@@ -61,6 +61,43 @@ static Mat4 lookAt(float ex, float ey, float ez,
     return r;
 }
 
+static Mat4 ortho(float l, float r, float b, float t, float n, float f) {
+    Mat4 m{};
+    m.m[0] = 2.0f / (r - l);
+    m.m[5] = 2.0f / (t - b);
+    m.m[10] = -2.0f / (f - n);
+    m.m[12] = -(r + l) / (r - l);
+    m.m[13] = -(t + b) / (t - b);
+    m.m[14] = -(f + n) / (f - n);
+    m.m[15] = 1.0f;
+    return m;
+}
+
+static void invert4x4(const float* m, float* out) {
+    float inv[16];
+    inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+    inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+    inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+    inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+    inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+    inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+    inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+    inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+    inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+    inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+    inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+    inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+    inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+    inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+    inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+    inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+
+    float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+    if (det == 0.0f) { memcpy(out, m, 16 * sizeof(float)); return; }
+    det = 1.0f / det;
+    for (int i = 0; i < 16; i++) out[i] = inv[i] * det;
+}
+
 static GLuint compileShader(GLenum type, const char* src) {
     GLuint s = glCreateShader(type);
     glShaderSource(s, 1, &src, nullptr);
@@ -95,8 +132,8 @@ static GLuint loadTexture(const char* path) {
     GLuint t = 0;
     glGenTextures(1, &t);
     glBindTexture(GL_TEXTURE_2D, t);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
@@ -110,26 +147,38 @@ struct GameState {
     int keyX, keyY;
     int doorX, doorY;
     bool keyExists;
+    float visualX, visualZ;
 };
 
 static GameState readState(lua_State* L) {
     GameState s{};
     lua_getglobal(L, "getState");
-    lua_call(L, 0, 7);
-    s.keyExists = lua_toboolean(L, -1) != 0; lua_pop(L, 1);
-    s.doorY = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.doorX = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.keyY = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.keyX = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.playerY = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.playerX = (int)lua_tointeger(L, -1); lua_pop(L, 1);
+    lua_call(L, 0, 9);
+    s.visualZ = (float)lua_tonumber(L, -1); lua_pop(L, 1);
+    s.visualX = (float)lua_tonumber(L, -1); lua_pop(L, 1);
+    s.keyExists = lua_toboolean(L, -1) != 0;  lua_pop(L, 1);
+    s.doorY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
+    s.doorX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
+    s.keyY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
+    s.keyX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
+    s.playerY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
+    s.playerX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
     return s;
 }
 
-static void sendAction(lua_State* L, const char* action) {
+static void sendMoveTo(lua_State* L, int gx, int gy) {
     lua_getglobal(L, "step");
-    lua_pushstring(L, action);
-    lua_call(L, 1, 0);
+    lua_pushstring(L, "moveTo");
+    lua_pushinteger(L, gx);
+    lua_pushinteger(L, gy);
+    lua_call(L, 3, 0);
+}
+
+static void sendTick(lua_State* L, float dt) {
+    lua_getglobal(L, "step");
+    lua_pushstring(L, "tick");
+    lua_pushnumber(L, dt);
+    lua_call(L, 2, 0);
 }
 
 static const char* VS_SRC = R"(
@@ -153,6 +202,37 @@ void main() {
     FragColor = texture(uTex, vUV);
 }
 )";
+
+static void drawSceneQuad(GLuint vbo, GLint uMVP, const Mat4& mvp,
+    GLuint tex, float cx, float cy, float cz,
+    float rx, float ry, float rz,
+    float ux, float uy, float uz,
+    float halfW, float halfH) {
+    float verts[20];
+    float rxh = rx * halfW, ryh = ry * halfW, rzh = rz * halfW;
+    float uxh = ux * halfH, uyh = uy * halfH, uzh = uz * halfH;
+
+    float p[4][3] = {
+        { cx - rxh - uxh, cy - ryh - uyh, cz - rzh - uzh },
+        { cx + rxh - uxh, cy + ryh - uyh, cz + rzh - uzh },
+        { cx + rxh + uxh, cy + ryh + uyh, cz + rzh + uzh },
+        { cx - rxh + uxh, cy - ryh + uyh, cz - rzh + uzh }
+    };
+    float uv[4][2] = { { 0,1 },{ 1,1 },{ 1,0 },{ 0,0 } };
+
+    for (int i = 0; i < 4; i++) {
+        verts[i * 5 + 0] = p[i][0];
+        verts[i * 5 + 1] = p[i][1];
+        verts[i * 5 + 2] = p[i][2];
+        verts[i * 5 + 3] = uv[i][0];
+        verts[i * 5 + 4] = uv[i][1];
+    }
+
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+    glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -189,6 +269,7 @@ int main(int argc, char* argv[]) {
     GLuint texPlayer = loadTexture("assets/player.bmp");
     GLuint texKey = loadTexture("assets/key.bmp");
     GLuint texDoor = loadTexture("assets/door.bmp");
+    GLuint texBackground = loadTexture("assets/background.bmp");
 
     GLuint vao, vbo;
     glGenVertexArrays(1, &vao);
@@ -208,67 +289,117 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auto drawQuad = [&](GLuint tex, float cx, float cy, float cz,
-        float rightX, float rightY, float rightZ,
-        float upX, float upY, float upZ,
-        float halfW, float halfH) {
-            float verts[20];
-            float rx = rightX * halfW, ry = rightY * halfW, rz = rightZ * halfW;
-            float ux = upX * halfH, uy = upY * halfH, uz = upZ * halfH;
-
-            float p[4][3] = {
-                { cx - rx - ux, cy - ry - uy, cz - rz - uz },
-                { cx + rx - ux, cy + ry - uy, cz + rz - uz },
-                { cx + rx + ux, cy + ry + uy, cz + rz + uz },
-                { cx - rx + ux, cy - ry + uy, cz - rz + uz }
-            };
-            float uv[4][2] = { { 0,1 },{ 1,1 },{ 1,0 },{ 0,0 } };
-
-            for (int i = 0; i < 4; i++) {
-                verts[i * 5 + 0] = p[i][0];
-                verts[i * 5 + 1] = p[i][1];
-                verts[i * 5 + 2] = p[i][2];
-                verts[i * 5 + 3] = uv[i][0];
-                verts[i * 5 + 4] = uv[i][1];
-            }
-
-            glBindTexture(GL_TEXTURE_2D, tex);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        };
-
-    auto billboardAxes = [&](float px, float pz,
-        float camX, float camZ,
-        float& rx, float& rz) {
-            float dx = camX - px;
-            float dz = camZ - pz;
-            float len = sqrtf(dx * dx + dz * dz);
-            if (len < 0.0001f) { rx = 1; rz = 0; return; }
-            dx /= len; dz /= len;
-            rx = -dz;
-            rz = dx;
-        };
-
     bool running = true;
     bool fullscreen = true;
+    bool dragging = false;
+    float camYaw = 0.0f;
+    float camPitch = 0.9f;
+    float zoom = 100.0f;
+    float lastMouseX = 0.0f, lastMouseY = 0.0f;
+    Uint64 lastTicks = SDL_GetTicks();
     SDL_Event e;
 
     while (running) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) running = false;
+
             if (e.type == SDL_EVENT_KEY_DOWN) {
-                if (e.key.key == SDLK_ESCAPE) { running = false; continue; }
+                if (e.key.key == SDLK_ESCAPE) running = false;
                 if (e.key.key == SDLK_F11) {
                     fullscreen = !fullscreen;
                     SDL_SetWindowFullscreen(window, fullscreen);
-                    continue;
                 }
-                if (e.key.key == SDLK_UP)    sendAction(L, "up");
-                if (e.key.key == SDLK_DOWN)  sendAction(L, "down");
-                if (e.key.key == SDLK_LEFT)  sendAction(L, "left");
-                if (e.key.key == SDLK_RIGHT) sendAction(L, "right");
+            }
+
+            if (e.type == SDL_EVENT_MOUSE_WHEEL) {
+                if (e.wheel.y > 0.0f) zoom *= 1.1f;
+                if (e.wheel.y < 0.0f) zoom /= 1.1f;
+                if (zoom < 10.0f)    zoom = 10.0f;
+                if (zoom > 1000.0f)  zoom = 1000.0f;
+            }
+
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                if (e.button.button == SDL_BUTTON_MIDDLE) {
+                    dragging = true;
+                    lastMouseX = e.button.x;
+                    lastMouseY = e.button.y;
+                }
+            }
+
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                if (e.button.button == SDL_BUTTON_MIDDLE) dragging = false;
+            }
+
+            if (e.type == SDL_EVENT_MOUSE_MOTION && dragging) {
+                float dx = e.motion.x - lastMouseX;
+                float dy = e.motion.y - lastMouseY;
+                lastMouseX = e.motion.x;
+                lastMouseY = e.motion.y;
+                camYaw += dx * 0.005f;
+                camPitch += dy * 0.005f;
+                if (camPitch < 0.15f) camPitch = 0.15f;
+                if (camPitch > 1.5f)  camPitch = 1.5f;
+            }
+
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN &&
+                e.button.button == SDL_BUTTON_LEFT) {
+                int mx = (int)e.button.x;
+                int my = (int)e.button.y;
+                int winW, winH;
+                SDL_GetWindowSizeInPixels(window, &winW, &winH);
+
+                GameState gs = readState(L);
+                float centerX = gs.visualX;
+                float centerZ = gs.visualZ;
+
+                float camDist = 10.0f * (100.0f / zoom);
+                float camX = centerX + camDist * sinf(camYaw) * cosf(camPitch);
+                float camY = camDist * sinf(camPitch);
+                float camZ = centerZ + camDist * cosf(camYaw) * cosf(camPitch);
+
+                Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, 100.0f);
+                Mat4 view = lookAt(camX, camY, camZ, centerX, 0.0f, centerZ, 0.0f, 1.0f, 0.0f);
+                Mat4 vp = mul(proj, view);
+
+                float invVP[16];
+                invert4x4(vp.m, invVP);
+
+                float ndcX = (2.0f * mx / (float)winW) - 1.0f;
+                float ndcY = 1.0f - (2.0f * my / (float)winH);
+                float pNear[4] = { ndcX, ndcY, -1.0f, 1.0f };
+                float pFar[4] = { ndcX, ndcY,  1.0f, 1.0f };
+                float wNear[4], wFar[4];
+
+                for (int i = 0; i < 4; i++) {
+                    wNear[i] = invVP[0 * 4 + i] * pNear[0] + invVP[1 * 4 + i] * pNear[1]
+                        + invVP[2 * 4 + i] * pNear[2] + invVP[3 * 4 + i] * pNear[3];
+                    wFar[i] = invVP[0 * 4 + i] * pFar[0] + invVP[1 * 4 + i] * pFar[1]
+                        + invVP[2 * 4 + i] * pFar[2] + invVP[3 * 4 + i] * pFar[3];
+                }
+                float nX = wNear[0] / wNear[3], nY = wNear[1] / wNear[3], nZ = wNear[2] / wNear[3];
+                float fX = wFar[0] / wFar[3], fY = wFar[1] / wFar[3], fZ = wFar[2] / wFar[3];
+
+                float dirX = fX - nX, dirY = fY - nY, dirZ = fZ - nZ;
+                if (dirY != 0.0f) {
+                    float t = -nY / dirY;
+                    if (t > 0.0f) {
+                        float hitX = nX + dirX * t;
+                        float hitZ = nZ + dirZ * t;
+                        int gx = (int)floorf(hitX);
+                        int gy = (int)floorf(hitZ);
+                        if (gx >= 0 && gx < GRID && gy >= 0 && gy < GRID) {
+                            sendMoveTo(L, gx, gy);
+                        }
+                    }
+                }
             }
         }
+
+        Uint64 now = SDL_GetTicks();
+        float dt = (now - lastTicks) / 1000.0f;
+        lastTicks = now;
+        if (dt > 0.25f) dt = 0.25f;
+        sendTick(L, dt);
 
         GameState gs = readState(L);
 
@@ -277,14 +408,12 @@ int main(int argc, char* argv[]) {
         float aspect = (float)winW / (float)winH;
         glViewport(0, 0, winW, winH);
 
-        glClearColor(0.05f, 0.05f, 0.07f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float centerX = GRID * TILE_F * 0.5f;
-        float centerZ = GRID * TILE_F * 0.5f;
-        float camDist = 14.0f;
-        float camPitch = 0.9f;
-        float camYaw = 0.0f;
+        float centerX = gs.visualX;
+        float centerZ = gs.visualZ;
+        float camDist = 10.0f * (100.0f / zoom);
         float camX = centerX + camDist * sinf(camYaw) * cosf(camPitch);
         float camY = camDist * sinf(camPitch);
         float camZ = centerZ + camDist * cosf(camYaw) * cosf(camPitch);
@@ -297,33 +426,57 @@ int main(int argc, char* argv[]) {
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(vao);
 
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        Mat4 orthoMat = ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+        drawSceneQuad(vbo, uMVP, orthoMat, texBackground,
+            0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            1.0f, 1.0f);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+
         for (int y = 0; y < GRID; y++) {
             for (int x = 0; x < GRID; x++) {
                 float wx = x * TILE_F + TILE_F * 0.5f;
                 float wz = y * TILE_F + TILE_F * 0.5f;
-                Mat4 model = identity();
-                Mat4 mvp = mul(proj, mul(view, model));
-                glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
-                drawQuad(texFloor, wx, 0.0f, wz, 1, 0, 0, 0, 0, 1, TILE_F * 0.5f, TILE_F * 0.5f);
+                Mat4 mvp = mul(proj, view);
+                drawSceneQuad(vbo, uMVP, mvp, texFloor,
+                    wx, 0.0f, wz,
+                    1, 0, 0,
+                    0, 0, 1,
+                    TILE_F * 0.5f, TILE_F * 0.5f);
             }
         }
 
         float spriteH = 1.4f;
         float spriteW = 1.2f;
 
-        auto drawBillboard = [&](GLuint tex, int gx, int gy) {
-            float wx = gx * TILE_F + TILE_F * 0.5f;
-            float wz = gy * TILE_F + TILE_F * 0.5f;
-            float rx, rz;
-            billboardAxes(wx, wz, camX, camZ, rx, rz);
+        auto drawBillboardAt = [&](GLuint tex, float wx, float wz) {
+            float dx = camX - wx;
+            float dz = camZ - wz;
+            float len = sqrtf(dx * dx + dz * dz);
+            if (len < 0.0001f) { dx = 0; dz = 1; len = 1; }
+            dx /= len; dz /= len;
+            float rx = -dz, rz = dx;
             Mat4 mvp = mul(proj, view);
-            glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
-            drawQuad(tex, wx, spriteH * 0.5f, wz, rx, 0, rz, 0, 1, 0, spriteW * 0.5f, spriteH * 0.5f);
+            drawSceneQuad(vbo, uMVP, mvp, tex,
+                wx, spriteH * 0.5f, wz,
+                rx, 0, rz,
+                0, 1, 0,
+                spriteW * 0.5f, spriteH * 0.5f);
             };
 
-        drawBillboard(texDoor, gs.doorX, gs.doorY);
-        if (gs.keyExists) drawBillboard(texKey, gs.keyX, gs.keyY);
-        drawBillboard(texPlayer, gs.playerX, gs.playerY);
+        auto drawBillboardTile = [&](GLuint tex, int gx, int gy) {
+            float wx = gx * TILE_F + TILE_F * 0.5f;
+            float wz = gy * TILE_F + TILE_F * 0.5f;
+            drawBillboardAt(tex, wx, wz);
+            };
+
+        drawBillboardTile(texDoor, gs.doorX, gs.doorY);
+        if (gs.keyExists) drawBillboardTile(texKey, gs.keyX, gs.keyY);
+        drawBillboardAt(texPlayer, gs.visualX, gs.visualZ);
 
         SDL_GL_SwapWindow(window);
     }
@@ -333,6 +486,7 @@ int main(int argc, char* argv[]) {
     glDeleteTextures(1, &texPlayer);
     glDeleteTextures(1, &texKey);
     glDeleteTextures(1, &texDoor);
+    glDeleteTextures(1, &texBackground);
     glDeleteProgram(program);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
