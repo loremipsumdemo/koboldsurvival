@@ -2,8 +2,11 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include <lua.hpp>
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include "model.h"
 
 const int GRID = 16;
 const float TILE_F = 1.0f;
@@ -146,6 +149,7 @@ struct GameState {
     int playerX, playerY;
     int keyX, keyY;
     int doorX, doorY;
+    int wagonX, wagonY;
     bool keyExists;
     float visualX, visualZ;
 };
@@ -153,7 +157,9 @@ struct GameState {
 static GameState readState(lua_State* L) {
     GameState s{};
     lua_getglobal(L, "getState");
-    lua_call(L, 0, 9);
+    lua_call(L, 0, 11);
+    s.wagonY = (int)lua_tointeger(L, -1); lua_pop(L, 1);
+    s.wagonX = (int)lua_tointeger(L, -1); lua_pop(L, 1);
     s.visualZ = (float)lua_tonumber(L, -1); lua_pop(L, 1);
     s.visualX = (float)lua_tonumber(L, -1); lua_pop(L, 1);
     s.keyExists = lua_toboolean(L, -1) != 0;  lua_pop(L, 1);
@@ -228,10 +234,47 @@ static void drawSceneQuad(GLuint vbo, GLint uMVP, const Mat4& mvp,
         verts[i * 5 + 4] = uv[i][1];
     }
 
+    // Bind our own VBO explicitly so we never write into another model's buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBindTexture(GL_TEXTURE_2D, tex);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
     glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+// Draws a loaded glTF model standing on tile (wx, wz), bottom-centred
+static void drawModel(const Model& m, GLint uMVP, const Mat4& viewProj,
+    float wx, float wz, float targetSize, float yaw) {
+    float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+    if (extent <= 0.0f) return;
+    float s = targetSize / extent;   // largest side becomes targetSize
+    float c = cosf(yaw), sn = sinf(yaw);
+
+    Mat4 model{};
+    model.m[0] = s * c;   model.m[2] = -s * sn;
+    model.m[5] = s;
+    model.m[8] = s * sn;  model.m[10] = s * c;
+    model.m[15] = 1.0f;
+
+    // Translate so the rotated/scaled model's bottom-centre lands on (wx, 0, wz)
+    float cx = (m.minX + m.maxX) * 0.5f;
+    float cz = (m.minZ + m.maxZ) * 0.5f;
+    float px = model.m[0] * cx + model.m[8] * cz;
+    float py = model.m[5] * m.minY;
+    float pz = model.m[2] * cx + model.m[10] * cz;
+    model.m[12] = wx - px;
+    model.m[13] = -py;
+    model.m[14] = wz - pz;
+
+    Mat4 mvp = mul(viewProj, model);
+    glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
+
+    glBindVertexArray(m.vao);
+    for (const DrawRange& d : m.draws) {
+        glBindTexture(GL_TEXTURE_2D, d.texture);
+        glDrawElements(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT,
+            (void*)(size_t)(d.firstIndex * sizeof(GLuint)));
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -281,6 +324,13 @@ int main(int argc, char* argv[]) {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // Wagon model (glTF/GLB). If it fails to load, the game still runs without it.
+    Model wagon;
+    if (!loadGLBModel("assets/wagon.glb", wagon)) {
+        SDL_Log("Could not load wagon model");
+    }
 
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
@@ -420,12 +470,14 @@ int main(int argc, char* argv[]) {
 
         Mat4 proj = perspective(0.9f, aspect, 0.1f, 100.0f);
         Mat4 view = lookAt(camX, camY, camZ, centerX, 0.0f, centerZ, 0.0f, 1.0f, 0.0f);
+        Mat4 viewProj = mul(proj, view);
 
         glUseProgram(program);
         glUniform1i(uTex, 0);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(vao);
 
+        // Background (screen-space, no depth)
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         Mat4 orthoMat = ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
@@ -437,12 +489,12 @@ int main(int argc, char* argv[]) {
         glDepthMask(GL_TRUE);
         glEnable(GL_DEPTH_TEST);
 
+        // Floor
         for (int y = 0; y < GRID; y++) {
             for (int x = 0; x < GRID; x++) {
                 float wx = x * TILE_F + TILE_F * 0.5f;
                 float wz = y * TILE_F + TILE_F * 0.5f;
-                Mat4 mvp = mul(proj, view);
-                drawSceneQuad(vbo, uMVP, mvp, texFloor,
+                drawSceneQuad(vbo, uMVP, viewProj, texFloor,
                     wx, 0.0f, wz,
                     1, 0, 0,
                     0, 0, 1,
@@ -460,8 +512,7 @@ int main(int argc, char* argv[]) {
             if (len < 0.0001f) { dx = 0; dz = 1; len = 1; }
             dx /= len; dz /= len;
             float rx = -dz, rz = dx;
-            Mat4 mvp = mul(proj, view);
-            drawSceneQuad(vbo, uMVP, mvp, tex,
+            drawSceneQuad(vbo, uMVP, viewProj, tex,
                 wx, spriteH * 0.5f, wz,
                 rx, 0, rz,
                 0, 1, 0,
@@ -478,10 +529,19 @@ int main(int argc, char* argv[]) {
         if (gs.keyExists) drawBillboardTile(texKey, gs.keyX, gs.keyY);
         drawBillboardAt(texPlayer, gs.visualX, gs.visualZ);
 
+        // 3D wagon entity on its tile
+        if (wagon.vao) {
+            drawModel(wagon, uMVP, viewProj,
+                gs.wagonX + 0.5f * TILE_F, gs.wagonY + 0.5f * TILE_F,
+                0.9f,   // size in world units (about one tile)
+                0.0f);  // yaw in radians
+        }
+
         SDL_GL_SwapWindow(window);
     }
 
     lua_close(L);
+    destroyModel(wagon);
     glDeleteTextures(1, &texFloor);
     glDeleteTextures(1, &texPlayer);
     glDeleteTextures(1, &texKey);

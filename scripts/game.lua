@@ -7,6 +7,7 @@ local state = {
     playerX = 0, playerY = 0,
     keyX = 0, keyY = 0,
     doorX = 0, doorY = 0,
+    wagonX = 0, wagonY = 0,
     keyExists = true,
 }
 
@@ -21,19 +22,27 @@ local function tileCenter(gx, gy)
     return gx + 0.5, gy + 0.5
 end
 
+-- Picks four distinct tiles for player, key, door, and wagon
 local function generate()
-    local px, py, kx, ky, dx, dy
+    local px, py, kx, ky, dx, dy, wx, wy
+    local function same(ax, ay, bx, by) return ax == bx and ay == by end
+
     repeat
         px = math.random(0, GRID - 1); py = math.random(0, GRID - 1)
         kx = math.random(0, GRID - 1); ky = math.random(0, GRID - 1)
         dx = math.random(0, GRID - 1); dy = math.random(0, GRID - 1)
-    until not (px == kx and py == ky)
-      and not (px == dx and py == dy)
-      and not (kx == dx and ky == dy)
+        wx = math.random(0, GRID - 1); wy = math.random(0, GRID - 1)
+    until not same(px, py, kx, ky)
+      and not same(px, py, dx, dy)
+      and not same(px, py, wx, wy)
+      and not same(kx, ky, dx, dy)
+      and not same(kx, ky, wx, wy)
+      and not same(dx, dy, wx, wy)
 
     state.playerX, state.playerY = px, py
     state.keyX, state.keyY = kx, ky
     state.doorX, state.doorY = dx, dy
+    state.wagonX, state.wagonY = wx, wy
     state.keyExists = true
 
     visualX, visualZ = tileCenter(px, py)
@@ -197,12 +206,15 @@ function step(action, a1, a2)
     end
 end
 
+-- Return order must match readState() in main.cpp.
+-- The wagon values are last.
 function getState()
     return state.playerX, state.playerY,
            state.keyX, state.keyY,
            state.doorX, state.doorY,
            state.keyExists,
-           visualX, visualZ
+           visualX, visualZ,
+           state.wagonX, state.wagonY
 end
 
 generate()
