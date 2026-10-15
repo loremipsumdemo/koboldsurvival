@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include <lua.hpp>
@@ -145,6 +146,51 @@ static GLuint loadTexture(const char* path) {
     return t;
 }
 
+// ---------------------------------------------------------------------------
+// ASCII text rendering (SDL3_ttf)
+// ---------------------------------------------------------------------------
+
+static const float GLYPH_HEIGHT = 1.0f;   // world units for a glyph's height
+
+struct TextTex {
+    GLuint tex;
+    float  aspect;   // width / height of the rendered text
+};
+
+struct Symbol { const char* text; SDL_Color color; };
+static const Symbol SYM_PLAYER = { "@",{ 255, 220,  80, 255 } };
+static const Symbol SYM_KEY = { "K",{ 255, 215,   0, 255 } };
+static const Symbol SYM_DOOR = { "D",{ 170, 110,  60, 255 } };
+static const Symbol SYM_WAGON = { "W",{ 90, 200, 255, 255 } };
+static const Symbol SYM_FLOOR = { ".",{ 110, 110, 110, 255 } };
+
+static TextTex makeTextTexture(TTF_Font* font, const Symbol& sym) {
+    SDL_Surface* s = TTF_RenderText_Blended(font, sym.text, strlen(sym.text), sym.color);
+    if (!s) {
+        SDL_Log("TTF_RenderText failed: %s", SDL_GetError());
+        return { 0, 1.0f };
+    }
+    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
+    SDL_DestroySurface(s);
+
+    GLuint t = 0;
+    glGenTextures(1, &t);
+    glBindTexture(GL_TEXTURE_2D, t);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
+
+    TextTex result{ t, (float)conv->w / (float)conv->h };
+    SDL_DestroySurface(conv);
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+
 struct GameState {
     int playerX, playerY;
     int keyX, keyY;
@@ -203,9 +249,12 @@ static const char* FS_SRC = R"(
 #version 330 core
 in vec2 vUV;
 uniform sampler2D uTex;
+uniform float uAlphaCut;   // discard pixels below this alpha (0 = off)
 out vec4 FragColor;
 void main() {
-    FragColor = texture(uTex, vUV);
+    vec4 c = texture(uTex, vUV);
+    if (c.a < uAlphaCut) discard;
+    FragColor = c;
 }
 )";
 
@@ -234,7 +283,6 @@ static void drawSceneQuad(GLuint vbo, GLint uMVP, const Mat4& mvp,
         verts[i * 5 + 4] = uv[i][1];
     }
 
-    // Bind our own VBO explicitly so we never write into another model's buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBindTexture(GL_TEXTURE_2D, tex);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
@@ -247,7 +295,7 @@ static void drawModel(const Model& m, GLint uMVP, const Mat4& viewProj,
     float wx, float wz, float targetSize, float yaw) {
     float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
     if (extent <= 0.0f) return;
-    float s = targetSize / extent;   // largest side becomes targetSize
+    float s = targetSize / extent;
     float c = cosf(yaw), sn = sinf(yaw);
 
     Mat4 model{};
@@ -256,7 +304,6 @@ static void drawModel(const Model& m, GLint uMVP, const Mat4& viewProj,
     model.m[8] = s * sn;  model.m[10] = s * c;
     model.m[15] = 1.0f;
 
-    // Translate so the rotated/scaled model's bottom-centre lands on (wx, 0, wz)
     float cx = (m.minX + m.maxX) * 0.5f;
     float cz = (m.minZ + m.maxZ) * 0.5f;
     float px = model.m[0] * cx + model.m[8] * cz;
@@ -279,6 +326,17 @@ static void drawModel(const Model& m, GLint uMVP, const Mat4& viewProj,
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
+
+    if (!TTF_Init()) {
+        SDL_Log("TTF_Init failed: %s", SDL_GetError());
+        return 1;
+    }
+    // Point size only controls texture sharpness; GLYPH_HEIGHT controls world size
+    TTF_Font* font = TTF_OpenFont("assets/NotoSans_Condensed-Bold.ttf", 64.0f);
+    if (!font) {
+        SDL_Log("Could not open font: %s", SDL_GetError());
+        return 1;
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -307,12 +365,21 @@ int main(int argc, char* argv[]) {
     GLuint program = makeProgram(VS_SRC, FS_SRC);
     GLint uMVP = glGetUniformLocation(program, "uMVP");
     GLint uTex = glGetUniformLocation(program, "uTex");
+    GLint uAlphaCut = glGetUniformLocation(program, "uAlphaCut");
 
+    // Sprite/model assets (used when ASCII mode is off)
     GLuint texFloor = loadTexture("assets/floor.bmp");
     GLuint texPlayer = loadTexture("assets/player.bmp");
     GLuint texKey = loadTexture("assets/key.bmp");
     GLuint texDoor = loadTexture("assets/door.bmp");
     GLuint texBackground = loadTexture("assets/background.bmp");
+
+    // ASCII text textures (used when ASCII mode is on)
+    TextTex glyphPlayer = makeTextTexture(font, SYM_PLAYER);
+    TextTex glyphKey = makeTextTexture(font, SYM_KEY);
+    TextTex glyphDoor = makeTextTexture(font, SYM_DOOR);
+    TextTex glyphWagon = makeTextTexture(font, SYM_WAGON);
+    TextTex glyphFloor = makeTextTexture(font, SYM_FLOOR);
 
     GLuint vao, vbo;
     glGenVertexArrays(1, &vao);
@@ -326,7 +393,6 @@ int main(int argc, char* argv[]) {
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 
-    // Wagon model (glTF/GLB). If it fails to load, the game still runs without it.
     Model wagon;
     if (!loadGLBModel("assets/wagon.glb", wagon)) {
         SDL_Log("Could not load wagon model");
@@ -342,6 +408,7 @@ int main(int argc, char* argv[]) {
     bool running = true;
     bool fullscreen = true;
     bool dragging = false;
+    bool asciiMode = true;     // F2 toggles between ASCII text and sprites/model
     float camYaw = 0.0f;
     float camPitch = 0.9f;
     float zoom = 100.0f;
@@ -358,6 +425,10 @@ int main(int argc, char* argv[]) {
                 if (e.key.key == SDLK_F11) {
                     fullscreen = !fullscreen;
                     SDL_SetWindowFullscreen(window, fullscreen);
+                }
+                if (e.key.key == SDLK_F2) {
+                    asciiMode = !asciiMode;
+                    SDL_Log("Render mode: %s", asciiMode ? "ASCII" : "sprites");
                 }
             }
 
@@ -476,65 +547,108 @@ int main(int argc, char* argv[]) {
         glUniform1i(uTex, 0);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(vao);
+        glUniform1f(uAlphaCut, 0.0f);
 
-        // Background (screen-space, no depth)
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        Mat4 orthoMat = ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-        drawSceneQuad(vbo, uMVP, orthoMat, texBackground,
-            0.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            1.0f, 1.0f);
-        glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
-
-        // Floor
-        for (int y = 0; y < GRID; y++) {
-            for (int x = 0; x < GRID; x++) {
-                float wx = x * TILE_F + TILE_F * 0.5f;
-                float wz = y * TILE_F + TILE_F * 0.5f;
-                drawSceneQuad(vbo, uMVP, viewProj, texFloor,
-                    wx, 0.0f, wz,
-                    1, 0, 0,
-                    0, 0, 1,
-                    TILE_F * 0.5f, TILE_F * 0.5f);
-            }
-        }
-
-        float spriteH = 1.4f;
-        float spriteW = 1.2f;
-
-        auto drawBillboardAt = [&](GLuint tex, float wx, float wz) {
+        // Billboard: a quad of size (w, h) that always faces the camera, standing on (wx, wz).
+        // Right vector is forward x up from lookAt, which is (dz, 0, -dx) where (dx, dz)
+        // points from the object toward the camera.
+        auto drawBillboardAt = [&](GLuint tex, float wx, float wz, float w, float h) {
             float dx = camX - wx;
             float dz = camZ - wz;
             float len = sqrtf(dx * dx + dz * dz);
             if (len < 0.0001f) { dx = 0; dz = 1; len = 1; }
             dx /= len; dz /= len;
-            float rx = -dz, rz = dx;
+            float rx = dz, rz = -dx;
             drawSceneQuad(vbo, uMVP, viewProj, tex,
-                wx, spriteH * 0.5f, wz,
+                wx, h * 0.5f, wz,
                 rx, 0, rz,
                 0, 1, 0,
-                spriteW * 0.5f, spriteH * 0.5f);
+                w * 0.5f, h * 0.5f);
             };
 
-        auto drawBillboardTile = [&](GLuint tex, int gx, int gy) {
+        auto drawBillboardTile = [&](GLuint tex, int gx, int gy, float w, float h) {
             float wx = gx * TILE_F + TILE_F * 0.5f;
             float wz = gy * TILE_F + TILE_F * 0.5f;
-            drawBillboardAt(tex, wx, wz);
+            drawBillboardAt(tex, wx, wz, w, h);
             };
 
-        drawBillboardTile(texDoor, gs.doorX, gs.doorY);
-        if (gs.keyExists) drawBillboardTile(texKey, gs.keyX, gs.keyY);
-        drawBillboardAt(texPlayer, gs.visualX, gs.visualZ);
+        // Text glyph billboards keep the rendered text's aspect ratio
+        auto drawGlyphAt = [&](const TextTex& t, float wx, float wz) {
+            drawBillboardAt(t.tex, wx, wz, GLYPH_HEIGHT * t.aspect, GLYPH_HEIGHT);
+            };
 
-        // 3D wagon entity on its tile
-        if (wagon.vao) {
-            drawModel(wagon, uMVP, viewProj,
-                gs.wagonX + 0.5f * TILE_F, gs.wagonY + 0.5f * TILE_F,
-                0.9f,   // size in world units (about one tile)
-                0.0f);  // yaw in radians
+        auto drawGlyphTile = [&](const TextTex& t, int gx, int gy) {
+            float wx = gx * TILE_F + TILE_F * 0.5f;
+            float wz = gy * TILE_F + TILE_F * 0.5f;
+            drawGlyphAt(t, wx, wz);
+            };
+
+        if (asciiMode) {
+            // ---- ASCII mode: every entity is rendered text ----
+            glUniform1f(uAlphaCut, 0.1f);   // drop fully transparent pixels, keep antialiased edges
+
+            // Floor: a small "." lying flat on each tile
+            const float dotHalfH = 0.15f;
+            for (int y = 0; y < GRID; y++) {
+                for (int x = 0; x < GRID; x++) {
+                    float wx = x * TILE_F + TILE_F * 0.5f;
+                    float wz = y * TILE_F + TILE_F * 0.5f;
+                    drawSceneQuad(vbo, uMVP, viewProj, glyphFloor.tex,
+                        wx, 0.01f, wz,
+                        1, 0, 0,
+                        0, 0, 1,
+                        dotHalfH * glyphFloor.aspect, dotHalfH);
+                }
+            }
+
+            drawGlyphTile(glyphDoor, gs.doorX, gs.doorY);
+            if (gs.keyExists) drawGlyphTile(glyphKey, gs.keyX, gs.keyY);
+            drawGlyphTile(glyphWagon, gs.wagonX, gs.wagonY);
+            drawGlyphAt(glyphPlayer, gs.visualX, gs.visualZ);
+
+            glUniform1f(uAlphaCut, 0.0f);
+        }
+        else {
+            // ---- Sprite/model mode (original rendering) ----
+            float spriteH = 1.4f;
+            float spriteW = 1.2f;
+
+            // Background (screen-space, no depth)
+            glDisable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
+            Mat4 orthoMat = ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+            drawSceneQuad(vbo, uMVP, orthoMat, texBackground,
+                0.0f, 0.0f, 0.0f,
+                1.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f,
+                1.0f, 1.0f);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+
+            // Floor
+            for (int y = 0; y < GRID; y++) {
+                for (int x = 0; x < GRID; x++) {
+                    float wx = x * TILE_F + TILE_F * 0.5f;
+                    float wz = y * TILE_F + TILE_F * 0.5f;
+                    drawSceneQuad(vbo, uMVP, viewProj, texFloor,
+                        wx, 0.0f, wz,
+                        1, 0, 0,
+                        0, 0, 1,
+                        TILE_F * 0.5f, TILE_F * 0.5f);
+                }
+            }
+
+            drawBillboardTile(texDoor, gs.doorX, gs.doorY, spriteW, spriteH);
+            if (gs.keyExists) drawBillboardTile(texKey, gs.keyX, gs.keyY, spriteW, spriteH);
+            drawBillboardAt(texPlayer, gs.visualX, gs.visualZ, spriteW, spriteH);
+
+            // 3D wagon entity on its tile
+            if (wagon.vao) {
+                drawModel(wagon, uMVP, viewProj,
+                    gs.wagonX + 0.5f * TILE_F, gs.wagonY + 0.5f * TILE_F,
+                    0.9f,
+                    0.0f);
+            }
         }
 
         SDL_GL_SwapWindow(window);
@@ -542,6 +656,11 @@ int main(int argc, char* argv[]) {
 
     lua_close(L);
     destroyModel(wagon);
+    glDeleteTextures(1, &glyphPlayer.tex);
+    glDeleteTextures(1, &glyphKey.tex);
+    glDeleteTextures(1, &glyphDoor.tex);
+    glDeleteTextures(1, &glyphWagon.tex);
+    glDeleteTextures(1, &glyphFloor.tex);
     glDeleteTextures(1, &texFloor);
     glDeleteTextures(1, &texPlayer);
     glDeleteTextures(1, &texKey);
@@ -550,6 +669,8 @@ int main(int argc, char* argv[]) {
     glDeleteProgram(program);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
+    TTF_CloseFont(font);
+    TTF_Quit();
     SDL_GL_DestroyContext(ctx);
     SDL_DestroyWindow(window);
     SDL_Quit();

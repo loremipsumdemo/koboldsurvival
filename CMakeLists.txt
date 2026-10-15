@@ -5,9 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
+
+# Silences the deprecation warning from tinygltf's own CMakeLists.txt
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 include(FetchContent)
 set(TINYGLTF_HEADER_ONLY ON CACHE BOOL "" FORCE)
@@ -25,13 +29,18 @@ add_executable(simple_game
     src/model.cpp
 )
 
-target_include_directories(simple_game PRIVATE ${LUA_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
+target_include_directories(simple_game PRIVATE
+    ${LUA_INCLUDE_DIR}
+    ${GLEW_INCLUDE_DIRS}
+    ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
+)
+
 target_link_libraries(simple_game PRIVATE
     SDL3::SDL3
+    SDL3_ttf::SDL3_ttf
     ${LUA_LIBRARIES}
     OpenGL::GL
     GLEW::GLEW
-    tinygltf
 )
 
 add_custom_command(TARGET simple_game POST_BUILD
