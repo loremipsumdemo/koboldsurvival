@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
-find_package(Lua REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
@@ -26,11 +25,13 @@ FetchContent_MakeAvailable(tinygltf)
 
 add_executable(simple_game
     src/main.cpp
+    src/renderer.cpp
+    src/systems.cpp
     src/model.cpp
 )
 
 target_include_directories(simple_game PRIVATE
-    ${LUA_INCLUDE_DIR}
+    src
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
 )
@@ -38,7 +39,6 @@ target_include_directories(simple_game PRIVATE
 target_link_libraries(simple_game PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
-    ${LUA_LIBRARIES}
     OpenGL::GL
     GLEW::GLEW
 )
@@ -46,6 +46,4 @@ target_link_libraries(simple_game PRIVATE
 add_custom_command(TARGET simple_game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:simple_game>/assets"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/scripts" "$<TARGET_FILE_DIR:simple_game>/scripts"
 )

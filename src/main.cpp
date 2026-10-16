@@ -2,336 +2,63 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
-#include <lua.hpp>
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstring>
+#include <optional>
+#include "camera.h"
+#include "components.h"
+#include "ecs.h"
 #include "model.h"
+#include "renderer.h"
+#include "resources.h"
+#include "systems.h"
 
-const int GRID = 16;
-const float TILE_F = 1.0f;
+namespace {
 
-struct Mat4 { float m[16]; };
-
-static Mat4 identity() {
-    Mat4 r{}; r.m[0] = r.m[5] = r.m[10] = r.m[15] = 1.0f; return r;
-}
-
-static Mat4 mul(const Mat4& a, const Mat4& b) {
-    Mat4 r{};
-    for (int c = 0; c < 4; c++)
-        for (int rw = 0; rw < 4; rw++) {
-            float s = 0;
-            for (int k = 0; k < 4; k++) s += a.m[k * 4 + rw] * b.m[c * 4 + k];
-            r.m[c * 4 + rw] = s;
-        }
-    return r;
-}
-
-static Mat4 perspective(float fovY, float aspect, float zNear, float zFar) {
-    Mat4 r{};
-    float f = 1.0f / tanf(fovY * 0.5f);
-    r.m[0] = f / aspect;
-    r.m[5] = f;
-    r.m[10] = (zFar + zNear) / (zNear - zFar);
-    r.m[11] = -1.0f;
-    r.m[14] = (2.0f * zFar * zNear) / (zNear - zFar);
-    return r;
-}
-
-static Mat4 lookAt(float ex, float ey, float ez,
-    float cx, float cy, float cz,
-    float ux, float uy, float uz) {
-    float fx = cx - ex, fy = cy - ey, fz = cz - ez;
-    float fl = sqrtf(fx * fx + fy * fy + fz * fz);
-    fx /= fl; fy /= fl; fz /= fl;
-    float sx = fy * uz - fz * uy;
-    float sy = fz * ux - fx * uz;
-    float sz = fx * uy - fy * ux;
-    float sl = sqrtf(sx * sx + sy * sy + sz * sz);
-    sx /= sl; sy /= sl; sz /= sl;
-    float ux2 = sy * fz - sz * fy;
-    float uy2 = sz * fx - sx * fz;
-    float uz2 = sx * fy - sy * fx;
-    Mat4 r{};
-    r.m[0] = sx;  r.m[4] = sy;  r.m[8] = sz;
-    r.m[1] = ux2; r.m[5] = uy2; r.m[9] = uz2;
-    r.m[2] = -fx; r.m[6] = -fy; r.m[10] = -fz;
-    r.m[12] = -(sx * ex + sy * ey + sz * ez);
-    r.m[13] = -(ux2 * ex + uy2 * ey + uz2 * ez);
-    r.m[14] = (fx * ex + fy * ey + fz * ez);
-    r.m[15] = 1.0f;
-    return r;
-}
-
-static Mat4 ortho(float l, float r, float b, float t, float n, float f) {
-    Mat4 m{};
-    m.m[0] = 2.0f / (r - l);
-    m.m[5] = 2.0f / (t - b);
-    m.m[10] = -2.0f / (f - n);
-    m.m[12] = -(r + l) / (r - l);
-    m.m[13] = -(t + b) / (t - b);
-    m.m[14] = -(f + n) / (f - n);
-    m.m[15] = 1.0f;
-    return m;
-}
-
-static void invert4x4(const float* m, float* out) {
+// Converts a screen pixel into a grid tile by intersecting the view ray with y = 0
+std::optional<GridPos> screenToTile(const Camera& cam, float cx, float cz,
+                                    float mx, float my, int winW, int winH) {
+    Mat4 vp = cam.viewProj(cx, cz, (float)winW / (float)winH);
     float inv[16];
-    inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
-    inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
-    inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
-    inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
-    inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
-    inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
-    inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
-    inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
-    inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
-    inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
-    inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
-    inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
-    inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
-    inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
-    inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
-    inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+    if (!invert4x4(vp.m, inv)) return std::nullopt;
 
-    float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-    if (det == 0.0f) { memcpy(out, m, 16 * sizeof(float)); return; }
-    det = 1.0f / det;
-    for (int i = 0; i < 16; i++) out[i] = inv[i] * det;
-}
-
-static GLuint compileShader(GLenum type, const char* src) {
-    GLuint s = glCreateShader(type);
-    glShaderSource(s, 1, &src, nullptr);
-    glCompileShader(s);
-    GLint ok = 0;
-    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-    if (!ok) {
-        char log[1024];
-        glGetShaderInfoLog(s, 1024, nullptr, log);
-        SDL_Log("Shader error: %s", log);
-    }
-    return s;
-}
-
-static GLuint makeProgram(const char* vs, const char* fs) {
-    GLuint v = compileShader(GL_VERTEX_SHADER, vs);
-    GLuint f = compileShader(GL_FRAGMENT_SHADER, fs);
-    GLuint p = glCreateProgram();
-    glAttachShader(p, v);
-    glAttachShader(p, f);
-    glLinkProgram(p);
-    glDeleteShader(v);
-    glDeleteShader(f);
-    return p;
-}
-
-static GLuint loadTexture(const char* path) {
-    SDL_Surface* s = SDL_LoadBMP(path);
-    if (!s) return 0;
-    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-    SDL_DestroySurface(s);
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
-    SDL_DestroySurface(conv);
-    return t;
-}
-
-// ---------------------------------------------------------------------------
-// ASCII text rendering (SDL3_ttf)
-// ---------------------------------------------------------------------------
-
-static const float GLYPH_HEIGHT = 1.0f;   // world units for a glyph's height
-
-struct TextTex {
-    GLuint tex;
-    float  aspect;   // width / height of the rendered text
-};
-
-struct Symbol { const char* text; SDL_Color color; };
-static const Symbol SYM_PLAYER = { "@",{ 255, 220,  80, 255 } };
-static const Symbol SYM_KEY = { "K",{ 255, 215,   0, 255 } };
-static const Symbol SYM_DOOR = { "D",{ 170, 110,  60, 255 } };
-static const Symbol SYM_WAGON = { "W",{ 90, 200, 255, 255 } };
-static const Symbol SYM_FLOOR = { ".",{ 110, 110, 110, 255 } };
-
-static TextTex makeTextTexture(TTF_Font* font, const Symbol& sym) {
-    SDL_Surface* s = TTF_RenderText_Blended(font, sym.text, strlen(sym.text), sym.color);
-    if (!s) {
-        SDL_Log("TTF_RenderText failed: %s", SDL_GetError());
-        return { 0, 1.0f };
-    }
-    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-    SDL_DestroySurface(s);
-
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
-
-    TextTex result{ t, (float)conv->w / (float)conv->h };
-    SDL_DestroySurface(conv);
-    return result;
-}
-
-// ---------------------------------------------------------------------------
-
-struct GameState {
-    int playerX, playerY;
-    int keyX, keyY;
-    int doorX, doorY;
-    int wagonX, wagonY;
-    bool keyExists;
-    float visualX, visualZ;
-};
-
-static GameState readState(lua_State* L) {
-    GameState s{};
-    lua_getglobal(L, "getState");
-    lua_call(L, 0, 11);
-    s.wagonY = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.wagonX = (int)lua_tointeger(L, -1); lua_pop(L, 1);
-    s.visualZ = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-    s.visualX = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-    s.keyExists = lua_toboolean(L, -1) != 0;  lua_pop(L, 1);
-    s.doorY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    s.doorX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    s.keyY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    s.keyX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    s.playerY = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    s.playerX = (int)lua_tointeger(L, -1);  lua_pop(L, 1);
-    return s;
-}
-
-static void sendMoveTo(lua_State* L, int gx, int gy) {
-    lua_getglobal(L, "step");
-    lua_pushstring(L, "moveTo");
-    lua_pushinteger(L, gx);
-    lua_pushinteger(L, gy);
-    lua_call(L, 3, 0);
-}
-
-static void sendTick(lua_State* L, float dt) {
-    lua_getglobal(L, "step");
-    lua_pushstring(L, "tick");
-    lua_pushnumber(L, dt);
-    lua_call(L, 2, 0);
-}
-
-static const char* VS_SRC = R"(
-#version 330 core
-layout(location=0) in vec3 aPos;
-layout(location=1) in vec2 aUV;
-uniform mat4 uMVP;
-out vec2 vUV;
-void main() {
-    vUV = aUV;
-    gl_Position = uMVP * vec4(aPos, 1.0);
-}
-)";
-
-static const char* FS_SRC = R"(
-#version 330 core
-in vec2 vUV;
-uniform sampler2D uTex;
-uniform float uAlphaCut;   // discard pixels below this alpha (0 = off)
-out vec4 FragColor;
-void main() {
-    vec4 c = texture(uTex, vUV);
-    if (c.a < uAlphaCut) discard;
-    FragColor = c;
-}
-)";
-
-static void drawSceneQuad(GLuint vbo, GLint uMVP, const Mat4& mvp,
-    GLuint tex, float cx, float cy, float cz,
-    float rx, float ry, float rz,
-    float ux, float uy, float uz,
-    float halfW, float halfH) {
-    float verts[20];
-    float rxh = rx * halfW, ryh = ry * halfW, rzh = rz * halfW;
-    float uxh = ux * halfH, uyh = uy * halfH, uzh = uz * halfH;
-
-    float p[4][3] = {
-        { cx - rxh - uxh, cy - ryh - uyh, cz - rzh - uzh },
-        { cx + rxh - uxh, cy + ryh - uyh, cz + rzh - uzh },
-        { cx + rxh + uxh, cy + ryh + uyh, cz + rzh + uzh },
-        { cx - rxh + uxh, cy - ryh + uyh, cz - rzh + uzh }
-    };
-    float uv[4][2] = { { 0,1 },{ 1,1 },{ 1,0 },{ 0,0 } };
+    float ndcX = (2.0f * mx / (float)winW) - 1.0f;
+    float ndcY = 1.0f - (2.0f * my / (float)winH);
+    float pNear[4] = { ndcX, ndcY, -1.0f, 1.0f };
+    float pFar[4] = { ndcX, ndcY, 1.0f, 1.0f };
+    float wNear[4], wFar[4];
 
     for (int i = 0; i < 4; i++) {
-        verts[i * 5 + 0] = p[i][0];
-        verts[i * 5 + 1] = p[i][1];
-        verts[i * 5 + 2] = p[i][2];
-        verts[i * 5 + 3] = uv[i][0];
-        verts[i * 5 + 4] = uv[i][1];
+        wNear[i] = inv[0 * 4 + i] * pNear[0] + inv[1 * 4 + i] * pNear[1]
+                 + inv[2 * 4 + i] * pNear[2] + inv[3 * 4 + i] * pNear[3];
+        wFar[i]  = inv[0 * 4 + i] * pFar[0]  + inv[1 * 4 + i] * pFar[1]
+                 + inv[2 * 4 + i] * pFar[2]  + inv[3 * 4 + i] * pFar[3];
     }
+    float nX = wNear[0] / wNear[3], nY = wNear[1] / wNear[3], nZ = wNear[2] / wNear[3];
+    float fX = wFar[0] / wFar[3], fY = wFar[1] / wFar[3], fZ = wFar[2] / wFar[3];
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-    glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    float dirY = fY - nY;
+    if (dirY == 0.0f) return std::nullopt;
+    float t = -nY / dirY;
+    if (t <= 0.0f) return std::nullopt;
+
+    float hitX = nX + (fX - nX) * t;
+    float hitZ = nZ + (fZ - nZ) * t;
+    int gx = (int)std::floor(hitX);
+    int gy = (int)std::floor(hitZ);
+    if (gx < 0 || gx >= GRID || gy < 0 || gy >= GRID) return std::nullopt;
+    return GridPos{ gx, gy };
 }
 
-// Draws a loaded glTF model standing on tile (wx, wz), bottom-centred
-static void drawModel(const Model& m, GLint uMVP, const Mat4& viewProj,
-    float wx, float wz, float targetSize, float yaw) {
-    float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-    if (extent <= 0.0f) return;
-    float s = targetSize / extent;
-    float c = cosf(yaw), sn = sinf(yaw);
+} // namespace
 
-    Mat4 model{};
-    model.m[0] = s * c;   model.m[2] = -s * sn;
-    model.m[5] = s;
-    model.m[8] = s * sn;  model.m[10] = s * c;
-    model.m[15] = 1.0f;
-
-    float cx = (m.minX + m.maxX) * 0.5f;
-    float cz = (m.minZ + m.maxZ) * 0.5f;
-    float px = model.m[0] * cx + model.m[8] * cz;
-    float py = model.m[5] * m.minY;
-    float pz = model.m[2] * cx + model.m[10] * cz;
-    model.m[12] = wx - px;
-    model.m[13] = -py;
-    model.m[14] = wz - pz;
-
-    Mat4 mvp = mul(viewProj, model);
-    glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
-
-    glBindVertexArray(m.vao);
-    for (const DrawRange& d : m.draws) {
-        glBindTexture(GL_TEXTURE_2D, d.texture);
-        glDrawElements(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT,
-            (void*)(size_t)(d.firstIndex * sizeof(GLuint)));
+int main(int, char**) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        SDL_Log("SDL_Init failed: %s", SDL_GetError());
+        return 1;
     }
-}
-
-int main(int argc, char* argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
-
     if (!TTF_Init()) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return 1;
     }
-    // Point size only controls texture sharpness; GLYPH_HEIGHT controls world size
     TTF_Font* font = TTF_OpenFont("assets/NotoSans_Condensed-Bold.ttf", 64.0f);
     if (!font) {
         SDL_Log("Could not open font: %s", SDL_GetError());
@@ -345,7 +72,7 @@ int main(int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     SDL_Window* window = SDL_CreateWindow("Game", 1280, 720,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE);
+                                          SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE);
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, ctx);
     SDL_GL_SetSwapInterval(1);
@@ -358,317 +85,130 @@ int main(int argc, char* argv[]) {
     }
     glGetError();
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    Renderer renderer;
+    if (!renderer.init()) return 1;
 
-    GLuint program = makeProgram(VS_SRC, FS_SRC);
-    GLint uMVP = glGetUniformLocation(program, "uMVP");
-    GLint uTex = glGetUniformLocation(program, "uTex");
-    GLint uAlphaCut = glGetUniformLocation(program, "uAlphaCut");
+    // ---- Assets ----
+    Assets assets;
+    assets.floorTex = loadTexture("assets/floor.bmp");
+    assets.playerTex = loadTexture("assets/player.bmp");
+    assets.keyTex = loadTexture("assets/key.bmp");
+    assets.doorTex = loadTexture("assets/door.bmp");
+    assets.backgroundTex = loadTexture("assets/background.bmp");
 
-    // Sprite/model assets (used when ASCII mode is off)
-    GLuint texFloor = loadTexture("assets/floor.bmp");
-    GLuint texPlayer = loadTexture("assets/player.bmp");
-    GLuint texKey = loadTexture("assets/key.bmp");
-    GLuint texDoor = loadTexture("assets/door.bmp");
-    GLuint texBackground = loadTexture("assets/background.bmp");
+    assets.glyphPlayer = makeGlyphTexture(font, "@", SDL_Color{ 255, 220, 80, 255 });
+    assets.glyphKey    = makeGlyphTexture(font, "K", SDL_Color{ 255, 215, 0, 255 });
+    assets.glyphDoor   = makeGlyphTexture(font, "D", SDL_Color{ 170, 110, 60, 255 });
+    assets.glyphWagon  = makeGlyphTexture(font, "W", SDL_Color{ 90, 200, 255, 255 });
+    assets.glyphFloor  = makeGlyphTexture(font, ".", SDL_Color{ 110, 110, 110, 255 });
 
-    // ASCII text textures (used when ASCII mode is on)
-    TextTex glyphPlayer = makeTextTexture(font, SYM_PLAYER);
-    TextTex glyphKey = makeTextTexture(font, SYM_KEY);
-    TextTex glyphDoor = makeTextTexture(font, SYM_DOOR);
-    TextTex glyphWagon = makeTextTexture(font, SYM_WAGON);
-    TextTex glyphFloor = makeTextTexture(font, SYM_FLOOR);
-
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindVertexArray(0);
-
-    Model wagon;
-    if (!loadGLBModel("assets/wagon.glb", wagon)) {
+    if (!loadGLBModel("assets/wagon.glb", assets.wagonModel)) {
         SDL_Log("Could not load wagon model");
     }
 
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    if (luaL_dofile(L, "scripts/game.lua") != LUA_OK) {
-        SDL_Log("Lua error: %s", lua_tostring(L, -1));
-        return 1;
-    }
+    // ---- World ----
+    World world;
+    Rng rng;
+    Commands commands;
+    Camera camera;
+    RenderMode mode = RenderMode::Ascii;
+
+    spawnFloor(world, assets);
+    generateLevel(world, assets, rng);
 
     bool running = true;
     bool fullscreen = true;
     bool dragging = false;
-    bool asciiMode = true;     // F2 toggles between ASCII text and sprites/model
-    float camYaw = 0.0f;
-    float camPitch = 0.9f;
-    float zoom = 100.0f;
     float lastMouseX = 0.0f, lastMouseY = 0.0f;
     Uint64 lastTicks = SDL_GetTicks();
     SDL_Event e;
 
     while (running) {
+        // ---- Input: translate events into commands and camera changes ----
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_QUIT) running = false;
+            switch (e.type) {
+            case SDL_EVENT_QUIT:
+                running = false;
+                break;
 
-            if (e.type == SDL_EVENT_KEY_DOWN) {
-                if (e.key.key == SDLK_ESCAPE) running = false;
-                if (e.key.key == SDLK_F11) {
+            case SDL_EVENT_KEY_DOWN:
+                if (e.key.key == SDLK_ESCAPE) {
+                    running = false;
+                } else if (e.key.key == SDLK_F11) {
                     fullscreen = !fullscreen;
                     SDL_SetWindowFullscreen(window, fullscreen);
+                } else if (e.key.key == SDLK_F2) {
+                    mode = (mode == RenderMode::Ascii) ? RenderMode::Sprite : RenderMode::Ascii;
+                    SDL_Log("Render mode: %s", mode == RenderMode::Ascii ? "ASCII" : "sprites");
                 }
-                if (e.key.key == SDLK_F2) {
-                    asciiMode = !asciiMode;
-                    SDL_Log("Render mode: %s", asciiMode ? "ASCII" : "sprites");
-                }
-            }
+                break;
 
-            if (e.type == SDL_EVENT_MOUSE_WHEEL) {
-                if (e.wheel.y > 0.0f) zoom *= 1.1f;
-                if (e.wheel.y < 0.0f) zoom /= 1.1f;
-                if (zoom < 10.0f)    zoom = 10.0f;
-                if (zoom > 1000.0f)  zoom = 1000.0f;
-            }
+            case SDL_EVENT_MOUSE_WHEEL:
+                if (e.wheel.y > 0.0f) camera.zoom *= 1.1f;
+                if (e.wheel.y < 0.0f) camera.zoom /= 1.1f;
+                if (camera.zoom < 10.0f) camera.zoom = 10.0f;
+                if (camera.zoom > 1000.0f) camera.zoom = 1000.0f;
+                break;
 
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 if (e.button.button == SDL_BUTTON_MIDDLE) {
                     dragging = true;
                     lastMouseX = e.button.x;
                     lastMouseY = e.button.y;
-                }
-            }
-
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-                if (e.button.button == SDL_BUTTON_MIDDLE) dragging = false;
-            }
-
-            if (e.type == SDL_EVENT_MOUSE_MOTION && dragging) {
-                float dx = e.motion.x - lastMouseX;
-                float dy = e.motion.y - lastMouseY;
-                lastMouseX = e.motion.x;
-                lastMouseY = e.motion.y;
-                camYaw += dx * 0.005f;
-                camPitch += dy * 0.005f;
-                if (camPitch < 0.15f) camPitch = 0.15f;
-                if (camPitch > 1.5f)  camPitch = 1.5f;
-            }
-
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN &&
-                e.button.button == SDL_BUTTON_LEFT) {
-                int mx = (int)e.button.x;
-                int my = (int)e.button.y;
-                int winW, winH;
-                SDL_GetWindowSizeInPixels(window, &winW, &winH);
-
-                GameState gs = readState(L);
-                float centerX = gs.visualX;
-                float centerZ = gs.visualZ;
-
-                float camDist = 10.0f * (100.0f / zoom);
-                float camX = centerX + camDist * sinf(camYaw) * cosf(camPitch);
-                float camY = camDist * sinf(camPitch);
-                float camZ = centerZ + camDist * cosf(camYaw) * cosf(camPitch);
-
-                Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, 100.0f);
-                Mat4 view = lookAt(camX, camY, camZ, centerX, 0.0f, centerZ, 0.0f, 1.0f, 0.0f);
-                Mat4 vp = mul(proj, view);
-
-                float invVP[16];
-                invert4x4(vp.m, invVP);
-
-                float ndcX = (2.0f * mx / (float)winW) - 1.0f;
-                float ndcY = 1.0f - (2.0f * my / (float)winH);
-                float pNear[4] = { ndcX, ndcY, -1.0f, 1.0f };
-                float pFar[4] = { ndcX, ndcY,  1.0f, 1.0f };
-                float wNear[4], wFar[4];
-
-                for (int i = 0; i < 4; i++) {
-                    wNear[i] = invVP[0 * 4 + i] * pNear[0] + invVP[1 * 4 + i] * pNear[1]
-                        + invVP[2 * 4 + i] * pNear[2] + invVP[3 * 4 + i] * pNear[3];
-                    wFar[i] = invVP[0 * 4 + i] * pFar[0] + invVP[1 * 4 + i] * pFar[1]
-                        + invVP[2 * 4 + i] * pFar[2] + invVP[3 * 4 + i] * pFar[3];
-                }
-                float nX = wNear[0] / wNear[3], nY = wNear[1] / wNear[3], nZ = wNear[2] / wNear[3];
-                float fX = wFar[0] / wFar[3], fY = wFar[1] / wFar[3], fZ = wFar[2] / wFar[3];
-
-                float dirX = fX - nX, dirY = fY - nY, dirZ = fZ - nZ;
-                if (dirY != 0.0f) {
-                    float t = -nY / dirY;
-                    if (t > 0.0f) {
-                        float hitX = nX + dirX * t;
-                        float hitZ = nZ + dirZ * t;
-                        int gx = (int)floorf(hitX);
-                        int gy = (int)floorf(hitZ);
-                        if (gx >= 0 && gx < GRID && gy >= 0 && gy < GRID) {
-                            sendMoveTo(L, gx, gy);
-                        }
+                } else if (e.button.button == SDL_BUTTON_LEFT) {
+                    int winW, winH;
+                    SDL_GetWindowSizeInPixels(window, &winW, &winH);
+                    Entity p = findPlayer(world);
+                    if (p) {
+                        Transform* t = world.get<Transform>(p);
+                        auto tile = screenToTile(camera, t->x, t->z,
+                                                 e.button.x, e.button.y, winW, winH);
+                        if (tile) commands.moveTo = *tile;
                     }
                 }
+                break;
+
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (e.button.button == SDL_BUTTON_MIDDLE) dragging = false;
+                break;
+
+            case SDL_EVENT_MOUSE_MOTION:
+                if (dragging) {
+                    float dx = e.motion.x - lastMouseX;
+                    float dy = e.motion.y - lastMouseY;
+                    lastMouseX = e.motion.x;
+                    lastMouseY = e.motion.y;
+                    camera.yaw += dx * 0.005f;
+                    camera.pitch += dy * 0.005f;
+                    if (camera.pitch < 0.15f) camera.pitch = 0.15f;
+                    if (camera.pitch > 1.5f) camera.pitch = 1.5f;
+                }
+                break;
             }
         }
 
+        // ---- Systems ----
         Uint64 now = SDL_GetTicks();
         float dt = (now - lastTicks) / 1000.0f;
         lastTicks = now;
         if (dt > 0.25f) dt = 0.25f;
-        sendTick(L, dt);
 
-        GameState gs = readState(L);
+        moveRequestSystem(world, commands);
+        movementSystem(world, dt);
+        pickupSystem(world);
+        levelSystem(world, assets, rng);
 
+        // ---- Render ----
         int winW, winH;
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
-        float aspect = (float)winW / (float)winH;
-        glViewport(0, 0, winW, winH);
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        float centerX = gs.visualX;
-        float centerZ = gs.visualZ;
-        float camDist = 10.0f * (100.0f / zoom);
-        float camX = centerX + camDist * sinf(camYaw) * cosf(camPitch);
-        float camY = camDist * sinf(camPitch);
-        float camZ = centerZ + camDist * cosf(camYaw) * cosf(camPitch);
-
-        Mat4 proj = perspective(0.9f, aspect, 0.1f, 100.0f);
-        Mat4 view = lookAt(camX, camY, camZ, centerX, 0.0f, centerZ, 0.0f, 1.0f, 0.0f);
-        Mat4 viewProj = mul(proj, view);
-
-        glUseProgram(program);
-        glUniform1i(uTex, 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(vao);
-        glUniform1f(uAlphaCut, 0.0f);
-
-        // Billboard: a quad of size (w, h) that always faces the camera, standing on (wx, wz).
-        // Right vector is forward x up from lookAt, which is (dz, 0, -dx) where (dx, dz)
-        // points from the object toward the camera.
-        auto drawBillboardAt = [&](GLuint tex, float wx, float wz, float w, float h) {
-            float dx = camX - wx;
-            float dz = camZ - wz;
-            float len = sqrtf(dx * dx + dz * dz);
-            if (len < 0.0001f) { dx = 0; dz = 1; len = 1; }
-            dx /= len; dz /= len;
-            float rx = dz, rz = -dx;
-            drawSceneQuad(vbo, uMVP, viewProj, tex,
-                wx, h * 0.5f, wz,
-                rx, 0, rz,
-                0, 1, 0,
-                w * 0.5f, h * 0.5f);
-            };
-
-        auto drawBillboardTile = [&](GLuint tex, int gx, int gy, float w, float h) {
-            float wx = gx * TILE_F + TILE_F * 0.5f;
-            float wz = gy * TILE_F + TILE_F * 0.5f;
-            drawBillboardAt(tex, wx, wz, w, h);
-            };
-
-        // Text glyph billboards keep the rendered text's aspect ratio
-        auto drawGlyphAt = [&](const TextTex& t, float wx, float wz) {
-            drawBillboardAt(t.tex, wx, wz, GLYPH_HEIGHT * t.aspect, GLYPH_HEIGHT);
-            };
-
-        auto drawGlyphTile = [&](const TextTex& t, int gx, int gy) {
-            float wx = gx * TILE_F + TILE_F * 0.5f;
-            float wz = gy * TILE_F + TILE_F * 0.5f;
-            drawGlyphAt(t, wx, wz);
-            };
-
-        if (asciiMode) {
-            // ---- ASCII mode: every entity is rendered text ----
-            glUniform1f(uAlphaCut, 0.1f);   // drop fully transparent pixels, keep antialiased edges
-
-            // Floor: a small "." lying flat on each tile
-            const float dotHalfH = 0.15f;
-            for (int y = 0; y < GRID; y++) {
-                for (int x = 0; x < GRID; x++) {
-                    float wx = x * TILE_F + TILE_F * 0.5f;
-                    float wz = y * TILE_F + TILE_F * 0.5f;
-                    drawSceneQuad(vbo, uMVP, viewProj, glyphFloor.tex,
-                        wx, 0.01f, wz,
-                        1, 0, 0,
-                        0, 0, 1,
-                        dotHalfH * glyphFloor.aspect, dotHalfH);
-                }
-            }
-
-            drawGlyphTile(glyphDoor, gs.doorX, gs.doorY);
-            if (gs.keyExists) drawGlyphTile(glyphKey, gs.keyX, gs.keyY);
-            drawGlyphTile(glyphWagon, gs.wagonX, gs.wagonY);
-            drawGlyphAt(glyphPlayer, gs.visualX, gs.visualZ);
-
-            glUniform1f(uAlphaCut, 0.0f);
-        }
-        else {
-            // ---- Sprite/model mode (original rendering) ----
-            float spriteH = 1.4f;
-            float spriteW = 1.2f;
-
-            // Background (screen-space, no depth)
-            glDisable(GL_DEPTH_TEST);
-            glDepthMask(GL_FALSE);
-            Mat4 orthoMat = ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-            drawSceneQuad(vbo, uMVP, orthoMat, texBackground,
-                0.0f, 0.0f, 0.0f,
-                1.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f,
-                1.0f, 1.0f);
-            glDepthMask(GL_TRUE);
-            glEnable(GL_DEPTH_TEST);
-
-            // Floor
-            for (int y = 0; y < GRID; y++) {
-                for (int x = 0; x < GRID; x++) {
-                    float wx = x * TILE_F + TILE_F * 0.5f;
-                    float wz = y * TILE_F + TILE_F * 0.5f;
-                    drawSceneQuad(vbo, uMVP, viewProj, texFloor,
-                        wx, 0.0f, wz,
-                        1, 0, 0,
-                        0, 0, 1,
-                        TILE_F * 0.5f, TILE_F * 0.5f);
-                }
-            }
-
-            drawBillboardTile(texDoor, gs.doorX, gs.doorY, spriteW, spriteH);
-            if (gs.keyExists) drawBillboardTile(texKey, gs.keyX, gs.keyY, spriteW, spriteH);
-            drawBillboardAt(texPlayer, gs.visualX, gs.visualZ, spriteW, spriteH);
-
-            // 3D wagon entity on its tile
-            if (wagon.vao) {
-                drawModel(wagon, uMVP, viewProj,
-                    gs.wagonX + 0.5f * TILE_F, gs.wagonY + 0.5f * TILE_F,
-                    0.9f,
-                    0.0f);
-            }
-        }
-
+        renderer.drawFrame(world, assets, camera, mode, winW, winH);
         SDL_GL_SwapWindow(window);
     }
 
-    lua_close(L);
-    destroyModel(wagon);
-    glDeleteTextures(1, &glyphPlayer.tex);
-    glDeleteTextures(1, &glyphKey.tex);
-    glDeleteTextures(1, &glyphDoor.tex);
-    glDeleteTextures(1, &glyphWagon.tex);
-    glDeleteTextures(1, &glyphFloor.tex);
-    glDeleteTextures(1, &texFloor);
-    glDeleteTextures(1, &texPlayer);
-    glDeleteTextures(1, &texKey);
-    glDeleteTextures(1, &texDoor);
-    glDeleteTextures(1, &texBackground);
-    glDeleteProgram(program);
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
+    // ---- Shutdown ----
+    destroyModel(assets.wagonModel);
+    freeAssets(assets);
+    renderer.shutdown();
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);
