@@ -21,6 +21,7 @@ namespace {
 
 constexpr float OVERLAY_HOLD_MS = 1000.0f;   // level-start image stays fully visible
 constexpr float OVERLAY_FADE_MS = 500.0f;    // then fades out over this long
+constexpr size_t HOVER_NAME_LIMIT = 10;      // hover label lists up to this many names
 
 // Ray through a pixel, intersected with the terrain surface. Returns world (x, z).
 std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terrain& t,
@@ -191,6 +192,11 @@ int main(int, char**) {
         SDL_Log("Could not open font: %s", SDL_GetError());
         return 1;
     }
+    TTF_Font* hudFont = TTF_OpenFont("assets/font/NotoSans_Condensed-Bold.ttf", 22.0f);
+    if (!hudFont) {
+        SDL_Log("Could not open HUD font: %s", SDL_GetError());
+        return 1;
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -212,16 +218,16 @@ int main(int, char**) {
     }
     glGetError();
 
+    // ---- Loading phase: every image, model and the first level load here, before the game loop.
+    // The loading screen shows progress across the whole phase (renderer 0..80%, level 80..100%).
     Renderer renderer;
-    if (!renderer.init(font)) return 1;
+    if (!renderer.init(font, hudFont, [&](float p) { loadingFrame(window, renderer, p * 0.8f); })) return 1;
 
-    // ---- Level setup ----
     Terrain terrain;
     World world;
     Rng rng;
-    loadingFrame(window, renderer, 0.1f);
     startLevel(world, terrain, renderer, rng, (unsigned)std::time(nullptr),
-               [&](float p) { loadingFrame(window, renderer, p); });
+               [&](float p) { loadingFrame(window, renderer, 0.8f + 0.2f * p); });
     loadingFrame(window, renderer, 1.0f);
 
     GameState gs;
@@ -341,7 +347,7 @@ int main(int, char**) {
 
         float panSpeed = cam.distance * 0.9f * dt;
         cam.pan(right * panSpeed, forward * panSpeed);
-        cam.updateClearance(terrain, dt);
+        cam.updateClearance(terrain);
 
         // ---- Systems ----
         squadSystem(world, dt);
@@ -382,13 +388,24 @@ int main(int, char**) {
             lastTitle = title;
         }
 
+        // ---- Hover label: names of the units under the mouse, up to the limit, then "..." ----
+        float hoverX = 0.0f, hoverY = 0.0f;
+        SDL_GetMouseState(&hoverX, &hoverY);
+        std::vector<Entity> under = renderer.unitsAtPixel(world, cam, hoverX, hoverY, winW, winH);
+        std::vector<std::string> hud;
+        for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) {
+            hud.push_back(world.get<Name>(under[i])->text);
+        }
+        if (under.size() > HOVER_NAME_LIMIT) hud.push_back("...");
+
         // ---- Render ----
-        renderer.drawFrame(world, terrain, cam, sel, overlayAlpha, winW, winH);
+        renderer.drawFrame(world, terrain, cam, sel, overlayAlpha, hud, winW, winH);
         SDL_GL_SwapWindow(window);
     }
 
     // ---- Shutdown ----
     renderer.shutdown();
+    TTF_CloseFont(hudFont);
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);

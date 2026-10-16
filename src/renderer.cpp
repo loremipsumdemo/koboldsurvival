@@ -319,7 +319,11 @@ GLuint loadSkyboxCross(const char* path) {
 
 } // namespace
 
-bool Renderer::init(TTF_Font* font) {
+bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, const std::function<void(float)>& progress) {
+    auto report = [&](float p) { if (progress) progress(p); };
+    font_ = font;
+    hudFont_ = hudFont;
+
     colorProgram_ = linkProgram(COLOR_VS, COLOR_FS);
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
 
@@ -343,16 +347,21 @@ bool Renderer::init(TTF_Font* font) {
     glBindVertexArray(0);
     setupGlyphLayout(glyphVao_, glyphVbo_);
 
-    // Images and models
+    // Images and models. The overlay loads first, so the loading screen can show it.
+    overlay_ = loadImage("assets/background/overlay_01.png", false);
+    report(0.05f);
     unitSprites_.reserve(38);
     for (int i = 1; i <= 38; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "assets/unit/%02d.png", i);
         unitSprites_.push_back(loadImage(path, false));
+        report(0.05f + 0.75f * (float)i / 38.0f);
     }
     keySprite_   = loadImage("assets/environment/key.png", false);
     doorSprite_  = loadImage("assets/environment/door.png", false);
+    report(0.82f);
     skyCube_ = loadSkyboxCross("assets/skybox/01.png");
+    report(0.86f);
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
     uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
@@ -366,15 +375,16 @@ bool Renderer::init(TTF_Font* font) {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    overlay_     = loadImage("assets/background/overlay_01.png", false);
     wall_        = makeGlyphTexture(font, "#", SDL_Color{ 170, 160, 140, 255 });
     unitFallback_ = makeGlyphTexture(font, "@", SDL_Color{ 80, 160, 255, 255 });
     keyFallback_  = makeGlyphTexture(font, "K", SDL_Color{ 255, 215, 0, 255 });
     doorFallback_ = makeGlyphTexture(font, "D", SDL_Color{ 230, 80, 60, 255 });
+    report(0.9f);
 
     if (!loadGLBModel("assets/3d/wagon.glb", wagon_)) {
         SDL_Log("Wagon model unavailable, the wagon will not be drawn");
     }
+    report(0.97f);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -393,6 +403,10 @@ void Renderer::shutdown() {
         if (g.tex) glDeleteTextures(1, &g.tex);
     }
     unitSprites_.clear();
+    for (HudLine& hl : hudLines_) {
+        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
+    }
+    hudLines_.clear();
     destroyModel(wagon_);
 
     glDeleteTextures(1, &skyCube_);
@@ -558,8 +572,117 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH) {
     glEnable(GL_DEPTH_TEST);
 }
 
+// The sprite for a unit, or the fallback symbol if its image is missing
+const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
+    const UnitSprite* us = w.get<UnitSprite>(e);
+    int idx = us ? us->id - 1 : 0;
+    const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
+    return (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
+}
+
+// Projects each unit's billboard to the screen and keeps those under the pixel.
+// The test uses the same size and aspect that drawGlyph uses.
+std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
+    std::vector<Entity> out;
+    Mat4 vp = cam.viewProj((float)winW / (float)winH);
+
+    auto project = [&](float x, float y, float z, float& sx, float& sy) {
+        float c[4];
+        for (int i = 0; i < 4; ++i) {
+            c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
+        }
+        if (c[3] <= 0.0f) return false;
+        sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)winW;
+        sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)winH;
+        return true;
+    };
+
+    for (Entity u : w.view<Unit, Transform, Name>()) {
+        const Transform* tr = w.get<Transform>(u);
+        float bottomX, bottomY, topX, topY, midX, midY;
+        if (!project(tr->x, tr->y, tr->z, bottomX, bottomY)) continue;
+        if (!project(tr->x, tr->y + GLYPH_H, tr->z, topX, topY)) continue;
+        if (!project(tr->x, tr->y + GLYPH_H * 0.5f, tr->z, midX, midY)) continue;
+
+        float heightPx = std::fabs(bottomY - topY);
+        float halfW = heightPx * 0.5f * unitGlyph(w, u).aspect;
+        float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
+        if (mx >= midX - halfW && mx <= midX + halfW && my >= top && my <= bottom) {
+            out.push_back(u);
+        }
+    }
+    return out;
+}
+
+void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH) {
+    if (!hudFont_) return;
+
+    // Rebuild only the lines whose text changed
+    for (size_t i = 0; i < lines.size(); ++i) {
+        if (i == hudLines_.size()) hudLines_.emplace_back();
+        HudLine& hl = hudLines_[i];
+        if (hl.tex.tex && hl.text == lines[i]) continue;
+        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
+
+        int tw = 0, th = 0;
+        TTF_GetStringSize(hudFont_, lines[i].c_str(), lines[i].size(), &tw, &th);
+        hl.text = lines[i];
+        hl.tex = makeGlyphTexture(hudFont_, lines[i].c_str(), SDL_Color{ 255, 255, 255, 255 });
+        hl.w = (float)tw;
+        hl.h = (float)th;
+    }
+    // Drop lines that are no longer shown
+    while (hudLines_.size() > lines.size()) {
+        if (hudLines_.back().tex.tex) glDeleteTextures(1, &hudLines_.back().tex.tex);
+        hudLines_.pop_back();
+    }
+    if (lines.empty()) return;
+
+    Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
+    const float margin = 12.0f, pad = 6.0f, gap = 2.0f;
+
+    glDisable(GL_DEPTH_TEST);
+
+    // Dark panels behind the text
+    Batch panels;
+    float y = margin;
+    for (const HudLine& hl : hudLines_) {
+        float x0 = margin, x1 = margin + hl.w + pad * 2.0f;
+        float y0 = y, y1 = y + hl.h + pad * 2.0f;
+        panels.quad({ x0, y0, 0 }, { x1, y0, 0 }, { x1, y1, 0 }, { x0, y1, 0 },
+                    RGBA{ 0.0f, 0.0f, 0.0f, 0.55f });
+        y = y1 + gap;
+    }
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, panels.v.size() * sizeof(Vertex), panels.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)panels.v.size());
+
+    // Text on top of each panel
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
+    y = margin;
+    for (const HudLine& hl : hudLines_) {
+        float x0 = margin + pad, x1 = x0 + hl.w;
+        float y0 = y + pad, y1 = y0 + hl.h;
+        float v[4 * 5] = {
+            x0, y1, 0.0f, 0.0f, 1.0f,
+            x1, y1, 0.0f, 1.0f, 1.0f,
+            x1, y0, 0.0f, 1.0f, 0.0f,
+            x0, y0, 0.0f, 0.0f, 0.0f
+        };
+        drawQuadVerts(hl.tex.tex, v, WHITE);
+        y = y1 + pad + gap;
+    }
+
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+}
+
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
-                         float overlayAlpha, int winW, int winH) {
+                         float overlayAlpha, const std::vector<std::string>& hud, int winW, int winH) {
     glViewport(0, 0, winW, winH);
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -573,7 +696,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     // 0. Sky: the skybox is sampled by view direction, so it stays fixed while the camera moves
     {
         // View matrix with the eye at the origin, so the sky only follows rotation
-        Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.5f, 4000.0f);
+        Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, 4000.0f);
         Mat4 viewRot = lookAt(0.0f, 0.0f, 0.0f,
                               cam.focusX - ex, cam.focusY - ey, cam.focusZ - ez,
                               0.0f, 1.0f, 0.0f);
@@ -713,5 +836,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glEnable(GL_DEPTH_TEST);
     }
 
+    drawHud(hud, winW, winH);
     glBindVertexArray(0);
 }

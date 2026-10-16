@@ -11,7 +11,6 @@ struct Camera {
     // Pitch stops at 95% of straight up or down, so the view never goes directly over or under
     static constexpr float MAX_PITCH = 0.95f * (PI_F * 0.5f);
     static constexpr float MIN_CLEARANCE = 0.6f;   // how far above the ground the eye must stay
-    static constexpr float LIFT_FALL = 3.0f;       // how fast the lift eases back to zero, units/s
 
     float focusX = 13.0f, focusY = 0.0f, focusZ = 13.0f;
     float yaw = 0.8f;
@@ -29,20 +28,19 @@ struct Camera {
     Mat4 viewProj(float aspect) const {
         float ex, ey, ez;
         eye(ex, ey, ez);
-        return mul(perspective(0.9f, aspect, 0.5f, 4000.0f),
+        return mul(perspective(0.9f, aspect, 0.1f, 4000.0f),
                    lookAt(ex, ey, ez, focusX, focusY, focusZ, 0.0f, 1.0f, 0.0f));
     }
 
-    // Called once per frame. It does one terrain height lookup and no ray tests.
-    // If the eye's position would be under the ground, the lift raises it at once.
-    // Otherwise the lift eases back down to zero, so the camera doesn't snap.
-    void updateClearance(const Terrain& t, float dt) {
+    // Called once per frame. One terrain height lookup, no ray tests.
+    // The lift is set to exactly what the eye needs, with no easing, so the camera
+    // reaches its clear position at once and never lags behind a move.
+    void updateClearance(const Terrain& t) {
         float ex = focusX + distance * std::sin(yaw) * std::cos(pitch);
         float ey = focusY + distance * std::sin(pitch);
         float ez = focusZ + distance * std::cos(yaw) * std::cos(pitch);
 
-        float needed = std::max(0.0f, t.heightAt(ex, ez) + MIN_CLEARANCE - ey);
-        lift = std::max(needed, lift - LIFT_FALL * dt);
+        lift = std::max(0.0f, t.heightAt(ex, ez) + MIN_CLEARANCE - ey);
     }
 
     // Moves the focus across the ground, relative to the current yaw
@@ -57,7 +55,7 @@ struct Camera {
     void clampState() {
         focusX = std::clamp(focusX, 0.0f, (float)MAP_SIZE);
         focusZ = std::clamp(focusZ, 0.0f, (float)MAP_SIZE);
-        distance = std::clamp(distance, 8.0f, 200.0f);
+        distance = std::clamp(distance, 1.5f, 200.0f);
         pitch = std::clamp(pitch, -MAX_PITCH, MAX_PITCH);
     }
 };
