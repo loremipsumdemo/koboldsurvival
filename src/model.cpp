@@ -1,265 +1,201 @@
+#include "model.h"
+#include <SDL3/SDL.h>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <string>
+
+// tinygltf needs its image decoder compiled exactly once, so it's enabled here.
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
-#include <GL/glew.h>
 #include "tiny_gltf.h"
-#include "model.h"
 
-#include <SDL3/SDL.h>
-#include <algorithm>
-#include <array>
-#include <cstdint>
-#include <cstring>
-#include <functional>
-#include <map>
-#include <string>
+namespace {
 
-using Mat4d = std::array<double, 16>;  // column-major, matching the rest of the project
+struct Accessor {
+    const unsigned char* data = nullptr;
+    size_t count = 0;
+    size_t stride = 0;
+    int compType = 0;
+};
 
-static Mat4d mulD(const Mat4d& a, const Mat4d& b) {
-    Mat4d r{};
-    for (int c = 0; c < 4; c++)
-        for (int rw = 0; rw < 4; rw++) {
-            double s = 0;
-            for (int k = 0; k < 4; k++) s += a[k * 4 + rw] * b[c * 4 + k];
-            r[c * 4 + rw] = s;
-        }
-    return r;
-}
+bool getAccessor(const tinygltf::Model& g, int index, Accessor& out) {
+    if (index < 0 || index >= (int)g.accessors.size()) return false;
+    const tinygltf::Accessor& acc = g.accessors[index];
+    if (acc.bufferView < 0 || acc.bufferView >= (int)g.bufferViews.size()) return false;
+    const tinygltf::BufferView& bv = g.bufferViews[acc.bufferView];
+    if (bv.buffer < 0 || bv.buffer >= (int)g.buffers.size()) return false;
+    const tinygltf::Buffer& buf = g.buffers[bv.buffer];
 
-// Local transform of a glTF node: either its matrix, or translation/rotation/scale
-static Mat4d nodeLocal(const tinygltf::Node& n) {
-    if (n.matrix.size() == 16) {
-        Mat4d r{};
-        for (int i = 0; i < 16; i++) r[i] = n.matrix[i];
-        return r;
-    }
-
-    double t[3] = { 0, 0, 0 }, s[3] = { 1, 1, 1 }, q[4] = { 0, 0, 0, 1 };
-    if (n.translation.size() == 3) for (int i = 0; i < 3; i++) t[i] = n.translation[i];
-    if (n.scale.size() == 3)       for (int i = 0; i < 3; i++) s[i] = n.scale[i];
-    if (n.rotation.size() == 4)    for (int i = 0; i < 4; i++) q[i] = n.rotation[i];
-
-    double x = q[0], y = q[1], z = q[2], w = q[3];
-    double r[9] = {  // rotation matrix from quaternion, column-major
-        1 - 2 * (y * y + z * z), 2 * (x * y + w * z),     2 * (x * z - w * y),
-        2 * (x * y - w * z),     1 - 2 * (x * x + z * z), 2 * (y * z + w * x),
-        2 * (x * z + w * y),     2 * (y * z - w * x),     1 - 2 * (x * x + y * y)
-    };
-
-    Mat4d m{};
-    for (int c = 0; c < 3; c++)
-        for (int rw = 0; rw < 3; rw++)
-            m[c * 4 + rw] = r[c * 3 + rw] * s[c];   // apply scale per column
-    m[12] = t[0]; m[13] = t[1]; m[14] = t[2]; m[15] = 1;
-    return m;
-}
-
-static const unsigned char* accessorPtr(const tinygltf::Model& m,
-    const tinygltf::Accessor& acc, size_t& stride) {
-    const auto& bv = m.bufferViews[acc.bufferView];
-    const auto& buf = m.buffers[bv.buffer];
     int comps = tinygltf::GetNumComponentsInType(acc.type);
-    int csize = tinygltf::GetComponentSizeInBytes(acc.componentType);
-    stride = bv.byteStride ? bv.byteStride : (size_t)(comps * csize);
-    return buf.data.data() + bv.byteOffset + acc.byteOffset;
-}
-
-// Reads float attributes (positions, UVs). Returns false if the format is not float.
-static bool readFloats(const tinygltf::Model& m, int accIdx, int comps, std::vector<float>& out) {
-    const auto& acc = m.accessors[accIdx];
-    if (acc.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
-
-    size_t stride;
-    const unsigned char* p = accessorPtr(m, acc, stride);
-    out.resize(acc.count * comps);
-    for (size_t i = 0; i < acc.count; i++)
-        memcpy(&out[i * comps], p + i * stride, comps * sizeof(float));
+    int bytes = tinygltf::GetComponentSizeInBytes(acc.componentType);
+    out.data = buf.data.data() + bv.byteOffset + acc.byteOffset;
+    out.count = acc.count;
+    out.stride = bv.byteStride ? bv.byteStride : (size_t)(comps * bytes);
+    out.compType = acc.componentType;
     return true;
 }
 
-static void readIndices(const tinygltf::Model& m, int accIdx, std::vector<uint32_t>& out) {
-    const auto& acc = m.accessors[accIdx];
-    size_t stride;
-    const unsigned char* p = accessorPtr(m, acc, stride);
-    out.resize(acc.count);
-    for (size_t i = 0; i < acc.count; i++) {
-        const unsigned char* e = p + i * stride;
-        switch (acc.componentType) {
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-            out[i] = *e;
-            break;
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-            uint16_t v; memcpy(&v, e, 2); out[i] = v;
-            break;
-        }
-        default: {
-            uint32_t v; memcpy(&v, e, 4); out[i] = v;
-            break;
-        }
-        }
+// Reads one index of any unsigned integer type
+GLuint readIndex(const Accessor& a, size_t i) {
+    const unsigned char* p = a.data + i * a.stride;
+    switch (a.compType) {
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return *p;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+        uint16_t v;
+        std::memcpy(&v, p, sizeof(v));
+        return v;
+    }
+    default: {
+        uint32_t v;
+        std::memcpy(&v, p, sizeof(v));
+        return v;
+    }
     }
 }
 
-static GLuint makeTexture(int w, int h, int comps, const unsigned char* px) {
+GLuint makeTexture(int w, int h, GLenum internalFmt, GLenum fmt, const unsigned char* pixels) {
     GLuint t = 0;
     glGenTextures(1, &t);
     glBindTexture(GL_TEXTURE_2D, t);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    GLenum fmt = (comps == 4) ? GL_RGBA : GL_RGB;
-    glTexImage2D(GL_TEXTURE_2D, 0, fmt, w, h, 0, fmt, GL_UNSIGNED_BYTE, px);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFmt, w, h, 0, fmt, GL_UNSIGNED_BYTE, pixels);
     return t;
 }
 
-static GLuint makeSolid(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
-    unsigned char px[4] = { r, g, b, a };
-    return makeTexture(1, 1, 4, px);
-}
+} // namespace
 
-bool loadGLBModel(const char* path, Model& out) {
-    tinygltf::TinyGLTF loader;
+bool loadGLBModel(const char* path, Model& m) {
     tinygltf::Model gltf;
+    tinygltf::TinyGLTF loader;
     std::string err, warn;
-
     if (!loader.LoadBinaryFromFile(&gltf, &err, &warn, path)) {
-        SDL_Log("Failed to load %s: %s", path, err.c_str());
-        return false;
-    }
-    if (!warn.empty()) SDL_Log("glTF warning: %s", warn.c_str());
-
-    std::vector<float>    verts;     // interleaved: x y z u v
-    std::vector<uint32_t> indices;
-    std::map<int, GLuint> texCache;  // material index -> GL texture
-
-    out.minX = out.minY = out.minZ = 1e30f;
-    out.maxX = out.maxY = out.maxZ = -1e30f;
-
-    auto getTexture = [&](int matIdx) -> GLuint {
-        auto it = texCache.find(matIdx);
-        if (it != texCache.end()) return it->second;
-
-        GLuint tex = 0;
-        if (matIdx >= 0) {
-            const auto& pbr = gltf.materials[matIdx].pbrMetallicRoughness;
-            int ti = pbr.baseColorTexture.index;
-            if (ti >= 0 && gltf.textures[ti].source >= 0) {
-                const auto& img = gltf.images[gltf.textures[ti].source];
-                if (img.component == 3 || img.component == 4)
-                    tex = makeTexture(img.width, img.height, img.component, img.image.data());
-            }
-            if (!tex) {  // untextured material: use its base colour factor
-                auto toByte = [](double v) {
-                    return (unsigned char)std::clamp(v * 255.0, 0.0, 255.0);
-                    };
-                const auto& f = pbr.baseColorFactor;
-                tex = makeSolid(toByte(f[0]), toByte(f[1]), toByte(f[2]), toByte(f[3]));
-            }
-        }
-        if (!tex) tex = makeSolid(255, 255, 255, 255);
-
-        texCache[matIdx] = tex;
-        return tex;
-        };
-
-    std::function<void(int, const Mat4d&)> visit = [&](int ni, const Mat4d& parent) {
-        const auto& node = gltf.nodes[ni];
-        Mat4d world = mulD(parent, nodeLocal(node));
-
-        if (node.mesh >= 0) {
-            for (const auto& prim : gltf.meshes[node.mesh].primitives) {
-                if (prim.mode != TINYGLTF_MODE_TRIANGLES) continue;
-
-                auto pit = prim.attributes.find("POSITION");
-                if (pit == prim.attributes.end()) continue;
-
-                std::vector<float> pos, uv;
-                readFloats(gltf, pit->second, 3, pos);
-                size_t vcount = pos.size() / 3;
-
-                auto tit = prim.attributes.find("TEXCOORD_0");
-                bool hasUV = tit != prim.attributes.end() && readFloats(gltf, tit->second, 2, uv);
-                if (!hasUV) uv.assign(vcount * 2, 0.0f);
-
-                uint32_t base = (uint32_t)(verts.size() / 5);
-                for (size_t i = 0; i < vcount; i++) {
-                    double x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
-
-                    float wx = (float)(world[0] * x + world[4] * y + world[8] * z + world[12]);
-                    float wy = (float)(world[1] * x + world[5] * y + world[9] * z + world[13]);
-                    float wz = (float)(world[2] * x + world[6] * y + world[10] * z + world[14]);
-
-                    // glTF UVs have v=0 at the top of the image; OpenGL has it at the bottom
-                    float u = uv[i * 2];
-                    float v = 1.0f - uv[i * 2 + 1];
-
-                    verts.push_back(wx); verts.push_back(wy); verts.push_back(wz);
-                    verts.push_back(u);  verts.push_back(v);
-
-                    out.minX = std::min(out.minX, wx); out.maxX = std::max(out.maxX, wx);
-                    out.minY = std::min(out.minY, wy); out.maxY = std::max(out.maxY, wy);
-                    out.minZ = std::min(out.minZ, wz); out.maxZ = std::max(out.maxZ, wz);
-                }
-
-                std::vector<uint32_t> idx;
-                if (prim.indices >= 0) {
-                    readIndices(gltf, prim.indices, idx);
-                }
-                else {
-                    idx.resize(vcount);
-                    for (size_t i = 0; i < vcount; i++) idx[i] = (uint32_t)i;
-                }
-
-                GLsizei first = (GLsizei)indices.size();
-                for (uint32_t i : idx) indices.push_back(base + i);
-
-                out.draws.push_back({ first, (GLsizei)idx.size(), getTexture(prim.material) });
-            }
-        }
-
-        for (int child : node.children) visit(child, world);
-        };
-
-    Mat4d identity{};
-    identity[0] = identity[5] = identity[10] = identity[15] = 1.0;
-
-    if (!gltf.scenes.empty()) {
-        int si = gltf.defaultScene >= 0 ? gltf.defaultScene : 0;
-        for (int root : gltf.scenes[si].nodes) visit(root, identity);
-    }
-
-    if (indices.empty()) {
-        SDL_Log("No drawable triangles in %s", path);
+        SDL_Log("Could not load %s: %s", path, err.c_str());
         return false;
     }
 
-    glGenVertexArrays(1, &out.vao);
-    glGenBuffers(1, &out.vbo);
-    glGenBuffers(1, &out.ebo);
-    glBindVertexArray(out.vao);
+    // Embedded images -> GL textures
+    std::vector<GLuint> imageTex(gltf.images.size(), 0);
+    for (size_t i = 0; i < gltf.images.size(); ++i) {
+        const tinygltf::Image& img = gltf.images[i];
+        if (img.image.empty() || (img.component != 3 && img.component != 4)) continue;
+        GLenum fmt = img.component == 4 ? GL_RGBA : GL_RGB;
+        imageTex[i] = makeTexture(img.width, img.height, fmt, fmt, img.image.data());
+        m.textures.push_back(imageTex[i]);
+    }
 
-    glBindBuffer(GL_ARRAY_BUFFER, out.vbo);
+    // 1x1 texture for primitives with a plain colour instead of a texture
+    auto solid = [&](unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+        unsigned char px[4] = { r, g, b, a };
+        GLuint t = makeTexture(1, 1, GL_RGBA, GL_RGBA, px);
+        m.textures.push_back(t);
+        return t;
+    };
+    auto toByte = [](double v) { return (unsigned char)(std::max(0.0, std::min(1.0, v)) * 255.0); };
+
+    std::vector<float> verts;     // 5 floats per vertex
+    std::vector<GLuint> indices;
+    const float inf = std::numeric_limits<float>::infinity();
+    float minX = inf, minY = inf, minZ = inf, maxX = -inf, maxY = -inf, maxZ = -inf;
+
+    for (const tinygltf::Mesh& mesh : gltf.meshes) {
+        for (const tinygltf::Primitive& prim : mesh.primitives) {
+            if (prim.mode != TINYGLTF_MODE_TRIANGLES) continue;
+
+            auto posIt = prim.attributes.find("POSITION");
+            if (posIt == prim.attributes.end()) continue;
+            Accessor pos;
+            if (!getAccessor(gltf, posIt->second, pos) || pos.compType != TINYGLTF_COMPONENT_TYPE_FLOAT) continue;
+
+            Accessor uv;
+            bool hasUV = false;
+            auto uvIt = prim.attributes.find("TEXCOORD_0");
+            if (uvIt != prim.attributes.end() && getAccessor(gltf, uvIt->second, uv)
+                && uv.compType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+                hasUV = true;
+            }
+
+            GLuint base = (GLuint)(verts.size() / 5);
+            for (size_t v = 0; v < pos.count; ++v) {
+                float p[3];
+                std::memcpy(p, pos.data + v * pos.stride, sizeof(p));
+                float t[2] = { 0.0f, 0.0f };
+                if (hasUV) std::memcpy(t, uv.data + v * uv.stride, sizeof(t));
+
+                verts.insert(verts.end(), { p[0], p[1], p[2], t[0], t[1] });
+                minX = std::min(minX, p[0]); maxX = std::max(maxX, p[0]);
+                minY = std::min(minY, p[1]); maxY = std::max(maxY, p[1]);
+                minZ = std::min(minZ, p[2]); maxZ = std::max(maxZ, p[2]);
+            }
+
+            GLsizei firstIndex = (GLsizei)indices.size();
+            Accessor idx;
+            if (prim.indices >= 0 && getAccessor(gltf, prim.indices, idx)) {
+                for (size_t i = 0; i < idx.count; ++i) indices.push_back(base + readIndex(idx, i));
+            } else {
+                for (size_t v = 0; v < pos.count; ++v) indices.push_back(base + (GLuint)v);
+            }
+            GLsizei count = (GLsizei)indices.size() - firstIndex;
+
+            // The base colour texture if there is one, otherwise the material's colour
+            GLuint tex = 0;
+            if (prim.material >= 0 && prim.material < (int)gltf.materials.size()) {
+                const tinygltf::Material& mat = gltf.materials[prim.material];
+                int ti = mat.pbrMetallicRoughness.baseColorTexture.index;
+                if (ti >= 0 && ti < (int)gltf.textures.size()) {
+                    int src = gltf.textures[ti].source;
+                    if (src >= 0 && src < (int)imageTex.size()) tex = imageTex[src];
+                }
+                if (!tex) {
+                    const std::vector<double>& f = mat.pbrMetallicRoughness.baseColorFactor;
+                    if (f.size() == 4) {
+                        tex = solid(toByte(f[0]), toByte(f[1]), toByte(f[2]), toByte(f[3]));
+                    }
+                }
+            }
+            if (!tex) tex = solid(255, 255, 255, 255);
+
+            m.draws.push_back({ tex, count, firstIndex });
+        }
+    }
+
+    if (verts.empty() || indices.empty()) {
+        SDL_Log("%s has no triangle geometry", path);
+        destroyModel(m);
+        return false;
+    }
+
+    m.minX = minX; m.minY = minY; m.minZ = minZ;
+    m.maxX = maxX; m.maxY = maxY; m.maxZ = maxZ;
+
+    glGenVertexArrays(1, &m.vao);
+    glGenBuffers(1, &m.vbo);
+    glGenBuffers(1, &m.ebo);
+    glBindVertexArray(m.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
-
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
     glBindVertexArray(0);
     return true;
 }
 
 void destroyModel(Model& m) {
-    for (const auto& d : m.draws) glDeleteTextures(1, &d.texture);
-    glDeleteBuffers(1, &m.ebo);
-    glDeleteBuffers(1, &m.vbo);
-    glDeleteVertexArrays(1, &m.vao);
+    for (GLuint t : m.textures) {
+        if (t) glDeleteTextures(1, &t);
+    }
+    if (m.ebo) glDeleteBuffers(1, &m.ebo);
+    if (m.vbo) glDeleteBuffers(1, &m.vbo);
+    if (m.vao) glDeleteVertexArrays(1, &m.vao);
     m = Model{};
 }

@@ -36,6 +36,7 @@ class World {
 public:
     Entity create() { return next_++; }
 
+    // Removes the entity from every component storage
     void destroy(Entity e) {
         for (auto& [type, storage] : storages_) storage->remove(e);
     }
@@ -49,7 +50,11 @@ public:
     template <typename T>
     bool has(Entity e) { return storage<T>().has(e); }
 
-    // Every entity that has all of the listed component types.
+    // Removes one component type from an entity, leaving the others
+    template <typename T>
+    void remove(Entity e) { storage<T>().remove(e); }
+
+    // Every entity that has all of the listed component types
     template <typename First, typename... Rest>
     std::vector<Entity> view() {
         std::vector<Entity> out;

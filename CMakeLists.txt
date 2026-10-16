@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(simple_game)
+project(rts_game)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
+find_package(SDL3_image CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
@@ -23,27 +24,30 @@ FetchContent_Declare(tinygltf
     GIT_TAG v2.9.3)
 FetchContent_MakeAvailable(tinygltf)
 
-add_executable(simple_game
+add_executable(rts_game
     src/main.cpp
     src/renderer.cpp
     src/systems.cpp
+    src/terrain.cpp
     src/model.cpp
 )
 
-target_include_directories(simple_game PRIVATE
+target_include_directories(rts_game PRIVATE
     src
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
 )
 
-target_link_libraries(simple_game PRIVATE
+target_link_libraries(rts_game PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
+    SDL3_image::SDL3_image
     OpenGL::GL
     GLEW::GLEW
 )
 
-add_custom_command(TARGET simple_game POST_BUILD
+# Copies the whole assets/ folder (fonts, sprites, models) next to the executable
+add_custom_command(TARGET rts_game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:simple_game>/assets"
+        "${CMAKE_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:rts_game>/assets"
 )

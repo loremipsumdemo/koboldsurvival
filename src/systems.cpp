@@ -2,255 +2,283 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <limits>
-#include <vector>
 
 namespace {
 
-bool sameTile(GridPos a, GridPos b) { return a.x == b.x && a.y == b.y; }
+constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
+constexpr float ENTER_RADIUS = 0.6f;     // how close a unit must be to step through the door
+constexpr float KEY_RADIUS = 0.9f;       // how close a unit must be to grab a key
 
-Appearance makeAppearance(TextTex glyph, GLuint sprite) {
-    Appearance ap;
-    ap.glyph = glyph;
-    ap.spriteTex = sprite;
-    return ap;
+GridPos tileOf(float x, float z) {
+    return { (int)std::floor(x), (int)std::floor(z) };
 }
 
-// Grid-based A* with 8-way movement. Same algorithm as the original Lua version.
-std::vector<GridPos> findPath(GridPos start, GridPos goal) {
-    if (sameTile(start, goal)) return {};
-    if (goal.x < 0 || goal.x >= GRID || goal.y < 0 || goal.y >= GRID) return {};
-
-    const int N = GRID * GRID;
-    const float INF = std::numeric_limits<float>::infinity();
-    auto idx = [](int x, int y) { return y * GRID + x; };
-    auto heuristic = [&](int x, int y) {
-        return (float)std::max(std::abs(x - goal.x), std::abs(y - goal.y));
-    };
-
-    std::vector<float> g(N, INF);
-    std::vector<int> cameFrom(N, -1);
-    std::vector<bool> closed(N, false);
-    std::vector<bool> inOpen(N, false);
-    std::vector<int> open;
-
-    int s = idx(start.x, start.y);
-    int t = idx(goal.x, goal.y);
-    g[s] = 0.0f;
-    open.push_back(s);
-    inOpen[s] = true;
-
-    static const int NB[8][2] = {
-        { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 },
-        { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }
-    };
-
-    while (!open.empty()) {
-        size_t best = 0;
-        float bestF = INF;
-        for (size_t i = 0; i < open.size(); ++i) {
-            int k = open[i];
-            float f = g[k] + heuristic(k % GRID, k / GRID);
-            if (f < bestF) { bestF = f; best = i; }
-        }
-
-        int cur = open[best];
-        open.erase(open.begin() + best);
-        inOpen[cur] = false;
-
-        if (cur == t) {
-            std::vector<GridPos> result;
-            for (int k = t; k != s; k = cameFrom[k]) {
-                result.push_back({ k % GRID, k / GRID });
-            }
-            std::reverse(result.begin(), result.end());
-            return result;
-        }
-
-        closed[cur] = true;
-        int cx = cur % GRID, cy = cur / GRID;
-        for (const auto& n : NB) {
-            int nx = cx + n[0], ny = cy + n[1];
-            if (nx < 0 || nx >= GRID || ny < 0 || ny >= GRID) continue;
-            int nk = idx(nx, ny);
-            if (closed[nk]) continue;
-
-            float tentative = g[cur] + 1.0f;
-            if (tentative < g[nk]) {
-                cameFrom[nk] = cur;
-                g[nk] = tentative;
-                if (!inOpen[nk]) {
-                    open.push_back(nk);
-                    inOpen[nk] = true;
-                }
-            }
-        }
-    }
-    return {};
-}
-
-// Spawns a tile-positioned entity that is destroyed on level regeneration
-Entity spawnLevelTile(World& w, GridPos g, Appearance ap) {
-    Entity e = w.create();
-    w.add(e, g);
-    w.add(e, Transform{ tileCenter(g.x), tileCenter(g.y) });
-    w.add(e, ap);
-    w.add(e, LevelEntity{});
-    return e;
+// Plans a new route for a squad's center. Only the center paths; members follow slots.
+void planSquad(World& w, Terrain& t, Entity squadE, GridPos target, bool wantsDoor) {
+    Squad* sq = w.get<Squad>(squadE);
+    GridPos from = tileOf(sq->cx, sq->cz);
+    sq->waypoints = t.findPath(from, t.nearestWalkable(target));
+    sq->next = 0;
+    sq->arrived = sq->waypoints.empty();
+    sq->wantsDoor = wantsDoor;
+    sq->enterDoor = false;
 }
 
 } // namespace
 
-Entity findPlayer(World& w) {
-    auto players = w.view<Player>();
-    return players.empty() ? NULL_ENTITY : players.front();
+Door* findDoor(World& w) {
+    auto doors = w.view<Door>();
+    return doors.empty() ? nullptr : w.get<Door>(doors.front());
 }
 
-void spawnFloor(World& w, const Assets& a) {
-    Appearance ap = makeAppearance(a.glyphFloor, a.floorTex);
-    for (int y = 0; y < GRID; y++) {
-        for (int x = 0; x < GRID; x++) {
-            Entity e = w.create();
-            w.add(e, GridPos{ x, y });
-            w.add(e, Transform{ tileCenter(x), tileCenter(y) });
-            w.add(e, ap);
-            w.add(e, Floor{});
+void setupWorld(World& w, Terrain& t, Rng& rng) {
+    // Building: 3x3 footprint, with the entrance on the south-centre tile
+    Door door;
+    door.origin = { rng.range(10, MAP_SIZE - 5), rng.range(10, MAP_SIZE - 5) };
+    door.entrance = { door.origin.x + 1, door.origin.y + 2 };
+    door.front = { door.origin.x + 1, door.origin.y + 3 };
+    for (int dy = 0; dy < 3; ++dy) {
+        for (int dx = 0; dx < 3; ++dx) {
+            t.setWalkable(door.origin.x + dx, door.origin.y + dy, false);
         }
     }
-}
+    Entity d = w.create();
+    w.add(d, door);
 
-void generateLevel(World& w, const Assets& a, Rng& rng) {
-    for (Entity e : w.view<LevelEntity>()) w.destroy(e);
+    // Units, in a block in the north-west corner
+    for (int i = 0; i < UNIT_COUNT; ++i) {
+        float x = 1.5f + (i % SQUAD_COLUMNS) * 1.5f;
+        float z = 1.5f + (i / SQUAD_COLUMNS) * 1.5f;
+        Entity u = w.create();
+        w.add(u, Transform{ x, t.heightAt(x, z), z });
+        w.add(u, Unit{});
+        w.add(u, UnitSprite{ rng.range(1, 38) });
+    }
 
-    // Four distinct tiles for player, key, door, wagon
-    std::vector<GridPos> taken;
-    auto pickTile = [&]() {
-        for (;;) {
-            GridPos p{ rng.range(0, GRID - 1), rng.range(0, GRID - 1) };
-            bool used = std::any_of(taken.begin(), taken.end(),
-                                    [&](const GridPos& t) { return sameTile(t, p); });
-            if (!used) {
-                taken.push_back(p);
-                return p;
-            }
-        }
-    };
-    GridPos playerPos = pickTile();
-    GridPos keyPos = pickTile();
-    GridPos doorPos = pickTile();
-    GridPos wagonPos = pickTile();
+    // Keys, scattered across the map on walkable tiles, away from the spawn corner
+    std::vector<GridPos> keyTiles;
+    while ((int)keyTiles.size() < KEY_COUNT) {
+        GridPos g{ rng.range(0, MAP_SIZE - 1), rng.range(0, MAP_SIZE - 1) };
+        if (!t.walkable(g.x, g.y)) continue;
+        if (g.x < 9 && g.y < 9) continue;
+        bool duplicate = std::any_of(keyTiles.begin(), keyTiles.end(),
+                                     [&](GridPos k) { return k == g; });
+        if (duplicate) continue;
 
-    // Player
-    Entity player = spawnLevelTile(w, playerPos,
-                                   makeAppearance(a.glyphPlayer, a.playerTex));
-    w.add(player, Player{});
-    w.add(player, Path{});
-    w.add(player, Segment{ tileCenter(playerPos.x), tileCenter(playerPos.y),
-                           tileCenter(playerPos.x), tileCenter(playerPos.y), 1.0f });
+        keyTiles.push_back(g);
+        float x = g.x + 0.5f, z = g.y + 0.5f;
+        Entity k = w.create();
+        w.add(k, Transform{ x, t.heightAt(x, z), z });
+        w.add(k, Key{});
+    }
 
-    // Key
-    Entity key = spawnLevelTile(w, keyPos, makeAppearance(a.glyphKey, a.keyTex));
-    w.add(key, Key{});
-
-    // Door
-    Entity door = spawnLevelTile(w, doorPos, makeAppearance(a.glyphDoor, a.doorTex));
-    w.add(door, Door{});
-
-    // Wagon (3D model in sprite mode, glyph in ASCII mode)
-    Appearance wagonAp = makeAppearance(a.glyphWagon, 0);
-    wagonAp.model = &a.wagonModel;
-    Entity wagon = spawnLevelTile(w, wagonPos, wagonAp);
+    // One wagon on a free tile. It is decorative and does not block movement.
+    GridPos wg;
+    do {
+        wg = { rng.range(0, MAP_SIZE - 1), rng.range(0, MAP_SIZE - 1) };
+    } while (!t.walkable(wg.x, wg.y) || (wg.x < 9 && wg.y < 9));
+    float wx = wg.x + 0.5f, wz = wg.y + 0.5f;
+    Entity wagon = w.create();
+    w.add(wagon, Transform{ wx, t.heightAt(wx, wz), wz });
     w.add(wagon, Wagon{});
 }
 
-void moveRequestSystem(World& w, Commands& cmds) {
-    if (!cmds.moveTo) return;
-    GridPos target = *cmds.moveTo;
-    cmds.moveTo.reset();
+void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
+                    GridPos clickTile, bool clickedDoor) {
+    if (units.empty()) return;
 
-    Entity p = findPlayer(w);
-    if (!p) return;
+    Door* door = findDoor(w);
+    bool wantsDoor = clickedDoor && door != nullptr;
+    GridPos target = clickTile;
+    if (wantsDoor) target = door->unlocked ? door->entrance : door->front;
 
-    GridPos from = *w.get<GridPos>(p);
-    Path* path = w.get<Path>(p);
-    path->steps = findPath(from, target);
-    path->accum = 0.0f;
+    // The formation center starts at the average position of the selected units
+    float cx = 0.0f, cz = 0.0f;
+    for (Entity u : units) {
+        Transform* tr = w.get<Transform>(u);
+        cx += tr->x;
+        cz += tr->z;
+    }
+    cx /= units.size();
+    cz /= units.size();
+
+    Squad s;
+    s.cx = cx;
+    s.cz = cz;
+    Entity sq = w.create();
+    w.add(sq, s);
+
+    // Each selected unit joins the new squad. Overwriting SquadMember drops any old squad.
+    for (size_t i = 0; i < units.size(); ++i) {
+        w.add(units[i], SquadMember{ sq, (int)i });
+    }
+
+    planSquad(w, t, sq, target, wantsDoor);
 }
 
-void movementSystem(World& w, float dt) {
-    // 1. Interpolate the visual position along the current segment
-    for (Entity e : w.view<Segment, Transform>()) {
-        Segment* seg = w.get<Segment>(e);
+void squadSystem(World& w, float dt) {
+    Door* door = findDoor(w);
+
+    for (Entity e : w.view<Squad>()) {
+        Squad* sq = w.get<Squad>(e);
+
+        if (!sq->arrived) {
+            GridPos wp = sq->waypoints[sq->next];
+            float tx = wp.x + 0.5f, tz = wp.y + 0.5f;
+            float dx = tx - sq->cx, dz = tz - sq->cz;
+            float d = std::sqrt(dx * dx + dz * dz);
+            float step = sq->speed * dt;
+
+            if (d > 1e-4f) {
+                sq->headX = dx / d;
+                sq->headZ = dz / d;
+            }
+
+            if (d <= step) {
+                sq->cx = tx;
+                sq->cz = tz;
+                if (++sq->next >= sq->waypoints.size()) sq->arrived = true;
+            } else {
+                sq->cx += dx / d * step;
+                sq->cz += dz / d * step;
+            }
+        }
+
+        sq->enterDoor = sq->wantsDoor && sq->arrived && door && door->unlocked;
+    }
+}
+
+void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
+    Door* door = findDoor(w);
+    std::vector<Entity> units = w.view<Unit, Transform>();
+    std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
+
+    // Pass 1: each unit's desired velocity, from its slot plus separation.
+    // Positions are read here but not changed, so the order of units doesn't matter.
+    for (size_t i = 0; i < units.size(); ++i) {
+        Entity e = units[i];
         Transform* tr = w.get<Transform>(e);
-        if (seg->t < 1.0f) {
-            seg->t = std::min(1.0f, seg->t + dt / MOVE_TIME);
-            tr->x = seg->startX + (seg->endX - seg->startX) * seg->t;
-            tr->z = seg->startZ + (seg->endZ - seg->startZ) * seg->t;
+        Unit* u = w.get<Unit>(e);
+
+        float tx = tr->x, tz = tr->z;   // default: stay put
+        if (SquadMember* sm = w.get<SquadMember>(e)) {
+            if (Squad* sq = w.get<Squad>(sm->squad)) {
+                if (sq->enterDoor && door) {
+                    tx = door->entrance.x + 0.5f;
+                    tz = door->entrance.y + 0.5f;
+                } else {
+                    // Slot grid: columns across the heading, rows behind the center
+                    int col = sm->slot % SQUAD_COLUMNS - SQUAD_COLUMNS / 2;
+                    int row = sm->slot / SQUAD_COLUMNS;
+                    float rightX = -sq->headZ, rightZ = sq->headX;
+                    float backX = -sq->headX, backZ = -sq->headZ;
+                    tx = sq->cx + (rightX * col + backX * row) * SLOT_SPACING;
+                    tz = sq->cz + (rightZ * col + backZ * row) * SLOT_SPACING;
+
+                    // Don't ask units to stand inside walls
+                    GridPos st = t.nearestWalkable(tileOf(tx, tz));
+                    tx = st.x + 0.5f;
+                    tz = st.y + 0.5f;
+                }
+            }
         }
+
+        float dx = tx - tr->x, dz = tz - tr->z;
+        float dist = std::sqrt(dx * dx + dz * dz);
+        float vx = 0.0f, vz = 0.0f;
+        if (dist > 0.05f) {
+            float sp = std::min(u->speed, dist * 2.5f);   // slow down near the target
+            vx = dx / dist * sp;
+            vz = dz / dist * sp;
+        }
+
+        // Separation: push away from any unit that is too close
+        for (size_t j = 0; j < units.size(); ++j) {
+            if (j == i) continue;
+            Transform* o = w.get<Transform>(units[j]);
+            Unit* ou = w.get<Unit>(units[j]);
+            float sx = tr->x - o->x, sz = tr->z - o->z;
+            float minD = u->radius + ou->radius + UNIT_CLEARANCE;
+            float d2 = sx * sx + sz * sz;
+            if (d2 < minD * minD) {
+                float d = std::sqrt(d2);
+                if (d < 1e-4f) { sx = 1.0f; sz = 0.0f; d = 1.0f; }
+                float push = (minD - d) * 8.0f;
+                vx += sx / d * push;
+                vz += sz / d * push;
+            }
+        }
+        vel[i] = { vx, vz };
     }
 
-    // 2. Advance the logical grid position one step per MOVE_TIME
-    for (Entity e : w.view<Path, GridPos, Segment, Transform>()) {
-        Path* path = w.get<Path>(e);
-        if (path->steps.empty()) {
-            path->accum = 0.0f;
-            continue;
-        }
-
-        path->accum += dt;
-        if (path->accum < MOVE_TIME) continue;
-        path->accum = 0.0f;
-
-        GridPos next = path->steps.front();
-        path->steps.erase(path->steps.begin());
-
-        GridPos* pos = w.get<GridPos>(e);
-        int adx = std::abs(next.x - pos->x);
-        int ady = std::abs(next.y - pos->y);
-        if (adx > 1 || ady > 1 || (adx == 0 && ady == 0)) {
-            path->steps.clear();   // path became invalid
-            continue;
-        }
-
-        pos->x = next.x;
-        pos->y = next.y;
-
-        Segment* seg = w.get<Segment>(e);
+    // Pass 2: apply movement, slide along walls, and handle door entry
+    std::vector<Entity> entered;
+    for (size_t i = 0; i < units.size(); ++i) {
+        Entity e = units[i];
         Transform* tr = w.get<Transform>(e);
-        seg->startX = tr->x;
-        seg->startZ = tr->z;
-        seg->endX = tileCenter(next.x);
-        seg->endZ = tileCenter(next.y);
-        seg->t = 0.0f;
+
+        float nx = tr->x + vel[i].first * dt;
+        float nz = tr->z + vel[i].second * dt;
+        // Try each axis separately so units slide along walls instead of stopping
+        if (t.walkable((int)std::floor(nx), (int)std::floor(tr->z))) tr->x = nx;
+        if (t.walkable((int)std::floor(tr->x), (int)std::floor(nz))) tr->z = nz;
+        tr->y = t.heightAt(tr->x, tr->z);
+
+        if (door && door->unlocked) {
+            SquadMember* sm = w.get<SquadMember>(e);
+            Squad* sq = sm ? w.get<Squad>(sm->squad) : nullptr;
+            if (sq && sq->enterDoor) {
+                float ex = door->entrance.x + 0.5f, ez = door->entrance.y + 0.5f;
+                float dx = tr->x - ex, dz = tr->z - ez;
+                if (dx * dx + dz * dz < ENTER_RADIUS * ENTER_RADIUS) entered.push_back(e);
+            }
+        }
+    }
+
+    for (Entity e : entered) {
+        w.destroy(e);
+        gs.unitsEntered++;
     }
 }
 
-void pickupSystem(World& w) {
-    Entity p = findPlayer(w);
-    if (!p) return;
-    GridPos pos = *w.get<GridPos>(p);
+void pickupSystem(World& w, Terrain& t, GameState& gs) {
+    std::vector<Entity> units = w.view<Unit, Transform>();
 
-    for (Entity k : w.view<Key, GridPos>()) {
-        if (sameTile(*w.get<GridPos>(k), pos)) {
-            w.destroy(k);
-            w.get<Player>(p)->hasKey = true;
+    // Any unit can collect a key
+    for (Entity k : w.view<Key, Transform>()) {
+        Transform* kt = w.get<Transform>(k);
+        for (Entity u : units) {
+            Transform* ut = w.get<Transform>(u);
+            float dx = ut->x - kt->x, dz = ut->z - kt->z;
+            if (dx * dx + dz * dz < KEY_RADIUS * KEY_RADIUS) {
+                w.destroy(k);
+                gs.keysCollected++;
+                break;
+            }
+        }
+    }
+
+    // Once every key is collected, the door opens and waiting squads replan to go in
+    Door* door = findDoor(w);
+    if (door && !door->unlocked && gs.keysCollected >= KEY_COUNT) {
+        door->unlocked = true;
+        t.setWalkable(door->entrance.x, door->entrance.y, true);
+        for (Entity sq : w.view<Squad>()) {
+            if (w.get<Squad>(sq)->wantsDoor) planSquad(w, t, sq, door->entrance, true);
         }
     }
 }
 
-void levelSystem(World& w, const Assets& a, Rng& rng) {
-    Entity p = findPlayer(w);
-    if (!p) return;
+void cleanupSquads(World& w) {
+    std::vector<Entity> used;
+    for (Entity e : w.view<SquadMember>()) used.push_back(w.get<SquadMember>(e)->squad);
 
-    const Player* player = w.get<Player>(p);
-    const GridPos* pos = w.get<GridPos>(p);
-    const Segment* seg = w.get<Segment>(p);
-    if (!player->hasKey || seg->t < 1.0f) return;
-
-    for (Entity d : w.view<Door, GridPos>()) {
-        if (sameTile(*w.get<GridPos>(d), *pos)) {
-            generateLevel(w, a, rng);   // destroys the player, so return immediately
-            return;
-        }
+    for (Entity sq : w.view<Squad>()) {
+        if (std::find(used.begin(), used.end(), sq) == used.end()) w.destroy(sq);
     }
+}
+
+void updateWinState(World& w, GameState& gs) {
+    Door* door = findDoor(w);
+    if (door && door->unlocked && gs.unitsEntered >= UNIT_COUNT) gs.won = true;
 }

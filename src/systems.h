@@ -1,19 +1,22 @@
 #pragma once
+#include <vector>
+#include "components.h"
 #include "ecs.h"
 #include "resources.h"
+#include "terrain.h"
 
-constexpr int GRID = 16;
-constexpr float MOVE_TIME = 0.1f;
+Door* findDoor(World& w);
 
-inline float tileCenter(int g) { return g + 0.5f; }
+// Spawns the building, the units, and the keys
+void setupWorld(World& w, Terrain& t, Rng& rng);
 
-Entity findPlayer(World& w);
+// Creates a squad from the given units and sends it to a tile
+void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
+                    GridPos clickTile, bool clickedDoor);
 
-void spawnFloor(World& w, const Assets& a);
-void generateLevel(World& w, const Assets& a, Rng& rng);
-
-// Each of these runs once per frame, in this order.
-void moveRequestSystem(World& w, Commands& cmds);
-void movementSystem(World& w, float dt);
-void pickupSystem(World& w);
-void levelSystem(World& w, const Assets& a, Rng& rng);
+// Systems, run once per frame in this order
+void squadSystem(World& w, float dt);
+void steeringSystem(World& w, Terrain& t, GameState& gs, float dt);
+void pickupSystem(World& w, Terrain& t, GameState& gs);
+void cleanupSquads(World& w);
+void updateWinState(World& w, GameState& gs);

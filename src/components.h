@@ -1,47 +1,54 @@
 #pragma once
 #include <vector>
-#include <GL/glew.h>
-#include "model.h"
+#include "ecs.h"
+#include "grid.h"
 
-// ---- Spatial data ----
-struct GridPos { int x = 0, y = 0; };
-
-// Visual world position on the XZ plane (interpolated between tiles)
-struct Transform { float x = 0.0f, z = 0.0f; };
-
-// Interpolation from one tile center to the next
-struct Segment {
-    float startX = 0.0f, startZ = 0.0f;
-    float endX = 0.0f, endZ = 0.0f;
-    float t = 1.0f;
+// World position. y is the terrain height under the entity.
+struct Transform {
+    float x = 0.0f, y = 0.0f, z = 0.0f;
 };
 
-// Queued tile-by-tile route plus the timer that paces steps
-struct Path {
-    std::vector<GridPos> steps;
-    float accum = 0.0f;
+// A player-controlled unit
+struct Unit {
+    float speed = 3.0f;      // tiles per second
+    float radius = 0.4f;     // used for separation from other units
 };
 
-// ---- Tags and small state ----
-struct Player { bool hasKey = false; };
+struct Selected {};
+
+// Which unit image this unit uses: assets/unit/01.png .. 38.png
+struct UnitSprite {
+    int id = 1;
+};
+
+// Links a unit to its squad and to its formation slot
+struct SquadMember {
+    Entity squad = NULL_ENTITY;
+    int slot = 0;
+};
+
+// A squad is one group movement order. Its center walks a path, and its
+// members seek formation slots around the center.
+struct Squad {
+    float cx = 0.0f, cz = 0.0f;       // formation center
+    float headX = 0.0f, headZ = 1.0f; // facing, from the direction of travel
+    std::vector<GridPos> waypoints;
+    size_t next = 0;
+    bool arrived = false;
+    bool wantsDoor = false;           // ordered to enter the building
+    bool enterDoor = false;           // unlocked and at the entrance, so members go through
+    float speed = 2.8f;               // slower than units, so members can keep up
+};
+
 struct Key {};
-struct Door {};
+
+// Decorative wagon. It is drawn as a symbol and does not block movement.
 struct Wagon {};
-struct Floor {};
 
-// Destroyed and respawned when a new level is generated
-struct LevelEntity {};
-
-// ---- Rendering ----
-struct TextTex {
-    GLuint tex = 0;
-    float aspect = 1.0f;   // width / height of the rendered glyph
-};
-
-struct Appearance {
-    TextTex glyph;                        // used in ASCII mode
-    GLuint spriteTex = 0;                 // used in sprite mode
-    float spriteW = 1.2f, spriteH = 1.4f;
-    const Model* model = nullptr;         // optional 3D model (sprite mode only)
-    float modelSize = 0.9f;
+// The 3x3 building. Its entrance is the south-centre tile of the footprint.
+struct Door {
+    GridPos origin;     // top-left tile of the 3x3 footprint
+    GridPos entrance;   // tile units step onto to enter
+    GridPos front;      // tile just outside the entrance, where locked squads wait
+    bool unlocked = false;
 };
