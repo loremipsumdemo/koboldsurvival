@@ -507,6 +507,57 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
+// Loading screen: the start image centred and fitted to the window, with a progress bar
+// across the bottom 4% of the screen (white fill on black)
+void Renderer::drawLoadingScreen(float progress, int winW, int winH) {
+    glViewport(0, 0, winW, winH);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
+
+    // Start image, fitted inside the window with its aspect ratio kept
+    if (overlay_.tex) {
+        float screenAspect = (float)winW / (float)winH;
+        float wd, h;
+        if (overlay_.aspect > screenAspect) {
+            wd = (float)winW;
+            h = wd / overlay_.aspect;
+        } else {
+            h = (float)winH;
+            wd = h * overlay_.aspect;
+        }
+        float x0 = winW * 0.5f - wd * 0.5f, x1 = x0 + wd;
+        float y0 = winH * 0.5f - h * 0.5f,  y1 = y0 + h;
+        float v[4 * 5] = {
+            x0, y1, 0.0f, 0.0f, 1.0f,
+            x1, y1, 0.0f, 1.0f, 1.0f,
+            x1, y0, 0.0f, 1.0f, 0.0f,
+            x0, y0, 0.0f, 0.0f, 0.0f
+        };
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
+        drawQuadVerts(overlay_.tex, v, WHITE);
+    }
+
+    // Progress bar: fills left to right across the bottom 4% of the screen
+    float barTop = winH * 0.96f;
+    float fill = winW * std::clamp(progress, 0.0f, 1.0f);
+    Batch bar;
+    bar.quad({ 0.0f, barTop, 0.0f }, { fill, barTop, 0.0f },
+             { fill, (float)winH, 0.0f }, { 0.0f, (float)winH, 0.0f }, WHITE);
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, bar.v.size() * sizeof(Vertex), bar.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)bar.v.size());
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+}
+
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                          float overlayAlpha, int winW, int winH) {
     glViewport(0, 0, winW, winH);
@@ -590,7 +641,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         int idx = us ? us->id - 1 : 0;
         const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
         const TextTex& g = (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
-        RGBA tint = w.has<Selected>(e) ? RGBA{ 1.0f, 1.0f, 0.6f, 1.0f } : WHITE;
+        RGBA tint = WHITE;
+        if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
+        else if (w.has<Selected>(e)) tint = RGBA{ 1.0f, 1.0f, 0.6f, 1.0f };
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
 

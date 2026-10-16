@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 #include "ecs.h"
 #include "grid.h"
@@ -15,6 +16,17 @@ struct Unit {
 };
 
 struct Selected {};
+
+// Player units. Only these can be ordered to move.
+struct Commandable {};
+
+// Red units. They stand still and can be selected, but can't be commanded.
+struct Hostile {};
+
+// Display name for a unit
+struct Name {
+    std::string text = "Unnamed Unit";
+};
 
 // Which unit image this unit uses: assets/unit/01.png .. 38.png
 struct UnitSprite {
@@ -38,6 +50,15 @@ struct Squad {
     bool wantsDoor = false;           // ordered to enter the building
     bool enterDoor = false;           // unlocked and at the entrance, so members go through
     float speed = 2.8f;               // slower than units, so members can keep up
+    int size = 0;                     // number of units, which sets the formation's spacing
+};
+
+// A single unit's own route. Used instead of a squad when one unit is ordered.
+struct SoloMove {
+    std::vector<GridPos> waypoints;
+    size_t next = 0;
+    bool wantsDoor = false;           // ordered to enter the building
+    bool enterDoor = false;           // unlocked and at the entrance, so the unit goes through
 };
 
 struct Key {};

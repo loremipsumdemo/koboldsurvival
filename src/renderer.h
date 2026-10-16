@@ -30,6 +30,9 @@ public:
     // Builds and uploads the terrain mesh. Frees the previous mesh if there is one.
     void uploadTerrain(const Terrain& t);
 
+    // Loading screen: the start image plus a progress bar (progress 0..1) along the bottom 4%
+    void drawLoadingScreen(float progress, int winW, int winH);
+
     // overlayAlpha: 0 hides the level-start image, 1 shows it fully
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                    float overlayAlpha, int winW, int winH);

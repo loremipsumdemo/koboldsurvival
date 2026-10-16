@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -80,7 +81,7 @@ void clearSelection(World& w) {
 
 std::vector<Entity> selectedUnits(World& w) {
     std::vector<Entity> out;
-    for (Entity u : w.view<Unit, Selected>()) out.push_back(u);
+    for (Entity u : w.view<Unit, Selected, Commandable>()) out.push_back(u);
     return out;
 }
 
@@ -110,7 +111,7 @@ void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
     float minY = std::min(y0, y1), maxY = std::max(y0, y1);
     Mat4 vp = cam.viewProj((float)W / (float)H);
 
-    for (Entity u : w.view<Unit, Transform>()) {
+    for (Entity u : w.view<Unit, Transform, Commandable>()) {
         Transform* tr = w.get<Transform>(u);
         float sx, sy;
         if (worldToScreen(vp, tr->x, tr->y + 0.5f, tr->z, W, H, sx, sy)
@@ -134,19 +135,34 @@ void rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
     issueMoveOrder(w, t, selectedUnits(w), tile, onDoor);
 }
 
+// Draws one loading frame and keeps the window responsive while the level loads
+void loadingFrame(SDL_Window* window, Renderer& renderer, float progress) {
+    SDL_PumpEvents();
+    int winW, winH;
+    SDL_GetWindowSizeInPixels(window, &winW, &winH);
+    renderer.drawLoadingScreen(progress, winW, winH);
+    SDL_GL_SwapWindow(window);
+}
+
 // Builds a fresh level: new terrain, new entities. Used at startup and on restart.
-void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed) {
+// progress, if given, is called as the level loads (0..1), for the loading screen.
+void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed,
+                const std::function<void(float)>& progress = {}) {
+    auto report = [&](float p) { if (progress) progress(p); };
     terrain.generate(seed);
+    report(0.35f);
     renderer.uploadTerrain(terrain);
+    report(0.7f);
     world = World{};
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
+    report(0.9f);
 }
 
 // Puts the camera on the tile under the lowest-numbered unit, so the game starts there
 void focusCameraOnFirstUnit(World& w, Camera& cam) {
     Entity first = NULL_ENTITY;
-    for (Entity u : w.view<Unit, Transform>()) {
+    for (Entity u : w.view<Unit, Transform, Commandable>()) {
         if (first == NULL_ENTITY || u < first) first = u;
     }
     if (first == NULL_ENTITY) return;
@@ -203,7 +219,10 @@ int main(int, char**) {
     Terrain terrain;
     World world;
     Rng rng;
-    startLevel(world, terrain, renderer, rng, (unsigned)std::time(nullptr));
+    loadingFrame(window, renderer, 0.1f);
+    startLevel(world, terrain, renderer, rng, (unsigned)std::time(nullptr),
+               [&](float p) { loadingFrame(window, renderer, p); });
+    loadingFrame(window, renderer, 1.0f);
 
     GameState gs;
     Selection sel;
@@ -254,14 +273,10 @@ int main(int, char**) {
                     pressY = e.button.y;
                     sel.dragging = false;
                 } else if (e.button.button == SDL_BUTTON_MIDDLE) {
+                    // Pressing alone changes nothing. Dragging orbits around the current focus.
                     middleDown = true;
                     lastX = e.button.x;
                     lastY = e.button.y;
-                    // The pivot is the terrain point under the cursor
-                    auto hit = pickGround(cam, terrain, e.button.x, e.button.y, winW, winH);
-                    if (hit) {
-                        cam.setPivot(hit->first, terrain.heightAt(hit->first, hit->second), hit->second);
-                    }
                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
                     rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH);
                 }
@@ -326,6 +341,7 @@ int main(int, char**) {
 
         float panSpeed = cam.distance * 0.9f * dt;
         cam.pan(right * panSpeed, forward * panSpeed);
+        cam.updateClearance(terrain, dt);
 
         // ---- Systems ----
         squadSystem(world, dt);
