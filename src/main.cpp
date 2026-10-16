@@ -4,11 +4,13 @@
 #include <SDL3/SDL_opengl.h>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <ctime>
 #include <functional>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 #include "camera.h"
 #include "components.h"
 #include "ecs.h"
@@ -19,161 +21,162 @@
 
 namespace {
 
-constexpr float OVERLAY_HOLD_MS = 1000.0f;   // level-start image stays fully visible
-constexpr float OVERLAY_FADE_MS = 500.0f;    // then fades out over this long
-constexpr size_t HOVER_NAME_LIMIT = 10;      // hover label lists up to this many names
+    constexpr float OVERLAY_HOLD_MS = 1000.0f;   // level-start image stays fully visible
+    constexpr float OVERLAY_FADE_MS = 500.0f;    // then fades out over this long
+    constexpr size_t HOVER_NAME_LIMIT = 10;      // hover label lists up to this many names
+    constexpr bool EDGE_SCROLL = false;          // true: pan when the mouse is near the window edge
 
-// Ray through a pixel, intersected with the terrain surface. Returns world (x, z).
-std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terrain& t,
-                                                  float mx, float my, int W, int H) {
-    Mat4 vp = cam.viewProj((float)W / (float)H);
-    float inv[16];
-    if (!invert4x4(vp.m, inv)) return std::nullopt;
+    // Ray through a pixel, intersected with the terrain surface. Returns world (x, z).
+    std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terrain& t,
+        float mx, float my, int W, int H) {
+        Mat4 vp = cam.viewProj((float)W / (float)H);
+        float inv[16];
+        if (!invert4x4(vp.m, inv)) return std::nullopt;
 
-    float ndcX = 2.0f * mx / (float)W - 1.0f;
-    float ndcY = 1.0f - 2.0f * my / (float)H;
+        float ndcX = 2.0f * mx / (float)W - 1.0f;
+        float ndcY = 1.0f - 2.0f * my / (float)H;
 
-    auto unproject = [&](float ndcZ, float out[3]) {
-        float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
-        float r[4];
+        auto unproject = [&](float ndcZ, float out[3]) {
+            float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
+            float r[4];
+            for (int i = 0; i < 4; ++i) {
+                r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1]
+                    + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
+            }
+            out[0] = r[0] / r[3];
+            out[1] = r[1] / r[3];
+            out[2] = r[2] / r[3];
+            };
+
+        float n[3], f[3];
+        unproject(-1.0f, n);
+        unproject(1.0f, f);
+
+        // Iterate: intersect with the plane at the terrain height under the last hit
+        float groundY = 0.0f, hx = 0.0f, hz = 0.0f;
+        for (int iter = 0; iter < 6; ++iter) {
+            float dy = f[1] - n[1];
+            if (std::fabs(dy) < 1e-6f) return std::nullopt;
+            float s = (groundY - n[1]) / dy;
+            hx = n[0] + (f[0] - n[0]) * s;
+            hz = n[2] + (f[2] - n[2]) * s;
+            groundY = t.heightAt(hx, hz);
+        }
+
+        if (hx < 0.0f || hz < 0.0f || hx >= MAP_SIZE || hz >= MAP_SIZE) return std::nullopt;
+        return std::make_pair(hx, hz);
+    }
+
+    // World point to pixel coordinates. Returns false if it's behind the camera.
+    bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
+        float c[4];
         for (int i = 0; i < 4; ++i) {
-            r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1]
-                 + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
+            c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
         }
-        out[0] = r[0] / r[3];
-        out[1] = r[1] / r[3];
-        out[2] = r[2] / r[3];
-    };
-
-    float n[3], f[3];
-    unproject(-1.0f, n);
-    unproject(1.0f, f);
-
-    // Iterate: intersect with the plane at the terrain height under the last hit
-    float groundY = 0.0f, hx = 0.0f, hz = 0.0f;
-    for (int iter = 0; iter < 6; ++iter) {
-        float dy = f[1] - n[1];
-        if (std::fabs(dy) < 1e-6f) return std::nullopt;
-        float s = (groundY - n[1]) / dy;
-        hx = n[0] + (f[0] - n[0]) * s;
-        hz = n[2] + (f[2] - n[2]) * s;
-        groundY = t.heightAt(hx, hz);
+        if (c[3] <= 0.0f) return false;
+        sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)W;
+        sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)H;
+        return true;
     }
 
-    if (hx < 0.0f || hz < 0.0f || hx >= MAP_SIZE || hz >= MAP_SIZE) return std::nullopt;
-    return std::make_pair(hx, hz);
-}
-
-// World point to pixel coordinates. Returns false if it's behind the camera.
-bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
-    float c[4];
-    for (int i = 0; i < 4; ++i) {
-        c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
+    void clearSelection(World& w) {
+        for (Entity e : w.view<Selected>()) w.remove<Selected>(e);
     }
-    if (c[3] <= 0.0f) return false;
-    sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)W;
-    sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)H;
-    return true;
-}
 
-void clearSelection(World& w) {
-    for (Entity e : w.view<Selected>()) w.remove<Selected>(e);
-}
-
-std::vector<Entity> selectedUnits(World& w) {
-    std::vector<Entity> out;
-    for (Entity u : w.view<Unit, Selected, Commandable>()) out.push_back(u);
-    return out;
-}
-
-// Click selection: nearest unit within one tile of the clicked ground point
-void clickSelect(World& w, const Terrain& t, const Camera& cam,
-                 float mx, float my, int W, int H, bool additive) {
-    if (!additive) clearSelection(w);
-    auto hit = pickGround(cam, t, mx, my, W, H);
-    if (!hit) return;
-
-    Entity best = NULL_ENTITY;
-    float bestD2 = 1.0f;
-    for (Entity u : w.view<Unit, Transform>()) {
-        Transform* tr = w.get<Transform>(u);
-        float dx = tr->x - hit->first, dz = tr->z - hit->second;
-        float d2 = dx * dx + dz * dz;
-        if (d2 < bestD2) { bestD2 = d2; best = u; }
+    std::vector<Entity> selectedUnits(World& w) {
+        std::vector<Entity> out;
+        for (Entity u : w.view<Unit, Selected, Commandable>()) out.push_back(u);
+        return out;
     }
-    if (best) w.add(best, Selected{});
-}
 
-// Box selection: every unit whose screen position falls inside the rectangle
-void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
-               int W, int H, bool additive) {
-    if (!additive) clearSelection(w);
-    float minX = std::min(x0, x1), maxX = std::max(x0, x1);
-    float minY = std::min(y0, y1), maxY = std::max(y0, y1);
-    Mat4 vp = cam.viewProj((float)W / (float)H);
+    // Click selection: nearest unit within one tile of the clicked ground point
+    void clickSelect(World& w, const Terrain& t, const Camera& cam,
+        float mx, float my, int W, int H, bool additive) {
+        if (!additive) clearSelection(w);
+        auto hit = pickGround(cam, t, mx, my, W, H);
+        if (!hit) return;
 
-    for (Entity u : w.view<Unit, Transform, Commandable>()) {
-        Transform* tr = w.get<Transform>(u);
-        float sx, sy;
-        if (worldToScreen(vp, tr->x, tr->y + 0.5f, tr->z, W, H, sx, sy)
-            && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
-            w.add(u, Selected{});
+        Entity best = NULL_ENTITY;
+        float bestD2 = 1.0f;
+        for (Entity u : w.view<Unit, Transform>()) {
+            Transform* tr = w.get<Transform>(u);
+            float dx = tr->x - hit->first, dz = tr->z - hit->second;
+            float d2 = dx * dx + dz * dz;
+            if (d2 < bestD2) { bestD2 = d2; best = u; }
+        }
+        if (best) w.add(best, Selected{});
+    }
+
+    // Box selection: every unit whose screen position falls inside the rectangle
+    void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
+        int W, int H, bool additive) {
+        if (!additive) clearSelection(w);
+        float minX = std::min(x0, x1), maxX = std::max(x0, x1);
+        float minY = std::min(y0, y1), maxY = std::max(y0, y1);
+        Mat4 vp = cam.viewProj((float)W / (float)H);
+
+        for (Entity u : w.view<Unit, Transform, Commandable>()) {
+            Transform* tr = w.get<Transform>(u);
+            float sx, sy;
+            if (worldToScreen(vp, tr->x, tr->y + 0.5f, tr->z, W, H, sx, sy)
+                && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
+                w.add(u, Selected{});
+            }
         }
     }
-}
 
-// Right click: order the selected units to a tile, or into the door if the building was clicked
-void rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my, int W, int H) {
-    auto hit = pickGround(cam, t, mx, my, W, H);
-    if (!hit) return;
+    // Right click: order the selected units to a tile, or into the door if the building was clicked
+    void rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my, int W, int H) {
+        auto hit = pickGround(cam, t, mx, my, W, H);
+        if (!hit) return;
 
-    GridPos tile{ (int)std::floor(hit->first), (int)std::floor(hit->second) };
-    Door* door = findDoor(w);
-    bool onDoor = door
-               && tile.x >= door->origin.x && tile.x < door->origin.x + 3
-               && tile.y >= door->origin.y && tile.y < door->origin.y + 3;
+        GridPos tile{ (int)std::floor(hit->first), (int)std::floor(hit->second) };
+        Door* door = findDoor(w);
+        bool onDoor = door
+            && tile.x >= door->origin.x && tile.x < door->origin.x + 3
+            && tile.y >= door->origin.y && tile.y < door->origin.y + 3;
 
-    issueMoveOrder(w, t, selectedUnits(w), tile, onDoor);
-}
-
-// Draws one loading frame and keeps the window responsive while the level loads
-void loadingFrame(SDL_Window* window, Renderer& renderer, float progress) {
-    SDL_PumpEvents();
-    int winW, winH;
-    SDL_GetWindowSizeInPixels(window, &winW, &winH);
-    renderer.drawLoadingScreen(progress, winW, winH);
-    SDL_GL_SwapWindow(window);
-}
-
-// Builds a fresh level: new terrain, new entities. Used at startup and on restart.
-// progress, if given, is called as the level loads (0..1), for the loading screen.
-void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed,
-                const std::function<void(float)>& progress = {}) {
-    auto report = [&](float p) { if (progress) progress(p); };
-    terrain.generate(seed);
-    report(0.35f);
-    renderer.uploadTerrain(terrain);
-    report(0.7f);
-    world = World{};
-    rng.gen.seed(seed);
-    setupWorld(world, terrain, rng);
-    report(0.9f);
-}
-
-// Puts the camera on the tile under the lowest-numbered unit, so the game starts there
-void focusCameraOnFirstUnit(World& w, Camera& cam) {
-    Entity first = NULL_ENTITY;
-    for (Entity u : w.view<Unit, Transform, Commandable>()) {
-        if (first == NULL_ENTITY || u < first) first = u;
+        issueMoveOrder(w, t, selectedUnits(w), tile, onDoor);
     }
-    if (first == NULL_ENTITY) return;
 
-    const Transform* t = w.get<Transform>(first);
-    cam.focusX = std::floor(t->x) + 0.5f;
-    cam.focusY = t->y;
-    cam.focusZ = std::floor(t->z) + 0.5f;
-    cam.clampState();
-}
+    // Draws one loading frame and keeps the window responsive while the level loads
+    void loadingFrame(SDL_Window* window, Renderer& renderer, float progress) {
+        SDL_PumpEvents();
+        int winW, winH;
+        SDL_GetWindowSizeInPixels(window, &winW, &winH);
+        renderer.drawLoadingScreen(progress, winW, winH);
+        SDL_GL_SwapWindow(window);
+    }
+
+    // Builds a fresh level: new terrain, new entities. Used at startup and on restart.
+    // progress, if given, is called as the level loads (0..1), for the loading screen.
+    void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed,
+        const std::function<void(float)>& progress = {}) {
+        auto report = [&](float p) { if (progress) progress(p); };
+        terrain.generate(seed);
+        report(0.35f);
+        renderer.uploadTerrain(terrain);
+        report(0.7f);
+        world = World{};
+        rng.gen.seed(seed);
+        setupWorld(world, terrain, rng);
+        report(0.9f);
+    }
+
+    // Puts the camera on the tile under the lowest-numbered unit, so the game starts there
+    void focusCameraOnFirstUnit(World& w, Camera& cam) {
+        Entity first = NULL_ENTITY;
+        for (Entity u : w.view<Unit, Transform, Commandable>()) {
+            if (first == NULL_ENTITY || u < first) first = u;
+        }
+        if (first == NULL_ENTITY) return;
+
+        const Transform* t = w.get<Transform>(first);
+        cam.focusX = std::floor(t->x) + 0.5f;
+        cam.focusY = t->y;
+        cam.focusZ = std::floor(t->z) + 0.5f;
+        cam.clampState();
+    }
 
 } // namespace
 
@@ -205,7 +208,7 @@ int main(int, char**) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     SDL_Window* window = SDL_CreateWindow("RTS", 1280, 720,
-                                          SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE);
+        SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE);
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, ctx);
     SDL_GL_SetSwapInterval(1);
@@ -227,7 +230,7 @@ int main(int, char**) {
     World world;
     Rng rng;
     startLevel(world, terrain, renderer, rng, (unsigned)std::time(nullptr),
-               [&](float p) { loadingFrame(window, renderer, 0.8f + 0.2f * p); });
+        [&](float p) { loadingFrame(window, renderer, 0.8f + 0.2f * p); });
     loadingFrame(window, renderer, 1.0f);
 
     GameState gs;
@@ -278,12 +281,14 @@ int main(int, char**) {
                     pressX = e.button.x;
                     pressY = e.button.y;
                     sel.dragging = false;
-                } else if (e.button.button == SDL_BUTTON_MIDDLE) {
+                }
+                else if (e.button.button == SDL_BUTTON_MIDDLE) {
                     // Pressing alone changes nothing. Dragging orbits around the current focus.
                     middleDown = true;
                     lastX = e.button.x;
                     lastY = e.button.y;
-                } else if (e.button.button == SDL_BUTTON_RIGHT) {
+                }
+                else if (e.button.button == SDL_BUTTON_RIGHT) {
                     rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH);
                 }
                 break;
@@ -294,7 +299,8 @@ int main(int, char**) {
                     bool additive = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
                     if (sel.dragging) {
                         boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive);
-                    } else {
+                    }
+                    else {
                         clickSelect(world, terrain, cam, e.button.x, e.button.y, winW, winH, additive);
                     }
                     sel.dragging = false;
@@ -328,7 +334,7 @@ int main(int, char**) {
         lastTicks = now;
         if (dt > 0.25f) dt = 0.25f;
 
-        // ---- Camera: keyboard panning and edge scrolling ----
+        // ---- Camera: keyboard panning and (optional) edge scrolling ----
         const bool* keys = SDL_GetKeyboardState(nullptr);
         float right = 0.0f, forward = 0.0f;
         if (keys[SDL_SCANCODE_D]) right += 1.0f;
@@ -336,7 +342,7 @@ int main(int, char**) {
         if (keys[SDL_SCANCODE_W]) forward += 1.0f;
         if (keys[SDL_SCANCODE_S]) forward -= 1.0f;
 
-        if (!leftDown && !middleDown) {
+        if (EDGE_SCROLL && !leftDown && !middleDown) {
             float mx, my;
             SDL_GetMouseState(&mx, &my);
             if (mx < 6.0f) right -= 1.0f;
@@ -373,16 +379,18 @@ int main(int, char**) {
             overlayMs += dt * 1000.0f;
             if (overlayMs >= OVERLAY_HOLD_MS + OVERLAY_FADE_MS) {
                 overlayOn = false;
-            } else if (overlayMs < OVERLAY_HOLD_MS) {
+            }
+            else if (overlayMs < OVERLAY_HOLD_MS) {
                 overlayAlpha = 1.0f;
-            } else {
+            }
+            else {
                 overlayAlpha = 1.0f - (overlayMs - OVERLAY_HOLD_MS) / OVERLAY_FADE_MS;
             }
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering ----
         std::string title = "RTS   Keys " + std::to_string(gs.keysCollected) + "/" + std::to_string(KEY_COUNT)
-                          + "   Entered " + std::to_string(gs.unitsEntered) + "/" + std::to_string(UNIT_COUNT);
+            + "   Entered " + std::to_string(gs.unitsEntered) + "/" + std::to_string(UNIT_COUNT);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;
