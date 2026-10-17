@@ -19,6 +19,7 @@
 #include "ecs.h"
 #include "renderer.h"
 #include "resources.h"
+#include "pak.h"
 #include "savegame.h"
 #include "settings.h"
 #include "systems.h"
@@ -543,12 +544,17 @@ int main(int, char**) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return 1;
     }
-    TTF_Font* font = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
-    TTF_Font* hudFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 22.0f);
-    TTF_Font* uiFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
-    TTF_Font* listFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);   // save list rows
-    if (!font || !hudFont || !uiFont) {
-        SDL_Log("Could not open font: %s", SDL_GetError());
+    // Every asset comes from data.pak next to the executable. Nothing is read from loose files.
+    if (!pakOpen("data.pak")) {
+        SDL_Log("Could not open data.pak. It must sit next to the game executable.");
+        return 1;
+    }
+    TTF_Font* font = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
+    TTF_Font* hudFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 22.0f);
+    TTF_Font* uiFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
+    TTF_Font* listFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);   // save list rows
+    if (!font || !hudFont || !uiFont || !listFont) {
+        SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
         return 1;
     }
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(rts_game)
+project(koboldgame)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,21 +24,27 @@ FetchContent_Declare(tinygltf
     GIT_TAG v2.9.3)
 FetchContent_MakeAvailable(tinygltf)
 
-add_executable(rts_game
+add_executable(koboldgame
     src/main.cpp
     src/renderer.cpp
     src/systems.cpp
     src/terrain.cpp
     src/model.cpp
+    src/pak.cpp
+    src/app.rc          # embeds the exe icon (src/app.ico) on Windows
 )
 
-target_include_directories(rts_game PRIVATE
+# Packs data/ into data.pak. Built as a normal C++ target so it works on any machine that builds the game.
+add_executable(pack_data tools/pack_data.cpp)
+set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tools")
+
+target_include_directories(koboldgame PRIVATE
     src
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
 )
 
-target_link_libraries(rts_game PRIVATE
+target_link_libraries(koboldgame PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     SDL3_image::SDL3_image
@@ -46,8 +52,10 @@ target_link_libraries(rts_game PRIVATE
     GLEW::GLEW
 )
 
-# Copies the whole data/ folder (fonts, sprites, models) next to the executable
-add_custom_command(TARGET rts_game POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:rts_game>/data"
+# Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
+# The game reads only this file, so the loose data/ folder is not copied.
+add_dependencies(koboldgame pack_data)
+add_custom_command(TARGET koboldgame POST_BUILD
+    COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldgame>/data.pak"
+    COMMENT "Packing data/ into data.pak"
 )

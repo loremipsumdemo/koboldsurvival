@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "pak.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cmath>
@@ -219,7 +220,7 @@ TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color) {
 
 // Loads a PNG (or any image SDL_image understands) into a texture
 TextTex loadImage(const char* path, bool repeatHorizontally) {
-    SDL_Surface* s = IMG_Load(path);
+    SDL_Surface* s = pakImage(path);
     if (!s) {
         SDL_Log("Could not load %s: %s", path, SDL_GetError());
         return {};
@@ -289,10 +290,10 @@ GLuint loadSkyboxFaces(const char* dir) {
 
     for (int f = 0; f < 6; ++f) {
         std::string path = std::string(dir) + "/" + names[f] + ".jpg";
-        SDL_Surface* s = IMG_Load(path.c_str());
+        SDL_Surface* s = pakImage(path);
         if (!s) {
             path = std::string(dir) + "/" + names[f] + ".png";
-            s = IMG_Load(path.c_str());
+            s = pakImage(path);
         }
         if (!s) {
             SDL_Log("Could not load skybox face %s/%s: %s", dir, names[f], SDL_GetError());

@@ -1,4 +1,5 @@
 #include "model.h"
+#include "pak.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstdint>
@@ -75,7 +76,14 @@ bool loadGLBModel(const char* path, Model& m) {
     tinygltf::Model gltf;
     tinygltf::TinyGLTF loader;
     std::string err, warn;
-    if (!loader.LoadBinaryFromFile(&gltf, &err, &warn, path)) {
+
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(path, bytes, size)) {
+        SDL_Log("Not in data.pak: %s", path);
+        return false;
+    }
+    if (!loader.LoadBinaryFromMemory(&gltf, &err, &warn, bytes, (unsigned int)size)) {
         SDL_Log("Could not load %s: %s", path, err.c_str());
         return false;
     }
