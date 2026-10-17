@@ -266,26 +266,11 @@ void main() {
 }
 )";
 
-// Loads a skybox laid out as a horizontal cross: 4 columns by 3 rows of square faces.
-//           col 0  col 1  col 2  col 3
-//   row 0      .    +Y      .      .
-//   row 1     -X    -Z     +X     +Z
-//   row 2      .    -Y      .      .
-// Reading the middle row left to right: left, front, right, back (turning right).
-GLuint loadSkyboxCross(const char* path) {
-    SDL_Surface* s = IMG_Load(path);
-    if (!s) {
-        SDL_Log("Could not load %s: %s", path, SDL_GetError());
-        return 0;
-    }
-    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-    SDL_DestroySurface(s);
-    if (!conv) return 0;
-
-    const int fw = conv->w / 4, fh = conv->h / 3;
-
-    // Cell (column, row) for each face, in GL's cube map face order
-    const int cells[6][2] = { {2, 1}, {0, 1}, {1, 0}, {1, 2}, {3, 1}, {1, 1} };
+// Loads a skybox from six separate images in a folder, named posx, negx, posy, negy, posz, negz
+// (.jpg or .png). Each image becomes one face of the cube map, in GL's face order.
+// Returns 0 if any face fails to load.
+GLuint loadSkyboxFaces(const char* dir) {
+    const char* names[6] = { "posx", "negx", "posy", "negy", "posz", "negz" };
     const GLenum targets[6] = {
         GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
         GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
@@ -302,27 +287,40 @@ GLuint loadSkyboxCross(const char* path) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    std::vector<unsigned char> face((size_t)fw * fh * 4);
     for (int f = 0; f < 6; ++f) {
-        const int x0 = cells[f][0] * fw, y0 = cells[f][1] * fh;
-        for (int y = 0; y < fh; ++y) {
-            const unsigned char* src = (const unsigned char*)conv->pixels
-                                     + (size_t)(y0 + y) * conv->pitch + (size_t)x0 * 4;
-            std::memcpy(&face[(size_t)y * fw * 4], src, (size_t)fw * 4);
+        std::string path = std::string(dir) + "/" + names[f] + ".jpg";
+        SDL_Surface* s = IMG_Load(path.c_str());
+        if (!s) {
+            path = std::string(dir) + "/" + names[f] + ".png";
+            s = IMG_Load(path.c_str());
         }
-        glTexImage2D(targets[f], 0, GL_RGBA8, fw, fh, 0, GL_RGBA, GL_UNSIGNED_BYTE, face.data());
-    }
+        if (!s) {
+            SDL_Log("Could not load skybox face %s/%s: %s", dir, names[f], SDL_GetError());
+            glDeleteTextures(1, &tex);
+            return 0;
+        }
 
-    SDL_DestroySurface(conv);
+        SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
+        SDL_DestroySurface(s);
+        if (!conv) {
+            glDeleteTextures(1, &tex);
+            return 0;
+        }
+
+        glTexImage2D(targets[f], 0, GL_RGBA8, conv->w, conv->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
+        SDL_DestroySurface(conv);
+    }
     return tex;
 }
 
 } // namespace
 
-bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, const std::function<void(float)>& progress) {
+bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
+                    const std::function<void(float)>& progress) {
     auto report = [&](float p) { if (progress) progress(p); };
     font_ = font;
     hudFont_ = hudFont;
+    uiFont_ = uiFont;
 
     colorProgram_ = linkProgram(COLOR_VS, COLOR_FS);
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
@@ -349,6 +347,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, const std::function<void(
 
     // Images and models. The overlay loads first, so the loading screen can show it.
     overlay_ = loadImage("assets/background/overlay_01.png", false);
+    title_ = loadImage("assets/ui/title.png", false);
     report(0.05f);
     unitSprites_.reserve(38);
     for (int i = 1; i <= 38; ++i) {
@@ -360,7 +359,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, const std::function<void(
     keySprite_   = loadImage("assets/environment/key.png", false);
     doorSprite_  = loadImage("assets/environment/door.png", false);
     report(0.82f);
-    skyCube_ = loadSkyboxCross("assets/skybox/01.png");
+    skyCube_ = loadSkyboxFaces("assets/skybox/01");
     report(0.86f);
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
@@ -407,6 +406,16 @@ void Renderer::shutdown() {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
     hudLines_.clear();
+    for (auto& entry : uiText_) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+    }
+    uiText_.clear();
+    for (auto& entry : listText_) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+    }
+    listText_.clear();
+    if (title_.tex) glDeleteTextures(1, &title_.tex);
+    title_.tex = 0;
     destroyModel(wagon_);
 
     glDeleteTextures(1, &skyCube_);
@@ -572,6 +581,177 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH) {
     glEnable(GL_DEPTH_TEST);
 }
 
+// ---- Menus ----
+
+void Renderer::beginUi(int winW, int winH) {
+    uiW_ = winW;
+    uiH_ = winH;
+    glViewport(0, 0, winW, winH);
+    glDisable(GL_DEPTH_TEST);
+    pixels_ = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
+}
+
+void Renderer::endUi() {
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::drawTitleBackground() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (!title_.tex) return;
+
+    // Cover the screen, keeping the aspect ratio and cropping whatever overflows
+    float screenAspect = (float)uiW_ / (float)uiH_;
+    float wd, h;
+    if (title_.aspect > screenAspect) {
+        h = (float)uiH_;
+        wd = h * title_.aspect;
+    } else {
+        wd = (float)uiW_;
+        h = wd / title_.aspect;
+    }
+    float x0 = uiW_ * 0.5f - wd * 0.5f, x1 = x0 + wd;
+    float y0 = uiH_ * 0.5f - h * 0.5f,  y1 = y0 + h;
+    float v[4 * 5] = {
+        x0, y1, 0.0f, 0.0f, 1.0f,
+        x1, y1, 0.0f, 1.0f, 1.0f,
+        x1, y0, 0.0f, 1.0f, 0.0f,
+        x0, y0, 0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(title_.tex, v, WHITE);
+}
+
+void Renderer::drawRect(const Rect& r, RGBA c) {
+    Batch b;
+    b.quad({ r.x, r.y, 0 }, { r.x + r.w, r.y, 0 }, { r.x + r.w, r.y + r.h, 0 }, { r.x, r.y + r.h, 0 }, c);
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+}
+
+Renderer::HudLine& Renderer::uiLine(const std::string& s) {
+    auto it = uiText_.find(s);
+    if (it != uiText_.end()) return it->second;
+
+    HudLine hl;
+    hl.text = s;
+    int tw = 0, th = 0;
+    TTF_GetStringSize(uiFont_, s.c_str(), s.size(), &tw, &th);
+    if (s.find_first_not_of(' ') == std::string::npos) {
+        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
+        TTF_GetStringSize(uiFont_, "Ag", 2, &tw, &th);
+        hl.w = 0.0f;
+        hl.h = (float)th;
+        return uiText_[s] = hl;
+    }
+    hl.tex = makeGlyphTexture(uiFont_, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
+    hl.w = (float)tw;
+    hl.h = (float)th;
+    return uiText_[s] = hl;
+}
+
+float Renderer::uiTextWidth(const std::string& s) {
+    return uiLine(s).w;
+}
+
+void Renderer::drawUiText(const std::string& s, float x, float y, RGBA tint) {
+    HudLine& hl = uiLine(s);
+    if (!hl.tex.tex) return;
+    float v[4 * 5] = {
+        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
+        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
+        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
+        x,         y,        0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(hl.tex.tex, v, tint);
+}
+
+void Renderer::drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint) {
+    drawUiText(s, cx - uiTextWidth(s) * 0.5f, y, tint);
+}
+
+void Renderer::setListFont(TTF_Font* font) {
+    // Textures made with the old font would be stale, so drop them
+    for (auto& entry : listText_) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+    }
+    listText_.clear();
+    listFont_ = font;
+}
+
+Renderer::HudLine& Renderer::listLine(const std::string& s) {
+    auto it = listText_.find(s);
+    if (it != listText_.end()) return it->second;
+
+    HudLine hl;
+    hl.text = s;
+    int tw = 0, th = 0;
+    TTF_GetStringSize(listFont_, s.c_str(), s.size(), &tw, &th);
+    if (s.find_first_not_of(' ') == std::string::npos) {
+        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
+        TTF_GetStringSize(listFont_, "Ag", 2, &tw, &th);
+        hl.w = 0.0f;
+        hl.h = (float)th;
+        return listText_[s] = hl;
+    }
+    hl.tex = makeGlyphTexture(listFont_, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
+    hl.w = (float)tw;
+    hl.h = (float)th;
+    return listText_[s] = hl;
+}
+
+float Renderer::listTextHeight(const std::string& s) {
+    return listLine(s).h;
+}
+
+void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
+    drawRect(r, RGBA{ 0.14f, 0.17f, 0.22f, 0.90f });
+    if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, RGBA{ 0.75f, 0.20f, 0.20f, 0.95f });
+    float textH = uiLine(label).h;
+    drawUiText(label, r.x + (r.w - uiTextWidth(label)) * 0.5f, r.y + (r.h - textH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void Renderer::drawListButton(const Rect& r, const std::string& label, bool hovered) {
+    drawRect(r, hovered ? RGBA{ 0.60f, 0.18f, 0.18f, 0.95f } : RGBA{ 0.34f, 0.12f, 0.12f, 0.90f });
+    const float tw = listLine(label).w;
+    const float th = listTextHeight(label);
+    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
+    if (!listFont_) return;
+    HudLine& hl = listLine(s);
+    if (!hl.tex.tex) return;
+    float v[4 * 5] = {
+        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
+        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
+        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
+        x,         y,        0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(hl.tex.tex, v, tint);
+}
+
+void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
+    RGBA bg = !enabled ? RGBA{ 0.10f, 0.10f, 0.12f, 0.70f }
+            : hovered  ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
+                       : RGBA{ 0.14f, 0.17f, 0.22f, 0.90f };
+    drawRect(r, bg);
+
+    RGBA fg = enabled ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
+    float textH = uiLine(label).h;
+    drawUiText(label, r.x + (r.w - uiTextWidth(label)) * 0.5f, r.y + (r.h - textH) * 0.5f, fg);
+}
+
 // The sprite for a unit, or the fallback symbol if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
     const UnitSprite* us = w.get<UnitSprite>(e);
@@ -679,6 +859,67 @@ void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH
 
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH) {
+    if (alpha <= 0.0f) return;
+
+    // Sits on the ground at the exact point the camera orbits around
+    const float cx = cam.focusX, cz = cam.focusZ;
+    const float cy = t.heightAt(cx, cz) + 0.03f;
+    const float outer = 0.5f, inner = 0.44f;     // about one tile across
+    const int segments = 48;
+    const float twoPi = 6.2831853f;
+
+    Batch ring;
+    RGBA col{ 0.95f, 0.95f, 1.0f, 0.9f * alpha };
+    for (int i = 0; i < segments; ++i) {
+        float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
+        V3 o0{ cx + outer * std::cos(a0), cy, cz + outer * std::sin(a0) };
+        V3 o1{ cx + outer * std::cos(a1), cy, cz + outer * std::sin(a1) };
+        V3 i0{ cx + inner * std::cos(a0), cy, cz + inner * std::sin(a0) };
+        V3 i1{ cx + inner * std::cos(a1), cy, cz + inner * std::sin(a1) };
+        ring.quad(o0, o1, i1, i0, col);
+    }
+
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, ring.v.size() * sizeof(Vertex), ring.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)ring.v.size());
+}
+
+void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha,
+                                 int winW, int winH) {
+    if (alpha <= 0.0f) return;
+
+    // An eight-faced crystal: a point at the top and bottom, with a ring of four corners between.
+    // It floats a little above the ground, so it reads as a marker rather than part of the terrain.
+    const float gy = t.heightAt(x, z);
+    const float cy = gy + 0.55f, halfH = 0.45f, r = 0.22f;
+    const V3 top{ x, cy + halfH, z };
+    const V3 bottom{ x, cy - halfH, z };
+    const V3 corner[4] = { V3{ x + r, cy, z }, V3{ x, cy, z + r }, V3{ x - r, cy, z }, V3{ x, cy, z - r } };
+
+    Batch crystal;
+    for (int i = 0; i < 4; ++i) {
+        const V3& a = corner[i];
+        const V3& b = corner[(i + 1) % 4];
+        // Alternate brightness between faces so the facets read as separate planes
+        const float shade = (i % 2 == 0) ? 1.0f : 0.8f;
+        RGBA upper{ 0.6f * shade, 0.95f * shade, 1.0f, 0.95f * alpha };
+        RGBA lower{ 0.3f * shade, 0.65f * shade, 0.95f, 0.95f * alpha };
+        crystal.tri(top, a, b, upper);
+        crystal.tri(bottom, b, a, lower);
+    }
+
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, crystal.v.size() * sizeof(Vertex), crystal.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)crystal.v.size());
 }
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
