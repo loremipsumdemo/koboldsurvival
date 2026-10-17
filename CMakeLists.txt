@@ -46,8 +46,8 @@ target_link_libraries(rts_game PRIVATE
     GLEW::GLEW
 )
 
-# Copies the whole assets/ folder (fonts, sprites, models) next to the executable
+# Copies the whole data/ folder (fonts, sprites, models) next to the executable
 add_custom_command(TARGET rts_game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:rts_game>/assets"
+        "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:rts_game>/data"
 )

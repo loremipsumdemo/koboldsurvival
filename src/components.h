@@ -28,7 +28,7 @@ struct Name {
     std::string text = "Unnamed Unit";
 };
 
-// Which unit image this unit uses: assets/unit/01.png .. 38.png
+// Which unit image this unit uses: data/unit/01.png .. 38.png
 struct UnitSprite {
     int id = 1;
 };

@@ -543,10 +543,10 @@ int main(int, char**) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return 1;
     }
-    TTF_Font* font = TTF_OpenFont("assets/font/NotoSans_Condensed-Bold.ttf", 64.0f);
-    TTF_Font* hudFont = TTF_OpenFont("assets/font/NotoSans_Condensed-Bold.ttf", 22.0f);
-    TTF_Font* uiFont = TTF_OpenFont("assets/font/NotoSans_Condensed-Bold.ttf", 30.0f);
-    TTF_Font* listFont = TTF_OpenFont("assets/font/NotoSans_Condensed-Bold.ttf", 20.0f);   // save list rows
+    TTF_Font* font = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
+    TTF_Font* hudFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 22.0f);
+    TTF_Font* uiFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
+    TTF_Font* listFont = TTF_OpenFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);   // save list rows
     if (!font || !hudFont || !uiFont) {
         SDL_Log("Could not open font: %s", SDL_GetError());
         return 1;
@@ -1104,10 +1104,10 @@ int main(int, char**) {
             // Keyboard panning and (optional) edge scrolling
             const bool* keys = SDL_GetKeyboardState(nullptr);
             float right = 0.0f, forward = 0.0f;
-            if (keys[SDL_SCANCODE_D]) right += 1.0f;
-            if (keys[SDL_SCANCODE_A]) right -= 1.0f;
-            if (keys[SDL_SCANCODE_W]) forward += 1.0f;
-            if (keys[SDL_SCANCODE_S]) forward -= 1.0f;
+            if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) right += 1.0f;
+            if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) right -= 1.0f;
+            if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) forward += 1.0f;
+            if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) forward -= 1.0f;
 
             if (settings.edgeScroll && !leftDown && !middleDown) {
                 float mx, my;
@@ -1118,7 +1118,9 @@ int main(int, char**) {
                 if (my > winH - 6.0f) forward -= 1.0f;
             }
 
-            float panSpeed = cam.distance * 0.9f * dt;
+            // Holding shift pans twice as fast
+            const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+            float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
             cam.pan(right * panSpeed, forward * panSpeed);
             cam.updateClearance(terrain);
 

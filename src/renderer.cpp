@@ -346,20 +346,20 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     setupGlyphLayout(glyphVao_, glyphVbo_);
 
     // Images and models. The overlay loads first, so the loading screen can show it.
-    overlay_ = loadImage("assets/background/overlay_01.png", false);
-    title_ = loadImage("assets/ui/title.png", false);
+    overlay_ = loadImage("data/background/overlay_01.png", false);
+    title_ = loadImage("data/ui/title.png", false);
     report(0.05f);
     unitSprites_.reserve(38);
     for (int i = 1; i <= 38; ++i) {
         char path[64];
-        std::snprintf(path, sizeof(path), "assets/unit/%02d.png", i);
+        std::snprintf(path, sizeof(path), "data/unit/%02d.png", i);
         unitSprites_.push_back(loadImage(path, false));
         report(0.05f + 0.75f * (float)i / 38.0f);
     }
-    keySprite_   = loadImage("assets/environment/key.png", false);
-    doorSprite_  = loadImage("assets/environment/door.png", false);
+    keySprite_   = loadImage("data/environment/key.png", false);
+    doorSprite_  = loadImage("data/environment/door.png", false);
     report(0.82f);
-    skyCube_ = loadSkyboxFaces("assets/skybox/01");
+    skyCube_ = loadSkyboxFaces("data/skybox/01");
     report(0.86f);
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
@@ -380,7 +380,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     doorFallback_ = makeGlyphTexture(font, "D", SDL_Color{ 230, 80, 60, 255 });
     report(0.9f);
 
-    if (!loadGLBModel("assets/3d/wagon.glb", wagon_)) {
+    if (!loadGLBModel("data/3d/wagon.glb", wagon_)) {
         SDL_Log("Wagon model unavailable, the wagon will not be drawn");
     }
     report(0.97f);

@@ -11,6 +11,7 @@ struct Camera {
     // Pitch stops at 95% of straight up or down, so the view never goes directly over or under
     static constexpr float MAX_PITCH = 0.95f * (PI_F * 0.5f);
     static constexpr float MIN_CLEARANCE = 0.6f;   // how far above the ground the eye must stay
+    static constexpr float FOCUS_HEIGHT = 0.5f;    // the focus point sits this far above the ground
 
     float focusX = 13.0f, focusY = 0.0f, focusZ = 13.0f;
     float yaw = 0.8f;
@@ -36,6 +37,8 @@ struct Camera {
     // The lift is set to exactly what the eye needs, with no easing, so the camera
     // reaches its clear position at once and never lags behind a move.
     void updateClearance(const Terrain& t) {
+        // Keep the focus half a tile above the ground under it, so the camera follows the terrain
+        focusY = t.heightAt(focusX, focusZ) + FOCUS_HEIGHT;
         float ex = focusX + distance * std::sin(yaw) * std::cos(pitch);
         float ey = focusY + distance * std::sin(pitch);
         float ez = focusZ + distance * std::cos(yaw) * std::cos(pitch);
