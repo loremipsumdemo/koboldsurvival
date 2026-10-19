@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QPushButton, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from worldgen import BIOME_RGB_F, BIOMES, World, load_world
+from worldgen import BIOME_RGB_F, BIOMES, GENERATOR_VERSION, World, load_world
 
 EYE_R = 1.6
 GRAVITY = 24.0
@@ -285,13 +285,13 @@ class Generator(QThread):
 
     def run(self):
         try:
-            settings, _o, _r, sea, _rt, _d = load_world(Path(self.path))
+            settings, _o, _r, sea, _rt, _d, _lr, generator = load_world(Path(self.path))
             world = World(settings)
             world.sea_level = sea
         except Exception as exc:
             self.failed.emit(str(exc))
             return
-        self.initialized.emit({"settings": settings, "sea": sea})
+        self.initialized.emit({"settings": settings, "sea": sea, "generator": generator})
         while True:
             with self._cond:
                 while not self._halt and self._next_locked() is None:
@@ -332,6 +332,7 @@ class Streamer(QObject):
     progress = pyqtSignal(int, int)
     spawn_ready = pyqtSignal()
     failed = pyqtSignal(str)
+    version_mismatch = pyqtSignal(str, str)
 
     def __init__(self, path):
         super().__init__()
@@ -350,6 +351,8 @@ class Streamer(QObject):
         return (c, c)
 
     def on_initialized(self, info):
+        if info["generator"] != GENERATOR_VERSION:
+            self.version_mismatch.emit(str(info["generator"]), GENERATOR_VERSION)
         self.terrain = Terrain(info["settings"], info["sea"])
         cx, cy = self.center_key()
         K = self.terrain.K
@@ -784,11 +787,18 @@ class MainWindow(QMainWindow):
         self.streamer.progress.connect(self.loading.set_progress)
         self.streamer.spawn_ready.connect(self._show_world)
         self.streamer.failed.connect(self._failed)
+        self.streamer.version_mismatch.connect(self._warn_version)
 
     def _stop_streamer(self):
         if self.streamer is not None:
             self.streamer.shutdown()
             self.streamer = None
+
+    def _warn_version(self, saved, current):
+        QMessageBox.warning(
+            self, "Generator version differs",
+            f"This world was saved by generator version {saved}, but this build is {current}. "
+            "The terrain may not match the saved preview.")
 
     def _failed(self, msg):
         self._stop_streamer()

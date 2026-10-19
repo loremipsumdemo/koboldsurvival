@@ -4,6 +4,7 @@ import hashlib
 import heapq
 import json
 import math
+import os
 import pickle
 import random
 import re
@@ -11,6 +12,7 @@ import sys
 import time
 import traceback
 from collections import OrderedDict
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -20,7 +22,7 @@ from PyQt6.QtGui import (
     QAction, QBrush, QColor, QFont, QImage, QPainter, QPen, QPixmap,
 )
 from PyQt6.QtWidgets import (
-    QApplication, QComboBox, QDoubleSpinBox, QFileDialog, QFormLayout,
+    QApplication, QComboBox, QProgressDialog, QDoubleSpinBox, QFileDialog, QFormLayout,
     QFrame, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QMainWindow,
     QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSlider, QSpinBox,
     QStackedWidget, QTabWidget, QVBoxLayout, QWidget,
@@ -40,6 +42,11 @@ sys.excepthook = excepthook
 
 def clamp(v, a, b):
     return a if v < a else (b if v > b else v)
+
+def lerp_arr(a, b, t):
+    a = np.asarray(a, np.float64); b = np.asarray(b, np.float64)
+    return a + (b - a) * t
+
 
 def lerp(a, b, t):
     return a + (b - a) * t
@@ -97,7 +104,7 @@ def ridged(x, y, seed, oct=6):
 BIOMES = [
     ("Deep Ocean", (12, 30, 60)),
     ("Ocean",      (30, 70, 115)),
-    ("Shore",      (198, 186, 140)),
+    ("Beach",      (198, 186, 140)),
     ("Snow",       (238, 243, 250)),
     ("Tundra",     (150, 160, 158)),
     ("Taiga",      (60, 96, 74)),
@@ -107,6 +114,9 @@ BIOMES = [
     ("Forest",     (64, 112, 66)),
     ("Rainforest", (34, 90, 58)),
     ("Mountain",   (126, 120, 112)),
+    ("Lake",       (58, 118, 168)),
+    ("Delta",      (132, 146, 84)),
+    ("Cliff",      (92, 88, 84)),
 ]
 BIOME_RGB = np.array([b[1] for b in BIOMES], dtype=np.float32)
 BIOME_RGB_F = BIOME_RGB.astype(np.float64)
@@ -164,6 +174,11 @@ class Settings:
     frequency: float = 1.0
     relief: float = 1.0
     tectonic: float = 0.0
+    land_gamma: float = 1.0
+    geology: float = 0.5
+    detail: float = 0.5
+    mask_strength: float = 0.5
+    biome_blend: float = 0.5
 
     @property
     def world_w(self):
@@ -198,7 +213,9 @@ class Settings:
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
 MAGIC = b"WGLB"
-VERSION = 1
+VERSION = 2
+GENERATOR_VERSION = "2.1"
+VIEW_MODES = [("biome", "Biome"), ("height", "Height"), ("temperature", "Temperature"), ("moisture", "Moisture")]
 
 def save_world(path: Path, settings: Settings, world: "World"):
     meta = {
@@ -208,11 +225,13 @@ def save_world(path: Path, settings: Settings, world: "World"):
         "sea_level": world.sea_level,
         "river_threshold": world.river_threshold,
         "done": world.done,
+        "generator": GENERATOR_VERSION,
     }
     payload = {
         "meta": meta,
         "overview": world.overview,
         "chunk_ready": world.chunk_ready,
+        "lowres": world.lowres,
     }
     with open(path, "wb") as f:
         pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -223,7 +242,7 @@ def load_world(path: Path):
     meta = payload["meta"]
     if meta.get("magic") != MAGIC.decode("ascii"):
         raise ValueError("Not a Worldgen Lab file.")
-    if meta.get("version") != VERSION:
+    if meta.get("version") not in (1, 2):
         raise ValueError(f"Unsupported version: {meta.get('version')}")
     settings = Settings.from_dict(meta["settings"])
     return (
@@ -233,6 +252,8 @@ def load_world(path: Path):
         float(meta["sea_level"]),
         int(meta["river_threshold"]),
         int(meta["done"]),
+        payload.get("lowres"),
+        meta.get("generator", "1.0"),
     )
 
 def build_sampler(method: str, seed: int):
@@ -371,6 +392,63 @@ def build_sampler(method: str, seed: int):
 def river_threshold_for(s: "Settings"):
     return int(round(RIVER_BASE * (s.chunk * s.chunk) / 65536))
 
+def soft_unit(v, knee=0.94):
+    v = np.asarray(v, np.float64)
+    out = v.copy()
+    hi = v > knee
+    lo = v < 1.0 - knee
+    out[hi] = knee + (1.0 - knee) * np.tanh((v[hi] - knee) / (1.0 - knee))
+    out[lo] = (1.0 - knee) - (1.0 - knee) * np.tanh(((1.0 - knee) - v[lo]) / (1.0 - knee))
+    return out
+
+
+def _remap_wrap(base, S, p, lo, hi, a, gamma=1.0, tail=64):
+    S = np.asarray(S, np.float64)
+    edges = np.linspace(S[0], S[-1], 4097)
+    hist, _ = np.histogram(S, bins=edges)
+    cdf = (np.cumsum(hist) - hist / 2.0) / S.size
+    k = np.exp(-0.5 * (np.arange(-120, 121) / 40.0) ** 2)
+    k /= k.sum()
+    grid_q = np.maximum.accumulate(np.convolve(np.pad(cdf, 120, mode="edge"), k, mode="valid"))
+    S = (edges[1:] + edges[:-1]) / 2.0
+    top_dq = (grid_q[-1] - grid_q[-tail]) / max(1e-12, S[-1] - S[-tail])
+    bot_dq = (grid_q[tail - 1] - grid_q[0]) / max(1e-12, S[tail - 1] - S[0])
+    norm = 1.0 - np.exp(-a)
+
+    def sampler(fx, fy):
+        v = np.asarray(base(fx, fy), np.float64)
+        q = np.interp(v, S, grid_q)
+        q = np.where(v > S[-1], 1.0 + (v - S[-1]) * top_dq, q)
+        q = np.where(v < S[0], (v - S[0]) * bot_dq, q)
+        out = np.empty_like(q)
+        land = q > p
+        u = np.power(np.clip((q[land] - p) / max(1e-9, 1.0 - p), 0.0, None), gamma)
+        out[land] = p + (hi - p) * (1.0 - np.exp(-a * u)) / norm
+        sea = ~land
+        w = q[sea] / max(1e-9, p)
+        out[sea] = lo + (p - lo) * (1.0 - np.exp(-a * w)) / norm
+        return out
+    return sampler
+
+
+def _geology(S):
+    def hard(fx, fy):
+        n = fbm(np.asarray(fx, np.float64) * 5.0 + 3.3, np.asarray(fy, np.float64) * 5.0 + 1.7, S + 3131, 4)
+        return np.clip(0.5 + (n - 0.5) * 2.2, 0.0, 1.0)
+    return hard
+
+
+def _detail_wrap(base, S, hard, sea, amp, mask_k, geo):
+    def sampler(fx, fy):
+        v = np.asarray(base(fx, fy), np.float64)
+        n = fbm(np.asarray(fx, np.float64) * 14.0, np.asarray(fy, np.float64) * 14.0, S + 77, 4) - 0.5
+        rock = (1.0 - 0.5 * geo) + geo * hard(fx, fy)
+        hi = _smooth(0.0, 0.2, v - sea)
+        mask = (1.0 - mask_k) + mask_k * hi
+        return v + amp * n * rock * mask
+    return sampler
+
+
 def _smooth(e0, e1, x):
     t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
     return t * t * (3.0 - 2.0 * t)
@@ -378,8 +456,8 @@ def _smooth(e0, e1, x):
 def _sites(fx, fy, G, S):
     cx = np.floor(fx * G); cy = np.floor(fy * G)
     out = []
-    for oy in (-1, 0, 1):
-        for ox in (-1, 0, 1):
+    for oy in (-2, -1, 0, 1, 2):
+        for ox in (-2, -1, 0, 1, 2):
             gx = cx + ox; gy = cy + oy
             gxi = gx.astype(np.int64); gyi = gy.astype(np.int64)
             jx = (gx + hash2(gxi, gyi, S + 1)) / G
@@ -422,6 +500,33 @@ def _rank(X, land):
     return np.clip(np.searchsorted(vals, X) / vals.size, 0.0, 1.0)
 
 
+def _wind_moisture(E, land, lat):
+    R = E.shape[0]
+    decay = 0.012 + 0.07 * np.exp(-((lat - 0.33) / 0.09) ** 2)
+    row_lat = lat[:, 0]
+    east = (row_lat >= 0.33) & (row_lat < 0.66)
+    results = {}
+    for direction in (1, -1):
+        m = np.zeros(R)
+        prev = None
+        out = np.zeros((R, R))
+        cols = range(R) if direction == 1 else range(R - 1, -1, -1)
+        for i in cols:
+            e = E[:, i]
+            rise = np.zeros(R) if prev is None else np.clip(e - prev, 0.0, None)
+            m = np.where(land[:, i], m, 1.0)
+            rain = m * (1.0 - np.exp(-(4.0 * rise + 0.015)))
+            m = m - rain
+            out[:, i] = m
+            m = m * (1.0 - decay[:, i])
+            prev = e
+        results[direction] = out
+    return np.where(east[:, None], results[1], results[-1])
+
+
+CLIMATE_RES = 160
+
+
 def _climate_ranks(sampler, sea, S, R=96):
     c = (np.arange(R) + 0.5) / R
     FX, FY = np.meshgrid(c, c)
@@ -429,11 +534,48 @@ def _climate_ranks(sampler, sea, S, R=96):
     land = E >= sea
     lat = np.abs(FY * 2 - 1)
     alt = np.clip(E - sea, 0.0, None)
-    dn = _ocean_dist(land) / R
-    T0 = 1 - lat ** 1.25 * 0.9 - alt * 0.8 + (fbm(FX * 3, FY * 3, S + 404, 3) - 0.5) * 0.12
-    M0 = (0.85 * np.exp(-dn * 5) + 0.5 * (fbm(FX * 3.5 + 13.7, FY * 3.5 + 7.1, S + 909, 4) - 0.5)
-          - 0.7 * np.exp(-((lat - 0.35) / 0.12) ** 2))
+    wind = _wind_moisture(E, land, lat)
+    T0 = (1 - lat ** 1.25 * 0.85 - alt * 1.0 - 0.3 * _smooth(0.78, 0.95, lat)
+          + (fbm(FX * 3, FY * 3, S + 404, 3) - 0.5) * 0.12)
+    M0 = wind + (fbm(FX * 3.5 + 13.7, FY * 3.5 + 7.1, S + 909, 4) - 0.5) * 0.12
     return _rank(T0, land), _rank(M0, land), _rank(E, land)
+
+
+def _shelf_wrap(base, sea, grid):
+    def sampler(fx, fy):
+        v = np.asarray(base(fx, fy), np.float64)
+        f = _bilerp(grid, fx, fy)
+        return np.where(v < sea, sea - (sea - v) * f, v)
+    return sampler
+
+
+def build_ridges(s):
+    if float(s.shape_strength) <= 0.001:
+        return None
+    S = int(s.seed)
+    rnd = mulberry32(S * 97 + 41)
+    P = 14
+    px = np.array([0.05 + 0.9 * rnd() for _ in range(P)])
+    py = np.array([0.05 + 0.9 * rnd() for _ in range(P)])
+
+    def ridge(fx, fy):
+        fx = np.asarray(fx, np.float64); fy = np.asarray(fy, np.float64)
+        d1 = np.full(fx.shape, 9.0); d2 = np.full(fx.shape, 9.0)
+        for x, y in zip(px, py):
+            d = np.hypot(fx - x, fy - y)
+            d2 = np.where(d < d1, d1, np.minimum(d2, d))
+            d1 = np.minimum(d1, d)
+        b = np.exp(-((d2 - d1) * 16) ** 2)
+        return b * (0.55 + 0.45 * fbm(fx * 6, fy * 6, S + 4401, 3))
+    return ridge
+
+
+def _ocean_shelf_grid(sampler, sea, R=96):
+    c = (np.arange(R) + 0.5) / R
+    FX, FY = np.meshgrid(c, c)
+    land = np.asarray(sampler(FX, FY), np.float64) >= sea
+    dn = _ocean_dist(~land) / R
+    return 0.3 + 0.7 * np.clip(dn / 0.12, 0.0, 1.0)
 
 
 def _edge_wrap(base, edge):
@@ -442,7 +584,7 @@ def _edge_wrap(base, edge):
     def sampler(fx, fy):
         v = np.asarray(base(fx, fy), np.float64)
         d = np.minimum(np.minimum(fx, 1.0 - fx), np.minimum(fy, 1.0 - fy))
-        return np.clip(v * (1.0 - 0.98 * edge * (1.0 - _smooth(0.0, band, d))), 0.0, 1.0)
+        return soft_unit(v * (1.0 - 0.98 * edge * (1.0 - _smooth(0.0, band, d))))
     return sampler
 
 
@@ -514,7 +656,7 @@ class PlanetFields:
         S = int(s.seed)
         c = (np.arange(R) + 0.5) / R
         FX, FY = np.meshgrid(c, c)
-        E0 = np.clip(np.asarray(base(FX, FY), np.float64), 0.0, 1.0)
+        E0 = soft_unit(np.asarray(base(FX, FY), np.float64))
         rnd = mulberry32(S * 97 + 11)
         N = 16 + int(rnd() * 8)
         px = np.array([rnd() for _ in range(N)])
@@ -560,13 +702,16 @@ class PlanetFields:
         fault = shear * narrow * detail * 0.2
 
         self.delta = s.tectonic * (plate + collide + arc + island + rift + ridge_sea + fault)
-        E1 = np.clip(E0 + self.delta, 0.0, 1.0)
+        for _ in range(8):
+            P = np.pad(self.delta, 1, mode="edge")
+            self.delta = (P[:-2, 1:-1] + P[2:, 1:-1] + P[1:-1, :-2] + P[1:-1, 2:] + 4 * P[1:-1, 1:-1]) / 8.0
+        E1 = soft_unit(E0 + self.delta)
         srt = np.sort(E1.ravel())
         self.sea = float(srt[int(srt.size * s.sea_percentile)])
 
     def wrap(self, base):
         def sampler(fx, fy):
-            return np.clip(np.asarray(base(fx, fy), np.float64) + _bilerp(self.delta, fx, fy), 0.0, 1.0)
+            return soft_unit(np.asarray(base(fx, fy), np.float64) + _bilerp(self.delta, fx, fy))
         return sampler
 
 
@@ -584,10 +729,13 @@ class World:
         self.done = 0
         self.total = settings.total_chunks
         self._cache = OrderedDict()
+        self.lowres = {}
+        self.view_mode = "biome"
 
         raw = build_sampler(settings.method, settings.seed)
         shape = build_layout(settings)
-        self.sampler, self.sea_level = self._compute_baselines(raw, shape)
+        ridges = build_ridges(settings)
+        self.sampler, self.sea_level = self._compute_baselines(raw, shape, ridges)
         if planet_active(settings):
             planet = PlanetFields(settings, self.sampler)
             self.sampler = planet.wrap(self.sampler)
@@ -595,10 +743,23 @@ class World:
         edge = clamp(float(settings.edge_water), 0.0, 1.0)
         if edge > 0.001:
             self.sampler = _edge_wrap(self.sampler, edge)
+        self.hard_fn = _geology(int(settings.seed))
+        self.sampler = _detail_wrap(self.sampler, int(settings.seed), self.hard_fn, self.sea_level,
+                                    0.10 * float(settings.detail), float(settings.mask_strength),
+                                    float(settings.geology))
         self.sampler = _rim_wrap(self.sampler, self.sea_level, int(settings.seed))
-        self.climate_t, self.climate_m, self.climate_e = _climate_ranks(self.sampler, self.sea_level, int(settings.seed))
+        self.sampler = _shelf_wrap(self.sampler, self.sea_level, _ocean_shelf_grid(self.sampler, self.sea_level))
+        steps = 200
+        c = (np.arange(steps) + 0.5) / steps
+        FXr, FYr = np.meshgrid(c, c)
+        S = np.sort(np.asarray(self.sampler(FXr, FYr), np.float64).ravel())
+        self.sampler = _remap_wrap(self.sampler, S, float(settings.sea_percentile),
+                                   0.02, 0.90, 0.6 / max(0.25, float(settings.relief)),
+                                   gamma=float(settings.land_gamma))
+        self.sea_level = float(settings.sea_percentile)
+        self.climate_t, self.climate_m, self.climate_e = _climate_ranks(self.sampler, self.sea_level, int(settings.seed), R=CLIMATE_RES)
 
-    def _compute_baselines(self, raw, shape):
+    def _compute_baselines(self, raw, shape, ridges=None):
         s = self.s
         f = float(s.frequency)
         k = clamp(float(s.shape_strength), 0.0, 1.0) if shape is not None else 0.0
@@ -606,32 +767,29 @@ class World:
         c = (np.arange(steps) + 0.5) / steps
         FX, FY = np.meshgrid(c, c)
         raw_s = np.asarray(raw(FX * f, FY * f), np.float64)
-        mn = float(raw_s.min()); mx = float(raw_s.max())
+        mn = float(np.percentile(raw_s, 0.5)); mx = float(np.percentile(raw_s, 99.5))
         rng = (mx - mn) or 1.0
 
         def field(fx, fy):
-            base = np.clip((raw(fx * f, fy * f) - mn) / rng, 0.0, 1.0)
+            base = (raw(fx * f, fy * f) - mn) / rng
             if shape is not None:
-                base = base * (1.0 - k) + shape(fx, fy) * k
-            return base
+                sv = shape(fx, fy)
+                base = base * (1.0 - k) + sv * k
+                if ridges is not None:
+                    base = base + 0.22 * ridges(fx, fy) * sv * (1.0 - np.clip(base, 0.0, 1.0))
+            return soft_unit(base)
 
         samples = np.asarray(field(FX, FY), np.float64).ravel()
         sea = float(np.sort(samples)[int(len(samples) * s.sea_percentile)])
-        rel = float(s.relief)
-
-        def sampler(fx, fy):
-            v = field(fx, fy)
-            if rel != 1.0:
-                v = np.clip(sea + (v - sea) * rel, 0.0, 1.0)
-            return v
-        return sampler, sea
+        return field, sea
 
     def regenerate_from_loaded(self, overview, chunk_ready, sea_level,
-                               river_threshold, done):
+                               river_threshold, done, lowres=None):
         self.sea_level = sea_level
         self.river_threshold = river_threshold
         self._cache.clear()
         self.chunk_ready = chunk_ready.copy()
+        self.lowres = dict(lowres) if lowres else {}
         if overview.shape[:2] == self.overview.shape[:2]:
             self.overview = overview.copy()
             self.done = done
@@ -668,8 +826,11 @@ class World:
 
         height = np.asarray(self.sampler(FX, FY), np.float32)
 
+        hard = self.hard_fn(FX, FY)
+        hi = _smooth(0.0, 0.2, height.astype(np.float64) - self.sea_level)
+        mask = ((1.0 - s.mask_strength) + s.mask_strength * hi).astype(np.float32)
         if s.method == "eroded":
-            self._erode(height, cx, cy)
+            self._erode(height, cx, cy, hard.astype(np.float32), mask)
 
         temp = _bilerp(self.climate_t, FX, FY).astype(np.float32)
         moist = _bilerp(self.climate_m, FX, FY).astype(np.float32)
@@ -699,16 +860,31 @@ class World:
                 flow_l[b] += flow_l[i]
         flow = np.array(flow_l, np.float32).reshape(CH, CH)
 
-        biome = self._classify(
-            elev, height.astype(np.float64), temp.astype(np.float64),
-            moist.astype(np.float64), slope.astype(np.float64), self.sea_level,
-        ).astype(np.uint8)
+        hf = height.astype(np.float64)
+        tf = temp.astype(np.float64); mf = moist.astype(np.float64); sf = slope.astype(np.float64)
+        blend = float(s.biome_blend)
+        seed = int(s.seed)
+        j1 = fbm(FX * 21.0 + 1.1, FY * 21.0 + 4.2, seed + 515, 3) - 0.5
+        j2 = fbm(FX * 17.0 + 7.7, FY * 17.0 + 2.9, seed + 616, 3) - 0.5
+        dither = fbm(FX * 40.0 + 9.0, FY * 40.0 + 9.0, seed + 727, 2) > 0.5
+        biome_a = self._classify(elev, hf, tf, mf, sf, self.sea_level)
+        biome_b = self._classify(elev, hf, tf + j1 * 0.3 * blend, mf + j2 * 0.3 * blend, sf, self.sea_level)
+        biome = np.where(dither, biome_b, biome_a).astype(np.uint8)
+        thr = self.river_threshold
+        land = height >= self.sea_level
+        sink = np.array(best).reshape(CH, CH) < 0
+        sink[0, :] = sink[-1, :] = sink[:, 0] = sink[:, -1] = False
+        lake = sink & land & (flow >= 0.5 * thr)
+        delta = (flow > thr) & land & (height < self.sea_level + 0.025) & ~lake
+        biome[lake] = 12
+        biome[delta] = 13
 
         return {"height": height, "temp": temp, "moist": moist,
                 "slope": slope, "flow": flow, "biome": biome}
 
-    def _erode(self, H, cx, cy):
+    def _erode(self, H, cx, cy, hard, mask):
         CH = self.s.chunk
+        geo = float(self.s.geology)
         rnd = mulberry32(int(self.s.seed) ^ (cx * 73856093) ^ (cy * 19349663))
         drops = int(CH * CH * 0.1)
         for _ in range(drops):
@@ -739,7 +915,8 @@ class World:
                     H[ny, nx] += amt * 0.6
                 else:
                     amt = min((cap - sed) * 0.25, -dh)
-                    H[ny, nx] -= amt
+                    w = (1.0 - 0.7 * geo * float(hard[ny, nx])) * float(mask[ny, nx])
+                    H[ny, nx] -= amt * w
                     sed += amt
                 speed = math.sqrt(max(0.05, speed * speed + dh * 6))
                 water *= 0.985
@@ -749,25 +926,27 @@ class World:
         conds = [
             h < sea - 0.055,
             h < sea,
-            (h < sea + 0.011) & (sl < 0.55),
-            (e > 0.86) & (sl > 0.12),
+            (h < sea + 0.05) & (sl < 0.8),
+            (h < sea + 0.02) & (sl >= 0.8),
+            (e > 0.86) & (sl > 0.06),
+            (t < 0.05),
             (t < 0.14) & (alt > 0.22),
             t < 0.14,
             t < 0.30,
-            (m < 0.18) & (t > 0.40),
-            (m < 0.30) & (t > 0.40),
+            (m < 0.22) & (t > 0.40),
+            (m < 0.32) & (t > 0.40),
             m < 0.18,
             m < 0.50,
-            (m < 0.80) | (t <= 0.55),
+            (m < 0.86) | (t <= 0.55),
         ]
-        choices = [0, 1, 2, 11, 3, 4, np.where(m > 0.4, 5, 4), 8, 7, 7, 6, 9]
+        choices = [0, 1, 2, 14, 11, 3, 3, 4, np.where(m > 0.4, 5, 4), 8, 7, 7, 6, 9]
         choices = [np.broadcast_to(np.asarray(c), h.shape) for c in choices]
         return np.select(conds, choices, default=10)
 
     def chunk_overview_size(self):
         return self.s.overview_ts
 
-    def render_chunk_to_overview(self, chunk):
+    def render_chunk_to_overview(self, chunk, cx, cy):
         s = self.s
         ts = self.chunk_overview_size()
         CH = s.chunk
@@ -775,19 +954,45 @@ class World:
         idx = np.minimum(np.arange(ts) * step, CH - 1)
         Y, X = np.meshgrid(idx, idx, indexing="ij")
         H = chunk["height"]
-        h = H[Y, X].astype(np.float64)
-        B = chunk["biome"][Y, X]
-        riv = (chunk["flow"][Y, X] > self.river_threshold) & (h > self.sea_level)
+        lr = {
+            "h": H[Y, X].astype(np.float64),
+            "b": chunk["biome"][Y, X],
+            "t": chunk["temp"][Y, X].astype(np.float64),
+            "m": chunk["moist"][Y, X].astype(np.float64),
+            "riv": (chunk["flow"][Y, X] > self.river_threshold),
+            "shade": self._hillshade_grid(H, X, Y),
+        }
+        self.lowres[(cx, cy)] = lr
+        return self.render_lowres(lr, self.view_mode)
+
+    def render_lowres(self, lr, mode):
+        h = lr["h"]
         sea = self.sea_level
-        waterm = (h < sea)[..., None]
-        rivm = riv[..., None]
-        with np.errstate(divide="ignore", invalid="ignore"):
+        if mode == "height":
+            land = np.clip((h - sea) / max(1e-6, 1 - sea), 0, 1)
+            deep = np.clip((sea - h) / max(1e-6, sea), 0, 1)
+            land_c = np.stack([lerp(70, 230, land), lerp(140, 240, land), lerp(70, 220, land)], -1)
+            sea_c = np.stack([lerp(120, 12, deep), lerp(170, 30, deep), lerp(210, 60, deep)], -1)
+            out = np.where((h < sea)[..., None], sea_c, land_c)
+        elif mode == "temperature":
+            t = np.clip(lr["t"], 0, 1)[..., None]
+            out = np.where(t < 0.5, lerp_arr([40, 90, 200], [240, 240, 240], t * 2),
+                           lerp_arr([240, 240, 240], [215, 50, 40], (t - 0.5) * 2))
+        elif mode == "moisture":
+            m = np.clip(lr["m"], 0, 1)[..., None]
+            out = lerp_arr([205, 180, 120], [30, 90, 160], m)
+        else:
             tw = h / sea
-        wc = np.stack([lerp(10, 44, tw), lerp(26, 102, tw), lerp(56, 146, tw)], -1)
-        lc = BIOME_RGB_F[B] * self._hillshade_grid(H, X, Y)[..., None]
-        out = np.where(waterm, wc, lc)
-        out = np.where(rivm, [70, 150, 215], out)
+            wc = np.stack([lerp(10, 44, tw), lerp(26, 102, tw), lerp(56, 146, tw)], -1)
+            lc = BIOME_RGB_F[lr["b"]] * lr["shade"][..., None]
+            out = np.where((h < sea)[..., None], wc, lc)
+            out = np.where((lr["riv"] & (h > sea))[..., None], [70, 150, 215], out)
         return np.clip(out, 0, 255).astype(np.uint8)
+
+    def redraw_overview(self, mode):
+        self.view_mode = mode
+        for (cx, cy), lr in self.lowres.items():
+            self.place_overview(cx, cy, self.render_lowres(lr, mode))
 
     def _hillshade_grid(self, H, X, Y):
         CH = self.s.chunk
@@ -1497,7 +1702,9 @@ METHOD_CHOICES = [
 ]
 
 # Full table kept so existing share codes still decode; only MENU_METHODS is offered.
-MENU_METHODS = ["fbm", "tectonic", "ranges", "voronoi", "eroded"]
+MENU_METHODS = ["fbm", "tectonic", "ranges", "voronoi"]
+METHOD_ORDER = ["fbm", "ridged", "warp", "voronoi", "tectonic", "eroded", "billow", "terraces",
+                "cellular", "plateau", "ranges", "turbulence", "hills"]
 
 START_CSS = """
 #startRoot{background:#07090d;}
@@ -1643,13 +1850,12 @@ RES_CHOICES = [
 
 
 CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-CODE_CHARS = 28
 CODE_CHECK_BITS = 10
 
 
 def _codec_fields():
     return [
-        ("method", "choice", [k for k, _ in METHOD_CHOICES]),
+        ("method", "choice", METHOD_ORDER),
         ("seed", "int", (0, 1, 2 ** 31)),
         ("num_chunks", "int", (2, 1, 511)),
         ("sea_percentile", "grid", (0.05, 0.01, 91)),
@@ -1664,11 +1870,27 @@ def _codec_fields():
         ("frequency", "grid", (0.4, 0.05, 53)),
         ("relief", "grid", (0.4, 0.05, 43)),
         ("tectonic", "grid", (0.0, 0.01, 101)),
+        ("land_gamma", "grid", (0.5, 0.05, 31)),
+        ("geology", "grid", (0.0, 0.01, 101)),
+        ("detail", "grid", (0.0, 0.01, 101)),
+        ("mask_strength", "grid", (0.0, 0.01, 101)),
+        ("biome_blend", "grid", (0.0, 0.01, 101)),
     ]
 
 
 def _radix(spec):
     return len(spec[2]) if spec[1] == "choice" else spec[2][2]
+
+
+def _code_chars():
+    total = 1
+    for spec in _codec_fields():
+        total *= _radix(spec)
+    chars = -(-((total - 1).bit_length() + CODE_CHECK_BITS) // 5)
+    return -(-chars // 4) * 4
+
+
+CODE_CHARS = _code_chars()
 
 
 def _field_index(spec, value):
@@ -1743,6 +1965,20 @@ def _to_int(v, default=0):
         return int(v)
     except (TypeError, ValueError):
         return default
+
+
+_POOL_WORLD = None
+
+
+def _pool_init(settings_dict, sea):
+    global _POOL_WORLD
+    _POOL_WORLD = World(Settings.from_dict(settings_dict))
+    _POOL_WORLD.sea_level = sea
+
+
+def _pool_chunk(key):
+    ch = _POOL_WORLD.generate_chunk(key[0], key[1])
+    return key, ch["height"], ch["biome"]
 
 
 def _combo(choices):
@@ -1917,6 +2153,21 @@ class StartMenu(QWidget):
         _frow(f, "Feature frequency", self.freq_slider, "live")
         _frow(f, "Relief", self.relief_slider, "live")
 
+        f = section("Surface detail", "Detail adds fine relief that is strongest on highlands. "
+                                      "Geology sets how much rock types differ. Mask strength confines "
+                                      "detail and erosion to high ground. Biome blend softens class "
+                                      "boundaries. Land curve sets how often high ground occurs.")
+        self.gamma_slider = SliderSpin(0.5, 2.0, 0.05, 2, 1.0, "×")
+        self.detail_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
+        self.geo_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
+        self.mask_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
+        self.blend_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
+        _frow(f, "Land height curve", self.gamma_slider, "live")
+        _frow(f, "Fine detail", self.detail_slider, "live")
+        _frow(f, "Geology contrast", self.geo_slider, "live")
+        _frow(f, "Mask strength", self.mask_slider, "live")
+        _frow(f, "Biome blend", self.blend_slider, "live")
+
         f = section("Water", "Water coverage is the share of the surface below sea level. Sea "
                              "level is solved from the terrain, so the target holds for any seed.")
         self.water_slider = SliderSpin(0.05, 0.95, 0.01, 0, 0.42, "%", mul=100)
@@ -1928,17 +2179,13 @@ class StartMenu(QWidget):
         self.count_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
         self.lsize_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
         self.coast_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.5, "%", mul=100)
-        self.inlet_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.3, "%", mul=100)
         self.lake_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.2, "%", mul=100)
-        self.elong_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.0, "%", mul=100)
         self.edge_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.0, "%", mul=100)
         _frow(f, "Layout strength", self.shape_slider, "live")
         _frow(f, "Landmass count", self.count_slider, "live")
         _frow(f, "Landmass size", self.lsize_slider, "live")
         _frow(f, "Coast ruggedness", self.coast_slider, "live")
-        _frow(f, "Inlets & bays", self.inlet_slider, "live")
         _frow(f, "Inland lakes", self.lake_slider, "live")
-        _frow(f, "Elongation", self.elong_slider, "live")
         _frow(f, "Edge water", self.edge_slider, "live")
 
         f = section("Tectonics")
@@ -1980,6 +2227,13 @@ class StartMenu(QWidget):
         f.addRow("Load code:", _hwrap(self.code_edit, apply_btn))
         self.code_status = _hint("")
         f.addRow(self.code_status)
+        save_set_btn = QPushButton("Save settings…")
+        save_set_btn.setObjectName("ghost")
+        save_set_btn.clicked.connect(self._save_settings)
+        load_set_btn = QPushButton("Load settings…")
+        load_set_btn.setObjectName("ghost")
+        load_set_btn.clicked.connect(self._load_settings)
+        f.addRow("Settings file:", _hwrap(save_set_btn, load_set_btn))
         col.addStretch(1)
 
         bar = QHBoxLayout()
@@ -2008,8 +2262,10 @@ class StartMenu(QWidget):
 
         self._sliders = (self.freq_slider, self.relief_slider, self.water_slider,
                          self.shape_slider, self.count_slider, self.lsize_slider,
-                         self.coast_slider, self.inlet_slider, self.lake_slider,
-                         self.elong_slider, self.tectonic_slider, self.edge_slider)
+                         self.coast_slider, self.lake_slider,
+                         self.tectonic_slider, self.edge_slider,
+                         self.gamma_slider, self.detail_slider, self.geo_slider,
+                         self.mask_slider, self.blend_slider)
         self.seed_spin.valueChanged.connect(self._on_form_changed)
         self.num_chunks_spin.valueChanged.connect(self._on_form_changed)
         for w in self._sliders:
@@ -2087,14 +2343,36 @@ class StartMenu(QWidget):
             landmass_count=self.count_slider.value(),
             landmass_size=self.lsize_slider.value(),
             coast_rough=self.coast_slider.value(),
-            inlets=self.inlet_slider.value(),
+            inlets=self.coast_slider.value(),
             lakes=self.lake_slider.value(),
-            elongation=self.elong_slider.value(),
             edge_water=self.edge_slider.value(),
             frequency=self.freq_slider.value(),
             relief=self.relief_slider.value(),
             tectonic=self.tectonic_slider.value(),
+            land_gamma=self.gamma_slider.value(),
+            detail=self.detail_slider.value(),
+            geology=self.geo_slider.value(),
+            mask_strength=self.mask_slider.value(),
+            biome_blend=self.blend_slider.value(),
         ))
+
+    def _save_settings(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save settings", "worldgen_settings.json", "Settings (*.json)")
+        if not path:
+            return
+        Path(path).write_text(json.dumps(self._collect().to_dict(), indent=2), encoding="utf-8")
+        self.code_status.setText("Settings saved.")
+
+    def _load_settings(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Load settings", "", "Settings (*.json)")
+        if not path:
+            return
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+            self.apply_settings(snap_settings(Settings.from_dict(data)))
+            self.code_status.setText("Settings loaded.")
+        except (OSError, ValueError, TypeError) as exc:
+            self.code_status.setText(f"Could not load settings: {exc}")
 
     def _show_preview(self, *_):
         if self._quiet:
@@ -2144,13 +2422,16 @@ class StartMenu(QWidget):
         self.count_slider.setValue(s.landmass_count)
         self.lsize_slider.setValue(s.landmass_size)
         self.coast_slider.setValue(s.coast_rough)
-        self.inlet_slider.setValue(s.inlets)
         self.lake_slider.setValue(s.lakes)
-        self.elong_slider.setValue(s.elongation)
         self.edge_slider.setValue(s.edge_water)
         self.freq_slider.setValue(s.frequency)
         self.relief_slider.setValue(s.relief)
         self.tectonic_slider.setValue(s.tectonic)
+        self.gamma_slider.setValue(s.land_gamma)
+        self.detail_slider.setValue(s.detail)
+        self.geo_slider.setValue(s.geology)
+        self.mask_slider.setValue(s.mask_strength)
+        self.blend_slider.setValue(s.biome_blend)
         self._quiet = False
         self._on_form_changed()
         self._show_preview()
@@ -2172,8 +2453,8 @@ class Explorer(QWidget):
         self.gen_start = time.time()
 
         if restored is not None:
-            overview, chunk_ready, sea, rt, done = restored
-            self.world.regenerate_from_loaded(overview, chunk_ready, sea, rt, done)
+            overview, chunk_ready, sea, rt, done, lowres = restored
+            self.world.regenerate_from_loaded(overview, chunk_ready, sea, rt, done, lowres)
             self._seek_to_first_unready()
             self.gen_active = self.world.done < self.world.total
 
@@ -2216,7 +2497,12 @@ class Explorer(QWidget):
         save_btn = QPushButton("💾 Save")
         save_btn.setStyleSheet(back_btn.styleSheet())
         save_btn.clicked.connect(self.save_requested.emit)
+        export_btn = QPushButton("⇪ Export…")
+        export_btn.setStyleSheet(back_btn.styleSheet())
+        export_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        export_btn.clicked.connect(self._export)
         h.addWidget(save_btn)
+        h.addWidget(export_btn)
 
         mode_label = "SHAPED LAYOUT" if self.s.shape_strength > 0.001 else "NATURAL TERRAIN"
         title = QLabel(f"◈ {mode_label} · "
@@ -2274,6 +2560,17 @@ class Explorer(QWidget):
 
         cam_style = back_btn.styleSheet() + \
             "QPushButton:checked{background:#12261d;border-color:#3b6f5c;}"
+        view_row = QHBoxLayout()
+        view_row.setSpacing(8)
+        view_lbl = QLabel("Map view")
+        view_lbl.setStyleSheet("color:#8fa0b4;")
+        self.view_combo = _combo(VIEW_MODES)
+        self.view_combo.setCurrentIndex(max(0, self.view_combo.findData(self.world.view_mode)))
+        self.view_combo.currentIndexChanged.connect(self._on_view_mode)
+        view_row.addWidget(view_lbl)
+        view_row.addWidget(self.view_combo, 1)
+        right.addLayout(view_row)
+
         cam_row = QHBoxLayout()
         cam_row.setSpacing(8)
         self.orbit_btn = QPushButton("Orbit")
@@ -2345,6 +2642,50 @@ class Explorer(QWidget):
         self._refresh_preview()
         self._update_readout()
 
+    def _export(self):
+        folder = QFileDialog.getExistingDirectory(self, "Export world to folder")
+        if not folder:
+            return
+        s = self.s
+        N, CH, K = s.world_w, s.chunk, s.chunks
+        H = np.empty((N, N), np.float32)
+        B = np.empty((N, N), np.uint8)
+        keys = [(cx, cy) for cy in range(K) for cx in range(K)]
+        dlg = QProgressDialog("Generating terrain for export…", "Cancel", 0, len(keys), self)
+        dlg.setWindowModality(Qt.WindowModality.WindowModal)
+        dlg.setMinimumDuration(0)
+        done = 0
+        with ProcessPoolExecutor(max_workers=os.cpu_count() or 1, initializer=_pool_init,
+                                 initargs=(s.to_dict(), self.world.sea_level)) as ex:
+            for batch_start in range(0, len(keys), 32):
+                batch = keys[batch_start:batch_start + 32]
+                for (cx, cy), hh, bb in ex.map(_pool_chunk, batch, chunksize=2):
+                    H[cy * CH:(cy + 1) * CH, cx * CH:(cx + 1) * CH] = hh
+                    B[cy * CH:(cy + 1) * CH, cx * CH:(cx + 1) * CH] = bb
+                    done += 1
+                dlg.setValue(done)
+                QApplication.processEvents()
+                if dlg.wasCanceled():
+                    dlg.close()
+                    return
+        dlg.close()
+        base = Path(folder) / f"world_{s.seed}"
+        h16 = np.clip(H.astype(np.float64) * 65535.0, 0, 65535).astype("<u2")
+        h16.tofile(base.with_suffix(".r16"))
+        img = QImage(h16.tobytes(), N, N, N * 2, QImage.Format.Format_Grayscale16).copy()
+        img.save(str(base) + "_height16.png")
+        rgb = np.ascontiguousarray(BIOME_RGB_F[B].astype(np.uint8))
+        QImage(rgb.tobytes(), N, N, N * 3, QImage.Format.Format_RGB888).copy().save(str(base) + "_biome.png")
+        meta = {"seed": s.seed, "world_size": N, "sea_level": self.world.sea_level,
+                "height_scale": "value/65535 of full range; sea_level is relative to the same range",
+                "settings": s.to_dict()}
+        Path(str(base) + "_export.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        QMessageBox.information(self, "Export complete", f"Saved to:\n{base}_*")
+
+    def _on_view_mode(self, *_):
+        self.world.redraw_overview(self.view_combo.currentData())
+        self.minimap.set_overview(self.world.overview)
+
     def _tick(self):
         if not self.gen_active:
             return
@@ -2360,7 +2701,7 @@ class Explorer(QWidget):
             cx = self.gen_cx
             cy = self.gen_cy
             chunk = self.world.generate_chunk(cx, cy)
-            img = self.world.render_chunk_to_overview(chunk)
+            img = self.world.render_chunk_to_overview(chunk, cx, cy)
             self.world.place_overview(cx, cy, img)
             self.world.chunk_ready[cy, cx] = True
             self.world.done += 1
@@ -2561,13 +2902,18 @@ class MainWindow(QMainWindow):
         if not path:
             return
         try:
-            settings, overview, chunk_ready, sea, rt, done = load_world(Path(path))
+            settings, overview, chunk_ready, sea, rt, done, lowres, _gen = load_world(Path(path))
+            if _gen != GENERATOR_VERSION:
+                QMessageBox.warning(
+                    self, "Generator version differs",
+                    f"This world was saved by generator version {_gen}, but this build is "
+                    f"{GENERATOR_VERSION}. The terrain may not match the saved preview.")
             if self.explorer is not None:
                 self.stack.removeWidget(self.explorer)
                 self.explorer.deleteLater()
             self.explorer = Explorer(
                 settings,
-                restored=(overview, chunk_ready, sea, rt, done),
+                restored=(overview, chunk_ready, sea, rt, done, lowres),
             )
             self.explorer.save_requested.connect(self._on_save)
             self.explorer.back_requested.connect(self.show_menu)
@@ -2611,3 +2957,57 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+BIOME_BOUNDS = {
+    "Desert": (0.04, 0.22), "Mountain": (0.05, 0.22), "Snow": (0.03, 0.14),
+    "Forest": (0.12, 0.34), "Rainforest": (0.02, 0.16), "Grassland": (0.04, 0.20),
+    "Taiga": (0.03, 0.16), "Tundra": (0.02, 0.12), "Shrubland": (0.03, 0.14),
+    "Lake": (0.0, 0.02), "Delta": (0.0, 0.04),
+}
+
+
+def validate_world(world: "World"):
+    s = world.s
+    CH = s.chunk
+    n = s.num_chunks
+    issues = []
+    grid = {}
+    for cy in range(n):
+        for cx in range(n):
+            grid[(cx, cy)] = world.generate_chunk(cx, cy)
+    hs = np.concatenate([grid[k]["height"].ravel() for k in grid]).astype(np.float64)
+    bs = np.concatenate([grid[k]["biome"].ravel() for k in grid])
+    if hs.max() >= 0.95 or hs.min() <= 0.0:
+        issues.append(f"height outside (0, 0.95): min {hs.min():.4f} max {hs.max():.4f}")
+    worst = 0.0
+    for (cx, cy), a in grid.items():
+        A = a["height"].astype(np.float64)
+        inner = max(np.abs(np.diff(A, axis=1)).max(), 1e-9)
+        if (cx + 1, cy) in grid:
+            d = np.abs(A[:, -1] - grid[(cx + 1, cy)]["height"][:, 0].astype(np.float64)).max()
+            worst = max(worst, d / max(inner * 4, 0.05))
+        if (cx, cy + 1) in grid:
+            d = np.abs(A[-1, :] - grid[(cx, cy + 1)]["height"][0, :].astype(np.float64)).max()
+            worst = max(worst, d / max(inner * 4, 0.05))
+    if worst > 1.0:
+        issues.append(f"chunk seam jump {worst:.2f}x the allowed limit")
+    land = bs >= 2
+    total_land = max(1, int(land.sum()))
+    shares = {}
+    for i, (name, _) in enumerate(BIOMES):
+        if i < 2:
+            continue
+        share = float((bs == i).sum()) / total_land
+        shares[name] = share
+        if name in BIOME_BOUNDS:
+            lo, hi = BIOME_BOUNDS[name]
+            if not (lo <= share <= hi):
+                issues.append(f"{name} share {share:.3f} outside [{lo}, {hi}]")
+    water = float((bs < 2).mean())
+    if water < 0.3 or water > 0.85:
+        issues.append(f"water share {water:.3f} outside [0.3, 0.85]")
+    return {"ok": not issues, "issues": issues, "height_min": float(hs.min()),
+            "height_max": float(hs.max()), "water_share": water, "land_shares": shares,
+            "seam_ratio": worst}
+
