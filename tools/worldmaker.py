@@ -36,7 +36,7 @@ from pathlib import Path
 import numpy as np
 from OpenGL import GL as gl
 from OpenGL.GLU import gluLookAt, gluPerspective
-from PyQt6.QtCore import QObject, QPoint, QPointF, QRectF, QSettings, Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtCore import QObject, QPoint, QPointF, QRectF, QSettings, QSize, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QAction, QBrush, QColor, QCursor, QFont, QImage, QKeySequence, QPainter, QPen, QPixmap,
     QPolygonF, QShortcut, QSurfaceFormat,
@@ -187,7 +187,8 @@ class Settings:
     method: str = "fbm"
     seed: int = 0
     chunk: int = 256
-    num_chunks: int = 10
+    chunks_x: int = 10
+    chunks_y: int = 10
     sea_percentile: float = 0.55
     shape_strength: float = 1.0
     landmass_count: float = 0.5
@@ -208,24 +209,42 @@ class Settings:
     erosion: float = 0.5
 
     @property
+    def world_wx(self):
+        return self.chunk * self.chunks_x
+
+    @property
+    def world_wy(self):
+        return self.chunk * self.chunks_y
+
+    @property
     def world_w(self):
-        return self.chunk * self.num_chunks
+        """Side of the square every world is drawn in. The larger of the two extents."""
+        return self.chunk * self.chunks
 
     @property
     def chunks(self):
-        return self.num_chunks
+        """Size of the square chunk grid: the larger of the two counts."""
+        return max(self.chunks_x, self.chunks_y)
+
+    @property
+    def dom(self):
+        """The world's shape in generation units. Both axes share one scale, with the longer
+        side equal to 1, so every noise feature is the same size in tiles on both axes and a
+        rectangular world is not stretched."""
+        L = float(self.world_w)
+        return float(self.world_wx) / L, float(self.world_wy) / L
 
     @property
     def total_chunks(self):
-        return self.num_chunks * self.num_chunks
+        return self.chunks_x * self.chunks_y
 
     @property
     def overview_ts(self):
-        return int(clamp(OVERVIEW_PX, 1, max(1, MAX_OVERVIEW // self.num_chunks)))
+        return int(clamp(OVERVIEW_PX, 1, max(1, MAX_OVERVIEW // self.chunks)))
 
     @property
     def overview_size(self):
-        return self.overview_ts * self.num_chunks
+        return self.overview_ts * self.chunks
 
     @property
     def preview_r(self):
@@ -237,13 +256,17 @@ class Settings:
 
     @classmethod
     def from_dict(cls, d):
+        d = dict(d)
+        if "num_chunks" in d and "chunks_x" not in d:   # worlds saved before X and Y were separate
+            d["chunks_x"] = d["chunks_y"] = d["num_chunks"]
+        d.pop("num_chunks", None)
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
 MAGIC = b"WGLB"
 VERSION = 2          # plain saves
 VERSION_EDITED = 3   # edited saves also carry base_lowres: the untouched original, used for edit diffs
 VERSION_FLORA = 4    # saves that also carry flora layers
-GENERATOR_VERSION = "5.0"
+GENERATOR_VERSION = "6.0"
 RESIDUAL_DETAIL = 0.15   # share of sub-grid detail kept after erosion (the rest is smoothed away)
 VIEW_MODES = [("biome", "Biome"), ("height", "Height"), ("temperature", "Temperature"), ("moisture", "Moisture")]
 
@@ -506,6 +529,24 @@ EROSION_RES = 256
 EROSION_ITERS = 24
 
 
+def _grid_shape(dom, R):
+    """Cells of a grid that covers the world: R along the longer side, the other side in
+    proportion. Cells are square, so a grid cell is the same size in tiles on both axes."""
+    ax, ay = dom
+    if ax >= ay:
+        return (max(8, int(round(R * ay / ax))), int(R))
+    return (int(R), max(8, int(round(R * ax / ay))))
+
+
+def _cells(shape, dom):
+    """Domain positions (FX, FY) at the centre of every cell of a grid of shape (GY, GX)."""
+    GY, GX = shape
+    ax, ay = dom
+    FX = (np.arange(GX) + 0.5) / GX * ax
+    FY = (np.arange(GY) + 0.5) / GY * ay
+    return np.meshgrid(FX, FY)
+
+
 def _diffuse(a, n):
     for _ in range(n):
         P = np.pad(a, 1, mode="edge")
@@ -520,27 +561,27 @@ def _receivers(H):
     """Steepest-descent routing (D8): every cell passes its water to whichever
     neighbour is lowest. A cell with no lower neighbour is a pit and keeps its water.
     Water that steps off the map edge leaves the world."""
-    G = H.shape[0]
+    GY, GX = H.shape
     P = np.pad(H, 1, constant_values=-1.0)
-    yy, xx = np.indices((G, G))
-    best = np.zeros((G, G))
-    rec = yy * G + xx
+    yy, xx = np.indices((GY, GX))
+    best = np.zeros((GY, GX))
+    rec = yy * GX + xx
     for oy, ox in _NEIGH8:
-        N = P[1 + oy:1 + oy + G, 1 + ox:1 + ox + G]
+        N = P[1 + oy:1 + oy + GY, 1 + ox:1 + ox + GX]
         ny = yy + oy
         nx = xx + ox
-        off = (ny < 0) | (ny >= G) | (nx < 0) | (nx >= G)
+        off = (ny < 0) | (ny >= GY) | (nx < 0) | (nx >= GX)
         drop = (H - N) / (1.4142 if (oy and ox) else 1.0)
         better = drop > best
         best = np.where(better, drop, best)
-        cand = np.where(off, _OUTLET, ny * G + nx)
+        cand = np.where(off, _OUTLET, ny * GX + nx)
         rec = np.where(better, cand, rec)
     return rec.ravel()
 
 
 def _accumulate(rec, H, runoff):
     """Total runoff that passes through each cell, summed from high ground down."""
-    G = H.shape[0]
+    GY, GX = H.shape
     order = np.argsort(-H.ravel(), kind="stable").tolist()
     r = rec.tolist()
     A = np.asarray(runoff, np.float64).ravel().tolist()
@@ -548,22 +589,22 @@ def _accumulate(rec, H, runoff):
         t = r[c]
         if t != c and t >= 0:
             A[t] += A[c]
-    return np.array(A).reshape(G, G)
+    return np.array(A).reshape(GY, GX)
 
 
 def _lake_mask(H, rec, A, land, lakes, fill):
     """Lakes are basins where the water collects. A basin counts as a lake when it
     is still a pit, or when sediment has filled it, and it receives enough runoff
     to hold water. The pool spreads into neighbouring ground at about the same level."""
-    G = H.shape[0]
-    idx = np.arange(G * G).reshape(G, G)
-    sink = (rec.reshape(G, G) == idx) & land
+    GY, GX = H.shape
+    idx = np.arange(GY * GX).reshape(GY, GX)
+    sink = (rec.reshape(GY, GX) == idx) & land
     q = 0.985 - 0.04 * float(lakes)
     thr = float(np.quantile(A[land], q)) if land.any() else np.inf
     core = (sink | ((fill > 0.004) & land)) & (A >= thr)
     level = np.where(core, H, np.inf)
     P = np.pad(level, 1, constant_values=np.inf)
-    nb = np.min(np.stack([P[1 + oy:1 + oy + G, 1 + ox:1 + ox + G] for oy, ox in _NEIGH8]), axis=0)
+    nb = np.min(np.stack([P[1 + oy:1 + oy + GY, 1 + ox:1 + ox + GX] for oy, ox in _NEIGH8]), axis=0)
     pool = np.isfinite(nb) & land & (H <= nb + 0.006)
     return core | pool
 
@@ -574,13 +615,13 @@ def _erode_hydro(H, sea, W, strength, iters, runoff):
     the water has not yet left, raising its floor. A pit fills until it spills over
     its lowest rim, after which its water runs on downhill. Returns the eroded
     surface and how much sediment settled at each cell (used to find lakes)."""
-    G = H.shape[0]
-    idx = np.arange(G * G)
+    GY, GX = H.shape
+    idx = np.arange(GY * GX)
     K = 0.0013 * strength
     D = 0.12
     SILT = 0.0015
     Wf = W.ravel()
-    fill = np.zeros(G * G)
+    fill = np.zeros(GY * GX)
     for _ in range(iters):
         land = H >= sea
         landf = land.ravel()
@@ -596,18 +637,17 @@ def _erode_hydro(H, sea, W, strength, iters, runoff):
         dep = np.where(pit, np.minimum(0.02, SILT * np.sqrt(A)), 0.0)
         Hn = Hn + dep
         fill += dep
-        Hn = Hn.reshape(G, G)
+        Hn = Hn.reshape(GY, GX)
         P = np.pad(Hn, 1, mode="edge")
         lap = P[:-2, 1:-1] + P[2:, 1:-1] + P[1:-1, :-2] + P[1:-1, 2:] - 4.0 * Hn
         H = Hn + D * lap * land
-    return H, fill.reshape(G, G)
+    return H, fill.reshape(GY, GX)
 
 
 def _hist_match(H, target):
-    G = H.shape[0]
-    out = np.empty(G * G)
+    out = np.empty(H.size)
     out[np.argsort(H.ravel(), kind="stable")] = np.sort(target.ravel())
-    return out.reshape(G, G)
+    return out.reshape(H.shape)
 
 
 def _settle(H, sea, land_passes=14, sea_passes=120):
@@ -631,9 +671,8 @@ def _global_pass(pre, s, sea, weather):
     settle sediment into pits, then route the runoff downhill to find rivers and the
     lakes where it collects."""
     Gpre = weather["elev"]
-    G = Gpre.shape[0]
-    c = (np.arange(G) + 0.5) / G
-    FX, FY = np.meshgrid(c, c)
+    dom = s.dom
+    FX, FY = _cells(Gpre.shape, dom)
     hard = _geology(int(s.seed))(FX, FY)
     hi = _smooth(0.0, 0.2, Gpre - sea)
     mask = (1.0 - float(s.mask_strength)) + float(s.mask_strength) * hi
@@ -647,12 +686,13 @@ def _global_pass(pre, s, sea, weather):
     A = _accumulate(rec, Eg, runoff)
     lake = _lake_mask(Eg, rec, A, land, float(s.lakes), fill).astype(np.float64)
     thr = float(np.quantile(A[land], 0.985)) if land.any() else 1.0
-    return _erosion_wrap(pre, Eg, Gpre), lake, A, thr, Eg
+    return _erosion_wrap(pre, Eg, Gpre, dom), lake, A, thr, Eg
 
 
-def _erosion_wrap(pre, Eg, Gpre):
+def _erosion_wrap(pre, Eg, Gpre, dom):
     def sampler(fx, fy):
-        base = _bilerp(Eg, fx, fy) + RESIDUAL_DETAIL * (np.asarray(pre(fx, fy), np.float64) - _bilerp(Gpre, fx, fy))
+        base = _bilerp(Eg, fx, fy, dom) + RESIDUAL_DETAIL * (
+            np.asarray(pre(fx, fy), np.float64) - _bilerp(Gpre, fx, fy, dom))
         return np.clip(base, 0.0, 1.0)
     return sampler
 
@@ -678,18 +718,22 @@ def _resample_nearest(arr, n):
     idx = np.minimum(np.floor((np.arange(n) + 0.5) * m / n).astype(np.int64), m - 1)
     return np.ascontiguousarray(arr[idx][:, idx])
 
-def _rim_wrap(base, sea, S):
+def _rim_wrap(base, sea, S, dom):
+    ax, ay = dom
+    short = min(ax, ay)     # the rim is a share of the shorter side, so a strip keeps its coast width
+
     def sampler(fx, fy):
         v = np.asarray(base(fx, fy), np.float64)
-        dist = (np.abs(fx - 0.5) ** 4 + np.abs(fy - 0.5) ** 4) ** 0.25
-        dist = dist + 0.05 * (fbm(fx * 4, fy * 4, S + 1801, 4) - 0.5)
+        # distance in from the nearest edge of the world, in units of the shorter side
+        edge = np.minimum(np.minimum(fx, ax - fx), np.minimum(fy, ay - fy)) / short
+        dist = (0.5 - edge) + 0.05 * (fbm(fx * 4, fy * 4, S + 1801, 4) - 0.5)
         m = _smooth(0.36, 0.46, dist)
         return v * (1.0 - m) + m * np.minimum(v, 0.4 * sea)
     return sampler
 
 
 def _ocean_dist(land):
-    R = land.shape[0]
+    GY, GX = land.shape
     dist = np.where(land, np.inf, 0.0)
     while True:
         p = np.pad(dist, 1, constant_values=np.inf)
@@ -699,7 +743,7 @@ def _ocean_dist(land):
         if np.array_equal(new, dist):
             break
         dist = new
-    dist[np.isinf(dist)] = R
+    dist[np.isinf(dist)] = max(GX, GY)
     return dist
 
 
@@ -714,21 +758,21 @@ def _wind_transport(E, land, lat, warmth):
     picks up moisture over the sea, scaled by how warm the sea is, and drops it on
     land, most where the ground rises into its path.
     Returns (rain, carried): rainfall per cell, and the moisture left in the air after it."""
-    R = E.shape[0]
+    GY, GX = E.shape
     decay = 0.012 + 0.07 * np.exp(-((lat - 0.33) / 0.09) ** 2)
     row_lat = lat[:, 0]
     westerly = (row_lat >= 0.33) & (row_lat < 0.66)
     rain_by_dir = {}
     carried_by_dir = {}
     for direction in (1, -1):
-        m = np.zeros(R)
+        m = np.zeros(GY)
         prev = None
-        rain_out = np.zeros((R, R))
-        carried_out = np.zeros((R, R))
-        cols = range(R) if direction == 1 else range(R - 1, -1, -1)
+        rain_out = np.zeros((GY, GX))
+        carried_out = np.zeros((GY, GX))
+        cols = range(GX) if direction == 1 else range(GX - 1, -1, -1)
         for i in cols:
             e = E[:, i]
-            rise = np.zeros(R) if prev is None else np.clip(e - prev, 0.0, None)
+            rise = np.zeros(GY) if prev is None else np.clip(e - prev, 0.0, None)
             m = np.where(land[:, i], m, warmth[:, i])
             rain = m * (1.0 - np.exp(-(4.0 * rise + 0.015)))
             m = m - rain
@@ -743,17 +787,15 @@ def _wind_transport(E, land, lat, warmth):
             np.where(pick, carried_by_dir[1], carried_by_dir[-1]))
 
 
-def _stage_weather(pre, sea, S, G=None):
+def _stage_weather(pre, sea, S, dom, G=None):
     """Stage 2 of the pipeline: weather, worked out from the geography alone.
     Temperature falls with latitude and altitude. Moisture comes from warm seas,
     travels with the wind belts and falls as rain on the way inland. Whatever rain
     is not lost to evaporation runs off the land and feeds the hydrology stage."""
-    G = G or EROSION_RES
-    c = (np.arange(G) + 0.5) / G
-    FX, FY = np.meshgrid(c, c)
+    FX, FY = _cells(_grid_shape(dom, G or EROSION_RES), dom)
     E = np.asarray(pre(FX, FY), np.float64)
     land = E >= sea
-    lat = np.abs(FY * 2 - 1)  # 0 on the equator row, 1 at the poles
+    lat = np.abs(FY / dom[1] * 2 - 1)  # 0 on the equator row, 1 at the poles, whatever the shape
     alt = np.clip(E - sea, 0.0, None)
     T0 = (1 - lat ** 1.25 * 0.85 - alt * 1.0 - 0.3 * _smooth(0.78, 0.95, lat)
           + (fbm(FX * 3, FY * 3, S + 404, 3) - 0.5) * 0.12)
@@ -838,10 +880,10 @@ def render_lowres_rgb(lr, mode, sea):
     return np.clip(out, 0, 255).astype(np.uint8)
 
 
-def _shelf_wrap(base, sea, grid):
+def _shelf_wrap(base, sea, grid, dom):
     def sampler(fx, fy):
         v = np.asarray(base(fx, fy), np.float64)
-        f = _bilerp(grid, fx, fy)
+        f = _bilerp(grid, fx, fy, dom)
         return np.where(v < sea, sea - (sea - v) * f, v)
     return sampler
 
@@ -850,10 +892,11 @@ def build_ridges(s):
     if float(s.shape_strength) <= 0.001:
         return None
     S = int(s.seed)
+    ax, ay = s.dom
     rnd = mulberry32(S * 97 + 41)
     P = 14
-    px = np.array([0.05 + 0.9 * rnd() for _ in range(P)])
-    py = np.array([0.05 + 0.9 * rnd() for _ in range(P)])
+    px = np.array([(0.05 + 0.9 * rnd()) * ax for _ in range(P)])
+    py = np.array([(0.05 + 0.9 * rnd()) * ay for _ in range(P)])
 
     def ridge(fx, fy):
         fx = np.asarray(fx, np.float64); fy = np.asarray(fy, np.float64)
@@ -867,20 +910,21 @@ def build_ridges(s):
     return ridge
 
 
-def _ocean_shelf_grid(sampler, sea, R=96):
-    c = (np.arange(R) + 0.5) / R
-    FX, FY = np.meshgrid(c, c)
+def _ocean_shelf_grid(sampler, sea, dom, R=96):
+    FX, FY = _cells(_grid_shape(dom, R), dom)
     land = np.asarray(sampler(FX, FY), np.float64) >= sea
     dn = _ocean_dist(~land) / R
     return 0.3 + 0.7 * np.clip(dn / 0.12, 0.0, 1.0)
 
 
-def _edge_wrap(base, edge):
+def _edge_wrap(base, edge, dom):
     band = 0.05 + 0.35 * edge
+    ax, ay = dom
+    short = min(ax, ay)
 
     def sampler(fx, fy):
         v = np.asarray(base(fx, fy), np.float64)
-        d = np.minimum(np.minimum(fx, 1.0 - fx), np.minimum(fy, 1.0 - fy))
+        d = np.minimum(np.minimum(fx, ax - fx), np.minimum(fy, ay - fy)) / short
         return soft_unit(v * (1.0 - 0.98 * edge * (1.0 - _smooth(0.0, band, d))))
     return sampler
 
@@ -890,6 +934,8 @@ def build_layout(s):
         return None
     S = int(s.seed)
     f = float(s.frequency)
+    ax, ay = s.dom
+    area = ax * ay
     rnd = mulberry32(S * 53 + 19)
     n_major = 3 + int(clamp(float(s.landmass_count), 0.0, 0.999) * 4)
     size_f = 0.45 + 0.9 * clamp(float(s.landmass_size), 0.0, 1.0)
@@ -898,18 +944,24 @@ def build_layout(s):
     rough = clamp(float(s.coast_rough), 0.0, 1.0)
     lakes = clamp(float(s.lakes), 0.0, 1.0)
     lake_t = 0.82 - 0.3 * lakes
+    # Spacing and counts are worked out in world units, so a long, thin world gets the same
+    # landmass spacing and density per tile as a square one of the same width.
+    spacing = 0.3 * math.sqrt(area)
 
     majors = []
     for _ in range(400):
         if len(majors) >= n_major:
             break
-        cx = 0.18 + 0.64 * rnd(); cy = 0.18 + 0.64 * rnd()
-        if all(math.hypot(cx - x, cy - y) > 0.3 for x, y, _ in majors):
+        cx = (0.18 + 0.64 * rnd()) * ax
+        cy = (0.18 + 0.64 * rnd()) * ay
+        if all(math.hypot(cx - x, cy - y) > spacing for x, y, _ in majors):
             majors.append((cx, cy, 0.17 + 0.08 * rnd()))
     blobs = [(cx, cy, sig * size_f, 1.0 + elong * (0.8 + 0.4 * rnd()))
              for cx, cy, sig in majors]
-    for _ in range(5 + int(rnd() * 8)):
-        cx = 0.05 + 0.90 * rnd(); cy = 0.05 + 0.90 * rnd()
+    n_small = max(2, int(round((5 + int(rnd() * 8)) * area)))
+    for _ in range(n_small):
+        cx = (0.05 + 0.90 * rnd()) * ax
+        cy = (0.05 + 0.90 * rnd()) * ay
         sig = 0.035 + 0.04 * rnd() ** 2
         blobs.append((cx, cy, sig * size_f, 1.0))
 
@@ -919,8 +971,8 @@ def build_layout(s):
         coast = (fbm(fx * 8 * f, fy * 8 * f, S + 131, 5) - 0.5) * rough
         fine = (fbm(fx * 18 * f, fy * 18 * f, S + 132, 4) - 0.5) * rough * 0.5
         field = np.zeros(np.shape(fx))
-        for cx, cy, sig, ax in blobs:
-            d = np.hypot((wx - cx) * ax, wy - cy) / sig + coast * 2 + fine
+        for cx, cy, sig, stretch in blobs:
+            d = np.hypot((wx - cx) * stretch, wy - cy) / sig + coast * 2 + fine
             field = np.maximum(field, np.exp(-d * d))
         if lakes > 0.001:
             water = _smooth(lake_t, lake_t + 0.1, fbm(fx * 8 * f, fy * 8 * f, S + 232, 4))
@@ -933,15 +985,17 @@ def planet_active(s):
 
 
 def planet_resolution(s):
-    return int(clamp(s.num_chunks * 10, 64, 256))
+    return int(clamp(s.chunks * 10, 64, 256))
 
 
-def _bilerp(G, FX, FY):
-    R = G.shape[0]
-    gx = np.clip(np.asarray(FX, np.float64) * R - 0.5, 0, R - 1)
-    gy = np.clip(np.asarray(FY, np.float64) * R - 0.5, 0, R - 1)
+def _bilerp(G, FX, FY, dom=(1.0, 1.0)):
+    """Bilinear lookup in a grid that covers the world. FX and FY are domain positions."""
+    GY, GX = G.shape
+    ax, ay = dom
+    gx = np.clip(np.asarray(FX, np.float64) / ax * GX - 0.5, 0, GX - 1)
+    gy = np.clip(np.asarray(FY, np.float64) / ay * GY - 0.5, 0, GY - 1)
     i0 = np.floor(gx).astype(np.int64); j0 = np.floor(gy).astype(np.int64)
-    i1 = np.minimum(i0 + 1, R - 1); j1 = np.minimum(j0 + 1, R - 1)
+    i1 = np.minimum(i0 + 1, GX - 1); j1 = np.minimum(j0 + 1, GY - 1)
     tx = gx - i0; ty = gy - j0
     a = G[j0, i0]; b = G[j0, i1]; c = G[j1, i0]; d = G[j1, i1]
     return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty
@@ -951,13 +1005,14 @@ class PlanetFields:
     def __init__(self, s, base):
         R = self.R = planet_resolution(s)
         S = int(s.seed)
-        c = (np.arange(R) + 0.5) / R
-        FX, FY = np.meshgrid(c, c)
+        self.dom = s.dom
+        ax, ay = s.dom
+        FX, FY = _cells(_grid_shape(s.dom, R), s.dom)
         E0 = soft_unit(np.asarray(base(FX, FY), np.float64))
         rnd = mulberry32(S * 97 + 11)
         N = 16 + int(rnd() * 8)
-        px = np.array([rnd() for _ in range(N)])
-        py = np.array([rnd() for _ in range(N)])
+        px = np.array([rnd() * ax for _ in range(N)])
+        py = np.array([rnd() * ay for _ in range(N)])
         ang = np.array([rnd() * 2 * math.pi for _ in range(N)])
         spd = np.array([0.3 + 0.7 * rnd() for _ in range(N)])
         cont = np.array([rnd() < 0.4 for _ in range(N)])
@@ -1008,7 +1063,7 @@ class PlanetFields:
 
     def wrap(self, base):
         def sampler(fx, fy):
-            return soft_unit(np.asarray(base(fx, fy), np.float64) + _bilerp(self.delta, fx, fy))
+            return soft_unit(np.asarray(base(fx, fy), np.float64) + _bilerp(self.delta, fx, fy, self.dom))
         return sampler
 
 
@@ -1023,6 +1078,8 @@ class World:
             (settings.overview_size, settings.overview_size, 3), (6, 9, 13), np.uint8
         )
         self.chunk_ready = np.zeros((settings.chunks, settings.chunks), bool)
+        self.chunk_ready[settings.chunks_y:, :] = True    # square padding around a rectangular world
+        self.chunk_ready[:, settings.chunks_x:] = True
         self.done = 0
         self.total = settings.total_chunks
         self._cache = OrderedDict()
@@ -1039,23 +1096,24 @@ class World:
             self.sea_level = planet.sea
         edge = clamp(float(settings.edge_water), 0.0, 1.0)
         if edge > 0.001:
-            self.sampler = _edge_wrap(self.sampler, edge)
+            self.sampler = _edge_wrap(self.sampler, edge, settings.dom)
         self.hard_fn = _geology(int(settings.seed))
         self.sampler = _detail_wrap(self.sampler, int(settings.seed), self.hard_fn, self.sea_level,
                                     0.06 * float(settings.detail), float(settings.mask_strength),
                                     float(settings.geology))
-        self.sampler = _rim_wrap(self.sampler, self.sea_level, int(settings.seed))
-        self.sampler = _shelf_wrap(self.sampler, self.sea_level, _ocean_shelf_grid(self.sampler, self.sea_level))
+        self.sampler = _rim_wrap(self.sampler, self.sea_level, int(settings.seed), settings.dom)
+        self.sampler = _shelf_wrap(self.sampler, self.sea_level,
+                                   _ocean_shelf_grid(self.sampler, self.sea_level, settings.dom),
+                                   settings.dom)
         steps = 200
-        c = (np.arange(steps) + 0.5) / steps
-        FXr, FYr = np.meshgrid(c, c)
+        FXr, FYr = _cells(_grid_shape(settings.dom, steps), settings.dom)
         S = np.sort(np.asarray(self.sampler(FXr, FYr), np.float64).ravel())
         self.sampler = _remap_wrap(self.sampler, S, float(settings.sea_percentile),
                                    0.02, 0.90, 0.6 / max(0.25, float(settings.relief)),
                                    gamma=float(settings.land_gamma))
         self.sea_level = float(settings.sea_percentile)
         # Stage 2 - weather, worked out from the geography alone.
-        weather = _stage_weather(self.sampler, self.sea_level, int(settings.seed))
+        weather = _stage_weather(self.sampler, self.sea_level, int(settings.seed), settings.dom)
         # Stage 3 - erosion and hydrology, driven by that weather.
         (self.sampler, self.lake_grid, self.flow_grid, self.river_threshold,
          eroded) = _global_pass(self.sampler, settings, self.sea_level, weather)
@@ -1068,8 +1126,7 @@ class World:
         f = float(s.frequency)
         k = clamp(float(s.shape_strength), 0.0, 1.0) if shape is not None else 0.0
         steps = int(clamp(round(200 * max(1.0, f)), 200, 400))
-        c = (np.arange(steps) + 0.5) / steps
-        FX, FY = np.meshgrid(c, c)
+        FX, FY = _cells(_grid_shape(s.dom, steps), s.dom)
         raw_s = np.asarray(raw(FX * f, FY * f), np.float64)
         mn = float(np.percentile(raw_s, 0.5)); mx = float(np.percentile(raw_s, 99.5))
         rng = (mx - mn) or 1.0
@@ -1107,6 +1164,8 @@ class World:
         self.overview[py:py + ts, px:px + ts] = img
 
     def get_chunk(self, cx, cy):
+        if cx >= self.s.chunks_x or cy >= self.s.chunks_y:
+            return None
         if not self.chunk_ready[cy, cx]:
             return None
         key = (cx, cy)
@@ -1121,31 +1180,38 @@ class World:
         return ch
 
     def generate_chunk(self, cx, cy):
-        s = self.s
-        CH = s.chunk
-        S = int(s.seed)
-        WW = s.world_w
+        CH = self.s.chunk
         c = np.arange(CH) + 0.5
-        FX, FY = np.meshgrid((cx * CH + c) / WW, (cy * CH + c) / WW)
+        FX, FY = np.meshgrid((cx * CH + c) / self.s.world_w, (cy * CH + c) / self.s.world_w)
+        f = self.surface(FX, FY, 1.0)
+        return {"height": f["height"], "temp": f["temp"], "moist": f["moist"],
+                "slope": f["slope"], "flow": f["flow"], "biome": f["biome"]}
 
+    def surface(self, FX, FY, tile=1.0):
+        """The four stages at any set of points. FX and FY are world positions divided by the
+        longer side, so X runs 0..dom[0] and Y runs 0..dom[1]. tile is how many world tiles
+        one sample is apart (1 for a chunk). Chunks and the stage-one preview both come from
+        here, so they always agree."""
+        s = self.s
         # Stage 1 - geography: the eroded elevation.
         height = np.asarray(self.sampler(FX, FY), np.float32)
 
         # Stage 2 - weather: temperature, moisture and the elevation rank.
-        temp = _bilerp(self.climate_t, FX, FY).astype(np.float32)
-        moist = _bilerp(self.climate_m, FX, FY).astype(np.float32)
-        elev = _bilerp(self.climate_e, FX, FY)
+        dom = s.dom
+        temp = _bilerp(self.climate_t, FX, FY, dom).astype(np.float32)
+        moist = _bilerp(self.climate_m, FX, FY, dom).astype(np.float32)
+        elev = _bilerp(self.climate_e, FX, FY, dom)
 
         # Stage 3 - hydrology: river flow and where water collects.
-        flow = _bilerp(self.flow_grid, FX, FY).astype(np.float32)
-        lake_cover = _bilerp(self.lake_grid, FX, FY) > 0.5
+        flow = _bilerp(self.flow_grid, FX, FY, dom).astype(np.float32)
+        lake_cover = _bilerp(self.lake_grid, FX, FY, dom) > 0.5
         thr = self.river_threshold
 
         dx = np.roll(height, -1, axis=1) - np.roll(height, 1, axis=1)
         dy = np.roll(height, -1, axis=0) - np.roll(height, 1, axis=0)
         dx[:, 0] = 0; dx[:, -1] = 0
         dy[0, :] = 0; dy[-1, :] = 0
-        slope = np.clip(np.sqrt(dx * dx + dy * dy) * 34, 0, 1).astype(np.float32)
+        slope = np.clip(np.sqrt(dx * dx + dy * dy) / (2.0 * tile) * 68, 0, 1).astype(np.float32)
 
         hf = height.astype(np.float64)
         tf = temp.astype(np.float64); mf = moist.astype(np.float64); sf = slope.astype(np.float64)
@@ -1165,8 +1231,8 @@ class World:
         biome[lake] = FLOODPLAIN
         biome[delta] = DELTA_SILT
 
-        return {"height": height, "temp": temp, "moist": moist,
-                "slope": slope, "flow": flow, "biome": biome}
+        return {"height": height, "temp": temp, "moist": moist, "slope": slope,
+                "flow": flow, "biome": biome, "lake": lake}
 
     def chunk_overview_size(self):
         return self.s.overview_ts
@@ -1180,10 +1246,10 @@ class World:
         Y, X = np.meshgrid(idx, idx, indexing="ij")
         H = chunk["height"]
         lr = {
-            "h": H[Y, X].astype(np.float64),
+            "h": H[Y, X].astype(np.float32),
             "b": chunk["biome"][Y, X],
-            "t": chunk["temp"][Y, X].astype(np.float64),
-            "m": chunk["moist"][Y, X].astype(np.float64),
+            "t": chunk["temp"][Y, X].astype(np.float32),
+            "m": chunk["moist"][Y, X].astype(np.float32),
             "riv": (chunk["flow"][Y, X] > self.river_threshold),
             "shade": self._hillshade_grid(H, X, Y),
         }
@@ -1212,10 +1278,9 @@ class World:
     def sample_height(self, wx, wy):
         s = self.s
         CH = s.chunk
-        ww = s.world_w
         wx, wy = np.broadcast_arrays(
-            np.clip(np.asarray(wx, np.float64), 0, ww - 1.001),
-            np.clip(np.asarray(wy, np.float64), 0, ww - 1.001),
+            np.clip(np.asarray(wx, np.float64), 0, s.world_wx - 1.001),
+            np.clip(np.asarray(wy, np.float64), 0, s.world_wy - 1.001),
         )
         shape = wx.shape
         wx = wx.ravel(); wy = wy.ravel()
@@ -1246,10 +1311,9 @@ class World:
     def sample_biome(self, wx, wy):
         s = self.s
         CH = s.chunk
-        ww = s.world_w
         wx, wy = np.broadcast_arrays(
-            np.clip(np.asarray(wx, np.float64), 0, ww - 1),
-            np.clip(np.asarray(wy, np.float64), 0, ww - 1),
+            np.clip(np.asarray(wx, np.float64), 0, s.world_wx - 1),
+            np.clip(np.asarray(wy, np.float64), 0, s.world_wy - 1),
         )
         shape = wx.shape
         wx = wx.ravel(); wy = wy.ravel()
@@ -1272,9 +1336,8 @@ class World:
 
     def sample_cell(self, wx, wy):
         s = self.s
-        ww = s.world_w
-        wx = clamp(wx, 0, ww - 1)
-        wy = clamp(wy, 0, ww - 1)
+        wx = clamp(wx, 0, s.world_wx - 1)
+        wy = clamp(wy, 0, s.world_wy - 1)
         cx = int(wx // s.chunk); cy = int(wy // s.chunk)
         ch = self.get_chunk(cx, cy)
         if ch is None: return None
@@ -1285,8 +1348,8 @@ class World:
         s = self.s
         x0 = cx - s.preview_r; x1 = cx + s.preview_r
         y0 = cy - s.preview_r; y1 = cy + s.preview_r
-        ccx0 = max(0, int(x0 // s.chunk)); ccx1 = min(s.chunks - 1, int(x1 // s.chunk))
-        ccy0 = max(0, int(y0 // s.chunk)); ccy1 = min(s.chunks - 1, int(y1 // s.chunk))
+        ccx0 = max(0, int(x0 // s.chunk)); ccx1 = min(s.chunks_x - 1, int(x1 // s.chunk))
+        ccy0 = max(0, int(y0 // s.chunk)); ccy1 = min(s.chunks_y - 1, int(y1 // s.chunk))
         for yy in range(ccy0, ccy1 + 1):
             for xx in range(ccx0, ccx1 + 1):
                 if not self.chunk_ready[yy, xx]:
@@ -1295,11 +1358,10 @@ class World:
 
 class WindowField:
     def __init__(self, world, cx, cy, R):
-        ww = world.s.world_w
         self.X0 = int(max(0, math.floor(cx - R)))
         self.Y0 = int(max(0, math.floor(cy - R)))
-        X1 = int(min(ww - 1, math.ceil(cx + R)))
-        Y1 = int(min(ww - 1, math.ceil(cy + R)))
+        X1 = int(min(world.s.world_wx - 1, math.ceil(cx + R)))
+        Y1 = int(min(world.s.world_wy - 1, math.ceil(cy + R)))
         self.nx = X1 - self.X0 + 1
         self.ny = Y1 - self.Y0 + 1
         xs = np.arange(self.X0, X1 + 1, dtype=np.float64)
@@ -1512,13 +1574,18 @@ class MinimapWidget(QWidget):
         self.px = 0.0
         self.py = 0.0
         self.ready = False
-        self.chunks = 10
-        self.world_w = 12800
+        self.wx = 12800.0      # the world's size in tiles
+        self.wy = 12800.0
+        self.kx = 10           # chunks across and down
+        self.ky = 10
+        self.ts = 1            # overview pixels per chunk
         self.preview_r = 64
         self._dragging = False
 
-    def configure(self, world_w, chunks, preview_r):
-        self.world_w = world_w; self.chunks = chunks; self.preview_r = preview_r
+    def configure(self, world_wx, world_wy, kx, ky, ts, preview_r):
+        self.wx = float(world_wx); self.wy = float(world_wy)
+        self.kx = int(kx); self.ky = int(ky); self.ts = int(ts)
+        self.preview_r = preview_r
 
     def set_overview(self, arr: np.ndarray):
         arr = np.ascontiguousarray(arr)
@@ -1535,49 +1602,64 @@ class MinimapWidget(QWidget):
         self.update()
 
     def _rects(self):
-        S = min(self.width(), self.height())
-        return S, (self.width() - S) // 2, (self.height() - S) // 2
+        """The world's own rectangle, fitted into the widget at its proportions."""
+        W, H = float(self.width()), float(self.height())
+        aspect = self.wx / self.wy
+        if W / max(H, 1.0) > aspect:
+            h = H; w = H * aspect
+        else:
+            w = W; h = W / aspect
+        return w, h, (W - w) / 2.0, (H - h) / 2.0
 
     def paintEvent(self, _):
         p = QPainter(self)
         p.fillRect(self.rect(), QColor("#07090d"))
-        S, ox, oy = self._rects()
-        if S <= 2: return
-        rect = QRectF(ox, oy, S, S)
+        w, h, ox, oy = self._rects()
+        if w <= 2 or h <= 2:
+            p.end()
+            return
+        rect = QRectF(ox, oy, w, h)
         if self.qimg is not None:
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-            p.drawImage(rect, self.qimg)
+            p.drawImage(rect, self.qimg, QRectF(0, 0, self.kx * self.ts, self.ky * self.ts))
 
         p.setPen(QPen(QColor(143, 230, 192, 26), 1))
-        for i in range(1, self.chunks):
-            t = i / self.chunks
-            p.drawLine(QPointF(ox + t * S, oy), QPointF(ox + t * S, oy + S))
-            p.drawLine(QPointF(ox, oy + t * S), QPointF(ox + S, oy + t * S))
+        for i in range(1, self.kx):
+            x = ox + w * i / self.kx
+            p.drawLine(QPointF(x, oy), QPointF(x, oy + h))
+        for j in range(1, self.ky):
+            y = oy + h * j / self.ky
+            p.drawLine(QPointF(ox, y), QPointF(ox + w, y))
 
-        mx = ox + (self.px / self.world_w) * S
-        my = oy + (self.py / self.world_w) * S
-        half = (self.preview_r / self.world_w) * S
+        mx = ox + (self.px / self.wx) * w
+        my = oy + (self.py / self.wy) * h
+        hx = self.preview_r / self.wx * w
+        hy = self.preview_r / self.wy * h
         pen = QColor(143, 230, 192, 240) if self.ready else QColor(230, 180, 103, 240)
         fill = QColor(143, 230, 192, 26) if self.ready else QColor(230, 180, 103, 26)
         p.setPen(QPen(pen, 1.5))
         p.setBrush(QBrush(fill))
-        p.drawRect(QRectF(mx - half, my - half, half * 2, half * 2))
+        p.drawRect(QRectF(mx - hx, my - hy, hx * 2, hy * 2))
 
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.setPen(QPen(QColor(255, 255, 255, 220), 1))
-        k = S * 0.018
+        k = min(w, h) * 0.018
         p.drawLine(QPointF(mx - k, my), QPointF(mx + k, my))
         p.drawLine(QPointF(mx, my - k), QPointF(mx, my + k))
         p.setPen(QPen(QColor("#8fe6c0") if self.ready else QColor("#e6b467"), 1.5))
-        p.drawEllipse(QPointF(mx, my), max(3.0, S * 0.012), max(3.0, S * 0.012))
+        r = max(3.0, min(w, h) * 0.012)
+        p.drawEllipse(QPointF(mx, my), r, r)
         p.setPen(QPen(QColor(255, 255, 255, 26), 1))
         p.drawRect(rect)
+        p.end()
 
     def _pick(self, pos):
-        S, ox, oy = self._rects()
-        u = clamp((pos.x() - ox) / S, 0, 1)
-        v = clamp((pos.y() - oy) / S, 0, 1)
-        self.moved.emit(u * self.world_w, v * self.world_w)
+        w, h, ox, oy = self._rects()
+        if w <= 0 or h <= 0:
+            return
+        u = clamp((pos.x() - ox) / w, 0, 1)
+        v = clamp((pos.y() - oy) / h, 0, 1)
+        self.moved.emit(u * self.wx, v * self.wy)
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
@@ -1754,7 +1836,7 @@ class Preview3DWidget(QWidget):
         if K["Q"] in held or K["C"] in held: my -= 1.0
         ml = math.sqrt(mx * mx + my * my + mz * mz)
         if ml > 0:
-            step = self.fly_speed * (3.0 if K["Shift"] in held else 1.0) * dt / ml
+            step = self.fly_speed * (4.0 if K["Shift"] in held else 1.0) * dt / ml
             px, py, pz = self.fly_pos
             self.fly_pos = (
                 clamp(px + mx * step, -4.0, 4.0),
@@ -1947,23 +2029,102 @@ QPushButton#dice{padding:4px 0;min-width:26px;max-width:30px;font-size:13px;}
 """
 
 
-def preview_pixels(s: Settings, n: int = 160):
-    w = World(s)
-    c = (np.arange(n) + 0.5) / n
-    FX, FY = np.meshgrid(c, c)
-    h = np.asarray(w.sampler(FX, FY), np.float64)
-    sea = max(w.sea_level, 1e-6)
-    land = ramp_rgb(LAND_A, np.clip((h - w.sea_level) / max(1 - w.sea_level, 1e-6), 0, 1))
-    wt = np.clip(h / sea, 0, 1)
-    water = np.stack([lerp(12, 52, wt), lerp(24, 104, wt), lerp(52, 152, wt)], -1)
-    out = np.where((h < w.sea_level)[..., None], water, land)
-    return np.clip(out, 0, 255).astype(np.uint8)
+def world_preview(world, n, show_sea=True):
+    """The whole world at its own shape: n pixels along the longer side, the shorter side in
+    proportion. Only the sampling depends on n, so the picture fits any window size. Colours
+    are the ground types the chunks use, shaded by the slope, with rivers and lakes drawn on
+    top. Flora is not part of this preview."""
+    s = world.s
+    if s.world_wx >= s.world_wy:
+        pw = int(n); ph = max(1, int(round(n * s.world_wy / s.world_wx)))
+    else:
+        ph = int(n); pw = max(1, int(round(n * s.world_wx / s.world_wy)))
+    tile = s.world_w / float(n)      # world tiles between two preview pixels, the same on both axes
+    XT, YT = np.meshgrid((np.arange(pw) + 0.5) * tile, (np.arange(ph) + 0.5) * tile)
+    FX = XT / s.world_w
+    FY = YT / s.world_w
+    f = world.surface(FX, FY, tile)
+    h = f["height"].astype(np.float64)
+    vs = s.world_w * VS_FRAC             # same vertical scale as the 3D walk
+    gx = np.gradient(h, axis=1) / tile * vs
+    gz = np.gradient(h, axis=0) / tile * vs
+    nrm = np.stack([-gx, np.ones_like(gx), -gz], -1)
+    nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)
+    shade = 0.4 + 0.6 * np.clip(nrm @ LIGHT, 0.0, 1.0)
+    rgb = BIOME_RGB_F[f["biome"]] * shade[..., None]
+    river = (f["flow"] > world.river_threshold) & (h >= world.sea_level) & ~f["lake"]
+    rgb[river] = (70, 150, 215)
+    if show_sea:
+        under = h < world.sea_level
+        water = np.array([40, 110, 170], np.float64)
+        rgb = np.where(under[..., None], rgb * 0.45 + water * 0.55, rgb)
+        edge = np.zeros(under.shape, bool)           # the shoreline: where sea meets land
+        hz = under[:, 1:] != under[:, :-1]
+        vt = under[1:, :] != under[:-1, :]
+        edge[:, 1:] |= hz; edge[:, :-1] |= hz
+        edge[1:, :] |= vt; edge[:-1, :] |= vt
+        rgb[edge] = (200, 235, 255)
+    return np.clip(rgb, 0, 255).astype(np.uint8)
+
+
+class PreviewLabel(QLabel):
+    """A label that tells its owner when its size changes, so the preview can redraw.
+    Its size comes from the layout alone: the picture it shows never feeds back into it."""
+    resized = pyqtSignal()
+
+    def sizeHint(self):
+        return QSize(260, 260)
+
+    def minimumSizeHint(self):
+        return QSize(220, 220)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self.resized.emit()
+
+
+class Cooldown:
+    """Keeps a group of randomize buttons disabled while an action runs, and for HOLD_MS
+    after it finishes, so clicks can't stack up work."""
+    HOLD_MS = 100
+
+    def __init__(self, buttons=()):
+        self.buttons = list(buttons)
+        self.busy = False
+
+    def add(self, *buttons):
+        self.buttons.extend(buttons)
+
+    def run(self, fn):
+        if self.busy:
+            return
+        self.busy = True
+        self._set(False)
+        try:
+            fn()
+        finally:
+            QTimer.singleShot(self.HOLD_MS, self._release)
+
+    def _set(self, on):
+        for b in self.buttons:
+            try:
+                b.setEnabled(on)
+            except RuntimeError:       # the button belonged to a panel that has been closed
+                pass
+
+    def _release(self):
+        self.busy = False
+        self._set(True)
+
+
+PREVIEW_MAX_PX = 360   # rendered size; the picture is scaled smoothly to fit the window
 
 
 class SliderSpin(QWidget):
     valueChanged = pyqtSignal(float)
     committed = pyqtSignal()
     _Q = 1000
+    gate = None   # set by the panel that owns this slider
 
     def __init__(self, lo, hi, step, decimals, value, suffix="", mul=1.0, parent=None):
         super().__init__(parent)
@@ -1988,7 +2149,7 @@ class SliderSpin(QWidget):
         self.dice = QPushButton("⟳")
         self.dice.setObjectName("dice")
         self.dice.setToolTip("Randomize this value")
-        self.dice.clicked.connect(self.randomize)
+        self.dice.clicked.connect(self._on_dice)
         lay.addWidget(self.dice)
         self.lock = QPushButton("🔓")
         self.lock.setObjectName("dice")
@@ -2020,6 +2181,12 @@ class SliderSpin(QWidget):
 
     def value(self):
         return self._v
+
+    def _on_dice(self, *_):
+        if self.gate is not None:
+            self.gate.run(self.randomize)
+        else:
+            self.randomize()
 
     def randomize(self, *_, emit=True):
         v = random.uniform(self._lo, self._hi)
@@ -2061,7 +2228,8 @@ def _codec_fields():
     return [
         ("method", "choice", METHOD_ORDER),
         ("seed", "int", (0, 1, 2 ** 31)),
-        ("num_chunks", "int", (2, 1, 511)),
+        ("chunks_x", "int", (2, 1, 511)),
+        ("chunks_y", "int", (2, 1, 511)),
         ("sea_percentile", "grid", (0.05, 0.01, 91)),
         ("shape_strength", "grid", (0.0, 0.01, 101)),
         ("landmass_count", "grid", (0.0, 0.01, 101)),
@@ -2251,7 +2419,7 @@ class StartMenu(QWidget):
 
         head = QVBoxLayout()
         head.setSpacing(4)
-        title = QLabel("◈  WORLDGEN LAB")
+        title = QLabel("◈  WORLDMAKER")
         title.setObjectName("title")
         sub = QLabel("Tune the settings, check the live preview, then generate.")
         sub.setObjectName("subtitle")
@@ -2269,23 +2437,47 @@ class StartMenu(QWidget):
         outer.addLayout(body, 1)
 
         side = QWidget()
-        side.setFixedWidth(300)
+        self._side = side
         sv = QVBoxLayout(side)
         sv.setContentsMargins(0, 0, 0, 0)
         sv.setSpacing(14)
         pbox = QGroupBox("PREVIEW")
         pl = QVBoxLayout(pbox)
         pl.setSpacing(10)
-        self.preview_img = QLabel("Preview updates when you release a slider.")
+        self.preview_img = PreviewLabel("Preview updates when you release a slider.")
         self.preview_img.setWordWrap(True)
         self.preview_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_img.setFixedSize(268, 268)
+        self.preview_img.setFixedSize(260, 260)   # resized to the window in resizeEvent
+        self._preview_timer = QTimer(self)
+        self._preview_timer.setSingleShot(True)
+        self._preview_timer.timeout.connect(self._show_preview)
+        self.preview_img.resized.connect(self._on_preview_resized)
+        self._stale = QFrame(self.preview_img)
+        self._stale.setStyleSheet(
+            "QFrame{background:rgba(5,7,10,225); border-radius:6px;}"
+            "QLabel{color:#dfe9f5; background:transparent; font-size:13px;}")
+        sl = QVBoxLayout(self._stale)
+        msg = QLabel("Chunk count changed.\nRefresh the preview to see the new world.")
+        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        msg.setWordWrap(True)
+        refresh = QPushButton("Refresh preview")
+        refresh.clicked.connect(self._show_preview)
+        sl.addStretch()
+        sl.addWidget(msg)
+        sl.addWidget(refresh, 0, Qt.AlignmentFlag.AlignCenter)
+        sl.addStretch()
+        self._stale.hide()
         self.preview_img.setStyleSheet(
             "background:#05070a;border:1px solid #16202d;border-radius:6px;color:#5d7089;")
-        pl.addWidget(self.preview_img, 0, Qt.AlignmentFlag.AlignCenter)
-        pl.addWidget(_hint("Shows terrain height and water. Settings tagged ○ are applied only "
-                           "when the world generates."))
+        pl.addWidget(self.preview_img, 0, Qt.AlignmentFlag.AlignHCenter)
+        self._sea_check = QCheckBox("Show sea level")
+        self._sea_check.setChecked(True)
+        self._sea_check.toggled.connect(lambda *_: self._show_preview())
+        pl.addWidget(self._sea_check, 0, Qt.AlignmentFlag.AlignHCenter)
         sv.addWidget(pbox)
+        sv.addWidget(_hint("The whole world at the size of this window: ground types, rivers and "
+                           "lakes. The blue tint and white line show sea level. Settings tagged ○ "
+                           "are applied only when the world generates."))
 
         dbox = QGroupBox("DERIVED")
         df = QFormLayout(dbox)
@@ -2300,7 +2492,13 @@ class StartMenu(QWidget):
             self._dv[key] = lab
         sv.addWidget(dbox)
         sv.addStretch(1)
-        body.addWidget(side)
+        side_scroll = QScrollArea()
+        side_scroll.setWidgetResizable(True)
+        side_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        side_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        side_scroll.setWidget(side)
+        self._side_scroll = side_scroll
+        body.addWidget(side_scroll)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -2333,10 +2531,14 @@ class StartMenu(QWidget):
 
         f = section("Seed & algorithm")
         self.method_combo = _combo([c for c in METHOD_CHOICES if c[0] in MENU_METHODS])
+        self._gate = Cooldown()
+        self._preview_key = None
+        self._preview_world = None
+        self._preview_chunks = None
         self.method_dice = QPushButton("⟳")
         self.method_dice.setObjectName("dice")
         self.method_dice.setToolTip("Pick a different algorithm")
-        self.method_dice.clicked.connect(self._randomize_method)
+        self.method_dice.clicked.connect(lambda: self._gate.run(self._randomize_method))
         self.method_lock = QPushButton("🔓")
         self.method_lock.setObjectName("dice")
         self.method_lock.setCheckable(True)
@@ -2347,7 +2549,7 @@ class StartMenu(QWidget):
         self.seed_spin.setValue(int(time.time() * 1000) % 1_000_000_000)
         self.dice_btn = QPushButton("Randomize")
         self.dice_btn.setObjectName("ghost")
-        self.dice_btn.clicked.connect(self._randomize_seed)
+        self.dice_btn.clicked.connect(lambda: self._gate.run(self._randomize_seed))
         _frow(f, "Algorithm", _hwrap(self.method_combo, self.method_dice, self.method_lock), "live")
         _frow(f, "Seed", _hwrap(self.seed_spin, self.dice_btn), "live")
 
@@ -2399,12 +2601,16 @@ class StartMenu(QWidget):
         self.tectonic_slider = SliderSpin(0.0, 1.0, 0.01, 0, 0.0, "%", mul=100)
         _frow(f, "Tectonic activity", self.tectonic_slider, "live")
 
-        f = section("World size", "The world is a square grid of chunks. Chunks per side sets the "
-                                  "total size.")
-        self.num_chunks_spin = QSpinBox()
-        self.num_chunks_spin.setRange(2, 512)
-        self.num_chunks_spin.setValue(10)
-        _frow(f, "Chunks per side", self.num_chunks_spin, "gen")
+        f = section("World size", "The world is a grid of chunks: X across, Y down. The two counts "
+                                  "can differ.")
+        self.chunks_x_spin = QSpinBox()
+        self.chunks_x_spin.setRange(2, 512)
+        self.chunks_x_spin.setValue(10)
+        self.chunks_y_spin = QSpinBox()
+        self.chunks_y_spin.setRange(2, 512)
+        self.chunks_y_spin.setValue(10)
+        _frow(f, "Chunks across (X)", self.chunks_x_spin, "gen")
+        _frow(f, "Chunks down (Y)", self.chunks_y_spin, "gen")
 
         f = section("Window", "Borderless fills the work area with no frame. Fullscreen covers "
                               "the monitor. Esc returns to windowed; F11 toggles borderless.")
@@ -2456,7 +2662,8 @@ class StartMenu(QWidget):
         self.gen_btn.clicked.connect(self._emit_settings)
         self.rand_all_btn = QPushButton("🎲 Randomize all")
         self.rand_all_btn.setMinimumHeight(38)
-        self.rand_all_btn.clicked.connect(self._randomize_all)
+        self.rand_all_btn.clicked.connect(lambda: self._gate.run(self._randomize_all))
+        self._gate.add(self.method_dice, self.dice_btn, self.rand_all_btn)
         self.preview_btn = QPushButton("Refresh preview")
         self.preview_btn.setMinimumHeight(38)
         self.preview_btn.clicked.connect(self._show_preview)
@@ -2474,10 +2681,13 @@ class StartMenu(QWidget):
                          self.gamma_slider, self.detail_slider, self.geo_slider,
                          self.mask_slider, self.blend_slider, self.erosion_slider)
         self.seed_spin.valueChanged.connect(self._on_form_changed)
-        self.num_chunks_spin.valueChanged.connect(self._on_form_changed)
+        self.chunks_x_spin.valueChanged.connect(self._on_chunks_changed)
+        self.chunks_y_spin.valueChanged.connect(self._on_chunks_changed)
         for w in self._sliders:
             w.valueChanged.connect(self._on_form_changed)
             w.committed.connect(self._show_preview)
+            w.gate = self._gate
+            self._gate.add(w.dice)
         self.method_combo.currentIndexChanged.connect(self._on_form_changed)
         self.method_combo.currentIndexChanged.connect(self._show_preview)
         self.seed_spin.editingFinished.connect(self._show_preview)
@@ -2530,21 +2740,22 @@ class StartMenu(QWidget):
     def _update_derived(self):
         s = self._collect()
         self.code_label.setText(encode_code(s))
-        ww = s.world_w
-        self._dv["World size"].setText(f"{ww:,} × {ww:,} cells")
-        self._dv["Total chunks"].setText(f"{s.total_chunks:,}  ({s.num_chunks} × {s.num_chunks})")
+        wx, wy = s.world_wx, s.world_wy
+        self._dv["World size"].setText(f"{wx:,} × {wy:,} cells")
+        self._dv["Total chunks"].setText(f"{s.total_chunks:,}  ({s.chunks_x} × {s.chunks_y})")
         self._dv["Overview image"].setText(
-            f"{s.overview_size} × {s.overview_size} px  ({s.overview_ts} px / chunk)")
+            f"{s.overview_ts * s.chunks_x} × {s.overview_ts * s.chunks_y} px  ({s.overview_ts} px / chunk)")
         self._dv["Preview window"].setText(f"{2 * s.preview_r} × {2 * s.preview_r} cells")
         self._dv["River threshold"].setText("top 1.5 % of land by drainage")
-        self.summary.setText(f"{ww:,}² cells · {s.total_chunks:,} chunks · "
-                             f"{s.overview_size}² overview")
+        self.summary.setText(f"{wx:,} × {wy:,} cells · {s.total_chunks:,} chunks · "
+                             f"{s.overview_ts * s.chunks_x} × {s.overview_ts * s.chunks_y} px overview")
 
     def _collect(self):
         return snap_settings(Settings(
             method=self.method_combo.currentData(),
             seed=int(self.seed_spin.value()),
-            num_chunks=int(self.num_chunks_spin.value()),
+            chunks_x=int(self.chunks_x_spin.value()),
+            chunks_y=int(self.chunks_y_spin.value()),
             sea_percentile=self.water_slider.value(),
             shape_strength=self.shape_slider.value(),
             landmass_count=self.count_slider.value(),
@@ -2582,16 +2793,47 @@ class StartMenu(QWidget):
         except (OSError, ValueError, TypeError) as exc:
             self.code_status.setText(f"Could not load settings: {exc}")
 
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        w = int(clamp(self.width() * 0.28, 280, 420))   # the sidebar grows with the window
+        self._side_scroll.setFixedWidth(w)
+        self._side.setFixedWidth(w - 18)
+        side = w - 18 - 56                               # room for the box's margins and frame
+        self.preview_img.setFixedSize(side, side)
+
+    def _place_stale(self):
+        self._stale.setGeometry(self.preview_img.rect())
+
+    def _on_preview_resized(self):
+        self._place_stale()
+        self._preview_timer.start(90)
+
+    def _on_chunks_changed(self, *_):
+        self._on_form_changed()
+        if self._preview_chunks is not None and \
+                (self.chunks_x_spin.value(), self.chunks_y_spin.value()) != self._preview_chunks:
+            self._place_stale()
+            self._stale.show()
+            self._stale.raise_()
+
     def _show_preview(self, *_):
         if self._quiet:
             return
-        px = preview_pixels(self._collect(), 160)
-        h, w = px.shape[:2]
-        img = QImage(px.tobytes(), w, h, w * 3, QImage.Format.Format_RGB888).copy()
+        s = self._collect()
+        key = json.dumps(s.to_dict(), sort_keys=True)
+        if key != self._preview_key or self._preview_world is None:
+            self._preview_world = World(s)     # the slow part; reused while settings are the same
+            self._preview_key = key
+        fit = max(160, min(self.preview_img.width(), self.preview_img.height()) - 4)
+        side = min(PREVIEW_MAX_PX, fit)
+        px = world_preview(self._preview_world, side, self._sea_check.isChecked())
+        ph, pw = px.shape[:2]
+        img = QImage(px.tobytes(), pw, ph, pw * 3, QImage.Format.Format_RGB888).copy()
         pix = QPixmap.fromImage(img).scaled(
-            228, 228, Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.FastTransformation)
+            fit, fit, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.preview_img.setPixmap(pix)
+        self._preview_chunks = (s.chunks_x, s.chunks_y)
+        self._stale.hide()
 
     def _copy_code(self):
         QApplication.clipboard().setText(self.code_label.text())
@@ -2624,7 +2866,8 @@ class StartMenu(QWidget):
             self.method_combo.addItem(name, s.method)
         self.method_combo.setCurrentIndex(self.method_combo.findData(s.method))
         self.seed_spin.setValue(int(s.seed))
-        self.num_chunks_spin.setValue(int(s.num_chunks))
+        self.chunks_x_spin.setValue(int(s.chunks_x))
+        self.chunks_y_spin.setValue(int(s.chunks_y))
         self.water_slider.setValue(s.sea_percentile)
         self.shape_slider.setValue(s.shape_strength)
         self.count_slider.setValue(s.landmass_count)
@@ -2654,8 +2897,8 @@ class Explorer(QWidget):
         super().__init__(parent)
         self.s = settings
         self.world = World(settings)
-        self.world_cx = settings.world_w * 0.5
-        self.world_cy = settings.world_w * 0.5
+        self.world_cx = settings.world_wx * 0.5
+        self.world_cy = settings.world_wy * 0.5
         self.gen_cx = 0
         self.gen_cy = 0
         self.gen_active = True
@@ -2674,14 +2917,14 @@ class Explorer(QWidget):
             self._finish_ui_immediately()
 
     def _seek_to_first_unready(self):
-        for cy in range(self.s.chunks):
-            for cx in range(self.s.chunks):
+        for cy in range(self.s.chunks_y):
+            for cx in range(self.s.chunks_x):
                 if not self.world.chunk_ready[cy, cx]:
                     self.gen_cx = cx
                     self.gen_cy = cy
                     return
-        self.gen_cx = self.s.chunks
-        self.gen_cy = self.s.chunks
+        self.gen_cx = 0
+        self.gen_cy = self.s.chunks_y
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
@@ -2756,7 +2999,8 @@ class Explorer(QWidget):
         layout.addLayout(body, 1)
 
         self.minimap = MinimapWidget()
-        self.minimap.configure(self.s.world_w, self.s.chunks, self.s.preview_r)
+        self.minimap.configure(self.s.world_wx, self.s.world_wy, self.s.chunks_x, self.s.chunks_y,
+                               self.s.overview_ts, self.s.preview_r)
         self.minimap.moved.connect(self._on_map_moved)
         self.minimap.released.connect(self._on_map_released)
         self.minimap.set_overview(self.world.overview)
@@ -2802,7 +3046,7 @@ class Explorer(QWidget):
 
         cam_hint = QLabel(
             "Fly: W/S forward · A/D strafe · E/Space up · Q/C down · "
-            "Shift sprint · drag to look · wheel changes speed"
+            "Shift 4× speed · drag to look · wheel changes speed"
         )
         cam_hint.setWordWrap(True)
         cam_hint.setStyleSheet("color:#6d8298;font-size:10px;")
@@ -2856,10 +3100,10 @@ class Explorer(QWidget):
         if not folder:
             return
         s = self.s
-        N, CH, K = s.world_w, s.chunk, s.chunks
-        H = np.empty((N, N), np.float32)
-        B = np.empty((N, N), np.uint8)
-        keys = [(cx, cy) for cy in range(K) for cx in range(K)]
+        NX, NY, CH = s.world_wx, s.world_wy, s.chunk
+        H = np.empty((NY, NX), np.float32)
+        B = np.empty((NY, NX), np.uint8)
+        keys = [(cx, cy) for cy in range(s.chunks_y) for cx in range(s.chunks_x)]
         dlg = QProgressDialog("Generating terrain for export…", "Cancel", 0, len(keys), self)
         dlg.setWindowModality(Qt.WindowModality.WindowModal)
         dlg.setMinimumDuration(0)
@@ -2881,11 +3125,11 @@ class Explorer(QWidget):
         base = Path(folder) / f"world_{s.seed}"
         h16 = np.clip(H.astype(np.float64) * 65535.0, 0, 65535).astype("<u2")
         h16.tofile(base.with_suffix(".r16"))
-        img = QImage(h16.tobytes(), N, N, N * 2, QImage.Format.Format_Grayscale16).copy()
+        img = QImage(h16.tobytes(), NX, NY, NX * 2, QImage.Format.Format_Grayscale16).copy()
         img.save(str(base) + "_height16.png")
         rgb = np.ascontiguousarray(BIOME_RGB_F[B].astype(np.uint8))
-        QImage(rgb.tobytes(), N, N, N * 3, QImage.Format.Format_RGB888).copy().save(str(base) + "_biome.png")
-        meta = {"seed": s.seed, "world_size": N, "sea_level": self.world.sea_level,
+        QImage(rgb.tobytes(), NX, NY, NX * 3, QImage.Format.Format_RGB888).copy().save(str(base) + "_biome.png")
+        meta = {"seed": s.seed, "world_size": [NX, NY], "sea_level": self.world.sea_level,
                 "height_scale": "value/65535 of full range; sea_level is relative to the same range",
                 "settings": s.to_dict()}
         Path(str(base) + "_export.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
@@ -2902,25 +3146,26 @@ class Explorer(QWidget):
         budget = 0.014
         generated = 0
         total = self.world.total
-        n = self.s.chunks
 
-        while self.world.done < total:
+        # Walk the real chunks only. A rectangular world is padded to a square internally,
+        # and the padding must never be generated or counted towards the total.
+        while self.world.done < total and self.gen_cy < self.s.chunks_y:
             if time.time() - t0 > budget:
                 break
             cx = self.gen_cx
             cy = self.gen_cy
+            self.gen_cx += 1
+            if self.gen_cx >= self.s.chunks_x:
+                self.gen_cx = 0
+                self.gen_cy += 1
+            if self.world.chunk_ready[cy, cx]:
+                continue
             chunk = self.world.generate_chunk(cx, cy)
             img = self.world.render_chunk_to_overview(chunk, cx, cy)
             self.world.place_overview(cx, cy, img)
             self.world.chunk_ready[cy, cx] = True
             self.world.done += 1
             generated += 1
-            self.gen_cx += 1
-            if self.gen_cx >= n:
-                self.gen_cx = 0
-                self.gen_cy += 1
-                if self.gen_cy >= n:
-                    break
 
         if generated > 0:
             self.minimap.refresh()
@@ -2930,7 +3175,7 @@ class Explorer(QWidget):
             )
             self._update_progress()
 
-        if self.world.done >= total:
+        if self.world.done >= total or self.gen_cy >= self.s.chunks_y:
             self.gen_active = False
             self.timer.stop()
             self.status_label.setText("ready")
@@ -2956,8 +3201,8 @@ class Explorer(QWidget):
         self.minimap.set_preview(self.world_cx, self.world_cy, ready)
 
     def _on_map_moved(self, wx, wy):
-        self.world_cx = clamp(wx, 0, self.s.world_w - 1)
-        self.world_cy = clamp(wy, 0, self.s.world_w - 1)
+        self.world_cx = clamp(wx, 0, self.s.world_wx - 1)
+        self.world_cy = clamp(wy, 0, self.s.world_wy - 1)
         self._refresh_preview()
         self._update_readout()
 
@@ -2965,8 +3210,8 @@ class Explorer(QWidget):
         self._refresh_preview()
 
     def _update_readout(self):
-        cx = int(clamp(self.world_cx, 0, self.s.world_w - 1))
-        cy = int(clamp(self.world_cy, 0, self.s.world_w - 1))
+        cx = int(clamp(self.world_cx, 0, self.s.world_wx - 1))
+        cy = int(clamp(self.world_cy, 0, self.s.world_wy - 1))
         cell = self.world.sample_cell(cx, cy)
         if cell is None:
             self.readout.setText(
@@ -3036,13 +3281,13 @@ def _mean8(a):
 
 
 def _bilinear(G, GX, GY):
-    n = G.shape[0]
-    x = np.clip(GX, 0, n - 1)
-    y = np.clip(GY, 0, n - 1)
+    ny, nx = G.shape
+    x = np.clip(GX, 0, nx - 1)
+    y = np.clip(GY, 0, ny - 1)
     x0 = np.floor(x).astype(np.int64)
     y0 = np.floor(y).astype(np.int64)
-    x1 = np.minimum(x0 + 1, n - 1)
-    y1 = np.minimum(y0 + 1, n - 1)
+    x1 = np.minimum(x0 + 1, nx - 1)
+    y1 = np.minimum(y0 + 1, ny - 1)
     tx = x - x0
     ty = y - y0
     return ((G[y0, x0] * (1 - tx) + G[y0, x1] * tx) * (1 - ty)
@@ -3069,7 +3314,7 @@ class EditDelta:
         self.biome = biome
         self.step = int(step)
         self.ts = int(ts)
-        self.n = dh.shape[0]
+        self.ny, self.nx = dh.shape
 
     def chunk(self, cx, cy, CH):
         """Return (dheight float32 CHxCH, biome_mask bool CHxCH, biome uint8 CHxCH) or None."""
@@ -3078,8 +3323,8 @@ class EditDelta:
         GX, GY = np.meshgrid(_sample_coord(tx, CH, self.ts, self.step),
                              _sample_coord(ty, CH, self.ts, self.step))
         dh = _bilinear(self.dh, GX, GY)
-        kx = np.clip(np.rint(GX).astype(np.int64), 0, self.n - 1)
-        ky = np.clip(np.rint(GY).astype(np.int64), 0, self.n - 1)
+        kx = np.clip(np.rint(GX).astype(np.int64), 0, self.nx - 1)
+        ky = np.clip(np.rint(GY).astype(np.int64), 0, self.ny - 1)
         mask = self.changed[ky, kx]
         if not np.any(dh) and not mask.any():
             return None
@@ -3091,15 +3336,19 @@ class EditableMap:
     FIELDS = ("h", "b", "t", "m", "riv")
 
     def __init__(self, settings, lowres, base_lowres, sea):
-        self.K = int(settings.chunks)
+        self.kx = int(settings.chunks_x)
+        self.ky = int(settings.chunks_y)
         self.ts = int(settings.overview_ts)
-        self.n = self.K * self.ts
+        self.nx = self.kx * self.ts     # samples across: the map is exactly the world's shape
+        self.ny = self.ky * self.ts     # samples down
         self.step = int(settings.chunk) // self.ts   # world tiles per sample
         self.sea = float(sea)
         self.base = self._grids(base_lowres if base_lowres is not None else lowres)
         self.cur = self._grids(lowres)
         self.undo_stack = []
         self.redo_stack = []
+        # each undo step copies every field, so long histories are only kept for small maps
+        self.max_undo = int(min(self.MAX_UNDO, max(2, 400e6 // (27 * self.nx * self.ny))))
         self._stroke = None
         self._stroke_changed = False
         self.version = 0        # bumps on every change that can be undone
@@ -3107,9 +3356,10 @@ class EditableMap:
 
     # ----- conversion between per-chunk dicts and whole-map grids -----
     def _grids(self, lowres):
-        n, ts = self.n, self.ts
-        g = {"h": np.zeros((n, n)), "b": np.zeros((n, n), np.uint8), "t": np.zeros((n, n)),
-             "m": np.zeros((n, n)), "riv": np.zeros((n, n), bool)}
+        ts = self.ts
+        shape = (self.ny, self.nx)
+        g = {"h": np.zeros(shape), "b": np.zeros(shape, np.uint8), "t": np.zeros(shape),
+             "m": np.zeros(shape), "riv": np.zeros(shape, bool)}
         for (cx, cy), lr in lowres.items():
             sl = (slice(cy * ts, (cy + 1) * ts), slice(cx * ts, (cx + 1) * ts))
             g["h"][sl] = lr["h"]
@@ -3124,8 +3374,8 @@ class EditableMap:
         ts = self.ts
         shade = self.shade(self.cur["h"])
         out = {}
-        for cy in range(self.K):
-            for cx in range(self.K):
+        for cy in range(self.ky):
+            for cx in range(self.kx):
                 sl = (slice(cy * ts, (cy + 1) * ts), slice(cx * ts, (cx + 1) * ts))
                 out[(cx, cy)] = {
                     "h": self.cur["h"][sl].copy(),
@@ -3141,8 +3391,8 @@ class EditableMap:
         """The original map as the file stores it (kept so later edits can be diffed)."""
         ts = self.ts
         out = {}
-        for cy in range(self.K):
-            for cx in range(self.K):
+        for cy in range(self.ky):
+            for cx in range(self.kx):
                 sl = (slice(cy * ts, (cy + 1) * ts), slice(cx * ts, (cx + 1) * ts))
                 out[(cx, cy)] = {f: self.base[f][sl].copy() for f in self.FIELDS}
         return out
@@ -3172,7 +3422,7 @@ class EditableMap:
 
     def changed_cells(self):
         c, b = self.cur, self.base
-        m = np.zeros((self.n, self.n), bool)
+        m = np.zeros((self.ny, self.nx), bool)
         for f in self.FIELDS:
             m |= c[f] != b[f]
         return m
@@ -3198,7 +3448,7 @@ class EditableMap:
 
     def cell_info(self, gx, gy):
         i, j = int(gx), int(gy)
-        if not (0 <= i < self.n and 0 <= j < self.n):
+        if not (0 <= i < self.nx and 0 <= j < self.ny):
             return None
         c = self.cur
         return {
@@ -3213,10 +3463,9 @@ class EditableMap:
 
     # ----- brushes -----
     def weights(self, gx, gy, radius, shape):
-        n = self.n
         r = max(0.5, float(radius))
-        xx = np.arange(n)[None, :] - float(gx)
-        yy = np.arange(n)[:, None] - float(gy)
+        xx = np.arange(self.nx)[None, :] - float(gx)
+        yy = np.arange(self.ny)[:, None] - float(gy)
         if shape == "square":
             w = (np.abs(xx) <= r) & (np.abs(yy) <= r)
             return w.astype(np.float64)
@@ -3237,7 +3486,7 @@ class EditableMap:
             return
         if self._stroke_changed:
             self.undo_stack.append(self._stroke)
-            if len(self.undo_stack) > self.MAX_UNDO:
+            if len(self.undo_stack) > self.max_undo:
                 self.undo_stack.pop(0)
             self.redo_stack.clear()
             self.version += 1
@@ -3318,10 +3567,10 @@ STEP_UP = 0.35
 MAX_SLOPE = 1.2
 WALK_SPEED = 7.0
 FLY_SPEED = 60.0
-SPRINT = 2.2
+SPRINT = 4.0                # Shift: 4x speed in walk and fly
 DOUBLE_TAP = 0.35
 VS_FRAC = 0.12
-VIEW_R = 2                 # chunks each side of the player: 2 gives a 5 x 5 area
+VIEW_R = 4                 # chunks each side of the player: 4 gives a 9 x 9 area
 LOAD_R = VIEW_R
 UNLOAD_R = VIEW_R + 1
 SENS = 0.0022
@@ -3344,7 +3593,7 @@ K_SHIFT = int(Qt.Key.Key_Shift)
 K_ESC = int(Qt.Key.Key_Escape)
 
 CONTROLS = (
-    "WASD move  ·  mouse look  ·  Shift sprint\n"
+    "WASD move  ·  mouse look  ·  Shift 4× speed\n"
     "Space jump  ·  double-tap Space toggles walk ⇄ fly\n"
     "Fly: Space / E up, C / Q down  ·  wheel changes fly speed\n"
     "Esc pause  ·  F11 fullscreen\n\n"
@@ -3371,9 +3620,12 @@ def _extend(own, R, D, G, rx, dy):
 class Terrain:
     def __init__(self, settings, sea):
         self.CH = int(settings.chunk)
-        self.K = int(settings.chunks)
         self.N = int(settings.world_w)
         self.W = float(self.N - 1)
+        self.KX = int(settings.chunks_x)
+        self.KY = int(settings.chunks_y)
+        self.WX = float(settings.world_wx - 1)
+        self.WZ = float(settings.world_wy - 1)
         self.vs = self.N * VS_FRAC
         self.sea_y = float(sea) * self.vs
         self.data = {}
@@ -3413,9 +3665,9 @@ class Terrain:
         if key not in self.data:
             return
         cx, cy = key
-        K, n = self.K, self.CH
-        rx = cx + 1 < K
-        dy = cy + 1 < K
+        KX, KY, n = self.KX, self.KY, self.CH
+        rx = cx + 1 < KX
+        dy = cy + 1 < KY
         R = self.data.get((cx + 1, cy)) if rx else None
         D = self.data.get((cx, cy + 1)) if dy else None
         G = self.data.get((cx + 1, cy + 1)) if rx and dy else None
@@ -3467,8 +3719,8 @@ class Terrain:
         return float(d[0][j - key[1] * n, i - key[0] * n])
 
     def ground(self, x, z):
-        x = min(max(float(x), 0.0), self.W - 1e-6)
-        z = min(max(float(z), 0.0), self.W - 1e-6)
+        x = min(max(float(x), 0.0), self.WX - 1e-6)
+        z = min(max(float(z), 0.0), self.WZ - 1e-6)
         i0 = int(x)
         j0 = int(z)
         fi = x - i0
@@ -3523,8 +3775,8 @@ class Walker:
 
     def _bounded(self, a):
         out = a.copy()
-        out[0] = min(max(out[0], 0.0), self.t.W)
-        out[2] = min(max(out[2], 0.0), self.t.W)
+        out[0] = min(max(out[0], 0.0), self.t.WX)
+        out[2] = min(max(out[2], 0.0), self.t.WZ)
         return out
 
     def step(self, dt, move2, move3, sprint, jump, toggle, mult):
@@ -3665,17 +3917,16 @@ class Streamer(QObject):
         self.gen.start()
 
     def center_key(self):
-        c = self.terrain.K // 2
-        return (c, c)
+        return (self.terrain.KX // 2, self.terrain.KY // 2)
 
     def on_initialized(self, info):
         if info["generator"] != GENERATOR_VERSION:
             self.version_mismatch.emit(str(info["generator"]), GENERATOR_VERSION)
         self.terrain = Terrain(info["settings"], info["sea"])
         cx, cy = self.center_key()
-        K = self.terrain.K
-        keys = [(x, y) for x in range(max(0, cx - VIEW_R), min(K, cx + VIEW_R + 1))
-                for y in range(max(0, cy - VIEW_R), min(K, cy + VIEW_R + 1))]
+        KX, KY = self.terrain.KX, self.terrain.KY
+        keys = [(x, y) for x in range(max(0, cx - VIEW_R), min(KX, cx + VIEW_R + 1))
+                for y in range(max(0, cy - VIEW_R), min(KY, cy + VIEW_R + 1))]
         keys.sort(key=lambda k: (k[0] - cx) ** 2 + (k[1] - cy) ** 2)
         self.spawn_keys = keys
         self.player_c = (cx, cy)
@@ -3706,13 +3957,13 @@ class Streamer(QObject):
         if self.terrain is None or not self.spawn_done:
             return
         t = self.terrain
-        n, K = t.CH, t.K
-        pcx = int(min(max(px // n, 0), K - 1))
-        pcz = int(min(max(pz // n, 0), K - 1))
+        n = t.CH
+        pcx = int(min(max(px // n, 0), t.KX - 1))
+        pcz = int(min(max(pz // n, 0), t.KY - 1))
         self.player_c = (pcx, pcz)
         keys = [(cx, cy)
-                for cx in range(max(0, pcx - LOAD_R), min(K, pcx + LOAD_R + 1))
-                for cy in range(max(0, pcz - LOAD_R), min(K, pcz + LOAD_R + 1))]
+                for cx in range(max(0, pcx - LOAD_R), min(t.KX, pcx + LOAD_R + 1))
+                for cy in range(max(0, pcz - LOAD_R), min(t.KY, pcz + LOAD_R + 1))]
         keys.sort(key=lambda k: (k[0] - pcx) ** 2 + (k[1] - pcz) ** 2)
         self.gen.set_wanted([k for k in keys if not t.has(k)])
         for k in list(t.data.keys()):
@@ -4046,6 +4297,37 @@ class ViewWidget(QOpenGLWidget):
         gl.glEnd()
         gl.glDepthMask(gl.GL_TRUE)
         gl.glDisable(gl.GL_BLEND)
+        self._draw_border()
+
+    def _draw_border(self):
+        """The edge of the world: a cage of grid lines rising from the ground, so the limit of
+        the map is visible from anywhere and the walk never seems to stop for no reason."""
+        t = self.t
+        X = float(t.WX + 1.0)            # the world's width in tiles
+        Z = float(t.WZ + 1.0)            # the world's depth in tiles
+        top = 4.0 * t.vs                 # as high as the fly mode can go
+        levels = [k * top / 16.0 for k in range(17)]
+        xs = list(range(0, int(X), t.CH)) + [int(X)]
+        zs = list(range(0, int(Z), t.CH)) + [int(Z)]
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDepthMask(gl.GL_FALSE)
+        gl.glColor4f(0.56, 0.9, 0.75, 0.42)
+        gl.glBegin(gl.GL_LINES)
+        for y in levels:                 # rings around the four sides
+            gl.glVertex3f(0.0, y, 0.0); gl.glVertex3f(X, y, 0.0)
+            gl.glVertex3f(0.0, y, Z); gl.glVertex3f(X, y, Z)
+            gl.glVertex3f(0.0, y, 0.0); gl.glVertex3f(0.0, y, Z)
+            gl.glVertex3f(X, y, 0.0); gl.glVertex3f(X, y, Z)
+        for x in xs:                     # uprights, one per chunk along the two long walls
+            gl.glVertex3f(float(x), 0.0, 0.0); gl.glVertex3f(float(x), top, 0.0)
+            gl.glVertex3f(float(x), 0.0, Z); gl.glVertex3f(float(x), top, Z)
+        for z in zs:
+            gl.glVertex3f(0.0, 0.0, float(z)); gl.glVertex3f(0.0, top, float(z))
+            gl.glVertex3f(X, 0.0, float(z)); gl.glVertex3f(X, top, float(z))
+        gl.glEnd()
+        gl.glDepthMask(gl.GL_TRUE)
+        gl.glDisable(gl.GL_BLEND)
 
     def resizeGL(self, w, h):
         pass
@@ -4089,28 +4371,65 @@ class LoadingPage(QWidget):
 
 
 class MapCanvas(QWidget):
+    """The map on screen. Zoom with the mouse wheel or + and -; move with W A S D or the
+    arrow keys, or drag with the right button; F or 0 fits the whole map. Each sample is
+    drawn at its true proportions and nothing outside the map's own rectangle can be
+    painted, so a map of 30 x 10 chunks is three times as wide as it is tall, and its
+    edges are the edges."""
+
     pressed = pyqtSignal(float, float)
     dragged = pyqtSignal(float, float)
     released = pyqtSignal()
     hovered = pyqtSignal(float, float)
+    view_changed = pyqtSignal()
+
+    MIN_ZOOM = 0.25        # smallest view, as a share of the fit-to-window size
+    MAX_PX = 48.0          # most screen pixels one sample can take
+    GRID_MIN_PX = 6.0      # sample lines show once a sample is at least this big
+    PAN_PX_PER_S = 700.0   # keyboard pan speed on screen; Shift goes faster
+    PAN_KEYS = {
+        int(Qt.Key.Key_W): (0, -1), int(Qt.Key.Key_Up): (0, -1),
+        int(Qt.Key.Key_S): (0, 1), int(Qt.Key.Key_Down): (0, 1),
+        int(Qt.Key.Key_A): (-1, 0), int(Qt.Key.Key_Left): (-1, 0),
+        int(Qt.Key.Key_D): (1, 0), int(Qt.Key.Key_Right): (1, 0),
+    }
 
     def __init__(self):
         super().__init__()
         self._img = None
-        self._n = 0
+        self._nx = 0
+        self._ny = 0
         self._cursor = None
         self._radius = 0.0
         self._shape = "circle"
+        self._fit_ps = 1.0          # screen pixels per sample when the whole map fits
+        self._ps = 1.0              # screen pixels per sample now
+        self._ox = 0.0              # screen position of the map's top-left corner
+        self._oy = 0.0
+        self._auto = True           # follows the window until the user zooms or pans
+        self._held = set()
+        self._pan_t = 0.0
+        self._drag = None
+        self._pan_timer = QTimer(self)
+        self._pan_timer.setInterval(16)
+        self._pan_timer.timeout.connect(self._pan_tick)
         self.setMouseTracking(True)
         self.setMinimumSize(320, 320)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setCursor(Qt.CursorShape.CrossCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-    def set_image(self, rgb, n):
+    # ----- the picture and the brush -----
+    def set_image(self, rgb):
         rgb = np.ascontiguousarray(rgb, dtype=np.uint8)
-        self._n = int(n)
-        self._img = QImage(rgb.tobytes(), self._n, self._n, 3 * self._n,
+        ny, nx = rgb.shape[:2]
+        if (nx, ny) != (self._nx, self._ny):
+            self._auto = True       # a new shape starts fitted to the window
+        self._nx = int(nx)
+        self._ny = int(ny)
+        self._img = QImage(rgb.tobytes(), self._nx, self._ny, 3 * self._nx,
                            QImage.Format.Format_RGB888).copy()
+        self._refit()
         self.update()
 
     def set_brush(self, radius, shape):
@@ -4118,19 +4437,141 @@ class MapCanvas(QWidget):
         self._shape = shape
         self.update()
 
-    def _rect(self):
-        side = max(1.0, min(self.width(), self.height()) - 8.0)
-        return QRectF((self.width() - side) / 2.0, (self.height() - side) / 2.0, side, side)
+    # ----- view: zoom and pan -----
+    def _refit(self):
+        if not self._nx or not self._ny:
+            return
+        avail_w = max(1.0, self.width() - 16.0)
+        avail_h = max(1.0, self.height() - 16.0)
+        self._fit_ps = min(avail_w / self._nx, avail_h / self._ny)
+        if self._auto:
+            self._ps = self._fit_ps
+            self._ox = (self.width() - self._nx * self._ps) / 2.0
+            self._oy = (self.height() - self._ny * self._ps) / 2.0
+            self.view_changed.emit()
 
+    @staticmethod
+    def _clamp_axis(o, size, view):
+        if size <= view:
+            return (view - size) / 2.0          # smaller than the window: keep it centred
+        return min(0.0, max(view - size, o))    # larger: the map keeps covering the window
+
+    def _clamp_view(self):
+        self._ox = self._clamp_axis(self._ox, self._nx * self._ps, self.width())
+        self._oy = self._clamp_axis(self._oy, self._ny * self._ps, self.height())
+
+    def zoom_at(self, factor, px, py):
+        """Zoom by factor, keeping the sample under screen point (px, py) where it is."""
+        if not self._nx or self._fit_ps <= 0:
+            return
+        hi = max(self.MAX_PX, self._fit_ps)
+        new = min(hi, max(self._fit_ps * self.MIN_ZOOM, self._ps * factor))
+        if abs(new - self._ps) < 1e-9:
+            return
+        gx = (px - self._ox) / self._ps
+        gy = (py - self._oy) / self._ps
+        self._ps = new
+        self._ox = px - gx * new
+        self._oy = py - gy * new
+        self._auto = False
+        self._clamp_view()
+        self.update()
+        self.view_changed.emit()
+
+    def zoom_by(self, factor):
+        self.zoom_at(factor, self.width() / 2.0, self.height() / 2.0)
+
+    def fit(self):
+        self._auto = True
+        self._refit()
+        self.update()
+        self.view_changed.emit()
+
+    def is_fitted(self):
+        return self._auto
+
+    def zoom_percent(self):
+        return 100.0 * self._ps / self._fit_ps if self._fit_ps > 0 else 100.0
+
+    def _pan_tick(self):
+        now = time.monotonic()
+        dt = min(0.05, now - self._pan_t)
+        self._pan_t = now
+        dx = dy = 0
+        for k in self._held:
+            ux, uy = self.PAN_KEYS[k]
+            dx += ux
+            dy += uy
+        if not (dx or dy):
+            return
+        fast = QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        speed = self.PAN_PX_PER_S * (2.5 if fast else 1.0)
+        norm = math.hypot(dx, dy)
+        # the camera moves one way, so the map slides the other
+        self._ox -= dx / norm * speed * dt
+        self._oy -= dy / norm * speed * dt
+        self._auto = False
+        self._clamp_view()
+        self.update()
+        self.view_changed.emit()
+
+    def wheelEvent(self, e):
+        dy = e.angleDelta().y()
+        if dy and self._nx:
+            p = e.position()
+            self.zoom_at(1.15 ** (dy / 120.0), p.x(), p.y())
+        e.accept()
+
+    def keyPressEvent(self, e):
+        k = e.key()
+        if k in self.PAN_KEYS:
+            if not self._held:
+                self._pan_t = time.monotonic()
+                self._pan_timer.start()
+            self._held.add(k)
+            e.accept()
+            return
+        if k in (int(Qt.Key.Key_Plus), int(Qt.Key.Key_Equal)):
+            self.zoom_by(1.25)
+            return
+        if k in (int(Qt.Key.Key_Minus), int(Qt.Key.Key_Underscore)):
+            self.zoom_by(0.8)
+            return
+        if k in (int(Qt.Key.Key_0), int(Qt.Key.Key_F)):
+            self.fit()
+            return
+        super().keyPressEvent(e)
+
+    def keyReleaseEvent(self, e):
+        k = e.key()
+        if k in self._held and not e.isAutoRepeat():
+            self._held.discard(k)
+            if not self._held:
+                self._pan_timer.stop()
+            return
+        super().keyReleaseEvent(e)
+
+    def focusOutEvent(self, e):
+        self._held.clear()
+        self._pan_timer.stop()
+        super().focusOutEvent(e)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        if self._auto:
+            self._refit()
+        else:
+            self._clamp_view()
+        self.update()
+
+    # ----- painting -----
     def _grid_at(self, pos):
         """Map a widget position to continuous sample coordinates, or None outside the map."""
-        if not self._n:
+        if not self._nx:
             return None
-        r = self._rect()
-        s = r.width() / self._n
-        gx = (pos.x() - r.x()) / s - 0.5
-        gy = (pos.y() - r.y()) / s - 0.5
-        if -0.5 <= gx < self._n - 0.5 and -0.5 <= gy < self._n - 0.5:
+        gx = (pos.x() - self._ox) / self._ps - 0.5
+        gy = (pos.y() - self._oy) / self._ps - 0.5
+        if -0.5 <= gx < self._nx - 0.5 and -0.5 <= gy < self._ny - 0.5:
             return gx, gy
         return None
 
@@ -4140,15 +4581,36 @@ class MapCanvas(QWidget):
         if self._img is None:
             p.end()
             return
-        r = self._rect()
-        p.drawImage(r, self._img)
+        ps, ox, oy = self._ps, self._ox, self._oy
+        W, H = self.width(), self.height()
+        rect = QRectF(ox, oy, self._nx * ps, self._ny * ps)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)  # samples stay crisp
+        p.drawImage(rect, self._img)
+
+        if ps >= self.GRID_MIN_PX:
+            p.setPen(QPen(QColor(255, 255, 255, 34), 1))
+            top, bottom = max(oy, 0.0), min(H, oy + self._ny * ps)
+            left, right = max(ox, 0.0), min(W, ox + self._nx * ps)
+            i0 = max(0, int(math.floor((left - ox) / ps)))
+            i1 = min(self._nx, int(math.ceil((right - ox) / ps)))
+            for i in range(i0, i1 + 1):
+                x = ox + i * ps
+                p.drawLine(QPointF(x, top), QPointF(x, bottom))
+            j0 = max(0, int(math.floor((top - oy) / ps)))
+            j1 = min(self._ny, int(math.ceil((bottom - oy) / ps)))
+            for j in range(j0, j1 + 1):
+                y = oy + j * ps
+                p.drawLine(QPointF(left, y), QPointF(right, y))
+
+        p.setPen(QPen(QColor(143, 230, 192, 80), 1))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRect(rect)
+
         if self._cursor is not None and self._radius > 0:
-            s = r.width() / self._n
-            cx = r.x() + (self._cursor[0] + 0.5) * s
-            cy = r.y() + (self._cursor[1] + 0.5) * s
-            rad = (self._radius + 0.5) * s
+            cx = ox + (self._cursor[0] + 0.5) * ps
+            cy = oy + (self._cursor[1] + 0.5) * ps
+            rad = (self._radius + 0.5) * ps
             p.setPen(QPen(QColor(255, 255, 255, 220), 1.5))
-            p.setBrush(Qt.BrushStyle.NoBrush)
             if self._shape == "square":
                 p.drawRect(QRectF(cx - rad, cy - rad, 2 * rad, 2 * rad))
             elif self._shape == "diamond":
@@ -4158,13 +4620,32 @@ class MapCanvas(QWidget):
                 p.drawEllipse(QPointF(cx, cy), rad, rad)
         p.end()
 
+    # ----- mouse -----
+    def enterEvent(self, e):
+        self.setFocus(Qt.FocusReason.MouseFocusReason)   # so the pan keys reach the map
+        super().enterEvent(e)
+
     def mousePressEvent(self, e):
+        self.setFocus(Qt.FocusReason.MouseFocusReason)
+        if e.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+            self._drag = (e.position(), self._ox, self._oy)
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            return
         if e.button() == Qt.MouseButton.LeftButton:
             g = self._grid_at(e.position())
             if g is not None:
                 self.pressed.emit(*g)
 
     def mouseMoveEvent(self, e):
+        if self._drag is not None:
+            p0, ox0, oy0 = self._drag
+            self._ox = ox0 + (e.position().x() - p0.x())
+            self._oy = oy0 + (e.position().y() - p0.y())
+            self._auto = False
+            self._clamp_view()
+            self.update()
+            self.view_changed.emit()
+            return
         g = self._grid_at(e.position())
         self._cursor = g
         if g is not None:
@@ -4174,6 +4655,10 @@ class MapCanvas(QWidget):
         self.update()
 
     def mouseReleaseEvent(self, e):
+        if self._drag is not None and e.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+            self._drag = None
+            self.setCursor(Qt.CursorShape.CrossCursor)
+            return
         if e.button() == Qt.MouseButton.LeftButton:
             self.released.emit()
 
@@ -4260,6 +4745,20 @@ class MapEditor(QWidget):
         view_row.addWidget(self.view_box, 1)
         panel.addLayout(view_row)
 
+        zoom_row = QHBoxLayout()
+        zoom_row.addWidget(QLabel("Zoom"))
+        self.zoom_out_btn = QPushButton("−")
+        self.fit_btn = QPushButton("Fit")
+        self.zoom_in_btn = QPushButton("+")
+        for b in (self.zoom_out_btn, self.fit_btn, self.zoom_in_btn):
+            b.setMaximumWidth(56)
+            b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            zoom_row.addWidget(b)
+        self.zoom_label = QLabel("")
+        self.zoom_label.setMinimumWidth(48)
+        zoom_row.addWidget(self.zoom_label, 1)
+        panel.addLayout(zoom_row)
+
         hist = QHBoxLayout()
         self.undo_btn = QPushButton("Undo")
         self.redo_btn = QPushButton("Redo")
@@ -4274,7 +4773,8 @@ class MapEditor(QWidget):
         for b in (self.walk_btn, self.export_btn, self.back_btn):
             panel.addWidget(b)
 
-        self.hint = QLabel("Drag on the map to paint. Ctrl+Z undoes, Ctrl+Shift+Z redoes, "
+        self.hint = QLabel("Drag on the map to paint. Scroll to zoom, WASD or arrow keys to move "
+                           "(right-drag also pans), F to fit. Ctrl+Z undoes, Ctrl+Shift+Z redoes, "
                            "Ctrl+S exports. Brushes change only heights, climate values and "
                            "ground types that already exist in the file.")
         self.hint.setWordWrap(True)
@@ -4308,6 +4808,10 @@ class MapEditor(QWidget):
         self.canvas.dragged.connect(self._drag)
         self.canvas.released.connect(self._release)
         self.canvas.hovered.connect(self._hover)
+        self.zoom_out_btn.clicked.connect(lambda: self.canvas.zoom_by(0.8))
+        self.zoom_in_btn.clicked.connect(lambda: self.canvas.zoom_by(1.25))
+        self.fit_btn.clicked.connect(self.canvas.fit)
+        self.canvas.view_changed.connect(self._update_zoom)
 
         QShortcut(QKeySequence(QKeySequence.StandardKey.Undo), self).activated.connect(self.undo)
         QShortcut(QKeySequence(QKeySequence.StandardKey.Redo), self).activated.connect(self.redo)
@@ -4343,13 +4847,17 @@ class MapEditor(QWidget):
     def _update_status(self):
         n_edit = int(self.map.changed_cells().sum())
         state = "unsaved changes" if self.map.unsaved() else ("edited" if n_edit else "unchanged")
-        self.status.setText(f"{self._title}\n{n_edit} samples changed · {state}")
+        self.status.setText(f"{self._title}\n{self.map.nx} × {self.map.ny} samples · "
+                            f"{n_edit} changed · {state}")
         self.undo_btn.setEnabled(bool(self.map.undo_stack))
         self.redo_btn.setEnabled(bool(self.map.redo_stack))
 
+    def _update_zoom(self):
+        self.zoom_label.setText("fit" if self.canvas.is_fitted() else f"{self.canvas.zoom_percent():.0f}%")
+
     def refresh(self):
         mode = self.view_box.currentData() or "biome"
-        self.canvas.set_image(self.map.render_rgb(mode), self.map.n)
+        self.canvas.set_image(self.map.render_rgb(mode))
 
     # ----- painting -----
     def _press(self, gx, gy):
@@ -4432,14 +4940,23 @@ def _soft_range(x, lo, hi, edge=0.12):
     return np.minimum(up, down)
 
 
-def _flora_noise(n, scale, seed):
-    """Noise over the whole map, spread roughly evenly over 0..255 so it stores compactly."""
-    x = np.arange(n, dtype=np.float64) * (scale / n)
-    X, Y = np.meshgrid(x, x)
+def _flora_noise(nx, ny, scale, seed):
+    """Noise over the whole map, spread roughly evenly over 0..255 so it stores compactly.
+    Features keep the same size in tiles on any map shape: the unit is set by the longer side."""
+    unit = scale / float(max(nx, ny))
+    X, Y = np.meshgrid(np.arange(nx, dtype=np.float64) * unit, np.arange(ny, dtype=np.float64) * unit)
     v = fbm(X, Y, int(seed), 3)
     z = (v - v.mean()) / max(float(v.std()), 1e-9)
     u = 1.0 / (1.0 + np.exp(-1.702 * z))   # logistic fit to a normal CDF: spreads values evenly over 0..1
     return np.round(u * 255).astype(np.uint8)
+
+
+def _flora_size(payload):
+    """(nx, ny) of a saved flora payload. Older files stored one square size as 'n'."""
+    if "nx" in payload:
+        return int(payload["nx"]), int(payload["ny"])
+    n = int(payload.get("n", -1))
+    return n, n
 
 
 def _flora_density(key, noise, coverage, t, m, ok):
@@ -4463,9 +4980,9 @@ def _flora_chunk(snap, cx, cy, CH, H, B, sea):
     tx = cx * CH + np.arange(CH)
     ty = cy * CH + np.arange(CH)
     GX, GY = np.meshgrid(_sample_coord(tx, CH, ts, step), _sample_coord(ty, CH, ts, step))
-    n = snap["t"].shape[0]
-    kx = np.clip(np.rint(GX).astype(np.int64), 0, n - 1)
-    ky = np.clip(np.rint(GY).astype(np.int64), 0, n - 1)
+    ny, nx = snap["t"].shape
+    kx = np.clip(np.rint(GX).astype(np.int64), 0, nx - 1)
+    ky = np.clip(np.rint(GY).astype(np.int64), 0, ny - 1)
     ok = ((H >= sea) & ~np.isin(B, NON_VIABLE)).astype(np.float32)
     best = np.zeros((CH, CH), np.float32)
     idx = np.zeros((CH, CH), np.uint8)
@@ -4487,10 +5004,11 @@ class FloraMap:
 
     def __init__(self, emap, payload=None, seed=0):
         self.map = emap
-        self.n = int(emap.n)
+        self.nx = int(emap.nx)
+        self.ny = int(emap.ny)
         self.dirty = False
         self.layers = {}
-        if payload is not None and int(payload.get("n", -1)) != self.n:
+        if payload is not None and _flora_size(payload) != (self.nx, self.ny):
             raise ValueError("The flora layers do not match the size of this map.")
         stored = payload.get("layers", {}) if payload is not None else {}
         for row in FLORA_LAYERS:
@@ -4498,19 +5016,20 @@ class FloraMap:
             entry = stored.get(key)
             if entry is not None:
                 noise = np.asarray(entry["noise"], np.uint8)
-                if noise.shape != (self.n, self.n):
+                if noise.shape != (self.ny, self.nx):
                     raise ValueError(f"Flora layer {key} has the wrong shape.")
                 self.layers[key] = {"seed": int(entry["seed"]),
                                     "coverage": float(entry["coverage"]), "noise": noise}
             else:
                 s = int(seed) % 900000 + offset
-                self.layers[key] = {"seed": s, "coverage": cov, "noise": _flora_noise(self.n, scale, s)}
+                self.layers[key] = {"seed": s, "coverage": cov,
+                                    "noise": _flora_noise(self.nx, self.ny, scale, s)}
 
     def reroll(self, key):
         row = FLORA_BY_KEY[key]
         seed = int(np.random.default_rng().integers(1, 900000))
         self.layers[key]["seed"] = seed
-        self.layers[key]["noise"] = _flora_noise(self.n, row[5], seed)
+        self.layers[key]["noise"] = _flora_noise(self.nx, self.ny, row[5], seed)
         self.dirty = True
 
     def set_coverage(self, key, value):
@@ -4559,7 +5078,7 @@ class FloraMap:
         }
 
     def to_payload(self):
-        return {"n": self.n,
+        return {"nx": self.nx, "ny": self.ny,
                 "layers": {k: {"seed": L["seed"], "coverage": L["coverage"], "noise": L["noise"]}
                            for k, L in self.layers.items()}}
 
@@ -4574,8 +5093,9 @@ class FloraPanel(QWidget):
         super().__init__()
         self.doc = doc
         self.flora = doc.ensure_flora()
-        self.step = max(1, self.flora.n // self.PREVIEW_TILES)
+        self.step = max(1, max(self.flora.nx, self.flora.ny) // self.PREVIEW_TILES)
         self._rows = {}
+        self._gate = Cooldown()
 
         root = QHBoxLayout(self)
         panel = QVBoxLayout()
@@ -4617,9 +5137,11 @@ class FloraPanel(QWidget):
             show.toggled.connect(lambda *_: self.refresh())
             slider.valueChanged.connect(lambda v, k=key: self._coverage(k, v))
             reroll.clicked.connect(lambda _=False, k=key: self._busy(lambda: self.flora.reroll(k)))
+            self._gate.add(reroll)
 
         reroll_all = QPushButton("Reroll all layers")
         reroll_all.clicked.connect(lambda: self._busy(lambda: [self.flora.reroll(r[0]) for r in FLORA_LAYERS]))
+        self._gate.add(reroll_all)
         panel.addWidget(reroll_all)
 
         self.hover = QLabel("Point at a tile to see its ground and plant cover.")
@@ -4640,7 +5162,8 @@ class FloraPanel(QWidget):
 
         note = QLabel("Plants grow only on land that can carry them: not on ice, bedrock, scree, "
                       "cliff rock, silt or sand. Climate sets how well each plant suits a spot. "
-                      "Plants show on this map; the 3D walk does not draw them yet.")
+                      "Plants show on this map; the 3D walk does not draw them yet. "
+                      "Scroll to zoom, WASD or arrow keys to move, F to fit.")
         note.setWordWrap(True)
         note.setStyleSheet("color:#8a97a8; font-size:11px;")
         panel.addWidget(note)
@@ -4666,26 +5189,27 @@ class FloraPanel(QWidget):
         self.refresh()
 
     def _busy(self, fn):
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        try:
-            fn()
-        finally:
-            QApplication.restoreOverrideCursor()
-        self.refresh()
+        def work():
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            try:
+                fn()
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.refresh()
+        self._gate.run(work)
 
     def refresh(self):
         show = {k for k, r in self._rows.items() if r["show"].isChecked()}
         rgb, dens, viable = self.flora.preview(show, self.step)
-        self.canvas.set_image(rgb, rgb.shape[0])
+        self.canvas.set_image(rgb)
         for k, r in self._rows.items():
             r["share"].setText(f"{float((dens[k] > 0.5).mean()) * 100:.0f}% of the map")
         state = "unsaved changes" if self.doc.unsaved() else "saved"
         self.status.setText(f"{self.doc.name}\n{viable * 100:.0f}% of the map can carry plants · {state}")
 
     def _hover(self, gx, gy):
-        n = self.flora.n
-        i = min(n - 1, max(0, int(gx * self.step)))
-        j = min(n - 1, max(0, int(gy * self.step)))
+        i = min(self.flora.nx - 1, max(0, int(gx * self.step)))
+        j = min(self.flora.ny - 1, max(0, int(gy * self.step)))
         sl = np.s_[j:j + 1, i:i + 1]
         tile = BIOMES[int(self.flora.map.cur["b"][j, i])][0]
         parts = [f"{row[1]} {float(self.flora.density(row[0], sl)[0, 0]) * 100:.0f}%" for row in FLORA_LAYERS]
@@ -5318,11 +5842,11 @@ BIOME_BOUNDS = {}
 def validate_world(world: "World"):
     s = world.s
     CH = s.chunk
-    n = s.num_chunks
+    nx, ny = s.chunks_x, s.chunks_y
     issues = []
     grid = {}
-    for cy in range(n):
-        for cx in range(n):
+    for cy in range(ny):
+        for cx in range(nx):
             grid[(cx, cy)] = world.generate_chunk(cx, cy)
     hs = np.concatenate([grid[k]["height"].ravel() for k in grid]).astype(np.float64)
     bs = np.concatenate([grid[k]["biome"].ravel() for k in grid])
