@@ -30,6 +30,7 @@
 #include "systems.h"
 #include "terrain.h"
 #include "ui.h"
+#include "world_format.h"
 
 namespace {
 
@@ -177,57 +178,64 @@ void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const 
     SDL_GL_SwapWindow(window);
 }
 
-// Maps and worlds made in the map editor are kept in this folder, beside the game
-std::string customMapDir() {
+// Game worlds are kept in this folder, beside the game. It was called custom_maps before.
+std::string mapsDir() {
     const char* base = SDL_GetBasePath();
-    return std::string(base ? base : "") + "custom_maps";
+    return std::string(base ? base : "") + "maps";
 }
 
-// A map the player can pick: a premade one from data.pak, a .map file in custom_maps, or a world
-// folder in custom_maps
-struct MapChoice {
-    std::string source;   // "data", "custom" for a .map file, or "world" for a world folder
-    std::string stem;     // file or folder name without the .map extension
+// A folder left as custom_maps by an earlier version moves to maps the first time the game starts
+void moveOldMapsFolder() {
+    const char* base = SDL_GetBasePath();
+    const std::filesystem::path oldDir = std::string(base ? base : "") + "custom_maps";
+    const std::filesystem::path newDir = mapsDir();
+    std::error_code ec;
+    if (!std::filesystem::is_directory(oldDir, ec) || std::filesystem::exists(newDir, ec)) return;
+    std::filesystem::rename(oldDir, newDir, ec);
+    if (ec) SDL_Log("Could not move custom_maps to maps: %s", ec.message().c_str());
+}
 
-    std::string label() const {
-        std::string s = stem;
-        std::replace(s.begin(), s.end(), '_', ' ');
-        return source == "data" ? s : s + " (custom)";
-    }
+// A map the New Game list can start: a premade map from data.pak ("data"), a game world folder in
+// maps ("world"), or an older .map file in maps ("custom")
+struct MapChoice {
+    std::string source;      // "data", "world" or "custom"
+    std::string stem;        // file or folder name without the .map extension. Saves refer to it.
+    std::string name;        // what the list shows: the saved name of a world, or the stem
+    long long created = 0;   // when a world was saved, milliseconds since 1970; 0 if unknown
+    std::string path;        // where a world folder or .map file is on disk
+
     std::string pakName() const { return "data/map/" + stem + ".map"; }
-    // Where a custom map or world folder is on disk
-    std::string diskPath() const { return customMapDir() + "/" + stem + (source == "custom" ? ".map" : ""); }
 };
 
-// Every map the player can choose: premade maps first, then custom ones, each sorted by name
+// Every map the New Game list can start, not yet sorted: the premade maps, then worlds and .map files
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
     const std::string prefix = "data/map/", suffix = ".map";
-    for (const std::string& name : pakNames(prefix, suffix)) {
-        out.push_back({ "data", name.substr(prefix.size(), name.size() - prefix.size() - suffix.size()) });
+    for (const std::string& pak : pakNames(prefix, suffix)) {
+        const std::string stem = pak.substr(prefix.size(), pak.size() - prefix.size() - suffix.size());
+        out.push_back(MapChoice{ "data", stem, stem, 0, "" });
     }
 
-    std::vector<MapChoice> custom;
+    const std::string dir = mapsDir();
+    for (const WorldEntry& e : listWorlds(dir)) {
+        const std::string stem = std::filesystem::path(e.folder).filename().string();
+        out.push_back(MapChoice{ "world", stem, e.name, e.created, e.folder });
+    }
+
     std::error_code ec;
-    const std::string dir = customMapDir();
     if (std::filesystem::is_directory(dir, ec)) {
         for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
-            if (entry.is_directory(ec) && std::filesystem::exists(entry.path() / "world.txt", ec)) {
-                custom.push_back({ "world", entry.path().filename().string() });
-            } else if (entry.path().extension() == ".map") {
-                custom.push_back({ "custom", entry.path().stem().string() });
-            }
+            if (entry.path().extension() != ".map") continue;
+            const std::string stem = entry.path().stem().string();
+            out.push_back(MapChoice{ "custom", stem, stem, 0, entry.path().string() });
         }
     }
-    std::sort(custom.begin(), custom.end(),
-              [](const MapChoice& a, const MapChoice& b) { return a.stem < b.stem; });
-    out.insert(out.end(), custom.begin(), custom.end());
     return out;
 }
 
 // Puts a map's ground into the terrain: a premade or custom map whole, or a world folder to be streamed
 bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
-    if (c.source == "world") return terrain.openWorld(c.diskPath(), err);
+    if (c.source == "world") return terrain.openWorld(c.path, err);
 
     MapData data;
     bool ok = false;
@@ -236,10 +244,10 @@ bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
         size_t size = 0;
         ok = pakFind(c.pakName(), bytes, size) && parseMap(bytes, size, data);
     } else {
-        ok = readMapFile(c.diskPath(), data);
+        ok = readMapFile(c.path, data);
     }
     if (!ok) {
-        err = "could not read " + c.label();
+        err = "could not read " + c.name;
         return false;
     }
     terrain.load(data);
@@ -427,6 +435,37 @@ void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending) {
     });
 }
 
+// What a map is, as the list's Type column shows it
+std::string mapTypeLabel(const MapChoice& m) {
+    if (m.source == "data") return "BUILT-IN";
+    return m.source == "world" ? "WORLD" : "MAP FILE";
+}
+
+// Sorts the New Game list. The premade map always comes first. The rest sort by name, or by the date
+// they were saved, newest first unless ascending.
+void sortMaps(std::vector<MapChoice>& maps, bool byName, bool ascending) {
+    std::stable_sort(maps.begin(), maps.end(), [&](const MapChoice& a, const MapChoice& b) {
+        const bool aPremade = a.source == "data", bPremade = b.source == "data";
+        if (aPremade != bPremade) return aPremade;
+        if (byName) {
+            const std::string la = toLower(a.name), lb = toLower(b.name);
+            if (la != lb) return ascending ? la < lb : lb < la;
+            return a.created > b.created;
+        }
+        if (a.created != b.created) return ascending ? a.created < b.created : a.created > b.created;
+        return a.name < b.name;
+    });
+}
+
+// The map a save was made on. Saves made before the premade maps were cut down to text_map name map_01.
+std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::string& source, std::string stem) {
+    if (source == "data" && stem == "map_01") stem = "text_map";
+    for (const MapChoice& m : maps) {
+        if (m.source == source && m.stem == stem) return m;
+    }
+    return std::nullopt;
+}
+
 // How many save rows fit the window height. The rows take whatever space is left under the fixed
 // parts of the popout, kept between MIN_SAVE_ROWS and MAX_SAVE_ROWS.
 size_t visibleSaveRows(int H) {
@@ -564,31 +603,29 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     return out;
 }
 
-// Rows of the New Game list that fit above its Back button
-size_t mapRowsVisible(int H) {
-    const float s = H / 720.0f;
-    const float pitch = 58.0f * s;
-    const float top = 0.24f * H;
-    const float space = 0.84f * H - top;
-    return std::max<size_t>(1, (size_t)(space / pitch));
-}
-
-// Buttons for the New Game map list, one row per visible map, plus Back
-std::vector<Button> layoutMapSelect(int W, int H, const std::vector<MapChoice>& maps, size_t offset) {
-    const float s = H / 720.0f;
-    const float rowH = 48.0f * s, pitch = 58.0f * s, bh = 50.0f * s;
-    const float bw = 420.0f * s;
-    const float x = (W - bw) * 0.5f, top = 0.24f * H;
-
+// Buttons for the New Game list, in the same popout as the load list: the column headers, one row
+// per visible map, the "..." rows at the ends, and Close.
+std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& maps, size_t listOffset) {
     std::vector<Button> out;
-    const size_t rows = mapRowsVisible(H);
-    const size_t first = std::min(offset, maps.size());
+    PanelGeometry g = panelGeometry(W, H);
+    const float x = g.box.x + g.pad, w = g.box.w - 2.0f * g.pad;
+
+    out.push_back(Button{ "Name", Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::MapSortName });
+    out.push_back(Button{ "Created", Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH },
+                          Action::MapSortTime });
+
+    const size_t rows = visibleSaveRows(H);
+    const size_t first = std::min(listOffset, maps.size());
     const size_t last = std::min(first + rows, maps.size());
+    if (first > 0) out.push_back(Button{ "", g.aboveBand, Action::MapScrollUp });
+    float y = g.listTop;
     for (size_t i = first; i < last; ++i) {
-        out.push_back(Button{ maps[i].label(), Rect{ x, top + (i - first) * pitch, bw, rowH },
-                              Action::PickMap, true, (int)i });
+        out.push_back(Button{ "", Rect{ x, y, w, g.rowH }, Action::PickMap, true, (int)i });
+        y += g.rowPitch;
     }
-    out.push_back(Button{ "Back", Rect{ x, 0.88f * H, bw, bh }, Action::Back });
+    if (last < maps.size()) out.push_back(Button{ "", g.belowBand, Action::MapScrollDown });
+
+    out.push_back(Button{ "Close", Rect{ x, g.closeY, w, g.btnH }, Action::Back });
     return out;
 }
 
@@ -745,6 +782,7 @@ int main(int, char**) {
     }
     glGetError();
 
+    moveOldMapsFolder();
     GameSettings settings = loadSettings(SETTINGS_PATH);
     applyDisplay(window, settings);
 
@@ -763,6 +801,8 @@ int main(int, char**) {
     std::vector<MapChoice> maps;          // premade and custom maps, for New Game
     MapChoice currentMap;                 // the map the game in progress is played on
     size_t mapOffset = 0;                 // first map shown in the New Game list
+    bool mapSortByName = false;           // New Game list sorted by name, else by date saved
+    bool mapSortAsc = false;              // ascending order; the list opens newest first
     SkyTuning sky;                        // atmosphere settings from the dev tools menu
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
     wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
@@ -831,6 +871,7 @@ int main(int, char**) {
 
     auto refreshMaps = [&]() {
         maps = listMaps();
+        sortMaps(maps, mapSortByName, mapSortAsc);
     };
 
     auto showNotice = [&](const std::string& text) {
@@ -881,7 +922,7 @@ int main(int, char**) {
         levelSeed = (unsigned)std::time(nullptr);
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
-            showNotice("Could not load " + choice.label() + ": " + err);
+            showNotice("Could not load " + choice.name + ": " + err);
             return;
         }
         closePanel();
@@ -922,10 +963,16 @@ int main(int, char**) {
             refreshSaves();
             return;
         }
-        const MapChoice choice{ d.mapSource, d.mapStem };
+        std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
+        if (!found) {
+            showNotice("The map for \"" + d.name + "\" is missing");
+            refreshSaves();
+            return;
+        }
+        const MapChoice choice = *found;
         std::string err;
         if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
-            showNotice("Map \"" + choice.label() + "\" could not be loaded: " + err);
+            showNotice("Map \"" + choice.name + "\" could not be loaded: " + err);
             refreshSaves();
             return;
         }
@@ -1012,7 +1059,7 @@ int main(int, char**) {
             const char* base = SDL_GetBasePath();
             const std::string dataDir = std::string(base ? base : "") + "editor_data";
             std::string err;
-            if (!wmTool.Init(window, font, dataDir, customMapDir(), err)) {
+            if (!wmTool.Init(window, font, dataDir, mapsDir(), err)) {
                 showNotice("The world tool could not start: " + err);
                 return;
             }
@@ -1042,6 +1089,31 @@ int main(int, char**) {
         case Action::PickMap:
             if (param >= 0 && param < (int)maps.size()) startMapLevel(maps[param]);
             return;
+        case Action::MapSortName:
+        case Action::MapSortTime: {
+            // Clicking the active column flips the order. A new column starts ascending.
+            const bool byName = action == Action::MapSortName;
+            if (mapSortByName == byName) {
+                mapSortAsc = !mapSortAsc;
+            } else {
+                mapSortByName = byName;
+                mapSortAsc = true;
+            }
+            sortMaps(maps, mapSortByName, mapSortAsc);
+            mapOffset = 0;
+            return;
+        }
+        case Action::MapScrollUp: {
+            const size_t page = visibleSaveRows(viewH);
+            mapOffset = (mapOffset > page) ? mapOffset - page : 0;
+            return;
+        }
+        case Action::MapScrollDown: {
+            const size_t page = visibleSaveRows(viewH);
+            const size_t maxOffset = maps.size() > page ? maps.size() - page : 0;
+            mapOffset = std::min(mapOffset + page, maxOffset);
+            return;
+        }
         case Action::OpenMapEditor:
             openEditor();
             return;
@@ -1310,7 +1382,7 @@ int main(int, char**) {
                     int next = (int)listOffset - (int)e.wheel.y;
                     listOffset = (size_t)std::clamp(next, 0, maxOffset);
                 } else if (screen == Screen::MapSelect) {
-                    int maxOffset = std::max(0, (int)maps.size() - (int)mapRowsVisible(winH));
+                    int maxOffset = std::max(0, (int)maps.size() - (int)visibleSaveRows(winH));
                     int next = (int)mapOffset - (int)e.wheel.y;
                     mapOffset = (size_t)std::clamp(next, 0, maxOffset);
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
@@ -1350,7 +1422,7 @@ int main(int, char**) {
                         const std::vector<Button> menuButtons = screen == Screen::DevTools
                             ? layoutDevTools(winW, winH, sky, gs.dayMinutes)
                             : screen == Screen::MapSelect
-                            ? layoutMapSelect(winW, winH, maps, mapOffset)
+                            ? layoutMapPanel(winW, winH, maps, mapOffset)
                             : layoutButtons(screen, winW, winH, settings, saves);
                         for (const Button& b : menuButtons) {
                             if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
@@ -1575,16 +1647,78 @@ int main(int, char**) {
             break;
 
         case Screen::MapSelect: {
+            // The same popout as the load list: a name and date for each map, sorted, scrolled in a window
+            const float s = winH / 720.0f;
+            PanelGeometry g = panelGeometry(winW, winH);
+            const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+            const RGBA grey{ 0.6f, 0.6f, 0.65f, 1.0f };
+            const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
+            const RGBA hint{ 0.75f, 0.85f, 1.0f, 1.0f };
+            const RGBA builtIn{ 0.6f, 0.85f, 1.0f, 1.0f };
+            const float cx = g.box.x + g.box.w * 0.5f;
+
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
             dim(0.45f);
-            renderer.drawUiTextCentered("New Game: choose a map", winW * 0.5f, winH * 0.14f,
-                                        RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            if (maps.empty()) {
-                renderer.drawUiTextCentered("No maps found. Save a game world from the map editor, or add .map files to custom_maps.",
-                                            winW * 0.5f, winH * 0.3f, RGBA{ 0.6f, 0.6f, 0.65f, 1.0f });
+            renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
+            renderer.drawUiTextCentered("New Game", cx, g.box.y + g.pad, white);
+            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Save a game world from the map editor."
+                                                     : "Click a map to start a new game",
+                                        cx, g.nameBox.y + g.nameBox.h * 0.22f, grey);
+
+            // Column headers. The active sort column shows its direction.
+            const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
+            const float textInset = 12.0f * s;
+            const float listH = renderer.listTextHeight("Ag");
+            const float hy = g.headerY + (g.headerH - listH) * 0.5f;
+            auto headerLabel = [&](const std::string& label, bool active) {
+                if (!active) return label;
+                return label + (mapSortAsc ? "  ^" : "  v");
+            };
+            renderer.drawListText(headerLabel("Name", mapSortByName), innerX + textInset, hy,
+                                  mapSortByName ? white : grey);
+            renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, grey);
+            renderer.drawListText(headerLabel("Created", !mapSortByName), innerX + COL_TIME * innerW, hy,
+                                  !mapSortByName ? white : grey);
+
+            // "..." rows: how many maps are hidden above and below the visible rows
+            const size_t total = maps.size();
+            const size_t shownFirst = std::min(mapOffset, total);
+            const size_t shownLast = std::min(shownFirst + visibleSaveRows(winH), total);
+            if (shownFirst > 0) {
+                const bool hot = g.aboveBand.contains(mouseX, mouseY);
+                renderer.drawListText("...   " + std::to_string(shownFirst) + " more above",
+                                      innerX + textInset, g.aboveBand.y + (g.aboveBand.h - listH) * 0.5f,
+                                      hot ? hover : hint);
             }
-            drawButtons(layoutMapSelect(winW, winH, maps, mapOffset));
+            if (shownLast < total) {
+                const bool hot = g.belowBand.contains(mouseX, mouseY);
+                renderer.drawListText("...   " + std::to_string(total - shownLast) + " more below",
+                                      innerX + textInset, g.belowBand.y + (g.belowBand.h - listH) * 0.5f,
+                                      hot ? hover : hint);
+            }
+
+            for (const Button& b : layoutMapPanel(winW, winH, maps, mapOffset)) {
+                const bool isHover = b.rect.contains(mouseX, mouseY);
+                if (b.action == Action::PickMap) {
+                    // A map row: background, then its name, type and date in the columns
+                    const MapChoice& m = maps[b.param];
+                    renderer.drawButton(b.rect, "", true, isHover);
+                    const float ry = b.rect.y + (b.rect.h - listH) * 0.5f;
+                    renderer.drawListText(m.name, b.rect.x + textInset, ry, isHover ? hover : white);
+                    renderer.drawListText(mapTypeLabel(m), b.rect.x + COL_TYPE * b.rect.w, ry,
+                                          m.source == "data" ? builtIn : white);
+                    const std::string when = m.source == "data" ? std::string("built in")
+                                           : m.created > 0 ? timeString(m.created) : std::string("unknown");
+                    renderer.drawListText(when, b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
+                } else if (b.action == Action::MapScrollUp || b.action == Action::MapScrollDown
+                           || b.action == Action::MapSortName || b.action == Action::MapSortTime) {
+                    // Drawn above as text: the "..." rows and the headers only need their click areas
+                    continue;
+                } else {
+                    drawButtons({ b });
+                }
+            }
             renderer.endUi();
             break;
         }

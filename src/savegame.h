@@ -11,6 +11,7 @@
 #include <system_error>
 #include <vector>
 #include "resources.h"
+#include "timefmt.h"
 
 // Save files are plain text. The terrain comes from the map the save was made on, and the wagon
 // and red units from the seed. A save stores what changes: the clock, the units and the camera.
@@ -37,7 +38,7 @@ struct SaveData {
     bool autosave = false;            // true for autosave0..2, false for manual saves
     long long timestamp = 0;          // milliseconds since 1970, used for ordering
     unsigned seed = 0;                // places the red units and the wagon
-    std::string mapSource;            // "data" for a premade map, "custom" for one in custom_maps
+    std::string mapSource;            // "data" for a premade map, "world" for a game world, "custom" for an older .map file
     std::string mapStem;              // the map's file name without .map
     GameState gs;
     SaveCamera cam;
@@ -50,23 +51,6 @@ struct SaveSummary {
     long long timestamp = 0;
     bool autosave = false;
 };
-
-// ISO 8601 style, 24-hour local time, with milliseconds: "2026-10-17_08:24:05.123".
-// ms is milliseconds since 1970.
-inline std::string timeString(long long ms) {
-    std::time_t t = (std::time_t)(ms / 1000);
-    std::tm tmv{};
-#ifdef _WIN32
-    localtime_s(&tmv, &t);
-#else
-    localtime_r(&t, &tmv);
-#endif
-    char date[32];
-    std::strftime(date, sizeof(date), "%Y-%m-%d_%H:%M:%S", &tmv);
-    char buf[48];
-    std::snprintf(buf, sizeof(buf), "%s.%03lld", date, ms % 1000);
-    return buf;
-}
 
 inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     std::error_code ec;

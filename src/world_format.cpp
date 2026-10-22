@@ -1,6 +1,7 @@
 #include "world_format.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -122,6 +123,8 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) 
             formatOk = v == FORMAT_VERSION;
         } else if (key == "name") {
             std::getline(ls >> std::ws, info.name);
+        } else if (key == "created") {
+            ls >> info.created;
         } else if (key == "size") {
             ls >> info.size;
         } else if (key == "chunk") {
@@ -137,6 +140,41 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) 
     if (info.size < 4) { err = "world.txt has no valid size"; return false; }
     out = info;
     return true;
+}
+
+std::vector<WorldEntry> listWorlds(const std::string& mapsFolder) {
+    std::vector<WorldEntry> out;
+    std::error_code ec;
+    if (!std::filesystem::is_directory(mapsFolder, ec)) return out;
+
+    for (const auto& entry : std::filesystem::directory_iterator(mapsFolder, ec)) {
+        if (!entry.is_directory(ec)) continue;
+        WorldInfo info;
+        std::string err;
+        if (!readWorldInfo(entry.path().string(), info, err)) continue;
+        WorldEntry w;
+        w.folder = entry.path().string();
+        w.name = info.name.empty() ? entry.path().filename().string() : info.name;
+        w.created = info.created;
+        out.push_back(w);
+    }
+    return out;
+}
+
+void sortWorldEntries(std::vector<WorldEntry>& worlds, bool byName, bool ascending) {
+    auto lower = [](std::string s) {
+        for (char& c : s) c = (char)std::tolower((unsigned char)c);
+        return s;
+    };
+    std::stable_sort(worlds.begin(), worlds.end(), [&](const WorldEntry& a, const WorldEntry& b) {
+        if (byName) {
+            const std::string la = lower(a.name), lb = lower(b.name);
+            if (la != lb) return ascending ? la < lb : lb < la;
+            return a.created > b.created;
+        }
+        if (a.created != b.created) return ascending ? a.created < b.created : a.created > b.created;
+        return a.name < b.name;
+    });
 }
 
 bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz, ChunkData& out) {
@@ -195,6 +233,7 @@ bool writeWorld(const std::string& folder, const WorldInfo& info,
     std::ostringstream txt;
     txt << "format " << FORMAT_VERSION << "\n";
     txt << "name " << info.name << "\n";
+    txt << "created " << info.created << "\n";
     txt << "size " << info.size << "\n";
     txt << "chunk " << CHUNK_TILES << "\n";
     txt << "heightScale " << info.heightScale << "\n";

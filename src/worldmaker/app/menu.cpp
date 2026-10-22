@@ -775,6 +775,164 @@ void DebugTab(Ctx& c, float top) {
     Label(c, y, "These change what is drawn or shown. They are not saved.", kTextDim);
 }
 
+// The game world list on the Files tab. It works like the game's save list: a name field, a question
+// before a name is replaced, sortable columns, and rows that scroll in a window.
+constexpr size_t GAME_WORLD_ROWS = 6;          // worlds shown at once
+constexpr size_t GAME_WORLD_NAME_LIMIT = 32;   // longest name in bytes, as in the game's save list
+
+// The name without leading or trailing spaces
+std::string TrimSpaces(const std::string& s) {
+    const size_t a = s.find_first_not_of(' ');
+    if (a == std::string::npos) return "";
+    const size_t b = s.find_last_not_of(' ');
+    return s.substr(a, b - a + 1);
+}
+
+// Reads the game worlds again after a change, and otherwise at most once a second
+void RefreshGameWorlds(Ctx& c) {
+    const unsigned long long now = SDL_GetTicks();
+    if (!c.m.gameWorldsStale && now - c.m.gameWorldsAt < 1000) return;
+    c.m.gameWorlds = c.s.listGameWorlds ? c.s.listGameWorlds(c.m.gameWorldByName, c.m.gameWorldAsc)
+                                        : std::vector<GameWorldEntry>{};
+    c.m.gameWorldsStale = false;
+    c.m.gameWorldsAt = now;
+    const size_t total = c.m.gameWorlds.size();
+    c.m.gameWorldOffset = std::min(c.m.gameWorldOffset, total > GAME_WORLD_ROWS ? total - GAME_WORLD_ROWS : 0);
+}
+
+// True if a game world is already saved under this name. Reads the maps folder again first.
+bool GameWorldNamed(Ctx& c, const std::string& name) {
+    if (!c.s.listGameWorlds) return false;
+    for (const GameWorldEntry& w : c.s.listGameWorlds(true, true)) {
+        if (w.name == name) return true;
+    }
+    return false;
+}
+
+// Writes the loaded world as a game world under this name, replacing one of the same name
+void SaveGameWorld(Ctx& c, const std::string& name) {
+    std::string path, err;
+    c.m.gameWorldAsk = false;
+    if (c.s.exportMap && c.s.exportMap(c.s.world, name, path, err)) {
+        c.m.status = "saved game world " + name;
+        c.m.gameWorldsStale = true;
+    } else {
+        c.m.status = "game world save failed: " + err;
+    }
+}
+
+// One list row: the name on the left, the date on the right. Returns true when it is clicked.
+bool ListRow(Ctx& c, float x, float y, float nameW, float dateW, const std::string& name, const std::string& when) {
+    const float h = c.btnH;
+    if (!Visible(c, y, h)) return false;
+    const float w = nameW + dateW;
+    const bool hot = Inside(c.mouse.x, c.mouse.y, x, y, w, h);
+    c.r.Rect(x, y, w, h, hot ? kButtonHot : kButton, 1.0f);
+    const float ty = y + (h - c.lh) * 0.5f;
+    c.r.Text(x + 12.0f, ty, FitText(c.r, name, nameW - 24.0f), kText);
+    c.r.Text(x + nameW + 12.0f, ty, FitText(c.r, when, dateW - 24.0f), kTextDim);
+    return hot && c.mouse.pressed;
+}
+
+// The game world section of the Files tab. Returns the y just below it.
+float GameWorldSection(Ctx& c, float top) {
+    float y = top;
+    RefreshGameWorlds(c);
+
+    // Name field and Save. A name another world already has asks before it replaces that world.
+    Label(c, y + (c.btnH - c.lh) * 0.5f, "Game world");
+    TextField(c, FieldX(c), y, FieldW(c), c.m.gameWorldName);
+    if (Button(c, FieldX(c) + FieldW(c) + 16.0f, y, 150.0f, "Save")) {
+        const std::string name = TrimSpaces(c.m.gameWorldName);
+        c.m.gameWorldAsk = false;
+        if (!c.s.hasWorld) {
+            c.m.status = "generate a world first";
+        } else if (name.empty()) {
+            c.m.status = "type a name for the game world";
+        } else if (name.size() > GAME_WORLD_NAME_LIMIT) {
+            c.m.status = "that name is too long";
+        } else if (GameWorldNamed(c, name)) {
+            c.m.gameWorldAsk = true;
+            c.m.gameWorldAskName = name;
+        } else {
+            SaveGameWorld(c, name);
+        }
+    }
+    y += c.rowH;
+
+    // The question, when the name is taken
+    if (c.m.gameWorldAsk) {
+        Label(c, y + (c.btnH - c.lh) * 0.5f, "A game world named \"" + c.m.gameWorldAskName + "\" exists. Replace it?", kAccent);
+        y += c.rowH;
+        if (Button(c, FieldX(c), y, 150.0f, "Replace", true, true)) SaveGameWorld(c, c.m.gameWorldAskName);
+        if (Button(c, FieldX(c) + 166.0f, y, 150.0f, "Cancel")) c.m.gameWorldAsk = false;
+        y += c.rowH;
+    }
+    Label(c, y, "Saved in the maps folder beside the game. New Game lists them.", kTextDim);
+    y += c.rowH;
+
+    // Column headers. Clicking the active one flips the direction; a new column starts ascending.
+    const float x = FieldX(c), w = FieldW(c) + 166.0f;
+    const float nameW = w * 0.6f, dateW = w - nameW;
+    auto header = [&](float hx, float hw, const char* label, bool byName) {
+        const bool active = c.m.gameWorldByName == byName;
+        std::string text = label;
+        if (active) text += c.m.gameWorldAsc ? "  ^" : "  v";
+        if (Button(c, hx, y, hw, text)) {
+            if (active) {
+                c.m.gameWorldAsc = !c.m.gameWorldAsc;
+            } else {
+                c.m.gameWorldByName = byName;
+                c.m.gameWorldAsc = true;
+            }
+            c.m.gameWorldsStale = true;
+            c.m.gameWorldOffset = 0;
+        }
+    };
+    header(x, nameW - 4.0f, "Name", true);
+    header(x + nameW + 4.0f, dateW - 4.0f, "Created", false);
+    y += c.rowH;
+
+    const size_t total = c.m.gameWorlds.size();
+    if (total == 0) {
+        Label(c, y + (c.btnH - c.lh) * 0.5f, "No game worlds yet. Generate a world and save it here.", kTextDim);
+        y += c.rowH;
+    }
+
+    // The window the list shows. The wheel over it scrolls the list instead of the tab.
+    c.m.gameListX = x;
+    c.m.gameListY = y;
+    c.m.gameListW = w;
+    c.m.gameListH = total > 0 ? (float)(GAME_WORLD_ROWS + 2) * c.rowH : 0.0f;
+
+    const size_t first = std::min(c.m.gameWorldOffset, total);
+    const size_t last = std::min(first + GAME_WORLD_ROWS, total);
+    if (first > 0) {
+        if (Button(c, x, y, w, "...   " + std::to_string(first) + " more above")) {
+            c.m.gameWorldOffset = first > GAME_WORLD_ROWS ? first - GAME_WORLD_ROWS : 0;
+        }
+        y += c.rowH;
+    }
+    for (size_t i = first; i < last; ++i) {
+        const GameWorldEntry& e = c.m.gameWorlds[i];
+        if (ListRow(c, x, y, nameW, dateW, e.name, e.when)) {
+            // Clicking a world copies its name, so Save replaces it
+            c.m.gameWorldName = e.name;
+            c.m.gameWorldAsk = false;
+            c.m.status = "name copied from the list";
+        }
+        y += c.rowH;
+    }
+    if (last < total) {
+        if (Button(c, x, y, w, "...   " + std::to_string(total - last) + " more below")) {
+            const size_t maxOffset = total > GAME_WORLD_ROWS ? total - GAME_WORLD_ROWS : 0;
+            c.m.gameWorldOffset = std::min(first + GAME_WORLD_ROWS, maxOffset);
+        }
+        y += c.rowH;
+    }
+    return y;
+}
+
 void FilesTab(Ctx& c, float top) {
     float y = top;
 
@@ -806,24 +964,8 @@ void FilesTab(Ctx& c, float top) {
     DesktopNote(c, y);
     y += c.rowH;
 
-    // The same world as a game world folder, which New Game lists
-    if (Button(c, FieldX(c), y, 230.0f, "Save game world")) {
-        std::string path, err;
-        if (!c.s.hasWorld) {
-            c.m.status = "generate a world first";
-        } else if (!IsSafeName(c.m.exportName)) {
-            c.m.status = "name may use letters, digits, space, - and _";
-        } else if (!c.s.exportMap) {
-            c.m.status = "game world save is not available here";
-        } else if (c.s.exportMap(c.s.world, c.m.exportName, path, err)) {
-            c.m.status = "saved game world to " + path;
-        } else {
-            c.m.status = "game world save failed: " + err;
-        }
-    }
-    y += c.rowH;
-    Label(c, y, "Game worlds are saved in custom_maps, beside the game, and listed under New Game.", kTextDim);
-    y += c.rowH;
+    // The same world as a game world, saved in the maps folder and listed under New Game
+    y = GameWorldSection(c, y);
 
     for (const std::string& name : c.m.worlds) {
         if (Button(c, c.x0 + kPad, y, c.pw * 0.5f, "Import " + name)) {
@@ -1114,8 +1256,17 @@ MenuAction DrawMenu(Renderer& r, MenuState& m, Session& s, Look& look, const Mou
         c.clipBottom = contentBottom;
         c.lowest = 0.0f;
         if (mouse.wheel != 0.0f && Inside(mouse.x, mouse.y, c.x0, contentTop, c.pw, viewH)) {
-            m.scroll = std::clamp(m.scroll - mouse.wheel * c.rowH * 1.5f, 0.0f, m.scrollMax);
-            MenuStopEditing(m);
+            if (m.tab == kFiles && m.gameListH > 0.0f &&
+                Inside(mouse.x, mouse.y, m.gameListX, m.gameListY, m.gameListW, m.gameListH)) {
+                // Over the game world list: the wheel scrolls the list a row at a time
+                const size_t total = m.gameWorlds.size();
+                const int maxOffset = total > GAME_WORLD_ROWS ? (int)(total - GAME_WORLD_ROWS) : 0;
+                const int next = (int)m.gameWorldOffset - (int)mouse.wheel;
+                m.gameWorldOffset = (size_t)std::clamp(next, 0, maxOffset);
+            } else {
+                m.scroll = std::clamp(m.scroll - mouse.wheel * c.rowH * 1.5f, 0.0f, m.scrollMax);
+                MenuStopEditing(m);
+            }
         }
         if (m.scrollMax > 0.0f) {
             const float thumbH = std::max(44.0f, viewH * viewH / (viewH + m.scrollMax));

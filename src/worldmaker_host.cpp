@@ -3,6 +3,7 @@
 #include "worldmaker_host.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -11,6 +12,7 @@
 
 #include "grid.h"
 #include "map.h"
+#include "timefmt.h"
 #include "world_format.h"
 
 #include "app/console.hpp"
@@ -81,6 +83,7 @@ float GameCornerHeight(const World& w, int gx, int gz) {
 // Writes the loaded world as a game world: a folder holding world.txt and region files, built
 // straight from the tool's heights. Land under the sea and bare rock are blocked, and so is any tile
 // whose corners differ in height by more than kMaxTileStep. outPath gets the folder's full path.
+// A world already saved under this name is replaced in its own folder, as the game's saves are.
 bool ExportGameWorld(const World& w, const std::string& name, const std::string& mapDir,
                      std::string& outPath, std::string& err) {
     namespace fs = std::filesystem;
@@ -90,21 +93,37 @@ bool ExportGameWorld(const World& w, const std::string& name, const std::string&
         err = "no world to export";
         return false;
     }
-    const std::string folder = mapDir + "/" + name;
+    if (name.empty()) {
+        err = "the world needs a name";
+        return false;
+    }
 
-    // Drop region files left by an earlier export of this name, so a smaller world leaves none behind
-    std::error_code ec;
-    if (fs::is_directory(folder, ec)) {
-        for (const auto& entry : fs::directory_iterator(folder, ec)) {
-            if (entry.path().extension() == ".kreg") fs::remove(entry.path(), ec);
+    // A world already saved under this name is replaced in its own folder. Otherwise a new folder is
+    // made, named by the time it was saved.
+    const long long now = (long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    std::string folder;
+    for (const WorldEntry& e : listWorlds(mapDir)) {
+        if (e.name == name) {
+            folder = e.folder;
+            break;
         }
     }
+    const bool replacing = !folder.empty();
+    if (!replacing) folder = mapDir + "/world_" + std::to_string(now);
+
+    // The world is written beside the old one and moved into place only when complete, so a save
+    // that fails leaves the old world as it was
+    const std::string temp = folder + ".saving";
+    std::error_code ec;
+    fs::remove_all(temp, ec);
 
     WorldInfo info;
     info.name = name;
+    info.created = now;
     info.size = n;
     info.heightScale = kGameHeightScale;
-    const bool ok = writeWorld(folder, info, [&](int cx, int cz, ChunkData& c) {
+    const bool ok = writeWorld(temp, info, [&](int cx, int cz, ChunkData& c) {
         for (int j = 0; j < CHUNK_CORNERS; ++j) {
             for (int i = 0; i < CHUNK_CORNERS; ++i) {
                 const int gx = std::min(cx * CHUNK_TILES + i, n);
@@ -133,7 +152,16 @@ bool ExportGameWorld(const World& w, const std::string& name, const std::string&
             }
         }
     }, err);
-    if (!ok) return false;
+    if (!ok) {
+        fs::remove_all(temp, ec);
+        return false;
+    }
+    if (replacing) fs::remove_all(folder, ec);
+    fs::rename(temp, folder, ec);
+    if (ec) {
+        err = "could not move the world into place";
+        return false;
+    }
     outPath = folder;
     return true;
 }
@@ -272,6 +300,16 @@ bool Tool::Init(SDL_Window* win, const std::vector<unsigned char>& font, const s
     s.session.themesDir = dataDir + "/themes";
     s.session.exportMap = [mapDir](const World& w, const std::string& name, std::string& path, std::string& e) {
         return ExportGameWorld(w, name, mapDir, path, e);
+    };
+    s.session.listGameWorlds = [mapDir](bool byName, bool ascending) {
+        std::vector<WorldEntry> found = listWorlds(mapDir);
+        sortWorldEntries(found, byName, ascending);
+        std::vector<GameWorldEntry> out;
+        for (const WorldEntry& e : found) {
+            out.push_back(GameWorldEntry{ e.name, e.created,
+                                          e.created > 0 ? timeString(e.created) : std::string("unknown") });
+        }
+        return out;
     };
     s.con.print("F1 opens the console. Esc opens the menu, where you can generate, export and import.");
     s.con.print("Type: gen   to generate a world with a random seed.");

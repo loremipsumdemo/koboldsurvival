@@ -14,6 +14,13 @@
 
 namespace wm {
 
+// A game world in the maps folder, as the Files tab lists it
+struct GameWorldEntry {
+    std::string name;        // the name it was saved under
+    long long created = 0;   // when it was saved, milliseconds since 1970; 0 if unknown
+    std::string when;        // created, as the list shows it
+};
+
 
 // What the running generation is doing. Shown in the menu under the progress bar.
 struct GenStatus {
@@ -65,6 +72,9 @@ struct Session {
     // Writes a world as a game world folder, under the name typed in the menu. Set by the host, which
     // knows the game's world format. outPath gets the folder written. Returns false with err on failure.
     std::function<bool(const World& w, const std::string& name, std::string& outPath, std::string& err)> exportMap;
+
+    // The game worlds in the maps folder, sorted by name or by created date. Set by the host.
+    std::function<std::vector<GameWorldEntry>(bool byName, bool ascending)> listGameWorlds;
 
     std::string worldsDir;           // <exe>/data/worlds
     std::string themesDir;           // <exe>/data/themes

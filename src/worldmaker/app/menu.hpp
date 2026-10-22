@@ -71,6 +71,19 @@ struct MenuState {
     std::string status;
 
     std::vector<std::string> worlds;  // exported worlds available to import
+
+    // Game worlds on the Files tab. The list works like the game's save list.
+    std::string gameWorldName;                // the name typed for the next game world
+    std::string gameWorldAskName;             // the name a replace question is about
+    bool gameWorldAsk = false;                // that name is taken: ask before replacing it
+    bool gameWorldByName = false;             // sorted by name, else by created date
+    bool gameWorldAsc = false;                // ascending order
+    size_t gameWorldOffset = 0;               // first world shown in the list
+    std::vector<GameWorldEntry> gameWorlds;   // the list, read from the host
+    bool gameWorldsStale = true;              // the list must be read again
+    unsigned long long gameWorldsAt = 0;      // when it was last read, in ms
+    // Where the list was drawn last frame, for the wheel. gameListH is 0 when it was not shown.
+    float gameListX = 0.0f, gameListY = 0.0f, gameListW = 0.0f, gameListH = 0.0f;
     std::vector<std::string> themes;  // exported themes available to import
 };
 

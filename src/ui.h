@@ -34,7 +34,9 @@ enum class Action {
     DevStarBright,        // param is -1 or +1
     DevColorTarget,       // param is -1 or +1, picks which colour the R/G/B buttons edit
     DevColor,             // param is channel * 2, plus 1 for the plus button
-    DevReset              // restores the default atmosphere
+    DevReset,             // restores the default atmosphere
+    MapSortName, MapSortTime,   // column headers in the New Game list
+    MapScrollUp, MapScrollDown  // the "..." rows at the ends of the New Game list
 };
 
 // Pixel rectangle, origin at the top-left of the window
