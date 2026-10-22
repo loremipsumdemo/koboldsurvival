@@ -110,6 +110,8 @@ public:
 
     // Smaller text for dense lists, such as the save list. The font is owned by the caller.
     void setListFont(TTF_Font* font);
+    // Fonts for the Stats popout: NotoSans Regular, or Bold if the Regular file is not packed. Owned by the caller.
+    void setStatsFonts(TTF_Font* title, TTF_Font* rows);
     void drawListText(const std::string& s, float x, float y, RGBA tint);
     float listTextHeight(const std::string& s);
     float listTextWidth(const std::string& s);
@@ -160,6 +162,15 @@ private:
 
     // Cached white text texture for a list string, using the list font
     HudLine& listLine(const std::string& s);
+    // A font with its own cache of text textures, for the Stats popout
+    struct TextFont {
+        TTF_Font* font = nullptr;
+        std::map<std::string, HudLine> lines;
+    };
+    HudLine& fontLine(TextFont& f, const std::string& s);
+    void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
+    float fontTextWidth(TextFont& f, const std::string& s);
+    float fontTextHeight(TextFont& f, const std::string& s);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1;
@@ -204,6 +215,7 @@ private:
     // Smaller font for dense lists
     TTF_Font* listFont_ = nullptr;
     std::map<std::string, HudLine> listText_;
+    TextFont statsTitle_, statsRow_;
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
 

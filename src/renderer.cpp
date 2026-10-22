@@ -427,6 +427,13 @@ void Renderer::shutdown() {
         if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
     }
     listText_.clear();
+    TextFont* statsFonts[] = { &statsTitle_, &statsRow_ };
+    for (TextFont* f : statsFonts) {
+        for (auto& entry : f->lines) {
+            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+        }
+        f->lines.clear();
+    }
     if (title_.tex) glDeleteTextures(1, &title_.tex);
     title_.tex = 0;
     destroyModel(wagon_);
@@ -729,11 +736,15 @@ void Renderer::beginUi(int winW, int winH) {
     uiH_ = winH;
     glViewport(0, 0, winW, winH);
     glDisable(GL_DEPTH_TEST);
+    // The UI backgrounds are translucent, so blending must be on. The sea pass in drawTerrain leaves it off.
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     pixels_ = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
 }
 
 void Renderer::endUi() {
     glBindVertexArray(0);
+    glDisable(GL_BLEND);   // the world pass draws with blending off, as it did before the UI
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -851,6 +862,65 @@ Renderer::HudLine& Renderer::listLine(const std::string& s) {
     hl.w = (float)tw;
     hl.h = (float)th;
     return listText_[s] = hl;
+}
+
+// Stats popout fonts: each one keeps its own cache of text textures
+void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
+    // Textures made with the old fonts would be stale, so drop them
+    TextFont* fonts[] = { &statsTitle_, &statsRow_ };
+    for (TextFont* f : fonts) {
+        for (auto& entry : f->lines) {
+            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+        }
+        f->lines.clear();
+    }
+    statsTitle_.font = title;
+    statsRow_.font = rows;
+}
+
+Renderer::HudLine& Renderer::fontLine(TextFont& f, const std::string& s) {
+    auto it = f.lines.find(s);
+    if (it != f.lines.end()) return it->second;
+
+    HudLine hl;
+    hl.text = s;
+    hl.w = 0.0f;
+    hl.h = 0.0f;
+    int tw = 0, th = 0;
+    if (!f.font) return f.lines[s] = hl;
+    if (s.find_first_not_of(' ') == std::string::npos) {
+        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
+        TTF_GetStringSize(f.font, "Ag", 2, &tw, &th);
+        hl.h = (float)th;
+        return f.lines[s] = hl;
+    }
+    TTF_GetStringSize(f.font, s.c_str(), s.size(), &tw, &th);
+    hl.tex = makeGlyphTexture(f.font, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
+    hl.w = (float)tw;
+    hl.h = (float)th;
+    return f.lines[s] = hl;
+}
+
+void Renderer::drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint) {
+    HudLine& hl = fontLine(f, s);
+    if (!hl.tex.tex) return;
+    float v[4 * 5] = {
+        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
+        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
+        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
+        x,         y,        0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(hl.tex.tex, v, tint);
+}
+
+float Renderer::fontTextWidth(TextFont& f, const std::string& s) {
+    return fontLine(f, s).w;
+}
+
+float Renderer::fontTextHeight(TextFont& f, const std::string& s) {
+    return fontLine(f, s).h;
 }
 
 float Renderer::listTextHeight(const std::string& s) {
@@ -1680,7 +1750,7 @@ void Renderer::drawNotice(const std::string& text, int winW, int winH) {
 
 StatsPanelLayout Renderer::statsPanelLayout(int winW, int winH) {
     const float s = winH / 720.0f;
-    return layoutStatsPanel(winW, winH, listTextHeight("Ag") + 1.0f * s, uiTextHeight("Ag"));
+    return layoutStatsPanel(winW, winH, fontTextHeight(statsRow_, "Ag") + 1.0f * s, fontTextHeight(statsTitle_, "Ag"));
 }
 
 void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name, const Stats& stats,
@@ -1690,19 +1760,21 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     const RGBA grey{ 0.66f, 0.66f, 0.72f, 1.0f };
     const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
     const float bgAlpha = 0.5f;
-    const float rowH = listTextHeight("Ag") + 1.0f * s;
+    const float rowH = fontTextHeight(statsRow_, "Ag") + 1.0f * s;
     const float pad = L.left.x - L.box.x;
 
     drawRect(L.box, RGBA{ 0.04f, 0.05f, 0.08f, bgAlpha });
-    drawUiTextCentered("Stats: " + name, L.box.x + L.box.w * 0.5f, L.box.y + pad, white);
+    const std::string caption = "Stats: " + name;
+    drawFontText(statsTitle_, caption, L.box.x + (L.box.w - fontTextWidth(statsTitle_, caption)) * 0.5f,
+                 L.box.y + pad, white);
 
     // Columns: the name at the left, then the level, the total XP and the XP still to go, right aligned
     auto row = [&](const Rect& col, float rowY, const std::string& a, const std::string& b,
                    const std::string& c, const std::string& d, RGBA tint) {
-        drawListText(a, col.x, rowY, tint);
-        drawListText(b, col.x + 200.0f - listTextWidth(b), rowY, tint);
-        drawListText(c, col.x + 312.0f - listTextWidth(c), rowY, tint);
-        drawListText(d, col.x + col.w - listTextWidth(d), rowY, tint);
+        drawFontText(statsRow_, a, col.x, rowY, tint);
+        drawFontText(statsRow_, b, col.x + 200.0f - fontTextWidth(statsRow_, b), rowY, tint);
+        drawFontText(statsRow_, c, col.x + 312.0f - fontTextWidth(statsRow_, c), rowY, tint);
+        drawFontText(statsRow_, d, col.x + col.w - fontTextWidth(statsRow_, d), rowY, tint);
     };
     auto column = [&](const Rect& col, const std::vector<StatGroup>& groups) {
         float rowY = col.y;
@@ -1713,7 +1785,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
                               : group == StatGroup::Combat ? "Combat"
                               : group == StatGroup::Gathering ? "Resource Gathering"
                               : group == StatGroup::Crafting ? "Crafting" : "Utility";
-            drawListText(title, col.x, rowY, heading);
+            drawFontText(statsRow_, title, col.x, rowY, heading);
             rowY += rowH;
             for (int i = 0; i < STAT_COUNT; ++i) {
                 if (statInfo(i).group != group) continue;
@@ -1730,8 +1802,8 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
 
     const bool hot = L.close.contains(mx, my);
     drawRect(L.close, hot ? RGBA{ 0.25f, 0.34f, 0.50f, bgAlpha } : RGBA{ 0.14f, 0.17f, 0.22f, bgAlpha });
-    const float tw = listTextWidth("Close"), th = listTextHeight("Close");
-    drawListText("Close", L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, white);
+    const float tw = fontTextWidth(statsRow_, "Close"), th = fontTextHeight(statsRow_, "Close");
+    drawFontText(statsRow_, "Close", L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, white);
 }
 
 ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH) {

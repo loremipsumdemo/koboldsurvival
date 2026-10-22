@@ -819,6 +819,18 @@ int main(int, char**) {
         SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
         return 1;
     }
+    // The Stats popout uses NotoSans Regular. Until that file is in data/font, it uses Bold.
+    TTF_Font* statsTitleFont = pakFont("data/font/NotoSans_Condensed-Regular.ttf", 30.0f);
+    TTF_Font* statsRowFont = pakFont("data/font/NotoSans_Condensed-Regular.ttf", 20.0f);
+    if (!statsTitleFont || !statsRowFont) {
+        SDL_Log("NotoSans_Condensed-Regular.ttf is not in data/font, so the Stats popout uses Bold");
+        statsTitleFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
+        statsRowFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);
+    }
+    if (!statsTitleFont || !statsRowFont) {
+        SDL_Log("Could not open the Stats popout font from data.pak: %s", SDL_GetError());
+        return 1;
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -847,6 +859,7 @@ int main(int, char**) {
     Renderer renderer;
     if (!renderer.init(font, hudFont, uiFont, [&](float p) { loadingFrame(window, renderer, p); })) return 1;
     renderer.setListFont(listFont);
+    renderer.setStatsFonts(statsTitleFont, statsRowFont);
 
     Terrain terrain;
     World world;
@@ -1621,8 +1634,11 @@ int main(int, char**) {
                         for (const UnitCell& c : pl.cells) {
                             if (!c.rect.contains(mx, my)) continue;
                             const Entity u = own[c.index];
-                            const bool additive = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
-                            if (additive && world.has<Selected>(u)) {
+                            // Shift toggles the unit in the selection. Alt adds it and never clears or removes anything.
+                            const SDL_Keymod mods = SDL_GetModState();
+                            const bool shift = (mods & SDL_KMOD_SHIFT) != 0;
+                            const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
+                            if (shift && world.has<Selected>(u)) {
                                 world.remove<Selected>(u);
                             } else {
                                 if (!additive) clearSelection(world);
@@ -1730,7 +1746,9 @@ int main(int, char**) {
                 }
                 if (e.button.button == SDL_BUTTON_LEFT && leftDown) {
                     leftDown = false;
-                    bool additive = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+                    // Shift adds to the selection. Alt never clears it, so Alt-click on empty ground does nothing.
+                    const SDL_Keymod mods = SDL_GetModState();
+                    const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
                     if (sel.dragging) {
                         boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive);
                     } else {
@@ -2189,6 +2207,8 @@ int main(int, char**) {
 
     // ---- Shutdown ----
     renderer.shutdown();
+    TTF_CloseFont(statsRowFont);
+    TTF_CloseFont(statsTitleFont);
     TTF_CloseFont(listFont);
     TTF_CloseFont(uiFont);
     TTF_CloseFont(hudFont);
