@@ -3,6 +3,7 @@
 #include <vector>
 #include "ecs.h"
 #include "grid.h"
+#include "navmesh.h"
 
 // World position. y is the terrain height under the entity.
 struct Transform {
@@ -37,6 +38,11 @@ struct UnitSprite {
 struct SquadMember {
     Entity squad = NULL_ENTITY;
     int slot = 0;
+    // Own route to the door, planned once when the squad goes in, so members on the far
+    // side of the building walk around it rather than pressing against the wall
+    std::vector<Vec2> doorRoute;
+    size_t doorNext = 0;
+    bool routed = false;
 };
 
 // A squad is one group movement order. Its center walks a path, and its
@@ -44,7 +50,7 @@ struct SquadMember {
 struct Squad {
     float cx = 0.0f, cz = 0.0f;       // formation center
     float headX = 0.0f, headZ = 1.0f; // facing, from the direction of travel
-    std::vector<GridPos> waypoints;
+    std::vector<Vec2> waypoints;      // smooth path, world units
     size_t next = 0;
     bool arrived = false;
     bool wantsDoor = false;           // ordered to enter the building
@@ -55,7 +61,7 @@ struct Squad {
 
 // A single unit's own route. Used instead of a squad when one unit is ordered.
 struct SoloMove {
-    std::vector<GridPos> waypoints;
+    std::vector<Vec2> waypoints;      // smooth path, world units
     size_t next = 0;
     bool wantsDoor = false;           // ordered to enter the building
     bool enterDoor = false;           // unlocked and at the entrance, so the unit goes through

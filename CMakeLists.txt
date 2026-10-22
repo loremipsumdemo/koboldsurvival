@@ -29,6 +29,8 @@ add_executable(koboldgame
     src/renderer.cpp
     src/systems.cpp
     src/terrain.cpp
+    src/navmesh.cpp
+    src/map.cpp
     src/model.cpp
     src/pak.cpp
     src/app.rc          # embeds the exe icon (src/app.ico) on Windows

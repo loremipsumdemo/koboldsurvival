@@ -12,8 +12,8 @@
 #include <vector>
 #include "resources.h"
 
-// Save files are plain text. The terrain and the building are rebuilt from the seed,
-// so a save only stores what changes: game progress, units, and keys still on the map.
+// Save files are plain text. The terrain comes from the map the save was made on, and the
+// building from the seed. A save stores what changes: game progress, units, and keys still on the map.
 
 inline constexpr const char* SAVE_DIR = "saves";
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
@@ -40,7 +40,9 @@ struct SaveData {
     std::string name;
     bool autosave = false;            // true for autosave0..2, false for manual saves
     long long timestamp = 0;          // milliseconds since 1970, used for ordering
-    unsigned seed = 0;                // rebuilds the terrain and the building
+    unsigned seed = 0;                // places the building, units and keys
+    std::string mapSource;            // "data" for a premade map, "custom" for one in custom_maps
+    std::string mapStem;              // the map's file name without .map
     GameState gs;
     bool doorUnlocked = false;
     SaveCamera cam;
@@ -82,6 +84,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     out << "name=" << d.name << "\n";
     out << "timestamp=" << d.timestamp << "\n";
     out << "seed=" << d.seed << "\n";
+    out << "map " << d.mapSource << " " << d.mapStem << "\n";
     out << "keysCollected=" << d.gs.keysCollected << "\n";
     out << "unitsEntered=" << d.gs.unitsEntered << "\n";
     out << "won=" << (d.gs.won ? 1 : 0) << "\n";
@@ -111,6 +114,11 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
             if (line.rfind("name=", 0) == 0)                   d.name = line.substr(5);
             else if (line.rfind("timestamp=", 0) == 0)        d.timestamp = std::stoll(line.substr(10));
             else if (line.rfind("seed=", 0) == 0)             d.seed = (unsigned)std::stoul(line.substr(5));
+            else if (line.rfind("map ", 0) == 0) {
+                std::istringstream ss(line.substr(4));
+                ss >> d.mapSource;
+                std::getline(ss >> std::ws, d.mapStem);
+            }
             else if (line.rfind("keysCollected=", 0) == 0)    d.gs.keysCollected = std::stoi(line.substr(14));
             else if (line.rfind("unitsEntered=", 0) == 0)    d.gs.unitsEntered = std::stoi(line.substr(13));
             else if (line.rfind("won=", 0) == 0)              d.gs.won = (line.substr(4) == "1");

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include <vector>
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -20,3 +21,6 @@ SDL_Surface* pakImage(const std::string& name);
 
 // Opens a font from the pak. Returns null if it's missing. Close it with TTF_CloseFont.
 TTF_Font* pakFont(const std::string& name, float size);
+
+// Names of every file in the pak that starts with prefix and ends with suffix, sorted.
+std::vector<std::string> pakNames(const std::string& prefix, const std::string& suffix);

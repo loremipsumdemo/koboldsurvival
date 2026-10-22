@@ -1,83 +1,40 @@
 #include "terrain.h"
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
-#include <functional>
-#include <numeric>
-#include <queue>
-#include <random>
 
-namespace {
-
-// Classic 2D gradient (Perlin) noise with a seeded permutation table.
-struct Perlin {
-    int p[512];
-
-    explicit Perlin(unsigned seed) {
-        std::vector<int> perm(256);
-        std::iota(perm.begin(), perm.end(), 0);
-        std::mt19937 rng(seed);
-        std::shuffle(perm.begin(), perm.end(), rng);
-        for (int i = 0; i < 512; ++i) p[i] = perm[i & 255];
-    }
-
-    static float fade(float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
-    static float lerp(float a, float b, float t) { return a + t * (b - a); }
-
-    static float grad(int h, float x, float y) {
-        switch (h & 7) {
-        case 0: return  x + y;
-        case 1: return -x + y;
-        case 2: return  x - y;
-        case 3: return -x - y;
-        case 4: return  x;
-        case 5: return -x;
-        case 6: return  y;
-        default: return -y;
-        }
-    }
-
-    // Output is roughly in [-0.71, 0.71]
-    float noise(float x, float y) const {
-        float fx = std::floor(x), fy = std::floor(y);
-        int xi = (int)fx & 255, yi = (int)fy & 255;
-        float xf = x - fx, yf = y - fy;
-        float u = fade(xf), v = fade(yf);
-
-        int aa = p[p[xi] + yi];
-        int ab = p[p[xi] + yi + 1];
-        int ba = p[p[xi + 1] + yi];
-        int bb = p[p[xi + 1] + yi + 1];
-
-        float x1 = lerp(grad(aa, xf, yf), grad(ba, xf - 1, yf), u);
-        float x2 = lerp(grad(ab, xf, yf - 1), grad(bb, xf - 1, yf - 1), u);
-        return lerp(x1, x2, v);
-    }
-};
-
-} // namespace
-
-void Terrain::generate(unsigned seed) {
-    Perlin perlin(seed);
-
+Terrain::Terrain() {
     heights_.assign((size_t)VERT_SIZE * VERT_SIZE, 0.0f);
-    for (int z = 0; z < VERT_SIZE; ++z) {
-        for (int x = 0; x < VERT_SIZE; ++x) {
-            // Two octaves, then scaled so the result stays within [-1, 1]
-            float fx = x * 0.12f, fz = z * 0.12f;   // features roughly 8 tiles across
-            float n = perlin.noise(fx, fz)
-                    + 0.5f * perlin.noise(fx * 2.1f + 17.3f, fz * 2.1f - 4.7f);
-            heights_[(size_t)z * VERT_SIZE + x] = std::clamp(n / 1.05f, -1.0f, 1.0f) * HEIGHT_SCALE;
+    walkable_.assign((size_t)MAP_SIZE * MAP_SIZE, 1);
+    rebuildNavmesh();
+}
+
+void Terrain::load(const std::vector<float>& heights) {
+    heights_.assign((size_t)VERT_SIZE * VERT_SIZE, 0.0f);
+    std::copy_n(heights.begin(), std::min(heights.size(), heights_.size()), heights_.begin());
+    walkable_.assign((size_t)MAP_SIZE * MAP_SIZE, 1);
+    rebuildNavmesh();
+}
+
+void Terrain::setVertexHeight(int x, int z, float h) {
+    if (x < 0 || z < 0 || x >= VERT_SIZE || z >= VERT_SIZE) return;
+    heights_[(size_t)z * VERT_SIZE + x] = std::clamp(h, -HEIGHT_SCALE, HEIGHT_SCALE);
+}
+
+void Terrain::paint(float hx, float hz, float radius, float amount) {
+    if (radius <= 0.0f) return;
+    const int x0 = std::max(0, (int)std::floor(hx - radius));
+    const int x1 = std::min(VERT_SIZE - 1, (int)std::ceil(hx + radius));
+    const int z0 = std::max(0, (int)std::floor(hz - radius));
+    const int z1 = std::min(VERT_SIZE - 1, (int)std::ceil(hz + radius));
+    for (int z = z0; z <= z1; ++z) {
+        for (int x = x0; x <= x1; ++x) {
+            const float dx = x - hx, dz = z - hz;
+            const float d = std::sqrt(dx * dx + dz * dz);
+            if (d >= radius) continue;
+            const float falloff = 1.0f - d / radius;
+            setVertexHeight(x, z, heights_[(size_t)z * VERT_SIZE + x] + amount * falloff * falloff);
         }
     }
-
-    size_t cells = (size_t)MAP_SIZE * MAP_SIZE;
-    walkable_.assign(cells, 1);
-    gScore_.assign(cells, 0.0f);
-    parent_.assign(cells, -1);
-    stamp_.assign(cells, 0u);
-    closed_.assign(cells, 0u);
-    gen_ = 0;
 }
 
 float Terrain::heightAt(float x, float z) const {
@@ -98,83 +55,26 @@ float Terrain::heightAt(float x, float z) const {
     return ha + fx * (hb - ha) + fz * (hd - hb);                 // triangle a, d, b
 }
 
-GridPos Terrain::nearestWalkable(GridPos g) const {
-    if (walkable(g.x, g.y)) return g;
-    for (int r = 1; r <= 15; ++r) {
-        for (int dy = -r; dy <= r; ++dy) {
-            for (int dx = -r; dx <= r; ++dx) {
-                if (std::max(std::abs(dx), std::abs(dy)) != r) continue;
-                if (walkable(g.x + dx, g.y + dy)) return { g.x + dx, g.y + dy };
-            }
-        }
-    }
-    return g;
+void Terrain::setWalkable(int x, int y, bool w) {
+    if (!inBounds(x, y)) return;
+    walkable_[y * MAP_SIZE + x] = w;
+    rebuildNavmesh();
 }
 
-std::vector<GridPos> Terrain::findPath(GridPos start, GridPos goal) {
-    if (start == goal || !walkable(goal.x, goal.y)) return {};
-
-    // New generation for this search, so no per-search clearing is needed
-    if (++gen_ == 0) {
-        std::fill(stamp_.begin(), stamp_.end(), 0u);
-        std::fill(closed_.begin(), closed_.end(), 0u);
-        gen_ = 1;
-    }
-
-    auto idx = [](int x, int y) { return y * MAP_SIZE + x; };
-    auto heuristic = [&](int x, int y) {
-        int dx = std::abs(x - goal.x), dy = std::abs(y - goal.y);
-        return (float)std::max(dx, dy) + 0.4142f * (float)std::min(dx, dy);   // octile
-    };
-
-    using Node = std::pair<float, int>;   // (f score, cell index)
-    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open;
-
-    int s = idx(start.x, start.y);
-    int goalIdx = idx(goal.x, goal.y);
-    stamp_[s] = gen_;
-    gScore_[s] = 0.0f;
-    parent_[s] = -1;
-    open.push({ heuristic(start.x, start.y), s });
-
-    static const int DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
-    static const int DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
-
-    while (!open.empty()) {
-        int cur = open.top().second;
-        open.pop();
-        if (closed_[cur] == gen_) continue;   // stale heap entry
-        closed_[cur] = gen_;
-        if (cur == goalIdx) break;
-
-        int cx = cur % MAP_SIZE, cy = cur / MAP_SIZE;
-        for (int k = 0; k < 8; ++k) {
-            int nx = cx + DX[k], ny = cy + DY[k];
-            if (!walkable(nx, ny)) continue;
-
-            bool diag = DX[k] != 0 && DY[k] != 0;
-            // No cutting corners past blocked tiles (keeps units out of building corners)
-            if (diag && (!walkable(cx + DX[k], cy) || !walkable(cx, cy + DY[k]))) continue;
-
-            int nk = idx(nx, ny);
-            if (closed_[nk] == gen_) continue;
-
-            float g2 = gScore_[cur] + (diag ? 1.4142f : 1.0f);
-            if (stamp_[nk] != gen_ || g2 < gScore_[nk]) {
-                stamp_[nk] = gen_;
-                gScore_[nk] = g2;
-                parent_[nk] = cur;
-                open.push({ g2 + heuristic(nx, ny), nk });
-            }
+void Terrain::rebuildNavmesh() {
+    // Each run of blocked tiles along a row becomes one obstacle box
+    std::vector<NavBox> blocked;
+    for (int y = 0; y < MAP_SIZE; ++y) {
+        int x = 0;
+        while (x < MAP_SIZE) {
+            if (walkable_[y * MAP_SIZE + x]) { ++x; continue; }
+            int start = x;
+            while (x < MAP_SIZE && !walkable_[y * MAP_SIZE + x]) ++x;
+            blocked.push_back({ (float)start, (float)y, (float)x, (float)y + 1.0f });
         }
     }
 
-    if (closed_[goalIdx] != gen_) return {};
-
-    std::vector<GridPos> path;
-    for (int k = goalIdx; k != s; k = parent_[k]) {
-        path.push_back({ k % MAP_SIZE, k / MAP_SIZE });
-    }
-    std::reverse(path.begin(), path.end());
-    return path;
+    // Units keep this far from any blocked tile, so their centres never sit inside a wall
+    constexpr float AGENT_CLEARANCE = 0.3f;
+    navmesh_.build({ 0.0f, 0.0f, (float)MAP_SIZE, (float)MAP_SIZE }, blocked, AGENT_CLEARANCE);
 }

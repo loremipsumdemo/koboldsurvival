@@ -1,5 +1,6 @@
 #include "pak.h"
 #include <cstdint>
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <unordered_map>
@@ -101,4 +102,17 @@ TTF_Font* pakFont(const std::string& name, float size) {
         return nullptr;
     }
     return TTF_OpenFontIO(SDL_IOFromConstMem(bytes, byteCount), true, size);
+}
+
+std::vector<std::string> pakNames(const std::string& prefix, const std::string& suffix) {
+    std::vector<std::string> out;
+    for (const auto& [name, entry] : g_index) {
+        (void)entry;
+        if (name.size() < prefix.size() + suffix.size()) continue;
+        if (name.compare(0, prefix.size(), prefix) != 0) continue;
+        if (name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) continue;
+        out.push_back(name);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
 }

@@ -9,26 +9,26 @@ constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
 constexpr float ENTER_RADIUS = 0.6f;     // how close a unit must be to step through the door
 constexpr float KEY_RADIUS = 0.9f;       // how close a unit must be to grab a key
 
-GridPos tileOf(float x, float z) {
-    return { (int)std::floor(x), (int)std::floor(z) };
+// Centre of a tile, for the building, which still sits on the tile grid
+Vec2 tileCenter(GridPos g) {
+    return { g.x + 0.5f, g.y + 0.5f };
 }
 
 // Plans a new route for a squad's center. Only the center paths; members follow slots.
-void planSquad(World& w, Terrain& t, Entity squadE, GridPos target, bool wantsDoor) {
+void planSquad(World& w, Terrain& t, Entity squadE, Vec2 target, bool wantsDoor) {
     Squad* sq = w.get<Squad>(squadE);
-    GridPos from = tileOf(sq->cx, sq->cz);
-    sq->waypoints = t.findPath(from, t.nearestWalkable(target));
+    sq->waypoints = t.findPath({ sq->cx, sq->cz }, target);
     sq->next = 0;
     sq->arrived = sq->waypoints.empty();
     sq->wantsDoor = wantsDoor;
     sq->enterDoor = false;
 }
 
-// Plans a single unit's own route to a tile
-void planSolo(World& w, Terrain& t, Entity e, GridPos target, bool wantsDoor) {
+// Plans a single unit's own route to a ground point
+void planSolo(World& w, Terrain& t, Entity e, Vec2 target, bool wantsDoor) {
     SoloMove* so = w.get<SoloMove>(e);
     Transform* tr = w.get<Transform>(e);
-    so->waypoints = t.findPath(tileOf(tr->x, tr->z), t.nearestWalkable(target));
+    so->waypoints = t.findPath({ tr->x, tr->z }, target);
     so->next = 0;
     so->wantsDoor = wantsDoor;
     so->enterDoor = false;
@@ -124,13 +124,13 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
 }
 
 void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
-                    GridPos clickTile, bool clickedDoor) {
+                    Vec2 clickPoint, bool clickedDoor) {
     if (units.empty()) return;
 
     Door* door = findDoor(w);
     bool wantsDoor = clickedDoor && door != nullptr;
-    GridPos target = clickTile;
-    if (wantsDoor) target = door->unlocked ? door->entrance : door->front;
+    Vec2 target = clickPoint;
+    if (wantsDoor) target = tileCenter(door->unlocked ? door->entrance : door->front);
 
     // A single unit walks its own route, with no formation
     if (units.size() == 1) {
@@ -161,7 +161,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
     // Each selected unit joins the new squad. Overwriting SquadMember drops any old squad.
     for (size_t i = 0; i < units.size(); ++i) {
         w.remove<SoloMove>(units[i]);
-        w.add(units[i], SquadMember{ sq, (int)i });
+        w.add(units[i], SquadMember{ sq, (int)i, {}, 0, false });
     }
 
     planSquad(w, t, sq, target, wantsDoor);
@@ -174,8 +174,8 @@ void squadSystem(World& w, float dt) {
         Squad* sq = w.get<Squad>(e);
 
         if (!sq->arrived) {
-            GridPos wp = sq->waypoints[sq->next];
-            float tx = wp.x + 0.5f, tz = wp.y + 0.5f;
+            Vec2 wp = sq->waypoints[sq->next];
+            float tx = wp.x, tz = wp.z;
             float dx = tx - sq->cx, dz = tz - sq->cz;
             float d = std::sqrt(dx * dx + dz * dz);
             float step = sq->speed * dt;
@@ -204,6 +204,14 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
     std::vector<Entity> units = w.view<Unit, Transform, Commandable>();
     std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
 
+    // Units going through the door don't push each other apart, so they can queue into the gap
+    auto entering = [&](Entity e) {
+        SquadMember* sm = w.get<SquadMember>(e);
+        Squad* sq = sm ? w.get<Squad>(sm->squad) : nullptr;
+        SoloMove* so = w.get<SoloMove>(e);
+        return (sq && sq->enterDoor) || (so && so->enterDoor);
+    };
+
     // Pass 1: each unit's desired velocity, from its slot plus separation.
     // Positions are read here but not changed, so the order of units doesn't matter.
     for (size_t i = 0; i < units.size(); ++i) {
@@ -215,8 +223,22 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
         if (SquadMember* sm = w.get<SquadMember>(e)) {
             if (Squad* sq = w.get<Squad>(sm->squad)) {
                 if (sq->enterDoor && door) {
-                    tx = door->entrance.x + 0.5f;
-                    tz = door->entrance.y + 0.5f;
+                    // Walk the navmesh to the entrance, rather than straight at it through the wall
+                    if (!sm->routed) {
+                        sm->doorRoute = t.findPath({ tr->x, tr->z }, tileCenter(door->entrance));
+                        sm->doorNext = 0;
+                        sm->routed = true;
+                    }
+                    while (sm->doorNext < sm->doorRoute.size()) {
+                        Vec2 wp = sm->doorRoute[sm->doorNext];
+                        float wx = wp.x - tr->x, wz = wp.z - tr->z;
+                        if (wx * wx + wz * wz > 0.2f * 0.2f) break;
+                        ++sm->doorNext;
+                    }
+                    Vec2 goal = sm->doorNext < sm->doorRoute.size()
+                              ? sm->doorRoute[sm->doorNext] : tileCenter(door->entrance);
+                    tx = goal.x;
+                    tz = goal.z;
                 } else {
                     // Slots are centred on the squad centre, so the group's middle sits on
                     // the click point: columns across the heading, rows behind it.
@@ -232,17 +254,20 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
                     tz = sq->cz + (rightZ * colOff + backZ * rowOff) * spacing;
 
                     // Don't ask units to stand inside walls
-                    GridPos st = t.nearestWalkable(tileOf(tx, tz));
-                    tx = st.x + 0.5f;
-                    tz = st.y + 0.5f;
+                    Vec2 st = t.snap({ tx, tz });
+                    tx = st.x;
+                    tz = st.z;
                 }
             }
         } else if (SoloMove* so = w.get<SoloMove>(e)) {
             // Move past any waypoints the unit has already reached
             while (so->next < so->waypoints.size()) {
-                GridPos wp = so->waypoints[so->next];
-                float wx = wp.x + 0.5f - tr->x, wz = wp.y + 0.5f - tr->z;
-                if (wx * wx + wz * wz > 0.2f * 0.2f) break;
+                Vec2 wp = so->waypoints[so->next];
+                float wx = wp.x - tr->x, wz = wp.z - tr->z;
+                // Corners can be passed loosely; the final point is where the unit should stop
+                bool last = so->next + 1 == so->waypoints.size();
+                float reach = last ? 0.05f : 0.2f;
+                if (wx * wx + wz * wz > reach * reach) break;
                 ++so->next;
             }
 
@@ -252,8 +277,8 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
                 tx = door->entrance.x + 0.5f;
                 tz = door->entrance.y + 0.5f;
             } else if (so->next < so->waypoints.size()) {
-                tx = so->waypoints[so->next].x + 0.5f;
-                tz = so->waypoints[so->next].y + 0.5f;
+                tx = so->waypoints[so->next].x;
+                tz = so->waypoints[so->next].z;
             }
         }
 
@@ -269,6 +294,7 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
         // Separation: push away from any unit that is too close
         for (size_t j = 0; j < units.size(); ++j) {
             if (j == i) continue;
+            if (entering(units[i]) || entering(units[j])) continue;
             Transform* o = w.get<Transform>(units[j]);
             Unit* ou = w.get<Unit>(units[j]);
             float sx = tr->x - o->x, sz = tr->z - o->z;
@@ -294,8 +320,8 @@ void steeringSystem(World& w, Terrain& t, GameState& gs, float dt) {
         float nx = tr->x + vel[i].first * dt;
         float nz = tr->z + vel[i].second * dt;
         // Try each axis separately so units slide along walls instead of stopping
-        if (t.walkable((int)std::floor(nx), (int)std::floor(tr->z))) tr->x = nx;
-        if (t.walkable((int)std::floor(tr->x), (int)std::floor(nz))) tr->z = nz;
+        if (t.isFree(nx, tr->z)) tr->x = nx;
+        if (t.isFree(tr->x, nz)) tr->z = nz;
         tr->y = t.heightAt(tr->x, tr->z);
 
         if (door && door->unlocked) {
@@ -340,10 +366,10 @@ void pickupSystem(World& w, Terrain& t, GameState& gs) {
         door->unlocked = true;
         t.setWalkable(door->entrance.x, door->entrance.y, true);
         for (Entity sq : w.view<Squad>()) {
-            if (w.get<Squad>(sq)->wantsDoor) planSquad(w, t, sq, door->entrance, true);
+            if (w.get<Squad>(sq)->wantsDoor) planSquad(w, t, sq, tileCenter(door->entrance), true);
         }
         for (Entity e : w.view<SoloMove>()) {
-            if (w.get<SoloMove>(e)->wantsDoor) planSolo(w, t, e, door->entrance, true);
+            if (w.get<SoloMove>(e)->wantsDoor) planSolo(w, t, e, tileCenter(door->entrance), true);
         }
     }
 }

@@ -10,9 +10,10 @@ Door* findDoor(World& w);
 // Spawns the building, the units, and the keys
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
-// Creates a squad from the given units and sends it to a tile
+// Creates a squad from the given units and sends it to a ground point. Clicking the door
+// sends them to its entrance instead.
 void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
-                    GridPos clickTile, bool clickedDoor);
+                    Vec2 clickPoint, bool clickedDoor);
 
 // Systems, run once per frame in this order
 void squadSystem(World& w, float dt);

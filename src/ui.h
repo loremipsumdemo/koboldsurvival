@@ -5,7 +5,7 @@
 inline constexpr const char* GAME_VERSION = "0.1.0";
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor };
 
 // What a button does when clicked
 enum class Action {
@@ -20,7 +20,14 @@ enum class Action {
     ScrollUp, ScrollDown, // the "..." rows at the ends of the save list
     DeleteSave,           // Delete button on a save row, which asks to confirm
     DeleteHold,           // Delete button on the confirm dialog, which is held down to confirm
-    DeleteNo              // Cancel on the confirm dialog
+    DeleteNo,             // Cancel on the confirm dialog
+    OpenMapEditor,        // Map Editor button on the title screen
+    PickMap,              // a map in the New Game list; param is its index
+    EditMode,             // switches the brush between raising and lowering
+    EditBrush,            // cycles the brush radius
+    EditReset,            // flattens the map
+    EditExport,           // saves the map to custom_maps
+    EditBack              // leaves the editor for the title screen
 };
 
 // Pixel rectangle, origin at the top-left of the window

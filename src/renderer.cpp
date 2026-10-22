@@ -923,6 +923,33 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)crystal.v.size());
 }
 
+void Renderer::drawBrushRing(const Camera& cam, const Terrain& t, float x, float z, float radius,
+                             RGBA color, int winW, int winH) {
+    if (color.a <= 0.0f || radius <= 0.0f) return;
+
+    const float cy = t.heightAt(x, z) + 0.03f;
+    const float outer = radius, inner = radius - 0.06f;
+    const int segments = 64;
+    const float twoPi = 6.2831853f;
+
+    Batch ring;
+    for (int i = 0; i < segments; ++i) {
+        float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
+        V3 o0{ x + outer * std::cos(a0), cy, z + outer * std::sin(a0) };
+        V3 o1{ x + outer * std::cos(a1), cy, z + outer * std::sin(a1) };
+        V3 i0{ x + inner * std::cos(a0), cy, z + inner * std::sin(a0) };
+        V3 i1{ x + inner * std::cos(a1), cy, z + inner * std::sin(a1) };
+        ring.quad(o0, o1, i1, i0, color);
+    }
+
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, ring.v.size() * sizeof(Vertex), ring.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)ring.v.size());
+}
+
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                          float overlayAlpha, const std::vector<std::string>& hud, int winW, int winH) {
     glViewport(0, 0, winW, winH);

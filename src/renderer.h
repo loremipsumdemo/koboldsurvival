@@ -54,6 +54,10 @@ public:
     // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
 
+    // Ring on the ground around (x, z) with the given radius in world units. Used for the map
+    // editor's brush. The colour's alpha is used as given.
+    void drawBrushRing(const Camera& cam, const Terrain& t, float x, float z, float radius,
+                       RGBA color, int winW, int winH);
     // Crystal marking where a right-click order was given, standing on the ground at (x, z).
     // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
