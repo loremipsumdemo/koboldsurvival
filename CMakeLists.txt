@@ -64,6 +64,9 @@ add_executable(koboldgame
     src/renderer.cpp
     src/items.cpp
     src/inventory.cpp
+    src/equip.cpp
+    src/stats.cpp
+    src/useitem.cpp
     src/systems.cpp
     src/terrain.cpp
     src/terrain_mesh.cpp

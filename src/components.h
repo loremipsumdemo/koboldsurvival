@@ -5,6 +5,7 @@
 #include "ecs.h"
 #include "grid.h"
 #include "geometry.h"
+#include "stats.h"
 
 // World position. y is the terrain height under the entity.
 struct Transform {
@@ -72,12 +73,28 @@ struct Inventory {
     std::array<ItemStack, INVENTORY_SLOTS> slots{};
 };
 
+// The gear a unit wears, one item per slot. The order is the order of the sidebar's gear panel.
+enum GearSlot : int {
+    GEAR_HEAD = 0,
+    GEAR_TORSO,
+    GEAR_MAIN_HAND,
+    GEAR_OFF_HAND,
+    GEAR_LEGS,
+    GEAR_FEET,
+    GEAR_ACCESSORY_1,
+    GEAR_ACCESSORY_2,
+    GEAR_SLOTS
+};
+
+struct Equipment {
+    std::array<int, GEAR_SLOTS> items{};   // item id in each slot, 0 for empty
+};
+
 // Health and hunger, for every unit. Both start at their maximum. Hunger falls by one each in-game
-// minute. A tick while hunger is already 0 costs one health instead. Neither goes below zero.
+// hour, on the clock's hour. A tick while hunger is already 0 costs one health instead. Neither goes below zero.
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
-    float hungerProgress = 0.0f;   // in-game minutes since the last tick
 };
 
 // An item lying on the ground. Its Transform gives the place.

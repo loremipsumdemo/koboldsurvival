@@ -67,14 +67,29 @@ public:
     // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
 
-    // In-game panels, drawn between beginUi and endUi. The bottom panel shows each unit in
-    // units with its portrait and name, and a yellow frame around the selected ones.
+    // In-game panels, drawn between beginUi and endUi. The bottom panel shows each unit with its
+    // portrait, a health bar and its name, and a purple frame around the selected ones.
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units);
-    // Right sidebar for one unit: its profile card and its 32 inventory slots. (mx, my) is the mouse,
-    // for hover. dimSlot is a slot whose stack is being dragged out, or -1.
-    void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my, int dimSlot);
+    // Right sidebar for one unit: its profile card, its gear and its 32 inventory slots. (mx, my) is the
+    // mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
+    // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
+    // show green or red for whether it may go there.
+    void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
+                              int dimSlot, int dimGear, int dragItem);
     // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
+    // The in-game clock and date in a box at the top right. right is the x the box lines up against:
+    // the window's right edge, or the sidebar's left edge while the sidebar shows. Both lines are
+    // right aligned, and the clock's digits keep the same width as they change.
+    void drawClock(const std::string& clock, const std::string& date, float right, int winH);
+    // A notice, drawn centred at the top of the window
+    void drawNotice(const std::string& text, int winW, int winH);
+    // The stats popout for one unit, and its layout (which depends on the fonts)
+    StatsPanelLayout statsPanelLayout(int winW, int winH);
+    void drawStatsPanel(const StatsPanelLayout& L, const std::string& name, const Stats& stats, float mx, float my);
+    // The right-click menu of an inventory item, opened at (x, y), and its drawing
+    ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
+    void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
     // Items lying on the ground, drawn as pink billboards over loaded ground (called by drawFrame).
     // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
@@ -110,6 +125,17 @@ private:
         TextTex tex;
         float w = 0.0f, h = 0.0f;
     };
+
+    // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
+    std::string fitText(const std::string& text, float maxW, bool ui);
+    // A quad that changes colour from top to bottom
+    void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
+    // Clock text: every digit takes the width of the widest digit, so the numbers don't shift
+    float digitCellWidth();
+    float clockTextWidth(const std::string& s);
+    void drawClockText(const std::string& s, float x, float y, RGBA tint);
+    // The name, stats and carry of an item, beside the mouse. count is shown as a stack.
+    void drawItemTooltip(int item, int count, float mx, float my);
 
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);

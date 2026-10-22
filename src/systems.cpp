@@ -95,6 +95,36 @@ Vec2 findSpawn(Terrain& t) {
 
 } // namespace
 
+namespace {
+
+// The names units are given when they spawn. Player units never share a name.
+const char* const UNIT_NAMES[] = {
+    "Aldric", "Bren", "Cora", "Dunstan", "Elin", "Fenn", "Gwen", "Hale", "Isolde", "Joss", "Kestrel", "Liam",
+    "Maren", "Nell", "Orrin", "Pim", "Quill", "Rhea", "Sable", "Tobin", "Wren", "Yara", "Ansel", "Brynn",
+};
+constexpr int UNIT_NAME_COUNT = (int)(sizeof(UNIT_NAMES) / sizeof(UNIT_NAMES[0]));
+
+std::string pickName(Rng& rng, const std::vector<std::string>& taken) {
+    for (int attempt = 0; attempt < 200; ++attempt) {
+        const std::string name = UNIT_NAMES[rng.range(0, UNIT_NAME_COUNT - 1)];
+        if (std::find(taken.begin(), taken.end(), name) == taken.end()) return name;
+    }
+    return UNIT_NAMES[0];
+}
+
+// Starting stats: attributes at levels 5..15, skills at levels 1..5. Each stat starts with exactly
+// the XP for its level.
+Stats startingStats(Rng& rng) {
+    Stats s;
+    for (int i = 0; i < STAT_COUNT; ++i) {
+        const bool attribute = statInfo(i).group == StatGroup::Attributes;
+        s.xp[i] = xpForLevel(attribute ? rng.range(5, 15) : rng.range(1, 5));
+    }
+    return s;
+}
+
+} // namespace
+
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     const Vec2 spawn = findSpawn(t);
     // Read in the ground around the spawn, so the units and red units can stand on it
@@ -103,7 +133,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     auto tileAt = [&](float v) { return std::clamp((int)std::floor(v), 0, size - 1); };
 
     // Units: a block centred on the spawn, each moved onto free ground
-    for (int i = 0; i < UNIT_COUNT; ++i) {
+    for (int i = 0; i < START_UNIT_COUNT; ++i) {
         const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f,
                                 spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
         Entity u = w.create();
@@ -111,6 +141,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(u, Unit{});
         w.add(u, Commandable{});
         w.add(u, Inventory{});
+        w.add(u, Equipment{});
         w.add(u, Needs{});
         w.add(u, Name{});
         w.add(u, UnitSprite{ rng.range(1, 38) });
@@ -137,6 +168,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(e, Transform{ x, t.heightAt(x, z), z });
         w.add(e, Unit{});
         w.add(e, Hostile{});
+        w.add(e, Equipment{});
         w.add(e, Needs{});
         w.add(e, Name{});
         w.add(e, UnitSprite{ rng.range(1, 38) });
@@ -152,6 +184,21 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(wagon, Transform{ x, t.heightAt(x, z), z });
         w.add(wagon, Wagon{});
         break;
+    }
+
+    // Names and stats for every unit. They are drawn last, so the placement above is the same as before
+    // names and stats existed.
+    std::vector<std::string> takenNames;
+    for (Entity u : w.view<Unit>()) {
+        if (!w.has<Stats>(u)) w.add(u, startingStats(rng));
+        Name* nm = w.get<Name>(u);
+        if (!nm) continue;
+        if (w.has<Commandable>(u)) {
+            nm->text = pickName(rng, takenNames);
+            takenNames.push_back(nm->text);
+        } else {
+            nm->text = pickName(rng, {});
+        }
     }
 }
 
@@ -246,8 +293,9 @@ bool dropStack(World& w, Entity unit, int slot) {
     return true;
 }
 
-void needsSystem(World& w, float minutes) {
-    for (Entity e : w.view<Needs>()) tickNeeds(*w.get<Needs>(e), minutes);
+void needsSystem(World& w, int hours) {
+    if (hours <= 0) return;
+    for (Entity e : w.view<Needs>()) tickNeeds(*w.get<Needs>(e), hours);
 }
 
 void pickupSystem(World& w) {

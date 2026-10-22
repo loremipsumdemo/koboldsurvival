@@ -1,13 +1,10 @@
 #pragma once
 #include <random>
+#include "calendar.h"
 
-// Overall progress
-// In-game clock. One real second is one in-game minute, so a day lasts 24 real minutes.
-constexpr float DAY_LENGTH_MINUTES = 1440.0f;
-constexpr float MINUTES_PER_SECOND = 1.0f;
-
+// Overall progress. The in-game clock and calendar are in calendar.h.
 struct GameState {
-    float dayMinutes = 360.0f;   // time of day, 0..1440. Starts at 06:00.
+    double clockSeconds = START_CLOCK_SECONDS;   // in-game seconds since Day 1, First Month, Year 500, 00:00
 };
 
 // Mouse drag rectangle in screen pixels, for box selection

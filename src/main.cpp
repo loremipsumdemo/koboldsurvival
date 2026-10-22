@@ -27,9 +27,12 @@
 #include "pak.h"
 #include "savegame.h"
 #include "settings.h"
+#include "equip.h"
+#include "items.h"
 #include "systems.h"
 #include "terrain.h"
 #include "ui.h"
+#include "useitem.h"
 #include "world_format.h"
 
 namespace {
@@ -319,7 +322,11 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             }
             world.add(e, inv);
         }
+        Equipment worn;
+        for (const SaveGear& g : u.gear) worn.items[g.slot] = g.item;
+        world.add(e, worn);
         world.add(e, u.hasNeeds ? u.needs : Needs{});
+        world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
     }
@@ -369,10 +376,19 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.hasNeeds = true;
             su.needs = *nd;
         }
+        if (const Stats* st = w.get<Stats>(u)) {
+            su.hasStats = true;
+            su.stats = *st;
+        }
         if (const Inventory* inv = w.get<Inventory>(u)) {
             for (int i = 0; i < INVENTORY_SLOTS; ++i) {
                 const ItemStack& st = inv->slots[i];
                 if (st.item > 0 && st.count > 0) su.stacks.push_back(SaveStack{ i, st });
+            }
+        }
+        if (const Equipment* worn = w.get<Equipment>(u)) {
+            for (int g = 0; g < GEAR_SLOTS; ++g) {
+                if (worn->items[g] > 0) su.gear.push_back(SaveGear{ g, worn->items[g] });
             }
         }
         d.units.push_back(su);
@@ -423,14 +439,6 @@ void applySaveCamera(const SaveCamera& c, Camera& cam) {
     cam.pitch = c.pitch;
     cam.distance = c.distance;
     cam.clampState();
-}
-
-// In-game time of day as four-digit military time, e.g. "0730" or "1800"
-std::string militaryTime(float minutes) {
-    const int m = ((int)minutes % 1440 + 1440) % 1440;
-    char buf[8];
-    std::snprintf(buf, sizeof(buf), "%02d%02d", m / 60, m % 60);
-    return buf;
 }
 
 // Current time in milliseconds since 1970
@@ -680,7 +688,7 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
 
 // Dev tools menu, opened from the Esc menu. Left: clock, stars, moon and brightness.
 // Right: the colour being edited, its red, green and blue, and reset.
-std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, float dayMinutes) {
+std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, double clockSeconds) {
     const float s = H / 720.0f;
     const float bh = 40.0f * s, gap = 8.0f * s;
     const float bw = 300.0f * s, half = (bw - gap) * 0.5f;
@@ -708,7 +716,7 @@ std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, float day
     auto onOff = [](bool v) { return std::string(v ? "on" : "off"); };
 
     float y = top;
-    full("Time " + militaryTime(dayMinutes), Action::DevTime, leftX, y, false);
+    full("Time " + formatClock(clockSeconds), Action::DevTime, leftX, y, false);
     pair("-30 min", Action::DevTime, -30, "+30 min", Action::DevTime, 30, leftX, y);
     full(std::string("Clock: ") + (sky.clockRunning ? "running" : "stopped"), Action::DevClock, leftX, y, true);
     pair("Stars " + onOff(sky.stars), Action::DevStars, 0, "Moon " + onOff(sky.moon), Action::DevMoon, 0,
@@ -857,7 +865,18 @@ int main(int, char**) {
     // A stack being dragged out of the inventory sidebar. Released outside the sidebar, it drops on the ground.
     bool itemDrag = false;
     Entity dragUnit = NULL_ENTITY;        // the unit whose inventory it came from
-    int dragSlot = -1;                    // the slot it came from
+    int dragSlot = -1;                    // the inventory slot it came from, or -1 when dragging gear
+    int dragGear = -1;                    // the gear slot it came from, or -1 when dragging from the inventory
+    // The stats popout for the lone selected unit, opened from the sidebar's Stats button
+    bool statsOpen = false;
+    // The right-click menu for an inventory item: Use and Drop, opened at the mouse
+    struct ItemMenu {
+        bool open = false;
+        Entity unit = NULL_ENTITY;
+        int slot = -1;
+        float x = 0.0f, y = 0.0f;
+    };
+    ItemMenu itemMenu;
     wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
     bool wmReady = false;                 // the tool has been set up on the window
 
@@ -1177,9 +1196,8 @@ int main(int, char**) {
             screen = Screen::DevTools;
             return;
         case Action::DevTime: {
-            float m = std::fmod(gs.dayMinutes + (float)param, DAY_LENGTH_MINUTES);
-            if (m < 0.0f) m += DAY_LENGTH_MINUTES;
-            gs.dayMinutes = m;
+            // Moves the clock by whole in-game minutes, carrying the date across midnight
+            gs.clockSeconds = std::max(0.0, gs.clockSeconds + (double)param * 60.0);
             return;
         }
         case Action::DevClock:
@@ -1372,6 +1390,49 @@ int main(int, char**) {
             SDL_GetMouseState(&mx, &my);
             return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow).panel.contains(mx, my);
         };
+        // Whether a point is over the bottom unit panel or the inventory sidebar. Those belong to the
+        // interface: clicks and wheel turns there never reach the world behind them.
+        // The buttons of the right-click menu for the item it was opened on: Use for a consumable with an
+        // effect, then Drop. Empty when the menu is closed or its item is gone.
+        auto menuLabels = [&]() {
+            std::vector<std::string> labels;
+            const Inventory* inv = world.get<Inventory>(itemMenu.unit);
+            if (!itemMenu.open || !inv || itemMenu.slot < 0 || itemMenu.slot >= INVENTORY_SLOTS) return labels;
+            const ItemDef* def = findItem(inv->slots[itemMenu.slot].item);
+            if (!def) return labels;
+            if (def->typeId == "consumable" && !def->onUse.empty()) labels.push_back("Use");
+            labels.push_back("Drop");
+            return labels;
+        };
+        // Uses the stack in a slot of a unit, and says what happened
+        auto useSlot = [&](Entity unit, int slot) {
+            const Inventory* inv = world.get<Inventory>(unit);
+            if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return;
+            const ItemDef* def = findItem(inv->slots[slot].item);
+            const std::string itemName = def ? def->name : std::string("That");
+            switch (useStackInSlot(world, unit, slot)) {
+            case UseResult::Used:
+                showNotice("Used " + itemName);
+                break;
+            case UseResult::NotUsable:
+                showNotice(itemName + " can't be used");
+                break;
+            case UseResult::Empty:
+                break;
+            }
+        };
+        auto overPanels = [&](float x, float y, int W, int H) {
+            const std::vector<std::string> labels = menuLabels();
+            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow),
+                                  layoutInventorySidebar(W, H), sidebarUp(), x, y)
+                || (statsOpen && renderer.statsPanelLayout(W, H).box.contains(x, y))
+                || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
+        };
+        auto pointerOverPanels = [&](int W, int H) {
+            float mx = 0.0f, my = 0.0f;
+            SDL_GetMouseState(&mx, &my);
+            return overPanels(mx, my, W, H);
+        };
 
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
@@ -1413,10 +1474,16 @@ int main(int, char**) {
                     break;
                 }
                 if (e.key.key == SDLK_ESCAPE) {
-                    if (screen == Screen::Playing) {
+                    if (screen == Screen::Playing && (itemMenu.open || statsOpen)) {
+                        // Escape closes the open menu or popout first, and only then pauses the game
+                        itemMenu.open = false;
+                        statsOpen = false;
+                    } else if (screen == Screen::Playing) {
                         leftDown = middleDown = false;
                         sel.dragging = false;
                         itemDrag = false;
+                        itemMenu.open = false;
+                        statsOpen = false;
                         screen = Screen::Pause;
                         refreshSaves();
                     } else if (screen == Screen::Pause) {
@@ -1445,7 +1512,8 @@ int main(int, char**) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
                                                    unitPanelRow - (int)e.wheel.y).scrollRow;
-                } else if (screen == Screen::Playing) {
+                } else if (screen == Screen::Playing && !pointerOverPanels(winW, winH)) {
+                    // Over the panels the wheel does nothing, so the camera doesn't zoom behind them
                     cam.distance *= (e.wheel.y > 0.0f) ? 0.9f : 1.1f;
                     cam.clampState();
                 }
@@ -1476,7 +1544,7 @@ int main(int, char**) {
                     // Menus: a left click runs the enabled button under the cursor
                     if (e.button.button == SDL_BUTTON_LEFT) {
                         const std::vector<Button> menuButtons = screen == Screen::DevTools
-                            ? layoutDevTools(winW, winH, sky, gs.dayMinutes)
+                            ? layoutDevTools(winW, winH, sky, gs.clockSeconds)
                             : screen == Screen::MapSelect
                             ? layoutMapPanel(winW, winH, maps, mapOffset)
                             : layoutButtons(screen, winW, winH, settings, saves);
@@ -1495,20 +1563,59 @@ int main(int, char**) {
                     const float mx = e.button.x, my = e.button.y;
                     const std::vector<Entity> own = ownUnitList();
                     const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
-                    const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
-                    if (pl.panel.contains(mx, my) || onSidebar) {
+
+                    // The right-click menu: a click on one of its buttons does that action. A click
+                    // anywhere else just closes it, and the click still does what it would have done.
+                    if (itemMenu.open) {
+                        const std::vector<std::string> labels = menuLabels();
+                        if (labels.empty()) {
+                            itemMenu.open = false;
+                        } else {
+                            const ItemMenuLayout ml = renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH);
+                            const int hit = itemMenuButtonAt(ml, mx, my);
+                            const bool onMenu = ml.box.contains(mx, my);
+                            const Entity unit = itemMenu.unit;
+                            const int slot = itemMenu.slot;
+                            itemMenu.open = false;
+                            if (hit >= 0 && labels[hit] == "Use") useSlot(unit, slot);
+                            else if (hit >= 0 && labels[hit] == "Drop") dropStack(world, unit, slot);
+                            if (onMenu) break;
+                        }
+                    }
+
+                    // The stats popout takes the clicks inside it, and its Close button shuts it. The
+                    // Stats button on the profile card opens and closes it.
+                    if (statsOpen) {
+                        const StatsPanelLayout sp = renderer.statsPanelLayout(winW, winH);
+                        if (sp.close.contains(mx, my)) statsOpen = false;
+                        if (sp.box.contains(mx, my)) break;
+                    }
+                    if (sidebarUp() && layoutInventorySidebar(winW, winH).statsButton.contains(mx, my)) {
+                        statsOpen = !statsOpen;
+                        break;
+                    }
+
+                    if (overPanels(mx, my, winW, winH)) {
+                        const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
                         if (onSidebar) {
-                            // Pressing a filled slot starts dragging its stack out of the inventory
+                            // A filled inventory slot starts dragging its stack out of the inventory. A filled
+                            // gear slot starts dragging the gear item out of the unit's gear.
                             const std::vector<Entity> picked = selectedUnits(world);
+                            const SidebarLayout sl = layoutInventorySidebar(winW, winH);
                             const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
-                            const SidebarLayout sb = layoutInventorySidebar(winW, winH);
-                            for (int i = 0; inv && i < INVENTORY_SLOTS; ++i) {
-                                if (sb.slots[i].contains(mx, my) && inv->slots[i].item != 0) {
-                                    itemDrag = true;
-                                    dragUnit = picked[0];
-                                    dragSlot = i;
-                                    break;
-                                }
+                            const Equipment* worn = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
+                            const int slot = sidebarSlotAt(sl, mx, my);
+                            const int gear = gearSlotAt(sl, mx, my);
+                            if (inv && slot >= 0 && inv->slots[slot].item != 0) {
+                                itemDrag = true;
+                                dragUnit = picked[0];
+                                dragSlot = slot;
+                                dragGear = -1;
+                            } else if (worn && gear >= 0 && worn->items[gear] != 0) {
+                                itemDrag = true;
+                                dragUnit = picked[0];
+                                dragSlot = -1;
+                                dragGear = gear;
                             }
                         }
                         for (const UnitCell& c : pl.cells) {
@@ -1547,28 +1654,79 @@ int main(int, char**) {
                     sel.dragging = false;
                 } else if (e.button.button == SDL_BUTTON_MIDDLE) {
                     // Pressing alone changes nothing. Dragging orbits around the current focus.
-                    middleDown = true;
-                    lastX = e.button.x;
-                    lastY = e.button.y;
+                    // Pressed over the panels, it orbits nothing.
+                    if (!overPanels(e.button.x, e.button.y, winW, winH)) {
+                        middleDown = true;
+                        lastX = e.button.x;
+                        lastY = e.button.y;
+                    }
                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
-                    float gx = 0.0f, gz = 0.0f;
-                    if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
-                        actionX = gx;
-                        actionZ = gz;
-                        actionAlpha = 1.0f;
+                    if (overPanels(e.button.x, e.button.y, winW, winH)) {
+                        // Right-click on an inventory item: gear goes straight to its slot, and anything
+                        // else opens the menu with Use and Drop. Elsewhere on the panels, nothing happens.
+                        itemMenu.open = false;
+                        const std::vector<Entity> picked = selectedUnits(world);
+                        const int slot = sidebarUp()
+                            ? sidebarSlotAt(layoutInventorySidebar(winW, winH), e.button.x, e.button.y) : -1;
+                        const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
+                        if (inv && slot >= 0 && inv->slots[slot].item != 0) {
+                            const int item = inv->slots[slot].item;
+                            const ItemDef* def = findItem(item);
+                            if (def && !def->equipSlot.empty()) {
+                                const Equipment* worn = world.get<Equipment>(picked[0]);
+                                const int target = worn ? gearSlotFor(*worn, item) : -1;
+                                std::string why;
+                                if (target < 0 || !equipFromInventory(world, picked[0], slot, target, why)) {
+                                    showNotice(why.empty() ? def->name + " can't be worn" : why);
+                                }
+                            } else {
+                                itemMenu = ItemMenu{ true, picked[0], slot, e.button.x, e.button.y };
+                            }
+                        }
+                    } else {
+                        float gx = 0.0f, gz = 0.0f;
+                        if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
+                            actionX = gx;
+                            actionZ = gz;
+                            actionAlpha = 1.0f;
+                        }
                     }
                 }
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
                 if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
-                    // Released outside the sidebar: the whole stack drops under the unit it came from.
-                    // Released inside the sidebar: nothing happens.
                     itemDrag = false;
-                    const bool overSidebar = layoutInventorySidebar(winW, winH).panel.contains(e.button.x, e.button.y);
-                    if (!overSidebar && world.has<Unit>(dragUnit)) dropStack(world, dragUnit, dragSlot);
+                    if (world.has<Unit>(dragUnit)) {
+                        const SidebarLayout sl = layoutInventorySidebar(winW, winH);
+                        const float rx = e.button.x, ry = e.button.y;
+                        const bool overSidebar = sl.panel.contains(rx, ry);
+                        const int gear = gearSlotAt(sl, rx, ry);
+                        const bool onGrid = sidebarSlotAt(sl, rx, ry) >= 0;
+                        std::string why;
+                        if (dragGear < 0) {
+                            // An inventory stack: onto a gear slot it equips, out of the sidebar it drops
+                            // under the unit. Released on the rest of the sidebar, nothing happens.
+                            if (gear >= 0) {
+                                if (!equipFromInventory(world, dragUnit, dragSlot, gear, why) && !why.empty()) showNotice(why);
+                            } else if (!overSidebar) {
+                                dropStack(world, dragUnit, dragSlot);
+                            }
+                        } else {
+                            // A gear item: onto another gear slot it moves, onto the inventory it comes off,
+                            // out of the sidebar it drops. Released on the rest of the sidebar, nothing happens.
+                            if (gear >= 0 && gear != dragGear) {
+                                if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) showNotice(why);
+                            } else if (onGrid) {
+                                if (!unequipToInventory(world, dragUnit, dragGear, why) && !why.empty()) showNotice(why);
+                            } else if (!overSidebar) {
+                                dropEquipped(world, dragUnit, dragGear);
+                            }
+                        }
+                    }
                     dragUnit = NULL_ENTITY;
                     dragSlot = -1;
+                    dragGear = -1;
                 }
                 if (e.button.button == SDL_BUTTON_LEFT && leftDown) {
                     leftDown = false;
@@ -1622,6 +1780,19 @@ int main(int, char**) {
         lastTicks = now;
         if (dt > 0.25f) dt = 0.25f;
         if (noticeSec > 0.0f) noticeSec -= dt;
+        // The stats popout and the item menu belong to one lone selected unit. They close when that changes.
+        if (screen == Screen::Playing) {
+            const std::vector<Entity> picked = selectedUnits(world);
+            const bool lone = picked.size() == 1 && world.has<Inventory>(picked[0]);
+            if (!lone) statsOpen = false;
+            if (itemMenu.open) {
+                const Inventory* inv = world.get<Inventory>(itemMenu.unit);
+                const bool same = lone && picked[0] == itemMenu.unit;
+                const bool hasItem = inv && itemMenu.slot >= 0 && itemMenu.slot < INVENTORY_SLOTS
+                                  && inv->slots[itemMenu.slot].item != 0;
+                if (!same || !hasItem) itemMenu.open = false;
+            }
+        }
         pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
         actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
 
@@ -1639,9 +1810,10 @@ int main(int, char**) {
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
-            if (sky.clockRunning) gs.dayMinutes = std::fmod(gs.dayMinutes + dt * MINUTES_PER_SECOND, DAY_LENGTH_MINUTES);
-            // Health and hunger run on the in-game clock, so they stop while the clock is stopped
-            needsSystem(world, sky.clockRunning ? dt * MINUTES_PER_SECOND : 0.0f);
+            // The in-game clock runs while it is not stopped. Hunger ticks once for each in-game hour it passes.
+            int hoursPassed = 0;
+            if (sky.clockRunning) hoursPassed = advanceClock(gs.clockSeconds, dt);
+            needsSystem(world, hoursPassed);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -1664,7 +1836,7 @@ int main(int, char**) {
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
-        std::string title = "RTS   Time " + militaryTime(gs.dayMinutes);
+        std::string title = "RTS   " + formatDate(gs.clockSeconds);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;
@@ -1683,18 +1855,16 @@ int main(int, char**) {
         }
 
         // ---- Render ----
-        renderer.setDayMinutes(gs.dayMinutes);
+        renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
         renderer.setSky(sky);
         auto drawButtons = [&](const std::vector<Button>& buttons) {
             for (const Button& b : buttons) {
                 renderer.drawButton(b.rect, b.label, b.enabled, b.rect.contains(mouseX, mouseY));
             }
         };
+        // Notices sit at the top middle of the window
         auto drawNotice = [&]() {
-            if (noticeSec > 0.0f) {
-                renderer.drawUiTextCentered(notice, winW * 0.5f, winH - 70.0f * (winH / 720.0f),
-                                            RGBA{ 1.0f, 1.0f, 0.6f, 1.0f });
-            }
+            if (noticeSec > 0.0f) renderer.drawNotice(notice, winW, winH);
         };
         auto dim = [&](float alpha) {
             renderer.drawRect(Rect{ 0.0f, 0.0f, (float)winW, (float)winH }, RGBA{ 0.0f, 0.0f, 0.0f, alpha });
@@ -1734,15 +1904,53 @@ int main(int, char**) {
                 renderer.drawUnitPanel(world, L, own);
                 const std::vector<Entity> picked = selectedUnits(world);
                 if (picked.size() == 1 && world.has<Inventory>(picked[0])) {
+                    // The item being dragged, so the gear slots can show where it fits
+                    int draggedId = 0;
+                    if (itemDrag && dragGear >= 0) {
+                        const Equipment* worn = world.get<Equipment>(dragUnit);
+                        if (worn) draggedId = worn->items[dragGear];
+                    } else if (itemDrag) {
+                        const Inventory* inv = world.get<Inventory>(dragUnit);
+                        if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS) draggedId = inv->slots[dragSlot].item;
+                    }
                     renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), world, picked[0],
-                                                  mouseX, mouseY, itemDrag ? dragSlot : -1);
+                                                  mouseX, mouseY,
+                                                  itemDrag && dragGear < 0 ? dragSlot : -1,
+                                                  itemDrag && dragGear >= 0 ? dragGear : -1,
+                                                  draggedId);
                 }
-                if (itemDrag) {
-                    const Inventory* inv = world.get<Inventory>(dragUnit);
-                    if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS && inv->slots[dragSlot].item != 0) {
-                        renderer.drawDraggedStack(mouseX, mouseY, inv->slots[dragSlot].item, inv->slots[dragSlot].count);
+                if (statsOpen && picked.size() == 1 && world.has<Stats>(picked[0])) {
+                    const Name* nm = world.get<Name>(picked[0]);
+                    renderer.drawStatsPanel(renderer.statsPanelLayout(winW, winH),
+                                            nm ? nm->text : std::string("Unnamed Unit"),
+                                            *world.get<Stats>(picked[0]), mouseX, mouseY);
+                }
+                if (itemMenu.open) {
+                    const std::vector<std::string> labels = menuLabels();
+                    if (!labels.empty()) {
+                        renderer.drawItemMenu(renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH),
+                                              labels, mouseX, mouseY);
                     }
                 }
+                if (itemDrag) {
+                    // The item under the mouse: a gear item, or a stack from the inventory
+                    if (dragGear >= 0) {
+                        const Equipment* worn = world.get<Equipment>(dragUnit);
+                        if (worn && worn->items[dragGear] != 0) renderer.drawDraggedStack(mouseX, mouseY, worn->items[dragGear], 1);
+                    } else {
+                        const Inventory* inv = world.get<Inventory>(dragUnit);
+                        if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS && inv->slots[dragSlot].item != 0) {
+                            renderer.drawDraggedStack(mouseX, mouseY, inv->slots[dragSlot].item, inv->slots[dragSlot].count);
+                        }
+                    }
+                }
+            }
+            // The clock sits in the top right, or just left of the sidebar while the sidebar shows
+            {
+                const std::vector<Entity> picked = selectedUnits(world);
+                const bool sidebar = picked.size() == 1 && world.has<Inventory>(picked[0]);
+                const float clockRight = sidebar ? layoutInventorySidebar(winW, winH).panel.x : (float)winW;
+                renderer.drawClock(formatClock(gs.clockSeconds), formatDate(gs.clockSeconds), clockRight, winH);
             }
             renderer.endUi();
             break;
@@ -1845,7 +2053,7 @@ int main(int, char**) {
             renderer.drawUiTextCentered("Dev Tools", winW * 0.5f, winH * 0.10f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
             renderer.drawUiTextCentered("Esc to go back", winW * 0.5f, winH * 0.10f + 36.0f * (winH / 720.0f),
                                         RGBA{ 0.7f, 0.7f, 0.7f, 1.0f });
-            drawButtons(layoutDevTools(winW, winH, sky, gs.dayMinutes));
+            drawButtons(layoutDevTools(winW, winH, sky, gs.clockSeconds));
             renderer.endUi();
             break;
         }

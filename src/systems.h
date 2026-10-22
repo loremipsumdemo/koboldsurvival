@@ -22,7 +22,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 bool dropStack(World& w, Entity unit, int slot);
 
 // Systems, run once per frame in this order
-void needsSystem(World& w, float minutes);      // health and hunger, from in-game minutes
+void needsSystem(World& w, int hours);          // health and hunger, for each whole in-game hour that passed
 void squadSystem(World& w, float dt);
 void steeringSystem(World& w, Terrain& t, float dt);
 void pickupSystem(World& w);                     // after steering, so units that just arrived can take items

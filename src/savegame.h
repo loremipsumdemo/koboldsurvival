@@ -27,6 +27,12 @@ struct SaveStack {
     ItemStack stack;
 };
 
+// One worn gear item of a unit: the gear slot and the item in it
+struct SaveGear {
+    int slot = 0;
+    int item = 0;
+};
+
 struct SaveUnit {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     bool hostile = false;
@@ -36,6 +42,10 @@ struct SaveUnit {
     bool hasNeeds = false;
     Needs needs;
     std::vector<SaveStack> stacks;
+    std::vector<SaveGear> gear;   // older saves have none, so their gear slots start empty
+    // Older saves have no stats. Those units get defaultStats().
+    bool hasStats = false;
+    Stats stats;
 };
 
 // An item lying on the ground when the game was saved
@@ -85,7 +95,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     out << "timestamp=" << d.timestamp << "\n";
     out << "seed=" << d.seed << "\n";
     out << "map " << d.mapSource << " " << d.mapStem << "\n";
-    out << "dayMinutes=" << d.gs.dayMinutes << "\n";
+    out << "clockSeconds=" << std::setprecision(15) << d.gs.clockSeconds << std::setprecision(9) << "\n";
     out << "autosave=" << (d.autosave ? 1 : 0) << "\n";
     out << "camera " << d.cam.fx << " " << d.cam.fy << " " << d.cam.fz << " "
         << d.cam.yaw << " " << d.cam.pitch << " " << d.cam.distance << "\n";
@@ -98,10 +108,18 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         const SaveUnit& u = d.units[i];
         if (u.hasNeeds) {
             out << "needs " << i << " " << u.needs.hp << " " << u.needs.maxHp << " "
-                << u.needs.hunger << " " << u.needs.maxHunger << " " << u.needs.hungerProgress << "\n";
+                << u.needs.hunger << " " << u.needs.maxHunger << "\n";
         }
         for (const SaveStack& s : u.stacks) {
             out << "slot " << i << " " << s.slot << " " << s.stack.item << " " << s.stack.count << "\n";
+        }
+        for (const SaveGear& g : u.gear) {
+            out << "gear " << i << " " << g.slot << " " << g.item << "\n";
+        }
+        if (u.hasStats) {
+            out << "stats " << i;
+            for (int xp : u.stats.xp) out << " " << xp;
+            out << "\n";
         }
     }
     if (d.hasItems) {
@@ -130,7 +148,9 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> d.mapSource;
                 std::getline(ss >> std::ws, d.mapStem);
             }
-            else if (line.rfind("dayMinutes=", 0) == 0)       d.gs.dayMinutes = std::stof(line.substr(11));
+            else if (line.rfind("clockSeconds=", 0) == 0)    d.gs.clockSeconds = std::stod(line.substr(13));
+            // Saves from before the calendar stored minutes into the day, starting at Day 1
+            else if (line.rfind("dayMinutes=", 0) == 0)       d.gs.clockSeconds = std::stod(line.substr(11)) * 60.0;
             else if (line.rfind("autosave=", 0) == 0)        d.autosave = (line.substr(9) == "1");
             else if (line.rfind("camera ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
@@ -158,7 +178,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 std::istringstream ss(line.substr(6));
                 size_t i = 0;
                 Needs n;
-                ss >> i >> n.hp >> n.maxHp >> n.hunger >> n.maxHunger >> n.hungerProgress;
+                ss >> i >> n.hp >> n.maxHp >> n.hunger >> n.maxHunger;   // older saves add a progress value, ignored
                 if (!ss.fail() && i < d.units.size()) {
                     d.units[i].hasNeeds = true;
                     d.units[i].needs = n;
@@ -170,6 +190,26 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 SaveStack s;
                 ss >> i >> s.slot >> s.stack.item >> s.stack.count;
                 if (!ss.fail() && i < d.units.size()) d.units[i].stacks.push_back(s);
+            }
+            else if (line.rfind("gear ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                SaveGear g;
+                ss >> i >> g.slot >> g.item;
+                if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
+                    d.units[i].gear.push_back(g);
+                }
+            }
+            else if (line.rfind("stats ", 0) == 0) {
+                std::istringstream ss(line.substr(6));
+                size_t i = 0;
+                Stats st;
+                ss >> i;
+                for (int& xp : st.xp) ss >> xp;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasStats = true;
+                    d.units[i].stats = st;
+                }
             }
         }
     } catch (...) {

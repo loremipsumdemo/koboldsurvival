@@ -189,9 +189,21 @@ bool toItem(const std::vector<std::string>& cols, const std::vector<Token>& row,
         err = "unknown type_id '" + item.typeId + "' on item " + std::to_string(item.id);
         return false;
     }
-    if (!needText("name", item.name)) return false;
-    if (item.name.empty()) { err = "item " + std::to_string(item.id) + " has no name"; return false; }
+    if (!needText("name", item.baseName)) return false;
+    if (item.baseName.empty()) { err = "item " + std::to_string(item.id) + " has no name"; return false; }
     needText("description", item.description);
+    needText("material", item.material);
+    if (!needInt("tier", item.tier)) return false;
+    if (item.tier < 0) { err = "item " + std::to_string(item.id) + " has a negative tier"; return false; }
+    if (!needText("equip_slot", item.equipSlot)) return false;
+    if (!item.equipSlot.empty()) {
+        static const char* const slots[] = {
+            "head", "torso", "legs", "feet", "accessory", "main_hand", "off_hand", "either_hand", "two_hand",
+        };
+        bool known = false;
+        for (const char* s : slots) if (item.equipSlot == s) known = true;
+        if (!known) { err = "unknown equip_slot '" + item.equipSlot + "' on item " + std::to_string(item.id); return false; }
+    }
 
     if (!needInt("max_stack_size", item.maxStackSize)) return false;
     if (!needInt("max_durability", item.maxDurability)) return false;
@@ -202,8 +214,13 @@ bool toItem(const std::vector<std::string>& cols, const std::vector<Token>& row,
     if (!needInt("required_level", item.requiredLevel)) return false;
     if (!needInt("attack_value", item.attackValue)) return false;
     if (!needInt("defense_value", item.defenseValue)) return false;
+    if (!needText("on_use", item.onUse)) return false;
 
     if (item.maxStackSize < 1) { err = "item " + std::to_string(item.id) + " needs a max_stack_size of at least 1"; return false; }
+
+    // The display name: material, base name, then tier
+    item.name = item.material.empty() ? item.baseName : item.material + " " + item.baseName;
+    if (item.tier > 0) item.name += " +" + std::to_string(item.tier);
     return true;
 }
 
