@@ -2,10 +2,20 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include "inventory.h"
+#include "items.h"
+#include "needs.h"
 
 namespace {
 
 constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
+constexpr float PICKUP_REACH = 0.9f;     // a unit this close to a ground item can take it
+
+// Stops a unit's pickup: the order and its walk both end
+void endPickup(World& w, Entity u) {
+    w.remove<PickupOrder>(u);
+    w.remove<SoloMove>(u);
+}
 
 // Plans a new route for a squad's center. Only the center paths; members follow slots.
 void planSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
@@ -101,6 +111,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(u, Unit{});
         w.add(u, Commandable{});
         w.add(u, Inventory{});
+        w.add(u, Needs{});
         w.add(u, Name{});
         w.add(u, UnitSprite{ rng.range(1, 38) });
     }
@@ -126,6 +137,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(e, Transform{ x, t.heightAt(x, z), z });
         w.add(e, Unit{});
         w.add(e, Hostile{});
+        w.add(e, Needs{});
         w.add(e, Name{});
         w.add(e, UnitSprite{ rng.range(1, 38) });
     }
@@ -146,10 +158,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
 void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 clickPoint) {
     if (units.empty()) return;
 
-    // A single unit walks its own route, with no formation
+    // A single unit walks its own route, with no formation. A move order replaces any pickup.
     if (units.size() == 1) {
         Entity u = units[0];
         w.remove<SquadMember>(u);
+        w.remove<PickupOrder>(u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, clickPoint);
         return;
@@ -175,10 +188,95 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
     // Each selected unit joins the new squad. Overwriting SquadMember drops any old squad.
     for (size_t i = 0; i < units.size(); ++i) {
         w.remove<SoloMove>(units[i]);
+        w.remove<PickupOrder>(units[i]);
         w.add(units[i], SquadMember{ sq, (int)i });
     }
 
     planSquad(w, t, sq, clickPoint);
+}
+
+void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem) {
+    const int size = t.size();
+    // Random tiles are tried until one is walkable. Most of a map is usually land, so a few tries
+    // are enough; the cap only stops a map with almost no walkable ground from stalling the load.
+    constexpr int TRIES_PER_COPY = 500;
+    for (const ItemDef& def : itemDatabase()) {
+        for (int n = 0; n < perItem; ++n) {
+            for (int attempt = 0; attempt < TRIES_PER_COPY; ++attempt) {
+                const int x = rng.range(0, size - 1), z = rng.range(0, size - 1);
+                bool walk = false;
+                float h = 0.0f;
+                if (!t.tileGround(x, z, walk, h) || !walk) continue;
+
+                Entity e = w.create();
+                w.add(e, Transform{ x + 0.5f, h, z + 0.5f });
+                w.add(e, GroundItem{ def.id, 1 });
+                break;
+            }
+        }
+    }
+}
+
+void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity item) {
+    const Transform* it = w.get<Transform>(item);
+    if (!it || !w.has<GroundItem>(item)) return;
+    const Vec2 target{ it->x, it->z };
+
+    for (Entity u : units) {
+        if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
+        w.remove<SquadMember>(u);
+        w.add(u, SoloMove{});
+        planSolo(w, t, u, target);
+        w.add(u, PickupOrder{ item });
+    }
+}
+
+bool dropStack(World& w, Entity unit, int slot) {
+    Inventory* inv = w.get<Inventory>(unit);
+    const Transform* tr = w.get<Transform>(unit);
+    if (!inv || !tr || slot < 0 || slot >= INVENTORY_SLOTS) return false;
+
+    ItemStack& s = inv->slots[slot];
+    if (s.item == 0 || s.count <= 0) return false;
+
+    Entity e = w.create();
+    w.add(e, Transform{ tr->x, tr->y, tr->z });
+    w.add(e, GroundItem{ s.item, s.count });
+    s = ItemStack{};
+    return true;
+}
+
+void needsSystem(World& w, float minutes) {
+    for (Entity e : w.view<Needs>()) tickNeeds(*w.get<Needs>(e), minutes);
+}
+
+void pickupSystem(World& w) {
+    // view() returns a copy, so ending a pickup inside the loop is safe
+    for (Entity u : w.view<PickupOrder, Transform, Inventory>()) {
+        const Entity item = w.get<PickupOrder>(u)->item;
+        const Transform* ut = w.get<Transform>(u);
+        const Transform* it = w.get<Transform>(item);
+        GroundItem* gi = w.get<GroundItem>(item);
+        if (!it || !gi) {                       // someone else took it, or it was removed
+            endPickup(w, u);
+            continue;
+        }
+
+        const float dx = it->x - ut->x, dz = it->z - ut->z;
+        if (dx * dx + dz * dz <= PICKUP_REACH * PICKUP_REACH) {
+            // Take what fits. Whatever is left stays on the ground. If nothing fits the order ends,
+            // and the unit stays where it is.
+            const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
+            if (left == 0) w.destroy(item);
+            else gi->count = left;
+            endPickup(w, u);
+            continue;
+        }
+
+        // Stopped short with no route left (the item can't be reached), so give up
+        const SoloMove* so = w.get<SoloMove>(u);
+        if (!so || so->next >= so->waypoints.size()) endPickup(w, u);
+    }
 }
 
 void squadSystem(World& w, float dt) {

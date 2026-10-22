@@ -59,12 +59,36 @@ struct SoloMove {
     size_t next = 0;
 };
 
-// Items a unit carries: a fixed number of slots, each holding an item id, or 0 when empty.
-// No items exist yet, so every slot is empty for now.
+// One inventory slot: an item id and how many of it. Item 0 means the slot is empty.
+struct ItemStack {
+    int item = 0;
+    int count = 0;
+};
+
+// Items a unit carries, one stack per slot
 constexpr int INVENTORY_SLOTS = 32;
 constexpr int INVENTORY_COLUMNS = 8;
 struct Inventory {
-    std::array<int, INVENTORY_SLOTS> items{};
+    std::array<ItemStack, INVENTORY_SLOTS> slots{};
+};
+
+// Health and hunger, for every unit. Both start at their maximum. Hunger falls by one each in-game
+// minute. A tick while hunger is already 0 costs one health instead. Neither goes below zero.
+struct Needs {
+    int hp = 100, maxHp = 100;
+    int hunger = 100, maxHunger = 100;
+    float hungerProgress = 0.0f;   // in-game minutes since the last tick
+};
+
+// An item lying on the ground. Its Transform gives the place.
+struct GroundItem {
+    int item = 0;
+    int count = 1;
+};
+
+// A unit's order to pick up a ground item. The unit walks to it and takes what fits.
+struct PickupOrder {
+    Entity item = NULL_ENTITY;
 };
 
 // Decorative wagon. It is drawn as a symbol and does not block movement.

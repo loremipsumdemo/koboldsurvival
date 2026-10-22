@@ -1,5 +1,7 @@
 #include "renderer.h"
 #include "terrain_mesh.h"
+#include "inventory.h"
+#include "items.h"
 #include "pak.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
@@ -7,16 +9,83 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <vector>
 
 namespace {
 
 constexpr float GLYPH_H = 1.2f;          // world height of unit sprites
+constexpr float ITEM_GLYPH_H = 0.32f;    // world height of an item sprite on the ground
 constexpr float WAGON_SIZE = 1.5f;       // largest side of the wagon model
 constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible across the screen
 constexpr float TWO_PI = 6.28318530f;
 
 const RGBA WHITE{ 1.0f, 1.0f, 1.0f, 1.0f };
+const RGBA ITEM_PINK{ 1.0f, 0.45f, 0.75f, 1.0f };
+
+// Name box over an item on the ground: dark red-brown, as in Kenshi
+const RGBA LABEL_FILL{ 0.36f, 0.12f, 0.08f, 0.92f };
+const RGBA LABEL_EDGE{ 0.62f, 0.30f, 0.20f, 1.0f };
+const RGBA LABEL_TEXT{ 1.0f, 0.93f, 0.86f, 1.0f };
+
+// World point to pixel coordinates. False if it is behind the camera.
+bool projectPoint(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
+    float c[4];
+    for (int i = 0; i < 4; ++i) {
+        c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
+    }
+    if (c[3] <= 0.0f) return false;
+    sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)W;
+    sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)H;
+    return true;
+}
+
+// Whether the chunk under (x, z) is loaded. Items on unloaded ground are not drawn.
+bool groundLoaded(const Terrain& t, float x, float z) {
+    const int cx = (int)std::floor(x / CHUNK_TILES), cz = (int)std::floor(z / CHUNK_TILES);
+    return t.chunkAt(cx, cz) != nullptr;
+}
+
+// Where an item's sprite is on screen: the centre x, the top and bottom, and half its width
+struct ItemOnScreen {
+    float cx = 0.0f, top = 0.0f, bottom = 0.0f, halfW = 0.0f;
+};
+
+bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, ItemOnScreen& out) {
+    float bx, by, tx, ty, mx, my;
+    if (!projectPoint(vp, tr.x, tr.y, tr.z, W, H, bx, by)) return false;
+    if (!projectPoint(vp, tr.x, tr.y + ITEM_GLYPH_H, tr.z, W, H, tx, ty)) return false;
+    if (!projectPoint(vp, tr.x, tr.y + ITEM_GLYPH_H * 0.5f, tr.z, W, H, mx, my)) return false;
+    out.cx = mx;
+    out.top = std::min(by, ty);
+    out.bottom = std::max(by, ty);
+    out.halfW = (out.bottom - out.top) * 0.5f;   // the sprite is square
+    return true;
+}
+
+// The name box sits just above the item's sprite, centred on it
+Rect labelBox(const ItemOnScreen& os, float textW, float textH, float s) {
+    const float padX = 7.0f * s, padY = 3.0f * s, gapY = 4.0f * s;
+    const float w = textW + 2.0f * padX, h = textH + 2.0f * padY;
+    return Rect{ os.cx - w * 0.5f, os.top - gapY - h, w, h };
+}
+
+// Colour that marks an item's kind in the inventory
+RGBA categoryColor(int item) {
+    const ItemDef* d = findItem(item);
+    if (!d) return RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
+    if (d->typeId == "consumable") return RGBA{ 0.30f, 0.65f, 0.35f, 1.0f };
+    if (d->typeId == "weapon")     return RGBA{ 0.75f, 0.30f, 0.28f, 1.0f };
+    if (d->typeId == "armor")      return RGBA{ 0.30f, 0.45f, 0.78f, 1.0f };
+    if (d->typeId == "accessory")  return RGBA{ 0.85f, 0.72f, 0.30f, 1.0f };
+    return RGBA{ 0.55f, 0.46f, 0.34f, 1.0f };   // plain items
+}
+
+// The name of an item for display
+std::string itemName(int item) {
+    const ItemDef* d = findItem(item);
+    return d ? d->name : std::string("Unknown item");
+}
 
 struct V3 { float x, y, z; };
 struct Vertex { V3 p; RGBA c; };         // position, then colour
@@ -311,6 +380,17 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
     unitFallback_ = makeGlyphTexture(font, "@", SDL_Color{ 80, 160, 255, 255 });
+    {
+        // One white texel: items are drawn as this, tinted pink, until they have art
+        const unsigned char texel[4] = { 255, 255, 255, 255 };
+        glGenTextures(1, &white_.tex);
+        glBindTexture(GL_TEXTURE_2D, white_.tex);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, texel);
+        white_.aspect = 1.0f;
+    }
     report(0.9f);
 
     if (!loadGLBModel("data/3d/wagon.glb", wagon_)) {
@@ -325,7 +405,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &overlay_, &unitFallback_ };
+    TextTex* textures[] = { &overlay_, &unitFallback_, &white_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
@@ -720,6 +800,10 @@ float Renderer::uiTextWidth(const std::string& s) {
     return uiLine(s).w;
 }
 
+float Renderer::uiTextHeight(const std::string& s) {
+    return uiLine(s).h;
+}
+
 void Renderer::drawUiText(const std::string& s, float x, float y, RGBA tint) {
     HudLine& hl = uiLine(s);
     if (!hl.tex.tex) return;
@@ -770,6 +854,10 @@ Renderer::HudLine& Renderer::listLine(const std::string& s) {
 
 float Renderer::listTextHeight(const std::string& s) {
     return listLine(s).h;
+}
+
+float Renderer::listTextWidth(const std::string& s) {
+    return listLine(s).w;
 }
 
 void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
@@ -1083,6 +1171,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
 
+    drawGroundItems(w, t);
+
     // 3. Colour overlays: selection rings and the drag box
     auto flush = [&](const Batch& batch, const Mat4& m) {
         glUseProgram(colorProgram_);
@@ -1197,19 +1287,189 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 }
 
-void Renderer::drawInventorySidebar(const SidebarLayout& L, const Inventory& inv, const std::string& unitName) {
+void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my, int dimSlot) {
     const float s = uiH_ / 720.0f;
-    drawRect(L.panel, RGBA{ 0.06f, 0.06f, 0.09f, 0.92f });
-    drawUiText("Inventory", L.panel.x + 14.0f * s, 10.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    drawListText(unitName, L.panel.x + 14.0f * s, 38.0f * s, RGBA{ 0.8f, 0.8f, 0.8f, 1.0f });
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA grey{ 0.72f, 0.72f, 0.76f, 1.0f };
+    const Inventory* inv = w.get<Inventory>(unit);
+    const Needs needs = w.get<Needs>(unit) ? *w.get<Needs>(unit) : Needs{};
+    const Name* nm = w.get<Name>(unit);
 
-    for (size_t i = 0; i < L.slots.size() && i < inv.items.size(); ++i) {
+    // Outer panel: see-through, so the world shows behind the sidebar
+    drawRect(L.panel, RGBA{ 0.04f, 0.04f, 0.06f, 0.35f });
+
+    // ---- Profile card: the unit's picture, name and details ----
+    drawRect(L.profile, RGBA{ 0.08f, 0.08f, 0.11f, 0.80f });
+    drawRect(L.portrait, RGBA{ 0.10f, 0.10f, 0.14f, 1.0f });
+    const TextTex& g = unitGlyph(w, unit);
+    if (g.tex) {
+        const float sz = L.portrait.w;
+        float pw = sz, ph = sz;
+        if (g.aspect > 1.0f) ph = sz / g.aspect;
+        else pw = sz * g.aspect;
+        const float x = L.portrait.x + (sz - pw) * 0.5f, y = L.portrait.y + (sz - ph) * 0.5f;
+        const float v[4 * 5] = {
+            x,      y + ph, 0.0f, 0.0f, 1.0f,
+            x + pw, y + ph, 0.0f, 1.0f, 1.0f,
+            x + pw, y,      0.0f, 1.0f, 0.0f,
+            x,      y,      0.0f, 0.0f, 0.0f
+        };
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+        drawQuadVerts(g.tex, v, WHITE);
+    }
+
+    const float tx = L.portrait.x + L.portrait.w + 12.0f * s;
+    const float rightEdge = L.profile.x + L.profile.w - 10.0f * s;
+    const float colW = rightEdge - tx;
+
+    // A name shortened with "..." until it fits the given width
+    auto fit = [&](const std::string& text, float maxW, bool ui) {
+        auto width = [&](const std::string& t) { return ui ? uiTextWidth(t) : listTextWidth(t); };
+        if (width(text) <= maxW) return text;
+        std::string t = text;
+        while (!t.empty() && width(t + "...") > maxW) {
+            t.pop_back();
+            while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
+        }
+        return t + "...";
+    };
+
+    const std::string name = nm ? nm->text : std::string("Unnamed Unit");
+    float y = L.profile.y + 10.0f * s;
+    drawUiText(fit(name, colW, true), tx, y, white);
+    y += uiTextHeight("Ag") + 6.0f * s;
+
+    // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
+    auto statRow = [&](float rowY, const char* label, const std::string& value, float frac, RGBA fill) {
+        drawListText(label, tx, rowY, grey);
+        drawListText(value, rightEdge - listTextWidth(value), rowY, white);
+        const float barY = rowY + listTextHeight("Ag") + 3.0f * s;
+        const float barH = 8.0f * s;
+        drawRect(Rect{ tx, barY, colW, barH }, RGBA{ 0.16f, 0.16f, 0.19f, 1.0f });
+        drawRect(Rect{ tx, barY, colW * std::clamp(frac, 0.0f, 1.0f), barH }, fill);
+        return barY + barH + 9.0f * s;
+    };
+    y = statRow(y, "Health", std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
+                needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
+    y = statRow(y, "Hunger", std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
+                needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
+
+    // Carried weight and slots used, on one line
+    char weightBuf[32];
+    std::snprintf(weightBuf, sizeof(weightBuf), "%.1f", inv ? carriedWeight(*inv) : 0.0f);
+    const std::string used = inv ? std::to_string(occupiedSlots(*inv)) : std::string("0");
+    drawListText(std::string("Weight ") + weightBuf + "     Slots " + used + " / " + std::to_string(INVENTORY_SLOTS),
+                 tx, y, grey);
+
+    // ---- Inventory grid on its own, fuller background ----
+    drawRect(L.gridPanel, RGBA{ 0.06f, 0.06f, 0.09f, 0.96f });
+    drawListText("Inventory", L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, white);
+
+    int hoverSlot = -1;
+    for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
         const Rect& r = L.slots[i];
-        drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.3f, 0.3f, 0.36f, 1.0f });
-        drawRect(r, RGBA{ 0.1f, 0.1f, 0.13f, 1.0f });
-        // An occupied slot shows a marker. Item art will replace this later.
-        if (inv.items[i] != 0) {
-            drawRect(Rect{ r.x + r.w * 0.25f, r.y + r.h * 0.25f, r.w * 0.5f, r.h * 0.5f }, RGBA{ 0.9f, 0.8f, 0.3f, 1.0f });
+        drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.30f, 0.30f, 0.36f, 1.0f });
+        drawRect(r, RGBA{ 0.10f, 0.10f, 0.13f, 1.0f });
+
+        const ItemStack& st = inv->slots[i];
+        if (st.item == 0 || st.count <= 0) continue;
+
+        // An item shows as a block in its kind's colour, with its count in the corner
+        RGBA c = categoryColor(st.item);
+        if ((int)i == dimSlot) c.a = 0.30f;
+        drawRect(Rect{ r.x + r.w * 0.12f, r.y + r.h * 0.12f, r.w * 0.76f, r.h * 0.76f }, c);
+        if (st.count > 1) {
+            const std::string n = std::to_string(st.count);
+            drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, white);
+        }
+        if (r.contains(mx, my)) hoverSlot = (int)i;
+    }
+
+    // Hovered stack: highlight, and its name beside the mouse
+    if (hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
+        const Rect& r = L.slots[hoverSlot];
+        drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.18f });
+        const ItemStack& st = inv->slots[hoverSlot];
+        std::string label = itemName(st.item);
+        if (st.count > 1) label += " x" + std::to_string(st.count);
+        const float tw = listTextWidth(label), th = listTextHeight(label);
+        float bx = mx + 14.0f * s;
+        if (bx + tw + 14.0f * s > uiW_) bx = mx - tw - 28.0f * s;
+        const float by = my + 12.0f * s;
+        drawRect(Rect{ bx, by, tw + 12.0f * s, th + 6.0f * s }, RGBA{ 0.0f, 0.0f, 0.0f, 0.8f });
+        drawListText(label, bx + 6.0f * s, by + 3.0f * s, white);
+    }
+}
+
+void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
+    const float s = uiH_ / 720.0f;
+    const float sz = 40.0f * s;
+    const Rect r{ mx - sz * 0.5f, my - sz * 0.5f, sz, sz };
+    RGBA c = categoryColor(item);
+    c.a = 0.85f;
+    drawRect(r, c);
+    if (count > 1) {
+        const std::string n = std::to_string(count);
+        drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, WHITE);
+    }
+    const std::string name = itemName(item);
+    drawListText(name, r.x + r.w + 6.0f * s, my - listTextHeight(name) * 0.5f, WHITE);
+}
+
+void Renderer::drawGroundItems(World& w, const Terrain& t) {
+    for (Entity e : w.view<GroundItem, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        if (!groundLoaded(t, tr->x, tr->z)) continue;
+        drawGlyph(white_, tr->x, tr->y, tr->z, ITEM_GLYPH_H, ITEM_PINK);
+    }
+}
+
+void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (Entity e : w.view<GroundItem, Transform>()) {
+        const GroundItem* gi = w.get<GroundItem>(e);
+        const Transform* tr = w.get<Transform>(e);
+        if (!groundLoaded(t, tr->x, tr->z)) continue;
+
+        ItemOnScreen os;
+        if (!itemOnScreen(vp, winW, winH, *tr, os)) continue;
+        const std::string name = itemName(gi->item);
+        const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
+        if (box.x + box.w < 0.0f || box.x > winW || box.y + box.h < 0.0f || box.y > winH) continue;
+
+        drawRect(Rect{ box.x - 1.0f, box.y - 1.0f, box.w + 2.0f, box.h + 2.0f }, LABEL_EDGE);
+        drawRect(box, LABEL_FILL);
+        drawListText(name, box.x + 7.0f * s, box.y + 3.0f * s, LABEL_TEXT);
+    }
+}
+
+Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    Entity best = NULL_ENTITY;
+    float bestD2 = 0.0f;
+    for (Entity e : w.view<GroundItem, Transform>()) {
+        const GroundItem* gi = w.get<GroundItem>(e);
+        const Transform* tr = w.get<Transform>(e);
+        if (!groundLoaded(t, tr->x, tr->z)) continue;
+
+        ItemOnScreen os;
+        if (!itemOnScreen(vp, winW, winH, *tr, os)) continue;
+        const std::string name = itemName(gi->item);
+        const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
+        const bool onLabel = box.contains(mx, my);
+        const bool onSprite = mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom;
+        if (!onLabel && !onSprite) continue;
+
+        // The item nearest the mouse wins when several overlap
+        const float cy = (os.top + os.bottom) * 0.5f;
+        const float d2 = (mx - os.cx) * (mx - os.cx) + (my - cy) * (my - cy);
+        if (best == NULL_ENTITY || d2 < bestD2) {
+            best = e;
+            bestD2 = d2;
         }
     }
+    return best;
 }

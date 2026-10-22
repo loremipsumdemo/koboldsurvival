@@ -62,6 +62,8 @@ set(WORLDTOOL_SOURCES
 add_executable(koboldgame
     src/main.cpp
     src/renderer.cpp
+    src/items.cpp
+    src/inventory.cpp
     src/systems.cpp
     src/terrain.cpp
     src/terrain_mesh.cpp

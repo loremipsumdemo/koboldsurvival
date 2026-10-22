@@ -70,8 +70,17 @@ public:
     // In-game panels, drawn between beginUi and endUi. The bottom panel shows each unit in
     // units with its portrait and name, and a yellow frame around the selected ones.
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units);
-    // Right sidebar with the 32 inventory slots of one unit
-    void drawInventorySidebar(const SidebarLayout& L, const Inventory& inv, const std::string& unitName);
+    // Right sidebar for one unit: its profile card and its 32 inventory slots. (mx, my) is the mouse,
+    // for hover. dimSlot is a slot whose stack is being dragged out, or -1.
+    void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my, int dimSlot);
+    // The stack being dragged, drawn under the mouse
+    void drawDraggedStack(float mx, float my, int item, int count);
+
+    // Items lying on the ground, drawn as pink billboards over loaded ground (called by drawFrame).
+    // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
+    // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite.
+    void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
+    Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH);
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -82,11 +91,13 @@ public:
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);
     float uiTextWidth(const std::string& s);
+    float uiTextHeight(const std::string& s);
 
     // Smaller text for dense lists, such as the save list. The font is owned by the caller.
     void setListFont(TTF_Font* font);
     void drawListText(const std::string& s, float x, float y, RGBA tint);
     float listTextHeight(const std::string& s);
+    float listTextWidth(const std::string& s);
     // A small button with list-font text, for the rows of the save list
     void drawListButton(const Rect& r, const std::string& label, bool hovered);
     // A button whose background fills from left to right (fill 0..1), for the hold-to-delete button
@@ -114,6 +125,9 @@ private:
 
     // The sprite for a unit, or the fallback symbol if its image is missing
     const TextTex& unitGlyph(World& w, Entity e) const;
+
+    // Ground items on loaded chunks, as pink sprites
+    void drawGroundItems(World& w, const Terrain& t);
 
     // Cached white text texture for a menu string, created on first use
     HudLine& uiLine(const std::string& s);
@@ -148,6 +162,8 @@ private:
     std::vector<TextTex> unitSprites_;
     // Text symbols, used only when a sprite file could not be loaded
     TextTex unitFallback_;
+    // A plain white texel. Items are drawn as this, tinted pink, until they have art.
+    TextTex white_;
     Model wagon_;
 
     // Hover label: one cached texture per line, rebuilt only when its text changes

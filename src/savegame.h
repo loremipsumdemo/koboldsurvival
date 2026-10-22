@@ -10,20 +10,39 @@
 #include <string>
 #include <system_error>
 #include <vector>
+#include "components.h"
 #include "resources.h"
 #include "timefmt.h"
 
 // Save files are plain text. The terrain comes from the map the save was made on, and the wagon
-// and red units from the seed. A save stores what changes: the clock, the units and the camera.
+// and red units from the seed. A save stores what changes: the clock, the units, what they carry,
+// the items on the ground and the camera.
 
 inline constexpr const char* SAVE_DIR = "saves";
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
+
+// One occupied inventory slot of a unit
+struct SaveStack {
+    int slot = 0;
+    ItemStack stack;
+};
 
 struct SaveUnit {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     bool hostile = false;
     int sprite = 1;
     std::string name;
+    // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
+    bool hasNeeds = false;
+    Needs needs;
+    std::vector<SaveStack> stacks;
+};
+
+// An item lying on the ground when the game was saved
+struct SaveGround {
+    float x = 0.0f, y = 0.0f, z = 0.0f;
+    int item = 0;
+    int count = 1;
 };
 
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
@@ -43,6 +62,9 @@ struct SaveData {
     GameState gs;
     SaveCamera cam;
     std::vector<SaveUnit> units;
+    // Older saves have no item lines. Their items are placed again from the seed when they load.
+    bool hasItems = false;
+    std::vector<SaveGround> ground;
 };
 
 struct SaveSummary {
@@ -70,6 +92,23 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     for (const SaveUnit& u : d.units) {
         out << "unit " << u.x << " " << u.y << " " << u.z << " "
             << (u.hostile ? 1 : 0) << " " << u.sprite << " " << u.name << "\n";
+    }
+    // Lines that refer to a unit by its position in the unit list above
+    for (size_t i = 0; i < d.units.size(); ++i) {
+        const SaveUnit& u = d.units[i];
+        if (u.hasNeeds) {
+            out << "needs " << i << " " << u.needs.hp << " " << u.needs.maxHp << " "
+                << u.needs.hunger << " " << u.needs.maxHunger << " " << u.needs.hungerProgress << "\n";
+        }
+        for (const SaveStack& s : u.stacks) {
+            out << "slot " << i << " " << s.slot << " " << s.stack.item << " " << s.stack.count << "\n";
+        }
+    }
+    if (d.hasItems) {
+        out << "items=1\n";
+        for (const SaveGround& g : d.ground) {
+            out << "ground " << g.x << " " << g.y << " " << g.z << " " << g.item << " " << g.count << "\n";
+        }
     }
     return (bool)out;
 }
@@ -107,6 +146,30 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 u.hostile = hostile != 0;
                 if (u.name.empty()) u.name = "Unnamed Unit";
                 d.units.push_back(u);
+            }
+            else if (line.rfind("items=", 0) == 0)           d.hasItems = (line.substr(6) == "1");
+            else if (line.rfind("ground ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                SaveGround g;
+                ss >> g.x >> g.y >> g.z >> g.item >> g.count;
+                if (!ss.fail()) d.ground.push_back(g);
+            }
+            else if (line.rfind("needs ", 0) == 0) {
+                std::istringstream ss(line.substr(6));
+                size_t i = 0;
+                Needs n;
+                ss >> i >> n.hp >> n.maxHp >> n.hunger >> n.maxHunger >> n.hungerProgress;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasNeeds = true;
+                    d.units[i].needs = n;
+                }
+            }
+            else if (line.rfind("slot ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                SaveStack s;
+                ss >> i >> s.slot >> s.stack.item >> s.stack.count;
+                if (!ss.fail() && i < d.units.size()) d.units[i].stacks.push_back(s);
             }
         }
     } catch (...) {

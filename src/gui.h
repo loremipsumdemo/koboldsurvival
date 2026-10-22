@@ -66,23 +66,39 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     return L;
 }
 
-// Right sidebar: the inventory of one unit, 8 columns of slots
+// Right sidebar for the one selected unit. From the top: a profile card with the unit's picture,
+// name and details, then the inventory grid of 8 columns of slots. The whole sidebar sits on a
+// see-through panel, and the grid has a fuller background of its own.
 struct SidebarLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    std::vector<Rect> slots;   // INVENTORY_SLOTS rectangles, row by row
+    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };      // the whole sidebar, drawn see-through
+    Rect profile{ 0.0f, 0.0f, 0.0f, 0.0f };    // profile card above the grid
+    Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };   // the unit's picture, inside the card on the left
+    Rect gridPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // solid background behind the inventory grid
+    std::vector<Rect> slots;                   // INVENTORY_SLOTS rectangles, row by row
 };
 
 inline SidebarLayout layoutInventorySidebar(int W, int H) {
     const float s = H / 720.0f;
-    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, headerH = 70.0f * s;
+    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s;
+    const float cardH = 178.0f * s, cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
 
     SidebarLayout L;
     L.panel = Rect{ W - width, 0.0f, width, (float)H };
-    const float slot = (width - 2.0f * pad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
+
+    L.profile = Rect{ L.panel.x + pad, pad, width - 2.0f * pad, cardH };
+    const float side = cardH - 2.0f * cardInset;
+    L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
+
+    // Grid: columns fill the width inside the grid background, rows follow
+    const float rows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
+    const float gridTop = L.profile.y + cardH + 12.0f * s;
+    const float slot = (width - 2.0f * pad - 2.0f * innerPad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
+    L.gridPanel = Rect{ L.panel.x + pad, gridTop, width - 2.0f * pad,
+                        headH + rows * slot + (rows - 1.0f) * gap + innerPad };
     for (int i = 0; i < INVENTORY_SLOTS; ++i) {
         const int c = i % INVENTORY_COLUMNS, r = i / INVENTORY_COLUMNS;
-        L.slots.push_back(Rect{ L.panel.x + pad + c * (slot + gap),
-                                L.panel.y + headerH + r * (slot + gap),
+        L.slots.push_back(Rect{ L.gridPanel.x + innerPad + c * (slot + gap),
+                                gridTop + headH + r * (slot + gap),
                                 slot, slot });
     }
     return L;

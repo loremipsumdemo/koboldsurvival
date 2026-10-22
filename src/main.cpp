@@ -254,10 +254,13 @@ bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
     return true;
 }
 
-// Builds a fresh level on a map: the ground, then the entities from the seed.
-// progress, if given, is called as the level loads (0..1), for the loading screen.
+// Every item in the database is put on the ground this many times when a level starts
+constexpr int ITEM_COPIES_PER_LEVEL = 10;
+
+// Builds a fresh level on a map: the ground, then the entities from the seed, then the items on the
+// ground if spawnItems is set. progress, if given, is called as the level loads (0..1), for the loading screen.
 bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& renderer, Rng& rng,
-                  unsigned seed, std::string& err, const std::function<void(float)>& progress = {}) {
+                  unsigned seed, bool spawnItems, std::string& err, const std::function<void(float)>& progress = {}) {
     auto report = [&](float p) { if (progress) progress(p); };
     if (!loadTerrain(c, terrain, err)) return false;
     report(0.35f);
@@ -266,6 +269,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     world = World{};
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
+    if (spawnItems) spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
     report(0.9f);
     return true;
 }
@@ -292,7 +296,9 @@ void primeStreaming(World& w, Terrain& t, const Camera& cam) {
 // The units are then swapped for the saved ones.
 bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
                   const MapChoice& map, std::string& err) {
-    if (!prepareLevel(map, world, terrain, renderer, rng, d.seed, err)) return false;
+    // A save from before items existed has none, so its items are placed from the seed as on a new level.
+    // A save that has items gets exactly those, and nothing is placed from the seed.
+    if (!prepareLevel(map, world, terrain, renderer, rng, d.seed, !d.hasItems, err)) return false;
 
     // Drop the units that setupWorld generated
     for (Entity e : world.view<Unit>()) world.destroy(e);
@@ -305,10 +311,26 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Hostile{});
         } else {
             world.add(e, Commandable{});
-            world.add(e, Inventory{});
+            Inventory inv;
+            for (const SaveStack& s : u.stacks) {
+                if (s.slot >= 0 && s.slot < INVENTORY_SLOTS && s.stack.item > 0 && s.stack.count > 0) {
+                    inv.slots[s.slot] = s.stack;
+                }
+            }
+            world.add(e, inv);
         }
+        world.add(e, u.hasNeeds ? u.needs : Needs{});
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
+    }
+
+    if (d.hasItems) {
+        for (const SaveGround& g : d.ground) {
+            if (g.item <= 0 || g.count <= 0) continue;
+            Entity e = world.create();
+            world.add(e, Transform{ g.x, g.y, g.z });
+            world.add(e, GroundItem{ g.item, g.count });
+        }
     }
     return true;
 }
@@ -343,7 +365,24 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.hostile = w.has<Hostile>(u);
         su.sprite = us ? us->id : 1;
         su.name = n ? n->text : "Unnamed Unit";
+        if (const Needs* nd = w.get<Needs>(u)) {
+            su.hasNeeds = true;
+            su.needs = *nd;
+        }
+        if (const Inventory* inv = w.get<Inventory>(u)) {
+            for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+                const ItemStack& st = inv->slots[i];
+                if (st.item > 0 && st.count > 0) su.stacks.push_back(SaveStack{ i, st });
+            }
+        }
         d.units.push_back(su);
+    }
+
+    d.hasItems = true;
+    for (Entity e : w.view<GroundItem, Transform>()) {
+        const GroundItem* g = w.get<GroundItem>(e);
+        const Transform* t = w.get<Transform>(e);
+        d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count });
     }
     return d;
 }
@@ -360,6 +399,16 @@ void focusCameraOnFirstUnit(World& w, Camera& cam) {
     cam.focusX = std::floor(t->x) + 0.5f;
     cam.focusY = t->y;
     cam.focusZ = std::floor(t->z) + 0.5f;
+    cam.clampState();
+}
+
+// Moves the camera's focus onto a unit, wherever it is on the map
+void focusCameraOnUnit(World& w, Camera& cam, Entity u) {
+    const Transform* t = w.get<Transform>(u);
+    if (!t) return;
+    cam.focusX = t->x;
+    cam.focusY = t->y;
+    cam.focusZ = t->z;
     cam.clampState();
 }
 
@@ -805,6 +854,10 @@ int main(int, char**) {
     bool mapSortAsc = false;              // ascending order; the list opens newest first
     SkyTuning sky;                        // atmosphere settings from the dev tools menu
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
+    // A stack being dragged out of the inventory sidebar. Released outside the sidebar, it drops on the ground.
+    bool itemDrag = false;
+    Entity dragUnit = NULL_ENTITY;        // the unit whose inventory it came from
+    int dragSlot = -1;                    // the slot it came from
     wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
     bool wmReady = false;                 // the tool has been set up on the window
 
@@ -920,7 +973,7 @@ int main(int, char**) {
     auto startMapLevel = [&](const MapChoice& choice) {
         std::string err;
         levelSeed = (unsigned)std::time(nullptr);
-        if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, err,
+        if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
             showNotice("Could not load " + choice.name + ": " + err);
             return;
@@ -932,6 +985,7 @@ int main(int, char**) {
         gs = GameState{};
         sel = Selection{};
         leftDown = middleDown = false;
+        itemDrag = false;
         overlayMs = 0.0f;
         overlayOn = true;
         autoTimer = 0.0f;
@@ -984,6 +1038,7 @@ int main(int, char**) {
         primeStreaming(world, terrain, cam);
         sel = Selection{};
         leftDown = middleDown = false;
+        itemDrag = false;
         overlayOn = false;
         overlayMs = 0.0f;
         autoTimer = 0.0f;
@@ -1361,6 +1416,7 @@ int main(int, char**) {
                     if (screen == Screen::Playing) {
                         leftDown = middleDown = false;
                         sel.dragging = false;
+                        itemDrag = false;
                         screen = Screen::Pause;
                         refreshSaves();
                     } else if (screen == Screen::Pause) {
@@ -1441,6 +1497,20 @@ int main(int, char**) {
                     const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
                     const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
                     if (pl.panel.contains(mx, my) || onSidebar) {
+                        if (onSidebar) {
+                            // Pressing a filled slot starts dragging its stack out of the inventory
+                            const std::vector<Entity> picked = selectedUnits(world);
+                            const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
+                            const SidebarLayout sb = layoutInventorySidebar(winW, winH);
+                            for (int i = 0; inv && i < INVENTORY_SLOTS; ++i) {
+                                if (sb.slots[i].contains(mx, my) && inv->slots[i].item != 0) {
+                                    itemDrag = true;
+                                    dragUnit = picked[0];
+                                    dragSlot = i;
+                                    break;
+                                }
+                            }
+                        }
                         for (const UnitCell& c : pl.cells) {
                             if (!c.rect.contains(mx, my)) continue;
                             const Entity u = own[c.index];
@@ -1451,9 +1521,22 @@ int main(int, char**) {
                                 if (!additive) clearSelection(world);
                                 if (!world.has<Selected>(u)) world.add(u, Selected{});
                             }
+                            // Double-click moves the camera to the unit, wherever it is
+                            if (e.button.clicks == 2) focusCameraOnUnit(world, cam, u);
                             break;
                         }
                         break;
+                    }
+
+                    // Holding Alt shows the items on the ground. A click on one sends the selected units to pick it up.
+                    if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
+                        const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH);
+                        if (item != NULL_ENTITY) {
+                            const std::vector<Entity> picked = selectedUnits(world);
+                            if (picked.empty()) showNotice("Select units to pick the item up");
+                            else issuePickupOrder(world, terrain, picked, item);
+                            break;
+                        }
                     }
                 }
 
@@ -1478,6 +1561,15 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
+                    // Released outside the sidebar: the whole stack drops under the unit it came from.
+                    // Released inside the sidebar: nothing happens.
+                    itemDrag = false;
+                    const bool overSidebar = layoutInventorySidebar(winW, winH).panel.contains(e.button.x, e.button.y);
+                    if (!overSidebar && world.has<Unit>(dragUnit)) dropStack(world, dragUnit, dragSlot);
+                    dragUnit = NULL_ENTITY;
+                    dragSlot = -1;
+                }
                 if (e.button.button == SDL_BUTTON_LEFT && leftDown) {
                     leftDown = false;
                     bool additive = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
@@ -1543,10 +1635,13 @@ int main(int, char**) {
 
             squadSystem(world, dt);
             steeringSystem(world, terrain, dt);
+            pickupSystem(world);
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
             if (sky.clockRunning) gs.dayMinutes = std::fmod(gs.dayMinutes + dt * MINUTES_PER_SECOND, DAY_LENGTH_MINUTES);
+            // Health and hunger run on the in-game clock, so they stop while the clock is stopped
+            needsSystem(world, sky.clockRunning ? dt * MINUTES_PER_SECOND : 0.0f);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -1628,19 +1723,25 @@ int main(int, char**) {
             renderer.drawFrame(world, terrain, cam, sel, overlayAlpha, hud, winW, winH);
             renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
             renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
-            // In-game panels: the unit list along the bottom, and the inventory of a lone selected unit
+            // In-game panels, drawn over the world: item names while Alt is held, the unit list along the
+            // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
+            if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) renderer.drawGroundLabels(world, terrain, cam, winW, winH);
             {
                 const std::vector<Entity> own = world.view<Unit, Transform, Commandable>();
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
                 unitPanelRow = L.scrollRow;
                 renderer.drawUnitPanel(world, L, own);
                 const std::vector<Entity> picked = selectedUnits(world);
-                if (picked.size() == 1) {
-                    const Inventory* inv = world.get<Inventory>(picked[0]);
-                    const Name* nm = world.get<Name>(picked[0]);
-                    if (inv) renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), *inv,
-                                                           nm ? nm->text : std::string());
+                if (picked.size() == 1 && world.has<Inventory>(picked[0])) {
+                    renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), world, picked[0],
+                                                  mouseX, mouseY, itemDrag ? dragSlot : -1);
+                }
+                if (itemDrag) {
+                    const Inventory* inv = world.get<Inventory>(dragUnit);
+                    if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS && inv->slots[dragSlot].item != 0) {
+                        renderer.drawDraggedStack(mouseX, mouseY, inv->slots[dragSlot].item, inv->slots[dragSlot].count);
+                    }
                 }
             }
             renderer.endUi();

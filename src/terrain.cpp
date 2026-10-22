@@ -172,6 +172,26 @@ bool Terrain::walkable(int x, int y) const {
     return c->walk[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES] != 0;
 }
 
+bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
+    if (!inBounds(x, y)) return false;
+    const int cx = x / CHUNK_TILES, cz = y / CHUNK_TILES;
+    const int lx = x % CHUNK_TILES, lz = y % CHUNK_TILES;
+
+    ChunkData fromFolder;
+    const ChunkData* c = chunkAt(cx, cz);
+    if (!c) {
+        if (!streamed_ || !readChunk(folder_, info_, cx, cz, fromFolder)) return false;
+        c = &fromFolder;
+    }
+    walkable = c->walk[(size_t)lz * CHUNK_TILES + lx] != 0;
+
+    // Average of the tile's four corners: the height at its centre
+    const size_t i = (size_t)lz * CHUNK_CORNERS + lx;
+    const float* h = c->heights.data();
+    height = (h[i] + h[i + 1] + h[i + CHUNK_CORNERS] + h[i + CHUNK_CORNERS + 1]) * 0.25f;
+    return true;
+}
+
 uint8_t Terrain::biome(int x, int y) const {
     const ChunkData* c = tileChunk(x, y);
     if (!c) return BIOME_NONE;
