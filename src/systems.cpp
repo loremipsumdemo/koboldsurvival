@@ -70,6 +70,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(u, Transform{ x, t.heightAt(x, z), z });
         w.add(u, Unit{});
         w.add(u, Commandable{});
+        w.add(u, Inventory{});
         w.add(u, Name{});
         w.add(u, UnitSprite{ rng.range(1, 38) });
     }

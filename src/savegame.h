@@ -88,6 +88,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     out << "keysCollected=" << d.gs.keysCollected << "\n";
     out << "unitsEntered=" << d.gs.unitsEntered << "\n";
     out << "won=" << (d.gs.won ? 1 : 0) << "\n";
+    out << "dayMinutes=" << d.gs.dayMinutes << "\n";
     out << "doorUnlocked=" << (d.doorUnlocked ? 1 : 0) << "\n";
     out << "autosave=" << (d.autosave ? 1 : 0) << "\n";
     out << "camera " << d.cam.fx << " " << d.cam.fy << " " << d.cam.fz << " "
@@ -122,6 +123,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
             else if (line.rfind("keysCollected=", 0) == 0)    d.gs.keysCollected = std::stoi(line.substr(14));
             else if (line.rfind("unitsEntered=", 0) == 0)    d.gs.unitsEntered = std::stoi(line.substr(13));
             else if (line.rfind("won=", 0) == 0)              d.gs.won = (line.substr(4) == "1");
+            else if (line.rfind("dayMinutes=", 0) == 0)       d.gs.dayMinutes = std::stof(line.substr(11));
             else if (line.rfind("doorUnlocked=", 0) == 0)    d.doorUnlocked = (line.substr(13) == "1");
             else if (line.rfind("autosave=", 0) == 0)        d.autosave = (line.substr(9) == "1");
             else if (line.rfind("camera ", 0) == 0) {

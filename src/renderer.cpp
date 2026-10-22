@@ -260,59 +260,41 @@ void main() {
 const char* SKY_FS = R"(
 #version 330 core
 in vec3 vDir;
-uniform samplerCube uSky;
+uniform vec3 uSunDir;     // unit vector towards the sun
+uniform float uSunAlpha;  // 0 when the sun is below the horizon, 1 when fully up
+uniform vec3 uSunCol;     // colour of the sun's glow and disc
+uniform vec3 uMoonDir;    // unit vector towards the moon, opposite the sun
+uniform float uMoonAlpha; // 0 when the moon is hidden
+uniform vec3 uMoonCol;
+uniform float uStarAlpha; // 0 when there are no stars
+uniform vec3 uZenith;     // sky colour straight up
+uniform vec3 uHorizon;    // sky colour at the horizon
 out vec4 FragColor;
 void main() {
-    FragColor = texture(uSky, normalize(vDir));
+    vec3 d = normalize(vDir);
+    // Gradient: the horizon colour blends up to the zenith colour
+    vec3 col = mix(uHorizon, uZenith, pow(clamp(d.y, 0.0, 1.0), 0.6));
+
+    // Stars: one per cell of a fine grid over the sphere, where a hash says so. Upper sky only.
+    if (uStarAlpha > 0.0 && d.y > 0.0) {
+        vec3 cell = floor(d * 180.0);
+        float h = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        col += vec3(step(0.994, h) * smoothstep(0.0, 0.3, d.y) * uStarAlpha);
+    }
+
+    // Moon: a soft halo and a small pale disc
+    float m = max(dot(d, uMoonDir), 0.0);
+    col += uMoonCol * 0.15 * pow(m, 6.0) * uMoonAlpha;
+    col = mix(col, uMoonCol, smoothstep(0.9990, 0.9994, m) * uMoonAlpha);
+
+    // Sun: a wide glow and a hard-edged disc
+    float s = max(dot(d, uSunDir), 0.0);
+    col += uSunCol * (0.25 * pow(s, 8.0) + 0.5 * pow(s, 128.0)) * uSunAlpha;
+    float disc = smoothstep(0.9994, 0.9997, s) * uSunAlpha;
+    col = mix(col, uSunCol, disc);
+    FragColor = vec4(col, 1.0);
 }
 )";
-
-// Loads a skybox from six separate images in a folder, named posx, negx, posy, negy, posz, negz
-// (.jpg or .png). Each image becomes one face of the cube map, in GL's face order.
-// Returns 0 if any face fails to load.
-GLuint loadSkyboxFaces(const char* dir) {
-    const char* names[6] = { "posx", "negx", "posy", "negy", "posz", "negz" };
-    const GLenum targets[6] = {
-        GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-        GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-        GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-    };
-
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    for (int f = 0; f < 6; ++f) {
-        std::string path = std::string(dir) + "/" + names[f] + ".jpg";
-        SDL_Surface* s = pakImage(path);
-        if (!s) {
-            path = std::string(dir) + "/" + names[f] + ".png";
-            s = pakImage(path);
-        }
-        if (!s) {
-            SDL_Log("Could not load skybox face %s/%s: %s", dir, names[f], SDL_GetError());
-            glDeleteTextures(1, &tex);
-            return 0;
-        }
-
-        SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-        SDL_DestroySurface(s);
-        if (!conv) {
-            glDeleteTextures(1, &tex);
-            return 0;
-        }
-
-        glTexImage2D(targets[f], 0, GL_RGBA8, conv->w, conv->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
-        SDL_DestroySurface(conv);
-    }
-    return tex;
-}
 
 } // namespace
 
@@ -360,11 +342,19 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     keySprite_   = loadImage("data/environment/key.png", false);
     doorSprite_  = loadImage("data/environment/door.png", false);
     report(0.82f);
-    skyCube_ = loadSkyboxFaces("data/skybox/01");
     report(0.86f);
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
     uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
+    uSunDir_   = glGetUniformLocation(skyProgram_, "uSunDir");
+    uSunAlpha_ = glGetUniformLocation(skyProgram_, "uSunAlpha");
+    uZenith_   = glGetUniformLocation(skyProgram_, "uZenith");
+    uHorizon_  = glGetUniformLocation(skyProgram_, "uHorizon");
+    uSunCol_   = glGetUniformLocation(skyProgram_, "uSunCol");
+    uMoonDir_   = glGetUniformLocation(skyProgram_, "uMoonDir");
+    uMoonAlpha_ = glGetUniformLocation(skyProgram_, "uMoonAlpha");
+    uMoonCol_   = glGetUniformLocation(skyProgram_, "uMoonCol");
+    uStarAlpha_ = glGetUniformLocation(skyProgram_, "uStarAlpha");
 
     const float skyQuad[8] = { -1.0f, -1.0f,  1.0f, -1.0f,  1.0f, 1.0f,  -1.0f, 1.0f };
     glGenVertexArrays(1, &skyVao_);
@@ -419,7 +409,6 @@ void Renderer::shutdown() {
     title_.tex = 0;
     destroyModel(wagon_);
 
-    glDeleteTextures(1, &skyCube_);
     glDeleteProgram(skyProgram_);
     glDeleteBuffers(1, &skyVbo_);
     glDeleteVertexArrays(1, &skyVao_);
@@ -476,8 +465,8 @@ void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
 void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint) {
     if (!g.tex) return;
 
-    // Right vector perpendicular to the direction from the camera
-    float dx = camX_ - x, dz = camZ_ - z;
+    // Right vector perpendicular to the direction from the sprite to the billboard point
+    float dx = billX_ - x, dz = billZ_ - z;
     float len = std::sqrt(dx * dx + dz * dz);
     if (len < 1e-4f) { dx = 0.0f; dz = 1.0f; len = 1.0f; }
     dx /= len;
@@ -959,10 +948,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     viewProj_ = cam.viewProj((float)winW / (float)winH);
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
-    camX_ = ex;
-    camZ_ = ez;
+    // Sprites turn to face a point 200 units behind the camera, along its view axis
+    constexpr float BILLBOARD_DISTANCE = 200.0f;
+    const float cp = std::cos(cam.pitch);
+    billX_ = ex + BILLBOARD_DISTANCE * std::sin(cam.yaw) * cp;
+    billZ_ = ez + BILLBOARD_DISTANCE * std::cos(cam.yaw) * cp;
 
-    // 0. Sky: the skybox is sampled by view direction, so it stays fixed while the camera moves
+    // 0. Sky: a gradient with a sun, sampled by view direction so it stays fixed while the camera moves
     {
         // View matrix with the eye at the origin, so the sky only follows rotation
         Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, 4000.0f);
@@ -972,10 +964,47 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float invSky[16];
         invert4x4(mul(proj, viewRot).m, invSky);
 
+        // Sun, moon, stars and sky colours come from the dev tools settings and the time of day.
+        // The sun rises at 06:00, peaks at noon and sets at 18:00. The moon sits opposite the sun.
+        const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * 3.14159265f;
+        const float elev = std::sin(ang);
+        float sunDir[3] = { std::cos(ang) * 0.4f, elev, std::cos(ang) * 0.9f };
+        const float sunLen = std::sqrt(sunDir[0] * sunDir[0] + sunDir[1] * sunDir[1] + sunDir[2] * sunDir[2]);
+        for (float& c : sunDir) c /= sunLen;
+        const float moonDir[3] = { -sunDir[0], -sunDir[1], -sunDir[2] };
+
+        auto smooth = [](float e0, float e1, float x) {
+            float t = std::clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);
+            return t * t * (3.0f - 2.0f * t);
+        };
+        auto lerp3 = [](const float* p, const float* q, float t, float* out) {
+            for (int i = 0; i < 3; ++i) out[i] = p[i] + (q[i] - p[i]) * t;
+        };
+        const float day = smooth(-0.1f, 0.2f, elev);
+        const float dusk = 1.0f - smooth(0.0f, 0.4f, std::fabs(elev));
+        const float sunAlpha = smooth(-0.05f, 0.05f, elev);
+        const float moonAlpha = sky_.moon ? (1.0f - sunAlpha) : 0.0f;
+        const float starAlpha = sky_.stars ? (1.0f - day) * sky_.starBrightness : 0.0f;
+
+        const auto& C = sky_.colors;
+        float zen[3], hor[3], horDusk[3], sunC[3];
+        lerp3(C[CT_NIGHT_ZENITH].data(), C[CT_DAY_ZENITH].data(), day, zen);
+        lerp3(C[CT_NIGHT_HORIZON].data(), C[CT_DAY_HORIZON].data(), day, hor);
+        lerp3(hor, C[CT_DUSK_HORIZON].data(), dusk * 0.8f, horDusk);
+        lerp3(C[CT_DUSK_SUN].data(), C[CT_SUN].data(), day, sunC);
+        for (float& c : sunC) c *= sky_.sunBrightness;
+
         glUseProgram(skyProgram_);
         glUniformMatrix4fv(uSkyInvVP_, 1, GL_FALSE, invSky);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyCube_);
+        glUniform3fv(uSunDir_, 1, sunDir);
+        glUniform1f(uSunAlpha_, sunAlpha);
+        glUniform3fv(uSunCol_, 1, sunC);
+        glUniform3fv(uMoonDir_, 1, moonDir);
+        glUniform1f(uMoonAlpha_, moonAlpha);
+        glUniform3fv(uMoonCol_, 1, C[CT_MOON].data());
+        glUniform1f(uStarAlpha_, starAlpha);
+        glUniform3fv(uZenith_, 1, zen);
+        glUniform3fv(uHorizon_, 1, horDusk);
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glBindVertexArray(skyVao_);
@@ -1107,4 +1136,65 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     drawHud(hud, winW, winH);
     glBindVertexArray(0);
+}
+
+// ---- In-game panels ----
+
+void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units) {
+    drawRect(L.panel, RGBA{ 0.05f, 0.05f, 0.08f, 0.85f });
+
+    for (const UnitCell& c : L.cells) {
+        const Entity e = units[c.index];
+        const bool selected = w.has<Selected>(e);
+        const Rect frame{ c.rect.x - 2.0f, c.rect.y - 2.0f, c.rect.w + 4.0f, c.rect.h + 4.0f };
+        drawRect(frame, selected ? RGBA{ 1.0f, 0.95f, 0.4f, 1.0f } : RGBA{ 0.25f, 0.25f, 0.3f, 1.0f });
+        drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.1f, 0.1f, 0.14f, 1.0f });
+
+        // Portrait fitted inside the square, keeping its shape
+        const TextTex& g = unitGlyph(w, e);
+        if (g.tex) {
+            const float sz = c.rect.w;
+            float pw = sz, ph = sz;
+            if (g.aspect > 1.0f) ph = sz / g.aspect;
+            else pw = sz * g.aspect;
+            const float x = c.rect.x + (sz - pw) * 0.5f, y = c.rect.y + (sz - ph) * 0.5f;
+            const float v[4 * 5] = {
+                x,      y + ph, 0.0f, 0.0f, 1.0f,
+                x + pw, y + ph, 0.0f, 1.0f, 1.0f,
+                x + pw, y,      0.0f, 1.0f, 0.0f,
+                x,      y,      0.0f, 0.0f, 0.0f
+            };
+            glUseProgram(glyphProgram_);
+            glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+            drawQuadVerts(g.tex, v, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+
+        // Name under the portrait, shortened so it fits the cell
+        const Name* nm = w.get<Name>(e);
+        std::string label = nm ? nm->text : std::string();
+        if (label.size() > 11) label = label.substr(0, 10) + ".";
+        drawListText(label, c.rect.x, c.rect.y + c.rect.w + 2.0f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    }
+
+    if (L.scrollable()) {
+        drawRect(L.track, RGBA{ 0.18f, 0.18f, 0.22f, 1.0f });
+        drawRect(L.thumb, RGBA{ 0.7f, 0.7f, 0.8f, 1.0f });
+    }
+}
+
+void Renderer::drawInventorySidebar(const SidebarLayout& L, const Inventory& inv, const std::string& unitName) {
+    const float s = uiH_ / 720.0f;
+    drawRect(L.panel, RGBA{ 0.06f, 0.06f, 0.09f, 0.92f });
+    drawUiText("Inventory", L.panel.x + 14.0f * s, 10.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawListText(unitName, L.panel.x + 14.0f * s, 38.0f * s, RGBA{ 0.8f, 0.8f, 0.8f, 1.0f });
+
+    for (size_t i = 0; i < L.slots.size() && i < inv.items.size(); ++i) {
+        const Rect& r = L.slots[i];
+        drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.3f, 0.3f, 0.36f, 1.0f });
+        drawRect(r, RGBA{ 0.1f, 0.1f, 0.13f, 1.0f });
+        // An occupied slot shows a marker. Item art will replace this later.
+        if (inv.items[i] != 0) {
+            drawRect(Rect{ r.x + r.w * 0.25f, r.y + r.h * 0.25f, r.w * 0.5f, r.h * 0.5f }, RGBA{ 0.9f, 0.8f, 0.3f, 1.0f });
+        }
+    }
 }

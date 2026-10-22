@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include "camera.h"
+#include "gui.h"
+#include "sky.h"
 #include "components.h"
 #include "ecs.h"
 #include "model.h"
@@ -36,6 +38,11 @@ public:
               const std::function<void(float)>& progress = {});
     void shutdown();
 
+    // In-game time of day in minutes, 0..1440. Sets the sun position and sky colours.
+    void setDayMinutes(float m) { dayMinutes_ = m; }
+    // Sun, moon, star and sky colour settings from the dev tools menu
+    void setSky(const SkyTuning& s) { sky_ = s; }
+
     // Builds and uploads the terrain mesh. Frees the previous mesh if there is one.
     void uploadTerrain(const Terrain& t);
 
@@ -61,6 +68,12 @@ public:
     // Crystal marking where a right-click order was given, standing on the ground at (x, z).
     // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
+
+    // In-game panels, drawn between beginUi and endUi. The bottom panel shows each unit in
+    // units with its portrait and name, and a yellow frame around the selected ones.
+    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units);
+    // Right sidebar with the 32 inventory slots of one unit
+    void drawInventorySidebar(const SidebarLayout& L, const Inventory& inv, const std::string& unitName);
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -92,7 +105,7 @@ private:
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
 
-    // Symbol-style billboard that faces the camera and stands on (x, y, z)
+    // Symbol-style billboard that stands on (x, y, z) and turns to face a point 200 units behind the camera
     void drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint);
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
@@ -141,8 +154,12 @@ private:
 
     Mat4 viewProj_{};
 
-    // Skybox: a cube map drawn as a full-screen quad, sampled by view direction
-    GLuint skyProgram_ = 0, skyVao_ = 0, skyVbo_ = 0, skyCube_ = 0;
-    GLint uSkyInvVP_ = -1;
-    float camX_ = 0.0f, camZ_ = 0.0f;
+    // Sky: a gradient and sun drawn as a full-screen quad, coloured by the time of day
+    GLuint skyProgram_ = 0, skyVao_ = 0, skyVbo_ = 0;
+    GLint uSkyInvVP_ = -1, uSunDir_ = -1, uSunAlpha_ = -1, uZenith_ = -1, uHorizon_ = -1, uSunCol_ = -1;
+    GLint uMoonDir_ = -1, uMoonAlpha_ = -1, uMoonCol_ = -1, uStarAlpha_ = -1;
+    float dayMinutes_ = 360.0f;
+    SkyTuning sky_;
+    // The point sprites turn to face: 200 units behind the camera
+    float billX_ = 0.0f, billZ_ = 0.0f;
 };

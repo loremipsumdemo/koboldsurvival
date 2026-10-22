@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <string>
 #include <vector>
 #include "ecs.h"
@@ -65,6 +66,14 @@ struct SoloMove {
     size_t next = 0;
     bool wantsDoor = false;           // ordered to enter the building
     bool enterDoor = false;           // unlocked and at the entrance, so the unit goes through
+};
+
+// Items a unit carries: a fixed number of slots, each holding an item id, or 0 when empty.
+// No items exist yet, so every slot is empty for now.
+constexpr int INVENTORY_SLOTS = 32;
+constexpr int INVENTORY_COLUMNS = 8;
+struct Inventory {
+    std::array<int, INVENTORY_SLOTS> items{};
 };
 
 struct Key {};

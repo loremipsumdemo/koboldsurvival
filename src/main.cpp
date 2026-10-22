@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <ctime>
 #include <filesystem>
 #include <functional>
@@ -15,6 +16,8 @@
 #include <utility>
 #include <vector>
 #include "camera.h"
+#include "gui.h"
+#include "sky.h"
 #include "components.h"
 #include "ecs.h"
 #include "renderer.h"
@@ -273,8 +276,12 @@ void restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         Entity e = world.create();
         world.add(e, Transform{ u.x, u.y, u.z });
         world.add(e, Unit{});
-        if (u.hostile) world.add(e, Hostile{});
-        else world.add(e, Commandable{});
+        if (u.hostile) {
+            world.add(e, Hostile{});
+        } else {
+            world.add(e, Commandable{});
+            world.add(e, Inventory{});
+        }
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
     }
@@ -358,6 +365,14 @@ void applySaveCamera(const SaveCamera& c, Camera& cam) {
     cam.pitch = c.pitch;
     cam.distance = c.distance;
     cam.clampState();
+}
+
+// In-game time of day as four-digit military time, e.g. "0730" or "1800"
+std::string militaryTime(float minutes) {
+    const int m = ((int)minutes % 1440 + 1440) % 1440;
+    char buf[8];
+    std::snprintf(buf, sizeof(buf), "%02d%02d", m / 60, m % 60);
+    return buf;
 }
 
 // Current time in milliseconds since 1970
@@ -604,6 +619,59 @@ EditorLayout layoutMapEditor(int W, int H, bool raise, int brushIdx) {
     return out;
 }
 
+// Dev tools menu, opened from the Esc menu. Left: clock, stars, moon and brightness.
+// Right: the colour being edited, its red, green and blue, and reset.
+std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, float dayMinutes) {
+    const float s = H / 720.0f;
+    const float bh = 40.0f * s, gap = 8.0f * s;
+    const float bw = 300.0f * s, half = (bw - gap) * 0.5f;
+    const float colGap = 24.0f * s;
+    const float leftX = W * 0.5f - colGap * 0.5f - bw;
+    const float rightX = W * 0.5f + colGap * 0.5f;
+    const float top = H * 0.20f;
+
+    std::vector<Button> out;
+    auto full = [&](const std::string& label, Action a, float x, float& y, bool enabled) {
+        out.push_back(Button{ label, Rect{ x, y, bw, bh }, a, enabled, 0 });
+        y += bh + gap;
+    };
+    auto pair = [&](const std::string& l, Action al, int pl, const std::string& r, Action ar, int pr,
+                    float x, float& y) {
+        out.push_back(Button{ l, Rect{ x, y, half, bh }, al, true, pl });
+        out.push_back(Button{ r, Rect{ x + half + gap, y, half, bh }, ar, true, pr });
+        y += bh + gap;
+    };
+    auto fmt = [](float v) {
+        char b[16];
+        std::snprintf(b, sizeof(b), "%.2f", v);
+        return std::string(b);
+    };
+    auto onOff = [](bool v) { return std::string(v ? "on" : "off"); };
+
+    float y = top;
+    full("Time " + militaryTime(dayMinutes), Action::DevTime, leftX, y, false);
+    pair("-30 min", Action::DevTime, -30, "+30 min", Action::DevTime, 30, leftX, y);
+    full(std::string("Clock: ") + (sky.clockRunning ? "running" : "stopped"), Action::DevClock, leftX, y, true);
+    pair("Stars " + onOff(sky.stars), Action::DevStars, 0, "Moon " + onOff(sky.moon), Action::DevMoon, 0,
+         leftX, y);
+    full("Sun brightness " + fmt(sky.sunBrightness), Action::DevSunBright, leftX, y, false);
+    pair("Sun -", Action::DevSunBright, -1, "Sun +", Action::DevSunBright, 1, leftX, y);
+    full("Star brightness " + fmt(sky.starBrightness), Action::DevStarBright, leftX, y, false);
+    pair("Stars -", Action::DevStarBright, -1, "Stars +", Action::DevStarBright, 1, leftX, y);
+
+    y = top;
+    const auto& c = sky.colors[sky.colorTarget];
+    full(std::string("Colour: ") + colorTargetName(sky.colorTarget), Action::DevColorTarget, rightX, y, false);
+    pair("Prev colour", Action::DevColorTarget, -1, "Next colour", Action::DevColorTarget, 1, rightX, y);
+    full("R " + fmt(c[0]) + "   G " + fmt(c[1]) + "   B " + fmt(c[2]), Action::DevColor, rightX, y, false);
+    pair("Red -", Action::DevColor, 0, "Red +", Action::DevColor, 1, rightX, y);
+    pair("Green -", Action::DevColor, 2, "Green +", Action::DevColor, 3, rightX, y);
+    pair("Blue -", Action::DevColor, 4, "Blue +", Action::DevColor, 5, rightX, y);
+    full("Reset atmosphere", Action::DevReset, rightX, y, true);
+    full("Back", Action::Back, rightX, y, true);
+    return out;
+}
+
 // Buttons for the main menus, in pixels
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSettings& st,
                                   const std::vector<SaveSummary>& saves) {
@@ -646,10 +714,12 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
         add("Save Game", Action::Save, x, y);                    y += bh + gap;
         add("Load Game", Action::Load, x, y, hasSave);           y += bh + gap;
         add("Settings", Action::Settings, x, y);                 y += bh + gap;
+        add("Dev Tools", Action::DevOpen, x, y);                 y += bh + gap;
         add("Return to Title", Action::ReturnToTitle, x, y);
         break;
     }
     case Screen::Playing:
+    case Screen::DevTools:
     case Screen::MapSelect:
     case Screen::MapEditor:
         break;
@@ -723,6 +793,8 @@ int main(int, char**) {
     bool editorPaint = false;             // left button held in the editor, painting the ground
     bool editorRaise = true;              // the brush raises the ground, or lowers it
     int brushIndex = 1;                   // index into BRUSH_RADII
+    SkyTuning sky;                        // atmosphere settings from the dev tools menu
+    int unitPanelRow = 0;                 // first visible row of the bottom unit panel
     std::string editName = "my_map";      // name typed in the editor, used for the exported file
     bool nameFocused = false;             // the name field takes typed text after it's clicked
 
@@ -956,6 +1028,10 @@ int main(int, char**) {
 
     // Starts the editor on a flat map
     auto openEditor = [&]() {
+        // Start clean: no units, keys or building left over from a game
+        world = World{};
+        gs = GameState{};
+        sel = Selection{};
         terrain.load(flatMap().heights);
         renderer.uploadTerrain(terrain);
         cam = Camera{};
@@ -1026,6 +1102,44 @@ int main(int, char**) {
             return;
         case Action::EditExport:
             exportEditorMap();
+            return;
+        case Action::DevOpen:
+            backScreen = Screen::Pause;
+            screen = Screen::DevTools;
+            return;
+        case Action::DevTime: {
+            float m = std::fmod(gs.dayMinutes + (float)param, DAY_LENGTH_MINUTES);
+            if (m < 0.0f) m += DAY_LENGTH_MINUTES;
+            gs.dayMinutes = m;
+            return;
+        }
+        case Action::DevClock:
+            sky.clockRunning = !sky.clockRunning;
+            return;
+        case Action::DevStars:
+            sky.stars = !sky.stars;
+            return;
+        case Action::DevMoon:
+            sky.moon = !sky.moon;
+            return;
+        case Action::DevSunBright:
+            sky.sunBrightness = std::clamp(sky.sunBrightness + 0.1f * param, 0.0f, 2.0f);
+            return;
+        case Action::DevStarBright:
+            sky.starBrightness = std::clamp(sky.starBrightness + 0.1f * param, 0.0f, 2.0f);
+            return;
+        case Action::DevColorTarget:
+            sky.colorTarget = ((sky.colorTarget + param) % CT_COUNT + CT_COUNT) % CT_COUNT;
+            return;
+        case Action::DevColor: {
+            const int channel = param / 2;
+            const float step = (param % 2) ? 0.05f : -0.05f;
+            float& c = sky.colors[sky.colorTarget][channel];
+            c = std::clamp(std::round((c + step) * 100.0f) / 100.0f, 0.0f, 1.0f);
+            return;
+        }
+        case Action::DevReset:
+            sky = SkyTuning{};
             return;
         case Action::EditBack:
             leaveEditor();
@@ -1182,6 +1296,17 @@ int main(int, char**) {
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
         viewH = winH;
 
+        // Own units in list order, the same order the bottom panel shows them
+        auto ownUnitList = [&]() { return world.view<Unit, Transform, Commandable>(); };
+        // The inventory sidebar is up only when exactly one of your units is selected
+        auto sidebarUp = [&]() { return selectedUnits(world).size() == 1; };
+        // Whether the mouse is over the bottom unit panel
+        auto unitPanelHovered = [&](int W, int H) {
+            float mx = 0.0f, my = 0.0f;
+            SDL_GetMouseState(&mx, &my);
+            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow).panel.contains(mx, my);
+        };
+
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
             switch (e.type) {
@@ -1229,6 +1354,8 @@ int main(int, char**) {
                         screen = Screen::Playing;
                     } else if (screen == Screen::Settings) {
                         screen = backScreen;
+                    } else if (screen == Screen::DevTools) {
+                        screen = Screen::Pause;
                     } else if (screen == Screen::MapSelect) {
                         screen = backScreen;
                     } else if (screen == Screen::MapEditor) {
@@ -1250,6 +1377,10 @@ int main(int, char**) {
                     int maxOffset = std::max(0, (int)maps.size() - (int)mapRowsVisible(winH));
                     int next = (int)mapOffset - (int)e.wheel.y;
                     mapOffset = (size_t)std::clamp(next, 0, maxOffset);
+                } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
+                    // Scrolls the unit list by whole rows
+                    unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
+                                                   unitPanelRow - (int)e.wheel.y).scrollRow;
                 } else if (screen == Screen::Playing || screen == Screen::MapEditor) {
                     cam.distance *= (e.wheel.y > 0.0f) ? 0.9f : 1.1f;
                     cam.clampState();
@@ -1309,7 +1440,9 @@ int main(int, char**) {
                 if (screen != Screen::Playing) {
                     // Menus: a left click runs the enabled button under the cursor
                     if (e.button.button == SDL_BUTTON_LEFT) {
-                        const std::vector<Button> menuButtons = screen == Screen::MapSelect
+                        const std::vector<Button> menuButtons = screen == Screen::DevTools
+                            ? layoutDevTools(winW, winH, sky, gs.dayMinutes)
+                            : screen == Screen::MapSelect
                             ? layoutMapSelect(winW, winH, maps, mapOffset)
                             : layoutButtons(screen, winW, winH, settings, saves);
                         for (const Button& b : menuButtons) {
@@ -1320,6 +1453,29 @@ int main(int, char**) {
                         }
                     }
                     break;
+                }
+
+                if (e.button.button == SDL_BUTTON_LEFT && screen == Screen::Playing) {
+                    // The unit panel and sidebar take the click, so it never reaches the ground
+                    const float mx = e.button.x, my = e.button.y;
+                    const std::vector<Entity> own = ownUnitList();
+                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
+                    const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
+                    if (pl.panel.contains(mx, my) || onSidebar) {
+                        for (const UnitCell& c : pl.cells) {
+                            if (!c.rect.contains(mx, my)) continue;
+                            const Entity u = own[c.index];
+                            const bool additive = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+                            if (additive && world.has<Selected>(u)) {
+                                world.remove<Selected>(u);
+                            } else {
+                                if (!additive) clearSelection(world);
+                                if (!world.has<Selected>(u)) world.add(u, Selected{});
+                            }
+                            break;
+                        }
+                        break;
+                    }
                 }
 
                 if (e.button.button == SDL_BUTTON_LEFT) {
@@ -1422,6 +1578,7 @@ int main(int, char**) {
             pickupSystem(world, terrain, gs);
             cleanupSquads(world);
             updateWinState(world, gs);
+            if (sky.clockRunning) gs.dayMinutes = std::fmod(gs.dayMinutes + dt * MINUTES_PER_SECOND, DAY_LENGTH_MINUTES);
 
             // Every unit has passed through the door, so start a new level
             if (gs.won) {
@@ -1466,7 +1623,8 @@ int main(int, char**) {
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
         std::string title = "RTS   Keys " + std::to_string(gs.keysCollected) + "/" + std::to_string(KEY_COUNT)
-                          + "   Entered " + std::to_string(gs.unitsEntered) + "/" + std::to_string(UNIT_COUNT);
+                          + "   Entered " + std::to_string(gs.unitsEntered) + "/" + std::to_string(UNIT_COUNT)
+                          + "   Time " + militaryTime(gs.dayMinutes);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;
@@ -1485,6 +1643,8 @@ int main(int, char**) {
         }
 
         // ---- Render ----
+        renderer.setDayMinutes(gs.dayMinutes);
+        renderer.setSky(sky);
         auto drawButtons = [&](const std::vector<Button>& buttons) {
             for (const Button& b : buttons) {
                 renderer.drawButton(b.rect, b.label, b.enabled, b.rect.contains(mouseX, mouseY));
@@ -1523,6 +1683,22 @@ int main(int, char**) {
             renderer.drawFrame(world, terrain, cam, sel, overlayAlpha, hud, winW, winH);
             renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
             renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
+            // In-game panels: the unit list along the bottom, and the inventory of a lone selected unit
+            renderer.beginUi(winW, winH);
+            {
+                const std::vector<Entity> own = world.view<Unit, Transform, Commandable>();
+                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
+                unitPanelRow = L.scrollRow;
+                renderer.drawUnitPanel(world, L, own);
+                const std::vector<Entity> picked = selectedUnits(world);
+                if (picked.size() == 1) {
+                    const Inventory* inv = world.get<Inventory>(picked[0]);
+                    const Name* nm = world.get<Name>(picked[0]);
+                    if (inv) renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), *inv,
+                                                           nm ? nm->text : std::string());
+                }
+            }
+            renderer.endUi();
             break;
 
         case Screen::MapSelect: {
@@ -1577,6 +1753,16 @@ int main(int, char**) {
             dim(0.55f);
             renderer.drawUiTextCentered("Paused", winW * 0.5f, winH * 0.22f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
             drawButtons(layoutButtons(Screen::Pause, winW, winH, settings, saves));
+            renderer.endUi();
+            break;
+        case Screen::DevTools:
+            renderer.drawFrame(world, terrain, cam, sel, 0.0f, {}, winW, winH);
+            renderer.beginUi(winW, winH);
+            dim(0.4f);
+            renderer.drawUiTextCentered("Dev Tools", winW * 0.5f, winH * 0.10f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+            renderer.drawUiTextCentered("Esc to go back", winW * 0.5f, winH * 0.10f + 36.0f * (winH / 720.0f),
+                                        RGBA{ 0.7f, 0.7f, 0.7f, 1.0f });
+            drawButtons(layoutDevTools(winW, winH, sky, gs.dayMinutes));
             renderer.endUi();
             break;
         }

@@ -2,10 +2,15 @@
 #include <random>
 
 // Overall progress
+// In-game clock. One real second is one in-game minute, so a day lasts 24 real minutes.
+constexpr float DAY_LENGTH_MINUTES = 1440.0f;
+constexpr float MINUTES_PER_SECOND = 1.0f;
+
 struct GameState {
     int keysCollected = 0;
     int unitsEntered = 0;
     bool won = false;
+    float dayMinutes = 360.0f;   // time of day, 0..1440. Starts at 06:00.
 };
 
 // Mouse drag rectangle in screen pixels, for box selection
