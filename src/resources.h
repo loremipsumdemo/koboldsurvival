@@ -7,9 +7,6 @@ constexpr float DAY_LENGTH_MINUTES = 1440.0f;
 constexpr float MINUTES_PER_SECOND = 1.0f;
 
 struct GameState {
-    int keysCollected = 0;
-    int unitsEntered = 0;
-    bool won = false;
     float dayMinutes = 360.0f;   // time of day, 0..1440. Starts at 06:00.
 };
 

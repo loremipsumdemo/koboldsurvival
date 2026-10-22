@@ -42,7 +42,6 @@ constexpr Uint64 DELETE_HOLD_MS = 3000;      // holding Delete this long deletes
 constexpr size_t NAME_LIMIT = 32;            // longest save name, in bytes
 constexpr Uint64 UNSAVED_WARN_MS = 30000;    // loading over a game not saved this recently asks first
 constexpr const char* SETTINGS_PATH = "settings.cfg";
-constexpr const char* CUSTOM_MAP_DIR = "custom_maps";        // maps made in the editor are saved here
 
 // Save list columns, as fractions of the list width. The name column starts at the left.
 constexpr float COL_TYPE = 0.54f;
@@ -153,7 +152,7 @@ void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
     }
 }
 
-// Right click: order the selected units to a tile, or into the door if the building was clicked
+// Right click: order the selected units to a ground point.
 // Returns true, with the ground point in gx and gz, if an order was given.
 bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my, int W, int H,
                      float& gx, float& gz) {
@@ -164,14 +163,8 @@ bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
     gx = hit->first;
     gz = hit->second;
 
-    GridPos tile{ (int)std::floor(hit->first), (int)std::floor(hit->second) };
-    Door* door = findDoor(w);
-    bool onDoor = door
-               && tile.x >= door->origin.x && tile.x < door->origin.x + 3
-               && tile.y >= door->origin.y && tile.y < door->origin.y + 3;
-
     // Units go to the exact ground point clicked, not to the centre of its tile
-    issueMoveOrder(w, t, units, Vec2{ hit->first, hit->second }, onDoor);
+    issueMoveOrder(w, t, units, Vec2{ hit->first, hit->second });
     return true;
 }
 
@@ -184,18 +177,26 @@ void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const 
     SDL_GL_SwapWindow(window);
 }
 
-// A map the player can pick: a premade one from data.pak, or one saved in custom_maps
+// Maps and worlds made in the map editor are kept in this folder, beside the game
+std::string customMapDir() {
+    const char* base = SDL_GetBasePath();
+    return std::string(base ? base : "") + "custom_maps";
+}
+
+// A map the player can pick: a premade one from data.pak, a .map file in custom_maps, or a world
+// folder in custom_maps
 struct MapChoice {
-    std::string source;   // "data" for a premade map, "custom" for one in custom_maps
-    std::string stem;     // file name without the .map extension
+    std::string source;   // "data", "custom" for a .map file, or "world" for a world folder
+    std::string stem;     // file or folder name without the .map extension
 
     std::string label() const {
         std::string s = stem;
         std::replace(s.begin(), s.end(), '_', ' ');
-        return source == "custom" ? s + " (custom)" : s;
+        return source == "data" ? s : s + " (custom)";
     }
     std::string pakName() const { return "data/map/" + stem + ".map"; }
-    std::string diskPath() const { return std::string(CUSTOM_MAP_DIR) + "/" + stem + ".map"; }
+    // Where a custom map or world folder is on disk
+    std::string diskPath() const { return customMapDir() + "/" + stem + (source == "custom" ? ".map" : ""); }
 };
 
 // Every map the player can choose: premade maps first, then custom ones, each sorted by name
@@ -208,10 +209,14 @@ std::vector<MapChoice> listMaps() {
 
     std::vector<MapChoice> custom;
     std::error_code ec;
-    if (std::filesystem::is_directory(CUSTOM_MAP_DIR, ec)) {
-        for (const auto& entry : std::filesystem::directory_iterator(CUSTOM_MAP_DIR, ec)) {
-            if (entry.path().extension() != ".map") continue;
-            custom.push_back({ "custom", entry.path().stem().string() });
+    const std::string dir = customMapDir();
+    if (std::filesystem::is_directory(dir, ec)) {
+        for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+            if (entry.is_directory(ec) && std::filesystem::exists(entry.path() / "world.txt", ec)) {
+                custom.push_back({ "world", entry.path().filename().string() });
+            } else if (entry.path().extension() == ".map") {
+                custom.push_back({ "custom", entry.path().stem().string() });
+            }
         }
     }
     std::sort(custom.begin(), custom.end(),
@@ -220,23 +225,33 @@ std::vector<MapChoice> listMaps() {
     return out;
 }
 
-// Reads a map's heights, from data.pak for a premade map or from disk for a custom one
-bool loadMapChoice(const MapChoice& c, MapData& out) {
+// Puts a map's ground into the terrain: a premade or custom map whole, or a world folder to be streamed
+bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
+    if (c.source == "world") return terrain.openWorld(c.diskPath(), err);
+
+    MapData data;
+    bool ok = false;
     if (c.source == "data") {
         const unsigned char* bytes = nullptr;
         size_t size = 0;
-        return pakFind(c.pakName(), bytes, size) && parseMap(bytes, size, out);
+        ok = pakFind(c.pakName(), bytes, size) && parseMap(bytes, size, data);
+    } else {
+        ok = readMapFile(c.diskPath(), data);
     }
-    return readMapFile(c.diskPath(), out);
+    if (!ok) {
+        err = "could not read " + c.label();
+        return false;
+    }
+    terrain.load(data);
+    return true;
 }
 
-// Turns typed text into a file name: letters, digits, '-' and '_' are kept, spaces become '_',
-// Builds a fresh level on the given map: new terrain, new entities. Used by New Game and on restart.
+// Builds a fresh level on a map: the ground, then the entities from the seed.
 // progress, if given, is called as the level loads (0..1), for the loading screen.
-void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed,
-                const MapData& map, const std::function<void(float)>& progress = {}) {
+bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& renderer, Rng& rng,
+                  unsigned seed, std::string& err, const std::function<void(float)>& progress = {}) {
     auto report = [&](float p) { if (progress) progress(p); };
-    terrain.load(map);
+    if (!loadTerrain(c, terrain, err)) return false;
     report(0.35f);
     renderer.uploadTerrain(terrain);
     report(0.7f);
@@ -244,21 +259,35 @@ void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, un
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
     report(0.9f);
+    return true;
 }
 
-// Rebuilds a level from a save. The terrain comes from the map, and the building from the seed. The units and keys
-// are then swapped for the saved ones, and the door is opened if it was open when saved.
-void restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
-                  const MapData& map) {
-    terrain.load(map);
-    renderer.uploadTerrain(terrain);
-    world = World{};
-    rng.gen.seed(d.seed);
-    setupWorld(world, terrain, rng);
+// Open worlds keep the ground loaded around the camera and every unit the player commands
+constexpr int STREAM_RADIUS = 4;            // chunks kept loaded around each focus point
+constexpr int STREAM_LOADS_PER_FRAME = 4;   // chunks read in per frame while playing, so play never stalls
 
-    // Drop the units and keys that setupWorld generated
+std::vector<Vec2> streamFocuses(World& w, const Camera& cam) {
+    std::vector<Vec2> out{ Vec2{ cam.focusX, cam.focusZ } };
+    for (Entity u : w.view<Unit, Transform, Commandable>()) {
+        const Transform* t = w.get<Transform>(u);
+        out.push_back(Vec2{ t->x, t->z });
+    }
+    return out;
+}
+
+// Reads in the ground around the camera and the units straight away, so a level starts with its ground in place
+void primeStreaming(World& w, Terrain& t, const Camera& cam) {
+    if (t.streamed()) t.stream(streamFocuses(w, cam), STREAM_RADIUS, 0);
+}
+
+// Rebuilds a level from a save. The ground comes from the map, and the wagon from the seed.
+// The units are then swapped for the saved ones.
+bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
+                  const MapChoice& map, std::string& err) {
+    if (!prepareLevel(map, world, terrain, renderer, rng, d.seed, err)) return false;
+
+    // Drop the units that setupWorld generated
     for (Entity e : world.view<Unit>()) world.destroy(e);
-    for (Entity e : world.view<Key>()) world.destroy(e);
 
     for (const SaveUnit& u : d.units) {
         Entity e = world.create();
@@ -273,16 +302,7 @@ void restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
     }
-    for (const SaveKey& k : d.keys) {
-        Entity e = world.create();
-        world.add(e, Transform{ k.x, k.y, k.z });
-        world.add(e, Key{});
-    }
-
-    if (Door* door = findDoor(world)) {
-        door->unlocked = d.doorUnlocked;
-        if (d.doorUnlocked) terrain.setWalkable(door->entrance.x, door->entrance.y, true);
-    }
+    return true;
 }
 
 // Captures what a save needs from the running world, including the camera
@@ -304,9 +324,6 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.cam.pitch = cam.pitch;
     d.cam.distance = cam.distance;
 
-    Door* door = findDoor(w);
-    d.doorUnlocked = door && door->unlocked;
-
     for (Entity u : w.view<Unit, Transform>()) {
         Transform* t = w.get<Transform>(u);
         Name* n = w.get<Name>(u);
@@ -319,10 +336,6 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.sprite = us ? us->id : 1;
         su.name = n ? n->text : "Unnamed Unit";
         d.units.push_back(su);
-    }
-    for (Entity k : w.view<Key, Transform>()) {
-        Transform* t = w.get<Transform>(k);
-        d.keys.push_back(SaveKey{ t->x, t->y, t->z });
     }
     return d;
 }
@@ -864,17 +877,17 @@ int main(int, char**) {
 
     // Loads a map and starts a new game on it, showing the level-start image
     auto startMapLevel = [&](const MapChoice& choice) {
-        MapData data;
-        if (!loadMapChoice(choice, data)) {
-            showNotice("Could not load " + choice.label());
+        std::string err;
+        levelSeed = (unsigned)std::time(nullptr);
+        if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, err,
+                          [&](float p) { loadingFrame(window, renderer, p); })) {
+            showNotice("Could not load " + choice.label() + ": " + err);
             return;
         }
         closePanel();
         currentMap = choice;
-        levelSeed = (unsigned)std::time(nullptr);
-        startLevel(world, terrain, renderer, rng, levelSeed, data,
-                   [&](float p) { loadingFrame(window, renderer, p); });
         focusCameraOnFirstUnit(world, cam);
+        primeStreaming(world, terrain, cam);
         gs = GameState{};
         sel = Selection{};
         leftDown = middleDown = false;
@@ -910,18 +923,18 @@ int main(int, char**) {
             return;
         }
         const MapChoice choice{ d.mapSource, d.mapStem };
-        MapData data;
-        if (!loadMapChoice(choice, data)) {
-            showNotice("Map \"" + choice.label() + "\" is missing");
+        std::string err;
+        if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
+            showNotice("Map \"" + choice.label() + "\" could not be loaded: " + err);
             refreshSaves();
             return;
         }
-        restoreLevel(world, terrain, renderer, rng, d, data);
         currentMap = choice;
         levelSeed = d.seed;
         gs = d.gs;
         focusCameraOnFirstUnit(world, cam);
         applySaveCamera(d.cam, cam);
+        primeStreaming(world, terrain, cam);
         sel = Selection{};
         leftDown = middleDown = false;
         overlayOn = false;
@@ -985,7 +998,7 @@ int main(int, char**) {
 
     // Opens the world tool on a fresh world. The tool is set up the first time the editor opens.
     auto openEditor = [&]() {
-        // Start clean: no units, keys or building left over from a game
+        // Start clean: no units left over from a game
         world = World{};
         gs = GameState{};
         sel = Selection{};
@@ -999,7 +1012,7 @@ int main(int, char**) {
             const char* base = SDL_GetBasePath();
             const std::string dataDir = std::string(base ? base : "") + "editor_data";
             std::string err;
-            if (!wmTool.Init(window, font, dataDir, CUSTOM_MAP_DIR, err)) {
+            if (!wmTool.Init(window, font, dataDir, customMapDir(), err)) {
                 showNotice("The world tool could not start: " + err);
                 return;
             }
@@ -1457,32 +1470,11 @@ int main(int, char**) {
             cam.updateClearance(terrain);
 
             squadSystem(world, dt);
-            steeringSystem(world, terrain, gs, dt);
-            pickupSystem(world, terrain, gs);
+            steeringSystem(world, terrain, dt);
             cleanupSquads(world);
-            updateWinState(world, gs);
+            // Open worlds: read in the ground near the camera and the units, a few chunks each frame
+            if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
             if (sky.clockRunning) gs.dayMinutes = std::fmod(gs.dayMinutes + dt * MINUTES_PER_SECOND, DAY_LENGTH_MINUTES);
-
-            // Every unit has passed through the door, so start a new level
-            if (gs.won) {
-                // The next level is a random map from the list
-                refreshMaps();
-                MapChoice next = currentMap;
-                if (!maps.empty()) next = maps[rng.range(0, (int)maps.size() - 1)];
-                MapData data;
-                if (!loadMapChoice(next, data) && !loadMapChoice(currentMap, data)) data = flatMap(DEFAULT_MAP_SIZE);
-                currentMap = next;
-                levelSeed = (unsigned)rng.gen();
-                startLevel(world, terrain, renderer, rng, levelSeed, data,
-                           [&](float p) { loadingFrame(window, renderer, p); });
-                focusCameraOnFirstUnit(world, cam);
-                gs = GameState{};
-                sel = Selection{};
-                leftDown = false;
-                overlayMs = 0.0f;
-                overlayOn = true;
-                autoTimer = 0.0f;
-            }
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -1505,9 +1497,7 @@ int main(int, char**) {
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
-        std::string title = "RTS   Keys " + std::to_string(gs.keysCollected) + "/" + std::to_string(KEY_COUNT)
-                          + "   Entered " + std::to_string(gs.unitsEntered) + "/" + std::to_string(UNIT_COUNT)
-                          + "   Time " + militaryTime(gs.dayMinutes);
+        std::string title = "RTS   Time " + militaryTime(gs.dayMinutes);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;
@@ -1591,7 +1581,7 @@ int main(int, char**) {
             renderer.drawUiTextCentered("New Game: choose a map", winW * 0.5f, winH * 0.14f,
                                         RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
             if (maps.empty()) {
-                renderer.drawUiTextCentered("No maps found. Add .map files to data/map or custom_maps.",
+                renderer.drawUiTextCentered("No maps found. Save a game world from the map editor, or add .map files to custom_maps.",
                                             winW * 0.5f, winH * 0.3f, RGBA{ 0.6f, 0.6f, 0.65f, 1.0f });
             }
             drawButtons(layoutMapSelect(winW, winH, maps, mapOffset));

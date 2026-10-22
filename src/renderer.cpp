@@ -11,7 +11,7 @@
 
 namespace {
 
-constexpr float GLYPH_H = 1.2f;          // world height of unit, key, and door sprites
+constexpr float GLYPH_H = 1.2f;          // world height of unit sprites
 constexpr float WAGON_SIZE = 1.5f;       // largest side of the wagon model
 constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible across the screen
 constexpr float TWO_PI = 6.28318530f;
@@ -286,8 +286,6 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         unitSprites_.push_back(loadImage(path, false));
         report(0.05f + 0.75f * (float)i / 38.0f);
     }
-    keySprite_   = loadImage("data/environment/key.png", false);
-    doorSprite_  = loadImage("data/environment/door.png", false);
     report(0.82f);
     report(0.86f);
 
@@ -312,10 +310,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    wall_        = makeGlyphTexture(font, "#", SDL_Color{ 170, 160, 140, 255 });
     unitFallback_ = makeGlyphTexture(font, "@", SDL_Color{ 80, 160, 255, 255 });
-    keyFallback_  = makeGlyphTexture(font, "K", SDL_Color{ 255, 215, 0, 255 });
-    doorFallback_ = makeGlyphTexture(font, "D", SDL_Color{ 230, 80, 60, 255 });
     report(0.9f);
 
     if (!loadGLBModel("data/3d/wagon.glb", wagon_)) {
@@ -330,8 +325,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &wall_, &keySprite_, &doorSprite_, &overlay_,
-                            &unitFallback_, &keyFallback_, &doorFallback_ };
+    TextTex* textures[] = { &overlay_, &unitFallback_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
@@ -409,12 +403,15 @@ bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
 
 } // namespace
 
+void Renderer::releaseChunk(TerrainChunk& c) {
+    if (c.ebo) glDeleteBuffers(1, &c.ebo);
+    if (c.vbo) glDeleteBuffers(1, &c.vbo);
+    if (c.vao) glDeleteVertexArrays(1, &c.vao);
+    c = TerrainChunk{};
+}
+
 void Renderer::releaseTerrain() {
-    for (TerrainChunk& c : chunks_) {
-        if (c.ebo) glDeleteBuffers(1, &c.ebo);
-        if (c.vbo) glDeleteBuffers(1, &c.vbo);
-        if (c.vao) glDeleteVertexArrays(1, &c.vao);
-    }
+    for (TerrainChunk& c : chunks_) releaseChunk(c);
     chunks_.clear();
     terrainSize_ = 0;
     chunksPerSide_ = 0;
@@ -423,64 +420,80 @@ void Renderer::releaseTerrain() {
 void Renderer::uploadTerrain(const Terrain& t) {
     releaseTerrain();
     terrainSize_ = t.size();
-    chunksPerSide_ = chunksPerSide(t.size());
+    chunksPerSide_ = t.chunksPerSide();
+    // Slots start empty. Each chunk gets its buffers the first time it is built.
     chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);
-    for (int cz = 0; cz < chunksPerSide_; ++cz) {
-        for (int cx = 0; cx < chunksPerSide_; ++cx) {
-            TerrainChunk& c = chunks_[(size_t)cz * chunksPerSide_ + cx];
-            c.bounds = chunkBounds(t, cx, cz);
-            glGenVertexArrays(1, &c.vao);
-            glGenBuffers(1, &c.vbo);
-            glGenBuffers(1, &c.ebo);
-            glBindVertexArray(c.vao);
-            glBindBuffer(GL_ARRAY_BUFFER, c.vbo);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)0);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)(3 * sizeof(float)));
-            glEnableVertexAttribArray(1);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c.ebo);
-            glBindVertexArray(0);
-        }
-    }
 }
 
 // Builds a chunk's mesh at a detail step and uploads it into the chunk's own buffers
-void Renderer::buildChunk(const Terrain& t, int index, int step) {
-    TerrainChunk& c = chunks_[(size_t)index];
-    buildChunkMesh(t, index % chunksPerSide_, index / chunksPerSide_, step, chunkScratch_);
-    glBindVertexArray(c.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, c.vbo);
+void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step) {
+    TerrainChunk& slot = chunks_[(size_t)id];
+    if (!slot.vao) {
+        glGenVertexArrays(1, &slot.vao);
+        glGenBuffers(1, &slot.vbo);
+        glGenBuffers(1, &slot.ebo);
+        glBindVertexArray(slot.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, slot.vbo);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, slot.ebo);
+        glBindVertexArray(0);
+    }
+    buildChunkMesh(t, c, step, chunkScratch_);
+    glBindVertexArray(slot.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, slot.vbo);
     glBufferData(GL_ARRAY_BUFFER, chunkScratch_.verts.size() * sizeof(TerrainVertex),
                  chunkScratch_.verts.data(), GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c.ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, slot.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunkScratch_.idx.size() * sizeof(uint32_t),
                  chunkScratch_.idx.data(), GL_DYNAMIC_DRAW);
-    c.indexCount = (GLsizei)chunkScratch_.idx.size();
-    c.step = step;
+    slot.indexCount = (GLsizei)chunkScratch_.idx.size();
+    slot.step = step;
     glBindVertexArray(0);
 }
 
-// Draws the visible chunks, each at the detail its distance from the eye needs, then the sea
+// Draws the loaded chunks in view, each at the detail its distance from the eye needs, then the sea.
+// Only a few chunk meshes are built per frame, so a newly loaded area fills in over a few frames.
 void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
+    constexpr int MAX_BUILDS_PER_FRAME = 8;
     const FrustumPlanes planes = framePlanes(viewProj_);
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
 
     glUseProgram(colorProgram_);
     glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    for (int i = 0; i < (int)chunks_.size(); ++i) {
-        TerrainChunk& c = chunks_[(size_t)i];
-        if (!chunkVisible(planes, c.bounds)) continue;
-        const float mx = 0.5f * (c.bounds.x0 + c.bounds.x1);
-        const float my = 0.5f * (c.bounds.minY + c.bounds.maxY);
-        const float mz = 0.5f * (c.bounds.z0 + c.bounds.z1);
+    int builds = 0;
+    for (int id = 0; id < (int)chunks_.size(); ++id) {
+        TerrainChunk& slot = chunks_[(size_t)id];
+        const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
+        if (!c) {
+            // Not loaded: free its buffers. They are made again if the chunk comes back.
+            if (slot.vao) releaseChunk(slot);
+            continue;
+        }
+        if (slot.version != c->version) {
+            slot.version = c->version;
+            slot.bounds = chunkBounds(t, *c);
+            slot.step = 0;
+        }
+        if (!chunkVisible(planes, slot.bounds)) continue;
+
+        const float mx = 0.5f * (slot.bounds.x0 + slot.bounds.x1);
+        const float my = 0.5f * (slot.bounds.minY + slot.bounds.maxY);
+        const float mz = 0.5f * (slot.bounds.z0 + slot.bounds.z1);
         const float dx = mx - ex, dy = my - ey, dz = mz - ez;
         const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
         const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
-        if (c.step != step) buildChunk(t, i, step);
-        glBindVertexArray(c.vao);
-        glDrawElements(GL_TRIANGLES, c.indexCount, GL_UNSIGNED_INT, nullptr);
+        if (slot.step != step && builds < MAX_BUILDS_PER_FRAME) {
+            buildChunk(t, *c, id, step);
+            ++builds;
+        }
+        if (slot.step == 0) continue;   // not built yet, drawn once it is
+        glBindVertexArray(slot.vao);
+        glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
 
@@ -1053,36 +1066,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
-    for (Entity e : w.view<Key, Transform>()) {
-        const Transform* tr = w.get<Transform>(e);
-        const TextTex& g = keySprite_.tex ? keySprite_ : keyFallback_;
-        drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, WHITE);
-    }
-
     for (Entity e : w.view<Wagon, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         drawModel(wagon_, tr->x, tr->y, tr->z, WAGON_SIZE);
-    }
-
-    // Building: a 3x3 block of walls, two rows high. The entrance shows the door.
-    for (Entity e : w.view<Door>()) {
-        const Door* d = w.get<Door>(e);
-        for (int dy = 0; dy < 3; ++dy) {
-            for (int dx = 0; dx < 3; ++dx) {
-                GridPos tile{ d->origin.x + dx, d->origin.y + dy };
-                float cx = tile.x + 0.5f, cz = tile.y + 0.5f;
-                float gy = t.heightAt(cx, cz);
-
-                if (tile == d->entrance) {
-                    RGBA tint = d->unlocked ? WHITE : RGBA{ 0.45f, 0.45f, 0.45f, 1.0f };
-                    const TextTex& g = doorSprite_.tex ? doorSprite_ : doorFallback_;
-                    drawGlyph(g, cx, gy, cz, GLYPH_H, tint);
-                } else {
-                    drawGlyph(wall_, cx, gy, cz, GLYPH_H, WHITE);
-                }
-                drawGlyph(wall_, cx, gy + GLYPH_H, cz, GLYPH_H, WHITE);
-            }
-        }
     }
 
     for (Entity e : w.view<Unit, Transform>()) {

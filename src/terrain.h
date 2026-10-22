@@ -1,54 +1,72 @@
 #pragma once
 #include <cstdint>
+#include <memory>
+#include <string>
 #include <vector>
+#include "chunk.h"
+#include "geometry.h"
 #include "grid.h"
 #include "map.h"
-#include "navmesh.h"
+#include "world_format.h"
 
-// Terrain is a resource, not entities: a million tiles as ECS entities would
-// be far too heavy. It holds the ground heights of the loaded map, the tile
-// walkability and ground types that the map is drawn with, and the navmesh that all
-// movement uses. Its size is the size of the loaded map.
+// A unit keeps this far from any blocked tile, so its centre never sits against a wall
+constexpr float AGENT_CLEARANCE = 0.3f;
+
+// Terrain holds the ground of the level being played: heights, walkability and ground types,
+// in chunks of CHUNK_TILES tiles. A level is one of two kinds:
+//   - a whole map in memory (a premade map, or an older saved map), with every chunk loaded, or
+//   - an open world folder, where chunks are read in as they are needed around the camera and
+//     the units, and dropped again when they are far away (stream()).
+// Outside the loaded chunks the ground counts as sea level and as blocked for movement.
 class Terrain {
 public:
     explicit Terrain(int size = DEFAULT_MAP_SIZE);
 
-    // Replaces the whole map: heights, walkability and ground types
+    // Replaces the level with a whole map in memory. Every chunk is loaded.
     void load(const MapData& m);
-    // The map as it stands, for saving
-    MapData toMapData() const;
+    // Opens a world folder. Nothing is read until stream() is called.
+    bool openWorld(const std::string& folder, std::string& err);
 
-    // Tiles per side, and corners per side
+    // Tiles per side of the whole level, and chunks per side
     int size() const { return size_; }
-    int vertSize() const { return size_ + 1; }
+    int chunksPerSide() const { return cps_; }
+    // The chunk at (cx, cz), or nullptr if it is not loaded
+    const ChunkData* chunkAt(int cx, int cz) const;
 
-    // Corner heights, (size+1)^2, in world units
-    const std::vector<float>& heights() const { return heights_; }
+    // Loads the chunks within `radius` chunks of each focus point (world units), nearest first,
+    // at most maxLoads of them (0 for no limit). Chunks more than radius + 1 chunks from every
+    // focus are unloaded. Returns the number of chunks loaded plus unloaded. Does nothing for
+    // a whole map in memory.
+    int stream(const std::vector<Vec2>& focuses, int radius, int maxLoads);
+    bool streamed() const { return streamed_; }
+    int loadedChunks() const;
 
-    // Bilinear height sample at a world position
+    // Corner heights in world units, bilinear within a tile. Sea level is 0.
     float heightAt(float x, float z) const;
 
     bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < size_ && y < size_; }
-    bool walkable(int x, int y) const { return inBounds(x, y) && walkable_[(size_t)y * size_ + x]; }
-    // Blocking a tile rebuilds the navmesh. Doors use this.
-    void setWalkable(int x, int y, bool w);
-
+    // A tile is walkable when its chunk is loaded and the tile is not blocked
+    bool walkable(int x, int y) const;
     // Ground type of a tile, or BIOME_NONE
-    uint8_t biome(int x, int y) const { return inBounds(x, y) ? biome_[(size_t)y * size_ + x] : BIOME_NONE; }
+    uint8_t biome(int x, int y) const;
 
-    // Navmesh queries, in world units
-    bool isFree(float x, float z) const { return navmesh_.isFree(x, z); }
-    Vec2 snap(Vec2 p) const { return navmesh_.snap(p); }
+    // Clearance queries, in world units
+    bool isFree(float x, float z) const;
+    Vec2 snap(Vec2 p) const;
 
-    // Smooth path from start to goal, not including start. Empty if unreachable or already there.
-    std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const { return navmesh_.findPath(start, goal); }
+    // Smooth path from start to goal, not including start. If the goal can't be reached, the path
+    // goes to the nearest reachable point. Empty if the unit is already there or can't move.
+    std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const;
 
 private:
-    void rebuildNavmesh();
+    // The chunk holding tile (x, y), or nullptr
+    const ChunkData* tileChunk(int x, int y) const;
 
-    int size_ = DEFAULT_MAP_SIZE;
-    std::vector<float> heights_;
-    std::vector<uint8_t> walkable_;
-    std::vector<uint8_t> biome_;
-    Navmesh navmesh_;
+    int size_ = 0;
+    int cps_ = 0;
+    std::vector<std::unique_ptr<ChunkData>> chunks_;   // chunk id = cz * cps_ + cx
+    bool streamed_ = false;
+    std::string folder_;
+    WorldInfo info_;
+    uint32_t nextVersion_ = 1;
 };

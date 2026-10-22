@@ -12,8 +12,8 @@
 #include <vector>
 #include "resources.h"
 
-// Save files are plain text. The terrain comes from the map the save was made on, and the
-// building from the seed. A save stores what changes: game progress, units, and keys still on the map.
+// Save files are plain text. The terrain comes from the map the save was made on, and the wagon
+// and red units from the seed. A save stores what changes: the clock, the units and the camera.
 
 inline constexpr const char* SAVE_DIR = "saves";
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
@@ -23,10 +23,6 @@ struct SaveUnit {
     bool hostile = false;
     int sprite = 1;
     std::string name;
-};
-
-struct SaveKey {
-    float x = 0.0f, y = 0.0f, z = 0.0f;
 };
 
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
@@ -40,14 +36,12 @@ struct SaveData {
     std::string name;
     bool autosave = false;            // true for autosave0..2, false for manual saves
     long long timestamp = 0;          // milliseconds since 1970, used for ordering
-    unsigned seed = 0;                // places the building, units and keys
+    unsigned seed = 0;                // places the red units and the wagon
     std::string mapSource;            // "data" for a premade map, "custom" for one in custom_maps
     std::string mapStem;              // the map's file name without .map
     GameState gs;
-    bool doorUnlocked = false;
     SaveCamera cam;
     std::vector<SaveUnit> units;
-    std::vector<SaveKey> keys;
 };
 
 struct SaveSummary {
@@ -85,20 +79,13 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     out << "timestamp=" << d.timestamp << "\n";
     out << "seed=" << d.seed << "\n";
     out << "map " << d.mapSource << " " << d.mapStem << "\n";
-    out << "keysCollected=" << d.gs.keysCollected << "\n";
-    out << "unitsEntered=" << d.gs.unitsEntered << "\n";
-    out << "won=" << (d.gs.won ? 1 : 0) << "\n";
     out << "dayMinutes=" << d.gs.dayMinutes << "\n";
-    out << "doorUnlocked=" << (d.doorUnlocked ? 1 : 0) << "\n";
     out << "autosave=" << (d.autosave ? 1 : 0) << "\n";
     out << "camera " << d.cam.fx << " " << d.cam.fy << " " << d.cam.fz << " "
         << d.cam.yaw << " " << d.cam.pitch << " " << d.cam.distance << "\n";
     for (const SaveUnit& u : d.units) {
         out << "unit " << u.x << " " << u.y << " " << u.z << " "
             << (u.hostile ? 1 : 0) << " " << u.sprite << " " << u.name << "\n";
-    }
-    for (const SaveKey& k : d.keys) {
-        out << "key " << k.x << " " << k.y << " " << k.z << "\n";
     }
     return (bool)out;
 }
@@ -120,11 +107,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> d.mapSource;
                 std::getline(ss >> std::ws, d.mapStem);
             }
-            else if (line.rfind("keysCollected=", 0) == 0)    d.gs.keysCollected = std::stoi(line.substr(14));
-            else if (line.rfind("unitsEntered=", 0) == 0)    d.gs.unitsEntered = std::stoi(line.substr(13));
-            else if (line.rfind("won=", 0) == 0)              d.gs.won = (line.substr(4) == "1");
             else if (line.rfind("dayMinutes=", 0) == 0)       d.gs.dayMinutes = std::stof(line.substr(11));
-            else if (line.rfind("doorUnlocked=", 0) == 0)    d.doorUnlocked = (line.substr(13) == "1");
             else if (line.rfind("autosave=", 0) == 0)        d.autosave = (line.substr(9) == "1");
             else if (line.rfind("camera ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
@@ -140,12 +123,6 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 u.hostile = hostile != 0;
                 if (u.name.empty()) u.name = "Unnamed Unit";
                 d.units.push_back(u);
-            }
-            else if (line.rfind("key ", 0) == 0) {
-                std::istringstream ss(line.substr(4));
-                SaveKey k;
-                ss >> k.x >> k.y >> k.z;
-                d.keys.push_back(k);
             }
         }
     } catch (...) {

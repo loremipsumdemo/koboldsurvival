@@ -11,6 +11,7 @@
 
 #include "grid.h"
 #include "map.h"
+#include "world_format.h"
 
 #include "app/console.hpp"
 #include "app/mapview.hpp"
@@ -59,53 +60,81 @@ uint8_t GameBiome(wm::Biome b) {
     return BIOME_NONE;
 }
 
-// Writes the loaded world as a game map. Corners are the average of the four tiles around
-// them, measured from the sea, so the sea is at height zero as the game expects. Land under
-// the sea and bare rock are blocked.
-bool ExportGameMap(const World& w, const std::string& name, const std::string& mapDir, std::string& err) {
+// The game's heights are a tenth of the tool's world units. A tile is one unit wide, so this keeps
+// the slopes the game walks on gentle.
+constexpr float kGameHeightScale = 0.1f;
+// A tile is blocked when its corners differ in height by more than this, in game units
+constexpr float kMaxTileStep = 0.5f;
+
+// Height of a corner in game units: the average of the four tiles around it, measured from the sea
+float GameCornerHeight(const World& w, int gx, int gz) {
+    const int n = w.size;
+    auto tile = [&](int x, int z) {
+        x = std::clamp(x, 0, n - 1);
+        z = std::clamp(z, 0, n - 1);
+        return w.height[static_cast<size_t>(z) * n + x];
+    };
+    const float avg = 0.25f * (tile(gx - 1, gz - 1) + tile(gx, gz - 1) + tile(gx - 1, gz) + tile(gx, gz));
+    return std::clamp((avg - w.seaLevel) * kGameHeightScale, -MAX_HEIGHT, MAX_HEIGHT);
+}
+
+// Writes the loaded world as a game world: a folder holding world.txt and region files, built
+// straight from the tool's heights. Land under the sea and bare rock are blocked, and so is any tile
+// whose corners differ in height by more than kMaxTileStep. outPath gets the folder's full path.
+bool ExportGameWorld(const World& w, const std::string& name, const std::string& mapDir,
+                     std::string& outPath, std::string& err) {
+    namespace fs = std::filesystem;
     const int n = w.size;
     if (n < 1 || w.height.size() != static_cast<size_t>(n) * static_cast<size_t>(n) ||
         w.biome.size() != w.height.size()) {
         err = "no world to export";
         return false;
     }
-    // The game can only play maps this size or smaller for now
-    constexpr int kMaxGameMapTiles = 2048;
-    if (n > kMaxGameMapTiles) {
-        err = "the game can only play maps up to " + std::to_string(kMaxGameMapTiles) + " tiles for now";
-        return false;
-    }
-    MapData m;
-    m.size = n;
-    const int vs = n + 1;
-    m.heights.assign(static_cast<size_t>(vs) * vs, 0.0f);
-    auto tile = [&](int x, int z) {
-        x = std::clamp(x, 0, n - 1);
-        z = std::clamp(z, 0, n - 1);
-        return w.height[static_cast<size_t>(z) * n + x];
-    };
-    for (int z = 0; z < vs; ++z) {
-        for (int x = 0; x < vs; ++x) {
-            const float avg = 0.25f * (tile(x - 1, z - 1) + tile(x, z - 1) + tile(x - 1, z) + tile(x, z));
-            m.heights[static_cast<size_t>(z) * vs + x] = std::clamp(avg - w.seaLevel, -MAX_HEIGHT, MAX_HEIGHT);
+    const std::string folder = mapDir + "/" + name;
+
+    // Drop region files left by an earlier export of this name, so a smaller world leaves none behind
+    std::error_code ec;
+    if (fs::is_directory(folder, ec)) {
+        for (const auto& entry : fs::directory_iterator(folder, ec)) {
+            if (entry.path().extension() == ".kreg") fs::remove(entry.path(), ec);
         }
     }
-    const size_t tiles = static_cast<size_t>(n) * n;
-    m.walkable.assign(tiles, 1);
-    m.biome.assign(tiles, BIOME_NONE);
-    for (size_t i = 0; i < tiles; ++i) {
-        const wm::Biome b = static_cast<wm::Biome>(w.biome[i]);
-        m.biome[i] = GameBiome(b);
-        const bool land = w.height[i] >= w.seaLevel;
-        m.walkable[i] = (land && b != wm::Biome::Rock && b != wm::Biome::CliffRock) ? 1 : 0;
-    }
-    std::error_code ec;
-    std::filesystem::create_directories(mapDir, ec);
-    const std::string path = mapDir + "/" + name + ".map";
-    if (!writeMapFile(path, m)) {
-        err = "could not write " + path;
-        return false;
-    }
+
+    WorldInfo info;
+    info.name = name;
+    info.size = n;
+    info.heightScale = kGameHeightScale;
+    const bool ok = writeWorld(folder, info, [&](int cx, int cz, ChunkData& c) {
+        for (int j = 0; j < CHUNK_CORNERS; ++j) {
+            for (int i = 0; i < CHUNK_CORNERS; ++i) {
+                const int gx = std::min(cx * CHUNK_TILES + i, n);
+                const int gz = std::min(cz * CHUNK_TILES + j, n);
+                c.heights[static_cast<size_t>(j) * CHUNK_CORNERS + i] = GameCornerHeight(w, gx, gz);
+            }
+        }
+        for (int j = 0; j < CHUNK_TILES; ++j) {
+            for (int i = 0; i < CHUNK_TILES; ++i) {
+                const int tx = cx * CHUNK_TILES + i, tz = cz * CHUNK_TILES + j;
+                if (tx >= n || tz >= n) continue;   // past the edge: no ground
+                const size_t k = static_cast<size_t>(tz) * n + tx;
+                const size_t t = static_cast<size_t>(j) * CHUNK_TILES + i;
+                const wm::Biome b = static_cast<wm::Biome>(w.biome[k]);
+                c.biome[t] = GameBiome(b);
+
+                const size_t c00 = static_cast<size_t>(j) * CHUNK_CORNERS + i;
+                const float corners[4] = { c.heights[c00], c.heights[c00 + 1],
+                                           c.heights[c00 + CHUNK_CORNERS], c.heights[c00 + CHUNK_CORNERS + 1] };
+                const float lo = std::min(std::min(corners[0], corners[1]), std::min(corners[2], corners[3]));
+                const float hi = std::max(std::max(corners[0], corners[1]), std::max(corners[2], corners[3]));
+                const bool land = w.height[k] >= w.seaLevel;
+                const bool flat = hi - lo <= kMaxTileStep;
+                const bool bare = b == wm::Biome::Rock || b == wm::Biome::CliffRock;
+                c.walk[t] = (land && flat && !bare) ? 1 : 0;
+            }
+        }
+    }, err);
+    if (!ok) return false;
+    outPath = folder;
     return true;
 }
 
@@ -241,8 +270,8 @@ bool Tool::Init(SDL_Window* win, const std::vector<unsigned char>& font, const s
 
     s.session.worldsDir = dataDir + "/worlds";
     s.session.themesDir = dataDir + "/themes";
-    s.session.exportMap = [mapDir](const World& w, const std::string& name, std::string& e) {
-        return ExportGameMap(w, name, mapDir, e);
+    s.session.exportMap = [mapDir](const World& w, const std::string& name, std::string& path, std::string& e) {
+        return ExportGameWorld(w, name, mapDir, path, e);
     };
     s.con.print("F1 opens the console. Esc opens the menu, where you can generate, export and import.");
     s.con.print("Type: gen   to generate a world with a random seed.");

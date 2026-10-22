@@ -1,13 +1,12 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include "chunk.h"
 #include "terrain.h"
 
 // The terrain is drawn in square chunks. Each chunk can be built at several levels of detail:
-// step 1 uses every tile corner, step 2 every second one, step 4 every fourth one. This file
-// has no OpenGL in it, so the meshes can be checked without a window.
-
-constexpr int CHUNK_TILES = 64;        // tiles per chunk side
+// step 1 uses every corner, step 2 every second one, step 4 every fourth one. This file has no
+// OpenGL in it, so the meshes can be checked without a window.
 
 struct TerrainVertex {
     float x, y, z;
@@ -25,9 +24,8 @@ struct ChunkBounds {
     float minY, maxY;
 };
 
-int chunksPerSide(int size);
-ChunkBounds chunkBounds(const Terrain& t, int cx, int cz);
+ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c);
 
-// Builds chunk (cx, cz) at a detail step. Vertical skirts hang from the edges that border
-// another chunk, so a coarse chunk and a fine one next to it leave no cracks. Map edges get none.
-void buildChunkMesh(const Terrain& t, int cx, int cz, int step, ChunkMesh& out);
+// Builds a chunk at a detail step. Vertical skirts hang from the edges that border another
+// chunk, so a coarse chunk and a fine one next to it leave no cracks. Map edges get none.
+void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out);

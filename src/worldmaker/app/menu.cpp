@@ -778,15 +778,15 @@ void DebugTab(Ctx& c, float top) {
 void FilesTab(Ctx& c, float top) {
     float y = top;
 
-    // Worlds: export writes data/worlds/<name>.wmw, import reads it back.
-    Label(c, y + (c.btnH - c.lh) * 0.5f, "World file");
+    // Editor files: the tool's own save, a .wmw file kept with the editor. Import reads them back.
+    Label(c, y + (c.btnH - c.lh) * 0.5f, "Editor file");
     TextField(c, FieldX(c), y, FieldW(c), c.m.exportName);
-    if (Button(c, FieldX(c) + FieldW(c) + 16.0f, y, 150.0f, "Export")) {
+    if (Button(c, FieldX(c) + FieldW(c) + 16.0f, y, 150.0f, "Save")) {
         std::string err;
         if (!c.s.hasWorld) {
             c.m.status = "generate a world first";
         } else if (SaveWorld(c.s, c.m.exportName, err)) {
-            c.m.status = "exported " + c.m.exportName + ".wmw";
+            c.m.status = "saved " + c.m.exportName + ".wmw";
             c.m.worlds = ListWorldNames(c.s.worldsDir);
         } else {
             c.m.status = "export failed: " + err;
@@ -806,21 +806,23 @@ void FilesTab(Ctx& c, float top) {
     DesktopNote(c, y);
     y += c.rowH;
 
-    // The same world as a game map, which the game can play
-    if (Button(c, FieldX(c), y, 230.0f, "Export game map")) {
-        std::string err;
+    // The same world as a game world folder, which New Game lists
+    if (Button(c, FieldX(c), y, 230.0f, "Save game world")) {
+        std::string path, err;
         if (!c.s.hasWorld) {
             c.m.status = "generate a world first";
         } else if (!IsSafeName(c.m.exportName)) {
             c.m.status = "name may use letters, digits, space, - and _";
         } else if (!c.s.exportMap) {
-            c.m.status = "game map export is not available here";
-        } else if (c.s.exportMap(c.s.world, c.m.exportName, err)) {
-            c.m.status = "exported game map " + c.m.exportName + ".map";
+            c.m.status = "game world save is not available here";
+        } else if (c.s.exportMap(c.s.world, c.m.exportName, path, err)) {
+            c.m.status = "saved game world to " + path;
         } else {
-            c.m.status = "game map export failed: " + err;
+            c.m.status = "game world save failed: " + err;
         }
     }
+    y += c.rowH;
+    Label(c, y, "Game worlds are saved in custom_maps, beside the game, and listed under New Game.", kTextDim);
     y += c.rowH;
 
     for (const std::string& name : c.m.worlds) {

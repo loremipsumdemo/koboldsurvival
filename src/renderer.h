@@ -127,10 +127,12 @@ private:
     GLuint dynVao_ = 0, dynVbo_ = 0;          // colour overlays
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
     // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
+    // One slot per chunk of the level, indexed by chunk id. Buffers exist only while the chunk is loaded.
     struct TerrainChunk {
         GLuint vao = 0, vbo = 0, ebo = 0;
         GLsizei indexCount = 0;
         int step = 0;              // detail step the buffers hold, 0 until first built
+        uint32_t version = 0;      // version of the chunk the buffers and bounds were made from
         ChunkBounds bounds{};
     };
     std::vector<TerrainChunk> chunks_;
@@ -138,13 +140,14 @@ private:
     int chunksPerSide_ = 0;
     ChunkMesh chunkScratch_;       // reused while building chunks
     void releaseTerrain();
-    void buildChunk(const Terrain& t, int index, int step);
+    void releaseChunk(TerrainChunk& c);
+    void buildChunk(const Terrain& t, const ChunkData& c, int id, int step);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
-    TextTex wall_, keySprite_, doorSprite_, overlay_, title_;
+    TextTex overlay_, title_;
     std::vector<TextTex> unitSprites_;
     // Text symbols, used only when a sprite file could not be loaded
-    TextTex unitFallback_, keyFallback_, doorFallback_;
+    TextTex unitFallback_;
     Model wagon_;
 
     // Hover label: one cached texture per line, rebuilt only when its text changes

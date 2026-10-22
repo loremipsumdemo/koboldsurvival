@@ -65,7 +65,8 @@ add_executable(koboldgame
     src/systems.cpp
     src/terrain.cpp
     src/terrain_mesh.cpp
-    src/navmesh.cpp
+    src/pathfind.cpp
+    src/world_format.cpp
     src/map.cpp
     src/model.cpp
     src/pak.cpp

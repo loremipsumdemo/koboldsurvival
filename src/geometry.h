@@ -88,3 +88,8 @@ inline bool invert4x4(const float* m, float* out) {
     for (int i = 0; i < 16; i++) out[i] = inv[i] * det;
     return true;
 }
+
+// A point on the ground, in world x and z
+struct Vec2 {
+    float x = 0.0f, z = 0.0f;
+};

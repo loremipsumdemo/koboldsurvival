@@ -5,19 +5,13 @@
 #include "resources.h"
 #include "terrain.h"
 
-Door* findDoor(World& w);
-
-// Spawns the building, the units, and the keys
+// Spawns the units, the red units and the wagon
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
-// Creates a squad from the given units and sends it to a ground point. Clicking the door
-// sends them to its entrance instead.
-void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units,
-                    Vec2 clickPoint, bool clickedDoor);
+// Creates a squad from the given units and sends it to a ground point
+void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 clickPoint);
 
 // Systems, run once per frame in this order
 void squadSystem(World& w, float dt);
-void steeringSystem(World& w, Terrain& t, GameState& gs, float dt);
-void pickupSystem(World& w, Terrain& t, GameState& gs);
+void steeringSystem(World& w, Terrain& t, float dt);
 void cleanupSquads(World& w);
-void updateWinState(World& w, GameState& gs);

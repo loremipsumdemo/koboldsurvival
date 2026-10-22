@@ -62,9 +62,9 @@ struct Session {
     std::map<int, StageTiming> stageTimes;   // time spent in each stage index
     std::chrono::steady_clock::time_point stageStart;  // when the open stage began
 
-    // Writes a world as a game map, under the name typed in the menu. Set by the host, which
-    // knows the game's map format. Returns false with err when the export fails.
-    std::function<bool(const World& w, const std::string& name, std::string& err)> exportMap;
+    // Writes a world as a game world folder, under the name typed in the menu. Set by the host, which
+    // knows the game's world format. outPath gets the folder written. Returns false with err on failure.
+    std::function<bool(const World& w, const std::string& name, std::string& outPath, std::string& err)> exportMap;
 
     std::string worldsDir;           // <exe>/data/worlds
     std::string themesDir;           // <exe>/data/themes
