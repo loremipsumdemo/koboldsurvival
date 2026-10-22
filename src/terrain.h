@@ -2,37 +2,39 @@
 #include <cstdint>
 #include <vector>
 #include "grid.h"
+#include "map.h"
 #include "navmesh.h"
 
 // Terrain is a resource, not entities: a million tiles as ECS entities would
 // be far too heavy. It holds the ground heights of the loaded map, the tile
-// walkability mask that the building is drawn on, and the navmesh that all
-// movement uses. It starts flat until a map is loaded.
+// walkability and ground types that the map is drawn with, and the navmesh that all
+// movement uses. Its size is the size of the loaded map.
 class Terrain {
 public:
-    Terrain();
+    explicit Terrain(int size = DEFAULT_MAP_SIZE);
 
-    // Replaces the ground with these corner heights (VERT_SIZE x VERT_SIZE). Walkability resets.
-    void load(const std::vector<float>& heights);
+    // Replaces the whole map: heights, walkability and ground types
+    void load(const MapData& m);
+    // The map as it stands, for saving
+    MapData toMapData() const;
 
-    // Corner heights, VERT_SIZE x VERT_SIZE, in world units
+    // Tiles per side, and corners per side
+    int size() const { return size_; }
+    int vertSize() const { return size_ + 1; }
+
+    // Corner heights, (size+1)^2, in world units
     const std::vector<float>& heights() const { return heights_; }
-
-    // Sets one corner's height. The navmesh only depends on walkability, so it isn't rebuilt.
-    void setVertexHeight(int x, int z, float h);
-
-    // Map editor brush: adds amount (may be negative) at the centre (hx, hz), falling off with
-    // the square of distance to zero at the radius. Corners stay within +/- HEIGHT_SCALE.
-    void paint(float hx, float hz, float radius, float amount);
 
     // Bilinear height sample at a world position
     float heightAt(float x, float z) const;
 
-    bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < MAP_SIZE && y < MAP_SIZE; }
-    bool walkable(int x, int y) const { return inBounds(x, y) && walkable_[y * MAP_SIZE + x]; }
-
-    // Blocking a tile rebuilds the navmesh
+    bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < size_ && y < size_; }
+    bool walkable(int x, int y) const { return inBounds(x, y) && walkable_[(size_t)y * size_ + x]; }
+    // Blocking a tile rebuilds the navmesh. Doors use this.
     void setWalkable(int x, int y, bool w);
+
+    // Ground type of a tile, or BIOME_NONE
+    uint8_t biome(int x, int y) const { return inBounds(x, y) ? biome_[(size_t)y * size_ + x] : BIOME_NONE; }
 
     // Navmesh queries, in world units
     bool isFree(float x, float z) const { return navmesh_.isFree(x, z); }
@@ -44,7 +46,9 @@ public:
 private:
     void rebuildNavmesh();
 
+    int size_ = DEFAULT_MAP_SIZE;
     std::vector<float> heights_;
     std::vector<uint8_t> walkable_;
+    std::vector<uint8_t> biome_;
     Navmesh navmesh_;
 };

@@ -18,6 +18,7 @@ struct Camera {
     float pitch = 1.0f;
     float distance = 20.0f;
     float lift = 0.0f;   // temporary height added to the eye while it is near or under the ground
+    float mapSize = 1024.0f;   // tiles per side of the loaded map. The game sets this each frame.
 
     // Eye position, including the temporary lift
     void eye(float& ex, float& ey, float& ez) const {
@@ -56,8 +57,8 @@ struct Camera {
     }
 
     void clampState() {
-        focusX = std::clamp(focusX, 0.0f, (float)MAP_SIZE);
-        focusZ = std::clamp(focusZ, 0.0f, (float)MAP_SIZE);
+        focusX = std::clamp(focusX, 0.0f, mapSize);
+        focusZ = std::clamp(focusZ, 0.0f, mapSize);
         distance = std::clamp(distance, 1.5f, 200.0f);
         pitch = std::clamp(pitch, -MAX_PITCH, MAX_PITCH);
     }

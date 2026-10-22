@@ -51,7 +51,7 @@ Door* findDoor(World& w) {
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     // Building: 3x3 footprint, with the entrance on the south-centre tile
     Door door;
-    door.origin = { rng.range(10, MAP_SIZE - 5), rng.range(10, MAP_SIZE - 5) };
+    door.origin = { rng.range(10, t.size() - 5), rng.range(10, t.size() - 5) };
     door.entrance = { door.origin.x + 1, door.origin.y + 2 };
     door.front = { door.origin.x + 1, door.origin.y + 3 };
     for (int dy = 0; dy < 3; ++dy) {
@@ -79,7 +79,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // They're placed on walkable tiles outside the spawn corner.
     std::vector<GridPos> enemyTiles;
     while ((int)enemyTiles.size() < ENEMY_COUNT) {
-        GridPos g{ rng.range(0, MAP_SIZE - 1), rng.range(0, MAP_SIZE - 1) };
+        GridPos g{ rng.range(0, t.size() - 1), rng.range(0, t.size() - 1) };
         if (!t.walkable(g.x, g.y)) continue;
         if (g.x < 9 && g.y < 9) continue;
         bool taken = std::any_of(enemyTiles.begin(), enemyTiles.end(),
@@ -99,7 +99,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // Keys, scattered across the map on walkable tiles, away from the spawn corner
     std::vector<GridPos> keyTiles;
     while ((int)keyTiles.size() < KEY_COUNT) {
-        GridPos g{ rng.range(0, MAP_SIZE - 1), rng.range(0, MAP_SIZE - 1) };
+        GridPos g{ rng.range(0, t.size() - 1), rng.range(0, t.size() - 1) };
         if (!t.walkable(g.x, g.y)) continue;
         if (g.x < 9 && g.y < 9) continue;
         bool duplicate = std::any_of(keyTiles.begin(), keyTiles.end(),
@@ -116,7 +116,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // One wagon on a free tile. It is decorative and does not block movement.
     GridPos wg;
     do {
-        wg = { rng.range(0, MAP_SIZE - 1), rng.range(0, MAP_SIZE - 1) };
+        wg = { rng.range(0, t.size() - 1), rng.range(0, t.size() - 1) };
     } while (!t.walkable(wg.x, wg.y) || (wg.x < 9 && wg.y < 9));
     float wx = wg.x + 0.5f, wz = wg.y + 0.5f;
     Entity wagon = w.create();

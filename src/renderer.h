@@ -15,6 +15,7 @@
 #include "model.h"
 #include "resources.h"
 #include "terrain.h"
+#include "terrain_mesh.h"
 #include "ui.h"
 
 // A texture plus its width/height ratio
@@ -43,11 +44,12 @@ public:
     // Sun, moon, star and sky colour settings from the dev tools menu
     void setSky(const SkyTuning& s) { sky_ = s; }
 
-    // Builds and uploads the terrain mesh. Frees the previous mesh if there is one.
+    // Sets up the terrain's chunks for a map, replacing any earlier one. Each chunk's mesh is built
+    // when it is first drawn, at the detail its distance from the camera needs.
     void uploadTerrain(const Terrain& t);
 
     // Loading screen: the start image plus a progress bar (progress 0..1) along the bottom 4%
-    void drawLoadingScreen(float progress, int winW, int winH);
+    void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string());
 
     // Units whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
@@ -61,10 +63,6 @@ public:
     // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
 
-    // Ring on the ground around (x, z) with the given radius in world units. Used for the map
-    // editor's brush. The colour's alpha is used as given.
-    void drawBrushRing(const Camera& cam, const Terrain& t, float x, float z, float radius,
-                       RGBA color, int winW, int winH);
     // Crystal marking where a right-click order was given, standing on the ground at (x, z).
     // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
@@ -128,8 +126,20 @@ private:
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // colour overlays
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
-    GLuint terrainVao_ = 0, terrainVbo_ = 0, terrainEbo_ = 0;
-    GLsizei terrainIndexCount_ = 0;
+    // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
+    struct TerrainChunk {
+        GLuint vao = 0, vbo = 0, ebo = 0;
+        GLsizei indexCount = 0;
+        int step = 0;              // detail step the buffers hold, 0 until first built
+        ChunkBounds bounds{};
+    };
+    std::vector<TerrainChunk> chunks_;
+    int terrainSize_ = 0;
+    int chunksPerSide_ = 0;
+    ChunkMesh chunkScratch_;       // reused while building chunks
+    void releaseTerrain();
+    void buildChunk(const Terrain& t, int index, int step);
+    void drawTerrain(const Terrain& t, const Camera& cam);
 
     TextTex wall_, keySprite_, doorSprite_, overlay_, title_;
     std::vector<TextTex> unitSprites_;

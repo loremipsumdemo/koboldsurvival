@@ -24,16 +24,53 @@ FetchContent_Declare(tinygltf
     GIT_TAG v2.9.3)
 FetchContent_MakeAvailable(tinygltf)
 
+# stb_truetype: the world tool's font rasterizer. stb has no CMakeLists, so this only fetches the sources.
+FetchContent_Declare(stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(stb)
+
+# The world tool (formerly the standalone worldmaker), hosted by the map editor screen.
+# Its code lives in the wm namespace, under src/worldmaker.
+set(WORLDTOOL_SOURCES
+    src/worldmaker/app/console.cpp
+    src/worldmaker/app/desktop.cpp
+    src/worldmaker/app/mapview.cpp
+    src/worldmaker/app/menu.cpp
+    src/worldmaker/app/session.cpp
+    src/worldmaker/core/debug_options.cpp
+    src/worldmaker/core/tunables.cpp
+    src/worldmaker/player/walker.cpp
+    src/worldmaker/render/gl_api.cpp
+    src/worldmaker/render/renderer.cpp
+    src/worldmaker/render/terrain.cpp
+    src/worldmaker/render/grid.cpp
+    src/worldmaker/render/surface_tile.cpp
+    src/worldmaker/render/skybox.cpp
+    src/worldmaker/render/gpu_timer.cpp
+    src/worldmaker/theme/theme.cpp
+    src/worldmaker/theme/themefile.cpp
+    src/worldmaker/world/chunk_gen.cpp
+    src/worldmaker/world/noise.cpp
+    src/worldmaker/world/segments.cpp
+    src/worldmaker/world/world.cpp
+    src/worldmaker/world/worldfile.cpp
+    src/worldmaker_host.cpp
+)
+
 add_executable(koboldgame
     src/main.cpp
     src/renderer.cpp
     src/systems.cpp
     src/terrain.cpp
+    src/terrain_mesh.cpp
     src/navmesh.cpp
     src/map.cpp
     src/model.cpp
     src/pak.cpp
     src/app.rc          # embeds the exe icon (src/app.ico) on Windows
+    ${WORLDTOOL_SOURCES}
 )
 
 # Packs data/ into data.pak. Built as a normal C++ target so it works on any machine that builds the game.
@@ -42,8 +79,10 @@ set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BIN
 
 target_include_directories(koboldgame PRIVATE
     src
+    src/worldmaker          # the world tool's own include root
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
+    ${stb_SOURCE_DIR}        # stb_truetype.h for the world tool's font
 )
 
 target_link_libraries(koboldgame PRIVATE

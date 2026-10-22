@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "terrain_mesh.h"
 #include "pak.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
@@ -136,60 +137,6 @@ void outlineSquare(Batch& b, float cx, float y, float cz, float r, float t, RGBA
     b.quad({ cx - r, y, cz + r - t }, { cx + r, y, cz + r - t }, { cx + r, y, cz + r }, { cx - r, y, cz + r }, c);
     b.quad({ cx - r, y, cz - r }, { cx - r + t, y, cz - r }, { cx - r + t, y, cz + r }, { cx - r, y, cz + r }, c);
     b.quad({ cx + r - t, y, cz - r }, { cx + r, y, cz - r }, { cx + r, y, cz + r }, { cx + r - t, y, cz + r }, c);
-}
-
-// Height bands: lowest tan-yellow, middle green, highest dark gray
-RGBA bandColor(float h) {
-    float n = h / HEIGHT_SCALE;   // back to the -1..1 range
-    if (n < -1.0f / 3.0f) return { 0.86f, 0.76f, 0.46f, 1.0f };
-    if (n < 1.0f / 3.0f)  return { 0.27f, 0.55f, 0.24f, 1.0f };
-    return { 0.27f, 0.27f, 0.29f, 1.0f };
-}
-
-// One vertex per tile corner, two triangles per tile, split along a-d
-void buildTerrainMesh(const Terrain& t, std::vector<Vertex>& verts, std::vector<uint32_t>& idx) {
-    const std::vector<float>& h = t.heights();
-    auto H = [&](int x, int z) {
-        x = std::clamp(x, 0, MAP_SIZE);
-        z = std::clamp(z, 0, MAP_SIZE);
-        return h[(size_t)z * VERT_SIZE + x];
-    };
-
-    // Directional light used only for slope shading
-    const float lx = 0.35f, ly = 0.8f, lz = 0.25f;
-    const float ll = std::sqrt(lx * lx + ly * ly + lz * lz);
-
-    verts.resize((size_t)VERT_SIZE * VERT_SIZE);
-    for (int z = 0; z < VERT_SIZE; ++z) {
-        for (int x = 0; x < VERT_SIZE; ++x) {
-            float hh = H(x, z);
-            float dhx = (H(x + 1, z) - H(x - 1, z)) * 0.5f;
-            float dhz = (H(x, z + 1) - H(x, z - 1)) * 0.5f;
-            float nl = std::sqrt(dhx * dhx + 1.0f + dhz * dhz);
-            float nx = -dhx / nl, ny = 1.0f / nl, nz = -dhz / nl;
-            float lit = (nx * lx + ny * ly + nz * lz) / ll;
-            float shade = std::clamp(0.45f + 0.55f * lit, 0.4f, 1.0f);
-
-            RGBA c = bandColor(hh);
-            verts[(size_t)z * VERT_SIZE + x] = {
-                { (float)x, hh, (float)z },
-                { c.r * shade, c.g * shade, c.b * shade, 1.0f }
-            };
-        }
-    }
-
-    idx.clear();
-    idx.reserve((size_t)MAP_SIZE * MAP_SIZE * 6);
-    for (int z = 0; z < MAP_SIZE; ++z) {
-        for (int x = 0; x < MAP_SIZE; ++x) {
-            uint32_t a = (uint32_t)(z * VERT_SIZE + x);
-            uint32_t b = a + 1;
-            uint32_t c = a + VERT_SIZE;
-            uint32_t d = c + 1;
-            idx.push_back(a); idx.push_back(c); idx.push_back(d);
-            idx.push_back(a); idx.push_back(d); idx.push_back(b);
-        }
-    }
 }
 
 // Renders one character from the font into a texture
@@ -419,38 +366,141 @@ void Renderer::shutdown() {
     glDeleteVertexArrays(1, &dynVao_);
     glDeleteBuffers(1, &glyphVbo_);
     glDeleteVertexArrays(1, &glyphVao_);
-    glDeleteBuffers(1, &terrainVbo_);
-    glDeleteBuffers(1, &terrainEbo_);
-    glDeleteVertexArrays(1, &terrainVao_);
+    releaseTerrain();
     colorProgram_ = glyphProgram_ = 0;
-    terrainVao_ = terrainVbo_ = terrainEbo_ = 0;
+}
+
+namespace {
+
+// Chunks closer to the eye than these distances, in tiles, are drawn at full, half and quarter detail
+constexpr float LOD_NEAR_TILES = 96.0f;
+constexpr float LOD_MID_TILES = 224.0f;
+// The sea is drawn just under zero, so flat ground at zero is not tinted by it
+constexpr float SEA_Y = -0.05f;
+
+// The six frustum planes of a column-major view-projection matrix, as (a, b, c, d) with a*x+b*y+c*z+d >= 0 inside
+struct FrustumPlanes {
+    float p[6][4];
+};
+
+FrustumPlanes framePlanes(const Mat4& m) {
+    // Element (row r, column c) is m[c * 4 + r]
+    auto el = [&](int r, int c) { return m.m[c * 4 + r]; };
+    FrustumPlanes f{};
+    for (int k = 0; k < 3; ++k) {
+        for (int s = 0; s < 2; ++s) {
+            const float sign = s == 0 ? 1.0f : -1.0f;
+            for (int c = 0; c < 4; ++c) f.p[2 * k + s][c] = el(3, c) + sign * el(k, c);
+        }
+    }
+    return f;
+}
+
+// True unless the chunk's box is entirely outside one of the planes
+bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
+    for (const auto& p : f.p) {
+        const float px = p[0] >= 0.0f ? b.x1 : b.x0;
+        const float py = p[1] >= 0.0f ? b.maxY : b.minY;
+        const float pz = p[2] >= 0.0f ? b.z1 : b.z0;
+        if (p[0] * px + p[1] * py + p[2] * pz + p[3] < 0.0f) return false;
+    }
+    return true;
+}
+
+} // namespace
+
+void Renderer::releaseTerrain() {
+    for (TerrainChunk& c : chunks_) {
+        if (c.ebo) glDeleteBuffers(1, &c.ebo);
+        if (c.vbo) glDeleteBuffers(1, &c.vbo);
+        if (c.vao) glDeleteVertexArrays(1, &c.vao);
+    }
+    chunks_.clear();
+    terrainSize_ = 0;
+    chunksPerSide_ = 0;
 }
 
 void Renderer::uploadTerrain(const Terrain& t) {
-    // A new level replaces the old terrain mesh
-    if (terrainVao_) {
-        glDeleteBuffers(1, &terrainVbo_);
-        glDeleteBuffers(1, &terrainEbo_);
-        glDeleteVertexArrays(1, &terrainVao_);
-        terrainVao_ = terrainVbo_ = terrainEbo_ = 0;
+    releaseTerrain();
+    terrainSize_ = t.size();
+    chunksPerSide_ = chunksPerSide(t.size());
+    chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);
+    for (int cz = 0; cz < chunksPerSide_; ++cz) {
+        for (int cx = 0; cx < chunksPerSide_; ++cx) {
+            TerrainChunk& c = chunks_[(size_t)cz * chunksPerSide_ + cx];
+            c.bounds = chunkBounds(t, cx, cz);
+            glGenVertexArrays(1, &c.vao);
+            glGenBuffers(1, &c.vbo);
+            glGenBuffers(1, &c.ebo);
+            glBindVertexArray(c.vao);
+            glBindBuffer(GL_ARRAY_BUFFER, c.vbo);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c.ebo);
+            glBindVertexArray(0);
+        }
     }
+}
 
-    std::vector<Vertex> verts;
-    std::vector<uint32_t> idx;
-    buildTerrainMesh(t, verts, idx);
-    terrainIndexCount_ = (GLsizei)idx.size();
-
-    glGenVertexArrays(1, &terrainVao_);
-    glGenBuffers(1, &terrainVbo_);
-    glGenBuffers(1, &terrainEbo_);
-
-    setupColorLayout(terrainVao_, terrainVbo_);
-    glBindVertexArray(terrainVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, terrainVbo_);
-    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainEbo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(uint32_t), idx.data(), GL_STATIC_DRAW);
+// Builds a chunk's mesh at a detail step and uploads it into the chunk's own buffers
+void Renderer::buildChunk(const Terrain& t, int index, int step) {
+    TerrainChunk& c = chunks_[(size_t)index];
+    buildChunkMesh(t, index % chunksPerSide_, index / chunksPerSide_, step, chunkScratch_);
+    glBindVertexArray(c.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, c.vbo);
+    glBufferData(GL_ARRAY_BUFFER, chunkScratch_.verts.size() * sizeof(TerrainVertex),
+                 chunkScratch_.verts.data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunkScratch_.idx.size() * sizeof(uint32_t),
+                 chunkScratch_.idx.data(), GL_DYNAMIC_DRAW);
+    c.indexCount = (GLsizei)chunkScratch_.idx.size();
+    c.step = step;
     glBindVertexArray(0);
+}
+
+// Draws the visible chunks, each at the detail its distance from the eye needs, then the sea
+void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
+    if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
+    const FrustumPlanes planes = framePlanes(viewProj_);
+    float ex, ey, ez;
+    cam.eye(ex, ey, ez);
+
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
+    for (int i = 0; i < (int)chunks_.size(); ++i) {
+        TerrainChunk& c = chunks_[(size_t)i];
+        if (!chunkVisible(planes, c.bounds)) continue;
+        const float mx = 0.5f * (c.bounds.x0 + c.bounds.x1);
+        const float my = 0.5f * (c.bounds.minY + c.bounds.maxY);
+        const float mz = 0.5f * (c.bounds.z0 + c.bounds.z1);
+        const float dx = mx - ex, dy = my - ey, dz = mz - ez;
+        const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+        const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
+        if (c.step != step) buildChunk(t, i, step);
+        glBindVertexArray(c.vao);
+        glDrawElements(GL_TRIANGLES, c.indexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    glBindVertexArray(0);
+
+    // The sea: a translucent plane over the whole map, so the seabed shows through it
+    const float s = (float)t.size();
+    Batch sea;
+    sea.quad({ 0.0f, SEA_Y, 0.0f }, { s, SEA_Y, 0.0f }, { s, SEA_Y, s }, { 0.0f, SEA_Y, s },
+             RGBA{ 0.16f, 0.36f, 0.58f, 0.55f });
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, sea.v.size() * sizeof(Vertex), sea.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)sea.v.size());
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
@@ -522,7 +572,7 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
 
 // Loading screen: the start image centred and fitted to the window, with a progress bar
 // across the bottom 4% of the screen (white fill on black)
-void Renderer::drawLoadingScreen(float progress, int winW, int winH) {
+void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label) {
     glViewport(0, 0, winW, winH);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -567,6 +617,13 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH) {
     glBufferData(GL_ARRAY_BUFFER, bar.v.size() * sizeof(Vertex), bar.v.data(), GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)bar.v.size());
     glBindVertexArray(0);
+
+    // The name of the stage that is running, above the bar
+    if (!label.empty()) {
+        beginUi(winW, winH);
+        drawUiTextCentered(label, winW * 0.5f, winH * 0.90f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        endUi();
+    }
 
     glEnable(GL_DEPTH_TEST);
 }
@@ -912,33 +969,6 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)crystal.v.size());
 }
 
-void Renderer::drawBrushRing(const Camera& cam, const Terrain& t, float x, float z, float radius,
-                             RGBA color, int winW, int winH) {
-    if (color.a <= 0.0f || radius <= 0.0f) return;
-
-    const float cy = t.heightAt(x, z) + 0.03f;
-    const float outer = radius, inner = radius - 0.06f;
-    const int segments = 64;
-    const float twoPi = 6.2831853f;
-
-    Batch ring;
-    for (int i = 0; i < segments; ++i) {
-        float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
-        V3 o0{ x + outer * std::cos(a0), cy, z + outer * std::sin(a0) };
-        V3 o1{ x + outer * std::cos(a1), cy, z + outer * std::sin(a1) };
-        V3 i0{ x + inner * std::cos(a0), cy, z + inner * std::sin(a0) };
-        V3 i1{ x + inner * std::cos(a1), cy, z + inner * std::sin(a1) };
-        ring.quad(o0, o1, i1, i0, color);
-    }
-
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, ring.v.size() * sizeof(Vertex), ring.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)ring.v.size());
-}
-
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                          float overlayAlpha, const std::vector<std::string>& hud, int winW, int winH) {
     glViewport(0, 0, winW, winH);
@@ -1017,8 +1047,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     // 1. Terrain
     glUseProgram(colorProgram_);
     glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    glBindVertexArray(terrainVao_);
-    glDrawElements(GL_TRIANGLES, terrainIndexCount_, GL_UNSIGNED_INT, nullptr);
+    drawTerrain(t, cam);
 
     // 2. Sprites and models, each standing on the terrain at its entity's height
     glUseProgram(glyphProgram_);

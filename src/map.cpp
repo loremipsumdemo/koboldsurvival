@@ -11,9 +11,9 @@
 namespace {
 
 const char MAGIC[4] = { 'K', 'M', 'A', 'P' };
-constexpr uint32_t VERSION = 1;
+constexpr uint32_t VERSION = 2;
 constexpr size_t HEADER_SIZE = 12;
-constexpr size_t VERT_COUNT = (size_t)VERT_SIZE * VERT_SIZE;
+constexpr uint32_t MAX_SIZE = 8192;
 
 void putU32(std::vector<unsigned char>& out, uint32_t v) {
     for (int i = 0; i < 4; ++i) out.push_back((unsigned char)((v >> (8 * i)) & 0xFF));
@@ -23,45 +23,66 @@ uint32_t getU32(const unsigned char* p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
+size_t cornerCount(size_t size) { return (size + 1) * (size + 1); }
+
 } // namespace
 
-MapData flatMap() {
+MapData flatMap(int size) {
     MapData m;
-    m.heights.assign(VERT_COUNT, 0.0f);
+    m.size = size;
+    m.heights.assign(cornerCount((size_t)size), 0.0f);
+    m.walkable.assign((size_t)size * size, 1);
+    m.biome.assign((size_t)size * size, BIOME_NONE);
     return m;
 }
 
-bool parseMap(const unsigned char* bytes, size_t size, MapData& out) {
-    if (!bytes || size != HEADER_SIZE + VERT_COUNT * 4) return false;
+bool parseMap(const unsigned char* bytes, size_t total, MapData& out) {
+    if (!bytes || total < HEADER_SIZE) return false;
     if (std::memcmp(bytes, MAGIC, 4) != 0) return false;
-    if (getU32(bytes + 4) != VERSION) return false;
-    if (getU32(bytes + 8) != (uint32_t)MAP_SIZE) return false;
+    const uint32_t version = getU32(bytes + 4);
+    const uint32_t size = getU32(bytes + 8);
+    if (size < 4 || size > MAX_SIZE) return false;
 
-    out.heights.resize(VERT_COUNT);
+    const size_t verts = cornerCount(size), tiles = (size_t)size * size;
+    size_t expected = 0;
+    if (version == 1) expected = HEADER_SIZE + verts * 4;
+    if (version == 2) expected = HEADER_SIZE + verts * 4 + tiles * 2;
+    if (expected == 0 || total != expected) return false;
+
+    MapData m = flatMap((int)size);
     const unsigned char* p = bytes + HEADER_SIZE;
-    for (size_t i = 0; i < VERT_COUNT; ++i, p += 4) {
+    for (size_t i = 0; i < verts; ++i, p += 4) {
         uint32_t bits = getU32(p);
         float h;
         std::memcpy(&h, &bits, sizeof(h));
         // A broken value becomes flat ground rather than a spike or a NaN in the mesh
-        h = std::isfinite(h) ? std::clamp(h, -HEIGHT_SCALE, HEIGHT_SCALE) : 0.0f;
-        out.heights[i] = h;
+        m.heights[i] = std::isfinite(h) ? std::clamp(h, -MAX_HEIGHT, MAX_HEIGHT) : 0.0f;
     }
+    if (version == 2) {
+        std::copy(p, p + tiles, m.walkable.begin());
+        p += tiles;
+        std::copy(p, p + tiles, m.biome.begin());
+    }
+    out = std::move(m);
     return true;
 }
 
 std::vector<unsigned char> encodeMap(const MapData& m) {
+    const size_t size = (size_t)m.size;
+    const size_t verts = cornerCount(size), tiles = size * size;
     std::vector<unsigned char> out;
-    out.reserve(HEADER_SIZE + VERT_COUNT * 4);
+    out.reserve(HEADER_SIZE + verts * 4 + tiles * 2);
     out.insert(out.end(), MAGIC, MAGIC + 4);
     putU32(out, VERSION);
-    putU32(out, (uint32_t)MAP_SIZE);
-    for (size_t i = 0; i < VERT_COUNT; ++i) {
+    putU32(out, (uint32_t)size);
+    for (size_t i = 0; i < verts; ++i) {
         float h = i < m.heights.size() ? m.heights[i] : 0.0f;
         uint32_t bits;
         std::memcpy(&bits, &h, sizeof(bits));
         putU32(out, bits);
     }
+    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.walkable.size() ? m.walkable[i] : 1);
+    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.biome.size() ? m.biome[i] : BIOME_NONE);
     return out;
 }
 

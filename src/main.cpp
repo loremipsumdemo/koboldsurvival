@@ -18,6 +18,7 @@
 #include "camera.h"
 #include "gui.h"
 #include "sky.h"
+#include "worldmaker_host.h"
 #include "components.h"
 #include "ecs.h"
 #include "renderer.h"
@@ -42,9 +43,6 @@ constexpr size_t NAME_LIMIT = 32;            // longest save name, in bytes
 constexpr Uint64 UNSAVED_WARN_MS = 30000;    // loading over a game not saved this recently asks first
 constexpr const char* SETTINGS_PATH = "settings.cfg";
 constexpr const char* CUSTOM_MAP_DIR = "custom_maps";        // maps made in the editor are saved here
-constexpr float BRUSH_RATE = 2.0f;                          // height change per second at the brush centre
-constexpr float BRUSH_RADII[] = { 1.0f, 2.0f, 3.0f, 4.0f }; // brush radius in tiles
-constexpr int BRUSH_COUNT = 4;
 
 // Save list columns, as fractions of the list width. The name column starts at the left.
 constexpr float COL_TYPE = 0.54f;
@@ -93,7 +91,7 @@ std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terra
         groundY = t.heightAt(hx, hz);
     }
 
-    if (hx < 0.0f || hz < 0.0f || hx >= MAP_SIZE || hz >= MAP_SIZE) return std::nullopt;
+    if (hx < 0.0f || hz < 0.0f || hx >= t.size() || hz >= t.size()) return std::nullopt;
     return std::make_pair(hx, hz);
 }
 
@@ -178,11 +176,11 @@ bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
 }
 
 // Draws one loading frame and keeps the window responsive while things load
-void loadingFrame(SDL_Window* window, Renderer& renderer, float progress) {
+void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label = std::string()) {
     SDL_PumpEvents();
     int winW, winH;
     SDL_GetWindowSizeInPixels(window, &winW, &winH);
-    renderer.drawLoadingScreen(progress, winW, winH);
+    renderer.drawLoadingScreen(progress, winW, winH, label);
     SDL_GL_SwapWindow(window);
 }
 
@@ -233,22 +231,12 @@ bool loadMapChoice(const MapChoice& c, MapData& out) {
 }
 
 // Turns typed text into a file name: letters, digits, '-' and '_' are kept, spaces become '_',
-// anything else is dropped
-std::string sanitizeMapName(const std::string& s) {
-    std::string out;
-    for (unsigned char c : s) {
-        if (std::isalnum(c) || c == '-' || c == '_') out += (char)c;
-        else if (c == ' ') out += '_';
-    }
-    return out;
-}
-
 // Builds a fresh level on the given map: new terrain, new entities. Used by New Game and on restart.
 // progress, if given, is called as the level loads (0..1), for the loading screen.
 void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, unsigned seed,
                 const MapData& map, const std::function<void(float)>& progress = {}) {
     auto report = [&](float p) { if (progress) progress(p); };
-    terrain.load(map.heights);
+    terrain.load(map);
     report(0.35f);
     renderer.uploadTerrain(terrain);
     report(0.7f);
@@ -262,7 +250,7 @@ void startLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, un
 // are then swapped for the saved ones, and the door is opened if it was open when saved.
 void restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
                   const MapData& map) {
-    terrain.load(map.heights);
+    terrain.load(map);
     renderer.uploadTerrain(terrain);
     world = World{};
     rng.gen.seed(d.seed);
@@ -591,34 +579,6 @@ std::vector<Button> layoutMapSelect(int W, int H, const std::vector<MapChoice>& 
     return out;
 }
 
-// The map editor's left panel: its buttons, the name field, and the panel itself
-struct EditorLayout {
-    std::vector<Button> buttons;
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };
-};
-
-EditorLayout layoutMapEditor(int W, int H, bool raise, int brushIdx) {
-    (void)W;
-    const float s = H / 720.0f;
-    const float bh = 50.0f * s, gap = 12.0f * s, pad = 24.0f * s;
-    const float bw = 300.0f * s;
-    const float x = pad, pitch = bh + gap, top = 96.0f * s;
-    auto row = [&](int i) { return top + i * pitch; };
-
-    EditorLayout out;
-    out.panel = Rect{ 0.0f, 0.0f, bw + 2.0f * pad, (float)H };
-    out.buttons.push_back(Button{ std::string("Mode: ") + (raise ? "Raise" : "Lower"),
-                                  Rect{ x, row(0), bw, bh }, Action::EditMode });
-    out.buttons.push_back(Button{ "Brush: " + std::to_string((int)BRUSH_RADII[brushIdx]) + " tiles",
-                                  Rect{ x, row(1), bw, bh }, Action::EditBrush });
-    out.buttons.push_back(Button{ "Reset to flat", Rect{ x, row(2), bw, bh }, Action::EditReset });
-    out.name = Rect{ x, row(3), bw, bh };
-    out.buttons.push_back(Button{ "Export", Rect{ x, row(4), bw, bh }, Action::EditExport });
-    out.buttons.push_back(Button{ "Back", Rect{ x, row(5), bw, bh }, Action::EditBack });
-    return out;
-}
-
 // Dev tools menu, opened from the Esc menu. Left: clock, stars, moon and brightness.
 // Right: the colour being edited, its red, green and blue, and reset.
 std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, float dayMinutes) {
@@ -790,13 +750,10 @@ int main(int, char**) {
     std::vector<MapChoice> maps;          // premade and custom maps, for New Game
     MapChoice currentMap;                 // the map the game in progress is played on
     size_t mapOffset = 0;                 // first map shown in the New Game list
-    bool editorPaint = false;             // left button held in the editor, painting the ground
-    bool editorRaise = true;              // the brush raises the ground, or lowers it
-    int brushIndex = 1;                   // index into BRUSH_RADII
     SkyTuning sky;                        // atmosphere settings from the dev tools menu
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
-    std::string editName = "my_map";      // name typed in the editor, used for the exported file
-    bool nameFocused = false;             // the name field takes typed text after it's clicked
+    wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
+    bool wmReady = false;                 // the tool has been set up on the window
 
     Screen screen = Screen::Title;
     Screen backScreen = Screen::Title;    // where Back goes from Settings
@@ -1026,50 +983,35 @@ int main(int, char**) {
         cam.pan(right * panSpeed, forward * panSpeed);
     };
 
-    // Starts the editor on a flat map
+    // Opens the world tool on a fresh world. The tool is set up the first time the editor opens.
     auto openEditor = [&]() {
         // Start clean: no units, keys or building left over from a game
         world = World{};
         gs = GameState{};
         sel = Selection{};
-        terrain.load(flatMap().heights);
-        renderer.uploadTerrain(terrain);
-        cam = Camera{};
-        editorPaint = false;
-        nameFocused = false;
+        if (!wmReady) {
+            const unsigned char* fontBytes = nullptr;
+            size_t fontSize = 0;
+            std::vector<unsigned char> font;
+            if (pakFind("data/font/NotoSans_Condensed-Bold.ttf", fontBytes, fontSize)) {
+                font.assign(fontBytes, fontBytes + fontSize);
+            }
+            const char* base = SDL_GetBasePath();
+            const std::string dataDir = std::string(base ? base : "") + "editor_data";
+            std::string err;
+            if (!wmTool.Init(window, font, dataDir, CUSTOM_MAP_DIR, err)) {
+                showNotice("The world tool could not start: " + err);
+                return;
+            }
+            wmReady = true;
+        }
+        wmTool.Begin();
         screen = Screen::MapEditor;
     };
 
     auto leaveEditor = [&]() {
-        editorPaint = false;
-        nameFocused = false;
+        wmTool.End();
         screen = Screen::Title;
-        SDL_StopTextInput(window);
-    };
-
-    // Saves the edited ground to custom_maps under the typed name
-    auto exportEditorMap = [&]() {
-        const std::string stem = sanitizeMapName(editName);
-        if (stem.empty()) {
-            showNotice("Type a name for the map first");
-            return;
-        }
-        MapData m;
-        m.heights = terrain.heights();
-        const std::string path = std::string(CUSTOM_MAP_DIR) + "/" + stem + ".map";
-        if (!writeMapFile(path, m)) {
-            showNotice("Could not export the map");
-            return;
-        }
-        refreshMaps();
-        showNotice("Exported " + path);
-    };
-
-    // Raises or lowers the ground under the brush, then re-uploads the mesh
-    auto paintAt = [&](float hx, float hz, float dt) {
-        const float sign = editorRaise ? 1.0f : -1.0f;
-        terrain.paint(hx, hz, BRUSH_RADII[brushIndex], sign * BRUSH_RATE * dt);
-        renderer.uploadTerrain(terrain);
     };
 
     // Runs a button's action
@@ -1089,19 +1031,6 @@ int main(int, char**) {
             return;
         case Action::OpenMapEditor:
             openEditor();
-            return;
-        case Action::EditMode:
-            editorRaise = !editorRaise;
-            return;
-        case Action::EditBrush:
-            brushIndex = (brushIndex + 1) % BRUSH_COUNT;
-            return;
-        case Action::EditReset:
-            terrain.load(flatMap().heights);
-            renderer.uploadTerrain(terrain);
-            return;
-        case Action::EditExport:
-            exportEditorMap();
             return;
         case Action::DevOpen:
             backScreen = Screen::Pause;
@@ -1140,9 +1069,6 @@ int main(int, char**) {
         }
         case Action::DevReset:
             sky = SkyTuning{};
-            return;
-        case Action::EditBack:
-            leaveEditor();
             return;
         case Action::LoadGame:
         case Action::Load:
@@ -1309,6 +1235,10 @@ int main(int, char**) {
 
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
+            if (screen == Screen::MapEditor && e.type != SDL_EVENT_QUIT) {
+                wmTool.Event(e);
+                continue;
+            }
             switch (e.type) {
             case SDL_EVENT_QUIT:
                 running = false;
@@ -1317,8 +1247,6 @@ int main(int, char**) {
             case SDL_EVENT_TEXT_INPUT:
                 if (panelOpen && panelSaveMode && ask == Ask::None && saveName.size() < NAME_LIMIT) {
                     saveName += e.text.text;
-                } else if (!panelOpen && screen == Screen::MapEditor && nameFocused && editName.size() < NAME_LIMIT) {
-                    editName += e.text.text;
                 }
                 break;
 
@@ -1358,12 +1286,7 @@ int main(int, char**) {
                         screen = Screen::Pause;
                     } else if (screen == Screen::MapSelect) {
                         screen = backScreen;
-                    } else if (screen == Screen::MapEditor) {
-                        leaveEditor();
                     }
-                } else if (screen == Screen::MapEditor && nameFocused) {
-                    if (e.key.key == SDLK_BACKSPACE) popUtf8Char(editName);
-                    else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) exportEditorMap();
                 }
                 break;
 
@@ -1381,7 +1304,7 @@ int main(int, char**) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
                                                    unitPanelRow - (int)e.wheel.y).scrollRow;
-                } else if (screen == Screen::Playing || screen == Screen::MapEditor) {
+                } else if (screen == Screen::Playing) {
                     cam.distance *= (e.wheel.y > 0.0f) ? 0.9f : 1.1f;
                     cam.clampState();
                 }
@@ -1404,35 +1327,6 @@ int main(int, char**) {
                                 break;
                             }
                         }
-                    }
-                    break;
-                }
-
-                if (screen == Screen::MapEditor) {
-                    if (e.button.button == SDL_BUTTON_LEFT) {
-                        // A panel button runs its action. The name field takes typed text. Anywhere
-                        // else paints the ground, and stops typing into the name.
-                        const EditorLayout ed = layoutMapEditor(winW, winH, editorRaise, brushIndex);
-                        bool onButton = false;
-                        for (const Button& b : ed.buttons) {
-                            if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
-                                performAction(b.action, b.param);
-                                onButton = true;
-                                break;
-                            }
-                        }
-                        if (ed.name.contains(e.button.x, e.button.y)) {
-                            nameFocused = true;
-                            SDL_StartTextInput(window);
-                        } else {
-                            nameFocused = false;
-                            SDL_StopTextInput(window);
-                            if (!onButton) editorPaint = true;
-                        }
-                    } else if (e.button.button == SDL_BUTTON_MIDDLE) {
-                        middleDown = true;
-                        lastX = e.button.x;
-                        lastY = e.button.y;
                     }
                     break;
                 }
@@ -1509,12 +1403,11 @@ int main(int, char**) {
                     }
                     sel.dragging = false;
                 }
-                if (e.button.button == SDL_BUTTON_LEFT) editorPaint = false;
                 if (e.button.button == SDL_BUTTON_MIDDLE) middleDown = false;
                 break;
 
             case SDL_EVENT_MOUSE_MOTION:
-                if (screen == Screen::Playing || screen == Screen::MapEditor) {
+                if (screen == Screen::Playing) {
                     if (screen == Screen::Playing && leftDown) {
                         float dx = e.motion.x - pressX, dy = e.motion.y - pressY;
                         if (!sel.dragging && dx * dx + dy * dy > 36.0f) sel.dragging = true;
@@ -1555,20 +1448,10 @@ int main(int, char**) {
         pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
         actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
 
+        cam.mapSize = (float)terrain.size();
+
         // ---- Game update: only while playing ----
         float overlayAlpha = 0.0f;
-        if (screen == Screen::MapEditor) {
-            panWithKeys(dt, false);
-            cam.updateClearance(terrain);
-            if (editorPaint) {
-                float mx = 0.0f, my = 0.0f;
-                SDL_GetMouseState(&mx, &my);
-                if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
-                    paintAt(hit->first, hit->second, dt);
-                }
-            }
-        }
-
         if (screen == Screen::Playing) {
             panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
             cam.updateClearance(terrain);
@@ -1587,7 +1470,7 @@ int main(int, char**) {
                 MapChoice next = currentMap;
                 if (!maps.empty()) next = maps[rng.range(0, (int)maps.size() - 1)];
                 MapData data;
-                if (!loadMapChoice(next, data) && !loadMapChoice(currentMap, data)) data = flatMap();
+                if (!loadMapChoice(next, data) && !loadMapChoice(currentMap, data)) data = flatMap(DEFAULT_MAP_SIZE);
                 currentMap = next;
                 levelSeed = (unsigned)rng.gen();
                 startLevel(world, terrain, renderer, rng, levelSeed, data,
@@ -1716,36 +1599,11 @@ int main(int, char**) {
             break;
         }
 
-        case Screen::MapEditor: {
-            // The editor shows the ground with no units, plus a ring for the brush under the mouse
-            const float s = winH / 720.0f;
-            renderer.drawFrame(world, terrain, cam, sel, 0.0f, {}, winW, winH);
-            if (auto hit = pickGround(cam, terrain, mouseX, mouseY, winW, winH)) {
-                const RGBA ring = editorRaise ? RGBA{ 1.0f, 0.95f, 0.6f, 0.9f } : RGBA{ 0.5f, 0.8f, 1.0f, 0.9f };
-                renderer.drawBrushRing(cam, terrain, hit->first, hit->second, BRUSH_RADII[brushIndex],
-                                       ring, winW, winH);
-            }
-
-            const EditorLayout ed = layoutMapEditor(winW, winH, editorRaise, brushIndex);
-            renderer.beginUi(winW, winH);
-            renderer.drawRect(ed.panel, RGBA{ 0.06f, 0.07f, 0.10f, 0.9f });
-            renderer.drawUiTextCentered("Map Editor", ed.panel.x + ed.panel.w * 0.5f, 22.0f * s,
-                                        RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            drawButtons(ed.buttons);
-
-            renderer.drawRect(ed.name, RGBA{ 0.10f, 0.11f, 0.15f, 1.0f });
-            const bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
-            // Grey until clicked, so it's clear the name is only typed into after a click
-            renderer.drawUiText("Name: " + editName + (nameFocused && cursorOn ? "|" : ""),
-                                ed.name.x + 12.0f * s, ed.name.y + ed.name.h * 0.22f,
-                                nameFocused ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.6f, 0.6f, 0.65f, 1.0f });
-
-            renderer.drawUiTextCentered("Left-drag: paint   Middle-drag: orbit   Wheel: zoom   WASD: pan",
-                                        ed.panel.x + ed.panel.w + (winW - ed.panel.w) * 0.5f, winH - 40.0f * s,
-                                        RGBA{ 0.75f, 0.85f, 1.0f, 1.0f });
-            renderer.endUi();
+        case Screen::MapEditor:
+            // The world tool draws the whole screen, and the editor closes when it asks to
+            wmTool.Frame();
+            if (wmTool.wantsBack()) leaveEditor();
             break;
-        }
 
         case Screen::Pause:
             renderer.drawFrame(world, terrain, cam, sel, 0.0f, {}, winW, winH);

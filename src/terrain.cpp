@@ -2,48 +2,39 @@
 #include <algorithm>
 #include <cmath>
 
-Terrain::Terrain() {
-    heights_.assign((size_t)VERT_SIZE * VERT_SIZE, 0.0f);
-    walkable_.assign((size_t)MAP_SIZE * MAP_SIZE, 1);
+Terrain::Terrain(int size) {
+    load(flatMap(size));
+}
+
+void Terrain::load(const MapData& m) {
+    size_ = m.size;
+    const size_t vs = (size_t)size_ + 1, tiles = (size_t)size_ * size_;
+    heights_.assign(vs * vs, 0.0f);
+    std::copy_n(m.heights.begin(), std::min(m.heights.size(), heights_.size()), heights_.begin());
+    walkable_.assign(tiles, 1);
+    std::copy_n(m.walkable.begin(), std::min(m.walkable.size(), tiles), walkable_.begin());
+    biome_.assign(tiles, BIOME_NONE);
+    std::copy_n(m.biome.begin(), std::min(m.biome.size(), tiles), biome_.begin());
     rebuildNavmesh();
 }
 
-void Terrain::load(const std::vector<float>& heights) {
-    heights_.assign((size_t)VERT_SIZE * VERT_SIZE, 0.0f);
-    std::copy_n(heights.begin(), std::min(heights.size(), heights_.size()), heights_.begin());
-    walkable_.assign((size_t)MAP_SIZE * MAP_SIZE, 1);
-    rebuildNavmesh();
-}
-
-void Terrain::setVertexHeight(int x, int z, float h) {
-    if (x < 0 || z < 0 || x >= VERT_SIZE || z >= VERT_SIZE) return;
-    heights_[(size_t)z * VERT_SIZE + x] = std::clamp(h, -HEIGHT_SCALE, HEIGHT_SCALE);
-}
-
-void Terrain::paint(float hx, float hz, float radius, float amount) {
-    if (radius <= 0.0f) return;
-    const int x0 = std::max(0, (int)std::floor(hx - radius));
-    const int x1 = std::min(VERT_SIZE - 1, (int)std::ceil(hx + radius));
-    const int z0 = std::max(0, (int)std::floor(hz - radius));
-    const int z1 = std::min(VERT_SIZE - 1, (int)std::ceil(hz + radius));
-    for (int z = z0; z <= z1; ++z) {
-        for (int x = x0; x <= x1; ++x) {
-            const float dx = x - hx, dz = z - hz;
-            const float d = std::sqrt(dx * dx + dz * dz);
-            if (d >= radius) continue;
-            const float falloff = 1.0f - d / radius;
-            setVertexHeight(x, z, heights_[(size_t)z * VERT_SIZE + x] + amount * falloff * falloff);
-        }
-    }
+MapData Terrain::toMapData() const {
+    MapData m;
+    m.size = size_;
+    m.heights = heights_;
+    m.walkable = walkable_;
+    m.biome = biome_;
+    return m;
 }
 
 float Terrain::heightAt(float x, float z) const {
-    x = std::clamp(x, 0.0f, (float)MAP_SIZE - 0.001f);
-    z = std::clamp(z, 0.0f, (float)MAP_SIZE - 0.001f);
+    const int vs = vertSize();
+    x = std::clamp(x, 0.0f, (float)size_ - 0.001f);
+    z = std::clamp(z, 0.0f, (float)size_ - 0.001f);
     int x0 = (int)x, z0 = (int)z;
     float fx = x - x0, fz = z - z0;
 
-    auto h = [&](int i, int j) { return heights_[(size_t)j * VERT_SIZE + i]; };
+    auto h = [&](int i, int j) { return heights_[(size_t)j * vs + i]; };
     float ha = h(x0, z0);          // corner a: (0,0)
     float hb = h(x0 + 1, z0);      // corner b: (1,0)
     float hc = h(x0, z0 + 1);      // corner c: (0,1)
@@ -57,24 +48,24 @@ float Terrain::heightAt(float x, float z) const {
 
 void Terrain::setWalkable(int x, int y, bool w) {
     if (!inBounds(x, y)) return;
-    walkable_[y * MAP_SIZE + x] = w;
+    walkable_[(size_t)y * size_ + x] = w;
     rebuildNavmesh();
 }
 
 void Terrain::rebuildNavmesh() {
     // Each run of blocked tiles along a row becomes one obstacle box
     std::vector<NavBox> blocked;
-    for (int y = 0; y < MAP_SIZE; ++y) {
+    for (int y = 0; y < size_; ++y) {
         int x = 0;
-        while (x < MAP_SIZE) {
-            if (walkable_[y * MAP_SIZE + x]) { ++x; continue; }
+        while (x < size_) {
+            if (walkable_[(size_t)y * size_ + x]) { ++x; continue; }
             int start = x;
-            while (x < MAP_SIZE && !walkable_[y * MAP_SIZE + x]) ++x;
+            while (x < size_ && !walkable_[(size_t)y * size_ + x]) ++x;
             blocked.push_back({ (float)start, (float)y, (float)x, (float)y + 1.0f });
         }
     }
 
     // Units keep this far from any blocked tile, so their centres never sit inside a wall
     constexpr float AGENT_CLEARANCE = 0.3f;
-    navmesh_.build({ 0.0f, 0.0f, (float)MAP_SIZE, (float)MAP_SIZE }, blocked, AGENT_CLEARANCE);
+    navmesh_.build({ 0.0f, 0.0f, (float)size_, (float)size_ }, blocked, AGENT_CLEARANCE);
 }

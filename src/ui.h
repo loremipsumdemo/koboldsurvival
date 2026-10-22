@@ -7,6 +7,8 @@ inline constexpr const char* GAME_VERSION = "0.1.0";
 // Which screen is showing
 enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTools };
 
+// Tools in the map editor's left panel, in button order
+
 // What a button does when clicked
 enum class Action {
     Continue, NewGame, LoadGame, Settings, Quit,
@@ -23,11 +25,6 @@ enum class Action {
     DeleteNo,             // Cancel on the confirm dialog
     OpenMapEditor,        // Map Editor button on the title screen
     PickMap,              // a map in the New Game list; param is its index
-    EditMode,             // switches the brush between raising and lowering
-    EditBrush,            // cycles the brush radius
-    EditReset,            // flattens the map
-    EditExport,           // saves the map to custom_maps
-    EditBack,             // leaves the editor for the title screen
     DevOpen,              // Dev Tools button in the Esc menu
     DevTime,              // moves the in-game clock; param is minutes
     DevClock,             // starts or stops the clock during play
