@@ -6,7 +6,7 @@
 
 // The starting party menu, shown after a map is picked in New Game and before the level starts.
 // Left: the three units. Middle: the picked unit's picture and totals. Right: tabs for its name and
-// sprite, its stats, its gear and its starting items. Bottom: Randomise all, Back and Confirm.
+// sprite, its stats, its gear and its starting items. Bottom: Randomize all, Back and Confirm.
 // The layout is pure, so the drawing and the mouse handling use the same rectangles.
 
 enum class PartyTab : int { Identity = 0, Stats, Gear, Items };
@@ -50,7 +50,7 @@ int clampDropScroll(int scroll, int count);
 struct PartyPanels {
     float topH = 0.0f;           // the title strip above the panels
     Rect left{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect centre{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect center{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect right{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bottom{ 0.0f, 0.0f, 0.0f, 0.0f };
 };

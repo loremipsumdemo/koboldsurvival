@@ -74,7 +74,7 @@ bool Build(const chunkgen::Settings& s, const std::string& dir, chunkgen::Tracke
     for (int sz = 0; sz < perSide; ++sz) {
         for (int sx = 0; sx < perSide; ++sx, ++k) {
             if (cancel.load()) {
-                err = "cancelled";
+                err = "canceled";
                 return false;
             }
             tr.Label("Segment " + std::to_string(k + 1) + " of " + std::to_string(total));
@@ -90,7 +90,7 @@ bool Build(const chunkgen::Settings& s, const std::string& dir, chunkgen::Tracke
             for (int j = 0; j < kChunksPerSide; ++j) {
                 for (int i = 0; i < kChunksPerSide; ++i) {
                     if (cancel.load()) {
-                        err = "cancelled";
+                        err = "canceled";
                         return false;
                     }
                     chunkgen::GenerateChunk(g, sx * kChunksPerSide + i, sz * kChunksPerSide + j, 1, c);
@@ -153,7 +153,7 @@ bool Assemble(const std::string& dir, World& out, chunkgen::Tracker& tr, const s
     for (int sz = 0; sz < perSide; ++sz) {
         for (int sx = 0; sx < perSide; ++sx, ++k) {
             if (cancel.load()) {
-                err = "cancelled";
+                err = "canceled";
                 return false;
             }
             if (!ReadSegment(SegmentPath(dir, sx, sz), chunks)) {

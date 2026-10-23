@@ -9,7 +9,7 @@
 namespace wm {
 
 
-// One editable theme value. Colours have count 3, everything else count 1.
+// One editable theme value. Colors have count 3, everything else count 1.
 struct LookField {
     const char* name;
     std::size_t offset;   // position of the first float inside Look

@@ -22,7 +22,7 @@ constexpr int kChunk = 64;  // tiles per chunk side
 struct Settings {
     uint32_t seed = 1;
     int size = 65536;           // tiles per side
-    float heightScale = 500.0f; // world units for a normalised height of 1
+    float heightScale = 500.0f; // world units for a normalized height of 1
     float waterShare = 0.42f;
     float relief = 1.0f;
     float rangeCover = 0.5f;
@@ -53,7 +53,7 @@ private:
 // The few values that depend on the whole map, sampled once from the seed.
 struct Globals {
     Settings s;
-    float sea = 0.0f;      // normalised sea level
+    float sea = 0.0f;      // normalized sea level
     float shoreTop = 0.0f; // land above this can carry peaks
     float peakThr = 0.0f;  // peak field threshold for the land
     bool bands = false;    // biome bands on, see Prepare
@@ -67,7 +67,7 @@ Globals Prepare(const Settings& s, Tracker& tr);
 // 4 for distant chunks. Each chunk has n x n samples, n = kChunk / step.
 struct Chunk {
     int cx = 0, cz = 0, step = 1, n = kChunk;
-    std::vector<float> height;   // normalised, 0 to 1
+    std::vector<float> height;   // normalized, 0 to 1
     std::vector<uint8_t> biome;  // Biome values
     std::vector<float> veg;      // 0 to 1
 };

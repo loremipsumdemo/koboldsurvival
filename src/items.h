@@ -41,7 +41,7 @@ const std::vector<ItemDef>& itemDatabase();
 // The definition with this id, or null if there is none. Id 0 means "no item".
 const ItemDef* findItem(int id);
 
-// Two capital letters for an item shown as a colour block: the first letters of its first two
+// Two capital letters for an item shown as a color block: the first letters of its first two
 // words, leaving out the +tier. "Iron Short Sword +4" gives "IS", "Bread" gives "BR".
 inline std::string itemInitials(const std::string& name) {
     std::vector<std::string> words;

@@ -10,7 +10,7 @@
 
 struct TerrainVertex {
     float x, y, z;
-    float r, g, b, a;   // colour, with the lighting already applied
+    float r, g, b, a;   // color, with the lighting already applied
 };
 
 struct ChunkMesh {

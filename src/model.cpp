@@ -98,7 +98,7 @@ bool loadGLBModel(const char* path, Model& m) {
         m.textures.push_back(imageTex[i]);
     }
 
-    // 1x1 texture for primitives with a plain colour instead of a texture
+    // 1x1 texture for primitives with a plain color instead of a texture
     auto solid = [&](unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
         unsigned char px[4] = { r, g, b, a };
         GLuint t = makeTexture(1, 1, GL_RGBA, GL_RGBA, px);
@@ -151,7 +151,7 @@ bool loadGLBModel(const char* path, Model& m) {
             }
             GLsizei count = (GLsizei)indices.size() - firstIndex;
 
-            // The base colour texture if there is one, otherwise the material's colour
+            // The base color texture if there is one, otherwise the material's color
             GLuint tex = 0;
             if (prim.material >= 0 && prim.material < (int)gltf.materials.size()) {
                 const tinygltf::Material& mat = gltf.materials[prim.material];

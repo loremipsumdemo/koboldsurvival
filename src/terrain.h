@@ -9,7 +9,7 @@
 #include "map.h"
 #include "world_format.h"
 
-// A unit keeps this far from any blocked tile, so its centre never sits against a wall
+// A unit keeps this far from any blocked tile, so its center never sits against a wall
 constexpr float AGENT_CLEARANCE = 0.3f;
 
 // Terrain holds the ground of the level being played: heights, walkability and ground types,
@@ -47,7 +47,7 @@ public:
     bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < size_ && y < size_; }
     // A tile is walkable when its chunk is loaded and the tile is not blocked
     bool walkable(int x, int y) const;
-    // Walkability and centre height of a tile, loaded or not. For a streamed world an unloaded chunk
+    // Walkability and center height of a tile, loaded or not. For a streamed world an unloaded chunk
     // is read from the folder for this call only, so nothing extra stays in memory. False if the tile
     // is outside the level or its chunk can't be read.
     bool tileGround(int x, int y, bool& walkable, float& height) const;

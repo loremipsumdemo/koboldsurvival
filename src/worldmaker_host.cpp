@@ -229,8 +229,8 @@ void DrawGenLog(Renderer& r, Session& s, int w, int h) {
     const float panelH = static_cast<float>(rows.size()) * lh + 12.0f;
     r.Rect(x - 8.0f, top - 6.0f, panelW + 16.0f, panelH, V3{0.04f, 0.04f, 0.06f}, 0.80f);
     for (size_t i = 0; i < rows.size(); ++i) {
-        const V3 colour = i == 0 ? V3{0.0f, 0.86f, 1.0f} : V3{0.80f, 0.85f, 0.90f};
-        r.Text(x, top + static_cast<float>(i) * lh, rows[i], colour);
+        const V3 color = i == 0 ? V3{0.0f, 0.86f, 1.0f} : V3{0.80f, 0.85f, 0.90f};
+        r.Text(x, top + static_cast<float>(i) * lh, rows[i], color);
     }
 }
 

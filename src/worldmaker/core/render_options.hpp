@@ -3,7 +3,7 @@
 namespace wm {
 
 
-// Which optimisations are switched on. The benchmark runs the same scene with
+// Which optimizations are switched on. The benchmark runs the same scene with
 // each variant so the effect of every change can be measured on the same machine.
 struct RenderOptions {
     bool batchUi = false;      // all 2D drawing in one vertex buffer and one draw call

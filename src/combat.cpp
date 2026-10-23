@@ -184,6 +184,15 @@ bool tryAutoUse(World& w, Entity e, Combat& c, CombatLog& log) {
     return false;
 }
 
+// A player unit that has just picked a fight drinks an elixir first, if it has one and none is active
+void drinkForFight(World& w, Entity p, Combat& pc, CombatLog& log) {
+    if (pc.buffLeft > 0.0f) return;
+    const int slot = slotNamed(w, p, ELIXIR);
+    if (slot >= 0 && useStackInSlot(w, p, slot) == UseResult::Used) {
+        log.add(nameOf(w, p) + " drinks " + ELIXIR);
+    }
+}
+
 } // namespace
 
 // ---- Formulas ----
@@ -263,7 +272,7 @@ float encumbranceOf(World& w, Entity e) {
     return encumbranceFor(carriedWeightOf(w, e), statsOf(w, e));
 }
 
-float walkSpeedOf(World& w, Entity e) {
+float walkSpeedOf(World& w, Entity e, bool running) {
     const Unit* u = w.get<Unit>(e);
     if (!u || isDowned(w, e)) return 0.0f;
     if (!w.has<Commandable>(e)) return u->speed;   // hostiles walk at their own pace
@@ -273,6 +282,7 @@ float walkSpeedOf(World& w, Entity e) {
     const float stamina = c ? c->stamina : 1.0f;
     const float load = encumbranceOf(w, e);
     float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1)) * (1.0f - load);
+    if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1);
     if (stamina <= 0.0f) speed *= 0.5f;
     return std::max(0.0f, speed);
 }
@@ -428,21 +438,28 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         if (unnoticedInRange) grantXp(w, p, STAT_STEALTH, STEALTH_XP_PER_SECOND * dt);
     }
 
-    // Targets. Player units pick from the hostiles in reach and keep that pick while it stays in reach.
+    // Targets. A player unit with an attack order keeps its ordered red unit until it is gone, and picks no
+    // other. The rest pick from the red units in reach and keep that pick while it stays in reach.
     // A player unit that picks a fight drinks an elixir first, if it has one and none is active.
     for (Entity p : players) {
         if (!standing(p)) continue;
         Combat& pc = *w.get<Combat>(p);
+        if (const AttackOrder* ao = w.get<AttackOrder>(p)) {
+            if (targetable(w, ao->target)) {
+                if (pc.target != ao->target) {
+                    pc.target = ao->target;
+                    drinkForFight(w, p, pc, log);
+                }
+                continue;
+            }
+            w.remove<AttackOrder>(p);   // the red unit is gone, so the order is done
+            pc.target = NULL_ENTITY;
+        }
         if (pc.target != NULL_ENTITY && targetable(w, pc.target) && distanceBetween(w, p, pc.target) <= ATTACK_REACH) {
             continue;
         }
         pc.target = pickInReach(w, p, hostiles);
-        if (pc.target != NULL_ENTITY && pc.buffLeft <= 0.0f) {
-            const int slot = slotNamed(w, p, ELIXIR);
-            if (slot >= 0 && useStackInSlot(w, p, slot) == UseResult::Used) {
-                log.add(nameOf(w, p) + " drinks " + ELIXIR);
-            }
-        }
+        if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc, log);
     }
 
     // Swings. Each unit whose swing is ready, standing, and in reach of its target swings, or first

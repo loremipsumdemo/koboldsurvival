@@ -12,8 +12,8 @@ namespace {
 const char* const kGridVS = R"GLSL(
 #version 330 core
 uniform mat4 uViewProj;
-uniform float uCentreX;
-uniform float uCentreZ;
+uniform float uCenterX;
+uniform float uCenterZ;
 uniform float uHalf;
 out vec3 vWorld;
 const vec2 kCorner[6] = vec2[6](
@@ -21,7 +21,7 @@ const vec2 kCorner[6] = vec2[6](
     vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0));
 void main() {
     vec2 c = kCorner[gl_VertexID];
-    vec3 p = vec3(uCentreX + c.x * uHalf, 0.0, uCentreZ + c.y * uHalf);
+    vec3 p = vec3(uCenterX + c.x * uHalf, 0.0, uCenterZ + c.y * uHalf);
     vWorld = p;
     gl_Position = uViewProj * vec4(p, 1.0);
 }
@@ -34,9 +34,9 @@ uniform vec3 uEye;
 uniform vec3 uMinor;
 uniform vec3 uMajor;
 uniform float uMajorEvery;
-uniform vec3 uFogColour;
+uniform vec3 uFogColor;
 uniform float uFog;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     vec2 g = vWorld.xz;
     vec2 fw = max(fwidth(g), vec2(1e-4));
@@ -56,7 +56,7 @@ void main() {
     float dist = distance(g, uEye.xz);
     float fd = dist * uFog * 0.004;
     float f = clamp(1.0 - exp(-fd * fd), 0.0, 1.0);
-    fragColour = vec4(col, a * (1.0 - f));
+    fragColor = vec4(col, a * (1.0 - f));
 }
 )GLSL";
 
@@ -67,13 +67,13 @@ bool Renderer::InitGrid(std::string& err) {
     if (!gridProg_) return false;
     grid_.viewProj = glGetUniformLocation(gridProg_, "uViewProj");
     grid_.eye = glGetUniformLocation(gridProg_, "uEye");
-    grid_.centreX = glGetUniformLocation(gridProg_, "uCentreX");
-    grid_.centreZ = glGetUniformLocation(gridProg_, "uCentreZ");
+    grid_.centerX = glGetUniformLocation(gridProg_, "uCenterX");
+    grid_.centerZ = glGetUniformLocation(gridProg_, "uCenterZ");
     grid_.half = glGetUniformLocation(gridProg_, "uHalf");
     grid_.minor = glGetUniformLocation(gridProg_, "uMinor");
     grid_.major = glGetUniformLocation(gridProg_, "uMajor");
     grid_.majorEvery = glGetUniformLocation(gridProg_, "uMajorEvery");
-    grid_.horizon = glGetUniformLocation(gridProg_, "uFogColour");
+    grid_.horizon = glGetUniformLocation(gridProg_, "uFogColor");
     grid_.fog = glGetUniformLocation(gridProg_, "uFog");
     return true;
 }
@@ -91,13 +91,13 @@ void Renderer::DrawGrid(const Camera& cam, const SkyState& sky, float radius, in
     glUseProgram(gridProg_);
     glUniformMatrix4fv(grid_.viewProj, 1, GL_FALSE, cam.viewProj.m);
     glUniform3f(grid_.eye, cam.eye.x, cam.eye.y, cam.eye.z);
-    glUniform1f(grid_.centreX, cx);
-    glUniform1f(grid_.centreZ, cz);
+    glUniform1f(grid_.centerX, cx);
+    glUniform1f(grid_.centerZ, cz);
     glUniform1f(grid_.half, radius);
     glUniform3f(grid_.minor, minorCol.x, minorCol.y, minorCol.z);
     glUniform3f(grid_.major, majorCol.x, majorCol.y, majorCol.z);
     glUniform1f(grid_.majorEvery, static_cast<float>(major < 1 ? 1 : major));
-    glUniform3f(grid_.horizon, sky.fogColour.x, sky.fogColour.y, sky.fogColour.z);
+    glUniform3f(grid_.horizon, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform1f(grid_.fog, sky.fog);
 
     glBindVertexArray(emptyVao_);

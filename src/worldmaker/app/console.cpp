@@ -303,7 +303,7 @@ void PrintConsoleHelp(Console& con) {
     con.print("  import <name>        read a world back from data/worlds");
     con.print("  worlds               list exported worlds");
     con.print("  theme list           show the sky, sun and fog values");
-    con.print("  theme set <v> ...    change a theme value (colours take 3 numbers)");
+    con.print("  theme set <v> ...    change a theme value (colors take 3 numbers)");
     con.print("  theme time <hour>    set the time of day");
     con.print("  theme reset          restore the default theme");
     con.print("  savetheme <name>     save the theme to data/themes");

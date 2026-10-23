@@ -12,7 +12,7 @@
 --   sell_value         : price when sold to vendor
 --   required_level     : minimum level to use/equip (gear: the tier)
 --   attack_value       : attack stat (weapons only, 0 otherwise)
---   defense_value      : defense stat (armour and shields, 0 otherwise)
+--   defense_value      : defense stat (armor and shields, 0 otherwise)
 --   on_use             : what right-clicking does from the inventory, written as a short script:
 --                        statements of health or hunger with a sign and a number, separated by ';'
 --                        e.g. health +50; hunger +10; attack +10 for 60s. Empty for none.
@@ -37,7 +37,7 @@ CREATE TABLE items (
     sell_value         INTEGER NOT NULL DEFAULT 0,
     required_level     INTEGER NOT NULL DEFAULT 1,
     attack_value       INTEGER NOT NULL DEFAULT 0,  -- weapons only
-    defense_value      INTEGER NOT NULL DEFAULT 0,  -- armour and shields only
+    defense_value      INTEGER NOT NULL DEFAULT 0,  -- armor and shields only
     on_use             TEXT,                        -- right-click script, NULL for none
     material           TEXT,                        -- gear only, NULL for none
     tier               INTEGER NOT NULL DEFAULT 0,  -- gear only, 0 for none

@@ -70,7 +70,7 @@ PartyPanels partyPanels(int W, int H) {
     P.left = Rect{ m, bodyY, leftW, bodyH };
     P.right = Rect{ W - m - rightW, bodyY, rightW, bodyH };
     const float cx = P.left.x + P.left.w + m;
-    P.centre = Rect{ cx, bodyY, P.right.x - m - cx, bodyH };
+    P.center = Rect{ cx, bodyY, P.right.x - m - cx, bodyH };
     P.bottom = Rect{ 0.0f, H - bottomH, (float)W, bottomH };
     return P;
 }
@@ -125,7 +125,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         sprAnchor = sprBox;
         out.push_back(Button{ std::to_string(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
 
-        out.push_back(Button{ "Randomise this unit", Rect{ inX, sprBox.y + sprBox.h + 26.0f * s, 240.0f * s, 36.0f * s },
+        out.push_back(Button{ "Randomize this unit", Rect{ inX, sprBox.y + sprBox.h + 26.0f * s, 240.0f * s, 36.0f * s },
                               Action::PartyRandomUnit, true, sel });
         break;
     }
@@ -173,7 +173,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         int attack = 0, defense = 0;
         gearTotals(worn, attack, defense);
         const float noteY = top + 4.0f * pitch + 2.0f * s;
-        out.push_back(Button{ "Attack " + std::to_string(attack) + "    Defence " + std::to_string(defense),
+        out.push_back(Button{ "Attack " + std::to_string(attack) + "    Defense " + std::to_string(defense),
                               Rect{ inX, noteY, inW, 22.0f * s }, Action::PartyNote, false, 0 });
         out.push_back(Button{ "Click a slot to choose its item. Only items that fit are listed.",
                               Rect{ inX, noteY + 26.0f * s, inW, 22.0f * s }, Action::PartyNote, false, 0 });
@@ -213,9 +213,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
     }
 
-    // Bottom bar: Randomise all, Back, Confirm, and the line that says what Confirm needs
+    // Bottom bar: Randomize all, Back, Confirm, and the line that says what Confirm needs
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
-    out.push_back(Button{ "Randomise all", Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
+    out.push_back(Button{ "Randomize all", Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
     out.push_back(Button{ "Back", Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
     out.push_back(Button{ "Confirm", Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, partyNamesValid(p), 0 });

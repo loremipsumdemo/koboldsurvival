@@ -47,7 +47,7 @@ bool groundLoaded(const Terrain& t, float x, float z) {
     return t.chunkAt(cx, cz) != nullptr;
 }
 
-// Where an item's sprite is on screen: the centre x, the top and bottom, and half its width
+// Where an item's sprite is on screen: the center x, the top and bottom, and half its width
 struct ItemOnScreen {
     float cx = 0.0f, top = 0.0f, bottom = 0.0f, halfW = 0.0f;
 };
@@ -65,7 +65,7 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
     return true;
 }
 
-// Colour that marks an item's kind in the inventory
+// Color that marks an item's kind in the inventory
 RGBA categoryColor(int item) {
     const ItemDef* d = findItem(item);
     if (!d) return RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
@@ -83,7 +83,7 @@ std::string itemName(int item) {
 }
 
 struct V3 { float x, y, z; };
-struct Vertex { V3 p; RGBA c; };         // position, then colour
+struct Vertex { V3 p; RGBA c; };         // position, then color
 
 const char* COLOR_VS = R"(
 #version 330 core
@@ -157,7 +157,7 @@ GLuint linkProgram(const char* vs, const char* fs) {
     return p;
 }
 
-// Position (location 0) and colour (location 1), for Vertex
+// Position (location 0) and color (location 1), for Vertex
 void setupColorLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -179,7 +179,7 @@ void setupGlyphLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(0);
 }
 
-// Coloured triangles rebuilt every frame (selection rings, drag box)
+// Colored triangles rebuilt every frame (selection rings, drag box)
 struct Batch {
     std::vector<Vertex> v;
 
@@ -281,17 +281,17 @@ const char* SKY_FS = R"(
 in vec3 vDir;
 uniform vec3 uSunDir;     // unit vector towards the sun
 uniform float uSunAlpha;  // 0 when the sun is below the horizon, 1 when fully up
-uniform vec3 uSunCol;     // colour of the sun's glow and disc
+uniform vec3 uSunCol;     // color of the sun's glow and disc
 uniform vec3 uMoonDir;    // unit vector towards the moon, opposite the sun
 uniform float uMoonAlpha; // 0 when the moon is hidden
 uniform vec3 uMoonCol;
 uniform float uStarAlpha; // 0 when there are no stars
-uniform vec3 uZenith;     // sky colour straight up
-uniform vec3 uHorizon;    // sky colour at the horizon
+uniform vec3 uZenith;     // sky color straight up
+uniform vec3 uHorizon;    // sky color at the horizon
 out vec4 FragColor;
 void main() {
     vec3 d = normalize(vDir);
-    // Gradient: the horizon colour blends up to the zenith colour
+    // Gradient: the horizon color blends up to the zenith color
     vec3 col = mix(uHorizon, uZenith, pow(clamp(d.y, 0.0, 1.0), 0.6));
 
     // Stars: one per cell of a fine grid over the sphere, where a hash says so. Upper sky only.
@@ -651,7 +651,7 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     float cx = (m.minX + m.maxX) * 0.5f;
     float cz = (m.minZ + m.maxZ) * 0.5f;
 
-    // Scale, then move so the centre of the bottom sits on (x, y, z)
+    // Scale, then move so the center of the bottom sits on (x, y, z)
     Mat4 model{};
     model.m[0] = s;
     model.m[5] = s;
@@ -1156,7 +1156,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float invSky[16];
         invert4x4(mul(proj, viewRot).m, invSky);
 
-        // Sun, moon, stars and sky colours come from the dev tools settings and the time of day.
+        // Sun, moon, stars and sky colors come from the dev tools settings and the time of day.
         // The sun rises at 06:00, peaks at noon and sets at 18:00. The moon sits opposite the sun.
         const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * 3.14159265f;
         const float elev = std::sin(ang);
@@ -1234,7 +1234,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     drawGroundItems(w, t);
 
-    // 3. Colour overlays: selection rings and the drag box
+    // 3. Color overlays: selection rings and the drag box
     auto flush = [&](const Batch& batch, const Mat4& m) {
         glUseProgram(colorProgram_);
         glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, m.m);
@@ -1278,13 +1278,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
 namespace {
 
-// The colour of an item's name by tier: grey at tier 1, rising to gold at tier 6. Tier 0 stays white.
+// The color of an item's name by tier: gray at tier 1, rising to gold at tier 6. Tier 0 stays white.
 RGBA tierTint(int tier) {
     if (tier <= 0) return RGBA{ 1.0f, 1.0f, 1.0f, 1.0f };
     const float t = std::clamp((tier - 1) / 5.0f, 0.0f, 1.0f);
-    const RGBA grey{ 0.62f, 0.62f, 0.66f, 1.0f }, gold{ 1.0f, 0.84f, 0.32f, 1.0f };
-    return RGBA{ grey.r + (gold.r - grey.r) * t, grey.g + (gold.g - grey.g) * t,
-                 grey.b + (gold.b - grey.b) * t, 1.0f };
+    const RGBA gray{ 0.62f, 0.62f, 0.66f, 1.0f }, gold{ 1.0f, 0.84f, 0.32f, 1.0f };
+    return RGBA{ gray.r + (gold.r - gray.r) * t, gray.g + (gold.g - gray.g) * t,
+                 gray.b + (gold.b - gray.b) * t, 1.0f };
 }
 
 // 1234567 as "1,234,567"
@@ -1328,7 +1328,7 @@ std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
     return t + "...";
 }
 
-// A quad with one colour at the top and another at the bottom
+// A quad with one color at the top and another at the bottom
 void Renderer::drawRectGradient(const Rect& r, RGBA top, RGBA bottom) {
     const float x0 = r.x, x1 = r.x + r.w, y0 = r.y, y1 = r.y + r.h;
     const Vertex v[6] = {
@@ -1375,51 +1375,195 @@ void Renderer::drawClockText(const std::string& s, float x, float y, RGBA tint) 
     }
 }
 
-// The tooltip for an item: its name in its tier's colour, then its stats that are not zero
-void Renderer::drawItemTooltip(int item, int count, float mx, float my) {
-    const ItemDef* d = findItem(item);
-    if (!d) return;
-    const float s = uiH_ / 720.0f;
-    const RGBA grey{ 0.80f, 0.80f, 0.84f, 1.0f };
+// The tooltip for an item: its name in its tier's color, then its stats that are not zero
+// Colors for the parts of a tooltip. The change colors match the green and red of the combat text.
+namespace {
+const RGBA GOOD_CHANGE{ 0.42f, 0.95f, 0.45f, 1.0f };
+const RGBA BAD_CHANGE{ 1.0f, 0.38f, 0.36f, 1.0f };
+const RGBA TIP_TEXT{ 0.80f, 0.80f, 0.84f, 1.0f };
+const RGBA TIP_HEADING{ 0.62f, 0.72f, 0.90f, 1.0f };
+const RGBA TIP_WARNING{ 1.0f, 0.72f, 0.35f, 1.0f };
 
-    std::vector<std::pair<std::string, RGBA>> lines;
-    std::string title = d->name;
+// The numbers a tooltip compares, summed over the items an item would replace
+struct GearSum {
+    int attack = 0, defense = 0, durability = 0;
+    float weight = 0.0f;
+};
+
+GearSum sumGear(const std::vector<int>& items) {
+    GearSum s;
+    for (int id : items) {
+        const ItemDef* d = findItem(id);
+        if (!d) continue;
+        s.attack += d->attackValue;
+        s.defense += d->defenseValue;
+        s.weight += d->weight;
+        if (d->maxDurability > 0) s.durability += d->currentDurability;
+    }
+    return s;
+}
+
+// The rows of an item's tooltip. With a baseline (the gear it would replace), each number that changes
+// shows the change in brackets: green when better, red when worse. A lighter weight is better.
+std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base) {
+    std::vector<TipRow> rows;
+    std::string title = d.name;
     if (count > 1) title += " x" + std::to_string(count);
-    lines.push_back({ title, tierTint(d->tier) });
-    if (d->attackValue > 0) lines.push_back({ "Attack " + std::to_string(d->attackValue), grey });
-    if (d->defenseValue > 0) lines.push_back({ "Defense " + std::to_string(d->defenseValue), grey });
-    char weight[32];
-    std::snprintf(weight, sizeof(weight), "%.1f", d->weight);
-    lines.push_back({ std::string("Weight ") + weight + (count > 1 ? " each" : ""), grey });
-    if (d->maxDurability > 0) {
-        lines.push_back({ "Durability " + std::to_string(d->currentDurability) + " / " +
-                          std::to_string(d->maxDurability), grey });
+    rows.push_back(TipRow{ title, tierTint(d.tier) });
+
+    auto intChange = [&](TipRow& row, int now, int before, bool higherIsBetter) {
+        if (!base || now == before) return;
+        const int diff = now - before;
+        row.change = "(" + std::string(diff > 0 ? "+" : "") + std::to_string(diff) + ")";
+        row.changeTint = ((diff > 0) == higherIsBetter) ? GOOD_CHANGE : BAD_CHANGE;
+    };
+
+    if (d.attackValue > 0 || (base && base->attack > 0)) {
+        TipRow row{ "Attack " + std::to_string(d.attackValue), TIP_TEXT };
+        intChange(row, d.attackValue, base ? base->attack : 0, true);
+        rows.push_back(row);
+    }
+    if (d.defenseValue > 0 || (base && base->defense > 0)) {
+        TipRow row{ "Defense " + std::to_string(d.defenseValue), TIP_TEXT };
+        intChange(row, d.defenseValue, base ? base->defense : 0, true);
+        rows.push_back(row);
     }
 
-    const float lineH = listTextHeight("Ag"), gap = 2.0f * s, pad = 7.0f * s;
-    float textW = 0.0f;
-    for (const auto& l : lines) textW = std::max(textW, listTextWidth(l.first));
-    const float bw = textW + 2.0f * pad;
-    const float bh = lines.size() * lineH + (lines.size() - 1) * gap + 2.0f * pad;
-    float bx = mx + 14.0f * s;
-    if (bx + bw > uiW_) bx = mx - bw - 14.0f * s;
-    float by = my + 12.0f * s;
-    if (by + bh > uiH_) by = uiH_ - bh;
-    bx = std::max(0.0f, bx);
-    by = std::max(0.0f, by);
+    char weight[32];
+    std::snprintf(weight, sizeof(weight), "%.1f", d.weight);
+    TipRow weightRow{ std::string("Weight ") + weight + (count > 1 ? " each" : ""), TIP_TEXT };
+    if (base && std::fabs(d.weight - base->weight) >= 0.05f) {
+        std::snprintf(weight, sizeof(weight), "(%+.1f)", d.weight - base->weight);
+        weightRow.change = weight;
+        weightRow.changeTint = d.weight < base->weight ? GOOD_CHANGE : BAD_CHANGE;
+    }
+    rows.push_back(weightRow);
 
-    drawRect(Rect{ bx, by, bw, bh }, RGBA{ 0.0f, 0.0f, 0.0f, 0.5f });
-    float ty = by + pad;
-    for (const auto& l : lines) {
-        drawListText(l.first, bx + pad, ty, l.second);
+    if (d.maxDurability > 0) {
+        TipRow row{ "Durability " + std::to_string(d.currentDurability) + " / " + std::to_string(d.maxDurability),
+                    TIP_TEXT };
+        intChange(row, d.currentDurability, base ? base->durability : 0, true);
+        rows.push_back(row);
+    }
+    return rows;
+}
+
+// A card beside a comparison: the gear slot, the item in it, and its stats. replaced marks the item the
+// hovered item would take the place of. held is 0 for an empty slot.
+std::vector<TipRow> gearCardRows(int slot, bool replaced, int held) {
+    std::vector<TipRow> rows;
+    rows.push_back(TipRow{ gearSlotName(slot), TIP_HEADING });
+    if (replaced) rows.push_back(TipRow{ "Will be replaced", TIP_WARNING });
+    const ItemDef* d = findItem(held);
+    if (!d) {
+        rows.push_back(TipRow{ "Empty", TIP_TEXT });
+        return rows;
+    }
+    for (const TipRow& row : itemRows(*d, 1, nullptr)) rows.push_back(row);
+    return rows;
+}
+} // namespace
+
+float Renderer::tipWidth(const std::vector<TipRow>& rows) {
+    const float s = uiH_ / 720.0f, gap = 6.0f * s, pad = 7.0f * s;
+    float w = 0.0f;
+    for (const TipRow& r : rows) {
+        float rowW = listTextWidth(r.text);
+        if (!r.change.empty()) rowW += gap + listTextWidth(r.change);
+        w = std::max(w, rowW);
+    }
+    return w + 2.0f * pad;
+}
+
+float Renderer::tipHeight(size_t rowCount) {
+    if (rowCount == 0) return 0.0f;
+    const float s = uiH_ / 720.0f, gap = 2.0f * s, pad = 7.0f * s;
+    return rowCount * listTextHeight("Ag") + (rowCount - 1) * gap + 2.0f * pad;
+}
+
+void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float width) {
+    const float s = uiH_ / 720.0f, gap = 2.0f * s, pad = 7.0f * s;
+    const float lineH = listTextHeight("Ag");
+    drawRect(Rect{ x, y, width, tipHeight(rows.size()) }, RGBA{ 0.0f, 0.0f, 0.0f, 0.5f });
+    float ty = y + pad;
+    for (const TipRow& r : rows) {
+        drawListText(r.text, x + pad, ty, r.tint);
+        if (!r.change.empty()) {
+            drawListText(r.change, x + pad + listTextWidth(r.text) + 6.0f * s, ty, r.changeTint);
+        }
         ty += lineH + gap;
     }
 }
 
-void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units) {
+void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Equipment* compareTo) {
+    const ItemDef* d = findItem(item);
+    if (!d) return;
+    const float s = uiH_ / 720.0f;
+    const float gap = 8.0f * s;
+
+    // Gear is compared with the gear it would replace, and each gear slot of its kind gets a card
+    const bool compare = compareTo && !d->equipSlot.empty();
+    std::vector<int> displaced;
+    std::vector<int> replacedItems;
+    if (compare) {
+        displaced = displacedSlots(*compareTo, item);
+        for (int slot : displaced) replacedItems.push_back(compareTo->items[slot]);
+    }
+    const GearSum base = sumGear(replacedItems);
+    const std::vector<TipRow> main = itemRows(*d, count, compare ? &base : nullptr);
+
+    std::vector<std::vector<TipRow>> cards;
+    if (compare) {
+        for (int slot : comparisonSlots(item)) {
+            const int held = compareTo->items[slot];
+            const bool replaced = held != 0 && std::find(displaced.begin(), displaced.end(), slot) != displaced.end();
+            cards.push_back(gearCardRows(slot, replaced, held));
+        }
+    }
+
+    // The tooltip sits beside the mouse, moved to its left near the right edge
+    const float mainW = tipWidth(main), mainH = tipHeight(main.size());
+    float bx = mx + 14.0f * s;
+    if (bx + mainW > uiW_) bx = mx - mainW - 14.0f * s;
+    bx = std::max(0.0f, bx);
+
+    std::vector<float> cardW;
+    float cardsW = 0.0f, cardsH = 0.0f;
+    for (const auto& c : cards) {
+        cardW.push_back(tipWidth(c));
+        cardsW += cardW.back() + (cardW.size() > 1 ? gap : 0.0f);
+        cardsH = std::max(cardsH, tipHeight(c.size()));
+    }
+
+    float by = my + 12.0f * s;
+    const float tallest = std::max(mainH, cardsH);
+    if (by + tallest > uiH_) by = uiH_ - tallest;
+    by = std::max(0.0f, by);
+
+    // The cards go on the side of the tooltip that has room: to its right if they fit, else to its left
+    const bool right = bx + mainW + gap + cardsW <= uiW_;
+    float cx = std::max(0.0f, right ? bx + mainW + gap : bx - gap - cardsW);
+
+    drawTip(main, bx, by, mainW);
+    for (size_t i = 0; i < cards.size(); ++i) {
+        drawTip(cards[i], cx, by, cardW[i]);
+        cx += cardW[i] + gap;
+    }
+}
+
+void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running) {
     const float s = uiH_ / 720.0f;
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.05f, 0.05f, 0.08f, bgAlpha });
+
+    // Walk and run: the lit one is the pace the squad is moving at
+    auto mode = [&](const Rect& r, const char* text, bool on) {
+        drawRect(r, on ? RGBA{ 0.66f, 0.38f, 1.0f, 1.0f } : RGBA{ 0.14f, 0.14f, 0.18f, bgAlpha });
+        const float tw = listTextWidth(text), th = listTextHeight(text);
+        drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    };
+    mode(L.walkButton, "Walk", !running);
+    mode(L.runButton, "Run", running);
 
     for (const UnitCell& c : L.cells) {
         const Entity e = units[c.index];
@@ -1448,8 +1592,18 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             drawQuadVerts(g.tex, v, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
 
-        // Health bar under the portrait
         const Needs* nd = w.get<Needs>(e);
+        // Low health: a red gradient rises from the bottom of the portrait by the share of health lost, as in the sidebar
+        if (nd && nd->maxHp > 0 && nd->hp < nd->maxHp) {
+            const float lost = std::clamp(1.0f - (float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f);
+            const float gh = c.rect.w * lost;
+            if (gh > 0.0f) {
+                drawRectGradient(Rect{ c.rect.x, c.rect.y + c.rect.w - gh, c.rect.w, gh },
+                                 RGBA{ 0.85f, 0.10f, 0.10f, 0.0f }, RGBA{ 0.85f, 0.10f, 0.10f, 0.65f });
+            }
+        }
+
+        // Health bar under the portrait
         const float frac = (nd && nd->maxHp > 0) ? std::clamp((float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f) : 0.0f;
         const float barY = c.rect.y + c.rect.w + 3.0f * s, barH = 4.0f * s;
         drawRect(Rect{ c.rect.x, barY, c.rect.w, barH }, RGBA{ 0.16f, 0.16f, 0.19f, bgAlpha });
@@ -1471,8 +1625,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
                                     int dimSlot, int dimGear, int dragItem) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA grey{ 0.72f, 0.72f, 0.76f, 1.0f };
-    const float bgAlpha = 0.5f;   // every background in the sidebar; text, item colours and bars stay solid
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    const float bgAlpha = 0.5f;   // every background in the sidebar; text, item colors and bars stay solid
     const Inventory* inv = w.get<Inventory>(unit);
     const Needs needs = w.get<Needs>(unit) ? *w.get<Needs>(unit) : Needs{};
     const Stats stats = w.get<Stats>(unit) ? *w.get<Stats>(unit) : defaultStats();
@@ -1531,7 +1685,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
     auto statRow = [&](float rowY, const char* label, const std::string& value, float frac, RGBA fill) {
-        drawListText(label, tx, rowY, grey);
+        drawListText(label, tx, rowY, gray);
         drawListText(value, rightEdge - listTextWidth(value), rowY, white);
         const float barY = rowY + listTextHeight("Ag") + 3.0f * s;
         const float barH = 8.0f * s;
@@ -1582,32 +1736,34 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const int item = worn ? worn->items[gi] : 0;
         const bool locked = (int)gi == GEAR_OFF_HAND && offLocked;
         if (item == 0) {
-            // An empty slot shows its name, or "Two-handed" for a locked off hand, centred and dimmed
+            // An empty slot shows its name, or "Two-handed" for a locked off hand, centerd and dimmed
             const char* text = locked ? "Two-handed" : gearSlotName((int)gi);
             const float tw = listTextWidth(text);
             drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - listH) * 0.5f,
-                         locked ? grey : RGBA{ 0.72f, 0.72f, 0.76f, 0.45f });
+                         locked ? gray : RGBA{ 0.72f, 0.72f, 0.76f, 0.45f });
             continue;
         }
 
-        drawListText(gearSlotName((int)gi), r.x + inset, r.y + inset, grey);
-        const float rowY = r.y + inset + listH + 3.0f * s;
+        // The slot's name stays, and the item is shown by its picture below it. Its name is in the hover tooltip.
+        drawListText(gearSlotName((int)gi), r.x + inset, r.y + inset, gray);
         float alpha = 1.0f;
         if ((int)gi == dimGear) alpha = 0.30f;
         else if ((int)gi == GEAR_OFF_HAND && dimOff) alpha = 0.35f;
-        // The small square beside the name is the item's picture, or its kind's colour without one
-        const float chip = 12.0f * s;
-        const Rect chipRect{ r.x + inset, rowY, chip, chip };
+        const float top = r.y + inset + listH + 2.0f * s;
+        const Rect area{ r.x + inset, top, r.w - 2.0f * inset, r.y + r.h - inset - top };
         if (const TextTex* pic = itemTexture(item)) {
-            drawFitted(*pic, chipRect, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
+            drawFitted(*pic, area, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
         } else {
+            // Without a picture, the item's kind shows as a color block with its initials
+            const float side = std::min(area.w, area.h) * 0.8f;
+            const Rect block{ area.x + (area.w - side) * 0.5f, area.y + (area.h - side) * 0.5f, side, side };
             RGBA c = categoryColor(item);
             c.a = alpha;
-            drawRect(chipRect, c);
+            drawRect(block, c);
+            const std::string ini = itemInitials(itemName(item));
+            drawListText(ini, block.x + (block.w - listTextWidth(ini)) * 0.5f, block.y + (block.h - listH) * 0.5f,
+                         RGBA{ 1.0f, 1.0f, 1.0f, alpha });
         }
-        const float textW = r.w - 2.0f * inset - chip - 6.0f * s;
-        drawListText(fitText(itemName(item), textW, false), r.x + inset + chip + 6.0f * s,
-                     rowY + (chip - listH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
     }
 
     int attack = 0, defense = 0;
@@ -1621,7 +1777,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
                              std::to_string(INVENTORY_SLOTS) + " slots";
     drawListText(used, L.gridPanel.x + L.gridPanel.w - 10.0f * s - listTextWidth(used),
-                 L.gridPanel.y + 6.0f * s, grey);
+                 L.gridPanel.y + 6.0f * s, gray);
 
     int hoverSlot = -1;
     for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
@@ -1632,7 +1788,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const ItemStack& st = inv->slots[i];
         if (st.item == 0 || st.count <= 0) continue;
 
-        // An item shows its picture, or else a block in its kind's colour with its initials. The count sits in the corner.
+        // An item shows its picture, or else a block in its kind's color with its initials. The count sits in the corner.
         RGBA c = categoryColor(st.item);
         if ((int)i == dimSlot) c.a = 0.30f;
         const Rect block{ r.x + r.w * 0.12f, r.y + r.h * 0.12f, r.w * 0.76f, r.h * 0.76f };
@@ -1655,7 +1811,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (dragItem == 0 && hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
         const Rect& r = L.slots[hoverSlot];
         drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.18f });
-        drawItemTooltip(inv->slots[hoverSlot].item, inv->slots[hoverSlot].count, mx, my);
+        drawItemTooltip(inv->slots[hoverSlot].item, inv->slots[hoverSlot].count, mx, my, worn);
     }
     if (dragItem == 0 && hoverGear >= 0 && hoverGear != dimGear && worn && worn->items[hoverGear] != 0) {
         const Rect& r = L.gear[hoverGear];
@@ -1712,7 +1868,7 @@ void Renderer::drawClock(const std::string& clock, const std::string& date, floa
     const float pad = 10.0f * s, margin = 12.0f * s, lineGap = 4.0f * s;
     const RGBA fill{ 0.04f, 0.04f, 0.05f, 0.5f };
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA grey{ 0.78f, 0.78f, 0.82f, 1.0f };
+    const RGBA gray{ 0.78f, 0.78f, 0.82f, 1.0f };
 
     const float clockW = clockTextWidth(clock), clockH = uiTextHeight("Ag");
     const float dateW = listTextWidth(date), dateH = listTextHeight("Ag");
@@ -1724,7 +1880,7 @@ void Renderer::drawClock(const std::string& clock, const std::string& date, floa
 
     drawRect(box, fill);
     drawClockText(clock, textRight - clockW, box.y + pad, white);
-    drawListText(date, textRight - dateW, box.y + pad + clockH + lineGap, grey);
+    drawListText(date, textRight - dateW, box.y + pad + clockH + lineGap, gray);
 }
 
 void Renderer::drawNotice(const std::string& text, int winW, int winH) {
@@ -1747,7 +1903,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
                               float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA grey{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
     const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
     const float bgAlpha = 0.5f;
     const float rowH = fontTextHeight(statsRow_, "Ag") + 1.0f * s;
@@ -1768,7 +1924,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     };
     auto column = [&](const Rect& col, const std::vector<StatGroup>& groups) {
         float rowY = col.y;
-        row(col, rowY, "Stat", "Level", "Total XP", "To next", grey);
+        row(col, rowY, "Stat", "Level", "Total XP", "To next", gray);
         rowY += rowH;
         for (StatGroup group : groups) {
             const char* title = group == StatGroup::Attributes ? "Attributes"
@@ -1928,7 +2084,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
     }
 }
 
-// The colour of a damage number or log line: green for a player unit's, red for a hostile's, gray otherwise
+// The color of a damage number or log line: green for a player unit's, red for a hostile's, gray otherwise
 static RGBA logTint(Tint t) {
     switch (t) {
     case Tint::Green: return RGBA{ 0.42f, 0.95f, 0.45f, 1.0f };
@@ -2001,7 +2157,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
 
 void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
     drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
-    // The rows start where the padding above them ends, so the text block is centred in the panel
+    // The rows start where the padding above them ends, so the text block is centerd in the panel
     const float top = L.panel.y + (L.panel.h - L.linesVisible * L.lineH) * 0.5f;
     const int count = (int)log.lines.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
@@ -2020,7 +2176,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                               const PartyPanels& P, const std::string& mapName, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA grey{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
     const RGBA faint{ 0.45f, 0.45f, 0.50f, 1.0f };
     const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
     const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
@@ -2039,19 +2195,19 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         if (on) return plateOn;
         return hot ? plateHot : plate;
     };
-    // Text centred in a box, shortened to fit
-    auto centred = [&](const Rect& r, const std::string& text, RGBA tint) {
+    // Text centerd in a box, shortened to fit
+    auto centerd = [&](const Rect& r, const std::string& text, RGBA tint) {
         const std::string t = fitText(text, r.w - 8.0f * s, false);
         drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - lineH) * 0.5f, tint);
     };
-    // Text at the left of a box, vertically centred, after an inset
+    // Text at the left of a box, vertically centerd, after an inset
     auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
         const std::string t = fitText(text, r.w - inset - 6.0f * s, false);
         drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
     };
 
     drawRect(P.left, panel);
-    drawRect(P.centre, panel);
+    drawRect(P.center, panel);
     drawRect(P.right, panel);
     drawRect(P.bottom, RGBA{ 0.03f, 0.03f, 0.05f, 0.95f });
     drawUiTextCentered("Starting party: " + mapName, uiW_ * 0.5f, (P.topH - uiTextHeight("Ag")) * 0.5f, white);
@@ -2070,19 +2226,19 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const std::string shown = named ? cleanName(u.name) : std::string("No name");
             drawListText(fitText(shown, tw, false), tx, b.rect.y + 22.0f * s,
                          !named ? warn : chosen ? hover : white);
-            drawListText("Sprite " + std::to_string(u.sprite), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, grey);
+            drawListText("Sprite " + std::to_string(u.sprite), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, gray);
             break;
         }
 
         case Action::PartyTabPick: {
             const bool on = b.param == (int)ui.tab;
             drawRect(b.rect, plateFor(hot, on, true));
-            centred(b.rect, b.label, on ? hover : white);
+            centerd(b.rect, b.label, on ? hover : white);
             break;
         }
 
         case Action::PartyNameField: {
-            drawListText("Name", b.rect.x, b.rect.y - 22.0f * s, grey);
+            drawListText("Name", b.rect.x, b.rect.y - 22.0f * s, gray);
             drawRect(b.rect, plateFor(hot, ui.editingName, true));
             if (b.label.empty() && !ui.editingName) {
                 leftText(b.rect, "Click to type a name", faint, 10.0f * s);
@@ -2093,20 +2249,20 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartySpriteBox:
-            drawListText("Sprite", b.rect.x, b.rect.y - 22.0f * s, grey);
+            drawListText("Sprite", b.rect.x, b.rect.y - 22.0f * s, gray);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
             leftText(b.rect, b.label, white, 10.0f * s);
             break;
 
         case Action::PartyRandomUnit:
             drawRect(b.rect, plateFor(hot, false, true));
-            centred(b.rect, b.label, white);
+            centerd(b.rect, b.label, white);
             break;
 
         case Action::PartyGearSlot: {
             const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
             drawRect(b.rect, plateFor(hot, open, true));
-            leftText(Rect{ b.rect.x, b.rect.y + 4.0f * s, b.rect.w, lineH }, gearSlotName(b.param), grey, 8.0f * s);
+            leftText(Rect{ b.rect.x, b.rect.y + 4.0f * s, b.rect.w, lineH }, gearSlotName(b.param), gray, 8.0f * s);
             leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 4.0f * s, b.rect.w, lineH }, b.label,
                      b.label == "Empty" ? faint : white, 8.0f * s);
             break;
@@ -2123,7 +2279,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyStep:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centred(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? white : faint);
             break;
 
         case Action::PartyHeading:
@@ -2131,7 +2287,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
 
         case Action::PartyNote:
-            leftText(b.rect, b.label, grey, 0.0f);
+            leftText(b.rect, b.label, gray, 0.0f);
             break;
 
         case Action::PartyInvSlot: {
@@ -2142,22 +2298,22 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                     drawFitted(*pic, Rect{ b.rect.x + b.rect.w * 0.12f, b.rect.y + b.rect.h * 0.12f,
                                            b.rect.w * 0.76f, b.rect.h * 0.76f }, white);
                 } else {
-                    centred(b.rect, itemInitials(itemNameOf(st.item)), white);
+                    centerd(b.rect, itemInitials(itemNameOf(st.item)), white);
                 }
                 const std::string n = std::to_string(st.count);
                 drawListText(n, b.rect.x + b.rect.w - listTextWidth(n) - 3.0f * s,
-                             b.rect.y + b.rect.h - lineH - 2.0f * s, grey);
+                             b.rect.y + b.rect.h - lineH - 2.0f * s, gray);
             }
             break;
         }
 
         case Action::PartyCount:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centred(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? white : faint);
             break;
 
         case Action::PartyMessage:
-            centred(b.rect, b.label, partyNamesValid(p) ? grey : warn);
+            centerd(b.rect, b.label, partyNamesValid(p) ? gray : warn);
             break;
 
         case Action::PartyDropBack:
@@ -2167,7 +2323,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyDropScroll:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centred(b.rect, b.label, b.enabled ? (hot ? hover : white) : faint);
+            centerd(b.rect, b.label, b.enabled ? (hot ? hover : white) : faint);
             break;
 
         case Action::PartyDropPick:
@@ -2179,7 +2335,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyConfirm:
         case Action::Back:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centred(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? white : faint);
             break;
 
         default:
@@ -2188,20 +2344,20 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     }
 
     // Middle: the picked unit, large, with its name and totals under it
-    const float cw = P.centre.w;
-    drawUnitPicture(picked.sprite, Rect{ P.centre.x + 20.0f * s, P.centre.y + 20.0f * s, cw - 40.0f * s,
-                                         P.centre.h - 130.0f * s });
+    const float cw = P.center.w;
+    drawUnitPicture(picked.sprite, Rect{ P.center.x + 20.0f * s, P.center.y + 20.0f * s, cw - 40.0f * s,
+                                         P.center.h - 130.0f * s });
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string("No name");
-    drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.centre.x + cw * 0.5f,
-                       P.centre.y + P.centre.h - 100.0f * s, named ? white : warn);
+    drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,
+                       P.center.y + P.center.h - 100.0f * s, named ? white : warn);
     int attack = 0, defense = 0;
     gearTotals(wornBy(picked), attack, defense);
-    const std::string totals = "Attack " + std::to_string(attack) + "    Defence " + std::to_string(defense)
+    const std::string totals = "Attack " + std::to_string(attack) + "    Defense " + std::to_string(defense)
                              + "    Carry " + std::to_string((int)carryLimit(picked.stats));
     const std::string shownTotals = fitText(totals, cw - 24.0f * s, false);
-    drawListText(shownTotals, P.centre.x + (cw - listTextWidth(shownTotals)) * 0.5f,
-                 P.centre.y + P.centre.h - 62.0f * s, grey);
+    drawListText(shownTotals, P.center.x + (cw - listTextWidth(shownTotals)) * 0.5f,
+                 P.center.y + P.center.h - 62.0f * s, gray);
 }
 
 Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {

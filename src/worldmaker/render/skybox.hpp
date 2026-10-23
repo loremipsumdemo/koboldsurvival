@@ -21,7 +21,7 @@ public:
     bool loaded() const { return tex_ != 0; }
     GLuint texture() const { return tex_; }
 
-    // Average colour of the four side faces around the horizon, 0 to 1 per channel.
+    // Average color of the four side faces around the horizon, 0 to 1 per channel.
     V3 horizon() const { return horizon_; }
 
 private:

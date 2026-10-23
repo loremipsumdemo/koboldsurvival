@@ -29,7 +29,7 @@ struct SliderTarget {
     int* i = nullptr;
 };
 
-// A slider value being typed in. Applied on Enter, cancelled on Escape or a click elsewhere.
+// A slider value being typed in. Applied on Enter, canceled on Escape or a click elsewhere.
 struct SliderEdit {
     const void* key = nullptr;   // identifies the slider being edited
     SliderTarget target;
@@ -37,14 +37,14 @@ struct SliderEdit {
     std::string text;            // what has been typed so far
 };
 
-// The colour picker. Changes apply live to the colour it was opened for.
-struct ColourPicker {
+// The color picker. Changes apply live to the color it was opened for.
+struct ColorPicker {
     bool open = false;
     bool fresh = false;                 // opened this frame, so the click that opened it does not close it
     std::string label;
-    float* rgb = nullptr;               // the colour being edited
+    float* rgb = nullptr;               // the color being edited
     float* opacity = nullptr;           // its opacity
-    float h = 0.0f, s = 0.0f, v = 1.0f; // the colour in HSV, kept so the wheel does not lose its place
+    float h = 0.0f, s = 0.0f, v = 1.0f; // the color in HSV, kept so the wheel does not lose its place
     float alpha = 1.0f;
     std::string hex;                    // "#RRGGBB" as shown in the hex field
 };
@@ -66,7 +66,7 @@ struct MenuState {
     const void* dragging = nullptr;   // slider being dragged
     float scroll = 0.0f;              // how far the Sky and Surface tabs are scrolled, in pixels
     float scrollMax = 0.0f;           // the furthest those tabs can scroll, from the last frame
-    ColourPicker picker;
+    ColorPicker picker;
     std::string desktopDir;           // where Export to Desktop writes, found when the menu opens
     std::string status;
 

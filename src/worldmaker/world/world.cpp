@@ -154,7 +154,7 @@ std::vector<float> RankLand(const std::vector<float>& X, const std::vector<uint8
     return out;
 }
 
-// Four-neighbour blur with the edges held, `passes` times.
+// Four-neighbor blur with the edges held, `passes` times.
 std::vector<float> Diffuse(std::vector<float> a, int g, int passes) {
     for (int p = 0; p < passes; ++p) {
         std::vector<float> b(a.size());
@@ -283,7 +283,7 @@ Weather ComputeWeather(const std::vector<float>& E, int g, float sea, uint32_t s
 
 // ---------- hydrology ----------
 
-// The downhill neighbour of every cell, steepest first. Edge cells drain off the map (-1).
+// The downhill neighbor of every cell, steepest first. Edge cells drain off the map (-1).
 std::vector<int> Receivers(const std::vector<float>& H, int g) {
     static const int kOff[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
     std::vector<int> rec(H.size());
@@ -366,7 +366,7 @@ void ErodeCoarse(std::vector<float>& H, const std::vector<float>& runoff, float 
 }
 
 // Slope slumping: land that drops more steeply than the talus angle slides part of
-// the way down to its neighbours.
+// the way down to its neighbors.
 void Thermal(std::vector<float>& H, float sea, int iters, float talus, float rate, int g) {
     const size_t cells = H.size();
     for (int it = 0; it < iters; ++it) {
@@ -395,7 +395,7 @@ void Thermal(std::vector<float>& H, float sea, int iters, float talus, float rat
     }
 }
 
-// Limits how far any tile can sit above or below its neighbour. The excess over the
+// Limits how far any tile can sit above or below its neighbor. The excess over the
 // limit is shared between the two tiles, a few passes at a time, so steps soften
 // rather than becoming a wall.
 void SoftenSlopes(std::vector<float>& h, int n, float maxStep, int passes) {
@@ -423,7 +423,7 @@ void SoftenSlopes(std::vector<float>& h, int n, float maxStep, int passes) {
 constexpr float kRimStart = 0.01f;    // distance from the edge (0 to 0.5) where the rim begins
 constexpr float kRimBlend = 0.12f;    // width of the blend back to normal ground
 constexpr float kPlainScale = 1.5f;   // size of the plains patches
-constexpr float kBedDepth = 0.01f;    // how far a lake bed sits below its surface (normalised)
+constexpr float kBedDepth = 0.01f;    // how far a lake bed sits below its surface (normalized)
 
 // Continents, mountains, plains and extra peaks, at full resolution. Sets sea to the
 // height that leaves the chosen share of the map under water.
@@ -681,8 +681,8 @@ struct WorldGen::Cache {
     // Stage A: the shape of the land, at full size.
     bool haveA = false;
     KeyA ka;
-    float sea = 0.0f;                 // normalised sea level
-    std::vector<float> h0;            // normalised heights after the shape stage
+    float sea = 0.0f;                 // normalized sea level
+    std::vector<float> h0;            // normalized heights after the shape stage
 
     // Stage B: erosion. The grid is coarser than the map.
     bool haveB = false;
@@ -997,8 +997,8 @@ float SampleHeight(const World& w, float x, float z) {
     return top + (bottom - top) * fz;
 }
 
-V3 BiomeColour(Biome b) {
-    // Colours of the ground types, as 0 to 1 values.
+V3 BiomeColor(Biome b) {
+    // Colors of the ground types, as 0 to 1 values.
     switch (b) {
         case Biome::Sand:       return {0.69f, 0.64f, 0.47f};   // seabed sand
         case Biome::Grass:      return {0.47f, 0.38f, 0.27f};   // loam

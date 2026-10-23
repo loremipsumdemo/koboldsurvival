@@ -26,7 +26,7 @@ const std::vector<LookField>& LookFields() {
         {"sun_azimuth",    LOOK_FIELD(sunAzimuth),    1,  0.0f, 360.0f,   "sun compass direction (degrees)"},
         {"sun_elevation",  LOOK_FIELD(sunElevation),  1,  5.0f,  85.0f,   "sun height at noon (degrees)"},
         {"sun_strength",   LOOK_FIELD(sunStrength),   1,  0.0f,   1.5f,   "sun brightness"},
-        {"sun_rgb",        LOOK_FIELD(sunRgb),        3,  0.0f,   1.0f,   "sun colour"},
+        {"sun_rgb",        LOOK_FIELD(sunRgb),        3,  0.0f,   1.0f,   "sun color"},
         {"ambient",        LOOK_FIELD(ambient),       1,  0.0f,   1.0f,   "light in shadow"},
         {"sky_top",        LOOK_FIELD(skyTop),        3,  0.0f,   1.0f,   "day sky overhead"},
         {"sky_horizon",    LOOK_FIELD(skyHorizon),    3,  0.0f,   1.0f,   "day sky at the horizon"},
@@ -34,24 +34,24 @@ const std::vector<LookField>& LookFields() {
         {"night_horizon",  LOOK_FIELD(nightHorizon),  3,  0.0f,   1.0f,   "night sky at the horizon"},
         {"fog",            LOOK_FIELD(fog),           1,  0.0f,   4.0f,   "fog density (0 = off)"},
         {"fog_enabled",    LOOK_FIELD(fogEnabled),    1,  0.0f,   1.0f,   "fog switch: 1 = on, 0 = all fog off"},
-        {"rock_rgb",       LOOK_FIELD(rockRgb),       3,  0.0f,   1.0f,   "rock colour on steep slopes"},
+        {"rock_rgb",       LOOK_FIELD(rockRgb),       3,  0.0f,   1.0f,   "rock color on steep slopes"},
         {"rock_slope",     LOOK_FIELD(rockSlope),     1,  0.05f,  0.95f,  "steepness where rock starts"},
         {"water_opacity",  LOOK_FIELD(waterOpacity),  1,  0.0f,   1.0f,   "water transparency multiplier"},
         {"water_pattern",  LOOK_FIELD(waterPattern),  1,  0.0f,   2.0f,   "strength of the light bands on the water"},
         {"water_speed",    LOOK_FIELD(waterSpeed),    1,  0.0f,   3.0f,   "how fast the water surface moves"},
-        {"grid_minor",     LOOK_FIELD(gridMinor),     3,  0.0f,   1.0f,   "minor grid line colour"},
-        {"grid_major",     LOOK_FIELD(gridMajor),     3,  0.0f,   1.0f,   "major grid line colour"},
-        {"sun_glow_rgb",   LOOK_FIELD(sunGlowRgb),    3,  0.0f,   1.0f,   "sun colour at sunrise and sunset"},
-        {"horizon_warm_rgb", LOOK_FIELD(horizonWarmRgb), 3, 0.0f, 1.0f,   "horizon colour at sunrise and sunset"},
-        {"star_rgb",       LOOK_FIELD(starRgb),       3,  0.0f,   1.0f,   "star colour"},
+        {"grid_minor",     LOOK_FIELD(gridMinor),     3,  0.0f,   1.0f,   "minor grid line color"},
+        {"grid_major",     LOOK_FIELD(gridMajor),     3,  0.0f,   1.0f,   "major grid line color"},
+        {"sun_glow_rgb",   LOOK_FIELD(sunGlowRgb),    3,  0.0f,   1.0f,   "sun color at sunrise and sunset"},
+        {"horizon_warm_rgb", LOOK_FIELD(horizonWarmRgb), 3, 0.0f, 1.0f,   "horizon color at sunrise and sunset"},
+        {"star_rgb",       LOOK_FIELD(starRgb),       3,  0.0f,   1.0f,   "star color"},
         {"star_amount",    LOOK_FIELD(starAmount),    1,  0.0f,   3.0f,   "star brightness (0 = no stars)"},
-        {"moon_rgb",       LOOK_FIELD(moonRgb),       3,  0.0f,   1.0f,   "moon colour"},
+        {"moon_rgb",       LOOK_FIELD(moonRgb),       3,  0.0f,   1.0f,   "moon color"},
         {"moon_strength",  LOOK_FIELD(moonStrength),  1,  0.0f,   3.0f,   "moon brightness (0 = no moon)"},
         {"moon_size",      LOOK_FIELD(moonSize),      1,  0.3f,   8.0f,   "moon radius (degrees)"},
-        {"fog_rgb",        LOOK_FIELD(fogRgb),        3,  0.0f,   1.0f,   "fog colour, blended in by the opacity in colour_opacity"},
-        {"underwater_rgb", LOOK_FIELD(underwaterRgb), 3,  0.0f,   1.0f,   "sea floor colour seen through the water"},
-        {"water_rgb",      LOOK_FIELD(waterRgb),      3,  0.0f,   1.0f,   "sea surface colour"},
-        {"colour_opacity", LOOK_FIELD(colourOpacity), kColourCount, 0.0f, 1.0f, "opacity of each colour, in slot order: sun, sun glow, horizon warm, star, moon, fog, underwater, water, rock, grid minor, grid major, sky top day, sky horizon day, sky top night, sky horizon night"},
+        {"fog_rgb",        LOOK_FIELD(fogRgb),        3,  0.0f,   1.0f,   "fog color, blended in by the opacity in color_opacity"},
+        {"underwater_rgb", LOOK_FIELD(underwaterRgb), 3,  0.0f,   1.0f,   "sea floor color seen through the water"},
+        {"water_rgb",      LOOK_FIELD(waterRgb),      3,  0.0f,   1.0f,   "sea surface color"},
+        {"color_opacity", LOOK_FIELD(colorOpacity), kColorCount, 0.0f, 1.0f, "opacity of each color, in slot order: sun, sun glow, horizon warm, star, moon, fog, underwater, water, rock, grid minor, grid major, sky top day, sky horizon day, sky top night, sky horizon night"},
     };
     return fields;
 }
@@ -120,7 +120,7 @@ std::size_t FindValue(const std::string& text, const std::string& key) {
     return p + 1;
 }
 
-// Reads a number, or [a, b, c] for colours, into vals. Returns the count read or 0.
+// Reads a number, or [a, b, c] for colors, into vals. Returns the count read or 0.
 int ReadValue(const std::string& text, std::size_t p, float* vals, int want) {
     while (p < text.size() && std::isspace(static_cast<unsigned char>(text[p]))) ++p;
     if (p >= text.size()) return 0;

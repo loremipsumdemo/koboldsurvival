@@ -73,8 +73,8 @@ bool Visible(Ctx& c, float y, float h) {
     return y >= c.clipTop && y + h <= c.clipBottom;
 }
 
-// Filled rectangle with centred label. Returns true on a click.
-// Primary buttons are filled with the accent colour and are the default action of a panel.
+// Filled rectangle with centerd label. Returns true on a click.
+// Primary buttons are filled with the accent color and are the default action of a panel.
 bool Button(Ctx& c, float x, float y, float w, const std::string& label, bool enabled = true, bool primary = false) {
     const float h = c.btnH;
     if (!Visible(c, y, h)) return false;
@@ -233,7 +233,7 @@ void Label(Ctx& c, float y, const std::string& s, V3 col = kText) {
     c.r.Text(c.x0 + kPad, y, s, col);
 }
 
-// Section heading in the accent colour.
+// Section heading in the accent color.
 void Heading(Ctx& c, float y, const char* s) {
     if (!Visible(c, y, c.rowH)) return;
     std::string t = s;
@@ -242,7 +242,7 @@ void Heading(Ctx& c, float y, const char* s) {
     c.r.Rect(c.x0 + kPad, y + c.lh + 6.0f, c.pw - 2.0f * kPad, 1.0f, kTrack, 1.0f);
 }
 
-// Colour helpers. Colours are kept as RGB 0 to 1; the picker edits them in HSV.
+// Color helpers. Colors are kept as RGB 0 to 1; the picker edits them in HSV.
 constexpr float kPi = 3.14159265f;
 
 void HsvToRgb(float h, float s, float v, float* out) {
@@ -269,7 +269,7 @@ void RgbToHsv(const float* rgb, float& h, float& s, float& v) {
     const float d = mx - mn;
     v = mx;
     s = mx > 0.0f ? d / mx : 0.0f;
-    if (d <= 0.0f) {          // grey: hue has no meaning, keep it at 0
+    if (d <= 0.0f) {          // gray: hue has no meaning, keep it at 0
         h = 0.0f;
         return;
     }
@@ -288,7 +288,7 @@ std::string FormatHex(const float* rgb) {
     return buf;
 }
 
-// Reads #RRGGBB or RRGGBB. Returns false when the text is not a colour.
+// Reads #RRGGBB or RRGGBB. Returns false when the text is not a color.
 bool ParseHex(std::string text, float* rgb) {
     if (!text.empty() && text[0] == '#') text.erase(0, 1);
     if (text.size() != 6) return false;
@@ -302,8 +302,8 @@ bool ParseHex(std::string text, float* rgb) {
     return true;
 }
 
-// Pushes the picker's HSV and opacity into the colour it edits.
-void ApplyPicker(ColourPicker& p) {
+// Pushes the picker's HSV and opacity into the color it edits.
+void ApplyPicker(ColorPicker& p) {
     if (!p.rgb) return;
     float col[3];
     HsvToRgb(p.h, p.s, p.v, col);
@@ -314,8 +314,8 @@ void ApplyPicker(ColourPicker& p) {
 }
 
 void OpenPicker(MenuState& m, const char* label, float* rgb, float* opacity) {
-    ColourPicker& p = m.picker;
-    p = ColourPicker{};
+    ColorPicker& p = m.picker;
+    p = ColorPicker{};
     p.open = true;
     p.fresh = true;
     p.label = label;
@@ -329,8 +329,8 @@ void OpenPicker(MenuState& m, const char* label, float* rgb, float* opacity) {
     m.sliderEdit = SliderEdit{};
 }
 
-// One colour: swatch, hex code and opacity. Click any of them to open the picker.
-void ColourRow(Ctx& c, float y, const char* label, float* rgb, float* opacity) {
+// One color: swatch, hex code and opacity. Click any of them to open the picker.
+void ColorRow(Ctx& c, float y, const char* label, float* rgb, float* opacity) {
     if (!Visible(c, y, c.btnH)) return;
     const float tx = c.x0 + c.pw * 0.42f;
     const float swW = 72.0f, hexX = tx + swW + 12.0f, hexW = 190.0f;
@@ -340,7 +340,7 @@ void ColourRow(Ctx& c, float y, const char* label, float* rgb, float* opacity) {
 
     c.r.Text(c.x0 + kPad, y + (c.btnH - c.lh) * 0.5f, label, kText);
 
-    // The swatch shows the colour at its opacity over the panel, so the opacity can be judged by eye.
+    // The swatch shows the color at its opacity over the panel, so the opacity can be judged by eye.
     const V3 shown{kPanel.x * (1.0f - a) + rgb[0] * a,
                    kPanel.y * (1.0f - a) + rgb[1] * a,
                    kPanel.z * (1.0f - a) + rgb[2] * a};
@@ -407,7 +407,7 @@ void Toggle(Ctx& c, float x, float y, float w, const char* label, bool& value);
 
 // Terrain settings, split over two tabs. Each slider edits the generator's settings;
 // the next world generated uses them.
-void RandomiseTerrain(GenParams& p) {
+void RandomizeTerrain(GenParams& p) {
     std::mt19937 rng(std::random_device{}());
     auto uni = [&rng](float lo, float hi) { return std::uniform_real_distribution<float>(lo, hi)(rng); };
     auto coin = [&rng](float chance) { return std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < chance; };
@@ -461,9 +461,9 @@ void GroundTab(Ctx& c, float top) {
     Slider(c, y, "Warmth", &p.warmth, -0.3f, 0.3f, 0.01f);                 y += c.rowH;
     Slider(c, y, "Wetness", &p.wetness, -0.3f, 0.3f, 0.01f);               y += c.rowH;
     Slider(c, y, "Vegetation", &p.cover, 0.0f, 1.0f, 0.01f);               y += c.rowH + 8.0f;
-    if (Button(c, x, y, colW, "Randomise terrain")) {
-        RandomiseTerrain(p);
-        c.m.status = "terrain randomised; generate to see it";
+    if (Button(c, x, y, colW, "Randomize terrain")) {
+        RandomizeTerrain(p);
+        c.m.status = "terrain randomized; generate to see it";
     }
     if (Button(c, x + colW + gap, y, colW, "Reset terrain")) {
         p = GenParams{};
@@ -572,18 +572,18 @@ void SkyTab(Ctx& c, float top) {
     Slider(c, y, "Sun azimuth", &l.sunAzimuth, 0.0f, 360.0f, 1.0f);               y += c.rowH;
     Slider(c, y, "Sun strength", &l.sunStrength, 0.0f, 10.0f, 0.0f);              y += c.rowH;
     Slider(c, y, "Sunrise and sunset glow", &l.sunsetGlow, 0.0f, 1.0f, 0.01f);    y += c.rowH;
-    ColourRow(c, y, "Sun colour", l.sunRgb, &l.colourOpacity[kColSun]);                                      y += c.rowH;
-    ColourRow(c, y, "Sun colour at sunset", l.sunGlowRgb, &l.colourOpacity[kColSunGlow]);                        y += c.rowH;
-    ColourRow(c, y, "Horizon at sunset", l.horizonWarmRgb, &l.colourOpacity[kColHorizonWarm]);                       y += c.rowH + 8.0f;
+    ColorRow(c, y, "Sun color", l.sunRgb, &l.colorOpacity[kColSun]);                                      y += c.rowH;
+    ColorRow(c, y, "Sun color at sunset", l.sunGlowRgb, &l.colorOpacity[kColSunGlow]);                        y += c.rowH;
+    ColorRow(c, y, "Horizon at sunset", l.horizonWarmRgb, &l.colorOpacity[kColHorizonWarm]);                       y += c.rowH + 8.0f;
 
     Heading(c, y, "Moon");                                                        y += c.rowH;
     Slider(c, y, "Moon strength", &l.moonStrength, 0.0f, 3.0f, 0.01f);            y += c.rowH;
     Slider(c, y, "Moon size (degrees)", &l.moonSize, 0.3f, 8.0f, 0.1f);           y += c.rowH;
-    ColourRow(c, y, "Moon colour", l.moonRgb, &l.colourOpacity[kColMoon]);                                    y += c.rowH + 8.0f;
+    ColorRow(c, y, "Moon color", l.moonRgb, &l.colorOpacity[kColMoon]);                                    y += c.rowH + 8.0f;
 
     Heading(c, y, "Stars");                                                       y += c.rowH;
     Slider(c, y, "Star amount", &l.starAmount, 0.0f, 3.0f, 0.01f);               y += c.rowH;
-    ColourRow(c, y, "Star colour", l.starRgb, &l.colourOpacity[kColStar]);                                    y += c.rowH + 8.0f;
+    ColorRow(c, y, "Star color", l.starRgb, &l.colorOpacity[kColStar]);                                    y += c.rowH + 8.0f;
 
     Heading(c, y, "Sky and air");                                                 y += c.rowH;
     Slider(c, y, "Ambient light", &l.ambient, 0.0f, 10.0f, 0.0f);                 y += c.rowH;
@@ -592,11 +592,11 @@ void SkyTab(Ctx& c, float top) {
     }
     y += c.rowH;
     Slider(c, y, "Fog density", &l.fog, 0.0f, 20.0f, 0.0f);                       y += c.rowH;
-    ColourRow(c, y, "Fog colour", l.fogRgb, &l.colourOpacity[kColFog]);                                      y += c.rowH;
-    ColourRow(c, y, "Sky top, day", l.skyTop, &l.colourOpacity[kColSkyTopDay]);                                    y += c.rowH;
-    ColourRow(c, y, "Sky horizon, day", l.skyHorizon, &l.colourOpacity[kColSkyHorizonDay]);                            y += c.rowH;
-    ColourRow(c, y, "Sky top, night", l.nightTop, &l.colourOpacity[kColSkyTopNight]);                                y += c.rowH;
-    ColourRow(c, y, "Sky horizon, night", l.nightHorizon, &l.colourOpacity[kColSkyHorizonNight]);                        y += c.rowH + 8.0f;
+    ColorRow(c, y, "Fog color", l.fogRgb, &l.colorOpacity[kColFog]);                                      y += c.rowH;
+    ColorRow(c, y, "Sky top, day", l.skyTop, &l.colorOpacity[kColSkyTopDay]);                                    y += c.rowH;
+    ColorRow(c, y, "Sky horizon, day", l.skyHorizon, &l.colorOpacity[kColSkyHorizonDay]);                            y += c.rowH;
+    ColorRow(c, y, "Sky top, night", l.nightTop, &l.colorOpacity[kColSkyTopNight]);                                y += c.rowH;
+    ColorRow(c, y, "Sky horizon, night", l.nightHorizon, &l.colorOpacity[kColSkyHorizonNight]);                        y += c.rowH + 8.0f;
 
     const char* names[5] = {"Clear", "Sunset", "Overcast", "Night", "Reset"};
     const float gap = 10.0f;
@@ -609,9 +609,9 @@ void SkyTab(Ctx& c, float top) {
     }
 }
 
-// Randomises the look within ranges that keep it readable: a time of day, a sky
-// colour family, and sensible light and water strengths. The clock is kept.
-void RandomiseLook(Look& l) {
+// Randomizes the look within ranges that keep it readable: a time of day, a sky
+// color family, and sensible light and water strengths. The clock is kept.
+void RandomizeLook(Look& l) {
     std::mt19937 rng(std::random_device{}());
     auto uni = [&rng](float lo, float hi) { return std::uniform_real_distribution<float>(lo, hi)(rng); };
     l.sunElevation = uni(35.0f, 80.0f);
@@ -624,8 +624,8 @@ void RandomiseLook(Look& l) {
     l.sunRgb[0] = 1.0f; l.sunRgb[1] = uni(0.85f, 1.0f); l.sunRgb[2] = uni(0.7f, 0.95f);
     l.skyTop[0] = uni(0.1f, 0.4f); l.skyTop[1] = uni(0.3f, 0.5f); l.skyTop[2] = uni(0.6f, 0.9f);
     l.skyHorizon[0] = uni(0.6f, 0.9f); l.skyHorizon[1] = uni(0.7f, 0.9f); l.skyHorizon[2] = uni(0.8f, 1.0f);
-    const float grey = uni(0.3f, 0.6f);
-    l.rockRgb[0] = grey * uni(1.0f, 1.1f); l.rockRgb[1] = grey; l.rockRgb[2] = grey * uni(0.85f, 0.95f);
+    const float gray = uni(0.3f, 0.6f);
+    l.rockRgb[0] = gray * uni(1.0f, 1.1f); l.rockRgb[1] = gray; l.rockRgb[2] = gray * uni(0.85f, 0.95f);
     l.rockSlope = uni(0.3f, 0.7f);
     l.waterOpacity = uni(0.6f, 1.0f);
     l.waterPattern = uni(0.5f, 1.5f);
@@ -637,22 +637,22 @@ void SurfaceTab(Ctx& c, float top) {
     float y = top;
     Heading(c, y, "Land");                                                        y += c.rowH;
     Slider(c, y, "Rock on steep slopes", &l.rockSlope, 0.05f, 0.95f, 0.01f);      y += c.rowH;
-    ColourRow(c, y, "Rock colour", l.rockRgb, &l.colourOpacity[kColRock]);                                    y += c.rowH + 8.0f;
+    ColorRow(c, y, "Rock color", l.rockRgb, &l.colorOpacity[kColRock]);                                    y += c.rowH + 8.0f;
 
     Heading(c, y, "Water");                                                       y += c.rowH;
-    ColourRow(c, y, "Sea surface colour", l.waterRgb, &l.colourOpacity[kColWater]);                            y += c.rowH;
-    ColourRow(c, y, "Sea floor colour", l.underwaterRgb, &l.colourOpacity[kColUnderwater]);                         y += c.rowH;
+    ColorRow(c, y, "Sea surface color", l.waterRgb, &l.colorOpacity[kColWater]);                            y += c.rowH;
+    ColorRow(c, y, "Sea floor color", l.underwaterRgb, &l.colorOpacity[kColUnderwater]);                         y += c.rowH;
     Slider(c, y, "Water opacity", &l.waterOpacity, 0.0f, 1.0f, 0.01f);            y += c.rowH;
     Slider(c, y, "Water light bands", &l.waterPattern, 0.0f, 2.0f, 0.01f);        y += c.rowH;
     Slider(c, y, "Water surface motion", &l.waterSpeed, 0.0f, 3.0f, 0.01f);       y += c.rowH + 8.0f;
 
     Heading(c, y, "Grid");                                                        y += c.rowH;
-    ColourRow(c, y, "Minor grid lines", l.gridMinor, &l.colourOpacity[kColGridMinor]);                             y += c.rowH;
-    ColourRow(c, y, "Major grid lines", l.gridMajor, &l.colourOpacity[kColGridMajor]);                             y += c.rowH + 8.0f;
+    ColorRow(c, y, "Minor grid lines", l.gridMinor, &l.colorOpacity[kColGridMinor]);                             y += c.rowH;
+    ColorRow(c, y, "Major grid lines", l.gridMajor, &l.colorOpacity[kColGridMajor]);                             y += c.rowH + 8.0f;
 
-    if (Button(c, c.x0 + kPad, y, c.pw * 0.42f, "Randomise look")) {
-        RandomiseLook(l);
-        c.m.status = "look randomised";
+    if (Button(c, c.x0 + kPad, y, c.pw * 0.42f, "Randomize look")) {
+        RandomizeLook(l);
+        c.m.status = "look randomized";
     }
 }
 
@@ -753,7 +753,7 @@ void DebugTab(Ctx& c, float top) {
     Label(c, y, "Debug", kAccent);
     y += c.rowH;
     Toggle(c, left, y, colW, "Wireframe terrain", gDebug.wireframe);
-    Toggle(c, right, y, colW, "Colour chunks by detail", gDebug.lodTint);
+    Toggle(c, right, y, colW, "Color chunks by detail", gDebug.lodTint);
     y += c.rowH;
     Toggle(c, left, y, colW, "Hide terrain", gDebug.hideTerrain);
     Toggle(c, right, y, colW, "Hide sea floor", gDebug.hideFloor);
@@ -979,9 +979,9 @@ void FilesTab(Ctx& c, float top) {
 
 }
 
-// The colour picker: a hue and saturation wheel, brightness and opacity bars, and a hex field.
+// The color picker: a hue and saturation wheel, brightness and opacity bars, and a hex field.
 void DrawPicker(Ctx& c) {
-    ColourPicker& p = c.m.picker;
+    ColorPicker& p = c.m.picker;
     MenuState& m = c.m;
     Renderer& r = c.r;
     const Mouse& mouse = c.mouse;
@@ -1009,7 +1009,7 @@ void DrawPicker(Ctx& c) {
     const std::string esc = "Esc to close";
     r.Text(bx + boxW - kPad - r.MeasureText(esc), by + 18.0f, esc, kTextDim);
 
-    // Wheel: the angle is the hue, the distance from the centre is the saturation.
+    // Wheel: the angle is the hue, the distance from the center is the saturation.
     const float R = 108.0f, cell = 6.0f;
     const float cx = bx + boxW * 0.5f;
     const float cy = by + 46.0f + R;
@@ -1085,7 +1085,7 @@ void DrawPicker(Ctx& c) {
         }
     }
 
-    // Hex field and a preview of the colour at its opacity.
+    // Hex field and a preview of the color at its opacity.
     const float hY = aY + 52.0f;
     if (m.activeField != &p.hex) p.hex = FormatHex(cur);
     r.Text(barX, hY + (c.btnH - c.lh) * 0.5f, "Hex", kTextDim);
@@ -1096,7 +1096,7 @@ void DrawPicker(Ctx& c) {
     r.Rect(barX + barW - 110.0f, hY, 110.0f, c.btnH, kTrack, 1.0f);
     r.Rect(barX + barW - 108.0f, hY + 2.0f, 106.0f, c.btnH - 4.0f, shown, 1.0f);
 
-    // Done closes the picker; the colour has already been applied as it was changed.
+    // Done closes the picker; the color has already been applied as it was changed.
     if (Button(c, bx + boxW - kPad - 140.0f, by + boxH - c.btnH - 18.0f, 140.0f, "Done", true, true)) {
         p.open = false;
         m.activeField = nullptr;
@@ -1156,7 +1156,7 @@ void MenuCommitSlider(MenuState& m) {
     if (m.picker.open && m.activeField == &m.picker.hex) {
         float rgb[3];
         if (ParseHex(m.picker.hex, rgb)) {
-            ColourPicker& p = m.picker;
+            ColorPicker& p = m.picker;
             p.rgb[0] = rgb[0];
             p.rgb[1] = rgb[1];
             p.rgb[2] = rgb[2];
@@ -1164,7 +1164,7 @@ void MenuCommitSlider(MenuState& m) {
             ApplyPicker(p);
             m.status.clear();
         } else {
-            m.status = "a hex colour looks like #RRGGBB";
+            m.status = "a hex color looks like #RRGGBB";
         }
         return;
     }

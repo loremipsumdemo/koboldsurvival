@@ -8,7 +8,7 @@
 #include <vector>
 #include "terrain.h"
 
-// Paths are searched over the tile grid and then smoothed into straight segments. The centre of a
+// Paths are searched over the tile grid and then smoothed into straight segments. The center of a
 // walkable tile is always clear of obstacles, so every grid path can be walked.
 
 namespace {
@@ -132,7 +132,7 @@ std::vector<Vec2> Terrain::findPath(Vec2 start, Vec2 goal) const {
     std::vector<std::pair<int, int>> tiles = tilePath(*this, sx, sz, gx, gz);
     const bool reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
 
-    // The unit starts where it stands, so the start tile's centre is not a waypoint
+    // The unit starts where it stands, so the start tile's center is not a waypoint
     if (!tiles.empty() && tiles.front().first == sx && tiles.front().second == sz) tiles.erase(tiles.begin());
     if (tiles.empty() && !reached) return {};
 

@@ -16,7 +16,7 @@ namespace {
 // Shaders (GLSL 3.30 core)
 // ---------------------------------------------------------------------------
 
-// Terrain: per-vertex colour, lit by the sun, with ambient fill and fog.
+// Terrain: per-vertex color, lit by the sun, with ambient fill and fog.
 const char* const kTerrainVS = R"GLSL(
 #version 330 core
 layout(location = 0) in vec3 aPos;
@@ -56,12 +56,12 @@ uniform float uSlopeView;
 uniform vec3 uSunDir;
 uniform vec3 uSunLight;
 uniform vec3 uAmbient;
-uniform vec3 uFogColour;
+uniform vec3 uFogColor;
 uniform float uFog;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     // Ground detail from the tile: its normal tilts the lighting, and its height
-    // darkens the colour a little. The tile repeats every 8 world units.
+    // darkens the color a little. The tile repeats every 8 world units.
     vec4 t = texture(uTile, vXZ / 8.0);
     // The fine grain fades out with distance so far ground does not shimmer.
     float grain = 1.0 - smoothstep(40.0, 220.0, vDist);
@@ -76,7 +76,7 @@ void main() {
     // Steep faces take more of the sky's light, so they read as rock rather than black.
     vec3 lit = base * mix(1.0, 0.85 + 0.3 * t.a, grain) * (uAmbient * (1.0 + 0.8 * steep) + uSunLight * diff);
     if (uSlopeView > 0.5) {
-        fragColour = vec4(mix(vec3(0.15, 0.55, 0.2), vec3(0.9, 0.15, 0.1), clamp(steep * 2.5, 0.0, 1.0)), 1.0);
+        fragColor = vec4(mix(vec3(0.15, 0.55, 0.2), vec3(0.9, 0.15, 0.1), clamp(steep * 2.5, 0.0, 1.0)), 1.0);
         return;
     }
 
@@ -89,7 +89,7 @@ void main() {
 
     float d = vDist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
-    fragColour = vec4(mix(lit, uFogColour, f), 1.0);
+    fragColor = vec4(mix(lit, uFogColor, f), 1.0);
 }
 )GLSL";
 
@@ -105,18 +105,18 @@ const char* const kWaterVS = R"GLSL(
 #version 330 core
 uniform mat4 uViewProj;
 uniform vec3 uEye;
-uniform vec3 uCentre;
+uniform vec3 uCenter;
 uniform float uHalf;
 uniform float uSeaY;
 out vec3 vWorld;
 )GLSL";
 
 // Seabed beyond the map: a flat plane far below the sea. Seen through the water it
-// is just the deep-water tint, so one flat colour is enough.
+// is just the deep-water tint, so one flat color is enough.
 const char* const kFloorVS = R"GLSL(
 #version 330 core
 uniform mat4 uViewProj;
-uniform vec3 uCentre;
+uniform vec3 uCenter;
 uniform float uHalf;
 out vec3 vWorld;
 const vec2 kCorner[6] = vec2[6](
@@ -124,7 +124,7 @@ const vec2 kCorner[6] = vec2[6](
     vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0));
 void main() {
     vec2 c = kCorner[gl_VertexID];
-    vec3 p = vec3(uCentre.x + c.x * uHalf, uCentre.y, uCentre.z + c.y * uHalf);
+    vec3 p = vec3(uCenter.x + c.x * uHalf, uCenter.y, uCenter.z + c.y * uHalf);
     vWorld = p;
     gl_Position = uViewProj * vec4(p, 1.0);
 }
@@ -137,14 +137,14 @@ in vec3 vWorld;
 uniform vec3 uEye;
 uniform vec3 uAmbient;
 uniform vec3 uSunLight;
-uniform vec3 uFogColour;
+uniform vec3 uFogColor;
 uniform float uFog;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     vec3 lit = uUnderwater * (uAmbient + uSunLight * 0.5);
     float d = distance(vWorld, uEye) * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
-    fragColour = vec4(mix(lit, uFogColour, f), 1.0);
+    fragColor = vec4(mix(lit, uFogColor, f), 1.0);
 }
 )GLSL";
 
@@ -155,8 +155,8 @@ uniform vec3 uEye;
 uniform vec3 uSunDir;
 uniform vec3 uSunLight;
 uniform vec3 uAmbient;
-uniform vec3 uColour;
-uniform vec3 uFogColour;
+uniform vec3 uColor;
+uniform vec3 uFogColor;
 uniform float uFog;
 uniform float uTime;
 uniform float uOpacity;
@@ -165,7 +165,7 @@ uniform float uSpeed;
 uniform float uFadeStart;
 uniform float uFadeEnd;
 uniform sampler2D uTile;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     // Two drifting copies of the tile, at different scales and directions, so the
     // surface shows no obvious repeat. Nothing here reflects the sky: the light only
@@ -185,7 +185,7 @@ void main() {
     float ridge = 1.0 - abs(2.0 * t.a - 1.0);
     float caustic = pow(ridge, 4.0) * max(sun.y, 0.0) * uPattern;
 
-    vec3 base = uColour * (0.85 + 0.3 * t.a);
+    vec3 base = uColor * (0.85 + 0.3 * t.a);
     vec3 lit = base * (uAmbient + uSunLight * ndl * 0.6) + uSunLight * caustic * 0.35;
 
     // Fairly see-through, a little more opaque where the ripples are high.
@@ -202,11 +202,11 @@ void main() {
     float d = dist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
 
-    // Far out the sea fades into the horizon colour and becomes opaque, so the edge
+    // Far out the sea fades into the horizon color and becomes opaque, so the edge
     // of the drawn water is never visible and the sea looks endless.
     float far = smoothstep(uFadeStart, uFadeEnd, dist);
-    vec3 col = mix(mix(lit, uFogColour, f), uFogColour, far);
-    fragColour = vec4(col, mix(alpha, 1.0, far));
+    vec3 col = mix(mix(lit, uFogColor, f), uFogColor, far);
+    fragColor = vec4(col, mix(alpha, 1.0, far));
 }
 )GLSL";
 
@@ -227,7 +227,7 @@ constexpr float kWaterBiasUnits = 4.0f;
 // The seabed beyond the map sits this far below the lowest point of the map.
 constexpr float kFloorMargin = 2.0f;
 
-// Vertex layout: position (3), normal (3), colour (3).
+// Vertex layout: position (3), normal (3), color (3).
 constexpr int kFloatsPerVertex = 9;
 
 // Grid vertex index of the k-th vertex along edge e (0 = j=0, 1 = i=cells, 2 = j=cells, 3 = i=0).
@@ -303,9 +303,9 @@ std::vector<float> MeshVertices(const World& w, int ox, int oz, int step, int ce
             const float dhdx = (w.height[tileIndex(tx + 2 * step, tz)] - w.height[tileIndex(tx - 2 * step, tz)]) / span;
             const float dhdz = (w.height[tileIndex(tx, tz + 2 * step)] - w.height[tileIndex(tx, tz - 2 * step)]) / span;
             const V3 nrm = Normalize(V3{-dhdx, 1.0f, -dhdz});
-            V3 col = BiomeColour(static_cast<Biome>(w.biome[tileIndex(tx, tz)]));
+            V3 col = BiomeColor(static_cast<Biome>(w.biome[tileIndex(tx, tz)]));
             if (w.veg.size() == w.height.size()) {
-                // Vegetation pulls the ground toward a green-brown canopy colour.
+                // Vegetation pulls the ground toward a green-brown canopy color.
                 const float v = std::clamp(w.veg[tileIndex(tx, tz)], 0.0f, 1.0f) * 0.45f;
                 col = V3{col.x + (0.20f - col.x) * v, col.y + (0.34f - col.y) * v, col.z + (0.13f - col.z) * v};
             }
@@ -403,7 +403,7 @@ bool Renderer::InitTerrain(std::string& err) {
     terr_.sunDir = glGetUniformLocation(terrainProg_, "uSunDir");
     terr_.sunLight = glGetUniformLocation(terrainProg_, "uSunLight");
     terr_.ambient = glGetUniformLocation(terrainProg_, "uAmbient");
-    terr_.fogColour = glGetUniformLocation(terrainProg_, "uFogColour");
+    terr_.fogColor = glGetUniformLocation(terrainProg_, "uFogColor");
     terr_.fog = glGetUniformLocation(terrainProg_, "uFog");
     terr_.tile = glGetUniformLocation(terrainProg_, "uTile");
     terr_.seaY = glGetUniformLocation(terrainProg_, "uSeaY");
@@ -417,7 +417,7 @@ bool Renderer::InitTerrain(std::string& err) {
     waterProg_ = BuildProgram((std::string(kWaterVS) + kQuadCorners + R"GLSL(
 void main() {
     vec2 c = kCorner[gl_VertexID];
-    vec3 p = vec3(uCentre.x + c.x * uHalf, uSeaY, uCentre.z + c.y * uHalf);
+    vec3 p = vec3(uCenter.x + c.x * uHalf, uSeaY, uCenter.z + c.y * uHalf);
     vWorld = p;
     gl_Position = uViewProj * vec4(p, 1.0);
 }
@@ -425,14 +425,14 @@ void main() {
     if (!waterProg_) return false;
     water_.viewProj = glGetUniformLocation(waterProg_, "uViewProj");
     water_.eye = glGetUniformLocation(waterProg_, "uEye");
-    water_.centre = glGetUniformLocation(waterProg_, "uCentre");
+    water_.center = glGetUniformLocation(waterProg_, "uCenter");
     water_.half = glGetUniformLocation(waterProg_, "uHalf");
     water_.seaY = glGetUniformLocation(waterProg_, "uSeaY");
     water_.sunDir = glGetUniformLocation(waterProg_, "uSunDir");
     water_.sunLight = glGetUniformLocation(waterProg_, "uSunLight");
     water_.ambient = glGetUniformLocation(waterProg_, "uAmbient");
-    water_.colour = glGetUniformLocation(waterProg_, "uColour");
-    water_.horizon = glGetUniformLocation(waterProg_, "uFogColour");
+    water_.color = glGetUniformLocation(waterProg_, "uColor");
+    water_.horizon = glGetUniformLocation(waterProg_, "uFogColor");
     water_.fog = glGetUniformLocation(waterProg_, "uFog");
     water_.time = glGetUniformLocation(waterProg_, "uTime");
     water_.tile = glGetUniformLocation(waterProg_, "uTile");
@@ -446,11 +446,11 @@ void main() {
     if (!floorProg_) return false;
     floor_.viewProj = glGetUniformLocation(floorProg_, "uViewProj");
     floor_.eye = glGetUniformLocation(floorProg_, "uEye");
-    floor_.centre = glGetUniformLocation(floorProg_, "uCentre");
+    floor_.center = glGetUniformLocation(floorProg_, "uCenter");
     floor_.half = glGetUniformLocation(floorProg_, "uHalf");
     floor_.ambient = glGetUniformLocation(floorProg_, "uAmbient");
     floor_.sunLight = glGetUniformLocation(floorProg_, "uSunLight");
-    floor_.fogColour = glGetUniformLocation(floorProg_, "uFogColour");
+    floor_.fogColor = glGetUniformLocation(floorProg_, "uFogColor");
     floor_.underwater = glGetUniformLocation(floorProg_, "uUnderwater");
     floor_.fog = glGetUniformLocation(floorProg_, "uFog");
 
@@ -500,7 +500,7 @@ void Renderer::ClearTerrain() {
 
 // ---------------------------------------------------------------------------
 // Seabed apron. The seabed continues outward from the map's edge: it starts at the
-// edge's own heights and colours and sinks to the floor over kApronWidth. It uses
+// edge's own heights and colors and sinks to the floor over kApronWidth. It uses
 // the terrain shader, so the edge has no visible seam, and the flat floor takes
 // over where the apron ends.
 // ---------------------------------------------------------------------------
@@ -535,7 +535,7 @@ ApronMesh BuildApronMesh(const World& w, float floorY) {
         return static_cast<std::size_t>(tz) * static_cast<std::size_t>(n) + static_cast<std::size_t>(tx);
     };
 
-    // Height and colour of the apron at (x, z): the edge's own values, sinking outward.
+    // Height and color of the apron at (x, z): the edge's own values, sinking outward.
     auto surface = [&](float x, float z, float& y, V3& col) {
         const float cx = std::clamp(x, lo, hi);
         const float cz = std::clamp(z, lo, hi);
@@ -546,7 +546,7 @@ ApronMesh BuildApronMesh(const World& w, float floorY) {
         const float edgeY = w.height[idx];
         const float k = std::clamp(dOut / kApronWidth, 0.0f, 1.0f);
         y = edgeY + (floorY - edgeY) * (k * k * (3.0f - 2.0f * k));
-        col = BiomeColour(static_cast<Biome>(w.biome[idx]));
+        col = BiomeColor(static_cast<Biome>(w.biome[idx]));
     };
 
     ApronMesh m;
@@ -691,7 +691,7 @@ void Renderer::DrawTerrain(const Camera& cam, const SkyState& sky, float viewDis
     glUniform3f(terr_.sunDir, sky.sunDir.x, sky.sunDir.y, sky.sunDir.z);
     glUniform3f(terr_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
     glUniform3f(terr_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
-    glUniform3f(terr_.fogColour, sky.fogColour.x, sky.fogColour.y, sky.fogColour.z);
+    glUniform3f(terr_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform3f(terr_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
     glUniform1f(terr_.fog, sky.fog);
     glUniform3f(terr_.tint, 1.0f, 1.0f, 1.0f);
@@ -756,11 +756,11 @@ void Renderer::DrawFloor(const Camera& cam, const SkyState& sky) {
     glUseProgram(floorProg_);
     glUniformMatrix4fv(floor_.viewProj, 1, GL_FALSE, cam.viewProj.m);
     glUniform3f(floor_.eye, cam.eye.x, cam.eye.y, cam.eye.z);
-    glUniform3f(floor_.centre, cam.eye.x, floorY_, cam.eye.z);
+    glUniform3f(floor_.center, cam.eye.x, floorY_, cam.eye.z);
     glUniform1f(floor_.half, cam.farPlane * 1.2f);
     glUniform3f(floor_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
     glUniform3f(floor_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
-    glUniform3f(floor_.fogColour, sky.fogColour.x, sky.fogColour.y, sky.fogColour.z);
+    glUniform3f(floor_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform3f(floor_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
     glUniform1f(floor_.fog, sky.fog);
 
@@ -772,7 +772,7 @@ void Renderer::DrawFloor(const Camera& cam, const SkyState& sky) {
 void Renderer::DrawWater(const Camera& cam, const SkyState& sky, float seaY, float viewDist) {
     const float surfaceY = seaY - kWaterDrop;
 
-    // The sea is drawn past the far plane, and fades to the horizon colour before the
+    // The sea is drawn past the far plane, and fades to the horizon color before the
     // far plane clips it, so no edge of the water can be seen.
     const float fadeEnd = std::min(viewDist, cam.farPlane * 0.9f);
     const float fadeStart = fadeEnd * 0.6f;
@@ -781,7 +781,7 @@ void Renderer::DrawWater(const Camera& cam, const SkyState& sky, float seaY, flo
     glUseProgram(waterProg_);
     glUniformMatrix4fv(water_.viewProj, 1, GL_FALSE, cam.viewProj.m);
     glUniform3f(water_.eye, cam.eye.x, cam.eye.y, cam.eye.z);
-    glUniform3f(water_.centre, cam.eye.x, surfaceY, cam.eye.z);
+    glUniform3f(water_.center, cam.eye.x, surfaceY, cam.eye.z);
     glUniform1f(water_.half, cam.farPlane * 1.2f);
     glUniform1f(water_.seaY, surfaceY);
     glUniform1f(water_.fadeStart, fadeStart);
@@ -789,8 +789,8 @@ void Renderer::DrawWater(const Camera& cam, const SkyState& sky, float seaY, flo
     glUniform3f(water_.sunDir, sky.sunDir.x, sky.sunDir.y, sky.sunDir.z);
     glUniform3f(water_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
     glUniform3f(water_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
-    glUniform3f(water_.colour, sky.waterRgb.x, sky.waterRgb.y, sky.waterRgb.z);
-    glUniform3f(water_.horizon, sky.fogColour.x, sky.fogColour.y, sky.fogColour.z);
+    glUniform3f(water_.color, sky.waterRgb.x, sky.waterRgb.y, sky.waterRgb.z);
+    glUniform3f(water_.horizon, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform1f(water_.fog, sky.fog);
     glUniform1f(water_.time, sky.waterTime);
     glUniform1f(water_.opacity, sky.waterOpacity);

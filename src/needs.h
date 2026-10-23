@@ -10,3 +10,24 @@ inline void tickNeeds(Needs& n, int hours) {
         else break;   // both empty: nothing more can change
     }
 }
+
+// In-game seconds for one point of regained health: a tenth of an in-game hour
+constexpr double REGEN_GAME_SECONDS = 360.0;
+
+// Gives a unit back health for the in-game time that passed. Only a unit that is standing, below its
+// maximum, out of combat, and with hunger over half regains anything. When it can't, its progress toward
+// the next point is kept, so a fight pauses regen rather than restarting it. Full health clears it.
+inline void regenHealth(Needs& n, bool inCombat, double gameSeconds) {
+    if (n.hp >= n.maxHp) {
+        n.healSeconds = 0.0;
+        return;
+    }
+    const bool eligible = !inCombat && n.hp > 0 && n.hunger * 2 > n.maxHunger;
+    if (!eligible || gameSeconds <= 0.0) return;
+    n.healSeconds += gameSeconds;
+    while (n.healSeconds >= REGEN_GAME_SECONDS && n.hp < n.maxHp) {
+        ++n.hp;
+        n.healSeconds -= REGEN_GAME_SECONDS;
+    }
+    if (n.hp >= n.maxHp) n.healSeconds = 0.0;
+}

@@ -50,7 +50,8 @@ constexpr int SPAWN_SEARCH_STEP = 32;      // spacing of the spawn candidates, i
 constexpr int SPAWN_LOAD_RADIUS = 4;       // chunks read in around the spawn, so units can be placed on them
 constexpr float ENEMY_RANGE = 128.0f;      // red units are placed within this many tiles of the spawn
 constexpr float ENEMY_MIN_RANGE = 12.0f;   // and no closer than this, so the start is clear
-constexpr float WAGON_RANGE = 40.0f;       // the wagon is placed within this many tiles of the spawn
+constexpr float WAGON_RANGE = 40.0f;       // the wagons are placed within this many tiles of the spawn
+constexpr int WAGON_COUNT = 5;             // wagons at the spawn, each on its own tile
 
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
@@ -63,7 +64,7 @@ bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
 
 // Finds where the player starts: the walkable square nearest the middle of the level. In an open
 // world the chunks are read in as the search reaches them, so the whole level can be searched.
-// Returns the centre of the square, in world units.
+// Returns the center of the square, in world units.
 Vec2 findSpawn(Terrain& t) {
     const int size = t.size();
     const int mid = size / 2;
@@ -141,7 +142,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     const int size = t.size();
     auto tileAt = [&](float v) { return std::clamp((int)std::floor(v), 0, size - 1); };
 
-    // Units: a block centred on the spawn, each moved onto free ground
+    // Units: a block centerd on the spawn, each moved onto free ground
     for (int i = 0; i < START_UNIT_COUNT; ++i) {
         const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f,
                                 spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
@@ -185,16 +186,18 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(e, UnitSprite{ rng.range(1, 38) });
     }
 
-    // One wagon on free ground near the spawn. It is decorative and does not block movement.
-    for (int attempt = 0; attempt < 20000; ++attempt) {
+    // Wagons on free ground near the spawn, each on its own tile. They are decorative and do not block movement.
+    std::vector<GridPos> wagonTiles;
+    for (int attempt = 0; attempt < 20000 && (int)wagonTiles.size() < WAGON_COUNT; ++attempt) {
         GridPos g{ rng.range(tileAt(spawn.x - WAGON_RANGE), tileAt(spawn.x + WAGON_RANGE)),
                    rng.range(tileAt(spawn.z - WAGON_RANGE), tileAt(spawn.z + WAGON_RANGE)) };
         if (!t.walkable(g.x, g.y)) continue;
+        if (std::find(wagonTiles.begin(), wagonTiles.end(), g) != wagonTiles.end()) continue;
+        wagonTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity wagon = w.create();
         w.add(wagon, Transform{ x, t.heightAt(x, z), z });
         w.add(wagon, Wagon{});
-        break;
     }
 
     // Names, stats, health and gear for every unit. These draw after the placement above, so where units
@@ -226,6 +229,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
         Entity u = units[0];
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
+        w.remove<AttackOrder>(u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, clickPoint);
         return;
@@ -252,6 +256,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
     for (size_t i = 0; i < units.size(); ++i) {
         w.remove<SoloMove>(units[i]);
         w.remove<PickupOrder>(units[i]);
+        w.remove<AttackOrder>(units[i]);
         w.add(units[i], SquadMember{ sq, (int)i });
     }
 
@@ -288,9 +293,24 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
         w.remove<SquadMember>(u);
+        w.remove<AttackOrder>(u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, target);
         w.add(u, PickupOrder{ item });
+    }
+}
+
+void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target) {
+    if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
+    for (Entity u : units) {
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;   // only your own units fight on order
+        // A fight replaces any move, pickup or formation the unit was on
+        w.remove<SquadMember>(u);
+        w.remove<SoloMove>(u);
+        w.remove<PickupOrder>(u);
+        w.add(u, AttackOrder{ target });
+        ensureCombat(w, u);
+        w.get<Combat>(u)->target = target;
     }
 }
 
@@ -309,9 +329,21 @@ bool dropStack(World& w, Entity unit, int slot) {
     return true;
 }
 
-void needsSystem(World& w, int hours) {
-    if (hours <= 0) return;
-    for (Entity e : w.view<Needs>()) tickNeeds(*w.get<Needs>(e), hours);
+void needsSystem(World& w, int hours, double gameSeconds) {
+    for (Entity e : w.view<Needs>()) {
+        Needs* n = w.get<Needs>(e);
+        // A unit that moved at run pace in the hour that just ended pays double for its next tick. The mark is
+        // used up here, so later hours cost the usual amount.
+        int ticks = hours;
+        if (hours > 0 && n->hurried) {
+            ticks += 1;
+            n->hurried = false;
+        }
+        tickNeeds(*n, ticks);
+
+        const Combat* c = w.get<Combat>(e);
+        regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds);
+    }
 }
 
 void pickupSystem(World& w) {
@@ -343,21 +375,22 @@ void pickupSystem(World& w) {
     }
 }
 
-void squadSystem(World& w, float dt) {
+void squadSystem(World& w, float dt, bool running) {
     for (Entity e : w.view<Squad>()) {
         Squad* sq = w.get<Squad>(e);
         if (sq->arrived) continue;
 
         // The squad keeps to the pace of its slowest member that can still move. Members that can't
         // move at all (downed, or carrying too much) are left behind, and don't hold the squad back.
-        float pace = sq->speed;
+        // Walking, the squad is also held to its own pace. Running, each member runs at its own speed,
+        // so the center goes at the slowest member's run pace.
         float slowest = -1.0f;
         for (Entity m : w.view<SquadMember, Unit>()) {
             if (w.get<SquadMember>(m)->squad != e) continue;
-            const float s = walkSpeedOf(w, m);
+            const float s = walkSpeedOf(w, m, running);
             if (s > 0.0f && (slowest < 0.0f || s < slowest)) slowest = s;
         }
-        pace = slowest < 0.0f ? 0.0f : std::min(pace, slowest);
+        const float pace = slowest < 0.0f ? 0.0f : running ? slowest : std::min(sq->speed, slowest);
 
         Vec2 wp = sq->waypoints[sq->next];
         float tx = wp.x, tz = wp.z;
@@ -381,7 +414,7 @@ void squadSystem(World& w, float dt) {
     }
 }
 
-void steeringSystem(World& w, Terrain& t, float dt) {
+void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // Every unit that moves: player units by their orders, hostiles by their chase
     std::vector<Entity> units = w.view<Unit, Transform>();
     std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
@@ -397,7 +430,7 @@ void steeringSystem(World& w, Terrain& t, float dt) {
         float tx = tr->x, tz = tr->z;   // default: stay put
         if (SquadMember* sm = w.get<SquadMember>(e)) {
             if (Squad* sq = w.get<Squad>(sm->squad)) {
-                // Slots are centred on the squad centre, so the group's middle sits on
+                // Slots are centerd on the squad center, so the group's middle sits on
                 // the click point: columns across the heading, rows behind it.
                 int cols = std::min(SQUAD_COLUMNS, sq->size);
                 int rows = (sq->size + cols - 1) / cols;
@@ -430,6 +463,15 @@ void steeringSystem(World& w, Terrain& t, float dt) {
                 tx = so->waypoints[so->next].x;
                 tz = so->waypoints[so->next].z;
             }
+        } else if (const AttackOrder* ao = w.get<AttackOrder>(e)) {
+            // An ordered fight: walk at the red unit, and stop once it is close enough to swing
+            if (const Transform* tt = w.get<Transform>(ao->target)) {
+                const float gx = tt->x - tr->x, gz = tt->z - tr->z;
+                if (std::sqrt(gx * gx + gz * gz) > ATTACK_REACH * CHASE_STOP_SHARE) {
+                    tx = tt->x;
+                    tz = tt->z;
+                }
+            }
         } else if (w.has<Hostile>(e)) {
             // A hostile walks at its target while it has one, and stops once it is close enough to swing
             if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
@@ -443,8 +485,8 @@ void steeringSystem(World& w, Terrain& t, float dt) {
             }
         }
 
-        // A downed unit has speed 0. A player unit's speed depends on its load, Athletics and stamina.
-        speeds[i] = walkSpeedOf(w, e);
+        // A downed unit has speed 0. A player unit's speed depends on its load, Athletics, stamina and pace.
+        speeds[i] = walkSpeedOf(w, e, running);
         float dx = tx - tr->x, dz = tz - tr->z;
         float dist = std::sqrt(dx * dx + dz * dz);
         float vx = 0.0f, vz = 0.0f;
@@ -498,6 +540,11 @@ void steeringSystem(World& w, Terrain& t, float dt) {
             grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved);
             grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt));
             if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0);
+            // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
+            // a hundredth of a tile or less in a frame, is not walking.
+            if (running && moved >= 0.01f) {
+                if (Needs* nd = w.get<Needs>(e)) nd->hurried = true;
+            }
         }
     }
 }

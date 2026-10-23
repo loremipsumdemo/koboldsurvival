@@ -13,7 +13,7 @@ constexpr int CHUNK_CORNERS = CHUNK_TILES + 1;
 constexpr int REGION_CHUNKS = 16;
 
 // One chunk of the world. Its corner heights include the far edges, so a chunk can be drawn
-// and walked on without its neighbours.
+// and walked on without its neighbors.
 struct ChunkData {
     int cx = 0, cz = 0;                  // chunk coordinates
     std::vector<float> heights;          // CHUNK_CORNERS x CHUNK_CORNERS, row by row, world units

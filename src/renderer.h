@@ -26,7 +26,7 @@ struct TextTex {
     float aspect = 1.0f;
 };
 
-// Multiplies the texture colour, alpha included.
+// Multiplies the texture color, alpha included.
 struct RGBA {
     float r, g, b, a;
 };
@@ -49,6 +49,15 @@ struct CombatLogLayout {
     int maxOffset() const { return lineCount > linesVisible ? lineCount - linesVisible : 0; }
 };
 
+// One line of an item tooltip: its text, and optionally a change against the item it is compared with,
+// such as "(+3)" in green when better or red when worse
+struct TipRow {
+    std::string text;
+    RGBA tint{ 1.0f, 1.0f, 1.0f, 1.0f };
+    std::string change;
+    RGBA changeTint{ 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
 class Renderer {
 public:
     // Creates the GL programs, then loads every image and model. progress (0..1) is
@@ -59,9 +68,9 @@ public:
               const std::function<void(float)>& progress = {});
     void shutdown();
 
-    // In-game time of day in minutes, 0..1440. Sets the sun position and sky colours.
+    // In-game time of day in minutes, 0..1440. Sets the sun position and sky colors.
     void setDayMinutes(float m) { dayMinutes_ = m; }
-    // Sun, moon, star and sky colour settings from the dev tools menu
+    // Sun, moon, star and sky color settings from the dev tools menu
     void setSky(const SkyTuning& s) { sky_ = s; }
 
     // Sets up the terrain's chunks for a map, replacing any earlier one. Each chunk's mesh is built
@@ -86,9 +95,10 @@ public:
     // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
 
-    // In-game panels, drawn between beginUi and endUi. The bottom panel shows each unit with its
-    // portrait, a health bar and its name, and a purple frame around the selected ones.
-    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units);
+    // In-game panels, drawn between beginUi and endUi. The bottom panel shows the walk and run toggle
+    // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
+    // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
+    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running);
     // Right sidebar for one unit: its profile card, its gear and its 32 inventory slots. (mx, my) is the
     // mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
@@ -101,7 +111,7 @@ public:
     // the window's right edge, or the sidebar's left edge while the sidebar shows. Both lines are
     // right aligned, and the clock's digits keep the same width as they change.
     void drawClock(const std::string& clock, const std::string& date, float right, int winH);
-    // A notice, drawn centred at the top of the window
+    // A notice, drawn centerd at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
     // The stats popout for one unit, and its layout (which depends on the fonts)
     StatsPanelLayout statsPanelLayout(int winW, int winH);
@@ -168,20 +178,26 @@ private:
 
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
-    // A quad that changes colour from top to bottom
+    // A quad that changes color from top to bottom
     void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
     // Clock text: every digit takes the width of the widest digit, so the numbers don't shift
     float digitCellWidth();
     float clockTextWidth(const std::string& s);
     void drawClockText(const std::string& s, float x, float y, RGBA tint);
-    // The name, stats and carry of an item, beside the mouse. count is shown as a stack.
-    void drawItemTooltip(int item, int count, float mx, float my);
+    // The name and stats of an item, beside the mouse. count is shown as a stack. When compareTo is given
+    // and the item is gear, its stats show how they change from the gear it would replace in compareTo,
+    // and a card beside it shows the gear it is compared with.
+    void drawItemTooltip(int item, int count, float mx, float my, const Equipment* compareTo = nullptr);
+    // A tooltip box with its rows, measured and drawn with its top-left corner at (x, y)
+    float tipWidth(const std::vector<TipRow>& rows);
+    float tipHeight(size_t rowCount);
+    void drawTip(const std::vector<TipRow>& rows, float x, float y, float width);
 
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
 
     // The picture for an item, from data/item/<id>.png. An item without one uses data/item/none.png.
-    // Null when neither is packed, and the item is drawn as its coloured block instead.
+    // Null when neither is packed, and the item is drawn as its colored block instead.
     const TextTex* itemTexture(int item);
     // A picture fitted inside r, keeping its proportions, multiplied by tint
     void drawFitted(const TextTex& g, const Rect& r, RGBA tint);
@@ -230,7 +246,7 @@ private:
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1;
 
-    GLuint dynVao_ = 0, dynVbo_ = 0;          // colour overlays
+    GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
     // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
     // One slot per chunk of the level, indexed by chunk id. Buffers exist only while the chunk is loaded.
@@ -279,7 +295,7 @@ private:
 
     Mat4 viewProj_{};
 
-    // Sky: a gradient and sun drawn as a full-screen quad, coloured by the time of day
+    // Sky: a gradient and sun drawn as a full-screen quad, colored by the time of day
     GLuint skyProgram_ = 0, skyVao_ = 0, skyVbo_ = 0;
     GLint uSkyInvVP_ = -1, uSunDir_ = -1, uSunAlpha_ = -1, uZenith_ = -1, uHorizon_ = -1, uSunCol_ = -1;
     GLint uMoonDir_ = -1, uMoonAlpha_ = -1, uMoonCol_ = -1, uStarAlpha_ = -1;

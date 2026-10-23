@@ -50,7 +50,7 @@ struct GenParams {
     float relief = 1.0f;         // mountain height, 0.25 to 2
     float rangeCover = 0.5f;     // how much of the land carries mountain ranges, 0 to 1
     float plainShare = 0.0f;     // share of the land pulled down to plains, 0 to 1
-    float plainLevel = 0.06f;    // plains height above the sea (normalised)
+    float plainLevel = 0.06f;    // plains height above the sea (normalized)
     // Erosion
     float erosion = 0.6f;       // strength of water erosion, 0 to 1
     int   passes = 24;          // water erosion passes, 8 to 60
@@ -73,12 +73,12 @@ struct GenParams {
 struct GenSettings {
     uint32_t seed = 1;
     int size = 4096;            // tiles per side, a multiple of kChunkTiles
-    float heightScale = 500.0f; // world units for a normalised height of 1
+    float heightScale = 500.0f; // world units for a normalized height of 1
     GenParams p;
 };
 
 // A generated world. One tile is one world unit. Tile (0, 0) is at
-// world (-size/2, -size/2), so the world is centred on the origin.
+// world (-size/2, -size/2), so the world is centerd on the origin.
 struct World {
     int size = 0;
     uint32_t seed = 1;
@@ -114,7 +114,7 @@ std::vector<float> DistanceToMask(const std::vector<uint8_t>& target, int w, int
 // Height in world units at a world-space position (bilinear, clamped to the edges).
 float SampleHeight(const World& w, float x, float z);
 
-// Colour used for terrain of this biome.
-V3 BiomeColour(Biome b);
+// Color used for terrain of this biome.
+V3 BiomeColor(Biome b);
 
 }  // namespace wm

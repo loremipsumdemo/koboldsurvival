@@ -48,7 +48,7 @@ bool Skybox::Load(const std::string& folder, std::string& err) {
         stbi_image_free(img);
     }
 
-    // Horizon colour: the middle rows of the four side faces, averaged.
+    // Horizon color: the middle rows of the four side faces, averaged.
     // Side faces are posx(0), negx(1), posz(4), negz(5).
     double sum[3] = {0.0, 0.0, 0.0};
     long long count = 0;

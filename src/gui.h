@@ -17,6 +17,8 @@ struct UnitCell {
 
 struct UnitPanelLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect walkButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel
+    Rect runButton{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     std::vector<UnitCell> cells;            // visible units only
@@ -31,11 +33,13 @@ struct UnitPanelLayout {
 // covers all three; the bar and name sit in the strip under the portrait.
 inline float unitCellLabelHeight(float s) { return 34.0f * s; }
 
-// Bottom panel: a 8-per-row grid of portraits with names, scrolled vertically.
+// Bottom panel: a walk and run toggle across the top, then a 8-per-row grid of portraits with names,
+// scrolled vertically.
 inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow) {
     const float s = H / 720.0f;
     const float cell = 64.0f * s, gap = 6.0f * s, pad = 10.0f * s;
     const float label = unitCellLabelHeight(s), scrollW = 14.0f * s;
+    const float toggleH = 22.0f * s;
     const int rowsVisible = 2;
 
     UnitPanelLayout L;
@@ -45,21 +49,28 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     L.scrollRow = std::clamp(scrollRow, 0, maxScroll);
 
     const float cellsW = UNITS_PER_ROW * cell + (UNITS_PER_ROW - 1) * gap;
+    const float gridH = rowsVisible * (cell + label) + (rowsVisible - 1) * gap;
     const float panelW = pad + cellsW + gap + scrollW + pad;
-    const float panelH = pad + rowsVisible * (cell + label) + (rowsVisible - 1) * gap + pad;
+    const float panelH = pad + toggleH + gap + gridH + pad;
     L.panel = Rect{ (W - panelW) * 0.5f, H - panelH - 8.0f * s, panelW, panelH };
+
+    // The toggle spans the cells, with Walk and Run side by side. The grid starts under it.
+    const float halfW = (cellsW - gap) * 0.5f;
+    L.walkButton = Rect{ L.panel.x + pad, L.panel.y + pad, halfW, toggleH };
+    L.runButton = Rect{ L.panel.x + pad + halfW + gap, L.panel.y + pad, halfW, toggleH };
+    const float top = L.panel.y + pad + toggleH + gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
         for (int c = 0; c < UNITS_PER_ROW; ++c) {
             const int idx = (L.scrollRow + r) * UNITS_PER_ROW + c;
             if (idx >= unitCount) break;
             const float x = L.panel.x + pad + c * (cell + gap);
-            const float y = L.panel.y + pad + r * (cell + label + gap);
+            const float y = top + r * (cell + label + gap);
             L.cells.push_back(UnitCell{ idx, Rect{ x, y, cell, cell + label } });
         }
     }
 
-    L.track = Rect{ L.panel.x + panelW - pad - scrollW, L.panel.y + pad, scrollW, panelH - 2.0f * pad };
+    L.track = Rect{ L.panel.x + panelW - pad - scrollW, top, scrollW, gridH };
     if (!L.scrollable()) {
         L.thumb = L.track;
     } else {
@@ -100,9 +111,9 @@ inline SidebarLayout layoutInventorySidebar(int W, int H) {
     const float btnW = 66.0f * s, btnH = 24.0f * s;
     L.statsButton = Rect{ L.profile.x + L.profile.w - cardInset - btnW, L.profile.y + cardInset, btnW, btnH };
 
-    // Gear: four slots to a row, two rows, then a line of attack and defence totals
+    // Gear: four slots to a row, two rows, then a line of attack and defense totals
     const int gearCols = 4, gearRows = GEAR_SLOTS / 4;
-    const float gearH = 44.0f * s, totalsH = 26.0f * s;
+    const float gearH = 56.0f * s, totalsH = 26.0f * s;
     const float gearTop = L.profile.y + cardH + sectionGap;
     const float gearW = (innerW - (gearCols - 1) * gap) / gearCols;
     L.gearPanel = Rect{ L.panel.x + pad, gearTop, width - 2.0f * pad,
@@ -153,7 +164,7 @@ inline int sidebarSlotAt(const SidebarLayout& L, float x, float y) {
     return -1;
 }
 
-// The stats popout, centred on the window. Two columns of stats, each row showing the level, the
+// The stats popout, centerd on the window. Two columns of stats, each row showing the level, the
 // total XP and the XP still needed for the next level. rowH is the height of one line of text and
 // titleH the height of the title, both from the fonts, so the box fits the text.
 struct StatsPanelLayout {

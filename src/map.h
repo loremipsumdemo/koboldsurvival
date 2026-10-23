@@ -40,7 +40,7 @@ MapData flatMap(int size);
 // Parses a map from bytes. Returns false if the magic, version or size don't match.
 bool parseMap(const unsigned char* bytes, size_t total, MapData& out);
 
-// Serialises a map to the version 2 format above
+// Serializes a map to the version 2 format above
 std::vector<unsigned char> encodeMap(const MapData& m);
 
 bool readMapFile(const std::string& path, MapData& out);

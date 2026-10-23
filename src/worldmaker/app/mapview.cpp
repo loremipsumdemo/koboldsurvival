@@ -39,7 +39,7 @@ void MapUV(const World& w, float x, float z, float& u, float& v) {
     v = (S * 0.5f - z) / S;
 }
 
-// Draws the window of the world centred on (cx, cz), wide tiles across, into the pixel square
+// Draws the window of the world centerd on (cx, cz), wide tiles across, into the pixel square
 // at (x, y). Outside the world the square is solid ocean, so the map never samples past its edge.
 void DrawMapWindow(Renderer& r, const World& w, float x, float y, float size, float cx, float cz, float wide,
                    float winW, float winH) {
@@ -88,7 +88,7 @@ MapImage BuildMapImage(const World& w, int maxSide) {
     img.side = side;
     img.rgba.assign(static_cast<size_t>(side) * side * 4, 255);
     const float stride = static_cast<float>(S) / side;
-    const int d = std::max(1, static_cast<int>(stride + 0.5f));  // neighbour distance, in tiles
+    const int d = std::max(1, static_cast<int>(stride + 0.5f));  // neighbor distance, in tiles
 
     auto tile = [&](int ix, int iz) {
         const int cx = std::clamp(ix, 0, S - 1);
@@ -110,7 +110,7 @@ MapImage BuildMapImage(const World& w, int maxSide) {
                 const float depth = std::clamp((w.seaLevel - h) / 60.0f, 0.0f, 1.0f);
                 col = V3{0.10f - 0.05f * depth, 0.28f - 0.12f * depth, 0.48f - 0.15f * depth};
             } else {
-                col = BiomeColour(static_cast<Biome>(w.biome[i]));
+                col = BiomeColor(static_cast<Biome>(w.biome[i]));
                 if (w.veg.size() == w.height.size()) {
                     // The same canopy tint the terrain mesh uses, so the flora shows on the map.
                     const float v = std::clamp(w.veg[i], 0.0f, 1.0f) * 0.45f;
@@ -290,7 +290,7 @@ void DrawFullMap(Renderer& r, const World& w, const Player& p, MapView& mv, cons
         mv.cz += dy * unitsPerPixel;
     }
 
-    // The view centre, kept so the window stays on the map.
+    // The view center, kept so the window stays on the map.
     float cx = mv.focusSelf ? p.pos.x : mv.cx;
     float cz = mv.focusSelf ? p.pos.z : mv.cz;
     const float wide = S / mv.zoom;

@@ -9,8 +9,8 @@ struct RenderDebug {
     bool showFps = false;        // FPS and UPS counter in the top left corner
     bool showPerfPanel = false;  // timing and work panel on the right; also turns GPU timers on
     bool wireframe = false;      // terrain drawn as lines
-    bool slopeView = false;      // terrain coloured by slope: green flat, red steep
-    bool lodTint = false;        // colour chunks by detail: green full detail, orange coarse
+    bool slopeView = false;      // terrain colored by slope: green flat, red steep
+    bool lodTint = false;        // color chunks by detail: green full detail, orange coarse
     bool hideTerrain = false;
     bool hideFloor = false;      // the seabed plane beyond the map
     bool hideWater = false;

@@ -21,11 +21,11 @@ struct MapImage {
 };
 MapImage BuildMapImage(const World& w, int maxSide);
 
-// State of the full map: zoom, the view centre when focus is on the mouse, and dragging.
+// State of the full map: zoom, the view center when focus is on the mouse, and dragging.
 struct MapView {
-    bool focusSelf = true;        // true: centre and zoom on the player. false: zoom about the mouse and drag to pan
+    bool focusSelf = true;        // true: center and zoom on the player. false: zoom about the mouse and drag to pan
     float zoom = 1.0f;            // 1 shows the whole world
-    float cx = 0.0f, cz = 0.0f;   // view centre in world units
+    float cx = 0.0f, cz = 0.0f;   // view center in world units
     float lastX = 0.0f, lastY = 0.0f;
     bool dragging = false;
 };

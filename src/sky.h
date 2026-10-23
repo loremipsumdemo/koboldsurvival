@@ -1,8 +1,8 @@
 #pragma once
 #include <array>
 
-// Colours the dev tools menu can edit. The sky blends between day and night colours using the
-// sun's height, and the dusk colours are used near the horizon at sunrise and sunset.
+// Colors the dev tools menu can edit. The sky blends between day and night colors using the
+// sun's height, and the dusk colors are used near the horizon at sunrise and sunset.
 enum ColorTarget {
     CT_DAY_ZENITH,
     CT_DAY_HORIZON,
@@ -23,14 +23,14 @@ inline const char* colorTargetName(int i) {
     return names[i];
 }
 
-// Atmosphere settings, edited from the Esc menu's dev tools. Colours are RGB, each 0..1.
+// Atmosphere settings, edited from the Esc menu's dev tools. Colors are RGB, each 0..1.
 struct SkyTuning {
     bool clockRunning = true;     // the in-game clock advances during play
     bool stars = true;
     bool moon = true;
     float sunBrightness = 1.0f;   // 0..2, scales the sun's glow and disc
     float starBrightness = 1.0f;  // 0..2
-    int colorTarget = 0;          // which colour the R/G/B buttons edit, a ColorTarget
+    int colorTarget = 0;          // which color the R/G/B buttons edit, a ColorTarget
 
     std::array<std::array<float, 3>, CT_COUNT> colors = {{
         {{ 0.22f, 0.45f, 0.85f }},   // CT_DAY_ZENITH

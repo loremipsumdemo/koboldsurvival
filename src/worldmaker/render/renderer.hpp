@@ -28,18 +28,18 @@ struct Camera {
     float farPlane = 1000.0f;   // far clip distance, so the sea can fade out before it
 };
 
-// One end of a line: position and colour, 24 bytes, no padding.
+// One end of a line: position and color, 24 bytes, no padding.
 struct LineVertex {
     float x, y, z;
     float r, g, b;
 };
 
-// Adds the floor grid around centre to out. Lines on multiples of `major` use majorCol.
+// Adds the floor grid around center to out. Lines on multiples of `major` use majorCol.
 // Used when gOpt.shaderGrid is off.
-void AppendGrid(std::vector<LineVertex>& out, V3 centre, float radius, int major, V3 minorCol, V3 majorCol);
+void AppendGrid(std::vector<LineVertex>& out, V3 center, float radius, int major, V3 minorCol, V3 majorCol);
 
 // Adds a wireframe box to out.
-void AppendWireBox(std::vector<LineVertex>& out, V3 centre, V3 size, V3 colour);
+void AppendWireBox(std::vector<LineVertex>& out, V3 center, V3 size, V3 color);
 
 // One square of terrain. Each chunk has a full-detail mesh and a coarse mesh
 // (every 4th tile), and DrawTerrain picks one by distance.
@@ -48,7 +48,7 @@ struct TerrainChunk {
     GLuint vboFull = 0;
     GLuint vaoCoarse = 0;
     GLuint vboCoarse = 0;
-    float cx = 0.0f;   // world-space centre
+    float cx = 0.0f;   // world-space center
     float cz = 0.0f;
     float minY = 0.0f; // height range of the chunk, skirts included, for culling
     float maxY = 0.0f;
@@ -60,14 +60,14 @@ public:
     bool Init(const std::vector<unsigned char>& fontBytes, std::string& err);
     void Shutdown();
 
-    // Sets the viewport and clears the frame to the sky's horizon colour.
+    // Sets the viewport and clears the frame to the sky's horizon color.
     void BeginFrame(int w, int h, const SkyState& sky);
 
     // Loads the six cube faces (posx, negx, posy, negy, posz, negz .jpg or .png) from
     // folder. On failure err says why and the procedural sky stays in use.
     bool LoadSkybox(const std::string& folder, std::string& err);
     bool UsingSkybox() const { return skybox_.loaded() && gDebug.skybox; }
-    // Average colour of the skybox at the horizon. Used for fog when the skybox is shown.
+    // Average color of the skybox at the horizon. Used for fog when the skybox is shown.
     V3 SkyboxHorizon() const { return skybox_.horizon(); }
 
     // Draws the sky dome, sun and stars. With gOpt.skyLast it is drawn after the
@@ -83,12 +83,12 @@ public:
     // 2D drawing in pixels, origin at the top left. Call between BeginUI and EndUI.
     void BeginUI(int w, int h);
     void EndUI();
-    void Rect(float x, float y, float w, float h, V3 colour, float alpha);
-    void Text(float x, float top, const std::string& s, V3 colour);
+    void Rect(float x, float y, float w, float h, V3 color, float alpha);
+    void Text(float x, float top, const std::string& s, V3 color);
     // Same as Text, with the whole line at the given opacity, 0 to 1.
-    void TextAlpha(float x, float top, const std::string& s, V3 colour, float alpha);
+    void TextAlpha(float x, float top, const std::string& s, V3 color, float alpha);
     // Text drawn at scale times the baked size, scaled about the start of the string.
-    void TextScaled(float x, float top, const std::string& s, V3 colour, float alpha, float scale);
+    void TextScaled(float x, float top, const std::string& s, V3 color, float alpha, float scale);
     float MeasureText(const std::string& s) const;
     float LineHeight() const;
 
@@ -121,7 +121,7 @@ private:
     bool InitTerrain(std::string& err);
     bool InitGrid(std::string& err);     // render/grid.cpp
     void ShutdownTerrain();
-    void DrawUI(const float* verts, std::size_t floats, bool useTex, V3 colour, float alpha);
+    void DrawUI(const float* verts, std::size_t floats, bool useTex, V3 color, float alpha);
     void FlushBatch();
 
     GLuint skyProg_ = 0;
@@ -145,21 +145,21 @@ private:
 
     struct SkyLocs {
         GLint forward, right, up, tanHalfFov, aspect;
-        GLint top, horizon, sunDir, sunColour, sunStrength, stars, depth, cube, useCube;
+        GLint top, horizon, sunDir, sunColor, sunStrength, stars, depth, cube, useCube;
         GLint starRgb, starAmount, moonDir, moonRgb, moonStrength, moonCos;
     } sky_{};
 
     struct LineLocs {
-        GLint viewProj, eye, light, fogColour, fog;
+        GLint viewProj, eye, light, fogColor, fog;
     } line_{};
 
     struct UiLocs {
-        GLint proj, colour, useTex, tex;
+        GLint proj, color, useTex, tex;
     } ui_{};
 
     Mat4 uiProj_{};
 
-    // Batched 2D drawing: every vertex carries its own colour and texture mode.
+    // Batched 2D drawing: every vertex carries its own color and texture mode.
     GLuint batchProg_ = 0;
     GLuint batchVao_ = 0;
     GLuint batchVbo_ = 0;
@@ -196,19 +196,19 @@ private:
     float apronMax_ = 0.0f;
 
     struct TerrainLocs {
-        GLint viewProj, eye, sunDir, sunLight, ambient, fogColour, fog, tile, seaY, tint, rockRgb, rockSlope, slopeView, underwater;
+        GLint viewProj, eye, sunDir, sunLight, ambient, fogColor, fog, tile, seaY, tint, rockRgb, rockSlope, slopeView, underwater;
     } terr_{};
 
     struct WaterLocs {
-        GLint viewProj, eye, centre, half, seaY, sunDir, sunLight, ambient, horizon, fog, colour, time, tile, fadeStart, fadeEnd, opacity, pattern, speed;
+        GLint viewProj, eye, center, half, seaY, sunDir, sunLight, ambient, horizon, fog, color, time, tile, fadeStart, fadeEnd, opacity, pattern, speed;
     } water_{};
 
     struct FloorLocs {
-        GLint viewProj, eye, centre, half, ambient, sunLight, fogColour, fog, underwater;
+        GLint viewProj, eye, center, half, ambient, sunLight, fogColor, fog, underwater;
     } floor_{};
 
     struct GridLocs {
-        GLint viewProj, eye, centreX, centreZ, half, minor, major, majorEvery, horizon, fog;
+        GLint viewProj, eye, centerX, centerZ, half, minor, major, majorEvery, horizon, fog;
     } grid_{};
 };
 

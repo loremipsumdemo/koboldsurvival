@@ -123,6 +123,24 @@ std::vector<Entity> selectedUnits(World& w) {
     return out;
 }
 
+// The unit the sidebar shows: the lone one of yours that is selected, or, when none of yours is, the lone red
+// unit. NULL when nothing is selected or more than one of yours is.
+Entity sidebarUnitOf(World& w) {
+    const std::vector<Entity> mine = selectedUnits(w);
+    if (mine.size() == 1) return mine[0];
+    if (!mine.empty()) return NULL_ENTITY;
+    const std::vector<Entity> any = w.view<Unit, Selected>();
+    return any.size() == 1 ? any[0] : NULL_ENTITY;
+}
+
+// The first red unit in a list, or NULL_ENTITY if there is none
+Entity firstRedUnit(World& w, const std::vector<Entity>& units) {
+    for (Entity u : units) {
+        if (w.has<Hostile>(u)) return u;
+    }
+    return NULL_ENTITY;
+}
+
 // Click selection: nearest unit within one tile of the clicked ground point
 void clickSelect(World& w, const Terrain& t, const Camera& cam,
                  float mx, float my, int W, int H, bool additive) {
@@ -170,7 +188,7 @@ bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
     gx = hit->first;
     gz = hit->second;
 
-    // Units go to the exact ground point clicked, not to the centre of its tile
+    // Units go to the exact ground point clicked, not to the center of its tile
     issueMoveOrder(w, t, units, Vec2{ hit->first, hit->second });
     return true;
 }
@@ -624,7 +642,7 @@ PanelGeometry panelGeometry(int W, int H) {
     const float pad = 16.0f * s, hdrH = 30.0f * s, band = 24.0f * s;
     const float rowH = 28.0f * s, pitch = rowH + rowGap;
     const float pw = 1100.0f * s, btnW = 180.0f * s;
-    // The panel is centred vertically, and never closer than 8px to the top
+    // The panel is centerd vertically, and never closer than 8px to the top
     const float panelH = 56.0f * s + btnH + gap + hdrH + band
                        + (float)visibleSaveRows(H) * pitch + band + btnH + pad;
     const float px = (W - pw) * 0.5f, py = std::max(8.0f * s, (H - panelH) * 0.5f);
@@ -753,7 +771,7 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
 }
 
 // Dev tools menu, opened from the Esc menu. Left: clock, stars, moon and brightness.
-// Right: the colour being edited, its red, green and blue, and reset.
+// Right: the color being edited, its red, green and blue, and reset.
 std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, double clockSeconds) {
     const float s = H / 720.0f;
     const float bh = 40.0f * s, gap = 8.0f * s;
@@ -794,8 +812,8 @@ std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, double cl
 
     y = top;
     const auto& c = sky.colors[sky.colorTarget];
-    full(std::string("Colour: ") + colorTargetName(sky.colorTarget), Action::DevColorTarget, rightX, y, false);
-    pair("Prev colour", Action::DevColorTarget, -1, "Next colour", Action::DevColorTarget, 1, rightX, y);
+    full(std::string("Color: ") + colorTargetName(sky.colorTarget), Action::DevColorTarget, rightX, y, false);
+    pair("Prev color", Action::DevColorTarget, -1, "Next color", Action::DevColorTarget, 1, rightX, y);
     full("R " + fmt(c[0]) + "   G " + fmt(c[1]) + "   B " + fmt(c[2]), Action::DevColor, rightX, y, false);
     pair("Red -", Action::DevColor, 0, "Red +", Action::DevColor, 1, rightX, y);
     pair("Green -", Action::DevColor, 2, "Green +", Action::DevColor, 3, rightX, y);
@@ -943,6 +961,9 @@ int main(int, char**) {
     bool mapSortAsc = false;              // ascending order; the list opens newest first
     SkyTuning sky;                        // atmosphere settings from the dev tools menu
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
+    // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
+    // double hunger at the next hour. Not saved: a game starts walking.
+    bool runMode = false;
     // A stack being dragged out of the inventory sidebar. Released outside the sidebar, it drops on the ground.
     bool itemDrag = false;
     Entity dragUnit = NULL_ENTITY;        // the unit whose inventory it came from
@@ -1104,6 +1125,8 @@ int main(int, char**) {
         clearCombatText();
         closePanel();
         currentMap = choice;
+        // The focus is clamped to the map, so the map's size has to be known before it is set
+        cam.mapSize = (float)terrain.size();
         focusCameraOnFirstUnit(world, cam);
         primeStreaming(world, terrain, cam);
         gs = GameState{};
@@ -1181,6 +1204,7 @@ int main(int, char**) {
         levelSeed = d.seed;
         clearCombatText();
         gs = d.gs;
+        cam.mapSize = (float)terrain.size();
         focusCameraOnFirstUnit(world, cam);
         applySaveCamera(d.cam, cam);
         primeStreaming(world, terrain, cam);
@@ -1628,10 +1652,15 @@ int main(int, char**) {
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
         viewH = winH;
 
-        // Own units in list order, the same order the bottom panel shows them
-        auto ownUnitList = [&]() { return world.view<Unit, Transform, Commandable>(); };
-        // The inventory sidebar is up only when exactly one of your units is selected
-        auto sidebarUp = [&]() { return selectedUnits(world).size() == 1; };
+        // Own units by entity number, lowest first. The bottom panel shows them in this order, and the
+        // camera starts on the first of them, which is also the first party member.
+        auto ownUnitList = [&]() {
+            std::vector<Entity> units = world.view<Unit, Transform, Commandable>();
+            std::sort(units.begin(), units.end());
+            return units;
+        };
+        // The sidebar is up for the lone selected unit, yours or a red one
+        auto sidebarUp = [&]() { return sidebarUnitOf(world) != NULL_ENTITY; };
         // Whether the mouse is over the bottom unit panel
         auto unitPanelHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
@@ -1928,10 +1957,15 @@ int main(int, char**) {
                     }
 
                     if (overPanels(mx, my, winW, winH)) {
+                        // The walk and run toggle on the bottom panel
+                        if (pl.walkButton.contains(mx, my)) { runMode = false; break; }
+                        if (pl.runButton.contains(mx, my)) { runMode = true; break; }
+
                         const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
                         if (onSidebar) {
                             // A filled inventory slot starts dragging its stack out of the inventory. A filled
-                            // gear slot starts dragging the gear item out of the unit's gear.
+                            // gear slot starts dragging the gear item out of the unit's gear. A red unit's
+                            // sidebar has no unit of yours in it, so nothing there can be dragged.
                             const std::vector<Entity> picked = selectedUnits(world);
                             const SidebarLayout sl = layoutInventorySidebar(winW, winH);
                             const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
@@ -2001,13 +2035,20 @@ int main(int, char**) {
                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
                     if (overPanels(e.button.x, e.button.y, winW, winH)) {
                         // Right-click on an inventory item: gear goes straight to its slot, and anything
-                        // else opens the menu with Use and Drop. Elsewhere on the panels, nothing happens.
+                        // else opens the menu with Use and Drop. Right-click on a worn gear item takes it off
+                        // into the inventory. Elsewhere on the panels, nothing happens. A red unit's sidebar
+                        // has no unit of yours in it, so neither of those applies there.
                         itemMenu.open = false;
                         const std::vector<Entity> picked = selectedUnits(world);
-                        const int slot = sidebarUp()
-                            ? sidebarSlotAt(layoutInventorySidebar(winW, winH), e.button.x, e.button.y) : -1;
+                        const SidebarLayout sl = layoutInventorySidebar(winW, winH);
+                        const int slot = sidebarUp() ? sidebarSlotAt(sl, e.button.x, e.button.y) : -1;
+                        const int gear = sidebarUp() ? gearSlotAt(sl, e.button.x, e.button.y) : -1;
                         const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
-                        if (inv && slot >= 0 && inv->slots[slot].item != 0) {
+                        const Equipment* wornHere = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
+                        if (wornHere && gear >= 0 && wornHere->items[gear] != 0) {
+                            std::string why;
+                            if (!unequipToInventory(world, picked[0], gear, why) && !why.empty()) showNotice(why);
+                        } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
                             const int item = inv->slots[slot].item;
                             const ItemDef* def = findItem(item);
                             if (def && !def->equipSlot.empty()) {
@@ -2022,11 +2063,26 @@ int main(int, char**) {
                             }
                         }
                     } else {
-                        float gx = 0.0f, gz = 0.0f;
-                        if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
-                            actionX = gx;
-                            actionZ = gz;
-                            actionAlpha = 1.0f;
+                        // A red unit under the pointer: each of your selected units fights it. Ground: they walk there.
+                        const Entity foe = firstRedUnit(world,
+                            renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
+                        if (foe != NULL_ENTITY) {
+                            const std::vector<Entity> units = selectedUnits(world);
+                            if (!units.empty()) {
+                                issueAttackOrder(world, units, foe);
+                                if (const Transform* ft = world.get<Transform>(foe)) {
+                                    actionX = ft->x;
+                                    actionZ = ft->z;
+                                    actionAlpha = 1.0f;
+                                }
+                            }
+                        } else {
+                            float gx = 0.0f, gz = 0.0f;
+                            if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
+                                actionX = gx;
+                                actionZ = gz;
+                                actionAlpha = 1.0f;
+                            }
                         }
                     }
                 }
@@ -2122,12 +2178,12 @@ int main(int, char**) {
         if (noticeSec > 0.0f) noticeSec -= dt;
         // The stats popout and the item menu belong to one lone selected unit. They close when that changes.
         if (screen == Screen::Playing) {
-            const std::vector<Entity> picked = selectedUnits(world);
-            const bool lone = picked.size() == 1 && world.has<Inventory>(picked[0]);
+            const Entity shown = sidebarUnitOf(world);
+            const bool lone = shown != NULL_ENTITY;
             if (!lone) statsOpen = false;
             if (itemMenu.open) {
                 const Inventory* inv = world.get<Inventory>(itemMenu.unit);
-                const bool same = lone && picked[0] == itemMenu.unit;
+                const bool same = lone && shown == itemMenu.unit;
                 const bool hasItem = inv && itemMenu.slot >= 0 && itemMenu.slot < INVENTORY_SLOTS
                                   && inv->slots[itemMenu.slot].item != 0;
                 if (!same || !hasItem) itemMenu.open = false;
@@ -2150,16 +2206,21 @@ int main(int, char**) {
             const size_t logCount = combatLog.lines.size();
             if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
             logSeen = logCount;
-            squadSystem(world, dt);
-            steeringSystem(world, terrain, dt);
+            squadSystem(world, dt, runMode);
+            steeringSystem(world, terrain, dt, runMode);
             pickupSystem(world);
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
-            // The in-game clock runs while it is not stopped. Hunger ticks once for each in-game hour it passes.
+            // The in-game clock runs while it is not stopped. Hunger ticks once for each in-game hour it passes,
+            // and health comes back by the in-game seconds that passed.
             int hoursPassed = 0;
-            if (sky.clockRunning) hoursPassed = advanceClock(gs.clockSeconds, dt);
-            needsSystem(world, hoursPassed);
+            double gameSecs = 0.0;
+            if (sky.clockRunning) {
+                gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
+                hoursPassed = advanceClock(gs.clockSeconds, dt);
+            }
+            needsSystem(world, hoursPassed, gameSecs);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -2235,16 +2296,18 @@ int main(int, char**) {
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) renderer.drawGroundLabels(world, terrain, cam, winW, winH);
             {
-                const std::vector<Entity> own = world.view<Unit, Transform, Commandable>();
+                const std::vector<Entity> own = ownUnitList();
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
                 unitPanelRow = L.scrollRow;
-                renderer.drawUnitPanel(world, L, own);
+                renderer.drawUnitPanel(world, L, own, runMode);
                 // The combat log, bottom left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);
                 logOffset = cl.offset;
                 renderer.drawCombatLog(cl, combatLog);
-                const std::vector<Entity> picked = selectedUnits(world);
-                if (picked.size() == 1 && world.has<Inventory>(picked[0])) {
+                // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
+                // are only shown: the mouse handling never starts a drag or a menu on them.
+                const Entity shown = sidebarUnitOf(world);
+                if (shown != NULL_ENTITY) {
                     // The item being dragged, so the gear slots can show where it fits
                     int draggedId = 0;
                     if (itemDrag && dragGear >= 0) {
@@ -2254,17 +2317,17 @@ int main(int, char**) {
                         const Inventory* inv = world.get<Inventory>(dragUnit);
                         if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS) draggedId = inv->slots[dragSlot].item;
                     }
-                    renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), world, picked[0],
+                    renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), world, shown,
                                                   mouseX, mouseY,
                                                   itemDrag && dragGear < 0 ? dragSlot : -1,
                                                   itemDrag && dragGear >= 0 ? dragGear : -1,
                                                   draggedId);
                 }
-                if (statsOpen && picked.size() == 1 && world.has<Stats>(picked[0])) {
-                    const Name* nm = world.get<Name>(picked[0]);
+                if (statsOpen && shown != NULL_ENTITY && world.has<Stats>(shown)) {
+                    const Name* nm = world.get<Name>(shown);
                     renderer.drawStatsPanel(renderer.statsPanelLayout(winW, winH),
                                             nm ? nm->text : std::string("Unnamed Unit"),
-                                            *world.get<Stats>(picked[0]), mouseX, mouseY);
+                                            *world.get<Stats>(shown), mouseX, mouseY);
                 }
                 if (itemMenu.open) {
                     const std::vector<std::string> labels = menuLabels();
@@ -2288,8 +2351,7 @@ int main(int, char**) {
             }
             // The clock sits in the top right, or just left of the sidebar while the sidebar shows
             {
-                const std::vector<Entity> picked = selectedUnits(world);
-                const bool sidebar = picked.size() == 1 && world.has<Inventory>(picked[0]);
+                const bool sidebar = sidebarUp();
                 const float clockRight = sidebar ? layoutInventorySidebar(winW, winH).panel.x : (float)winW;
                 renderer.drawClock(formatClock(gs.clockSeconds), formatDate(gs.clockSeconds), clockRight, winH);
             }
@@ -2301,7 +2363,7 @@ int main(int, char**) {
             const float s = winH / 720.0f;
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-            const RGBA grey{ 0.6f, 0.6f, 0.65f, 1.0f };
+            const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
             const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
             const RGBA hint{ 0.75f, 0.85f, 1.0f, 1.0f };
             const RGBA builtIn{ 0.6f, 0.85f, 1.0f, 1.0f };
@@ -2314,7 +2376,7 @@ int main(int, char**) {
             renderer.drawUiTextCentered("New Game", cx, g.box.y + g.pad, white);
             renderer.drawUiTextCentered(maps.empty() ? "No maps found. Save a game world from the map editor."
                                                      : "Click a map to start a new game",
-                                        cx, g.nameBox.y + g.nameBox.h * 0.22f, grey);
+                                        cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
 
             // Column headers. The active sort column shows its direction.
             const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
@@ -2326,10 +2388,10 @@ int main(int, char**) {
                 return label + (mapSortAsc ? "  ^" : "  v");
             };
             renderer.drawListText(headerLabel("Name", mapSortByName), innerX + textInset, hy,
-                                  mapSortByName ? white : grey);
-            renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, grey);
+                                  mapSortByName ? white : gray);
+            renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, gray);
             renderer.drawListText(headerLabel("Created", !mapSortByName), innerX + COL_TIME * innerW, hy,
-                                  !mapSortByName ? white : grey);
+                                  !mapSortByName ? white : gray);
 
             // "..." rows: how many maps are hidden above and below the visible rows
             const size_t total = maps.size();
@@ -2415,7 +2477,7 @@ int main(int, char**) {
             const float s = winH / 720.0f;
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-            const RGBA grey{ 0.6f, 0.6f, 0.65f, 1.0f };
+            const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
             const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
             const RGBA hint{ 0.75f, 0.85f, 1.0f, 1.0f };
             const float cx = g.box.x + g.box.w * 0.5f;
@@ -2466,7 +2528,7 @@ int main(int, char**) {
                     renderer.drawUiText(saveName + (cursorOn ? "|" : ""), g.nameBox.x + 12.0f, textY, white);
                 } else {
                     renderer.drawUiTextCentered("Click a save to load it",
-                                                cx, g.nameBox.y + g.nameBox.h * 0.22f, grey);
+                                                cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
                 }
 
                 // Column headers. The active sort column shows its direction.
@@ -2479,13 +2541,13 @@ int main(int, char**) {
                     return label + (sortAsc ? "  ^" : "  v");
                 };
                 renderer.drawListText(headerLabel("Name", sortKey == SortKey::Name),
-                                      innerX + textInset, hy, sortKey == SortKey::Name ? white : grey);
-                renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, grey);
+                                      innerX + textInset, hy, sortKey == SortKey::Name ? white : gray);
+                renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, gray);
                 renderer.drawListText(headerLabel("Time", sortKey == SortKey::Time),
-                                      innerX + COL_TIME * innerW, hy, sortKey == SortKey::Time ? white : grey);
+                                      innerX + COL_TIME * innerW, hy, sortKey == SortKey::Time ? white : gray);
 
                 if (saves.empty()) {
-                    renderer.drawUiTextCentered("No saves yet", cx, g.listTop + g.nameBox.h * 0.22f, grey);
+                    renderer.drawUiTextCentered("No saves yet", cx, g.listTop + g.nameBox.h * 0.22f, gray);
                 }
 
                 // "..." rows: how many saves are hidden above and below the visible rows

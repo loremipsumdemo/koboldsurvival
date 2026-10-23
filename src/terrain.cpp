@@ -185,7 +185,7 @@ bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     }
     walkable = c->walk[(size_t)lz * CHUNK_TILES + lx] != 0;
 
-    // Average of the tile's four corners: the height at its centre
+    // Average of the tile's four corners: the height at its center
     const size_t i = (size_t)lz * CHUNK_CORNERS + lx;
     const float* h = c->heights.data();
     height = (h[i] + h[i + 1] + h[i + CHUNK_CORNERS] + h[i + CHUNK_CORNERS + 1]) * 0.25f;

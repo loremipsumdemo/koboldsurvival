@@ -44,7 +44,7 @@ in vec3 vDir;
 uniform vec3 uSkyTop;
 uniform vec3 uSkyHorizon;
 uniform vec3 uSunDir;
-uniform vec3 uSunColour;
+uniform vec3 uSunColor;
 uniform float uSunStrength;
 uniform float uStars;
 uniform samplerCube uSkybox;
@@ -55,7 +55,7 @@ uniform vec3 uMoonDir;
 uniform vec3 uMoonRgb;
 uniform float uMoonStrength;
 uniform float uMoonCos;
-out vec4 fragColour;
+out vec4 fragColor;
 
 float hash(vec3 p) {
     p = fract(p * 0.3183099 + vec3(0.1));
@@ -66,7 +66,7 @@ float hash(vec3 p) {
 void main() {
     vec3 d = normalize(vDir);
     if (uUseCube != 0) {
-        fragColour = vec4(texture(uSkybox, d).rgb, 1.0);
+        fragColor = vec4(texture(uSkybox, d).rgb, 1.0);
         return;
     }
     float t = clamp(d.y, 0.0, 1.0);
@@ -77,7 +77,7 @@ void main() {
     float disc = smoothstep(0.9994, 0.9998, cosA);
     float glow = pow(max(cosA, 0.0), 64.0) * 0.6;
     float vis = smoothstep(-0.05, 0.02, sun.y);
-    col += uSunColour * (disc * 2.0 + glow * uSunStrength) * vis;
+    col += uSunColor * (disc * 2.0 + glow * uSunStrength) * vis;
 
     vec3 cell = floor(d * 180.0);
     float star = step(0.9965, hash(cell)) * uStars * smoothstep(0.0, 0.3, d.y);
@@ -91,11 +91,11 @@ void main() {
     float halo = pow(max(mc, 0.0), 300.0) * 0.25;
     col += uMoonRgb * (moonDisc * 1.5 + halo) * uMoonStrength * mUp;
 
-    fragColour = vec4(col, 1.0);
+    fragColor = vec4(col, 1.0);
 }
 )GLSL";
 
-// Lines: per-vertex colour, lit by the sun, faded into the horizon colour with distance.
+// Lines: per-vertex color, lit by the sun, faded into the horizon color with distance.
 const char* const kLineVS = R"GLSL(
 #version 330 core
 layout(location = 0) in vec3 aPos;
@@ -116,18 +116,18 @@ const char* const kLineFS = R"GLSL(
 in vec3 vCol;
 in float vDist;
 uniform vec3 uLight;
-uniform vec3 uFogColour;
+uniform vec3 uFogColor;
 uniform float uFog;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     vec3 lit = vCol * uLight;
     float d = vDist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
-    fragColour = vec4(mix(lit, uFogColour, f), 1.0);
+    fragColor = vec4(mix(lit, uFogColor, f), 1.0);
 }
 )GLSL";
 
-// 2D: solid colour, or the font atlas red channel as alpha when useTex is set.
+// 2D: solid color, or the font atlas red channel as alpha when useTex is set.
 const char* const kUiVS = R"GLSL(
 #version 330 core
 layout(location = 0) in vec2 aPos;
@@ -144,12 +144,12 @@ const char* const kUiFS = R"GLSL(
 #version 330 core
 in vec2 vUv;
 uniform sampler2D uTex;
-uniform vec4 uColour;
+uniform vec4 uColor;
 uniform int uUseTex;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     float a = (uUseTex != 0) ? texture(uTex, vUv).r : 1.0;
-    fragColour = vec4(uColour.rgb, uColour.a * a);
+    fragColor = vec4(uColor.rgb, uColor.a * a);
 }
 )GLSL";
 
@@ -173,15 +173,15 @@ const char* const kMapFS = R"GLSL(
 in vec2 vUv;
 uniform sampler2D uTex;
 uniform float uAlpha;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     vec4 c = texture(uTex, vUv);
-    fragColour = vec4(c.rgb, c.a * uAlpha);
+    fragColor = vec4(c.rgb, c.a * uAlpha);
 }
 )GLSL";
 
 // Batched 2D: every vertex carries position, texture coordinate with a mode
-// (1 = font atlas alpha, 0 = solid), and colour.
+// (1 = font atlas alpha, 0 = solid), and color.
 const char* const kBatchVS = R"GLSL(
 #version 330 core
 layout(location = 0) in vec2 aPos;
@@ -202,10 +202,10 @@ const char* const kBatchFS = R"GLSL(
 in vec3 vUvMode;
 in vec4 vCol;
 uniform sampler2D uTex;
-out vec4 fragColour;
+out vec4 fragColor;
 void main() {
     float a = (vUvMode.z > 0.5) ? texture(uTex, vUvMode.xy).r : 1.0;
-    fragColour = vec4(vCol.rgb, vCol.a * a);
+    fragColor = vec4(vCol.rgb, vCol.a * a);
 }
 )GLSL";
 
@@ -343,7 +343,7 @@ bool Renderer::Init(const std::vector<unsigned char>& fontBytes, std::string& er
     sky_.top = glGetUniformLocation(skyProg_, "uSkyTop");
     sky_.horizon = glGetUniformLocation(skyProg_, "uSkyHorizon");
     sky_.sunDir = glGetUniformLocation(skyProg_, "uSunDir");
-    sky_.sunColour = glGetUniformLocation(skyProg_, "uSunColour");
+    sky_.sunColor = glGetUniformLocation(skyProg_, "uSunColor");
     sky_.sunStrength = glGetUniformLocation(skyProg_, "uSunStrength");
     sky_.stars = glGetUniformLocation(skyProg_, "uStars");
     sky_.starRgb = glGetUniformLocation(skyProg_, "uStarRgb");
@@ -378,11 +378,11 @@ bool Renderer::Init(const std::vector<unsigned char>& fontBytes, std::string& er
     line_.viewProj = glGetUniformLocation(lineProg_, "uViewProj");
     line_.eye = glGetUniformLocation(lineProg_, "uEye");
     line_.light = glGetUniformLocation(lineProg_, "uLight");
-    line_.fogColour = glGetUniformLocation(lineProg_, "uFogColour");
+    line_.fogColor = glGetUniformLocation(lineProg_, "uFogColor");
     line_.fog = glGetUniformLocation(lineProg_, "uFog");
 
     ui_.proj = glGetUniformLocation(uiProg_, "uProj");
-    ui_.colour = glGetUniformLocation(uiProg_, "uColour");
+    ui_.color = glGetUniformLocation(uiProg_, "uColor");
     ui_.useTex = glGetUniformLocation(uiProg_, "uUseTex");
     ui_.tex = glGetUniformLocation(uiProg_, "uTex");
 
@@ -475,7 +475,7 @@ void Renderer::DrawSky(const Camera& cam, const SkyState& sky) {
     glUniform3f(sky_.top, sky.top.x, sky.top.y, sky.top.z);
     glUniform3f(sky_.horizon, sky.horizon.x, sky.horizon.y, sky.horizon.z);
     glUniform3f(sky_.sunDir, sky.sunDir.x, sky.sunDir.y, sky.sunDir.z);
-    glUniform3f(sky_.sunColour, sky.sunColour.x, sky.sunColour.y, sky.sunColour.z);
+    glUniform3f(sky_.sunColor, sky.sunColor.x, sky.sunColor.y, sky.sunColor.z);
     glUniform1f(sky_.sunStrength, sky.sunStrength);
     glUniform1f(sky_.stars, sky.stars);
     glUniform3f(sky_.starRgb, sky.starRgb.x, sky.starRgb.y, sky.starRgb.z);
@@ -508,7 +508,7 @@ void Renderer::DrawLines(const Camera& cam, const SkyState& sky, const std::vect
     glUniformMatrix4fv(line_.viewProj, 1, GL_FALSE, cam.viewProj.m);
     glUniform3f(line_.eye, cam.eye.x, cam.eye.y, cam.eye.z);
     glUniform3f(line_.light, sky.light.x, sky.light.y, sky.light.z);
-    glUniform3f(line_.fogColour, sky.fogColour.x, sky.fogColour.y, sky.fogColour.z);
+    glUniform3f(line_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform1f(line_.fog, sky.fog);
 
     glBindVertexArray(lineVao_);
@@ -596,7 +596,7 @@ void Renderer::DrawUI(const float* verts, std::size_t floats, bool useTex, V3 c,
 
     glUseProgram(uiProg_);
     glUniformMatrix4fv(ui_.proj, 1, GL_FALSE, uiProj_.m);
-    glUniform4f(ui_.colour, c.x, c.y, c.z, a);
+    glUniform4f(ui_.color, c.x, c.y, c.z, a);
     glUniform1i(ui_.useTex, useTex ? 1 : 0);
     glUniform1i(ui_.tex, 0);
     glBindTexture(GL_TEXTURE_2D, gFontTex);

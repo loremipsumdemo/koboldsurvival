@@ -34,10 +34,10 @@ SkyState ComputeSky(const Look& l) {
     // Sunrise and sunset: the sun turns orange, and the horizon warms, while the sun
     // is low. Full strength when it touches the horizon, gone a little above it.
     const float warm = std::exp(-std::pow(s.sunDir.y / 0.25f, 2.0f)) * std::clamp(l.sunsetGlow, 0.0f, 1.0f);
-    const V3 sunTint = Mix(Rgb(l.sunRgb) * ColourOpacity(l, kColSun), Rgb(l.sunGlowRgb) * ColourOpacity(l, kColSunGlow), warm * 0.8f);
-    s.horizon = Mix(s.horizon, Rgb(l.horizonWarmRgb), warm * 0.35f * ColourOpacity(l, kColHorizonWarm));
+    const V3 sunTint = Mix(Rgb(l.sunRgb) * ColorOpacity(l, kColSun), Rgb(l.sunGlowRgb) * ColorOpacity(l, kColSunGlow), warm * 0.8f);
+    s.horizon = Mix(s.horizon, Rgb(l.horizonWarmRgb), warm * 0.35f * ColorOpacity(l, kColHorizonWarm));
 
-    s.sunColour = sunTint;
+    s.sunColor = sunTint;
     s.sunStrength = l.sunStrength;
     s.light = sunTint * (l.ambient + l.sunStrength * s.daylight);
     s.stars = 1.0f - s.daylight;
@@ -47,16 +47,16 @@ SkyState ComputeSky(const Look& l) {
     s.waterTime = l.time;
     s.rockRgb = V3{l.rockRgb[0], l.rockRgb[1], l.rockRgb[2]};
     s.rockSlope = l.rockSlope;
-    s.waterOpacity = l.waterOpacity * ColourOpacity(l, kColWater);
+    s.waterOpacity = l.waterOpacity * ColorOpacity(l, kColWater);
     s.waterPattern = l.waterPattern;
     s.waterSpeed = l.waterSpeed;
-    s.starRgb = Rgb(l.starRgb) * ColourOpacity(l, kColStar);
+    s.starRgb = Rgb(l.starRgb) * ColorOpacity(l, kColStar);
     s.starAmount = l.starAmount;
     s.moonDir = V3{-s.sunDir.x, -s.sunDir.y, -s.sunDir.z};
-    s.moonRgb = Rgb(l.moonRgb) * ColourOpacity(l, kColMoon);
+    s.moonRgb = Rgb(l.moonRgb) * ColorOpacity(l, kColMoon);
     s.moonStrength = l.moonStrength;
     s.moonCos = std::cos(std::clamp(l.moonSize, 0.1f, 10.0f) * kDeg2Rad);
-    s.fogColour = Mix(s.horizon, Rgb(l.fogRgb), ColourOpacity(l, kColFog));
+    s.fogColor = Mix(s.horizon, Rgb(l.fogRgb), ColorOpacity(l, kColFog));
     s.underwaterRgb = Rgb(l.underwaterRgb);
     s.waterRgb = Rgb(l.waterRgb);
     return s;

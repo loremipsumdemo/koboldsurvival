@@ -14,15 +14,17 @@ constexpr int HP_PER_VITALITY = 5;
 constexpr float UNARMED_ATTACK = 3.0f;
 constexpr float UNARMED_WEIGHT = 0.5f;
 constexpr float STRENGTH_ATTACK = 0.2f;     // attack added per Strength level
-constexpr float MITIGATION_K = 50.0f;       // share of damage taken is K / (K + defence)
+constexpr float MITIGATION_K = 50.0f;       // share of damage taken is K / (K + defense)
 constexpr float BLOCK_DAMAGE = 0.25f;       // damage kept on a blocked hit
-constexpr float ATTACK_REACH = 1.4f;        // tiles between unit centres that allow a swing
+constexpr float ATTACK_REACH = 1.4f;        // tiles between unit centers that allow a swing
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
 constexpr float LEASH_RANGE = 12.0f;        // a hostile gives up a chase past this distance
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
 constexpr float CHASE_STOP_SHARE = 0.8f;    // a hostile stops walking once it is this share of reach away
 constexpr float ENCUMBRANCE_XP_FROM = 0.5f; // Strength XP starts once encumbrance reaches this
 constexpr float ENDURANCE_XP_PER_TILE = 0.1f;
+constexpr float RUN_SPEED_BONUS = 0.5f;     // running is this much faster than walking, before Athletics
+constexpr float RUN_ATHLETICS_PER_LEVEL = 0.01f; // and each Athletics level above 1 adds this much more to run speed
 constexpr float FLOAT_LIFE = 1.0f;          // seconds a damage number stays on screen
 constexpr size_t LOG_LIMIT = 500;           // lines the combat log keeps
 
@@ -31,7 +33,7 @@ constexpr size_t LOG_LIMIT = 500;           // lines the combat log keeps
 struct CombatNumbers {
     int maxHp = 0;
     float attack = 0.0f;       // main hand (or unarmed), plus 0.2 per Strength level, plus any elixir
-    float defense = 0.0f;      // defence of everything worn
+    float defense = 0.0f;      // defense of everything worn
     float mitigation = 1.0f;   // share of damage that gets through
     float accuracy = 0.0f;     // chance a swing lands before dodging
     float dodge = 0.0f;        // chance to dodge a swing that would land
@@ -75,8 +77,9 @@ float encumbranceOf(World& w, Entity e);
 
 // Tiles per second a unit can walk now. Its base speed, Athletics, and the encumbrance all count; a
 // unit with no stamina left walks at half speed; a downed unit walks at zero. Hostiles keep their
-// base speed.
-float walkSpeedOf(World& w, Entity e);
+// base speed. Running, for a player unit, is faster again: RUN_SPEED_BONUS, plus RUN_ATHLETICS_PER_LEVEL
+// for each Athletics level above 1.
+float walkSpeedOf(World& w, Entity e, bool running = false);
 
 // Strength XP for walking: nothing below ENCUMBRANCE_XP_FROM, then rising to 0.5 XP a second at a
 // full load. Only counts while the unit is moving, which the caller checks.

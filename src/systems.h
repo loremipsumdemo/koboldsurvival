@@ -5,7 +5,7 @@
 #include "resources.h"
 #include "terrain.h"
 
-// Spawns the units, the red units and the wagon
+// Spawns the units, the red units and the wagons
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
 // Starting stats drawn the way new units get them: attributes at levels 5..15, skills at 1..5
@@ -24,13 +24,20 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
 // Sends each unit that carries items to a ground item. Whichever gets in reach first takes it.
 void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity item);
 
+// Orders each unit to fight one red unit: each walks at it on its own, with no formation, and keeps it as its
+// target until it is gone. Units with no place in the fight (red ones, or not your own) are skipped.
+void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target);
+
 // Moves the whole stack in one inventory slot onto the ground, under its unit. False if the slot is empty.
 bool dropStack(World& w, Entity unit, int slot);
 
 // Systems, run once per frame in this order. combatSystem (combat.h) runs before all of them, so a unit
-// that dies this frame is gone before the others move.
-void squadSystem(World& w, float dt);
-void steeringSystem(World& w, Terrain& t, float dt);
+// that dies this frame is gone before the others move. running is the squad's walk or run mode: when set,
+// player units move at run pace, and each one that moves is marked for a double hunger tick.
+void squadSystem(World& w, float dt, bool running = false);
+void steeringSystem(World& w, Terrain& t, float dt, bool running = false);
 void pickupSystem(World& w);                     // after steering, so units that just arrived can take items
 void cleanupSquads(World& w);
-void needsSystem(World& w, int hours);          // health and hunger, for each whole in-game hour that passed
+// Health and hunger, after each whole in-game hour that passed (hours) and the in-game seconds that
+// passed (gameSeconds, which can be fractional). Out of combat, units regain health as in regenHealth.
+void needsSystem(World& w, int hours, double gameSeconds = 0.0);

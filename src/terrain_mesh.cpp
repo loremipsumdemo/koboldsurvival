@@ -9,15 +9,15 @@ constexpr float SKIRT_BASE = 8.0f;
 
 struct Rgb { float r, g, b; };
 
-// Colour for a tile with no ground type: sandy below sea level, green, then grey on the high ground
-Rgb bandColour(float h) {
+// Color for a tile with no ground type: sandy below sea level, green, then gray on the high ground
+Rgb bandColor(float h) {
     if (h < -1.33f) return { 0.86f, 0.76f, 0.46f };
     if (h < 1.33f) return { 0.27f, 0.55f, 0.24f };
     return { 0.27f, 0.27f, 0.29f };
 }
 
-// Colour of a ground type. Water and shelf ground is drawn as seabed sand.
-Rgb biomeColour(uint8_t b) {
+// Color of a ground type. Water and shelf ground is drawn as seabed sand.
+Rgb biomeColor(uint8_t b) {
     switch (b) {
     case BIOME_SAND:
     case BIOME_WATER:
@@ -48,7 +48,7 @@ int tilesDown(const Terrain& t, const ChunkData& c) {
 }
 
 // Height of a corner at a position in the level. A corner just outside this chunk is read from
-// the neighbouring chunk when that is loaded, so shading matches across the border. Otherwise the
+// the neighboring chunk when that is loaded, so shading matches across the border. Otherwise the
 // nearest corner of this chunk is used.
 float cornerHeight(const Terrain& t, const ChunkData& c, int gx, int gz) {
     int i = gx - c.cx * CHUNK_TILES, j = gz - c.cz * CHUNK_TILES;
@@ -114,7 +114,7 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
     for (int j = 0; j < nz; ++j) {
         for (int i = 0; i < nx; ++i) {
             const int x = xs[(size_t)i], z = zs[(size_t)j];
-            // Neighbouring samples, one step either side, so the slope is smooth across chunk borders
+            // Neighboring samples, one step either side, so the slope is smooth across chunk borders
             const int xl = (i == 0) ? x - step : xs[(size_t)i - 1];
             const int xr = (i == nx - 1) ? x + step : xs[(size_t)i + 1];
             const int zu = (j == 0) ? z - step : zs[(size_t)j - 1];
@@ -132,7 +132,7 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const float hh = c.heights[(size_t)z * CHUNK_CORNERS + x];
             const int tx = std::min(x, std::max(a - 1, 0)), tz = std::min(z, std::max(b - 1, 0));
             const uint8_t bt = c.biome[(size_t)tz * CHUNK_TILES + tx];
-            const Rgb col = (bt == BIOME_NONE) ? bandColour(hh) : biomeColour(bt);
+            const Rgb col = (bt == BIOME_NONE) ? bandColor(hh) : biomeColor(bt);
             out.verts[(size_t)j * nx + i] = { (float)gx, hh, (float)gz,
                                               col.r * shade, col.g * shade, col.b * shade, 1.0f };
         }

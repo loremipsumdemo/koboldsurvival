@@ -93,10 +93,14 @@ struct Equipment {
 
 // Health and hunger, for every unit. Hunger falls by one each in-game hour, on the clock's hour. A tick
 // while hunger is already 0 costs one health instead. Health is set from Vitality each frame, and it
-// stays between zero and the maximum. A unit at zero health is downed.
+// stays between zero and the maximum. A unit at zero health is downed. Out of combat, with hunger over
+// half, health comes back one point per tenth of an in-game hour.
+// The last two fields are not saved: a loaded unit starts with no run mark and no part of a regen point.
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
+    bool hurried = false;        // moved at run pace this in-game hour, so the next hunger tick costs double
+    double healSeconds = 0.0;    // in-game seconds saved toward the next point of health
 };
 
 // Fighting state for a unit. Nothing here is saved: a loaded unit starts fresh, with its stamina full.
@@ -125,6 +129,12 @@ struct GroundItem {
 // A unit's order to pick up a ground item. The unit walks to it and takes what fits.
 struct PickupOrder {
     Entity item = NULL_ENTITY;
+};
+
+// A player unit's order to fight one red unit. The unit walks at it and keeps it as its target, choosing no
+// other, until the red unit is gone. A move or pickup order cancels it.
+struct AttackOrder {
+    Entity target = NULL_ENTITY;
 };
 
 // Decorative wagon. It is drawn as a symbol and does not block movement.

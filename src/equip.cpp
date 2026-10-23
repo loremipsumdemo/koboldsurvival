@@ -81,6 +81,26 @@ int gearSlotFor(const Equipment& worn, int item) {
     return fits.empty() ? -1 : fits.front();
 }
 
+std::vector<int> comparisonSlots(int item) {
+    const ItemDef* d = findItem(item);
+    if (!d || d->equipSlot.empty()) return {};
+    const std::vector<int> fits = fittingSlots(*d);
+    auto fitsSlot = [&](int slot) { return std::find(fits.begin(), fits.end(), slot) != fits.end(); };
+    if (fitsSlot(GEAR_MAIN_HAND) || fitsSlot(GEAR_OFF_HAND)) return { GEAR_MAIN_HAND, GEAR_OFF_HAND };
+    if (fitsSlot(GEAR_ACCESSORY_1)) return { GEAR_ACCESSORY_1, GEAR_ACCESSORY_2 };
+    return fits;
+}
+
+std::vector<int> displacedSlots(const Equipment& worn, int item) {
+    const ItemDef* d = findItem(item);
+    if (!d || d->equipSlot.empty()) return {};
+    // A two-handed weapon needs both hands empty first
+    if (d->equipSlot == "two_hand") return { GEAR_MAIN_HAND, GEAR_OFF_HAND };
+    const int slot = gearSlotFor(worn, item);
+    if (slot < 0) return {};
+    return { slot };
+}
+
 void gearTotals(const Equipment& worn, int& attack, int& defense) {
     attack = 0;
     defense = 0;

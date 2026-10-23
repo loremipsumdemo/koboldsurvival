@@ -9,11 +9,11 @@ namespace wm {
 
 // Every value the theme can change. All fields are floats so the console can
 // set them by name, and they can be written to a theme file later.
-// The colours a theme sets, each with an opacity. The order is the order of Look::colourOpacity.
-enum ColourSlot {
+// The colors a theme sets, each with an opacity. The order is the order of Look::colorOpacity.
+enum ColorSlot {
     kColSun = 0, kColSunGlow, kColHorizonWarm, kColStar, kColMoon, kColFog, kColUnderwater,
     kColWater, kColRock, kColGridMinor, kColGridMajor, kColSkyTopDay, kColSkyHorizonDay,
-    kColSkyTopNight, kColSkyHorizonNight, kColourCount
+    kColSkyTopNight, kColSkyHorizonNight, kColorCount
 };
 
 struct Look {
@@ -40,8 +40,8 @@ struct Look {
     float waterSpeed = 1.0f;        // how fast the water surface moves
     float gridMinor[3] = {0.14f, 0.35f, 0.47f};
     float gridMajor[3] = {0.0f, 0.86f, 1.0f};
-    float sunGlowRgb[3] = {1.0f, 0.55f, 0.25f};      // sun colour at sunrise and sunset
-    float horizonWarmRgb[3] = {0.95f, 0.50f, 0.30f}; // horizon colour at sunrise and sunset
+    float sunGlowRgb[3] = {1.0f, 0.55f, 0.25f};      // sun color at sunrise and sunset
+    float horizonWarmRgb[3] = {0.95f, 0.50f, 0.30f}; // horizon color at sunrise and sunset
     float starRgb[3] = {1.0f, 1.0f, 1.0f};
     float starAmount = 0.8f;        // star brightness, 0 = no stars
     float moonRgb[3] = {0.75f, 0.82f, 0.95f};
@@ -50,21 +50,21 @@ struct Look {
     float fogRgb[3] = {0.72f, 0.84f, 0.94f};
     float underwaterRgb[3] = {0.05f, 0.22f, 0.34f};  // the sea floor as seen through the water
     float waterRgb[3] = {0.10f, 0.30f, 0.50f};       // the sea surface
-    // Opacity of each colour above, 0 to 1, indexed by ColourSlot. Lights use it as brightness,
+    // Opacity of each color above, 0 to 1, indexed by ColorSlot. Lights use it as brightness,
     // fog and water use it as blend strength. Fog starts at 0 so the default look is unchanged.
-    float colourOpacity[kColourCount] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    float colorOpacity[kColorCount] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     float time = 0.0f;              // seconds since start, drives the water ripples (not a theme value)
 };
 
 // Values derived from a Look for one frame.
-// Opacity of a colour slot, clamped to 0..1.
-inline float ColourOpacity(const Look& l, int slot) { return std::clamp(l.colourOpacity[slot], 0.0f, 1.0f); }
+// Opacity of a color slot, clamped to 0..1.
+inline float ColorOpacity(const Look& l, int slot) { return std::clamp(l.colorOpacity[slot], 0.0f, 1.0f); }
 
 struct SkyState {
     V3 sunDir{0.0f, 1.0f, 0.0f};    // unit vector pointing at the sun
-    V3 sunColour{1.0f, 1.0f, 1.0f};
-    V3 top{0.0f, 0.0f, 0.0f};       // sky colour overhead right now
-    V3 horizon{0.0f, 0.0f, 0.0f};   // sky colour at the horizon right now, also the fog colour
+    V3 sunColor{1.0f, 1.0f, 1.0f};
+    V3 top{0.0f, 0.0f, 0.0f};       // sky color overhead right now
+    V3 horizon{0.0f, 0.0f, 0.0f};   // sky color at the horizon right now, also the fog color
     V3 light{1.0f, 1.0f, 1.0f};     // multiplier for lit world geometry
     float sunStrength = 1.0f;
     float sunElevDeg = 0.0f;
@@ -74,7 +74,7 @@ struct SkyState {
     V3 ambientLight{0.0f, 0.0f, 0.0f};   // shadow fill for terrain
     V3 sunLight{0.0f, 0.0f, 0.0f};       // direct sun for terrain, zero at night
     float waterTime = 0.0f;              // ripple phase in seconds
-    V3 rockRgb{0.46f, 0.43f, 0.39f};     // rock colour on steep slopes
+    V3 rockRgb{0.46f, 0.43f, 0.39f};     // rock color on steep slopes
     float rockSlope = 0.45f;             // where rock starts
     float waterOpacity = 1.0f;           // multiplies water alpha
     float waterPattern = 1.0f;           // strength of the water light bands and glints
@@ -85,7 +85,7 @@ struct SkyState {
     V3 moonRgb{0.75f, 0.82f, 0.95f};
     float moonStrength = 0.6f;
     float moonCos = 0.9996f;             // cosine of the moon's angular radius
-    V3 fogColour{0.0f, 0.0f, 0.0f};      // colour the distance fades to
+    V3 fogColor{0.0f, 0.0f, 0.0f};      // color the distance fades to
     V3 underwaterRgb{0.05f, 0.22f, 0.34f};
     V3 waterRgb{0.10f, 0.30f, 0.50f};
 };

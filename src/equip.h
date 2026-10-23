@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "components.h"
 #include "ecs.h"
 
@@ -20,7 +21,15 @@ bool offHandBlocked(const Equipment& worn);
 // slot it fits, which swaps out what is there. -1 if the item fits no slot at all.
 int gearSlotFor(const Equipment& worn, int item);
 
-// Attack and defence added up over everything a unit wears
+// The gear slots an inventory item is compared with on hover: both hands for a weapon or shield, both
+// accessory slots for an accessory, and otherwise the slots it fits. Empty when the item is not gear.
+std::vector<int> comparisonSlots(int item);
+
+// The gear slots that equipping the item would empty: both hands for a two-handed weapon, otherwise
+// the slot gearSlotFor sends it to. Empty when the item is not gear, or fits no slot.
+std::vector<int> displacedSlots(const Equipment& worn, int item);
+
+// Attack and defense added up over everything a unit wears
 void gearTotals(const Equipment& worn, int& attack, int& defense);
 
 // Moves one gear item from an inventory slot into a gear slot. Whatever was in the gear slot goes

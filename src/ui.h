@@ -32,7 +32,7 @@ enum class Action {
     DevMoon,              // shows or hides the moon
     DevSunBright,         // param is -1 or +1
     DevStarBright,        // param is -1 or +1
-    DevColorTarget,       // param is -1 or +1, picks which colour the R/G/B buttons edit
+    DevColorTarget,       // param is -1 or +1, picks which color the R/G/B buttons edit
     DevColor,             // param is channel * 2, plus 1 for the plus button
     DevReset,             // restores the default atmosphere
     MapSortName, MapSortTime,   // column headers in the New Game list
