@@ -65,13 +65,6 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
     return true;
 }
 
-// The name box sits just above the item's sprite, centred on it
-Rect labelBox(const ItemOnScreen& os, float textW, float textH, float s) {
-    const float padX = 7.0f * s, padY = 3.0f * s, gapY = 4.0f * s;
-    const float w = textW + 2.0f * padX, h = textH + 2.0f * padY;
-    return Rect{ os.cx - w * 0.5f, os.top - gapY - h, w, h };
-}
-
 // Colour that marks an item's kind in the inventory
 RGBA categoryColor(int item) {
     const ItemDef* d = findItem(item);
@@ -1810,24 +1803,67 @@ void Renderer::drawItemMenu(const ItemMenuLayout& L, const std::vector<std::stri
     }
 }
 
-void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH) {
+std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrain& t, const Camera& cam,
+                                                          int winW, int winH) {
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const float padX = 7.0f * s, padY = 3.0f * s, gapY = 4.0f * s, lineGap = 2.0f * s;
+    const float lineH = listTextHeight("Ag");
+
+    // The items on each tile, with their sprite positions and names
+    struct Seen { Entity e; ItemOnScreen os; std::string name; };
+    std::map<std::pair<int, int>, std::vector<Seen>> tiles;
     for (Entity e : w.view<GroundItem, Transform>()) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
-
-        ItemOnScreen os;
+        Seen seen{ e, ItemOnScreen{}, itemName(gi->item) };
         const TextTex* pic = itemTexture(gi->item);
-        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
-        const std::string name = itemName(gi->item);
-        const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
-        if (box.x + box.w < 0.0f || box.x > winW || box.y + box.h < 0.0f || box.y > winH) continue;
+        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, seen.os)) continue;
+        tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
+    }
 
-        drawRect(Rect{ box.x - 1.0f, box.y - 1.0f, box.w + 2.0f, box.h + 2.0f }, LABEL_EDGE);
-        drawRect(box, LABEL_FILL);
-        drawListText(name, box.x + 7.0f * s, box.y + 3.0f * s, LABEL_TEXT);
+    std::vector<GroundStack> out;
+    for (auto& entry : tiles) {
+        std::vector<Seen>& seen = entry.second;
+        // Entity order, so the names keep the same places from frame to frame
+        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) { return a.e < b.e; });
+
+        // One box above the middle of the tile's items, one line per item, the widest name setting its width
+        const float n = (float)seen.size();
+        float cx = 0.0f, top = 0.0f, maxW = 0.0f;
+        for (const Seen& sn : seen) {
+            cx += sn.os.cx;
+            top += sn.os.top;
+            maxW = std::max(maxW, listTextWidth(sn.name));
+        }
+        cx /= n;
+        top /= n;
+        const float boxW = maxW + 2.0f * padX;
+        const float boxH = n * lineH + (n - 1.0f) * lineGap + 2.0f * padY;
+
+        GroundStack st;
+        st.box = Rect{ cx - boxW * 0.5f, top - gapY - boxH, boxW, boxH };
+        if (st.box.x + st.box.w < 0.0f || st.box.x > winW || st.box.y + st.box.h < 0.0f || st.box.y > winH) continue;
+        for (size_t i = 0; i < seen.size(); ++i) {
+            st.items.push_back(seen[i].e);
+            st.names.push_back(seen[i].name);
+            st.rows.push_back(Rect{ st.box.x, st.box.y + padY + (float)i * (lineH + lineGap), boxW, lineH });
+        }
+        out.push_back(std::move(st));
+    }
+    return out;
+}
+
+void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    // Items on one tile share a box, with one line each, top line first and the last one nearest the item
+    for (const GroundStack& st : groundStacks(w, t, cam, winW, winH)) {
+        drawRect(Rect{ st.box.x - 1.0f, st.box.y - 1.0f, st.box.w + 2.0f, st.box.h + 2.0f }, LABEL_EDGE);
+        drawRect(st.box, LABEL_FILL);
+        for (size_t i = 0; i < st.names.size(); ++i) {
+            drawListText(st.names[i], st.box.x + 7.0f * s, st.rows[i].y, LABEL_TEXT);
+        }
     }
 }
 
@@ -2072,7 +2108,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 }
 
 Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {
-    const float s = winH / 720.0f;
+    // A name line in a label box picks its item
+    for (const GroundStack& st : groundStacks(w, t, cam, winW, winH)) {
+        for (size_t i = 0; i < st.rows.size(); ++i) {
+            if (st.rows[i].contains(mx, my)) return st.items[i];
+        }
+    }
+
+    // Otherwise the sprite under the mouse
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
@@ -2084,11 +2127,8 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
         ItemOnScreen os;
         const TextTex* pic = itemTexture(gi->item);
         if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
-        const std::string name = itemName(gi->item);
-        const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
-        const bool onLabel = box.contains(mx, my);
         const bool onSprite = mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom;
-        if (!onLabel && !onSprite) continue;
+        if (!onSprite) continue;
 
         // The item nearest the mouse wins when several overlap
         const float cy = (os.top + os.bottom) * 0.5f;

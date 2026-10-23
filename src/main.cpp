@@ -2,6 +2,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
+#include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -186,6 +187,55 @@ void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const 
 std::string mapsDir() {
     const char* base = SDL_GetBasePath();
     return std::string(base ? base : "") + "maps";
+}
+
+// The folder beside the game where F12 screenshots are saved
+std::string screenshotsDir() {
+    const char* base = SDL_GetBasePath();
+    return std::string(base ? base : "") + "screenshots";
+}
+
+// Reads back the frame that is about to be shown and saves it as a PNG in the screenshots folder.
+// Returns the file's name, or an empty string if it could not be saved.
+std::string saveScreenshot(SDL_Window* window) {
+    int w = 0, h = 0;
+    SDL_GetWindowSizeInPixels(window, &w, &h);
+    if (w <= 0 || h <= 0) return "";
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glReadBuffer(GL_BACK);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    std::vector<unsigned char> pixels((size_t)w * h * 4);
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // OpenGL counts rows from the bottom, the picture from the top. The window's alpha is not part of the picture.
+    const size_t rowBytes = (size_t)w * 4;
+    std::vector<unsigned char> flipped(pixels.size());
+    for (int y = 0; y < h; ++y) {
+        std::copy_n(pixels.data() + (size_t)(h - 1 - y) * rowBytes, rowBytes, flipped.data() + (size_t)y * rowBytes);
+    }
+    for (size_t i = 3; i < flipped.size(); i += 4) flipped[i] = 255;
+
+    std::error_code ec;
+    const std::filesystem::path dir = screenshotsDir();
+    std::filesystem::create_directories(dir, ec);
+    if (ec) return "";
+
+    // Named by the time it was taken. A number is added if that name is already used.
+    const std::time_t now = std::time(nullptr);
+    const std::tm* tm = std::localtime(&now);
+    char stamp[32] = "screenshot";
+    if (tm) std::strftime(stamp, sizeof(stamp), "screenshot_%Y%m%d_%H%M%S", tm);
+    std::string name = std::string(stamp) + ".png";
+    for (int n = 2; std::filesystem::exists(dir / name, ec); ++n) {
+        name = std::string(stamp) + "_" + std::to_string(n) + ".png";
+    }
+
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ABGR8888, flipped.data(), (int)rowBytes);
+    if (!surface) return "";
+    const bool ok = IMG_SavePNG(surface, (dir / name).string().c_str());
+    SDL_DestroySurface(surface);
+    return ok ? name : "";
 }
 
 // A folder left as custom_maps by an earlier version moves to maps the first time the game starts
@@ -946,6 +996,7 @@ int main(int, char**) {
 
     bool leftDown = false, middleDown = false;
     bool running = true;
+    bool screenshotPending = false;   // set by F12, and the next frame is saved before it is shown
     float pressX = 0.0f, pressY = 0.0f;
     float lastX = 0.0f, lastY = 0.0f;
     std::string lastTitle;
@@ -1613,6 +1664,11 @@ int main(int, char**) {
 
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
+            // F12 takes a screenshot from any screen, whatever menu, text box or the map editor has the keys
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_F12 && !e.key.repeat) {
+                screenshotPending = true;
+                continue;
+            }
             if (screen == Screen::MapEditor && e.type != SDL_EVENT_QUIT) {
                 wmTool.Event(e);
                 continue;
@@ -2430,6 +2486,13 @@ int main(int, char**) {
         renderer.beginUi(winW, winH);
         drawNotice();
         renderer.endUi();
+
+        // The frame is complete but not yet shown, so it is the one saved
+        if (screenshotPending) {
+            screenshotPending = false;
+            const std::string saved = saveScreenshot(window);
+            showNotice(saved.empty() ? std::string("Could not save the screenshot") : "Saved " + saved);
+        }
 
         SDL_GL_SwapWindow(window);
     }

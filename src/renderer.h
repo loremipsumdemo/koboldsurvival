@@ -174,6 +174,17 @@ private:
     // Ground items on loaded chunks, as pink sprites
     void drawGroundItems(World& w, const Terrain& t);
 
+    // One name box over the items on one tile. Each item has a row, top row first, and the row is
+    // the part of the box that picks that item.
+    struct GroundStack {
+        Rect box;
+        std::vector<Entity> items;
+        std::vector<std::string> names;
+        std::vector<Rect> rows;
+    };
+    // The name boxes for the items on loaded, visible ground. Drawing and clicking both use this.
+    std::vector<GroundStack> groundStacks(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
+
     // Cached white text texture for a menu string, created on first use
     HudLine& uiLine(const std::string& s);
 
