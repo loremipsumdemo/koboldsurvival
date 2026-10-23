@@ -23,6 +23,7 @@ struct GameSettings {
     int resolutionIndex = 1;                // index into RESOLUTIONS
     bool edgeScroll = false;
     int autosaveMinutes = 5;
+    bool showUnitNames = true;              // each unit's name over its head, in brackets
 };
 
 inline int parseInt(const std::string& v, int fallback) {
@@ -43,6 +44,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "resolution")      s.resolutionIndex = parseInt(val, s.resolutionIndex);
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
+        else if (key == "unitNames")       s.showUnitNames = (val == "1");
     }
 
     s.displayMode = std::clamp(s.displayMode, 0, DISPLAY_MODE_COUNT - 1);
@@ -60,6 +62,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "resolution=" << s.resolutionIndex << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
+    out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     return true;
 }
 

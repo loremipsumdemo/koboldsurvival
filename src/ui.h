@@ -5,7 +5,7 @@
 inline constexpr const char* GAME_VERSION = "0.1.0";
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTools };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTools, PartySetup };
 
 // Tools in the map editor's left panel, in button order
 
@@ -36,7 +36,27 @@ enum class Action {
     DevColor,             // param is channel * 2, plus 1 for the plus button
     DevReset,             // restores the default atmosphere
     MapSortName, MapSortTime,   // column headers in the New Game list
-    MapScrollUp, MapScrollDown  // the "..." rows at the ends of the New Game list
+    MapScrollUp, MapScrollDown,  // the "..." rows at the ends of the New Game list
+    ToggleUnitNames,             // Settings: shows or hides each unit's name over its head
+    // The starting party menu, after a map is picked in New Game
+    PartyPick,        // a unit in the left column; param is its index
+    PartyTabPick,     // a tab on the right; param is the tab
+    PartyNameField,   // the name box, which takes typed text while it is being edited
+    PartySpriteBox,   // opens the sprite dropdown
+    PartyRandomUnit,  // gives the picked unit a new random member
+    PartyGearSlot,    // opens the item dropdown for a gear slot; param is the slot
+    PartyStatLabel,   // a stat's name and level, drawn only; param is the stat
+    PartyStep,        // a stat's minus or plus; param is stat * 2 for minus, stat * 2 + 1 for plus
+    PartyHeading,     // a group heading, drawn only
+    PartyNote,        // a line of text, drawn only
+    PartyInvSlot,     // an inventory slot in the Items tab; param is the slot
+    PartyCount,       // the count of the picked stack; param is -1 or +1
+    PartyDropPick,    // an entry in the open dropdown; param is its index
+    PartyDropScroll,  // the scroll rows of the open dropdown; param is -1 or +1
+    PartyDropBack,    // the background of the open dropdown, which takes clicks and does nothing
+    PartyRandomAll,   // a new random party
+    PartyConfirm,     // starts the level with the party
+    PartyMessage      // the line under the menu, drawn only
 };
 
 // Pixel rectangle, origin at the top-left of the window

@@ -27,6 +27,9 @@
 #include "pak.h"
 #include "savegame.h"
 #include "settings.h"
+#include "inventory.h"
+#include "party.h"
+#include "party_ui.h"
 #include "equip.h"
 #include "items.h"
 #include "systems.h"
@@ -37,8 +40,6 @@
 
 namespace {
 
-constexpr float OVERLAY_HOLD_MS = 1000.0f;   // level-start image stays fully visible
-constexpr float OVERLAY_FADE_MS = 500.0f;    // then fades out over this long
 constexpr size_t HOVER_NAME_LIMIT = 10;      // hover label lists up to this many names
 constexpr size_t MIN_SAVE_ROWS = 5;          // the save list shows between these many rows,
 constexpr size_t MAX_SAVE_ROWS = 10;         // depending on how tall the window is
@@ -428,6 +429,16 @@ void focusCameraOnUnit(World& w, Camera& cam, Entity u) {
     cam.clampState();
 }
 
+// Holds the camera's focus on a unit as it moves. False once the unit is gone, so following stops.
+bool followUnitCamera(World& w, Camera& cam, Entity u) {
+    const Transform* t = w.get<Transform>(u);
+    if (!t || !w.has<Unit>(u)) return false;
+    cam.focusX = t->x;
+    cam.focusZ = t->z;
+    cam.clampState();
+    return true;
+}
+
 // Puts the camera back where it was saved. Saves from before the camera was stored keep
 // the default focus set by focusCameraOnFirstUnit.
 void applySaveCamera(const SaveCamera& c, Camera& cam) {
@@ -772,6 +783,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
             Action::CycleResolution, x, y, st.displayMode != DISPLAY_BORDERLESS); y += bh + gap;
         add(std::string("Edge scrolling: ") + (st.edgeScroll ? "On" : "Off"), Action::ToggleEdge, x, y); y += bh + gap;
         add("Autosave: " + std::to_string(st.autosaveMinutes) + " min", Action::CycleAutosave, x, y); y += bh + gap;
+        add(std::string("Unit names: ") + (st.showUnitNames ? "On" : "Off"), Action::ToggleUnitNames, x, y); y += bh + gap;
         add("Back", Action::Back, x, y);
         break;
     }
@@ -789,6 +801,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
     case Screen::DevTools:
     case Screen::MapSelect:
     case Screen::MapEditor:
+    case Screen::PartySetup:
         break;
     }
     return out;
@@ -896,6 +909,15 @@ int main(int, char**) {
     Screen screen = Screen::Title;
     Screen backScreen = Screen::Title;    // where Back goes from Settings
 
+    // The starting party: the units a new game begins with, edited in the party menu. It is rolled the
+    // first time that menu opens, then kept for the session, so edits survive a trip back to the map list.
+    Party party{};
+    bool partyRolled = false;
+    PartyUi partyUi;
+    MapChoice pendingMap;                 // the map picked, which starts once the party is confirmed
+    Rng partyRng;
+    partyRng.gen.seed((unsigned)std::time(nullptr));
+
     // Whether a game is loaded. Loading over one may need a confirmation first.
     bool gameActive = false;
     // When the current game was last saved. Empty until it's saved, so a new or loaded game counts as unsaved.
@@ -928,9 +950,8 @@ int main(int, char**) {
     float lastX = 0.0f, lastY = 0.0f;
     std::string lastTitle;
 
-    // Level-start image: visible for OVERLAY_HOLD_MS, then fades out
-    float overlayMs = 0.0f;
-    bool overlayOn = false;
+    // The unit the camera follows, set by a double-click on its panel card. A manual pan clears it.
+    Entity followUnit = NULL_ENTITY;
 
     // Autosave countdown, in seconds of play
     float autoTimer = 0.0f;
@@ -1010,6 +1031,8 @@ int main(int, char**) {
             showNotice("Could not load " + choice.name + ": " + err);
             return;
         }
+        // The party from the menu replaces the three units that the seed made
+        applyParty(world, party);
         closePanel();
         currentMap = choice;
         focusCameraOnFirstUnit(world, cam);
@@ -1018,12 +1041,35 @@ int main(int, char**) {
         sel = Selection{};
         leftDown = middleDown = false;
         itemDrag = false;
-        overlayMs = 0.0f;
-        overlayOn = true;
+        followUnit = NULL_ENTITY;
         autoTimer = 0.0f;
         gameActive = true;
         lastSaveTicks.reset();
         screen = Screen::Playing;
+    };
+
+    // Opens the party menu for a picked map. The party is rolled the first time, then kept.
+    auto openParty = [&](const MapChoice& choice) {
+        if (!partyRolled) {
+            party = randomParty(partyRng);
+            partyRolled = true;
+        }
+        pendingMap = choice;
+        partyUi = PartyUi{};
+        backScreen = Screen::MapSelect;
+        screen = Screen::PartySetup;
+    };
+
+    // Stops typing into the name box, if it is taking text
+    auto stopNameEdit = [&]() {
+        if (partyUi.editingName) SDL_StopTextInput(window);
+        partyUi.editingName = false;
+    };
+
+    // Closes the open dropdown, if there is one
+    auto closeDropdown = [&]() {
+        partyUi.dropKind = DropKind::None;
+        partyUi.dropScroll = 0;
     };
 
     // Writes the current game to a file. Used for manual saves and autosaves alike.
@@ -1071,8 +1117,7 @@ int main(int, char**) {
         sel = Selection{};
         leftDown = middleDown = false;
         itemDrag = false;
-        overlayOn = false;
-        overlayMs = 0.0f;
+        followUnit = NULL_ENTITY;
         autoTimer = 0.0f;
         gameActive = true;
         lastSaveTicks.reset();
@@ -1107,7 +1152,7 @@ int main(int, char**) {
     // Pans the camera with WASD or the arrow keys. Edge scrolling pans when the mouse is at a window edge.
     auto panWithKeys = [&](float dt, bool edgeScroll) {
         const bool* keys = SDL_GetKeyboardState(nullptr);
-        float right = 0.0f, forward = 0.0f;
+        float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
         if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) right += 1.0f;
         if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) right -= 1.0f;
         if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) forward += 1.0f;
@@ -1127,6 +1172,8 @@ int main(int, char**) {
         // Holding shift pans twice as fast
         const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
         float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
+        // Any manual move takes the camera off the unit it was following
+        if (right != 0.0f || forward != 0.0f) followUnit = NULL_ENTITY;
         cam.pan(right * panSpeed, forward * panSpeed);
     };
 
@@ -1134,6 +1181,7 @@ int main(int, char**) {
     auto openEditor = [&]() {
         // Start clean: no units left over from a game
         world = World{};
+        followUnit = NULL_ENTITY;
         gs = GameState{};
         sel = Selection{};
         if (!wmReady) {
@@ -1174,7 +1222,7 @@ int main(int, char**) {
             screen = Screen::MapSelect;
             return;
         case Action::PickMap:
-            if (param >= 0 && param < (int)maps.size()) startMapLevel(maps[param]);
+            if (param >= 0 && param < (int)maps.size()) openParty(maps[param]);
             return;
         case Action::MapSortName:
         case Action::MapSortTime: {
@@ -1201,6 +1249,117 @@ int main(int, char**) {
             mapOffset = std::min(mapOffset + page, maxOffset);
             return;
         }
+        case Action::PartyPick:
+            partyUi.selected = std::clamp(param, 0, START_UNIT_COUNT - 1);
+            stopNameEdit();
+            closeDropdown();
+            return;
+        case Action::PartyTabPick:
+            partyUi.tab = (PartyTab)std::clamp(param, 0, PARTY_TAB_COUNT - 1);
+            stopNameEdit();
+            closeDropdown();
+            return;
+        case Action::PartyNameField:
+            closeDropdown();
+            if (!partyUi.editingName) SDL_StartTextInput(window);
+            partyUi.editingName = true;
+            return;
+        case Action::PartySpriteBox:
+            // The list opens scrolled so the unit's current sprite is near the middle
+            stopNameEdit();
+            partyUi.dropKind = DropKind::Sprite;
+            partyUi.dropScroll = clampDropScroll(pickedMember(party, partyUi).sprite - 1 - DROP_VISIBLE_ROWS / 2,
+                                                 UNIT_SPRITE_COUNT);
+            return;
+        case Action::PartyRandomUnit: {
+            // A new member for the picked unit, with a name that no other unit in the party has
+            const int picked = std::clamp(partyUi.selected, 0, START_UNIT_COUNT - 1);
+            std::vector<std::string> others;
+            for (int i = 0; i < START_UNIT_COUNT; ++i) {
+                if (i != picked) others.push_back(party[i].name);
+            }
+            party[picked] = randomMember(partyRng, others);
+            stopNameEdit();
+            closeDropdown();
+            return;
+        }
+        case Action::PartyGearSlot:
+            stopNameEdit();
+            partyUi.dropKind = DropKind::Gear;
+            partyUi.dropSlot = std::clamp(param, 0, GEAR_SLOTS - 1);
+            partyUi.dropScroll = 0;
+            return;
+        case Action::PartyStep: {
+            // Minus is the even parameter and plus the odd one. Holding Shift moves a level by ten.
+            const int stat = param / 2;
+            const int step = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 10 : 1;
+            Stats& st = pickedMember(party, partyUi).stats;
+            setStatLevel(st, stat, levelOf(st, stat) + ((param % 2) != 0 ? step : -step));
+            return;
+        }
+        case Action::PartyInvSlot:
+            stopNameEdit();
+            partyUi.stackSlot = std::clamp(param, 0, INVENTORY_SLOTS - 1);
+            partyUi.dropKind = DropKind::Item;
+            partyUi.dropSlot = partyUi.stackSlot;
+            partyUi.dropScroll = 0;
+            return;
+        case Action::PartyCount: {
+            ItemStack& st = pickedMember(party, partyUi).items[partyUi.stackSlot];
+            if (st.item > 0) st.count = std::clamp(st.count + param, 1, stackLimit(st.item));
+            return;
+        }
+        case Action::PartyDropPick: {
+            const std::vector<DropEntry> entries = dropdownEntries(party, partyUi);
+            if (param < 0 || param >= (int)entries.size()) return;
+            PartyMember& m = pickedMember(party, partyUi);
+            const int value = entries[param].value;
+            switch (partyUi.dropKind) {
+            case DropKind::Sprite:
+                m.sprite = value;
+                break;
+            case DropKind::Gear:
+                m.gear[partyUi.dropSlot] = value;
+                break;
+            case DropKind::Item: {
+                ItemStack& st = m.items[partyUi.dropSlot];
+                if (value == 0) {
+                    st = ItemStack{};
+                } else {
+                    // Choosing the same item again keeps its count. Anything else starts at one.
+                    const int count = st.item == value ? st.count : 1;
+                    st = ItemStack{ value, std::clamp(count, 1, stackLimit(value)) };
+                }
+                break;
+            }
+            case DropKind::None:
+                break;
+            }
+            closeDropdown();
+            return;
+        }
+        case Action::PartyDropScroll: {
+            const int count = (int)dropdownEntries(party, partyUi).size();
+            partyUi.dropScroll = clampDropScroll(partyUi.dropScroll + param, count);
+            return;
+        }
+        case Action::PartyDropBack:
+        case Action::PartyHeading:
+        case Action::PartyNote:
+        case Action::PartyStatLabel:
+        case Action::PartyMessage:
+            return;
+        case Action::PartyRandomAll:
+            party = randomParty(partyRng);
+            stopNameEdit();
+            closeDropdown();
+            return;
+        case Action::PartyConfirm:
+            if (!partyNamesValid(party)) return;
+            stopNameEdit();
+            closeDropdown();
+            startMapLevel(pendingMap);
+            return;
         case Action::OpenMapEditor:
             openEditor();
             return;
@@ -1352,6 +1511,8 @@ int main(int, char**) {
             screen = Screen::Settings;
             return;
         case Action::Back:
+            stopNameEdit();
+            closeDropdown();
             screen = backScreen;
             return;
         case Action::Resume:
@@ -1375,6 +1536,9 @@ int main(int, char**) {
             break;
         case Action::ToggleEdge:
             settings.edgeScroll = !settings.edgeScroll;
+            break;
+        case Action::ToggleUnitNames:
+            settings.showUnitNames = !settings.showUnitNames;
             break;
         case Action::CycleAutosave: {
             int idx = 0;
@@ -1459,12 +1623,39 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_TEXT_INPUT:
+                if (screen == Screen::PartySetup) {
+                    // Typed text goes into the name being edited, up to the limit
+                    std::string& name = pickedMember(party, partyUi).name;
+                    const std::string typed = e.text.text;
+                    if (partyUi.editingName && name.size() + typed.size() <= PARTY_NAME_LIMIT) name += typed;
+                    break;
+                }
                 if (panelOpen && panelSaveMode && ask == Ask::None && saveName.size() < NAME_LIMIT) {
                     saveName += e.text.text;
                 }
                 break;
 
             case SDL_EVENT_KEY_DOWN:
+                if (screen == Screen::PartySetup) {
+                    // Escape backs out one step at a time: the dropdown, then the name box, then the map list
+                    if (e.key.key == SDLK_ESCAPE) {
+                        if (partyUi.dropKind != DropKind::None) {
+                            closeDropdown();
+                        } else if (partyUi.editingName) {
+                            stopNameEdit();
+                        } else {
+                            screen = backScreen;
+                        }
+                    } else if (partyUi.editingName) {
+                        std::string& name = pickedMember(party, partyUi).name;
+                        if (e.key.key == SDLK_BACKSPACE) {
+                            popUtf8Char(name);
+                        } else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) {
+                            stopNameEdit();
+                        }
+                    }
+                    break;
+                }
                 if (panelOpen) {
                     if (e.key.key == SDLK_ESCAPE) {
                         // Escape backs out of a question first, then closes the popout
@@ -1521,6 +1712,12 @@ int main(int, char**) {
                     int maxOffset = std::max(0, (int)maps.size() - (int)visibleSaveRows(winH));
                     int next = (int)mapOffset - (int)e.wheel.y;
                     mapOffset = (size_t)std::clamp(next, 0, maxOffset);
+                } else if (screen == Screen::PartySetup) {
+                    // Scrolls an open dropdown. The rest of the menu does not scroll.
+                    if (partyUi.dropKind != DropKind::None) {
+                        const int count = (int)dropdownEntries(party, partyUi).size();
+                        partyUi.dropScroll = clampDropScroll(partyUi.dropScroll - (int)e.wheel.y, count);
+                    }
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
@@ -1548,6 +1745,35 @@ int main(int, char**) {
                                 }
                                 break;
                             }
+                        }
+                    }
+                    break;
+                }
+
+                if (screen == Screen::PartySetup) {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        const float mx = e.button.x, my = e.button.y;
+                        const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
+                        const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop);
+                        // The last enabled button under the pointer is the one on top, so it gets the click
+                        const Button* hit = nullptr;
+                        for (auto it = buttons.rbegin(); it != buttons.rend(); ++it) {
+                            if (it->enabled && it->rect.contains(mx, my)) {
+                                hit = &*it;
+                                break;
+                            }
+                        }
+                        const bool onDropdown = hit && (hit->action == Action::PartyDropPick
+                                                        || hit->action == Action::PartyDropScroll
+                                                        || hit->action == Action::PartyDropBack);
+                        if (partyUi.dropKind != DropKind::None && !onDropdown) {
+                            // A click outside an open dropdown only closes it
+                            closeDropdown();
+                        } else if (hit) {
+                            if (partyUi.editingName && hit->action != Action::PartyNameField) stopNameEdit();
+                            performAction(hit->action, hit->param);
+                        } else {
+                            stopNameEdit();
                         }
                     }
                     break;
@@ -1644,8 +1870,11 @@ int main(int, char**) {
                                 if (!additive) clearSelection(world);
                                 if (!world.has<Selected>(u)) world.add(u, Selected{});
                             }
-                            // Double-click moves the camera to the unit, wherever it is
-                            if (e.button.clicks == 2) focusCameraOnUnit(world, cam, u);
+                            // Double-click moves the camera to the unit, wherever it is, and keeps it on the unit as it moves
+                            if (e.button.clicks == 2) {
+                                focusCameraOnUnit(world, cam, u);
+                                followUnit = u;
+                            }
                             break;
                         }
                         break;
@@ -1817,9 +2046,9 @@ int main(int, char**) {
         cam.mapSize = (float)terrain.size();
 
         // ---- Game update: only while playing ----
-        float overlayAlpha = 0.0f;
         if (screen == Screen::Playing) {
             panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
+            if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
             cam.updateClearance(terrain);
 
             squadSystem(world, dt);
@@ -1838,18 +2067,6 @@ int main(int, char**) {
             if (autoTimer >= settings.autosaveMinutes * 60.0f) {
                 autoTimer = 0.0f;
                 if (autosaveNow()) showNotice("Autosaved");
-            }
-
-            // Level-start image timing
-            if (overlayOn) {
-                overlayMs += dt * 1000.0f;
-                if (overlayMs >= OVERLAY_HOLD_MS + OVERLAY_FADE_MS) {
-                    overlayOn = false;
-                } else if (overlayMs < OVERLAY_HOLD_MS) {
-                    overlayAlpha = 1.0f;
-                } else {
-                    overlayAlpha = 1.0f - (overlayMs - OVERLAY_HOLD_MS) / OVERLAY_FADE_MS;
-                }
             }
         }
 
@@ -1908,12 +2125,13 @@ int main(int, char**) {
             break;
 
         case Screen::Playing:
-            renderer.drawFrame(world, terrain, cam, sel, overlayAlpha, hud, winW, winH);
+            renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
             renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
             renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
             // In-game panels, drawn over the world: item names while Alt is held, the unit list along the
             // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
+            if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) renderer.drawGroundLabels(world, terrain, cam, winW, winH);
             {
                 const std::vector<Entity> own = world.view<Unit, Transform, Commandable>();
@@ -2050,6 +2268,17 @@ int main(int, char**) {
             break;
         }
 
+        case Screen::PartySetup: {
+            const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
+            renderer.beginUi(winW, winH);
+            renderer.drawTitleBackground();
+            dim(0.45f);
+            renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop), party, partyUi,
+                                    partyPanels(winW, winH), pendingMap.name, mouseX, mouseY);
+            renderer.endUi();
+            break;
+        }
+
         case Screen::MapEditor:
             // The world tool draws the whole screen, and the editor closes when it asks to
             wmTool.Frame();
@@ -2057,7 +2286,7 @@ int main(int, char**) {
             break;
 
         case Screen::Pause:
-            renderer.drawFrame(world, terrain, cam, sel, 0.0f, {}, winW, winH);
+            renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
             renderer.beginUi(winW, winH);
             dim(0.55f);
             renderer.drawUiTextCentered("Paused", winW * 0.5f, winH * 0.22f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -2065,7 +2294,7 @@ int main(int, char**) {
             renderer.endUi();
             break;
         case Screen::DevTools:
-            renderer.drawFrame(world, terrain, cam, sel, 0.0f, {}, winW, winH);
+            renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
             renderer.beginUi(winW, winH);
             dim(0.4f);
             renderer.drawUiTextCentered("Dev Tools", winW * 0.5f, winH * 0.10f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });

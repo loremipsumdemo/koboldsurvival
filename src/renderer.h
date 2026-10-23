@@ -17,6 +17,7 @@
 #include "terrain.h"
 #include "terrain_mesh.h"
 #include "ui.h"
+#include "party_ui.h"
 
 // A texture plus its width/height ratio
 struct TextTex {
@@ -24,7 +25,7 @@ struct TextTex {
     float aspect = 1.0f;
 };
 
-// Multiplies the texture colour. Alpha also fades the overlay.
+// Multiplies the texture colour, alpha included.
 struct RGBA {
     float r, g, b, a;
 };
@@ -48,16 +49,15 @@ public:
     // when it is first drawn, at the detail its distance from the camera needs.
     void uploadTerrain(const Terrain& t);
 
-    // Loading screen: the start image plus a progress bar (progress 0..1) along the bottom 4%
+    // Loading screen: black, with a progress bar (progress 0..1) along the bottom 4%
     void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string());
 
     // Units whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
 
-    // overlayAlpha: 0 hides the level-start image, 1 shows it fully
     // hud: text lines drawn in the top-left corner (empty for none)
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
-                   float overlayAlpha, const std::vector<std::string>& hud, int winW, int winH);
+                   const std::vector<std::string>& hud, int winW, int winH);
 
     // Tile-sized ring on the ground under the camera's pivot point, drawn over drawFrame.
     // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
@@ -91,11 +91,22 @@ public:
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
-    // Items lying on the ground, drawn as pink billboards over loaded ground (called by drawFrame).
+    // Items lying on the ground, drawn as billboards over loaded ground (called by drawFrame). Each shows
+    // its picture from data/item, or the pink quad when there is none.
     // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
     // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite.
     void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
     Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH);
+
+    // Each unit's name over its head, in brackets with a drop shadow. Hostile units are shown in red.
+    void drawUnitNames(World& w, const Camera& cam, int winW, int winH);
+
+    // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
+    // party's pictures, names and totals. Call between beginUi and endUi.
+    void drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
+                        const PartyPanels& P, const std::string& mapName, float mx, float my);
+    // A unit's picture, fitted inside r and kept in its proportions
+    void drawUnitPicture(int sprite, const Rect& r);
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -141,6 +152,12 @@ private:
 
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
+
+    // The picture for an item, from data/item/<id>.png. An item without one uses data/item/none.png.
+    // Null when neither is packed, and the item is drawn as its coloured block instead.
+    const TextTex* itemTexture(int item);
+    // A picture fitted inside r, keeping its proportions, multiplied by tint
+    void drawFitted(const TextTex& g, const Rect& r, RGBA tint);
 
     // Symbol-style billboard that stands on (x, y, z) and turns to face a point 200 units behind the camera
     void drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint);
@@ -195,10 +212,13 @@ private:
     void buildChunk(const Terrain& t, const ChunkData& c, int id, int step);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
-    TextTex overlay_, title_;
+    TextTex title_;
     std::vector<TextTex> unitSprites_;
     // Text symbols, used only when a sprite file could not be loaded
     TextTex unitFallback_;
+    // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
+    std::map<int, TextTex> itemPics_;
+    TextTex itemNone_;   // data/item/none.png, for items without a picture of their own
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.
     TextTex white_;
     Model wagon_;

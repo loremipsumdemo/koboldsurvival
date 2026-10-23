@@ -125,6 +125,14 @@ Stats startingStats(Rng& rng) {
 
 } // namespace
 
+Stats randomStartingStats(Rng& rng) {
+    return startingStats(rng);
+}
+
+std::string randomUnitName(Rng& rng, const std::vector<std::string>& taken) {
+    return pickName(rng, taken);
+}
+
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     const Vec2 spawn = findSpawn(t);
     // Read in the ground around the spawn, so the units and red units can stand on it

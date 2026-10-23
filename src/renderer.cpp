@@ -52,7 +52,8 @@ struct ItemOnScreen {
     float cx = 0.0f, top = 0.0f, bottom = 0.0f, halfW = 0.0f;
 };
 
-bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, ItemOnScreen& out) {
+// aspect is the width over the height of the item's picture (1 for the pink quad)
+bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspect, ItemOnScreen& out) {
     float bx, by, tx, ty, mx, my;
     if (!projectPoint(vp, tr.x, tr.y, tr.z, W, H, bx, by)) return false;
     if (!projectPoint(vp, tr.x, tr.y + ITEM_GLYPH_H, tr.z, W, H, tx, ty)) return false;
@@ -60,7 +61,7 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, ItemOnScree
     out.cx = mx;
     out.top = std::min(by, ty);
     out.bottom = std::max(by, ty);
-    out.halfW = (out.bottom - out.top) * 0.5f;   // the sprite is square
+    out.halfW = (out.bottom - out.top) * 0.5f * aspect;
     return true;
 }
 
@@ -262,6 +263,14 @@ TextTex loadImage(const char* path, bool repeatHorizontally) {
     return result;
 }
 
+// Like loadImage, but a file that is not packed gives an empty texture with no error logged
+TextTex loadOptionalImage(const char* path) {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(path, bytes, size)) return {};
+    return loadImage(path, false);
+}
+
 const char* SKY_VS = R"(
 #version 330 core
 layout(location=0) in vec2 aNdc;
@@ -345,9 +354,9 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glBindVertexArray(0);
     setupGlyphLayout(glyphVao_, glyphVbo_);
 
-    // Images and models. The overlay loads first, so the loading screen can show it.
-    overlay_ = loadImage("data/background/overlay_01.png", false);
+    // Images and models
     title_ = loadImage("data/ui/title.png", false);
+    itemNone_ = loadOptionalImage("data/item/none.png");
     report(0.05f);
     unitSprites_.reserve(38);
     for (int i = 1; i <= 38; ++i) {
@@ -406,7 +415,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &overlay_, &unitFallback_, &white_ };
+    TextTex* textures[] = { &unitFallback_, &white_, &itemNone_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
@@ -415,6 +424,10 @@ void Renderer::shutdown() {
         if (g.tex) glDeleteTextures(1, &g.tex);
     }
     unitSprites_.clear();
+    for (auto& entry : itemPics_) {
+        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
+    }
+    itemPics_.clear();
     for (HudLine& hl : hudLines_) {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
@@ -671,8 +684,7 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-// Loading screen: the start image centred and fitted to the window, with a progress bar
-// across the bottom 4% of the screen (white fill on black)
+// Loading screen: black, with a progress bar across the bottom 4% of the screen (white fill)
 void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label) {
     glViewport(0, 0, winW, winH);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -680,30 +692,6 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     glDisable(GL_DEPTH_TEST);
 
     Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
-
-    // Start image, fitted inside the window with its aspect ratio kept
-    if (overlay_.tex) {
-        float screenAspect = (float)winW / (float)winH;
-        float wd, h;
-        if (overlay_.aspect > screenAspect) {
-            wd = (float)winW;
-            h = wd / overlay_.aspect;
-        } else {
-            h = (float)winH;
-            wd = h * overlay_.aspect;
-        }
-        float x0 = winW * 0.5f - wd * 0.5f, x1 = x0 + wd;
-        float y0 = winH * 0.5f - h * 0.5f,  y1 = y0 + h;
-        float v[4 * 5] = {
-            x0, y1, 0.0f, 0.0f, 1.0f,
-            x1, y1, 0.0f, 1.0f, 1.0f,
-            x1, y0, 0.0f, 1.0f, 0.0f,
-            x0, y0, 0.0f, 0.0f, 0.0f
-        };
-        glUseProgram(glyphProgram_);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
-        drawQuadVerts(overlay_.tex, v, WHITE);
-    }
 
     // Progress bar: fills left to right across the bottom 4% of the screen
     float barTop = winH * 0.96f;
@@ -1142,7 +1130,7 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
 }
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
-                         float overlayAlpha, const std::vector<std::string>& hud, int winW, int winH) {
+                         const std::vector<std::string>& hud, int winW, int winH) {
     glViewport(0, 0, winW, winH);
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1277,36 +1265,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
         glDisable(GL_DEPTH_TEST);
         flush(box, ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f));
-        glEnable(GL_DEPTH_TEST);
-    }
-
-    // 4. Level-start image: centred on screen, fading as overlayAlpha drops
-    if (overlayAlpha > 0.0f && overlay_.tex) {
-        glUseProgram(glyphProgram_);
-        Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
-        glDisable(GL_DEPTH_TEST);
-
-        // Fit inside the screen while keeping the image's aspect ratio
-        float screenAspect = (float)winW / (float)winH;
-        float wd, h;
-        if (overlay_.aspect > screenAspect) {
-            wd = (float)winW;
-            h = wd / overlay_.aspect;
-        } else {
-            h = (float)winH;
-            wd = h * overlay_.aspect;
-        }
-        float x0 = winW * 0.5f - wd * 0.5f, x1 = x0 + wd;
-        float y0 = winH * 0.5f - h * 0.5f,  y1 = y0 + h;
-        float v[4 * 5] = {
-            x0, y1, 0.0f, 0.0f, 1.0f,
-            x1, y1, 0.0f, 1.0f, 1.0f,
-            x1, y0, 0.0f, 1.0f, 0.0f,
-            x0, y0, 0.0f, 0.0f, 0.0f
-        };
-        drawQuadVerts(overlay_.tex, v, RGBA{ 1.0f, 1.0f, 1.0f, overlayAlpha });
-
         glEnable(GL_DEPTH_TEST);
     }
 
@@ -1635,10 +1593,16 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         float alpha = 1.0f;
         if ((int)gi == dimGear) alpha = 0.30f;
         else if ((int)gi == GEAR_OFF_HAND && dimOff) alpha = 0.35f;
-        RGBA c = categoryColor(item);
-        c.a = alpha;
+        // The small square beside the name is the item's picture, or its kind's colour without one
         const float chip = 12.0f * s;
-        drawRect(Rect{ r.x + inset, rowY, chip, chip }, c);
+        const Rect chipRect{ r.x + inset, rowY, chip, chip };
+        if (const TextTex* pic = itemTexture(item)) {
+            drawFitted(*pic, chipRect, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
+        } else {
+            RGBA c = categoryColor(item);
+            c.a = alpha;
+            drawRect(chipRect, c);
+        }
         const float textW = r.w - 2.0f * inset - chip - 6.0f * s;
         drawListText(fitText(itemName(item), textW, false), r.x + inset + chip + 6.0f * s,
                      rowY + (chip - listH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
@@ -1666,14 +1630,18 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const ItemStack& st = inv->slots[i];
         if (st.item == 0 || st.count <= 0) continue;
 
-        // An item shows as a block in its kind's colour, with its initials and its count in the corner
+        // An item shows its picture, or else a block in its kind's colour with its initials. The count sits in the corner.
         RGBA c = categoryColor(st.item);
         if ((int)i == dimSlot) c.a = 0.30f;
         const Rect block{ r.x + r.w * 0.12f, r.y + r.h * 0.12f, r.w * 0.76f, r.h * 0.76f };
-        drawRect(block, c);
-        const std::string ini = itemInitials(itemName(st.item));
-        drawListText(ini, block.x + (block.w - listTextWidth(ini)) * 0.5f,
-                     block.y + (block.h - listH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, c.a });
+        if (const TextTex* pic = itemTexture(st.item)) {
+            drawFitted(*pic, block, RGBA{ 1.0f, 1.0f, 1.0f, c.a });
+        } else {
+            drawRect(block, c);
+            const std::string ini = itemInitials(itemName(st.item));
+            drawListText(ini, block.x + (block.w - listTextWidth(ini)) * 0.5f,
+                         block.y + (block.h - listH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, c.a });
+        }
         if (st.count > 1) {
             const std::string n = std::to_string(st.count);
             drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listH - 1.0f * s, white);
@@ -1698,9 +1666,13 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     const float s = uiH_ / 720.0f;
     const float sz = 40.0f * s;
     const Rect r{ mx - sz * 0.5f, my - sz * 0.5f, sz, sz };
-    RGBA c = categoryColor(item);
-    c.a = 0.85f;
-    drawRect(r, c);
+    if (const TextTex* pic = itemTexture(item)) {
+        drawFitted(*pic, r, RGBA{ 1.0f, 1.0f, 1.0f, 0.85f });
+    } else {
+        RGBA c = categoryColor(item);
+        c.a = 0.85f;
+        drawRect(r, c);
+    }
     if (count > 1) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, WHITE);
@@ -1713,8 +1685,24 @@ void Renderer::drawGroundItems(World& w, const Terrain& t) {
     for (Entity e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
-        drawGlyph(white_, tr->x, tr->y, tr->z, ITEM_GLYPH_H, ITEM_PINK);
+        const GroundItem* gi = w.get<GroundItem>(e);
+        if (const TextTex* pic = itemTexture(gi->item)) {
+            drawGlyph(*pic, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
+        } else {
+            drawGlyph(white_, tr->x, tr->y, tr->z, ITEM_GLYPH_H, ITEM_PINK);
+        }
     }
+}
+
+const TextTex* Renderer::itemTexture(int item) {
+    auto it = itemPics_.find(item);
+    if (it == itemPics_.end()) {
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/item/%d.png", item);
+        it = itemPics_.emplace(item, loadOptionalImage(path)).first;
+    }
+    if (it->second.tex) return &it->second;
+    return itemNone_.tex ? &itemNone_ : nullptr;
 }
 
 void Renderer::drawClock(const std::string& clock, const std::string& date, float right, int winH) {
@@ -1831,7 +1819,8 @@ void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, i
         if (!groundLoaded(t, tr->x, tr->z)) continue;
 
         ItemOnScreen os;
-        if (!itemOnScreen(vp, winW, winH, *tr, os)) continue;
+        const TextTex* pic = itemTexture(gi->item);
+        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
         const std::string name = itemName(gi->item);
         const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
         if (box.x + box.w < 0.0f || box.x > winW || box.y + box.h < 0.0f || box.y > winH) continue;
@@ -1840,6 +1829,246 @@ void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, i
         drawRect(box, LABEL_FILL);
         drawListText(name, box.x + 7.0f * s, box.y + 3.0f * s, LABEL_TEXT);
     }
+}
+
+void Renderer::drawUnitPicture(int sprite, const Rect& r) {
+    const int idx = sprite - 1;
+    const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
+    const TextTex& g = (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
+    drawFitted(g, r, WHITE);
+}
+
+void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
+    if (!g.tex) return;
+
+    // Fit the picture inside r without changing its shape
+    const float aspect = g.aspect > 0.0f ? g.aspect : 1.0f;
+    float w = r.h * aspect, h = r.h;
+    if (w > r.w) {
+        w = r.w;
+        h = r.w / aspect;
+    }
+    const float x = r.x + (r.w - w) * 0.5f, y = r.y + (r.h - h) * 0.5f;
+    float v[4 * 5] = {
+        x,     y + h, 0.0f, 0.0f, 1.0f,
+        x + w, y + h, 0.0f, 1.0f, 1.0f,
+        x + w, y,     0.0f, 1.0f, 0.0f,
+        x,     y,     0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(g.tex, v, tint);
+}
+
+void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const RGBA player{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA hostile{ 1.0f, 0.55f, 0.50f, 1.0f };
+    const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
+    for (Entity u : w.view<Unit, Transform, Name>()) {
+        const Transform* tr = w.get<Transform>(u);
+        const Name* nm = w.get<Name>(u);
+        // The tag sits just above the top of the unit's picture
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+
+        const std::string tag = "[" + nm->text + "]";
+        const float tw = listTextWidth(tag), th = listTextHeight(tag);
+        if (sx < -tw || sx > winW + tw || sy < -th || sy > winH + th) continue;
+        const float x = sx - tw * 0.5f, y = sy - th;
+        // The drop shadow is the same text in black, a little down and to the right
+        drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
+        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : player);
+    }
+}
+
+void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
+                              const PartyPanels& P, const std::string& mapName, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA grey{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA faint{ 0.45f, 0.45f, 0.50f, 1.0f };
+    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
+    const RGBA warn{ 1.0f, 0.72f, 0.55f, 1.0f };
+    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.92f };
+    const RGBA plate{ 0.12f, 0.14f, 0.19f, 0.95f };
+    const RGBA plateHot{ 0.20f, 0.25f, 0.36f, 0.95f };
+    const RGBA plateOn{ 0.28f, 0.22f, 0.44f, 0.95f };    // the purple used for the selected unit
+    const RGBA plateOff{ 0.10f, 0.10f, 0.12f, 0.70f };
+    const float lineH = listTextHeight("Ag");
+    const PartyMember& picked = pickedMember(p, ui);
+
+    // Background for a plate: purple when chosen, lighter when hovered, dim when disabled
+    auto plateFor = [&](bool hot, bool on, bool enabled) -> RGBA {
+        if (!enabled) return plateOff;
+        if (on) return plateOn;
+        return hot ? plateHot : plate;
+    };
+    // Text centred in a box, shortened to fit
+    auto centred = [&](const Rect& r, const std::string& text, RGBA tint) {
+        const std::string t = fitText(text, r.w - 8.0f * s, false);
+        drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - lineH) * 0.5f, tint);
+    };
+    // Text at the left of a box, vertically centred, after an inset
+    auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
+        const std::string t = fitText(text, r.w - inset - 6.0f * s, false);
+        drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
+    };
+
+    drawRect(P.left, panel);
+    drawRect(P.centre, panel);
+    drawRect(P.right, panel);
+    drawRect(P.bottom, RGBA{ 0.03f, 0.03f, 0.05f, 0.95f });
+    drawUiTextCentered("Starting party: " + mapName, uiW_ * 0.5f, (P.topH - uiTextHeight("Ag")) * 0.5f, white);
+
+    for (const Button& b : buttons) {
+        const bool hot = b.enabled && b.rect.contains(mx, my);
+        switch (b.action) {
+        case Action::PartyPick: {
+            const PartyMember& u = p[static_cast<size_t>(b.param)];
+            const bool chosen = b.param == std::clamp(ui.selected, 0, START_UNIT_COUNT - 1);
+            drawRect(b.rect, plateFor(hot, chosen, true));
+            const float pic = b.rect.h - 14.0f * s;
+            drawUnitPicture(u.sprite, Rect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic });
+            const float tx = b.rect.x + pic + 16.0f * s, tw = b.rect.x + b.rect.w - tx - 8.0f * s;
+            const bool named = !cleanName(u.name).empty();
+            const std::string shown = named ? cleanName(u.name) : std::string("No name");
+            drawListText(fitText(shown, tw, false), tx, b.rect.y + 22.0f * s,
+                         !named ? warn : chosen ? hover : white);
+            drawListText("Sprite " + std::to_string(u.sprite), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, grey);
+            break;
+        }
+
+        case Action::PartyTabPick: {
+            const bool on = b.param == (int)ui.tab;
+            drawRect(b.rect, plateFor(hot, on, true));
+            centred(b.rect, b.label, on ? hover : white);
+            break;
+        }
+
+        case Action::PartyNameField: {
+            drawListText("Name", b.rect.x, b.rect.y - 22.0f * s, grey);
+            drawRect(b.rect, plateFor(hot, ui.editingName, true));
+            if (b.label.empty() && !ui.editingName) {
+                leftText(b.rect, "Click to type a name", faint, 10.0f * s);
+            } else {
+                leftText(b.rect, b.label + (ui.editingName ? "|" : ""), white, 10.0f * s);
+            }
+            break;
+        }
+
+        case Action::PartySpriteBox:
+            drawListText("Sprite", b.rect.x, b.rect.y - 22.0f * s, grey);
+            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
+            leftText(b.rect, b.label, white, 10.0f * s);
+            break;
+
+        case Action::PartyRandomUnit:
+            drawRect(b.rect, plateFor(hot, false, true));
+            centred(b.rect, b.label, white);
+            break;
+
+        case Action::PartyGearSlot: {
+            const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
+            drawRect(b.rect, plateFor(hot, open, true));
+            leftText(Rect{ b.rect.x, b.rect.y + 4.0f * s, b.rect.w, lineH }, gearSlotName(b.param), grey, 8.0f * s);
+            leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 4.0f * s, b.rect.w, lineH }, b.label,
+                     b.label == "Empty" ? faint : white, 8.0f * s);
+            break;
+        }
+
+        case Action::PartyStatLabel: {
+            drawRect(b.rect, RGBA{ 0.0f, 0.0f, 0.0f, 0.18f });
+            leftText(b.rect, b.label, white, 6.0f * s);
+            const std::string lv = std::to_string(levelOf(picked.stats, b.param));
+            drawListText(lv, b.rect.x + b.rect.w - 6.0f * s - listTextWidth(lv),
+                         b.rect.y + (b.rect.h - lineH) * 0.5f, hover);
+            break;
+        }
+
+        case Action::PartyStep:
+            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            centred(b.rect, b.label, b.enabled ? white : faint);
+            break;
+
+        case Action::PartyHeading:
+            leftText(b.rect, b.label, heading, 0.0f);
+            break;
+
+        case Action::PartyNote:
+            leftText(b.rect, b.label, grey, 0.0f);
+            break;
+
+        case Action::PartyInvSlot: {
+            const ItemStack& st = picked.items[b.param];
+            drawRect(b.rect, plateFor(hot, b.param == ui.stackSlot, true));
+            if (st.item > 0) {
+                if (const TextTex* pic = itemTexture(st.item)) {
+                    drawFitted(*pic, Rect{ b.rect.x + b.rect.w * 0.12f, b.rect.y + b.rect.h * 0.12f,
+                                           b.rect.w * 0.76f, b.rect.h * 0.76f }, white);
+                } else {
+                    centred(b.rect, itemInitials(itemNameOf(st.item)), white);
+                }
+                const std::string n = std::to_string(st.count);
+                drawListText(n, b.rect.x + b.rect.w - listTextWidth(n) - 3.0f * s,
+                             b.rect.y + b.rect.h - lineH - 2.0f * s, grey);
+            }
+            break;
+        }
+
+        case Action::PartyCount:
+            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            centred(b.rect, b.label, b.enabled ? white : faint);
+            break;
+
+        case Action::PartyMessage:
+            centred(b.rect, b.label, partyNamesValid(p) ? grey : warn);
+            break;
+
+        case Action::PartyDropBack:
+            drawRect(Rect{ b.rect.x - 1.0f, b.rect.y - 1.0f, b.rect.w + 2.0f, b.rect.h + 2.0f }, RGBA{ 0.45f, 0.50f, 0.70f, 0.9f });
+            drawRect(b.rect, RGBA{ 0.04f, 0.05f, 0.08f, 0.98f });
+            break;
+
+        case Action::PartyDropScroll:
+            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            centred(b.rect, b.label, b.enabled ? (hot ? hover : white) : faint);
+            break;
+
+        case Action::PartyDropPick:
+            if (hot) drawRect(b.rect, plateHot);
+            leftText(b.rect, b.label, hot ? hover : white, 10.0f * s);
+            break;
+
+        case Action::PartyRandomAll:
+        case Action::PartyConfirm:
+        case Action::Back:
+            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            centred(b.rect, b.label, b.enabled ? white : faint);
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    // Middle: the picked unit, large, with its name and totals under it
+    const float cw = P.centre.w;
+    drawUnitPicture(picked.sprite, Rect{ P.centre.x + 20.0f * s, P.centre.y + 20.0f * s, cw - 40.0f * s,
+                                         P.centre.h - 130.0f * s });
+    const bool named = !cleanName(picked.name).empty();
+    const std::string name = named ? cleanName(picked.name) : std::string("No name");
+    drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.centre.x + cw * 0.5f,
+                       P.centre.y + P.centre.h - 100.0f * s, named ? white : warn);
+    int attack = 0, defense = 0;
+    gearTotals(wornBy(picked), attack, defense);
+    const std::string totals = "Attack " + std::to_string(attack) + "    Defence " + std::to_string(defense)
+                             + "    Carry " + std::to_string((int)carryLimit(picked.stats));
+    const std::string shownTotals = fitText(totals, cw - 24.0f * s, false);
+    drawListText(shownTotals, P.centre.x + (cw - listTextWidth(shownTotals)) * 0.5f,
+                 P.centre.y + P.centre.h - 62.0f * s, grey);
 }
 
 Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {
@@ -1853,7 +2082,8 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
         if (!groundLoaded(t, tr->x, tr->z)) continue;
 
         ItemOnScreen os;
-        if (!itemOnScreen(vp, winW, winH, *tr, os)) continue;
+        const TextTex* pic = itemTexture(gi->item);
+        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
         const std::string name = itemName(gi->item);
         const Rect box = labelBox(os, listTextWidth(name), listTextHeight(name), s);
         const bool onLabel = box.contains(mx, my);

@@ -8,6 +8,12 @@
 // Spawns the units, the red units and the wagon
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
+// Starting stats drawn the way new units get them: attributes at levels 5..15, skills at 1..5
+Stats randomStartingStats(Rng& rng);
+
+// A unit name from the list that is not in taken
+std::string randomUnitName(Rng& rng, const std::vector<std::string>& taken);
+
 // Puts `perItem` copies of every item in the database on the ground at random walkable tiles across
 // the whole level. Each copy is a single item.
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem);
