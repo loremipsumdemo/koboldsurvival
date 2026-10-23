@@ -1,7 +1,9 @@
 #include "useitem.h"
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
+#include "combat.h"
 #include "inventory.h"
 #include "items.h"
 
@@ -19,7 +21,7 @@ std::string lower(std::string s) {
     return s;
 }
 
-// Reads one statement such as "health +50" or "hunger -10"
+// Reads one statement such as "health +50", "hunger -10" or "attack +10 for 60s"
 bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     const std::string s = trim(raw);
 
@@ -28,8 +30,9 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     const std::string name = lower(s.substr(0, i));
     if (name == "health") e.stat = UseEffect::Stat::Health;
     else if (name == "hunger") e.stat = UseEffect::Stat::Hunger;
-    else if (name.empty()) { err = "expected health or hunger in \"" + s + "\""; return false; }
-    else { err = "unknown stat \"" + name + "\" in \"" + s + "\" (use health or hunger)"; return false; }
+    else if (name == "attack") e.stat = UseEffect::Stat::Attack;
+    else if (name.empty()) { err = "expected health, hunger or attack in \"" + s + "\""; return false; }
+    else { err = "unknown stat \"" + name + "\" in \"" + s + "\" (use health, hunger or attack)"; return false; }
 
     while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;
     if (i >= s.size() || (s[i] != '+' && s[i] != '-')) {
@@ -43,11 +46,32 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     const size_t digitsAt = i;
     while (i < s.size() && std::isdigit((unsigned char)s[i])) ++i;
     if (i == digitsAt) { err = "expected a number after the sign in \"" + s + "\""; return false; }
-    if (i != s.size()) { err = "unexpected text after the number in \"" + s + "\""; return false; }
     if (i - digitsAt > 6) { err = "the number is too large in \"" + s + "\""; return false; }
 
     e.amount = std::stoi(s.substr(digitsAt, i - digitsAt));
     if (negative) e.amount = -e.amount;
+
+    // Optional duration, "for 60s". Only attack takes one, and attack must have one.
+    while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;
+    if (i == s.size()) {
+        if (e.stat == UseEffect::Stat::Attack) {
+            err = "attack needs a duration, such as \"for 60s\", in \"" + s + "\"";
+            return false;
+        }
+        return true;
+    }
+    if (s.compare(i, 3, "for") != 0) { err = "unexpected text after the number in \"" + s + "\""; return false; }
+    i += 3;
+    while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;
+    const size_t secondsAt = i;
+    while (i < s.size() && std::isdigit((unsigned char)s[i])) ++i;
+    if (i == secondsAt) { err = "expected a number of seconds in \"" + s + "\""; return false; }
+    const int seconds = std::stoi(s.substr(secondsAt, i - secondsAt));
+    if (i < s.size() && (s[i] == 's' || s[i] == 'S')) ++i;
+    while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;
+    if (i != s.size()) { err = "unexpected text after the duration in \"" + s + "\""; return false; }
+    if (e.stat != UseEffect::Stat::Attack) { err = "only attack can last a time, in \"" + s + "\""; return false; }
+    e.seconds = (float)seconds;
     return true;
 }
 
@@ -80,14 +104,36 @@ bool parseUseScript(const std::string& script, std::vector<UseEffect>& out, std:
     return finish();
 }
 
-void applyUseEffects(const std::vector<UseEffect>& effects, Needs& needs) {
+int applyUse(const std::vector<UseEffect>& effects, const UseTarget& t) {
+    int restored = 0;
     for (const UseEffect& e : effects) {
-        if (e.stat == UseEffect::Stat::Health) {
-            needs.hp = std::clamp(needs.hp + e.amount, 0, needs.maxHp);
-        } else {
-            needs.hunger = std::clamp(needs.hunger + e.amount, 0, needs.maxHunger);
+        switch (e.stat) {
+        case UseEffect::Stat::Health:
+            if (t.needs) {
+                const int before = t.needs->hp;
+                const int amount = e.amount > 0 ? (int)std::lround(e.amount * t.healScale) : e.amount;
+                t.needs->hp = std::clamp(before + amount, 0, t.needs->maxHp);
+                restored += std::max(0, t.needs->hp - before);
+            }
+            break;
+        case UseEffect::Stat::Hunger:
+            if (t.needs) t.needs->hunger = std::clamp(t.needs->hunger + e.amount, 0, t.needs->maxHunger);
+            break;
+        case UseEffect::Stat::Attack:
+            if (t.combat && e.seconds > 0.0f) {
+                t.combat->buffAttack = (float)e.amount;
+                t.combat->buffLeft = e.seconds;
+            }
+            break;
         }
     }
+    return restored;
+}
+
+void applyUseEffects(const std::vector<UseEffect>& effects, Needs& needs) {
+    UseTarget t;
+    t.needs = &needs;
+    applyUse(effects, t);
 }
 
 UseResult useStackInSlot(World& w, Entity unit, int slot) {
@@ -108,7 +154,14 @@ UseResult useStackInSlot(World& w, Entity unit, int slot) {
     }
     if (effects.empty()) return UseResult::NotUsable;
 
-    if (Needs* needs = w.get<Needs>(unit)) applyUseEffects(effects, *needs);
+    UseTarget target;
+    target.needs = w.get<Needs>(unit);
+    target.combat = w.get<Combat>(unit);
+    if (const Stats* st = w.get<Stats>(unit)) {
+        target.healScale = 1.0f + 0.01f * (float)(levelOf(*st, STAT_MEDICAL) - 1);
+    }
+    const int restored = applyUse(effects, target);
     if (--s.count <= 0) s = ItemStack{};
+    grantXp(w, unit, STAT_MEDICAL, (float)restored);
     return UseResult::Used;
 }

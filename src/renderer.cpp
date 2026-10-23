@@ -713,6 +713,15 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
 // ---- Menus ----
 
 void Renderer::beginUi(int winW, int winH) {
+    // Combat log lines are new strings in every fight, so the list cache would grow for the whole session.
+    // It is cleared here, once a frame, when no text reference is held: anything drawn again is rebuilt.
+    constexpr size_t LIST_CACHE_LIMIT = 512;
+    if (listText_.size() > LIST_CACHE_LIMIT) {
+        for (auto& entry : listText_) {
+            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+        }
+        listText_.clear();
+    }
     uiW_ = winW;
     uiH_ = winH;
     glViewport(0, 0, winW, winH);
@@ -725,7 +734,7 @@ void Renderer::beginUi(int winW, int winH) {
 
 void Renderer::endUi() {
     glBindVertexArray(0);
-    glDisable(GL_BLEND);   // the world pass draws with blending off, as it did before the UI
+    glDisable(GL_BLEND);   // the world pass draws with blending off
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -1536,7 +1545,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
                 needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
 
     // Carried weight against what Strength lets the unit carry
-    const float carried = inv ? carriedWeight(*inv) : 0.0f;
+    const float carried = carriedWeightOf(w, unit);
     const float limit = carryLimit(stats);
     char carry[48];
     std::snprintf(carry, sizeof(carry), "%.1f / %.0f", carried, limit);
@@ -1916,6 +1925,94 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
         // The drop shadow is the same text in black, a little down and to the right
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
         drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : player);
+    }
+}
+
+// The colour of a damage number or log line: green for a player unit's, red for a hostile's, gray otherwise
+static RGBA logTint(Tint t) {
+    switch (t) {
+    case Tint::Green: return RGBA{ 0.42f, 0.95f, 0.45f, 1.0f };
+    case Tint::Red:   return RGBA{ 1.0f, 0.38f, 0.36f, 1.0f };
+    case Tint::Gray:  break;
+    }
+    return RGBA{ 0.78f, 0.78f, 0.82f, 1.0f };
+}
+
+void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (const FloatingNumber& f : floats) {
+        // Anchored just above the unit's head, like its name
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
+
+        // Arc: up and to the right, then down, fading out over the last 40% of its life. The rise peaks
+        // about two fifths of the way through (about 38 pixels up at 720 lines), then falls 60 pixels below its start.
+        const float t = std::clamp(f.age / FLOAT_LIFE, 0.0f, 1.0f);
+        const float rise = (200.0f * t - 260.0f * t * t) * s;
+        const float drift = 40.0f * t * s;
+        const float alpha = t < 0.6f ? 1.0f : (1.0f - t) / 0.4f;
+
+        const std::string text = "-" + std::to_string(f.amount);
+        const float x = sx + drift - uiTextWidth(text) * 0.5f;
+        const float y = sy - 4.0f * s - uiTextHeight(text) - rise;
+        RGBA c = logTint(f.tint);
+        c.a *= alpha;
+        drawUiText(text, x + 1.5f * s, y + 1.5f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.85f * alpha });
+        drawUiText(text, x, y, c);
+    }
+}
+
+CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit) {
+    const float s = winH / 720.0f;
+    const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
+    const int linesVisible = 6;
+
+    CombatLogLayout L;
+    L.linesVisible = linesVisible;
+    L.lineCount = lineCount;
+    L.lineH = listTextHeight("Ag") + 2.0f * s;
+    L.offset = std::clamp(offset, 0, L.maxOffset());
+
+    const float x = 8.0f * s;
+    const float w = std::max(180.0f * s, std::min(340.0f * s, rightLimit - x));
+    const float h = 2.0f * pad + linesVisible * L.lineH;
+    L.panel = Rect{ x, winH - h - 8.0f * s, w, h };
+    L.textX = x + pad;
+    L.textW = w - 2.0f * pad - scrollW - gap;
+
+    // Which lines are visible: the window ends L.offset lines above the newest
+    const int end = lineCount - L.offset;
+    L.shown = std::min(linesVisible, std::max(0, end));
+    L.first = end - L.shown;
+
+    const float trackX = x + w - pad * 0.5f - scrollW * 0.5f;
+    const float trackY = L.panel.y + pad, trackH = h - 2.0f * pad;
+    L.track = Rect{ trackX, trackY, scrollW * 0.5f, trackH };
+    if (L.scrollable()) {
+        const float share = (float)linesVisible / (float)lineCount;
+        const float thumbH = std::max(16.0f * s, trackH * share);
+        // At offset 0 the thumb sits at the bottom, and at the top of its range it sits at the top
+        const float frac = L.maxOffset() > 0 ? (float)L.offset / (float)L.maxOffset() : 0.0f;
+        L.thumb = Rect{ trackX, trackY + (trackH - thumbH) * (1.0f - frac), scrollW * 0.5f, thumbH };
+    }
+    return L;
+}
+
+void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
+    drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
+    // The rows start where the padding above them ends, so the text block is centred in the panel
+    const float top = L.panel.y + (L.panel.h - L.linesVisible * L.lineH) * 0.5f;
+    const int count = (int)log.lines.size();
+    for (int k = 0; k < L.shown && L.first + k < count; ++k) {
+        const LogLine& ln = log.lines[L.first + k];
+        // Bottom-aligned: the newest line is the last row
+        const int row = L.linesVisible - L.shown + k;
+        drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
+    }
+    if (L.scrollable()) {
+        drawRect(L.track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
+        drawRect(L.thumb, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
     }
 }
 

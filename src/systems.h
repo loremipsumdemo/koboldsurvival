@@ -27,9 +27,10 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 // Moves the whole stack in one inventory slot onto the ground, under its unit. False if the slot is empty.
 bool dropStack(World& w, Entity unit, int slot);
 
-// Systems, run once per frame in this order
-void needsSystem(World& w, int hours);          // health and hunger, for each whole in-game hour that passed
+// Systems, run once per frame in this order. combatSystem (combat.h) runs before all of them, so a unit
+// that dies this frame is gone before the others move.
 void squadSystem(World& w, float dt);
 void steeringSystem(World& w, Terrain& t, float dt);
 void pickupSystem(World& w);                     // after steering, so units that just arrived can take items
 void cleanupSquads(World& w);
+void needsSystem(World& w, int hours);          // health and hunger, for each whole in-game hour that passed

@@ -64,6 +64,7 @@ add_executable(koboldgame
     src/renderer.cpp
     src/items.cpp
     src/inventory.cpp
+    src/combat.cpp
     src/equip.cpp
     src/stats.cpp
     src/party.cpp

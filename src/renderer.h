@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "gui.h"
 #include "sky.h"
+#include "combat.h"
 #include "components.h"
 #include "ecs.h"
 #include "model.h"
@@ -28,6 +29,24 @@ struct TextTex {
 // Multiplies the texture colour, alpha included.
 struct RGBA {
     float r, g, b, a;
+};
+
+// The combat log panel in the bottom left corner. The newest line is at the bottom, and offset counts
+// the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
+struct CombatLogLayout {
+    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
+    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
+    float textX = 0.0f, textW = 0.0f;
+    float lineH = 0.0f;
+    int linesVisible = 0;
+    int lineCount = 0;
+    int offset = 0;                          // lines scrolled up from the newest, within range
+    int first = 0;                           // index of the oldest visible line
+    int shown = 0;                           // how many lines are visible
+
+    bool scrollable() const { return lineCount > linesVisible; }
+    int maxOffset() const { return lineCount > linesVisible ? lineCount - linesVisible : 0; }
 };
 
 class Renderer {
@@ -100,6 +119,14 @@ public:
 
     // Each unit's name over its head, in brackets with a drop shadow. Hostile units are shown in red.
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH);
+
+    // Damage numbers over the units they hit, rising and fading from the combat system's list. They draw
+    // between beginUi and endUi, after the names.
+    void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
+    // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
+    // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
+    CombatLogLayout combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit);
+    void drawCombatLog(const CombatLogLayout& L, const CombatLog& log);
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
     // party's pictures, names and totals. Call between beginUi and endUi.

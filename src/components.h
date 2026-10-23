@@ -23,7 +23,8 @@ struct Selected {};
 // Player units. Only these can be ordered to move.
 struct Commandable {};
 
-// Red units. They stand still and can be selected, but can't be commanded.
+// Red units. They can be selected but not commanded. They stand until a player unit comes within
+// aggro range, then chase it.
 struct Hostile {};
 
 // Display name for a unit
@@ -90,11 +91,29 @@ struct Equipment {
     std::array<int, GEAR_SLOTS> items{};   // item id in each slot, 0 for empty
 };
 
-// Health and hunger, for every unit. Both start at their maximum. Hunger falls by one each in-game
-// hour, on the clock's hour. A tick while hunger is already 0 costs one health instead. Neither goes below zero.
+// Health and hunger, for every unit. Hunger falls by one each in-game hour, on the clock's hour. A tick
+// while hunger is already 0 costs one health instead. Health is set from Vitality each frame, and it
+// stays between zero and the maximum. A unit at zero health is downed.
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
+};
+
+// Fighting state for a unit. Nothing here is saved: a loaded unit starts fresh, with its stamina full.
+struct Combat {
+    float swingLeft = 0.0f;           // seconds until the unit may swing again
+    Entity target = NULL_ENTITY;      // the unit it is fighting: a hostile for a player unit, and the reverse
+    float buffAttack = 0.0f;          // attack added by an elixir
+    float buffLeft = 0.0f;            // seconds the elixir has left
+    float stamina = -1.0f;            // below zero until the first combat frame sets it to the maximum
+    float encumbrance = 0.0f;         // 0..1, from the last frame's movement
+    float moved = 0.0f;               // tiles walked in the last frame
+    std::vector<Entity> spotted;      // hostiles this unit has already spotted, for Perception XP
+};
+
+// Fractional XP waiting to become whole points, one per stat. Walking and fighting give fractions of a point.
+struct XpBuffer {
+    std::array<float, STAT_COUNT> frac{};
 };
 
 // An item lying on the ground. Its Transform gives the place.

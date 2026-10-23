@@ -31,6 +31,7 @@
 #include "inventory.h"
 #include "party.h"
 #include "party_ui.h"
+#include "combat.h"
 #include "equip.h"
 #include "items.h"
 #include "systems.h"
@@ -183,7 +184,7 @@ void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const 
     SDL_GL_SwapWindow(window);
 }
 
-// Game worlds are kept in this folder, beside the game. It was called custom_maps before.
+// Game worlds are kept in this folder, beside the game.
 std::string mapsDir() {
     const char* base = SDL_GetBasePath();
     return std::string(base ? base : "") + "maps";
@@ -360,7 +361,11 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
     for (const SaveUnit& u : d.units) {
         Entity e = world.create();
         world.add(e, Transform{ u.x, u.y, u.z });
-        world.add(e, Unit{});
+        // Hostiles walk at their own pace, as on a new level. Every unit fights, so each one gets Combat.
+        Unit unit;
+        if (u.hostile) unit.speed = HOSTILE_WALK_SPEED;
+        world.add(e, unit);
+        world.add(e, Combat{});
         if (u.hostile) {
             world.add(e, Hostile{});
         } else {
@@ -1004,6 +1009,18 @@ int main(int, char**) {
     // The unit the camera follows, set by a double-click on its panel card. A manual pan clears it.
     Entity followUnit = NULL_ENTITY;
 
+    // The combat log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
+    CombatLog combatLog;
+    std::vector<FloatingNumber> floatingNumbers;
+    int logOffset = 0;      // lines the combat log is scrolled up from its newest line; 0 follows new lines
+    size_t logSeen = 0;     // lines the log held last frame, so a view scrolled up stays on the same lines
+    auto clearCombatText = [&]() {
+        combatLog = CombatLog{};
+        floatingNumbers.clear();
+        logOffset = 0;
+        logSeen = 0;
+    };
+
     // Autosave countdown, in seconds of play
     float autoTimer = 0.0f;
 
@@ -1084,6 +1101,7 @@ int main(int, char**) {
         }
         // The party from the menu replaces the three units that the seed made
         applyParty(world, party);
+        clearCombatText();
         closePanel();
         currentMap = choice;
         focusCameraOnFirstUnit(world, cam);
@@ -1161,6 +1179,7 @@ int main(int, char**) {
         }
         currentMap = choice;
         levelSeed = d.seed;
+        clearCombatText();
         gs = d.gs;
         focusCameraOnFirstUnit(world, cam);
         applySaveCamera(d.cam, cam);
@@ -1232,6 +1251,7 @@ int main(int, char**) {
     auto openEditor = [&]() {
         // Start clean: no units left over from a game
         world = World{};
+        clearCombatText();
         followUnit = NULL_ENTITY;
         gs = GameState{};
         sel = Selection{};
@@ -1649,10 +1669,23 @@ int main(int, char**) {
                 break;
             }
         };
+        // The combat log in the bottom left, stopping short of the unit panel. Its offset is kept in range.
+        auto combatLogPanel = [&](int W, int H) {
+            const float s = H / 720.0f;
+            const float unitLeft = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow).panel.x;
+            return renderer.combatLogLayout(W, H, logOffset, (int)combatLog.lines.size(), unitLeft - 8.0f * s);
+        };
+        // Whether the mouse is over the combat log
+        auto combatLogHovered = [&](int W, int H) {
+            float mx = 0.0f, my = 0.0f;
+            SDL_GetMouseState(&mx, &my);
+            return combatLogPanel(W, H).panel.contains(mx, my);
+        };
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
             return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow),
                                   layoutInventorySidebar(W, H), sidebarUp(), x, y)
+                || combatLogPanel(W, H).panel.contains(x, y)
                 || (statsOpen && renderer.statsPanelLayout(W, H).box.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
         };
@@ -1774,6 +1807,10 @@ int main(int, char**) {
                         const int count = (int)dropdownEntries(party, partyUi).size();
                         partyUi.dropScroll = clampDropScroll(partyUi.dropScroll - (int)e.wheel.y, count);
                     }
+                } else if (screen == Screen::Playing && combatLogHovered(winW, winH)) {
+                    // Scrolls the combat log, three lines a notch. Wheel up goes back in time.
+                    const int step = e.wheel.y > 0.0f ? 3 : e.wheel.y < 0.0f ? -3 : 0;
+                    logOffset = std::clamp(logOffset + step, 0, combatLogPanel(winW, winH).maxOffset());
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
@@ -2107,6 +2144,12 @@ int main(int, char**) {
             if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
             cam.updateClearance(terrain);
 
+            // Fighting first, so a unit that dies this frame is gone before the others move
+            combatSystem(world, rng, dt, combatLog, floatingNumbers);
+            // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
+            const size_t logCount = combatLog.lines.size();
+            if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
+            logSeen = logCount;
             squadSystem(world, dt);
             steeringSystem(world, terrain, dt);
             pickupSystem(world);
@@ -2188,12 +2231,18 @@ int main(int, char**) {
             // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
+            // Damage numbers rise over the units they hit
+            renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) renderer.drawGroundLabels(world, terrain, cam, winW, winH);
             {
                 const std::vector<Entity> own = world.view<Unit, Transform, Commandable>();
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
                 unitPanelRow = L.scrollRow;
                 renderer.drawUnitPanel(world, L, own);
+                // The combat log, bottom left. Its offset is written back, so it stays in range.
+                const CombatLogLayout cl = combatLogPanel(winW, winH);
+                logOffset = cl.offset;
+                renderer.drawCombatLog(cl, combatLog);
                 const std::vector<Entity> picked = selectedUnits(world);
                 if (picked.size() == 1 && world.has<Inventory>(picked[0])) {
                     // The item being dragged, so the gear slots can show where it fits

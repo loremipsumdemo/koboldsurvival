@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include "combat.h"
 #include "inventory.h"
 #include "items.h"
 #include "needs.h"
@@ -151,6 +152,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(u, Inventory{});
         w.add(u, Equipment{});
         w.add(u, Needs{});
+        w.add(u, Combat{});
         w.add(u, Name{});
         w.add(u, UnitSprite{ rng.range(1, 38) });
     }
@@ -174,10 +176,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         enemyTiles.push_back(g);
         Entity e = w.create();
         w.add(e, Transform{ x, t.heightAt(x, z), z });
-        w.add(e, Unit{});
+        w.add(e, Unit{ HOSTILE_WALK_SPEED });
         w.add(e, Hostile{});
         w.add(e, Equipment{});
         w.add(e, Needs{});
+        w.add(e, Combat{});
         w.add(e, Name{});
         w.add(e, UnitSprite{ rng.range(1, 38) });
     }
@@ -194,11 +197,16 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         break;
     }
 
-    // Names and stats for every unit. They are drawn last, so the placement above is the same as before
-    // names and stats existed.
+    // Names, stats, health and gear for every unit. These draw after the placement above, so where units
+    // stand doesn't depend on them.
     std::vector<std::string> takenNames;
     for (Entity u : w.view<Unit>()) {
         if (!w.has<Stats>(u)) w.add(u, startingStats(rng));
+        if (Needs* nd = w.get<Needs>(u)) {
+            nd->maxHp = maxHealthFor(*w.get<Stats>(u));
+            nd->hp = nd->maxHp;
+        }
+        if (w.has<Hostile>(u)) w.add(u, randomHostileGear(rng));
         Name* nm = w.get<Name>(u);
         if (!nm) continue;
         if (w.has<Commandable>(u)) {
@@ -340,11 +348,22 @@ void squadSystem(World& w, float dt) {
         Squad* sq = w.get<Squad>(e);
         if (sq->arrived) continue;
 
+        // The squad keeps to the pace of its slowest member that can still move. Members that can't
+        // move at all (downed, or carrying too much) are left behind, and don't hold the squad back.
+        float pace = sq->speed;
+        float slowest = -1.0f;
+        for (Entity m : w.view<SquadMember, Unit>()) {
+            if (w.get<SquadMember>(m)->squad != e) continue;
+            const float s = walkSpeedOf(w, m);
+            if (s > 0.0f && (slowest < 0.0f || s < slowest)) slowest = s;
+        }
+        pace = slowest < 0.0f ? 0.0f : std::min(pace, slowest);
+
         Vec2 wp = sq->waypoints[sq->next];
         float tx = wp.x, tz = wp.z;
         float dx = tx - sq->cx, dz = tz - sq->cz;
         float d = std::sqrt(dx * dx + dz * dz);
-        float step = sq->speed * dt;
+        float step = pace * dt;
 
         if (d > 1e-4f) {
             sq->headX = dx / d;
@@ -363,8 +382,10 @@ void squadSystem(World& w, float dt) {
 }
 
 void steeringSystem(World& w, Terrain& t, float dt) {
-    std::vector<Entity> units = w.view<Unit, Transform, Commandable>();
+    // Every unit that moves: player units by their orders, hostiles by their chase
+    std::vector<Entity> units = w.view<Unit, Transform>();
     std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
+    std::vector<float> speeds(units.size(), 0.0f);
 
     // Pass 1: each unit's desired velocity, from its slot plus separation.
     // Positions are read here but not changed, so the order of units doesn't matter.
@@ -409,13 +430,26 @@ void steeringSystem(World& w, Terrain& t, float dt) {
                 tx = so->waypoints[so->next].x;
                 tz = so->waypoints[so->next].z;
             }
+        } else if (w.has<Hostile>(e)) {
+            // A hostile walks at its target while it has one, and stops once it is close enough to swing
+            if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
+                if (const Transform* tt = w.get<Transform>(c->target)) {
+                    const float gx = tt->x - tr->x, gz = tt->z - tr->z;
+                    if (std::sqrt(gx * gx + gz * gz) > ATTACK_REACH * CHASE_STOP_SHARE) {
+                        tx = tt->x;
+                        tz = tt->z;
+                    }
+                }
+            }
         }
 
+        // A downed unit has speed 0. A player unit's speed depends on its load, Athletics and stamina.
+        speeds[i] = walkSpeedOf(w, e);
         float dx = tx - tr->x, dz = tz - tr->z;
         float dist = std::sqrt(dx * dx + dz * dz);
         float vx = 0.0f, vz = 0.0f;
-        if (dist > 0.05f) {
-            float sp = std::min(u->speed, dist * 2.5f);   // slow down near the target
+        if (dist > 0.05f && speeds[i] > 0.0f) {
+            float sp = std::min(speeds[i], dist * 2.5f);   // slow down near the target
             vx = dx / dist * sp;
             vz = dz / dist * sp;
         }
@@ -439,9 +473,14 @@ void steeringSystem(World& w, Terrain& t, float dt) {
         vel[i] = { vx, vz };
     }
 
-    // Pass 2: apply movement and slide along walls
+    // Pass 2: apply movement and slide along walls. Walking gives XP, and records the distance walked and
+    // the load for the combat step, which runs first next frame.
     for (size_t i = 0; i < units.size(); ++i) {
-        Transform* tr = w.get<Transform>(units[i]);
+        const Entity e = units[i];
+        Transform* tr = w.get<Transform>(e);
+        const bool player = w.has<Commandable>(e);
+        const float load = player ? encumbranceOf(w, e) : 0.0f;
+        const float x0 = tr->x, z0 = tr->z, y0 = tr->y;
 
         float nx = tr->x + vel[i].first * dt;
         float nz = tr->z + vel[i].second * dt;
@@ -449,6 +488,17 @@ void steeringSystem(World& w, Terrain& t, float dt) {
         if (t.isFree(nx, tr->z)) tr->x = nx;
         if (t.isFree(tr->x, nz)) tr->z = nz;
         tr->y = t.heightAt(tr->x, tr->z);
+
+        const float moved = std::hypot(tr->x - x0, tr->z - z0);
+        if (Combat* c = w.get<Combat>(e)) {
+            c->moved = moved;
+            c->encumbrance = load;
+        }
+        if (player && moved > 0.0f) {
+            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved);
+            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt));
+            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0);
+        }
     }
 }
 

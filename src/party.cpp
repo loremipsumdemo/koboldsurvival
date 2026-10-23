@@ -1,5 +1,6 @@
 #include "party.h"
 #include <algorithm>
+#include "combat.h"
 #include "inventory.h"
 #include "items.h"
 #include "systems.h"
@@ -117,6 +118,9 @@ void applyParty(World& w, const Party& p) {
         w.add(u, Name{ name.empty() ? std::string("Unnamed Unit") : name });
         w.add(u, UnitSprite{ m.sprite });
         w.add(u, m.stats);
+        Needs needs;   // a new unit starts at full health for its Vitality
+        needs.maxHp = needs.hp = maxHealthFor(m.stats);
+        w.add(u, needs);
         Inventory inv;
         inv.slots = m.items;
         w.add(u, inv);

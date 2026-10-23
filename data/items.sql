@@ -15,7 +15,7 @@
 --   defense_value      : defense stat (armour and shields, 0 otherwise)
 --   on_use             : what right-clicking does from the inventory, written as a short script:
 --                        statements of health or hunger with a sign and a number, separated by ';'
---                        e.g. health +50; hunger +10. Empty for none.
+--                        e.g. health +50; hunger +10; attack +10 for 60s. Empty for none.
 --   material           : gear material, e.g. 'Iron'. Empty for items with no material.
 --   tier               : gear tier, 1 or more. Shown after the name as +N, so
 --                        material 'Iron', name 'Short Sword', tier 4 is 'Iron Short Sword +4'. 0 for none.
@@ -55,7 +55,7 @@ INSERT INTO items (id, type_id, max_stack_size, name, description, max_durabilit
 (7, 'consumable', 20, 'Health Potion', 'Restores 50 HP when consumed.', 0, 0, 0.5, 25, 12, 1, 0, 0, 'health +50', NULL, 0, NULL),
 (8, 'consumable', 20, 'Mana Potion', 'Restores 50 MP when consumed.', 0, 0, 0.5, 30, 15, 1, 0, 0, NULL, NULL, 0, NULL),
 (9, 'consumable', 10, 'Stamina Draught', 'Restores 40 stamina and briefly boosts regeneration.', 0, 0, 0.4, 20, 10, 1, 0, 0, NULL, NULL, 0, NULL),
-(10, 'consumable', 5, 'Elixir of Might', 'Grants +10 attack for 60 seconds.', 0, 0, 0.3, 75, 35, 5, 0, 0, NULL, NULL, 0, NULL),
+(10, 'consumable', 5, 'Elixir of Might', 'Grants +10 attack for 60 seconds.', 0, 0, 0.3, 75, 35, 5, 0, 0, 'attack +10 for 60s', NULL, 0, NULL),
 (11, 'consumable', 10, 'Bread', 'Simple travel food. Restores 15 HP.', 0, 0, 0.3, 4, 2, 1, 0, 0, 'hunger +30; health +15', NULL, 0, NULL),
 (12, 'consumable', 5, 'Antidote', 'Cures poison and reduces poison damage for 30 seconds.', 0, 0, 0.2, 18, 9, 1, 0, 0, NULL, NULL, 0, NULL),
 (13, 'consumable', 20, 'Apple', 'Restores 8 hunger when eaten.', 0, 0, 0.3, 8, 4, 1, 0, 0, 'hunger +8', NULL, 0, NULL),

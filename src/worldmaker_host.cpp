@@ -28,7 +28,7 @@
 #include "theme/theme.hpp"
 #include "world/world.hpp"
 
-// Globals the tool's own main loop used to define. The host owns them now.
+// Render options and per-frame stats for the world tool.
 namespace wm {
 RenderOptions gOpt{};   // the baseline rendering
 RenderStats gStats{};   // counted during each frame

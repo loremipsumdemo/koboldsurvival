@@ -16,7 +16,7 @@ Rgb bandColour(float h) {
     return { 0.27f, 0.27f, 0.29f };
 }
 
-// Colour of a ground type. Water and shelf are old types: they are shown as seabed sand.
+// Colour of a ground type. Water and shelf ground is drawn as seabed sand.
 Rgb biomeColour(uint8_t b) {
     switch (b) {
     case BIOME_SAND:

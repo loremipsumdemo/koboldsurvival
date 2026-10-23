@@ -20,4 +20,9 @@ struct Rng {
         std::uniform_int_distribution<int> dist(lo, hi);
         return dist(gen);
     }
+
+    // A number from 0 up to, but not including, 1
+    float unit() {
+        return std::uniform_real_distribution<float>(0.0f, 1.0f)(gen);
+    }
 };
