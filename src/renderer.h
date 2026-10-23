@@ -266,6 +266,32 @@ private:
     void buildChunk(const Terrain& t, const ChunkData& c, int id, int step);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
+    // Terrain, sea and seabed shaders and textures (renderer_terrain.cpp)
+    struct TerrainShader {
+        GLuint prog = 0;
+        GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
+        GLint sunLight = -1, ambient = -1, underwater = -1, fogColor = -1, fog = -1, tile = -1;
+    };
+    struct SeaShader {
+        GLuint prog = 0;
+        GLint viewProj = -1, center = -1, half = -1, eye = -1, sunDir = -1, sunLight = -1, ambient = -1, color = -1;
+        GLint fogColor = -1, fog = -1, time = -1, opacity = -1, pattern = -1, speed = -1, fadeStart = -1, fadeEnd = -1, tile = -1;
+    };
+    struct FloorShader {
+        GLuint prog = 0;
+        GLint viewProj = -1, center = -1, half = -1, eye = -1, ambient = -1, sunLight = -1, underwater = -1, fogColor = -1, fog = -1;
+    };
+    TerrainShader groundShader_;
+    SeaShader seaShader_;
+    FloorShader floorShader_;
+    GLuint groundTex_ = 0, seaTex_ = 0;      // the surface tiles of the world being drawn
+    uint32_t surfaceVersion_ = 0;            // which world's surface those tiles came from
+    GLuint emptyVao_ = 0;                    // for shaders that build their quads from gl_VertexID
+    float skySun_[3] = { 0.0f, 1.0f, 0.0f }; // the sun the sky draws, which lights the terrain
+    bool initTerrainGl();
+    void releaseTerrainGl();
+    void uploadSurfaceTiles(const Terrain& t);
+
     TextTex title_;
     std::vector<TextTex> unitSprites_;
     // Text symbols, used only when a sprite file could not be loaded

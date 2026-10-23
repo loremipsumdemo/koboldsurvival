@@ -15,17 +15,22 @@ V3 Mix(V3 a, V3 b, float t) { return a + (b - a) * t; }
 }  // namespace
 
 SkyState ComputeSky(const Look& l) {
-    SkyState s;
-
     // The sun follows a sine over the day: rising at 6, highest at 12, setting at 18.
     const float angle = (l.clock - 6.0f) / 24.0f * 2.0f * kPi;
     const float elev = l.sunElevation * kDeg2Rad * std::sin(angle);
     const float az = l.sunAzimuth * kDeg2Rad;
-    s.sunDir = {std::cos(elev) * std::sin(az), std::sin(elev), std::cos(elev) * std::cos(az)};
+    const V3 sunDir{std::cos(elev) * std::sin(az), std::sin(elev), std::cos(elev) * std::cos(az)};
+    SkyState s = ComputeSkyForSun(l, sunDir);
     s.sunElevDeg = elev / kDeg2Rad;
+    return s;
+}
+
+SkyState ComputeSkyForSun(const Look& l, V3 sunDir) {
+    SkyState s;
+    s.sunDir = sunDir;
 
     // Smooth blend between night and day around the horizon.
-    float t = (std::sin(elev) + 0.10f) / 0.30f;
+    float t = (sunDir.y + 0.10f) / 0.30f;
     t = std::clamp(t, 0.0f, 1.0f);
     s.daylight = t * t * (3.0f - 2.0f * t);
 

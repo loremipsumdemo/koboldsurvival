@@ -18,6 +18,7 @@ struct ChunkData {
     int cx = 0, cz = 0;                  // chunk coordinates
     std::vector<float> heights;          // CHUNK_CORNERS x CHUNK_CORNERS, row by row, world units
     std::vector<uint8_t> biome;          // CHUNK_TILES x CHUNK_TILES ground types, BIOME_NONE for none
+    std::vector<uint8_t> veg;            // CHUNK_TILES x CHUNK_TILES, vegetation density 0 to 255
     std::vector<uint8_t> walk;           // CHUNK_TILES x CHUNK_TILES, 1 walkable, 0 blocked
     uint32_t version = 0;                // changes whenever the chunk is loaded, so drawn copies can be checked
 };
@@ -29,6 +30,7 @@ inline ChunkData emptyChunk(int cx, int cz) {
     c.cz = cz;
     c.heights.assign((size_t)CHUNK_CORNERS * CHUNK_CORNERS, 0.0f);
     c.biome.assign((size_t)CHUNK_TILES * CHUNK_TILES, BIOME_NONE);
+    c.veg.assign((size_t)CHUNK_TILES * CHUNK_TILES, 0);
     c.walk.assign((size_t)CHUNK_TILES * CHUNK_TILES, 0);
     return c;
 }

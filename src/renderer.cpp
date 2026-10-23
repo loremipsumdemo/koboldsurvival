@@ -335,6 +335,8 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
     glUseProgram(0);
 
+    if (!initTerrainGl()) return false;
+
     glGenVertexArrays(1, &dynVao_);
     glGenBuffers(1, &dynVbo_);
     setupColorLayout(dynVao_, dynVbo_);
@@ -454,160 +456,8 @@ void Renderer::shutdown() {
     glDeleteVertexArrays(1, &dynVao_);
     glDeleteBuffers(1, &glyphVbo_);
     glDeleteVertexArrays(1, &glyphVao_);
-    releaseTerrain();
+    releaseTerrainGl();
     colorProgram_ = glyphProgram_ = 0;
-}
-
-namespace {
-
-// Chunks closer to the eye than these distances, in tiles, are drawn at full, half and quarter detail
-constexpr float LOD_NEAR_TILES = 96.0f;
-constexpr float LOD_MID_TILES = 224.0f;
-// The sea is drawn just under zero, so flat ground at zero is not tinted by it
-constexpr float SEA_Y = -0.05f;
-
-// The six frustum planes of a column-major view-projection matrix, as (a, b, c, d) with a*x+b*y+c*z+d >= 0 inside
-struct FrustumPlanes {
-    float p[6][4];
-};
-
-FrustumPlanes framePlanes(const Mat4& m) {
-    // Element (row r, column c) is m[c * 4 + r]
-    auto el = [&](int r, int c) { return m.m[c * 4 + r]; };
-    FrustumPlanes f{};
-    for (int k = 0; k < 3; ++k) {
-        for (int s = 0; s < 2; ++s) {
-            const float sign = s == 0 ? 1.0f : -1.0f;
-            for (int c = 0; c < 4; ++c) f.p[2 * k + s][c] = el(3, c) + sign * el(k, c);
-        }
-    }
-    return f;
-}
-
-// True unless the chunk's box is entirely outside one of the planes
-bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
-    for (const auto& p : f.p) {
-        const float px = p[0] >= 0.0f ? b.x1 : b.x0;
-        const float py = p[1] >= 0.0f ? b.maxY : b.minY;
-        const float pz = p[2] >= 0.0f ? b.z1 : b.z0;
-        if (p[0] * px + p[1] * py + p[2] * pz + p[3] < 0.0f) return false;
-    }
-    return true;
-}
-
-} // namespace
-
-void Renderer::releaseChunk(TerrainChunk& c) {
-    if (c.ebo) glDeleteBuffers(1, &c.ebo);
-    if (c.vbo) glDeleteBuffers(1, &c.vbo);
-    if (c.vao) glDeleteVertexArrays(1, &c.vao);
-    c = TerrainChunk{};
-}
-
-void Renderer::releaseTerrain() {
-    for (TerrainChunk& c : chunks_) releaseChunk(c);
-    chunks_.clear();
-    terrainSize_ = 0;
-    chunksPerSide_ = 0;
-}
-
-void Renderer::uploadTerrain(const Terrain& t) {
-    releaseTerrain();
-    terrainSize_ = t.size();
-    chunksPerSide_ = t.chunksPerSide();
-    // Slots start empty. Each chunk gets its buffers the first time it is built.
-    chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);
-}
-
-// Builds a chunk's mesh at a detail step and uploads it into the chunk's own buffers
-void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step) {
-    TerrainChunk& slot = chunks_[(size_t)id];
-    if (!slot.vao) {
-        glGenVertexArrays(1, &slot.vao);
-        glGenBuffers(1, &slot.vbo);
-        glGenBuffers(1, &slot.ebo);
-        glBindVertexArray(slot.vao);
-        glBindBuffer(GL_ARRAY_BUFFER, slot.vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, slot.ebo);
-        glBindVertexArray(0);
-    }
-    buildChunkMesh(t, c, step, chunkScratch_);
-    glBindVertexArray(slot.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, slot.vbo);
-    glBufferData(GL_ARRAY_BUFFER, chunkScratch_.verts.size() * sizeof(TerrainVertex),
-                 chunkScratch_.verts.data(), GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, slot.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunkScratch_.idx.size() * sizeof(uint32_t),
-                 chunkScratch_.idx.data(), GL_DYNAMIC_DRAW);
-    slot.indexCount = (GLsizei)chunkScratch_.idx.size();
-    slot.step = step;
-    glBindVertexArray(0);
-}
-
-// Draws the loaded chunks in view, each at the detail its distance from the eye needs, then the sea.
-// Only a few chunk meshes are built per frame, so a newly loaded area fills in over a few frames.
-void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
-    if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
-    constexpr int MAX_BUILDS_PER_FRAME = 8;
-    const FrustumPlanes planes = framePlanes(viewProj_);
-    float ex, ey, ez;
-    cam.eye(ex, ey, ez);
-
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    int builds = 0;
-    for (int id = 0; id < (int)chunks_.size(); ++id) {
-        TerrainChunk& slot = chunks_[(size_t)id];
-        const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
-        if (!c) {
-            // Not loaded: free its buffers. They are made again if the chunk comes back.
-            if (slot.vao) releaseChunk(slot);
-            continue;
-        }
-        if (slot.version != c->version) {
-            slot.version = c->version;
-            slot.bounds = chunkBounds(t, *c);
-            slot.step = 0;
-        }
-        if (!chunkVisible(planes, slot.bounds)) continue;
-
-        const float mx = 0.5f * (slot.bounds.x0 + slot.bounds.x1);
-        const float my = 0.5f * (slot.bounds.minY + slot.bounds.maxY);
-        const float mz = 0.5f * (slot.bounds.z0 + slot.bounds.z1);
-        const float dx = mx - ex, dy = my - ey, dz = mz - ez;
-        const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
-        if (slot.step != step && builds < MAX_BUILDS_PER_FRAME) {
-            buildChunk(t, *c, id, step);
-            ++builds;
-        }
-        if (slot.step == 0) continue;   // not built yet, drawn once it is
-        glBindVertexArray(slot.vao);
-        glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
-    }
-    glBindVertexArray(0);
-
-    // The sea: a translucent plane over the whole map, so the seabed shows through it
-    const float s = (float)t.size();
-    Batch sea;
-    sea.quad({ 0.0f, SEA_Y, 0.0f }, { s, SEA_Y, 0.0f }, { s, SEA_Y, s }, { 0.0f, SEA_Y, s },
-             RGBA{ 0.16f, 0.36f, 0.58f, 0.55f });
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(GL_FALSE);
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, sea.v.size() * sizeof(Vertex), sea.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)sea.v.size());
-    glBindVertexArray(0);
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
 }
 
 void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
@@ -1164,6 +1014,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const float sunLen = std::sqrt(sunDir[0] * sunDir[0] + sunDir[1] * sunDir[1] + sunDir[2] * sunDir[2]);
         for (float& c : sunDir) c /= sunLen;
         const float moonDir[3] = { -sunDir[0], -sunDir[1], -sunDir[2] };
+        skySun_[0] = sunDir[0];
+        skySun_[1] = sunDir[1];
+        skySun_[2] = sunDir[2];
 
         auto smooth = [](float e0, float e1, float x) {
             float t = std::clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);

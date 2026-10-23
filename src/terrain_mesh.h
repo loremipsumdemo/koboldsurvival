@@ -9,8 +9,9 @@
 // OpenGL in it, so the meshes can be checked without a window.
 
 struct TerrainVertex {
-    float x, y, z;
-    float r, g, b, a;   // color, with the lighting already applied
+    float x, y, z;      // position
+    float nx, ny, nz;   // normal, in the editor's units, so slopes shade and turn to rock as they do there
+    float r, g, b;      // ground color, with vegetation, before lighting
 };
 
 struct ChunkMesh {
@@ -26,6 +27,7 @@ struct ChunkBounds {
 
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c);
 
-// Builds a chunk at a detail step. Vertical skirts hang from the edges that border another
-// chunk, so a coarse chunk and a fine one next to it leave no cracks. Map edges get none.
+// Builds a chunk at a detail step. Vertical skirts hang from every edge: short ones where the edge borders
+// another chunk, so a coarse chunk and a fine one next to it leave no cracks, and walls down to the seabed
+// on the map's border.
 void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out);

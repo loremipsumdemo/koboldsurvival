@@ -1,22 +1,34 @@
 #pragma once
 
 // The game's world format. A world is a folder holding:
-//   world.txt             plain text: format, name, created, size in tiles, chunk size, height scale
+//   world.txt             plain text: format, name, created, size in tiles, chunk size, height scale, seabed depth
+//   look.json             the editor's look the world was saved with: sky, sun, rock and water colors, water motion
+//   surface.ksrf          the two surface tiles the ground and the sea are drawn with
 //   r.<rx>.<rz>.kreg      region files, each holding 16 x 16 chunks (1024 tiles)
 // A chunk is read on its own, so a large world never has to be in memory at once.
 // Worlds are kept in the maps folder beside the game, one folder per world.
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
 
 #include "chunk.h"
+#include "theme/theme.hpp"
 
 struct WorldInfo {
     std::string name;            // the name the world was saved under
     long long created = 0;       // when it was saved, milliseconds since 1970; 0 if unknown
     int size = 0;                // tiles per side
-    float heightScale = 1.0f;    // how the stored heights were scaled from the tool (for reference)
+    float heightScale = 1.0f;    // stored heights are the editor's world units times this
+    float floorY = -1.0f;        // height of the seabed beyond the map, in stored units
+};
+
+// The look a world is drawn with, and the surface tiles the ground and sea use
+struct WorldSurface {
+    wm::Look look;               // the editor's look, from look.json
+    std::vector<uint8_t> ground; // ground tile, RGBA8, from surface.ksrf
+    std::vector<uint8_t> water;  // sea tile, RGBA8
 };
 
 // One world in a maps folder
@@ -44,3 +56,9 @@ bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz,
 // Chunks past the edge of the map are written empty.
 bool writeWorld(const std::string& folder, const WorldInfo& info,
                 const std::function<void(int cx, int cz, ChunkData& c)>& makeChunk, std::string& err);
+
+// Writes the look and surface tiles into a world folder. Call after writeWorld.
+bool writeWorldSurface(const std::string& folder, const WorldSurface& s, std::string& err);
+
+// Reads the look and surface tiles back. Both are needed: a folder without them is not a world.
+bool readWorldSurface(const std::string& folder, WorldSurface& out, std::string& err);

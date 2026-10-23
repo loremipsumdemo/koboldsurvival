@@ -1,4 +1,5 @@
 #include "terrain.h"
+#include "render/surface_pixels.hpp"
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -33,6 +34,17 @@ ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
     return c;
 }
 
+// The editor's default look and surface tiles, for a map that has none of its own
+const WorldSurface& DefaultSurface() {
+    static const WorldSurface s = [] {
+        WorldSurface d;
+        d.ground = wm::SurfaceTilePixels(wm::kGroundTileSpec);
+        d.water = wm::SurfaceTilePixels(wm::kWaterTileSpec);
+        return d;
+    }();
+    return s;
+}
+
 } // namespace
 
 Terrain::Terrain(int size) {
@@ -53,11 +65,22 @@ void Terrain::load(const MapData& m) {
             chunks_[(size_t)cz * cps_ + cx] = std::move(c);
         }
     }
+    // A premade map is stored in whole units, with the editor's default look and tiles and no vegetation
+    heightScale_ = 1.0f;
+    floorY_ = m.heights.empty() ? -2.0f : *std::min_element(m.heights.begin(), m.heights.end()) - 2.0f;
+    surface_ = DefaultSurface();
+    surfaceVersion_ = nextVersion_++;
 }
 
 bool Terrain::openWorld(const std::string& folder, std::string& err) {
     WorldInfo info;
     if (!readWorldInfo(folder, info, err)) return false;
+    WorldSurface surface;
+    if (!readWorldSurface(folder, surface, err)) return false;
+    surface_ = std::move(surface);
+    surfaceVersion_ = nextVersion_++;
+    heightScale_ = info.heightScale;
+    floorY_ = info.floorY;
     size_ = info.size;
     cps_ = ::chunksPerSide(size_);
     chunks_.clear();

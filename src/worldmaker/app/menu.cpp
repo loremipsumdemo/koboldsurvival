@@ -813,7 +813,7 @@ bool GameWorldNamed(Ctx& c, const std::string& name) {
 void SaveGameWorld(Ctx& c, const std::string& name) {
     std::string path, err;
     c.m.gameWorldAsk = false;
-    if (c.s.exportMap && c.s.exportMap(c.s.world, name, path, err)) {
+    if (c.s.exportMap && c.s.exportMap(c.s.world, c.look, name, path, err)) {
         c.m.status = "saved game world " + name;
         c.m.gameWorldsStale = true;
     } else {

@@ -6,21 +6,31 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <vector>
 
+#include "render/surface_pixels.hpp"
+#include "theme/themefile.hpp"
+
 namespace {
 
-constexpr uint32_t FORMAT_VERSION = 1;
+constexpr uint32_t FORMAT_VERSION = 2;
 const char REGION_MAGIC[4] = { 'K', 'R', 'E', 'G' };
 constexpr size_t REGION_HEADER = 16;   // magic, format version, region x, region z
 constexpr size_t CORNERS = (size_t)CHUNK_CORNERS * CHUNK_CORNERS;
 constexpr size_t TILES = (size_t)CHUNK_TILES * CHUNK_TILES;
 constexpr size_t WALK_BYTES = TILES / 8;
-// One chunk record: a present flag, the lowest and highest height, 16-bit heights, ground types and
-// packed walkability
-constexpr size_t RECORD = 1 + 4 + 4 + CORNERS * 2 + TILES + WALK_BYTES;
+// One chunk record: a present flag, the lowest and highest height, 16-bit heights, ground types,
+// vegetation density and packed walkability
+constexpr size_t RECORD = 1 + 4 + 4 + CORNERS * 2 + TILES + TILES + WALK_BYTES;
 constexpr int REGION_SLOTS = REGION_CHUNKS * REGION_CHUNKS;
+
+const char LOOK_FILE[] = "look.json";
+const char SURFACE_FILE[] = "surface.ksrf";
+const char SURFACE_MAGIC[4] = { 'K', 'S', 'R', 'F' };
+constexpr uint32_t SURFACE_VERSION = 1;
+constexpr size_t SURFACE_HEADER = 12;   // magic, format version, tile size
 
 void putU32(uint8_t* p, uint32_t v) {
     for (int i = 0; i < 4; ++i) p[i] = (uint8_t)((v >> (8 * i)) & 0xFF);
@@ -61,7 +71,10 @@ void encodeRecord(const ChunkData& c, uint8_t* p) {
     }
     uint8_t* bp = hp + CORNERS * 2;
     std::memcpy(bp, c.biome.data(), TILES);
-    uint8_t* wp = bp + TILES;
+    uint8_t* vp = bp + TILES;
+    if (c.veg.size() == TILES) std::memcpy(vp, c.veg.data(), TILES);
+    else std::memset(vp, 0, TILES);
+    uint8_t* wp = vp + TILES;
     std::memset(wp, 0, WALK_BYTES);
     for (size_t i = 0; i < TILES; ++i) {
         if (c.walk[i]) wp[i / 8] |= (uint8_t)(1u << (i % 8));
@@ -79,7 +92,9 @@ void decodeRecord(const uint8_t* p, ChunkData& c) {
     }
     const uint8_t* bp = hp + CORNERS * 2;
     c.biome.assign(bp, bp + TILES);
-    const uint8_t* wp = bp + TILES;
+    const uint8_t* vp = bp + TILES;
+    c.veg.assign(vp, vp + TILES);
+    const uint8_t* wp = vp + TILES;
     c.walk.assign(TILES, 0);
     for (size_t i = 0; i < TILES; ++i) c.walk[i] = (wp[i / 8] >> (i % 8)) & 1u;
 }
@@ -133,11 +148,14 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) 
             chunkOk = t == CHUNK_TILES;
         } else if (key == "heightScale") {
             ls >> info.heightScale;
+        } else if (key == "floorY") {
+            ls >> info.floorY;
         }
     }
     if (!formatOk) { err = "world.txt is not a version " + std::to_string(FORMAT_VERSION) + " world"; return false; }
     if (!chunkOk) { err = "world.txt uses a different chunk size"; return false; }
     if (info.size < 4) { err = "world.txt has no valid size"; return false; }
+    if (!(info.heightScale > 0.0f)) { err = "world.txt has no valid height scale"; return false; }
     out = info;
     return true;
 }
@@ -237,10 +255,51 @@ bool writeWorld(const std::string& folder, const WorldInfo& info,
     txt << "size " << info.size << "\n";
     txt << "chunk " << CHUNK_TILES << "\n";
     txt << "heightScale " << info.heightScale << "\n";
+    txt << "floorY " << info.floorY << "\n";
     const std::string s = txt.str();
     if (!writeFileAtomic(fs::path(folder) / "world.txt", std::vector<uint8_t>(s.begin(), s.end()))) {
         err = "could not write world.txt";
         return false;
     }
+    return true;
+}
+
+bool writeWorldSurface(const std::string& folder, const WorldSurface& s, std::string& err) {
+    namespace fs = std::filesystem;
+    if (s.ground.size() != wm::SURFACE_TILE_BYTES || s.water.size() != wm::SURFACE_TILE_BYTES) {
+        err = "the surface tiles are the wrong size";
+        return false;
+    }
+    if (!wm::SaveLookFile(s.look, (fs::path(folder) / LOOK_FILE).string(), err)) return false;
+
+    std::vector<uint8_t> bytes(SURFACE_HEADER + 2 * wm::SURFACE_TILE_BYTES);
+    std::memcpy(bytes.data(), SURFACE_MAGIC, 4);
+    putU32(bytes.data() + 4, SURFACE_VERSION);
+    putU32(bytes.data() + 8, (uint32_t)wm::SURFACE_TILE_SIZE);
+    std::memcpy(bytes.data() + SURFACE_HEADER, s.ground.data(), wm::SURFACE_TILE_BYTES);
+    std::memcpy(bytes.data() + SURFACE_HEADER + wm::SURFACE_TILE_BYTES, s.water.data(), wm::SURFACE_TILE_BYTES);
+    if (!writeFileAtomic(fs::path(folder) / SURFACE_FILE, bytes)) {
+        err = "could not write " + std::string(SURFACE_FILE);
+        return false;
+    }
+    return true;
+}
+
+bool readWorldSurface(const std::string& folder, WorldSurface& out, std::string& err) {
+    namespace fs = std::filesystem;
+    if (!wm::LoadLookFile((fs::path(folder) / LOOK_FILE).string(), out.look, err)) return false;
+
+    std::ifstream in(fs::path(folder) / SURFACE_FILE, std::ios::binary);
+    if (!in) { err = "no " + std::string(SURFACE_FILE) + " in " + folder; return false; }
+    const std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    const bool sized = bytes.size() == SURFACE_HEADER + 2 * wm::SURFACE_TILE_BYTES;
+    if (!sized || std::memcmp(bytes.data(), SURFACE_MAGIC, 4) != 0 ||
+        getU32(bytes.data() + 4) != SURFACE_VERSION || getU32(bytes.data() + 8) != (uint32_t)wm::SURFACE_TILE_SIZE) {
+        err = std::string(SURFACE_FILE) + " is not a version " + std::to_string(SURFACE_VERSION) + " surface";
+        return false;
+    }
+    const uint8_t* g = bytes.data() + SURFACE_HEADER;
+    out.ground.assign(g, g + wm::SURFACE_TILE_BYTES);
+    out.water.assign(g + wm::SURFACE_TILE_BYTES, g + 2 * wm::SURFACE_TILE_BYTES);
     return true;
 }

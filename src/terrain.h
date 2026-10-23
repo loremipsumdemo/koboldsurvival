@@ -51,6 +51,14 @@ public:
     // is read from the folder for this call only, so nothing extra stays in memory. False if the tile
     // is outside the level or its chunk can't be read.
     bool tileGround(int x, int y, bool& walkable, float& height) const;
+    // The look and surface tiles the level is drawn with. A whole map in memory uses the editor's default.
+    const WorldSurface& surface() const { return surface_; }
+    // Changes when the surface changes (a new level), so the renderer knows to upload it again
+    uint32_t surfaceVersion() const { return surfaceVersion_; }
+    // Stored heights are the editor's world units times this
+    float heightScale() const { return heightScale_; }
+    // Height of the seabed beyond the map, in stored units
+    float floorY() const { return floorY_; }
     // Ground type of a tile, or BIOME_NONE
     uint8_t biome(int x, int y) const;
 
@@ -73,4 +81,8 @@ private:
     std::string folder_;
     WorldInfo info_;
     uint32_t nextVersion_ = 1;
+    WorldSurface surface_;
+    uint32_t surfaceVersion_ = 0;
+    float heightScale_ = 1.0f;
+    float floorY_ = -1.0f;
 };

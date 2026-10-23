@@ -47,6 +47,7 @@ set(WORLDTOOL_SOURCES
     src/worldmaker/render/terrain.cpp
     src/worldmaker/render/grid.cpp
     src/worldmaker/render/surface_tile.cpp
+    src/worldmaker/render/surface_pixels.cpp
     src/worldmaker/render/skybox.cpp
     src/worldmaker/render/gpu_timer.cpp
     src/worldmaker/theme/theme.cpp
@@ -62,6 +63,7 @@ set(WORLDTOOL_SOURCES
 add_executable(koboldgame
     src/main.cpp
     src/renderer.cpp
+    src/renderer_terrain.cpp
     src/items.cpp
     src/inventory.cpp
     src/combat.cpp

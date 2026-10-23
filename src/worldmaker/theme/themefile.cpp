@@ -75,9 +75,14 @@ bool SaveLookFile(const Look& look, const std::string& path, std::string& err) {
             std::snprintf(buf, sizeof buf, "%.6g", p[0]);
             out << buf;
         } else {
-            char buf[96];
-            std::snprintf(buf, sizeof buf, "[%.6g, %.6g, %.6g]", p[0], p[1], p[2]);
-            out << buf;
+            // Every value of the field: colors have three, color_opacity has one per color slot
+            out << "[";
+            for (int i = 0; i < f.count; ++i) {
+                char buf[32];
+                std::snprintf(buf, sizeof buf, "%s%.6g", i ? ", " : "", p[i]);
+                out << buf;
+            }
+            out << "]";
         }
     }
     out << "\n}\n";
@@ -170,13 +175,14 @@ bool LoadLookFile(const std::string& path, Look& look, std::string& err) {
         const std::size_t p = FindValue(text, fld.name);
         if (p == std::string::npos) continue;   // missing keys keep their current value
 
-        float vals[3] = {0.0f, 0.0f, 0.0f};
-        if (ReadValue(text, p, vals, fld.count) != fld.count) {
+        // Sized to the field: color_opacity has one value per color slot, more than a color's three
+        std::vector<float> vals(static_cast<std::size_t>(fld.count), 0.0f);
+        if (ReadValue(text, p, vals.data(), fld.count) != fld.count) {
             err = std::string("bad value for ") + fld.name;
             return false;
         }
         float* dst = LookValue(loaded, fld);
-        for (int i = 0; i < fld.count; ++i) dst[i] = Limit(vals[i], fld.lo, fld.hi);
+        for (int i = 0; i < fld.count; ++i) dst[i] = Limit(vals[static_cast<std::size_t>(i)], fld.lo, fld.hi);
     }
 
     look = loaded;

@@ -14,6 +14,7 @@
 #include "map.h"
 #include "timefmt.h"
 #include "world_format.h"
+#include "render/surface_pixels.hpp"
 
 #include "app/console.hpp"
 #include "app/mapview.hpp"
@@ -84,7 +85,7 @@ float GameCornerHeight(const World& w, int gx, int gz) {
 // straight from the tool's heights. Land under the sea and bare rock are blocked, and so is any tile
 // whose corners differ in height by more than kMaxTileStep. outPath gets the folder's full path.
 // A world already saved under this name is replaced in its own folder, as the game's saves are.
-bool ExportGameWorld(const World& w, const std::string& name, const std::string& mapDir,
+bool ExportGameWorld(const World& w, const Look& look, const std::string& name, const std::string& mapDir,
                      std::string& outPath, std::string& err) {
     namespace fs = std::filesystem;
     const int n = w.size;
@@ -123,6 +124,10 @@ bool ExportGameWorld(const World& w, const std::string& name, const std::string&
     info.created = now;
     info.size = n;
     info.heightScale = kGameHeightScale;
+    // The seabed beyond the map sits two editor units under the lowest ground, as the editor draws it
+    float lowest = w.height[0];
+    for (float h : w.height) lowest = std::min(lowest, h);
+    info.floorY = std::clamp((lowest - 2.0f - w.seaLevel) * kGameHeightScale, -MAX_HEIGHT, MAX_HEIGHT);
     const bool ok = writeWorld(temp, info, [&](int cx, int cz, ChunkData& c) {
         for (int j = 0; j < CHUNK_CORNERS; ++j) {
             for (int i = 0; i < CHUNK_CORNERS; ++i) {
@@ -139,6 +144,8 @@ bool ExportGameWorld(const World& w, const std::string& name, const std::string&
                 const size_t t = static_cast<size_t>(j) * CHUNK_TILES + i;
                 const wm::Biome b = static_cast<wm::Biome>(w.biome[k]);
                 c.biome[t] = GameBiome(b);
+                c.veg[t] = w.veg.size() == w.height.size()
+                    ? static_cast<uint8_t>(std::lround(std::clamp(w.veg[k], 0.0f, 1.0f) * 255.0f)) : 0;
 
                 const size_t c00 = static_cast<size_t>(j) * CHUNK_CORNERS + i;
                 const float corners[4] = { c.heights[c00], c.heights[c00 + 1],
@@ -153,6 +160,15 @@ bool ExportGameWorld(const World& w, const std::string& name, const std::string&
         }
     }, err);
     if (!ok) {
+        fs::remove_all(temp, ec);
+        return false;
+    }
+    // The look and the two surface tiles, so the game draws the world the way the editor showed it
+    WorldSurface surface;
+    surface.look = look;
+    surface.ground = SurfaceTilePixels(kGroundTileSpec);
+    surface.water = SurfaceTilePixels(kWaterTileSpec);
+    if (!writeWorldSurface(temp, surface, err)) {
         fs::remove_all(temp, ec);
         return false;
     }
@@ -298,8 +314,9 @@ bool Tool::Init(SDL_Window* win, const std::vector<unsigned char>& font, const s
 
     s.session.worldsDir = dataDir + "/worlds";
     s.session.themesDir = dataDir + "/themes";
-    s.session.exportMap = [mapDir](const World& w, const std::string& name, std::string& path, std::string& e) {
-        return ExportGameWorld(w, name, mapDir, path, e);
+    s.session.exportMap = [mapDir](const World& w, const Look& look, const std::string& name, std::string& path,
+                                   std::string& e) {
+        return ExportGameWorld(w, look, name, mapDir, path, e);
     };
     s.session.listGameWorlds = [mapDir](bool byName, bool ascending) {
         std::vector<WorldEntry> found = listWorlds(mapDir);

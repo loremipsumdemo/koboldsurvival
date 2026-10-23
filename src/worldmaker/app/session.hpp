@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 
+#include "theme/theme.hpp"
 #include "world/world.hpp"
 
 namespace wm {
@@ -71,7 +72,8 @@ struct Session {
 
     // Writes a world as a game world folder, under the name typed in the menu. Set by the host, which
     // knows the game's world format. outPath gets the folder written. Returns false with err on failure.
-    std::function<bool(const World& w, const std::string& name, std::string& outPath, std::string& err)> exportMap;
+    // The look is saved with the world, so the game draws the ground and sea the way the editor showed them.
+    std::function<bool(const World& w, const Look& look, const std::string& name, std::string& outPath, std::string& err)> exportMap;
 
     // The game worlds in the maps folder, sorted by name or by created date. Set by the host.
     std::function<std::vector<GameWorldEntry>(bool byName, bool ascending)> listGameWorlds;
