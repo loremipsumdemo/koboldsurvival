@@ -13,7 +13,6 @@ enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTo
 enum class Action {
     Continue, NewGame, LoadGame, Settings, Quit,
     Resume, Save, Load, LoadSlot, ReturnToTitle, Back,
-    CycleDisplay, CycleResolution, ToggleEdge, CycleAutosave,
     ConfirmName,      // Save button in the save/load popout
     CancelName,       // Close button in the save/load popout
     OverwriteYes, OverwriteNo,
@@ -37,7 +36,6 @@ enum class Action {
     DevReset,             // restores the default atmosphere
     MapSortName, MapSortTime,   // column headers in the New Game list
     MapScrollUp, MapScrollDown,  // the "..." rows at the ends of the New Game list
-    ToggleUnitNames,             // Settings: shows or hides each unit's name over its head
     // The starting party menu, after a map is picked in New Game
     PartyPick,        // a unit in the left column; param is its index
     PartyTabPick,     // a tab on the right; param is the tab

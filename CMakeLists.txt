@@ -31,6 +31,15 @@ FetchContent_Declare(stb
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(stb)
 
+# miniaudio: background music. It decodes MP3 itself and plays through the system's audio API, so it needs
+# no other libraries. The pinned release keeps builds reproducible.
+set(MINIAUDIO_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(miniaudio
+    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+    GIT_TAG 0.11.25
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(miniaudio)
+
 # The world tool (formerly the standalone worldmaker), hosted by the map editor screen.
 # Its code lives in the wm namespace, under src/worldmaker.
 set(WORLDTOOL_SOURCES
@@ -80,7 +89,11 @@ add_executable(koboldgame
     src/map.cpp
     src/model.cpp
     src/pak.cpp
-    src/app.rc          # embeds the exe icon (src/app.ico) on Windows
+    src/audio.cpp
+    src/display.cpp
+    src/settings_menu.cpp
+    src/settings_draw.cpp
+    src/app.rc         # embeds the exe icon (src/app.ico) on Windows
     ${WORLDTOOL_SOURCES}
 )
 
@@ -102,6 +115,7 @@ target_link_libraries(koboldgame PRIVATE
     SDL3_image::SDL3_image
     OpenGL::GL
     GLEW::GLEW
+    miniaudio
 )
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.

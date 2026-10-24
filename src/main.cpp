@@ -25,9 +25,12 @@
 #include "renderer.h"
 #include "resources.h"
 #include "map.h"
+#include "audio.h"
 #include "pak.h"
 #include "savegame.h"
 #include "settings.h"
+#include "settings_menu.h"
+#include "display.h"
 #include "inventory.h"
 #include "party.h"
 #include "party_ui.h"
@@ -824,8 +827,7 @@ std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, double cl
 }
 
 // Buttons for the main menus, in pixels
-std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSettings& st,
-                                  const std::vector<SaveSummary>& saves) {
+std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves) {
     const float s = H / 720.0f;
     const float bh = 56.0f * s, gap = 14.0f * s;
     const float bw = 380.0f * s;
@@ -848,18 +850,6 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
         add("Quit", Action::Quit, x, y);
         break;
     }
-    case Screen::Settings: {
-        float x = (W - bw) * 0.5f, y = H * 0.30f;
-        add(std::string("Display: ") + DISPLAY_MODE_NAMES[st.displayMode], Action::CycleDisplay, x, y); y += bh + gap;
-        add("Resolution: " + std::to_string(RESOLUTIONS[st.resolutionIndex].w) + "x"
-                           + std::to_string(RESOLUTIONS[st.resolutionIndex].h),
-            Action::CycleResolution, x, y, st.displayMode != DISPLAY_BORDERLESS); y += bh + gap;
-        add(std::string("Edge scrolling: ") + (st.edgeScroll ? "On" : "Off"), Action::ToggleEdge, x, y); y += bh + gap;
-        add("Autosave: " + std::to_string(st.autosaveMinutes) + " min", Action::CycleAutosave, x, y); y += bh + gap;
-        add(std::string("Unit names: ") + (st.showUnitNames ? "On" : "Off"), Action::ToggleUnitNames, x, y); y += bh + gap;
-        add("Back", Action::Back, x, y);
-        break;
-    }
     case Screen::Pause: {
         float x = (W - bw) * 0.5f, y = H * 0.36f;
         add("Resume", Action::Resume, x, y);                     y += bh + gap;
@@ -871,6 +861,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
         break;
     }
     case Screen::Playing:
+    case Screen::Settings:
     case Screen::DevTools:
     case Screen::MapSelect:
     case Screen::MapEditor:
@@ -878,6 +869,26 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const GameSetting
         break;
     }
     return out;
+}
+
+// The track each screen plays, a file name in the BGM folder. nullptr keeps whatever is playing, so the menus
+// opened from the title (New Game, Load Game, Settings) do not restart it. "" is silence. It is matched to the
+// current screen once per frame, and a game or the editor ends the title track by stopping it when it starts.
+const char* musicFor(Screen screen) {
+    switch (screen) {
+    case Screen::Title:
+        return "title.mp3";
+    case Screen::Settings:
+    case Screen::MapSelect:
+    case Screen::PartySetup:
+    case Screen::Pause:
+    case Screen::DevTools:
+        return nullptr;
+    case Screen::Playing:
+    case Screen::MapEditor:
+        return "";
+    }
+    return "";
 }
 
 } // namespace
@@ -927,7 +938,6 @@ int main(int, char**) {
     SDL_Window* window = SDL_CreateWindow("RTS", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, ctx);
-    SDL_GL_SetSwapInterval(1);
 
     glewExperimental = GL_TRUE;
     GLenum glewErr = glewInit();
@@ -939,7 +949,9 @@ int main(int, char**) {
 
     moveOldMapsFolder();
     GameSettings settings = loadSettings(SETTINGS_PATH);
-    applyDisplay(window, settings);
+    DisplayInfo displayInfo = queryDisplays(settings.monitor);
+    applyDisplay(window, settings, displayInfo);
+    SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
 
     // ---- Loading phase: textures and models load before the title screen appears ----
     Renderer renderer;
@@ -984,6 +996,7 @@ int main(int, char**) {
 
     Screen screen = Screen::Title;
     Screen backScreen = Screen::Title;    // where Back goes from Settings
+    SettingsMenuState settingsUi;         // the Settings screen's tab, open dropdown and dragged slider
 
     // The starting party: the units a new game begins with, edited in the party menu. It is rolled the
     // first time that menu opens, then kept for the session, so edits survive a trip back to the map list.
@@ -1115,6 +1128,8 @@ int main(int, char**) {
     auto startMapLevel = [&](const MapChoice& choice) {
         std::string err;
         levelSeed = (unsigned)std::time(nullptr);
+        // The title music ends as a new game starts, before its level loads
+        audio::stopMusic();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
             showNotice("Could not load " + choice.name + ": " + err);
@@ -1195,6 +1210,8 @@ int main(int, char**) {
         }
         const MapChoice choice = *found;
         std::string err;
+        // The title music ends as a saved game starts, before its level loads
+        audio::stopMusic();
         if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
             showNotice("Map \"" + choice.name + "\" could not be loaded: " + err);
             refreshSaves();
@@ -1273,6 +1290,8 @@ int main(int, char**) {
 
     // Opens the world tool on a fresh world. The tool is set up the first time the editor opens.
     auto openEditor = [&]() {
+        // The editor has no music of its own, so the title track ends here
+        audio::stopMusic();
         // Start clean: no units left over from a game
         world = World{};
         clearCombatText();
@@ -1302,6 +1321,70 @@ int main(int, char**) {
     auto leaveEditor = [&]() {
         wmTool.End();
         screen = Screen::Title;
+    };
+
+    // ---- Settings: the audio buses and the window follow the settings as they change ----
+    auto applyAudio = [&]() {
+        audio::setBus(audio::Bus::Music, settings.musicVolume, settings.musicOn);
+        audio::setBus(audio::Bus::Ambient, settings.ambientVolume, settings.ambientOn);
+        audio::setBus(audio::Bus::Effects, settings.effectsVolume, settings.effectsOn);
+    };
+    // Reads the monitors again, then makes the window show the settings, which are normalized to what it can show
+    auto applyVideo = [&]() {
+        displayInfo = queryDisplays(settings.monitor);
+        applyDisplay(window, settings, displayInfo);
+        SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
+    };
+    auto saveSettingsFile = [&]() { saveSettings(settings, SETTINGS_PATH); };
+    // Applies what a change touched. It is saved when the change is final: a slider saves when released.
+    auto settingsCommit = [&](const SettingsChange& c, bool save) {
+        if (!c.any) return;
+        if (c.display) applyVideo();
+        else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
+        if (c.audio) applyAudio();
+        if (save) saveSettingsFile();
+    };
+    auto leaveSettings = [&]() {
+        settingsUi.openRow = -1;
+        settingsUi.dragRow = -1;
+        screen = backScreen;
+    };
+    // A left click on the Settings screen: a tab, a dropdown or one of its options, a toggle, a slider or a button
+    auto settingsClick = [&](float x, float y, int W, int H) {
+        const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+        const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
+        switch (c.kind) {
+        case ClickKind::Tab:
+            settingsSelectTab(settingsUi, static_cast<SettingsTab>(c.index));
+            break;
+        case ClickKind::OpenDropdown:
+            settingsOpenDropdown(settingsUi, rows, c.row);
+            break;
+        case ClickKind::CloseDropdown:
+            settingsCloseDropdown(settingsUi);
+            break;
+        case ClickKind::PickOption:
+            settingsCloseDropdown(settingsUi);
+            settingsCommit(pickOption(rows[c.row].id, rows[c.row].options[c.index], settings), true);
+            break;
+        case ClickKind::ToggleRow:
+        case ClickKind::LevelToggle:
+            settingsCommit(setRowOn(rows[c.row].id, !rows[c.row].on, settings), true);
+            break;
+        case ClickKind::LevelDrag:
+            settingsUi.dragRow = c.row;
+            settingsCommit(setRowLevel(rows[c.row].id, c.index, settings), false);
+            break;
+        case ClickKind::Defaults:
+            settingsCloseDropdown(settingsUi);
+            settingsCommit(resetAllSettings(settings), true);
+            break;
+        case ClickKind::Back:
+            leaveSettings();
+            break;
+        case ClickKind::None:
+            break;
+        }
     };
 
     // Runs a button's action
@@ -1604,6 +1687,8 @@ int main(int, char**) {
         case Action::Settings:
             backScreen = screen;
             screen = Screen::Settings;
+            settingsUi.openRow = -1;
+            settingsUi.dragRow = -1;
             return;
         case Action::Back:
             stopNameEdit();
@@ -1621,33 +1706,21 @@ int main(int, char**) {
         case Action::Quit:
             running = false;
             return;
-        case Action::CycleDisplay:
-            settings.displayMode = (settings.displayMode + 1) % DISPLAY_MODE_COUNT;
-            applyDisplay(window, settings);
-            break;
-        case Action::CycleResolution:
-            settings.resolutionIndex = (settings.resolutionIndex + 1) % RESOLUTION_COUNT;
-            applyDisplay(window, settings);
-            break;
-        case Action::ToggleEdge:
-            settings.edgeScroll = !settings.edgeScroll;
-            break;
-        case Action::ToggleUnitNames:
-            settings.showUnitNames = !settings.showUnitNames;
-            break;
-        case Action::CycleAutosave: {
-            int idx = 0;
-            for (int i = 0; i < AUTOSAVE_COUNT; ++i) {
-                if (AUTOSAVE_CHOICES[i] == settings.autosaveMinutes) idx = i;
-            }
-            settings.autosaveMinutes = AUTOSAVE_CHOICES[(idx + 1) % AUTOSAVE_COUNT];
-            break;
         }
-        }
-        saveSettings(settings, SETTINGS_PATH);
     };
 
+    // Without an audio output the game runs silent, so this result is not checked
+    audio::init();
+    applyAudio();
+
     while (running) {
+        // Taken at the top of the frame, for the frame rate limit at its end
+        const auto frameStart = std::chrono::steady_clock::now();
+
+        // Music follows the screen. A screen that names a track starts it, nullptr keeps what is playing, and
+        // "" is silence. Each request is tried once, so a missing track is not reloaded every frame.
+        if (const char* track = musicFor(screen)) audio::playMusic(track);
+
         int winW, winH;
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
         viewH = winH;
@@ -1811,7 +1884,9 @@ int main(int, char**) {
                     } else if (screen == Screen::Pause) {
                         screen = Screen::Playing;
                     } else if (screen == Screen::Settings) {
-                        screen = backScreen;
+                        // Escape closes an open dropdown first, then leaves the menu
+                        if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
+                        else leaveSettings();
                     } else if (screen == Screen::DevTools) {
                         screen = Screen::Pause;
                     } else if (screen == Screen::MapSelect) {
@@ -1835,6 +1910,12 @@ int main(int, char**) {
                     if (partyUi.dropKind != DropKind::None) {
                         const int count = (int)dropdownEntries(party, partyUi).size();
                         partyUi.dropScroll = clampDropScroll(partyUi.dropScroll - (int)e.wheel.y, count);
+                    }
+                } else if (screen == Screen::Settings) {
+                    // Scrolls an open dropdown. Nothing else on the menu scrolls.
+                    if (settingsUi.openRow >= 0) {
+                        const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+                        settingsScrollDropdown(settingsUi, layoutSettings(winW, winH, rows, settingsUi), (int)e.wheel.y);
                     }
                 } else if (screen == Screen::Playing && combatLogHovered(winW, winH)) {
                     // Scrolls the combat log, three lines a notch. Wheel up goes back in time.
@@ -1901,6 +1982,11 @@ int main(int, char**) {
                     break;
                 }
 
+                if (screen == Screen::Settings) {
+                    if (e.button.button == SDL_BUTTON_LEFT) settingsClick(e.button.x, e.button.y, winW, winH);
+                    break;
+                }
+
                 if (screen != Screen::Playing) {
                     // Menus: a left click runs the enabled button under the cursor
                     if (e.button.button == SDL_BUTTON_LEFT) {
@@ -1908,7 +1994,7 @@ int main(int, char**) {
                             ? layoutDevTools(winW, winH, sky, gs.clockSeconds)
                             : screen == Screen::MapSelect
                             ? layoutMapPanel(winW, winH, maps, mapOffset)
-                            : layoutButtons(screen, winW, winH, settings, saves);
+                            : layoutButtons(screen, winW, winH, saves);
                         for (const Button& b : menuButtons) {
                             if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                                 performAction(b.action, b.param);
@@ -2089,6 +2175,11 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                // A slider let go of: save its final level
+                if (e.button.button == SDL_BUTTON_LEFT && settingsUi.dragRow >= 0) {
+                    settingsUi.dragRow = -1;
+                    saveSettingsFile();
+                }
                 if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
                     itemDrag = false;
                     if (world.has<Unit>(dragUnit)) {
@@ -2138,6 +2229,21 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_MOTION:
+                // A slider follows the mouse while its button is held
+                if (screen == Screen::Settings && settingsUi.dragRow >= 0) {
+                    if (e.motion.state & SDL_BUTTON_LMASK) {
+                        const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+                        const SettingsLayout L = layoutSettings(winW, winH, rows, settingsUi);
+                        if (settingsUi.dragRow < (int)L.rows.size()) {
+                            const int level = levelAtX(L.rows[settingsUi.dragRow].track, e.motion.x);
+                            settingsCommit(setRowLevel(rows[settingsUi.dragRow].id, level, settings), false);
+                        }
+                    } else {
+                        // The button came up outside the window, so no button-up arrived: save here
+                        settingsUi.dragRow = -1;
+                        saveSettingsFile();
+                    }
+                }
                 if (screen == Screen::Playing) {
                     if (screen == Screen::Playing && leftDown) {
                         float dx = e.motion.x - pressX, dy = e.motion.y - pressY;
@@ -2224,7 +2330,7 @@ int main(int, char**) {
 
             // Autosave every N minutes of play
             autoTimer += dt;
-            if (autoTimer >= settings.autosaveMinutes * 60.0f) {
+            if (settings.autosaveMinutes > 0 && autoTimer >= settings.autosaveMinutes * 60.0f) {
                 autoTimer = 0.0f;
                 if (autosaveNow()) showNotice("Autosaved");
             }
@@ -2271,18 +2377,19 @@ int main(int, char**) {
             renderer.drawTitleBackground();
             renderer.drawUiText(std::string("Version ") + GAME_VERSION, 16.0f, winH - 44.0f,
                                 RGBA{ 1.0f, 1.0f, 1.0f, 0.8f });
-            drawButtons(layoutButtons(Screen::Title, winW, winH, settings, saves));
+            drawButtons(layoutButtons(Screen::Title, winW, winH, saves));
             renderer.endUi();
             break;
 
-        case Screen::Settings:
+        case Screen::Settings: {
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
             dim(0.45f);
-            renderer.drawUiTextCentered("Settings", winW * 0.5f, winH * 0.18f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            drawButtons(layoutButtons(Screen::Settings, winW, winH, settings, saves));
+            const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+            drawSettingsMenu(renderer, layoutSettings(winW, winH, rows, settingsUi), rows, settingsUi, mouseX, mouseY);
             renderer.endUi();
             break;
+        }
 
         case Screen::Playing:
             renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
@@ -2457,7 +2564,7 @@ int main(int, char**) {
             renderer.beginUi(winW, winH);
             dim(0.55f);
             renderer.drawUiTextCentered("Paused", winW * 0.5f, winH * 0.22f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            drawButtons(layoutButtons(Screen::Pause, winW, winH, settings, saves));
+            drawButtons(layoutButtons(Screen::Pause, winW, winH, saves));
             renderer.endUi();
             break;
         case Screen::DevTools:
@@ -2606,9 +2713,12 @@ int main(int, char**) {
         }
 
         SDL_GL_SwapWindow(window);
+        // Holds the frame to the limit, counted from the frame's start
+        limitFrameRate(frameStart, settings.fpsLimit);
     }
 
     // ---- Shutdown ----
+    audio::shutdown();
     renderer.shutdown();
     TTF_CloseFont(statsRowFont);
     TTF_CloseFont(statsTitleFont);
