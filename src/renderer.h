@@ -133,8 +133,9 @@ public:
     // Items lying on the ground, drawn as billboards over loaded ground (called by drawFrame). Each shows
     // its picture from data/item, or the pink quad when there is none.
     // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
-    // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite.
-    void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
+    // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite. The name
+    // line on top under (mx, my) is drawn highlighted.
+    void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my);
     Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH);
 
     // Each unit's name over its head, in brackets with a drop shadow. Hostile units are shown in red.
@@ -233,15 +234,21 @@ private:
     void drawGroundItems(World& w, const Terrain& t);
 
     // One name box over the items on one tile. Each item has a row, top row first, and the row is
-    // the part of the box that picks that item.
+    // the part of the box that picks that item. dist2 is the squared distance from the camera to the
+    // nearest item on the tile.
     struct GroundStack {
         Rect box;
         std::vector<Entity> items;
         std::vector<std::string> names;
         std::vector<Rect> rows;
+        float dist2 = 0.0f;
     };
-    // The name boxes for the items on loaded, visible ground. Drawing and clicking both use this.
+    // The name boxes for the items on loaded, visible ground, farthest first, so a nearer box is drawn
+    // over the ones behind it. Drawing and clicking both use this.
     std::vector<GroundStack> groundStacks(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
+    // The name line on top under (mx, my), as an index into stacks and its row. A box hides the boxes
+    // behind it, so a line under a nearer box is not found. Returns false when there is none.
+    static bool topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row);
 
     // Cached white text texture for a menu string, created on first use
     HudLine& uiLine(const std::string& s);

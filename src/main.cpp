@@ -2601,7 +2601,9 @@ int main(int, char**) {
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
-            if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) renderer.drawGroundLabels(world, terrain, cam, winW, winH);
+            if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
+                renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
+            }
             {
                 const std::vector<Entity> own = ownUnitList();
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);

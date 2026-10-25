@@ -29,6 +29,9 @@ const RGBA ITEM_PINK{ 1.0f, 0.45f, 0.75f, 1.0f };
 const RGBA LABEL_FILL{ 0.36f, 0.12f, 0.08f, 0.5f };
 const RGBA LABEL_EDGE{ 0.62f, 0.30f, 0.20f, 0.5f };
 const RGBA LABEL_TEXT{ 1.0f, 0.93f, 0.86f, 1.0f };
+// The name under the mouse: a darker cell with gold text
+const RGBA LABEL_HOT_FILL{ 0.12f, 0.04f, 0.02f, 0.85f };
+const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
 
 // World point to pixel coordinates. False if it is behind the camera.
 bool projectPoint(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
@@ -1972,15 +1975,19 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float padX = 7.0f * s, padY = 3.0f * s, gapY = 4.0f * s, lineGap = 2.0f * s;
     const float lineH = listTextHeight("Ag");
+    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+    cam.eye(ex, ey, ez);
 
-    // The items on each tile, with their sprite positions and names
-    struct Seen { Entity e; ItemOnScreen os; std::string name; };
+    // The items on each tile, with their sprite positions, names and squared distance from the camera
+    struct Seen { Entity e; ItemOnScreen os; std::string name; float dist2; };
     std::map<std::pair<int, int>, std::vector<Seen>> tiles;
     for (Entity e : w.view<GroundItem, Transform>()) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
-        Seen seen{ e, ItemOnScreen{}, itemName(gi->item) };
+        Seen seen{ e, ItemOnScreen{}, itemName(gi->item), 0.0f };
+        const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
+        seen.dist2 = dx * dx + dy * dy + dz * dz;
         const TextTex* pic = itemTexture(gi->item);
         if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, seen.os)) continue;
         tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
@@ -1994,11 +2001,12 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
 
         // One box above the middle of the tile's items, one line per item, the widest name setting its width
         const float n = (float)seen.size();
-        float cx = 0.0f, top = 0.0f, maxW = 0.0f;
+        float cx = 0.0f, top = 0.0f, maxW = 0.0f, nearest = seen[0].dist2;
         for (const Seen& sn : seen) {
             cx += sn.os.cx;
             top += sn.os.top;
             maxW = std::max(maxW, listTextWidth(sn.name));
+            nearest = std::min(nearest, sn.dist2);
         }
         cx /= n;
         top /= n;
@@ -2006,6 +2014,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         const float boxH = n * lineH + (n - 1.0f) * lineGap + 2.0f * padY;
 
         GroundStack st;
+        st.dist2 = nearest;
         st.box = Rect{ cx - boxW * 0.5f, top - gapY - boxH, boxW, boxH };
         if (st.box.x + st.box.w < 0.0f || st.box.x > winW || st.box.y + st.box.h < 0.0f || st.box.y > winH) continue;
         for (size_t i = 0; i < seen.size(); ++i) {
@@ -2015,17 +2024,45 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         }
         out.push_back(std::move(st));
     }
+    // Farthest first, so the nearest box is drawn last, on top
+    std::stable_sort(out.begin(), out.end(),
+                     [](const GroundStack& a, const GroundStack& b) { return a.dist2 > b.dist2; });
     return out;
 }
 
-void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH) {
+bool Renderer::topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row) {
+    // The last stack is drawn on top, so search from the end. A box that covers the point without a
+    // name line under it hides the boxes behind it.
+    for (size_t k = stacks.size(); k-- > 0;) {
+        const GroundStack& st = stacks[k];
+        for (size_t j = 0; j < st.rows.size(); ++j) {
+            if (st.rows[j].contains(mx, my)) {
+                stack = k;
+                row = j;
+                return true;
+            }
+        }
+        if (st.box.contains(mx, my)) return false;
+    }
+    return false;
+}
+
+void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my) {
     const float s = winH / 720.0f;
-    // Items on one tile share a box, with one line each, top line first and the last one nearest the item
-    for (const GroundStack& st : groundStacks(w, t, cam, winW, winH)) {
+    // Items on one tile share a box, with one line each, top line first and the last one nearest the item.
+    // Boxes are drawn farthest first, so a nearer box covers the ones behind it. The one line on top under
+    // (mx, my) gets a darker cell and gold text, so it is clear which item a click picks.
+    const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
+    size_t hotStack = 0, hotRow = 0;
+    const bool hasHot = topLabelRow(stacks, mx, my, hotStack, hotRow);
+    for (size_t k = 0; k < stacks.size(); ++k) {
+        const GroundStack& st = stacks[k];
         drawRect(Rect{ st.box.x - 1.0f, st.box.y - 1.0f, st.box.w + 2.0f, st.box.h + 2.0f }, LABEL_EDGE);
         drawRect(st.box, LABEL_FILL);
         for (size_t i = 0; i < st.names.size(); ++i) {
-            drawListText(st.names[i], st.box.x + 7.0f * s, st.rows[i].y, LABEL_TEXT);
+            const bool hot = hasHot && k == hotStack && i == hotRow;
+            if (hot) drawRect(st.rows[i], LABEL_HOT_FILL);
+            drawListText(st.names[i], st.box.x + 7.0f * s, st.rows[i].y, hot ? LABEL_HOT_TEXT : LABEL_TEXT);
         }
     }
 }
@@ -2359,12 +2396,10 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 }
 
 Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {
-    // A name line in a label box picks its item
-    for (const GroundStack& st : groundStacks(w, t, cam, winW, winH)) {
-        for (size_t i = 0; i < st.rows.size(); ++i) {
-            if (st.rows[i].contains(mx, my)) return st.items[i];
-        }
-    }
+    // A name line in a label box picks its item. The box on top wins, so the nearer item is picked.
+    const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
+    size_t k = 0, j = 0;
+    if (topLabelRow(stacks, mx, my, k, j)) return stacks[k].items[j];
 
     // Otherwise the sprite under the mouse
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
