@@ -711,7 +711,7 @@ DialogGeometry questionGeometry(int W, int H) {
 // While a question is up, only its Yes and No buttons are returned.
 // Save rows carry their index in the list as param. Their text is drawn in columns by the renderer code.
 std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
-                                const std::vector<SaveSummary>& saves, size_t listOffset) {
+                                const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle) {
     std::vector<Button> out;
     if (ask != Ask::None) {
         DialogGeometry d = questionGeometry(W, H);
@@ -753,7 +753,9 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     }
     if (last < saves.size()) out.push_back(Button{ "", g.belowBand, Action::ScrollDown });
 
-    out.push_back(Button{ "Close", Rect{ x, g.closeY, w, g.btnH }, Action::CancelName });
+    // Opened from the title screen, the button goes back there. Opened from the Esc menu, it closes to that menu.
+    out.push_back(Button{ fromTitle ? "Return to Title" : "Close", Rect{ x, g.closeY, w, g.btnH },
+                          Action::CancelName });
     return out;
 }
 
@@ -779,7 +781,7 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
     }
     if (last < maps.size()) out.push_back(Button{ "", g.belowBand, Action::MapScrollDown });
 
-    out.push_back(Button{ "Close", Rect{ x, g.closeY, w, g.btnH }, Action::Back });
+    out.push_back(Button{ "Return to Title", Rect{ x, g.closeY, w, g.btnH }, Action::ReturnToTitle });
     return out;
 }
 
@@ -1049,6 +1051,7 @@ int main(int, char**) {
     // Save/load popout. It sits over the current screen.
     bool panelOpen = false;
     bool panelSaveMode = false;           // true: Save Game, false: Load Game
+    Screen panelFrom = Screen::Title;     // the screen the popout opened over
     Ask ask = Ask::None;                  // the question the popout is asking, if any
     std::optional<SaveSummary> pendingOverwrite;   // the save an overwrite question is about
     std::optional<SaveSummary> pendingLoad;        // the save an unsaved-progress question is about
@@ -1136,6 +1139,7 @@ int main(int, char**) {
     auto openPanel = [&](bool saveMode) {
         panelOpen = true;
         panelSaveMode = saveMode;
+        panelFrom = screen;
         ask = Ask::None;
         pendingOverwrite.reset();
         pendingLoad.reset();
@@ -2020,7 +2024,7 @@ int main(int, char**) {
                     } else if (screen == Screen::DevTools) {
                         screen = Screen::Pause;
                     } else if (screen == Screen::MapSelect) {
-                        screen = backScreen;
+                        performAction(Action::ReturnToTitle, 0);
                     }
                 }
                 break;
@@ -2071,7 +2075,8 @@ int main(int, char**) {
                 if (panelOpen) {
                     // The popout takes all clicks while it's open
                     if (e.button.button == SDL_BUTTON_LEFT) {
-                        for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset)) {
+                        for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
+                                                           panelFrom == Screen::Title)) {
                             if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                                 if (b.action == Action::DeleteHold) {
                                     // Held, not clicked: the timer deletes once it has been held long enough
@@ -2821,7 +2826,8 @@ int main(int, char**) {
                     renderer.drawUiTextCentered("Hold Delete for 3 seconds to confirm.",
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
                 }
-                for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset)) {
+                for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
+                                                   panelFrom == Screen::Title)) {
                     if (b.action == Action::DeleteHold) {
                         const float fill = deleteHolding
                             ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS)
@@ -2880,7 +2886,8 @@ int main(int, char**) {
                                           hot ? hover : hint);
                 }
 
-                for (const Button& b : layoutPanel(winW, winH, panelSaveMode, Ask::None, saves, listOffset)) {
+                for (const Button& b : layoutPanel(winW, winH, panelSaveMode, Ask::None, saves, listOffset,
+                                                   panelFrom == Screen::Title)) {
                     const bool isHover = b.rect.contains(mouseX, mouseY);
                     if (b.action == Action::LoadSlot) {
                         // A save row: background, then left-aligned name and the type and time columns
