@@ -8,7 +8,7 @@ namespace {
 constexpr float SKIRT_BASE = 8.0f;
 
 // Vegetation pulls the ground toward this canopy color, by up to kCanopyShare at full density.
-// These are the editor's values, so the vegetation reads the same in both.
+// These are the world maker's values, so the vegetation reads the same as in a generated world.
 constexpr float kCanopyR = 0.20f, kCanopyG = 0.34f, kCanopyB = 0.13f;
 constexpr float kCanopyShare = 0.45f;
 
@@ -21,8 +21,8 @@ Rgb bandColor(float h) {
     return { 0.27f, 0.27f, 0.29f };
 }
 
-// Color of a ground type, as the editor draws it (BiomeColor in worldmaker/world/world.cpp).
-// Water and shelf are not stored in worlds; an unknown type gets the editor's default, seabed sand.
+// Color of a ground type, as the world maker draws it.
+// Water and shelf are not stored in worlds; an unknown type gets the default, seabed sand.
 Rgb biomeColor(uint8_t b) {
     switch (b) {
         case BIOME_SAND:        return { 0.69f, 0.64f, 0.47f };   // seabed sand
@@ -119,8 +119,8 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const int x = xs[(size_t)i], z = zs[(size_t)j];
             const int gx = x0 + x, gz = z0 + z;
 
-            // Slope across two steps either way, over four steps of ground, as the editor takes it. Stored
-            // heights are scaled by heightScale, so they are scaled back to the editor's units first.
+            // Slope across two steps either way, over four steps of ground, as the world maker takes it. Stored
+            // heights are scaled by heightScale, so they are scaled back to the world's units first.
             const float dhdx = (cornerHeight(t, c, gx + 2 * step, gz) - cornerHeight(t, c, gx - 2 * step, gz))
                              / (4.0f * step) / hs;
             const float dhdz = (cornerHeight(t, c, gx, gz + 2 * step) - cornerHeight(t, c, gx, gz - 2 * step))

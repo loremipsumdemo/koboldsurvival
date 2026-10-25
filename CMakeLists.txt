@@ -24,13 +24,6 @@ FetchContent_Declare(tinygltf
     GIT_TAG v2.9.3)
 FetchContent_MakeAvailable(tinygltf)
 
-# stb_truetype: the world tool's font rasterizer. stb has no CMakeLists, so this only fetches the sources.
-FetchContent_Declare(stb
-    GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG master
-    GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(stb)
-
 # miniaudio: background music. It decodes MP3 itself and plays through the system's audio API, so it needs
 # no other libraries. The pinned release keeps builds reproducible.
 set(MINIAUDIO_INSTALL OFF CACHE BOOL "" FORCE)
@@ -40,33 +33,12 @@ FetchContent_Declare(miniaudio
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(miniaudio)
 
-# The world tool (formerly the standalone worldmaker), hosted by the map editor screen.
-# Its code lives in the wm namespace, under src/worldmaker.
+# The look (the sky, sun, rock and water colors) and the surface textures, in the wm namespace under
+# src/worldmaker. The game reads and writes these with each world folder. The rest of the old world tool is gone.
 set(WORLDTOOL_SOURCES
-    src/worldmaker/app/console.cpp
-    src/worldmaker/app/desktop.cpp
-    src/worldmaker/app/mapview.cpp
-    src/worldmaker/app/menu.cpp
-    src/worldmaker/app/session.cpp
-    src/worldmaker/core/debug_options.cpp
-    src/worldmaker/core/tunables.cpp
-    src/worldmaker/player/walker.cpp
-    src/worldmaker/render/gl_api.cpp
-    src/worldmaker/render/renderer.cpp
-    src/worldmaker/render/terrain.cpp
-    src/worldmaker/render/grid.cpp
-    src/worldmaker/render/surface_tile.cpp
     src/worldmaker/render/surface_pixels.cpp
-    src/worldmaker/render/skybox.cpp
-    src/worldmaker/render/gpu_timer.cpp
     src/worldmaker/theme/theme.cpp
     src/worldmaker/theme/themefile.cpp
-    src/worldmaker/world/chunk_gen.cpp
-    src/worldmaker/world/noise.cpp
-    src/worldmaker/world/segments.cpp
-    src/worldmaker/world/world.cpp
-    src/worldmaker/world/worldfile.cpp
-    src/worldmaker_host.cpp
 )
 
 # Build stamp for the title screen, BUILD.YYYY.MM.DD.HH.MM.mmm. The stamp is taken at build time, not configure time,
@@ -118,10 +90,9 @@ set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BIN
 
 target_include_directories(koboldgame PRIVATE
     src
-    src/worldmaker          # the world tool's own include root
+    src/worldmaker          # the look and surface code the world files use
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
-    ${stb_SOURCE_DIR}        # stb_truetype.h for the world tool's font
 )
 
 target_link_libraries(koboldgame PRIVATE

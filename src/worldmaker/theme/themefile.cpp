@@ -1,7 +1,6 @@
 #include "theme/themefile.hpp"
 
 #include <algorithm>
-#include "core/tunables.hpp"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -182,7 +181,7 @@ bool LoadLookFile(const std::string& path, Look& look, std::string& err) {
             return false;
         }
         float* dst = LookValue(loaded, fld);
-        for (int i = 0; i < fld.count; ++i) dst[i] = Limit(vals[static_cast<std::size_t>(i)], fld.lo, fld.hi);
+        for (int i = 0; i < fld.count; ++i) dst[i] = std::clamp(vals[static_cast<std::size_t>(i)], fld.lo, fld.hi);
     }
 
     look = loaded;

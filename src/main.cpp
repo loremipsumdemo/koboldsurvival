@@ -20,7 +20,6 @@
 #include "camera.h"
 #include "gui.h"
 #include "sky.h"
-#include "worldmaker_host.h"
 #include "components.h"
 #include "ecs.h"
 #include "renderer.h"
@@ -857,7 +856,6 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
         add("Continue", Action::Continue, x, y, hasSave);        y += bh + gap;
         add("New Game", Action::NewGame, x, y);                  y += bh + gap;
         add("Load Game", Action::LoadGame, x, y, hasSave);       y += bh + gap;
-        add("Map Editor", Action::OpenMapEditor, x, y);          y += bh + gap;
         add("Settings", Action::Settings, x, y);                 y += bh + gap;
         add("Quit", Action::Quit, x, y);
         break;
@@ -876,7 +874,6 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     case Screen::Settings:
     case Screen::DevTools:
     case Screen::MapSelect:
-    case Screen::MapEditor:
     case Screen::PartySetup:
         break;
     }
@@ -903,8 +900,6 @@ Soundtrack soundtrackFor(Screen screen) {
         return {};
     case Screen::Playing:
         return { "bgm_01.mp3", "amb_01.mp3" };
-    case Screen::MapEditor:
-        return { "", "" };
     }
     return {};
 }
@@ -1027,8 +1022,6 @@ int main(int, char**) {
         float x = 0.0f, y = 0.0f;
     };
     BehaviorEditor behaviorEditor;
-    wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
-    bool wmReady = false;                 // the tool has been set up on the window
 
     Screen screen = Screen::Title;
     Screen backScreen = Screen::Title;    // where Back goes from Settings
@@ -1326,41 +1319,6 @@ int main(int, char**) {
         cam.pan(right * panSpeed, forward * panSpeed);
     };
 
-    // Opens the world tool on a fresh world. The tool is set up the first time the editor opens.
-    auto openEditor = [&]() {
-        // The editor has no music of its own, so the title track ends here
-        audio::stopTracks();
-        // Start clean: no units left over from a game
-        world = World{};
-        clearCombatText();
-        followUnit = NULL_ENTITY;
-        gs = GameState{};
-        sel = Selection{};
-        if (!wmReady) {
-            const unsigned char* fontBytes = nullptr;
-            size_t fontSize = 0;
-            std::vector<unsigned char> font;
-            if (pakFind("data/font/NotoSans_Condensed-Bold.ttf", fontBytes, fontSize)) {
-                font.assign(fontBytes, fontBytes + fontSize);
-            }
-            const char* base = SDL_GetBasePath();
-            const std::string dataDir = std::string(base ? base : "") + "editor_data";
-            std::string err;
-            if (!wmTool.Init(window, font, dataDir, mapsDir(), err)) {
-                showNotice("The world tool could not start: " + err);
-                return;
-            }
-            wmReady = true;
-        }
-        wmTool.Begin();
-        screen = Screen::MapEditor;
-    };
-
-    auto leaveEditor = [&]() {
-        wmTool.End();
-        screen = Screen::Title;
-    };
-
     // ---- Settings: the audio buses and the window follow the settings as they change ----
     auto applyAudio = [&]() {
         audio::setBus(audio::Bus::Music, settings.musicVolume, settings.musicOn);
@@ -1578,9 +1536,6 @@ int main(int, char**) {
             stopNameEdit();
             closeDropdown();
             startMapLevel(pendingMap);
-            return;
-        case Action::OpenMapEditor:
-            openEditor();
             return;
         case Action::DevOpen:
             backScreen = Screen::Pause;
@@ -1931,13 +1886,9 @@ int main(int, char**) {
 
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
-            // F12 takes a screenshot from any screen, whatever menu, text box or the map editor has the keys
+            // F12 takes a screenshot from any screen, whatever menu or text box has the keys
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_F12 && !e.key.repeat) {
                 screenshotPending = true;
-                continue;
-            }
-            if (screen == Screen::MapEditor && e.type != SDL_EVENT_QUIT) {
-                wmTool.Event(e);
                 continue;
             }
             switch (e.type) {
@@ -2694,7 +2645,7 @@ int main(int, char**) {
             dim(0.45f);
             renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
             renderer.drawUiTextCentered("New Game", cx, g.box.y + g.pad, white);
-            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Save a game world from the map editor."
+            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Make one with flat_world_maker.py."
                                                      : "Click a map to start a new game",
                                         cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
 
@@ -2765,12 +2716,6 @@ int main(int, char**) {
             renderer.endUi();
             break;
         }
-
-        case Screen::MapEditor:
-            // The world tool draws the whole screen, and the editor closes when it asks to
-            wmTool.Frame();
-            if (wmTool.wantsBack()) leaveEditor();
-            break;
 
         case Screen::Pause:
             renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);

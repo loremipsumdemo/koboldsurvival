@@ -2,7 +2,7 @@
 
 // The game's world format. A world is a folder holding:
 //   world.txt             plain text: format, name, created, size in tiles, chunk size, height scale, seabed depth
-//   look.json             the editor's look the world was saved with: sky, sun, rock and water colors, water motion
+//   look.json             the look the world was saved with: sky, sun, rock and water colors, water motion
 //   surface.ksrf          the two surface tiles the ground and the sea are drawn with
 //   r.<rx>.<rz>.kreg      region files, each holding 16 x 16 chunks (1024 tiles)
 // A chunk is read on its own, so a large world never has to be in memory at once.
@@ -20,13 +20,13 @@ struct WorldInfo {
     std::string name;            // the name the world was saved under
     long long created = 0;       // when it was saved, milliseconds since 1970; 0 if unknown
     int size = 0;                // tiles per side
-    float heightScale = 1.0f;    // stored heights are the editor's world units times this
+    float heightScale = 1.0f;    // stored heights are the world's units times this
     float floorY = -1.0f;        // height of the seabed beyond the map, in stored units
 };
 
 // The look a world is drawn with, and the surface tiles the ground and sea use
 struct WorldSurface {
-    wm::Look look;               // the editor's look, from look.json
+    wm::Look look;               // the look, from look.json
     std::vector<uint8_t> ground; // ground tile, RGBA8, from surface.ksrf
     std::vector<uint8_t> water;  // sea tile, RGBA8
 };

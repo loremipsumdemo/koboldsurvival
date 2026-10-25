@@ -92,7 +92,7 @@ struct SkyState {
 
 SkyState ComputeSky(const Look& look);
 // The same, with the sun taken from sunDir (a unit vector) instead of the look's clock. The game uses
-// this so its ground and sea light the same way as the editor, with the sun its own sky shows.
+// this so its ground and sea light the same way as the world maker, with the sun its own sky shows.
 SkyState ComputeSkyForSun(const Look& look, V3 sunDir);
 
 // Moves the clock forward when the day cycle is on.

@@ -16,7 +16,7 @@ namespace {
 // ---------------------------------------------------------------------------
 // Shaders (GLSL 3.30 core), ported from the world tool. The names match the world tool's, so the two
 // can be compared line by line. Heights in the game are scaled by heightScale, so the ground takes
-// a depth scale to measure the water in the editor's units.
+// a depth scale to measure the water in the world's units.
 // ---------------------------------------------------------------------------
 
 const char* const kGroundVS = R"GLSL(
@@ -214,7 +214,7 @@ void main() {
 
 constexpr float LOD_NEAR_TILES = 96.0f;   // chunks closer than this are drawn at full detail
 constexpr float LOD_MID_TILES = 224.0f;   // closer than this, at half detail; beyond, a quarter
-// The sea sits this far below sea level, in the editor's units, so terrain exactly at sea level
+// The sea sits this far below sea level, in the world's units, so terrain exactly at sea level
 // stays just above it.
 constexpr float kWaterDrop = 0.05f;
 // Pushes the sea back in the depth buffer, so where land and sea meet, the land wins. The slope term

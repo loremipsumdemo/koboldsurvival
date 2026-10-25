@@ -10,7 +10,7 @@
 
 struct TerrainVertex {
     float x, y, z;      // position
-    float nx, ny, nz;   // normal, in the editor's units, so slopes shade and turn to rock as they do there
+    float nx, ny, nz;   // normal, in the world's units, so slopes shade and turn to rock the same way in every world
     float r, g, b;      // ground color, with vegetation, before lighting
 };
 

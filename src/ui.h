@@ -2,9 +2,7 @@
 #include <string>
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTools, PartySetup };
-
-// Tools in the map editor's left panel, in button order
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, DevTools, PartySetup };
 
 // What a button does when clicked
 enum class Action {
@@ -19,7 +17,6 @@ enum class Action {
     DeleteSave,           // Delete button on a save row, which asks to confirm
     DeleteHold,           // Delete button on the confirm dialog, which is held down to confirm
     DeleteNo,             // Cancel on the confirm dialog
-    OpenMapEditor,        // Map Editor button on the title screen
     PickMap,              // a map in the New Game list; param is its index
     DevOpen,              // Dev Tools button in the Esc menu
     DevTime,              // moves the in-game clock; param is minutes

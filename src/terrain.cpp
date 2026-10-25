@@ -34,7 +34,7 @@ ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
     return c;
 }
 
-// The editor's default look and surface tiles, for a map that has none of its own
+// The default look and surface tiles, for a map that has none of its own
 const WorldSurface& DefaultSurface() {
     static const WorldSurface s = [] {
         WorldSurface d;
@@ -65,7 +65,7 @@ void Terrain::load(const MapData& m) {
             chunks_[(size_t)cz * cps_ + cx] = std::move(c);
         }
     }
-    // A premade map is stored in whole units, with the editor's default look and tiles and no vegetation
+    // A premade map is stored in whole units, with the default look and tiles and no vegetation
     heightScale_ = 1.0f;
     floorY_ = m.heights.empty() ? -2.0f : *std::min_element(m.heights.begin(), m.heights.end()) - 2.0f;
     surface_ = DefaultSurface();
