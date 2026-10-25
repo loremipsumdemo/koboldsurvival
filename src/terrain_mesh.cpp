@@ -94,7 +94,22 @@ ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c) {
     return { x0, z0, x0 + a, z0 + b, low, hi + 1.0f };
 }
 
-void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out) {
+// A corner on this chunk's edge, at position v along it, when the neighbor across that edge is drawn
+// coarser (every S corners, and at the far end). The coarse edge runs straight between its samples, so
+// the corner is moved onto that line. Otherwise the two edges would not meet and would leave cracks.
+// alongZ: the edge runs along z at x = fixed; otherwise along x at z = fixed. len: the edge's length.
+float onCoarseEdge(const ChunkData& c, bool alongZ, int fixed, int v, int S, int len, float h) {
+    if (v % S == 0 || v >= len) return h;
+    const int v0 = (v / S) * S;
+    const int v1 = std::min(v0 + S, len);
+    auto at = [&](int k) {
+        return alongZ ? c.heights[(size_t)k * CHUNK_CORNERS + fixed] : c.heights[(size_t)fixed * CHUNK_CORNERS + k];
+    };
+    const float f = (float)(v - v0) / (float)(v1 - v0);
+    return at(v0) + f * (at(v1) - at(v0));
+}
+
+void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out, const int* nb) {
     out.verts.clear();
     out.idx.clear();
     if (step < 1) step = 1;
@@ -119,8 +134,8 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const int x = xs[(size_t)i], z = zs[(size_t)j];
             const int gx = x0 + x, gz = z0 + z;
 
-            // Slope across two steps either way, over four steps of ground, as the world maker takes it. Stored
-            // heights are scaled by heightScale, so they are scaled back to the world's units first.
+            // Slope across two steps either way, over four steps of ground, as the world maker takes it. Heights
+            // are in world units, so no scale is needed.
             const float dhdx = (cornerHeight(t, c, gx + 2 * step, gz) - cornerHeight(t, c, gx - 2 * step, gz))
                              / (4.0f * step) / hs;
             const float dhdz = (cornerHeight(t, c, gx, gz + 2 * step) - cornerHeight(t, c, gx, gz - 2 * step))
@@ -128,7 +143,14 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const float nl = std::sqrt(dhdx * dhdx + 1.0f + dhdz * dhdz);
             const float nxv = -dhdx / nl, nyv = 1.0f / nl, nzv = -dhdz / nl;
 
-            const float hh = c.heights[(size_t)z * CHUNK_CORNERS + x];
+            float hh = c.heights[(size_t)z * CHUNK_CORNERS + x];
+            // Edge corners next to a coarser neighbor move onto that neighbor's edge
+            if (nb) {
+                if (x == 0 && nb[0] > step) hh = onCoarseEdge(c, true, 0, z, nb[0], b, hh);
+                if (x == a && nb[1] > step) hh = onCoarseEdge(c, true, a, z, nb[1], b, hh);
+                if (z == 0 && nb[2] > step) hh = onCoarseEdge(c, false, 0, x, nb[2], a, hh);
+                if (z == b && nb[3] > step) hh = onCoarseEdge(c, false, b, x, nb[3], a, hh);
+            }
             const int tx = std::min(x, std::max(a - 1, 0)), tz = std::min(z, std::max(b - 1, 0));
             const size_t ti = (size_t)tz * CHUNK_TILES + tx;
             const uint8_t bt = c.biome[ti];

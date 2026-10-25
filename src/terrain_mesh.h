@@ -28,6 +28,9 @@ struct ChunkBounds {
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c);
 
 // Builds a chunk at a detail step. Vertical skirts hang from every edge: short ones where the edge borders
-// another chunk, so a coarse chunk and a fine one next to it leave no cracks, and walls down to the seabed
-// on the map's border.
-void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out);
+// another chunk, and walls down to the seabed on the map's border.
+// neighbourSteps: the detail steps the west, east, north and south neighbors are drawn at (0 where there is
+// none or it is not built). Where a neighbor is coarser, this chunk's edge corners are moved onto its edge so
+// the two meet without cracks. nullptr means no neighbor constraints.
+void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out,
+                    const int* neighbourSteps = nullptr);

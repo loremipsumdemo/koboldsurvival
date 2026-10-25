@@ -9,14 +9,15 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace {
 
 // ---------------------------------------------------------------------------
 // Shaders (GLSL 3.30 core), ported from the world tool. The names match the world tool's, so the two
-// can be compared line by line. Heights in the game are scaled by heightScale, so the ground takes
-// a depth scale to measure the water in the world's units.
+// can be compared line by line. Heights are in world units, so the ground's depth scale is 1 for a
+// level read from a world folder.
 // ---------------------------------------------------------------------------
 
 const char* const kGroundVS = R"GLSL(
@@ -433,7 +434,7 @@ void Renderer::uploadTerrain(const Terrain& t) {
 }
 
 // Builds a chunk's mesh at a detail step and uploads it into the chunk's own buffers
-void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step) {
+void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep) {
     TerrainChunk& slot = chunks_[(size_t)id];
     if (!slot.vao) {
         glGenVertexArrays(1, &slot.vao);
@@ -451,7 +452,7 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, slot.ebo);
         glBindVertexArray(0);
     }
-    buildChunkMesh(t, c, step, chunkScratch_);
+    buildChunkMesh(t, c, step, chunkScratch_, nbStep);
     glBindVertexArray(slot.vao);
     glBindBuffer(GL_ARRAY_BUFFER, slot.vbo);
     glBufferData(GL_ARRAY_BUFFER, chunkScratch_.verts.size() * sizeof(TerrainVertex),
@@ -461,6 +462,7 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
                  chunkScratch_.idx.data(), GL_DYNAMIC_DRAW);
     slot.indexCount = (GLsizei)chunkScratch_.idx.size();
     slot.step = step;
+    for (int k = 0; k < 4; ++k) slot.nbStep[k] = nbStep[k];
     glBindVertexArray(0);
 }
 
@@ -476,7 +478,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     // The light and look the ground and sea are shaded with: the world's look, lit by the sun the sky shows
     const wm::SkyState sky = wm::ComputeSkyForSun(t.surface().look, wm::V3{ skySun_[0], skySun_[1], skySun_[2] });
     const float hs = t.heightScale();
-    const float seaY = 0.0f;                        // sea level, in stored units
+    const float seaY = 0.0f;                        // sea level, in world units
     const float waterY = seaY - kWaterDrop * hs;    // the sea's surface, just under sea level
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
@@ -543,8 +545,19 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         const float dx = mx - ex, dy = my - ey, dz = mz - ez;
         const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
         const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
-        if (slot.step != step && builds < MAX_BUILDS_PER_FRAME) {
-            buildChunk(t, *c, id, step);
+
+        // The detail each neighbor is drawn at, as its buffers hold it now (0 when none or not built). A chunk
+        // stitches its edges to a coarser neighbor, so it is rebuilt when a neighbor's detail changes.
+        const int cx = id % chunksPerSide_, cz = id / chunksPerSide_;
+        int nb[4] = { 0, 0, 0, 0 };
+        if (cx > 0) nb[0] = chunks_[(size_t)(id - 1)].step;
+        if (cx < chunksPerSide_ - 1) nb[1] = chunks_[(size_t)(id + 1)].step;
+        if (cz > 0) nb[2] = chunks_[(size_t)(id - chunksPerSide_)].step;
+        if (cz < chunksPerSide_ - 1) nb[3] = chunks_[(size_t)(id + chunksPerSide_)].step;
+        const bool neighboursChanged = std::memcmp(nb, slot.nbStep, sizeof nb) != 0;
+
+        if ((slot.step != step || neighboursChanged) && builds < MAX_BUILDS_PER_FRAME) {
+            buildChunk(t, *c, id, step, nb);
             ++builds;
         }
         if (slot.step == 0) continue;   // not built yet, drawn once it is

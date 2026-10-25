@@ -79,8 +79,10 @@ bool Terrain::openWorld(const std::string& folder, std::string& err) {
     if (!readWorldSurface(folder, surface, err)) return false;
     surface_ = std::move(surface);
     surfaceVersion_ = nextVersion_++;
-    heightScale_ = info.heightScale;
-    floorY_ = info.floorY;
+    // Chunks are read in world units (see readChunk), so the height scale is already applied and the
+    // sea floor, which world.txt gives in stored units, is converted here.
+    heightScale_ = 1.0f;
+    floorY_ = info.floorY / info.heightScale;
     size_ = info.size;
     cps_ = ::chunksPerSide(size_);
     chunks_.clear();

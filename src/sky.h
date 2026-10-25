@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 
-// Colors the dev tools menu can edit. The sky blends between day and night colors using the
+// The sky colors. The sky blends between day and night colors using the
 // sun's height, and the dusk colors are used near the horizon at sunrise and sunset.
 enum ColorTarget {
     CT_DAY_ZENITH,
@@ -23,7 +23,7 @@ inline const char* colorTargetName(int i) {
     return names[i];
 }
 
-// Atmosphere settings, edited from the Esc menu's dev tools. Colors are RGB, each 0..1.
+// Atmosphere settings. Colors are RGB, each 0..1.
 struct SkyTuning {
     bool clockRunning = true;     // the in-game clock advances during play
     bool stars = true;

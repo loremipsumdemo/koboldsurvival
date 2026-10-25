@@ -1012,7 +1012,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float invSky[16];
         invert4x4(mul(proj, viewRot).m, invSky);
 
-        // Sun, moon, stars and sky colors come from the dev tools settings and the time of day.
+        // Sun, moon, stars and sky colors come from the sky settings and the time of day.
         // The sun rises at 06:00, peaks at noon and sets at 18:00. The moon sits opposite the sun.
         const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * 3.14159265f;
         const float elev = std::sin(ang);

@@ -70,7 +70,7 @@ public:
 
     // In-game time of day in minutes, 0..1440. Sets the sun position and sky colors.
     void setDayMinutes(float m) { dayMinutes_ = m; }
-    // Sun, moon, star and sky color settings from the dev tools menu
+    // Sun, moon, star and sky color settings
     void setSky(const SkyTuning& s) { sky_ = s; }
 
     // Sets up the terrain's chunks for a map, replacing any earlier one. Each chunk's mesh is built
@@ -276,6 +276,7 @@ private:
         GLuint vao = 0, vbo = 0, ebo = 0;
         GLsizei indexCount = 0;
         int step = 0;              // detail step the buffers hold, 0 until first built
+        int nbStep[4] = { 0, 0, 0, 0 };   // west, east, north, south neighbors' steps the buffers were built with
         uint32_t version = 0;      // version of the chunk the buffers and bounds were made from
         ChunkBounds bounds{};
     };
@@ -285,7 +286,7 @@ private:
     ChunkMesh chunkScratch_;       // reused while building chunks
     void releaseTerrain();
     void releaseChunk(TerrainChunk& c);
-    void buildChunk(const Terrain& t, const ChunkData& c, int id, int step);
+    void buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
     // Terrain, sea and seabed shaders and textures (renderer_terrain.cpp)

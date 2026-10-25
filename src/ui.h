@@ -2,7 +2,7 @@
 #include <string>
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, DevTools, PartySetup };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, PartySetup };
 
 // What a button does when clicked
 enum class Action {
@@ -18,16 +18,6 @@ enum class Action {
     DeleteHold,           // Delete button on the confirm dialog, which is held down to confirm
     DeleteNo,             // Cancel on the confirm dialog
     PickMap,              // a map in the New Game list; param is its index
-    DevOpen,              // Dev Tools button in the Esc menu
-    DevTime,              // moves the in-game clock; param is minutes
-    DevClock,             // starts or stops the clock during play
-    DevStars,             // shows or hides the stars
-    DevMoon,              // shows or hides the moon
-    DevSunBright,         // param is -1 or +1
-    DevStarBright,        // param is -1 or +1
-    DevColorTarget,       // param is -1 or +1, picks which color the R/G/B buttons edit
-    DevColor,             // param is channel * 2, plus 1 for the plus button
-    DevReset,             // restores the default atmosphere
     MapSortName, MapSortTime,   // column headers in the New Game list
     MapScrollUp, MapScrollDown,  // the "..." rows at the ends of the New Game list
     // The starting party menu, after a map is picked in New Game

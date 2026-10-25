@@ -55,9 +55,10 @@ public:
     const WorldSurface& surface() const { return surface_; }
     // Changes when the surface changes (a new level), so the renderer knows to upload it again
     uint32_t surfaceVersion() const { return surfaceVersion_; }
-    // Stored heights are the world's units times this
+    // Heights are held in world units. The file's height scale is applied when chunks are read, so
+    // this is 1 for every level; it is kept for the shaders that take a depth scale.
     float heightScale() const { return heightScale_; }
-    // Height of the seabed beyond the map, in stored units
+    // Height of the seabed beyond the map, in world units
     float floorY() const { return floorY_; }
     // Ground type of a tile, or BIOME_NONE
     uint8_t biome(int x, int y) const;

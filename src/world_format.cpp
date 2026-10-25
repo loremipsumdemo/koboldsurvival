@@ -212,6 +212,10 @@ bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz,
     out.cx = cx;
     out.cz = cz;
     decodeRecord(rec.data(), out);
+    // Stored heights are the world's units times heightScale. Chunks hold world units, so the
+    // scale is taken off here, once, on the way in.
+    const float inv = 1.0f / info.heightScale;
+    for (float& h : out.heights) h *= inv;
     return true;
 }
 

@@ -784,59 +784,6 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
     return out;
 }
 
-// Dev tools menu, opened from the Esc menu. Left: clock, stars, moon and brightness.
-// Right: the color being edited, its red, green and blue, and reset.
-std::vector<Button> layoutDevTools(int W, int H, const SkyTuning& sky, double clockSeconds) {
-    const float s = H / 720.0f;
-    const float bh = 40.0f * s, gap = 8.0f * s;
-    const float bw = 300.0f * s, half = (bw - gap) * 0.5f;
-    const float colGap = 24.0f * s;
-    const float leftX = W * 0.5f - colGap * 0.5f - bw;
-    const float rightX = W * 0.5f + colGap * 0.5f;
-    const float top = H * 0.20f;
-
-    std::vector<Button> out;
-    auto full = [&](const std::string& label, Action a, float x, float& y, bool enabled) {
-        out.push_back(Button{ label, Rect{ x, y, bw, bh }, a, enabled, 0 });
-        y += bh + gap;
-    };
-    auto pair = [&](const std::string& l, Action al, int pl, const std::string& r, Action ar, int pr,
-                    float x, float& y) {
-        out.push_back(Button{ l, Rect{ x, y, half, bh }, al, true, pl });
-        out.push_back(Button{ r, Rect{ x + half + gap, y, half, bh }, ar, true, pr });
-        y += bh + gap;
-    };
-    auto fmt = [](float v) {
-        char b[16];
-        std::snprintf(b, sizeof(b), "%.2f", v);
-        return std::string(b);
-    };
-    auto onOff = [](bool v) { return std::string(v ? "on" : "off"); };
-
-    float y = top;
-    full("Time " + formatClock(clockSeconds), Action::DevTime, leftX, y, false);
-    pair("-30 min", Action::DevTime, -30, "+30 min", Action::DevTime, 30, leftX, y);
-    full(std::string("Clock: ") + (sky.clockRunning ? "running" : "stopped"), Action::DevClock, leftX, y, true);
-    pair("Stars " + onOff(sky.stars), Action::DevStars, 0, "Moon " + onOff(sky.moon), Action::DevMoon, 0,
-         leftX, y);
-    full("Sun brightness " + fmt(sky.sunBrightness), Action::DevSunBright, leftX, y, false);
-    pair("Sun -", Action::DevSunBright, -1, "Sun +", Action::DevSunBright, 1, leftX, y);
-    full("Star brightness " + fmt(sky.starBrightness), Action::DevStarBright, leftX, y, false);
-    pair("Stars -", Action::DevStarBright, -1, "Stars +", Action::DevStarBright, 1, leftX, y);
-
-    y = top;
-    const auto& c = sky.colors[sky.colorTarget];
-    full(std::string("Color: ") + colorTargetName(sky.colorTarget), Action::DevColorTarget, rightX, y, false);
-    pair("Prev color", Action::DevColorTarget, -1, "Next color", Action::DevColorTarget, 1, rightX, y);
-    full("R " + fmt(c[0]) + "   G " + fmt(c[1]) + "   B " + fmt(c[2]), Action::DevColor, rightX, y, false);
-    pair("Red -", Action::DevColor, 0, "Red +", Action::DevColor, 1, rightX, y);
-    pair("Green -", Action::DevColor, 2, "Green +", Action::DevColor, 3, rightX, y);
-    pair("Blue -", Action::DevColor, 4, "Blue +", Action::DevColor, 5, rightX, y);
-    full("Reset atmosphere", Action::DevReset, rightX, y, true);
-    full("Back", Action::Back, rightX, y, true);
-    return out;
-}
-
 // Buttons for the main menus, in pixels
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves) {
     const float s = H / 720.0f;
@@ -866,13 +813,11 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
         add("Save Game", Action::Save, x, y);                    y += bh + gap;
         add("Load Game", Action::Load, x, y, hasSave);           y += bh + gap;
         add("Settings", Action::Settings, x, y);                 y += bh + gap;
-        add("Dev Tools", Action::DevOpen, x, y);                 y += bh + gap;
         add("Return to Title", Action::ReturnToTitle, x, y);
         break;
     }
     case Screen::Playing:
     case Screen::Settings:
-    case Screen::DevTools:
     case Screen::MapSelect:
     case Screen::PartySetup:
         break;
@@ -896,7 +841,6 @@ Soundtrack soundtrackFor(Screen screen) {
     case Screen::MapSelect:
     case Screen::PartySetup:
     case Screen::Pause:
-    case Screen::DevTools:
         return {};
     case Screen::Playing:
         return { "bgm_01.mp3", "amb_01.mp3" };
@@ -991,7 +935,7 @@ int main(int, char**) {
     size_t mapOffset = 0;                 // first map shown in the New Game list
     bool mapSortByName = false;           // New Game list sorted by name, else by date saved
     bool mapSortAsc = false;              // ascending order; the list opens newest first
-    SkyTuning sky;                        // atmosphere settings from the dev tools menu
+    SkyTuning sky;                        // atmosphere settings
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
     // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
     // double hunger at the next hour. Not saved: a game starts walking.
@@ -1537,43 +1481,6 @@ int main(int, char**) {
             closeDropdown();
             startMapLevel(pendingMap);
             return;
-        case Action::DevOpen:
-            backScreen = Screen::Pause;
-            screen = Screen::DevTools;
-            return;
-        case Action::DevTime: {
-            // Moves the clock by whole in-game minutes, carrying the date across midnight
-            gs.clockSeconds = std::max(0.0, gs.clockSeconds + (double)param * 60.0);
-            return;
-        }
-        case Action::DevClock:
-            sky.clockRunning = !sky.clockRunning;
-            return;
-        case Action::DevStars:
-            sky.stars = !sky.stars;
-            return;
-        case Action::DevMoon:
-            sky.moon = !sky.moon;
-            return;
-        case Action::DevSunBright:
-            sky.sunBrightness = std::clamp(sky.sunBrightness + 0.1f * param, 0.0f, 2.0f);
-            return;
-        case Action::DevStarBright:
-            sky.starBrightness = std::clamp(sky.starBrightness + 0.1f * param, 0.0f, 2.0f);
-            return;
-        case Action::DevColorTarget:
-            sky.colorTarget = ((sky.colorTarget + param) % CT_COUNT + CT_COUNT) % CT_COUNT;
-            return;
-        case Action::DevColor: {
-            const int channel = param / 2;
-            const float step = (param % 2) ? 0.05f : -0.05f;
-            float& c = sky.colors[sky.colorTarget][channel];
-            c = std::clamp(std::round((c + step) * 100.0f) / 100.0f, 0.0f, 1.0f);
-            return;
-        }
-        case Action::DevReset:
-            sky = SkyTuning{};
-            return;
         case Action::LoadGame:
         case Action::Load:
             openPanel(false);
@@ -1972,8 +1879,6 @@ int main(int, char**) {
                         // Escape closes an open dropdown first, then leaves the menu
                         if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
                         else leaveSettings();
-                    } else if (screen == Screen::DevTools) {
-                        screen = Screen::Pause;
                     } else if (screen == Screen::MapSelect) {
                         performAction(Action::ReturnToTitle, 0);
                     }
@@ -2081,9 +1986,7 @@ int main(int, char**) {
                 if (screen != Screen::Playing) {
                     // Menus: a left click runs the enabled button under the cursor
                     if (e.button.button == SDL_BUTTON_LEFT) {
-                        const std::vector<Button> menuButtons = screen == Screen::DevTools
-                            ? layoutDevTools(winW, winH, sky, gs.clockSeconds)
-                            : screen == Screen::MapSelect
+                        const std::vector<Button> menuButtons = screen == Screen::MapSelect
                             ? layoutMapPanel(winW, winH, maps, mapOffset)
                             : layoutButtons(screen, winW, winH, saves);
                         for (const Button& b : menuButtons) {
@@ -2645,7 +2548,7 @@ int main(int, char**) {
             dim(0.45f);
             renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
             renderer.drawUiTextCentered("New Game", cx, g.box.y + g.pad, white);
-            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Make one with flat_world_maker.py."
+            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Make one with worldgen.py."
                                                      : "Click a map to start a new game",
                                         cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
 
@@ -2723,16 +2626,6 @@ int main(int, char**) {
             dim(0.55f);
             renderer.drawUiTextCentered("Paused", winW * 0.5f, winH * 0.22f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
             drawButtons(layoutButtons(Screen::Pause, winW, winH, saves));
-            renderer.endUi();
-            break;
-        case Screen::DevTools:
-            renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
-            renderer.beginUi(winW, winH);
-            dim(0.4f);
-            renderer.drawUiTextCentered("Dev Tools", winW * 0.5f, winH * 0.10f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            renderer.drawUiTextCentered("Esc to go back", winW * 0.5f, winH * 0.10f + 36.0f * (winH / 720.0f),
-                                        RGBA{ 0.7f, 0.7f, 0.7f, 1.0f });
-            drawButtons(layoutDevTools(winW, winH, sky, gs.clockSeconds));
             renderer.endUi();
             break;
         }

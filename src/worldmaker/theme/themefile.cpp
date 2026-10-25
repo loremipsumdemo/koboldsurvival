@@ -171,7 +171,11 @@ bool LoadLookFile(const std::string& path, Look& look, std::string& err) {
     // Read into a copy so a bad file changes nothing.
     Look loaded = look;
     for (const LookField& fld : LookFields()) {
-        const std::size_t p = FindValue(text, fld.name);
+        std::size_t p = FindValue(text, fld.name);
+        // The world generator's files from before this spelling was fixed write colour_opacity
+        if (p == std::string::npos && std::string(fld.name) == "color_opacity") {
+            p = FindValue(text, "colour_opacity");
+        }
         if (p == std::string::npos) continue;   // missing keys keep their current value
 
         // Sized to the field: color_opacity has one value per color slot, more than a color's three
