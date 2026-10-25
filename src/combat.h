@@ -105,6 +105,10 @@ struct LogLine {
 // Every line the fight has written, oldest first, up to LOG_LIMIT
 struct CombatLog {
     std::vector<LogLine> lines;
+    // Swings that landed, and swings that did not (missed or dodged), since the level began. The caller compares
+    // these before and after a frame, to play a sound once for what happened in it.
+    size_t hits = 0;
+    size_t misses = 0;
     void add(const std::string& text, Tint tint = Tint::Gray);
 };
 

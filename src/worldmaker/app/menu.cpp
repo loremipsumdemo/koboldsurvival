@@ -1307,11 +1307,13 @@ MenuAction DrawMenu(Renderer& r, MenuState& m, Session& s, Look& look, const Mou
 
     // Footer buttons and status. Resume is the primary action.
     MenuAction action = MenuAction::None;
-    const float bw1 = 170.0f, bw2 = 170.0f, bw3 = 140.0f, gap = 12.0f;
+    // The last button is as wide as its label, with room either side, so the label always fits
+    const float bw1 = 170.0f, bw2 = 170.0f, gap = 12.0f;
+    const float bw3 = std::max(140.0f, r.MeasureText("Return to Title") + 32.0f);
     const float bx = right - kPad - (bw1 + bw2 + bw3 + gap * 2.0f);
     if (Button(c, bx, footY, bw1, "Resume", !picking, true)) action = MenuAction::Resume;
     if (Button(c, bx + bw1 + gap, footY, bw2, "Console", !picking)) action = MenuAction::OpenConsole;
-    if (Button(c, bx + bw1 + bw2 + gap * 2.0f, footY, bw3, "Back to title", !picking)) action = MenuAction::Quit;
+    if (Button(c, bx + bw1 + bw2 + gap * 2.0f, footY, bw3, "Return to Title", !picking)) action = MenuAction::Quit;
     if (!m.status.empty()) {
         const float avail = bx - 20.0f - (c.x0 + kPad);
         r.Text(c.x0 + kPad, footY + (c.btnH - c.lh) * 0.5f, FitText(r, m.status, avail), kAccent);

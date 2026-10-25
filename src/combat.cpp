@@ -132,16 +132,19 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     const Tint tint = tintFor(w, a, d);
 
     if (r.outcome == Outcome::Miss) {
+        ++log.misses;
         log.add(attacker + " misses " + defender, tint);
         return;
     }
     if (r.outcome == Outcome::Dodge) {
+        ++log.misses;
         log.add(defender + " dodges " + attacker + "'s swing", tint);
         grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE);
         return;
     }
 
-    // A hit on a downed unit kills it
+    // The swing landed. A hit on a downed unit kills it.
+    ++log.hits;
     if (downed) {
         log.add(attacker + " slays " + defender, tint);
         removeUnit(w, d);

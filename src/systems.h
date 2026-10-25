@@ -36,7 +36,8 @@ bool dropStack(World& w, Entity unit, int slot);
 // player units move at run pace, and each one that moves is marked for a double hunger tick.
 void squadSystem(World& w, float dt, bool running = false);
 void steeringSystem(World& w, Terrain& t, float dt, bool running = false);
-void pickupSystem(World& w);                     // after steering, so units that just arrived can take items
+// After steering, so units that just arrived can take items. Returns how many player units took something this frame.
+int pickupSystem(World& w);
 void cleanupSquads(World& w);
 // Health and hunger, after each whole in-game hour that passed (hours) and the in-game seconds that
 // passed (gameSeconds, which can be fractional). Out of combat, units regain health as in regenHealth.

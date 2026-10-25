@@ -871,25 +871,37 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     return out;
 }
 
-// The track each screen plays, a file name in the BGM folder. nullptr keeps whatever is playing, so the menus
-// opened from the title (New Game, Load Game, Settings) do not restart it. "" is silence. It is matched to the
-// current screen once per frame, and a game or the editor ends the title track by stopping it when it starts.
-const char* musicFor(Screen screen) {
+// The tracks a screen plays, as file names in the BGM folder. A null track keeps whatever is playing on its bus,
+// so the menus opened from the title (New Game, Load Game, Settings) do not restart it. "" is silence. Both
+// tracks are matched to the current screen once per frame.
+struct Soundtrack {
+    const char* music = nullptr;     // the music bus
+    const char* ambient = nullptr;   // the ambient bus
+};
+
+Soundtrack soundtrackFor(Screen screen) {
     switch (screen) {
     case Screen::Title:
-        return "title.mp3";
+        return { "title.mp3", "" };
     case Screen::Settings:
     case Screen::MapSelect:
     case Screen::PartySetup:
     case Screen::Pause:
     case Screen::DevTools:
-        return nullptr;
+        return {};
     case Screen::Playing:
+        return { "bgm_01.mp3", "amb_01.mp3" };
     case Screen::MapEditor:
-        return "";
+        return { "", "" };
     }
-    return "";
+    return {};
 }
+
+// Sound effect files, in the SFX folder
+const char* const SFX_MENU = "sfx_01.mp3";   // a confirmed click on a menu button or control
+const char* const SFX_HIT = "sfx_02.mp3";    // a swing that lands
+const char* const SFX_MISS = "sfx_03.mp3";   // a swing that misses or is dodged
+const char* const SFX_ITEM = "sfx_04.mp3";   // an item picked up, moved between inventory and gear, or dropped from inventory
 
 } // namespace
 
@@ -903,7 +915,8 @@ int main(int, char**) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return 1;
     }
-    // Every asset comes from data.pak next to the executable. Nothing is read from loose files.
+    // Every asset comes from data.pak next to the executable, except the music and sound effects: those are loose
+    // files in the BGM and SFX folders beside it, read by the audio module.
     if (!pakOpen("data.pak")) {
         SDL_Log("Could not open data.pak. It must sit next to the game executable.");
         return 1;
@@ -935,7 +948,7 @@ int main(int, char**) {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    SDL_Window* window = SDL_CreateWindow("RTS", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("Kobold Game", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, ctx);
 
@@ -1129,7 +1142,7 @@ int main(int, char**) {
         std::string err;
         levelSeed = (unsigned)std::time(nullptr);
         // The title music ends as a new game starts, before its level loads
-        audio::stopMusic();
+        audio::stopTracks();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
             showNotice("Could not load " + choice.name + ": " + err);
@@ -1211,7 +1224,7 @@ int main(int, char**) {
         const MapChoice choice = *found;
         std::string err;
         // The title music ends as a saved game starts, before its level loads
-        audio::stopMusic();
+        audio::stopTracks();
         if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
             showNotice("Map \"" + choice.name + "\" could not be loaded: " + err);
             refreshSaves();
@@ -1291,7 +1304,7 @@ int main(int, char**) {
     // Opens the world tool on a fresh world. The tool is set up the first time the editor opens.
     auto openEditor = [&]() {
         // The editor has no music of its own, so the title track ends here
-        audio::stopMusic();
+        audio::stopTracks();
         // Start clean: no units left over from a game
         world = World{};
         clearCombatText();
@@ -1353,6 +1366,8 @@ int main(int, char**) {
     auto settingsClick = [&](float x, float y, int W, int H) {
         const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
         const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
+        // Every control that does something clicks. Closing a dropdown, and a click on nothing, do not.
+        if (c.kind != ClickKind::None && c.kind != ClickKind::CloseDropdown) audio::playEffect(SFX_MENU);
         switch (c.kind) {
         case ClickKind::Tab:
             settingsSelectTab(settingsUi, static_cast<SettingsTab>(c.index));
@@ -1389,6 +1404,7 @@ int main(int, char**) {
 
     // Runs a button's action
     auto performAction = [&](Action action, int param) {
+        audio::playEffect(SFX_MENU);
         switch (action) {
         case Action::Continue:
             if (!saves.empty()) loadSave(saves.front().path);
@@ -1717,9 +1733,11 @@ int main(int, char**) {
         // Taken at the top of the frame, for the frame rate limit at its end
         const auto frameStart = std::chrono::steady_clock::now();
 
-        // Music follows the screen. A screen that names a track starts it, nullptr keeps what is playing, and
-        // "" is silence. Each request is tried once, so a missing track is not reloaded every frame.
-        if (const char* track = musicFor(screen)) audio::playMusic(track);
+        // Music and ambient sound follow the screen. A screen that names a track starts it, nullptr keeps what is
+        // playing, and "" is silence. Each request is tried once, so a missing track is not reloaded every frame.
+        const Soundtrack sound = soundtrackFor(screen);
+        if (sound.music) audio::playTrack(audio::Bus::Music, sound.music);
+        if (sound.ambient) audio::playTrack(audio::Bus::Ambient, sound.ambient);
 
         int winW, winH;
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
@@ -2024,8 +2042,13 @@ int main(int, char**) {
                             const Entity unit = itemMenu.unit;
                             const int slot = itemMenu.slot;
                             itemMenu.open = false;
-                            if (hit >= 0 && labels[hit] == "Use") useSlot(unit, slot);
-                            else if (hit >= 0 && labels[hit] == "Drop") dropStack(world, unit, slot);
+                            if (hit >= 0 && labels[hit] == "Use") {
+                                useSlot(unit, slot);
+                                audio::playEffect(SFX_MENU);
+                            } else if (hit >= 0 && labels[hit] == "Drop") {
+                                // A drop from the inventory plays its own sound, in place of the menu click
+                                audio::playEffect(dropStack(world, unit, slot) ? SFX_ITEM : SFX_MENU);
+                            }
                             if (onMenu) break;
                         }
                     }
@@ -2133,7 +2156,8 @@ int main(int, char**) {
                         const Equipment* wornHere = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
                         if (wornHere && gear >= 0 && wornHere->items[gear] != 0) {
                             std::string why;
-                            if (!unequipToInventory(world, picked[0], gear, why) && !why.empty()) showNotice(why);
+                            if (unequipToInventory(world, picked[0], gear, why)) audio::playEffect(SFX_ITEM);
+                            else if (!why.empty()) showNotice(why);
                         } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
                             const int item = inv->slots[slot].item;
                             const ItemDef* def = findItem(item);
@@ -2143,6 +2167,8 @@ int main(int, char**) {
                                 std::string why;
                                 if (target < 0 || !equipFromInventory(world, picked[0], slot, target, why)) {
                                     showNotice(why.empty() ? def->name + " can't be worn" : why);
+                                } else {
+                                    audio::playEffect(SFX_ITEM);
                                 }
                             } else {
                                 itemMenu = ItemMenu{ true, picked[0], slot, e.button.x, e.button.y };
@@ -2193,9 +2219,10 @@ int main(int, char**) {
                             // An inventory stack: onto a gear slot it equips, out of the sidebar it drops
                             // under the unit. Released on the rest of the sidebar, nothing happens.
                             if (gear >= 0) {
-                                if (!equipFromInventory(world, dragUnit, dragSlot, gear, why) && !why.empty()) showNotice(why);
+                                if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) audio::playEffect(SFX_ITEM);
+                                else if (!why.empty()) showNotice(why);
                             } else if (!overSidebar) {
-                                dropStack(world, dragUnit, dragSlot);
+                                if (dropStack(world, dragUnit, dragSlot)) audio::playEffect(SFX_ITEM);
                             }
                         } else {
                             // A gear item: onto another gear slot it moves, onto the inventory it comes off,
@@ -2203,7 +2230,8 @@ int main(int, char**) {
                             if (gear >= 0 && gear != dragGear) {
                                 if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) showNotice(why);
                             } else if (onGrid) {
-                                if (!unequipToInventory(world, dragUnit, dragGear, why) && !why.empty()) showNotice(why);
+                                if (unequipToInventory(world, dragUnit, dragGear, why)) audio::playEffect(SFX_ITEM);
+                                else if (!why.empty()) showNotice(why);
                             } else if (!overSidebar) {
                                 dropEquipped(world, dragUnit, dragGear);
                             }
@@ -2306,15 +2334,20 @@ int main(int, char**) {
             if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
             cam.updateClearance(terrain);
 
-            // Fighting first, so a unit that dies this frame is gone before the others move
+            // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
+            // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
+            const size_t hitsBefore = combatLog.hits;
+            const size_t missesBefore = combatLog.misses;
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
+            if (combatLog.hits > hitsBefore) audio::playEffect(SFX_HIT);
+            else if (combatLog.misses > missesBefore) audio::playEffect(SFX_MISS);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
             const size_t logCount = combatLog.lines.size();
             if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
             logSeen = logCount;
             squadSystem(world, dt, runMode);
             steeringSystem(world, terrain, dt, runMode);
-            pickupSystem(world);
+            if (pickupSystem(world) > 0) audio::playEffect(SFX_ITEM);
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
@@ -2337,7 +2370,7 @@ int main(int, char**) {
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
-        std::string title = "RTS   " + formatDate(gs.clockSeconds);
+        std::string title = "Kobold Game   " + formatDate(gs.clockSeconds);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;

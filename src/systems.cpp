@@ -346,7 +346,8 @@ void needsSystem(World& w, int hours, double gameSeconds) {
     }
 }
 
-void pickupSystem(World& w) {
+int pickupSystem(World& w) {
+    int taken = 0;
     // view() returns a copy, so ending a pickup inside the loop is safe
     for (Entity u : w.view<PickupOrder, Transform, Inventory>()) {
         const Entity item = w.get<PickupOrder>(u)->item;
@@ -362,9 +363,11 @@ void pickupSystem(World& w) {
         if (dx * dx + dz * dz <= PICKUP_REACH * PICKUP_REACH) {
             // Take what fits. Whatever is left stays on the ground. If nothing fits the order ends,
             // and the unit stays where it is.
+            const int count = gi->count;
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left == 0) w.destroy(item);
             else gi->count = left;
+            if (w.has<Commandable>(u) && left < count) ++taken;
             endPickup(w, u);
             continue;
         }
@@ -373,6 +376,7 @@ void pickupSystem(World& w) {
         const SoloMove* so = w.get<SoloMove>(u);
         if (!so || so->next >= so->waypoints.size()) endPickup(w, u);
     }
+    return taken;
 }
 
 void squadSystem(World& w, float dt, bool running) {

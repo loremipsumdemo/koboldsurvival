@@ -1,35 +1,31 @@
 #pragma once
 #include <string>
 
-// Audio output, with three buses that the settings control: Music, Ambient and Sound Effects. Each bus has
-// a level from 0 to 100 and can be switched off, which mutes it and keeps the level for when it is back on.
-//
-// Music is one looped track at a time, read from a BGM folder next to the working directory, the same place
-// data.pak is read from.
-//
-// Nothing here stops the game from running. With no audio output, or a missing, unreadable or corrupt file,
-// the sound is simply silent and no error is shown.
+// Game audio, through miniaudio. There are three buses, each with a level from 0 to 100 and an on/off switch that
+// keeps the level. The music and ambient buses each loop one track; the effects bus plays one-shot sounds.
+// Tracks are read from the BGM folder and sound effects from the SFX folder: loose files next to the executable,
+// not packed into data.pak. A file that is missing or cannot be decoded is silent, with no error.
 namespace audio {
 
 enum class Bus : int { Music = 0, Ambient, Effects, Count };
 
-// Opens the audio output. Returns false if there is none, and the calls below then do nothing.
+// Opens the audio output. Without one, everything below is a quiet no-op. Returns whether it opened.
 bool init();
-
-// Stops the music and closes the audio output.
 void shutdown();
 
-// Sets a bus's level, 0 to 100, and whether it is heard at all
+// Sets a bus's level, 0 to 100, and whether it is heard
 void setBus(Bus bus, int level, bool on);
 
-// Plays `file`, a name in the BGM folder such as "title.mp3", looped on the Music bus. An empty name stops
-// the music. Asking for the track already playing does nothing, so this can be called every frame.
-void playMusic(const std::string& file);
+// Loops a track on the music or the ambient bus. Asking for the track already playing does not restart it, and
+// "" stops the bus. The other buses hold no tracks, so they are ignored.
+void playTrack(Bus bus, const std::string& file);
+// Stops the music and the ambient tracks
+void stopTracks();
+// The track a bus is playing, or "" when none is
+std::string trackPlaying(Bus bus);
 
-// Stops the music at once
-void stopMusic();
-
-// The track that is playing, or empty when the music is silent
-std::string musicPlaying();
+// Plays a sound effect once on the effects bus. Each call starts it from the beginning on the next of a few copies
+// in turn, so the same effect can overlap itself a few times. A copy still playing is restarted.
+void playEffect(const std::string& file);
 
 } // namespace audio

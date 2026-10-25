@@ -29,7 +29,7 @@ struct GameSettings {
     int height = 720;
     int refreshHz = 0;              // fullscreen refresh rate, 0 for the monitor's default
     bool vsync = true;
-    int fpsLimit = 0;               // 0 for no limit
+    int fpsLimit = 60;              // frames per second, 0 for no limit
 
     // Interface
     int autosaveMinutes = 5;        // 0 for off
@@ -101,7 +101,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.width = std::clamp(s.width, 640, 15360);
     s.height = std::clamp(s.height, 480, 8640);
     s.refreshHz = std::clamp(s.refreshHz, 0, 1000);
-    if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = 0;
+    if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
