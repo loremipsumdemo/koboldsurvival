@@ -5,9 +5,15 @@
 // one, or, if hunger is already zero, lowers health by one instead. Neither goes below zero.
 inline void tickNeeds(Needs& n, int hours) {
     for (int i = 0; i < hours; ++i) {
-        if (n.hunger > 0) --n.hunger;
-        else if (n.hp > 0) --n.hp;
-        else break;   // both empty: nothing more can change
+        if (n.hunger > 0) {
+            --n.hunger;
+            n.changed |= NEEDS_HUNGER_CHANGED;
+        } else if (n.hp > 0) {
+            --n.hp;
+            n.changed |= NEEDS_HP_CHANGED;
+        } else {
+            break;   // both empty: nothing more can change
+        }
     }
 }
 
@@ -27,6 +33,7 @@ inline void regenHealth(Needs& n, bool inCombat, double gameSeconds) {
     n.healSeconds += gameSeconds;
     while (n.healSeconds >= REGEN_GAME_SECONDS && n.hp < n.maxHp) {
         ++n.hp;
+        n.changed |= NEEDS_HP_CHANGED;
         n.healSeconds -= REGEN_GAME_SECONDS;
     }
     if (n.hp >= n.maxHp) n.healSeconds = 0.0;

@@ -114,10 +114,15 @@ int applyUse(const std::vector<UseEffect>& effects, const UseTarget& t) {
                 const int amount = e.amount > 0 ? (int)std::lround(e.amount * t.healScale) : e.amount;
                 t.needs->hp = std::clamp(before + amount, 0, t.needs->maxHp);
                 restored += std::max(0, t.needs->hp - before);
+                if (t.needs->hp != before) t.needs->changed |= NEEDS_HP_CHANGED;
             }
             break;
         case UseEffect::Stat::Hunger:
-            if (t.needs) t.needs->hunger = std::clamp(t.needs->hunger + e.amount, 0, t.needs->maxHunger);
+            if (t.needs) {
+                const int before = t.needs->hunger;
+                t.needs->hunger = std::clamp(before + e.amount, 0, t.needs->maxHunger);
+                if (t.needs->hunger != before) t.needs->changed |= NEEDS_HUNGER_CHANGED;
+            }
             break;
         case UseEffect::Stat::Attack:
             if (t.combat && e.seconds > 0.0f) {
@@ -136,8 +141,20 @@ void applyUseEffects(const std::vector<UseEffect>& effects, Needs& needs) {
     applyUse(effects, t);
 }
 
-UseResult useStackInSlot(World& w, Entity unit, int slot) {
-    Inventory* inv = w.get<Inventory>(unit);
+int restoreAmount(const ItemDef& def, UseEffect::Stat stat) {
+    if (def.typeId != "consumable" || def.onUse.empty()) return 0;
+    std::vector<UseEffect> effects;
+    std::string err;
+    if (!parseUseScript(def.onUse, effects, err)) return 0;
+    int total = 0;
+    for (const UseEffect& e : effects) {
+        if (e.stat == stat && e.amount > 0) total += e.amount;
+    }
+    return total;
+}
+
+UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
+    Inventory* inv = w.get<Inventory>(consumer);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return UseResult::Empty;
 
     ItemStack& s = inv->slots[slot];
@@ -154,14 +171,20 @@ UseResult useStackInSlot(World& w, Entity unit, int slot) {
     }
     if (effects.empty()) return UseResult::NotUsable;
 
-    UseTarget target;
-    target.needs = w.get<Needs>(unit);
-    target.combat = w.get<Combat>(unit);
-    if (const Stats* st = w.get<Stats>(unit)) {
-        target.healScale = 1.0f + 0.01f * (float)(levelOf(*st, STAT_MEDICAL) - 1);
+    // The effects land on the target. The healing scales with the consumer's Medical skill, and the Medical XP
+    // from it goes to the consumer.
+    UseTarget t;
+    t.needs = w.get<Needs>(target);
+    t.combat = w.get<Combat>(target);
+    if (const Stats* st = w.get<Stats>(consumer)) {
+        t.healScale = 1.0f + 0.01f * (float)(levelOf(*st, STAT_MEDICAL) - 1);
     }
-    const int restored = applyUse(effects, target);
+    const int restored = applyUse(effects, t);
     if (--s.count <= 0) s = ItemStack{};
-    grantXp(w, unit, STAT_MEDICAL, (float)restored);
+    grantXp(w, consumer, STAT_MEDICAL, (float)restored);
     return UseResult::Used;
+}
+
+UseResult useStackInSlot(World& w, Entity unit, int slot) {
+    return useStackOn(w, unit, unit, slot);
 }

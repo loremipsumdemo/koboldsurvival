@@ -8,17 +8,7 @@
 
 namespace {
 
-// Potions a unit drinks or eats in a fight: the share of its max health below which it uses one, and
-// how long the use takes. Listed in the order they are tried.
-struct AutoUse {
-    const char* item;
-    float below;
-    float seconds;
-};
-const AutoUse AUTO_USE[] = {
-    { "Health Potion", 0.35f, 1.0f },
-    { "Bread",         0.50f, 2.0f },
-};
+// Healing and food are not fixed here any more: each unit's behavior rules decide when it uses them (behavior.h).
 const char* const ELIXIR = "Elixir of Might";
 
 constexpr float STAMINA_DRAIN = 2.0f;   // stamina lost per second walking at a full load (scaled by the load)
@@ -153,7 +143,10 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 
     Needs* nd = w.get<Needs>(d);
     const int before = nd ? nd->hp : 0;
-    if (nd) nd->hp = std::max(0, before - r.damage);
+    if (nd) {
+        nd->hp = std::max(0, before - r.damage);
+        if (nd->hp != before) nd->changed |= NEEDS_HP_CHANGED;
+    }
     const int lost = nd ? before - nd->hp : r.damage;
 
     log.add(attacker + " hits " + defender + " for " + std::to_string(r.damage) +
@@ -170,24 +163,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     if (nd && nd->hp == 0) log.add(defender + " is down", tint);
 }
 
-// Drinks or eats a potion when a player unit is hurt. True if one was used, which takes its turn.
-bool tryAutoUse(World& w, Entity e, Combat& c, CombatLog& log) {
-    const CombatNumbers n = numbersOf(w, e);
-    for (const AutoUse& a : AUTO_USE) {
-        const int before = hpOf(w, e);
-        if (before >= a.below * n.maxHp) continue;
-        const int slot = slotNamed(w, e, a.item);
-        if (slot < 0) continue;
-        if (useStackInSlot(w, e, slot) != UseResult::Used) continue;
-        c.swingLeft = a.seconds;
-        log.add(nameOf(w, e) + " uses " + a.item + ": HP " + std::to_string(before) + " -> " +
-                std::to_string(hpOf(w, e)) + " of " + std::to_string(n.maxHp));
-        return true;
-    }
-    return false;
-}
-
-// A player unit that has just picked a fight drinks an elixir first, if it has one and none is active
+// A unit that has just picked a fight drinks an elixir first, if it has one and none is active
 void drinkForFight(World& w, Entity p, Combat& pc, CombatLog& log) {
     if (pc.buffLeft > 0.0f) return;
     const int slot = slotNamed(w, p, ELIXIR);
@@ -278,7 +254,8 @@ float encumbranceOf(World& w, Entity e) {
 float walkSpeedOf(World& w, Entity e, bool running) {
     const Unit* u = w.get<Unit>(e);
     if (!u || isDowned(w, e)) return 0.0f;
-    if (!w.has<Commandable>(e)) return u->speed;   // hostiles walk at their own pace
+    // Running is the player's pace for its squads, so a red unit never runs
+    if (!w.has<Commandable>(e)) running = false;
 
     const Stats s = statsOf(w, e);
     const Combat* c = w.get<Combat>(e);
@@ -300,7 +277,6 @@ float strengthXpWhileWalking(float encumbrance, float seconds) {
 
 void grantXp(World& w, Entity e, int stat, float amount) {
     if (amount <= 0.0f || stat < 0 || stat >= STAT_COUNT) return;
-    if (!w.has<Commandable>(e)) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;
 
@@ -380,8 +356,11 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         const CombatNumbers n = numbersOf(w, e);
 
         if (Needs* nd = w.get<Needs>(e)) {
+            const int hpBefore = nd->hp, maxBefore = nd->maxHp;
             nd->maxHp = n.maxHp;
             nd->hp = std::min(nd->hp, n.maxHp);
+            // Only a real change counts, since this runs every frame
+            if (nd->hp != hpBefore || nd->maxHp != maxBefore) nd->changed |= NEEDS_HP_CHANGED;
         }
 
         if (c.stamina < 0.0f) c.stamina = n.maxStamina;   // first frame: start full
@@ -394,7 +373,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             if (c.buffLeft <= 0.0f) {
                 c.buffLeft = 0.0f;
                 c.buffAttack = 0.0f;
-                if (w.has<Commandable>(e)) log.add(nameOf(w, e) + "'s Elixir of Might wears off");
+                log.add(nameOf(w, e) + "'s Elixir of Might wears off");
             }
         }
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);
@@ -417,19 +396,22 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {
                 hc.target = p;
                 log.add(nameOf(w, h) + " notices " + nameOf(w, p));
+                drinkForFight(w, h, hc, log);
                 break;
             }
         }
     }
 
-    // Spotting and stealth XP for each standing player unit
-    for (Entity p : players) {
-        if (!standing(p)) continue;
+    // Spotting and stealth XP for each standing unit, against the opposing side: player units spot red units, and
+    // red units spot player units
+    for (Entity p : everyone) {
+        if (!standing(p) || !w.has<Combat>(p)) continue;
         Combat& pc = *w.get<Combat>(p);
         const Stats st = statsOf(w, p);
         const float spotRange = AGGRO_RANGE * (1.0f + PERCEPTION_RANGE_PER_LEVEL * (levelOf(st, STAT_PERCEPTION) - 1));
+        const std::vector<Entity>& foes = w.has<Commandable>(p) ? hostiles : players;
         bool unnoticedInRange = false;
-        for (Entity h : hostiles) {
+        for (Entity h : foes) {
             if (!standing(h)) continue;
             const float d = distanceBetween(w, p, h);
             if (d <= spotRange && std::find(pc.spotted.begin(), pc.spotted.end(), h) == pc.spotted.end()) {
@@ -465,15 +447,14 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc, log);
     }
 
-    // Swings. Each unit whose swing is ready, standing, and in reach of its target swings, or first
-    // uses a potion if it is hurt. Units removed by a kill are skipped by the existence check.
+    // Swings. Each unit whose swing is ready, standing, and in reach of its target swings. Units removed by a
+    // kill are skipped by the existence check.
     for (Entity e : everyone) {
         if (!w.has<Combat>(e) || !w.has<Transform>(e) || !standing(e)) continue;
         Combat& c = *w.get<Combat>(e);
         if (c.target == NULL_ENTITY || c.swingLeft > 0.0f) continue;
         const Entity t = c.target;
         if (!targetable(w, t) || distanceBetween(w, e, t) > ATTACK_REACH) continue;
-        if (w.has<Commandable>(e) && tryAutoUse(w, e, c, log)) continue;
         strike(w, rng, e, t, log, floats);
     }
 }

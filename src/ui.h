@@ -1,9 +1,6 @@
 #pragma once
 #include <string>
 
-// Build version shown on the title screen
-inline constexpr const char* GAME_VERSION = "0.1.0";
-
 // Which screen is showing
 enum class Screen { Title, Settings, Playing, Pause, MapSelect, MapEditor, DevTools, PartySetup };
 

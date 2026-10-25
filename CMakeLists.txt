@@ -69,6 +69,19 @@ set(WORLDTOOL_SOURCES
     src/worldmaker_host.cpp
 )
 
+# Build stamp for the title screen, BUILD.YYYY.MM.DD.HH.MM.mmm. The stamp is taken at build time, not configure time,
+# so build_stamp rewrites the generated source on every build. Listing that file as BYPRODUCTS makes Ninja run the
+# writer before it compiles the file; without it, the build can compile the previous build's stamp.
+add_executable(build_stamp tools/build_stamp.cpp)
+set_target_properties(build_stamp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tools")
+set(BUILD_STAMP_CPP "${CMAKE_BINARY_DIR}/generated/build_info.cpp")
+if(NOT EXISTS "${BUILD_STAMP_CPP}")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated")
+    file(WRITE "${BUILD_STAMP_CPP}" "extern const char* const BUILD_STAMP = \"BUILD.unset\";\n")
+endif()
+add_custom_target(write_build_stamp COMMAND build_stamp "${BUILD_STAMP_CPP}" BYPRODUCTS "${BUILD_STAMP_CPP}" VERBATIM)
+add_dependencies(write_build_stamp build_stamp)
+
 add_executable(koboldgame
     src/main.cpp
     src/renderer.cpp
@@ -81,6 +94,7 @@ add_executable(koboldgame
     src/party.cpp
     src/party_ui.cpp
     src/useitem.cpp
+    src/behavior.cpp
     src/systems.cpp
     src/terrain.cpp
     src/terrain_mesh.cpp
@@ -94,6 +108,7 @@ add_executable(koboldgame
     src/settings_menu.cpp
     src/settings_draw.cpp
     src/app.rc         # embeds the exe icon (src/app.ico) on Windows
+    ${BUILD_STAMP_CPP} # defines BUILD_STAMP, rewritten on every build
     ${WORLDTOOL_SOURCES}
 )
 
@@ -120,7 +135,7 @@ target_link_libraries(koboldgame PRIVATE
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
 # The game reads only this file, so the loose data/ folder is not copied.
-add_dependencies(koboldgame pack_data)
+add_dependencies(koboldgame pack_data write_build_stamp)
 add_custom_command(TARGET koboldgame POST_BUILD
     COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldgame>/data.pak"
     COMMENT "Packing data/ into data.pak"

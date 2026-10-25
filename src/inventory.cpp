@@ -1,5 +1,7 @@
 #include "inventory.h"
 #include <algorithm>
+#include <string>
+#include <tuple>
 #include "items.h"
 
 int stackLimit(int item) {
@@ -50,4 +52,31 @@ int occupiedSlots(const Inventory& inv) {
         if (s.item != 0) ++n;
     }
     return n;
+}
+
+namespace {
+
+// Where an item type sorts. Unknown types go after the ones the database lists.
+int typeRank(const std::string& typeId) {
+    static const char* const order[] = { "item", "consumable", "weapon", "armor", "accessory" };
+    for (int i = 0; i < (int)(sizeof(order) / sizeof(order[0])); ++i) {
+        if (typeId == order[i]) return i;
+    }
+    return (int)(sizeof(order) / sizeof(order[0]));
+}
+
+} // namespace
+
+void sortInventoryByType(Inventory& inv) {
+    auto key = [](const ItemStack& s) {
+        const ItemDef* def = findItem(s.item);
+        return std::make_tuple(typeRank(def ? def->typeId : std::string()), def ? def->name : std::string(), s.item);
+    };
+    std::stable_sort(inv.slots.begin(), inv.slots.end(), [&](const ItemStack& a, const ItemStack& b) {
+        const bool aEmpty = a.item == 0 || a.count <= 0;
+        const bool bEmpty = b.item == 0 || b.count <= 0;
+        if (aEmpty != bEmpty) return bEmpty;   // stacks before empty slots
+        if (aEmpty) return false;
+        return key(a) < key(b);
+    });
 }

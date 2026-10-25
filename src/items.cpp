@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include "pak.h"
 
 namespace {
@@ -278,24 +279,43 @@ bool parseItemSql(const std::string& sql, std::vector<ItemDef>& out, std::string
     return true;
 }
 
+namespace {
+
+std::vector<ItemDef>& databaseStorage() {
+    static std::vector<ItemDef> db;
+    return db;
+}
+
+bool& databaseLoaded() {
+    static bool loaded = false;
+    return loaded;
+}
+
+} // namespace
+
 const std::vector<ItemDef>& itemDatabase() {
-    static const std::vector<ItemDef> db = [] {
-        std::vector<ItemDef> items;
+    // Loaded from the pak the first time it is needed, unless replaceItemDatabase ran first
+    if (!databaseLoaded()) {
+        databaseLoaded() = true;
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         if (!pakFind("data/items.sql", bytes, size)) {
             std::fprintf(stderr, "items: data/items.sql is not in the pak\n");
-            return items;
+        } else {
+            std::string err;
+            const std::string sql((const char*)bytes, size);
+            if (!parseItemSql(sql, databaseStorage(), err)) {
+                std::fprintf(stderr, "items: %s\n", err.c_str());
+                databaseStorage().clear();
+            }
         }
-        std::string err;
-        const std::string sql((const char*)bytes, size);
-        if (!parseItemSql(sql, items, err)) {
-            std::fprintf(stderr, "items: %s\n", err.c_str());
-            items.clear();
-        }
-        return items;
-    }();
-    return db;
+    }
+    return databaseStorage();
+}
+
+void replaceItemDatabase(std::vector<ItemDef> items) {
+    databaseLoaded() = true;   // the pak is not read after this
+    databaseStorage() = std::move(items);
 }
 
 const ItemDef* findItem(int id) {

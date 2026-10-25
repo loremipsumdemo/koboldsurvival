@@ -2,6 +2,7 @@
 #include <array>
 #include <string>
 #include <vector>
+#include "behavior_rules.h"
 #include "ecs.h"
 #include "grid.h"
 #include "geometry.h"
@@ -32,7 +33,7 @@ struct Name {
     std::string text = "Unnamed Unit";
 };
 
-// Which unit image this unit uses: data/unit/01.png .. 38.png
+// Which unit image this unit uses: data/unit/01.png up to UNIT_SPRITE_COUNT (party.h)
 struct UnitSprite {
     int id = 1;
 };
@@ -95,12 +96,25 @@ struct Equipment {
 // while hunger is already 0 costs one health instead. Health is set from Vitality each frame, and it
 // stays between zero and the maximum. A unit at zero health is downed. Out of combat, with hunger over
 // half, health comes back one point per tenth of an in-game hour.
-// The last two fields are not saved: a loaded unit starts with no run mark and no part of a regen point.
+// The last three fields are not saved: a loaded unit starts with no run mark, no part of a regen point,
+// and both values marked changed, so its behaviors are checked once.
+constexpr unsigned NEEDS_HP_CHANGED = 1u;
+constexpr unsigned NEEDS_HUNGER_CHANGED = 2u;
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
     bool hurried = false;        // moved at run pace this in-game hour, so the next hunger tick costs double
     double healSeconds = 0.0;    // in-game seconds saved toward the next point of health
+    // Which values changed since the behavior pass last checked them. Every place that changes one sets its bit,
+    // and the pass clears the bits it has read.
+    unsigned changed = NEEDS_HP_CHANGED | NEEDS_HUNGER_CHANGED;
+};
+
+// A unit's behavior rules, highest priority first. pending is set when a rule is added or edited, so the next
+// behavior pass checks every rule, not only those whose values changed.
+struct Behaviors {
+    std::vector<BehaviorRule> rules = defaultBehaviors();
+    bool pending = true;
 };
 
 // Fighting state for a unit. Nothing here is saved: a loaded unit starts fresh, with its stamina full.

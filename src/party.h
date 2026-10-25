@@ -13,8 +13,8 @@
 // The starting party: the units a new game begins with, as set up in the party menu. Plain
 // functions over the data, so they can be tested without the game running.
 
-// Unit pictures are data/unit/01.png to 38.png
-inline constexpr int UNIT_SPRITE_COUNT = 38;
+// Unit pictures are data/unit/01.png to 71.png
+inline constexpr int UNIT_SPRITE_COUNT = 71;
 
 // Longest name a unit can have, in bytes
 inline constexpr size_t PARTY_NAME_LIMIT = 32;

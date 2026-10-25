@@ -4,6 +4,7 @@
 #include "inventory.h"
 #include "items.h"
 #include "pak.h"
+#include "party.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cmath>
@@ -353,12 +354,12 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     title_ = loadImage("data/ui/title.png", false);
     itemNone_ = loadOptionalImage("data/item/none.png");
     report(0.05f);
-    unitSprites_.reserve(38);
-    for (int i = 1; i <= 38; ++i) {
+    unitSprites_.reserve(UNIT_SPRITE_COUNT);
+    for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/unit/%02d.png", i);
         unitSprites_.push_back(loadImage(path, false));
-        report(0.05f + 0.75f * (float)i / 38.0f);
+        report(0.05f + 0.75f * (float)i / (float)UNIT_SPRITE_COUNT);
     }
     report(0.82f);
     report(0.86f);
@@ -576,6 +577,7 @@ void Renderer::beginUi(int winW, int winH) {
     uiH_ = winH;
     glViewport(0, 0, winW, winH);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);   // a clip left on by an earlier pass would cut off the menus
     // The UI backgrounds are translucent, so blending must be on. The sea pass in drawTerrain leaves it off.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -584,6 +586,7 @@ void Renderer::beginUi(int winW, int winH) {
 
 void Renderer::endUi() {
     glBindVertexArray(0);
+    glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);   // the world pass draws with blending off
     glEnable(GL_DEPTH_TEST);
 }
@@ -1475,7 +1478,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
 }
 
 void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
-                                    int dimSlot, int dimGear, int dragItem) {
+                                    int dimSlot, int dimGear, int dragItem, bool editable) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
@@ -1487,6 +1490,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const Equipment* worn = w.get<Equipment>(unit);
 
     drawRect(L.panel, RGBA{ 0.04f, 0.04f, 0.06f, bgAlpha });
+    // Everything below the panel's background scrolls, so it is clipped to the panel
+    beginClip(L.panel);
 
     // ---- Profile card: the unit's picture, name, health, hunger and carry ----
     drawRect(L.profile, RGBA{ 0.08f, 0.08f, 0.11f, bgAlpha });
@@ -1627,10 +1632,11 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     // ---- Inventory grid on its own background ----
     drawRect(L.gridPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
     drawListText("Inventory", L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, white);
+    // The slot count sits left of the sort button, which is at the right of the heading
     const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
                              std::to_string(INVENTORY_SLOTS) + " slots";
-    drawListText(used, L.gridPanel.x + L.gridPanel.w - 10.0f * s - listTextWidth(used),
-                 L.gridPanel.y + 6.0f * s, gray);
+    drawListText(used, L.sortButton.x - 8.0f * s - listTextWidth(used), L.gridPanel.y + 6.0f * s, gray);
+    drawSmallButton(L.sortButton, "Sort", editable, editable && L.sortButton.contains(mx, my));
 
     int hoverSlot = -1;
     for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
@@ -1660,6 +1666,13 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (r.contains(mx, my)) hoverSlot = (int)i;
     }
 
+    // The behavior list under the grid
+    {
+        const Behaviors* beh = w.get<Behaviors>(unit);
+        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), mx, my, editable);
+    }
+    endClip();
+
     // Tooltips and highlights are for hovering, not while something is being dragged
     if (dragItem == 0 && hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
         const Rect& r = L.slots[hoverSlot];
@@ -1671,6 +1684,138 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.18f });
         drawItemTooltip(worn->items[hoverGear], 1, mx, my);
     }
+}
+
+void Renderer::beginClip(const Rect& r) {
+    // OpenGL counts rows from the bottom of the window, the layout from the top
+    const int x0 = std::max(0, (int)std::floor(r.x));
+    const int x1 = std::min(uiW_, (int)std::ceil(r.x + r.w));
+    const int top = std::max(0, (int)std::floor(r.y));
+    const int bottom = std::min(uiH_, (int)std::ceil(r.y + r.h));
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x0, uiH_ - bottom, std::max(0, x1 - x0), std::max(0, bottom - top));
+}
+
+void Renderer::endClip() {
+    glDisable(GL_SCISSOR_TEST);
+}
+
+void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
+    const RGBA bg = !enabled ? RGBA{ 0.10f, 0.10f, 0.12f, 0.70f }
+                  : hovered  ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
+                             : RGBA{ 0.14f, 0.17f, 0.22f, 0.90f };
+    drawRect(r, bg);
+    const RGBA fg = enabled ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
+    const float tw = listTextWidth(label), th = listTextHeight(label);
+    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
+}
+
+void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules,
+                                   float mx, float my, bool editable) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    const float bgAlpha = 0.5f;
+    const float listH = listTextHeight("Ag");
+    const Rect& P = L.behaviorPanel;
+
+    drawRect(P, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
+    drawListText("Behavior", P.x + 10.0f * s, P.y + 6.0f * s, white);
+    const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
+    drawListText(count, P.x + P.w - 10.0f * s - listTextWidth(count), P.y + 6.0f * s, gray);
+
+    static const char* const heads[5] = { "On", "Target", "Condition", "Action", "Target" };
+    for (size_t i = 0; i < 5; ++i) {
+        const Rect& h = L.behaviorHeads[i];
+        drawListText(fitText(heads[i], h.w, false), h.x, h.y + (h.h - listH) * 0.5f, gray);
+    }
+
+    for (size_t i = 0; i < L.behaviorRows.size() && i < rules.size(); ++i) {
+        const BehaviorRowLayout& R = L.behaviorRows[i];
+        const BehaviorRule& r = rules[i];
+        if (editable && R.row.contains(mx, my)) drawRect(R.row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
+        // A rule that is off reads gray, so the list shows at a glance which ones work
+        const RGBA text = r.on ? white : gray;
+
+        // The on box: a dark square, with a blue fill while the rule is on
+        drawRect(Rect{ R.toggle.x - 1.0f, R.toggle.y - 1.0f, R.toggle.w + 2.0f, R.toggle.h + 2.0f },
+                 RGBA{ 0.30f, 0.30f, 0.36f, bgAlpha });
+        drawRect(R.toggle, RGBA{ 0.10f, 0.10f, 0.13f, bgAlpha });
+        if (r.on) {
+            const float inset = 3.0f * s;
+            drawRect(Rect{ R.toggle.x + inset, R.toggle.y + inset,
+                           R.toggle.w - 2.0f * inset, R.toggle.h - 2.0f * inset },
+                     RGBA{ 0.35f, 0.62f, 0.95f, editable ? 1.0f : 0.5f });
+        }
+
+        // Each option cell shows its text, fitted to the cell, and lights up under the mouse
+        auto cell = [&](const Rect& c, const std::string& label) {
+            const bool hot = editable && c.contains(mx, my);
+            drawRect(c, hot ? RGBA{ 0.22f, 0.28f, 0.38f, 0.90f } : RGBA{ 0.10f, 0.10f, 0.13f, 0.90f });
+            drawListText(fitText(label, c.w - 8.0f * s, false), c.x + 4.0f * s, c.y + (c.h - listH) * 0.5f, text);
+        };
+        cell(R.conditionTarget, targetName(r.conditionTarget));
+        cell(R.condition, std::string(conditionName(r.condition)) + " " + opName(r.op) + " " +
+                          std::to_string(r.percent) + "%");
+        cell(R.action, actionName(r.action));
+        cell(R.actionTarget, targetName(r.actionTarget));
+
+        const bool upOn = editable && i > 0;
+        const bool downOn = editable && i + 1 < rules.size();
+        drawSmallButton(R.up, "^", upOn, upOn && R.up.contains(mx, my));
+        drawSmallButton(R.down, "v", downOn, downOn && R.down.contains(mx, my));
+        drawSmallButton(R.remove, "x", editable, editable && R.remove.contains(mx, my));
+    }
+
+    const bool canAdd = editable && rules.size() < (size_t)BEHAVIOR_LIMIT;
+    drawButton(L.addButton, "+ Add behavior", canAdd, canAdd && L.addButton.contains(mx, my));
+}
+
+void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my) {
+    const BehaviorHit hit = behaviorHitAt(L, mx, my);
+    const Behaviors* b = w.get<Behaviors>(unit);
+    if (hit.row < 0 || !b || hit.row >= (int)b->rules.size()) return;
+    const float s = uiH_ / 720.0f;
+    std::vector<TipRow> rows(1);
+    rows[0].text = describeRule(b->rules[(size_t)hit.row]);
+    const float width = tipWidth(rows), height = tipHeight(rows.size());
+    // Beside the mouse, moved to the other side or up when the window has no room for it
+    float x = mx + 14.0f * s, y = my + 14.0f * s;
+    if (x + width > uiW_) x = mx - 14.0f * s - width;
+    if (y + height > uiH_) y = uiH_ - height;
+    drawTip(rows, std::max(0.0f, x), std::max(0.0f, y), width);
+}
+
+ConditionEditorLayout Renderer::conditionEditorLayout(float x, float y, int winW, int winH) {
+    return layoutConditionEditor(x, y, listTextHeight("Ag"), winW, winH);
+}
+
+void Renderer::drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my) {
+    drawRect(L.box, RGBA{ 0.04f, 0.04f, 0.06f, 0.92f });
+    // A choice is lit when it is the rule's current one, and brighter still under the mouse
+    auto choice = [&](const Rect& c, const std::string& label, bool current) {
+        const bool hot = c.contains(mx, my);
+        const RGBA bg = current ? RGBA{ 0.28f, 0.46f, 0.74f, 0.95f }
+                      : hot     ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
+                                : RGBA{ 0.14f, 0.17f, 0.22f, 0.95f };
+        drawRect(c, bg);
+        const float tw = listTextWidth(label), th = listTextHeight(label);
+        drawListText(label, c.x + (c.w - tw) * 0.5f, c.y + (c.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    };
+    for (size_t i = 0; i < L.kinds.size(); ++i) {
+        choice(L.kinds[i], conditionName((BehaviorCondition)i), (int)r.condition == (int)i);
+    }
+    for (size_t i = 0; i < L.ops.size(); ++i) {
+        choice(L.ops[i], opName((BehaviorOp)i), (int)r.op == (int)i);
+    }
+    static const char* const stepLabels[4] = { "-10", "-1", "+1", "+10" };
+    for (size_t i = 0; i < L.steps.size() && i < 4; ++i) {
+        choice(L.steps[i], stepLabels[i], false);
+    }
+    drawRect(L.value, RGBA{ 0.10f, 0.10f, 0.13f, 0.95f });
+    const std::string pct = std::to_string(r.percent) + "%";
+    drawListText(pct, L.value.x + (L.value.w - listTextWidth(pct)) * 0.5f,
+                 L.value.y + (L.value.h - listTextHeight(pct)) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {

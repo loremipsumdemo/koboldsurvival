@@ -38,6 +38,10 @@ bool parseItemSql(const std::string& sql, std::vector<ItemDef>& out, std::string
 // missing or can't be parsed; the reason is printed to stderr.
 const std::vector<ItemDef>& itemDatabase();
 
+// Replaces the database with these items and stops the pak from being read. For tests, which
+// supply their own definitions. Any pointer from findItem before this call is no longer valid.
+void replaceItemDatabase(std::vector<ItemDef> items);
+
 // The definition with this id, or null if there is none. Id 0 means "no item".
 const ItemDef* findItem(int id);
 

@@ -16,7 +16,7 @@
 
 // Save files are plain text. The terrain comes from the map the save was made on, and the wagon
 // and red units from the seed. A save stores what changes: the clock, the units, what they carry,
-// the items on the ground and the camera.
+// their behavior rules, the items on the ground and the camera.
 
 inline constexpr const char* SAVE_DIR = "saves";
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
@@ -46,6 +46,9 @@ struct SaveUnit {
     // Older saves have no stats. Those units get defaultStats().
     bool hasStats = false;
     Stats stats;
+    // Older saves have no behaviors. Those units get defaultBehaviors().
+    bool hasBehaviors = false;
+    std::vector<BehaviorRule> behaviors;   // highest priority first
 };
 
 // An item lying on the ground when the game was saved
@@ -120,6 +123,14 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "stats " << i;
             for (int xp : u.stats.xp) out << " " << xp;
             out << "\n";
+        }
+        if (u.hasBehaviors) {
+            out << "behaviors " << i << "\n";
+            for (const BehaviorRule& b : u.behaviors) {
+                out << "behavior " << i << " " << (b.on ? 1 : 0) << " " << (int)b.conditionTarget << " "
+                    << (int)b.condition << " " << (int)b.op << " " << b.percent << " " << (int)b.action << " "
+                    << (int)b.actionTarget << "\n";
+            }
         }
     }
     if (d.hasItems) {
@@ -209,6 +220,23 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 if (!ss.fail() && i < d.units.size()) {
                     d.units[i].hasStats = true;
                     d.units[i].stats = st;
+                }
+            }
+            else if (line.rfind("behaviors ", 0) == 0) {
+                std::istringstream ss(line.substr(10));
+                size_t i = 0;
+                ss >> i;
+                if (!ss.fail() && i < d.units.size()) d.units[i].hasBehaviors = true;
+            }
+            else if (line.rfind("behavior ", 0) == 0) {
+                std::istringstream ss(line.substr(9));
+                size_t i = 0;
+                int on = 0, conditionTarget = 0, condition = 0, op = 0, percent = 0, action = 0, actionTarget = 0;
+                ss >> i >> on >> conditionTarget >> condition >> op >> percent >> action >> actionTarget;
+                if (!ss.fail() && i < d.units.size() &&
+                    d.units[i].behaviors.size() < (size_t)BEHAVIOR_LIMIT) {
+                    d.units[i].behaviors.push_back(ruleFromFields(on, conditionTarget, condition, op, percent,
+                                                                  action, actionTarget));
                 }
             }
         }

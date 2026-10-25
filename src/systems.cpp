@@ -6,6 +6,7 @@
 #include "inventory.h"
 #include "items.h"
 #include "needs.h"
+#include "party.h"
 
 namespace {
 
@@ -153,9 +154,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(u, Inventory{});
         w.add(u, Equipment{});
         w.add(u, Needs{});
+        w.add(u, Behaviors{});
         w.add(u, Combat{});
         w.add(u, Name{});
-        w.add(u, UnitSprite{ rng.range(1, 38) });
+        w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
     }
 
     // Red units: same kind of unit, but they stand still and can't be commanded. They are placed on
@@ -179,11 +181,13 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(e, Transform{ x, t.heightAt(x, z), z });
         w.add(e, Unit{ HOSTILE_WALK_SPEED });
         w.add(e, Hostile{});
+        w.add(e, Inventory{});
         w.add(e, Equipment{});
         w.add(e, Needs{});
+        w.add(e, Behaviors{});
         w.add(e, Combat{});
         w.add(e, Name{});
-        w.add(e, UnitSprite{ rng.range(1, 38) });
+        w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
     }
 
     // Wagons on free ground near the spawn, each on its own tile. They are decorative and do not block movement.
@@ -525,7 +529,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         const Entity e = units[i];
         Transform* tr = w.get<Transform>(e);
         const bool player = w.has<Commandable>(e);
-        const float load = player ? encumbranceOf(w, e) : 0.0f;
+        const float load = encumbranceOf(w, e);
         const float x0 = tr->x, z0 = tr->z, y0 = tr->y;
 
         float nx = tr->x + vel[i].first * dt;
@@ -540,13 +544,13 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             c->moved = moved;
             c->encumbrance = load;
         }
-        if (player && moved > 0.0f) {
+        if (moved > 0.0f) {
             grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved);
             grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt));
             if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0);
             // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
             // a hundredth of a tile or less in a frame, is not walking.
-            if (running && moved >= 0.01f) {
+            if (player && running && moved >= 0.01f) {
                 if (Needs* nd = w.get<Needs>(e)) nd->hurried = true;
             }
         }

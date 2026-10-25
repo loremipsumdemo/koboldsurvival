@@ -3,6 +3,7 @@
 #include <vector>
 #include "components.h"
 #include "ecs.h"
+#include "items.h"
 
 // What a consumable does when it is right-clicked in the inventory. Its script is a few statements,
 // separated by ';' or new lines. Each names a stat, then a sign and a whole number:
@@ -48,3 +49,11 @@ enum class UseResult {
 // Right-click on an inventory slot. A consumable with a script applies it, and one item leaves the stack.
 // Health restored by a unit's own item counts as Medical XP.
 UseResult useStackInSlot(World& w, Entity unit, int slot);
+
+// Uses a stack from the consumer's inventory on a target unit: the effects land on the target, and one item
+// leaves the consumer's stack. The consumer's Medical skill scales the healing and earns the XP.
+UseResult useStackOn(World& w, Entity consumer, Entity target, int slot);
+
+// How much of a stat a consumable restores: the total of its positive effects on it. Zero for anything that is
+// not a consumable with a working script.
+int restoreAmount(const ItemDef& def, UseEffect::Stat stat);

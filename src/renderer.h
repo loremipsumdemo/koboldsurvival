@@ -99,12 +99,22 @@ public:
     // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
     // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running);
-    // Right sidebar for one unit: its profile card, its gear and its 32 inventory slots. (mx, my) is the
-    // mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
+    // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
+    // is the mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
-    // show green or red for whether it may go there.
+    // show green or red for whether it may go there. editable says whether the sort, the behavior edits and
+    // the add button work; for a red unit they are drawn dimmed.
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
-                              int dimSlot, int dimGear, int dragItem);
+                              int dimSlot, int dimGear, int dragItem, bool editable);
+    // The full text of the behavior row under the mouse, beside it. Call after drawInventorySidebar.
+    void drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my);
+    // Clips drawing to r until endClip, in window pixels with the top left at the top left. The sidebar's
+    // content scrolls under its panel, so it is clipped to the panel.
+    void beginClip(const Rect& r);
+    void endClip();
+    // The condition editor for a behavior, opened at (x, y), and its drawing. r is the rule being edited.
+    ConditionEditorLayout conditionEditorLayout(float x, float y, int winW, int winH);
+    void drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my);
     // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
     // The in-game clock and date in a box at the top right. right is the x the box lines up against:
@@ -178,6 +188,11 @@ private:
 
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
+    // The behavior list under the inventory: its heading, column headings, one row per rule and the add button
+    void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules,
+                             float mx, float my, bool editable);
+    // A small list-font button with a centered label, for the sort, priority and delete buttons
+    void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom
     void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
     // Clock text: every digit takes the width of the widest digit, so the numbers don't shift

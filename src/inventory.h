@@ -15,3 +15,7 @@ float carriedWeight(const Inventory& inv);
 
 // Number of slots holding something
 int occupiedSlots(const Inventory& inv);
+
+// Reorders the stacks by item type (items, consumables, weapons, armor, accessories), then by name. Empty slots
+// go last. Stacks are not merged or split, so every item is still there.
+void sortInventoryByType(Inventory& inv);

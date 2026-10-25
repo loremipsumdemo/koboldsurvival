@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "build_info.h"
 #include "camera.h"
 #include "gui.h"
 #include "sky.h"
@@ -34,6 +35,7 @@
 #include "inventory.h"
 #include "party.h"
 #include "party_ui.h"
+#include "behavior.h"
 #include "combat.h"
 #include "equip.h"
 #include "items.h"
@@ -391,18 +393,22 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Hostile{});
         } else {
             world.add(e, Commandable{});
-            Inventory inv;
-            for (const SaveStack& s : u.stacks) {
-                if (s.slot >= 0 && s.slot < INVENTORY_SLOTS && s.stack.item > 0 && s.stack.count > 0) {
-                    inv.slots[s.slot] = s.stack;
-                }
-            }
-            world.add(e, inv);
         }
+        // Every unit carries items and has behaviors, whichever side it is on
+        Inventory inv;
+        for (const SaveStack& s : u.stacks) {
+            if (s.slot >= 0 && s.slot < INVENTORY_SLOTS && s.stack.item > 0 && s.stack.count > 0) {
+                inv.slots[s.slot] = s.stack;
+            }
+        }
+        world.add(e, inv);
         Equipment worn;
         for (const SaveGear& g : u.gear) worn.items[g.slot] = g.item;
         world.add(e, worn);
         world.add(e, u.hasNeeds ? u.needs : Needs{});
+        Behaviors behaviors;   // older saves have none, so their units get the defaults
+        if (u.hasBehaviors) behaviors.rules = u.behaviors;
+        world.add(e, behaviors);
         world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
@@ -456,6 +462,10 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         if (const Stats* st = w.get<Stats>(u)) {
             su.hasStats = true;
             su.stats = *st;
+        }
+        if (const Behaviors* b = w.get<Behaviors>(u)) {
+            su.hasBehaviors = true;
+            su.behaviors = b->rules;
         }
         if (const Inventory* inv = w.get<Inventory>(u)) {
             for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -1004,6 +1014,17 @@ int main(int, char**) {
         float x = 0.0f, y = 0.0f;
     };
     ItemMenu itemMenu;
+    // How far the sidebar is scrolled, in pixels, and the unit that scroll was for. A different unit starts at the top.
+    float sidebarScroll = 0.0f;
+    Entity sidebarScrollUnit = NULL_ENTITY;
+    // The condition editor for one behavior of a unit, opened from the behavior's Condition cell at (x, y)
+    struct BehaviorEditor {
+        bool open = false;
+        Entity unit = NULL_ENTITY;
+        size_t row = 0;
+        float x = 0.0f, y = 0.0f;
+    };
+    BehaviorEditor behaviorEditor;
     wmhost::Tool wmTool;                  // the world tool, hosted by the map editor
     bool wmReady = false;                 // the tool has been set up on the window
 
@@ -1752,6 +1773,93 @@ int main(int, char**) {
         };
         // The sidebar is up for the lone selected unit, yours or a red one
         auto sidebarUp = [&]() { return sidebarUnitOf(world) != NULL_ENTITY; };
+        // The sidebar's layout for a window of W by H, for the unit it shows, scrolled by the given pixels
+        auto sidebarFor = [&](int W, int H, float scroll) {
+            const Entity shown = sidebarUnitOf(world);
+            const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
+            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll);
+        };
+        // Only your own units can be changed from the sidebar. A red unit's sidebar is for looking at.
+        auto shownIsYours = [&]() {
+            const Entity shown = sidebarUnitOf(world);
+            return shown != NULL_ENTITY && world.has<Commandable>(shown);
+        };
+        // Sorts a unit's inventory by item type
+        auto sortInventory = [&](Entity unit) {
+            Inventory* inv = world.get<Inventory>(unit);
+            if (!inv) return;
+            sortInventoryByType(*inv);
+            audio::playEffect(SFX_MENU);
+        };
+        // Adds a behavior with the default rule, unless the list is full
+        auto addBehavior = [&](Entity unit) {
+            Behaviors* b = world.get<Behaviors>(unit);
+            if (!b || (int)b->rules.size() >= BEHAVIOR_LIMIT) return;
+            b->rules.push_back(BehaviorRule{});
+            b->pending = true;   // the new rule is checked on the next behavior pass
+            audio::playEffect(SFX_MENU);
+        };
+        // A click on one part of a behavior row. Toggles and choices change the rule at once, the priority and delete
+        // buttons move or remove it, and the Condition cell opens the editor for it.
+        auto behaviorClick = [&](Entity unit, const BehaviorHit& hit, float mx, float my) {
+            Behaviors* b = world.get<Behaviors>(unit);
+            if (!b || hit.row < 0 || hit.row >= (int)b->rules.size()) return;
+            const size_t row = (size_t)hit.row;
+            BehaviorRule& r = b->rules[row];
+            switch (hit.part) {
+            case BehaviorPart::Toggle:
+                r.on = !r.on;
+                break;
+            case BehaviorPart::ConditionTarget:
+                r.conditionTarget = (BehaviorTarget)(((int)r.conditionTarget + 1) % (int)BehaviorTarget::Count);
+                break;
+            case BehaviorPart::Action:
+                r.action = (BehaviorAction)(((int)r.action + 1) % (int)BehaviorAction::Count);
+                break;
+            case BehaviorPart::ActionTarget:
+                r.actionTarget = (BehaviorTarget)(((int)r.actionTarget + 1) % (int)BehaviorTarget::Count);
+                break;
+            case BehaviorPart::Condition:
+                itemMenu.open = false;
+                behaviorEditor = BehaviorEditor{ true, unit, row, mx, my };
+                return;
+            case BehaviorPart::Up:
+                if (!moveBehavior(b->rules, row, -1)) return;
+                behaviorEditor.open = false;   // the rule's row has changed, so the editor is closed
+                break;
+            case BehaviorPart::Down:
+                if (!moveBehavior(b->rules, row, +1)) return;
+                behaviorEditor.open = false;
+                break;
+            case BehaviorPart::Remove:
+                if (!removeBehavior(b->rules, row)) return;
+                behaviorEditor.open = false;
+                break;
+            case BehaviorPart::None:
+                return;
+            }
+            b->pending = true;   // every rule is checked again, so the change takes effect at once
+            audio::playEffect(SFX_MENU);
+        };
+        // A click on the open condition editor: a kind, an operator, or a step of the percent
+        auto editorClick = [&](const ConditionEditorLayout& ed, float mx, float my) {
+            Behaviors* b = world.get<Behaviors>(behaviorEditor.unit);
+            if (!b || behaviorEditor.row >= b->rules.size()) {
+                behaviorEditor.open = false;
+                return;
+            }
+            BehaviorRule& r = b->rules[behaviorEditor.row];
+            const int kind = rectIndexAt(ed.kinds, mx, my);
+            const int op = rectIndexAt(ed.ops, mx, my);
+            const int step = rectIndexAt(ed.steps, mx, my);
+            static const int stepSizes[4] = { -10, -1, 1, 10 };
+            if (kind >= 0) r.condition = (BehaviorCondition)kind;
+            else if (op >= 0) r.op = (BehaviorOp)op;
+            else if (step >= 0) r.percent = std::clamp(r.percent + stepSizes[step], 0, 100);
+            else return;
+            b->pending = true;
+            audio::playEffect(SFX_MENU);
+        };
         // Whether the mouse is over the bottom unit panel
         auto unitPanelHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
@@ -1804,9 +1912,11 @@ int main(int, char**) {
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
             return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow),
-                                  layoutInventorySidebar(W, H), sidebarUp(), x, y)
+                                  sidebarFor(W, H, sidebarScroll), sidebarUp(), x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
                 || (statsOpen && renderer.statsPanelLayout(W, H).box.contains(x, y))
+                || (behaviorEditor.open
+                    && renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, W, H).box.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
         };
         auto pointerOverPanels = [&](int W, int H) {
@@ -1887,16 +1997,18 @@ int main(int, char**) {
                     break;
                 }
                 if (e.key.key == SDLK_ESCAPE) {
-                    if (screen == Screen::Playing && (itemMenu.open || statsOpen)) {
-                        // Escape closes the open menu or popout first, and only then pauses the game
+                    if (screen == Screen::Playing && (itemMenu.open || statsOpen || behaviorEditor.open)) {
+                        // Escape closes the open menu, editor or popout first, and only then pauses the game
                         itemMenu.open = false;
                         statsOpen = false;
+                        behaviorEditor.open = false;
                     } else if (screen == Screen::Playing) {
                         leftDown = middleDown = false;
                         sel.dragging = false;
                         itemDrag = false;
                         itemMenu.open = false;
                         statsOpen = false;
+                        behaviorEditor.open = false;
                         screen = Screen::Pause;
                         refreshSaves();
                     } else if (screen == Screen::Pause) {
@@ -1943,6 +2055,11 @@ int main(int, char**) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
                                                    unitPanelRow - (int)e.wheel.y).scrollRow;
+                } else if (screen == Screen::Playing && sidebarUp()
+                           && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+                    // Scrolls the sidebar, 40 pixels a notch. Wheel up goes back toward the top.
+                    const float notch = 40.0f * (winH / 720.0f);
+                    sidebarScroll = sidebarFor(winW, winH, sidebarScroll - e.wheel.y * notch).scroll;
                 } else if (screen == Screen::Playing && !pointerOverPanels(winW, winH)) {
                     // Over the panels the wheel does nothing, so the camera doesn't zoom behind them
                     cam.distance *= (e.wheel.y > 0.0f) ? 0.9f : 1.1f;
@@ -2053,6 +2170,18 @@ int main(int, char**) {
                         }
                     }
 
+                    // The condition editor takes the clicks on it. A click anywhere else closes it, and that click
+                    // still does whatever it would have done.
+                    if (behaviorEditor.open) {
+                        const ConditionEditorLayout ed =
+                            renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, winW, winH);
+                        if (ed.box.contains(mx, my)) {
+                            editorClick(ed, mx, my);
+                            break;
+                        }
+                        behaviorEditor.open = false;
+                    }
+
                     // The stats popout takes the clicks inside it, and its Close button shuts it. The
                     // Stats button on the profile card opens and closes it.
                     if (statsOpen) {
@@ -2060,7 +2189,7 @@ int main(int, char**) {
                         if (sp.close.contains(mx, my)) statsOpen = false;
                         if (sp.box.contains(mx, my)) break;
                     }
-                    if (sidebarUp() && layoutInventorySidebar(winW, winH).statsButton.contains(mx, my)) {
+                    if (sidebarUp() && sidebarFor(winW, winH, sidebarScroll).statsButton.contains(mx, my)) {
                         statsOpen = !statsOpen;
                         break;
                     }
@@ -2070,13 +2199,33 @@ int main(int, char**) {
                         if (pl.walkButton.contains(mx, my)) { runMode = false; break; }
                         if (pl.runButton.contains(mx, my)) { runMode = true; break; }
 
-                        const bool onSidebar = sidebarUp() && layoutInventorySidebar(winW, winH).panel.contains(mx, my);
+                        const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
+                        const bool onSidebar = sidebarUp() && sl.panel.contains(mx, my);
                         if (onSidebar) {
+                            // Sort, add and the behavior rows change your unit, when the sidebar shows one. They
+                            // come before the drags, which start on the inventory and gear.
+                            if (shownIsYours()) {
+                                const Entity shown = sidebarUnitOf(world);
+                                if (sl.sortButton.contains(mx, my)) {
+                                    itemMenu.open = false;
+                                    sortInventory(shown);
+                                    break;
+                                }
+                                if (sl.addButton.contains(mx, my)) {
+                                    addBehavior(shown);
+                                    break;
+                                }
+                                const BehaviorHit bh = behaviorHitAt(sl, mx, my);
+                                if (bh.row >= 0) {
+                                    behaviorClick(shown, bh, mx, my);
+                                    break;
+                                }
+                            }
+
                             // A filled inventory slot starts dragging its stack out of the inventory. A filled
                             // gear slot starts dragging the gear item out of the unit's gear. A red unit's
                             // sidebar has no unit of yours in it, so nothing there can be dragged.
                             const std::vector<Entity> picked = selectedUnits(world);
-                            const SidebarLayout sl = layoutInventorySidebar(winW, winH);
                             const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
                             const Equipment* worn = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
                             const int slot = sidebarSlotAt(sl, mx, my);
@@ -2149,7 +2298,7 @@ int main(int, char**) {
                         // has no unit of yours in it, so neither of those applies there.
                         itemMenu.open = false;
                         const std::vector<Entity> picked = selectedUnits(world);
-                        const SidebarLayout sl = layoutInventorySidebar(winW, winH);
+                        const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
                         const int slot = sidebarUp() ? sidebarSlotAt(sl, e.button.x, e.button.y) : -1;
                         const int gear = sidebarUp() ? gearSlotAt(sl, e.button.x, e.button.y) : -1;
                         const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
@@ -2209,7 +2358,7 @@ int main(int, char**) {
                 if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
                     itemDrag = false;
                     if (world.has<Unit>(dragUnit)) {
-                        const SidebarLayout sl = layoutInventorySidebar(winW, winH);
+                        const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
                         const float rx = e.button.x, ry = e.button.y;
                         const bool overSidebar = sl.panel.contains(rx, ry);
                         const int gear = gearSlotAt(sl, rx, ry);
@@ -2322,6 +2471,17 @@ int main(int, char**) {
                                   && inv->slots[itemMenu.slot].item != 0;
                 if (!same || !hasItem) itemMenu.open = false;
             }
+            // The sidebar starts at the top for a unit it was not scrolled for. The editor closes when its rule is gone.
+            if (shown != sidebarScrollUnit) {
+                sidebarScrollUnit = shown;
+                sidebarScroll = 0.0f;
+            }
+            if (behaviorEditor.open) {
+                const Behaviors* b = world.get<Behaviors>(behaviorEditor.unit);
+                if (!b || shown != behaviorEditor.unit || behaviorEditor.row >= b->rules.size()) {
+                    behaviorEditor.open = false;
+                }
+            }
         }
         pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
         actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
@@ -2339,6 +2499,8 @@ int main(int, char**) {
             const size_t hitsBefore = combatLog.hits;
             const size_t missesBefore = combatLog.misses;
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
+            // Behaviors after the fight, so a unit hit this frame can drink in the same frame
+            behaviorSystem(world, combatLog);
             if (combatLog.hits > hitsBefore) audio::playEffect(SFX_HIT);
             else if (combatLog.misses > missesBefore) audio::playEffect(SFX_MISS);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
@@ -2408,8 +2570,8 @@ int main(int, char**) {
         case Screen::Title:
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
-            renderer.drawUiText(std::string("Version ") + GAME_VERSION, 16.0f, winH - 44.0f,
-                                RGBA{ 1.0f, 1.0f, 1.0f, 0.8f });
+            // The build stamp sits in the bottom left corner, in the smaller list font
+            renderer.drawListText(BUILD_STAMP, 16.0f, winH - 44.0f, RGBA{ 1.0f, 1.0f, 1.0f, 0.6f });
             drawButtons(layoutButtons(Screen::Title, winW, winH, saves));
             renderer.endUi();
             break;
@@ -2457,11 +2619,14 @@ int main(int, char**) {
                         const Inventory* inv = world.get<Inventory>(dragUnit);
                         if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS) draggedId = inv->slots[dragSlot].item;
                     }
-                    renderer.drawInventorySidebar(layoutInventorySidebar(winW, winH), world, shown,
-                                                  mouseX, mouseY,
+                    const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
+                    sidebarScroll = sl.scroll;   // kept within range as the list grows and shrinks
+                    renderer.drawInventorySidebar(sl, world, shown, mouseX, mouseY,
                                                   itemDrag && dragGear < 0 ? dragSlot : -1,
                                                   itemDrag && dragGear >= 0 ? dragGear : -1,
-                                                  draggedId);
+                                                  draggedId, shownIsYours());
+                    // The full text of the rule under the mouse, when nothing else is open over it
+                    if (!itemDrag && !behaviorEditor.open) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
                 }
                 if (statsOpen && shown != NULL_ENTITY && world.has<Stats>(shown)) {
                     const Name* nm = world.get<Name>(shown);
@@ -2474,6 +2639,14 @@ int main(int, char**) {
                     if (!labels.empty()) {
                         renderer.drawItemMenu(renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH),
                                               labels, mouseX, mouseY);
+                    }
+                }
+                if (behaviorEditor.open && shown == behaviorEditor.unit) {
+                    const Behaviors* b = world.get<Behaviors>(shown);
+                    if (b && behaviorEditor.row < b->rules.size()) {
+                        renderer.drawConditionEditor(
+                            renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, winW, winH),
+                            b->rules[behaviorEditor.row], mouseX, mouseY);
                     }
                 }
                 if (itemDrag) {
@@ -2492,7 +2665,7 @@ int main(int, char**) {
             // The clock sits in the top right, or just left of the sidebar while the sidebar shows
             {
                 const bool sidebar = sidebarUp();
-                const float clockRight = sidebar ? layoutInventorySidebar(winW, winH).panel.x : (float)winW;
+                const float clockRight = sidebar ? sidebarFor(winW, winH, sidebarScroll).panel.x : (float)winW;
                 renderer.drawClock(formatClock(gs.clockSeconds), formatDate(gs.clockSeconds), clockRight, winH);
             }
             renderer.endUi();

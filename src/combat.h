@@ -76,9 +76,10 @@ float encumbranceFor(float carried, const Stats& s);
 float encumbranceOf(World& w, Entity e);
 
 // Tiles per second a unit can walk now. Its base speed, Athletics, and the encumbrance all count; a
-// unit with no stamina left walks at half speed; a downed unit walks at zero. Hostiles keep their
-// base speed. Running, for a player unit, is faster again: RUN_SPEED_BONUS, plus RUN_ATHLETICS_PER_LEVEL
-// for each Athletics level above 1.
+// unit with no stamina left walks at half speed; a downed unit walks at zero. Every unit uses the same
+// formula, so a red unit's base speed and stats count the same way. Running is faster again:
+// RUN_SPEED_BONUS, plus RUN_ATHLETICS_PER_LEVEL for each Athletics level above 1. Only a player unit can
+// run, since the run and walk choice is the player's.
 float walkSpeedOf(World& w, Entity e, bool running = false);
 
 // Strength XP for walking: nothing below ENCUMBRANCE_XP_FROM, then rising to 0.5 XP a second at a
