@@ -146,6 +146,20 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
 // The minimap in the top right corner, the compass strip under it, and the clock under that. They line up
 // against right, the window's right edge or the sidebar's left edge while the sidebar shows.
 // Everything is in window pixels, scaled from a 720-pixel-high window.
+// The talk box: centred, with its Close button at the bottom right
+struct DialogueLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect close{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline DialogueLayout layoutDialogue(int W, int H) {
+    const float s = H / 720.0f;
+    const float w = 440.0f * s, h = 150.0f * s, pad = 14.0f * s, btnW = 90.0f * s, btnH = 28.0f * s;
+    DialogueLayout L;
+    L.box = Rect{ (W - w) * 0.5f, (H - h) * 0.5f, w, h };
+    L.close = Rect{ L.box.x + L.box.w - pad - btnW, L.box.y + L.box.h - pad - btnH, btnW, btnH };
+    return L;
+}
+
 // The expand button in the top left corner of the minimap, or of the full map it expands into
 inline Rect mapToggleOf(const Rect& r, float s) { return Rect{ r.x + 4.0f * s, r.y + 4.0f * s, 18.0f * s, 18.0f * s }; }
 

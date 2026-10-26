@@ -76,6 +76,13 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) {
     return dx * dx + dy * dy + dz * dz <= LOD_MID_TILES * LOD_MID_TILES;
 }
 
+// A dot on the minimap: a unit's place, and whose it is
+enum class MapDotKind { Player, Hostile, Neutral };
+struct MapDot {
+    Vec2 at{ 0.0f, 0.0f };
+    MapDotKind kind = MapDotKind::Player;
+};
+
 class Renderer {
 public:
     // Creates the GL programs, then loads every image and model. progress (0..1) is
@@ -122,10 +129,12 @@ public:
     // it is sea. The whole level, fitted in area (kept square), with the same dots. A compass strip r shows
     // the bearing ahead, in degrees from north, with the marks in view. The overview picture is built when
     // a level is uploaded, and drawn once it is ready.
-    void drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float centreX, float centreZ, float spanTiles);
-    void drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span);
+    void drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float centreX, float centreZ, float spanTiles);
+    void drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, float cx, float cz, float span);
     // The + or - that expands the minimap, or collapses the full map back into it
     void drawMinimapToggle(const Rect& r, bool open);
+    // The talk box: a unit's name and what it says, with a Close button
+    void drawDialogue(const DialogueLayout& L, const std::string& name, const std::string& text, float mx, float my);
     void drawCompass(const Rect& r, float bearingDeg);
     // Where the hover names in the top left start, from the top of the window
     void setHudTop(float y) { hudTop_ = y; }
@@ -269,6 +278,7 @@ private:
     float overviewSize_ = 0.0f;       // tiles per side of the level, 0 while there is no picture
     float overviewExtent_ = 1.0f;     // tiles the picture covers per side
     GLuint dotTex_ = 0;
+    GLuint dotWhiteTex_ = 0;   // a white dot, tinted for the red and neutral units
     float hudTop_ = 12.0f;
 
     // The picture for an item, from data/item/<id>.png. An item without one uses data/item/none.png.

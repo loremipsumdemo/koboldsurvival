@@ -28,6 +28,14 @@ struct Commandable {};
 // aggro range, then chase it.
 struct Hostile {};
 
+// Neutral units: like red units, but not hostile. They can be talked to, and nothing attacks them.
+struct Neutral {};
+
+// What a unit says when it is talked to. Every red and neutral unit has the same default.
+struct Dialogue {
+    std::string text = "Hello world.";
+};
+
 // Display name for a unit
 struct Name {
     std::string text = "Unnamed Unit";

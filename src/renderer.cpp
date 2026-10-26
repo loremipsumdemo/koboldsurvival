@@ -248,7 +248,7 @@ static GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba) {
 }
 
 // A round green dot with a black outline, 16 pixels across, for the units on the maps
-static GLuint MakeDotTexture() {
+static GLuint MakeDotTexture(bool white = false) {
     constexpr int N = 16;
     std::vector<uint8_t> px(static_cast<size_t>(N) * N * 4, 0);
     for (int y = 0; y < N; ++y) {
@@ -258,9 +258,9 @@ static GLuint MakeDotTexture() {
             const bool green = d < 5.0f;             // inside is green, the ring out to the edge is black
             const float alpha = std::clamp(7.6f - d, 0.0f, 1.0f);
             uint8_t* p = &px[static_cast<size_t>(y * N + x) * 4];
-            p[0] = green ? 64 : 0;
-            p[1] = green ? 230 : 0;
-            p[2] = green ? 80 : 0;
+            p[0] = green ? (white ? 255 : 64) : 0;
+            p[1] = green ? (white ? 255 : 230) : 0;
+            p[2] = green ? (white ? 255 : 80) : 0;
             p[3] = static_cast<uint8_t>(alpha * 255.0f);
         }
     }
@@ -1124,6 +1124,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const TextTex& g = (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
         RGBA tint = WHITE;
         if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
+        else if (w.has<Neutral>(e)) tint = WHITE;   // neutral sprites are never tinted
         else if (w.has<Selected>(e)) tint = RGBA{ 1.0f, 1.0f, 0.6f, 1.0f };
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
@@ -1161,8 +1162,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         box.quad({ x0, y0, 0 }, { x0 + th, y0, 0 }, { x0 + th, y1, 0 }, { x0, y1, 0 }, line);
         box.quad({ x1 - th, y0, 0 }, { x1, y0, 0 }, { x1, y1, 0 }, { x1 - th, y1, 0 }, line);
 
+        // Blending must be on for the box's fill to be 30% see-through; the world pass leaves it off
         glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         flush(box, ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f));
+        glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
     }
 
@@ -1478,7 +1483,7 @@ void Renderer::drawDot(float cx, float cy, float d) {
     drawUiQuad(dotTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-void Renderer::drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float cx, float cz, float span) {
+void Renderer::drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float cx, float cz, float span) {
     pollOverview();
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -1503,14 +1508,23 @@ void Renderer::drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float c
     }
 
     const float d = std::max(5.0f, r.w * 0.045f);
-    for (const Vec2& p : dots) {
+    for (const MapDot& dot : dots) {
+        const Vec2& p = dot.at;
         if (p.x < xLo || p.x > xHi || p.z < zLo || p.z > zHi) continue;
-        drawDot(sx(p.x), sy(p.z), d);
+        if (dot.kind == MapDotKind::Player) {
+            drawDot(sx(p.x), sy(p.z), d);
+            continue;
+        }
+        // Red and gray dots: the white dot tinted, with its black ring
+        if (!dotWhiteTex_) dotWhiteTex_ = MakeDotTexture(true);
+        const RGBA tint = dot.kind == MapDotKind::Hostile ? RGBA{ 1.0f, 0.25f, 0.25f, 1.0f } : RGBA{ 0.6f, 0.6f, 0.6f, 1.0f };
+        const float cx = sx(p.x), cy = sy(p.z), h = d * 0.5f;
+        drawUiQuad(dotWhiteTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
     }
 }
 
 // The world map: the part of the level `span` tiles wide centred on cx, cz, in the square under the title
-void Renderer::drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span) {
+void Renderer::drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, float cx, float cz, float span) {
     const float s = uiH_ / 720.0f;
     drawRect(area, RGBA{ 0.0f, 0.0f, 0.02f, 0.72f });
     drawListText("World map. Scroll to zoom. Press M or Escape to close.", area.x + 28.0f * s, area.y + 8.0f * s,
@@ -1523,6 +1537,16 @@ void Renderer::drawMinimapToggle(const Rect& r, bool open) {
     const char* sym = open ? "-" : "+";
     const float tw = listTextWidth(sym), th = listTextHeight(sym);
     drawListText(sym, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void Renderer::drawDialogue(const DialogueLayout& L, const std::string& name, const std::string& text, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const Rect& b = L.box;
+    drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, RGBA{ 0.50f, 0.55f, 0.66f, 1.0f });
+    drawRect(b, RGBA{ 0.04f, 0.05f, 0.08f, 0.96f });
+    drawListText(name, b.x + 14.0f * s, b.y + 12.0f * s, RGBA{ 0.6f, 0.6f, 0.6f, 1.0f });
+    drawListText(text, b.x + 14.0f * s, b.y + 12.0f * s + listTextHeight("Ag") + 12.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawButton(L.close, "Close", true, L.close.contains(mx, my));
 }
 
 void Renderer::drawCompass(const Rect& r, float bearingDeg) {
@@ -2387,6 +2411,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA player{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA hostile{ 1.0f, 0.55f, 0.50f, 1.0f };
+    const RGBA neutral{ 0.6f, 0.6f, 0.6f, 1.0f };
     const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
     for (Entity u : w.view<Unit, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
@@ -2402,7 +2427,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
         const float x = sx - tw * 0.5f, y = sy - th;
         // The drop shadow is the same text in black, a little down and to the right
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
-        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : player);
+        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : player);
     }
 }
 

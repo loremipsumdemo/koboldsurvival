@@ -170,35 +170,43 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // Units: a block centred on the spawn
     for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 
-    // Red units: same kind of unit, but they stand still and can't be commanded. They are placed on
-    // walkable tiles within range of the spawn, but not close to it. The attempt limit stops a small
-    // map from looping forever when it has fewer free tiles than red units.
+    // Red units and neutral units: the same kind of unit, but they stand still and can't be commanded. A red unit
+    // fights a player unit that comes close; a neutral one can be talked to. Both are placed on walkable tiles within
+    // range of the spawn, but not close to it. The attempt limit stops a small map from looping forever when it has
+    // fewer free tiles than units.
     std::vector<GridPos> enemyTiles;
-    for (int attempt = 0; attempt < 20000 && (int)enemyTiles.size() < ENEMY_COUNT; ++attempt) {
-        GridPos g{ rng.range(tileAt(spawn.x - ENEMY_RANGE), tileAt(spawn.x + ENEMY_RANGE)),
-                   rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
-        if (!t.walkable(g.x, g.y)) continue;
-        const float x = g.x + 0.5f, z = g.y + 0.5f;
-        const float dx = x - spawn.x, dz = z - spawn.z;
-        if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) continue;
-        if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE) continue;
-        bool taken = std::any_of(enemyTiles.begin(), enemyTiles.end(),
-                                 [&](GridPos k) { return k == g; });
-        if (taken) continue;
+    auto placeNpcs = [&](int count, bool neutral) {
+        const size_t target = enemyTiles.size() + count;
+        for (int attempt = 0; attempt < 20000 && enemyTiles.size() < target; ++attempt) {
+            GridPos g{ rng.range(tileAt(spawn.x - ENEMY_RANGE), tileAt(spawn.x + ENEMY_RANGE)),
+                       rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
+            if (!t.walkable(g.x, g.y)) continue;
+            const float x = g.x + 0.5f, z = g.y + 0.5f;
+            const float dx = x - spawn.x, dz = z - spawn.z;
+            if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) continue;
+            if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE) continue;
+            bool taken = std::any_of(enemyTiles.begin(), enemyTiles.end(),
+                                     [&](GridPos k) { return k == g; });
+            if (taken) continue;
 
-        enemyTiles.push_back(g);
-        Entity e = w.create();
-        w.add(e, Transform{ x, t.heightAt(x, z), z });
-        w.add(e, Unit{ HOSTILE_WALK_SPEED });
-        w.add(e, Hostile{});
-        w.add(e, Inventory{});
-        w.add(e, Equipment{});
-        w.add(e, Needs{});
-        w.add(e, Behaviors{});
-        w.add(e, Combat{});
-        w.add(e, Name{});
-        w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
-    }
+            enemyTiles.push_back(g);
+            Entity e = w.create();
+            w.add(e, Transform{ x, t.heightAt(x, z), z });
+            w.add(e, Unit{ HOSTILE_WALK_SPEED });
+            if (neutral) w.add(e, Neutral{});
+            else w.add(e, Hostile{});
+            w.add(e, Inventory{});
+            w.add(e, Equipment{});
+            w.add(e, Needs{});
+            w.add(e, Behaviors{});
+            w.add(e, Combat{});
+            w.add(e, Name{});
+            w.add(e, Dialogue{});
+            w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+        }
+    };
+    placeNpcs(ENEMY_COUNT, false);
+    placeNpcs(NEUTRAL_COUNT, true);
 
     // Wagons on free ground near the spawn, each on its own tile. They are decorative and do not block movement.
     std::vector<GridPos> wagonTiles;
@@ -223,7 +231,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             nd->maxHp = maxHealthFor(*w.get<Stats>(u));
             nd->hp = nd->maxHp;
         }
-        if (w.has<Hostile>(u)) w.add(u, randomHostileGear(rng));
+        if (w.has<Hostile>(u) || w.has<Neutral>(u)) w.add(u, randomHostileGear(rng));
         Name* nm = w.get<Name>(u);
         if (!nm) continue;
         if (w.has<Commandable>(u)) {

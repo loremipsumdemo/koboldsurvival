@@ -137,6 +137,17 @@ Entity sidebarUnitOf(World& w) {
     return any.size() == 1 ? any[0] : NULL_ENTITY;
 }
 
+// The neutral unit being talked to, or NULL_ENTITY when no talk box is open
+Entity dialogueUnit = NULL_ENTITY;
+
+// The first neutral unit in a list, or NULL_ENTITY if there is none
+Entity firstNeutral(World& w, const std::vector<Entity>& units) {
+    for (Entity u : units) {
+        if (w.has<Neutral>(u)) return u;
+    }
+    return NULL_ENTITY;
+}
+
 // The first red unit in a list, or NULL_ENTITY if there is none
 Entity firstRedUnit(World& w, const std::vector<Entity>& units) {
     for (Entity u : units) {
@@ -344,6 +355,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     renderer.uploadTerrain(terrain);
     report(0.7f);
     world = World{};
+    dialogueUnit = NULL_ENTITY;   // entity ids restart with the new world, so a talk box can't keep pointing at one
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
     if (spawnItems) spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
@@ -385,14 +397,17 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, Transform{ u.x, u.y, u.z });
         // Hostiles walk at their own pace, as on a new level. Every unit fights, so each one gets Combat.
         Unit unit;
-        if (u.hostile) unit.speed = HOSTILE_WALK_SPEED;
+        if (u.hostile || u.neutral) unit.speed = HOSTILE_WALK_SPEED;
         world.add(e, unit);
         world.add(e, Combat{});
         if (u.hostile) {
             world.add(e, Hostile{});
+        } else if (u.neutral) {
+            world.add(e, Neutral{});
         } else {
             world.add(e, Commandable{});
         }
+        if (u.hostile || u.neutral) world.add(e, Dialogue{});
         // Every unit carries items and has behaviors, whichever side it is on
         Inventory inv;
         for (const SaveStack& s : u.stacks) {
@@ -452,6 +467,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.y = t->y;
         su.z = t->z;
         su.hostile = w.has<Hostile>(u);
+        su.neutral = w.has<Neutral>(u);
         su.sprite = us ? us->id : 1;
         su.name = n ? n->text : "Unnamed Unit";
         if (const Needs* nd = w.get<Needs>(u)) {
@@ -2028,6 +2044,10 @@ int main(int, char**) {
                     break;
                 }
                 if (e.key.key == SDLK_ESCAPE) {
+                    if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) {
+                        dialogueUnit = NULL_ENTITY;
+                        break;
+                    }
                     if (screen == Screen::Playing && mapOpen) {
                         mapOpen = false;  // Escape closes the world map first
                     } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
@@ -2198,6 +2218,15 @@ int main(int, char**) {
                     break;
                 }
 
+                // The talk box is over everything: its Close button ends it, and a click in it does nothing else
+                if (dialogueUnit != NULL_ENTITY && screen == Screen::Playing) {
+                    const DialogueLayout dl = layoutDialogue(winW, winH);
+                    if (e.button.button == SDL_BUTTON_LEFT && dl.close.contains(e.button.x, e.button.y)) {
+                        dialogueUnit = NULL_ENTITY;
+                        break;
+                    }
+                    if (dl.box.contains(e.button.x, e.button.y)) break;
+                }
                 // The expand button, on the minimap or on the full map it expands into
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const float x = e.button.x, y = e.button.y;
@@ -2452,6 +2481,13 @@ int main(int, char**) {
                         }
                     } else {
                         // A red unit under the pointer: each of your selected units fights it. Ground: they walk there.
+                        // A neutral unit under the pointer: right-clicking it starts a talk. Nothing else happens.
+                        const Entity npc = firstNeutral(world,
+                            renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
+                        if (npc != NULL_ENTITY) {
+                            dialogueUnit = npc;
+                            break;
+                        }
                         const Entity foe = firstRedUnit(world,
                             renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
                         if (foe != NULL_ENTITY) {
@@ -2777,10 +2813,14 @@ int main(int, char**) {
             // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
             // Every player unit is a green dot on the minimap and the world map
-            std::vector<Vec2> mapDots;
-            for (Entity e : ownUnitList()) {
+            std::vector<MapDot> mapDots;
+            for (Entity e : world.view<Unit, Transform>()) {
                 const Transform* t = world.get<Transform>(e);
-                if (t) mapDots.push_back(Vec2{ t->x, t->z });
+                MapDotKind kind = MapDotKind::Player;
+                if (world.has<Hostile>(e)) kind = MapDotKind::Hostile;
+                else if (world.has<Neutral>(e)) kind = MapDotKind::Neutral;
+                else if (!world.has<Commandable>(e)) continue;
+                mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, kind });
             }
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
             // Damage numbers rise over the units they hit
@@ -2864,6 +2904,19 @@ int main(int, char**) {
                 const Rect area = worldMapArea(winW, winH);
                 renderer.drawWorldMap(area, mapDots, mapCx, mapCz, mapSpan);
                 renderer.drawMinimapToggle(mapToggleOf(area, winH / 720.0f), true);
+            }
+            // The talk box, over everything. It ends if the unit it is with is gone.
+            if (dialogueUnit != NULL_ENTITY) {
+                if (!world.has<Unit>(dialogueUnit)) {
+                    dialogueUnit = NULL_ENTITY;
+                } else {
+                    float mhx = 0.0f, mhy = 0.0f;
+                    SDL_GetMouseState(&mhx, &mhy);
+                    const Name* nm = world.get<Name>(dialogueUnit);
+                    const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
+                    renderer.drawDialogue(layoutDialogue(winW, winH), nm ? nm->text : std::string("Unnamed Unit"),
+                                          dg ? dg->text : std::string(), mhx, mhy);
+                }
             }
             renderer.endUi();
             }

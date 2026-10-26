@@ -36,6 +36,7 @@ struct SaveGear {
 struct SaveUnit {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     bool hostile = false;
+    bool neutral = false;
     int sprite = 1;
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
@@ -104,7 +105,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         << d.cam.yaw << " " << d.cam.pitch << " " << d.cam.distance << "\n";
     for (const SaveUnit& u : d.units) {
         out << "unit " << u.x << " " << u.y << " " << u.z << " "
-            << (u.hostile ? 1 : 0) << " " << u.sprite << " " << u.name << "\n";
+            << (u.hostile ? 1 : u.neutral ? 2 : 0) << " " << u.sprite << " " << u.name << "\n";
     }
     // Lines that refer to a unit by its position in the unit list above
     for (size_t i = 0; i < d.units.size(); ++i) {
@@ -174,7 +175,8 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 int hostile = 0;
                 ss >> u.x >> u.y >> u.z >> hostile >> u.sprite;
                 std::getline(ss >> std::ws, u.name);
-                u.hostile = hostile != 0;
+                u.hostile = hostile == 1;
+                u.neutral = hostile == 2;
                 if (u.name.empty()) u.name = "Unnamed Unit";
                 d.units.push_back(u);
             }
