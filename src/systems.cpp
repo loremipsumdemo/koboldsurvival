@@ -314,6 +314,19 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
     }
 }
 
+void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
+    for (Entity u : units) {
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (w.has<SquadMember>(u)) w.remove<SquadMember>(u);
+        if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
+        if (w.has<PickupOrder>(u)) w.remove<PickupOrder>(u);
+        if (!w.has<SoloMove>(u)) w.add(u, SoloMove{});
+        SoloMove* so = w.get<SoloMove>(u);
+        so->waypoints.assign(1, target);   // one straight waypoint: no path is planned
+        so->next = 0;
+    }
+}
+
 void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target) {
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {

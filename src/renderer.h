@@ -64,6 +64,18 @@ struct TipRow {
     RGBA changeTint{ 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
+// Terrain is drawn at full detail within LOD_NEAR_TILES of the eye, at half detail out to LOD_MID_TILES, and at a
+// quarter beyond. Units, items, their names and labels, and damage numbers are only drawn, and only picked, within
+// LOD_MID_TILES: beyond it they are not loaded onto the screen.
+constexpr float LOD_NEAR_TILES = 96.0f;
+constexpr float LOD_MID_TILES = 224.0f;
+inline bool withinDetail(const Camera& cam, float x, float y, float z) {
+    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+    cam.eye(ex, ey, ez);
+    const float dx = x - ex, dy = y - ey, dz = z - ez;
+    return dx * dx + dy * dy + dz * dz <= LOD_MID_TILES * LOD_MID_TILES;
+}
+
 class Renderer {
 public:
     // Creates the GL programs, then loads every image and model. progress (0..1) is
@@ -112,6 +124,8 @@ public:
     // a level is uploaded, and drawn once it is ready.
     void drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float centreX, float centreZ, float spanTiles);
     void drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span);
+    // The + or - that expands the minimap, or collapses the full map back into it
+    void drawMinimapToggle(const Rect& r, bool open);
     void drawCompass(const Rect& r, float bearingDeg);
     // Where the hover names in the top left start, from the top of the window
     void setHudTop(float y) { hudTop_ = y; }
@@ -276,7 +290,7 @@ private:
     const TextTex& unitGlyph(World& w, Entity e) const;
 
     // Ground items on loaded chunks, as pink sprites
-    void drawGroundItems(World& w, const Terrain& t);
+    void drawGroundItems(World& w, const Terrain& t, const Camera& cam);
 
     // One name box over the items on one tile. Each item has a row, top row first, and the row is
     // the part of the box that picks that item. dist2 is the squared distance from the camera to the

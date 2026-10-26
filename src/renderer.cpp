@@ -878,6 +878,7 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
 
     for (Entity u : w.view<Unit, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float bottomX, bottomY, topX, topY, midX, midY;
         if (!project(tr->x, tr->y, tr->z, bottomX, bottomY)) continue;
         if (!project(tr->x, tr->y + GLYPH_H, tr->z, topX, topY)) continue;
@@ -1039,7 +1040,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     // 0. Sky: a gradient with a sun, sampled by view direction so it stays fixed while the camera moves
     {
         // View matrix with the eye at the origin, so the sky only follows rotation
-        Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, 4000.0f);
+        Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, CAMERA_FAR);
         Mat4 viewRot = lookAt(0.0f, 0.0f, 0.0f,
                               cam.focusX - ex, cam.focusY - ey, cam.focusZ - ez,
                               0.0f, 1.0f, 0.0f);
@@ -1110,11 +1111,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     for (Entity e : w.view<Wagon, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         drawModel(wagon_, tr->x, tr->y, tr->z, WAGON_SIZE);
     }
 
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const UnitSprite* us = w.get<UnitSprite>(e);
         int idx = us ? us->id - 1 : 0;
         const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
@@ -1125,7 +1128,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
 
-    drawGroundItems(w, t);
+    drawGroundItems(w, t, cam);
 
     // 3. Color overlays: selection rings and the drag box
     auto flush = [&](const Batch& batch, const Mat4& m) {
@@ -1148,8 +1151,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         Batch box;
         float x0 = std::min(sel.x0, sel.x1), x1 = std::max(sel.x0, sel.x1);
         float y0 = std::min(sel.y0, sel.y1), y1 = std::max(sel.y0, sel.y1);
-        RGBA fill{ 0.3f, 1.0f, 0.3f, 0.15f };
-        RGBA line{ 0.3f, 1.0f, 0.3f, 0.9f };
+        RGBA fill{ 0.3f, 1.0f, 0.3f, 0.30f };
+        RGBA line{ 0.3f, 1.0f, 0.3f, 1.0f };
         float th = 2.0f;
 
         box.quad({ x0, y0, 0 }, { x1, y0, 0 }, { x1, y1, 0 }, { x0, y1, 0 }, fill);
@@ -1510,9 +1513,16 @@ void Renderer::drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float c
 void Renderer::drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span) {
     const float s = uiH_ / 720.0f;
     drawRect(area, RGBA{ 0.0f, 0.0f, 0.02f, 0.72f });
-    drawListText("World map. Scroll to zoom. Press M or Escape to close.", area.x + 10.0f * s, area.y + 8.0f * s,
+    drawListText("World map. Scroll to zoom. Press M or Escape to close.", area.x + 28.0f * s, area.y + 8.0f * s,
                  RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     drawMinimap(WorldMapBox(area, s), dots, cx, cz, span);
+}
+
+void Renderer::drawMinimapToggle(const Rect& r, bool open) {
+    drawRect(r, RGBA{ 0.05f, 0.06f, 0.09f, 0.85f });
+    const char* sym = open ? "-" : "+";
+    const float tw = listTextWidth(sym), th = listTextHeight(sym);
+    drawListText(sym, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
 void Renderer::drawCompass(const Rect& r, float bearingDeg) {
@@ -1557,7 +1567,6 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     };
     // One toggle for the pace, lit while the squad runs, and the View Map button beside it
     mode(L.paceButton, running ? "Pace: Run" : "Pace: Walk", running);
-    mode(L.mapButton, "View Map (M)", false);
 
     for (const UnitCell& c : L.cells) {
         const Entity e = units[c.index];
@@ -2052,10 +2061,10 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     drawListText(name, r.x + r.w + 6.0f * s, my - listTextHeight(name) * 0.5f, WHITE);
 }
 
-void Renderer::drawGroundItems(World& w, const Terrain& t) {
+void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     for (Entity e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z)) continue;
+        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const GroundItem* gi = w.get<GroundItem>(e);
         if (const TextTex* pic = itemTexture(gi->item)) {
             drawGlyph(*pic, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
@@ -2264,6 +2273,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         Seen seen{ e, ItemOnScreen{}, itemName(gi->item), 0.0f };
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         seen.dist2 = dx * dx + dy * dy + dz * dz;
+        if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES) continue;
         const TextTex* pic = itemTexture(gi->item);
         if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, seen.os)) continue;
         tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
@@ -2381,6 +2391,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
     for (Entity u : w.view<Unit, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
         const Name* nm = w.get<Name>(u);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // The tag sits just above the top of the unit's picture
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, tr->y + GLYPH_H + 0.1f, tr->z, winW, winH, sx, sy)) continue;
@@ -2409,6 +2420,7 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     for (const FloatingNumber& f : floats) {
+        if (!withinDetail(cam, f.x, f.y, f.z)) continue;
         // Anchored just above the unit's head, like its name
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
@@ -2707,7 +2719,7 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
     for (Entity e : w.view<GroundItem, Transform>()) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z)) continue;
+        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
 
         ItemOnScreen os;
         const TextTex* pic = itemTexture(gi->item);

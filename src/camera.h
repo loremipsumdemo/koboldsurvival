@@ -6,6 +6,9 @@
 #include "terrain.h"
 
 // Free camera. The focus point is the point the camera looks at and orbits around.
+// How far the camera draws: the terrain beyond the mid range is drawn at quarter detail out to here
+inline constexpr float CAMERA_FAR = 8000.0f;
+
 struct Camera {
     static constexpr float PI_F = 3.14159265f;
     // Pitch stops at 95% of straight up or down, so the view never goes directly over or under
@@ -38,7 +41,7 @@ struct Camera {
     Mat4 viewProj(float aspect) const {
         float ex, ey, ez;
         eye(ex, ey, ez);
-        return mul(perspective(0.9f, aspect, 0.1f, 4000.0f),
+        return mul(perspective(0.9f, aspect, 0.1f, CAMERA_FAR),
                    lookAt(ex, ey, ez, focusX, focusY, focusZ, 0.0f, 1.0f, 0.0f));
     }
 

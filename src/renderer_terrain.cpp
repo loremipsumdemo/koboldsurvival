@@ -213,8 +213,6 @@ void main() {
 // Constants and helpers
 // ---------------------------------------------------------------------------
 
-constexpr float LOD_NEAR_TILES = 96.0f;   // chunks closer than this are drawn at full detail
-constexpr float LOD_MID_TILES = 224.0f;   // closer than this, at half detail; beyond, a quarter
 // The sea sits this far below sea level, in the world's units, so terrain exactly at sea level
 // stays just above it.
 constexpr float kWaterDrop = 0.05f;
@@ -224,7 +222,7 @@ constexpr float kWaterDrop = 0.05f;
 constexpr float kWaterBiasSlope = 0.0f;
 constexpr float kWaterBiasUnits = 4.0f;
 // The far plane of the game's camera (camera.h)
-constexpr float kFarPlane = 4000.0f;
+constexpr float kFarPlane = CAMERA_FAR;
 // Chunk meshes built per frame, so a newly loaded area fills in over a few frames
 constexpr int MAX_BUILDS_PER_FRAME = 8;
 

@@ -66,7 +66,6 @@ struct UnitPanelLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };       // the "Squad Panel" bar across the top
     Rect paceButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel, on the left
-    Rect mapButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // View Map, across the top, on the right
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     std::vector<UnitCell> cells;            // visible units only
@@ -114,10 +113,8 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     L.collapsed = collapsed;
     const float bodyY = L.panel.y + barH;
 
-    // The top row holds the pace toggle and the View Map button side by side. The grid starts under it.
-    const float halfW = (cellsW - gap) * 0.5f;
-    L.paceButton = Rect{ L.panel.x + pad, bodyY + pad, halfW, toggleH };
-    L.mapButton = Rect{ L.panel.x + pad + halfW + gap, bodyY + pad, halfW, toggleH };
+    // The top row holds the pace toggle. The grid starts under it.
+    L.paceButton = Rect{ L.panel.x + pad, bodyY + pad, cellsW, toggleH };
     const float top = bodyY + pad + toggleH + gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
@@ -141,7 +138,7 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     if (collapsed) {
         // Only the bar shows, so nothing in the body can be pressed
         L.cells.clear();
-        L.paceButton = L.mapButton = L.track = L.thumb = Rect{};
+        L.paceButton = L.track = L.thumb = Rect{};
     }
     return L;
 }
@@ -149,11 +146,23 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
 // The minimap in the top right corner, the compass strip under it, and the clock under that. They line up
 // against right, the window's right edge or the sidebar's left edge while the sidebar shows.
 // Everything is in window pixels, scaled from a 720-pixel-high window.
+// The expand button in the top left corner of the minimap, or of the full map it expands into
+inline Rect mapToggleOf(const Rect& r, float s) { return Rect{ r.x + 4.0f * s, r.y + 4.0f * s, 18.0f * s, 18.0f * s }; }
+
+// The full map: the minimap expanded from its top right corner, to 80% of the window's height. It does not depend on
+// the other panels.
+inline Rect expandedMapRect(int H, float right) {
+    const float s = H / 720.0f;
+    const float margin = 12.0f * s, side = H * 0.8f;
+    return Rect{ right - margin - side, margin, side, side };
+}
+
 struct MinimapLayout {
     Rect map{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect compass{ 0.0f, 0.0f, 0.0f, 0.0f };
     float right = 0.0f;       // the edge the block lines up against, its margin not included
     float clockTop = 0.0f;    // where the clock box starts
+    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };   // the + that expands the minimap into the full map
 };
 
 inline MinimapLayout layoutMinimap(int H, float right) {
@@ -164,6 +173,7 @@ inline MinimapLayout layoutMinimap(int H, float right) {
     L.map = Rect{ right - margin - size, margin, size, size };
     L.compass = Rect{ right - margin - size, margin + size + gap, size, compassH };
     L.clockTop = L.compass.y + compassH + gap;
+    L.toggle = mapToggleOf(L.map, s);
     return L;
 }
 

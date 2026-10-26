@@ -23,6 +23,8 @@ void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem);
 
 // Creates a squad from the given units and sends it to a ground point
 void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 clickPoint);
+// Walks units straight at a point, with no route planned, for a right button that is still held
+void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target);
 
 // Sends each unit that carries items to a ground item. Whichever gets in reach first takes it.
 void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity item);
