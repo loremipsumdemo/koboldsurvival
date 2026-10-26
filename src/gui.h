@@ -49,6 +49,10 @@ inline float squadDefaultWidth(int H) { return squadWidthFor(UNITS_PER_ROW, H); 
 inline float squadMinWidth(int H) { return squadWidthFor(2, H); }
 inline float squadDefaultX(int W, int H) { return (W - squadDefaultWidth(H)) * 0.5f; }
 
+// The Unit Panel's default width, and its default left edge: it sits against the right edge of the window
+inline float sidebarDefaultWidth(int H) { return 380.0f * H / 720.0f; }
+inline float sidebarDefaultX(int W, int H) { return W - 8.0f * H / 720.0f - sidebarDefaultWidth(H); }
+
 // A bottom panel's rectangle: its default left edge and bottom edge moved by the place, kept on the screen
 inline Rect placedRect(const PanelPlace& p, float defaultX, float w, float h, int W, int H, float margin) {
     const float x = std::clamp(defaultX + p.dx, 0.0f, std::max(0.0f, W - w));
@@ -246,9 +250,11 @@ struct SidebarLayout {
 // its tallest tab, and never taller than 60% of the window. Everything is in window pixels, scaled from a
 // 720-pixel-high window.
 inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
-                                            float heightOverride = 0.0f) {
+                                            const PanelPlace& place = PanelPlace{}) {
     const float s = H / 720.0f;
-    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
+    const float pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
+    // Its default width, or as dragged between a minimum and the screen
+    const float width = place.w > 0.0f ? std::min(std::max(place.w, 200.0f * s), W - 16.0f * s) : sidebarDefaultWidth(H);
     const float cardH = 200.0f * s, cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
     const float barH = 22.0f * s, tabH = 26.0f * s, tabGap = 3.0f * s;
     const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s, addH = 24.0f * s;
@@ -261,7 +267,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     L.open = open;
     L.tab = tab;
     if (!open) {
-        L.panel = Rect{ W - margin - width, H - barH - margin, width, barH };
+        L.panel = placedRect(place, sidebarDefaultX(W, H), width, barH, W, H, margin);
         L.title = Rect{ L.panel.x, L.panel.y, width, barH };
         L.plus = BarToggle(L.title, s);
         return L;
@@ -279,13 +285,13 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     const float contents[UNIT_TAB_COUNT] = { gridPanelH, gearPanelH, cardH, statsH, behaviorPanelH };
 
-    const float bodyVis = unitPanelBodyHeight(H, heightOverride) - barH - tabH;
+    const float bodyVis = unitPanelBodyHeight(H, place.h) - barH - tabH;
     const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
     const float shift = -std::clamp(scroll, 0.0f, maxScroll);   // the contents move up by this much
     const float panelH = barH + tabH + bodyVis;
     L.scroll = -shift;
     L.maxScroll = maxScroll;
-    L.panel = Rect{ W - margin - width, H - panelH - margin, width, panelH };
+    L.panel = placedRect(place, sidebarDefaultX(W, H), width, panelH, W, H, margin);
     L.title = Rect{ L.panel.x, L.panel.y, width, barH };
     L.minus = BarToggle(L.title, s);
 
