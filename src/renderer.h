@@ -164,7 +164,7 @@ public:
     // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
     CombatLogLayout combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
-                                    bool collapsed = false);
+                                    bool collapsed = false, const PanelPlace& place = PanelPlace{});
     void drawCombatLog(const CombatLogLayout& L, const CombatLog& log);
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the

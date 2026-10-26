@@ -28,12 +28,12 @@ inline const char* settingsTabName(SettingsTab tab) {
 // What a row changes
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
-    Autosave, UnitNames,                                        // Interface
+    Autosave, UnitNames, ResetPanels,                           // Interface
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
     MusicLevel, AmbientLevel, EffectsLevel                      // Audio
 };
 
-enum class RowKind { Dropdown, Toggle, Level, Text };
+enum class RowKind { Dropdown, Toggle, Level, Text, Action };
 
 // One choice in a dropdown. A resolution option carries its size in w and h; the other dropdowns use value.
 // A disabled option is shown greyed and cannot be picked.
@@ -116,7 +116,7 @@ struct SettingsLayout {
 };
 
 enum class ClickKind {
-    None, Tab, OpenDropdown, CloseDropdown, PickOption, ToggleRow, LevelToggle, LevelDrag, Defaults, Back
+    None, Tab, OpenDropdown, CloseDropdown, PickOption, ToggleRow, LevelToggle, LevelDrag, Defaults, Back, Action
 };
 
 // What a click means: the row it hit, and for a tab, an option or a slider, its index. For LevelDrag the index

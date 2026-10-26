@@ -24,7 +24,8 @@ inline Rect BarToggle(const Rect& bar, float s) {
 
 // The height of the bottom panels when they are open. It is the Unit Panel's bar, its tabs and enough room for the
 // inventory grid, so the Squad Panel and the Combat Log are as tall as the Unit Panel. Never more than 60% of the window.
-inline float unitPanelBodyHeight(int H) {
+inline float unitPanelBodyHeight(int H, float override = 0.0f) {
+    if (override > 0.0f) return std::min(override, (float)H);
     const float s = H / 720.0f;
     const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, headH = 30.0f * s;
     const float innerPad = 10.0f * s, barH = 22.0f * s, tabH = 26.0f * s;
@@ -32,6 +33,27 @@ inline float unitPanelBodyHeight(int H) {
     const float gridRows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
     const float gridPanelH = headH + gridRows * slot + (gridRows - 1.0f) * gap + innerPad;
     return std::min(barH + tabH + gridPanelH + 2.0f * pad, H * 0.6f);
+}
+
+// Where a bottom panel was dragged. dx and dy move it from its default place, which sits against the bottom edge of the
+// window, and w and h give it a dragged width and height. 0 is the default size.
+struct PanelPlace { float dx = 0.0f, dy = 0.0f, w = 0.0f, h = 0.0f; };
+
+// The Squad Panel's width for a number of columns: the cells, their gaps, the scroll bar and the margins
+inline float squadWidthFor(int cols, int H) {
+    const float s = H / 720.0f;
+    const float cell = 44.0f * s, gap = 5.0f * s, pad = 10.0f * s, scrollW = 14.0f * s;
+    return 2.0f * pad + cols * (cell + gap) + scrollW;
+}
+inline float squadDefaultWidth(int H) { return squadWidthFor(UNITS_PER_ROW, H); }
+inline float squadMinWidth(int H) { return squadWidthFor(2, H); }
+inline float squadDefaultX(int W, int H) { return (W - squadDefaultWidth(H)) * 0.5f; }
+
+// A bottom panel's rectangle: its default left edge and bottom edge moved by the place, kept on the screen
+inline Rect placedRect(const PanelPlace& p, float defaultX, float w, float h, int W, int H, float margin) {
+    const float x = std::clamp(defaultX + p.dx, 0.0f, std::max(0.0f, W - w));
+    const float y = std::clamp(H - margin + p.dy - h, 0.0f, std::max(0.0f, (float)H - h));
+    return Rect{ x, y, w, h };
 }
 
 struct UnitPanelLayout {
@@ -57,28 +79,32 @@ inline float unitCellLabelHeight(float s) { return 34.0f * s; }
 
 // Bottom panel: the walk and run toggle and the View Map button across the top, then a 8-per-row grid of portraits with names,
 // scrolled vertically.
-inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false) {
+inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
+                                       const PanelPlace& place = PanelPlace{}) {
     const float s = H / 720.0f;
     const float cell = 44.0f * s, gap = 5.0f * s, pad = 10.0f * s;
     const float label = unitCellLabelHeight(s), scrollW = 14.0f * s;
     const float toggleH = 22.0f * s;
     const float barH = 22.0f * s;   // the title bar above everything else in the panel
-    // As many rows as the open height has room for, so the Squad Panel is as tall as the Unit Panel
-    const float bodyH = unitPanelBodyHeight(H);
+    // Half the height of the Unit Panel by default, or as dragged. As many rows as that has room for.
+    const float bodyH = place.h > 0.0f ? std::min(place.h, (float)H) : unitPanelBodyHeight(H) * 0.5f;
     const float chromeH = barH + pad + toggleH + gap + pad;
     const int rowsVisible = std::max(2, (int)std::floor((bodyH - chromeH + gap) / (cell + label + gap)));
+    // As many columns as a dragged width has room for. By default, UNITS_PER_ROW.
+    const int cols = place.w > 0.0f ? std::max(2, (int)std::floor((place.w - 2.0f * pad - scrollW) / (cell + gap)))
+                                    : UNITS_PER_ROW;
 
     UnitPanelLayout L;
     L.rowsVisible = rowsVisible;
-    L.rowCount = (unitCount + UNITS_PER_ROW - 1) / UNITS_PER_ROW;
+    L.rowCount = (unitCount + cols - 1) / cols;
     const int maxScroll = std::max(0, L.rowCount - rowsVisible);
     L.scrollRow = std::clamp(scrollRow, 0, maxScroll);
 
-    const float cellsW = UNITS_PER_ROW * cell + (UNITS_PER_ROW - 1) * gap;
+    const float cellsW = cols * cell + (cols - 1) * gap;
     const float gridH = rowsVisible * (cell + label) + (rowsVisible - 1) * gap;
     const float panelW = pad + cellsW + gap + scrollW + pad;
     const float panelH = collapsed ? barH : bodyH;
-    L.panel = Rect{ (W - panelW) * 0.5f, H - panelH - 8.0f * s, panelW, panelH };
+    L.panel = placedRect(place, squadDefaultX(W, H), panelW, panelH, W, H, 8.0f * s);
     L.title = Rect{ L.panel.x, L.panel.y, panelW, barH };
     L.toggle = BarToggle(L.title, s);
     L.collapsed = collapsed;
@@ -91,8 +117,8 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     const float top = bodyY + pad + toggleH + gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
-        for (int c = 0; c < UNITS_PER_ROW; ++c) {
-            const int idx = (L.scrollRow + r) * UNITS_PER_ROW + c;
+        for (int c = 0; c < cols; ++c) {
+            const int idx = (L.scrollRow + r) * cols + c;
             if (idx >= unitCount) break;
             const float x = L.panel.x + pad + c * (cell + gap);
             const float y = top + r * (cell + label + gap);
@@ -219,7 +245,8 @@ struct SidebarLayout {
 // the bar and the picked tab's contents, which scroll when they are taller than the panel. The panel is as tall as
 // its tallest tab, and never taller than 60% of the window. Everything is in window pixels, scaled from a
 // 720-pixel-high window.
-inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0) {
+inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
+                                            float heightOverride = 0.0f) {
     const float s = H / 720.0f;
     const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
     const float cardH = 200.0f * s, cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
@@ -252,7 +279,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     const float contents[UNIT_TAB_COUNT] = { gridPanelH, gearPanelH, cardH, statsH, behaviorPanelH };
 
-    const float bodyVis = unitPanelBodyHeight(H) - barH - tabH;
+    const float bodyVis = unitPanelBodyHeight(H, heightOverride) - barH - tabH;
     const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
     const float shift = -std::clamp(scroll, 0.0f, maxScroll);   // the contents move up by this much
     const float panelH = barH + tabH + bodyVis;

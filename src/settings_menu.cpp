@@ -89,6 +89,16 @@ RowSpec makeToggle(RowId id, const std::string& label, bool on) {
     return r;
 }
 
+// A button row: its control is a button with the text, and the row does what its id says
+RowSpec makeAction(RowId id, const std::string& label, const std::string& text) {
+    RowSpec r;
+    r.id = id;
+    r.kind = RowKind::Action;
+    r.label = label;
+    r.text = text;
+    return r;
+}
+
 RowSpec makeLevel(RowId id, const std::string& label, int level, bool on) {
     RowSpec r;
     r.id = id;
@@ -174,6 +184,7 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     }
     rows.push_back(makeDropdown(RowId::Autosave, "Autosave", saves, indexOfValue(saves, s.autosaveMinutes), true));
     rows.push_back(makeToggle(RowId::UnitNames, "Unit names", s.showUnitNames));
+    rows.push_back(makeAction(RowId::ResetPanels, "Reset All UI Panels", "Reset"));
     return rows;
 }
 
@@ -244,6 +255,7 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
         case RowKind::Dropdown:
             R.control = Rect{ colX, cy, colW, ch };
             break;
+        case RowKind::Action:
         case RowKind::Toggle:
             R.control = Rect{ colX, cy, std::min(colW, TOGGLE_W * u), ch };
             break;
@@ -311,6 +323,9 @@ SettingsClick hitSettings(const SettingsLayout& L, const std::vector<RowSpec>& r
         switch (r.kind) {
         case RowKind::Dropdown:
             if (r.enabled && R.control.contains(x, y)) return { ClickKind::OpenDropdown, row, -1 };
+            break;
+        case RowKind::Action:
+            if (r.enabled && R.control.contains(x, y)) return { ClickKind::Action, row, -1 };
             break;
         case RowKind::Toggle:
             if (r.enabled && R.control.contains(x, y)) return { ClickKind::ToggleRow, row, -1 };

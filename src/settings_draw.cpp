@@ -80,6 +80,9 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
                         row.enabled ? kText : kDisabledText);
             break;
         }
+        case RowKind::Action:
+            r.drawButton(R.control, row.text, row.enabled, row.enabled && over(R.control, mx, my));
+            break;
         case RowKind::Toggle:
             r.drawButton(R.control, row.on ? "On" : "Off", row.enabled, row.enabled && over(R.control, mx, my));
             break;

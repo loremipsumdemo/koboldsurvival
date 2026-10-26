@@ -2431,24 +2431,28 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
 }
 
 CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
-                                          bool collapsed) {
+                                          bool collapsed, const PanelPlace& place) {
     const float s = winH / 720.0f;
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
     const float barH = 22.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;
-    // As many lines as fit at the height of the Unit Panel
-    const int linesVisible = std::max(1, (int)std::floor((unitPanelBodyHeight(winH) - barH - 2.0f * pad) / lineH));
+    // Half the height of the Unit Panel by default, or as dragged. As many lines as that has room for.
+    const float bodyH = place.h > 0.0f ? std::min(place.h, (float)winH) : unitPanelBodyHeight(winH) * 0.5f;
+    const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - 2.0f * pad) / lineH));
 
     CombatLogLayout L;
     L.linesVisible = linesVisible;
     L.lineCount = lineCount;
-    L.lineH = listTextHeight("Ag") + 2.0f * s;
+    L.lineH = lineH;
     L.offset = std::clamp(offset, 0, L.maxOffset());
 
-    const float x = 8.0f * s;
-    const float w = std::max(180.0f * s, std::min(340.0f * s, rightLimit - x));
-    const float h = collapsed ? barH : unitPanelBodyHeight(winH);
-    L.panel = Rect{ x, winH - h - 8.0f * s, w, h };
+    // By default its width stops short of the Squad Panel. A dragged width stays between its minimum and the screen.
+    const float w = place.w > 0.0f
+        ? std::min(std::max(place.w, 120.0f * s), winW - 16.0f * s)
+        : std::max(180.0f * s, std::min(340.0f * s, rightLimit - 8.0f * s));
+    const float h = collapsed ? barH : bodyH;
+    L.panel = placedRect(place, 8.0f * s, w, h, winW, winH, 8.0f * s);
+    const float x = L.panel.x;
     L.bar = Rect{ x, L.panel.y, w, barH };
     L.toggle = BarToggle(L.bar, s);
     L.collapsed = collapsed;
@@ -2473,7 +2477,6 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
     if (collapsed) L.track = L.thumb = Rect{};
     return L;
 }
-
 void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
     drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
     drawTitleBar(L.bar, ICON_COMBAT_LOG, "Combat Log");
