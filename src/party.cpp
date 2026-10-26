@@ -93,8 +93,8 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     return m;
 }
 
-Party randomParty(Rng& rng) {
-    Party p;
+Party randomParty(Rng& rng, int count) {
+    Party p(count);
     std::vector<std::string> names;
     std::vector<int> sprites;
     for (PartyMember& m : p) {
@@ -128,4 +128,18 @@ void applyParty(World& w, const Party& p) {
         worn.items = m.gear;
         w.add(u, worn);
     }
+}
+
+void addRandomMember(Party& p, Rng& rng) {
+    std::vector<std::string> names;
+    std::vector<int> sprites;
+    for (const PartyMember& m : p) {
+        names.push_back(m.name);
+        sprites.push_back(m.sprite);
+    }
+    PartyMember m = randomMember(rng, names);
+    while (std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
+        m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
+    }
+    p.push_back(m);
 }

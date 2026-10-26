@@ -19,6 +19,9 @@ inline constexpr int UNIT_SPRITE_COUNT = 71;
 // Longest name a unit can have, in bytes
 inline constexpr size_t PARTY_NAME_LIMIT = 32;
 
+// Most units a party can have. The starting party is START_UNIT_COUNT, and the menu adds more.
+inline constexpr int PARTY_MAX_UNITS = 24;
+
 // One unit of the starting party
 struct PartyMember {
     std::string name;
@@ -28,8 +31,8 @@ struct PartyMember {
     std::array<ItemStack, INVENTORY_SLOTS> items{};   // what the unit carries at the start
 };
 
-// The units a new game starts with, one for each START_UNIT_COUNT
-using Party = std::array<PartyMember, START_UNIT_COUNT>;
+// The units a new game starts with: START_UNIT_COUNT or more, up to PARTY_MAX_UNITS
+using Party = std::vector<PartyMember>;
 
 // The display name of an item, or an empty string for id 0 or an unknown id
 std::string itemNameOf(int item);
@@ -58,7 +61,10 @@ std::vector<int> allItemChoices();
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken);
 
 // A random party of distinct names and distinct sprites
-Party randomParty(Rng& rng);
+Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
+
+// Adds a random member to the end of the party, with a name and sprite that no member has yet
+void addRandomMember(Party& p, Rng& rng);
 
 // Puts the party into the player units (the Commandable ones), in the order they were created. Other
 // units are left as they are.

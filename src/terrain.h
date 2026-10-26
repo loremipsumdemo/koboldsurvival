@@ -29,6 +29,9 @@ public:
 
     // Tiles per side of the whole level, and chunks per side
     int size() const { return size_; }
+    // The folder and header of a streamed world (the folder is empty for a whole map in memory)
+    const std::string& folder() const { return folder_; }
+    const WorldInfo& worldInfo() const { return info_; }
     int chunksPerSide() const { return cps_; }
     // The chunk at (cx, cz), or nullptr if it is not loaded
     const ChunkData* chunkAt(int cx, int cz) const;

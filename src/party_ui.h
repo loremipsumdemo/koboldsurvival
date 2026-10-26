@@ -24,6 +24,7 @@ struct PartyUi {
     DropKind dropKind = DropKind::None;    // the open dropdown, if any
     int dropSlot = 0;                      // the gear slot or inventory slot it fills
     int dropScroll = 0;                    // the first entry it shows
+    int listScroll = 0;                    // the first unit shown in the left column
 };
 
 // One entry in an open dropdown: its text, and the value it sets (a sprite number or an item id,
@@ -55,6 +56,10 @@ struct PartyPanels {
     Rect bottom{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 PartyPanels partyPanels(int W, int H);
+
+// How many units the left column shows at once, and the most it can scroll by
+int partyListVisible(int H);
+int partyListMaxScroll(int count, int H);
 
 // Every part of the menu that can be clicked, or that is drawn as text, in draw order. Later
 // buttons draw over earlier ones and take a click first, so an open dropdown comes last.

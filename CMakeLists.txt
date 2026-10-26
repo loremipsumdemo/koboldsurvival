@@ -69,6 +69,7 @@ add_executable(koboldgame
     src/behavior.cpp
     src/systems.cpp
     src/terrain.cpp
+    src/overview.cpp
     src/terrain_mesh.cpp
     src/pathfind.cpp
     src/world_format.cpp

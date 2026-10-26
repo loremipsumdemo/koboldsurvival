@@ -8,6 +8,9 @@
 // Spawns the units, the red units and the wagons
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
+// Adds player units, at the spawn, until there are count of them
+void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
+
 // Starting stats drawn the way new units get them: attributes at levels 5..15, skills at 1..5
 Stats randomStartingStats(Rng& rng);
 

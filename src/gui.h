@@ -16,10 +16,31 @@ struct UnitCell {
     Rect rect{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
+// The [-] or [+] button at the right end of a title bar, which folds its panel up or down
+inline Rect BarToggle(const Rect& bar, float s) {
+    const float sz = bar.h - 6.0f * s;
+    return Rect{ bar.x + bar.w - sz - 3.0f * s, bar.y + 3.0f * s, sz, sz };
+}
+
+// The height of the bottom panels when they are open. It is the Unit Panel's bar, its tabs and enough room for the
+// inventory grid, so the Squad Panel and the Combat Log are as tall as the Unit Panel. Never more than 60% of the window.
+inline float unitPanelBodyHeight(int H) {
+    const float s = H / 720.0f;
+    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, headH = 30.0f * s;
+    const float innerPad = 10.0f * s, barH = 22.0f * s, tabH = 26.0f * s;
+    const float slot = (width - 2.0f * pad - 2.0f * innerPad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
+    const float gridRows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
+    const float gridPanelH = headH + gridRows * slot + (gridRows - 1.0f) * gap + innerPad;
+    return std::min(barH + tabH + gridPanelH + 2.0f * pad, H * 0.6f);
+}
+
 struct UnitPanelLayout {
+    bool collapsed = false;                     // only the title bar shows
+    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };      // the [-] or [+] button in the bar
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect walkButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel
-    Rect runButton{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };       // the "Squad Panel" bar across the top
+    Rect paceButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel, on the left
+    Rect mapButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // View Map, across the top, on the right
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     std::vector<UnitCell> cells;            // visible units only
@@ -34,14 +55,18 @@ struct UnitPanelLayout {
 // covers all three; the bar and name sit in the strip under the portrait.
 inline float unitCellLabelHeight(float s) { return 34.0f * s; }
 
-// Bottom panel: a walk and run toggle across the top, then a 8-per-row grid of portraits with names,
+// Bottom panel: the walk and run toggle and the View Map button across the top, then a 8-per-row grid of portraits with names,
 // scrolled vertically.
-inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow) {
+inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false) {
     const float s = H / 720.0f;
-    const float cell = 64.0f * s, gap = 6.0f * s, pad = 10.0f * s;
+    const float cell = 44.0f * s, gap = 5.0f * s, pad = 10.0f * s;
     const float label = unitCellLabelHeight(s), scrollW = 14.0f * s;
     const float toggleH = 22.0f * s;
-    const int rowsVisible = 2;
+    const float barH = 22.0f * s;   // the title bar above everything else in the panel
+    // As many rows as the open height has room for, so the Squad Panel is as tall as the Unit Panel
+    const float bodyH = unitPanelBodyHeight(H);
+    const float chromeH = barH + pad + toggleH + gap + pad;
+    const int rowsVisible = std::max(2, (int)std::floor((bodyH - chromeH + gap) / (cell + label + gap)));
 
     UnitPanelLayout L;
     L.rowsVisible = rowsVisible;
@@ -52,14 +77,18 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     const float cellsW = UNITS_PER_ROW * cell + (UNITS_PER_ROW - 1) * gap;
     const float gridH = rowsVisible * (cell + label) + (rowsVisible - 1) * gap;
     const float panelW = pad + cellsW + gap + scrollW + pad;
-    const float panelH = pad + toggleH + gap + gridH + pad;
+    const float panelH = collapsed ? barH : bodyH;
     L.panel = Rect{ (W - panelW) * 0.5f, H - panelH - 8.0f * s, panelW, panelH };
+    L.title = Rect{ L.panel.x, L.panel.y, panelW, barH };
+    L.toggle = BarToggle(L.title, s);
+    L.collapsed = collapsed;
+    const float bodyY = L.panel.y + barH;
 
-    // The toggle spans the cells, with Walk and Run side by side. The grid starts under it.
+    // The top row holds the pace toggle and the View Map button side by side. The grid starts under it.
     const float halfW = (cellsW - gap) * 0.5f;
-    L.walkButton = Rect{ L.panel.x + pad, L.panel.y + pad, halfW, toggleH };
-    L.runButton = Rect{ L.panel.x + pad + halfW + gap, L.panel.y + pad, halfW, toggleH };
-    const float top = L.panel.y + pad + toggleH + gap;
+    L.paceButton = Rect{ L.panel.x + pad, bodyY + pad, halfW, toggleH };
+    L.mapButton = Rect{ L.panel.x + pad + halfW + gap, bodyY + pad, halfW, toggleH };
+    const float top = bodyY + pad + toggleH + gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
         for (int c = 0; c < UNITS_PER_ROW; ++c) {
@@ -79,7 +108,58 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
         const float ty = L.track.y + (L.track.h - th) * L.scrollRow / maxScroll;
         L.thumb = Rect{ L.track.x, ty, L.track.w, th };
     }
+    if (collapsed) {
+        // Only the bar shows, so nothing in the body can be pressed
+        L.cells.clear();
+        L.paceButton = L.mapButton = L.track = L.thumb = Rect{};
+    }
     return L;
+}
+
+// The minimap in the top right corner, the compass strip under it, and the clock under that. They line up
+// against right, the window's right edge or the sidebar's left edge while the sidebar shows.
+// Everything is in window pixels, scaled from a 720-pixel-high window.
+struct MinimapLayout {
+    Rect map{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect compass{ 0.0f, 0.0f, 0.0f, 0.0f };
+    float right = 0.0f;       // the edge the block lines up against, its margin not included
+    float clockTop = 0.0f;    // where the clock box starts
+};
+
+inline MinimapLayout layoutMinimap(int H, float right) {
+    const float s = H / 720.0f;
+    const float margin = 12.0f * s, size = 180.0f * s, gap = 6.0f * s, compassH = 30.0f * s;
+    MinimapLayout L;
+    L.right = right;
+    L.map = Rect{ right - margin - size, margin, size, size };
+    L.compass = Rect{ right - margin - size, margin + size + gap, size, compassH };
+    L.clockTop = L.compass.y + compassH + gap;
+    return L;
+}
+
+// The part of the world map's area that holds the map: a square under a line of text, centred
+inline Rect WorldMapBox(const Rect& area, float s) {
+    const float top = area.y + 30.0f * s;
+    const float side = std::max(0.0f, std::min(area.w, area.h - 30.0f * s));
+    return Rect{ area.x + (area.w - side) * 0.5f, top, side, side };
+}
+
+// The ground point under a pixel of the minimap, false outside the minimap or outside the level. The minimap
+// shows a window of `span` tiles centred on cx, cz, with the largest x at its left and the largest z at its top.
+inline bool minimapGround(const Rect& r, float cx, float cz, float span, float levelSize, float px, float py,
+                          float& x, float& z) {
+    if (!r.contains(px, py) || span <= 0.0f || r.w <= 0.0f || r.h <= 0.0f) return false;
+    x = cx + span * 0.5f - (px - r.x) / r.w * span;
+    z = cz + span * 0.5f - (py - r.y) / r.h * span;
+    return x >= 0.0f && z >= 0.0f && x <= levelSize && z <= levelSize;
+}
+
+// The ground point under a pixel of the world map box, which shows the whole level
+inline bool worldMapGround(const Rect& box, float levelSize, float px, float py, float& x, float& z) {
+    if (!box.contains(px, py) || box.w <= 0.0f || levelSize <= 0.0f) return false;
+    x = levelSize - (px - box.x) / box.w * levelSize;
+    z = levelSize - (py - box.y) / box.h * levelSize;
+    return x >= 0.0f && z >= 0.0f && x <= levelSize && z <= levelSize;
 }
 
 // One row of the Behavior list: the on box, the four option cells, then the priority and delete buttons,
@@ -103,38 +183,65 @@ enum class BehaviorPart { None, Toggle, ConditionTarget, Condition, Action, Acti
 // unit's picture, name, stats and carry bar, then the gear, then the inventory grid of 8 columns of slots,
 // then the unit's behavior rules. The sidebar sits on a see-through panel, which does not scroll, and each
 // section has a background of its own.
+// The Unit Panel's tabs, left to right
+enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_EQUIPMENT, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR,
+                     UNIT_TAB_COUNT };
+// The groups the Stats tab lists its stats under
+constexpr int STAT_GROUP_COUNT = 5;
+
 struct SidebarLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };      // the whole sidebar, drawn see-through
-    Rect profile{ 0.0f, 0.0f, 0.0f, 0.0f };    // profile card at the top
+    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };      // the whole Unit Panel, bottom right
+    bool open = false;                          // closed: the bar alone. open: the tabs and the picked tab
+    int tab = UNIT_TAB_INVENTORY;               // the tab shown, when open
+    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };      // the "Unit Panel" bar across the top, which does not scroll
+    Rect minus{ 0.0f, 0.0f, 0.0f, 0.0f };      // [-], shown while open; empty otherwise
+    Rect plus{ 0.0f, 0.0f, 0.0f, 0.0f };       // [+], shown while closed; empty otherwise
+    std::array<Rect, UNIT_TAB_COUNT> tabs{};   // the tab buttons under the bar; empty while closed
+    Rect body{ 0.0f, 0.0f, 0.0f, 0.0f };       // the area under the tabs, where the picked tab's contents scroll
+    Rect profile{ 0.0f, 0.0f, 0.0f, 0.0f };    // profile card: name, health, hunger and carry
     Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };   // the unit's picture, inside the card on the left
-    Rect statsButton{ 0.0f, 0.0f, 0.0f, 0.0f };// opens the stats popout, top right of the card
     Rect gearPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the gear slots and their totals
     std::vector<Rect> gear;                    // GEAR_SLOTS rectangles in GearSlot order, four per row
     Rect gridPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the inventory grid
     Rect sortButton{ 0.0f, 0.0f, 0.0f, 0.0f }; // sorts the grid by item type, top right of its heading
     std::vector<Rect> slots;                   // INVENTORY_SLOTS rectangles, row by row
+    Rect statsArea{ 0.0f, 0.0f, 0.0f, 0.0f };  // the stats list, in the Stats tab
+    float statRowH = 0.0f;                     // the height of each row in the stats list
     Rect behaviorPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the behavior list
     std::array<Rect, 5> behaviorHeads{};       // column headings: On, Target, Condition, Action, Target
     std::vector<BehaviorRowLayout> behaviorRows;   // one per rule, highest priority first
     Rect addButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // adds a rule, under the last one
     float scroll = 0.0f;                       // the scroll offset used, in pixels, within 0..maxScroll
-    float maxScroll = 0.0f;                    // how far the sidebar can scroll
+    float maxScroll = 0.0f;                    // how far the picked tab can scroll
 };
 
-// The sidebar for a window of size W by H, showing a unit with ruleCount behavior rules, scrolled by scroll
-// pixels. The scroll is kept within range, and the result says what it was clamped to.
-inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll) {
+// The Unit Panel along the bottom right. Closed, it is its title bar alone, with [+]. Open, it has five tabs under
+// the bar and the picked tab's contents, which scroll when they are taller than the panel. The panel is as tall as
+// its tallest tab, and never taller than 60% of the window. Everything is in window pixels, scaled from a
+// 720-pixel-high window.
+inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0) {
     const float s = H / 720.0f;
-    const float width = 400.0f * s, pad = 14.0f * s, gap = 6.0f * s;
+    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
     const float cardH = 200.0f * s, cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
-    const float sectionGap = 12.0f * s;
-    const float innerW = width - 2.0f * pad - 2.0f * innerPad;
+    const float barH = 22.0f * s, tabH = 26.0f * s, tabGap = 3.0f * s;
     const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s, addH = 24.0f * s;
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
-    const float sortW = 56.0f * s, sortH = 22.0f * s;
+    const float sortW = 56.0f * s, sortH = 22.0f * s, statRowH = 20.0f * s;
     const int rules = std::clamp(ruleCount, 0, BEHAVIOR_LIMIT);
+    tab = std::clamp(tab, 0, UNIT_TAB_COUNT - 1);
 
-    // The heights of the sections, which give the height of the whole sidebar and so how far it scrolls
+    SidebarLayout L;
+    L.open = open;
+    L.tab = tab;
+    if (!open) {
+        L.panel = Rect{ W - margin - width, H - barH - margin, width, barH };
+        L.title = Rect{ L.panel.x, L.panel.y, width, barH };
+        L.plus = BarToggle(L.title, s);
+        return L;
+    }
+
+    const float innerW = width - 2.0f * pad - 2.0f * innerPad;
+    // The height each tab's contents need
     const int gearCols = 4, gearRows = GEAR_SLOTS / gearCols;
     const float gearH = 56.0f * s, totalsH = 26.0f * s;
     const float gearPanelH = headH + gearRows * gearH + gearRows * gap + totalsH + innerPad;
@@ -142,86 +249,98 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float slot = (width - 2.0f * pad - 2.0f * innerPad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
     const float gridPanelH = headH + gridRows * slot + (gridRows - 1.0f) * gap + innerPad;
     const float behaviorPanelH = headH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
-    const float contentH = pad + cardH + sectionGap + gearPanelH + sectionGap + gridPanelH + sectionGap
-                         + behaviorPanelH + pad;
-    const float maxScroll = std::max(0.0f, contentH - H);
-    const float shift = -std::clamp(scroll, 0.0f, maxScroll);   // the content moves up by this much
+    const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
+    const float contents[UNIT_TAB_COUNT] = { gridPanelH, gearPanelH, cardH, statsH, behaviorPanelH };
 
-    SidebarLayout L;
+    const float bodyVis = unitPanelBodyHeight(H) - barH - tabH;
+    const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
+    const float shift = -std::clamp(scroll, 0.0f, maxScroll);   // the contents move up by this much
+    const float panelH = barH + tabH + bodyVis;
     L.scroll = -shift;
     L.maxScroll = maxScroll;
-    L.panel = Rect{ W - width, 0.0f, width, (float)H };
+    L.panel = Rect{ W - margin - width, H - panelH - margin, width, panelH };
+    L.title = Rect{ L.panel.x, L.panel.y, width, barH };
+    L.minus = BarToggle(L.title, s);
 
-    L.profile = Rect{ L.panel.x + pad, pad + shift, width - 2.0f * pad, cardH };
-    const float side = cardH - 2.0f * cardInset;
-    L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
-    const float btnW = 66.0f * s, btnH = 24.0f * s;
-    L.statsButton = Rect{ L.profile.x + L.profile.w - cardInset - btnW, L.profile.y + cardInset, btnW, btnH };
+    const float tabY = L.panel.y + barH;
+    const float tabW = (width - 2.0f * pad - (UNIT_TAB_COUNT - 1) * tabGap) / UNIT_TAB_COUNT;
+    for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
+        L.tabs[i] = Rect{ L.panel.x + pad + i * (tabW + tabGap), tabY + 3.0f * s, tabW, tabH - 6.0f * s };
+    }
+    L.body = Rect{ L.panel.x, tabY + tabH, width, bodyVis };
+    const float top = L.body.y + pad + shift;   // the picked tab's contents, which scroll
 
-    // Gear: four slots to a row, two rows, then a line of attack and defense totals
-    const float gearTop = L.profile.y + cardH + sectionGap;
-    const float gearW = (innerW - (gearCols - 1) * gap) / gearCols;
-    L.gearPanel = Rect{ L.panel.x + pad, gearTop, width - 2.0f * pad, gearPanelH };
-    for (int i = 0; i < GEAR_SLOTS; ++i) {
-        const int c = i % gearCols, r = i / gearCols;
-        L.gear.push_back(Rect{ L.gearPanel.x + innerPad + c * (gearW + gap),
-                               gearTop + headH + r * (gearH + gap),
-                               gearW, gearH });
+    if (tab == UNIT_TAB_PROFILE) {
+        L.profile = Rect{ L.panel.x + pad, top, width - 2.0f * pad, cardH };
+        const float side = cardH - 2.0f * cardInset;
+        L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
     }
-
-    // Grid: columns fill the width inside the grid background, rows follow. The sort button is in the heading.
-    const float gridTop = L.gearPanel.y + L.gearPanel.h + sectionGap;
-    L.gridPanel = Rect{ L.panel.x + pad, gridTop, width - 2.0f * pad, gridPanelH };
-    L.sortButton = Rect{ L.gridPanel.x + L.gridPanel.w - innerPad - sortW, gridTop + (headH - sortH) * 0.5f,
-                         sortW, sortH };
-    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
-        const int c = i % INVENTORY_COLUMNS, r = i / INVENTORY_COLUMNS;
-        L.slots.push_back(Rect{ L.gridPanel.x + innerPad + c * (slot + gap),
-                                gridTop + headH + r * (slot + gap),
-                                slot, slot });
+    if (tab == UNIT_TAB_EQUIPMENT) {
+        // Four gear slots to a row, two rows, then a line of attack and defense totals
+        const float gearW = (innerW - (gearCols - 1) * gap) / gearCols;
+        L.gearPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gearPanelH };
+        for (int i = 0; i < GEAR_SLOTS; ++i) {
+            const int c = i % gearCols, r = i / gearCols;
+            L.gear.push_back(Rect{ L.gearPanel.x + innerPad + c * (gearW + gap),
+                                   top + headH + r * (gearH + gap), gearW, gearH });
+        }
     }
-
-    // Behaviors: the on box has a fixed width, and the four option columns share what the priority buttons
-    // leave, in the proportions below. The buttons sit at the right end of each row.
-    const float behaviorTop = L.gridPanel.y + L.gridPanel.h + sectionGap;
-    L.behaviorPanel = Rect{ L.panel.x + pad, behaviorTop, width - 2.0f * pad, behaviorPanelH };
-    const float rowX = L.behaviorPanel.x + innerPad;
-    const float rowW = L.behaviorPanel.w - 2.0f * innerPad;
-    const float toggleW = 18.0f * s, colGap = 3.0f * s;
-    const float buttonsW = 3.0f * buttonW + 2.0f * buttonGap;
-    const float colsW = rowW - buttonsW - gap;                 // the toggle and the four option columns
-    const float optionsW = colsW - toggleW - 4.0f * colGap;    // the four option columns, with their gaps taken out
-    const float share[4] = { 0.19f, 0.31f, 0.33f, 0.17f };     // condition target, condition, action, action target
-    std::array<float, 5> colX{}, colWidth{};                   // the toggle, then the four option columns
-    colX[0] = rowX;
-    colWidth[0] = toggleW;
-    float cursor = rowX + toggleW;
-    for (int i = 0; i < 4; ++i) {
-        cursor += colGap;
-        colX[i + 1] = cursor;
-        colWidth[i + 1] = optionsW * share[i];
-        cursor += colWidth[i + 1];
+    if (tab == UNIT_TAB_INVENTORY) {
+        L.gridPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gridPanelH };
+        L.sortButton = Rect{ L.gridPanel.x + L.gridPanel.w - innerPad - sortW, top + (headH - sortH) * 0.5f,
+                             sortW, sortH };
+        for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+            const int c = i % INVENTORY_COLUMNS, r = i / INVENTORY_COLUMNS;
+            L.slots.push_back(Rect{ L.gridPanel.x + innerPad + c * (slot + gap),
+                                    top + headH + r * (slot + gap), slot, slot });
+        }
     }
-    const float buttonsX = rowX + colsW + gap;
-    const float headY = L.behaviorPanel.y + headH;
-    const float rowsY = headY + colHeadH;
-    for (int i = 0; i < rules; ++i) {
-        BehaviorRowLayout R;
-        const float y = rowsY + i * (rowH + rowGap);
-        R.row = Rect{ rowX, y, rowW, rowH };
-        R.toggle = Rect{ colX[0], y + (rowH - toggleW) * 0.5f, toggleW, toggleW };
-        R.conditionTarget = Rect{ colX[1], y, colWidth[1], rowH };
-        R.condition = Rect{ colX[2], y, colWidth[2], rowH };
-        R.action = Rect{ colX[3], y, colWidth[3], rowH };
-        R.actionTarget = Rect{ colX[4], y, colWidth[4], rowH };
-        const float by = y + 2.0f * s, bh = rowH - 4.0f * s;
-        R.up = Rect{ buttonsX, by, buttonW, bh };
-        R.down = Rect{ buttonsX + buttonW + buttonGap, by, buttonW, bh };
-        R.remove = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
-        L.behaviorRows.push_back(R);
+    if (tab == UNIT_TAB_STATS) {
+        L.statsArea = Rect{ L.panel.x + pad, top, width - 2.0f * pad, statsH };
+        L.statRowH = statRowH;
     }
-    for (size_t i = 0; i < 5; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
-    L.addButton = Rect{ rowX, rowsY + rules * (rowH + rowGap), rowW, addH };
+    if (tab == UNIT_TAB_BEHAVIOR) {
+        // Behaviors: the on box has a fixed width, and the four option columns share what the priority buttons
+        // leave, in the proportions below. The buttons sit at the right end of each row.
+        L.behaviorPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, behaviorPanelH };
+        const float rowX = L.behaviorPanel.x + innerPad;
+        const float rowW = L.behaviorPanel.w - 2.0f * innerPad;
+        const float toggleW = 18.0f * s, colGap = 3.0f * s;
+        const float buttonsW = 3.0f * buttonW + 2.0f * buttonGap;
+        const float colsW = rowW - buttonsW - gap;                 // the toggle and the four option columns
+        const float optionsW = colsW - toggleW - 4.0f * colGap;    // the four option columns, with their gaps taken out
+        const float share[4] = { 0.19f, 0.31f, 0.33f, 0.17f };     // condition target, condition, action, action target
+        std::array<float, 5> colX{}, colWidth{};                   // the toggle, then the four option columns
+        colX[0] = rowX;
+        colWidth[0] = toggleW;
+        float cursor = rowX + toggleW;
+        for (int i = 0; i < 4; ++i) {
+            cursor += colGap;
+            colX[i + 1] = cursor;
+            colWidth[i + 1] = optionsW * share[i];
+            cursor += colWidth[i + 1];
+        }
+        const float buttonsX = rowX + colsW + gap;
+        const float headY = L.behaviorPanel.y + headH;
+        const float rowsY = headY + colHeadH;
+        for (int i = 0; i < rules; ++i) {
+            BehaviorRowLayout R;
+            const float y = rowsY + i * (rowH + rowGap);
+            R.row = Rect{ rowX, y, rowW, rowH };
+            R.toggle = Rect{ colX[0], y + (rowH - toggleW) * 0.5f, toggleW, toggleW };
+            R.conditionTarget = Rect{ colX[1], y, colWidth[1], rowH };
+            R.condition = Rect{ colX[2], y, colWidth[2], rowH };
+            R.action = Rect{ colX[3], y, colWidth[3], rowH };
+            R.actionTarget = Rect{ colX[4], y, colWidth[4], rowH };
+            const float by = y + 2.0f * s, bh = rowH - 4.0f * s;
+            R.up = Rect{ buttonsX, by, buttonW, bh };
+            R.down = Rect{ buttonsX + buttonW + buttonGap, by, buttonW, bh };
+            R.remove = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
+            L.behaviorRows.push_back(R);
+        }
+        for (size_t i = 0; i < 5; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
+        L.addButton = Rect{ rowX, rowsY + rules * (rowH + rowGap), rowW, addH };
+    }
     return L;
 }
 

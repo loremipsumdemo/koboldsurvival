@@ -51,7 +51,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         if (static_cast<int>(i) == static_cast<int>(st.tab)) fill = kAccent;
         else if (over(t, mx, my)) fill = kTabHover;
         r.drawRect(t, fill);
-        r.drawUiTextCentered(name, t.x + t.w * 0.5f, t.y + (t.h - r.uiTextHeight(name)) * 0.5f, kText);
+        r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }
 
     for (size_t i = 0; i < rows.size() && i < L.rows.size(); ++i) {

@@ -7,8 +7,8 @@
 namespace {
 
 // The unit the menu is editing, kept to the party's range
-int pickedIndex(const PartyUi& ui) {
-    return std::clamp(ui.selected, 0, START_UNIT_COUNT - 1);
+int pickedIndex(const Party& p, const PartyUi& ui) {
+    return std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
 }
 
 const char* groupTitle(StatGroup g) {
@@ -25,11 +25,11 @@ const char* groupTitle(StatGroup g) {
 } // namespace
 
 const PartyMember& pickedMember(const Party& p, const PartyUi& ui) {
-    return p[pickedIndex(ui)];
+    return p[pickedIndex(p, ui)];
 }
 
 PartyMember& pickedMember(Party& p, const PartyUi& ui) {
-    return p[pickedIndex(ui)];
+    return p[pickedIndex(p, ui)];
 }
 
 std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
@@ -57,6 +57,18 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
 int clampDropScroll(int scroll, int count) {
     if (count <= DROP_VISIBLE_ROWS) return 0;
     return std::clamp(scroll, 0, count - DROP_VISIBLE_ROWS);
+}
+
+int partyListVisible(int H) {
+    const float s = H / 720.0f;
+    const PartyPanels P = partyPanels(0, H);
+    // Each card is 96 px with a 10 px gap, and 60 px at the bottom of the column is kept for the hints
+    const float area = P.left.h - 12.0f * s - 60.0f * s;
+    return std::max(1, (int)std::floor((area + 10.0f * s) / (96.0f * s + 10.0f * s)));
+}
+
+int partyListMaxScroll(int count, int H) {
+    return std::max(0, count - partyListVisible(H));
 }
 
 PartyPanels partyPanels(int W, int H) {
@@ -89,17 +101,21 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     std::vector<Button> dropGroup;   // added last, so an open dropdown draws over everything
     Rect sprAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, gearAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, invAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
 
-    // Left column: the three units, then a hint on how to use the menu
+    // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
-    float y = P.left.y + 12.0f * s;
-    for (int i = 0; i < START_UNIT_COUNT; ++i) {
-        out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, y, P.left.w - 20.0f * s, cardH },
+    const int count = (int)p.size();
+    const int visible = partyListVisible(H);
+    const int first = std::clamp(ui.listScroll, 0, partyListMaxScroll(count, H));
+    const float listTop = P.left.y + 12.0f * s;
+    for (int i = first; i < count && i < first + visible; ++i) {
+        const float cy = listTop + (i - first) * (cardH + cardGap);
+        out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, cy, P.left.w - 20.0f * s, cardH },
                               Action::PartyPick, true, i });
-        y += cardH + cardGap;
     }
-    out.push_back(Button{ "Click a unit to edit it.", Rect{ P.left.x + 10.0f * s, y + 6.0f * s, P.left.w - 20.0f * s, 22.0f * s },
+    const float hintY = P.left.y + P.left.h - 56.0f * s;
+    out.push_back(Button{ "Click a unit to edit it.", Rect{ P.left.x + 10.0f * s, hintY, P.left.w - 20.0f * s, 22.0f * s },
                           Action::PartyNote, false, 0 });
-    out.push_back(Button{ "Shift + click changes a stat by 10.", Rect{ P.left.x + 10.0f * s, y + 30.0f * s, P.left.w - 20.0f * s, 22.0f * s },
+    out.push_back(Button{ "Shift + click changes a stat by 10.", Rect{ P.left.x + 10.0f * s, hintY + 24.0f * s, P.left.w - 20.0f * s, 22.0f * s },
                           Action::PartyNote, false, 0 });
 
     // Right column: the tabs, then the picked tab's contents
@@ -114,7 +130,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
     // Contents start here. A field's caption sits 22 px above its box, so there is room for it.
     const float top = tabY + tabH + 22.0f * s;
-    const int sel = pickedIndex(ui);
+    const int sel = pickedIndex(p, ui);
 
     switch (ui.tab) {
     case PartyTab::Identity: {
@@ -217,6 +233,12 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
     out.push_back(Button{ "Randomize all", Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
     out.push_back(Button{ "Back", Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
+    // Add and remove units: the party has up to PARTY_MAX_UNITS, and the starting units cannot be removed
+    const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
+    out.push_back(Button{ "Add unit", Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
+                          (int)p.size() < PARTY_MAX_UNITS, 0 });
+    out.push_back(Button{ "Remove unit", Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
+                          (int)p.size() > START_UNIT_COUNT, 0 });
     out.push_back(Button{ "Confirm", Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, partyNamesValid(p), 0 });
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },

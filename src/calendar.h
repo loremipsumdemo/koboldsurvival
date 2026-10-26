@@ -98,6 +98,22 @@ inline std::string formatDate(double seconds) {
     return s;
 }
 
+// "23:59": the hour and minute
+inline std::string formatTime(double seconds) {
+    const ClockTime c = clockOf(seconds);
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "%02d:%02d", c.hour, c.minute);
+    return buf;
+}
+
+// "500-01-01": the year, then the month and the day, each month and day as two digits
+inline std::string formatYmd(double seconds) {
+    const CalendarDate d = dateOf(seconds);
+    char buf[24];
+    std::snprintf(buf, sizeof(buf), "%d-%02d-%02d", d.year, d.month, d.day);
+    return buf;
+}
+
 // Moves the clock on by `realSeconds` of real time and returns how many in-game hours it passed
 // over, counted by the clock's own hour boundaries (so 10:59 to 11:00 is one hour, whatever the
 // frame rate). Hunger ticks once for each.

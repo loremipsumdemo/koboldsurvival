@@ -136,6 +136,30 @@ std::string randomUnitName(Rng& rng, const std::vector<std::string>& taken) {
     return pickName(rng, taken);
 }
 
+// One player unit in the block centred on the spawn: slot i of the block, moved onto free ground
+void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
+    const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f,
+                            spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
+    Entity u = w.create();
+    w.add(u, Transform{ p.x, t.heightAt(p.x, p.z), p.z });
+    w.add(u, Unit{});
+    w.add(u, Commandable{});
+    w.add(u, Inventory{});
+    w.add(u, Equipment{});
+    w.add(u, Needs{});
+    w.add(u, Behaviors{});
+    w.add(u, Combat{});
+    w.add(u, Name{});
+    w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+}
+
+// Makes sure there are `count` player units, adding the missing ones at the spawn
+void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
+    const Vec2 spawn = findSpawn(t);
+    const int have = (int)w.view<Unit, Commandable>().size();
+    for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
+}
+
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     const Vec2 spawn = findSpawn(t);
     // Read in the ground around the spawn, so the units and red units can stand on it
@@ -143,22 +167,8 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     const int size = t.size();
     auto tileAt = [&](float v) { return std::clamp((int)std::floor(v), 0, size - 1); };
 
-    // Units: a block centerd on the spawn, each moved onto free ground
-    for (int i = 0; i < START_UNIT_COUNT; ++i) {
-        const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f,
-                                spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
-        Entity u = w.create();
-        w.add(u, Transform{ p.x, t.heightAt(p.x, p.z), p.z });
-        w.add(u, Unit{});
-        w.add(u, Commandable{});
-        w.add(u, Inventory{});
-        w.add(u, Equipment{});
-        w.add(u, Needs{});
-        w.add(u, Behaviors{});
-        w.add(u, Combat{});
-        w.add(u, Name{});
-        w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
-    }
+    // Units: a block centred on the spawn
+    for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 
     // Red units: same kind of unit, but they stand still and can't be commanded. They are placed on
     // walkable tiles within range of the spawn, but not close to it. The attempt limit stops a small

@@ -19,6 +19,8 @@
 #include "terrain_mesh.h"
 #include "ui.h"
 #include "party_ui.h"
+#include "overview.h"
+#include "ui_icons.h"
 
 // A texture plus its width/height ratio
 struct TextTex {
@@ -35,6 +37,7 @@ struct RGBA {
 // the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
 struct CombatLogLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Combat Log" bar across the top
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     float textX = 0.0f, textW = 0.0f;
@@ -44,6 +47,9 @@ struct CombatLogLayout {
     int offset = 0;                          // lines scrolled up from the newest, within range
     int first = 0;                           // index of the oldest visible line
     int shown = 0;                           // how many lines are visible
+
+    bool collapsed = false;                  // only the bar shows
+    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };  // the [-] or [+] button in the bar
 
     bool scrollable() const { return lineCount > linesVisible; }
     int maxOffset() const { return lineCount > linesVisible ? lineCount - linesVisible : 0; }
@@ -99,11 +105,22 @@ public:
     // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
     // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running);
+    // The minimap: a square r showing spanTiles across, centred on (centreX, centreZ), north up, with the
+    // level's ground and a green dot for each position in dots (tile x and z). Past the edge of the level
+    // it is sea. The whole level, fitted in area (kept square), with the same dots. A compass strip r shows
+    // the bearing ahead, in degrees from north, with the marks in view. The overview picture is built when
+    // a level is uploaded, and drawn once it is ready.
+    void drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float centreX, float centreZ, float spanTiles);
+    void drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span);
+    void drawCompass(const Rect& r, float bearingDeg);
+    // Where the hover names in the top left start, from the top of the window
+    void setHudTop(float y) { hudTop_ = y; }
     // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
     // is the mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
     // show green or red for whether it may go there. editable says whether the sort, the behavior edits and
     // the add button work; for a red unit they are drawn dimmed.
+    void drawStatsTab(const SidebarLayout& L, const Stats& stats);
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
     // The full text of the behavior row under the mouse, beside it. Call after drawInventorySidebar.
@@ -120,7 +137,7 @@ public:
     // The in-game clock and date in a box at the top right. right is the x the box lines up against:
     // the window's right edge, or the sidebar's left edge while the sidebar shows. Both lines are
     // right aligned, and the clock's digits keep the same width as they change.
-    void drawClock(const std::string& clock, const std::string& date, float right, int winH);
+    void drawClock(const std::string& clock, const std::string& date, float right, float top, int winH);
     // A notice, drawn centerd at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
     // The stats popout for one unit, and its layout (which depends on the fonts)
@@ -146,7 +163,8 @@ public:
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
     // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
-    CombatLogLayout combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit);
+    CombatLogLayout combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
+                                    bool collapsed = false);
     void drawCombatLog(const CombatLogLayout& L, const CombatLog& log);
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
@@ -161,6 +179,16 @@ public:
     void endUi();
     void drawTitleBackground();                  // clears, then draws title.png covering the screen
     void drawRect(const Rect& r, RGBA c);
+    // A UI icon in r: its picture from data/ui, or the pink placeholder with its id as the number
+    void drawUiIcon(int icon, const Rect& r);
+    // An icon of height h at (x, y), with its text beside it in the list font
+    void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);
+    // An icon and text, centred together in r. uiFont picks the menu font, else the list font.
+    void drawIconLabel(const Rect& r, int icon, const std::string& text, RGBA tint, bool uiFont);
+    // A bar across the top of a panel: the icon and the title in it
+    void drawTitleBar(const Rect& bar, int icon, const std::string& title);
+    // The [-] when the panel is open, the [+] when it is folded
+    void drawCollapseButton(const Rect& r, bool collapsed);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);
@@ -211,6 +239,23 @@ private:
 
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
+    // A textured UI quad from (x0, y0) top left to (x1, y1) bottom right, with texture coordinates u0 v0 at
+    // the top left and u1 v1 at the bottom right
+    void drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
+                    RGBA tint);
+    // A green dot with a black outline, d pixels across, centred on (cx, cy)
+    void drawDot(float cx, float cy, float d);
+    // Takes the overview picture if its build has finished, and uploads it
+    void pollOverview();
+    OverviewBuilder overview_;
+    // The UI icon pictures, by id. An id with no picture has a texture of 0.
+    const TextTex& uiIconTexture(int icon);
+    std::map<int, TextTex> uiIcons_;
+    GLuint overviewTex_ = 0;
+    float overviewSize_ = 0.0f;       // tiles per side of the level, 0 while there is no picture
+    float overviewExtent_ = 1.0f;     // tiles the picture covers per side
+    GLuint dotTex_ = 0;
+    float hudTop_ = 12.0f;
 
     // The picture for an item, from data/item/<id>.png. An item without one uses data/item/none.png.
     // Null when neither is packed, and the item is drawn as its colored block instead.

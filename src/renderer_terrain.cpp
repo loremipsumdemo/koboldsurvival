@@ -427,6 +427,27 @@ void Renderer::releaseTerrain() {
 
 void Renderer::uploadTerrain(const Terrain& t) {
     releaseTerrain();
+    // The picture of the whole level for the minimap and the world map. A streamed world is read in the
+    // background, chunk by chunk; a whole map in memory is read right away.
+    if (overviewTex_) {
+        glDeleteTextures(1, &overviewTex_);
+        overviewTex_ = 0;
+    }
+    overviewSize_ = 0.0f;
+    if (t.streamed()) {
+        const std::string folder = t.folder();
+        const WorldInfo info = t.worldInfo();
+        overview_.start(t.size(), [folder, info](int cx, int cz, ChunkData& c) {
+            return readChunk(folder, info, cx, cz, c);
+        }, true);
+    } else {
+        overview_.start(t.size(), [&t](int cx, int cz, ChunkData& c) {
+            const ChunkData* p = t.chunkAt(cx, cz);
+            if (!p) return false;
+            c = *p;
+            return true;
+        }, false);
+    }
     terrainSize_ = t.size();
     chunksPerSide_ = t.chunksPerSide();
     // Slots start empty. Each chunk gets its buffers the first time it is built.

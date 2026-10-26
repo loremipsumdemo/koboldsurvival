@@ -331,6 +331,9 @@ bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
     return true;
 }
 
+// Tiles across the minimap
+constexpr float MINIMAP_TILES = 160.0f;
+
 // Every item in the database is put on the ground this many times when a level starts
 constexpr int ITEM_COPIES_PER_LEVEL = 10;
 
@@ -940,13 +943,18 @@ int main(int, char**) {
     // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
     // double hunger at the next hour. Not saved: a game starts walking.
     bool runMode = false;
+    bool combatCollapsed = false, squadCollapsed = false;   // the title bars' [-] buttons
+    bool unitOpen = false;          // the Unit Panel: open shows its tabs, closed shows its bar alone
+    int unitTab = 0;                // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
+    Entity lastLone = NULL_ENTITY;  // the lone unit the Unit Panel showed last frame
+    float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;   // the world map's view: its centre and width in tiles, 0 while closed
+    bool mapOpen = false;          // the world map covers the ground: M or the View Map button
     // A stack being dragged out of the inventory sidebar. Released outside the sidebar, it drops on the ground.
     bool itemDrag = false;
     Entity dragUnit = NULL_ENTITY;        // the unit whose inventory it came from
     int dragSlot = -1;                    // the inventory slot it came from, or -1 when dragging gear
     int dragGear = -1;                    // the gear slot it came from, or -1 when dragging from the inventory
     // The stats popout for the lone selected unit, opened from the sidebar's Stats button
-    bool statsOpen = false;
     // The right-click menu for an inventory item: Use and Drop, opened at the mouse
     struct ItemMenu {
         bool open = false;
@@ -1111,6 +1119,7 @@ int main(int, char**) {
             return;
         }
         // The party from the menu replaces the three units that the seed made
+        ensurePlayerUnits(world, terrain, rng, (int)party.size());
         applyParty(world, party);
         clearCombatText();
         closePanel();
@@ -1371,7 +1380,7 @@ int main(int, char**) {
             return;
         }
         case Action::PartyPick:
-            partyUi.selected = std::clamp(param, 0, START_UNIT_COUNT - 1);
+            partyUi.selected = std::clamp(param, 0, (int)party.size() - 1);
             stopNameEdit();
             closeDropdown();
             return;
@@ -1394,9 +1403,9 @@ int main(int, char**) {
             return;
         case Action::PartyRandomUnit: {
             // A new member for the picked unit, with a name that no other unit in the party has
-            const int picked = std::clamp(partyUi.selected, 0, START_UNIT_COUNT - 1);
+            const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
             std::vector<std::string> others;
-            for (int i = 0; i < START_UNIT_COUNT; ++i) {
+            for (int i = 0; i < (int)party.size(); ++i) {
                 if (i != picked) others.push_back(party[i].name);
             }
             party[picked] = randomMember(partyRng, others);
@@ -1470,8 +1479,28 @@ int main(int, char**) {
         case Action::PartyStatLabel:
         case Action::PartyMessage:
             return;
+        case Action::PartyAddUnit:
+            // A random unit at the end of the party. The list is scrolled to the end, and the layout clamps it.
+            if ((int)party.size() < PARTY_MAX_UNITS) {
+                addRandomMember(party, partyRng);
+                partyUi.selected = (int)party.size() - 1;
+                partyUi.listScroll = (int)party.size();
+                stopNameEdit();
+                closeDropdown();
+            }
+            return;
+        case Action::PartyRemoveUnit:
+            // The picked unit leaves the party, but the starting units stay
+            if ((int)party.size() > START_UNIT_COUNT) {
+                const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
+                party.erase(party.begin() + picked);
+                partyUi.selected = std::clamp(picked, 0, (int)party.size() - 1);
+                stopNameEdit();
+                closeDropdown();
+            }
+            return;
         case Action::PartyRandomAll:
-            party = randomParty(partyRng);
+            party = randomParty(partyRng, (int)party.size());
             stopNameEdit();
             closeDropdown();
             return;
@@ -1643,7 +1672,7 @@ int main(int, char**) {
         auto sidebarFor = [&](int W, int H, float scroll) {
             const Entity shown = sidebarUnitOf(world);
             const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
-            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll);
+            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab);
         };
         // Only your own units can be changed from the sidebar. A red unit's sidebar is for looking at.
         auto shownIsYours = [&]() {
@@ -1730,7 +1759,7 @@ int main(int, char**) {
         auto unitPanelHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
             SDL_GetMouseState(&mx, &my);
-            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow).panel.contains(mx, my);
+            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed).panel.contains(mx, my);
         };
         // Whether a point is over the bottom unit panel or the inventory sidebar. Those belong to the
         // interface: clicks and wheel turns there never reach the world behind them.
@@ -1766,8 +1795,8 @@ int main(int, char**) {
         // The combat log in the bottom left, stopping short of the unit panel. Its offset is kept in range.
         auto combatLogPanel = [&](int W, int H) {
             const float s = H / 720.0f;
-            const float unitLeft = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow).panel.x;
-            return renderer.combatLogLayout(W, H, logOffset, (int)combatLog.lines.size(), unitLeft - 8.0f * s);
+            const float unitLeft = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed).panel.x;
+            return renderer.combatLogLayout(W, H, logOffset, (int)combatLog.lines.size(), unitLeft - 8.0f * s, combatCollapsed);
         };
         // Whether the mouse is over the combat log
         auto combatLogHovered = [&](int W, int H) {
@@ -1775,12 +1804,43 @@ int main(int, char**) {
             SDL_GetMouseState(&mx, &my);
             return combatLogPanel(W, H).panel.contains(mx, my);
         };
+        // The minimap sits in the top right corner, left of the sidebar while the sidebar shows
+        auto minimapFor = [&](int W, int H) {
+            return layoutMinimap(H, (float)W);
+        };
+        // The world map's area: the window above the unit panel
+        auto worldMapArea = [&](int W, int H) {
+            const float ms = H / 720.0f;
+            const UnitPanelLayout L = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed);
+            // The map stops above the tallest of the bottom panels
+            const float bottom = std::min({ L.panel.y, sidebarFor(W, H, sidebarScroll).panel.y, combatLogPanel(W, H).panel.y });
+            return Rect{ 40.0f * ms, 40.0f * ms, W - 80.0f * ms, bottom - 56.0f * ms };
+        };
+        // The ground point under the mouse on the minimap, or on the world map while it is open
+        auto mapGroundAt = [&](int W, int H, float x, float y, float& gx, float& gz) {
+            const float size = (float)terrain.size();
+            if (mapOpen) {
+                return minimapGround(WorldMapBox(worldMapArea(W, H), H / 720.0f), mapCx, mapCz, mapSpan, size, x, y, gx, gz);
+            }
+            // The sidebar covers the minimap, so a click on the sidebar is never a click on the minimap
+            if (sidebarFor(W, H, sidebarScroll).panel.contains(x, y)) return false;
+            return minimapGround(minimapFor(W, H).map, cam.focusX, cam.focusZ, MINIMAP_TILES, size, x, y, gx, gz);
+        };
+        // A move order to a ground point for the selected units, as a right click on the ground gives
+        auto moveSelectedTo = [&](float x, float z) {
+            const std::vector<Entity> units = selectedUnits(world);
+            if (units.empty()) return;
+            issueMoveOrder(world, terrain, units, Vec2{ x, z });
+            actionX = x;
+            actionZ = z;
+            actionAlpha = 1.0f;
+        };
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
-            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow),
-                                  sidebarFor(W, H, sidebarScroll), sidebarUp(), x, y)
+            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed),
+                                  sidebarFor(W, H, sidebarScroll), true, x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
-                || (statsOpen && renderer.statsPanelLayout(W, H).box.contains(x, y))
+                || (!mapOpen && (minimapFor(W, H).map.contains(x, y) || minimapFor(W, H).compass.contains(x, y)))
                 || (behaviorEditor.open
                     && renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, W, H).box.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
@@ -1858,18 +1918,22 @@ int main(int, char**) {
                     }
                     break;
                 }
+                if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
+                    mapOpen = !mapOpen;   // M opens and closes the world map
+                    break;
+                }
                 if (e.key.key == SDLK_ESCAPE) {
-                    if (screen == Screen::Playing && (itemMenu.open || statsOpen || behaviorEditor.open)) {
+                    if (screen == Screen::Playing && mapOpen) {
+                        mapOpen = false;  // Escape closes the world map first
+                    } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
                         // Escape closes the open menu, editor or popout first, and only then pauses the game
                         itemMenu.open = false;
-                        statsOpen = false;
                         behaviorEditor.open = false;
                     } else if (screen == Screen::Playing) {
                         leftDown = middleDown = false;
                         sel.dragging = false;
                         itemDrag = false;
                         itemMenu.open = false;
-                        statsOpen = false;
                         behaviorEditor.open = false;
                         screen = Screen::Pause;
                         refreshSaves();
@@ -1900,6 +1964,10 @@ int main(int, char**) {
                     if (partyUi.dropKind != DropKind::None) {
                         const int count = (int)dropdownEntries(party, partyUi).size();
                         partyUi.dropScroll = clampDropScroll(partyUi.dropScroll - (int)e.wheel.y, count);
+                    } else if (partyPanels(winW, winH).left.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+                        // The unit list scrolls, a unit at a time
+                        const int maxScroll = partyListMaxScroll((int)party.size(), winH);
+                        partyUi.listScroll = std::clamp(std::min(partyUi.listScroll, maxScroll) - (int)e.wheel.y, 0, maxScroll);
                     }
                 } else if (screen == Screen::Settings) {
                     // Scrolls an open dropdown. Nothing else on the menu scrolls.
@@ -1911,11 +1979,24 @@ int main(int, char**) {
                     // Scrolls the combat log, three lines a notch. Wheel up goes back in time.
                     const int step = e.wheel.y > 0.0f ? 3 : e.wheel.y < 0.0f ? -3 : 0;
                     logOffset = std::clamp(logOffset + step, 0, combatLogPanel(winW, winH).maxOffset());
+                } else if (screen == Screen::Playing && mapOpen && !pointerOverPanels(winW, winH)
+                           && WorldMapBox(worldMapArea(winW, winH), winH / 720.0f).contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+                    // Zooms the world map about the point under the mouse: wheel up zooms in, down zooms out
+                    const Rect box = WorldMapBox(worldMapArea(winW, winH), winH / 720.0f);
+                    const float fx = std::clamp((e.wheel.mouse_x - box.x) / box.w, 0.0f, 1.0f);
+                    const float fz = std::clamp((e.wheel.mouse_y - box.y) / box.h, 0.0f, 1.0f);
+                    const float oldSpan = mapSpan;
+                    const float gx = mapCx + oldSpan * 0.5f - fx * oldSpan;   // the ground under the mouse
+                    const float gz = mapCz + oldSpan * 0.5f - fz * oldSpan;
+                    const float size = (float)terrain.size();
+                    mapSpan = std::clamp(e.wheel.y > 0.0f ? oldSpan * 0.8f : oldSpan * 1.25f, std::min(64.0f, size), size);
+                    mapCx = gx - mapSpan * 0.5f + fx * mapSpan;
+                    mapCz = gz - mapSpan * 0.5f + fz * mapSpan;
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list by whole rows
                     unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
-                                                   unitPanelRow - (int)e.wheel.y).scrollRow;
-                } else if (screen == Screen::Playing && sidebarUp()
+                                                   unitPanelRow - (int)e.wheel.y, squadCollapsed).scrollRow;
+                } else if (screen == Screen::Playing
                            && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
                     // Scrolls the sidebar, 40 pixels a notch. Wheel up goes back toward the top.
                     const float notch = 40.0f * (winH / 720.0f);
@@ -1999,11 +2080,42 @@ int main(int, char**) {
                     break;
                 }
 
+                // With the world map open, only the panels take clicks; the ground and its units do not
+                if (screen == Screen::Playing && mapOpen && !overPanels(e.button.x, e.button.y, winW, winH)) {
+                    // With the world map open, a right click on the map is a move order; the rest is dropped
+                    float mgx = 0.0f, mgz = 0.0f;
+                    if (e.button.button == SDL_BUTTON_RIGHT && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
+                        moveSelectedTo(mgx, mgz);
+                    }
+                    break;
+                }
+
+                // The [-] and [+] buttons on the title bars fold their panels up or down
+                if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
+                    const float tx = e.button.x, ty = e.button.y;
+                    const SidebarLayout sbl = sidebarFor(winW, winH, sidebarScroll);
+                    if (sbl.plus.contains(tx, ty)) {
+                        unitOpen = true;
+                        break;
+                    }
+                    if (sbl.minus.contains(tx, ty)) {
+                        unitOpen = false;
+                        break;
+                    }
+                    if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed).toggle.contains(tx, ty)) {
+                        squadCollapsed = !squadCollapsed;
+                        break;
+                    }
+                    if (combatLogPanel(winW, winH).toggle.contains(tx, ty)) {
+                        combatCollapsed = !combatCollapsed;
+                        break;
+                    }
+                }
                 if (e.button.button == SDL_BUTTON_LEFT && screen == Screen::Playing) {
                     // The unit panel and sidebar take the click, so it never reaches the ground
                     const float mx = e.button.x, my = e.button.y;
                     const std::vector<Entity> own = ownUnitList();
-                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
+                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed);
 
                     // The right-click menu: a click on one of its buttons does that action. A click
                     // anywhere else just closes it, and the click still does what it would have done.
@@ -2041,25 +2153,28 @@ int main(int, char**) {
                         behaviorEditor.open = false;
                     }
 
-                    // The stats popout takes the clicks inside it, and its Close button shuts it. The
-                    // Stats button on the profile card opens and closes it.
-                    if (statsOpen) {
-                        const StatsPanelLayout sp = renderer.statsPanelLayout(winW, winH);
-                        if (sp.close.contains(mx, my)) statsOpen = false;
-                        if (sp.box.contains(mx, my)) break;
-                    }
-                    if (sidebarUp() && sidebarFor(winW, winH, sidebarScroll).statsButton.contains(mx, my)) {
-                        statsOpen = !statsOpen;
-                        break;
+                    // The Unit Panel's tabs pick what it shows
+                    {
+                        const SidebarLayout st = sidebarFor(winW, winH, sidebarScroll);
+                        bool tabHit = false;
+                        for (int t = 0; t < UNIT_TAB_COUNT && st.open; ++t) {
+                            if (st.tabs[t].contains(mx, my)) {
+                                unitTab = t;
+                                sidebarScroll = 0.0f;
+                                tabHit = true;
+                                break;
+                            }
+                        }
+                        if (tabHit) break;
                     }
 
                     if (overPanels(mx, my, winW, winH)) {
-                        // The walk and run toggle on the bottom panel
-                        if (pl.walkButton.contains(mx, my)) { runMode = false; break; }
-                        if (pl.runButton.contains(mx, my)) { runMode = true; break; }
+                        // The pace toggle and the View Map button on the bottom panel
+                        if (pl.paceButton.contains(mx, my)) { runMode = !runMode; break; }
+                        if (pl.mapButton.contains(mx, my)) { mapOpen = !mapOpen; break; }
 
                         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
-                        const bool onSidebar = sidebarUp() && sl.panel.contains(mx, my);
+                        const bool onSidebar = sl.panel.contains(mx, my);
                         if (onSidebar) {
                             // Sort, add and the behavior rows change your unit, when the sidebar shows one. They
                             // come before the drags, which start on the inventory and gear.
@@ -2150,7 +2265,11 @@ int main(int, char**) {
                         lastY = e.button.y;
                     }
                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
-                    if (overPanels(e.button.x, e.button.y, winW, winH)) {
+                    float mgx = 0.0f, mgz = 0.0f;
+                    if (screen == Screen::Playing && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
+                        // The minimap: the selected units walk to the point clicked on it
+                        moveSelectedTo(mgx, mgz);
+                    } else if (overPanels(e.button.x, e.button.y, winW, winH)) {
                         // Right-click on an inventory item: gear goes straight to its slot, and anything
                         // else opens the menu with Use and Drop. Right-click on a worn gear item takes it off
                         // into the inventory. Elsewhere on the panels, nothing happens. A red unit's sidebar
@@ -2322,7 +2441,14 @@ int main(int, char**) {
         if (screen == Screen::Playing) {
             const Entity shown = sidebarUnitOf(world);
             const bool lone = shown != NULL_ENTITY;
-            if (!lone) statsOpen = false;
+            // The Unit Panel opens when one unit is selected on its own, and folds when there is none
+            if (!lone) {
+                unitOpen = false;
+            } else if (shown != lastLone) {
+                unitOpen = true;
+                sidebarScroll = 0.0f;
+            }
+            lastLone = shown;
             if (itemMenu.open) {
                 const Inventory* inv = world.get<Inventory>(itemMenu.unit);
                 const bool same = lone && shown == itemMenu.unit;
@@ -2445,13 +2571,46 @@ int main(int, char**) {
             break;
         }
 
-        case Screen::Playing:
+        case Screen::Playing: {
+            // The world map's view starts out showing the whole level, and starts over each time it opens
+            if (!mapOpen) {
+                mapSpan = 0.0f;
+            } else {
+                const float size = (float)terrain.size();
+                if (mapSpan <= 0.0f) {
+                    mapSpan = size;
+                    mapCx = size * 0.5f;
+                    mapCz = size * 0.5f;
+                }
+                // From one chunk across to the whole level
+                mapSpan = std::clamp(mapSpan, std::min(64.0f, size), size);
+                const float half = mapSpan * 0.5f;
+                mapCx = std::clamp(mapCx, half, size - half);
+                mapCz = std::clamp(mapCz, half, size - half);
+            }
             renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
             renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
             renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
             // In-game panels, drawn over the world: item names while Alt is held, the unit list along the
             // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
+            // Every player unit is a green dot on the minimap and the world map
+            std::vector<Vec2> mapDots;
+            for (Entity e : ownUnitList()) {
+                const Transform* t = world.get<Transform>(e);
+                if (t) mapDots.push_back(Vec2{ t->x, t->z });
+            }
+            if (!mapOpen) {
+                const MinimapLayout mm = minimapFor(winW, winH);
+                renderer.drawMinimap(mm.map, mapDots, cam.focusX, cam.focusZ, MINIMAP_TILES);
+                renderer.drawCompass(mm.compass, cam.bearingDegrees());
+            }
+            // The clock sits under the minimap, lined up with its right edge. The Unit Panel draws over both.
+            {
+                const MinimapLayout mm = minimapFor(winW, winH);
+                renderer.drawClock(formatTime(gs.clockSeconds), formatYmd(gs.clockSeconds),
+                                   mm.map.x + mm.map.w, mm.clockTop, winH);
+            }
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
@@ -2460,8 +2619,12 @@ int main(int, char**) {
             }
             {
                 const std::vector<Entity> own = ownUnitList();
-                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow);
+                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed);
                 unitPanelRow = L.scrollRow;
+                if (mapOpen) {
+                    // The world map fills the window above the panel
+                    renderer.drawWorldMap(worldMapArea(winW, winH), mapDots, mapCx, mapCz, mapSpan);
+                }
                 renderer.drawUnitPanel(world, L, own, runMode);
                 // The combat log, bottom left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);
@@ -2470,7 +2633,7 @@ int main(int, char**) {
                 // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
                 // are only shown: the mouse handling never starts a drag or a menu on them.
                 const Entity shown = sidebarUnitOf(world);
-                if (shown != NULL_ENTITY) {
+                {
                     // The item being dragged, so the gear slots can show where it fits
                     int draggedId = 0;
                     if (itemDrag && dragGear >= 0) {
@@ -2487,13 +2650,7 @@ int main(int, char**) {
                                                   itemDrag && dragGear >= 0 ? dragGear : -1,
                                                   draggedId, shownIsYours());
                     // The full text of the rule under the mouse, when nothing else is open over it
-                    if (!itemDrag && !behaviorEditor.open) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
-                }
-                if (statsOpen && shown != NULL_ENTITY && world.has<Stats>(shown)) {
-                    const Name* nm = world.get<Name>(shown);
-                    renderer.drawStatsPanel(renderer.statsPanelLayout(winW, winH),
-                                            nm ? nm->text : std::string("Unnamed Unit"),
-                                            *world.get<Stats>(shown), mouseX, mouseY);
+                    if (shown != NULL_ENTITY && !itemDrag && !behaviorEditor.open) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
                 }
                 if (itemMenu.open) {
                     const std::vector<std::string> labels = menuLabels();
@@ -2523,13 +2680,8 @@ int main(int, char**) {
                     }
                 }
             }
-            // The clock sits in the top right, or just left of the sidebar while the sidebar shows
-            {
-                const bool sidebar = sidebarUp();
-                const float clockRight = sidebar ? sidebarFor(winW, winH, sidebarScroll).panel.x : (float)winW;
-                renderer.drawClock(formatClock(gs.clockSeconds), formatDate(gs.clockSeconds), clockRight, winH);
-            }
             renderer.endUi();
+            }
             break;
 
         case Screen::MapSelect: {

@@ -233,6 +233,40 @@ TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color) {
     return result;
 }
 
+// A texture from RGBA pixels, clamped at its edges and filtered linearly
+static GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba) {
+    GLuint t = 0;
+    glGenTextures(1, &t);
+    glBindTexture(GL_TEXTURE_2D, t);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    return t;
+}
+
+// A round green dot with a black outline, 16 pixels across, for the units on the maps
+static GLuint MakeDotTexture() {
+    constexpr int N = 16;
+    std::vector<uint8_t> px(static_cast<size_t>(N) * N * 4, 0);
+    for (int y = 0; y < N; ++y) {
+        for (int x = 0; x < N; ++x) {
+            const float dx = x + 0.5f - N * 0.5f, dy = y + 0.5f - N * 0.5f;
+            const float d = std::sqrt(dx * dx + dy * dy);
+            const bool green = d < 5.0f;             // inside is green, the ring out to the edge is black
+            const float alpha = std::clamp(7.6f - d, 0.0f, 1.0f);
+            uint8_t* p = &px[static_cast<size_t>(y * N + x) * 4];
+            p[0] = green ? 64 : 0;
+            p[1] = green ? 230 : 0;
+            p[2] = green ? 80 : 0;
+            p[3] = static_cast<uint8_t>(alpha * 255.0f);
+        }
+    }
+    return MakeRgbaTexture(N, N, px.data());
+}
+
 // Loads a PNG (or any image SDL_image understands) into a texture
 TextTex loadImage(const char* path, bool repeatHorizontally) {
     SDL_Surface* s = pakImage(path);
@@ -890,7 +924,7 @@ void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH
 
     // Dark panels behind the text
     Batch panels;
-    float y = margin;
+    float y = hudTop_;
     for (const HudLine& hl : hudLines_) {
         float x0 = margin, x1 = margin + hl.w + pad * 2.0f;
         float y0 = y, y1 = y + hl.h + pad * 2.0f;
@@ -1410,10 +1444,110 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
     }
 }
 
+// ---- the minimap, the compass and the world map ----------------------------------------------------
+
+void Renderer::pollOverview() {
+    OverviewPicture pic;
+    if (!overview_.take(pic)) return;
+    if (overviewTex_) glDeleteTextures(1, &overviewTex_);
+    overviewTex_ = pic.px > 0 ? MakeRgbaTexture(pic.px, pic.px, pic.rgba.data()) : 0;
+    overviewSize_ = pic.px > 0 ? static_cast<float>(pic.size) : 0.0f;
+    overviewExtent_ = pic.px > 0 ? pic.extent() : 1.0f;
+}
+
+void Renderer::drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
+                          RGBA tint) {
+    // Vertices BL, BR, TR, TL: the top edge (y0) takes the top texture coordinate v0
+    const float v[4 * 5] = {
+        x0, y1, 0.0f, u0, v1,
+        x1, y1, 0.0f, u1, v1,
+        x1, y0, 0.0f, u1, v0,
+        x0, y0, 0.0f, u0, v0
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(tex, v, tint);
+}
+
+void Renderer::drawDot(float cx, float cy, float d) {
+    if (!dotTex_) dotTex_ = MakeDotTexture();
+    const float h = d * 0.5f;
+    drawUiQuad(dotTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void Renderer::drawMinimap(const Rect& r, const std::vector<Vec2>& dots, float cx, float cz, float span) {
+    pollOverview();
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    drawRect(Rect{ r.x - 2.0f * s, r.y - 2.0f * s, r.w + 4.0f * s, r.h + 4.0f * s }, RGBA{ 0.02f, 0.02f, 0.03f, 0.9f });
+    drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });   // sea, where the window is past the edge of the level
+    if (span <= 0.0f) return;
+
+    // The window in tiles. Its left edge is the largest x and its top edge the largest z.
+    const float xHi = cx + span * 0.5f, xLo = cx - span * 0.5f;
+    const float zHi = cz + span * 0.5f, zLo = cz - span * 0.5f;
+    auto sx = [&](float x) { return r.x + (xHi - x) / span * r.w; };
+    auto sy = [&](float z) { return r.y + (zHi - z) / span * r.h; };
+
+    if (overviewTex_ && overviewSize_ > 0.0f) {
+        const float size = overviewSize_, ext = overviewExtent_;
+        auto u = [&](float x) { return (size - x) / ext; };
+        auto v = [&](float z) { return (size - z) / ext; };
+        // The part of the window inside the level
+        const float ax = std::min(xHi, size), bx = std::max(xLo, 0.0f);
+        const float az = std::min(zHi, size), bz = std::max(zLo, 0.0f);
+        if (ax > bx && az > bz) drawUiQuad(overviewTex_, sx(ax), sy(az), sx(bx), sy(bz), u(ax), v(az), u(bx), v(bz), white);
+    }
+
+    const float d = std::max(5.0f, r.w * 0.045f);
+    for (const Vec2& p : dots) {
+        if (p.x < xLo || p.x > xHi || p.z < zLo || p.z > zHi) continue;
+        drawDot(sx(p.x), sy(p.z), d);
+    }
+}
+
+// The world map: the part of the level `span` tiles wide centred on cx, cz, in the square under the title
+void Renderer::drawWorldMap(const Rect& area, const std::vector<Vec2>& dots, float cx, float cz, float span) {
+    const float s = uiH_ / 720.0f;
+    drawRect(area, RGBA{ 0.0f, 0.0f, 0.02f, 0.72f });
+    drawListText("World map. Scroll to zoom. Press M or Escape to close.", area.x + 10.0f * s, area.y + 8.0f * s,
+                 RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawMinimap(WorldMapBox(area, s), dots, cx, cz, span);
+}
+
+void Renderer::drawCompass(const Rect& r, float bearingDeg) {
+    const float s = uiH_ / 720.0f;
+    drawRect(Rect{ r.x - 2.0f * s, r.y - 2.0f * s, r.w + 4.0f * s, r.h + 4.0f * s }, RGBA{ 0.02f, 0.02f, 0.03f, 0.9f });
+    drawRect(r, RGBA{ 0.05f, 0.05f, 0.08f, 0.8f });
+
+    // The strip shows 60 degrees either side of the bearing, a tick every 15 degrees and a letter every 90
+    const float half = 60.0f;
+    const float perDeg = r.w / (2.0f * half);
+    const float cx = r.x + r.w * 0.5f;
+    const char* names[4] = { "N", "E", "S", "W" };
+    for (int a = 0; a < 360; a += 15) {
+        const float d = std::fmod(static_cast<float>(a) - bearingDeg + 540.0f, 360.0f) - 180.0f;
+        if (std::fabs(d) > half) continue;
+        const float x = cx + d * perDeg;
+        const bool major = a % 90 == 0;
+        const float tick = (major ? 8.0f : 5.0f) * s;
+        drawRect(Rect{ x - 0.5f, r.y + r.h - tick, 1.0f, tick }, RGBA{ 0.9f, 0.9f, 0.95f, 0.9f });
+        if (major) {
+            const char* name = names[a / 90];
+            drawListText(name, x - listTextWidth(name) * 0.5f, r.y + 2.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+    }
+    // The bearing the camera looks along: a small mark at the centre
+    drawRect(Rect{ cx - 1.5f * s, r.y, 3.0f * s, 4.0f * s }, RGBA{ 1.0f, 0.85f, 0.3f, 1.0f });
+}
+
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running) {
     const float s = uiH_ / 720.0f;
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.05f, 0.05f, 0.08f, bgAlpha });
+    drawTitleBar(L.title, ICON_SQUAD_PANEL, "Squad Panel");
+    drawCollapseButton(L.toggle, L.collapsed);
+    if (L.collapsed) return;
 
     // Walk and run: the lit one is the pace the squad is moving at
     auto mode = [&](const Rect& r, const char* text, bool on) {
@@ -1421,8 +1555,9 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     };
-    mode(L.walkButton, "Walk", !running);
-    mode(L.runButton, "Run", running);
+    // One toggle for the pace, lit while the squad runs, and the View Map button beside it
+    mode(L.paceButton, running ? "Pace: Run" : "Pace: Walk", running);
+    mode(L.mapButton, "View Map (M)", false);
 
     for (const UnitCell& c : L.cells) {
         const Entity e = units[c.index];
@@ -1480,22 +1615,94 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 }
 
+// The Stats tab: every stat's level, total XP and the XP it still needs, under the heading of its group
+void Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const Rect& area = L.statsArea;
+    const float rowH = L.statRowH;
+    const float th = listTextHeight("Ag");
+    const float nameX = area.x + rowH + 4.0f * s;
+    // The numbers sit right aligned in three columns
+    const float levelR = area.x + area.w * 0.56f, xpR = area.x + area.w * 0.78f, nextR = area.x + area.w;
+
+    auto row = [&](float y, int icon, const std::string& name, const std::string& lv, const std::string& xp,
+                   const std::string& next, RGBA tint) {
+        if (icon >= 0) drawUiIcon(icon, Rect{ area.x, y, rowH - 2.0f * s, rowH - 2.0f * s });
+        drawListText(fitText(name, levelR - 8.0f * s - nameX, false), nameX, y + (rowH - th) * 0.5f, tint);
+        drawListText(lv, levelR - listTextWidth(lv), y + (rowH - th) * 0.5f, tint);
+        drawListText(xp, xpR - listTextWidth(xp), y + (rowH - th) * 0.5f, tint);
+        drawListText(next, nextR - listTextWidth(next), y + (rowH - th) * 0.5f, tint);
+    };
+    float y = area.y;
+    row(y, -1, "Stat", "Level", "Total XP", "To next", gray);
+    y += rowH;
+    const StatGroup groups[] = { StatGroup::Attributes, StatGroup::Combat, StatGroup::Gathering,
+                                 StatGroup::Crafting, StatGroup::Utility };
+    for (StatGroup group : groups) {
+        const char* title = group == StatGroup::Attributes ? "Attributes"
+                          : group == StatGroup::Combat ? "Combat"
+                          : group == StatGroup::Gathering ? "Resource Gathering"
+                          : group == StatGroup::Crafting ? "Crafting" : "Utility";
+        drawListText(title, area.x, y + (rowH - th) * 0.5f, heading);
+        y += rowH;
+        for (int i = 0; i < STAT_COUNT; ++i) {
+            if (statInfo(i).group != group) continue;
+            const int lv = levelOf(stats, i);
+            const std::string next = lv >= MAX_LEVEL ? std::string("Max")
+                                   : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
+            row(y, statIcon(i), statInfo(i).name, std::to_string(lv), withCommas(stats.xp[i]), next, white);
+            y += rowH;
+        }
+    }
+}
+
 void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                                     int dimSlot, int dimGear, int dragItem, bool editable) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
     const float bgAlpha = 0.5f;   // every background in the sidebar; text, item colors and bars stay solid
+    // The bar with its [-] or [+] button, and the tabs under it. They stay where they are when the content scrolls.
+    auto frame = [&]() {
+        drawTitleBar(L.title, ICON_UNIT_PANEL, "Unit Panel");
+        if (L.minus.w > 0.0f) drawCollapseButton(L.minus, false);
+        if (L.plus.w > 0.0f) drawCollapseButton(L.plus, true);
+        static const char* const names[UNIT_TAB_COUNT] = { "Inventory", "Equipment", "Profile", "Stats", "Behavior" };
+        for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
+            const Rect& t = L.tabs[i];
+            if (t.w <= 0.0f) continue;
+            drawRect(t, i == L.tab ? RGBA{ 0.30f, 0.36f, 0.56f, 0.95f } : RGBA{ 0.12f, 0.14f, 0.20f, 0.9f });
+            const float tw = listTextWidth(names[i]), th = listTextHeight("Ag");
+            drawListText(names[i], t.x + (t.w - tw) * 0.5f, t.y + (t.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+    };
+    drawRect(L.panel, RGBA{ 0.04f, 0.04f, 0.06f, bgAlpha });
+    if (!L.open) {
+        frame();
+        return;
+    }
+    if (unit == NULL_ENTITY) {
+        // Nothing is selected, and the body says so
+        frame();
+        drawUiTextCentered("No unit selected", L.panel.x + L.panel.w * 0.5f,
+                           L.body.y + (L.body.h - uiTextHeight("Ag")) * 0.5f, gray);
+        return;
+    }
     const Inventory* inv = w.get<Inventory>(unit);
     const Needs needs = w.get<Needs>(unit) ? *w.get<Needs>(unit) : Needs{};
     const Stats stats = w.get<Stats>(unit) ? *w.get<Stats>(unit) : defaultStats();
     const Name* nm = w.get<Name>(unit);
     const Equipment* worn = w.get<Equipment>(unit);
-
-    drawRect(L.panel, RGBA{ 0.04f, 0.04f, 0.06f, bgAlpha });
-    // Everything below the panel's background scrolls, so it is clipped to the panel
+    // The picked tab's contents scroll, so they are clipped to the panel
     beginClip(L.panel);
 
+    const float listH = listTextHeight("Ag");
+    int hoverGear = -1;
+    int hoverSlot = -1;
+    if (L.tab == UNIT_TAB_PROFILE) {
     // ---- Profile card: the unit's picture, name, health, hunger and carry ----
     drawRect(L.profile, RGBA{ 0.08f, 0.08f, 0.11f, bgAlpha });
     drawRect(L.portrait, RGBA{ 0.10f, 0.10f, 0.14f, bgAlpha });
@@ -1532,16 +1739,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     const std::string name = nm ? nm->text : std::string("Unnamed Unit");
     float y = L.profile.y + 10.0f * s;
-    drawUiText(fitText(name, L.statsButton.x - 8.0f * s - tx, true), tx, y, white);
+    drawUiText(fitText(name, L.profile.x + L.profile.w - 10.0f * s - tx, true), tx, y, white);
 
-    // The stats button opens the stats popout
-    {
-        const bool hot = L.statsButton.contains(mx, my);
-        drawRect(L.statsButton, hot ? RGBA{ 0.25f, 0.34f, 0.50f, bgAlpha } : RGBA{ 0.14f, 0.17f, 0.22f, bgAlpha });
-        const float tw = listTextWidth("Stats"), th = listTextHeight("Stats");
-        drawListText("Stats", L.statsButton.x + (L.statsButton.w - tw) * 0.5f,
-                     L.statsButton.y + (L.statsButton.h - th) * 0.5f, white);
-    }
     y += uiTextHeight("Ag") + 6.0f * s;
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
@@ -1565,14 +1764,16 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     char carry[48];
     std::snprintf(carry, sizeof(carry), "%.1f / %.0f", carried, limit);
     statRow(y, "Carry", carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+    }
 
+    if (L.tab == UNIT_TAB_EQUIPMENT) {
     // ---- Gear: what the unit wears, four slots to a row, then the totals ----
     const bool offLocked = worn && offHandBlocked(*worn);
     const ItemDef* dragDef = dragItem != 0 ? findItem(dragItem) : nullptr;
     // A two-handed weapon, held or dragged, dims the off hand
     const bool dimOff = offLocked || (dragDef && dragDef->equipSlot == "two_hand");
     drawRect(L.gearPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawListText("Equipment", L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, white);
+    drawIconText(L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_EQUIPMENT, "Equipment", white);
 
     // While an item is dragged, each gear slot shows whether it may go there: green if so, red if not.
     // A gear item leaving its own slot is not in the way of itself.
@@ -1580,8 +1781,6 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (dimGear >= 0) eval.items[dimGear] = 0;
 
     const float inset = 5.0f * s;
-    const float listH = listTextHeight("Ag");
-    int hoverGear = -1;
     for (size_t gi = 0; gi < L.gear.size() && gi < GEAR_SLOTS; ++gi) {
         const Rect& r = L.gear[gi];
         RGBA edge{ 0.30f, 0.30f, 0.36f, bgAlpha };
@@ -1632,16 +1831,17 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const std::string totals = "Attack " + std::to_string(attack) + "      Defense " + std::to_string(defense);
     drawListText(totals, L.gearPanel.x + 10.0f * s, L.gearPanel.y + L.gearPanel.h - listH - 6.0f * s, white);
 
+    }
     // ---- Inventory grid on its own background ----
+    if (L.tab == UNIT_TAB_INVENTORY) {
     drawRect(L.gridPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawListText("Inventory", L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, white);
+    drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, "Inventory", white);
     // The slot count sits left of the sort button, which is at the right of the heading
     const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
                              std::to_string(INVENTORY_SLOTS) + " slots";
     drawListText(used, L.sortButton.x - 8.0f * s - listTextWidth(used), L.gridPanel.y + 6.0f * s, gray);
     drawSmallButton(L.sortButton, "Sort", editable, editable && L.sortButton.contains(mx, my));
 
-    int hoverSlot = -1;
     for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
         const Rect& r = L.slots[i];
         drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.30f, 0.30f, 0.36f, bgAlpha });
@@ -1669,12 +1869,24 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (r.contains(mx, my)) hoverSlot = (int)i;
     }
 
-    // The behavior list under the grid
-    {
+    }
+    // The behavior list
+    if (L.tab == UNIT_TAB_BEHAVIOR) {
         const Behaviors* beh = w.get<Behaviors>(unit);
         drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), mx, my, editable);
     }
+    if (L.tab == UNIT_TAB_STATS) drawStatsTab(L, stats);
+    if (L.maxScroll > 0.0f) {
+        // The scroll bar down the right side: its thumb is the part of the tab in view
+        const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
+        const float totalH = L.maxScroll + L.body.h;
+        const float thumbH = std::max(16.0f * s, track.h * L.body.h / totalH);
+        const float thumbY = track.y + (track.h - thumbH) * (L.scroll / L.maxScroll);
+        drawRect(track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
+        drawRect(Rect{ track.x, thumbY, track.w, thumbH }, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+    }
     endClip();
+    frame();
 
     // Tooltips and highlights are for hovering, not while something is being dragged
     if (dragItem == 0 && hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
@@ -1723,7 +1935,7 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
     const Rect& P = L.behaviorPanel;
 
     drawRect(P, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawListText("Behavior", P.x + 10.0f * s, P.y + 6.0f * s, white);
+    drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, "Behavior", white);
     const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
     drawListText(count, P.x + P.w - 10.0f * s - listTextWidth(count), P.y + 6.0f * s, gray);
 
@@ -1864,24 +2076,85 @@ const TextTex* Renderer::itemTexture(int item) {
     return itemNone_.tex ? &itemNone_ : nullptr;
 }
 
-void Renderer::drawClock(const std::string& clock, const std::string& date, float right, int winH) {
+// The UI icon with this id: its picture from data/ui, loaded once. An id with no picture has no texture.
+const TextTex& Renderer::uiIconTexture(int icon) {
+    auto it = uiIcons_.find(icon);
+    if (it != uiIcons_.end()) return it->second;
+    const std::string num = icon < 10 ? "0" + std::to_string(icon) : std::to_string(icon);
+    return uiIcons_.emplace(icon, loadOptionalImage(("data/ui/icon_" + num + ".png").c_str())).first->second;
+}
+
+void Renderer::drawUiIcon(int icon, const Rect& r) {
+    const TextTex& t = uiIconTexture(icon);
+    if (t.tex) {
+        drawFitted(t, r, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        return;
+    }
+    // The placeholder until the picture is packed: a pink square with its id in it
+    drawRect(r, RGBA{ 1.0f, 0.42f, 0.78f, 1.0f });
+    const std::string num = icon < 10 ? "0" + std::to_string(icon) : std::to_string(icon);
+    const float tw = listTextWidth(num), th = listTextHeight("Ag");
+    drawListText(num, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 0.12f, 0.02f, 0.08f, 1.0f });
+}
+
+void Renderer::drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint) {
+    const float s = uiH_ / 720.0f;
+    drawUiIcon(icon, Rect{ x, y, h, h });
+    const float th = listTextHeight("Ag");
+    drawListText(text, x + h + 4.0f * s, y + (h - th) * 0.5f, tint);
+}
+
+void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, RGBA tint, bool uiFont) {
+    const float s = uiH_ / 720.0f;
+    const float gap = 6.0f * s;
+    const float sz = std::max(0.0f, r.h - 8.0f * s);
+    const float textW = uiFont ? uiTextWidth(text) : listTextWidth(text);
+    const float textH = uiFont ? uiTextHeight("Ag") : listTextHeight("Ag");
+    const float x0 = r.x + (r.w - (sz + gap + textW)) * 0.5f;
+    drawUiIcon(icon, Rect{ x0, r.y + (r.h - sz) * 0.5f, sz, sz });
+    const float tx = x0 + sz + gap, ty = r.y + (r.h - textH) * 0.5f;
+    if (uiFont) drawUiText(text, tx, ty, tint);
+    else drawListText(text, tx, ty, tint);
+}
+
+void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    drawRect(bar, RGBA{ 0.14f, 0.18f, 0.28f, 0.95f });
+    if (icon == ICON_NONE) {
+        drawListText(title, bar.x + 6.0f * s, bar.y + (bar.h - listTextHeight("Ag")) * 0.5f, white);
+        return;
+    }
+    drawIconText(bar.x + 6.0f * s, bar.y + 3.0f * s, std::max(0.0f, bar.h - 6.0f * s), icon, title, white);
+}
+
+void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
+    drawRect(r, RGBA{ 0.22f, 0.26f, 0.36f, 0.95f });
+    const char* sign = collapsed ? "+" : "-";
+    const float tw = listTextWidth(sign), th = listTextHeight("Ag");
+    drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+// The clock: the time in the larger line, and the date under it in the list font, as 500-01-01.
+// The block's right edge is `right`, and it starts at `top`.
+void Renderer::drawClock(const std::string& clock, const std::string& date, float right, float top, int winH) {
     const float s = winH / 720.0f;
-    const float pad = 10.0f * s, margin = 12.0f * s, lineGap = 4.0f * s;
+    const float pad = 10.0f * s, lineGap = 4.0f * s;
     const RGBA fill{ 0.04f, 0.04f, 0.05f, 0.5f };
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.78f, 0.78f, 0.82f, 1.0f };
 
-    const float clockW = clockTextWidth(clock), clockH = uiTextHeight("Ag");
-    const float dateW = listTextWidth(date), dateH = listTextHeight("Ag");
-    const float w = std::max(clockW, dateW) + 2.0f * pad;
-    const float h = clockH + lineGap + dateH + 2.0f * pad;
-    const Rect box{ right - margin - w, margin, w, h };
+    const float bigW = clockTextWidth(clock), bigH = uiTextHeight("Ag");
+    const float smallW = listTextWidth(date), smallH = listTextHeight("Ag");
+    const float w = std::max(bigW, smallW) + 2.0f * pad;
+    const float h = bigH + lineGap + smallH + 2.0f * pad;
+    const Rect box{ right - w, top, w, h };
     // Both lines are right aligned to the same edge
     const float textRight = box.x + box.w - pad;
 
     drawRect(box, fill);
-    drawClockText(clock, textRight - clockW, box.y + pad, white);
-    drawListText(date, textRight - dateW, box.y + pad + clockH + lineGap, gray);
+    drawClockText(clock, textRight - bigW, box.y + pad, white);
+    drawListText(date, textRight - smallW, box.y + pad + bigH + lineGap, gray);
 }
 
 void Renderer::drawNotice(const std::string& text, int winW, int winH) {
@@ -1909,6 +2182,8 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     const float bgAlpha = 0.5f;
     const float rowH = fontTextHeight(statsRow_, "Ag") + 1.0f * s;
     const float pad = L.left.x - L.box.x;
+    const float iconH = fontTextHeight(statsRow_, "Ag");
+    const float nameIndent = iconH + 4.0f * s;   // the stat names sit after their icons
 
     drawRect(L.box, RGBA{ 0.04f, 0.05f, 0.08f, bgAlpha });
     const std::string caption = "Stats: " + name;
@@ -1916,30 +2191,31 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
                  L.box.y + pad, white);
 
     // Columns: the name at the left, then the level, the total XP and the XP still to go, right aligned
-    auto row = [&](const Rect& col, float rowY, const std::string& a, const std::string& b,
+    auto row = [&](const Rect& col, float rowY, float indent, const std::string& a, const std::string& b,
                    const std::string& c, const std::string& d, RGBA tint) {
-        drawFontText(statsRow_, a, col.x, rowY, tint);
+        drawFontText(statsRow_, a, col.x + indent, rowY, tint);
         drawFontText(statsRow_, b, col.x + 200.0f - fontTextWidth(statsRow_, b), rowY, tint);
         drawFontText(statsRow_, c, col.x + 312.0f - fontTextWidth(statsRow_, c), rowY, tint);
         drawFontText(statsRow_, d, col.x + col.w - fontTextWidth(statsRow_, d), rowY, tint);
     };
     auto column = [&](const Rect& col, const std::vector<StatGroup>& groups) {
         float rowY = col.y;
-        row(col, rowY, "Stat", "Level", "Total XP", "To next", gray);
+        row(col, rowY, nameIndent, "Stat", "Level", "Total XP", "To next", gray);
         rowY += rowH;
         for (StatGroup group : groups) {
             const char* title = group == StatGroup::Attributes ? "Attributes"
                               : group == StatGroup::Combat ? "Combat"
                               : group == StatGroup::Gathering ? "Resource Gathering"
                               : group == StatGroup::Crafting ? "Crafting" : "Utility";
-            drawFontText(statsRow_, title, col.x, rowY, heading);
+            drawFontText(statsRow_, title, col.x + nameIndent, rowY, heading);
             rowY += rowH;
             for (int i = 0; i < STAT_COUNT; ++i) {
                 if (statInfo(i).group != group) continue;
                 const int lv = levelOf(stats, i);
                 const std::string next = lv >= MAX_LEVEL ? std::string("Max")
                                        : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
-                row(col, rowY, statInfo(i).name, std::to_string(lv), withCommas(stats.xp[i]), next, white);
+                drawUiIcon(statIcon(i), Rect{ col.x, rowY, iconH, iconH });
+                row(col, rowY, nameIndent, statInfo(i).name, std::to_string(lv), withCommas(stats.xp[i]), next, white);
                 rowY += rowH;
             }
         }
@@ -2154,10 +2430,14 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     }
 }
 
-CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit) {
+CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
+                                          bool collapsed) {
     const float s = winH / 720.0f;
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
-    const int linesVisible = 6;
+    const float barH = 22.0f * s;
+    const float lineH = listTextHeight("Ag") + 2.0f * s;
+    // As many lines as fit at the height of the Unit Panel
+    const int linesVisible = std::max(1, (int)std::floor((unitPanelBodyHeight(winH) - barH - 2.0f * pad) / lineH));
 
     CombatLogLayout L;
     L.linesVisible = linesVisible;
@@ -2167,8 +2447,11 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
 
     const float x = 8.0f * s;
     const float w = std::max(180.0f * s, std::min(340.0f * s, rightLimit - x));
-    const float h = 2.0f * pad + linesVisible * L.lineH;
+    const float h = collapsed ? barH : unitPanelBodyHeight(winH);
     L.panel = Rect{ x, winH - h - 8.0f * s, w, h };
+    L.bar = Rect{ x, L.panel.y, w, barH };
+    L.toggle = BarToggle(L.bar, s);
+    L.collapsed = collapsed;
     L.textX = x + pad;
     L.textW = w - 2.0f * pad - scrollW - gap;
 
@@ -2178,7 +2461,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
     L.first = end - L.shown;
 
     const float trackX = x + w - pad * 0.5f - scrollW * 0.5f;
-    const float trackY = L.panel.y + pad, trackH = h - 2.0f * pad;
+    const float trackY = L.panel.y + barH + pad, trackH = h - barH - 2.0f * pad;
     L.track = Rect{ trackX, trackY, scrollW * 0.5f, trackH };
     if (L.scrollable()) {
         const float share = (float)linesVisible / (float)lineCount;
@@ -2187,13 +2470,18 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
         const float frac = L.maxOffset() > 0 ? (float)L.offset / (float)L.maxOffset() : 0.0f;
         L.thumb = Rect{ trackX, trackY + (trackH - thumbH) * (1.0f - frac), scrollW * 0.5f, thumbH };
     }
+    if (collapsed) L.track = L.thumb = Rect{};
     return L;
 }
 
 void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
     drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
-    // The rows start where the padding above them ends, so the text block is centerd in the panel
-    const float top = L.panel.y + (L.panel.h - L.linesVisible * L.lineH) * 0.5f;
+    drawTitleBar(L.bar, ICON_COMBAT_LOG, "Combat Log");
+    drawCollapseButton(L.toggle, L.collapsed);
+    if (L.collapsed) return;
+    // The rows are centred in the space under the bar
+    const float bodyTop = L.bar.y + L.bar.h;
+    const float top = bodyTop + (L.panel.y + L.panel.h - bodyTop - L.linesVisible * L.lineH) * 0.5f;
     const int count = (int)log.lines.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
         const LogLine& ln = log.lines[L.first + k];
@@ -2252,7 +2540,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         switch (b.action) {
         case Action::PartyPick: {
             const PartyMember& u = p[static_cast<size_t>(b.param)];
-            const bool chosen = b.param == std::clamp(ui.selected, 0, START_UNIT_COUNT - 1);
+            const bool chosen = b.param == std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
             drawRect(b.rect, plateFor(hot, chosen, true));
             const float pic = b.rect.h - 14.0f * s;
             drawUnitPicture(u.sprite, Rect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic });
@@ -2268,7 +2556,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyTabPick: {
             const bool on = b.param == (int)ui.tab;
             drawRect(b.rect, plateFor(hot, on, true));
-            centerd(b.rect, b.label, on ? hover : white);
+            drawIconLabel(b.rect, partyTabIcon(b.param), b.label, on ? hover : white, false);
             break;
         }
 
@@ -2294,6 +2582,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             centerd(b.rect, b.label, white);
             break;
 
+        case Action::PartyAddUnit:
+        case Action::PartyRemoveUnit:
+            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            centerd(b.rect, b.label, b.enabled ? white : faint);
+            break;
+
         case Action::PartyGearSlot: {
             const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
             drawRect(b.rect, plateFor(hot, open, true));
@@ -2305,7 +2599,9 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyStatLabel: {
             drawRect(b.rect, RGBA{ 0.0f, 0.0f, 0.0f, 0.18f });
-            leftText(b.rect, b.label, white, 6.0f * s);
+            const float isz = b.rect.h - 4.0f * s;
+            drawUiIcon(statIcon(b.param), Rect{ b.rect.x + 4.0f * s, b.rect.y + 2.0f * s, isz, isz });
+            leftText(Rect{ b.rect.x + isz + 8.0f * s, b.rect.y, b.rect.w - isz - 8.0f * s, b.rect.h }, b.label, white, 2.0f * s);
             const std::string lv = std::to_string(levelOf(picked.stats, b.param));
             drawListText(lv, b.rect.x + b.rect.w - 6.0f * s - listTextWidth(lv),
                          b.rect.y + (b.rect.h - lineH) * 0.5f, hover);
