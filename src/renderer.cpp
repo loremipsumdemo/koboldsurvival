@@ -745,6 +745,26 @@ Renderer::HudLine& Renderer::listLine(const std::string& s) {
 }
 
 // Stats popout fonts: each one keeps its own cache of text textures
+// Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
+void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
+    for (HudLine& hl : hudLines_) {
+        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
+    }
+    hudLines_.clear();
+    for (auto& entry : uiText_) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+    }
+    uiText_.clear();
+    for (auto& entry : listText_) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+    }
+    listText_.clear();
+    hudFont_ = hud;
+    uiFont_ = ui;
+    listFont_ = list;
+    setStatsFonts(statsTitle, statsRow);
+}
+
 void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
     // Textures made with the old fonts would be stale, so drop them
     TextFont* fonts[] = { &statsTitle_, &statsRow_ };
@@ -1539,14 +1559,238 @@ void Renderer::drawMinimapToggle(const Rect& r, bool open) {
     drawListText(sym, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-void Renderer::drawDialogue(const DialogueLayout& L, const std::string& name, const std::string& text, float mx, float my) {
+std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
+    std::vector<std::string> out;
+    std::string cur;
+    size_t start = 0;
+    while (start <= text.size()) {
+        size_t end = text.find(' ', start);
+        if (end == std::string::npos) end = text.size();
+        const std::string word = text.substr(start, end - start);
+        if (!word.empty()) {
+            const std::string trial = cur.empty() ? word : cur + " " + word;
+            // A word wider than the line keeps a line of its own; the caller shortens what does not fit
+            if (cur.empty() || listTextWidth(trial) <= maxW) cur = trial;
+            else {
+                out.push_back(cur);
+                cur = word;
+            }
+        }
+        start = end + 1;
+    }
+    if (!cur.empty()) out.push_back(cur);
+    return out;
+}
+
+void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
+                            const std::vector<DialogueOption>& options, float mx, float my) {
     const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA playerTint{ 0.72f, 0.88f, 1.0f, 1.0f };
+    const RGBA rowBg{ 0.10f, 0.11f, 0.15f, 0.92f };
+    const RGBA plate{ 0.16f, 0.18f, 0.24f, 1.0f };
     const Rect& b = L.box;
     drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, RGBA{ 0.50f, 0.55f, 0.66f, 1.0f });
     drawRect(b, RGBA{ 0.04f, 0.05f, 0.08f, 0.96f });
-    drawListText(name, b.x + 14.0f * s, b.y + 12.0f * s, RGBA{ 0.6f, 0.6f, 0.6f, 1.0f });
-    drawListText(text, b.x + 14.0f * s, b.y + 12.0f * s + listTextHeight("Ag") + 12.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    drawButton(L.close, "Close", true, L.close.contains(mx, my));
+
+    // The lines: the last ones said, the NPC's portrait on the left and the player's on the right
+    const float lineH = listTextHeight("Ag");
+    const size_t shownFrom = convo.size() > L.lines.size() ? convo.size() - L.lines.size() : 0;
+    for (size_t i = 0; i < L.lines.size() && shownFrom + i < convo.size(); ++i) {
+        const SpokenLine& ln = convo[shownFrom + i];
+        const Rect& r = L.lines[i];
+        drawRect(r, rowBg);
+        const float pic = r.h - 10.0f * s;
+        const Rect picRect = ln.player ? Rect{ r.x + r.w - pic - 5.0f * s, r.y + 5.0f * s, pic, pic }
+                                       : Rect{ r.x + 5.0f * s, r.y + 5.0f * s, pic, pic };
+        drawRect(Rect{ picRect.x - 1.0f * s, picRect.y - 1.0f * s, picRect.w + 2.0f * s, picRect.h + 2.0f * s }, plate);
+        drawUnitPicture(ln.sprite, picRect);
+        const float textX = ln.player ? r.x + 10.0f * s : picRect.x + picRect.w + 10.0f * s;
+        const float textW = r.w - pic - 24.0f * s;
+        const std::vector<std::string> wrapped = wrapListText(ln.text, textW);
+        for (size_t j = 0; j < wrapped.size() && (float)j * lineH < r.h - 8.0f * s; ++j) {
+            drawListText(fitText(wrapped[j], textW, false), textX, r.y + 6.0f * s + (float)j * lineH,
+                         ln.player ? playerTint : white);
+        }
+    }
+
+    // The options the player can say, then End Dialogue, which is always last
+    for (size_t i = 0; i < L.options.size() && i < options.size(); ++i) {
+        const Rect& r = L.options[i];
+        drawButton(r, fitText(options[i].prompt, r.w - 16.0f * s, false), true, r.contains(mx, my));
+    }
+    drawButton(L.end, "End Dialogue", true, L.end.contains(mx, my));
+}
+
+void Renderer::drawItemCell(const Rect& r, int item, int count) {
+    if (item == 0) return;
+    const float s = uiH_ / 720.0f;
+    const Rect inner{ r.x + 3.0f * s, r.y + 3.0f * s, r.w - 6.0f * s, r.h - 6.0f * s };
+    if (const TextTex* pic = itemTexture(item)) {
+        drawFitted(*pic, inner, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    } else {
+        RGBA c = categoryColor(item);
+        c.a = 0.9f;
+        drawRect(inner, c);
+    }
+    if (count > 1) {
+        const std::string n = std::to_string(count);
+        drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight("Ag") - 1.0f * s,
+                     RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    }
+}
+
+void Renderer::drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint) {
+    HudLine& hl = uiLine(s);
+    if (!hl.tex.tex) return;
+    const float w = hl.w * scale, h = hl.h * scale;
+    const float x = cx - w * 0.5f, y = cy - h * 0.5f;
+    float v[4 * 5] = {
+        x,     y + h, 0.0f, 0.0f, 1.0f,
+        x + w, y + h, 0.0f, 1.0f, 1.0f,
+        x + w, y,     0.0f, 1.0f, 0.0f,
+        x,     y,     0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(hl.tex.tex, v, tint);
+}
+
+// A black bar across the top at 30% opacity, with PAUSED in large white letters, centred. With a hint, a line under
+// it says how to resume.
+void Renderer::drawPauseBar(bool hint) {
+    const float s = uiH_ / 720.0f;
+    const float pad = 10.0f * s;
+    const float bigH = uiTextHeight("PAUSED") * 2.6f;
+    const std::string tip = "(Used the space bar to unpause.)";
+    const float tipH = hint ? uiTextHeight(tip) : 0.0f;
+    const float h = pad + bigH + (hint ? pad + tipH : 0.0f) + pad;
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, RGBA{ 0.0f, 0.0f, 0.0f, 0.3f });
+    drawUiTextLarge("PAUSED", uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+// The value bar's colour at t from 0 to 1: red at the start, yellow halfway, green at the end
+static RGBA valueBarColor(float t) {
+    const RGBA red{ 0.85f, 0.20f, 0.20f, 1.0f }, yellow{ 0.95f, 0.85f, 0.20f, 1.0f }, green{ 0.25f, 0.85f, 0.30f, 1.0f };
+    const RGBA a = t < 0.5f ? red : yellow;
+    const RGBA b = t < 0.5f ? yellow : green;
+    const float u = t < 0.5f ? t * 2.0f : (t - 0.5f) * 2.0f;
+    return RGBA{ a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u, 1.0f };
+}
+
+void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const Inventory* npcInv,
+                         const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
+                         const TradeStatus& status, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.95f };
+    const RGBA bar{ 0.16f, 0.18f, 0.24f, 1.0f };
+    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
+    const RGBA plate{ 0.12f, 0.14f, 0.19f, 1.0f };
+    const RGBA plateHot{ 0.22f, 0.26f, 0.36f, 1.0f };
+    const float th = listTextHeight("Ag");
+    const float pad = 10.0f * s, line = 20.0f * s;
+
+    // The Interaction Panel: the NPC's name, and its inventory
+    drawRect(L.interaction, panel);
+    drawRect(L.interBar, bar);
+    drawListText("Interaction Panel", L.interBar.x + 6.0f * s, L.interBar.y + (L.interBar.h - th) * 0.5f, white);
+    const float nameY = L.interBar.y + L.interBar.h + pad;
+    drawListText(fitText(npcName, L.interaction.w - 2.0f * pad, false), L.interaction.x + pad, nameY, white);
+    drawListText("Inventory", L.interaction.x + pad, nameY + line, heading);
+    drawRect(L.npcGrid, well);
+    int hoverNpc = -1;
+    for (size_t i = 0; i < L.npcSlots.size(); ++i) {
+        const Rect& r = L.npcSlots[i];
+        const bool hot = r.contains(mx, my);
+        drawRect(r, hot ? plateHot : plate);
+        if (!npcInv || i >= (size_t)INVENTORY_SLOTS) continue;
+        const ItemStack& st = npcInv->slots[i];
+        if (st.item == 0 || (int)i == dragFrom) continue;
+        drawItemCell(r, st.item, st.count);
+        if (hot) hoverNpc = (int)i;
+    }
+
+    // The Trade Panel: a box for each side, its items in cells, the total under it
+    drawRect(L.tradePanel, panel);
+    drawRect(L.tradeBar, bar);
+    drawListText("Trade Panel", L.tradeBar.x + 6.0f * s, L.tradeBar.y + (L.tradeBar.h - th) * 0.5f, white);
+    auto side = [&](const Rect& box, const std::vector<Rect>& cells, const std::vector<TradeGhost>& ghosts,
+                    const char* hint, const Rect& total) {
+        drawRect(box, well);
+        for (size_t i = 0; i < cells.size(); ++i) {
+            drawRect(cells[i], plate);
+            if (i < ghosts.size()) drawItemCell(cells[i], ghosts[i].stack.item, ghosts[i].stack.count);
+        }
+        // The hint shows while the side is empty, centred in its box
+        if (ghosts.empty()) {
+            const std::vector<std::string> lines = wrapListText(hint, box.w - 2.0f * pad);
+            float ty = box.y + (box.h - (float)lines.size() * th) * 0.5f;
+            for (const std::string& ln : lines) {
+                const std::string shown = fitText(ln, box.w - 2.0f * pad, false);
+                drawListText(shown, box.x + (box.w - listTextWidth(shown)) * 0.5f, ty, gray);
+                ty += th;
+            }
+        }
+        drawListText(fitText("Total value: " + std::to_string(tradeValueOf(ghosts)), total.w, false), total.x, total.y, white);
+    };
+    side(L.theirBox, L.theirCells, theirs, "Drag or right-click items from their inventory here", L.theirTotal);
+    side(L.yourBox, L.yourCells, yours, "Drag or right-click your items from your inventory here", L.yourTotal);
+
+    // The value bar: red while the offer is far from the price, yellow, then green once it is met
+    drawRect(L.valueBar, well);
+    const float fillW = L.valueBar.w * std::clamp(status.progress, 0.0f, 1.0f);
+    const int slices = 24;
+    for (int i = 0; i < slices; ++i) {
+        const float x0 = L.valueBar.x + L.valueBar.w * (float)i / slices;
+        const float x1 = L.valueBar.x + L.valueBar.w * (float)(i + 1) / slices;
+        if (x0 >= L.valueBar.x + fillW) break;
+        drawRect(Rect{ x0, L.valueBar.y, std::min(x1, L.valueBar.x + fillW) - x0, L.valueBar.h },
+                 valueBarColor((i + 0.5f) / slices));
+    }
+    drawListText(fitText(status.text, L.statusLine.w, false), L.statusLine.x, L.statusLine.y,
+                 status.ok ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : RGBA{ 1.0f, 0.72f, 0.55f, 1.0f });
+
+    drawButton(L.cancelBtn, "Cancel", true, L.cancelBtn.contains(mx, my));
+    drawButton(L.tradeBtn, "Trade", status.ok, status.ok && L.tradeBtn.contains(mx, my));
+
+    if (hoverNpc >= 0 && npcInv) {
+        const ItemStack& st = npcInv->slots[hoverNpc];
+        drawItemTooltip(st.item, st.count, mx, my);
+    }
+}
+
+void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
+                                  float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.98f };
+    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
+    const float th = listTextHeight("Ag");
+    drawRect(L.box, panel);
+    const std::string title = "Choose how many: " + itemName + " (" + std::to_string(available) + " available)";
+    drawListText(fitText(title, L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
+    drawRect(L.countBox, well);
+    const std::string num = std::to_string(chosen);
+    drawListText(num, L.countBox.x + (L.countBox.w - listTextWidth(num)) * 0.5f,
+                 L.countBox.y + (L.countBox.h - th) * 0.5f, white);
+    auto btn = [&](const Rect& r, const char* label, bool enabled) {
+        drawButton(r, label, enabled, enabled && r.contains(mx, my));
+    };
+    btn(L.minus100, "-100", chosen > 1);
+    btn(L.minus10, "-10", chosen > 1);
+    btn(L.minus1, "-", chosen > 1);
+    btn(L.plus1, "+", chosen < available);
+    btn(L.plus10, "+10", chosen < available);
+    btn(L.plus100, "+100", chosen < available);
+    btn(L.single, "Single", chosen != 1);
+    btn(L.max, "Max", chosen != available);
+    btn(L.confirm, "Confirm", true);
+    btn(L.cancel, "Cancel", true);
+    (void)s;
 }
 
 void Renderer::drawCompass(const Rect& r, float bearingDeg) {
@@ -1648,8 +1892,9 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 }
 
-// The Stats tab: every stat's level, total XP and the XP it still needs, under the heading of its group
-void Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats) {
+// The Stats tab: every stat's level under the heading of its group, with its progress bar. Returns the stat under
+// the mouse, or -1. The hover tooltip is drawn later, outside the panel's clip (drawStatTip).
+int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -1657,20 +1902,23 @@ void Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats) {
     const Rect& area = L.statsArea;
     const float rowH = L.statRowH;
     const float th = listTextHeight("Ag");
-    const float nameX = area.x + rowH + 4.0f * s;
-    // The numbers sit right aligned in three columns
-    const float levelR = area.x + area.w * 0.56f, xpR = area.x + area.w * 0.78f, nextR = area.x + area.w;
+    // The level sits on the left, right aligned in its column; then the icon and the name. The name and its
+    // progress bar run to the right edge.
+    const float levelR = area.x + 26.0f * s;
+    const float iconX = area.x + 32.0f * s;
+    const float nameX = iconX + rowH;
+    const float barEnd = area.x + area.w;
+    int hovered = -1;
 
-    auto row = [&](float y, int icon, const std::string& name, const std::string& lv, const std::string& xp,
-                   const std::string& next, RGBA tint) {
-        if (icon >= 0) drawUiIcon(icon, Rect{ area.x, y, rowH - 2.0f * s, rowH - 2.0f * s });
-        drawListText(fitText(name, levelR - 8.0f * s - nameX, false), nameX, y + (rowH - th) * 0.5f, tint);
-        drawListText(lv, levelR - listTextWidth(lv), y + (rowH - th) * 0.5f, tint);
-        drawListText(xp, xpR - listTextWidth(xp), y + (rowH - th) * 0.5f, tint);
-        drawListText(next, nextR - listTextWidth(next), y + (rowH - th) * 0.5f, tint);
+    auto row = [&](float y, int icon, const std::string& name, const std::string& lv, RGBA tint) {
+        // The text sits above a 3px progress bar strip along the bottom edge of the row
+        const float ty = y + (rowH - 4.0f * s - th) * 0.5f;
+        drawListText(lv, levelR - listTextWidth(lv), ty, tint);
+        if (icon >= 0) drawUiIcon(icon, Rect{ iconX, y, rowH - 2.0f * s, rowH - 2.0f * s });
+        drawListText(fitText(name, barEnd - 8.0f * s - nameX, false), nameX, ty, tint);
     };
     float y = area.y;
-    row(y, -1, "Stat", "Level", "Total XP", "To next", gray);
+    row(y, -1, "Stat", "Level", gray);
     y += rowH;
     const StatGroup groups[] = { StatGroup::Attributes, StatGroup::Combat, StatGroup::Gathering,
                                  StatGroup::Crafting, StatGroup::Utility };
@@ -1684,12 +1932,37 @@ void Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats) {
         for (int i = 0; i < STAT_COUNT; ++i) {
             if (statInfo(i).group != group) continue;
             const int lv = levelOf(stats, i);
-            const std::string next = lv >= MAX_LEVEL ? std::string("Max")
-                                   : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
-            row(y, statIcon(i), statInfo(i).name, std::to_string(lv), withCommas(stats.xp[i]), next, white);
+            row(y, statIcon(i), statInfo(i).name, std::to_string(lv), white);
+            // Progress from this level toward the next one
+            const float barY = y + rowH - 3.0f * s, barH = 3.0f * s;
+            const float barW = barEnd - nameX;
+            drawRect(Rect{ nameX, barY, barW, barH }, RGBA{ 0.16f, 0.16f, 0.19f, 1.0f });
+            drawRect(Rect{ nameX, barY, barW * levelProgress(stats, i), barH }, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+            if (mx >= area.x && mx < area.x + area.w && my >= y && my < y + rowH) hovered = i;
             y += rowH;
         }
     }
+    return hovered;
+}
+
+// The tooltip for a stat: its name, level, progress to the next level, its current XP and the XP the next level needs
+void Renderer::drawStatTip(const Stats& stats, int stat, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const int lv = levelOf(stats, stat);
+    const int pct = (int)std::lround(levelProgress(stats, stat) * 100.0f);
+    std::vector<TipRow> rows(5);
+    rows[0].text = statInfo(stat).name;
+    rows[0].tint = RGBA{ 0.80f, 0.86f, 0.96f, 1.0f };
+    rows[1].text = "Level: " + std::to_string(lv);
+    rows[2].text = "Progress: " + std::to_string(pct) + "%";
+    rows[3].text = "Current XP: " + withCommas(stats.xp[stat]);
+    rows[4].text = "Next Level XP: " + (lv >= MAX_LEVEL ? std::string("Max") : withCommas(xpForLevel(lv + 1)));
+    const float width = tipWidth(rows), height = tipHeight(rows.size());
+    // Beside the mouse, moved to the other side or up when the window has no room for it
+    float x = mx + 14.0f * s, y = my + 14.0f * s;
+    if (x + width > uiW_) x = mx - 14.0f * s - width;
+    if (y + height > uiH_) y = uiH_ - height;
+    drawTip(rows, std::max(0.0f, x), std::max(0.0f, y), width);
 }
 
 void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
@@ -1735,6 +2008,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float listH = listTextHeight("Ag");
     int hoverGear = -1;
     int hoverSlot = -1;
+    int hoverStat = -1;   // the stat under the mouse in the Stats tab
     if (L.tab == UNIT_TAB_PROFILE) {
     // ---- Profile card: the unit's picture, name, health, hunger and carry ----
     drawRect(L.profile, RGBA{ 0.08f, 0.08f, 0.11f, bgAlpha });
@@ -1908,7 +2182,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const Behaviors* beh = w.get<Behaviors>(unit);
         drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), mx, my, editable);
     }
-    if (L.tab == UNIT_TAB_STATS) drawStatsTab(L, stats);
+    if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
     if (L.maxScroll > 0.0f) {
         // The scroll bar down the right side: its thumb is the part of the tab in view
         const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
@@ -1922,6 +2196,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     frame();
 
     // Tooltips and highlights are for hovering, not while something is being dragged
+    if (dragItem == 0 && hoverStat >= 0) drawStatTip(stats, hoverStat, mx, my);
     if (dragItem == 0 && hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
         const Rect& r = L.slots[hoverSlot];
         drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.18f });
@@ -2467,21 +2742,61 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     }
 }
 
-CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
-                                          bool collapsed, const PanelPlace& place) {
+// Trade values over their units: a second's life, fading out over its last 30%, above the name tag
+void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (const TradeLabel& l : labels) {
+        const Transform* tr = w.get<Transform>(l.unit);
+        if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H * 2.2f, tr->z, winW, winH, sx, sy)) continue;
+        const float t = std::clamp(l.age / TRADE_LABEL_LIFE, 0.0f, 1.0f);
+        const float alpha = t < 0.7f ? 1.0f : (1.0f - t) / 0.3f;
+        const float x = sx - uiTextWidth(l.text) * 0.5f, y = sy - uiTextHeight(l.text);
+        drawUiText(l.text, x + 1.5f * s, y + 1.5f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.85f * alpha });
+        drawUiText(l.text, x, y, RGBA{ 1.0f, 0.90f, 0.45f, alpha });
+    }
+}
+
+// The rows of the Game tab's filter menu, in order. A heading names a group of kinds and is not clickable.
+struct FilterEntry {
+    const char* label;
+    LogKind kind;
+    bool heading;
+};
+static const FilterEntry kFilterEntries[] = {
+    { "Combat Messages", LogKind::Other, true },
+    { "Seen", LogKind::Seen, false },
+    { "Hit", LogKind::Hit, false },
+    { "Miss", LogKind::Miss, false },
+    { "Damage", LogKind::Damage, false },
+    { "Experience Messages", LogKind::Other, true },
+    { "Experience", LogKind::Xp, false },
+    { "Item Messages", LogKind::Other, true },
+    { "Pickup", LogKind::Pickup, false },
+    { "Drop", LogKind::Drop, false },
+    { "Loot", LogKind::Loot, false },
+};
+constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
+
+CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
+                                          float rightLimit, bool collapsed, const PanelPlace& place) {
     const float s = winH / 720.0f;
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
-    const float barH = 22.0f * s;
+    const float barH = 22.0f * s, tabH = 20.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;
-    // Half the height of the Unit Panel by default, or as dragged. As many lines as that has room for.
+    // Half the height of the Unit Panel by default, or as dragged. As many lines as that has room for, under the tabs.
     const float bodyH = place.h > 0.0f ? std::min(place.h, (float)winH) : unitPanelBodyHeight(winH) * 0.5f;
-    const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - 2.0f * pad) / lineH));
+    const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - tabH - 2.0f * pad) / lineH));
 
     CombatLogLayout L;
     L.linesVisible = linesVisible;
     L.lineCount = lineCount;
     L.lineH = lineH;
     L.offset = std::clamp(offset, 0, L.maxOffset());
+    L.tab = std::clamp(tab, 0, 1);
+    L.filterOpen = filterOpen && L.tab == 1 && !collapsed;
 
     // By default its width stops short of the Squad Panel. A dragged width stays between its minimum and the screen.
     const float w = place.w > 0.0f
@@ -2489,8 +2804,8 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
         : std::max(180.0f * s, std::min(340.0f * s, rightLimit - 8.0f * s));
     const float h = collapsed ? barH : bodyH;
     L.panel = placedRect(place, 8.0f * s, w, h, winW, winH, 8.0f * s);
-    const float x = L.panel.x;
-    L.bar = Rect{ x, L.panel.y, w, barH };
+    const float x = L.panel.x, y = L.panel.y;
+    L.bar = Rect{ x, y, w, barH };
     L.toggle = BarToggle(L.bar, s);
     L.collapsed = collapsed;
     L.textX = x + pad;
@@ -2502,7 +2817,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
     L.first = end - L.shown;
 
     const float trackX = x + w - pad * 0.5f - scrollW * 0.5f;
-    const float trackY = L.panel.y + barH + pad, trackH = h - barH - 2.0f * pad;
+    const float trackY = y + barH + tabH + pad, trackH = h - barH - tabH - 2.0f * pad;
     L.track = Rect{ trackX, trackY, scrollW * 0.5f, trackH };
     if (L.scrollable()) {
         const float share = (float)linesVisible / (float)lineCount;
@@ -2511,20 +2826,62 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int offset, int li
         const float frac = L.maxOffset() > 0 ? (float)L.offset / (float)L.maxOffset() : 0.0f;
         L.thumb = Rect{ trackX, trackY + (trackH - thumbH) * (1.0f - frac), scrollW * 0.5f, thumbH };
     }
-    if (collapsed) L.track = L.thumb = Rect{};
+
+    // The tabs under the bar. The Filter button sits at the right of the row.
+    const float tabY = y + barH;
+    L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, 84.0f * s, tabH - 2.0f * s };
+    L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, 60.0f * s, tabH - 2.0f * s };
+    L.filterBtn = Rect{ x + w - pad - scrollW - 62.0f * s, tabY + 2.0f * s, 62.0f * s, tabH - 2.0f * s };
+
+    // The filter menu opens upward from the Filter button, so it stays on screen at the bottom of the window
+    if (L.filterOpen) {
+        const float rowH = listTextHeight("Ag") + 6.0f * s;
+        const float menuW = 160.0f * s;
+        const float menuH = kFilterRowCount * rowH + 8.0f * s;
+        L.filterMenu = Rect{ L.filterBtn.x + L.filterBtn.w - menuW, std::max(0.0f, tabY + tabH - menuH), menuW, menuH };
+        for (int i = 0; i < kFilterRowCount; ++i) {
+            const Rect r{ L.filterMenu.x, L.filterMenu.y + 4.0f * s + i * rowH, menuW, rowH };
+            L.filterRows.push_back(CombatLogLayout::FilterRow{ r, kFilterEntries[i].kind, kFilterEntries[i].heading,
+                                                               kFilterEntries[i].label });
+        }
+    }
+    if (collapsed) {
+        L.track = L.thumb = Rect{};
+        L.tabMessage = L.tabGame = L.filterBtn = Rect{};
+    }
     return L;
 }
-void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
+
+void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
+                             float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA lit{ 0.22f, 0.26f, 0.36f, 0.95f };
+    const RGBA dim{ 0.10f, 0.11f, 0.15f, 0.90f };
+
     drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
-    drawTitleBar(L.bar, ICON_COMBAT_LOG, "Combat Log");
+    drawTitleBar(L.bar, ICON_COMBAT_LOG, "Information Panel");
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
-    // The rows are centred in the space under the bar
-    const float bodyTop = L.bar.y + L.bar.h;
+
+    // The two tabs: the one shown is lit
+    auto tab = [&](const Rect& r, const char* label, bool selected) {
+        drawRect(r, selected ? lit : dim);
+        drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listTextHeight("Ag")) * 0.5f,
+                     selected ? white : gray);
+    };
+    tab(L.tabMessage, "Message", L.tab == 0);
+    tab(L.tabGame, "Game", L.tab == 1);
+    if (L.tab == 1) drawButton(L.filterBtn, "Filter", true, L.filterBtn.contains(mx, my) || L.filterOpen);
+
+    // The rows are centred in the space under the tabs
+    const float tabH = 20.0f * s;
+    const float bodyTop = L.bar.y + L.bar.h + tabH;
     const float top = bodyTop + (L.panel.y + L.panel.h - bodyTop - L.linesVisible * L.lineH) * 0.5f;
-    const int count = (int)log.lines.size();
+    const int count = (int)rows.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
-        const LogLine& ln = log.lines[L.first + k];
+        const LogLine& ln = *rows[(size_t)(L.first + k)];
         // Bottom-aligned: the newest line is the last row
         const int row = L.linesVisible - L.shown + k;
         drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
@@ -2532,6 +2889,24 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const CombatLog& log) {
     if (L.scrollable()) {
         drawRect(L.track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
         drawRect(L.thumb, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+    }
+
+    // The filter menu, over the lines. Each kind reads On or Off.
+    if (L.filterOpen) {
+        drawRect(L.filterMenu, RGBA{ 0.04f, 0.05f, 0.08f, 0.97f });
+        const float th = listTextHeight("Ag");
+        for (const CombatLogLayout::FilterRow& fr : L.filterRows) {
+            if (fr.heading) {
+                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.80f, 0.86f, 0.96f, 1.0f });
+                continue;
+            }
+            if (fr.r.contains(mx, my)) drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
+            const bool on = filter.on[(int)fr.kind];
+            drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, white);
+            const char* state = on ? "On" : "Off";
+            drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
+                         on ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : gray);
+        }
     }
 }
 

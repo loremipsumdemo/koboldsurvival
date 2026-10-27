@@ -32,6 +32,10 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 // Orders each unit to fight one red unit: each walks at it on its own, with no formation, and keeps it as its
 // target until it is gone. Units with no place in the fight (red ones, or not your own) are skipped.
 void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target);
+// Right-click talk: each selected unit walks up to the NPC; the first in talk range starts the talk
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc);
+// Drops every talk order, once a talk has started or the NPC is gone
+void clearTalkOrders(World& w);
 
 // Moves the whole stack in one inventory slot onto the ground, under its unit. False if the slot is empty.
 bool dropStack(World& w, Entity unit, int slot);

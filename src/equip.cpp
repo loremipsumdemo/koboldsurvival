@@ -134,7 +134,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     }
     *inv = next;
     worn->items[gearSlot] = item;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP);
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
     return true;
 }
 
@@ -156,7 +156,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP);
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
     return true;
 }
 
@@ -175,7 +175,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     }
     *inv = next;
     worn->items[gearSlot] = 0;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP);
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
     return true;
 }
 
@@ -188,6 +188,8 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     if (item == 0) return false;
     // Copy what's needed before creating an entity, which can move the stored components
     const Transform at = *tr;
+    const ItemDef* def = findItem(item);
+    queueLog(nameOf(w, unit) + " drops " + (def ? def->name : std::string("an item")), LogKind::Drop);
     worn->items[gearSlot] = 0;
     Entity e = w.create();
     w.add(e, Transform{ at.x, at.y, at.z });

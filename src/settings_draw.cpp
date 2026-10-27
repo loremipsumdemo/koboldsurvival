@@ -86,7 +86,8 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         case RowKind::Toggle:
             r.drawButton(R.control, row.on ? "On" : "Off", row.enabled, row.enabled && over(R.control, mx, my));
             break;
-        case RowKind::Level: {
+        case RowKind::Level:
+        case RowKind::Scale: {
             // Track filled to the level, with a thumb at the level; the percentage sits to its right
             const Rect& tr = R.track;
             const float fillW = tr.w * row.current / 100.0f;
@@ -98,7 +99,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
                        dragging ? kThumbDrag : (row.on ? kText : kSecondary));
             r.drawUiText(row.text, R.value.x + R.value.w - r.uiTextWidth(row.text),
                          R.value.y + (R.value.h - r.uiTextHeight(row.text)) * 0.5f, kText);
-            r.drawButton(R.toggle, row.on ? "On" : "Off", true, over(R.toggle, mx, my));
+            if (row.kind == RowKind::Level) r.drawButton(R.toggle, row.on ? "On" : "Off", true, over(R.toggle, mx, my));
             break;
         }
         case RowKind::Text:

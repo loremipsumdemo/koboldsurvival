@@ -38,11 +38,6 @@ constexpr float VITALITY_XP_PER_HP_LOST = 1.0f;
 constexpr float BLOCK_XP_PER_BLOCK = 2.0f;
 constexpr float AGILITY_XP_PER_DODGE = 2.0f;
 
-Stats statsOf(World& w, Entity e) {
-    const Stats* s = w.get<Stats>(e);
-    return s ? *s : defaultStats();
-}
-
 Equipment wornOf(World& w, Entity e) {
     const Equipment* q = w.get<Equipment>(e);
     return q ? *q : Equipment{};
@@ -115,7 +110,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     const SwingResult r = resolveSwing(an, dn, downed, rng.unit(), rng.unit(), rng.unit());
 
     if (Combat* ca = w.get<Combat>(a)) ca->swingLeft = an.swingTime;
-    grantXp(w, a, STAT_DEXTERITY, DEXTERITY_XP_PER_SWING);
+    grantXp(w, a, STAT_DEXTERITY, DEXTERITY_XP_PER_SWING, "swinging");
 
     const std::string attacker = nameOf(w, a);
     const std::string defender = nameOf(w, d);
@@ -123,20 +118,20 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 
     if (r.outcome == Outcome::Miss) {
         ++log.misses;
-        log.add(attacker + " misses " + defender, tint);
+        log.add(attacker + " misses " + defender, tint, LogKind::Miss);
         return;
     }
     if (r.outcome == Outcome::Dodge) {
         ++log.misses;
-        log.add(defender + " dodges " + attacker + "'s swing", tint);
-        grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE);
+        log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss);
+        grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE, "dodging");
         return;
     }
 
     // The swing landed. A hit on a downed unit kills it.
     ++log.hits;
     if (downed) {
-        log.add(attacker + " slays " + defender, tint);
+        log.add(attacker + " slays " + defender, tint, LogKind::Damage);
         removeUnit(w, d);
         return;
     }
@@ -149,18 +144,18 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     }
     const int lost = nd ? before - nd->hp : r.damage;
 
-    log.add(attacker + " hits " + defender + " for " + std::to_string(r.damage) +
-            (r.blocked ? " (blocked)" : ""), tint);
+    log.add(attacker + " hits " + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit);
+    if (r.damage > 0) log.add(defender + " takes " + std::to_string(r.damage) + " damage", tint, LogKind::Damage);
     if (const Transform* td = w.get<Transform>(d)) {
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
 
-    grantXp(w, a, STAT_MELEE, MELEE_XP_PER_DAMAGE * lost);
-    grantXp(w, a, STAT_STRENGTH, STRENGTH_XP_PER_DAMAGE * lost);
-    grantXp(w, d, STAT_VITALITY, VITALITY_XP_PER_HP_LOST * lost);
-    if (r.blocked) grantXp(w, d, STAT_BLOCK, BLOCK_XP_PER_BLOCK);
+    grantXp(w, a, STAT_MELEE, MELEE_XP_PER_DAMAGE * lost, "dealing damage");
+    grantXp(w, a, STAT_STRENGTH, STRENGTH_XP_PER_DAMAGE * lost, "dealing damage");
+    grantXp(w, d, STAT_VITALITY, VITALITY_XP_PER_HP_LOST * lost, "taking damage");
+    if (r.blocked) grantXp(w, d, STAT_BLOCK, BLOCK_XP_PER_BLOCK, "blocking");
 
-    if (nd && nd->hp == 0) log.add(defender + " is down", tint);
+    if (nd && nd->hp == 0) log.add(defender + " is down", tint, LogKind::Damage);
 }
 
 // A unit that has just picked a fight drinks an elixir first, if it has one and none is active
@@ -173,6 +168,11 @@ void drinkForFight(World& w, Entity p, Combat& pc, CombatLog& log) {
 }
 
 } // namespace
+
+Stats statsOf(World& w, Entity e) {
+    const Stats* s = w.get<Stats>(e);
+    return s ? *s : defaultStats();
+}
 
 // ---- Formulas ----
 
@@ -275,7 +275,43 @@ float strengthXpWhileWalking(float encumbrance, float seconds) {
 
 // ---- Experience ----
 
-void grantXp(World& w, Entity e, int stat, float amount) {
+namespace {
+std::vector<LogLine> gQueued;   // game messages waiting for the next frame's log
+}
+
+void queueLog(const std::string& text, LogKind kind) {
+    gQueued.push_back(LogLine{ text, Tint::Gray, kind });
+}
+
+void CombatLog::say(const std::string& text) {
+    spoken.push_back(LogLine{ text, Tint::Gray, LogKind::Other });
+    if (spoken.size() > LOG_LIMIT) spoken.erase(spoken.begin());
+}
+
+void flushQueuedLog(CombatLog& log) {
+    for (const LogLine& ln : gQueued) log.add(ln.text, ln.tint, ln.kind);
+    gQueued.clear();
+}
+
+void discardQueuedLog() {
+    gQueued.clear();
+}
+
+std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFilter& f) {
+    std::vector<const LogLine*> out;
+    if (tab == 0) {
+        for (const LogLine& ln : log.spoken) out.push_back(&ln);
+        return out;
+    }
+    for (const LogLine& ln : log.lines) {
+        if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) out.push_back(&ln);
+    }
+    // The Game tab shows only the newest LOG_LIMIT of what passes the filter
+    if (out.size() > LOG_LIMIT) out.erase(out.begin(), out.begin() + (out.size() - LOG_LIMIT));
+    return out;
+}
+
+void grantXp(World& w, Entity e, int stat, float amount, const char* why) {
     if (amount <= 0.0f || stat < 0 || stat >= STAT_COUNT) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;
@@ -284,7 +320,12 @@ void grantXp(World& w, Entity e, int stat, float amount) {
     const float total = buf.frac[stat] + amount;
     const float whole = std::floor(total);
     buf.frac[stat] = total - whole;
-    if (whole >= 1.0f) addXp(*st, stat, (int)whole);
+    if (whole < 1.0f) return;
+    addXp(*st, stat, (int)whole);
+    if (why) {
+        queueLog(nameOf(w, e) + " gains " + std::to_string((int)whole) + " " + statInfo(stat).name +
+                 " XP for " + why, LogKind::Xp);
+    }
 }
 
 // ---- Log and damage numbers ----
@@ -295,10 +336,17 @@ Tint tintFor(World& w, Entity attacker, Entity target) {
     return Tint::Gray;
 }
 
-void CombatLog::add(const std::string& text, Tint tint) {
-    lines.push_back(LogLine{ text, tint });
-    if (lines.size() > LOG_LIMIT) {
-        lines.erase(lines.begin(), lines.begin() + (lines.size() - LOG_LIMIT));
+void CombatLog::add(const std::string& text, Tint tint, LogKind kind) {
+    lines.push_back(LogLine{ text, tint, kind });
+    // Each kind keeps its own newest LOG_LIMIT, so a flood of one kind never pushes out the others
+    if (++kindCount[(int)kind] > LOG_LIMIT) {
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (it->kind == kind) {
+                lines.erase(it);
+                break;
+            }
+        }
+        --kindCount[(int)kind];
     }
 }
 
@@ -395,7 +443,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             if (!standing(p) || distanceBetween(w, h, p) > AGGRO_RANGE) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {
                 hc.target = p;
-                log.add(nameOf(w, h) + " notices " + nameOf(w, p));
+                log.add(nameOf(w, h) + " notices " + nameOf(w, p), Tint::Gray, LogKind::Seen);
                 drinkForFight(w, h, hc, log);
                 break;
             }
@@ -416,11 +464,11 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             const float d = distanceBetween(w, p, h);
             if (d <= spotRange && std::find(pc.spotted.begin(), pc.spotted.end(), h) == pc.spotted.end()) {
                 pc.spotted.push_back(h);
-                grantXp(w, p, STAT_PERCEPTION, PERCEPTION_XP_PER_SPOT);
+                grantXp(w, p, STAT_PERCEPTION, PERCEPTION_XP_PER_SPOT, "spotting an enemy");
             }
-            if (d <= AGGRO_RANGE && w.get<Combat>(h)->target != p) unnoticedInRange = true;
+            if (d <= STEALTH_RANGE && w.get<Combat>(h)->target != p) unnoticedInRange = true;
         }
-        if (unnoticedInRange) grantXp(w, p, STAT_STEALTH, STEALTH_XP_PER_SECOND * dt);
+        if (unnoticedInRange) grantXp(w, p, STAT_STEALTH, STEALTH_XP_PER_SECOND * dt, "staying unnoticed");
     }
 
     // Targets. A player unit with an attack order keeps its ordered red unit until it is gone, and picks no

@@ -50,6 +50,20 @@ struct CombatLogLayout {
 
     bool collapsed = false;                  // only the bar shows
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };  // the [-] or [+] button in the bar
+    // The two tabs under the bar: Message (0) and Game (1). On the Game tab, the Filter button and its menu.
+    int tab = 0;
+    Rect tabMessage{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tabGame{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect filterBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    bool filterOpen = false;
+    Rect filterMenu{ 0.0f, 0.0f, 0.0f, 0.0f };
+    struct FilterRow {
+        Rect r;
+        LogKind kind;
+        bool heading;
+        const char* label;
+    };
+    std::vector<FilterRow> filterRows;       // the menu's rows, when it is open
 
     bool scrollable() const { return lineCount > linesVisible; }
     int maxOffset() const { return lineCount > linesVisible ? lineCount - linesVisible : 0; }
@@ -134,7 +148,11 @@ public:
     // The + or - that expands the minimap, or collapses the full map back into it
     void drawMinimapToggle(const Rect& r, bool open);
     // The talk box: a unit's name and what it says, with a Close button
-    void drawDialogue(const DialogueLayout& L, const std::string& name, const std::string& text, float mx, float my);
+    // The talk box: the last lines said with their portraits, the options, and End Dialogue
+    void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
+                      const std::vector<DialogueOption>& options, float mx, float my);
+    // The text split into lines no wider than maxW, at spaces
+    std::vector<std::string> wrapListText(const std::string& text, float maxW);
     void drawCompass(const Rect& r, float bearingDeg);
     // Where the hover names in the top left start, from the top of the window
     void setHudTop(float y) { hudTop_ = y; }
@@ -143,7 +161,9 @@ public:
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
     // show green or red for whether it may go there. editable says whether the sort, the behavior edits and
     // the add button work; for a red unit they are drawn dimmed.
-    void drawStatsTab(const SidebarLayout& L, const Stats& stats);
+    // The Stats tab's rows; returns the stat under the mouse, or -1
+    int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my);
+    void drawStatTip(const Stats& stats, int stat, float mx, float my);
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
     // The full text of the behavior row under the mouse, beside it. Call after drawInventorySidebar.
@@ -157,6 +177,21 @@ public:
     void drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my);
     // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
+    // One item in a cell: its picture, and its count when more than one
+    void drawItemCell(const Rect& r, int item, int count);
+    // The PAUSED bar across the top of the window, and text drawn scaled up about its centre
+    void drawPauseBar(bool hint);
+    // Trade value lines over their units
+    void drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH);
+    void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
+    // The trade popout: the NPC's inventory, and both sides of the trade as ghosts. dragFrom is the NPC slot being
+    // dragged, shown as not there, or -1.
+    void drawTrade(const TradeLayout& L, const std::string& npcName, const Inventory* npcInv,
+                   const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
+                   const TradeStatus& status, float mx, float my);
+    // The quantity prompt over the trade: a count with -100 -10 - + +10 +100, Single, Max, Confirm and Cancel
+    void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
+                            float mx, float my);
     // The in-game clock and date in a box at the top right. right is the x the box lines up against:
     // the window's right edge, or the sidebar's left edge while the sidebar shows. Both lines are
     // right aligned, and the clock's digits keep the same width as they change.
@@ -186,9 +221,11 @@ public:
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
     // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
-    CombatLogLayout combatLogLayout(int winW, int winH, int offset, int lineCount, float rightLimit,
+    CombatLogLayout combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount, float rightLimit,
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
-    void drawCombatLog(const CombatLogLayout& L, const CombatLog& log);
+    // The Information Panel: rows are the lines of the tab shown, oldest first
+    void drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
+                       float mx, float my);
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
     // party's pictures, names and totals. Call between beginUi and endUi.
@@ -222,6 +259,7 @@ public:
     void setListFont(TTF_Font* font);
     // Fonts for the Stats popout: NotoSans Regular, or Bold if the Regular file is not packed. Owned by the caller.
     void setStatsFonts(TTF_Font* title, TTF_Font* rows);
+    void setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
     void drawListText(const std::string& s, float x, float y, RGBA tint);
     float listTextHeight(const std::string& s);
     float listTextWidth(const std::string& s);

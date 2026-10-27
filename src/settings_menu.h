@@ -28,12 +28,12 @@ inline const char* settingsTabName(SettingsTab tab) {
 // What a row changes
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
-    Autosave, UnitNames, ResetPanels,                           // Interface
+    Autosave, UnitNames, FontScale, ResetPanels,                // Interface
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
     MusicLevel, AmbientLevel, EffectsLevel                      // Audio
 };
 
-enum class RowKind { Dropdown, Toggle, Level, Text, Action };
+enum class RowKind { Dropdown, Toggle, Level, Scale, Text, Action };   // Scale: a slider with no on/off button
 
 // One choice in a dropdown. A resolution option carries its size in w and h; the other dropdowns use value.
 // A disabled option is shown greyed and cannot be picked.
@@ -132,6 +132,7 @@ struct SettingsChange {
     bool display = false;     // display mode, monitor, resolution or refresh rate
     bool vsync = false;
     bool audio = false;
+    bool fonts = false;       // the text size, so the fonts are reopened
     bool any = false;         // anything at all, so the settings are saved
 };
 

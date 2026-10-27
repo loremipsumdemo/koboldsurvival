@@ -31,9 +31,29 @@ struct Hostile {};
 // Neutral units: like red units, but not hostile. They can be talked to, and nothing attacks them.
 struct Neutral {};
 
-// What a unit says when it is talked to. Every red and neutral unit has the same default.
+// One thing the player can say in a talk, and the reply the unit gives to it
+struct DialogueOption {
+    std::string prompt;
+    std::string reply;
+    bool opensTrade = false;   // the option that brings up the trade
+};
+
+// What a unit says when it is talked to, and what the player can say back. Every red and neutral unit starts with
+// the same greeting and options.
 struct Dialogue {
     std::string text = "Hello world.";
+    std::vector<DialogueOption> options = {
+        { "Show me your wares.", "Hello world.", true },
+        { "What else can you tell me about the quest?", "Hello world." },
+    };
+};
+
+// One line of a talk: who said it, what, and the sprite its portrait is drawn from
+struct SpokenLine {
+    std::string speaker;
+    std::string text;
+    bool player = false;
+    int sprite = 1;
 };
 
 // Display name for a unit
@@ -74,6 +94,13 @@ struct SoloMove {
 struct ItemStack {
     int item = 0;
     int count = 0;
+};
+
+// An item shown in one side of a trade: where it is in the inventory it came from, and the stack. It is only a
+// picture of the trade; the inventory is not changed.
+struct TradeGhost {
+    int slot = -1;
+    ItemStack stack;
 };
 
 // Items a unit carries, one stack per slot
@@ -151,6 +178,11 @@ struct GroundItem {
 // A unit's order to pick up a ground item. The unit walks to it and takes what fits.
 struct PickupOrder {
     Entity item = NULL_ENTITY;
+};
+
+// A selected unit's order to talk to an NPC. It walks up to the NPC and the first unit in talk range starts the talk.
+struct TalkOrder {
+    Entity npc = NULL_ENTITY;
 };
 
 // A player unit's order to fight one red unit. The unit walks at it and keeps it as its target, choosing no

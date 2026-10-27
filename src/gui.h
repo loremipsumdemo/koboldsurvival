@@ -1,8 +1,10 @@
 #pragma once
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <vector>
 #include "components.h"
+#include "items.h"
 #include "ui.h"
 
 // Layout for the in-game panels. Pure functions of the window size and the state,
@@ -146,17 +148,179 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
 // The minimap in the top right corner, the compass strip under it, and the clock under that. They line up
 // against right, the window's right edge or the sidebar's left edge while the sidebar shows.
 // Everything is in window pixels, scaled from a 720-pixel-high window.
-// The talk box: centred, with its Close button at the bottom right
+// The talk box: centred. It shows the last lines said, one row each, then one button per option, then End Dialogue at
+// the bottom. Its height follows how many lines and options there are.
 struct DialogueLayout {
     Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect close{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> lines;                 // one row per line shown, oldest first
+    std::vector<Rect> options;               // one button per option
+    Rect end{ 0.0f, 0.0f, 0.0f, 0.0f };      // End Dialogue
 };
-inline DialogueLayout layoutDialogue(int W, int H) {
+inline DialogueLayout layoutDialogue(int W, int H, int lineCount, int optionCount) {
     const float s = H / 720.0f;
-    const float w = 440.0f * s, h = 150.0f * s, pad = 14.0f * s, btnW = 90.0f * s, btnH = 28.0f * s;
+    const float w = 520.0f * s, pad = 12.0f * s, rowH = 66.0f * s, gap = 6.0f * s, btnH = 30.0f * s;
+    const float h = pad + lineCount * (rowH + gap) + optionCount * (btnH + gap) + btnH + pad;
     DialogueLayout L;
     L.box = Rect{ (W - w) * 0.5f, (H - h) * 0.5f, w, h };
-    L.close = Rect{ L.box.x + L.box.w - pad - btnW, L.box.y + L.box.h - pad - btnH, btnW, btnH };
+    float y = L.box.y + pad;
+    for (int i = 0; i < lineCount; ++i) {
+        L.lines.push_back(Rect{ L.box.x + pad, y, w - 2.0f * pad, rowH });
+        y += rowH + gap;
+    }
+    for (int i = 0; i < optionCount; ++i) {
+        L.options.push_back(Rect{ L.box.x + pad, y, w - 2.0f * pad, btnH });
+        y += btnH + gap;
+    }
+    L.end = Rect{ L.box.x + pad, y, w - 2.0f * pad, btnH };
+    return L;
+}
+
+// The trade popout: the Interaction Panel with the NPC's inventory, and the Trade Panel beside it. Each side of the
+// trade has a box of TRADE_SLOTS cells, its total under it, a value bar, a status line, and Cancel and Trade.
+constexpr int TRADE_SLOTS = 12;
+struct TradeLayout {
+    Rect interaction{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect interBar{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect npcGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> npcSlots;                   // one cell per inventory slot of the NPC
+    Rect tradePanel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tradeBar{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect theirBox{ 0.0f, 0.0f, 0.0f, 0.0f };     // the NPC's side
+    Rect yourBox{ 0.0f, 0.0f, 0.0f, 0.0f };      // your side
+    std::vector<Rect> theirCells, yourCells;
+    Rect theirTotal{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect yourTotal{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect valueBar{ 0.0f, 0.0f, 0.0f, 0.0f };     // how close the offer is to the NPC's price
+    Rect statusLine{ 0.0f, 0.0f, 0.0f, 0.0f };   // why the trade can't be confirmed, or that it can
+    Rect cancelBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tradeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline TradeLayout layoutTrade(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 10.0f * s, bar = 22.0f * s, gap = 12.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 110.0f * s;
+    const float barH = 12.0f * s;
+    const float cell = 26.0f * s, cellGap = 2.0f * s;
+    const int cols = INVENTORY_COLUMNS, rows = INVENTORY_SLOTS / cols;
+    const float gridW = cols * cell + (cols - 1) * cellGap;
+    const float gridH = rows * cell + (rows - 1) * cellGap;
+    const float interW = gridW + 2.0f * pad;
+    const float interH = bar + pad + 2.0f * line + gridH + 8.0f * s + pad;
+
+    const float cellT = 34.0f * s, cellTGap = 4.0f * s;
+    const int tcols = 4, trows = TRADE_SLOTS / tcols;
+    const float boxW = tcols * cellT + (tcols - 1) * cellTGap + 2.0f * pad;
+    const float boxH = trows * cellT + (trows - 1) * cellTGap + 2.0f * pad;
+    const float tradeW = 2.0f * boxW + 3.0f * pad;
+    const float tradeH = bar + pad + boxH + 2.0f * s + line + 4.0f * s + barH + 4.0f * s + line + gap + btnH + pad;
+
+    // The two panels side by side, centred on the window
+    const float totalW = interW + gap + tradeW;
+    const float x0 = (W - totalW) * 0.5f;
+    const float y0 = (H - std::max(interH, tradeH)) * 0.5f;
+
+    TradeLayout L;
+    L.interaction = Rect{ x0, y0, interW, interH };
+    L.interBar = Rect{ x0, y0, interW, bar };
+    L.npcGrid = Rect{ x0 + pad, y0 + bar + pad + 2.0f * line, gridW, gridH + 8.0f * s };
+    const float npcTop = L.npcGrid.y + 4.0f * s;
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        const int col = i % cols, row = i / cols;
+        L.npcSlots.push_back(Rect{ L.npcGrid.x + col * (cell + cellGap), npcTop + row * (cell + cellGap), cell, cell });
+    }
+
+    const float tx = x0 + interW + gap;
+    L.tradePanel = Rect{ tx, y0, tradeW, tradeH };
+    L.tradeBar = Rect{ tx, y0, tradeW, bar };
+    const float boxY = y0 + bar + pad;
+    L.theirBox = Rect{ tx + pad, boxY, boxW, boxH };
+    L.yourBox = Rect{ tx + 2.0f * pad + boxW, boxY, boxW, boxH };
+    for (int i = 0; i < TRADE_SLOTS; ++i) {
+        const int col = i % tcols, row = i / tcols;
+        const float dx = col * (cellT + cellTGap), dy = row * (cellT + cellTGap);
+        L.theirCells.push_back(Rect{ L.theirBox.x + pad + dx, L.theirBox.y + pad + dy, cellT, cellT });
+        L.yourCells.push_back(Rect{ L.yourBox.x + pad + dx, L.yourBox.y + pad + dy, cellT, cellT });
+    }
+    const float totalY = boxY + boxH + 2.0f * s;
+    L.theirTotal = Rect{ L.theirBox.x, totalY, boxW, line };
+    L.yourTotal = Rect{ L.yourBox.x, totalY, boxW, line };
+    const float barY = totalY + line + 4.0f * s;
+    L.valueBar = Rect{ tx + pad, barY, tradeW - 2.0f * pad, barH };
+    L.statusLine = Rect{ tx + pad, barY + barH + 4.0f * s, tradeW - 2.0f * pad, line };
+    const float btnY = y0 + tradeH - pad - btnH;
+    L.cancelBtn = Rect{ tx + pad, btnY, btnW, btnH };
+    L.tradeBtn = Rect{ tx + tradeW - pad - btnW, btnY, btnW, btnH };
+    return L;
+}
+
+// Whether a trade can be confirmed: why not, if it can't, and how close the offer is to the price (0 to 1)
+struct TradeStatus {
+    bool ok = false;
+    std::string text;
+    float progress = 0.0f;
+};
+
+// The trade fee for a Charisma level, in percent: 100 at level 1, 1 at level 99, a straight line between
+inline float tradeFeePercent(int charisma) {
+    const float t = (float)(std::clamp(charisma, 1, MAX_LEVEL) - 1) / (float)(MAX_LEVEL - 1);
+    return 100.0f - 99.0f * t;
+}
+
+// What an NPC asks for its items: their value plus the trade fee, rounded up to a whole number
+inline int requiredOffer(int npcValue, int charisma) {
+    const double fee = tradeFeePercent(charisma);
+    return (int)std::ceil(npcValue * (100.0 + fee) / 100.0 - 1e-9);
+}
+
+// The sell value of every item in one side of a trade, summed
+inline int tradeValueOf(const std::vector<TradeGhost>& ghosts) {
+    int total = 0;
+    for (const TradeGhost& g : ghosts) {
+        const ItemDef* d = findItem(g.stack.item);
+        if (d) total += d->sellValue * g.stack.count;
+    }
+    return total;
+}
+
+// The quantity prompt for a trade: how many of a stack's item go in the trade. It opens over the trade popout.
+struct QuantityLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect countBox{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect minus100{ 0.0f, 0.0f, 0.0f, 0.0f }, minus10{ 0.0f, 0.0f, 0.0f, 0.0f }, minus1{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect plus1{ 0.0f, 0.0f, 0.0f, 0.0f }, plus10{ 0.0f, 0.0f, 0.0f, 0.0f }, plus100{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect single{ 0.0f, 0.0f, 0.0f, 0.0f }, max{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline QuantityLayout layoutQuantity(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 12.0f * s, gap = 6.0f * s, line = 22.0f * s, btnH = 28.0f * s;
+    const float smallW = 58.0f * s, countW = 96.0f * s, wideW = 110.0f * s;
+    const float rowW = 6.0f * smallW + countW + 6.0f * gap;
+    const float boxW = rowW + 2.0f * pad;
+    const float boxH = pad + line + gap + btnH + gap + btnH + gap + btnH + pad;
+    QuantityLayout L;
+    L.box = Rect{ (W - boxW) * 0.5f, (H - boxH) * 0.5f, boxW, boxH };
+    float y = L.box.y + pad;
+    L.title = Rect{ L.box.x + pad, y, boxW - 2.0f * pad, line };
+    y += line + gap;
+    float x = L.box.x + pad;
+    auto place = [&](Rect& r, float w) { r = Rect{ x, y, w, btnH }; x += w + gap; };
+    place(L.minus100, smallW);
+    place(L.minus10, smallW);
+    place(L.minus1, smallW);
+    L.countBox = Rect{ x, y, countW, btnH };
+    x += countW + gap;
+    place(L.plus1, smallW);
+    place(L.plus10, smallW);
+    place(L.plus100, smallW);
+    y += btnH + gap;
+    const float row2W = 2.0f * wideW + gap;
+    const float x2 = L.box.x + (boxW - row2W) * 0.5f;
+    L.single = Rect{ x2, y, wideW, btnH };
+    L.max = Rect{ x2 + wideW + gap, y, wideW, btnH };
+    y += btnH + gap;
+    L.confirm = Rect{ x2, y, wideW, btnH };
+    L.cancel = Rect{ x2 + wideW + gap, y, wideW, btnH };
     return L;
 }
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include "components.h"
 #include "ecs.h"
+#include "stats.h"
 #include "resources.h"
 
 // Combat: the formulas, the fight that runs each frame, and the text it writes (the log and the damage
@@ -17,6 +18,8 @@ constexpr float STRENGTH_ATTACK = 0.2f;     // attack added per Strength level
 constexpr float MITIGATION_K = 50.0f;       // share of damage taken is K / (K + defense)
 constexpr float BLOCK_DAMAGE = 0.25f;       // damage kept on a blocked hit
 constexpr float ATTACK_REACH = 1.4f;        // tiles between unit centers that allow a swing
+constexpr float TALK_RANGE = 1.0f;           // tiles between a unit and an NPC that allow a talk
+constexpr float STEALTH_RANGE = 2.0f;        // tiles from a hostile within which an unnoticed unit earns stealth XP
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
 constexpr float LEASH_RANGE = 12.0f;        // a hostile gives up a chase past this distance
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
@@ -26,7 +29,7 @@ constexpr float ENDURANCE_XP_PER_TILE = 0.1f;
 constexpr float RUN_SPEED_BONUS = 0.5f;     // running is this much faster than walking, before Athletics
 constexpr float RUN_ATHLETICS_PER_LEVEL = 0.01f; // and each Athletics level above 1 adds this much more to run speed
 constexpr float FLOAT_LIFE = 1.0f;          // seconds a damage number stays on screen
-constexpr size_t LOG_LIMIT = 500;           // lines the combat log keeps
+constexpr size_t LOG_LIMIT = 500;           // messages each kind keeps, and the talk log keeps: the newest are kept
 
 // What a unit fights with, worked out from its stats, worn gear and buffs. Never stored: it is
 // recalculated whenever it is needed, so it always matches the current stats and gear.
@@ -90,7 +93,9 @@ float strengthXpWhileWalking(float encumbrance, float seconds);
 
 // Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
 // XpBuffer until it adds up to a point. Only player units gain XP.
-void grantXp(World& w, Entity e, int stat, float amount);
+// why names the action the XP came from, for the log; nullptr writes no message
+void grantXp(World& w, Entity e, int stat, float amount, const char* why = nullptr);
+Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit
 
 // ---- Log and damage numbers ----
 
@@ -98,9 +103,20 @@ void grantXp(World& w, Entity e, int stat, float amount);
 enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, Entity attacker, Entity target);
 
+// What a game message is about, so the Game tab can hide each kind. Other messages are never hidden.
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot };
+constexpr int LOG_KIND_COUNT = 9;
+
 struct LogLine {
     std::string text;
     Tint tint = Tint::Gray;
+    LogKind kind = LogKind::Other;
+};
+
+// Which kinds the Game tab shows. All are on at first.
+struct LogFilter {
+    bool on[LOG_KIND_COUNT];
+    LogFilter() { for (bool& b : on) b = true; }
 };
 
 // Every line the fight has written, oldest first, up to LOG_LIMIT
@@ -110,14 +126,37 @@ struct CombatLog {
     // these before and after a frame, to play a sound once for what happened in it.
     size_t hits = 0;
     size_t misses = 0;
-    void add(const std::string& text, Tint tint = Tint::Gray);
+    // What was said in talks, as "Name: text", for the Message tab
+    std::vector<LogLine> spoken;
+    // Messages of each kind held now, so a kind over LOG_LIMIT drops its own oldest and nothing else
+    size_t kindCount[LOG_KIND_COUNT] = {};
+    // Adds a line to the talk log, keeping the newest LOG_LIMIT
+    void say(const std::string& text);
+    void add(const std::string& text, Tint tint = Tint::Gray, LogKind kind = LogKind::Other);
 };
+
+// Game messages written outside a fight (XP, pickups, drops). They wait until flushQueuedLog adds them to a log, on
+// the next frame. discardQueuedLog drops them, when a new level starts.
+void queueLog(const std::string& text, LogKind kind);
+void flushQueuedLog(CombatLog& log);
+void discardQueuedLog();
+
+// The lines an Information Panel tab shows: 0 what was said in talks, 1 the game messages that pass the filter
+std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFilter& f);
 
 // A damage number over a unit's head, at the place the hit landed. age counts up from 0.
 struct FloatingNumber {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     int amount = 0;
     Tint tint = Tint::Gray;
+    float age = 0.0f;
+};
+
+// A line of text over a unit for a moment, such as the value of a trade
+constexpr float TRADE_LABEL_LIFE = 2.0f;     // seconds
+struct TradeLabel {
+    Entity unit = NULL_ENTITY;
+    std::string text;
     float age = 0.0f;
 };
 

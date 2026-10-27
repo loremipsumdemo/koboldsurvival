@@ -181,7 +181,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     }
     const int restored = applyUse(effects, t);
     if (--s.count <= 0) s = ItemStack{};
-    grantXp(w, consumer, STAT_MEDICAL, (float)restored);
+    grantXp(w, consumer, STAT_MEDICAL, (float)restored, "healing");
     return UseResult::Used;
 }
 

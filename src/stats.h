@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <array>
 #include <string>
 
@@ -74,6 +75,16 @@ inline Stats defaultStats() {
 // Current level of one stat
 inline int levelOf(const Stats& s, int stat) {
     return levelForXp(s.xp[stat]);
+}
+
+// How far a stat is from its current level to the next: 0 at the XP for the current level, 1 at the XP for the
+// next. A stat at level 99 is full.
+inline float levelProgress(const Stats& s, int stat) {
+    const int lv = levelOf(s, stat);
+    if (lv >= MAX_LEVEL) return 1.0f;
+    const int lo = xpForLevel(lv), hi = xpForLevel(lv + 1);
+    if (hi <= lo) return 0.0f;
+    return std::clamp((float)(s.xp[stat] - lo) / (float)(hi - lo), 0.0f, 1.0f);
 }
 
 // Adds XP to one stat, capped at the XP for level 99. Returns how many levels it gained.

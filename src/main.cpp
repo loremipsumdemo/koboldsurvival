@@ -129,7 +129,177 @@ std::vector<Entity> selectedUnits(World& w) {
 
 // The unit the sidebar shows: the lone one of yours that is selected, or, when none of yours is, the lone red
 // unit. NULL when nothing is selected or more than one of yours is.
+// The neutral unit being talked to, or NULL_ENTITY when no talk box is open
+Entity dialogueUnit = NULL_ENTITY;
+Entity dialoguePlayer = NULL_ENTITY;      // the player unit a talk is with, who speaks the player's lines
+std::vector<SpokenLine> dialogueConvo;    // the lines of the talk so far
+bool tradeOpen = false;                   // the trade popout is up, in place of the talk box
+constexpr float TALK_COOLDOWN = 1.0f;     // seconds after a talk ends before another one can start
+float talkCooldown = 0.0f;                // seconds of that cooldown left
+bool paused = false;                      // paused with Space, until Space is pressed again
+std::vector<TradeGhost> tradeNpc;         // items shown on the NPC's side of the trade
+std::vector<TradeGhost> tradePlayer;      // items shown on your side of the trade
+int tradeNpcDrag = -1;                    // the NPC's inventory slot being dragged into the trade, or -1
+
+// A stack's item being chosen for the trade: how many, out of how many the inventory holds that are not in the trade yet
+struct QuantityPrompt {
+    bool open = false;
+    bool npcSide = false;
+    Entity owner = NULL_ENTITY;
+    int slot = -1;
+    int item = 0;
+    std::string name;
+    int chosen = 1;
+    int available = 0;
+};
+QuantityPrompt quantity;
+
+// Shows a stack on one side of a trade, in the next free cell. Only a picture: the inventory is not changed.
+// How many of an item an inventory holds that are not already in one side of a trade
+int tradeAvailable(const Inventory& inv, const std::vector<TradeGhost>& side, int item) {
+    int total = 0;
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        if (inv.slots[i].item == item) total += inv.slots[i].count;
+    }
+    for (const TradeGhost& g : side) {
+        if (g.stack.item == item) total -= g.stack.count;
+    }
+    return std::max(0, total);
+}
+
+// Puts up to `want` of the clicked stack's item in a side of the trade: the clicked stack first, then the other stacks
+// of that item in the inventory. Stacks already in the trade only give what is still free. Returns how many went in.
+int tradeAddItems(std::vector<TradeGhost>& side, const Inventory& inv, int clickedSlot, int want) {
+    if (clickedSlot < 0 || clickedSlot >= INVENTORY_SLOTS || inv.slots[clickedSlot].item == 0 || want <= 0) return 0;
+    const int item = inv.slots[clickedSlot].item;
+    std::vector<int> order{ clickedSlot };
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        if (i != clickedSlot && inv.slots[i].item == item) order.push_back(i);
+    }
+    int added = 0;
+    for (int slot : order) {
+        if (added >= want) break;
+        TradeGhost* ghost = nullptr;
+        for (TradeGhost& g : side) {
+            if (g.slot == slot) ghost = &g;
+        }
+        const int inTrade = ghost ? ghost->stack.count : 0;
+        const int take = std::min(inv.slots[slot].count - inTrade, want - added);
+        if (take <= 0) continue;
+        if (ghost) {
+            ghost->stack.count += take;
+        } else {
+            if ((int)side.size() >= TRADE_SLOTS) break;
+            side.push_back(TradeGhost{ slot, ItemStack{ item, take } });
+        }
+        added += take;
+    }
+    return added;
+}
+
+// Takes some of a stack's items out of an inventory; the slot empties when nothing is left in it
+void takeFromSlot(Inventory& inv, int slot, int count) {
+    if (slot < 0 || slot >= INVENTORY_SLOTS) return;
+    ItemStack& st = inv.slots[slot];
+    st.count -= count;
+    if (st.count <= 0) st = ItemStack{};
+}
+
+// Whether an inventory still holds everything a side of the trade says it gives
+bool tradeStillThere(const Inventory* inv, const std::vector<TradeGhost>& side) {
+    if (!inv) return side.empty();
+    for (const TradeGhost& g : side) {
+        if (g.slot < 0 || g.slot >= INVENTORY_SLOTS) return false;
+        int needed = 0;
+        for (const TradeGhost& other : side) {
+            if (other.slot == g.slot) needed += other.stack.count;
+        }
+        const ItemStack& st = inv->slots[g.slot];
+        if (st.item != g.stack.item || st.count < needed) return false;
+    }
+    return true;
+}
+
+bool tradeItemsPresent(World& w, Entity npc, Entity player) {
+    return tradeStillThere(w.get<Inventory>(npc), tradeNpc) && tradeStillThere(w.get<Inventory>(player), tradePlayer);
+}
+
+// Takes back out the ghost shown in one of the cells. True if one was there.
+bool takeTradeGhostAt(std::vector<TradeGhost>& side, const std::vector<Rect>& cells, float x, float y) {
+    for (size_t i = 0; i < side.size() && i < cells.size(); ++i) {
+        if (cells[i].contains(x, y)) {
+            side.erase(side.begin() + (int)i);
+            return true;
+        }
+    }
+    return false;
+}
+
+// The distance in tiles between two units on the ground
+float gapBetween(World& w, Entity a, Entity b) {
+    const Transform* ta = w.get<Transform>(a);
+    const Transform* tb = w.get<Transform>(b);
+    if (!ta || !tb) return 1e9f;
+    const float dx = ta->x - tb->x, dz = ta->z - tb->z;
+    return std::sqrt(dx * dx + dz * dz);
+}
+
+// Whether a side's inventory has room for what it receives, once what it gives is taken out of it
+bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::vector<TradeGhost>& receives) {
+    for (const TradeGhost& g : gives) {
+        if (g.slot >= 0 && g.slot < INVENTORY_SLOTS) takeFromSlot(inv, g.slot, g.stack.count);
+    }
+    for (const TradeGhost& g : receives) {
+        if (addToInventory(inv, g.stack.item, g.stack.count) != 0) return false;
+    }
+    return true;
+}
+
+// Whether the trade on the table can be confirmed: both sides have items, each inventory has room for what it
+// receives, and the offer covers the NPC's price with its fee. Also how close the offer is, for the value bar.
+TradeStatus checkTrade(World& w, Entity npc, Entity player) {
+    TradeStatus st;
+    const Inventory* ni = npc != NULL_ENTITY ? w.get<Inventory>(npc) : nullptr;
+    const Inventory* pi = player != NULL_ENTITY ? w.get<Inventory>(player) : nullptr;
+    if (!ni || !pi) {
+        st.text = "No unit to trade with";
+        return st;
+    }
+    const int npcValue = tradeValueOf(tradeNpc);
+    const int offer = tradeValueOf(tradePlayer);
+    const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA));
+    st.progress = needed > 0 ? (float)offer / (float)needed : 1.0f;
+    if (tradeNpc.empty() || tradePlayer.empty()) st.text = "Add items to both sides";
+    else if (!tradeFits(*pi, tradePlayer, tradeNpc)) st.text = "Your unit has no room for their items";
+    else if (!tradeFits(*ni, tradeNpc, tradePlayer)) st.text = "They have no room for your items";
+    else if (offer < needed) st.text = "They need " + std::to_string(needed - offer) + " more value";
+    else {
+        st.ok = true;
+        st.text = "Ready. Trade fee: " + std::to_string(needed - npcValue);
+    }
+    return st;
+}
+
+// Makes the trade: each side's items move to the other, and the player's Charisma gains XP for the fee paid
+void completeTrade(World& w, Entity npc, Entity player) {
+    Inventory* ni = w.get<Inventory>(npc);
+    Inventory* pi = w.get<Inventory>(player);
+    const int npcValue = tradeValueOf(tradeNpc);
+    const int fee = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA)) - npcValue;
+    for (const TradeGhost& g : tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
+    for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
+    for (const TradeGhost& g : tradeNpc) addToInventory(*pi, g.stack.item, g.stack.count);
+    for (const TradeGhost& g : tradePlayer) addToInventory(*ni, g.stack.item, g.stack.count);
+    if (fee > 0) grantXp(w, player, STAT_CHARISMA, fee, "paying trade fees");
+    tradeOpen = false;
+    tradeNpc.clear();
+    tradePlayer.clear();
+    tradeNpcDrag = -1;
+}
+
+// The unit the Unit Panel shows: the talking unit during a trade, otherwise the lone selected unit
 Entity sidebarUnitOf(World& w) {
+    if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return dialoguePlayer;
     const std::vector<Entity> mine = selectedUnits(w);
     if (mine.size() == 1) return mine[0];
     if (!mine.empty()) return NULL_ENTITY;
@@ -137,8 +307,11 @@ Entity sidebarUnitOf(World& w) {
     return any.size() == 1 ? any[0] : NULL_ENTITY;
 }
 
-// The neutral unit being talked to, or NULL_ENTITY when no talk box is open
-Entity dialogueUnit = NULL_ENTITY;
+// The units the Unit Panel acts on: the talking unit during a trade, otherwise the selected units
+std::vector<Entity> panelUnits(World& w) {
+    if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return { dialoguePlayer };
+    return selectedUnits(w);
+}
 
 // The first neutral unit in a list, or NULL_ENTITY if there is none
 Entity firstNeutral(World& w, const std::vector<Entity>& units) {
@@ -356,6 +529,13 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     report(0.7f);
     world = World{};
     dialogueUnit = NULL_ENTITY;   // entity ids restart with the new world, so a talk box can't keep pointing at one
+    dialogueConvo.clear();
+    discardQueuedLog();
+    tradeOpen = false;
+    tradeNpc.clear();
+    tradePlayer.clear();
+    tradeNpcDrag = -1;
+    paused = false;
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
     if (spawnItems) spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
@@ -872,6 +1052,45 @@ const char* const SFX_ITEM = "sfx_04.mp3";   // an item picked up, moved between
 
 } // namespace
 
+// The text fonts, opened at the Font size setting. Each is a percentage of its base size, and the smaller text is the
+// same base size as the buttons so it reads as large as them.
+struct UiFonts {
+    TTF_Font* hud = nullptr;
+    TTF_Font* ui = nullptr;
+    TTF_Font* list = nullptr;
+    TTF_Font* statsTitle = nullptr;
+    TTF_Font* statsRow = nullptr;
+    bool valid() const { return hud && ui && list && statsTitle && statsRow; }
+};
+
+UiFonts openUiFonts(int pct) {
+    const float size = 30.0f * pct / 100.0f;
+    const char* bold = "data/font/NotoSans_Condensed-Bold.ttf";
+    const char* regular = "data/font/NotoSans_Condensed-Regular.ttf";
+    UiFonts f;
+    f.hud = pakFont(bold, size);
+    f.ui = pakFont(bold, size);
+    f.list = pakFont(bold, size);
+    // The Stats popout uses NotoSans Regular. Until that file is in data/font, it uses Bold.
+    f.statsTitle = pakFont(regular, size);
+    f.statsRow = pakFont(regular, size);
+    if (!f.statsTitle || !f.statsRow) {
+        SDL_Log("NotoSans_Condensed-Regular.ttf is not in data/font, so the Stats popout uses Bold");
+        if (f.statsTitle) TTF_CloseFont(f.statsTitle);
+        if (f.statsRow) TTF_CloseFont(f.statsRow);
+        f.statsTitle = pakFont(bold, size);
+        f.statsRow = pakFont(bold, size);
+    }
+    return f;
+}
+
+void closeUiFonts(UiFonts& f) {
+    for (TTF_Font** font : { &f.hud, &f.ui, &f.list, &f.statsTitle, &f.statsRow }) {
+        if (*font) TTF_CloseFont(*font);
+        *font = nullptr;
+    }
+}
+
 int main(int, char**) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -888,24 +1107,13 @@ int main(int, char**) {
         SDL_Log("Could not open data.pak. It must sit next to the game executable.");
         return 1;
     }
+    // Settings come first: the saved text size decides the fonts
+    GameSettings settings = loadSettings(SETTINGS_PATH);
+    UiFonts fonts = openUiFonts(settings.fontScale);
+    int appliedFontScale = settings.fontScale;
     TTF_Font* font = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
-    TTF_Font* hudFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 22.0f);
-    TTF_Font* uiFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
-    TTF_Font* listFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);   // save list rows
-    if (!font || !hudFont || !uiFont || !listFont) {
+    if (!font || !fonts.valid()) {
         SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
-        return 1;
-    }
-    // The Stats popout uses NotoSans Regular. Until that file is in data/font, it uses Bold.
-    TTF_Font* statsTitleFont = pakFont("data/font/NotoSans_Condensed-Regular.ttf", 30.0f);
-    TTF_Font* statsRowFont = pakFont("data/font/NotoSans_Condensed-Regular.ttf", 20.0f);
-    if (!statsTitleFont || !statsRowFont) {
-        SDL_Log("NotoSans_Condensed-Regular.ttf is not in data/font, so the Stats popout uses Bold");
-        statsTitleFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 30.0f);
-        statsRowFont = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 20.0f);
-    }
-    if (!statsTitleFont || !statsRowFont) {
-        SDL_Log("Could not open the Stats popout font from data.pak: %s", SDL_GetError());
         return 1;
     }
 
@@ -928,16 +1136,15 @@ int main(int, char**) {
     glGetError();
 
     moveOldMapsFolder();
-    GameSettings settings = loadSettings(SETTINGS_PATH);
     DisplayInfo displayInfo = queryDisplays(settings.monitor);
     applyDisplay(window, settings, displayInfo);
     SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
 
     // ---- Loading phase: textures and models load before the title screen appears ----
     Renderer renderer;
-    if (!renderer.init(font, hudFont, uiFont, [&](float p) { loadingFrame(window, renderer, p); })) return 1;
-    renderer.setListFont(listFont);
-    renderer.setStatsFonts(statsTitleFont, statsRowFont);
+    if (!renderer.init(font, fonts.hud, fonts.ui, [&](float p) { loadingFrame(window, renderer, p); })) return 1;
+    renderer.setListFont(fonts.list);
+    renderer.setStatsFonts(fonts.statsTitle, fonts.statsRow);
 
     Terrain terrain;
     World world;
@@ -1050,11 +1257,16 @@ int main(int, char**) {
     // The combat log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
     CombatLog combatLog;
     std::vector<FloatingNumber> floatingNumbers;
+    std::vector<TradeLabel> tradeLabels;   // trade values shown over the traders for a second
+    int infoTab = 0;        // the Information Panel's tab: 0 Message, 1 Game
+    LogFilter logFilter;    // which game message kinds the Game tab shows
+    bool logFilterOpen = false;
     int logOffset = 0;      // lines the combat log is scrolled up from its newest line; 0 follows new lines
     size_t logSeen = 0;     // lines the log held last frame, so a view scrolled up stays on the same lines
     auto clearCombatText = [&]() {
         combatLog = CombatLog{};
         floatingNumbers.clear();
+        tradeLabels.clear();
         logOffset = 0;
         logSeen = 0;
     };
@@ -1086,9 +1298,9 @@ int main(int, char**) {
         sortMaps(maps, mapSortByName, mapSortAsc);
     };
 
-    auto showNotice = [&](const std::string& text) {
+    auto showNotice = [&](const std::string& text, float seconds = 2.5f) {
         notice = text;
-        noticeSec = 2.5f;
+        noticeSec = seconds;
     };
 
     // Closes the popout and drops any pending question
@@ -1308,11 +1520,25 @@ int main(int, char**) {
     };
     auto saveSettingsFile = [&]() { saveSettings(settings, SETTINGS_PATH); };
     // Applies what a change touched. It is saved when the change is final: a slider saves when released.
+    // The Font size setting: every text font is reopened at the new size, and the text drawn with the old ones is dropped
+    auto applyFontScale = [&]() {
+        if (settings.fontScale == appliedFontScale) return;
+        UiFonts next = openUiFonts(settings.fontScale);
+        if (!next.valid()) {
+            closeUiFonts(next);
+            return;
+        }
+        renderer.setFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
+        closeUiFonts(fonts);
+        fonts = next;
+        appliedFontScale = settings.fontScale;
+    };
     auto settingsCommit = [&](const SettingsChange& c, bool save) {
         if (!c.any) return;
         if (c.display) applyVideo();
         else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
         if (c.audio) applyAudio();
+        if (c.fonts) applyFontScale();
         if (save) saveSettingsFile();
     };
     auto leaveSettings = [&]() {
@@ -1827,7 +2053,136 @@ int main(int, char**) {
         auto combatLogPanel = [&](int W, int H) {
             const float s = H / 720.0f;
             const float unitLeft = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel.x;
-            return renderer.combatLogLayout(W, H, logOffset, (int)combatLog.lines.size(), unitLeft - 8.0f * s, combatCollapsed, logPlace);
+            return renderer.combatLogLayout(W, H, infoTab, logFilterOpen, logOffset,
+                                            (int)infoLines(combatLog, infoTab, logFilter).size(),
+                                            unitLeft - 8.0f * s, combatCollapsed, logPlace);
+        };
+        // The talk: each line said goes into the talk's lines and the Message tab. The player's side speaks as the
+        // first player unit that is selected, or else the first one there is.
+        auto sayAs = [&](Entity who, const std::string& text, bool player) {
+            SpokenLine ln;
+            ln.text = text;
+            ln.player = player;
+            const bool known = who != NULL_ENTITY && world.has<Unit>(who);
+            ln.speaker = known ? nameOf(world, who) : std::string(player ? "You" : "Unnamed Unit");
+            const UnitSprite* us = known ? world.get<UnitSprite>(who) : nullptr;
+            ln.sprite = us ? us->id : 1;
+            dialogueConvo.push_back(ln);
+            combatLog.say(ln.speaker + ": " + text);
+        };
+        // Ends the talk and the trade with it
+        auto endTalk = [&]() {
+            talkCooldown = TALK_COOLDOWN;
+            tradeOpen = false;
+            tradeNpc.clear();
+            tradePlayer.clear();
+            tradeNpcDrag = -1;
+            quantity.open = false;
+            dialogueUnit = NULL_ENTITY;
+            dialogueConvo.clear();
+        };
+        // An item put in the trade from a stack: a single item goes straight in, a stack asks how many first
+        auto requestTrade = [&](bool npcSide, Entity owner, int slot) {
+            const Inventory* inv = world.get<Inventory>(owner);
+            if (!inv || slot < 0 || slot >= INVENTORY_SLOTS || inv->slots[slot].item == 0) return;
+            std::vector<TradeGhost>& side = npcSide ? tradeNpc : tradePlayer;
+            const int item = inv->slots[slot].item;
+            if (inv->slots[slot].count <= 1) {
+                if (tradeAddItems(side, *inv, slot, 1) == 0) showNotice("That item is already in the trade, or the trade is full.");
+                return;
+            }
+            const int avail = tradeAvailable(*inv, side, item);
+            if (avail <= 0) {
+                showNotice("There is no more of that item to trade");
+                return;
+            }
+            const ItemDef* def = findItem(item);
+            quantity = QuantityPrompt{ true, npcSide, owner, slot, item, def ? def->name : std::string("Item"), 1, avail };
+        };
+        auto confirmQuantity = [&]() {
+            const Inventory* inv = world.get<Inventory>(quantity.owner);
+            std::vector<TradeGhost>& side = quantity.npcSide ? tradeNpc : tradePlayer;
+            const int added = inv ? tradeAddItems(side, *inv, quantity.slot, quantity.chosen) : 0;
+            if (added == 0) showNotice("The trade is full");
+            quantity.open = false;
+        };
+        auto startTalk = [&](Entity npc, Entity talker) {
+            // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
+            std::vector<Entity> others;
+            for (Entity u : selectedUnits(world)) {
+                if (u != talker) others.push_back(u);
+            }
+            clearTalkOrders(world);
+            if (const Transform* nt = world.get<Transform>(npc); nt && !others.empty()) {
+                issueMoveOrder(world, terrain, others, Vec2{ nt->x, nt->z });
+            }
+            dialogueUnit = npc;
+            dialogueConvo.clear();
+            dialoguePlayer = talker;
+            const Dialogue* dg = world.get<Dialogue>(npc);
+            sayAs(npc, dg ? dg->text : std::string("Hello world."), false);
+        };
+        // Picking an option: the player says its prompt, and the unit answers with its reply
+        // Starts a talk, unless one ended too recently. Then no dialogue starts, but the units still walk to the NPC.
+        auto tryStartTalk = [&](Entity npc, Entity talker, std::vector<Entity> units) {
+            if (talkCooldown <= 0.0f) {
+                startTalk(npc, talker);
+                return;
+            }
+            for (Entity u : world.view<TalkOrder>()) units.push_back(u);
+            std::sort(units.begin(), units.end());
+            units.erase(std::unique(units.begin(), units.end()), units.end());
+            const Transform* nt = world.get<Transform>(npc);
+            if (nt && !units.empty()) issueMoveOrder(world, terrain, units, Vec2{ nt->x, nt->z });
+        };
+        auto chooseOption = [&](size_t i) {
+            const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
+            if (!dg || i >= dg->options.size()) return;
+            const std::string prompt = dg->options[i].prompt, reply = dg->options[i].reply;
+            const bool trade = dg->options[i].opensTrade;
+            sayAs(dialoguePlayer, prompt, true);
+            sayAs(dialogueUnit, reply, false);
+            if (trade) {
+                tradeOpen = true;
+                tradeNpc.clear();
+                tradePlayer.clear();
+                tradeNpcDrag = -1;
+            }
+        };
+        // The talk box for the lines so far and the options of the unit it is with
+        auto dialogueBox = [&](int W, int H) {
+            const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
+            const int lines = (int)std::min<size_t>(2, dialogueConvo.size());
+            return layoutDialogue(W, H, lines, dg ? (int)dg->options.size() : 0);
+        };
+        // A click on the Information Panel's tabs, its Filter button or its menu. True if the click was used.
+        auto infoPanelClick = [&](int W, int H, float tx, float ty) {
+            const CombatLogLayout cl = combatLogPanel(W, H);
+            if (cl.collapsed) return false;
+            if (cl.tabMessage.contains(tx, ty)) {
+                if (infoTab != 0) { infoTab = 0; logOffset = 0; }
+                logFilterOpen = false;
+                return true;
+            }
+            if (cl.tabGame.contains(tx, ty)) {
+                if (infoTab != 1) { infoTab = 1; logOffset = 0; }
+                logFilterOpen = false;
+                return true;
+            }
+            if (infoTab == 1 && cl.filterBtn.contains(tx, ty)) {
+                logFilterOpen = !logFilterOpen;
+                return true;
+            }
+            if (cl.filterOpen) {
+                for (const CombatLogLayout::FilterRow& fr : cl.filterRows) {
+                    if (fr.heading || !fr.r.contains(tx, ty)) continue;
+                    logFilter.on[(int)fr.kind] = !logFilter.on[(int)fr.kind];
+                    return true;
+                }
+                if (cl.filterMenu.contains(tx, ty)) return true;
+                logFilterOpen = false;   // a click elsewhere closes the menu, and still does its own job
+            }
+            return false;
         };
         // The rectangle of each bottom panel: 0 squad, 1 Unit Panel, 2 combat log
         auto resizablePanel = [&](int which, int W, int H) -> Rect {
@@ -2043,11 +2398,13 @@ int main(int, char**) {
                     mapOpen = !mapOpen;   // M opens and closes the world map
                     break;
                 }
+                // Space pauses and resumes the game, but not while a talk or a trade is open
+                if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat && dialogueUnit == NULL_ENTITY) {
+                    paused = !paused;
+                }
                 if (e.key.key == SDLK_ESCAPE) {
-                    if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) {
-                        dialogueUnit = NULL_ENTITY;
-                        break;
-                    }
+                    // A talk only ends with its End Dialogue button, so Escape does nothing while one is open
+                    if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) break;
                     if (screen == Screen::Playing && mapOpen) {
                         mapOpen = false;  // Escape closes the world map first
                     } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
@@ -2218,14 +2575,87 @@ int main(int, char**) {
                     break;
                 }
 
-                // The talk box is over everything: its Close button ends it, and a click in it does nothing else
+                // The talk owns the mouse while it is open. During a trade the Unit Panel still works, so a click there
+                // passes on to the panel; everything else is the talk's or the trade's.
                 if (dialogueUnit != NULL_ENTITY && screen == Screen::Playing) {
-                    const DialogueLayout dl = layoutDialogue(winW, winH);
-                    if (e.button.button == SDL_BUTTON_LEFT && dl.close.contains(e.button.x, e.button.y)) {
-                        dialogueUnit = NULL_ENTITY;
+                    // The quantity prompt is modal over the trade: only its buttons answer
+                    if (quantity.open && tradeOpen) {
+                        if (e.button.button == SDL_BUTTON_LEFT) {
+                            const QuantityLayout ql = layoutQuantity(winW, winH);
+                            const float qx = e.button.x, qy = e.button.y;
+                            const int cap = std::max(1, quantity.available);
+                            auto nudge = [&](int by) { quantity.chosen = std::clamp(quantity.chosen + by, 1, cap); };
+                            if (ql.minus100.contains(qx, qy)) nudge(-100);
+                            else if (ql.minus10.contains(qx, qy)) nudge(-10);
+                            else if (ql.minus1.contains(qx, qy)) nudge(-1);
+                            else if (ql.plus1.contains(qx, qy)) nudge(1);
+                            else if (ql.plus10.contains(qx, qy)) nudge(10);
+                            else if (ql.plus100.contains(qx, qy)) nudge(100);
+                            else if (ql.single.contains(qx, qy)) quantity.chosen = 1;
+                            else if (ql.max.contains(qx, qy)) quantity.chosen = cap;
+                            else if (ql.confirm.contains(qx, qy)) confirmQuantity();
+                            else if (ql.cancel.contains(qx, qy)) quantity.open = false;
+                        }
                         break;
                     }
-                    if (dl.box.contains(e.button.x, e.button.y)) break;
+                    const float x = e.button.x, y = e.button.y;
+                    const bool unitPanelClick = tradeOpen && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
+                    if (!unitPanelClick) {
+                        if (tradeOpen) {
+                            const TradeLayout tl = layoutTrade(winW, winH);
+                            const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
+                            const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
+                            if (leftButton && tl.cancelBtn.contains(x, y)) {
+                                tradeOpen = false;
+                                tradeNpc.clear();
+                                tradePlayer.clear();
+                                tradeNpcDrag = -1;
+                            } else if (leftButton && tl.tradeBtn.contains(x, y)) {
+                                if (!tradeItemsPresent(world, dialogueUnit, dialoguePlayer)) {
+                                    // Something offered is no longer in its inventory: the trade fails and the talk ends
+                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, "Trade failed", 0.0f });
+                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, "Trade failed", 0.0f });
+                                    endTalk();
+                                } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
+                                    const std::string label = "[Trade Value: " + std::to_string(tradeValueOf(tradePlayer)) + "]";
+                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, label, 0.0f });
+                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, label, 0.0f });
+                                    completeTrade(world, dialogueUnit, dialoguePlayer);
+                                    endTalk();
+                                    showNotice("Trade complete.", TRADE_LABEL_LIFE);
+                                }
+                            } else if (takeTradeGhostAt(tradeNpc, tl.theirCells, x, y)
+                                       || takeTradeGhostAt(tradePlayer, tl.yourCells, x, y)) {
+                                // A ghost was taken back out of its cell
+                            } else {
+                                // An NPC item: left button drags it to the left box, right button puts it there
+                                for (size_t i = 0; npcInv && i < tl.npcSlots.size(); ++i) {
+                                    if (!tl.npcSlots[i].contains(x, y) || npcInv->slots[i].item == 0) continue;
+                                    if (leftButton) {
+                                        tradeNpcDrag = (int)i;
+                                    } else if (e.button.button == SDL_BUTTON_RIGHT) {
+                                        requestTrade(true, dialogueUnit, (int)i);
+                                    }
+                                    break;
+                                }
+                            }
+                        } else if (e.button.button == SDL_BUTTON_LEFT) {
+                            const DialogueLayout dl = dialogueBox(winW, winH);
+                            if (dl.end.contains(x, y)) {
+                                talkCooldown = TALK_COOLDOWN;
+                                dialogueUnit = NULL_ENTITY;
+                                dialogueConvo.clear();
+                            } else {
+                                for (size_t i = 0; i < dl.options.size(); ++i) {
+                                    if (dl.options[i].contains(x, y)) {
+                                        chooseOption(i);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
                 }
                 // The expand button, on the minimap or on the full map it expands into
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
@@ -2263,6 +2693,7 @@ int main(int, char**) {
                         unitPlace.w = unitPlace.h = 0.0f;
                         break;
                     }
+                    if (infoPanelClick(winW, winH, tx, ty)) break;
                     if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).toggle.contains(tx, ty)) {
                         squadCollapsed = !squadCollapsed;
                         squadPlace.w = squadPlace.h = 0.0f;
@@ -2377,7 +2808,7 @@ int main(int, char**) {
                             // A filled inventory slot starts dragging its stack out of the inventory. A filled
                             // gear slot starts dragging the gear item out of the unit's gear. A red unit's
                             // sidebar has no unit of yours in it, so nothing there can be dragged.
-                            const std::vector<Entity> picked = selectedUnits(world);
+                            const std::vector<Entity> picked = panelUnits(world);
                             const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
                             const Equipment* worn = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
                             const int slot = sidebarSlotAt(sl, mx, my);
@@ -2453,7 +2884,7 @@ int main(int, char**) {
                         // into the inventory. Elsewhere on the panels, nothing happens. A red unit's sidebar
                         // has no unit of yours in it, so neither of those applies there.
                         itemMenu.open = false;
-                        const std::vector<Entity> picked = selectedUnits(world);
+                        const std::vector<Entity> picked = panelUnits(world);
                         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
                         const int slot = sidebarUp() ? sidebarSlotAt(sl, e.button.x, e.button.y) : -1;
                         const int gear = sidebarUp() ? gearSlotAt(sl, e.button.x, e.button.y) : -1;
@@ -2463,6 +2894,9 @@ int main(int, char**) {
                             std::string why;
                             if (unequipToInventory(world, picked[0], gear, why)) audio::playEffect(SFX_ITEM);
                             else if (!why.empty()) showNotice(why);
+                        } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && tradeOpen) {
+                            // During a trade a right-click puts the item in the trade, whatever it is
+                            requestTrade(false, picked[0], slot);
                         } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
                             const int item = inv->slots[slot].item;
                             const ItemDef* def = findItem(item);
@@ -2485,7 +2919,20 @@ int main(int, char**) {
                         const Entity npc = firstNeutral(world,
                             renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
                         if (npc != NULL_ENTITY) {
-                            dialogueUnit = npc;
+                            rightHold = false;
+                            // A selected unit already in talk range talks now; otherwise the selected units walk up
+                            // to the NPC, and the first to arrive starts the talk
+                            const std::vector<Entity> units = selectedUnits(world);
+                            Entity talker = NULL_ENTITY;
+                            for (Entity u : units) {
+                                if (gapBetween(world, u, npc) <= TALK_RANGE) {
+                                    talker = u;
+                                    break;
+                                }
+                            }
+                            if (talker != NULL_ENTITY) tryStartTalk(npc, talker, units);
+                            else if (units.empty()) showNotice("Select a unit to talk to them");
+                            else issueTalkOrder(world, units, npc);
                             break;
                         }
                         const Entity foe = firstRedUnit(world,
@@ -2524,6 +2971,26 @@ int main(int, char**) {
                 if (e.button.button == SDL_BUTTON_LEFT && settingsUi.dragRow >= 0) {
                     settingsUi.dragRow = -1;
                     saveSettingsFile();
+                }
+                // The trade: an NPC item let go over its side becomes a ghost there. A unit's item let go over your side
+                // does too, if it is the unit being traded with. Either way the drag ends with nothing moved.
+                if (e.button.button == SDL_BUTTON_LEFT && tradeOpen && dialogueUnit != NULL_ENTITY) {
+                    const float x = e.button.x, y = e.button.y;
+                    const TradeLayout tl = layoutTrade(winW, winH);
+                    if (tradeNpcDrag >= 0) {
+                        if (tl.theirBox.contains(x, y)) requestTrade(true, dialogueUnit, tradeNpcDrag);
+                        tradeNpcDrag = -1;
+                    }
+                    if (itemDrag && !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
+                        if (tl.yourBox.contains(x, y) && dragGear < 0) {
+                            if (dragUnit == dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
+                            else showNotice("You can only trade with the unit you are talking to.");
+                        }
+                        itemDrag = false;
+                        dragUnit = NULL_ENTITY;
+                        dragSlot = -1;
+                        dragGear = -1;
+                    }
                 }
                 if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
                     itemDrag = false;
@@ -2689,10 +3156,31 @@ int main(int, char**) {
             actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
         }
 
+        // Game messages written outside a fight (XP, pickups, drops) join the log every frame
+        flushQueuedLog(combatLog);
         cam.mapSize = (float)terrain.size();
 
         // ---- Game update: only while playing ----
-        if (screen == Screen::Playing) {
+        // The game stands still while a talk is open, and only End Dialogue starts it again
+        talkCooldown = std::max(0.0f, talkCooldown - dt);
+        // A talk order ends the first time one of its units is in talk range of its NPC
+        if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
+            Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
+            for (Entity u : world.view<TalkOrder>()) {
+                const Entity npcOf = world.get<TalkOrder>(u)->npc;
+                if (!world.has<Unit>(npcOf)) {
+                    clearTalkOrders(world);
+                    break;
+                }
+                if (gapBetween(world, u, npcOf) <= TALK_RANGE) {
+                    talkNpc = npcOf;
+                    talker = u;
+                    break;
+                }
+            }
+            if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {});
+        }
+        if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
             panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
             if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
             cam.updateClearance(terrain);
@@ -2825,6 +3313,11 @@ int main(int, char**) {
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
+            for (TradeLabel& l : tradeLabels) l.age += dt;
+            tradeLabels.erase(std::remove_if(tradeLabels.begin(), tradeLabels.end(),
+                                             [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),
+                              tradeLabels.end());
+            renderer.drawTradeLabels(tradeLabels, world, cam, winW, winH);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
                 renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
             }
@@ -2848,7 +3341,7 @@ int main(int, char**) {
                 // The combat log, bottom left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);
                 logOffset = cl.offset;
-                renderer.drawCombatLog(cl, combatLog);
+                renderer.drawCombatLog(cl, infoLines(combatLog, infoTab, logFilter), logFilter, mouseX, mouseY);
                 // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
                 // are only shown: the mouse handling never starts a drag or a menu on them.
                 const Entity shown = sidebarUnitOf(world);
@@ -2909,15 +3402,32 @@ int main(int, char**) {
             if (dialogueUnit != NULL_ENTITY) {
                 if (!world.has<Unit>(dialogueUnit)) {
                     dialogueUnit = NULL_ENTITY;
+                    dialogueConvo.clear();
+                    tradeOpen = false;
                 } else {
                     float mhx = 0.0f, mhy = 0.0f;
                     SDL_GetMouseState(&mhx, &mhy);
-                    const Name* nm = world.get<Name>(dialogueUnit);
-                    const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
-                    renderer.drawDialogue(layoutDialogue(winW, winH), nm ? nm->text : std::string("Unnamed Unit"),
-                                          dg ? dg->text : std::string(), mhx, mhy);
+                    if (dialogueUnit == NULL_ENTITY) quantity.open = false;
+                    if (tradeOpen) {
+                        const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
+                        renderer.drawTrade(layoutTrade(winW, winH), nameOf(world, dialogueUnit), npcInv, tradeNpc,
+                                           tradePlayer, tradeNpcDrag, checkTrade(world, dialogueUnit, dialoguePlayer), mhx, mhy);
+                        if (npcInv && tradeNpcDrag >= 0 && npcInv->slots[tradeNpcDrag].item != 0) {
+                            renderer.drawDraggedStack(mhx, mhy, npcInv->slots[tradeNpcDrag].item, npcInv->slots[tradeNpcDrag].count);
+                        }
+                        if (quantity.open) {
+                            renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,
+                                                        quantity.available, mhx, mhy);
+                        }
+                    } else {
+                        const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
+                        renderer.drawDialogue(dialogueBox(winW, winH), dialogueConvo,
+                                              dg ? dg->options : std::vector<DialogueOption>{}, mhx, mhy);
+                    }
                 }
             }
+            // The PAUSED bar, over everything in the game and its popouts, while the game stands still
+            if (paused || dialogueUnit != NULL_ENTITY) renderer.drawPauseBar(paused && dialogueUnit == NULL_ENTITY);
             renderer.endUi();
             }
             break;
@@ -3014,7 +3524,7 @@ int main(int, char**) {
             renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
             renderer.beginUi(winW, winH);
             dim(0.55f);
-            renderer.drawUiTextCentered("Paused", winW * 0.5f, winH * 0.22f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+            renderer.drawPauseBar(false);
             drawButtons(layoutButtons(Screen::Pause, winW, winH, saves));
             renderer.endUi();
             break;
@@ -3163,11 +3673,7 @@ int main(int, char**) {
     // ---- Shutdown ----
     audio::shutdown();
     renderer.shutdown();
-    TTF_CloseFont(statsRowFont);
-    TTF_CloseFont(statsTitleFont);
-    TTF_CloseFont(listFont);
-    TTF_CloseFont(uiFont);
-    TTF_CloseFont(hudFont);
+    closeUiFonts(fonts);
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);

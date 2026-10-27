@@ -34,6 +34,7 @@ struct GameSettings {
     // Interface
     int autosaveMinutes = 5;        // 0 for off
     bool showUnitNames = true;      // each unit's name over its head, in brackets
+    int fontScale = 100;            // text size as a percentage of the base sizes, 100 to 200 in steps of 5
 
     // Controls
     bool edgeScroll = false;
@@ -79,6 +80,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
+        else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
         else if (key == "musicOn")         s.musicOn = (val == "1");
@@ -106,6 +108,8 @@ inline GameSettings loadSettings(const std::string& path) {
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
+    s.fontScale = std::clamp(s.fontScale, 100, 200);
+    s.fontScale = 100 + 5 * ((s.fontScale - 100 + 2) / 5);
     return s;
 }
 
@@ -121,6 +125,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "fpsLimit=" << s.fpsLimit << "\n";
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
+    out << "fontScale=" << s.fontScale << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
     out << "musicVolume=" << s.musicVolume << "\n";
     out << "musicOn=" << (s.musicOn ? 1 : 0) << "\n";

@@ -99,6 +99,18 @@ RowSpec makeAction(RowId id, const std::string& label, const std::string& text) 
     return r;
 }
 
+// A slider from 100% to 200%, in steps of 5: the level 0 to 100 is the percentage above 100
+RowSpec makeScale(RowId id, const std::string& label, int percent) {
+    RowSpec r;
+    r.id = id;
+    r.kind = RowKind::Scale;
+    r.label = label;
+    r.current = std::clamp(percent - 100, 0, 100);
+    r.on = true;
+    r.text = std::to_string(100 + r.current) + "%";
+    return r;
+}
+
 RowSpec makeLevel(RowId id, const std::string& label, int level, bool on) {
     RowSpec r;
     r.id = id;
@@ -184,6 +196,7 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     }
     rows.push_back(makeDropdown(RowId::Autosave, "Autosave", saves, indexOfValue(saves, s.autosaveMinutes), true));
     rows.push_back(makeToggle(RowId::UnitNames, "Unit names", s.showUnitNames));
+    rows.push_back(makeScale(RowId::FontScale, "Font size", s.fontScale));
     rows.push_back(makeAction(RowId::ResetPanels, "Reset All UI Panels", "Reset"));
     return rows;
 }
@@ -259,7 +272,8 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
         case RowKind::Toggle:
             R.control = Rect{ colX, cy, std::min(colW, TOGGLE_W * u), ch };
             break;
-        case RowKind::Level: {
+        case RowKind::Level:
+        case RowKind::Scale: {
             const float btnW = LEVEL_BTN_W * u, txtW = LEVEL_TEXT_W * u, gap = LEVEL_GAP * u;
             R.toggle = Rect{ colX + colW - btnW, cy, btnW, ch };
             R.value = Rect{ R.toggle.x - gap - txtW, cy, txtW, ch };
@@ -329,6 +343,9 @@ SettingsClick hitSettings(const SettingsLayout& L, const std::vector<RowSpec>& r
             break;
         case RowKind::Toggle:
             if (r.enabled && R.control.contains(x, y)) return { ClickKind::ToggleRow, row, -1 };
+            break;
+        case RowKind::Scale:
+            if (R.control.contains(x, y)) return { ClickKind::LevelDrag, row, levelAtX(R.track, x) };
             break;
         case RowKind::Level:
             if (R.toggle.contains(x, y)) return { ClickKind::LevelToggle, row, -1 };
@@ -444,6 +461,16 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
 
 SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
     SettingsChange c;
+    if (id == RowId::FontScale) {
+        // Steps of 5 percent from 100 to 200: the level 0 to 100 snaps to the nearest step
+        const int pct = 100 + 5 * ((std::clamp(level, 0, 100) + 2) / 5);
+        if (s.fontScale != pct) {
+            s.fontScale = pct;
+            c.fonts = true;
+            c.any = true;
+        }
+        return c;
+    }
     const int v = std::clamp(level, 0, 100);
     switch (id) {
     case RowId::MusicLevel:
@@ -470,6 +497,7 @@ SettingsChange resetAllSettings(GameSettings& s) {
     SettingsChange c;
     c.display = true;
     c.vsync = true;
+    c.fonts = true;
     c.audio = true;
     c.any = true;
     return c;

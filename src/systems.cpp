@@ -160,6 +160,22 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
     for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 }
 
+// Stacks of loot an NPC carries when it spawns: a few random items, each stack a random count up to its stack limit
+constexpr int NPC_LOOT_MIN = 2;
+constexpr int NPC_LOOT_MAX = 5;
+
+Inventory randomNpcLoot(Rng& rng) {
+    Inventory inv;
+    const std::vector<ItemDef>& items = itemDatabase();
+    if (items.empty()) return inv;
+    const int stacks = rng.range(NPC_LOOT_MIN, NPC_LOOT_MAX);
+    for (int i = 0; i < stacks; ++i) {
+        const ItemDef& d = items[(size_t)rng.range(0, (int)items.size() - 1)];
+        addToInventory(inv, d.id, rng.range(1, std::max(1, stackLimit(d.id))));
+    }
+    return inv;
+}
+
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     const Vec2 spawn = findSpawn(t);
     // Read in the ground around the spawn, so the units and red units can stand on it
@@ -195,7 +211,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             w.add(e, Unit{ HOSTILE_WALK_SPEED });
             if (neutral) w.add(e, Neutral{});
             else w.add(e, Hostile{});
-            w.add(e, Inventory{});
+            w.add(e, randomNpcLoot(rng));
             w.add(e, Equipment{});
             w.add(e, Needs{});
             w.add(e, Behaviors{});
@@ -252,6 +268,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, clickPoint);
         return;
@@ -279,6 +296,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2
         w.remove<SoloMove>(units[i]);
         w.remove<PickupOrder>(units[i]);
         w.remove<AttackOrder>(units[i]);
+        w.remove<TalkOrder>(units[i]);
         w.add(units[i], SquadMember{ sq, (int)i });
     }
 
@@ -316,6 +334,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
         w.remove<SquadMember>(u);
         w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, target);
         w.add(u, PickupOrder{ item });
@@ -327,6 +346,7 @@ void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
         if (w.has<SquadMember>(u)) w.remove<SquadMember>(u);
         if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
         if (w.has<PickupOrder>(u)) w.remove<PickupOrder>(u);
         if (!w.has<SoloMove>(u)) w.add(u, SoloMove{});
         SoloMove* so = w.get<SoloMove>(u);
@@ -343,10 +363,29 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
+        w.remove<TalkOrder>(u);
         w.add(u, AttackOrder{ target });
         ensureCombat(w, u);
         w.get<Combat>(u)->target = target;
     }
+}
+
+// Right-click on an NPC: each selected unit walks up to it. The first in talk range starts the talk.
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc) {
+    if (!w.has<Unit>(npc) || !w.get<Transform>(npc)) return;
+    for (Entity u : units) {
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        w.remove<SquadMember>(u);
+        w.remove<SoloMove>(u);
+        w.remove<PickupOrder>(u);
+        w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
+        w.add(u, TalkOrder{ npc });
+    }
+}
+
+void clearTalkOrders(World& w) {
+    for (Entity u : w.view<TalkOrder>()) w.remove<TalkOrder>(u);
 }
 
 bool dropStack(World& w, Entity unit, int slot) {
@@ -357,6 +396,9 @@ bool dropStack(World& w, Entity unit, int slot) {
     ItemStack& s = inv->slots[slot];
     if (s.item == 0 || s.count <= 0) return false;
 
+    const ItemDef* def = findItem(s.item);
+    queueLog(nameOf(w, unit) + " drops " + std::to_string(s.count) + " " + (def ? def->name : std::string("an item")),
+             LogKind::Drop);
     Entity e = w.create();
     w.add(e, Transform{ tr->x, tr->y, tr->z });
     w.add(e, GroundItem{ s.item, s.count });
@@ -399,7 +441,12 @@ int pickupSystem(World& w) {
             // Take what fits. Whatever is left stays on the ground. If nothing fits the order ends,
             // and the unit stays where it is.
             const int count = gi->count;
+            const ItemDef* def = findItem(gi->item);
+            const std::string itemName = def ? def->name : std::string("an item");
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
+            if (left < count) {
+                queueLog(nameOf(w, u) + " picks up " + std::to_string(count - left) + " " + itemName, LogKind::Pickup);
+            }
             if (left == 0) w.destroy(item);
             else gi->count = left;
             if (w.has<Commandable>(u) && left < count) ++taken;
@@ -467,7 +514,13 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         Unit* u = w.get<Unit>(e);
 
         float tx = tr->x, tz = tr->z;   // default: stay put
-        if (SquadMember* sm = w.get<SquadMember>(e)) {
+        if (const TalkOrder* talk = w.get<TalkOrder>(e)) {
+            // A talk: walk at the NPC until a unit is in talk range, which starts the talk
+            if (const Transform* nt = w.get<Transform>(talk->npc)) {
+                tx = nt->x;
+                tz = nt->z;
+            }
+        } else if (SquadMember* sm = w.get<SquadMember>(e)) {
             if (Squad* sq = w.get<Squad>(sm->squad)) {
                 // Slots are centerd on the squad center, so the group's middle sits on
                 // the click point: columns across the heading, rows behind it.
@@ -576,9 +629,9 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             c->encumbrance = load;
         }
         if (moved > 0.0f) {
-            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved);
-            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt));
-            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0);
+            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved, "walking");
+            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), "carrying a load");
+            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0, "climbing");
             // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
             // a hundredth of a tile or less in a frame, is not walking.
             if (player && running && moved >= 0.01f) {
