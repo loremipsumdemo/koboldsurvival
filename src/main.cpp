@@ -1239,7 +1239,6 @@ int main(int, char**) {
     // The starting party: the units a new game begins with, edited in the party menu. It is rolled the
     // first time that menu opens, then kept for the session, so edits survive a trip back to the map list.
     Party party{};
-    bool partyRolled = false;
     PartyUi partyUi;
     MapChoice pendingMap;                 // the map picked, which starts once the party is confirmed
     Rng partyRng;
@@ -1386,7 +1385,9 @@ int main(int, char**) {
         clearCombatText();
         closePanel();
         currentMap = choice;
-        // The focus is clamped to the map, so the map's size has to be known before it is set
+        // A new game starts with the default camera, not the zoom and angle the last game was left at. The focus is
+        // clamped to the map, so the map's size has to be known before it is set.
+        cam = Camera{};
         cam.mapSize = (float)terrain.size();
         focusCameraOnFirstUnit(world, cam);
         primeStreaming(world, terrain, cam);
@@ -1401,12 +1402,10 @@ int main(int, char**) {
         screen = Screen::Playing;
     };
 
-    // Opens the party menu for a picked map. The party is rolled the first time, then kept.
+    // Opens the party menu for a picked map. A new party is rolled every time, so its names come from the language
+    // in use now.
     auto openParty = [&](const MapChoice& choice) {
-        if (!partyRolled) {
-            party = randomParty(partyRng);
-            partyRolled = true;
-        }
+        party = randomParty(partyRng);
         pendingMap = choice;
         partyUi = PartyUi{};
         backScreen = Screen::Title;
@@ -1468,6 +1467,8 @@ int main(int, char**) {
         levelSeed = d.seed;
         clearCombatText();
         gs = d.gs;
+        // Older saves have no camera, so they start from the default one, not the last game's view
+        cam = Camera{};
         cam.mapSize = (float)terrain.size();
         focusCameraOnFirstUnit(world, cam);
         applySaveCamera(d.cam, cam);
