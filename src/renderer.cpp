@@ -3227,7 +3227,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
     }
 
-    // Middle: the picked unit, large, with its name and totals under it
+    // Middle: the picked unit, large, with its name and totals under it. With no units, only the message.
+    if (p.empty()) {
+        drawUiTextCentered(fitText(lang("UILABEL_NEEDS_UNITS"), P.center.w - 24.0f * s, true), P.center.x + P.center.w * 0.5f,
+                           P.center.y + P.center.h * 0.5f, warn);
+        return;
+    }
     const float cw = P.center.w;
     drawUnitPicture(picked.sprite, Rect{ P.center.x + 20.0f * s, P.center.y + 20.0f * s, cw - 40.0f * s,
                                          P.center.h - 130.0f * s });

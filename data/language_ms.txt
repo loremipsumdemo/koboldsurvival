@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Perisai badan
 UILABEL_TYPE_ACCESSORY	Aksesori
 UILABEL_SLOT_EITHER_HAND	Mana-mana tangan
 UILABEL_SLOT_TWO_HAND	Dua tangan
+MISC_TRADE_CHANGE	Dagangan: {0}
+UILABEL_NEEDS_UNITS	Tambah sekurang-kurangnya satu unit untuk mula.

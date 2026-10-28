@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Πανοπλία
 UILABEL_TYPE_ACCESSORY	Εξάρτημα
 UILABEL_SLOT_EITHER_HAND	Οποιοδήποτε χέρι
 UILABEL_SLOT_TWO_HAND	Δίχειρο
+MISC_TRADE_CHANGE	Συναλλαγή: {0}
+UILABEL_NEEDS_UNITS	Προσθέστε τουλάχιστον μία μονάδα για να ξεκινήσετε.

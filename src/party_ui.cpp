@@ -26,10 +26,16 @@ std::string groupTitle(StatGroup g) {
 } // namespace
 
 const PartyMember& pickedMember(const Party& p, const PartyUi& ui) {
-    return p[pickedIndex(p, ui)];
+    static const PartyMember none{};   // with no units there is no picked unit; nothing is drawn from this
+    return p.empty() ? none : p[pickedIndex(p, ui)];
 }
 
 PartyMember& pickedMember(Party& p, const PartyUi& ui) {
+    static PartyMember none;   // thrown away: the party menu shows no unit controls when the party is empty
+    if (p.empty()) {
+        none = PartyMember{};
+        return none;
+    }
     return p[pickedIndex(p, ui)];
 }
 
@@ -92,6 +98,7 @@ PartyPanels partyPanels(int W, int H) {
 }
 
 std::string partyMessage(const Party& p) {
+    if (p.empty()) return std::string(lang("UILABEL_NEEDS_UNITS"));
     return partyNamesValid(p) ? std::string(lang("UILABEL_CONFIRM_STARTS"))
                               : std::string(lang("UILABEL_NEEDS_NAMES"));
 }
@@ -123,7 +130,8 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     out.push_back(Button{ lang("UILABEL_SHIFT_CLICK"), Rect{ P.left.x + 10.0f * s, hintY + 24.0f * s, P.left.w - 20.0f * s, 22.0f * s },
                           Action::PartyNote, false, 0 });
 
-    // Right column: the tabs, then the picked tab's contents
+    // Right column: the tabs, then the picked tab's contents. Only with a unit to pick.
+    if (!p.empty()) {
     const float inX = P.right.x + 14.0f * s, inW = P.right.w - 28.0f * s;
     const float tabH = 34.0f * s, tabGap = 6.0f * s;
     const float tabW = (inW - (PARTY_TAB_COUNT - 1) * tabGap) / PARTY_TAB_COUNT;
@@ -237,19 +245,20 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         break;
     }
     }
+    }
 
     // Bottom bar: Randomize all, Back, Confirm, and the line that says what Confirm needs
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
     out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
     out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
-    // Add and remove units: the party has up to PARTY_MAX_UNITS, and the starting units cannot be removed
+    // Add and remove units: the party has up to PARTY_MAX_UNITS, and any unit can be removed
     const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
     out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
                           (int)p.size() < PARTY_MAX_UNITS, 0 });
     out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
-                          (int)p.size() > START_UNIT_COUNT, 0 });
+                          !p.empty(), 0 });
     out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
-                          Action::PartyConfirm, partyNamesValid(p), 0 });
+                          Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
 

@@ -1581,7 +1581,11 @@ int main(int, char**) {
         if (c.display) applyVideo();
         else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
         if (c.audio) applyAudio();
-        if (c.language) applyLanguage();
+        if (c.language) {
+            applyLanguage();
+            // The party's names came from the old language, so the party is rolled again in the new one
+            party = randomParty(partyRng, (int)party.size());
+        }
         if (c.fonts || c.language) applyFontScale();
         if (save) saveSettingsFile();
     };
@@ -1803,8 +1807,8 @@ int main(int, char**) {
             }
             return;
         case Action::PartyRemoveUnit:
-            // The picked unit leaves the party, but the starting units stay
-            if ((int)party.size() > START_UNIT_COUNT) {
+            // The picked unit leaves the party. The party can be emptied, but a game needs at least one unit to start.
+            if (!party.empty()) {
                 const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
                 party.erase(party.begin() + picked);
                 partyUi.selected = std::clamp(picked, 0, (int)party.size() - 1);
@@ -1818,7 +1822,7 @@ int main(int, char**) {
             closeDropdown();
             return;
         case Action::PartyConfirm:
-            if (!partyNamesValid(party)) return;
+            if (party.empty() || !partyNamesValid(party)) return;
             stopNameEdit();
             closeDropdown();
             startMapLevel(pendingMap);
@@ -2688,9 +2692,12 @@ int main(int, char**) {
                                     tradeLabels.push_back(TradeLabel{ dialoguePlayer, lang("MISC_TRADE_FAILED"), 0.0f });
                                     endTalk();
                                 } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
-                                    const std::string label = "[Trade Value: " + std::to_string(tradeValueOf(tradePlayer)) + "]";
-                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, label, 0.0f });
-                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, label, 0.0f });
+                                    // Each side shows its own gain or loss: what it receives minus what it gives
+                                    const int theirGive = tradeValueOf(tradeNpc);
+                                    const int yourGive = tradeValueOf(tradePlayer);
+                                    auto signedValue = [](int v) { return (v > 0 ? "+" : "") + std::to_string(v); };
+                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, langf("MISC_TRADE_CHANGE", { signedValue(yourGive - theirGive) }), 0.0f });
+                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
                                     completeTrade(world, dialogueUnit, dialoguePlayer);
                                     endTalk();
                                     showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);

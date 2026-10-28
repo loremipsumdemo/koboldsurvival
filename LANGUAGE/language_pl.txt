@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Zbroja
 UILABEL_TYPE_ACCESSORY	Akcesorium
 UILABEL_SLOT_EITHER_HAND	Dowolna ręka
 UILABEL_SLOT_TWO_HAND	Dwuręczny
+MISC_TRADE_CHANGE	Handel: {0}
+UILABEL_NEEDS_UNITS	Dodaj co najmniej jedną jednostkę, aby zacząć.

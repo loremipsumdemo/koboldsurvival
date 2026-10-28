@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Броня
 UILABEL_TYPE_ACCESSORY	Аксессуар
 UILABEL_SLOT_EITHER_HAND	Любая рука
 UILABEL_SLOT_TWO_HAND	Двуручное
+MISC_TRADE_CHANGE	Обмен: {0}
+UILABEL_NEEDS_UNITS	Добавьте хотя бы одного юнита, чтобы начать.

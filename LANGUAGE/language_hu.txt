@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Páncél
 UILABEL_TYPE_ACCESSORY	Kiegészítő
 UILABEL_SLOT_EITHER_HAND	Bármelyik kéz
 UILABEL_SLOT_TWO_HAND	Kétkezes
+MISC_TRADE_CHANGE	Csere: {0}
+UILABEL_NEEDS_UNITS	Az indításhoz legalább egy egységet adj hozzá.

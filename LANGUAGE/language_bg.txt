@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Броня
 UILABEL_TYPE_ACCESSORY	Аксесоар
 UILABEL_SLOT_EITHER_HAND	Всяка ръка
 UILABEL_SLOT_TWO_HAND	Двуръчно
+MISC_TRADE_CHANGE	Търговия: {0}
+UILABEL_NEEDS_UNITS	Добавете поне една единица, за да започнете.

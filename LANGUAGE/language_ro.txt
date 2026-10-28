@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Armură
 UILABEL_TYPE_ACCESSORY	Accesoriu
 UILABEL_SLOT_EITHER_HAND	Oricare mână
 UILABEL_SLOT_TWO_HAND	Cu două mâini
+MISC_TRADE_CHANGE	Schimb: {0}
+UILABEL_NEEDS_UNITS	Adăugați cel puțin o unitate pentru a începe.

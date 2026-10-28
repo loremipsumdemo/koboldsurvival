@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Armure
 UILABEL_TYPE_ACCESSORY	Accessoire
 UILABEL_SLOT_EITHER_HAND	Une ou deux mains
 UILABEL_SLOT_TWO_HAND	À deux mains
+MISC_TRADE_CHANGE	Échange : {0}
+UILABEL_NEEDS_UNITS	Ajoutez au moins une unité pour commencer.

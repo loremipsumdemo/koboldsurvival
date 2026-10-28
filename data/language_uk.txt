@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Броня
 UILABEL_TYPE_ACCESSORY	Аксесуар
 UILABEL_SLOT_EITHER_HAND	Будь-яка рука
 UILABEL_SLOT_TWO_HAND	Двоєручна
+MISC_TRADE_CHANGE	Обмін: {0}
+UILABEL_NEEDS_UNITS	Додайте принаймні один загін, щоб почати.

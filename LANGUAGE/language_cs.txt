@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Zbroj
 UILABEL_TYPE_ACCESSORY	Doplněk
 UILABEL_SLOT_EITHER_HAND	Libovolná ruka
 UILABEL_SLOT_TWO_HAND	Obouruční
+MISC_TRADE_CHANGE	Obchod: {0}
+UILABEL_NEEDS_UNITS	Pro začátek přidejte alespoň jednu jednotku.

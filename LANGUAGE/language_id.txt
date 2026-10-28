@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	Baju zirah
 UILABEL_TYPE_ACCESSORY	Aksesori
 UILABEL_SLOT_EITHER_HAND	Tangan mana pun
 UILABEL_SLOT_TWO_HAND	Dua tangan
+MISC_TRADE_CHANGE	Perdagangan: {0}
+UILABEL_NEEDS_UNITS	Tambahkan setidaknya satu unit untuk memulai.

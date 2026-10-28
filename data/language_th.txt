@@ -552,3 +552,5 @@ UILABEL_TYPE_ARMOR	เกราะ
 UILABEL_TYPE_ACCESSORY	เครื่องประดับ
 UILABEL_SLOT_EITHER_HAND	มือข้างใดก็ได้
 UILABEL_SLOT_TWO_HAND	สองมือ
+MISC_TRADE_CHANGE	การค้า: {0}
+UILABEL_NEEDS_UNITS	เพิ่มอย่างน้อยหนึ่งหน่วยเพื่อเริ่มเกม
