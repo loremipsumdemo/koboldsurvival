@@ -4,6 +4,7 @@
 #include "display.h"
 #include "settings.h"
 #include "ui.h"
+#include "language.h"
 
 // The Settings screen: four tabs, each a list of rows. A row is a dropdown, an on/off toggle, a volume level
 // with an on/off button, or a line of text. Everything here is pure: the layout, the clicks and the changes
@@ -12,15 +13,16 @@
 
 class Renderer;
 
-enum class SettingsTab : int { Graphics = 0, Interface, Controls, Audio };
-inline constexpr int SETTINGS_TAB_COUNT = 4;
+enum class SettingsTab : int { Graphics = 0, Interface, Language, Controls, Audio };
+inline constexpr int SETTINGS_TAB_COUNT = 5;
 
-inline const char* settingsTabName(SettingsTab tab) {
+inline std::string settingsTabName(SettingsTab tab) {
     switch (tab) {
-    case SettingsTab::Graphics:  return "Graphics";
-    case SettingsTab::Interface: return "Interface";
-    case SettingsTab::Controls:  return "Controls";
-    case SettingsTab::Audio:     return "Audio";
+    case SettingsTab::Graphics:  return lang("UILABEL_GRAPHICS");
+    case SettingsTab::Interface: return lang("UILABEL_INTERFACE");
+    case SettingsTab::Language:  return lang("UILABEL_LANGUAGE_TAB");
+    case SettingsTab::Controls:  return lang("UILABEL_CONTROLS");
+    case SettingsTab::Audio:     return lang("UILABEL_AUDIO");
     }
     return "";
 }
@@ -28,7 +30,8 @@ inline const char* settingsTabName(SettingsTab tab) {
 // What a row changes
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
-    Autosave, UnitNames, FontScale, Language, Font, ResetPanels,  // Interface
+    Autosave, UnitNames, FontScale, ResetPanels,                // Interface
+    Language, Font,                                             // Language
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
     MusicLevel, AmbientLevel, EffectsLevel                      // Audio
 };
@@ -58,19 +61,19 @@ struct RowSpec {
 
 // The Controls tab's description of the game's controls. These match the input code in main.cpp.
 struct ControlNote {
-    const char* keys;
+    const char* keys;      // language keys, looked up when the tab is drawn
     const char* does;
 };
 inline constexpr ControlNote CONTROL_NOTES[] = {
-    { "W A S D, or the arrow keys", "Move the camera" },
-    { "Mouse wheel", "Zoom in and out" },
-    { "Hold middle mouse and drag", "Rotate the camera" },
-    { "Left click, or drag a box", "Select units" },
-    { "Shift or Alt with a click", "Add to the selection" },
-    { "Right click", "Move or attack with the selected units" },
-    { "Hold Alt", "Show the names of items on the ground" },
-    { "Esc", "Open the menu, or go back" },
-    { "F12", "Take a screenshot" },
+    { "CONTROL_KEYS_1", "CONTROL_DOES_1" },
+    { "CONTROL_KEYS_2", "CONTROL_DOES_2" },
+    { "CONTROL_KEYS_3", "CONTROL_DOES_3" },
+    { "CONTROL_KEYS_4", "CONTROL_DOES_4" },
+    { "CONTROL_KEYS_5", "CONTROL_DOES_5" },
+    { "CONTROL_KEYS_6", "CONTROL_DOES_6" },
+    { "CONTROL_KEYS_7", "CONTROL_DOES_7" },
+    { "CONTROL_KEYS_8", "CONTROL_DOES_8" },
+    { "CONTROL_KEYS_9", "CONTROL_DOES_9" },
 };
 inline constexpr int CONTROL_NOTE_COUNT = (int)(sizeof(CONTROL_NOTES) / sizeof(CONTROL_NOTES[0]));
 

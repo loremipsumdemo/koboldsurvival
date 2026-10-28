@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Română
+UILABEL_CONTINUE	Continuă
+UILABEL_NEW_GAME	Joc nou
+UILABEL_LOAD_GAME	Încarcă jocul
+UILABEL_SETTINGS	Setări
+UILABEL_LANGUAGE_BUTTON	Limbă ({0})
+UILABEL_QUIT	Ieșire
+UILABEL_RESUME	Reia
+UILABEL_SAVE_GAME	Salvează jocul
+UILABEL_RETURN_TO_TITLE	Înapoi la ecranul de titlu
+UILABEL_CLOSE	Închide
+UILABEL_BACK	Înapoi
+UILABEL_SAVE	Salvează
+UILABEL_DELETE	Șterge
+UILABEL_CANCEL	Anulează
+UILABEL_CONFIRM	Confirmă
+UILABEL_YES	Da
+UILABEL_NO	Nu
+UILABEL_NAME	Nume
+UILABEL_TIME	Timp
+UILABEL_CREATED	Creat
+UILABEL_TYPE	Tip
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUAL
+UILABEL_NO_SAVES	Nicio salvare încă
+UILABEL_UNSAVED_WARNING	Progresul nesalvat din acest joc se va pierde.
+UILABEL_HOLD_DELETE	Ține apăsat Șterge timp de 3 secunde pentru a confirma.
+UILABEL_CLICK_SAVE	Fă clic pe o salvare pentru a o încărca
+UILABEL_CLICK_MAP	Fă clic pe o hartă pentru a începe un joc nou
+UILABEL_NO_MAPS	Nu s-au găsit hărți. Creează una cu worldgen.py.
+UILABEL_BUILT_IN	INCLUSĂ
+UILABEL_WORLD	LUME
+UILABEL_MAP_FILE	FIȘIER HARTĂ
+UILABEL_BUILT_IN_WHEN	inclusă
+UILABEL_UNKNOWN	necunoscut
+UILABEL_ON	Pornit
+UILABEL_OFF	Oprit
+UILABEL_EMPTY	Gol
+UILABEL_NONE_AVAILABLE	Niciunul disponibil
+UILABEL_TWO_HANDED	Cu două mâini
+UILABEL_WILL_BE_REPLACED	Va fi înlocuit
+UILABEL_GRAPHICS	Grafică
+UILABEL_INTERFACE	Interfață
+UILABEL_LANGUAGE_TAB	Limbă
+UILABEL_CONTROLS	Comenzi
+UILABEL_AUDIO	Audio
+UILABEL_DISPLAY_MODE	Mod de afișare
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Rezoluție
+UILABEL_REFRESH_RATE	Rată de reîmprospătare
+UILABEL_DEFAULT	Implicit
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Limită de cadre pe secundă
+UILABEL_UNLIMITED	Nelimitat
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Salvare automată
+UILABEL_MINUTE	1 minut
+UILABEL_MINUTES	{0} minute
+UILABEL_UNIT_NAMES	Nume unități
+UILABEL_FONT_SIZE	Dimensiune font
+UILABEL_RESET_PANELS	Resetează toate panourile UI
+UILABEL_RESET	Resetează
+UILABEL_FONT	Font
+UILABEL_FONT_AUTOMATIC	Automat
+UILABEL_EDGE_SCROLL	Derulare la margini
+UILABEL_MUSIC	Muzică
+UILABEL_AMBIENT	Ambient
+UILABEL_SOUND_EFFECTS	Efecte sonore
+UILABEL_RESTORE_DEFAULTS	Restabilește implicitele
+UILABEL_WINDOWED	În fereastră
+UILABEL_BORDERLESS	Fără margini
+UILABEL_FULL_SCREEN	Ecran complet
+CONTROL_KEYS_1	W A S D, sau tastele săgeți
+CONTROL_DOES_1	Mută camera
+CONTROL_KEYS_2	Rotița mouse-ului
+CONTROL_DOES_2	Mărește și micșorează
+CONTROL_KEYS_3	Ține apăsat butonul din mijloc și trage
+CONTROL_DOES_3	Rotește camera
+CONTROL_KEYS_4	Clic stânga, sau trage un dreptunghi
+CONTROL_DOES_4	Selectează unități
+CONTROL_KEYS_5	Shift sau Alt cu un clic
+CONTROL_DOES_5	Adaugă la selecție
+CONTROL_KEYS_6	Clic dreapta
+CONTROL_DOES_6	Mută sau atacă cu unitățile selectate
+CONTROL_KEYS_7	Ține apăsat Alt
+CONTROL_DOES_7	Afișează numele obiectelor de pe jos
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Deschide meniul sau revine înapoi
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Fă o captură de ecran
+UILABEL_PAUSED	ÎN PAUZĂ
+UILABEL_PACE_RUN	Ritm: alergare
+UILABEL_PACE_WALK	Ritm: mers
+UILABEL_SQUAD_PANEL	Panou echipă
+UILABEL_UNIT_PANEL	Panou unitate
+UILABEL_INFORMATION_PANEL	Panou de informații
+UILABEL_INTERACTION_PANEL	Panou de interacțiune
+UILABEL_TRADE_PANEL	Panou de comerț
+UILABEL_INVENTORY	Inventar
+UILABEL_EQUIPMENT	Echipament
+UILABEL_BEHAVIOR	Comportament
+UILABEL_TRADE	Comerț
+UILABEL_END_DIALOGUE	Încheie dialogul
+UILABEL_TRADE_DROP_THEIRS	Trage aici sau fă clic dreapta pentru a adăuga obiecte din inventarul lor
+UILABEL_TRADE_DROP_YOURS	Trage aici sau fă clic dreapta pentru a adăuga obiectele tale din inventar
+UILABEL_SINGLE	Unic
+UILABEL_MAX	Max
+UILABEL_SORT	Sortează
+UILABEL_WORLD_MAP_HINT	Harta lumii. Derulează pentru zoom. Apasă M sau Esc pentru a închide.
+UILABEL_NO_UNIT_SELECTED	Nicio unitate selectată
+UILABEL_UNNAMED_UNIT	Unitate fără nume
+UILABEL_NO_NAME	Fără nume
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Statistici
+UILABEL_CLICK_TO_TYPE	Fă clic pentru a scrie un nume
+UILABEL_SPRITE	Sprite
+UILABEL_STARTING_PARTY	Echipa de start: {0}
+UILABEL_HEALTH	Sănătate
+UILABEL_HUNGER	Foame
+UILABEL_CARRY	Capacitate de transport
+UILABEL_NEXT_LEVEL_XP_LINE	XP până la nivelul următor: {0}
+UILABEL_STAT	Statistică
+UILABEL_LEVEL	Nivel
+UILABEL_TOTAL_XP	XP total
+UILABEL_TO_NEXT	Până la următorul
+UILABEL_ATTRIBUTES	Atribute
+UILABEL_COMBAT	Luptă
+UILABEL_RESOURCE_GATHERING	Culegere de resurse
+UILABEL_CRAFTING	Meșteșuguri
+UILABEL_UTILITY	Utilitare
+UILABEL_GEAR	Echipament
+UILABEL_ITEMS	Obiecte
+UILABEL_IDENTITY	Identitate
+UILABEL_RANDOMIZE_UNIT	Randomizează această unitate
+UILABEL_RANDOMIZE_ALL	Randomizează tot
+UILABEL_ADD_UNIT	Adaugă unitate
+UILABEL_REMOVE_UNIT	Elimină unitatea
+UILABEL_CONFIRM_STARTS	Confirmă pornește jocul cu această echipă.
+UILABEL_NEEDS_NAMES	Fiecare unitate trebuie să aibă un nume înainte de a începe jocul.
+UILABEL_CLICK_UNIT_EDIT	Fă clic pe o unitate pentru a o edita.
+UILABEL_SHIFT_CLICK	Shift + clic modifică o statistică cu 10.
+UILABEL_LEVELS_HINT	Nivelurile merg de la 1 la 99.
+UILABEL_CLICK_SLOT	Fă clic pe un loc pentru a alege obiectul. Sunt listate doar obiectele care încap.
+UILABEL_CLICK_SLOT_STACK	Fă clic pe un loc pentru a alege obiectul. Stivele țin până la limita obiectului.
+UILABEL_SCROLL_UP	Derulează în sus
+UILABEL_SCROLL_DOWN	Derulează în jos
+UILABEL_SLOT_HEAD	Cap
+UILABEL_SLOT_TORSO	Trunchi
+UILABEL_SLOT_MAIN_HAND	Mâna principală
+UILABEL_SLOT_OFF_HAND	Mâna secundară
+UILABEL_SLOT_LEGS	Picioare
+UILABEL_SLOT_FEET	Tălpi
+UILABEL_SLOT_ACCESSORY	Accesoriu
+UILABEL_BEHAVIOR_ON	Pornit
+UILABEL_TARGET	Țintă
+UILABEL_CONDITION	Condiție
+UILABEL_ACTION	Acțiune
+UILABEL_COMBAT_MESSAGES	Mesaje de luptă
+UILABEL_SEEN	Văzut
+UILABEL_HIT	Lovit
+UILABEL_MISS	Ratat
+UILABEL_DAMAGE	Daune
+UILABEL_EXPERIENCE_MESSAGES	Mesaje de experiență
+UILABEL_EXPERIENCE	Experiență
+UILABEL_ITEM_MESSAGES	Mesaje despre obiecte
+UILABEL_PICKUP	Ridicare
+UILABEL_DROP	Aruncare
+UILABEL_LOOT	Pradă
+UILABEL_USE	Folosește
+UILABEL_MESSAGE	Mesaj
+UILABEL_GAME	Joc
+UILABEL_FILTER	Filtru
+UILABEL_STAT_HEAD_STAT	Statistică
+UILABEL_UNKNOWN_SLOT	Necunoscut
+UILABEL_MONTH_NAME	Luna {0}
+UILABEL_STRENGTH_STAT	Forță
+MISC_GAME_SAVED	Joc salvat
+MISC_SAVE_FAILED	Nu s-a putut salva jocul
+MISC_READ_FAILED	Nu s-a putut citi acea salvare
+MISC_SAVE_OLD	Această salvare e din perioada dinaintea hărților și nu poate fi încărcată
+MISC_AUTOSAVED	Salvat automat
+MISC_SCREENSHOT_FAILED	Nu s-a putut salva captura de ecran
+MISC_SCREENSHOT_SAVED	{0} salvat
+MISC_TRADE_FULL	Schimbul este plin
+MISC_TRADE_ALREADY	Acel obiect este deja în schimb, sau schimbul este plin.
+MISC_TRADE_NO_MORE	Nu mai există acel obiect pentru schimb
+MISC_NO_UNIT_TO_TRADE	Nicio unitate cu care să faci schimb
+MISC_TRADE_ADD_BOTH	Adaugă obiecte pe ambele părți
+MISC_TRADE_NO_ROOM_YOURS	Unitatea ta nu are loc pentru obiectele lor
+MISC_TRADE_NO_ROOM_THEIRS	Ei nu au loc pentru obiectele tale
+MISC_TRADE_FAILED	Schimbul a eșuat
+MISC_TRADE_COMPLETE	Schimb finalizat.
+MISC_PICKUP_SELECT	Selectează unitățile care vor ridica obiectul
+MISC_TALK_SELECT	Selectează o unitate cu care să vorbești
+MISC_TRADE_ONLY_TALKING	Poți face schimb doar cu unitatea cu care vorbești.
+MISC_DROPS	{0} aruncă {1} {2}
+MISC_AN_ITEM	un obiect
+MISC_UNIT	Unitate
+MISC_TWO_HANDED_IN_MAIN	O armă cu două mâini este în mâna principală
+MISC_YOU	Tu
+MISC_UNKNOWN_ITEM	Obiect necunoscut
+MISC_ITEM_FALLBACK	Obiect
+MISC_THAT_ITEM	Acela
+MISC_REASON_FEES	plata taxelor de comerț
+MISC_REASON_WALKING	mers
+MISC_REASON_CARRYING	purtarea unei încărcături
+MISC_REASON_CLIMBING	cățărare
+MISC_REASON_SWINGING	lovituri
+MISC_REASON_DODGING	eschivare
+MISC_REASON_DEALING	cauzarea de daune
+MISC_REASON_TAKING	primirea de daune
+MISC_REASON_BLOCKING	blocare
+MISC_REASON_SPOTTING	zărirea unui inamic
+MISC_REASON_UNNOTICED	rămânerea nedetectat
+MISC_REASON_GEAR	schimbarea echipamentului
+NPC_GREETING	Salut, lume.
+NPC_OPTION_WARES	Arată-mi marfa ta.
+NPC_OPTION_QUEST	Ce mai poți să-mi spui despre misiune?
+MISC_ORD_1	Primul
+MISC_ORD_2	Al doilea
+MISC_ORD_3	Al treilea
+MISC_ORD_4	Al patrulea
+MISC_ORD_5	Al cincilea
+MISC_ORD_6	Al șaselea
+MISC_ORD_7	Al șaptelea
+MISC_ORD_8	Al optulea
+MISC_ORD_9	Al nouălea
+MISC_ORD_10	Al zecelea
+MISC_ORD_11	Al unsprezecelea
+MISC_ORD_12	Al doisprezecelea
+MISC_SKY_DAY_ZENITH	Zenit de zi
+MISC_SKY_DAY_HORIZON	Orizont de zi
+MISC_SKY_NIGHT_ZENITH	Zenit de noapte
+MISC_SKY_NIGHT_HORIZON	Orizont de noapte
+MISC_SKY_DUSK_HORIZON	Orizont de amurg
+MISC_SKY_DUSK_SUN	Soare de amurg
+MISC_SKY_SUN	Soare
+MISC_SKY_MOON	Lună
+MISC_TARGET_SELF	Sine
+MISC_TARGET_ALLY	Aliat
+MISC_TARGET_ENEMY	Inamic
+MISC_COND_HEALTH	Sănătate
+MISC_COND_HUNGER	Foame
+MISC_ACT_HEAL	Folosește un obiect de vindecare
+MISC_ACT_FOOD	Consumă un aliment
+UILABEL_STAT_DESC_STRENGTH	Daune corp la corp, capacitate de transport
+UILABEL_STAT_DESC_DEXTERITY	Viteza atacului
+UILABEL_STAT_DESC_VITALITY	Sănătate maximă
+UILABEL_STAT_DESC_ENDURANCE	Energie maximă
+UILABEL_STAT_DESC_AGILITY	Șansa de a evita lovitura
+UILABEL_STAT_DESC_INTELLIGENCE	Rezerva de mană
+UILABEL_STAT_DESC_WISDOM	Numărul de vrăji care pot fi învățate
+UILABEL_STAT_DESC_CHARISMA	Prețurile comercianților, opțiuni de dialog unice
+UILABEL_STAT_DESC_PERCEPTION	Raza de detectare
+UILABEL_STAT_DESC_ATHLETICS	Viteza de alergare
+UILABEL_STAT_DESC_STEALTH	Mai bun la evitarea detectării în timpul furișării
+UILABEL_STAT_DESC_MELEE	Precizia în luptă corp la corp
+UILABEL_STAT_DESC_PROJECTILES	Precizia la distanță
+UILABEL_STAT_DESC_ARCANE	Puterea vrăjilor
+UILABEL_STAT_DESC_BLOCK	Șansa de a bloca sau de a para
+UILABEL_STAT_DESC_MINING	Randamentul minereului
+UILABEL_STAT_DESC_HERBALISM	Randamentul culegerii de plante sălbatice
+UILABEL_STAT_DESC_WOODCUTTING	Randamentul lemnului
+UILABEL_STAT_DESC_SKINNING	Randamentul pieilor și cărnii
+UILABEL_STAT_DESC_FARMING	Randamentul culturilor
+UILABEL_STAT_DESC_COOKING	Puterea bonusurilor de hrană
+UILABEL_STAT_DESC_SMELTING	Randamentul topirii minereului
+UILABEL_STAT_DESC_FORGING	Prelucrarea metalului
+UILABEL_STAT_DESC_CARPENTRY	Prelucrarea lemnului
+UILABEL_STAT_DESC_STONEWORKING	Prelucrarea pietrei
+UILABEL_STAT_DESC_LOCKPICKING	Dificultatea încuietorilor
+UILABEL_STAT_DESC_THIEVERY	Succesul furtului
+UILABEL_STAT_DESC_MEDICAL	Eficiența vindecării
+UILABEL_DEXTERITY_STAT	Dexteritate
+UILABEL_VITALITY_STAT	Vitalitate
+UILABEL_ENDURANCE_STAT	Anduranță
+UILABEL_AGILITY_STAT	Agilitate
+UILABEL_INTELLIGENCE_STAT	Inteligență
+UILABEL_WISDOM_STAT	Înțelepciune
+UILABEL_CHARISMA_STAT	Charismă
+UILABEL_PERCEPTION_STAT	Percepție
+UILABEL_ATHLETICS_STAT	Atletism
+UILABEL_STEALTH_STAT	Furiș
+UILABEL_MELEE_STAT	Corp la corp
+UILABEL_PROJECTILES_STAT	Proiectile
+UILABEL_ARCANE_STAT	Arcane
+UILABEL_BLOCK_STAT	Blocare
+UILABEL_MINING_STAT	Minerit
+UILABEL_HERBALISM_STAT	Ierboristică
+UILABEL_WOODCUTTING_STAT	Tăiere de lemne
+UILABEL_SKINNING_STAT	Jupuire
+UILABEL_FARMING_STAT	Agricultură
+UILABEL_COOKING_STAT	Gătit
+UILABEL_SMELTING_STAT	Topire
+UILABEL_FORGING_STAT	Făurărie
+UILABEL_CARPENTRY_STAT	Tâmplărie
+UILABEL_STONEWORKING_STAT	Prelucrarea pietrei
+UILABEL_LOCKPICKING_STAT	Deschiderea lacătelor
+UILABEL_THIEVERY_STAT	Furt
+UILABEL_MEDICAL_STAT	Medicină
+MISC_CANT_BE_WORN	{0} nu poate fi purtat
+MISC_ITEM_NAME_FORMAT	{1} de {0}
+MISC_MATERIAL_IRON	fier
+MISC_MATERIAL_STEEL	oțel
+MISC_MATERIAL_BRONZE	bronz
+MISC_MATERIAL_SILVER	argint
+MISC_MATERIAL_LEATHER	piele
+MISC_MATERIAL_BONE	os
+MISC_MATERIAL_WOOD	lemn
+MISC_NEED_MORE_VALUE	Mai au nevoie de {0} în valoare
+MISC_TRADE_READY_FEE	Gata. Taxa de comerț: {0}
+MISC_LOAD_FAILED	Nu s-a putut încărca {0}: {1}
+MISC_MAP_MISSING	Lipsește harta pentru "{0}"
+MISC_MAP_LOAD_FAILED	Harta "{0}" nu s-a putut încărca: {1}
+MISC_LOADED	S-a încărcat {0}
+MISC_DELETE_FAILED	Nu s-a putut șterge "{0}"
+MISC_DELETED	S-a șters "{0}"
+MISC_USED	Folosit: {0}
+MISC_OVERWRITE_Q	Suprascrii "{0}"?
+MISC_LOAD_Q	Încarci "{0}"?
+MISC_DELETE_Q	Ștergi "{0}"?
+MISC_NOT_FIT_SLOT	{0} nu încape în locul {1}
+MISC_EMPTY_OFF_HAND	Golește mâna secundară înainte de a ține {0}
+MISC_NO_ROOM_INV	Nu este loc în inventar pentru {0}
+MISC_SLOT_HOLDS	Acel loc conține deja {0}
+UILABEL_TIP_TYPE	Tip: {0}
+UILABEL_TIP_MATERIAL	Material: {0}
+UILABEL_TIP_SLOT	Loc: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Nivel necesar: {0}
+UILABEL_TIP_ATTACK	Atac {0}
+UILABEL_TIP_DEFENSE	Apărare {0}
+UILABEL_TIP_WEIGHT	Greutate {0}
+UILABEL_TIP_EACH	 bucata
+UILABEL_TIP_STACKS	Se stivuiește până la {0}
+UILABEL_TIP_BUY	Preț de cumpărare: {0}
+UILABEL_TIP_SELL	Preț de vânzare: {0}
+UILABEL_TIP_USE	Folosire: {0}
+UILABEL_TOTAL_VALUE	Valoare totală: {0}
+UILABEL_CHOOSE_HOW_MANY	Alege câte: {0} ({1} disponibile)
+UILABEL_TIP_LEVEL	Nivel: {0}
+UILABEL_TIP_PROGRESS	Progres: {0}%
+UILABEL_TIP_CURRENT_XP	XP curent: {0}
+UILABEL_ATTACK_DEFENSE	Atac {0}      Apărare {1}
+UILABEL_STATS_CAPTION	Statistici: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Loc {0}: {1}
+UILABEL_SLOT_N_EMPTY	Loc {0}: gol
+UILABEL_COUNT	Număr {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Atac {0}    Apărare {1}    Capacitate {2}
+MISC_IS_DOWN	{0} a căzut
+MISC_PICKS_UP	{0} ridică {1} {2}
+MISC_CANNOT_READ	Nu s-a putut citi {0}
+UILABEL_TIP_DURABILITY	Durabilitate {0} / {1}
+UILABEL_DATE_LINE	ZIUA {0} · {1} · ANUL {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} câștigă {1} {2} XP pentru {3}
+UILABEL_PAUSE_HINT	(Apasă bara de spațiu pentru a continua.)
+MISC_DRINKS	{0} bea {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	E
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	V
+ITEM_1_NAME	Minereu de fier
+ITEM_1_DESC	Minereu brut care poate fi topit în lingouri de fier.
+ITEM_2_NAME	Buștean de stejar
+ITEM_2_DESC	Un buștean rezistent folosit la meșteșuguri și construcții.
+ITEM_3_NAME	Plantă vindecătoare
+ITEM_3_DESC	O plantă obișnuită cu proprietăți reparatoare ușoare.
+ITEM_4_NAME	Monedă de aur
+ITEM_4_DESC	Moneda standard a regatului.
+ITEM_5_NAME	Blană de lup
+ITEM_5_DESC	O blană aspră luată de la un lup ucis. Căutată de cojocari.
+ITEM_6_NAME	Relicvă veche
+ITEM_6_DESC	Un artefact misterios care vibrează ușor de energie.
+ITEM_7_NAME	Poțiune de sănătate
+ITEM_7_DESC	Restabilește 50 de sănătate când este consumată.
+ITEM_8_NAME	Poțiune de mană
+ITEM_8_DESC	Restabilește 50 de mană când este consumată.
+ITEM_9_NAME	Băutură de energie
+ITEM_9_DESC	Restabilește 40 de anduranță și accelerează scurt regenerarea.
+ITEM_10_NAME	Elixir al puterii
+ITEM_10_DESC	Oferă +10 atac timp de 60 de secunde.
+ITEM_11_NAME	Pâine
+ITEM_11_DESC	Hrană simplă de drum. Restabilește 15 sănătate.
+ITEM_12_NAME	Antidot
+ITEM_12_DESC	Vindecă otrăvirea și reduce daunele de otravă timp de 30 de secunde.
+ITEM_13_NAME	Măr
+ITEM_13_DESC	Restabilește 8 foame când este mâncat.
+ITEM_14_NAME	Fructe de pădure
+ITEM_14_DESC	Restabilesc 6 foame când sunt mâncate.
+ITEM_15_NAME	Biscuit tare
+ITEM_15_DESC	Restabilește 12 foame când este mâncat.
+ITEM_16_NAME	Bucată de brânză
+ITEM_16_DESC	Restabilește 15 foame când este mâncată.
+ITEM_17_NAME	Pește afumat
+ITEM_17_DESC	Restabilește 20 de foame când este mâncat.
+ITEM_18_NAME	Prăjitură cu miere
+ITEM_18_DESC	Restabilește 18 foame când este mâncată.
+ITEM_19_NAME	Plăcintă cu berbec
+ITEM_19_DESC	Restabilește 26 de foame când este mâncată.
+ITEM_20_NAME	Bol cu tocăniță
+ITEM_20_DESC	Restabilește 30 de foame când este mâncat.
+ITEM_21_NAME	Pulpă de mistreț friptă
+ITEM_21_DESC	Restabilește 40 de foame când este mâncată.
+ITEM_22_NAME	Rație de drum
+ITEM_22_DESC	Restabilește 50 de foame când este mâncată.
+ITEM_23_NAME	Șapcă
+ITEM_23_DESC	Protejează capul.
+ITEM_24_NAME	Glugă
+ITEM_24_DESC	Protejează capul.
+ITEM_25_NAME	Coif de zale
+ITEM_25_DESC	Protejează capul.
+ITEM_26_NAME	Coif
+ITEM_26_DESC	Protejează capul.
+ITEM_27_NAME	Vizieră
+ITEM_27_DESC	Protejează capul.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Protejează capul.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Protejează capul.
+ITEM_30_NAME	Coif mare
+ITEM_30_DESC	Protejează capul.
+ITEM_31_NAME	Cerc de cap
+ITEM_31_DESC	Protejează capul.
+ITEM_32_NAME	Coroană
+ITEM_32_DESC	Protejează capul.
+ITEM_33_NAME	Tunică
+ITEM_33_DESC	Acoperă pieptul și corpul.
+ITEM_34_NAME	Vestă de piele
+ITEM_34_DESC	Acoperă pieptul și corpul.
+ITEM_35_NAME	Vestă lamelară
+ITEM_35_DESC	Acoperă pieptul și corpul.
+ITEM_36_NAME	Brigandină
+ITEM_36_DESC	Acoperă pieptul și corpul.
+ITEM_37_NAME	Zale
+ITEM_37_DESC	Acoperă pieptul și corpul.
+ITEM_38_NAME	Plastron
+ITEM_38_DESC	Acoperă pieptul și corpul.
+ITEM_39_NAME	Cuirasă
+ITEM_39_DESC	Acoperă pieptul și corpul.
+ITEM_40_NAME	Armură de piept
+ITEM_40_DESC	Acoperă pieptul și corpul.
+ITEM_41_NAME	Armură completă din plăci
+ITEM_41_DESC	Acoperă pieptul și corpul.
+ITEM_42_NAME	Armură ceremonială
+ITEM_42_DESC	Acoperă pieptul și corpul.
+ITEM_43_NAME	Pantaloni de călărie
+ITEM_43_DESC	Acoperă picioarele.
+ITEM_44_NAME	Pantaloni
+ITEM_44_DESC	Acoperă picioarele.
+ITEM_45_NAME	Jambiere
+ITEM_45_DESC	Acoperă picioarele.
+ITEM_46_NAME	Pantaloni de zale
+ITEM_46_DESC	Acoperă picioarele.
+ITEM_47_NAME	Protecții de coapsă
+ITEM_47_DESC	Acoperă picioarele.
+ITEM_48_NAME	Cuisse
+ITEM_48_DESC	Acoperă picioarele.
+ITEM_49_NAME	Jambiere de metal
+ITEM_49_DESC	Acoperă picioarele.
+ITEM_50_NAME	Pantaloni din plăci
+ITEM_50_DESC	Acoperă picioarele.
+ITEM_51_NAME	Jambiere de zale
+ITEM_51_DESC	Acoperă picioarele.
+ITEM_52_NAME	Jambiere aurite
+ITEM_52_DESC	Acoperă picioarele.
+ITEM_53_NAME	Sandale
+ITEM_53_DESC	Protejează tălpile.
+ITEM_54_NAME	Pantofi
+ITEM_54_DESC	Protejează tălpile.
+ITEM_55_NAME	Cizme
+ITEM_55_DESC	Protejează tălpile.
+ITEM_56_NAME	Cizme de călărie
+ITEM_56_DESC	Protejează tălpile.
+ITEM_57_NAME	Cizme cu cuie
+ITEM_57_DESC	Protejează tălpile.
+ITEM_58_NAME	Bandaje pentru picioare
+ITEM_58_DESC	Protejează tălpile.
+ITEM_59_NAME	Cizme de marș
+ITEM_59_DESC	Protejează tălpile.
+ITEM_60_NAME	Sabatoane
+ITEM_60_DESC	Protejează tălpile.
+ITEM_61_NAME	Solerete
+ITEM_61_DESC	Protejează tălpile.
+ITEM_62_NAME	Cizme de luptă
+ITEM_62_DESC	Protejează tălpile.
+ITEM_63_NAME	Panglică
+ITEM_63_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_64_NAME	Amuletă
+ITEM_64_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_65_NAME	Brățară
+ITEM_65_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_66_NAME	Broșă
+ITEM_66_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_67_NAME	Inel
+ITEM_67_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_68_NAME	Colier
+ITEM_68_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_69_NAME	Pandantiv
+ITEM_69_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_71_NAME	Torques
+ITEM_71_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_72_NAME	Mantie
+ITEM_72_DESC	Un mic ornament uzat. Pot fi purtate două deodată.
+ITEM_73_NAME	Sabie scurtă
+ITEM_73_DESC	Ținută în mâna principală.
+ITEM_74_NAME	Sabie lungă
+ITEM_74_DESC	Ținută în mâna principală.
+ITEM_75_NAME	Topor
+ITEM_75_DESC	Ținut în mâna principală.
+ITEM_76_NAME	Ciomag
+ITEM_76_DESC	Ținut în mâna principală.
+ITEM_77_NAME	Ciomag cu lanț
+ITEM_77_DESC	Ținut în mâna principală.
+ITEM_78_NAME	Floretă
+ITEM_78_DESC	Ținută în mâna principală.
+ITEM_79_NAME	Pumnal
+ITEM_79_DESC	Ținut într-una din mâini. Se potrivește în mâna principală sau în cea secundară.
+ITEM_80_NAME	Cuțit
+ITEM_80_DESC	Ținut într-una din mâini. Se potrivește în mâna principală sau în cea secundară.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Ținut într-una din mâini. Se potrivește în mâna principală sau în cea secundară.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Ținut în mâna secundară. Blochează loviturile.
+ITEM_83_NAME	Scut zmeu
+ITEM_83_DESC	Ținut în mâna secundară. Blochează loviturile.
+ITEM_84_NAME	Scut turn
+ITEM_84_DESC	Ținut în mâna secundară. Blochează loviturile.
+ITEM_85_NAME	Sabie cu două mâini
+ITEM_85_DESC	Necesită ambele mâini. Mâna secundară trebuie să fie goală.
+ITEM_86_NAME	Ciocan de război
+ITEM_86_DESC	Necesită ambele mâini. Mâna secundară trebuie să fie goală.
+ITEM_87_NAME	Secure de luptă
+ITEM_87_DESC	Necesită ambele mâini. Mâna secundară trebuie să fie goală.
+UILABEL_UI_SCALE	Scara interfeței
+NAME_MASCULINE	["Andrei", "Mihai", "Radu", "Vlad", "Ionuț"]
+NAME_FEMININE	["Ioana", "Maria", "Elena", "Corina", "Andreea"]
+NAME_ANDROGYNOUS	["Alex", "Sasha", "Dani", "Ariel", "Noa"]
+UILABEL_BODY_TYPE	Tip de corp
+UILABEL_BODY_MASCULINE	Masculin
+UILABEL_BODY_FEMININE	Feminin
+UILABEL_BODY_ANDROGYNOUS	Androgin
+UILABEL_TYPE_ITEM	Obiect
+UILABEL_TYPE_CONSUMABLE	Consumabil
+UILABEL_TYPE_WEAPON	Armă
+UILABEL_TYPE_ARMOR	Armură
+UILABEL_TYPE_ACCESSORY	Accesoriu
+UILABEL_SLOT_EITHER_HAND	Oricare mână
+UILABEL_SLOT_TWO_HAND	Cu două mâini

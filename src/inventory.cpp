@@ -70,7 +70,7 @@ int typeRank(const std::string& typeId) {
 void sortInventoryByType(Inventory& inv) {
     auto key = [](const ItemStack& s) {
         const ItemDef* def = findItem(s.item);
-        return std::make_tuple(typeRank(def ? def->typeId : std::string()), def ? def->name : std::string(), s.item);
+        return std::make_tuple(typeRank(def ? def->typeId : std::string()), def ? itemDisplayName(*def) : std::string(), s.item);
     };
     std::stable_sort(inv.slots.begin(), inv.slots.end(), [&](const ItemStack& a, const ItemStack& b) {
         const bool aEmpty = a.item == 0 || a.count <= 0;

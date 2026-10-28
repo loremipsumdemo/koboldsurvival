@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "language.h"
 
 // Behaviors: rules a unit follows on its own. A rule reads a condition, such as its health below 10%, from
 // itself, its allies or its enemies, and when the condition holds it carries out an action, such as drinking a
@@ -37,20 +38,20 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 }
 
 // The text shown for each option, in the order the enums are declared
-inline const char* targetName(BehaviorTarget t) {
+inline std::string targetName(BehaviorTarget t) {
     switch (t) {
-    case BehaviorTarget::Self: return "Self";
-    case BehaviorTarget::Ally: return "Ally";
-    case BehaviorTarget::Enemy: return "Enemy";
+    case BehaviorTarget::Self: return lang("MISC_TARGET_SELF");
+    case BehaviorTarget::Ally: return lang("MISC_TARGET_ALLY");
+    case BehaviorTarget::Enemy: return lang("MISC_TARGET_ENEMY");
     case BehaviorTarget::Count: break;
     }
     return "?";
 }
 
-inline const char* conditionName(BehaviorCondition c) {
+inline std::string conditionName(BehaviorCondition c) {
     switch (c) {
-    case BehaviorCondition::Health: return "Health";
-    case BehaviorCondition::Hunger: return "Hunger";
+    case BehaviorCondition::Health: return lang("MISC_COND_HEALTH");
+    case BehaviorCondition::Hunger: return lang("MISC_COND_HUNGER");
     case BehaviorCondition::Count: break;
     }
     return "?";
@@ -69,10 +70,10 @@ inline const char* opName(BehaviorOp o) {
     return "?";
 }
 
-inline const char* actionName(BehaviorAction a) {
+inline std::string actionName(BehaviorAction a) {
     switch (a) {
-    case BehaviorAction::ConsumeHealing: return "Consume healing item";
-    case BehaviorAction::ConsumeFood: return "Consume food item";
+    case BehaviorAction::ConsumeHealing: return lang("MISC_ACT_HEAL");
+    case BehaviorAction::ConsumeFood: return lang("MISC_ACT_FOOD");
     case BehaviorAction::Count: break;
     }
     return "?";

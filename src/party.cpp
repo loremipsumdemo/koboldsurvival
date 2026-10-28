@@ -1,4 +1,5 @@
 #include "party.h"
+#include "language.h"
 #include <algorithm>
 #include "combat.h"
 #include "inventory.h"
@@ -17,7 +18,7 @@ std::vector<int> sortedByName(std::vector<int> ids) {
 
 std::string itemNameOf(int item) {
     const ItemDef* d = findItem(item);
-    return d ? d->name : std::string();
+    return d ? itemDisplayName(*d) : std::string();
 }
 
 std::string cleanName(const std::string& s) {
@@ -25,16 +26,13 @@ std::string cleanName(const std::string& s) {
     if (a == std::string::npos) return "";
     const size_t b = s.find_last_not_of(' ');
     std::string out = s.substr(a, b - a + 1);
-    if (out.size() > PARTY_NAME_LIMIT) {
-        out.resize(PARTY_NAME_LIMIT);
-        // A UTF-8 character cut in half at the end is dropped
-        size_t i = out.size();
-        while (i > 0 && (static_cast<unsigned char>(out[i - 1]) & 0xC0) == 0x80) --i;
-        if (i > 0) {
-            const unsigned char lead = static_cast<unsigned char>(out[i - 1]);
-            const size_t need = lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : lead >= 0xC0 ? 2 : 1;
-            if (out.size() - (i - 1) < need) out.resize(i - 1);
-        }
+    // Keep at most PARTY_NAME_CHARS characters: a character is a whole UTF-8 sequence, so none is split
+    size_t chars = 0;
+    for (size_t i = 0; i < out.size(); ) {
+        if (chars == PARTY_NAME_CHARS) { out.resize(i); break; }
+        ++chars;
+        ++i;
+        while (i < out.size() && (static_cast<unsigned char>(out[i]) & 0xC0) == 0x80) ++i;
     }
     return out;
 }
@@ -72,7 +70,8 @@ std::vector<int> allItemChoices() {
 
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     PartyMember m;
-    m.name = randomUnitName(rng, taken);
+    m.body = randomBodyType(rng);
+    m.name = randomUnitName(rng, m.body, taken);
     m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
     m.stats = randomStartingStats(rng);
 
@@ -115,8 +114,9 @@ void applyParty(World& w, const Party& p) {
         const Entity u = players[i];
         const PartyMember& m = p[i];
         const std::string name = cleanName(m.name);
-        w.add(u, Name{ name.empty() ? std::string("Unnamed Unit") : name });
+        w.add(u, Name{ name.empty() ? std::string(lang("UILABEL_UNNAMED_UNIT")) : name });
         w.add(u, UnitSprite{ m.sprite });
+        w.add(u, Body{ m.body });
         w.add(u, m.stats);
         Needs needs;   // a new unit starts at full health for its Vitality
         needs.maxHp = needs.hp = maxHealthFor(m.stats);

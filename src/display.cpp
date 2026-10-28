@@ -1,4 +1,5 @@
 #include "display.h"
+#include "language.h"
 
 #include <cmath>
 
@@ -11,7 +12,7 @@ DisplayInfo queryDisplays(int monitorSetting) {
         MonitorInfo m;
         m.id = ids[i];
         const char* name = SDL_GetDisplayName(ids[i]);
-        m.name = name ? name : ("Monitor " + std::to_string(i + 1));
+        m.name = name ? name : langf("UILABEL_MONITOR_N", { std::to_string(i + 1) });
         SDL_Rect bounds{};
         if (SDL_GetDisplayBounds(ids[i], &bounds)) {
             m.x = bounds.x;
@@ -27,7 +28,7 @@ DisplayInfo queryDisplays(int monitorSetting) {
     if (d.monitors.empty()) {
         MonitorInfo m;
         m.id = SDL_GetPrimaryDisplay();
-        m.name = "Monitor 1";
+        m.name = langf("UILABEL_MONITOR_N", { "1" });
         m.w = 1280;
         m.h = 720;
         d.monitors.push_back(m);

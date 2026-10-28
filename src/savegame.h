@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include "language.h"
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
@@ -38,6 +39,9 @@ struct SaveUnit {
     bool hostile = false;
     bool neutral = false;
     int sprite = 1;
+    // Older saves have no body type, so it is worked out from the name (bodyForSavedName)
+    bool hasBody = false;
+    int body = 0;
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
     bool hasNeeds = false;
@@ -125,6 +129,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             for (int xp : u.stats.xp) out << " " << xp;
             out << "\n";
         }
+        if (u.hasBody) out << "body " << i << " " << u.body << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -177,7 +182,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 std::getline(ss >> std::ws, u.name);
                 u.hostile = hostile == 1;
                 u.neutral = hostile == 2;
-                if (u.name.empty()) u.name = "Unnamed Unit";
+                if (u.name.empty()) u.name = lang("UILABEL_UNNAMED_UNIT");
                 d.units.push_back(u);
             }
             else if (line.rfind("items=", 0) == 0)           d.hasItems = (line.substr(6) == "1");
@@ -211,6 +216,16 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> i >> g.slot >> g.item;
                 if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
                     d.units[i].gear.push_back(g);
+                }
+            }
+            else if (line.rfind("body ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                int b = 0;
+                ss >> i >> b;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasBody = true;
+                    d.units[i].body = std::clamp(b, 0, 2);
                 }
             }
             else if (line.rfind("stats ", 0) == 0) {

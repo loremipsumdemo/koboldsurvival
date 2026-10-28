@@ -8,7 +8,7 @@
 // functions over the world, so they can be tested without the game running.
 
 // The sidebar's name for a gear slot, e.g. "Main hand"
-const char* gearSlotName(int slot);
+std::string gearSlotName(int slot);
 
 // Whether an item may go into a gear slot, given what the unit already wears. When it may not,
 // why says what to tell the player.

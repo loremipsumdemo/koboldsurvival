@@ -94,7 +94,7 @@ float strengthXpWhileWalking(float encumbrance, float seconds);
 // Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
 // XpBuffer until it adds up to a point. Only player units gain XP.
 // why names the action the XP came from, for the log; nullptr writes no message
-void grantXp(World& w, Entity e, int stat, float amount, const char* why = nullptr);
+void grantXp(World& w, Entity e, int stat, float amount, const std::string& why = std::string());
 Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit
 
 // ---- Log and damage numbers ----

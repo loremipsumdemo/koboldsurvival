@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include "language.h"
 #include <string>
 #include <vector>
 #include "behavior_rules.h"
@@ -41,10 +42,10 @@ struct DialogueOption {
 // What a unit says when it is talked to, and what the player can say back. Every red and neutral unit starts with
 // the same greeting and options.
 struct Dialogue {
-    std::string text = "Hello world.";
+    std::string text = lang("NPC_GREETING");
     std::vector<DialogueOption> options = {
-        { "Show me your wares.", "Hello world.", true },
-        { "What else can you tell me about the quest?", "Hello world." },
+        { lang("NPC_OPTION_WARES"), lang("NPC_GREETING"), true },
+        { lang("NPC_OPTION_QUEST"), lang("NPC_GREETING") },
     };
 };
 
@@ -58,13 +59,26 @@ struct SpokenLine {
 
 // Display name for a unit
 struct Name {
-    std::string text = "Unnamed Unit";
+    std::string text = lang("UILABEL_UNNAMED_UNIT");
 };
 
 // Which unit image this unit uses: data/unit/01.png up to UNIT_SPRITE_COUNT (party.h)
 struct UnitSprite {
     int id = 1;
 };
+
+// The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
+// the time, feminine 45% and androgynous 10% (randomBodyType in systems.h).
+enum BodyType : int { BODY_MASCULINE = 0, BODY_FEMININE = 1, BODY_ANDROGYNOUS = 2 };
+struct Body {
+    int type = BODY_MASCULINE;
+};
+
+// The language key for a body type's name
+inline const char* bodyTypeKey(int type) {
+    return type == BODY_FEMININE ? "UILABEL_BODY_FEMININE"
+         : type == BODY_ANDROGYNOUS ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
+}
 
 // Links a unit to its squad and to its formation slot
 struct SquadMember {

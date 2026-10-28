@@ -64,7 +64,7 @@ bool carryOut(World& w, Entity actor, Entity target, BehaviorAction action, Comb
     }
     if (best < 0) return false;
 
-    const std::string itemName = findItem(inv->slots[best].item)->name;
+    const std::string itemName = itemDisplayName(*findItem(inv->slots[best].item));
     const Needs* before = w.get<Needs>(target);
     const int was = before ? (food ? before->hunger : before->hp) : 0;
     if (useStackOn(w, actor, target, best) != UseResult::Used) return false;

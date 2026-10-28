@@ -1,4 +1,5 @@
 #include "party_ui.h"
+#include "language.h"
 #include <algorithm>
 #include "inventory.h"
 #include "items.h"
@@ -11,13 +12,13 @@ int pickedIndex(const Party& p, const PartyUi& ui) {
     return std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
 }
 
-const char* groupTitle(StatGroup g) {
+std::string groupTitle(StatGroup g) {
     switch (g) {
-    case StatGroup::Attributes: return "Attributes";
-    case StatGroup::Combat:     return "Combat";
-    case StatGroup::Gathering:  return "Resource Gathering";
-    case StatGroup::Crafting:   return "Crafting";
-    case StatGroup::Utility:    return "Utility";
+    case StatGroup::Attributes: return lang("UILABEL_ATTRIBUTES");
+    case StatGroup::Combat:     return lang("UILABEL_COMBAT");
+    case StatGroup::Gathering:  return lang("UILABEL_RESOURCE_GATHERING");
+    case StatGroup::Crafting:   return lang("UILABEL_CRAFTING");
+    case StatGroup::Utility:    return lang("UILABEL_UTILITY");
     }
     return "";
 }
@@ -38,16 +39,19 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     case DropKind::None:
         break;
     case DropKind::Sprite:
-        for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ "Sprite " + std::to_string(i), i });
+        for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ langf("UILABEL_SPRITE_N", { std::to_string(i) }), i });
+        break;
+    case DropKind::Body:
+        for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey(i)), i });
         break;
     case DropKind::Gear:
-        out.push_back(DropEntry{ "Empty", 0 });
+        out.push_back(DropEntry{ lang("UILABEL_EMPTY"), 0 });
         for (int id : gearChoices(pickedMember(p, ui), ui.dropSlot)) {
             out.push_back(DropEntry{ itemNameOf(id), id });
         }
         break;
     case DropKind::Item:
-        out.push_back(DropEntry{ "Empty", 0 });
+        out.push_back(DropEntry{ lang("UILABEL_EMPTY"), 0 });
         for (int id : allItemChoices()) out.push_back(DropEntry{ itemNameOf(id), id });
         break;
     }
@@ -88,8 +92,8 @@ PartyPanels partyPanels(int W, int H) {
 }
 
 std::string partyMessage(const Party& p) {
-    return partyNamesValid(p) ? std::string("Confirm starts the game with this party.")
-                              : std::string("Every unit needs a name before the game can start.");
+    return partyNamesValid(p) ? std::string(lang("UILABEL_CONFIRM_STARTS"))
+                              : std::string(lang("UILABEL_NEEDS_NAMES"));
 }
 
 std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi& ui,
@@ -100,6 +104,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     std::vector<Button> out;
     std::vector<Button> dropGroup;   // added last, so an open dropdown draws over everything
     Rect sprAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, gearAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, invAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect bodyAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
 
     // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
@@ -113,16 +118,16 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                               Action::PartyPick, true, i });
     }
     const float hintY = P.left.y + P.left.h - 56.0f * s;
-    out.push_back(Button{ "Click a unit to edit it.", Rect{ P.left.x + 10.0f * s, hintY, P.left.w - 20.0f * s, 22.0f * s },
+    out.push_back(Button{ lang("UILABEL_CLICK_UNIT_EDIT"), Rect{ P.left.x + 10.0f * s, hintY, P.left.w - 20.0f * s, 22.0f * s },
                           Action::PartyNote, false, 0 });
-    out.push_back(Button{ "Shift + click changes a stat by 10.", Rect{ P.left.x + 10.0f * s, hintY + 24.0f * s, P.left.w - 20.0f * s, 22.0f * s },
+    out.push_back(Button{ lang("UILABEL_SHIFT_CLICK"), Rect{ P.left.x + 10.0f * s, hintY + 24.0f * s, P.left.w - 20.0f * s, 22.0f * s },
                           Action::PartyNote, false, 0 });
 
     // Right column: the tabs, then the picked tab's contents
     const float inX = P.right.x + 14.0f * s, inW = P.right.w - 28.0f * s;
     const float tabH = 34.0f * s, tabGap = 6.0f * s;
     const float tabW = (inW - (PARTY_TAB_COUNT - 1) * tabGap) / PARTY_TAB_COUNT;
-    const char* const tabNames[PARTY_TAB_COUNT] = { "Identity", "Stats", "Gear", "Items" };
+    const std::string tabNames[PARTY_TAB_COUNT] = { lang("UILABEL_IDENTITY"), lang("UILABEL_STATS"), lang("UILABEL_GEAR"), lang("UILABEL_ITEMS") };
     const float tabY = P.right.y + 12.0f * s;
     for (int t = 0; t < PARTY_TAB_COUNT; ++t) {
         out.push_back(Button{ tabNames[t], Rect{ inX + t * (tabW + tabGap), tabY, tabW, tabH },
@@ -141,7 +146,11 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         sprAnchor = sprBox;
         out.push_back(Button{ std::to_string(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
 
-        out.push_back(Button{ "Randomize this unit", Rect{ inX, sprBox.y + sprBox.h + 26.0f * s, 240.0f * s, 36.0f * s },
+        const Rect bodyBox{ inX, sprBox.y + sprBox.h + 26.0f * s, 220.0f * s, 40.0f * s };
+        bodyAnchor = bodyBox;
+        out.push_back(Button{ lang(bodyTypeKey(m.body)) + "   v", bodyBox, Action::PartyBodyBox, true, sel });
+
+        out.push_back(Button{ lang("UILABEL_RANDOMIZE_UNIT"), Rect{ inX, bodyBox.y + bodyBox.h + 26.0f * s, 240.0f * s, 36.0f * s },
                               Action::PartyRandomUnit, true, sel });
         break;
     }
@@ -171,7 +180,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         };
         column(inX, { StatGroup::Attributes, StatGroup::Combat });
         column(inX + colW + colGap, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
-        out.push_back(Button{ "Levels run from 1 to 99.", Rect{ inX, P.right.y + P.right.h - 46.0f * s, inW, 22.0f * s },
+        out.push_back(Button{ lang("UILABEL_LEVELS_HINT"), Rect{ inX, P.right.y + P.right.h - 46.0f * s, inW, 22.0f * s },
                               Action::PartyNote, false, 0 });
         break;
     }
@@ -182,16 +191,16 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             const int col = g % 2, row = g / 2;
             const Rect r{ inX + col * (tileW + gap), top + row * pitch, tileW, tileH };
             if (ui.dropKind == DropKind::Gear && ui.dropSlot == g) gearAnchor = r;
-            out.push_back(Button{ m.gear[g] != 0 ? itemNameOf(m.gear[g]) : std::string("Empty"), r,
+            out.push_back(Button{ m.gear[g] != 0 ? itemNameOf(m.gear[g]) : std::string(lang("UILABEL_EMPTY")), r,
                                   Action::PartyGearSlot, true, g });
         }
         const Equipment worn = wornBy(m);
         int attack = 0, defense = 0;
         gearTotals(worn, attack, defense);
         const float noteY = top + 4.0f * pitch + 2.0f * s;
-        out.push_back(Button{ "Attack " + std::to_string(attack) + "    Defense " + std::to_string(defense),
+        out.push_back(Button{ langf("UILABEL_ATTACK_DEFENSE", { std::to_string(attack), std::to_string(defense) }),
                               Rect{ inX, noteY, inW, 22.0f * s }, Action::PartyNote, false, 0 });
-        out.push_back(Button{ "Click a slot to choose its item. Only items that fit are listed.",
+        out.push_back(Button{ lang("UILABEL_CLICK_SLOT"),
                               Rect{ inX, noteY + 26.0f * s, inW, 22.0f * s }, Action::PartyNote, false, 0 });
         break;
     }
@@ -211,19 +220,19 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         const ItemStack& st = m.items[slot];
         const float infoY = top + INVENTORY_SLOTS / INVENTORY_COLUMNS * (cell + gap) + 6.0f * s;
         const std::string info = st.item > 0
-            ? "Slot " + std::to_string(slot + 1) + ": " + itemNameOf(st.item)
-            : "Slot " + std::to_string(slot + 1) + ": empty";
+            ? langf("UILABEL_SLOT_N_ITEM", { std::to_string(slot + 1), itemNameOf(st.item) })
+            : langf("UILABEL_SLOT_N_EMPTY", { std::to_string(slot + 1) });
         out.push_back(Button{ info, Rect{ inX, infoY, inW, 22.0f * s }, Action::PartyNote, false, 0 });
 
         const float countY = infoY + 30.0f * s, btnW = 40.0f * s, labelW = 120.0f * s;
         const bool hasItem = st.item > 0;
         out.push_back(Button{ "-", Rect{ inX, countY, btnW, 32.0f * s }, Action::PartyCount,
                               hasItem && st.count > 1, -1 });
-        out.push_back(Button{ "Count " + std::to_string(st.count),
+        out.push_back(Button{ langf("UILABEL_COUNT", { std::to_string(st.count) }),
                               Rect{ inX + btnW + 8.0f * s, countY, labelW, 32.0f * s }, Action::PartyNote, false, 0 });
         out.push_back(Button{ "+", Rect{ inX + btnW + labelW + 16.0f * s, countY, btnW, 32.0f * s }, Action::PartyCount,
                               hasItem && st.count < stackLimit(st.item), 1 });
-        out.push_back(Button{ "Click a slot to choose its item. Stacks hold up to the item's limit.",
+        out.push_back(Button{ lang("UILABEL_CLICK_SLOT_STACK"),
                               Rect{ inX, countY + 44.0f * s, inW, 22.0f * s }, Action::PartyNote, false, 0 });
         break;
     }
@@ -231,15 +240,15 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
 
     // Bottom bar: Randomize all, Back, Confirm, and the line that says what Confirm needs
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
-    out.push_back(Button{ "Randomize all", Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
-    out.push_back(Button{ "Back", Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
+    out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
+    out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
     // Add and remove units: the party has up to PARTY_MAX_UNITS, and the starting units cannot be removed
     const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
-    out.push_back(Button{ "Add unit", Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
+    out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
                           (int)p.size() < PARTY_MAX_UNITS, 0 });
-    out.push_back(Button{ "Remove unit", Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
+    out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
                           (int)p.size() > START_UNIT_COUNT, 0 });
-    out.push_back(Button{ "Confirm", Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
+    out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, partyNamesValid(p), 0 });
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
@@ -247,6 +256,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     // The open dropdown: a background, optional scroll rows, and the visible entries
     if (ui.dropKind != DropKind::None) {
         const Rect anchor = ui.dropKind == DropKind::Sprite ? sprAnchor
+                          : ui.dropKind == DropKind::Body ? bodyAnchor
                           : ui.dropKind == DropKind::Gear ? gearAnchor : invAnchor;
         const int total = (int)drop.size();
         const int first = clampDropScroll(ui.dropScroll, total);
@@ -265,11 +275,12 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         dropGroup.push_back(Button{ "", Rect{ listX, listY, listW, listH }, Action::PartyDropBack, true, 0 });
         float ry = listY + pad;
         if (scrollable) {
-            dropGroup.push_back(Button{ "Scroll up", Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll, first > 0, -1 });
+            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_UP"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll, first > 0, -1 });
             ry += scrollH;
         }
         int current = 0;
         if (ui.dropKind == DropKind::Sprite) current = m.sprite;
+        if (ui.dropKind == DropKind::Body) current = m.body;
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
         for (int i = first; i < first + shown; ++i) {
@@ -279,7 +290,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             ry += rowH;
         }
         if (scrollable) {
-            dropGroup.push_back(Button{ "Scroll down", Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll,
+            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_DOWN"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll,
                                         first + shown < total, 1 });
         }
     }

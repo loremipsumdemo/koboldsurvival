@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Nederlands
+UILABEL_CONTINUE	Doorgaan
+UILABEL_NEW_GAME	Nieuw spel
+UILABEL_LOAD_GAME	Spel laden
+UILABEL_SETTINGS	Instellingen
+UILABEL_LANGUAGE_BUTTON	Taal ({0})
+UILABEL_QUIT	Afsluiten
+UILABEL_RESUME	Hervatten
+UILABEL_SAVE_GAME	Spel opslaan
+UILABEL_RETURN_TO_TITLE	Terug naar titelscherm
+UILABEL_CLOSE	Sluiten
+UILABEL_BACK	Terug
+UILABEL_SAVE	Opslaan
+UILABEL_DELETE	Verwijderen
+UILABEL_CANCEL	Annuleren
+UILABEL_CONFIRM	Bevestigen
+UILABEL_YES	Ja
+UILABEL_NO	Nee
+UILABEL_NAME	Naam
+UILABEL_TIME	Tijd
+UILABEL_CREATED	Aangemaakt
+UILABEL_TYPE	Type
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	HANDMATIG
+UILABEL_NO_SAVES	Nog geen opslagen
+UILABEL_UNSAVED_WARNING	Niet-opgeslagen voortgang in dit spel gaat verloren.
+UILABEL_HOLD_DELETE	Houd Verwijderen 3 seconden ingedrukt om te bevestigen.
+UILABEL_CLICK_SAVE	Klik op een opslag om die te laden
+UILABEL_CLICK_MAP	Klik op een kaart om een nieuw spel te starten
+UILABEL_NO_MAPS	Geen kaarten gevonden. Maak er een met worldgen.py.
+UILABEL_BUILT_IN	INGEBOUWD
+UILABEL_WORLD	WERELD
+UILABEL_MAP_FILE	KAARTBESTAND
+UILABEL_BUILT_IN_WHEN	ingebouwd
+UILABEL_UNKNOWN	onbekend
+UILABEL_ON	Aan
+UILABEL_OFF	Uit
+UILABEL_EMPTY	Leeg
+UILABEL_NONE_AVAILABLE	Geen beschikbaar
+UILABEL_TWO_HANDED	Tweehandig
+UILABEL_WILL_BE_REPLACED	Wordt vervangen
+UILABEL_GRAPHICS	Grafische instellingen
+UILABEL_INTERFACE	Interface
+UILABEL_LANGUAGE_TAB	Taal
+UILABEL_CONTROLS	Besturing
+UILABEL_AUDIO	Geluid
+UILABEL_DISPLAY_MODE	Weergavemodus
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Resolutie
+UILABEL_REFRESH_RATE	Vernieuwingsfrequentie
+UILABEL_DEFAULT	Standaard
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Limiet framesnelheid
+UILABEL_UNLIMITED	Onbeperkt
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Automatisch opslaan
+UILABEL_MINUTE	1 minuut
+UILABEL_MINUTES	{0} minuten
+UILABEL_UNIT_NAMES	Eenheidsnamen
+UILABEL_FONT_SIZE	Lettergrootte
+UILABEL_RESET_PANELS	Alle UI-panelen resetten
+UILABEL_RESET	Resetten
+UILABEL_FONT	Lettertype
+UILABEL_FONT_AUTOMATIC	Automatisch
+UILABEL_EDGE_SCROLL	Scrollen aan de rand
+UILABEL_MUSIC	Muziek
+UILABEL_AMBIENT	Omgevingsgeluid
+UILABEL_SOUND_EFFECTS	Geluidseffecten
+UILABEL_RESTORE_DEFAULTS	Standaardwaarden herstellen
+UILABEL_WINDOWED	Venster
+UILABEL_BORDERLESS	Zonder rand
+UILABEL_FULL_SCREEN	Volledig scherm
+CONTROL_KEYS_1	W A S D of de pijltjestoetsen
+CONTROL_DOES_1	De camera verplaatsen
+CONTROL_KEYS_2	Muiswiel
+CONTROL_DOES_2	In- en uitzoomen
+CONTROL_KEYS_3	Houd middelste muisknop ingedrukt en sleep
+CONTROL_DOES_3	De camera draaien
+CONTROL_KEYS_4	Linksklik, of sleep een vak
+CONTROL_DOES_4	Eenheden selecteren
+CONTROL_KEYS_5	Shift of Alt met een klik
+CONTROL_DOES_5	Aan de selectie toevoegen
+CONTROL_KEYS_6	Rechtsklik
+CONTROL_DOES_6	Verplaatsen of aanvallen met de geselecteerde eenheden
+CONTROL_KEYS_7	Houd Alt ingedrukt
+CONTROL_DOES_7	De namen van voorwerpen op de grond tonen
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Het menu openen, of teruggaan
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Een screenshot maken
+UILABEL_PAUSED	GEPAUZEERD
+UILABEL_PACE_RUN	Tempo: rennen
+UILABEL_PACE_WALK	Tempo: lopen
+UILABEL_SQUAD_PANEL	Groepspaneel
+UILABEL_UNIT_PANEL	Eenheidspaneel
+UILABEL_INFORMATION_PANEL	Informatiepaneel
+UILABEL_INTERACTION_PANEL	Interactiepaneel
+UILABEL_TRADE_PANEL	Handelspaneel
+UILABEL_INVENTORY	Inventaris
+UILABEL_EQUIPMENT	Uitrusting
+UILABEL_BEHAVIOR	Gedrag
+UILABEL_TRADE	Handelen
+UILABEL_END_DIALOGUE	Gesprek beëindigen
+UILABEL_TRADE_DROP_THEIRS	Sleep hier of klik met rechts om voorwerpen uit hun inventaris toe te voegen
+UILABEL_TRADE_DROP_YOURS	Sleep hier of klik met rechts om je eigen voorwerpen uit je inventaris toe te voegen
+UILABEL_SINGLE	Enkel
+UILABEL_MAX	Max
+UILABEL_SORT	Sorteren
+UILABEL_WORLD_MAP_HINT	Wereldkaart. Scrol om te zoomen. Druk op M of Esc om te sluiten.
+UILABEL_NO_UNIT_SELECTED	Geen eenheid geselecteerd
+UILABEL_UNNAMED_UNIT	Naamloze eenheid
+UILABEL_NO_NAME	Geen naam
+UILABEL_PROFILE	Profiel
+UILABEL_STATS	Statistieken
+UILABEL_CLICK_TO_TYPE	Klik om een naam te typen
+UILABEL_SPRITE	Sprite
+UILABEL_STARTING_PARTY	Startgroep: {0}
+UILABEL_HEALTH	Gezondheid
+UILABEL_HUNGER	Honger
+UILABEL_CARRY	Draagvermogen
+UILABEL_NEXT_LEVEL_XP_LINE	Volgend niveau XP: {0}
+UILABEL_STAT	Statistiek
+UILABEL_LEVEL	Niveau
+UILABEL_TOTAL_XP	Totaal XP
+UILABEL_TO_NEXT	Tot volgende
+UILABEL_ATTRIBUTES	Eigenschappen
+UILABEL_COMBAT	Gevecht
+UILABEL_RESOURCE_GATHERING	Grondstoffen verzamelen
+UILABEL_CRAFTING	Vervaardigen
+UILABEL_UTILITY	Hulpvaardigheden
+UILABEL_GEAR	Uitrusting
+UILABEL_ITEMS	Voorwerpen
+UILABEL_IDENTITY	Identiteit
+UILABEL_RANDOMIZE_UNIT	Deze eenheid willekeurig maken
+UILABEL_RANDOMIZE_ALL	Alles willekeurig maken
+UILABEL_ADD_UNIT	Eenheid toevoegen
+UILABEL_REMOVE_UNIT	Eenheid verwijderen
+UILABEL_CONFIRM_STARTS	Bevestigen start het spel met deze groep.
+UILABEL_NEEDS_NAMES	Elke eenheid moet een naam hebben voordat het spel kan beginnen.
+UILABEL_CLICK_UNIT_EDIT	Klik op een eenheid om deze te bewerken.
+UILABEL_SHIFT_CLICK	Shift + klik verandert een statistiek met 10.
+UILABEL_LEVELS_HINT	Niveaus lopen van 1 tot 99.
+UILABEL_CLICK_SLOT	Klik op een plek om het voorwerp te kiezen. Alleen passende voorwerpen worden getoond.
+UILABEL_CLICK_SLOT_STACK	Klik op een plek om het voorwerp te kiezen. Stapels bevatten tot de limiet van het voorwerp.
+UILABEL_SCROLL_UP	Omhoog scrollen
+UILABEL_SCROLL_DOWN	Omlaag scrollen
+UILABEL_SLOT_HEAD	Hoofd
+UILABEL_SLOT_TORSO	Romp
+UILABEL_SLOT_MAIN_HAND	Hoofdhand
+UILABEL_SLOT_OFF_HAND	Tweede hand
+UILABEL_SLOT_LEGS	Benen
+UILABEL_SLOT_FEET	Voeten
+UILABEL_SLOT_ACCESSORY	Accessoire
+UILABEL_BEHAVIOR_ON	Aan
+UILABEL_TARGET	Doel
+UILABEL_CONDITION	Voorwaarde
+UILABEL_ACTION	Actie
+UILABEL_COMBAT_MESSAGES	Gevechtsberichten
+UILABEL_SEEN	Gezien
+UILABEL_HIT	Raak
+UILABEL_MISS	Mis
+UILABEL_DAMAGE	Schade
+UILABEL_EXPERIENCE_MESSAGES	Ervaringsberichten
+UILABEL_EXPERIENCE	Ervaring
+UILABEL_ITEM_MESSAGES	Voorwerpberichten
+UILABEL_PICKUP	Oppakken
+UILABEL_DROP	Laten vallen
+UILABEL_LOOT	Buit
+UILABEL_USE	Gebruiken
+UILABEL_MESSAGE	Bericht
+UILABEL_GAME	Spel
+UILABEL_FILTER	Filter
+UILABEL_STAT_HEAD_STAT	Statistiek
+UILABEL_UNKNOWN_SLOT	Onbekend
+UILABEL_MONTH_NAME	Maand {0}
+UILABEL_STRENGTH_STAT	Kracht
+MISC_GAME_SAVED	Spel opgeslagen
+MISC_SAVE_FAILED	Kon het spel niet opslaan
+MISC_READ_FAILED	Kon die opslag niet lezen
+MISC_SAVE_OLD	Die opslag komt van vóór de kaarten en kan niet worden geladen
+MISC_AUTOSAVED	Automatisch opgeslagen
+MISC_SCREENSHOT_FAILED	Kon de screenshot niet opslaan
+MISC_SCREENSHOT_SAVED	{0} opgeslagen
+MISC_TRADE_FULL	De handel zit vol
+MISC_TRADE_ALREADY	Dat voorwerp zit al in de handel, of de handel is vol.
+MISC_TRADE_NO_MORE	Er is niet meer van dat voorwerp om te ruilen
+MISC_NO_UNIT_TO_TRADE	Geen eenheid om mee te handelen
+MISC_TRADE_ADD_BOTH	Voeg voorwerpen toe aan beide kanten
+MISC_TRADE_NO_ROOM_YOURS	Je eenheid heeft geen plek voor hun voorwerpen
+MISC_TRADE_NO_ROOM_THEIRS	Zij hebben geen plek voor jouw voorwerpen
+MISC_TRADE_FAILED	Handel mislukt
+MISC_TRADE_COMPLETE	Handel voltooid.
+MISC_PICKUP_SELECT	Selecteer eenheden om het voorwerp op te pakken
+MISC_TALK_SELECT	Selecteer een eenheid om mee te praten
+MISC_TRADE_ONLY_TALKING	Je kunt alleen handelen met de eenheid met wie je praat.
+MISC_DROPS	{0} laat {1} {2} vallen
+MISC_AN_ITEM	een voorwerp
+MISC_UNIT	Eenheid
+MISC_TWO_HANDED_IN_MAIN	Een tweehandig wapen zit in de hoofdhand
+MISC_YOU	Jij
+MISC_UNKNOWN_ITEM	Onbekend voorwerp
+MISC_ITEM_FALLBACK	Voorwerp
+MISC_THAT_ITEM	Dat
+MISC_REASON_FEES	handelskosten betalen
+MISC_REASON_WALKING	lopen
+MISC_REASON_CARRYING	een last dragen
+MISC_REASON_CLIMBING	klimmen
+MISC_REASON_SWINGING	zwaaien
+MISC_REASON_DODGING	ontwijken
+MISC_REASON_DEALING	schade toebrengen
+MISC_REASON_TAKING	schade oplopen
+MISC_REASON_BLOCKING	blokkeren
+MISC_REASON_SPOTTING	een vijand opmerken
+MISC_REASON_UNNOTICED	onopgemerkt blijven
+MISC_REASON_GEAR	uitrusting wisselen
+NPC_GREETING	Hallo wereld.
+NPC_OPTION_WARES	Laat me je waren zien.
+NPC_OPTION_QUEST	Wat kun je me nog meer vertellen over de opdracht?
+MISC_ORD_1	Eerste
+MISC_ORD_2	Tweede
+MISC_ORD_3	Derde
+MISC_ORD_4	Vierde
+MISC_ORD_5	Vijfde
+MISC_ORD_6	Zesde
+MISC_ORD_7	Zevende
+MISC_ORD_8	Achtste
+MISC_ORD_9	Negende
+MISC_ORD_10	Tiende
+MISC_ORD_11	Elfde
+MISC_ORD_12	Twaalfde
+MISC_SKY_DAY_ZENITH	Dagzenit
+MISC_SKY_DAY_HORIZON	Daghorizon
+MISC_SKY_NIGHT_ZENITH	Nachtzenit
+MISC_SKY_NIGHT_HORIZON	Nachthorizon
+MISC_SKY_DUSK_HORIZON	Schemerhorizon
+MISC_SKY_DUSK_SUN	Schemerzon
+MISC_SKY_SUN	Zon
+MISC_SKY_MOON	Maan
+MISC_TARGET_SELF	Zelf
+MISC_TARGET_ALLY	Bondgenoot
+MISC_TARGET_ENEMY	Vijand
+MISC_COND_HEALTH	Gezondheid
+MISC_COND_HUNGER	Honger
+MISC_ACT_HEAL	Helend voorwerp gebruiken
+MISC_ACT_FOOD	Voedsel eten
+UILABEL_STAT_DESC_STRENGTH	Schade van nabijgevecht, draagvermogen
+UILABEL_STAT_DESC_DEXTERITY	Aanvalssnelheid
+UILABEL_STAT_DESC_VITALITY	Maximale gezondheid
+UILABEL_STAT_DESC_ENDURANCE	Maximale uithouding
+UILABEL_STAT_DESC_AGILITY	Ontwijkkans
+UILABEL_STAT_DESC_INTELLIGENCE	Manapool
+UILABEL_STAT_DESC_WISDOM	Aantal leerbare spreuken
+UILABEL_STAT_DESC_CHARISMA	Handelsprijzen van NPC's, unieke gespreksopties
+UILABEL_STAT_DESC_PERCEPTION	Detectiebereik
+UILABEL_STAT_DESC_ATHLETICS	Loopsnelheid
+UILABEL_STAT_DESC_STEALTH	Beter in het vermijden van ontdekking bij sluipen
+UILABEL_STAT_DESC_MELEE	Nauwkeurigheid van nabijgevecht
+UILABEL_STAT_DESC_PROJECTILES	Nauwkeurigheid op afstand
+UILABEL_STAT_DESC_ARCANE	Spreukkracht
+UILABEL_STAT_DESC_BLOCK	Kans om te blokkeren of te pareren
+UILABEL_STAT_DESC_MINING	Ertsopbrengst
+UILABEL_STAT_DESC_HERBALISM	Opbrengst bij het verzamelen van wilde planten
+UILABEL_STAT_DESC_WOODCUTTING	Houtopbrengst
+UILABEL_STAT_DESC_SKINNING	Opbrengst van huid en vlees
+UILABEL_STAT_DESC_FARMING	Gewasopbrengst
+UILABEL_STAT_DESC_COOKING	Sterkte van voedselbonussen
+UILABEL_STAT_DESC_SMELTING	Opbrengst bij het smelten van erts
+UILABEL_STAT_DESC_FORGING	Metaalbewerking
+UILABEL_STAT_DESC_CARPENTRY	Houtbewerking
+UILABEL_STAT_DESC_STONEWORKING	Steenbewerking
+UILABEL_STAT_DESC_LOCKPICKING	Moeilijkheid van sloten
+UILABEL_STAT_DESC_THIEVERY	Kans om te stelen
+UILABEL_STAT_DESC_MEDICAL	Effectiviteit van genezing
+UILABEL_DEXTERITY_STAT	Behendigheid
+UILABEL_VITALITY_STAT	Vitaliteit
+UILABEL_ENDURANCE_STAT	Uithoudingsvermogen
+UILABEL_AGILITY_STAT	Lenigheid
+UILABEL_INTELLIGENCE_STAT	Intelligentie
+UILABEL_WISDOM_STAT	Wijsheid
+UILABEL_CHARISMA_STAT	Charisma
+UILABEL_PERCEPTION_STAT	Waarneming
+UILABEL_ATHLETICS_STAT	Atletiek
+UILABEL_STEALTH_STAT	Sluipen
+UILABEL_MELEE_STAT	Nabij gevecht
+UILABEL_PROJECTILES_STAT	Projectielen
+UILABEL_ARCANE_STAT	Arcane
+UILABEL_BLOCK_STAT	Blokkeren
+UILABEL_MINING_STAT	Mijnbouw
+UILABEL_HERBALISM_STAT	Kruidkunde
+UILABEL_WOODCUTTING_STAT	Houtkap
+UILABEL_SKINNING_STAT	Villen
+UILABEL_FARMING_STAT	Landbouw
+UILABEL_COOKING_STAT	Koken
+UILABEL_SMELTING_STAT	Smelten
+UILABEL_FORGING_STAT	Smeden
+UILABEL_CARPENTRY_STAT	Timmerwerk
+UILABEL_STONEWORKING_STAT	Steenbewerking
+UILABEL_LOCKPICKING_STAT	Slotbreken
+UILABEL_THIEVERY_STAT	Dieverij
+UILABEL_MEDICAL_STAT	Geneeskunde
+MISC_CANT_BE_WORN	{0} kan niet worden gedragen
+MISC_ITEM_NAME_FORMAT	{0} {1}
+MISC_MATERIAL_IRON	ijzeren
+MISC_MATERIAL_STEEL	stalen
+MISC_MATERIAL_BRONZE	bronzen
+MISC_MATERIAL_SILVER	zilveren
+MISC_MATERIAL_LEATHER	lederen
+MISC_MATERIAL_BONE	beenderen
+MISC_MATERIAL_WOOD	houten
+MISC_NEED_MORE_VALUE	Ze hebben nog {0} aan waarde nodig
+MISC_TRADE_READY_FEE	Klaar. Handelskosten: {0}
+MISC_LOAD_FAILED	Kon {0} niet laden: {1}
+MISC_MAP_MISSING	De kaart voor "{0}" ontbreekt
+MISC_MAP_LOAD_FAILED	Kaart "{0}" kon niet worden geladen: {1}
+MISC_LOADED	{0} geladen
+MISC_DELETE_FAILED	Kon "{0}" niet verwijderen
+MISC_DELETED	"{0}" verwijderd
+MISC_USED	{0} gebruikt
+MISC_OVERWRITE_Q	"{0}" overschrijven?
+MISC_LOAD_Q	"{0}" laden?
+MISC_DELETE_Q	"{0}" verwijderen?
+MISC_NOT_FIT_SLOT	{0} past niet in de plek {1}
+MISC_EMPTY_OFF_HAND	Maak je tweede hand leeg voordat je {0} vasthoudt
+MISC_NO_ROOM_INV	Geen plek in de inventaris voor {0}
+MISC_SLOT_HOLDS	Die plek bevat al {0}
+UILABEL_TIP_TYPE	Type: {0}
+UILABEL_TIP_MATERIAL	Materiaal: {0}
+UILABEL_TIP_SLOT	Plek: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Vereist niveau: {0}
+UILABEL_TIP_ATTACK	Aanval {0}
+UILABEL_TIP_DEFENSE	Verdediging {0}
+UILABEL_TIP_WEIGHT	Gewicht {0}
+UILABEL_TIP_EACH	 per stuk
+UILABEL_TIP_STACKS	Stapelt tot {0}
+UILABEL_TIP_BUY	Koopprijs: {0}
+UILABEL_TIP_SELL	Verkoopprijs: {0}
+UILABEL_TIP_USE	Gebruik: {0}
+UILABEL_TOTAL_VALUE	Totale waarde: {0}
+UILABEL_CHOOSE_HOW_MANY	Kies hoeveel: {0} ({1} beschikbaar)
+UILABEL_TIP_LEVEL	Niveau: {0}
+UILABEL_TIP_PROGRESS	Voortgang: {0}%
+UILABEL_TIP_CURRENT_XP	Huidige XP: {0}
+UILABEL_ATTACK_DEFENSE	Aanval {0}      Verdediging {1}
+UILABEL_STATS_CAPTION	Statistieken: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Plek {0}: {1}
+UILABEL_SLOT_N_EMPTY	Plek {0}: leeg
+UILABEL_COUNT	Aantal {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Aanval {0}    Verdediging {1}    Draagvermogen {2}
+MISC_IS_DOWN	{0} is neergegaan
+MISC_PICKS_UP	{0} pakt {1} {2} op
+MISC_CANNOT_READ	Kon {0} niet lezen
+UILABEL_TIP_DURABILITY	Duurzaamheid {0} / {1}
+UILABEL_DATE_LINE	DAG {0} · {1} · JAAR {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} krijgt {1} {2} XP voor {3}
+UILABEL_PAUSE_HINT	(Druk op de spatiebalk om verder te gaan.)
+MISC_DRINKS	{0} drinkt {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	O
+UILABEL_COMPASS_S	Z
+UILABEL_COMPASS_W	W
+ITEM_1_NAME	IJzererts
+ITEM_1_DESC	Ruw erts dat tot ijzeren staven gesmolten kan worden.
+ITEM_2_NAME	Eikenblok
+ITEM_2_DESC	Een stevige stam die bij het vervaardigen en bouwen wordt gebruikt.
+ITEM_3_NAME	Genezende kruid
+ITEM_3_DESC	Een gewoon kruid met een milde herstellende werking.
+ITEM_4_NAME	Gouden munt
+ITEM_4_DESC	De gangbare munt van het rijk.
+ITEM_5_NAME	Wolvenvel
+ITEM_5_DESC	Een ruwe vacht van een gedode wolf. Looiers zijn er op uit.
+ITEM_6_NAME	Oud relikwie
+ITEM_6_DESC	Een mysterieus artefact dat zwak van energie zoemt.
+ITEM_7_NAME	Gezondheidsdrankje
+ITEM_7_DESC	Herstelt 50 gezondheid bij gebruik.
+ITEM_8_NAME	Manadrankje
+ITEM_8_DESC	Herstelt 50 mana bij gebruik.
+ITEM_9_NAME	Uithoudingsdrank
+ITEM_9_DESC	Herstelt 40 uithouding en versnelt kort het herstel.
+ITEM_10_NAME	Elixer van kracht
+ITEM_10_DESC	Geeft 60 seconden +10 aanval.
+ITEM_11_NAME	Brood
+ITEM_11_DESC	Eenvoudig reisvoedsel. Herstelt 15 gezondheid.
+ITEM_12_NAME	Tegengif
+ITEM_12_DESC	Geneest vergiftiging en verkleint 30 seconden de giftschade.
+ITEM_13_NAME	Appel
+ITEM_13_DESC	Herstelt 8 honger bij het eten.
+ITEM_14_NAME	Wilde bessen
+ITEM_14_DESC	Herstelt 6 honger bij het eten.
+ITEM_15_NAME	Hard koekje
+ITEM_15_DESC	Herstelt 12 honger bij het eten.
+ITEM_16_NAME	Kaaspunt
+ITEM_16_DESC	Herstelt 15 honger bij het eten.
+ITEM_17_NAME	Gerookte vis
+ITEM_17_DESC	Herstelt 20 honger bij het eten.
+ITEM_18_NAME	Honingcake
+ITEM_18_DESC	Herstelt 18 honger bij het eten.
+ITEM_19_NAME	Schapenpastei
+ITEM_19_DESC	Herstelt 26 honger bij het eten.
+ITEM_20_NAME	Stoofpot
+ITEM_20_DESC	Herstelt 30 honger bij het eten.
+ITEM_21_NAME	Geroosterde everzwijnpoot
+ITEM_21_DESC	Herstelt 40 honger bij het eten.
+ITEM_22_NAME	Reisrantsoen
+ITEM_22_DESC	Herstelt 50 honger bij het eten.
+ITEM_23_NAME	Pet
+ITEM_23_DESC	Beschermt het hoofd.
+ITEM_24_NAME	Kap
+ITEM_24_DESC	Beschermt het hoofd.
+ITEM_25_NAME	Kolder
+ITEM_25_DESC	Beschermt het hoofd.
+ITEM_26_NAME	Helm
+ITEM_26_DESC	Beschermt het hoofd.
+ITEM_27_NAME	Vizier
+ITEM_27_DESC	Beschermt het hoofd.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Beschermt het hoofd.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Beschermt het hoofd.
+ITEM_30_NAME	Grote helm
+ITEM_30_DESC	Beschermt het hoofd.
+ITEM_31_NAME	Diadeem
+ITEM_31_DESC	Beschermt het hoofd.
+ITEM_32_NAME	Kroon
+ITEM_32_DESC	Beschermt het hoofd.
+ITEM_33_NAME	Tuniek
+ITEM_33_DESC	Bedekt borst en lichaam.
+ITEM_34_NAME	Wambuis
+ITEM_34_DESC	Bedekt borst en lichaam.
+ITEM_35_NAME	Lamellenvest
+ITEM_35_DESC	Bedekt borst en lichaam.
+ITEM_36_NAME	Brigandine
+ITEM_36_DESC	Bedekt borst en lichaam.
+ITEM_37_NAME	Maliënkolder
+ITEM_37_DESC	Bedekt borst en lichaam.
+ITEM_38_NAME	Borstplaat
+ITEM_38_DESC	Bedekt borst en lichaam.
+ITEM_39_NAME	Kuras
+ITEM_39_DESC	Bedekt borst en lichaam.
+ITEM_40_NAME	Borstharnas
+ITEM_40_DESC	Bedekt borst en lichaam.
+ITEM_41_NAME	Volledige plaatharnas
+ITEM_41_DESC	Bedekt borst en lichaam.
+ITEM_42_NAME	Ceremonieel harnas
+ITEM_42_DESC	Bedekt borst en lichaam.
+ITEM_43_NAME	Rijbroek
+ITEM_43_DESC	Bedekt de benen.
+ITEM_44_NAME	Broek
+ITEM_44_DESC	Bedekt de benen.
+ITEM_45_NAME	Beenkappen
+ITEM_45_DESC	Bedekt de benen.
+ITEM_46_NAME	Maliënbroek
+ITEM_46_DESC	Bedekt de benen.
+ITEM_47_NAME	Dijplaten
+ITEM_47_DESC	Bedekt de benen.
+ITEM_48_NAME	Dijbeschermers
+ITEM_48_DESC	Bedekt de benen.
+ITEM_49_NAME	Scheenbeschermers
+ITEM_49_DESC	Bedekt de benen.
+ITEM_50_NAME	Plaatbroek
+ITEM_50_DESC	Bedekt de benen.
+ITEM_51_NAME	Maliënbeenkleding
+ITEM_51_DESC	Bedekt de benen.
+ITEM_52_NAME	Vergulde beenplaten
+ITEM_52_DESC	Bedekt de benen.
+ITEM_53_NAME	Sandalen
+ITEM_53_DESC	Beschermt de voeten.
+ITEM_54_NAME	Schoenen
+ITEM_54_DESC	Beschermt de voeten.
+ITEM_55_NAME	Laarzen
+ITEM_55_DESC	Beschermt de voeten.
+ITEM_56_NAME	Rijlaarzen
+ITEM_56_DESC	Beschermt de voeten.
+ITEM_57_NAME	Spijkerlaarzen
+ITEM_57_DESC	Beschermt de voeten.
+ITEM_58_NAME	Voetwikkels
+ITEM_58_DESC	Beschermt de voeten.
+ITEM_59_NAME	Marsschoenen
+ITEM_59_DESC	Beschermt de voeten.
+ITEM_60_NAME	Voetplaten
+ITEM_60_DESC	Beschermt de voeten.
+ITEM_61_NAME	Voetstukken
+ITEM_61_DESC	Beschermt de voeten.
+ITEM_62_NAME	Oorlogslaarzen
+ITEM_62_DESC	Beschermt de voeten.
+ITEM_63_NAME	Band
+ITEM_63_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_64_NAME	Amulet
+ITEM_64_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_65_NAME	Armband
+ITEM_65_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_66_NAME	Broche
+ITEM_66_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_67_NAME	Ring
+ITEM_67_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_68_NAME	Halsketting
+ITEM_68_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_69_NAME	Hanger
+ITEM_69_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_71_NAME	Torque
+ITEM_71_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_72_NAME	Mantel
+ITEM_72_DESC	Een klein versleten sieraad. Er kunnen er twee tegelijk worden gedragen.
+ITEM_73_NAME	Kort zwaard
+ITEM_73_DESC	Wordt in de hoofdhand gehouden.
+ITEM_74_NAME	Lang zwaard
+ITEM_74_DESC	Wordt in de hoofdhand gehouden.
+ITEM_75_NAME	Bijl
+ITEM_75_DESC	Wordt in de hoofdhand gehouden.
+ITEM_76_NAME	Knots
+ITEM_76_DESC	Wordt in de hoofdhand gehouden.
+ITEM_77_NAME	Vlegel
+ITEM_77_DESC	Wordt in de hoofdhand gehouden.
+ITEM_78_NAME	Rapier
+ITEM_78_DESC	Wordt in de hoofdhand gehouden.
+ITEM_79_NAME	Dolk
+ITEM_79_DESC	Wordt in een van beide handen gehouden. Past in de hoofdhand of de tweede hand.
+ITEM_80_NAME	Mes
+ITEM_80_DESC	Wordt in een van beide handen gehouden. Past in de hoofdhand of de tweede hand.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Wordt in een van beide handen gehouden. Past in de hoofdhand of de tweede hand.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Wordt in de tweede hand gehouden. Blokkeert slagen.
+ITEM_83_NAME	Vlieger schild
+ITEM_83_DESC	Wordt in de tweede hand gehouden. Blokkeert slagen.
+ITEM_84_NAME	Torenschild
+ITEM_84_DESC	Wordt in de tweede hand gehouden. Blokkeert slagen.
+ITEM_85_NAME	Tweehandszwaard
+ITEM_85_DESC	Heeft twee handen nodig. De tweede hand moet leeg zijn.
+ITEM_86_NAME	Oorlogshamer
+ITEM_86_DESC	Heeft twee handen nodig. De tweede hand moet leeg zijn.
+ITEM_87_NAME	Strijdbijl
+ITEM_87_DESC	Heeft twee handen nodig. De tweede hand moet leeg zijn.
+UILABEL_UI_SCALE	Schaal van de interface
+NAME_MASCULINE	["Daan", "Bram", "Joris", "Thijs", "Lars"]
+NAME_FEMININE	["Fleur", "Sanne", "Lotte", "Maud", "Eva"]
+NAME_ANDROGYNOUS	["Sam", "Noa", "Robin", "Kai", "Jesse"]
+UILABEL_BODY_TYPE	Lichaamstype
+UILABEL_BODY_MASCULINE	Mannelijk
+UILABEL_BODY_FEMININE	Vrouwelijk
+UILABEL_BODY_ANDROGYNOUS	Androgyn
+UILABEL_TYPE_ITEM	Voorwerp
+UILABEL_TYPE_CONSUMABLE	Verbruiksartikel
+UILABEL_TYPE_WEAPON	Wapen
+UILABEL_TYPE_ARMOR	Harnas
+UILABEL_TYPE_ACCESSORY	Accessoire
+UILABEL_SLOT_EITHER_HAND	Elke hand
+UILABEL_SLOT_TWO_HAND	Tweehandig

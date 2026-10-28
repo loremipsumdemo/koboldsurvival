@@ -1,6 +1,8 @@
 #include "systems.h"
+#include "language.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <cstdlib>
 #include "combat.h"
 #include "inventory.h"
@@ -100,20 +102,6 @@ Vec2 findSpawn(Terrain& t) {
 
 namespace {
 
-// The names units are given when they spawn. Player units never share a name.
-const char* const UNIT_NAMES[] = {
-    "Aldric", "Bren", "Cora", "Dunstan", "Elin", "Fenn", "Gwen", "Hale", "Isolde", "Joss", "Kestrel", "Liam",
-    "Maren", "Nell", "Orrin", "Pim", "Quill", "Rhea", "Sable", "Tobin", "Wren", "Yara", "Ansel", "Brynn",
-};
-constexpr int UNIT_NAME_COUNT = (int)(sizeof(UNIT_NAMES) / sizeof(UNIT_NAMES[0]));
-
-std::string pickName(Rng& rng, const std::vector<std::string>& taken) {
-    for (int attempt = 0; attempt < 200; ++attempt) {
-        const std::string name = UNIT_NAMES[rng.range(0, UNIT_NAME_COUNT - 1)];
-        if (std::find(taken.begin(), taken.end(), name) == taken.end()) return name;
-    }
-    return UNIT_NAMES[0];
-}
 
 // Starting stats: attributes at levels 5..15, skills at levels 1..5. Each stat starts with exactly
 // the XP for its level.
@@ -132,8 +120,27 @@ Stats randomStartingStats(Rng& rng) {
     return startingStats(rng);
 }
 
-std::string randomUnitName(Rng& rng, const std::vector<std::string>& taken) {
-    return pickName(rng, taken);
+int randomBodyType(Rng& rng) {
+    const int r = rng.range(1, 100);
+    return r <= 45 ? BODY_MASCULINE : r <= 90 ? BODY_FEMININE : BODY_ANDROGYNOUS;
+}
+
+int bodyForSavedName(const std::string& name) {
+    const size_t h = std::hash<std::string>{}(name) % 100;
+    return h < 45 ? BODY_MASCULINE : h < 90 ? BODY_FEMININE : BODY_ANDROGYNOUS;
+}
+
+// Player units never share a name. The names come from the set for the body type.
+std::string randomUnitName(Rng& rng, int body, const std::vector<std::string>& taken) {
+    const NameSet set = body == BODY_FEMININE ? NameSet::Feminine
+                      : body == BODY_ANDROGYNOUS ? NameSet::Androgynous : NameSet::Masculine;
+    const std::vector<std::string> names = languageNames(set);
+    if (names.empty()) return lang("UILABEL_UNNAMED_UNIT");
+    for (int attempt = 0; attempt < 200; ++attempt) {
+        const std::string& name = names[rng.range(0, (int)names.size() - 1)];
+        if (std::find(taken.begin(), taken.end(), name) == taken.end()) return name;
+    }
+    return names[0];
 }
 
 // One player unit in the block centred on the spawn: slot i of the block, moved onto free ground
@@ -151,6 +158,7 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     w.add(u, Combat{});
     w.add(u, Name{});
     w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+    w.add(u, Body{ randomBodyType(rng) });
 }
 
 // Makes sure there are `count` player units, adding the missing ones at the spawn
@@ -248,13 +256,16 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             nd->hp = nd->maxHp;
         }
         if (w.has<Hostile>(u) || w.has<Neutral>(u)) w.add(u, randomHostileGear(rng));
+        // The body comes first: the name is drawn from the set for it
+        if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
+        const int body = w.get<Body>(u)->type;
         Name* nm = w.get<Name>(u);
         if (!nm) continue;
         if (w.has<Commandable>(u)) {
-            nm->text = pickName(rng, takenNames);
+            nm->text = randomUnitName(rng, body, takenNames);
             takenNames.push_back(nm->text);
         } else {
-            nm->text = pickName(rng, {});
+            nm->text = randomUnitName(rng, body, {});
         }
     }
 }
@@ -397,7 +408,7 @@ bool dropStack(World& w, Entity unit, int slot) {
     if (s.item == 0 || s.count <= 0) return false;
 
     const ItemDef* def = findItem(s.item);
-    queueLog(nameOf(w, unit) + " drops " + std::to_string(s.count) + " " + (def ? def->name : std::string("an item")),
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }),
              LogKind::Drop);
     Entity e = w.create();
     w.add(e, Transform{ tr->x, tr->y, tr->z });
@@ -442,10 +453,10 @@ int pickupSystem(World& w) {
             // and the unit stays where it is.
             const int count = gi->count;
             const ItemDef* def = findItem(gi->item);
-            const std::string itemName = def ? def->name : std::string("an item");
+            const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left < count) {
-                queueLog(nameOf(w, u) + " picks up " + std::to_string(count - left) + " " + itemName, LogKind::Pickup);
+                queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup);
             }
             if (left == 0) w.destroy(item);
             else gi->count = left;
@@ -629,9 +640,9 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             c->encumbrance = load;
         }
         if (moved > 0.0f) {
-            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved, "walking");
-            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), "carrying a load");
-            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0, "climbing");
+            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
+            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"));
+            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0, lang("MISC_REASON_CLIMBING"));
             // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
             // a hundredth of a tile or less in a frame, is not walking.
             if (player && running && moved >= 0.01f) {

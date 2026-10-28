@@ -61,6 +61,7 @@ add_executable(koboldgame
     src/items.cpp
     src/language.cpp
     src/fontlist.cpp
+    src/fonts.cpp
     src/inventory.cpp
     src/combat.cpp
     src/equip.cpp
@@ -113,4 +114,14 @@ add_dependencies(koboldgame pack_data write_build_stamp)
 add_custom_command(TARGET koboldgame POST_BUILD
     COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldgame>/data.pak"
     COMMENT "Packing data/ into data.pak"
+)
+
+# The LANGUAGE folder goes next to the exe, loose, beside data.pak, BGM and SFX. Its English file is also in the pak,
+# so the game still runs if this folder is missing. Files here override the pak's copy of the same language.
+# The BGM and SFX folders (music and sound effects) are copied the same way. The audio module reads them loose.
+add_custom_command(TARGET koboldgame POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/LANGUAGE" "$<TARGET_FILE_DIR:koboldgame>/LANGUAGE"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldgame>/BGM"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldgame>/SFX"
+    COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"
 )

@@ -13,13 +13,14 @@ enum class PartyTab : int { Identity = 0, Stats, Gear, Items };
 inline constexpr int PARTY_TAB_COUNT = 4;
 
 // Which dropdown list is open, and what picking an entry sets
-enum class DropKind { None, Sprite, Gear, Item };
+enum class DropKind { None, Sprite, Body, Gear, Item };
 
 // What the menu shows and what it is editing. The party itself is kept by the caller.
 struct PartyUi {
     int selected = 0;                      // the unit picked in the left column
     PartyTab tab = PartyTab::Identity;
     bool editingName = false;              // typed text goes into the picked unit's name
+    std::string composition;               // text an input method is composing, shown until it is committed
     int stackSlot = 0;                     // the inventory slot picked in the Items tab
     DropKind dropKind = DropKind::None;    // the open dropdown, if any
     int dropSlot = 0;                      // the gear slot or inventory slot it fills

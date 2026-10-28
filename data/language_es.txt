@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Español-España
+UILABEL_CONTINUE	Continuar
+UILABEL_NEW_GAME	Nueva partida
+UILABEL_LOAD_GAME	Cargar partida
+UILABEL_SETTINGS	Ajustes
+UILABEL_LANGUAGE_BUTTON	Idioma ({0})
+UILABEL_QUIT	Salir
+UILABEL_RESUME	Reanudar
+UILABEL_SAVE_GAME	Guardar partida
+UILABEL_RETURN_TO_TITLE	Volver al título
+UILABEL_CLOSE	Cerrar
+UILABEL_BACK	Atrás
+UILABEL_SAVE	Guardar
+UILABEL_DELETE	Borrar
+UILABEL_CANCEL	Cancelar
+UILABEL_CONFIRM	Confirmar
+UILABEL_YES	Sí
+UILABEL_NO	No
+UILABEL_NAME	Nombre
+UILABEL_TIME	Hora
+UILABEL_CREATED	Creado
+UILABEL_TYPE	Tipo
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUAL
+UILABEL_NO_SAVES	Aún no hay partidas guardadas
+UILABEL_UNSAVED_WARNING	El progreso no guardado de esta partida se perderá.
+UILABEL_HOLD_DELETE	Mantén Borrar 3 segundos para confirmar.
+UILABEL_CLICK_SAVE	Haz clic en una partida para cargarla
+UILABEL_CLICK_MAP	Haz clic en un mapa para empezar una partida nueva
+UILABEL_NO_MAPS	No se encontraron mapas. Crea uno con worldgen.py.
+UILABEL_BUILT_IN	INCLUIDO
+UILABEL_WORLD	MUNDO
+UILABEL_MAP_FILE	ARCHIVO DE MAPA
+UILABEL_BUILT_IN_WHEN	incluido
+UILABEL_UNKNOWN	desconocido
+UILABEL_ON	Activado
+UILABEL_OFF	Desactivado
+UILABEL_EMPTY	Vacío
+UILABEL_NONE_AVAILABLE	Ninguno disponible
+UILABEL_TWO_HANDED	A dos manos
+UILABEL_WILL_BE_REPLACED	Será reemplazado
+UILABEL_GRAPHICS	Gráficos
+UILABEL_INTERFACE	Interfaz
+UILABEL_LANGUAGE_TAB	Idioma
+UILABEL_CONTROLS	Controles
+UILABEL_AUDIO	Audio
+UILABEL_DISPLAY_MODE	Modo de pantalla
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Resolución
+UILABEL_REFRESH_RATE	Frecuencia de refresco
+UILABEL_DEFAULT	Predeterminada
+UILABEL_VSYNC	Sincronización vertical
+UILABEL_FRAME_LIMIT	Límite de fotogramas
+UILABEL_UNLIMITED	Sin límite
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Autoguardado
+UILABEL_MINUTE	1 minuto
+UILABEL_MINUTES	{0} minutos
+UILABEL_UNIT_NAMES	Nombres de unidades
+UILABEL_FONT_SIZE	Tamaño de letra
+UILABEL_RESET_PANELS	Restablecer todos los paneles
+UILABEL_RESET	Restablecer
+UILABEL_FONT	Fuente
+UILABEL_FONT_AUTOMATIC	Automático
+UILABEL_EDGE_SCROLL	Desplazamiento por bordes
+UILABEL_MUSIC	Música
+UILABEL_AMBIENT	Ambiente
+UILABEL_SOUND_EFFECTS	Efectos de sonido
+UILABEL_RESTORE_DEFAULTS	Restaurar valores
+UILABEL_WINDOWED	En ventana
+UILABEL_BORDERLESS	Sin bordes
+UILABEL_FULL_SCREEN	Pantalla completa
+CONTROL_KEYS_1	W A S D, o las flechas
+CONTROL_DOES_1	Mover la cámara
+CONTROL_KEYS_2	Rueda del ratón
+CONTROL_DOES_2	Acercar y alejar
+CONTROL_KEYS_3	Mantén el botón central y arrastra
+CONTROL_DOES_3	Girar la cámara
+CONTROL_KEYS_4	Clic izquierdo, o arrastra un recuadro
+CONTROL_DOES_4	Seleccionar unidades
+CONTROL_KEYS_5	Mayús o Alt con un clic
+CONTROL_DOES_5	Añadir a la selección
+CONTROL_KEYS_6	Clic derecho
+CONTROL_DOES_6	Mover o atacar con las unidades seleccionadas
+CONTROL_KEYS_7	Mantén Alt
+CONTROL_DOES_7	Mostrar los nombres de los objetos en el suelo
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Abrir el menú o volver
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Hacer una captura
+UILABEL_PAUSED	PAUSA
+UILABEL_PACE_RUN	Ritmo: correr
+UILABEL_PACE_WALK	Ritmo: andar
+UILABEL_SQUAD_PANEL	Panel de escuadra
+UILABEL_UNIT_PANEL	Panel de unidad
+UILABEL_INFORMATION_PANEL	Panel de información
+UILABEL_INTERACTION_PANEL	Panel de interacción
+UILABEL_TRADE_PANEL	Panel de comercio
+UILABEL_INVENTORY	Inventario
+UILABEL_EQUIPMENT	Equipo
+UILABEL_BEHAVIOR	Comportamiento
+UILABEL_TRADE	Comerciar
+UILABEL_END_DIALOGUE	Terminar diálogo
+UILABEL_TRADE_DROP_THEIRS	Arrastra o haz clic derecho en objetos de su inventario aquí
+UILABEL_TRADE_DROP_YOURS	Arrastra o haz clic derecho en tus objetos de tu inventario aquí
+UILABEL_SINGLE	Uno
+UILABEL_MAX	Máx.
+UILABEL_SORT	Ordenar
+UILABEL_WORLD_MAP_HINT	Mapa del mundo. Desplázate para acercar. Pulsa M o Escape para cerrar.
+UILABEL_NO_UNIT_SELECTED	Ninguna unidad seleccionada
+UILABEL_UNNAMED_UNIT	Unidad sin nombre
+UILABEL_NO_NAME	Sin nombre
+UILABEL_PROFILE	Perfil
+UILABEL_STATS	Estadísticas
+UILABEL_CLICK_TO_TYPE	Haz clic para escribir un nombre
+UILABEL_SPRITE	Sprite
+UILABEL_STARTING_PARTY	Grupo inicial: {0}
+UILABEL_HEALTH	Salud
+UILABEL_HUNGER	Hambre
+UILABEL_CARRY	Carga
+UILABEL_NEXT_LEVEL_XP_LINE	XP para el siguiente nivel: {0}
+UILABEL_STAT	Estadística
+UILABEL_LEVEL	Nivel
+UILABEL_TOTAL_XP	XP total
+UILABEL_TO_NEXT	Siguiente
+UILABEL_ATTRIBUTES	Atributos
+UILABEL_COMBAT	Combate
+UILABEL_RESOURCE_GATHERING	Recolección
+UILABEL_CRAFTING	Artesanía
+UILABEL_UTILITY	Utilidades
+UILABEL_GEAR	Equipo
+UILABEL_ITEMS	Objetos
+UILABEL_IDENTITY	Identidad
+UILABEL_RANDOMIZE_UNIT	Aleatorizar esta unidad
+UILABEL_RANDOMIZE_ALL	Aleatorizar todo
+UILABEL_ADD_UNIT	Añadir unidad
+UILABEL_REMOVE_UNIT	Quitar unidad
+UILABEL_CONFIRM_STARTS	Confirmar inicia la partida con este grupo.
+UILABEL_NEEDS_NAMES	Cada unidad necesita un nombre antes de empezar la partida.
+UILABEL_CLICK_UNIT_EDIT	Haz clic en una unidad para editarla.
+UILABEL_SHIFT_CLICK	Mayús + clic cambia una estadística en 10.
+UILABEL_LEVELS_HINT	Los niveles van de 1 a 99.
+UILABEL_CLICK_SLOT	Haz clic en un hueco para elegir su objeto. Solo aparecen los que caben.
+UILABEL_CLICK_SLOT_STACK	Haz clic en un hueco para elegir su objeto. Las pilas admiten hasta el límite del objeto.
+UILABEL_SCROLL_UP	Subir
+UILABEL_SCROLL_DOWN	Bajar
+UILABEL_SLOT_HEAD	Cabeza
+UILABEL_SLOT_TORSO	Torso
+UILABEL_SLOT_MAIN_HAND	Mano principal
+UILABEL_SLOT_OFF_HAND	Mano secundaria
+UILABEL_SLOT_LEGS	Piernas
+UILABEL_SLOT_FEET	Pies
+UILABEL_SLOT_ACCESSORY	Accesorio
+UILABEL_BEHAVIOR_ON	Al
+UILABEL_TARGET	Objetivo
+UILABEL_CONDITION	Condición
+UILABEL_ACTION	Acción
+UILABEL_COMBAT_MESSAGES	Mensajes de combate
+UILABEL_SEEN	Visto
+UILABEL_HIT	Acierto
+UILABEL_MISS	Fallo
+UILABEL_DAMAGE	Daño
+UILABEL_EXPERIENCE_MESSAGES	Mensajes de experiencia
+UILABEL_EXPERIENCE	Experiencia
+UILABEL_ITEM_MESSAGES	Mensajes de objetos
+UILABEL_PICKUP	Recoger
+UILABEL_DROP	Soltar
+UILABEL_LOOT	Botín
+UILABEL_USE	Usar
+UILABEL_MESSAGE	Mensaje
+UILABEL_GAME	Juego
+UILABEL_FILTER	Filtro
+UILABEL_STAT_HEAD_STAT	Estadística
+UILABEL_UNKNOWN_SLOT	Desconocido
+UILABEL_MONTH_NAME	Mes {0}
+UILABEL_STRENGTH_STAT	Fuerza
+MISC_GAME_SAVED	Partida guardada
+MISC_SAVE_FAILED	No se pudo guardar la partida
+MISC_READ_FAILED	No se pudo leer esa partida
+MISC_SAVE_OLD	Esa partida es anterior a los mapas y no se puede cargar
+MISC_AUTOSAVED	Autoguardado
+MISC_SCREENSHOT_FAILED	No se pudo guardar la captura
+MISC_SCREENSHOT_SAVED	Guardado {0}
+MISC_TRADE_FULL	El intercambio está lleno
+MISC_TRADE_ALREADY	Ese objeto ya está en el intercambio, o el intercambio está lleno.
+MISC_TRADE_NO_MORE	No queda más de ese objeto para intercambiar
+MISC_NO_UNIT_TO_TRADE	No hay ninguna unidad con la que comerciar
+MISC_TRADE_ADD_BOTH	Añade objetos a ambos lados
+MISC_TRADE_NO_ROOM_YOURS	Tu unidad no tiene sitio para sus objetos
+MISC_TRADE_NO_ROOM_THEIRS	No tienen sitio para tus objetos
+MISC_TRADE_FAILED	Intercambio fallido
+MISC_TRADE_COMPLETE	Intercambio completado.
+MISC_PICKUP_SELECT	Selecciona unidades para recoger el objeto
+MISC_TALK_SELECT	Selecciona una unidad para hablar con ella
+MISC_TRADE_ONLY_TALKING	Solo puedes comerciar con la unidad con la que hablas.
+MISC_DROPS	{0} suelta {1} {2}
+MISC_AN_ITEM	un objeto
+MISC_UNIT	Unidad
+MISC_TWO_HANDED_IN_MAIN	Un arma a dos manos está en la mano principal
+MISC_YOU	Tú
+MISC_UNKNOWN_ITEM	Objeto desconocido
+MISC_ITEM_FALLBACK	Objeto
+MISC_THAT_ITEM	Ese
+MISC_REASON_FEES	pagar tasas de comercio
+MISC_REASON_WALKING	caminar
+MISC_REASON_CARRYING	cargar peso
+MISC_REASON_CLIMBING	escalar
+MISC_REASON_SWINGING	blandir
+MISC_REASON_DODGING	esquivar
+MISC_REASON_DEALING	causar daño
+MISC_REASON_TAKING	recibir daño
+MISC_REASON_BLOCKING	bloquear
+MISC_REASON_SPOTTING	localizar a un enemigo
+MISC_REASON_UNNOTICED	pasar desapercibido
+MISC_REASON_GEAR	cambiar de equipo
+NPC_GREETING	Hola, mundo.
+NPC_OPTION_WARES	Enséñame tus mercancías.
+NPC_OPTION_QUEST	¿Qué más me puedes contar sobre la misión?
+MISC_ORD_1	Primero
+MISC_ORD_2	Segundo
+MISC_ORD_3	Tercero
+MISC_ORD_4	Cuarto
+MISC_ORD_5	Quinto
+MISC_ORD_6	Sexto
+MISC_ORD_7	Séptimo
+MISC_ORD_8	Octavo
+MISC_ORD_9	Noveno
+MISC_ORD_10	Décimo
+MISC_ORD_11	Undécimo
+MISC_ORD_12	Duodécimo
+MISC_SKY_DAY_ZENITH	Cénit diurno
+MISC_SKY_DAY_HORIZON	Horizonte diurno
+MISC_SKY_NIGHT_ZENITH	Cénit nocturno
+MISC_SKY_NIGHT_HORIZON	Horizonte nocturno
+MISC_SKY_DUSK_HORIZON	Horizonte del ocaso
+MISC_SKY_DUSK_SUN	Sol del ocaso
+MISC_SKY_SUN	Sol
+MISC_SKY_MOON	Luna
+MISC_TARGET_SELF	Uno mismo
+MISC_TARGET_ALLY	Aliado
+MISC_TARGET_ENEMY	Enemigo
+MISC_COND_HEALTH	Salud
+MISC_COND_HUNGER	Hambre
+MISC_ACT_HEAL	Consumir objeto curativo
+MISC_ACT_FOOD	Consumir comida
+UILABEL_STAT_DESC_STRENGTH	Daño cuerpo a cuerpo, capacidad de carga
+UILABEL_STAT_DESC_DEXTERITY	Velocidad de ataque
+UILABEL_STAT_DESC_VITALITY	Salud máxima
+UILABEL_STAT_DESC_ENDURANCE	Resistencia máxima
+UILABEL_STAT_DESC_AGILITY	Probabilidad de esquivar
+UILABEL_STAT_DESC_INTELLIGENCE	Reserva de maná
+UILABEL_STAT_DESC_WISDOM	Capacidad de hechizos aprendibles
+UILABEL_STAT_DESC_CHARISMA	Precios de comercio con PNJ, opciones de diálogo únicas
+UILABEL_STAT_DESC_PERCEPTION	Alcance de detección
+UILABEL_STAT_DESC_ATHLETICS	Velocidad de carrera
+UILABEL_STAT_DESC_STEALTH	Mejor para evitar ser detectado al acechar
+UILABEL_STAT_DESC_MELEE	Precisión cuerpo a cuerpo
+UILABEL_STAT_DESC_PROJECTILES	Precisión a distancia
+UILABEL_STAT_DESC_ARCANE	Poder de hechizos
+UILABEL_STAT_DESC_BLOCK	Probabilidad de bloqueo o parada
+UILABEL_STAT_DESC_MINING	Rendimiento de mineral
+UILABEL_STAT_DESC_HERBALISM	Rendimiento de recolección de plantas
+UILABEL_STAT_DESC_WOODCUTTING	Rendimiento de troncos
+UILABEL_STAT_DESC_SKINNING	Rendimiento de pieles y carne
+UILABEL_STAT_DESC_FARMING	Rendimiento de cosechas
+UILABEL_STAT_DESC_COOKING	Fuerza de los alimentos
+UILABEL_STAT_DESC_SMELTING	Rendimiento de fundición
+UILABEL_STAT_DESC_FORGING	Fabricación de metal
+UILABEL_STAT_DESC_CARPENTRY	Fabricación en madera
+UILABEL_STAT_DESC_STONEWORKING	Fabricación en piedra
+UILABEL_STAT_DESC_LOCKPICKING	Dificultad de cerraduras
+UILABEL_STAT_DESC_THIEVERY	Éxito al robar
+UILABEL_STAT_DESC_MEDICAL	Efectividad de curación
+UILABEL_DEXTERITY_STAT	Destreza
+UILABEL_VITALITY_STAT	Vitalidad
+UILABEL_ENDURANCE_STAT	Resistencia
+UILABEL_AGILITY_STAT	Agilidad
+UILABEL_INTELLIGENCE_STAT	Inteligencia
+UILABEL_WISDOM_STAT	Sabiduría
+UILABEL_CHARISMA_STAT	Carisma
+UILABEL_PERCEPTION_STAT	Percepción
+UILABEL_ATHLETICS_STAT	Atletismo
+UILABEL_STEALTH_STAT	Sigilo
+UILABEL_MELEE_STAT	Cuerpo a cuerpo
+UILABEL_PROJECTILES_STAT	Proyectiles
+UILABEL_ARCANE_STAT	Arcano
+UILABEL_BLOCK_STAT	Bloqueo
+UILABEL_MINING_STAT	Minería
+UILABEL_HERBALISM_STAT	Herbolaria
+UILABEL_WOODCUTTING_STAT	Leñadería
+UILABEL_SKINNING_STAT	Desollado
+UILABEL_FARMING_STAT	Agricultura
+UILABEL_COOKING_STAT	Cocina
+UILABEL_SMELTING_STAT	Fundición
+UILABEL_FORGING_STAT	Forja
+UILABEL_CARPENTRY_STAT	Carpintería
+UILABEL_STONEWORKING_STAT	Cantería
+UILABEL_LOCKPICKING_STAT	Ganzúa
+UILABEL_THIEVERY_STAT	Latrocinio
+UILABEL_MEDICAL_STAT	Medicina
+MISC_CANT_BE_WORN	{0} no se puede equipar
+MISC_ITEM_NAME_FORMAT	{1} de {0}
+MISC_MATERIAL_IRON	hierro
+MISC_MATERIAL_STEEL	acero
+MISC_MATERIAL_BRONZE	bronce
+MISC_MATERIAL_SILVER	plata
+MISC_MATERIAL_LEATHER	cuero
+MISC_MATERIAL_BONE	hueso
+MISC_MATERIAL_WOOD	madera
+MISC_NEED_MORE_VALUE	Necesitan {0} más de valor
+MISC_TRADE_READY_FEE	Listo. Tasa de comercio: {0}
+MISC_LOAD_FAILED	No se pudo cargar {0}: {1}
+MISC_MAP_MISSING	Falta el mapa de "{0}"
+MISC_MAP_LOAD_FAILED	No se pudo cargar el mapa "{0}": {1}
+MISC_LOADED	Cargado {0}
+MISC_DELETE_FAILED	No se pudo borrar "{0}"
+MISC_DELETED	Borrado "{0}"
+MISC_USED	Usaste {0}
+MISC_OVERWRITE_Q	¿Sobrescribir "{0}"?
+MISC_LOAD_Q	¿Cargar "{0}"?
+MISC_DELETE_Q	¿Borrar "{0}"?
+MISC_NOT_FIT_SLOT	{0} no cabe en el hueco {1}
+MISC_EMPTY_OFF_HAND	Vacía la mano secundaria antes de sostener {0}
+MISC_NO_ROOM_INV	No hay espacio en el inventario para {0}
+MISC_SLOT_HOLDS	Ese hueco ya tiene {0}
+UILABEL_TIP_TYPE	Tipo: {0}
+UILABEL_TIP_MATERIAL	Material: {0}
+UILABEL_TIP_SLOT	Ranura: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Nivel requerido: {0}
+UILABEL_TIP_ATTACK	Ataque {0}
+UILABEL_TIP_DEFENSE	Defensa {0}
+UILABEL_TIP_WEIGHT	Peso {0}
+UILABEL_TIP_EACH	 cada uno
+UILABEL_TIP_STACKS	Se apila hasta {0}
+UILABEL_TIP_BUY	Precio de compra: {0}
+UILABEL_TIP_SELL	Precio de venta: {0}
+UILABEL_TIP_USE	Uso: {0}
+UILABEL_TOTAL_VALUE	Valor total: {0}
+UILABEL_CHOOSE_HOW_MANY	Elige cuántos: {0} ({1} disponibles)
+UILABEL_TIP_LEVEL	Nivel: {0}
+UILABEL_TIP_PROGRESS	Progreso: {0}%
+UILABEL_TIP_CURRENT_XP	XP actual: {0}
+UILABEL_ATTACK_DEFENSE	Ataque {0}      Defensa {1}
+UILABEL_STATS_CAPTION	Estadísticas: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Hueco {0}: {1}
+UILABEL_SLOT_N_EMPTY	Hueco {0}: vacío
+UILABEL_COUNT	Cantidad {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defensa {1}    Carga {2}
+MISC_IS_DOWN	{0} cae
+MISC_PICKS_UP	{0} recoge {1} {2}
+MISC_CANNOT_READ	No se pudo leer {0}
+UILABEL_TIP_DURABILITY	Durabilidad {0} / {1}
+UILABEL_DATE_LINE	DÍA {0} · {1} · AÑO {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} gana {1} XP de {2} por {3}
+UILABEL_PAUSE_HINT	(Usa la barra espaciadora para reanudar.)
+MISC_DRINKS	{0} bebe {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	E
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	O
+ITEM_1_NAME	Mineral de hierro
+ITEM_1_DESC	Mineral en bruto que puede fundirse en lingotes de hierro.
+ITEM_2_NAME	Tronco de roble
+ITEM_2_DESC	Un tronco resistente para artesanía y construcción.
+ITEM_3_NAME	Hierba curativa
+ITEM_3_DESC	Una hierba común con suaves propiedades restauradoras.
+ITEM_4_NAME	Moneda de oro
+ITEM_4_DESC	Moneda oficial del reino.
+ITEM_5_NAME	Piel de lobo
+ITEM_5_DESC	Piel basta de un lobo abatido. Muy buscada por los curtidores.
+ITEM_6_NAME	Reliquia antigua
+ITEM_6_DESC	Un misterioso artefacto que vibra con una energía tenue.
+ITEM_7_NAME	Poción de salud
+ITEM_7_DESC	Restaura 50 PV al consumirse.
+ITEM_8_NAME	Poción de maná
+ITEM_8_DESC	Restaura 50 PM al consumirse.
+ITEM_9_NAME	Brebaje de resistencia
+ITEM_9_DESC	Restaura 40 de resistencia y acelera brevemente la regeneración.
+ITEM_10_NAME	Elixir de poderío
+ITEM_10_DESC	Concede +10 de ataque durante 60 segundos.
+ITEM_11_NAME	Pan
+ITEM_11_DESC	Comida sencilla de viaje. Restaura 15 PV.
+ITEM_12_NAME	Antídoto
+ITEM_12_DESC	Cura el veneno y reduce su daño durante 30 segundos.
+ITEM_13_NAME	Manzana
+ITEM_13_DESC	Sacia 8 de hambre al comerlo.
+ITEM_14_NAME	Bayas silvestres
+ITEM_14_DESC	Sacia 6 de hambre al comerlo.
+ITEM_15_NAME	Galleta dura
+ITEM_15_DESC	Sacia 12 de hambre al comerlo.
+ITEM_16_NAME	Cuña de queso
+ITEM_16_DESC	Sacia 15 de hambre al comerlo.
+ITEM_17_NAME	Pescado ahumado
+ITEM_17_DESC	Sacia 20 de hambre al comerlo.
+ITEM_18_NAME	Pastel de miel
+ITEM_18_DESC	Sacia 18 de hambre al comerlo.
+ITEM_19_NAME	Pastel de cordero
+ITEM_19_DESC	Sacia 26 de hambre al comerlo.
+ITEM_20_NAME	Cuenco de guiso
+ITEM_20_DESC	Sacia 30 de hambre al comerlo.
+ITEM_21_NAME	Pierna de jabalí asada
+ITEM_21_DESC	Sacia 40 de hambre al comerlo.
+ITEM_22_NAME	Ración de viaje
+ITEM_22_DESC	Sacia 50 de hambre al comerlo.
+ITEM_23_NAME	Gorra
+ITEM_23_DESC	Protege la cabeza.
+ITEM_24_NAME	Capucha
+ITEM_24_DESC	Protege la cabeza.
+ITEM_25_NAME	Cofia
+ITEM_25_DESC	Protege la cabeza.
+ITEM_26_NAME	Yelmo
+ITEM_26_DESC	Protege la cabeza.
+ITEM_27_NAME	Visera
+ITEM_27_DESC	Protege la cabeza.
+ITEM_28_NAME	Bacinete
+ITEM_28_DESC	Protege la cabeza.
+ITEM_29_NAME	Celada
+ITEM_29_DESC	Protege la cabeza.
+ITEM_30_NAME	Gran yelmo
+ITEM_30_DESC	Protege la cabeza.
+ITEM_31_NAME	Diadema
+ITEM_31_DESC	Protege la cabeza.
+ITEM_32_NAME	Corona
+ITEM_32_DESC	Protege la cabeza.
+ITEM_33_NAME	Túnica
+ITEM_33_DESC	Cubre el pecho y el cuerpo.
+ITEM_34_NAME	Jubón
+ITEM_34_DESC	Cubre el pecho y el cuerpo.
+ITEM_35_NAME	Chaleco laminar
+ITEM_35_DESC	Cubre el pecho y el cuerpo.
+ITEM_36_NAME	Brigantina
+ITEM_36_DESC	Cubre el pecho y el cuerpo.
+ITEM_37_NAME	Haubergón
+ITEM_37_DESC	Cubre el pecho y el cuerpo.
+ITEM_38_NAME	Peto
+ITEM_38_DESC	Cubre el pecho y el cuerpo.
+ITEM_39_NAME	Coraza
+ITEM_39_DESC	Cubre el pecho y el cuerpo.
+ITEM_40_NAME	Pechera
+ITEM_40_DESC	Cubre el pecho y el cuerpo.
+ITEM_41_NAME	Armadura completa
+ITEM_41_DESC	Cubre el pecho y el cuerpo.
+ITEM_42_NAME	Armadura ceremonial
+ITEM_42_DESC	Cubre el pecho y el cuerpo.
+ITEM_43_NAME	Calzones
+ITEM_43_DESC	Cubre las piernas.
+ITEM_44_NAME	Pantalones
+ITEM_44_DESC	Cubre las piernas.
+ITEM_45_NAME	Mallas
+ITEM_45_DESC	Cubre las piernas.
+ITEM_46_NAME	Calzas
+ITEM_46_DESC	Cubre las piernas.
+ITEM_47_NAME	Faldones
+ITEM_47_DESC	Cubre las piernas.
+ITEM_48_NAME	Muslos
+ITEM_48_DESC	Cubre las piernas.
+ITEM_49_NAME	Grebas
+ITEM_49_DESC	Cubre las piernas.
+ITEM_50_NAME	Mallas de placas
+ITEM_50_DESC	Cubre las piernas.
+ITEM_51_NAME	Mallas de cota
+ITEM_51_DESC	Cubre las piernas.
+ITEM_52_NAME	Grebas doradas
+ITEM_52_DESC	Cubre las piernas.
+ITEM_53_NAME	Sandalias
+ITEM_53_DESC	Protege los pies.
+ITEM_54_NAME	Zapatos
+ITEM_54_DESC	Protege los pies.
+ITEM_55_NAME	Botas
+ITEM_55_DESC	Protege los pies.
+ITEM_56_NAME	Botas de montar
+ITEM_56_DESC	Protege los pies.
+ITEM_57_NAME	Botas de clavos
+ITEM_57_DESC	Protege los pies.
+ITEM_58_NAME	Vendas
+ITEM_58_DESC	Protege los pies.
+ITEM_59_NAME	Botas de marcha
+ITEM_59_DESC	Protege los pies.
+ITEM_60_NAME	Zapatos de placas
+ITEM_60_DESC	Protege los pies.
+ITEM_61_NAME	Zapatos de malla
+ITEM_61_DESC	Protege los pies.
+ITEM_62_NAME	Botas de guerra
+ITEM_62_DESC	Protege los pies.
+ITEM_63_NAME	Banda
+ITEM_63_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_64_NAME	Encanto
+ITEM_64_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_65_NAME	Pulsera
+ITEM_65_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_66_NAME	Broche
+ITEM_66_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_67_NAME	Anillo
+ITEM_67_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_68_NAME	Amuleto
+ITEM_68_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_69_NAME	Colgante
+ITEM_69_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_70_NAME	Talismán
+ITEM_70_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_71_NAME	Torques
+ITEM_71_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_72_NAME	Capa
+ITEM_72_DESC	Un pequeño adorno gastado. Se pueden llevar dos a la vez.
+ITEM_73_NAME	Espada corta
+ITEM_73_DESC	Se sostiene en la mano principal.
+ITEM_74_NAME	Espada larga
+ITEM_74_DESC	Se sostiene en la mano principal.
+ITEM_75_NAME	Hacha
+ITEM_75_DESC	Se sostiene en la mano principal.
+ITEM_76_NAME	Maza
+ITEM_76_DESC	Se sostiene en la mano principal.
+ITEM_77_NAME	Mayal
+ITEM_77_DESC	Se sostiene en la mano principal.
+ITEM_78_NAME	Estoque
+ITEM_78_DESC	Se sostiene en la mano principal.
+ITEM_79_NAME	Daga
+ITEM_79_DESC	Se sostiene en cualquier mano. Cabe en la principal o en la secundaria.
+ITEM_80_NAME	Cuchillo
+ITEM_80_DESC	Se sostiene en cualquier mano. Cabe en la principal o en la secundaria.
+ITEM_81_NAME	Estilete
+ITEM_81_DESC	Se sostiene en cualquier mano. Cabe en la principal o en la secundaria.
+ITEM_82_NAME	Broquel
+ITEM_82_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_83_NAME	Escudo de cometa
+ITEM_83_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_84_NAME	Escudo torre
+ITEM_84_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_85_NAME	Mandoble
+ITEM_85_DESC	Requiere ambas manos. La mano secundaria debe estar vacía.
+ITEM_86_NAME	Martillo de guerra
+ITEM_86_DESC	Requiere ambas manos. La mano secundaria debe estar vacía.
+ITEM_87_NAME	Hacha de batalla
+ITEM_87_DESC	Requiere ambas manos. La mano secundaria debe estar vacía.
+UILABEL_UI_SCALE	Escala de la interfaz
+NAME_MASCULINE	["Alonso", "Diego", "Mateo", "Tomás", "Rodrigo"]
+NAME_FEMININE	["Lucía", "Elena", "Inés", "Marta", "Carmen"]
+NAME_ANDROGYNOUS	["Alex", "Noa", "Sol", "Ariel", "Río"]
+UILABEL_BODY_TYPE	Tipo de cuerpo
+UILABEL_BODY_MASCULINE	Masculino
+UILABEL_BODY_FEMININE	Femenino
+UILABEL_BODY_ANDROGYNOUS	Andrógino
+UILABEL_TYPE_ITEM	Objeto
+UILABEL_TYPE_CONSUMABLE	Consumible
+UILABEL_TYPE_WEAPON	Arma
+UILABEL_TYPE_ARMOR	Armadura
+UILABEL_TYPE_ACCESSORY	Accesorio
+UILABEL_SLOT_EITHER_HAND	Cualquier mano
+UILABEL_SLOT_TWO_HAND	A dos manos

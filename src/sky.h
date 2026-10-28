@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include "language.h"
 
 // The sky colors. The sky blends between day and night colors using the
 // sun's height, and the dusk colors are used near the horizon at sunrise and sunset.
@@ -15,12 +16,12 @@ enum ColorTarget {
     CT_COUNT
 };
 
-inline const char* colorTargetName(int i) {
-    static const char* const names[CT_COUNT] = {
-        "Day zenith", "Day horizon", "Night zenith", "Night horizon",
-        "Dusk horizon", "Dusk sun", "Sun", "Moon"
+inline std::string colorTargetName(int i) {
+    static const char* const keys[CT_COUNT] = {
+        "MISC_SKY_DAY_ZENITH", "MISC_SKY_DAY_HORIZON", "MISC_SKY_NIGHT_ZENITH", "MISC_SKY_NIGHT_HORIZON",
+        "MISC_SKY_DUSK_HORIZON", "MISC_SKY_DUSK_SUN", "MISC_SKY_SUN", "MISC_SKY_MOON"
     };
-    return names[i];
+    return lang(keys[i]);
 }
 
 // Atmosphere settings. Colors are RGB, each 0..1.

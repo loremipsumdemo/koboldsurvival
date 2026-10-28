@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <string>
+#include "language.h"
 
 // The in-game calendar. One full day and night takes 30 real minutes, so an in-game hour takes
 // 75 real seconds. The clock is kept as in-game seconds since the start of the game, which is
@@ -66,17 +67,13 @@ inline float timeOfDayMinutes(double seconds) {
 
 // "First" .. "Twelfth"
 inline std::string ordinalWord(int n) {
-    static const char* const words[] = {
-        "First", "Second", "Third", "Fourth", "Fifth", "Sixth",
-        "Seventh", "Eighth", "Ninth", "Tenth", "Eleventh", "Twelfth",
-    };
     if (n < 1 || n > 12) return std::to_string(n);
-    return words[n - 1];
+    return lang("MISC_ORD_" + std::to_string(n));
 }
 
 // "Third Month". Months are never named Jan, February and so on.
 inline std::string monthName(int month) {
-    return ordinalWord(month) + " Month";
+    return langf("UILABEL_MONTH_NAME", { ordinalWord(month) });
 }
 
 // "23:59:47"
@@ -90,8 +87,7 @@ inline std::string formatClock(double seconds) {
 // "DAY 12 · THIRD MONTH · YEAR 500"
 inline std::string formatDate(double seconds) {
     const CalendarDate d = dateOf(seconds);
-    std::string s = "DAY " + std::to_string(d.day) + " \xC2\xB7 " + monthName(d.month) +
-                    " \xC2\xB7 YEAR " + std::to_string(d.year);
+    std::string s = langf("UILABEL_DATE_LINE", { std::to_string(d.day), monthName(d.month), std::to_string(d.year) });
     for (char& ch : s) {
         if (ch >= 'a' && ch <= 'z') ch = (char)std::toupper((unsigned char)ch);
     }

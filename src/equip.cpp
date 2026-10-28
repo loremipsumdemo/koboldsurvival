@@ -1,4 +1,5 @@
 #include "equip.h"
+#include "language.h"
 #include <algorithm>
 #include <vector>
 #include "combat.h"
@@ -12,7 +13,7 @@ namespace {
 
 std::string nameOf(int item) {
     const ItemDef* d = findItem(item);
-    return d ? d->name : std::string("That");
+    return d ? itemDisplayName(*d) : std::string(lang("MISC_THAT_ITEM"));
 }
 
 // The gear slots an item fits, from its equip_slot
@@ -36,11 +37,12 @@ bool isTwoHanded(int item) {
 
 } // namespace
 
-const char* gearSlotName(int slot) {
-    static const char* const names[GEAR_SLOTS] = {
-        "Head", "Torso", "Main hand", "Off hand", "Legs", "Feet", "Accessory", "Accessory",
+std::string gearSlotName(int slot) {
+    static const char* const keys[GEAR_SLOTS] = {
+        "UILABEL_SLOT_HEAD", "UILABEL_SLOT_TORSO", "UILABEL_SLOT_MAIN_HAND", "UILABEL_SLOT_OFF_HAND",
+        "UILABEL_SLOT_LEGS", "UILABEL_SLOT_FEET", "UILABEL_SLOT_ACCESSORY", "UILABEL_SLOT_ACCESSORY",
     };
-    return (slot >= 0 && slot < GEAR_SLOTS) ? names[slot] : "Unknown";
+    return (slot >= 0 && slot < GEAR_SLOTS) ? lang(keys[slot]) : lang("UILABEL_UNKNOWN_SLOT");
 }
 
 bool offHandBlocked(const Equipment& worn) {
@@ -56,15 +58,15 @@ bool canEquip(const Equipment& worn, int item, int slot, std::string& why) {
     }
     const std::vector<int> fits = fittingSlots(*d);
     if (slot < 0 || slot >= GEAR_SLOTS || std::find(fits.begin(), fits.end(), slot) == fits.end()) {
-        why = nameOf(item) + " doesn't fit the " + gearSlotName(slot) + " slot";
+        why = langf("MISC_NOT_FIT_SLOT", { nameOf(item), gearSlotName(slot) });
         return false;
     }
     if (d->equipSlot == "two_hand" && slot == GEAR_MAIN_HAND && worn.items[GEAR_OFF_HAND] != 0) {
-        why = "Empty the off hand before holding " + nameOf(item);
+        why = langf("MISC_EMPTY_OFF_HAND", { nameOf(item) });
         return false;
     }
     if (slot == GEAR_OFF_HAND && offHandBlocked(worn)) {
-        why = "A two-handed weapon is in the main hand";
+        why = lang("MISC_TWO_HANDED_IN_MAIN");
         return false;
     }
     return true;
@@ -129,12 +131,12 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     ItemStack& taken = next.slots[invSlot];
     if (--taken.count <= 0) taken = ItemStack{};
     if (displaced != 0 && addToInventory(next, displaced, 1) > 0) {
-        why = "No room in the inventory for " + nameOf(displaced);
+        why = langf("MISC_NO_ROOM_INV", { nameOf(displaced) });
         return false;
     }
     *inv = next;
     worn->items[gearSlot] = item;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -147,7 +149,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
     const int item = worn->items[fromSlot];
     if (item == 0) return false;
     if (worn->items[toSlot] != 0) {
-        why = "That slot already holds " + nameOf(worn->items[toSlot]);
+        why = langf("MISC_SLOT_HOLDS", { nameOf(worn->items[toSlot]) });
         return false;
     }
     Equipment after = *worn;
@@ -156,7 +158,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -170,12 +172,12 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     if (item == 0) return false;
     Inventory next = *inv;
     if (addToInventory(next, item, 1) > 0) {
-        why = "No room in the inventory for " + nameOf(item);
+        why = langf("MISC_NO_ROOM_INV", { nameOf(item) });
         return false;
     }
     *inv = next;
     worn->items[gearSlot] = 0;
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, "changing gear");
+    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -189,7 +191,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     // Copy what's needed before creating an entity, which can move the stored components
     const Transform at = *tr;
     const ItemDef* def = findItem(item);
-    queueLog(nameOf(w, unit) + " drops " + (def ? def->name : std::string("an item")), LogKind::Drop);
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop);
     worn->items[gearSlot] = 0;
     Entity e = w.create();
     w.add(e, Transform{ at.x, at.y, at.z });

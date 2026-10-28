@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include "language.h"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
@@ -27,6 +28,7 @@
 #include "map.h"
 #include "audio.h"
 #include "pak.h"
+#include "fonts.h"
 #include "savegame.h"
 #include "settings.h"
 #include "settings_menu.h"
@@ -262,20 +264,20 @@ TradeStatus checkTrade(World& w, Entity npc, Entity player) {
     const Inventory* ni = npc != NULL_ENTITY ? w.get<Inventory>(npc) : nullptr;
     const Inventory* pi = player != NULL_ENTITY ? w.get<Inventory>(player) : nullptr;
     if (!ni || !pi) {
-        st.text = "No unit to trade with";
+        st.text = lang("MISC_NO_UNIT_TO_TRADE");
         return st;
     }
     const int npcValue = tradeValueOf(tradeNpc);
     const int offer = tradeValueOf(tradePlayer);
     const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA));
     st.progress = needed > 0 ? (float)offer / (float)needed : 1.0f;
-    if (tradeNpc.empty() || tradePlayer.empty()) st.text = "Add items to both sides";
-    else if (!tradeFits(*pi, tradePlayer, tradeNpc)) st.text = "Your unit has no room for their items";
-    else if (!tradeFits(*ni, tradeNpc, tradePlayer)) st.text = "They have no room for your items";
-    else if (offer < needed) st.text = "They need " + std::to_string(needed - offer) + " more value";
+    if (tradeNpc.empty() || tradePlayer.empty()) st.text = lang("MISC_TRADE_ADD_BOTH");
+    else if (!tradeFits(*pi, tradePlayer, tradeNpc)) st.text = lang("MISC_TRADE_NO_ROOM_YOURS");
+    else if (!tradeFits(*ni, tradeNpc, tradePlayer)) st.text = lang("MISC_TRADE_NO_ROOM_THEIRS");
+    else if (offer < needed) st.text = langf("MISC_NEED_MORE_VALUE", { std::to_string(needed - offer) });
     else {
         st.ok = true;
-        st.text = "Ready. Trade fee: " + std::to_string(needed - npcValue);
+        st.text = langf("MISC_TRADE_READY_FEE", { std::to_string(needed - npcValue) });
     }
     return st;
 }
@@ -290,7 +292,7 @@ void completeTrade(World& w, Entity npc, Entity player) {
     for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
     for (const TradeGhost& g : tradeNpc) addToInventory(*pi, g.stack.item, g.stack.count);
     for (const TradeGhost& g : tradePlayer) addToInventory(*ni, g.stack.item, g.stack.count);
-    if (fee > 0) grantXp(w, player, STAT_CHARISMA, fee, "paying trade fees");
+    if (fee > 0) grantXp(w, player, STAT_CHARISMA, fee, lang("MISC_REASON_FEES"));
     tradeOpen = false;
     tradeNpc.clear();
     tradePlayer.clear();
@@ -518,7 +520,7 @@ bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
         ok = readMapFile(c.path, data);
     }
     if (!ok) {
-        err = "could not read " + c.name;
+        err = langf("MISC_CANNOT_READ", { c.name });
         return false;
     }
     terrain.load(data);
@@ -619,6 +621,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
+        world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
     }
 
     if (d.hasItems) {
@@ -662,7 +665,11 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.hostile = w.has<Hostile>(u);
         su.neutral = w.has<Neutral>(u);
         su.sprite = us ? us->id : 1;
-        su.name = n ? n->text : "Unnamed Unit";
+        su.name = n ? n->text : lang("UILABEL_UNNAMED_UNIT");
+        if (const Body* bd = w.get<Body>(u)) {
+            su.hasBody = true;
+            su.body = bd->type;
+        }
         if (const Needs* nd = w.get<Needs>(u)) {
             su.hasNeeds = true;
             su.needs = *nd;
@@ -799,8 +806,8 @@ void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending) {
 
 // What a map is, as the list's Type column shows it
 std::string mapTypeLabel(const MapChoice& m) {
-    if (m.source == "data" || m.source == "packed") return "BUILT-IN";
-    return m.source == "world" ? "WORLD" : "MAP FILE";
+    if (m.source == "data" || m.source == "packed") return lang("UILABEL_BUILT_IN");
+    return m.source == "world" ? lang("UILABEL_WORLD") : lang("UILABEL_MAP_FILE");
 }
 
 // Sorts the New Game list. The premade map always comes first. The rest sort by name, or by the date
@@ -924,25 +931,25 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     if (ask != Ask::None) {
         DialogGeometry d = questionGeometry(W, H);
         if (ask == Ask::Delete) {
-            out.push_back(Button{ "Delete", d.yes, Action::DeleteHold });
-            out.push_back(Button{ "Cancel", d.no, Action::DeleteNo });
+            out.push_back(Button{ lang("UILABEL_DELETE"), d.yes, Action::DeleteHold });
+            out.push_back(Button{ lang("UILABEL_CANCEL"), d.no, Action::DeleteNo });
             return out;
         }
         Action yes = Action::OverwriteYes, no = Action::OverwriteNo;
         if (ask == Ask::LoadUnsaved) { yes = Action::LoadYes; no = Action::LoadNo; }
-        out.push_back(Button{ "Yes", d.yes, yes });
-        out.push_back(Button{ "No", d.no, no });
+        out.push_back(Button{ lang("UILABEL_YES"), d.yes, yes });
+        out.push_back(Button{ lang("UILABEL_NO"), d.no, no });
         return out;
     }
 
     PanelGeometry g = panelGeometry(W, H);
     const float x = g.box.x + g.pad, w = g.box.w - 2.0f * g.pad;
 
-    if (saveMode) out.push_back(Button{ "Save", g.saveBtn, Action::ConfirmName });
+    if (saveMode) out.push_back(Button{ lang("UILABEL_SAVE"), g.saveBtn, Action::ConfirmName });
 
     // Column headers. Type is not sortable, since autosaves always come first anyway.
-    out.push_back(Button{ "Name", Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::SortName });
-    out.push_back(Button{ "Time", Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH }, Action::SortTime });
+    out.push_back(Button{ lang("UILABEL_NAME"), Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::SortName });
+    out.push_back(Button{ lang("UILABEL_TIME"), Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH }, Action::SortTime });
 
     const size_t rows = visibleSaveRows(H);
     size_t first = std::min(listOffset, saves.size());
@@ -956,13 +963,13 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     for (size_t i = first; i < last; ++i) {
         // Each row: the save itself, then its Delete button in the right-hand column
         out.push_back(Button{ "", Rect{ x, y, w - delW - delGap, g.rowH }, Action::LoadSlot, true, (int)i });
-        out.push_back(Button{ "Delete", Rect{ x + w - delW, y, delW, g.rowH }, Action::DeleteSave, true, (int)i });
+        out.push_back(Button{ lang("UILABEL_DELETE"), Rect{ x + w - delW, y, delW, g.rowH }, Action::DeleteSave, true, (int)i });
         y += g.rowPitch;
     }
     if (last < saves.size()) out.push_back(Button{ "", g.belowBand, Action::ScrollDown });
 
     // Opened from the title screen, the button goes back there. Opened from the Esc menu, it closes to that menu.
-    out.push_back(Button{ fromTitle ? "Return to Title" : "Close", Rect{ x, g.closeY, w, g.btnH },
+    out.push_back(Button{ fromTitle ? lang("UILABEL_RETURN_TO_TITLE") : lang("UILABEL_CLOSE"), Rect{ x, g.closeY, w, g.btnH },
                           Action::CancelName });
     return out;
 }
@@ -974,8 +981,8 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
     PanelGeometry g = panelGeometry(W, H);
     const float x = g.box.x + g.pad, w = g.box.w - 2.0f * g.pad;
 
-    out.push_back(Button{ "Name", Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::MapSortName });
-    out.push_back(Button{ "Created", Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH },
+    out.push_back(Button{ lang("UILABEL_NAME"), Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::MapSortName });
+    out.push_back(Button{ lang("UILABEL_CREATED"), Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH },
                           Action::MapSortTime });
 
     const size_t rows = visibleSaveRows(H);
@@ -989,7 +996,7 @@ std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& m
     }
     if (last < maps.size()) out.push_back(Button{ "", g.belowBand, Action::MapScrollDown });
 
-    out.push_back(Button{ "Return to Title", Rect{ x, g.closeY, w, g.btnH }, Action::ReturnToTitle });
+    out.push_back(Button{ lang("UILABEL_RETURN_TO_TITLE"), Rect{ x, g.closeY, w, g.btnH }, Action::ReturnToTitle });
     return out;
 }
 
@@ -1009,20 +1016,21 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     case Screen::Title: {
         // Right-hand side of the screen. The left side is left clear for the logo.
         float x = W * 0.62f, y = H * 0.34f;
-        add("Continue", Action::Continue, x, y, hasSave);        y += bh + gap;
-        add("New Game", Action::NewGame, x, y);                  y += bh + gap;
-        add("Load Game", Action::LoadGame, x, y, hasSave);       y += bh + gap;
-        add("Settings", Action::Settings, x, y);                 y += bh + gap;
-        add("Quit", Action::Quit, x, y);
+        add(lang("UILABEL_CONTINUE"), Action::Continue, x, y, hasSave);        y += bh + gap;
+        add(lang("UILABEL_NEW_GAME"), Action::NewGame, x, y);                  y += bh + gap;
+        add(lang("UILABEL_LOAD_GAME"), Action::LoadGame, x, y, hasSave);       y += bh + gap;
+        add(lang("UILABEL_SETTINGS"), Action::Settings, x, y);                 y += bh + gap;
+        add(langf("UILABEL_LANGUAGE_BUTTON", { languageDisplayName() }), Action::Language, x, y); y += bh + gap;
+        add(lang("UILABEL_QUIT"), Action::Quit, x, y);
         break;
     }
     case Screen::Pause: {
         float x = (W - bw) * 0.5f, y = H * 0.36f;
-        add("Resume", Action::Resume, x, y);                     y += bh + gap;
-        add("Save Game", Action::Save, x, y);                    y += bh + gap;
-        add("Load Game", Action::Load, x, y, hasSave);           y += bh + gap;
-        add("Settings", Action::Settings, x, y);                 y += bh + gap;
-        add("Return to Title", Action::ReturnToTitle, x, y);
+        add(lang("UILABEL_RESUME"), Action::Resume, x, y);                     y += bh + gap;
+        add(lang("UILABEL_SAVE_GAME"), Action::Save, x, y);                    y += bh + gap;
+        add(lang("UILABEL_LOAD_GAME"), Action::Load, x, y, hasSave);           y += bh + gap;
+        add(lang("UILABEL_SETTINGS"), Action::Settings, x, y);                 y += bh + gap;
+        add(lang("UILABEL_RETURN_TO_TITLE"), Action::ReturnToTitle, x, y);
         break;
     }
     case Screen::Playing:
@@ -1065,56 +1073,36 @@ const char* const SFX_ITEM = "sfx_04.mp3";   // an item picked up, moved between
 
 } // namespace
 
-// The text fonts, opened at the Font size setting. Each is a percentage of its base size, and the smaller text is the
-// same base size as the buttons so it reads as large as them.
+// The text fonts, opened at the Font size setting and for the selected language. Each main font has the other fonts
+// as fallbacks (see fonts.h). owned holds every font opened, so they can all be closed.
 struct UiFonts {
     TTF_Font* hud = nullptr;
     TTF_Font* ui = nullptr;
     TTF_Font* list = nullptr;
     TTF_Font* statsTitle = nullptr;
     TTF_Font* statsRow = nullptr;
+    std::vector<TTF_Font*> owned;
     bool valid() const { return hud && ui && list && statsTitle && statsRow; }
 };
 
 void closeUiFonts(UiFonts& f);
 
-UiFonts openUiFonts(int pct, const std::string& fontPath) {
-    const float size = 30.0f * pct / 100.0f;
-    const char* bold = "data/font/NotoSans_Condensed-Bold.ttf";
-    const char* regular = "data/font/NotoSans_Condensed-Regular.ttf";
-    if (!fontPath.empty()) {
-        // A font the player picked, from this computer. If it can't be opened, the built-in one is used.
-        UiFonts f;
-        f.hud = TTF_OpenFont(fontPath.c_str(), size);
-        f.ui = TTF_OpenFont(fontPath.c_str(), size);
-        f.list = TTF_OpenFont(fontPath.c_str(), size);
-        f.statsTitle = TTF_OpenFont(fontPath.c_str(), size);
-        f.statsRow = TTF_OpenFont(fontPath.c_str(), size);
-        if (f.valid()) return f;
-        closeUiFonts(f);
-    }
+UiFonts openUiFonts(int pct, const std::string& fontPath, const std::string& languageId) {
+    // 100% is the default size: 20 points at 100%
+    const float size = 20.0f * pct / 100.0f;
     UiFonts f;
-    f.hud = pakFont(bold, size);
-    f.ui = pakFont(bold, size);
-    f.list = pakFont(bold, size);
-    // The Stats popout uses NotoSans Regular. Until that file is in data/font, it uses Bold.
-    f.statsTitle = pakFont(regular, size);
-    f.statsRow = pakFont(regular, size);
-    if (!f.statsTitle || !f.statsRow) {
-        SDL_Log("NotoSans_Condensed-Regular.ttf is not in data/font, so the Stats popout uses Bold");
-        if (f.statsTitle) TTF_CloseFont(f.statsTitle);
-        if (f.statsRow) TTF_CloseFont(f.statsRow);
-        f.statsTitle = pakFont(bold, size);
-        f.statsRow = pakFont(bold, size);
-    }
+    // The HUD, the UI, the lists and the title are bold. The Stats popout is regular.
+    f.hud = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.ui = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.list = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.statsTitle = openFontChain(size, false, fontPath, languageId, f.owned);
+    f.statsRow = openFontChain(size, false, fontPath, languageId, f.owned);
     return f;
 }
 
 void closeUiFonts(UiFonts& f) {
-    for (TTF_Font** font : { &f.hud, &f.ui, &f.list, &f.statsTitle, &f.statsRow }) {
-        if (*font) TTF_CloseFont(*font);
-        *font = nullptr;
-    }
+    closeFonts(f.owned);
+    f.hud = f.ui = f.list = f.statsTitle = f.statsRow = nullptr;
 }
 
 int main(int, char**) {
@@ -1135,14 +1123,23 @@ int main(int, char**) {
     }
     // Settings come first: the saved text size decides the fonts
     GameSettings settings = loadSettings(SETTINGS_PATH);
-    UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath);
+    UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
     int appliedFontScale = settings.fontScale;
     std::string appliedFontPath = settings.fontPath;
+    std::string appliedLanguage = settings.language;
     {
+        // A saved language whose file can't be found goes back to the default one, and the setting is saved
         std::string langErr;
-        if (!loadLanguage(settings.language, langErr)) SDL_Log("Language: %s. Using English.", langErr.c_str());
+        if (!loadLanguage(settings.language, langErr)) {
+            SDL_Log("Language: %s. Using the default language.", langErr.c_str());
+            settings.language = LANGUAGE_DEFAULT_ID;
+            loadLanguage(settings.language, langErr);
+            saveSettings(settings, SETTINGS_PATH);
+        }
     }
-    TTF_Font* font = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
+    // The large title font, for the selected language, with the same fallbacks. It keeps the language it started with.
+    std::vector<TTF_Font*> titleFontOwned;
+    TTF_Font* font = openFontChain(64.0f, true, settings.fontPath, settings.language, titleFontOwned);
     if (!font || !fonts.valid()) {
         SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
         return 1;
@@ -1312,7 +1309,7 @@ int main(int, char**) {
     float actionAlpha = 0.0f;
     float actionX = 0.0f, actionZ = 0.0f;
 
-    // Short message ("Game saved", and so on)
+    // Short message (lang("MISC_GAME_SAVED"), and so on)
     std::string notice;
     float noticeSec = 0.0f;
 
@@ -1380,7 +1377,7 @@ int main(int, char**) {
         audio::stopTracks();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
-            showNotice("Could not load " + choice.name + ": " + err);
+            showNotice(langf("MISC_LOAD_FAILED", { choice.name, err }));
             return;
         }
         // The party from the menu replaces the three units that the seed made
@@ -1420,6 +1417,7 @@ int main(int, char**) {
     auto stopNameEdit = [&]() {
         if (partyUi.editingName) SDL_StopTextInput(window);
         partyUi.editingName = false;
+        partyUi.composition.clear();
     };
 
     // Closes the open dropdown, if there is one
@@ -1442,18 +1440,18 @@ int main(int, char**) {
     auto loadSave = [&](std::string path) {
         SaveData d;
         if (!readSaveFile(path, d)) {
-            showNotice("Could not read that save");
+            showNotice(lang("MISC_READ_FAILED"));
             refreshSaves();
             return;
         }
         if (d.mapStem.empty()) {
-            showNotice("That save is from before maps and can't be loaded");
+            showNotice(lang("MISC_SAVE_OLD"));
             refreshSaves();
             return;
         }
         std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
         if (!found) {
-            showNotice("The map for \"" + d.name + "\" is missing");
+            showNotice(langf("MISC_MAP_MISSING", { d.name }));
             refreshSaves();
             return;
         }
@@ -1462,7 +1460,7 @@ int main(int, char**) {
         // The title music ends as a saved game starts, before its level loads
         audio::stopTracks();
         if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
-            showNotice("Map \"" + choice.name + "\" could not be loaded: " + err);
+            showNotice(langf("MISC_MAP_LOAD_FAILED", { choice.name, err }));
             refreshSaves();
             return;
         }
@@ -1483,7 +1481,7 @@ int main(int, char**) {
         lastSaveTicks.reset();
         screen = Screen::Playing;
         closePanel();
-        showNotice("Loaded " + d.name);
+        showNotice(langf("MISC_LOADED", { d.name }));
     };
 
     // Writes an autosave into the next slot. Slots rotate: an empty one first, otherwise the oldest.
@@ -1506,7 +1504,7 @@ int main(int, char**) {
         pendingDelete.reset();
         deleteHolding = false;
         refreshSaves();
-        showNotice(ec ? "Could not delete \"" + name + "\"" : "Deleted \"" + name + "\"");
+        showNotice(ec ? langf("MISC_DELETE_FAILED", { name }) : langf("MISC_DELETED", { name }));
     };
 
     // Pans the camera with WASD or the arrow keys. Edge scrolling pans when the mouse is at a window edge.
@@ -1553,8 +1551,9 @@ int main(int, char**) {
     // Applies what a change touched. It is saved when the change is final: a slider saves when released.
     // The Font size setting: every text font is reopened at the new size, and the text drawn with the old ones is dropped
     auto applyFontScale = [&]() {
-        if (settings.fontScale == appliedFontScale && settings.fontPath == appliedFontPath) return;
-        UiFonts next = openUiFonts(settings.fontScale, settings.fontPath);
+        if (settings.fontScale == appliedFontScale && settings.fontPath == appliedFontPath
+            && settings.language == appliedLanguage) return;
+        UiFonts next = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
         if (!next.valid()) {
             closeUiFonts(next);
             return;
@@ -1564,19 +1563,25 @@ int main(int, char**) {
         fonts = next;
         appliedFontScale = settings.fontScale;
         appliedFontPath = settings.fontPath;
+        appliedLanguage = settings.language;
     };
-    // The Language setting: its text file is reloaded. A file that can't be read leaves English in use.
+    // The Language setting: its text file is reloaded. A file that can't be found goes back to the default language,
+    // and that choice is saved.
     auto applyLanguage = [&]() {
         std::string err;
-        if (!loadLanguage(settings.language, err)) showNotice(err);
+        if (loadLanguage(settings.language, err)) return;
+        showNotice(err + ". Using the default language.");
+        settings.language = LANGUAGE_DEFAULT_ID;
+        loadLanguage(settings.language, err);
+        saveSettingsFile();
     };
     auto settingsCommit = [&](const SettingsChange& c, bool save) {
         if (!c.any) return;
         if (c.display) applyVideo();
         else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
         if (c.audio) applyAudio();
-        if (c.fonts) applyFontScale();
         if (c.language) applyLanguage();
+        if (c.fonts || c.language) applyFontScale();
         if (save) saveSettingsFile();
     };
     auto leaveSettings = [&]() {
@@ -1693,6 +1698,11 @@ int main(int, char**) {
             if (!partyUi.editingName) SDL_StartTextInput(window);
             partyUi.editingName = true;
             return;
+        case Action::PartyBodyBox:
+            stopNameEdit();
+            partyUi.dropKind = DropKind::Body;
+            partyUi.dropScroll = 0;
+            return;
         case Action::PartySpriteBox:
             // The list opens scrolled so the unit's current sprite is near the middle
             stopNameEdit();
@@ -1746,6 +1756,9 @@ int main(int, char**) {
             switch (partyUi.dropKind) {
             case DropKind::Sprite:
                 m.sprite = value;
+                break;
+            case DropKind::Body:
+                m.body = value;
                 break;
             case DropKind::Gear:
                 m.gear[partyUi.dropSlot] = value;
@@ -1892,7 +1905,7 @@ int main(int, char**) {
             }
             bool ok = writeSave(manualSavePath(nowMs()), name, false);
             closePanel();
-            showNotice(ok ? "Game saved" : "Could not save the game");
+            showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
             return;
         }
         case Action::OverwriteYes: {
@@ -1904,7 +1917,7 @@ int main(int, char**) {
             // Keep the save's file and its AUTO or MANUAL type; only the contents change
             bool ok = writeSave(target.path, target.name, target.autosave);
             closePanel();
-            showNotice(ok ? "Game saved" : "Could not save the game");
+            showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
             return;
         }
         case Action::OverwriteNo:
@@ -1920,6 +1933,16 @@ int main(int, char**) {
             screen = Screen::Settings;
             settingsUi.openRow = -1;
             settingsUi.dragRow = -1;
+            rescanLanguages();
+            return;
+        case Action::Language:
+            // The start menu's Language button: the same Settings screen, opened on its Language tab
+            backScreen = screen;
+            screen = Screen::Settings;
+            settingsUi.tab = SettingsTab::Language;
+            settingsUi.openRow = -1;
+            settingsUi.dragRow = -1;
+            rescanLanguages();
             return;
         case Action::Back:
             stopNameEdit();
@@ -2070,8 +2093,8 @@ int main(int, char**) {
             if (!itemMenu.open || !inv || itemMenu.slot < 0 || itemMenu.slot >= INVENTORY_SLOTS) return labels;
             const ItemDef* def = findItem(inv->slots[itemMenu.slot].item);
             if (!def) return labels;
-            if (def->typeId == "consumable" && !def->onUse.empty()) labels.push_back("Use");
-            labels.push_back("Drop");
+            if (def->typeId == "consumable" && !def->onUse.empty()) labels.push_back(lang("UILABEL_USE"));
+            labels.push_back(lang("UILABEL_DROP"));
             return labels;
         };
         // Uses the stack in a slot of a unit, and says what happened
@@ -2079,10 +2102,10 @@ int main(int, char**) {
             const Inventory* inv = world.get<Inventory>(unit);
             if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return;
             const ItemDef* def = findItem(inv->slots[slot].item);
-            const std::string itemName = def ? def->name : std::string("That");
+            const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_THAT_ITEM"));
             switch (useStackInSlot(world, unit, slot)) {
             case UseResult::Used:
-                showNotice("Used " + itemName);
+                showNotice(langf("MISC_USED", { itemName }));
                 break;
             case UseResult::NotUsable:
                 showNotice(itemName + " can't be used");
@@ -2106,7 +2129,7 @@ int main(int, char**) {
             ln.text = text;
             ln.player = player;
             const bool known = who != NULL_ENTITY && world.has<Unit>(who);
-            ln.speaker = known ? nameOf(world, who) : std::string(player ? "You" : "Unnamed Unit");
+            ln.speaker = known ? nameOf(world, who) : std::string(player ? lang("MISC_YOU") : lang("UILABEL_UNNAMED_UNIT"));
             const UnitSprite* us = known ? world.get<UnitSprite>(who) : nullptr;
             ln.sprite = us ? us->id : 1;
             dialogueConvo.push_back(ln);
@@ -2130,22 +2153,22 @@ int main(int, char**) {
             std::vector<TradeGhost>& side = npcSide ? tradeNpc : tradePlayer;
             const int item = inv->slots[slot].item;
             if (inv->slots[slot].count <= 1) {
-                if (tradeAddItems(side, *inv, slot, 1) == 0) showNotice("That item is already in the trade, or the trade is full.");
+                if (tradeAddItems(side, *inv, slot, 1) == 0) showNotice(lang("MISC_TRADE_ALREADY"));
                 return;
             }
             const int avail = tradeAvailable(*inv, side, item);
             if (avail <= 0) {
-                showNotice("There is no more of that item to trade");
+                showNotice(lang("MISC_TRADE_NO_MORE"));
                 return;
             }
             const ItemDef* def = findItem(item);
-            quantity = QuantityPrompt{ true, npcSide, owner, slot, item, def ? def->name : std::string("Item"), 1, avail };
+            quantity = QuantityPrompt{ true, npcSide, owner, slot, item, def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, avail };
         };
         auto confirmQuantity = [&]() {
             const Inventory* inv = world.get<Inventory>(quantity.owner);
             std::vector<TradeGhost>& side = quantity.npcSide ? tradeNpc : tradePlayer;
             const int added = inv ? tradeAddItems(side, *inv, quantity.slot, quantity.chosen) : 0;
-            if (added == 0) showNotice("The trade is full");
+            if (added == 0) showNotice(lang("MISC_TRADE_FULL"));
             quantity.open = false;
         };
         auto startTalk = [&](Entity npc, Entity talker) {
@@ -2162,7 +2185,7 @@ int main(int, char**) {
             dialogueConvo.clear();
             dialoguePlayer = talker;
             const Dialogue* dg = world.get<Dialogue>(npc);
-            sayAs(npc, dg ? dg->text : std::string("Hello world."), false);
+            sayAs(npc, dg ? dg->text : std::string(lang("NPC_GREETING")), false);
         };
         // Picking an option: the player says its prompt, and the unit answers with its reply
         // Starts a talk, unless one ended too recently. Then no dialogue starts, but the units still walk to the NPC.
@@ -2383,15 +2406,20 @@ int main(int, char**) {
 
             case SDL_EVENT_TEXT_INPUT:
                 if (screen == Screen::PartySetup) {
-                    // Typed text goes into the name being edited, up to the limit
-                    std::string& name = pickedMember(party, partyUi).name;
-                    const std::string typed = e.text.text;
-                    if (partyUi.editingName && name.size() + typed.size() <= PARTY_NAME_LIMIT) name += typed;
+                    // Typed text goes into the name being edited, up to the limit in characters. Any text an input
+                    // method was composing is now committed, so it leaves the name box.
+                    partyUi.composition.clear();
+                    if (partyUi.editingName) appendUtf8Limited(pickedMember(party, partyUi).name, e.text.text, PARTY_NAME_CHARS);
                     break;
                 }
                 if (panelOpen && panelSaveMode && ask == Ask::None && saveName.size() < NAME_LIMIT) {
                     saveName += e.text.text;
                 }
+                break;
+
+            case SDL_EVENT_TEXT_EDITING:
+                // An input method is composing text (for example Chinese or Japanese): it shows in the name box
+                if (screen == Screen::PartySetup && partyUi.editingName) partyUi.composition = e.edit.text;
                 break;
 
             case SDL_EVENT_KEY_DOWN:
@@ -2655,8 +2683,8 @@ int main(int, char**) {
                             } else if (leftButton && tl.tradeBtn.contains(x, y)) {
                                 if (!tradeItemsPresent(world, dialogueUnit, dialoguePlayer)) {
                                     // Something offered is no longer in its inventory: the trade fails and the talk ends
-                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, "Trade failed", 0.0f });
-                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, "Trade failed", 0.0f });
+                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, lang("MISC_TRADE_FAILED"), 0.0f });
+                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, lang("MISC_TRADE_FAILED"), 0.0f });
                                     endTalk();
                                 } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
                                     const std::string label = "[Trade Value: " + std::to_string(tradeValueOf(tradePlayer)) + "]";
@@ -2664,7 +2692,7 @@ int main(int, char**) {
                                     tradeLabels.push_back(TradeLabel{ dialoguePlayer, label, 0.0f });
                                     completeTrade(world, dialogueUnit, dialoguePlayer);
                                     endTalk();
-                                    showNotice("Trade complete.", TRADE_LABEL_LIFE);
+                                    showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);
                                 }
                             } else if (takeTradeGhostAt(tradeNpc, tl.theirCells, x, y)
                                        || takeTradeGhostAt(tradePlayer, tl.yourCells, x, y)) {
@@ -2782,10 +2810,10 @@ int main(int, char**) {
                             const Entity unit = itemMenu.unit;
                             const int slot = itemMenu.slot;
                             itemMenu.open = false;
-                            if (hit >= 0 && labels[hit] == "Use") {
+                            if (hit >= 0 && labels[hit] == lang("UILABEL_USE")) {
                                 useSlot(unit, slot);
                                 audio::playEffect(SFX_MENU);
-                            } else if (hit >= 0 && labels[hit] == "Drop") {
+                            } else if (hit >= 0 && labels[hit] == lang("UILABEL_DROP")) {
                                 // A drop from the inventory plays its own sound, in place of the menu click
                                 audio::playEffect(dropStack(world, unit, slot) ? SFX_ITEM : SFX_MENU);
                             }
@@ -2895,7 +2923,7 @@ int main(int, char**) {
                         const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH);
                         if (item != NULL_ENTITY) {
                             const std::vector<Entity> picked = selectedUnits(world);
-                            if (picked.empty()) showNotice("Select units to pick the item up");
+                            if (picked.empty()) showNotice(lang("MISC_PICKUP_SELECT"));
                             else issuePickupOrder(world, terrain, picked, item);
                             break;
                         }
@@ -2947,7 +2975,7 @@ int main(int, char**) {
                                 const int target = worn ? gearSlotFor(*worn, item) : -1;
                                 std::string why;
                                 if (target < 0 || !equipFromInventory(world, picked[0], slot, target, why)) {
-                                    showNotice(why.empty() ? def->name + " can't be worn" : why);
+                                    showNotice(why.empty() ? langf("MISC_CANT_BE_WORN", { itemDisplayName(*def) }) : why);
                                 } else {
                                     audio::playEffect(SFX_ITEM);
                                 }
@@ -2973,7 +3001,7 @@ int main(int, char**) {
                                 }
                             }
                             if (talker != NULL_ENTITY) tryStartTalk(npc, talker, units);
-                            else if (units.empty()) showNotice("Select a unit to talk to them");
+                            else if (units.empty()) showNotice(lang("MISC_TALK_SELECT"));
                             else issueTalkOrder(world, units, npc);
                             break;
                         }
@@ -3026,7 +3054,7 @@ int main(int, char**) {
                     if (itemDrag && !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                         if (tl.yourBox.contains(x, y) && dragGear < 0) {
                             if (dragUnit == dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
-                            else showNotice("You can only trade with the unit you are talking to.");
+                            else showNotice(lang("MISC_TRADE_ONLY_TALKING"));
                         }
                         itemDrag = false;
                         dragUnit = NULL_ENTITY;
@@ -3260,7 +3288,7 @@ int main(int, char**) {
             autoTimer += dt;
             if (settings.autosaveMinutes > 0 && autoTimer >= settings.autosaveMinutes * 60.0f) {
                 autoTimer = 0.0f;
-                if (autosaveNow()) showNotice("Autosaved");
+                if (autosaveNow()) showNotice(lang("MISC_AUTOSAVED"));
             }
         }
 
@@ -3275,6 +3303,7 @@ int main(int, char**) {
         std::vector<std::string> hud;
         float mouseX = 0.0f, mouseY = 0.0f;
         SDL_GetMouseState(&mouseX, &mouseY);
+        renderer.setMouse(mouseX, mouseY);
         if (screen == Screen::Playing) {
             std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH);
             for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) {
@@ -3489,9 +3518,9 @@ int main(int, char**) {
             renderer.drawTitleBackground();
             dim(0.45f);
             renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
-            renderer.drawUiTextCentered("New Game", cx, g.box.y + g.pad, white);
-            renderer.drawUiTextCentered(maps.empty() ? "No maps found. Make one with worldgen.py."
-                                                     : "Click a map to start a new game",
+            renderer.drawUiTextCentered(lang("UILABEL_NEW_GAME"), cx, g.box.y + g.pad, white);
+            renderer.drawUiTextCentered(maps.empty() ? lang("UILABEL_NO_MAPS")
+                                                     : lang("UILABEL_CLICK_MAP"),
                                         cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
 
             // Column headers. The active sort column shows its direction.
@@ -3503,10 +3532,10 @@ int main(int, char**) {
                 if (!active) return label;
                 return label + (mapSortAsc ? "  ^" : "  v");
             };
-            renderer.drawListText(headerLabel("Name", mapSortByName), innerX + textInset, hy,
+            renderer.drawListText(headerLabel(lang("UILABEL_NAME"), mapSortByName), innerX + textInset, hy,
                                   mapSortByName ? white : gray);
-            renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, gray);
-            renderer.drawListText(headerLabel("Created", !mapSortByName), innerX + COL_TIME * innerW, hy,
+            renderer.drawListText(lang("UILABEL_TYPE"), innerX + COL_TYPE * innerW, hy, gray);
+            renderer.drawListText(headerLabel(lang("UILABEL_CREATED"), !mapSortByName), innerX + COL_TIME * innerW, hy,
                                   !mapSortByName ? white : gray);
 
             // "..." rows: how many maps are hidden above and below the visible rows
@@ -3536,8 +3565,8 @@ int main(int, char**) {
                     renderer.drawListText(m.name, b.rect.x + textInset, ry, isHover ? hover : white);
                     renderer.drawListText(mapTypeLabel(m), b.rect.x + COL_TYPE * b.rect.w, ry,
                                           (m.source == "data" || m.source == "packed") ? builtIn : white);
-                    const std::string when = (m.source == "data" || m.source == "packed") ? std::string("built in")
-                                           : m.created > 0 ? timeString(m.created) : std::string("unknown");
+                    const std::string when = (m.source == "data" || m.source == "packed") ? std::string(lang("UILABEL_BUILT_IN_WHEN"))
+                                           : m.created > 0 ? timeString(m.created) : std::string(lang("UILABEL_UNKNOWN"));
                     renderer.drawListText(when, b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
                 } else if (b.action == Action::MapScrollUp || b.action == Action::MapScrollDown
                            || b.action == Action::MapSortName || b.action == Action::MapSortTime) {
@@ -3585,27 +3614,27 @@ int main(int, char**) {
             renderer.beginUi(winW, winH);
             dim(0.25f);
             renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
-            renderer.drawUiTextCentered(panelSaveMode ? "Save Game" : "Load Game", cx, g.box.y + g.pad, white);
+            renderer.drawUiTextCentered(panelSaveMode ? lang("UILABEL_SAVE_GAME") : lang("UILABEL_LOAD_GAME"), cx, g.box.y + g.pad, white);
 
             if (ask != Ask::None) {
                 DialogGeometry d = questionGeometry(winW, winH);
                 renderer.drawRect(d.box, RGBA{ 0.13f, 0.07f, 0.07f, 1.0f });
                 if (ask == Ask::Overwrite) {
                     std::string who = pendingOverwrite ? pendingOverwrite->name : std::string();
-                    renderer.drawUiTextCentered("Overwrite \"" + who + "\"?",
+                    renderer.drawUiTextCentered(langf("MISC_OVERWRITE_Q", { who }),
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s, white);
                 } else if (ask == Ask::LoadUnsaved) {
                     std::string who = pendingLoad ? pendingLoad->name : std::string();
-                    renderer.drawUiTextCentered("Load \"" + who + "\"?",
+                    renderer.drawUiTextCentered(langf("MISC_LOAD_Q", { who }),
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
-                    renderer.drawUiTextCentered("Unsaved progress in this game will be lost.",
+                    renderer.drawUiTextCentered(lang("UILABEL_UNSAVED_WARNING"),
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
                 } else {
                     // Delete: the name is shown so it's clear which save goes
                     const std::string who = pendingDelete ? pendingDelete->name : std::string();
-                    renderer.drawUiTextCentered("Delete \"" + who + "\"?",
+                    renderer.drawUiTextCentered(langf("MISC_DELETE_Q", { who }),
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
-                    renderer.drawUiTextCentered("Hold Delete for 3 seconds to confirm.",
+                    renderer.drawUiTextCentered(lang("UILABEL_HOLD_DELETE"),
                                                 d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
                 }
                 for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
@@ -3628,7 +3657,7 @@ int main(int, char**) {
                     bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
                     renderer.drawUiText(saveName + (cursorOn ? "|" : ""), g.nameBox.x + 12.0f, textY, white);
                 } else {
-                    renderer.drawUiTextCentered("Click a save to load it",
+                    renderer.drawUiTextCentered(lang("UILABEL_CLICK_SAVE"),
                                                 cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
                 }
 
@@ -3641,14 +3670,14 @@ int main(int, char**) {
                     if (!active) return label;
                     return label + (sortAsc ? "  ^" : "  v");
                 };
-                renderer.drawListText(headerLabel("Name", sortKey == SortKey::Name),
+                renderer.drawListText(headerLabel(lang("UILABEL_NAME"), sortKey == SortKey::Name),
                                       innerX + textInset, hy, sortKey == SortKey::Name ? white : gray);
-                renderer.drawListText("Type", innerX + COL_TYPE * innerW, hy, gray);
-                renderer.drawListText(headerLabel("Time", sortKey == SortKey::Time),
+                renderer.drawListText(lang("UILABEL_TYPE"), innerX + COL_TYPE * innerW, hy, gray);
+                renderer.drawListText(headerLabel(lang("UILABEL_TIME"), sortKey == SortKey::Time),
                                       innerX + COL_TIME * innerW, hy, sortKey == SortKey::Time ? white : gray);
 
                 if (saves.empty()) {
-                    renderer.drawUiTextCentered("No saves yet", cx, g.listTop + g.nameBox.h * 0.22f, gray);
+                    renderer.drawUiTextCentered(lang("UILABEL_NO_SAVES"), cx, g.listTop + g.nameBox.h * 0.22f, gray);
                 }
 
                 // "..." rows: how many saves are hidden above and below the visible rows
@@ -3677,7 +3706,7 @@ int main(int, char**) {
                         renderer.drawButton(b.rect, "", true, isHover);
                         const float ry = b.rect.y + (b.rect.h - listH) * 0.5f;
                         renderer.drawListText(sv.name, b.rect.x + textInset, ry, isHover ? hover : white);
-                        renderer.drawListText(sv.autosave ? "AUTO" : "MANUAL",
+                        renderer.drawListText(sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
                                               b.rect.x + COL_TYPE * b.rect.w, ry,
                                               sv.autosave ? RGBA{ 0.6f, 0.85f, 1.0f, 1.0f } : white);
                         renderer.drawListText(timeString(sv.timestamp),
@@ -3687,7 +3716,7 @@ int main(int, char**) {
                         // Drawn above as text: the "..." rows and the headers only need their click areas
                         continue;
                     } else if (b.action == Action::DeleteSave) {
-                        renderer.drawListButton(b.rect, "Delete", isHover);
+                        renderer.drawListButton(b.rect, lang("UILABEL_DELETE"), isHover);
                     } else {
                         renderer.drawButton(b.rect, b.label, b.enabled, isHover);
                     }
@@ -3704,7 +3733,7 @@ int main(int, char**) {
         if (screenshotPending) {
             screenshotPending = false;
             const std::string saved = saveScreenshot(window);
-            showNotice(saved.empty() ? std::string("Could not save the screenshot") : "Saved " + saved);
+            showNotice(saved.empty() ? std::string(lang("MISC_SCREENSHOT_FAILED")) : langf("MISC_SCREENSHOT_SAVED", { saved }));
         }
 
         SDL_GL_SwapWindow(window);
@@ -3716,7 +3745,7 @@ int main(int, char**) {
     audio::shutdown();
     renderer.shutdown();
     closeUiFonts(fonts);
-    TTF_CloseFont(font);
+    closeFonts(titleFontOwned);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);
     SDL_DestroyWindow(window);

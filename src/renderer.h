@@ -61,7 +61,7 @@ struct CombatLogLayout {
         Rect r;
         LogKind kind;
         bool heading;
-        const char* label;
+        std::string label;
     };
     std::vector<FilterRow> filterRows;       // the menu's rows, when it is open
 
@@ -252,6 +252,14 @@ public:
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);
+    // Text that does not fit its box is drawn smaller, down to a floor, then shortened. The full text shows in a
+    // tooltip while the mouse is over the box: noteTip sets it, and endUi draws it.
+    void setMouse(float x, float y) { mouseX_ = x; mouseY_ = y; }
+    void noteTip(const std::string& full, const Rect& area);
+    void drawUiTextInBox(const std::string& s, const Rect& box, RGBA tint);
+    void drawUiTextScaled(const std::string& s, float x, float y, float k, RGBA tint);
+    std::string fitShrinkText(const std::string& s, float boxW);
+    float fitShrinkScale(const std::string& shown, float boxW, float boxH);
     float uiTextWidth(const std::string& s);
     float uiTextHeight(const std::string& s);
 
@@ -448,6 +456,9 @@ private:
     TextFont statsTitle_, statsRow_;
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
+    float mouseX_ = 0.0f, mouseY_ = 0.0f;   // the mouse, for tooltips
+    std::string tip_;                        // the full text to show as a tooltip, or empty
+    void drawTip();
 
     Mat4 viewProj_{};
 

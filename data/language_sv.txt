@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Svenska
+UILABEL_CONTINUE	Fortsätt
+UILABEL_NEW_GAME	Nytt spel
+UILABEL_LOAD_GAME	Ladda spel
+UILABEL_SETTINGS	Inställningar
+UILABEL_LANGUAGE_BUTTON	Språk ({0})
+UILABEL_QUIT	Avsluta
+UILABEL_RESUME	Återuppta
+UILABEL_SAVE_GAME	Spara spel
+UILABEL_RETURN_TO_TITLE	Tillbaka till titelskärmen
+UILABEL_CLOSE	Stäng
+UILABEL_BACK	Tillbaka
+UILABEL_SAVE	Spara
+UILABEL_DELETE	Radera
+UILABEL_CANCEL	Avbryt
+UILABEL_CONFIRM	Bekräfta
+UILABEL_YES	Ja
+UILABEL_NO	Nej
+UILABEL_NAME	Namn
+UILABEL_TIME	Tid
+UILABEL_CREATED	Skapad
+UILABEL_TYPE	Typ
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUELL
+UILABEL_NO_SAVES	Inga sparfiler ännu
+UILABEL_UNSAVED_WARNING	Osparade framsteg i det här spelet går förlorade.
+UILABEL_HOLD_DELETE	Håll in Radera i 3 sekunder för att bekräfta.
+UILABEL_CLICK_SAVE	Klicka på en sparfil för att ladda den
+UILABEL_CLICK_MAP	Klicka på en karta för att starta ett nytt spel
+UILABEL_NO_MAPS	Inga kartor hittades. Skapa en med worldgen.py.
+UILABEL_BUILT_IN	INBYGGD
+UILABEL_WORLD	VÄRLD
+UILABEL_MAP_FILE	KARTFIL
+UILABEL_BUILT_IN_WHEN	inbyggd
+UILABEL_UNKNOWN	okänd
+UILABEL_ON	På
+UILABEL_OFF	Av
+UILABEL_EMPTY	Tom
+UILABEL_NONE_AVAILABLE	Inga tillgängliga
+UILABEL_TWO_HANDED	Tvåhänt
+UILABEL_WILL_BE_REPLACED	Kommer att ersättas
+UILABEL_GRAPHICS	Grafik
+UILABEL_INTERFACE	Gränssnitt
+UILABEL_LANGUAGE_TAB	Språk
+UILABEL_CONTROLS	Kontroller
+UILABEL_AUDIO	Ljud
+UILABEL_DISPLAY_MODE	Visningsläge
+UILABEL_MONITOR	Bildskärm
+UILABEL_RESOLUTION	Upplösning
+UILABEL_REFRESH_RATE	Uppdateringsfrekvens
+UILABEL_DEFAULT	Standard
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Gräns för bildfrekvens
+UILABEL_UNLIMITED	Obegränsad
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Automatisk sparning
+UILABEL_MINUTE	1 minut
+UILABEL_MINUTES	{0} minuter
+UILABEL_UNIT_NAMES	Enhetsnamn
+UILABEL_FONT_SIZE	Teckenstorlek
+UILABEL_RESET_PANELS	Återställ alla gränssnittspaneler
+UILABEL_RESET	Återställ
+UILABEL_FONT	Teckensnitt
+UILABEL_FONT_AUTOMATIC	Automatiskt
+UILABEL_EDGE_SCROLL	Rullning vid kanten
+UILABEL_MUSIC	Musik
+UILABEL_AMBIENT	Omgivningsljud
+UILABEL_SOUND_EFFECTS	Ljudeffekter
+UILABEL_RESTORE_DEFAULTS	Återställ standardvärden
+UILABEL_WINDOWED	Fönster
+UILABEL_BORDERLESS	Utan kant
+UILABEL_FULL_SCREEN	Helskärm
+CONTROL_KEYS_1	W A S D, eller piltangenterna
+CONTROL_DOES_1	Flyttar kameran
+CONTROL_KEYS_2	Musens scrollhjul
+CONTROL_DOES_2	Zoomar in och ut
+CONTROL_KEYS_3	Håll ned mittenknappen och dra
+CONTROL_DOES_3	Roterar kameran
+CONTROL_KEYS_4	Vänsterklick, eller dra en ruta
+CONTROL_DOES_4	Väljer enheter
+CONTROL_KEYS_5	Shift eller Alt med ett klick
+CONTROL_DOES_5	Lägger till i urvalet
+CONTROL_KEYS_6	Högerklick
+CONTROL_DOES_6	Flyttar eller anfaller med de valda enheterna
+CONTROL_KEYS_7	Håll ned Alt
+CONTROL_DOES_7	Visar namnen på föremål på marken
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Öppnar menyn, eller går tillbaka
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Tar en skärmbild
+UILABEL_PAUSED	PAUSAD
+UILABEL_PACE_RUN	Tempo: spring
+UILABEL_PACE_WALK	Tempo: gå
+UILABEL_SQUAD_PANEL	Truppanel
+UILABEL_UNIT_PANEL	Enhetspanel
+UILABEL_INFORMATION_PANEL	Informationspanel
+UILABEL_INTERACTION_PANEL	Interaktionspanel
+UILABEL_TRADE_PANEL	Handelspanel
+UILABEL_INVENTORY	Inventarie
+UILABEL_EQUIPMENT	Utrustning
+UILABEL_BEHAVIOR	Beteende
+UILABEL_TRADE	Handel
+UILABEL_END_DIALOGUE	Avsluta dialogen
+UILABEL_TRADE_DROP_THEIRS	Dra hit eller högerklicka för att lägga till föremål från deras inventarie
+UILABEL_TRADE_DROP_YOURS	Dra hit eller högerklicka för att lägga till dina föremål från din inventarie
+UILABEL_SINGLE	Enkel
+UILABEL_MAX	Max
+UILABEL_SORT	Sortera
+UILABEL_WORLD_MAP_HINT	Världskarta. Rulla för att zooma. Tryck M eller Esc för att stänga.
+UILABEL_NO_UNIT_SELECTED	Ingen enhet vald
+UILABEL_UNNAMED_UNIT	Namnlös enhet
+UILABEL_NO_NAME	Inget namn
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Statistik
+UILABEL_CLICK_TO_TYPE	Klicka för att skriva ett namn
+UILABEL_SPRITE	Sprite
+UILABEL_STARTING_PARTY	Startgrupp: {0}
+UILABEL_HEALTH	Hälsa
+UILABEL_HUNGER	Hunger
+UILABEL_CARRY	Bärkapacitet
+UILABEL_NEXT_LEVEL_XP_LINE	Erfarenhet till nästa nivå: {0}
+UILABEL_STAT	Statistik
+UILABEL_LEVEL	Nivå
+UILABEL_TOTAL_XP	Total erfarenhet
+UILABEL_TO_NEXT	Till nästa
+UILABEL_ATTRIBUTES	Attribut
+UILABEL_COMBAT	Strid
+UILABEL_RESOURCE_GATHERING	Resursinsamling
+UILABEL_CRAFTING	Hantverk
+UILABEL_UTILITY	Hjälpfärdigheter
+UILABEL_GEAR	Utrustning
+UILABEL_ITEMS	Föremål
+UILABEL_IDENTITY	Identitet
+UILABEL_RANDOMIZE_UNIT	Slumpa den här enheten
+UILABEL_RANDOMIZE_ALL	Slumpa alla
+UILABEL_ADD_UNIT	Lägg till enhet
+UILABEL_REMOVE_UNIT	Ta bort enhet
+UILABEL_CONFIRM_STARTS	Bekräfta startar spelet med den här gruppen.
+UILABEL_NEEDS_NAMES	Varje enhet behöver ett namn innan spelet kan starta.
+UILABEL_CLICK_UNIT_EDIT	Klicka på en enhet för att redigera den.
+UILABEL_SHIFT_CLICK	Shift + klick ändrar en statistik med 10.
+UILABEL_LEVELS_HINT	Nivåerna går från 1 till 99.
+UILABEL_CLICK_SLOT	Klicka på en plats för att välja föremål. Endast föremål som får plats visas.
+UILABEL_CLICK_SLOT_STACK	Klicka på en plats för att välja föremål. Staplar rymmer upp till föremålets gräns.
+UILABEL_SCROLL_UP	Rulla upp
+UILABEL_SCROLL_DOWN	Rulla ned
+UILABEL_SLOT_HEAD	Huvud
+UILABEL_SLOT_TORSO	Bål
+UILABEL_SLOT_MAIN_HAND	Huvudhand
+UILABEL_SLOT_OFF_HAND	Andra handen
+UILABEL_SLOT_LEGS	Ben
+UILABEL_SLOT_FEET	Fötter
+UILABEL_SLOT_ACCESSORY	Tillbehör
+UILABEL_BEHAVIOR_ON	På
+UILABEL_TARGET	Mål
+UILABEL_CONDITION	Villkor
+UILABEL_ACTION	Åtgärd
+UILABEL_COMBAT_MESSAGES	Stridsmeddelanden
+UILABEL_SEEN	Sedd
+UILABEL_HIT	Träff
+UILABEL_MISS	Miss
+UILABEL_DAMAGE	Skada
+UILABEL_EXPERIENCE_MESSAGES	Erfarenhetsmeddelanden
+UILABEL_EXPERIENCE	Erfarenhet
+UILABEL_ITEM_MESSAGES	Föremålsmeddelanden
+UILABEL_PICKUP	Plocka upp
+UILABEL_DROP	Släpp
+UILABEL_LOOT	Byte
+UILABEL_USE	Använd
+UILABEL_MESSAGE	Meddelande
+UILABEL_GAME	Spel
+UILABEL_FILTER	Filter
+UILABEL_STAT_HEAD_STAT	Statistik
+UILABEL_UNKNOWN_SLOT	Okänd
+UILABEL_MONTH_NAME	Månad {0}
+UILABEL_STRENGTH_STAT	Styrka
+MISC_GAME_SAVED	Spelet sparades
+MISC_SAVE_FAILED	Kunde inte spara spelet
+MISC_READ_FAILED	Kunde inte läsa den sparfilen
+MISC_SAVE_OLD	Den sparfilen är från före kartorna och kan inte laddas
+MISC_AUTOSAVED	Sparades automatiskt
+MISC_SCREENSHOT_FAILED	Kunde inte spara skärmbilden
+MISC_SCREENSHOT_SAVED	Sparade {0}
+MISC_TRADE_FULL	Handeln är full
+MISC_TRADE_ALREADY	Föremålet finns redan i handeln, eller så är handeln full.
+MISC_TRADE_NO_MORE	Det finns inte mer av det föremålet att handla med
+MISC_NO_UNIT_TO_TRADE	Ingen enhet att handla med
+MISC_TRADE_ADD_BOTH	Lägg till föremål på båda sidor
+MISC_TRADE_NO_ROOM_YOURS	Din enhet har inte plats för deras föremål
+MISC_TRADE_NO_ROOM_THEIRS	De har inte plats för dina föremål
+MISC_TRADE_FAILED	Handeln misslyckades
+MISC_TRADE_COMPLETE	Handeln klar.
+MISC_PICKUP_SELECT	Välj enheter som ska plocka upp föremålet
+MISC_TALK_SELECT	Välj en enhet att prata med
+MISC_TRADE_ONLY_TALKING	Du kan bara handla med enheten du pratar med.
+MISC_DROPS	{0} släpper {1} {2}
+MISC_AN_ITEM	ett föremål
+MISC_UNIT	Enhet
+MISC_TWO_HANDED_IN_MAIN	Ett tvåhandsvapen finns i huvudhanden
+MISC_YOU	Du
+MISC_UNKNOWN_ITEM	Okänt föremål
+MISC_ITEM_FALLBACK	Föremål
+MISC_THAT_ITEM	Det
+MISC_REASON_FEES	betala handelsavgifter
+MISC_REASON_WALKING	gå
+MISC_REASON_CARRYING	bära en last
+MISC_REASON_CLIMBING	klättra
+MISC_REASON_SWINGING	svingar
+MISC_REASON_DODGING	undvika
+MISC_REASON_DEALING	orsaka skada
+MISC_REASON_TAKING	ta skada
+MISC_REASON_BLOCKING	blockera
+MISC_REASON_SPOTTING	upptäcka en fiende
+MISC_REASON_UNNOTICED	förbli oupptäckt
+MISC_REASON_GEAR	byta utrustning
+NPC_GREETING	Hej världen.
+NPC_OPTION_WARES	Visa mig dina varor.
+NPC_OPTION_QUEST	Vad mer kan du berätta om uppdraget?
+MISC_ORD_1	Första
+MISC_ORD_2	Andra
+MISC_ORD_3	Tredje
+MISC_ORD_4	Fjärde
+MISC_ORD_5	Femte
+MISC_ORD_6	Sjätte
+MISC_ORD_7	Sjunde
+MISC_ORD_8	Åttonde
+MISC_ORD_9	Nionde
+MISC_ORD_10	Tionde
+MISC_ORD_11	Elfte
+MISC_ORD_12	Tolfte
+MISC_SKY_DAY_ZENITH	Dagens zenit
+MISC_SKY_DAY_HORIZON	Dagens horisont
+MISC_SKY_NIGHT_ZENITH	Nattens zenit
+MISC_SKY_NIGHT_HORIZON	Nattens horisont
+MISC_SKY_DUSK_HORIZON	Skymningens horisont
+MISC_SKY_DUSK_SUN	Solen i skymningen
+MISC_SKY_SUN	Solen
+MISC_SKY_MOON	Månen
+MISC_TARGET_SELF	Själv
+MISC_TARGET_ALLY	Allierad
+MISC_TARGET_ENEMY	Fiende
+MISC_COND_HEALTH	Hälsa
+MISC_COND_HUNGER	Hunger
+MISC_ACT_HEAL	Använd ett läkande föremål
+MISC_ACT_FOOD	Ät mat
+UILABEL_STAT_DESC_STRENGTH	Skada i närstrid, bärkapacitet
+UILABEL_STAT_DESC_DEXTERITY	Attackhastighet
+UILABEL_STAT_DESC_VITALITY	Max hälsa
+UILABEL_STAT_DESC_ENDURANCE	Max uthållighet
+UILABEL_STAT_DESC_AGILITY	Chans att undvika
+UILABEL_STAT_DESC_INTELLIGENCE	Manapool
+UILABEL_STAT_DESC_WISDOM	Antal lärbara besvärjelser
+UILABEL_STAT_DESC_CHARISMA	Handelspriser för NPC, unika dialogval
+UILABEL_STAT_DESC_PERCEPTION	Upptäcktsräckvidd
+UILABEL_STAT_DESC_ATHLETICS	Löpfart
+UILABEL_STAT_DESC_STEALTH	Bättre på att undgå upptäckt vid smygande
+UILABEL_STAT_DESC_MELEE	Träffsäkerhet i närstrid
+UILABEL_STAT_DESC_PROJECTILES	Träffsäkerhet på avstånd
+UILABEL_STAT_DESC_ARCANE	Besvärjelsekraft
+UILABEL_STAT_DESC_BLOCK	Chans att blockera eller parera
+UILABEL_STAT_DESC_MINING	Malmutbyte
+UILABEL_STAT_DESC_HERBALISM	Utbyte vid insamling av vilda växter
+UILABEL_STAT_DESC_WOODCUTTING	Stockutbyte
+UILABEL_STAT_DESC_SKINNING	Utbyte av skinn och kött
+UILABEL_STAT_DESC_FARMING	Skördeutbyte
+UILABEL_STAT_DESC_COOKING	Styrka på matbonusar
+UILABEL_STAT_DESC_SMELTING	Utbyte vid smältning av malm
+UILABEL_STAT_DESC_FORGING	Metallbearbetning
+UILABEL_STAT_DESC_CARPENTRY	Träbearbetning
+UILABEL_STAT_DESC_STONEWORKING	Stenbearbetning
+UILABEL_STAT_DESC_LOCKPICKING	Låssvårighet
+UILABEL_STAT_DESC_THIEVERY	Lyckad stöld
+UILABEL_STAT_DESC_MEDICAL	Effektivitet i läkning
+UILABEL_DEXTERITY_STAT	Smidighet
+UILABEL_VITALITY_STAT	Vitalitet
+UILABEL_ENDURANCE_STAT	Uthållighet
+UILABEL_AGILITY_STAT	Kvickhet
+UILABEL_INTELLIGENCE_STAT	Intelligens
+UILABEL_WISDOM_STAT	Visdom
+UILABEL_CHARISMA_STAT	Karisma
+UILABEL_PERCEPTION_STAT	Perception
+UILABEL_ATHLETICS_STAT	Atletik
+UILABEL_STEALTH_STAT	Smygning
+UILABEL_MELEE_STAT	Närstrid
+UILABEL_PROJECTILES_STAT	Projektiler
+UILABEL_ARCANE_STAT	Magi
+UILABEL_BLOCK_STAT	Block
+UILABEL_MINING_STAT	Gruvdrift
+UILABEL_HERBALISM_STAT	Örtlära
+UILABEL_WOODCUTTING_STAT	Skogsarbete
+UILABEL_SKINNING_STAT	Flåning
+UILABEL_FARMING_STAT	Jordbruk
+UILABEL_COOKING_STAT	Matlagning
+UILABEL_SMELTING_STAT	Smältning
+UILABEL_FORGING_STAT	Smide
+UILABEL_CARPENTRY_STAT	Snickeri
+UILABEL_STONEWORKING_STAT	Stenhuggeri
+UILABEL_LOCKPICKING_STAT	Låsöppning
+UILABEL_THIEVERY_STAT	Tjuveri
+UILABEL_MEDICAL_STAT	Medicin
+MISC_CANT_BE_WORN	{0} kan inte bäras
+MISC_ITEM_NAME_FORMAT	{1} av {0}
+MISC_MATERIAL_IRON	järn
+MISC_MATERIAL_STEEL	stål
+MISC_MATERIAL_BRONZE	brons
+MISC_MATERIAL_SILVER	silver
+MISC_MATERIAL_LEATHER	läder
+MISC_MATERIAL_BONE	ben
+MISC_MATERIAL_WOOD	trä
+MISC_NEED_MORE_VALUE	De behöver {0} mer i värde
+MISC_TRADE_READY_FEE	Klart. Handelsavgift: {0}
+MISC_LOAD_FAILED	Kunde inte ladda {0}: {1}
+MISC_MAP_MISSING	Kartan för "{0}" saknas
+MISC_MAP_LOAD_FAILED	Kartan "{0}" kunde inte laddas: {1}
+MISC_LOADED	Laddade {0}
+MISC_DELETE_FAILED	Kunde inte radera "{0}"
+MISC_DELETED	Raderade "{0}"
+MISC_USED	Använde {0}
+MISC_OVERWRITE_Q	Skriva över "{0}"?
+MISC_LOAD_Q	Ladda "{0}"?
+MISC_DELETE_Q	Radera "{0}"?
+MISC_NOT_FIT_SLOT	{0} passar inte i platsen {1}
+MISC_EMPTY_OFF_HAND	Töm den andra handen innan du håller i {0}
+MISC_NO_ROOM_INV	Inget utrymme i inventarien för {0}
+MISC_SLOT_HOLDS	Den platsen innehåller redan {0}
+UILABEL_TIP_TYPE	Typ: {0}
+UILABEL_TIP_MATERIAL	Material: {0}
+UILABEL_TIP_SLOT	Plats: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Krav på nivå: {0}
+UILABEL_TIP_ATTACK	Attack {0}
+UILABEL_TIP_DEFENSE	Försvar {0}
+UILABEL_TIP_WEIGHT	Vikt {0}
+UILABEL_TIP_EACH	 styck
+UILABEL_TIP_STACKS	Staplas till {0}
+UILABEL_TIP_BUY	Köppris: {0}
+UILABEL_TIP_SELL	Säljpris: {0}
+UILABEL_TIP_USE	Användning: {0}
+UILABEL_TOTAL_VALUE	Totalt värde: {0}
+UILABEL_CHOOSE_HOW_MANY	Välj hur många: {0} ({1} tillgängliga)
+UILABEL_TIP_LEVEL	Nivå: {0}
+UILABEL_TIP_PROGRESS	Framsteg: {0}%
+UILABEL_TIP_CURRENT_XP	Nuvarande erfarenhet: {0}
+UILABEL_ATTACK_DEFENSE	Attack {0}      Försvar {1}
+UILABEL_STATS_CAPTION	Statistik: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Plats {0}: {1}
+UILABEL_SLOT_N_EMPTY	Plats {0}: tom
+UILABEL_COUNT	Antal {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Försvar {1}    Bärkapacitet {2}
+MISC_IS_DOWN	{0} är nedslagen
+MISC_PICKS_UP	{0} plockar upp {1} {2}
+MISC_CANNOT_READ	Kunde inte läsa {0}
+UILABEL_TIP_DURABILITY	Hållbarhet {0} / {1}
+UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
+UILABEL_MONITOR_N	Bildskärm {0}
+MISC_GAINS_XP	{0} får {1} {2} erfarenhet för {3}
+UILABEL_PAUSE_HINT	(Tryck mellanslag för att återuppta.)
+MISC_DRINKS	{0} dricker {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	Ö
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	V
+ITEM_1_NAME	Järnmalm
+ITEM_1_DESC	Rå malm som kan smältas till järnbarrar.
+ITEM_2_NAME	Ekstock
+ITEM_2_DESC	En stadig stock som används i hantverk och byggande.
+ITEM_3_NAME	Läkande ört
+ITEM_3_DESC	En vanlig ört med mild återställande verkan.
+ITEM_4_NAME	Guldmynt
+ITEM_4_DESC	Rikets vanliga valuta.
+ITEM_5_NAME	Vargskinn
+ITEM_5_DESC	En grov päls från en fälld varg. Garvare är ute efter den.
+ITEM_6_NAME	Forntida relik
+ITEM_6_DESC	Ett mystiskt föremål som svagt surrar av energi.
+ITEM_7_NAME	Hälsodryck
+ITEM_7_DESC	Återställer 50 hälsa när den konsumeras.
+ITEM_8_NAME	Manadryck
+ITEM_8_DESC	Återställer 50 mana när den konsumeras.
+ITEM_9_NAME	Uthållighetsdryck
+ITEM_9_DESC	Återställer 40 uthållighet och ökar återhämtningen en kort stund.
+ITEM_10_NAME	Kraftelixir
+ITEM_10_DESC	Ger +10 attack i 60 sekunder.
+ITEM_11_NAME	Bröd
+ITEM_11_DESC	Enkel resmat. Återställer 15 hälsa.
+ITEM_12_NAME	Motgift
+ITEM_12_DESC	Botar förgiftning och minskar giftskadan i 30 sekunder.
+ITEM_13_NAME	Äpple
+ITEM_13_DESC	Återställer 8 hunger när det äts.
+ITEM_14_NAME	Vilda bär
+ITEM_14_DESC	Återställer 6 hunger när de äts.
+ITEM_15_NAME	Hårt kex
+ITEM_15_DESC	Återställer 12 hunger när det äts.
+ITEM_16_NAME	Ostbit
+ITEM_16_DESC	Återställer 15 hunger när den äts.
+ITEM_17_NAME	Rökt fisk
+ITEM_17_DESC	Återställer 20 hunger när den äts.
+ITEM_18_NAME	Honungskaka
+ITEM_18_DESC	Återställer 18 hunger när den äts.
+ITEM_19_NAME	Fårpaj
+ITEM_19_DESC	Återställer 26 hunger när den äts.
+ITEM_20_NAME	Grytskål
+ITEM_20_DESC	Återställer 30 hunger när den äts.
+ITEM_21_NAME	Stekt vildsvinslår
+ITEM_21_DESC	Återställer 40 hunger när den äts.
+ITEM_22_NAME	Resranson
+ITEM_22_DESC	Återställer 50 hunger när den äts.
+ITEM_23_NAME	Mössa
+ITEM_23_DESC	Skyddar huvudet.
+ITEM_24_NAME	Huva
+ITEM_24_DESC	Skyddar huvudet.
+ITEM_25_NAME	Kedjehuva
+ITEM_25_DESC	Skyddar huvudet.
+ITEM_26_NAME	Hjälm
+ITEM_26_DESC	Skyddar huvudet.
+ITEM_27_NAME	Visir
+ITEM_27_DESC	Skyddar huvudet.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Skyddar huvudet.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Skyddar huvudet.
+ITEM_30_NAME	Stor hjälm
+ITEM_30_DESC	Skyddar huvudet.
+ITEM_31_NAME	Pannband
+ITEM_31_DESC	Skyddar huvudet.
+ITEM_32_NAME	Krona
+ITEM_32_DESC	Skyddar huvudet.
+ITEM_33_NAME	Tunika
+ITEM_33_DESC	Täcker bröstet och kroppen.
+ITEM_34_NAME	Läderväst
+ITEM_34_DESC	Täcker bröstet och kroppen.
+ITEM_35_NAME	Lamellväst
+ITEM_35_DESC	Täcker bröstet och kroppen.
+ITEM_36_NAME	Brigandin
+ITEM_36_DESC	Täcker bröstet och kroppen.
+ITEM_37_NAME	Pansarskjorta
+ITEM_37_DESC	Täcker bröstet och kroppen.
+ITEM_38_NAME	Bröstplåt
+ITEM_38_DESC	Täcker bröstet och kroppen.
+ITEM_39_NAME	Kyrass
+ITEM_39_DESC	Täcker bröstet och kroppen.
+ITEM_40_NAME	Pansarbröst
+ITEM_40_DESC	Täcker bröstet och kroppen.
+ITEM_41_NAME	Fullt plåtharnesk
+ITEM_41_DESC	Täcker bröstet och kroppen.
+ITEM_42_NAME	Ceremoniell rustning
+ITEM_42_DESC	Täcker bröstet och kroppen.
+ITEM_43_NAME	Ridbyxor
+ITEM_43_DESC	Täcker benen.
+ITEM_44_NAME	Byxor
+ITEM_44_DESC	Täcker benen.
+ITEM_45_NAME	Benskydd
+ITEM_45_DESC	Täcker benen.
+ITEM_46_NAME	Kedjebyxor
+ITEM_46_DESC	Täcker benen.
+ITEM_47_NAME	Lårskydd
+ITEM_47_DESC	Täcker benen.
+ITEM_48_NAME	Lårplåtar
+ITEM_48_DESC	Täcker benen.
+ITEM_49_NAME	Benplåtar
+ITEM_49_DESC	Täcker benen.
+ITEM_50_NAME	Plåtbyxor
+ITEM_50_DESC	Täcker benen.
+ITEM_51_NAME	Kedjebenskydd
+ITEM_51_DESC	Täcker benen.
+ITEM_52_NAME	Förgyllda benplåtar
+ITEM_52_DESC	Täcker benen.
+ITEM_53_NAME	Sandaler
+ITEM_53_DESC	Skyddar fötterna.
+ITEM_54_NAME	Skor
+ITEM_54_DESC	Skyddar fötterna.
+ITEM_55_NAME	Stövlar
+ITEM_55_DESC	Skyddar fötterna.
+ITEM_56_NAME	Ridstövlar
+ITEM_56_DESC	Skyddar fötterna.
+ITEM_57_NAME	Spikstövlar
+ITEM_57_DESC	Skyddar fötterna.
+ITEM_58_NAME	Fotlindor
+ITEM_58_DESC	Skyddar fötterna.
+ITEM_59_NAME	Marschstövlar
+ITEM_59_DESC	Skyddar fötterna.
+ITEM_60_NAME	Sabatoner
+ITEM_60_DESC	Skyddar fötterna.
+ITEM_61_NAME	Sollerets
+ITEM_61_DESC	Skyddar fötterna.
+ITEM_62_NAME	Krigsstövlar
+ITEM_62_DESC	Skyddar fötterna.
+ITEM_63_NAME	Band
+ITEM_63_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_64_NAME	Amulett
+ITEM_64_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_65_NAME	Armband
+ITEM_65_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_66_NAME	Brosch
+ITEM_66_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_67_NAME	Ring
+ITEM_67_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_68_NAME	Halsband
+ITEM_68_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_69_NAME	Hänge
+ITEM_69_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_71_NAME	Halsring
+ITEM_71_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_72_NAME	Mantel
+ITEM_72_DESC	En liten sliten prydnad. Två kan bäras samtidigt.
+ITEM_73_NAME	Kort svärd
+ITEM_73_DESC	Hålls i huvudhanden.
+ITEM_74_NAME	Långt svärd
+ITEM_74_DESC	Hålls i huvudhanden.
+ITEM_75_NAME	Yxa
+ITEM_75_DESC	Hålls i huvudhanden.
+ITEM_76_NAME	Klubba
+ITEM_76_DESC	Hålls i huvudhanden.
+ITEM_77_NAME	Slagvapen
+ITEM_77_DESC	Hålls i huvudhanden.
+ITEM_78_NAME	Rapir
+ITEM_78_DESC	Hålls i huvudhanden.
+ITEM_79_NAME	Dolk
+ITEM_79_DESC	Hålls i ena handen. Passar i huvudhanden eller andra handen.
+ITEM_80_NAME	Kniv
+ITEM_80_DESC	Hålls i ena handen. Passar i huvudhanden eller andra handen.
+ITEM_81_NAME	Stilett
+ITEM_81_DESC	Hålls i ena handen. Passar i huvudhanden eller andra handen.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Hålls i andra handen. Blockerar slag.
+ITEM_83_NAME	Dragensköld
+ITEM_83_DESC	Hålls i andra handen. Blockerar slag.
+ITEM_84_NAME	Tornsköld
+ITEM_84_DESC	Hålls i andra handen. Blockerar slag.
+ITEM_85_NAME	Tvåhandssvärd
+ITEM_85_DESC	Kräver båda händerna. Den andra handen måste vara tom.
+ITEM_86_NAME	Krigshammare
+ITEM_86_DESC	Kräver båda händerna. Den andra handen måste vara tom.
+ITEM_87_NAME	Stridsyxa
+ITEM_87_DESC	Kräver båda händerna. Den andra handen måste vara tom.
+UILABEL_UI_SCALE	Gränssnittets skala
+NAME_MASCULINE	["Erik", "Anders", "Gustav", "Oskar", "Viktor"]
+NAME_FEMININE	["Astrid", "Linnea", "Saga", "Ingrid", "Elsa"]
+NAME_ANDROGYNOUS	["Robin", "Alex", "Kim", "Sasha", "Noa"]
+UILABEL_BODY_TYPE	Kroppstyp
+UILABEL_BODY_MASCULINE	Maskulin
+UILABEL_BODY_FEMININE	Feminin
+UILABEL_BODY_ANDROGYNOUS	Androgyn
+UILABEL_TYPE_ITEM	Föremål
+UILABEL_TYPE_CONSUMABLE	Förbrukningsvara
+UILABEL_TYPE_WEAPON	Vapen
+UILABEL_TYPE_ARMOR	Rustning
+UILABEL_TYPE_ACCESSORY	Tillbehör
+UILABEL_SLOT_EITHER_HAND	Valfri hand
+UILABEL_SLOT_TWO_HAND	Tvåhänt

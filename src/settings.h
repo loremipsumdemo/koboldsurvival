@@ -12,7 +12,7 @@ inline constexpr int DISPLAY_WINDOWED = 0;
 inline constexpr int DISPLAY_BORDERLESS = 1;
 inline constexpr int DISPLAY_FULLSCREEN = 2;
 inline constexpr int DISPLAY_MODE_COUNT = 3;
-inline constexpr const char* DISPLAY_MODE_NAMES[] = { "Windowed", "Borderless", "Full screen" };
+inline constexpr const char* DISPLAY_MODE_NAMES[] = { "UILABEL_WINDOWED", "UILABEL_BORDERLESS", "UILABEL_FULL_SCREEN" };   // language keys
 
 // Frame rate limits in frames per second. 0 is no limit.
 inline constexpr int FPS_CHOICES[] = { 0, 30, 60, 90, 120, 144, 165, 240 };
@@ -21,6 +21,11 @@ inline constexpr int FPS_CHOICE_COUNT = 8;
 // Autosave intervals in minutes. 0 is off.
 inline constexpr int AUTOSAVE_CHOICES[] = { 0, 1, 2, 5, 10, 15, 30 };
 inline constexpr int AUTOSAVE_COUNT = 7;
+
+// The UI scale range in percent, and the steps the slider moves in
+inline constexpr int UI_SCALE_MIN = 50;
+inline constexpr int UI_SCALE_MAX = 200;
+inline constexpr int UI_SCALE_STEP = 5;
 
 struct GameSettings {
     // Graphics
@@ -35,9 +40,9 @@ struct GameSettings {
     // Interface
     int autosaveMinutes = 5;        // 0 for off
     bool showUnitNames = true;      // each unit's name over its head, in brackets
-    int fontScale = 100;            // text size as a percentage of the base sizes, 100 to 200 in steps of 5
-    std::string fontPath;           // the UI font file, or empty for the built-in one
-    int language = 0;               // 0 English, 1 Spanish
+    int fontScale = 100;            // UI scale as a percentage of the base sizes, 50 to 200 in steps of 5
+    std::string fontPath;           // the UI font file, or empty for Automatic (the built-in fonts)
+    std::string language = LANGUAGE_DEFAULT_ID;   // the language's id, e.g. "language_fr"
 
     // Controls
     bool edgeScroll = false;
@@ -85,7 +90,14 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "fontPath")        s.fontPath = val;
-        else if (key == "language")        s.language = parseInt(val, s.language);
+        else if (key == "language") {
+            // Older settings files stored 0 for English and 1 for Spanish, and the first language files had longer names
+            if (val == "0" || val == "language_english") s.language = LANGUAGE_DEFAULT_ID;
+            else if (val == "1") s.language = "language_es";
+            else if (val == "language_spanish") s.language = "language_es";
+            else if (val == "language_french") s.language = "language_fr";
+            else s.language = val;
+        }
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
         else if (key == "musicOn")         s.musicOn = (val == "1");
@@ -113,9 +125,9 @@ inline GameSettings loadSettings(const std::string& path) {
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
-    s.fontScale = std::clamp(s.fontScale, 100, 200);
-    s.fontScale = 100 + 5 * ((s.fontScale - 100 + 2) / 5);
-    s.language = std::clamp(s.language, 0, LANGUAGE_COUNT - 1);
+    s.fontScale = std::clamp(s.fontScale, UI_SCALE_MIN, UI_SCALE_MAX);
+    s.fontScale = UI_SCALE_MIN + 5 * ((s.fontScale - UI_SCALE_MIN + 2) / 5);
+    if (!validLanguageId(s.language)) s.language = LANGUAGE_DEFAULT_ID;
     return s;
 }
 

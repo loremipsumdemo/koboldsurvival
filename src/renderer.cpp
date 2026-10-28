@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "language.h"
 #include "terrain_mesh.h"
 #include "equip.h"
 #include "inventory.h"
@@ -83,7 +84,7 @@ RGBA categoryColor(int item) {
 // The name of an item for display
 std::string itemName(int item) {
     const ItemDef* d = findItem(item);
-    return d ? d->name : std::string("Unknown item");
+    return d ? itemDisplayName(*d) : std::string(lang("MISC_UNKNOWN_ITEM"));
 }
 
 struct V3 { float x, y, z; };
@@ -622,6 +623,7 @@ void Renderer::beginUi(int winW, int winH) {
 }
 
 void Renderer::endUi() {
+    drawTip();
     glBindVertexArray(0);
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);   // the world pass draws with blending off
@@ -712,6 +714,79 @@ void Renderer::drawUiText(const std::string& s, float x, float y, RGBA tint) {
 
 void Renderer::drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint) {
     drawUiText(s, cx - uiTextWidth(s) * 0.5f, y, tint);
+}
+
+// Automatic text fit. Text is drawn no smaller than this share of its size, and anything still too long is then
+// shortened with "...".
+static const float kMinTextFit = 0.6f;
+
+// The text as it will be drawn in a box boxW wide: shortened only if it cannot fit even at the smallest size
+std::string Renderer::fitShrinkText(const std::string& s, float boxW) {
+    return fitText(s, boxW / kMinTextFit, true);
+}
+
+// The factor a line of ui text is drawn at to fit a box: 1 when it fits, otherwise smaller, never below kMinTextFit
+float Renderer::fitShrinkScale(const std::string& shown, float boxW, float boxH) {
+    const HudLine& hl = uiLine(shown);
+    if (hl.w <= 0.0f || hl.h <= 0.0f) return 1.0f;
+    float k = 1.0f;
+    if (hl.w > boxW) k = std::min(k, boxW / hl.w);
+    if (hl.h > boxH) k = std::min(k, boxH / hl.h);
+    return std::max(k, kMinTextFit);
+}
+
+// Draws ui text with its top-left corner at (x, y), at k times its size
+void Renderer::drawUiTextScaled(const std::string& s, float x, float y, float k, RGBA tint) {
+    HudLine& hl = uiLine(s);
+    if (!hl.tex.tex) return;
+    const float w = hl.w * k, h = hl.h * k;
+    float v[4 * 5] = {
+        x,     y + h, 0.0f, 0.0f, 1.0f,
+        x + w, y + h, 0.0f, 1.0f, 1.0f,
+        x + w, y,     0.0f, 1.0f, 0.0f,
+        x,     y,     0.0f, 0.0f, 0.0f
+    };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(hl.tex.tex, v, tint);
+}
+
+// Draws ui text centred in a box, shrunk to fit it when automatic text fit is on
+void Renderer::drawUiTextInBox(const std::string& s, const Rect& box, RGBA tint) {
+    const std::string shown = fitShrinkText(s, box.w);
+    if (shown != s) noteTip(s, box);
+    const float k = fitShrinkScale(shown, box.w, box.h);
+    const float w = uiTextWidth(shown) * k, h = uiTextHeight(shown) * k;
+    drawUiTextScaled(shown, box.x + (box.w - w) * 0.5f, box.y + (box.h - h) * 0.5f, k, tint);
+}
+
+// Sets the tooltip to the full text if the mouse is over the area the text was drawn in
+void Renderer::noteTip(const std::string& full, const Rect& area) {
+    if (area.contains(mouseX_, mouseY_)) tip_ = full;
+}
+
+// Draws the tooltip set this frame, beside the mouse and kept on screen, with its text wrapped
+void Renderer::drawTip() {
+    if (tip_.empty()) return;
+    const float s = uiH_ / 720.0f;
+    const float pad = 6.0f * s;
+    const float maxW = std::min(360.0f * s, uiW_ * 0.5f);
+    const std::vector<std::string> lines = wrapListText(tip_, maxW - 2.0f * pad);
+    float w = 0.0f;
+    for (const std::string& ln : lines) w = std::max(w, listTextWidth(ln));
+    w += 2.0f * pad;
+    const float lh = listTextHeight("Ag");
+    const float h = (float)lines.size() * lh + 2.0f * pad;
+    float x = mouseX_ + 14.0f * s, y = mouseY_ + 18.0f * s;
+    if (x + w > uiW_) x = std::max(0.0f, uiW_ - w);
+    if (y + h > uiH_) y = std::max(0.0f, mouseY_ - h - 4.0f * s);
+    drawRect(Rect{ x, y, w, h }, RGBA{ 0.05f, 0.05f, 0.08f, 0.96f });
+    float ty = y + pad;
+    for (const std::string& ln : lines) {
+        drawListText(ln, x + pad, ty, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        ty += lh;
+    }
+    tip_.clear();
 }
 
 void Renderer::setListFont(TTF_Font* font) {
@@ -834,8 +909,7 @@ float Renderer::listTextWidth(const std::string& s) {
 void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
     drawRect(r, RGBA{ 0.14f, 0.17f, 0.22f, 0.90f });
     if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, RGBA{ 0.75f, 0.20f, 0.20f, 0.95f });
-    float textH = uiLine(label).h;
-    drawUiText(label, r.x + (r.w - uiTextWidth(label)) * 0.5f, r.y + (r.h - textH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawUiTextInBox(label, r, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
 void Renderer::drawListButton(const Rect& r, const std::string& label, bool hovered) {
@@ -867,8 +941,9 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
     drawRect(r, bg);
 
     RGBA fg = enabled ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
-    float textH = uiLine(label).h;
-    drawUiText(label, r.x + (r.w - uiTextWidth(label)) * 0.5f, r.y + (r.h - textH) * 0.5f, fg);
+    // A small inset keeps the text off the button's edge
+    const float s = uiH_ / 720.0f;
+    drawUiTextInBox(label, Rect{ r.x + 4.0f * s, r.y + 2.0f * s, r.w - 8.0f * s, r.h - 4.0f * s }, fg);
 }
 
 // The sprite for a unit, or the fallback symbol if its image is missing
@@ -1329,25 +1404,35 @@ GearSum sumGear(const std::vector<int>& items) {
 // Wraps a line of tooltip text to the tooltip's text width
 using TipWrap = std::function<std::vector<std::string>(const std::string&)>;
 
-// "main_hand" reads "Main hand"; "armor" reads "Armor"
+// "main_hand" reads lang("UILABEL_SLOT_MAIN_HAND"); "armor" reads "Armor"
 std::string tipWords(std::string s) {
     for (char& c : s) if (c == '_') c = ' ';
     if (!s.empty()) s[0] = (char)std::toupper((unsigned char)s[0]);
     return s;
 }
 
+// The language's word for an item's type, material or slot: the key prefix and the id in capitals (armor reads
+// UILABEL_TYPE_ARMOR). A word with no key yet shows the fallback.
+std::string itemWord(const std::string& prefix, const std::string& id, const std::string& fallback) {
+    std::string key = prefix + id;
+    for (char& c : key) c = (char)std::toupper((unsigned char)c);
+    const std::string text = lang(key);
+    return text == key ? fallback : text;
+}
+
 std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, const TipWrap& wrap) {
     std::vector<TipRow> rows;
-    std::string title = d.name;
+    std::string title = itemDisplayName(d);
     if (count > 1) title += " x" + std::to_string(count);
     rows.push_back(TipRow{ title, tierTint(d.tier) });
-    if (!d.description.empty()) {
-        for (const std::string& line : wrap(d.description)) rows.push_back(TipRow{ line, TIP_TEXT });
+    const std::string desc = itemDisplayDescription(d);
+    if (!desc.empty()) {
+        for (const std::string& line : wrap(desc)) rows.push_back(TipRow{ line, TIP_TEXT });
     }
-    rows.push_back(TipRow{ "Type: " + tipWords(d.typeId), TIP_TEXT });
-    if (!d.material.empty()) rows.push_back(TipRow{ "Material: " + d.material, TIP_TEXT });
-    if (!d.equipSlot.empty()) rows.push_back(TipRow{ "Slot: " + tipWords(d.equipSlot), TIP_TEXT });
-    rows.push_back(TipRow{ "Required level: " + std::to_string(d.requiredLevel), TIP_TEXT });
+    rows.push_back(TipRow{ langf("UILABEL_TIP_TYPE", { itemWord("UILABEL_TYPE_", d.typeId, tipWords(d.typeId)) }), TIP_TEXT });
+    if (!d.material.empty()) rows.push_back(TipRow{ langf("UILABEL_TIP_MATERIAL", { itemWord("MISC_MATERIAL_", d.material, d.material) }), TIP_TEXT });
+    if (!d.equipSlot.empty()) rows.push_back(TipRow{ langf("UILABEL_TIP_SLOT", { itemWord("UILABEL_SLOT_", d.equipSlot, tipWords(d.equipSlot)) }), TIP_TEXT });
+    rows.push_back(TipRow{ langf("UILABEL_TIP_REQUIRED_LEVEL", { std::to_string(d.requiredLevel) }), TIP_TEXT });
 
     auto intChange = [&](TipRow& row, int now, int before, bool higherIsBetter) {
         if (!base || now == before) return;
@@ -1357,19 +1442,19 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
     };
 
     if (d.attackValue > 0 || (base && base->attack > 0)) {
-        TipRow row{ "Attack " + std::to_string(d.attackValue), TIP_TEXT };
+        TipRow row{ langf("UILABEL_TIP_ATTACK", { std::to_string(d.attackValue) }), TIP_TEXT };
         intChange(row, d.attackValue, base ? base->attack : 0, true);
         rows.push_back(row);
     }
     if (d.defenseValue > 0 || (base && base->defense > 0)) {
-        TipRow row{ "Defense " + std::to_string(d.defenseValue), TIP_TEXT };
+        TipRow row{ langf("UILABEL_TIP_DEFENSE", { std::to_string(d.defenseValue) }), TIP_TEXT };
         intChange(row, d.defenseValue, base ? base->defense : 0, true);
         rows.push_back(row);
     }
 
     char weight[32];
     std::snprintf(weight, sizeof(weight), "%.1f", d.weight);
-    TipRow weightRow{ std::string("Weight ") + weight + (count > 1 ? " each" : ""), TIP_TEXT };
+    TipRow weightRow{ langf("UILABEL_TIP_WEIGHT", { weight }) + (count > 1 ? lang("UILABEL_TIP_EACH") : std::string()), TIP_TEXT };
     if (base && std::fabs(d.weight - base->weight) >= 0.05f) {
         std::snprintf(weight, sizeof(weight), "(%+.1f)", d.weight - base->weight);
         weightRow.change = weight;
@@ -1378,15 +1463,15 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
     rows.push_back(weightRow);
 
     if (d.maxDurability > 0) {
-        TipRow row{ "Durability " + std::to_string(d.currentDurability) + " / " + std::to_string(d.maxDurability),
+        TipRow row{ langf("UILABEL_TIP_DURABILITY", { std::to_string(d.currentDurability), std::to_string(d.maxDurability) }),
                     TIP_TEXT };
         intChange(row, d.currentDurability, base ? base->durability : 0, true);
         rows.push_back(row);
     }
-    if (d.maxStackSize > 1) rows.push_back(TipRow{ "Stacks to " + std::to_string(d.maxStackSize), TIP_TEXT });
-    if (d.buyValue > 0) rows.push_back(TipRow{ "Buy price: " + std::to_string(d.buyValue), TIP_TEXT });
-    if (d.sellValue > 0) rows.push_back(TipRow{ "Sell price: " + std::to_string(d.sellValue), TIP_TEXT });
-    if (!d.onUse.empty()) rows.push_back(TipRow{ "Use: " + d.onUse, TIP_TEXT });
+    if (d.maxStackSize > 1) rows.push_back(TipRow{ langf("UILABEL_TIP_STACKS", { std::to_string(d.maxStackSize) }), TIP_TEXT });
+    if (d.buyValue > 0) rows.push_back(TipRow{ langf("UILABEL_TIP_BUY", { std::to_string(d.buyValue) }), TIP_TEXT });
+    if (d.sellValue > 0) rows.push_back(TipRow{ langf("UILABEL_TIP_SELL", { std::to_string(d.sellValue) }), TIP_TEXT });
+    if (!d.onUse.empty()) rows.push_back(TipRow{ langf("UILABEL_TIP_USE", { d.onUse }), TIP_TEXT });
     return rows;
 }
 
@@ -1395,10 +1480,10 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
 std::vector<TipRow> gearCardRows(int slot, bool replaced, int held, const TipWrap& wrap) {
     std::vector<TipRow> rows;
     rows.push_back(TipRow{ gearSlotName(slot), TIP_HEADING });
-    if (replaced) rows.push_back(TipRow{ "Will be replaced", TIP_WARNING });
+    if (replaced) rows.push_back(TipRow{ lang("UILABEL_WILL_BE_REPLACED"), TIP_WARNING });
     const ItemDef* d = findItem(held);
     if (!d) {
-        rows.push_back(TipRow{ "Empty", TIP_TEXT });
+        rows.push_back(TipRow{ lang("UILABEL_EMPTY"), TIP_TEXT });
         return rows;
     }
     for (const TipRow& row : itemRows(*d, 1, nullptr, wrap)) rows.push_back(row);
@@ -1570,7 +1655,7 @@ void Renderer::drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float
 void Renderer::drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, float cx, float cz, float span) {
     const float s = uiH_ / 720.0f;
     drawRect(area, RGBA{ 0.0f, 0.0f, 0.02f, 0.72f });
-    drawListText("World map. Scroll to zoom. Press M or Escape to close.", area.x + 28.0f * s, area.y + 8.0f * s,
+    drawListText(lang("UILABEL_WORLD_MAP_HINT"), area.x + 28.0f * s, area.y + 8.0f * s,
                  RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     drawMinimap(WorldMapBox(area, s), dots, cx, cz, span);
 }
@@ -1642,7 +1727,7 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
         const Rect& r = L.options[i];
         drawButton(r, fitText(options[i].prompt, r.w - 16.0f * s, false), true, r.contains(mx, my));
     }
-    drawButton(L.end, "End Dialogue", true, L.end.contains(mx, my));
+    drawButton(L.end, lang("UILABEL_END_DIALOGUE"), true, L.end.contains(mx, my));
 }
 
 void Renderer::drawItemCell(const Rect& r, int item, int count) {
@@ -1684,12 +1769,12 @@ void Renderer::drawUiTextLarge(const std::string& s, float cx, float cy, float s
 void Renderer::drawPauseBar(bool hint) {
     const float s = uiH_ / 720.0f;
     const float pad = 10.0f * s;
-    const float bigH = uiTextHeight("PAUSED") * 2.6f;
-    const std::string tip = "(Used the space bar to unpause.)";
+    const float bigH = uiTextHeight(lang("UILABEL_PAUSED")) * 2.6f;
+    const std::string tip = lang("UILABEL_PAUSE_HINT");
     const float tipH = hint ? uiTextHeight(tip) : 0.0f;
     const float h = pad + bigH + (hint ? pad + tipH : 0.0f) + pad;
     drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, RGBA{ 0.0f, 0.0f, 0.0f, 0.3f });
-    drawUiTextLarge("PAUSED", uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawUiTextLarge(lang("UILABEL_PAUSED"), uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
@@ -1720,10 +1805,10 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     // The Interaction Panel: the NPC's name, and its inventory
     drawRect(L.interaction, panel);
     drawRect(L.interBar, bar);
-    drawListText("Interaction Panel", L.interBar.x + 6.0f * s, L.interBar.y + (L.interBar.h - th) * 0.5f, white);
+    drawListText(lang("UILABEL_INTERACTION_PANEL"), L.interBar.x + 6.0f * s, L.interBar.y + (L.interBar.h - th) * 0.5f, white);
     const float nameY = L.interBar.y + L.interBar.h + pad;
     drawListText(fitText(npcName, L.interaction.w - 2.0f * pad, false), L.interaction.x + pad, nameY, white);
-    drawListText("Inventory", L.interaction.x + pad, nameY + line, heading);
+    drawListText(lang("UILABEL_INVENTORY"), L.interaction.x + pad, nameY + line, heading);
     drawRect(L.npcGrid, well);
     int hoverNpc = -1;
     for (size_t i = 0; i < L.npcSlots.size(); ++i) {
@@ -1740,9 +1825,9 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     // The Trade Panel: a box for each side, its items in cells, the total under it
     drawRect(L.tradePanel, panel);
     drawRect(L.tradeBar, bar);
-    drawListText("Trade Panel", L.tradeBar.x + 6.0f * s, L.tradeBar.y + (L.tradeBar.h - th) * 0.5f, white);
+    drawListText(lang("UILABEL_TRADE_PANEL"), L.tradeBar.x + 6.0f * s, L.tradeBar.y + (L.tradeBar.h - th) * 0.5f, white);
     auto side = [&](const Rect& box, const std::vector<Rect>& cells, const std::vector<TradeGhost>& ghosts,
-                    const char* hint, const Rect& total) {
+                    const std::string& hint, const Rect& total) {
         drawRect(box, well);
         for (size_t i = 0; i < cells.size(); ++i) {
             drawRect(cells[i], plate);
@@ -1758,10 +1843,10 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
                 ty += th;
             }
         }
-        drawListText(fitText("Total value: " + std::to_string(tradeValueOf(ghosts)), total.w, false), total.x, total.y, white);
+        drawListText(fitText(langf("UILABEL_TOTAL_VALUE", { std::to_string(tradeValueOf(ghosts)) }), total.w, false), total.x, total.y, white);
     };
-    side(L.theirBox, L.theirCells, theirs, "Drag or right-click items from their inventory here", L.theirTotal);
-    side(L.yourBox, L.yourCells, yours, "Drag or right-click your items from your inventory here", L.yourTotal);
+    side(L.theirBox, L.theirCells, theirs, lang("UILABEL_TRADE_DROP_THEIRS"), L.theirTotal);
+    side(L.yourBox, L.yourCells, yours, lang("UILABEL_TRADE_DROP_YOURS"), L.yourTotal);
 
     // The value bar: red while the offer is far from the price, yellow, then green once it is met
     drawRect(L.valueBar, well);
@@ -1777,12 +1862,19 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     drawListText(fitText(status.text, L.statusLine.w, false), L.statusLine.x, L.statusLine.y,
                  status.ok ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : RGBA{ 1.0f, 0.72f, 0.55f, 1.0f });
 
-    drawButton(L.cancelBtn, "Cancel", true, L.cancelBtn.contains(mx, my));
-    drawButton(L.tradeBtn, "Trade", status.ok, status.ok && L.tradeBtn.contains(mx, my));
+    drawButton(L.cancelBtn, lang("UILABEL_CANCEL"), true, L.cancelBtn.contains(mx, my));
+    drawButton(L.tradeBtn, lang("UILABEL_TRADE"), status.ok, status.ok && L.tradeBtn.contains(mx, my));
 
     if (hoverNpc >= 0 && npcInv) {
         const ItemStack& st = npcInv->slots[hoverNpc];
         drawItemTooltip(st.item, st.count, mx, my);
+    }
+    // Item ghosts show their item's tooltip on hover, as items do elsewhere
+    for (size_t i = 0; i < L.theirCells.size() && i < theirs.size(); ++i) {
+        if (theirs[i].stack.item != 0 && L.theirCells[i].contains(mx, my)) drawItemTooltip(theirs[i].stack.item, theirs[i].stack.count, mx, my);
+    }
+    for (size_t i = 0; i < L.yourCells.size() && i < yours.size(); ++i) {
+        if (yours[i].stack.item != 0 && L.yourCells[i].contains(mx, my)) drawItemTooltip(yours[i].stack.item, yours[i].stack.count, mx, my);
     }
 }
 
@@ -1794,13 +1886,13 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
     const float th = listTextHeight("Ag");
     drawRect(L.box, panel);
-    const std::string title = "Choose how many: " + itemName + " (" + std::to_string(available) + " available)";
+    const std::string title = langf("UILABEL_CHOOSE_HOW_MANY", { itemName, std::to_string(available) });
     drawListText(fitText(title, L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
     drawRect(L.countBox, well);
     const std::string num = std::to_string(chosen);
     drawListText(num, L.countBox.x + (L.countBox.w - listTextWidth(num)) * 0.5f,
                  L.countBox.y + (L.countBox.h - th) * 0.5f, white);
-    auto btn = [&](const Rect& r, const char* label, bool enabled) {
+    auto btn = [&](const Rect& r, const std::string& label, bool enabled) {
         drawButton(r, label, enabled, enabled && r.contains(mx, my));
     };
     btn(L.minus100, "-100", chosen > 1);
@@ -1809,10 +1901,10 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     btn(L.plus1, "+", chosen < available);
     btn(L.plus10, "+10", chosen < available);
     btn(L.plus100, "+100", chosen < available);
-    btn(L.single, "Single", chosen != 1);
-    btn(L.max, "Max", chosen != available);
-    btn(L.confirm, "Confirm", true);
-    btn(L.cancel, "Cancel", true);
+    btn(L.single, lang("UILABEL_SINGLE"), chosen != 1);
+    btn(L.max, lang("UILABEL_MAX"), chosen != available);
+    btn(L.confirm, lang("UILABEL_CONFIRM"), true);
+    btn(L.cancel, lang("UILABEL_CANCEL"), true);
     (void)s;
 }
 
@@ -1825,7 +1917,7 @@ void Renderer::drawCompass(const Rect& r, float bearingDeg) {
     const float half = 60.0f;
     const float perDeg = r.w / (2.0f * half);
     const float cx = r.x + r.w * 0.5f;
-    const char* names[4] = { "N", "E", "S", "W" };
+    const std::string names[4] = { lang("UILABEL_COMPASS_N"), lang("UILABEL_COMPASS_E"), lang("UILABEL_COMPASS_S"), lang("UILABEL_COMPASS_W") };
     for (int a = 0; a < 360; a += 15) {
         const float d = std::fmod(static_cast<float>(a) - bearingDeg + 540.0f, 360.0f) - 180.0f;
         if (std::fabs(d) > half) continue;
@@ -1834,7 +1926,7 @@ void Renderer::drawCompass(const Rect& r, float bearingDeg) {
         const float tick = (major ? 8.0f : 5.0f) * s;
         drawRect(Rect{ x - 0.5f, r.y + r.h - tick, 1.0f, tick }, RGBA{ 0.9f, 0.9f, 0.95f, 0.9f });
         if (major) {
-            const char* name = names[a / 90];
+            const std::string name = names[a / 90];
             drawListText(name, x - listTextWidth(name) * 0.5f, r.y + 2.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
     }
@@ -1846,18 +1938,18 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     const float s = uiH_ / 720.0f;
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.05f, 0.05f, 0.08f, bgAlpha });
-    drawTitleBar(L.title, ICON_SQUAD_PANEL, "Squad Panel");
+    drawTitleBar(L.title, ICON_SQUAD_PANEL, lang("UILABEL_SQUAD_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
     // Walk and run: the lit one is the pace the squad is moving at
-    auto mode = [&](const Rect& r, const char* text, bool on) {
+    auto mode = [&](const Rect& r, const std::string& text, bool on) {
         drawRect(r, on ? RGBA{ 0.66f, 0.38f, 1.0f, 1.0f } : RGBA{ 0.14f, 0.14f, 0.18f, bgAlpha });
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     };
     // One toggle for the pace, lit while the squad runs, and the View Map button beside it
-    mode(L.paceButton, running ? "Pace: Run" : "Pace: Walk", running);
+    mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
 
     for (const UnitCell& c : L.cells) {
         const Entity e = units[c.index];
@@ -1905,7 +1997,9 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
 
         // Name under the bar, cut at a word with "..." to fit the cell
         const Name* nm = w.get<Name>(e);
-        const std::string label = fitText(nm ? nm->text : std::string("Unnamed Unit"), c.rect.w, false);
+        const std::string full = nm ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
+        const std::string label = fitText(full, c.rect.w, false);
+        if (label != full) noteTip(full, c.rect);
         drawListText(label, c.rect.x, c.rect.y + c.rect.w + 8.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     }
 
@@ -1941,15 +2035,15 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
         drawListText(fitText(name, barEnd - 8.0f * s - nameX, false), nameX, ty, tint);
     };
     float y = area.y;
-    row(y, -1, "Stat", "Level", gray);
+    row(y, -1, lang("UILABEL_STAT"), lang("UILABEL_LEVEL"), gray);
     y += rowH;
     const StatGroup groups[] = { StatGroup::Attributes, StatGroup::Combat, StatGroup::Gathering,
                                  StatGroup::Crafting, StatGroup::Utility };
     for (StatGroup group : groups) {
-        const char* title = group == StatGroup::Attributes ? "Attributes"
-                          : group == StatGroup::Combat ? "Combat"
-                          : group == StatGroup::Gathering ? "Resource Gathering"
-                          : group == StatGroup::Crafting ? "Crafting" : "Utility";
+        const std::string title = group == StatGroup::Attributes ? lang("UILABEL_ATTRIBUTES")
+                          : group == StatGroup::Combat ? lang("UILABEL_COMBAT")
+                          : group == StatGroup::Gathering ? lang("UILABEL_RESOURCE_GATHERING")
+                          : group == StatGroup::Crafting ? lang("UILABEL_CRAFTING") : lang("UILABEL_UTILITY");
         drawListText(title, area.x, y + (rowH - th) * 0.5f, heading);
         y += rowH;
         for (int i = 0; i < STAT_COUNT; ++i) {
@@ -1976,10 +2070,10 @@ void Renderer::drawStatTip(const Stats& stats, int stat, float mx, float my) {
     std::vector<TipRow> rows(5);
     rows[0].text = statName(stat);
     rows[0].tint = RGBA{ 0.80f, 0.86f, 0.96f, 1.0f };
-    rows[1].text = "Level: " + std::to_string(lv);
-    rows[2].text = "Progress: " + std::to_string(pct) + "%";
-    rows[3].text = "Current XP: " + withCommas(stats.xp[stat]);
-    rows[4].text = "Next Level XP: " + (lv >= MAX_LEVEL ? std::string("Max") : withCommas(xpForLevel(lv + 1)));
+    rows[1].text = langf("UILABEL_TIP_LEVEL", { std::to_string(lv) });
+    rows[2].text = langf("UILABEL_TIP_PROGRESS", { std::to_string(pct) });
+    rows[3].text = langf("UILABEL_TIP_CURRENT_XP", { withCommas(stats.xp[stat]) });
+    rows[4].text = langf("UILABEL_NEXT_LEVEL_XP_LINE", { lv >= MAX_LEVEL ? std::string(lang("UILABEL_MAX")) : withCommas(xpForLevel(lv + 1)) });
     const float width = tipWidth(rows), height = tipHeight(rows.size());
     // Beside the mouse, moved to the other side or up when the window has no room for it
     float x = mx + 14.0f * s, y = my + 14.0f * s;
@@ -1996,10 +2090,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float bgAlpha = 0.5f;   // every background in the sidebar; text, item colors and bars stay solid
     // The bar with its [-] or [+] button, and the tabs under it. They stay where they are when the content scrolls.
     auto frame = [&]() {
-        drawTitleBar(L.title, ICON_UNIT_PANEL, "Unit Panel");
+        drawTitleBar(L.title, ICON_UNIT_PANEL, lang("UILABEL_UNIT_PANEL"));
         if (L.minus.w > 0.0f) drawCollapseButton(L.minus, false);
         if (L.plus.w > 0.0f) drawCollapseButton(L.plus, true);
-        static const char* const names[UNIT_TAB_COUNT] = { "Inventory", "Equipment", "Profile", "Stats", "Behavior" };
+        const std::string names[UNIT_TAB_COUNT] = { lang("UILABEL_INVENTORY"), lang("UILABEL_EQUIPMENT"), lang("UILABEL_PROFILE"), lang("UILABEL_STATS"), lang("UILABEL_BEHAVIOR") };
         for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
             const Rect& t = L.tabs[i];
             if (t.w <= 0.0f) continue;
@@ -2016,7 +2110,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (unit == NULL_ENTITY) {
         // Nothing is selected, and the body says so
         frame();
-        drawUiTextCentered("No unit selected", L.panel.x + L.panel.w * 0.5f,
+        drawUiTextCentered(lang("UILABEL_NO_UNIT_SELECTED"), L.panel.x + L.panel.w * 0.5f,
                            L.body.y + (L.body.h - uiTextHeight("Ag")) * 0.5f, gray);
         return;
     }
@@ -2067,14 +2161,19 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float rightEdge = L.profile.x + L.profile.w - 10.0f * s;
     const float colW = rightEdge - tx;
 
-    const std::string name = nm ? nm->text : std::string("Unnamed Unit");
+    const std::string name = nm ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
     float y = L.profile.y + 10.0f * s;
     drawUiText(fitText(name, L.profile.x + L.profile.w - 10.0f * s - tx, true), tx, y, white);
 
     y += uiTextHeight("Ag") + 6.0f * s;
+    // The body type the name was drawn for
+    if (const Body* bd = w.get<Body>(unit)) {
+        drawListText(lang(bodyTypeKey(bd->type)), tx, y, gray);
+        y += listTextHeight("Ag") + 6.0f * s;
+    }
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
-    auto statRow = [&](float rowY, const char* label, const std::string& value, float frac, RGBA fill) {
+    auto statRow = [&](float rowY, const std::string& label, const std::string& value, float frac, RGBA fill) {
         drawListText(label, tx, rowY, gray);
         drawListText(value, rightEdge - listTextWidth(value), rowY, white);
         const float barY = rowY + listTextHeight("Ag") + 3.0f * s;
@@ -2083,9 +2182,9 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawRect(Rect{ tx, barY, colW * std::clamp(frac, 0.0f, 1.0f), barH }, fill);
         return barY + barH + 9.0f * s;
     };
-    y = statRow(y, "Health", std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
+    y = statRow(y, lang("UILABEL_HEALTH"), std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
                 needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
-    y = statRow(y, "Hunger", std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
+    y = statRow(y, lang("UILABEL_HUNGER"), std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
                 needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
 
     // Carried weight against what Strength lets the unit carry
@@ -2093,7 +2192,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float limit = carryLimit(stats);
     char carry[48];
     std::snprintf(carry, sizeof(carry), "%.1f / %.0f", carried, limit);
-    statRow(y, "Carry", carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+    statRow(y, lang("UILABEL_CARRY"), carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
     }
 
     if (L.tab == UNIT_TAB_EQUIPMENT) {
@@ -2103,7 +2202,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     // A two-handed weapon, held or dragged, dims the off hand
     const bool dimOff = offLocked || (dragDef && dragDef->equipSlot == "two_hand");
     drawRect(L.gearPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawIconText(L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_EQUIPMENT, "Equipment", white);
+    drawIconText(L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_EQUIPMENT, lang("UILABEL_EQUIPMENT"), white);
 
     // While an item is dragged, each gear slot shows whether it may go there: green if so, red if not.
     // A gear item leaving its own slot is not in the way of itself.
@@ -2126,8 +2225,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const int item = worn ? worn->items[gi] : 0;
         const bool locked = (int)gi == GEAR_OFF_HAND && offLocked;
         if (item == 0) {
-            // An empty slot shows its name, or "Two-handed" for a locked off hand, centerd and dimmed
-            const char* text = locked ? "Two-handed" : gearSlotName((int)gi);
+            // An empty slot shows its name, or lang("UILABEL_TWO_HANDED") for a locked off hand, centerd and dimmed
+            const std::string text = locked ? lang("UILABEL_TWO_HANDED") : gearSlotName((int)gi);
             const float tw = listTextWidth(text);
             drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - listH) * 0.5f,
                          locked ? gray : RGBA{ 0.72f, 0.72f, 0.76f, 0.45f });
@@ -2158,19 +2257,19 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     int attack = 0, defense = 0;
     if (worn) gearTotals(*worn, attack, defense);
-    const std::string totals = "Attack " + std::to_string(attack) + "      Defense " + std::to_string(defense);
+    const std::string totals = langf("UILABEL_ATTACK_DEFENSE", { std::to_string(attack), std::to_string(defense) });
     drawListText(totals, L.gearPanel.x + 10.0f * s, L.gearPanel.y + L.gearPanel.h - listH - 6.0f * s, white);
 
     }
     // ---- Inventory grid on its own background ----
     if (L.tab == UNIT_TAB_INVENTORY) {
     drawRect(L.gridPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, "Inventory", white);
+    drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, lang("UILABEL_INVENTORY"), white);
     // The slot count sits left of the sort button, which is at the right of the heading
     const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
                              std::to_string(INVENTORY_SLOTS) + " slots";
     drawListText(used, L.sortButton.x - 8.0f * s - listTextWidth(used), L.gridPanel.y + 6.0f * s, gray);
-    drawSmallButton(L.sortButton, "Sort", editable, editable && L.sortButton.contains(mx, my));
+    drawSmallButton(L.sortButton, lang("UILABEL_SORT"), editable, editable && L.sortButton.contains(mx, my));
 
     for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
         const Rect& r = L.slots[i];
@@ -2266,11 +2365,11 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
     const Rect& P = L.behaviorPanel;
 
     drawRect(P, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
-    drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, "Behavior", white);
+    drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, lang("UILABEL_BEHAVIOR"), white);
     const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
     drawListText(count, P.x + P.w - 10.0f * s - listTextWidth(count), P.y + 6.0f * s, gray);
 
-    static const char* const heads[5] = { "On", "Target", "Condition", "Action", "Target" };
+    const std::string heads[5] = { lang("UILABEL_BEHAVIOR_ON"), lang("UILABEL_TARGET"), lang("UILABEL_CONDITION"), lang("UILABEL_ACTION"), lang("UILABEL_TARGET") };
     for (size_t i = 0; i < 5; ++i) {
         const Rect& h = L.behaviorHeads[i];
         drawListText(fitText(heads[i], h.w, false), h.x, h.y + (h.h - listH) * 0.5f, gray);
@@ -2439,13 +2538,22 @@ void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, R
     const float s = uiH_ / 720.0f;
     const float gap = 6.0f * s;
     const float sz = std::max(0.0f, r.h - 8.0f * s);
-    const float textW = uiFont ? uiTextWidth(text) : listTextWidth(text);
-    const float textH = uiFont ? uiTextHeight("Ag") : listTextHeight("Ag");
+    if (uiFont) {
+        // The text gets the room beside the icon, and is shrunk to it when automatic text fit is on
+        const float avail = std::max(0.0f, r.w - sz - gap - 8.0f * s);
+        const std::string shown = fitShrinkText(text, avail);
+        if (shown != text) noteTip(text, r);
+        const float k = fitShrinkScale(shown, avail, r.h);
+        const float x0 = r.x + (r.w - (sz + gap + uiTextWidth(shown) * k)) * 0.5f;
+        drawUiIcon(icon, Rect{ x0, r.y + (r.h - sz) * 0.5f, sz, sz });
+        drawUiTextScaled(shown, x0 + sz + gap, r.y + (r.h - uiTextHeight("Ag") * k) * 0.5f, k, tint);
+        return;
+    }
+    const float textW = listTextWidth(text);
+    const float textH = listTextHeight("Ag");
     const float x0 = r.x + (r.w - (sz + gap + textW)) * 0.5f;
     drawUiIcon(icon, Rect{ x0, r.y + (r.h - sz) * 0.5f, sz, sz });
-    const float tx = x0 + sz + gap, ty = r.y + (r.h - textH) * 0.5f;
-    if (uiFont) drawUiText(text, tx, ty, tint);
-    else drawListText(text, tx, ty, tint);
+    drawListText(text, x0 + sz + gap, r.y + (r.h - textH) * 0.5f, tint);
 }
 
 void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title) {
@@ -2517,7 +2625,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     const float nameIndent = iconH + 4.0f * s;   // the stat names sit after their icons
 
     drawRect(L.box, RGBA{ 0.04f, 0.05f, 0.08f, bgAlpha });
-    const std::string caption = "Stats: " + name;
+    const std::string caption = langf("UILABEL_STATS_CAPTION", { name });
     drawFontText(statsTitle_, caption, L.box.x + (L.box.w - fontTextWidth(statsTitle_, caption)) * 0.5f,
                  L.box.y + pad, white);
 
@@ -2531,19 +2639,19 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     };
     auto column = [&](const Rect& col, const std::vector<StatGroup>& groups) {
         float rowY = col.y;
-        row(col, rowY, nameIndent, "Stat", "Level", "Total XP", "To next", gray);
+        row(col, rowY, nameIndent, lang("UILABEL_STAT"), lang("UILABEL_LEVEL"), lang("UILABEL_TOTAL_XP"), lang("UILABEL_TO_NEXT"), gray);
         rowY += rowH;
         for (StatGroup group : groups) {
-            const char* title = group == StatGroup::Attributes ? "Attributes"
-                              : group == StatGroup::Combat ? "Combat"
-                              : group == StatGroup::Gathering ? "Resource Gathering"
-                              : group == StatGroup::Crafting ? "Crafting" : "Utility";
+            const std::string title = group == StatGroup::Attributes ? lang("UILABEL_ATTRIBUTES")
+                              : group == StatGroup::Combat ? lang("UILABEL_COMBAT")
+                              : group == StatGroup::Gathering ? lang("UILABEL_RESOURCE_GATHERING")
+                              : group == StatGroup::Crafting ? lang("UILABEL_CRAFTING") : lang("UILABEL_UTILITY");
             drawFontText(statsRow_, title, col.x + nameIndent, rowY, heading);
             rowY += rowH;
             for (int i = 0; i < STAT_COUNT; ++i) {
                 if (statInfo(i).group != group) continue;
                 const int lv = levelOf(stats, i);
-                const std::string next = lv >= MAX_LEVEL ? std::string("Max")
+                const std::string next = lv >= MAX_LEVEL ? std::string(lang("UILABEL_MAX"))
                                        : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
                 drawUiIcon(statIcon(i), Rect{ col.x, rowY, iconH, iconH });
                 row(col, rowY, nameIndent, statName(i), std::to_string(lv), withCommas(stats.xp[i]), next, white);
@@ -2556,8 +2664,8 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
 
     const bool hot = L.close.contains(mx, my);
     drawRect(L.close, hot ? RGBA{ 0.25f, 0.34f, 0.50f, bgAlpha } : RGBA{ 0.14f, 0.17f, 0.22f, bgAlpha });
-    const float tw = fontTextWidth(statsRow_, "Close"), th = fontTextHeight(statsRow_, "Close");
-    drawFontText(statsRow_, "Close", L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, white);
+    const float tw = fontTextWidth(statsRow_, lang("UILABEL_CLOSE")), th = fontTextHeight(statsRow_, lang("UILABEL_CLOSE"));
+    drawFontText(statsRow_, lang("UILABEL_CLOSE"), L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, white);
 }
 
 ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH) {
@@ -2784,22 +2892,22 @@ void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, 
 
 // The rows of the Game tab's filter menu, in order. A heading names a group of kinds and is not clickable.
 struct FilterEntry {
-    const char* label;
+    const char* label;     // a language key, looked up when the menu is drawn
     LogKind kind;
     bool heading;
 };
 static const FilterEntry kFilterEntries[] = {
-    { "Combat Messages", LogKind::Other, true },
-    { "Seen", LogKind::Seen, false },
-    { "Hit", LogKind::Hit, false },
-    { "Miss", LogKind::Miss, false },
-    { "Damage", LogKind::Damage, false },
-    { "Experience Messages", LogKind::Other, true },
-    { "Experience", LogKind::Xp, false },
-    { "Item Messages", LogKind::Other, true },
-    { "Pickup", LogKind::Pickup, false },
-    { "Drop", LogKind::Drop, false },
-    { "Loot", LogKind::Loot, false },
+    { "UILABEL_COMBAT_MESSAGES", LogKind::Other, true },
+    { "UILABEL_SEEN", LogKind::Seen, false },
+    { "UILABEL_HIT", LogKind::Hit, false },
+    { "UILABEL_MISS", LogKind::Miss, false },
+    { "UILABEL_DAMAGE", LogKind::Damage, false },
+    { "UILABEL_EXPERIENCE_MESSAGES", LogKind::Other, true },
+    { "UILABEL_EXPERIENCE", LogKind::Xp, false },
+    { "UILABEL_ITEM_MESSAGES", LogKind::Other, true },
+    { "UILABEL_PICKUP", LogKind::Pickup, false },
+    { "UILABEL_DROP", LogKind::Drop, false },
+    { "UILABEL_LOOT", LogKind::Loot, false },
 };
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
 
@@ -2865,7 +2973,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
         for (int i = 0; i < kFilterRowCount; ++i) {
             const Rect r{ L.filterMenu.x, L.filterMenu.y + 4.0f * s + i * rowH, menuW, rowH };
             L.filterRows.push_back(CombatLogLayout::FilterRow{ r, kFilterEntries[i].kind, kFilterEntries[i].heading,
-                                                               kFilterEntries[i].label });
+                                                               lang(kFilterEntries[i].label) });
         }
     }
     if (collapsed) {
@@ -2884,19 +2992,19 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
     const RGBA dim{ 0.10f, 0.11f, 0.15f, 0.90f };
 
     drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
-    drawTitleBar(L.bar, ICON_COMBAT_LOG, "Information Panel");
+    drawTitleBar(L.bar, ICON_COMBAT_LOG, lang("UILABEL_INFORMATION_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
     // The two tabs: the one shown is lit
-    auto tab = [&](const Rect& r, const char* label, bool selected) {
+    auto tab = [&](const Rect& r, const std::string& label, bool selected) {
         drawRect(r, selected ? lit : dim);
         drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listTextHeight("Ag")) * 0.5f,
                      selected ? white : gray);
     };
-    tab(L.tabMessage, "Message", L.tab == 0);
-    tab(L.tabGame, "Game", L.tab == 1);
-    if (L.tab == 1) drawButton(L.filterBtn, "Filter", true, L.filterBtn.contains(mx, my) || L.filterOpen);
+    tab(L.tabMessage, lang("UILABEL_MESSAGE"), L.tab == 0);
+    tab(L.tabGame, lang("UILABEL_GAME"), L.tab == 1);
+    if (L.tab == 1) drawButton(L.filterBtn, lang("UILABEL_FILTER"), true, L.filterBtn.contains(mx, my) || L.filterOpen);
 
     // The rows are centred in the space under the tabs
     const float tabH = 20.0f * s;
@@ -2926,7 +3034,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
             if (fr.r.contains(mx, my)) drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
             const bool on = filter.on[(int)fr.kind];
             drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, white);
-            const char* state = on ? "On" : "Off";
+            const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
             drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
                          on ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : gray);
         }
@@ -2964,6 +3072,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     // Text at the left of a box, vertically centerd, after an inset
     auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
         const std::string t = fitText(text, r.w - inset - 6.0f * s, false);
+        if (t != text) noteTip(text, r);
         drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
     };
 
@@ -2971,7 +3080,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     drawRect(P.center, panel);
     drawRect(P.right, panel);
     drawRect(P.bottom, RGBA{ 0.03f, 0.03f, 0.05f, 0.95f });
-    drawUiTextCentered("Starting party: " + mapName, uiW_ * 0.5f, (P.topH - uiTextHeight("Ag")) * 0.5f, white);
+    drawUiTextCentered(langf("UILABEL_STARTING_PARTY", { mapName }), uiW_ * 0.5f, (P.topH - uiTextHeight("Ag")) * 0.5f, white);
 
     for (const Button& b : buttons) {
         const bool hot = b.enabled && b.rect.contains(mx, my);
@@ -2984,10 +3093,10 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawUnitPicture(u.sprite, Rect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic });
             const float tx = b.rect.x + pic + 16.0f * s, tw = b.rect.x + b.rect.w - tx - 8.0f * s;
             const bool named = !cleanName(u.name).empty();
-            const std::string shown = named ? cleanName(u.name) : std::string("No name");
+            const std::string shown = named ? cleanName(u.name) : std::string(lang("UILABEL_NO_NAME"));
             drawListText(fitText(shown, tw, false), tx, b.rect.y + 22.0f * s,
                          !named ? warn : chosen ? hover : white);
-            drawListText("Sprite " + std::to_string(u.sprite), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, gray);
+            drawListText(langf("UILABEL_SPRITE_N", { std::to_string(u.sprite) }), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, gray);
             break;
         }
 
@@ -2999,10 +3108,10 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartyNameField: {
-            drawListText("Name", b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawListText(lang("UILABEL_NAME"), b.rect.x, b.rect.y - 22.0f * s, gray);
             drawRect(b.rect, plateFor(hot, ui.editingName, true));
             if (b.label.empty() && !ui.editingName) {
-                leftText(b.rect, "Click to type a name", faint, 10.0f * s);
+                leftText(b.rect, lang("UILABEL_CLICK_TO_TYPE"), faint, 10.0f * s);
             } else {
                 leftText(b.rect, b.label + (ui.editingName ? "|" : ""), white, 10.0f * s);
             }
@@ -3010,8 +3119,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartySpriteBox:
-            drawListText("Sprite", b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawListText(lang("UILABEL_SPRITE"), b.rect.x, b.rect.y - 22.0f * s, gray);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
+            leftText(b.rect, b.label, white, 10.0f * s);
+            break;
+
+        case Action::PartyBodyBox:
+            drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Body, true));
             leftText(b.rect, b.label, white, 10.0f * s);
             break;
 
@@ -3031,7 +3146,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawRect(b.rect, plateFor(hot, open, true));
             leftText(Rect{ b.rect.x, b.rect.y + 4.0f * s, b.rect.w, lineH }, gearSlotName(b.param), gray, 8.0f * s);
             leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 4.0f * s, b.rect.w, lineH }, b.label,
-                     b.label == "Empty" ? faint : white, 8.0f * s);
+                     b.label == lang("UILABEL_EMPTY") ? faint : white, 8.0f * s);
             break;
         }
 
@@ -3117,13 +3232,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     drawUnitPicture(picked.sprite, Rect{ P.center.x + 20.0f * s, P.center.y + 20.0f * s, cw - 40.0f * s,
                                          P.center.h - 130.0f * s });
     const bool named = !cleanName(picked.name).empty();
-    const std::string name = named ? cleanName(picked.name) : std::string("No name");
+    const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));
     drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,
                        P.center.y + P.center.h - 100.0f * s, named ? white : warn);
     int attack = 0, defense = 0;
     gearTotals(wornBy(picked), attack, defense);
-    const std::string totals = "Attack " + std::to_string(attack) + "    Defense " + std::to_string(defense)
-                             + "    Carry " + std::to_string((int)carryLimit(picked.stats));
+    const std::string totals = langf("UILABEL_ATTACK_DEFENSE_CARRY", { std::to_string(attack), std::to_string(defense), std::to_string((int)carryLimit(picked.stats)) });
     const std::string shownTotals = fitText(totals, cw - 24.0f * s, false);
     drawListText(shownTotals, P.center.x + (cw - listTextWidth(shownTotals)) * 0.5f,
                  P.center.y + P.center.h - 62.0f * s, gray);

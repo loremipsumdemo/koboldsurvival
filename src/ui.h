@@ -6,7 +6,7 @@ enum class Screen { Title, Settings, Playing, Pause, MapSelect, PartySetup };
 
 // What a button does when clicked
 enum class Action {
-    Continue, NewGame, LoadGame, Settings, Quit,
+    Continue, NewGame, LoadGame, Settings, Language, Quit,
     Resume, Save, Load, LoadSlot, ReturnToTitle, Back,
     ConfirmName,      // Save button in the save/load popout
     CancelName,       // Close button in the save/load popout
@@ -25,6 +25,7 @@ enum class Action {
     PartyTabPick,     // a tab on the right; param is the tab
     PartyNameField,   // the name box, which takes typed text while it is being edited
     PartySpriteBox,   // opens the sprite dropdown
+    PartyBodyBox,     // opens the body type dropdown
     PartyRandomUnit,  // gives the picked unit a new random member
     PartyAddUnit,     // adds a random unit to the end of the party
     PartyRemoveUnit,  // removes the picked unit, while the party has more than the starting units

@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Українська
+UILABEL_CONTINUE	Продовжити
+UILABEL_NEW_GAME	Нова гра
+UILABEL_LOAD_GAME	Завантажити гру
+UILABEL_SETTINGS	Налаштування
+UILABEL_LANGUAGE_BUTTON	Мова ({0})
+UILABEL_QUIT	Вихід
+UILABEL_RESUME	Продовжити
+UILABEL_SAVE_GAME	Зберегти гру
+UILABEL_RETURN_TO_TITLE	Повернутися до заставки
+UILABEL_CLOSE	Закрити
+UILABEL_BACK	Назад
+UILABEL_SAVE	Зберегти
+UILABEL_DELETE	Видалити
+UILABEL_CANCEL	Скасувати
+UILABEL_CONFIRM	Підтвердити
+UILABEL_YES	Так
+UILABEL_NO	Ні
+UILABEL_NAME	Ім'я
+UILABEL_TIME	Час
+UILABEL_CREATED	Створено
+UILABEL_TYPE	Тип
+UILABEL_AUTO	АВТО
+UILABEL_MANUAL	РУЧНЕ
+UILABEL_NO_SAVES	Збережень ще немає
+UILABEL_UNSAVED_WARNING	Незбережений прогрес у цій грі буде втрачено.
+UILABEL_HOLD_DELETE	Утримуйте «Видалити» 3 секунди для підтвердження.
+UILABEL_CLICK_SAVE	Натисніть на збереження, щоб завантажити його
+UILABEL_CLICK_MAP	Натисніть на карту, щоб почати нову гру
+UILABEL_NO_MAPS	Карт не знайдено. Створіть одну за допомогою worldgen.py.
+UILABEL_BUILT_IN	ВБУДОВАНА
+UILABEL_WORLD	СВІТ
+UILABEL_MAP_FILE	ФАЙЛ КАРТИ
+UILABEL_BUILT_IN_WHEN	вбудована
+UILABEL_UNKNOWN	невідомо
+UILABEL_ON	Увімк.
+UILABEL_OFF	Вимк.
+UILABEL_EMPTY	Порожньо
+UILABEL_NONE_AVAILABLE	Немає доступних
+UILABEL_TWO_HANDED	Дворучна
+UILABEL_WILL_BE_REPLACED	Буде замінено
+UILABEL_GRAPHICS	Графіка
+UILABEL_INTERFACE	Інтерфейс
+UILABEL_LANGUAGE_TAB	Мова
+UILABEL_CONTROLS	Керування
+UILABEL_AUDIO	Звук
+UILABEL_DISPLAY_MODE	Режим екрана
+UILABEL_MONITOR	Монітор
+UILABEL_RESOLUTION	Роздільна здатність
+UILABEL_REFRESH_RATE	Частота оновлення
+UILABEL_DEFAULT	Типово
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Обмеження частоти кадрів
+UILABEL_UNLIMITED	Без обмежень
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Автозбереження
+UILABEL_MINUTE	1 хвилина
+UILABEL_MINUTES	{0} хв
+UILABEL_UNIT_NAMES	Імена юнітів
+UILABEL_FONT_SIZE	Розмір шрифту
+UILABEL_RESET_PANELS	Скинути всі панелі інтерфейсу
+UILABEL_RESET	Скинути
+UILABEL_FONT	Шрифт
+UILABEL_FONT_AUTOMATIC	Автоматично
+UILABEL_EDGE_SCROLL	Прокрутка біля краю екрана
+UILABEL_MUSIC	Музика
+UILABEL_AMBIENT	Фонові звуки
+UILABEL_SOUND_EFFECTS	Звукові ефекти
+UILABEL_RESTORE_DEFAULTS	Відновити типові значення
+UILABEL_WINDOWED	У вікні
+UILABEL_BORDERLESS	Без рамки
+UILABEL_FULL_SCREEN	Повноекранний
+CONTROL_KEYS_1	W A S D або стрілки
+CONTROL_DOES_1	Переміщує камеру
+CONTROL_KEYS_2	Колесо миші
+CONTROL_DOES_2	Наближає та віддаляє
+CONTROL_KEYS_3	Утримуйте середню кнопку миші та тягніть
+CONTROL_DOES_3	Обертає камеру
+CONTROL_KEYS_4	Лівий клік або перетягування рамки
+CONTROL_DOES_4	Вибирає юнітів
+CONTROL_KEYS_5	Shift або Alt з кліком
+CONTROL_DOES_5	Додає до вибору
+CONTROL_KEYS_6	Правий клік
+CONTROL_DOES_6	Переміщує або атакує вибраними юнітами
+CONTROL_KEYS_7	Утримуйте Alt
+CONTROL_DOES_7	Показує назви предметів на землі
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Відкриває меню або повертає назад
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Робить знімок екрана
+UILABEL_PAUSED	ПАУЗА
+UILABEL_PACE_RUN	Темп: біг
+UILABEL_PACE_WALK	Темп: хода
+UILABEL_SQUAD_PANEL	Панель загону
+UILABEL_UNIT_PANEL	Панель юніта
+UILABEL_INFORMATION_PANEL	Інформаційна панель
+UILABEL_INTERACTION_PANEL	Панель взаємодії
+UILABEL_TRADE_PANEL	Панель торгівлі
+UILABEL_INVENTORY	Інвентар
+UILABEL_EQUIPMENT	Спорядження
+UILABEL_BEHAVIOR	Поведінка
+UILABEL_TRADE	Торгівля
+UILABEL_END_DIALOGUE	Завершити діалог
+UILABEL_TRADE_DROP_THEIRS	Перетягніть сюди або клацніть правою кнопкою, щоб додати предмети з їхнього інвентаря
+UILABEL_TRADE_DROP_YOURS	Перетягніть сюди або клацніть правою кнопкою, щоб додати свої предмети з інвентаря
+UILABEL_SINGLE	Один
+UILABEL_MAX	Макс.
+UILABEL_SORT	Сортувати
+UILABEL_WORLD_MAP_HINT	Карта світу. Прокрутіть, щоб наблизити. Натисніть M або Esc, щоб закрити.
+UILABEL_NO_UNIT_SELECTED	Юніта не вибрано
+UILABEL_UNNAMED_UNIT	Юніт без імені
+UILABEL_NO_NAME	Без імені
+UILABEL_PROFILE	Профіль
+UILABEL_STATS	Характеристики
+UILABEL_CLICK_TO_TYPE	Натисніть, щоб ввести ім'я
+UILABEL_SPRITE	Спрайт
+UILABEL_STARTING_PARTY	Стартовий загін: {0}
+UILABEL_HEALTH	Здоров'я
+UILABEL_HUNGER	Голод
+UILABEL_CARRY	Вантажопідйомність
+UILABEL_NEXT_LEVEL_XP_LINE	Досвід до наступного рівня: {0}
+UILABEL_STAT	Характеристика
+UILABEL_LEVEL	Рівень
+UILABEL_TOTAL_XP	Усього досвіду
+UILABEL_TO_NEXT	До наступного
+UILABEL_ATTRIBUTES	Атрибути
+UILABEL_COMBAT	Бій
+UILABEL_RESOURCE_GATHERING	Збір ресурсів
+UILABEL_CRAFTING	Ремесло
+UILABEL_UTILITY	Допоміжні
+UILABEL_GEAR	Спорядження
+UILABEL_ITEMS	Предмети
+UILABEL_IDENTITY	Особистість
+UILABEL_RANDOMIZE_UNIT	Випадково налаштувати цього юніта
+UILABEL_RANDOMIZE_ALL	Випадково налаштувати всіх
+UILABEL_ADD_UNIT	Додати юніта
+UILABEL_REMOVE_UNIT	Прибрати юніта
+UILABEL_CONFIRM_STARTS	Підтвердження розпочне гру з цим загоном.
+UILABEL_NEEDS_NAMES	Кожен юніт має мати ім'я, перш ніж гра зможе розпочатися.
+UILABEL_CLICK_UNIT_EDIT	Натисніть на юніта, щоб його змінити.
+UILABEL_SHIFT_CLICK	Shift + клік змінює характеристику на 10.
+UILABEL_LEVELS_HINT	Рівні від 1 до 99.
+UILABEL_CLICK_SLOT	Натисніть на комірку, щоб вибрати предмет. Показано лише ті, що підходять.
+UILABEL_CLICK_SLOT_STACK	Натисніть на комірку, щоб вибрати предмет. Стоси вміщують до ліміту предмета.
+UILABEL_SCROLL_UP	Прокрутити вгору
+UILABEL_SCROLL_DOWN	Прокрутити вниз
+UILABEL_SLOT_HEAD	Голова
+UILABEL_SLOT_TORSO	Тулуб
+UILABEL_SLOT_MAIN_HAND	Основна рука
+UILABEL_SLOT_OFF_HAND	Друга рука
+UILABEL_SLOT_LEGS	Ноги
+UILABEL_SLOT_FEET	Стопи
+UILABEL_SLOT_ACCESSORY	Аксесуар
+UILABEL_BEHAVIOR_ON	Увімк.
+UILABEL_TARGET	Ціль
+UILABEL_CONDITION	Умова
+UILABEL_ACTION	Дія
+UILABEL_COMBAT_MESSAGES	Повідомлення бою
+UILABEL_SEEN	Помічено
+UILABEL_HIT	Влучання
+UILABEL_MISS	Промах
+UILABEL_DAMAGE	Шкода
+UILABEL_EXPERIENCE_MESSAGES	Повідомлення про досвід
+UILABEL_EXPERIENCE	Досвід
+UILABEL_ITEM_MESSAGES	Повідомлення про предмети
+UILABEL_PICKUP	Підняти
+UILABEL_DROP	Викинути
+UILABEL_LOOT	Здобич
+UILABEL_USE	Використати
+UILABEL_MESSAGE	Повідомлення
+UILABEL_GAME	Гра
+UILABEL_FILTER	Фільтр
+UILABEL_STAT_HEAD_STAT	Характеристика
+UILABEL_UNKNOWN_SLOT	Невідомо
+UILABEL_MONTH_NAME	Місяць {0}
+UILABEL_STRENGTH_STAT	Сила
+MISC_GAME_SAVED	Гру збережено
+MISC_SAVE_FAILED	Не вдалося зберегти гру
+MISC_READ_FAILED	Не вдалося прочитати це збереження
+MISC_SAVE_OLD	Це збереження створено до появи карт, його не можна завантажити
+MISC_AUTOSAVED	Автозбереження виконано
+MISC_SCREENSHOT_FAILED	Не вдалося зберегти знімок екрана
+MISC_SCREENSHOT_SAVED	Збережено: {0}
+MISC_TRADE_FULL	Угода заповнена
+MISC_TRADE_ALREADY	Цей предмет уже в угоді, або угода заповнена.
+MISC_TRADE_NO_MORE	Більше цього предмета для обміну немає
+MISC_NO_UNIT_TO_TRADE	Немає юніта для торгівлі
+MISC_TRADE_ADD_BOTH	Додайте предмети з обох боків
+MISC_TRADE_NO_ROOM_YOURS	У вашого юніта немає місця для їхніх предметів
+MISC_TRADE_NO_ROOM_THEIRS	У них немає місця для ваших предметів
+MISC_TRADE_FAILED	Угода не відбулася
+MISC_TRADE_COMPLETE	Угоду завершено.
+MISC_PICKUP_SELECT	Виберіть юнітів, які підберуть предмет
+MISC_TALK_SELECT	Виберіть юніта, з яким хочете поговорити
+MISC_TRADE_ONLY_TALKING	Торгувати можна лише з юнітом, з яким ви розмовляєте.
+MISC_DROPS	{0} викидає {1} {2}
+MISC_AN_ITEM	предмет
+MISC_UNIT	Юніт
+MISC_TWO_HANDED_IN_MAIN	Дворучна зброя в основній руці
+MISC_YOU	Ви
+MISC_UNKNOWN_ITEM	Невідомий предмет
+MISC_ITEM_FALLBACK	Предмет
+MISC_THAT_ITEM	Цей
+MISC_REASON_FEES	сплата торгових зборів
+MISC_REASON_WALKING	ходьба
+MISC_REASON_CARRYING	перенесення вантажу
+MISC_REASON_CLIMBING	лазіння
+MISC_REASON_SWINGING	замахи
+MISC_REASON_DODGING	ухилення
+MISC_REASON_DEALING	завдавання шкоди
+MISC_REASON_TAKING	отримання шкоди
+MISC_REASON_BLOCKING	блокування
+MISC_REASON_SPOTTING	помічання ворога
+MISC_REASON_UNNOTICED	залишатися непоміченим
+MISC_REASON_GEAR	зміна спорядження
+NPC_GREETING	Привіт, світе.
+NPC_OPTION_WARES	Покажи свої товари.
+NPC_OPTION_QUEST	Що ще ти можеш розповісти про завдання?
+MISC_ORD_1	Перший
+MISC_ORD_2	Другий
+MISC_ORD_3	Третій
+MISC_ORD_4	Четвертий
+MISC_ORD_5	П'ятий
+MISC_ORD_6	Шостий
+MISC_ORD_7	Сьомий
+MISC_ORD_8	Восьмий
+MISC_ORD_9	Дев'ятий
+MISC_ORD_10	Десятий
+MISC_ORD_11	Одинадцятий
+MISC_ORD_12	Дванадцятий
+MISC_SKY_DAY_ZENITH	Денний зеніт
+MISC_SKY_DAY_HORIZON	Денний горизонт
+MISC_SKY_NIGHT_ZENITH	Нічний зеніт
+MISC_SKY_NIGHT_HORIZON	Нічний горизонт
+MISC_SKY_DUSK_HORIZON	Горизонт присмерку
+MISC_SKY_DUSK_SUN	Сонце на присмерку
+MISC_SKY_SUN	Сонце
+MISC_SKY_MOON	Місяць
+MISC_TARGET_SELF	Себе
+MISC_TARGET_ALLY	Союзник
+MISC_TARGET_ENEMY	Ворог
+MISC_COND_HEALTH	Здоров'я
+MISC_COND_HUNGER	Голод
+MISC_ACT_HEAL	Використати лікувальний предмет
+MISC_ACT_FOOD	Їсти їжу
+UILABEL_STAT_DESC_STRENGTH	Шкода в ближньому бою, вантажопідйомність
+UILABEL_STAT_DESC_DEXTERITY	Швидкість атаки
+UILABEL_STAT_DESC_VITALITY	Максимальне здоров'я
+UILABEL_STAT_DESC_ENDURANCE	Максимальна витривалість
+UILABEL_STAT_DESC_AGILITY	Шанс ухилення
+UILABEL_STAT_DESC_INTELLIGENCE	Запас мани
+UILABEL_STAT_DESC_WISDOM	Кількість заклинань, яких можна навчитися
+UILABEL_STAT_DESC_CHARISMA	Ціни у торговців, унікальні варіанти діалогу
+UILABEL_STAT_DESC_PERCEPTION	Дальність виявлення
+UILABEL_STAT_DESC_ATHLETICS	Швидкість бігу
+UILABEL_STAT_DESC_STEALTH	Краще уникає виявлення під час крадіжки
+UILABEL_STAT_DESC_MELEE	Точність у ближньому бою
+UILABEL_STAT_DESC_PROJECTILES	Точність на далекій відстані
+UILABEL_STAT_DESC_ARCANE	Сила заклинань
+UILABEL_STAT_DESC_BLOCK	Шанс блокування або парирування
+UILABEL_STAT_DESC_MINING	Вихід руди
+UILABEL_STAT_DESC_HERBALISM	Вихід під час збору диких рослин
+UILABEL_STAT_DESC_WOODCUTTING	Вихід деревини
+UILABEL_STAT_DESC_SKINNING	Вихід шкур і м'яса
+UILABEL_STAT_DESC_FARMING	Урожайність
+UILABEL_STAT_DESC_COOKING	Сила бонусів від їжі
+UILABEL_STAT_DESC_SMELTING	Вихід під час плавлення руди
+UILABEL_STAT_DESC_FORGING	Обробка металу
+UILABEL_STAT_DESC_CARPENTRY	Обробка дерева
+UILABEL_STAT_DESC_STONEWORKING	Обробка каменю
+UILABEL_STAT_DESC_LOCKPICKING	Складність замків
+UILABEL_STAT_DESC_THIEVERY	Успіх крадіжки
+UILABEL_STAT_DESC_MEDICAL	Ефективність лікування
+UILABEL_DEXTERITY_STAT	Спритність
+UILABEL_VITALITY_STAT	Життєвість
+UILABEL_ENDURANCE_STAT	Витривалість
+UILABEL_AGILITY_STAT	Проворність
+UILABEL_INTELLIGENCE_STAT	Інтелект
+UILABEL_WISDOM_STAT	Мудрість
+UILABEL_CHARISMA_STAT	Харизма
+UILABEL_PERCEPTION_STAT	Сприйняття
+UILABEL_ATHLETICS_STAT	Атлетика
+UILABEL_STEALTH_STAT	Скритність
+UILABEL_MELEE_STAT	Ближній бій
+UILABEL_PROJECTILES_STAT	Метання
+UILABEL_ARCANE_STAT	Магія
+UILABEL_BLOCK_STAT	Блок
+UILABEL_MINING_STAT	Гірнича справа
+UILABEL_HERBALISM_STAT	Трав'янство
+UILABEL_WOODCUTTING_STAT	Лісорубство
+UILABEL_SKINNING_STAT	Здирання шкур
+UILABEL_FARMING_STAT	Землеробство
+UILABEL_COOKING_STAT	Куховарство
+UILABEL_SMELTING_STAT	Плавлення
+UILABEL_FORGING_STAT	Ковальство
+UILABEL_CARPENTRY_STAT	Столярство
+UILABEL_STONEWORKING_STAT	Кам'яна справа
+UILABEL_LOCKPICKING_STAT	Відмикання замків
+UILABEL_THIEVERY_STAT	Злодійство
+UILABEL_MEDICAL_STAT	Медицина
+MISC_CANT_BE_WORN	{0} не можна носити
+MISC_ITEM_NAME_FORMAT	{1} з {0}
+MISC_MATERIAL_IRON	заліза
+MISC_MATERIAL_STEEL	сталі
+MISC_MATERIAL_BRONZE	бронзи
+MISC_MATERIAL_SILVER	срібла
+MISC_MATERIAL_LEATHER	шкіри
+MISC_MATERIAL_BONE	кістки
+MISC_MATERIAL_WOOD	дерева
+MISC_NEED_MORE_VALUE	Їм потрібно ще {0} вартості
+MISC_TRADE_READY_FEE	Готово. Торговий збір: {0}
+MISC_LOAD_FAILED	Не вдалося завантажити {0}: {1}
+MISC_MAP_MISSING	Карта «{0}» відсутня
+MISC_MAP_LOAD_FAILED	Не вдалося завантажити карту «{0}»: {1}
+MISC_LOADED	Завантажено: {0}
+MISC_DELETE_FAILED	Не вдалося видалити «{0}»
+MISC_DELETED	Видалено «{0}»
+MISC_USED	Використано: {0}
+MISC_OVERWRITE_Q	Перезаписати «{0}»?
+MISC_LOAD_Q	Завантажити «{0}»?
+MISC_DELETE_Q	Видалити «{0}»?
+MISC_NOT_FIT_SLOT	{0} не підходить до комірки «{1}»
+MISC_EMPTY_OFF_HAND	Звільніть другу руку, перш ніж тримати {0}
+MISC_NO_ROOM_INV	Немає місця в інвентарі для {0}
+MISC_SLOT_HOLDS	У цій комірці вже є {0}
+UILABEL_TIP_TYPE	Тип: {0}
+UILABEL_TIP_MATERIAL	Матеріал: {0}
+UILABEL_TIP_SLOT	Комірка: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Потрібний рівень: {0}
+UILABEL_TIP_ATTACK	Атака {0}
+UILABEL_TIP_DEFENSE	Захист {0}
+UILABEL_TIP_WEIGHT	Вага {0}
+UILABEL_TIP_EACH	 за штуку
+UILABEL_TIP_STACKS	Складається до {0}
+UILABEL_TIP_BUY	Ціна купівлі: {0}
+UILABEL_TIP_SELL	Ціна продажу: {0}
+UILABEL_TIP_USE	Використання: {0}
+UILABEL_TOTAL_VALUE	Загальна вартість: {0}
+UILABEL_CHOOSE_HOW_MANY	Оберіть кількість: {0} (доступно: {1})
+UILABEL_TIP_LEVEL	Рівень: {0}
+UILABEL_TIP_PROGRESS	Прогрес: {0}%
+UILABEL_TIP_CURRENT_XP	Поточний досвід: {0}
+UILABEL_ATTACK_DEFENSE	Атака {0}      Захист {1}
+UILABEL_STATS_CAPTION	Характеристики: {0}
+UILABEL_SPRITE_N	Спрайт {0}
+UILABEL_SLOT_N_ITEM	Комірка {0}: {1}
+UILABEL_SLOT_N_EMPTY	Комірка {0}: порожньо
+UILABEL_COUNT	Кількість {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Атака {0}    Захист {1}    Вантаж {2}
+MISC_IS_DOWN	{0} повалений
+MISC_PICKS_UP	{0} підбирає {1} {2}
+MISC_CANNOT_READ	Не вдалося прочитати {0}
+UILABEL_TIP_DURABILITY	Міцність {0} / {1}
+UILABEL_DATE_LINE	ДЕНЬ {0} · {1} · РІК {2}
+UILABEL_MONITOR_N	Монітор {0}
+MISC_GAINS_XP	{0} отримує {1} {2} досвіду за {3}
+UILABEL_PAUSE_HINT	(Натисніть пробіл, щоб продовжити.)
+MISC_DRINKS	{0} п'є {1}
+UILABEL_COMPASS_N	Пн
+UILABEL_COMPASS_E	Сх
+UILABEL_COMPASS_S	Пд
+UILABEL_COMPASS_W	Зх
+ITEM_1_NAME	Залізна руда
+ITEM_1_DESC	Сира руда, яку можна переплавити на залізні зливки.
+ITEM_2_NAME	Дубове поліно
+ITEM_2_DESC	Міцне поліно, яке використовують у ремеслі та будівництві.
+ITEM_3_NAME	Цілюща трава
+ITEM_3_DESC	Звичайна трава з м'яким відновлювальним ефектом.
+ITEM_4_NAME	Золота монета
+ITEM_4_DESC	Стандартна валюта королівства.
+ITEM_5_NAME	Вовча шкура
+ITEM_5_DESC	Груба шкура вбитого вовка. Її шукають кушнірі.
+ITEM_6_NAME	Стародавній реліквій
+ITEM_6_DESC	Таємничий артефакт, що ледь чутно гуде від енергії.
+ITEM_7_NAME	Зілля здоров'я
+ITEM_7_DESC	Після вживання відновлює 50 здоров'я.
+ITEM_8_NAME	Зілля мани
+ITEM_8_DESC	Після вживання відновлює 50 мани.
+ITEM_9_NAME	Настоянка витривалості
+ITEM_9_DESC	Відновлює 40 витривалості та ненадовго прискорює регенерацію.
+ITEM_10_NAME	Еліксир міці
+ITEM_10_DESC	Дає +10 до атаки на 60 секунд.
+ITEM_11_NAME	Хліб
+ITEM_11_DESC	Проста дорожня їжа. Відновлює 15 здоров'я.
+ITEM_12_NAME	Протиотрута
+ITEM_12_DESC	Лікує отруєння і на 30 секунд зменшує шкоду від отрути.
+ITEM_13_NAME	Яблуко
+ITEM_13_DESC	Після з'їдання відновлює 8 голоду.
+ITEM_14_NAME	Дикі ягоди
+ITEM_14_DESC	Після з'їдання відновлюють 6 голоду.
+ITEM_15_NAME	Тверде печиво
+ITEM_15_DESC	Після з'їдання відновлює 12 голоду.
+ITEM_16_NAME	Шматок сиру
+ITEM_16_DESC	Після з'їдання відновлює 15 голоду.
+ITEM_17_NAME	Копчена риба
+ITEM_17_DESC	Після з'їдання відновлює 20 голоду.
+ITEM_18_NAME	Медовий пряник
+ITEM_18_DESC	Після з'їдання відновлює 18 голоду.
+ITEM_19_NAME	Бараняча пательня
+ITEM_19_DESC	Після з'їдання відновлює 26 голоду.
+ITEM_20_NAME	Миска юшки
+ITEM_20_DESC	Після з'їдання відновлює 30 голоду.
+ITEM_21_NAME	Смажена кабанятина
+ITEM_21_DESC	Після з'їдання відновлює 40 голоду.
+ITEM_22_NAME	Дорожній пайок
+ITEM_22_DESC	Після з'їдання відновлює 50 голоду.
+ITEM_23_NAME	Шапка
+ITEM_23_DESC	Захищає голову.
+ITEM_24_NAME	Каптур
+ITEM_24_DESC	Захищає голову.
+ITEM_25_NAME	Кольчужний каптур
+ITEM_25_DESC	Захищає голову.
+ITEM_26_NAME	Шолом
+ITEM_26_DESC	Захищає голову.
+ITEM_27_NAME	Забрало
+ITEM_27_DESC	Захищає голову.
+ITEM_28_NAME	Бацинет
+ITEM_28_DESC	Захищає голову.
+ITEM_29_NAME	Салет
+ITEM_29_DESC	Захищає голову.
+ITEM_30_NAME	Великий шолом
+ITEM_30_DESC	Захищає голову.
+ITEM_31_NAME	Обруч
+ITEM_31_DESC	Захищає голову.
+ITEM_32_NAME	Корона
+ITEM_32_DESC	Захищає голову.
+ITEM_33_NAME	Туніка
+ITEM_33_DESC	Прикриває груди й тіло.
+ITEM_34_NAME	Шкіряний жилет
+ITEM_34_DESC	Прикриває груди й тіло.
+ITEM_35_NAME	Пластинчастий жилет
+ITEM_35_DESC	Прикриває груди й тіло.
+ITEM_36_NAME	Бригандина
+ITEM_36_DESC	Прикриває груди й тіло.
+ITEM_37_NAME	Кольчуга
+ITEM_37_DESC	Прикриває груди й тіло.
+ITEM_38_NAME	Нагрудник
+ITEM_38_DESC	Прикриває груди й тіло.
+ITEM_39_NAME	Кіраса
+ITEM_39_DESC	Прикриває груди й тіло.
+ITEM_40_NAME	Панцир
+ITEM_40_DESC	Прикриває груди й тіло.
+ITEM_41_NAME	Повний латний обладунок
+ITEM_41_DESC	Прикриває груди й тіло.
+ITEM_42_NAME	Парадний обладунок
+ITEM_42_DESC	Прикриває груди й тіло.
+ITEM_43_NAME	Бриджі
+ITEM_43_DESC	Прикриває ноги.
+ITEM_44_NAME	Штани
+ITEM_44_DESC	Прикриває ноги.
+ITEM_45_NAME	Гетри
+ITEM_45_DESC	Прикриває ноги.
+ITEM_46_NAME	Кольчужні штани
+ITEM_46_DESC	Прикриває ноги.
+ITEM_47_NAME	Наколінники стегна
+ITEM_47_DESC	Прикриває ноги.
+ITEM_48_NAME	Стегнові пластини
+ITEM_48_DESC	Прикриває ноги.
+ITEM_49_NAME	Наголінники
+ITEM_49_DESC	Прикриває ноги.
+ITEM_50_NAME	Латні штани
+ITEM_50_DESC	Прикриває ноги.
+ITEM_51_NAME	Кольчужні наголінники
+ITEM_51_DESC	Прикриває ноги.
+ITEM_52_NAME	Позолочені наголінники
+ITEM_52_DESC	Прикриває ноги.
+ITEM_53_NAME	Сандалі
+ITEM_53_DESC	Захищають стопи.
+ITEM_54_NAME	Черевики
+ITEM_54_DESC	Захищають стопи.
+ITEM_55_NAME	Чоботи
+ITEM_55_DESC	Захищають стопи.
+ITEM_56_NAME	Вершницькі чоботи
+ITEM_56_DESC	Захищають стопи.
+ITEM_57_NAME	Цвяхові чоботи
+ITEM_57_DESC	Захищають стопи.
+ITEM_58_NAME	Обмотки
+ITEM_58_DESC	Захищають стопи.
+ITEM_59_NAME	Походні чоботи
+ITEM_59_DESC	Захищають стопи.
+ITEM_60_NAME	Сабатони
+ITEM_60_DESC	Захищають стопи.
+ITEM_61_NAME	Соллерети
+ITEM_61_DESC	Захищають стопи.
+ITEM_62_NAME	Бойові чоботи
+ITEM_62_DESC	Захищають стопи.
+ITEM_63_NAME	Стрічка
+ITEM_63_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_64_NAME	Амулет
+ITEM_64_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_65_NAME	Браслет
+ITEM_65_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_66_NAME	Брошка
+ITEM_66_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_67_NAME	Перстень
+ITEM_67_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_68_NAME	Намисто
+ITEM_68_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_69_NAME	Підвіска
+ITEM_69_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_70_NAME	Талісман
+ITEM_70_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_71_NAME	Торквес
+ITEM_71_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_72_NAME	Плащ
+ITEM_72_DESC	Невелика потерта прикраса. Можна носити дві одночасно.
+ITEM_73_NAME	Короткий меч
+ITEM_73_DESC	Тримається в основній руці.
+ITEM_74_NAME	Довгий меч
+ITEM_74_DESC	Тримається в основній руці.
+ITEM_75_NAME	Сокира
+ITEM_75_DESC	Тримається в основній руці.
+ITEM_76_NAME	Булава
+ITEM_76_DESC	Тримається в основній руці.
+ITEM_77_NAME	Ціп
+ITEM_77_DESC	Тримається в основній руці.
+ITEM_78_NAME	Рапіра
+ITEM_78_DESC	Тримається в основній руці.
+ITEM_79_NAME	Кинджал
+ITEM_79_DESC	Тримається однією рукою. Підходить для основної або другої руки.
+ITEM_80_NAME	Ніж
+ITEM_80_DESC	Тримається однією рукою. Підходить для основної або другої руки.
+ITEM_81_NAME	Стилет
+ITEM_81_DESC	Тримається однією рукою. Підходить для основної або другої руки.
+ITEM_82_NAME	Баклер
+ITEM_82_DESC	Тримається в другій руці. Відбиває удари.
+ITEM_83_NAME	Ромбоподібний щит
+ITEM_83_DESC	Тримається в другій руці. Відбиває удари.
+ITEM_84_NAME	Баштовий щит
+ITEM_84_DESC	Тримається в другій руці. Відбиває удари.
+ITEM_85_NAME	Дворучний меч
+ITEM_85_DESC	Потребує обох рук. Друга рука має бути вільною.
+ITEM_86_NAME	Бойовий молот
+ITEM_86_DESC	Потребує обох рук. Друга рука має бути вільною.
+ITEM_87_NAME	Бойова сокира
+ITEM_87_DESC	Потребує обох рук. Друга рука має бути вільною.
+UILABEL_UI_SCALE	Масштаб інтерфейсу
+NAME_MASCULINE	["Oleksandr", "Bohdan", "Taras", "Mykola", "Andrii"]
+NAME_FEMININE	["Oksana", "Kateryna", "Yulia", "Solomiia", "Daryna"]
+NAME_ANDROGYNOUS	["Sasha", "Nika", "Zhenia", "Ari", "Dani"]
+UILABEL_BODY_TYPE	Тип статури
+UILABEL_BODY_MASCULINE	Чоловічий
+UILABEL_BODY_FEMININE	Жіночий
+UILABEL_BODY_ANDROGYNOUS	Андрогінний
+UILABEL_TYPE_ITEM	Предмет
+UILABEL_TYPE_CONSUMABLE	Витратний
+UILABEL_TYPE_WEAPON	Зброя
+UILABEL_TYPE_ARMOR	Броня
+UILABEL_TYPE_ACCESSORY	Аксесуар
+UILABEL_SLOT_EITHER_HAND	Будь-яка рука
+UILABEL_SLOT_TWO_HAND	Двоєручна

@@ -70,7 +70,7 @@ RowSpec makeDropdown(RowId id, const std::string& label, std::vector<DropOption>
     r.kind = RowKind::Dropdown;
     r.label = label;
     if (options.empty()) {
-        options.push_back(DropOption{ "None available", 0, 0, 0, false });
+        options.push_back(DropOption{ lang("UILABEL_NONE_AVAILABLE"), 0, 0, 0, false });
         current = 0;
         enabled = false;
     }
@@ -87,7 +87,7 @@ RowSpec makeToggle(RowId id, const std::string& label, bool on) {
     r.kind = RowKind::Toggle;
     r.label = label;
     r.on = on;
-    r.text = on ? "On" : "Off";
+    r.text = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
     return r;
 }
 
@@ -102,14 +102,15 @@ RowSpec makeAction(RowId id, const std::string& label, const std::string& text) 
 }
 
 // A slider from 100% to 200%, in steps of 5: the level 0 to 100 is the percentage above 100
+// A scale slider: the percentage runs from UI_SCALE_MIN to UI_SCALE_MAX, and the track shows where it sits.
 RowSpec makeScale(RowId id, const std::string& label, int percent) {
     RowSpec r;
     r.id = id;
     r.kind = RowKind::Scale;
     r.label = label;
-    r.current = std::clamp(percent - 100, 0, 100);
-    r.on = true;
-    r.text = std::to_string(100 + r.current) + "%";
+    const int span = UI_SCALE_MAX - UI_SCALE_MIN;
+    r.current = std::clamp(((percent - UI_SCALE_MIN) * 100 + span / 2) / span, 0, 100);
+    r.text = std::to_string(percent) + "%";
     return r;
 }
 
@@ -137,8 +138,8 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     std::vector<RowSpec> rows;
 
     std::vector<DropOption> modes;
-    for (int i = 0; i < DISPLAY_MODE_COUNT; ++i) modes.push_back(DropOption{ DISPLAY_MODE_NAMES[i], i, 0, 0, true });
-    rows.push_back(makeDropdown(RowId::Display, "Display mode", modes, s.displayMode, true));
+    for (int i = 0; i < DISPLAY_MODE_COUNT; ++i) modes.push_back(DropOption{ lang(DISPLAY_MODE_NAMES[i]), i, 0, 0, true });
+    rows.push_back(makeDropdown(RowId::Display, lang("UILABEL_DISPLAY_MODE"), modes, s.displayMode, true));
 
     std::vector<DropOption> monitors;
     for (size_t i = 0; i < d.monitors.size(); ++i) {
@@ -147,7 +148,7 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
             ? " (" + std::to_string(m.w) + " x " + std::to_string(m.h) + ")" : std::string();
         monitors.push_back(DropOption{ std::to_string(i + 1) + ". " + m.name + size, (int)i, 0, 0, true });
     }
-    rows.push_back(makeDropdown(RowId::Monitor, "Monitor", monitors, d.chosen, true));
+    rows.push_back(makeDropdown(RowId::Monitor, lang("UILABEL_MONITOR"), monitors, d.chosen, true));
 
     // Windowed offers every standard size that fits the monitor, full screen every mode it has, and borderless
     // always covers the desktop, so its one size is shown but cannot be changed.
@@ -161,27 +162,27 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
         sizes.push_back(sizeOption(d.desktopW, d.desktopH, " (desktop)"));
         sizeEnabled = false;
     }
-    rows.push_back(makeDropdown(RowId::Resolution, "Resolution", sizes,
+    rows.push_back(makeDropdown(RowId::Resolution, lang("UILABEL_RESOLUTION"), sizes,
                                 indexOfSize(sizes, s.width, s.height), sizeEnabled));
 
     // Refresh rates only apply to full screen, at the size chosen. Default leaves it to the monitor.
-    std::vector<DropOption> rates{ DropOption{ "Default", 0, 0, 0, true } };
+    std::vector<DropOption> rates{ DropOption{ lang("UILABEL_DEFAULT"), 0, 0, 0, true } };
     if (s.displayMode == DISPLAY_FULLSCREEN) {
         for (int hz : refreshRates(d.modes, s.width, s.height)) {
             rates.push_back(DropOption{ std::to_string(hz) + " Hz", hz, 0, 0, true });
         }
     }
-    rows.push_back(makeDropdown(RowId::Refresh, "Refresh rate", rates,
+    rows.push_back(makeDropdown(RowId::Refresh, lang("UILABEL_REFRESH_RATE"), rates,
                                 indexOfValue(rates, s.refreshHz), rates.size() > 1));
 
-    rows.push_back(makeToggle(RowId::VSync, "V-Sync", s.vsync));
+    rows.push_back(makeToggle(RowId::VSync, lang("UILABEL_VSYNC"), s.vsync));
 
     std::vector<DropOption> fps;
     for (int i = 0; i < FPS_CHOICE_COUNT; ++i) {
         const int v = FPS_CHOICES[i];
-        fps.push_back(DropOption{ v == 0 ? std::string("Unlimited") : std::to_string(v) + " FPS", v, 0, 0, true });
+        fps.push_back(DropOption{ v == 0 ? std::string(lang("UILABEL_UNLIMITED")) : langf("UILABEL_FPS", { std::to_string(v) }), v, 0, 0, true });
     }
-    rows.push_back(makeDropdown(RowId::FpsLimit, "Frame rate limit", fps, indexOfValue(fps, s.fpsLimit), true));
+    rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
     return rows;
 }
 
@@ -191,44 +192,56 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     for (int i = 0; i < AUTOSAVE_COUNT; ++i) {
         const int m = AUTOSAVE_CHOICES[i];
         std::string label;
-        if (m == 0) label = "Off";
-        else if (m == 1) label = "1 minute";
-        else label = std::to_string(m) + " minutes";
+        if (m == 0) label = lang("UILABEL_OFF");
+        else if (m == 1) label = lang("UILABEL_MINUTE");
+        else label = langf("UILABEL_MINUTES", { std::to_string(m) });
         saves.push_back(DropOption{ label, m, 0, 0, true });
     }
-    rows.push_back(makeDropdown(RowId::Autosave, "Autosave", saves, indexOfValue(saves, s.autosaveMinutes), true));
-    rows.push_back(makeToggle(RowId::UnitNames, "Unit names", s.showUnitNames));
-    rows.push_back(makeScale(RowId::FontScale, "Font size", s.fontScale));
+    rows.push_back(makeDropdown(RowId::Autosave, lang("UILABEL_AUTOSAVE"), saves, indexOfValue(saves, s.autosaveMinutes), true));
+    rows.push_back(makeToggle(RowId::UnitNames, lang("UILABEL_UNIT_NAMES"), s.showUnitNames));
+    rows.push_back(makeScale(RowId::FontScale, lang("UILABEL_UI_SCALE"), s.fontScale));
+    rows.push_back(makeAction(RowId::ResetPanels, lang("UILABEL_RESET_PANELS"), lang("UILABEL_RESET")));
+    return rows;
+}
+
+// The Language tab: the language, then the font. The start menu's Language button opens this same tab.
+std::vector<RowSpec> languageRows(const GameSettings& s) {
+    std::vector<RowSpec> rows;
+    // Each option's value is its place in the list of languages, which pickOption maps back to the id
     std::vector<DropOption> langs;
-    for (int i = 0; i < LANGUAGE_COUNT; ++i) langs.push_back(DropOption{ languageName(i), i, 0, 0, true });
-    rows.push_back(makeDropdown(RowId::Language, "Language", langs, s.language, true));
-    // The font: the built-in one, or any font installed on this computer
-    std::vector<DropOption> fonts{ DropOption{ "Built-in (Noto Sans)", 0, 0, 0, true } };
+    int currentLanguage = 0;
+    const std::vector<LanguageChoice>& choices = languageChoices();
+    for (size_t i = 0; i < choices.size(); ++i) {
+        langs.push_back(DropOption{ choices[i].label, (int)i, 0, 0, true });
+        if (choices[i].id == s.language) currentLanguage = (int)i;
+    }
+    rows.push_back(makeDropdown(RowId::Language, lang("UILABEL_LANGUAGE_TAB"), langs, currentLanguage, true));
+    // The font: Automatic (the built-in fonts, the default), or any font installed on this computer
+    std::vector<DropOption> fonts{ DropOption{ lang("UILABEL_FONT_AUTOMATIC"), 0, 0, 0, true } };
     int currentFont = 0;
     const std::vector<std::string>& installed = installedFontPaths();
     for (size_t i = 0; i < installed.size(); ++i) {
         fonts.push_back(DropOption{ fontDisplayName(installed[i]), (int)i + 1, 0, 0, true });
         if (installed[i] == s.fontPath) currentFont = (int)i + 1;
     }
-    rows.push_back(makeDropdown(RowId::Font, "Font", fonts, currentFont, true));
-    rows.push_back(makeAction(RowId::ResetPanels, "Reset All UI Panels", "Reset"));
+    rows.push_back(makeDropdown(RowId::Font, lang("UILABEL_FONT"), fonts, currentFont, true));
     return rows;
 }
 
 std::vector<RowSpec> controlsRows(const GameSettings& s) {
     std::vector<RowSpec> rows;
-    rows.push_back(makeToggle(RowId::EdgeScroll, "Edge scrolling", s.edgeScroll));
+    rows.push_back(makeToggle(RowId::EdgeScroll, lang("UILABEL_EDGE_SCROLL"), s.edgeScroll));
     for (int i = 0; i < CONTROL_NOTE_COUNT; ++i) {
-        rows.push_back(makeText(CONTROL_NOTES[i].keys, CONTROL_NOTES[i].does));
+        rows.push_back(makeText(lang(CONTROL_NOTES[i].keys), lang(CONTROL_NOTES[i].does)));
     }
     return rows;
 }
 
 std::vector<RowSpec> audioRows(const GameSettings& s) {
     std::vector<RowSpec> rows;
-    rows.push_back(makeLevel(RowId::MusicLevel, "Music", s.musicVolume, s.musicOn));
-    rows.push_back(makeLevel(RowId::AmbientLevel, "Ambient", s.ambientVolume, s.ambientOn));
-    rows.push_back(makeLevel(RowId::EffectsLevel, "Sound effects", s.effectsVolume, s.effectsOn));
+    rows.push_back(makeLevel(RowId::MusicLevel, lang("UILABEL_MUSIC"), s.musicVolume, s.musicOn));
+    rows.push_back(makeLevel(RowId::AmbientLevel, lang("UILABEL_AMBIENT"), s.ambientVolume, s.ambientOn));
+    rows.push_back(makeLevel(RowId::EffectsLevel, lang("UILABEL_SOUND_EFFECTS"), s.effectsVolume, s.effectsOn));
     return rows;
 }
 
@@ -238,6 +251,7 @@ std::vector<RowSpec> settingsRows(SettingsTab tab, const GameSettings& s, const 
     switch (tab) {
     case SettingsTab::Graphics:  return graphicsRows(s, d);
     case SettingsTab::Interface: return interfaceRows(s);
+    case SettingsTab::Language:  return languageRows(s);
     case SettingsTab::Controls:  return controlsRows(s);
     case SettingsTab::Audio:     return audioRows(s);
     }
@@ -359,7 +373,7 @@ SettingsClick hitSettings(const SettingsLayout& L, const std::vector<RowSpec>& r
             if (r.enabled && R.control.contains(x, y)) return { ClickKind::ToggleRow, row, -1 };
             break;
         case RowKind::Scale:
-            if (R.control.contains(x, y)) return { ClickKind::LevelDrag, row, levelAtX(R.track, x) };
+            if (r.enabled && R.control.contains(x, y)) return { ClickKind::LevelDrag, row, levelAtX(R.track, x) };
             break;
         case RowKind::Level:
             if (R.toggle.contains(x, y)) return { ClickKind::LevelToggle, row, -1 };
@@ -434,10 +448,12 @@ SettingsChange pickOption(RowId id, const DropOption& option, GameSettings& s) {
     case RowId::Autosave:
         s.autosaveMinutes = option.value;
         break;
-    case RowId::Language:
-        s.language = std::clamp(option.value, 0, LANGUAGE_COUNT - 1);
+    case RowId::Language: {
+        const std::vector<LanguageChoice>& choices = languageChoices();
+        if (option.value >= 0 && option.value < (int)choices.size()) s.language = choices[option.value].id;
         c.language = true;
         break;
+    }
     case RowId::Font: {
         const std::vector<std::string>& installed = installedFontPaths();
         s.fontPath = option.value > 0 && option.value <= (int)installed.size() ? installed[option.value - 1] : std::string();
@@ -486,8 +502,10 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
 SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
     SettingsChange c;
     if (id == RowId::FontScale) {
-        // Steps of 5 percent from 100 to 200: the level 0 to 100 snaps to the nearest step
-        const int pct = 100 + 5 * ((std::clamp(level, 0, 100) + 2) / 5);
+        // Steps of 5 percent from 50 to 200: the level 0 to 100 spans that range and snaps to the nearest step
+        const int span = UI_SCALE_MAX - UI_SCALE_MIN;
+        const int offset = std::clamp(level, 0, 100) * span / 100;
+        const int pct = UI_SCALE_MIN + UI_SCALE_STEP * ((offset + UI_SCALE_STEP / 2) / UI_SCALE_STEP);
         if (s.fontScale != pct) {
             s.fontScale = pct;
             c.fonts = true;

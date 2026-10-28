@@ -1,4 +1,5 @@
 #include "items.h"
+#include "language.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -195,4 +196,34 @@ const ItemDef* findItem(int id) {
         if (d.id == id) return &d;
     }
     return nullptr;
+}
+
+namespace {
+
+std::string upperAscii(std::string s) {
+    for (char& c : s) if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+    return s;
+}
+
+} // namespace
+
+std::string itemDisplayName(const ItemDef& d) {
+    const std::string key = "ITEM_" + std::to_string(d.id) + "_NAME";
+    std::string base = lang(key);
+    if (base == key) base = d.baseName;
+    std::string out = base;
+    if (!d.material.empty()) {
+        const std::string matKey = "MISC_MATERIAL_" + upperAscii(d.material);
+        std::string material = lang(matKey);
+        if (material == matKey) material = d.material;
+        out = langf("MISC_ITEM_NAME_FORMAT", { material, base });   // word order follows the language
+    }
+    if (d.tier > 0) out += " +" + std::to_string(d.tier);
+    return out;
+}
+
+std::string itemDisplayDescription(const ItemDef& d) {
+    const std::string key = "ITEM_" + std::to_string(d.id) + "_DESC";
+    const std::string text = lang(key);
+    return text == key ? d.description : text;
 }

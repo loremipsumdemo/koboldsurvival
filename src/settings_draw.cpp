@@ -1,4 +1,5 @@
 #include "settings_menu.h"
+#include "language.h"
 
 #include <algorithm>
 #include "renderer.h"
@@ -41,12 +42,12 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
 
     r.drawRect(Rect{ L.panel.x - 2.0f * u, L.panel.y - 2.0f * u, L.panel.w + 4.0f * u, L.panel.h + 4.0f * u }, kEdge);
     r.drawRect(L.panel, kPanel);
-    r.drawUiTextCentered("Settings", L.panel.x + L.panel.w * 0.5f, L.panel.y + 18.0f * u, kText);
+    r.drawUiTextCentered(lang("UILABEL_SETTINGS"), L.panel.x + L.panel.w * 0.5f, L.panel.y + 18.0f * u, kText);
 
     // Tabs: the one showing is filled in blue
     for (size_t i = 0; i < L.tabs.size(); ++i) {
         const Rect& t = L.tabs[i];
-        const char* name = settingsTabName(static_cast<SettingsTab>(i));
+        const std::string name = settingsTabName(static_cast<SettingsTab>(i));
         RGBA fill = kTabIdle;
         if (static_cast<int>(i) == static_cast<int>(st.tab)) fill = kAccent;
         else if (over(t, mx, my)) fill = kTabHover;
@@ -84,7 +85,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             r.drawButton(R.control, row.text, row.enabled, row.enabled && over(R.control, mx, my));
             break;
         case RowKind::Toggle:
-            r.drawButton(R.control, row.on ? "On" : "Off", row.enabled, row.enabled && over(R.control, mx, my));
+            r.drawButton(R.control, row.on ? lang("UILABEL_ON") : lang("UILABEL_OFF"), row.enabled, row.enabled && over(R.control, mx, my));
             break;
         case RowKind::Level:
         case RowKind::Scale: {
@@ -99,7 +100,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
                        dragging ? kThumbDrag : (row.on ? kText : kSecondary));
             r.drawUiText(row.text, R.value.x + R.value.w - r.uiTextWidth(row.text),
                          R.value.y + (R.value.h - r.uiTextHeight(row.text)) * 0.5f, kText);
-            if (row.kind == RowKind::Level) r.drawButton(R.toggle, row.on ? "On" : "Off", true, over(R.toggle, mx, my));
+            if (row.kind == RowKind::Level) r.drawButton(R.toggle, row.on ? lang("UILABEL_ON") : lang("UILABEL_OFF"), true, over(R.toggle, mx, my));
             break;
         }
         case RowKind::Text:
@@ -107,8 +108,8 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         }
     }
 
-    r.drawButton(L.defaults, "Restore defaults", true, over(L.defaults, mx, my));
-    r.drawButton(L.back, "Back", true, over(L.back, mx, my));
+    r.drawButton(L.defaults, lang("UILABEL_RESTORE_DEFAULTS"), true, over(L.defaults, mx, my));
+    r.drawButton(L.back, lang("UILABEL_BACK"), true, over(L.back, mx, my));
 
     // The open dropdown is drawn last, over the rows and the footer
     if (L.drop.open && L.drop.row >= 0 && L.drop.row < static_cast<int>(rows.size())) {

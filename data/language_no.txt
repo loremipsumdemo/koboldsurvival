@@ -1,0 +1,554 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Norsk
+UILABEL_CONTINUE	Fortsett
+UILABEL_NEW_GAME	Nytt spill
+UILABEL_LOAD_GAME	Last spill
+UILABEL_SETTINGS	Innstillinger
+UILABEL_LANGUAGE_BUTTON	Språk ({0})
+UILABEL_QUIT	Avslutt
+UILABEL_RESUME	Fortsett spillet
+UILABEL_SAVE_GAME	Lagre spill
+UILABEL_RETURN_TO_TITLE	Tilbake til tittelskjermen
+UILABEL_CLOSE	Lukk
+UILABEL_BACK	Tilbake
+UILABEL_SAVE	Lagre
+UILABEL_DELETE	Slett
+UILABEL_CANCEL	Avbryt
+UILABEL_CONFIRM	Bekreft
+UILABEL_YES	Ja
+UILABEL_NO	Nei
+UILABEL_NAME	Navn
+UILABEL_TIME	Tid
+UILABEL_CREATED	Opprettet
+UILABEL_TYPE	Type
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUELL
+UILABEL_NO_SAVES	Ingen lagringer ennå
+UILABEL_UNSAVED_WARNING	Ulagret fremgang i dette spillet går tapt.
+UILABEL_HOLD_DELETE	Hold Slett inne i 3 sekunder for å bekrefte.
+UILABEL_CLICK_SAVE	Klikk på en lagring for å laste den
+UILABEL_CLICK_MAP	Klikk på et kart for å starte et nytt spill
+UILABEL_NO_MAPS	Fant ingen kart. Lag ett med worldgen.py.
+UILABEL_BUILT_IN	INNEBYGD
+UILABEL_WORLD	VERDEN
+UILABEL_MAP_FILE	KARTFIL
+UILABEL_BUILT_IN_WHEN	innebygd
+UILABEL_UNKNOWN	ukjent
+UILABEL_ON	På
+UILABEL_OFF	Av
+UILABEL_EMPTY	Tom
+UILABEL_NONE_AVAILABLE	Ingen tilgjengelige
+UILABEL_TWO_HANDED	Tohånds
+UILABEL_WILL_BE_REPLACED	Blir erstattet
+UILABEL_GRAPHICS	Grafikk
+UILABEL_INTERFACE	Grensesnitt
+UILABEL_LANGUAGE_TAB	Språk
+UILABEL_CONTROLS	Kontroller
+UILABEL_AUDIO	Lyd
+UILABEL_DISPLAY_MODE	Skjermmodus
+UILABEL_MONITOR	Skjerm
+UILABEL_RESOLUTION	Oppløsning
+UILABEL_REFRESH_RATE	Oppdateringsfrekvens
+UILABEL_DEFAULT	Standard
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Grense for bildefrekvens
+UILABEL_UNLIMITED	Ubegrenset
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Automatisk lagring
+UILABEL_MINUTE	1 minutt
+UILABEL_MINUTES	{0} minutter
+UILABEL_UNIT_NAMES	Enhetsnavn
+UILABEL_FONT_SIZE	Skriftstørrelse
+UILABEL_RESET_PANELS	Tilbakestill alle grensesnittpaneler
+UILABEL_RESET	Tilbakestill
+UILABEL_FONT	Skrift
+UILABEL_FONT_AUTOMATIC	Automatisk
+UILABEL_EDGE_SCROLL	Rullering ved kanten
+UILABEL_MUSIC	Musikk
+UILABEL_AMBIENT	Omgivelser
+UILABEL_SOUND_EFFECTS	Lydeffekter
+UILABEL_RESTORE_DEFAULTS	Gjenopprett standardverdier
+UILABEL_WINDOWED	Vindu
+UILABEL_BORDERLESS	Uten kant
+UILABEL_FULL_SCREEN	Fullskjerm
+CONTROL_KEYS_1	W A S D, eller piltastene
+CONTROL_DOES_1	Flytt kameraet
+CONTROL_KEYS_2	Musehjul
+CONTROL_DOES_2	Zoom inn og ut
+CONTROL_KEYS_3	Hold midtknappen og dra
+CONTROL_DOES_3	Roter kameraet
+CONTROL_KEYS_4	Venstreklikk, eller dra en boks
+CONTROL_DOES_4	Velg enheter
+CONTROL_KEYS_5	Shift eller Alt med et klikk
+CONTROL_DOES_5	Legg til i utvalget
+CONTROL_KEYS_6	Høyreklikk
+CONTROL_DOES_6	Flytt eller angrip med de valgte enhetene
+CONTROL_KEYS_7	Hold Alt
+CONTROL_DOES_7	Vis navnene på gjenstander på bakken
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Åpne menyen, eller gå tilbake
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Ta et skjermbilde
+UILABEL_PAUSED	PAUSET
+UILABEL_PACE_RUN	Tempo: løp
+UILABEL_PACE_WALK	Tempo: gå
+UILABEL_SQUAD_PANEL	Troppspanel
+UILABEL_UNIT_PANEL	Enhetspanel
+UILABEL_INFORMATION_PANEL	Informasjonspanel
+UILABEL_INTERACTION_PANEL	Samhandlingspanel
+UILABEL_TRADE_PANEL	Handelspanel
+UILABEL_INVENTORY	Beholdning
+UILABEL_EQUIPMENT	Utstyr
+UILABEL_BEHAVIOR	Atferd
+UILABEL_TRADE	Handel
+UILABEL_END_DIALOGUE	Avslutt samtalen
+UILABEL_TRADE_DROP_THEIRS	Dra hit eller høyreklikk for å legge til gjenstander fra beholdningen deres
+UILABEL_TRADE_DROP_YOURS	Dra hit eller høyreklikk for å legge til dine egne gjenstander fra beholdningen din
+UILABEL_SINGLE	Enkel
+UILABEL_MAX	Maks
+UILABEL_SORT	Sorter
+UILABEL_WORLD_MAP_HINT	Verdenskart. Rull for å zoome. Trykk M eller Esc for å lukke.
+UILABEL_NO_UNIT_SELECTED	Ingen enhet valgt
+UILABEL_UNNAMED_UNIT	Enhet uten navn
+UILABEL_NO_NAME	Uten navn
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Statistikk
+UILABEL_CLICK_TO_TYPE	Klikk for å skrive et navn
+UILABEL_SPRITE	Figur
+UILABEL_STARTING_PARTY	Startgruppe: {0}
+UILABEL_HEALTH	Helse
+UILABEL_HUNGER	Sult
+UILABEL_CARRY	Bærekapasitet
+UILABEL_NEXT_LEVEL_XP_LINE	Erfaring til neste nivå: {0}
+UILABEL_STAT	Statistikk
+UILABEL_LEVEL	Nivå
+UILABEL_TOTAL_XP	Total erfaring
+UILABEL_TO_NEXT	Til neste
+UILABEL_ATTRIBUTES	Egenskaper
+UILABEL_COMBAT	Kamp
+UILABEL_RESOURCE_GATHERING	Ressursinnsamling
+UILABEL_CRAFTING	Håndverk
+UILABEL_UTILITY	Hjelpeferdigheter
+UILABEL_GEAR	Utstyr
+UILABEL_ITEMS	Gjenstander
+UILABEL_IDENTITY	Identitet
+UILABEL_RANDOMIZE_UNIT	Tilfeldiggjør denne enheten
+UILABEL_RANDOMIZE_ALL	Tilfeldiggjør alle
+UILABEL_ADD_UNIT	Legg til enhet
+UILABEL_REMOVE_UNIT	Fjern enhet
+UILABEL_CONFIRM_STARTS	Bekreft starter spillet med denne gruppen.
+UILABEL_NEEDS_NAMES	Hver enhet må ha et navn før spillet kan starte.
+UILABEL_CLICK_UNIT_EDIT	Klikk på en enhet for å redigere den.
+UILABEL_SHIFT_CLICK	Shift + klikk endrer en statistikk med 10.
+UILABEL_LEVELS_HINT	Nivåene går fra 1 til 99.
+UILABEL_CLICK_SLOT	Klikk på en plass for å velge gjenstand. Bare gjenstander som passer vises.
+UILABEL_CLICK_SLOT_STACK	Klikk på en plass for å velge gjenstand. Stabler holder opptil gjenstandens grense.
+UILABEL_SCROLL_UP	Rull opp
+UILABEL_SCROLL_DOWN	Rull ned
+UILABEL_SLOT_HEAD	Hode
+UILABEL_SLOT_TORSO	Overkropp
+UILABEL_SLOT_MAIN_HAND	Hovedhånd
+UILABEL_SLOT_OFF_HAND	Sekundærhånd
+UILABEL_SLOT_LEGS	Ben
+UILABEL_SLOT_FEET	Føtter
+UILABEL_SLOT_ACCESSORY	Tilbehør
+UILABEL_BEHAVIOR_ON	På
+UILABEL_TARGET	Mål
+UILABEL_CONDITION	Betingelse
+UILABEL_ACTION	Handling
+UILABEL_COMBAT_MESSAGES	Kampmeldinger
+UILABEL_SEEN	Sett
+UILABEL_HIT	Treff
+UILABEL_MISS	Bom
+UILABEL_DAMAGE	Skade
+UILABEL_EXPERIENCE_MESSAGES	Erfaringsmeldinger
+UILABEL_EXPERIENCE	Erfaring
+UILABEL_ITEM_MESSAGES	Gjenstandsmeldinger
+UILABEL_PICKUP	Plukk opp
+UILABEL_DROP	Slipp
+UILABEL_LOOT	Bytte
+UILABEL_USE	Bruk
+UILABEL_MESSAGE	Melding
+UILABEL_GAME	Spill
+UILABEL_FILTER	Filter
+UILABEL_STAT_HEAD_STAT	Statistikk
+UILABEL_UNKNOWN_SLOT	Ukjent
+UILABEL_MONTH_NAME	Måned {0}
+UILABEL_STRENGTH_STAT	Styrke
+MISC_GAME_SAVED	Spillet er lagret
+MISC_SAVE_FAILED	Kunne ikke lagre spillet
+MISC_READ_FAILED	Kunne ikke lese den lagringen
+MISC_SAVE_OLD	Den lagringen er fra før kartene og kan ikke lastes
+MISC_AUTOSAVED	Automatisk lagret
+MISC_SCREENSHOT_FAILED	Kunne ikke lagre skjermbildet
+MISC_SCREENSHOT_SAVED	Lagret {0}
+MISC_TRADE_FULL	Handelen er full
+MISC_TRADE_ALREADY	Den gjenstanden er allerede i handelen, eller handelen er full.
+MISC_TRADE_NO_MORE	Det finnes ikke flere av den gjenstanden å handle med
+MISC_NO_UNIT_TO_TRADE	Ingen enhet å handle med
+MISC_TRADE_ADD_BOTH	Legg til gjenstander på begge sider
+MISC_TRADE_NO_ROOM_YOURS	Enheten din har ikke plass til gjenstandene deres
+MISC_TRADE_NO_ROOM_THEIRS	De har ikke plass til gjenstandene dine
+MISC_TRADE_FAILED	Handelen mislyktes
+MISC_TRADE_COMPLETE	Handelen er fullført.
+MISC_PICKUP_SELECT	Velg enheter som skal plukke opp gjenstanden
+MISC_TALK_SELECT	Velg en enhet å snakke med
+MISC_TRADE_ONLY_TALKING	Du kan bare handle med enheten du snakker med.
+MISC_DROPS	{0} slipper {1} {2}
+MISC_AN_ITEM	en gjenstand
+MISC_UNIT	Enhet
+MISC_TWO_HANDED_IN_MAIN	Et tohåndsvåpen er i hovedhånden
+MISC_YOU	Du
+MISC_UNKNOWN_ITEM	Ukjent gjenstand
+MISC_ITEM_FALLBACK	Gjenstand
+MISC_THAT_ITEM	Den
+MISC_REASON_FEES	betaler handelsavgifter
+MISC_REASON_WALKING	å gå
+MISC_REASON_CARRYING	å bære en last
+MISC_REASON_CLIMBING	å klatre
+MISC_REASON_SWINGING	å svinge
+MISC_REASON_DODGING	å unnvike
+MISC_REASON_DEALING	å gjøre skade
+MISC_REASON_TAKING	å ta skade
+MISC_REASON_BLOCKING	å blokkere
+MISC_REASON_SPOTTING	å oppdage en fiende
+MISC_REASON_UNNOTICED	å forbli uoppdaget
+MISC_REASON_GEAR	å bytte utstyr
+NPC_GREETING	Hei, verden.
+NPC_OPTION_WARES	Vis meg varene dine.
+NPC_OPTION_QUEST	Hva mer kan du fortelle meg om oppdraget?
+MISC_ORD_1	Første
+MISC_ORD_2	Andre
+MISC_ORD_3	Tredje
+MISC_ORD_4	Fjerde
+MISC_ORD_5	Femte
+MISC_ORD_6	Sjette
+MISC_ORD_7	Sjuende
+MISC_ORD_8	Åttende
+MISC_ORD_9	Niende
+MISC_ORD_10	Tiende
+MISC_ORD_11	Ellevte
+MISC_ORD_12	Tolvte
+MISC_SKY_DAY_ZENITH	Dagens zenit
+MISC_SKY_DAY_HORIZON	Dagens horisont
+MISC_SKY_NIGHT_ZENITH	Nattens zenit
+MISC_SKY_NIGHT_HORIZON	Nattens horisont
+MISC_SKY_DUSK_HORIZON	Skumringens horisont
+MISC_SKY_DUSK_SUN	Skumringens sol
+MISC_SKY_SUN	Sol
+MISC_SKY_MOON	Måne
+MISC_TARGET_SELF	Selv
+MISC_TARGET_ALLY	Allierte
+MISC_TARGET_ENEMY	Fiende
+MISC_COND_HEALTH	Helse
+MISC_COND_HUNGER	Sult
+MISC_ACT_HEAL	Bruk helbredende gjenstand
+MISC_ACT_FOOD	Spis mat
+UILABEL_STAT_DESC_STRENGTH	Skade i nærkamp, bærekapasitet
+UILABEL_STAT_DESC_DEXTERITY	Angrepshastighet
+UILABEL_STAT_DESC_VITALITY	Maks helse
+UILABEL_STAT_DESC_ENDURANCE	Maks utholdenhet
+UILABEL_STAT_DESC_AGILITY	Sjanse for å unnvike
+UILABEL_STAT_DESC_INTELLIGENCE	Mana-beholdning
+UILABEL_STAT_DESC_WISDOM	Antall lærbare trylleformularer
+UILABEL_STAT_DESC_CHARISMA	Priser hos handelsfolk, unike samtalealternativer
+UILABEL_STAT_DESC_PERCEPTION	Oppdagelsesrekkevidde
+UILABEL_STAT_DESC_ATHLETICS	Løpefart
+UILABEL_STAT_DESC_STEALTH	Bedre til å unngå å bli oppdaget når du sniker deg
+UILABEL_STAT_DESC_MELEE	Treffsikkerhet i nærkamp
+UILABEL_STAT_DESC_PROJECTILES	Treffsikkerhet på avstand
+UILABEL_STAT_DESC_ARCANE	Tryllekraft
+UILABEL_STAT_DESC_BLOCK	Sjanse for å blokkere eller parere
+UILABEL_STAT_DESC_MINING	Utbytte av malm
+UILABEL_STAT_DESC_HERBALISM	Utbytte fra innsamling av ville planter
+UILABEL_STAT_DESC_WOODCUTTING	Utbytte av tømmer
+UILABEL_STAT_DESC_SKINNING	Utbytte av skinn og kjøtt
+UILABEL_STAT_DESC_FARMING	Avlingsutbytte
+UILABEL_STAT_DESC_COOKING	Styrke på matbonuser
+UILABEL_STAT_DESC_SMELTING	Utbytte ved smelting av malm
+UILABEL_STAT_DESC_FORGING	Metallhåndverk
+UILABEL_STAT_DESC_CARPENTRY	Trehåndverk
+UILABEL_STAT_DESC_STONEWORKING	Steinhåndverk
+UILABEL_STAT_DESC_LOCKPICKING	Vanskelighetsgrad på låser
+UILABEL_STAT_DESC_THIEVERY	Suksess ved tyveri
+UILABEL_STAT_DESC_MEDICAL	Effektivitet av helbredelse
+UILABEL_DEXTERITY_STAT	Smidighet
+UILABEL_VITALITY_STAT	Vitalitet
+UILABEL_ENDURANCE_STAT	Utholdenhet
+UILABEL_AGILITY_STAT	Behendighet
+UILABEL_INTELLIGENCE_STAT	Intelligens
+UILABEL_WISDOM_STAT	Visdom
+UILABEL_CHARISMA_STAT	Karisma
+UILABEL_PERCEPTION_STAT	Persepsjon
+UILABEL_ATHLETICS_STAT	Atletikk
+UILABEL_STEALTH_STAT	Snikeri
+UILABEL_MELEE_STAT	Nærkamp
+UILABEL_PROJECTILES_STAT	Prosjektiler
+UILABEL_ARCANE_STAT	Magi
+UILABEL_BLOCK_STAT	Blokkering
+UILABEL_MINING_STAT	Gruvedrift
+UILABEL_HERBALISM_STAT	Urtekunnskap
+UILABEL_WOODCUTTING_STAT	Hogst
+UILABEL_SKINNING_STAT	Flåing
+UILABEL_FARMING_STAT	Jordbruk
+UILABEL_COOKING_STAT	Matlaging
+UILABEL_SMELTING_STAT	Smelting
+UILABEL_FORGING_STAT	Smiing
+UILABEL_CARPENTRY_STAT	Snekring
+UILABEL_STONEWORKING_STAT	Steinarbeid
+UILABEL_LOCKPICKING_STAT	Låsing
+UILABEL_THIEVERY_STAT	Tyveri
+UILABEL_MEDICAL_STAT	Medisin
+MISC_CANT_BE_WORN	{0} kan ikke bæres
+MISC_ITEM_NAME_FORMAT	{1} av {0}
+MISC_MATERIAL_IRON	jern
+MISC_MATERIAL_STEEL	stål
+MISC_MATERIAL_BRONZE	bronse
+MISC_MATERIAL_SILVER	sølv
+MISC_MATERIAL_LEATHER	lær
+MISC_MATERIAL_BONE	bein
+MISC_MATERIAL_WOOD	tre
+MISC_NEED_MORE_VALUE	De trenger {0} mer i verdi
+MISC_TRADE_READY_FEE	Klar. Handelsavgift: {0}
+MISC_LOAD_FAILED	Kunne ikke laste {0}: {1}
+MISC_MAP_MISSING	Kartet for "{0}" mangler
+MISC_MAP_LOAD_FAILED	Kartet "{0}" kunne ikke lastes: {1}
+MISC_LOADED	Lastet {0}
+MISC_DELETE_FAILED	Kunne ikke slette "{0}"
+MISC_DELETED	Slettet "{0}"
+MISC_USED	Brukte {0}
+MISC_OVERWRITE_Q	Overskrive "{0}"?
+MISC_LOAD_Q	Laste "{0}"?
+MISC_DELETE_Q	Slette "{0}"?
+MISC_NOT_FIT_SLOT	{0} passer ikke i {1}-plassen
+MISC_EMPTY_OFF_HAND	Tøm sekundærhånden før du holder {0}
+MISC_NO_ROOM_INV	Ikke plass i beholdningen til {0}
+MISC_SLOT_HOLDS	Den plassen har allerede {0}
+UILABEL_TIP_TYPE	Type: {0}
+UILABEL_TIP_MATERIAL	Materiale: {0}
+UILABEL_TIP_SLOT	Plass: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Kreves nivå: {0}
+UILABEL_TIP_ATTACK	Angrep {0}
+UILABEL_TIP_DEFENSE	Forsvar {0}
+UILABEL_TIP_WEIGHT	Vekt {0}
+UILABEL_TIP_EACH	 stykk
+UILABEL_TIP_STACKS	Stabler til {0}
+UILABEL_TIP_BUY	Kjøpspris: {0}
+UILABEL_TIP_SELL	Salgspris: {0}
+UILABEL_TIP_USE	Bruk: {0}
+UILABEL_TOTAL_VALUE	Total verdi: {0}
+UILABEL_CHOOSE_HOW_MANY	Velg hvor mange: {0} ({1} tilgjengelig)
+UILABEL_TIP_LEVEL	Nivå: {0}
+UILABEL_TIP_PROGRESS	Fremgang: {0}%
+UILABEL_TIP_CURRENT_XP	Nåværende erfaring: {0}
+UILABEL_ATTACK_DEFENSE	Angrep {0}      Forsvar {1}
+UILABEL_STATS_CAPTION	Statistikk: {0}
+UILABEL_SPRITE_N	Figur {0}
+UILABEL_SLOT_N_ITEM	Plass {0}: {1}
+UILABEL_SLOT_N_EMPTY	Plass {0}: tom
+UILABEL_COUNT	Antall {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Angrep {0}    Forsvar {1}    Bærekapasitet {2}
+MISC_IS_DOWN	{0} er nede
+MISC_PICKS_UP	{0} plukker opp {1} {2}
+MISC_CANNOT_READ	Kunne ikke lese {0}
+UILABEL_TIP_DURABILITY	Holdbarhet {0} / {1}
+UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
+UILABEL_MONITOR_N	Skjerm {0}
+MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
+UILABEL_PAUSE_HINT	(Trykk mellomromstasten for å fortsette.)
+MISC_DRINKS	{0} drikker {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	Ø
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	V
+ITEM_1_NAME	Jernmalm
+ITEM_1_DESC	Rå malm som kan smeltes til jernbarrer.
+ITEM_2_NAME	Eiketømmer
+ITEM_2_DESC	En solid stokk som brukes i håndverk og bygging.
+ITEM_3_NAME	Helbredende urt
+ITEM_3_DESC	En vanlig urt med svak helbredende virkning.
+ITEM_4_NAME	Gullmynt
+ITEM_4_DESC	Rikets vanlige valuta.
+ITEM_5_NAME	Ulvepels
+ITEM_5_DESC	En grov pels fra en felt ulv. Garvere er ute etter den.
+ITEM_6_NAME	Gammel relikvie
+ITEM_6_DESC	En mystisk gjenstand som summer svakt av energi.
+ITEM_7_NAME	Helbredelseseliksir
+ITEM_7_DESC	Gjenoppretter 50 helse når den drikkes.
+ITEM_8_NAME	Manaeliksir
+ITEM_8_DESC	Gjenoppretter 50 mana når den drikkes.
+ITEM_9_NAME	Utholdenhetsdrikk
+ITEM_9_DESC	Gjenoppretter 40 utholdenhet og øker regenerasjonen kort.
+ITEM_10_NAME	Kraftelixir
+ITEM_10_DESC	Gir +10 angrep i 60 sekunder.
+ITEM_11_NAME	Brød
+ITEM_11_DESC	Enkel reisemat. Gjenoppretter 15 helse.
+ITEM_12_NAME	Motgift
+ITEM_12_DESC	Kurerer gift og reduserer giftskade i 30 sekunder.
+ITEM_13_NAME	Eple
+ITEM_13_DESC	Gjenoppretter 8 sult når det spises.
+ITEM_14_NAME	Ville bær
+ITEM_14_DESC	Gjenoppretter 6 sult når det spises.
+ITEM_15_NAME	Hardt kjeks
+ITEM_15_DESC	Gjenoppretter 12 sult når det spises.
+ITEM_16_NAME	Ostebit
+ITEM_16_DESC	Gjenoppretter 15 sult når det spises.
+ITEM_17_NAME	Røkt fisk
+ITEM_17_DESC	Gjenoppretter 20 sult når det spises.
+ITEM_18_NAME	Honningkake
+ITEM_18_DESC	Gjenoppretter 18 sult når det spises.
+ITEM_19_NAME	Fårepai
+ITEM_19_DESC	Gjenoppretter 26 sult når det spises.
+ITEM_20_NAME	Gryterett
+ITEM_20_DESC	Gjenoppretter 30 sult når det spises.
+ITEM_21_NAME	Stekt villsvinlår
+ITEM_21_DESC	Gjenoppretter 40 sult når det spises.
+ITEM_22_NAME	Reiseproviant
+ITEM_22_DESC	Gjenoppretter 50 sult når det spises.
+ITEM_23_NAME	Lue
+ITEM_23_DESC	Beskytter hodet.
+ITEM_24_NAME	Hette
+ITEM_24_DESC	Beskytter hodet.
+ITEM_25_NAME	Kjedehette
+ITEM_25_DESC	Beskytter hodet.
+ITEM_26_NAME	Hjelm
+ITEM_26_DESC	Beskytter hodet.
+ITEM_27_NAME	Visir
+ITEM_27_DESC	Beskytter hodet.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Beskytter hodet.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Beskytter hodet.
+ITEM_30_NAME	Stor hjelm
+ITEM_30_DESC	Beskytter hodet.
+ITEM_31_NAME	Pannebånd
+ITEM_31_DESC	Beskytter hodet.
+ITEM_32_NAME	Krone
+ITEM_32_DESC	Beskytter hodet.
+ITEM_33_NAME	Tunika
+ITEM_33_DESC	Dekker bryst og kropp.
+ITEM_34_NAME	Lærvest
+ITEM_34_DESC	Dekker bryst og kropp.
+ITEM_35_NAME	Lamellvest
+ITEM_35_DESC	Dekker bryst og kropp.
+ITEM_36_NAME	Brigandine
+ITEM_36_DESC	Dekker bryst og kropp.
+ITEM_37_NAME	Ringbrynje
+ITEM_37_DESC	Dekker bryst og kropp.
+ITEM_38_NAME	Brystplate
+ITEM_38_DESC	Dekker bryst og kropp.
+ITEM_39_NAME	Kyras
+ITEM_39_DESC	Dekker bryst og kropp.
+ITEM_40_NAME	Brystpanser
+ITEM_40_DESC	Dekker bryst og kropp.
+ITEM_41_NAME	Full platerustning
+ITEM_41_DESC	Dekker bryst og kropp.
+ITEM_42_NAME	Seremoniell rustning
+ITEM_42_DESC	Dekker bryst og kropp.
+ITEM_43_NAME	Ridebukser
+ITEM_43_DESC	Dekker bena.
+ITEM_44_NAME	Bukser
+ITEM_44_DESC	Dekker bena.
+ITEM_45_NAME	Leggings
+ITEM_45_DESC	Dekker bena.
+ITEM_46_NAME	Kjedebukser
+ITEM_46_DESC	Dekker bena.
+ITEM_47_NAME	Lårplater
+ITEM_47_DESC	Dekker bena.
+ITEM_48_NAME	Lårbeskyttere
+ITEM_48_DESC	Dekker bena.
+ITEM_49_NAME	Leggskinner
+ITEM_49_DESC	Dekker bena.
+ITEM_50_NAME	Platebukser
+ITEM_50_DESC	Dekker bena.
+ITEM_51_NAME	Kjedeleggings
+ITEM_51_DESC	Dekker bena.
+ITEM_52_NAME	Forgylte leggskinner
+ITEM_52_DESC	Dekker bena.
+ITEM_53_NAME	Sandaler
+ITEM_53_DESC	Beskytter føttene.
+ITEM_54_NAME	Sko
+ITEM_54_DESC	Beskytter føttene.
+ITEM_55_NAME	Støvler
+ITEM_55_DESC	Beskytter føttene.
+ITEM_56_NAME	Ridestøvler
+ITEM_56_DESC	Beskytter føttene.
+ITEM_57_NAME	Spikerstøvler
+ITEM_57_DESC	Beskytter føttene.
+ITEM_58_NAME	Fotbindinger
+ITEM_58_DESC	Beskytter føttene.
+ITEM_59_NAME	Marsjstøvler
+ITEM_59_DESC	Beskytter føttene.
+ITEM_60_NAME	Sabatons
+ITEM_60_DESC	Beskytter føttene.
+ITEM_61_NAME	Sollerets
+ITEM_61_DESC	Beskytter føttene.
+ITEM_62_NAME	Krigsstøvler
+ITEM_62_DESC	Beskytter føttene.
+ITEM_63_NAME	Bånd
+ITEM_63_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_64_NAME	Amulett
+ITEM_64_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_65_NAME	Armbånd
+ITEM_65_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_66_NAME	Brosje
+ITEM_66_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_67_NAME	Ring
+ITEM_67_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_68_NAME	Halskjede
+ITEM_68_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_69_NAME	Anheng
+ITEM_69_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_71_NAME	Torque
+ITEM_71_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_72_NAME	Kappe
+ITEM_72_DESC	En liten, slitt prydgjenstand. Man kan bære to om gangen.
+ITEM_73_NAME	Kortsverd
+ITEM_73_DESC	Holdes i hovedhånden.
+ITEM_74_NAME	Langsverd
+ITEM_74_DESC	Holdes i hovedhånden.
+ITEM_75_NAME	Øks
+ITEM_75_DESC	Holdes i hovedhånden.
+ITEM_76_NAME	Kølle
+ITEM_76_DESC	Holdes i hovedhånden.
+ITEM_77_NAME	Slegge
+ITEM_77_DESC	Holdes i hovedhånden.
+ITEM_78_NAME	Rapir
+ITEM_78_DESC	Holdes i hovedhånden.
+ITEM_79_NAME	Dolk
+ITEM_79_DESC	Holdes i én hånd. Passer i hovedhånden eller sekundærhånden.
+ITEM_80_NAME	Kniv
+ITEM_80_DESC	Holdes i én hånd. Passer i hovedhånden eller sekundærhånden.
+ITEM_81_NAME	Stilett
+ITEM_81_DESC	Holdes i én hånd. Passer i hovedhånden eller sekundærhånden.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Holdes i sekundærhånden. Stopper slag.
+ITEM_83_NAME	Dragskjold
+ITEM_83_DESC	Holdes i sekundærhånden. Stopper slag.
+ITEM_84_NAME	Tårnskjold
+ITEM_84_DESC	Holdes i sekundærhånden. Stopper slag.
+ITEM_85_NAME	Stort sverd
+ITEM_85_DESC	Krever begge hender. Sekundærhånden må være tom.
+ITEM_86_NAME	Krigshammer
+ITEM_86_DESC	Krever begge hender. Sekundærhånden må være tom.
+ITEM_87_NAME	Stridsøks
+ITEM_87_DESC	Krever begge hender. Sekundærhånden må være tom.
+UILABEL_UI_SCALE	Skala for grensesnittet
+NAME_MASCULINE	["Eirik", "Halvor", "Sindre", "Magnus", "Odd"]
+NAME_FEMININE	["Ingrid", "Solveig", "Hedda", "Marit", "Liv"]
+NAME_ANDROGYNOUS	["Ari", "Noa", "Kai", "Sol", "Jo"]
+UILABEL_BODY_TYPE	Kroppstype
+UILABEL_BODY_MASCULINE	Maskulin
+UILABEL_BODY_FEMININE	Feminin
+UILABEL_BODY_ANDROGYNOUS	Androgyn
+UILABEL_TYPE_ITEM	Gjenstand
+UILABEL_TYPE_CONSUMABLE	Forbruksvare
+UILABEL_TYPE_WEAPON	Våpen
+UILABEL_TYPE_ARMOR	Rustning
+UILABEL_TYPE_ACCESSORY	Tilbehør
+UILABEL_SLOT_EITHER_HAND	Enhver hånd
+UILABEL_SLOT_TWO_HAND	Tohåndsvåpen

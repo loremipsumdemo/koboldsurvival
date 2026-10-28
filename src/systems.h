@@ -15,7 +15,12 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 Stats randomStartingStats(Rng& rng);
 
 // A unit name from the list that is not in taken
-std::string randomUnitName(Rng& rng, const std::vector<std::string>& taken);
+// The body type a new unit gets: masculine 45% of the time, feminine 45%, androgynous 10%
+int randomBodyType(Rng& rng);
+// A name for a unit of this body type, from the language in use (English if it has none), not in taken if it can be
+std::string randomUnitName(Rng& rng, int body, const std::vector<std::string>& taken);
+// The body type of a unit saved before body types existed: the same 45/45/10 split, worked out from its name
+int bodyForSavedName(const std::string& name);
 
 // Puts `perItem` copies of every item in the database on the ground at random walkable tiles across
 // the whole level. Each copy is a single item.

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <string>
+#include "language.h"
 
 // Unit stats: 11 attributes, 4 combat, 5 resource gathering, 5 crafting and 3 utility skills. Each
 // has a level from 1 to 99. The level comes from the total XP in that stat, which uses the

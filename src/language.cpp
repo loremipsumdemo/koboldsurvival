@@ -1,6 +1,13 @@
 #include "language.h"
+#include <algorithm>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <set>
+#include <system_error>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "pak.h"
 
@@ -75,16 +82,10 @@ std::string cleanText(const std::string& raw) {
     return out.substr(first, last - first + 1);
 }
 
-// Reads one language file from the pak into a table. False if the file is missing.
-bool readFile(const char* file, Table& into, std::string& err) {
+// Fills a table from the text of a language file. Returns false if no line in it was usable.
+bool parseText(const std::string& text0, Table& into) {
     into.clear();
-    const unsigned char* bytes = nullptr;
-    size_t size = 0;
-    if (!pakFind(file, bytes, size)) {
-        err = std::string(file) + " is not in the pak";
-        return false;
-    }
-    std::string text((const char*)bytes, size);
+    std::string text = text0;
     if (text.compare(0, 3, "\xEF\xBB\xBF") == 0) text.erase(0, 3);   // a byte order mark, from some editors
 
     size_t start = 0;
@@ -106,38 +107,163 @@ bool readFile(const char* file, Table& into, std::string& err) {
         if (value.empty()) continue;           // an empty text falls back to English
         into[key] = value;
     }
+    return !into.empty();
+}
+
+// Reads a language's file: from the LANGUAGE folder if inFolder, else from the pak. False if it is missing or has
+// no usable line.
+bool readLanguageFile(const std::string& id, bool inFolder, Table& into) {
+    if (inFolder) {
+        std::ifstream in(std::filesystem::path(LANGUAGE_FOLDER) / (id + ".txt"), std::ios::binary);
+        if (!in) {
+            into.clear();
+            return false;
+        }
+        const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        return parseText(text, into);
+    }
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind("data/" + id + ".txt", bytes, size)) {
+        into.clear();
+        return false;
+    }
+    return parseText(std::string((const char*)bytes, size), into);
+}
+
+// A language's texts: the pak's file, with the LANGUAGE folder's file laid over it key by key. So a key the folder
+// file leaves out still has its text from the pak. False if neither file has a usable line.
+bool readLanguageMerged(const std::string& id, Table& into) {
+    Table packed, folder;
+    const bool inPak = readLanguageFile(id, false, packed);
+    const bool inFolder = readLanguageFile(id, true, folder);
+    into.clear();
+    if (!inPak && !inFolder) return false;
+    into = packed;
+    for (const auto& kv : folder) into[kv.first] = kv.second;
     return true;
+}
+
+// The English texts: the base every other language falls back to
+bool loadEnglish() {
+    if (readLanguageMerged(LANGUAGE_DEFAULT_ID, englishTable())) return true;
+    englishTable().clear();
+    return false;
+}
+
+// The name a table gives its language, or the id when it has no LANGUAGE_NAME line
+std::string nameIn(const Table& t, const std::string& id) {
+    const auto it = t.find("LANGUAGE_NAME");
+    return it != t.end() ? it->second : id;
+}
+
+// "[fr] - Français": the language code from the id (language_fr gives fr), then the name
+std::string labelFor(const std::string& id, const std::string& name) {
+    const std::string prefix = "language_";
+    const std::string code = id.compare(0, prefix.size(), prefix) == 0 ? id.substr(prefix.size()) : id;
+    return "[" + code + "] - " + name;
+}
+
+std::string& activeLabel() {
+    static std::string label = labelFor(LANGUAGE_DEFAULT_ID, "English");
+    return label;
+}
+
+std::vector<LanguageChoice>& choiceList() {
+    static std::vector<LanguageChoice> list;
+    return list;
+}
+
+bool scanned = false;
+
+// Ids from before the web codes. Their files can still sit in an old LANGUAGE folder, so they are never listed.
+// Settings maps these names to the new ids.
+bool isLegacyId(const std::string& id) {
+    return id == "language_english" || id == "language_spanish" || id == "language_french";
+}
+
+void scanLanguages() {
+    std::vector<LanguageChoice> found;
+    std::set<std::string> seen;
+    const std::string prefix = "language_";
+
+    // Every candidate id: files in the LANGUAGE folder, then files in the pak
+    std::vector<std::string> ids;
+    std::error_code ec;
+    std::filesystem::directory_iterator it(LANGUAGE_FOLDER, ec), end;
+    for (; !ec && it != end; it.increment(ec)) {
+        const std::string file = it->path().filename().string();
+        if (file.size() > 4 && file.compare(file.size() - 4, 4, ".txt") == 0) ids.push_back(file.substr(0, file.size() - 4));
+    }
+    for (const std::string& name : pakNames("data/" + prefix, ".txt")) {
+        ids.push_back(name.substr(5, name.size() - 9));   // "data/" and ".txt" removed
+    }
+
+    Table t;
+    for (const std::string& id : ids) {
+        if (!validLanguageId(id) || id.compare(0, prefix.size(), prefix) != 0 || isLegacyId(id) || seen.count(id)) continue;
+        if (!readLanguageMerged(id, t)) continue;
+        seen.insert(id);
+        const std::string name = nameIn(t, id);
+        found.push_back(LanguageChoice{ id, name, labelFor(id, name) });
+    }
+
+    // Sorted by id, with the default language first
+    std::sort(found.begin(), found.end(), [](const LanguageChoice& a, const LanguageChoice& b) {
+        return a.id < b.id;
+    });
+    const auto def = std::find_if(found.begin(), found.end(), [](const LanguageChoice& c) {
+        return c.id == LANGUAGE_DEFAULT_ID;
+    });
+    if (def != found.end() && def != found.begin()) std::rotate(found.begin(), def, def + 1);
+    if (found.empty()) found.push_back(LanguageChoice{ LANGUAGE_DEFAULT_ID, "English", labelFor(LANGUAGE_DEFAULT_ID, "English") });
+    choiceList() = found;
+    scanned = true;
 }
 
 } // namespace
 
-const char* languageName(int language) {
-    static const char* const names[] = { "English", "Spanish" };
-    return names[language >= 0 && language < LANGUAGE_COUNT ? language : 0];
-}
-
-const char* languageFile(int language) {
-    static const char* const files[] = {
-        "data/language_english.txt", "data/language_spanish.txt"
-    };
-    return files[language >= 0 && language < LANGUAGE_COUNT ? language : 0];
-}
-
-bool loadLanguage(int language, std::string& err) {
-    err.clear();
-    std::string englishErr;
-    if (!readFile(languageFile(0), englishTable(), englishErr)) {
-        std::fprintf(stderr, "language: %s\n", englishErr.c_str());
-    }
-    if (language == 0) {
-        activeTable() = englishTable();
-        return true;
-    }
-    if (!readFile(languageFile(language), activeTable(), err)) {
-        activeTable().clear();   // English is used through the fallback
-        return false;
+bool validLanguageId(const std::string& id) {
+    if (id.empty() || id.size() > 64) return false;
+    for (char c : id) {
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-';
+        if (!ok) return false;
     }
     return true;
+}
+
+const std::vector<LanguageChoice>& languageChoices() {
+    if (!scanned) scanLanguages();
+    return choiceList();
+}
+
+void rescanLanguages() {
+    scanLanguages();
+}
+
+std::string languageDisplayName() {
+    return activeLabel();
+}
+
+bool loadLanguage(const std::string& id, std::string& err) {
+    err.clear();
+    if (!loadEnglish()) std::fprintf(stderr, "language: no usable %s.txt in the LANGUAGE folder or data.pak\n", LANGUAGE_DEFAULT_ID);
+
+    bool ok = true;
+    if (id == LANGUAGE_DEFAULT_ID) {
+        activeTable() = englishTable();
+    } else if (validLanguageId(id) && readLanguageMerged(id, activeTable())) {
+        // loaded from the LANGUAGE folder, or else from the pak
+    } else {
+        activeTable().clear();   // English is used through the fallback
+        err = "language file " + id + ".txt was not found";
+        ok = false;
+    }
+    // The label names the language that is actually in use
+    const std::string usedId = ok ? id : std::string(LANGUAGE_DEFAULT_ID);
+    const Table& t = ok && id != LANGUAGE_DEFAULT_ID ? activeTable() : englishTable();
+    activeLabel() = labelFor(usedId, nameIn(t, usedId));
+    return ok;
 }
 
 std::string lang(const std::string& key) {
@@ -147,6 +273,43 @@ std::string lang(const std::string& key) {
     const auto e = englishTable().find(key);
     if (e != englishTable().end()) return e->second;
     return key;
+}
+
+// The strings in a list written like ["James","Michael"]. Anything that is not such a list gives no names.
+static std::vector<std::string> parseNameArray(const std::string& text) {
+    std::vector<std::string> out;
+    size_t i = text.find('[');
+    if (i == std::string::npos) return out;
+    ++i;
+    while (i < text.size() && text[i] != ']') {
+        if (text[i] != '"') {
+            ++i;   // commas and spaces between the strings
+            continue;
+        }
+        std::string s;
+        ++i;
+        while (i < text.size() && text[i] != '"') {
+            if (text[i] == '\\' && i + 1 < text.size()) ++i;   // \" and \\ stand for the character after the backslash
+            s += text[i++];
+        }
+        if (i >= text.size()) return {};   // a string that is never closed: the list is not usable
+        ++i;
+        if (!s.empty()) out.push_back(s);
+    }
+    return out;
+}
+
+std::vector<std::string> languageNames(NameSet set) {
+    const char* key = set == NameSet::Feminine ? "NAME_FEMININE"
+                    : set == NameSet::Androgynous ? "NAME_ANDROGYNOUS" : "NAME_MASCULINE";
+    std::vector<std::string> out;
+    const auto a = activeTable().find(key);
+    if (a != activeTable().end()) out = parseNameArray(a->second);
+    if (out.empty()) {
+        const auto e = englishTable().find(key);
+        if (e != englishTable().end()) out = parseNameArray(e->second);
+    }
+    return out;
 }
 
 std::string langf(const std::string& key, std::initializer_list<std::string> args) {
