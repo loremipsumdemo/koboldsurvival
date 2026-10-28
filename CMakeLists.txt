@@ -59,6 +59,8 @@ add_executable(koboldgame
     src/renderer.cpp
     src/renderer_terrain.cpp
     src/items.cpp
+    src/language.cpp
+    src/fontlist.cpp
     src/inventory.cpp
     src/combat.cpp
     src/equip.cpp

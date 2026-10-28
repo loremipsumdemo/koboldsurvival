@@ -1,4 +1,5 @@
 #include "stats.h"
+#include "language.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -7,34 +8,34 @@ namespace {
 
 const std::array<StatInfo, STAT_COUNT>& infoTable() {
     static const std::array<StatInfo, STAT_COUNT> table = {{
-        { "Strength",     StatGroup::Attributes, "Melee damage, weight carry capacity" },
-        { "Dexterity",    StatGroup::Attributes, "Attack speed" },
-        { "Vitality",     StatGroup::Attributes, "Max health" },
-        { "Endurance",    StatGroup::Attributes, "Max stamina" },
-        { "Agility",      StatGroup::Attributes, "Dodge chance" },
-        { "Intelligence", StatGroup::Attributes, "Mana pool" },
-        { "Wisdom",       StatGroup::Attributes, "Learnable spell number capacity" },
-        { "Charisma",     StatGroup::Attributes, "NPC trade prices, unique dialogue options" },
-        { "Perception",   StatGroup::Attributes, "Detection range" },
-        { "Athletics",    StatGroup::Attributes, "Running speed" },
-        { "Stealth",      StatGroup::Attributes, "Better at avoiding sneak detection" },
-        { "Melee",        StatGroup::Combat,     "Melee accuracy" },
-        { "Projectiles",  StatGroup::Combat,     "Ranged accuracy" },
-        { "Arcane",       StatGroup::Combat,     "Spell power" },
-        { "Block",        StatGroup::Combat,     "Block/parry chance" },
-        { "Mining",       StatGroup::Gathering,  "Ore yield" },
-        { "Herbalism",    StatGroup::Gathering,  "Wild plant gather yield" },
-        { "Woodcutting",  StatGroup::Gathering,  "Log yield" },
-        { "Skinning",     StatGroup::Gathering,  "Hide/meat yield" },
-        { "Farming",      StatGroup::Gathering,  "Crop yield" },
-        { "Cooking",      StatGroup::Crafting,   "Food buff strength" },
-        { "Smelting",     StatGroup::Crafting,   "Ore smelting yield" },
-        { "Forging",      StatGroup::Crafting,   "Metal crafting" },
-        { "Carpentry",    StatGroup::Crafting,   "Wood crafting" },
-        { "Stoneworking", StatGroup::Crafting,   "Stone crafting" },
-        { "Lockpicking",  StatGroup::Utility,    "Lock difficulty" },
-        { "Thievery",     StatGroup::Utility,    "Stealing success" },
-        { "Medical",      StatGroup::Utility,    "Healing effectiveness" },
+        { "UILABEL_STRENGTH_STAT",     StatGroup::Attributes, "Melee damage, weight carry capacity" },
+        { "UILABEL_DEXTERITY_STAT",    StatGroup::Attributes, "Attack speed" },
+        { "UILABEL_VITALITY_STAT",     StatGroup::Attributes, "Max health" },
+        { "UILABEL_ENDURANCE_STAT",    StatGroup::Attributes, "Max stamina" },
+        { "UILABEL_AGILITY_STAT",      StatGroup::Attributes, "Dodge chance" },
+        { "UILABEL_INTELLIGENCE_STAT", StatGroup::Attributes, "Mana pool" },
+        { "UILABEL_WISDOM_STAT",       StatGroup::Attributes, "Learnable spell number capacity" },
+        { "UILABEL_CHARISMA_STAT",     StatGroup::Attributes, "NPC trade prices, unique dialogue options" },
+        { "UILABEL_PERCEPTION_STAT",   StatGroup::Attributes, "Detection range" },
+        { "UILABEL_ATHLETICS_STAT",    StatGroup::Attributes, "Running speed" },
+        { "UILABEL_STEALTH_STAT",      StatGroup::Attributes, "Better at avoiding sneak detection" },
+        { "UILABEL_MELEE_STAT",        StatGroup::Combat,     "Melee accuracy" },
+        { "UILABEL_PROJECTILES_STAT",  StatGroup::Combat,     "Ranged accuracy" },
+        { "UILABEL_ARCANE_STAT",       StatGroup::Combat,     "Spell power" },
+        { "UILABEL_BLOCK_STAT",        StatGroup::Combat,     "Block/parry chance" },
+        { "UILABEL_MINING_STAT",       StatGroup::Gathering,  "Ore yield" },
+        { "UILABEL_HERBALISM_STAT",    StatGroup::Gathering,  "Wild plant gather yield" },
+        { "UILABEL_WOODCUTTING_STAT",  StatGroup::Gathering,  "Log yield" },
+        { "UILABEL_SKINNING_STAT",     StatGroup::Gathering,  "Hide/meat yield" },
+        { "UILABEL_FARMING_STAT",      StatGroup::Gathering,  "Crop yield" },
+        { "UILABEL_COOKING_STAT",      StatGroup::Crafting,   "Food buff strength" },
+        { "UILABEL_SMELTING_STAT",     StatGroup::Crafting,   "Ore smelting yield" },
+        { "UILABEL_FORGING_STAT",      StatGroup::Crafting,   "Metal crafting" },
+        { "UILABEL_CARPENTRY_STAT",    StatGroup::Crafting,   "Wood crafting" },
+        { "UILABEL_STONEWORKING_STAT", StatGroup::Crafting,   "Stone crafting" },
+        { "UILABEL_LOCKPICKING_STAT",  StatGroup::Utility,    "Lock difficulty" },
+        { "UILABEL_THIEVERY_STAT",     StatGroup::Utility,    "Stealing success" },
+        { "UILABEL_MEDICAL_STAT",      StatGroup::Utility,    "Healing effectiveness" },
     }};
     return table;
 }
@@ -58,6 +59,10 @@ const std::array<int, MAX_LEVEL + 1>& xpTable() {
 
 const StatInfo& statInfo(int stat) {
     return infoTable()[std::clamp(stat, 0, STAT_COUNT - 1)];
+}
+
+std::string statName(int stat) {
+    return lang(statInfo(stat).key);
 }
 
 int xpForLevel(int level) {

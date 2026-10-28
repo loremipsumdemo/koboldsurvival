@@ -1326,11 +1326,28 @@ GearSum sumGear(const std::vector<int>& items) {
 
 // The rows of an item's tooltip. With a baseline (the gear it would replace), each number that changes
 // shows the change in brackets: green when better, red when worse. A lighter weight is better.
-std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base) {
+// Wraps a line of tooltip text to the tooltip's text width
+using TipWrap = std::function<std::vector<std::string>(const std::string&)>;
+
+// "main_hand" reads "Main hand"; "armor" reads "Armor"
+std::string tipWords(std::string s) {
+    for (char& c : s) if (c == '_') c = ' ';
+    if (!s.empty()) s[0] = (char)std::toupper((unsigned char)s[0]);
+    return s;
+}
+
+std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, const TipWrap& wrap) {
     std::vector<TipRow> rows;
     std::string title = d.name;
     if (count > 1) title += " x" + std::to_string(count);
     rows.push_back(TipRow{ title, tierTint(d.tier) });
+    if (!d.description.empty()) {
+        for (const std::string& line : wrap(d.description)) rows.push_back(TipRow{ line, TIP_TEXT });
+    }
+    rows.push_back(TipRow{ "Type: " + tipWords(d.typeId), TIP_TEXT });
+    if (!d.material.empty()) rows.push_back(TipRow{ "Material: " + d.material, TIP_TEXT });
+    if (!d.equipSlot.empty()) rows.push_back(TipRow{ "Slot: " + tipWords(d.equipSlot), TIP_TEXT });
+    rows.push_back(TipRow{ "Required level: " + std::to_string(d.requiredLevel), TIP_TEXT });
 
     auto intChange = [&](TipRow& row, int now, int before, bool higherIsBetter) {
         if (!base || now == before) return;
@@ -1366,12 +1383,16 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base) {
         intChange(row, d.currentDurability, base ? base->durability : 0, true);
         rows.push_back(row);
     }
+    if (d.maxStackSize > 1) rows.push_back(TipRow{ "Stacks to " + std::to_string(d.maxStackSize), TIP_TEXT });
+    if (d.buyValue > 0) rows.push_back(TipRow{ "Buy price: " + std::to_string(d.buyValue), TIP_TEXT });
+    if (d.sellValue > 0) rows.push_back(TipRow{ "Sell price: " + std::to_string(d.sellValue), TIP_TEXT });
+    if (!d.onUse.empty()) rows.push_back(TipRow{ "Use: " + d.onUse, TIP_TEXT });
     return rows;
 }
 
 // A card beside a comparison: the gear slot, the item in it, and its stats. replaced marks the item the
 // hovered item would take the place of. held is 0 for an empty slot.
-std::vector<TipRow> gearCardRows(int slot, bool replaced, int held) {
+std::vector<TipRow> gearCardRows(int slot, bool replaced, int held, const TipWrap& wrap) {
     std::vector<TipRow> rows;
     rows.push_back(TipRow{ gearSlotName(slot), TIP_HEADING });
     if (replaced) rows.push_back(TipRow{ "Will be replaced", TIP_WARNING });
@@ -1380,7 +1401,7 @@ std::vector<TipRow> gearCardRows(int slot, bool replaced, int held) {
         rows.push_back(TipRow{ "Empty", TIP_TEXT });
         return rows;
     }
-    for (const TipRow& row : itemRows(*d, 1, nullptr)) rows.push_back(row);
+    for (const TipRow& row : itemRows(*d, 1, nullptr, wrap)) rows.push_back(row);
     return rows;
 }
 } // namespace
@@ -1431,14 +1452,16 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
         for (int slot : displaced) replacedItems.push_back(compareTo->items[slot]);
     }
     const GearSum base = sumGear(replacedItems);
-    const std::vector<TipRow> main = itemRows(*d, count, compare ? &base : nullptr);
+    const float tipTextW = 260.0f * s;
+    const TipWrap wrapTip = [this, tipTextW](const std::string& t) { return wrapListText(t, tipTextW); };
+    const std::vector<TipRow> main = itemRows(*d, count, compare ? &base : nullptr, wrapTip);
 
     std::vector<std::vector<TipRow>> cards;
     if (compare) {
         for (int slot : comparisonSlots(item)) {
             const int held = compareTo->items[slot];
             const bool replaced = held != 0 && std::find(displaced.begin(), displaced.end(), slot) != displaced.end();
-            cards.push_back(gearCardRows(slot, replaced, held));
+            cards.push_back(gearCardRows(slot, replaced, held, wrapTip));
         }
     }
 
@@ -1932,7 +1955,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
         for (int i = 0; i < STAT_COUNT; ++i) {
             if (statInfo(i).group != group) continue;
             const int lv = levelOf(stats, i);
-            row(y, statIcon(i), statInfo(i).name, std::to_string(lv), white);
+            row(y, statIcon(i), statName(i), std::to_string(lv), white);
             // Progress from this level toward the next one
             const float barY = y + rowH - 3.0f * s, barH = 3.0f * s;
             const float barW = barEnd - nameX;
@@ -1951,7 +1974,7 @@ void Renderer::drawStatTip(const Stats& stats, int stat, float mx, float my) {
     const int lv = levelOf(stats, stat);
     const int pct = (int)std::lround(levelProgress(stats, stat) * 100.0f);
     std::vector<TipRow> rows(5);
-    rows[0].text = statInfo(stat).name;
+    rows[0].text = statName(stat);
     rows[0].tint = RGBA{ 0.80f, 0.86f, 0.96f, 1.0f };
     rows[1].text = "Level: " + std::to_string(lv);
     rows[2].text = "Progress: " + std::to_string(pct) + "%";
@@ -2523,7 +2546,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
                 const std::string next = lv >= MAX_LEVEL ? std::string("Max")
                                        : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
                 drawUiIcon(statIcon(i), Rect{ col.x, rowY, iconH, iconH });
-                row(col, rowY, nameIndent, statInfo(i).name, std::to_string(lv), withCommas(stats.xp[i]), next, white);
+                row(col, rowY, nameIndent, statName(i), std::to_string(lv), withCommas(stats.xp[i]), next, white);
                 rowY += rowH;
             }
         }

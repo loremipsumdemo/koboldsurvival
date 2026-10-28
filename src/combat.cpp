@@ -323,7 +323,7 @@ void grantXp(World& w, Entity e, int stat, float amount, const char* why) {
     if (whole < 1.0f) return;
     addXp(*st, stat, (int)whole);
     if (why) {
-        queueLog(nameOf(w, e) + " gains " + std::to_string((int)whole) + " " + statInfo(stat).name +
+        queueLog(nameOf(w, e) + " gains " + std::to_string((int)whole) + " " + statName(stat) +
                  " XP for " + why, LogKind::Xp);
     }
 }

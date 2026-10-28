@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-// One entry in the item database (data/items.sql). Fields follow the SQL columns.
+// One entry in the item database (data/itemdb.txt).
 struct ItemDef {
     int id = 0;
     std::string typeId;               // 'item', 'consumable', 'weapon', 'armor' or 'accessory'
@@ -29,12 +29,10 @@ struct ItemDef {
     std::string onUse;               // right-click script from the inventory, e.g. "health +50; hunger +10". Empty for none.
 };
 
-// Reads the INSERT rows of an items.sql file. Comments, the CREATE TABLE and other statements are
-// skipped. Columns are matched by name, so their order in the file doesn't matter. Quoted text may
-// hold '' for an apostrophe. Returns false and sets err if a row is bad or an id repeats.
-bool parseItemSql(const std::string& sql, std::vector<ItemDef>& out, std::string& err);
+// Reads the blocks of an itemdb.txt file: [id], then key = value lines. Returns false and sets err if a block is bad.
+bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string& err);
 
-// The game's item database, read once from data/items.sql in the pak. Empty if the file is
+// The game's item database, read once from data/itemdb.txt in the pak. Empty if the file is
 // missing or can't be parsed; the reason is printed to stderr.
 const std::vector<ItemDef>& itemDatabase();
 

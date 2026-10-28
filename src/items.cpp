@@ -2,17 +2,12 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
-#include <unordered_map>
+#include <sstream>
 #include <unordered_set>
 #include <utility>
 #include "pak.h"
 
 namespace {
-
-std::string upper(std::string s) {
-    for (char& c : s) c = (char)std::toupper((unsigned char)c);
-    return s;
-}
 
 std::string trim(const std::string& s) {
     size_t a = 0, b = s.size();
@@ -21,203 +16,80 @@ std::string trim(const std::string& s) {
     return s.substr(a, b - a);
 }
 
-// Removes -- comments. Text inside quotes is left alone, so a '--' in a description survives.
-// A comment runs to the end of its line, and the line break is kept.
-std::string stripComments(const std::string& in) {
-    std::string out;
-    out.reserve(in.size());
-    bool inQuote = false;
-    for (size_t i = 0; i < in.size(); ++i) {
-        const char c = in[i];
-        if (inQuote) {
-            out += c;
-            if (c == '\'') {
-                if (i + 1 < in.size() && in[i + 1] == '\'') {   // '' is an escaped quote
-                    out += in[++i];
-                } else {
-                    inQuote = false;
-                }
-            }
-            continue;
-        }
-        if (c == '\'') {
-            inQuote = true;
-            out += c;
-            continue;
-        }
-        if (c == '-' && i + 1 < in.size() && in[i + 1] == '-') {
-            while (i < in.size() && in[i] != '\n') ++i;
-            if (i < in.size()) out += '\n';
-            continue;
-        }
-        out += c;
-    }
-    return out;
-}
-
-// Splits the text into statements at each ';' that isn't inside quotes
-std::vector<std::string> splitStatements(const std::string& sql) {
-    std::vector<std::string> out;
-    std::string cur;
-    bool inQuote = false;
-    for (char c : sql) {
-        // An escaped '' toggles the flag twice, so it stays inside the string
-        if (c == '\'') inQuote = !inQuote;
-        if (c == ';' && !inQuote) {
-            out.push_back(cur);
-            cur.clear();
-            continue;
-        }
-        cur += c;
-    }
-    out.push_back(cur);
-    return out;
-}
-
-// One value in an INSERT row. Quoted values keep their text; unquoted ones are numbers or NULL.
-struct Token {
-    std::string text;
-    bool quoted = false;
-};
-
-// Reads one "( ... )" row starting at pos, which must point at '('. Leaves pos after the ')'.
-bool readRow(const std::string& s, size_t& pos, std::vector<Token>& row) {
-    if (pos >= s.size() || s[pos] != '(') return false;
-    ++pos;
-    Token cur;
-    bool inQuote = false;
-    while (pos < s.size()) {
-        const char c = s[pos];
-        if (inQuote) {
-            if (c == '\'') {
-                if (pos + 1 < s.size() && s[pos + 1] == '\'') {
-                    cur.text += '\'';
-                    pos += 2;
-                    continue;
-                }
-                inQuote = false;
-                ++pos;
-                continue;
-            }
-            cur.text += c;
-            ++pos;
-            continue;
-        }
-        if (c == '\'') {
-            inQuote = true;
-            cur.quoted = true;
-            ++pos;
-            continue;
-        }
-        if (c == ',') {
-            row.push_back(cur);
-            cur = Token{};
-            ++pos;
-            continue;
-        }
-        if (c == ')') {
-            row.push_back(cur);
-            ++pos;
-            return true;
-        }
-        if (!std::isspace((unsigned char)c)) cur.text += c;   // spaces outside quotes are not part of a value
-        ++pos;
-    }
-    return false;   // the text ended before the row closed
-}
-
-bool toInt(const Token& t, int& v) {
-    if (t.quoted || t.text.empty()) return false;
+bool parseIntText(const std::string& v, int& out) {
+    if (v.empty()) return false;
     char* end = nullptr;
-    const long long n = std::strtoll(t.text.c_str(), &end, 10);
+    const long n = std::strtol(v.c_str(), &end, 10);
     if (*end != '\0') return false;
-    v = (int)n;
+    out = (int)n;
     return true;
 }
 
-bool toFloat(const Token& t, float& v) {
-    if (t.quoted || t.text.empty()) return false;
+bool parseFloatText(const std::string& v, float& out) {
+    if (v.empty()) return false;
     char* end = nullptr;
-    const double d = std::strtod(t.text.c_str(), &end);
+    const float f = std::strtof(v.c_str(), &end);
     if (*end != '\0') return false;
-    v = (float)d;
+    out = f;
     return true;
 }
 
-bool isNull(const Token& t) {
-    return !t.quoted && upper(t.text) == "NULL";
-}
+// Sets one field of an item from its key. False, with err set, if the key is unknown or the value is bad.
+bool setField(ItemDef& item, const std::string& key, const std::string& val, std::string& err) {
+    const std::string where = " on item " + std::to_string(item.id);
+    auto needInt = [&](int& field) {
+        if (parseIntText(val, field)) return true;
+        err = "bad number for " + key + where + ": '" + val + "'";
+        return false;
+    };
+    auto needFloat = [&](float& field) {
+        if (parseFloatText(val, field)) return true;
+        err = "bad number for " + key + where + ": '" + val + "'";
+        return false;
+    };
 
-// Builds one item from a row, matching each value to its column name
-bool toItem(const std::vector<std::string>& cols, const std::vector<Token>& row, ItemDef& item, std::string& err) {
-    if (cols.size() != row.size()) {
-        err = "a row has " + std::to_string(row.size()) + " values but the column list has " + std::to_string(cols.size());
+    if (key == "type") item.typeId = val;
+    else if (key == "name") item.baseName = val;
+    else if (key == "description") item.description = val;
+    else if (key == "material") item.material = val;
+    else if (key == "equip_slot") item.equipSlot = val;
+    else if (key == "on_use") item.onUse = val;
+    else if (key == "max_stack_size") return needInt(item.maxStackSize);
+    else if (key == "max_durability") return needInt(item.maxDurability);
+    else if (key == "current_durability") return needInt(item.currentDurability);
+    else if (key == "weight") return needFloat(item.weight);
+    else if (key == "buy_value") return needInt(item.buyValue);
+    else if (key == "sell_value") return needInt(item.sellValue);
+    else if (key == "required_level") return needInt(item.requiredLevel);
+    else if (key == "attack_value") return needInt(item.attackValue);
+    else if (key == "defense_value") return needInt(item.defenseValue);
+    else if (key == "tier") return needInt(item.tier);
+    else {
+        err = "unknown key '" + key + "'" + where;
         return false;
     }
+    return true;
+}
 
-    std::unordered_map<std::string, size_t> at;
-    for (size_t i = 0; i < cols.size(); ++i) at[cols[i]] = i;
-
-    auto get = [&](const char* name) -> const Token* {
-        auto it = at.find(name);
-        if (it == at.end()) return nullptr;
-        const Token& t = row[it->second];
-        return isNull(t) ? nullptr : &t;
-    };
-    auto needInt = [&](const char* name, int& v) {
-        const Token* t = get(name);
-        if (!t) return true;   // absent or NULL: the default stays
-        if (!toInt(*t, v)) { err = std::string("bad number in column ") + name + ": " + t->text; return false; }
-        return true;
-    };
-    auto needFloat = [&](const char* name, float& v) {
-        const Token* t = get(name);
-        if (!t) return true;
-        if (!toFloat(*t, v)) { err = std::string("bad number in column ") + name + ": " + t->text; return false; }
-        return true;
-    };
-    auto needText = [&](const char* name, std::string& v) {
-        const Token* t = get(name);
-        if (t) v = t->text;
-        return true;
-    };
-
-    if (!needInt("id", item.id)) return false;
-    if (item.id <= 0) { err = "item id must be a positive number"; return false; }
-    if (!needText("type_id", item.typeId)) return false;
+// Checks a finished item and builds its display name. False, with err set, if it is not valid.
+bool finishItem(ItemDef& item, std::string& err) {
+    const std::string where = " on item " + std::to_string(item.id);
     if (item.typeId != "item" && item.typeId != "consumable" && item.typeId != "weapon" &&
         item.typeId != "armor" && item.typeId != "accessory") {
-        err = "unknown type_id '" + item.typeId + "' on item " + std::to_string(item.id);
+        err = "unknown type '" + item.typeId + "'" + where;
         return false;
     }
-    if (!needText("name", item.baseName)) return false;
-    if (item.baseName.empty()) { err = "item " + std::to_string(item.id) + " has no name"; return false; }
-    needText("description", item.description);
-    needText("material", item.material);
-    if (!needInt("tier", item.tier)) return false;
-    if (item.tier < 0) { err = "item " + std::to_string(item.id) + " has a negative tier"; return false; }
-    if (!needText("equip_slot", item.equipSlot)) return false;
+    if (item.baseName.empty()) { err = "no name" + where; return false; }
+    if (item.tier < 0) { err = "negative tier" + where; return false; }
     if (!item.equipSlot.empty()) {
         static const char* const slots[] = {
             "head", "torso", "legs", "feet", "accessory", "main_hand", "off_hand", "either_hand", "two_hand",
         };
         bool known = false;
         for (const char* s : slots) if (item.equipSlot == s) known = true;
-        if (!known) { err = "unknown equip_slot '" + item.equipSlot + "' on item " + std::to_string(item.id); return false; }
+        if (!known) { err = "unknown equip_slot '" + item.equipSlot + "'" + where; return false; }
     }
-
-    if (!needInt("max_stack_size", item.maxStackSize)) return false;
-    if (!needInt("max_durability", item.maxDurability)) return false;
-    if (!needInt("current_durability", item.currentDurability)) return false;
-    if (!needFloat("weight", item.weight)) return false;
-    if (!needInt("buy_value", item.buyValue)) return false;
-    if (!needInt("sell_value", item.sellValue)) return false;
-    if (!needInt("required_level", item.requiredLevel)) return false;
-    if (!needInt("attack_value", item.attackValue)) return false;
-    if (!needInt("defense_value", item.defenseValue)) return false;
-    if (!needText("on_use", item.onUse)) return false;
-
-    if (item.maxStackSize < 1) { err = "item " + std::to_string(item.id) + " needs a max_stack_size of at least 1"; return false; }
+    if (item.maxStackSize < 1) { err = "max_stack_size must be at least 1" + where; return false; }
 
     // The display name: material, base name, then tier
     item.name = item.material.empty() ? item.baseName : item.material + " " + item.baseName;
@@ -227,55 +99,54 @@ bool toItem(const std::vector<std::string>& cols, const std::vector<Token>& row,
 
 } // namespace
 
-bool parseItemSql(const std::string& sql, std::vector<ItemDef>& out, std::string& err) {
+bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string& err) {
     out.clear();
     err.clear();
     std::unordered_set<int> ids;
+    bool open = false;          // a block is being read
+    ItemDef current;
+    int line = 0;
 
-    for (const std::string& raw : splitStatements(stripComments(sql))) {
-        const std::string stmt = trim(raw);
-        if (stmt.empty()) continue;
+    auto closeBlock = [&]() {
+        if (!open) return true;
+        open = false;
+        if (!finishItem(current, err)) return false;
+        out.push_back(current);
+        return true;
+    };
 
-        // Only INSERT statements hold rows; CREATE TABLE and anything else is skipped
-        const std::string up = upper(stmt);
-        if (up.compare(0, 6, "INSERT") != 0) continue;
+    std::istringstream in(text);
+    std::string raw;
+    while (std::getline(in, raw)) {
+        ++line;
+        const std::string s = trim(raw);
+        if (s.empty() || s[0] == '#') continue;
+        const std::string where = " (line " + std::to_string(line) + ")";
 
-        // Column list: the first parenthesised group, which has no nested brackets
-        const size_t colOpen = stmt.find('(');
-        const size_t colClose = colOpen == std::string::npos ? std::string::npos : stmt.find(')', colOpen);
-        if (colClose == std::string::npos) { err = "INSERT has no column list"; return false; }
-        std::vector<std::string> cols;
-        {
-            std::string name;
-            for (size_t i = colOpen + 1; i <= colClose; ++i) {
-                const char c = stmt[i];
-                if (c == ',' || i == colClose) {
-                    cols.push_back(trim(name));
-                    name.clear();
-                } else {
-                    name += c;
-                }
+        if (s.front() == '[') {
+            if (s.back() != ']') { err = "bad item header" + where; return false; }
+            if (!closeBlock()) { err += where; return false; }
+            current = ItemDef{};
+            if (!parseIntText(trim(s.substr(1, s.size() - 2)), current.id) || current.id <= 0) {
+                err = "item id must be a positive number" + where;
+                return false;
             }
+            if (!ids.insert(current.id).second) {
+                err = "item id " + std::to_string(current.id) + " appears twice" + where;
+                return false;
+            }
+            open = true;
+            continue;
         }
 
-        const size_t valuesAt = up.find("VALUES");
-        if (valuesAt == std::string::npos) { err = "INSERT has no VALUES"; return false; }
-
-        // Rows: "(...)" groups separated by commas
-        size_t pos = valuesAt + 6;
-        while (true) {
-            while (pos < stmt.size() && (std::isspace((unsigned char)stmt[pos]) || stmt[pos] == ',')) ++pos;
-            if (pos >= stmt.size()) break;
-
-            std::vector<Token> row;
-            if (!readRow(stmt, pos, row)) { err = "malformed row near: " + stmt.substr(pos, 40); return false; }
-
-            ItemDef item;
-            if (!toItem(cols, row, item, err)) return false;
-            if (!ids.insert(item.id).second) { err = "item id " + std::to_string(item.id) + " appears twice"; return false; }
-            out.push_back(item);
-        }
+        const size_t eq = s.find('=');
+        if (eq == std::string::npos) { err = "expected key = value" + where; return false; }
+        if (!open) { err = "value before any item header" + where; return false; }
+        const std::string key = trim(s.substr(0, eq));
+        const std::string val = trim(s.substr(eq + 1));
+        if (!setField(current, key, val, err)) { err += where; return false; }
     }
+    if (!closeBlock()) return false;
     return true;
 }
 
@@ -299,12 +170,12 @@ const std::vector<ItemDef>& itemDatabase() {
         databaseLoaded() = true;
         const unsigned char* bytes = nullptr;
         size_t size = 0;
-        if (!pakFind("data/items.sql", bytes, size)) {
-            std::fprintf(stderr, "items: data/items.sql is not in the pak\n");
+        if (!pakFind("data/itemdb.txt", bytes, size)) {
+            std::fprintf(stderr, "items: data/itemdb.txt is not in the pak\n");
         } else {
             std::string err;
-            const std::string sql((const char*)bytes, size);
-            if (!parseItemSql(sql, databaseStorage(), err)) {
+            const std::string text((const char*)bytes, size);
+            if (!parseItemDb(text, databaseStorage(), err)) {
                 std::fprintf(stderr, "items: %s\n", err.c_str());
                 databaseStorage().clear();
             }

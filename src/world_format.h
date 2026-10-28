@@ -41,6 +41,9 @@ struct WorldEntry {
 // Chunks per side for a world of this size
 int chunksPerSide(int size);
 
+// A world folder that starts with this prefix is read from data.pak, not the disk: "pak:data/map/main"
+inline constexpr const char* PAK_WORLD_PREFIX = "pak:";
+
 bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err);
 
 // Every world in a maps folder: each subfolder holding a readable world.txt. Not sorted.

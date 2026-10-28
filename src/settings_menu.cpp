@@ -1,4 +1,6 @@
 #include "settings_menu.h"
+#include "fontlist.h"
+#include "language.h"
 
 #include <algorithm>
 #include <cmath>
@@ -197,6 +199,18 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     rows.push_back(makeDropdown(RowId::Autosave, "Autosave", saves, indexOfValue(saves, s.autosaveMinutes), true));
     rows.push_back(makeToggle(RowId::UnitNames, "Unit names", s.showUnitNames));
     rows.push_back(makeScale(RowId::FontScale, "Font size", s.fontScale));
+    std::vector<DropOption> langs;
+    for (int i = 0; i < LANGUAGE_COUNT; ++i) langs.push_back(DropOption{ languageName(i), i, 0, 0, true });
+    rows.push_back(makeDropdown(RowId::Language, "Language", langs, s.language, true));
+    // The font: the built-in one, or any font installed on this computer
+    std::vector<DropOption> fonts{ DropOption{ "Built-in (Noto Sans)", 0, 0, 0, true } };
+    int currentFont = 0;
+    const std::vector<std::string>& installed = installedFontPaths();
+    for (size_t i = 0; i < installed.size(); ++i) {
+        fonts.push_back(DropOption{ fontDisplayName(installed[i]), (int)i + 1, 0, 0, true });
+        if (installed[i] == s.fontPath) currentFont = (int)i + 1;
+    }
+    rows.push_back(makeDropdown(RowId::Font, "Font", fonts, currentFont, true));
     rows.push_back(makeAction(RowId::ResetPanels, "Reset All UI Panels", "Reset"));
     return rows;
 }
@@ -420,6 +434,16 @@ SettingsChange pickOption(RowId id, const DropOption& option, GameSettings& s) {
     case RowId::Autosave:
         s.autosaveMinutes = option.value;
         break;
+    case RowId::Language:
+        s.language = std::clamp(option.value, 0, LANGUAGE_COUNT - 1);
+        c.language = true;
+        break;
+    case RowId::Font: {
+        const std::vector<std::string>& installed = installedFontPaths();
+        s.fontPath = option.value > 0 && option.value <= (int)installed.size() ? installed[option.value - 1] : std::string();
+        c.fonts = true;
+        break;
+    }
     default:
         return c;
     }
@@ -498,6 +522,7 @@ SettingsChange resetAllSettings(GameSettings& s) {
     c.display = true;
     c.vsync = true;
     c.fonts = true;
+    c.language = true;
     c.audio = true;
     c.any = true;
     return c;

@@ -42,7 +42,7 @@ enum StatId : int {
 enum class StatGroup { Attributes, Combat, Gathering, Crafting, Utility };
 
 struct StatInfo {
-    const char* name;
+    const char* key;        // the language key for its name, e.g. UILABEL_STRENGTH_STAT
     StatGroup group;
     const char* effect;     // what the stat will do once the feature it belongs to exists
 };
@@ -51,6 +51,9 @@ constexpr int MAX_LEVEL = 99;
 
 // The name, group and effect of a stat
 const StatInfo& statInfo(int stat);
+
+// The name of a stat in the language in use
+std::string statName(int stat);
 
 // Total XP needed to reach a level, 1..99. Level 1 needs 0 XP. Levels outside the range are clamped.
 int xpForLevel(int level);

@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include "language.h"
 #include <fstream>
 #include <string>
 
@@ -35,6 +36,8 @@ struct GameSettings {
     int autosaveMinutes = 5;        // 0 for off
     bool showUnitNames = true;      // each unit's name over its head, in brackets
     int fontScale = 100;            // text size as a percentage of the base sizes, 100 to 200 in steps of 5
+    std::string fontPath;           // the UI font file, or empty for the built-in one
+    int language = 0;               // 0 English, 1 Spanish
 
     // Controls
     bool edgeScroll = false;
@@ -81,6 +84,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
+        else if (key == "fontPath")        s.fontPath = val;
+        else if (key == "language")        s.language = parseInt(val, s.language);
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
         else if (key == "musicOn")         s.musicOn = (val == "1");
@@ -110,6 +115,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
     s.fontScale = std::clamp(s.fontScale, 100, 200);
     s.fontScale = 100 + 5 * ((s.fontScale - 100 + 2) / 5);
+    s.language = std::clamp(s.language, 0, LANGUAGE_COUNT - 1);
     return s;
 }
 
@@ -126,6 +132,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "fontScale=" << s.fontScale << "\n";
+    out << "fontPath=" << s.fontPath << "\n";
+    out << "language=" << s.language << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
     out << "musicVolume=" << s.musicVolume << "\n";
     out << "musicOn=" << (s.musicOn ? 1 : 0) << "\n";

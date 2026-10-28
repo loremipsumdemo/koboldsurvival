@@ -29,6 +29,8 @@ const float* LookValue(const Look& look, const LookField& f);
 // Theme files are JSON: {"format": "worldmaker-look", "version": 1, "clock": 12, "sun_rgb": [1, 0.9, 0.8], ...}
 bool SaveLookFile(const Look& look, const std::string& path, std::string& err);
 bool LoadLookFile(const std::string& path, Look& look, std::string& err);
+// The same, from the text of a look file already read
+bool LoadLookText(const std::string& text, Look& look, std::string& err);
 
 // Names (without folder or extension) of every .json file in dir, sorted.
 std::vector<std::string> ListLookNames(const std::string& dir);

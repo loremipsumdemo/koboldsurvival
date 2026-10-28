@@ -465,9 +465,22 @@ struct MapChoice {
     std::string pakName() const { return "data/map/" + stem + ".map"; }
 };
 
-// Every map the New Game list can start, not yet sorted: the premade maps, then worlds and .map files
+// The main map: a world folder packed into data.pak at data/map/main. New Game always starts on it.
+constexpr const char* MAIN_MAP_STEM = "main";
+
+bool mainMapPacked() {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    return pakFind(std::string("data/map/") + MAIN_MAP_STEM + "/world.txt", bytes, size);
+}
+
+// Every map the New Game list can start, not yet sorted: the main map, the premade maps, then worlds and .map files
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
+    if (mainMapPacked()) {
+        out.push_back(MapChoice{ "packed", MAIN_MAP_STEM, MAIN_MAP_STEM, 0,
+                                 std::string(PAK_WORLD_PREFIX) + "data/map/" + MAIN_MAP_STEM });
+    }
     const std::string prefix = "data/map/", suffix = ".map";
     for (const std::string& pak : pakNames(prefix, suffix)) {
         const std::string stem = pak.substr(prefix.size(), pak.size() - prefix.size() - suffix.size());
@@ -493,7 +506,7 @@ std::vector<MapChoice> listMaps() {
 
 // Puts a map's ground into the terrain: a premade or custom map whole, or a world folder to be streamed
 bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
-    if (c.source == "world") return terrain.openWorld(c.path, err);
+    if (c.source == "world" || c.source == "packed") return terrain.openWorld(c.path, err);
 
     MapData data;
     bool ok = false;
@@ -786,7 +799,7 @@ void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending) {
 
 // What a map is, as the list's Type column shows it
 std::string mapTypeLabel(const MapChoice& m) {
-    if (m.source == "data") return "BUILT-IN";
+    if (m.source == "data" || m.source == "packed") return "BUILT-IN";
     return m.source == "world" ? "WORLD" : "MAP FILE";
 }
 
@@ -1063,10 +1076,23 @@ struct UiFonts {
     bool valid() const { return hud && ui && list && statsTitle && statsRow; }
 };
 
-UiFonts openUiFonts(int pct) {
+void closeUiFonts(UiFonts& f);
+
+UiFonts openUiFonts(int pct, const std::string& fontPath) {
     const float size = 30.0f * pct / 100.0f;
     const char* bold = "data/font/NotoSans_Condensed-Bold.ttf";
     const char* regular = "data/font/NotoSans_Condensed-Regular.ttf";
+    if (!fontPath.empty()) {
+        // A font the player picked, from this computer. If it can't be opened, the built-in one is used.
+        UiFonts f;
+        f.hud = TTF_OpenFont(fontPath.c_str(), size);
+        f.ui = TTF_OpenFont(fontPath.c_str(), size);
+        f.list = TTF_OpenFont(fontPath.c_str(), size);
+        f.statsTitle = TTF_OpenFont(fontPath.c_str(), size);
+        f.statsRow = TTF_OpenFont(fontPath.c_str(), size);
+        if (f.valid()) return f;
+        closeUiFonts(f);
+    }
     UiFonts f;
     f.hud = pakFont(bold, size);
     f.ui = pakFont(bold, size);
@@ -1109,8 +1135,13 @@ int main(int, char**) {
     }
     // Settings come first: the saved text size decides the fonts
     GameSettings settings = loadSettings(SETTINGS_PATH);
-    UiFonts fonts = openUiFonts(settings.fontScale);
+    UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath);
     int appliedFontScale = settings.fontScale;
+    std::string appliedFontPath = settings.fontPath;
+    {
+        std::string langErr;
+        if (!loadLanguage(settings.language, langErr)) SDL_Log("Language: %s. Using English.", langErr.c_str());
+    }
     TTF_Font* font = pakFont("data/font/NotoSans_Condensed-Bold.ttf", 64.0f);
     if (!font || !fonts.valid()) {
         SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
@@ -1381,7 +1412,7 @@ int main(int, char**) {
         }
         pendingMap = choice;
         partyUi = PartyUi{};
-        backScreen = Screen::MapSelect;
+        backScreen = Screen::Title;
         screen = Screen::PartySetup;
     };
 
@@ -1522,8 +1553,8 @@ int main(int, char**) {
     // Applies what a change touched. It is saved when the change is final: a slider saves when released.
     // The Font size setting: every text font is reopened at the new size, and the text drawn with the old ones is dropped
     auto applyFontScale = [&]() {
-        if (settings.fontScale == appliedFontScale) return;
-        UiFonts next = openUiFonts(settings.fontScale);
+        if (settings.fontScale == appliedFontScale && settings.fontPath == appliedFontPath) return;
+        UiFonts next = openUiFonts(settings.fontScale, settings.fontPath);
         if (!next.valid()) {
             closeUiFonts(next);
             return;
@@ -1532,6 +1563,12 @@ int main(int, char**) {
         closeUiFonts(fonts);
         fonts = next;
         appliedFontScale = settings.fontScale;
+        appliedFontPath = settings.fontPath;
+    };
+    // The Language setting: its text file is reloaded. A file that can't be read leaves English in use.
+    auto applyLanguage = [&]() {
+        std::string err;
+        if (!loadLanguage(settings.language, err)) showNotice(err);
     };
     auto settingsCommit = [&](const SettingsChange& c, bool save) {
         if (!c.any) return;
@@ -1539,6 +1576,7 @@ int main(int, char**) {
         else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
         if (c.audio) applyAudio();
         if (c.fonts) applyFontScale();
+        if (c.language) applyLanguage();
         if (save) saveSettingsFile();
     };
     auto leaveSettings = [&]() {
@@ -1602,12 +1640,16 @@ int main(int, char**) {
         case Action::Continue:
             if (!saves.empty()) loadSave(saves.front().path);
             return;
-        case Action::NewGame:
-            refreshMaps();
-            mapOffset = 0;
-            backScreen = Screen::Title;
-            screen = Screen::MapSelect;
+        case Action::NewGame: {
+            // New Game always starts on the main map, so there is no map to pick
+            const std::optional<MapChoice> mainMap = findMap(listMaps(), "packed", MAIN_MAP_STEM);
+            if (!mainMap) {
+                showNotice("The main map is missing from data.pak");
+                return;
+            }
+            openParty(*mainMap);
             return;
+        }
         case Action::PickMap:
             if (param >= 0 && param < (int)maps.size()) openParty(maps[param]);
             return;
@@ -3493,8 +3535,8 @@ int main(int, char**) {
                     const float ry = b.rect.y + (b.rect.h - listH) * 0.5f;
                     renderer.drawListText(m.name, b.rect.x + textInset, ry, isHover ? hover : white);
                     renderer.drawListText(mapTypeLabel(m), b.rect.x + COL_TYPE * b.rect.w, ry,
-                                          m.source == "data" ? builtIn : white);
-                    const std::string when = m.source == "data" ? std::string("built in")
+                                          (m.source == "data" || m.source == "packed") ? builtIn : white);
+                    const std::string when = (m.source == "data" || m.source == "packed") ? std::string("built in")
                                            : m.created > 0 ? timeString(m.created) : std::string("unknown");
                     renderer.drawListText(when, b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
                 } else if (b.action == Action::MapScrollUp || b.action == Action::MapScrollDown

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pak.h"
 #include "render/surface_pixels.hpp"
 #include "theme/themefile.hpp"
 
@@ -119,12 +120,42 @@ int chunksPerSide(int size) {
     return (size + CHUNK_TILES - 1) / CHUNK_TILES;
 }
 
+namespace {
+
+bool isPakWorld(const std::string& folder) {
+    return folder.rfind(PAK_WORLD_PREFIX, 0) == 0;
+}
+
+// The data.pak name of a file in a pak world folder, e.g. "data/map/main/world.txt"
+std::string pakNameOf(const std::string& folder, const std::string& file) {
+    return folder.substr(std::strlen(PAK_WORLD_PREFIX)) + "/" + file;
+}
+
+// The whole of one file in a world folder, from data.pak or from the disk
+bool readWorldFile(const std::string& folder, const std::string& file, std::vector<uint8_t>& out) {
+    out.clear();
+    if (isPakWorld(folder)) {
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (!pakFind(pakNameOf(folder, file), bytes, size)) return false;
+        out.assign(bytes, bytes + size);
+        return true;
+    }
+    std::ifstream in(std::filesystem::path(folder) / file, std::ios::binary);
+    if (!in) return false;
+    out.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    return true;
+}
+
+} // namespace
+
 bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) {
-    std::ifstream in(std::filesystem::path(folder) / "world.txt");
-    if (!in) {
+    std::vector<uint8_t> raw;
+    if (!readWorldFile(folder, "world.txt", raw)) {
         err = "no world.txt in " + folder;
         return false;
     }
+    std::istringstream in(std::string(raw.begin(), raw.end()));
     WorldInfo info;
     bool formatOk = false, chunkOk = false;
     std::string line;
@@ -201,12 +232,21 @@ bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz,
     const int rx = cx / REGION_CHUNKS, rz = cz / REGION_CHUNKS;
     const int slot = (cz % REGION_CHUNKS) * REGION_CHUNKS + (cx % REGION_CHUNKS);
 
-    std::ifstream in(std::filesystem::path(folder) / regionName(rx, rz), std::ios::binary);
-    if (!in) return false;
-    in.seekg((std::streamoff)(REGION_HEADER + (size_t)slot * RECORD));
+    const size_t at = REGION_HEADER + (size_t)slot * RECORD;
     std::vector<uint8_t> rec(RECORD);
-    in.read(reinterpret_cast<char*>(rec.data()), (std::streamsize)RECORD);
-    if (!in || rec[0] != 1) return false;
+    if (isPakWorld(folder)) {
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (!pakFind(pakNameOf(folder, regionName(rx, rz)), bytes, size) || at + RECORD > size) return false;
+        std::memcpy(rec.data(), bytes + at, RECORD);
+    } else {
+        std::ifstream in(std::filesystem::path(folder) / regionName(rx, rz), std::ios::binary);
+        if (!in) return false;
+        in.seekg((std::streamoff)at);
+        in.read(reinterpret_cast<char*>(rec.data()), (std::streamsize)RECORD);
+        if (!in) return false;
+    }
+    if (rec[0] != 1) return false;
 
     out = ChunkData{};
     out.cx = cx;
@@ -290,12 +330,12 @@ bool writeWorldSurface(const std::string& folder, const WorldSurface& s, std::st
 }
 
 bool readWorldSurface(const std::string& folder, WorldSurface& out, std::string& err) {
-    namespace fs = std::filesystem;
-    if (!wm::LoadLookFile((fs::path(folder) / LOOK_FILE).string(), out.look, err)) return false;
+    std::vector<uint8_t> lookRaw;
+    if (!readWorldFile(folder, LOOK_FILE, lookRaw)) { err = "no " + std::string(LOOK_FILE) + " in " + folder; return false; }
+    if (!wm::LoadLookText(std::string(lookRaw.begin(), lookRaw.end()), out.look, err)) return false;
 
-    std::ifstream in(fs::path(folder) / SURFACE_FILE, std::ios::binary);
-    if (!in) { err = "no " + std::string(SURFACE_FILE) + " in " + folder; return false; }
-    const std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::vector<uint8_t> bytes;
+    if (!readWorldFile(folder, SURFACE_FILE, bytes)) { err = "no " + std::string(SURFACE_FILE) + " in " + folder; return false; }
     const bool sized = bytes.size() == SURFACE_HEADER + 2 * wm::SURFACE_TILE_BYTES;
     if (!sized || std::memcmp(bytes.data(), SURFACE_MAGIC, 4) != 0 ||
         getU32(bytes.data() + 4) != SURFACE_VERSION || getU32(bytes.data() + 8) != (uint32_t)wm::SURFACE_TILE_SIZE) {

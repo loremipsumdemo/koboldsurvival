@@ -1,0 +1,1585 @@
+# Item database. One block per item, starting with its id in brackets, e.g. [23].
+# Each line is key = value. Text values run to the end of the line. A key left empty means none.
+# Blank lines and lines starting with # are skipped. Keys:
+#   type              : item, consumable, weapon, armor or accessory
+#   max_stack_size    : most of this item one inventory slot holds (at least 1)
+#   name              : base name, e.g. Short Sword
+#   description       : flavour text shown in the tooltip
+#   max_durability    : 0 for not applicable
+#   current_durability: durability when made
+#   weight            : weight of one
+#   buy_value         : price to buy from a vendor
+#   sell_value        : price when sold to a vendor
+#   required_level   : minimum level to use or equip
+#   attack_value      : attack stat, weapons only
+#   defense_value     : defense stat, armor and shields only
+#   on_use            : right-click script, e.g. health +50; hunger +10; attack +10 for 60s
+#   material          : gear material, e.g. Iron. Empty for none
+#   tier              : gear tier, 1 or more. Shown after the name as +N. 0 for none
+#   equip_slot        : head, torso, legs, feet, accessory, main_hand, off_hand, either_hand, two_hand. Empty for none
+
+[1]
+type = item
+max_stack_size = 99
+name = Iron Ore
+description = Raw ore that can be smelted into iron ingots.
+max_durability = 0
+current_durability = 0
+weight = 1.0
+buy_value = 10
+sell_value = 5
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[2]
+type = item
+max_stack_size = 99
+name = Oak Log
+description = A sturdy log used in crafting and construction.
+max_durability = 0
+current_durability = 0
+weight = 2.0
+buy_value = 8
+sell_value = 4
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[3]
+type = item
+max_stack_size = 99
+name = Healing Herb
+description = A common herb with mild restorative properties.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 5
+sell_value = 2
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[4]
+type = item
+max_stack_size = 200
+name = Gold Coin
+description = Standard currency of the realm.
+max_durability = 0
+current_durability = 0
+weight = 0.0
+buy_value = 1
+sell_value = 0
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[5]
+type = item
+max_stack_size = 1
+name = Wolf Pelt
+description = A rough pelt taken from a slain wolf. Sought by tanners.
+max_durability = 0
+current_durability = 0
+weight = 1.5
+buy_value = 20
+sell_value = 12
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[6]
+type = item
+max_stack_size = 1
+name = Ancient Relic
+description = A mysterious artifact humming with faint energy.
+max_durability = 0
+current_durability = 0
+weight = 0.5
+buy_value = 0
+sell_value = 250
+required_level = 10
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[7]
+type = consumable
+max_stack_size = 20
+name = Health Potion
+description = Restores 50 HP when consumed.
+max_durability = 0
+current_durability = 0
+weight = 0.5
+buy_value = 25
+sell_value = 12
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = health +50
+material = 
+tier = 0
+equip_slot = 
+
+[8]
+type = consumable
+max_stack_size = 20
+name = Mana Potion
+description = Restores 50 MP when consumed.
+max_durability = 0
+current_durability = 0
+weight = 0.5
+buy_value = 30
+sell_value = 15
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[9]
+type = consumable
+max_stack_size = 10
+name = Stamina Draught
+description = Restores 40 stamina and briefly boosts regeneration.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 20
+sell_value = 10
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[10]
+type = consumable
+max_stack_size = 5
+name = Elixir of Might
+description = Grants +10 attack for 60 seconds.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 75
+sell_value = 35
+required_level = 5
+attack_value = 0
+defense_value = 0
+on_use = attack +10 for 60s
+material = 
+tier = 0
+equip_slot = 
+
+[11]
+type = consumable
+max_stack_size = 10
+name = Bread
+description = Simple travel food. Restores 15 HP.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 4
+sell_value = 2
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +30; health +15
+material = 
+tier = 0
+equip_slot = 
+
+[12]
+type = consumable
+max_stack_size = 5
+name = Antidote
+description = Cures poison and reduces poison damage for 30 seconds.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 18
+sell_value = 9
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+
+[13]
+type = consumable
+max_stack_size = 20
+name = Apple
+description = Restores 8 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 8
+sell_value = 4
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +8
+material = 
+tier = 0
+equip_slot = 
+
+[14]
+type = consumable
+max_stack_size = 20
+name = Wild Berries
+description = Restores 6 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 6
+sell_value = 3
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +6
+material = 
+tier = 0
+equip_slot = 
+
+[15]
+type = consumable
+max_stack_size = 20
+name = Hard Biscuit
+description = Restores 12 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 12
+sell_value = 6
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +12
+material = 
+tier = 0
+equip_slot = 
+
+[16]
+type = consumable
+max_stack_size = 20
+name = Cheese Wedge
+description = Restores 15 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.3
+buy_value = 15
+sell_value = 7
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +15
+material = 
+tier = 0
+equip_slot = 
+
+[17]
+type = consumable
+max_stack_size = 20
+name = Smoked Fish
+description = Restores 20 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 20
+sell_value = 10
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +20
+material = 
+tier = 0
+equip_slot = 
+
+[18]
+type = consumable
+max_stack_size = 20
+name = Honey Cake
+description = Restores 18 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 18
+sell_value = 9
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +18
+material = 
+tier = 0
+equip_slot = 
+
+[19]
+type = consumable
+max_stack_size = 20
+name = Mutton Pie
+description = Restores 26 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.5
+buy_value = 26
+sell_value = 13
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +26
+material = 
+tier = 0
+equip_slot = 
+
+[20]
+type = consumable
+max_stack_size = 20
+name = Stew Bowl
+description = Restores 30 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.5
+buy_value = 30
+sell_value = 15
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +30
+material = 
+tier = 0
+equip_slot = 
+
+[21]
+type = consumable
+max_stack_size = 20
+name = Roast Boar Leg
+description = Restores 40 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.6
+buy_value = 40
+sell_value = 20
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +40
+material = 
+tier = 0
+equip_slot = 
+
+[22]
+type = consumable
+max_stack_size = 20
+name = Trail Ration
+description = Restores 50 hunger when eaten.
+max_durability = 0
+current_durability = 0
+weight = 0.7
+buy_value = 50
+sell_value = 25
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +50
+material = 
+tier = 0
+equip_slot = 
+
+[23]
+type = armor
+max_stack_size = 1
+name = Cap
+description = Protects the head.
+max_durability = 48
+current_durability = 48
+weight = 1.4
+buy_value = 13
+sell_value = 6
+required_level = 1
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Leather
+tier = 1
+equip_slot = head
+
+[24]
+type = armor
+max_stack_size = 1
+name = Hood
+description = Protects the head.
+max_durability = 54
+current_durability = 54
+weight = 1.4
+buy_value = 13
+sell_value = 6
+required_level = 2
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Leather
+tier = 2
+equip_slot = head
+
+[25]
+type = armor
+max_stack_size = 1
+name = Coif
+description = Protects the head.
+max_durability = 89
+current_durability = 89
+weight = 2.4
+buy_value = 50
+sell_value = 25
+required_level = 3
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Iron
+tier = 3
+equip_slot = head
+
+[26]
+type = armor
+max_stack_size = 1
+name = Helm
+description = Protects the head.
+max_durability = 67
+current_durability = 67
+weight = 2.0
+buy_value = 26
+sell_value = 13
+required_level = 2
+attack_value = 0
+defense_value = 4
+on_use = 
+material = Bronze
+tier = 2
+equip_slot = head
+
+[27]
+type = armor
+max_stack_size = 1
+name = Visor
+description = Protects the head.
+max_durability = 122
+current_durability = 122
+weight = 2.2
+buy_value = 101
+sell_value = 50
+required_level = 4
+attack_value = 0
+defense_value = 8
+on_use = 
+material = Steel
+tier = 4
+equip_slot = head
+
+[28]
+type = armor
+max_stack_size = 1
+name = Bascinet
+description = Protects the head.
+max_durability = 98
+current_durability = 98
+weight = 2.4
+buy_value = 57
+sell_value = 28
+required_level = 4
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Iron
+tier = 4
+equip_slot = head
+
+[29]
+type = armor
+max_stack_size = 1
+name = Sallet
+description = Protects the head.
+max_durability = 133
+current_durability = 133
+weight = 2.2
+buy_value = 112
+sell_value = 56
+required_level = 5
+attack_value = 0
+defense_value = 9
+on_use = 
+material = Steel
+tier = 5
+equip_slot = head
+
+[30]
+type = armor
+max_stack_size = 1
+name = Great Helm
+description = Protects the head.
+max_durability = 107
+current_durability = 107
+weight = 2.4
+buy_value = 57
+sell_value = 28
+required_level = 5
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Iron
+tier = 5
+equip_slot = head
+
+[31]
+type = armor
+max_stack_size = 1
+name = Circlet
+description = Protects the head.
+max_durability = 67
+current_durability = 67
+weight = 1.8
+buy_value = 108
+sell_value = 54
+required_level = 3
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Silver
+tier = 3
+equip_slot = head
+
+[32]
+type = armor
+max_stack_size = 1
+name = Crown
+description = Protects the head.
+max_durability = 86
+current_durability = 86
+weight = 1.8
+buy_value = 123
+sell_value = 61
+required_level = 6
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Silver
+tier = 6
+equip_slot = head
+
+[33]
+type = armor
+max_stack_size = 1
+name = Tunic
+description = Covers the chest and body.
+max_durability = 48
+current_durability = 48
+weight = 4.2
+buy_value = 22
+sell_value = 11
+required_level = 1
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Leather
+tier = 1
+equip_slot = torso
+
+[34]
+type = armor
+max_stack_size = 1
+name = Jerkin
+description = Covers the chest and body.
+max_durability = 54
+current_durability = 54
+weight = 4.2
+buy_value = 25
+sell_value = 12
+required_level = 2
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Leather
+tier = 2
+equip_slot = torso
+
+[35]
+type = armor
+max_stack_size = 1
+name = Lamellar Vest
+description = Covers the chest and body.
+max_durability = 54
+current_durability = 54
+weight = 4.8
+buy_value = 29
+sell_value = 14
+required_level = 2
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Bone
+tier = 2
+equip_slot = torso
+
+[36]
+type = armor
+max_stack_size = 1
+name = Brigandine
+description = Covers the chest and body.
+max_durability = 74
+current_durability = 74
+weight = 6.0
+buy_value = 56
+sell_value = 28
+required_level = 3
+attack_value = 0
+defense_value = 10
+on_use = 
+material = Bronze
+tier = 3
+equip_slot = torso
+
+[37]
+type = armor
+max_stack_size = 1
+name = Hauberk
+description = Covers the chest and body.
+max_durability = 98
+current_durability = 98
+weight = 7.2
+buy_value = 99
+sell_value = 49
+required_level = 4
+attack_value = 0
+defense_value = 13
+on_use = 
+material = Iron
+tier = 4
+equip_slot = torso
+
+[38]
+type = armor
+max_stack_size = 1
+name = Breastplate
+description = Covers the chest and body.
+max_durability = 82
+current_durability = 82
+weight = 6.0
+buy_value = 61
+sell_value = 30
+required_level = 4
+attack_value = 0
+defense_value = 11
+on_use = 
+material = Bronze
+tier = 4
+equip_slot = torso
+
+[39]
+type = armor
+max_stack_size = 1
+name = Cuirass
+description = Covers the chest and body.
+max_durability = 107
+current_durability = 107
+weight = 7.2
+buy_value = 106
+sell_value = 53
+required_level = 5
+attack_value = 0
+defense_value = 14
+on_use = 
+material = Iron
+tier = 5
+equip_slot = torso
+
+[40]
+type = armor
+max_stack_size = 1
+name = Chestplate
+description = Covers the chest and body.
+max_durability = 133
+current_durability = 133
+weight = 6.6
+buy_value = 211
+sell_value = 105
+required_level = 5
+attack_value = 0
+defense_value = 18
+on_use = 
+material = Steel
+tier = 5
+equip_slot = torso
+
+[41]
+type = armor
+max_stack_size = 1
+name = Full Plate
+description = Covers the chest and body.
+max_durability = 144
+current_durability = 144
+weight = 6.6
+buy_value = 222
+sell_value = 111
+required_level = 6
+attack_value = 0
+defense_value = 19
+on_use = 
+material = Steel
+tier = 6
+equip_slot = torso
+
+[42]
+type = armor
+max_stack_size = 1
+name = Ceremonial Plate
+description = Covers the chest and body.
+max_durability = 86
+current_durability = 86
+weight = 5.4
+buy_value = 228
+sell_value = 114
+required_level = 6
+attack_value = 0
+defense_value = 14
+on_use = 
+material = Silver
+tier = 6
+equip_slot = torso
+
+[43]
+type = armor
+max_stack_size = 1
+name = Breeches
+description = Covers the legs.
+max_durability = 48
+current_durability = 48
+weight = 2.4
+buy_value = 16
+sell_value = 8
+required_level = 1
+attack_value = 0
+defense_value = 4
+on_use = 
+material = Leather
+tier = 1
+equip_slot = legs
+
+[44]
+type = armor
+max_stack_size = 1
+name = Trousers
+description = Covers the legs.
+max_durability = 54
+current_durability = 54
+weight = 2.4
+buy_value = 16
+sell_value = 8
+required_level = 2
+attack_value = 0
+defense_value = 4
+on_use = 
+material = Leather
+tier = 2
+equip_slot = legs
+
+[45]
+type = armor
+max_stack_size = 1
+name = Leggings
+description = Covers the legs.
+max_durability = 54
+current_durability = 54
+weight = 2.8
+buy_value = 22
+sell_value = 11
+required_level = 2
+attack_value = 0
+defense_value = 5
+on_use = 
+material = Bone
+tier = 2
+equip_slot = legs
+
+[46]
+type = armor
+max_stack_size = 1
+name = Chausses
+description = Covers the legs.
+max_durability = 74
+current_durability = 74
+weight = 3.5
+buy_value = 36
+sell_value = 18
+required_level = 3
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Bronze
+tier = 3
+equip_slot = legs
+
+[47]
+type = armor
+max_stack_size = 1
+name = Tassets
+description = Covers the legs.
+max_durability = 82
+current_durability = 82
+weight = 3.5
+buy_value = 41
+sell_value = 20
+required_level = 4
+attack_value = 0
+defense_value = 7
+on_use = 
+material = Bronze
+tier = 4
+equip_slot = legs
+
+[48]
+type = armor
+max_stack_size = 1
+name = Cuisses
+description = Covers the legs.
+max_durability = 98
+current_durability = 98
+weight = 4.2
+buy_value = 71
+sell_value = 35
+required_level = 4
+attack_value = 0
+defense_value = 9
+on_use = 
+material = Iron
+tier = 4
+equip_slot = legs
+
+[49]
+type = armor
+max_stack_size = 1
+name = Greaves
+description = Covers the legs.
+max_durability = 107
+current_durability = 107
+weight = 4.2
+buy_value = 71
+sell_value = 35
+required_level = 5
+attack_value = 0
+defense_value = 9
+on_use = 
+material = Iron
+tier = 5
+equip_slot = legs
+
+[50]
+type = armor
+max_stack_size = 1
+name = Plate Leggings
+description = Covers the legs.
+max_durability = 133
+current_durability = 133
+weight = 3.9
+buy_value = 145
+sell_value = 72
+required_level = 5
+attack_value = 0
+defense_value = 12
+on_use = 
+material = Steel
+tier = 5
+equip_slot = legs
+
+[51]
+type = armor
+max_stack_size = 1
+name = Mail Leggings
+description = Covers the legs.
+max_durability = 89
+current_durability = 89
+weight = 4.2
+buy_value = 64
+sell_value = 32
+required_level = 3
+attack_value = 0
+defense_value = 8
+on_use = 
+material = Iron
+tier = 3
+equip_slot = legs
+
+[52]
+type = armor
+max_stack_size = 1
+name = Gilded Greaves
+description = Covers the legs.
+max_durability = 86
+current_durability = 86
+weight = 3.1
+buy_value = 168
+sell_value = 84
+required_level = 6
+attack_value = 0
+defense_value = 10
+on_use = 
+material = Silver
+tier = 6
+equip_slot = legs
+
+[53]
+type = armor
+max_stack_size = 1
+name = Sandals
+description = Protects the feet.
+max_durability = 48
+current_durability = 48
+weight = 1.0
+buy_value = 10
+sell_value = 5
+required_level = 1
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Leather
+tier = 1
+equip_slot = feet
+
+[54]
+type = armor
+max_stack_size = 1
+name = Shoes
+description = Protects the feet.
+max_durability = 54
+current_durability = 54
+weight = 1.0
+buy_value = 10
+sell_value = 5
+required_level = 2
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Leather
+tier = 2
+equip_slot = feet
+
+[55]
+type = armor
+max_stack_size = 1
+name = Boots
+description = Protects the feet.
+max_durability = 60
+current_durability = 60
+weight = 1.0
+buy_value = 10
+sell_value = 5
+required_level = 3
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Leather
+tier = 3
+equip_slot = feet
+
+[56]
+type = armor
+max_stack_size = 1
+name = Riding Boots
+description = Protects the feet.
+max_durability = 65
+current_durability = 65
+weight = 1.0
+buy_value = 13
+sell_value = 6
+required_level = 4
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Leather
+tier = 4
+equip_slot = feet
+
+[57]
+type = armor
+max_stack_size = 1
+name = Hobnail Boots
+description = Protects the feet.
+max_durability = 74
+current_durability = 74
+weight = 1.5
+buy_value = 21
+sell_value = 10
+required_level = 3
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Bronze
+tier = 3
+equip_slot = feet
+
+[58]
+type = armor
+max_stack_size = 1
+name = Wrappings
+description = Protects the feet.
+max_durability = 54
+current_durability = 54
+weight = 1.2
+buy_value = 11
+sell_value = 5
+required_level = 2
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Bone
+tier = 2
+equip_slot = feet
+
+[59]
+type = armor
+max_stack_size = 1
+name = Marching Boots
+description = Protects the feet.
+max_durability = 89
+current_durability = 89
+weight = 1.8
+buy_value = 36
+sell_value = 18
+required_level = 3
+attack_value = 0
+defense_value = 4
+on_use = 
+material = Iron
+tier = 3
+equip_slot = feet
+
+[60]
+type = armor
+max_stack_size = 1
+name = Sabatons
+description = Protects the feet.
+max_durability = 98
+current_durability = 98
+weight = 1.8
+buy_value = 36
+sell_value = 18
+required_level = 4
+attack_value = 0
+defense_value = 4
+on_use = 
+material = Iron
+tier = 4
+equip_slot = feet
+
+[61]
+type = armor
+max_stack_size = 1
+name = Sollerets
+description = Protects the feet.
+max_durability = 133
+current_durability = 133
+weight = 1.7
+buy_value = 79
+sell_value = 39
+required_level = 5
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Steel
+tier = 5
+equip_slot = feet
+
+[62]
+type = armor
+max_stack_size = 1
+name = Warboots
+description = Protects the feet.
+max_durability = 144
+current_durability = 144
+weight = 1.7
+buy_value = 79
+sell_value = 39
+required_level = 6
+attack_value = 0
+defense_value = 6
+on_use = 
+material = Steel
+tier = 6
+equip_slot = feet
+
+[63]
+type = accessory
+max_stack_size = 1
+name = Band
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 11
+sell_value = 5
+required_level = 1
+attack_value = 0
+defense_value = 1
+on_use = 
+material = Bronze
+tier = 1
+equip_slot = accessory
+
+[64]
+type = accessory
+max_stack_size = 1
+name = Charm
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 8
+sell_value = 4
+required_level = 2
+attack_value = 0
+defense_value = 1
+on_use = 
+material = Bone
+tier = 2
+equip_slot = accessory
+
+[65]
+type = accessory
+max_stack_size = 1
+name = Bracelet
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 22
+sell_value = 11
+required_level = 3
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Iron
+tier = 3
+equip_slot = accessory
+
+[66]
+type = accessory
+max_stack_size = 1
+name = Brooch
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 16
+sell_value = 8
+required_level = 3
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Bronze
+tier = 3
+equip_slot = accessory
+
+[67]
+type = accessory
+max_stack_size = 1
+name = Ring
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 48
+sell_value = 24
+required_level = 2
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Silver
+tier = 2
+equip_slot = accessory
+
+[68]
+type = accessory
+max_stack_size = 1
+name = Amulet
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 48
+sell_value = 24
+required_level = 3
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Silver
+tier = 3
+equip_slot = accessory
+
+[69]
+type = accessory
+max_stack_size = 1
+name = Pendant
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 48
+sell_value = 24
+required_level = 4
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Silver
+tier = 4
+equip_slot = accessory
+
+[70]
+type = accessory
+max_stack_size = 1
+name = Talisman
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 8
+sell_value = 4
+required_level = 4
+attack_value = 0
+defense_value = 1
+on_use = 
+material = Bone
+tier = 4
+equip_slot = accessory
+
+[71]
+type = accessory
+max_stack_size = 1
+name = Torc
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.2
+buy_value = 46
+sell_value = 23
+required_level = 5
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Steel
+tier = 5
+equip_slot = accessory
+
+[72]
+type = accessory
+max_stack_size = 1
+name = Cloak
+description = A small worn trinket. Two can be worn at once.
+max_durability = 0
+current_durability = 0
+weight = 0.1
+buy_value = 10
+sell_value = 5
+required_level = 6
+attack_value = 0
+defense_value = 2
+on_use = 
+material = Leather
+tier = 6
+equip_slot = accessory
+
+[73]
+type = weapon
+max_stack_size = 1
+name = Short Sword
+description = Held in the main hand.
+max_durability = 89
+current_durability = 89
+weight = 2.4
+buy_value = 92
+sell_value = 46
+required_level = 3
+attack_value = 10
+defense_value = 0
+on_use = 
+material = Iron
+tier = 3
+equip_slot = main_hand
+
+[74]
+type = weapon
+max_stack_size = 1
+name = Long Sword
+description = Held in the main hand.
+max_durability = 122
+current_durability = 122
+weight = 3.3
+buy_value = 224
+sell_value = 112
+required_level = 4
+attack_value = 16
+defense_value = 0
+on_use = 
+material = Steel
+tier = 4
+equip_slot = main_hand
+
+[75]
+type = weapon
+max_stack_size = 1
+name = Axe
+description = Held in the main hand.
+max_durability = 81
+current_durability = 81
+weight = 3.8
+buy_value = 84
+sell_value = 42
+required_level = 2
+attack_value = 9
+defense_value = 0
+on_use = 
+material = Iron
+tier = 2
+equip_slot = main_hand
+
+[76]
+type = weapon
+max_stack_size = 1
+name = Mace
+description = Held in the main hand.
+max_durability = 74
+current_durability = 74
+weight = 3.5
+buy_value = 54
+sell_value = 27
+required_level = 3
+attack_value = 8
+defense_value = 0
+on_use = 
+material = Bronze
+tier = 3
+equip_slot = main_hand
+
+[77]
+type = weapon
+max_stack_size = 1
+name = Flail
+description = Held in the main hand.
+max_durability = 98
+current_durability = 98
+weight = 3.6
+buy_value = 101
+sell_value = 50
+required_level = 4
+attack_value = 11
+defense_value = 0
+on_use = 
+material = Iron
+tier = 4
+equip_slot = main_hand
+
+[78]
+type = weapon
+max_stack_size = 1
+name = Rapier
+description = Held in the main hand.
+max_durability = 133
+current_durability = 133
+weight = 1.8
+buy_value = 211
+sell_value = 105
+required_level = 5
+attack_value = 15
+defense_value = 0
+on_use = 
+material = Steel
+tier = 5
+equip_slot = main_hand
+
+[79]
+type = weapon
+max_stack_size = 1
+name = Dagger
+description = Held in either hand. Fits the main hand or the off hand.
+max_durability = 67
+current_durability = 67
+weight = 0.9
+buy_value = 24
+sell_value = 12
+required_level = 2
+attack_value = 3
+defense_value = 0
+on_use = 
+material = Bronze
+tier = 2
+equip_slot = either_hand
+
+[80]
+type = weapon
+max_stack_size = 1
+name = Knife
+description = Held in either hand. Fits the main hand or the off hand.
+max_durability = 72
+current_durability = 72
+weight = 0.6
+buy_value = 34
+sell_value = 17
+required_level = 1
+attack_value = 3
+defense_value = 0
+on_use = 
+material = Iron
+tier = 1
+equip_slot = either_hand
+
+[81]
+type = weapon
+max_stack_size = 1
+name = Stiletto
+description = Held in either hand. Fits the main hand or the off hand.
+max_durability = 112
+current_durability = 112
+weight = 0.4
+buy_value = 106
+sell_value = 53
+required_level = 3
+attack_value = 7
+defense_value = 0
+on_use = 
+material = Steel
+tier = 3
+equip_slot = either_hand
+
+[82]
+type = armor
+max_stack_size = 1
+name = Buckler
+description = Held in the off hand. Blocks blows.
+max_durability = 40
+current_durability = 40
+weight = 0.9
+buy_value = 11
+sell_value = 5
+required_level = 2
+attack_value = 0
+defense_value = 3
+on_use = 
+material = Wood
+tier = 2
+equip_slot = off_hand
+
+[83]
+type = armor
+max_stack_size = 1
+name = Kite Shield
+description = Held in the off hand. Blocks blows.
+max_durability = 98
+current_durability = 98
+weight = 4.8
+buy_value = 71
+sell_value = 35
+required_level = 4
+attack_value = 0
+defense_value = 9
+on_use = 
+material = Iron
+tier = 4
+equip_slot = off_hand
+
+[84]
+type = armor
+max_stack_size = 1
+name = Tower Shield
+description = Held in the off hand. Blocks blows.
+max_durability = 144
+current_durability = 144
+weight = 9.9
+buy_value = 222
+sell_value = 111
+required_level = 6
+attack_value = 0
+defense_value = 19
+on_use = 
+material = Steel
+tier = 6
+equip_slot = off_hand
+
+[85]
+type = weapon
+max_stack_size = 1
+name = Greatsword
+description = Needs both hands. The off hand must be empty.
+max_durability = 133
+current_durability = 133
+weight = 6.6
+buy_value = 330
+sell_value = 165
+required_level = 5
+attack_value = 24
+defense_value = 0
+on_use = 
+material = Steel
+tier = 5
+equip_slot = two_hand
+
+[86]
+type = weapon
+max_stack_size = 1
+name = Warhammer
+description = Needs both hands. The off hand must be empty.
+max_durability = 98
+current_durability = 98
+weight = 7.2
+buy_value = 134
+sell_value = 67
+required_level = 4
+attack_value = 15
+defense_value = 0
+on_use = 
+material = Iron
+tier = 4
+equip_slot = two_hand
+
+[87]
+type = weapon
+max_stack_size = 1
+name = Battleaxe
+description = Needs both hands. The off hand must be empty.
+max_durability = 82
+current_durability = 82
+weight = 5.5
+buy_value = 78
+sell_value = 39
+required_level = 4
+attack_value = 12
+defense_value = 0
+on_use = 
+material = Bronze
+tier = 4
+equip_slot = two_hand

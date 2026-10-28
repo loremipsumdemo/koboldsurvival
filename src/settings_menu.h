@@ -28,7 +28,7 @@ inline const char* settingsTabName(SettingsTab tab) {
 // What a row changes
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
-    Autosave, UnitNames, FontScale, ResetPanels,                // Interface
+    Autosave, UnitNames, FontScale, Language, Font, ResetPanels,  // Interface
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
     MusicLevel, AmbientLevel, EffectsLevel                      // Audio
 };
@@ -132,7 +132,8 @@ struct SettingsChange {
     bool display = false;     // display mode, monitor, resolution or refresh rate
     bool vsync = false;
     bool audio = false;
-    bool fonts = false;       // the text size, so the fonts are reopened
+    bool fonts = false;       // the text size or font, so the fonts are reopened
+    bool language = false;    // the language, so its text file is reloaded
     bool any = false;         // anything at all, so the settings are saved
 };
 

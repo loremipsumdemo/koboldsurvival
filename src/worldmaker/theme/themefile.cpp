@@ -160,8 +160,10 @@ bool LoadLookFile(const std::string& path, Look& look, std::string& err) {
     }
     std::stringstream ss;
     ss << f.rdbuf();
-    const std::string text = ss.str();
+    return LoadLookText(ss.str(), look, err);
+}
 
+bool LoadLookText(const std::string& text, Look& look, std::string& err) {
     const std::size_t fmt = FindValue(text, "format");
     if (fmt == std::string::npos || text.find("worldmaker-look", fmt) == std::string::npos) {
         err = "not a worldmaker theme file";

@@ -157,7 +157,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                 ry += pitch;
                 for (int i = 0; i < STAT_COUNT; ++i) {
                     if (statInfo(i).group != g) continue;
-                    out.push_back(Button{ statInfo(i).name, Rect{ x, ry, colW - 2.0f * (btn + 4.0f * s), rowH },
+                    out.push_back(Button{ statName(i), Rect{ x, ry, colW - 2.0f * (btn + 4.0f * s), rowH },
                                           Action::PartyStatLabel, false, i });
                     out.push_back(Button{ "-", Rect{ x + colW - 2.0f * btn - 4.0f * s, ry, btn, rowH },
                                           Action::PartyStep, true, i * 2 });
