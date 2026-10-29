@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Herhangi bir el
 UILABEL_SLOT_TWO_HAND	İki el
 MISC_TRADE_CHANGE	Takas: {0}
 UILABEL_NEEDS_UNITS	Başlamak için en az bir birim ekleyin.
+PROP_WAGON	At arabası
+PROP_CAMPFIRE	Kamp ateşi
+PROP_BEDROLL	Yer yatağı
+PROP_BED	Yatak
+PROP_BARREL	Fıçı
+PROP_ORE	Cevher
+PROP_TREE	Ağaç
+PROP_BOULDER	Kaya
+PROP_MUSHROOM	Mantar
+PROP_BONES	Kemikler
+PROP_WALL	Duvar
+PROP_STALL	Tezgâh

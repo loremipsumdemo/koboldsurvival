@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Будь-яка рука
 UILABEL_SLOT_TWO_HAND	Двоєручна
 MISC_TRADE_CHANGE	Обмін: {0}
 UILABEL_NEEDS_UNITS	Додайте принаймні один загін, щоб почати.
+PROP_WAGON	Віз
+PROP_CAMPFIRE	Багаття
+PROP_BEDROLL	Підстилка
+PROP_BED	Ліжко
+PROP_BARREL	Бочка
+PROP_ORE	Руда
+PROP_TREE	Дерево
+PROP_BOULDER	Валун
+PROP_MUSHROOM	Гриб
+PROP_BONES	Кістки
+PROP_WALL	Стіна
+PROP_STALL	Ятка

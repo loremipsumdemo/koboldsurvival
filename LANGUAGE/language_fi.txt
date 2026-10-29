@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Kumpi tahansa käsi
 UILABEL_SLOT_TWO_HAND	Kaksikätinen
 MISC_TRADE_CHANGE	Kauppa: {0}
 UILABEL_NEEDS_UNITS	Lisää vähintään yksi yksikkö aloittaaksesi.
+PROP_WAGON	Vaunu
+PROP_CAMPFIRE	Nuotio
+PROP_BEDROLL	Makuualusta
+PROP_BED	Sänky
+PROP_BARREL	Tynnyri
+PROP_ORE	Malmi
+PROP_TREE	Puu
+PROP_BOULDER	Lohkare
+PROP_MUSHROOM	Sieni
+PROP_BONES	Luut
+PROP_WALL	Muuri
+PROP_STALL	Koju

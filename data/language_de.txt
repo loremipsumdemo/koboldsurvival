@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Beliebige Hand
 UILABEL_SLOT_TWO_HAND	Zweihändig
 MISC_TRADE_CHANGE	Handel: {0}
 UILABEL_NEEDS_UNITS	Füge mindestens eine Einheit hinzu, um zu beginnen.
+PROP_WAGON	Wagen
+PROP_CAMPFIRE	Lagerfeuer
+PROP_BEDROLL	Schlafrolle
+PROP_BED	Bett
+PROP_BARREL	Fass
+PROP_ORE	Erz
+PROP_TREE	Baum
+PROP_BOULDER	Felsbrocken
+PROP_MUSHROOM	Pilz
+PROP_BONES	Knochen
+PROP_WALL	Mauer
+PROP_STALL	Marktstand

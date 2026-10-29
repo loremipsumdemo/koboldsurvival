@@ -5,7 +5,7 @@
 #include "resources.h"
 #include "terrain.h"
 
-// Spawns the units, the red units and the wagons
+// Spawns the units, the red units and the props
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
 // Adds player units, at the spawn, until there are count of them

@@ -15,7 +15,7 @@
 #include "resources.h"
 #include "timefmt.h"
 
-// Save files are plain text. The terrain comes from the map the save was made on, and the wagon
+// Save files are plain text. The terrain comes from the map the save was made on, and the props
 // and red units from the seed. A save stores what changes: the clock, the units, what they carry,
 // their behavior rules, the items on the ground and the camera.
 
@@ -74,7 +74,7 @@ struct SaveData {
     std::string name;
     bool autosave = false;            // true for autosave0..2, false for manual saves
     long long timestamp = 0;          // milliseconds since 1970, used for ordering
-    unsigned seed = 0;                // places the red units and the wagon
+    unsigned seed = 0;                // places the red units and the props
     std::string mapSource;            // "data" for a premade map, "world" for a game world, "custom" for an older .map file
     std::string mapStem;              // the map's file name without .map
     GameState gs;

@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Tay nào cũng được
 UILABEL_SLOT_TWO_HAND	Hai tay
 MISC_TRADE_CHANGE	Giao dịch: {0}
 UILABEL_NEEDS_UNITS	Thêm ít nhất một đơn vị để bắt đầu.
+PROP_WAGON	Xe ngựa
+PROP_CAMPFIRE	Lửa trại
+PROP_BEDROLL	Chiếu ngủ
+PROP_BED	Giường
+PROP_BARREL	Thùng gỗ
+PROP_ORE	Quặng
+PROP_TREE	Cây
+PROP_BOULDER	Tảng đá
+PROP_MUSHROOM	Nấm
+PROP_BONES	Xương
+PROP_WALL	Bức tường
+PROP_STALL	Sạp hàng

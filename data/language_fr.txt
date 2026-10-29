@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Une ou deux mains
 UILABEL_SLOT_TWO_HAND	À deux mains
 MISC_TRADE_CHANGE	Échange : {0}
 UILABEL_NEEDS_UNITS	Ajoutez au moins une unité pour commencer.
+PROP_WAGON	Chariot
+PROP_CAMPFIRE	Feu de camp
+PROP_BEDROLL	Paillasse
+PROP_BED	Lit
+PROP_BARREL	Tonneau
+PROP_ORE	Minerai
+PROP_TREE	Arbre
+PROP_BOULDER	Rocher
+PROP_MUSHROOM	Champignon
+PROP_BONES	Ossements
+PROP_WALL	Mur
+PROP_STALL	Étal

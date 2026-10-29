@@ -205,5 +205,8 @@ struct AttackOrder {
     Entity target = NULL_ENTITY;
 };
 
-// Decorative wagon. It is drawn as a symbol and does not block movement.
-struct Wagon {};
+// A prop: a 3D model on the map, such as a wagon or a campfire. It is scenery and does not block movement.
+// kind is a PropKind; props.h gives each kind its model, name and size.
+struct Prop {
+    int kind = 0;
+};

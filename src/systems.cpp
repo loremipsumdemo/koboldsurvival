@@ -9,6 +9,7 @@
 #include "items.h"
 #include "needs.h"
 #include "party.h"
+#include "props.h"
 
 namespace {
 
@@ -53,8 +54,6 @@ constexpr int SPAWN_SEARCH_STEP = 32;      // spacing of the spawn candidates, i
 constexpr int SPAWN_LOAD_RADIUS = 4;       // chunks read in around the spawn, so units can be placed on them
 constexpr float ENEMY_RANGE = 128.0f;      // red units are placed within this many tiles of the spawn
 constexpr float ENEMY_MIN_RANGE = 12.0f;   // and no closer than this, so the start is clear
-constexpr float WAGON_RANGE = 40.0f;       // the wagons are placed within this many tiles of the spawn
-constexpr int WAGON_COUNT = 5;             // wagons at the spawn, each on its own tile
 
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
@@ -232,18 +231,21 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     placeNpcs(ENEMY_COUNT, false);
     placeNpcs(NEUTRAL_COUNT, true);
 
-    // Wagons on free ground near the spawn, each on its own tile. They are decorative and do not block movement.
-    std::vector<GridPos> wagonTiles;
-    for (int attempt = 0; attempt < 20000 && (int)wagonTiles.size() < WAGON_COUNT; ++attempt) {
-        GridPos g{ rng.range(tileAt(spawn.x - WAGON_RANGE), tileAt(spawn.x + WAGON_RANGE)),
-                   rng.range(tileAt(spawn.z - WAGON_RANGE), tileAt(spawn.z + WAGON_RANGE)) };
+    // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
+    // own tile. They are scenery and do not block movement.
+    std::vector<GridPos> propTiles;
+    const int propTotal = PROP_KIND_COUNT * PROP_COPIES;
+    for (int attempt = 0; attempt < 20000 && (int)propTiles.size() < propTotal; ++attempt) {
+        GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
+                   rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
         if (!t.walkable(g.x, g.y)) continue;
-        if (std::find(wagonTiles.begin(), wagonTiles.end(), g) != wagonTiles.end()) continue;
-        wagonTiles.push_back(g);
+        if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
+        const int kind = (int)propTiles.size() / PROP_COPIES;
+        propTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
-        Entity wagon = w.create();
-        w.add(wagon, Transform{ x, t.heightAt(x, z), z });
-        w.add(wagon, Wagon{});
+        Entity prop = w.create();
+        w.add(prop, Transform{ x, t.heightAt(x, z), z });
+        w.add(prop, Prop{ kind });
     }
 
     // Names, stats, health and gear for every unit. These draw after the placement above, so where units

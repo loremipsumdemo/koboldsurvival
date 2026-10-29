@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Tangan mana pun
 UILABEL_SLOT_TWO_HAND	Dua tangan
 MISC_TRADE_CHANGE	Perdagangan: {0}
 UILABEL_NEEDS_UNITS	Tambahkan setidaknya satu unit untuk memulai.
+PROP_WAGON	Gerobak
+PROP_CAMPFIRE	Api unggun
+PROP_BEDROLL	Tikar tidur
+PROP_BED	Ranjang
+PROP_BARREL	Tong
+PROP_ORE	Bijih
+PROP_TREE	Pohon
+PROP_BOULDER	Batu besar
+PROP_MUSHROOM	Jamur
+PROP_BONES	Tulang
+PROP_WALL	Tembok
+PROP_STALL	Kios

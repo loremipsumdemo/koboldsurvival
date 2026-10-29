@@ -51,7 +51,7 @@
 
 namespace {
 
-constexpr size_t HOVER_NAME_LIMIT = 10;      // hover label lists up to this many names
+constexpr size_t HOVER_NAME_LIMIT = 10;      // the hover list shows up to this many names
 constexpr size_t MIN_SAVE_ROWS = 5;          // the save list shows between these many rows,
 constexpr size_t MAX_SAVE_ROWS = 10;         // depending on how tall the window is
 constexpr Uint64 DELETE_HOLD_MS = 3000;      // holding Delete this long deletes the save
@@ -579,7 +579,7 @@ void primeStreaming(World& w, Terrain& t, const Camera& cam) {
     if (t.streamed()) t.stream(streamFocuses(w, cam), STREAM_RADIUS, 0);
 }
 
-// Rebuilds a level from a save. The ground comes from the map, and the wagon from the seed.
+// Rebuilds a level from a save. The ground comes from the map, and the props from the seed.
 // The units are then swapped for the saved ones.
 bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
                   const MapChoice& map, std::string& err) {
@@ -3372,17 +3372,34 @@ int main(int, char**) {
             lastTitle = title;
         }
 
-        // ---- Hover label: names of the units under the mouse, up to the limit, then "..." ----
-        std::vector<std::string> hud;
+        // ---- Hover list: what is under the mouse, in the top-left corner. Units first (white), then items on the
+        // ground (orange-yellow), then props (gray), up to the limit in all, then "..." ----
+        std::vector<HudEntry> hud;
         float mouseX = 0.0f, mouseY = 0.0f;
         SDL_GetMouseState(&mouseX, &mouseY);
         renderer.setMouse(mouseX, mouseY);
         if (screen == Screen::Playing) {
-            std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH);
-            for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) {
-                hud.push_back(world.get<Name>(under[i])->text);
+            std::vector<HudEntry> under;
+            for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH))
+                under.push_back({ world.get<Name>(u)->text, HUD_UNIT_COLOR });
+
+            std::vector<Entity> items = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+            // While Alt shows the name boxes, the name line under the mouse counts too
+            if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
+                const Entity labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+                if (labelled != NULL_ENTITY && std::find(items.begin(), items.end(), labelled) == items.end())
+                    items.insert(items.begin(), labelled);
             }
-            if (under.size() > HOVER_NAME_LIMIT) hud.push_back("...");
+            for (Entity e : items) {
+                const std::string name = itemNameOf(world.get<GroundItem>(e)->item);
+                under.push_back({ name.empty() ? std::string(lang("MISC_UNKNOWN_ITEM")) : name, HUD_ITEM_COLOR });
+            }
+
+            for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH))
+                under.push_back({ lang(propInfo(world.get<Prop>(e)->kind).nameKey), HUD_PROP_COLOR });
+
+            for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) hud.push_back(under[i]);
+            if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
         }
 
         // ---- Render ----

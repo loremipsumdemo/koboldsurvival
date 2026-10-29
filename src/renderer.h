@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <functional>
 #include <map>
 #include <string>
@@ -19,6 +20,7 @@
 #include "terrain_mesh.h"
 #include "ui.h"
 #include "party_ui.h"
+#include "props.h"
 #include "overview.h"
 #include "ui_icons.h"
 
@@ -32,6 +34,15 @@ struct TextTex {
 struct RGBA {
     float r, g, b, a;
 };
+
+// One line of the hover list in the top-left corner: what is under the mouse, in the colour for its sort
+struct HudEntry {
+    std::string text;
+    RGBA color;
+};
+inline constexpr RGBA HUD_UNIT_COLOR{ 1.0f, 1.0f, 1.0f, 1.0f };    // unit names: white
+inline constexpr RGBA HUD_ITEM_COLOR{ 1.0f, 0.72f, 0.2f, 1.0f };   // items on the ground: orange-yellow
+inline constexpr RGBA HUD_PROP_COLOR{ 0.68f, 0.68f, 0.68f, 1.0f }; // props: gray
 
 // The combat log panel in the bottom left corner. The newest line is at the bottom, and offset counts
 // the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
@@ -121,10 +132,15 @@ public:
 
     // Units whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
+    // Props whose model covers the pixel (mx, my), in entity order. The test uses the model's box on screen.
+    std::vector<Entity> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
+    // Items on the ground whose sprite covers the pixel (mx, my), in entity order
+    std::vector<Entity> groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
+                                           int winW, int winH);
 
-    // hud: text lines drawn in the top-left corner (empty for none)
+    // hud: the hover list drawn in the top-left corner, one coloured line each (empty for none)
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
-                   const std::vector<std::string>& hud, int winW, int winH);
+                   const std::vector<HudEntry>& hud, int winW, int winH);
 
     // Tile-sized ring on the ground under the camera's pivot point, drawn over drawFrame.
     // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
@@ -339,8 +355,8 @@ private:
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize);
 
-    // Text lines in the top-left corner, each on a dark panel
-    void drawHud(const std::vector<std::string>& lines, int winW, int winH);
+    // Text lines in the top-left corner, each on a dark panel, each in its own colour
+    void drawHud(const std::vector<HudEntry>& lines, int winW, int winH);
 
     // The sprite for a unit, or the fallback symbol if its image is missing
     const TextTex& unitGlyph(World& w, Entity e) const;
@@ -439,7 +455,8 @@ private:
     TextTex itemNone_;   // data/item/none.png, for items without a picture of their own
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.
     TextTex white_;
-    Model wagon_;
+    // One model per prop kind (props.h). A kind whose model failed to load has an empty model and is not drawn.
+    std::array<Model, PROP_KIND_COUNT> propModels_{};
 
     // Hover label: one cached texture per line, rebuilt only when its text changes
     TTF_Font* font_ = nullptr;

@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Всяка ръка
 UILABEL_SLOT_TWO_HAND	Двуръчно
 MISC_TRADE_CHANGE	Търговия: {0}
 UILABEL_NEEDS_UNITS	Добавете поне една единица, за да започнете.
+PROP_WAGON	Каруца
+PROP_CAMPFIRE	Лагерен огън
+PROP_BEDROLL	Постелка
+PROP_BED	Легло
+PROP_BARREL	Буре
+PROP_ORE	Руда
+PROP_TREE	Дърво
+PROP_BOULDER	Канара
+PROP_MUSHROOM	Гъба
+PROP_BONES	Кости
+PROP_WALL	Стена
+PROP_STALL	Сергия

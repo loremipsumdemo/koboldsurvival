@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Oricare mână
 UILABEL_SLOT_TWO_HAND	Cu două mâini
 MISC_TRADE_CHANGE	Schimb: {0}
 UILABEL_NEEDS_UNITS	Adăugați cel puțin o unitate pentru a începe.
+PROP_WAGON	Căruță
+PROP_CAMPFIRE	Foc de tabără
+PROP_BEDROLL	Așternut
+PROP_BED	Pat
+PROP_BARREL	Butoi
+PROP_ORE	Minereu
+PROP_TREE	Copac
+PROP_BOULDER	Bolovan
+PROP_MUSHROOM	Ciupercă
+PROP_BONES	Oase
+PROP_WALL	Zid
+PROP_STALL	Tarabă

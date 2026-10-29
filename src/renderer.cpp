@@ -19,7 +19,6 @@ namespace {
 
 constexpr float GLYPH_H = 1.2f;          // world height of unit sprites
 constexpr float ITEM_GLYPH_H = 0.32f;    // world height of an item sprite on the ground
-constexpr float WAGON_SIZE = 1.5f;       // largest side of the wagon model
 constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible across the screen
 constexpr float TWO_PI = 6.28318530f;
 
@@ -437,8 +436,10 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     }
     report(0.9f);
 
-    if (!loadGLBModel("data/3d/wagon.glb", wagon_)) {
-        SDL_Log("Wagon model unavailable, the wagon will not be drawn");
+    for (int kind = 0; kind < PROP_KIND_COUNT; ++kind) {
+        const PropInfo& info = propInfo(kind);
+        if (!loadGLBModel(info.file, propModels_[(size_t)kind]))
+            SDL_Log("Prop model %s unavailable, that prop will not be drawn", info.file);
     }
     report(0.97f);
 
@@ -483,7 +484,7 @@ void Renderer::shutdown() {
     }
     if (title_.tex) glDeleteTextures(1, &title_.tex);
     title_.tex = 0;
-    destroyModel(wagon_);
+    for (Model& m : propModels_) destroyModel(m);
 
     glDeleteProgram(skyProgram_);
     glDeleteBuffers(1, &skyVbo_);
@@ -989,20 +990,73 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     return out;
 }
 
-void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH) {
+// Projects each prop's model box (the box drawModel scales and places) to the screen, and keeps the props
+// whose box on screen covers the pixel. A prop whose model did not load is not drawn, so it is not found either.
+std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
+    std::vector<Entity> out;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (Entity e : w.view<Prop, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        const int kind = w.get<Prop>(e)->kind;
+        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        const Model& m = propModels_[(size_t)kind];
+        if (!m.vao) continue;
+        const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+        if (extent <= 0.0f) continue;
+        const float k = propInfo(kind).size / extent;
+        const float hx = 0.5f * k * (m.maxX - m.minX), hz = 0.5f * k * (m.maxZ - m.minZ);
+        const float h = k * (m.maxY - m.minY);
+
+        float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
+        bool seen = true;
+        for (int c = 0; c < 8 && seen; ++c) {
+            float sx = 0.0f, sy = 0.0f;
+            seen = projectPoint(vp, tr->x + ((c & 1) ? hx : -hx), tr->y + ((c & 2) ? h : 0.0f),
+                                tr->z + ((c & 4) ? hz : -hz), winW, winH, sx, sy);
+            if (c == 0) { x0 = x1 = sx; y0 = y1 = sy; }
+            x0 = std::min(x0, sx); x1 = std::max(x1, sx);
+            y0 = std::min(y0, sy); y1 = std::max(y1, sy);
+        }
+        if (seen && mx >= x0 && mx <= x1 && my >= y0 && my <= y1) out.push_back(e);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+// The ground items whose sprite covers the pixel, the same test groundItemAtPixel uses for sprites
+std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
+                                                 int winW, int winH) {
+    std::vector<Entity> out;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (Entity e : w.view<GroundItem, Transform>()) {
+        const GroundItem* gi = w.get<GroundItem>(e);
+        const Transform* tr = w.get<Transform>(e);
+        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        ItemOnScreen os;
+        const TextTex* pic = itemTexture(gi->item);
+        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
+        if (mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom) out.push_back(e);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     if (!hudFont_) return;
 
-    // Rebuild only the lines whose text changed
+    // Rebuild only the lines whose text changed. The text is made white and tinted to its colour when drawn.
     for (size_t i = 0; i < lines.size(); ++i) {
         if (i == hudLines_.size()) hudLines_.emplace_back();
         HudLine& hl = hudLines_[i];
-        if (hl.tex.tex && hl.text == lines[i]) continue;
+        const std::string& text = lines[i].text;
+        if (hl.tex.tex && hl.text == text) continue;
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
 
         int tw = 0, th = 0;
-        TTF_GetStringSize(hudFont_, lines[i].c_str(), lines[i].size(), &tw, &th);
-        hl.text = lines[i];
-        hl.tex = makeGlyphTexture(hudFont_, lines[i].c_str(), SDL_Color{ 255, 255, 255, 255 });
+        TTF_GetStringSize(hudFont_, text.c_str(), text.size(), &tw, &th);
+        hl.text = text;
+        hl.tex = makeGlyphTexture(hudFont_, text.c_str(), SDL_Color{ 255, 255, 255, 255 });
         hl.w = (float)tw;
         hl.h = (float)th;
     }
@@ -1038,8 +1092,9 @@ void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH
     // Text on top of each panel
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
-    y = margin;
-    for (const HudLine& hl : hudLines_) {
+    y = hudTop_;   // the same top as the panels
+    for (size_t i = 0; i < hudLines_.size(); ++i) {
+        const HudLine& hl = hudLines_[i];
         float x0 = margin + pad, x1 = x0 + hl.w;
         float y0 = y + pad, y1 = y0 + hl.h;
         float v[4 * 5] = {
@@ -1048,7 +1103,7 @@ void Renderer::drawHud(const std::vector<std::string>& lines, int winW, int winH
             x1, y0, 0.0f, 1.0f, 0.0f,
             x0, y0, 0.0f, 0.0f, 0.0f
         };
-        drawQuadVerts(hl.tex.tex, v, WHITE);
+        drawQuadVerts(hl.tex.tex, v, lines[i].color);
         y = y1 + pad + gap;
     }
 
@@ -1118,7 +1173,7 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
 }
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
-                         const std::vector<std::string>& hud, int winW, int winH) {
+                         const std::vector<HudEntry>& hud, int winW, int winH) {
     glViewport(0, 0, winW, winH);
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1204,10 +1259,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
-    for (Entity e : w.view<Wagon, Transform>()) {
+    for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        drawModel(wagon_, tr->x, tr->y, tr->z, WAGON_SIZE);
+        const int kind = w.get<Prop>(e)->kind;
+        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        drawModel(propModels_[(size_t)kind], tr->x, tr->y, tr->z, propInfo(kind).size);
     }
 
     for (Entity e : w.view<Unit, Transform>()) {

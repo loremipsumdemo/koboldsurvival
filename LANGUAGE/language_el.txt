@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Οποιοδήποτε χέρι
 UILABEL_SLOT_TWO_HAND	Δίχειρο
 MISC_TRADE_CHANGE	Συναλλαγή: {0}
 UILABEL_NEEDS_UNITS	Προσθέστε τουλάχιστον μία μονάδα για να ξεκινήσετε.
+PROP_WAGON	Άμαξα
+PROP_CAMPFIRE	Φωτιά κατασκήνωσης
+PROP_BEDROLL	Στρωμνή
+PROP_BED	Κρεβάτι
+PROP_BARREL	Βαρέλι
+PROP_ORE	Μετάλλευμα
+PROP_TREE	Δέντρο
+PROP_BOULDER	Βράχος
+PROP_MUSHROOM	Μανιτάρι
+PROP_BONES	Κόκαλα
+PROP_WALL	Τείχος
+PROP_STALL	Πάγκος

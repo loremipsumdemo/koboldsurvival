@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	Cualquier mano
 UILABEL_SLOT_TWO_HAND	A dos manos
 MISC_TRADE_CHANGE	Comercio: {0}
 UILABEL_NEEDS_UNITS	Añade al menos una unidad para empezar.
+PROP_WAGON	Carreta
+PROP_CAMPFIRE	Hoguera
+PROP_BEDROLL	Esterilla
+PROP_BED	Cama
+PROP_BARREL	Barril
+PROP_ORE	Mineral
+PROP_TREE	Árbol
+PROP_BOULDER	Roca
+PROP_MUSHROOM	Seta
+PROP_BONES	Huesos
+PROP_WALL	Muro
+PROP_STALL	Puesto

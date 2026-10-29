@@ -554,3 +554,15 @@ UILABEL_SLOT_EITHER_HAND	มือข้างใดก็ได้
 UILABEL_SLOT_TWO_HAND	สองมือ
 MISC_TRADE_CHANGE	การค้า: {0}
 UILABEL_NEEDS_UNITS	เพิ่มอย่างน้อยหนึ่งหน่วยเพื่อเริ่มเกม
+PROP_WAGON	เกวียน
+PROP_CAMPFIRE	กองไฟ
+PROP_BEDROLL	ที่นอนม้วน
+PROP_BED	เตียง
+PROP_BARREL	ถัง
+PROP_ORE	แร่
+PROP_TREE	ต้นไม้
+PROP_BOULDER	ก้อนหิน
+PROP_MUSHROOM	เห็ด
+PROP_BONES	กระดูก
+PROP_WALL	กำแพง
+PROP_STALL	แผงลอย
