@@ -8,6 +8,16 @@
 // Free camera. The focus point is the point the camera looks at and orbits around.
 // How far the camera draws: the terrain beyond the mid range is drawn at quarter detail out to here
 inline constexpr float CAMERA_FAR = 8000.0f;
+// The near plane. Depth precision at a distance z is about z * z / (near * 2^bits), so the depth buffer resolves
+// distant surfaces (the sea against the shore) far better with the near plane further out. A fixed near plane has
+// to suit the closest zoom, so it was 0.5 everywhere and the sea and shore flickered when zoomed out.
+// The near plane now follows the zoom: CAMERA_NEAR_PER_DISTANCE of the camera's distance, kept between
+// CAMERA_NEAR_MIN and CAMERA_NEAR_MAX, and never more than CAMERA_NEAR_CLEARANCE of the eye's height above the
+// ground, so ground close under the eye is not cut away.
+inline constexpr float CAMERA_NEAR_MIN = 0.5f;            // the closest zoom, as before (0.1 flickered with 24-bit depth)
+inline constexpr float CAMERA_NEAR_MAX = 6.0f;            // at the widest zoom (distance 200): 12 times the precision
+inline constexpr float CAMERA_NEAR_PER_DISTANCE = 0.03f;  // 0.6 at the default distance of 20
+inline constexpr float CAMERA_NEAR_CLEARANCE = 0.5f;
 
 struct Camera {
     static constexpr float PI_F = 3.14159265f;
@@ -22,6 +32,7 @@ struct Camera {
     float distance = 20.0f;
     float lift = 0.0f;   // temporary height added to the eye while it is near or under the ground
     float mapSize = 1024.0f;   // tiles per side of the loaded map. The game sets this each frame.
+    float eyeClearance = 1000.0f;   // the eye's height above the ground under it, set by updateClearance
 
     // Eye position, including the temporary lift
     // The compass bearing the camera looks along, in degrees from north (0) clockwise through east (90).
@@ -38,11 +49,22 @@ struct Camera {
         ez = focusZ + distance * std::cos(yaw) * std::cos(pitch);
     }
 
+    // The near plane for this frame (see CAMERA_NEAR_MIN). Every projection of the world, and the sky,
+    // must use this one value so their depths agree.
+    float nearPlane() const {
+        const float byZoom = std::clamp(distance * CAMERA_NEAR_PER_DISTANCE, CAMERA_NEAR_MIN, CAMERA_NEAR_MAX);
+        const float byGround = std::max(CAMERA_NEAR_MIN, eyeClearance * CAMERA_NEAR_CLEARANCE);
+        return std::min(byZoom, byGround);
+    }
+
+    Mat4 projection(float aspect) const {
+        return perspective(0.9f, aspect, nearPlane(), CAMERA_FAR);
+    }
+
     Mat4 viewProj(float aspect) const {
         float ex, ey, ez;
         eye(ex, ey, ez);
-        return mul(perspective(0.9f, aspect, 0.1f, CAMERA_FAR),
-                   lookAt(ex, ey, ez, focusX, focusY, focusZ, 0.0f, 1.0f, 0.0f));
+        return mul(projection(aspect), lookAt(ex, ey, ez, focusX, focusY, focusZ, 0.0f, 1.0f, 0.0f));
     }
 
     // Called once per frame. One terrain height lookup, no ray tests.
@@ -55,7 +77,9 @@ struct Camera {
         float ey = focusY + distance * std::sin(pitch);
         float ez = focusZ + distance * std::cos(yaw) * std::cos(pitch);
 
-        lift = std::max(0.0f, t.heightAt(ex, ez) + MIN_CLEARANCE - ey);
+        const float ground = t.heightAt(ex, ez);
+        lift = std::max(0.0f, ground + MIN_CLEARANCE - ey);
+        eyeClearance = ey + lift - ground;
     }
 
     // Moves the focus across the ground, relative to the current yaw

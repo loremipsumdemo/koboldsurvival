@@ -1135,7 +1135,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     // 0. Sky: a gradient with a sun, sampled by view direction so it stays fixed while the camera moves
     {
         // View matrix with the eye at the origin, so the sky only follows rotation
-        Mat4 proj = perspective(0.9f, (float)winW / (float)winH, 0.1f, CAMERA_FAR);
+        Mat4 proj = cam.projection((float)winW / (float)winH);
         Mat4 viewRot = lookAt(0.0f, 0.0f, 0.0f,
                               cam.focusX - ex, cam.focusY - ey, cam.focusZ - ez,
                               0.0f, 1.0f, 0.0f);

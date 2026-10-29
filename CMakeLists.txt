@@ -108,6 +108,10 @@ target_link_libraries(koboldgame PRIVATE
     miniaudio
 )
 
+# A Windows GUI program, so no console window opens with the game. SDL_main.h (included in main.cpp) supplies
+# the WinMain entry point this needs. Log lines go to log.txt beside the exe. Other systems ignore this.
+set_target_properties(koboldgame PROPERTIES WIN32_EXECUTABLE TRUE)
+
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
 # The game reads only this file, so the loose data/ folder is not copied.
 add_dependencies(koboldgame pack_data write_build_stamp)

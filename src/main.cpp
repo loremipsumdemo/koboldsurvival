@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>   // the WinMain entry point for a Windows GUI program (no console window)
 #include "language.h"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
@@ -10,7 +11,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
+#include <exception>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -1105,22 +1108,60 @@ void closeUiFonts(UiFonts& f) {
     f.hud = f.ui = f.list = f.statsTitle = f.statsRow = nullptr;
 }
 
-int main(int, char**) {
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("SDL_Init failed: %s", SDL_GetError());
-        return 1;
-    }
+// Every SDL_Log line also goes to log.txt beside the game, flushed at once, so a game that closes on its
+// own leaves the reason behind. The lines still go to the console or debugger output as before.
+std::FILE* gLogFile = nullptr;
+SDL_LogOutputFunction gDefaultLog = nullptr;
+void* gDefaultLogData = nullptr;
 
-    if (!TTF_Init()) {
-        SDL_Log("TTF_Init failed: %s", SDL_GetError());
-        return 1;
+void SDLCALL logToFile(void*, int category, SDL_LogPriority priority, const char* message) {
+    if (gLogFile) {
+        std::fprintf(gLogFile, "%s\n", message);
+        std::fflush(gLogFile);
     }
+    if (gDefaultLog) gDefaultLog(gDefaultLogData, category, priority, message);
+}
+
+// log.txt goes next to the exe, whatever folder the game was started from
+void startLogFile() {
+    const char* base = SDL_GetBasePath();   // owned by SDL; works before SDL_Init
+    const std::string path = std::string(base ? base : "") + "log.txt";
+    gLogFile = std::fopen(path.c_str(), "w");
+    if (!gLogFile) gLogFile = std::fopen("log.txt", "w");
+    SDL_GetLogOutputFunction(&gDefaultLog, &gDefaultLogData);
+    SDL_SetLogOutputFunction(logToFile, nullptr);
+}
+
+// Logs why the game has to close and shows it in a message box. Returns the exit code.
+int fatalError(SDL_Window* window, const std::string& message) {
+    SDL_Log("FATAL: %s", message.c_str());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Kobold Game", message.c_str(), window);
+    return 1;
+}
+
+// An exception nothing caught would end the game without a word: say what it was first
+void onTerminate() {
+    std::string what = "an unknown error";
+    if (std::exception_ptr ex = std::current_exception()) {
+        try { std::rethrow_exception(ex); }
+        catch (const std::exception& e) { what = e.what(); }
+        catch (...) {}
+    }
+    fatalError(nullptr, "The game stopped on an error: " + what);
+    std::abort();
+}
+
+int main(int, char**) {
+    startLogFile();
+    std::set_terminate(onTerminate);
+    SDL_Log("Kobold Game starting. Working folder: %s", std::filesystem::current_path().string().c_str());
+
+    if (!SDL_Init(SDL_INIT_VIDEO)) return fatalError(nullptr, std::string("SDL_Init failed: ") + SDL_GetError());
+    if (!TTF_Init()) return fatalError(nullptr, std::string("TTF_Init failed: ") + SDL_GetError());
     // Every asset comes from data.pak next to the executable, except the music and sound effects: those are loose
     // files in the BGM and SFX folders beside it, read by the audio module.
-    if (!pakOpen("data.pak")) {
-        SDL_Log("Could not open data.pak. It must sit next to the game executable.");
-        return 1;
-    }
+    if (!pakOpen("data.pak")) return fatalError(nullptr, "Could not open data.pak. It must sit next to the game executable.");
+    SDL_Log("data.pak open");
     // Settings come first: the saved text size decides the fonts
     GameSettings settings = loadSettings(SETTINGS_PATH);
     UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
@@ -1140,28 +1181,49 @@ int main(int, char**) {
     // The large title font, for the selected language, with the same fallbacks. It keeps the language it started with.
     std::vector<TTF_Font*> titleFontOwned;
     TTF_Font* font = openFontChain(64.0f, true, settings.fontPath, settings.language, titleFontOwned);
-    if (!font || !fonts.valid()) {
-        SDL_Log("Could not open font from data.pak: %s", SDL_GetError());
-        return 1;
-    }
+    if (!font || !fonts.valid()) return fatalError(nullptr, std::string("Could not open a font from data.pak: ") + SDL_GetError());
+    SDL_Log("Settings, language and fonts loaded (language %s, UI scale %d%%)", settings.language.c_str(), settings.fontScale);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    // 24 bits: the depth every graphics card offers for a window. Asking for 32 made Windows fall back to its
+    // software renderer ("GDI Generic", OpenGL 1.1) on cards without it, and the game could not start.
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+    // One window, made once. Destroying an OpenGL window and making another left the new one black on Windows.
     SDL_Window* window = SDL_CreateWindow("Kobold Game", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    if (!window) return fatalError(nullptr, std::string("Could not create the game window: ") + SDL_GetError());
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, ctx);
+    if (!ctx || !SDL_GL_MakeCurrent(window, ctx))
+        return fatalError(window, std::string("Could not start OpenGL 3.3: ") + SDL_GetError() +
+                                  "\nUpdating the graphics driver may help.");
+    {
+        // The game needs OpenGL 3.3 on the graphics card. Windows' own software renderer only has 1.1.
+        const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+        const char* card = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+        int major = 0, minor = 0;
+        if (version) std::sscanf(version, "%d.%d", &major, &minor);
+        const bool software = card && std::string(card).find("GDI Generic") != std::string::npos;
+        if (major < 3 || (major == 3 && minor < 3) || software)
+            return fatalError(window, std::string("The game needs OpenGL 3.3 on the graphics card, and got OpenGL ") +
+                                      (version ? version : "?") + " on " + (card ? card : "?") +
+                                      ".\nUpdating the graphics driver may help.");
+    }
+    {
+        int gotDepth = 0;
+        SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &gotDepth);
+        SDL_Log("Depth buffer: %d bits", gotDepth);
+    }
 
     glewExperimental = GL_TRUE;
     GLenum glewErr = glewInit();
-    if (glewErr != GLEW_OK) {
-        SDL_Log("GLEW init failed: %s", glewGetErrorString(glewErr));
-        return 1;
-    }
+    if (glewErr != GLEW_OK)
+        return fatalError(window, std::string("GLEW init failed: ") + reinterpret_cast<const char*>(glewGetErrorString(glewErr)));
     glGetError();
+    SDL_Log("OpenGL %s on %s", reinterpret_cast<const char*>(glGetString(GL_VERSION)),
+            reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
 
     moveOldMapsFolder();
     DisplayInfo displayInfo = queryDisplays(settings.monitor);
@@ -1170,7 +1232,9 @@ int main(int, char**) {
 
     // ---- Loading phase: textures and models load before the title screen appears ----
     Renderer renderer;
-    if (!renderer.init(font, fonts.hud, fonts.ui, [&](float p) { loadingFrame(window, renderer, p); })) return 1;
+    if (!renderer.init(font, fonts.hud, fonts.ui, [&](float p) { loadingFrame(window, renderer, p); }))
+        return fatalError(window, "Loading the game's textures, models or shaders failed. log.txt beside the game has the details.");
+    SDL_Log("Renderer loaded");
     renderer.setListFont(fonts.list);
     renderer.setStatsFonts(fonts.statsTitle, fonts.statsRow);
 
@@ -1972,6 +2036,7 @@ int main(int, char**) {
     audio::init();
     applyAudio();
 
+    SDL_Log("Start-up done, showing the title screen");
     while (running) {
         // Taken at the top of the frame, for the frame rate limit at its end
         const auto frameStart = std::chrono::steady_clock::now();
@@ -3757,6 +3822,7 @@ int main(int, char**) {
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);
     SDL_DestroyWindow(window);
+    SDL_Log("Closed normally");
     SDL_Quit();
     return 0;
 }

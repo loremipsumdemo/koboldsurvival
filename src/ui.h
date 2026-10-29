@@ -28,7 +28,7 @@ enum class Action {
     PartyBodyBox,     // opens the body type dropdown
     PartyRandomUnit,  // gives the picked unit a new random member
     PartyAddUnit,     // adds a random unit to the end of the party
-    PartyRemoveUnit,  // removes the picked unit, while the party has more than the starting units
+    PartyRemoveUnit,  // removes the picked unit, down to an empty party (Start needs one)
     PartyGearSlot,    // opens the item dropdown for a gear slot; param is the slot
     PartyStatLabel,   // a stat's name and level, drawn only; param is the stat
     PartyStep,        // a stat's minus or plus; param is stat * 2 for minus, stat * 2 + 1 for plus
