@@ -146,6 +146,56 @@ std::vector<TradeGhost> tradeNpc;         // items shown on the NPC's side of th
 std::vector<TradeGhost> tradePlayer;      // items shown on your side of the trade
 int tradeNpcDrag = -1;                    // the NPC's inventory slot being dragged into the trade, or -1
 
+// The storage panel: the storage prop it shows (a barrel) and the unit using it. It stays open while that unit is
+// within STORAGE_CLOSE_RANGE of the prop. NULL_ENTITY when closed.
+Entity storageProp = NULL_ENTITY;
+Entity storageUnit = NULL_ENTITY;
+int storageDrag = -1;                     // the storage slot being dragged out of the panel, or -1
+
+void closeStorage() {
+    storageProp = NULL_ENTITY;
+    storageUnit = NULL_ENTITY;
+    storageDrag = -1;
+}
+
+// The name of a prop in the language in use
+std::string propNameOf(World& w, Entity prop) {
+    const Prop* p = w.get<Prop>(prop);
+    return p ? lang(propInfo(p->kind).nameKey) : std::string();
+}
+
+// Moves a whole stack from the storage into its unit's inventory, if all of it fits. Otherwise nothing moves.
+bool takeFromStorage(World& w, int slot, std::string& why) {
+    Storage* st = w.get<Storage>(storageProp);
+    Inventory* inv = w.get<Inventory>(storageUnit);
+    if (!st || !inv || slot < 0 || slot >= STORAGE_SLOTS || st->slots[slot].item == 0) return false;
+    const ItemStack stack = st->slots[slot];
+    if (!slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, stack.item, stack.count)) {
+        const ItemDef* def = findItem(stack.item);
+        why = langf("MISC_NO_ROOM_INV", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
+        return false;
+    }
+    addToInventory(*inv, stack.item, stack.count);
+    st->slots[slot] = ItemStack{};
+    return true;
+}
+
+// Drops a whole stack from the storage on the ground where its unit stands, not where the prop is
+bool dropFromStorage(World& w, int slot) {
+    Storage* st = w.get<Storage>(storageProp);
+    const Transform* ut = w.get<Transform>(storageUnit);
+    if (!st || !ut || slot < 0 || slot >= STORAGE_SLOTS || st->slots[slot].item == 0) return false;
+    const ItemStack stack = st->slots[slot];
+    const ItemDef* def = findItem(stack.item);
+    queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
+                                   def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) }), LogKind::Drop);
+    const Entity e = w.create();
+    w.add(e, Transform{ ut->x, ut->y, ut->z });
+    w.add(e, GroundItem{ stack.item, stack.count });
+    st->slots[slot] = ItemStack{};
+    return true;
+}
+
 // A stack's item being chosen for the trade: how many, out of how many the inventory holds that are not in the trade yet
 struct QuantityPrompt {
     bool open = false;
@@ -156,8 +206,47 @@ struct QuantityPrompt {
     std::string name;
     int chosen = 1;
     int available = 0;
+    bool toStorage = false;   // the stack goes into the open storage panel's prop, not into the trade
 };
 QuantityPrompt quantity;
+
+void takeFromSlot(Inventory& inv, int slot, int count);
+
+// How many of an item the storage unit carries, over all its stacks
+int carriedCount(const Inventory& inv, int item) {
+    int total = 0;
+    for (const ItemStack& s : inv.slots) {
+        if (s.item == item) total += s.count;
+    }
+    return total;
+}
+
+// Moves `count` of the clicked stack's item from the storage unit into the storage: the clicked stack first, then the
+// unit's other stacks of that item. Nothing moves unless all of them fit.
+bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why) {
+    Storage* st = w.get<Storage>(storageProp);
+    Inventory* inv = w.get<Inventory>(storageUnit);
+    if (!st || !inv || clickedSlot < 0 || clickedSlot >= INVENTORY_SLOTS || count <= 0) return false;
+    const int item = inv->slots[clickedSlot].item;
+    if (item == 0 || carriedCount(*inv, item) < count) return false;
+    if (!slotsCanTake(st->slots.data(), STORAGE_SLOTS, item, count)) {
+        why = lang("MISC_STORAGE_FULL");
+        return false;
+    }
+    int left = count;
+    std::vector<int> order{ clickedSlot };
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        if (i != clickedSlot && inv->slots[i].item == item) order.push_back(i);
+    }
+    for (int slot : order) {
+        if (left <= 0) break;
+        const int take = std::min(left, inv->slots[slot].count);
+        takeFromSlot(*inv, slot, take);
+        left -= take;
+    }
+    addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
+    return true;
+}
 
 // Shows a stack on one side of a trade, in the next free cell. Only a picture: the inventory is not changed.
 // How many of an item an inventory holds that are not already in one side of a trade
@@ -302,9 +391,11 @@ void completeTrade(World& w, Entity npc, Entity player) {
     tradeNpcDrag = -1;
 }
 
-// The unit the Unit Panel shows: the talking unit during a trade, otherwise the lone selected unit
+// The unit the Unit Panel shows: the talking unit during a trade, the unit using a storage prop while its panel is
+// open, otherwise the lone selected unit
 Entity sidebarUnitOf(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return dialoguePlayer;
+    if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return storageUnit;
     const std::vector<Entity> mine = selectedUnits(w);
     if (mine.size() == 1) return mine[0];
     if (!mine.empty()) return NULL_ENTITY;
@@ -312,9 +403,10 @@ Entity sidebarUnitOf(World& w) {
     return any.size() == 1 ? any[0] : NULL_ENTITY;
 }
 
-// The units the Unit Panel acts on: the talking unit during a trade, otherwise the selected units
+// The units the Unit Panel acts on: the talking unit during a trade, the storage panel's unit, otherwise the selected units
 std::vector<Entity> panelUnits(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return { dialoguePlayer };
+    if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return { storageUnit };
     return selectedUnits(w);
 }
 
@@ -553,6 +645,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     tradeNpc.clear();
     tradePlayer.clear();
     tradeNpcDrag = -1;
+    closeStorage();
     paused = false;
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
@@ -635,6 +728,15 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, GroundItem{ g.item, g.count });
         }
     }
+    // What the barrels held. The props were placed again from the seed, so each is found by its serial.
+    for (Entity e : world.view<Prop, Storage>()) {
+        const int serial = world.get<Prop>(e)->serial;
+        Storage* st = world.get<Storage>(e);
+        for (const SaveStorage& s : d.storage) {
+            if (s.prop != serial || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
+            st->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
+        }
+    }
     return true;
 }
 
@@ -704,6 +806,14 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         const GroundItem* g = w.get<GroundItem>(e);
         const Transform* t = w.get<Transform>(e);
         d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count });
+    }
+    for (Entity e : w.view<Prop, Storage>()) {
+        const int serial = w.get<Prop>(e)->serial;
+        const Storage* st = w.get<Storage>(e);
+        for (int i = 0; i < STORAGE_SLOTS; ++i) {
+            const ItemStack& s = st->slots[(size_t)i];
+            if (s.item > 0 && s.count > 0) d.storage.push_back(SaveStorage{ serial, i, s.item, s.count });
+        }
     }
     return d;
 }
@@ -2235,11 +2345,62 @@ int main(int, char**) {
             quantity = QuantityPrompt{ true, npcSide, owner, slot, item, def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, avail };
         };
         auto confirmQuantity = [&]() {
+            if (quantity.toStorage) {
+                std::string why;
+                if (storageProp != NULL_ENTITY && quantity.owner == storageUnit &&
+                    storeCountInStorage(world, quantity.slot, quantity.chosen, why)) {
+                    audio::playEffect(SFX_ITEM);
+                } else if (!why.empty()) {
+                    showNotice(why);
+                }
+                quantity.open = false;
+                return;
+            }
             const Inventory* inv = world.get<Inventory>(quantity.owner);
             std::vector<TradeGhost>& side = quantity.npcSide ? tradeNpc : tradePlayer;
             const int added = inv ? tradeAddItems(side, *inv, quantity.slot, quantity.chosen) : 0;
             if (added == 0) showNotice(lang("MISC_TRADE_FULL"));
             quantity.open = false;
+        };
+        // A click on the how-many prompt, for a trade or for a storage: the -100 to +100 steps, Single and Max set the
+        // number, Confirm moves that many, Cancel closes it
+        auto quantityClick = [&](float qx, float qy) {
+            const QuantityLayout ql = layoutQuantity(winW, winH);
+            const int cap = std::max(1, quantity.available);
+            auto nudge = [&](int by) { quantity.chosen = std::clamp(quantity.chosen + by, 1, cap); };
+            if (ql.minus100.contains(qx, qy)) nudge(-100);
+            else if (ql.minus10.contains(qx, qy)) nudge(-10);
+            else if (ql.minus1.contains(qx, qy)) nudge(-1);
+            else if (ql.plus1.contains(qx, qy)) nudge(1);
+            else if (ql.plus10.contains(qx, qy)) nudge(10);
+            else if (ql.plus100.contains(qx, qy)) nudge(100);
+            else if (ql.single.contains(qx, qy)) quantity.chosen = 1;
+            else if (ql.max.contains(qx, qy)) quantity.chosen = cap;
+            else if (ql.confirm.contains(qx, qy)) confirmQuantity();
+            else if (ql.cancel.contains(qx, qy)) quantity.open = false;
+        };
+        // An item from the storage unit's inventory going into the storage: a single item goes straight in, a stack
+        // asks how many first, as a trade does. Max is what the unit carries of the item, or what the storage has room
+        // for if that is less.
+        auto requestStore = [&](int slot) {
+            const Inventory* inv = world.get<Inventory>(storageUnit);
+            const Storage* st = world.get<Storage>(storageProp);
+            if (!inv || !st || slot < 0 || slot >= INVENTORY_SLOTS || inv->slots[slot].item == 0) return;
+            const int item = inv->slots[slot].item;
+            std::string why;
+            if (inv->slots[slot].count <= 1) {
+                if (storeCountInStorage(world, slot, 1, why)) audio::playEffect(SFX_ITEM);
+                else if (!why.empty()) showNotice(why);
+                return;
+            }
+            const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
+            if (cap <= 0) {
+                showNotice(lang("MISC_STORAGE_FULL"));
+                return;
+            }
+            const ItemDef* def = findItem(item);
+            quantity = QuantityPrompt{ true, false, storageUnit, slot, item,
+                                       def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, cap, true };
         };
         auto startTalk = [&](Entity npc, Entity talker) {
             // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
@@ -2269,6 +2430,64 @@ int main(int, char**) {
             units.erase(std::unique(units.begin(), units.end()), units.end());
             const Transform* nt = world.get<Transform>(npc);
             if (nt && !units.empty()) issueMoveOrder(world, terrain, units, Vec2{ nt->x, nt->z });
+        };
+        // Right-click on a prop that can be used, with units selected. A barrel or a bed sends the selected unit nearest
+        // to it. Ore or a tree sends the nearest selected units, as many as it has room for (PROP_WORKER_LIMIT in
+        // all). False if no usable prop is under the pointer, so the click is a move order instead.
+        auto usePropAt = [&](float mx, float my) {
+            float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+            cam.eye(ex, ey, ez);
+            Entity prop = NULL_ENTITY;
+            float best = 0.0f;
+            for (Entity p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
+                if (propInfo(world.get<Prop>(p)->kind).use == PropUse::None) continue;
+                const Transform* pt = world.get<Transform>(p);
+                const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
+                if (prop == NULL_ENTITY || d2 < best) {
+                    prop = p;
+                    best = d2;
+                }
+            }
+            if (prop == NULL_ENTITY) return false;
+
+            std::vector<Entity> units = selectedUnits(world);
+            if (units.empty()) {
+                showNotice(lang("MISC_PROP_SELECT"));
+                return true;
+            }
+            std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
+                return gapBetween(world, a, prop) < gapBetween(world, b, prop);
+            });
+            const PropUse use = propInfo(world.get<Prop>(prop)->kind).use;
+            if (use == PropUse::Gather) {
+                // Units already on this prop keep their places; the rest share what is left
+                int others = 0;
+                for (Entity u : world.view<Gathering>()) {
+                    if (world.get<Gathering>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
+                }
+                for (Entity u : world.view<PropOrder>()) {
+                    if (world.get<PropOrder>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
+                }
+                const int room = std::max(0, PROP_WORKER_LIMIT - others);
+                if (room == 0) {
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                    return true;
+                }
+                if ((int)units.size() > room) {
+                    units.resize((size_t)room);
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                }
+                issuePropOrder(world, terrain, units, prop);
+            } else {
+                issuePropOrder(world, terrain, { units[0] }, prop);
+            }
+            if (const Transform* pt = world.get<Transform>(prop)) {
+                actionX = pt->x;
+                actionZ = pt->z;
+                actionAlpha = 1.0f;
+            }
+            audio::playEffect(SFX_MENU);
+            return true;
         };
         auto chooseOption = [&](size_t i) {
             const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
@@ -2719,23 +2938,8 @@ int main(int, char**) {
                 // passes on to the panel; everything else is the talk's or the trade's.
                 if (dialogueUnit != NULL_ENTITY && screen == Screen::Playing) {
                     // The quantity prompt is modal over the trade: only its buttons answer
-                    if (quantity.open && tradeOpen) {
-                        if (e.button.button == SDL_BUTTON_LEFT) {
-                            const QuantityLayout ql = layoutQuantity(winW, winH);
-                            const float qx = e.button.x, qy = e.button.y;
-                            const int cap = std::max(1, quantity.available);
-                            auto nudge = [&](int by) { quantity.chosen = std::clamp(quantity.chosen + by, 1, cap); };
-                            if (ql.minus100.contains(qx, qy)) nudge(-100);
-                            else if (ql.minus10.contains(qx, qy)) nudge(-10);
-                            else if (ql.minus1.contains(qx, qy)) nudge(-1);
-                            else if (ql.plus1.contains(qx, qy)) nudge(1);
-                            else if (ql.plus10.contains(qx, qy)) nudge(10);
-                            else if (ql.plus100.contains(qx, qy)) nudge(100);
-                            else if (ql.single.contains(qx, qy)) quantity.chosen = 1;
-                            else if (ql.max.contains(qx, qy)) quantity.chosen = cap;
-                            else if (ql.confirm.contains(qx, qy)) confirmQuantity();
-                            else if (ql.cancel.contains(qx, qy)) quantity.open = false;
-                        }
+                    if (quantity.open && tradeOpen && !quantity.toStorage) {
+                        if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
                         break;
                     }
                     const float x = e.button.x, y = e.button.y;
@@ -2795,6 +2999,37 @@ int main(int, char**) {
                                         break;
                                     }
                                 }
+                            }
+                        }
+                        break;
+                    }
+                }
+                // Choosing how many of a stack to store: the prompt is modal, and only its buttons answer
+                if (screen == Screen::Playing && quantity.open && quantity.toStorage) {
+                    if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
+                    break;
+                }
+                // The storage panel takes every click on it. Left button on an item starts dragging it out; right button
+                // moves its whole stack into the unit's inventory, if all of it fits.
+                if (screen == Screen::Playing && storageProp != NULL_ENTITY) {
+                    const StorageLayout stl = layoutStorage(winW, winH);
+                    const float x = e.button.x, y = e.button.y;
+                    if (stl.panel.contains(x, y)) {
+                        const Storage* st = world.get<Storage>(storageProp);
+                        if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {
+                            closeStorage();
+                            audio::playEffect(SFX_MENU);
+                        } else if (st) {
+                            for (size_t i = 0; i < stl.slots.size(); ++i) {
+                                if (!stl.slots[i].contains(x, y) || st->slots[i].item == 0) continue;
+                                if (e.button.button == SDL_BUTTON_LEFT) {
+                                    storageDrag = (int)i;
+                                } else if (e.button.button == SDL_BUTTON_RIGHT) {
+                                    std::string why;
+                                    if (takeFromStorage(world, (int)i, why)) audio::playEffect(SFX_ITEM);
+                                    else if (!why.empty()) showNotice(why);
+                                }
+                                break;
                             }
                         }
                         break;
@@ -3040,6 +3275,10 @@ int main(int, char**) {
                         } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && tradeOpen) {
                             // During a trade a right-click puts the item in the trade, whatever it is
                             requestTrade(false, picked[0], slot);
+                        } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && storageProp != NULL_ENTITY &&
+                                   picked[0] == storageUnit) {
+                            // With a storage panel open, a right-click puts the item in the storage. A stack asks how many.
+                            requestStore(slot);
                         } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
                             const int item = inv->slots[slot].item;
                             const ItemDef* def = findItem(item);
@@ -3090,6 +3329,9 @@ int main(int, char**) {
                                     actionAlpha = 1.0f;
                                 }
                             }
+                        } else if (usePropAt(e.button.x, e.button.y)) {
+                            // A barrel, a bed, ore or a tree: the selected units go to use it
+                            rightHold = false;
                         } else {
                             float gx = 0.0f, gz = 0.0f;
                             if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) beginRightHold(gx, gz);
@@ -3114,6 +3356,35 @@ int main(int, char**) {
                 if (e.button.button == SDL_BUTTON_LEFT && settingsUi.dragRow >= 0) {
                     settingsUi.dragRow = -1;
                     saveSettingsFile();
+                }
+                // An item dragged out of the storage: let go over the panel it stays; over the Unit Panel it goes into the
+                // unit's inventory if it all fits; anywhere else it drops where the unit stands, not at the prop
+                if (e.button.button == SDL_BUTTON_LEFT && storageDrag >= 0) {
+                    const int from = storageDrag;
+                    storageDrag = -1;
+                    if (storageProp != NULL_ENTITY) {
+                        const float x = e.button.x, y = e.button.y;
+                        if (layoutStorage(winW, winH).panel.contains(x, y)) {
+                            // back where it was
+                        } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
+                            std::string why;
+                            if (takeFromStorage(world, from, why)) audio::playEffect(SFX_ITEM);
+                            else if (!why.empty()) showNotice(why);
+                        } else if (dropFromStorage(world, from)) {
+                            audio::playEffect(SFX_ITEM);
+                        }
+                    }
+                    break;
+                }
+                // An inventory stack let go over the storage panel goes into the storage, if all of it fits
+                if (e.button.button == SDL_BUTTON_LEFT && itemDrag && storageProp != NULL_ENTITY &&
+                    layoutStorage(winW, winH).panel.contains(e.button.x, e.button.y)) {
+                    if (dragGear < 0 && dragUnit == storageUnit) requestStore(dragSlot);
+                    itemDrag = false;
+                    dragUnit = NULL_ENTITY;
+                    dragSlot = -1;
+                    dragGear = -1;
+                    break;
                 }
                 // The trade: an NPC item let go over its side becomes a ghost there. A unit's item let go over your side
                 // does too, if it is the unit being traded with. Either way the drag ends with nothing moved.
@@ -3344,6 +3615,23 @@ int main(int, char**) {
             squadSystem(world, dt, runMode);
             steeringSystem(world, terrain, dt, runMode);
             if (pickupSystem(world) > 0) audio::playEffect(SFX_ITEM);
+            // Units that reached the prop they were sent to: a barrel opens its panel, a taken bed or a full work
+            // place says so
+            for (const PropArrival& a : propOrderSystem(world)) {
+                const Prop* p = world.get<Prop>(a.prop);
+                if (!p) continue;
+                const PropUse use = propInfo(p->kind).use;
+                if (use == PropUse::Storage) {
+                    closeStorage();
+                    storageProp = a.prop;
+                    storageUnit = a.unit;
+                    itemMenu.open = false;
+                } else if (a.taken && use == PropUse::Occupy) {
+                    showNotice(lang("MISC_PROP_TAKEN"));
+                } else if (a.taken && use == PropUse::Gather) {
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                }
+            }
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
@@ -3356,6 +3644,8 @@ int main(int, char**) {
                 hoursPassed = advanceClock(gs.clockSeconds, dt);
             }
             needsSystem(world, hoursPassed, gameSecs);
+            // Ore and trees: the units working them gather by the in-game time that passed
+            gatherSystem(world, gameSecs);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -3364,6 +3654,17 @@ int main(int, char**) {
                 if (autosaveNow()) showNotice(lang("MISC_AUTOSAVED"));
             }
         }
+
+        // The storage panel closes once its unit is out of reach of the prop, is downed, or either is gone.
+        // A how-many prompt for it closes with it.
+        if (storageProp != NULL_ENTITY) {
+            const Needs* sn = world.get<Needs>(storageUnit);
+            if (!world.has<Storage>(storageProp) || !world.has<Unit>(storageUnit) ||
+                (sn && sn->hp <= 0) || gapBetween(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE) {
+                closeStorage();
+            }
+        }
+        if (quantity.open && quantity.toStorage && storageProp == NULL_ENTITY) quantity.open = false;
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
         std::string title = "Kobold Game   " + formatDate(gs.clockSeconds);
@@ -3479,6 +3780,7 @@ int main(int, char**) {
                                              [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),
                               tradeLabels.end());
             renderer.drawTradeLabels(tradeLabels, world, cam, winW, winH);
+            renderer.drawPropProgress(world, cam, winW, winH);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
                 renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
             }
@@ -3551,6 +3853,18 @@ int main(int, char**) {
                             renderer.drawDraggedStack(mouseX, mouseY, inv->slots[dragSlot].item, inv->slots[dragSlot].count);
                         }
                     }
+                }
+            }
+            // The storage panel, and the item being dragged out of it
+            if (storageProp != NULL_ENTITY) {
+                const Storage* st = world.get<Storage>(storageProp);
+                renderer.drawStorage(layoutStorage(winW, winH), propNameOf(world, storageProp), st, storageDrag, mouseX, mouseY);
+                if (st && storageDrag >= 0 && st->slots[storageDrag].item != 0) {
+                    renderer.drawDraggedStack(mouseX, mouseY, st->slots[storageDrag].item, st->slots[storageDrag].count);
+                }
+                if (quantity.open && quantity.toStorage) {
+                    renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,
+                                                quantity.available, mouseX, mouseY);
                 }
             }
             // The world map popout is over everything, the panels included

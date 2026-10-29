@@ -566,3 +566,17 @@ PROP_MUSHROOM	فطر
 PROP_BONES	عظام
 PROP_WALL	جدار
 PROP_STALL	كشك
+MISC_STORAGE_FULL	لا توجد مساحة في المخزن
+MISC_PROP_SELECT	اختر وحدة لاستخدامه
+MISC_PROP_TAKEN	مستخدم بالفعل
+MISC_PROP_WORKERS_FULL	يمكن لـ {0} وحدات كحد أقصى العمل عليه في وقت واحد
+MISC_GATHERS	{0} يجمع {1}
+MISC_GATHER_NO_ROOM	لا توجد مساحة لدى {0} لـ {1} فيتوقف عن العمل
+MISC_REASON_GATHERING	الجمع
+UILABEL_TASK	المهمة: {0}
+UILABEL_TASK_IDLE	خامل
+UILABEL_TASK_MOVING	يتحرك
+UILABEL_TASK_RESTING	يستريح
+UILABEL_STORAGE_HINT	انقر بزر الفأرة الأيمن على عنصر لأخذه، أو اسحبه للخارج لإسقاطه حيث تقف وحدتك. انقر بزر الفأرة الأيمن على عناصر وحدتك لتخزينها.
+ITEM_88_NAME	جذع خشب
+ITEM_88_DESC	خشب مقطوع من شجرة، يُستخدم في الصناعة والبناء.

@@ -205,8 +205,43 @@ struct AttackOrder {
     Entity target = NULL_ENTITY;
 };
 
-// A prop: a 3D model on the map, such as a wagon or a campfire. It is scenery and does not block movement.
-// kind is a PropKind; props.h gives each kind its model, name and size.
+// A prop: a 3D model on the map, such as a wagon or a campfire. It does not block movement.
+// kind is a PropKind; props.h gives each kind its model, name, size and use. serial is its place in the order the
+// level placed the props, which is the same each time the level is built from its seed, so a save can name it.
 struct Prop {
     int kind = 0;
+    int serial = 0;
+};
+
+// The items a storage prop (a barrel) holds, one stack per slot
+constexpr int STORAGE_SLOTS = 12;
+constexpr int STORAGE_COLUMNS = 6;
+struct Storage {
+    std::array<ItemStack, STORAGE_SLOTS> slots{};
+};
+
+// A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, takes the bed or
+// starts working, by the prop's use. Any other order replaces it.
+struct PropOrder {
+    Entity prop = NULL_ENTITY;
+};
+
+// A unit lying on an occupiable prop (a bed or a bedroll). It stays on the prop until it is given another order.
+// One unit at a time can occupy a prop.
+struct Occupying {
+    Entity prop = NULL_ENTITY;
+};
+
+// A unit working a gathering prop (ore or a tree). Its task shows as the prop's skill, such as Mining. It ends when
+// the unit is given another order, is downed, or has no room for what it gathers.
+struct Gathering {
+    Entity prop = NULL_ENTITY;
+};
+
+// A gathering prop's progress toward its next item, 0 to 1. The units working it add to it each in-game hour by
+// their skill. Each time it is full, one of them, in turn, receives the item. Not saved.
+struct PropWork {
+    double progress = 0.0;
+    unsigned turn = 0;      // which worker receives the next item
+    int workers = 0;        // units working it in the last frame, for the progress bar
 };

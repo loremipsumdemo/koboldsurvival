@@ -63,6 +63,15 @@ struct SaveGround {
     int count = 1;
 };
 
+// One stack in a storage prop (a barrel). The prop is named by its serial (components.h), which is the same each time
+// the level is built from its seed.
+struct SaveStorage {
+    int prop = 0;
+    int slot = 0;
+    int item = 0;
+    int count = 0;
+};
+
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
 struct SaveCamera {
     bool present = false;
@@ -83,6 +92,7 @@ struct SaveData {
     // Older saves have no item lines. Their items are placed again from the seed when they load.
     bool hasItems = false;
     std::vector<SaveGround> ground;
+    std::vector<SaveStorage> storage;   // what the barrels hold. Older saves have none, so their barrels start empty.
 };
 
 struct SaveSummary {
@@ -145,6 +155,9 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "ground " << g.x << " " << g.y << " " << g.z << " " << g.item << " " << g.count << "\n";
         }
     }
+    for (const SaveStorage& st : d.storage) {
+        out << "storage " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
+    }
     return (bool)out;
 }
 
@@ -186,6 +199,12 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 d.units.push_back(u);
             }
             else if (line.rfind("items=", 0) == 0)           d.hasItems = (line.substr(6) == "1");
+            else if (line.rfind("storage ", 0) == 0) {
+                std::istringstream ss(line.substr(8));
+                SaveStorage st;
+                ss >> st.prop >> st.slot >> st.item >> st.count;
+                if (!ss.fail()) d.storage.push_back(st);
+            }
             else if (line.rfind("ground ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
                 SaveGround g;

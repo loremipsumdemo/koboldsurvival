@@ -566,3 +566,17 @@ PROP_MUSHROOM	Sopp
 PROP_BONES	Knokler
 PROP_WALL	Mur
 PROP_STALL	Bod
+MISC_STORAGE_FULL	Ingen plass i lageret
+MISC_PROP_SELECT	Velg en enhet for å bruke den
+MISC_PROP_TAKEN	Allerede i bruk
+MISC_PROP_WORKERS_FULL	Opptil {0} enheter kan jobbe med den samtidig
+MISC_GATHERS	{0} samler {1}
+MISC_GATHER_NO_ROOM	{0} har ikke plass til {1} og slutter å jobbe
+MISC_REASON_GATHERING	innsamling
+UILABEL_TASK	Oppgave: {0}
+UILABEL_TASK_IDLE	Ledig
+UILABEL_TASK_MOVING	I bevegelse
+UILABEL_TASK_RESTING	Hviler
+UILABEL_STORAGE_HINT	Høyreklikk på en gjenstand for å ta den, eller dra den ut for å slippe den der enheten din står. Høyreklikk på enhetens gjenstander for å legge dem i lageret.
+ITEM_88_NAME	Tømmerstokk
+ITEM_88_DESC	Tre hogget fra et tre, brukes til håndverk og bygging.

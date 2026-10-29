@@ -202,6 +202,12 @@ public:
     void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
     // The trade popout: the NPC's inventory, and both sides of the trade as ghosts. dragFrom is the NPC slot being
     // dragged, shown as not there, or -1.
+    // The storage panel for a storage prop: its name, its items (the one being dragged, dragFrom, left out), a hint
+    // and Close. A hovered item shows its tooltip.
+    void drawStorage(const StorageLayout& L, const std::string& propName, const Storage* storage, int dragFrom,
+                     float mx, float my);
+    // A bar over each gathering prop being worked, showing how close its next item is
+    void drawPropProgress(World& w, const Camera& cam, int winW, int winH);
     void drawTrade(const TradeLayout& L, const std::string& npcName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, float mx, float my);
@@ -303,7 +309,8 @@ private:
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
     // The behavior list under the inventory: its heading, column headings, one row per rule and the add button
-    void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules,
+    // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
+    void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
                              float mx, float my, bool editable);
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);

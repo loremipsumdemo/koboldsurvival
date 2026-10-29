@@ -566,3 +566,17 @@ PROP_MUSHROOM	Гриб
 PROP_BONES	Кістки
 PROP_WALL	Стіна
 PROP_STALL	Ятка
+MISC_STORAGE_FULL	У сховищі немає місця
+MISC_PROP_SELECT	Виберіть юніта, щоб скористатися цим
+MISC_PROP_TAKEN	Уже зайнято
+MISC_PROP_WORKERS_FULL	Одночасно тут можуть працювати не більше {0} юнітів
+MISC_GATHERS	{0} добуває {1}
+MISC_GATHER_NO_ROOM	У {0} немає місця для {1}, роботу припинено
+MISC_REASON_GATHERING	добування
+UILABEL_TASK	Завдання: {0}
+UILABEL_TASK_IDLE	Бездіяльний
+UILABEL_TASK_MOVING	У дорозі
+UILABEL_TASK_RESTING	Відпочиває
+UILABEL_STORAGE_HINT	Клацніть предмет правою кнопкою, щоб узяти його, або перетягніть назовні, щоб кинути там, де стоїть ваш юніт. Клацніть правою кнопкою предмети юніта, щоб покласти їх на зберігання.
+ITEM_88_NAME	Колода
+ITEM_88_DESC	Деревина зрубаного дерева, для ремесел і будівництва.

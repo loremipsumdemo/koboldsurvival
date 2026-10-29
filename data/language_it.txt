@@ -566,3 +566,17 @@ PROP_MUSHROOM	Fungo
 PROP_BONES	Ossa
 PROP_WALL	Muro
 PROP_STALL	Bancarella
+MISC_STORAGE_FULL	Nessuno spazio nel deposito
+MISC_PROP_SELECT	Seleziona un'unità per usarlo
+MISC_PROP_TAKEN	Già in uso
+MISC_PROP_WORKERS_FULL	Fino a {0} unità possono lavorarci insieme
+MISC_GATHERS	{0} raccoglie {1}
+MISC_GATHER_NO_ROOM	{0} non ha spazio per {1} e smette di lavorare
+MISC_REASON_GATHERING	raccolta
+UILABEL_TASK	Compito: {0}
+UILABEL_TASK_IDLE	Inattivo
+UILABEL_TASK_MOVING	In movimento
+UILABEL_TASK_RESTING	Riposa
+UILABEL_STORAGE_HINT	Clic destro su un oggetto per prenderlo, oppure trascinalo fuori per lasciarlo dove si trova la tua unità. Clic destro sugli oggetti della tua unità per riporli.
+ITEM_88_NAME	Tronco di legno
+ITEM_88_DESC	Legno tagliato da un albero, per creare e costruire.

@@ -566,3 +566,17 @@ PROP_MUSHROOM	Sieni
 PROP_BONES	Luut
 PROP_WALL	Muuri
 PROP_STALL	Koju
+MISC_STORAGE_FULL	Säiliössä ei ole tilaa
+MISC_PROP_SELECT	Valitse yksikkö käyttämään sitä
+MISC_PROP_TAKEN	Jo käytössä
+MISC_PROP_WORKERS_FULL	Enintään {0} yksikköä voi työstää sitä kerralla
+MISC_GATHERS	{0} kerää: {1}
+MISC_GATHER_NO_ROOM	{0}: ei tilaa kohteelle {1}, lopettaa työn
+MISC_REASON_GATHERING	keräily
+UILABEL_TASK	Tehtävä: {0}
+UILABEL_TASK_IDLE	Toimeton
+UILABEL_TASK_MOVING	Liikkeellä
+UILABEL_TASK_RESTING	Lepää
+UILABEL_STORAGE_HINT	Ota esine napsauttamalla sitä hiiren oikealla painikkeella tai vedä se ulos pudottaaksesi sen yksikkösi kohdalle. Säilö yksikkösi esineitä napsauttamalla niitä hiiren oikealla painikkeella.
+ITEM_88_NAME	Puupölkky
+ITEM_88_DESC	Puusta kaadettua puuta, käsitöihin ja rakentamiseen.

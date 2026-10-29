@@ -9,6 +9,12 @@ int stackLimit(int item);
 // Puts up to `count` of an item into the inventory: first onto matching stacks with room, then
 // into empty slots. Returns how many could not fit, so 0 means all of them went in.
 int addToInventory(Inventory& inv, int item, int count);
+// The same, for any row of slots, such as a storage prop's
+int addToSlots(ItemStack* slots, int slotCount, int item, int count);
+// Whether all `count` of an item would fit in a row of slots, without changing them
+bool slotsCanTake(const ItemStack* slots, int slotCount, int item, int count);
+// How many more of an item a row of slots has room for
+int slotsRoomFor(const ItemStack* slots, int slotCount, int item);
 
 // Total weight of everything carried
 float carriedWeight(const Inventory& inv);

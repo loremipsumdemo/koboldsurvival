@@ -566,3 +566,17 @@ PROP_MUSHROOM	Svamp
 PROP_BONES	Ben
 PROP_WALL	Mur
 PROP_STALL	Stånd
+MISC_STORAGE_FULL	Inget utrymme i förrådet
+MISC_PROP_SELECT	Välj en enhet för att använda den
+MISC_PROP_TAKEN	Redan upptagen
+MISC_PROP_WORKERS_FULL	Upp till {0} enheter kan arbeta med den samtidigt
+MISC_GATHERS	{0} samlar {1}
+MISC_GATHER_NO_ROOM	{0} har inte plats för {1} och slutar arbeta
+MISC_REASON_GATHERING	insamling
+UILABEL_TASK	Uppgift: {0}
+UILABEL_TASK_IDLE	Overksam
+UILABEL_TASK_MOVING	I rörelse
+UILABEL_TASK_RESTING	Vilar
+UILABEL_STORAGE_HINT	Högerklicka på ett föremål för att ta det, eller dra ut det för att släppa det där din enhet står. Högerklicka på din enhets föremål för att lägga dem i förrådet.
+ITEM_88_NAME	Timmerstock
+ITEM_88_DESC	Virke från ett fällt träd, för hantverk och byggen.

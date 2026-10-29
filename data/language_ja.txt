@@ -566,3 +566,17 @@ PROP_MUSHROOM	キノコ
 PROP_BONES	骨
 PROP_WALL	壁
 PROP_STALL	露店
+MISC_STORAGE_FULL	収納に空きがありません
+MISC_PROP_SELECT	使うユニットを選択してください
+MISC_PROP_TAKEN	すでに使用中です
+MISC_PROP_WORKERS_FULL	同時に作業できるのは最大 {0} ユニットです
+MISC_GATHERS	{0} が {1} を採集した
+MISC_GATHER_NO_ROOM	{0} は {1} を持つ空きがないため作業をやめた
+MISC_REASON_GATHERING	採集
+UILABEL_TASK	作業: {0}
+UILABEL_TASK_IDLE	待機
+UILABEL_TASK_MOVING	移動中
+UILABEL_TASK_RESTING	休息中
+UILABEL_STORAGE_HINT	アイテムを右クリックで受け取り、外へドラッグするとユニットの足元に落とします。ユニットのアイテムを右クリックすると収納します。
+ITEM_88_NAME	木材
+ITEM_88_DESC	木から切り出した木材。製作や建築に使う。

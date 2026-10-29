@@ -566,3 +566,17 @@ PROP_MUSHROOM	Ciupercă
 PROP_BONES	Oase
 PROP_WALL	Zid
 PROP_STALL	Tarabă
+MISC_STORAGE_FULL	Nu mai este loc în depozit
+MISC_PROP_SELECT	Selectează o unitate pentru a-l folosi
+MISC_PROP_TAKEN	Este deja folosit
+MISC_PROP_WORKERS_FULL	Cel mult {0} unități pot lucra la el deodată
+MISC_GATHERS	{0} adună {1}
+MISC_GATHER_NO_ROOM	{0} nu are loc pentru {1} și se oprește din lucru
+MISC_REASON_GATHERING	adunare
+UILABEL_TASK	Sarcină: {0}
+UILABEL_TASK_IDLE	Inactiv
+UILABEL_TASK_MOVING	În mișcare
+UILABEL_TASK_RESTING	Se odihnește
+UILABEL_STORAGE_HINT	Clic dreapta pe un obiect ca să-l iei sau trage-l afară ca să-l lași unde stă unitatea ta. Clic dreapta pe obiectele unității tale ca să le depozitezi.
+ITEM_88_NAME	Buștean
+ITEM_88_DESC	Lemn tăiat dintr-un copac, pentru meșteșuguri și construcții.

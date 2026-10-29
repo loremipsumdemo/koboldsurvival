@@ -566,3 +566,17 @@ PROP_MUSHROOM	Гриб
 PROP_BONES	Кости
 PROP_WALL	Стена
 PROP_STALL	Прилавок
+MISC_STORAGE_FULL	В хранилище нет места
+MISC_PROP_SELECT	Выберите юнита, чтобы использовать это
+MISC_PROP_TAKEN	Уже занято
+MISC_PROP_WORKERS_FULL	Одновременно здесь могут работать не больше {0} юнитов
+MISC_GATHERS	{0} добывает {1}
+MISC_GATHER_NO_ROOM	У {0} нет места для {1}, работа прекращена
+MISC_REASON_GATHERING	добыча
+UILABEL_TASK	Задача: {0}
+UILABEL_TASK_IDLE	Бездействует
+UILABEL_TASK_MOVING	В пути
+UILABEL_TASK_RESTING	Отдыхает
+UILABEL_STORAGE_HINT	Щёлкните предмет правой кнопкой, чтобы взять его, или перетащите наружу, чтобы бросить там, где стоит ваш юнит. Щёлкните правой кнопкой предметы юнита, чтобы убрать их на хранение.
+ITEM_88_NAME	Бревно
+ITEM_88_DESC	Древесина срубленного дерева, для ремёсел и строительства.

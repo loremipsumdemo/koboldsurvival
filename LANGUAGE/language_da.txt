@@ -566,3 +566,17 @@ PROP_MUSHROOM	Svamp
 PROP_BONES	Knogler
 PROP_WALL	Mur
 PROP_STALL	Bod
+MISC_STORAGE_FULL	Ingen plads i lageret
+MISC_PROP_SELECT	Vælg en enhed for at bruge den
+MISC_PROP_TAKEN	Allerede i brug
+MISC_PROP_WORKERS_FULL	Op til {0} enheder kan arbejde på den ad gangen
+MISC_GATHERS	{0} samler {1}
+MISC_GATHER_NO_ROOM	{0} har ikke plads til {1} og holder op med at arbejde
+MISC_REASON_GATHERING	indsamling
+UILABEL_TASK	Opgave: {0}
+UILABEL_TASK_IDLE	Ledig
+UILABEL_TASK_MOVING	Bevæger sig
+UILABEL_TASK_RESTING	Hviler
+UILABEL_STORAGE_HINT	Højreklik på en genstand for at tage den, eller træk den ud for at lægge den, hvor din enhed står. Højreklik på din enheds genstande for at lægge dem i lageret.
+ITEM_88_NAME	Træstamme
+ITEM_88_DESC	Træ fældet fra et træ, bruges til håndværk og byggeri.

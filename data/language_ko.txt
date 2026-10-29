@@ -566,3 +566,17 @@ PROP_MUSHROOM	버섯
 PROP_BONES	뼈
 PROP_WALL	벽
 PROP_STALL	노점
+MISC_STORAGE_FULL	보관함에 공간이 없습니다
+MISC_PROP_SELECT	사용할 유닛을 선택하세요
+MISC_PROP_TAKEN	이미 사용 중입니다
+MISC_PROP_WORKERS_FULL	한 번에 최대 {0}개 유닛이 작업할 수 있습니다
+MISC_GATHERS	{0}이(가) {1}을(를) 채집합니다
+MISC_GATHER_NO_ROOM	{0}이(가) {1}을(를) 넣을 공간이 없어 작업을 멈춥니다
+MISC_REASON_GATHERING	채집
+UILABEL_TASK	작업: {0}
+UILABEL_TASK_IDLE	대기
+UILABEL_TASK_MOVING	이동 중
+UILABEL_TASK_RESTING	휴식 중
+UILABEL_STORAGE_HINT	아이템을 우클릭하면 가져가고, 밖으로 끌어내면 유닛이 서 있는 곳에 떨어뜨립니다. 유닛의 아이템을 우클릭하면 보관합니다.
+ITEM_88_NAME	통나무
+ITEM_88_DESC	나무에서 벤 목재로, 제작과 건축에 쓰인다.

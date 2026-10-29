@@ -566,3 +566,17 @@ PROP_MUSHROOM	Jamur
 PROP_BONES	Tulang
 PROP_WALL	Tembok
 PROP_STALL	Kios
+MISC_STORAGE_FULL	Tidak ada ruang di penyimpanan
+MISC_PROP_SELECT	Pilih unit untuk menggunakannya
+MISC_PROP_TAKEN	Sudah dipakai
+MISC_PROP_WORKERS_FULL	Paling banyak {0} unit dapat mengerjakannya sekaligus
+MISC_GATHERS	{0} mengumpulkan {1}
+MISC_GATHER_NO_ROOM	{0} tidak punya ruang untuk {1} dan berhenti bekerja
+MISC_REASON_GATHERING	mengumpulkan
+UILABEL_TASK	Tugas: {0}
+UILABEL_TASK_IDLE	Diam
+UILABEL_TASK_MOVING	Bergerak
+UILABEL_TASK_RESTING	Beristirahat
+UILABEL_STORAGE_HINT	Klik kanan sebuah barang untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unitmu berdiri. Klik kanan barang milik unitmu untuk menyimpannya.
+ITEM_88_NAME	Batang kayu
+ITEM_88_DESC	Kayu yang ditebang dari pohon, untuk kerajinan dan bangunan.

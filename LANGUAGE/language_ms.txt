@@ -566,3 +566,17 @@ PROP_MUSHROOM	Cendawan
 PROP_BONES	Tulang
 PROP_WALL	Tembok
 PROP_STALL	Gerai
+MISC_STORAGE_FULL	Tiada ruang dalam simpanan
+MISC_PROP_SELECT	Pilih unit untuk menggunakannya
+MISC_PROP_TAKEN	Sudah digunakan
+MISC_PROP_WORKERS_FULL	Paling banyak {0} unit boleh mengerjakannya serentak
+MISC_GATHERS	{0} mengumpul {1}
+MISC_GATHER_NO_ROOM	{0} tiada ruang untuk {1} dan berhenti bekerja
+MISC_REASON_GATHERING	mengumpul
+UILABEL_TASK	Tugas: {0}
+UILABEL_TASK_IDLE	Terbiar
+UILABEL_TASK_MOVING	Bergerak
+UILABEL_TASK_RESTING	Berehat
+UILABEL_STORAGE_HINT	Klik kanan item untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unit anda berdiri. Klik kanan item unit anda untuk menyimpannya.
+ITEM_88_NAME	Batang kayu
+ITEM_88_DESC	Kayu yang ditebang daripada pokok, untuk kraf dan binaan.

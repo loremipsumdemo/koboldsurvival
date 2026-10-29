@@ -566,3 +566,17 @@ PROP_MUSHROOM	Mushroom
 PROP_BONES	Bones
 PROP_WALL	Wall
 PROP_STALL	Stall
+MISC_STORAGE_FULL	No room in storage
+MISC_PROP_SELECT	Select a unit to use it
+MISC_PROP_TAKEN	Already in use
+MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
+MISC_GATHERS	{0} gathers {1}
+MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
+MISC_REASON_GATHERING	gathering
+UILABEL_TASK	Task: {0}
+UILABEL_TASK_IDLE	Idle
+UILABEL_TASK_MOVING	Moving
+UILABEL_TASK_RESTING	Resting
+UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
+ITEM_88_NAME	Wood Log
+ITEM_88_DESC	Wood cut from a tree, used in crafting and building.

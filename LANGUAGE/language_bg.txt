@@ -566,3 +566,17 @@ PROP_MUSHROOM	Гъба
 PROP_BONES	Кости
 PROP_WALL	Стена
 PROP_STALL	Сергия
+MISC_STORAGE_FULL	Няма място в склада
+MISC_PROP_SELECT	Изберете единица, за да го използвате
+MISC_PROP_TAKEN	Вече се използва
+MISC_PROP_WORKERS_FULL	Най-много {0} единици могат да работят по него едновременно
+MISC_GATHERS	{0} събира {1}
+MISC_GATHER_NO_ROOM	{0} няма място за {1} и спира работа
+MISC_REASON_GATHERING	събиране
+UILABEL_TASK	Задача: {0}
+UILABEL_TASK_IDLE	Бездейства
+UILABEL_TASK_MOVING	Движи се
+UILABEL_TASK_RESTING	Почива
+UILABEL_STORAGE_HINT	Щракнете с десния бутон върху предмет, за да го вземете, или го изтеглете навън, за да го пуснете там, където стои единицата ви. Щракнете с десния бутон върху предметите на единицата си, за да ги приберете.
+ITEM_88_NAME	Дървен труп
+ITEM_88_DESC	Дърво, отсечено от дърво, за занаяти и строеж.

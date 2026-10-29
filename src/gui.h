@@ -252,6 +252,47 @@ inline TradeLayout layoutTrade(int W, int H) {
     return L;
 }
 
+// The storage panel, for a storage prop such as a barrel: an Interaction Panel with the prop's name, its slots,
+// a hint and a Close button, in the top middle of the window, clear of the bottom panels
+struct StorageLayout {
+    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the prop's name
+    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Inventory"
+    Rect grid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> slots;                  // STORAGE_SLOTS cells, row by row
+    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
+    Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline StorageLayout layoutStorage(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
+    const float btnH = 28.0f * s, btnW = 110.0f * s;
+    const float cell = 36.0f * s, cellGap = 4.0f * s, inset = 4.0f * s;
+    const int cols = STORAGE_COLUMNS, rows = STORAGE_SLOTS / STORAGE_COLUMNS;
+    const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
+    const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
+    const float panelW = std::max(gridW, 260.0f * s) + 2.0f * pad;
+    const float hintH = 3.0f * line;
+    const float panelH = bar + pad + 2.0f * line + gridH + gap + hintH + gap + btnH + pad;
+    const float x0 = (W - panelW) * 0.5f;
+    const float y0 = std::max(8.0f * s, H * 0.14f);
+
+    StorageLayout L;
+    L.panel = Rect{ x0, y0, panelW, panelH };
+    L.bar = Rect{ x0, y0, panelW, bar };
+    L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
+    L.heading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
+    L.grid = Rect{ x0 + (panelW - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
+    for (int i = 0; i < STORAGE_SLOTS; ++i) {
+        const int col = i % cols, row = i / cols;
+        L.slots.push_back(Rect{ L.grid.x + inset + col * (cell + cellGap), L.grid.y + inset + row * (cell + cellGap), cell, cell });
+    }
+    L.hint = Rect{ x0 + pad, L.grid.y + gridH + gap, panelW - 2.0f * pad, hintH };
+    L.closeBtn = Rect{ x0 + (panelW - btnW) * 0.5f, y0 + panelH - pad - btnH, btnW, btnH };
+    return L;
+}
+
 // Whether a trade can be confirmed: why not, if it can't, and how close the offer is to the price (0 to 1)
 struct TradeStatus {
     bool ok = false;

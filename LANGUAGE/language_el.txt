@@ -566,3 +566,17 @@ PROP_MUSHROOM	Μανιτάρι
 PROP_BONES	Κόκαλα
 PROP_WALL	Τείχος
 PROP_STALL	Πάγκος
+MISC_STORAGE_FULL	Δεν υπάρχει χώρος στην αποθήκη
+MISC_PROP_SELECT	Επίλεξε μια μονάδα για να το χρησιμοποιήσει
+MISC_PROP_TAKEN	Χρησιμοποιείται ήδη
+MISC_PROP_WORKERS_FULL	Έως {0} μονάδες μπορούν να το δουλεύουν ταυτόχρονα
+MISC_GATHERS	{0} συλλέγει {1}
+MISC_GATHER_NO_ROOM	{0} δεν έχει χώρο για {1} και σταματά να δουλεύει
+MISC_REASON_GATHERING	συλλογή
+UILABEL_TASK	Εργασία: {0}
+UILABEL_TASK_IDLE	Αδρανής
+UILABEL_TASK_MOVING	Κινείται
+UILABEL_TASK_RESTING	Ξεκουράζεται
+UILABEL_STORAGE_HINT	Δεξί κλικ σε ένα αντικείμενο για να το πάρεις ή σύρε το έξω για να το αφήσεις εκεί όπου στέκεται η μονάδα σου. Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα αποθηκεύσεις.
+ITEM_88_NAME	Κορμός ξύλου
+ITEM_88_DESC	Ξύλο κομμένο από δέντρο, για κατασκευές και χειροτεχνία.

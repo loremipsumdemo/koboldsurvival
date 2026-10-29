@@ -566,3 +566,17 @@ PROP_MUSHROOM	Cogumelo
 PROP_BONES	Ossos
 PROP_WALL	Muro
 PROP_STALL	Banca
+MISC_STORAGE_FULL	Sem espaço no armazém
+MISC_PROP_SELECT	Selecione uma unidade para o usar
+MISC_PROP_TAKEN	Já está em uso
+MISC_PROP_WORKERS_FULL	Até {0} unidades podem trabalhá-lo ao mesmo tempo
+MISC_GATHERS	{0} recolhe {1}
+MISC_GATHER_NO_ROOM	{0} não tem espaço para {1} e deixa de trabalhar
+MISC_REASON_GATHERING	recolher
+UILABEL_TASK	Tarefa: {0}
+UILABEL_TASK_IDLE	Inativa
+UILABEL_TASK_MOVING	Em movimento
+UILABEL_TASK_RESTING	A descansar
+UILABEL_STORAGE_HINT	Clique com o botão direito num item para o tirar, ou arraste-o para fora para o largar onde a sua unidade está. Clique com o botão direito nos itens da sua unidade para os guardar.
+ITEM_88_NAME	Tronco de madeira
+ITEM_88_DESC	Madeira cortada de uma árvore, usada no fabrico e na construção.

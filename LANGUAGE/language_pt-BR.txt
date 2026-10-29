@@ -566,3 +566,17 @@ PROP_MUSHROOM	Cogumelo
 PROP_BONES	Ossos
 PROP_WALL	Muro
 PROP_STALL	Barraca
+MISC_STORAGE_FULL	Sem espaço no armazenamento
+MISC_PROP_SELECT	Selecione uma unidade para usá-lo
+MISC_PROP_TAKEN	Já está em uso
+MISC_PROP_WORKERS_FULL	Até {0} unidades podem trabalhar nele ao mesmo tempo
+MISC_GATHERS	{0} coleta {1}
+MISC_GATHER_NO_ROOM	{0} não tem espaço para {1} e para de trabalhar
+MISC_REASON_GATHERING	coletar
+UILABEL_TASK	Tarefa: {0}
+UILABEL_TASK_IDLE	Ociosa
+UILABEL_TASK_MOVING	Em movimento
+UILABEL_TASK_RESTING	Descansando
+UILABEL_STORAGE_HINT	Clique com o botão direito em um item para pegá-lo, ou arraste-o para fora para soltá-lo onde sua unidade está. Clique com o botão direito nos itens da sua unidade para guardá-los.
+ITEM_88_NAME	Tora de madeira
+ITEM_88_DESC	Madeira cortada de uma árvore, usada em fabricação e construção.

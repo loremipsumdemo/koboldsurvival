@@ -566,3 +566,17 @@ PROP_MUSHROOM	Nấm
 PROP_BONES	Xương
 PROP_WALL	Bức tường
 PROP_STALL	Sạp hàng
+MISC_STORAGE_FULL	Không còn chỗ trong kho
+MISC_PROP_SELECT	Chọn một đơn vị để sử dụng
+MISC_PROP_TAKEN	Đang có người dùng
+MISC_PROP_WORKERS_FULL	Tối đa {0} đơn vị có thể làm cùng lúc
+MISC_GATHERS	{0} thu được {1}
+MISC_GATHER_NO_ROOM	{0} không còn chỗ cho {1} nên ngừng làm việc
+MISC_REASON_GATHERING	thu thập
+UILABEL_TASK	Nhiệm vụ: {0}
+UILABEL_TASK_IDLE	Rảnh
+UILABEL_TASK_MOVING	Đang di chuyển
+UILABEL_TASK_RESTING	Đang nghỉ
+UILABEL_STORAGE_HINT	Nhấp chuột phải vào vật phẩm để lấy, hoặc kéo ra ngoài để thả tại chỗ đơn vị của bạn đang đứng. Nhấp chuột phải vào vật phẩm của đơn vị để cất vào.
+ITEM_88_NAME	Khúc gỗ
+ITEM_88_DESC	Gỗ đốn từ cây, dùng để chế tạo và xây dựng.

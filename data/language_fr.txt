@@ -566,3 +566,17 @@ PROP_MUSHROOM	Champignon
 PROP_BONES	Ossements
 PROP_WALL	Mur
 PROP_STALL	Étal
+MISC_STORAGE_FULL	Plus de place dans le stockage
+MISC_PROP_SELECT	Sélectionnez une unité pour l'utiliser
+MISC_PROP_TAKEN	Déjà utilisé
+MISC_PROP_WORKERS_FULL	Jusqu'à {0} unités peuvent y travailler à la fois
+MISC_GATHERS	{0} récolte {1}
+MISC_GATHER_NO_ROOM	{0} n'a pas de place pour {1} et arrête de travailler
+MISC_REASON_GATHERING	récolter
+UILABEL_TASK	Tâche : {0}
+UILABEL_TASK_IDLE	Inactif
+UILABEL_TASK_MOVING	En déplacement
+UILABEL_TASK_RESTING	Se repose
+UILABEL_STORAGE_HINT	Clic droit sur un objet pour le prendre, ou faites-le glisser dehors pour le poser là où se tient votre unité. Clic droit sur les objets de votre unité pour les ranger.
+ITEM_88_NAME	Bûche de bois
+ITEM_88_DESC	Du bois coupé dans un arbre, pour l'artisanat et la construction.

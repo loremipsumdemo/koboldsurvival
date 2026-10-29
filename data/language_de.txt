@@ -566,3 +566,17 @@ PROP_MUSHROOM	Pilz
 PROP_BONES	Knochen
 PROP_WALL	Mauer
 PROP_STALL	Marktstand
+MISC_STORAGE_FULL	Kein Platz im Lager
+MISC_PROP_SELECT	Wähle eine Einheit, um es zu benutzen
+MISC_PROP_TAKEN	Bereits belegt
+MISC_PROP_WORKERS_FULL	Bis zu {0} Einheiten können gleichzeitig daran arbeiten
+MISC_GATHERS	{0} sammelt {1}
+MISC_GATHER_NO_ROOM	{0} hat keinen Platz für {1} und hört auf zu arbeiten
+MISC_REASON_GATHERING	Sammeln
+UILABEL_TASK	Aufgabe: {0}
+UILABEL_TASK_IDLE	Untätig
+UILABEL_TASK_MOVING	Unterwegs
+UILABEL_TASK_RESTING	Ruht
+UILABEL_STORAGE_HINT	Rechtsklick auf einen Gegenstand nimmt ihn, Herausziehen legt ihn dort ab, wo deine Einheit steht. Rechtsklick auf die Gegenstände deiner Einheit lagert sie ein.
+ITEM_88_NAME	Holzstamm
+ITEM_88_DESC	Holz von einem gefällten Baum, für Handwerk und Bau.

@@ -56,3 +56,26 @@ void cleanupSquads(World& w);
 // Health and hunger, after each whole in-game hour that passed (hours) and the in-game seconds that
 // passed (gameSeconds, which can be fractional). Out of combat, units regain health as in regenHealth.
 void needsSystem(World& w, int hours, double gameSeconds = 0.0);
+
+// ---- Props (props.h) ----
+// Right-click on a usable prop: each unit walks to it. In reach, a storage prop opens its panel, an occupiable prop
+// takes the unit if it is free, and a gathering prop puts the unit to work if fewer than PROP_WORKER_LIMIT are on it.
+void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop);
+// A unit that reached the prop it was sent to. taken: the bed was occupied, or the prop had all the workers it can have.
+struct PropArrival {
+    Entity unit = NULL_ENTITY;
+    Entity prop = NULL_ENTITY;
+    bool taken = false;
+};
+// After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
+// or say a bed is taken. Units on beds are kept on them.
+std::vector<PropArrival> propOrderSystem(World& w);
+// Gathering: the units working each prop add to its progress by their skill, for the in-game seconds that passed.
+// Each full bar gives one item to one of them, in turn. One with no room drops it at its feet and stops working.
+void gatherSystem(World& w, double gameSeconds);
+// The unit on an occupiable prop, or NULL_ENTITY
+Entity propOccupant(World& w, Entity prop);
+// Units working a gathering prop or on their way to it
+int propWorkerCount(World& w, Entity prop);
+// What a unit is doing, for the Unit Panel: the skill it is gathering with, Resting, Moving or Idle
+std::string taskNameOf(World& w, Entity u);

@@ -566,3 +566,17 @@ PROP_MUSHROOM	Houba
 PROP_BONES	Kosti
 PROP_WALL	Zeď
 PROP_STALL	Stánek
+MISC_STORAGE_FULL	Ve skladu není místo
+MISC_PROP_SELECT	Vyberte jednotku, která to použije
+MISC_PROP_TAKEN	Už se používá
+MISC_PROP_WORKERS_FULL	Najednou na tom může pracovat nejvýše {0} jednotek
+MISC_GATHERS	{0} získává {1}
+MISC_GATHER_NO_ROOM	{0} nemá místo pro {1} a přestává pracovat
+MISC_REASON_GATHERING	sběr
+UILABEL_TASK	Úkol: {0}
+UILABEL_TASK_IDLE	Nečinný
+UILABEL_TASK_MOVING	Pohybuje se
+UILABEL_TASK_RESTING	Odpočívá
+UILABEL_STORAGE_HINT	Pravým kliknutím předmět vezmete, přetažením ven ho položíte tam, kde stojí vaše jednotka. Pravým kliknutím na předměty své jednotky je uložíte.
+ITEM_88_NAME	Dřevěné poleno
+ITEM_88_DESC	Dřevo z pokáceného stromu, k výrobě a stavění.

@@ -566,3 +566,17 @@ PROP_MUSHROOM	Mantar
 PROP_BONES	Kemikler
 PROP_WALL	Duvar
 PROP_STALL	Tezgâh
+MISC_STORAGE_FULL	Depoda yer yok
+MISC_PROP_SELECT	Kullanmak için bir birim seç
+MISC_PROP_TAKEN	Zaten kullanımda
+MISC_PROP_WORKERS_FULL	Aynı anda en fazla {0} birim çalışabilir
+MISC_GATHERS	{0}, {1} topluyor
+MISC_GATHER_NO_ROOM	{0} için {1} yer yok, çalışmayı bırakıyor
+MISC_REASON_GATHERING	toplamak
+UILABEL_TASK	Görev: {0}
+UILABEL_TASK_IDLE	Boşta
+UILABEL_TASK_MOVING	Hareket ediyor
+UILABEL_TASK_RESTING	Dinleniyor
+UILABEL_STORAGE_HINT	Bir eşyayı almak için sağ tıkla ya da biriminin durduğu yere bırakmak için dışarı sürükle. Biriminin eşyalarını depolamak için sağ tıkla.
+ITEM_88_NAME	Odun kütüğü
+ITEM_88_DESC	Ağaçtan kesilmiş odun, zanaat ve yapı için kullanılır.

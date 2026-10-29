@@ -566,3 +566,17 @@ PROP_MUSHROOM	Hongo
 PROP_BONES	Huesos
 PROP_WALL	Muro
 PROP_STALL	Puesto
+MISC_STORAGE_FULL	No hay espacio en el almacén
+MISC_PROP_SELECT	Selecciona una unidad para usarlo
+MISC_PROP_TAKEN	Ya está en uso
+MISC_PROP_WORKERS_FULL	Hasta {0} unidades pueden trabajarlo a la vez
+MISC_GATHERS	{0} recolecta {1}
+MISC_GATHER_NO_ROOM	{0} no tiene espacio para {1} y deja de trabajar
+MISC_REASON_GATHERING	recolectar
+UILABEL_TASK	Tarea: {0}
+UILABEL_TASK_IDLE	Inactivo
+UILABEL_TASK_MOVING	En movimiento
+UILABEL_TASK_RESTING	Descansando
+UILABEL_STORAGE_HINT	Haz clic derecho en un objeto para tomarlo, o arrástralo afuera para soltarlo donde está tu unidad. Haz clic derecho en los objetos de tu unidad para guardarlos.
+ITEM_88_NAME	Tronco de madera
+ITEM_88_DESC	Madera cortada de un árbol, para fabricar y construir.

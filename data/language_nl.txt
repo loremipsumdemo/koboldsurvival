@@ -566,3 +566,17 @@ PROP_MUSHROOM	Paddenstoel
 PROP_BONES	Botten
 PROP_WALL	Muur
 PROP_STALL	Kraam
+MISC_STORAGE_FULL	Geen ruimte in de opslag
+MISC_PROP_SELECT	Selecteer een eenheid om het te gebruiken
+MISC_PROP_TAKEN	Al in gebruik
+MISC_PROP_WORKERS_FULL	Er kunnen maximaal {0} eenheden tegelijk aan werken
+MISC_GATHERS	{0} verzamelt {1}
+MISC_GATHER_NO_ROOM	{0} heeft geen ruimte voor {1} en stopt met werken
+MISC_REASON_GATHERING	verzamelen
+UILABEL_TASK	Taak: {0}
+UILABEL_TASK_IDLE	Inactief
+UILABEL_TASK_MOVING	Onderweg
+UILABEL_TASK_RESTING	Rust
+UILABEL_STORAGE_HINT	Klik met rechts op een voorwerp om het te pakken, of sleep het eruit om het neer te leggen waar je eenheid staat. Klik met rechts op de voorwerpen van je eenheid om ze op te bergen.
+ITEM_88_NAME	Houtblok
+ITEM_88_DESC	Hout van een gekapte boom, voor ambacht en bouw.

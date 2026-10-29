@@ -566,3 +566,17 @@ PROP_MUSHROOM	Grzyb
 PROP_BONES	Kości
 PROP_WALL	Mur
 PROP_STALL	Stragan
+MISC_STORAGE_FULL	Brak miejsca w schowku
+MISC_PROP_SELECT	Wybierz jednostkę, aby tego użyć
+MISC_PROP_TAKEN	Już zajęte
+MISC_PROP_WORKERS_FULL	Naraz może przy tym pracować najwyżej {0} jednostek
+MISC_GATHERS	{0} zbiera {1}
+MISC_GATHER_NO_ROOM	{0} nie ma miejsca na {1} i przestaje pracować
+MISC_REASON_GATHERING	zbieranie
+UILABEL_TASK	Zadanie: {0}
+UILABEL_TASK_IDLE	Bezczynny
+UILABEL_TASK_MOVING	W ruchu
+UILABEL_TASK_RESTING	Odpoczywa
+UILABEL_STORAGE_HINT	Kliknij prawym przyciskiem przedmiot, aby go wziąć, lub przeciągnij go na zewnątrz, aby upuścić go tam, gdzie stoi twoja jednostka. Kliknij prawym przyciskiem przedmioty jednostki, aby je schować.
+ITEM_88_NAME	Kłoda drewna
+ITEM_88_DESC	Drewno ścięte z drzewa, do rzemiosła i budowy.

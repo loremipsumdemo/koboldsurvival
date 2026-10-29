@@ -6,6 +6,7 @@
 #include "items.h"
 #include "pak.h"
 #include "party.h"
+#include "systems.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cmath>
@@ -1935,6 +1936,76 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     }
 }
 
+void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const Storage* storage, int dragFrom,
+                           float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.95f };
+    const RGBA bar{ 0.16f, 0.18f, 0.24f, 1.0f };
+    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
+    const RGBA plate{ 0.12f, 0.14f, 0.19f, 1.0f };
+    const RGBA plateHot{ 0.22f, 0.26f, 0.36f, 1.0f };
+    const float th = listTextHeight("Ag");
+
+    drawRect(L.panel, panel);
+    drawRect(L.bar, bar);
+    drawListText(fitText(lang("UILABEL_INTERACTION_PANEL"), L.bar.w - 12.0f * s, false), L.bar.x + 6.0f * s,
+                 L.bar.y + (L.bar.h - th) * 0.5f, white);
+    const std::string name = fitText(propName, L.name.w, false);
+    if (name != propName) noteTip(propName, L.name);
+    drawListText(name, L.name.x, L.name.y, white);
+    drawListText(fitText(lang("UILABEL_INVENTORY"), L.heading.w, false), L.heading.x, L.heading.y, heading);
+    drawRect(L.grid, well);
+    int hover = -1;
+    for (size_t i = 0; i < L.slots.size(); ++i) {
+        const Rect& r = L.slots[i];
+        const bool hot = r.contains(mx, my);
+        drawRect(r, hot ? plateHot : plate);
+        if (!storage || i >= (size_t)STORAGE_SLOTS) continue;
+        const ItemStack& st = storage->slots[i];
+        if (st.item == 0 || (int)i == dragFrom) continue;
+        drawItemCell(r, st.item, st.count);
+        if (hot) hover = (int)i;
+    }
+    float ty = L.hint.y;
+    for (const std::string& ln : wrapListText(lang("UILABEL_STORAGE_HINT"), L.hint.w)) {
+        if (ty + th > L.hint.y + L.hint.h + 0.5f) break;
+        drawListText(ln, L.hint.x, ty, gray);
+        ty += th;
+    }
+    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
+    if (hover >= 0 && dragFrom < 0) drawItemTooltip(storage->slots[hover].item, storage->slots[hover].count, mx, my);
+}
+
+// The bar sits over the top of the prop's model, in window pixels, and fills as the next item nears
+void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH) {
+    const float s = uiH_ / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const float barW = 46.0f * s, barH = 7.0f * s;
+    for (Entity e : w.view<PropWork, Prop, Transform>()) {
+        const PropWork* pw = w.get<PropWork>(e);
+        if (pw->workers <= 0) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        const int kind = w.get<Prop>(e)->kind;
+        float top = propInfo(kind).size;   // the model's height, scaled as drawModel scales it
+        if (kind >= 0 && kind < PROP_KIND_COUNT) {
+            const Model& m = propModels_[(size_t)kind];
+            const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+            if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;
+        }
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, tr->y + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
+        const Rect back{ sx - barW * 0.5f, sy - barH, barW, barH };
+        drawRect(Rect{ back.x - 1.0f * s, back.y - 1.0f * s, back.w + 2.0f * s, back.h + 2.0f * s }, RGBA{ 0.0f, 0.0f, 0.0f, 0.75f });
+        drawRect(back, RGBA{ 0.12f, 0.12f, 0.14f, 0.9f });
+        const float t = (float)std::clamp(pw->progress, 0.0, 1.0);
+        drawRect(Rect{ back.x, back.y, back.w * t, back.h }, RGBA{ 0.95f, 0.75f, 0.25f, 1.0f });
+    }
+}
+
 void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                                   float mx, float my) {
     const float s = uiH_ / 720.0f;
@@ -2359,7 +2430,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     // The behavior list
     if (L.tab == UNIT_TAB_BEHAVIOR) {
         const Behaviors* beh = w.get<Behaviors>(unit);
-        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), mx, my, editable);
+        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable);
     }
     if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
     if (L.maxScroll > 0.0f) {
@@ -2412,7 +2483,7 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
 }
 
-void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules,
+void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
                                    float mx, float my, bool editable) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -2424,7 +2495,20 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
     drawRect(P, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
     drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, lang("UILABEL_BEHAVIOR"), white);
     const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
-    drawListText(count, P.x + P.w - 10.0f * s - listTextWidth(count), P.y + 6.0f * s, gray);
+    const float countX = P.x + P.w - 10.0f * s - listTextWidth(count);
+    drawListText(count, countX, P.y + 6.0f * s, gray);
+    // The unit's task, such as Mining, centred between the heading and the count
+    {
+        const float left = P.x + 10.0f * s + listTextHeight("Ag") + 6.0f * s + listTextWidth(lang("UILABEL_BEHAVIOR")) + 12.0f * s;
+        const float room = countX - 12.0f * s - left;
+        const std::string full = langf("UILABEL_TASK", { task });
+        const std::string shown = room > 0.0f ? fitText(full, room, false) : std::string();
+        if (!shown.empty()) {
+            const Rect area{ left, P.y + 6.0f * s, room, listTextHeight("Ag") };
+            if (shown != full) noteTip(full, area);
+            drawListText(shown, left + (room - listTextWidth(shown)) * 0.5f, P.y + 6.0f * s, RGBA{ 1.0f, 0.86f, 0.55f, 1.0f });
+        }
+    }
 
     const std::string heads[5] = { lang("UILABEL_BEHAVIOR_ON"), lang("UILABEL_TARGET"), lang("UILABEL_CONDITION"), lang("UILABEL_ACTION"), lang("UILABEL_TARGET") };
     for (size_t i = 0; i < 5; ++i) {

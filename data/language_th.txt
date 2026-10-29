@@ -566,3 +566,17 @@ PROP_MUSHROOM	เห็ด
 PROP_BONES	กระดูก
 PROP_WALL	กำแพง
 PROP_STALL	แผงลอย
+MISC_STORAGE_FULL	ไม่มีที่ว่างในที่เก็บ
+MISC_PROP_SELECT	เลือกยูนิตเพื่อใช้งาน
+MISC_PROP_TAKEN	มีผู้ใช้อยู่แล้ว
+MISC_PROP_WORKERS_FULL	ทำงานพร้อมกันได้สูงสุด {0} ยูนิต
+MISC_GATHERS	{0} เก็บ {1}
+MISC_GATHER_NO_ROOM	{0} ไม่มีที่ว่างสำหรับ {1} จึงหยุดทำงาน
+MISC_REASON_GATHERING	การเก็บเกี่ยว
+UILABEL_TASK	งาน: {0}
+UILABEL_TASK_IDLE	ว่าง
+UILABEL_TASK_MOVING	กำลังเดิน
+UILABEL_TASK_RESTING	กำลังพัก
+UILABEL_STORAGE_HINT	คลิกขวาที่ไอเทมเพื่อหยิบ หรือลากออกไปเพื่อวางไว้ตรงที่ยูนิตของคุณยืนอยู่ คลิกขวาที่ไอเทมของยูนิตเพื่อเก็บเข้าไป
+ITEM_88_NAME	ท่อนไม้
+ITEM_88_DESC	ไม้ที่ตัดจากต้นไม้ ใช้ในการประดิษฐ์และก่อสร้าง

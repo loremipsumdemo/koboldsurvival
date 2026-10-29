@@ -9,14 +9,14 @@ int stackLimit(int item) {
     return d ? std::max(1, d->maxStackSize) : 1;
 }
 
-int addToInventory(Inventory& inv, int item, int count) {
+int addToSlots(ItemStack* slots, int slotCount, int item, int count) {
     if (item <= 0 || count <= 0) return std::max(0, count);
     const int limit = stackLimit(item);
     int left = count;
 
     // Top up stacks of the same item first
-    for (ItemStack& s : inv.slots) {
-        if (left <= 0) break;
+    for (int i = 0; i < slotCount && left > 0; ++i) {
+        ItemStack& s = slots[i];
         if (s.item == item && s.count < limit) {
             const int put = std::min(left, limit - s.count);
             s.count += put;
@@ -24,8 +24,8 @@ int addToInventory(Inventory& inv, int item, int count) {
         }
     }
     // Then start new stacks in empty slots
-    for (ItemStack& s : inv.slots) {
-        if (left <= 0) break;
+    for (int i = 0; i < slotCount && left > 0; ++i) {
+        ItemStack& s = slots[i];
         if (s.item == 0) {
             const int put = std::min(left, limit);
             s.item = item;
@@ -34,6 +34,33 @@ int addToInventory(Inventory& inv, int item, int count) {
         }
     }
     return left;
+}
+
+int addToInventory(Inventory& inv, int item, int count) {
+    return addToSlots(inv.slots.data(), INVENTORY_SLOTS, item, count);
+}
+
+int slotsRoomFor(const ItemStack* slots, int slotCount, int item) {
+    if (item <= 0) return 0;
+    const int limit = stackLimit(item);
+    int room = 0;
+    for (int i = 0; i < slotCount; ++i) {
+        if (slots[i].item == item) room += std::max(0, limit - slots[i].count);
+        else if (slots[i].item == 0) room += limit;
+    }
+    return room;
+}
+
+bool slotsCanTake(const ItemStack* slots, int slotCount, int item, int count) {
+    if (item <= 0 || count <= 0) return true;
+    const int limit = stackLimit(item);
+    int room = 0;
+    for (int i = 0; i < slotCount; ++i) {
+        if (slots[i].item == item) room += std::max(0, limit - slots[i].count);
+        else if (slots[i].item == 0) room += limit;
+        if (room >= count) return true;
+    }
+    return false;
 }
 
 float carriedWeight(const Inventory& inv) {
