@@ -1,0 +1,1541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  :root{color-scheme:light}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>Character Tangle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-screen app — slim masthead, full-bleed physics stage, docked dossier rail that reflows under the stage on phones. */
+:root{
+  --bg:#eef0f3;
+  --panel:#f8f9fb;
+  --ink:#1a1d24;
+  --ink-soft:#5a6170;
+  --ink-faint:#8d93a1;
+  --rule:#d3d7df;
+  --rule-soft:#e3e6ec;
+  --pos:#1f7a5e;
+  --neg:#b22f45;
+  --cpx:#9a6a12;
+  --sphere:#636c80;
+  --focus:#2f5fd0;
+  --shadow:rgba(26,29,36,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1116;
+    --panel:#161a21;
+    --ink:#e8eaef;
+    --ink-soft:#a0a7b6;
+    --ink-faint:#6e7686;
+    --rule:#2a303b;
+    --rule-soft:#20252e;
+    --pos:#4ecfa3;
+    --neg:#ff7183;
+    --cpx:#e8b155;
+    --sphere:#8690a8;
+    --focus:#7aa2ff;
+    --shadow:rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1116;
+  --panel:#161a21;
+  --ink:#e8eaef;
+  --ink-soft:#a0a7b6;
+  --ink-faint:#6e7686;
+  --rule:#2a303b;
+  --rule-soft:#20252e;
+  --pos:#4ecfa3;
+  --neg:#ff7183;
+  --cpx:#e8b155;
+  --sphere:#8690a8;
+  --focus:#7aa2ff;
+  --shadow:rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  height:100%;
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.masthead{
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  flex-wrap:wrap;
+  padding-block:10px 9px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  border-bottom:1px solid var(--rule);
+  background:var(--panel);
+}
+.wordmark{
+  font-family:"Fraunces",Georgia,serif;
+  font-weight:800;
+  font-size:19px;
+  letter-spacing:-.015em;
+  margin:0;
+}
+.wordmark em{font-style:italic;font-weight:600;color:var(--ink-soft)}
+.tagline{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin:0;
+  max-width:52ch;
+  line-height:1.45;
+}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px 14px;
+  padding-block:9px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  border-bottom:1px solid var(--rule);
+  background:var(--panel);
+}
+.ctl{display:flex;align-items:center;gap:7px}
+.ctl label{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  white-space:nowrap;
+}
+input[type=range]{width:96px;accent-color:var(--focus)}
+.count{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12px;
+  color:var(--ink);
+  min-width:2ch;
+  font-variant-numeric:tabular-nums;
+}
+select,button{
+  font-family:inherit;
+  font-size:12.5px;
+  color:var(--ink);
+  background:var(--bg);
+  border:1px solid var(--rule);
+  border-radius:3px;
+  padding:5px 9px;
+  cursor:pointer;
+}
+button:hover,select:hover{border-color:var(--ink-faint)}
+button:focus-visible,select:focus-visible,input:focus-visible,.chip:focus-visible{
+  outline:2px solid var(--focus);
+  outline-offset:2px;
+}
+.primary{
+  background:var(--ink);
+  color:var(--panel);
+  border-color:var(--ink);
+  font-weight:600;
+  letter-spacing:.01em;
+}
+.primary:hover{background:var(--ink-soft);border-color:var(--ink-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:4px 8px;
+  border:1px solid var(--rule);
+  border-radius:999px;
+  background:transparent;
+  color:var(--ink-faint);
+}
+.chip[aria-pressed="true"]{
+  background:var(--ink);
+  color:var(--panel);
+  border-color:var(--ink);
+}
+
+.premise{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  gap:6px 26px;
+  padding-block:11px 12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 70%,var(--bg)),var(--bg));
+}
+.phead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;min-width:0;flex:0 1 auto}
+.pcat{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0;
+  order:-1;
+  flex-basis:100%;
+}
+.ptitle{
+  font-family:"Fraunces",Georgia,serif;
+  font-size:19px;
+  font-weight:800;
+  letter-spacing:-.015em;
+  margin:0;
+  text-wrap:balance;
+}
+.preg{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  padding:2px 7px;
+  border-radius:999px;
+  border:1px solid currentColor;
+}
+.reg-e{color:var(--neg)}
+.reg-s{color:var(--pos)}
+.pbody{flex:1 1 320px;min-width:0;display:grid;gap:3px}
+.pbody .seed{margin:0;font-size:13px;line-height:1.45;color:var(--ink)}
+.pbody .pcast{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+.who{
+  font:inherit;
+  font-weight:600;
+  color:var(--ink);
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  border-bottom:1px solid var(--rule);
+}
+.who:hover{border-bottom-color:var(--ink);color:var(--focus)}
+
+.workspace{
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr 310px;
+}
+.stage{
+  position:relative;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  background:
+    radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--panel) 55%, transparent), transparent 70%),
+    var(--bg);
+}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+
+/* the web alone is the default; F2 brings the rest back */
+body.bare .masthead,
+body.bare .controls,
+body.bare .premise,
+body.bare .rail{display:none}
+body.bare .workspace{grid-template-columns:1fr;grid-template-rows:1fr}
+
+.chrome-toggle{
+  position:absolute;
+  z-index:6;
+  top:calc(10px + env(safe-area-inset-top,0px));
+  right:max(12px,env(safe-area-inset-right,0px));
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  background:color-mix(in srgb,var(--panel) 80%,transparent);
+  border:1px solid var(--rule-soft);
+  border-radius:999px;
+  padding:5px 10px;
+  backdrop-filter:blur(6px);
+  cursor:pointer;
+}
+.chrome-toggle:hover{color:var(--ink);border-color:var(--rule)}
+.chrome-toggle kbd{
+  font-family:inherit;
+  font-size:9.5px;
+  border:1px solid var(--rule);
+  border-radius:3px;
+  padding:1px 4px;
+  color:var(--ink-soft);
+}
+
+.legend{
+  position:absolute;
+  left:max(14px,env(safe-area-inset-left,0px));
+  bottom:14px;
+  background:color-mix(in srgb, var(--panel) 88%, transparent);
+  border:1px solid var(--rule-soft);
+  border-radius:4px;
+  padding:9px 11px;
+  display:grid;
+  gap:5px;
+  backdrop-filter:blur(6px);
+  pointer-events:none;
+}
+.legend h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 2px;
+  font-weight:500;
+}
+.legend .row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-soft)}
+.legend svg{display:block;flex:none}
+
+.tip{
+  position:absolute;
+  pointer-events:none;
+  max-width:230px;
+  background:var(--ink);
+  color:var(--panel);
+  border-radius:4px;
+  padding:7px 9px;
+  font-size:11.5px;
+  line-height:1.4;
+  box-shadow:0 6px 18px var(--shadow);
+  transform:translate(-50%,-115%);
+  z-index:5;
+}
+.tip strong{
+  display:block;
+  font-family:"Fraunces",Georgia,serif;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:2px;
+}
+.tip .roles{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10px;
+  letter-spacing:.04em;
+  opacity:.72;
+  margin-top:3px;
+}
+
+.rail{
+  border-left:1px solid var(--rule);
+  background:var(--panel);
+  overflow-y:auto;
+  min-height:0;
+  padding-block:14px 20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.rail h2{
+  font-family:"Fraunces",Georgia,serif;
+  font-size:16px;
+  font-weight:600;
+  margin:0 0 2px;
+  text-wrap:balance;
+}
+.rail .sub{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 12px;
+}
+.backlink{
+  font-size:11.5px;
+  color:var(--focus);
+  background:none;
+  border:none;
+  padding:0 0 10px;
+  cursor:pointer;
+}
+.ties{list-style:none;margin:0;padding:0;display:grid;gap:1px;background:var(--rule-soft)}
+.ties li{background:var(--panel);padding:9px 0}
+.tie{
+  width:100%;
+  text-align:left;
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  display:grid;
+  gap:3px;
+}
+.tie .pair{
+  font-size:12px;
+  color:var(--ink-soft);
+  display:flex;
+  gap:5px;
+  align-items:baseline;
+  flex-wrap:wrap;
+}
+.tie .arrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500}
+.tie .name{
+  font-family:"Fraunces",Georgia,serif;
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1.25;
+}
+.tie .gloss{font-size:11.5px;color:var(--ink-faint);line-height:1.45}
+.tie:hover .name{text-decoration:underline;text-underline-offset:2px}
+.railhead{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10px;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  font-weight:500;
+  margin:18px 0 7px;
+  padding-bottom:5px;
+  border-bottom:1px solid var(--rule-soft);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:baseline;
+}
+.railhead .hint{letter-spacing:.02em;text-transform:none;color:var(--ink-faint);font-size:10px}
+.blurb{font-size:12.5px;line-height:1.5;color:var(--ink-soft);margin:0}
+.source{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;
+  color:var(--ink-faint);
+  margin:-8px 0 10px;
+}
+.identity{border-top:1px solid var(--rule-soft);padding-top:10px;margin-top:14px}
+.identnote{font-size:11.5px;line-height:1.45;color:var(--ink-faint);margin:6px 0 0}
+.castline .code,.pair .code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.06em;
+  color:var(--panel);
+  background:var(--sphere);
+  border-radius:3px;
+  padding:2px 5px;
+}
+.castline .arch{color:var(--ink-soft)}
+
+.chemrow{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:2px 9px;
+  align-items:baseline;
+  padding:5px 0;
+  border-bottom:1px solid var(--rule-soft);
+}
+.chemrow .ccode{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.05em;
+  color:var(--ink-faint);
+}
+.chemrow.c-with .ccode{color:var(--pos)}
+.chemrow.c-against .ccode{color:var(--neg)}
+.chemrow .cwhy{font-size:11.5px;line-height:1.4;color:var(--ink-soft)}
+.chemrow .chere{grid-column:2;font-size:11.5px;color:var(--ink)}
+.chemrow .chere::before{content:"on the board: ";color:var(--ink-faint);font-size:10.5px}
+.chemrow.here .ccode{text-decoration:underline;text-underline-offset:3px}
+.chemtag{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+.chemtag.c-with{color:var(--pos)}
+.chemtag.c-against{color:var(--neg)}
+
+.dich{margin:0 0 12px}
+.dich h3{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  margin:10px 0 6px;
+  font-family:"IBM Plex Sans",sans-serif;
+  font-size:11.5px;
+  font-weight:600;
+  color:var(--ink-soft);
+}
+.dich .letter{
+  font-family:"Fraunces",Georgia,serif;
+  font-size:15px;
+  font-weight:800;
+  color:var(--ink);
+}
+.dich .flag{
+  margin-left:auto;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.05em;
+  color:var(--cpx);
+  font-weight:400;
+}
+.facet{display:grid;gap:3px;margin-bottom:7px}
+.facet .poles{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;
+  letter-spacing:.02em;
+  color:var(--ink-faint);
+}
+.facet .poles .on{color:var(--ink)}
+.facet .track{
+  position:relative;
+  height:3px;
+  border-radius:2px;
+  background:var(--rule-soft);
+}
+.facet .track::before{
+  content:"";
+  position:absolute;
+  left:50%;top:-2px;
+  width:1px;height:7px;
+  background:var(--rule);
+}
+.facet .track i{
+  position:absolute;
+  top:-3px;
+  width:9px;height:9px;
+  border-radius:50%;
+  transform:translateX(-50%);
+  background:var(--ink);
+  border:2px solid var(--panel);
+}
+.facet.s-mid .track i{background:var(--ink-faint)}
+.facet.s-oops .track i{background:var(--cpx)}
+.facet.s-oops .poles .on{color:var(--cpx)}
+
+.v-p{color:var(--pos)}
+.v-n{color:var(--neg)}
+.v-x{color:var(--cpx)}
+.empty{font-size:12px;color:var(--ink-faint);line-height:1.5}
+
+@media (max-width:860px){
+  .workspace{grid-template-columns:1fr;grid-template-rows:minmax(44vh,1fr) minmax(0,38%)}
+  .rail{border-left:none;border-top:1px solid var(--rule)}
+  .legend{right:max(14px,env(safe-area-inset-right,0px));left:auto;bottom:10px;padding:7px 9px}
+  .legend .row{font-size:10px}
+}
+@media (max-width:520px){
+  .tagline{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto}
+}
+</style>
+
+</head>
+<body>
+<header class="masthead">
+  <h1 class="wordmark">Character <em>Tangle</em></h1>
+  <p class="tagline">A cast of strangers, roped together by the dynamics that actually drive stories. Drag anyone. Click a sphere to read their ties.</p>
+</header>
+
+<div class="controls">
+  <button class="primary" id="roll">Recast</button>
+  <div class="ctl">
+    <label for="cast">Cast</label>
+    <input type="range" id="cast" min="4" max="14" value="5">
+    <span class="count" id="castN">5</span>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Kinds of dynamic to include"></div>
+  <div class="ctl">
+    <label for="register">Register</label>
+    <select id="register">
+      <option value="r" selected>Either</option>
+      <option value="e">Extreme</option>
+      <option value="s">Silly</option>
+    </select>
+  </div>
+  <button id="replot">New plot</button>
+  <button id="copy">Copy as text</button>
+</div>
+
+<section class="premise" id="premise" aria-live="polite"></section>
+
+<main class="workspace">
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <button class="chrome-toggle" id="chromeToggle" aria-pressed="false">panels <kbd>F2</kbd></button>
+    <div class="legend">
+      <h2>Reading the lines</h2>
+      <div class="row"><svg width="40" height="10" aria-hidden="true"><line x1="1" y1="5" x2="39" y2="5" stroke="var(--pos)" stroke-width="2"/></svg> mostly warm</div>
+      <div class="row"><svg width="40" height="10" aria-hidden="true"><line x1="1" y1="5" x2="39" y2="5" stroke="var(--neg)" stroke-width="2" stroke-dasharray="7 5"/></svg> mostly hostile</div>
+      <div class="row"><svg width="40" height="10" aria-hidden="true"><path d="M1 5 q5 -4 10 0 t10 0 t10 0 t8 0" fill="none" stroke="var(--cpx)" stroke-width="2"/></svg> complicated</div>
+      <div class="row"><svg width="40" height="10" aria-hidden="true"><line x1="1" y1="5" x2="32" y2="5" stroke="currentColor" stroke-width="1.6"/><path d="M39 5 L31 1.6 L31 8.4 Z" fill="currentColor"/></svg> one-way</div>
+      <div class="row"><svg width="40" height="10" aria-hidden="true"><line x1="8" y1="5" x2="32" y2="5" stroke="currentColor" stroke-width="1.6"/><path d="M39 5 L31 1.6 L31 8.4 Z" fill="currentColor"/><path d="M1 5 L9 1.6 L9 8.4 Z" fill="currentColor"/></svg> mutual</div>
+    </div>
+  </div>
+  <aside class="rail" id="rail"></aside>
+</main>
+
+<script>
+/* ---------- the trope library: [name, kind, valence, directedness, roleA, roleB, gloss] ---------- */
+const K={ROM:"romance",FRI:"friendship",FAM:"family",MEN:"mentorship",RIV:"rivalry",POW:"power",ALL:"alliance",DEV:"devotion"};
+const RAW=[
+["Enemies to Lovers",K.ROM,"x",2,"Antagonist","Antagonist","Hostility that keeps inventing reasons to be in the same room."],
+["Friends to Lovers",K.ROM,"p",2,"Friend","Friend","Years of safety, then one of them says it out loud."],
+["Lovers to Enemies",K.ROM,"n",2,"Ex","Ex","They know exactly where the soft parts are."],
+["Slow Burn",K.ROM,"p",2,"Half","Half","Everyone else worked it out three chapters ago."],
+["Star-Crossed",K.ROM,"x",2,"Beloved","Beloved","The world is arranged specifically to keep them apart."],
+["Unrequited Love",K.ROM,"x",1,"Pining","Oblivious","One of them is having an entire relationship alone."],
+["Fake Dating",K.ROM,"x",2,"Accomplice","Accomplice","A lie that keeps requiring more honest behaviour."],
+["Second Chance",K.ROM,"p",2,"Returning","Waiting","Older, slower, finally able to hear each other."],
+["Forbidden Love",K.ROM,"x",2,"Beloved","Beloved","Wanting it costs them standing, family, or safety."],
+["Opposites Attract",K.ROM,"p",2,"Order","Chaos","Each one is the other's missing operating instruction."],
+["The One That Got Away",K.ROM,"x",1,"Still Carrying It","Moved On","A door only one of them is still standing at."],
+["Will They Won't They",K.ROM,"x",2,"Almost","Almost","Perpetual near-miss, sustained by terrible timing."],
+["Arranged Match",K.ROM,"x",2,"Promised","Promised","A contract between families, two strangers inside it."],
+["Secret Relationship",K.ROM,"x",2,"Lover","Lover","Real in private, denied in every room that matters."],
+["Toxic Devotion",K.ROM,"n",2,"Captive","Captive","Neither can leave; both keep proving why they should."],
+["Marriage of Convenience",K.ROM,"x",2,"Signatory","Signatory","A merger that slowly stops being only a merger."],
+["Grumpy and Sunshine",K.ROM,"p",2,"Grump","Sunshine","One scowls, one persists, the scowl stops working."],
+["Childhood Sweethearts",K.ROM,"p",2,"First Love","First Love","They have no memory of each other's absence."],
+["Soulmates",K.ROM,"p",2,"Half","Half","Recognition that arrives before acquaintance does."],
+["Doomed Romance",K.ROM,"x",2,"Beloved","Beloved","Both know the ending and keep going anyway."],
+["Rebound",K.ROM,"x",1,"Rebounding","Stand-in","Loving someone in the shape of someone else."],
+["Mutual Pining",K.ROM,"x",2,"Pining","Pining","Two people being carefully, symmetrically stupid."],
+["Exes Still on the Payroll",K.ROM,"x",2,"Colleague","Colleague","Professional courtesy stretched over an unhealed thing."],
+["Obsessive Love",K.ROM,"n",1,"Obsessed","Object","Devotion that has stopped asking for consent."],
+["Found Family",K.FRI,"p",2,"Kin","Kin","Chosen deliberately, which is the whole point."],
+["Ride or Die",K.FRI,"p",2,"Ally","Ally","No question asked before the answer is yes."],
+["Platonic Soulmates",K.FRI,"p",2,"Other Half","Other Half","The central love story, with no romance in it."],
+["Odd Couple",K.FRI,"p",2,"Mess","Order","Constant friction, total refusal to separate."],
+["Frenemies",K.FRI,"x",2,"Rival-Friend","Rival-Friend","Genuine affection run entirely through insults."],
+["Fair-Weather Friend",K.FRI,"n",1,"User","Used","Present for the good days, unreachable for the rest."],
+["Friendly Rivals",K.FRI,"p",2,"Contender","Contender","Each is the reason the other keeps getting better."],
+["Confidant",K.FRI,"p",1,"Confider","Keeper","One does the telling; the other does the holding."],
+["Drifted Apart",K.FRI,"x",2,"Former Friend","Former Friend","Nothing broke. They simply stopped replying."],
+["Third Wheel",K.FRI,"x",1,"Odd One","Pair","Belonging to a group that has quietly become two."],
+["Vitriolic Best Buds",K.FRI,"p",2,"Needler","Needler","Affection expressed exclusively as abuse."],
+["Loyal to a Fault",K.FRI,"p",1,"Devotee","Beneficiary","Loyalty that has outlasted the thing deserving it."],
+["Orbiter and Centre",K.FRI,"x",1,"Orbiter","Centre","One builds their life around a friendship the other barely tracks."],
+["Reunited After Years",K.FRI,"p",2,"Old Friend","Old Friend","Picking up mid-sentence after a decade of silence."],
+["Comrades in Grief",K.FRI,"p",2,"Mourner","Mourner","Bonded by the one person neither can mention."],
+["Reluctant Roommates",K.FRI,"x",2,"Tenant","Tenant","Forced proximity grinding slowly into fondness."],
+["Old War Buddies",K.FRI,"p",2,"Veteran","Veteran","A shorthand nobody else in the room can follow."],
+["Estranged Siblings",K.FAM,"n",2,"Sibling","Sibling","Same childhood, two irreconcilable accounts of it."],
+["Sibling Rivalry",K.FAM,"x",2,"Sibling","Sibling","Competing for a prize their parents stopped offering."],
+["Protective Elder Sibling",K.FAM,"p",1,"Shield","Sheltered","Took the hits early and never stopped standing there."],
+["Absent Parent",K.FAM,"n",1,"Absent","Waiting","A shape in the doorway that never fills in."],
+["Overbearing Parent",K.FAM,"x",1,"Parent","Child","Love delivered exclusively as correction."],
+["Chosen Parent",K.FAM,"p",2,"Guardian","Ward","No blood, no paperwork, entirely a parent."],
+["Prodigal Return",K.FAM,"x",1,"Returning","Left Behind","Comes back expecting the door, finds the bill."],
+["Golden Child and Overlooked",K.FAM,"n",2,"Favoured","Overlooked","Both damaged by the same unequal attention."],
+["Twin Bond",K.FAM,"p",2,"Twin","Twin","One nervous system wearing two bodies."],
+["Black Sheep",K.FAM,"x",1,"Outcast","Household","Loved in theory, uninvited in practice."],
+["Living in the Shadow",K.FAM,"x",1,"Shadowed","Legend","Measured daily against someone who isn't competing."],
+["Caretaker and Dependent",K.FAM,"x",2,"Caretaker","Dependent","Devotion and resentment occupying the same hour."],
+["Secret Parentage",K.FAM,"x",1,"Keeper","Unknowing","One of them is carrying the other's real origin."],
+["In-Law Friction",K.FAM,"n",2,"Relation","Relation","Polite warfare conducted entirely at dinner."],
+["Inherited Feud",K.FAM,"n",2,"Heir","Heir","Hating each other on behalf of the dead."],
+["Parent Who Became a Peer",K.FAM,"p",2,"Elder","Grown Child","The authority dissolved; the friendship survived."],
+["Mentor and Protégé",K.MEN,"p",2,"Mentor","Protégé","Handing over a craft and the right to break it."],
+["Fallen Mentor",K.MEN,"x",2,"Mentor","Student","The student finds out what the teacher actually is."],
+["Corrupting Teacher",K.MEN,"n",1,"Corruptor","Pupil","Real skill, taught for the teacher's own purposes."],
+["Student Surpasses Master",K.MEN,"x",2,"Master","Successor","Pride and obsolescence arriving in the same moment."],
+["Reluctant Mentor",K.MEN,"p",2,"Holdout","Persistent","Refuses to teach, teaches constantly by accident."],
+["Handler and Asset",K.MEN,"x",2,"Handler","Asset","Care that is indistinguishable from management."],
+["Master and Servant",K.MEN,"x",2,"Master","Servant","Intimacy structured entirely by rank."],
+["Patron and Artist",K.MEN,"x",2,"Patron","Artist","Money buying work, then slowly buying opinions."],
+["Commander and Soldier",K.MEN,"p",2,"Commander","Soldier","Trust that only functions under instruction."],
+["The Right Hand",K.MEN,"p",1,"Lieutenant","Leader","Absolute competence, permanently one step behind."],
+["Cult Leader and Devotee",K.MEN,"n",2,"Leader","Devotee","Belonging offered at the price of a self."],
+["Understudy and Star",K.MEN,"x",1,"Understudy","Star","Studying someone closely enough to replace them."],
+["Arch-Nemesis",K.RIV,"n",2,"Nemesis","Nemesis","Neither is entirely themselves without the other."],
+["Worthy Opponent",K.RIV,"x",2,"Opponent","Opponent","Mutual respect that will not stop the fight."],
+["Obsessive Rival",K.RIV,"n",1,"Obsessed","Unbothered","A rivalry only one of them has entered."],
+["The Betrayal",K.RIV,"n",1,"Betrayer","Betrayed","One decision that re-dates everything before it."],
+["Hunter and Quarry",K.RIV,"n",1,"Hunter","Quarry","Attention that functions as a slow sentence."],
+["Old Grudge",K.RIV,"n",1,"Grudge-Holder","Forgetful","A wound kept warm by exactly one person."],
+["Foils",K.RIV,"x",2,"Foil","Foil","Same question, two incompatible answers."],
+["Blood Feud",K.RIV,"n",2,"Combatant","Combatant","Violence with a genealogy and no off-ramp."],
+["Dark Mirror",K.RIV,"x",2,"Self","Other Self","What either could have been with three worse days."],
+["Nemesis Who Was a Friend",K.RIV,"n",2,"Former Friend","Former Friend","Enmity built from an intimacy neither can undo."],
+["Scapegoat and Accuser",K.RIV,"n",1,"Accuser","Scapegoat","Someone had to carry it; the loudest voice chose."],
+["Usurper and Deposed",K.RIV,"n",2,"Usurper","Deposed","One sits in a chair the other hasn't conceded."],
+["Rivals for One Prize",K.RIV,"n",2,"Claimant","Claimant","Nothing personal until it is entirely personal."],
+["Cat and Mouse",K.RIV,"x",2,"Pursuer","Pursued","Each enjoying the chase more than the ending."],
+["Puppet Master and Pawn",K.POW,"n",1,"Puppeteer","Pawn","One of them thinks the decisions are theirs."],
+["Blackmailer and Victim",K.POW,"n",1,"Blackmailer","Held","A relationship made entirely of one fact."],
+["Mutually Assured Destruction",K.POW,"x",2,"Holder","Holder","Perfect peace, maintained by matching evidence."],
+["Debt Owed",K.POW,"x",1,"Debtor","Creditor","Gratitude that has hardened into obligation."],
+["Savior Complex",K.POW,"x",1,"Rescuer","Rescued","Help that requires the other to stay in trouble."],
+["Codependence",K.POW,"n",2,"Half","Half","Two people agreeing not to be separate people."],
+["Gaslighter and Doubter",K.POW,"n",1,"Gaslighter","Doubter","One rewrites the record; the other stops trusting theirs."],
+["The Enabler",K.POW,"n",1,"Enabler","Enabled","Kindness that keeps the harm comfortably funded."],
+["Keeper of the Secret",K.POW,"x",1,"Keeper","Exposed","Silence that is a gift and a leash at once."],
+["Uneasy Allies",K.ALL,"x",2,"Ally","Ally","Cooperating fully while planning for the betrayal."],
+["Enemy of My Enemy",K.ALL,"x",2,"Partner","Partner","A friendship with a precise expiry date."],
+["Partners in Crime",K.ALL,"p",2,"Partner","Partner","Complete trust, extremely poor judgement."],
+["Double Agent",K.ALL,"x",1,"Mole","Trusting","Real affection on one side, a job on the other."],
+["Rival Coworkers",K.ALL,"x",2,"Colleague","Colleague","Same goal, same budget, one promotion."],
+["Respect Across the Line",K.ALL,"x",2,"Opposite","Opposite","On different sides and the only honest ones there."],
+["Bound by Contract",K.ALL,"x",2,"Party","Party","A relationship neither chose and neither can exit."],
+["Informant and Handler",K.ALL,"x",2,"Informant","Handler","Dependence dressed up as a professional arrangement."],
+["Fellow Survivors",K.ALL,"p",2,"Survivor","Survivor","The only two people who don't need it explained."],
+["Traitor in the Ranks",K.ALL,"n",1,"Traitor","Trusting","Selling out a group one specific person believes in."],
+["Hero Worship",K.DEV,"x",1,"Admirer","Idol","Admiring a person who was never asked to be one."],
+["Disillusioned Admirer",K.DEV,"n",1,"Disillusioned","Fallen Idol","The worst discovery: an ordinary person."],
+["Stalker and Target",K.DEV,"n",1,"Stalker","Target","Attention experienced as weather, then as threat."],
+["Secret Guardian",K.DEV,"p",1,"Guardian","Unaware","Protection the protected person will never learn about."],
+["Unknown Benefactor",K.DEV,"p",1,"Benefactor","Beneficiary","Generosity arranged to be impossible to thank."],
+["Ghost of the Past",K.DEV,"x",1,"Haunted","Memory","A relationship conducted with someone no longer present."],
+["Nemesis Unaware",K.DEV,"x",1,"Fixated","Unaware","A lifelong enemy who doesn't know the name."],
+["Replacement for the Dead",K.DEV,"x",1,"Mourner","Stand-in","Loved sincerely, for being shaped like someone else."],
+["Bonded by Trauma",K.DEV,"x",2,"Survivor","Survivor","Closeness built on the worst night either had."],
+["Oath Bound",K.DEV,"x",2,"Sworn","Sworn","A promise outliving the feeling that produced it."]
+];
+const TROPES=RAW.map(([n,k,v,d,a,b,g],i)=>({i,n,k,v,d,a,b,g}));
+const KIND_ORDER=[K.ROM,K.FRI,K.FAM,K.MEN,K.RIV,K.POW,K.ALL,K.DEV];
+const KIND_LABEL={[K.ROM]:"Romance",[K.FRI]:"Friends",[K.FAM]:"Family",[K.MEN]:"Mentors",[K.RIV]:"Rivals",[K.POW]:"Power",[K.ALL]:"Allies",[K.DEV]:"Devotion"};
+
+/* ---------- conflict scenarios ---------- */
+const SCENARIOS=[{"c":"Person vs. Person","n":"Rival wants same goal","e":"Two assassins race to kill the same target.","s":"Two shoppers sprint for the last rotisserie chicken."},{"c":"Person vs. Person","n":"Love triangle","e":"Vampire, werewolf, and human fight to the death for her heart.","s":"Two people compete for the affections of a barista who just wants to make lattes."},{"c":"Person vs. Person","n":"Traitor within the group","e":"The mole has sold nuclear codes to the enemy.","s":"Someone keeps eating the office birthday cake before the party."},{"c":"Person vs. Person","n":"Bully and underdog","e":"A tyrant crushes a village until one child rises.","s":"The gym bro mocks the guy using the 2-pound weights."},{"c":"Person vs. Person","n":"Mentor betrays student","e":"The master poisons the apprentice to steal his power.","s":"The driving instructor secretly fails everyone to keep his job."},{"c":"Person vs. Person","n":"Siblings competing for approval","e":"Two heirs plot to kill each other for the throne.","s":"Two siblings race to be the one who takes out the trash first for Dad's praise."},{"c":"Person vs. Person","n":"Ex who won't let go","e":"The ex stages a kidnapping to win them back.","s":"The ex keeps \"accidentally\" liking every Instagram post from 2019."},{"c":"Person vs. Person","n":"Corrupt authority figure","e":"The police chief runs the cartel.","s":"The HOA president secretly fines people for fun."},{"c":"Person vs. Person","n":"Allies with clashing methods","e":"One wants to negotiate, one wants to nuke the city.","s":"One wants to use a map, one refuses to stop for directions."},{"c":"Person vs. Person","n":"Villain who was once a friend","e":"Best friend becomes the warlord destroying the world.","s":"Your childhood friend now works for the competing lemonade stand."},{"c":"Person vs. Person","n":"Parent disapproves of partner","e":"The father hires a hitman to scare off the suitor.","s":"Dad aggressively quizzes the date about their credit score."},{"c":"Person vs. Person","n":"Coworker sabotaging for promotion","e":"The rival frames them for embezzlement.","s":"Someone keeps hiding the good stapler."},{"c":"Person vs. Person","n":"Stranger who knows a secret","e":"A drifter reveals the hero's true parentage.","s":"The new neighbor knows you sing in the shower."},{"c":"Person vs. Person","n":"Rival faction leader","e":"Two warlords clash over the last water source.","s":"Two food truck owners feud over the best parking spot."},{"c":"Person vs. Person","n":"Person who refuses to forgive","e":"A vendetta spanning three generations.","s":"Someone still won't forgive a borrowed sweater returned with a stain in 2009."},{"c":"Person vs. Self","n":"Fear of failure","e":"The surgeon freezes mid-operation.","s":"Staring at the \"submit\" button on a job application for 40 minutes."},{"c":"Person vs. Self","n":"Addiction","e":"The detective spirals into heroin.","s":"Can't stop buying scented candles."},{"c":"Person vs. Self","n":"Guilt over past mistake","e":"The soldier haunted by a civilian he killed.","s":"Still cringes about a dumb joke from 2014."},{"c":"Person vs. Self","n":"Identity crisis","e":"An amnesiac doesn't know if they're the killer.","s":"Wondering if you're actually a \"dog person.\""},{"c":"Person vs. Self","n":"Duty vs. desire","e":"Save the kingdom or save the lover.","s":"Go to the gym or nap."},{"c":"Person vs. Self","n":"Suppressed trauma","e":"Flashbacks sabotage every mission.","s":"Flinching every time someone says \"we need to talk.\""},{"c":"Person vs. Self","n":"Temptation of forbidden power","e":"The ring whispers to the hero to rule the world.","s":"The \"buy now, pay later\" button on a shopping app."},{"c":"Person vs. Self","n":"Imposter syndrome","e":"The spy believes they're actually the enemy.","s":"New job, convinced everyone knows you're faking it."},{"c":"Person vs. Self","n":"Moral compromise","e":"Kill one to save a thousand.","s":"Lying on a résumé about \"proficient in Excel.\""},{"c":"Person vs. Self","n":"Revenge vs. forgiveness","e":"Spare the man who murdered your family.","s":"Forgive the roommate who finished your leftovers."},{"c":"Person vs. Self","n":"Fear of intimacy","e":"Sabotages every relationship before it starts.","s":"Hiding in the bathroom when guests arrive."},{"c":"Person vs. Self","n":"Survivor's guilt","e":"The lone survivor of a massacre.","s":"The only one who didn't get food poisoning at the potluck."},{"c":"Person vs. Self","n":"Mask vs. true self","e":"A double life as a spy and a spouse.","s":"Acting professional on Zoom calls from the waist up."},{"c":"Person vs. Self","n":"Breaking a personal code","e":"The pacifist picks up a gun.","s":"The vegetarian eats a chicken nugget at 2 a.m."},{"c":"Person vs. Self","n":"Aging and relevance","e":"The old general watches the new generation surpass him.","s":"Dad trying to learn TikTok dances."},{"c":"Person vs. Nature","n":"Stranded in wilderness","e":"Alone in the Arctic with a broken radio.","s":"Lost in IKEA for three hours."},{"c":"Person vs. Nature","n":"Natural disaster","e":"The tsunami swallows the city.","s":"A surprise hailstorm ruins the picnic."},{"c":"Person vs. Nature","n":"Deadly disease","e":"A pandemic wipes out nations.","s":"A cold hits the office and everyone acts like it's the plague."},{"c":"Person vs. Nature","n":"Running out of food/water","e":"Rationing the last canteen in the desert.","s":"The fridge is empty and it's 11 p.m."},{"c":"Person vs. Nature","n":"Predator stalking the group","e":"A bear hunts the hikers one by one.","s":"A goose terrorizes the park."},{"c":"Person vs. Nature","n":"Extreme weather","e":"A blizzard traps them in the cabin.","s":"The heat wave makes the car AC break."},{"c":"Person vs. Nature","n":"Sinking ship","e":"The Titanic goes down.","s":"The inflatable pool float deflates mid-lake."},{"c":"Person vs. Nature","n":"Lost at sea","e":"Adrift for 90 days.","s":"The kayak drifts to the other side of the pond."},{"c":"Person vs. Nature","n":"Hostile alien environment","e":"The planet's atmosphere is acid.","s":"A campsite with aggressive mosquitoes."},{"c":"Person vs. Nature","n":"Unstoppable force of time","e":"The hero races to stop a countdown to extinction.","s":"The parking meter expires in 2 minutes."},{"c":"Person vs. Society","n":"Rebel vs. oppressive regime","e":"Sparking a revolution against a dictator.","s":"Arguing with the HOA about the mailbox color."},{"c":"Person vs. Society","n":"Outcast in conformist community","e":"The dissident in a surveillance state.","s":"The one guy who doesn't own a Stanley cup."},{"c":"Person vs. Society","n":"Challenging an unjust law","e":"Defying a law that executes dissenters.","s":"Fighting a $200 fine for a 3-minute overstay."},{"c":"Person vs. Society","n":"Whistleblower","e":"Leaking war crimes.","s":"Telling HR someone microwaved fish."},{"c":"Person vs. Society","n":"Forbidden love across class lines","e":"A princess and a slave.","s":"Dating someone who roots for the rival football team."},{"c":"Person vs. Society","n":"Minority fighting for rights","e":"A movement facing violent suppression.","s":"Campaigning for better cafeteria options."},{"c":"Person vs. Society","n":"Standing against mob mentality","e":"One juror holds out against a lynching.","s":"The only person who likes pineapple pizza at the party."},{"c":"Person vs. Society","n":"Heretic vs. church","e":"Burned at the stake for questioning doctrine.","s":"Debating the \"correct\" way to load a dishwasher."},{"c":"Person vs. Society","n":"Refusing a tradition","e":"Rejecting a ritual sacrifice.","s":"Skipping the family group photo."},{"c":"Person vs. Society","n":"Artist vs. censorship","e":"The book is banned and burned.","s":"The boss edits your funny Slack emoji."},{"c":"Person vs. Supernatural / Fate","n":"Prophecy","e":"The child destined to end the world.","s":"The horoscope says avoid large purchases today."},{"c":"Person vs. Supernatural / Fate","n":"Cursed bloodline","e":"Every firstborn dies at 30.","s":"Your family is \"cursed\" to always lose board games."},{"c":"Person vs. Supernatural / Fate","n":"Haunted by a ghost","e":"The vengeful spirit drives them mad.","s":"A ghost keeps moving the TV remote."},{"c":"Person vs. Supernatural / Fate","n":"Deal with a demon","e":"Selling your soul for power.","s":"Signing a 24-month phone contract."},{"c":"Person vs. Supernatural / Fate","n":"Fighting destiny","e":"The chosen one refuses the call.","s":"Refusing to accept you're \"the responsible one.\""},{"c":"Person vs. Supernatural / Fate","n":"Reluctant chosen one","e":"The farmer must wield the sword of light.","s":"Being voluntold to run the group chat."},{"c":"Person vs. Supernatural / Fate","n":"Gods meddling","e":"Zeus hurls thunderbolts at the hero.","s":"The universe \"clearly\" making you late for work."},{"c":"Person vs. Supernatural / Fate","n":"Unkillable monster","e":"The beast that regenerates every wound.","s":"The house centipede that survives every shoe."},{"c":"Person vs. Supernatural / Fate","n":"Time loop","e":"Reliving the day of the murder.","s":"Reliving the same awkward elevator small talk."},{"c":"Person vs. Supernatural / Fate","n":"Doppelgänger","e":"An evil twin impersonates the hero.","s":"Someone has the exact same jacket as you at the party."},{"c":"War & Large-Scale Conflict","n":"Drafted into war","e":"Forced to the front lines at 17.","s":"Voluntold to organize the office potluck."},{"c":"War & Large-Scale Conflict","n":"Historic grudge between kingdoms","e":"A 500-year blood feud.","s":"Two neighbors feuding over a fence since 1998."},{"c":"War & Large-Scale Conflict","n":"False flag","e":"Framing a nation to start a war.","s":"Blaming the dog for the ripped couch."},{"c":"War & Large-Scale Conflict","n":"The siege","e":"Starving out a fortress.","s":"The whole family camped outside the bathroom door."},{"c":"War & Large-Scale Conflict","n":"Mutiny","e":"The crew overthrows the captain at sea.","s":"The book club votes out the founder."},{"c":"War & Large-Scale Conflict","n":"POW escape","e":"Tunneling out of a prison camp.","s":"Sneaking out of a boring meeting."},{"c":"War & Large-Scale Conflict","n":"Guerrilla resistance","e":"Sabotaging the occupiers' supply lines.","s":"Passive-aggressive notes in the shared kitchen."},{"c":"War & Large-Scale Conflict","n":"Arms race","e":"Building a bigger bomb.","s":"Neighbors one-upping Christmas decorations."},{"c":"War & Large-Scale Conflict","n":"Sabotaged peace treaty","e":"An assassin kills the negotiator.","s":"Someone eats the peace-offering casserole before the apology."},{"c":"War & Large-Scale Conflict","n":"Civil war splitting families","e":"Brother vs. brother on the battlefield.","s":"Thanksgiving divided over politics."},{"c":"Family & Domestic Conflict","n":"Inheritance dispute","e":"Poisoning the patriarch for the estate.","s":"Fighting over Grandma's ugly lamp."},{"c":"Family & Domestic Conflict","n":"Absent father returns","e":"The estranged father is the villain.","s":"Dad shows up after 10 years and critiques your lawn."},{"c":"Family & Domestic Conflict","n":"Overbearing mother","e":"Mother controls every aspect of the wedding.","s":"Mom texts 47 times about wearing a jacket."},{"c":"Family & Domestic Conflict","n":"Golden child vs. scapegoat","e":"One sibling framed for the other's crime.","s":"One kid gets the good cereal, the other gets store brand."},{"c":"Family & Domestic Conflict","n":"Divorce and custody","e":"A bitter custody battle across borders.","s":"Splitting the friend group after a breakup."},{"c":"Family & Domestic Conflict","n":"Family secret exposed","e":"The hidden sibling from an affair.","s":"Someone finds out the \"homemade\" pie was store-bought."},{"c":"Family & Domestic Conflict","n":"Adopted child seeks origins","e":"The heir discovers a royal bloodline.","s":"Finding out you're not actually Italian."},{"c":"Family & Domestic Conflict","n":"Sibling rivalry turned deadly","e":"Cain and Abel.","s":"Fighting over the front seat."},{"c":"Family & Domestic Conflict","n":"Meddling in-law","e":"The mother-in-law sabotages the marriage.","s":"Mom rearranges your kitchen \"as a favor.\""},{"c":"Family & Domestic Conflict","n":"Caring for aging parent","e":"The caregiver sacrifices everything.","s":"Teaching Dad to use the TV remote for the 50th time."},{"c":"Workplace & Institutional Conflict","n":"Hostile takeover","e":"The corporation strips the town bare.","s":"The new manager bans casual Fridays."},{"c":"Workplace & Institutional Conflict","n":"Whistleblower vs. company","e":"Exposing toxic waste dumping.","s":"Reporting someone who reheats fish in the microwave."},{"c":"Workplace & Institutional Conflict","n":"Rookie vs. veteran","e":"The new cop vs. the corrupt old-timer.","s":"The intern vs. the guy who's been there 20 years."},{"c":"Workplace & Institutional Conflict","n":"Boss takes credit","e":"The CEO steals the invention and the fortune.","s":"Your manager presents your slide deck as their own."},{"c":"Workplace & Institutional Conflict","n":"Unethical experiment","e":"Human testing on prisoners.","s":"Testing if the office plant survives without water."},{"c":"Workplace & Institutional Conflict","n":"Union vs. management","e":"A strike shuts down the factory.","s":"Petitioning for a second coffee machine."},{"c":"Workplace & Institutional Conflict","n":"Rivalry for boss's favor","e":"Two advisors plot each other's downfall.","s":"Competing to bring the boss the best birthday gift."},{"c":"Workplace & Institutional Conflict","n":"Cover-up of a scandal","e":"Burying evidence of a cover-up.","s":"Hiding that someone broke the printer."},{"c":"Workplace & Institutional Conflict","n":"Merger costing jobs","e":"The merger lays off the whole town.","s":"The two teams have to share one Slack channel."},{"c":"Workplace & Institutional Conflict","n":"Intern discovers corruption","e":"The intern finds the embezzlement ledger.","s":"The intern finds out everyone leaves early on Fridays."},{"c":"Survival & Heist Conflicts","n":"Double-cross during heist","e":"The partner takes the diamonds and the getaway car.","s":"Someone splits the bill unevenly at dinner."},{"c":"Survival & Heist Conflicts","n":"Member wants a bigger cut","e":"The safecracker holds the team hostage for more.","s":"The friend who \"did the most driving\" wants extra gas money."},{"c":"Survival & Heist Conflicts","n":"Hostage situation","e":"A bank robbery gone wrong.","s":"The toddler holding the TV remote hostage."},{"c":"Survival & Heist Conflicts","n":"Ticking clock","e":"Defuse the bomb in 60 seconds.","s":"The pizza is getting cold."},{"c":"Survival & Heist Conflicts","n":"Escape from captivity","e":"Breaking out of a dungeon.","s":"Escaping a boring dinner party."},{"c":"Survival & Heist Conflicts","n":"Traitor sold out the team","e":"The inside man gave up the safehouse.","s":"Someone leaked the surprise party."},{"c":"Survival & Heist Conflicts","n":"Job goes wrong","e":"The heist triggers a citywide manhunt.","s":"The group project falls apart the night before."},{"c":"Survival & Heist Conflicts","n":"Rival crew after same prize","e":"Two crews race for the crown jewels.","s":"Two families racing for the last parking spot at the mall."},{"c":"Survival & Heist Conflicts","n":"Betrayal of the plan","e":"The safecracker aborts the mission mid-heist.","s":"Someone deviates from the group itinerary on vacation."},{"c":"Survival & Heist Conflicts","n":"Sacrifice play","e":"One stays behind to hold the door.","s":"One person volunteers to go back for the forgotten phone charger."}];
+const SCEN_CATS=[...new Set(SCENARIOS.map(s=>s.c))];
+
+/* ---------- MBTI Step II: 16 types + the 20 facets (Form Q) ---------- */
+const TYPES={
+ISTJ:["Inspector","Checks the record before trusting anybody's version of the story."],
+ISFJ:["Protector","Remembers what everyone needs and quietly supplies it first."],
+INFJ:["Counselor","Reads the undercurrent in a room and plans three moves around it."],
+INTJ:["Mastermind","Builds the long plan, then revises reality until it fits."],
+ISTP:["Crafter","Takes the thing apart to find out exactly how it fails."],
+ISFP:["Composer","Says very little, then shows you precisely what they meant."],
+INFP:["Healer","Holds a private standard that nothing is permitted to violate."],
+INTP:["Architect","Refuses an answer that hasn't survived being taken apart."],
+ESTP:["Promoter","Reads the moment and moves while everyone else is still deciding."],
+ESFP:["Performer","Makes the present tense feel like the only one available."],
+ENFP:["Champion","Sees the potential version of you and argues for it loudly."],
+ENTP:["Inventor","Takes the opposite side to find out what actually holds."],
+ESTJ:["Supervisor","Decides, assigns, and expects it finished by Thursday."],
+ESFJ:["Provider","Keeps the group fed, informed, and faintly obligated."],
+ENFJ:["Teacher","Pulls people toward the version of themselves they agreed to."],
+ENTJ:["Fieldmarshal","Treats every room as a problem that needs an owner."]
+};
+const DICH=[
+ ["E","I","Extraversion","Introversion",[["Initiating","Receiving"],["Expressive","Contained"],["Gregarious","Intimate"],["Active","Reflective"],["Enthusiastic","Quiet"]]],
+ ["S","N","Sensing","Intuition",[["Concrete","Abstract"],["Realistic","Imaginative"],["Practical","Conceptual"],["Experiential","Theoretical"],["Traditional","Original"]]],
+ ["T","F","Thinking","Feeling",[["Logical","Empathetic"],["Reasonable","Compassionate"],["Questioning","Accommodating"],["Critical","Accepting"],["Tough","Tender"]]],
+ ["J","P","Judging","Perceiving",[["Systematic","Casual"],["Planful","Open-Ended"],["Early Starting","Pressure-Prompted"],["Scheduled","Spontaneous"],["Methodical","Emergent"]]]
+];
+const CODES=Object.keys(TYPES);
+
+/* score: -5 (far left pole) .. +5 (far right pole); |s|<=1 is the midzone */
+function profileFor(code,rand){
+  return DICH.map((D,di)=>{
+    const [L,R,,,pairs]=D;
+    const letter=code[di], toLeft=letter===L;
+    let scores=pairs.map(()=>{
+      const r=rand();
+      let mag,sign;
+      if(r<0.17){mag=rand();sign=rand()<0.5?-1:1;}                       // midzone
+      else if(r<0.32){mag=2+rand()*2.4;sign=toLeft?1:-1;}                // out-of-preference
+      else {mag=2+rand()*3;sign=toLeft?-1:1;}                            // in-preference
+      return +(sign*mag).toFixed(1);
+    });
+    // the facets must still add up to the reported letter
+    let guard=0;
+    while(guard++<6){
+      const sum=scores.reduce((a,b)=>a+b,0);
+      if(toLeft?sum<0:sum>0)break;
+      let worst=0;
+      scores.forEach((s,i)=>{if((toLeft?s:-s)>(toLeft?scores[worst]:-scores[worst]))worst=i});
+      scores[worst]=+((toLeft?-1:1)*(2.6+rand()*2.4)).toFixed(1);
+    }
+    return {d:di,scores};
+  });
+}
+function facetState(score,letterIsLeft){
+  if(Math.abs(score)<=1)return "mid";
+  return (score<0)===letterIsLeft?"in":"oops";
+}
+function oopsCount(p,code){
+  let k=0;
+  p.forEach(g=>{const [L]=DICH[g.d];const left=code[g.d]===L;g.scores.forEach(s=>{if(facetState(s,left)==="oops")k++})});
+  return k;
+}
+
+/* ---------- who plays with whom ----------
+   Derived, not hand-listed. Plays together = the three types that share your middle pair
+   (NT / NF / ST / SF): the same read on the world, differing only in tempo or grip.
+   Plays off  = three principled inversions, none of which can be a clan member.        */
+const FLIP={E:"I",I:"E",S:"N",N:"S",T:"F",F:"T",J:"P",P:"J"};
+const flipAt=(code,idx)=>code.split("").map((c,i)=>idx.includes(i)?FLIP[c]:c).join("");
+function clanWhy(a,b){
+  const e=a[0]!==b[0], j=a[3]!==b[3];
+  if(e&&j)return "same read, opposite tempo and grip";
+  if(e)return b[0]==="E"?"same read, said out loud":"same read, kept inside";
+  if(j)return b[3]==="P"?"same read, looser grip":"same read, tighter grip";
+  return "same read";
+}
+const CHEM={};
+for(const code of CODES){
+  CHEM[code]={
+    together:CODES.filter(c=>c!==code&&c[1]===code[1]&&c[2]===code[2])
+      .map(c=>({code:c,why:clanWhy(code,c)}))
+      .sort((x,y)=>x.why.length-y.why.length),
+    off:[
+      {code:flipAt(code,[0,1,2,3]),why:"the inverse — nothing in common but the room"},
+      {code:flipAt(code,[1,2]),why:"your working method, none of your values"},
+      {code:flipAt(code,[2]),why:"your eyes, the opposite verdict"}
+    ]
+  };
+}
+function pairChem(a,b){
+  if(a===b)return null;
+  if(CHEM[a].together.some(o=>o.code===b))return "together";
+  if(CHEM[a].off.some(o=>o.code===b))return "off";
+  return null;
+}
+
+/* ---------- cast names ---------- */
+const ROSTER_RAW={
+"INFJ-T":"Lisa Simpson~The Simpsons|Fox Mulder~The X-Files|Atticus Finch~To Kill a Mockingbird|Galadriel~The Lord of the Rings",
+"INFJ-A":"Morpheus~The Matrix|Dumbledore~Harry Potter|Yoda~Star Wars|Mufasa~The Lion King",
+"INTJ-T":"Katniss Everdeen~The Hunger Games|Clarice Starling~The Silence of the Lambs|Severus Snape~Harry Potter|Lelouch Lamperouge~Code Geass",
+"INTJ-A":"Sherlock Holmes~Sherlock|Batman~Batman|Nick Fury~Marvel|Light Yagami~Death Note",
+"INFP-T":"Charlie Brown~Peanuts|Frodo Baggins~The Lord of the Rings|Peter Parker~Spider-Man|Shinji Ikari~Evangelion",
+"INFP-A":"Luke Skywalker~Star Wars|Amélie Poulain~Amélie|Luna Lovegood~Harry Potter|Vash the Stampede~Trigun",
+"INTP-T":"L~Death Note|Neo~The Matrix|Kakashi Hatake~Naruto|Willow Rosenberg~Buffy",
+"INTP-A":"Sherlock Holmes~BBC Sherlock|The Doctor~Doctor Who|Abed Nadir~Community|Data~Star Trek",
+"ENFJ-T":"Judy Hopps~Zootopia|Kim Possible~Kim Possible|Katara~Avatar|Mufasa~The Lion King",
+"ENFJ-A":"Optimus Prime~Transformers|Captain America~Marvel|Aragorn~The Lord of the Rings|Professor X~X-Men",
+"ENFP-T":"Phoebe Buffay~Friends|Michael Scott~The Office|Naruto Uzumaki~Naruto|Aang~Avatar",
+"ENFP-A":"Pinkie Pie~My Little Pony|Barney Stinson~How I Met Your Mother|Starfire~Teen Titans|Goku~Dragon Ball Z",
+"ESFJ-T":"Cinderella~Cinderella|Giselle~Enchanted|Mrs. Potts~Beauty and the Beast|Monica Geller~Friends",
+"ESFJ-A":"Kronk~The Emperor's New Groove|Sailor Moon~Sailor Moon|SpongeBob~SpongeBob SquarePants|Tails~Sonic",
+"ISFJ-T":"Samwise Gamgee~The Lord of the Rings|Rory Williams~Doctor Who|Dr. Watson~Sherlock Holmes|Tuxedo Mask~Sailor Moon",
+"ISFJ-A":"Captain America~Marvel|Pikachu~Pokémon|Rocko~Rocko's Modern Life|Leonard Hofstadter~The Big Bang Theory",
+"ISTP-T":"Wolverine~X-Men|Helga Pataki~Hey Arnold!|Knuckles~Sonic|Martin Crane~Frasier",
+"ISTP-A":"Indiana Jones~Indiana Jones|James Bond~James Bond|Spike Spiegel~Cowboy Bebop|Boba Fett~Star Wars",
+"ENTJ-T":"Light Yagami~Death Note|Miranda Priestly~The Devil Wears Prada|Azula~Avatar|Jeffrey Sinclair~Babylon 5",
+"ENTJ-A":"Lex Luthor~Superman|Princess Leia~Star Wars|Sailor Uranus~Sailor Moon|Gordon Gekko~Wall Street",
+"ESTJ-T":"Asuka Langley Soryu~Evangelion|Dolores Umbridge~Harry Potter|Miranda Hobbes~Sex and the City|Monica Geller~Friends",
+"ESTJ-A":"Hermione Granger~Harry Potter|Lara Croft~Tomb Raider|Dwight Schrute~The Office|Sailor Mars~Sailor Moon",
+"ENTP-T":"Dr. Neo Cortex~Crash Bandicoot|Bugs Bunny~Looney Tunes|Kramer~Seinfeld|Morte~Planescape: Torment",
+"ENTP-A":"Tony Stark~Iron Man|Jack Sparrow~Pirates of the Caribbean|The Joker~Batman|Rick Sanchez~Rick and Morty",
+"ESTP-T":"Eric Cartman~South Park|Ren~Ren & Stimpy|Bender~Futurama|Bart Simpson~The Simpsons",
+"ESTP-A":"Duke Nukem~Duke Nukem|Sonic the Hedgehog~Sonic|Han Solo~Star Wars|Wolverine~X-Men",
+"ESFP-T":"Homer Simpson~The Simpsons|Crash Bandicoot~Crash Bandicoot|Penny Hofstadter~The Big Bang Theory|Joey Tribbiani~Friends",
+"ESFP-A":"Goku~Dragon Ball Z|Sailor Moon~Sailor Moon|Diddy Kong~Donkey Kong|Ulala~Space Channel 5",
+"ISFP-T":"Scooby-Doo~Scooby-Doo|Shinji Ikari~Evangelion|Frodo Baggins~The Lord of the Rings|Butters Stotch~South Park",
+"ISFP-A":"Sailor Neptune~Sailor Moon|Legolas~The Lord of the Rings|Amélie Poulain~Amélie|Marshall Eriksen~How I Met Your Mother",
+"ISTJ-T":"Severus Snape~Harry Potter|Vegeta~Dragon Ball Z|Helga Pataki~Hey Arnold!|Martin Crane~Frasier",
+"ISTJ-A":"Solid Snake~Metal Gear Solid|Sam~Sam & Max|Hermione Granger~Harry Potter|Ned Stark~Game of Thrones"
+};
+const ROSTER={};
+for(const k in ROSTER_RAW)ROSTER[k]=ROSTER_RAW[k].split("|").map(s=>{const[n,src]=s.split("~");return{n,src}});
+const COMBOS=Object.keys(ROSTER);
+
+function pick(a,r){return a[Math.floor(r()*a.length)]}
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+function makeCast(n,rand){
+  const combos=shuffled(COMBOS,rand),seen=new Set(),out=[];
+  for(let pass=0;pass<2&&out.length<n;pass++){
+    for(const combo of combos){
+      if(out.length>=n)break;
+      const options=shuffled(ROSTER[combo],rand).filter(o=>!seen.has(o.n));
+      if(!options.length)continue;
+      const c=options[0];
+      seen.add(c.n);
+      out.push({name:c.n,src:c.src,combo,code:combo.slice(0,4),ident:combo.slice(5)});
+    }
+  }
+  return out;
+}
+
+/* ---------- plot: a scenario, cast from the people already on the board ---------- */
+const CAT_HINT={
+ "Person vs. Person":["rivalry","romance"],
+ "Person vs. Self":[],
+ "Person vs. Nature":["friendship","alliance"],
+ "Person vs. Society":["friendship","devotion"],
+ "Person vs. Supernatural / Fate":["devotion","mentorship"],
+ "War & Large-Scale Conflict":["rivalry","alliance"],
+ "Family & Domestic Conflict":["family"],
+ "Workplace & Institutional Conflict":["alliance","power"],
+ "Survival & Heist Conflicts":["alliance","power"]
+};
+function againstType(nd){
+  const out=[];
+  nd.prof.forEach(g=>{
+    const [L,,,,pairs]=DICH[g.d];const left=nd.code[g.d]===L;
+    g.scores.forEach((s,i)=>{if(facetState(s,left)==="oops")out.push({pole:s<0?pairs[i][0]:pairs[i][1],mag:Math.abs(s)})});
+  });
+  return out.sort((a,b)=>b.mag-a.mag);
+}
+function pickPair(cat,rand){
+  if(!links.length)return null;
+  const hint=CAT_HINT[cat]||[];
+  const fit=links.filter(l=>hint.includes(l.t.k));
+  const set=fit.length?fit:links;
+  return set[Math.floor(rand()*set.length)];
+}
+const WHO=nd=>`<button class="who" data-id="${nd.id}">${esc(nd.name)}</button>`;
+
+function composePlot(sc,register,rand){
+  const line=register==="e"?sc.e:sc.s;
+  const pair=pickPair(sc.c,rand);
+  const A=pair?nodes[pair.a]:nodes[0], B=pair?nodes[pair.b]:nodes[1%nodes.length];
+  const tie=pair?pair.t:null;
+  const tieName=tie?tie.n.toLowerCase():"strangers";
+  const others=nodes.filter(nd=>nd!==A&&nd!==B);
+  const third=others.length?others[Math.floor(rand()*others.length)]:null;
+  const lone=nodes.slice().sort((a,b)=>b.oops-a.oops||(rand()-.5))[0];
+  const flaw=againstType(lone)[0];
+  const pickOf=a=>a[Math.floor(rand()*a.length)];
+
+  let cast;
+  switch(sc.c){
+    case "Person vs. Self":
+      cast=pickOf([
+        `${WHO(lone)} is carrying this one alone${flaw?`, and the ${flaw.pole.toLowerCase()} streak that runs against their ${lone.code} is exactly where it gets in`:""}.`,
+        `It lands on ${WHO(lone)}. ${lone.oops} of their twenty facets already pull against type${flaw?` — the ${flaw.pole.toLowerCase()} one hardest`:""}, so there is no settled self to fall back on.`
+      ]);break;
+    case "Person vs. Nature":
+      cast=pickOf([
+        `It comes for all ${nodes.length} of them. ${WHO(A)} and ${WHO(B)} have to agree on what to do next, and they are ${tieName}.`,
+        `Nobody is exempt. The decision falls to ${WHO(A)} and ${WHO(B)} — ${tieName} — while everyone else waits.`
+      ]);break;
+    case "Person vs. Society":
+      cast=pickOf([
+        `${WHO(A)} is the one who won't go along. ${WHO(B)}, ${tieName}, has to decide whether that is worth standing next to.`,
+        `${WHO(A)} breaks ranks first. Everyone else, ${WHO(B)} included, finds out what their own position was.`
+      ]);break;
+    case "Person vs. Supernatural / Fate":
+      cast=pickOf([
+        `${WHO(A)} is the one it has settled on. ${WHO(B)} is the only one who believes them, which is what ${tieName} buys you.`,
+        `It picks ${WHO(A)}. ${WHO(B)} — ${tieName} — sees it coming and is not listened to.`
+      ]);break;
+    case "War & Large-Scale Conflict":
+      cast=pickOf([
+        `The cast splits. ${WHO(A)} leads one side, ${WHO(B)} the other; they were ${tieName} right up to the first shot.`,
+        `${WHO(A)} and ${WHO(B)} end up on opposite sides of it${third?`, and ${WHO(third)} has to pick`:""}. Being ${tieName} does not survive the map.`
+      ]);break;
+    case "Family & Domestic Conflict":
+      cast=pickOf([
+        `${WHO(A)} and ${WHO(B)} are at the middle of it — ${tieName}, now with something to divide.`,
+        `It plays out between ${WHO(A)} and ${WHO(B)}. ${third?`${WHO(third)} is dragged in as a referee and does badly.`:"Nobody else gets to stay out of it."}`
+      ]);break;
+    case "Workplace & Institutional Conflict":
+      cast=pickOf([
+        `${WHO(A)} and ${WHO(B)} are ${tieName}, with the institution sitting between them.`,
+        `${WHO(A)} is on one end of it and ${WHO(B)} on the other${third?`; ${WHO(third)} signs whatever is put in front of them`:""}.`
+      ]);break;
+    case "Survival & Heist Conflicts":
+      cast=pickOf([
+        `${WHO(A)}, ${WHO(B)}${third?` and ${WHO(third)}`:""} are the crew. ${WHO(A)} and ${WHO(B)} being ${tieName} is going to matter at the worst moment.`,
+        `The job needs ${WHO(A)} and ${WHO(B)}, who are ${tieName}${third?`, plus ${WHO(third)}, who was available`:""}.`
+      ]);break;
+    default:
+      cast=pickOf([
+        `${WHO(A)} and ${WHO(B)} are on opposite ends of it, and they are already ${tieName}.`,
+        `It puts ${WHO(A)} against ${WHO(B)}. They were ${tieName} before any of this started.`,
+        `${WHO(A)} wants it. So does ${WHO(B)}, which ${tieName} did nothing to prevent.`
+      ]);
+  }
+  return {sc,register,line,cast,
+    plain:`${sc.c} — ${sc.n} (${register==="e"?"extreme":"silly"})\n${line}\n${cast.replace(/<[^>]+>/g,"")}`};
+}
+
+function rollPlot(seed){
+  const rand=mulberry(seed===undefined?(Math.random()*1e9|0):seed);
+  const mode=document.getElementById("register").value;
+  const sc=SCENARIOS[Math.floor(rand()*SCENARIOS.length)];
+  const register=mode==="r"?(rand()<0.5?"e":"s"):mode;
+  plot=composePlot(sc,register,rand);
+  renderPlot();
+}
+function renderPlot(){
+  if(!plot)return;
+  const el=document.getElementById("premise");
+  el.innerHTML=`<div class="phead">
+      <p class="pcat">${esc(plot.sc.c)}</p>
+      <h2 class="ptitle">${esc(plot.sc.n)}</h2>
+      <span class="preg reg-${plot.register}">${plot.register==="e"?"extreme":"silly"}</span>
+    </div>
+    <div class="pbody">
+      <p class="seed">${esc(plot.line)}</p>
+      <p class="pcast">${plot.cast}</p>
+    </div>`;
+  el.querySelectorAll(".who").forEach(b=>b.addEventListener("click",()=>{
+    selected=+b.dataset.id;renderRail();rail.scrollTop=0;
+  }));
+}
+
+/* ---------- state ---------- */
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),stage=document.getElementById("stage"),rail=document.getElementById("rail");
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let W=0,H=0,dpr=1;
+let nodes=[],links=[],selected=null,hovered=null,dragging=null,tipEl=null,plot=null,labelBoxes=[];
+const enabled=new Set(KIND_ORDER);
+
+/* chips */
+const chipWrap=document.getElementById("chips");
+KIND_ORDER.forEach(k=>{
+  const b=document.createElement("button");
+  b.className="chip";b.type="button";b.textContent=KIND_LABEL[k];b.setAttribute("aria-pressed","true");
+  b.addEventListener("click",()=>{
+    if(enabled.has(k)){ if(enabled.size===1)return; enabled.delete(k);b.setAttribute("aria-pressed","false"); }
+    else { enabled.add(k);b.setAttribute("aria-pressed","true"); }
+    generate();
+  });
+  chipWrap.appendChild(b);
+});
+
+/* ---------- generation ---------- */
+function shuffled(arr,rand){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a}
+
+function generate(seed){
+  const rand=mulberry(seed===undefined?(Math.random()*1e9|0):seed);
+  let n=+document.getElementById("cast").value;
+  const dens=2.1;
+  const cast=makeCast(n,rand);
+  const cx=W/2||400,cy=H/2||300,R=Math.min(cx,cy)*0.55;
+  nodes=cast.map((c,i)=>{
+    const a=(i/cast.length)*Math.PI*2+rand()*0.4;
+    // the profile is seeded from the character, so Batman scores the same every recast
+    const prof=profileFor(c.code,mulberry(hash(c.name+"|"+c.combo)));
+    return {id:i,name:c.name,src:c.src,code:c.code,ident:c.ident,combo:c.combo,
+      arch:TYPES[c.code][0],blurb:TYPES[c.code][1],prof,oops:oopsCount(prof,c.code),
+      x:cx+Math.cos(a)*R+(rand()-.5)*30,y:cy+Math.sin(a)*R+(rand()-.5)*30,vx:0,vy:0,r:27+rand()*5};
+  });
+
+  n=nodes.length;
+  const pool=shuffled(TROPES.filter(t=>enabled.has(t.k)),rand);
+  const maxPairs=n*(n-1)/2;
+  const QUOTA={p:2,n:2,x:2};              // every web carries at least two of each temperature
+  const need=Math.min(maxPairs,pool.length,6);
+  const want=Math.max(need,Math.min(maxPairs,pool.length,Math.max(n-1,Math.round(n*dens))));
+
+  // 1. the shape — a spine so nobody is stranded, then extra pairs up to `want`
+  const taken=new Set(),order=shuffled(nodes.map(nd=>nd.id),rand),pairs=[];
+  const addPair=(a,b)=>{
+    if(a===b)return false;
+    const key=a<b?a+":"+b:b+":"+a;
+    if(taken.has(key))return false;
+    taken.add(key);pairs.push([a,b]);return true;
+  };
+  for(let i=1;i<order.length;i++)addPair(order[i],order[Math.floor(rand()*i)]);
+  let guard=0;
+  while(pairs.length<want&&guard++<900)addPair(Math.floor(rand()*n),Math.floor(rand()*n));
+
+  // 2. the tropes — fill the quota first, then let chemistry pick the rest
+  const spent=new Set();
+  const draw=vals=>{
+    let avail=pool.filter(t=>!spent.has(t.i)&&(!vals||vals.includes(t.v)));
+    if(!avail.length)avail=pool.filter(t=>!vals||vals.includes(t.v));
+    if(!avail.length)return null;
+    const t=avail[Math.floor(rand()*avail.length)];
+    spent.add(t.i);
+    return t;
+  };
+  const chemOf=pr=>pairChem(nodes[pr[0]].code,nodes[pr[1]].code);
+  const left=shuffled(pairs,rand),out=[];
+  for(const v of ["p","n","x"]){
+    for(let k=0;k<QUOTA[v]&&left.length;k++){
+      const t=draw([v]);
+      if(!t)break;                        // the enabled kinds hold nothing of this temperature
+      let i=left.findIndex(pr=>chemOf(pr)===(v==="p"?"together":"off"));
+      if(i<0)i=0;
+      out.push({pr:left.splice(i,1)[0],t});
+    }
+  }
+  for(const pr of left){
+    const c=chemOf(pr);
+    const prefer=c==="together"?["p"]:c==="off"?["n","x"]:null;
+    out.push({pr,t:(prefer&&rand()<0.8?draw(prefer):null)||draw(null)});
+  }
+  links=shuffled(out.filter(o=>o.t),rand).map(({pr,t})=>{
+    const flip=t.d===1&&rand()<0.5;
+    return {a:flip?pr[1]:pr[0],b:flip?pr[0]:pr[1],t,chem:chemOf(pr)};
+  });
+  selected=null;hovered=null;
+  rollPlot();
+  renderRail();
+}
+
+/* ---------- physics ---------- */
+function step(){
+  const n=nodes.length;if(!n)return;
+  const cx=W/2,cy=H/2;
+  const rest=Math.max(140,Math.min(W,H)*0.33);
+  for(let i=0;i<n;i++){
+    const a=nodes[i];
+    // gentle pull to centre
+    a.vx+=(cx-a.x)*0.00055;
+    a.vy+=(cy-a.y)*0.00055;
+    if(!reduce){a.vx+=(Math.random()-.5)*0.035;a.vy+=(Math.random()-.5)*0.035;}
+    for(let j=i+1;j<n;j++){
+      const b=nodes[j];
+      let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||0.01;
+      const ux=dx/d,uy=dy/d;
+      // inverse-square repulsion
+      const rep=Math.min(2.4,14000/(d*d));
+      a.vx-=ux*rep;a.vy-=uy*rep;b.vx+=ux*rep;b.vy+=uy*rep;
+      // hard separation so spheres never overlap labels
+      const sep=a.r+b.r+78;
+      if(d<sep){
+        const push=(sep-d)*0.055;
+        a.x-=ux*push;a.y-=uy*push;b.x+=ux*push;b.y+=uy*push;
+      }
+    }
+  }
+  for(const l of links){
+    const a=nodes[l.a],b=nodes[l.b];
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||0.01;
+    const f=(d-rest)*0.0022;
+    const ux=dx/d,uy=dy/d;
+    a.vx+=ux*f;a.vy+=uy*f;b.vx-=ux*f;b.vy-=uy*f;
+  }
+  const pad=58,damp=reduce?0.72:0.86;
+  for(const a of nodes){
+    if(a===dragging){a.vx=a.vy=0;continue}
+    a.vx*=damp;a.vy*=damp;
+    const sp=Math.hypot(a.vx,a.vy);
+    if(sp>6){a.vx*=6/sp;a.vy*=6/sp}
+    a.x+=a.vx;a.y+=a.vy;
+    if(a.x<pad){a.x=pad;a.vx=Math.abs(a.vx)*.4}
+    if(a.x>W-pad){a.x=W-pad;a.vx=-Math.abs(a.vx)*.4}
+    if(a.y<pad){a.y=pad;a.vy=Math.abs(a.vy)*.4}
+    if(a.y>H-pad-10){a.y=H-pad-10;a.vy=-Math.abs(a.vy)*.4}
+  }
+}
+
+/* ---------- drawing ---------- */
+const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+let C={};
+function readTokens(){
+  C={pos:css("--pos"),neg:css("--neg"),cpx:css("--cpx"),ink:css("--ink"),soft:css("--ink-soft"),faint:css("--ink-faint"),bg:css("--bg"),panel:css("--panel"),sphere:css("--sphere"),rule:css("--rule")};
+}
+const vcol=v=>v==="p"?C.pos:v==="n"?C.neg:C.cpx;
+
+function wavy(x1,y1,x2,y2,amp,wl){
+  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1;
+  const ux=dx/len,uy=dy/len,px=-uy,py=ux;
+  const steps=Math.max(10,Math.round(len/3));
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const t=i/steps,d=t*len;
+    const taper=Math.sin(Math.PI*t);
+    const off=Math.sin(d/wl*Math.PI*2)*amp*taper;
+    const x=x1+ux*d+px*off,y=y1+uy*d+py*off;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  }
+  ctx.stroke();
+}
+function head(x,y,ux,uy,s,col){
+  ctx.save();ctx.translate(x,y);ctx.rotate(Math.atan2(uy,ux));
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-s,s*0.46);ctx.lineTo(-s*0.72,0);ctx.lineTo(-s,-s*0.46);
+  ctx.closePath();ctx.fillStyle=col;ctx.fill();ctx.restore();
+}
+
+const NAME_FONT='600 14px "Fraunces", Georgia, serif';
+const SRC_FONT='400 10px "IBM Plex Mono", ui-monospace, monospace';
+const TIE_FONT='500 11px "IBM Plex Mono", ui-monospace, monospace';
+
+/* the stack of text under a sphere: name (wrapped to two lines if long), then source */
+function nameStack(nd){
+  ctx.font=NAME_FONT;
+  const words=nd.name.split(" ");
+  let lines=[nd.name];
+  if(ctx.measureText(nd.name).width>136&&words.length>1){
+    const mid=Math.ceil(words.length/2);
+    lines=[words.slice(0,mid).join(" "),words.slice(mid).join(" ")];
+  }
+  const out=lines.map((txt,i)=>({txt,font:NAME_FONT,col:C.ink,y:nd.y+nd.r+8+i*16,w:ctx.measureText(txt).width}));
+  ctx.font=SRC_FONT;
+  out.push({txt:nd.src,font:SRC_FONT,col:C.faint,y:nd.y+nd.r+9+lines.length*16,w:ctx.measureText(nd.src).width});
+  return out;
+}
+const overlaps=(A,B)=>!(A.x+A.w<B.x||B.x+B.w<A.x||A.y+A.h<B.y||B.y+B.h<A.y);
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const focus=selected!=null?selected:(hovered&&hovered.kind==="node"?hovered.id:null);
+  const hoverLink=hovered&&hovered.kind==="link"?hovered.id:null;
+  const isDim=nd=>focus!=null&&nd.id!==focus&&!links.some(l=>(l.a===focus&&l.b===nd.id)||(l.b===focus&&l.a===nd.id));
+
+  // --- lines and arrowheads ---
+  const pending=[];
+  links.forEach((l,li)=>{
+    const a=nodes[l.a],b=nodes[l.b];
+    const touched=focus==null||l.a===focus||l.b===focus;
+    const hot=li===hoverLink||(focus!=null&&touched);
+    const alpha=focus==null?1:(touched?1:0.16);
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    const ux=dx/d,uy=dy/d;
+    const gap=9;
+    const x1=a.x+ux*(a.r+gap),y1=a.y+uy*(a.r+gap);
+    const x2=b.x-ux*(b.r+gap),y2=b.y-uy*(b.r+gap);
+    const col=vcol(l.t.v);
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.strokeStyle=col;
+    ctx.lineWidth=hot?2.6:1.9;
+    ctx.lineCap="round";
+    const ax=x2-ux*10,ay=y2-uy*10,bx=x1+ux*10,by=y1+uy*10;
+    if(l.t.v==="n"){ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(ax,ay);ctx.stroke();ctx.setLineDash([]);}
+    else if(l.t.v==="x"){wavy(l.t.d===2?bx:x1,l.t.d===2?by:y1,ax,ay,4.6,26);}
+    else {ctx.beginPath();ctx.moveTo(l.t.d===2?bx:x1,l.t.d===2?by:y1);ctx.lineTo(ax,ay);ctx.stroke();}
+    head(x2,y2,ux,uy,10,col);
+    if(l.t.d===2)head(x1,y1,-ux,-uy,10,col);
+    ctx.restore();
+    if(focus==null||touched){
+      ctx.font=TIE_FONT;
+      pending.push({li,txt:l.t.n,mx:(x1+x2)/2,my:(y1+y2)/2,
+        w:ctx.measureText(l.t.n).width+12,h:16,dy:0,col:hot?col:C.faint,alpha:alpha*(hot?1:0.9)});
+    }
+  });
+
+  // --- what a tie label must not land on: the spheres and their name stacks ---
+  const fixed=[];
+  nodes.forEach(nd=>{
+    fixed.push({x:nd.x-nd.r,y:nd.y-nd.r,w:nd.r*2,h:nd.r*2});
+    nameStack(nd).forEach(s=>fixed.push({x:nd.x-s.w/2-5,y:s.y-2,w:s.w+10,h:15}));
+  });
+
+  // --- place the labels: leftmost stays put; anything further right, or level but
+  //     further up, is the one that steps up until it has clear air ---
+  const boxOf=L=>({x:L.mx-L.w/2,y:L.my-L.h/2+L.dy,w:L.w,h:L.h});
+  pending.sort((a,b)=>(a.mx-b.mx)||(b.my-a.my));
+  const settled=[];
+  // offsets tried in order of preference: stay, then step up, then down as a last resort
+  const OFFSETS=[0];
+  for(let k=1;k<=20;k++)OFFSETS.push(-5*k);
+  for(let k=1;k<=10;k++)OFFSETS.push(5*k);
+  const collisions=L=>{
+    const box=boxOf(L);
+    let n=0;
+    for(const f of fixed)if(overlaps(box,f))n++;
+    for(const s of settled)if(overlaps(box,boxOf(s)))n++;
+    return n;
+  };
+  for(const L of pending){
+    let best=null;
+    for(const dy of OFFSETS){
+      L.dy=dy;
+      const n=collisions(L);
+      if(n===0){best=dy;break}
+      if(best===null||n<best.n)best={dy,n};
+    }
+    L.dy=typeof best==="number"?best:best.dy;  // nowhere clear: the least-crowded spot
+    settled.push(L);
+  }
+  labelBoxes=settled.map(L=>({li:L.li,...boxOf(L)}));
+
+  // --- draw the labels, with a leader back to the line for any that moved ---
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  for(const L of settled){
+    ctx.save();
+    ctx.globalAlpha=L.alpha;
+    const y=L.my+L.dy;
+    if(Math.abs(L.dy)>3){
+      ctx.strokeStyle=L.col;
+      ctx.globalAlpha=L.alpha*0.35;
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(L.mx,L.my);ctx.lineTo(L.mx,y+(L.dy<0?L.h/2-1:1-L.h/2));ctx.stroke();
+      ctx.globalAlpha=L.alpha;
+    }
+    ctx.fillStyle=C.bg;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(L.mx-L.w/2,y-L.h/2,L.w,L.h,8);else ctx.rect(L.mx-L.w/2,y-L.h/2,L.w,L.h);
+    ctx.fill();
+    ctx.font=TIE_FONT;
+    ctx.fillStyle=L.col;
+    ctx.fillText(L.txt,L.mx,y+0.5);
+    ctx.restore();
+  }
+
+  // --- spheres ---
+  nodes.forEach(nd=>{
+    const dim=isDim(nd);
+    ctx.save();
+    ctx.globalAlpha=dim?0.22:1;
+    const g=ctx.createRadialGradient(nd.x-nd.r*0.38,nd.y-nd.r*0.44,nd.r*0.12,nd.x,nd.y,nd.r*1.15);
+    const base=C.sphere;
+    g.addColorStop(0,"rgba(255,255,255,.55)");
+    g.addColorStop(0.42,base);
+    g.addColorStop(1,"rgba(0,0,0,.32)");
+    ctx.beginPath();ctx.arc(nd.x,nd.y,nd.r,0,Math.PI*2);
+    ctx.fillStyle=base;ctx.fill();
+    ctx.fillStyle=g;ctx.fill();
+    if(nd.id===focus){
+      ctx.lineWidth=2;ctx.strokeStyle=C.ink;ctx.stroke();
+      ctx.beginPath();ctx.arc(nd.x,nd.y,nd.r+6,0,Math.PI*2);
+      ctx.lineWidth=1;ctx.strokeStyle=C.faint;ctx.stroke();
+    }
+    // type code inside the sphere
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.font='500 11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle="rgba(255,255,255,.95)";
+    ctx.fillText(nd.code,nd.x,nd.y-5);
+    ctx.font='500 9.5px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle=nd.ident==="T"?"rgba(255,255,255,.62)":"rgba(255,255,255,.88)";
+    ctx.fillText(nd.ident==="T"?"turbulent":"assertive",nd.x,nd.y+8);
+
+    // name, then source — same measurements the label placement used
+    ctx.textBaseline="top";
+    nameStack(nd).forEach(s=>{
+      ctx.font=s.font;
+      ctx.fillStyle=C.bg;
+      ctx.globalAlpha=(dim?0.22:1)*0.88;
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(nd.x-s.w/2-5,s.y-2,s.w+10,15,5);ctx.fill();}
+      ctx.globalAlpha=dim?0.22:1;
+      ctx.fillStyle=s.col;
+      ctx.fillText(s.txt,nd.x,s.y);
+    });
+    ctx.restore();
+  });
+}
+
+/* ---------- loop ---------- */
+function frame(){step();draw();requestAnimationFrame(frame)}
+
+/* ---------- sizing ---------- */
+function resize(){
+  const r=stage.getBoundingClientRect();
+  W=Math.max(200,r.width);H=Math.max(200,r.height);
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+new ResizeObserver(resize).observe(stage);
+
+/* ---------- hit testing & interaction ---------- */
+function pt(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function nodeAt(p){
+  for(let i=nodes.length-1;i>=0;i--){const n=nodes[i];if(Math.hypot(n.x-p.x,n.y-p.y)<=n.r+4)return n}
+  return null;
+}
+function linkAt(p){
+  // a label that stepped up to avoid a collision is still the way to reach its tie
+  for(const b of labelBoxes)
+    if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h)return b.li;
+  for(let i=0;i<links.length;i++){
+    const a=nodes[links[i].a],b=nodes[links[i].b];
+    const dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy||1;
+    let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/L2;t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(p.x-(a.x+dx*t),p.y-(a.y+dy*t));
+    if(d<10)return i;
+  }
+  return -1;
+}
+function showTip(p,html){
+  if(!tipEl){tipEl=document.createElement("div");tipEl.className="tip";stage.appendChild(tipEl)}
+  tipEl.innerHTML=html;
+  tipEl.style.left=Math.max(120,Math.min(W-120,p.x))+"px";
+  tipEl.style.top=(p.y-14)+"px";
+  tipEl.hidden=false;
+}
+function hideTip(){if(tipEl)tipEl.hidden=true}
+
+cv.addEventListener("pointerdown",e=>{
+  const p=pt(e),n=nodeAt(p);
+  if(n){dragging=n;cv.setPointerCapture(e.pointerId);cv.classList.add("dragging")}
+});
+cv.addEventListener("pointermove",e=>{
+  const p=pt(e);
+  if(dragging){dragging.x=p.x;dragging.y=p.y;return}
+  const n=nodeAt(p);
+  if(n){
+    hovered={kind:"node",id:n.id};
+    const ties=links.filter(l=>l.a===n.id||l.b===n.id).length;
+    showTip(p,`<strong>${esc(n.name)}</strong>${n.combo} · ${esc(n.arch)} · ${esc(n.src)}<div class="roles">${ties} tie${ties===1?"":"s"} · ${n.oops} out-of-preference facet${n.oops===1?"":"s"} — ${document.body.classList.contains("bare")?"F2 for the profile":"click to open"}</div>`);
+    return;
+  }
+  const li=linkAt(p);
+  if(li>=0){
+    hovered={kind:"link",id:li};
+    const l=links[li],t=l.t;
+    showTip(p,`<strong>${esc(t.n)}</strong>${esc(t.g)}<div class="roles">${esc(nodes[l.a].name)} (${esc(t.a)}) ${t.d===2?"⇄":"→"} ${esc(nodes[l.b].name)} (${esc(t.b)})</div>`);
+    return;
+  }
+  hovered=null;hideTip();
+});
+cv.addEventListener("pointerup",e=>{
+  if(dragging){cv.classList.remove("dragging");dragging=null;return}
+  const p=pt(e),n=nodeAt(p);
+  selected=n?(selected===n.id?null:n.id):null;
+  renderRail();
+});
+cv.addEventListener("pointerleave",()=>{hovered=null;hideTip()});
+
+/* ---------- rail ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function tieRow(l){
+  const t=l.t,A=nodes[l.a].name,B=nodes[l.b].name;
+  const arrow=t.d===2?"⇄":"→";
+  return `<li><button class="tie" data-a="${l.a}" data-b="${l.b}">
+    <span class="pair"><span>${esc(A)}</span><span class="arrow v-${t.v}">${arrow}</span><span>${esc(B)}</span></span>
+    <span class="name">${esc(t.n)}</span>
+    <span class="gloss">${esc(t.g)} <span class="v-${t.v}">· ${t.v==="p"?"warm":t.v==="n"?"hostile":"complicated"}${t.d===1?", one-way":""}</span>${l.chem?` <span class="chemtag ${l.chem==="together"?"c-with":"c-against"}">${nodes[l.a].code}/${nodes[l.b].code} plays ${l.chem}</span>`:""}</span>
+  </button></li>`;
+}
+function castRow(nd){
+  return `<li><button class="tie castline" data-a="${nd.id}" data-b="${nd.id}">
+    <span class="pair"><span class="code">${nd.combo}</span><span class="name" style="font-size:13.5px">${esc(nd.name)}</span></span>
+    <span class="gloss"><span class="arch">${esc(nd.arch)}</span> · ${esc(nd.src)}${nd.oops?` · <span class="v-x">${nd.oops} against type</span>`:""}</span>
+  </button></li>`;
+}
+function identityRow(nd){
+  const turb=nd.ident==="T";
+  return `<section class="dich identity">
+    <h3><span class="letter">${nd.ident}</span>${turb?"Turbulent":"Assertive"}<span class="flag">identity, not a Step II facet</span></h3>
+    <div class="facet s-${turb?"oops":"in"}">
+      <span class="poles"><span class="${turb?"":"on"}">Assertive</span><span class="${turb?"on":""}">Turbulent</span></span>
+      <span class="track"><i style="left:${turb?78:22}%"></i></span>
+    </div>
+    <p class="identnote">${turb?"Self-doubting, driven by the gap between what they are and what they meant to be.":"Even-keeled, largely untroubled by having been wrong."}</p>
+  </section>`;
+}
+function facetBlock(nd){
+  return nd.prof.map(g=>{
+    const [L,R,LN,RN,pairs]=DICH[g.d];
+    const left=nd.code[g.d]===L;
+    const rows=g.scores.map((s,i)=>{
+      const st=facetState(s,left);
+      const pct=((s+5)/10*100).toFixed(1);
+      return `<div class="facet s-${st}" title="${esc(pairs[i][0])} vs ${esc(pairs[i][1])}">
+        <span class="poles"><span class="${s<0?"on":""}">${esc(pairs[i][0])}</span><span class="${s>0?"on":""}">${esc(pairs[i][1])}</span></span>
+        <span class="track"><i style="left:${pct}%"></i></span>
+      </div>`;
+    }).join("");
+    const outs=g.scores.filter(s=>facetState(s,left)==="oops").length;
+    return `<section class="dich">
+      <h3><span class="letter">${nd.code[g.d]}</span>${esc(nd.code[g.d]===L?LN:RN)}${outs?`<span class="flag">${outs} against type</span>`:""}</h3>
+      ${rows}
+    </section>`;
+  }).join("");
+}
+function chemBlock(nd){
+  const onBoard=code=>nodes.filter(o=>o.id!==nd.id&&o.code===code);
+  const row=(o,cls)=>{
+    const here=onBoard(o.code);
+    return `<div class="chemrow ${cls}${here.length?" here":""}">
+      <span class="ccode">${o.code}</span>
+      <span class="cwhy">${esc(o.why)}</span>
+      ${here.length?`<span class="chere">${here.map(h=>`<button class="who" data-id="${h.id}">${esc(h.name)}</button>`).join(", ")}</span>`:""}
+    </div>`;
+  };
+  const C2=CHEM[nd.code];
+  return `<h3 class="railhead">Plays together <span class="hint">${nd.code} clan</span></h3>
+    ${C2.together.map(o=>row(o,"c-with")).join("")}
+    <h3 class="railhead">Plays off</h3>
+    ${C2.off.map(o=>row(o,"c-against")).join("")}`;
+}
+function renderRail(){
+  if(selected==null){
+    const counts={p:0,n:0,x:0};links.forEach(l=>counts[l.t.v]++);
+    rail.innerHTML=`<h2>The whole tangle</h2>
+      <p class="sub">${nodes.length} characters · ${links.length} ties · ${counts.p} warm / ${counts.n} hostile / ${counts.x} complicated</p>
+      <h3 class="railhead">Cast</h3>
+      <ul class="ties">${nodes.map(castRow).join("")}</ul>
+      <h3 class="railhead">Ties</h3>
+      <ul class="ties">${links.map(tieRow).join("")}</ul>`;
+  }else{
+    const me=nodes[selected];
+    const mine=links.filter(l=>l.a===selected||l.b===selected);
+    rail.innerHTML=`<button class="backlink" id="back">← the whole tangle</button>
+      <h2>${esc(me.name)}</h2>
+      <p class="sub">${me.combo} · ${esc(me.arch)}</p>
+      <p class="source">${esc(me.src)} · ${mine.length} tie${mine.length===1?"":"s"}</p>
+      <p class="blurb">${esc(me.blurb)}</p>
+      ${chemBlock(me)}
+      <h3 class="railhead">Step II profile <span class="hint">${me.oops} of 20 against type</span></h3>
+      ${facetBlock(me)}
+      ${identityRow(me)}
+      <h3 class="railhead">Ties</h3>
+      ${mine.length?`<ul class="ties">${mine.map(tieRow).join("")}</ul>`:`<p class="empty">Unconnected — drag the cast slider or recast.</p>`}`;
+    rail.querySelector("#back").addEventListener("click",()=>{selected=null;renderRail()});
+  }
+  rail.querySelectorAll(".who").forEach(b=>b.addEventListener("click",ev=>{
+    ev.stopPropagation();selected=+b.dataset.id;renderRail();rail.scrollTop=0;
+  }));
+  rail.querySelectorAll(".tie").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const a=+btn.dataset.a;
+      selected=selected===a?+btn.dataset.b:a;
+      renderRail();
+    });
+  });
+}
+
+/* ---------- controls ---------- */
+const castEl=document.getElementById("cast"),castN=document.getElementById("castN");
+castEl.addEventListener("input",()=>{castN.textContent=castEl.value;generate()});
+document.getElementById("roll").addEventListener("click",()=>generate());
+document.getElementById("replot").addEventListener("click",()=>rollPlot());
+document.getElementById("register").addEventListener("change",()=>rollPlot());
+document.getElementById("copy").addEventListener("click",async e=>{
+  const roster=nodes.map(n=>{
+    const outs=[];
+    n.prof.forEach(g=>{
+      const [L,,,,pairs]=DICH[g.d];const left=n.code[g.d]===L;
+      g.scores.forEach((s,i)=>{if(facetState(s,left)==="oops")outs.push(s<0?pairs[i][0]:pairs[i][1])});
+    });
+    return `${n.name} (${n.src}) — ${n.combo}, ${n.arch}\n    ${n.blurb}\n    against type: ${outs.length?outs.join(", "):"none"}\n    plays together: ${CHEM[n.code].together.map(o=>o.code).join(", ")}\n    plays off: ${CHEM[n.code].off.map(o=>o.code).join(", ")}`;
+  }).join("\n");
+  const web=links.map(l=>`${nodes[l.a].name} ${l.t.d===2?"<->":"->"} ${nodes[l.b].name}  |  ${l.t.n} (${l.t.a} / ${l.t.b})  —  ${l.t.g}`).join("\n");
+  const txt=`PREMISE\n${plot?plot.plain:"—"}\n\nCAST\n${roster}\n\nTIES\n${web}\n`;
+  const btn=e.currentTarget;
+  try{await navigator.clipboard.writeText(txt);btn.textContent="Copied";}
+  catch{btn.textContent="Clipboard blocked";}
+  setTimeout(()=>btn.textContent="Copy as text",1600);
+});
+const chromeBtn=document.getElementById("chromeToggle");
+function setBare(on){
+  document.body.classList.toggle("bare",on);
+  chromeBtn.setAttribute("aria-pressed",String(!on));
+  chromeBtn.firstChild.nodeValue=on?"panels ":"hide ";
+  chromeBtn.title=on?"Show the premise, controls and profiles (F2)":"Back to the web alone (F2)";
+  resize();
+}
+chromeBtn.addEventListener("click",()=>setBare(!document.body.classList.contains("bare")));
+addEventListener("keydown",e=>{
+  if(e.key==="F2"){e.preventDefault();setBare(!document.body.classList.contains("bare"));return}
+  if(e.key==="Escape"&&selected!=null){selected=null;renderRail()}
+});
+
+/* ---------- boot ---------- */
+readTokens();
+setBare(true);
+resize();
+generate();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",readTokens);
+new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
