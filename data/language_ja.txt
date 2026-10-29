@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	休息中
 UILABEL_STORAGE_HINT	アイテムを右クリックで受け取り、外へドラッグするとユニットの足元に落とします。ユニットのアイテムを右クリックすると収納します。
 ITEM_88_NAME	木材
 ITEM_88_DESC	木から切り出した木材。製作や建築に使う。
+UILABEL_INPUT	投入
+UILABEL_OUTPUT	完成品
+UILABEL_CRAFT_HINT	ユニットのアイテムを右クリックで投入欄に入れ、完成品は完成品欄から受け取ります。作業を始めるには {0} を右クリックして「製作」を選びます。
+MISC_CRAFT_WRONG_ITEM	{0} はここでは使えません
+MISC_CRAFT_NEEDS	{0} を投入欄に入れると始められます
+MISC_CRAFT_OUTPUT_FULL	完成品欄がいっぱいです
+MISC_CRAFTS	{0} が {1} を作った
+MISC_CRAFT_STOPS	{0} は作業する材料がなくなり、手を止めた
+MISC_REASON_CRAFTING	製作
+ITEM_89_NAME	生肉
+ITEM_89_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_90_NAME	焼いた肉
+ITEM_90_DESC	火で焼いた肉。体力と空腹を回復する。
+UILABEL_CRAFT	製作

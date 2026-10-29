@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	휴식 중
 UILABEL_STORAGE_HINT	아이템을 우클릭하면 가져가고, 밖으로 끌어내면 유닛이 서 있는 곳에 떨어뜨립니다. 유닛의 아이템을 우클릭하면 보관합니다.
 ITEM_88_NAME	통나무
 ITEM_88_DESC	나무에서 벤 목재로, 제작과 건축에 쓰인다.
+UILABEL_INPUT	재료
+UILABEL_OUTPUT	결과물
+UILABEL_CRAFT_HINT	유닛의 아이템을 우클릭해 재료 칸에 넣고, 완성된 아이템은 결과물 칸에서 가져갑니다. 작업을 시작하려면 {0}을(를) 우클릭하고 제작을 선택하세요.
+MISC_CRAFT_WRONG_ITEM	{0}은(는) 여기에 쓸 수 없습니다
+MISC_CRAFT_NEEDS	시작하려면 재료 칸에 {0}을(를) 넣으세요
+MISC_CRAFT_OUTPUT_FULL	결과물 칸이 가득 찼습니다
+MISC_CRAFTS	{0}이(가) {1}을(를) 만듭니다
+MISC_CRAFT_STOPS	{0}이(가) 더 작업할 재료가 없어 멈춥니다
+MISC_REASON_CRAFTING	제작
+ITEM_89_NAME	생고기
+ITEM_89_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_90_NAME	구운 고기
+ITEM_90_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+UILABEL_CRAFT	제작

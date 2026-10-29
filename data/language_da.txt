@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Hviler
 UILABEL_STORAGE_HINT	Højreklik på en genstand for at tage den, eller træk den ud for at lægge den, hvor din enhed står. Højreklik på din enheds genstande for at lægge dem i lageret.
 ITEM_88_NAME	Træstamme
 ITEM_88_DESC	Træ fældet fra et træ, bruges til håndværk og byggeri.
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i input, og tag færdige genstande fra output. Højreklik på {0} og vælg Fremstil for at begynde at arbejde.
+MISC_CRAFT_WRONG_ITEM	{0} kan ikke bruges her
+MISC_CRAFT_NEEDS	Læg {0} i input for at begynde
+MISC_CRAFT_OUTPUT_FULL	Output er fuldt
+MISC_CRAFTS	{0} laver {1}
+MISC_CRAFT_STOPS	{0} har ikke mere at arbejde med og stopper
+MISC_REASON_CRAFTING	håndværk
+ITEM_89_NAME	Råt kød
+ITEM_89_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_90_NAME	Stegt kød
+ITEM_90_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+UILABEL_CRAFT	Fremstil

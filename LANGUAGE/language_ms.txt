@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Berehat
 UILABEL_STORAGE_HINT	Klik kanan item untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unit anda berdiri. Klik kanan item unit anda untuk menyimpannya.
 ITEM_88_NAME	Batang kayu
 ITEM_88_DESC	Kayu yang ditebang daripada pokok, untuk kraf dan binaan.
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+UILABEL_CRAFT_HINT	Klik kanan item unit anda untuk memasukkannya ke input, dan ambil item siap dari output. Untuk mula bekerja, klik kanan {0} dan pilih Buat.
+MISC_CRAFT_WRONG_ITEM	{0} tidak boleh digunakan di sini
+MISC_CRAFT_NEEDS	Masukkan {0} ke input untuk bermula
+MISC_CRAFT_OUTPUT_FULL	Output sudah penuh
+MISC_CRAFTS	{0} membuat {1}
+MISC_CRAFT_STOPS	{0} tiada apa-apa lagi untuk dikerjakan dan berhenti
+MISC_REASON_CRAFTING	kraf
+ITEM_89_NAME	Daging mentah
+ITEM_89_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_90_NAME	Daging masak
+ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+UILABEL_CRAFT	Buat

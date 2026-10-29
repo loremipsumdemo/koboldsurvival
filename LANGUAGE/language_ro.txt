@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Se odihnește
 UILABEL_STORAGE_HINT	Clic dreapta pe un obiect ca să-l iei sau trage-l afară ca să-l lași unde stă unitatea ta. Clic dreapta pe obiectele unității tale ca să le depozitezi.
 ITEM_88_NAME	Buștean
 ITEM_88_DESC	Lemn tăiat dintr-un copac, pentru meșteșuguri și construcții.
+UILABEL_INPUT	Intrare
+UILABEL_OUTPUT	Ieșire
+UILABEL_CRAFT_HINT	Clic dreapta pe obiectele unității tale ca să le pui la intrare, iar obiectele gata le iei de la ieșire. Ca să înceapă lucrul, clic dreapta pe {0} și alege Meșteșugește.
+MISC_CRAFT_WRONG_ITEM	{0} nu poate fi folosit aici
+MISC_CRAFT_NEEDS	Pune {0} la intrare ca să începi
+MISC_CRAFT_OUTPUT_FULL	Ieșirea este plină
+MISC_CRAFTS	{0} face {1}
+MISC_CRAFT_STOPS	{0} nu mai are la ce lucra și se oprește
+MISC_REASON_CRAFTING	meșteșug
+ITEM_89_NAME	Carne crudă
+ITEM_89_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_90_NAME	Carne friptă
+ITEM_90_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+UILABEL_CRAFT	Meșteșugește

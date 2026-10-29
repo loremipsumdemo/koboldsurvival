@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Resting
 UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
 ITEM_88_NAME	Wood Log
 ITEM_88_DESC	Wood cut from a tree, used in crafting and building.
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+UILABEL_CRAFT_HINT	Right-click your unit's items to put them in the input, and take finished items from the output. To start working, right-click the {0} and choose Craft.
+MISC_CRAFT_WRONG_ITEM	{0} can't be used here
+MISC_CRAFT_NEEDS	Put {0} in the input to start
+MISC_CRAFT_OUTPUT_FULL	The output is full
+MISC_CRAFTS	{0} makes {1}
+MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
+MISC_REASON_CRAFTING	crafting
+ITEM_89_NAME	Raw Meat
+ITEM_89_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_90_NAME	Cooked Meat
+ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
+UILABEL_CRAFT	Craft

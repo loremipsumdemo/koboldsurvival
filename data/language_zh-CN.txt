@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	休息中
 UILABEL_STORAGE_HINT	右键点击物品即可取出，或将其拖出，放在你的单位所站的位置。右键点击单位的物品即可存入。
 ITEM_88_NAME	木头
 ITEM_88_DESC	从树上砍下的木材，用于制作和建造。
+UILABEL_INPUT	原料
+UILABEL_OUTPUT	成品
+UILABEL_CRAFT_HINT	右键点击单位的物品即可放入原料栏，做好的物品从成品栏取出。要开始工作，请右键点击{0}并选择“制作”。
+MISC_CRAFT_WRONG_ITEM	{0}不能在这里使用
+MISC_CRAFT_NEEDS	将{0}放入原料栏即可开始
+MISC_CRAFT_OUTPUT_FULL	成品栏已满
+MISC_CRAFTS	{0} 制作了 {1}
+MISC_CRAFT_STOPS	{0} 没有可加工的东西，停止工作
+MISC_REASON_CRAFTING	制作
+ITEM_89_NAME	生肉
+ITEM_89_DESC	未煮熟的肉。在篝火上烤熟它。
+ITEM_90_NAME	烤肉
+ITEM_90_DESC	在火上烤熟的肉。恢复生命和饥饿。
+UILABEL_CRAFT	制作

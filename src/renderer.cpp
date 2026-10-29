@@ -1936,8 +1936,8 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     }
 }
 
-void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const Storage* storage, int dragFrom,
-                           float mx, float my) {
+void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::vector<std::string>& headings,
+                           const std::string& hint, const Storage* storage, int dragFrom, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -1956,8 +1956,10 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     const std::string name = fitText(propName, L.name.w, false);
     if (name != propName) noteTip(propName, L.name);
     drawListText(name, L.name.x, L.name.y, white);
-    drawListText(fitText(lang("UILABEL_INVENTORY"), L.heading.w, false), L.heading.x, L.heading.y, heading);
-    drawRect(L.grid, well);
+    for (size_t i = 0; i < L.headings.size() && i < headings.size(); ++i) {
+        drawListText(fitText(headings[i], L.headings[i].w, false), L.headings[i].x, L.headings[i].y, heading);
+    }
+    for (const Rect& g : L.grids) drawRect(g, well);
     int hover = -1;
     for (size_t i = 0; i < L.slots.size(); ++i) {
         const Rect& r = L.slots[i];
@@ -1970,7 +1972,7 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
         if (hot) hover = (int)i;
     }
     float ty = L.hint.y;
-    for (const std::string& ln : wrapListText(lang("UILABEL_STORAGE_HINT"), L.hint.w)) {
+    for (const std::string& ln : wrapListText(hint, L.hint.w)) {
         if (ty + th > L.hint.y + L.hint.h + 0.5f) break;
         drawListText(ln, L.hint.x, ty, gray);
         ty += th;

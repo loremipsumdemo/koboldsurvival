@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Dinleniyor
 UILABEL_STORAGE_HINT	Bir eşyayı almak için sağ tıkla ya da biriminin durduğu yere bırakmak için dışarı sürükle. Biriminin eşyalarını depolamak için sağ tıkla.
 ITEM_88_NAME	Odun kütüğü
 ITEM_88_DESC	Ağaçtan kesilmiş odun, zanaat ve yapı için kullanılır.
+UILABEL_INPUT	Girdi
+UILABEL_OUTPUT	Çıktı
+UILABEL_CRAFT_HINT	Biriminin eşyalarını girdiye koymak için sağ tıkla, hazır eşyaları çıktıdan al. Çalışmaya başlamak için {0} üzerine sağ tıkla ve Üret'i seç.
+MISC_CRAFT_WRONG_ITEM	{0} burada kullanılamaz
+MISC_CRAFT_NEEDS	Başlamak için girdiye {0} koy
+MISC_CRAFT_OUTPUT_FULL	Çıktı dolu
+MISC_CRAFTS	{0}, {1} yapıyor
+MISC_CRAFT_STOPS	{0} üzerinde çalışacak bir şey kalmadı, duruyor
+MISC_REASON_CRAFTING	zanaat
+ITEM_89_NAME	Çiğ et
+ITEM_89_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_90_NAME	Pişmiş et
+ITEM_90_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+UILABEL_CRAFT	Üret

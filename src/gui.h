@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <utility>
 #include <vector>
 #include "components.h"
 #include "items.h"
@@ -252,43 +253,64 @@ inline TradeLayout layoutTrade(int W, int H) {
     return L;
 }
 
-// The storage panel, for a storage prop such as a barrel: an Interaction Panel with the prop's name, its slots,
-// a hint and a Close button, in the top middle of the window, clear of the bottom panels
+// The storage panel, for a storage prop (a barrel) or a crafting prop (a campfire): an Interaction Panel with the
+// prop's name, its slots, a hint and a Close button, in the top middle of the window, clear of the bottom panels.
+// A storage prop has one section, its inventory. A crafting prop has two: its input on top and its output below.
+// slots holds every slot's cell by its index in the prop's Storage, so a crafting prop's output cells come after its
+// input cells.
 struct StorageLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the prop's name
-    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Inventory"
-    Rect grid{ 0.0f, 0.0f, 0.0f, 0.0f };
-    std::vector<Rect> slots;                  // STORAGE_SLOTS cells, row by row
+    std::vector<Rect> headings;               // one per section: "Inventory", or "Input" and "Output"
+    std::vector<Rect> grids;                  // one per section, behind its cells
+    std::vector<Rect> slots;                  // STORAGE_SLOTS cells
     Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
     Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
-inline StorageLayout layoutStorage(int W, int H) {
+inline StorageLayout layoutStorage(int W, int H, bool crafting) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
     const float cell = 36.0f * s, cellGap = 4.0f * s, inset = 4.0f * s;
-    const int cols = STORAGE_COLUMNS, rows = STORAGE_SLOTS / STORAGE_COLUMNS;
+    const int cols = STORAGE_COLUMNS;
+    // Each section: its first slot and how many it has
+    std::vector<std::pair<int, int>> sections;
+    if (crafting) sections = { { 0, CRAFT_INPUT_SLOTS }, { CRAFT_INPUT_SLOTS, STORAGE_SLOTS - CRAFT_INPUT_SLOTS } };
+    else sections = { { 0, STORAGE_SLOTS } };
     const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
-    const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
+    auto gridHeight = [&](int count) {
+        const int rows = (count + cols - 1) / cols;
+        return rows * cell + (rows - 1) * cellGap + 2.0f * inset;
+    };
+    float sectionsH = 0.0f;
+    for (const auto& sec : sections) sectionsH += line + gridHeight(sec.second) + gap;
     const float panelW = std::max(gridW, 260.0f * s) + 2.0f * pad;
     const float hintH = 3.0f * line;
-    const float panelH = bar + pad + 2.0f * line + gridH + gap + hintH + gap + btnH + pad;
+    const float panelH = bar + pad + line + sectionsH + hintH + gap + btnH + pad;
     const float x0 = (W - panelW) * 0.5f;
-    const float y0 = std::max(8.0f * s, H * 0.14f);
+    const float y0 = std::max(8.0f * s, H * 0.12f);
 
     StorageLayout L;
     L.panel = Rect{ x0, y0, panelW, panelH };
     L.bar = Rect{ x0, y0, panelW, bar };
     L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
-    L.heading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
-    L.grid = Rect{ x0 + (panelW - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
-    for (int i = 0; i < STORAGE_SLOTS; ++i) {
-        const int col = i % cols, row = i / cols;
-        L.slots.push_back(Rect{ L.grid.x + inset + col * (cell + cellGap), L.grid.y + inset + row * (cell + cellGap), cell, cell });
+    L.slots.assign(STORAGE_SLOTS, Rect{ 0.0f, 0.0f, 0.0f, 0.0f });
+    float y = L.name.y + line;
+    for (const auto& sec : sections) {
+        L.headings.push_back(Rect{ x0 + pad, y, panelW - 2.0f * pad, line });
+        y += line;
+        const float gh = gridHeight(sec.second);
+        const Rect grid{ x0 + (panelW - gridW) * 0.5f, y, gridW, gh };
+        L.grids.push_back(grid);
+        for (int i = 0; i < sec.second; ++i) {
+            const int col = i % cols, row = i / cols;
+            L.slots[(size_t)(sec.first + i)] = Rect{ grid.x + inset + col * (cell + cellGap),
+                                                     grid.y + inset + row * (cell + cellGap), cell, cell };
+        }
+        y += gh + gap;
     }
-    L.hint = Rect{ x0 + pad, L.grid.y + gridH + gap, panelW - 2.0f * pad, hintH };
+    L.hint = Rect{ x0 + pad, y, panelW - 2.0f * pad, hintH };
     L.closeBtn = Rect{ x0 + (panelW - btnW) * 0.5f, y0 + panelH - pad - btnH, btnW, btnH };
     return L;
 }

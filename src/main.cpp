@@ -158,10 +158,32 @@ void closeStorage() {
     storageDrag = -1;
 }
 
+// The choice a crafting prop (a campfire) offers when a unit reaches it: Inventory, which opens its input and output,
+// or Craft, which puts the unit to work. Shown over the prop until one is picked or it is clicked away. It closes
+// under the same rules as the storage panel.
+Entity craftChoiceProp = NULL_ENTITY;
+Entity craftChoiceUnit = NULL_ENTITY;
+
+void closeCraftChoice() {
+    craftChoiceProp = NULL_ENTITY;
+    craftChoiceUnit = NULL_ENTITY;
+}
+
 // The name of a prop in the language in use
 std::string propNameOf(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     return p ? lang(propInfo(p->kind).nameKey) : std::string();
+}
+
+// What the open storage panel's prop is used for: PropUse::Storage for a barrel, PropUse::Crafting for a campfire
+PropUse storageUse(World& w) {
+    const Prop* p = w.get<Prop>(storageProp);
+    return p ? propInfo(p->kind).use : PropUse::None;
+}
+
+// The storage panel's layout for the prop it shows: one section, or input and output for a crafting prop
+StorageLayout storageLayout(World& w, int W, int H) {
+    return layoutStorage(W, H, storageUse(w) == PropUse::Crafting);
 }
 
 // Moves a whole stack from the storage into its unit's inventory, if all of it fits. Otherwise nothing moves.
@@ -177,6 +199,7 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     }
     addToInventory(*inv, stack.item, stack.count);
     st->slots[slot] = ItemStack{};
+    propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
 }
 
@@ -193,6 +216,7 @@ bool dropFromStorage(World& w, int slot) {
     w.add(e, Transform{ ut->x, ut->y, ut->z });
     w.add(e, GroundItem{ stack.item, stack.count });
     st->slots[slot] = ItemStack{};
+    propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
 }
 
@@ -229,7 +253,17 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
     if (!st || !inv || clickedSlot < 0 || clickedSlot >= INVENTORY_SLOTS || count <= 0) return false;
     const int item = inv->slots[clickedSlot].item;
     if (item == 0 || carriedCount(*inv, item) < count) return false;
-    if (!slotsCanTake(st->slots.data(), STORAGE_SLOTS, item, count)) {
+    // A barrel takes anything into any slot. A campfire takes only its input item, into its input slots.
+    const Prop* prop = w.get<Prop>(storageProp);
+    const PropUse use = prop ? propInfo(prop->kind).use : PropUse::Storage;
+    if (use == PropUse::Crafting && item != propInfo(prop->kind).input) {
+        const ItemDef* def = findItem(item);
+        why = langf("MISC_CRAFT_WRONG_ITEM", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
+        return false;
+    }
+    int first = 0, slots = STORAGE_SLOTS;
+    inputSlots(use, first, slots);
+    if (!slotsCanTake(st->slots.data() + first, slots, item, count)) {
         why = lang("MISC_STORAGE_FULL");
         return false;
     }
@@ -244,7 +278,8 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
         takeFromSlot(*inv, slot, take);
         left -= take;
     }
-    addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
+    addToSlots(st->slots.data() + first, slots, item, count);
+    propStorageChanged(w, storageProp);
     return true;
 }
 
@@ -646,6 +681,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     tradePlayer.clear();
     tradeNpcDrag = -1;
     closeStorage();
+    closeCraftChoice();
     paused = false;
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
@@ -2393,7 +2429,14 @@ int main(int, char**) {
                 else if (!why.empty()) showNotice(why);
                 return;
             }
-            const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
+            const PropUse use = storageUse(world);
+            if (use == PropUse::Crafting && item != propInfo(world.get<Prop>(storageProp)->kind).input) {
+                showNotice(langf("MISC_CRAFT_WRONG_ITEM", { itemNameOf(item) }));
+                return;
+            }
+            int first = 0, slots = STORAGE_SLOTS;
+            inputSlots(use, first, slots);
+            const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data() + first, slots, item));
             if (cap <= 0) {
                 showNotice(lang("MISC_STORAGE_FULL"));
                 return;
@@ -2431,9 +2474,9 @@ int main(int, char**) {
             const Transform* nt = world.get<Transform>(npc);
             if (nt && !units.empty()) issueMoveOrder(world, terrain, units, Vec2{ nt->x, nt->z });
         };
-        // Right-click on a prop that can be used, with units selected. A barrel or a bed sends the selected unit nearest
-        // to it. Ore or a tree sends the nearest selected units, as many as it has room for (PROP_WORKER_LIMIT in
-        // all). False if no usable prop is under the pointer, so the click is a move order instead.
+        // Right-click on a prop that can be used, with units selected. A barrel, a bed or a campfire sends the selected
+        // unit nearest to it. A resource prop (ore or a tree) sends the nearest selected units, as many as it has room
+        // for. False if no usable prop is under the pointer, so the click is a move order instead.
         auto usePropAt = [&](float mx, float my) {
             float ex = 0.0f, ey = 0.0f, ez = 0.0f;
             cam.eye(ex, ey, ez);
@@ -2458,24 +2501,25 @@ int main(int, char**) {
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
                 return gapBetween(world, a, prop) < gapBetween(world, b, prop);
             });
-            const PropUse use = propInfo(world.get<Prop>(prop)->kind).use;
-            if (use == PropUse::Gather) {
+            const PropInfo& info = propInfo(world.get<Prop>(prop)->kind);
+            const PropUse use = info.use;
+            if (use == PropUse::Resource) {
                 // Units already on this prop keep their places; the rest share what is left
                 int others = 0;
-                for (Entity u : world.view<Gathering>()) {
-                    if (world.get<Gathering>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
+                for (Entity u : world.view<Working>()) {
+                    if (world.get<Working>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
                 }
                 for (Entity u : world.view<PropOrder>()) {
                     if (world.get<PropOrder>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
                 }
-                const int room = std::max(0, PROP_WORKER_LIMIT - others);
+                const int room = std::max(0, info.workers - others);
                 if (room == 0) {
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                     return true;
                 }
                 if ((int)units.size() > room) {
                     units.resize((size_t)room);
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 }
                 issuePropOrder(world, terrain, units, prop);
             } else {
@@ -2488,6 +2532,46 @@ int main(int, char**) {
             }
             audio::playEffect(SFX_MENU);
             return true;
+        };
+        // The Inventory / Craft choice: a small menu over the crafting prop, kept on screen
+        auto craftChoiceLayout = [&]() {
+            float x = winW * 0.5f, y = winH * 0.4f;
+            if (const Transform* pt = world.get<Transform>(craftChoiceProp)) {
+                const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+                float sx = 0.0f, sy = 0.0f;
+                if (worldToScreen(vp, pt->x, pt->y + 1.0f, pt->z, winW, winH, sx, sy)) {
+                    x = sx;
+                    y = sy;
+                }
+            }
+            return renderer.itemMenuLayout(x, y, 2, winW, winH);
+        };
+        auto craftChoiceLabels = [&]() {
+            return std::vector<std::string>{ lang("UILABEL_INVENTORY"), lang("UILABEL_CRAFT") };
+        };
+        // Inventory opens the input and output. Craft puts the unit to work if the prop can be worked right now.
+        auto pickCraftChoice = [&](int option) {
+            const Entity prop = craftChoiceProp, unit = craftChoiceUnit;
+            closeCraftChoice();
+            if (option == 0) {
+                if (!(storageProp == prop && storageUnit == unit)) {
+                    closeStorage();
+                    storageProp = prop;
+                    storageUnit = unit;
+                }
+                audio::playEffect(SFX_MENU);
+                return;
+            }
+            const Prop* p = world.get<Prop>(prop);
+            if (!p) return;
+            const PropInfo& info = propInfo(p->kind);
+            switch (tryStartWork(world, unit, prop)) {
+            case WorkStart::Started: audio::playEffect(SFX_MENU); break;
+            case WorkStart::NoInput: showNotice(langf("MISC_CRAFT_NEEDS", { itemNameOf(info.input) })); break;
+            case WorkStart::OutputFull: showNotice(lang("MISC_CRAFT_OUTPUT_FULL")); break;
+            case WorkStart::Full: showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) })); break;
+            case WorkStart::TooFar: break;
+            }
         };
         auto chooseOption = [&](size_t i) {
             const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
@@ -3004,6 +3088,17 @@ int main(int, char**) {
                         break;
                     }
                 }
+                // The Inventory / Craft choice: a click on an option picks it. A click anywhere else closes the choice, and
+                // that click still does what it would have done.
+                if (screen == Screen::Playing && craftChoiceProp != NULL_ENTITY) {
+                    const ItemMenuLayout ml = craftChoiceLayout();
+                    const int hit = itemMenuButtonAt(ml, e.button.x, e.button.y);
+                    if (ml.box.contains(e.button.x, e.button.y)) {
+                        if (e.button.button == SDL_BUTTON_LEFT && hit >= 0) pickCraftChoice(hit);
+                        break;
+                    }
+                    closeCraftChoice();
+                }
                 // Choosing how many of a stack to store: the prompt is modal, and only its buttons answer
                 if (screen == Screen::Playing && quantity.open && quantity.toStorage) {
                     if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
@@ -3012,7 +3107,7 @@ int main(int, char**) {
                 // The storage panel takes every click on it. Left button on an item starts dragging it out; right button
                 // moves its whole stack into the unit's inventory, if all of it fits.
                 if (screen == Screen::Playing && storageProp != NULL_ENTITY) {
-                    const StorageLayout stl = layoutStorage(winW, winH);
+                    const StorageLayout stl = storageLayout(world, winW, winH);
                     const float x = e.button.x, y = e.button.y;
                     if (stl.panel.contains(x, y)) {
                         const Storage* st = world.get<Storage>(storageProp);
@@ -3364,7 +3459,7 @@ int main(int, char**) {
                     storageDrag = -1;
                     if (storageProp != NULL_ENTITY) {
                         const float x = e.button.x, y = e.button.y;
-                        if (layoutStorage(winW, winH).panel.contains(x, y)) {
+                        if (storageLayout(world, winW, winH).panel.contains(x, y)) {
                             // back where it was
                         } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                             std::string why;
@@ -3378,7 +3473,7 @@ int main(int, char**) {
                 }
                 // An inventory stack let go over the storage panel goes into the storage, if all of it fits
                 if (e.button.button == SDL_BUTTON_LEFT && itemDrag && storageProp != NULL_ENTITY &&
-                    layoutStorage(winW, winH).panel.contains(e.button.x, e.button.y)) {
+                    storageLayout(world, winW, winH).panel.contains(e.button.x, e.button.y)) {
                     if (dragGear < 0 && dragUnit == storageUnit) requestStore(dragSlot);
                     itemDrag = false;
                     dragUnit = NULL_ENTITY;
@@ -3620,16 +3715,24 @@ int main(int, char**) {
             for (const PropArrival& a : propOrderSystem(world)) {
                 const Prop* p = world.get<Prop>(a.prop);
                 if (!p) continue;
-                const PropUse use = propInfo(p->kind).use;
-                if (use == PropUse::Storage) {
+                const PropInfo& info = propInfo(p->kind);
+                // A barrel opens its panel (kept as it is if it is already open for this unit and prop). A campfire asks
+                // whether to open its inventory or to craft.
+                if (info.use == PropUse::Crafting) {
+                    craftChoiceProp = a.prop;
+                    craftChoiceUnit = a.unit;
+                    itemMenu.open = false;
+                }
+                if (info.use == PropUse::Storage && !(storageProp == a.prop && storageUnit == a.unit)) {
                     closeStorage();
                     storageProp = a.prop;
                     storageUnit = a.unit;
                     itemMenu.open = false;
-                } else if (a.taken && use == PropUse::Occupy) {
+                }
+                if (a.taken && info.use == PropUse::Occupy) {
                     showNotice(lang("MISC_PROP_TAKEN"));
-                } else if (a.taken && use == PropUse::Gather) {
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(PROP_WORKER_LIMIT) }));
+                } else if (a.taken && isWorkProp(info.use)) {
+                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 }
             }
             cleanupSquads(world);
@@ -3644,8 +3747,8 @@ int main(int, char**) {
                 hoursPassed = advanceClock(gs.clockSeconds, dt);
             }
             needsSystem(world, hoursPassed, gameSecs);
-            // Ore and trees: the units working them gather by the in-game time that passed
-            gatherSystem(world, gameSecs);
+            // Resource and crafting props: the units working them make items by the in-game time that passed
+            workSystem(world, gameSecs);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -3655,16 +3758,28 @@ int main(int, char**) {
             }
         }
 
-        // The storage panel closes once its unit is out of reach of the prop, is downed, or either is gone.
-        // A how-many prompt for it closes with it.
+        // The storage panel closes once its unit is out of reach of the prop, is downed, or either is gone, or when the
+        // selection becomes one unit other than the panel's. A how-many prompt for it closes with it.
         if (storageProp != NULL_ENTITY) {
             const Needs* sn = world.get<Needs>(storageUnit);
+            const std::vector<Entity> picked = selectedUnits(world);
             if (!world.has<Storage>(storageProp) || !world.has<Unit>(storageUnit) ||
-                (sn && sn->hp <= 0) || gapBetween(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE) {
+                (sn && sn->hp <= 0) || gapBetween(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE ||
+                (picked.size() == 1 && picked[0] != storageUnit)) {
                 closeStorage();
             }
         }
         if (quantity.open && quantity.toStorage && storageProp == NULL_ENTITY) quantity.open = false;
+        // The Inventory / Craft choice closes by the same rules
+        if (craftChoiceProp != NULL_ENTITY) {
+            const Needs* cn = world.get<Needs>(craftChoiceUnit);
+            const std::vector<Entity> picked = selectedUnits(world);
+            if (!world.has<Prop>(craftChoiceProp) || !world.has<Unit>(craftChoiceUnit) || (cn && cn->hp <= 0) ||
+                gapBetween(world, craftChoiceUnit, craftChoiceProp) > STORAGE_CLOSE_RANGE ||
+                (picked.size() == 1 && picked[0] != craftChoiceUnit)) {
+                closeCraftChoice();
+            }
+        }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
         std::string title = "Kobold Game   " + formatDate(gs.clockSeconds);
@@ -3858,7 +3973,14 @@ int main(int, char**) {
             // The storage panel, and the item being dragged out of it
             if (storageProp != NULL_ENTITY) {
                 const Storage* st = world.get<Storage>(storageProp);
-                renderer.drawStorage(layoutStorage(winW, winH), propNameOf(world, storageProp), st, storageDrag, mouseX, mouseY);
+                const bool crafting = storageUse(world) == PropUse::Crafting;
+                const std::vector<std::string> heads = crafting
+                    ? std::vector<std::string>{ lang("UILABEL_INPUT"), lang("UILABEL_OUTPUT") }
+                    : std::vector<std::string>{ lang("UILABEL_INVENTORY") };
+                const std::string hint = crafting ? langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) })
+                                                  : lang("UILABEL_STORAGE_HINT");
+                renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), heads, hint, st,
+                                     storageDrag, mouseX, mouseY);
                 if (st && storageDrag >= 0 && st->slots[storageDrag].item != 0) {
                     renderer.drawDraggedStack(mouseX, mouseY, st->slots[storageDrag].item, st->slots[storageDrag].count);
                 }
@@ -3867,6 +3989,7 @@ int main(int, char**) {
                                                 quantity.available, mouseX, mouseY);
                 }
             }
+            if (craftChoiceProp != NULL_ENTITY) renderer.drawItemMenu(craftChoiceLayout(), craftChoiceLabels(), mouseX, mouseY);
             // The world map popout is over everything, the panels included
             if (mapOpen) {
                 const Rect area = worldMapArea(winW, winH);

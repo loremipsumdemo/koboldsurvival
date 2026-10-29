@@ -7,6 +7,7 @@
 #include "ecs.h"
 #include "grid.h"
 #include "geometry.h"
+#include "props.h"
 #include "stats.h"
 
 // World position. y is the terrain height under the entity.
@@ -213,15 +214,14 @@ struct Prop {
     int serial = 0;
 };
 
-// The items a storage prop (a barrel) holds, one stack per slot
-constexpr int STORAGE_SLOTS = 12;
-constexpr int STORAGE_COLUMNS = 6;
+// The items a storage prop (a barrel) holds, one stack per slot. A crafting prop (a campfire) keeps its input in the
+// first CRAFT_INPUT_SLOTS slots and its output in the rest (props.h).
 struct Storage {
     std::array<ItemStack, STORAGE_SLOTS> slots{};
 };
 
 // A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, takes the bed or
-// starts working, by the prop's use. Any other order replaces it.
+// starts working, by the prop's use (a crafting prop opens its panel too). Any other order replaces it.
 struct PropOrder {
     Entity prop = NULL_ENTITY;
 };
@@ -232,14 +232,16 @@ struct Occupying {
     Entity prop = NULL_ENTITY;
 };
 
-// A unit working a gathering prop (ore or a tree). Its task shows as the prop's skill, such as Mining. It ends when
-// the unit is given another order, is downed, or has no room for what it gathers.
-struct Gathering {
+// A unit working a resource prop (ore or a tree) or a crafting prop (a campfire). Its task shows as the prop's skill,
+// such as Mining or Cooking. It ends when the unit is given another order or is downed; at a resource prop also when
+// the unit has no room for what it gathers, and at a crafting prop when the input runs out or the output is full.
+struct Working {
     Entity prop = NULL_ENTITY;
 };
 
-// A gathering prop's progress toward its next item, 0 to 1. The units working it add to it each in-game hour by
-// their skill. Each time it is full, one of them, in turn, receives the item. Not saved.
+// A resource or crafting prop's progress toward its next item, 0 to 1. The units working it add to it each in-game
+// hour by their skill. Each time it is full, an item is made: at a resource prop one of the workers, in turn, receives
+// it; at a crafting prop one input item becomes one output item. Not saved.
 struct PropWork {
     double progress = 0.0;
     unsigned turn = 0;      // which worker receives the next item

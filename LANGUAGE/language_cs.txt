@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Odpočívá
 UILABEL_STORAGE_HINT	Pravým kliknutím předmět vezmete, přetažením ven ho položíte tam, kde stojí vaše jednotka. Pravým kliknutím na předměty své jednotky je uložíte.
 ITEM_88_NAME	Dřevěné poleno
 ITEM_88_DESC	Dřevo z pokáceného stromu, k výrobě a stavění.
+UILABEL_INPUT	Vstup
+UILABEL_OUTPUT	Výstup
+UILABEL_CRAFT_HINT	Pravým kliknutím vložte předměty jednotky do vstupu a hotové předměty si vezměte z výstupu. Práci zahájíte pravým kliknutím na {0} a volbou Vyrábět.
+MISC_CRAFT_WRONG_ITEM	{0} zde nelze použít
+MISC_CRAFT_NEEDS	Pro začátek vložte do vstupu {0}
+MISC_CRAFT_OUTPUT_FULL	Výstup je plný
+MISC_CRAFTS	{0} vyrábí {1}
+MISC_CRAFT_STOPS	{0} už nemá na čem pracovat a přestává
+MISC_REASON_CRAFTING	řemeslo
+ITEM_89_NAME	Syrové maso
+ITEM_89_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_90_NAME	Pečené maso
+ITEM_90_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+UILABEL_CRAFT	Vyrábět

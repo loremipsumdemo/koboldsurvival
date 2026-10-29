@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Ruht
 UILABEL_STORAGE_HINT	Rechtsklick auf einen Gegenstand nimmt ihn, Herausziehen legt ihn dort ab, wo deine Einheit steht. Rechtsklick auf die Gegenstände deiner Einheit lagert sie ein.
 ITEM_88_NAME	Holzstamm
 ITEM_88_DESC	Holz von einem gefällten Baum, für Handwerk und Bau.
+UILABEL_INPUT	Eingabe
+UILABEL_OUTPUT	Ausgabe
+UILABEL_CRAFT_HINT	Rechtsklick auf die Gegenstände deiner Einheit legt sie in die Eingabe; fertige Gegenstände nimmst du aus der Ausgabe. Um mit der Arbeit zu beginnen, klicke mit rechts auf {0} und wähle Herstellen.
+MISC_CRAFT_WRONG_ITEM	{0} kann hier nicht verwendet werden
+MISC_CRAFT_NEEDS	Lege {0} in die Eingabe, um zu beginnen
+MISC_CRAFT_OUTPUT_FULL	Die Ausgabe ist voll
+MISC_CRAFTS	{0} stellt {1} her
+MISC_CRAFT_STOPS	{0} hat nichts mehr zu tun und hört auf
+MISC_REASON_CRAFTING	Handwerk
+ITEM_89_NAME	Rohes Fleisch
+ITEM_89_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_90_NAME	Gebratenes Fleisch
+ITEM_90_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+UILABEL_CRAFT	Herstellen

@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Hviler
 UILABEL_STORAGE_HINT	Høyreklikk på en gjenstand for å ta den, eller dra den ut for å slippe den der enheten din står. Høyreklikk på enhetens gjenstander for å legge dem i lageret.
 ITEM_88_NAME	Tømmerstokk
 ITEM_88_DESC	Tre hogget fra et tre, brukes til håndverk og bygging.
+UILABEL_INPUT	Inndata
+UILABEL_OUTPUT	Utdata
+UILABEL_CRAFT_HINT	Høyreklikk på enhetens gjenstander for å legge dem i inndata, og ta ferdige gjenstander fra utdata. Høyreklikk på {0} og velg Lag for å begynne å jobbe.
+MISC_CRAFT_WRONG_ITEM	{0} kan ikke brukes her
+MISC_CRAFT_NEEDS	Legg {0} i inndata for å begynne
+MISC_CRAFT_OUTPUT_FULL	Utdata er fullt
+MISC_CRAFTS	{0} lager {1}
+MISC_CRAFT_STOPS	{0} har ikke mer å jobbe med og stopper
+MISC_REASON_CRAFTING	håndverk
+ITEM_89_NAME	Rått kjøtt
+ITEM_89_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_90_NAME	Stekt kjøtt
+ITEM_90_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+UILABEL_CRAFT	Lag

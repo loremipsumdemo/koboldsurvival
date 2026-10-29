@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Đang nghỉ
 UILABEL_STORAGE_HINT	Nhấp chuột phải vào vật phẩm để lấy, hoặc kéo ra ngoài để thả tại chỗ đơn vị của bạn đang đứng. Nhấp chuột phải vào vật phẩm của đơn vị để cất vào.
 ITEM_88_NAME	Khúc gỗ
 ITEM_88_DESC	Gỗ đốn từ cây, dùng để chế tạo và xây dựng.
+UILABEL_INPUT	Nguyên liệu
+UILABEL_OUTPUT	Thành phẩm
+UILABEL_CRAFT_HINT	Nhấp chuột phải vào vật phẩm của đơn vị để cho vào ô nguyên liệu, và lấy thành phẩm ở ô thành phẩm. Để bắt đầu làm, nhấp chuột phải vào {0} và chọn Chế tạo.
+MISC_CRAFT_WRONG_ITEM	Không dùng được {0} ở đây
+MISC_CRAFT_NEEDS	Cho {0} vào ô nguyên liệu để bắt đầu
+MISC_CRAFT_OUTPUT_FULL	Ô thành phẩm đã đầy
+MISC_CRAFTS	{0} làm ra {1}
+MISC_CRAFT_STOPS	{0} không còn gì để làm nên dừng lại
+MISC_REASON_CRAFTING	chế tạo
+ITEM_89_NAME	Thịt sống
+ITEM_89_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_90_NAME	Thịt nướng
+ITEM_90_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+UILABEL_CRAFT	Chế tạo

@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Descansando
 UILABEL_STORAGE_HINT	Clique com o botão direito em um item para pegá-lo, ou arraste-o para fora para soltá-lo onde sua unidade está. Clique com o botão direito nos itens da sua unidade para guardá-los.
 ITEM_88_NAME	Tora de madeira
 ITEM_88_DESC	Madeira cortada de uma árvore, usada em fabricação e construção.
+UILABEL_INPUT	Entrada
+UILABEL_OUTPUT	Saída
+UILABEL_CRAFT_HINT	Clique com o botão direito nos itens da sua unidade para colocá-los na entrada, e pegue os itens prontos na saída. Para começar a trabalhar, clique com o botão direito em {0} e escolha Fabricar.
+MISC_CRAFT_WRONG_ITEM	{0} não pode ser usado aqui
+MISC_CRAFT_NEEDS	Coloque {0} na entrada para começar
+MISC_CRAFT_OUTPUT_FULL	A saída está cheia
+MISC_CRAFTS	{0} faz {1}
+MISC_CRAFT_STOPS	{0} não tem mais no que trabalhar e para
+MISC_REASON_CRAFTING	fabricar
+ITEM_89_NAME	Carne crua
+ITEM_89_DESC	Carne não cozida. Asse-a numa fogueira.
+ITEM_90_NAME	Carne assada
+ITEM_90_DESC	Carne assada no fogo. Restaura vida e fome.
+UILABEL_CRAFT	Fabricar

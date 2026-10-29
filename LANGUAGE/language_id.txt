@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	Beristirahat
 UILABEL_STORAGE_HINT	Klik kanan sebuah barang untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unitmu berdiri. Klik kanan barang milik unitmu untuk menyimpannya.
 ITEM_88_NAME	Batang kayu
 ITEM_88_DESC	Kayu yang ditebang dari pohon, untuk kerajinan dan bangunan.
+UILABEL_INPUT	Masukan
+UILABEL_OUTPUT	Hasil
+UILABEL_CRAFT_HINT	Klik kanan barang unitmu untuk memasukkannya ke masukan, dan ambil barang jadi dari hasil. Untuk mulai bekerja, klik kanan {0} lalu pilih Buat.
+MISC_CRAFT_WRONG_ITEM	{0} tidak bisa dipakai di sini
+MISC_CRAFT_NEEDS	Masukkan {0} ke masukan untuk mulai
+MISC_CRAFT_OUTPUT_FULL	Hasil sudah penuh
+MISC_CRAFTS	{0} membuat {1}
+MISC_CRAFT_STOPS	{0} tidak punya bahan lagi dan berhenti
+MISC_REASON_CRAFTING	kerajinan
+ITEM_89_NAME	Daging mentah
+ITEM_89_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_90_NAME	Daging matang
+ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+UILABEL_CRAFT	Buat

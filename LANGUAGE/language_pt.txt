@@ -580,3 +580,17 @@ UILABEL_TASK_RESTING	A descansar
 UILABEL_STORAGE_HINT	Clique com o botão direito num item para o tirar, ou arraste-o para fora para o largar onde a sua unidade está. Clique com o botão direito nos itens da sua unidade para os guardar.
 ITEM_88_NAME	Tronco de madeira
 ITEM_88_DESC	Madeira cortada de uma árvore, usada no fabrico e na construção.
+UILABEL_INPUT	Entrada
+UILABEL_OUTPUT	Saída
+UILABEL_CRAFT_HINT	Clique com o botão direito nos itens da sua unidade para os pôr na entrada, e tire os itens prontos da saída. Para começar a trabalhar, clique com o botão direito em {0} e escolha Fabricar.
+MISC_CRAFT_WRONG_ITEM	{0} não pode ser usado aqui
+MISC_CRAFT_NEEDS	Ponha {0} na entrada para começar
+MISC_CRAFT_OUTPUT_FULL	A saída está cheia
+MISC_CRAFTS	{0} faz {1}
+MISC_CRAFT_STOPS	{0} não tem mais em que trabalhar e para
+MISC_REASON_CRAFTING	fabricar
+ITEM_89_NAME	Carne crua
+ITEM_89_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_90_NAME	Carne assada
+ITEM_90_DESC	Carne assada ao lume. Restaura vida e fome.
+UILABEL_CRAFT	Fabricar
