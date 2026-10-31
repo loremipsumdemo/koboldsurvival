@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	상대에게 내 아이템을 넣을 공간이 없습�
 MISC_TRADE_FAILED	거래에 실패했습니다
 MISC_TRADE_COMPLETE	거래가 완료되었습니다.
 MISC_PICKUP_SELECT	아이템을 주울 유닛을 선택하세요
-MISC_TALK_SELECT	대화할 유닛을 선택하세요
 MISC_TRADE_ONLY_TALKING	지금 대화 중인 유닛과만 거래할 수 있습니다.
 MISC_DROPS	{0}이(가) {1} {2}을(를) 떨어뜨립니다
 MISC_AN_ITEM	아이템 하나
@@ -567,7 +566,6 @@ PROP_BONES	뼈
 PROP_WALL	벽
 PROP_STALL	노점
 MISC_STORAGE_FULL	보관함에 공간이 없습니다
-MISC_PROP_SELECT	사용할 유닛을 선택하세요
 MISC_PROP_TAKEN	이미 사용 중입니다
 MISC_PROP_WORKERS_FULL	한 번에 최대 {0}개 유닛이 작업할 수 있습니다
 MISC_GATHERS	{0}이(가) {1}을(를) 채집합니다
@@ -582,7 +580,7 @@ ITEM_88_NAME	통나무
 ITEM_88_DESC	나무에서 벤 목재로, 제작과 건축에 쓰인다.
 UILABEL_INPUT	재료
 UILABEL_OUTPUT	결과물
-UILABEL_CRAFT_HINT	유닛의 아이템을 우클릭해 재료 칸에 넣고, 완성된 아이템은 결과물 칸에서 가져갑니다. 작업을 시작하려면 {0}을(를) 우클릭하고 제작을 선택하세요.
+UILABEL_CRAFT_HINT	유닛의 아이템을 우클릭해 재료 칸에 넣고, 완성된 아이템은 결과물 칸에서 가져갑니다. 작업을 시작하려면 {0}을(를) 우클릭하고 사용을 선택하세요.
 MISC_CRAFT_WRONG_ITEM	{0}은(는) 여기에 쓸 수 없습니다
 MISC_CRAFT_NEEDS	시작하려면 재료 칸에 {0}을(를) 넣으세요
 MISC_CRAFT_OUTPUT_FULL	결과물 칸이 가득 찼습니다
@@ -593,4 +591,17 @@ ITEM_89_NAME	생고기
 ITEM_89_DESC	익히지 않은 고기. 모닥불에서 구우세요.
 ITEM_90_NAME	구운 고기
 ITEM_90_DESC	불에 구운 고기. 체력과 허기를 회복한다.
-UILABEL_CRAFT	제작
+UILABEL_TALK	대화
+UILABEL_ATTACK	공격
+UILABEL_ATTACK_UNPROVOKED	공격 (선제)
+UILABEL_FOLLOW	따라가기
+UILABEL_DEFEND	방어
+UILABEL_TASK_FOLLOWING	따라가는 중
+UILABEL_TASK_DEFENDING	방어 중
+MISC_FREE_TRADE_ADD	어느 쪽에든 아이템을 넣으세요
+MISC_FREE_TRADE_READY	교환 준비 완료
+MISC_TURNS_HOSTILE	{0}이(가) 적대적으로 변했습니다
+MISC_SELECT_UNIT_FIRST	먼저 유닛을 선택하세요
+FACTION_PLAYER	플레이어 세력
+FACTION_GRAY	회색 세력
+FACTION_RED	붉은 세력

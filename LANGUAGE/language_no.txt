@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	De har ikke plass til gjenstandene dine
 MISC_TRADE_FAILED	Handelen mislyktes
 MISC_TRADE_COMPLETE	Handelen er fullført.
 MISC_PICKUP_SELECT	Velg enheter som skal plukke opp gjenstanden
-MISC_TALK_SELECT	Velg en enhet å snakke med
 MISC_TRADE_ONLY_TALKING	Du kan bare handle med enheten du snakker med.
 MISC_DROPS	{0} slipper {1} {2}
 MISC_AN_ITEM	en gjenstand
@@ -567,7 +566,6 @@ PROP_BONES	Knokler
 PROP_WALL	Mur
 PROP_STALL	Bod
 MISC_STORAGE_FULL	Ingen plass i lageret
-MISC_PROP_SELECT	Velg en enhet for å bruke den
 MISC_PROP_TAKEN	Allerede i bruk
 MISC_PROP_WORKERS_FULL	Opptil {0} enheter kan jobbe med den samtidig
 MISC_GATHERS	{0} samler {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Tømmerstokk
 ITEM_88_DESC	Tre hogget fra et tre, brukes til håndverk og bygging.
 UILABEL_INPUT	Inndata
 UILABEL_OUTPUT	Utdata
-UILABEL_CRAFT_HINT	Høyreklikk på enhetens gjenstander for å legge dem i inndata, og ta ferdige gjenstander fra utdata. Høyreklikk på {0} og velg Lag for å begynne å jobbe.
+UILABEL_CRAFT_HINT	Høyreklikk på enhetens gjenstander for å legge dem i inndata, og ta ferdige gjenstander fra utdata. Høyreklikk på {0} og velg Bruk for å begynne å jobbe.
 MISC_CRAFT_WRONG_ITEM	{0} kan ikke brukes her
 MISC_CRAFT_NEEDS	Legg {0} i inndata for å begynne
 MISC_CRAFT_OUTPUT_FULL	Utdata er fullt
@@ -593,4 +591,17 @@ ITEM_89_NAME	Rått kjøtt
 ITEM_89_DESC	Ukokt kjøtt. Stek det ved et leirbål.
 ITEM_90_NAME	Stekt kjøtt
 ITEM_90_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
-UILABEL_CRAFT	Lag
+UILABEL_TALK	Snakk
+UILABEL_ATTACK	Angrip
+UILABEL_ATTACK_UNPROVOKED	Angrip (uprovosert)
+UILABEL_FOLLOW	Følg
+UILABEL_DEFEND	Forsvar
+UILABEL_TASK_FOLLOWING	Følger
+UILABEL_TASK_DEFENDING	Forsvarer
+MISC_FREE_TRADE_ADD	Legg gjenstander på en av sidene
+MISC_FREE_TRADE_READY	Klar til handel
+MISC_TURNS_HOSTILE	{0} blir fiendtlig
+MISC_SELECT_UNIT_FIRST	Velg en enhet først
+FACTION_PLAYER	Spillerens fraksjon
+FACTION_GRAY	Den grå fraksjonen
+FACTION_RED	Den røde fraksjonen

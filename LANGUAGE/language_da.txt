@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	De har ikke plads til dine genstande
 MISC_TRADE_FAILED	Handlen mislykkedes
 MISC_TRADE_COMPLETE	Handlen er gennemført.
 MISC_PICKUP_SELECT	Vælg enheder, der skal samle genstanden op
-MISC_TALK_SELECT	Vælg en enhed for at tale med den
 MISC_TRADE_ONLY_TALKING	Du kan kun handle med den enhed, du taler med.
 MISC_DROPS	{0} taber {1} {2}
 MISC_AN_ITEM	en genstand
@@ -567,7 +566,6 @@ PROP_BONES	Knogler
 PROP_WALL	Mur
 PROP_STALL	Bod
 MISC_STORAGE_FULL	Ingen plads i lageret
-MISC_PROP_SELECT	Vælg en enhed for at bruge den
 MISC_PROP_TAKEN	Allerede i brug
 MISC_PROP_WORKERS_FULL	Op til {0} enheder kan arbejde på den ad gangen
 MISC_GATHERS	{0} samler {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Træstamme
 ITEM_88_DESC	Træ fældet fra et træ, bruges til håndværk og byggeri.
 UILABEL_INPUT	Input
 UILABEL_OUTPUT	Output
-UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i input, og tag færdige genstande fra output. Højreklik på {0} og vælg Fremstil for at begynde at arbejde.
+UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i input, og tag færdige genstande fra output. Højreklik på {0} og vælg Brug for at begynde at arbejde.
 MISC_CRAFT_WRONG_ITEM	{0} kan ikke bruges her
 MISC_CRAFT_NEEDS	Læg {0} i input for at begynde
 MISC_CRAFT_OUTPUT_FULL	Output er fuldt
@@ -593,4 +591,17 @@ ITEM_89_NAME	Råt kød
 ITEM_89_DESC	Utilberedt kød. Steg det ved et lejrbål.
 ITEM_90_NAME	Stegt kød
 ITEM_90_DESC	Kød stegt over ild. Genopretter helbred og mætter.
-UILABEL_CRAFT	Fremstil
+UILABEL_TALK	Tal
+UILABEL_ATTACK	Angrib
+UILABEL_ATTACK_UNPROVOKED	Angrib (uprovokeret)
+UILABEL_FOLLOW	Følg
+UILABEL_DEFEND	Forsvar
+UILABEL_TASK_FOLLOWING	Følger
+UILABEL_TASK_DEFENDING	Forsvarer
+MISC_FREE_TRADE_ADD	Læg genstande på en af siderne
+MISC_FREE_TRADE_READY	Klar til handel
+MISC_TURNS_HOSTILE	{0} bliver fjendtlig
+MISC_SELECT_UNIT_FIRST	Vælg først en enhed
+FACTION_PLAYER	Spillerens fraktion
+FACTION_GRAY	Den grå fraktion
+FACTION_RED	Den røde fraktion

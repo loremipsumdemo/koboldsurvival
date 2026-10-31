@@ -17,12 +17,16 @@ namespace {
 constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
 constexpr float PICKUP_REACH = 0.9f;     // a unit this close to a ground item can take it
 
-// Ends a unit's use of a prop: the walk to one, a bed it lies on, or the work it does. Every order the player
-// gives calls this, so a unit given another order leaves its bed or stops working.
+constexpr float FOLLOW_DISTANCE = 1.6f;   // a unit following or defending another keeps within this many tiles of it
+
+// Ends a unit's standing orders: the walk to a prop, a bed it lies on, the work it does, and following or defending a
+// unit. Every order the player gives calls this, so a unit given another order leaves its bed or stops what it was at.
 void endPropTasks(World& w, Entity u) {
     w.remove<PropOrder>(u);
     w.remove<Occupying>(u);
     w.remove<Working>(u);
+    w.remove<FollowOrder>(u);
+    w.remove<DefendOrder>(u);
 }
 
 // Stops a unit's pickup: the order and its walk both end
@@ -167,6 +171,7 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     w.add(u, Name{});
     w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
     w.add(u, Body{ randomBodyType(rng) });
+    w.add(u, Faction{ FACTION_PLAYER });
 }
 
 // Makes sure there are `count` player units, adding the missing ones at the spawn
@@ -227,6 +232,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             w.add(e, Unit{ HOSTILE_WALK_SPEED });
             if (neutral) w.add(e, Neutral{});
             else w.add(e, Hostile{});
+            w.add(e, Faction{ neutral ? FACTION_GRAY : FACTION_RED });
             w.add(e, randomNpcLoot(rng));
             w.add(e, Equipment{});
             w.add(e, Needs{});
@@ -400,7 +406,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
 }
 
 // Right-click on an NPC: each selected unit walks up to it. The first in talk range starts the talk.
-void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc) {
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade) {
     if (!w.has<Unit>(npc) || !w.get<Transform>(npc)) return;
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
@@ -410,7 +416,7 @@ void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc) {
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
         endPropTasks(w, u);
-        w.add(u, TalkOrder{ npc });
+        w.add(u, TalkOrder{ npc, trade });
     }
 }
 
@@ -530,23 +536,88 @@ void squadSystem(World& w, float dt, bool running) {
     }
 }
 
+namespace {
+
+// The unit a unit is following or defending (and not off fighting an attacker), or NULL_ENTITY
+Entity leadOf(World& w, Entity e) {
+    if (const FollowOrder* f = w.get<FollowOrder>(e)) return f->target;
+    if (const DefendOrder* d = w.get<DefendOrder>(e); d && !w.has<AttackOrder>(e)) return d->ward;
+    return NULL_ENTITY;
+}
+
+// Whether a unit following or defending lead is close enough to stop. It is when it is within FOLLOW_DISTANCE of the
+// lead, or when it touches another unit with the same lead that is closer to the lead than it is and lies toward the
+// lead from it (within 60 degrees). That other unit must always be the closer of the two, so two followers can never
+// hold each other in place: when the lead walks off, the nearest one goes after it, and the rest follow in turn.
+// A crowd around one unit settles into a cluster instead of pressing in on it forever.
+// Stopping behind another counts only within a radius that grows with the crowd: about what that many units need
+// packed around the lead. Further out, a unit keeps on, and the idle units in its way step aside (steeringSystem),
+// so a crowd that came in single file gathers round the lead instead of trailing behind it in a long line.
+bool closeEnoughToLead(World& w, const std::vector<Entity>& units, Entity e, Entity lead) {
+    const Transform* tr = w.get<Transform>(e);
+    const Transform* lt = w.get<Transform>(lead);
+    if (!tr || !lt) return true;
+    const float gx = lt->x - tr->x, gz = lt->z - tr->z;
+    const float myGap = std::sqrt(gx * gx + gz * gz);
+    if (myGap <= FOLLOW_DISTANCE) return true;
+    const Unit* mu = w.get<Unit>(e);
+    int crowd = 0;
+    for (Entity o : units) crowd += leadOf(w, o) == lead ? 1 : 0;
+    const float spacing = 2.0f * mu->radius + UNIT_CLEARANCE;
+    if (myGap > FOLLOW_DISTANCE + 0.75f * spacing * std::sqrt((float)crowd)) return false;
+    for (Entity o : units) {
+        if (o == e || o == lead || leadOf(w, o) != lead) continue;
+        const Transform* ot = w.get<Transform>(o);
+        const Unit* ou = w.get<Unit>(o);
+        const float ox = ot->x - tr->x, oz = ot->z - tr->z;
+        const float touching = mu->radius + ou->radius + UNIT_CLEARANCE + 0.3f;
+        const float gap = std::sqrt(ox * ox + oz * oz);
+        if (gap > touching || gap < 1e-4f) continue;
+        const float theirGap = std::hypot(lt->x - ot->x, lt->z - ot->z);
+        if (theirGap >= myGap) continue;                       // it must be closer to the lead
+        if (ox * gx + oz * gz < 0.5f * gap * myGap) continue;   // and toward the lead from here, within 60 degrees
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
 void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // Every unit that moves: player units by their orders, hostiles by their chase
     std::vector<Entity> units = w.view<Unit, Transform>();
     std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
     std::vector<float> speeds(units.size(), 0.0f);
+    // Each unit's goal this frame, whether it is going somewhere of its own (else it is idle, holding its spot), and
+    // whether it is pinned in place (lying on a bed)
+    std::vector<std::pair<float, float>> goal(units.size(), { 0.0f, 0.0f });
+    std::vector<char> going(units.size(), 0), pinned(units.size(), 0);
+    // For a unit settled while following or defending, and not in a fight, the unit it follows (else NULL_ENTITY).
+    // Such units hold still among their own: see pass 1b.
+    std::vector<Entity> calmLead(units.size(), NULL_ENTITY);
 
-    // Pass 1: each unit's desired velocity, from its slot plus separation.
+    // The units something is attacking this frame
+    std::vector<Entity> attacked;
+    for (Entity e : units) {
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) attacked.push_back(c->target);
+    }
+    std::sort(attacked.begin(), attacked.end());
+    auto underAttack = [&](Entity e) { return std::binary_search(attacked.begin(), attacked.end(), e); };
+    const float unitWidth = 2.0f * 0.4f + UNIT_CLEARANCE;   // one unit's room, at the usual radius
+
+    // Pass 1a: each unit's goal: where its orders take it, or the spot it is idling at.
     // Positions are read here but not changed, so the order of units doesn't matter.
     for (size_t i = 0; i < units.size(); ++i) {
         Entity e = units[i];
         Transform* tr = w.get<Transform>(e);
-        Unit* u = w.get<Unit>(e);
 
         float tx = tr->x, tz = tr->z;   // default: stay put
+        float leadGap = -1.0f;          // how far a following or defending unit is from the unit it follows
         // A unit on a bed or bedroll lies still on it: it does not move, and nothing pushes it off
         if (w.has<Occupying>(e)) {
             speeds[i] = 0.0f;
+            pinned[i] = 1;
+            goal[i] = { tr->x, tr->z };
             continue;
         }
         if (const Working* g = w.get<Working>(e); g && !w.has<SoloMove>(e)) {
@@ -608,6 +679,28 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
                     tz = tt->z;
                 }
             }
+        } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
+            // Following or defending (with no attacker to fight): walk after the unit, and stop once close enough
+            const Entity lead = leadOf(w, e);
+            if (const Transform* lt = w.get<Transform>(lead)) {
+                leadGap = std::hypot(lt->x - tr->x, lt->z - tr->z);
+                // Once settled, a unit that is not in a fight stays put, without checking again, until the unit it
+                // follows has moved off by at least a whole unit's room. Small moves of the lead, or of the others
+                // around it, don't set it shuffling.
+                const IdleSpot* rest = w.get<IdleSpot>(e);
+                const bool calm = !underAttack(e) && !underAttack(lead);
+                const bool stay = calm && rest && rest->leadGap >= 0.0f && leadGap <= rest->leadGap + unitWidth;
+                if (stay) {
+                    calmLead[i] = lead;
+                } else if (!closeEnoughToLead(w, units, e, lead)) {
+                    tx = lt->x;
+                    tz = lt->z;
+                } else if (calm) {
+                    calmLead[i] = lead;
+                }
+            } else {
+                w.remove<FollowOrder>(e);   // the unit it followed is gone
+            }
         } else if (w.has<Hostile>(e)) {
             // A hostile walks at its target while it has one, and stops once it is close enough to swing
             if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
@@ -621,31 +714,78 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             }
         }
 
+        // With nowhere to go, a unit holds the spot where it came to rest. With somewhere to go, the spot is dropped,
+        // and a new one is taken where it next stops.
+        const bool idle = tx == tr->x && tz == tr->z;
+        if (idle) {
+            IdleSpot* spot = w.get<IdleSpot>(e);
+            if (!spot) spot = &w.add(e, IdleSpot{ tr->x, tr->z, leadGap });
+            else if (spot->leadGap < 0.0f) spot->leadGap = leadGap;
+            tx = spot->x;
+            tz = spot->z;
+        } else if (w.has<IdleSpot>(e)) {
+            w.remove<IdleSpot>(e);
+        }
+        goal[i] = { tx, tz };
+        going[i] = idle ? 0 : 1;
         // A downed unit has speed 0. A player unit's speed depends on its load, Athletics, stamina and pace.
         speeds[i] = walkSpeedOf(w, e, running);
-        float dx = tx - tr->x, dz = tz - tr->z;
-        float dist = std::sqrt(dx * dx + dz * dz);
-        float vx = 0.0f, vz = 0.0f;
-        if (dist > 0.05f && speeds[i] > 0.0f) {
-            float sp = std::min(speeds[i], dist * 2.5f);   // slow down near the target
-            vx = dx / dist * sp;
-            vz = dz / dist * sp;
-        }
+    }
 
-        // Separation: push away from any unit that is too close
+    // Pass 1b: each unit's velocity: toward its goal, plus separation from the units too close to it.
+    // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
+    // aside, off the other unit's way. Once nothing pushes it, it walks back to its spot.
+    for (size_t i = 0; i < units.size(); ++i) {
+        if (pinned[i]) continue;
+        const Entity e = units[i];
+        const Transform* tr = w.get<Transform>(e);
+        const Unit* u = w.get<Unit>(e);
+
+        float vx = 0.0f, vz = 0.0f, sideX = 0.0f, sideZ = 0.0f;
+        bool shoved = false;
         for (size_t j = 0; j < units.size(); ++j) {
             if (j == i) continue;
-            Transform* o = w.get<Transform>(units[j]);
-            Unit* ou = w.get<Unit>(units[j]);
+            const Transform* o = w.get<Transform>(units[j]);
+            const Unit* ou = w.get<Unit>(units[j]);
             float sx = tr->x - o->x, sz = tr->z - o->z;
-            float minD = u->radius + ou->radius + UNIT_CLEARANCE;
-            float d2 = sx * sx + sz * sz;
-            if (d2 < minD * minD) {
-                float d = std::sqrt(d2);
-                if (d < 1e-4f) { sx = 1.0f; sz = 0.0f; d = 1.0f; }
-                float push = (minD - d) * 8.0f;
-                vx += sx / d * push;
-                vz += sz / d * push;
+            const float minD = u->radius + ou->radius + UNIT_CLEARANCE;
+            const float d2 = sx * sx + sz * sz;
+            if (d2 >= minD * minD) continue;
+            // Two settled units following the same unit leave each other be: no pushing back and forth between them
+            if (calmLead[i] != NULL_ENTITY && calmLead[i] == calmLead[j]) continue;
+            float d = std::sqrt(d2);
+            if (d < 1e-4f) { sx = 1.0f; sz = 0.0f; d = 1.0f; }
+            const float push = (minD - d) * 8.0f;
+            vx += sx / d * push;
+            vz += sz / d * push;
+            if (!going[i] && going[j]) {
+                // Pushed by a unit on its way: step to the side of its path, the side this unit is already on
+                shoved = true;
+                float hx = goal[j].first - o->x, hz = goal[j].second - o->z;
+                const float hl = std::sqrt(hx * hx + hz * hz);
+                if (hl > 1e-4f) {
+                    hx /= hl;
+                    hz /= hl;
+                    float side = hx * sz - hz * sx;                      // which side of its heading this unit is on
+                    if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
+                    const float s = side > 0.0f ? 1.0f : -1.0f;
+                    sideX += -hz * s * push;
+                    sideZ += hx * s * push;
+                }
+            }
+        }
+        if (shoved) {
+            vx += sideX;
+            vz += sideZ;
+        } else {
+            const float dx = goal[i].first - tr->x, dz = goal[i].second - tr->z;
+            const float dist = std::sqrt(dx * dx + dz * dz);
+            // A settled follower only walks back to its spot when it is at least a whole unit's room away from it
+            const float deadZone = calmLead[i] != NULL_ENTITY ? unitWidth : 0.05f;
+            if (dist > deadZone && speeds[i] > 0.0f) {
+                const float sp = std::min(speeds[i], dist * 2.5f);   // slow down near the goal
+                vx += dx / dist * sp;
+                vz += dz / dist * sp;
             }
         }
         vel[i] = { vx, vz };
@@ -778,7 +918,7 @@ int propWorkerCount(World& w, Entity prop) {
     return n;
 }
 
-void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop) {
+void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt || !w.has<Prop>(prop)) return;
     for (Entity u : units) {
@@ -790,8 +930,85 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
         endPropTasks(w, u);
         w.add(u, SoloMove{});
         planSolo(w, t, u, Vec2{ pt->x, pt->z });
-        w.add(u, PropOrder{ prop });
+        w.add(u, PropOrder{ prop, action });
     }
+}
+
+void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target) {
+    if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
+    for (Entity u : units) {
+        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        w.remove<SquadMember>(u);
+        w.remove<SoloMove>(u);
+        w.remove<PickupOrder>(u);
+        w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
+        endPropTasks(w, u);
+        w.add(u, FollowOrder{ target });
+    }
+}
+
+void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
+    if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
+    for (Entity u : units) {
+        if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        w.remove<SquadMember>(u);
+        w.remove<SoloMove>(u);
+        w.remove<PickupOrder>(u);
+        w.remove<AttackOrder>(u);
+        w.remove<TalkOrder>(u);
+        endPropTasks(w, u);
+        w.add(u, DefendOrder{ ward, NULL_ENTITY });
+    }
+}
+
+void defendSystem(World& w) {
+    for (Entity d : w.view<DefendOrder>()) {
+        DefendOrder* o = w.get<DefendOrder>(d);
+        if (!w.has<Unit>(o->ward) || !w.get<Transform>(o->ward)) {   // the unit defended is gone
+            w.remove<AttackOrder>(d);
+            w.remove<DefendOrder>(d);
+            continue;
+        }
+        // Still fighting an attacker that is standing and still after the ward: keep at it
+        auto attackingWard = [&](Entity a) {
+            const Combat* c = w.get<Combat>(a);
+            const Needs* n = w.get<Needs>(a);
+            // Your own units never fight each other, even one that attacks the unit defended
+            return a != d && !w.has<Commandable>(a) && w.has<Unit>(a) && w.get<Transform>(a) && c &&
+                   c->target == o->ward && (!n || n->hp > 0);
+        };
+        if (o->engaged != NULL_ENTITY && attackingWard(o->engaged) && w.has<AttackOrder>(d)) continue;
+        if (o->engaged != NULL_ENTITY) {
+            w.remove<AttackOrder>(d);
+            if (Combat* c = w.get<Combat>(d)) c->target = NULL_ENTITY;
+            o->engaged = NULL_ENTITY;
+        }
+        // The nearest unit now attacking the ward, if any, becomes the one to fight
+        const Transform* dt = w.get<Transform>(d);
+        Entity best = NULL_ENTITY;
+        float bestD2 = 0.0f;
+        for (Entity a : w.view<Unit, Transform, Combat>()) {
+            if (!attackingWard(a)) continue;
+            const Transform* at = w.get<Transform>(a);
+            const float d2 = (at->x - dt->x) * (at->x - dt->x) + (at->z - dt->z) * (at->z - dt->z);
+            if (best == NULL_ENTITY || d2 < bestD2) {
+                best = a;
+                bestD2 = d2;
+            }
+        }
+        if (best != NULL_ENTITY) {
+            o->engaged = best;
+            w.add(d, AttackOrder{ best });
+        }
+    }
+}
+
+void makeHostile(World& w, Entity unit) {
+    if (!w.has<Unit>(unit) || w.has<Commandable>(unit) || w.has<Hostile>(unit)) return;
+    w.remove<Neutral>(unit);
+    w.add(unit, Hostile{});
+    queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, unit) }), LogKind::Seen);
 }
 
 std::vector<PropArrival> propOrderSystem(World& w) {
@@ -806,10 +1023,19 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             continue;
         }
         if (flatGap(w, u, prop) <= PROP_REACH) {
+            const PropAction action = w.get<PropOrder>(u)->action;
             w.remove<PropOrder>(u);
             w.remove<SoloMove>(u);
-            PropArrival a{ u, prop, false, false };
+            PropArrival a;
+            a.unit = u;
+            a.prop = prop;
+            a.action = action;
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
+            if (action == PropAction::Inventory) {
+                // Inventory: the game opens the storage or crafting prop's panel
+                if (hasStorage(info.use)) out.push_back(a);
+                continue;
+            }
             switch (info.use) {
             case PropUse::Storage:
                 break;
@@ -837,12 +1063,15 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 }
                 break;
             case PropUse::Crafting:
-                // The game asks the player what to do: open the inventory, or craft (tryStartWork)
+                // Use: start crafting if the input and output allow it, checked now, at the moment of the try
+                a.craft = tryStartWork(w, u, prop);
+                a.started = a.craft == WorkStart::Started;
+                a.taken = a.craft == WorkStart::Full;
                 break;
             case PropUse::None:
                 break;
             }
-            if (info.use != PropUse::None) out.push_back(a);
+            if (info.use != PropUse::None && info.use != PropUse::Storage) out.push_back(a);
             continue;
         }
         // Stopped short with no route left (the prop can't be reached), so give up
@@ -910,6 +1139,7 @@ void workSystem(World& w, double gameSeconds) {
 
         while (pw.progress >= 1.0 && !workers.empty()) {
             pw.progress -= 1.0;
+            ++pw.made;   // finished, whatever becomes of the item: the ring hops for it
             const size_t pick = pw.turn % workers.size();
             ++pw.turn;
             const Entity got = workers[pick];
@@ -987,10 +1217,27 @@ std::string taskNameOf(World& w, Entity u) {
     else if (const PropOrder* po = w.get<PropOrder>(u); po && useOf(w, po->prop) == PropUse::Resource) prop = po->prop;
     if (const Prop* p = prop != NULL_ENTITY ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
     if (w.has<Occupying>(u)) return lang("UILABEL_TASK_RESTING");
+    if (w.has<DefendOrder>(u)) return lang("UILABEL_TASK_DEFENDING");
+    if (w.has<FollowOrder>(u)) return lang("UILABEL_TASK_FOLLOWING");
     const SoloMove* so = w.get<SoloMove>(u);
     if (so && so->next < so->waypoints.size()) return lang("UILABEL_TASK_MOVING");
     if (const SquadMember* sm = w.get<SquadMember>(u)) {
         if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return lang("UILABEL_TASK_MOVING");
     }
     return lang("UILABEL_TASK_IDLE");
+}
+
+std::vector<int> emotesOf(World& w, Entity u) {
+    std::vector<int> out;
+    auto propEmoteOf = [&](Entity prop) {
+        const Prop* p = w.get<Prop>(prop);
+        return p ? propEmote(p->kind) : (int)EMOTE_NONE;
+    };
+    if (const Working* wk = w.get<Working>(u); wk && propEmoteOf(wk->prop) != EMOTE_NONE) out.push_back(propEmoteOf(wk->prop));
+    if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EMOTE_NONE) out.push_back(propEmoteOf(oc->prop));
+    if (w.has<Inventory>(u) && w.has<Stats>(u)) {
+        const float limit = carryLimit(statsOf(w, u));
+        if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EMOTE_ENCUMBERED);
+    }
+    return out;
 }

@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Nekik nincs hely a te tárgyaidnak
 MISC_TRADE_FAILED	A kereskedés sikertelen
 MISC_TRADE_COMPLETE	A kereskedés befejeződött.
 MISC_PICKUP_SELECT	Válassz egységeket, amelyek felveszik a tárgyat
-MISC_TALK_SELECT	Válassz egy egységet, hogy beszélj vele
 MISC_TRADE_ONLY_TALKING	Csak azzal az egységgel kereskedhetsz, akivel éppen beszélsz.
 MISC_DROPS	{0} eldobja: {1} {2}
 MISC_AN_ITEM	egy tárgyat
@@ -567,7 +566,6 @@ PROP_BONES	Csontok
 PROP_WALL	Fal
 PROP_STALL	Bódé
 MISC_STORAGE_FULL	Nincs hely a tárolóban
-MISC_PROP_SELECT	Válassz egy egységet a használatához
 MISC_PROP_TAKEN	Már használatban van
 MISC_PROP_WORKERS_FULL	Egyszerre legfeljebb {0} egység dolgozhat rajta
 MISC_GATHERS	{0} gyűjt: {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Fatörzs
 ITEM_88_DESC	Fáról vágott fa, kézművességhez és építkezéshez.
 UILABEL_INPUT	Bemenet
 UILABEL_OUTPUT	Kimenet
-UILABEL_CRAFT_HINT	Jobb kattintással teheted az egységed tárgyait a bemenetbe, a kész tárgyakat pedig a kimenetből veheted el. A munka indításához kattints jobb gombbal erre: {0}, és válaszd a Készítés lehetőséget.
+UILABEL_CRAFT_HINT	Jobb kattintással teheted az egységed tárgyait a bemenetbe, a kész tárgyakat pedig a kimenetből veheted el. A munka indításához kattints jobb gombbal erre: {0}, és válaszd a Használat lehetőséget.
 MISC_CRAFT_WRONG_ITEM	{0} itt nem használható
 MISC_CRAFT_NEEDS	Tegyél {0} tárgyat a bemenetbe a kezdéshez
 MISC_CRAFT_OUTPUT_FULL	A kimenet megtelt
@@ -593,4 +591,17 @@ ITEM_89_NAME	Nyers hús
 ITEM_89_DESC	Nyers hús. Süsd meg egy tábortűznél.
 ITEM_90_NAME	Sült hús
 ITEM_90_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
-UILABEL_CRAFT	Készítés
+UILABEL_TALK	Beszéd
+UILABEL_ATTACK	Támadás
+UILABEL_ATTACK_UNPROVOKED	Támadás (provokálatlanul)
+UILABEL_FOLLOW	Követés
+UILABEL_DEFEND	Védelem
+UILABEL_TASK_FOLLOWING	Követ
+UILABEL_TASK_DEFENDING	Véd
+MISC_FREE_TRADE_ADD	Tegyél tárgyakat bármelyik oldalra
+MISC_FREE_TRADE_READY	Kész a cserére
+MISC_TURNS_HOSTILE	{0} ellenségessé válik
+MISC_SELECT_UNIT_FIRST	Előbb válassz egy egységet
+FACTION_PLAYER	Játékos frakció
+FACTION_GRAY	Szürke frakció
+FACTION_RED	Vörös frakció

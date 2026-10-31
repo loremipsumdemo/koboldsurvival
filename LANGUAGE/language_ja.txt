@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	相手にはあなたのアイテムを入れる空き
 MISC_TRADE_FAILED	取引に失敗しました
 MISC_TRADE_COMPLETE	取引が完了しました。
 MISC_PICKUP_SELECT	アイテムを拾うユニットを選択してください
-MISC_TALK_SELECT	話しかけるユニットを選択してください
 MISC_TRADE_ONLY_TALKING	取引できるのは、話している相手のユニットだけです。
 MISC_DROPS	{0} は {1} {2} を落とす
 MISC_AN_ITEM	アイテム
@@ -567,7 +566,6 @@ PROP_BONES	骨
 PROP_WALL	壁
 PROP_STALL	露店
 MISC_STORAGE_FULL	収納に空きがありません
-MISC_PROP_SELECT	使うユニットを選択してください
 MISC_PROP_TAKEN	すでに使用中です
 MISC_PROP_WORKERS_FULL	同時に作業できるのは最大 {0} ユニットです
 MISC_GATHERS	{0} が {1} を採集した
@@ -582,7 +580,7 @@ ITEM_88_NAME	木材
 ITEM_88_DESC	木から切り出した木材。製作や建築に使う。
 UILABEL_INPUT	投入
 UILABEL_OUTPUT	完成品
-UILABEL_CRAFT_HINT	ユニットのアイテムを右クリックで投入欄に入れ、完成品は完成品欄から受け取ります。作業を始めるには {0} を右クリックして「製作」を選びます。
+UILABEL_CRAFT_HINT	ユニットのアイテムを右クリックで投入欄に入れ、完成品は完成品欄から受け取ります。作業を始めるには {0} を右クリックして「使用」を選びます。
 MISC_CRAFT_WRONG_ITEM	{0} はここでは使えません
 MISC_CRAFT_NEEDS	{0} を投入欄に入れると始められます
 MISC_CRAFT_OUTPUT_FULL	完成品欄がいっぱいです
@@ -593,4 +591,17 @@ ITEM_89_NAME	生肉
 ITEM_89_DESC	焼いていない肉。焚き火で焼こう。
 ITEM_90_NAME	焼いた肉
 ITEM_90_DESC	火で焼いた肉。体力と空腹を回復する。
-UILABEL_CRAFT	製作
+UILABEL_TALK	話す
+UILABEL_ATTACK	攻撃
+UILABEL_ATTACK_UNPROVOKED	攻撃（挑発なし）
+UILABEL_FOLLOW	ついて行く
+UILABEL_DEFEND	守る
+UILABEL_TASK_FOLLOWING	追従中
+UILABEL_TASK_DEFENDING	護衛中
+MISC_FREE_TRADE_ADD	どちらかの側にアイテムを追加してください
+MISC_FREE_TRADE_READY	交換の準備ができました
+MISC_TURNS_HOSTILE	{0} が敵対した
+MISC_SELECT_UNIT_FIRST	先にユニットを選択してください
+FACTION_PLAYER	プレイヤー勢力
+FACTION_GRAY	灰の勢力
+FACTION_RED	赤の勢力

@@ -42,6 +42,8 @@ struct SaveUnit {
     // Older saves have no body type, so it is worked out from the name (bodyForSavedName)
     bool hasBody = false;
     int body = 0;
+    bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
+    int faction = 0;
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
     bool hasNeeds = false;
@@ -140,6 +142,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "\n";
         }
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
+        if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -235,6 +238,16 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> i >> g.slot >> g.item;
                 if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
                     d.units[i].gear.push_back(g);
+                }
+            }
+            else if (line.rfind("faction ", 0) == 0) {
+                std::istringstream ss(line.substr(8));
+                size_t i = 0;
+                int f = 0;
+                ss >> i >> f;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasFaction = true;
+                    d.units[i].faction = std::clamp(f, 0, (int)FACTION_COUNT - 1);
                 }
             }
             else if (line.rfind("body ", 0) == 0) {

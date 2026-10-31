@@ -81,6 +81,27 @@ inline const char* bodyTypeKey(int type) {
          : type == BODY_ANDROGYNOUS ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
 }
 
+// The side a unit belongs to. Your units are the Player Faction, the units that start neutral the Gray Faction, and the
+// hostile ones the Red Faction. A unit keeps its faction if it turns hostile (Attack (Unprovoked)).
+enum FactionId : int { FACTION_PLAYER = 0, FACTION_GRAY = 1, FACTION_RED = 2, FACTION_COUNT };
+struct Faction {
+    int id = FACTION_PLAYER;
+};
+
+// The language key for a faction's name
+inline const char* factionKey(int id) {
+    return id == FACTION_GRAY ? "FACTION_GRAY" : id == FACTION_RED ? "FACTION_RED" : "FACTION_PLAYER";
+}
+
+// Where a unit came to rest the last time it stopped by its own movement. While it has nowhere to go, it walks back
+// here, so a unit pushed aside by others passing returns to its place once they have gone. Set when the unit stops,
+// and dropped while it is walking somewhere. Not saved.
+// For a unit following or defending another, leadGap is how far it was from that unit when it stopped (else below 0).
+struct IdleSpot {
+    float x = 0.0f, z = 0.0f;
+    float leadGap = -1.0f;
+};
+
 // Links a unit to its squad and to its formation slot
 struct SquadMember {
     Entity squad = NULL_ENTITY;
@@ -198,6 +219,20 @@ struct PickupOrder {
 // A selected unit's order to talk to an NPC. It walks up to the NPC and the first unit in talk range starts the talk.
 struct TalkOrder {
     Entity npc = NULL_ENTITY;
+    bool trade = false;   // a free trade with another unit of yours, in place of a talk
+};
+
+// A standing order to follow a unit: the unit walks after it and stays within FOLLOW_DISTANCE of it, until it is
+// given another order or the unit it follows is gone
+struct FollowOrder {
+    Entity target = NULL_ENTITY;
+};
+
+// A standing order to defend a unit: follow it, and fight whatever unit is attacking it. engaged is the attacker
+// being fought, if any. It lasts until the unit is given another order or the unit it defends is gone.
+struct DefendOrder {
+    Entity ward = NULL_ENTITY;
+    Entity engaged = NULL_ENTITY;
 };
 
 // A player unit's order to fight one red unit. The unit walks at it and keeps it as its target, choosing no
@@ -224,6 +259,7 @@ struct Storage {
 // starts working, by the prop's use (a crafting prop opens its panel too). Any other order replaces it.
 struct PropOrder {
     Entity prop = NULL_ENTITY;
+    PropAction action = PropAction::Use;
 };
 
 // A unit lying on an occupiable prop (a bed or a bedroll). It stays on the prop until it is given another order.
@@ -245,5 +281,6 @@ struct Working {
 struct PropWork {
     double progress = 0.0;
     unsigned turn = 0;      // which worker receives the next item
-    int workers = 0;        // units working it in the last frame, for the progress bar
+    int workers = 0;        // units working it in the last frame, for the progress ring
+    unsigned made = 0;      // items finished here so far, so the progress ring can hop as each one is done
 };

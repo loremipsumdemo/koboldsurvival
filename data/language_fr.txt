@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Ils n'ont pas de place pour vos objets
 MISC_TRADE_FAILED	Échange échoué
 MISC_TRADE_COMPLETE	Échange terminé.
 MISC_PICKUP_SELECT	Sélectionnez des unités pour ramasser l'objet
-MISC_TALK_SELECT	Sélectionnez une unité pour lui parler
 MISC_TRADE_ONLY_TALKING	Vous ne pouvez échanger qu'avec l'unité à qui vous parlez.
 MISC_DROPS	{0} lâche {1} {2}
 MISC_AN_ITEM	un objet
@@ -567,7 +566,6 @@ PROP_BONES	Ossements
 PROP_WALL	Mur
 PROP_STALL	Étal
 MISC_STORAGE_FULL	Plus de place dans le stockage
-MISC_PROP_SELECT	Sélectionnez une unité pour l'utiliser
 MISC_PROP_TAKEN	Déjà utilisé
 MISC_PROP_WORKERS_FULL	Jusqu'à {0} unités peuvent y travailler à la fois
 MISC_GATHERS	{0} récolte {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Bûche de bois
 ITEM_88_DESC	Du bois coupé dans un arbre, pour l'artisanat et la construction.
 UILABEL_INPUT	Entrée
 UILABEL_OUTPUT	Sortie
-UILABEL_CRAFT_HINT	Clic droit sur les objets de votre unité pour les mettre dans l'entrée, et prenez les objets terminés dans la sortie. Pour commencer à travailler, clic droit sur {0} puis choisissez Fabriquer.
+UILABEL_CRAFT_HINT	Clic droit sur les objets de votre unité pour les mettre dans l'entrée, et prenez les objets terminés dans la sortie. Pour commencer à travailler, clic droit sur {0} puis choisissez Utiliser.
 MISC_CRAFT_WRONG_ITEM	{0} ne peut pas être utilisé ici
 MISC_CRAFT_NEEDS	Mettez {0} dans l'entrée pour commencer
 MISC_CRAFT_OUTPUT_FULL	La sortie est pleine
@@ -593,4 +591,17 @@ ITEM_89_NAME	Viande crue
 ITEM_89_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
 ITEM_90_NAME	Viande cuite
 ITEM_90_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
-UILABEL_CRAFT	Fabriquer
+UILABEL_TALK	Parler
+UILABEL_ATTACK	Attaquer
+UILABEL_ATTACK_UNPROVOKED	Attaquer (sans provocation)
+UILABEL_FOLLOW	Suivre
+UILABEL_DEFEND	Défendre
+UILABEL_TASK_FOLLOWING	Suit
+UILABEL_TASK_DEFENDING	Défend
+MISC_FREE_TRADE_ADD	Ajoutez des objets d'un côté ou de l'autre
+MISC_FREE_TRADE_READY	Prêt à échanger
+MISC_TURNS_HOSTILE	{0} devient hostile
+MISC_SELECT_UNIT_FIRST	Sélectionnez d'abord une unité
+FACTION_PLAYER	Faction du joueur
+FACTION_GRAY	Faction grise
+FACTION_RED	Faction rouge

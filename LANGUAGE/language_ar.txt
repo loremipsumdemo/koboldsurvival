@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	ليس لديهم مكان لأغراضك
 MISC_TRADE_FAILED	فشل التبادل
 MISC_TRADE_COMPLETE	اكتمل التبادل.
 MISC_PICKUP_SELECT	حدد الوحدات لالتقاط الغرض
-MISC_TALK_SELECT	حدد وحدة للتحدث معها
 MISC_TRADE_ONLY_TALKING	لا يمكنك التبادل إلا مع الوحدة التي تتحدث معها.
 MISC_DROPS	{0} يُسقط {1} {2}
 MISC_AN_ITEM	غرضًا
@@ -567,7 +566,6 @@ PROP_BONES	عظام
 PROP_WALL	جدار
 PROP_STALL	كشك
 MISC_STORAGE_FULL	لا توجد مساحة في المخزن
-MISC_PROP_SELECT	اختر وحدة لاستخدامه
 MISC_PROP_TAKEN	مستخدم بالفعل
 MISC_PROP_WORKERS_FULL	يمكن لـ {0} وحدات كحد أقصى العمل عليه في وقت واحد
 MISC_GATHERS	{0} يجمع {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	جذع خشب
 ITEM_88_DESC	خشب مقطوع من شجرة، يُستخدم في الصناعة والبناء.
 UILABEL_INPUT	المدخلات
 UILABEL_OUTPUT	المخرجات
-UILABEL_CRAFT_HINT	انقر بزر الفأرة الأيمن على عناصر وحدتك لوضعها في المدخلات، وخذ العناصر الجاهزة من المخرجات. لبدء العمل، انقر بزر الفأرة الأيمن على {0} واختر صنع.
+UILABEL_CRAFT_HINT	انقر بزر الفأرة الأيمن على عناصر وحدتك لوضعها في المدخلات، وخذ العناصر الجاهزة من المخرجات. لبدء العمل، انقر بزر الفأرة الأيمن على {0} واختر استخدام.
 MISC_CRAFT_WRONG_ITEM	لا يمكن استخدام {0} هنا
 MISC_CRAFT_NEEDS	ضع {0} في المدخلات للبدء
 MISC_CRAFT_OUTPUT_FULL	المخرجات ممتلئة
@@ -593,4 +591,17 @@ ITEM_89_NAME	لحم نيء
 ITEM_89_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
 ITEM_90_NAME	لحم مطبوخ
 ITEM_90_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
-UILABEL_CRAFT	صنع
+UILABEL_TALK	تحدث
+UILABEL_ATTACK	هاجم
+UILABEL_ATTACK_UNPROVOKED	هاجم (دون استفزاز)
+UILABEL_FOLLOW	اتبع
+UILABEL_DEFEND	دافع
+UILABEL_TASK_FOLLOWING	يتبع
+UILABEL_TASK_DEFENDING	يدافع
+MISC_FREE_TRADE_ADD	أضف عناصر إلى أي جانب
+MISC_FREE_TRADE_READY	جاهز للتبادل
+MISC_TURNS_HOSTILE	{0} يصبح معاديًا
+MISC_SELECT_UNIT_FIRST	اختر وحدة أولًا
+FACTION_PLAYER	فصيل اللاعب
+FACTION_GRAY	الفصيل الرمادي
+FACTION_RED	الفصيل الأحمر

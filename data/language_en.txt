@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	They have no room for your items
 MISC_TRADE_FAILED	Trade failed
 MISC_TRADE_COMPLETE	Trade complete.
 MISC_PICKUP_SELECT	Select units to pick the item up
-MISC_TALK_SELECT	Select a unit to talk to them
 MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
 MISC_DROPS	{0} drops {1} {2}
 MISC_AN_ITEM	an item
@@ -567,7 +566,6 @@ PROP_BONES	Bones
 PROP_WALL	Wall
 PROP_STALL	Stall
 MISC_STORAGE_FULL	No room in storage
-MISC_PROP_SELECT	Select a unit to use it
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
 MISC_GATHERS	{0} gathers {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Wood Log
 ITEM_88_DESC	Wood cut from a tree, used in crafting and building.
 UILABEL_INPUT	Input
 UILABEL_OUTPUT	Output
-UILABEL_CRAFT_HINT	Right-click your unit's items to put them in the input, and take finished items from the output. To start working, right-click the {0} and choose Craft.
+UILABEL_CRAFT_HINT	Right-click your unit's items to put them in the input, and take finished items from the output. To start working, right-click the {0} and choose Use.
 MISC_CRAFT_WRONG_ITEM	{0} can't be used here
 MISC_CRAFT_NEEDS	Put {0} in the input to start
 MISC_CRAFT_OUTPUT_FULL	The output is full
@@ -593,4 +591,17 @@ ITEM_89_NAME	Raw Meat
 ITEM_89_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_90_NAME	Cooked Meat
 ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
-UILABEL_CRAFT	Craft
+UILABEL_TALK	Talk
+UILABEL_ATTACK	Attack
+UILABEL_ATTACK_UNPROVOKED	Attack (Unprovoked)
+UILABEL_FOLLOW	Follow
+UILABEL_DEFEND	Defend
+UILABEL_TASK_FOLLOWING	Following
+UILABEL_TASK_DEFENDING	Defending
+MISC_FREE_TRADE_ADD	Add items to either side
+MISC_FREE_TRADE_READY	Ready to trade
+MISC_TURNS_HOSTILE	{0} turns hostile
+MISC_SELECT_UNIT_FIRST	Select a unit first
+FACTION_PLAYER	Player Faction
+FACTION_GRAY	Gray Faction
+FACTION_RED	Red Faction

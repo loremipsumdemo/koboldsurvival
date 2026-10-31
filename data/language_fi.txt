@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Heillä ei ole tilaa sinun esineillesi
 MISC_TRADE_FAILED	Kauppa epäonnistui
 MISC_TRADE_COMPLETE	Kauppa valmis.
 MISC_PICKUP_SELECT	Valitse yksiköt, jotka nostavat esineen
-MISC_TALK_SELECT	Valitse yksikkö puhuaksesi sille
 MISC_TRADE_ONLY_TALKING	Voit käydä kauppaa vain sen yksikön kanssa, jonka kanssa puhut.
 MISC_DROPS	{0} pudottaa {1} {2}
 MISC_AN_ITEM	esineen
@@ -567,7 +566,6 @@ PROP_BONES	Luut
 PROP_WALL	Muuri
 PROP_STALL	Koju
 MISC_STORAGE_FULL	Säiliössä ei ole tilaa
-MISC_PROP_SELECT	Valitse yksikkö käyttämään sitä
 MISC_PROP_TAKEN	Jo käytössä
 MISC_PROP_WORKERS_FULL	Enintään {0} yksikköä voi työstää sitä kerralla
 MISC_GATHERS	{0} kerää: {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Puupölkky
 ITEM_88_DESC	Puusta kaadettua puuta, käsitöihin ja rakentamiseen.
 UILABEL_INPUT	Syöte
 UILABEL_OUTPUT	Tuotos
-UILABEL_CRAFT_HINT	Laita yksikkösi esineitä syötteeseen napsauttamalla niitä hiiren oikealla, ja ota valmiit esineet tuotoksesta. Aloita työ napsauttamalla kohdetta {0} hiiren oikealla ja valitsemalla Valmista.
+UILABEL_CRAFT_HINT	Laita yksikkösi esineitä syötteeseen napsauttamalla niitä hiiren oikealla, ja ota valmiit esineet tuotoksesta. Aloita työ napsauttamalla kohdetta {0} hiiren oikealla ja valitsemalla Käytä.
 MISC_CRAFT_WRONG_ITEM	{0}: ei voi käyttää tässä
 MISC_CRAFT_NEEDS	Laita {0} syötteeseen aloittaaksesi
 MISC_CRAFT_OUTPUT_FULL	Tuotos on täynnä
@@ -593,4 +591,17 @@ ITEM_89_NAME	Raaka liha
 ITEM_89_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
 ITEM_90_NAME	Kypsä liha
 ITEM_90_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
-UILABEL_CRAFT	Valmista
+UILABEL_TALK	Puhu
+UILABEL_ATTACK	Hyökkää
+UILABEL_ATTACK_UNPROVOKED	Hyökkää (provosoimatta)
+UILABEL_FOLLOW	Seuraa
+UILABEL_DEFEND	Puolusta
+UILABEL_TASK_FOLLOWING	Seuraa
+UILABEL_TASK_DEFENDING	Puolustaa
+MISC_FREE_TRADE_ADD	Lisää esineitä kummalle puolelle tahansa
+MISC_FREE_TRADE_READY	Valmis vaihtoon
+MISC_TURNS_HOSTILE	{0} muuttuu vihamieliseksi
+MISC_SELECT_UNIT_FIRST	Valitse ensin yksikkö
+FACTION_PLAYER	Pelaajan ryhmittymä
+FACTION_GRAY	Harmaa ryhmittymä
+FACTION_RED	Punainen ryhmittymä

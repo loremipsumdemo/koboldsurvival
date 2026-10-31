@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	No tienen sitio para tus objetos
 MISC_TRADE_FAILED	Intercambio fallido
 MISC_TRADE_COMPLETE	Intercambio completado.
 MISC_PICKUP_SELECT	Selecciona unidades para recoger el objeto
-MISC_TALK_SELECT	Selecciona una unidad para hablar con ella
 MISC_TRADE_ONLY_TALKING	Solo puedes comerciar con la unidad con la que hablas.
 MISC_DROPS	{0} suelta {1} {2}
 MISC_AN_ITEM	un objeto
@@ -567,7 +566,6 @@ PROP_BONES	Huesos
 PROP_WALL	Muro
 PROP_STALL	Puesto
 MISC_STORAGE_FULL	No hay sitio en el almacén
-MISC_PROP_SELECT	Selecciona una unidad para usarlo
 MISC_PROP_TAKEN	Ya está en uso
 MISC_PROP_WORKERS_FULL	Hasta {0} unidades pueden trabajarlo a la vez
 MISC_GATHERS	{0} recoge {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Tronco de madera
 ITEM_88_DESC	Madera cortada de un árbol, para fabricar y construir.
 UILABEL_INPUT	Entrada
 UILABEL_OUTPUT	Salida
-UILABEL_CRAFT_HINT	Haz clic derecho en los objetos de tu unidad para ponerlos en la entrada, y coge los terminados de la salida. Para empezar a trabajar, haz clic derecho en {0} y elige Fabricar.
+UILABEL_CRAFT_HINT	Haz clic derecho en los objetos de tu unidad para ponerlos en la entrada, y coge los terminados de la salida. Para empezar a trabajar, haz clic derecho en {0} y elige Usar.
 MISC_CRAFT_WRONG_ITEM	{0} no se puede usar aquí
 MISC_CRAFT_NEEDS	Pon {0} en la entrada para empezar
 MISC_CRAFT_OUTPUT_FULL	La salida está llena
@@ -593,4 +591,17 @@ ITEM_89_NAME	Carne cruda
 ITEM_89_DESC	Carne sin cocinar. Cocínala en una hoguera.
 ITEM_90_NAME	Carne asada
 ITEM_90_DESC	Carne asada al fuego. Restaura salud y hambre.
-UILABEL_CRAFT	Fabricar
+UILABEL_TALK	Hablar
+UILABEL_ATTACK	Atacar
+UILABEL_ATTACK_UNPROVOKED	Atacar (sin provocación)
+UILABEL_FOLLOW	Seguir
+UILABEL_DEFEND	Defender
+UILABEL_TASK_FOLLOWING	Siguiendo
+UILABEL_TASK_DEFENDING	Defendiendo
+MISC_FREE_TRADE_ADD	Añade objetos a cualquier lado
+MISC_FREE_TRADE_READY	Listo para intercambiar
+MISC_TURNS_HOSTILE	{0} se vuelve hostil
+MISC_SELECT_UNIT_FIRST	Primero selecciona una unidad
+FACTION_PLAYER	Facción del jugador
+FACTION_GRAY	Facción gris
+FACTION_RED	Facción roja

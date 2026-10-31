@@ -1,0 +1,6 @@
+Emote	File	Shown when
+1	emote/1.png	Mining: working Ore
+2	emote/2.png	Woodcutting: working a Tree
+3	emote/3.png	Cooking: working a Campfire
+4	emote/4.png	Encumbered: carrying 90% or more of the carry limit
+5	emote/5.png	Sleeping: lying on a Bed or Bedroll

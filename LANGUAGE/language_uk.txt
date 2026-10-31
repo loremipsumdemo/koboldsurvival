@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	У них немає місця для ваших пр
 MISC_TRADE_FAILED	Угода не відбулася
 MISC_TRADE_COMPLETE	Угоду завершено.
 MISC_PICKUP_SELECT	Виберіть юнітів, які підберуть предмет
-MISC_TALK_SELECT	Виберіть юніта, з яким хочете поговорити
 MISC_TRADE_ONLY_TALKING	Торгувати можна лише з юнітом, з яким ви розмовляєте.
 MISC_DROPS	{0} викидає {1} {2}
 MISC_AN_ITEM	предмет
@@ -567,7 +566,6 @@ PROP_BONES	Кістки
 PROP_WALL	Стіна
 PROP_STALL	Ятка
 MISC_STORAGE_FULL	У сховищі немає місця
-MISC_PROP_SELECT	Виберіть юніта, щоб скористатися цим
 MISC_PROP_TAKEN	Уже зайнято
 MISC_PROP_WORKERS_FULL	Одночасно тут можуть працювати не більше {0} юнітів
 MISC_GATHERS	{0} добуває {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Колода
 ITEM_88_DESC	Деревина зрубаного дерева, для ремесел і будівництва.
 UILABEL_INPUT	Сировина
 UILABEL_OUTPUT	Готове
-UILABEL_CRAFT_HINT	Клацніть правою кнопкою предмети юніта, щоб покласти їх у сировину, а готові предмети забирайте з готового. Щоб почати роботу, клацніть правою кнопкою {0} і виберіть «Виготовити».
+UILABEL_CRAFT_HINT	Клацніть правою кнопкою предмети юніта, щоб покласти їх у сировину, а готові предмети забирайте з готового. Щоб почати роботу, клацніть правою кнопкою {0} і виберіть «Використати».
 MISC_CRAFT_WRONG_ITEM	{0} тут не підходить
 MISC_CRAFT_NEEDS	Покладіть {0} у сировину, щоб почати
 MISC_CRAFT_OUTPUT_FULL	Місце для готового заповнене
@@ -593,4 +591,17 @@ ITEM_89_NAME	Сире м'ясо
 ITEM_89_DESC	Неприготоване м'ясо. Підсмажте його на багатті.
 ITEM_90_NAME	Смажене м'ясо
 ITEM_90_DESC	М'ясо, засмажене на вогні. Відновлює здоров'я і втамовує голод.
-UILABEL_CRAFT	Виготовити
+UILABEL_TALK	Говорити
+UILABEL_ATTACK	Атакувати
+UILABEL_ATTACK_UNPROVOKED	Атакувати (без приводу)
+UILABEL_FOLLOW	Слідувати
+UILABEL_DEFEND	Захищати
+UILABEL_TASK_FOLLOWING	Слідує
+UILABEL_TASK_DEFENDING	Захищає
+MISC_FREE_TRADE_ADD	Додайте предмети на будь-який бік
+MISC_FREE_TRADE_READY	Готово до обміну
+MISC_TURNS_HOSTILE	{0} стає ворожим
+MISC_SELECT_UNIT_FIRST	Спершу виберіть юніта
+FACTION_PLAYER	Фракція гравця
+FACTION_GRAY	Сіра фракція
+FACTION_RED	Червона фракція

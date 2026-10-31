@@ -186,6 +186,8 @@ struct TradeLayout {
     std::vector<Rect> npcSlots;                   // one cell per inventory slot of the NPC
     Rect tradePanel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect tradeBar{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect theirName{ 0.0f, 0.0f, 0.0f, 0.0f };    // the other unit's name, over its side
+    Rect yourName{ 0.0f, 0.0f, 0.0f, 0.0f };     // your unit's name, over your side
     Rect theirBox{ 0.0f, 0.0f, 0.0f, 0.0f };     // the NPC's side
     Rect yourBox{ 0.0f, 0.0f, 0.0f, 0.0f };      // your side
     std::vector<Rect> theirCells, yourCells;
@@ -212,7 +214,7 @@ inline TradeLayout layoutTrade(int W, int H) {
     const float boxW = tcols * cellT + (tcols - 1) * cellTGap + 2.0f * pad;
     const float boxH = trows * cellT + (trows - 1) * cellTGap + 2.0f * pad;
     const float tradeW = 2.0f * boxW + 3.0f * pad;
-    const float tradeH = bar + pad + boxH + 2.0f * s + line + 4.0f * s + barH + 4.0f * s + line + gap + btnH + pad;
+    const float tradeH = bar + pad + line + boxH + 2.0f * s + line + 4.0f * s + barH + 4.0f * s + line + gap + btnH + pad;
 
     // The two panels side by side, centred on the window
     const float totalW = interW + gap + tradeW;
@@ -232,7 +234,10 @@ inline TradeLayout layoutTrade(int W, int H) {
     const float tx = x0 + interW + gap;
     L.tradePanel = Rect{ tx, y0, tradeW, tradeH };
     L.tradeBar = Rect{ tx, y0, tradeW, bar };
-    const float boxY = y0 + bar + pad;
+    // Each side's unit name over its box
+    L.theirName = Rect{ tx + pad, y0 + bar + pad, boxW, line };
+    L.yourName = Rect{ tx + 2.0f * pad + boxW, y0 + bar + pad, boxW, line };
+    const float boxY = y0 + bar + pad + line;
     L.theirBox = Rect{ tx + pad, boxY, boxW, boxH };
     L.yourBox = Rect{ tx + 2.0f * pad + boxW, boxY, boxW, boxH };
     for (int i = 0; i < TRADE_SLOTS; ++i) {
@@ -500,13 +505,16 @@ struct SidebarLayout {
 // the bar and the picked tab's contents, which scroll when they are taller than the panel. The panel is as tall as
 // its tallest tab, and never taller than 60% of the window. Everything is in window pixels, scaled from a
 // 720-pixel-high window.
+// profileH: the height the profile card's text needs, from the renderer (profileCardHeight). The card is at least its
+// usual 200 pixels at 720p, and taller when its text needs more, as at a large UI scale.
 inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
-                                            const PanelPlace& place = PanelPlace{}) {
+                                            const PanelPlace& place = PanelPlace{}, float profileH = 0.0f) {
     const float s = H / 720.0f;
     const float pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
     // Its default width, or as dragged between a minimum and the screen
     const float width = place.w > 0.0f ? std::min(std::max(place.w, 200.0f * s), W - 16.0f * s) : sidebarDefaultWidth(H);
-    const float cardH = 200.0f * s, cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
+    const float baseCardH = 200.0f * s;
+    const float cardH = std::max(baseCardH, profileH), cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
     const float barH = 22.0f * s, tabH = 26.0f * s, tabGap = 3.0f * s;
     const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s, addH = 24.0f * s;
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
@@ -556,7 +564,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
 
     if (tab == UNIT_TAB_PROFILE) {
         L.profile = Rect{ L.panel.x + pad, top, width - 2.0f * pad, cardH };
-        const float side = cardH - 2.0f * cardInset;
+        const float side = baseCardH - 2.0f * cardInset;   // the picture keeps its size when the card grows
         L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
     }
     if (tab == UNIT_TAB_EQUIPMENT) {

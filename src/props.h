@@ -1,4 +1,5 @@
 #pragma once
+#include "emotes.h"
 #include "stats.h"
 
 // Props: 3D models placed on the map, such as wagons, campfires and trees. They do not block movement and cannot be
@@ -29,6 +30,10 @@ enum PropKind : int {
 
 // What a prop can be used for, by right-clicking it with units selected
 enum class PropUse { None, Storage, Occupy, Resource, Crafting };
+
+// What a unit sent to a prop does there, as picked from the right-click menu: Inventory opens a storage or crafting
+// prop's items; Use takes a bed, works a resource prop, or starts crafting
+enum class PropAction { Inventory, Use };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak. A missing model is logged and that kind is not drawn.
@@ -67,6 +72,18 @@ inline const PropInfo& propInfo(int kind) {
         { "data/3d/stall.glb",    "PROP_STALL",    2.0f, PropUse::None,     -1, 0, 0, 0 },
     };
     return info[(kind >= 0 && kind < PROP_KIND_COUNT) ? kind : 0];
+}
+
+// The emote shown over a unit using a prop of this kind: working it, or lying on it. EMOTE_NONE for none.
+inline int propEmote(int kind) {
+    switch (kind) {
+    case PROP_ORE: return EMOTE_MINING;
+    case PROP_TREE: return EMOTE_WOODCUTTING;
+    case PROP_CAMPFIRE: return EMOTE_COOKING;
+    case PROP_BED:
+    case PROP_BEDROLL: return EMOTE_SLEEPING;
+    default: return EMOTE_NONE;
+    }
 }
 
 // Whether units are put to work on a prop of this use

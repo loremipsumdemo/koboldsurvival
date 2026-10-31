@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	De har inte plats för dina föremål
 MISC_TRADE_FAILED	Handeln misslyckades
 MISC_TRADE_COMPLETE	Handeln klar.
 MISC_PICKUP_SELECT	Välj enheter som ska plocka upp föremålet
-MISC_TALK_SELECT	Välj en enhet att prata med
 MISC_TRADE_ONLY_TALKING	Du kan bara handla med enheten du pratar med.
 MISC_DROPS	{0} släpper {1} {2}
 MISC_AN_ITEM	ett föremål
@@ -567,7 +566,6 @@ PROP_BONES	Ben
 PROP_WALL	Mur
 PROP_STALL	Stånd
 MISC_STORAGE_FULL	Inget utrymme i förrådet
-MISC_PROP_SELECT	Välj en enhet för att använda den
 MISC_PROP_TAKEN	Redan upptagen
 MISC_PROP_WORKERS_FULL	Upp till {0} enheter kan arbeta med den samtidigt
 MISC_GATHERS	{0} samlar {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Timmerstock
 ITEM_88_DESC	Virke från ett fällt träd, för hantverk och byggen.
 UILABEL_INPUT	Indata
 UILABEL_OUTPUT	Utdata
-UILABEL_CRAFT_HINT	Högerklicka på din enhets föremål för att lägga dem i indata, och ta färdiga föremål från utdata. Högerklicka på {0} och välj Tillverka för att börja arbeta.
+UILABEL_CRAFT_HINT	Högerklicka på din enhets föremål för att lägga dem i indata, och ta färdiga föremål från utdata. Högerklicka på {0} och välj Använd för att börja arbeta.
 MISC_CRAFT_WRONG_ITEM	{0} kan inte användas här
 MISC_CRAFT_NEEDS	Lägg {0} i indata för att börja
 MISC_CRAFT_OUTPUT_FULL	Utdata är fullt
@@ -593,4 +591,17 @@ ITEM_89_NAME	Rått kött
 ITEM_89_DESC	Otillagat kött. Stek det vid en lägereld.
 ITEM_90_NAME	Stekt kött
 ITEM_90_DESC	Kött stekt över eld. Återställer hälsa och mättar.
-UILABEL_CRAFT	Tillverka
+UILABEL_TALK	Prata
+UILABEL_ATTACK	Anfall
+UILABEL_ATTACK_UNPROVOKED	Anfall (oprovocerat)
+UILABEL_FOLLOW	Följ
+UILABEL_DEFEND	Försvara
+UILABEL_TASK_FOLLOWING	Följer
+UILABEL_TASK_DEFENDING	Försvarar
+MISC_FREE_TRADE_ADD	Lägg föremål på någon av sidorna
+MISC_FREE_TRADE_READY	Redo att byta
+MISC_TURNS_HOSTILE	{0} blir fientlig
+MISC_SELECT_UNIT_FIRST	Välj en enhet först
+FACTION_PLAYER	Spelarens fraktion
+FACTION_GRAY	Den grå fraktionen
+FACTION_RED	Den röda fraktionen

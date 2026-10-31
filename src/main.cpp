@@ -139,6 +139,8 @@ Entity dialogueUnit = NULL_ENTITY;
 Entity dialoguePlayer = NULL_ENTITY;      // the player unit a talk is with, who speaks the player's lines
 std::vector<SpokenLine> dialogueConvo;    // the lines of the talk so far
 bool tradeOpen = false;                   // the trade popout is up, in place of the talk box
+// A free trade between two of your own units, from the right-click menu's Trade: no value or fee, only room counts
+bool freeTrade = false;
 constexpr float TALK_COOLDOWN = 1.0f;     // seconds after a talk ends before another one can start
 float talkCooldown = 0.0f;                // seconds of that cooldown left
 bool paused = false;                      // paused with Space, until Space is pressed again
@@ -158,16 +160,16 @@ void closeStorage() {
     storageDrag = -1;
 }
 
-// The choice a crafting prop (a campfire) offers when a unit reaches it: Inventory, which opens its input and output,
-// or Craft, which puts the unit to work. Shown over the prop until one is picked or it is clicked away. It closes
-// under the same rules as the storage panel.
-Entity craftChoiceProp = NULL_ENTITY;
-Entity craftChoiceUnit = NULL_ENTITY;
-
-void closeCraftChoice() {
-    craftChoiceProp = NULL_ENTITY;
-    craftChoiceUnit = NULL_ENTITY;
-}
+// The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
+// the pointer, and a click on an option picks it; a click anywhere else closes it.
+enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use };
+struct ContextMenu {
+    bool open = false;
+    float x = 0.0f, y = 0.0f;
+    Entity target = NULL_ENTITY;
+    std::vector<MenuAction> actions;
+};
+ContextMenu contextMenu;
 
 // The name of a prop in the language in use
 std::string propNameOf(World& w, Entity prop) {
@@ -394,6 +396,18 @@ TradeStatus checkTrade(World& w, Entity npc, Entity player) {
         st.text = lang("MISC_NO_UNIT_TO_TRADE");
         return st;
     }
+    if (freeTrade) {
+        // Between your own units: anything may go either way, so long as each side has room for what it receives
+        st.progress = 1.0f;
+        if (tradeNpc.empty() && tradePlayer.empty()) st.text = lang("MISC_FREE_TRADE_ADD");
+        else if (!tradeFits(*pi, tradePlayer, tradeNpc)) st.text = lang("MISC_TRADE_NO_ROOM_YOURS");
+        else if (!tradeFits(*ni, tradeNpc, tradePlayer)) st.text = lang("MISC_TRADE_NO_ROOM_THEIRS");
+        else {
+            st.ok = true;
+            st.text = lang("MISC_FREE_TRADE_READY");
+        }
+        return st;
+    }
     const int npcValue = tradeValueOf(tradeNpc);
     const int offer = tradeValueOf(tradePlayer);
     const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA));
@@ -414,7 +428,7 @@ void completeTrade(World& w, Entity npc, Entity player) {
     Inventory* ni = w.get<Inventory>(npc);
     Inventory* pi = w.get<Inventory>(player);
     const int npcValue = tradeValueOf(tradeNpc);
-    const int fee = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA)) - npcValue;
+    const int fee = freeTrade ? 0 : requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA)) - npcValue;
     for (const TradeGhost& g : tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
     for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
     for (const TradeGhost& g : tradeNpc) addToInventory(*pi, g.stack.item, g.stack.count);
@@ -443,22 +457,6 @@ std::vector<Entity> panelUnits(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return { dialoguePlayer };
     if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return { storageUnit };
     return selectedUnits(w);
-}
-
-// The first neutral unit in a list, or NULL_ENTITY if there is none
-Entity firstNeutral(World& w, const std::vector<Entity>& units) {
-    for (Entity u : units) {
-        if (w.has<Neutral>(u)) return u;
-    }
-    return NULL_ENTITY;
-}
-
-// The first red unit in a list, or NULL_ENTITY if there is none
-Entity firstRedUnit(World& w, const std::vector<Entity>& units) {
-    for (Entity u : units) {
-        if (w.has<Hostile>(u)) return u;
-    }
-    return NULL_ENTITY;
 }
 
 // Click selection: nearest unit within one tile of the clicked ground point
@@ -681,7 +679,8 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     tradePlayer.clear();
     tradeNpcDrag = -1;
     closeStorage();
-    closeCraftChoice();
+    contextMenu = ContextMenu{};
+    freeTrade = false;
     paused = false;
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
@@ -754,6 +753,8 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
         world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
+        // Older saves have no faction: it comes from the side the unit is on
+        world.add(e, Faction{ u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_GRAY : FACTION_PLAYER });
     }
 
     if (d.hasItems) {
@@ -805,6 +806,10 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.z = t->z;
         su.hostile = w.has<Hostile>(u);
         su.neutral = w.has<Neutral>(u);
+        if (const Faction* f = w.get<Faction>(u)) {
+            su.hasFaction = true;
+            su.faction = f->id;
+        }
         su.sprite = us ? us->id : 1;
         su.name = n ? n->text : lang("UILABEL_UNNAMED_UNIT");
         if (const Body* bd = w.get<Body>(u)) {
@@ -2210,7 +2215,8 @@ int main(int, char**) {
         auto sidebarFor = [&](int W, int H, float scroll) {
             const Entity shown = sidebarUnitOf(world);
             const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
-            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace);
+            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
+                                          renderer.profileCardHeight(H));
         };
         // Only your own units can be changed from the sidebar. A red unit's sidebar is for looking at.
         auto shownIsYours = [&]() {
@@ -2355,6 +2361,7 @@ int main(int, char**) {
         auto endTalk = [&]() {
             talkCooldown = TALK_COOLDOWN;
             tradeOpen = false;
+            freeTrade = false;
             tradeNpc.clear();
             tradePlayer.clear();
             tradeNpcDrag = -1;
@@ -2474,10 +2481,31 @@ int main(int, char**) {
             const Transform* nt = world.get<Transform>(npc);
             if (nt && !units.empty()) issueMoveOrder(world, terrain, units, Vec2{ nt->x, nt->z });
         };
-        // Right-click on a prop that can be used, with units selected. A barrel, a bed or a campfire sends the selected
-        // unit nearest to it. A resource prop (ore or a tree) sends the nearest selected units, as many as it has room
-        // for. False if no usable prop is under the pointer, so the click is a move order instead.
-        auto usePropAt = [&](float mx, float my) {
+        // A free trade between two of your own units: the trade screen, with the other unit's items on the left
+        auto startFreeTrade = [&](Entity other, Entity unit) {
+            clearTalkOrders(world);
+            closeStorage();
+            contextMenu.open = false;
+            itemMenu.open = false;
+            quantity.open = false;
+            dialogueUnit = other;
+            dialoguePlayer = unit;
+            dialogueConvo.clear();
+            tradeOpen = true;
+            freeTrade = true;
+            tradeNpc.clear();
+            tradePlayer.clear();
+            tradeNpcDrag = -1;
+        };
+        // ---- The right-click menu ----
+        // What is under the pointer: a unit (one that is not selected, if there is one), or else the nearest prop
+        // that can be used
+        auto menuTargetAt = [&](float mx, float my) {
+            const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
+            for (Entity u : under) {
+                if (!world.has<Selected>(u)) return u;
+            }
+            if (!under.empty()) return under[0];
             float ex = 0.0f, ey = 0.0f, ez = 0.0f;
             cam.eye(ex, ey, ez);
             Entity prop = NULL_ENTITY;
@@ -2491,87 +2519,153 @@ int main(int, char**) {
                     best = d2;
                 }
             }
-            if (prop == NULL_ENTITY) return false;
-
-            std::vector<Entity> units = selectedUnits(world);
-            if (units.empty()) {
-                showNotice(lang("MISC_PROP_SELECT"));
-                return true;
+            return prop;
+        };
+        // Your selected units that act on a target, nearest first. The target itself never acts on itself.
+        auto menuActors = [&](Entity target) {
+            std::vector<Entity> units;
+            for (Entity u : selectedUnits(world)) {
+                if (u != target) units.push_back(u);
             }
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
-                return gapBetween(world, a, prop) < gapBetween(world, b, prop);
+                return gapBetween(world, a, target) < gapBetween(world, b, target);
             });
-            const PropInfo& info = propInfo(world.get<Prop>(prop)->kind);
-            const PropUse use = info.use;
-            if (use == PropUse::Resource) {
-                // Units already on this prop keep their places; the rest share what is left
+            return units;
+        };
+        // The options for a target, in the order the menu lists them
+        auto menuActionsFor = [&](Entity target) {
+            std::vector<MenuAction> out;
+            if (world.has<Unit>(target)) {
+                if (world.has<Commandable>(target)) {
+                    out = { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend };
+                } else if (world.has<Hostile>(target)) {
+                    out = { MenuAction::Follow, MenuAction::Attack };
+                } else {
+                    out = { MenuAction::Talk, MenuAction::Follow, MenuAction::Defend, MenuAction::AttackUnprovoked };
+                }
+            } else if (const Prop* p = world.get<Prop>(target)) {
+                const PropUse use = propInfo(p->kind).use;
+                if (hasStorage(use)) out.push_back(MenuAction::Inventory);
+                if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
+            }
+            return out;
+        };
+        auto contextLabels = [&]() {
+            std::vector<std::string> labels;
+            for (MenuAction a : contextMenu.actions) {
+                switch (a) {
+                case MenuAction::Talk: labels.push_back(lang("UILABEL_TALK")); break;
+                case MenuAction::Trade: labels.push_back(lang("UILABEL_TRADE")); break;
+                case MenuAction::Follow: labels.push_back(lang("UILABEL_FOLLOW")); break;
+                case MenuAction::Defend: labels.push_back(lang("UILABEL_DEFEND")); break;
+                case MenuAction::Attack: labels.push_back(lang("UILABEL_ATTACK")); break;
+                case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK_UNPROVOKED")); break;
+                case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
+                case MenuAction::Use: labels.push_back(lang("UILABEL_USE")); break;
+                }
+            }
+            return labels;
+        };
+        auto contextMenuLayout = [&]() {
+            return renderer.itemMenuLayout(contextMenu.x, contextMenu.y, (int)contextMenu.actions.size(), winW, winH);
+        };
+        // Opens the menu for what is under the pointer. False if nothing there can be acted on, so the right-click is
+        // a move order instead.
+        auto openContextMenu = [&](float mx, float my) {
+            const Entity target = menuTargetAt(mx, my);
+            if (target == NULL_ENTITY) return false;
+            const std::vector<MenuAction> actions = menuActionsFor(target);
+            if (actions.empty()) return false;
+            if (menuActors(target).empty()) {
+                // Your lone selected unit clicked on itself: a move order, as on the ground under it
+                if (world.has<Selected>(target) && world.has<Commandable>(target)) return false;
+                showNotice(lang("MISC_SELECT_UNIT_FIRST"));
+                return true;
+            }
+            contextMenu = ContextMenu{ true, mx, my, target, actions };
+            itemMenu.open = false;
+            return true;
+        };
+        // Does the picked option with the selected units
+        auto pickMenuAction = [&](MenuAction a) {
+            const Entity target = contextMenu.target;
+            contextMenu.open = false;
+            const std::vector<Entity> actors = menuActors(target);
+            if (actors.empty()) {
+                showNotice(lang("MISC_SELECT_UNIT_FIRST"));
+                return;
+            }
+            if (!world.has<Unit>(target) && !world.has<Prop>(target)) return;
+            switch (a) {
+            case MenuAction::Talk: {
+                // A selected unit already in talk range talks now; otherwise they walk up, and the first there talks
+                Entity talker = NULL_ENTITY;
+                for (Entity u : actors) {
+                    if (gapBetween(world, u, target) <= TALK_RANGE) {
+                        talker = u;
+                        break;
+                    }
+                }
+                if (talker != NULL_ENTITY) tryStartTalk(target, talker, actors);
+                else issueTalkOrder(world, actors, target);
+                break;
+            }
+            case MenuAction::Trade:
+                // The nearest selected unit trades: now if it is close enough, or once it has walked up
+                if (gapBetween(world, actors[0], target) <= TALK_RANGE) startFreeTrade(target, actors[0]);
+                else issueTalkOrder(world, { actors[0] }, target, true);
+                break;
+            case MenuAction::Follow:
+                issueFollowOrder(world, actors, target);
+                break;
+            case MenuAction::Defend:
+                issueDefendOrder(world, actors, target);
+                break;
+            case MenuAction::AttackUnprovoked:
+                makeHostile(world, target);
+                issueAttackOrder(world, actors, target);
+                break;
+            case MenuAction::Attack:
+                issueAttackOrder(world, actors, target);
+                break;
+            case MenuAction::Inventory:
+                issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Inventory);
+                break;
+            case MenuAction::Use: {
+                const PropInfo& info = propInfo(world.get<Prop>(target)->kind);
+                if (info.use != PropUse::Resource) {
+                    issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Use);
+                    break;
+                }
+                // A resource prop takes the nearest selected units, as many as it has room for. Units already on it
+                // keep their places; the rest share what is left.
+                std::vector<Entity> units = actors;
                 int others = 0;
                 for (Entity u : world.view<Working>()) {
-                    if (world.get<Working>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
+                    if (world.get<Working>(u)->prop == target && std::find(units.begin(), units.end(), u) == units.end()) ++others;
                 }
                 for (Entity u : world.view<PropOrder>()) {
-                    if (world.get<PropOrder>(u)->prop == prop && std::find(units.begin(), units.end(), u) == units.end()) ++others;
+                    if (world.get<PropOrder>(u)->prop == target && std::find(units.begin(), units.end(), u) == units.end()) ++others;
                 }
                 const int room = std::max(0, info.workers - others);
                 if (room == 0) {
                     showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
-                    return true;
+                    return;
                 }
                 if ((int)units.size() > room) {
                     units.resize((size_t)room);
                     showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 }
-                issuePropOrder(world, terrain, units, prop);
-            } else {
-                issuePropOrder(world, terrain, { units[0] }, prop);
+                issuePropOrder(world, terrain, units, target, PropAction::Use);
+                break;
             }
-            if (const Transform* pt = world.get<Transform>(prop)) {
-                actionX = pt->x;
-                actionZ = pt->z;
+            }
+            if (const Transform* tt = world.get<Transform>(target)) {
+                actionX = tt->x;
+                actionZ = tt->z;
                 actionAlpha = 1.0f;
             }
             audio::playEffect(SFX_MENU);
-            return true;
-        };
-        // The Inventory / Craft choice: a small menu over the crafting prop, kept on screen
-        auto craftChoiceLayout = [&]() {
-            float x = winW * 0.5f, y = winH * 0.4f;
-            if (const Transform* pt = world.get<Transform>(craftChoiceProp)) {
-                const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-                float sx = 0.0f, sy = 0.0f;
-                if (worldToScreen(vp, pt->x, pt->y + 1.0f, pt->z, winW, winH, sx, sy)) {
-                    x = sx;
-                    y = sy;
-                }
-            }
-            return renderer.itemMenuLayout(x, y, 2, winW, winH);
-        };
-        auto craftChoiceLabels = [&]() {
-            return std::vector<std::string>{ lang("UILABEL_INVENTORY"), lang("UILABEL_CRAFT") };
-        };
-        // Inventory opens the input and output. Craft puts the unit to work if the prop can be worked right now.
-        auto pickCraftChoice = [&](int option) {
-            const Entity prop = craftChoiceProp, unit = craftChoiceUnit;
-            closeCraftChoice();
-            if (option == 0) {
-                if (!(storageProp == prop && storageUnit == unit)) {
-                    closeStorage();
-                    storageProp = prop;
-                    storageUnit = unit;
-                }
-                audio::playEffect(SFX_MENU);
-                return;
-            }
-            const Prop* p = world.get<Prop>(prop);
-            if (!p) return;
-            const PropInfo& info = propInfo(p->kind);
-            switch (tryStartWork(world, unit, prop)) {
-            case WorkStart::Started: audio::playEffect(SFX_MENU); break;
-            case WorkStart::NoInput: showNotice(langf("MISC_CRAFT_NEEDS", { itemNameOf(info.input) })); break;
-            case WorkStart::OutputFull: showNotice(lang("MISC_CRAFT_OUTPUT_FULL")); break;
-            case WorkStart::Full: showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) })); break;
-            case WorkStart::TooFar: break;
-            }
         };
         auto chooseOption = [&](size_t i) {
             const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
@@ -2582,6 +2676,7 @@ int main(int, char**) {
             sayAs(dialogueUnit, reply, false);
             if (trade) {
                 tradeOpen = true;
+                freeTrade = false;
                 tradeNpc.clear();
                 tradePlayer.clear();
                 tradeNpcDrag = -1;
@@ -3033,7 +3128,9 @@ int main(int, char**) {
                             const TradeLayout tl = layoutTrade(winW, winH);
                             const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
                             const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
-                            if (leftButton && tl.cancelBtn.contains(x, y)) {
+                            if (leftButton && tl.cancelBtn.contains(x, y) && freeTrade) {
+                                endTalk();   // a free trade has no talk to go back to
+                            } else if (leftButton && tl.cancelBtn.contains(x, y)) {
                                 tradeOpen = false;
                                 tradeNpc.clear();
                                 tradePlayer.clear();
@@ -3049,8 +3146,10 @@ int main(int, char**) {
                                     const int theirGive = tradeValueOf(tradeNpc);
                                     const int yourGive = tradeValueOf(tradePlayer);
                                     auto signedValue = [](int v) { return (v > 0 ? "+" : "") + std::to_string(v); };
-                                    tradeLabels.push_back(TradeLabel{ dialogueUnit, langf("MISC_TRADE_CHANGE", { signedValue(yourGive - theirGive) }), 0.0f });
-                                    tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
+                                    if (!freeTrade) {   // a free trade between your own units has no value to show
+                                        tradeLabels.push_back(TradeLabel{ dialogueUnit, langf("MISC_TRADE_CHANGE", { signedValue(yourGive - theirGive) }), 0.0f });
+                                        tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
+                                    }
                                     completeTrade(world, dialogueUnit, dialoguePlayer);
                                     endTalk();
                                     showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);
@@ -3088,16 +3187,18 @@ int main(int, char**) {
                         break;
                     }
                 }
-                // The Inventory / Craft choice: a click on an option picks it. A click anywhere else closes the choice, and
-                // that click still does what it would have done.
-                if (screen == Screen::Playing && craftChoiceProp != NULL_ENTITY) {
-                    const ItemMenuLayout ml = craftChoiceLayout();
-                    const int hit = itemMenuButtonAt(ml, e.button.x, e.button.y);
+                // The right-click menu: a left click on an option picks it. A click anywhere else closes the menu, and
+                // that click still does what it would have done (a right-click elsewhere opens a new menu or moves).
+                if (screen == Screen::Playing && contextMenu.open) {
+                    const ItemMenuLayout ml = contextMenuLayout();
                     if (ml.box.contains(e.button.x, e.button.y)) {
-                        if (e.button.button == SDL_BUTTON_LEFT && hit >= 0) pickCraftChoice(hit);
+                        const int hit = itemMenuButtonAt(ml, e.button.x, e.button.y);
+                        if (e.button.button == SDL_BUTTON_LEFT && hit >= 0 && hit < (int)contextMenu.actions.size()) {
+                            pickMenuAction(contextMenu.actions[(size_t)hit]);
+                        }
                         break;
                     }
-                    closeCraftChoice();
+                    contextMenu.open = false;
                 }
                 // Choosing how many of a stack to store: the prompt is modal, and only its buttons answer
                 if (screen == Screen::Playing && quantity.open && quantity.toStorage) {
@@ -3391,41 +3492,9 @@ int main(int, char**) {
                             }
                         }
                     } else {
-                        // A red unit under the pointer: each of your selected units fights it. Ground: they walk there.
-                        // A neutral unit under the pointer: right-clicking it starts a talk. Nothing else happens.
-                        const Entity npc = firstNeutral(world,
-                            renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
-                        if (npc != NULL_ENTITY) {
-                            rightHold = false;
-                            // A selected unit already in talk range talks now; otherwise the selected units walk up
-                            // to the NPC, and the first to arrive starts the talk
-                            const std::vector<Entity> units = selectedUnits(world);
-                            Entity talker = NULL_ENTITY;
-                            for (Entity u : units) {
-                                if (gapBetween(world, u, npc) <= TALK_RANGE) {
-                                    talker = u;
-                                    break;
-                                }
-                            }
-                            if (talker != NULL_ENTITY) tryStartTalk(npc, talker, units);
-                            else if (units.empty()) showNotice(lang("MISC_TALK_SELECT"));
-                            else issueTalkOrder(world, units, npc);
-                            break;
-                        }
-                        const Entity foe = firstRedUnit(world,
-                            renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH));
-                        if (foe != NULL_ENTITY) {
-                            const std::vector<Entity> units = selectedUnits(world);
-                            if (!units.empty()) {
-                                issueAttackOrder(world, units, foe);
-                                if (const Transform* ft = world.get<Transform>(foe)) {
-                                    actionX = ft->x;
-                                    actionZ = ft->z;
-                                    actionAlpha = 1.0f;
-                                }
-                            }
-                        } else if (usePropAt(e.button.x, e.button.y)) {
-                            // A barrel, a bed, ore or a tree: the selected units go to use it
+                        // A unit or a usable prop under the pointer opens the right-click menu: Talk, Trade, Follow,
+                        // Defend, Attack, Inventory or Use, as fits it. Anywhere else the selected units walk there.
+                        if (openContextMenu(e.button.x, e.button.y)) {
                             rightHold = false;
                         } else {
                             float gx = 0.0f, gz = 0.0f;
@@ -3675,6 +3744,7 @@ int main(int, char**) {
         // A talk order ends the first time one of its units is in talk range of its NPC
         if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
             Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
+            bool tradeTalk = false;
             for (Entity u : world.view<TalkOrder>()) {
                 const Entity npcOf = world.get<TalkOrder>(u)->npc;
                 if (!world.has<Unit>(npcOf)) {
@@ -3684,10 +3754,12 @@ int main(int, char**) {
                 if (gapBetween(world, u, npcOf) <= TALK_RANGE) {
                     talkNpc = npcOf;
                     talker = u;
+                    tradeTalk = world.get<TalkOrder>(u)->trade;
                     break;
                 }
             }
-            if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {});
+            if (talker != NULL_ENTITY && tradeTalk) startFreeTrade(talkNpc, talker);
+            else if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {});
         }
         if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
             panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
@@ -3698,6 +3770,7 @@ int main(int, char**) {
             // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
             const size_t hitsBefore = combatLog.hits;
             const size_t missesBefore = combatLog.misses;
+            defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
             behaviorSystem(world, combatLog);
@@ -3710,29 +3783,29 @@ int main(int, char**) {
             squadSystem(world, dt, runMode);
             steeringSystem(world, terrain, dt, runMode);
             if (pickupSystem(world) > 0) audio::playEffect(SFX_ITEM);
-            // Units that reached the prop they were sent to: a barrel opens its panel, a taken bed or a full work
-            // place says so
+            // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
+            // prop had all its workers, or a campfire had nothing to cook or no room.
             for (const PropArrival& a : propOrderSystem(world)) {
                 const Prop* p = world.get<Prop>(a.prop);
                 if (!p) continue;
                 const PropInfo& info = propInfo(p->kind);
-                // A barrel opens its panel (kept as it is if it is already open for this unit and prop). A campfire asks
-                // whether to open its inventory or to craft.
-                if (info.use == PropUse::Crafting) {
-                    craftChoiceProp = a.prop;
-                    craftChoiceUnit = a.unit;
-                    itemMenu.open = false;
-                }
-                if (info.use == PropUse::Storage && !(storageProp == a.prop && storageUnit == a.unit)) {
-                    closeStorage();
-                    storageProp = a.prop;
-                    storageUnit = a.unit;
-                    itemMenu.open = false;
+                if (a.action == PropAction::Inventory) {
+                    if (!(storageProp == a.prop && storageUnit == a.unit)) {
+                        closeStorage();
+                        storageProp = a.prop;
+                        storageUnit = a.unit;
+                        itemMenu.open = false;
+                    }
+                    continue;
                 }
                 if (a.taken && info.use == PropUse::Occupy) {
                     showNotice(lang("MISC_PROP_TAKEN"));
-                } else if (a.taken && isWorkProp(info.use)) {
+                } else if (a.taken) {
                     showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
+                } else if (info.use == PropUse::Crafting && a.craft == WorkStart::NoInput) {
+                    showNotice(langf("MISC_CRAFT_NEEDS", { itemNameOf(info.input) }));
+                } else if (info.use == PropUse::Crafting && a.craft == WorkStart::OutputFull) {
+                    showNotice(lang("MISC_CRAFT_OUTPUT_FULL"));
                 }
             }
             cleanupSquads(world);
@@ -3770,15 +3843,10 @@ int main(int, char**) {
             }
         }
         if (quantity.open && quantity.toStorage && storageProp == NULL_ENTITY) quantity.open = false;
-        // The Inventory / Craft choice closes by the same rules
-        if (craftChoiceProp != NULL_ENTITY) {
-            const Needs* cn = world.get<Needs>(craftChoiceUnit);
-            const std::vector<Entity> picked = selectedUnits(world);
-            if (!world.has<Prop>(craftChoiceProp) || !world.has<Unit>(craftChoiceUnit) || (cn && cn->hp <= 0) ||
-                gapBetween(world, craftChoiceUnit, craftChoiceProp) > STORAGE_CLOSE_RANGE ||
-                (picked.size() == 1 && picked[0] != craftChoiceUnit)) {
-                closeCraftChoice();
-            }
+        // The right-click menu closes if its target is gone or a talk or trade opens
+        if (contextMenu.open && ((!world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
+                                 dialogueUnit != NULL_ENTITY)) {
+            contextMenu.open = false;
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
@@ -3888,6 +3956,8 @@ int main(int, char**) {
                 mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, kind });
             }
             if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
+            // What each unit is doing: mining, woodcutting, cooking, sleeping, encumbered
+            renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
             for (TradeLabel& l : tradeLabels) l.age += dt;
@@ -3989,7 +4059,7 @@ int main(int, char**) {
                                                 quantity.available, mouseX, mouseY);
                 }
             }
-            if (craftChoiceProp != NULL_ENTITY) renderer.drawItemMenu(craftChoiceLayout(), craftChoiceLabels(), mouseX, mouseY);
+            if (contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
             // The world map popout is over everything, the panels included
             if (mapOpen) {
                 const Rect area = worldMapArea(winW, winH);
@@ -4008,8 +4078,9 @@ int main(int, char**) {
                     if (dialogueUnit == NULL_ENTITY) quantity.open = false;
                     if (tradeOpen) {
                         const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
-                        renderer.drawTrade(layoutTrade(winW, winH), nameOf(world, dialogueUnit), npcInv, tradeNpc,
-                                           tradePlayer, tradeNpcDrag, checkTrade(world, dialogueUnit, dialoguePlayer), mhx, mhy);
+                        renderer.drawTrade(layoutTrade(winW, winH), nameOf(world, dialogueUnit), nameOf(world, dialoguePlayer),
+                                           npcInv, tradeNpc, tradePlayer, tradeNpcDrag,
+                                           checkTrade(world, dialogueUnit, dialoguePlayer), !freeTrade, mhx, mhy);
                         if (npcInv && tradeNpcDrag >= 0 && npcInv->slots[tradeNpcDrag].item != 0) {
                             renderer.drawDraggedStack(mhx, mhy, npcInv->slots[tradeNpcDrag].item, npcInv->slots[tradeNpcDrag].count);
                         }

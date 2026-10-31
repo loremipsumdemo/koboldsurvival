@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	У них нет места для ваших пред
 MISC_TRADE_FAILED	Сделка не состоялась
 MISC_TRADE_COMPLETE	Сделка завершена.
 MISC_PICKUP_SELECT	Выберите юнитов, которые подберут предмет
-MISC_TALK_SELECT	Выберите юнита, с которым хотите поговорить
 MISC_TRADE_ONLY_TALKING	Торговать можно только с юнитом, с которым вы говорите.
 MISC_DROPS	{0} выбрасывает {1} {2}
 MISC_AN_ITEM	предмет
@@ -567,7 +566,6 @@ PROP_BONES	Кости
 PROP_WALL	Стена
 PROP_STALL	Прилавок
 MISC_STORAGE_FULL	В хранилище нет места
-MISC_PROP_SELECT	Выберите юнита, чтобы использовать это
 MISC_PROP_TAKEN	Уже занято
 MISC_PROP_WORKERS_FULL	Одновременно здесь могут работать не больше {0} юнитов
 MISC_GATHERS	{0} добывает {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Бревно
 ITEM_88_DESC	Древесина срубленного дерева, для ремёсел и строительства.
 UILABEL_INPUT	Сырьё
 UILABEL_OUTPUT	Готовое
-UILABEL_CRAFT_HINT	Щёлкните правой кнопкой предметы юнита, чтобы положить их в сырьё, а готовые предметы забирайте из готового. Чтобы начать работу, щёлкните правой кнопкой {0} и выберите «Изготовить».
+UILABEL_CRAFT_HINT	Щёлкните правой кнопкой предметы юнита, чтобы положить их в сырьё, а готовые предметы забирайте из готового. Чтобы начать работу, щёлкните правой кнопкой {0} и выберите «Использовать».
 MISC_CRAFT_WRONG_ITEM	{0} здесь не подходит
 MISC_CRAFT_NEEDS	Положите {0} в сырьё, чтобы начать
 MISC_CRAFT_OUTPUT_FULL	Место для готового заполнено
@@ -593,4 +591,17 @@ ITEM_89_NAME	Сырое мясо
 ITEM_89_DESC	Неприготовленное мясо. Пожарьте его на костре.
 ITEM_90_NAME	Жареное мясо
 ITEM_90_DESC	Мясо, зажаренное на огне. Восстанавливает здоровье и утоляет голод.
-UILABEL_CRAFT	Изготовить
+UILABEL_TALK	Говорить
+UILABEL_ATTACK	Атаковать
+UILABEL_ATTACK_UNPROVOKED	Атаковать (без повода)
+UILABEL_FOLLOW	Следовать
+UILABEL_DEFEND	Защищать
+UILABEL_TASK_FOLLOWING	Следует
+UILABEL_TASK_DEFENDING	Защищает
+MISC_FREE_TRADE_ADD	Добавьте предметы на любую сторону
+MISC_FREE_TRADE_READY	Готово к обмену
+MISC_TURNS_HOSTILE	{0} становится враждебным
+MISC_SELECT_UNIT_FIRST	Сначала выберите юнита
+FACTION_PLAYER	Фракция игрока
+FACTION_GRAY	Серая фракция
+FACTION_RED	Красная фракция

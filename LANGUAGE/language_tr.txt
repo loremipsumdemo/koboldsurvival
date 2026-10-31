@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Onların sizin eşyalarınız için yeri yok
 MISC_TRADE_FAILED	Ticaret başarısız
 MISC_TRADE_COMPLETE	Ticaret tamamlandı.
 MISC_PICKUP_SELECT	Eşyayı almak için birimler seçin
-MISC_TALK_SELECT	Konuşmak için bir birim seçin
 MISC_TRADE_ONLY_TALKING	Yalnızca konuştuğunuz birimle ticaret yapabilirsiniz.
 MISC_DROPS	{0} {1} {2} bırakır
 MISC_AN_ITEM	bir eşya
@@ -567,7 +566,6 @@ PROP_BONES	Kemikler
 PROP_WALL	Duvar
 PROP_STALL	Tezgâh
 MISC_STORAGE_FULL	Depoda yer yok
-MISC_PROP_SELECT	Kullanmak için bir birim seç
 MISC_PROP_TAKEN	Zaten kullanımda
 MISC_PROP_WORKERS_FULL	Aynı anda en fazla {0} birim çalışabilir
 MISC_GATHERS	{0}, {1} topluyor
@@ -582,7 +580,7 @@ ITEM_88_NAME	Odun kütüğü
 ITEM_88_DESC	Ağaçtan kesilmiş odun, zanaat ve yapı için kullanılır.
 UILABEL_INPUT	Girdi
 UILABEL_OUTPUT	Çıktı
-UILABEL_CRAFT_HINT	Biriminin eşyalarını girdiye koymak için sağ tıkla, hazır eşyaları çıktıdan al. Çalışmaya başlamak için {0} üzerine sağ tıkla ve Üret'i seç.
+UILABEL_CRAFT_HINT	Biriminin eşyalarını girdiye koymak için sağ tıkla, hazır eşyaları çıktıdan al. Çalışmaya başlamak için {0} üzerine sağ tıkla ve Kullan'ı seç.
 MISC_CRAFT_WRONG_ITEM	{0} burada kullanılamaz
 MISC_CRAFT_NEEDS	Başlamak için girdiye {0} koy
 MISC_CRAFT_OUTPUT_FULL	Çıktı dolu
@@ -593,4 +591,17 @@ ITEM_89_NAME	Çiğ et
 ITEM_89_DESC	Pişmemiş et. Kamp ateşinde pişir.
 ITEM_90_NAME	Pişmiş et
 ITEM_90_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
-UILABEL_CRAFT	Üret
+UILABEL_TALK	Konuş
+UILABEL_ATTACK	Saldır
+UILABEL_ATTACK_UNPROVOKED	Saldır (kışkırtılmadan)
+UILABEL_FOLLOW	Takip et
+UILABEL_DEFEND	Savun
+UILABEL_TASK_FOLLOWING	Takip ediyor
+UILABEL_TASK_DEFENDING	Savunuyor
+MISC_FREE_TRADE_ADD	Herhangi bir tarafa eşya ekle
+MISC_FREE_TRADE_READY	Takasa hazır
+MISC_TURNS_HOSTILE	{0} düşmanca oldu
+MISC_SELECT_UNIT_FIRST	Önce bir birim seç
+FACTION_PLAYER	Oyuncu Hizbi
+FACTION_GRAY	Gri Hizip
+FACTION_RED	Kızıl Hizip

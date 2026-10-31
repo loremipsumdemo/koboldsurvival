@@ -206,11 +206,17 @@ public:
     // dragged, dragFrom, left out), a hint and Close. A hovered item shows its tooltip.
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::vector<std::string>& headings,
                      const std::string& hint, const Storage* storage, int dragFrom, float mx, float my);
-    // A bar over each gathering prop being worked, showing how close its next item is
+    // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
+    // several shows one at a time, changing every EMOTE_CYCLE_MS.
+    void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown);
+    // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
+    // clockwise from the top, as its next item nears. Each time an item is finished the ring hops up and back down once.
     void drawPropProgress(World& w, const Camera& cam, int winW, int winH);
-    void drawTrade(const TradeLayout& L, const std::string& npcName, const Inventory* npcInv,
+    // yourName: your trading unit's name, over your side. showValue: whether to draw the value bar, which a trade
+    // with an NPC has and a free trade between your own units does not.
+    void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
-                   const TradeStatus& status, float mx, float my);
+                   const TradeStatus& status, bool showValue, float mx, float my);
     // The quantity prompt over the trade: a count with -100 -10 - + +10 +100, Single, Max, Confirm and Cancel
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
@@ -284,6 +290,9 @@ public:
     float fitShrinkScale(const std::string& shown, float boxW, float boxH);
     float uiTextWidth(const std::string& s);
     float uiTextHeight(const std::string& s);
+    // The height the Unit Panel's profile card needs for its text at the current fonts, in a window H pixels high:
+    // the name, the faction, the body type, then health, hunger and carry with their bars
+    float profileCardHeight(int H);
 
     // Smaller text for dense lists, such as the save list. The font is owned by the caller.
     void setListFont(TTF_Font* font);
@@ -459,9 +468,20 @@ private:
     TextTex unitFallback_;
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
+    std::map<int, TextTex> emotePics_;   // data/emote/<id>.png, loaded the first time each is shown
+    const TextTex* emoteTexture(int id);
     TextTex itemNone_;   // data/item/none.png, for items without a picture of their own
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.
     TextTex white_;
+    // Each worked prop's count of finished items as last drawn, and when its ring last hopped (seconds), so the ring
+    // can hop once for each item finished
+    struct PropHop {
+        unsigned made = 0;
+        float start = -1.0f;
+    };
+    std::map<Entity, PropHop> propHops_;
+    // A flat ring, or a part of one, in window pixels: the part from `from` to `to` (0 to 1, clockwise from the top)
+    void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
     // One model per prop kind (props.h). A kind whose model failed to load has an empty model and is not drawn.
     std::array<Model, PROP_KIND_COUNT> propModels_{};
 

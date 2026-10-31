@@ -464,6 +464,10 @@ void Renderer::shutdown() {
         if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
     }
     itemPics_.clear();
+    for (auto& entry : emotePics_) {
+        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
+    }
+    emotePics_.clear();
     for (HudLine& hl : hudLines_) {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
@@ -669,6 +673,13 @@ void Renderer::drawRect(const Rect& r, RGBA c) {
     glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
     glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+}
+
+float Renderer::profileCardHeight(int H) {
+    const float s = H / 720.0f;
+    const float line = listTextHeight("Ag");
+    const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
+    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 3.0f * statRow + 4.0f * s;
 }
 
 Renderer::HudLine& Renderer::uiLine(const std::string& s) {
@@ -1845,9 +1856,10 @@ static RGBA valueBarColor(float t) {
     return RGBA{ a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u, 1.0f };
 }
 
-void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const Inventory* npcInv,
-                         const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
-                         const TradeStatus& status, float mx, float my) {
+void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName,
+                         const Inventory* npcInv, const std::vector<TradeGhost>& theirs,
+                         const std::vector<TradeGhost>& yours, int dragFrom, const TradeStatus& status, bool showValue,
+                         float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -1903,13 +1915,22 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
         }
         drawListText(fitText(langf("UILABEL_TOTAL_VALUE", { std::to_string(tradeValueOf(ghosts)) }), total.w, false), total.x, total.y, white);
     };
+    // Whose side is whose: each unit's name over its box
+    auto nameOver = [&](const Rect& r, const std::string& name) {
+        const std::string shown = fitText(name, r.w, false);
+        if (shown != name) noteTip(name, r);
+        drawListText(shown, r.x, r.y + (r.h - th) * 0.5f, heading);
+    };
+    nameOver(L.theirName, npcName);
+    nameOver(L.yourName, yourName);
     side(L.theirBox, L.theirCells, theirs, lang("UILABEL_TRADE_DROP_THEIRS"), L.theirTotal);
     side(L.yourBox, L.yourCells, yours, lang("UILABEL_TRADE_DROP_YOURS"), L.yourTotal);
 
-    // The value bar: red while the offer is far from the price, yellow, then green once it is met
-    drawRect(L.valueBar, well);
+    // The value bar: red while the offer is far from the price, yellow, then green once it is met. A free trade between
+    // your own units has no price, so no bar.
+    if (showValue) drawRect(L.valueBar, well);
     const float fillW = L.valueBar.w * std::clamp(status.progress, 0.0f, 1.0f);
-    const int slices = 24;
+    const int slices = showValue ? 24 : 0;
     for (int i = 0; i < slices; ++i) {
         const float x0 = L.valueBar.x + L.valueBar.w * (float)i / slices;
         const float x1 = L.valueBar.x + L.valueBar.w * (float)(i + 1) / slices;
@@ -1981,14 +2002,57 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     if (hover >= 0 && dragFrom < 0) drawItemTooltip(storage->slots[hover].item, storage->slots[hover].count, mx, my);
 }
 
-// The bar sits over the top of the prop's model, in window pixels, and fills as the next item nears
+void Renderer::drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color) {
+    from = std::clamp(from, 0.0f, 1.0f);
+    to = std::clamp(to, 0.0f, 1.0f);
+    if (to <= from) return;
+    constexpr int FULL_SEGMENTS = 48;   // segments in a whole ring: smooth at this size
+    const int n = std::max(1, (int)std::ceil(FULL_SEGMENTS * (to - from)));
+    constexpr float TWO_PI = 6.28318531f;
+    Batch b;
+    for (int i = 0; i < n; ++i) {
+        // Angle 0 is straight up, and it grows clockwise on screen (y grows downward)
+        const float a0 = TWO_PI * (from + (to - from) * (float)i / n);
+        const float a1 = TWO_PI * (from + (to - from) * (float)(i + 1) / n);
+        const float s0 = std::sin(a0), c0 = std::cos(a0), s1 = std::sin(a1), c1 = std::cos(a1);
+        b.quad({ cx + s0 * inner, cy - c0 * inner, 0 }, { cx + s0 * outer, cy - c0 * outer, 0 },
+               { cx + s1 * outer, cy - c1 * outer, 0 }, { cx + s1 * inner, cy - c1 * inner, 0 }, color);
+    }
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+}
+
+// The ring sits over the top of the prop's model, in window pixels, and fills as the next item nears. When an item is
+// finished, the ring hops: up and back down once, quickly. It stays up for the hop even if the work stopped with that
+// item, so the last one shows too.
 void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH) {
     const float s = uiH_ / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    const float barW = 46.0f * s, barH = 7.0f * s;
+    const float outer = 11.0f * s, inner = 4.3f * s;          // the hole is about two fifths of the ring
+    const RGBA back{ 0.31f, 0.24f, 0.17f, 1.0f };             // dark brown
+    const RGBA fill{ 0.91f, 0.65f, 0.24f, 1.0f };             // orange-yellow
+    constexpr float HOP_SECONDS = 0.22f, HOP_HEIGHT = 9.0f;
+    const float now = (float)SDL_GetTicks() / 1000.0f;
+
+    std::map<Entity, PropHop> seen;
     for (Entity e : w.view<PropWork, Prop, Transform>()) {
         const PropWork* pw = w.get<PropWork>(e);
-        if (pw->workers <= 0) continue;
+        PropHop hop;
+        if (auto it = propHops_.find(e); it != propHops_.end() && it->second.made <= pw->made) hop = it->second;
+        else hop.made = pw->made;   // first seen (or a new world): no hop for items made before
+        if (pw->made != hop.made) {
+            hop.made = pw->made;
+            hop.start = now;
+        }
+        seen[e] = hop;
+        const float t = hop.start >= 0.0f ? (now - hop.start) / HOP_SECONDS : 1.0f;
+        const bool hopping = t >= 0.0f && t < 1.0f;
+        if (pw->workers <= 0 && !hopping) continue;
+
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
@@ -2000,12 +2064,13 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         }
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, tr->y + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
-        const Rect back{ sx - barW * 0.5f, sy - barH, barW, barH };
-        drawRect(Rect{ back.x - 1.0f * s, back.y - 1.0f * s, back.w + 2.0f * s, back.h + 2.0f * s }, RGBA{ 0.0f, 0.0f, 0.0f, 0.75f });
-        drawRect(back, RGBA{ 0.12f, 0.12f, 0.14f, 0.9f });
-        const float t = (float)std::clamp(pw->progress, 0.0, 1.0);
-        drawRect(Rect{ back.x, back.y, back.w * t, back.h }, RGBA{ 0.95f, 0.75f, 0.25f, 1.0f });
+        const float cy = sy - outer - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
+        // Just finished: the ring shows full for the hop, then the next item's progress
+        const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
+        drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
+        drawRing(sx, cy, outer, inner, 0.0f, frac, fill);
     }
+    propHops_.swap(seen);   // props no longer worked, or gone, are forgotten
 }
 
 void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
@@ -2296,11 +2361,15 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     drawUiText(fitText(name, L.profile.x + L.profile.w - 10.0f * s - tx, true), tx, y, white);
 
     y += uiTextHeight("Ag") + 6.0f * s;
-    // The body type the name was drawn for
-    if (const Body* bd = w.get<Body>(unit)) {
-        drawListText(lang(bodyTypeKey(bd->type)), tx, y, gray);
+    // Under the name: the faction the unit belongs to, then the body type the name was drawn for, a line each
+    auto infoLine = [&](const std::string& line) {
+        const std::string shown = fitText(line, colW, false);
+        if (shown != line) noteTip(line, Rect{ tx, y, colW, listTextHeight("Ag") });
+        drawListText(shown, tx, y, gray);
         y += listTextHeight("Ag") + 6.0f * s;
-    }
+    };
+    if (const Faction* fa = w.get<Faction>(unit)) infoLine(lang(factionKey(fa->id)));
+    if (const Body* bd = w.get<Body>(unit)) infoLine(lang(bodyTypeKey(bd->type)));
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
     auto statRow = [&](float rowY, const std::string& label, const std::string& value, float frac, RGBA fill) {
@@ -2647,6 +2716,37 @@ const TextTex* Renderer::itemTexture(int item) {
     }
     if (it->second.tex) return &it->second;
     return itemNone_.tex ? &itemNone_ : nullptr;
+}
+
+// An emote's picture from data/emote, loaded once. Null when the pak has none for it.
+const TextTex* Renderer::emoteTexture(int id) {
+    auto it = emotePics_.find(id);
+    if (it == emotePics_.end()) {
+        it = emotePics_.emplace(id, loadOptionalImage(("data/emote/" + std::to_string(id) + ".png").c_str())).first;
+    }
+    return it->second.tex ? &it->second : nullptr;
+}
+
+void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const float size = 28.0f * s;
+    const unsigned long long turn = (unsigned long long)SDL_GetTicks() / EMOTE_CYCLE_MS;
+    for (Entity u : w.view<Unit, Transform>()) {
+        const std::vector<int> emotes = emotesOf(w, u);
+        if (emotes.empty()) continue;
+        const Transform* tr = w.get<Transform>(u);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        // Above the head, where the name tag is, and above the tag when names are shown
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        float bottom = sy - 2.0f * s;
+        if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
+        if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
+        const TextTex* pic = emoteTexture(emotes[(size_t)(turn % emotes.size())]);
+        if (!pic) continue;
+        drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    }
 }
 
 // The UI icon with this id: its picture from data/ui, loaded once. An id with no picture has no texture.

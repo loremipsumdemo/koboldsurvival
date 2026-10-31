@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Δεν έχουν χώρο για τα αντικεί�
 MISC_TRADE_FAILED	Η συναλλαγή απέτυχε
 MISC_TRADE_COMPLETE	Η συναλλαγή ολοκληρώθηκε.
 MISC_PICKUP_SELECT	Επίλεξε μονάδες για να σηκώσουν το αντικείμενο
-MISC_TALK_SELECT	Επίλεξε μια μονάδα για να της μιλήσεις
 MISC_TRADE_ONLY_TALKING	Μπορείς να κάνεις συναλλαγή μόνο με τη μονάδα με την οποία μιλάς.
 MISC_DROPS	Ο/Η {0} αφήνει {1} {2}
 MISC_AN_ITEM	ένα αντικείμενο
@@ -567,7 +566,6 @@ PROP_BONES	Κόκαλα
 PROP_WALL	Τείχος
 PROP_STALL	Πάγκος
 MISC_STORAGE_FULL	Δεν υπάρχει χώρος στην αποθήκη
-MISC_PROP_SELECT	Επίλεξε μια μονάδα για να το χρησιμοποιήσει
 MISC_PROP_TAKEN	Χρησιμοποιείται ήδη
 MISC_PROP_WORKERS_FULL	Έως {0} μονάδες μπορούν να το δουλεύουν ταυτόχρονα
 MISC_GATHERS	{0} συλλέγει {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Κορμός ξύλου
 ITEM_88_DESC	Ξύλο κομμένο από δέντρο, για κατασκευές και χειροτεχνία.
 UILABEL_INPUT	Είσοδος
 UILABEL_OUTPUT	Έξοδος
-UILABEL_CRAFT_HINT	Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα βάλεις στην είσοδο, και πάρε τα έτοιμα από την έξοδο. Για να αρχίσει δουλειά, κάνε δεξί κλικ στο {0} και διάλεξε Κατασκευή.
+UILABEL_CRAFT_HINT	Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα βάλεις στην είσοδο, και πάρε τα έτοιμα από την έξοδο. Για να αρχίσει δουλειά, κάνε δεξί κλικ στο {0} και διάλεξε Χρήση.
 MISC_CRAFT_WRONG_ITEM	Το {0} δεν μπορεί να χρησιμοποιηθεί εδώ
 MISC_CRAFT_NEEDS	Βάλε {0} στην είσοδο για να ξεκινήσεις
 MISC_CRAFT_OUTPUT_FULL	Η έξοδος είναι γεμάτη
@@ -593,4 +591,17 @@ ITEM_89_NAME	Ωμό κρέας
 ITEM_89_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
 ITEM_90_NAME	Ψητό κρέας
 ITEM_90_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
-UILABEL_CRAFT	Κατασκευή
+UILABEL_TALK	Μίλα
+UILABEL_ATTACK	Επίθεση
+UILABEL_ATTACK_UNPROVOKED	Επίθεση (απρόκλητη)
+UILABEL_FOLLOW	Ακολούθησε
+UILABEL_DEFEND	Υπεράσπισε
+UILABEL_TASK_FOLLOWING	Ακολουθεί
+UILABEL_TASK_DEFENDING	Υπερασπίζεται
+MISC_FREE_TRADE_ADD	Πρόσθεσε αντικείμενα σε όποια πλευρά θες
+MISC_FREE_TRADE_READY	Έτοιμο για ανταλλαγή
+MISC_TURNS_HOSTILE	{0} γίνεται εχθρικός
+MISC_SELECT_UNIT_FIRST	Επίλεξε πρώτα μια μονάδα
+FACTION_PLAYER	Φατρία του παίκτη
+FACTION_GRAY	Γκρίζα φατρία
+FACTION_RED	Κόκκινη φατρία

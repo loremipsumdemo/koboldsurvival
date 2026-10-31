@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Mereka tiada ruang untuk barang anda
 MISC_TRADE_FAILED	Perdagangan gagal
 MISC_TRADE_COMPLETE	Perdagangan selesai.
 MISC_PICKUP_SELECT	Pilih unit untuk mengambil barang itu
-MISC_TALK_SELECT	Pilih unit untuk bercakap dengannya
 MISC_TRADE_ONLY_TALKING	Anda hanya boleh berdagang dengan unit yang sedang anda ajak bercakap.
 MISC_DROPS	{0} menjatuhkan {1} {2}
 MISC_AN_ITEM	satu barang
@@ -567,7 +566,6 @@ PROP_BONES	Tulang
 PROP_WALL	Tembok
 PROP_STALL	Gerai
 MISC_STORAGE_FULL	Tiada ruang dalam simpanan
-MISC_PROP_SELECT	Pilih unit untuk menggunakannya
 MISC_PROP_TAKEN	Sudah digunakan
 MISC_PROP_WORKERS_FULL	Paling banyak {0} unit boleh mengerjakannya serentak
 MISC_GATHERS	{0} mengumpul {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Batang kayu
 ITEM_88_DESC	Kayu yang ditebang daripada pokok, untuk kraf dan binaan.
 UILABEL_INPUT	Input
 UILABEL_OUTPUT	Output
-UILABEL_CRAFT_HINT	Klik kanan item unit anda untuk memasukkannya ke input, dan ambil item siap dari output. Untuk mula bekerja, klik kanan {0} dan pilih Buat.
+UILABEL_CRAFT_HINT	Klik kanan item unit anda untuk memasukkannya ke input, dan ambil item siap dari output. Untuk mula bekerja, klik kanan {0} dan pilih Guna.
 MISC_CRAFT_WRONG_ITEM	{0} tidak boleh digunakan di sini
 MISC_CRAFT_NEEDS	Masukkan {0} ke input untuk bermula
 MISC_CRAFT_OUTPUT_FULL	Output sudah penuh
@@ -593,4 +591,17 @@ ITEM_89_NAME	Daging mentah
 ITEM_89_DESC	Daging yang belum dimasak. Masak di unggun api.
 ITEM_90_NAME	Daging masak
 ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
-UILABEL_CRAFT	Buat
+UILABEL_TALK	Bercakap
+UILABEL_ATTACK	Serang
+UILABEL_ATTACK_UNPROVOKED	Serang (tanpa provokasi)
+UILABEL_FOLLOW	Ikut
+UILABEL_DEFEND	Pertahan
+UILABEL_TASK_FOLLOWING	Mengikut
+UILABEL_TASK_DEFENDING	Mempertahan
+MISC_FREE_TRADE_ADD	Tambah item ke mana-mana pihak
+MISC_FREE_TRADE_READY	Sedia untuk bertukar
+MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
+MISC_SELECT_UNIT_FIRST	Pilih unit dahulu
+FACTION_PLAYER	Puak Pemain
+FACTION_GRAY	Puak Kelabu
+FACTION_RED	Puak Merah

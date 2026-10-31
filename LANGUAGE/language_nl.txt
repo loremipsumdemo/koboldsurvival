@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Zij hebben geen plek voor jouw voorwerpen
 MISC_TRADE_FAILED	Handel mislukt
 MISC_TRADE_COMPLETE	Handel voltooid.
 MISC_PICKUP_SELECT	Selecteer eenheden om het voorwerp op te pakken
-MISC_TALK_SELECT	Selecteer een eenheid om mee te praten
 MISC_TRADE_ONLY_TALKING	Je kunt alleen handelen met de eenheid met wie je praat.
 MISC_DROPS	{0} laat {1} {2} vallen
 MISC_AN_ITEM	een voorwerp
@@ -567,7 +566,6 @@ PROP_BONES	Botten
 PROP_WALL	Muur
 PROP_STALL	Kraam
 MISC_STORAGE_FULL	Geen ruimte in de opslag
-MISC_PROP_SELECT	Selecteer een eenheid om het te gebruiken
 MISC_PROP_TAKEN	Al in gebruik
 MISC_PROP_WORKERS_FULL	Er kunnen maximaal {0} eenheden tegelijk aan werken
 MISC_GATHERS	{0} verzamelt {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Houtblok
 ITEM_88_DESC	Hout van een gekapte boom, voor ambacht en bouw.
 UILABEL_INPUT	Invoer
 UILABEL_OUTPUT	Uitvoer
-UILABEL_CRAFT_HINT	Klik met rechts op de voorwerpen van je eenheid om ze in de invoer te leggen, en neem klare voorwerpen uit de uitvoer. Klik met rechts op {0} en kies Maken om aan het werk te gaan.
+UILABEL_CRAFT_HINT	Klik met rechts op de voorwerpen van je eenheid om ze in de invoer te leggen, en neem klare voorwerpen uit de uitvoer. Klik met rechts op {0} en kies Gebruiken om aan het werk te gaan.
 MISC_CRAFT_WRONG_ITEM	{0} kan hier niet worden gebruikt
 MISC_CRAFT_NEEDS	Leg {0} in de invoer om te beginnen
 MISC_CRAFT_OUTPUT_FULL	De uitvoer is vol
@@ -593,4 +591,17 @@ ITEM_89_NAME	Rauw vlees
 ITEM_89_DESC	Ongekookt vlees. Bak het bij een kampvuur.
 ITEM_90_NAME	Gebakken vlees
 ITEM_90_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
-UILABEL_CRAFT	Maken
+UILABEL_TALK	Praten
+UILABEL_ATTACK	Aanvallen
+UILABEL_ATTACK_UNPROVOKED	Aanvallen (onuitgelokt)
+UILABEL_FOLLOW	Volgen
+UILABEL_DEFEND	Verdedigen
+UILABEL_TASK_FOLLOWING	Volgt
+UILABEL_TASK_DEFENDING	Verdedigt
+MISC_FREE_TRADE_ADD	Voeg aan een van beide kanten voorwerpen toe
+MISC_FREE_TRADE_READY	Klaar om te ruilen
+MISC_TURNS_HOSTILE	{0} wordt vijandig
+MISC_SELECT_UNIT_FIRST	Selecteer eerst een eenheid
+FACTION_PLAYER	Spelersfactie
+FACTION_GRAY	Grijze factie
+FACTION_RED	Rode factie

@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Sie haben keinen Platz für deine Gegenstände
 MISC_TRADE_FAILED	Handel fehlgeschlagen
 MISC_TRADE_COMPLETE	Handel abgeschlossen.
 MISC_PICKUP_SELECT	Wähle Einheiten, die den Gegenstand aufheben sollen
-MISC_TALK_SELECT	Wähle eine Einheit, um mit ihr zu sprechen
 MISC_TRADE_ONLY_TALKING	Du kannst nur mit der Einheit handeln, mit der du gerade sprichst.
 MISC_DROPS	{0} lässt {1} {2} fallen
 MISC_AN_ITEM	ein Gegenstand
@@ -567,7 +566,6 @@ PROP_BONES	Knochen
 PROP_WALL	Mauer
 PROP_STALL	Marktstand
 MISC_STORAGE_FULL	Kein Platz im Lager
-MISC_PROP_SELECT	Wähle eine Einheit, um es zu benutzen
 MISC_PROP_TAKEN	Bereits belegt
 MISC_PROP_WORKERS_FULL	Bis zu {0} Einheiten können gleichzeitig daran arbeiten
 MISC_GATHERS	{0} sammelt {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Holzstamm
 ITEM_88_DESC	Holz von einem gefällten Baum, für Handwerk und Bau.
 UILABEL_INPUT	Eingabe
 UILABEL_OUTPUT	Ausgabe
-UILABEL_CRAFT_HINT	Rechtsklick auf die Gegenstände deiner Einheit legt sie in die Eingabe; fertige Gegenstände nimmst du aus der Ausgabe. Um mit der Arbeit zu beginnen, klicke mit rechts auf {0} und wähle Herstellen.
+UILABEL_CRAFT_HINT	Rechtsklick auf die Gegenstände deiner Einheit legt sie in die Eingabe; fertige Gegenstände nimmst du aus der Ausgabe. Um mit der Arbeit zu beginnen, klicke mit rechts auf {0} und wähle Benutzen.
 MISC_CRAFT_WRONG_ITEM	{0} kann hier nicht verwendet werden
 MISC_CRAFT_NEEDS	Lege {0} in die Eingabe, um zu beginnen
 MISC_CRAFT_OUTPUT_FULL	Die Ausgabe ist voll
@@ -593,4 +591,17 @@ ITEM_89_NAME	Rohes Fleisch
 ITEM_89_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
 ITEM_90_NAME	Gebratenes Fleisch
 ITEM_90_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
-UILABEL_CRAFT	Herstellen
+UILABEL_TALK	Sprechen
+UILABEL_ATTACK	Angreifen
+UILABEL_ATTACK_UNPROVOKED	Angreifen (unprovoziert)
+UILABEL_FOLLOW	Folgen
+UILABEL_DEFEND	Verteidigen
+UILABEL_TASK_FOLLOWING	Folgt
+UILABEL_TASK_DEFENDING	Verteidigt
+MISC_FREE_TRADE_ADD	Lege auf eine der Seiten Gegenstände
+MISC_FREE_TRADE_READY	Bereit zum Tauschen
+MISC_TURNS_HOSTILE	{0} wird feindselig
+MISC_SELECT_UNIT_FIRST	Wähle zuerst eine Einheit
+FACTION_PLAYER	Spielerfraktion
+FACTION_GRAY	Graue Fraktion
+FACTION_RED	Rote Fraktion

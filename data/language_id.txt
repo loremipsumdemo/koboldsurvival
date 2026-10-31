@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Mereka tidak punya ruang untuk barang Anda
 MISC_TRADE_FAILED	Perdagangan gagal
 MISC_TRADE_COMPLETE	Perdagangan selesai.
 MISC_PICKUP_SELECT	Pilih unit yang akan mengambil barang itu
-MISC_TALK_SELECT	Pilih unit untuk diajak bicara
 MISC_TRADE_ONLY_TALKING	Anda hanya dapat berdagang dengan unit yang sedang Anda ajak bicara.
 MISC_DROPS	{0} menjatuhkan {1} {2}
 MISC_AN_ITEM	sebuah barang
@@ -567,7 +566,6 @@ PROP_BONES	Tulang
 PROP_WALL	Tembok
 PROP_STALL	Kios
 MISC_STORAGE_FULL	Tidak ada ruang di penyimpanan
-MISC_PROP_SELECT	Pilih unit untuk menggunakannya
 MISC_PROP_TAKEN	Sudah dipakai
 MISC_PROP_WORKERS_FULL	Paling banyak {0} unit dapat mengerjakannya sekaligus
 MISC_GATHERS	{0} mengumpulkan {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Batang kayu
 ITEM_88_DESC	Kayu yang ditebang dari pohon, untuk kerajinan dan bangunan.
 UILABEL_INPUT	Masukan
 UILABEL_OUTPUT	Hasil
-UILABEL_CRAFT_HINT	Klik kanan barang unitmu untuk memasukkannya ke masukan, dan ambil barang jadi dari hasil. Untuk mulai bekerja, klik kanan {0} lalu pilih Buat.
+UILABEL_CRAFT_HINT	Klik kanan barang unitmu untuk memasukkannya ke masukan, dan ambil barang jadi dari hasil. Untuk mulai bekerja, klik kanan {0} lalu pilih Gunakan.
 MISC_CRAFT_WRONG_ITEM	{0} tidak bisa dipakai di sini
 MISC_CRAFT_NEEDS	Masukkan {0} ke masukan untuk mulai
 MISC_CRAFT_OUTPUT_FULL	Hasil sudah penuh
@@ -593,4 +591,17 @@ ITEM_89_NAME	Daging mentah
 ITEM_89_DESC	Daging yang belum dimasak. Masak di api unggun.
 ITEM_90_NAME	Daging matang
 ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
-UILABEL_CRAFT	Buat
+UILABEL_TALK	Bicara
+UILABEL_ATTACK	Serang
+UILABEL_ATTACK_UNPROVOKED	Serang (tanpa provokasi)
+UILABEL_FOLLOW	Ikuti
+UILABEL_DEFEND	Lindungi
+UILABEL_TASK_FOLLOWING	Mengikuti
+UILABEL_TASK_DEFENDING	Melindungi
+MISC_FREE_TRADE_ADD	Tambahkan barang ke sisi mana saja
+MISC_FREE_TRADE_READY	Siap bertukar
+MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
+MISC_SELECT_UNIT_FIRST	Pilih unit dulu
+FACTION_PLAYER	Faksi Pemain
+FACTION_GRAY	Faksi Kelabu
+FACTION_RED	Faksi Merah

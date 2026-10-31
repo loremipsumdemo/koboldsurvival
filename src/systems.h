@@ -38,7 +38,18 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 // target until it is gone. Units with no place in the fight (red ones, or not your own) are skipped.
 void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target);
 // Right-click talk: each selected unit walks up to the NPC; the first in talk range starts the talk
-void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc);
+// With trade set, it is a free trade with another unit of yours instead: the first in range starts the trade.
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade = false);
+// Standing orders from the right-click menu. Follow: each unit walks after the target and keeps close to it.
+// Defend: the same, and each unit fights whatever is attacking the unit it defends (defendSystem). The target itself
+// is skipped if it is among the units. Any other order ends them.
+void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target);
+void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward);
+// Before the fight each frame: each defending unit picks the nearest unit attacking its ward, and fights it until it
+// stops or falls; with none, it follows its ward
+void defendSystem(World& w);
+// Attack (Unprovoked) on a neutral unit: it becomes hostile, with a line in the log
+void makeHostile(World& w, Entity unit);
 // Drops every talk order, once a talk has started or the NPC is gone
 void clearTalkOrders(World& w);
 
@@ -58,17 +69,24 @@ void cleanupSquads(World& w);
 void needsSystem(World& w, int hours, double gameSeconds = 0.0);
 
 // ---- Props (props.h) ----
-// Right-click on a usable prop: each unit walks to it. In reach, a storage prop opens its panel; an occupiable prop
-// takes the unit if it is free; a resource prop puts the unit to work if it has room for another worker; a crafting
-// prop asks the player whether to open its inventory or to craft (tryStartWork).
-void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop);
-// A unit that reached the prop it was sent to. started: it took the bed or started working. taken: the bed was
-// occupied, or the prop had all the workers it can have.
+// From the right-click menu on a prop: each unit walks to it, and in reach does the action picked. Inventory opens a
+// storage or crafting prop's panel. Use takes a free bed, works a resource prop if it has room for another worker,
+// or starts crafting if the prop's input and output allow it (tryStartWork).
+void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action);
+// Puts a unit to work on a resource or crafting prop, if it can start now: it is in reach, the prop has room for
+// another worker, and a crafting prop has its input item and room for its output. Checked at the moment of the try.
+enum class WorkStart { Started, TooFar, Full, NoInput, OutputFull };
+WorkStart tryStartWork(World& w, Entity unit, Entity prop);
+// A unit that reached the prop it was sent to, with what it was sent to do. Inventory: the game opens the panel.
+// Use: started is set if it took the bed or started working; taken if the bed was occupied or the prop had all the
+// workers it can have; craft is the result of trying to start at a crafting prop.
 struct PropArrival {
     Entity unit = NULL_ENTITY;
     Entity prop = NULL_ENTITY;
+    PropAction action = PropAction::Use;
     bool taken = false;
     bool started = false;
+    WorkStart craft = WorkStart::Started;
 };
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
 // or say why a unit could not start. Units on beds are kept on them.
@@ -81,10 +99,6 @@ void workSystem(World& w, double gameSeconds);
 // Whether a crafting prop can be worked: it has its input item, and room for one more of its output
 enum class CraftState { Ready, NoInput, OutputFull };
 CraftState craftStateOf(World& w, Entity prop);
-// Puts a unit to work on a resource or crafting prop, if it can start now: it is in reach, the prop has room for
-// another worker, and a crafting prop has its input item and room for its output. Checked at the moment of the try.
-enum class WorkStart { Started, TooFar, Full, NoInput, OutputFull };
-WorkStart tryStartWork(World& w, Entity unit, Entity prop);
 // Call whenever a crafting prop's items change (taken, put in or dropped): if it can no longer be worked, everyone
 // working it stops and its progress is lost, so an item can never be made from input that was taken away
 void propStorageChanged(World& w, Entity prop);
@@ -92,6 +106,9 @@ void propStorageChanged(World& w, Entity prop);
 Entity propOccupant(World& w, Entity prop);
 // Units working a resource or crafting prop, or on their way to it
 int propWorkerCount(World& w, Entity prop);
+// The emotes to show over a unit's head (emotes.h), in the order they take turns: what it is working at or lying on,
+// then Encumbered when it carries ENCUMBERED_SHARE of its carry limit or more. Empty for none.
+std::vector<int> emotesOf(World& w, Entity u);
 // What a unit is doing, for the Unit Panel: the skill it is working with (such as Mining or Cooking), Resting, Moving
 // or Idle
 std::string taskNameOf(World& w, Entity u);

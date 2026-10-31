@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Ei nu au loc pentru obiectele tale
 MISC_TRADE_FAILED	Schimbul a eșuat
 MISC_TRADE_COMPLETE	Schimb finalizat.
 MISC_PICKUP_SELECT	Selectează unitățile care vor ridica obiectul
-MISC_TALK_SELECT	Selectează o unitate cu care să vorbești
 MISC_TRADE_ONLY_TALKING	Poți face schimb doar cu unitatea cu care vorbești.
 MISC_DROPS	{0} aruncă {1} {2}
 MISC_AN_ITEM	un obiect
@@ -567,7 +566,6 @@ PROP_BONES	Oase
 PROP_WALL	Zid
 PROP_STALL	Tarabă
 MISC_STORAGE_FULL	Nu mai este loc în depozit
-MISC_PROP_SELECT	Selectează o unitate pentru a-l folosi
 MISC_PROP_TAKEN	Este deja folosit
 MISC_PROP_WORKERS_FULL	Cel mult {0} unități pot lucra la el deodată
 MISC_GATHERS	{0} adună {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Buștean
 ITEM_88_DESC	Lemn tăiat dintr-un copac, pentru meșteșuguri și construcții.
 UILABEL_INPUT	Intrare
 UILABEL_OUTPUT	Ieșire
-UILABEL_CRAFT_HINT	Clic dreapta pe obiectele unității tale ca să le pui la intrare, iar obiectele gata le iei de la ieșire. Ca să înceapă lucrul, clic dreapta pe {0} și alege Meșteșugește.
+UILABEL_CRAFT_HINT	Clic dreapta pe obiectele unității tale ca să le pui la intrare, iar obiectele gata le iei de la ieșire. Ca să înceapă lucrul, clic dreapta pe {0} și alege Folosește.
 MISC_CRAFT_WRONG_ITEM	{0} nu poate fi folosit aici
 MISC_CRAFT_NEEDS	Pune {0} la intrare ca să începi
 MISC_CRAFT_OUTPUT_FULL	Ieșirea este plină
@@ -593,4 +591,17 @@ ITEM_89_NAME	Carne crudă
 ITEM_89_DESC	Carne negătită. Gătește-o la un foc de tabără.
 ITEM_90_NAME	Carne friptă
 ITEM_90_DESC	Carne friptă la foc. Reface viața și potolește foamea.
-UILABEL_CRAFT	Meșteșugește
+UILABEL_TALK	Vorbește
+UILABEL_ATTACK	Atacă
+UILABEL_ATTACK_UNPROVOKED	Atacă (neprovocat)
+UILABEL_FOLLOW	Urmează
+UILABEL_DEFEND	Apără
+UILABEL_TASK_FOLLOWING	Urmează
+UILABEL_TASK_DEFENDING	Apără
+MISC_FREE_TRADE_ADD	Adaugă obiecte în oricare parte
+MISC_FREE_TRADE_READY	Gata de schimb
+MISC_TURNS_HOSTILE	{0} devine ostil
+MISC_SELECT_UNIT_FIRST	Selectează mai întâi o unitate
+FACTION_PLAYER	Facțiunea jucătorului
+FACTION_GRAY	Facțiunea gri
+FACTION_RED	Facțiunea roșie

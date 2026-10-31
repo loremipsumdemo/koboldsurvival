@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Họ không còn chỗ cho vật phẩm của bạn
 MISC_TRADE_FAILED	Giao dịch thất bại
 MISC_TRADE_COMPLETE	Giao dịch hoàn tất.
 MISC_PICKUP_SELECT	Chọn đơn vị để nhặt vật phẩm
-MISC_TALK_SELECT	Chọn một đơn vị để nói chuyện
 MISC_TRADE_ONLY_TALKING	Bạn chỉ có thể giao dịch với đơn vị bạn đang nói chuyện.
 MISC_DROPS	{0} vứt {1} {2}
 MISC_AN_ITEM	một vật phẩm
@@ -567,7 +566,6 @@ PROP_BONES	Xương
 PROP_WALL	Bức tường
 PROP_STALL	Sạp hàng
 MISC_STORAGE_FULL	Không còn chỗ trong kho
-MISC_PROP_SELECT	Chọn một đơn vị để sử dụng
 MISC_PROP_TAKEN	Đang có người dùng
 MISC_PROP_WORKERS_FULL	Tối đa {0} đơn vị có thể làm cùng lúc
 MISC_GATHERS	{0} thu được {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Khúc gỗ
 ITEM_88_DESC	Gỗ đốn từ cây, dùng để chế tạo và xây dựng.
 UILABEL_INPUT	Nguyên liệu
 UILABEL_OUTPUT	Thành phẩm
-UILABEL_CRAFT_HINT	Nhấp chuột phải vào vật phẩm của đơn vị để cho vào ô nguyên liệu, và lấy thành phẩm ở ô thành phẩm. Để bắt đầu làm, nhấp chuột phải vào {0} và chọn Chế tạo.
+UILABEL_CRAFT_HINT	Nhấp chuột phải vào vật phẩm của đơn vị để cho vào ô nguyên liệu, và lấy thành phẩm ở ô thành phẩm. Để bắt đầu làm, nhấp chuột phải vào {0} và chọn Dùng.
 MISC_CRAFT_WRONG_ITEM	Không dùng được {0} ở đây
 MISC_CRAFT_NEEDS	Cho {0} vào ô nguyên liệu để bắt đầu
 MISC_CRAFT_OUTPUT_FULL	Ô thành phẩm đã đầy
@@ -593,4 +591,17 @@ ITEM_89_NAME	Thịt sống
 ITEM_89_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
 ITEM_90_NAME	Thịt nướng
 ITEM_90_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
-UILABEL_CRAFT	Chế tạo
+UILABEL_TALK	Nói chuyện
+UILABEL_ATTACK	Tấn công
+UILABEL_ATTACK_UNPROVOKED	Tấn công (vô cớ)
+UILABEL_FOLLOW	Đi theo
+UILABEL_DEFEND	Bảo vệ
+UILABEL_TASK_FOLLOWING	Đang đi theo
+UILABEL_TASK_DEFENDING	Đang bảo vệ
+MISC_FREE_TRADE_ADD	Thêm vật phẩm vào bên nào cũng được
+MISC_FREE_TRADE_READY	Sẵn sàng trao đổi
+MISC_TURNS_HOSTILE	{0} trở nên thù địch
+MISC_SELECT_UNIT_FIRST	Hãy chọn một đơn vị trước
+FACTION_PLAYER	Phe người chơi
+FACTION_GRAY	Phe Xám
+FACTION_RED	Phe Đỏ

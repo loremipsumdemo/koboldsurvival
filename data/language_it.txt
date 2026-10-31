@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Non hanno spazio per i tuoi oggetti
 MISC_TRADE_FAILED	Scambio fallito
 MISC_TRADE_COMPLETE	Scambio completato.
 MISC_PICKUP_SELECT	Seleziona le unità che raccoglieranno l'oggetto
-MISC_TALK_SELECT	Seleziona un'unità per parlarle
 MISC_TRADE_ONLY_TALKING	Puoi scambiare solo con l'unità con cui stai parlando.
 MISC_DROPS	{0} lascia cadere {1} {2}
 MISC_AN_ITEM	un oggetto
@@ -567,7 +566,6 @@ PROP_BONES	Ossa
 PROP_WALL	Muro
 PROP_STALL	Bancarella
 MISC_STORAGE_FULL	Nessuno spazio nel deposito
-MISC_PROP_SELECT	Seleziona un'unità per usarlo
 MISC_PROP_TAKEN	Già in uso
 MISC_PROP_WORKERS_FULL	Fino a {0} unità possono lavorarci insieme
 MISC_GATHERS	{0} raccoglie {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Tronco di legno
 ITEM_88_DESC	Legno tagliato da un albero, per creare e costruire.
 UILABEL_INPUT	Ingresso
 UILABEL_OUTPUT	Uscita
-UILABEL_CRAFT_HINT	Clic destro sugli oggetti della tua unità per metterli nell'ingresso, e prendi gli oggetti finiti dall'uscita. Per iniziare a lavorare, clic destro su {0} e scegli Crea.
+UILABEL_CRAFT_HINT	Clic destro sugli oggetti della tua unità per metterli nell'ingresso, e prendi gli oggetti finiti dall'uscita. Per iniziare a lavorare, clic destro su {0} e scegli Usa.
 MISC_CRAFT_WRONG_ITEM	{0} non si può usare qui
 MISC_CRAFT_NEEDS	Metti {0} nell'ingresso per iniziare
 MISC_CRAFT_OUTPUT_FULL	L'uscita è piena
@@ -593,4 +591,17 @@ ITEM_89_NAME	Carne cruda
 ITEM_89_DESC	Carne non cotta. Cuocila su un falò.
 ITEM_90_NAME	Carne cotta
 ITEM_90_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
-UILABEL_CRAFT	Crea
+UILABEL_TALK	Parla
+UILABEL_ATTACK	Attacca
+UILABEL_ATTACK_UNPROVOKED	Attacca (senza provocazione)
+UILABEL_FOLLOW	Segui
+UILABEL_DEFEND	Difendi
+UILABEL_TASK_FOLLOWING	Segue
+UILABEL_TASK_DEFENDING	Difende
+MISC_FREE_TRADE_ADD	Aggiungi oggetti a uno dei due lati
+MISC_FREE_TRADE_READY	Pronto allo scambio
+MISC_TURNS_HOSTILE	{0} diventa ostile
+MISC_SELECT_UNIT_FIRST	Seleziona prima un'unità
+FACTION_PLAYER	Fazione del giocatore
+FACTION_GRAY	Fazione grigia
+FACTION_RED	Fazione rossa

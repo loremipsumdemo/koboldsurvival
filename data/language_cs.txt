@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Nemají místo pro vaše předměty
 MISC_TRADE_FAILED	Obchod se nezdařil
 MISC_TRADE_COMPLETE	Obchod dokončen.
 MISC_PICKUP_SELECT	Vyberte jednotky, které předmět sebrou
-MISC_TALK_SELECT	Vyberte jednotku, se kterou chcete mluvit
 MISC_TRADE_ONLY_TALKING	Obchodovat můžete jen s jednotkou, se kterou mluvíte.
 MISC_DROPS	{0} upustí {1} {2}
 MISC_AN_ITEM	předmět
@@ -567,7 +566,6 @@ PROP_BONES	Kosti
 PROP_WALL	Zeď
 PROP_STALL	Stánek
 MISC_STORAGE_FULL	Ve skladu není místo
-MISC_PROP_SELECT	Vyberte jednotku, která to použije
 MISC_PROP_TAKEN	Už se používá
 MISC_PROP_WORKERS_FULL	Najednou na tom může pracovat nejvýše {0} jednotek
 MISC_GATHERS	{0} získává {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Dřevěné poleno
 ITEM_88_DESC	Dřevo z pokáceného stromu, k výrobě a stavění.
 UILABEL_INPUT	Vstup
 UILABEL_OUTPUT	Výstup
-UILABEL_CRAFT_HINT	Pravým kliknutím vložte předměty jednotky do vstupu a hotové předměty si vezměte z výstupu. Práci zahájíte pravým kliknutím na {0} a volbou Vyrábět.
+UILABEL_CRAFT_HINT	Pravým kliknutím vložte předměty jednotky do vstupu a hotové předměty si vezměte z výstupu. Práci zahájíte pravým kliknutím na {0} a volbou Použít.
 MISC_CRAFT_WRONG_ITEM	{0} zde nelze použít
 MISC_CRAFT_NEEDS	Pro začátek vložte do vstupu {0}
 MISC_CRAFT_OUTPUT_FULL	Výstup je plný
@@ -593,4 +591,17 @@ ITEM_89_NAME	Syrové maso
 ITEM_89_DESC	Nevařené maso. Upečte ho u táboráku.
 ITEM_90_NAME	Pečené maso
 ITEM_90_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
-UILABEL_CRAFT	Vyrábět
+UILABEL_TALK	Mluvit
+UILABEL_ATTACK	Zaútočit
+UILABEL_ATTACK_UNPROVOKED	Zaútočit (bez provokace)
+UILABEL_FOLLOW	Následovat
+UILABEL_DEFEND	Bránit
+UILABEL_TASK_FOLLOWING	Následuje
+UILABEL_TASK_DEFENDING	Brání
+MISC_FREE_TRADE_ADD	Přidejte předměty na kteroukoli stranu
+MISC_FREE_TRADE_READY	Připraveno k výměně
+MISC_TURNS_HOSTILE	{0} se stává nepřátelským
+MISC_SELECT_UNIT_FIRST	Nejprve vyberte jednotku
+FACTION_PLAYER	Frakce hráče
+FACTION_GRAY	Šedá frakce
+FACTION_RED	Rudá frakce

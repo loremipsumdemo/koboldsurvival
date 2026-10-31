@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Eles não têm espaço para os seus itens
 MISC_TRADE_FAILED	Troca falhou
 MISC_TRADE_COMPLETE	Troca concluída.
 MISC_PICKUP_SELECT	Selecione unidades para pegar o item
-MISC_TALK_SELECT	Selecione uma unidade para conversar com ela
 MISC_TRADE_ONLY_TALKING	Você só pode trocar com a unidade com quem está conversando.
 MISC_DROPS	{0} larga {1} {2}
 MISC_AN_ITEM	um item
@@ -567,7 +566,6 @@ PROP_BONES	Ossos
 PROP_WALL	Muro
 PROP_STALL	Barraca
 MISC_STORAGE_FULL	Sem espaço no armazenamento
-MISC_PROP_SELECT	Selecione uma unidade para usá-lo
 MISC_PROP_TAKEN	Já está em uso
 MISC_PROP_WORKERS_FULL	Até {0} unidades podem trabalhar nele ao mesmo tempo
 MISC_GATHERS	{0} coleta {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Tora de madeira
 ITEM_88_DESC	Madeira cortada de uma árvore, usada em fabricação e construção.
 UILABEL_INPUT	Entrada
 UILABEL_OUTPUT	Saída
-UILABEL_CRAFT_HINT	Clique com o botão direito nos itens da sua unidade para colocá-los na entrada, e pegue os itens prontos na saída. Para começar a trabalhar, clique com o botão direito em {0} e escolha Fabricar.
+UILABEL_CRAFT_HINT	Clique com o botão direito nos itens da sua unidade para colocá-los na entrada, e pegue os itens prontos na saída. Para começar a trabalhar, clique com o botão direito em {0} e escolha Usar.
 MISC_CRAFT_WRONG_ITEM	{0} não pode ser usado aqui
 MISC_CRAFT_NEEDS	Coloque {0} na entrada para começar
 MISC_CRAFT_OUTPUT_FULL	A saída está cheia
@@ -593,4 +591,17 @@ ITEM_89_NAME	Carne crua
 ITEM_89_DESC	Carne não cozida. Asse-a numa fogueira.
 ITEM_90_NAME	Carne assada
 ITEM_90_DESC	Carne assada no fogo. Restaura vida e fome.
-UILABEL_CRAFT	Fabricar
+UILABEL_TALK	Conversar
+UILABEL_ATTACK	Atacar
+UILABEL_ATTACK_UNPROVOKED	Atacar (sem provocação)
+UILABEL_FOLLOW	Seguir
+UILABEL_DEFEND	Defender
+UILABEL_TASK_FOLLOWING	Seguindo
+UILABEL_TASK_DEFENDING	Defendendo
+MISC_FREE_TRADE_ADD	Adicione itens a qualquer lado
+MISC_FREE_TRADE_READY	Pronto para trocar
+MISC_TURNS_HOSTILE	{0} fica hostil
+MISC_SELECT_UNIT_FIRST	Selecione uma unidade primeiro
+FACTION_PLAYER	Facção do Jogador
+FACTION_GRAY	Facção Cinzenta
+FACTION_RED	Facção Vermelha

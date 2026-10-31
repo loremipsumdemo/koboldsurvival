@@ -194,7 +194,6 @@ MISC_TRADE_NO_ROOM_THEIRS	Oni nie mają miejsca na twoje przedmioty
 MISC_TRADE_FAILED	Handel nie powiódł się
 MISC_TRADE_COMPLETE	Handel zakończony.
 MISC_PICKUP_SELECT	Wybierz jednostki, które podniosą przedmiot
-MISC_TALK_SELECT	Wybierz jednostkę, aby z nią porozmawiać
 MISC_TRADE_ONLY_TALKING	Możesz handlować tylko z jednostką, z którą rozmawiasz.
 MISC_DROPS	{0} upuszcza {1} {2}
 MISC_AN_ITEM	przedmiot
@@ -567,7 +566,6 @@ PROP_BONES	Kości
 PROP_WALL	Mur
 PROP_STALL	Stragan
 MISC_STORAGE_FULL	Brak miejsca w schowku
-MISC_PROP_SELECT	Wybierz jednostkę, aby tego użyć
 MISC_PROP_TAKEN	Już zajęte
 MISC_PROP_WORKERS_FULL	Naraz może przy tym pracować najwyżej {0} jednostek
 MISC_GATHERS	{0} zbiera {1}
@@ -582,7 +580,7 @@ ITEM_88_NAME	Kłoda drewna
 ITEM_88_DESC	Drewno ścięte z drzewa, do rzemiosła i budowy.
 UILABEL_INPUT	Wejście
 UILABEL_OUTPUT	Wyjście
-UILABEL_CRAFT_HINT	Kliknij prawym przyciskiem przedmioty jednostki, aby włożyć je do wejścia, a gotowe bierz z wyjścia. Aby zacząć pracę, kliknij prawym przyciskiem {0} i wybierz Wytwórz.
+UILABEL_CRAFT_HINT	Kliknij prawym przyciskiem przedmioty jednostki, aby włożyć je do wejścia, a gotowe bierz z wyjścia. Aby zacząć pracę, kliknij prawym przyciskiem {0} i wybierz Użycie.
 MISC_CRAFT_WRONG_ITEM	{0} nie można tu użyć
 MISC_CRAFT_NEEDS	Włóż {0} do wejścia, aby zacząć
 MISC_CRAFT_OUTPUT_FULL	Wyjście jest pełne
@@ -593,4 +591,17 @@ ITEM_89_NAME	Surowe mięso
 ITEM_89_DESC	Niegotowane mięso. Upiecz je przy ognisku.
 ITEM_90_NAME	Pieczone mięso
 ITEM_90_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
-UILABEL_CRAFT	Wytwórz
+UILABEL_TALK	Rozmawiaj
+UILABEL_ATTACK	Atakuj
+UILABEL_ATTACK_UNPROVOKED	Atakuj (bez prowokacji)
+UILABEL_FOLLOW	Podążaj
+UILABEL_DEFEND	Broń
+UILABEL_TASK_FOLLOWING	Podąża
+UILABEL_TASK_DEFENDING	Broni
+MISC_FREE_TRADE_ADD	Dodaj przedmioty po dowolnej stronie
+MISC_FREE_TRADE_READY	Gotowe do wymiany
+MISC_TURNS_HOSTILE	{0} staje się wrogi
+MISC_SELECT_UNIT_FIRST	Najpierw wybierz jednostkę
+FACTION_PLAYER	Frakcja gracza
+FACTION_GRAY	Szara frakcja
+FACTION_RED	Czerwona frakcja
