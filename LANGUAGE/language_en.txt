@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Resting
 UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
 ITEM_88_NAME	Wood Log
 ITEM_88_DESC	Wood cut from a tree, used in crafting and building.
-UILABEL_INPUT	Input
-UILABEL_OUTPUT	Output
-UILABEL_CRAFT_HINT	Right-click your unit's items to put them in the input, and take finished items from the output. To start working, right-click the {0} and choose Use.
+UILABEL_CRAFT_HINT	Right-click your unit's items to put them in. What is made goes to the worker's inventory. To start working, right-click the {0} and choose Use.
 MISC_CRAFT_WRONG_ITEM	{0} can't be used here
 MISC_CRAFT_NEEDS	Put {0} in the input to start
-MISC_CRAFT_OUTPUT_FULL	The output is full
 MISC_CRAFTS	{0} makes {1}
 MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
 MISC_REASON_CRAFTING	crafting
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Select a unit first
 FACTION_PLAYER	Player Faction
 FACTION_GRAY	Gray Faction
 FACTION_RED	Red Faction
+MISC_PROP_UNREACHABLE	Unreachable
+MISC_ITEM_GAINED	+ {0}

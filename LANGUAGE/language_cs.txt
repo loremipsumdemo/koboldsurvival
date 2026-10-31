@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Odpočívá
 UILABEL_STORAGE_HINT	Pravým kliknutím předmět vezmete, přetažením ven ho položíte tam, kde stojí vaše jednotka. Pravým kliknutím na předměty své jednotky je uložíte.
 ITEM_88_NAME	Dřevěné poleno
 ITEM_88_DESC	Dřevo z pokáceného stromu, k výrobě a stavění.
-UILABEL_INPUT	Vstup
-UILABEL_OUTPUT	Výstup
-UILABEL_CRAFT_HINT	Pravým kliknutím vložte předměty jednotky do vstupu a hotové předměty si vezměte z výstupu. Práci zahájíte pravým kliknutím na {0} a volbou Použít.
+UILABEL_CRAFT_HINT	Pravým kliknutím na předměty jednotky je vložíte dovnitř. Výrobky jdou do inventáře toho, kdo pracuje. Práci zahájíte pravým kliknutím na {0} a volbou Použít.
 MISC_CRAFT_WRONG_ITEM	{0} zde nelze použít
 MISC_CRAFT_NEEDS	Pro začátek vložte do vstupu {0}
-MISC_CRAFT_OUTPUT_FULL	Výstup je plný
 MISC_CRAFTS	{0} vyrábí {1}
 MISC_CRAFT_STOPS	{0} už nemá na čem pracovat a přestává
 MISC_REASON_CRAFTING	řemeslo
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Nejprve vyberte jednotku
 FACTION_PLAYER	Frakce hráče
 FACTION_GRAY	Šedá frakce
 FACTION_RED	Rudá frakce
+MISC_PROP_UNREACHABLE	Nedosažitelné
+MISC_ITEM_GAINED	+ {0}

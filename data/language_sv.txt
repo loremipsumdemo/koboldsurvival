@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Vilar
 UILABEL_STORAGE_HINT	Högerklicka på ett föremål för att ta det, eller dra ut det för att släppa det där din enhet står. Högerklicka på din enhets föremål för att lägga dem i förrådet.
 ITEM_88_NAME	Timmerstock
 ITEM_88_DESC	Virke från ett fällt träd, för hantverk och byggen.
-UILABEL_INPUT	Indata
-UILABEL_OUTPUT	Utdata
-UILABEL_CRAFT_HINT	Högerklicka på din enhets föremål för att lägga dem i indata, och ta färdiga föremål från utdata. Högerklicka på {0} och välj Använd för att börja arbeta.
+UILABEL_CRAFT_HINT	Högerklicka på din enhets föremål för att lägga i dem. Det som tillverkas hamnar i arbetarens förråd. Högerklicka på {0} och välj Använd för att börja arbeta.
 MISC_CRAFT_WRONG_ITEM	{0} kan inte användas här
 MISC_CRAFT_NEEDS	Lägg {0} i indata för att börja
-MISC_CRAFT_OUTPUT_FULL	Utdata är fullt
 MISC_CRAFTS	{0} tillverkar {1}
 MISC_CRAFT_STOPS	{0} har inget mer att arbeta med och slutar
 MISC_REASON_CRAFTING	hantverk
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Välj en enhet först
 FACTION_PLAYER	Spelarens fraktion
 FACTION_GRAY	Den grå fraktionen
 FACTION_RED	Den röda fraktionen
+MISC_PROP_UNREACHABLE	Onåbar
+MISC_ITEM_GAINED	+ {0}

@@ -15,7 +15,7 @@
 namespace {
 
 constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
-constexpr float PICKUP_REACH = 0.9f;     // a unit this close to a ground item can take it
+constexpr float PICKUP_REACH = 2.0f;     // a unit this close to a ground item (in tiles) can take it
 
 constexpr float FOLLOW_DISTANCE = 1.6f;   // a unit following or defending another keeps within this many tiles of it
 
@@ -592,8 +592,8 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // whether it is pinned in place (lying on a bed)
     std::vector<std::pair<float, float>> goal(units.size(), { 0.0f, 0.0f });
     std::vector<char> going(units.size(), 0), pinned(units.size(), 0);
-    // For a unit settled while following or defending, and not in a fight, the unit it follows (else NULL_ENTITY).
-    // Such units hold still among their own: see pass 1b.
+    // For a unit settled while following or defending, and not in a fight, the unit it follows; for a worker settled
+    // at its prop, the prop (else NULL_ENTITY). Units that share one hold still among themselves: see pass 1b.
     std::vector<Entity> calmLead(units.size(), NULL_ENTITY);
 
     // The units something is attacking this frame
@@ -621,12 +621,14 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             continue;
         }
         if (const Working* g = w.get<Working>(e); g && !w.has<SoloMove>(e)) {
-            // A worker that was pushed away from its prop walks back to it
+            // A worker stays where it is while it is in reach. One pushed out of reach walks back toward the prop.
             if (const Transform* pt = w.get<Transform>(g->prop)) {
                 const float gx = pt->x - tr->x, gz = pt->z - tr->z;
-                if (gx * gx + gz * gz > PROP_REACH * PROP_REACH * 0.64f) {
+                if (gx * gx + gz * gz > PROP_REACH * PROP_REACH) {
                     tx = pt->x;
                     tz = pt->z;
+                } else if (!underAttack(e)) {
+                    calmLead[i] = g->prop;   // settled at its work, among the others working the same prop
                 }
             }
         } else if (const TalkOrder* talk = w.get<TalkOrder>(e)) {
@@ -758,6 +760,20 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             const float push = (minD - d) * 8.0f;
             vx += sx / d * push;
             vz += sz / d * push;
+            if (going[i] && pinned[j]) {
+                // Against a unit that can't give way (one lying on a bed): slide around it, on the side already nearer
+                float hx = goal[i].first - tr->x, hz = goal[i].second - tr->z;
+                const float hl = std::sqrt(hx * hx + hz * hz);
+                if (hl > 1e-4f) {
+                    hx /= hl;
+                    hz /= hl;
+                    float side = -hz * sx + hx * sz;                          // which side of this unit's heading it is on
+                    if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
+                    const float sgn = side > 0.0f ? 1.0f : -1.0f;
+                    vx += -hz * sgn * push * 1.5f;
+                    vz += hx * sgn * push * 1.5f;
+                }
+            }
             if (!going[i] && going[j]) {
                 // Pushed by a unit on its way: step to the side of its path, the side this unit is already on
                 shoved = true;
@@ -898,11 +914,26 @@ CraftState craftStateOf(World& w, Entity prop) {
     if (!p || !st || propInfo(p->kind).use != PropUse::Crafting) return CraftState::NoInput;
     const PropInfo& info = propInfo(p->kind);
     int have = 0;
-    for (int i = 0; i < CRAFT_INPUT_SLOTS; ++i) have += st->slots[(size_t)i].item == info.input ? st->slots[(size_t)i].count : 0;
-    if (have <= 0) return CraftState::NoInput;
-    if (slotsRoomFor(st->slots.data() + CRAFT_INPUT_SLOTS, STORAGE_SLOTS - CRAFT_INPUT_SLOTS, info.item) <= 0)
-        return CraftState::OutputFull;
-    return CraftState::Ready;
+    for (const ItemStack& stack : st->slots) have += stack.item == info.input ? stack.count : 0;
+    return have > 0 ? CraftState::Ready : CraftState::NoInput;
+}
+
+bool propInTheWay(World& w, Entity unit, Entity prop) {
+    const Transform* a = w.get<Transform>(unit);
+    const Transform* b = w.get<Transform>(prop);
+    if (!a || !b) return false;
+    const float abx = b->x - a->x, abz = b->z - a->z;
+    const float len2 = abx * abx + abz * abz;
+    for (Entity p : w.view<Prop, Transform>()) {
+        if (p == prop) continue;
+        const Transform* c = w.get<Transform>(p);
+        // The point of the line nearest the other prop's centre
+        float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
+        t = std::clamp(t, 0.0f, 1.0f);
+        const float nx = a->x + abx * t - c->x, nz = a->z + abz * t - c->z;
+        if (nx * nx + nz * nz < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) return true;
+    }
+    return false;
 }
 
 Entity propOccupant(World& w, Entity prop) {
@@ -1040,17 +1071,22 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             case PropUse::Storage:
                 break;
             case PropUse::Occupy: {
-                // One try: a free bed is taken, and the unit moves onto it. A taken one leaves the unit where it is.
+                // One try, once in reach. Another prop on the straight line to the bed makes it unreachable; another
+                // unit already on it makes it taken. Either way the order ends and the unit stays where it is.
+                // Otherwise the unit is put on the bed, right on its spot, wherever in reach it stopped.
                 const Entity occupant = propOccupant(w, prop);
-                if (occupant == NULL_ENTITY || occupant == u) {
+                if (propInTheWay(w, u, prop)) {
+                    a.unreachable = true;
+                } else if (occupant != NULL_ENTITY && occupant != u) {
+                    a.taken = true;
+                } else {
                     Transform* ut = w.get<Transform>(u);
                     ut->x = pt->x;
                     ut->y = pt->y;
                     ut->z = pt->z;
+                    w.remove<IdleSpot>(u);
                     w.add(u, Occupying{ prop });
                     a.started = true;
-                } else {
-                    a.taken = true;
                 }
                 break;
             }
@@ -1082,13 +1118,19 @@ std::vector<PropArrival> propOrderSystem(World& w) {
         }
     }
 
-    // A unit on a bed stays exactly on it. If the bed is gone, it gets up.
-    for (Entity u : w.view<Occupying, Transform>()) {
-        const Transform* pt = w.get<Transform>(w.get<Occupying>(u)->prop);
-        if (!pt) {
+    // A unit on a bed stays exactly on it: nothing but an order of yours moves it off. If the bed is gone, it gets
+    // up. One unit to a bed: should two ever be on one, the first to have been made keeps it and the other gets up.
+    std::vector<Entity> lying = w.view<Occupying, Transform>();
+    std::sort(lying.begin(), lying.end());
+    std::vector<Entity> bedsTaken;
+    for (Entity u : lying) {
+        const Entity bed = w.get<Occupying>(u)->prop;
+        const Transform* pt = w.get<Transform>(bed);
+        if (!pt || std::find(bedsTaken.begin(), bedsTaken.end(), bed) != bedsTaken.end()) {
             w.remove<Occupying>(u);
             continue;
         }
+        bedsTaken.push_back(bed);
         Transform* ut = w.get<Transform>(u);
         ut->x = pt->x;
         ut->y = pt->y;
@@ -1097,7 +1139,8 @@ std::vector<PropArrival> propOrderSystem(World& w) {
     return out;
 }
 
-void workSystem(World& w, double gameSeconds) {
+std::vector<WorkGain> workSystem(World& w, double gameSeconds) {
+    std::vector<WorkGain> gains;
     // The units working each prop this frame. A downed unit stops working. One pushed out of reach is walking back,
     // so it does not add to the progress until it is in reach again.
     std::map<Entity, std::vector<Entity>> workersOf;
@@ -1120,7 +1163,7 @@ void workSystem(World& w, double gameSeconds) {
         std::sort(workers.begin(), workers.end());
         const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
         const bool crafting = info.use == PropUse::Crafting;
-        // A crafting prop with nothing to use, or no room for what it makes, sends its workers off
+        // A crafting prop with none of its input left sends its workers off
         auto stopAll = [&]() {
             stopWorkersAt(w, prop);
             workers.clear();
@@ -1137,33 +1180,57 @@ void workSystem(World& w, double gameSeconds) {
         for (Entity u : workers) perHour += 1.0 / workHoursFor(levelOf(statsOf(w, u), info.stat));
         pw.progress += gameSeconds / 3600.0 * perHour;
 
+        const std::string itemName = itemNameFor(info.item);
         while (pw.progress >= 1.0 && !workers.empty()) {
+            if (crafting) {
+                // A finished item. The input is checked at this moment: if it is gone, nothing is made and the work
+                // stops. The item goes to the next worker in turn that has room for it. If none has, nothing is used
+                // up or made: the bar stays full, the workers stop, and the next unit with room to work here finishes it.
+                if (craftStateOf(w, prop) != CraftState::Ready) {
+                    stopAll();
+                    break;
+                }
+                Entity got = NULL_ENTITY;
+                for (size_t k = 0; k < workers.size() && got == NULL_ENTITY; ++k) {
+                    const Entity cand = workers[(pw.turn + k) % workers.size()];
+                    const Inventory* inv = w.get<Inventory>(cand);
+                    if (inv && slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, info.item, 1)) got = cand;
+                }
+                if (got == NULL_ENTITY) {
+                    for (Entity u : workers) {
+                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), itemName }), LogKind::Other);
+                        w.remove<Working>(u);
+                    }
+                    workers.clear();
+                    pw.progress = 1.0;   // held full until someone with room works it
+                    break;
+                }
+                Storage* st = w.get<Storage>(prop);
+                if (!takeOne(st->slots.data(), STORAGE_SLOTS, info.input)) {
+                    stopAll();
+                    break;
+                }
+                pw.progress -= 1.0;
+                ++pw.made;   // the ring hops for it
+                ++pw.turn;
+                addToInventory(*w.get<Inventory>(got), info.item, 1);
+                gains.push_back(WorkGain{ got, info.item });
+                queueLog(langf("MISC_CRAFTS", { nameOf(w, got), itemName }), LogKind::Pickup);
+                grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
+                if (craftStateOf(w, prop) != CraftState::Ready) {
+                    stopAll();   // that was the last of the input
+                    break;
+                }
+                continue;
+            }
             pw.progress -= 1.0;
             ++pw.made;   // finished, whatever becomes of the item: the ring hops for it
             const size_t pick = pw.turn % workers.size();
             ++pw.turn;
             const Entity got = workers[pick];
-            const std::string itemName = itemNameFor(info.item);
-            if (crafting) {
-                // One input item becomes one output item, and the worker in turn gets the XP. The input is checked and
-                // used up first, at the moment the item is finished: if it is not there any more, or the output has no
-                // room, nothing is made and the work stops.
-                Storage* st = w.get<Storage>(prop);
-                if (craftStateOf(w, prop) != CraftState::Ready || !takeOne(st->slots.data(), CRAFT_INPUT_SLOTS, info.input)) {
-                    stopAll();
-                    break;
-                }
-                addToSlots(st->slots.data() + CRAFT_INPUT_SLOTS, STORAGE_SLOTS - CRAFT_INPUT_SLOTS, info.item, 1);
-                queueLog(langf("MISC_CRAFTS", { nameOf(w, got), itemName }), LogKind::Pickup);
-                grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
-                if (craftStateOf(w, prop) != CraftState::Ready) {
-                    stopAll();
-                    break;
-                }
-                continue;
-            }
             Inventory* inv = w.get<Inventory>(got);
             if (inv && addToInventory(*inv, info.item, 1) == 0) {
+                gains.push_back(WorkGain{ got, info.item });
                 queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_GATHERING"));
             } else {
@@ -1179,8 +1246,11 @@ void workSystem(World& w, double gameSeconds) {
             }
         }
         pw.workers = (int)workers.size();
-        if (workers.empty()) pw.progress = std::min(pw.progress, 0.999);
+        // A resource prop left with no workers keeps what it had, short of a whole item. A crafting prop may be left
+        // full, waiting for a unit with room.
+        if (workers.empty() && !crafting) pw.progress = std::min(pw.progress, 0.999);
     }
+    return gains;
 }
 
 WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
@@ -1193,7 +1263,6 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     if (propInfo(p->kind).use == PropUse::Crafting) {
         const CraftState cs = craftStateOf(w, prop);
         if (cs == CraftState::NoInput) return WorkStart::NoInput;
-        if (cs == CraftState::OutputFull) return WorkStart::OutputFull;
     }
     w.remove<SquadMember>(unit);
     w.remove<SoloMove>(unit);

@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	يستريح
 UILABEL_STORAGE_HINT	انقر بزر الفأرة الأيمن على عنصر لأخذه، أو اسحبه للخارج لإسقاطه حيث تقف وحدتك. انقر بزر الفأرة الأيمن على عناصر وحدتك لتخزينها.
 ITEM_88_NAME	جذع خشب
 ITEM_88_DESC	خشب مقطوع من شجرة، يُستخدم في الصناعة والبناء.
-UILABEL_INPUT	المدخلات
-UILABEL_OUTPUT	المخرجات
-UILABEL_CRAFT_HINT	انقر بزر الفأرة الأيمن على عناصر وحدتك لوضعها في المدخلات، وخذ العناصر الجاهزة من المخرجات. لبدء العمل، انقر بزر الفأرة الأيمن على {0} واختر استخدام.
+UILABEL_CRAFT_HINT	انقر بزر الفأرة الأيمن على عناصر وحدتك لوضعها فيه. ما يُصنع يذهب إلى مخزون العامل. لبدء العمل، انقر بزر الفأرة الأيمن على {0} واختر استخدام.
 MISC_CRAFT_WRONG_ITEM	لا يمكن استخدام {0} هنا
 MISC_CRAFT_NEEDS	ضع {0} في المدخلات للبدء
-MISC_CRAFT_OUTPUT_FULL	المخرجات ممتلئة
 MISC_CRAFTS	{0} يصنع {1}
 MISC_CRAFT_STOPS	لم يبقَ لدى {0} ما يعمل عليه فيتوقف
 MISC_REASON_CRAFTING	الصناعة
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	اختر وحدة أولًا
 FACTION_PLAYER	فصيل اللاعب
 FACTION_GRAY	الفصيل الرمادي
 FACTION_RED	الفصيل الأحمر
+MISC_PROP_UNREACHABLE	لا يمكن الوصول
+MISC_ITEM_GAINED	+ {0}

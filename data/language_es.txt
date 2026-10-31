@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Descansando
 UILABEL_STORAGE_HINT	Haz clic derecho en un objeto para cogerlo, o arrástralo fuera para soltarlo donde está tu unidad. Haz clic derecho en los objetos de tu unidad para guardarlos.
 ITEM_88_NAME	Tronco de madera
 ITEM_88_DESC	Madera cortada de un árbol, para fabricar y construir.
-UILABEL_INPUT	Entrada
-UILABEL_OUTPUT	Salida
-UILABEL_CRAFT_HINT	Haz clic derecho en los objetos de tu unidad para ponerlos en la entrada, y coge los terminados de la salida. Para empezar a trabajar, haz clic derecho en {0} y elige Usar.
+UILABEL_CRAFT_HINT	Haz clic derecho en los objetos de tu unidad para meterlos. Lo fabricado va al inventario de quien trabaja. Para empezar a trabajar, haz clic derecho en {0} y elige Usar.
 MISC_CRAFT_WRONG_ITEM	{0} no se puede usar aquí
 MISC_CRAFT_NEEDS	Pon {0} en la entrada para empezar
-MISC_CRAFT_OUTPUT_FULL	La salida está llena
 MISC_CRAFTS	{0} fabrica {1}
 MISC_CRAFT_STOPS	{0} no tiene nada más en lo que trabajar y para
 MISC_REASON_CRAFTING	fabricar
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Primero selecciona una unidad
 FACTION_PLAYER	Facción del jugador
 FACTION_GRAY	Facción gris
 FACTION_RED	Facción roja
+MISC_PROP_UNREACHABLE	Inalcanzable
+MISC_ITEM_GAINED	+ {0}

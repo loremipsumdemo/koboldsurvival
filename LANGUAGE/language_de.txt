@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Ruht
 UILABEL_STORAGE_HINT	Rechtsklick auf einen Gegenstand nimmt ihn, Herausziehen legt ihn dort ab, wo deine Einheit steht. Rechtsklick auf die Gegenstände deiner Einheit lagert sie ein.
 ITEM_88_NAME	Holzstamm
 ITEM_88_DESC	Holz von einem gefällten Baum, für Handwerk und Bau.
-UILABEL_INPUT	Eingabe
-UILABEL_OUTPUT	Ausgabe
-UILABEL_CRAFT_HINT	Rechtsklick auf die Gegenstände deiner Einheit legt sie in die Eingabe; fertige Gegenstände nimmst du aus der Ausgabe. Um mit der Arbeit zu beginnen, klicke mit rechts auf {0} und wähle Benutzen.
+UILABEL_CRAFT_HINT	Rechtsklick auf die Gegenstände deiner Einheit legt sie hinein. Was hergestellt wird, kommt ins Inventar der arbeitenden Einheit. Um mit der Arbeit zu beginnen, klicke mit rechts auf {0} und wähle Benutzen.
 MISC_CRAFT_WRONG_ITEM	{0} kann hier nicht verwendet werden
 MISC_CRAFT_NEEDS	Lege {0} in die Eingabe, um zu beginnen
-MISC_CRAFT_OUTPUT_FULL	Die Ausgabe ist voll
 MISC_CRAFTS	{0} stellt {1} her
 MISC_CRAFT_STOPS	{0} hat nichts mehr zu tun und hört auf
 MISC_REASON_CRAFTING	Handwerk
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Wähle zuerst eine Einheit
 FACTION_PLAYER	Spielerfraktion
 FACTION_GRAY	Graue Fraktion
 FACTION_RED	Rote Fraktion
+MISC_PROP_UNREACHABLE	Unerreichbar
+MISC_ITEM_GAINED	+ {0}

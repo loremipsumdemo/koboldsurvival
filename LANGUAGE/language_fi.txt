@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Lepää
 UILABEL_STORAGE_HINT	Ota esine napsauttamalla sitä hiiren oikealla painikkeella tai vedä se ulos pudottaaksesi sen yksikkösi kohdalle. Säilö yksikkösi esineitä napsauttamalla niitä hiiren oikealla painikkeella.
 ITEM_88_NAME	Puupölkky
 ITEM_88_DESC	Puusta kaadettua puuta, käsitöihin ja rakentamiseen.
-UILABEL_INPUT	Syöte
-UILABEL_OUTPUT	Tuotos
-UILABEL_CRAFT_HINT	Laita yksikkösi esineitä syötteeseen napsauttamalla niitä hiiren oikealla, ja ota valmiit esineet tuotoksesta. Aloita työ napsauttamalla kohdetta {0} hiiren oikealla ja valitsemalla Käytä.
+UILABEL_CRAFT_HINT	Laita yksikkösi esineitä sisään napsauttamalla niitä hiiren oikealla. Valmistettu menee työntekijän tavaroihin. Aloita työ napsauttamalla kohdetta {0} hiiren oikealla ja valitsemalla Käytä.
 MISC_CRAFT_WRONG_ITEM	{0}: ei voi käyttää tässä
 MISC_CRAFT_NEEDS	Laita {0} syötteeseen aloittaaksesi
-MISC_CRAFT_OUTPUT_FULL	Tuotos on täynnä
 MISC_CRAFTS	{0} valmistaa: {1}
 MISC_CRAFT_STOPS	{0}: ei enää työstettävää, lopettaa
 MISC_REASON_CRAFTING	käsityö
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Valitse ensin yksikkö
 FACTION_PLAYER	Pelaajan ryhmittymä
 FACTION_GRAY	Harmaa ryhmittymä
 FACTION_RED	Punainen ryhmittymä
+MISC_PROP_UNREACHABLE	Ei saavutettavissa
+MISC_ITEM_GAINED	+ {0}

@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	休息中
 UILABEL_STORAGE_HINT	右鍵點擊物品即可取出，或將其拖出，放在你的單位所站的位置。右鍵點擊單位的物品即可存入。
 ITEM_88_NAME	木頭
 ITEM_88_DESC	從樹上砍下的木材，用於製作和建造。
-UILABEL_INPUT	原料
-UILABEL_OUTPUT	成品
-UILABEL_CRAFT_HINT	右鍵點擊單位的物品即可放入原料欄，做好的物品從成品欄取出。要開始工作，請右鍵點擊{0}並選擇「使用」。
+UILABEL_CRAFT_HINT	右鍵點擊單位的物品即可放入。做好的物品會進入工作單位的物品欄。要開始工作，請右鍵點擊{0}並選擇「使用」。
 MISC_CRAFT_WRONG_ITEM	{0}不能在這裡使用
 MISC_CRAFT_NEEDS	將{0}放入原料欄即可開始
-MISC_CRAFT_OUTPUT_FULL	成品欄已滿
 MISC_CRAFTS	{0} 製作了 {1}
 MISC_CRAFT_STOPS	{0} 沒有可加工的東西，停止工作
 MISC_REASON_CRAFTING	製作
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	請先選擇一個單位
 FACTION_PLAYER	玩家陣營
 FACTION_GRAY	灰色陣營
 FACTION_RED	紅色陣營
+MISC_PROP_UNREACHABLE	無法到達
+MISC_ITEM_GAINED	+ {0}

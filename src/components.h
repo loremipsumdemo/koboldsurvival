@@ -249,8 +249,8 @@ struct Prop {
     int serial = 0;
 };
 
-// The items a storage prop (a barrel) holds, one stack per slot. A crafting prop (a campfire) keeps its input in the
-// first CRAFT_INPUT_SLOTS slots and its output in the rest (props.h).
+// The items a storage prop (a barrel) or a crafting prop (a campfire, which takes only its input item) holds, one stack
+// per slot
 struct Storage {
     std::array<ItemStack, STORAGE_SLOTS> slots{};
 };

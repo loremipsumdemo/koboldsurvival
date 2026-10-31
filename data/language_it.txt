@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Riposa
 UILABEL_STORAGE_HINT	Clic destro su un oggetto per prenderlo, oppure trascinalo fuori per lasciarlo dove si trova la tua unità. Clic destro sugli oggetti della tua unità per riporli.
 ITEM_88_NAME	Tronco di legno
 ITEM_88_DESC	Legno tagliato da un albero, per creare e costruire.
-UILABEL_INPUT	Ingresso
-UILABEL_OUTPUT	Uscita
-UILABEL_CRAFT_HINT	Clic destro sugli oggetti della tua unità per metterli nell'ingresso, e prendi gli oggetti finiti dall'uscita. Per iniziare a lavorare, clic destro su {0} e scegli Usa.
+UILABEL_CRAFT_HINT	Clic destro sugli oggetti della tua unità per metterli dentro. Ciò che viene prodotto va nell'inventario di chi lavora. Per iniziare a lavorare, clic destro su {0} e scegli Usa.
 MISC_CRAFT_WRONG_ITEM	{0} non si può usare qui
 MISC_CRAFT_NEEDS	Metti {0} nell'ingresso per iniziare
-MISC_CRAFT_OUTPUT_FULL	L'uscita è piena
 MISC_CRAFTS	{0} prepara {1}
 MISC_CRAFT_STOPS	{0} non ha più nulla su cui lavorare e si ferma
 MISC_REASON_CRAFTING	artigianato
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Seleziona prima un'unità
 FACTION_PLAYER	Fazione del giocatore
 FACTION_GRAY	Fazione grigia
 FACTION_RED	Fazione rossa
+MISC_PROP_UNREACHABLE	Irraggiungibile
+MISC_ITEM_GAINED	+ {0}

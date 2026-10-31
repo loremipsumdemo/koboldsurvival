@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Pihen
 UILABEL_STORAGE_HINT	Jobb kattintással elveheted a tárgyat, vagy húzd ki, hogy oda tedd le, ahol az egységed áll. Jobb kattintással az egységed tárgyait berakhatod.
 ITEM_88_NAME	Fatörzs
 ITEM_88_DESC	Fáról vágott fa, kézművességhez és építkezéshez.
-UILABEL_INPUT	Bemenet
-UILABEL_OUTPUT	Kimenet
-UILABEL_CRAFT_HINT	Jobb kattintással teheted az egységed tárgyait a bemenetbe, a kész tárgyakat pedig a kimenetből veheted el. A munka indításához kattints jobb gombbal erre: {0}, és válaszd a Használat lehetőséget.
+UILABEL_CRAFT_HINT	Jobb kattintással teheted bele az egységed tárgyait. Az elkészült tárgy a dolgozó egység készletébe kerül. A munka indításához kattints jobb gombbal erre: {0}, és válaszd a Használat lehetőséget.
 MISC_CRAFT_WRONG_ITEM	{0} itt nem használható
 MISC_CRAFT_NEEDS	Tegyél {0} tárgyat a bemenetbe a kezdéshez
-MISC_CRAFT_OUTPUT_FULL	A kimenet megtelt
 MISC_CRAFTS	{0} elkészít: {1}
 MISC_CRAFT_STOPS	{0} nem talál több munkát, és abbahagyja
 MISC_REASON_CRAFTING	kézművesség
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Előbb válassz egy egységet
 FACTION_PLAYER	Játékos frakció
 FACTION_GRAY	Szürke frakció
 FACTION_RED	Vörös frakció
+MISC_PROP_UNREACHABLE	Elérhetetlen
+MISC_ITEM_GAINED	+ {0}

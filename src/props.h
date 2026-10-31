@@ -7,10 +7,10 @@
 //   Storage props (the barrel) hold items that a unit standing by them can take or put in.
 //   Occupiable props (the bed and the bedroll) hold one unit, which stays on them until it is given another order.
 //   Resource props (ore and trees) are worked by units, and give an item now and then.
-//   Crafting props (the campfire) have an input and an output. A unit working one turns one input item into one
-//   output item at a time, while the input has the item it needs and the output has room.
-// Storage and crafting props keep their items in a Storage component. A crafting prop's first CRAFT_INPUT_SLOTS
-// slots are its input, and the rest its output.
+//   Crafting props (the campfire) have an inventory that takes only the item they use (Raw Meat for the campfire).
+//   A unit working one is like one working a resource prop, except that each item it makes uses up one input item,
+//   checked at the moment the item is finished, and goes straight into the worker's inventory.
+// Storage and crafting props keep their items in a Storage component.
 
 enum PropKind : int {
     PROP_WAGON,
@@ -42,7 +42,8 @@ enum class PropAction { Inventory, Use };
 // use: what right-clicking it does.
 // For resource and crafting props only:
 //   stat: the skill that sets how fast a unit works it (workHoursFor)
-//   item: the item it gives: what a resource prop yields, or what a crafting prop makes (an id from data/itemdb.txt)
+//   item: the item it gives the worker: what a resource prop yields, or what a crafting prop makes (an id from
+//         data/itemdb.txt)
 //   input: the item a crafting prop uses up, one for each item it makes; 0 for a resource prop
 //   workers: the most units that can work it at once
 struct PropInfo {
@@ -91,22 +92,20 @@ inline bool isWorkProp(PropUse use) { return use == PropUse::Resource || use == 
 // Whether a prop of this use keeps items, and opens the storage panel
 inline bool hasStorage(PropUse use) { return use == PropUse::Storage || use == PropUse::Crafting; }
 
-// The slots of a storage or crafting prop. A crafting prop's first CRAFT_INPUT_SLOTS are its input, the rest its output.
+// The slots of a storage or crafting prop. A crafting prop's inventory takes only its input item.
 constexpr int STORAGE_SLOTS = 12;
 constexpr int STORAGE_COLUMNS = 6;
-constexpr int CRAFT_INPUT_SLOTS = 6;
-
-// The slots a unit's items go into, as [first, first + count): a crafting prop's input, or all of a storage prop
-inline void inputSlots(PropUse use, int& first, int& count) {
-    first = 0;
-    count = use == PropUse::Crafting ? CRAFT_INPUT_SLOTS : STORAGE_SLOTS;
-}
 
 constexpr int PROP_COPIES = 2;         // how many of each kind a new level places
 constexpr float PROP_RANGE = 40.0f;    // props are placed within this many tiles of the spawn, each on its own tile
 
-constexpr float PROP_REACH = 1.2f;            // a unit this close to a prop (in tiles) can use it
-constexpr float STORAGE_CLOSE_RANGE = 1.5f;   // the storage panel closes when its unit is further away than this
+// A unit within this many tiles of a prop can use it: work a resource or crafting prop, open a storage, take a bed.
+// It need not stand right on the prop, so several can work one without crowding each other off it.
+constexpr float PROP_REACH = 2.0f;
+constexpr float STORAGE_CLOSE_RANGE = 2.5f;   // the storage panel closes when its unit is further away than this
+// Each prop stands on its own tile. For an occupiable prop's line check, another prop is in the way when the straight
+// line from the unit to the bed passes within this many tiles of that prop's centre.
+constexpr float PROP_BLOCK_RADIUS = 0.45f;
 
 // In-game hours one unit takes to make one item at a resource or crafting prop: one hour, plus up to one more for a
 // low skill. The extra time falls evenly from a full hour at level 1 to nothing at level 99.

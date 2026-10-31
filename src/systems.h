@@ -74,34 +74,45 @@ void needsSystem(World& w, int hours, double gameSeconds = 0.0);
 // or starts crafting if the prop's input and output allow it (tryStartWork).
 void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action);
 // Puts a unit to work on a resource or crafting prop, if it can start now: it is in reach, the prop has room for
-// another worker, and a crafting prop has its input item and room for its output. Checked at the moment of the try.
-enum class WorkStart { Started, TooFar, Full, NoInput, OutputFull };
+// another worker, and a crafting prop has its input item. Checked at the moment of the try.
+enum class WorkStart { Started, TooFar, Full, NoInput };
 WorkStart tryStartWork(World& w, Entity unit, Entity prop);
 // A unit that reached the prop it was sent to, with what it was sent to do. Inventory: the game opens the panel.
 // Use: started is set if it took the bed or started working; taken if the bed was occupied or the prop had all the
-// workers it can have; craft is the result of trying to start at a crafting prop.
+// workers it can have; unreachable if another prop stands between the unit and the bed; craft is the result of trying
+// to start at a crafting prop.
 struct PropArrival {
     Entity unit = NULL_ENTITY;
     Entity prop = NULL_ENTITY;
     PropAction action = PropAction::Use;
     bool taken = false;
     bool started = false;
+    bool unreachable = false;
     WorkStart craft = WorkStart::Started;
 };
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
 // or say why a unit could not start. Units on beds are kept on them.
 std::vector<PropArrival> propOrderSystem(World& w);
+// An item a unit received from its work, for the "+ item" label over it
+struct WorkGain {
+    Entity unit = NULL_ENTITY;
+    int item = 0;
+};
 // Resource and crafting props: the units working each one add to its progress by their skill, for the in-game
-// seconds that passed. At a resource prop each full bar gives one item to one of them, in turn; one with no room drops
-// it at its feet and stops. At a crafting prop each full bar turns one input item into one output item; once the input
-// runs out or the output is full, its workers stop.
-void workSystem(World& w, double gameSeconds);
-// Whether a crafting prop can be worked: it has its input item, and room for one more of its output
-enum class CraftState { Ready, NoInput, OutputFull };
+// seconds that passed. Each full bar gives one item to one of the workers, in turn. At a resource prop, one with no
+// room drops it at its feet and stops. At a crafting prop, the item uses up one input item, checked at that moment;
+// once the input runs out the workers stop, and if no worker has room the bar waits, full, for one that has.
+// Returns the items the workers received this frame.
+std::vector<WorkGain> workSystem(World& w, double gameSeconds);
+// Whether a crafting prop can be worked: it has its input item
+enum class CraftState { Ready, NoInput };
 CraftState craftStateOf(World& w, Entity prop);
 // Call whenever a crafting prop's items change (taken, put in or dropped): if it can no longer be worked, everyone
 // working it stops and its progress is lost, so an item can never be made from input that was taken away
 void propStorageChanged(World& w, Entity prop);
+// Whether another prop stands on the straight line from a unit to a prop (within PROP_BLOCK_RADIUS of it). Units and
+// items on the ground don't count.
+bool propInTheWay(World& w, Entity unit, Entity prop);
 // The unit on an occupiable prop, or NULL_ENTITY
 Entity propOccupant(World& w, Entity prop);
 // Units working a resource or crafting prop, or on their way to it

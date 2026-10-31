@@ -13,3 +13,7 @@ enum EmoteId : int {
 
 constexpr unsigned EMOTE_CYCLE_MS = 1000;   // how long each emote shows when a unit has more than one
 constexpr float ENCUMBERED_SHARE = 0.9f;    // carried weight, as a share of the carry limit, that shows Encumbered
+// Every emote gives a little hop now and then, like the progress ring's when an item is finished, but lower
+constexpr unsigned EMOTE_HOP_EVERY_MS = 2000;   // one hop this often
+constexpr unsigned EMOTE_HOP_MS = 220;          // how long a hop takes, up and back down
+constexpr float EMOTE_HOP_HEIGHT = 4.0f;        // how high it goes, in pixels at 720p (the ring's hop is 9)

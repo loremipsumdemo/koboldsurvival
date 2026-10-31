@@ -202,10 +202,10 @@ public:
     void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
     // The trade popout: the NPC's inventory, and both sides of the trade as ghosts. dragFrom is the NPC slot being
     // dragged, shown as not there, or -1.
-    // The storage panel for a storage or crafting prop: its name, each section's heading and items (the one being
-    // dragged, dragFrom, left out), a hint and Close. A hovered item shows its tooltip.
-    void drawStorage(const StorageLayout& L, const std::string& propName, const std::vector<std::string>& headings,
-                     const std::string& hint, const Storage* storage, int dragFrom, float mx, float my);
+    // The storage panel for a storage or crafting prop: its name, its items (the one being dragged, dragFrom, left
+    // out), a hint and Close. A hovered item shows its tooltip.
+    void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
+                     const Storage* storage, int dragFrom, float mx, float my);
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown);

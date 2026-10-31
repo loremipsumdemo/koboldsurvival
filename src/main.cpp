@@ -183,9 +183,9 @@ PropUse storageUse(World& w) {
     return p ? propInfo(p->kind).use : PropUse::None;
 }
 
-// The storage panel's layout for the prop it shows: one section, or input and output for a crafting prop
-StorageLayout storageLayout(World& w, int W, int H) {
-    return layoutStorage(W, H, storageUse(w) == PropUse::Crafting);
+// The storage panel's layout, the same for a barrel and a campfire
+StorageLayout storageLayout(World&, int W, int H) {
+    return layoutStorage(W, H);
 }
 
 // Moves a whole stack from the storage into its unit's inventory, if all of it fits. Otherwise nothing moves.
@@ -263,9 +263,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
         why = langf("MISC_CRAFT_WRONG_ITEM", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
         return false;
     }
-    int first = 0, slots = STORAGE_SLOTS;
-    inputSlots(use, first, slots);
-    if (!slotsCanTake(st->slots.data() + first, slots, item, count)) {
+    if (!slotsCanTake(st->slots.data(), STORAGE_SLOTS, item, count)) {
         why = lang("MISC_STORAGE_FULL");
         return false;
     }
@@ -280,7 +278,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
         takeFromSlot(*inv, slot, take);
         left -= take;
     }
-    addToSlots(st->slots.data() + first, slots, item, count);
+    addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
     propStorageChanged(w, storageProp);
     return true;
 }
@@ -1499,7 +1497,7 @@ int main(int, char**) {
     // The combat log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
     CombatLog combatLog;
     std::vector<FloatingNumber> floatingNumbers;
-    std::vector<TradeLabel> tradeLabels;   // trade values shown over the traders for a second
+    std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+ item" from work
     int infoTab = 0;        // the Information Panel's tab: 0 Message, 1 Game
     LogFilter logFilter;    // which game message kinds the Game tab shows
     bool logFilterOpen = false;
@@ -2441,9 +2439,7 @@ int main(int, char**) {
                 showNotice(langf("MISC_CRAFT_WRONG_ITEM", { itemNameOf(item) }));
                 return;
             }
-            int first = 0, slots = STORAGE_SLOTS;
-            inputSlots(use, first, slots);
-            const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data() + first, slots, item));
+            const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
             if (cap <= 0) {
                 showNotice(lang("MISC_STORAGE_FULL"));
                 return;
@@ -3798,14 +3794,14 @@ int main(int, char**) {
                     }
                     continue;
                 }
-                if (a.taken && info.use == PropUse::Occupy) {
+                if (a.unreachable) {
+                    showNotice(lang("MISC_PROP_UNREACHABLE"));
+                } else if (a.taken && info.use == PropUse::Occupy) {
                     showNotice(lang("MISC_PROP_TAKEN"));
                 } else if (a.taken) {
                     showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 } else if (info.use == PropUse::Crafting && a.craft == WorkStart::NoInput) {
                     showNotice(langf("MISC_CRAFT_NEEDS", { itemNameOf(info.input) }));
-                } else if (info.use == PropUse::Crafting && a.craft == WorkStart::OutputFull) {
-                    showNotice(lang("MISC_CRAFT_OUTPUT_FULL"));
                 }
             }
             cleanupSquads(world);
@@ -3821,7 +3817,10 @@ int main(int, char**) {
             }
             needsSystem(world, hoursPassed, gameSecs);
             // Resource and crafting props: the units working them make items by the in-game time that passed
-            workSystem(world, gameSecs);
+            // Each item a worker receives shows over it, as "+ Iron Ore", like a trade's label
+            for (const WorkGain& g : workSystem(world, gameSecs)) {
+                tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_ITEM_GAINED", { itemNameOf(g.item) }), 0.0f });
+            }
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -4044,12 +4043,9 @@ int main(int, char**) {
             if (storageProp != NULL_ENTITY) {
                 const Storage* st = world.get<Storage>(storageProp);
                 const bool crafting = storageUse(world) == PropUse::Crafting;
-                const std::vector<std::string> heads = crafting
-                    ? std::vector<std::string>{ lang("UILABEL_INPUT"), lang("UILABEL_OUTPUT") }
-                    : std::vector<std::string>{ lang("UILABEL_INVENTORY") };
                 const std::string hint = crafting ? langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) })
                                                   : lang("UILABEL_STORAGE_HINT");
-                renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), heads, hint, st,
+                renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), hint, st,
                                      storageDrag, mouseX, mouseY);
                 if (st && storageDrag >= 0 && st->slots[storageDrag].item != 0) {
                     renderer.drawDraggedStack(mouseX, mouseY, st->slots[storageDrag].item, st->slots[storageDrag].count);

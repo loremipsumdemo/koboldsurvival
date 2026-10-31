@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Odpoczywa
 UILABEL_STORAGE_HINT	Kliknij prawym przyciskiem przedmiot, aby go wziąć, lub przeciągnij go na zewnątrz, aby upuścić go tam, gdzie stoi twoja jednostka. Kliknij prawym przyciskiem przedmioty jednostki, aby je schować.
 ITEM_88_NAME	Kłoda drewna
 ITEM_88_DESC	Drewno ścięte z drzewa, do rzemiosła i budowy.
-UILABEL_INPUT	Wejście
-UILABEL_OUTPUT	Wyjście
-UILABEL_CRAFT_HINT	Kliknij prawym przyciskiem przedmioty jednostki, aby włożyć je do wejścia, a gotowe bierz z wyjścia. Aby zacząć pracę, kliknij prawym przyciskiem {0} i wybierz Użycie.
+UILABEL_CRAFT_HINT	Kliknij prawym przyciskiem przedmioty jednostki, aby je włożyć. Wytworzone trafia do ekwipunku pracującej jednostki. Aby zacząć pracę, kliknij prawym przyciskiem {0} i wybierz Użycie.
 MISC_CRAFT_WRONG_ITEM	{0} nie można tu użyć
 MISC_CRAFT_NEEDS	Włóż {0} do wejścia, aby zacząć
-MISC_CRAFT_OUTPUT_FULL	Wyjście jest pełne
 MISC_CRAFTS	{0} wytwarza {1}
 MISC_CRAFT_STOPS	{0} nie ma już nad czym pracować i przerywa
 MISC_REASON_CRAFTING	rzemiosło
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Najpierw wybierz jednostkę
 FACTION_PLAYER	Frakcja gracza
 FACTION_GRAY	Szara frakcja
 FACTION_RED	Czerwona frakcja
+MISC_PROP_UNREACHABLE	Nieosiągalne
+MISC_ITEM_GAINED	+ {0}

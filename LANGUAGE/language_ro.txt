@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Se odihnește
 UILABEL_STORAGE_HINT	Clic dreapta pe un obiect ca să-l iei sau trage-l afară ca să-l lași unde stă unitatea ta. Clic dreapta pe obiectele unității tale ca să le depozitezi.
 ITEM_88_NAME	Buștean
 ITEM_88_DESC	Lemn tăiat dintr-un copac, pentru meșteșuguri și construcții.
-UILABEL_INPUT	Intrare
-UILABEL_OUTPUT	Ieșire
-UILABEL_CRAFT_HINT	Clic dreapta pe obiectele unității tale ca să le pui la intrare, iar obiectele gata le iei de la ieșire. Ca să înceapă lucrul, clic dreapta pe {0} și alege Folosește.
+UILABEL_CRAFT_HINT	Clic dreapta pe obiectele unității tale ca să le pui înăuntru. Ce se face ajunge în inventarul celui care lucrează. Ca să înceapă lucrul, clic dreapta pe {0} și alege Folosește.
 MISC_CRAFT_WRONG_ITEM	{0} nu poate fi folosit aici
 MISC_CRAFT_NEEDS	Pune {0} la intrare ca să începi
-MISC_CRAFT_OUTPUT_FULL	Ieșirea este plină
 MISC_CRAFTS	{0} face {1}
 MISC_CRAFT_STOPS	{0} nu mai are la ce lucra și se oprește
 MISC_REASON_CRAFTING	meșteșug
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Selectează mai întâi o unitate
 FACTION_PLAYER	Facțiunea jucătorului
 FACTION_GRAY	Facțiunea gri
 FACTION_RED	Facțiunea roșie
+MISC_PROP_UNREACHABLE	Inaccesibil
+MISC_ITEM_GAINED	+ {0}

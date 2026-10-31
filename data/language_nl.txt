@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Rust
 UILABEL_STORAGE_HINT	Klik met rechts op een voorwerp om het te pakken, of sleep het eruit om het neer te leggen waar je eenheid staat. Klik met rechts op de voorwerpen van je eenheid om ze op te bergen.
 ITEM_88_NAME	Houtblok
 ITEM_88_DESC	Hout van een gekapte boom, voor ambacht en bouw.
-UILABEL_INPUT	Invoer
-UILABEL_OUTPUT	Uitvoer
-UILABEL_CRAFT_HINT	Klik met rechts op de voorwerpen van je eenheid om ze in de invoer te leggen, en neem klare voorwerpen uit de uitvoer. Klik met rechts op {0} en kies Gebruiken om aan het werk te gaan.
+UILABEL_CRAFT_HINT	Klik met rechts op de voorwerpen van je eenheid om ze erin te leggen. Wat gemaakt wordt, gaat naar de inventaris van de werker. Klik met rechts op {0} en kies Gebruiken om aan het werk te gaan.
 MISC_CRAFT_WRONG_ITEM	{0} kan hier niet worden gebruikt
 MISC_CRAFT_NEEDS	Leg {0} in de invoer om te beginnen
-MISC_CRAFT_OUTPUT_FULL	De uitvoer is vol
 MISC_CRAFTS	{0} maakt {1}
 MISC_CRAFT_STOPS	{0} heeft niets meer om aan te werken en stopt
 MISC_REASON_CRAFTING	ambacht
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Selecteer eerst een eenheid
 FACTION_PLAYER	Spelersfactie
 FACTION_GRAY	Grijze factie
 FACTION_RED	Rode factie
+MISC_PROP_UNREACHABLE	Onbereikbaar
+MISC_ITEM_GAINED	+ {0}

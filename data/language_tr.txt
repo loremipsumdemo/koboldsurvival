@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Dinleniyor
 UILABEL_STORAGE_HINT	Bir eşyayı almak için sağ tıkla ya da biriminin durduğu yere bırakmak için dışarı sürükle. Biriminin eşyalarını depolamak için sağ tıkla.
 ITEM_88_NAME	Odun kütüğü
 ITEM_88_DESC	Ağaçtan kesilmiş odun, zanaat ve yapı için kullanılır.
-UILABEL_INPUT	Girdi
-UILABEL_OUTPUT	Çıktı
-UILABEL_CRAFT_HINT	Biriminin eşyalarını girdiye koymak için sağ tıkla, hazır eşyaları çıktıdan al. Çalışmaya başlamak için {0} üzerine sağ tıkla ve Kullan'ı seç.
+UILABEL_CRAFT_HINT	Biriminin eşyalarını içine koymak için sağ tıkla. Üretilen, çalışan birimin envanterine gider. Çalışmaya başlamak için {0} üzerine sağ tıkla ve Kullan'ı seç.
 MISC_CRAFT_WRONG_ITEM	{0} burada kullanılamaz
 MISC_CRAFT_NEEDS	Başlamak için girdiye {0} koy
-MISC_CRAFT_OUTPUT_FULL	Çıktı dolu
 MISC_CRAFTS	{0}, {1} yapıyor
 MISC_CRAFT_STOPS	{0} üzerinde çalışacak bir şey kalmadı, duruyor
 MISC_REASON_CRAFTING	zanaat
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Önce bir birim seç
 FACTION_PLAYER	Oyuncu Hizbi
 FACTION_GRAY	Gri Hizip
 FACTION_RED	Kızıl Hizip
+MISC_PROP_UNREACHABLE	Ulaşılamıyor
+MISC_ITEM_GAINED	+ {0}

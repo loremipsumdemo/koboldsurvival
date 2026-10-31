@@ -1957,8 +1957,8 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     }
 }
 
-void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::vector<std::string>& headings,
-                           const std::string& hint, const Storage* storage, int dragFrom, float mx, float my) {
+void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
+                           const Storage* storage, int dragFrom, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -1977,10 +1977,8 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     const std::string name = fitText(propName, L.name.w, false);
     if (name != propName) noteTip(propName, L.name);
     drawListText(name, L.name.x, L.name.y, white);
-    for (size_t i = 0; i < L.headings.size() && i < headings.size(); ++i) {
-        drawListText(fitText(headings[i], L.headings[i].w, false), L.headings[i].x, L.headings[i].y, heading);
-    }
-    for (const Rect& g : L.grids) drawRect(g, well);
+    drawListText(fitText(lang("UILABEL_INVENTORY"), L.heading.w, false), L.heading.x, L.heading.y, heading);
+    drawRect(L.grid, well);
     int hover = -1;
     for (size_t i = 0; i < L.slots.size(); ++i) {
         const Rect& r = L.slots[i];
@@ -2731,7 +2729,12 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float size = 28.0f * s;
-    const unsigned long long turn = (unsigned long long)SDL_GetTicks() / EMOTE_CYCLE_MS;
+    const unsigned long long ticks = (unsigned long long)SDL_GetTicks();
+    const unsigned long long turn = ticks / EMOTE_CYCLE_MS;
+    // The hop: up and back down once, at the start of every EMOTE_HOP_EVERY_MS. Every emote hops together.
+    const unsigned long long sinceHop = ticks % EMOTE_HOP_EVERY_MS;
+    const float hop = sinceHop < EMOTE_HOP_MS
+        ? std::sin(3.14159265f * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (Entity u : w.view<Unit, Transform>()) {
         const std::vector<int> emotes = emotesOf(w, u);
         if (emotes.empty()) continue;
@@ -2745,7 +2748,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         const TextTex* pic = emoteTexture(emotes[(size_t)(turn % emotes.size())]);
         if (!pic) continue;
-        drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     }
 }
 

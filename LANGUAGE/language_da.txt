@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Hviler
 UILABEL_STORAGE_HINT	Højreklik på en genstand for at tage den, eller træk den ud for at lægge den, hvor din enhed står. Højreklik på din enheds genstande for at lægge dem i lageret.
 ITEM_88_NAME	Træstamme
 ITEM_88_DESC	Træ fældet fra et træ, bruges til håndværk og byggeri.
-UILABEL_INPUT	Input
-UILABEL_OUTPUT	Output
-UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i input, og tag færdige genstande fra output. Højreklik på {0} og vælg Brug for at begynde at arbejde.
+UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i. Det fremstillede går til arbejderens inventar. Højreklik på {0} og vælg Brug for at begynde at arbejde.
 MISC_CRAFT_WRONG_ITEM	{0} kan ikke bruges her
 MISC_CRAFT_NEEDS	Læg {0} i input for at begynde
-MISC_CRAFT_OUTPUT_FULL	Output er fuldt
 MISC_CRAFTS	{0} laver {1}
 MISC_CRAFT_STOPS	{0} har ikke mere at arbejde med og stopper
 MISC_REASON_CRAFTING	håndværk
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Vælg først en enhed
 FACTION_PLAYER	Spillerens fraktion
 FACTION_GRAY	Den grå fraktion
 FACTION_RED	Den røde fraktion
+MISC_PROP_UNREACHABLE	Kan ikke nås
+MISC_ITEM_GAINED	+ {0}

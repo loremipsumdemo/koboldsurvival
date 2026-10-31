@@ -578,12 +578,9 @@ UILABEL_TASK_RESTING	Se repose
 UILABEL_STORAGE_HINT	Clic droit sur un objet pour le prendre, ou faites-le glisser dehors pour le poser là où se tient votre unité. Clic droit sur les objets de votre unité pour les ranger.
 ITEM_88_NAME	Bûche de bois
 ITEM_88_DESC	Du bois coupé dans un arbre, pour l'artisanat et la construction.
-UILABEL_INPUT	Entrée
-UILABEL_OUTPUT	Sortie
-UILABEL_CRAFT_HINT	Clic droit sur les objets de votre unité pour les mettre dans l'entrée, et prenez les objets terminés dans la sortie. Pour commencer à travailler, clic droit sur {0} puis choisissez Utiliser.
+UILABEL_CRAFT_HINT	Clic droit sur les objets de votre unité pour les y mettre. Ce qui est fabriqué va dans l'inventaire de l'unité qui travaille. Pour commencer à travailler, clic droit sur {0} puis choisissez Utiliser.
 MISC_CRAFT_WRONG_ITEM	{0} ne peut pas être utilisé ici
 MISC_CRAFT_NEEDS	Mettez {0} dans l'entrée pour commencer
-MISC_CRAFT_OUTPUT_FULL	La sortie est pleine
 MISC_CRAFTS	{0} fabrique {1}
 MISC_CRAFT_STOPS	{0} n'a plus rien à travailler et s'arrête
 MISC_REASON_CRAFTING	fabriquer
@@ -605,3 +602,5 @@ MISC_SELECT_UNIT_FIRST	Sélectionnez d'abord une unité
 FACTION_PLAYER	Faction du joueur
 FACTION_GRAY	Faction grise
 FACTION_RED	Faction rouge
+MISC_PROP_UNREACHABLE	Inaccessible
+MISC_ITEM_GAINED	+ {0}
