@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Nấm độc
 ITEM_126_DESC	Một cây nấm dại trông như mọi cây khác. Ăn vào sẽ mất máu và độ no.
+UILABEL_OPTIMIZE	Tối ưu
+UILABEL_REMOVE_ALL	Tháo hết
+MISC_GEAR_NO_ROOM	Không đủ chỗ trong túi đồ
+MISC_GEAR_ALREADY_BEST	Đã mặc trang bị tốt nhất
+MISC_GEAR_NONE_WORN	Không có trang bị để tháo
+UILABEL_OPTIMIZE_ALL	Tối ưu tất cả
+MISC_OPTIMIZE_ALL_ASK	Tối ưu trang bị cho cả {0} đơn vị trong đội? Mỗi đơn vị chọn từ đồ đang mặc và mang theo. Đơn vị không đủ chỗ cho đồ tháo ra sẽ giữ nguyên.
+UILABEL_OPTIMIZE_BALANCE	Tấn công {0}% / Phòng thủ {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Thay phụ kiện
+UILABEL_OPTIMIZE_TWO_HANDED	Cho phép vũ khí hai tay
+UILABEL_OPTIMIZE_VALUE_TIES	Khi hòa, chọn món giá trị hơn
+MISC_OPTIMIZE_ALL_SAME	Mọi đơn vị đã mặc trang bị tốt nhất
+MISC_OPTIMIZE_ALL_DONE	Đã tối ưu trang bị cho {0} đơn vị
+MISC_OPTIMIZE_ALL_SOME_ROOM	Đã tối ưu trang bị cho {0} đơn vị; {1} đơn vị thiếu chỗ trong túi đồ

@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Trujący grzyb
 ITEM_126_DESC	Dziki grzyb, który wygląda jak każdy inny. Zjedzenie go kosztuje zdrowie i sytość.
+UILABEL_OPTIMIZE	Optymalizuj
+UILABEL_REMOVE_ALL	Zdejmij wszystko
+MISC_GEAR_NO_ROOM	Za mało miejsca w ekwipunku
+MISC_GEAR_ALREADY_BEST	Ma już na sobie najlepszy ekwipunek
+MISC_GEAR_NONE_WORN	Brak ekwipunku do zdjęcia
+UILABEL_OPTIMIZE_ALL	Optymalizuj wszystkich
+MISC_OPTIMIZE_ALL_ASK	Zoptymalizować ekwipunek wszystkich {0} jednostek w oddziale? Każda wybiera z tego, co nosi i ma przy sobie. Jednostka bez miejsca na zdjęte rzeczy zostaje bez zmian.
+UILABEL_OPTIMIZE_BALANCE	Atak {0}% / Obrona {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Zmieniaj akcesoria
+UILABEL_OPTIMIZE_TWO_HANDED	Pozwól na broń dwuręczną
+UILABEL_OPTIMIZE_VALUE_TIES	Przy remisie wygrywa cenniejszy przedmiot
+MISC_OPTIMIZE_ALL_SAME	Wszystkie jednostki noszą już najlepszy ekwipunek
+MISC_OPTIMIZE_ALL_DONE	Zoptymalizowano ekwipunek {0} jednostek
+MISC_OPTIMIZE_ALL_SOME_ROOM	Zoptymalizowano ekwipunek {0} jednostek; {1} nie miało miejsca w ekwipunku

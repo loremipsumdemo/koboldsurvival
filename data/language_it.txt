@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Fungo velenoso
 ITEM_126_DESC	Un fungo selvatico che sembra uguale agli altri. Mangiarlo costa salute e sazietà.
+UILABEL_OPTIMIZE	Ottimizza
+UILABEL_REMOVE_ALL	Togli tutto
+MISC_GEAR_NO_ROOM	Spazio insufficiente nell'inventario
+MISC_GEAR_ALREADY_BEST	Indossa già l'equipaggiamento migliore
+MISC_GEAR_NONE_WORN	Nessun equipaggiamento da togliere
+UILABEL_OPTIMIZE_ALL	Ottimizza tutti
+MISC_OPTIMIZE_ALL_ASK	Ottimizzare l'equipaggiamento di tutte le {0} unità della squadra? Ogni unità sceglie tra ciò che indossa e porta con sé. Un'unità senza spazio per ciò che toglie resta com'è.
+UILABEL_OPTIMIZE_BALANCE	Attacco {0}% / Difesa {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Cambia accessori
+UILABEL_OPTIMIZE_TWO_HANDED	Consenti armi a due mani
+UILABEL_OPTIMIZE_VALUE_TIES	In parità vince l'oggetto più prezioso
+MISC_OPTIMIZE_ALL_SAME	Tutte le unità indossano già il loro equipaggiamento migliore
+MISC_OPTIMIZE_ALL_DONE	Equipaggiamento ottimizzato per {0} unità
+MISC_OPTIMIZE_ALL_SOME_ROOM	Equipaggiamento ottimizzato per {0} unità; {1} senza spazio nell'inventario

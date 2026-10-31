@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Cendawan beracun
 ITEM_126_DESC	Cendawan liar yang kelihatan seperti yang lain. Memakannya mengurangkan kesihatan dan rasa kenyang.
+UILABEL_OPTIMIZE	Optimumkan
+UILABEL_REMOVE_ALL	Tanggalkan semua
+MISC_GEAR_NO_ROOM	Ruang inventori tidak mencukupi
+MISC_GEAR_ALREADY_BEST	Sudah memakai kelengkapan terbaik
+MISC_GEAR_NONE_WORN	Tiada kelengkapan untuk ditanggalkan
+UILABEL_OPTIMIZE_ALL	Optimumkan semua
+MISC_OPTIMIZE_ALL_ASK	Optimumkan kelengkapan kesemua {0} unit dalam skuad? Setiap unit memilih daripada apa yang dipakai dan dibawanya. Unit tanpa ruang untuk barang yang ditanggalkan dibiarkan seperti biasa.
+UILABEL_OPTIMIZE_BALANCE	Serangan {0}% / Pertahanan {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Tukar aksesori
+UILABEL_OPTIMIZE_TWO_HANDED	Benarkan senjata dua tangan
+UILABEL_OPTIMIZE_VALUE_TIES	Jika seri, barang lebih bernilai menang
+MISC_OPTIMIZE_ALL_SAME	Semua unit sudah memakai kelengkapan terbaik
+MISC_OPTIMIZE_ALL_DONE	Kelengkapan {0} unit dioptimumkan
+MISC_OPTIMIZE_ALL_SOME_ROOM	Kelengkapan {0} unit dioptimumkan; {1} tiada ruang inventori

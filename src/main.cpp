@@ -212,8 +212,8 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
         why = langf("MISC_NO_ROOM_INV", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
         return false;
     }
-    addToInventory(*inv, stack.item, stack.count);
     *from = ItemStack{};
+    giveOrDrop(w, storageUnit, stack.item, stack.count);   // checked to fit above; anything that didn't would fall
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     const ItemDef* got = findItem(stack.item);
     queueUnitLabel(storageUnit, itemGainLabel(stack.count, got ? itemDisplayName(*got) : std::string(lang("MISC_AN_ITEM"))));
@@ -454,8 +454,9 @@ void completeTrade(World& w, Entity npc, Entity player) {
     const int fee = freeTrade ? 0 : requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA)) - npcValue;
     for (const TradeGhost& g : tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
     for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
-    for (const TradeGhost& g : tradeNpc) addToInventory(*pi, g.stack.item, g.stack.count);
-    for (const TradeGhost& g : tradePlayer) addToInventory(*ni, g.stack.item, g.stack.count);
+    // The trade was checked to fit, but should anything not, it falls at the receiver's feet
+    for (const TradeGhost& g : tradeNpc) giveOrDrop(w, player, g.stack.item, g.stack.count);
+    for (const TradeGhost& g : tradePlayer) giveOrDrop(w, npc, g.stack.item, g.stack.count);
     // Over each side, what it received ("+3x Iron Ore") and what it gave ("-Gold Coin"), one label per kind of item
     auto totals = [](const std::vector<TradeGhost>& side) {
         std::vector<std::pair<int, int>> out;   // item, count, in the order first offered
@@ -1546,6 +1547,9 @@ int main(int, char**) {
     float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;   // the world map's view: its centre and width in tiles, 0 while closed
     bool mapOpen = false;          // the world map covers the ground: M or the View Map button
     bool rightHold = false;        // the right button is held over a point for the selected units
+    // The Optimize All dialog, from the button beside Walk/Run: open, and whether its slider is being dragged
+    bool optimizeAllOpen = false;
+    bool optimizeSliderDrag = false;
     float holdX = 0.0f, holdZ = 0.0f;
     // A stack being dragged out of the inventory sidebar. Released outside the sidebar, it drops on the ground.
     bool itemDrag = false;
@@ -1901,6 +1905,15 @@ int main(int, char**) {
         SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
     };
     auto saveSettingsFile = [&]() { saveSettings(settings, SETTINGS_PATH); };
+    // How Optimize and Optimize All choose, from the settings the Optimize All dialog sets
+    auto gearPrefs = [&]() {
+        GearPrefs p;
+        p.attackShare = settings.optimizeAttackShare;
+        p.accessories = settings.optimizeAccessories;
+        p.twoHanded = settings.optimizeTwoHanded;
+        p.valueTies = settings.optimizeValueTies;
+        return p;
+    };
     // Applies what a change touched. It is saved when the change is final: a slider saves when released.
     // The Font size setting: every text font is reopened at the new size, and the text drawn with the old ones is dropped
     auto applyFontScale = [&]() {
@@ -3115,7 +3128,10 @@ int main(int, char**) {
                 if (e.key.key == SDLK_ESCAPE) {
                     // A talk only ends with its End Dialogue button, so Escape does nothing while one is open
                     if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) break;
-                    if (screen == Screen::Playing && mapOpen) {
+                    if (screen == Screen::Playing && optimizeAllOpen) {
+                        optimizeAllOpen = false;   // Escape is Cancel on the Optimize All dialog
+                        optimizeSliderDrag = false;
+                    } else if (screen == Screen::Playing && mapOpen) {
                         mapOpen = false;  // Escape closes the world map first
                     } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
                         // Escape closes the open menu, editor or popout first, and only then pauses the game
@@ -3308,6 +3324,44 @@ int main(int, char**) {
                     break;
                 }
 
+                // The Optimize All dialog is modal: only it answers while it is open
+                if (screen == Screen::Playing && optimizeAllOpen) {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        const OptimizeAllLayout ol = layoutOptimizeAll(winW, winH);
+                        const float x = e.button.x, y = e.button.y;
+                        const Rect grab{ ol.track.x - 8.0f, ol.track.y - 10.0f, ol.track.w + 16.0f, ol.track.h + 20.0f };
+                        if (grab.contains(x, y)) {
+                            settings.optimizeAttackShare = levelAtX(ol.track, x);
+                            optimizeSliderDrag = true;
+                        } else if (ol.toggles[0].contains(x, y)) {
+                            settings.optimizeAccessories = !settings.optimizeAccessories;
+                            saveSettingsFile();
+                        } else if (ol.toggles[1].contains(x, y)) {
+                            settings.optimizeTwoHanded = !settings.optimizeTwoHanded;
+                            saveSettingsFile();
+                        } else if (ol.toggles[2].contains(x, y)) {
+                            settings.optimizeValueTies = !settings.optimizeValueTies;
+                            saveSettingsFile();
+                        } else if (ol.cancel.contains(x, y)) {
+                            optimizeAllOpen = false;
+                            audio::playEffect(SFX_MENU);
+                        } else if (ol.confirm.contains(x, y)) {
+                            // Each unit of the squad, on its own: one without the room to change stays as it was
+                            const std::vector<Entity> squad = ownUnitList();
+                            const OptimizeAllResult r = optimizeAllGear(world, squad, gearPrefs());
+                            optimizeAllOpen = false;
+                            if (r.changed == 0 && r.noRoom == 0) {
+                                showNotice(lang("MISC_OPTIMIZE_ALL_SAME"));
+                            } else if (r.noRoom == 0) {
+                                showNotice(langf("MISC_OPTIMIZE_ALL_DONE", { std::to_string(r.changed) }));
+                            } else {
+                                showNotice(langf("MISC_OPTIMIZE_ALL_SOME_ROOM", { std::to_string(r.changed), std::to_string(r.noRoom) }));
+                            }
+                            audio::playEffect(r.changed > 0 ? SFX_ITEM : SFX_MENU);
+                        }
+                    }
+                    break;
+                }
                 // With the world map open, only the panels take clicks; the ground and its units do not
                 if (screen == Screen::Playing && mapOpen && !overPanels(e.button.x, e.button.y, winW, winH)) {
                     // With the world map open, a right click on the map is a move order; the rest is dropped
@@ -3563,6 +3617,14 @@ int main(int, char**) {
                     if (overPanels(mx, my, winW, winH)) {
                         // The pace toggle and the View Map button on the bottom panel
                         if (pl.paceButton.contains(mx, my)) { runMode = !runMode; break; }
+                        if (pl.optimizeAllButton.contains(mx, my)) {
+                            contextMenu.open = false;
+                            itemMenu.open = false;
+                            optimizeAllOpen = true;
+                            optimizeSliderDrag = false;
+                            audio::playEffect(SFX_MENU);
+                            break;
+                        }
 
                         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
                         const bool onSidebar = sl.panel.contains(mx, my);
@@ -3574,6 +3636,24 @@ int main(int, char**) {
                                 if (sl.sortButton.contains(mx, my)) {
                                     itemMenu.open = false;
                                     sortInventory(shown);
+                                    break;
+                                }
+                                // The Gear tab: Optimize wears the best gear on hand, Remove All takes it all off.
+                                // Either one is checked as a whole first; if the inventory can't take what comes off,
+                                // nothing changes.
+                                if (sl.optimizeButton.contains(mx, my) || sl.removeAllButton.contains(mx, my)) {
+                                    itemMenu.open = false;
+                                    const bool optimize = sl.optimizeButton.contains(mx, my);
+                                    std::string why;
+                                    const GearAction done = optimize ? optimizeGear(world, shown, why, gearPrefs()) : removeAllGear(world, shown, why);
+                                    if (done == GearAction::Done) {
+                                        audio::playEffect(SFX_ITEM);
+                                    } else if (done == GearAction::NoRoom) {
+                                        showNotice(why);
+                                        audio::playEffect(SFX_MENU);
+                                    } else {
+                                        showNotice(lang(optimize ? "MISC_GEAR_ALREADY_BEST" : "MISC_GEAR_NONE_WORN"));
+                                    }
                                     break;
                                 }
                                 if (sl.addButton.contains(mx, my)) {
@@ -3716,6 +3796,11 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (optimizeSliderDrag && e.button.button == SDL_BUTTON_LEFT) {
+                    optimizeSliderDrag = false;
+                    saveSettingsFile();   // its last place is kept
+                    break;
+                }
                 // Letting go of the right button plans the route to where it was held
                 if (rightHold && e.button.button == SDL_BUTTON_RIGHT) {
                     rightHold = false;
@@ -3832,6 +3917,16 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_MOTION:
+                // The Optimize All slider follows the mouse while its button is held
+                if (screen == Screen::Playing && optimizeAllOpen && optimizeSliderDrag) {
+                    if (e.motion.state & SDL_BUTTON_LMASK) {
+                        settings.optimizeAttackShare = levelAtX(layoutOptimizeAll(winW, winH).track, e.motion.x);
+                    } else {
+                        optimizeSliderDrag = false;
+                        saveSettingsFile();
+                    }
+                    break;
+                }
                 if (grabWhich >= 0) {
                     applyGrab(winW, winH, e.motion.x, e.motion.y);
                     break;
@@ -4332,6 +4427,11 @@ int main(int, char**) {
                 }
             }
             if (contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
+            if (optimizeAllOpen) {
+                renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
+                                         { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
+                                         mouseX, mouseY);
+            }
             // The world map popout is over everything, the panels included
             if (mapOpen) {
                 const Rect area = worldMapArea(winW, winH);

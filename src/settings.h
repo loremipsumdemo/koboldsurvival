@@ -47,6 +47,12 @@ struct GameSettings {
     // Controls
     bool edgeScroll = false;
 
+    // How Optimize and Optimize All choose gear (GearPrefs in equip.h), as last set in the Optimize All dialog
+    int optimizeAttackShare = 50;
+    bool optimizeAccessories = true;
+    bool optimizeTwoHanded = true;
+    bool optimizeValueTies = true;
+
     // Audio: each bus has a level from 0 to 100, and can be switched off without losing the level. The global level
     // scales all three: a bus is heard at its level times the global level.
     int globalVolume = 50;
@@ -102,6 +108,10 @@ inline GameSettings loadSettings(const std::string& path) {
             else s.language = val;
         }
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
+        else if (key == "optimizeAttackShare") s.optimizeAttackShare = parseInt(val, s.optimizeAttackShare);
+        else if (key == "optimizeAccessories") s.optimizeAccessories = (val == "1");
+        else if (key == "optimizeTwoHanded")   s.optimizeTwoHanded = (val == "1");
+        else if (key == "optimizeValueTies")   s.optimizeValueTies = (val == "1");
         // Earlier builds called it the master, then the total volume
         else if (key == "globalVolume" || key == "masterVolume" || key == "totalVolume") s.globalVolume = parseInt(val, s.globalVolume);
         else if (key == "globalOn" || key == "masterOn" || key == "totalOn") s.globalOn = (val == "1");
@@ -129,6 +139,7 @@ inline GameSettings loadSettings(const std::string& path) {
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
     s.globalVolume = std::clamp(s.globalVolume, 0, 100);
+    s.optimizeAttackShare = std::clamp(s.optimizeAttackShare, 0, 100);
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
@@ -154,6 +165,10 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
+    out << "optimizeAttackShare=" << s.optimizeAttackShare << "\n";
+    out << "optimizeAccessories=" << (s.optimizeAccessories ? 1 : 0) << "\n";
+    out << "optimizeTwoHanded=" << (s.optimizeTwoHanded ? 1 : 0) << "\n";
+    out << "optimizeValueTies=" << (s.optimizeValueTies ? 1 : 0) << "\n";
     out << "globalVolume=" << s.globalVolume << "\n";
     out << "globalOn=" << (s.globalOn ? 1 : 0) << "\n";
     out << "musicVolume=" << s.musicVolume << "\n";

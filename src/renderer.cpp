@@ -2120,6 +2120,50 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     propHops_.swap(seen);   // props no longer worked, or gone, are forgotten
 }
 
+void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
+                               float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    const RGBA accent{ 0.66f, 0.38f, 1.0f, 1.0f };
+    const float th = listTextHeight("Ag");
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, RGBA{ 0.0f, 0.0f, 0.0f, 0.45f });   // dims the game behind it
+    drawRect(L.box, RGBA{ 0.05f, 0.06f, 0.09f, 0.98f });
+    drawListText(fitText(lang("UILABEL_OPTIMIZE_ALL"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
+    float ty = L.text.y;
+    for (const std::string& ln : wrapListText(langf("MISC_OPTIMIZE_ALL_ASK", { std::to_string(unitCount) }), L.text.w)) {
+        if (ty + th > L.text.y + L.text.h + 0.5f) break;
+        drawListText(ln, L.text.x, ty, gray);
+        ty += th;
+    }
+    // The slider: all defense at the left, all attack at the right
+    const int share = std::clamp(attackShare, 0, 100);
+    const std::string sl = langf("UILABEL_OPTIMIZE_BALANCE", { std::to_string(share), std::to_string(100 - share) });
+    drawListText(fitText(sl, L.sliderLabel.w, false), L.sliderLabel.x, L.sliderLabel.y + (L.sliderLabel.h - th) * 0.5f, white);
+    drawRect(L.track, RGBA{ 0.18f, 0.18f, 0.24f, 1.0f });
+    drawRect(Rect{ L.track.x, L.track.y, L.track.w * share / 100.0f, L.track.h }, accent);
+    const float kx = L.track.x + L.track.w * share / 100.0f, kw = 8.0f * s, kh = L.track.h + 8.0f * s;
+    drawRect(Rect{ kx - kw * 0.5f, L.track.y + (L.track.h - kh) * 0.5f, kw, kh }, white);
+    // The toggles: a box, filled when on, and its label
+    const char* keys[3] = { "UILABEL_OPTIMIZE_ACCESSORIES", "UILABEL_OPTIMIZE_TWO_HANDED", "UILABEL_OPTIMIZE_VALUE_TIES" };
+    for (int i = 0; i < 3; ++i) {
+        const Rect& r = L.toggles[(size_t)i];
+        const float box = r.h - 6.0f * s;
+        const Rect b{ r.x, r.y + 3.0f * s, box, box };
+        const bool hot = r.contains(mx, my);
+        drawRect(b, hot ? RGBA{ 0.40f, 0.40f, 0.48f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.36f, 1.0f });
+        drawRect(Rect{ b.x + 2.0f * s, b.y + 2.0f * s, b.w - 4.0f * s, b.h - 4.0f * s },
+                 toggles[(size_t)i] ? accent : RGBA{ 0.08f, 0.08f, 0.11f, 1.0f });
+        const std::string label = lang(keys[i]);
+        const float lx = b.x + box + 8.0f * s;
+        const std::string shown = fitText(label, r.x + r.w - lx, false);
+        if (shown != label) noteTip(label, r);
+        drawListText(shown, lx, r.y + (r.h - th) * 0.5f, white);
+    }
+    drawButton(L.confirm, lang("UILABEL_CONFIRM"), unitCount > 0, unitCount > 0 && L.confirm.contains(mx, my));
+    drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
+}
+
 void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                                   float mx, float my) {
     const float s = uiH_ / 720.0f;
@@ -2192,6 +2236,13 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     };
     // One toggle for the pace, lit while the squad runs, and the View Map button beside it
     mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
+    // Optimize All, beside it: opens a dialog to confirm
+    {
+        const std::string label = lang("UILABEL_OPTIMIZE_ALL");
+        const std::string shown = fitText(label, L.optimizeAllButton.w - 6.0f * s, false);
+        if (shown != label) noteTip(label, L.optimizeAllButton);
+        mode(L.optimizeAllButton, shown, false);
+    }
 
     for (const UnitCell& c : L.cells) {
         const Entity e = units[c.index];
@@ -2449,6 +2500,15 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const bool dimOff = offLocked || (dragDef && dragDef->equipSlot == "two_hand");
     drawRect(L.gearPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
     drawIconText(L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_EQUIPMENT, lang("UILABEL_EQUIPMENT"), white);
+    // Optimize and Remove All, for a unit of yours. A label too long for its button is shortened, with the whole of it
+    // in a tooltip.
+    auto gearButton = [&](const Rect& r, const std::string& label) {
+        const std::string shown = fitText(label, r.w - 6.0f * s, false);
+        if (shown != label) noteTip(label, r);
+        drawSmallButton(r, shown, editable, editable && r.contains(mx, my));
+    };
+    gearButton(L.optimizeButton, lang("UILABEL_OPTIMIZE"));
+    gearButton(L.removeAllButton, lang("UILABEL_REMOVE_ALL"));
 
     // While an item is dragged, each gear slot shows whether it may go there: green if so, red if not.
     // A gear item leaving its own slot is not in the way of itself.

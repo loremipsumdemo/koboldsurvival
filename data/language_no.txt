@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig sopp
 ITEM_126_DESC	En vill sopp som ser ut som alle andre. Å spise den koster helse og metthet.
+UILABEL_OPTIMIZE	Optimaliser
+UILABEL_REMOVE_ALL	Ta av alt
+MISC_GEAR_NO_ROOM	Ikke nok plass i inventaret
+MISC_GEAR_ALREADY_BEST	Har allerede på seg det beste utstyret
+MISC_GEAR_NONE_WORN	Ikke noe utstyr å ta av
+UILABEL_OPTIMIZE_ALL	Optimaliser alle
+MISC_OPTIMIZE_ALL_ASK	Optimalisere utstyret til alle {0} enhetene i troppen? Hver enhet velger blant det den har på og bærer. En enhet uten plass til det som tas av, blir som den er.
+UILABEL_OPTIMIZE_BALANCE	Angrep {0} % / Forsvar {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Bytt tilbehør
+UILABEL_OPTIMIZE_TWO_HANDED	Tillat tohåndsvåpen
+UILABEL_OPTIMIZE_VALUE_TIES	Ved likhet vinner det mest verdifulle
+MISC_OPTIMIZE_ALL_SAME	Alle enhetene har allerede på seg sitt beste utstyr
+MISC_OPTIMIZE_ALL_DONE	Utstyr optimalisert for {0} enheter
+MISC_OPTIMIZE_ALL_SOME_ROOM	Utstyr optimalisert for {0} enheter; {1} manglet plass i inventaret

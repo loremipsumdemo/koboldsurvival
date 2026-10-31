@@ -6,6 +6,7 @@
 #include <map>
 #include <cstdlib>
 #include "combat.h"
+#include "equip.h"
 #include "inventory.h"
 #include "items.h"
 #include "needs.h"
@@ -1329,7 +1330,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 ++pw.made;   // the ring hops for it
                 ++pw.turn;
                 if (outItem > 0) {
-                    addToInventory(*w.get<Inventory>(got), outItem, 1);
+                    giveOrDrop(w, got, outItem, 1);   // checked to fit above; should it not, it falls at the cook's feet
                     gains.push_back(WorkGain{ got, outItem });
                     queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup);
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));

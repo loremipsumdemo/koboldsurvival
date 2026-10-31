@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	毒キノコ
 ITEM_126_DESC	ほかと見分けのつかない野生のキノコ。食べると体力と満腹度が減る。
+UILABEL_OPTIMIZE	最適化
+UILABEL_REMOVE_ALL	すべて外す
+MISC_GEAR_NO_ROOM	所持品の空きが足りません
+MISC_GEAR_ALREADY_BEST	すでに最良の装備をしています
+MISC_GEAR_NONE_WORN	外す装備がありません
+UILABEL_OPTIMIZE_ALL	全員を最適化
+MISC_OPTIMIZE_ALL_ASK	部隊の {0} 人全員の装備を最適化しますか？各ユニットは装備中と所持中の物から選びます。外した物を入れる空きがないユニットはそのままです。
+UILABEL_OPTIMIZE_BALANCE	攻撃 {0}% / 防御 {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	アクセサリーも変更
+UILABEL_OPTIMIZE_TWO_HANDED	両手武器を許可
+UILABEL_OPTIMIZE_VALUE_TIES	同点なら価値の高い方
+MISC_OPTIMIZE_ALL_SAME	全員すでに最良の装備をしています
+MISC_OPTIMIZE_ALL_DONE	{0} 人の装備を最適化しました
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0} 人の装備を最適化しました。{1} 人は所持品の空きが足りません

@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Hongo venenoso
 ITEM_126_DESC	Un hongo silvestre que parece uno cualquiera. Comerlo cuesta salud y saciedad.
+UILABEL_OPTIMIZE	Optimizar
+UILABEL_REMOVE_ALL	Quitar todo
+MISC_GEAR_NO_ROOM	No hay suficiente espacio en el inventario
+MISC_GEAR_ALREADY_BEST	Ya lleva el mejor equipo
+MISC_GEAR_NONE_WORN	No hay equipo que quitar
+UILABEL_OPTIMIZE_ALL	Optimizar todo
+MISC_OPTIMIZE_ALL_ASK	¿Optimizar el equipo de las {0} unidades del escuadrón? Cada unidad elige entre lo que lleva puesto y consigo. Una unidad sin espacio para lo que se quita se queda como está.
+UILABEL_OPTIMIZE_BALANCE	Ataque {0} % / Defensa {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Cambiar accesorios
+UILABEL_OPTIMIZE_TWO_HANDED	Permitir armas a dos manos
+UILABEL_OPTIMIZE_VALUE_TIES	En empate, gana el objeto más valioso
+MISC_OPTIMIZE_ALL_SAME	Todas las unidades ya llevan su mejor equipo
+MISC_OPTIMIZE_ALL_DONE	Equipo optimizado para {0} unidades
+MISC_OPTIMIZE_ALL_SOME_ROOM	Equipo optimizado para {0} unidades; {1} no tenían espacio en el inventario

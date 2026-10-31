@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Poison Mushroom
 ITEM_126_DESC	A wild mushroom that looks like any other. Eating it costs health and hunger.
+UILABEL_OPTIMIZE	Optimize
+UILABEL_REMOVE_ALL	Remove All
+MISC_GEAR_NO_ROOM	Not enough inventory space
+MISC_GEAR_ALREADY_BEST	Already wearing the best gear
+MISC_GEAR_NONE_WORN	No gear to remove
+UILABEL_OPTIMIZE_ALL	Optimize All
+MISC_OPTIMIZE_ALL_ASK	Optimize the gear of all {0} units in your squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is.
+UILABEL_OPTIMIZE_BALANCE	Attack {0}% / Defense {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Change accessories
+UILABEL_OPTIMIZE_TWO_HANDED	Allow two-handed weapons
+UILABEL_OPTIMIZE_VALUE_TIES	Ties go to the more valuable item
+MISC_OPTIMIZE_ALL_SAME	Every unit already wears its best gear
+MISC_OPTIMIZE_ALL_DONE	Optimized gear for {0} units
+MISC_OPTIMIZE_ALL_SOME_ROOM	Optimized gear for {0} units; {1} lacked inventory space

@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Отровна гъба
 ITEM_126_DESC	Дива гъба, която изглежда като всяка друга. Изяждането ѝ отнема здраве и ситост.
+UILABEL_OPTIMIZE	Оптимизирай
+UILABEL_REMOVE_ALL	Свали всичко
+MISC_GEAR_NO_ROOM	Няма достатъчно място в инвентара
+MISC_GEAR_ALREADY_BEST	Вече носи най-добрата екипировка
+MISC_GEAR_NONE_WORN	Няма екипировка за сваляне
+UILABEL_OPTIMIZE_ALL	Оптимизирай всички
+MISC_OPTIMIZE_ALL_ASK	Да се оптимизира ли екипировката на всички {0} единици в отряда? Всяка избира от това, което носи и има в себе си. Единица без място за свалените предмети остава както е.
+UILABEL_OPTIMIZE_BALANCE	Атака {0}% / Защита {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Сменяй аксесоарите
+UILABEL_OPTIMIZE_TWO_HANDED	Позволи двуръчни оръжия
+UILABEL_OPTIMIZE_VALUE_TIES	При равенство – по-ценният предмет
+MISC_OPTIMIZE_ALL_SAME	Всички единици вече носят най-добрата си екипировка
+MISC_OPTIMIZE_ALL_DONE	Оптимизирана е екипировката на {0} единици
+MISC_OPTIMIZE_ALL_SOME_ROOM	Оптимизирана е екипировката на {0} единици; {1} нямаха място в инвентара

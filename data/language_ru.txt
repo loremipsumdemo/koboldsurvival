@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Ядовитый гриб
 ITEM_126_DESC	Лесной гриб, похожий на любой другой. Съесть его — потерять здоровье и сытость.
+UILABEL_OPTIMIZE	Оптимизировать
+UILABEL_REMOVE_ALL	Снять всё
+MISC_GEAR_NO_ROOM	Недостаточно места в инвентаре
+MISC_GEAR_ALREADY_BEST	Уже носит лучшее снаряжение
+MISC_GEAR_NONE_WORN	Нечего снимать
+UILABEL_OPTIMIZE_ALL	Оптимизировать всех
+MISC_OPTIMIZE_ALL_ASK	Оптимизировать снаряжение всех {0} бойцов отряда? Каждый выбирает из того, что на нём и при нём. Боец без места для снятого остаётся как есть.
+UILABEL_OPTIMIZE_BALANCE	Атака {0}% / Защита {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Менять аксессуары
+UILABEL_OPTIMIZE_TWO_HANDED	Разрешить двуручное оружие
+UILABEL_OPTIMIZE_VALUE_TIES	При равенстве — более ценный предмет
+MISC_OPTIMIZE_ALL_SAME	Все бойцы уже носят лучшее снаряжение
+MISC_OPTIMIZE_ALL_DONE	Снаряжение оптимизировано у {0} бойцов
+MISC_OPTIMIZE_ALL_SOME_ROOM	Снаряжение оптимизировано у {0} бойцов; {1} не хватило места в инвентаре

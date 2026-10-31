@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Myrkkysieni
 ITEM_126_DESC	Metsäsieni, joka näyttää muiden kaltaiselta. Sen syöminen vie terveyttä ja kylläisyyttä.
+UILABEL_OPTIMIZE	Optimoi
+UILABEL_REMOVE_ALL	Riisu kaikki
+MISC_GEAR_NO_ROOM	Tavaraluettelossa ei ole tarpeeksi tilaa
+MISC_GEAR_ALREADY_BEST	Paras varustus on jo päällä
+MISC_GEAR_NONE_WORN	Ei riisuttavaa varustusta
+UILABEL_OPTIMIZE_ALL	Optimoi kaikki
+MISC_OPTIMIZE_ALL_ASK	Optimoidaanko joukkueen kaikkien {0} yksikön varusteet? Kukin valitsee siitä, mitä sillä on päällä ja mukana. Yksikkö, jolla ei ole tilaa riisutuille tavaroille, jää ennalleen.
+UILABEL_OPTIMIZE_BALANCE	Hyökkäys {0} % / Puolustus {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Vaihda asusteita
+UILABEL_OPTIMIZE_TWO_HANDED	Salli kahden käden aseet
+UILABEL_OPTIMIZE_VALUE_TIES	Tasatilanteessa arvokkaampi voittaa
+MISC_OPTIMIZE_ALL_SAME	Kaikilla yksiköillä on jo parhaat varusteensa
+MISC_OPTIMIZE_ALL_DONE	Varusteet optimoitu {0} yksiköltä
+MISC_OPTIMIZE_ALL_SOME_ROOM	Varusteet optimoitu {0} yksiköltä; {1} ilman tilaa tavaraluettelossa

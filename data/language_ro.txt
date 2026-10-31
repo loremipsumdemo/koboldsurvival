@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Ciupercă otrăvitoare
 ITEM_126_DESC	O ciupercă de pădure care arată ca oricare alta. Mâncată, costă sănătate și sațietate.
+UILABEL_OPTIMIZE	Optimizează
+UILABEL_REMOVE_ALL	Scoate tot
+MISC_GEAR_NO_ROOM	Nu e destul loc în inventar
+MISC_GEAR_ALREADY_BEST	Poartă deja cel mai bun echipament
+MISC_GEAR_NONE_WORN	Niciun echipament de scos
+UILABEL_OPTIMIZE_ALL	Optimizează tot
+MISC_OPTIMIZE_ALL_ASK	Optimizezi echipamentul tuturor celor {0} unități din echipă? Fiecare alege din ce poartă și are la ea. O unitate fără loc pentru ce scoate rămâne cum e.
+UILABEL_OPTIMIZE_BALANCE	Atac {0}% / Apărare {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Schimbă accesoriile
+UILABEL_OPTIMIZE_TWO_HANDED	Permite arme cu două mâini
+UILABEL_OPTIMIZE_VALUE_TIES	La egalitate câștigă obiectul mai valoros
+MISC_OPTIMIZE_ALL_SAME	Toate unitățile poartă deja cel mai bun echipament
+MISC_OPTIMIZE_ALL_DONE	Echipament optimizat pentru {0} unități
+MISC_OPTIMIZE_ALL_SOME_ROOM	Echipament optimizat pentru {0} unități; {1} nu au avut loc în inventar

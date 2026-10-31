@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig svamp
 ITEM_126_DESC	En vild svamp, der ligner alle andre. Spiser man den, koster det helbred og mæthed.
+UILABEL_OPTIMIZE	Optimer
+UILABEL_REMOVE_ALL	Tag alt af
+MISC_GEAR_NO_ROOM	Ikke nok plads i inventaret
+MISC_GEAR_ALREADY_BEST	Har allerede det bedste udstyr på
+MISC_GEAR_NONE_WORN	Intet udstyr at tage af
+UILABEL_OPTIMIZE_ALL	Optimer alle
+MISC_OPTIMIZE_ALL_ASK	Optimer udstyret for alle {0} enheder i holdet? Hver enhed vælger blandt det, den har på og bærer. En enhed uden plads til det, der tages af, forbliver som den er.
+UILABEL_OPTIMIZE_BALANCE	Angreb {0}% / Forsvar {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Skift tilbehør
+UILABEL_OPTIMIZE_TWO_HANDED	Tillad tohåndsvåben
+UILABEL_OPTIMIZE_VALUE_TIES	Ved lighed vinder den mest værdifulde
+MISC_OPTIMIZE_ALL_SAME	Alle enheder har allerede deres bedste udstyr på
+MISC_OPTIMIZE_ALL_DONE	Udstyr optimeret for {0} enheder
+MISC_OPTIMIZE_ALL_SOME_ROOM	Udstyr optimeret for {0} enheder; {1} manglede plads i inventaret

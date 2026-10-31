@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Jamur beracun
 ITEM_126_DESC	Jamur liar yang tampak seperti jamur lainnya. Memakannya mengurangi kesehatan dan rasa kenyang.
+UILABEL_OPTIMIZE	Optimalkan
+UILABEL_REMOVE_ALL	Lepas semua
+MISC_GEAR_NO_ROOM	Ruang inventaris tidak cukup
+MISC_GEAR_ALREADY_BEST	Sudah memakai perlengkapan terbaik
+MISC_GEAR_NONE_WORN	Tidak ada perlengkapan untuk dilepas
+UILABEL_OPTIMIZE_ALL	Optimalkan semua
+MISC_OPTIMIZE_ALL_ASK	Optimalkan perlengkapan semua {0} unit di regu? Tiap unit memilih dari yang dipakai dan dibawanya. Unit tanpa ruang untuk barang yang dilepas dibiarkan apa adanya.
+UILABEL_OPTIMIZE_BALANCE	Serangan {0}% / Pertahanan {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Ganti aksesori
+UILABEL_OPTIMIZE_TWO_HANDED	Izinkan senjata dua tangan
+UILABEL_OPTIMIZE_VALUE_TIES	Jika seri, pilih barang yang lebih berharga
+MISC_OPTIMIZE_ALL_SAME	Semua unit sudah memakai perlengkapan terbaiknya
+MISC_OPTIMIZE_ALL_DONE	Perlengkapan {0} unit dioptimalkan
+MISC_OPTIMIZE_ALL_SOME_ROOM	Perlengkapan {0} unit dioptimalkan; {1} kekurangan ruang inventaris

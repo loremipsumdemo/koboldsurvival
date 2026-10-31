@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Cogumelo venenoso
 ITEM_126_DESC	Um cogumelo selvagem igual a qualquer outro. Comê-lo custa saúde e saciedade.
+UILABEL_OPTIMIZE	Otimizar
+UILABEL_REMOVE_ALL	Remover tudo
+MISC_GEAR_NO_ROOM	Espaço insuficiente no inventário
+MISC_GEAR_ALREADY_BEST	Já está usando o melhor equipamento
+MISC_GEAR_NONE_WORN	Nenhum equipamento para remover
+UILABEL_OPTIMIZE_ALL	Otimizar todos
+MISC_OPTIMIZE_ALL_ASK	Otimizar o equipamento das {0} unidades do esquadrão? Cada unidade escolhe entre o que veste e carrega. Uma unidade sem espaço para o que tira fica como está.
+UILABEL_OPTIMIZE_BALANCE	Ataque {0}% / Defesa {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Trocar acessórios
+UILABEL_OPTIMIZE_TWO_HANDED	Permitir armas de duas mãos
+UILABEL_OPTIMIZE_VALUE_TIES	No empate, vence o item mais valioso
+MISC_OPTIMIZE_ALL_SAME	Todas as unidades já usam o melhor equipamento
+MISC_OPTIMIZE_ALL_DONE	Equipamento otimizado para {0} unidades
+MISC_OPTIMIZE_ALL_SOME_ROOM	Equipamento otimizado para {0} unidades; {1} sem espaço no inventário

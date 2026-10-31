@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftige paddenstoel
 ITEM_126_DESC	Een wilde paddenstoel die eruitziet als elke andere. Opeten kost gezondheid en verzadiging.
+UILABEL_OPTIMIZE	Optimaliseren
+UILABEL_REMOVE_ALL	Alles afdoen
+MISC_GEAR_NO_ROOM	Niet genoeg ruimte in de inventaris
+MISC_GEAR_ALREADY_BEST	Draagt al de beste uitrusting
+MISC_GEAR_NONE_WORN	Geen uitrusting om af te doen
+UILABEL_OPTIMIZE_ALL	Alles optimaliseren
+MISC_OPTIMIZE_ALL_ASK	De uitrusting van alle {0} eenheden in de groep optimaliseren? Elke eenheid kiest uit wat ze draagt en bij zich heeft. Een eenheid zonder ruimte voor wat er afgaat, blijft zoals ze is.
+UILABEL_OPTIMIZE_BALANCE	Aanval {0}% / Verdediging {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Accessoires wisselen
+UILABEL_OPTIMIZE_TWO_HANDED	Tweehandige wapens toestaan
+UILABEL_OPTIMIZE_VALUE_TIES	Bij gelijkspel wint het waardevolste
+MISC_OPTIMIZE_ALL_SAME	Alle eenheden dragen al hun beste uitrusting
+MISC_OPTIMIZE_ALL_DONE	Uitrusting van {0} eenheden geoptimaliseerd
+MISC_OPTIMIZE_ALL_SOME_ROOM	Uitrusting van {0} eenheden geoptimaliseerd; {1} hadden geen ruimte in de inventaris

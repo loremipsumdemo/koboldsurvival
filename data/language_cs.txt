@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Jedovatá houba
 ITEM_126_DESC	Lesní houba, která vypadá jako každá jiná. Snědení stojí zdraví i sytost.
+UILABEL_OPTIMIZE	Optimalizovat
+UILABEL_REMOVE_ALL	Sundat vše
+MISC_GEAR_NO_ROOM	V inventáři není dost místa
+MISC_GEAR_ALREADY_BEST	Už nosí nejlepší výbavu
+MISC_GEAR_NONE_WORN	Žádná výbava k sundání
+UILABEL_OPTIMIZE_ALL	Optimalizovat vše
+MISC_OPTIMIZE_ALL_ASK	Optimalizovat výbavu všech {0} jednotek v oddílu? Každá vybírá z toho, co nosí a má u sebe. Jednotka bez místa pro sundané věci zůstane, jak je.
+UILABEL_OPTIMIZE_BALANCE	Útok {0} % / Obrana {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Měnit doplňky
+UILABEL_OPTIMIZE_TWO_HANDED	Povolit obouruční zbraně
+UILABEL_OPTIMIZE_VALUE_TIES	Při shodě vyhrává cennější předmět
+MISC_OPTIMIZE_ALL_SAME	Všechny jednotky už nosí nejlepší výbavu
+MISC_OPTIMIZE_ALL_DONE	Výbava optimalizována u {0} jednotek
+MISC_OPTIMIZE_ALL_SOME_ROOM	Výbava optimalizována u {0} jednotek; {1} neměly místo v inventáři

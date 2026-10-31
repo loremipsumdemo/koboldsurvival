@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	독버섯
 ITEM_126_DESC	다른 버섯과 똑같아 보이는 야생 버섯. 먹으면 체력과 포만감이 줄어듭니다.
+UILABEL_OPTIMIZE	최적화
+UILABEL_REMOVE_ALL	모두 해제
+MISC_GEAR_NO_ROOM	인벤토리 공간이 부족합니다
+MISC_GEAR_ALREADY_BEST	이미 최고의 장비를 착용 중입니다
+MISC_GEAR_NONE_WORN	해제할 장비가 없습니다
+UILABEL_OPTIMIZE_ALL	전체 최적화
+MISC_OPTIMIZE_ALL_ASK	분대의 {0}명 모두 장비를 최적화할까요? 각 유닛은 착용하고 가진 것 중에서 고릅니다. 벗은 장비를 넣을 공간이 없는 유닛은 그대로 둡니다.
+UILABEL_OPTIMIZE_BALANCE	공격 {0}% / 방어 {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	장신구 변경
+UILABEL_OPTIMIZE_TWO_HANDED	양손 무기 허용
+UILABEL_OPTIMIZE_VALUE_TIES	동점이면 더 비싼 아이템
+MISC_OPTIMIZE_ALL_SAME	모든 유닛이 이미 최고의 장비를 착용 중입니다
+MISC_OPTIMIZE_ALL_DONE	{0}명의 장비를 최적화했습니다
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0}명의 장비를 최적화했습니다. {1}명은 인벤토리 공간이 부족합니다

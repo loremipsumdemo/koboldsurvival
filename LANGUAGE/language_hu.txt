@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Mérges gomba
 ITEM_126_DESC	Vadgomba, amely olyan, mint bármelyik másik. Megenni egészségbe és jóllakottságba kerül.
+UILABEL_OPTIMIZE	Optimalizálás
+UILABEL_REMOVE_ALL	Mindet levesz
+MISC_GEAR_NO_ROOM	Nincs elég hely a tárgylistában
+MISC_GEAR_ALREADY_BEST	Már a legjobb felszerelést viseli
+MISC_GEAR_NONE_WORN	Nincs levehető felszerelés
+UILABEL_OPTIMIZE_ALL	Összes optimalizálása
+MISC_OPTIMIZE_ALL_ASK	Optimalizálod az osztag mind a(z) {0} egységének felszerelését? Minden egység abból választ, amit visel és magánál tart. Az az egység, amelynek nincs helye a levett tárgyaknak, változatlan marad.
+UILABEL_OPTIMIZE_BALANCE	Támadás {0}% / Védekezés {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Kiegészítők cseréje
+UILABEL_OPTIMIZE_TWO_HANDED	Kétkezes fegyverek engedélyezése
+UILABEL_OPTIMIZE_VALUE_TIES	Döntetlennél az értékesebb tárgy nyer
+MISC_OPTIMIZE_ALL_SAME	Minden egység már a legjobb felszerelését viseli
+MISC_OPTIMIZE_ALL_DONE	{0} egység felszerelése optimalizálva
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0} egység felszerelése optimalizálva; {1} egységnek nem volt helye

@@ -69,6 +69,7 @@ struct UnitPanelLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };       // the "Squad Panel" bar across the top
     Rect paceButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel, on the left
+    Rect optimizeAllButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // Optimize All, beside the pace toggle
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     std::vector<UnitCell> cells;            // visible units only
@@ -124,7 +125,10 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     const float bodyY = L.panel.y + barH;
 
     // The top row holds the pace toggle. The grid starts under it.
-    L.paceButton = Rect{ L.panel.x + pad, bodyY + pad, cellsW, toggleH };
+    // The pace toggle and Optimize All share the row, half each
+    const float halfW = (cellsW - gap) * 0.5f;
+    L.paceButton = Rect{ L.panel.x + pad, bodyY + pad, halfW, toggleH };
+    L.optimizeAllButton = Rect{ L.paceButton.x + halfW + gap, bodyY + pad, halfW, toggleH };
     const float top = bodyY + pad + toggleH + gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
@@ -151,7 +155,7 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     if (collapsed) {
         // Only the bar shows, so nothing in the body can be pressed
         L.cells.clear();
-        L.paceButton = L.track = L.thumb = Rect{};
+        L.paceButton = L.optimizeAllButton = L.track = L.thumb = Rect{};
     }
     return L;
 }
@@ -417,6 +421,44 @@ struct QuantityLayout {
     Rect single{ 0.0f, 0.0f, 0.0f, 0.0f }, max{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
+// The Optimize All dialog: a title, a line saying what it will do, the Attack and Defense slider, three toggles, and
+// Confirm and Cancel
+struct OptimizeAllLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };          // wrapped, up to three lines
+    Rect sliderLabel{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Attack 60% / Defense 40%"
+    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };         // the slider: left is all defense, right all attack
+    std::array<Rect, 3> toggles{};                // accessories, two-handed weapons, value on ties: the box and its label
+    Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 14.0f * s, gap = 8.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 120.0f * s;
+    const float boxW = 440.0f * s;
+    const float boxH = pad + line + gap + 3.0f * line + gap + line + 16.0f * s + gap + 3.0f * (line + 4.0f * s) + gap + btnH + pad;
+    OptimizeAllLayout L;
+    L.box = Rect{ (W - boxW) * 0.5f, (H - boxH) * 0.5f, boxW, boxH };
+    const float x = L.box.x + pad, w = boxW - 2.0f * pad;
+    float y = L.box.y + pad;
+    L.title = Rect{ x, y, w, line };
+    y += line + gap;
+    L.text = Rect{ x, y, w, 3.0f * line };
+    y += 3.0f * line + gap;
+    L.sliderLabel = Rect{ x, y, w, line };
+    y += line;
+    L.track = Rect{ x + 6.0f * s, y + 4.0f * s, w - 12.0f * s, 8.0f * s };
+    y += 16.0f * s + gap;
+    for (Rect& t : L.toggles) {
+        t = Rect{ x, y, w, line };
+        y += line + 4.0f * s;
+    }
+    y += gap;
+    L.confirm = Rect{ L.box.x + boxW * 0.5f - gap * 0.5f - btnW, y, btnW, btnH };
+    L.cancel = Rect{ L.box.x + boxW * 0.5f + gap * 0.5f, y, btnW, btnH };
+    return L;
+}
+
 inline QuantityLayout layoutQuantity(int W, int H) {
     const float s = H / 720.0f;
     const float pad = 12.0f * s, gap = 6.0f * s, line = 22.0f * s, btnH = 28.0f * s;
@@ -546,6 +588,8 @@ struct SidebarLayout {
     Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };   // the unit's picture, inside the card on the left
     Rect gearPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the gear slots and their totals
     std::vector<Rect> gear;                    // GEAR_SLOTS rectangles in GearSlot order, four per row
+    Rect optimizeButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Gear tab: wears the best gear on hand (optimizeGear)
+    Rect removeAllButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // the Gear tab: takes all gear off (removeAllGear)
     Rect gridPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the inventory grid
     Rect sortButton{ 0.0f, 0.0f, 0.0f, 0.0f }; // sorts the grid by item type, top right of its heading
     std::vector<Rect> slots;                   // INVENTORY_SLOTS rectangles, row by row
@@ -629,6 +673,10 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         // Four gear slots to a row, two rows, then a line of attack and defense totals
         const float gearW = (innerW - (gearCols - 1) * gap) / gearCols;
         L.gearPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gearPanelH };
+        // Optimize and Remove All, side by side at the right of the heading
+        const float btnW = 84.0f * s, btnGap = 6.0f * s;
+        L.removeAllButton = Rect{ L.gearPanel.x + L.gearPanel.w - innerPad - btnW, top + (headH - sortH) * 0.5f, btnW, sortH };
+        L.optimizeButton = Rect{ L.removeAllButton.x - btnGap - btnW, L.removeAllButton.y, btnW, sortH };
         for (int i = 0; i < GEAR_SLOTS; ++i) {
             const int c = i % gearCols, r = i / gearCols;
             L.gear.push_back(Rect{ L.gearPanel.x + innerPad + c * (gearW + gap),

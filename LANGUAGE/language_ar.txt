@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	فطر سام
 ITEM_126_DESC	فطر بري يشبه أي فطر آخر. أكله يكلّف الصحة والشبع.
+UILABEL_OPTIMIZE	تحسين
+UILABEL_REMOVE_ALL	نزع الكل
+MISC_GEAR_NO_ROOM	لا توجد مساحة كافية في المخزون
+MISC_GEAR_ALREADY_BEST	يرتدي بالفعل أفضل عتاد
+MISC_GEAR_NONE_WORN	لا يوجد عتاد لنزعه
+UILABEL_OPTIMIZE_ALL	تحسين الكل
+MISC_OPTIMIZE_ALL_ASK	هل تريد تحسين عتاد جميع وحدات فرقتك وعددها {0}؟ تختار كل وحدة مما ترتديه وتحمله. الوحدة التي لا تملك مساحة لما تنزعه تبقى كما هي.
+UILABEL_OPTIMIZE_BALANCE	هجوم {0}% / دفاع {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	تغيير الإكسسوارات
+UILABEL_OPTIMIZE_TWO_HANDED	السماح بالأسلحة ذات اليدين
+UILABEL_OPTIMIZE_VALUE_TIES	عند التعادل يُختار العنصر الأعلى قيمة
+MISC_OPTIMIZE_ALL_SAME	كل الوحدات ترتدي أفضل عتاد لديها بالفعل
+MISC_OPTIMIZE_ALL_DONE	تم تحسين عتاد {0} وحدة
+MISC_OPTIMIZE_ALL_SOME_ROOM	تم تحسين عتاد {0} وحدة؛ {1} بلا مساحة كافية في المخزون

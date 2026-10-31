@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftpilz
 ITEM_126_DESC	Ein Wildpilz, der wie jeder andere aussieht. Ihn zu essen kostet Gesundheit und Sättigung.
+UILABEL_OPTIMIZE	Optimieren
+UILABEL_REMOVE_ALL	Alles ablegen
+MISC_GEAR_NO_ROOM	Nicht genug Platz im Inventar
+MISC_GEAR_ALREADY_BEST	Trägt bereits die beste Ausrüstung
+MISC_GEAR_NONE_WORN	Keine Ausrüstung zum Ablegen
+UILABEL_OPTIMIZE_ALL	Alle optimieren
+MISC_OPTIMIZE_ALL_ASK	Die Ausrüstung aller {0} Einheiten im Trupp optimieren? Jede Einheit wählt aus dem, was sie trägt und bei sich hat. Eine Einheit ohne Platz für Abgelegtes bleibt, wie sie ist.
+UILABEL_OPTIMIZE_BALANCE	Angriff {0} % / Verteidigung {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Accessoires wechseln
+UILABEL_OPTIMIZE_TWO_HANDED	Zweihandwaffen erlauben
+UILABEL_OPTIMIZE_VALUE_TIES	Bei Gleichstand gewinnt der wertvollere Gegenstand
+MISC_OPTIMIZE_ALL_SAME	Alle Einheiten tragen bereits ihre beste Ausrüstung
+MISC_OPTIMIZE_ALL_DONE	Ausrüstung von {0} Einheiten optimiert
+MISC_OPTIMIZE_ALL_SOME_ROOM	Ausrüstung von {0} Einheiten optimiert; {1} hatten keinen Platz im Inventar

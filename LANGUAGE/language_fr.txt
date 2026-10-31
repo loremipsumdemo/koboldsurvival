@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Champignon vénéneux
 ITEM_126_DESC	Un champignon sauvage qui ressemble à tous les autres. Le manger coûte de la santé et de la satiété.
+UILABEL_OPTIMIZE	Optimiser
+UILABEL_REMOVE_ALL	Tout retirer
+MISC_GEAR_NO_ROOM	Pas assez de place dans l'inventaire
+MISC_GEAR_ALREADY_BEST	Porte déjà le meilleur équipement
+MISC_GEAR_NONE_WORN	Aucun équipement à retirer
+UILABEL_OPTIMIZE_ALL	Tout optimiser
+MISC_OPTIMIZE_ALL_ASK	Optimiser l'équipement des {0} unités de l'escouade ? Chaque unité choisit parmi ce qu'elle porte et transporte. Une unité sans place pour ce qu'elle retire reste telle quelle.
+UILABEL_OPTIMIZE_BALANCE	Attaque {0} % / Défense {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Changer les accessoires
+UILABEL_OPTIMIZE_TWO_HANDED	Autoriser les armes à deux mains
+UILABEL_OPTIMIZE_VALUE_TIES	En cas d'égalité, l'objet le plus précieux
+MISC_OPTIMIZE_ALL_SAME	Toutes les unités portent déjà leur meilleur équipement
+MISC_OPTIMIZE_ALL_DONE	Équipement optimisé pour {0} unités
+MISC_OPTIMIZE_ALL_SOME_ROOM	Équipement optimisé pour {0} unités ; {1} manquaient de place dans l'inventaire

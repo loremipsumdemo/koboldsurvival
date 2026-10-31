@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig svamp
 ITEM_126_DESC	En vild svamp som ser ut som alla andra. Att äta den kostar hälsa och mättnad.
+UILABEL_OPTIMIZE	Optimera
+UILABEL_REMOVE_ALL	Ta av allt
+MISC_GEAR_NO_ROOM	Inte tillräckligt med plats i inventariet
+MISC_GEAR_ALREADY_BEST	Bär redan den bästa utrustningen
+MISC_GEAR_NONE_WORN	Ingen utrustning att ta av
+UILABEL_OPTIMIZE_ALL	Optimera alla
+MISC_OPTIMIZE_ALL_ASK	Optimera utrustningen för alla {0} enheter i truppen? Varje enhet väljer bland det den bär och har med sig. En enhet utan plats för det som tas av lämnas som den är.
+UILABEL_OPTIMIZE_BALANCE	Anfall {0} % / Försvar {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Byt tillbehör
+UILABEL_OPTIMIZE_TWO_HANDED	Tillåt tvåhandsvapen
+UILABEL_OPTIMIZE_VALUE_TIES	Vid lika vinner det mest värdefulla
+MISC_OPTIMIZE_ALL_SAME	Alla enheter bär redan sin bästa utrustning
+MISC_OPTIMIZE_ALL_DONE	Utrustning optimerad för {0} enheter
+MISC_OPTIMIZE_ALL_SOME_ROOM	Utrustning optimerad för {0} enheter; {1} saknade plats i inventariet

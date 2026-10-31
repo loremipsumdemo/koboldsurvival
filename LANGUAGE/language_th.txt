@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	เห็ดพิษ
 ITEM_126_DESC	เห็ดป่าที่ดูเหมือนเห็ดทั่วไป กินแล้วเสียพลังชีวิตและความอิ่ม
+UILABEL_OPTIMIZE	ปรับให้ดีที่สุด
+UILABEL_REMOVE_ALL	ถอดทั้งหมด
+MISC_GEAR_NO_ROOM	ช่องเก็บของไม่พอ
+MISC_GEAR_ALREADY_BEST	สวมอุปกรณ์ที่ดีที่สุดอยู่แล้ว
+MISC_GEAR_NONE_WORN	ไม่มีอุปกรณ์ให้ถอด
+UILABEL_OPTIMIZE_ALL	ปรับทุกคน
+MISC_OPTIMIZE_ALL_ASK	ปรับอุปกรณ์ของทั้ง {0} หน่วยในหน่วยรบให้ดีที่สุดไหม แต่ละหน่วยเลือกจากของที่สวมและพกอยู่ หน่วยที่ไม่มีที่ว่างสำหรับของที่ถอดจะคงเดิม
+UILABEL_OPTIMIZE_BALANCE	โจมตี {0}% / ป้องกัน {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	เปลี่ยนเครื่องประดับ
+UILABEL_OPTIMIZE_TWO_HANDED	อนุญาตอาวุธสองมือ
+UILABEL_OPTIMIZE_VALUE_TIES	ถ้าเท่ากันเลือกชิ้นที่มีค่ากว่า
+MISC_OPTIMIZE_ALL_SAME	ทุกหน่วยสวมอุปกรณ์ที่ดีที่สุดอยู่แล้ว
+MISC_OPTIMIZE_ALL_DONE	ปรับอุปกรณ์ของ {0} หน่วยแล้ว
+MISC_OPTIMIZE_ALL_SOME_ROOM	ปรับอุปกรณ์ของ {0} หน่วยแล้ว; {1} หน่วยช่องเก็บของไม่พอ

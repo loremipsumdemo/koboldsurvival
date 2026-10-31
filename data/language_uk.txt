@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Отруйний гриб
 ITEM_126_DESC	Лісовий гриб, схожий на будь-який інший. З'їсти його — втратити здоров'я і ситість.
+UILABEL_OPTIMIZE	Оптимізувати
+UILABEL_REMOVE_ALL	Зняти все
+MISC_GEAR_NO_ROOM	Недостатньо місця в інвентарі
+MISC_GEAR_ALREADY_BEST	Уже носить найкраще спорядження
+MISC_GEAR_NONE_WORN	Нічого знімати
+UILABEL_OPTIMIZE_ALL	Оптимізувати всіх
+MISC_OPTIMIZE_ALL_ASK	Оптимізувати спорядження всіх {0} бійців загону? Кожен обирає з того, що на ньому й при ньому. Боєць без місця для знятого лишається як є.
+UILABEL_OPTIMIZE_BALANCE	Атака {0}% / Захист {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Змінювати аксесуари
+UILABEL_OPTIMIZE_TWO_HANDED	Дозволити дворучну зброю
+UILABEL_OPTIMIZE_VALUE_TIES	За рівності — цінніший предмет
+MISC_OPTIMIZE_ALL_SAME	Усі бійці вже носять найкраще спорядження
+MISC_OPTIMIZE_ALL_DONE	Спорядження оптимізовано у {0} бійців
+MISC_OPTIMIZE_ALL_SOME_ROOM	Спорядження оптимізовано у {0} бійців; {1} забракло місця в інвентарі

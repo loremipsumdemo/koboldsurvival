@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Zehirli mantar
 ITEM_126_DESC	Diğerlerinden farksız görünen yabani bir mantar. Yemek sağlık ve tokluk kaybettirir.
+UILABEL_OPTIMIZE	En iyisini kuşan
+UILABEL_REMOVE_ALL	Hepsini çıkar
+MISC_GEAR_NO_ROOM	Envanterde yeterli yer yok
+MISC_GEAR_ALREADY_BEST	Zaten en iyi teçhizatı giyiyor
+MISC_GEAR_NONE_WORN	Çıkarılacak teçhizat yok
+UILABEL_OPTIMIZE_ALL	Hepsini en iyiye ayarla
+MISC_OPTIMIZE_ALL_ASK	Mangadaki {0} birimin hepsinin teçhizatı en iyiye ayarlansın mı? Her birim giydiği ve taşıdığı şeylerden seçer. Çıkardıklarına yeri olmayan birim olduğu gibi kalır.
+UILABEL_OPTIMIZE_BALANCE	Saldırı %{0} / Savunma %{1}
+UILABEL_OPTIMIZE_ACCESSORIES	Aksesuarları değiştir
+UILABEL_OPTIMIZE_TWO_HANDED	İki elli silahlara izin ver
+UILABEL_OPTIMIZE_VALUE_TIES	Eşitlikte daha değerli eşya kazanır
+MISC_OPTIMIZE_ALL_SAME	Tüm birimler zaten en iyi teçhizatlarını giyiyor
+MISC_OPTIMIZE_ALL_DONE	{0} birimin teçhizatı ayarlandı
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0} birimin teçhizatı ayarlandı; {1} birimin envanterinde yer yoktu

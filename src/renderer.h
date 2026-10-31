@@ -225,6 +225,10 @@ public:
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, bool showValue, float mx, float my);
     // The quantity prompt over the trade: a count with -100 -10 - + +10 +100, Single, Max, Confirm and Cancel
+    // The Optimize All dialog: what it will do for unitCount units, the Attack and Defense slider at attackShare
+    // (0 to 100), the three toggles (accessories, two-handed weapons, value on ties), and Confirm and Cancel
+    void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
+                         float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
     // The in-game clock and date in a box at the top right. right is the x the box lines up against:

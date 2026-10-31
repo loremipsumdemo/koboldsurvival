@@ -738,3 +738,17 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Δηλητηριώδες μανιτάρι
 ITEM_126_DESC	Ένα άγριο μανιτάρι που μοιάζει με όλα τα άλλα. Αν το φας, χάνεις υγεία και χορτασμό.
+UILABEL_OPTIMIZE	Βελτιστοποίηση
+UILABEL_REMOVE_ALL	Αφαίρεση όλων
+MISC_GEAR_NO_ROOM	Δεν υπάρχει αρκετός χώρος στο απόθεμα
+MISC_GEAR_ALREADY_BEST	Φορά ήδη τον καλύτερο εξοπλισμό
+MISC_GEAR_NONE_WORN	Δεν υπάρχει εξοπλισμός για αφαίρεση
+UILABEL_OPTIMIZE_ALL	Βελτιστοποίηση όλων
+MISC_OPTIMIZE_ALL_ASK	Να βελτιστοποιηθεί ο εξοπλισμός και των {0} μονάδων της ομάδας; Κάθε μονάδα διαλέγει από ό,τι φορά και κουβαλά. Μια μονάδα χωρίς χώρο για ό,τι βγάζει μένει ως έχει.
+UILABEL_OPTIMIZE_BALANCE	Επίθεση {0}% / Άμυνα {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Αλλαγή αξεσουάρ
+UILABEL_OPTIMIZE_TWO_HANDED	Να επιτρέπονται δίχειρα όπλα
+UILABEL_OPTIMIZE_VALUE_TIES	Στην ισοπαλία κερδίζει το πολυτιμότερο
+MISC_OPTIMIZE_ALL_SAME	Όλες οι μονάδες φορούν ήδη τον καλύτερο εξοπλισμό τους
+MISC_OPTIMIZE_ALL_DONE	Βελτιστοποιήθηκε ο εξοπλισμός {0} μονάδων
+MISC_OPTIMIZE_ALL_SOME_ROOM	Βελτιστοποιήθηκε ο εξοπλισμός {0} μονάδων· {1} δεν είχαν χώρο στο απόθεμα
