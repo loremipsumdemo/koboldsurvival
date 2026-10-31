@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	{0} を投入欄に入れると始められます
 MISC_CRAFTS	{0} が {1} を作った
 MISC_CRAFT_STOPS	{0} は作業する材料がなくなり、手を止めた
 MISC_REASON_CRAFTING	製作
-ITEM_89_NAME	生肉
+ITEM_89_NAME	生の熊肉
 ITEM_89_DESC	焼いていない肉。焚き火で焼こう。
-ITEM_90_NAME	焼いた肉
+ITEM_90_NAME	焼いた熊肉
 ITEM_90_DESC	火で焼いた肉。体力と空腹を回復する。
 UILABEL_TALK	話す
 UILABEL_ATTACK	攻撃
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	解錠に失敗
 MISC_UNLOCKS	{0} が {1} を解錠した
 MISC_REASON_LOCKPICKING	解錠
 MISC_LOCKED_NAME	{0}（施錠）
+PROP_CHAIR	椅子
+PROP_BENCH	ベンチ
+PROP_STOOL	スツール
+PROP_TABLE	テーブル
+PROP_END_TABLE	サイドテーブル
+PROP_ROUND_TABLE	丸テーブル
+PROP_METAL_TABLE	金属のテーブル
+PROP_STANDING_TORCH	スタンドたいまつ
+PROP_SUPPORT_BEAM	支柱
+PROP_TRAINING_DUMMY	訓練用人形
+PROP_RAW_FOOD_STORAGE	生の食料庫
+PROP_FOOD_STORAGE	食料庫
+PROP_WEAPON_RACK	武器ラック
+PROP_ARMOR_STAND	防具スタンド
+PROP_WATER_TANK	水タンク
+PROP_WATER_PUMP	ポンプ
+PROP_FORGE	鍛冶炉
+FILTER_RAW_FOOD	生の食料
+FILTER_FOOD	食料
+FILTER_WEAPON	武器
+FILTER_ARMOR	防具
+FILTER_WATER	水
+MISC_STORAGE_ONLY	{0} のみ入れられます
+UILABEL_STORAGE_TAKES	{0} のみ入れられます。
+UILABEL_TASK_SITTING	座っている
+UILABEL_TASK_LOCKED_IN	閉じ込められている
+MISC_LOCKED_IN	{0} は {1} に閉じ込められた
+MISC_REASON_TRAINING	訓練
+MISC_XP_GAINED	+{0} {1} 経験値
+UILABEL_INPUT	投入
+UILABEL_OUTPUT	産出
+MISC_FUEL_LEFT	燃焼中: 燃料残り {0} 分
+MISC_NO_FUEL	燃料なし
+MISC_OUTPUT_FULL	産出がいっぱい: 停止中
+UILABEL_PASSIVE_HINT	{0} を燃料にする: 1つにつきゲーム内 {1} 分燃え、作業者がいなくても産出に {2} を作る。産出がいっぱいの間は止まる。アイテムを右クリックで出し入れ。
+ITEM_91_NAME	水
+ITEM_91_DESC	ポンプから汲んだ新鮮な水。
+ITEM_92_NAME	鉄のインゴット
+ITEM_92_DESC	鍛冶炉で鉱石から精錬した鉄の延べ棒。
+ITEM_93_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_93_NAME	生の牛肉
+ITEM_94_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_94_NAME	焼いた牛肉
+ITEM_95_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_95_NAME	生の鶏肉
+ITEM_96_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_96_NAME	焼いた鶏肉
+ITEM_97_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_97_NAME	生の猪肉
+ITEM_98_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_98_NAME	焼いた猪肉
+ITEM_99_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_99_NAME	生の狼の肉
+ITEM_100_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_100_NAME	焼いた狼の肉
+ITEM_101_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_101_NAME	生の鹿肉
+ITEM_102_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_102_NAME	焼いた鹿肉
+ITEM_103_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_103_NAME	生の兎肉
+ITEM_104_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_104_NAME	焼いた兎肉
+ITEM_105_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_105_NAME	生の魚
+ITEM_106_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_106_NAME	焼いた魚
+ITEM_107_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_107_NAME	生の蟹肉
+ITEM_108_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_108_NAME	焼いた蟹肉
+ITEM_109_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_109_NAME	生のトカゲの肉
+ITEM_110_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_110_NAME	焼いたトカゲの肉
+ITEM_111_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_111_NAME	生の蛇肉
+ITEM_112_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_112_NAME	焼いた蛇肉
+ITEM_113_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_113_NAME	生の豚肉
+ITEM_114_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_114_NAME	焼いた豚肉
+ITEM_115_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_115_NAME	生の羊肉
+ITEM_116_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_116_NAME	焼いた羊肉
+ITEM_117_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_117_NAME	生の鴨肉
+ITEM_118_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_118_NAME	焼いた鴨肉
+ITEM_119_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_119_NAME	生の亀の肉
+ITEM_120_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_120_NAME	焼いた亀の肉
+ITEM_121_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_121_NAME	生のコウモリの肉
+ITEM_122_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_122_NAME	焼いたコウモリの肉
+ITEM_123_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_123_NAME	生のカエルの肉
+ITEM_124_DESC	火で焼いた肉。体力と空腹を回復する。
+ITEM_124_NAME	焼いたカエルの肉
+ITEM_125_DESC	小さな野生のキノコ。生で食べても体力と空腹はほとんど回復しない。
+ITEM_125_NAME	キノコ
+MISC_FOOD_TO_COOK	生肉

@@ -27,7 +27,18 @@ struct ItemDef {
     int attackValue = 0;
     int defenseValue = 0;
     std::string onUse;               // right-click script from the inventory, e.g. "health +50; hunger +10". Empty for none.
+    // Words that sort the item for the props that take only some items, lower case: raw_food (the Raw Food Storage),
+    // water (the Water Tank), ore. Empty for none.
+    std::vector<std::string> tags;
+    int cooksInto = 0;               // the item a campfire cooks this one into (cooks_into), or 0 if it can't be cooked
 };
+
+inline bool hasTag(const ItemDef& d, const std::string& tag) {
+    for (const std::string& t : d.tags) {
+        if (t == tag) return true;
+    }
+    return false;
+}
 
 // Reads the blocks of an itemdb.txt file: [id], then key = value lines. Returns false and sets err if a block is bad.
 bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string& err);

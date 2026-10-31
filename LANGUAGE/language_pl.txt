@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Włóż {0} do wejścia, aby zacząć
 MISC_CRAFTS	{0} wytwarza {1}
 MISC_CRAFT_STOPS	{0} nie ma już nad czym pracować i przerywa
 MISC_REASON_CRAFTING	rzemiosło
-ITEM_89_NAME	Surowe mięso
+ITEM_89_NAME	Surowe mięso niedźwiedzia
 ITEM_89_DESC	Niegotowane mięso. Upiecz je przy ognisku.
-ITEM_90_NAME	Pieczone mięso
+ITEM_90_NAME	Pieczone mięso niedźwiedzia
 ITEM_90_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
 UILABEL_TALK	Rozmawiaj
 UILABEL_ATTACK	Atakuj
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Nie udało się otworzyć zamka
 MISC_UNLOCKS	{0} otwiera: {1}
 MISC_REASON_LOCKPICKING	otwieranie zamków
 MISC_LOCKED_NAME	{0} (zamknięte)
+PROP_CHAIR	Krzesło
+PROP_BENCH	Ława
+PROP_STOOL	Stołek
+PROP_TABLE	Stół
+PROP_END_TABLE	Stolik nocny
+PROP_ROUND_TABLE	Okrągły stół
+PROP_METAL_TABLE	Metalowy stół
+PROP_STANDING_TORCH	Pochodnia stojąca
+PROP_SUPPORT_BEAM	Belka podporowa
+PROP_TRAINING_DUMMY	Manekin treningowy
+PROP_RAW_FOOD_STORAGE	Magazyn surowej żywności
+PROP_FOOD_STORAGE	Magazyn żywności
+PROP_WEAPON_RACK	Stojak na broń
+PROP_ARMOR_STAND	Stojak na zbroję
+PROP_WATER_TANK	Zbiornik wody
+PROP_WATER_PUMP	Pompa wodna
+PROP_FORGE	Kuźnia
+FILTER_RAW_FOOD	surowa żywność
+FILTER_FOOD	żywność
+FILTER_WEAPON	broń
+FILTER_ARMOR	zbroja
+FILTER_WATER	woda
+MISC_STORAGE_ONLY	Przyjmuje tylko: {0}
+UILABEL_STORAGE_TAKES	Przyjmuje tylko: {0}.
+UILABEL_TASK_SITTING	Siedzi
+UILABEL_TASK_LOCKED_IN	Zamknięty
+MISC_LOCKED_IN	{0} jest zamknięty: {1}
+MISC_REASON_TRAINING	trening
+MISC_XP_GAINED	+{0} dośw. {1}
+UILABEL_INPUT	Wejście
+UILABEL_OUTPUT	Wyjście
+MISC_FUEL_LEFT	Pali się: zostało {0} min paliwa
+MISC_NO_FUEL	Brak paliwa
+MISC_OUTPUT_FULL	Wyjście pełne: wstrzymano
+UILABEL_PASSIVE_HINT	Bierze jako paliwo: {0}. Każda sztuka pali się {1} minut gry i robi do wyjścia: {2}, z pracownikiem lub bez. Stoi, gdy wyjście jest pełne. Kliknij prawym przyciskiem, by włożyć lub wyjąć przedmiot.
+ITEM_91_NAME	Woda
+ITEM_91_DESC	Świeża woda z pompy.
+ITEM_92_NAME	Sztabka żelaza
+ITEM_92_DESC	Sztabka żelaza wytopiona z rudy w kuźni.
+ITEM_93_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_93_NAME	Surowe mięso krowy
+ITEM_94_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_94_NAME	Pieczone mięso krowy
+ITEM_95_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_95_NAME	Surowe mięso kurczaka
+ITEM_96_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_96_NAME	Pieczone mięso kurczaka
+ITEM_97_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_97_NAME	Surowe mięso dzika
+ITEM_98_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_98_NAME	Pieczone mięso dzika
+ITEM_99_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_99_NAME	Surowe mięso wilka
+ITEM_100_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_100_NAME	Pieczone mięso wilka
+ITEM_101_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_101_NAME	Surowe mięso jelenia
+ITEM_102_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_102_NAME	Pieczone mięso jelenia
+ITEM_103_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_103_NAME	Surowe mięso królika
+ITEM_104_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_104_NAME	Pieczone mięso królika
+ITEM_105_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_105_NAME	Surowa ryba
+ITEM_106_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_106_NAME	Pieczona ryba
+ITEM_107_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_107_NAME	Surowe mięso kraba
+ITEM_108_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_108_NAME	Pieczone mięso kraba
+ITEM_109_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_109_NAME	Surowe mięso jaszczurki
+ITEM_110_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_110_NAME	Pieczone mięso jaszczurki
+ITEM_111_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_111_NAME	Surowe mięso węża
+ITEM_112_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_112_NAME	Pieczone mięso węża
+ITEM_113_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_113_NAME	Surowe mięso świni
+ITEM_114_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_114_NAME	Pieczone mięso świni
+ITEM_115_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_115_NAME	Surowe mięso owcy
+ITEM_116_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_116_NAME	Pieczone mięso owcy
+ITEM_117_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_117_NAME	Surowe mięso kaczki
+ITEM_118_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_118_NAME	Pieczone mięso kaczki
+ITEM_119_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_119_NAME	Surowe mięso żółwia
+ITEM_120_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_120_NAME	Pieczone mięso żółwia
+ITEM_121_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_121_NAME	Surowe mięso nietoperza
+ITEM_122_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_122_NAME	Pieczone mięso nietoperza
+ITEM_123_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_123_NAME	Surowe mięso żaby
+ITEM_124_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
+ITEM_124_NAME	Pieczone mięso żaby
+ITEM_125_DESC	Mały dziki grzyb. Zjedzony na surowo niewiele pomaga na zdrowie i głód.
+ITEM_125_NAME	Grzyb
+MISC_FOOD_TO_COOK	surowe mięso

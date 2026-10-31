@@ -55,6 +55,23 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
     else if (key == "material") item.material = val;
     else if (key == "equip_slot") item.equipSlot = val;
     else if (key == "on_use") item.onUse = val;
+    else if (key == "tags") {
+        // Comma-separated words, such as raw_food or water. Spaces around them are dropped, and case is ignored.
+        item.tags.clear();
+        size_t at = 0;
+        while (at <= val.size()) {
+            size_t comma = val.find(',', at);
+            if (comma == std::string::npos) comma = val.size();
+            std::string tag = val.substr(at, comma - at);
+            while (!tag.empty() && std::isspace((unsigned char)tag.back())) tag.pop_back();
+            size_t lead = 0;
+            while (lead < tag.size() && std::isspace((unsigned char)tag[lead])) ++lead;
+            tag = tag.substr(lead);
+            for (char& c : tag) c = (char)std::tolower((unsigned char)c);
+            if (!tag.empty()) item.tags.push_back(tag);
+            at = comma + 1;
+        }
+    }
     else if (key == "max_stack_size") return needInt(item.maxStackSize);
     else if (key == "max_durability") return needInt(item.maxDurability);
     else if (key == "current_durability") return needInt(item.currentDurability);
@@ -65,6 +82,7 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
     else if (key == "attack_value") return needInt(item.attackValue);
     else if (key == "defense_value") return needInt(item.defenseValue);
     else if (key == "tier") return needInt(item.tier);
+    else if (key == "cooks_into") return needInt(item.cooksInto);
     else {
         err = "unknown key '" + key + "'" + where;
         return false;

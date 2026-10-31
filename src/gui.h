@@ -323,13 +323,20 @@ struct StorageLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the prop's name
-    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Inventory"
+    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Inventory", or "Input" over a forge's input
     Rect grid{ 0.0f, 0.0f, 0.0f, 0.0f };
     std::vector<Rect> slots;                  // STORAGE_SLOTS cells, row by row
+    // A passive crafting prop's output (a forge's): its heading, grid and STORAGE_SLOTS cells. Empty for other props.
+    bool output = false;
+    Rect outHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect outGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> outSlots;
+    Rect status{ 0.0f, 0.0f, 0.0f, 0.0f };    // a forge's fuel line; zero height for other props
     Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
     Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
-inline StorageLayout layoutStorage(int W, int H) {
+// The storage panel. With output set (a passive crafting prop) it has a second grid, for the output, and a status line.
+inline StorageLayout layoutStorage(int W, int H, bool output = false) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
@@ -338,10 +345,11 @@ inline StorageLayout layoutStorage(int W, int H) {
     const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
     const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
     const float panelW = std::max(gridW, 260.0f * s) + 2.0f * pad;
-    const float hintH = 5.0f * line;   // room for the campfire's three-sentence hint
-    const float panelH = bar + pad + 2.0f * line + gridH + gap + hintH + gap + btnH + pad;
+    const float hintH = 6.0f * line;   // room for the longest hint: a filtered storage's or a forge's
+    const float outH = output ? line + gridH + line : 0.0f;   // output heading, grid and status line
+    const float panelH = bar + pad + 2.0f * line + gridH + outH + gap + hintH + gap + btnH + pad;
     const float x0 = (W - panelW) * 0.5f;
-    const float y0 = std::max(8.0f * s, H * 0.14f);
+    const float y0 = std::max(8.0f * s, std::min(H * 0.14f, H - panelH - 8.0f * s));
 
     StorageLayout L;
     L.panel = Rect{ x0, y0, panelW, panelH };
@@ -349,11 +357,23 @@ inline StorageLayout layoutStorage(int W, int H) {
     L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
     L.heading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
     L.grid = Rect{ x0 + (panelW - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
-    for (int i = 0; i < STORAGE_SLOTS; ++i) {
-        const int col = i % cols, row = i / cols;
-        L.slots.push_back(Rect{ L.grid.x + inset + col * (cell + cellGap), L.grid.y + inset + row * (cell + cellGap), cell, cell });
+    auto cells = [&](const Rect& grid, std::vector<Rect>& out) {
+        for (int i = 0; i < STORAGE_SLOTS; ++i) {
+            const int col = i % cols, row = i / cols;
+            out.push_back(Rect{ grid.x + inset + col * (cell + cellGap), grid.y + inset + row * (cell + cellGap), cell, cell });
+        }
+    };
+    cells(L.grid, L.slots);
+    float below = L.grid.y + gridH;
+    L.output = output;
+    if (output) {
+        L.outHeading = Rect{ x0 + pad, below, panelW - 2.0f * pad, line };
+        L.outGrid = Rect{ L.grid.x, below + line, gridW, gridH };
+        cells(L.outGrid, L.outSlots);
+        L.status = Rect{ x0 + pad, L.outGrid.y + gridH, panelW - 2.0f * pad, line };
+        below = L.status.y + line;
     }
-    L.hint = Rect{ x0 + pad, L.grid.y + gridH + gap, panelW - 2.0f * pad, hintH };
+    L.hint = Rect{ x0 + pad, below + gap, panelW - 2.0f * pad, hintH };
     L.closeBtn = Rect{ x0 + (panelW - btnW) * 0.5f, y0 + panelH - pad - btnH, btnW, btnH };
     return L;
 }

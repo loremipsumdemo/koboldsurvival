@@ -252,22 +252,29 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     placeNpcs(NEUTRAL_COUNT, true);
 
     // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
-    // own tile. They are scenery and do not block movement.
+    // own tile. They do not block movement. They go down a round of every kind at a time (wagon, campfire, ... forge,
+    // then wagon again), so if the ground near the spawn ever runs out, every kind has been placed before any has its
+    // last copies.
     std::vector<GridPos> propTiles;
     const int propTotal = PROP_KIND_COUNT * PROP_COPIES;
-    for (int attempt = 0; attempt < 20000 && (int)propTiles.size() < propTotal; ++attempt) {
+    for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
         GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
                    rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
         if (!t.walkable(g.x, g.y)) continue;
         if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
         const int serial = (int)propTiles.size();
-        const int kind = serial / PROP_COPIES;
+        const int kind = serial % PROP_KIND_COUNT;
         propTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity prop = w.create();
         w.add(prop, Transform{ x, t.heightAt(x, z), z });
         w.add(prop, Prop{ kind, serial });
-        if (hasStorage(propInfo(kind).use)) w.add(prop, Storage{});   // a barrel or a campfire starts empty
+        if (hasStorage(propInfo(kind))) w.add(prop, Storage{});   // a barrel or a campfire starts empty
+        if (propInfo(kind).use == PropUse::PassiveCrafting) {     // a forge starts cold, with an empty output
+            w.add(prop, Output{});
+            w.add(prop, Fuel{});
+            w.add(prop, PropWork{});
+        }
         if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
     }
 
@@ -302,7 +309,12 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     }
 }
 
-void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 clickPoint) {
+void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2 clickPoint) {
+    // A unit locked in a cage stays where it is
+    std::vector<Entity> units;
+    for (Entity u : given) {
+        if (!lockedIn(w, u)) units.push_back(u);
+    }
     if (units.empty()) return;
 
     // A single unit walks its own route, with no formation. A move order replaces any pickup.
@@ -377,6 +389,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
+        if (lockedIn(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -389,7 +402,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 
 void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
     for (Entity u : units) {
-        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || lockedIn(w, u)) continue;
         if (w.has<SquadMember>(u)) w.remove<SquadMember>(u);
         if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -406,6 +419,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;   // only your own units fight on order
+        if (lockedIn(w, u)) continue;
         // A fight replaces any move, pickup or formation the unit was on
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
@@ -422,7 +436,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
 void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade) {
     if (!w.has<Unit>(npc) || !w.get<Transform>(npc)) return;
     for (Entity u : units) {
-        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || lockedIn(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -924,11 +938,14 @@ void stopWorkersAt(World& w, Entity prop) {
 CraftState craftStateOf(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     const Storage* st = w.get<Storage>(prop);
-    if (!p || !st || propInfo(p->kind).use != PropUse::Crafting) return CraftState::NoInput;
+    if (!p || propInfo(p->kind).use != PropUse::Crafting) return CraftState::NoInput;
     const PropInfo& info = propInfo(p->kind);
-    int have = 0;
-    for (const ItemStack& stack : st->slots) have += stack.item == info.input ? stack.count : 0;
-    return have > 0 ? CraftState::Ready : CraftState::NoInput;
+    if (info.input == 0) return CraftState::Ready;   // the water pump and the training dummy need nothing
+    if (!st) return CraftState::NoInput;
+    for (const ItemStack& stack : st->slots) {
+        if (stack.count > 0 && recipeOutput(p->kind, stack.item) > 0) return CraftState::Ready;
+    }
+    return CraftState::NoInput;
 }
 
 bool propInTheWay(World& w, Entity unit, Entity prop) {
@@ -967,6 +984,11 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     if (!pt || !w.has<Prop>(prop)) return;
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (lockedIn(w, u)) {
+            // Locked in: the only order it takes is to unlock the prop it is in, which it does from where it is
+            if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
+            continue;
+        }
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
@@ -981,7 +1003,7 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
 void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target) {
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
-        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || lockedIn(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -995,7 +1017,7 @@ void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target)
 void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
     if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
     for (Entity u : units) {
-        if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || lockedIn(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -1091,7 +1113,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             }
             if (action == PropAction::Inventory) {
                 // Inventory: the game opens the storage or crafting prop's panel
-                if (hasStorage(info.use)) out.push_back(a);
+                if (hasStorage(info)) out.push_back(a);
                 continue;
             }
             switch (info.use) {
@@ -1114,6 +1136,11 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                     w.remove<IdleSpot>(u);
                     w.add(u, Occupying{ prop });
                     a.started = true;
+                    // A lockable one (the Prisoner Cage) locks behind the unit
+                    if (Lock* lk = w.get<Lock>(prop)) {
+                        lk->locked = true;
+                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other);
+                    }
                 }
                 break;
             }
@@ -1131,10 +1158,11 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 a.started = a.craft == WorkStart::Started;
                 a.taken = a.craft == WorkStart::Full;
                 break;
+            case PropUse::PassiveCrafting:   // works by itself: only its Inventory does anything
             case PropUse::None:
                 break;
             }
-            if (info.use != PropUse::None && info.use != PropUse::Storage) out.push_back(a);
+            if (info.use != PropUse::None && info.use != PropUse::Storage && info.use != PropUse::PassiveCrafting) out.push_back(a);
             continue;
         }
         // Stopped short with no route left (the prop can't be reached), so give up
@@ -1248,6 +1276,24 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         const std::string itemName = itemNameFor(info.item);
         while (pw.progress >= 1.0 && !workers.empty()) {
             if (crafting) {
+                // What this item is made from and into: the first input in the prop's slots that it has a recipe for
+                // (a campfire cooks each kind of raw meat into its own cooked meat), or nothing for a prop that needs
+                // no input
+                int inItem = 0, outItem = info.item;
+                if (info.input != 0) {
+                    outItem = 0;
+                    if (const Storage* st = w.get<Storage>(prop)) {
+                        for (const ItemStack& stack : st->slots) {
+                            if (stack.count <= 0) continue;
+                            if (const int made = recipeOutput(w.get<Prop>(prop)->kind, stack.item); made > 0) {
+                                inItem = stack.item;
+                                outItem = made;
+                                break;
+                            }
+                        }
+                    }
+                }
+                const std::string outName = itemNameFor(outItem);
                 // A finished item. The input is checked at this moment: if it is gone, nothing is made and the work
                 // stops. The item goes to the next worker in turn that has room for it. If none has, nothing is used
                 // up or made: the bar stays full, the workers stop, and the next unit with room to work here finishes it.
@@ -1255,33 +1301,42 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     stopAll();
                     break;
                 }
-                Entity got = NULL_ENTITY;
+                // A prop that makes nothing (the training dummy) gives the next worker in turn its XP
+                Entity got = outItem <= 0 ? workers[pw.turn % workers.size()] : NULL_ENTITY;
                 for (size_t k = 0; k < workers.size() && got == NULL_ENTITY; ++k) {
                     const Entity cand = workers[(pw.turn + k) % workers.size()];
                     const Inventory* inv = w.get<Inventory>(cand);
-                    if (inv && slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, info.item, 1)) got = cand;
+                    if (inv && slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, outItem, 1)) got = cand;
                 }
                 if (got == NULL_ENTITY) {
                     for (Entity u : workers) {
-                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), itemName }), LogKind::Other);
+                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other);
                         w.remove<Working>(u);
                     }
                     workers.clear();
                     pw.progress = 1.0;   // held full until someone with room works it
                     break;
                 }
-                Storage* st = w.get<Storage>(prop);
-                if (!takeOne(st->slots.data(), STORAGE_SLOTS, info.input)) {
-                    stopAll();
-                    break;
+                if (info.input != 0) {   // the water pump and the training dummy use nothing up
+                    Storage* st = w.get<Storage>(prop);
+                    if (!st || inItem <= 0 || !takeOne(st->slots.data(), STORAGE_SLOTS, inItem)) {
+                        stopAll();
+                        break;
+                    }
                 }
                 pw.progress -= 1.0;
                 ++pw.made;   // the ring hops for it
                 ++pw.turn;
-                addToInventory(*w.get<Inventory>(got), info.item, 1);
-                gains.push_back(WorkGain{ got, info.item });
-                queueLog(langf("MISC_CRAFTS", { nameOf(w, got), itemName }), LogKind::Pickup);
-                grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
+                if (outItem > 0) {
+                    addToInventory(*w.get<Inventory>(got), outItem, 1);
+                    gains.push_back(WorkGain{ got, outItem });
+                    queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup);
+                    grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
+                } else {
+                    // Training: no item, only the skill's XP
+                    gains.push_back(WorkGain{ got, info.stat, WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
+                    grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_TRAINING"));
+                }
                 if (craftStateOf(w, prop) != CraftState::Ready) {
                     stopAll();   // that was the last of the input
                     break;
@@ -1325,6 +1380,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
     if (const Lock* lock = w.get<Lock>(prop); lock && lock->locked) return WorkStart::Locked;
+    if (lockedIn(w, unit)) return WorkStart::Locked;   // shut in a cage, it can't get to work
     if (workersAt(w, prop) >= propInfo(p->kind).workers) return WorkStart::Full;
     if (propInfo(p->kind).use == PropUse::Crafting) {
         const CraftState cs = craftStateOf(w, prop);
@@ -1349,12 +1405,22 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
     if (levelOf(statsOf(w, unit), STAT_LOCKPICKING) < lock->level) return WorkStart::SkillTooLow;
     if (workersAt(w, prop) >= 1) return WorkStart::Full;   // one unit at a lock at a time
+    const bool inside = occupiedProp(w, unit) == prop;     // picking the cage it is shut in, from the inside
+    if (!inside && lockedIn(w, unit)) return WorkStart::Locked;
     w.remove<SquadMember>(unit);
     w.remove<SoloMove>(unit);
     w.remove<PickupOrder>(unit);
     w.remove<AttackOrder>(unit);
     w.remove<TalkOrder>(unit);
-    endPropTasks(w, unit);
+    if (inside) {
+        // It stays in the cage while it works at the lock, and after the lock opens, until it is ordered out
+        w.remove<PropOrder>(unit);
+        w.remove<Working>(unit);
+        w.remove<FollowOrder>(unit);
+        w.remove<DefendOrder>(unit);
+    } else {
+        endPropTasks(w, unit);
+    }
     w.add(unit, Working{ prop, true });
     return WorkStart::Started;
 }
@@ -1371,7 +1437,11 @@ std::string taskNameOf(World& w, Entity u) {
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
     else if (const PropOrder* po = w.get<PropOrder>(u); po && useOf(w, po->prop) == PropUse::Resource) prop = po->prop;
     if (const Prop* p = prop != NULL_ENTITY ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
-    if (w.has<Occupying>(u)) return lang("UILABEL_TASK_RESTING");
+    if (const Occupying* oc = w.get<Occupying>(u)) {
+        if (lockedIn(w, u)) return lang("UILABEL_TASK_LOCKED_IN");
+        const Prop* p = w.get<Prop>(oc->prop);
+        return lang(p && isSeat(p->kind) ? "UILABEL_TASK_SITTING" : "UILABEL_TASK_RESTING");
+    }
     if (w.has<DefendOrder>(u)) return lang("UILABEL_TASK_DEFENDING");
     if (w.has<FollowOrder>(u)) return lang("UILABEL_TASK_FOLLOWING");
     const SoloMove* so = w.get<SoloMove>(u);
@@ -1393,10 +1463,112 @@ std::vector<int> emotesOf(World& w, Entity u) {
         else if (propEmoteOf(wk->prop) != EMOTE_NONE) out.push_back(propEmoteOf(wk->prop));
     }
     if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EMOTE_NONE) out.push_back(propEmoteOf(oc->prop));
+    if (lockedIn(w, u)) out.push_back(EMOTE_LOCKED_IN);
     if (w.has<Inventory>(u) && w.has<Stats>(u)) {
         const float limit = carryLimit(statsOf(w, u));
         if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EMOTE_ENCUMBERED);
     }
     if (const Needs* n = w.get<Needs>(u); n && n->hunger < 1) out.push_back(EMOTE_HUNGRY);
     return out;
+}
+
+bool propAcceptsItem(int kind, int item) {
+    const PropInfo& info = propInfo(kind);
+    if (item <= 0) return false;
+    if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
+    const ItemDef* def = findItem(item);
+    switch (info.accepts) {
+    case ItemFilter::Any: return true;
+    case ItemFilter::RawFood: return def && hasTag(*def, "raw_food") && def->typeId != "consumable";
+    case ItemFilter::Food: return def && def->typeId == "consumable";
+    case ItemFilter::Weapon: return def && def->typeId == "weapon";
+    case ItemFilter::Armor: return def && def->typeId == "armor";
+    case ItemFilter::Water: return def && hasTag(*def, "water");
+    }
+    return false;
+}
+
+int recipeOutput(int kind, int input) {
+    const PropInfo& info = propInfo(kind);
+    if (input <= 0 || (info.use != PropUse::Crafting && info.use != PropUse::PassiveCrafting)) return 0;
+    if (info.input == INPUT_COOKABLE) {
+        const ItemDef* def = findItem(input);
+        return def && def->cooksInto > 0 && findItem(def->cooksInto) ? def->cooksInto : 0;
+    }
+    return input == info.input ? info.item : 0;
+}
+
+Entity occupiedProp(World& w, Entity u) {
+    const Occupying* oc = w.get<Occupying>(u);
+    return oc ? oc->prop : NULL_ENTITY;
+}
+
+bool lockedIn(World& w, Entity u) {
+    const Occupying* oc = w.get<Occupying>(u);
+    if (!oc) return false;
+    const Lock* lock = w.get<Lock>(oc->prop);
+    return lock && lock->locked;
+}
+
+PassiveState passiveStateOf(World& w, Entity prop) {
+    const Prop* p = w.get<Prop>(prop);
+    const Output* out = w.get<Output>(prop);
+    const Fuel* fuel = w.get<Fuel>(prop);
+    if (!p || !out || !fuel) return PassiveState::NoFuel;
+    const PropInfo& info = propInfo(p->kind);
+    if (!slotsCanTake(out->slots.data(), STORAGE_SLOTS, info.item, 1)) return PassiveState::OutputFull;
+    if (fuel->hours > 1e-9) return PassiveState::Burning;
+    const Storage* st = w.get<Storage>(prop);
+    if (st) {
+        for (const ItemStack& s : st->slots) {
+            if (s.item == info.input && s.count > 0) return PassiveState::Burning;   // it lights the next one now
+        }
+    }
+    return PassiveState::NoFuel;
+}
+
+void passiveCraftSystem(World& w, double gameSeconds) {
+    for (Entity e : w.view<Prop, Output, Fuel>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (info.use != PropUse::PassiveCrafting) continue;
+        Output& out = *w.get<Output>(e);
+        Fuel& fuel = *w.get<Fuel>(e);
+        Storage* st = w.get<Storage>(e);
+        PropWork& pw = w.has<PropWork>(e) ? *w.get<PropWork>(e) : w.add(e, PropWork{});
+        const double craftHours = PASSIVE_CRAFT_HOURS > 0.0 ? PASSIVE_CRAFT_HOURS : 1.0;
+        const double perInput = info.fuelHours > 0.0 ? info.fuelHours : 1.0;
+        double hours = std::max(0.0, gameSeconds / 3600.0);
+        bool burning = false;
+        // A long jump of the clock can finish several items, so this goes round until the time is used up or it stops
+        for (int guard = 0; guard < 100000; ++guard) {
+            // A finished item goes into the output, if it has room. If not, it waits there, finished.
+            if (pw.progress >= 1.0 - 1e-9) {
+                if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
+                addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
+                pw.progress = 0.0;
+                ++pw.made;   // the ring hops for it
+            }
+            // No room for the next item: pause, burning nothing
+            if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
+            if (hours <= 1e-12) {
+                burning = fuel.hours > 1e-9 || (st && std::any_of(st->slots.begin(), st->slots.end(), [&](const ItemStack& s) {
+                    return s.item == info.input && s.count > 0;
+                }));
+                break;
+            }
+            // Out of fuel: the next input item is used up, and burns for its hours
+            if (fuel.hours <= 1e-9) {
+                fuel.hours = 0.0;
+                if (!st || !takeOne(st->slots.data(), STORAGE_SLOTS, info.input)) break;
+                fuel.hours = perInput;
+            }
+            const double step = std::min({ hours, fuel.hours, (1.0 - pw.progress) * craftHours });
+            if (step <= 0.0) break;
+            burning = true;
+            hours -= step;
+            fuel.hours -= step;
+            pw.progress = std::min(1.0, pw.progress + step / craftHours);
+        }
+        pw.workers = burning ? 1 : 0;   // the ring shows while it burns
+    }
 }

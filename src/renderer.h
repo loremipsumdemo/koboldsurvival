@@ -101,8 +101,12 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) {
     return dx * dx + dy * dy + dz * dz <= LOD_MID_TILES * LOD_MID_TILES;
 }
 
+// The stand-in for a prop whose model is not in data.pak: a pink square, missingPropSide(kind) tiles on a side
+constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
+float missingPropSide(int kind);
+
 // A dot on the minimap: a unit's place, and whose it is
-enum class MapDotKind { Player, Hostile, Neutral };
+enum class MapDotKind { Player, Hostile, Neutral, Resource };   // Resource: ore, a tree or a mushroom
 struct MapDot {
     Vec2 at{ 0.0f, 0.0f };
     MapDotKind kind = MapDotKind::Player;
@@ -204,8 +208,11 @@ public:
     // dragged, shown as not there, or -1.
     // The storage panel for a storage or crafting prop: its name, its items (the one being dragged, dragFrom, left
     // out), a hint and Close. A hovered item shows its tooltip.
+    // The storage panel. output is a passive crafting prop's output, or null; its cells are panel slots STORAGE_SLOTS
+    // and up, as is dragFrom when it is one of them. status is the forge's fuel line, empty for other props.
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
-                     const Storage* storage, int dragFrom, float mx, float my);
+                     const Storage* storage, const Output* output, const std::string& status, int dragFrom,
+                     float mx, float my);
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown);

@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Put {0} in the input to start
 MISC_CRAFTS	{0} makes {1}
 MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
 MISC_REASON_CRAFTING	crafting
-ITEM_89_NAME	Raw Meat
+ITEM_89_NAME	Raw Bear Meat
 ITEM_89_DESC	Uncooked meat. Cook it at a campfire.
-ITEM_90_NAME	Cooked Meat
+ITEM_90_NAME	Cooked Bear Meat
 ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
 UILABEL_TALK	Talk
 UILABEL_ATTACK	Attack
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Lockpick failed
 MISC_UNLOCKS	{0} unlocks the {1}
 MISC_REASON_LOCKPICKING	picking locks
 MISC_LOCKED_NAME	{0} (Locked)
+PROP_CHAIR	Chair
+PROP_BENCH	Bench
+PROP_STOOL	Stool
+PROP_TABLE	Table
+PROP_END_TABLE	End Table
+PROP_ROUND_TABLE	Round Table
+PROP_METAL_TABLE	Metal Table
+PROP_STANDING_TORCH	Standing Torch
+PROP_SUPPORT_BEAM	Support Beam
+PROP_TRAINING_DUMMY	Training Dummy
+PROP_RAW_FOOD_STORAGE	Raw Food Storage
+PROP_FOOD_STORAGE	Food Storage
+PROP_WEAPON_RACK	Weapon Rack
+PROP_ARMOR_STAND	Armor Stand
+PROP_WATER_TANK	Water Tank
+PROP_WATER_PUMP	Water Pump
+PROP_FORGE	Forge
+FILTER_RAW_FOOD	raw food
+FILTER_FOOD	food
+FILTER_WEAPON	weapons
+FILTER_ARMOR	armor
+FILTER_WATER	water
+MISC_STORAGE_ONLY	Only takes {0}
+UILABEL_STORAGE_TAKES	Takes only {0}.
+UILABEL_TASK_SITTING	Sitting
+UILABEL_TASK_LOCKED_IN	Locked in
+MISC_LOCKED_IN	{0} is locked in the {1}
+MISC_REASON_TRAINING	training
+MISC_XP_GAINED	+{0} {1} XP
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_FUEL_LEFT	Burning: {0} min of fuel left
+MISC_NO_FUEL	No fuel
+MISC_OUTPUT_FULL	Output full: paused
+UILABEL_PASSIVE_HINT	Takes {0} as fuel: each burns for {1} in-game minutes and makes {2} in the output, with or without a worker. It pauses while the output is full. Right-click items to move them in or out.
+ITEM_91_NAME	Water
+ITEM_91_DESC	Fresh water from a pump.
+ITEM_92_NAME	Iron Ingot
+ITEM_92_DESC	A bar of iron smelted from ore at a forge.
+ITEM_93_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_93_NAME	Raw Cow Meat
+ITEM_94_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_94_NAME	Cooked Cow Meat
+ITEM_95_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_95_NAME	Raw Chicken Meat
+ITEM_96_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_96_NAME	Cooked Chicken Meat
+ITEM_97_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_97_NAME	Raw Boar Meat
+ITEM_98_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_98_NAME	Cooked Boar Meat
+ITEM_99_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_99_NAME	Raw Wolf Meat
+ITEM_100_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_100_NAME	Cooked Wolf Meat
+ITEM_101_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_101_NAME	Raw Deer Meat
+ITEM_102_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_102_NAME	Cooked Deer Meat
+ITEM_103_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_103_NAME	Raw Rabbit Meat
+ITEM_104_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_104_NAME	Cooked Rabbit Meat
+ITEM_105_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_105_NAME	Raw Fish
+ITEM_106_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_106_NAME	Cooked Fish
+ITEM_107_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_107_NAME	Raw Crab Meat
+ITEM_108_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_108_NAME	Cooked Crab Meat
+ITEM_109_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_109_NAME	Raw Lizard Meat
+ITEM_110_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_110_NAME	Cooked Lizard Meat
+ITEM_111_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_111_NAME	Raw Snake Meat
+ITEM_112_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_112_NAME	Cooked Snake Meat
+ITEM_113_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_113_NAME	Raw Pig Meat
+ITEM_114_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_114_NAME	Cooked Pig Meat
+ITEM_115_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_115_NAME	Raw Sheep Meat
+ITEM_116_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_116_NAME	Cooked Sheep Meat
+ITEM_117_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_117_NAME	Raw Duck Meat
+ITEM_118_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_118_NAME	Cooked Duck Meat
+ITEM_119_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_119_NAME	Raw Turtle Meat
+ITEM_120_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_120_NAME	Cooked Turtle Meat
+ITEM_121_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_121_NAME	Raw Bat Meat
+ITEM_122_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_122_NAME	Cooked Bat Meat
+ITEM_123_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_123_NAME	Raw Frog Meat
+ITEM_124_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_124_NAME	Cooked Frog Meat
+ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
+ITEM_125_NAME	Mushroom
+MISC_FOOD_TO_COOK	raw meat

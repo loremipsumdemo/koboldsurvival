@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Cho {0} vào ô nguyên liệu để bắt đầu
 MISC_CRAFTS	{0} làm ra {1}
 MISC_CRAFT_STOPS	{0} không còn gì để làm nên dừng lại
 MISC_REASON_CRAFTING	chế tạo
-ITEM_89_NAME	Thịt sống
+ITEM_89_NAME	Thịt gấu sống
 ITEM_89_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
-ITEM_90_NAME	Thịt nướng
+ITEM_90_NAME	Thịt gấu nướng
 ITEM_90_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
 UILABEL_TALK	Nói chuyện
 UILABEL_ATTACK	Tấn công
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Cạy khóa thất bại
 MISC_UNLOCKS	{0} mở khóa {1}
 MISC_REASON_LOCKPICKING	cạy khóa
 MISC_LOCKED_NAME	{0} (đã khóa)
+PROP_CHAIR	Ghế
+PROP_BENCH	Ghế dài
+PROP_STOOL	Ghế đẩu
+PROP_TABLE	Bàn
+PROP_END_TABLE	Bàn đầu giường
+PROP_ROUND_TABLE	Bàn tròn
+PROP_METAL_TABLE	Bàn kim loại
+PROP_STANDING_TORCH	Đuốc đứng
+PROP_SUPPORT_BEAM	Xà chống
+PROP_TRAINING_DUMMY	Hình nộm luyện tập
+PROP_RAW_FOOD_STORAGE	Kho đồ ăn sống
+PROP_FOOD_STORAGE	Kho thức ăn
+PROP_WEAPON_RACK	Giá vũ khí
+PROP_ARMOR_STAND	Giá giáp
+PROP_WATER_TANK	Bể nước
+PROP_WATER_PUMP	Máy bơm nước
+PROP_FORGE	Lò rèn
+FILTER_RAW_FOOD	đồ ăn sống
+FILTER_FOOD	thức ăn
+FILTER_WEAPON	vũ khí
+FILTER_ARMOR	giáp
+FILTER_WATER	nước
+MISC_STORAGE_ONLY	Chỉ nhận: {0}
+UILABEL_STORAGE_TAKES	Chỉ nhận: {0}.
+UILABEL_TASK_SITTING	Đang ngồi
+UILABEL_TASK_LOCKED_IN	Bị nhốt
+MISC_LOCKED_IN	{0} bị nhốt trong {1}
+MISC_REASON_TRAINING	luyện tập
+MISC_XP_GAINED	+{0} kinh nghiệm {1}
+UILABEL_INPUT	Đầu vào
+UILABEL_OUTPUT	Đầu ra
+MISC_FUEL_LEFT	Đang cháy: còn {0} phút nhiên liệu
+MISC_NO_FUEL	Hết nhiên liệu
+MISC_OUTPUT_FULL	Đầu ra đầy: tạm dừng
+UILABEL_PASSIVE_HINT	Dùng {0} làm nhiên liệu: mỗi cái cháy {1} phút trong game và làm ra {2} ở đầu ra, có hay không có người làm. Tạm dừng khi đầu ra đầy. Nhấp chuột phải vào vật phẩm để bỏ vào hoặc lấy ra.
+ITEM_91_NAME	Nước
+ITEM_91_DESC	Nước sạch từ máy bơm.
+ITEM_92_NAME	Thỏi sắt
+ITEM_92_DESC	Một thỏi sắt nấu chảy từ quặng ở lò rèn.
+ITEM_93_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_93_NAME	Thịt bò sống
+ITEM_94_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_94_NAME	Thịt bò nướng
+ITEM_95_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_95_NAME	Thịt gà sống
+ITEM_96_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_96_NAME	Thịt gà nướng
+ITEM_97_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_97_NAME	Thịt lợn rừng sống
+ITEM_98_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_98_NAME	Thịt lợn rừng nướng
+ITEM_99_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_99_NAME	Thịt sói sống
+ITEM_100_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_100_NAME	Thịt sói nướng
+ITEM_101_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_101_NAME	Thịt hươu sống
+ITEM_102_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_102_NAME	Thịt hươu nướng
+ITEM_103_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_103_NAME	Thịt thỏ sống
+ITEM_104_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_104_NAME	Thịt thỏ nướng
+ITEM_105_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_105_NAME	Cá sống
+ITEM_106_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_106_NAME	Cá nướng
+ITEM_107_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_107_NAME	Thịt cua sống
+ITEM_108_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_108_NAME	Thịt cua nướng
+ITEM_109_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_109_NAME	Thịt thằn lằn sống
+ITEM_110_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_110_NAME	Thịt thằn lằn nướng
+ITEM_111_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_111_NAME	Thịt rắn sống
+ITEM_112_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_112_NAME	Thịt rắn nướng
+ITEM_113_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_113_NAME	Thịt lợn sống
+ITEM_114_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_114_NAME	Thịt lợn nướng
+ITEM_115_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_115_NAME	Thịt cừu sống
+ITEM_116_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_116_NAME	Thịt cừu nướng
+ITEM_117_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_117_NAME	Thịt vịt sống
+ITEM_118_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_118_NAME	Thịt vịt nướng
+ITEM_119_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_119_NAME	Thịt rùa sống
+ITEM_120_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_120_NAME	Thịt rùa nướng
+ITEM_121_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_121_NAME	Thịt dơi sống
+ITEM_122_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_122_NAME	Thịt dơi nướng
+ITEM_123_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_123_NAME	Thịt ếch sống
+ITEM_124_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_124_NAME	Thịt ếch nướng
+ITEM_125_DESC	Một cây nấm dại nhỏ. Ăn sống chỉ hồi chút ít máu và cơn đói.
+ITEM_125_NAME	Nấm
+MISC_FOOD_TO_COOK	thịt sống

@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	시작하려면 재료 칸에 {0}을(를) 넣으세요
 MISC_CRAFTS	{0}이(가) {1}을(를) 만듭니다
 MISC_CRAFT_STOPS	{0}이(가) 더 작업할 재료가 없어 멈춥니다
 MISC_REASON_CRAFTING	제작
-ITEM_89_NAME	생고기
+ITEM_89_NAME	날 곰고기
 ITEM_89_DESC	익히지 않은 고기. 모닥불에서 구우세요.
-ITEM_90_NAME	구운 고기
+ITEM_90_NAME	구운 곰고기
 ITEM_90_DESC	불에 구운 고기. 체력과 허기를 회복한다.
 UILABEL_TALK	대화
 UILABEL_ATTACK	공격
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	자물쇠 따기 실패
 MISC_UNLOCKS	{0}이(가) {1}의 잠금을 풀었습니다
 MISC_REASON_LOCKPICKING	자물쇠 따기
 MISC_LOCKED_NAME	{0} (잠김)
+PROP_CHAIR	의자
+PROP_BENCH	벤치
+PROP_STOOL	걸상
+PROP_TABLE	탁자
+PROP_END_TABLE	협탁
+PROP_ROUND_TABLE	원탁
+PROP_METAL_TABLE	금속 탁자
+PROP_STANDING_TORCH	스탠드 횃불
+PROP_SUPPORT_BEAM	지지대
+PROP_TRAINING_DUMMY	훈련용 허수아비
+PROP_RAW_FOOD_STORAGE	날음식 저장고
+PROP_FOOD_STORAGE	음식 저장고
+PROP_WEAPON_RACK	무기 거치대
+PROP_ARMOR_STAND	갑옷 거치대
+PROP_WATER_TANK	물탱크
+PROP_WATER_PUMP	물 펌프
+PROP_FORGE	대장간 화로
+FILTER_RAW_FOOD	날음식
+FILTER_FOOD	음식
+FILTER_WEAPON	무기
+FILTER_ARMOR	갑옷
+FILTER_WATER	물
+MISC_STORAGE_ONLY	{0}만 넣을 수 있습니다
+UILABEL_STORAGE_TAKES	{0}만 넣을 수 있습니다.
+UILABEL_TASK_SITTING	앉아 있음
+UILABEL_TASK_LOCKED_IN	갇힘
+MISC_LOCKED_IN	{0}이(가) {1}에 갇혔습니다
+MISC_REASON_TRAINING	훈련
+MISC_XP_GAINED	+{0} {1} 경험치
+UILABEL_INPUT	투입
+UILABEL_OUTPUT	산출
+MISC_FUEL_LEFT	연소 중: 연료 {0}분 남음
+MISC_NO_FUEL	연료 없음
+MISC_OUTPUT_FULL	산출 가득 참: 일시 정지
+UILABEL_PASSIVE_HINT	{0}을(를) 연료로 씁니다: 하나당 게임 시간 {1}분 동안 타며, 일꾼이 없어도 산출에 {2}을(를) 만듭니다. 산출이 가득 차 있는 동안은 멈춥니다. 아이템을 우클릭해 넣거나 꺼내세요.
+ITEM_91_NAME	물
+ITEM_91_DESC	펌프에서 길어 온 신선한 물.
+ITEM_92_NAME	철 주괴
+ITEM_92_DESC	대장간 화로에서 광석을 녹여 만든 철 막대.
+ITEM_93_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_93_NAME	날 소고기
+ITEM_94_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_94_NAME	구운 소고기
+ITEM_95_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_95_NAME	날 닭고기
+ITEM_96_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_96_NAME	구운 닭고기
+ITEM_97_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_97_NAME	날 멧돼지고기
+ITEM_98_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_98_NAME	구운 멧돼지고기
+ITEM_99_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_99_NAME	날 늑대고기
+ITEM_100_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_100_NAME	구운 늑대고기
+ITEM_101_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_101_NAME	날 사슴고기
+ITEM_102_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_102_NAME	구운 사슴고기
+ITEM_103_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_103_NAME	날 토끼고기
+ITEM_104_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_104_NAME	구운 토끼고기
+ITEM_105_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_105_NAME	날 생선
+ITEM_106_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_106_NAME	구운 생선
+ITEM_107_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_107_NAME	날 게살
+ITEM_108_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_108_NAME	구운 게살
+ITEM_109_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_109_NAME	날 도마뱀고기
+ITEM_110_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_110_NAME	구운 도마뱀고기
+ITEM_111_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_111_NAME	날 뱀고기
+ITEM_112_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_112_NAME	구운 뱀고기
+ITEM_113_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_113_NAME	날 돼지고기
+ITEM_114_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_114_NAME	구운 돼지고기
+ITEM_115_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_115_NAME	날 양고기
+ITEM_116_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_116_NAME	구운 양고기
+ITEM_117_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_117_NAME	날 오리고기
+ITEM_118_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_118_NAME	구운 오리고기
+ITEM_119_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_119_NAME	날 거북이고기
+ITEM_120_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_120_NAME	구운 거북이고기
+ITEM_121_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_121_NAME	날 박쥐고기
+ITEM_122_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_122_NAME	구운 박쥐고기
+ITEM_123_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_123_NAME	날 개구리고기
+ITEM_124_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_124_NAME	구운 개구리고기
+ITEM_125_DESC	작은 야생 버섯. 날로 먹으면 체력과 허기를 조금만 채워 줍니다.
+ITEM_125_NAME	버섯
+MISC_FOOD_TO_COOK	날고기

@@ -437,10 +437,26 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     }
     report(0.9f);
 
+    // Each prop kind's model: exactly data/3d/<n>.glb (props.h). No other name is tried, so a file that is missing or
+    // misnamed shows up at once: that kind is drawn as a pink stand-in (drawFrame), and log.txt names it.
     for (int kind = 0; kind < PROP_KIND_COUNT; ++kind) {
         const PropInfo& info = propInfo(kind);
-        if (!loadGLBModel(info.file, propModels_[(size_t)kind]))
-            SDL_Log("Prop model %s unavailable, that prop will not be drawn", info.file);
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (!pakFind(info.file, bytes, size)) {
+            SDL_Log("Prop model %s not in data.pak: the %s is drawn as a pink square", info.file, lang(info.nameKey).c_str());
+        } else {
+            Model& m = propModels_[(size_t)kind];
+            const bool read = loadGLBModel(info.file, m);
+            const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+            if (!read || !m.vao || m.draws.empty() || !(extent > 0.0f)) {
+                // Unreadable, or nothing in it to draw: drop what was made, so the stand-in shows instead
+                destroyModel(m);
+                m = Model{};
+                SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn as a pink square",
+                        info.file, lang(info.nameKey).c_str());
+            }
+        }
     }
     report(0.97f);
 
@@ -512,6 +528,12 @@ void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * 5 * sizeof(float), v);
     glBindTexture(GL_TEXTURE_2D, tex);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+// A prop kind with no model is drawn as a pink square this many tiles on a side: the height of a unit's sprite, so it
+// stands like a unit would, whatever the kind
+float missingPropSide(int) {
+    return GLYPH_H;
 }
 
 void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint) {
@@ -1003,7 +1025,7 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
 }
 
 // Projects each prop's model box (the box drawModel scales and places) to the screen, and keeps the props
-// whose box on screen covers the pixel. A prop whose model did not load is not drawn, so it is not found either.
+// whose box on screen covers the pixel. A prop whose model did not load is found by its pink stand-in.
 std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     std::vector<Entity> out;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
@@ -1013,12 +1035,18 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
         const Model& m = propModels_[(size_t)kind];
-        if (!m.vao) continue;
         const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-        if (extent <= 0.0f) continue;
-        const float k = propInfo(kind).size / extent;
-        const float hx = 0.5f * k * (m.maxX - m.minX), hz = 0.5f * k * (m.maxZ - m.minZ);
-        const float h = k * (m.maxY - m.minY);
+        float hx = 0.0f, hz = 0.0f, h = 0.0f;
+        if (m.vao && extent > 0.0f) {
+            const float k = propInfo(kind).size / extent;
+            hx = 0.5f * k * (m.maxX - m.minX);
+            hz = 0.5f * k * (m.maxZ - m.minZ);
+            h = k * (m.maxY - m.minY);
+        } else {
+            // The pink stand-in: a square facing the camera, so a box that holds it from any side
+            hx = hz = 0.5f * missingPropSide(kind);
+            h = missingPropSide(kind);
+        }
 
         float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
         bool seen = true;
@@ -1276,7 +1304,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
-        drawModel(propModels_[(size_t)kind], tr->x, tr->y, tr->z, propInfo(kind).size);
+        if (propModels_[(size_t)kind].vao) {
+            drawModel(propModels_[(size_t)kind], tr->x, tr->y, tr->z, propInfo(kind).size);
+        } else {
+            // No model: a pink square as tall as the prop's size, standing on its spot and turned to the camera
+            drawGlyph(white_, tr->x, tr->y, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
+        }
     }
 
     for (Entity e : w.view<Unit, Transform>()) {
@@ -1714,8 +1747,10 @@ void Renderer::drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float
         }
         // Red and gray dots: the white dot tinted, with its black ring
         if (!dotWhiteTex_) dotWhiteTex_ = MakeDotTexture(true);
-        const RGBA tint = dot.kind == MapDotKind::Hostile ? RGBA{ 1.0f, 0.25f, 0.25f, 1.0f } : RGBA{ 0.6f, 0.6f, 0.6f, 1.0f };
-        const float cx = sx(p.x), cy = sy(p.z), h = d * 0.5f;
+        const RGBA tint = dot.kind == MapDotKind::Hostile    ? RGBA{ 1.0f, 0.25f, 0.25f, 1.0f }
+                        : dot.kind == MapDotKind::Resource ? RGBA{ 0.91f, 0.65f, 0.24f, 1.0f }   // orange-yellow
+                                                           : RGBA{ 0.6f, 0.6f, 0.6f, 1.0f };
+        const float cx = sx(p.x), cy = sy(p.z), h = d * (dot.kind == MapDotKind::Resource ? 0.35f : 0.5f);
         drawUiQuad(dotWhiteTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
     }
 }
@@ -1958,11 +1993,13 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
 }
 
 void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
-                           const Storage* storage, int dragFrom, float mx, float my) {
+                           const Storage* storage, const Output* output, const std::string& status, int dragFrom,
+                           float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
     const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA amber{ 0.91f, 0.65f, 0.24f, 1.0f };
     const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.95f };
     const RGBA bar{ 0.16f, 0.18f, 0.24f, 1.0f };
     const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
@@ -1977,18 +2014,30 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     const std::string name = fitText(propName, L.name.w, false);
     if (name != propName) noteTip(propName, L.name);
     drawListText(name, L.name.x, L.name.y, white);
-    drawListText(fitText(lang("UILABEL_INVENTORY"), L.heading.w, false), L.heading.x, L.heading.y, heading);
-    drawRect(L.grid, well);
-    int hover = -1;
-    for (size_t i = 0; i < L.slots.size(); ++i) {
-        const Rect& r = L.slots[i];
-        const bool hot = r.contains(mx, my);
-        drawRect(r, hot ? plateHot : plate);
-        if (!storage || i >= (size_t)STORAGE_SLOTS) continue;
-        const ItemStack& st = storage->slots[i];
-        if (st.item == 0 || (int)i == dragFrom) continue;
-        drawItemCell(r, st.item, st.count);
-        if (hot) hover = (int)i;
+    drawListText(fitText(lang(L.output ? "UILABEL_INPUT" : "UILABEL_INVENTORY"), L.heading.w, false), L.heading.x,
+                 L.heading.y, heading);
+    // One grid of cells. first is the panel slot of its first cell.
+    ItemStack hoverStack{};
+    auto grid = [&](const Rect& area, const std::vector<Rect>& cells, const ItemStack* stacks, int first) {
+        drawRect(area, well);
+        for (size_t i = 0; i < cells.size(); ++i) {
+            const Rect& r = cells[i];
+            const bool hot = r.contains(mx, my);
+            drawRect(r, hot ? plateHot : plate);
+            if (!stacks || i >= (size_t)STORAGE_SLOTS) continue;
+            const ItemStack& st = stacks[i];
+            if (st.item == 0 || first + (int)i == dragFrom) continue;
+            drawItemCell(r, st.item, st.count);
+            if (hot) hoverStack = st;
+        }
+    };
+    grid(L.grid, L.slots, storage ? storage->slots.data() : nullptr, 0);
+    if (L.output) {
+        drawListText(fitText(lang("UILABEL_OUTPUT"), L.outHeading.w, false), L.outHeading.x, L.outHeading.y, heading);
+        grid(L.outGrid, L.outSlots, output ? output->slots.data() : nullptr, STORAGE_SLOTS);
+        const std::string line = fitText(status, L.status.w, false);
+        if (line != status) noteTip(status, L.status);
+        drawListText(line, L.status.x, L.status.y + (L.status.h - th) * 0.5f, amber);
     }
     float ty = L.hint.y;
     for (const std::string& ln : wrapListText(hint, L.hint.w)) {
@@ -1997,7 +2046,7 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
         ty += th;
     }
     drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
-    if (hover >= 0 && dragFrom < 0) drawItemTooltip(storage->slots[hover].item, storage->slots[hover].count, mx, my);
+    if (hoverStack.item != 0 && dragFrom < 0) drawItemTooltip(hoverStack.item, hoverStack.count, mx, my);
 }
 
 void Renderer::drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color) {
@@ -2054,7 +2103,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
-        float top = propInfo(kind).size;   // the model's height, scaled as drawModel scales it
+        float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
         if (kind >= 0 && kind < PROP_KIND_COUNT) {
             const Model& m = propModels_[(size_t)kind];
             const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });

@@ -262,6 +262,17 @@ struct Storage {
     std::array<ItemStack, STORAGE_SLOTS> slots{};
 };
 
+// A passive crafting prop's output inventory (the forge's Iron Ingots). Units can take from it, but not put in.
+struct Output {
+    std::array<ItemStack, STORAGE_SLOTS> slots{};
+};
+
+// A passive crafting prop's fuel: the in-game hours left to burn of the input item it last took. It takes the next
+// input item only once this has run out, so an item is used up only when it starts to burn.
+struct Fuel {
+    double hours = 0.0;
+};
+
 // A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, takes the bed or
 // starts working, by the prop's use (a crafting prop opens its panel too). Any other order replaces it.
 struct PropOrder {
@@ -269,8 +280,9 @@ struct PropOrder {
     PropAction action = PropAction::Use;
 };
 
-// A unit lying on an occupiable prop (a bed or a bedroll). It stays on the prop until it is given another order.
-// One unit at a time can occupy a prop.
+// A unit on an occupiable prop (a bed, a chair, a cage). It stays on the prop until it is given another order.
+// One unit at a time can occupy a prop. In a locked prop (lockedIn in systems.h) it takes no orders at all, other than
+// to unlock that prop, until the prop is unlocked.
 struct Occupying {
     Entity prop = NULL_ENTITY;
 };
@@ -285,7 +297,8 @@ struct Working {
 
 // A resource or crafting prop's progress toward its next item, 0 to 1. The units working it add to it each in-game
 // hour by their skill. Each time it is full, an item is made: at a resource prop one of the workers, in turn, receives
-// it; at a crafting prop one input item becomes one output item. Not saved.
+// it; at a crafting prop one input item becomes one output item. A passive crafting prop fills it by itself, while
+// its fuel burns (workers is then 1 while it burns, for the ring). Saved only for a passive crafting prop.
 struct PropWork {
     double progress = 0.0;
     unsigned turn = 0;      // which worker receives the next item

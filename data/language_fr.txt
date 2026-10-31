@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Mettez {0} dans l'entrée pour commencer
 MISC_CRAFTS	{0} fabrique {1}
 MISC_CRAFT_STOPS	{0} n'a plus rien à travailler et s'arrête
 MISC_REASON_CRAFTING	fabriquer
-ITEM_89_NAME	Viande crue
+ITEM_89_NAME	Viande d'ours crue
 ITEM_89_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
-ITEM_90_NAME	Viande cuite
+ITEM_90_NAME	Viande d'ours cuite
 ITEM_90_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
 UILABEL_TALK	Parler
 UILABEL_ATTACK	Attaquer
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Crochetage raté
 MISC_UNLOCKS	{0} déverrouille : {1}
 MISC_REASON_LOCKPICKING	crocheter des serrures
 MISC_LOCKED_NAME	{0} (verrouillé)
+PROP_CHAIR	Chaise
+PROP_BENCH	Banc
+PROP_STOOL	Tabouret
+PROP_TABLE	Table
+PROP_END_TABLE	Table de chevet
+PROP_ROUND_TABLE	Table ronde
+PROP_METAL_TABLE	Table en métal
+PROP_STANDING_TORCH	Torche sur pied
+PROP_SUPPORT_BEAM	Poutre de soutien
+PROP_TRAINING_DUMMY	Mannequin d'entraînement
+PROP_RAW_FOOD_STORAGE	Réserve de vivres crus
+PROP_FOOD_STORAGE	Réserve de nourriture
+PROP_WEAPON_RACK	Râtelier d'armes
+PROP_ARMOR_STAND	Porte-armure
+PROP_WATER_TANK	Réservoir d'eau
+PROP_WATER_PUMP	Pompe à eau
+PROP_FORGE	Forge
+FILTER_RAW_FOOD	vivres crus
+FILTER_FOOD	nourriture
+FILTER_WEAPON	armes
+FILTER_ARMOR	armures
+FILTER_WATER	eau
+MISC_STORAGE_ONLY	N'accepte que : {0}
+UILABEL_STORAGE_TAKES	N'accepte que : {0}.
+UILABEL_TASK_SITTING	Assis
+UILABEL_TASK_LOCKED_IN	Enfermé
+MISC_LOCKED_IN	{0} est enfermé : {1}
+MISC_REASON_TRAINING	entraînement
+MISC_XP_GAINED	+{0} XP en {1}
+UILABEL_INPUT	Entrée
+UILABEL_OUTPUT	Sortie
+MISC_FUEL_LEFT	Brûle : {0} min de combustible restantes
+MISC_NO_FUEL	Pas de combustible
+MISC_OUTPUT_FULL	Sortie pleine : en pause
+UILABEL_PASSIVE_HINT	Utilise {0} comme combustible : chacun brûle {1} minutes de jeu et produit {2} dans la sortie, avec ou sans ouvrier. Elle s'arrête tant que la sortie est pleine. Clic droit sur un objet pour le mettre ou le retirer.
+ITEM_91_NAME	Eau
+ITEM_91_DESC	De l'eau fraîche tirée d'une pompe.
+ITEM_92_NAME	Lingot de fer
+ITEM_92_DESC	Une barre de fer fondue à partir de minerai dans une forge.
+ITEM_93_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_93_NAME	Viande de bœuf crue
+ITEM_94_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_94_NAME	Viande de bœuf cuite
+ITEM_95_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_95_NAME	Viande de poulet crue
+ITEM_96_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_96_NAME	Viande de poulet cuite
+ITEM_97_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_97_NAME	Viande de sanglier crue
+ITEM_98_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_98_NAME	Viande de sanglier cuite
+ITEM_99_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_99_NAME	Viande de loup crue
+ITEM_100_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_100_NAME	Viande de loup cuite
+ITEM_101_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_101_NAME	Viande de cerf crue
+ITEM_102_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_102_NAME	Viande de cerf cuite
+ITEM_103_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_103_NAME	Viande de lapin crue
+ITEM_104_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_104_NAME	Viande de lapin cuite
+ITEM_105_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_105_NAME	Poisson cru
+ITEM_106_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_106_NAME	Poisson cuit
+ITEM_107_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_107_NAME	Viande de crabe crue
+ITEM_108_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_108_NAME	Viande de crabe cuite
+ITEM_109_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_109_NAME	Viande de lézard crue
+ITEM_110_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_110_NAME	Viande de lézard cuite
+ITEM_111_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_111_NAME	Viande de serpent crue
+ITEM_112_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_112_NAME	Viande de serpent cuite
+ITEM_113_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_113_NAME	Viande de porc crue
+ITEM_114_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_114_NAME	Viande de porc cuite
+ITEM_115_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_115_NAME	Viande de mouton crue
+ITEM_116_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_116_NAME	Viande de mouton cuite
+ITEM_117_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_117_NAME	Viande de canard crue
+ITEM_118_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_118_NAME	Viande de canard cuite
+ITEM_119_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_119_NAME	Viande de tortue crue
+ITEM_120_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_120_NAME	Viande de tortue cuite
+ITEM_121_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_121_NAME	Viande de chauve-souris crue
+ITEM_122_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_122_NAME	Viande de chauve-souris cuite
+ITEM_123_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
+ITEM_123_NAME	Viande de grenouille crue
+ITEM_124_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
+ITEM_124_NAME	Viande de grenouille cuite
+ITEM_125_DESC	Un petit champignon sauvage. Cru, il aide peu la santé et la faim.
+ITEM_125_NAME	Champignon
+MISC_FOOD_TO_COOK	de la viande crue

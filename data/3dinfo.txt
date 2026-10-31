@@ -1,15 +1,32 @@
 Model	Prop	Kind
-1.glb	Wagon	scenery
-2.glb	Campfire	Crafting prop: Raw Meat into Cooked Meat (Cooking)
+1.glb	Wagon	Decor prop
+2.glb	Campfire	Crafting prop: any raw meat into its cooked meat (Cooking)
 3.glb	Bedroll	Occupiable prop
 4.glb	Bed	Occupiable prop
-5.glb	Barrel	Storage prop
+5.glb	Barrel	Storage prop (takes anything)
 6.glb	Ore	Resource prop: Iron Ore (Mining)
 7.glb	Tree	Resource prop: Wood Log (Woodcutting)
-8.glb	Boulder	scenery
-9.glb	Mushroom	scenery
-10.glb	Bones	scenery
-11.glb	Wall	scenery
-12.glb	Stall	scenery
+8.glb	Boulder	Decor prop
+9.glb	Mushroom	Resource prop: Mushroom (Herbalism)
+10.glb	Bones	Decor prop
+11.glb	Wall	Decor prop
+12.glb	Stall	Decor prop
 13.glb	Locked Chest	Storage prop, Lockable (Lockpicking 5)
-14.glb	Prisoner Cage	Occupiable prop, Lockable (Lockpicking 15)
+14.glb	Prisoner Cage	Occupiable prop, Lockable (Lockpicking 15): locks when a unit gets in
+15.glb	Chair	Occupiable prop
+16.glb	Bench	Occupiable prop
+17.glb	Stool	Occupiable prop
+18.glb	Table	Decor prop
+19.glb	End Table	Decor prop
+20.glb	Round Table	Decor prop
+21.glb	Metal Table	Decor prop
+22.glb	Standing Torch	Decor prop
+23.glb	Support Beam	Decor prop
+24.glb	Training Dummy	Crafting prop, no inventory or input: Melee XP only
+25.glb	Raw Food Storage	Storage prop: items tagged raw_food that can't be eaten as they are
+26.glb	Food Storage	Storage prop: consumables only
+27.glb	Weapon Rack	Storage prop: weapons only
+28.glb	Armor Stand	Storage prop: armor only (shields included)
+29.glb	Water Tank	Storage prop: items tagged water only
+30.glb	Water Pump	Crafting prop, no inventory or input: Water (Strength)
+31.glb	Forge	Passive Crafting prop: Iron Ore as fuel (1 hour each) into Iron Ingot

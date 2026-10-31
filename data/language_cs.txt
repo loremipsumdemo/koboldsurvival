@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Pro začátek vložte do vstupu {0}
 MISC_CRAFTS	{0} vyrábí {1}
 MISC_CRAFT_STOPS	{0} už nemá na čem pracovat a přestává
 MISC_REASON_CRAFTING	řemeslo
-ITEM_89_NAME	Syrové maso
+ITEM_89_NAME	Syrové medvědí maso
 ITEM_89_DESC	Nevařené maso. Upečte ho u táboráku.
-ITEM_90_NAME	Pečené maso
+ITEM_90_NAME	Pečené medvědí maso
 ITEM_90_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
 UILABEL_TALK	Mluvit
 UILABEL_ATTACK	Zaútočit
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Páčení selhalo
 MISC_UNLOCKS	{0} odemyká: {1}
 MISC_REASON_LOCKPICKING	páčení zámků
 MISC_LOCKED_NAME	{0} (zamčeno)
+PROP_CHAIR	Židle
+PROP_BENCH	Lavice
+PROP_STOOL	Stolička
+PROP_TABLE	Stůl
+PROP_END_TABLE	Noční stolek
+PROP_ROUND_TABLE	Kulatý stůl
+PROP_METAL_TABLE	Kovový stůl
+PROP_STANDING_TORCH	Stojací pochodeň
+PROP_SUPPORT_BEAM	Podpěrný trám
+PROP_TRAINING_DUMMY	Cvičná figurína
+PROP_RAW_FOOD_STORAGE	Sklad syrových potravin
+PROP_FOOD_STORAGE	Sklad potravin
+PROP_WEAPON_RACK	Stojan na zbraně
+PROP_ARMOR_STAND	Stojan na zbroj
+PROP_WATER_TANK	Nádrž na vodu
+PROP_WATER_PUMP	Vodní pumpa
+PROP_FORGE	Výheň
+FILTER_RAW_FOOD	syrové potraviny
+FILTER_FOOD	jídlo
+FILTER_WEAPON	zbraně
+FILTER_ARMOR	zbroj
+FILTER_WATER	voda
+MISC_STORAGE_ONLY	Přijímá jen: {0}
+UILABEL_STORAGE_TAKES	Přijímá jen: {0}.
+UILABEL_TASK_SITTING	Sedí
+UILABEL_TASK_LOCKED_IN	Zamčen
+MISC_LOCKED_IN	{0} je zamčen: {1}
+MISC_REASON_TRAINING	trénink
+MISC_XP_GAINED	+{0} zk. {1}
+UILABEL_INPUT	Vstup
+UILABEL_OUTPUT	Výstup
+MISC_FUEL_LEFT	Hoří: palivo na {0} min
+MISC_NO_FUEL	Žádné palivo
+MISC_OUTPUT_FULL	Výstup je plný: pozastaveno
+UILABEL_PASSIVE_HINT	Bere {0} jako palivo: každý kus hoří {1} herních minut a vyrobí {2} do výstupu, s pracovníkem i bez něj. Když je výstup plný, stojí. Pravým kliknutím předměty vkládáš nebo vybíráš.
+ITEM_91_NAME	Voda
+ITEM_91_DESC	Čerstvá voda z pumpy.
+ITEM_92_NAME	Železný ingot
+ITEM_92_DESC	Kus železa vytavený z rudy ve výhni.
+ITEM_93_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_93_NAME	Syrové hovězí maso
+ITEM_94_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_94_NAME	Pečené hovězí maso
+ITEM_95_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_95_NAME	Syrové kuřecí maso
+ITEM_96_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_96_NAME	Pečené kuřecí maso
+ITEM_97_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_97_NAME	Syrové kančí maso
+ITEM_98_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_98_NAME	Pečené kančí maso
+ITEM_99_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_99_NAME	Syrové vlčí maso
+ITEM_100_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_100_NAME	Pečené vlčí maso
+ITEM_101_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_101_NAME	Syrové jelení maso
+ITEM_102_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_102_NAME	Pečené jelení maso
+ITEM_103_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_103_NAME	Syrové králičí maso
+ITEM_104_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_104_NAME	Pečené králičí maso
+ITEM_105_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_105_NAME	Syrová ryba
+ITEM_106_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_106_NAME	Pečená ryba
+ITEM_107_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_107_NAME	Syrové krabí maso
+ITEM_108_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_108_NAME	Pečené krabí maso
+ITEM_109_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_109_NAME	Syrové ještěrčí maso
+ITEM_110_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_110_NAME	Pečené ještěrčí maso
+ITEM_111_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_111_NAME	Syrové hadí maso
+ITEM_112_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_112_NAME	Pečené hadí maso
+ITEM_113_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_113_NAME	Syrové vepřové maso
+ITEM_114_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_114_NAME	Pečené vepřové maso
+ITEM_115_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_115_NAME	Syrové ovčí maso
+ITEM_116_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_116_NAME	Pečené ovčí maso
+ITEM_117_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_117_NAME	Syrové kachní maso
+ITEM_118_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_118_NAME	Pečené kachní maso
+ITEM_119_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_119_NAME	Syrové želví maso
+ITEM_120_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_120_NAME	Pečené želví maso
+ITEM_121_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_121_NAME	Syrové netopýří maso
+ITEM_122_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_122_NAME	Pečené netopýří maso
+ITEM_123_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_123_NAME	Syrové žabí maso
+ITEM_124_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
+ITEM_124_NAME	Pečené žabí maso
+ITEM_125_DESC	Malá lesní houba. Syrová moc nepomůže zdraví ani hladu.
+ITEM_125_NAME	Houba
+MISC_FOOD_TO_COOK	syrové maso

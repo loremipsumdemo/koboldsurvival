@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <cstdlib>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -44,6 +45,7 @@ struct SaveUnit {
     int body = 0;
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
+    int occupying = -1;        // the serial of the bed, chair or cage it is on, or -1
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
     bool hasNeeds = false;
@@ -81,6 +83,14 @@ struct SaveLock {
 };
 
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
+// A passive crafting prop's (a forge's) fuel hours left and progress toward its next item, by serial. Older saves have
+// none, so their forges start cold.
+struct SaveFuel {
+    int prop = 0;
+    double hours = 0.0;
+    double progress = 0.0;
+};
+
 struct SaveCamera {
     bool present = false;
     float fx = 0.0f, fy = 0.0f, fz = 0.0f;   // focus point
@@ -99,9 +109,15 @@ struct SaveData {
     std::vector<SaveUnit> units;
     // Older saves have no item lines. Their items are placed again from the seed when they load.
     bool hasItems = false;
+    // The prop layout the save was made with (PROP_LAYOUT in props.h). Older saves have 0. When it differs from the
+    // game's, the saved prop states (what storages hold, locks, forges, who sits where) name other props, so they are
+    // left out.
+    int propLayout = 0;
     std::vector<SaveGround> ground;
     std::vector<SaveStorage> storage;   // what the barrels hold. Older saves have none, so their barrels start empty.
     std::vector<SaveLock> locks;
+    std::vector<SaveStorage> output;    // what the forges' outputs hold
+    std::vector<SaveFuel> fuel;
 };
 
 struct SaveSummary {
@@ -150,6 +166,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         }
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
+        if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -159,6 +176,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             }
         }
     }
+    if (d.propLayout != 0) out << "propLayout=" << d.propLayout << "\n";
     if (d.hasItems) {
         out << "items=1\n";
         for (const SaveGround& g : d.ground) {
@@ -169,6 +187,12 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         out << "storage " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
     for (const SaveLock& l : d.locks) out << "lock " << l.prop << " " << (l.locked ? 1 : 0) << "\n";
+    for (const SaveStorage& st : d.output) {
+        out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
+    }
+    for (const SaveFuel& f : d.fuel) {
+        out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9) << "\n";
+    }
     return (bool)out;
 }
 
@@ -210,6 +234,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 d.units.push_back(u);
             }
             else if (line.rfind("items=", 0) == 0)           d.hasItems = (line.substr(6) == "1");
+            else if (line.rfind("propLayout=", 0) == 0)      d.propLayout = std::atoi(line.c_str() + 11);
             else if (line.rfind("lock ", 0) == 0) {
                 std::istringstream ss(line.substr(5));
                 SaveLock l;
@@ -255,6 +280,25 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
                     d.units[i].gear.push_back(g);
                 }
+            }
+            else if (line.rfind("occupy ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                size_t i = 0;
+                int serial = -1;
+                ss >> i >> serial;
+                if (!ss.fail() && i < d.units.size() && serial >= 0) d.units[i].occupying = serial;
+            }
+            else if (line.rfind("output ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                SaveStorage st;
+                ss >> st.prop >> st.slot >> st.item >> st.count;
+                if (!ss.fail()) d.output.push_back(st);
+            }
+            else if (line.rfind("fuel ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                SaveFuel f;
+                ss >> f.prop >> f.hours >> f.progress;
+                if (!ss.fail()) d.fuel.push_back(f);
             }
             else if (line.rfind("faction ", 0) == 0) {
                 std::istringstream ss(line.substr(8));

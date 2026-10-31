@@ -6,3 +6,5 @@ Emote	File	Shown when
 5	emote/5.png	Sleeping: lying on a Bed or Bedroll
 6	emote/6.png	Hungry: hunger below 1
 7	emote/7.png	Lockpicking: picking a lock
+8	emote/8.png	Locked in: in a locked occupiable prop (the Prisoner Cage)
+9	emote/9.png	Herbalism: gathering at a Mushroom

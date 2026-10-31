@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Pune {0} la intrare ca să începi
 MISC_CRAFTS	{0} face {1}
 MISC_CRAFT_STOPS	{0} nu mai are la ce lucra și se oprește
 MISC_REASON_CRAFTING	meșteșug
-ITEM_89_NAME	Carne crudă
+ITEM_89_NAME	Carne de urs crudă
 ITEM_89_DESC	Carne negătită. Gătește-o la un foc de tabără.
-ITEM_90_NAME	Carne friptă
+ITEM_90_NAME	Carne de urs friptă
 ITEM_90_DESC	Carne friptă la foc. Reface viața și potolește foamea.
 UILABEL_TALK	Vorbește
 UILABEL_ATTACK	Atacă
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Descuierea a eșuat
 MISC_UNLOCKS	{0} descuie: {1}
 MISC_REASON_LOCKPICKING	descuierea lacătelor
 MISC_LOCKED_NAME	{0} (încuiat)
+PROP_CHAIR	Scaun
+PROP_BENCH	Bancă
+PROP_STOOL	Taburet
+PROP_TABLE	Masă
+PROP_END_TABLE	Noptieră
+PROP_ROUND_TABLE	Masă rotundă
+PROP_METAL_TABLE	Masă de metal
+PROP_STANDING_TORCH	Torță pe suport
+PROP_SUPPORT_BEAM	Grindă de susținere
+PROP_TRAINING_DUMMY	Manechin de antrenament
+PROP_RAW_FOOD_STORAGE	Depozit de hrană crudă
+PROP_FOOD_STORAGE	Depozit de hrană
+PROP_WEAPON_RACK	Suport de arme
+PROP_ARMOR_STAND	Suport de armură
+PROP_WATER_TANK	Rezervor de apă
+PROP_WATER_PUMP	Pompă de apă
+PROP_FORGE	Forjă
+FILTER_RAW_FOOD	hrană crudă
+FILTER_FOOD	hrană
+FILTER_WEAPON	arme
+FILTER_ARMOR	armură
+FILTER_WATER	apă
+MISC_STORAGE_ONLY	Primește doar: {0}
+UILABEL_STORAGE_TAKES	Primește doar: {0}.
+UILABEL_TASK_SITTING	Stă jos
+UILABEL_TASK_LOCKED_IN	Închis
+MISC_LOCKED_IN	{0} este închis în: {1}
+MISC_REASON_TRAINING	antrenament
+MISC_XP_GAINED	+{0} XP {1}
+UILABEL_INPUT	Intrare
+UILABEL_OUTPUT	Ieșire
+MISC_FUEL_LEFT	Arde: mai are combustibil {0} min
+MISC_NO_FUEL	Fără combustibil
+MISC_OUTPUT_FULL	Ieșire plină: în pauză
+UILABEL_PASSIVE_HINT	Folosește {0} drept combustibil: fiecare arde {1} minute de joc și face {2} în ieșire, cu sau fără lucrător. Se oprește cât timp ieșirea e plină. Clic dreapta pe obiecte ca să le pui sau să le scoți.
+ITEM_91_NAME	Apă
+ITEM_91_DESC	Apă proaspătă de la o pompă.
+ITEM_92_NAME	Lingou de fier
+ITEM_92_DESC	O bară de fier topită din minereu într-o forjă.
+ITEM_93_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_93_NAME	Carne de vită crudă
+ITEM_94_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_94_NAME	Carne de vită friptă
+ITEM_95_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_95_NAME	Carne de pui crudă
+ITEM_96_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_96_NAME	Carne de pui friptă
+ITEM_97_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_97_NAME	Carne de mistreț crudă
+ITEM_98_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_98_NAME	Carne de mistreț friptă
+ITEM_99_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_99_NAME	Carne de lup crudă
+ITEM_100_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_100_NAME	Carne de lup friptă
+ITEM_101_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_101_NAME	Carne de cerb crudă
+ITEM_102_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_102_NAME	Carne de cerb friptă
+ITEM_103_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_103_NAME	Carne de iepure crudă
+ITEM_104_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_104_NAME	Carne de iepure friptă
+ITEM_105_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_105_NAME	Pește crud
+ITEM_106_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_106_NAME	Pește fript
+ITEM_107_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_107_NAME	Carne de crab crudă
+ITEM_108_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_108_NAME	Carne de crab friptă
+ITEM_109_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_109_NAME	Carne de șopârlă crudă
+ITEM_110_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_110_NAME	Carne de șopârlă friptă
+ITEM_111_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_111_NAME	Carne de șarpe crudă
+ITEM_112_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_112_NAME	Carne de șarpe friptă
+ITEM_113_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_113_NAME	Carne de porc crudă
+ITEM_114_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_114_NAME	Carne de porc friptă
+ITEM_115_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_115_NAME	Carne de oaie crudă
+ITEM_116_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_116_NAME	Carne de oaie friptă
+ITEM_117_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_117_NAME	Carne de rață crudă
+ITEM_118_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_118_NAME	Carne de rață friptă
+ITEM_119_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_119_NAME	Carne de broască țestoasă crudă
+ITEM_120_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_120_NAME	Carne de broască țestoasă friptă
+ITEM_121_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_121_NAME	Carne de liliac crudă
+ITEM_122_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_122_NAME	Carne de liliac friptă
+ITEM_123_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_123_NAME	Carne de broască crudă
+ITEM_124_DESC	Carne friptă la foc. Reface viața și potolește foamea.
+ITEM_124_NAME	Carne de broască friptă
+ITEM_125_DESC	O ciupercă mică de pădure. Crudă, ajută puțin la sănătate și la foame.
+ITEM_125_NAME	Ciupercă
+MISC_FOOD_TO_COOK	carne crudă

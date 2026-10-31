@@ -98,10 +98,11 @@ struct PropArrival {
 std::vector<PropArrival> propOrderSystem(World& w);
 // What a unit's work gave this frame, for the label over it: an item ("+ item"), a lock opened, or a lockpick that failed
 struct WorkGain {
-    enum class Kind { Item, Unlocked, LockpickFailed };
+    enum class Kind { Item, Unlocked, LockpickFailed, Trained };
     Entity unit = NULL_ENTITY;
-    int item = 0;
+    int item = 0;               // for Trained, the stat trained instead
     Kind kind = Kind::Item;
+    float xp = 0.0f;            // for Trained, the XP given
 };
 // Resource and crafting props: the units working each one add to its progress by their skill, for the in-game
 // seconds that passed. Each full bar gives one item to one of the workers, in turn. At a resource prop, one with no
@@ -114,7 +115,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng);
 // Starts a unit picking a locked prop's lock, if it is in reach, has the Lockpicking level the lock needs, and nobody
 // else is at it. Checked at the moment of the try.
 WorkStart tryStartUnlock(World& w, Entity unit, Entity prop);
-// Whether a crafting prop can be worked: it has its input item
+// Whether a crafting prop can be worked: it has its input item, or needs none
 enum class CraftState { Ready, NoInput };
 CraftState craftStateOf(World& w, Entity prop);
 // Call whenever a crafting prop's items change (taken, put in or dropped): if it can no longer be worked, everyone
@@ -127,9 +128,29 @@ bool propInTheWay(World& w, Entity unit, Entity prop);
 Entity propOccupant(World& w, Entity prop);
 // Units working a resource or crafting prop, or on their way to it
 int propWorkerCount(World& w, Entity prop);
+// Whether a prop of this kind takes this item into its inventory: a crafting or passive crafting prop only its input
+// item, a storage prop the items its ItemFilter allows (props.h)
+bool propAcceptsItem(int kind, int item);
+// What a crafting or passive crafting prop of this kind makes from an input item: its item for its own input, or the
+// input's cooks_into at a campfire (INPUT_COOKABLE). 0 if it takes no such input.
+int recipeOutput(int kind, int input);
+// Whether a unit is in an occupiable prop that is locked (the Prisoner Cage). Such a unit takes no orders except to
+// unlock that prop: every issue...Order function and steerUnits skip it.
+bool lockedIn(World& w, Entity u);
+// The prop a unit occupies, or NULL_ENTITY
+Entity occupiedProp(World& w, Entity u);
+
+// Passive crafting props (the forge): each burns its fuel and makes items into its output, with no unit needed, for
+// the in-game seconds that passed. One input item is taken as fuel whenever the last has burned out. It pauses,
+// burning nothing, while its output has no room for the next item, and goes on once it has.
+void passiveCraftSystem(World& w, double gameSeconds);
+// What a passive crafting prop is doing, for its panel
+enum class PassiveState { Burning, NoFuel, OutputFull };
+PassiveState passiveStateOf(World& w, Entity prop);
+
 // The emotes to show over a unit's head (emotes.h), in the order they take turns: what it is working at or lying on,
 // then Encumbered when it carries ENCUMBERED_SHARE of its carry limit or more. Empty for none.
 std::vector<int> emotesOf(World& w, Entity u);
-// What a unit is doing, for the Unit Panel: the skill it is working with (such as Mining or Cooking), Resting, Moving
-// or Idle
+// What a unit is doing, for the Unit Panel: the skill it is working with (such as Mining or Cooking), Resting,
+// Sitting, Locked in, Moving or Idle
 std::string taskNameOf(World& w, Entity u);

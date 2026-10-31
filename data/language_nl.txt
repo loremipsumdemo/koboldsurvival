@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Leg {0} in de invoer om te beginnen
 MISC_CRAFTS	{0} maakt {1}
 MISC_CRAFT_STOPS	{0} heeft niets meer om aan te werken en stopt
 MISC_REASON_CRAFTING	ambacht
-ITEM_89_NAME	Rauw vlees
+ITEM_89_NAME	Rauw berenvlees
 ITEM_89_DESC	Ongekookt vlees. Bak het bij een kampvuur.
-ITEM_90_NAME	Gebakken vlees
+ITEM_90_NAME	Gebakken berenvlees
 ITEM_90_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
 UILABEL_TALK	Praten
 UILABEL_ATTACK	Aanvallen
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Slot openbreken mislukt
 MISC_UNLOCKS	{0} breekt {1} open
 MISC_REASON_LOCKPICKING	sloten openbreken
 MISC_LOCKED_NAME	{0} (op slot)
+PROP_CHAIR	Stoel
+PROP_BENCH	Bank
+PROP_STOOL	Kruk
+PROP_TABLE	Tafel
+PROP_END_TABLE	Bijzettafel
+PROP_ROUND_TABLE	Ronde tafel
+PROP_METAL_TABLE	Metalen tafel
+PROP_STANDING_TORCH	Staande fakkel
+PROP_SUPPORT_BEAM	Steunbalk
+PROP_TRAINING_DUMMY	Oefenpop
+PROP_RAW_FOOD_STORAGE	Opslag voor rauw voedsel
+PROP_FOOD_STORAGE	Voedselopslag
+PROP_WEAPON_RACK	Wapenrek
+PROP_ARMOR_STAND	Harnasstandaard
+PROP_WATER_TANK	Watertank
+PROP_WATER_PUMP	Waterpomp
+PROP_FORGE	Smidse
+FILTER_RAW_FOOD	rauw voedsel
+FILTER_FOOD	voedsel
+FILTER_WEAPON	wapens
+FILTER_ARMOR	harnassen
+FILTER_WATER	water
+MISC_STORAGE_ONLY	Neemt alleen: {0}
+UILABEL_STORAGE_TAKES	Neemt alleen: {0}.
+UILABEL_TASK_SITTING	Zit
+UILABEL_TASK_LOCKED_IN	Opgesloten
+MISC_LOCKED_IN	{0} zit opgesloten: {1}
+MISC_REASON_TRAINING	training
+MISC_XP_GAINED	+{0} {1}-XP
+UILABEL_INPUT	Invoer
+UILABEL_OUTPUT	Uitvoer
+MISC_FUEL_LEFT	Brandt: nog {0} min brandstof
+MISC_NO_FUEL	Geen brandstof
+MISC_OUTPUT_FULL	Uitvoer vol: gepauzeerd
+UILABEL_PASSIVE_HINT	Gebruikt {0} als brandstof: elk brandt {1} spelminuten en maakt {2} in de uitvoer, met of zonder werker. Hij pauzeert zolang de uitvoer vol is. Rechtsklik op voorwerpen om ze erin of eruit te halen.
+ITEM_91_NAME	Water
+ITEM_91_DESC	Vers water uit een pomp.
+ITEM_92_NAME	IJzerstaaf
+ITEM_92_DESC	Een staaf ijzer, in een smidse uit erts gesmolten.
+ITEM_93_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_93_NAME	Rauw rundvlees
+ITEM_94_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_94_NAME	Gebakken rundvlees
+ITEM_95_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_95_NAME	Rauw kippenvlees
+ITEM_96_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_96_NAME	Gebakken kippenvlees
+ITEM_97_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_97_NAME	Rauw wildzwijnvlees
+ITEM_98_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_98_NAME	Gebakken wildzwijnvlees
+ITEM_99_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_99_NAME	Rauw wolvenvlees
+ITEM_100_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_100_NAME	Gebakken wolvenvlees
+ITEM_101_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_101_NAME	Rauw hertenvlees
+ITEM_102_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_102_NAME	Gebakken hertenvlees
+ITEM_103_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_103_NAME	Rauw konijnenvlees
+ITEM_104_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_104_NAME	Gebakken konijnenvlees
+ITEM_105_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_105_NAME	Rauwe vis
+ITEM_106_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_106_NAME	Gebakken vis
+ITEM_107_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_107_NAME	Rauw krabvlees
+ITEM_108_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_108_NAME	Gebakken krabvlees
+ITEM_109_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_109_NAME	Rauw hagedissenvlees
+ITEM_110_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_110_NAME	Gebakken hagedissenvlees
+ITEM_111_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_111_NAME	Rauw slangenvlees
+ITEM_112_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_112_NAME	Gebakken slangenvlees
+ITEM_113_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_113_NAME	Rauw varkensvlees
+ITEM_114_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_114_NAME	Gebakken varkensvlees
+ITEM_115_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_115_NAME	Rauw schapenvlees
+ITEM_116_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_116_NAME	Gebakken schapenvlees
+ITEM_117_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_117_NAME	Rauw eendenvlees
+ITEM_118_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_118_NAME	Gebakken eendenvlees
+ITEM_119_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_119_NAME	Rauw schildpadvlees
+ITEM_120_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_120_NAME	Gebakken schildpadvlees
+ITEM_121_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_121_NAME	Rauw vleermuisvlees
+ITEM_122_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_122_NAME	Gebakken vleermuisvlees
+ITEM_123_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_123_NAME	Rauw kikkervlees
+ITEM_124_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
+ITEM_124_NAME	Gebakken kikkervlees
+ITEM_125_DESC	Een kleine wilde paddenstoel. Rauw doet hij weinig voor gezondheid of honger.
+ITEM_125_NAME	Paddenstoel
+MISC_FOOD_TO_COOK	rauw vlees

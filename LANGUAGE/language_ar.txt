@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	ضع {0} في المدخلات للبدء
 MISC_CRAFTS	{0} يصنع {1}
 MISC_CRAFT_STOPS	لم يبقَ لدى {0} ما يعمل عليه فيتوقف
 MISC_REASON_CRAFTING	الصناعة
-ITEM_89_NAME	لحم نيء
+ITEM_89_NAME	لحم دب نيء
 ITEM_89_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
-ITEM_90_NAME	لحم مطبوخ
+ITEM_90_NAME	لحم دب مطبوخ
 ITEM_90_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
 UILABEL_TALK	تحدث
 UILABEL_ATTACK	هاجم
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	فشل فتح القفل
 MISC_UNLOCKS	{0} يفتح قفل {1}
 MISC_REASON_LOCKPICKING	فتح الأقفال
 MISC_LOCKED_NAME	{0} (مقفل)
+PROP_CHAIR	كرسي
+PROP_BENCH	مقعد طويل
+PROP_STOOL	مقعد صغير
+PROP_TABLE	طاولة
+PROP_END_TABLE	طاولة جانبية
+PROP_ROUND_TABLE	طاولة مستديرة
+PROP_METAL_TABLE	طاولة معدنية
+PROP_STANDING_TORCH	مشعل قائم
+PROP_SUPPORT_BEAM	عارضة دعم
+PROP_TRAINING_DUMMY	دمية تدريب
+PROP_RAW_FOOD_STORAGE	مخزن الطعام النيء
+PROP_FOOD_STORAGE	مخزن الطعام
+PROP_WEAPON_RACK	حامل الأسلحة
+PROP_ARMOR_STAND	حامل الدروع
+PROP_WATER_TANK	خزان الماء
+PROP_WATER_PUMP	مضخة الماء
+PROP_FORGE	كور الحداد
+FILTER_RAW_FOOD	طعام نيء
+FILTER_FOOD	طعام
+FILTER_WEAPON	أسلحة
+FILTER_ARMOR	دروع
+FILTER_WATER	ماء
+MISC_STORAGE_ONLY	يقبل فقط: {0}
+UILABEL_STORAGE_TAKES	يقبل فقط: {0}.
+UILABEL_TASK_SITTING	جالس
+UILABEL_TASK_LOCKED_IN	محبوس
+MISC_LOCKED_IN	{0} محبوس في {1}
+MISC_REASON_TRAINING	التدريب
+MISC_XP_GAINED	+{0} خبرة {1}
+UILABEL_INPUT	المدخلات
+UILABEL_OUTPUT	المخرجات
+MISC_FUEL_LEFT	مشتعل: بقي وقود لمدة {0} دقيقة
+MISC_NO_FUEL	لا وقود
+MISC_OUTPUT_FULL	المخرجات ممتلئة: متوقف
+UILABEL_PASSIVE_HINT	يستخدم {0} وقودًا: كل واحدة تحترق {1} دقيقة من وقت اللعبة وتصنع {2} في المخرجات، بوجود عامل أو بدونه. يتوقف عندما تمتلئ المخرجات. انقر بالزر الأيمن على العناصر لنقلها إلى الداخل أو الخارج.
+ITEM_91_NAME	ماء
+ITEM_91_DESC	ماء عذب من مضخة.
+ITEM_92_NAME	سبيكة حديد
+ITEM_92_DESC	قضيب من الحديد صُهر من الخام في كور الحداد.
+ITEM_93_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_93_NAME	لحم بقر نيء
+ITEM_94_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_94_NAME	لحم بقر مطبوخ
+ITEM_95_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_95_NAME	لحم دجاج نيء
+ITEM_96_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_96_NAME	لحم دجاج مطبوخ
+ITEM_97_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_97_NAME	لحم خنزير بري نيء
+ITEM_98_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_98_NAME	لحم خنزير بري مطبوخ
+ITEM_99_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_99_NAME	لحم ذئب نيء
+ITEM_100_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_100_NAME	لحم ذئب مطبوخ
+ITEM_101_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_101_NAME	لحم غزال نيء
+ITEM_102_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_102_NAME	لحم غزال مطبوخ
+ITEM_103_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_103_NAME	لحم أرنب نيء
+ITEM_104_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_104_NAME	لحم أرنب مطبوخ
+ITEM_105_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_105_NAME	سمك نيء
+ITEM_106_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_106_NAME	سمك مطبوخ
+ITEM_107_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_107_NAME	لحم سلطعون نيء
+ITEM_108_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_108_NAME	لحم سلطعون مطبوخ
+ITEM_109_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_109_NAME	لحم سحلية نيء
+ITEM_110_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_110_NAME	لحم سحلية مطبوخ
+ITEM_111_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_111_NAME	لحم ثعبان نيء
+ITEM_112_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_112_NAME	لحم ثعبان مطبوخ
+ITEM_113_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_113_NAME	لحم خنزير نيء
+ITEM_114_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_114_NAME	لحم خنزير مطبوخ
+ITEM_115_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_115_NAME	لحم خروف نيء
+ITEM_116_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_116_NAME	لحم خروف مطبوخ
+ITEM_117_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_117_NAME	لحم بط نيء
+ITEM_118_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_118_NAME	لحم بط مطبوخ
+ITEM_119_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_119_NAME	لحم سلحفاة نيء
+ITEM_120_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_120_NAME	لحم سلحفاة مطبوخ
+ITEM_121_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_121_NAME	لحم خفاش نيء
+ITEM_122_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_122_NAME	لحم خفاش مطبوخ
+ITEM_123_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_123_NAME	لحم ضفدع نيء
+ITEM_124_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
+ITEM_124_NAME	لحم ضفدع مطبوخ
+ITEM_125_DESC	فطر بري صغير. إذا أُكل نيئًا لا يفيد الصحة أو الجوع إلا قليلًا.
+ITEM_125_NAME	فطر
+MISC_FOOD_TO_COOK	لحمًا نيئًا

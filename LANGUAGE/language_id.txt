@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Masukkan {0} ke masukan untuk mulai
 MISC_CRAFTS	{0} membuat {1}
 MISC_CRAFT_STOPS	{0} tidak punya bahan lagi dan berhenti
 MISC_REASON_CRAFTING	kerajinan
-ITEM_89_NAME	Daging mentah
+ITEM_89_NAME	Daging beruang mentah
 ITEM_89_DESC	Daging yang belum dimasak. Masak di api unggun.
-ITEM_90_NAME	Daging matang
+ITEM_90_NAME	Daging beruang matang
 ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
 UILABEL_TALK	Bicara
 UILABEL_ATTACK	Serang
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Gagal membobol kunci
 MISC_UNLOCKS	{0} membuka kunci {1}
 MISC_REASON_LOCKPICKING	membobol kunci
 MISC_LOCKED_NAME	{0} (terkunci)
+PROP_CHAIR	Kursi
+PROP_BENCH	Bangku panjang
+PROP_STOOL	Bangku kecil
+PROP_TABLE	Meja
+PROP_END_TABLE	Meja samping
+PROP_ROUND_TABLE	Meja bundar
+PROP_METAL_TABLE	Meja logam
+PROP_STANDING_TORCH	Obor berdiri
+PROP_SUPPORT_BEAM	Balok penyangga
+PROP_TRAINING_DUMMY	Boneka latihan
+PROP_RAW_FOOD_STORAGE	Gudang makanan mentah
+PROP_FOOD_STORAGE	Gudang makanan
+PROP_WEAPON_RACK	Rak senjata
+PROP_ARMOR_STAND	Dudukan zirah
+PROP_WATER_TANK	Tangki air
+PROP_WATER_PUMP	Pompa air
+PROP_FORGE	Tempa
+FILTER_RAW_FOOD	makanan mentah
+FILTER_FOOD	makanan
+FILTER_WEAPON	senjata
+FILTER_ARMOR	zirah
+FILTER_WATER	air
+MISC_STORAGE_ONLY	Hanya menerima: {0}
+UILABEL_STORAGE_TAKES	Hanya menerima: {0}.
+UILABEL_TASK_SITTING	Duduk
+UILABEL_TASK_LOCKED_IN	Terkunci
+MISC_LOCKED_IN	{0} terkunci di {1}
+MISC_REASON_TRAINING	latihan
+MISC_XP_GAINED	+{0} XP {1}
+UILABEL_INPUT	Masukan
+UILABEL_OUTPUT	Keluaran
+MISC_FUEL_LEFT	Menyala: bahan bakar tersisa {0} mnt
+MISC_NO_FUEL	Tidak ada bahan bakar
+MISC_OUTPUT_FULL	Keluaran penuh: berhenti
+UILABEL_PASSIVE_HINT	Memakai {0} sebagai bahan bakar: masing-masing menyala {1} menit dalam game dan membuat {2} di keluaran, dengan atau tanpa pekerja. Berhenti selama keluaran penuh. Klik kanan item untuk memasukkan atau mengeluarkannya.
+ITEM_91_NAME	Air
+ITEM_91_DESC	Air segar dari pompa.
+ITEM_92_NAME	Batangan besi
+ITEM_92_DESC	Batangan besi yang dilebur dari bijih di tempa.
+ITEM_93_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_93_NAME	Daging sapi mentah
+ITEM_94_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_94_NAME	Daging sapi matang
+ITEM_95_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_95_NAME	Daging ayam mentah
+ITEM_96_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_96_NAME	Daging ayam matang
+ITEM_97_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_97_NAME	Daging babi hutan mentah
+ITEM_98_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_98_NAME	Daging babi hutan matang
+ITEM_99_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_99_NAME	Daging serigala mentah
+ITEM_100_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_100_NAME	Daging serigala matang
+ITEM_101_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_101_NAME	Daging rusa mentah
+ITEM_102_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_102_NAME	Daging rusa matang
+ITEM_103_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_103_NAME	Daging kelinci mentah
+ITEM_104_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_104_NAME	Daging kelinci matang
+ITEM_105_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_105_NAME	Ikan mentah
+ITEM_106_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_106_NAME	Ikan matang
+ITEM_107_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_107_NAME	Daging kepiting mentah
+ITEM_108_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_108_NAME	Daging kepiting matang
+ITEM_109_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_109_NAME	Daging kadal mentah
+ITEM_110_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_110_NAME	Daging kadal matang
+ITEM_111_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_111_NAME	Daging ular mentah
+ITEM_112_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_112_NAME	Daging ular matang
+ITEM_113_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_113_NAME	Daging babi mentah
+ITEM_114_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_114_NAME	Daging babi matang
+ITEM_115_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_115_NAME	Daging domba mentah
+ITEM_116_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_116_NAME	Daging domba matang
+ITEM_117_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_117_NAME	Daging bebek mentah
+ITEM_118_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_118_NAME	Daging bebek matang
+ITEM_119_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_119_NAME	Daging kura-kura mentah
+ITEM_120_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_120_NAME	Daging kura-kura matang
+ITEM_121_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_121_NAME	Daging kelelawar mentah
+ITEM_122_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_122_NAME	Daging kelelawar matang
+ITEM_123_DESC	Daging yang belum dimasak. Masak di api unggun.
+ITEM_123_NAME	Daging katak mentah
+ITEM_124_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
+ITEM_124_NAME	Daging katak matang
+ITEM_125_DESC	Jamur liar kecil. Dimakan mentah, hanya sedikit membantu kesehatan dan rasa lapar.
+ITEM_125_NAME	Jamur
+MISC_FOOD_TO_COOK	daging mentah

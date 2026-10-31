@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Læg {0} i input for at begynde
 MISC_CRAFTS	{0} laver {1}
 MISC_CRAFT_STOPS	{0} har ikke mere at arbejde med og stopper
 MISC_REASON_CRAFTING	håndværk
-ITEM_89_NAME	Råt kød
+ITEM_89_NAME	Råt bjørnekød
 ITEM_89_DESC	Utilberedt kød. Steg det ved et lejrbål.
-ITEM_90_NAME	Stegt kød
+ITEM_90_NAME	Stegt bjørnekød
 ITEM_90_DESC	Kød stegt over ild. Genopretter helbred og mætter.
 UILABEL_TALK	Tal
 UILABEL_ATTACK	Angrib
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Dirkning mislykkedes
 MISC_UNLOCKS	{0} låser {1} op
 MISC_REASON_LOCKPICKING	dirke låse
 MISC_LOCKED_NAME	{0} (låst)
+PROP_CHAIR	Stol
+PROP_BENCH	Bænk
+PROP_STOOL	Skammel
+PROP_TABLE	Bord
+PROP_END_TABLE	Sidebord
+PROP_ROUND_TABLE	Rundt bord
+PROP_METAL_TABLE	Metalbord
+PROP_STANDING_TORCH	Stående fakkel
+PROP_SUPPORT_BEAM	Støttebjælke
+PROP_TRAINING_DUMMY	Træningsdukke
+PROP_RAW_FOOD_STORAGE	Lager til rå mad
+PROP_FOOD_STORAGE	Madlager
+PROP_WEAPON_RACK	Våbenstativ
+PROP_ARMOR_STAND	Rustningsstativ
+PROP_WATER_TANK	Vandtank
+PROP_WATER_PUMP	Vandpumpe
+PROP_FORGE	Esse
+FILTER_RAW_FOOD	rå mad
+FILTER_FOOD	mad
+FILTER_WEAPON	våben
+FILTER_ARMOR	rustning
+FILTER_WATER	vand
+MISC_STORAGE_ONLY	Tager kun {0}
+UILABEL_STORAGE_TAKES	Tager kun {0}.
+UILABEL_TASK_SITTING	Sidder
+UILABEL_TASK_LOCKED_IN	Låst inde
+MISC_LOCKED_IN	{0} er låst inde i {1}
+MISC_REASON_TRAINING	træning
+MISC_XP_GAINED	+{0} {1} XP
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_FUEL_LEFT	Brænder: {0} min brændsel tilbage
+MISC_NO_FUEL	Intet brændsel
+MISC_OUTPUT_FULL	Output fuldt: på pause
+UILABEL_PASSIVE_HINT	Tager {0} som brændsel: hver brænder i {1} spilminutter og laver {2} i output, med eller uden en arbejder. Den holder pause, mens output er fuldt. Højreklik på genstande for at flytte dem ind eller ud.
+ITEM_91_NAME	Vand
+ITEM_91_DESC	Frisk vand fra en pumpe.
+ITEM_92_NAME	Jernbarre
+ITEM_92_DESC	En barre jern smeltet af malm i en esse.
+ITEM_93_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_93_NAME	Råt oksekød
+ITEM_94_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_94_NAME	Stegt oksekød
+ITEM_95_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_95_NAME	Råt kyllingekød
+ITEM_96_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_96_NAME	Stegt kyllingekød
+ITEM_97_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_97_NAME	Råt vildsvinekød
+ITEM_98_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_98_NAME	Stegt vildsvinekød
+ITEM_99_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_99_NAME	Råt ulvekød
+ITEM_100_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_100_NAME	Stegt ulvekød
+ITEM_101_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_101_NAME	Råt hjortekød
+ITEM_102_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_102_NAME	Stegt hjortekød
+ITEM_103_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_103_NAME	Råt kaninkød
+ITEM_104_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_104_NAME	Stegt kaninkød
+ITEM_105_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_105_NAME	Rå fisk
+ITEM_106_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_106_NAME	Stegt fisk
+ITEM_107_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_107_NAME	Råt krabbekød
+ITEM_108_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_108_NAME	Stegt krabbekød
+ITEM_109_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_109_NAME	Råt firbenkød
+ITEM_110_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_110_NAME	Stegt firbenkød
+ITEM_111_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_111_NAME	Råt slangekød
+ITEM_112_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_112_NAME	Stegt slangekød
+ITEM_113_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_113_NAME	Råt svinekød
+ITEM_114_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_114_NAME	Stegt svinekød
+ITEM_115_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_115_NAME	Råt fårekød
+ITEM_116_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_116_NAME	Stegt fårekød
+ITEM_117_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_117_NAME	Råt andekød
+ITEM_118_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_118_NAME	Stegt andekød
+ITEM_119_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_119_NAME	Råt skildpaddekød
+ITEM_120_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_120_NAME	Stegt skildpaddekød
+ITEM_121_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_121_NAME	Råt flagermuskød
+ITEM_122_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_122_NAME	Stegt flagermuskød
+ITEM_123_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_123_NAME	Råt frøkød
+ITEM_124_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_124_NAME	Stegt frøkød
+ITEM_125_DESC	En lille vild svamp. Rå gør den ikke meget for helbred eller sult.
+ITEM_125_NAME	Svamp
+MISC_FOOD_TO_COOK	råt kød

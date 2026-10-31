@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Başlamak için girdiye {0} koy
 MISC_CRAFTS	{0}, {1} yapıyor
 MISC_CRAFT_STOPS	{0} üzerinde çalışacak bir şey kalmadı, duruyor
 MISC_REASON_CRAFTING	zanaat
-ITEM_89_NAME	Çiğ et
+ITEM_89_NAME	Çiğ ayı eti
 ITEM_89_DESC	Pişmemiş et. Kamp ateşinde pişir.
-ITEM_90_NAME	Pişmiş et
+ITEM_90_NAME	Pişmiş ayı eti
 ITEM_90_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
 UILABEL_TALK	Konuş
 UILABEL_ATTACK	Saldır
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Maymuncuk başarısız
 MISC_UNLOCKS	{0}, {1} kilidini açıyor
 MISC_REASON_LOCKPICKING	kilit açmak
 MISC_LOCKED_NAME	{0} (kilitli)
+PROP_CHAIR	Sandalye
+PROP_BENCH	Bank
+PROP_STOOL	Tabure
+PROP_TABLE	Masa
+PROP_END_TABLE	Komodin
+PROP_ROUND_TABLE	Yuvarlak masa
+PROP_METAL_TABLE	Metal masa
+PROP_STANDING_TORCH	Ayaklı meşale
+PROP_SUPPORT_BEAM	Destek kirişi
+PROP_TRAINING_DUMMY	Antrenman mankeni
+PROP_RAW_FOOD_STORAGE	Çiğ yiyecek deposu
+PROP_FOOD_STORAGE	Yiyecek deposu
+PROP_WEAPON_RACK	Silah rafı
+PROP_ARMOR_STAND	Zırh standı
+PROP_WATER_TANK	Su tankı
+PROP_WATER_PUMP	Su pompası
+PROP_FORGE	Demirci ocağı
+FILTER_RAW_FOOD	çiğ yiyecek
+FILTER_FOOD	yiyecek
+FILTER_WEAPON	silahlar
+FILTER_ARMOR	zırh
+FILTER_WATER	su
+MISC_STORAGE_ONLY	Yalnızca şunu alır: {0}
+UILABEL_STORAGE_TAKES	Yalnızca şunu alır: {0}.
+UILABEL_TASK_SITTING	Oturuyor
+UILABEL_TASK_LOCKED_IN	Kilitli
+MISC_LOCKED_IN	{0}, {1} içinde kilitli
+MISC_REASON_TRAINING	antrenman
+MISC_XP_GAINED	+{0} {1} TP
+UILABEL_INPUT	Girdi
+UILABEL_OUTPUT	Çıktı
+MISC_FUEL_LEFT	Yanıyor: {0} dk yakıt kaldı
+MISC_NO_FUEL	Yakıt yok
+MISC_OUTPUT_FULL	Çıktı dolu: duraklatıldı
+UILABEL_PASSIVE_HINT	Yakıt olarak {0} kullanır: her biri {1} oyun dakikası yanar ve işçi olsun olmasın çıktıya {2} yapar. Çıktı doluyken durur. Eşyaları koymak ya da almak için sağ tıkla.
+ITEM_91_NAME	Su
+ITEM_91_DESC	Pompadan gelen temiz su.
+ITEM_92_NAME	Demir külçe
+ITEM_92_DESC	Demirci ocağında cevherden eritilmiş bir demir külçesi.
+ITEM_93_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_93_NAME	Çiğ dana eti
+ITEM_94_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_94_NAME	Pişmiş dana eti
+ITEM_95_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_95_NAME	Çiğ tavuk eti
+ITEM_96_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_96_NAME	Pişmiş tavuk eti
+ITEM_97_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_97_NAME	Çiğ yaban domuzu eti
+ITEM_98_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_98_NAME	Pişmiş yaban domuzu eti
+ITEM_99_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_99_NAME	Çiğ kurt eti
+ITEM_100_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_100_NAME	Pişmiş kurt eti
+ITEM_101_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_101_NAME	Çiğ geyik eti
+ITEM_102_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_102_NAME	Pişmiş geyik eti
+ITEM_103_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_103_NAME	Çiğ tavşan eti
+ITEM_104_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_104_NAME	Pişmiş tavşan eti
+ITEM_105_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_105_NAME	Çiğ balık
+ITEM_106_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_106_NAME	Pişmiş balık
+ITEM_107_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_107_NAME	Çiğ yengeç eti
+ITEM_108_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_108_NAME	Pişmiş yengeç eti
+ITEM_109_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_109_NAME	Çiğ kertenkele eti
+ITEM_110_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_110_NAME	Pişmiş kertenkele eti
+ITEM_111_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_111_NAME	Çiğ yılan eti
+ITEM_112_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_112_NAME	Pişmiş yılan eti
+ITEM_113_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_113_NAME	Çiğ domuz eti
+ITEM_114_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_114_NAME	Pişmiş domuz eti
+ITEM_115_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_115_NAME	Çiğ koyun eti
+ITEM_116_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_116_NAME	Pişmiş koyun eti
+ITEM_117_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_117_NAME	Çiğ ördek eti
+ITEM_118_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_118_NAME	Pişmiş ördek eti
+ITEM_119_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_119_NAME	Çiğ kaplumbağa eti
+ITEM_120_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_120_NAME	Pişmiş kaplumbağa eti
+ITEM_121_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_121_NAME	Çiğ yarasa eti
+ITEM_122_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_122_NAME	Pişmiş yarasa eti
+ITEM_123_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_123_NAME	Çiğ kurbağa eti
+ITEM_124_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
+ITEM_124_NAME	Pişmiş kurbağa eti
+ITEM_125_DESC	Küçük bir yabani mantar. Çiğ yenince sağlığa ve açlığa pek az iyi gelir.
+ITEM_125_NAME	Mantar
+MISC_FOOD_TO_COOK	çiğ et

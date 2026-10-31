@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Ponha {0} na entrada para começar
 MISC_CRAFTS	{0} faz {1}
 MISC_CRAFT_STOPS	{0} não tem mais em que trabalhar e para
 MISC_REASON_CRAFTING	fabricar
-ITEM_89_NAME	Carne crua
+ITEM_89_NAME	Carne de urso crua
 ITEM_89_DESC	Carne por cozinhar. Asse-a numa fogueira.
-ITEM_90_NAME	Carne assada
+ITEM_90_NAME	Carne de urso assada
 ITEM_90_DESC	Carne assada ao lume. Restaura vida e fome.
 UILABEL_TALK	Falar
 UILABEL_ATTACK	Atacar
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Falha ao arrombar
 MISC_UNLOCKS	{0} destranca {1}
 MISC_REASON_LOCKPICKING	arrombar fechaduras
 MISC_LOCKED_NAME	{0} (trancado)
+PROP_CHAIR	Cadeira
+PROP_BENCH	Banco
+PROP_STOOL	Banco baixo
+PROP_TABLE	Mesa
+PROP_END_TABLE	Mesa de cabeceira
+PROP_ROUND_TABLE	Mesa redonda
+PROP_METAL_TABLE	Mesa de metal
+PROP_STANDING_TORCH	Tocha de pé
+PROP_SUPPORT_BEAM	Viga de suporte
+PROP_TRAINING_DUMMY	Boneco de treino
+PROP_RAW_FOOD_STORAGE	Despensa de comida crua
+PROP_FOOD_STORAGE	Despensa
+PROP_WEAPON_RACK	Suporte de armas
+PROP_ARMOR_STAND	Suporte de armadura
+PROP_WATER_TANK	Depósito de água
+PROP_WATER_PUMP	Bomba de água
+PROP_FORGE	Forja
+FILTER_RAW_FOOD	comida crua
+FILTER_FOOD	comida
+FILTER_WEAPON	armas
+FILTER_ARMOR	armadura
+FILTER_WATER	água
+MISC_STORAGE_ONLY	Só aceita: {0}
+UILABEL_STORAGE_TAKES	Só aceita: {0}.
+UILABEL_TASK_SITTING	Sentado
+UILABEL_TASK_LOCKED_IN	Fechado
+MISC_LOCKED_IN	{0} está fechado em: {1}
+MISC_REASON_TRAINING	treino
+MISC_XP_GAINED	+{0} XP de {1}
+UILABEL_INPUT	Entrada
+UILABEL_OUTPUT	Saída
+MISC_FUEL_LEFT	A arder: restam {0} min de combustível
+MISC_NO_FUEL	Sem combustível
+MISC_OUTPUT_FULL	Saída cheia: em pausa
+UILABEL_PASSIVE_HINT	Usa {0} como combustível: cada um arde {1} minutos de jogo e faz {2} na saída, com ou sem trabalhador. Para enquanto a saída estiver cheia. Clica com o botão direito nos itens para os pôr ou tirar.
+ITEM_91_NAME	Água
+ITEM_91_DESC	Água fresca de uma bomba.
+ITEM_92_NAME	Lingote de ferro
+ITEM_92_DESC	Uma barra de ferro fundida a partir de minério numa forja.
+ITEM_93_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_93_NAME	Carne de vaca crua
+ITEM_94_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_94_NAME	Carne de vaca assada
+ITEM_95_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_95_NAME	Carne de frango crua
+ITEM_96_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_96_NAME	Carne de frango assada
+ITEM_97_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_97_NAME	Carne de javali crua
+ITEM_98_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_98_NAME	Carne de javali assada
+ITEM_99_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_99_NAME	Carne de lobo crua
+ITEM_100_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_100_NAME	Carne de lobo assada
+ITEM_101_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_101_NAME	Carne de veado crua
+ITEM_102_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_102_NAME	Carne de veado assada
+ITEM_103_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_103_NAME	Carne de coelho crua
+ITEM_104_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_104_NAME	Carne de coelho assada
+ITEM_105_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_105_NAME	Peixe cru
+ITEM_106_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_106_NAME	Peixe assado
+ITEM_107_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_107_NAME	Carne de caranguejo crua
+ITEM_108_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_108_NAME	Carne de caranguejo assada
+ITEM_109_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_109_NAME	Carne de lagarto crua
+ITEM_110_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_110_NAME	Carne de lagarto assada
+ITEM_111_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_111_NAME	Carne de serpente crua
+ITEM_112_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_112_NAME	Carne de serpente assada
+ITEM_113_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_113_NAME	Carne de porco crua
+ITEM_114_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_114_NAME	Carne de porco assada
+ITEM_115_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_115_NAME	Carne de ovelha crua
+ITEM_116_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_116_NAME	Carne de ovelha assada
+ITEM_117_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_117_NAME	Carne de pato crua
+ITEM_118_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_118_NAME	Carne de pato assada
+ITEM_119_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_119_NAME	Carne de tartaruga crua
+ITEM_120_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_120_NAME	Carne de tartaruga assada
+ITEM_121_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_121_NAME	Carne de morcego crua
+ITEM_122_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_122_NAME	Carne de morcego assada
+ITEM_123_DESC	Carne por cozinhar. Asse-a numa fogueira.
+ITEM_123_NAME	Carne de rã crua
+ITEM_124_DESC	Carne assada ao lume. Restaura vida e fome.
+ITEM_124_NAME	Carne de rã assada
+ITEM_125_DESC	Um pequeno cogumelo selvagem. Cru, ajuda pouco a saúde e a fome.
+ITEM_125_NAME	Cogumelo
+MISC_FOOD_TO_COOK	carne crua

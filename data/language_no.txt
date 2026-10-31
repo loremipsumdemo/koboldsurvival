@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Legg {0} i inndata for å begynne
 MISC_CRAFTS	{0} lager {1}
 MISC_CRAFT_STOPS	{0} har ikke mer å jobbe med og stopper
 MISC_REASON_CRAFTING	håndverk
-ITEM_89_NAME	Rått kjøtt
+ITEM_89_NAME	Rått bjørnekjøtt
 ITEM_89_DESC	Ukokt kjøtt. Stek det ved et leirbål.
-ITEM_90_NAME	Stekt kjøtt
+ITEM_90_NAME	Stekt bjørnekjøtt
 ITEM_90_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
 UILABEL_TALK	Snakk
 UILABEL_ATTACK	Angrip
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Dirking mislyktes
 MISC_UNLOCKS	{0} låser opp {1}
 MISC_REASON_LOCKPICKING	dirke låser
 MISC_LOCKED_NAME	{0} (låst)
+PROP_CHAIR	Stol
+PROP_BENCH	Benk
+PROP_STOOL	Krakk
+PROP_TABLE	Bord
+PROP_END_TABLE	Sidebord
+PROP_ROUND_TABLE	Rundt bord
+PROP_METAL_TABLE	Metallbord
+PROP_STANDING_TORCH	Stående fakkel
+PROP_SUPPORT_BEAM	Støttebjelke
+PROP_TRAINING_DUMMY	Treningsdukke
+PROP_RAW_FOOD_STORAGE	Lager for rå mat
+PROP_FOOD_STORAGE	Matlager
+PROP_WEAPON_RACK	Våpenstativ
+PROP_ARMOR_STAND	Rustningsstativ
+PROP_WATER_TANK	Vanntank
+PROP_WATER_PUMP	Vannpumpe
+PROP_FORGE	Esse
+FILTER_RAW_FOOD	rå mat
+FILTER_FOOD	mat
+FILTER_WEAPON	våpen
+FILTER_ARMOR	rustning
+FILTER_WATER	vann
+MISC_STORAGE_ONLY	Tar bare {0}
+UILABEL_STORAGE_TAKES	Tar bare {0}.
+UILABEL_TASK_SITTING	Sitter
+UILABEL_TASK_LOCKED_IN	Innelåst
+MISC_LOCKED_IN	{0} er låst inne i {1}
+MISC_REASON_TRAINING	trening
+MISC_XP_GAINED	+{0} {1} erfaring
+UILABEL_INPUT	Inndata
+UILABEL_OUTPUT	Utdata
+MISC_FUEL_LEFT	Brenner: {0} min brensel igjen
+MISC_NO_FUEL	Ikke brensel
+MISC_OUTPUT_FULL	Utdata fullt: på pause
+UILABEL_PASSIVE_HINT	Tar {0} som brensel: hver brenner i {1} spillminutter og lager {2} i utdata, med eller uten arbeider. Den tar pause mens utdata er fullt. Høyreklikk på gjenstander for å flytte dem inn eller ut.
+ITEM_91_NAME	Vann
+ITEM_91_DESC	Friskt vann fra en pumpe.
+ITEM_92_NAME	Jernbarre
+ITEM_92_DESC	En barre jern smeltet av malm i en esse.
+ITEM_93_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_93_NAME	Rått storfekjøtt
+ITEM_94_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_94_NAME	Stekt storfekjøtt
+ITEM_95_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_95_NAME	Rått kyllingkjøtt
+ITEM_96_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_96_NAME	Stekt kyllingkjøtt
+ITEM_97_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_97_NAME	Rått villsvinkjøtt
+ITEM_98_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_98_NAME	Stekt villsvinkjøtt
+ITEM_99_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_99_NAME	Rått ulvekjøtt
+ITEM_100_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_100_NAME	Stekt ulvekjøtt
+ITEM_101_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_101_NAME	Rått hjortekjøtt
+ITEM_102_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_102_NAME	Stekt hjortekjøtt
+ITEM_103_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_103_NAME	Rått kaninkjøtt
+ITEM_104_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_104_NAME	Stekt kaninkjøtt
+ITEM_105_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_105_NAME	Rå fisk
+ITEM_106_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_106_NAME	Stekt fisk
+ITEM_107_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_107_NAME	Rått krabbekjøtt
+ITEM_108_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_108_NAME	Stekt krabbekjøtt
+ITEM_109_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_109_NAME	Rått øglekjøtt
+ITEM_110_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_110_NAME	Stekt øglekjøtt
+ITEM_111_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_111_NAME	Rått slangekjøtt
+ITEM_112_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_112_NAME	Stekt slangekjøtt
+ITEM_113_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_113_NAME	Rått svinekjøtt
+ITEM_114_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_114_NAME	Stekt svinekjøtt
+ITEM_115_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_115_NAME	Rått sauekjøtt
+ITEM_116_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_116_NAME	Stekt sauekjøtt
+ITEM_117_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_117_NAME	Rått andekjøtt
+ITEM_118_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_118_NAME	Stekt andekjøtt
+ITEM_119_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_119_NAME	Rått skilpaddekjøtt
+ITEM_120_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_120_NAME	Stekt skilpaddekjøtt
+ITEM_121_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_121_NAME	Rått flaggermuskjøtt
+ITEM_122_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_122_NAME	Stekt flaggermuskjøtt
+ITEM_123_DESC	Ukokt kjøtt. Stek det ved et leirbål.
+ITEM_123_NAME	Rått froskekjøtt
+ITEM_124_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
+ITEM_124_NAME	Stekt froskekjøtt
+ITEM_125_DESC	En liten vill sopp. Rå hjelper den lite på helse og sult.
+ITEM_125_NAME	Sopp
+MISC_FOOD_TO_COOK	rått kjøtt

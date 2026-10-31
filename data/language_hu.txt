@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Tegyél {0} tárgyat a bemenetbe a kezdéshez
 MISC_CRAFTS	{0} elkészít: {1}
 MISC_CRAFT_STOPS	{0} nem talál több munkát, és abbahagyja
 MISC_REASON_CRAFTING	kézművesség
-ITEM_89_NAME	Nyers hús
+ITEM_89_NAME	Nyers medvehús
 ITEM_89_DESC	Nyers hús. Süsd meg egy tábortűznél.
-ITEM_90_NAME	Sült hús
+ITEM_90_NAME	Sült medvehús
 ITEM_90_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
 UILABEL_TALK	Beszéd
 UILABEL_ATTACK	Támadás
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	A zárfeltörés nem sikerült
 MISC_UNLOCKS	{0} kinyitja: {1}
 MISC_REASON_LOCKPICKING	zárfeltörés
 MISC_LOCKED_NAME	{0} (zárva)
+PROP_CHAIR	Szék
+PROP_BENCH	Pad
+PROP_STOOL	Zsámoly
+PROP_TABLE	Asztal
+PROP_END_TABLE	Kisasztal
+PROP_ROUND_TABLE	Kerek asztal
+PROP_METAL_TABLE	Fémasztal
+PROP_STANDING_TORCH	Állófáklya
+PROP_SUPPORT_BEAM	Tartógerenda
+PROP_TRAINING_DUMMY	Gyakorlóbábu
+PROP_RAW_FOOD_STORAGE	Nyersétel-tároló
+PROP_FOOD_STORAGE	Élelmiszertároló
+PROP_WEAPON_RACK	Fegyverállvány
+PROP_ARMOR_STAND	Páncélállvány
+PROP_WATER_TANK	Víztartály
+PROP_WATER_PUMP	Vízpumpa
+PROP_FORGE	Kovácsműhely
+FILTER_RAW_FOOD	nyers étel
+FILTER_FOOD	étel
+FILTER_WEAPON	fegyverek
+FILTER_ARMOR	páncél
+FILTER_WATER	víz
+MISC_STORAGE_ONLY	Csak ezt fogadja: {0}
+UILABEL_STORAGE_TAKES	Csak ezt fogadja: {0}.
+UILABEL_TASK_SITTING	Ül
+UILABEL_TASK_LOCKED_IN	Bezárva
+MISC_LOCKED_IN	{0} be van zárva: {1}
+MISC_REASON_TRAINING	edzés
+MISC_XP_GAINED	+{0} {1} tapasztalat
+UILABEL_INPUT	Bemenet
+UILABEL_OUTPUT	Kimenet
+MISC_FUEL_LEFT	Ég: még {0} perc tüzelő
+MISC_NO_FUEL	Nincs tüzelő
+MISC_OUTPUT_FULL	A kimenet tele: szünetel
+UILABEL_PASSIVE_HINT	Tüzelőként ezt használja: {0}. Mindegyik {1} játékpercig ég, és ezt készíti a kimenetbe: {2}, munkással vagy anélkül. Szünetel, amíg a kimenet tele van. Jobb kattintással tehetsz be vagy vehetsz ki tárgyakat.
+ITEM_91_NAME	Víz
+ITEM_91_DESC	Friss víz egy pumpából.
+ITEM_92_NAME	Vasrúd
+ITEM_92_DESC	Kovácsműhelyben ércből olvasztott vasrúd.
+ITEM_93_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_93_NAME	Nyers marhahús
+ITEM_94_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_94_NAME	Sült marhahús
+ITEM_95_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_95_NAME	Nyers csirkehús
+ITEM_96_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_96_NAME	Sült csirkehús
+ITEM_97_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_97_NAME	Nyers vaddisznóhús
+ITEM_98_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_98_NAME	Sült vaddisznóhús
+ITEM_99_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_99_NAME	Nyers farkashús
+ITEM_100_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_100_NAME	Sült farkashús
+ITEM_101_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_101_NAME	Nyers szarvashús
+ITEM_102_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_102_NAME	Sült szarvashús
+ITEM_103_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_103_NAME	Nyers nyúlhús
+ITEM_104_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_104_NAME	Sült nyúlhús
+ITEM_105_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_105_NAME	Nyers hal
+ITEM_106_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_106_NAME	Sült hal
+ITEM_107_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_107_NAME	Nyers rákhús
+ITEM_108_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_108_NAME	Sült rákhús
+ITEM_109_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_109_NAME	Nyers gyíkhús
+ITEM_110_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_110_NAME	Sült gyíkhús
+ITEM_111_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_111_NAME	Nyers kígyóhús
+ITEM_112_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_112_NAME	Sült kígyóhús
+ITEM_113_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_113_NAME	Nyers disznóhús
+ITEM_114_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_114_NAME	Sült disznóhús
+ITEM_115_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_115_NAME	Nyers birkahús
+ITEM_116_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_116_NAME	Sült birkahús
+ITEM_117_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_117_NAME	Nyers kacsahús
+ITEM_118_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_118_NAME	Sült kacsahús
+ITEM_119_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_119_NAME	Nyers teknőshús
+ITEM_120_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_120_NAME	Sült teknőshús
+ITEM_121_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_121_NAME	Nyers denevérhús
+ITEM_122_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_122_NAME	Sült denevérhús
+ITEM_123_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_123_NAME	Nyers békahús
+ITEM_124_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_124_NAME	Sült békahús
+ITEM_125_DESC	Kis vadgomba. Nyersen alig segít az egészségen és az éhségen.
+ITEM_125_NAME	Gomba
+MISC_FOOD_TO_COOK	nyers hús

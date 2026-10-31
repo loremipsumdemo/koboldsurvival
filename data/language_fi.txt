@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Laita {0} syötteeseen aloittaaksesi
 MISC_CRAFTS	{0} valmistaa: {1}
 MISC_CRAFT_STOPS	{0}: ei enää työstettävää, lopettaa
 MISC_REASON_CRAFTING	käsityö
-ITEM_89_NAME	Raaka liha
+ITEM_89_NAME	Raaka karhunliha
 ITEM_89_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
-ITEM_90_NAME	Kypsä liha
+ITEM_90_NAME	Kypsä karhunliha
 ITEM_90_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
 UILABEL_TALK	Puhu
 UILABEL_ATTACK	Hyökkää
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Tiirikointi epäonnistui
 MISC_UNLOCKS	{0} avaa: {1}
 MISC_REASON_LOCKPICKING	tiirikointi
 MISC_LOCKED_NAME	{0} (lukittu)
+PROP_CHAIR	Tuoli
+PROP_BENCH	Penkki
+PROP_STOOL	Jakkara
+PROP_TABLE	Pöytä
+PROP_END_TABLE	Sivupöytä
+PROP_ROUND_TABLE	Pyöreä pöytä
+PROP_METAL_TABLE	Metallipöytä
+PROP_STANDING_TORCH	Seisova soihtu
+PROP_SUPPORT_BEAM	Tukipalkki
+PROP_TRAINING_DUMMY	Harjoitusnukke
+PROP_RAW_FOOD_STORAGE	Raaka-ainevarasto
+PROP_FOOD_STORAGE	Ruokavarasto
+PROP_WEAPON_RACK	Aseteline
+PROP_ARMOR_STAND	Haarniskateline
+PROP_WATER_TANK	Vesisäiliö
+PROP_WATER_PUMP	Vesipumppu
+PROP_FORGE	Ahjo
+FILTER_RAW_FOOD	raaka ruoka
+FILTER_FOOD	ruoka
+FILTER_WEAPON	aseet
+FILTER_ARMOR	haarniska
+FILTER_WATER	vesi
+MISC_STORAGE_ONLY	Ottaa vain: {0}
+UILABEL_STORAGE_TAKES	Ottaa vain: {0}.
+UILABEL_TASK_SITTING	Istuu
+UILABEL_TASK_LOCKED_IN	Lukittuna
+MISC_LOCKED_IN	{0} on lukittuna: {1}
+MISC_REASON_TRAINING	harjoittelu
+MISC_XP_GAINED	+{0} kokemusta: {1}
+UILABEL_INPUT	Syöte
+UILABEL_OUTPUT	Tuotos
+MISC_FUEL_LEFT	Palaa: polttoainetta {0} min jäljellä
+MISC_NO_FUEL	Ei polttoainetta
+MISC_OUTPUT_FULL	Tuotos täynnä: tauolla
+UILABEL_PASSIVE_HINT	Käyttää polttoaineena: {0}. Kukin palaa {1} pelin minuuttia ja tekee tuotokseen: {2}, työntekijän kanssa tai ilman. Pitää taukoa, kun tuotos on täynnä. Siirrä esineitä sisään tai ulos oikealla napsautuksella.
+ITEM_91_NAME	Vesi
+ITEM_91_DESC	Raikasta vettä pumpusta.
+ITEM_92_NAME	Rautaharkko
+ITEM_92_DESC	Ahjossa malmista sulatettu rautaharkko.
+ITEM_93_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_93_NAME	Raaka naudanliha
+ITEM_94_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_94_NAME	Kypsä naudanliha
+ITEM_95_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_95_NAME	Raaka kananliha
+ITEM_96_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_96_NAME	Kypsä kananliha
+ITEM_97_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_97_NAME	Raaka villisianliha
+ITEM_98_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_98_NAME	Kypsä villisianliha
+ITEM_99_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_99_NAME	Raaka sudenliha
+ITEM_100_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_100_NAME	Kypsä sudenliha
+ITEM_101_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_101_NAME	Raaka peuranliha
+ITEM_102_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_102_NAME	Kypsä peuranliha
+ITEM_103_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_103_NAME	Raaka kaniininliha
+ITEM_104_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_104_NAME	Kypsä kaniininliha
+ITEM_105_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_105_NAME	Raaka kala
+ITEM_106_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_106_NAME	Kypsä kala
+ITEM_107_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_107_NAME	Raaka ravunliha
+ITEM_108_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_108_NAME	Kypsä ravunliha
+ITEM_109_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_109_NAME	Raaka liskonliha
+ITEM_110_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_110_NAME	Kypsä liskonliha
+ITEM_111_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_111_NAME	Raaka käärmeenliha
+ITEM_112_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_112_NAME	Kypsä käärmeenliha
+ITEM_113_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_113_NAME	Raaka sianliha
+ITEM_114_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_114_NAME	Kypsä sianliha
+ITEM_115_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_115_NAME	Raaka lampaanliha
+ITEM_116_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_116_NAME	Kypsä lampaanliha
+ITEM_117_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_117_NAME	Raaka ankanliha
+ITEM_118_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_118_NAME	Kypsä ankanliha
+ITEM_119_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_119_NAME	Raaka kilpikonnanliha
+ITEM_120_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_120_NAME	Kypsä kilpikonnanliha
+ITEM_121_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_121_NAME	Raaka lepakonliha
+ITEM_122_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_122_NAME	Kypsä lepakonliha
+ITEM_123_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_123_NAME	Raaka sammakonliha
+ITEM_124_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
+ITEM_124_NAME	Kypsä sammakonliha
+ITEM_125_DESC	Pieni metsäsieni. Raakana syötynä se auttaa vain vähän terveyteen ja nälkään.
+ITEM_125_NAME	Sieni
+MISC_FOOD_TO_COOK	raakaa lihaa

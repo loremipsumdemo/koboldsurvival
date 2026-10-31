@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Metti {0} nell'ingresso per iniziare
 MISC_CRAFTS	{0} prepara {1}
 MISC_CRAFT_STOPS	{0} non ha più nulla su cui lavorare e si ferma
 MISC_REASON_CRAFTING	artigianato
-ITEM_89_NAME	Carne cruda
+ITEM_89_NAME	Carne d'orso cruda
 ITEM_89_DESC	Carne non cotta. Cuocila su un falò.
-ITEM_90_NAME	Carne cotta
+ITEM_90_NAME	Carne d'orso cotta
 ITEM_90_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
 UILABEL_TALK	Parla
 UILABEL_ATTACK	Attacca
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Scasso fallito
 MISC_UNLOCKS	{0} apre {1}
 MISC_REASON_LOCKPICKING	scassinare serrature
 MISC_LOCKED_NAME	{0} (chiuso)
+PROP_CHAIR	Sedia
+PROP_BENCH	Panca
+PROP_STOOL	Sgabello
+PROP_TABLE	Tavolo
+PROP_END_TABLE	Comodino
+PROP_ROUND_TABLE	Tavolo rotondo
+PROP_METAL_TABLE	Tavolo di metallo
+PROP_STANDING_TORCH	Torcia a stelo
+PROP_SUPPORT_BEAM	Trave di sostegno
+PROP_TRAINING_DUMMY	Manichino da addestramento
+PROP_RAW_FOOD_STORAGE	Dispensa di cibo crudo
+PROP_FOOD_STORAGE	Dispensa
+PROP_WEAPON_RACK	Rastrelliera per armi
+PROP_ARMOR_STAND	Supporto per armature
+PROP_WATER_TANK	Serbatoio d'acqua
+PROP_WATER_PUMP	Pompa dell'acqua
+PROP_FORGE	Forgia
+FILTER_RAW_FOOD	cibo crudo
+FILTER_FOOD	cibo
+FILTER_WEAPON	armi
+FILTER_ARMOR	armature
+FILTER_WATER	acqua
+MISC_STORAGE_ONLY	Accetta solo: {0}
+UILABEL_STORAGE_TAKES	Accetta solo: {0}.
+UILABEL_TASK_SITTING	Seduto
+UILABEL_TASK_LOCKED_IN	Rinchiuso
+MISC_LOCKED_IN	{0} è rinchiuso: {1}
+MISC_REASON_TRAINING	addestramento
+MISC_XP_GAINED	+{0} XP di {1}
+UILABEL_INPUT	Ingresso
+UILABEL_OUTPUT	Uscita
+MISC_FUEL_LEFT	Brucia: {0} min di combustibile rimasti
+MISC_NO_FUEL	Niente combustibile
+MISC_OUTPUT_FULL	Uscita piena: in pausa
+UILABEL_PASSIVE_HINT	Usa {0} come combustibile: ognuno brucia per {1} minuti di gioco e produce {2} nell'uscita, con o senza un lavoratore. Si ferma finché l'uscita è piena. Clic destro sugli oggetti per metterli o toglierli.
+ITEM_91_NAME	Acqua
+ITEM_91_DESC	Acqua fresca da una pompa.
+ITEM_92_NAME	Lingotto di ferro
+ITEM_92_DESC	Una barra di ferro fusa dal minerale in una forgia.
+ITEM_93_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_93_NAME	Carne di manzo cruda
+ITEM_94_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_94_NAME	Carne di manzo cotta
+ITEM_95_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_95_NAME	Carne di pollo cruda
+ITEM_96_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_96_NAME	Carne di pollo cotta
+ITEM_97_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_97_NAME	Carne di cinghiale cruda
+ITEM_98_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_98_NAME	Carne di cinghiale cotta
+ITEM_99_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_99_NAME	Carne di lupo cruda
+ITEM_100_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_100_NAME	Carne di lupo cotta
+ITEM_101_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_101_NAME	Carne di cervo cruda
+ITEM_102_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_102_NAME	Carne di cervo cotta
+ITEM_103_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_103_NAME	Carne di coniglio cruda
+ITEM_104_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_104_NAME	Carne di coniglio cotta
+ITEM_105_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_105_NAME	Pesce crudo
+ITEM_106_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_106_NAME	Pesce cotto
+ITEM_107_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_107_NAME	Carne di granchio cruda
+ITEM_108_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_108_NAME	Carne di granchio cotta
+ITEM_109_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_109_NAME	Carne di lucertola cruda
+ITEM_110_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_110_NAME	Carne di lucertola cotta
+ITEM_111_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_111_NAME	Carne di serpente cruda
+ITEM_112_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_112_NAME	Carne di serpente cotta
+ITEM_113_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_113_NAME	Carne di maiale cruda
+ITEM_114_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_114_NAME	Carne di maiale cotta
+ITEM_115_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_115_NAME	Carne di pecora cruda
+ITEM_116_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_116_NAME	Carne di pecora cotta
+ITEM_117_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_117_NAME	Carne d'anatra cruda
+ITEM_118_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_118_NAME	Carne d'anatra cotta
+ITEM_119_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_119_NAME	Carne di tartaruga cruda
+ITEM_120_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_120_NAME	Carne di tartaruga cotta
+ITEM_121_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_121_NAME	Carne di pipistrello cruda
+ITEM_122_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_122_NAME	Carne di pipistrello cotta
+ITEM_123_DESC	Carne non cotta. Cuocila su un falò.
+ITEM_123_NAME	Carne di rana cruda
+ITEM_124_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
+ITEM_124_NAME	Carne di rana cotta
+ITEM_125_DESC	Un piccolo fungo selvatico. Crudo, aiuta poco la salute e la fame.
+ITEM_125_NAME	Fungo
+MISC_FOOD_TO_COOK	carne cruda

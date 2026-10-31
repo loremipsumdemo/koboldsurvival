@@ -152,7 +152,9 @@ int tradeNpcDrag = -1;                    // the NPC's inventory slot being drag
 // within STORAGE_CLOSE_RANGE of the prop. NULL_ENTITY when closed.
 Entity storageProp = NULL_ENTITY;
 Entity storageUnit = NULL_ENTITY;
-int storageDrag = -1;                     // the storage slot being dragged out of the panel, or -1
+// The panel slot being dragged out of the panel, or -1. Panel slots 0 to STORAGE_SLOTS - 1 are the prop's Storage (its
+// input, at a crafting prop); the next STORAGE_SLOTS are a passive crafting prop's Output.
+int storageDrag = -1;
 
 void closeStorage() {
     storageProp = NULL_ENTITY;
@@ -183,43 +185,65 @@ PropUse storageUse(World& w) {
     return p ? propInfo(p->kind).use : PropUse::None;
 }
 
-// The storage panel's layout, the same for a barrel and a campfire
-StorageLayout storageLayout(World&, int W, int H) {
-    return layoutStorage(W, H);
+// The storage panel's layout: one grid for a barrel or a campfire, an input and an output grid for a forge
+StorageLayout storageLayout(World& w, int W, int H) {
+    return layoutStorage(W, H, w.has<Output>(storageProp));
+}
+
+// A panel slot of the open storage (see storageDrag), or null if there is no such slot
+ItemStack* storageSlot(World& w, int slot) {
+    if (slot < 0) return nullptr;
+    if (slot < STORAGE_SLOTS) {
+        Storage* st = w.get<Storage>(storageProp);
+        return st ? &st->slots[(size_t)slot] : nullptr;
+    }
+    Output* out = w.get<Output>(storageProp);
+    return out && slot < 2 * STORAGE_SLOTS ? &out->slots[(size_t)(slot - STORAGE_SLOTS)] : nullptr;
 }
 
 // Moves a whole stack from the storage into its unit's inventory, if all of it fits. Otherwise nothing moves.
 bool takeFromStorage(World& w, int slot, std::string& why) {
-    Storage* st = w.get<Storage>(storageProp);
+    ItemStack* from = storageSlot(w, slot);
     Inventory* inv = w.get<Inventory>(storageUnit);
-    if (!st || !inv || slot < 0 || slot >= STORAGE_SLOTS || st->slots[slot].item == 0) return false;
-    const ItemStack stack = st->slots[slot];
+    if (!from || !inv || from->item == 0) return false;
+    const ItemStack stack = *from;
     if (!slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, stack.item, stack.count)) {
         const ItemDef* def = findItem(stack.item);
         why = langf("MISC_NO_ROOM_INV", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
         return false;
     }
     addToInventory(*inv, stack.item, stack.count);
-    st->slots[slot] = ItemStack{};
+    *from = ItemStack{};
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
 }
 
 // Drops a whole stack from the storage on the ground where its unit stands, not where the prop is
 bool dropFromStorage(World& w, int slot) {
-    Storage* st = w.get<Storage>(storageProp);
+    ItemStack* from = storageSlot(w, slot);
     const Transform* ut = w.get<Transform>(storageUnit);
-    if (!st || !ut || slot < 0 || slot >= STORAGE_SLOTS || st->slots[slot].item == 0) return false;
-    const ItemStack stack = st->slots[slot];
+    if (!from || !ut || from->item == 0) return false;
+    const ItemStack stack = *from;
     const ItemDef* def = findItem(stack.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
                                    def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) }), LogKind::Drop);
     const Entity e = w.create();
     w.add(e, Transform{ ut->x, ut->y, ut->z });
     w.add(e, GroundItem{ stack.item, stack.count });
-    st->slots[slot] = ItemStack{};
+    *from = ItemStack{};
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
+}
+
+// Why the open storage won't take an item: a crafting prop takes only its input, a filtered storage only its sort
+// (props.h: ItemFilter). Empty if it takes it.
+std::string refusalFor(World& w, int item) {
+    const Prop* prop = w.get<Prop>(storageProp);
+    if (!prop || propAcceptsItem(prop->kind, item)) return std::string();
+    const PropInfo& info = propInfo(prop->kind);
+    if (info.use == PropUse::Storage) return langf("MISC_STORAGE_ONLY", { lang(itemFilterKey(info.accepts)) });
+    const ItemDef* def = findItem(item);
+    return langf("MISC_CRAFT_WRONG_ITEM", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
 }
 
 // A stack's item being chosen for the trade: how many, out of how many the inventory holds that are not in the trade yet
@@ -255,12 +279,10 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
     if (!st || !inv || clickedSlot < 0 || clickedSlot >= INVENTORY_SLOTS || count <= 0) return false;
     const int item = inv->slots[clickedSlot].item;
     if (item == 0 || carriedCount(*inv, item) < count) return false;
-    // A barrel takes anything into any slot. A campfire takes only its input item, into its input slots.
-    const Prop* prop = w.get<Prop>(storageProp);
-    const PropUse use = prop ? propInfo(prop->kind).use : PropUse::Storage;
-    if (use == PropUse::Crafting && item != propInfo(prop->kind).input) {
-        const ItemDef* def = findItem(item);
-        why = langf("MISC_CRAFT_WRONG_ITEM", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
+    // A barrel takes anything into any slot. A campfire or a forge takes only its input item, and a weapon rack and the
+    // like only their sort of item.
+    if (const std::string no = refusalFor(w, item); !no.empty()) {
+        why = no;
         return false;
     }
     if (!slotsCanTake(st->slots.data(), STORAGE_SLOTS, item, count)) {
@@ -682,6 +704,32 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     paused = false;
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng);
+    // log.txt: how many of each prop kind went down, and how far the nearest is from the first unit
+    {
+        std::array<int, PROP_KIND_COUNT> placed{};
+        std::array<float, PROP_KIND_COUNT> nearest{};
+        nearest.fill(1e9f);
+        Vec2 home{ 0.0f, 0.0f };
+        for (Entity u : world.view<Unit, Transform, Commandable>()) {
+            home = Vec2{ world.get<Transform>(u)->x, world.get<Transform>(u)->z };
+            break;
+        }
+        for (Entity e : world.view<Prop, Transform>()) {
+            const int kind = world.get<Prop>(e)->kind;
+            if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+            ++placed[(size_t)kind];
+            const Transform* pt = world.get<Transform>(e);
+            nearest[(size_t)kind] = std::min(nearest[(size_t)kind], std::hypot(pt->x - home.x, pt->z - home.z));
+        }
+        std::string line;
+        for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+            char buf[96];
+            std::snprintf(buf, sizeof(buf), "%s%s %d (%.0f)", k ? ", " : "", lang(propInfo(k).nameKey).c_str(),
+                          placed[(size_t)k], placed[(size_t)k] ? nearest[(size_t)k] : -1.0f);
+            line += buf;
+        }
+        SDL_Log("Props placed, with the nearest one's distance in tiles: %s", line.c_str());
+    }
     if (spawnItems) spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
     report(0.9f);
     return true;
@@ -716,8 +764,10 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
     // Drop the units that setupWorld generated
     for (Entity e : world.view<Unit>()) world.destroy(e);
 
+    std::vector<Entity> restoredUnits;   // in the save's order
     for (const SaveUnit& u : d.units) {
         Entity e = world.create();
+        restoredUnits.push_back(e);
         world.add(e, Transform{ u.x, u.y, u.z });
         // Hostiles walk at their own pace, as on a new level. Every unit fights, so each one gets Combat.
         Unit unit;
@@ -763,6 +813,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, GroundItem{ g.item, g.count });
         }
     }
+    // The props' states below name each prop by its serial. A save made when the level laid its props out another way
+    // (other kinds, or another number of each) would put them on the wrong props, so they are left out.
+    if (d.propLayout != PROP_LAYOUT) {
+        SDL_Log("Save has prop layout %d, the game has %d: prop contents, locks and seats start fresh", d.propLayout, PROP_LAYOUT);
+        return true;
+    }
     // Which locks were open. The props were placed again from the seed, locked, so each is found by its serial.
     for (Entity e : world.view<Prop, Lock>()) {
         for (const SaveLock& l : d.locks) {
@@ -778,6 +834,32 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             st->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
         }
     }
+    // A forge's output, and its fuel and progress
+    for (Entity e : world.view<Prop, Output>()) {
+        const int serial = world.get<Prop>(e)->serial;
+        Output* out = world.get<Output>(e);
+        for (const SaveStorage& s : d.output) {
+            if (s.prop != serial || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
+            out->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
+        }
+        for (const SaveFuel& f : d.fuel) {
+            if (f.prop != serial) continue;
+            if (Fuel* fuel = world.get<Fuel>(e)) fuel->hours = std::max(0.0, f.hours);
+            if (PropWork* pw = world.get<PropWork>(e)) pw->progress = std::clamp(f.progress, 0.0, 1.0);
+        }
+    }
+    // Units on beds, chairs and in cages, put back on them. Two saved on one prop: the first keeps it.
+    for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
+        if (d.units[i].occupying < 0) continue;
+        for (Entity p : world.view<Prop, Transform>()) {
+            if (world.get<Prop>(p)->serial != d.units[i].occupying) continue;
+            if (propInfo(world.get<Prop>(p)->kind).use != PropUse::Occupy || propOccupant(world, p) != NULL_ENTITY) break;
+            const Transform* pt = world.get<Transform>(p);
+            *world.get<Transform>(restoredUnits[i]) = *pt;
+            world.add(restoredUnits[i], Occupying{ p });
+            break;
+        }
+    }
     return true;
 }
 
@@ -791,6 +873,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.mapSource = map.source;
     d.mapStem = map.stem;
     d.gs = gs;
+    d.propLayout = PROP_LAYOUT;
 
     d.cam.present = true;
     d.cam.fx = cam.focusX;
@@ -819,6 +902,9 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         if (const Body* bd = w.get<Body>(u)) {
             su.hasBody = true;
             su.body = bd->type;
+        }
+        if (const Occupying* oc = w.get<Occupying>(u)) {
+            if (const Prop* p = w.get<Prop>(oc->prop)) su.occupying = p->serial;
         }
         if (const Needs* nd = w.get<Needs>(u)) {
             su.hasNeeds = true;
@@ -860,6 +946,17 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             const ItemStack& s = st->slots[(size_t)i];
             if (s.item > 0 && s.count > 0) d.storage.push_back(SaveStorage{ serial, i, s.item, s.count });
         }
+    }
+    for (Entity e : w.view<Prop, Output>()) {
+        const int serial = w.get<Prop>(e)->serial;
+        const Output* out = w.get<Output>(e);
+        for (int i = 0; i < STORAGE_SLOTS; ++i) {
+            const ItemStack& s = out->slots[(size_t)i];
+            if (s.item > 0 && s.count > 0) d.output.push_back(SaveStorage{ serial, i, s.item, s.count });
+        }
+        const Fuel* fuel = w.get<Fuel>(e);
+        const PropWork* pw = w.get<PropWork>(e);
+        d.fuel.push_back(SaveFuel{ serial, fuel ? fuel->hours : 0.0, pw ? pw->progress : 0.0 });
     }
     return d;
 }
@@ -2453,9 +2550,8 @@ int main(int, char**) {
                 else if (!why.empty()) showNotice(why);
                 return;
             }
-            const PropUse use = storageUse(world);
-            if (use == PropUse::Crafting && item != propInfo(world.get<Prop>(storageProp)->kind).input) {
-                showNotice(langf("MISC_CRAFT_WRONG_ITEM", { itemNameOf(item) }));
+            if (const std::string no = refusalFor(world, item); !no.empty()) {
+                showNotice(no);
                 return;
             }
             const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
@@ -2512,11 +2608,24 @@ int main(int, char**) {
             tradePlayer.clear();
             tradeNpcDrag = -1;
         };
+        // Tells the player when a unit given an order can't follow it because it is locked in a cage. True if one is.
+        auto noteLockedIn = [&](const std::vector<Entity>& units) {
+            for (Entity u : units) {
+                if (!lockedIn(world, u)) continue;
+                showNotice(langf("MISC_LOCKED_IN", { nameOf(world, u), propNameOf(world, occupiedProp(world, u)) }));
+                return true;
+            }
+            return false;
+        };
         // ---- The right-click menu ----
         // What is under the pointer: a unit (one that is not selected, if there is one), or else the nearest prop
         // that can be used
         auto menuTargetAt = [&](float mx, float my) {
             const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
+            // A unit locked in a cage stands for the cage: the menu offers to unlock it
+            for (Entity u : under) {
+                if (lockedIn(world, u)) return occupiedProp(world, u);
+            }
             for (Entity u : under) {
                 if (!world.has<Selected>(u)) return u;
             }
@@ -2537,10 +2646,11 @@ int main(int, char**) {
             return prop;
         };
         // Your selected units that act on a target, nearest first. The target itself never acts on itself.
+        // A unit locked in a cage acts only on that cage.
         auto menuActors = [&](Entity target) {
             std::vector<Entity> units;
             for (Entity u : selectedUnits(world)) {
-                if (u != target) units.push_back(u);
+                if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
             }
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
                 return gapBetween(world, a, target) < gapBetween(world, b, target);
@@ -2562,7 +2672,7 @@ int main(int, char**) {
                 const PropUse use = propInfo(p->kind).use;
                 // A locked prop offers only Unlock, until it is open
                 if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) return std::vector<MenuAction>{ MenuAction::Unlock };
-                if (hasStorage(use)) out.push_back(MenuAction::Inventory);
+                if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
                 if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
             }
             return out;
@@ -2597,7 +2707,7 @@ int main(int, char**) {
             if (menuActors(target).empty()) {
                 // Your lone selected unit clicked on itself: a move order, as on the ground under it
                 if (world.has<Selected>(target) && world.has<Commandable>(target)) return false;
-                showNotice(lang("MISC_SELECT_UNIT_FIRST"));
+                if (!noteLockedIn(selectedUnits(world))) showNotice(lang("MISC_SELECT_UNIT_FIRST"));
                 return true;
             }
             contextMenu = ContextMenu{ true, mx, my, target, actions };
@@ -2855,6 +2965,7 @@ int main(int, char**) {
         auto beginRightHold = [&](float x, float z) {
             const std::vector<Entity> units = selectedUnits(world);
             if (units.empty()) return;
+            noteLockedIn(units);   // a unit locked in a cage stays put
             rightHold = true;
             holdX = x;
             holdZ = z;
@@ -3282,13 +3393,16 @@ int main(int, char**) {
                     const StorageLayout stl = storageLayout(world, winW, winH);
                     const float x = e.button.x, y = e.button.y;
                     if (stl.panel.contains(x, y)) {
-                        const Storage* st = world.get<Storage>(storageProp);
                         if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {
                             closeStorage();
                             audio::playEffect(SFX_MENU);
-                        } else if (st) {
-                            for (size_t i = 0; i < stl.slots.size(); ++i) {
-                                if (!stl.slots[i].contains(x, y) || st->slots[i].item == 0) continue;
+                        } else {
+                            // The input (or only) grid's cells are panel slots 0 and up, a forge's output cells follow
+                            std::vector<Rect> cells = stl.slots;
+                            cells.insert(cells.end(), stl.outSlots.begin(), stl.outSlots.end());
+                            for (size_t i = 0; i < cells.size(); ++i) {
+                                const ItemStack* at = storageSlot(world, (int)i);
+                                if (!cells[i].contains(x, y) || !at || at->item == 0) continue;
                                 if (e.button.button == SDL_BUTTON_LEFT) {
                                     storageDrag = (int)i;
                                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -3499,7 +3613,10 @@ int main(int, char**) {
                         if (item != NULL_ENTITY) {
                             const std::vector<Entity> picked = selectedUnits(world);
                             if (picked.empty()) showNotice(lang("MISC_PICKUP_SELECT"));
-                            else issuePickupOrder(world, terrain, picked, item);
+                            else {
+                                noteLockedIn(picked);
+                                issuePickupOrder(world, terrain, picked, item);
+                            }
                             break;
                         }
                     }
@@ -3889,7 +4006,8 @@ int main(int, char**) {
                 } else if (a.taken) {
                     showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 } else if (info.use == PropUse::Crafting && a.craft == WorkStart::NoInput) {
-                    showNotice(langf("MISC_CRAFT_NEEDS", { itemNameOf(info.input) }));
+                    showNotice(langf("MISC_CRAFT_NEEDS", { info.input == INPUT_COOKABLE ? std::string(lang("MISC_FOOD_TO_COOK"))
+                                                                                         : itemNameOf(info.input) }));
                 }
             }
             cleanupSquads(world);
@@ -3918,8 +4036,13 @@ int main(int, char**) {
                 case WorkGain::Kind::LockpickFailed:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_LOCKPICK_FAILED"), 0.0f });
                     break;
+                case WorkGain::Kind::Trained:
+                    tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_XP_GAINED", { std::to_string((int)std::lround(g.xp)), statName(g.item) }), 0.0f });
+                    break;
                 }
             }
+            // Passive crafting props (the forge) burn their fuel and fill their output by themselves
+            passiveCraftSystem(world, gameSecs);
 
             // Autosave every N minutes of play
             autoTimer += dt;
@@ -4049,6 +4172,12 @@ int main(int, char**) {
             renderer.beginUi(winW, winH);
             // Every player unit is a green dot on the minimap and the world map
             std::vector<MapDot> mapDots;
+            // Resource props first, as small orange-yellow dots, so the units' dots draw over them
+            for (Entity e : world.view<Prop, Transform>()) {
+                if (propInfo(world.get<Prop>(e)->kind).use != PropUse::Resource) continue;
+                const Transform* t = world.get<Transform>(e);
+                mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Resource });
+            }
             for (Entity e : world.view<Unit, Transform>()) {
                 const Transform* t = world.get<Transform>(e);
                 MapDotKind kind = MapDotKind::Player;
@@ -4145,13 +4274,32 @@ int main(int, char**) {
             // The storage panel, and the item being dragged out of it
             if (storageProp != NULL_ENTITY) {
                 const Storage* st = world.get<Storage>(storageProp);
-                const bool crafting = storageUse(world) == PropUse::Crafting;
-                const std::string hint = crafting ? langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) })
-                                                  : lang("UILABEL_STORAGE_HINT");
+                const Prop* sp = world.get<Prop>(storageProp);
+                const PropInfo& sinfo = propInfo(sp ? sp->kind : 0);
+                std::string hint, status;
+                if (sinfo.use == PropUse::Crafting) {
+                    hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) });
+                } else if (sinfo.use == PropUse::PassiveCrafting) {
+                    hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
+                                                           std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
+                                                           itemNameOf(sinfo.item) });
+                    const Fuel* fuel = world.get<Fuel>(storageProp);
+                    switch (passiveStateOf(world, storageProp)) {
+                    case PassiveState::OutputFull: status = lang("MISC_OUTPUT_FULL"); break;
+                    case PassiveState::NoFuel: status = lang("MISC_NO_FUEL"); break;
+                    case PassiveState::Burning:
+                        status = langf("MISC_FUEL_LEFT", { std::to_string((int)std::ceil((fuel ? fuel->hours : 0.0) * 60.0 - 1e-6)) });
+                        break;
+                    }
+                } else if (sinfo.accepts != ItemFilter::Any) {
+                    hint = langf("UILABEL_STORAGE_TAKES", { lang(itemFilterKey(sinfo.accepts)) }) + " " + lang("UILABEL_STORAGE_HINT");
+                } else {
+                    hint = lang("UILABEL_STORAGE_HINT");
+                }
                 renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), hint, st,
-                                     storageDrag, mouseX, mouseY);
-                if (st && storageDrag >= 0 && st->slots[storageDrag].item != 0) {
-                    renderer.drawDraggedStack(mouseX, mouseY, st->slots[storageDrag].item, st->slots[storageDrag].count);
+                                     world.get<Output>(storageProp), status, storageDrag, mouseX, mouseY);
+                if (const ItemStack* dragged = storageSlot(world, storageDrag); dragged && dragged->item != 0) {
+                    renderer.drawDraggedStack(mouseX, mouseY, dragged->item, dragged->count);
                 }
                 if (quantity.open && quantity.toStorage) {
                     renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,

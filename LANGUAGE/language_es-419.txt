@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Pon {0} en la entrada para empezar
 MISC_CRAFTS	{0} fabrica {1}
 MISC_CRAFT_STOPS	{0} no tiene nada más en qué trabajar y se detiene
 MISC_REASON_CRAFTING	fabricar
-ITEM_89_NAME	Carne cruda
+ITEM_89_NAME	Carne de oso cruda
 ITEM_89_DESC	Carne sin cocinar. Cocínala en una fogata.
-ITEM_90_NAME	Carne cocida
+ITEM_90_NAME	Carne de oso cocida
 ITEM_90_DESC	Carne cocinada al fuego. Restaura salud y hambre.
 UILABEL_TALK	Hablar
 UILABEL_ATTACK	Atacar
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Falló la ganzúa
 MISC_UNLOCKS	{0} abre {1}
 MISC_REASON_LOCKPICKING	forzar cerraduras
 MISC_LOCKED_NAME	{0} (cerrado)
+PROP_CHAIR	Silla
+PROP_BENCH	Banca
+PROP_STOOL	Taburete
+PROP_TABLE	Mesa
+PROP_END_TABLE	Mesa auxiliar
+PROP_ROUND_TABLE	Mesa redonda
+PROP_METAL_TABLE	Mesa de metal
+PROP_STANDING_TORCH	Antorcha de pie
+PROP_SUPPORT_BEAM	Viga de soporte
+PROP_TRAINING_DUMMY	Muñeco de entrenamiento
+PROP_RAW_FOOD_STORAGE	Almacén de comida cruda
+PROP_FOOD_STORAGE	Almacén de comida
+PROP_WEAPON_RACK	Armero
+PROP_ARMOR_STAND	Soporte de armadura
+PROP_WATER_TANK	Tanque de agua
+PROP_WATER_PUMP	Bomba de agua
+PROP_FORGE	Forja
+FILTER_RAW_FOOD	comida cruda
+FILTER_FOOD	comida
+FILTER_WEAPON	armas
+FILTER_ARMOR	armadura
+FILTER_WATER	agua
+MISC_STORAGE_ONLY	Solo acepta: {0}
+UILABEL_STORAGE_TAKES	Solo acepta: {0}.
+UILABEL_TASK_SITTING	Sentado
+UILABEL_TASK_LOCKED_IN	Encerrado
+MISC_LOCKED_IN	{0} está encerrado en: {1}
+MISC_REASON_TRAINING	entrenamiento
+MISC_XP_GAINED	+{0} XP de {1}
+UILABEL_INPUT	Entrada
+UILABEL_OUTPUT	Salida
+MISC_FUEL_LEFT	Ardiendo: quedan {0} min de combustible
+MISC_NO_FUEL	Sin combustible
+MISC_OUTPUT_FULL	Salida llena: en pausa
+UILABEL_PASSIVE_HINT	Usa {0} como combustible: cada uno arde {1} minutos de juego y hace {2} en la salida, con o sin trabajador. Se detiene mientras la salida esté llena. Haz clic derecho en los objetos para meterlos o sacarlos.
+ITEM_91_NAME	Agua
+ITEM_91_DESC	Agua fresca de una bomba.
+ITEM_92_NAME	Lingote de hierro
+ITEM_92_DESC	Una barra de hierro fundida a partir de mineral en una forja.
+ITEM_93_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_93_NAME	Carne de res cruda
+ITEM_94_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_94_NAME	Carne de res cocida
+ITEM_95_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_95_NAME	Carne de pollo cruda
+ITEM_96_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_96_NAME	Carne de pollo cocida
+ITEM_97_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_97_NAME	Carne de jabalí cruda
+ITEM_98_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_98_NAME	Carne de jabalí cocida
+ITEM_99_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_99_NAME	Carne de lobo cruda
+ITEM_100_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_100_NAME	Carne de lobo cocida
+ITEM_101_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_101_NAME	Carne de venado cruda
+ITEM_102_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_102_NAME	Carne de venado cocida
+ITEM_103_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_103_NAME	Carne de conejo cruda
+ITEM_104_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_104_NAME	Carne de conejo cocida
+ITEM_105_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_105_NAME	Pescado crudo
+ITEM_106_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_106_NAME	Pescado cocido
+ITEM_107_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_107_NAME	Carne de cangrejo cruda
+ITEM_108_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_108_NAME	Carne de cangrejo cocida
+ITEM_109_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_109_NAME	Carne de lagarto cruda
+ITEM_110_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_110_NAME	Carne de lagarto cocida
+ITEM_111_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_111_NAME	Carne de serpiente cruda
+ITEM_112_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_112_NAME	Carne de serpiente cocida
+ITEM_113_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_113_NAME	Carne de cerdo cruda
+ITEM_114_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_114_NAME	Carne de cerdo cocida
+ITEM_115_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_115_NAME	Carne de oveja cruda
+ITEM_116_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_116_NAME	Carne de oveja cocida
+ITEM_117_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_117_NAME	Carne de pato cruda
+ITEM_118_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_118_NAME	Carne de pato cocida
+ITEM_119_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_119_NAME	Carne de tortuga cruda
+ITEM_120_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_120_NAME	Carne de tortuga cocida
+ITEM_121_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_121_NAME	Carne de murciélago cruda
+ITEM_122_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_122_NAME	Carne de murciélago cocida
+ITEM_123_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_123_NAME	Carne de rana cruda
+ITEM_124_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_124_NAME	Carne de rana cocida
+ITEM_125_DESC	Un pequeño hongo silvestre. Crudo, ayuda poco a la salud y al hambre.
+ITEM_125_NAME	Hongo
+MISC_FOOD_TO_COOK	carne cruda

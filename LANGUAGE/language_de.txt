@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Lege {0} in die Eingabe, um zu beginnen
 MISC_CRAFTS	{0} stellt {1} her
 MISC_CRAFT_STOPS	{0} hat nichts mehr zu tun und hört auf
 MISC_REASON_CRAFTING	Handwerk
-ITEM_89_NAME	Rohes Fleisch
+ITEM_89_NAME	Rohes Bärenfleisch
 ITEM_89_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
-ITEM_90_NAME	Gebratenes Fleisch
+ITEM_90_NAME	Gebratenes Bärenfleisch
 ITEM_90_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
 UILABEL_TALK	Sprechen
 UILABEL_ATTACK	Angreifen
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Schlossknacken misslungen
 MISC_UNLOCKS	{0} schließt {1} auf
 MISC_REASON_LOCKPICKING	Schlösserknacken
 MISC_LOCKED_NAME	{0} (verschlossen)
+PROP_CHAIR	Stuhl
+PROP_BENCH	Bank
+PROP_STOOL	Hocker
+PROP_TABLE	Tisch
+PROP_END_TABLE	Beistelltisch
+PROP_ROUND_TABLE	Runder Tisch
+PROP_METAL_TABLE	Metalltisch
+PROP_STANDING_TORCH	Standfackel
+PROP_SUPPORT_BEAM	Stützbalken
+PROP_TRAINING_DUMMY	Trainingspuppe
+PROP_RAW_FOOD_STORAGE	Rohkostlager
+PROP_FOOD_STORAGE	Vorratslager
+PROP_WEAPON_RACK	Waffenständer
+PROP_ARMOR_STAND	Rüstungsständer
+PROP_WATER_TANK	Wassertank
+PROP_WATER_PUMP	Wasserpumpe
+PROP_FORGE	Schmiede
+FILTER_RAW_FOOD	Rohkost
+FILTER_FOOD	Nahrung
+FILTER_WEAPON	Waffen
+FILTER_ARMOR	Rüstung
+FILTER_WATER	Wasser
+MISC_STORAGE_ONLY	Nimmt nur: {0}
+UILABEL_STORAGE_TAKES	Nimmt nur: {0}.
+UILABEL_TASK_SITTING	Sitzt
+UILABEL_TASK_LOCKED_IN	Eingesperrt
+MISC_LOCKED_IN	{0} ist eingesperrt: {1}
+MISC_REASON_TRAINING	Training
+MISC_XP_GAINED	+{0} {1}-XP
+UILABEL_INPUT	Eingang
+UILABEL_OUTPUT	Ausgang
+MISC_FUEL_LEFT	Brennt: noch {0} Min. Brennstoff
+MISC_NO_FUEL	Kein Brennstoff
+MISC_OUTPUT_FULL	Ausgang voll: pausiert
+UILABEL_PASSIVE_HINT	Nimmt {0} als Brennstoff: Jedes brennt {1} Spielminuten und macht {2} im Ausgang, mit oder ohne Arbeiter. Sie pausiert, solange der Ausgang voll ist. Rechtsklick auf Gegenstände bewegt sie hinein oder heraus.
+ITEM_91_NAME	Wasser
+ITEM_91_DESC	Frisches Wasser aus einer Pumpe.
+ITEM_92_NAME	Eisenbarren
+ITEM_92_DESC	Ein Barren Eisen, in einer Schmiede aus Erz geschmolzen.
+ITEM_93_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_93_NAME	Rohes Rindfleisch
+ITEM_94_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_94_NAME	Gebratenes Rindfleisch
+ITEM_95_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_95_NAME	Rohes Hühnerfleisch
+ITEM_96_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_96_NAME	Gebratenes Hühnerfleisch
+ITEM_97_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_97_NAME	Rohes Wildschweinfleisch
+ITEM_98_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_98_NAME	Gebratenes Wildschweinfleisch
+ITEM_99_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_99_NAME	Rohes Wolfsfleisch
+ITEM_100_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_100_NAME	Gebratenes Wolfsfleisch
+ITEM_101_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_101_NAME	Rohes Hirschfleisch
+ITEM_102_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_102_NAME	Gebratenes Hirschfleisch
+ITEM_103_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_103_NAME	Rohes Kaninchenfleisch
+ITEM_104_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_104_NAME	Gebratenes Kaninchenfleisch
+ITEM_105_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_105_NAME	Roher Fisch
+ITEM_106_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_106_NAME	Gebratener Fisch
+ITEM_107_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_107_NAME	Rohes Krabbenfleisch
+ITEM_108_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_108_NAME	Gebratenes Krabbenfleisch
+ITEM_109_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_109_NAME	Rohes Echsenfleisch
+ITEM_110_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_110_NAME	Gebratenes Echsenfleisch
+ITEM_111_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_111_NAME	Rohes Schlangenfleisch
+ITEM_112_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_112_NAME	Gebratenes Schlangenfleisch
+ITEM_113_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_113_NAME	Rohes Schweinefleisch
+ITEM_114_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_114_NAME	Gebratenes Schweinefleisch
+ITEM_115_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_115_NAME	Rohes Schaffleisch
+ITEM_116_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_116_NAME	Gebratenes Schaffleisch
+ITEM_117_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_117_NAME	Rohes Entenfleisch
+ITEM_118_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_118_NAME	Gebratenes Entenfleisch
+ITEM_119_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_119_NAME	Rohes Schildkrötenfleisch
+ITEM_120_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_120_NAME	Gebratenes Schildkrötenfleisch
+ITEM_121_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_121_NAME	Rohes Fledermausfleisch
+ITEM_122_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_122_NAME	Gebratenes Fledermausfleisch
+ITEM_123_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_123_NAME	Rohes Froschfleisch
+ITEM_124_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
+ITEM_124_NAME	Gebratenes Froschfleisch
+ITEM_125_DESC	Ein kleiner Wildpilz. Roh gegessen hilft er Gesundheit und Hunger kaum.
+ITEM_125_NAME	Pilz
+MISC_FOOD_TO_COOK	rohes Fleisch

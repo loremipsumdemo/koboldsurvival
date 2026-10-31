@@ -584,9 +584,9 @@ MISC_CRAFT_NEEDS	Lägg {0} i indata för att börja
 MISC_CRAFTS	{0} tillverkar {1}
 MISC_CRAFT_STOPS	{0} har inget mer att arbeta med och slutar
 MISC_REASON_CRAFTING	hantverk
-ITEM_89_NAME	Rått kött
+ITEM_89_NAME	Rått björnkött
 ITEM_89_DESC	Otillagat kött. Stek det vid en lägereld.
-ITEM_90_NAME	Stekt kött
+ITEM_90_NAME	Stekt björnkött
 ITEM_90_DESC	Kött stekt över eld. Återställer hälsa och mättar.
 UILABEL_TALK	Prata
 UILABEL_ATTACK	Anfall
@@ -625,3 +625,109 @@ MISC_LOCKPICK_FAILED	Dyrkningen misslyckades
 MISC_UNLOCKS	{0} låser upp {1}
 MISC_REASON_LOCKPICKING	dyrka lås
 MISC_LOCKED_NAME	{0} (låst)
+PROP_CHAIR	Stol
+PROP_BENCH	Bänk
+PROP_STOOL	Pall
+PROP_TABLE	Bord
+PROP_END_TABLE	Sidobord
+PROP_ROUND_TABLE	Runt bord
+PROP_METAL_TABLE	Metallbord
+PROP_STANDING_TORCH	Stående fackla
+PROP_SUPPORT_BEAM	Stödbjälke
+PROP_TRAINING_DUMMY	Träningsdocka
+PROP_RAW_FOOD_STORAGE	Förråd för rå mat
+PROP_FOOD_STORAGE	Matförråd
+PROP_WEAPON_RACK	Vapenställ
+PROP_ARMOR_STAND	Rustningsställ
+PROP_WATER_TANK	Vattentank
+PROP_WATER_PUMP	Vattenpump
+PROP_FORGE	Smedja
+FILTER_RAW_FOOD	rå mat
+FILTER_FOOD	mat
+FILTER_WEAPON	vapen
+FILTER_ARMOR	rustning
+FILTER_WATER	vatten
+MISC_STORAGE_ONLY	Tar bara {0}
+UILABEL_STORAGE_TAKES	Tar bara {0}.
+UILABEL_TASK_SITTING	Sitter
+UILABEL_TASK_LOCKED_IN	Inlåst
+MISC_LOCKED_IN	{0} är inlåst i {1}
+MISC_REASON_TRAINING	träning
+MISC_XP_GAINED	+{0} {1} erfarenhet
+UILABEL_INPUT	Inmatning
+UILABEL_OUTPUT	Utmatning
+MISC_FUEL_LEFT	Brinner: {0} min bränsle kvar
+MISC_NO_FUEL	Inget bränsle
+MISC_OUTPUT_FULL	Utmatningen full: pausad
+UILABEL_PASSIVE_HINT	Tar {0} som bränsle: varje brinner i {1} spelminuter och gör {2} i utmatningen, med eller utan arbetare. Den pausar medan utmatningen är full. Högerklicka på föremål för att flytta in eller ut dem.
+ITEM_91_NAME	Vatten
+ITEM_91_DESC	Friskt vatten från en pump.
+ITEM_92_NAME	Järntacka
+ITEM_92_DESC	En tacka järn smält ur malm i en smedja.
+ITEM_93_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_93_NAME	Rått nötkött
+ITEM_94_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_94_NAME	Stekt nötkött
+ITEM_95_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_95_NAME	Rått kycklingkött
+ITEM_96_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_96_NAME	Stekt kycklingkött
+ITEM_97_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_97_NAME	Rått vildsvinskött
+ITEM_98_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_98_NAME	Stekt vildsvinskött
+ITEM_99_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_99_NAME	Rått vargkött
+ITEM_100_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_100_NAME	Stekt vargkött
+ITEM_101_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_101_NAME	Rått hjortkött
+ITEM_102_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_102_NAME	Stekt hjortkött
+ITEM_103_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_103_NAME	Rått kaninkött
+ITEM_104_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_104_NAME	Stekt kaninkött
+ITEM_105_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_105_NAME	Rå fisk
+ITEM_106_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_106_NAME	Stekt fisk
+ITEM_107_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_107_NAME	Rått krabbkött
+ITEM_108_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_108_NAME	Stekt krabbkött
+ITEM_109_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_109_NAME	Rått ödlekött
+ITEM_110_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_110_NAME	Stekt ödlekött
+ITEM_111_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_111_NAME	Rått ormkött
+ITEM_112_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_112_NAME	Stekt ormkött
+ITEM_113_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_113_NAME	Rått fläskkött
+ITEM_114_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_114_NAME	Stekt fläskkött
+ITEM_115_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_115_NAME	Rått fårkött
+ITEM_116_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_116_NAME	Stekt fårkött
+ITEM_117_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_117_NAME	Rått ankkött
+ITEM_118_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_118_NAME	Stekt ankkött
+ITEM_119_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_119_NAME	Rått sköldpaddskött
+ITEM_120_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_120_NAME	Stekt sköldpaddskött
+ITEM_121_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_121_NAME	Rått fladdermuskött
+ITEM_122_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_122_NAME	Stekt fladdermuskött
+ITEM_123_DESC	Otillagat kött. Stek det vid en lägereld.
+ITEM_123_NAME	Rått grodkött
+ITEM_124_DESC	Kött stekt över eld. Återställer hälsa och mättar.
+ITEM_124_NAME	Stekt grodkött
+ITEM_125_DESC	En liten vild svamp. Rå hjälper den knappt mot hunger eller för hälsan.
+ITEM_125_NAME	Svamp
+MISC_FOOD_TO_COOK	rått kött
