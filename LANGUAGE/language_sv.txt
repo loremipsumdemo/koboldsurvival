@@ -604,3 +604,24 @@ FACTION_GRAY	Den grå fraktionen
 FACTION_RED	Den röda fraktionen
 MISC_PROP_UNREACHABLE	Onåbar
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_RANDOM_NAME	Helt slumpmässigt
+SCENARIO_RANDOM_DESC	En grupp på 1 till 32 enheter, var och en med alla egenskaper mellan 1 och 99 och slumpade föremål och utrustning som de orkar bära.
+SCENARIO_CARAVAN_NAME	Resande karavan
+SCENARIO_CARAVAN_DESC	Tio resenärer på vägen tillsammans. Alla egenskaper börjar på 5, och var och en bär 10 guldmynt.
+SCENARIO_SHABBY_NAME	Sjaskigt gäng
+SCENARIO_SHABBY_DESC	Tre otursförföljda kobolder med ett slumpat föremål var och alla egenskaper mellan 1 och 10.
+SCENARIO_NOBODY_NAME	Svältande ingen
+SCENARIO_NOBODY_DESC	En enhet utan någonting: inga föremål, ingen utrustning, alla egenskaper på 1 och en tom mage.
+SCENARIO_DIGGERS_NAME	Fängelsehålegrävare
+SCENARIO_DIGGERS_DESC	Sju gruvarbetare i full utrustning. Deras egenskaper ligger mellan 5 och 20, men var och en har Gruvdrift 50 och bär 3 järnmalm.
+PROP_LOCKED_CHEST	Låst kista
+PROP_PRISONER_CAGE	Fångbur
+UILABEL_UNLOCK	Dyrka upp
+MISC_PROP_LOCKED	Låst
+MISC_LOCKPICK_NEEDS	Kräver Låsöppning {0}
+MISC_UNLOCKED	Upplåst!
+MISC_LOCKPICK_FAILED	Dyrkningen misslyckades
+MISC_UNLOCKS	{0} låser upp {1}
+MISC_REASON_LOCKPICKING	dyrka lås
+MISC_LOCKED_NAME	{0} (låst)

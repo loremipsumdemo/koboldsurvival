@@ -604,3 +604,24 @@ FACTION_GRAY	ฝ่ายเทา
 FACTION_RED	ฝ่ายแดง
 MISC_PROP_UNREACHABLE	เข้าถึงไม่ได้
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	ฉากเริ่มต้น
+SCENARIO_RANDOM_NAME	สุ่มทั้งหมด
+SCENARIO_RANDOM_DESC	กลุ่มยูนิต 1 ถึง 32 ตัว แต่ละตัวมีค่าสถานะทุกค่าระหว่าง 1 ถึง 99 พร้อมไอเทมและอุปกรณ์สุ่มที่แบกไหว
+SCENARIO_CARAVAN_NAME	กองคาราวานพเนจร
+SCENARIO_CARAVAN_DESC	นักเดินทางสิบคนบนเส้นทางด้วยกัน ค่าสถานะทุกค่าเริ่มที่ 5 และแต่ละคนพกเหรียญทอง 10 เหรียญ
+SCENARIO_SHABBY_NAME	ลูกเรือซอมซ่อ
+SCENARIO_SHABBY_DESC	โคบอลด์ดวงซวยสามตัว แต่ละตัวมีไอเทมสุ่มหนึ่งชิ้น และค่าสถานะทุกค่าระหว่าง 1 ถึง 10
+SCENARIO_NOBODY_NAME	ไร้นามผู้หิวโหย
+SCENARIO_NOBODY_DESC	ยูนิตเดียวที่ไม่มีอะไรเลย ไม่มีไอเทม ไม่มีอุปกรณ์ ค่าสถานะทุกค่าเป็น 1 และท้องว่าง
+SCENARIO_DIGGERS_NAME	นักขุดดันเจี้ยน
+SCENARIO_DIGGERS_DESC	คนงานเหมืองเจ็ดคนในชุดอุปกรณ์เต็มชุด ค่าสถานะอยู่ระหว่าง 5 ถึง 20 แต่ทุกคนมีการขุดเหมือง 50 และพกแร่เหล็ก 3 ก้อน
+PROP_LOCKED_CHEST	หีบที่ล็อกไว้
+PROP_PRISONER_CAGE	กรงขังนักโทษ
+UILABEL_UNLOCK	สะเดาะกุญแจ
+MISC_PROP_LOCKED	ล็อกอยู่
+MISC_LOCKPICK_NEEDS	ต้องมี การงัดกุญแจ {0}
+MISC_UNLOCKED	ปลดล็อกแล้ว!
+MISC_LOCKPICK_FAILED	สะเดาะกุญแจไม่สำเร็จ
+MISC_UNLOCKS	{0} ปลดล็อก {1}
+MISC_REASON_LOCKPICKING	การสะเดาะกุญแจ
+MISC_LOCKED_NAME	{0} (ล็อกอยู่)

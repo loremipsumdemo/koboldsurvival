@@ -604,3 +604,24 @@ FACTION_GRAY	Faction grise
 FACTION_RED	Faction rouge
 MISC_PROP_UNREACHABLE	Inaccessible
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scénario
+SCENARIO_RANDOM_NAME	Entièrement aléatoire
+SCENARIO_RANDOM_DESC	Un groupe de 1 à 32 unités, chacune avec toutes ses statistiques entre 1 et 99, et des objets et équipements aléatoires qu'elle peut porter.
+SCENARIO_CARAVAN_NAME	Caravane itinérante
+SCENARIO_CARAVAN_DESC	Dix voyageurs sur la route ensemble. Toutes les statistiques commencent à 5, et chacun porte 10 pièces d'or.
+SCENARIO_SHABBY_NAME	Équipe miteuse
+SCENARIO_SHABBY_DESC	Trois kobolds malchanceux avec un objet aléatoire chacun et toutes les statistiques entre 1 et 10.
+SCENARIO_NOBODY_NAME	Moins-que-rien affamé
+SCENARIO_NOBODY_DESC	Une seule unité sans rien du tout : aucun objet, aucun équipement, toutes les statistiques à 1 et le ventre vide.
+SCENARIO_DIGGERS_NAME	Creuseurs de donjon
+SCENARIO_DIGGERS_DESC	Sept mineurs en équipement complet. Leurs statistiques vont de 5 à 20, mais chacun a Minage à 50 et porte 3 minerais de fer.
+PROP_LOCKED_CHEST	Coffre verrouillé
+PROP_PRISONER_CAGE	Cage de prisonnier
+UILABEL_UNLOCK	Crocheter
+MISC_PROP_LOCKED	Verrouillé
+MISC_LOCKPICK_NEEDS	Nécessite Crochetage {0}
+MISC_UNLOCKED	Déverrouillé !
+MISC_LOCKPICK_FAILED	Crochetage raté
+MISC_UNLOCKS	{0} déverrouille : {1}
+MISC_REASON_LOCKPICKING	crocheter des serrures
+MISC_LOCKED_NAME	{0} (verrouillé)

@@ -604,3 +604,24 @@ FACTION_GRAY	Gri Hizip
 FACTION_RED	Kızıl Hizip
 MISC_PROP_UNREACHABLE	Ulaşılamıyor
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Senaryo
+SCENARIO_RANDOM_NAME	Tamamen rastgele
+SCENARIO_RANDOM_DESC	1 ile 32 birimlik bir grup; her birinin tüm nitelikleri 1 ile 99 arasında ve taşıyabileceği rastgele eşya ve teçhizatı var.
+SCENARIO_CARAVAN_NAME	Gezgin kervan
+SCENARIO_CARAVAN_DESC	Yolda birlikte on gezgin. Tüm nitelikler 5'ten başlar ve her biri 10 altın sikke taşır.
+SCENARIO_SHABBY_NAME	Pejmürde tayfa
+SCENARIO_SHABBY_DESC	Talihsiz üç kobold; her birinde rastgele bir eşya var ve tüm nitelikleri 1 ile 10 arasında.
+SCENARIO_NOBODY_NAME	Aç bir hiç kimse
+SCENARIO_NOBODY_DESC	Hiçbir şeyi olmayan tek bir birim: eşya yok, teçhizat yok, tüm nitelikler 1 ve mide bomboş.
+SCENARIO_DIGGERS_NAME	Zindan kazıcıları
+SCENARIO_DIGGERS_DESC	Tam teçhizatlı yedi madenci. Nitelikleri 5 ile 20 arasında, ama her birinin Madenciliği 50 ve 3 demir cevheri taşıyor.
+PROP_LOCKED_CHEST	Kilitli sandık
+PROP_PRISONER_CAGE	Esir kafesi
+UILABEL_UNLOCK	Kilidi aç
+MISC_PROP_LOCKED	Kilitli
+MISC_LOCKPICK_NEEDS	Gerekli: Kilit açma {0}
+MISC_UNLOCKED	Kilit açıldı!
+MISC_LOCKPICK_FAILED	Maymuncuk başarısız
+MISC_UNLOCKS	{0}, {1} kilidini açıyor
+MISC_REASON_LOCKPICKING	kilit açmak
+MISC_LOCKED_NAME	{0} (kilitli)

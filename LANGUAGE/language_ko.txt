@@ -604,3 +604,24 @@ FACTION_GRAY	회색 세력
 FACTION_RED	붉은 세력
 MISC_PROP_UNREACHABLE	도달할 수 없습니다
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	시나리오
+SCENARIO_RANDOM_NAME	완전 무작위
+SCENARIO_RANDOM_DESC	1~32명의 유닛으로, 각 유닛의 모든 능력치가 1~99이며 들 수 있는 만큼 무작위 아이템과 장비를 지닌다.
+SCENARIO_CARAVAN_NAME	떠도는 상단
+SCENARIO_CARAVAN_DESC	함께 길을 떠난 여행자 10명. 모든 능력치가 5에서 시작하고, 각자 금화 10닢을 지닌다.
+SCENARIO_SHABBY_NAME	초라한 무리
+SCENARIO_SHABBY_DESC	운 없는 코볼트 3명. 각자 무작위 아이템 하나를 지니며 모든 능력치가 1~10이다.
+SCENARIO_NOBODY_NAME	굶주린 무명인
+SCENARIO_NOBODY_DESC	아무것도 없는 유닛 1명. 아이템도 장비도 없고, 모든 능력치가 1이며 배가 텅 비었다.
+SCENARIO_DIGGERS_NAME	던전 굴착꾼
+SCENARIO_DIGGERS_DESC	완전 무장한 광부 7명. 능력치는 5~20이지만 모두 채광이 50이며 철광석을 3개씩 지닌다.
+PROP_LOCKED_CHEST	잠긴 상자
+PROP_PRISONER_CAGE	죄수 우리
+UILABEL_UNLOCK	자물쇠 열기
+MISC_PROP_LOCKED	잠겨 있습니다
+MISC_LOCKPICK_NEEDS	자물쇠 따기 {0} 필요
+MISC_UNLOCKED	잠금 해제!
+MISC_LOCKPICK_FAILED	자물쇠 따기 실패
+MISC_UNLOCKS	{0}이(가) {1}의 잠금을 풀었습니다
+MISC_REASON_LOCKPICKING	자물쇠 따기
+MISC_LOCKED_NAME	{0} (잠김)

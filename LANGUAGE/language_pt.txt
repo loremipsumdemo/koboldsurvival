@@ -604,3 +604,24 @@ FACTION_GRAY	Fação Cinzenta
 FACTION_RED	Fação Vermelha
 MISC_PROP_UNREACHABLE	Inalcançável
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Cenário
+SCENARIO_RANDOM_NAME	Totalmente aleatório
+SCENARIO_RANDOM_DESC	Um grupo de 1 a 32 unidades, cada uma com todos os atributos entre 1 e 99, e itens e equipamento aleatórios que consegue carregar.
+SCENARIO_CARAVAN_NAME	Caravana itinerante
+SCENARIO_CARAVAN_DESC	Dez viajantes juntos na estrada. Todos os atributos começam em 5, e cada um leva 10 moedas de ouro.
+SCENARIO_SHABBY_NAME	Bando andrajoso
+SCENARIO_SHABBY_DESC	Três kobolds sem sorte, cada um com um item aleatório e todos os atributos entre 1 e 10.
+SCENARIO_NOBODY_NAME	Zé-ninguém esfomeado
+SCENARIO_NOBODY_DESC	Uma unidade sem nada: sem itens, sem equipamento, todos os atributos a 1 e o estômago vazio.
+SCENARIO_DIGGERS_NAME	Escavadores de masmorra
+SCENARIO_DIGGERS_DESC	Sete mineiros com equipamento completo. Os atributos vão de 5 a 20, mas cada um tem Mineração a 50 e leva 3 minérios de ferro.
+PROP_LOCKED_CHEST	Baú trancado
+PROP_PRISONER_CAGE	Jaula de prisioneiro
+UILABEL_UNLOCK	Destrancar
+MISC_PROP_LOCKED	Trancado
+MISC_LOCKPICK_NEEDS	Requer Arrombamento {0}
+MISC_UNLOCKED	Destrancado!
+MISC_LOCKPICK_FAILED	Falha ao arrombar
+MISC_UNLOCKS	{0} destranca {1}
+MISC_REASON_LOCKPICKING	arrombar fechaduras
+MISC_LOCKED_NAME	{0} (trancado)

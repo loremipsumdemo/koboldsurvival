@@ -604,3 +604,24 @@ FACTION_GRAY	Harmaa ryhmittymä
 FACTION_RED	Punainen ryhmittymä
 MISC_PROP_UNREACHABLE	Ei saavutettavissa
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Skenaario
+SCENARIO_RANDOM_NAME	Täysin satunnainen
+SCENARIO_RANDOM_DESC	1–32 yksikön joukko, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa.
+SCENARIO_CARAVAN_NAME	Matkaava karavaani
+SCENARIO_CARAVAN_DESC	Kymmenen matkalaista yhdessä tiellä. Kaikki ominaisuudet alkavat viidestä, ja jokaisella on 10 kultakolikkoa.
+SCENARIO_SHABBY_NAME	Nuhjuinen porukka
+SCENARIO_SHABBY_DESC	Kolme huono-onnista koboldia, kullakin yksi satunnainen esine ja kaikki ominaisuudet väliltä 1–10.
+SCENARIO_NOBODY_NAME	Nälkäinen ei-kukaan
+SCENARIO_NOBODY_DESC	Yksi yksikkö ilman mitään: ei esineitä, ei varusteita, kaikki ominaisuudet 1 ja tyhjä vatsa.
+SCENARIO_DIGGERS_NAME	Luolastonkaivajat
+SCENARIO_DIGGERS_DESC	Seitsemän kaivostyöläistä täysissä varusteissa. Ominaisuudet ovat 5–20, mutta jokaisella on Louhinta 50 ja 3 rautamalmia mukana.
+PROP_LOCKED_CHEST	Lukittu arkku
+PROP_PRISONER_CAGE	Vankihäkki
+UILABEL_UNLOCK	Avaa lukko
+MISC_PROP_LOCKED	Lukittu
+MISC_LOCKPICK_NEEDS	Vaatii: Lukkojen avaus {0}
+MISC_UNLOCKED	Avattu!
+MISC_LOCKPICK_FAILED	Tiirikointi epäonnistui
+MISC_UNLOCKS	{0} avaa: {1}
+MISC_REASON_LOCKPICKING	tiirikointi
+MISC_LOCKED_NAME	{0} (lukittu)

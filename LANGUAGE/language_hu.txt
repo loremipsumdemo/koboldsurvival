@@ -604,3 +604,24 @@ FACTION_GRAY	Szürke frakció
 FACTION_RED	Vörös frakció
 MISC_PROP_UNREACHABLE	Elérhetetlen
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Forgatókönyv
+SCENARIO_RANDOM_NAME	Teljesen véletlen
+SCENARIO_RANDOM_DESC	1–32 egységből álló csapat, mindegyik minden tulajdonsága 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír.
+SCENARIO_CARAVAN_NAME	Vándorló karaván
+SCENARIO_CARAVAN_DESC	Tíz utazó együtt az úton. Minden tulajdonság 5-ről indul, és mindenkinél 10 aranyérme van.
+SCENARIO_SHABBY_NAME	Ütött-kopott banda
+SCENARIO_SHABBY_DESC	Három balszerencsés kobold, mindegyiknél egy véletlen tárggyal és 1–10 közötti tulajdonságokkal.
+SCENARIO_NOBODY_NAME	Éhező senki
+SCENARIO_NOBODY_DESC	Egyetlen egység, semmi nélkül: se tárgy, se felszerelés, minden tulajdonság 1, és üres gyomor.
+SCENARIO_DIGGERS_NAME	Tömlöcásók
+SCENARIO_DIGGERS_DESC	Hét bányász teljes felszerelésben. Tulajdonságaik 5 és 20 közöttiek, de mindegyiknek 50 a Bányászata, és 3 vasércet visz.
+PROP_LOCKED_CHEST	Lezárt láda
+PROP_PRISONER_CAGE	Fogolyketrec
+UILABEL_UNLOCK	Feltörés
+MISC_PROP_LOCKED	Zárva
+MISC_LOCKPICK_NEEDS	Szükséges: Zárnyitás {0}
+MISC_UNLOCKED	Kinyitva!
+MISC_LOCKPICK_FAILED	A zárfeltörés nem sikerült
+MISC_UNLOCKS	{0} kinyitja: {1}
+MISC_REASON_LOCKPICKING	zárfeltörés
+MISC_LOCKED_NAME	{0} (zárva)

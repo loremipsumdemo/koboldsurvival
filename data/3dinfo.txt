@@ -1,0 +1,15 @@
+Model	Prop	Kind
+1.glb	Wagon	scenery
+2.glb	Campfire	Crafting prop: Raw Meat into Cooked Meat (Cooking)
+3.glb	Bedroll	Occupiable prop
+4.glb	Bed	Occupiable prop
+5.glb	Barrel	Storage prop
+6.glb	Ore	Resource prop: Iron Ore (Mining)
+7.glb	Tree	Resource prop: Wood Log (Woodcutting)
+8.glb	Boulder	scenery
+9.glb	Mushroom	scenery
+10.glb	Bones	scenery
+11.glb	Wall	scenery
+12.glb	Stall	scenery
+13.glb	Locked Chest	Storage prop, Lockable (Lockpicking 5)
+14.glb	Prisoner Cage	Occupiable prop, Lockable (Lockpicking 15)

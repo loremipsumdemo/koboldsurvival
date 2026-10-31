@@ -604,3 +604,24 @@ FACTION_GRAY	Grijze factie
 FACTION_RED	Rode factie
 MISC_PROP_UNREACHABLE	Onbereikbaar
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_RANDOM_NAME	Volledig willekeurig
+SCENARIO_RANDOM_DESC	Een groep van 1 tot 32 eenheden, elk met alle eigenschappen tussen 1 en 99, en willekeurige voorwerpen en uitrusting die ze kunnen dragen.
+SCENARIO_CARAVAN_NAME	Reizende karavaan
+SCENARIO_CARAVAN_DESC	Tien reizigers samen onderweg. Alle eigenschappen beginnen op 5, en ieder draagt 10 gouden munten.
+SCENARIO_SHABBY_NAME	Sjofele bende
+SCENARIO_SHABBY_DESC	Drie kobolds die het niet meezit, elk met één willekeurig voorwerp en alle eigenschappen tussen 1 en 10.
+SCENARIO_NOBODY_NAME	Hongerige niemand
+SCENARIO_NOBODY_DESC	Eén eenheid met helemaal niets: geen voorwerpen, geen uitrusting, alle eigenschappen op 1 en een lege maag.
+SCENARIO_DIGGERS_NAME	Kerkergravers
+SCENARIO_DIGGERS_DESC	Zeven mijnwerkers in volle uitrusting. Hun eigenschappen lopen van 5 tot 20, maar ieder heeft Mijnbouw 50 en draagt 3 ijzererts.
+PROP_LOCKED_CHEST	Afgesloten kist
+PROP_PRISONER_CAGE	Gevangenenkooi
+UILABEL_UNLOCK	Openbreken
+MISC_PROP_LOCKED	Op slot
+MISC_LOCKPICK_NEEDS	Vereist Slotbreken {0}
+MISC_UNLOCKED	Opengebroken!
+MISC_LOCKPICK_FAILED	Slot openbreken mislukt
+MISC_UNLOCKS	{0} breekt {1} open
+MISC_REASON_LOCKPICKING	sloten openbreken
+MISC_LOCKED_NAME	{0} (op slot)

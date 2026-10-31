@@ -604,3 +604,24 @@ FACTION_GRAY	Facțiunea gri
 FACTION_RED	Facțiunea roșie
 MISC_PROP_UNREACHABLE	Inaccesibil
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenariu
+SCENARIO_RANDOM_NAME	Complet aleatoriu
+SCENARIO_RANDOM_DESC	Un grup de 1 până la 32 de unități, fiecare cu toate atributele între 1 și 99 și cu obiecte și echipament aleatorii pe care le poate căra.
+SCENARIO_CARAVAN_NAME	Caravana călătoare
+SCENARIO_CARAVAN_DESC	Zece călători împreună pe drum. Toate atributele încep de la 5 și fiecare are 10 monede de aur.
+SCENARIO_SHABBY_NAME	Echipa zdrențăroasă
+SCENARIO_SHABBY_DESC	Trei kobolzi ghinioniști, fiecare cu un obiect aleatoriu și toate atributele între 1 și 10.
+SCENARIO_NOBODY_NAME	Un nimeni flămând
+SCENARIO_NOBODY_DESC	O singură unitate fără nimic: fără obiecte, fără echipament, toate atributele la 1 și stomacul gol.
+SCENARIO_DIGGERS_NAME	Săpătorii de temnițe
+SCENARIO_DIGGERS_DESC	Șapte mineri cu echipament complet. Atributele lor sunt între 5 și 20, dar fiecare are Minerit 50 și cară 3 minereuri de fier.
+PROP_LOCKED_CHEST	Cufăr încuiat
+PROP_PRISONER_CAGE	Cușcă pentru prizonieri
+UILABEL_UNLOCK	Descuie
+MISC_PROP_LOCKED	Încuiat
+MISC_LOCKPICK_NEEDS	Necesită Deschiderea lacătelor {0}
+MISC_UNLOCKED	Descuiat!
+MISC_LOCKPICK_FAILED	Descuierea a eșuat
+MISC_UNLOCKS	{0} descuie: {1}
+MISC_REASON_LOCKPICKING	descuierea lacătelor
+MISC_LOCKED_NAME	{0} (încuiat)

@@ -249,6 +249,13 @@ struct Prop {
     int serial = 0;
 };
 
+// A lockable prop's lock (props.h: PropInfo::lockLevel). While locked, the prop can't be opened or used. level is the
+// Lockpicking level a unit needs to try to unlock it.
+struct Lock {
+    bool locked = true;
+    int level = 1;
+};
+
 // The items a storage prop (a barrel) or a crafting prop (a campfire, which takes only its input item) holds, one stack
 // per slot
 struct Storage {
@@ -273,6 +280,7 @@ struct Occupying {
 // the unit has no room for what it gathers, and at a crafting prop when the input runs out or the output is full.
 struct Working {
     Entity prop = NULL_ENTITY;
+    bool unlocking = false;   // picking the prop's lock, rather than working it
 };
 
 // A resource or crafting prop's progress toward its next item, 0 to 1. The units working it add to it each in-game

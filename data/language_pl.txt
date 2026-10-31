@@ -604,3 +604,24 @@ FACTION_GRAY	Szara frakcja
 FACTION_RED	Czerwona frakcja
 MISC_PROP_UNREACHABLE	Nieosiągalne
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenariusz
+SCENARIO_RANDOM_NAME	W pełni losowy
+SCENARIO_RANDOM_DESC	Drużyna od 1 do 32 jednostek, każda ze wszystkimi cechami od 1 do 99 oraz losowymi przedmiotami i wyposażeniem, które jest w stanie unieść.
+SCENARIO_CARAVAN_NAME	Wędrowna karawana
+SCENARIO_CARAVAN_DESC	Dziesięciu podróżnych razem w drodze. Wszystkie cechy zaczynają od 5, a każdy niesie 10 złotych monet.
+SCENARIO_SHABBY_NAME	Obdarta załoga
+SCENARIO_SHABBY_DESC	Trzy pechowe kobolty, każdy z jednym losowym przedmiotem i wszystkimi cechami od 1 do 10.
+SCENARIO_NOBODY_NAME	Głodny nikt
+SCENARIO_NOBODY_DESC	Jedna jednostka bez niczego: bez przedmiotów, bez wyposażenia, wszystkie cechy na 1 i pusty żołądek.
+SCENARIO_DIGGERS_NAME	Kopacze lochów
+SCENARIO_DIGGERS_DESC	Siedmiu górników w pełnym wyposażeniu. Ich cechy wynoszą od 5 do 20, ale każdy ma Górnictwo 50 i niesie 3 rudy żelaza.
+PROP_LOCKED_CHEST	Zamknięta skrzynia
+PROP_PRISONER_CAGE	Klatka na więźniów
+UILABEL_UNLOCK	Otwórz zamek
+MISC_PROP_LOCKED	Zamknięte
+MISC_LOCKPICK_NEEDS	Wymaga: Otwieranie zamków {0}
+MISC_UNLOCKED	Otwarte!
+MISC_LOCKPICK_FAILED	Nie udało się otworzyć zamka
+MISC_UNLOCKS	{0} otwiera: {1}
+MISC_REASON_LOCKPICKING	otwieranie zamków
+MISC_LOCKED_NAME	{0} (zamknięte)

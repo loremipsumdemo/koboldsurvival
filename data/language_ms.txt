@@ -604,3 +604,24 @@ FACTION_GRAY	Puak Kelabu
 FACTION_RED	Puak Merah
 MISC_PROP_UNREACHABLE	Tidak dapat dicapai
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Senario
+SCENARIO_RANDOM_NAME	Rawak sepenuhnya
+SCENARIO_RANDOM_DESC	Kumpulan 1 hingga 32 unit, setiap satu dengan semua statistik antara 1 dan 99, serta item dan kelengkapan rawak yang mampu dibawanya.
+SCENARIO_CARAVAN_NAME	Karavan pengembara
+SCENARIO_CARAVAN_DESC	Sepuluh pengembara di jalan bersama. Semua statistik bermula pada 5, dan setiap seorang membawa 10 syiling emas.
+SCENARIO_SHABBY_NAME	Kru lusuh
+SCENARIO_SHABBY_DESC	Tiga kobold yang malang, setiap seekor dengan satu item rawak dan semua statistik antara 1 dan 10.
+SCENARIO_NOBODY_NAME	Si lapar tiada nama
+SCENARIO_NOBODY_DESC	Satu unit tanpa apa-apa: tiada item, tiada kelengkapan, semua statistik 1, dan perut kosong.
+SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
+SCENARIO_DIGGERS_DESC	Tujuh pelombong berkelengkapan penuh. Statistik mereka antara 5 dan 20, tetapi setiap seorang mempunyai Perlombongan 50 dan membawa 3 bijih besi.
+PROP_LOCKED_CHEST	Peti berkunci
+PROP_PRISONER_CAGE	Sangkar tahanan
+UILABEL_UNLOCK	Buka kunci
+MISC_PROP_LOCKED	Berkunci
+MISC_LOCKPICK_NEEDS	Perlu Membuka kunci {0}
+MISC_UNLOCKED	Dibuka!
+MISC_LOCKPICK_FAILED	Gagal mengopek kunci
+MISC_UNLOCKS	{0} membuka kunci {1}
+MISC_REASON_LOCKPICKING	mengopek kunci
+MISC_LOCKED_NAME	{0} (berkunci)

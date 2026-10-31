@@ -604,3 +604,24 @@ FACTION_GRAY	Faksi Kelabu
 FACTION_RED	Faksi Merah
 MISC_PROP_UNREACHABLE	Tidak terjangkau
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Skenario
+SCENARIO_RANDOM_NAME	Acak penuh
+SCENARIO_RANDOM_DESC	Kelompok berisi 1 sampai 32 unit, masing-masing dengan semua statistik antara 1 dan 99, serta barang dan perlengkapan acak yang bisa dibawanya.
+SCENARIO_CARAVAN_NAME	Karavan pengembara
+SCENARIO_CARAVAN_DESC	Sepuluh pengelana berjalan bersama. Semua statistik dimulai dari 5, dan masing-masing membawa 10 koin emas.
+SCENARIO_SHABBY_NAME	Kru lusuh
+SCENARIO_SHABBY_DESC	Tiga kobold yang sial, masing-masing dengan satu barang acak dan semua statistik antara 1 dan 10.
+SCENARIO_NOBODY_NAME	Orang lapar tanpa nama
+SCENARIO_NOBODY_DESC	Satu unit tanpa apa pun: tanpa barang, tanpa perlengkapan, semua statistik 1, dan perut kosong.
+SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
+SCENARIO_DIGGERS_DESC	Tujuh penambang berperlengkapan penuh. Statistik mereka 5 sampai 20, tetapi masing-masing punya Penambangan 50 dan membawa 3 bijih besi.
+PROP_LOCKED_CHEST	Peti terkunci
+PROP_PRISONER_CAGE	Kandang tahanan
+UILABEL_UNLOCK	Buka kunci
+MISC_PROP_LOCKED	Terkunci
+MISC_LOCKPICK_NEEDS	Butuh Membuka kunci {0}
+MISC_UNLOCKED	Terbuka!
+MISC_LOCKPICK_FAILED	Gagal membobol kunci
+MISC_UNLOCKS	{0} membuka kunci {1}
+MISC_REASON_LOCKPICKING	membobol kunci
+MISC_LOCKED_NAME	{0} (terkunci)

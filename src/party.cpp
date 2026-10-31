@@ -5,6 +5,8 @@
 #include "inventory.h"
 #include "items.h"
 #include "systems.h"
+#include "emotes.h"
+#include "equip.h"
 
 namespace {
 
@@ -89,7 +91,156 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
         const int item = items[rng.range(0, (int)items.size() - 1)];
         m.items[i] = ItemStack{ item, rng.range(1, std::min(stackLimit(item), 5)) };
     }
+    keepUnderEncumbrance(m.items, m.gear, m.stats);   // never more than it can carry
     return m;
+}
+
+void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::array<int, GEAR_SLOTS>& gear,
+                          const Stats& stats) {
+    const float cap = ENCUMBERED_SHARE * carryLimit(stats);
+    auto weightOf = [](int item) {
+        const ItemDef* d = findItem(item);
+        return d ? std::max(0.0f, d->weight) : 0.0f;
+    };
+    auto total = [&]() {
+        Inventory inv;
+        inv.slots = items;
+        Equipment worn;
+        worn.items = gear;
+        return carriedWeight(inv) + wornWeight(worn);
+    };
+    // The last stacks go first, a few at a time, so most of what was rolled stays
+    for (int i = INVENTORY_SLOTS - 1; i >= 0 && total() >= cap; --i) {
+        ItemStack& st = items[(size_t)i];
+        const float each = weightOf(st.item);
+        if (st.item == 0 || each <= 0.0f) continue;
+        const float over = total() - cap;
+        const int drop = std::min(st.count, (int)std::floor(over / each) + 1);
+        st.count -= drop;
+        if (st.count <= 0) st = ItemStack{};
+    }
+    // Then the heaviest gear, while it is still too much
+    while (total() >= cap) {
+        int heaviest = -1;
+        for (int g = 0; g < GEAR_SLOTS; ++g) {
+            if (gear[(size_t)g] != 0 && weightOf(gear[(size_t)g]) > 0.0f &&
+                (heaviest < 0 || weightOf(gear[(size_t)g]) > weightOf(gear[(size_t)heaviest]))) heaviest = g;
+        }
+        if (heaviest < 0) break;
+        gear[(size_t)heaviest] = 0;
+    }
+}
+
+const char* scenarioNameKey(ScenarioId id) {
+    switch (id) {
+    case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_NAME";
+    case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_NAME";
+    case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_NAME";
+    case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_NAME";
+    default: return "SCENARIO_RANDOM_NAME";
+    }
+}
+
+const char* scenarioDescKey(ScenarioId id) {
+    switch (id) {
+    case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_DESC";
+    case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_DESC";
+    case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_DESC";
+    case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_DESC";
+    default: return "SCENARIO_RANDOM_DESC";
+    }
+}
+
+namespace {
+
+constexpr int GOLD_COIN = 4;   // item ids in data/itemdb.txt
+constexpr int IRON_ORE = 1;
+
+// Every stat at a random level from lo to hi
+Stats statsBetween(Rng& rng, int lo, int hi) {
+    Stats s;
+    for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(s, i, rng.range(lo, hi));
+    return s;
+}
+
+// Every gear slot filled where an item fits it and the unit can still carry it, keeping `reserve` weight free for
+// what it will carry. The main hand takes a one-handed item, so the off hand can be filled too.
+void fullGear(PartyMember& m, Rng& rng, float reserve) {
+    const float cap = ENCUMBERED_SHARE * carryLimit(m.stats) - reserve;
+    for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
+        Equipment worn = wornBy(m);
+        const float used = wornWeight(worn);
+        std::vector<int> choices;
+        for (int item : gearChoices(m, slot)) {
+            const ItemDef* d = findItem(item);
+            if (!d) continue;
+            if (slot == GEAR_MAIN_HAND && d->equipSlot == "two_hand") continue;
+            if (used + d->weight >= cap) continue;
+            choices.push_back(item);
+        }
+        if (!choices.empty()) m.gear[(size_t)slot] = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
+    }
+}
+
+} // namespace
+
+Party scenarioParty(ScenarioId id, Rng& rng, int count) {
+    int size = 1;
+    switch (id) {
+    case ScenarioId::FullRandom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : rng.range(1, PARTY_MAX_UNITS); break;
+    case ScenarioId::TravelingCaravan: size = 10; break;
+    case ScenarioId::ShabbyCrew: size = 3; break;
+    case ScenarioId::StarvingNobody: size = 1; break;
+    case ScenarioId::DungeonDiggers: size = 7; break;
+    case ScenarioId::Count: break;
+    }
+    // The names, body types and pictures are rolled as for any party; the scenario then sets the rest
+    Party p = randomParty(rng, size);
+    const std::vector<int> items = allItemChoices();
+    for (PartyMember& m : p) {
+        m.gear = {};
+        m.items = {};
+        switch (id) {
+        case ScenarioId::FullRandom: {
+            m.stats = statsBetween(rng, 1, MAX_LEVEL);
+            for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
+                if (rng.range(0, 1) == 0) continue;
+                const std::vector<int> choices = gearChoices(m, slot);
+                if (!choices.empty()) m.gear[(size_t)slot] = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
+            }
+            const int stacks = rng.range(2, 5);
+            for (int i = 0; i < stacks && !items.empty(); ++i) {
+                const int item = items[(size_t)rng.range(0, (int)items.size() - 1)];
+                m.items[(size_t)i] = ItemStack{ item, rng.range(1, std::min(stackLimit(item), 5)) };
+            }
+            break;
+        }
+        case ScenarioId::TravelingCaravan:
+            m.stats = statsBetween(rng, 5, 5);
+            m.items[0] = ItemStack{ GOLD_COIN, 10 };
+            break;
+        case ScenarioId::ShabbyCrew:
+            m.stats = statsBetween(rng, 1, 10);
+            if (!items.empty()) m.items[0] = ItemStack{ items[(size_t)rng.range(0, (int)items.size() - 1)], 1 };
+            break;
+        case ScenarioId::StarvingNobody:
+            m.stats = statsBetween(rng, 1, 1);
+            m.hunger = 0;
+            break;
+        case ScenarioId::DungeonDiggers: {
+            m.stats = statsBetween(rng, 5, 20);
+            setStatLevel(m.stats, STAT_MINING, 50);
+            const ItemDef* ore = findItem(IRON_ORE);
+            fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);   // room is kept for the ore
+            m.items[0] = ItemStack{ IRON_ORE, 3 };
+            break;
+        }
+        case ScenarioId::Count:
+            break;
+        }
+        keepUnderEncumbrance(m.items, m.gear, m.stats);
+    }
+    return p;
 }
 
 Party randomParty(Rng& rng, int count) {
@@ -118,8 +269,9 @@ void applyParty(World& w, const Party& p) {
         w.add(u, UnitSprite{ m.sprite });
         w.add(u, Body{ m.body });
         w.add(u, m.stats);
-        Needs needs;   // a new unit starts at full health for its Vitality
+        Needs needs;   // a new unit starts at full health for its Vitality, and full unless its scenario says otherwise
         needs.maxHp = needs.hp = maxHealthFor(m.stats);
+        if (m.hunger >= 0) needs.hunger = std::clamp(m.hunger, 0, needs.maxHunger);
         w.add(u, needs);
         Inventory inv;
         inv.slots = m.items;

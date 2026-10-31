@@ -604,3 +604,24 @@ FACTION_GRAY	Серая фракция
 FACTION_RED	Красная фракция
 MISC_PROP_UNREACHABLE	Недостижимо
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Сценарий
+SCENARIO_RANDOM_NAME	Полностью случайный
+SCENARIO_RANDOM_DESC	Отряд из 1–32 юнитов, у каждого все характеристики от 1 до 99, а также случайные предметы и снаряжение, которые он может унести.
+SCENARIO_CARAVAN_NAME	Странствующий караван
+SCENARIO_CARAVAN_DESC	Десять путников вместе в дороге. Все характеристики начинаются с 5, и у каждого 10 золотых монет.
+SCENARIO_SHABBY_NAME	Потрёпанная шайка
+SCENARIO_SHABBY_DESC	Три невезучих кобольда, у каждого один случайный предмет и все характеристики от 1 до 10.
+SCENARIO_NOBODY_NAME	Голодный никто
+SCENARIO_NOBODY_DESC	Один юнит без всего: ни предметов, ни снаряжения, все характеристики на 1 и пустой желудок.
+SCENARIO_DIGGERS_NAME	Копатели подземелий
+SCENARIO_DIGGERS_DESC	Семь шахтёров в полном снаряжении. Характеристики от 5 до 20, но у каждого Горное дело 50 и при себе 3 железные руды.
+PROP_LOCKED_CHEST	Запертый сундук
+PROP_PRISONER_CAGE	Клетка для пленника
+UILABEL_UNLOCK	Взломать
+MISC_PROP_LOCKED	Заперто
+MISC_LOCKPICK_NEEDS	Нужно: Взлом замков {0}
+MISC_UNLOCKED	Открыто!
+MISC_LOCKPICK_FAILED	Взлом не удался
+MISC_UNLOCKS	{0} вскрывает: {1}
+MISC_REASON_LOCKPICKING	взлом замков
+MISC_LOCKED_NAME	{0} (заперто)

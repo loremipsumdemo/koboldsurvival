@@ -604,3 +604,24 @@ FACTION_GRAY	Gray Faction
 FACTION_RED	Red Faction
 MISC_PROP_UNREACHABLE	Unreachable
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_RANDOM_NAME	Full Random
+SCENARIO_RANDOM_DESC	A party of 1 to 32 units, each with every stat somewhere from 1 to 99, and random items and gear they can carry.
+SCENARIO_CARAVAN_NAME	Traveling Caravan
+SCENARIO_CARAVAN_DESC	Ten travelers on the road together. Every stat starts at 5, and each carries 10 Gold Coins.
+SCENARIO_SHABBY_NAME	Shabby Crew
+SCENARIO_SHABBY_DESC	Three down-on-their-luck kobolds with one random item each and every stat from 1 to 10.
+SCENARIO_NOBODY_NAME	Starving Nobody
+SCENARIO_NOBODY_DESC	One unit with nothing at all: no items, no gear, every stat at 1, and an empty stomach.
+SCENARIO_DIGGERS_NAME	Dungeon Diggers
+SCENARIO_DIGGERS_DESC	Seven miners in full gear. Their stats run from 5 to 20, but each has Mining at 50 and carries 3 Iron Ore.
+PROP_LOCKED_CHEST	Locked Chest
+PROP_PRISONER_CAGE	Prisoner Cage
+UILABEL_UNLOCK	Unlock
+MISC_PROP_LOCKED	Locked
+MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
+MISC_UNLOCKED	Unlocked!
+MISC_LOCKPICK_FAILED	Lockpick failed
+MISC_UNLOCKS	{0} unlocks the {1}
+MISC_REASON_LOCKPICKING	picking locks
+MISC_LOCKED_NAME	{0} (Locked)

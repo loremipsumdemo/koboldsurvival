@@ -604,3 +604,24 @@ FACTION_GRAY	Γκρίζα φατρία
 FACTION_RED	Κόκκινη φατρία
 MISC_PROP_UNREACHABLE	Απρόσιτο
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Σενάριο
+SCENARIO_RANDOM_NAME	Εντελώς τυχαίο
+SCENARIO_RANDOM_DESC	Μια ομάδα από 1 έως 32 μονάδες, καθεμία με όλα τα χαρακτηριστικά από 1 έως 99 και τυχαία αντικείμενα και εξοπλισμό που μπορεί να κουβαλήσει.
+SCENARIO_CARAVAN_NAME	Περιπλανώμενο καραβάνι
+SCENARIO_CARAVAN_DESC	Δέκα ταξιδιώτες μαζί στον δρόμο. Όλα τα χαρακτηριστικά ξεκινούν από 5 και ο καθένας κουβαλά 10 χρυσά νομίσματα.
+SCENARIO_SHABBY_NAME	Κουρελιασμένο πλήρωμα
+SCENARIO_SHABBY_DESC	Τρία άτυχα κόμπολντ με ένα τυχαίο αντικείμενο το καθένα και όλα τα χαρακτηριστικά από 1 έως 10.
+SCENARIO_NOBODY_NAME	Πεινασμένος κανένας
+SCENARIO_NOBODY_DESC	Μία μονάδα χωρίς τίποτα: χωρίς αντικείμενα, χωρίς εξοπλισμό, όλα τα χαρακτηριστικά στο 1 και άδειο στομάχι.
+SCENARIO_DIGGERS_NAME	Σκαφτιάδες μπουντρουμιών
+SCENARIO_DIGGERS_DESC	Επτά μεταλλωρύχοι με πλήρη εξοπλισμό. Τα χαρακτηριστικά τους είναι από 5 έως 20, αλλά ο καθένας έχει Εξόρυξη 50 και κουβαλά 3 σιδηρομεταλλεύματα.
+PROP_LOCKED_CHEST	Κλειδωμένο σεντούκι
+PROP_PRISONER_CAGE	Κλουβί κρατουμένων
+UILABEL_UNLOCK	Ξεκλείδωμα
+MISC_PROP_LOCKED	Κλειδωμένο
+MISC_LOCKPICK_NEEDS	Απαιτεί Ανοίγματα κλειδαριών {0}
+MISC_UNLOCKED	Ξεκλειδώθηκε!
+MISC_LOCKPICK_FAILED	Η παραβίαση απέτυχε
+MISC_UNLOCKS	{0} ξεκλειδώνει: {1}
+MISC_REASON_LOCKPICKING	παραβίαση κλειδαριών
+MISC_LOCKED_NAME	{0} (κλειδωμένο)

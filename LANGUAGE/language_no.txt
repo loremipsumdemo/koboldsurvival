@@ -604,3 +604,24 @@ FACTION_GRAY	Den grå fraksjonen
 FACTION_RED	Den røde fraksjonen
 MISC_PROP_UNREACHABLE	Utilgjengelig
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_RANDOM_NAME	Helt tilfeldig
+SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheter, hver med alle egenskaper fra 1 til 99 og tilfeldige gjenstander og utstyr de kan bære.
+SCENARIO_CARAVAN_NAME	Reisende karavane
+SCENARIO_CARAVAN_DESC	Ti reisende på veien sammen. Alle egenskaper starter på 5, og hver bærer 10 gullmynter.
+SCENARIO_SHABBY_NAME	Lurvete gjeng
+SCENARIO_SHABBY_DESC	Tre uheldige kobolder med én tilfeldig gjenstand hver og alle egenskaper fra 1 til 10.
+SCENARIO_NOBODY_NAME	Sulten ingen
+SCENARIO_NOBODY_DESC	Én enhet uten noe som helst: ingen gjenstander, intet utstyr, alle egenskaper på 1 og tom mage.
+SCENARIO_DIGGERS_NAME	Fangehullsgravere
+SCENARIO_DIGGERS_DESC	Sju gruvearbeidere i fullt utstyr. Egenskapene ligger fra 5 til 20, men hver har Gruvedrift 50 og bærer 3 jernmalm.
+PROP_LOCKED_CHEST	Låst kiste
+PROP_PRISONER_CAGE	Fangebur
+UILABEL_UNLOCK	Lås opp
+MISC_PROP_LOCKED	Låst
+MISC_LOCKPICK_NEEDS	Krever Låsing {0}
+MISC_UNLOCKED	Låst opp!
+MISC_LOCKPICK_FAILED	Dirking mislyktes
+MISC_UNLOCKS	{0} låser opp {1}
+MISC_REASON_LOCKPICKING	dirke låser
+MISC_LOCKED_NAME	{0} (låst)

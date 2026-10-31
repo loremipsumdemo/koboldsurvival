@@ -8,7 +8,7 @@
 // Spawns the units, the red units and the props
 void setupWorld(World& w, Terrain& t, Rng& rng);
 
-// Adds player units, at the spawn, until there are count of them
+// Makes there be exactly count player units: adds them at the spawn, or removes the last made, as needed
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 
 // Starting stats drawn the way new units get them: attributes at levels 5..15, skills at 1..5
@@ -75,7 +75,9 @@ void needsSystem(World& w, int hours, double gameSeconds = 0.0);
 void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action);
 // Puts a unit to work on a resource or crafting prop, if it can start now: it is in reach, the prop has room for
 // another worker, and a crafting prop has its input item. Checked at the moment of the try.
-enum class WorkStart { Started, TooFar, Full, NoInput };
+// Locked: the prop is locked. NotLocked: an Unlock on a prop with no lock, or one already open. SkillTooLow: the unit's
+// Lockpicking is below the lock's level.
+enum class WorkStart { Started, TooFar, Full, NoInput, Locked, NotLocked, SkillTooLow };
 WorkStart tryStartWork(World& w, Entity unit, Entity prop);
 // A unit that reached the prop it was sent to, with what it was sent to do. Inventory: the game opens the panel.
 // Use: started is set if it took the bed or started working; taken if the bed was occupied or the prop had all the
@@ -88,22 +90,30 @@ struct PropArrival {
     bool taken = false;
     bool started = false;
     bool unreachable = false;
+    bool locked = false;       // the prop is locked, so it could not be opened or used
     WorkStart craft = WorkStart::Started;
 };
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
 // or say why a unit could not start. Units on beds are kept on them.
 std::vector<PropArrival> propOrderSystem(World& w);
-// An item a unit received from its work, for the "+ item" label over it
+// What a unit's work gave this frame, for the label over it: an item ("+ item"), a lock opened, or a lockpick that failed
 struct WorkGain {
+    enum class Kind { Item, Unlocked, LockpickFailed };
     Entity unit = NULL_ENTITY;
     int item = 0;
+    Kind kind = Kind::Item;
 };
 // Resource and crafting props: the units working each one add to its progress by their skill, for the in-game
 // seconds that passed. Each full bar gives one item to one of the workers, in turn. At a resource prop, one with no
 // room drops it at its feet and stops. At a crafting prop, the item uses up one input item, checked at that moment;
 // once the input runs out the workers stop, and if no worker has room the bar waits, full, for one that has.
-// Returns the items the workers received this frame.
-std::vector<WorkGain> workSystem(World& w, double gameSeconds);
+// A unit picking a lock (Working::unlocking) makes an attempt each time the bar fills, at its Lockpicking pace, and
+// opens the lock with lockpickChance (props.h); it keeps trying until the lock opens or it is given another order.
+// Returns what the workers received this frame: items, opened locks and failed attempts.
+std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng);
+// Starts a unit picking a locked prop's lock, if it is in reach, has the Lockpicking level the lock needs, and nobody
+// else is at it. Checked at the moment of the try.
+WorkStart tryStartUnlock(World& w, Entity unit, Entity prop);
 // Whether a crafting prop can be worked: it has its input item
 enum class CraftState { Ready, NoInput };
 CraftState craftStateOf(World& w, Entity prop);

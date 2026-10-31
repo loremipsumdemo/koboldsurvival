@@ -39,8 +39,8 @@ inline void appendUtf8Limited(std::string& s, const std::string& add, size_t max
     }
 }
 
-// Most units a party can have. The starting party is START_UNIT_COUNT, and the menu adds more.
-inline constexpr int PARTY_MAX_UNITS = 24;
+// Most units a party can have. A scenario sets how many it starts with, and the menu adds or removes them.
+inline constexpr int PARTY_MAX_UNITS = 32;
 
 // One unit of the starting party
 struct PartyMember {
@@ -50,6 +50,7 @@ struct PartyMember {
     Stats stats;                                       // total XP in each stat
     std::array<int, GEAR_SLOTS> gear{};               // item id in each gear slot, 0 for empty
     std::array<ItemStack, INVENTORY_SLOTS> items{};   // what the unit carries at the start
+    int hunger = -1;                                   // hunger at the start, 0 to 100; -1 for full
 };
 
 // The units a new game starts with: START_UNIT_COUNT or more, up to PARTY_MAX_UNITS
@@ -82,6 +83,27 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken);
 
 // A random party of distinct names and distinct sprites
 Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
+
+// Takes items off a unit until it carries less than ENCUMBERED_SHARE of its carry limit (emotes.h): the last stacks
+// of its inventory first, then its heaviest gear. Items that weigh nothing stay. Used on every unit a game generates.
+void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::array<int, GEAR_SLOTS>& gear,
+                          const Stats& stats);
+
+// ---- Scenarios: the start a new game is set up from, picked on the page before the party menu ----
+enum class ScenarioId : int {
+    FullRandom = 0,     // 1 to 32 units, every stat 1 to 99, random items and gear they can carry
+    TravelingCaravan,   // 10 units, every stat 5, 10 Gold Coins each
+    ShabbyCrew,         // 3 units, one random item each, every stat 1 to 10
+    StarvingNobody,     // 1 unit, nothing carried or worn, every stat 1, hunger 0
+    DungeonDiggers,     // 7 units in full gear, every stat 5 to 20 but Mining 50, 3 Iron Ore each
+    Count
+};
+// The language keys for a scenario's name and description
+const char* scenarioNameKey(ScenarioId id);
+const char* scenarioDescKey(ScenarioId id);
+// A party for a scenario, with distinct names and sprites. count, when 1 or more, sets the size of a Full Random party
+// (the other scenarios have their own sizes).
+Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
 
 // Adds a random member to the end of the party, with a name and sprite that no member has yet
 void addRandomMember(Party& p, Rng& rng);

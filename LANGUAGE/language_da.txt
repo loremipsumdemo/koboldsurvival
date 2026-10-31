@@ -604,3 +604,24 @@ FACTION_GRAY	Den grå fraktion
 FACTION_RED	Den røde fraktion
 MISC_PROP_UNREACHABLE	Kan ikke nås
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenarie
+SCENARIO_RANDOM_NAME	Helt tilfældig
+SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære.
+SCENARIO_CARAVAN_NAME	Rejsende karavane
+SCENARIO_CARAVAN_DESC	Ti rejsende på vejen sammen. Alle evner starter på 5, og hver bærer 10 guldmønter.
+SCENARIO_SHABBY_NAME	Lurvet bande
+SCENARIO_SHABBY_DESC	Tre uheldige kobolder med hver én tilfældig genstand og alle evner fra 1 til 10.
+SCENARIO_NOBODY_NAME	Sulten ingen
+SCENARIO_NOBODY_DESC	Én enhed uden noget som helst: ingen genstande, intet udstyr, alle evner på 1 og en tom mave.
+SCENARIO_DIGGERS_NAME	Fangekældergravere
+SCENARIO_DIGGERS_DESC	Syv minearbejdere i fuld udrustning. Deres evner ligger fra 5 til 20, men hver har Minedrift 50 og bærer 3 jernmalm.
+PROP_LOCKED_CHEST	Låst kiste
+PROP_PRISONER_CAGE	Fangebur
+UILABEL_UNLOCK	Lås op
+MISC_PROP_LOCKED	Låst
+MISC_LOCKPICK_NEEDS	Kræver Låseoplukning {0}
+MISC_UNLOCKED	Låst op!
+MISC_LOCKPICK_FAILED	Dirkning mislykkedes
+MISC_UNLOCKS	{0} låser {1} op
+MISC_REASON_LOCKPICKING	dirke låse
+MISC_LOCKED_NAME	{0} (låst)

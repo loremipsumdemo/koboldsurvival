@@ -2,7 +2,7 @@
 #include <string>
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, PartySetup };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup };
 
 // What a button does when clicked
 enum class Action {

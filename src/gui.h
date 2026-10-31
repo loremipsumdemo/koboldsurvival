@@ -83,6 +83,9 @@ struct UnitPanelLayout {
 // covers all three; the bar and name sit in the strip under the portrait.
 inline float unitCellLabelHeight(float s) { return 34.0f * s; }
 
+// The squad panel scrolls very slowly: this many wheel notches move it one row
+constexpr float SQUAD_WHEEL_NOTCHES_PER_ROW = 4.0f;
+
 // Bottom panel: the walk and run toggle and the View Map button across the top, then a 8-per-row grid of portraits with names,
 // scrolled vertically.
 inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
@@ -92,9 +95,12 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     const float label = unitCellLabelHeight(s), scrollW = 14.0f * s;
     const float toggleH = 22.0f * s;
     const float barH = 22.0f * s;   // the title bar above everything else in the panel
-    // Half the height of the Unit Panel by default, or as dragged. As many rows as that has room for.
-    const float bodyH = place.h > 0.0f ? std::min(place.h, (float)H) : unitPanelBodyHeight(H) * 0.5f;
+    // Half the height of the Unit Panel by default, but never too short for two rows of units; or as dragged. As many
+    // rows as that has room for.
     const float chromeH = barH + pad + toggleH + gap + pad;
+    const float twoRowsH = chromeH + 2.0f * (cell + label) + gap;
+    const float bodyH = place.h > 0.0f ? std::min(place.h, (float)H)
+                                       : std::min(std::max(unitPanelBodyHeight(H) * 0.5f, twoRowsH), (float)H);
     // At least one row, even in a panel dragged too short for it
     const int rowsVisible = std::max(1, (int)std::floor((bodyH - chromeH + gap) / (cell + label + gap)));
     // As many columns as a dragged width has room for. By default, UNITS_PER_ROW.
@@ -259,6 +265,55 @@ inline TradeLayout layoutTrade(int W, int H) {
     const float btnY = y0 + tradeH - pad - btnH;
     L.cancelBtn = Rect{ tx + pad, btnY, btnW, btnH };
     L.tradeBtn = Rect{ tx + tradeW - pad - btnW, btnY, btnW, btnH };
+    return L;
+}
+
+// The scenario page, between New Game and the party menu: the picked scenario's name and description at the top, and
+// a list of the scenarios at the bottom, which scrolls when it has more than fit, with Back and Continue under it
+struct ScenarioLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Scenario", over everything
+    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the picked scenario's name
+    Rect desc{ 0.0f, 0.0f, 0.0f, 0.0f };      // and its description, wrapped
+    Rect list{ 0.0f, 0.0f, 0.0f, 0.0f };      // where the rows are
+    std::vector<Rect> rows;                   // the rows shown, for scenarios first .. first + rows.size() - 1
+    int first = 0;                            // the scroll, kept in range
+    int visible = 0;                          // how many rows fit
+    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };     // the scroll bar, when the list scrolls
+    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect back{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect next{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
+    const float s = H / 720.0f;
+    const float pad = 20.0f * s, rowH = 38.0f * s, rowGap = 6.0f * s, btnH = 36.0f * s, btnW = 170.0f * s;
+    const float scrollW = 8.0f * s;
+    const float boxW = std::min((float)W - 48.0f * s, 760.0f * s), boxH = (float)H - 64.0f * s;
+    const float x0 = (W - boxW) * 0.5f, y0 = 32.0f * s;
+    ScenarioLayout L;
+    L.box = Rect{ x0, y0, boxW, boxH };
+    L.heading = Rect{ x0 + pad, y0 + pad, boxW - 2.0f * pad, 26.0f * s };
+    L.name = Rect{ x0 + pad, L.heading.y + L.heading.h + 10.0f * s, boxW - 2.0f * pad, 34.0f * s };
+    L.desc = Rect{ x0 + pad, L.name.y + L.name.h + 8.0f * s, boxW - 2.0f * pad, 130.0f * s };
+    L.back = Rect{ x0 + pad, y0 + boxH - pad - btnH, btnW, btnH };
+    L.next = Rect{ x0 + boxW - pad - btnW, y0 + boxH - pad - btnH, btnW, btnH };
+    const float listTop = L.desc.y + L.desc.h + 14.0f * s;
+    const float listBottom = L.back.y - 16.0f * s;
+    L.list = Rect{ x0 + pad, listTop, boxW - 2.0f * pad, std::max(0.0f, listBottom - listTop) };
+    L.visible = std::max(1, (int)std::floor((L.list.h + rowGap) / (rowH + rowGap)));
+    L.first = std::clamp(scroll, 0, std::max(0, count - L.visible));
+    const bool scrolls = count > L.visible;
+    const float rowW = L.list.w - (scrolls ? scrollW + 8.0f * s : 0.0f);
+    for (int i = L.first; i < count && i < L.first + L.visible; ++i) {
+        L.rows.push_back(Rect{ L.list.x, listTop + (i - L.first) * (rowH + rowGap), rowW, rowH });
+    }
+    if (scrolls) {
+        const float shownH = L.visible * (rowH + rowGap) - rowGap;
+        L.track = Rect{ L.list.x + L.list.w - scrollW, listTop, scrollW, shownH };
+        const float th = std::max(16.0f * s, shownH * L.visible / count);
+        const int maxFirst = count - L.visible;
+        L.thumb = Rect{ L.track.x, L.track.y + (shownH - th) * L.first / std::max(1, maxFirst), scrollW, th };
+    }
     return L;
 }
 

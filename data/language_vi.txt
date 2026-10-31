@@ -604,3 +604,24 @@ FACTION_GRAY	Phe Xám
 FACTION_RED	Phe Đỏ
 MISC_PROP_UNREACHABLE	Không thể đến
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Kịch bản
+SCENARIO_RANDOM_NAME	Ngẫu nhiên hoàn toàn
+SCENARIO_RANDOM_DESC	Một nhóm từ 1 đến 32 đơn vị, mỗi đơn vị có mọi chỉ số từ 1 đến 99, cùng vật phẩm và trang bị ngẫu nhiên mà nó mang nổi.
+SCENARIO_CARAVAN_NAME	Đoàn lữ hành
+SCENARIO_CARAVAN_DESC	Mười lữ khách cùng nhau trên đường. Mọi chỉ số bắt đầu ở 5, và mỗi người mang 10 đồng vàng.
+SCENARIO_SHABBY_NAME	Băng lôi thôi
+SCENARIO_SHABBY_DESC	Ba kobold kém may mắn, mỗi con có một vật phẩm ngẫu nhiên và mọi chỉ số từ 1 đến 10.
+SCENARIO_NOBODY_NAME	Kẻ vô danh đói khát
+SCENARIO_NOBODY_DESC	Một đơn vị chẳng có gì: không vật phẩm, không trang bị, mọi chỉ số là 1 và bụng rỗng.
+SCENARIO_DIGGERS_NAME	Thợ đào ngục tối
+SCENARIO_DIGGERS_DESC	Bảy thợ mỏ trang bị đầy đủ. Chỉ số của họ từ 5 đến 20, nhưng ai cũng có Khai khoáng 50 và mang 3 quặng sắt.
+PROP_LOCKED_CHEST	Rương bị khóa
+PROP_PRISONER_CAGE	Lồng tù nhân
+UILABEL_UNLOCK	Mở khóa
+MISC_PROP_LOCKED	Đã khóa
+MISC_LOCKPICK_NEEDS	Cần Mở khóa {0}
+MISC_UNLOCKED	Đã mở khóa!
+MISC_LOCKPICK_FAILED	Cạy khóa thất bại
+MISC_UNLOCKS	{0} mở khóa {1}
+MISC_REASON_LOCKPICKING	cạy khóa
+MISC_LOCKED_NAME	{0} (đã khóa)

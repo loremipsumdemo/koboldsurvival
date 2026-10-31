@@ -604,3 +604,24 @@ FACTION_GRAY	Сіра фракція
 FACTION_RED	Червона фракція
 MISC_PROP_UNREACHABLE	Недосяжно
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Сценарій
+SCENARIO_RANDOM_NAME	Повністю випадковий
+SCENARIO_RANDOM_DESC	Загін з 1–32 юнітів, у кожного всі характеристики від 1 до 99, а також випадкові предмети й спорядження, які він може нести.
+SCENARIO_CARAVAN_NAME	Мандрівний караван
+SCENARIO_CARAVAN_DESC	Десять мандрівників разом у дорозі. Усі характеристики починаються з 5, і кожен має 10 золотих монет.
+SCENARIO_SHABBY_NAME	Обшарпана ватага
+SCENARIO_SHABBY_DESC	Три невдахи-кобольди, кожен з одним випадковим предметом і всіма характеристиками від 1 до 10.
+SCENARIO_NOBODY_NAME	Голодний ніхто
+SCENARIO_NOBODY_DESC	Один юніт без нічого: ні предметів, ні спорядження, усі характеристики на 1 і порожній шлунок.
+SCENARIO_DIGGERS_NAME	Копачі підземель
+SCENARIO_DIGGERS_DESC	Семеро шахтарів у повному спорядженні. Характеристики від 5 до 20, але в кожного Гірнича справа 50 і при собі 3 залізні руди.
+PROP_LOCKED_CHEST	Замкнена скриня
+PROP_PRISONER_CAGE	Клітка для в'язня
+UILABEL_UNLOCK	Зламати замок
+MISC_PROP_LOCKED	Замкнено
+MISC_LOCKPICK_NEEDS	Потрібно: Відмикання замків {0}
+MISC_UNLOCKED	Відчинено!
+MISC_LOCKPICK_FAILED	Зламати не вдалося
+MISC_UNLOCKS	{0} відмикає: {1}
+MISC_REASON_LOCKPICKING	зламування замків
+MISC_LOCKED_NAME	{0} (замкнено)

@@ -604,3 +604,24 @@ FACTION_GRAY	Šedá frakce
 FACTION_RED	Rudá frakce
 MISC_PROP_UNREACHABLE	Nedosažitelné
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scénář
+SCENARIO_RANDOM_NAME	Zcela náhodný
+SCENARIO_RANDOM_DESC	Družina 1 až 32 jednotek, každá se všemi vlastnostmi od 1 do 99 a s náhodnými předměty a výstrojí, kterou unese.
+SCENARIO_CARAVAN_NAME	Putovní karavana
+SCENARIO_CARAVAN_DESC	Deset poutníků společně na cestě. Všechny vlastnosti začínají na 5 a každý nese 10 zlatých mincí.
+SCENARIO_SHABBY_NAME	Ošuntělá parta
+SCENARIO_SHABBY_DESC	Tři koboldi, kterým se nedaří, každý s jedním náhodným předmětem a všemi vlastnostmi od 1 do 10.
+SCENARIO_NOBODY_NAME	Hladový nikdo
+SCENARIO_NOBODY_DESC	Jedna jednotka bez ničeho: bez předmětů, bez výstroje, všechny vlastnosti na 1 a prázdný žaludek.
+SCENARIO_DIGGERS_NAME	Kopáči podzemí
+SCENARIO_DIGGERS_DESC	Sedm horníků v plné výstroji. Vlastnosti mají od 5 do 20, ale Těžba je u každého na 50 a každý nese 3 železné rudy.
+PROP_LOCKED_CHEST	Zamčená truhla
+PROP_PRISONER_CAGE	Vězeňská klec
+UILABEL_UNLOCK	Odemknout
+MISC_PROP_LOCKED	Zamčeno
+MISC_LOCKPICK_NEEDS	Vyžaduje Odemykání zámků {0}
+MISC_UNLOCKED	Odemčeno!
+MISC_LOCKPICK_FAILED	Páčení selhalo
+MISC_UNLOCKS	{0} odemyká: {1}
+MISC_REASON_LOCKPICKING	páčení zámků
+MISC_LOCKED_NAME	{0} (zamčeno)

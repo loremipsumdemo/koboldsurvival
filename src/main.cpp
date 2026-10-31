@@ -162,7 +162,7 @@ void closeStorage() {
 
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
-enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use };
+enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -763,6 +763,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, GroundItem{ g.item, g.count });
         }
     }
+    // Which locks were open. The props were placed again from the seed, locked, so each is found by its serial.
+    for (Entity e : world.view<Prop, Lock>()) {
+        for (const SaveLock& l : d.locks) {
+            if (l.prop == world.get<Prop>(e)->serial) world.get<Lock>(e)->locked = l.locked;
+        }
+    }
     // What the barrels held. The props were placed again from the seed, so each is found by its serial.
     for (Entity e : world.view<Prop, Storage>()) {
         const int serial = world.get<Prop>(e)->serial;
@@ -846,6 +852,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         const Transform* t = w.get<Transform>(e);
         d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count });
     }
+    for (Entity e : w.view<Prop, Lock>()) d.locks.push_back(SaveLock{ w.get<Prop>(e)->serial, w.get<Lock>(e)->locked });
     for (Entity e : w.view<Prop, Storage>()) {
         const int serial = w.get<Prop>(e)->serial;
         const Storage* st = w.get<Storage>(e);
@@ -1188,6 +1195,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     case Screen::Playing:
     case Screen::Settings:
     case Screen::MapSelect:
+    case Screen::ScenarioSelect:
     case Screen::PartySetup:
         break;
     }
@@ -1208,6 +1216,7 @@ Soundtrack soundtrackFor(Screen screen) {
         return { "title.mp3", "" };
     case Screen::Settings:
     case Screen::MapSelect:
+    case Screen::ScenarioSelect:
     case Screen::PartySetup:
     case Screen::Pause:
         return {};
@@ -1401,6 +1410,7 @@ int main(int, char**) {
     bool mapSortAsc = false;              // ascending order; the list opens newest first
     SkyTuning sky;                        // atmosphere settings
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
+    float unitPanelWheel = 0.0f;          // wheel movement over the squad panel not yet turned into a row of scroll
     // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
     // double hunger at the next hour. Not saved: a game starts walking.
     bool runMode = false;
@@ -1453,6 +1463,9 @@ int main(int, char**) {
     // first time that menu opens, then kept for the session, so edits survive a trip back to the map list.
     Party party{};
     PartyUi partyUi;
+    // The scenario page: the scenario picked (Full Random each time the page opens) and how far its list is scrolled
+    ScenarioId scenarioPick = ScenarioId::FullRandom;
+    int scenarioScroll = 0;
     MapChoice pendingMap;                 // the map picked, which starts once the party is confirmed
     Rng partyRng;
     partyRng.gen.seed((unsigned)std::time(nullptr));
@@ -1615,13 +1628,19 @@ int main(int, char**) {
         screen = Screen::Playing;
     };
 
-    // Opens the party menu for a picked map. A new party is rolled every time, so its names come from the language
-    // in use now.
+    // Opens the scenario page for a picked map, with Full Random picked. The party menu comes after it.
     auto openParty = [&](const MapChoice& choice) {
-        party = randomParty(partyRng);
         pendingMap = choice;
+        scenarioPick = ScenarioId::FullRandom;
+        scenarioScroll = 0;
+        screen = Screen::ScenarioSelect;
+    };
+    // From the scenario page to the party menu, with a party rolled for the scenario. A new party is rolled every time,
+    // so its names come from the language in use now. Back in the party menu returns to the scenario page.
+    auto openPartyMenu = [&]() {
+        party = scenarioParty(scenarioPick, partyRng);
         partyUi = PartyUi{};
-        backScreen = Screen::Title;
+        backScreen = Screen::ScenarioSelect;
         screen = Screen::PartySetup;
     };
 
@@ -1797,7 +1816,7 @@ int main(int, char**) {
         if (c.language) {
             applyLanguage();
             // The party's names came from the old language, so the party is rolled again in the new one
-            party = randomParty(partyRng, (int)party.size());
+            party = scenarioParty(scenarioPick, partyRng, (int)party.size());
         }
         if (c.fonts || c.language) applyFontScale();
         if (save) saveSettingsFile();
@@ -2030,7 +2049,7 @@ int main(int, char**) {
             }
             return;
         case Action::PartyRandomAll:
-            party = randomParty(partyRng, (int)party.size());
+            party = scenarioParty(scenarioPick, partyRng, (int)party.size());
             stopNameEdit();
             closeDropdown();
             return;
@@ -2541,6 +2560,8 @@ int main(int, char**) {
                 }
             } else if (const Prop* p = world.get<Prop>(target)) {
                 const PropUse use = propInfo(p->kind).use;
+                // A locked prop offers only Unlock, until it is open
+                if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) return std::vector<MenuAction>{ MenuAction::Unlock };
                 if (hasStorage(use)) out.push_back(MenuAction::Inventory);
                 if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
             }
@@ -2558,6 +2579,7 @@ int main(int, char**) {
                 case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK_UNPROVOKED")); break;
                 case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
                 case MenuAction::Use: labels.push_back(lang("UILABEL_USE")); break;
+                case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
                 }
             }
             return labels;
@@ -2627,6 +2649,26 @@ int main(int, char**) {
             case MenuAction::Inventory:
                 issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Inventory);
                 break;
+            case MenuAction::Unlock: {
+                // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
+                const Lock* lock = world.get<Lock>(target);
+                if (!lock || !lock->locked) return;
+                Entity best = NULL_ENTITY;
+                int bestLevel = 0;
+                for (Entity u : actors) {   // nearest first
+                    const int lv = levelOf(statsOf(world, u), STAT_LOCKPICKING);
+                    if (lv > bestLevel) {
+                        best = u;
+                        bestLevel = lv;
+                    }
+                }
+                if (best == NULL_ENTITY || bestLevel < lock->level) {
+                    showNotice(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock->level) }));
+                    return;
+                }
+                issuePropOrder(world, terrain, { best }, target, PropAction::Unlock);
+                break;
+            }
             case MenuAction::Use: {
                 const PropInfo& info = propInfo(world.get<Prop>(target)->kind);
                 if (info.use != PropUse::Resource) {
@@ -2959,7 +3001,7 @@ int main(int, char**) {
                         // Escape closes an open dropdown first, then leaves the menu
                         if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
                         else leaveSettings();
-                    } else if (screen == Screen::MapSelect) {
+                    } else if (screen == Screen::MapSelect || screen == Screen::ScenarioSelect) {
                         performAction(Action::ReturnToTitle, 0);
                     }
                 }
@@ -2978,6 +3020,10 @@ int main(int, char**) {
                     int maxOffset = std::max(0, (int)maps.size() - (int)visibleSaveRows(winH));
                     int next = (int)mapOffset - (int)e.wheel.y;
                     mapOffset = (size_t)std::clamp(next, 0, maxOffset);
+                } else if (screen == Screen::ScenarioSelect) {
+                    // The scenario list scrolls a row at a time; the layout keeps it in range
+                    scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
+                                                    scenarioScroll - (int)e.wheel.y).first;
                 } else if (screen == Screen::PartySetup) {
                     // Scrolls an open dropdown. The rest of the menu does not scroll.
                     if (partyUi.dropKind != DropKind::None) {
@@ -3011,9 +3057,16 @@ int main(int, char**) {
                     mapCx = gx - mapSpan * 0.5f + fx * mapSpan;
                     mapCz = gz - mapSpan * 0.5f + fz * mapSpan;
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
-                    // Scrolls the unit list by whole rows
-                    unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
-                                                   unitPanelRow - (int)e.wheel.y, squadCollapsed, squadPlace).scrollRow;
+                    // Scrolls the unit list very slowly: a row for every SQUAD_WHEEL_NOTCHES_PER_ROW notches of the
+                    // wheel. Turning the wheel the other way starts the count again.
+                    if (unitPanelWheel * e.wheel.y < 0.0f) unitPanelWheel = 0.0f;
+                    unitPanelWheel += e.wheel.y;
+                    const int rows = (int)(unitPanelWheel / SQUAD_WHEEL_NOTCHES_PER_ROW);
+                    if (rows != 0) {
+                        unitPanelWheel -= rows * SQUAD_WHEEL_NOTCHES_PER_ROW;
+                        unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
+                                                       unitPanelRow - rows, squadCollapsed, squadPlace).scrollRow;
+                    }
                 } else if (screen == Screen::Playing
                            && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
                     // Scrolls the sidebar, 40 pixels a notch. Wheel up goes back toward the top.
@@ -3044,6 +3097,28 @@ int main(int, char**) {
                                 }
                                 break;
                             }
+                        }
+                    }
+                    break;
+                }
+
+                if (screen == Screen::ScenarioSelect) {
+                    // A row picks its scenario; Continue rolls the party for it; Back returns to the title
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        const float mx = e.button.x, my = e.button.y;
+                        const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
+                        scenarioScroll = sl.first;
+                        for (size_t i = 0; i < sl.rows.size(); ++i) {
+                            if (sl.rows[i].contains(mx, my)) {
+                                scenarioPick = (ScenarioId)(sl.first + (int)i);
+                                audio::playEffect(SFX_MENU);
+                            }
+                        }
+                        if (sl.next.contains(mx, my)) {
+                            audio::playEffect(SFX_MENU);
+                            openPartyMenu();
+                        } else if (sl.back.contains(mx, my)) {
+                            performAction(Action::ReturnToTitle, 0);
                         }
                     }
                     break;
@@ -3785,6 +3860,19 @@ int main(int, char**) {
                 const Prop* p = world.get<Prop>(a.prop);
                 if (!p) continue;
                 const PropInfo& info = propInfo(p->kind);
+                if (a.locked || a.craft == WorkStart::Locked) {
+                    showNotice(lang("MISC_PROP_LOCKED"));   // locked: it can't be opened or used until it is unlocked
+                    continue;
+                }
+                if (a.action == PropAction::Unlock) {
+                    if (a.craft == WorkStart::SkillTooLow) {
+                        const Lock* lock = world.get<Lock>(a.prop);
+                        showNotice(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock ? lock->level : 1) }));
+                    } else if (a.craft == WorkStart::Full) {
+                        showNotice(lang("MISC_PROP_TAKEN"));
+                    }
+                    continue;
+                }
                 if (a.action == PropAction::Inventory) {
                     if (!(storageProp == a.prop && storageUnit == a.unit)) {
                         closeStorage();
@@ -3818,8 +3906,19 @@ int main(int, char**) {
             needsSystem(world, hoursPassed, gameSecs);
             // Resource and crafting props: the units working them make items by the in-game time that passed
             // Each item a worker receives shows over it, as "+ Iron Ore", like a trade's label
-            for (const WorkGain& g : workSystem(world, gameSecs)) {
-                tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_ITEM_GAINED", { itemNameOf(g.item) }), 0.0f });
+            for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
+                switch (g.kind) {
+                case WorkGain::Kind::Item:
+                    tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_ITEM_GAINED", { itemNameOf(g.item) }), 0.0f });
+                    break;
+                case WorkGain::Kind::Unlocked:
+                    tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
+                    audio::playEffect(SFX_ITEM);
+                    break;
+                case WorkGain::Kind::LockpickFailed:
+                    tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_LOCKPICK_FAILED"), 0.0f });
+                    break;
+                }
             }
 
             // Autosave every N minutes of play
@@ -3878,8 +3977,12 @@ int main(int, char**) {
                 under.push_back({ name.empty() ? std::string(lang("MISC_UNKNOWN_ITEM")) : name, HUD_ITEM_COLOR });
             }
 
-            for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH))
-                under.push_back({ lang(propInfo(world.get<Prop>(e)->kind).nameKey), HUD_PROP_COLOR });
+            for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
+                // A locked prop says so: "Locked Chest (Locked)"
+                const std::string name = lang(propInfo(world.get<Prop>(e)->kind).nameKey);
+                const Lock* lock = world.get<Lock>(e);
+                under.push_back({ lock && lock->locked ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
+            }
 
             for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) hud.push_back(under[i]);
             if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
@@ -4170,6 +4273,51 @@ int main(int, char**) {
                     drawButtons({ b });
                 }
             }
+            renderer.endUi();
+            break;
+        }
+
+        case Screen::ScenarioSelect: {
+            // The picked scenario's name and description at the top, the list of scenarios at the bottom
+            const float s = winH / 720.0f;
+            const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
+            scenarioScroll = sl.first;
+            const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+            const RGBA gray{ 0.72f, 0.74f, 0.80f, 1.0f };
+            const RGBA accent{ 1.0f, 0.78f, 0.30f, 1.0f };
+            renderer.beginUi(winW, winH);
+            renderer.drawTitleBackground();
+            dim(0.45f);
+            renderer.drawRect(sl.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
+            renderer.drawListText(lang("UILABEL_SCENARIO"), sl.heading.x, sl.heading.y, gray);
+            const std::string name = lang(scenarioNameKey(scenarioPick));
+            renderer.drawUiTextInBox(name, Rect{ sl.name.x, sl.name.y, sl.name.w, sl.name.h }, accent);
+            float ty = sl.desc.y;
+            const float lh = renderer.listTextHeight("Ag");
+            for (const std::string& ln : renderer.wrapListText(lang(scenarioDescKey(scenarioPick)), sl.desc.w)) {
+                if (ty + lh > sl.desc.y + sl.desc.h + 0.5f) break;
+                renderer.drawListText(ln, sl.desc.x, ty, white);
+                ty += lh;
+            }
+            renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.3f, 0.32f, 0.4f, 1.0f });
+            for (size_t i = 0; i < sl.rows.size(); ++i) {
+                const ScenarioId id = (ScenarioId)(sl.first + (int)i);
+                const Rect& r = sl.rows[i];
+                renderer.drawButton(r, lang(scenarioNameKey(id)), true, r.contains(mouseX, mouseY));
+                if (id == scenarioPick) {
+                    // The picked one: a bar down its left edge and a frame
+                    renderer.drawRect(Rect{ r.x, r.y, 5.0f * s, r.h }, accent);
+                    renderer.drawRect(Rect{ r.x, r.y, r.w, 2.0f * s }, accent);
+                    renderer.drawRect(Rect{ r.x, r.y + r.h - 2.0f * s, r.w, 2.0f * s }, accent);
+                    renderer.drawRect(Rect{ r.x + r.w - 2.0f * s, r.y, 2.0f * s, r.h }, accent);
+                }
+            }
+            if (sl.track.h > 0.0f) {
+                renderer.drawRect(sl.track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
+                renderer.drawRect(sl.thumb, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+            }
+            renderer.drawButton(sl.back, lang("UILABEL_BACK"), true, sl.back.contains(mouseX, mouseY));
+            renderer.drawButton(sl.next, lang("UILABEL_CONTINUE"), true, sl.next.contains(mouseX, mouseY));
             renderer.endUi();
             break;
         }

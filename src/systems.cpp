@@ -174,10 +174,15 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     w.add(u, Faction{ FACTION_PLAYER });
 }
 
-// Makes sure there are `count` player units, adding the missing ones at the spawn
+// Makes there be exactly `count` player units: the missing ones are added at the spawn, and any beyond count go. The
+// party is put into them in the order they were made (applyParty), so the last made are the ones that go.
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
+    std::vector<Entity> players = w.view<Unit, Commandable>();
+    std::sort(players.begin(), players.end());
+    for (size_t i = (size_t)std::max(0, count); i < players.size(); ++i) w.destroy(players[i]);
+    const int have = std::min((int)players.size(), std::max(0, count));
+    if (have >= count) return;
     const Vec2 spawn = findSpawn(t);
-    const int have = (int)w.view<Unit, Commandable>().size();
     for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 }
 
@@ -263,6 +268,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(prop, Transform{ x, t.heightAt(x, z), z });
         w.add(prop, Prop{ kind, serial });
         if (hasStorage(propInfo(kind).use)) w.add(prop, Storage{});   // a barrel or a campfire starts empty
+        if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
     }
 
     // Names, stats, health and gear for every unit. These draw after the placement above, so where units
@@ -275,6 +281,13 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             nd->hp = nd->maxHp;
         }
         if (w.has<Hostile>(u) || w.has<Neutral>(u)) w.add(u, randomHostileGear(rng));
+        // No unit starts out carrying so much that it is encumbered
+        if (Inventory* inv = w.get<Inventory>(u)) {
+            Equipment* worn = w.get<Equipment>(u);
+            std::array<int, GEAR_SLOTS> gear = worn ? worn->items : std::array<int, GEAR_SLOTS>{};
+            keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
+            if (worn) worn->items = gear;
+        }
         // The body comes first: the name is drawn from the set for it
         if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
         const int body = w.get<Body>(u)->type;
@@ -1062,6 +1075,20 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             a.prop = prop;
             a.action = action;
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
+            const Lock* lock = w.get<Lock>(prop);
+            if (action == PropAction::Unlock) {
+                // Unlock: start picking the lock, if the unit has the skill and nobody else is at it
+                a.craft = tryStartUnlock(w, u, prop);
+                a.started = a.craft == WorkStart::Started;
+                out.push_back(a);
+                continue;
+            }
+            if (lock && lock->locked) {
+                // A locked prop can't be opened or used
+                a.locked = true;
+                out.push_back(a);
+                continue;
+            }
             if (action == PropAction::Inventory) {
                 // Inventory: the game opens the storage or crafting prop's panel
                 if (hasStorage(info.use)) out.push_back(a);
@@ -1139,14 +1166,18 @@ std::vector<PropArrival> propOrderSystem(World& w) {
     return out;
 }
 
-std::vector<WorkGain> workSystem(World& w, double gameSeconds) {
+std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     std::vector<WorkGain> gains;
     // The units working each prop this frame. A downed unit stops working. One pushed out of reach is walking back,
     // so it does not add to the progress until it is in reach again.
     std::map<Entity, std::vector<Entity>> workersOf;
     for (Entity u : w.view<Working, Transform>()) {
-        const Entity prop = w.get<Working>(u)->prop;
-        if (!isWorkProp(useOf(w, prop))) {
+        const Working* wk = w.get<Working>(u);
+        const Entity prop = wk->prop;
+        const Lock* lock = w.get<Lock>(prop);
+        // Picking a lock that is still locked, or working a prop that is not
+        const bool valid = wk->unlocking ? (lock && lock->locked) : (isWorkProp(useOf(w, prop)) && !(lock && lock->locked));
+        if (!valid) {
             w.remove<Working>(u);
             continue;
         }
@@ -1162,6 +1193,40 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds) {
     for (auto& [prop, workers] : workersOf) {
         std::sort(workers.begin(), workers.end());
         const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
+        if (w.get<Working>(workers[0])->unlocking) {
+            // Picking the lock: each attempt fills the bar, at the picker's Lockpicking pace, then succeeds with
+            // lockpickChance. A failed attempt starts the next one; a success opens the lock and the work is done.
+            PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
+            pw.workers = (int)workers.size();
+            double perHour = 0.0;
+            for (Entity u : workers) {
+                perHour += 1.0 / (LOCKPICK_SHARE * workHoursFor(levelOf(statsOf(w, u), STAT_LOCKPICKING)));
+            }
+            pw.progress += gameSeconds / 3600.0 * perHour;
+            Lock* lock = w.get<Lock>(prop);
+            while (pw.progress >= 1.0 && lock->locked) {
+                pw.progress -= 1.0;
+                ++pw.made;   // the ring hops at the end of each attempt
+                const Entity picker = workers[pw.turn % workers.size()];
+                ++pw.turn;
+                const int level = levelOf(statsOf(w, picker), STAT_LOCKPICKING);
+                if ((double)rng.unit() < lockpickChance(level)) {
+                    lock->locked = false;
+                    gains.push_back(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
+                    queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other);
+                    grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_SUCCESS, lang("MISC_REASON_LOCKPICKING"));
+                } else {
+                    gains.push_back(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
+                    grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_FAIL, lang("MISC_REASON_LOCKPICKING"));
+                }
+            }
+            if (!lock->locked) {
+                for (Entity u : workers) w.remove<Working>(u);
+                pw.progress = 0.0;
+                pw.workers = 0;
+            }
+            continue;
+        }
         const bool crafting = info.use == PropUse::Crafting;
         // A crafting prop with none of its input left sends its workers off
         auto stopAll = [&]() {
@@ -1259,6 +1324,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop) return WorkStart::Started;   // already at it
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
+    if (const Lock* lock = w.get<Lock>(prop); lock && lock->locked) return WorkStart::Locked;
     if (workersAt(w, prop) >= propInfo(p->kind).workers) return WorkStart::Full;
     if (propInfo(p->kind).use == PropUse::Crafting) {
         const CraftState cs = craftStateOf(w, prop);
@@ -1274,6 +1340,25 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     return WorkStart::Started;
 }
 
+WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
+    const Lock* lock = w.get<Lock>(prop);
+    if (!lock || !w.has<Prop>(prop) || !w.get<Transform>(unit)) return WorkStart::NotLocked;
+    if (!lock->locked) return WorkStart::NotLocked;
+    if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop && wk->unlocking) return WorkStart::Started;
+    if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
+    if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
+    if (levelOf(statsOf(w, unit), STAT_LOCKPICKING) < lock->level) return WorkStart::SkillTooLow;
+    if (workersAt(w, prop) >= 1) return WorkStart::Full;   // one unit at a lock at a time
+    w.remove<SquadMember>(unit);
+    w.remove<SoloMove>(unit);
+    w.remove<PickupOrder>(unit);
+    w.remove<AttackOrder>(unit);
+    w.remove<TalkOrder>(unit);
+    endPropTasks(w, unit);
+    w.add(unit, Working{ prop, true });
+    return WorkStart::Started;
+}
+
 void propStorageChanged(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p || propInfo(p->kind).use != PropUse::Crafting) return;
@@ -1282,6 +1367,7 @@ void propStorageChanged(World& w, Entity prop) {
 
 std::string taskNameOf(World& w, Entity u) {
     Entity prop = NULL_ENTITY;
+    if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(STAT_LOCKPICKING);
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
     else if (const PropOrder* po = w.get<PropOrder>(u); po && useOf(w, po->prop) == PropUse::Resource) prop = po->prop;
     if (const Prop* p = prop != NULL_ENTITY ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
@@ -1302,11 +1388,15 @@ std::vector<int> emotesOf(World& w, Entity u) {
         const Prop* p = w.get<Prop>(prop);
         return p ? propEmote(p->kind) : (int)EMOTE_NONE;
     };
-    if (const Working* wk = w.get<Working>(u); wk && propEmoteOf(wk->prop) != EMOTE_NONE) out.push_back(propEmoteOf(wk->prop));
+    if (const Working* wk = w.get<Working>(u)) {
+        if (wk->unlocking) out.push_back(EMOTE_LOCKPICKING);
+        else if (propEmoteOf(wk->prop) != EMOTE_NONE) out.push_back(propEmoteOf(wk->prop));
+    }
     if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EMOTE_NONE) out.push_back(propEmoteOf(oc->prop));
     if (w.has<Inventory>(u) && w.has<Stats>(u)) {
         const float limit = carryLimit(statsOf(w, u));
         if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EMOTE_ENCUMBERED);
     }
+    if (const Needs* n = w.get<Needs>(u); n && n->hunger < 1) out.push_back(EMOTE_HUNGRY);
     return out;
 }

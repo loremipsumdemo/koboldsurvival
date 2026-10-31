@@ -604,3 +604,24 @@ FACTION_GRAY	الفصيل الرمادي
 FACTION_RED	الفصيل الأحمر
 MISC_PROP_UNREACHABLE	لا يمكن الوصول
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	السيناريو
+SCENARIO_RANDOM_NAME	عشوائي بالكامل
+SCENARIO_RANDOM_DESC	فرقة من 1 إلى 32 وحدة، لكل منها كل الإحصاءات بين 1 و99، مع عناصر وعتاد عشوائية تستطيع حملها.
+SCENARIO_CARAVAN_NAME	القافلة المتنقلة
+SCENARIO_CARAVAN_DESC	عشرة مسافرين على الطريق معًا. تبدأ كل الإحصاءات عند 5، ويحمل كل منهم 10 قطع ذهبية.
+SCENARIO_SHABBY_NAME	الطاقم الرث
+SCENARIO_SHABBY_DESC	ثلاثة كوبولدات تعساء الحظ، مع كل منهم عنصر عشوائي واحد وكل الإحصاءات بين 1 و10.
+SCENARIO_NOBODY_NAME	الجائع النكرة
+SCENARIO_NOBODY_DESC	وحدة واحدة لا تملك شيئًا: لا عناصر ولا عتاد، وكل الإحصاءات عند 1، ومعدة فارغة.
+SCENARIO_DIGGERS_NAME	حفارو الزنزانات
+SCENARIO_DIGGERS_DESC	سبعة عمال مناجم بعتاد كامل. إحصاءاتهم بين 5 و20، لكن التعدين لكل منهم 50 ويحمل 3 من خام الحديد.
+PROP_LOCKED_CHEST	صندوق مقفل
+PROP_PRISONER_CAGE	قفص السجين
+UILABEL_UNLOCK	افتح القفل
+MISC_PROP_LOCKED	مقفل
+MISC_LOCKPICK_NEEDS	يتطلب فتح الأقفال {0}
+MISC_UNLOCKED	فُتح القفل!
+MISC_LOCKPICK_FAILED	فشل فتح القفل
+MISC_UNLOCKS	{0} يفتح قفل {1}
+MISC_REASON_LOCKPICKING	فتح الأقفال
+MISC_LOCKED_NAME	{0} (مقفل)

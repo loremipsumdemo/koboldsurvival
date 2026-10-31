@@ -604,3 +604,24 @@ FACTION_GRAY	Сива фракция
 FACTION_RED	Червена фракция
 MISC_PROP_UNREACHABLE	Недостъпно
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Сценарий
+SCENARIO_RANDOM_NAME	Напълно случаен
+SCENARIO_RANDOM_DESC	Група от 1 до 32 единици, всяка с всички показатели между 1 и 99 и случайни предмети и екипировка, които може да носи.
+SCENARIO_CARAVAN_NAME	Пътуващ керван
+SCENARIO_CARAVAN_DESC	Десет пътници заедно на път. Всички показатели започват от 5 и всеки носи 10 златни монети.
+SCENARIO_SHABBY_NAME	Окъсана дружина
+SCENARIO_SHABBY_DESC	Три коболда без късмет, всеки с по един случаен предмет и всички показатели между 1 и 10.
+SCENARIO_NOBODY_NAME	Гладен никой
+SCENARIO_NOBODY_DESC	Една единица без нищо: без предмети, без екипировка, всички показатели на 1 и празен стомах.
+SCENARIO_DIGGERS_NAME	Подземни копачи
+SCENARIO_DIGGERS_DESC	Седем миньори в пълна екипировка. Показателите им са от 5 до 20, но всеки има Копаене 50 и носи 3 железни руди.
+PROP_LOCKED_CHEST	Заключен сандък
+PROP_PRISONER_CAGE	Клетка за затворници
+UILABEL_UNLOCK	Отключи
+MISC_PROP_LOCKED	Заключено
+MISC_LOCKPICK_NEEDS	Нужно е Отваряне на ключалки {0}
+MISC_UNLOCKED	Отключено!
+MISC_LOCKPICK_FAILED	Неуспешно отключване
+MISC_UNLOCKS	{0} отключва {1}
+MISC_REASON_LOCKPICKING	разбиване на ключалки
+MISC_LOCKED_NAME	{0} (заключено)

@@ -604,3 +604,24 @@ FACTION_GRAY	Facción gris
 FACTION_RED	Facción roja
 MISC_PROP_UNREACHABLE	Inalcanzable
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Escenario
+SCENARIO_RANDOM_NAME	Totalmente aleatorio
+SCENARIO_RANDOM_DESC	Un grupo de 1 a 32 unidades, cada una con todas sus estadísticas entre 1 y 99, y objetos y equipo aleatorios que puede cargar.
+SCENARIO_CARAVAN_NAME	Caravana viajera
+SCENARIO_CARAVAN_DESC	Diez viajeros juntos en el camino. Todas las estadísticas empiezan en 5 y cada uno lleva 10 monedas de oro.
+SCENARIO_SHABBY_NAME	Pandilla andrajosa
+SCENARIO_SHABBY_DESC	Tres kobolds sin suerte con un objeto aleatorio cada uno y todas las estadísticas entre 1 y 10.
+SCENARIO_NOBODY_NAME	Don nadie hambriento
+SCENARIO_NOBODY_DESC	Una unidad sin nada: sin objetos, sin equipo, todas las estadísticas en 1 y el estómago vacío.
+SCENARIO_DIGGERS_NAME	Excavadores de mazmorras
+SCENARIO_DIGGERS_DESC	Siete mineros con equipo completo. Sus estadísticas van de 5 a 20, pero cada uno tiene Minería en 50 y lleva 3 minerales de hierro.
+PROP_LOCKED_CHEST	Cofre cerrado con llave
+PROP_PRISONER_CAGE	Jaula de prisionero
+UILABEL_UNLOCK	Abrir cerradura
+MISC_PROP_LOCKED	Cerrado con llave
+MISC_LOCKPICK_NEEDS	Requiere Ganzúa {0}
+MISC_UNLOCKED	¡Abierto!
+MISC_LOCKPICK_FAILED	Falló la ganzúa
+MISC_UNLOCKS	{0} abre {1}
+MISC_REASON_LOCKPICKING	forzar cerraduras
+MISC_LOCKED_NAME	{0} (cerrado)

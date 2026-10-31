@@ -604,3 +604,24 @@ FACTION_GRAY	Fazione grigia
 FACTION_RED	Fazione rossa
 MISC_PROP_UNREACHABLE	Irraggiungibile
 MISC_ITEM_GAINED	+ {0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_RANDOM_NAME	Del tutto casuale
+SCENARIO_RANDOM_DESC	Un gruppo da 1 a 32 unità, ognuna con tutte le statistiche tra 1 e 99 e oggetti ed equipaggiamento casuali che riesce a portare.
+SCENARIO_CARAVAN_NAME	Carovana errante
+SCENARIO_CARAVAN_DESC	Dieci viaggiatori insieme sulla strada. Tutte le statistiche partono da 5 e ognuno porta 10 monete d'oro.
+SCENARIO_SHABBY_NAME	Ciurma malconcia
+SCENARIO_SHABBY_DESC	Tre coboldi sfortunati con un oggetto casuale ciascuno e tutte le statistiche tra 1 e 10.
+SCENARIO_NOBODY_NAME	Nessuno affamato
+SCENARIO_NOBODY_DESC	Un'unità senza niente: nessun oggetto, nessun equipaggiamento, tutte le statistiche a 1 e lo stomaco vuoto.
+SCENARIO_DIGGERS_NAME	Scavatori di segrete
+SCENARIO_DIGGERS_DESC	Sette minatori in equipaggiamento completo. Le loro statistiche vanno da 5 a 20, ma ognuno ha Estrazione a 50 e porta 3 minerali di ferro.
+PROP_LOCKED_CHEST	Forziere chiuso a chiave
+PROP_PRISONER_CAGE	Gabbia per prigionieri
+UILABEL_UNLOCK	Scassina
+MISC_PROP_LOCKED	Chiuso a chiave
+MISC_LOCKPICK_NEEDS	Richiede Scasso {0}
+MISC_UNLOCKED	Aperto!
+MISC_LOCKPICK_FAILED	Scasso fallito
+MISC_UNLOCKS	{0} apre {1}
+MISC_REASON_LOCKPICKING	scassinare serrature
+MISC_LOCKED_NAME	{0} (chiuso)
