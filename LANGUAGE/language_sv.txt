@@ -66,6 +66,7 @@ UILABEL_RESET	Återställ
 UILABEL_FONT	Teckensnitt
 UILABEL_FONT_AUTOMATIC	Automatiskt
 UILABEL_EDGE_SCROLL	Rullning vid kanten
+UILABEL_GLOBAL_VOLUME	Global volym
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Omgivningsljud
 UILABEL_SOUND_EFFECTS	Ljudeffekter
@@ -603,7 +604,7 @@ FACTION_PLAYER	Spelarens fraktion
 FACTION_GRAY	Den grå fraktionen
 FACTION_RED	Den röda fraktionen
 MISC_PROP_UNREACHABLE	Onåbar
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_RANDOM_NAME	Helt slumpmässigt
 SCENARIO_RANDOM_DESC	En grupp på 1 till 32 enheter, var och en med alla egenskaper mellan 1 och 99 och slumpade föremål och utrustning som de orkar bära.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Stekt grodkött
 ITEM_125_DESC	En liten vild svamp. Rå hjälper den knappt mot hunger eller för hälsan.
 ITEM_125_NAME	Svamp
 MISC_FOOD_TO_COOK	rått kött
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Giftig svamp
+ITEM_126_DESC	En vild svamp som ser ut som alla andra. Att äta den kostar hälsa och mättnad.

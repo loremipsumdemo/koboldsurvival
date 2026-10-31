@@ -66,6 +66,7 @@ UILABEL_RESET	Resetten
 UILABEL_FONT	Lettertype
 UILABEL_FONT_AUTOMATIC	Automatisch
 UILABEL_EDGE_SCROLL	Scrollen aan de rand
+UILABEL_GLOBAL_VOLUME	Globaal volume
 UILABEL_MUSIC	Muziek
 UILABEL_AMBIENT	Omgevingsgeluid
 UILABEL_SOUND_EFFECTS	Geluidseffecten
@@ -603,7 +604,7 @@ FACTION_PLAYER	Spelersfactie
 FACTION_GRAY	Grijze factie
 FACTION_RED	Rode factie
 MISC_PROP_UNREACHABLE	Onbereikbaar
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_RANDOM_NAME	Volledig willekeurig
 SCENARIO_RANDOM_DESC	Een groep van 1 tot 32 eenheden, elk met alle eigenschappen tussen 1 en 99, en willekeurige voorwerpen en uitrusting die ze kunnen dragen.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Gebakken kikkervlees
 ITEM_125_DESC	Een kleine wilde paddenstoel. Rauw doet hij weinig voor gezondheid of honger.
 ITEM_125_NAME	Paddenstoel
 MISC_FOOD_TO_COOK	rauw vlees
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Giftige paddenstoel
+ITEM_126_DESC	Een wilde paddenstoel die eruitziet als elke andere. Opeten kost gezondheid en verzadiging.

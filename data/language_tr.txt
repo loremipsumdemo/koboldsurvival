@@ -66,6 +66,7 @@ UILABEL_RESET	Sıfırla
 UILABEL_FONT	Yazı tipi
 UILABEL_FONT_AUTOMATIC	Otomatik
 UILABEL_EDGE_SCROLL	Kenarda kaydırma
+UILABEL_GLOBAL_VOLUME	Genel ses düzeyi
 UILABEL_MUSIC	Müzik
 UILABEL_AMBIENT	Ortam sesleri
 UILABEL_SOUND_EFFECTS	Ses efektleri
@@ -603,7 +604,7 @@ FACTION_PLAYER	Oyuncu Hizbi
 FACTION_GRAY	Gri Hizip
 FACTION_RED	Kızıl Hizip
 MISC_PROP_UNREACHABLE	Ulaşılamıyor
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senaryo
 SCENARIO_RANDOM_NAME	Tamamen rastgele
 SCENARIO_RANDOM_DESC	1 ile 32 birimlik bir grup; her birinin tüm nitelikleri 1 ile 99 arasında ve taşıyabileceği rastgele eşya ve teçhizatı var.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Pişmiş kurbağa eti
 ITEM_125_DESC	Küçük bir yabani mantar. Çiğ yenince sağlığa ve açlığa pek az iyi gelir.
 ITEM_125_NAME	Mantar
 MISC_FOOD_TO_COOK	çiğ et
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Zehirli mantar
+ITEM_126_DESC	Diğerlerinden farksız görünen yabani bir mantar. Yemek sağlık ve tokluk kaybettirir.

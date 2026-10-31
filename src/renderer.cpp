@@ -3172,16 +3172,20 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
 void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    // A unit with several labels at once (an item's Health and Hunger) shows them stacked, the newest on top
+    std::map<Entity, int> stacked;
     for (const TradeLabel& l : labels) {
         const Transform* tr = w.get<Transform>(l.unit);
         if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, tr->y + GLYPH_H * 2.2f, tr->z, winW, winH, sx, sy)) continue;
+        const int row = stacked[l.unit]++;
         const float t = std::clamp(l.age / TRADE_LABEL_LIFE, 0.0f, 1.0f);
         const float alpha = t < 0.7f ? 1.0f : (1.0f - t) / 0.3f;
-        const float x = sx - uiTextWidth(l.text) * 0.5f, y = sy - uiTextHeight(l.text);
+        const float lineH = uiTextHeight("Ag") + 2.0f * s;
+        const float x = sx - uiTextWidth(l.text) * 0.5f, y = sy - uiTextHeight(l.text) - row * lineH;
         drawUiText(l.text, x + 1.5f * s, y + 1.5f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.85f * alpha });
-        drawUiText(l.text, x, y, RGBA{ 1.0f, 0.90f, 0.45f, alpha });
+        drawUiText(l.text, x, y, l.red ? RGBA{ 1.0f, 0.35f, 0.32f, alpha } : RGBA{ 1.0f, 0.90f, 0.45f, alpha });
     }
 }
 

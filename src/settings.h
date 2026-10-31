@@ -47,12 +47,15 @@ struct GameSettings {
     // Controls
     bool edgeScroll = false;
 
-    // Audio: each bus has a level from 0 to 100, and can be switched off without losing the level
-    int musicVolume = 80;
+    // Audio: each bus has a level from 0 to 100, and can be switched off without losing the level. The global level
+    // scales all three: a bus is heard at its level times the global level.
+    int globalVolume = 50;
+    bool globalOn = true;
+    int musicVolume = 50;
     bool musicOn = true;
-    int ambientVolume = 80;
+    int ambientVolume = 50;
     bool ambientOn = true;
-    int effectsVolume = 80;
+    int effectsVolume = 50;
     bool effectsOn = true;
 };
 
@@ -99,6 +102,9 @@ inline GameSettings loadSettings(const std::string& path) {
             else s.language = val;
         }
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
+        // Earlier builds called it the master, then the total volume
+        else if (key == "globalVolume" || key == "masterVolume" || key == "totalVolume") s.globalVolume = parseInt(val, s.globalVolume);
+        else if (key == "globalOn" || key == "masterOn" || key == "totalOn") s.globalOn = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
         else if (key == "musicOn")         s.musicOn = (val == "1");
         else if (key == "ambientVolume")   s.ambientVolume = parseInt(val, s.ambientVolume);
@@ -122,6 +128,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.refreshHz = std::clamp(s.refreshHz, 0, 1000);
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
+    s.globalVolume = std::clamp(s.globalVolume, 0, 100);
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
@@ -147,6 +154,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
+    out << "globalVolume=" << s.globalVolume << "\n";
+    out << "globalOn=" << (s.globalOn ? 1 : 0) << "\n";
     out << "musicVolume=" << s.musicVolume << "\n";
     out << "musicOn=" << (s.musicOn ? 1 : 0) << "\n";
     out << "ambientVolume=" << s.ambientVolume << "\n";

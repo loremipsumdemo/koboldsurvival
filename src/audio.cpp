@@ -153,6 +153,11 @@ void setBus(Bus bus, int level, bool on) {
     ma_sound_group_set_volume(&buses[index], gain);
 }
 
+void setGlobal(int level, bool on) {
+    if (!engineReady) return;
+    ma_engine_set_volume(&engine, on ? std::clamp(level, 0, 100) / 100.0f : 0.0f);
+}
+
 void playTrack(Bus bus, const std::string& file) {
     const int slot = trackSlot(bus);
     if (!engineReady || slot < 0) return;     // no output: nothing to play, and nothing to remember

@@ -66,6 +66,7 @@ UILABEL_RESET	إعادة التعيين
 UILABEL_FONT	الخط
 UILABEL_FONT_AUTOMATIC	تلقائي
 UILABEL_EDGE_SCROLL	التمرير عند الحواف
+UILABEL_GLOBAL_VOLUME	مستوى الصوت العام
 UILABEL_MUSIC	الموسيقى
 UILABEL_AMBIENT	الأجواء
 UILABEL_SOUND_EFFECTS	المؤثرات الصوتية
@@ -603,7 +604,7 @@ FACTION_PLAYER	فصيل اللاعب
 FACTION_GRAY	الفصيل الرمادي
 FACTION_RED	الفصيل الأحمر
 MISC_PROP_UNREACHABLE	لا يمكن الوصول
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	السيناريو
 SCENARIO_RANDOM_NAME	عشوائي بالكامل
 SCENARIO_RANDOM_DESC	فرقة من 1 إلى 32 وحدة، لكل منها كل الإحصاءات بين 1 و99، مع عناصر وعتاد عشوائية تستطيع حملها.
@@ -731,3 +732,9 @@ ITEM_124_NAME	لحم ضفدع مطبوخ
 ITEM_125_DESC	فطر بري صغير. إذا أُكل نيئًا لا يفيد الصحة أو الجوع إلا قليلًا.
 ITEM_125_NAME	فطر
 MISC_FOOD_TO_COOK	لحمًا نيئًا
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	فطر سام
+ITEM_126_DESC	فطر بري يشبه أي فطر آخر. أكله يكلّف الصحة والشبع.

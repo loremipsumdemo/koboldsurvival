@@ -15,6 +15,8 @@ void shutdown();
 
 // Sets a bus's level, 0 to 100, and whether it is heard
 void setBus(Bus bus, int level, bool on);
+// Sets the global level, 0 to 100, and whether anything is heard. It scales every bus.
+void setGlobal(int level, bool on);
 
 // Loops a track on the music or the ambient bus. Asking for the track already playing does not restart it, and
 // "" stops the bus. The other buses hold no tracks, so they are ignored.

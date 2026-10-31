@@ -66,6 +66,7 @@ UILABEL_RESET	Сбросить
 UILABEL_FONT	Шрифт
 UILABEL_FONT_AUTOMATIC	Автоматически
 UILABEL_EDGE_SCROLL	Прокрутка у края экрана
+UILABEL_GLOBAL_VOLUME	Общая громкость
 UILABEL_MUSIC	Музыка
 UILABEL_AMBIENT	Фоновые звуки
 UILABEL_SOUND_EFFECTS	Звуковые эффекты
@@ -603,7 +604,7 @@ FACTION_PLAYER	Фракция игрока
 FACTION_GRAY	Серая фракция
 FACTION_RED	Красная фракция
 MISC_PROP_UNREACHABLE	Недостижимо
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
 SCENARIO_RANDOM_NAME	Полностью случайный
 SCENARIO_RANDOM_DESC	Отряд из 1–32 юнитов, у каждого все характеристики от 1 до 99, а также случайные предметы и снаряжение, которые он может унести.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Жареное мясо лягушки
 ITEM_125_DESC	Маленький лесной гриб. Сырым почти не помогает ни здоровью, ни от голода.
 ITEM_125_NAME	Гриб
 MISC_FOOD_TO_COOK	сырое мясо
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Ядовитый гриб
+ITEM_126_DESC	Лесной гриб, похожий на любой другой. Съесть его — потерять здоровье и сытость.

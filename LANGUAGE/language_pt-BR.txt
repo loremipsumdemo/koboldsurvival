@@ -66,6 +66,7 @@ UILABEL_RESET	Redefinir
 UILABEL_FONT	Fonte
 UILABEL_FONT_AUTOMATIC	Automático
 UILABEL_EDGE_SCROLL	Rolagem nas bordas
+UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Música
 UILABEL_AMBIENT	Ambiente
 UILABEL_SOUND_EFFECTS	Efeitos sonoros
@@ -603,7 +604,7 @@ FACTION_PLAYER	Facção do Jogador
 FACTION_GRAY	Facção Cinzenta
 FACTION_RED	Facção Vermelha
 MISC_PROP_UNREACHABLE	Inalcançável
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Cenário
 SCENARIO_RANDOM_NAME	Totalmente aleatório
 SCENARIO_RANDOM_DESC	Um grupo de 1 a 32 unidades, cada uma com todos os atributos entre 1 e 99, e itens e equipamentos aleatórios que consegue carregar.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Carne de rã assada
 ITEM_125_DESC	Um pequeno cogumelo selvagem. Cru, ajuda pouco a saúde e a fome.
 ITEM_125_NAME	Cogumelo
 MISC_FOOD_TO_COOK	carne crua
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Cogumelo venenoso
+ITEM_126_DESC	Um cogumelo selvagem igual a qualquer outro. Comê-lo custa saúde e saciedade.

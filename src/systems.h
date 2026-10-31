@@ -96,7 +96,7 @@ struct PropArrival {
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
 // or say why a unit could not start. Units on beds are kept on them.
 std::vector<PropArrival> propOrderSystem(World& w);
-// What a unit's work gave this frame, for the label over it: an item ("+ item"), a lock opened, or a lockpick that failed
+// What a unit's work gave this frame, for the label over it: an item ("+item"), a lock opened, or a lockpick that failed
 struct WorkGain {
     enum class Kind { Item, Unlocked, LockpickFailed, Trained };
     Entity unit = NULL_ENTITY;

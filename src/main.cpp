@@ -215,6 +215,8 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     addToInventory(*inv, stack.item, stack.count);
     *from = ItemStack{};
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
+    const ItemDef* got = findItem(stack.item);
+    queueUnitLabel(storageUnit, itemGainLabel(stack.count, got ? itemDisplayName(*got) : std::string(lang("MISC_AN_ITEM"))));
     return true;
 }
 
@@ -302,6 +304,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
     }
     addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
     propStorageChanged(w, storageProp);
+    queueUnitLabel(storageUnit, itemLossLabelFor(count, item), true);   // "-3x Iron Ore" over the unit that stored it
     return true;
 }
 
@@ -453,6 +456,24 @@ void completeTrade(World& w, Entity npc, Entity player) {
     for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
     for (const TradeGhost& g : tradeNpc) addToInventory(*pi, g.stack.item, g.stack.count);
     for (const TradeGhost& g : tradePlayer) addToInventory(*ni, g.stack.item, g.stack.count);
+    // Over each side, what it received ("+3x Iron Ore") and what it gave ("-Gold Coin"), one label per kind of item
+    auto totals = [](const std::vector<TradeGhost>& side) {
+        std::vector<std::pair<int, int>> out;   // item, count, in the order first offered
+        for (const TradeGhost& g : side) {
+            auto it = std::find_if(out.begin(), out.end(), [&](const std::pair<int, int>& p) { return p.first == g.stack.item; });
+            if (it == out.end()) out.push_back({ g.stack.item, g.stack.count });
+            else it->second += g.stack.count;
+        }
+        return out;
+    };
+    for (const auto& [item, count] : totals(tradeNpc)) {
+        queueUnitLabel(player, itemGainLabelFor(count, item));
+        queueUnitLabel(npc, itemLossLabelFor(count, item), true);
+    }
+    for (const auto& [item, count] : totals(tradePlayer)) {
+        queueUnitLabel(npc, itemGainLabelFor(count, item));
+        queueUnitLabel(player, itemLossLabelFor(count, item), true);
+    }
     if (fee > 0) grantXp(w, player, STAT_CHARISMA, fee, lang("MISC_REASON_FEES"));
     tradeOpen = false;
     tradeNpc.clear();
@@ -1607,7 +1628,7 @@ int main(int, char**) {
     // The combat log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
     CombatLog combatLog;
     std::vector<FloatingNumber> floatingNumbers;
-    std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+ item" from work
+    std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+item" from work
     int infoTab = 0;        // the Information Panel's tab: 0 Message, 1 Game
     LogFilter logFilter;    // which game message kinds the Game tab shows
     bool logFilterOpen = false;
@@ -1617,6 +1638,7 @@ int main(int, char**) {
         combatLog = CombatLog{};
         floatingNumbers.clear();
         tradeLabels.clear();
+        discardQueuedLabels();
         logOffset = 0;
         logSeen = 0;
     };
@@ -1867,6 +1889,7 @@ int main(int, char**) {
 
     // ---- Settings: the audio buses and the window follow the settings as they change ----
     auto applyAudio = [&]() {
+        audio::setGlobal(settings.globalVolume, settings.globalOn);
         audio::setBus(audio::Bus::Music, settings.musicVolume, settings.musicOn);
         audio::setBus(audio::Bus::Ambient, settings.ambientVolume, settings.ambientOn);
         audio::setBus(audio::Bus::Effects, settings.effectsVolume, settings.effectsOn);
@@ -4023,11 +4046,11 @@ int main(int, char**) {
             }
             needsSystem(world, hoursPassed, gameSecs);
             // Resource and crafting props: the units working them make items by the in-game time that passed
-            // Each item a worker receives shows over it, as "+ Iron Ore", like a trade's label
+            // Each item a worker receives shows over it, as "+Iron Ore", like a trade's label
             for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
                 switch (g.kind) {
                 case WorkGain::Kind::Item:
-                    tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_ITEM_GAINED", { itemNameOf(g.item) }), 0.0f });
+                    tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
                     break;
                 case WorkGain::Kind::Unlocked:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
@@ -4191,6 +4214,8 @@ int main(int, char**) {
             renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
+            // Labels the systems queued this frame: items gained, and what used items did
+            for (const TradeLabel& l : takeQueuedLabels()) tradeLabels.push_back(l);
             for (TradeLabel& l : tradeLabels) l.age += dt;
             tradeLabels.erase(std::remove_if(tradeLabels.begin(), tradeLabels.end(),
                                              [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),

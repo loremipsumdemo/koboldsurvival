@@ -66,6 +66,7 @@ UILABEL_RESET	Setel ulang
 UILABEL_FONT	Font
 UILABEL_FONT_AUTOMATIC	Otomatis
 UILABEL_EDGE_SCROLL	Gulir di tepi layar
+UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Suara latar
 UILABEL_SOUND_EFFECTS	Efek suara
@@ -603,7 +604,7 @@ FACTION_PLAYER	Faksi Pemain
 FACTION_GRAY	Faksi Kelabu
 FACTION_RED	Faksi Merah
 MISC_PROP_UNREACHABLE	Tidak terjangkau
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenario
 SCENARIO_RANDOM_NAME	Acak penuh
 SCENARIO_RANDOM_DESC	Kelompok berisi 1 sampai 32 unit, masing-masing dengan semua statistik antara 1 dan 99, serta barang dan perlengkapan acak yang bisa dibawanya.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Daging katak matang
 ITEM_125_DESC	Jamur liar kecil. Dimakan mentah, hanya sedikit membantu kesehatan dan rasa lapar.
 ITEM_125_NAME	Jamur
 MISC_FOOD_TO_COOK	daging mentah
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Jamur beracun
+ITEM_126_DESC	Jamur liar yang tampak seperti jamur lainnya. Memakannya mengurangi kesehatan dan rasa kenyang.

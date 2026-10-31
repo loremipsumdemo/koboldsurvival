@@ -66,6 +66,7 @@ UILABEL_RESET	Επαναφορά
 UILABEL_FONT	Γραμματοσειρά
 UILABEL_FONT_AUTOMATIC	Αυτόματη
 UILABEL_EDGE_SCROLL	Κύλιση στις άκρες
+UILABEL_GLOBAL_VOLUME	Γενική ένταση
 UILABEL_MUSIC	Μουσική
 UILABEL_AMBIENT	Περιβάλλον
 UILABEL_SOUND_EFFECTS	Ηχητικά εφέ
@@ -603,7 +604,7 @@ FACTION_PLAYER	Φατρία του παίκτη
 FACTION_GRAY	Γκρίζα φατρία
 FACTION_RED	Κόκκινη φατρία
 MISC_PROP_UNREACHABLE	Απρόσιτο
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Σενάριο
 SCENARIO_RANDOM_NAME	Εντελώς τυχαίο
 SCENARIO_RANDOM_DESC	Μια ομάδα από 1 έως 32 μονάδες, καθεμία με όλα τα χαρακτηριστικά από 1 έως 99 και τυχαία αντικείμενα και εξοπλισμό που μπορεί να κουβαλήσει.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Ψητό κρέας βατράχου
 ITEM_125_DESC	Ένα μικρό άγριο μανιτάρι. Ωμό βοηθά ελάχιστα την υγεία και την πείνα.
 ITEM_125_NAME	Μανιτάρι
 MISC_FOOD_TO_COOK	ωμό κρέας
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Δηλητηριώδες μανιτάρι
+ITEM_126_DESC	Ένα άγριο μανιτάρι που μοιάζει με όλα τα άλλα. Αν το φας, χάνεις υγεία και χορτασμό.

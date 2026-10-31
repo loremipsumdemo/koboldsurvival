@@ -66,6 +66,7 @@ UILABEL_RESET	Resetează
 UILABEL_FONT	Font
 UILABEL_FONT_AUTOMATIC	Automat
 UILABEL_EDGE_SCROLL	Derulare la margini
+UILABEL_GLOBAL_VOLUME	Volum global
 UILABEL_MUSIC	Muzică
 UILABEL_AMBIENT	Ambient
 UILABEL_SOUND_EFFECTS	Efecte sonore
@@ -603,7 +604,7 @@ FACTION_PLAYER	Facțiunea jucătorului
 FACTION_GRAY	Facțiunea gri
 FACTION_RED	Facțiunea roșie
 MISC_PROP_UNREACHABLE	Inaccesibil
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariu
 SCENARIO_RANDOM_NAME	Complet aleatoriu
 SCENARIO_RANDOM_DESC	Un grup de 1 până la 32 de unități, fiecare cu toate atributele între 1 și 99 și cu obiecte și echipament aleatorii pe care le poate căra.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Carne de broască friptă
 ITEM_125_DESC	O ciupercă mică de pădure. Crudă, ajută puțin la sănătate și la foame.
 ITEM_125_NAME	Ciupercă
 MISC_FOOD_TO_COOK	carne crudă
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Ciupercă otrăvitoare
+ITEM_126_DESC	O ciupercă de pădure care arată ca oricare alta. Mâncată, costă sănătate și sațietate.

@@ -104,6 +104,8 @@ enum class PropAction { Inventory, Use, Unlock };
 //            needs to try to unlock it.
 // accepts: for a storage prop, which items it takes (ItemFilter). Any if left out.
 // fuelHours: for a passive crafting prop, the in-game hours each input item burns. An hour if left out.
+// altItem, altOneIn: for a resource prop, an item it gives instead of its item one time in altOneIn (the Mushroom's
+//                    Poison Mushroom, 1 in 10). None if left out.
 constexpr int INPUT_COOKABLE = -1;
 struct PropInfo {
     const char* file;
@@ -117,6 +119,8 @@ struct PropInfo {
     int lockLevel;
     ItemFilter accepts = ItemFilter::Any;
     double fuelHours = 1.0;
+    int altItem = 0;
+    int altOneIn = 0;
 };
 
 inline const PropInfo& propInfo(int kind) {
@@ -129,7 +133,8 @@ inline const PropInfo& propInfo(int kind) {
         { "data/3d/6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, STAT_MINING, 1, 0, 3, 0 },       // Iron Ore
         { "data/3d/7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, STAT_WOODCUTTING, 88, 0, 3, 0 }, // Wood Log
         { "data/3d/8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, STAT_HERBALISM, 125, 0, 3, 0 },  // Mushroom
+        { "data/3d/9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, STAT_HERBALISM, 125, 0, 3, 0,
+          ItemFilter::Any, 1.0, 126, 10 },                                                                   // Mushroom; 1 in 10 Poison Mushroom
         { "data/3d/10.glb", "PROP_BONES",          1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
         { "data/3d/11.glb", "PROP_WALL",           2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
         { "data/3d/12.glb", "PROP_STALL",          2.0f, PropUse::None,     -1, 0, 0, 0, 0 },

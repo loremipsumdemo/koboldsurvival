@@ -66,6 +66,7 @@ UILABEL_RESET	รีเซ็ต
 UILABEL_FONT	ฟอนต์
 UILABEL_FONT_AUTOMATIC	อัตโนมัติ
 UILABEL_EDGE_SCROLL	เลื่อนเมื่อชี้ที่ขอบจอ
+UILABEL_GLOBAL_VOLUME	ระดับเสียงรวม
 UILABEL_MUSIC	เพลง
 UILABEL_AMBIENT	เสียงบรรยากาศ
 UILABEL_SOUND_EFFECTS	เสียงเอฟเฟกต์
@@ -603,7 +604,7 @@ FACTION_PLAYER	ฝ่ายผู้เล่น
 FACTION_GRAY	ฝ่ายเทา
 FACTION_RED	ฝ่ายแดง
 MISC_PROP_UNREACHABLE	เข้าถึงไม่ได้
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	ฉากเริ่มต้น
 SCENARIO_RANDOM_NAME	สุ่มทั้งหมด
 SCENARIO_RANDOM_DESC	กลุ่มยูนิต 1 ถึง 32 ตัว แต่ละตัวมีค่าสถานะทุกค่าระหว่าง 1 ถึง 99 พร้อมไอเทมและอุปกรณ์สุ่มที่แบกไหว
@@ -731,3 +732,9 @@ ITEM_124_NAME	เนื้อกบย่าง
 ITEM_125_DESC	เห็ดป่าดอกเล็ก กินดิบ ๆ ช่วยเรื่องพลังชีวิตและความหิวได้นิดเดียว
 ITEM_125_NAME	เห็ด
 MISC_FOOD_TO_COOK	เนื้อดิบ
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	เห็ดพิษ
+ITEM_126_DESC	เห็ดป่าที่ดูเหมือนเห็ดทั่วไป กินแล้วเสียพลังชีวิตและความอิ่ม

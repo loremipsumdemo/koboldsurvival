@@ -239,6 +239,7 @@ std::vector<RowSpec> controlsRows(const GameSettings& s) {
 
 std::vector<RowSpec> audioRows(const GameSettings& s) {
     std::vector<RowSpec> rows;
+    rows.push_back(makeLevel(RowId::GlobalLevel, lang("UILABEL_GLOBAL_VOLUME"), s.globalVolume, s.globalOn));
     rows.push_back(makeLevel(RowId::MusicLevel, lang("UILABEL_MUSIC"), s.musicVolume, s.musicOn));
     rows.push_back(makeLevel(RowId::AmbientLevel, lang("UILABEL_AMBIENT"), s.ambientVolume, s.ambientOn));
     rows.push_back(makeLevel(RowId::EffectsLevel, lang("UILABEL_SOUND_EFFECTS"), s.effectsVolume, s.effectsOn));
@@ -480,6 +481,10 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
     case RowId::EdgeScroll:
         s.edgeScroll = on;
         break;
+    case RowId::GlobalLevel:
+        s.globalOn = on;
+        c.audio = true;
+        break;
     case RowId::MusicLevel:
         s.musicOn = on;
         c.audio = true;
@@ -515,6 +520,10 @@ SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
     }
     const int v = std::clamp(level, 0, 100);
     switch (id) {
+    case RowId::GlobalLevel:
+        s.globalVolume = v;
+        c.audio = true;
+        break;
     case RowId::MusicLevel:
         s.musicVolume = v;
         c.audio = true;

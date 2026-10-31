@@ -6,6 +6,7 @@
 #include "combat.h"
 #include "inventory.h"
 #include "items.h"
+#include "language.h"
 
 namespace {
 
@@ -179,7 +180,35 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     if (const Stats* st = w.get<Stats>(consumer)) {
         t.healScale = 1.0f + 0.01f * (float)(levelOf(*st, STAT_MEDICAL) - 1);
     }
+    const int hpBefore = t.needs ? t.needs->hp : 0, hungerBefore = t.needs ? t.needs->hunger : 0;
     const int restored = applyUse(effects, t);
+    // Over the target's head, one label for each stat the item touched, in the order its script names them, with what
+    // it actually changed: "Health +15", "Hunger +30", "Attack +10"
+    std::vector<UseEffect::Stat> shown;
+    int attack = 0;
+    for (const UseEffect& e : effects) {
+        if (e.stat == UseEffect::Stat::Attack) attack += e.amount;
+        if (std::find(shown.begin(), shown.end(), e.stat) == shown.end()) shown.push_back(e.stat);
+    }
+    // A loss ("Health -10") is red. One that changed nothing still shows its sign: "Hunger -0" for a unit already
+    // starving, in red, as a poison is still a poison.
+    auto nominal = [&](UseEffect::Stat st) {
+        int sum = 0;
+        for (const UseEffect& e : effects) sum += e.stat == st ? e.amount : 0;
+        return sum;
+    };
+    auto show = [&](UseEffect::Stat st, const char* labelKey, int change) {
+        const bool down = change < 0 || (change == 0 && nominal(st) < 0);
+        const std::string num = (down ? "-" : "+") + std::to_string(change < 0 ? -change : change);
+        queueUnitLabel(target, langf("MISC_EFFECT_LABEL", { lang(labelKey), num }), down);
+    };
+    for (UseEffect::Stat st : shown) {
+        if (st == UseEffect::Stat::Health && t.needs) show(st, "UILABEL_HEALTH", t.needs->hp - hpBefore);
+        else if (st == UseEffect::Stat::Hunger && t.needs) show(st, "UILABEL_HUNGER", t.needs->hunger - hungerBefore);
+        else if (st == UseEffect::Stat::Attack && t.combat) show(st, "UILABEL_ATTACK", attack);
+    }
+    // And under them, over the one who used it, the item it used up
+    queueUnitLabel(consumer, itemLossLabelFor(1, s.item), true);
     if (--s.count <= 0) s = ItemStack{};
     grantXp(w, consumer, STAT_MEDICAL, (float)restored, "healing");
     return UseResult::Used;

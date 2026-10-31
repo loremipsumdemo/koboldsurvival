@@ -66,6 +66,7 @@ UILABEL_RESET	Ripristina
 UILABEL_FONT	Carattere
 UILABEL_FONT_AUTOMATIC	Automatico
 UILABEL_EDGE_SCROLL	Scorrimento ai bordi
+UILABEL_GLOBAL_VOLUME	Volume globale
 UILABEL_MUSIC	Musica
 UILABEL_AMBIENT	Ambiente
 UILABEL_SOUND_EFFECTS	Effetti sonori
@@ -603,7 +604,7 @@ FACTION_PLAYER	Fazione del giocatore
 FACTION_GRAY	Fazione grigia
 FACTION_RED	Fazione rossa
 MISC_PROP_UNREACHABLE	Irraggiungibile
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_RANDOM_NAME	Del tutto casuale
 SCENARIO_RANDOM_DESC	Un gruppo da 1 a 32 unità, ognuna con tutte le statistiche tra 1 e 99 e oggetti ed equipaggiamento casuali che riesce a portare.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Carne di rana cotta
 ITEM_125_DESC	Un piccolo fungo selvatico. Crudo, aiuta poco la salute e la fame.
 ITEM_125_NAME	Fungo
 MISC_FOOD_TO_COOK	carne cruda
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Fungo velenoso
+ITEM_126_DESC	Un fungo selvatico che sembra uguale agli altri. Mangiarlo costa salute e sazietà.

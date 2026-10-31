@@ -1,0 +1,1 @@
+pip install numpy scipy pillow pydub sounddevice soundfile imageio-ffmpeg trimesh manifold3d "yt-dlp[default]"

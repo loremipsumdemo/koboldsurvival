@@ -66,6 +66,7 @@ UILABEL_RESET	Palauta
 UILABEL_FONT	Fontti
 UILABEL_FONT_AUTOMATIC	Automaattinen
 UILABEL_EDGE_SCROLL	Reunavieritys
+UILABEL_GLOBAL_VOLUME	Yleinen äänenvoimakkuus
 UILABEL_MUSIC	Musiikki
 UILABEL_AMBIENT	Ympäristöäänet
 UILABEL_SOUND_EFFECTS	Äänitehosteet
@@ -603,7 +604,7 @@ FACTION_PLAYER	Pelaajan ryhmittymä
 FACTION_GRAY	Harmaa ryhmittymä
 FACTION_RED	Punainen ryhmittymä
 MISC_PROP_UNREACHABLE	Ei saavutettavissa
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenaario
 SCENARIO_RANDOM_NAME	Täysin satunnainen
 SCENARIO_RANDOM_DESC	1–32 yksikön joukko, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Kypsä sammakonliha
 ITEM_125_DESC	Pieni metsäsieni. Raakana syötynä se auttaa vain vähän terveyteen ja nälkään.
 ITEM_125_NAME	Sieni
 MISC_FOOD_TO_COOK	raakaa lihaa
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Myrkkysieni
+ITEM_126_DESC	Metsäsieni, joka näyttää muiden kaltaiselta. Sen syöminen vie terveyttä ja kylläisyyttä.

@@ -158,7 +158,21 @@ struct TradeLabel {
     Entity unit = NULL_ENTITY;
     std::string text;
     float age = 0.0f;
+    bool red = false;   // an item lost ("-Iron Ore"), drawn in red; the rest are yellow
 };
+
+// Labels any system can put over a unit, like the trade's: an item gained ("+Iron Ore", "+3x Iron Ore"), or what a
+// used item did ("Health +15"). The game takes them each frame and shows them with its trade labels.
+void queueUnitLabel(Entity unit, const std::string& text, bool red = false);
+std::vector<TradeLabel> takeQueuedLabels();
+void discardQueuedLabels();
+// The label for count of an item gained: "+Iron Ore" for one, "+3x Iron Ore" for more
+std::string itemGainLabel(int count, const std::string& itemName);
+// The label for count of an item that left a unit's inventory: "-Iron Ore", "-3x Iron Ore". Queue it with red set.
+std::string itemLossLabel(int count, const std::string& itemName);
+// The same, for an item id, with the item's name in the language in use
+std::string itemGainLabelFor(int count, int item);
+std::string itemLossLabelFor(int count, int item);
 
 // ---- Units and the fight ----
 

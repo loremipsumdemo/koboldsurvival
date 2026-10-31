@@ -66,6 +66,7 @@ UILABEL_RESET	Visszaállítás
 UILABEL_FONT	Betűtípus
 UILABEL_FONT_AUTOMATIC	Automatikus
 UILABEL_EDGE_SCROLL	Görgetés a szélnél
+UILABEL_GLOBAL_VOLUME	Globális hangerő
 UILABEL_MUSIC	Zene
 UILABEL_AMBIENT	Környezeti hangok
 UILABEL_SOUND_EFFECTS	Hangeffektek
@@ -603,7 +604,7 @@ FACTION_PLAYER	Játékos frakció
 FACTION_GRAY	Szürke frakció
 FACTION_RED	Vörös frakció
 MISC_PROP_UNREACHABLE	Elérhetetlen
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Forgatókönyv
 SCENARIO_RANDOM_NAME	Teljesen véletlen
 SCENARIO_RANDOM_DESC	1–32 egységből álló csapat, mindegyik minden tulajdonsága 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Sült békahús
 ITEM_125_DESC	Kis vadgomba. Nyersen alig segít az egészségen és az éhségen.
 ITEM_125_NAME	Gomba
 MISC_FOOD_TO_COOK	nyers hús
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Mérges gomba
+ITEM_126_DESC	Vadgomba, amely olyan, mint bármelyik másik. Megenni egészségbe és jóllakottságba kerül.

@@ -462,6 +462,7 @@ bool dropStack(World& w, Entity unit, int slot) {
     const ItemDef* def = findItem(s.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }),
              LogKind::Drop);
+    queueUnitLabel(unit, itemLossLabelFor(s.count, s.item), true);   // "-Iron Ore" over its head
     Entity e = w.create();
     w.add(e, Transform{ tr->x, tr->y, tr->z });
     w.add(e, GroundItem{ s.item, s.count });
@@ -509,6 +510,7 @@ int pickupSystem(World& w) {
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left < count) {
                 queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup);
+                queueUnitLabel(u, itemGainLabel(count - left, itemName));   // "+Iron Ore" over its head
             }
             if (left == 0) w.destroy(item);
             else gi->count = left;
@@ -1273,7 +1275,6 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         for (Entity u : workers) perHour += 1.0 / workHoursFor(levelOf(statsOf(w, u), info.stat));
         pw.progress += gameSeconds / 3600.0 * perHour;
 
-        const std::string itemName = itemNameFor(info.item);
         while (pw.progress >= 1.0 && !workers.empty()) {
             if (crafting) {
                 // What this item is made from and into: the first input in the prop's slots that it has a recipe for
@@ -1348,9 +1349,13 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             const size_t pick = pw.turn % workers.size();
             ++pw.turn;
             const Entity got = workers[pick];
+            // Now and then a resource prop gives its other item instead (a Poison Mushroom, one time in ten)
+            int gives = info.item;
+            if (info.altItem > 0 && info.altOneIn > 0 && rng.range(1, info.altOneIn) == 1) gives = info.altItem;
+            const std::string itemName = itemNameFor(gives);
             Inventory* inv = w.get<Inventory>(got);
-            if (inv && addToInventory(*inv, info.item, 1) == 0) {
-                gains.push_back(WorkGain{ got, info.item });
+            if (inv && addToInventory(*inv, gives, 1) == 0) {
+                gains.push_back(WorkGain{ got, gives });
                 queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_GATHERING"));
             } else {
@@ -1358,9 +1363,10 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 if (const Transform* ut = w.get<Transform>(got)) {
                     const Entity drop = w.create();
                     w.add(drop, Transform{ ut->x, ut->y, ut->z });
-                    w.add(drop, GroundItem{ info.item, 1 });
+                    w.add(drop, GroundItem{ gives, 1 });
                 }
                 queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop);
+                queueUnitLabel(got, itemLossLabel(1, itemName), true);   // it fell at the unit's feet
                 w.remove<Working>(got);
                 workers.erase(workers.begin() + (long)pick);
             }

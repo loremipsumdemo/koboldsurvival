@@ -66,6 +66,7 @@ UILABEL_RESET	Нулиране
 UILABEL_FONT	Шрифт
 UILABEL_FONT_AUTOMATIC	Автоматичен
 UILABEL_EDGE_SCROLL	Превъртане при ръбовете
+UILABEL_GLOBAL_VOLUME	Глобална сила на звука
 UILABEL_MUSIC	Музика
 UILABEL_AMBIENT	Околна среда
 UILABEL_SOUND_EFFECTS	Звукови ефекти
@@ -603,7 +604,7 @@ FACTION_PLAYER	Фракция на играча
 FACTION_GRAY	Сива фракция
 FACTION_RED	Червена фракция
 MISC_PROP_UNREACHABLE	Недостъпно
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
 SCENARIO_RANDOM_NAME	Напълно случаен
 SCENARIO_RANDOM_DESC	Група от 1 до 32 единици, всяка с всички показатели между 1 и 99 и случайни предмети и екипировка, които може да носи.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Печено жабешко месо
 ITEM_125_DESC	Малка дива гъба. Сурова почти не помага на здравето и глада.
 ITEM_125_NAME	Гъба
 MISC_FOOD_TO_COOK	сурово месо
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Отровна гъба
+ITEM_126_DESC	Дива гъба, която изглежда като всяка друга. Изяждането ѝ отнема здраве и ситост.

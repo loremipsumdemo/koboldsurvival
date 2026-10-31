@@ -66,6 +66,7 @@ UILABEL_RESET	Set semula
 UILABEL_FONT	Fon
 UILABEL_FONT_AUTOMATIC	Automatik
 UILABEL_EDGE_SCROLL	Tatal di tepi
+UILABEL_GLOBAL_VOLUME	Kelantangan global
 UILABEL_MUSIC	Muzik
 UILABEL_AMBIENT	Bunyi persekitaran
 UILABEL_SOUND_EFFECTS	Kesan bunyi
@@ -603,7 +604,7 @@ FACTION_PLAYER	Puak Pemain
 FACTION_GRAY	Puak Kelabu
 FACTION_RED	Puak Merah
 MISC_PROP_UNREACHABLE	Tidak dapat dicapai
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senario
 SCENARIO_RANDOM_NAME	Rawak sepenuhnya
 SCENARIO_RANDOM_DESC	Kumpulan 1 hingga 32 unit, setiap satu dengan semua statistik antara 1 dan 99, serta item dan kelengkapan rawak yang mampu dibawanya.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Daging katak masak
 ITEM_125_DESC	Cendawan liar yang kecil. Dimakan mentah, ia hanya sedikit membantu kesihatan dan lapar.
 ITEM_125_NAME	Cendawan
 MISC_FOOD_TO_COOK	daging mentah
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Cendawan beracun
+ITEM_126_DESC	Cendawan liar yang kelihatan seperti yang lain. Memakannya mengurangkan kesihatan dan rasa kenyang.

@@ -66,6 +66,7 @@ UILABEL_RESET	Obnovit
 UILABEL_FONT	Písmo
 UILABEL_FONT_AUTOMATIC	Automaticky
 UILABEL_EDGE_SCROLL	Posouvání u okrajů
+UILABEL_GLOBAL_VOLUME	Globální hlasitost
 UILABEL_MUSIC	Hudba
 UILABEL_AMBIENT	Atmosféra
 UILABEL_SOUND_EFFECTS	Zvukové efekty
@@ -603,7 +604,7 @@ FACTION_PLAYER	Frakce hráče
 FACTION_GRAY	Šedá frakce
 FACTION_RED	Rudá frakce
 MISC_PROP_UNREACHABLE	Nedosažitelné
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénář
 SCENARIO_RANDOM_NAME	Zcela náhodný
 SCENARIO_RANDOM_DESC	Družina 1 až 32 jednotek, každá se všemi vlastnostmi od 1 do 99 a s náhodnými předměty a výstrojí, kterou unese.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Pečené žabí maso
 ITEM_125_DESC	Malá lesní houba. Syrová moc nepomůže zdraví ani hladu.
 ITEM_125_NAME	Houba
 MISC_FOOD_TO_COOK	syrové maso
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Jedovatá houba
+ITEM_126_DESC	Lesní houba, která vypadá jako každá jiná. Snědení stojí zdraví i sytost.

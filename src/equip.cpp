@@ -192,6 +192,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     const Transform at = *tr;
     const ItemDef* def = findItem(item);
     queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop);
+    queueUnitLabel(unit, itemLossLabelFor(1, item), true);
     worn->items[gearSlot] = 0;
     Entity e = w.create();
     w.add(e, Transform{ at.x, at.y, at.z });

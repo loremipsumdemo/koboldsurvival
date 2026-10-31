@@ -66,6 +66,7 @@ UILABEL_RESET	Скинути
 UILABEL_FONT	Шрифт
 UILABEL_FONT_AUTOMATIC	Автоматично
 UILABEL_EDGE_SCROLL	Прокрутка біля краю екрана
+UILABEL_GLOBAL_VOLUME	Загальна гучність
 UILABEL_MUSIC	Музика
 UILABEL_AMBIENT	Фонові звуки
 UILABEL_SOUND_EFFECTS	Звукові ефекти
@@ -603,7 +604,7 @@ FACTION_PLAYER	Фракція гравця
 FACTION_GRAY	Сіра фракція
 FACTION_RED	Червона фракція
 MISC_PROP_UNREACHABLE	Недосяжно
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарій
 SCENARIO_RANDOM_NAME	Повністю випадковий
 SCENARIO_RANDOM_DESC	Загін з 1–32 юнітів, у кожного всі характеристики від 1 до 99, а також випадкові предмети й спорядження, які він може нести.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Смажене м'ясо жаби
 ITEM_125_DESC	Маленький лісовий гриб. Сирим майже не допомагає ні здоров'ю, ні від голоду.
 ITEM_125_NAME	Гриб
 MISC_FOOD_TO_COOK	сире м'ясо
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Отруйний гриб
+ITEM_126_DESC	Лісовий гриб, схожий на будь-який інший. З'їсти його — втратити здоров'я і ситість.

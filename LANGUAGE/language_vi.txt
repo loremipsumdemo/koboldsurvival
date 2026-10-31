@@ -66,6 +66,7 @@ UILABEL_RESET	Đặt lại
 UILABEL_FONT	Phông chữ
 UILABEL_FONT_AUTOMATIC	Tự động
 UILABEL_EDGE_SCROLL	Cuộn khi chạm mép
+UILABEL_GLOBAL_VOLUME	Âm lượng chung
 UILABEL_MUSIC	Nhạc nền
 UILABEL_AMBIENT	Âm thanh môi trường
 UILABEL_SOUND_EFFECTS	Hiệu ứng âm thanh
@@ -603,7 +604,7 @@ FACTION_PLAYER	Phe người chơi
 FACTION_GRAY	Phe Xám
 FACTION_RED	Phe Đỏ
 MISC_PROP_UNREACHABLE	Không thể đến
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Kịch bản
 SCENARIO_RANDOM_NAME	Ngẫu nhiên hoàn toàn
 SCENARIO_RANDOM_DESC	Một nhóm từ 1 đến 32 đơn vị, mỗi đơn vị có mọi chỉ số từ 1 đến 99, cùng vật phẩm và trang bị ngẫu nhiên mà nó mang nổi.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Thịt ếch nướng
 ITEM_125_DESC	Một cây nấm dại nhỏ. Ăn sống chỉ hồi chút ít máu và cơn đói.
 ITEM_125_NAME	Nấm
 MISC_FOOD_TO_COOK	thịt sống
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Nấm độc
+ITEM_126_DESC	Một cây nấm dại trông như mọi cây khác. Ăn vào sẽ mất máu và độ no.

@@ -66,6 +66,7 @@ UILABEL_RESET	Nulstil
 UILABEL_FONT	Skrifttype
 UILABEL_FONT_AUTOMATIC	Automatisk
 UILABEL_EDGE_SCROLL	Rulning ved kanter
+UILABEL_GLOBAL_VOLUME	Global lydstyrke
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Omgivelser
 UILABEL_SOUND_EFFECTS	Lydeffekter
@@ -603,7 +604,7 @@ FACTION_PLAYER	Spillerens fraktion
 FACTION_GRAY	Den grå fraktion
 FACTION_RED	Den røde fraktion
 MISC_PROP_UNREACHABLE	Kan ikke nås
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenarie
 SCENARIO_RANDOM_NAME	Helt tilfældig
 SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Stegt frøkød
 ITEM_125_DESC	En lille vild svamp. Rå gør den ikke meget for helbred eller sult.
 ITEM_125_NAME	Svamp
 MISC_FOOD_TO_COOK	råt kød
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Giftig svamp
+ITEM_126_DESC	En vild svamp, der ligner alle andre. Spiser man den, koster det helbred og mæthed.

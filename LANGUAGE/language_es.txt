@@ -66,6 +66,7 @@ UILABEL_RESET	Restablecer
 UILABEL_FONT	Fuente
 UILABEL_FONT_AUTOMATIC	Automático
 UILABEL_EDGE_SCROLL	Desplazamiento por bordes
+UILABEL_GLOBAL_VOLUME	Volumen global
 UILABEL_MUSIC	Música
 UILABEL_AMBIENT	Ambiente
 UILABEL_SOUND_EFFECTS	Efectos de sonido
@@ -603,7 +604,7 @@ FACTION_PLAYER	Facción del jugador
 FACTION_GRAY	Facción gris
 FACTION_RED	Facción roja
 MISC_PROP_UNREACHABLE	Inalcanzable
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Escenario
 SCENARIO_RANDOM_NAME	Totalmente aleatorio
 SCENARIO_RANDOM_DESC	Un grupo de 1 a 32 unidades, cada una con todas sus estadísticas entre 1 y 99, y objetos y equipo aleatorios que puede cargar.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Carne de rana asada
 ITEM_125_DESC	Una pequeña seta silvestre. Cruda, ayuda poco a la salud y al hambre.
 ITEM_125_NAME	Seta
 MISC_FOOD_TO_COOK	carne cruda
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Seta venenosa
+ITEM_126_DESC	Una seta silvestre que parece una cualquiera. Comerla cuesta salud y saciedad.

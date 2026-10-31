@@ -33,7 +33,7 @@ enum class RowId : int {
     Autosave, UnitNames, FontScale, ResetPanels,                // Interface
     Language, Font,                                             // Language
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
-    MusicLevel, AmbientLevel, EffectsLevel                      // Audio
+    GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel         // Audio
 };
 
 enum class RowKind { Dropdown, Toggle, Level, Scale, Text, Action };   // Scale: a slider with no on/off button

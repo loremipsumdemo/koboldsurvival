@@ -66,6 +66,7 @@ UILABEL_RESET	Réinitialiser
 UILABEL_FONT	Police
 UILABEL_FONT_AUTOMATIC	Automatique
 UILABEL_EDGE_SCROLL	Défilement aux bords
+UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Musique
 UILABEL_AMBIENT	Ambiance
 UILABEL_SOUND_EFFECTS	Effets sonores
@@ -603,7 +604,7 @@ FACTION_PLAYER	Faction du joueur
 FACTION_GRAY	Faction grise
 FACTION_RED	Faction rouge
 MISC_PROP_UNREACHABLE	Inaccessible
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénario
 SCENARIO_RANDOM_NAME	Entièrement aléatoire
 SCENARIO_RANDOM_DESC	Un groupe de 1 à 32 unités, chacune avec toutes ses statistiques entre 1 et 99, et des objets et équipements aléatoires qu'elle peut porter.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Viande de grenouille cuite
 ITEM_125_DESC	Un petit champignon sauvage. Cru, il aide peu la santé et la faim.
 ITEM_125_NAME	Champignon
 MISC_FOOD_TO_COOK	de la viande crue
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Champignon vénéneux
+ITEM_126_DESC	Un champignon sauvage qui ressemble à tous les autres. Le manger coûte de la santé et de la satiété.

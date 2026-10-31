@@ -7,7 +7,7 @@ Model	Prop	Kind
 6.glb	Ore	Resource prop: Iron Ore (Mining)
 7.glb	Tree	Resource prop: Wood Log (Woodcutting)
 8.glb	Boulder	Decor prop
-9.glb	Mushroom	Resource prop: Mushroom (Herbalism)
+9.glb	Mushroom	Resource prop: Mushroom, 1 in 10 Poison Mushroom (Herbalism)
 10.glb	Bones	Decor prop
 11.glb	Wall	Decor prop
 12.glb	Stall	Decor prop

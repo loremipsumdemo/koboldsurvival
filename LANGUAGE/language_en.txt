@@ -66,6 +66,7 @@ UILABEL_RESET	Reset
 UILABEL_FONT	Font
 UILABEL_FONT_AUTOMATIC	Automatic
 UILABEL_EDGE_SCROLL	Edge scrolling
+UILABEL_GLOBAL_VOLUME	Global volume
 UILABEL_MUSIC	Music
 UILABEL_AMBIENT	Ambient
 UILABEL_SOUND_EFFECTS	Sound effects
@@ -603,7 +604,7 @@ FACTION_PLAYER	Player Faction
 FACTION_GRAY	Gray Faction
 FACTION_RED	Red Faction
 MISC_PROP_UNREACHABLE	Unreachable
-MISC_ITEM_GAINED	+ {0}
+MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_RANDOM_NAME	Full Random
 SCENARIO_RANDOM_DESC	A party of 1 to 32 units, each with every stat somewhere from 1 to 99, and random items and gear they can carry.
@@ -731,3 +732,9 @@ ITEM_124_NAME	Cooked Frog Meat
 ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
 ITEM_125_NAME	Mushroom
 MISC_FOOD_TO_COOK	raw meat
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Poison Mushroom
+ITEM_126_DESC	A wild mushroom that looks like any other. Eating it costs health and hunger.
