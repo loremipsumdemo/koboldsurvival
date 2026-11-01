@@ -88,7 +88,7 @@ def generate_images():
         for hue in hues:
             draw_random_shape(draw, rng, hue)
 
-        output_path = OUTPUT_DIR / f"{index}.png"
+        output_path = OUTPUT_DIR / f"item_{index}.png"
         image.save(output_path, format="PNG", optimize=True)
 
     print(f"Generated {IMAGE_COUNT} transparent {SIZE}x{SIZE} PNGs in: {OUTPUT_DIR.resolve()}")

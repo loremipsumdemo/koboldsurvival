@@ -1,10 +1,15 @@
+Emotes: data/emote/emote_<n>.png (no leading zeros), small pictures over a unit's head that show what it is doing
+(src/emotes.h). emote_0.png stands in for any emote whose own picture is missing; without it, a pink square is drawn.
+A new emote takes the next free number.
+
 Emote	File	Shown when
-1	emote/1.png	Mining: working Ore
-2	emote/2.png	Woodcutting: working a Tree
-3	emote/3.png	Cooking: working a Campfire
-4	emote/4.png	Encumbered: carrying 90% or more of the carry limit
-5	emote/5.png	Sleeping: lying on a Bed or Bedroll
-6	emote/6.png	Hungry: hunger below 1
-7	emote/7.png	Lockpicking: picking a lock
-8	emote/8.png	Locked in: in a locked occupiable prop (the Prisoner Cage)
-9	emote/9.png	Herbalism: gathering at a Mushroom
+0	emote_0.png	Stand-in for any emote whose own picture is missing
+1	emote_1.png	Mining: working Ore
+2	emote_2.png	Woodcutting: working a Tree
+3	emote_3.png	Cooking: working a Campfire
+4	emote_4.png	Encumbered: carrying 90% or more of the carry limit
+5	emote_5.png	Sleeping: lying on a Bed or Bedroll
+6	emote_6.png	Hungry: hunger below 1
+7	emote_7.png	Lockpicking: picking a lock
+8	emote_8.png	Locked in: in a locked occupiable prop (the Prisoner Cage)
+9	emote_9.png	Herbalism: gathering at a Mushroom

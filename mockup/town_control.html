@@ -1,0 +1,794 @@
+<title>Town Control Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: command rail + continuous 800x800 field + status column; stacks board-first on phones. */
+:root{
+  --bg:#EDF0F4; --panel:#FFFFFF; --sunk:#E3E8ED; --line:#C8D1DA; --line-soft:#DDE3E9;
+  --ink:#171E26; --muted:#5C6975; --faint:#8995A2;
+  --field:#DFE4EA; --fieldline:#CFD7DF;
+  --red:#B3372C; --blue:#1F5F9E; --green:#2E7D46; --yellow:#8A6D0E;
+  --ok:#2F7446; --bad:#A63B30; --open:#9A7A12; --fuel:#A8781A;
+  --terr-red:#F0D3CE; --terr-blue:#CBDCEC; --terr-green:#CFE4D5; --terr-yellow:#EBE0C0; --terr-none:#D8DEE4;
+  --slab:#F3F6F8; --slabline:#B9C4CE;
+  --shadow:0 1px 2px rgba(20,32,45,.08), 0 6px 18px rgba(20,32,45,.06);
+  --d:'IBM Plex Sans Condensed','Helvetica Neue',Arial,sans-serif;
+  --b:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --m:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F141A; --panel:#171F28; --sunk:#121A22; --line:#2B3744; --line-soft:#222D38;
+  --ink:#E2E8EF; --muted:#8B99A7; --faint:#6B7885;
+  --field:#141C24; --fieldline:#223040;
+  --red:#E2695B; --blue:#5FA3E3; --green:#5CB173; --yellow:#D9B63F;
+  --ok:#5FAC77; --bad:#DC6B5E; --open:#DCB745; --fuel:#D9A93F;
+  --terr-red:#3A1D19; --terr-blue:#152F46; --terr-green:#16301F; --terr-yellow:#332B12; --terr-none:#1C262F;
+  --slab:#222D39; --slabline:#38485A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --panel:#171F28; --sunk:#121A22; --line:#2B3744; --line-soft:#222D38;
+  --ink:#E2E8EF; --muted:#8B99A7; --faint:#6B7885;
+  --field:#141C24; --fieldline:#223040;
+  --red:#E2695B; --blue:#5FA3E3; --green:#5CB173; --yellow:#D9B63F;
+  --ok:#5FAC77; --bad:#DC6B5E; --open:#DCB745; --fuel:#D9A93F;
+  --terr-red:#3A1D19; --terr-blue:#152F46; --terr-green:#16301F; --terr-yellow:#332B12; --terr-none:#1C262F;
+  --slab:#222D39; --slabline:#38485A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--b); font-size:14px; line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:18px 28px; -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1320px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
+
+.topbar{display:flex; align-items:center; gap:13px; flex-wrap:wrap; background:var(--panel);
+  border:1px solid var(--line); border-radius:8px; padding:10px 14px; box-shadow:var(--shadow)}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto; min-width:0}
+.brand h1{font-family:var(--d); font-size:17px; font-weight:700; letter-spacing:.02em; margin:0; text-wrap:balance}
+.brand .sub{font-size:11px; color:var(--faint); letter-spacing:.09em; text-transform:uppercase; font-family:var(--d); font-weight:600}
+.facswitch{display:flex; background:var(--sunk); border:1px solid var(--line); border-radius:7px; padding:3px; gap:3px}
+.facswitch button{font-family:var(--d); font-weight:600; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+  border:0; background:transparent; color:var(--muted); padding:6px 10px; border-radius:5px; cursor:pointer;
+  display:flex; align-items:center; gap:6px}
+.facswitch button .swatch{width:9px; height:9px; border-radius:2px; opacity:.55}
+.facswitch button.red .swatch{background:var(--red)} .facswitch button.blue .swatch{background:var(--blue)}
+.facswitch button.green .swatch{background:var(--green)} .facswitch button.yellow .swatch{background:var(--yellow)}
+.facswitch button[aria-pressed="true"]{background:var(--panel); box-shadow:var(--shadow)}
+.facswitch button[aria-pressed="true"].red{color:var(--red)} .facswitch button[aria-pressed="true"].blue{color:var(--blue)}
+.facswitch button[aria-pressed="true"].green{color:var(--green)} .facswitch button[aria-pressed="true"].yellow{color:var(--yellow)}
+.facswitch button[aria-pressed="true"] .swatch{opacity:1}
+.readout{display:flex; gap:15px; align-items:center}
+.stat{display:flex; flex-direction:column; line-height:1.15}
+.stat .k{font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); font-family:var(--d); font-weight:600}
+.stat .v{font-family:var(--m); font-size:15px; font-weight:500; font-variant-numeric:tabular-nums}
+.stat .v.warn{color:var(--bad)}
+.btnrow{display:flex; gap:6px}
+.ghostbtn{font-family:var(--d); font-weight:600; font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+  background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:7px 11px; cursor:pointer}
+.ghostbtn:hover{color:var(--ink); border-color:var(--muted)}
+.ghostbtn.on{color:var(--open); border-color:var(--open)}
+
+.stage{display:grid; grid-template-columns:190px minmax(0,1fr) 272px; gap:14px; align-items:start}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow)}
+.phead{font-family:var(--d); font-weight:600; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--faint); padding:11px 13px 8px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+.pbody{padding:0 10px 11px; display:flex; flex-direction:column; gap:5px}
+
+.ptile{display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:9px; width:100%;
+  text-align:left; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--ink);
+  padding:7px 8px; cursor:pointer; font-family:var(--b); font-size:13px}
+.ptile:hover:not(:disabled){background:var(--sunk)}
+.ptile[aria-pressed="true"]{border-color:currentColor; background:var(--sunk)}
+.ptile[aria-pressed="true"].red{color:var(--red)} .ptile[aria-pressed="true"].blue{color:var(--blue)}
+.ptile[aria-pressed="true"].green{color:var(--green)} .ptile[aria-pressed="true"].yellow{color:var(--yellow)}
+.ptile:disabled{opacity:.42; cursor:not-allowed}
+.ptile .gi{width:22px; height:22px; color:inherit}
+.ptile .gi svg{width:100%; height:100%; display:block}
+.ptile .nm{font-weight:500; min-width:0}
+.ptile .nm small{display:block; font-size:10.5px; color:var(--faint); font-weight:400; line-height:1.3}
+.ptile .cost{font-family:var(--m); font-size:11.5px; color:var(--faint); font-variant-numeric:tabular-nums}
+.ptile.destroy[aria-pressed="true"]{color:var(--bad); border-color:var(--bad)}
+.divider{height:1px; background:var(--line-soft); margin:6px 2px}
+.kbd{font-family:var(--m); font-size:10px; color:var(--faint); border:1px solid var(--line); border-radius:3px; padding:0 4px}
+
+.boardwrap{display:flex; flex-direction:column; overflow:hidden}
+.fieldbox{padding:14px; display:flex; justify-content:center}
+#field{width:100%; max-width:800px; aspect-ratio:1/1; display:block; touch-action:none; cursor:crosshair;
+  border-radius:4px; user-select:none}
+.tickbar{height:3px; background:var(--line-soft); position:relative; overflow:hidden}
+.tickbar i{position:absolute; inset:0 auto 0 0; width:0; background:var(--open); display:block}
+.tickbar.paused i{background:var(--faint)}
+.strip{display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line-soft);
+  padding:10px 14px; background:var(--sunk); font-family:var(--m); font-size:12px}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--faint); flex:none}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+.strip .msg{min-width:0; color:var(--ink)}
+.strip .coord{margin-left:auto; color:var(--faint); font-variant-numeric:tabular-nums}
+
+.town{border:1px solid var(--line-soft); border-radius:6px; padding:9px 10px; cursor:pointer; background:transparent;
+  text-align:left; display:flex; flex-direction:column; gap:6px; width:100%; color:var(--ink); font-family:var(--b)}
+.town:hover{border-color:var(--line)}
+.town[aria-pressed="true"]{border-color:currentColor; background:var(--sunk)}
+.town[aria-pressed="true"].red{color:var(--red)} .town[aria-pressed="true"].blue{color:var(--blue)}
+.town[aria-pressed="true"].green{color:var(--green)} .town[aria-pressed="true"].yellow{color:var(--yellow)}
+.town .row1{display:flex; align-items:center; gap:7px}
+.town .nm{font-family:var(--d); font-weight:700; font-size:13.5px; letter-spacing:.02em}
+.town .gi{width:16px; height:16px; flex:none; color:var(--faint)}
+.town .gi svg{width:100%; height:100%; display:block}
+.town .gi.red{color:var(--red)} .town .gi.blue{color:var(--blue)}
+.town .gi.green{color:var(--green)} .town .gi.yellow{color:var(--yellow)}
+.pill{font-family:var(--d); font-weight:600; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+  border-radius:3px; padding:2px 6px; margin-left:auto; border:1px solid currentColor}
+.pill.held{color:var(--ok)} .pill.open{color:var(--open)} .pill.dying{color:var(--bad)}
+.town .meta{font-family:var(--m); font-size:11px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; font-variant-numeric:tabular-nums}
+.town .meta .hurt{color:var(--bad)}
+.empty{padding:4px 4px 10px; font-size:12.5px; color:var(--faint)}
+
+.fuel{padding:0 13px 12px; display:flex; flex-direction:column; gap:8px}
+.fuelhead{display:flex; align-items:baseline; gap:8px; font-family:var(--m); font-size:12px; font-variant-numeric:tabular-nums}
+.fuelhead b{font-size:17px; font-weight:500}
+.fuelhead span{color:var(--faint); margin-left:auto}
+.gauge{height:7px; border-radius:4px; background:var(--sunk); border:1px solid var(--line-soft); overflow:hidden}
+.gauge i{display:block; height:100%; background:var(--fuel)}
+.gauge.dry i{background:var(--bad)}
+.depo{display:flex; gap:6px}
+.depo button{flex:1; font-family:var(--m); font-size:11.5px; border:1px solid var(--line); background:transparent;
+  color:var(--ink); border-radius:5px; padding:6px 0; cursor:pointer}
+.depo button:hover:not(:disabled){border-color:var(--fuel); color:var(--fuel)}
+.depo button:disabled{opacity:.4; cursor:not-allowed}
+.fuelnote{font-family:var(--m); font-size:11px; color:var(--muted); line-height:1.45}
+.fuelnote.bad{color:var(--bad)}
+
+.steps{display:flex; flex-direction:column; padding:2px 3px}
+.step{display:grid; grid-template-columns:18px minmax(0,1fr); gap:8px; align-items:start; padding:6px 0; position:relative}
+.step + .step::before{content:""; position:absolute; left:8.5px; top:-7px; height:13px; width:1px; background:var(--line)}
+.step .mk{width:17px; height:17px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center;
+  font-family:var(--m); font-size:9px; color:var(--faint); background:var(--panel)}
+.step.done .mk{border-color:var(--ok); color:var(--ok)}
+.step.next .mk{border-color:var(--open); color:var(--open); border-style:dashed}
+.step .tx{font-size:12.5px; line-height:1.35}
+.step .tx small{display:block; font-size:11px; color:var(--faint); font-family:var(--m)}
+.step.done .tx{color:var(--muted)}
+
+.log{font-family:var(--m); font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:3px; padding:0 3px}
+.log div{display:flex; gap:6px}
+.log .t{color:var(--faint); flex:none} .log div:first-child{color:var(--ink)}
+
+details.rules{border-top:1px solid var(--line-soft); margin-top:2px}
+details.rules summary{cursor:pointer; list-style:none; padding:10px 13px; font-family:var(--d); font-weight:600;
+  font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint)}
+details.rules summary::-webkit-details-marker{display:none}
+details.rules summary::after{content:"+"; float:right; font-family:var(--m)}
+details.rules[open] summary::after{content:"\2013"}
+details.rules ol{margin:0; padding:0 14px 12px 30px; display:flex; flex-direction:column; gap:7px; font-size:12.5px; color:var(--muted)}
+details.rules li::marker{font-family:var(--m); font-size:11px; color:var(--faint)}
+
+@media (max-width:1040px){
+  .stage{grid-template-columns:minmax(0,1fr); grid-template-areas:"board" "pal" "insp"}
+  .boardwrap{grid-area:board} .palette{grid-area:pal} .inspector{grid-area:insp}
+  .palette .pbody{flex-direction:row; flex-wrap:wrap}
+  .palette .ptile{width:auto; flex:1 1 160px; grid-template-columns:22px minmax(0,1fr)}
+  .palette .ptile .cost{display:none}
+  .palette .divider{display:none}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="i-flag" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 14.4V1.8"/><path d="M4.6 2.8h7.8l-2.1 2.7 2.1 2.7H4.6z" fill="currentColor"/></g>
+<g id="i-flagbare" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 14.4V1.8"/><path d="M4.6 2.8h7.8l-2.1 2.7 2.1 2.7H4.6z" stroke-dasharray="2 1.7"/></g>
+<g id="i-foundation" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="5.2" width="11.6" height="6.6" rx="1"/><path d="M2.2 8.5h11.6M8 5.2v3.3M5.1 8.5v3.3M10.9 8.5v3.3"/></g>
+<g id="i-vault" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="3.2" width="10.4" height="9.6" rx="1.4"/><circle cx="8" cy="8" r="2.4"/><path d="M8 5.6V3.2M8 12.8v-2.4"/></g>
+<g id="i-shop" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.7 6.7h10.6v6.6H2.7z"/><path d="M1.9 3.5h12.2l-1 3.2H2.9z"/><path d="M6.4 13.3V9.6h3.2v3.7"/></g>
+<g id="i-farm" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.7 13.3V6.5L8 3.3l5.3 3.2v6.8z"/><path d="M6.3 13.3V9.4h3.4v3.9"/></g>
+<g id="i-turbine" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7.1 14h1.8l-.5-5.5h-.8z"/><circle cx="8" cy="7.6" r=".95"/><path d="M8 6.65V2.3M8.82 8.07l3.76 2.17M7.18 8.07l-3.76 2.17"/></g>
+<g id="i-destroy" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></g>
+<g id="i-log" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="5" width="12.4" height="6" rx="3"/><ellipse cx="4.9" cy="8" rx="1.5" ry="2.3"/></g>
+</defs></svg>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><h1>Town Control Board</h1><span class="sub">800 × 800 field</span></div>
+    <div class="facswitch" id="facswitch" role="group" aria-label="Acting team">
+      <button class="red" data-fac="red" aria-pressed="true"><span class="swatch"></span>Red</button>
+      <button class="blue" data-fac="blue" aria-pressed="false"><span class="swatch"></span>Blue</button>
+      <button class="green" data-fac="green" aria-pressed="false"><span class="swatch"></span>Green</button>
+      <button class="yellow" data-fac="yellow" aria-pressed="false"><span class="swatch"></span>Yellow</button>
+    </div>
+    <div class="readout">
+      <div class="stat"><span class="k">Logs held</span><span class="v" id="v-logs">600</span></div>
+      <div class="stat"><span class="k">Upkeep drain</span><span class="v" id="v-drain">0/min</span></div>
+      <div class="stat"><span class="k">Next tick</span><span class="v" id="v-tick">4.0s</span></div>
+    </div>
+    <div class="btnrow">
+      <button class="ghostbtn" id="btn-pause">Pause</button>
+      <button class="ghostbtn" id="btn-gather">+250 logs</button>
+      <button class="ghostbtn" id="btn-reset">Reset</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <aside class="panel palette">
+      <div class="phead">Build <span class="kbd">1–6</span></div>
+      <div class="pbody" id="palette"></div>
+      <div class="divider"></div>
+      <div class="pbody" id="tools"></div>
+    </aside>
+
+    <section class="panel boardwrap">
+      <div class="fieldbox">
+        <svg id="field" viewBox="0 0 800 800" role="img" aria-label="Town control field, 800 by 800 units">
+          <rect x="0" y="0" width="800" height="800" fill="var(--field)" stroke="var(--line)" stroke-width="1.5" rx="4"/>
+          <g id="ticks"></g>
+          <g id="terr"></g>
+          <g id="pieces"></g>
+          <g id="ghost" pointer-events="none"></g>
+        </svg>
+      </div>
+      <div class="tickbar" id="tickbar"><i id="tickfill"></i></div>
+      <div class="strip">
+        <span class="dot" id="s-dot"></span>
+        <span class="msg" id="s-msg">Plant a flagpole to open the first claim.</span>
+        <span class="coord" id="s-coord">—</span>
+      </div>
+    </section>
+
+    <aside class="panel inspector">
+      <div class="phead">Towns</div>
+      <div class="pbody" id="towns"></div>
+      <div class="phead" id="fuel-head">Vault upkeep</div>
+      <div class="fuel" id="fuel"></div>
+      <div class="phead" id="seq-head">Claim sequence</div>
+      <div class="steps" id="steps"></div>
+      <div class="phead">Activity</div>
+      <div class="log" id="log"></div>
+      <details class="rules">
+        <summary>Ruleset</summary>
+        <ol>
+          <li>A flagpole casts a circular claim of radius 150 and cannot be attacked.</li>
+          <li>Two claim circles may never intersect, so poles sit at least 300 apart.</li>
+          <li>A foundation must fall wholly inside one claim circle, clear of other foundations.</li>
+          <li>Every other building, the vault included, sits on a foundation.</li>
+          <li>Each team may place any number of flagpoles, but may have only 2 active vaults at a time across all its claims.</li>
+          <li>Each claim can hold one vault. A vault seals its claim: only its own team may build inside. Everyone else is locked out until it falls.</li>
+          <li>A pole with no vault in its circle loses 1 of its 10 HP every tick. At zero it falls.</li>
+          <li>Foundations lose 1 of their 10 HP every tick unless a vault in the circle is burning logs.</li>
+          <li>Killing the vault's foundation kills the vault, which starts the pole decaying.</li>
+          <li>With no vault in the claim, whichever team places one takes the claim.</li>
+        </ol>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var FIELD=800, R=150, FS=56, HALF=FS/2, DIAG=Math.SQRT2*HALF, GAP=FS+6;
+  var MAXHP=10, TICK=4000, CAP=400;
+  var PIECES={
+    flag:{n:'Flagpole',d:'Casts a 150 claim',cost:120,icon:'i-flag'},
+    foundation:{n:'Foundation',d:'Base for everything',cost:20,icon:'i-foundation'},
+    vault:{n:'Vault',d:'Burns logs as upkeep',cost:60,icon:'i-vault'},
+    shop:{n:'Shop',d:'Trades with the town',cost:40,icon:'i-shop'},
+    farm:{n:'Farm',d:'Works the land',cost:30,icon:'i-farm'},
+    turbine:{n:'Wind turbine',d:'Powers the town',cost:50,icon:'i-turbine'}
+  };
+  var ORDER=['flag','foundation','vault','shop','farm','turbine'];
+  var TEAMS=['red','blue','green','yellow'];
+  var FACT={red:{n:'Red Team'},blue:{n:'Blue Team'},green:{n:'Green Team'},yellow:{n:'Yellow Team'}};
+  var S, uid=1, timer=null, lastTick=0;
+
+  function seed(){
+    uid=1; lastTick=Date.now();
+    return {fac:'red',tool:'place',piece:'flag',focus:-1,paused:false,
+      logs:{red:600,blue:600,green:600,yellow:600},
+      flags:[],founds:[],log:[['Field','empty — no claims yet']]};
+  }
+  function dist(ax,ay,bx,by){var dx=ax-bx,dy=ay-by;return Math.sqrt(dx*dx+dy*dy);}
+  function rnd(n){return Math.round(n);}
+  function townAt(x,y){
+    for(var i=0;i<S.flags.length;i++) if(dist(x,y,S.flags[i].x,S.flags[i].y)<=R) return i;
+    return -1;
+  }
+  function foundsOf(fi){
+    var f=S.flags[fi];
+    return S.founds.filter(function(d){return dist(d.x,d.y,f.x,f.y)<=R;});
+  }
+  function claimName(f){return FACT[f.holder||f.owner].n;}
+  function activeVaults(fac){
+    var count=0;
+    S.flags.forEach(function(f,i){var v=vaultOf(i);if(v&&v.st.o===fac) count++;});
+    return count;
+  }
+  function vaultOf(fi){
+    var list=foundsOf(fi);
+    for(var i=0;i<list.length;i++) if(list[i].st&&list[i].st.t==='vault') return list[i];
+    return null;
+  }
+  function foundAt(x,y){
+    for(var i=S.founds.length-1;i>=0;i--){
+      var d=S.founds[i];
+      if(Math.abs(x-d.x)<=HALF&&Math.abs(y-d.y)<=HALF) return d;
+    }
+    return null;
+  }
+  function flagAt(x,y){
+    for(var i=S.flags.length-1;i>=0;i--) if(dist(x,y,S.flags[i].x,S.flags[i].y)<=24) return S.flags[i];
+    return null;
+  }
+  // a claim is sealed to everyone but the vault's owner; with no vault it goes neutral
+  function lockOf(ti){
+    if(ti<0) return null;
+    var v=vaultOf(ti);
+    return (v&&v.st.o!==S.fac)?v.st.o:null;
+  }
+  function drainOf(fi){return foundsOf(fi).length;}          // logs burned per tick
+  function fuelled(fi){var v=vaultOf(fi); return !!(v&&v.st.pool>0);}
+  function totalDrain(fac){
+    var t=0;
+    S.flags.forEach(function(f,i){
+      var v=vaultOf(i);
+      if(v&&v.st.o===fac&&v.st.pool>0) t+=drainOf(i);
+    });
+    return t;
+  }
+  function ok(m){return {ok:true,msg:m};} function bad(m){return {ok:false,msg:m};}
+
+  // ---- validation -------------------------------------------------------
+  function check(piece,x,y){
+    var p=PIECES[piece];
+    if(S.logs[S.fac]<p.cost) return bad('Not enough logs — '+p.n+' costs '+p.cost);
+    if(piece==='flag'){
+      if(x<R||y<R||x>FIELD-R||y>FIELD-R) return bad('Claim circle would spill past the field edge');
+      for(var i=0;i<S.flags.length;i++){
+        var f=S.flags[i],dd=dist(x,y,f.x,f.y);
+        if(dd<2*R) return bad('Circle overlaps '+claimName(f)+' — centres '+rnd(dd)+' apart, '+(2*R)+' needed');
+      }
+      for(var j=0;j<S.founds.length;j++)
+        if(dist(x,y,S.founds[j].x,S.founds[j].y)<HALF+20) return bad('A foundation is in the way');
+      return ok('Clear ground — opens a '+R+'-radius claim');
+    }
+    if(piece==='foundation'){
+      var t=townAt(x,y);
+      if(t<0) return bad(S.flags.length?'Outside every claim circle':'No claim yet — plant a flagpole first');
+      var lkf=lockOf(t);
+      if(lkf) return bad(claimName(S.flags[t])+' is sealed by '+FACT[lkf].n+'’s vault — kill it to open the claim');
+      var fl=S.flags[t],dc=dist(x,y,fl.x,fl.y);
+      if(dc+DIAG>R) return bad('Corner juts outside '+claimName(fl)+'’s circle — move '+rnd(dc+DIAG-R)+' inward');
+      if(dc<34) return bad('Too close to the flagpole');
+      for(var m=0;m<S.founds.length;m++){
+        var d=S.founds[m];
+        if(Math.abs(x-d.x)<GAP&&Math.abs(y-d.y)<GAP) return bad('Overlaps an existing foundation');
+      }
+      return ok('Fits inside '+claimName(fl)+'’s circle, '+rnd(R-dc-DIAG)+' of margin');
+    }
+    var host=foundAt(x,y);
+    if(!host) return bad(S.founds.length?'Needs a foundation underneath':'No foundations yet');
+    if(host.st) return bad('That foundation already carries a '+PIECES[host.st.t].n.toLowerCase());
+    var ti=townAt(host.x,host.y), lk=lockOf(ti);
+    if(lk) return bad(claimName(S.flags[ti])+' is sealed by '+FACT[lk].n+'’s vault — kill it to open the claim');
+    if(piece==='vault'){
+      if(activeVaults(S.fac)>=2) return bad(FACT[S.fac].n+' already has 2 active vaults — destroy one before placing another');
+      if(ti>=0&&vaultOf(ti)) return bad(claimName(S.flags[ti])+' already has a vault — destroy it first');
+      return ok('Takes '+(ti>=0?claimName(S.flags[ti]):'the claim')+' for '+FACT[S.fac].n+' and stops the pole decaying');
+    }
+    return ok('Sits on a foundation in '+(ti>=0?claimName(S.flags[ti]):'the field'));
+  }
+  function checkDestroy(x,y){
+    if(flagAt(x,y)) return bad('Flagpoles cannot be attacked — starve the vault instead');
+    var h=foundAt(x,y);
+    if(!h) return bad('Nothing here to destroy');
+    if(h.st){
+      if(h.st.t==='vault') return ok('Destroying the vault bares the pole and starts its decay');
+      return ok('Destroys '+PIECES[h.st.t].n.toLowerCase());
+    }
+    return ok('Clears the foundation');
+  }
+  function anywhere(piece){
+    if(S.logs[S.fac]<PIECES[piece].cost) return false;
+    if(piece==='vault'&&activeVaults(S.fac)>=2) return false;
+    var x,y,i;
+    if(piece==='flag'){
+      for(y=R;y<=FIELD-R;y+=20) for(x=R;x<=FIELD-R;x+=20) if(check('flag',x,y).ok) return true;
+      return false;
+    }
+    if(piece==='foundation'){
+      for(i=0;i<S.flags.length;i++){
+        var f=S.flags[i];
+        for(var a=0;a<360;a+=15) for(var r=0;r<=R-DIAG;r+=20)
+          if(check('foundation',f.x+Math.cos(a*Math.PI/180)*r,f.y+Math.sin(a*Math.PI/180)*r).ok) return true;
+      }
+      return false;
+    }
+    for(i=0;i<S.founds.length;i++) if(check(piece,S.founds[i].x,S.founds[i].y).ok) return true;
+    return false;
+  }
+
+  // ---- simulation tick --------------------------------------------------
+  function tick(){
+    var killedF=[],killedD=0,i;
+    // burn logs and settle each town
+    S.flags.forEach(function(f,i){
+      var v=vaultOf(i), list=foundsOf(i);
+      if(v&&v.st.pool>0){
+        v.st.pool=Math.max(0,v.st.pool-list.length);
+        list.forEach(function(d){if(d.hp<MAXHP) d.hp++;});
+        if(v.st.pool===0) note(claimName(f),'vault ran dry — foundations now decaying');
+      } else {
+        list.forEach(function(d){d.hp--;});
+      }
+      if(v) {if(f.hp<MAXHP) f.hp++;}
+      else f.hp--;
+    });
+    // orphan foundations outside every circle always rot
+    S.founds.forEach(function(d){ if(townAt(d.x,d.y)<0) d.hp--; });
+    // remove dead foundations
+    for(i=S.founds.length-1;i>=0;i--){
+      if(S.founds[i].hp<=0){
+        var d=S.founds[i], ti=townAt(d.x,d.y), where=ti>=0?claimName(S.flags[ti]):'Ruins';
+        if(d.st&&d.st.t==='vault') note(where,'vault foundation collapsed — vault lost');
+        else killedD++;
+        S.founds.splice(i,1);
+      }
+    }
+    if(killedD) note('Field',killedD+' foundation'+(killedD>1?'s':'')+' crumbled');
+    // remove dead flags
+    for(i=S.flags.length-1;i>=0;i--){
+      if(S.flags[i].hp<=0){ killedF.push(S.flags[i].name); S.flags.splice(i,1); }
+    }
+    killedF.forEach(function(n){note(n,'pole rotted away — claim gone');});
+    if(S.focus>=S.flags.length) S.focus=S.flags.length-1;
+    lastTick=Date.now();
+    render();
+  }
+  function startClock(){
+    if(timer) clearInterval(timer);
+    lastTick=Date.now();
+    timer=setInterval(function(){ if(!S.paused) tick(); },TICK);
+  }
+  setInterval(function(){
+    var f=document.getElementById('tickfill'), b=document.getElementById('tickbar');
+    if(S.paused){b.classList.add('paused'); f.style.width='100%'; document.getElementById('v-tick').textContent='paused'; return;}
+    b.classList.remove('paused');
+    var e=Math.min(TICK,Date.now()-lastTick);
+    f.style.width=(e/TICK*100).toFixed(1)+'%';
+    document.getElementById('v-tick').textContent=((TICK-e)/1000).toFixed(1)+'s';
+  },100);
+
+  // ---- actions ----------------------------------------------------------
+  function act(x,y){
+    var r,host;
+    if(S.tool==='destroy'){
+      r=checkDestroy(x,y);
+      if(!r.ok){setStrip(false,r.msg);return;}
+      host=foundAt(x,y);
+      var ti=townAt(host.x,host.y), where=ti>=0?claimName(S.flags[ti]):'Ruins';
+      if(host.st){
+        var was=host.st.t; host.st=null;
+        note(where, was==='vault'?'vault destroyed — pole bare, claim open':PIECES[was].n.toLowerCase()+' destroyed');
+      } else { S.founds.splice(S.founds.indexOf(host),1); note(where,'foundation cleared'); }
+      if(ti>=0) S.focus=ti;
+    } else {
+      r=check(S.piece,x,y);
+      if(!r.ok){setStrip(false,r.msg);return;}
+      S.logs[S.fac]-=PIECES[S.piece].cost;
+      if(S.piece==='flag'){
+        S.flags.push({id:uid++,x:x,y:y,owner:S.fac,holder:null,hp:MAXHP});
+        S.focus=S.flags.length-1;
+        note(claimName(S.flags[S.focus]),'pole planted — decaying until a vault stands');
+      } else if(S.piece==='foundation'){
+        S.founds.push({id:uid++,x:x,y:y,owner:S.fac,hp:MAXHP,st:null});
+        S.focus=townAt(x,y);
+        note(claimName(S.flags[S.focus]),'foundation laid');
+      } else {
+        host=foundAt(x,y);
+        host.st={t:S.piece,o:S.fac,pool:S.piece==='vault'?0:undefined};
+        var fi=townAt(host.x,host.y); if(fi>=0) S.focus=fi;
+        if(S.piece==='vault'&&fi>=0){
+          var prev=S.flags[fi].holder; S.flags[fi].holder=S.fac;
+          note(claimName(S.flags[fi]),(prev&&prev!==S.fac?'seized by ':'claimed by ')+FACT[S.fac].n+' — add logs');
+        } else note(fi>=0?claimName(S.flags[fi]):'Field', PIECES[S.piece].n.toLowerCase()+' built');
+      }
+    }
+    render(); hover(x,y);
+  }
+  function deposit(n){
+    if(S.focus<0) return;
+    var v=vaultOf(S.focus); if(!v) return;
+    var room=CAP-v.st.pool, amt=Math.min(n,S.logs[S.fac],room);
+    if(amt<=0) return;
+    S.logs[S.fac]-=amt; v.st.pool+=amt;
+    note(claimName(S.flags[S.focus]),amt+' logs into the vault');
+    render();
+  }
+  function note(where,what){S.log.unshift([where,what]); S.log=S.log.slice(0,5);}
+
+  // ---- svg helpers ------------------------------------------------------
+  function icon(id,cx,cy,size,color,extra){
+    var s=size/16;
+    return '<g transform="translate('+(cx-size/2)+','+(cy-size/2)+') scale('+s+')" stroke-width="'+(1.5/s)+
+      '" color="'+color+'"'+(extra||'')+'><use href="#'+id+'"/></g>';
+  }
+  function htmlIcon(id){return '<svg viewBox="0 0 16 16" stroke-width="1.4" aria-hidden="true"><use href="#'+id+'"/></svg>';}
+  function hpColor(hp){return hp>6?'var(--ok)':hp>3?'var(--open)':'var(--bad)';}
+  function hpBar(cx,cy,w,hp){
+    var h=4;
+    return '<rect x="'+(cx-w/2)+'" y="'+cy+'" width="'+w+'" height="'+h+'" rx="2" fill="var(--slabline)" fill-opacity=".55"/>'+
+      '<rect x="'+(cx-w/2)+'" y="'+cy+'" width="'+(w*hp/MAXHP)+'" height="'+h+'" rx="2" fill="'+hpColor(hp)+'"/>';
+  }
+
+  var elTerr=document.getElementById('terr'), elPieces=document.getElementById('pieces'),
+      elGhost=document.getElementById('ghost'), elField=document.getElementById('field');
+
+  function drawTicks(){
+    var h='',v;
+    for(v=100;v<FIELD;v+=100){
+      h+='<line x1="'+v+'" y1="0" x2="'+v+'" y2="7" stroke="var(--fieldline)" stroke-width="1"/>'+
+         '<line x1="'+v+'" y1="'+FIELD+'" x2="'+v+'" y2="'+(FIELD-7)+'" stroke="var(--fieldline)" stroke-width="1"/>'+
+         '<line x1="0" y1="'+v+'" x2="7" y2="'+v+'" stroke="var(--fieldline)" stroke-width="1"/>'+
+         '<line x1="'+FIELD+'" y1="'+v+'" x2="'+(FIELD-7)+'" y2="'+v+'" stroke="var(--fieldline)" stroke-width="1"/>';
+    }
+    h+='<text x="10" y="20" fill="var(--faint)" font-family="'+"'IBM Plex Mono',monospace"+'" font-size="11">0,0</text>'+
+       '<text x="790" y="788" text-anchor="end" fill="var(--faint)" font-family="'+"'IBM Plex Mono',monospace"+'" font-size="11">800,800</text>';
+    document.getElementById('ticks').innerHTML=h;
+  }
+
+  function render(){
+    var th='',ph='';
+    S.flags.forEach(function(f,i){
+      var v=vaultOf(i), owner=v?v.st.o:null, dying=!v;
+      var tint=owner?('var(--terr-'+owner+')'):'var(--terr-none)';
+      var edge=dying?'var(--bad)':('var(--'+owner+')');
+      th+='<circle cx="'+f.x+'" cy="'+f.y+'" r="'+R+'" fill="'+tint+'" fill-opacity="'+(S.focus===i?'.95':'.7')+'" '+
+          'stroke="'+edge+'" stroke-width="'+(S.focus===i?2.5:1.5)+'" '+(dying?'stroke-dasharray="9 7" ':'')+'/>';
+      th+='<text x="'+f.x+'" y="'+(f.y-R+20)+'" text-anchor="middle" fill="'+edge+'" fill-opacity=".9" '+
+          'font-family="'+"'IBM Plex Sans Condensed',sans-serif"+'" font-size="15" font-weight="700" letter-spacing=".5">'+
+          claimName(f).toUpperCase()+(dying?' · '+f.hp+' HP':'')+'</text>';
+      if(v&&v.st.pool===0) th+='<text x="'+f.x+'" y="'+(f.y+R-12)+'" text-anchor="middle" fill="var(--bad)" '+
+          'font-family="'+"'IBM Plex Mono',monospace"+'" font-size="12">no upkeep</text>';
+    });
+    S.founds.forEach(function(d){
+      var c='var(--'+d.owner+')', hurt=d.hp<MAXHP;
+      ph+='<rect x="'+(d.x-HALF)+'" y="'+(d.y-HALF)+'" width="'+FS+'" height="'+FS+'" rx="4" fill="var(--slab)" '+
+          'stroke="'+(hurt?hpColor(d.hp):c)+'" stroke-width="'+(hurt?2:1.5)+'" stroke-opacity=".85"'+
+          (hurt?' stroke-dasharray="5 4"':'')+'/>';
+      if(d.st) ph+=icon(PIECES[d.st.t].icon,d.x,d.y-(d.st.t==='vault'?3:0),32,'var(--'+d.st.o+')');
+      else ph+=icon('i-foundation',d.x,d.y,28,'var(--slabline)');
+      if(d.st&&d.st.t==='vault'){
+        var frac=Math.min(1,d.st.pool/CAP), w=FS-16;
+        ph+='<rect x="'+(d.x-w/2)+'" y="'+(d.y+HALF-15)+'" width="'+w+'" height="4" rx="2" fill="var(--slabline)" fill-opacity=".55"/>'+
+            '<rect x="'+(d.x-w/2)+'" y="'+(d.y+HALF-15)+'" width="'+(w*frac)+'" height="4" rx="2" fill="'+(d.st.pool?'var(--fuel)':'var(--bad)')+'"/>';
+      }
+      if(hurt) ph+=hpBar(d.x,d.y+HALF+4,FS-10,d.hp);
+    });
+    S.flags.forEach(function(f,i){
+      var v=vaultOf(i), owner=v?v.st.o:null, col=v?('var(--'+owner+')'):'var(--bad)';
+      ph+='<circle cx="'+f.x+'" cy="'+f.y+'" r="21" fill="var(--panel)" stroke="'+col+'" stroke-width="1.5"/>';
+      ph+=icon(v?'i-flag':'i-flagbare',f.x,f.y,26,col);
+      if(f.hp<MAXHP) ph+=hpBar(f.x,f.y+25,40,f.hp);
+    });
+    if(!S.flags.length&&!S.founds.length){
+      th+='<text x="400" y="392" text-anchor="middle" fill="var(--faint)" font-family="'+"'IBM Plex Sans Condensed',sans-serif"+
+          '" font-size="19" font-weight="600" letter-spacing=".5">NO CLAIMS ON THE FIELD</text>'+
+          '<text x="400" y="418" text-anchor="middle" fill="var(--faint)" font-family="'+"'IBM Plex Mono',monospace"+
+          '" font-size="13">Plant a flagpole, then race the decay clock</text>';
+    }
+    elTerr.innerHTML=th; elPieces.innerHTML=ph; elGhost.innerHTML='';
+    renderTop(); renderPalette(); renderTowns(); renderFuel(); renderSteps(); renderLog();
+    setStrip(null, S.tool==='destroy'
+      ? 'Destroy tool — click a building. Poles are immune.'
+      : 'Placing '+PIECES[S.piece].n.toLowerCase()+' as '+FACT[S.fac].n+' — move over the field.');
+  }
+
+  function renderTop(){
+    document.getElementById('v-logs').textContent=S.logs[S.fac].toLocaleString();
+    var dr=totalDrain(S.fac)*(60000/TICK);
+    document.getElementById('v-drain').textContent=rnd(dr)+'/min';
+    Array.prototype.forEach.call(document.querySelectorAll('#facswitch button'),function(b){
+      b.setAttribute('aria-pressed',b.dataset.fac===S.fac);
+    });
+    var pb=document.getElementById('btn-pause');
+    pb.textContent=S.paused?'Resume':'Pause'; pb.classList.toggle('on',S.paused);
+  }
+  function renderPalette(){
+    var html='';
+    ORDER.forEach(function(p){
+      var cfg=PIECES[p],can=anywhere(p),sel=S.tool==='place'&&S.piece===p;
+      html+='<button class="ptile '+S.fac+'" data-piece="'+p+'" aria-pressed="'+sel+'"'+(can?'':' disabled')+
+        ' title="'+cfg.n+' — '+cfg.cost+' logs">'+
+        '<span class="gi">'+htmlIcon(cfg.icon)+'</span>'+
+        '<span class="nm">'+cfg.n+'<small>'+(can?cfg.d:'nowhere legal')+'</small></span>'+
+        '<span class="cost">'+cfg.cost+'</span></button>';
+    });
+    document.getElementById('palette').innerHTML=html;
+    document.getElementById('tools').innerHTML='<button class="ptile destroy" data-tool="destroy" aria-pressed="'+(S.tool==='destroy')+'">'+
+      '<span class="gi">'+htmlIcon('i-destroy')+'</span><span class="nm">Destroy<small>anything but a pole</small></span>'+
+      '<span class="cost">X</span></button>';
+  }
+  function renderTowns(){
+    var el=document.getElementById('towns');
+    if(!S.flags.length){
+      el.innerHTML='<div class="empty">No towns yet. A flagpole costs '+PIECES.flag.cost+
+        ' logs and begins losing 1 HP every tick until a vault stands inside its circle.</div>';
+      return;
+    }
+    var html='';
+    S.flags.forEach(function(f,i){
+      var v=vaultOf(i),held=!!v,owner=held?v.st.o:null,list=foundsOf(i);
+      var built=list.filter(function(d){return d.st&&d.st.t!=='vault';}).length;
+      var dry=held&&v.st.pool<=0, cls=held?(dry?'dying':'held'):'dying';
+      var label=held?(dry?'No upkeep':'Fuelled'):'Pole decaying';
+      html+='<button class="town '+(owner||'')+'" data-town="'+i+'" aria-pressed="'+(S.focus===i)+'">'+
+        '<span class="row1"><span class="gi '+(held?owner:'')+'">'+htmlIcon(held?'i-flag':'i-flagbare')+'</span>'+
+        '<span class="nm">'+claimName(f)+'</span><span class="pill '+cls+'">'+label+'</span></span>'+
+        '<span class="meta"><span>'+(held?FACT[owner].n:(f.holder?FACT[f.holder].n+' · bare':'Unclaimed'))+'</span>'+
+        '<span class="'+(f.hp<MAXHP?'hurt':'')+'">pole '+f.hp+'/'+MAXHP+'</span>'+
+        '<span>'+list.length+' found.</span><span>'+built+' built</span></span></button>';
+    });
+    el.innerHTML=html;
+  }
+  function renderFuel(){
+    var el=document.getElementById('fuel'), head=document.getElementById('fuel-head');
+    var f=S.flags[S.focus];
+    if(!f){head.textContent='Vault upkeep'; el.innerHTML='<div class="fuelnote">Select a town to manage its vault.</div>'; return;}
+    head.textContent='Vault upkeep · '+claimName(f);
+    var v=vaultOf(S.focus);
+    if(!v){
+      el.innerHTML='<div class="fuelnote bad">No vault in this circle. The pole is losing 1 HP per tick — '+
+        f.hp+' left, about '+(f.hp*TICK/1000)+'s. Place a vault on a foundation to stop it.</div>';
+      return;
+    }
+    var pool=v.st.pool, drain=drainOf(S.focus), ticks=drain?Math.floor(pool/drain):Infinity;
+    var pct=Math.min(100,pool/CAP*100);
+    var mine=S.logs[S.fac];
+    el.innerHTML=
+      '<div class="fuelhead"><b>'+pool+'</b> logs<span>'+drain+' per tick · '+rnd(drain*60000/TICK)+'/min</span></div>'+
+      '<div class="gauge'+(pool?'':' dry')+'"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="depo">'+
+        '<button data-dep="25"'+(mine<25?' disabled':'')+'>+25</button>'+
+        '<button data-dep="100"'+(mine<100?' disabled':'')+'>+100</button>'+
+        '<button data-dep="'+CAP+'"'+(mine<1?' disabled':'')+'>Fill</button>'+
+      '</div>'+
+      (pool
+        ? '<div class="fuelnote">Burns for '+ticks+' more tick'+(ticks===1?'':'s')+' (~'+(ticks*TICK/1000)+'s), repairing foundations as it goes.</div>'
+        : '<div class="fuelnote bad">Vault is dry. Every foundation here loses 1 HP per tick, this vault’s own slab included — when it falls, the vault goes with it.</div>');
+  }
+  function renderSteps(){
+    var el=document.getElementById('steps'),f=S.flags[S.focus];
+    document.getElementById('seq-head').textContent=f?'Claim sequence · '+claimName(f):'Claim sequence';
+    if(!f){
+      el.innerHTML='<div class="step next"><span class="mk">1</span><span class="tx">Plant a flagpole'+
+        '<small>'+PIECES.flag.cost+' logs · opens a 150 circle</small></span></div>'+
+        '<div class="step"><span class="mk">2</span><span class="tx">Lay a foundation inside it<small>'+PIECES.foundation.cost+' logs</small></span></div>'+
+        '<div class="step"><span class="mk">3</span><span class="tx">Place the vault<small>'+PIECES.vault.cost+' logs · stops pole decay</small></span></div>'+
+        '<div class="step"><span class="mk">4</span><span class="tx">Load it with logs<small>stops foundation decay</small></span></div>';
+      return;
+    }
+    var list=foundsOf(S.focus),v=vaultOf(S.focus);
+    var st=[
+      {d:true,t:'Flagpole planted',s:'radius '+R+' at '+rnd(f.x)+', '+rnd(f.y)+' · '+f.hp+'/'+MAXHP+' HP'},
+      {d:list.length>0,t:'Foundation inside the circle',s:list.length?list.length+' laid':'none yet'},
+      {d:!!v,t:'Vault on a foundation',s:v?'held by '+FACT[v.st.o].n:'pole decaying'},
+      {d:!!(v&&v.st.pool>0),t:'Logs in the vault',s:v?(v.st.pool?v.st.pool+' logs burning':'dry — foundations decaying'):'no vault yet'}
+    ];
+    var next=st.findIndex(function(s){return !s.d;});
+    el.innerHTML=st.map(function(s,i){
+      return '<div class="step '+(s.d?'done':(i===next?'next':''))+'"><span class="mk">'+(s.d?'✓':(i+1))+
+        '</span><span class="tx">'+s.t+'<small>'+s.s+'</small></span></div>';
+    }).join('');
+  }
+  function renderLog(){
+    document.getElementById('log').innerHTML=S.log.map(function(e){
+      return '<div><span class="t">'+e[0]+'</span><span>'+e[1]+'</span></div>';
+    }).join('');
+  }
+  function setStrip(state,msg){
+    document.getElementById('s-dot').className='dot'+(state===true?' ok':state===false?' bad':'');
+    document.getElementById('s-msg').textContent=msg;
+  }
+
+  // ---- ghost / hover ----------------------------------------------------
+  function hover(x,y){
+    if(x==null){elGhost.innerHTML=''; document.getElementById('s-coord').textContent='—'; return;}
+    var r=S.tool==='destroy'?checkDestroy(x,y):check(S.piece,x,y);
+    var col=r.ok?'var(--ok)':'var(--bad)', g='';
+    if(S.tool==='destroy'){
+      var h=foundAt(x,y), fl=flagAt(x,y);
+      if(h) g+='<rect x="'+(h.x-HALF-3)+'" y="'+(h.y-HALF-3)+'" width="'+(FS+6)+'" height="'+(FS+6)+'" rx="5" fill="none" stroke="'+col+'" stroke-width="2.5"/>';
+      else if(fl) g+='<circle cx="'+fl.x+'" cy="'+fl.y+'" r="25" fill="none" stroke="'+col+'" stroke-width="2.5"/>';
+      g+=icon('i-destroy',x,y,22,col);
+    } else if(S.piece==='flag'){
+      g+='<circle cx="'+x+'" cy="'+y+'" r="'+R+'" fill="'+col+'" fill-opacity=".09" stroke="'+col+'" stroke-width="2" stroke-dasharray="10 8"/>'+
+         '<line x1="'+x+'" y1="'+y+'" x2="'+(x+R)+'" y2="'+y+'" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 4"/>'+
+         '<text x="'+(x+R/2)+'" y="'+(y-7)+'" text-anchor="middle" fill="'+col+'" font-family="'+"'IBM Plex Mono',monospace"+'" font-size="12">r '+R+'</text>';
+      if(!r.ok) S.flags.forEach(function(f){
+        if(dist(x,y,f.x,f.y)<2*R)
+          g+='<circle cx="'+f.x+'" cy="'+f.y+'" r="'+R+'" fill="none" stroke="var(--bad)" stroke-width="2"/>'+
+             '<line x1="'+x+'" y1="'+y+'" x2="'+f.x+'" y2="'+f.y+'" stroke="var(--bad)" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      });
+      g+=icon('i-flag',x,y,26,col);
+    } else if(S.piece==='foundation'){
+      g+='<rect x="'+(x-HALF)+'" y="'+(y-HALF)+'" width="'+FS+'" height="'+FS+'" rx="4" fill="'+col+'" fill-opacity=".14" stroke="'+col+'" stroke-width="2" stroke-dasharray="6 5"/>';
+      var t=townAt(x,y);
+      if(t>=0) g+='<line x1="'+S.flags[t].x+'" y1="'+S.flags[t].y+'" x2="'+x+'" y2="'+y+'" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 4"/>';
+      g+=icon('i-foundation',x,y,28,col);
+    } else {
+      var host=foundAt(x,y);
+      if(host){
+        g+='<rect x="'+(host.x-HALF-3)+'" y="'+(host.y-HALF-3)+'" width="'+(FS+6)+'" height="'+(FS+6)+'" rx="5" fill="none" stroke="'+col+'" stroke-width="2.5"/>'+
+           icon(PIECES[S.piece].icon,host.x,host.y,32,col,' opacity=".75"');
+      } else {
+        g+='<circle cx="'+x+'" cy="'+y+'" r="20" fill="none" stroke="'+col+'" stroke-width="2" stroke-dasharray="5 5"/>'+
+           icon(PIECES[S.piece].icon,x,y,26,col,' opacity=".75"');
+      }
+    }
+    elGhost.innerHTML=g;
+    setStrip(r.ok,r.msg);
+    document.getElementById('s-coord').textContent=rnd(x)+', '+rnd(y);
+  }
+  function pt(e){
+    var b=elField.getBoundingClientRect(), s=FIELD/b.width;
+    return {x:Math.max(0,Math.min(FIELD,(e.clientX-b.left)*s)), y:Math.max(0,Math.min(FIELD,(e.clientY-b.top)*s))};
+  }
+
+  // ---- events -----------------------------------------------------------
+  elField.addEventListener('pointermove',function(e){var p=pt(e);hover(p.x,p.y);});
+  elField.addEventListener('pointerleave',function(){hover(null);});
+  elField.addEventListener('pointerdown',function(e){e.preventDefault();var p=pt(e);act(p.x,p.y);});
+  document.getElementById('palette').addEventListener('click',function(e){
+    var b=e.target.closest('[data-piece]'); if(!b||b.disabled) return;
+    S.tool='place'; S.piece=b.dataset.piece; render();
+  });
+  document.getElementById('tools').addEventListener('click',function(e){
+    if(!e.target.closest('[data-tool]')) return;
+    S.tool=S.tool==='destroy'?'place':'destroy'; render();
+  });
+  document.getElementById('towns').addEventListener('click',function(e){
+    var b=e.target.closest('[data-town]'); if(!b) return;
+    S.focus=+b.dataset.town; render();
+  });
+  document.getElementById('fuel').addEventListener('click',function(e){
+    var b=e.target.closest('[data-dep]'); if(!b||b.disabled) return;
+    deposit(+b.dataset.dep);
+  });
+  document.getElementById('facswitch').addEventListener('click',function(e){
+    var b=e.target.closest('[data-fac]'); if(!b) return;
+    S.fac=b.dataset.fac; render();
+  });
+  document.getElementById('btn-pause').addEventListener('click',function(){
+    S.paused=!S.paused; if(!S.paused) lastTick=Date.now(); render();
+  });
+  document.getElementById('btn-gather').addEventListener('click',function(){
+    S.logs[S.fac]+=250; note(FACT[S.fac].n,'250 logs gathered'); render();
+  });
+  document.getElementById('btn-reset').addEventListener('click',function(){S=seed();startClock();render();});
+  document.addEventListener('keydown',function(e){
+    if(e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey) return;
+    var n=parseInt(e.key,10);
+    if(n>=1&&n<=6){S.tool='place';S.piece=ORDER[n-1];render();}
+    else if(e.key==='x'||e.key==='X'){S.tool=S.tool==='destroy'?'place':'destroy';render();}
+    else if(e.key==='f'||e.key==='F'){S.fac=TEAMS[(TEAMS.indexOf(S.fac)+1)%TEAMS.length];render();}
+    else if(e.key===' '){S.paused=!S.paused; if(!S.paused) lastTick=Date.now(); render();}
+    else return;
+    e.preventDefault();
+  });
+
+  function start(data){
+    S=(data&&data.S)?data.S:seed();
+    if(data&&data.uid) uid=data.uid;
+    drawTicks(); startClock(); render();
+    if(window.claude&&window.claude.hot&&window.claude.hot.snapshot)
+      window.claude.hot.snapshot(function(){return {S:S,uid:uid};});
+  }
+  if(window.claude&&window.claude.hot&&window.claude.hot.ready) window.claude.hot.ready(start);
+  else start((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+})();
+</script>

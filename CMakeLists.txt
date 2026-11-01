@@ -41,7 +41,7 @@ set(WORLDTOOL_SOURCES
     src/worldmaker/theme/themefile.cpp
 )
 
-# Build stamp for the title screen, BUILD.YYYY.MM.DD.HH.MM.mmm. The stamp is taken at build time, not configure time,
+# Build stamp for the title screen, BUILD.YYYY.MM.DD.HH.MM.SS (24-hour). The stamp is taken at build time, not configure time,
 # so build_stamp rewrites the generated source on every build. Listing that file as BYPRODUCTS makes Ninja run the
 # writer before it compiles the file; without it, the build can compile the previous build's stamp.
 add_executable(build_stamp tools/build_stamp.cpp)
@@ -120,11 +120,12 @@ add_custom_command(TARGET koboldgame POST_BUILD
     COMMENT "Packing data/ into data.pak"
 )
 
-# The LANGUAGE folder goes next to the exe, loose, beside data.pak, BGM and SFX. Its English file is also in the pak,
+# The language files (data/language) are also copied next to the exe as a loose LANGUAGE folder, beside data.pak, BGM
+# and SFX, so they can be edited without rebuilding the pak. They are in the pak too,
 # so the game still runs if this folder is missing. Files here override the pak's copy of the same language.
 # The BGM and SFX folders (music and sound effects) are copied the same way. The audio module reads them loose.
 add_custom_command(TARGET koboldgame POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/LANGUAGE" "$<TARGET_FILE_DIR:koboldgame>/LANGUAGE"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/language" "$<TARGET_FILE_DIR:koboldgame>/LANGUAGE"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldgame>/BGM"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldgame>/SFX"
     COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"

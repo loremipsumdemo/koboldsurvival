@@ -57,12 +57,14 @@ struct GameSettings {
     // scales all three: a bus is heard at its level times the global level.
     int globalVolume = 50;
     bool globalOn = true;
-    int musicVolume = 50;
+    int musicVolume = 5;
     bool musicOn = true;
     int ambientVolume = 50;
     bool ambientOn = true;
     int effectsVolume = 50;
     bool effectsOn = true;
+    int interfaceVolume = 5;    // the menus' and buttons' sounds
+    bool interfaceOn = true;
 };
 
 inline int parseInt(const std::string& v, int fallback) {
@@ -121,6 +123,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "ambientOn")       s.ambientOn = (val == "1");
         else if (key == "effectsVolume")   s.effectsVolume = parseInt(val, s.effectsVolume);
         else if (key == "effectsOn")       s.effectsOn = (val == "1");
+        else if (key == "interfaceVolume") s.interfaceVolume = parseInt(val, s.interfaceVolume);
+        else if (key == "interfaceOn")     s.interfaceOn = (val == "1");
     }
 
     // Old files: the preset index used the four sizes that were offered before
@@ -143,6 +147,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);
     s.ambientVolume = std::clamp(s.ambientVolume, 0, 100);
     s.effectsVolume = std::clamp(s.effectsVolume, 0, 100);
+    s.interfaceVolume = std::clamp(s.interfaceVolume, 0, 100);
     s.fontScale = std::clamp(s.fontScale, UI_SCALE_MIN, UI_SCALE_MAX);
     s.fontScale = UI_SCALE_MIN + 5 * ((s.fontScale - UI_SCALE_MIN + 2) / 5);
     if (!validLanguageId(s.language)) s.language = LANGUAGE_DEFAULT_ID;
@@ -177,6 +182,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "ambientOn=" << (s.ambientOn ? 1 : 0) << "\n";
     out << "effectsVolume=" << s.effectsVolume << "\n";
     out << "effectsOn=" << (s.effectsOn ? 1 : 0) << "\n";
+    out << "interfaceVolume=" << s.interfaceVolume << "\n";
+    out << "interfaceOn=" << (s.interfaceOn ? 1 : 0) << "\n";
     out.close();                       // flushes, so a failed write shows up in the state
     return !out.fail();
 }

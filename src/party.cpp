@@ -133,20 +133,24 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::ar
 
 const char* scenarioNameKey(ScenarioId id) {
     switch (id) {
+    case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_NAME";
     case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_NAME";
     case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_NAME";
     case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_NAME";
     case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_NAME";
+    case ScenarioId::Custom: return "SCENARIO_CUSTOM_NAME";
     default: return "SCENARIO_RANDOM_NAME";
     }
 }
 
 const char* scenarioDescKey(ScenarioId id) {
     switch (id) {
+    case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_DESC";
     case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_DESC";
     case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_DESC";
     case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_DESC";
     case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_DESC";
+    case ScenarioId::Custom: return "SCENARIO_CUSTOM_DESC";
     default: return "SCENARIO_RANDOM_DESC";
     }
 }
@@ -187,20 +191,30 @@ void fullGear(PartyMember& m, Rng& rng, float reserve) {
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     int size = 1;
     switch (id) {
+    case ScenarioId::Vagabond: size = 1; break;
     case ScenarioId::FullRandom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : rng.range(1, PARTY_MAX_UNITS); break;
     case ScenarioId::TravelingCaravan: size = 10; break;
     case ScenarioId::ShabbyCrew: size = 3; break;
     case ScenarioId::StarvingNobody: size = 1; break;
     case ScenarioId::DungeonDiggers: size = 7; break;
+    case ScenarioId::Custom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT; break;
     case ScenarioId::Count: break;
     }
     // The names, body types and pictures are rolled as for any party; the scenario then sets the rest
     Party p = randomParty(rng, size);
+    if (id == ScenarioId::Custom) {
+        // Kept as rolled: random starting stats, some gear and items
+        for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
+        return p;
+    }
     const std::vector<int> items = allItemChoices();
     for (PartyMember& m : p) {
         m.gear = {};
         m.items = {};
         switch (id) {
+        case ScenarioId::Vagabond:
+            m.stats = statsBetween(rng, 1, 5);
+            break;
         case ScenarioId::FullRandom: {
             m.stats = statsBetween(rng, 1, MAX_LEVEL);
             for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
@@ -235,6 +249,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
             m.items[0] = ItemStack{ IRON_ORE, 3 };
             break;
         }
+        case ScenarioId::Custom:
         case ScenarioId::Count:
             break;
         }

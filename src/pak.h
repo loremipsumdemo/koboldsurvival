@@ -7,7 +7,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 // Packed game data. The game reads everything under data/ from data.pak and never from loose
-// files. Names are the paths the game uses, such as "data/unit/01.png".
+// files. Names are the paths the game uses, such as "data/unit/unit_1.png".
 
 // Opens data.pak and loads its index. Returns false if it's missing or damaged. Call once at startup.
 bool pakOpen(const std::string& pakPath);

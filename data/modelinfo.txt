@@ -1,0 +1,37 @@
+Prop models: data/model/model_<n>.glb (no leading zeros), one per kind of prop, numbered from 1 in the order of
+src/props.h. model_0.glb stands in for any model that is missing or unreadable; without it, the prop is drawn as a pink
+square, and log.txt names the missing file. A new kind of prop takes the next free number.
+
+Model	File	Prop	Kind
+0	model_0.glb	(stand-in)	Used for any prop whose own model is missing or unreadable
+1	model_1.glb	Wagon	Decor prop
+2	model_2.glb	Campfire	Crafting prop: any raw meat into its cooked meat (Cooking)
+3	model_3.glb	Bedroll	Occupiable prop
+4	model_4.glb	Bed	Occupiable prop
+5	model_5.glb	Barrel	Storage prop (takes anything)
+6	model_6.glb	Ore	Resource prop: Iron Ore (Mining)
+7	model_7.glb	Tree	Resource prop: Wood Log (Woodcutting)
+8	model_8.glb	Boulder	Decor prop
+9	model_9.glb	Mushroom	Resource prop: Mushroom, 1 in 10 Poison Mushroom (Herbalism)
+10	model_10.glb	Bones	Decor prop
+11	model_11.glb	Wall	Decor prop
+12	model_12.glb	Stall	Decor prop
+13	model_13.glb	Locked Chest	Storage prop, Lockable (Lockpicking 5)
+14	model_14.glb	Prisoner Cage	Occupiable prop, Lockable (Lockpicking 15): locks when a unit gets in
+15	model_15.glb	Chair	Occupiable prop
+16	model_16.glb	Bench	Occupiable prop
+17	model_17.glb	Stool	Occupiable prop
+18	model_18.glb	Table	Decor prop
+19	model_19.glb	End Table	Decor prop
+20	model_20.glb	Round Table	Decor prop
+21	model_21.glb	Metal Table	Decor prop
+22	model_22.glb	Standing Torch	Decor prop
+23	model_23.glb	Support Beam	Decor prop
+24	model_24.glb	Training Dummy	Crafting prop, no inventory or input: Melee XP only
+25	model_25.glb	Raw Food Storage	Storage prop: items tagged raw_food that can't be eaten as they are
+26	model_26.glb	Food Storage	Storage prop: consumables only
+27	model_27.glb	Weapon Rack	Storage prop: weapons only
+28	model_28.glb	Armor Stand	Storage prop: armor only (shields included)
+29	model_29.glb	Water Tank	Storage prop: items tagged water only
+30	model_30.glb	Water Pump	Crafting prop, no inventory or input: Water (Strength)
+31	model_31.glb	Forge	Passive Crafting prop: Iron Ore as fuel (1 hour each) into Iron Ingot

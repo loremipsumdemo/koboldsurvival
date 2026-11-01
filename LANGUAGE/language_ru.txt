@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Прокрутка у края экрана
 UILABEL_GLOBAL_VOLUME	Общая громкость
 UILABEL_MUSIC	Музыка
 UILABEL_AMBIENT	Фоновые звуки
+UILABEL_INTERFACE_SOUNDS	Звуки интерфейса
 UILABEL_SOUND_EFFECTS	Звуковые эффекты
 UILABEL_RESTORE_DEFAULTS	Восстановить значения по умолчанию
 UILABEL_WINDOWED	В окне
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Профиль
 UILABEL_STATS	Характеристики
 UILABEL_CLICK_TO_TYPE	Нажмите, чтобы ввести имя
 UILABEL_SPRITE	Спрайт
-UILABEL_STARTING_PARTY	Стартовый отряд: {0}
 UILABEL_HEALTH	Здоровье
 UILABEL_HUNGER	Голод
 UILABEL_CARRY	Грузоподъёмность
@@ -606,6 +606,8 @@ FACTION_RED	Красная фракция
 MISC_PROP_UNREACHABLE	Недостижимо
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
+SCENARIO_VAGABOND_NAME	Бродяга
+SCENARIO_VAGABOND_DESC	Одинокий странник, у которого ничего нет: ни предметов, ни снаряжения, а каждая характеристика от 1 до 5.
 SCENARIO_RANDOM_NAME	Полностью случайный
 SCENARIO_RANDOM_DESC	Отряд из 1–32 юнитов, у каждого все характеристики от 1 до 99, а также случайные предметы и снаряжение, которые он может унести.
 SCENARIO_CARAVAN_NAME	Странствующий караван
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Голодный никто
 SCENARIO_NOBODY_DESC	Один юнит без всего: ни предметов, ни снаряжения, все характеристики на 1 и пустой желудок.
 SCENARIO_DIGGERS_NAME	Копатели подземелий
 SCENARIO_DIGGERS_DESC	Семь шахтёров в полном снаряжении. Характеристики от 5 до 20, но у каждого Горное дело 50 и при себе 3 железные руды.
+SCENARIO_CUSTOM_NAME	Свой сценарий
+SCENARIO_CUSTOM_DESC	Соберите свой отряд. Он начинается с трёх юнитов, и вы можете добавлять или убирать юнитов, до 32.
 PROP_LOCKED_CHEST	Запертый сундук
 PROP_PRISONER_CAGE	Клетка для пленника
 UILABEL_UNLOCK	Взломать
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	При равенстве — более ценны�
 MISC_OPTIMIZE_ALL_SAME	Все бойцы уже носят лучшее снаряжение
 MISC_OPTIMIZE_ALL_DONE	Снаряжение оптимизировано у {0} бойцов
 MISC_OPTIMIZE_ALL_SOME_ROOM	Снаряжение оптимизировано у {0} бойцов; {1} не хватило места в инвентаре
+GAME_TITLE_FIRST	Кобольд
+GAME_TITLE_SECOND	Выживание
+UILABEL_EARLY_ACCESS	Ранний доступ
+MISC_TITLE_KEYS	Выбор  //  Enter Подтвердить
+UILABEL_LANGUAGE_LABEL	Язык:

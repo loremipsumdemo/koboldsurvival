@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Scrollen aan de rand
 UILABEL_GLOBAL_VOLUME	Globaal volume
 UILABEL_MUSIC	Muziek
 UILABEL_AMBIENT	Omgevingsgeluid
+UILABEL_INTERFACE_SOUNDS	Interfacegeluiden
 UILABEL_SOUND_EFFECTS	Geluidseffecten
 UILABEL_RESTORE_DEFAULTS	Standaardwaarden herstellen
 UILABEL_WINDOWED	Venster
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profiel
 UILABEL_STATS	Statistieken
 UILABEL_CLICK_TO_TYPE	Klik om een naam te typen
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Startgroep: {0}
 UILABEL_HEALTH	Gezondheid
 UILABEL_HUNGER	Honger
 UILABEL_CARRY	Draagvermogen
@@ -606,6 +606,8 @@ FACTION_RED	Rode factie
 MISC_PROP_UNREACHABLE	Onbereikbaar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Zwerver
+SCENARIO_VAGABOND_DESC	Een eenzame zwerver zonder bezit: geen voorwerpen, geen uitrusting en elke eigenschap van 1 tot 5.
 SCENARIO_RANDOM_NAME	Volledig willekeurig
 SCENARIO_RANDOM_DESC	Een groep van 1 tot 32 eenheden, elk met alle eigenschappen tussen 1 en 99, en willekeurige voorwerpen en uitrusting die ze kunnen dragen.
 SCENARIO_CARAVAN_NAME	Reizende karavaan
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Hongerige niemand
 SCENARIO_NOBODY_DESC	Eén eenheid met helemaal niets: geen voorwerpen, geen uitrusting, alle eigenschappen op 1 en een lege maag.
 SCENARIO_DIGGERS_NAME	Kerkergravers
 SCENARIO_DIGGERS_DESC	Zeven mijnwerkers in volle uitrusting. Hun eigenschappen lopen van 5 tot 20, maar ieder heeft Mijnbouw 50 en draagt 3 ijzererts.
+SCENARIO_CUSTOM_NAME	Eigen scenario
+SCENARIO_CUSTOM_DESC	Stel je eigen groep samen. Hij begint met drie eenheden, en je kunt eenheden toevoegen of verwijderen, tot 32.
 PROP_LOCKED_CHEST	Afgesloten kist
 PROP_PRISONER_CAGE	Gevangenenkooi
 UILABEL_UNLOCK	Openbreken
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Bij gelijkspel wint het waardevolste
 MISC_OPTIMIZE_ALL_SAME	Alle eenheden dragen al hun beste uitrusting
 MISC_OPTIMIZE_ALL_DONE	Uitrusting van {0} eenheden geoptimaliseerd
 MISC_OPTIMIZE_ALL_SOME_ROOM	Uitrusting van {0} eenheden geoptimaliseerd; {1} hadden geen ruimte in de inventaris
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Overleven
+UILABEL_EARLY_ACCESS	Early Access
+MISC_TITLE_KEYS	Kiezen  //  Enter Bevestigen
+UILABEL_LANGUAGE_LABEL	Taal:

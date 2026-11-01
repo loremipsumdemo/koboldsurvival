@@ -5,6 +5,7 @@
 #include "ecs.h"
 #include "stats.h"
 #include "resources.h"
+#include "sounds.h"
 
 // Combat: the formulas, the fight that runs each frame, and the text it writes (the log and the damage
 // numbers). The formulas are plain functions over their inputs, so the tests can check them directly.

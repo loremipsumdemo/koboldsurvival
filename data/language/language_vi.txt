@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Tiếng Việt
+UILABEL_CONTINUE	Tiếp tục
+UILABEL_NEW_GAME	Trò chơi mới
+UILABEL_LOAD_GAME	Tải trò chơi
+UILABEL_SETTINGS	Cài đặt
+UILABEL_LANGUAGE_BUTTON	Ngôn ngữ ({0})
+UILABEL_QUIT	Thoát
+UILABEL_RESUME	Tiếp tục chơi
+UILABEL_SAVE_GAME	Lưu trò chơi
+UILABEL_RETURN_TO_TITLE	Quay về màn hình chính
+UILABEL_CLOSE	Đóng
+UILABEL_BACK	Quay lại
+UILABEL_SAVE	Lưu
+UILABEL_DELETE	Xóa
+UILABEL_CANCEL	Hủy
+UILABEL_CONFIRM	Xác nhận
+UILABEL_YES	Có
+UILABEL_NO	Không
+UILABEL_NAME	Tên
+UILABEL_TIME	Thời gian
+UILABEL_CREATED	Ngày tạo
+UILABEL_TYPE	Loại
+UILABEL_AUTO	TỰ ĐỘNG
+UILABEL_MANUAL	THỦ CÔNG
+UILABEL_NO_SAVES	Chưa có bản lưu nào
+UILABEL_UNSAVED_WARNING	Tiến trình chưa lưu trong trò chơi này sẽ bị mất.
+UILABEL_HOLD_DELETE	Giữ Xóa trong 3 giây để xác nhận.
+UILABEL_CLICK_SAVE	Nhấp vào một bản lưu để tải
+UILABEL_CLICK_MAP	Nhấp vào một bản đồ để bắt đầu trò chơi mới
+UILABEL_NO_MAPS	Không tìm thấy bản đồ. Hãy tạo một bản bằng worldgen.py.
+UILABEL_BUILT_IN	CÓ SẴN
+UILABEL_WORLD	THẾ GIỚI
+UILABEL_MAP_FILE	TỆP BẢN ĐỒ
+UILABEL_BUILT_IN_WHEN	có sẵn
+UILABEL_UNKNOWN	không rõ
+UILABEL_ON	Bật
+UILABEL_OFF	Tắt
+UILABEL_EMPTY	Trống
+UILABEL_NONE_AVAILABLE	Không có sẵn
+UILABEL_TWO_HANDED	Hai tay
+UILABEL_WILL_BE_REPLACED	Sẽ bị thay thế
+UILABEL_GRAPHICS	Đồ họa
+UILABEL_INTERFACE	Giao diện
+UILABEL_LANGUAGE_TAB	Ngôn ngữ
+UILABEL_CONTROLS	Điều khiển
+UILABEL_AUDIO	Âm thanh
+UILABEL_DISPLAY_MODE	Chế độ hiển thị
+UILABEL_MONITOR	Màn hình
+UILABEL_RESOLUTION	Độ phân giải
+UILABEL_REFRESH_RATE	Tần số quét
+UILABEL_DEFAULT	Mặc định
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Giới hạn khung hình
+UILABEL_UNLIMITED	Không giới hạn
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Tự động lưu
+UILABEL_MINUTE	1 phút
+UILABEL_MINUTES	{0} phút
+UILABEL_UNIT_NAMES	Tên đơn vị
+UILABEL_FONT_SIZE	Cỡ chữ
+UILABEL_RESET_PANELS	Đặt lại tất cả bảng giao diện
+UILABEL_RESET	Đặt lại
+UILABEL_FONT	Phông chữ
+UILABEL_FONT_AUTOMATIC	Tự động
+UILABEL_EDGE_SCROLL	Cuộn khi chạm mép
+UILABEL_GLOBAL_VOLUME	Âm lượng chung
+UILABEL_MUSIC	Nhạc nền
+UILABEL_AMBIENT	Âm thanh môi trường
+UILABEL_INTERFACE_SOUNDS	Âm thanh giao diện
+UILABEL_SOUND_EFFECTS	Hiệu ứng âm thanh
+UILABEL_RESTORE_DEFAULTS	Khôi phục mặc định
+UILABEL_WINDOWED	Cửa sổ
+UILABEL_BORDERLESS	Không viền
+UILABEL_FULL_SCREEN	Toàn màn hình
+CONTROL_KEYS_1	W A S D hoặc phím mũi tên
+CONTROL_DOES_1	Di chuyển camera
+CONTROL_KEYS_2	Con lăn chuột
+CONTROL_DOES_2	Phóng to và thu nhỏ
+CONTROL_KEYS_3	Giữ chuột giữa và kéo
+CONTROL_DOES_3	Xoay camera
+CONTROL_KEYS_4	Nhấp chuột trái, hoặc kéo một hộp
+CONTROL_DOES_4	Chọn đơn vị
+CONTROL_KEYS_5	Shift hoặc Alt kèm nhấp chuột
+CONTROL_DOES_5	Thêm vào lựa chọn
+CONTROL_KEYS_6	Nhấp chuột phải
+CONTROL_DOES_6	Di chuyển hoặc tấn công bằng các đơn vị đã chọn
+CONTROL_KEYS_7	Giữ Alt
+CONTROL_DOES_7	Hiển thị tên vật phẩm trên mặt đất
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Mở menu, hoặc quay lại
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Chụp ảnh màn hình
+UILABEL_PAUSED	TẠM DỪNG
+UILABEL_PACE_RUN	Nhịp độ: chạy
+UILABEL_PACE_WALK	Nhịp độ: đi bộ
+UILABEL_SQUAD_PANEL	Bảng đội hình
+UILABEL_UNIT_PANEL	Bảng đơn vị
+UILABEL_INFORMATION_PANEL	Bảng thông tin
+UILABEL_INTERACTION_PANEL	Bảng tương tác
+UILABEL_TRADE_PANEL	Bảng giao dịch
+UILABEL_INVENTORY	Túi đồ
+UILABEL_EQUIPMENT	Trang bị
+UILABEL_BEHAVIOR	Hành vi
+UILABEL_TRADE	Giao dịch
+UILABEL_END_DIALOGUE	Kết thúc hội thoại
+UILABEL_TRADE_DROP_THEIRS	Kéo vào đây hoặc nhấp chuột phải để thêm vật phẩm từ túi đồ của họ
+UILABEL_TRADE_DROP_YOURS	Kéo vào đây hoặc nhấp chuột phải để thêm vật phẩm từ túi đồ của bạn
+UILABEL_SINGLE	Đơn
+UILABEL_MAX	Tối đa
+UILABEL_SORT	Sắp xếp
+UILABEL_WORLD_MAP_HINT	Bản đồ thế giới. Cuộn để phóng to. Nhấn M hoặc Esc để đóng.
+UILABEL_NO_UNIT_SELECTED	Chưa chọn đơn vị nào
+UILABEL_UNNAMED_UNIT	Đơn vị không tên
+UILABEL_NO_NAME	Không tên
+UILABEL_PROFILE	Hồ sơ
+UILABEL_STATS	Chỉ số
+UILABEL_CLICK_TO_TYPE	Nhấp để nhập tên
+UILABEL_SPRITE	Hình ảnh
+UILABEL_HEALTH	Sinh lực
+UILABEL_HUNGER	Đói
+UILABEL_CARRY	Sức mang
+UILABEL_NEXT_LEVEL_XP_LINE	Kinh nghiệm đến cấp tiếp theo: {0}
+UILABEL_STAT	Chỉ số
+UILABEL_LEVEL	Cấp
+UILABEL_TOTAL_XP	Tổng kinh nghiệm
+UILABEL_TO_NEXT	Đến cấp tiếp
+UILABEL_ATTRIBUTES	Thuộc tính
+UILABEL_COMBAT	Chiến đấu
+UILABEL_RESOURCE_GATHERING	Thu thập tài nguyên
+UILABEL_CRAFTING	Chế tác
+UILABEL_UTILITY	Kỹ năng phụ
+UILABEL_GEAR	Trang bị
+UILABEL_ITEMS	Vật phẩm
+UILABEL_IDENTITY	Danh tính
+UILABEL_RANDOMIZE_UNIT	Ngẫu nhiên hóa đơn vị này
+UILABEL_RANDOMIZE_ALL	Ngẫu nhiên hóa tất cả
+UILABEL_ADD_UNIT	Thêm đơn vị
+UILABEL_REMOVE_UNIT	Xóa đơn vị
+UILABEL_CONFIRM_STARTS	Xác nhận sẽ bắt đầu trò chơi với đội hình này.
+UILABEL_NEEDS_NAMES	Mọi đơn vị cần có tên trước khi trò chơi có thể bắt đầu.
+UILABEL_CLICK_UNIT_EDIT	Nhấp vào một đơn vị để chỉnh sửa.
+UILABEL_SHIFT_CLICK	Shift + nhấp chuột thay đổi chỉ số 10 điểm.
+UILABEL_LEVELS_HINT	Cấp độ từ 1 đến 99.
+UILABEL_CLICK_SLOT	Nhấp vào một ô để chọn vật phẩm. Chỉ hiện các vật phẩm vừa vặn.
+UILABEL_CLICK_SLOT_STACK	Nhấp vào một ô để chọn vật phẩm. Chồng vật phẩm tối đa theo giới hạn của nó.
+UILABEL_SCROLL_UP	Cuộn lên
+UILABEL_SCROLL_DOWN	Cuộn xuống
+UILABEL_SLOT_HEAD	Đầu
+UILABEL_SLOT_TORSO	Thân
+UILABEL_SLOT_MAIN_HAND	Tay chính
+UILABEL_SLOT_OFF_HAND	Tay phụ
+UILABEL_SLOT_LEGS	Chân
+UILABEL_SLOT_FEET	Bàn chân
+UILABEL_SLOT_ACCESSORY	Phụ kiện
+UILABEL_BEHAVIOR_ON	Bật
+UILABEL_TARGET	Mục tiêu
+UILABEL_CONDITION	Điều kiện
+UILABEL_ACTION	Hành động
+UILABEL_COMBAT_MESSAGES	Thông báo chiến đấu
+UILABEL_SEEN	Đã thấy
+UILABEL_HIT	Trúng
+UILABEL_MISS	Trượt
+UILABEL_DAMAGE	Sát thương
+UILABEL_EXPERIENCE_MESSAGES	Thông báo kinh nghiệm
+UILABEL_EXPERIENCE	Kinh nghiệm
+UILABEL_ITEM_MESSAGES	Thông báo vật phẩm
+UILABEL_PICKUP	Nhặt
+UILABEL_DROP	Vứt
+UILABEL_LOOT	Chiến lợi phẩm
+UILABEL_USE	Dùng
+UILABEL_MESSAGE	Thông báo
+UILABEL_GAME	Trò chơi
+UILABEL_FILTER	Bộ lọc
+UILABEL_STAT_HEAD_STAT	Chỉ số
+UILABEL_UNKNOWN_SLOT	Không rõ
+UILABEL_MONTH_NAME	Tháng {0}
+UILABEL_STRENGTH_STAT	Sức mạnh
+MISC_GAME_SAVED	Đã lưu trò chơi
+MISC_SAVE_FAILED	Không thể lưu trò chơi
+MISC_READ_FAILED	Không thể đọc bản lưu đó
+MISC_SAVE_OLD	Bản lưu này được tạo trước khi có bản đồ nên không thể tải
+MISC_AUTOSAVED	Đã tự động lưu
+MISC_SCREENSHOT_FAILED	Không thể lưu ảnh màn hình
+MISC_SCREENSHOT_SAVED	Đã lưu {0}
+MISC_TRADE_FULL	Giao dịch đã đầy
+MISC_TRADE_ALREADY	Vật phẩm đó đã có trong giao dịch, hoặc giao dịch đã đầy.
+MISC_TRADE_NO_MORE	Không còn vật phẩm đó để giao dịch
+MISC_NO_UNIT_TO_TRADE	Không có đơn vị nào để giao dịch
+MISC_TRADE_ADD_BOTH	Thêm vật phẩm vào cả hai bên
+MISC_TRADE_NO_ROOM_YOURS	Đơn vị của bạn không còn chỗ cho vật phẩm của họ
+MISC_TRADE_NO_ROOM_THEIRS	Họ không còn chỗ cho vật phẩm của bạn
+MISC_TRADE_FAILED	Giao dịch thất bại
+MISC_TRADE_COMPLETE	Giao dịch hoàn tất.
+MISC_PICKUP_SELECT	Chọn đơn vị để nhặt vật phẩm
+MISC_TRADE_ONLY_TALKING	Bạn chỉ có thể giao dịch với đơn vị bạn đang nói chuyện.
+MISC_DROPS	{0} vứt {1} {2}
+MISC_AN_ITEM	một vật phẩm
+MISC_UNIT	Đơn vị
+MISC_TWO_HANDED_IN_MAIN	Vũ khí hai tay đang ở tay chính
+MISC_YOU	Bạn
+MISC_UNKNOWN_ITEM	Vật phẩm không rõ
+MISC_ITEM_FALLBACK	Vật phẩm
+MISC_THAT_ITEM	Vật đó
+MISC_REASON_FEES	trả phí giao dịch
+MISC_REASON_WALKING	đi bộ
+MISC_REASON_CARRYING	mang vác đồ nặng
+MISC_REASON_CLIMBING	leo trèo
+MISC_REASON_SWINGING	vung vũ khí
+MISC_REASON_DODGING	né tránh
+MISC_REASON_DEALING	gây sát thương
+MISC_REASON_TAKING	nhận sát thương
+MISC_REASON_BLOCKING	chặn đòn
+MISC_REASON_SPOTTING	phát hiện kẻ địch
+MISC_REASON_UNNOTICED	giữ mình không bị phát hiện
+MISC_REASON_GEAR	thay đổi trang bị
+NPC_GREETING	Chào thế giới.
+NPC_OPTION_WARES	Cho tôi xem hàng của bạn.
+NPC_OPTION_QUEST	Bạn còn có thể cho tôi biết gì về nhiệm vụ?
+MISC_ORD_1	Thứ nhất
+MISC_ORD_2	Thứ hai
+MISC_ORD_3	Thứ ba
+MISC_ORD_4	Thứ tư
+MISC_ORD_5	Thứ năm
+MISC_ORD_6	Thứ sáu
+MISC_ORD_7	Thứ bảy
+MISC_ORD_8	Thứ tám
+MISC_ORD_9	Thứ chín
+MISC_ORD_10	Thứ mười
+MISC_ORD_11	Thứ mười một
+MISC_ORD_12	Thứ mười hai
+MISC_SKY_DAY_ZENITH	Đỉnh ngày
+MISC_SKY_DAY_HORIZON	Chân trời ngày
+MISC_SKY_NIGHT_ZENITH	Đỉnh đêm
+MISC_SKY_NIGHT_HORIZON	Chân trời đêm
+MISC_SKY_DUSK_HORIZON	Chân trời hoàng hôn
+MISC_SKY_DUSK_SUN	Mặt trời hoàng hôn
+MISC_SKY_SUN	Mặt trời
+MISC_SKY_MOON	Mặt trăng
+MISC_TARGET_SELF	Bản thân
+MISC_TARGET_ALLY	Đồng minh
+MISC_TARGET_ENEMY	Kẻ địch
+MISC_COND_HEALTH	Sinh lực
+MISC_COND_HUNGER	Đói
+MISC_ACT_HEAL	Dùng vật phẩm hồi phục
+MISC_ACT_FOOD	Ăn thức ăn
+UILABEL_STAT_DESC_STRENGTH	Sát thương cận chiến, sức mang
+UILABEL_STAT_DESC_DEXTERITY	Tốc độ tấn công
+UILABEL_STAT_DESC_VITALITY	Sinh lực tối đa
+UILABEL_STAT_DESC_ENDURANCE	Thể lực tối đa
+UILABEL_STAT_DESC_AGILITY	Tỷ lệ né tránh
+UILABEL_STAT_DESC_INTELLIGENCE	Lượng mana
+UILABEL_STAT_DESC_WISDOM	Số phép thuật có thể học
+UILABEL_STAT_DESC_CHARISMA	Giá giao dịch với NPC, lựa chọn hội thoại đặc biệt
+UILABEL_STAT_DESC_PERCEPTION	Tầm phát hiện
+UILABEL_STAT_DESC_ATHLETICS	Tốc độ chạy
+UILABEL_STAT_DESC_STEALTH	Giỏi hơn trong việc tránh bị phát hiện khi lén lút
+UILABEL_STAT_DESC_MELEE	Độ chính xác cận chiến
+UILABEL_STAT_DESC_PROJECTILES	Độ chính xác tầm xa
+UILABEL_STAT_DESC_ARCANE	Sức mạnh phép thuật
+UILABEL_STAT_DESC_BLOCK	Tỷ lệ chặn hoặc đỡ đòn
+UILABEL_STAT_DESC_MINING	Sản lượng quặng
+UILABEL_STAT_DESC_HERBALISM	Sản lượng thu hái thực vật hoang dã
+UILABEL_STAT_DESC_WOODCUTTING	Sản lượng gỗ
+UILABEL_STAT_DESC_SKINNING	Sản lượng da và thịt
+UILABEL_STAT_DESC_FARMING	Sản lượng mùa màng
+UILABEL_STAT_DESC_COOKING	Sức mạnh buff từ thức ăn
+UILABEL_STAT_DESC_SMELTING	Sản lượng luyện quặng
+UILABEL_STAT_DESC_FORGING	Chế tác kim loại
+UILABEL_STAT_DESC_CARPENTRY	Chế tác gỗ
+UILABEL_STAT_DESC_STONEWORKING	Chế tác đá
+UILABEL_STAT_DESC_LOCKPICKING	Độ khó của khóa
+UILABEL_STAT_DESC_THIEVERY	Tỷ lệ thành công khi trộm cắp
+UILABEL_STAT_DESC_MEDICAL	Hiệu quả chữa trị
+UILABEL_DEXTERITY_STAT	Khéo léo
+UILABEL_VITALITY_STAT	Sinh lực
+UILABEL_ENDURANCE_STAT	Sức bền
+UILABEL_AGILITY_STAT	Nhanh nhẹn
+UILABEL_INTELLIGENCE_STAT	Trí tuệ
+UILABEL_WISDOM_STAT	Minh triết
+UILABEL_CHARISMA_STAT	Thu hút
+UILABEL_PERCEPTION_STAT	Nhận thức
+UILABEL_ATHLETICS_STAT	Thể thao
+UILABEL_STEALTH_STAT	Lén lút
+UILABEL_MELEE_STAT	Cận chiến
+UILABEL_PROJECTILES_STAT	Ném bắn
+UILABEL_ARCANE_STAT	Huyền thuật
+UILABEL_BLOCK_STAT	Chặn đỡ
+UILABEL_MINING_STAT	Khai khoáng
+UILABEL_HERBALISM_STAT	Thảo dược
+UILABEL_WOODCUTTING_STAT	Đốn củi
+UILABEL_SKINNING_STAT	Lột da
+UILABEL_FARMING_STAT	Canh tác
+UILABEL_COOKING_STAT	Nấu ăn
+UILABEL_SMELTING_STAT	Luyện kim
+UILABEL_FORGING_STAT	Rèn
+UILABEL_CARPENTRY_STAT	Mộc
+UILABEL_STONEWORKING_STAT	Đẽo đá
+UILABEL_LOCKPICKING_STAT	Mở khóa
+UILABEL_THIEVERY_STAT	Trộm cắp
+UILABEL_MEDICAL_STAT	Y học
+MISC_CANT_BE_WORN	Không thể mặc {0}
+MISC_ITEM_NAME_FORMAT	{1} bằng {0}
+MISC_MATERIAL_IRON	sắt
+MISC_MATERIAL_STEEL	thép
+MISC_MATERIAL_BRONZE	đồng
+MISC_MATERIAL_SILVER	bạc
+MISC_MATERIAL_LEATHER	da
+MISC_MATERIAL_BONE	xương
+MISC_MATERIAL_WOOD	gỗ
+MISC_NEED_MORE_VALUE	Họ cần thêm {0} giá trị
+MISC_TRADE_READY_FEE	Sẵn sàng. Phí giao dịch: {0}
+MISC_LOAD_FAILED	Không thể tải {0}: {1}
+MISC_MAP_MISSING	Thiếu bản đồ "{0}"
+MISC_MAP_LOAD_FAILED	Không thể tải bản đồ "{0}": {1}
+MISC_LOADED	Đã tải {0}
+MISC_DELETE_FAILED	Không thể xóa "{0}"
+MISC_DELETED	Đã xóa "{0}"
+MISC_USED	Đã dùng {0}
+MISC_OVERWRITE_Q	Ghi đè "{0}"?
+MISC_LOAD_Q	Tải "{0}"?
+MISC_DELETE_Q	Xóa "{0}"?
+MISC_NOT_FIT_SLOT	{0} không vừa ô {1}
+MISC_EMPTY_OFF_HAND	Hãy trống tay phụ trước khi cầm {0}
+MISC_NO_ROOM_INV	Không đủ chỗ trong túi đồ cho {0}
+MISC_SLOT_HOLDS	Ô đó đã chứa {0}
+UILABEL_TIP_TYPE	Loại: {0}
+UILABEL_TIP_MATERIAL	Chất liệu: {0}
+UILABEL_TIP_SLOT	Ô: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Cấp yêu cầu: {0}
+UILABEL_TIP_ATTACK	Tấn công {0}
+UILABEL_TIP_DEFENSE	Phòng thủ {0}
+UILABEL_TIP_WEIGHT	Trọng lượng {0}
+UILABEL_TIP_EACH	 mỗi cái
+UILABEL_TIP_STACKS	Chồng tối đa {0}
+UILABEL_TIP_BUY	Giá mua: {0}
+UILABEL_TIP_SELL	Giá bán: {0}
+UILABEL_TIP_USE	Công dụng: {0}
+UILABEL_TOTAL_VALUE	Tổng giá trị: {0}
+UILABEL_CHOOSE_HOW_MANY	Chọn số lượng: {0} ({1} có sẵn)
+UILABEL_TIP_LEVEL	Cấp: {0}
+UILABEL_TIP_PROGRESS	Tiến độ: {0}%
+UILABEL_TIP_CURRENT_XP	Kinh nghiệm hiện tại: {0}
+UILABEL_ATTACK_DEFENSE	Tấn công {0}      Phòng thủ {1}
+UILABEL_STATS_CAPTION	Chỉ số: {0}
+UILABEL_SPRITE_N	Hình ảnh {0}
+UILABEL_SLOT_N_ITEM	Ô {0}: {1}
+UILABEL_SLOT_N_EMPTY	Ô {0}: trống
+UILABEL_COUNT	Số lượng {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Tấn công {0}    Phòng thủ {1}    Sức mang {2}
+MISC_IS_DOWN	{0} đã gục
+MISC_PICKS_UP	{0} nhặt {1} {2}
+MISC_CANNOT_READ	Không thể đọc {0}
+UILABEL_TIP_DURABILITY	Độ bền {0} / {1}
+UILABEL_DATE_LINE	NGÀY {0} · {1} · NĂM {2}
+UILABEL_MONITOR_N	Màn hình {0}
+MISC_GAINS_XP	{0} nhận {1} {2} kinh nghiệm nhờ {3}
+UILABEL_PAUSE_HINT	(Nhấn phím cách để tiếp tục.)
+MISC_DRINKS	{0} uống {1}
+UILABEL_COMPASS_N	B
+UILABEL_COMPASS_E	Đ
+UILABEL_COMPASS_S	N
+UILABEL_COMPASS_W	T
+ITEM_1_NAME	Quặng sắt
+ITEM_1_DESC	Quặng thô có thể luyện thành thỏi sắt.
+ITEM_2_NAME	Khúc gỗ sồi
+ITEM_2_DESC	Khúc gỗ chắc chắn dùng trong chế tác và xây dựng.
+ITEM_3_NAME	Thảo dược chữa lành
+ITEM_3_DESC	Loại thảo dược thông thường có tác dụng phục hồi nhẹ.
+ITEM_4_NAME	Đồng vàng
+ITEM_4_DESC	Tiền tệ tiêu chuẩn của vương quốc.
+ITEM_5_NAME	Da sói
+ITEM_5_DESC	Bộ da thô lấy từ con sói bị giết. Thợ thuộc da rất cần.
+ITEM_6_NAME	Thánh tích cổ
+ITEM_6_DESC	Một cổ vật bí ẩn khẽ ngân lên luồng năng lượng.
+ITEM_7_NAME	Bình hồi máu
+ITEM_7_DESC	Hồi 50 sinh lực khi dùng.
+ITEM_8_NAME	Bình hồi mana
+ITEM_8_DESC	Hồi 50 mana khi dùng.
+ITEM_9_NAME	Nước tăng thể lực
+ITEM_9_DESC	Hồi 40 thể lực và tăng tốc hồi phục trong thời gian ngắn.
+ITEM_10_NAME	Thuốc tăng sức mạnh
+ITEM_10_DESC	Tăng +10 tấn công trong 60 giây.
+ITEM_11_NAME	Bánh mì
+ITEM_11_DESC	Thức ăn đi đường đơn giản. Hồi 15 sinh lực.
+ITEM_12_NAME	Thuốc giải độc
+ITEM_12_DESC	Chữa độc và giảm sát thương độc trong 30 giây.
+ITEM_13_NAME	Táo
+ITEM_13_DESC	Khi ăn sẽ hồi 8 độ đói.
+ITEM_14_NAME	Dâu rừng
+ITEM_14_DESC	Khi ăn sẽ hồi 6 độ đói.
+ITEM_15_NAME	Bánh quy cứng
+ITEM_15_DESC	Khi ăn sẽ hồi 12 độ đói.
+ITEM_16_NAME	Miếng phô mai
+ITEM_16_DESC	Khi ăn sẽ hồi 15 độ đói.
+ITEM_17_NAME	Cá hun khói
+ITEM_17_DESC	Khi ăn sẽ hồi 20 độ đói.
+ITEM_18_NAME	Bánh mật ong
+ITEM_18_DESC	Khi ăn sẽ hồi 18 độ đói.
+ITEM_19_NAME	Bánh nhân thịt cừu
+ITEM_19_DESC	Khi ăn sẽ hồi 26 độ đói.
+ITEM_20_NAME	Tô hầm
+ITEM_20_DESC	Khi ăn sẽ hồi 30 độ đói.
+ITEM_21_NAME	Chân lợn rừng nướng
+ITEM_21_DESC	Khi ăn sẽ hồi 40 độ đói.
+ITEM_22_NAME	Khẩu phần đi đường
+ITEM_22_DESC	Khi ăn sẽ hồi 50 độ đói.
+ITEM_23_NAME	Mũ lưỡi trai
+ITEM_23_DESC	Bảo vệ đầu.
+ITEM_24_NAME	Mũ trùm
+ITEM_24_DESC	Bảo vệ đầu.
+ITEM_25_NAME	Mũ giáp xích
+ITEM_25_DESC	Bảo vệ đầu.
+ITEM_26_NAME	Mũ sắt
+ITEM_26_DESC	Bảo vệ đầu.
+ITEM_27_NAME	Mặt nạ sắt
+ITEM_27_DESC	Bảo vệ đầu.
+ITEM_28_NAME	Mũ bascinet
+ITEM_28_DESC	Bảo vệ đầu.
+ITEM_29_NAME	Mũ sallet
+ITEM_29_DESC	Bảo vệ đầu.
+ITEM_30_NAME	Mũ giáp lớn
+ITEM_30_DESC	Bảo vệ đầu.
+ITEM_31_NAME	Băng trán
+ITEM_31_DESC	Bảo vệ đầu.
+ITEM_32_NAME	Vương miện
+ITEM_32_DESC	Bảo vệ đầu.
+ITEM_33_NAME	Áo tunic
+ITEM_33_DESC	Che ngực và thân.
+ITEM_34_NAME	Áo da
+ITEM_34_DESC	Che ngực và thân.
+ITEM_35_NAME	Áo giáp vảy
+ITEM_35_DESC	Che ngực và thân.
+ITEM_36_NAME	Áo brigandine
+ITEM_36_DESC	Che ngực và thân.
+ITEM_37_NAME	Áo giáp xích
+ITEM_37_DESC	Che ngực và thân.
+ITEM_38_NAME	Giáp ngực
+ITEM_38_DESC	Che ngực và thân.
+ITEM_39_NAME	Giáp cuirass
+ITEM_39_DESC	Che ngực và thân.
+ITEM_40_NAME	Giáp ngực tấm
+ITEM_40_DESC	Che ngực và thân.
+ITEM_41_NAME	Giáp tấm toàn thân
+ITEM_41_DESC	Che ngực và thân.
+ITEM_42_NAME	Giáp nghi lễ
+ITEM_42_DESC	Che ngực và thân.
+ITEM_43_NAME	Quần cưỡi ngựa
+ITEM_43_DESC	Che chân.
+ITEM_44_NAME	Quần dài
+ITEM_44_DESC	Che chân.
+ITEM_45_NAME	Ống quần bảo vệ
+ITEM_45_DESC	Che chân.
+ITEM_46_NAME	Quần giáp xích
+ITEM_46_DESC	Che chân.
+ITEM_47_NAME	Giáp đùi
+ITEM_47_DESC	Che chân.
+ITEM_48_NAME	Giáp đùi tấm
+ITEM_48_DESC	Che chân.
+ITEM_49_NAME	Giáp ống chân
+ITEM_49_DESC	Che chân.
+ITEM_50_NAME	Quần giáp tấm
+ITEM_50_DESC	Che chân.
+ITEM_51_NAME	Giáp chân xích
+ITEM_51_DESC	Che chân.
+ITEM_52_NAME	Giáp ống chân mạ vàng
+ITEM_52_DESC	Che chân.
+ITEM_53_NAME	Dép xăng đan
+ITEM_53_DESC	Bảo vệ bàn chân.
+ITEM_54_NAME	Giày
+ITEM_54_DESC	Bảo vệ bàn chân.
+ITEM_55_NAME	Ủng
+ITEM_55_DESC	Bảo vệ bàn chân.
+ITEM_56_NAME	Ủng cưỡi ngựa
+ITEM_56_DESC	Bảo vệ bàn chân.
+ITEM_57_NAME	Ủng đinh
+ITEM_57_DESC	Bảo vệ bàn chân.
+ITEM_58_NAME	Băng bàn chân
+ITEM_58_DESC	Bảo vệ bàn chân.
+ITEM_59_NAME	Ủng hành quân
+ITEM_59_DESC	Bảo vệ bàn chân.
+ITEM_60_NAME	Giày sabaton
+ITEM_60_DESC	Bảo vệ bàn chân.
+ITEM_61_NAME	Giày solleret
+ITEM_61_DESC	Bảo vệ bàn chân.
+ITEM_62_NAME	Ủng chiến
+ITEM_62_DESC	Bảo vệ bàn chân.
+ITEM_63_NAME	Dải băng
+ITEM_63_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_64_NAME	Bùa hộ mệnh
+ITEM_64_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_65_NAME	Vòng tay
+ITEM_65_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_66_NAME	Ghim cài
+ITEM_66_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_67_NAME	Nhẫn
+ITEM_67_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_68_NAME	Vòng cổ
+ITEM_68_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_69_NAME	Mặt dây chuyền
+ITEM_69_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_70_NAME	Bùa
+ITEM_70_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_71_NAME	Vòng cổ torc
+ITEM_71_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_72_NAME	Áo choàng
+ITEM_72_DESC	Món trang sức nhỏ đã cũ. Có thể đeo hai món cùng lúc.
+ITEM_73_NAME	Kiếm ngắn
+ITEM_73_DESC	Cầm ở tay chính.
+ITEM_74_NAME	Kiếm dài
+ITEM_74_DESC	Cầm ở tay chính.
+ITEM_75_NAME	Rìu
+ITEM_75_DESC	Cầm ở tay chính.
+ITEM_76_NAME	Chùy
+ITEM_76_DESC	Cầm ở tay chính.
+ITEM_77_NAME	Cối xay đập
+ITEM_77_DESC	Cầm ở tay chính.
+ITEM_78_NAME	Kiếm rapier
+ITEM_78_DESC	Cầm ở tay chính.
+ITEM_79_NAME	Dao găm
+ITEM_79_DESC	Cầm bằng một tay. Vừa tay chính hoặc tay phụ.
+ITEM_80_NAME	Dao
+ITEM_80_DESC	Cầm bằng một tay. Vừa tay chính hoặc tay phụ.
+ITEM_81_NAME	Dao stiletto
+ITEM_81_DESC	Cầm bằng một tay. Vừa tay chính hoặc tay phụ.
+ITEM_82_NAME	Khiên buckler
+ITEM_82_DESC	Cầm ở tay phụ. Chặn đòn đánh.
+ITEM_83_NAME	Khiên hình thoi
+ITEM_83_DESC	Cầm ở tay phụ. Chặn đòn đánh.
+ITEM_84_NAME	Khiên tháp
+ITEM_84_DESC	Cầm ở tay phụ. Chặn đòn đánh.
+ITEM_85_NAME	Kiếm hai tay
+ITEM_85_DESC	Cần cả hai tay. Tay phụ phải trống.
+ITEM_86_NAME	Búa chiến
+ITEM_86_DESC	Cần cả hai tay. Tay phụ phải trống.
+ITEM_87_NAME	Rìu chiến
+ITEM_87_DESC	Cần cả hai tay. Tay phụ phải trống.
+UILABEL_UI_SCALE	Tỷ lệ giao diện
+NAME_MASCULINE	["Minh", "Hùng", "Long", "Tuấn", "Đức"]
+NAME_FEMININE	["Lan", "Hương", "Mai", "Linh", "Thảo"]
+NAME_ANDROGYNOUS	["An", "Tâm", "Hạ", "Thiên", "Vân"]
+UILABEL_BODY_TYPE	Kiểu cơ thể
+UILABEL_BODY_MASCULINE	Nam tính
+UILABEL_BODY_FEMININE	Nữ tính
+UILABEL_BODY_ANDROGYNOUS	Trung tính
+UILABEL_TYPE_ITEM	Vật phẩm
+UILABEL_TYPE_CONSUMABLE	Tiêu hao
+UILABEL_TYPE_WEAPON	Vũ khí
+UILABEL_TYPE_ARMOR	Giáp
+UILABEL_TYPE_ACCESSORY	Phụ kiện
+UILABEL_SLOT_EITHER_HAND	Tay nào cũng được
+UILABEL_SLOT_TWO_HAND	Hai tay
+MISC_TRADE_CHANGE	Giao dịch: {0}
+UILABEL_NEEDS_UNITS	Thêm ít nhất một đơn vị để bắt đầu.
+PROP_WAGON	Xe ngựa
+PROP_CAMPFIRE	Lửa trại
+PROP_BEDROLL	Chiếu ngủ
+PROP_BED	Giường
+PROP_BARREL	Thùng gỗ
+PROP_ORE	Quặng
+PROP_TREE	Cây
+PROP_BOULDER	Tảng đá
+PROP_MUSHROOM	Nấm
+PROP_BONES	Xương
+PROP_WALL	Bức tường
+PROP_STALL	Sạp hàng
+MISC_STORAGE_FULL	Không còn chỗ trong kho
+MISC_PROP_TAKEN	Đang có người dùng
+MISC_PROP_WORKERS_FULL	Tối đa {0} đơn vị có thể làm cùng lúc
+MISC_GATHERS	{0} thu được {1}
+MISC_GATHER_NO_ROOM	{0} không còn chỗ cho {1} nên ngừng làm việc
+MISC_REASON_GATHERING	thu thập
+UILABEL_TASK	Nhiệm vụ: {0}
+UILABEL_TASK_IDLE	Rảnh
+UILABEL_TASK_MOVING	Đang di chuyển
+UILABEL_TASK_RESTING	Đang nghỉ
+UILABEL_STORAGE_HINT	Nhấp chuột phải vào vật phẩm để lấy, hoặc kéo ra ngoài để thả tại chỗ đơn vị của bạn đang đứng. Nhấp chuột phải vào vật phẩm của đơn vị để cất vào.
+ITEM_88_NAME	Khúc gỗ
+ITEM_88_DESC	Gỗ đốn từ cây, dùng để chế tạo và xây dựng.
+UILABEL_CRAFT_HINT	Nhấp chuột phải vào vật phẩm của đơn vị để cho vào. Thứ làm ra sẽ vào túi đồ của đơn vị đang làm. Để bắt đầu làm, nhấp chuột phải vào {0} và chọn Dùng.
+MISC_CRAFT_WRONG_ITEM	Không dùng được {0} ở đây
+MISC_CRAFT_NEEDS	Cho {0} vào ô nguyên liệu để bắt đầu
+MISC_CRAFTS	{0} làm ra {1}
+MISC_CRAFT_STOPS	{0} không còn gì để làm nên dừng lại
+MISC_REASON_CRAFTING	chế tạo
+ITEM_89_NAME	Thịt gấu sống
+ITEM_89_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_90_NAME	Thịt gấu nướng
+ITEM_90_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+UILABEL_TALK	Nói chuyện
+UILABEL_ATTACK	Tấn công
+UILABEL_ATTACK_UNPROVOKED	Tấn công (vô cớ)
+UILABEL_FOLLOW	Đi theo
+UILABEL_DEFEND	Bảo vệ
+UILABEL_TASK_FOLLOWING	Đang đi theo
+UILABEL_TASK_DEFENDING	Đang bảo vệ
+MISC_FREE_TRADE_ADD	Thêm vật phẩm vào bên nào cũng được
+MISC_FREE_TRADE_READY	Sẵn sàng trao đổi
+MISC_TURNS_HOSTILE	{0} trở nên thù địch
+MISC_SELECT_UNIT_FIRST	Hãy chọn một đơn vị trước
+FACTION_PLAYER	Phe người chơi
+FACTION_GRAY	Phe Xám
+FACTION_RED	Phe Đỏ
+MISC_PROP_UNREACHABLE	Không thể đến
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Kịch bản
+SCENARIO_VAGABOND_NAME	Kẻ lang thang
+SCENARIO_VAGABOND_DESC	Một kẻ lữ hành đơn độc không có gì trong tay: không vật phẩm, không trang bị, và mọi chỉ số từ 1 đến 5.
+SCENARIO_RANDOM_NAME	Ngẫu nhiên hoàn toàn
+SCENARIO_RANDOM_DESC	Một nhóm từ 1 đến 32 đơn vị, mỗi đơn vị có mọi chỉ số từ 1 đến 99, cùng vật phẩm và trang bị ngẫu nhiên mà nó mang nổi.
+SCENARIO_CARAVAN_NAME	Đoàn lữ hành
+SCENARIO_CARAVAN_DESC	Mười lữ khách cùng nhau trên đường. Mọi chỉ số bắt đầu ở 5, và mỗi người mang 10 đồng vàng.
+SCENARIO_SHABBY_NAME	Băng lôi thôi
+SCENARIO_SHABBY_DESC	Ba kobold kém may mắn, mỗi con có một vật phẩm ngẫu nhiên và mọi chỉ số từ 1 đến 10.
+SCENARIO_NOBODY_NAME	Kẻ vô danh đói khát
+SCENARIO_NOBODY_DESC	Một đơn vị chẳng có gì: không vật phẩm, không trang bị, mọi chỉ số là 1 và bụng rỗng.
+SCENARIO_DIGGERS_NAME	Thợ đào ngục tối
+SCENARIO_DIGGERS_DESC	Bảy thợ mỏ trang bị đầy đủ. Chỉ số của họ từ 5 đến 20, nhưng ai cũng có Khai khoáng 50 và mang 3 quặng sắt.
+SCENARIO_CUSTOM_NAME	Kịch bản tùy chỉnh
+SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Bắt đầu với ba đơn vị, và bạn có thể thêm hoặc bớt đơn vị, tối đa 32.
+PROP_LOCKED_CHEST	Rương bị khóa
+PROP_PRISONER_CAGE	Lồng tù nhân
+UILABEL_UNLOCK	Mở khóa
+MISC_PROP_LOCKED	Đã khóa
+MISC_LOCKPICK_NEEDS	Cần Mở khóa {0}
+MISC_UNLOCKED	Đã mở khóa!
+MISC_LOCKPICK_FAILED	Cạy khóa thất bại
+MISC_UNLOCKS	{0} mở khóa {1}
+MISC_REASON_LOCKPICKING	cạy khóa
+MISC_LOCKED_NAME	{0} (đã khóa)
+PROP_CHAIR	Ghế
+PROP_BENCH	Ghế dài
+PROP_STOOL	Ghế đẩu
+PROP_TABLE	Bàn
+PROP_END_TABLE	Bàn đầu giường
+PROP_ROUND_TABLE	Bàn tròn
+PROP_METAL_TABLE	Bàn kim loại
+PROP_STANDING_TORCH	Đuốc đứng
+PROP_SUPPORT_BEAM	Xà chống
+PROP_TRAINING_DUMMY	Hình nộm luyện tập
+PROP_RAW_FOOD_STORAGE	Kho đồ ăn sống
+PROP_FOOD_STORAGE	Kho thức ăn
+PROP_WEAPON_RACK	Giá vũ khí
+PROP_ARMOR_STAND	Giá giáp
+PROP_WATER_TANK	Bể nước
+PROP_WATER_PUMP	Máy bơm nước
+PROP_FORGE	Lò rèn
+FILTER_RAW_FOOD	đồ ăn sống
+FILTER_FOOD	thức ăn
+FILTER_WEAPON	vũ khí
+FILTER_ARMOR	giáp
+FILTER_WATER	nước
+MISC_STORAGE_ONLY	Chỉ nhận: {0}
+UILABEL_STORAGE_TAKES	Chỉ nhận: {0}.
+UILABEL_TASK_SITTING	Đang ngồi
+UILABEL_TASK_LOCKED_IN	Bị nhốt
+MISC_LOCKED_IN	{0} bị nhốt trong {1}
+MISC_REASON_TRAINING	luyện tập
+MISC_XP_GAINED	+{0} kinh nghiệm {1}
+UILABEL_INPUT	Đầu vào
+UILABEL_OUTPUT	Đầu ra
+MISC_FUEL_LEFT	Đang cháy: còn {0} phút nhiên liệu
+MISC_NO_FUEL	Hết nhiên liệu
+MISC_OUTPUT_FULL	Đầu ra đầy: tạm dừng
+UILABEL_PASSIVE_HINT	Dùng {0} làm nhiên liệu: mỗi cái cháy {1} phút trong game và làm ra {2} ở đầu ra, có hay không có người làm. Tạm dừng khi đầu ra đầy. Nhấp chuột phải vào vật phẩm để bỏ vào hoặc lấy ra.
+ITEM_91_NAME	Nước
+ITEM_91_DESC	Nước sạch từ máy bơm.
+ITEM_92_NAME	Thỏi sắt
+ITEM_92_DESC	Một thỏi sắt nấu chảy từ quặng ở lò rèn.
+ITEM_93_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_93_NAME	Thịt bò sống
+ITEM_94_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_94_NAME	Thịt bò nướng
+ITEM_95_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_95_NAME	Thịt gà sống
+ITEM_96_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_96_NAME	Thịt gà nướng
+ITEM_97_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_97_NAME	Thịt lợn rừng sống
+ITEM_98_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_98_NAME	Thịt lợn rừng nướng
+ITEM_99_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_99_NAME	Thịt sói sống
+ITEM_100_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_100_NAME	Thịt sói nướng
+ITEM_101_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_101_NAME	Thịt hươu sống
+ITEM_102_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_102_NAME	Thịt hươu nướng
+ITEM_103_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_103_NAME	Thịt thỏ sống
+ITEM_104_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_104_NAME	Thịt thỏ nướng
+ITEM_105_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_105_NAME	Cá sống
+ITEM_106_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_106_NAME	Cá nướng
+ITEM_107_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_107_NAME	Thịt cua sống
+ITEM_108_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_108_NAME	Thịt cua nướng
+ITEM_109_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_109_NAME	Thịt thằn lằn sống
+ITEM_110_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_110_NAME	Thịt thằn lằn nướng
+ITEM_111_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_111_NAME	Thịt rắn sống
+ITEM_112_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_112_NAME	Thịt rắn nướng
+ITEM_113_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_113_NAME	Thịt lợn sống
+ITEM_114_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_114_NAME	Thịt lợn nướng
+ITEM_115_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_115_NAME	Thịt cừu sống
+ITEM_116_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_116_NAME	Thịt cừu nướng
+ITEM_117_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_117_NAME	Thịt vịt sống
+ITEM_118_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_118_NAME	Thịt vịt nướng
+ITEM_119_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_119_NAME	Thịt rùa sống
+ITEM_120_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_120_NAME	Thịt rùa nướng
+ITEM_121_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_121_NAME	Thịt dơi sống
+ITEM_122_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_122_NAME	Thịt dơi nướng
+ITEM_123_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_123_NAME	Thịt ếch sống
+ITEM_124_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
+ITEM_124_NAME	Thịt ếch nướng
+ITEM_125_DESC	Một cây nấm dại nhỏ. Ăn sống chỉ hồi chút ít máu và cơn đói.
+ITEM_125_NAME	Nấm
+MISC_FOOD_TO_COOK	thịt sống
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Nấm độc
+ITEM_126_DESC	Một cây nấm dại trông như mọi cây khác. Ăn vào sẽ mất máu và độ no.
+UILABEL_OPTIMIZE	Tối ưu
+UILABEL_REMOVE_ALL	Tháo hết
+MISC_GEAR_NO_ROOM	Không đủ chỗ trong túi đồ
+MISC_GEAR_ALREADY_BEST	Đã mặc trang bị tốt nhất
+MISC_GEAR_NONE_WORN	Không có trang bị để tháo
+UILABEL_OPTIMIZE_ALL	Tối ưu tất cả
+MISC_OPTIMIZE_ALL_ASK	Tối ưu trang bị cho cả {0} đơn vị trong đội? Mỗi đơn vị chọn từ đồ đang mặc và mang theo. Đơn vị không đủ chỗ cho đồ tháo ra sẽ giữ nguyên.
+UILABEL_OPTIMIZE_BALANCE	Tấn công {0}% / Phòng thủ {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Thay phụ kiện
+UILABEL_OPTIMIZE_TWO_HANDED	Cho phép vũ khí hai tay
+UILABEL_OPTIMIZE_VALUE_TIES	Khi hòa, chọn món giá trị hơn
+MISC_OPTIMIZE_ALL_SAME	Mọi đơn vị đã mặc trang bị tốt nhất
+MISC_OPTIMIZE_ALL_DONE	Đã tối ưu trang bị cho {0} đơn vị
+MISC_OPTIMIZE_ALL_SOME_ROOM	Đã tối ưu trang bị cho {0} đơn vị; {1} đơn vị thiếu chỗ trong túi đồ
+GAME_TITLE_FIRST	Sinh tồn
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Truy cập sớm
+MISC_TITLE_KEYS	Chọn  //  Enter Xác nhận
+UILABEL_LANGUAGE_LABEL	Ngôn ngữ:

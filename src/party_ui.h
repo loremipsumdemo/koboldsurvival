@@ -26,6 +26,9 @@ struct PartyUi {
     int dropSlot = 0;                      // the gear slot or inventory slot it fills
     int dropScroll = 0;                    // the first entry it shows
     int listScroll = 0;                    // the first unit shown in the left column
+    bool listDrag = false;                 // the left column's scroll bar thumb is held
+    float listGrab = 0.0f;                 // where on the thumb it was taken, from its top
+    bool resizable = false;                // Add Unit and Remove Unit are offered (the Custom scenario only)
 };
 
 // One entry in an open dropdown: its text, and the value it sets (a sprite number or an item id,
@@ -61,6 +64,14 @@ PartyPanels partyPanels(int W, int H);
 // How many units the left column shows at once, and the most it can scroll by
 int partyListVisible(int H);
 int partyListMaxScroll(int count, int H);
+// The left column's scroll bar, down its right edge, when it has more units than fit; both rects empty otherwise
+struct PartyListBar {
+    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+PartyListBar partyListBar(int W, int H, int count, int scroll);
+// The scroll that puts the thumb's top at thumbTop (the pointer's height less where the thumb was taken), in range
+int partyListScrollAt(int W, int H, int count, float thumbTop);
 
 // Every part of the menu that can be clicked, or that is drawn as text, in draw order. Later
 // buttons draw over earlier ones and take a click first, so an open dropdown comes last.

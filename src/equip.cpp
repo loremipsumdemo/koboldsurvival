@@ -137,6 +137,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     }
     *inv = next;
     worn->items[gearSlot] = item;
+    queueSound(Sfx::Equip);
     grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
@@ -159,6 +160,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
+    queueSound(Sfx::Equip);
     grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
@@ -178,6 +180,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     }
     *inv = next;
     worn->items[gearSlot] = 0;
+    queueSound(Sfx::Unequip);
     grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
@@ -194,6 +197,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     const ItemDef* def = findItem(item);
     queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop);
     queueUnitLabel(unit, itemLossLabelFor(1, item), true);
+    queueSound(Sfx::Drop);
     worn->items[gearSlot] = 0;
     Entity e = w.create();
     w.add(e, Transform{ at.x, at.y, at.z });
@@ -211,6 +215,7 @@ int giveOrDrop(World& w, Entity unit, int item, int count) {
             const Transform at = *tr;   // creating an entity can move the stored components
             queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), nameOf(item) }), LogKind::Drop);
             queueUnitLabel(unit, itemLossLabel(left, nameOf(item)), true);
+            queueSound(Sfx::Drop);
             const Entity e = w.create();
             w.add(e, Transform{ at.x, at.y, at.z });
             w.add(e, GroundItem{ item, left });
@@ -412,6 +417,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
     for (int g = 0; g < GEAR_SLOTS; ++g) changed += worn->items[(size_t)g] != target.items[(size_t)g] ? 1 : 0;
     *inv = next;
     worn->items = target.items;
+    queueSound(Sfx::GearChanged);
     grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP * (float)changed, lang("MISC_REASON_GEAR"));
     return GearAction::Done;
 }

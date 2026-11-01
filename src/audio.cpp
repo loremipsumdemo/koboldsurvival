@@ -98,15 +98,15 @@ bool decodeEffect(const std::string& file, std::vector<float>& frames) {
     return !frames.empty();
 }
 
-// Makes the copies of an effect: each is a sound on the effects bus that plays the effect's frames
-void openCopies(Effect& fx) {
+// Makes the copies of an effect: each is a sound on its bus that plays the effect's frames
+void openCopies(Effect& fx, Bus bus) {
     const ma_uint32 channels = ma_engine_get_channels(&engine);
     const ma_uint64 frameCount = fx.frames.size() / channels;
     for (size_t i = 0; i < EFFECT_COPIES; ++i) {
         auto copy = std::make_unique<EffectCopy>();
         if (ma_audio_buffer_ref_init(ma_format_f32, channels, fx.frames.data(), frameCount, &copy->source) != MA_SUCCESS) break;
         if (ma_sound_init_from_data_source(&engine, &copy->source, MA_SOUND_FLAG_NO_SPATIALIZATION,
-                                           &buses[(int)Bus::Effects], &copy->sound) != MA_SUCCESS) break;
+                                           &buses[(int)bus], &copy->sound) != MA_SUCCESS) break;
         fx.copies.push_back(std::move(copy));
     }
 }
@@ -186,15 +186,18 @@ std::string trackPlaying(Bus bus) {
     return slot >= 0 && tracks[slot].ready ? tracks[slot].requested : std::string();
 }
 
-void playEffect(const std::string& file) {
+void playEffect(const std::string& file, Bus bus) {
     if (!engineReady || file.empty()) return;
+    if (bus != Bus::Interface) bus = Bus::Effects;   // only these two play one-shot sounds
 
-    auto found = effects.find(file);
+    // Each file has its own copies on each bus it is played on
+    const std::string key = file + (bus == Bus::Interface ? "|ui" : "");
+    auto found = effects.find(key);
     if (found == effects.end()) {
         // The first request decodes the file and makes the copies. A missing or undecodable file makes none, so
         // it stays silent and is not looked for again.
-        found = effects.emplace(file, Effect{}).first;
-        if (decodeEffect(file, found->second.frames)) openCopies(found->second);
+        found = effects.emplace(key, Effect{}).first;
+        if (decodeEffect(file, found->second.frames)) openCopies(found->second, bus);
     }
 
     Effect& fx = found->second;

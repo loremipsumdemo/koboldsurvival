@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Gulir di tepi layar
 UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Suara latar
+UILABEL_INTERFACE_SOUNDS	Suara antarmuka
 UILABEL_SOUND_EFFECTS	Efek suara
 UILABEL_RESTORE_DEFAULTS	Pulihkan bawaan
 UILABEL_WINDOWED	Jendela
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Statistik
 UILABEL_CLICK_TO_TYPE	Klik untuk mengetik nama
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Kelompok awal: {0}
 UILABEL_HEALTH	Kesehatan
 UILABEL_HUNGER	Lapar
 UILABEL_CARRY	Daya angkut
@@ -606,6 +606,8 @@ FACTION_RED	Faksi Merah
 MISC_PROP_UNREACHABLE	Tidak terjangkau
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenario
+SCENARIO_VAGABOND_NAME	Gelandangan
+SCENARIO_VAGABOND_DESC	Pengembara tunggal yang tidak punya apa-apa: tanpa barang, tanpa perlengkapan, dan setiap stat antara 1 dan 5.
 SCENARIO_RANDOM_NAME	Acak penuh
 SCENARIO_RANDOM_DESC	Kelompok berisi 1 sampai 32 unit, masing-masing dengan semua statistik antara 1 dan 99, serta barang dan perlengkapan acak yang bisa dibawanya.
 SCENARIO_CARAVAN_NAME	Karavan pengembara
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Orang lapar tanpa nama
 SCENARIO_NOBODY_DESC	Satu unit tanpa apa pun: tanpa barang, tanpa perlengkapan, semua statistik 1, dan perut kosong.
 SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
 SCENARIO_DIGGERS_DESC	Tujuh penambang berperlengkapan penuh. Statistik mereka 5 sampai 20, tetapi masing-masing punya Penambangan 50 dan membawa 3 bijih besi.
+SCENARIO_CUSTOM_NAME	Skenario Kustom
+SCENARIO_CUSTOM_DESC	Susun kelompokmu sendiri. Dimulai dengan tiga unit, dan kamu bisa menambah atau menghapus unit, hingga 32.
 PROP_LOCKED_CHEST	Peti terkunci
 PROP_PRISONER_CAGE	Kandang tahanan
 UILABEL_UNLOCK	Buka kunci
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Jika seri, pilih barang yang lebih berharga
 MISC_OPTIMIZE_ALL_SAME	Semua unit sudah memakai perlengkapan terbaiknya
 MISC_OPTIMIZE_ALL_DONE	Perlengkapan {0} unit dioptimalkan
 MISC_OPTIMIZE_ALL_SOME_ROOM	Perlengkapan {0} unit dioptimalkan; {1} kekurangan ruang inventaris
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Bertahan Hidup
+UILABEL_EARLY_ACCESS	Akses Awal
+MISC_TITLE_KEYS	Pilih  //  Enter Konfirmasi
+UILABEL_LANGUAGE_LABEL	Bahasa:

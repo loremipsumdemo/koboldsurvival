@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Прокрутка біля краю екрана
 UILABEL_GLOBAL_VOLUME	Загальна гучність
 UILABEL_MUSIC	Музика
 UILABEL_AMBIENT	Фонові звуки
+UILABEL_INTERFACE_SOUNDS	Звуки інтерфейсу
 UILABEL_SOUND_EFFECTS	Звукові ефекти
 UILABEL_RESTORE_DEFAULTS	Відновити типові значення
 UILABEL_WINDOWED	У вікні
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Профіль
 UILABEL_STATS	Характеристики
 UILABEL_CLICK_TO_TYPE	Натисніть, щоб ввести ім'я
 UILABEL_SPRITE	Спрайт
-UILABEL_STARTING_PARTY	Стартовий загін: {0}
 UILABEL_HEALTH	Здоров'я
 UILABEL_HUNGER	Голод
 UILABEL_CARRY	Вантажопідйомність
@@ -606,6 +606,8 @@ FACTION_RED	Червона фракція
 MISC_PROP_UNREACHABLE	Недосяжно
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарій
+SCENARIO_VAGABOND_NAME	Волоцюга
+SCENARIO_VAGABOND_DESC	Самотній мандрівник, у якого нічого немає: ні предметів, ні спорядження, а кожна характеристика від 1 до 5.
 SCENARIO_RANDOM_NAME	Повністю випадковий
 SCENARIO_RANDOM_DESC	Загін з 1–32 юнітів, у кожного всі характеристики від 1 до 99, а також випадкові предмети й спорядження, які він може нести.
 SCENARIO_CARAVAN_NAME	Мандрівний караван
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Голодний ніхто
 SCENARIO_NOBODY_DESC	Один юніт без нічого: ні предметів, ні спорядження, усі характеристики на 1 і порожній шлунок.
 SCENARIO_DIGGERS_NAME	Копачі підземель
 SCENARIO_DIGGERS_DESC	Семеро шахтарів у повному спорядженні. Характеристики від 5 до 20, але в кожного Гірнича справа 50 і при собі 3 залізні руди.
+SCENARIO_CUSTOM_NAME	Власний сценарій
+SCENARIO_CUSTOM_DESC	Зберіть власний загін. Він починається з трьох юнітів, і ви можете додавати або прибирати юніти, до 32.
 PROP_LOCKED_CHEST	Замкнена скриня
 PROP_PRISONER_CAGE	Клітка для в'язня
 UILABEL_UNLOCK	Зламати замок
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	За рівності — цінніший пред�
 MISC_OPTIMIZE_ALL_SAME	Усі бійці вже носять найкраще спорядження
 MISC_OPTIMIZE_ALL_DONE	Спорядження оптимізовано у {0} бійців
 MISC_OPTIMIZE_ALL_SOME_ROOM	Спорядження оптимізовано у {0} бійців; {1} забракло місця в інвентарі
+GAME_TITLE_FIRST	Кобольд
+GAME_TITLE_SECOND	Виживання
+UILABEL_EARLY_ACCESS	Ранній доступ
+MISC_TITLE_KEYS	Вибір  //  Enter Підтвердити
+UILABEL_LANGUAGE_LABEL	Мова:

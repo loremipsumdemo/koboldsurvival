@@ -1,0 +1,12 @@
+# Update notes
+- Optimize and Remove All buttons in the Gear tab, and Optimize All beside Walk/Run.
+- Items gained and lost show over your units, losses in red.
+- Mushrooms can be gathered with Herbalism, and one in ten is poisonous.
+- Seventeen kinds of meat to cook at the campfire.
+- The Forge smelts Iron Ore into Iron Ingots by itself.
+- Locked chests and prisoner cages, opened with Lockpicking.
+
+# Coming up
+- More props, more recipes and more to discover.
+
+Thanks for playing!

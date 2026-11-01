@@ -85,8 +85,8 @@ inline const char* itemFilterKey(ItemFilter f) {
 enum class PropAction { Inventory, Use, Unlock };
 
 // What a kind of prop looks like, is called and does.
-// file: its model, in the pak: data/3d/<number>.glb, numbered from 1 in PropKind order (data/3dinfo.txt lists them).
-//       A missing model is logged and that kind is not drawn.
+// file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists
+//       them). A missing model is logged and drawn with model_0.glb, or as a pink square if that is missing too.
 // nameKey: its name in the language files, shown in the hover list and the storage panel.
 // size: the model is scaled so its longest side is this many tiles.
 // use: what right-clicking it does.
@@ -125,38 +125,38 @@ struct PropInfo {
 
 inline const PropInfo& propInfo(int kind) {
     static const PropInfo info[PROP_KIND_COUNT] = {
-        { "data/3d/1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::Crafting, STAT_COOKING, 0, INPUT_COOKABLE, 1, 0 },   // raw meat -> cooked
-        { "data/3d/3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/3d/4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/3d/5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  -1, 0, 0, 0, 0 },
-        { "data/3d/6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, STAT_MINING, 1, 0, 3, 0 },       // Iron Ore
-        { "data/3d/7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, STAT_WOODCUTTING, 88, 0, 3, 0 }, // Wood Log
-        { "data/3d/8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, STAT_HERBALISM, 125, 0, 3, 0,
+        { "data/model/model_1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::Crafting, STAT_COOKING, 0, INPUT_COOKABLE, 1, 0 },   // raw meat -> cooked
+        { "data/model/model_3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
+        { "data/model/model_4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
+        { "data/model/model_5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  -1, 0, 0, 0, 0 },
+        { "data/model/model_6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, STAT_MINING, 1, 0, 3, 0 },       // Iron Ore
+        { "data/model/model_7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, STAT_WOODCUTTING, 88, 0, 3, 0 }, // Wood Log
+        { "data/model/model_8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, STAT_HERBALISM, 125, 0, 3, 0,
           ItemFilter::Any, 1.0, 126, 10 },                                                                   // Mushroom; 1 in 10 Poison Mushroom
-        { "data/3d/10.glb", "PROP_BONES",          1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/11.glb", "PROP_WALL",           2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/12.glb", "PROP_STALL",          2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/13.glb", "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  -1, 0, 0, 0, 5 },    // Lockable
-        { "data/3d/14.glb", "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   -1, 0, 0, 0, 15 },   // Lockable
-        { "data/3d/15.glb", "PROP_CHAIR",          0.9f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/3d/16.glb", "PROP_BENCH",          1.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/3d/17.glb", "PROP_STOOL",          0.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/3d/18.glb", "PROP_TABLE",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/19.glb", "PROP_END_TABLE",      0.7f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/20.glb", "PROP_ROUND_TABLE",    1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/21.glb", "PROP_METAL_TABLE",    1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/22.glb", "PROP_STANDING_TORCH", 1.6f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/23.glb", "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/3d/24.glb", "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, STAT_MELEE, 0, 0, 1, 0 },        // XP only
-        { "data/3d/25.glb", "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, -1, 0, 0, 0, 0, ItemFilter::RawFood },
-        { "data/3d/26.glb", "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Food },
-        { "data/3d/27.glb", "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Weapon },
-        { "data/3d/28.glb", "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Armor },
-        { "data/3d/29.glb", "PROP_WATER_TANK",     1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Water },
-        { "data/3d/30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, STAT_STRENGTH, 91, 0, 1, 0 },    // Water
-        { "data/3d/31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, STAT_SMELTING, 92, 1, 0, 0,
+        { "data/model/model_10.glb", "PROP_BONES",          1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_11.glb", "PROP_WALL",           2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_12.glb", "PROP_STALL",          2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_13.glb", "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  -1, 0, 0, 0, 5 },    // Lockable
+        { "data/model/model_14.glb", "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   -1, 0, 0, 0, 15 },   // Lockable
+        { "data/model/model_15.glb", "PROP_CHAIR",          0.9f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
+        { "data/model/model_16.glb", "PROP_BENCH",          1.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
+        { "data/model/model_17.glb", "PROP_STOOL",          0.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
+        { "data/model/model_18.glb", "PROP_TABLE",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_19.glb", "PROP_END_TABLE",      0.7f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_20.glb", "PROP_ROUND_TABLE",    1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_21.glb", "PROP_METAL_TABLE",    1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_22.glb", "PROP_STANDING_TORCH", 1.6f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_23.glb", "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     -1, 0, 0, 0, 0 },
+        { "data/model/model_24.glb", "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, STAT_MELEE, 0, 0, 1, 0 },        // XP only
+        { "data/model/model_25.glb", "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, -1, 0, 0, 0, 0, ItemFilter::RawFood },
+        { "data/model/model_26.glb", "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Food },
+        { "data/model/model_27.glb", "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Weapon },
+        { "data/model/model_28.glb", "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Armor },
+        { "data/model/model_29.glb", "PROP_WATER_TANK",     1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Water },
+        { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, STAT_STRENGTH, 91, 0, 1, 0 },    // Water
+        { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, STAT_SMELTING, 92, 1, 0, 0,
           ItemFilter::Any, 1.0 },                                                                            // Iron Ore -> Iron Ingot
     };
     return info[(kind >= 0 && kind < PROP_KIND_COUNT) ? kind : 0];

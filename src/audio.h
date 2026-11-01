@@ -7,7 +7,8 @@
 // not packed into data.pak. A file that is missing or cannot be decoded is silent, with no error.
 namespace audio {
 
-enum class Bus : int { Music = 0, Ambient, Effects, Count };
+// Interface: the menus' and buttons' sounds, on their own slider
+enum class Bus : int { Music = 0, Ambient, Effects, Interface, Count };
 
 // Opens the audio output. Without one, everything below is a quiet no-op. Returns whether it opened.
 bool init();
@@ -26,8 +27,9 @@ void stopTracks();
 // The track a bus is playing, or "" when none is
 std::string trackPlaying(Bus bus);
 
-// Plays a sound effect once on the effects bus. Each call starts it from the beginning on the next of a few copies
-// in turn, so the same effect can overlap itself a few times. A copy still playing is restarted.
-void playEffect(const std::string& file);
+// Plays a sound effect once on a bus (the effects bus unless told otherwise). Each call starts it from the beginning
+// on the next of a few copies in turn, so the same effect can overlap itself a few times. A copy still playing is
+// restarted.
+void playEffect(const std::string& file, Bus bus = Bus::Effects);
 
 } // namespace audio

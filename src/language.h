@@ -10,7 +10,8 @@
 // skipped. A line that can't be read is skipped.
 //
 // A language's id is its file name without ".txt", named by its language code, e.g. "language_fr" or "language_pt-BR". Its file is looked for first in the
-// LANGUAGE folder next to the game, then in data.pak as data/<id>.txt. The first line of text is
+// LANGUAGE folder next to the game, then in data.pak as data/language/<id>.txt. The project keeps them in
+// data/language, and the build copies that folder next to the game as LANGUAGE. The first line of text is
 //   LANGUAGE_NAME<TAB>Español
 // which is the name shown in the menus.
 //

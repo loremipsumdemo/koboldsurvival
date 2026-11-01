@@ -243,6 +243,7 @@ std::vector<RowSpec> audioRows(const GameSettings& s) {
     rows.push_back(makeLevel(RowId::MusicLevel, lang("UILABEL_MUSIC"), s.musicVolume, s.musicOn));
     rows.push_back(makeLevel(RowId::AmbientLevel, lang("UILABEL_AMBIENT"), s.ambientVolume, s.ambientOn));
     rows.push_back(makeLevel(RowId::EffectsLevel, lang("UILABEL_SOUND_EFFECTS"), s.effectsVolume, s.effectsOn));
+    rows.push_back(makeLevel(RowId::InterfaceLevel, lang("UILABEL_INTERFACE_SOUNDS"), s.interfaceVolume, s.interfaceOn));
     return rows;
 }
 
@@ -497,6 +498,10 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         s.effectsOn = on;
         c.audio = true;
         break;
+    case RowId::InterfaceLevel:
+        s.interfaceOn = on;
+        c.audio = true;
+        break;
     default:
         return c;
     }
@@ -534,6 +539,10 @@ SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
         break;
     case RowId::EffectsLevel:
         s.effectsVolume = v;
+        c.audio = true;
+        break;
+    case RowId::InterfaceLevel:
+        s.interfaceVolume = v;
         c.audio = true;
         break;
     default:

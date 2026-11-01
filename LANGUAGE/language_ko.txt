@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	화면 가장자리 스크롤
 UILABEL_GLOBAL_VOLUME	전체 음량
 UILABEL_MUSIC	음악
 UILABEL_AMBIENT	환경음
+UILABEL_INTERFACE_SOUNDS	인터페이스 소리
 UILABEL_SOUND_EFFECTS	효과음
 UILABEL_RESTORE_DEFAULTS	기본값으로 복원
 UILABEL_WINDOWED	창 모드
@@ -118,7 +119,6 @@ UILABEL_PROFILE	프로필
 UILABEL_STATS	능력치
 UILABEL_CLICK_TO_TYPE	클릭하여 이름 입력
 UILABEL_SPRITE	스프라이트
-UILABEL_STARTING_PARTY	시작 파티: {0}
 UILABEL_HEALTH	체력
 UILABEL_HUNGER	허기
 UILABEL_CARRY	운반 중량
@@ -606,6 +606,8 @@ FACTION_RED	붉은 세력
 MISC_PROP_UNREACHABLE	도달할 수 없습니다
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	시나리오
+SCENARIO_VAGABOND_NAME	방랑자
+SCENARIO_VAGABOND_DESC	가진 것 하나 없는 외로운 방랑자. 아이템도 장비도 없고, 모든 능력치는 1에서 5 사이입니다.
 SCENARIO_RANDOM_NAME	완전 무작위
 SCENARIO_RANDOM_DESC	1~32명의 유닛으로, 각 유닛의 모든 능력치가 1~99이며 들 수 있는 만큼 무작위 아이템과 장비를 지닌다.
 SCENARIO_CARAVAN_NAME	떠도는 상단
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	굶주린 무명인
 SCENARIO_NOBODY_DESC	아무것도 없는 유닛 1명. 아이템도 장비도 없고, 모든 능력치가 1이며 배가 텅 비었다.
 SCENARIO_DIGGERS_NAME	던전 굴착꾼
 SCENARIO_DIGGERS_DESC	완전 무장한 광부 7명. 능력치는 5~20이지만 모두 채광이 50이며 철광석을 3개씩 지닌다.
+SCENARIO_CUSTOM_NAME	사용자 지정 시나리오
+SCENARIO_CUSTOM_DESC	나만의 일행을 꾸리세요. 유닛 세 명으로 시작하며, 최대 32명까지 유닛을 추가하거나 제거할 수 있습니다.
 PROP_LOCKED_CHEST	잠긴 상자
 PROP_PRISONER_CAGE	죄수 우리
 UILABEL_UNLOCK	자물쇠 열기
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	동점이면 더 비싼 아이템
 MISC_OPTIMIZE_ALL_SAME	모든 유닛이 이미 최고의 장비를 착용 중입니다
 MISC_OPTIMIZE_ALL_DONE	{0}명의 장비를 최적화했습니다
 MISC_OPTIMIZE_ALL_SOME_ROOM	{0}명의 장비를 최적화했습니다. {1}명은 인벤토리 공간이 부족합니다
+GAME_TITLE_FIRST	코볼트
+GAME_TITLE_SECOND	서바이벌
+UILABEL_EARLY_ACCESS	앞서 해보기
+MISC_TITLE_KEYS	선택  //  Enter 확인
+UILABEL_LANGUAGE_LABEL	언어:

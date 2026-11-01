@@ -464,6 +464,7 @@ bool dropStack(World& w, Entity unit, int slot) {
     queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }),
              LogKind::Drop);
     queueUnitLabel(unit, itemLossLabelFor(s.count, s.item), true);   // "-Iron Ore" over its head
+    queueSound(Sfx::Drop);
     Entity e = w.create();
     w.add(e, Transform{ tr->x, tr->y, tr->z });
     w.add(e, GroundItem{ s.item, s.count });
@@ -512,6 +513,7 @@ int pickupSystem(World& w) {
             if (left < count) {
                 queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup);
                 queueUnitLabel(u, itemGainLabel(count - left, itemName));   // "+Iron Ore" over its head
+                queueSound(Sfx::Pickup);
             }
             if (left == 0) w.destroy(item);
             else gi->count = left;
@@ -1077,6 +1079,7 @@ void makeHostile(World& w, Entity unit) {
     if (!w.has<Unit>(unit) || w.has<Commandable>(unit) || w.has<Hostile>(unit)) return;
     w.remove<Neutral>(unit);
     w.add(unit, Hostile{});
+    queueSound(Sfx::TurnHostile);
     queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, unit) }), LogKind::Seen);
 }
 
@@ -1139,6 +1142,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                     w.remove<IdleSpot>(u);
                     w.add(u, Occupying{ prop });
                     a.started = true;
+                    queueSound(w.has<Lock>(prop) ? Sfx::LockedIn : Sfx::Occupy);
                     // A lockable one (the Prisoner Cage) locks behind the unit
                     if (Lock* lk = w.get<Lock>(prop)) {
                         lk->locked = true;
@@ -1223,6 +1227,12 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
 
     for (auto& [prop, workers] : workersOf) {
         std::sort(workers.begin(), workers.end());
+        // Each gain says which kind of prop it came from, for its sound
+        const int propKind = w.get<Prop>(prop)->kind;
+        auto addGain = [&](WorkGain g) {
+            g.propKind = propKind;
+            gains.push_back(g);
+        };
         const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
         if (w.get<Working>(workers[0])->unlocking) {
             // Picking the lock: each attempt fills the bar, at the picker's Lockpicking pace, then succeeds with
@@ -1243,11 +1253,11 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 const int level = levelOf(statsOf(w, picker), STAT_LOCKPICKING);
                 if ((double)rng.unit() < lockpickChance(level)) {
                     lock->locked = false;
-                    gains.push_back(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
+                    addGain(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
                     queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other);
                     grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_SUCCESS, lang("MISC_REASON_LOCKPICKING"));
                 } else {
-                    gains.push_back(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
+                    addGain(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
                     grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_FAIL, lang("MISC_REASON_LOCKPICKING"));
                 }
             }
@@ -1331,12 +1341,12 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 ++pw.turn;
                 if (outItem > 0) {
                     giveOrDrop(w, got, outItem, 1);   // checked to fit above; should it not, it falls at the cook's feet
-                    gains.push_back(WorkGain{ got, outItem });
+                    addGain(WorkGain{ got, outItem });
                     queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup);
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
                 } else {
                     // Training: no item, only the skill's XP
-                    gains.push_back(WorkGain{ got, info.stat, WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
+                    addGain(WorkGain{ got, info.stat, WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_TRAINING"));
                 }
                 if (craftStateOf(w, prop) != CraftState::Ready) {
@@ -1356,7 +1366,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             const std::string itemName = itemNameFor(gives);
             Inventory* inv = w.get<Inventory>(got);
             if (inv && addToInventory(*inv, gives, 1) == 0) {
-                gains.push_back(WorkGain{ got, gives });
+                addGain(WorkGain{ got, gives });
                 queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_GATHERING"));
             } else {
@@ -1368,6 +1378,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop);
                 queueUnitLabel(got, itemLossLabel(1, itemName), true);   // it fell at the unit's feet
+                queueSound(Sfx::Drop);
                 w.remove<Working>(got);
                 workers.erase(workers.begin() + (long)pick);
             }
@@ -1554,6 +1565,7 @@ void passiveCraftSystem(World& w, double gameSeconds) {
                 addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
                 pw.progress = 0.0;
                 ++pw.made;   // the ring hops for it
+                queueSound(Sfx::DoneForge);
             }
             // No room for the next item: pause, burning nothing
             if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;

@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Kenarda kaydırma
 UILABEL_GLOBAL_VOLUME	Genel ses düzeyi
 UILABEL_MUSIC	Müzik
 UILABEL_AMBIENT	Ortam sesleri
+UILABEL_INTERFACE_SOUNDS	Arayüz sesleri
 UILABEL_SOUND_EFFECTS	Ses efektleri
 UILABEL_RESTORE_DEFAULTS	Varsayılanları geri yükle
 UILABEL_WINDOWED	Pencereli
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	İstatistikler
 UILABEL_CLICK_TO_TYPE	Ad yazmak için tıklayın
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Başlangıç grubu: {0}
 UILABEL_HEALTH	Can
 UILABEL_HUNGER	Açlık
 UILABEL_CARRY	Taşıma kapasitesi
@@ -606,6 +606,8 @@ FACTION_RED	Kızıl Hizip
 MISC_PROP_UNREACHABLE	Ulaşılamıyor
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senaryo
+SCENARIO_VAGABOND_NAME	Serseri
+SCENARIO_VAGABOND_DESC	Hiçbir şeyi olmayan yalnız bir gezgin: eşya yok, teçhizat yok ve her istatistik 1 ile 5 arasında.
 SCENARIO_RANDOM_NAME	Tamamen rastgele
 SCENARIO_RANDOM_DESC	1 ile 32 birimlik bir grup; her birinin tüm nitelikleri 1 ile 99 arasında ve taşıyabileceği rastgele eşya ve teçhizatı var.
 SCENARIO_CARAVAN_NAME	Gezgin kervan
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Aç bir hiç kimse
 SCENARIO_NOBODY_DESC	Hiçbir şeyi olmayan tek bir birim: eşya yok, teçhizat yok, tüm nitelikler 1 ve mide bomboş.
 SCENARIO_DIGGERS_NAME	Zindan kazıcıları
 SCENARIO_DIGGERS_DESC	Tam teçhizatlı yedi madenci. Nitelikleri 5 ile 20 arasında, ama her birinin Madenciliği 50 ve 3 demir cevheri taşıyor.
+SCENARIO_CUSTOM_NAME	Özel Senaryo
+SCENARIO_CUSTOM_DESC	Kendi grubunu kur. Üç birimle başlar ve 32'ye kadar birim ekleyip çıkarabilirsin.
 PROP_LOCKED_CHEST	Kilitli sandık
 PROP_PRISONER_CAGE	Esir kafesi
 UILABEL_UNLOCK	Kilidi aç
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Eşitlikte daha değerli eşya kazanır
 MISC_OPTIMIZE_ALL_SAME	Tüm birimler zaten en iyi teçhizatlarını giyiyor
 MISC_OPTIMIZE_ALL_DONE	{0} birimin teçhizatı ayarlandı
 MISC_OPTIMIZE_ALL_SOME_ROOM	{0} birimin teçhizatı ayarlandı; {1} birimin envanterinde yer yoktu
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Hayatta Kalma
+UILABEL_EARLY_ACCESS	Erken Erişim
+MISC_TITLE_KEYS	Seç  //  Enter Onayla
+UILABEL_LANGUAGE_LABEL	Dil:

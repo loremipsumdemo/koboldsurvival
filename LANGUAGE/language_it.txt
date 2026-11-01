@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Scorrimento ai bordi
 UILABEL_GLOBAL_VOLUME	Volume globale
 UILABEL_MUSIC	Musica
 UILABEL_AMBIENT	Ambiente
+UILABEL_INTERFACE_SOUNDS	Suoni dell'interfaccia
 UILABEL_SOUND_EFFECTS	Effetti sonori
 UILABEL_RESTORE_DEFAULTS	Ripristina i valori predefiniti
 UILABEL_WINDOWED	Finestra
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profilo
 UILABEL_STATS	Statistiche
 UILABEL_CLICK_TO_TYPE	Clicca per digitare un nome
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Gruppo iniziale: {0}
 UILABEL_HEALTH	Salute
 UILABEL_HUNGER	Fame
 UILABEL_CARRY	Trasporto
@@ -606,6 +606,8 @@ FACTION_RED	Fazione rossa
 MISC_PROP_UNREACHABLE	Irraggiungibile
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Vagabondo
+SCENARIO_VAGABOND_DESC	Un viandante solitario senza nulla di suo: nessun oggetto, nessun equipaggiamento e ogni statistica tra 1 e 5.
 SCENARIO_RANDOM_NAME	Del tutto casuale
 SCENARIO_RANDOM_DESC	Un gruppo da 1 a 32 unità, ognuna con tutte le statistiche tra 1 e 99 e oggetti ed equipaggiamento casuali che riesce a portare.
 SCENARIO_CARAVAN_NAME	Carovana errante
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Nessuno affamato
 SCENARIO_NOBODY_DESC	Un'unità senza niente: nessun oggetto, nessun equipaggiamento, tutte le statistiche a 1 e lo stomaco vuoto.
 SCENARIO_DIGGERS_NAME	Scavatori di segrete
 SCENARIO_DIGGERS_DESC	Sette minatori in equipaggiamento completo. Le loro statistiche vanno da 5 a 20, ma ognuno ha Estrazione a 50 e porta 3 minerali di ferro.
+SCENARIO_CUSTOM_NAME	Scenario personalizzato
+SCENARIO_CUSTOM_DESC	Crea il tuo gruppo. Inizia con tre unità e puoi aggiungere o rimuovere unità, fino a 32.
 PROP_LOCKED_CHEST	Forziere chiuso a chiave
 PROP_PRISONER_CAGE	Gabbia per prigionieri
 UILABEL_UNLOCK	Scassina
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	In parità vince l'oggetto più prezioso
 MISC_OPTIMIZE_ALL_SAME	Tutte le unità indossano già il loro equipaggiamento migliore
 MISC_OPTIMIZE_ALL_DONE	Equipaggiamento ottimizzato per {0} unità
 MISC_OPTIMIZE_ALL_SOME_ROOM	Equipaggiamento ottimizzato per {0} unità; {1} senza spazio nell'inventario
+GAME_TITLE_FIRST	Sopravvivenza
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Accesso anticipato
+MISC_TITLE_KEYS	Scegli  //  Invio Conferma
+UILABEL_LANGUAGE_LABEL	Lingua:

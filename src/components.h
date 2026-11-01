@@ -63,7 +63,7 @@ struct Name {
     std::string text = lang("UILABEL_UNNAMED_UNIT");
 };
 
-// Which unit image this unit uses: data/unit/01.png up to UNIT_SPRITE_COUNT (party.h)
+// Which unit image this unit uses: data/unit/unit_1.png up to UNIT_SPRITE_COUNT (party.h)
 struct UnitSprite {
     int id = 1;
 };

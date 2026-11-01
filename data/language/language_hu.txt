@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Magyar
+UILABEL_CONTINUE	Folytatás
+UILABEL_NEW_GAME	Új játék
+UILABEL_LOAD_GAME	Játék betöltése
+UILABEL_SETTINGS	Beállítások
+UILABEL_LANGUAGE_BUTTON	Nyelv ({0})
+UILABEL_QUIT	Kilépés
+UILABEL_RESUME	Folytatás
+UILABEL_SAVE_GAME	Játék mentése
+UILABEL_RETURN_TO_TITLE	Vissza a címképernyőre
+UILABEL_CLOSE	Bezárás
+UILABEL_BACK	Vissza
+UILABEL_SAVE	Mentés
+UILABEL_DELETE	Törlés
+UILABEL_CANCEL	Mégse
+UILABEL_CONFIRM	Megerősítés
+UILABEL_YES	Igen
+UILABEL_NO	Nem
+UILABEL_NAME	Név
+UILABEL_TIME	Idő
+UILABEL_CREATED	Létrehozva
+UILABEL_TYPE	Típus
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	KÉZI
+UILABEL_NO_SAVES	Még nincs mentés
+UILABEL_UNSAVED_WARNING	A játék nem mentett haladása elvész.
+UILABEL_HOLD_DELETE	A megerősítéshez tartsd nyomva a Törlés gombot 3 másodpercig.
+UILABEL_CLICK_SAVE	Kattints egy mentésre a betöltéséhez
+UILABEL_CLICK_MAP	Kattints egy térképre új játék indításához
+UILABEL_NO_MAPS	Nem található térkép. Készíts egyet a worldgen.py-val.
+UILABEL_BUILT_IN	BEÉPÍTETT
+UILABEL_WORLD	VILÁG
+UILABEL_MAP_FILE	TÉRKÉPFÁJL
+UILABEL_BUILT_IN_WHEN	beépített
+UILABEL_UNKNOWN	ismeretlen
+UILABEL_ON	Be
+UILABEL_OFF	Ki
+UILABEL_EMPTY	Üres
+UILABEL_NONE_AVAILABLE	Nincs elérhető
+UILABEL_TWO_HANDED	Kétkezes
+UILABEL_WILL_BE_REPLACED	Lecserélődik
+UILABEL_GRAPHICS	Grafika
+UILABEL_INTERFACE	Felület
+UILABEL_LANGUAGE_TAB	Nyelv
+UILABEL_CONTROLS	Irányítás
+UILABEL_AUDIO	Hang
+UILABEL_DISPLAY_MODE	Megjelenítési mód
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Felbontás
+UILABEL_REFRESH_RATE	Frissítési gyakoriság
+UILABEL_DEFAULT	Alapértelmezett
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Képkockasebesség-korlát
+UILABEL_UNLIMITED	Korlátlan
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Automatikus mentés
+UILABEL_MINUTE	1 perc
+UILABEL_MINUTES	{0} perc
+UILABEL_UNIT_NAMES	Egységnevek
+UILABEL_FONT_SIZE	Betűméret
+UILABEL_RESET_PANELS	Minden panel visszaállítása
+UILABEL_RESET	Visszaállítás
+UILABEL_FONT	Betűtípus
+UILABEL_FONT_AUTOMATIC	Automatikus
+UILABEL_EDGE_SCROLL	Görgetés a szélnél
+UILABEL_GLOBAL_VOLUME	Globális hangerő
+UILABEL_MUSIC	Zene
+UILABEL_AMBIENT	Környezeti hangok
+UILABEL_INTERFACE_SOUNDS	Kezelőfelület hangjai
+UILABEL_SOUND_EFFECTS	Hangeffektek
+UILABEL_RESTORE_DEFAULTS	Alapértékek visszaállítása
+UILABEL_WINDOWED	Ablakos
+UILABEL_BORDERLESS	Keret nélküli
+UILABEL_FULL_SCREEN	Teljes képernyő
+CONTROL_KEYS_1	W A S D vagy a nyilak
+CONTROL_DOES_1	A kamera mozgatása
+CONTROL_KEYS_2	Egérgörgő
+CONTROL_DOES_2	Nagyítás és kicsinyítés
+CONTROL_KEYS_3	Tartsd lenyomva az egér középső gombját és húzz
+CONTROL_DOES_3	A kamera forgatása
+CONTROL_KEYS_4	Bal kattintás, vagy téglalap húzása
+CONTROL_DOES_4	Egységek kijelölése
+CONTROL_KEYS_5	Shift vagy Alt kattintással
+CONTROL_DOES_5	Hozzáadás a kijelöléshez
+CONTROL_KEYS_6	Jobb kattintás
+CONTROL_DOES_6	Mozgás vagy támadás a kijelölt egységekkel
+CONTROL_KEYS_7	Tartsd lenyomva az Alt gombot
+CONTROL_DOES_7	A földön lévő tárgyak neveinek megjelenítése
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	A menü megnyitása, vagy visszalépés
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Képernyőkép készítése
+UILABEL_PAUSED	SZÜNETEL
+UILABEL_PACE_RUN	Tempó: futás
+UILABEL_PACE_WALK	Tempó: séta
+UILABEL_SQUAD_PANEL	Csapatpanel
+UILABEL_UNIT_PANEL	Egységpanel
+UILABEL_INFORMATION_PANEL	Információs panel
+UILABEL_INTERACTION_PANEL	Interakciós panel
+UILABEL_TRADE_PANEL	Kereskedelmi panel
+UILABEL_INVENTORY	Készlet
+UILABEL_EQUIPMENT	Felszerelés
+UILABEL_BEHAVIOR	Viselkedés
+UILABEL_TRADE	Kereskedés
+UILABEL_END_DIALOGUE	Párbeszéd befejezése
+UILABEL_TRADE_DROP_THEIRS	Húzd ide, vagy jobb kattintással add hozzá a tárgyakat az ő készletükből
+UILABEL_TRADE_DROP_YOURS	Húzd ide, vagy jobb kattintással add hozzá a saját tárgyaidat a készletedből
+UILABEL_SINGLE	Egy
+UILABEL_MAX	Max
+UILABEL_SORT	Rendezés
+UILABEL_WORLD_MAP_HINT	Világtérkép. Görgetéssel nagyíthatsz. Az M vagy az Esc megnyomásával bezárhatod.
+UILABEL_NO_UNIT_SELECTED	Nincs kijelölt egység
+UILABEL_UNNAMED_UNIT	Névtelen egység
+UILABEL_NO_NAME	Névtelen
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Statisztikák
+UILABEL_CLICK_TO_TYPE	Kattints a név beírásához
+UILABEL_SPRITE	Figura
+UILABEL_HEALTH	Életerő
+UILABEL_HUNGER	Éhség
+UILABEL_CARRY	Teherbírás
+UILABEL_NEXT_LEVEL_XP_LINE	Következő szint tapasztalata: {0}
+UILABEL_STAT	Statisztika
+UILABEL_LEVEL	Szint
+UILABEL_TOTAL_XP	Összes tapasztalat
+UILABEL_TO_NEXT	A következőig
+UILABEL_ATTRIBUTES	Tulajdonságok
+UILABEL_COMBAT	Harc
+UILABEL_RESOURCE_GATHERING	Erőforrás-gyűjtés
+UILABEL_CRAFTING	Kézművesség
+UILABEL_UTILITY	Segédkészségek
+UILABEL_GEAR	Felszerelés
+UILABEL_ITEMS	Tárgyak
+UILABEL_IDENTITY	Személyazonosság
+UILABEL_RANDOMIZE_UNIT	Egység véletlenszerűsítése
+UILABEL_RANDOMIZE_ALL	Mindent véletlenszerűen
+UILABEL_ADD_UNIT	Egység hozzáadása
+UILABEL_REMOVE_UNIT	Egység eltávolítása
+UILABEL_CONFIRM_STARTS	A megerősítéssel ezzel a csapattal indul a játék.
+UILABEL_NEEDS_NAMES	Minden egységnek kell neve, mielőtt a játék elindulhat.
+UILABEL_CLICK_UNIT_EDIT	Kattints egy egységre a szerkesztéséhez.
+UILABEL_SHIFT_CLICK	A Shift + kattintás 10-zel módosítja a statisztikát.
+UILABEL_LEVELS_HINT	A szintek 1-től 99-ig terjednek.
+UILABEL_CLICK_SLOT	Kattints egy helyre a tárgy kiválasztásához. Csak a ráférő tárgyak jelennek meg.
+UILABEL_CLICK_SLOT_STACK	Kattints egy helyre a tárgy kiválasztásához. A halmok a tárgy határáig tartalmaznak.
+UILABEL_SCROLL_UP	Görgetés felfelé
+UILABEL_SCROLL_DOWN	Görgetés lefelé
+UILABEL_SLOT_HEAD	Fej
+UILABEL_SLOT_TORSO	Törzs
+UILABEL_SLOT_MAIN_HAND	Fő kéz
+UILABEL_SLOT_OFF_HAND	Másik kéz
+UILABEL_SLOT_LEGS	Lábak
+UILABEL_SLOT_FEET	Lábfejek
+UILABEL_SLOT_ACCESSORY	Kiegészítő
+UILABEL_BEHAVIOR_ON	Be
+UILABEL_TARGET	Cél
+UILABEL_CONDITION	Feltétel
+UILABEL_ACTION	Művelet
+UILABEL_COMBAT_MESSAGES	Harci üzenetek
+UILABEL_SEEN	Látva
+UILABEL_HIT	Találat
+UILABEL_MISS	Mellé
+UILABEL_DAMAGE	Sebzés
+UILABEL_EXPERIENCE_MESSAGES	Tapasztalati üzenetek
+UILABEL_EXPERIENCE	Tapasztalat
+UILABEL_ITEM_MESSAGES	Tárgyüzenetek
+UILABEL_PICKUP	Felvétel
+UILABEL_DROP	Eldobás
+UILABEL_LOOT	Zsákmány
+UILABEL_USE	Használat
+UILABEL_MESSAGE	Üzenet
+UILABEL_GAME	Játék
+UILABEL_FILTER	Szűrő
+UILABEL_STAT_HEAD_STAT	Statisztika
+UILABEL_UNKNOWN_SLOT	Ismeretlen
+UILABEL_MONTH_NAME	{0} hónap
+UILABEL_STRENGTH_STAT	Erő
+MISC_GAME_SAVED	A játék mentve
+MISC_SAVE_FAILED	A játékot nem sikerült menteni
+MISC_READ_FAILED	Ezt a mentést nem sikerült beolvasni
+MISC_SAVE_OLD	Ez a mentés a térképek előttről származik, és nem tölthető be
+MISC_AUTOSAVED	Automatikusan mentve
+MISC_SCREENSHOT_FAILED	A képernyőképet nem sikerült menteni
+MISC_SCREENSHOT_SAVED	Mentve: {0}
+MISC_TRADE_FULL	A kereskedés megtelt
+MISC_TRADE_ALREADY	Ez a tárgy már a kereskedésben van, vagy a kereskedés megtelt.
+MISC_TRADE_NO_MORE	Ebből a tárgyból nincs több a kereskedéshez
+MISC_NO_UNIT_TO_TRADE	Nincs egység, akivel kereskedni lehetne
+MISC_TRADE_ADD_BOTH	Adj tárgyakat mindkét oldalhoz
+MISC_TRADE_NO_ROOM_YOURS	Az egységednek nincs hely az ő tárgyaiknak
+MISC_TRADE_NO_ROOM_THEIRS	Nekik nincs hely a te tárgyaidnak
+MISC_TRADE_FAILED	A kereskedés sikertelen
+MISC_TRADE_COMPLETE	A kereskedés befejeződött.
+MISC_PICKUP_SELECT	Válassz egységeket, amelyek felveszik a tárgyat
+MISC_TRADE_ONLY_TALKING	Csak azzal az egységgel kereskedhetsz, akivel éppen beszélsz.
+MISC_DROPS	{0} eldobja: {1} {2}
+MISC_AN_ITEM	egy tárgyat
+MISC_UNIT	Egység
+MISC_TWO_HANDED_IN_MAIN	Kétkezes fegyver van a fő kézben
+MISC_YOU	Te
+MISC_UNKNOWN_ITEM	Ismeretlen tárgy
+MISC_ITEM_FALLBACK	Tárgy
+MISC_THAT_ITEM	Az
+MISC_REASON_FEES	kereskedelmi díjak fizetése
+MISC_REASON_WALKING	gyaloglás
+MISC_REASON_CARRYING	teher cipelése
+MISC_REASON_CLIMBING	mászás
+MISC_REASON_SWINGING	lendítés
+MISC_REASON_DODGING	kitérés
+MISC_REASON_DEALING	sebzés okozása
+MISC_REASON_TAKING	sebzés elszenvedése
+MISC_REASON_BLOCKING	védekezés
+MISC_REASON_SPOTTING	ellenség észlelése
+MISC_REASON_UNNOTICED	feltűnés nélkül maradás
+MISC_REASON_GEAR	felszerelés cseréje
+NPC_GREETING	Helló, világ.
+NPC_OPTION_WARES	Mutasd meg az árudat.
+NPC_OPTION_QUEST	Mit mondhatnál még a küldetésről?
+MISC_ORD_1	Első
+MISC_ORD_2	Második
+MISC_ORD_3	Harmadik
+MISC_ORD_4	Negyedik
+MISC_ORD_5	Ötödik
+MISC_ORD_6	Hatodik
+MISC_ORD_7	Hetedik
+MISC_ORD_8	Nyolcadik
+MISC_ORD_9	Kilencedik
+MISC_ORD_10	Tizedik
+MISC_ORD_11	Tizenegyedik
+MISC_ORD_12	Tizenkettedik
+MISC_SKY_DAY_ZENITH	Nappali zenit
+MISC_SKY_DAY_HORIZON	Nappali horizont
+MISC_SKY_NIGHT_ZENITH	Éjszakai zenit
+MISC_SKY_NIGHT_HORIZON	Éjszakai horizont
+MISC_SKY_DUSK_HORIZON	Alkonyati horizont
+MISC_SKY_DUSK_SUN	Alkonyati nap
+MISC_SKY_SUN	Nap
+MISC_SKY_MOON	Hold
+MISC_TARGET_SELF	Önmaga
+MISC_TARGET_ALLY	Szövetséges
+MISC_TARGET_ENEMY	Ellenség
+MISC_COND_HEALTH	Életerő
+MISC_COND_HUNGER	Éhség
+MISC_ACT_HEAL	Gyógyító tárgy használata
+MISC_ACT_FOOD	Étel fogyasztása
+UILABEL_STAT_DESC_STRENGTH	Közelharci sebzés, teherbírás
+UILABEL_STAT_DESC_DEXTERITY	Támadási sebesség
+UILABEL_STAT_DESC_VITALITY	Maximális életerő
+UILABEL_STAT_DESC_ENDURANCE	Maximális állóképesség
+UILABEL_STAT_DESC_AGILITY	Kitérési esély
+UILABEL_STAT_DESC_INTELLIGENCE	Mana-készlet
+UILABEL_STAT_DESC_WISDOM	Megtanulható varázslatok száma
+UILABEL_STAT_DESC_CHARISMA	NJK-kereskedelmi árak, egyedi párbeszédlehetőségek
+UILABEL_STAT_DESC_PERCEPTION	Felfedési távolság
+UILABEL_STAT_DESC_ATHLETICS	Futási sebesség
+UILABEL_STAT_DESC_STEALTH	Jobb a lopakodás közbeni felfedezés elkerülésében
+UILABEL_STAT_DESC_MELEE	Közelharci pontosság
+UILABEL_STAT_DESC_PROJECTILES	Távolsági pontosság
+UILABEL_STAT_DESC_ARCANE	Varázserő
+UILABEL_STAT_DESC_BLOCK	Védekezési vagy kivédési esély
+UILABEL_STAT_DESC_MINING	Ércfeldolgozási hozam
+UILABEL_STAT_DESC_HERBALISM	Vadon élő növények gyűjtési hozama
+UILABEL_STAT_DESC_WOODCUTTING	Fahozam
+UILABEL_STAT_DESC_SKINNING	Bőr- és húshozam
+UILABEL_STAT_DESC_FARMING	Termésmennyiség
+UILABEL_STAT_DESC_COOKING	Étel-bónuszok erőssége
+UILABEL_STAT_DESC_SMELTING	Ércolvasztási hozam
+UILABEL_STAT_DESC_FORGING	Fémmegmunkálás
+UILABEL_STAT_DESC_CARPENTRY	Faművesség
+UILABEL_STAT_DESC_STONEWORKING	Kőfaragás
+UILABEL_STAT_DESC_LOCKPICKING	Zárak nehézsége
+UILABEL_STAT_DESC_THIEVERY	Lopás sikere
+UILABEL_STAT_DESC_MEDICAL	Gyógyítás hatékonysága
+UILABEL_DEXTERITY_STAT	Ügyesség
+UILABEL_VITALITY_STAT	Életerő-szint
+UILABEL_ENDURANCE_STAT	Állóképesség
+UILABEL_AGILITY_STAT	Ügyesség-szint
+UILABEL_INTELLIGENCE_STAT	Intelligencia
+UILABEL_WISDOM_STAT	Bölcsesség
+UILABEL_CHARISMA_STAT	Karizma
+UILABEL_PERCEPTION_STAT	Észlelés
+UILABEL_ATHLETICS_STAT	Atlétika
+UILABEL_STEALTH_STAT	Lopakodás
+UILABEL_MELEE_STAT	Közelharc
+UILABEL_PROJECTILES_STAT	Távolsági harc
+UILABEL_ARCANE_STAT	Varázslás
+UILABEL_BLOCK_STAT	Védekezés
+UILABEL_MINING_STAT	Bányászat
+UILABEL_HERBALISM_STAT	Gyógynövénytan
+UILABEL_WOODCUTTING_STAT	Fakitermelés
+UILABEL_SKINNING_STAT	Nyúzás
+UILABEL_FARMING_STAT	Földművelés
+UILABEL_COOKING_STAT	Főzés
+UILABEL_SMELTING_STAT	Olvasztás
+UILABEL_FORGING_STAT	Kovácsolás
+UILABEL_CARPENTRY_STAT	Ácsmunka
+UILABEL_STONEWORKING_STAT	Kőfaragás
+UILABEL_LOCKPICKING_STAT	Zárnyitás
+UILABEL_THIEVERY_STAT	Tolvajlás
+UILABEL_MEDICAL_STAT	Orvoslás
+MISC_CANT_BE_WORN	A(z) {0} nem viselhető
+MISC_ITEM_NAME_FORMAT	{0} {1}
+MISC_MATERIAL_IRON	vas
+MISC_MATERIAL_STEEL	acél
+MISC_MATERIAL_BRONZE	bronz
+MISC_MATERIAL_SILVER	ezüst
+MISC_MATERIAL_LEATHER	bőr
+MISC_MATERIAL_BONE	csont
+MISC_MATERIAL_WOOD	fa
+MISC_NEED_MORE_VALUE	Még {0} értékkel tartoznak
+MISC_TRADE_READY_FEE	Kész. Kereskedelmi díj: {0}
+MISC_LOAD_FAILED	A(z) {0} nem tölthető be: {1}
+MISC_MAP_MISSING	A(z) "{0}" térképe hiányzik
+MISC_MAP_LOAD_FAILED	A(z) "{0}" térkép nem tölthető be: {1}
+MISC_LOADED	Betöltve: {0}
+MISC_DELETE_FAILED	A(z) "{0}" nem törölhető
+MISC_DELETED	Törölve: "{0}"
+MISC_USED	Használva: {0}
+MISC_OVERWRITE_Q	Felülírjuk a(z) "{0}" mentést?
+MISC_LOAD_Q	Betöltsük a(z) "{0}" mentést?
+MISC_DELETE_Q	Töröljük a(z) "{0}" mentést?
+MISC_NOT_FIT_SLOT	A(z) {0} nem fér bele a(z) {1} helyre
+MISC_EMPTY_OFF_HAND	Üresítsd ki a másik kezet, mielőtt a(z) {0} tárgyat fogod
+MISC_NO_ROOM_INV	Nincs hely a készletben a(z) {0} tárgynak
+MISC_SLOT_HOLDS	Ez a hely már tartalmazza a(z) {0} tárgyat
+UILABEL_TIP_TYPE	Típus: {0}
+UILABEL_TIP_MATERIAL	Anyag: {0}
+UILABEL_TIP_SLOT	Hely: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Szükséges szint: {0}
+UILABEL_TIP_ATTACK	Támadás {0}
+UILABEL_TIP_DEFENSE	Védelem {0}
+UILABEL_TIP_WEIGHT	Súly {0}
+UILABEL_TIP_EACH	 darabonként
+UILABEL_TIP_STACKS	Halmozható {0}-ig
+UILABEL_TIP_BUY	Vételár: {0}
+UILABEL_TIP_SELL	Eladási ár: {0}
+UILABEL_TIP_USE	Használat: {0}
+UILABEL_TOTAL_VALUE	Teljes érték: {0}
+UILABEL_CHOOSE_HOW_MANY	Válaszd ki a mennyiséget: {0} ({1} elérhető)
+UILABEL_TIP_LEVEL	Szint: {0}
+UILABEL_TIP_PROGRESS	Haladás: {0}%
+UILABEL_TIP_CURRENT_XP	Jelenlegi tapasztalat: {0}
+UILABEL_ATTACK_DEFENSE	Támadás {0}      Védelem {1}
+UILABEL_STATS_CAPTION	Statisztikák: {0}
+UILABEL_SPRITE_N	Figura {0}
+UILABEL_SLOT_N_ITEM	Hely {0}: {1}
+UILABEL_SLOT_N_EMPTY	Hely {0}: üres
+UILABEL_COUNT	Darabszám {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Támadás {0}    Védelem {1}    Teherbírás {2}
+MISC_IS_DOWN	{0} elesett
+MISC_PICKS_UP	{0} felveszi: {1} {2}
+MISC_CANNOT_READ	A(z) {0} nem olvasható be
+UILABEL_TIP_DURABILITY	Tartósság {0} / {1}
+UILABEL_DATE_LINE	{0}. NAP · {1} · {2}. ÉV
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} {1} {2} tapasztalatot szerez ezért: {3}
+UILABEL_PAUSE_HINT	(A folytatáshoz nyomd meg a szóköz billentyűt.)
+MISC_DRINKS	{0} megissza: {1}
+UILABEL_COMPASS_N	É
+UILABEL_COMPASS_E	K
+UILABEL_COMPASS_S	D
+UILABEL_COMPASS_W	NY
+ITEM_1_NAME	Vasérc
+ITEM_1_DESC	Nyers érc, amelyből vasrudak olvaszthatók.
+ITEM_2_NAME	Tölgyfarönk
+ITEM_2_DESC	Szilárd rönk, amelyet kézművességben és építkezésben használnak.
+ITEM_3_NAME	Gyógynövény
+ITEM_3_DESC	Közönséges gyógynövény enyhe helyreállító hatással.
+ITEM_4_NAME	Aranypénz
+ITEM_4_DESC	A királyság szokásos pénzegysége.
+ITEM_5_NAME	Farkasbőr
+ITEM_5_DESC	Egy elejtett farkas durva bundája. A cserzők keresik.
+ITEM_6_NAME	Ősi ereklye
+ITEM_6_DESC	Rejtélyes tárgy, amely halkan zúg az energiától.
+ITEM_7_NAME	Gyógyital
+ITEM_7_DESC	Elfogyasztva 50 életerőt állít helyre.
+ITEM_8_NAME	Manaital
+ITEM_8_DESC	Elfogyasztva 50 manát állít helyre.
+ITEM_9_NAME	Állóképességi főzet
+ITEM_9_DESC	40 állóképességet állít helyre, és rövid időre gyorsítja a regenerációt.
+ITEM_10_NAME	Erőelixír
+ITEM_10_DESC	60 másodpercig +10 támadást ad.
+ITEM_11_NAME	Kenyér
+ITEM_11_DESC	Egyszerű utazási étel. 15 életerőt állít helyre.
+ITEM_12_NAME	Ellenméreg
+ITEM_12_DESC	Gyógyítja a mérgezést, és 30 másodpercig csökkenti a méregsebzést.
+ITEM_13_NAME	Alma
+ITEM_13_DESC	Elfogyasztva 8 éhséget állít helyre.
+ITEM_14_NAME	Vadbogyók
+ITEM_14_DESC	Elfogyasztva 6 éhséget állítanak helyre.
+ITEM_15_NAME	Kemény keksz
+ITEM_15_DESC	Elfogyasztva 12 éhséget állít helyre.
+ITEM_16_NAME	Sajtszelet
+ITEM_16_DESC	Elfogyasztva 15 éhséget állít helyre.
+ITEM_17_NAME	Füstölt hal
+ITEM_17_DESC	Elfogyasztva 20 éhséget állít helyre.
+ITEM_18_NAME	Mézes sütemény
+ITEM_18_DESC	Elfogyasztva 18 éhséget állít helyre.
+ITEM_19_NAME	Birkapogácsa
+ITEM_19_DESC	Elfogyasztva 26 éhséget állít helyre.
+ITEM_20_NAME	Tál pörkölt
+ITEM_20_DESC	Elfogyasztva 30 éhséget állít helyre.
+ITEM_21_NAME	Sült vaddisznócomb
+ITEM_21_DESC	Elfogyasztva 40 éhséget állít helyre.
+ITEM_22_NAME	Utazási adag
+ITEM_22_DESC	Elfogyasztva 50 éhséget állít helyre.
+ITEM_23_NAME	Sapka
+ITEM_23_DESC	A fejet védi.
+ITEM_24_NAME	Csuklya
+ITEM_24_DESC	A fejet védi.
+ITEM_25_NAME	Láncsapka
+ITEM_25_DESC	A fejet védi.
+ITEM_26_NAME	Sisak
+ITEM_26_DESC	A fejet védi.
+ITEM_27_NAME	Sisakrostély
+ITEM_27_DESC	A fejet védi.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	A fejet védi.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	A fejet védi.
+ITEM_30_NAME	Nagy sisak
+ITEM_30_DESC	A fejet védi.
+ITEM_31_NAME	Homlokpánt
+ITEM_31_DESC	A fejet védi.
+ITEM_32_NAME	Korona
+ITEM_32_DESC	A fejet védi.
+ITEM_33_NAME	Tunika
+ITEM_33_DESC	A mellkast és a testet fedi.
+ITEM_34_NAME	Bőrmellény
+ITEM_34_DESC	A mellkast és a testet fedi.
+ITEM_35_NAME	Lemezes mellény
+ITEM_35_DESC	A mellkast és a testet fedi.
+ITEM_36_NAME	Brigantin
+ITEM_36_DESC	A mellkast és a testet fedi.
+ITEM_37_NAME	Láncing
+ITEM_37_DESC	A mellkast és a testet fedi.
+ITEM_38_NAME	Mellvért
+ITEM_38_DESC	A mellkast és a testet fedi.
+ITEM_39_NAME	Páncélmellvért
+ITEM_39_DESC	A mellkast és a testet fedi.
+ITEM_40_NAME	Mellpajzs
+ITEM_40_DESC	A mellkast és a testet fedi.
+ITEM_41_NAME	Teljes lemezpáncél
+ITEM_41_DESC	A mellkast és a testet fedi.
+ITEM_42_NAME	Szertartási páncél
+ITEM_42_DESC	A mellkast és a testet fedi.
+ITEM_43_NAME	Lovaglónadrág
+ITEM_43_DESC	A lábakat fedi.
+ITEM_44_NAME	Nadrág
+ITEM_44_DESC	A lábakat fedi.
+ITEM_45_NAME	Gamasz
+ITEM_45_DESC	A lábakat fedi.
+ITEM_46_NAME	Láncos nadrág
+ITEM_46_DESC	A lábakat fedi.
+ITEM_47_NAME	Combvédő
+ITEM_47_DESC	A lábakat fedi.
+ITEM_48_NAME	Combpáncél
+ITEM_48_DESC	A lábakat fedi.
+ITEM_49_NAME	Lábszárvédő
+ITEM_49_DESC	A lábakat fedi.
+ITEM_50_NAME	Lemezes lábvédő
+ITEM_50_DESC	A lábakat fedi.
+ITEM_51_NAME	Láncos lábvédő
+ITEM_51_DESC	A lábakat fedi.
+ITEM_52_NAME	Aranyozott lábvédő
+ITEM_52_DESC	A lábakat fedi.
+ITEM_53_NAME	Szandál
+ITEM_53_DESC	A lábfejeket védi.
+ITEM_54_NAME	Cipő
+ITEM_54_DESC	A lábfejeket védi.
+ITEM_55_NAME	Csizma
+ITEM_55_DESC	A lábfejeket védi.
+ITEM_56_NAME	Lovaglócsizma
+ITEM_56_DESC	A lábfejeket védi.
+ITEM_57_NAME	Szegecses csizma
+ITEM_57_DESC	A lábfejeket védi.
+ITEM_58_NAME	Lábtekercs
+ITEM_58_DESC	A lábfejeket védi.
+ITEM_59_NAME	Menetcsizma
+ITEM_59_DESC	A lábfejeket védi.
+ITEM_60_NAME	Szabaton
+ITEM_60_DESC	A lábfejeket védi.
+ITEM_61_NAME	Sollerett
+ITEM_61_DESC	A lábfejeket védi.
+ITEM_62_NAME	Harci csizma
+ITEM_62_DESC	A lábfejeket védi.
+ITEM_63_NAME	Szalag
+ITEM_63_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_64_NAME	Amulett
+ITEM_64_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_65_NAME	Karkötő
+ITEM_65_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_66_NAME	Bross
+ITEM_66_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_67_NAME	Gyűrű
+ITEM_67_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_68_NAME	Nyaklánc
+ITEM_68_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_69_NAME	Medál
+ITEM_69_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_70_NAME	Talizmán
+ITEM_70_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_71_NAME	Torques
+ITEM_71_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_72_NAME	Köpeny
+ITEM_72_DESC	Kis, kopott díszítés. Egyszerre kettő viselhető.
+ITEM_73_NAME	Rövid kard
+ITEM_73_DESC	A fő kézben tartják.
+ITEM_74_NAME	Hosszú kard
+ITEM_74_DESC	A fő kézben tartják.
+ITEM_75_NAME	Balta
+ITEM_75_DESC	A fő kézben tartják.
+ITEM_76_NAME	Buzogány
+ITEM_76_DESC	A fő kézben tartják.
+ITEM_77_NAME	Cséphadaró
+ITEM_77_DESC	A fő kézben tartják.
+ITEM_78_NAME	Rapír
+ITEM_78_DESC	A fő kézben tartják.
+ITEM_79_NAME	Tőr
+ITEM_79_DESC	Egy kézzel tartják. Belefér a fő- vagy a másik kézbe.
+ITEM_80_NAME	Kés
+ITEM_80_DESC	Egy kézzel tartják. Belefér a fő- vagy a másik kézbe.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Egy kézzel tartják. Belefér a fő- vagy a másik kézbe.
+ITEM_82_NAME	Bukler
+ITEM_82_DESC	A másik kézben tartják. Felfogja az ütéseket.
+ITEM_83_NAME	Rombuszpajzs
+ITEM_83_DESC	A másik kézben tartják. Felfogja az ütéseket.
+ITEM_84_NAME	Toronypajzs
+ITEM_84_DESC	A másik kézben tartják. Felfogja az ütéseket.
+ITEM_85_NAME	Kétkezes kard
+ITEM_85_DESC	Mindkét kéz szükséges hozzá. A másik kéznek üresnek kell lennie.
+ITEM_86_NAME	Hadikalapács
+ITEM_86_DESC	Mindkét kéz szükséges hozzá. A másik kéznek üresnek kell lennie.
+ITEM_87_NAME	Hadibalta
+ITEM_87_DESC	Mindkét kéz szükséges hozzá. A másik kéznek üresnek kell lennie.
+UILABEL_UI_SCALE	Felület mérete
+NAME_MASCULINE	["Gábor", "Balázs", "Zoltán", "Ferenc", "Márton"]
+NAME_FEMININE	["Eszter", "Zsófia", "Réka", "Viola", "Hajnal"]
+NAME_ANDROGYNOUS	["Dani", "Kiri", "Nóri", "Sasha", "Robi"]
+UILABEL_BODY_TYPE	Testtípus
+UILABEL_BODY_MASCULINE	Férfias
+UILABEL_BODY_FEMININE	Nőies
+UILABEL_BODY_ANDROGYNOUS	Androgün
+UILABEL_TYPE_ITEM	Tárgy
+UILABEL_TYPE_CONSUMABLE	Fogyóeszköz
+UILABEL_TYPE_WEAPON	Fegyver
+UILABEL_TYPE_ARMOR	Páncél
+UILABEL_TYPE_ACCESSORY	Kiegészítő
+UILABEL_SLOT_EITHER_HAND	Bármelyik kéz
+UILABEL_SLOT_TWO_HAND	Kétkezes
+MISC_TRADE_CHANGE	Csere: {0}
+UILABEL_NEEDS_UNITS	Az indításhoz legalább egy egységet adj hozzá.
+PROP_WAGON	Szekér
+PROP_CAMPFIRE	Tábortűz
+PROP_BEDROLL	Fekhely
+PROP_BED	Ágy
+PROP_BARREL	Hordó
+PROP_ORE	Érc
+PROP_TREE	Fa
+PROP_BOULDER	Szikla
+PROP_MUSHROOM	Gomba
+PROP_BONES	Csontok
+PROP_WALL	Fal
+PROP_STALL	Bódé
+MISC_STORAGE_FULL	Nincs hely a tárolóban
+MISC_PROP_TAKEN	Már használatban van
+MISC_PROP_WORKERS_FULL	Egyszerre legfeljebb {0} egység dolgozhat rajta
+MISC_GATHERS	{0} gyűjt: {1}
+MISC_GATHER_NO_ROOM	{0} nem fér el a(z) {1}, ezért abbahagyja a munkát
+MISC_REASON_GATHERING	gyűjtés
+UILABEL_TASK	Feladat: {0}
+UILABEL_TASK_IDLE	Tétlen
+UILABEL_TASK_MOVING	Mozog
+UILABEL_TASK_RESTING	Pihen
+UILABEL_STORAGE_HINT	Jobb kattintással elveheted a tárgyat, vagy húzd ki, hogy oda tedd le, ahol az egységed áll. Jobb kattintással az egységed tárgyait berakhatod.
+ITEM_88_NAME	Fatörzs
+ITEM_88_DESC	Fáról vágott fa, kézművességhez és építkezéshez.
+UILABEL_CRAFT_HINT	Jobb kattintással teheted bele az egységed tárgyait. Az elkészült tárgy a dolgozó egység készletébe kerül. A munka indításához kattints jobb gombbal erre: {0}, és válaszd a Használat lehetőséget.
+MISC_CRAFT_WRONG_ITEM	{0} itt nem használható
+MISC_CRAFT_NEEDS	Tegyél {0} tárgyat a bemenetbe a kezdéshez
+MISC_CRAFTS	{0} elkészít: {1}
+MISC_CRAFT_STOPS	{0} nem talál több munkát, és abbahagyja
+MISC_REASON_CRAFTING	kézművesség
+ITEM_89_NAME	Nyers medvehús
+ITEM_89_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_90_NAME	Sült medvehús
+ITEM_90_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+UILABEL_TALK	Beszéd
+UILABEL_ATTACK	Támadás
+UILABEL_ATTACK_UNPROVOKED	Támadás (provokálatlanul)
+UILABEL_FOLLOW	Követés
+UILABEL_DEFEND	Védelem
+UILABEL_TASK_FOLLOWING	Követ
+UILABEL_TASK_DEFENDING	Véd
+MISC_FREE_TRADE_ADD	Tegyél tárgyakat bármelyik oldalra
+MISC_FREE_TRADE_READY	Kész a cserére
+MISC_TURNS_HOSTILE	{0} ellenségessé válik
+MISC_SELECT_UNIT_FIRST	Előbb válassz egy egységet
+FACTION_PLAYER	Játékos frakció
+FACTION_GRAY	Szürke frakció
+FACTION_RED	Vörös frakció
+MISC_PROP_UNREACHABLE	Elérhetetlen
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Forgatókönyv
+SCENARIO_VAGABOND_NAME	Csavargó
+SCENARIO_VAGABOND_DESC	Magányos vándor, akinek semmije sincs: se tárgy, se felszerelés, és minden érték 1 és 5 között.
+SCENARIO_RANDOM_NAME	Teljesen véletlen
+SCENARIO_RANDOM_DESC	1–32 egységből álló csapat, mindegyik minden tulajdonsága 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír.
+SCENARIO_CARAVAN_NAME	Vándorló karaván
+SCENARIO_CARAVAN_DESC	Tíz utazó együtt az úton. Minden tulajdonság 5-ről indul, és mindenkinél 10 aranyérme van.
+SCENARIO_SHABBY_NAME	Ütött-kopott banda
+SCENARIO_SHABBY_DESC	Három balszerencsés kobold, mindegyiknél egy véletlen tárggyal és 1–10 közötti tulajdonságokkal.
+SCENARIO_NOBODY_NAME	Éhező senki
+SCENARIO_NOBODY_DESC	Egyetlen egység, semmi nélkül: se tárgy, se felszerelés, minden tulajdonság 1, és üres gyomor.
+SCENARIO_DIGGERS_NAME	Tömlöcásók
+SCENARIO_DIGGERS_DESC	Hét bányász teljes felszerelésben. Tulajdonságaik 5 és 20 közöttiek, de mindegyiknek 50 a Bányászata, és 3 vasércet visz.
+SCENARIO_CUSTOM_NAME	Egyéni forgatókönyv
+SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel indul, és egységeket adhatsz hozzá vagy vehetsz el, legfeljebb 32-ig.
+PROP_LOCKED_CHEST	Lezárt láda
+PROP_PRISONER_CAGE	Fogolyketrec
+UILABEL_UNLOCK	Feltörés
+MISC_PROP_LOCKED	Zárva
+MISC_LOCKPICK_NEEDS	Szükséges: Zárnyitás {0}
+MISC_UNLOCKED	Kinyitva!
+MISC_LOCKPICK_FAILED	A zárfeltörés nem sikerült
+MISC_UNLOCKS	{0} kinyitja: {1}
+MISC_REASON_LOCKPICKING	zárfeltörés
+MISC_LOCKED_NAME	{0} (zárva)
+PROP_CHAIR	Szék
+PROP_BENCH	Pad
+PROP_STOOL	Zsámoly
+PROP_TABLE	Asztal
+PROP_END_TABLE	Kisasztal
+PROP_ROUND_TABLE	Kerek asztal
+PROP_METAL_TABLE	Fémasztal
+PROP_STANDING_TORCH	Állófáklya
+PROP_SUPPORT_BEAM	Tartógerenda
+PROP_TRAINING_DUMMY	Gyakorlóbábu
+PROP_RAW_FOOD_STORAGE	Nyersétel-tároló
+PROP_FOOD_STORAGE	Élelmiszertároló
+PROP_WEAPON_RACK	Fegyverállvány
+PROP_ARMOR_STAND	Páncélállvány
+PROP_WATER_TANK	Víztartály
+PROP_WATER_PUMP	Vízpumpa
+PROP_FORGE	Kovácsműhely
+FILTER_RAW_FOOD	nyers étel
+FILTER_FOOD	étel
+FILTER_WEAPON	fegyverek
+FILTER_ARMOR	páncél
+FILTER_WATER	víz
+MISC_STORAGE_ONLY	Csak ezt fogadja: {0}
+UILABEL_STORAGE_TAKES	Csak ezt fogadja: {0}.
+UILABEL_TASK_SITTING	Ül
+UILABEL_TASK_LOCKED_IN	Bezárva
+MISC_LOCKED_IN	{0} be van zárva: {1}
+MISC_REASON_TRAINING	edzés
+MISC_XP_GAINED	+{0} {1} tapasztalat
+UILABEL_INPUT	Bemenet
+UILABEL_OUTPUT	Kimenet
+MISC_FUEL_LEFT	Ég: még {0} perc tüzelő
+MISC_NO_FUEL	Nincs tüzelő
+MISC_OUTPUT_FULL	A kimenet tele: szünetel
+UILABEL_PASSIVE_HINT	Tüzelőként ezt használja: {0}. Mindegyik {1} játékpercig ég, és ezt készíti a kimenetbe: {2}, munkással vagy anélkül. Szünetel, amíg a kimenet tele van. Jobb kattintással tehetsz be vagy vehetsz ki tárgyakat.
+ITEM_91_NAME	Víz
+ITEM_91_DESC	Friss víz egy pumpából.
+ITEM_92_NAME	Vasrúd
+ITEM_92_DESC	Kovácsműhelyben ércből olvasztott vasrúd.
+ITEM_93_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_93_NAME	Nyers marhahús
+ITEM_94_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_94_NAME	Sült marhahús
+ITEM_95_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_95_NAME	Nyers csirkehús
+ITEM_96_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_96_NAME	Sült csirkehús
+ITEM_97_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_97_NAME	Nyers vaddisznóhús
+ITEM_98_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_98_NAME	Sült vaddisznóhús
+ITEM_99_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_99_NAME	Nyers farkashús
+ITEM_100_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_100_NAME	Sült farkashús
+ITEM_101_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_101_NAME	Nyers szarvashús
+ITEM_102_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_102_NAME	Sült szarvashús
+ITEM_103_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_103_NAME	Nyers nyúlhús
+ITEM_104_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_104_NAME	Sült nyúlhús
+ITEM_105_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_105_NAME	Nyers hal
+ITEM_106_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_106_NAME	Sült hal
+ITEM_107_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_107_NAME	Nyers rákhús
+ITEM_108_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_108_NAME	Sült rákhús
+ITEM_109_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_109_NAME	Nyers gyíkhús
+ITEM_110_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_110_NAME	Sült gyíkhús
+ITEM_111_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_111_NAME	Nyers kígyóhús
+ITEM_112_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_112_NAME	Sült kígyóhús
+ITEM_113_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_113_NAME	Nyers disznóhús
+ITEM_114_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_114_NAME	Sült disznóhús
+ITEM_115_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_115_NAME	Nyers birkahús
+ITEM_116_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_116_NAME	Sült birkahús
+ITEM_117_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_117_NAME	Nyers kacsahús
+ITEM_118_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_118_NAME	Sült kacsahús
+ITEM_119_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_119_NAME	Nyers teknőshús
+ITEM_120_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_120_NAME	Sült teknőshús
+ITEM_121_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_121_NAME	Nyers denevérhús
+ITEM_122_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_122_NAME	Sült denevérhús
+ITEM_123_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_123_NAME	Nyers békahús
+ITEM_124_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
+ITEM_124_NAME	Sült békahús
+ITEM_125_DESC	Kis vadgomba. Nyersen alig segít az egészségen és az éhségen.
+ITEM_125_NAME	Gomba
+MISC_FOOD_TO_COOK	nyers hús
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Mérges gomba
+ITEM_126_DESC	Vadgomba, amely olyan, mint bármelyik másik. Megenni egészségbe és jóllakottságba kerül.
+UILABEL_OPTIMIZE	Optimalizálás
+UILABEL_REMOVE_ALL	Mindet levesz
+MISC_GEAR_NO_ROOM	Nincs elég hely a tárgylistában
+MISC_GEAR_ALREADY_BEST	Már a legjobb felszerelést viseli
+MISC_GEAR_NONE_WORN	Nincs levehető felszerelés
+UILABEL_OPTIMIZE_ALL	Összes optimalizálása
+MISC_OPTIMIZE_ALL_ASK	Optimalizálod az osztag mind a(z) {0} egységének felszerelését? Minden egység abból választ, amit visel és magánál tart. Az az egység, amelynek nincs helye a levett tárgyaknak, változatlan marad.
+UILABEL_OPTIMIZE_BALANCE	Támadás {0}% / Védekezés {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Kiegészítők cseréje
+UILABEL_OPTIMIZE_TWO_HANDED	Kétkezes fegyverek engedélyezése
+UILABEL_OPTIMIZE_VALUE_TIES	Döntetlennél az értékesebb tárgy nyer
+MISC_OPTIMIZE_ALL_SAME	Minden egység már a legjobb felszerelését viseli
+MISC_OPTIMIZE_ALL_DONE	{0} egység felszerelése optimalizálva
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0} egység felszerelése optimalizálva; {1} egységnek nem volt helye
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Túlélés
+UILABEL_EARLY_ACCESS	Korai hozzáférés
+MISC_TITLE_KEYS	Kiválasztás  //  Enter Megerősítés
+UILABEL_LANGUAGE_LABEL	Nyelv:

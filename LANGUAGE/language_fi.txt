@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Reunavieritys
 UILABEL_GLOBAL_VOLUME	Yleinen äänenvoimakkuus
 UILABEL_MUSIC	Musiikki
 UILABEL_AMBIENT	Ympäristöäänet
+UILABEL_INTERFACE_SOUNDS	Käyttöliittymän äänet
 UILABEL_SOUND_EFFECTS	Äänitehosteet
 UILABEL_RESTORE_DEFAULTS	Palauta oletusasetukset
 UILABEL_WINDOWED	Ikkuna
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profiili
 UILABEL_STATS	Ominaisuudet
 UILABEL_CLICK_TO_TYPE	Napsauta kirjoittaaksesi nimen
 UILABEL_SPRITE	Hahmo
-UILABEL_STARTING_PARTY	Aloitusryhmä: {0}
 UILABEL_HEALTH	Terveys
 UILABEL_HUNGER	Nälkä
 UILABEL_CARRY	Kantokyky
@@ -606,6 +606,8 @@ FACTION_RED	Punainen ryhmittymä
 MISC_PROP_UNREACHABLE	Ei saavutettavissa
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenaario
+SCENARIO_VAGABOND_NAME	Kulkuri
+SCENARIO_VAGABOND_DESC	Yksinäinen vaeltaja, jolla ei ole mitään: ei esineitä, ei varusteita ja jokainen ominaisuus 1–5.
 SCENARIO_RANDOM_NAME	Täysin satunnainen
 SCENARIO_RANDOM_DESC	1–32 yksikön joukko, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa.
 SCENARIO_CARAVAN_NAME	Matkaava karavaani
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Nälkäinen ei-kukaan
 SCENARIO_NOBODY_DESC	Yksi yksikkö ilman mitään: ei esineitä, ei varusteita, kaikki ominaisuudet 1 ja tyhjä vatsa.
 SCENARIO_DIGGERS_NAME	Luolastonkaivajat
 SCENARIO_DIGGERS_DESC	Seitsemän kaivostyöläistä täysissä varusteissa. Ominaisuudet ovat 5–20, mutta jokaisella on Louhinta 50 ja 3 rautamalmia mukana.
+SCENARIO_CUSTOM_NAME	Oma skenaario
+SCENARIO_CUSTOM_DESC	Kokoa oma ryhmäsi. Se alkaa kolmella yksiköllä, ja voit lisätä tai poistaa yksiköitä, enintään 32.
 PROP_LOCKED_CHEST	Lukittu arkku
 PROP_PRISONER_CAGE	Vankihäkki
 UILABEL_UNLOCK	Avaa lukko
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Tasatilanteessa arvokkaampi voittaa
 MISC_OPTIMIZE_ALL_SAME	Kaikilla yksiköillä on jo parhaat varusteensa
 MISC_OPTIMIZE_ALL_DONE	Varusteet optimoitu {0} yksiköltä
 MISC_OPTIMIZE_ALL_SOME_ROOM	Varusteet optimoitu {0} yksiköltä; {1} ilman tilaa tavaraluettelossa
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Selviytyminen
+UILABEL_EARLY_ACCESS	Ennakkojulkaisu
+MISC_TITLE_KEYS	Valitse  //  Enter Vahvista
+UILABEL_LANGUAGE_LABEL	Kieli:

@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Rulning ved kanter
 UILABEL_GLOBAL_VOLUME	Global lydstyrke
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Omgivelser
+UILABEL_INTERFACE_SOUNDS	Brugerfladelyde
 UILABEL_SOUND_EFFECTS	Lydeffekter
 UILABEL_RESTORE_DEFAULTS	Gendan standardindstillinger
 UILABEL_WINDOWED	Vindue
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Værdier
 UILABEL_CLICK_TO_TYPE	Klik for at skrive et navn
 UILABEL_SPRITE	Figur
-UILABEL_STARTING_PARTY	Startgruppe: {0}
 UILABEL_HEALTH	Helbred
 UILABEL_HUNGER	Sult
 UILABEL_CARRY	Bærekapacitet
@@ -606,6 +606,8 @@ FACTION_RED	Den røde fraktion
 MISC_PROP_UNREACHABLE	Kan ikke nås
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenarie
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	En ensom vandrer uden noget at kalde sit eget: ingen genstande, intet udstyr og hver evne fra 1 til 5.
 SCENARIO_RANDOM_NAME	Helt tilfældig
 SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære.
 SCENARIO_CARAVAN_NAME	Rejsende karavane
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Sulten ingen
 SCENARIO_NOBODY_DESC	Én enhed uden noget som helst: ingen genstande, intet udstyr, alle evner på 1 og en tom mave.
 SCENARIO_DIGGERS_NAME	Fangekældergravere
 SCENARIO_DIGGERS_DESC	Syv minearbejdere i fuld udrustning. Deres evner ligger fra 5 til 20, men hver har Minedrift 50 og bærer 3 jernmalm.
+SCENARIO_CUSTOM_NAME	Brugerdefineret scenarie
+SCENARIO_CUSTOM_DESC	Byg din egen gruppe. Den starter med tre enheder, og du kan tilføje eller fjerne enheder, op til 32.
 PROP_LOCKED_CHEST	Låst kiste
 PROP_PRISONER_CAGE	Fangebur
 UILABEL_UNLOCK	Lås op
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Ved lighed vinder den mest værdifulde
 MISC_OPTIMIZE_ALL_SAME	Alle enheder har allerede deres bedste udstyr på
 MISC_OPTIMIZE_ALL_DONE	Udstyr optimeret for {0} enheder
 MISC_OPTIMIZE_ALL_SOME_ROOM	Udstyr optimeret for {0} enheder; {1} manglede plads i inventaret
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Overlevelse
+UILABEL_EARLY_ACCESS	Tidlig adgang
+MISC_TITLE_KEYS	Vælg  //  Enter Bekræft
+UILABEL_LANGUAGE_LABEL	Sprog:

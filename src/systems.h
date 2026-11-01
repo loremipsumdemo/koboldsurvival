@@ -103,6 +103,7 @@ struct WorkGain {
     int item = 0;               // for Trained, the stat trained instead
     Kind kind = Kind::Item;
     float xp = 0.0f;            // for Trained, the XP given
+    int propKind = -1;          // the kind of prop it came from (props.h), for its sound
 };
 // Resource and crafting props: the units working each one add to its progress by their skill, for the in-game
 // seconds that passed. Each full bar gives one item to one of the workers, in turn. At a resource prop, one with no

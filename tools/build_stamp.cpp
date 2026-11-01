@@ -1,7 +1,8 @@
 // Writes the build stamp shown on the title screen, as a small C++ source file.
 // Usage: build_stamp <output.cpp>
 //
-// The stamp is BUILD.YYYY.MM.DD.HH.MM.mmm in local time, read when this program runs. CMake runs it at the start of
+// The stamp is BUILD.YYYY.MM.DD.HH.MM.SS in local time and 24-hour time (BUILD.2026.10.31.18.34.05), read when this
+// program runs. CMake runs it at the start of
 // every build, so each build gets its own stamp. The output defines BUILD_STAMP, declared in src/build_info.h.
 
 #include <chrono>
@@ -15,11 +16,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Seconds and milliseconds come from the same instant, so they always agree
     const auto now = std::chrono::system_clock::now();
     const std::time_t seconds = std::chrono::system_clock::to_time_t(now);
-    const int millis = static_cast<int>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000);
 
     std::tm local{};
 #ifdef _WIN32
@@ -29,9 +27,9 @@ int main(int argc, char** argv) {
 #endif
 
     char stamp[64];
-    std::snprintf(stamp, sizeof stamp, "BUILD.%04d.%02d.%02d.%02d.%02d.%03d",
+    std::snprintf(stamp, sizeof stamp, "BUILD.%04d.%02d.%02d.%02d.%02d.%02d",
                   local.tm_year + 1900, local.tm_mon + 1, local.tm_mday,
-                  local.tm_hour, local.tm_min, millis);
+                  local.tm_hour, local.tm_min, local.tm_sec);
 
     std::ofstream out(argv[1]);
     if (!out) {

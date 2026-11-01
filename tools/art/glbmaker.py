@@ -1321,10 +1321,10 @@ def run_gui():
                     break
                 try:
                     model = generate_model(random.Random(base_seed + i), fr)
-                    model.export(os.path.join(folder, f"{i:02d}.glb"))
+                    model.export(os.path.join(folder, f"model_{i}.glb"))
                     done += 1
                 except Exception as exc:
-                    failed.append(f"{i:02d}.glb: {exc}")
+                    failed.append(f"model_{i}.glb: {exc}")
                 events.put(("progress", i))
             events.put(("done", (done, failed)))
 

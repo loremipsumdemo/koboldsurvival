@@ -3,22 +3,24 @@
 
 #include <algorithm>
 #include "renderer.h"
+#include "textcase.h"
 
 namespace {
 
-const RGBA kText{ 1.0f, 1.0f, 1.0f, 1.0f };
-const RGBA kSecondary{ 0.72f, 0.75f, 0.80f, 1.0f };
+const RGBA kText = theme::BONE;
+const RGBA kSlider = theme::GREEN;   // a slider's filled part, while its sound is on
+const RGBA kSecondary{ 0.553f, 0.576f, 0.631f, 1.0f };
 const RGBA kDisabledText{ 0.50f, 0.52f, 0.56f, 1.0f };
-const RGBA kPanel{ 0.06f, 0.07f, 0.09f, 0.96f };
-const RGBA kEdge{ 0.30f, 0.34f, 0.42f, 1.0f };
-const RGBA kTabIdle{ 0.14f, 0.16f, 0.20f, 1.0f };
-const RGBA kTabHover{ 0.21f, 0.24f, 0.30f, 1.0f };
-const RGBA kAccent{ 0.20f, 0.40f, 0.78f, 1.0f };
-const RGBA kTrack{ 0.15f, 0.17f, 0.21f, 1.0f };
-const RGBA kFillOff{ 0.36f, 0.38f, 0.43f, 1.0f };
-const RGBA kThumbDrag{ 0.75f, 0.85f, 1.0f, 1.0f };
-const RGBA kListBg{ 0.09f, 0.10f, 0.13f, 1.0f };
-const RGBA kListHover{ 0.22f, 0.25f, 0.32f, 1.0f };
+const RGBA kPanel{ 0.05f, 0.035f, 0.08f, 0.96f };
+const RGBA kEdge{ 0.478f, 0.043f, 0.278f, 1.0f };
+const RGBA kTabIdle{ 0.10f, 0.07f, 0.13f, 1.0f };
+const RGBA kTabHover{ 0.14f, 0.21f, 0.0f, 1.0f };
+const RGBA kAccent{ 0.176f, 0.259f, 0.0f, 1.0f };
+const RGBA kTrack{ 0.13f, 0.08f, 0.17f, 1.0f };
+const RGBA kFillOff{ 0.553f, 0.576f, 0.631f, 1.0f };
+const RGBA kThumbDrag{ 0.91f, 0.925f, 0.949f, 1.0f };
+const RGBA kListBg{ 0.07f, 0.05f, 0.10f, 1.0f };
+const RGBA kListHover{ 0.176f, 0.259f, 0.0f, 1.0f };
 
 bool over(const Rect& r, float x, float y) {
     return r.contains(x, y);
@@ -40,18 +42,21 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
                       const SettingsMenuState& st, float mx, float my) {
     const float u = L.panel.h / 640.0f;
 
-    r.drawRect(Rect{ L.panel.x - 2.0f * u, L.panel.y - 2.0f * u, L.panel.w + 4.0f * u, L.panel.h + 4.0f * u }, kEdge);
-    r.drawRect(L.panel, kPanel);
-    r.drawUiTextCentered(lang("UILABEL_SETTINGS"), L.panel.x + L.panel.w * 0.5f, L.panel.y + 18.0f * u, kText);
+    // The pink-framed panel, with its title in capitals
+    r.drawThemedPanel(Rect{ L.panel.x - 2.0f * u, L.panel.y - 2.0f * u, L.panel.w + 4.0f * u, L.panel.h + 4.0f * u });
+    r.drawUiTextCentered(uiUpper(lang("UILABEL_SETTINGS")), L.panel.x + L.panel.w * 0.5f, L.panel.y + 18.0f * u, kText);
 
-    // Tabs: the one showing is filled in blue
+    // Tabs: the one showing is filled in dark green
     for (size_t i = 0; i < L.tabs.size(); ++i) {
         const Rect& t = L.tabs[i];
         const std::string name = settingsTabName(static_cast<SettingsTab>(i));
         RGBA fill = kTabIdle;
         if (static_cast<int>(i) == static_cast<int>(st.tab)) fill = kAccent;
         else if (over(t, mx, my)) fill = kTabHover;
+        if (over(t, mx, my)) r.noteHover(t);
         r.drawRect(t, fill);
+        // The open tab has a green edge along its foot
+        if (static_cast<int>(i) == static_cast<int>(st.tab)) r.drawRect(Rect{ t.x, t.y + t.h - 2.0f * u, t.w, 2.0f * u }, theme::GREEN);
         r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }
 
@@ -93,7 +98,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             const Rect& tr = R.track;
             const float fillW = tr.w * row.current / 100.0f;
             r.drawRect(tr, kTrack);
-            if (fillW > 0.0f) r.drawRect(Rect{ tr.x, tr.y, fillW, tr.h }, row.on ? kAccent : kFillOff);
+            if (fillW > 0.0f) r.drawRect(Rect{ tr.x, tr.y, fillW, tr.h }, row.on ? kSlider : kFillOff);
             const float thumbW = 12.0f * u, thumbH = tr.h + 12.0f * u;
             const bool dragging = st.dragRow == idx;
             r.drawRect(Rect{ tr.x + fillW - thumbW * 0.5f, tr.y + tr.h * 0.5f - thumbH * 0.5f, thumbW, thumbH },
@@ -123,6 +128,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             const Rect& it = L.drop.items[k];
             if (index == row.current) r.drawRect(it, kAccent);
             else if (opt.enabled && over(it, mx, my)) r.drawRect(it, kListHover);
+            if (opt.enabled && over(it, mx, my)) r.noteHover(it);
             r.drawUiText(opt.label, it.x + 12.0f * u, it.y + (it.h - r.uiTextHeight(opt.label)) * 0.5f,
                          opt.enabled ? kText : kDisabledText);
         }

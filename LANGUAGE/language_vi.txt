@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Cuộn khi chạm mép
 UILABEL_GLOBAL_VOLUME	Âm lượng chung
 UILABEL_MUSIC	Nhạc nền
 UILABEL_AMBIENT	Âm thanh môi trường
+UILABEL_INTERFACE_SOUNDS	Âm thanh giao diện
 UILABEL_SOUND_EFFECTS	Hiệu ứng âm thanh
 UILABEL_RESTORE_DEFAULTS	Khôi phục mặc định
 UILABEL_WINDOWED	Cửa sổ
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Hồ sơ
 UILABEL_STATS	Chỉ số
 UILABEL_CLICK_TO_TYPE	Nhấp để nhập tên
 UILABEL_SPRITE	Hình ảnh
-UILABEL_STARTING_PARTY	Đội hình khởi đầu: {0}
 UILABEL_HEALTH	Sinh lực
 UILABEL_HUNGER	Đói
 UILABEL_CARRY	Sức mang
@@ -606,6 +606,8 @@ FACTION_RED	Phe Đỏ
 MISC_PROP_UNREACHABLE	Không thể đến
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Kịch bản
+SCENARIO_VAGABOND_NAME	Kẻ lang thang
+SCENARIO_VAGABOND_DESC	Một kẻ lữ hành đơn độc không có gì trong tay: không vật phẩm, không trang bị, và mọi chỉ số từ 1 đến 5.
 SCENARIO_RANDOM_NAME	Ngẫu nhiên hoàn toàn
 SCENARIO_RANDOM_DESC	Một nhóm từ 1 đến 32 đơn vị, mỗi đơn vị có mọi chỉ số từ 1 đến 99, cùng vật phẩm và trang bị ngẫu nhiên mà nó mang nổi.
 SCENARIO_CARAVAN_NAME	Đoàn lữ hành
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Kẻ vô danh đói khát
 SCENARIO_NOBODY_DESC	Một đơn vị chẳng có gì: không vật phẩm, không trang bị, mọi chỉ số là 1 và bụng rỗng.
 SCENARIO_DIGGERS_NAME	Thợ đào ngục tối
 SCENARIO_DIGGERS_DESC	Bảy thợ mỏ trang bị đầy đủ. Chỉ số của họ từ 5 đến 20, nhưng ai cũng có Khai khoáng 50 và mang 3 quặng sắt.
+SCENARIO_CUSTOM_NAME	Kịch bản tùy chỉnh
+SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Bắt đầu với ba đơn vị, và bạn có thể thêm hoặc bớt đơn vị, tối đa 32.
 PROP_LOCKED_CHEST	Rương bị khóa
 PROP_PRISONER_CAGE	Lồng tù nhân
 UILABEL_UNLOCK	Mở khóa
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Khi hòa, chọn món giá trị hơn
 MISC_OPTIMIZE_ALL_SAME	Mọi đơn vị đã mặc trang bị tốt nhất
 MISC_OPTIMIZE_ALL_DONE	Đã tối ưu trang bị cho {0} đơn vị
 MISC_OPTIMIZE_ALL_SOME_ROOM	Đã tối ưu trang bị cho {0} đơn vị; {1} đơn vị thiếu chỗ trong túi đồ
+GAME_TITLE_FIRST	Sinh tồn
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Truy cập sớm
+MISC_TITLE_KEYS	Chọn  //  Enter Xác nhận
+UILABEL_LANGUAGE_LABEL	Ngôn ngữ:

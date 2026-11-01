@@ -109,7 +109,7 @@ def main():
     
     for i in range(1, 100):
         img = generate_image(seed=i * 1337 + 42)
-        filename = f"icon_{i:02d}.png"
+        filename = f"icon_{i}.png"
         img.save(os.path.join(out_dir, filename), "PNG")
         print(f"Generated {filename}")
     

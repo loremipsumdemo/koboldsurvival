@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Español-Latinoamérica
+UILABEL_CONTINUE	Continuar
+UILABEL_NEW_GAME	Nueva partida
+UILABEL_LOAD_GAME	Cargar partida
+UILABEL_SETTINGS	Configuración
+UILABEL_LANGUAGE_BUTTON	Idioma ({0})
+UILABEL_QUIT	Salir
+UILABEL_RESUME	Reanudar
+UILABEL_SAVE_GAME	Guardar partida
+UILABEL_RETURN_TO_TITLE	Volver al título
+UILABEL_CLOSE	Cerrar
+UILABEL_BACK	Atrás
+UILABEL_SAVE	Guardar
+UILABEL_DELETE	Eliminar
+UILABEL_CANCEL	Cancelar
+UILABEL_CONFIRM	Confirmar
+UILABEL_YES	Sí
+UILABEL_NO	No
+UILABEL_NAME	Nombre
+UILABEL_TIME	Hora
+UILABEL_CREATED	Creado
+UILABEL_TYPE	Tipo
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUAL
+UILABEL_NO_SAVES	Aún no hay partidas guardadas
+UILABEL_UNSAVED_WARNING	El progreso no guardado de esta partida se perderá.
+UILABEL_HOLD_DELETE	Mantén Eliminar durante 3 segundos para confirmar.
+UILABEL_CLICK_SAVE	Haz clic en una partida guardada para cargarla
+UILABEL_CLICK_MAP	Haz clic en un mapa para empezar una partida nueva
+UILABEL_NO_MAPS	No se encontraron mapas. Crea uno con worldgen.py.
+UILABEL_BUILT_IN	INCLUIDO
+UILABEL_WORLD	MUNDO
+UILABEL_MAP_FILE	ARCHIVO DE MAPA
+UILABEL_BUILT_IN_WHEN	incluido
+UILABEL_UNKNOWN	desconocido
+UILABEL_ON	Activado
+UILABEL_OFF	Desactivado
+UILABEL_EMPTY	Vacío
+UILABEL_NONE_AVAILABLE	Ninguno disponible
+UILABEL_TWO_HANDED	A dos manos
+UILABEL_WILL_BE_REPLACED	Se reemplazará
+UILABEL_GRAPHICS	Gráficos
+UILABEL_INTERFACE	Interfaz
+UILABEL_LANGUAGE_TAB	Idioma
+UILABEL_CONTROLS	Controles
+UILABEL_AUDIO	Audio
+UILABEL_DISPLAY_MODE	Modo de pantalla
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Resolución
+UILABEL_REFRESH_RATE	Frecuencia de actualización
+UILABEL_DEFAULT	Predeterminado
+UILABEL_VSYNC	Sincronización vertical
+UILABEL_FRAME_LIMIT	Límite de fotogramas
+UILABEL_UNLIMITED	Sin límite
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Guardado automático
+UILABEL_MINUTE	1 minuto
+UILABEL_MINUTES	{0} minutos
+UILABEL_UNIT_NAMES	Nombres de unidades
+UILABEL_FONT_SIZE	Tamaño de letra
+UILABEL_RESET_PANELS	Restablecer todos los paneles
+UILABEL_RESET	Restablecer
+UILABEL_FONT	Fuente
+UILABEL_FONT_AUTOMATIC	Automática
+UILABEL_EDGE_SCROLL	Desplazamiento en los bordes
+UILABEL_GLOBAL_VOLUME	Volumen global
+UILABEL_MUSIC	Música
+UILABEL_AMBIENT	Ambiente
+UILABEL_INTERFACE_SOUNDS	Sonidos de la interfaz
+UILABEL_SOUND_EFFECTS	Efectos de sonido
+UILABEL_RESTORE_DEFAULTS	Restaurar valores predeterminados
+UILABEL_WINDOWED	Ventana
+UILABEL_BORDERLESS	Sin bordes
+UILABEL_FULL_SCREEN	Pantalla completa
+CONTROL_KEYS_1	W A S D, o las flechas
+CONTROL_DOES_1	Mueve la cámara
+CONTROL_KEYS_2	Rueda del mouse
+CONTROL_DOES_2	Acerca y aleja
+CONTROL_KEYS_3	Mantén el botón central del mouse y arrastra
+CONTROL_DOES_3	Gira la cámara
+CONTROL_KEYS_4	Clic izquierdo, o arrastra un recuadro
+CONTROL_DOES_4	Selecciona unidades
+CONTROL_KEYS_5	Shift o Alt con un clic
+CONTROL_DOES_5	Agrega a la selección
+CONTROL_KEYS_6	Clic derecho
+CONTROL_DOES_6	Mueve o ataca con las unidades seleccionadas
+CONTROL_KEYS_7	Mantén Alt
+CONTROL_DOES_7	Muestra los nombres de los objetos en el suelo
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Abre el menú, o vuelve atrás
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Toma una captura de pantalla
+UILABEL_PAUSED	PAUSADO
+UILABEL_PACE_RUN	Ritmo: correr
+UILABEL_PACE_WALK	Ritmo: caminar
+UILABEL_SQUAD_PANEL	Panel de escuadrón
+UILABEL_UNIT_PANEL	Panel de unidad
+UILABEL_INFORMATION_PANEL	Panel de información
+UILABEL_INTERACTION_PANEL	Panel de interacción
+UILABEL_TRADE_PANEL	Panel de intercambio
+UILABEL_INVENTORY	Inventario
+UILABEL_EQUIPMENT	Equipo
+UILABEL_BEHAVIOR	Comportamiento
+UILABEL_TRADE	Intercambio
+UILABEL_END_DIALOGUE	Terminar diálogo
+UILABEL_TRADE_DROP_THEIRS	Arrastra o haz clic derecho en objetos de su inventario aquí
+UILABEL_TRADE_DROP_YOURS	Arrastra o haz clic derecho en tus objetos de tu inventario aquí
+UILABEL_SINGLE	Uno
+UILABEL_MAX	Máx.
+UILABEL_SORT	Ordenar
+UILABEL_WORLD_MAP_HINT	Mapa del mundo. Desplázate para acercar. Pulsa M o Esc para cerrar.
+UILABEL_NO_UNIT_SELECTED	Ninguna unidad seleccionada
+UILABEL_UNNAMED_UNIT	Unidad sin nombre
+UILABEL_NO_NAME	Sin nombre
+UILABEL_PROFILE	Perfil
+UILABEL_STATS	Estadísticas
+UILABEL_CLICK_TO_TYPE	Haz clic para escribir un nombre
+UILABEL_SPRITE	Sprite
+UILABEL_HEALTH	Salud
+UILABEL_HUNGER	Hambre
+UILABEL_CARRY	Carga
+UILABEL_NEXT_LEVEL_XP_LINE	XP para el siguiente nivel: {0}
+UILABEL_STAT	Estadística
+UILABEL_LEVEL	Nivel
+UILABEL_TOTAL_XP	XP total
+UILABEL_TO_NEXT	Para el siguiente
+UILABEL_ATTRIBUTES	Atributos
+UILABEL_COMBAT	Combate
+UILABEL_RESOURCE_GATHERING	Recolección de recursos
+UILABEL_CRAFTING	Fabricación
+UILABEL_UTILITY	Utilidad
+UILABEL_GEAR	Equipo
+UILABEL_ITEMS	Objetos
+UILABEL_IDENTITY	Identidad
+UILABEL_RANDOMIZE_UNIT	Aleatorizar esta unidad
+UILABEL_RANDOMIZE_ALL	Aleatorizar todas
+UILABEL_ADD_UNIT	Agregar unidad
+UILABEL_REMOVE_UNIT	Quitar unidad
+UILABEL_CONFIRM_STARTS	Confirmar inicia el juego con este grupo.
+UILABEL_NEEDS_NAMES	Cada unidad necesita un nombre antes de que el juego pueda empezar.
+UILABEL_CLICK_UNIT_EDIT	Haz clic en una unidad para editarla.
+UILABEL_SHIFT_CLICK	Shift + clic cambia una estadística en 10.
+UILABEL_LEVELS_HINT	Los niveles van del 1 al 99.
+UILABEL_CLICK_SLOT	Haz clic en una casilla para elegir su objeto. Solo se muestran los objetos que caben.
+UILABEL_CLICK_SLOT_STACK	Haz clic en una casilla para elegir su objeto. Las pilas tienen hasta el límite del objeto.
+UILABEL_SCROLL_UP	Desplazar hacia arriba
+UILABEL_SCROLL_DOWN	Desplazar hacia abajo
+UILABEL_SLOT_HEAD	Cabeza
+UILABEL_SLOT_TORSO	Torso
+UILABEL_SLOT_MAIN_HAND	Mano principal
+UILABEL_SLOT_OFF_HAND	Mano secundaria
+UILABEL_SLOT_LEGS	Piernas
+UILABEL_SLOT_FEET	Pies
+UILABEL_SLOT_ACCESSORY	Accesorio
+UILABEL_BEHAVIOR_ON	Activado
+UILABEL_TARGET	Objetivo
+UILABEL_CONDITION	Condición
+UILABEL_ACTION	Acción
+UILABEL_COMBAT_MESSAGES	Mensajes de combate
+UILABEL_SEEN	Visto
+UILABEL_HIT	Golpe
+UILABEL_MISS	Fallo
+UILABEL_DAMAGE	Daño
+UILABEL_EXPERIENCE_MESSAGES	Mensajes de experiencia
+UILABEL_EXPERIENCE	Experiencia
+UILABEL_ITEM_MESSAGES	Mensajes de objetos
+UILABEL_PICKUP	Recoger
+UILABEL_DROP	Soltar
+UILABEL_LOOT	Botín
+UILABEL_USE	Usar
+UILABEL_MESSAGE	Mensaje
+UILABEL_GAME	Juego
+UILABEL_FILTER	Filtro
+UILABEL_STAT_HEAD_STAT	Estadística
+UILABEL_UNKNOWN_SLOT	Desconocido
+UILABEL_MONTH_NAME	Mes {0}
+UILABEL_STRENGTH_STAT	Fuerza
+MISC_GAME_SAVED	Partida guardada
+MISC_SAVE_FAILED	No se pudo guardar la partida
+MISC_READ_FAILED	No se pudo leer esa partida guardada
+MISC_SAVE_OLD	Esa partida guardada es anterior a los mapas y no se puede cargar
+MISC_AUTOSAVED	Guardado automáticamente
+MISC_SCREENSHOT_FAILED	No se pudo guardar la captura de pantalla
+MISC_SCREENSHOT_SAVED	Guardado {0}
+MISC_TRADE_FULL	El intercambio está lleno
+MISC_TRADE_ALREADY	Ese objeto ya está en el intercambio, o el intercambio está lleno.
+MISC_TRADE_NO_MORE	No queda más de ese objeto para intercambiar
+MISC_NO_UNIT_TO_TRADE	No hay ninguna unidad con la que intercambiar
+MISC_TRADE_ADD_BOTH	Agrega objetos en ambos lados
+MISC_TRADE_NO_ROOM_YOURS	Tu unidad no tiene espacio para sus objetos
+MISC_TRADE_NO_ROOM_THEIRS	Ellos no tienen espacio para tus objetos
+MISC_TRADE_FAILED	El intercambio falló
+MISC_TRADE_COMPLETE	Intercambio completado.
+MISC_PICKUP_SELECT	Selecciona unidades para recoger el objeto
+MISC_TRADE_ONLY_TALKING	Solo puedes intercambiar con la unidad con la que estás hablando.
+MISC_DROPS	{0} suelta {1} {2}
+MISC_AN_ITEM	un objeto
+MISC_UNIT	Unidad
+MISC_TWO_HANDED_IN_MAIN	Hay un arma a dos manos en la mano principal
+MISC_YOU	Tú
+MISC_UNKNOWN_ITEM	Objeto desconocido
+MISC_ITEM_FALLBACK	Objeto
+MISC_THAT_ITEM	Ese
+MISC_REASON_FEES	pagar las tarifas de intercambio
+MISC_REASON_WALKING	caminar
+MISC_REASON_CARRYING	cargar un peso
+MISC_REASON_CLIMBING	escalar
+MISC_REASON_SWINGING	blandir
+MISC_REASON_DODGING	esquivar
+MISC_REASON_DEALING	causar daño
+MISC_REASON_TAKING	recibir daño
+MISC_REASON_BLOCKING	bloquear
+MISC_REASON_SPOTTING	detectar a un enemigo
+MISC_REASON_UNNOTICED	pasar desapercibido
+MISC_REASON_GEAR	cambiar de equipo
+NPC_GREETING	Hola, mundo.
+NPC_OPTION_WARES	Muéstrame tus mercancías.
+NPC_OPTION_QUEST	¿Qué más me puedes contar sobre la misión?
+MISC_ORD_1	Primer
+MISC_ORD_2	Segundo
+MISC_ORD_3	Tercer
+MISC_ORD_4	Cuarto
+MISC_ORD_5	Quinto
+MISC_ORD_6	Sexto
+MISC_ORD_7	Séptimo
+MISC_ORD_8	Octavo
+MISC_ORD_9	Noveno
+MISC_ORD_10	Décimo
+MISC_ORD_11	Undécimo
+MISC_ORD_12	Duodécimo
+MISC_SKY_DAY_ZENITH	Cenit diurno
+MISC_SKY_DAY_HORIZON	Horizonte diurno
+MISC_SKY_NIGHT_ZENITH	Cenit nocturno
+MISC_SKY_NIGHT_HORIZON	Horizonte nocturno
+MISC_SKY_DUSK_HORIZON	Horizonte del crepúsculo
+MISC_SKY_DUSK_SUN	Sol del crepúsculo
+MISC_SKY_SUN	Sol
+MISC_SKY_MOON	Luna
+MISC_TARGET_SELF	Uno mismo
+MISC_TARGET_ALLY	Aliado
+MISC_TARGET_ENEMY	Enemigo
+MISC_COND_HEALTH	Salud
+MISC_COND_HUNGER	Hambre
+MISC_ACT_HEAL	Usar objeto curativo
+MISC_ACT_FOOD	Consumir alimento
+UILABEL_STAT_DESC_STRENGTH	Daño cuerpo a cuerpo, capacidad de carga
+UILABEL_STAT_DESC_DEXTERITY	Velocidad de ataque
+UILABEL_STAT_DESC_VITALITY	Salud máxima
+UILABEL_STAT_DESC_ENDURANCE	Resistencia máxima
+UILABEL_STAT_DESC_AGILITY	Probabilidad de esquivar
+UILABEL_STAT_DESC_INTELLIGENCE	Reserva de maná
+UILABEL_STAT_DESC_WISDOM	Cantidad de hechizos que se pueden aprender
+UILABEL_STAT_DESC_CHARISMA	Precios de intercambio con PNJ, opciones de diálogo únicas
+UILABEL_STAT_DESC_PERCEPTION	Alcance de detección
+UILABEL_STAT_DESC_ATHLETICS	Velocidad de carrera
+UILABEL_STAT_DESC_STEALTH	Mejor para evitar ser detectado al sigilar
+UILABEL_STAT_DESC_MELEE	Precisión cuerpo a cuerpo
+UILABEL_STAT_DESC_PROJECTILES	Precisión a distancia
+UILABEL_STAT_DESC_ARCANE	Poder de hechizos
+UILABEL_STAT_DESC_BLOCK	Probabilidad de bloqueo o parada
+UILABEL_STAT_DESC_MINING	Rendimiento de mineral
+UILABEL_STAT_DESC_HERBALISM	Rendimiento al recolectar plantas silvestres
+UILABEL_STAT_DESC_WOODCUTTING	Rendimiento de troncos
+UILABEL_STAT_DESC_SKINNING	Rendimiento de pieles y carne
+UILABEL_STAT_DESC_FARMING	Rendimiento de cosechas
+UILABEL_STAT_DESC_COOKING	Potencia de los bonos de comida
+UILABEL_STAT_DESC_SMELTING	Rendimiento de la fundición de mineral
+UILABEL_STAT_DESC_FORGING	Fabricación en metal
+UILABEL_STAT_DESC_CARPENTRY	Fabricación en madera
+UILABEL_STAT_DESC_STONEWORKING	Fabricación en piedra
+UILABEL_STAT_DESC_LOCKPICKING	Dificultad de las cerraduras
+UILABEL_STAT_DESC_THIEVERY	Éxito al robar
+UILABEL_STAT_DESC_MEDICAL	Efectividad de la curación
+UILABEL_DEXTERITY_STAT	Destreza
+UILABEL_VITALITY_STAT	Vitalidad
+UILABEL_ENDURANCE_STAT	Resistencia
+UILABEL_AGILITY_STAT	Agilidad
+UILABEL_INTELLIGENCE_STAT	Inteligencia
+UILABEL_WISDOM_STAT	Sabiduría
+UILABEL_CHARISMA_STAT	Carisma
+UILABEL_PERCEPTION_STAT	Percepción
+UILABEL_ATHLETICS_STAT	Atletismo
+UILABEL_STEALTH_STAT	Sigilo
+UILABEL_MELEE_STAT	Cuerpo a cuerpo
+UILABEL_PROJECTILES_STAT	Proyectiles
+UILABEL_ARCANE_STAT	Arcano
+UILABEL_BLOCK_STAT	Bloqueo
+UILABEL_MINING_STAT	Minería
+UILABEL_HERBALISM_STAT	Herbolaria
+UILABEL_WOODCUTTING_STAT	Leñador
+UILABEL_SKINNING_STAT	Desollar
+UILABEL_FARMING_STAT	Agricultura
+UILABEL_COOKING_STAT	Cocina
+UILABEL_SMELTING_STAT	Fundición
+UILABEL_FORGING_STAT	Forja
+UILABEL_CARPENTRY_STAT	Carpintería
+UILABEL_STONEWORKING_STAT	Cantería
+UILABEL_LOCKPICKING_STAT	Ganzúa
+UILABEL_THIEVERY_STAT	Robo
+UILABEL_MEDICAL_STAT	Medicina
+MISC_CANT_BE_WORN	{0} no se puede equipar
+MISC_ITEM_NAME_FORMAT	{1} de {0}
+MISC_MATERIAL_IRON	hierro
+MISC_MATERIAL_STEEL	acero
+MISC_MATERIAL_BRONZE	bronce
+MISC_MATERIAL_SILVER	plata
+MISC_MATERIAL_LEATHER	cuero
+MISC_MATERIAL_BONE	hueso
+MISC_MATERIAL_WOOD	madera
+MISC_NEED_MORE_VALUE	Les faltan {0} de valor
+MISC_TRADE_READY_FEE	Listo. Tarifa de intercambio: {0}
+MISC_LOAD_FAILED	No se pudo cargar {0}: {1}
+MISC_MAP_MISSING	Falta el mapa de "{0}"
+MISC_MAP_LOAD_FAILED	No se pudo cargar el mapa "{0}": {1}
+MISC_LOADED	Cargado {0}
+MISC_DELETE_FAILED	No se pudo eliminar "{0}"
+MISC_DELETED	"{0}" eliminado
+MISC_USED	Usado {0}
+MISC_OVERWRITE_Q	¿Sobrescribir "{0}"?
+MISC_LOAD_Q	¿Cargar "{0}"?
+MISC_DELETE_Q	¿Eliminar "{0}"?
+MISC_NOT_FIT_SLOT	{0} no cabe en la casilla {1}
+MISC_EMPTY_OFF_HAND	Vacía la mano secundaria antes de sostener {0}
+MISC_NO_ROOM_INV	No hay espacio en el inventario para {0}
+MISC_SLOT_HOLDS	Esa casilla ya contiene {0}
+UILABEL_TIP_TYPE	Tipo: {0}
+UILABEL_TIP_MATERIAL	Material: {0}
+UILABEL_TIP_SLOT	Casilla: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Nivel requerido: {0}
+UILABEL_TIP_ATTACK	Ataque {0}
+UILABEL_TIP_DEFENSE	Defensa {0}
+UILABEL_TIP_WEIGHT	Peso {0}
+UILABEL_TIP_EACH	 c/u
+UILABEL_TIP_STACKS	Se apila hasta {0}
+UILABEL_TIP_BUY	Precio de compra: {0}
+UILABEL_TIP_SELL	Precio de venta: {0}
+UILABEL_TIP_USE	Uso: {0}
+UILABEL_TOTAL_VALUE	Valor total: {0}
+UILABEL_CHOOSE_HOW_MANY	Elige cuántos: {0} ({1} disponibles)
+UILABEL_TIP_LEVEL	Nivel: {0}
+UILABEL_TIP_PROGRESS	Progreso: {0}%
+UILABEL_TIP_CURRENT_XP	XP actual: {0}
+UILABEL_ATTACK_DEFENSE	Ataque {0}      Defensa {1}
+UILABEL_STATS_CAPTION	Estadísticas: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Casilla {0}: {1}
+UILABEL_SLOT_N_EMPTY	Casilla {0}: vacía
+UILABEL_COUNT	Cantidad {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defensa {1}    Carga {2}
+MISC_IS_DOWN	{0} está caído
+MISC_PICKS_UP	{0} recoge {1} {2}
+MISC_CANNOT_READ	No se pudo leer {0}
+UILABEL_TIP_DURABILITY	Durabilidad {0} / {1}
+UILABEL_DATE_LINE	DÍA {0} · {1} · AÑO {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} gana {1} {2} XP por {3}
+UILABEL_PAUSE_HINT	(Pulsa la barra espaciadora para reanudar.)
+MISC_DRINKS	{0} bebe {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	E
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	O
+ITEM_1_NAME	Mineral de hierro
+ITEM_1_DESC	Mineral sin procesar que puede fundirse en lingotes de hierro.
+ITEM_2_NAME	Tronco de roble
+ITEM_2_DESC	Un tronco resistente que se usa en la fabricación y la construcción.
+ITEM_3_NAME	Hierba curativa
+ITEM_3_DESC	Una hierba común con propiedades restauradoras leves.
+ITEM_4_NAME	Moneda de oro
+ITEM_4_DESC	Moneda estándar del reino.
+ITEM_5_NAME	Piel de lobo
+ITEM_5_DESC	Una piel áspera obtenida de un lobo abatido. Muy buscada por los curtidores.
+ITEM_6_NAME	Reliquia antigua
+ITEM_6_DESC	Un artefacto misterioso que zumba con una energía tenue.
+ITEM_7_NAME	Poción de salud
+ITEM_7_DESC	Restaura 50 de salud al consumirla.
+ITEM_8_NAME	Poción de maná
+ITEM_8_DESC	Restaura 50 de maná al consumirla.
+ITEM_9_NAME	Brebaje de resistencia
+ITEM_9_DESC	Restaura 40 de resistencia y acelera brevemente la regeneración.
+ITEM_10_NAME	Elixir de poder
+ITEM_10_DESC	Otorga +10 de ataque durante 60 segundos.
+ITEM_11_NAME	Pan
+ITEM_11_DESC	Comida sencilla de viaje. Restaura 15 de salud.
+ITEM_12_NAME	Antídoto
+ITEM_12_DESC	Cura el veneno y reduce el daño por veneno durante 30 segundos.
+ITEM_13_NAME	Manzana
+ITEM_13_DESC	Restaura 8 de hambre al comerla.
+ITEM_14_NAME	Bayas silvestres
+ITEM_14_DESC	Restaura 6 de hambre al comerlas.
+ITEM_15_NAME	Galleta dura
+ITEM_15_DESC	Restaura 12 de hambre al comerla.
+ITEM_16_NAME	Trozo de queso
+ITEM_16_DESC	Restaura 15 de hambre al comerlo.
+ITEM_17_NAME	Pescado ahumado
+ITEM_17_DESC	Restaura 20 de hambre al comerlo.
+ITEM_18_NAME	Pastel de miel
+ITEM_18_DESC	Restaura 18 de hambre al comerlo.
+ITEM_19_NAME	Pastel de cordero
+ITEM_19_DESC	Restaura 26 de hambre al comerlo.
+ITEM_20_NAME	Tazón de estofado
+ITEM_20_DESC	Restaura 30 de hambre al comerlo.
+ITEM_21_NAME	Pierna de jabalí asada
+ITEM_21_DESC	Restaura 40 de hambre al comerla.
+ITEM_22_NAME	Ración de viaje
+ITEM_22_DESC	Restaura 50 de hambre al comerla.
+ITEM_23_NAME	Gorra
+ITEM_23_DESC	Protege la cabeza.
+ITEM_24_NAME	Capucha
+ITEM_24_DESC	Protege la cabeza.
+ITEM_25_NAME	Cofia de malla
+ITEM_25_DESC	Protege la cabeza.
+ITEM_26_NAME	Yelmo
+ITEM_26_DESC	Protege la cabeza.
+ITEM_27_NAME	Visera
+ITEM_27_DESC	Protege la cabeza.
+ITEM_28_NAME	Bacinete
+ITEM_28_DESC	Protege la cabeza.
+ITEM_29_NAME	Celada
+ITEM_29_DESC	Protege la cabeza.
+ITEM_30_NAME	Gran yelmo
+ITEM_30_DESC	Protege la cabeza.
+ITEM_31_NAME	Diadema
+ITEM_31_DESC	Protege la cabeza.
+ITEM_32_NAME	Corona
+ITEM_32_DESC	Protege la cabeza.
+ITEM_33_NAME	Túnica
+ITEM_33_DESC	Cubre el pecho y el cuerpo.
+ITEM_34_NAME	Jubón
+ITEM_34_DESC	Cubre el pecho y el cuerpo.
+ITEM_35_NAME	Coraza lamelar
+ITEM_35_DESC	Cubre el pecho y el cuerpo.
+ITEM_36_NAME	Brigantina
+ITEM_36_DESC	Cubre el pecho y el cuerpo.
+ITEM_37_NAME	Cota de malla
+ITEM_37_DESC	Cubre el pecho y el cuerpo.
+ITEM_38_NAME	Peto
+ITEM_38_DESC	Cubre el pecho y el cuerpo.
+ITEM_39_NAME	Coraza
+ITEM_39_DESC	Cubre el pecho y el cuerpo.
+ITEM_40_NAME	Pechera
+ITEM_40_DESC	Cubre el pecho y el cuerpo.
+ITEM_41_NAME	Armadura completa
+ITEM_41_DESC	Cubre el pecho y el cuerpo.
+ITEM_42_NAME	Armadura ceremonial
+ITEM_42_DESC	Cubre el pecho y el cuerpo.
+ITEM_43_NAME	Calzas
+ITEM_43_DESC	Cubre las piernas.
+ITEM_44_NAME	Pantalones
+ITEM_44_DESC	Cubre las piernas.
+ITEM_45_NAME	Polainas
+ITEM_45_DESC	Cubre las piernas.
+ITEM_46_NAME	Calzas de malla
+ITEM_46_DESC	Cubre las piernas.
+ITEM_47_NAME	Musleras
+ITEM_47_DESC	Cubre las piernas.
+ITEM_48_NAME	Cuisses
+ITEM_48_DESC	Cubre las piernas.
+ITEM_49_NAME	Grebas
+ITEM_49_DESC	Cubre las piernas.
+ITEM_50_NAME	Grebas de placas
+ITEM_50_DESC	Cubre las piernas.
+ITEM_51_NAME	Grebas de malla
+ITEM_51_DESC	Cubre las piernas.
+ITEM_52_NAME	Grebas doradas
+ITEM_52_DESC	Cubre las piernas.
+ITEM_53_NAME	Sandalias
+ITEM_53_DESC	Protege los pies.
+ITEM_54_NAME	Zapatos
+ITEM_54_DESC	Protege los pies.
+ITEM_55_NAME	Botas
+ITEM_55_DESC	Protege los pies.
+ITEM_56_NAME	Botas de montar
+ITEM_56_DESC	Protege los pies.
+ITEM_57_NAME	Botas claveteadas
+ITEM_57_DESC	Protege los pies.
+ITEM_58_NAME	Vendajes para los pies
+ITEM_58_DESC	Protege los pies.
+ITEM_59_NAME	Botas de marcha
+ITEM_59_DESC	Protege los pies.
+ITEM_60_NAME	Sabatones
+ITEM_60_DESC	Protege los pies.
+ITEM_61_NAME	Solerets
+ITEM_61_DESC	Protege los pies.
+ITEM_62_NAME	Botas de guerra
+ITEM_62_DESC	Protege los pies.
+ITEM_63_NAME	Cinta
+ITEM_63_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_64_NAME	Amuleto
+ITEM_64_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_65_NAME	Pulsera
+ITEM_65_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_66_NAME	Broche
+ITEM_66_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_67_NAME	Anillo
+ITEM_67_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_68_NAME	Collar
+ITEM_68_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_69_NAME	Colgante
+ITEM_69_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_70_NAME	Talismán
+ITEM_70_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_71_NAME	Torque
+ITEM_71_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_72_NAME	Capa
+ITEM_72_DESC	Una pequeña joya usada. Se pueden llevar dos a la vez.
+ITEM_73_NAME	Espada corta
+ITEM_73_DESC	Se sostiene en la mano principal.
+ITEM_74_NAME	Espada larga
+ITEM_74_DESC	Se sostiene en la mano principal.
+ITEM_75_NAME	Hacha
+ITEM_75_DESC	Se sostiene en la mano principal.
+ITEM_76_NAME	Maza
+ITEM_76_DESC	Se sostiene en la mano principal.
+ITEM_77_NAME	Mayal
+ITEM_77_DESC	Se sostiene en la mano principal.
+ITEM_78_NAME	Estoque
+ITEM_78_DESC	Se sostiene en la mano principal.
+ITEM_79_NAME	Daga
+ITEM_79_DESC	Se sostiene con una mano. Cabe en la mano principal o en la secundaria.
+ITEM_80_NAME	Cuchillo
+ITEM_80_DESC	Se sostiene con una mano. Cabe en la mano principal o en la secundaria.
+ITEM_81_NAME	Estilete
+ITEM_81_DESC	Se sostiene con una mano. Cabe en la mano principal o en la secundaria.
+ITEM_82_NAME	Escudo redondo
+ITEM_82_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_83_NAME	Escudo cometa
+ITEM_83_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_84_NAME	Escudo torre
+ITEM_84_DESC	Se sostiene en la mano secundaria. Bloquea golpes.
+ITEM_85_NAME	Mandoble
+ITEM_85_DESC	Necesita las dos manos. La mano secundaria debe estar vacía.
+ITEM_86_NAME	Martillo de guerra
+ITEM_86_DESC	Necesita las dos manos. La mano secundaria debe estar vacía.
+ITEM_87_NAME	Hacha de guerra
+ITEM_87_DESC	Necesita las dos manos. La mano secundaria debe estar vacía.
+UILABEL_UI_SCALE	Escala de la interfaz
+NAME_MASCULINE	["Santiago", "Mateo", "Joaquín", "Emilio", "Julián"]
+NAME_FEMININE	["Valentina", "Camila", "Sofía", "Renata", "Paula"]
+NAME_ANDROGYNOUS	["Nico", "Charly", "Kiri", "Dani", "Yoel"]
+UILABEL_BODY_TYPE	Tipo de cuerpo
+UILABEL_BODY_MASCULINE	Masculino
+UILABEL_BODY_FEMININE	Femenino
+UILABEL_BODY_ANDROGYNOUS	Andrógino
+UILABEL_TYPE_ITEM	Objeto
+UILABEL_TYPE_CONSUMABLE	Consumible
+UILABEL_TYPE_WEAPON	Arma
+UILABEL_TYPE_ARMOR	Armadura
+UILABEL_TYPE_ACCESSORY	Accesorio
+UILABEL_SLOT_EITHER_HAND	Cualquier mano
+UILABEL_SLOT_TWO_HAND	A dos manos
+MISC_TRADE_CHANGE	Comercio: {0}
+UILABEL_NEEDS_UNITS	Añade al menos una unidad para empezar.
+PROP_WAGON	Carreta
+PROP_CAMPFIRE	Fogata
+PROP_BEDROLL	Petate
+PROP_BED	Cama
+PROP_BARREL	Barril
+PROP_ORE	Mineral
+PROP_TREE	Árbol
+PROP_BOULDER	Roca
+PROP_MUSHROOM	Hongo
+PROP_BONES	Huesos
+PROP_WALL	Muro
+PROP_STALL	Puesto
+MISC_STORAGE_FULL	No hay espacio en el almacén
+MISC_PROP_TAKEN	Ya está en uso
+MISC_PROP_WORKERS_FULL	Hasta {0} unidades pueden trabajarlo a la vez
+MISC_GATHERS	{0} recolecta {1}
+MISC_GATHER_NO_ROOM	{0} no tiene espacio para {1} y deja de trabajar
+MISC_REASON_GATHERING	recolectar
+UILABEL_TASK	Tarea: {0}
+UILABEL_TASK_IDLE	Inactivo
+UILABEL_TASK_MOVING	En movimiento
+UILABEL_TASK_RESTING	Descansando
+UILABEL_STORAGE_HINT	Haz clic derecho en un objeto para tomarlo, o arrástralo afuera para soltarlo donde está tu unidad. Haz clic derecho en los objetos de tu unidad para guardarlos.
+ITEM_88_NAME	Tronco de madera
+ITEM_88_DESC	Madera cortada de un árbol, para fabricar y construir.
+UILABEL_CRAFT_HINT	Haz clic derecho en los objetos de tu unidad para ponerlos dentro. Lo fabricado va al inventario de quien trabaja. Para empezar a trabajar, haz clic derecho en {0} y elige Usar.
+MISC_CRAFT_WRONG_ITEM	{0} no se puede usar aquí
+MISC_CRAFT_NEEDS	Pon {0} en la entrada para empezar
+MISC_CRAFTS	{0} fabrica {1}
+MISC_CRAFT_STOPS	{0} no tiene nada más en qué trabajar y se detiene
+MISC_REASON_CRAFTING	fabricar
+ITEM_89_NAME	Carne de oso cruda
+ITEM_89_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_90_NAME	Carne de oso cocida
+ITEM_90_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+UILABEL_TALK	Hablar
+UILABEL_ATTACK	Atacar
+UILABEL_ATTACK_UNPROVOKED	Atacar (sin provocación)
+UILABEL_FOLLOW	Seguir
+UILABEL_DEFEND	Defender
+UILABEL_TASK_FOLLOWING	Siguiendo
+UILABEL_TASK_DEFENDING	Defendiendo
+MISC_FREE_TRADE_ADD	Agrega objetos a cualquier lado
+MISC_FREE_TRADE_READY	Listo para intercambiar
+MISC_TURNS_HOSTILE	{0} se vuelve hostil
+MISC_SELECT_UNIT_FIRST	Primero selecciona una unidad
+FACTION_PLAYER	Facción del jugador
+FACTION_GRAY	Facción gris
+FACTION_RED	Facción roja
+MISC_PROP_UNREACHABLE	Inalcanzable
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Escenario
+SCENARIO_VAGABOND_NAME	Vagabundo
+SCENARIO_VAGABOND_DESC	Un trotamundos solitario sin nada a su nombre: sin objetos, sin equipo y cada estadística entre 1 y 5.
+SCENARIO_RANDOM_NAME	Totalmente aleatorio
+SCENARIO_RANDOM_DESC	Un grupo de 1 a 32 unidades, cada una con todas sus estadísticas entre 1 y 99, y objetos y equipo aleatorios que puede cargar.
+SCENARIO_CARAVAN_NAME	Caravana viajera
+SCENARIO_CARAVAN_DESC	Diez viajeros juntos en el camino. Todas las estadísticas empiezan en 5 y cada uno lleva 10 monedas de oro.
+SCENARIO_SHABBY_NAME	Pandilla andrajosa
+SCENARIO_SHABBY_DESC	Tres kobolds sin suerte con un objeto aleatorio cada uno y todas las estadísticas entre 1 y 10.
+SCENARIO_NOBODY_NAME	Don nadie hambriento
+SCENARIO_NOBODY_DESC	Una unidad sin nada: sin objetos, sin equipo, todas las estadísticas en 1 y el estómago vacío.
+SCENARIO_DIGGERS_NAME	Excavadores de mazmorras
+SCENARIO_DIGGERS_DESC	Siete mineros con equipo completo. Sus estadísticas van de 5 a 20, pero cada uno tiene Minería en 50 y lleva 3 minerales de hierro.
+SCENARIO_CUSTOM_NAME	Escenario personalizado
+SCENARIO_CUSTOM_DESC	Arma tu propio grupo. Empieza con tres unidades y puedes agregar o quitar unidades, hasta 32.
+PROP_LOCKED_CHEST	Cofre cerrado con llave
+PROP_PRISONER_CAGE	Jaula de prisionero
+UILABEL_UNLOCK	Abrir cerradura
+MISC_PROP_LOCKED	Cerrado con llave
+MISC_LOCKPICK_NEEDS	Requiere Ganzúa {0}
+MISC_UNLOCKED	¡Abierto!
+MISC_LOCKPICK_FAILED	Falló la ganzúa
+MISC_UNLOCKS	{0} abre {1}
+MISC_REASON_LOCKPICKING	forzar cerraduras
+MISC_LOCKED_NAME	{0} (cerrado)
+PROP_CHAIR	Silla
+PROP_BENCH	Banca
+PROP_STOOL	Taburete
+PROP_TABLE	Mesa
+PROP_END_TABLE	Mesa auxiliar
+PROP_ROUND_TABLE	Mesa redonda
+PROP_METAL_TABLE	Mesa de metal
+PROP_STANDING_TORCH	Antorcha de pie
+PROP_SUPPORT_BEAM	Viga de soporte
+PROP_TRAINING_DUMMY	Muñeco de entrenamiento
+PROP_RAW_FOOD_STORAGE	Almacén de comida cruda
+PROP_FOOD_STORAGE	Almacén de comida
+PROP_WEAPON_RACK	Armero
+PROP_ARMOR_STAND	Soporte de armadura
+PROP_WATER_TANK	Tanque de agua
+PROP_WATER_PUMP	Bomba de agua
+PROP_FORGE	Forja
+FILTER_RAW_FOOD	comida cruda
+FILTER_FOOD	comida
+FILTER_WEAPON	armas
+FILTER_ARMOR	armadura
+FILTER_WATER	agua
+MISC_STORAGE_ONLY	Solo acepta: {0}
+UILABEL_STORAGE_TAKES	Solo acepta: {0}.
+UILABEL_TASK_SITTING	Sentado
+UILABEL_TASK_LOCKED_IN	Encerrado
+MISC_LOCKED_IN	{0} está encerrado en: {1}
+MISC_REASON_TRAINING	entrenamiento
+MISC_XP_GAINED	+{0} XP de {1}
+UILABEL_INPUT	Entrada
+UILABEL_OUTPUT	Salida
+MISC_FUEL_LEFT	Ardiendo: quedan {0} min de combustible
+MISC_NO_FUEL	Sin combustible
+MISC_OUTPUT_FULL	Salida llena: en pausa
+UILABEL_PASSIVE_HINT	Usa {0} como combustible: cada uno arde {1} minutos de juego y hace {2} en la salida, con o sin trabajador. Se detiene mientras la salida esté llena. Haz clic derecho en los objetos para meterlos o sacarlos.
+ITEM_91_NAME	Agua
+ITEM_91_DESC	Agua fresca de una bomba.
+ITEM_92_NAME	Lingote de hierro
+ITEM_92_DESC	Una barra de hierro fundida a partir de mineral en una forja.
+ITEM_93_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_93_NAME	Carne de res cruda
+ITEM_94_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_94_NAME	Carne de res cocida
+ITEM_95_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_95_NAME	Carne de pollo cruda
+ITEM_96_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_96_NAME	Carne de pollo cocida
+ITEM_97_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_97_NAME	Carne de jabalí cruda
+ITEM_98_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_98_NAME	Carne de jabalí cocida
+ITEM_99_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_99_NAME	Carne de lobo cruda
+ITEM_100_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_100_NAME	Carne de lobo cocida
+ITEM_101_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_101_NAME	Carne de venado cruda
+ITEM_102_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_102_NAME	Carne de venado cocida
+ITEM_103_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_103_NAME	Carne de conejo cruda
+ITEM_104_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_104_NAME	Carne de conejo cocida
+ITEM_105_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_105_NAME	Pescado crudo
+ITEM_106_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_106_NAME	Pescado cocido
+ITEM_107_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_107_NAME	Carne de cangrejo cruda
+ITEM_108_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_108_NAME	Carne de cangrejo cocida
+ITEM_109_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_109_NAME	Carne de lagarto cruda
+ITEM_110_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_110_NAME	Carne de lagarto cocida
+ITEM_111_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_111_NAME	Carne de serpiente cruda
+ITEM_112_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_112_NAME	Carne de serpiente cocida
+ITEM_113_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_113_NAME	Carne de cerdo cruda
+ITEM_114_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_114_NAME	Carne de cerdo cocida
+ITEM_115_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_115_NAME	Carne de oveja cruda
+ITEM_116_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_116_NAME	Carne de oveja cocida
+ITEM_117_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_117_NAME	Carne de pato cruda
+ITEM_118_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_118_NAME	Carne de pato cocida
+ITEM_119_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_119_NAME	Carne de tortuga cruda
+ITEM_120_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_120_NAME	Carne de tortuga cocida
+ITEM_121_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_121_NAME	Carne de murciélago cruda
+ITEM_122_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_122_NAME	Carne de murciélago cocida
+ITEM_123_DESC	Carne sin cocinar. Cocínala en una fogata.
+ITEM_123_NAME	Carne de rana cruda
+ITEM_124_DESC	Carne cocinada al fuego. Restaura salud y hambre.
+ITEM_124_NAME	Carne de rana cocida
+ITEM_125_DESC	Un pequeño hongo silvestre. Crudo, ayuda poco a la salud y al hambre.
+ITEM_125_NAME	Hongo
+MISC_FOOD_TO_COOK	carne cruda
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Hongo venenoso
+ITEM_126_DESC	Un hongo silvestre que parece uno cualquiera. Comerlo cuesta salud y saciedad.
+UILABEL_OPTIMIZE	Optimizar
+UILABEL_REMOVE_ALL	Quitar todo
+MISC_GEAR_NO_ROOM	No hay suficiente espacio en el inventario
+MISC_GEAR_ALREADY_BEST	Ya lleva el mejor equipo
+MISC_GEAR_NONE_WORN	No hay equipo que quitar
+UILABEL_OPTIMIZE_ALL	Optimizar todo
+MISC_OPTIMIZE_ALL_ASK	¿Optimizar el equipo de las {0} unidades del escuadrón? Cada unidad elige entre lo que lleva puesto y consigo. Una unidad sin espacio para lo que se quita se queda como está.
+UILABEL_OPTIMIZE_BALANCE	Ataque {0} % / Defensa {1} %
+UILABEL_OPTIMIZE_ACCESSORIES	Cambiar accesorios
+UILABEL_OPTIMIZE_TWO_HANDED	Permitir armas a dos manos
+UILABEL_OPTIMIZE_VALUE_TIES	En empate, gana el objeto más valioso
+MISC_OPTIMIZE_ALL_SAME	Todas las unidades ya llevan su mejor equipo
+MISC_OPTIMIZE_ALL_DONE	Equipo optimizado para {0} unidades
+MISC_OPTIMIZE_ALL_SOME_ROOM	Equipo optimizado para {0} unidades; {1} no tenían espacio en el inventario
+GAME_TITLE_FIRST	Supervivencia
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Acceso anticipado
+MISC_TITLE_KEYS	Elegir  //  Enter Confirmar
+UILABEL_LANGUAGE_LABEL	Idioma:

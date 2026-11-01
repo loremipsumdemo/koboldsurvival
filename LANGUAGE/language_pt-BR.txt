@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Rolagem nas bordas
 UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Música
 UILABEL_AMBIENT	Ambiente
+UILABEL_INTERFACE_SOUNDS	Sons da interface
 UILABEL_SOUND_EFFECTS	Efeitos sonoros
 UILABEL_RESTORE_DEFAULTS	Restaurar padrões
 UILABEL_WINDOWED	Janela
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Perfil
 UILABEL_STATS	Atributos
 UILABEL_CLICK_TO_TYPE	Clique para digitar um nome
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Grupo inicial: {0}
 UILABEL_HEALTH	Vida
 UILABEL_HUNGER	Fome
 UILABEL_CARRY	Carga
@@ -606,6 +606,8 @@ FACTION_RED	Facção Vermelha
 MISC_PROP_UNREACHABLE	Inalcançável
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Cenário
+SCENARIO_VAGABOND_NAME	Vagabundo
+SCENARIO_VAGABOND_DESC	Um andarilho solitário sem nada de seu: sem itens, sem equipamento e todos os atributos entre 1 e 5.
 SCENARIO_RANDOM_NAME	Totalmente aleatório
 SCENARIO_RANDOM_DESC	Um grupo de 1 a 32 unidades, cada uma com todos os atributos entre 1 e 99, e itens e equipamentos aleatórios que consegue carregar.
 SCENARIO_CARAVAN_NAME	Caravana viajante
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Zé-ninguém faminto
 SCENARIO_NOBODY_DESC	Uma unidade sem nada: sem itens, sem equipamento, todos os atributos em 1 e o estômago vazio.
 SCENARIO_DIGGERS_NAME	Escavadores de masmorra
 SCENARIO_DIGGERS_DESC	Sete mineradores com equipamento completo. Os atributos vão de 5 a 20, mas cada um tem Mineração 50 e carrega 3 minérios de ferro.
+SCENARIO_CUSTOM_NAME	Cenário personalizado
+SCENARIO_CUSTOM_DESC	Monte seu próprio grupo. Começa com três unidades e você pode adicionar ou remover unidades, até 32.
 PROP_LOCKED_CHEST	Baú trancado
 PROP_PRISONER_CAGE	Jaula de prisioneiro
 UILABEL_UNLOCK	Destrancar
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	No empate, vence o item mais valioso
 MISC_OPTIMIZE_ALL_SAME	Todas as unidades já usam o melhor equipamento
 MISC_OPTIMIZE_ALL_DONE	Equipamento otimizado para {0} unidades
 MISC_OPTIMIZE_ALL_SOME_ROOM	Equipamento otimizado para {0} unidades; {1} sem espaço no inventário
+GAME_TITLE_FIRST	Sobrevivência
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Acesso antecipado
+MISC_TITLE_KEYS	Escolher  //  Enter Confirmar
+UILABEL_LANGUAGE_LABEL	Idioma:

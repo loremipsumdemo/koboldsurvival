@@ -1,6 +1,6 @@
 // Packs a folder into one pak file, so the game ships a single data.pak instead of loose files.
 // Usage: pack_data <folder> <output.pak>
-// Each file is stored under the folder's name, such as "data/unit/01.png" for data/unit/01.png.
+// Each file is stored under the folder's name, such as "data/unit/unit_1.png" for data/unit/unit_1.png.
 // The layout must match src/pak.cpp.
 
 #include <algorithm>

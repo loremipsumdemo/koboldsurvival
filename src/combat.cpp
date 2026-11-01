@@ -283,6 +283,21 @@ std::vector<LogLine> gQueued;   // game messages waiting for the next frame's lo
 
 namespace {
 std::vector<TradeLabel> gQueuedLabels;
+std::vector<Sfx> gQueuedSounds;
+}
+
+void queueSound(Sfx s) {
+    if (std::find(gQueuedSounds.begin(), gQueuedSounds.end(), s) == gQueuedSounds.end()) gQueuedSounds.push_back(s);
+}
+
+std::vector<Sfx> takeQueuedSounds() {
+    std::vector<Sfx> out;
+    out.swap(gQueuedSounds);
+    return out;
+}
+
+void discardQueuedSounds() {
+    gQueuedSounds.clear();
 }
 
 void queueUnitLabel(Entity unit, const std::string& text, bool red) {
@@ -362,7 +377,9 @@ void grantXp(World& w, Entity e, int stat, float amount, const std::string& why)
     const float whole = std::floor(total);
     buf.frac[stat] = total - whole;
     if (whole < 1.0f) return;
+    const int before = levelOf(*st, stat);
     addXp(*st, stat, (int)whole);
+    if (levelOf(*st, stat) > before) queueSound(Sfx::LevelUp);
     if (!why.empty()) {
         queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), LogKind::Xp);
     }

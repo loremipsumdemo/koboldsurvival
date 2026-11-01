@@ -209,6 +209,15 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     }
     // And under them, over the one who used it, the item it used up
     queueUnitLabel(consumer, itemLossLabelFor(1, s.item), true);
+    // Its sound: hurt by it, or food eaten, or anything else drunk
+    {
+        bool hurt = false, food = false;
+        for (const UseEffect& e : effects) {
+            if (e.amount < 0) hurt = true;
+            if (e.stat == UseEffect::Stat::Hunger) food = true;
+        }
+        queueSound(hurt ? Sfx::Poison : food ? Sfx::Eat : Sfx::Drink);
+    }
     if (--s.count <= 0) s = ItemStack{};
     grantXp(w, consumer, STAT_MEDICAL, (float)restored, "healing");
     return UseResult::Used;

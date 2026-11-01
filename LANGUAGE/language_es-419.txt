@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Desplazamiento en los bordes
 UILABEL_GLOBAL_VOLUME	Volumen global
 UILABEL_MUSIC	Música
 UILABEL_AMBIENT	Ambiente
+UILABEL_INTERFACE_SOUNDS	Sonidos de la interfaz
 UILABEL_SOUND_EFFECTS	Efectos de sonido
 UILABEL_RESTORE_DEFAULTS	Restaurar valores predeterminados
 UILABEL_WINDOWED	Ventana
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Perfil
 UILABEL_STATS	Estadísticas
 UILABEL_CLICK_TO_TYPE	Haz clic para escribir un nombre
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Grupo inicial: {0}
 UILABEL_HEALTH	Salud
 UILABEL_HUNGER	Hambre
 UILABEL_CARRY	Carga
@@ -606,6 +606,8 @@ FACTION_RED	Facción roja
 MISC_PROP_UNREACHABLE	Inalcanzable
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Escenario
+SCENARIO_VAGABOND_NAME	Vagabundo
+SCENARIO_VAGABOND_DESC	Un trotamundos solitario sin nada a su nombre: sin objetos, sin equipo y cada estadística entre 1 y 5.
 SCENARIO_RANDOM_NAME	Totalmente aleatorio
 SCENARIO_RANDOM_DESC	Un grupo de 1 a 32 unidades, cada una con todas sus estadísticas entre 1 y 99, y objetos y equipo aleatorios que puede cargar.
 SCENARIO_CARAVAN_NAME	Caravana viajera
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Don nadie hambriento
 SCENARIO_NOBODY_DESC	Una unidad sin nada: sin objetos, sin equipo, todas las estadísticas en 1 y el estómago vacío.
 SCENARIO_DIGGERS_NAME	Excavadores de mazmorras
 SCENARIO_DIGGERS_DESC	Siete mineros con equipo completo. Sus estadísticas van de 5 a 20, pero cada uno tiene Minería en 50 y lleva 3 minerales de hierro.
+SCENARIO_CUSTOM_NAME	Escenario personalizado
+SCENARIO_CUSTOM_DESC	Arma tu propio grupo. Empieza con tres unidades y puedes agregar o quitar unidades, hasta 32.
 PROP_LOCKED_CHEST	Cofre cerrado con llave
 PROP_PRISONER_CAGE	Jaula de prisionero
 UILABEL_UNLOCK	Abrir cerradura
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	En empate, gana el objeto más valioso
 MISC_OPTIMIZE_ALL_SAME	Todas las unidades ya llevan su mejor equipo
 MISC_OPTIMIZE_ALL_DONE	Equipo optimizado para {0} unidades
 MISC_OPTIMIZE_ALL_SOME_ROOM	Equipo optimizado para {0} unidades; {1} no tenían espacio en el inventario
+GAME_TITLE_FIRST	Supervivencia
+GAME_TITLE_SECOND	Kobold
+UILABEL_EARLY_ACCESS	Acceso anticipado
+MISC_TITLE_KEYS	Elegir  //  Enter Confirmar
+UILABEL_LANGUAGE_LABEL	Idioma:

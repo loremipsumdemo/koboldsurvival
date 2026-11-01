@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Dansk
+UILABEL_CONTINUE	Fortsæt
+UILABEL_NEW_GAME	Nyt spil
+UILABEL_LOAD_GAME	Indlæs spil
+UILABEL_SETTINGS	Indstillinger
+UILABEL_LANGUAGE_BUTTON	Sprog ({0})
+UILABEL_QUIT	Afslut
+UILABEL_RESUME	Genoptag
+UILABEL_SAVE_GAME	Gem spil
+UILABEL_RETURN_TO_TITLE	Tilbage til titel
+UILABEL_CLOSE	Luk
+UILABEL_BACK	Tilbage
+UILABEL_SAVE	Gem
+UILABEL_DELETE	Slet
+UILABEL_CANCEL	Annuller
+UILABEL_CONFIRM	Bekræft
+UILABEL_YES	Ja
+UILABEL_NO	Nej
+UILABEL_NAME	Navn
+UILABEL_TIME	Tid
+UILABEL_CREATED	Oprettet
+UILABEL_TYPE	Type
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUEL
+UILABEL_NO_SAVES	Ingen gemte spil endnu
+UILABEL_UNSAVED_WARNING	Ugemte fremskridt i dette spil går tabt.
+UILABEL_HOLD_DELETE	Hold Slet nede i 3 sekunder for at bekræfte.
+UILABEL_CLICK_SAVE	Klik på et gem for at indlæse det
+UILABEL_CLICK_MAP	Klik på et kort for at starte et nyt spil
+UILABEL_NO_MAPS	Ingen kort fundet. Lav et med worldgen.py.
+UILABEL_BUILT_IN	INDBYGGET
+UILABEL_WORLD	VERDEN
+UILABEL_MAP_FILE	KORTFIL
+UILABEL_BUILT_IN_WHEN	indbygget
+UILABEL_UNKNOWN	ukendt
+UILABEL_ON	Til
+UILABEL_OFF	Fra
+UILABEL_EMPTY	Tom
+UILABEL_NONE_AVAILABLE	Ingen tilgængelige
+UILABEL_TWO_HANDED	Tohåndet
+UILABEL_WILL_BE_REPLACED	Bliver erstattet
+UILABEL_GRAPHICS	Grafik
+UILABEL_INTERFACE	Grænseflade
+UILABEL_LANGUAGE_TAB	Sprog
+UILABEL_CONTROLS	Styring
+UILABEL_AUDIO	Lyd
+UILABEL_DISPLAY_MODE	Skærmtilstand
+UILABEL_MONITOR	Skærm
+UILABEL_RESOLUTION	Opløsning
+UILABEL_REFRESH_RATE	Opdateringsfrekvens
+UILABEL_DEFAULT	Standard
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Billedhastighedsgrænse
+UILABEL_UNLIMITED	Ubegrænset
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Automatisk gem
+UILABEL_MINUTE	1 minut
+UILABEL_MINUTES	{0} minutter
+UILABEL_UNIT_NAMES	Enhedsnavne
+UILABEL_FONT_SIZE	Skriftstørrelse
+UILABEL_RESET_PANELS	Nulstil alle paneler
+UILABEL_RESET	Nulstil
+UILABEL_FONT	Skrifttype
+UILABEL_FONT_AUTOMATIC	Automatisk
+UILABEL_EDGE_SCROLL	Rulning ved kanter
+UILABEL_GLOBAL_VOLUME	Global lydstyrke
+UILABEL_MUSIC	Musik
+UILABEL_AMBIENT	Omgivelser
+UILABEL_INTERFACE_SOUNDS	Brugerfladelyde
+UILABEL_SOUND_EFFECTS	Lydeffekter
+UILABEL_RESTORE_DEFAULTS	Gendan standardindstillinger
+UILABEL_WINDOWED	Vindue
+UILABEL_BORDERLESS	Uden kant
+UILABEL_FULL_SCREEN	Fuld skærm
+CONTROL_KEYS_1	W A S D, eller piletasterne
+CONTROL_DOES_1	Flyt kameraet
+CONTROL_KEYS_2	Musehjul
+CONTROL_DOES_2	Zoom ind og ud
+CONTROL_KEYS_3	Hold midterste museknap nede og træk
+CONTROL_DOES_3	Drej kameraet
+CONTROL_KEYS_4	Venstreklik, eller træk en boks
+CONTROL_DOES_4	Vælg enheder
+CONTROL_KEYS_5	Shift eller Alt med et klik
+CONTROL_DOES_5	Føj til valget
+CONTROL_KEYS_6	Højreklik
+CONTROL_DOES_6	Flyt eller angrib med de valgte enheder
+CONTROL_KEYS_7	Hold Alt nede
+CONTROL_DOES_7	Vis navnene på genstande på jorden
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Åbn menuen, eller gå tilbage
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Tag et skærmbillede
+UILABEL_PAUSED	PAUSET
+UILABEL_PACE_RUN	Tempo: løb
+UILABEL_PACE_WALK	Tempo: gang
+UILABEL_SQUAD_PANEL	Troppepanel
+UILABEL_UNIT_PANEL	Enhedspanel
+UILABEL_INFORMATION_PANEL	Informationspanel
+UILABEL_INTERACTION_PANEL	Interaktionspanel
+UILABEL_TRADE_PANEL	Handelspanel
+UILABEL_INVENTORY	Beholdning
+UILABEL_EQUIPMENT	Udstyr
+UILABEL_BEHAVIOR	Adfærd
+UILABEL_TRADE	Handel
+UILABEL_END_DIALOGUE	Afslut samtale
+UILABEL_TRADE_DROP_THEIRS	Træk eller højreklik på genstande fra deres beholdning hertil
+UILABEL_TRADE_DROP_YOURS	Træk eller højreklik på dine genstande fra din beholdning hertil
+UILABEL_SINGLE	Enkelt
+UILABEL_MAX	Maks
+UILABEL_SORT	Sortér
+UILABEL_WORLD_MAP_HINT	Verdenskort. Rul for at zoome. Tryk M eller Esc for at lukke.
+UILABEL_NO_UNIT_SELECTED	Ingen enhed valgt
+UILABEL_UNNAMED_UNIT	Unavngiven enhed
+UILABEL_NO_NAME	Intet navn
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Værdier
+UILABEL_CLICK_TO_TYPE	Klik for at skrive et navn
+UILABEL_SPRITE	Figur
+UILABEL_HEALTH	Helbred
+UILABEL_HUNGER	Sult
+UILABEL_CARRY	Bærekapacitet
+UILABEL_NEXT_LEVEL_XP_LINE	Erfaring til næste niveau: {0}
+UILABEL_STAT	Værdi
+UILABEL_LEVEL	Niveau
+UILABEL_TOTAL_XP	Samlet erfaring
+UILABEL_TO_NEXT	Til næste
+UILABEL_ATTRIBUTES	Egenskaber
+UILABEL_COMBAT	Kamp
+UILABEL_RESOURCE_GATHERING	Indsamling af ressourcer
+UILABEL_CRAFTING	Håndværk
+UILABEL_UTILITY	Hjælpefærdigheder
+UILABEL_GEAR	Udstyr
+UILABEL_ITEMS	Genstande
+UILABEL_IDENTITY	Identitet
+UILABEL_RANDOMIZE_UNIT	Gør denne enhed tilfældig
+UILABEL_RANDOMIZE_ALL	Gør alle tilfældige
+UILABEL_ADD_UNIT	Tilføj enhed
+UILABEL_REMOVE_UNIT	Fjern enhed
+UILABEL_CONFIRM_STARTS	Bekræft starter spillet med denne gruppe.
+UILABEL_NEEDS_NAMES	Hver enhed skal have et navn, før spillet kan starte.
+UILABEL_CLICK_UNIT_EDIT	Klik på en enhed for at redigere den.
+UILABEL_SHIFT_CLICK	Shift + klik ændrer en værdi med 10.
+UILABEL_LEVELS_HINT	Niveauerne går fra 1 til 99.
+UILABEL_CLICK_SLOT	Klik på en plads for at vælge dens genstand. Kun genstande, der passer, vises.
+UILABEL_CLICK_SLOT_STACK	Klik på en plads for at vælge dens genstand. Stakke rummer op til genstandens grænse.
+UILABEL_SCROLL_UP	Rul op
+UILABEL_SCROLL_DOWN	Rul ned
+UILABEL_SLOT_HEAD	Hoved
+UILABEL_SLOT_TORSO	Overkrop
+UILABEL_SLOT_MAIN_HAND	Hovedhånd
+UILABEL_SLOT_OFF_HAND	Sekundær hånd
+UILABEL_SLOT_LEGS	Ben
+UILABEL_SLOT_FEET	Fødder
+UILABEL_SLOT_ACCESSORY	Tilbehør
+UILABEL_BEHAVIOR_ON	Til
+UILABEL_TARGET	Mål
+UILABEL_CONDITION	Betingelse
+UILABEL_ACTION	Handling
+UILABEL_COMBAT_MESSAGES	Kampmeddelelser
+UILABEL_SEEN	Set
+UILABEL_HIT	Ramt
+UILABEL_MISS	Bom
+UILABEL_DAMAGE	Skade
+UILABEL_EXPERIENCE_MESSAGES	Erfaringsmeddelelser
+UILABEL_EXPERIENCE	Erfaring
+UILABEL_ITEM_MESSAGES	Genstandsmeddelelser
+UILABEL_PICKUP	Saml op
+UILABEL_DROP	Smid
+UILABEL_LOOT	Bytte
+UILABEL_USE	Brug
+UILABEL_MESSAGE	Meddelelse
+UILABEL_GAME	Spil
+UILABEL_FILTER	Filter
+UILABEL_STAT_HEAD_STAT	Værdi
+UILABEL_UNKNOWN_SLOT	Ukendt
+UILABEL_MONTH_NAME	{0} måned
+UILABEL_STRENGTH_STAT	Styrke
+MISC_GAME_SAVED	Spil gemt
+MISC_SAVE_FAILED	Spillet kunne ikke gemmes
+MISC_READ_FAILED	Det gemte spil kunne ikke læses
+MISC_SAVE_OLD	Det gemte spil er fra før kortene og kan ikke indlæses
+MISC_AUTOSAVED	Gemt automatisk
+MISC_SCREENSHOT_FAILED	Skærmbilledet kunne ikke gemmes
+MISC_SCREENSHOT_SAVED	Gemt {0}
+MISC_TRADE_FULL	Handlen er fuld
+MISC_TRADE_ALREADY	Genstanden er allerede i handlen, eller handlen er fuld.
+MISC_TRADE_NO_MORE	Der er ikke mere af den genstand at handle med
+MISC_NO_UNIT_TO_TRADE	Ingen enhed at handle med
+MISC_TRADE_ADD_BOTH	Tilføj genstande på begge sider
+MISC_TRADE_NO_ROOM_YOURS	Din enhed har ikke plads til deres genstande
+MISC_TRADE_NO_ROOM_THEIRS	De har ikke plads til dine genstande
+MISC_TRADE_FAILED	Handlen mislykkedes
+MISC_TRADE_COMPLETE	Handlen er gennemført.
+MISC_PICKUP_SELECT	Vælg enheder, der skal samle genstanden op
+MISC_TRADE_ONLY_TALKING	Du kan kun handle med den enhed, du taler med.
+MISC_DROPS	{0} taber {1} {2}
+MISC_AN_ITEM	en genstand
+MISC_UNIT	Enhed
+MISC_TWO_HANDED_IN_MAIN	Et tohåndsvåben er i hovedhånden
+MISC_YOU	Du
+MISC_UNKNOWN_ITEM	Ukendt genstand
+MISC_ITEM_FALLBACK	Genstand
+MISC_THAT_ITEM	Den
+MISC_REASON_FEES	betaling af handelsgebyrer
+MISC_REASON_WALKING	gang
+MISC_REASON_CARRYING	at bære en last
+MISC_REASON_CLIMBING	klatring
+MISC_REASON_SWINGING	svingning
+MISC_REASON_DODGING	undvigelse
+MISC_REASON_DEALING	at påføre skade
+MISC_REASON_TAKING	at tage skade
+MISC_REASON_BLOCKING	blokering
+MISC_REASON_SPOTTING	at opdage en fjende
+MISC_REASON_UNNOTICED	at forblive uopdaget
+MISC_REASON_GEAR	skift af udstyr
+NPC_GREETING	Hej verden.
+NPC_OPTION_WARES	Vis mig dine varer.
+NPC_OPTION_QUEST	Hvad kan du ellers fortælle mig om questen?
+MISC_ORD_1	Første
+MISC_ORD_2	Anden
+MISC_ORD_3	Tredje
+MISC_ORD_4	Fjerde
+MISC_ORD_5	Femte
+MISC_ORD_6	Sjette
+MISC_ORD_7	Syvende
+MISC_ORD_8	Ottende
+MISC_ORD_9	Niende
+MISC_ORD_10	Tiende
+MISC_ORD_11	Ellevte
+MISC_ORD_12	Tolvte
+MISC_SKY_DAY_ZENITH	Dagens zenit
+MISC_SKY_DAY_HORIZON	Dagens horisont
+MISC_SKY_NIGHT_ZENITH	Nattens zenit
+MISC_SKY_NIGHT_HORIZON	Nattens horisont
+MISC_SKY_DUSK_HORIZON	Skumringens horisont
+MISC_SKY_DUSK_SUN	Solen i skumringen
+MISC_SKY_SUN	Solen
+MISC_SKY_MOON	Månen
+MISC_TARGET_SELF	Sig selv
+MISC_TARGET_ALLY	Allieret
+MISC_TARGET_ENEMY	Fjende
+MISC_COND_HEALTH	Helbred
+MISC_COND_HUNGER	Sult
+MISC_ACT_HEAL	Brug en helbredende genstand
+MISC_ACT_FOOD	Spis en madgenstand
+UILABEL_STAT_DESC_STRENGTH	Nærkampsskade, bærekapacitet
+UILABEL_STAT_DESC_DEXTERITY	Angrebshastighed
+UILABEL_STAT_DESC_VITALITY	Maks. helbred
+UILABEL_STAT_DESC_ENDURANCE	Maks. udholdenhed
+UILABEL_STAT_DESC_AGILITY	Chance for at undvige
+UILABEL_STAT_DESC_INTELLIGENCE	Manapulje
+UILABEL_STAT_DESC_WISDOM	Antal fortryllelser, der kan læres
+UILABEL_STAT_DESC_CHARISMA	Handelspriser hos NPC'er, særlige dialogvalg
+UILABEL_STAT_DESC_PERCEPTION	Opdagelsesafstand
+UILABEL_STAT_DESC_ATHLETICS	Løbehastighed
+UILABEL_STAT_DESC_STEALTH	Bedre til at undgå at blive opdaget, når man sniger
+UILABEL_STAT_DESC_MELEE	Nærkampsnøjagtighed
+UILABEL_STAT_DESC_PROJECTILES	Distancenøjagtighed
+UILABEL_STAT_DESC_ARCANE	Fortryllelseskraft
+UILABEL_STAT_DESC_BLOCK	Chance for blokering/parade
+UILABEL_STAT_DESC_MINING	Malmudbytte
+UILABEL_STAT_DESC_HERBALISM	Udbytte ved indsamling af vilde planter
+UILABEL_STAT_DESC_WOODCUTTING	Udbytte af træstammer
+UILABEL_STAT_DESC_SKINNING	Udbytte af skind og kød
+UILABEL_STAT_DESC_FARMING	Høstudbytte
+UILABEL_STAT_DESC_COOKING	Styrke af madbonusser
+UILABEL_STAT_DESC_SMELTING	Udbytte ved smeltning af malm
+UILABEL_STAT_DESC_FORGING	Metalhåndværk
+UILABEL_STAT_DESC_CARPENTRY	Træhåndværk
+UILABEL_STAT_DESC_STONEWORKING	Stenhåndværk
+UILABEL_STAT_DESC_LOCKPICKING	Låsenes sværhedsgrad
+UILABEL_STAT_DESC_THIEVERY	Succes ved tyveri
+UILABEL_STAT_DESC_MEDICAL	Helbredelsens virkning
+UILABEL_DEXTERITY_STAT	Behændighed
+UILABEL_VITALITY_STAT	Vitalitet
+UILABEL_ENDURANCE_STAT	Udholdenhed
+UILABEL_AGILITY_STAT	Smidighed
+UILABEL_INTELLIGENCE_STAT	Intelligens
+UILABEL_WISDOM_STAT	Visdom
+UILABEL_CHARISMA_STAT	Karisma
+UILABEL_PERCEPTION_STAT	Opmærksomhed
+UILABEL_ATHLETICS_STAT	Atletik
+UILABEL_STEALTH_STAT	Snigen
+UILABEL_MELEE_STAT	Nærkamp
+UILABEL_PROJECTILES_STAT	Distancevåben
+UILABEL_ARCANE_STAT	Arkane kræfter
+UILABEL_BLOCK_STAT	Blokering
+UILABEL_MINING_STAT	Minedrift
+UILABEL_HERBALISM_STAT	Urtekendskab
+UILABEL_WOODCUTTING_STAT	Skovhugning
+UILABEL_SKINNING_STAT	Flåning
+UILABEL_FARMING_STAT	Landbrug
+UILABEL_COOKING_STAT	Madlavning
+UILABEL_SMELTING_STAT	Smeltning
+UILABEL_FORGING_STAT	Smedning
+UILABEL_CARPENTRY_STAT	Tømrerarbejde
+UILABEL_STONEWORKING_STAT	Stenhugning
+UILABEL_LOCKPICKING_STAT	Låseoplukning
+UILABEL_THIEVERY_STAT	Tyveri
+UILABEL_MEDICAL_STAT	Medicin
+MISC_CANT_BE_WORN	{0} kan ikke bæres
+MISC_ITEM_NAME_FORMAT	{1} af {0}
+MISC_MATERIAL_IRON	jern
+MISC_MATERIAL_STEEL	stål
+MISC_MATERIAL_BRONZE	bronze
+MISC_MATERIAL_SILVER	sølv
+MISC_MATERIAL_LEATHER	læder
+MISC_MATERIAL_BONE	ben
+MISC_MATERIAL_WOOD	træ
+MISC_NEED_MORE_VALUE	De mangler {0} mere i værdi
+MISC_TRADE_READY_FEE	Klar. Handelsgebyr: {0}
+MISC_LOAD_FAILED	{0} kunne ikke indlæses: {1}
+MISC_MAP_MISSING	Kortet til "{0}" mangler
+MISC_MAP_LOAD_FAILED	Kortet "{0}" kunne ikke indlæses: {1}
+MISC_LOADED	Indlæst {0}
+MISC_DELETE_FAILED	"{0}" kunne ikke slettes
+MISC_DELETED	Slettede "{0}"
+MISC_USED	Brugte {0}
+MISC_OVERWRITE_Q	Overskriv "{0}"?
+MISC_LOAD_Q	Indlæs "{0}"?
+MISC_DELETE_Q	Slet "{0}"?
+MISC_NOT_FIT_SLOT	{0} passer ikke i pladsen {1}
+MISC_EMPTY_OFF_HAND	Tøm den sekundære hånd, før du holder {0}
+MISC_NO_ROOM_INV	Der er ikke plads i beholdningen til {0}
+MISC_SLOT_HOLDS	Pladsen indeholder allerede {0}
+UILABEL_TIP_TYPE	Type: {0}
+UILABEL_TIP_MATERIAL	Materiale: {0}
+UILABEL_TIP_SLOT	Plads: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Påkrævet niveau: {0}
+UILABEL_TIP_ATTACK	Angreb {0}
+UILABEL_TIP_DEFENSE	Forsvar {0}
+UILABEL_TIP_WEIGHT	Vægt {0}
+UILABEL_TIP_EACH	 stk.
+UILABEL_TIP_STACKS	Stakker op til {0}
+UILABEL_TIP_BUY	Købspris: {0}
+UILABEL_TIP_SELL	Salgspris: {0}
+UILABEL_TIP_USE	Brug: {0}
+UILABEL_TOTAL_VALUE	Samlet værdi: {0}
+UILABEL_CHOOSE_HOW_MANY	Vælg antal: {0} ({1} tilgængelige)
+UILABEL_TIP_LEVEL	Niveau: {0}
+UILABEL_TIP_PROGRESS	Fremskridt: {0}%
+UILABEL_TIP_CURRENT_XP	Nuværende erfaring: {0}
+UILABEL_ATTACK_DEFENSE	Angreb {0}      Forsvar {1}
+UILABEL_STATS_CAPTION	Værdier: {0}
+UILABEL_SPRITE_N	Figur {0}
+UILABEL_SLOT_N_ITEM	Plads {0}: {1}
+UILABEL_SLOT_N_EMPTY	Plads {0}: tom
+UILABEL_COUNT	Antal {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Angreb {0}    Forsvar {1}    Bærekapacitet {2}
+MISC_IS_DOWN	{0} er faldet
+MISC_PICKS_UP	{0} samler {1} {2} op
+MISC_CANNOT_READ	{0} kunne ikke læses
+UILABEL_TIP_DURABILITY	Holdbarhed {0} / {1}
+UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
+UILABEL_MONITOR_N	Skærm {0}
+MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
+UILABEL_PAUSE_HINT	(Tryk mellemrum for at fortsætte.)
+MISC_DRINKS	{0} drikker {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	Ø
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	V
+ITEM_1_NAME	Jernmalm
+ITEM_1_DESC	Råmalm, der kan smeltes til jernbarrer.
+ITEM_2_NAME	Egetræsstamme
+ITEM_2_DESC	En solid stamme, der bruges til håndværk og byggeri.
+ITEM_3_NAME	Helbredende urt
+ITEM_3_DESC	En almindelig urt med en mild helbredende virkning.
+ITEM_4_NAME	Guldmønt
+ITEM_4_DESC	Rigets almindelige møntenhed.
+ITEM_5_NAME	Ulvepels
+ITEM_5_DESC	En grov pels fra en dræbt ulv. Eftertragtet af garvere.
+ITEM_6_NAME	Gammel relikvie
+ITEM_6_DESC	En mystisk genstand, der svagt summer af energi.
+ITEM_7_NAME	Helbredelsesdrik
+ITEM_7_DESC	Genopretter 50 helbred, når den drikkes.
+ITEM_8_NAME	Manadrik
+ITEM_8_DESC	Genopretter 50 mana, når den drikkes.
+ITEM_9_NAME	Udholdenhedstrunk
+ITEM_9_DESC	Genopretter 40 udholdenhed og øger regenerationen kort.
+ITEM_10_NAME	Eliksir af styrke
+ITEM_10_DESC	Giver +10 angreb i 60 sekunder.
+ITEM_11_NAME	Brød
+ITEM_11_DESC	Simpel rejsemad. Genopretter 15 helbred.
+ITEM_12_NAME	Modgift
+ITEM_12_DESC	Helbreder gift og mindsker giftskade i 30 sekunder.
+ITEM_13_NAME	Æble
+ITEM_13_DESC	Genopretter 8 sult, når det spises.
+ITEM_14_NAME	Vilde bær
+ITEM_14_DESC	Genopretter 6 sult, når de spises.
+ITEM_15_NAME	Hård kiks
+ITEM_15_DESC	Genopretter 12 sult, når den spises.
+ITEM_16_NAME	Ostestykke
+ITEM_16_DESC	Genopretter 15 sult, når det spises.
+ITEM_17_NAME	Røget fisk
+ITEM_17_DESC	Genopretter 20 sult, når den spises.
+ITEM_18_NAME	Honningkage
+ITEM_18_DESC	Genopretter 18 sult, når den spises.
+ITEM_19_NAME	Fåretærte
+ITEM_19_DESC	Genopretter 26 sult, når den spises.
+ITEM_20_NAME	Skål med gryderet
+ITEM_20_DESC	Genopretter 30 sult, når den spises.
+ITEM_21_NAME	Stegt vildsvinelår
+ITEM_21_DESC	Genopretter 40 sult, når det spises.
+ITEM_22_NAME	Rejsekost
+ITEM_22_DESC	Genopretter 50 sult, når den spises.
+ITEM_23_NAME	Hætte
+ITEM_23_DESC	Beskytter hovedet.
+ITEM_24_NAME	Kappe med hætte
+ITEM_24_DESC	Beskytter hovedet.
+ITEM_25_NAME	Kæde-hætte
+ITEM_25_DESC	Beskytter hovedet.
+ITEM_26_NAME	Hjelm
+ITEM_26_DESC	Beskytter hovedet.
+ITEM_27_NAME	Visir
+ITEM_27_DESC	Beskytter hovedet.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Beskytter hovedet.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Beskytter hovedet.
+ITEM_30_NAME	Stor hjelm
+ITEM_30_DESC	Beskytter hovedet.
+ITEM_31_NAME	Pandebånd
+ITEM_31_DESC	Beskytter hovedet.
+ITEM_32_NAME	Krone
+ITEM_32_DESC	Beskytter hovedet.
+ITEM_33_NAME	Tunika
+ITEM_33_DESC	Dækker brystet og kroppen.
+ITEM_34_NAME	Lædervams
+ITEM_34_DESC	Dækker brystet og kroppen.
+ITEM_35_NAME	Lamellevest
+ITEM_35_DESC	Dækker brystet og kroppen.
+ITEM_36_NAME	Brigandine
+ITEM_36_DESC	Dækker brystet og kroppen.
+ITEM_37_NAME	Ringbrynje
+ITEM_37_DESC	Dækker brystet og kroppen.
+ITEM_38_NAME	Brystplade
+ITEM_38_DESC	Dækker brystet og kroppen.
+ITEM_39_NAME	Kyras
+ITEM_39_DESC	Dækker brystet og kroppen.
+ITEM_40_NAME	Brystpanser
+ITEM_40_DESC	Dækker brystet og kroppen.
+ITEM_41_NAME	Fuld pladerustning
+ITEM_41_DESC	Dækker brystet og kroppen.
+ITEM_42_NAME	Ceremoniel pladerustning
+ITEM_42_DESC	Dækker brystet og kroppen.
+ITEM_43_NAME	Ridebukser
+ITEM_43_DESC	Dækker benene.
+ITEM_44_NAME	Bukser
+ITEM_44_DESC	Dækker benene.
+ITEM_45_NAME	Gamacher
+ITEM_45_DESC	Dækker benene.
+ITEM_46_NAME	Ringbrynjebukser
+ITEM_46_DESC	Dækker benene.
+ITEM_47_NAME	Lårplader
+ITEM_47_DESC	Dækker benene.
+ITEM_48_NAME	Lårskinner
+ITEM_48_DESC	Dækker benene.
+ITEM_49_NAME	Benskinner
+ITEM_49_DESC	Dækker benene.
+ITEM_50_NAME	Pladebenskinner
+ITEM_50_DESC	Dækker benene.
+ITEM_51_NAME	Ringbrynjebenskinner
+ITEM_51_DESC	Dækker benene.
+ITEM_52_NAME	Forgyldte benskinner
+ITEM_52_DESC	Dækker benene.
+ITEM_53_NAME	Sandaler
+ITEM_53_DESC	Beskytter fødderne.
+ITEM_54_NAME	Sko
+ITEM_54_DESC	Beskytter fødderne.
+ITEM_55_NAME	Støvler
+ITEM_55_DESC	Beskytter fødderne.
+ITEM_56_NAME	Ridestøvler
+ITEM_56_DESC	Beskytter fødderne.
+ITEM_57_NAME	Støvler med søm
+ITEM_57_DESC	Beskytter fødderne.
+ITEM_58_NAME	Fodklude
+ITEM_58_DESC	Beskytter fødderne.
+ITEM_59_NAME	Marchstøvler
+ITEM_59_DESC	Beskytter fødderne.
+ITEM_60_NAME	Sabatoner
+ITEM_60_DESC	Beskytter fødderne.
+ITEM_61_NAME	Sollerets
+ITEM_61_DESC	Beskytter fødderne.
+ITEM_62_NAME	Krigsstøvler
+ITEM_62_DESC	Beskytter fødderne.
+ITEM_63_NAME	Bånd
+ITEM_63_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_64_NAME	Amulet
+ITEM_64_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_65_NAME	Armbånd
+ITEM_65_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_66_NAME	Broche
+ITEM_66_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_67_NAME	Ring
+ITEM_67_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_68_NAME	Halskæde
+ITEM_68_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_69_NAME	Vedhæng
+ITEM_69_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_71_NAME	Torques
+ITEM_71_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_72_NAME	Kappe
+ITEM_72_DESC	Et lille slidt smykke. To kan bæres ad gangen.
+ITEM_73_NAME	Kort sværd
+ITEM_73_DESC	Holdes i hovedhånden.
+ITEM_74_NAME	Langt sværd
+ITEM_74_DESC	Holdes i hovedhånden.
+ITEM_75_NAME	Økse
+ITEM_75_DESC	Holdes i hovedhånden.
+ITEM_76_NAME	Stridskølle
+ITEM_76_DESC	Holdes i hovedhånden.
+ITEM_77_NAME	Trefløjet stav
+ITEM_77_DESC	Holdes i hovedhånden.
+ITEM_78_NAME	Rapier
+ITEM_78_DESC	Holdes i hovedhånden.
+ITEM_79_NAME	Dolk
+ITEM_79_DESC	Holdes i én hånd. Passer i hovedhånden eller den sekundære hånd.
+ITEM_80_NAME	Kniv
+ITEM_80_DESC	Holdes i én hånd. Passer i hovedhånden eller den sekundære hånd.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Holdes i én hånd. Passer i hovedhånden eller den sekundære hånd.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Holdes i den sekundære hånd. Blokerer slag.
+ITEM_83_NAME	Drageskjold
+ITEM_83_DESC	Holdes i den sekundære hånd. Blokerer slag.
+ITEM_84_NAME	Tårnskjold
+ITEM_84_DESC	Holdes i den sekundære hånd. Blokerer slag.
+ITEM_85_NAME	Tohåndssværd
+ITEM_85_DESC	Kræver begge hænder. Den sekundære hånd skal være tom.
+ITEM_86_NAME	Krigshammer
+ITEM_86_DESC	Kræver begge hænder. Den sekundære hånd skal være tom.
+ITEM_87_NAME	Krigsøkse
+ITEM_87_DESC	Kræver begge hænder. Den sekundære hånd skal være tom.
+UILABEL_UI_SCALE	Skala for brugerfladen
+NAME_MASCULINE	["Mikkel", "Jesper", "Anders", "Søren", "Frederik"]
+NAME_FEMININE	["Ida", "Karoline", "Sofie", "Freja", "Astrid"]
+NAME_ANDROGYNOUS	["Ask", "Kim", "Sascha", "Remi", "Lou"]
+UILABEL_BODY_TYPE	Kropstype
+UILABEL_BODY_MASCULINE	Maskulin
+UILABEL_BODY_FEMININE	Feminin
+UILABEL_BODY_ANDROGYNOUS	Androgyn
+UILABEL_TYPE_ITEM	Genstand
+UILABEL_TYPE_CONSUMABLE	Forbrugsvare
+UILABEL_TYPE_WEAPON	Våben
+UILABEL_TYPE_ARMOR	Rustning
+UILABEL_TYPE_ACCESSORY	Tilbehør
+UILABEL_SLOT_EITHER_HAND	Enhver hånd
+UILABEL_SLOT_TWO_HAND	Tohåndet
+MISC_TRADE_CHANGE	Handel: {0}
+UILABEL_NEEDS_UNITS	Tilføj mindst én enhed for at starte.
+PROP_WAGON	Vogn
+PROP_CAMPFIRE	Lejrbål
+PROP_BEDROLL	Soveunderlag
+PROP_BED	Seng
+PROP_BARREL	Tønde
+PROP_ORE	Malm
+PROP_TREE	Træ
+PROP_BOULDER	Kampesten
+PROP_MUSHROOM	Svamp
+PROP_BONES	Knogler
+PROP_WALL	Mur
+PROP_STALL	Bod
+MISC_STORAGE_FULL	Ingen plads i lageret
+MISC_PROP_TAKEN	Allerede i brug
+MISC_PROP_WORKERS_FULL	Op til {0} enheder kan arbejde på den ad gangen
+MISC_GATHERS	{0} samler {1}
+MISC_GATHER_NO_ROOM	{0} har ikke plads til {1} og holder op med at arbejde
+MISC_REASON_GATHERING	indsamling
+UILABEL_TASK	Opgave: {0}
+UILABEL_TASK_IDLE	Ledig
+UILABEL_TASK_MOVING	Bevæger sig
+UILABEL_TASK_RESTING	Hviler
+UILABEL_STORAGE_HINT	Højreklik på en genstand for at tage den, eller træk den ud for at lægge den, hvor din enhed står. Højreklik på din enheds genstande for at lægge dem i lageret.
+ITEM_88_NAME	Træstamme
+ITEM_88_DESC	Træ fældet fra et træ, bruges til håndværk og byggeri.
+UILABEL_CRAFT_HINT	Højreklik på din enheds genstande for at lægge dem i. Det fremstillede går til arbejderens inventar. Højreklik på {0} og vælg Brug for at begynde at arbejde.
+MISC_CRAFT_WRONG_ITEM	{0} kan ikke bruges her
+MISC_CRAFT_NEEDS	Læg {0} i input for at begynde
+MISC_CRAFTS	{0} laver {1}
+MISC_CRAFT_STOPS	{0} har ikke mere at arbejde med og stopper
+MISC_REASON_CRAFTING	håndværk
+ITEM_89_NAME	Råt bjørnekød
+ITEM_89_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_90_NAME	Stegt bjørnekød
+ITEM_90_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+UILABEL_TALK	Tal
+UILABEL_ATTACK	Angrib
+UILABEL_ATTACK_UNPROVOKED	Angrib (uprovokeret)
+UILABEL_FOLLOW	Følg
+UILABEL_DEFEND	Forsvar
+UILABEL_TASK_FOLLOWING	Følger
+UILABEL_TASK_DEFENDING	Forsvarer
+MISC_FREE_TRADE_ADD	Læg genstande på en af siderne
+MISC_FREE_TRADE_READY	Klar til handel
+MISC_TURNS_HOSTILE	{0} bliver fjendtlig
+MISC_SELECT_UNIT_FIRST	Vælg først en enhed
+FACTION_PLAYER	Spillerens fraktion
+FACTION_GRAY	Den grå fraktion
+FACTION_RED	Den røde fraktion
+MISC_PROP_UNREACHABLE	Kan ikke nås
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Scenarie
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	En ensom vandrer uden noget at kalde sit eget: ingen genstande, intet udstyr og hver evne fra 1 til 5.
+SCENARIO_RANDOM_NAME	Helt tilfældig
+SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære.
+SCENARIO_CARAVAN_NAME	Rejsende karavane
+SCENARIO_CARAVAN_DESC	Ti rejsende på vejen sammen. Alle evner starter på 5, og hver bærer 10 guldmønter.
+SCENARIO_SHABBY_NAME	Lurvet bande
+SCENARIO_SHABBY_DESC	Tre uheldige kobolder med hver én tilfældig genstand og alle evner fra 1 til 10.
+SCENARIO_NOBODY_NAME	Sulten ingen
+SCENARIO_NOBODY_DESC	Én enhed uden noget som helst: ingen genstande, intet udstyr, alle evner på 1 og en tom mave.
+SCENARIO_DIGGERS_NAME	Fangekældergravere
+SCENARIO_DIGGERS_DESC	Syv minearbejdere i fuld udrustning. Deres evner ligger fra 5 til 20, men hver har Minedrift 50 og bærer 3 jernmalm.
+SCENARIO_CUSTOM_NAME	Brugerdefineret scenarie
+SCENARIO_CUSTOM_DESC	Byg din egen gruppe. Den starter med tre enheder, og du kan tilføje eller fjerne enheder, op til 32.
+PROP_LOCKED_CHEST	Låst kiste
+PROP_PRISONER_CAGE	Fangebur
+UILABEL_UNLOCK	Lås op
+MISC_PROP_LOCKED	Låst
+MISC_LOCKPICK_NEEDS	Kræver Låseoplukning {0}
+MISC_UNLOCKED	Låst op!
+MISC_LOCKPICK_FAILED	Dirkning mislykkedes
+MISC_UNLOCKS	{0} låser {1} op
+MISC_REASON_LOCKPICKING	dirke låse
+MISC_LOCKED_NAME	{0} (låst)
+PROP_CHAIR	Stol
+PROP_BENCH	Bænk
+PROP_STOOL	Skammel
+PROP_TABLE	Bord
+PROP_END_TABLE	Sidebord
+PROP_ROUND_TABLE	Rundt bord
+PROP_METAL_TABLE	Metalbord
+PROP_STANDING_TORCH	Stående fakkel
+PROP_SUPPORT_BEAM	Støttebjælke
+PROP_TRAINING_DUMMY	Træningsdukke
+PROP_RAW_FOOD_STORAGE	Lager til rå mad
+PROP_FOOD_STORAGE	Madlager
+PROP_WEAPON_RACK	Våbenstativ
+PROP_ARMOR_STAND	Rustningsstativ
+PROP_WATER_TANK	Vandtank
+PROP_WATER_PUMP	Vandpumpe
+PROP_FORGE	Esse
+FILTER_RAW_FOOD	rå mad
+FILTER_FOOD	mad
+FILTER_WEAPON	våben
+FILTER_ARMOR	rustning
+FILTER_WATER	vand
+MISC_STORAGE_ONLY	Tager kun {0}
+UILABEL_STORAGE_TAKES	Tager kun {0}.
+UILABEL_TASK_SITTING	Sidder
+UILABEL_TASK_LOCKED_IN	Låst inde
+MISC_LOCKED_IN	{0} er låst inde i {1}
+MISC_REASON_TRAINING	træning
+MISC_XP_GAINED	+{0} {1} XP
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_FUEL_LEFT	Brænder: {0} min brændsel tilbage
+MISC_NO_FUEL	Intet brændsel
+MISC_OUTPUT_FULL	Output fuldt: på pause
+UILABEL_PASSIVE_HINT	Tager {0} som brændsel: hver brænder i {1} spilminutter og laver {2} i output, med eller uden en arbejder. Den holder pause, mens output er fuldt. Højreklik på genstande for at flytte dem ind eller ud.
+ITEM_91_NAME	Vand
+ITEM_91_DESC	Frisk vand fra en pumpe.
+ITEM_92_NAME	Jernbarre
+ITEM_92_DESC	En barre jern smeltet af malm i en esse.
+ITEM_93_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_93_NAME	Råt oksekød
+ITEM_94_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_94_NAME	Stegt oksekød
+ITEM_95_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_95_NAME	Råt kyllingekød
+ITEM_96_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_96_NAME	Stegt kyllingekød
+ITEM_97_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_97_NAME	Råt vildsvinekød
+ITEM_98_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_98_NAME	Stegt vildsvinekød
+ITEM_99_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_99_NAME	Råt ulvekød
+ITEM_100_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_100_NAME	Stegt ulvekød
+ITEM_101_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_101_NAME	Råt hjortekød
+ITEM_102_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_102_NAME	Stegt hjortekød
+ITEM_103_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_103_NAME	Råt kaninkød
+ITEM_104_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_104_NAME	Stegt kaninkød
+ITEM_105_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_105_NAME	Rå fisk
+ITEM_106_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_106_NAME	Stegt fisk
+ITEM_107_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_107_NAME	Råt krabbekød
+ITEM_108_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_108_NAME	Stegt krabbekød
+ITEM_109_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_109_NAME	Råt firbenkød
+ITEM_110_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_110_NAME	Stegt firbenkød
+ITEM_111_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_111_NAME	Råt slangekød
+ITEM_112_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_112_NAME	Stegt slangekød
+ITEM_113_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_113_NAME	Råt svinekød
+ITEM_114_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_114_NAME	Stegt svinekød
+ITEM_115_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_115_NAME	Råt fårekød
+ITEM_116_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_116_NAME	Stegt fårekød
+ITEM_117_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_117_NAME	Råt andekød
+ITEM_118_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_118_NAME	Stegt andekød
+ITEM_119_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_119_NAME	Råt skildpaddekød
+ITEM_120_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_120_NAME	Stegt skildpaddekød
+ITEM_121_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_121_NAME	Råt flagermuskød
+ITEM_122_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_122_NAME	Stegt flagermuskød
+ITEM_123_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_123_NAME	Råt frøkød
+ITEM_124_DESC	Kød stegt over ild. Genopretter helbred og mætter.
+ITEM_124_NAME	Stegt frøkød
+ITEM_125_DESC	En lille vild svamp. Rå gør den ikke meget for helbred eller sult.
+ITEM_125_NAME	Svamp
+MISC_FOOD_TO_COOK	råt kød
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Giftig svamp
+ITEM_126_DESC	En vild svamp, der ligner alle andre. Spiser man den, koster det helbred og mæthed.
+UILABEL_OPTIMIZE	Optimer
+UILABEL_REMOVE_ALL	Tag alt af
+MISC_GEAR_NO_ROOM	Ikke nok plads i inventaret
+MISC_GEAR_ALREADY_BEST	Har allerede det bedste udstyr på
+MISC_GEAR_NONE_WORN	Intet udstyr at tage af
+UILABEL_OPTIMIZE_ALL	Optimer alle
+MISC_OPTIMIZE_ALL_ASK	Optimer udstyret for alle {0} enheder i holdet? Hver enhed vælger blandt det, den har på og bærer. En enhed uden plads til det, der tages af, forbliver som den er.
+UILABEL_OPTIMIZE_BALANCE	Angreb {0}% / Forsvar {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Skift tilbehør
+UILABEL_OPTIMIZE_TWO_HANDED	Tillad tohåndsvåben
+UILABEL_OPTIMIZE_VALUE_TIES	Ved lighed vinder den mest værdifulde
+MISC_OPTIMIZE_ALL_SAME	Alle enheder har allerede deres bedste udstyr på
+MISC_OPTIMIZE_ALL_DONE	Udstyr optimeret for {0} enheder
+MISC_OPTIMIZE_ALL_SOME_ROOM	Udstyr optimeret for {0} enheder; {1} manglede plads i inventaret
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Overlevelse
+UILABEL_EARLY_ACCESS	Tidlig adgang
+MISC_TITLE_KEYS	Vælg  //  Enter Bekræft
+UILABEL_LANGUAGE_LABEL	Sprog:

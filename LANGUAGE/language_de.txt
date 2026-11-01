@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Scrollen am Bildschirmrand
 UILABEL_GLOBAL_VOLUME	Globale Lautstärke
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Umgebung
+UILABEL_INTERFACE_SOUNDS	Oberflächengeräusche
 UILABEL_SOUND_EFFECTS	Soundeffekte
 UILABEL_RESTORE_DEFAULTS	Standardwerte wiederherstellen
 UILABEL_WINDOWED	Fenster
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Werte
 UILABEL_CLICK_TO_TYPE	Klicken, um einen Namen einzugeben
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Startgruppe: {0}
 UILABEL_HEALTH	Gesundheit
 UILABEL_HUNGER	Hunger
 UILABEL_CARRY	Tragkraft
@@ -606,6 +606,8 @@ FACTION_RED	Rote Fraktion
 MISC_PROP_UNREACHABLE	Unerreichbar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Szenario
+SCENARIO_VAGABOND_NAME	Vagabund
+SCENARIO_VAGABOND_DESC	Ein einsamer Wanderer, der nichts besitzt: keine Gegenstände, keine Ausrüstung und jeder Wert zwischen 1 und 5.
 SCENARIO_RANDOM_NAME	Völlig zufällig
 SCENARIO_RANDOM_DESC	Eine Gruppe aus 1 bis 32 Einheiten, jede mit allen Werten zwischen 1 und 99 und zufälligen Gegenständen und Ausrüstung, die sie tragen kann.
 SCENARIO_CARAVAN_NAME	Reisende Karawane
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Hungernder Niemand
 SCENARIO_NOBODY_DESC	Eine Einheit mit gar nichts: keine Gegenstände, keine Ausrüstung, alle Werte auf 1 und ein leerer Magen.
 SCENARIO_DIGGERS_NAME	Verliesgräber
 SCENARIO_DIGGERS_DESC	Sieben Bergleute in voller Ausrüstung. Ihre Werte liegen zwischen 5 und 20, doch jeder hat Bergbau 50 und trägt 3 Eisenerz.
+SCENARIO_CUSTOM_NAME	Eigenes Szenario
+SCENARIO_CUSTOM_DESC	Stelle deine eigene Gruppe zusammen. Sie beginnt mit drei Einheiten, und du kannst Einheiten hinzufügen oder entfernen, bis zu 32.
 PROP_LOCKED_CHEST	Verschlossene Truhe
 PROP_PRISONER_CAGE	Gefangenenkäfig
 UILABEL_UNLOCK	Aufschließen
@@ -748,7 +752,12 @@ MISC_OPTIMIZE_ALL_ASK	Die Ausrüstung aller {0} Einheiten im Trupp optimieren? J
 UILABEL_OPTIMIZE_BALANCE	Angriff {0} % / Verteidigung {1} %
 UILABEL_OPTIMIZE_ACCESSORIES	Accessoires wechseln
 UILABEL_OPTIMIZE_TWO_HANDED	Zweihandwaffen erlauben
-UILABEL_OPTIMIZE_VALUE_TIES	Bei Gleichstand gewinnt der wertvollere Gegenstand
+UILABEL_OPTIMIZE_VALUE_TIES	Bei Gleichstand das Wertvollere
 MISC_OPTIMIZE_ALL_SAME	Alle Einheiten tragen bereits ihre beste Ausrüstung
 MISC_OPTIMIZE_ALL_DONE	Ausrüstung von {0} Einheiten optimiert
 MISC_OPTIMIZE_ALL_SOME_ROOM	Ausrüstung von {0} Einheiten optimiert; {1} hatten keinen Platz im Inventar
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Überleben
+UILABEL_EARLY_ACCESS	Early Access
+MISC_TITLE_KEYS	Auswählen  //  Enter Bestätigen
+UILABEL_LANGUAGE_LABEL	Sprache:

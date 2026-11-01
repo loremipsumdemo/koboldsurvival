@@ -421,12 +421,49 @@ struct QuantityLayout {
     Rect single{ 0.0f, 0.0f, 0.0f, 0.0f }, max{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
+// The title screen's header, top left: the game's name, large, and under it the pink notice board for update notes.
+// The board reaches across to the menu buttons (which start at 62% of the width) and down to two thirds of the window.
+// The title screen, top left: a small "Early Access" line, the game's name, a pink rule, and the notice board of
+// update notes. Along the bottom: the build stamp on the left and the keys on the right.
+struct TitleLayout {
+    float side = 0.0f;                          // the screen's left and right margin
+    Rect eyebrow{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };        // the name's line: its height is the size the name is drawn at
+    Rect rule{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect news{ 0.0f, 0.0f, 0.0f, 0.0f };        // the notice board, frame included
+    Rect newsText{ 0.0f, 0.0f, 0.0f, 0.0f };    // inside the board's padding
+    Rect footer{ 0.0f, 0.0f, 0.0f, 0.0f };      // the line along the bottom
+};
+inline float titleClamp(float lo, float v, float hi) { return std::max(lo, std::min(v, hi)); }
+inline TitleLayout layoutTitle(int W, int H) {
+    const float s = H / 720.0f;
+    TitleLayout L;
+    L.side = titleClamp(24.0f * s, W * 0.05f, 90.0f * s);
+    const float top = titleClamp(26.0f * s, H * 0.07f, 80.0f * s);
+    const float gap = titleClamp(18.0f * s, H * 0.034f, 38.0f * s);
+    const float eyebrowH = 14.0f * s;
+    const float nameH = titleClamp(28.0f * s, W * 0.058f, 86.0f * s);
+    const float boardW = titleClamp(280.0f * s, W * 0.34f, 470.0f * s);
+    const float footerH = 18.0f * s, footerPad = titleClamp(16.0f * s, H * 0.03f, 30.0f * s);
+    L.footer = Rect{ L.side, H - footerPad - footerH, W - 2.0f * L.side, footerH };
+    L.eyebrow = Rect{ L.side, top, W * 0.5f, eyebrowH };
+    L.name = Rect{ L.side, L.eyebrow.y + eyebrowH + gap * 0.6f, W * 0.56f - L.side, nameH };
+    L.rule = Rect{ L.side, L.name.y + nameH + gap * 0.45f, boardW, std::max(1.0f, 2.0f * s) };
+    const float boardY = L.rule.y + L.rule.h + gap;
+    const float boardH = std::max(160.0f * s, L.footer.y - 28.0f * s - boardY);
+    L.news = Rect{ L.side, boardY, boardW, boardH };
+    const float padX = titleClamp(16.0f * s, W * 0.02f, 26.0f * s), padY = titleClamp(14.0f * s, W * 0.017f, 22.0f * s);
+    L.newsText = Rect{ L.news.x + 3.0f * s + padX, L.news.y + 3.0f * s + padY, L.news.w - 6.0f * s - 2.0f * padX,
+                       L.news.h - 6.0f * s - 2.0f * padY };
+    return L;
+}
+
 // The Optimize All dialog: a title, a line saying what it will do, the Attack and Defense slider, three toggles, and
 // Confirm and Cancel
 struct OptimizeAllLayout {
     Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };          // wrapped, up to three lines
+    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };          // wrapped, up to five lines
     Rect sliderLabel{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Attack 60% / Defense 40%"
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };         // the slider: left is all defense, right all attack
     std::array<Rect, 3> toggles{};                // accessories, two-handed weapons, value on ties: the box and its label
@@ -434,17 +471,18 @@ struct OptimizeAllLayout {
 };
 inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
     const float s = H / 720.0f;
-    const float pad = 14.0f * s, gap = 8.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 120.0f * s;
-    const float boxW = 440.0f * s;
-    const float boxH = pad + line + gap + 3.0f * line + gap + line + 16.0f * s + gap + 3.0f * (line + 4.0f * s) + gap + btnH + pad;
+    // line: one line of the list font at its usual size (20 points), with a little room
+    const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 160.0f * s;
+    const float boxW = 560.0f * s;
+    const float boxH = pad + line + gap + 5.0f * line + gap + line + 16.0f * s + gap + 3.0f * (line + 4.0f * s) + gap + btnH + pad;
     OptimizeAllLayout L;
     L.box = Rect{ (W - boxW) * 0.5f, (H - boxH) * 0.5f, boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
     float y = L.box.y + pad;
     L.title = Rect{ x, y, w, line };
     y += line + gap;
-    L.text = Rect{ x, y, w, 3.0f * line };
-    y += 3.0f * line + gap;
+    L.text = Rect{ x, y, w, 5.0f * line };
+    y += 5.0f * line + gap;
     L.sliderLabel = Rect{ x, y, w, line };
     y += line;
     L.track = Rect{ x + 6.0f * s, y + 4.0f * s, w - 12.0f * s, 8.0f * s };

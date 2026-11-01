@@ -1,7 +1,8 @@
 #pragma once
 
-// Emotes: small pictures over a unit's head that show what it is doing, from data/emote/<id>.png. A unit with
-// several shows each in turn, EMOTE_CYCLE_MS apiece. A picture that is missing from the pak is simply not drawn.
+// Emotes: small pictures over a unit's head that show what it is doing, from data/emote/emote_<id>.png (data/emoteinfo.txt
+// lists them). A unit with several shows each in turn, EMOTE_CYCLE_MS apiece. A picture that is missing from the pak
+// is drawn with emote_0.png, or as a pink square if that is missing too.
 enum EmoteId : int {
     EMOTE_NONE = 0,
     EMOTE_MINING = 1,        // working ore

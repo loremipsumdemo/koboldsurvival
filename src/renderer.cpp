@@ -7,6 +7,7 @@
 #include "pak.h"
 #include "party.h"
 #include "systems.h"
+#include "textcase.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cmath>
@@ -24,7 +25,6 @@ constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible acr
 constexpr float TWO_PI = 6.28318530f;
 
 const RGBA WHITE{ 1.0f, 1.0f, 1.0f, 1.0f };
-const RGBA ITEM_PINK{ 1.0f, 0.45f, 0.75f, 1.0f };
 
 // Name box over an item on the ground: dark red-brown, as in Kenshi
 const RGBA LABEL_FILL{ 0.36f, 0.12f, 0.08f, 0.5f };
@@ -389,13 +389,16 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     setupGlyphLayout(glyphVao_, glyphVbo_);
 
     // Images and models
-    title_ = loadImage("data/ui/title.png", false);
-    itemNone_ = loadOptionalImage("data/item/none.png");
+    // The _0 file of each kind of picture stands in for one that is missing (and pink_ when that is missing too)
+    itemNone_ = loadOptionalImage("data/item/item_0.png");
+    emoteFallback_ = loadOptionalImage("data/emote/emote_0.png");
+    iconFallback_ = loadOptionalImage("data/icon/icon_0.png");
+    unitFallback_ = loadOptionalImage("data/unit/unit_0.png");
     report(0.05f);
     unitSprites_.reserve(UNIT_SPRITE_COUNT);
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
-        std::snprintf(path, sizeof(path), "data/unit/%02d.png", i);
+        std::snprintf(path, sizeof(path), "data/unit/unit_%d.png", i);
         unitSprites_.push_back(loadImage(path, false));
         report(0.05f + 0.75f * (float)i / (float)UNIT_SPRITE_COUNT);
     }
@@ -423,28 +426,49 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    unitFallback_ = makeGlyphTexture(font, "@", SDL_Color{ 80, 160, 255, 255 });
     {
-        // One white texel: items are drawn as this, tinted pink, until they have art
-        const unsigned char texel[4] = { 255, 255, 255, 255 };
-        glGenTextures(1, &white_.tex);
-        glBindTexture(GL_TEXTURE_2D, white_.tex);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, texel);
-        white_.aspect = 1.0f;
+        // One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture
+        // that is missing along with its _0 stand-in
+        auto texel = [](TextTex& t, unsigned char r, unsigned char g, unsigned char b) {
+            const unsigned char px[4] = { r, g, b, 255 };
+            glGenTextures(1, &t.tex);
+            glBindTexture(GL_TEXTURE_2D, t.tex);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
+            t.aspect = 1.0f;
+        };
+        texel(white_, 255, 255, 255);
+        texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
     }
     report(0.9f);
 
-    // Each prop kind's model: exactly data/3d/<n>.glb (props.h). No other name is tried, so a file that is missing or
-    // misnamed shows up at once: that kind is drawn as a pink stand-in (drawFrame), and log.txt names it.
+    // The stand-in model, model_0.glb, for a kind whose own model is missing or unreadable
+    {
+        const char* fallbackFile = "data/model/model_0.glb";
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (pakFind(fallbackFile, bytes, size)) {
+            const bool read = loadGLBModel(fallbackFile, fallbackModel_);
+            const float extent = std::max({ fallbackModel_.maxX - fallbackModel_.minX, fallbackModel_.maxY - fallbackModel_.minY,
+                                            fallbackModel_.maxZ - fallbackModel_.minZ });
+            if (!read || !fallbackModel_.vao || fallbackModel_.draws.empty() || !(extent > 0.0f)) {
+                destroyModel(fallbackModel_);
+                fallbackModel_ = Model{};
+                SDL_Log("The stand-in model %s could not be read or has nothing to draw", fallbackFile);
+            }
+        }
+    }
+    const char* standIn = fallbackModel_.vao ? "with model_0.glb" : "as a pink square";
+    // Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
+    // missing or misnamed shows up at once: that kind is drawn with the stand-in (propModel), and log.txt names it.
     for (int kind = 0; kind < PROP_KIND_COUNT; ++kind) {
         const PropInfo& info = propInfo(kind);
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         if (!pakFind(info.file, bytes, size)) {
-            SDL_Log("Prop model %s not in data.pak: the %s is drawn as a pink square", info.file, lang(info.nameKey).c_str());
+            SDL_Log("Prop model %s not in data.pak: the %s is drawn %s", info.file, lang(info.nameKey).c_str(), standIn);
         } else {
             Model& m = propModels_[(size_t)kind];
             const bool read = loadGLBModel(info.file, m);
@@ -453,8 +477,8 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
                 // Unreadable, or nothing in it to draw: drop what was made, so the stand-in shows instead
                 destroyModel(m);
                 m = Model{};
-                SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn as a pink square",
-                        info.file, lang(info.nameKey).c_str());
+                SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
+                        info.file, lang(info.nameKey).c_str(), standIn);
             }
         }
     }
@@ -467,7 +491,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &unitFallback_, &white_, &itemNone_ };
+    TextTex* textures[] = { &unitFallback_, &white_, &pink_, &itemNone_, &emoteFallback_, &iconFallback_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
@@ -503,9 +527,8 @@ void Renderer::shutdown() {
         }
         f->lines.clear();
     }
-    if (title_.tex) glDeleteTextures(1, &title_.tex);
-    title_.tex = 0;
     for (Model& m : propModels_) destroyModel(m);
+    destroyModel(fallbackModel_);
 
     glDeleteProgram(skyProgram_);
     glDeleteBuffers(1, &skyVbo_);
@@ -658,32 +681,256 @@ void Renderer::endUi() {
     glEnable(GL_DEPTH_TEST);
 }
 
+namespace {
+
+// Smooth 2D noise, as the title backdrop's edges use: Perlin's gradient noise over a shuffled table, seeded so each
+// edge has its own shape. Returns about -0.6 to 0.6.
+struct EdgeNoise {
+    unsigned char p[512];
+    explicit EdgeNoise(unsigned seed) {
+        unsigned char perm[256];
+        for (int i = 0; i < 256; ++i) perm[i] = (unsigned char)i;
+        unsigned st = seed;
+        auto rnd = [&]() { st = st * 1664525u + 1013904223u; return st / 4294967296.0; };
+        for (int i = 255; i > 0; --i) {
+            const int j = (int)(rnd() * (i + 1));
+            std::swap(perm[i], perm[j]);
+        }
+        for (int i = 0; i < 512; ++i) p[i] = perm[i & 255];
+    }
+    float operator()(float x, float y) const {
+        const int X = (int)std::floor(x) & 255, Y = (int)std::floor(y) & 255;
+        x -= std::floor(x);
+        y -= std::floor(y);
+        auto fade = [](float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); };
+        auto lerp = [](float a, float b, float t) { return a + t * (b - a); };
+        auto grad = [](int h, float gx, float gy) { return ((h & 1) ? -gx : gx) + ((h & 2) ? -gy : gy); };
+        const float u = fade(x), v = fade(y);
+        const int A = p[X] + Y, B = p[X + 1] + Y;
+        return lerp(lerp(grad(p[A], x, y), grad(p[B], x - 1.0f, y), u),
+                    lerp(grad(p[A + 1], x, y - 1.0f), grad(p[B + 1], x - 1.0f, y - 1.0f), u), v) * 0.62f;
+    }
+};
+
+RGBA mixColor(RGBA a, RGBA b, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return RGBA{ a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, a.a + (b.a - a.a) * t };
+}
+RGBA rgb255(int r, int g, int b, float a) { return RGBA{ r / 255.0f, g / 255.0f, b / 255.0f, a }; }
+
+// A colour from stops at 0..1 (stops in order)
+RGBA stopColor(const std::vector<std::pair<float, RGBA>>& stops, float t) {
+    if (t <= stops.front().first) return stops.front().second;
+    for (size_t i = 1; i < stops.size(); ++i) {
+        if (t <= stops[i].first) {
+            const float span = stops[i].first - stops[i - 1].first;
+            return mixColor(stops[i - 1].second, stops[i].second, span > 0.0f ? (t - stops[i - 1].first) / span : 1.0f);
+        }
+    }
+    return stops.back().second;
+}
+
+// One side of one band: where its edge sits, how much it wanders, and how fast
+struct BandEdge {
+    int layer;
+    int side;   // -1 the left side, 1 the right
+    float base, a1, a2, f1, f2, m1, m2;
+    EdgeNoise noise;
+};
+
+} // namespace
+
+void Renderer::drawUiTris(const std::vector<UiVert>& in) {
+    if (in.empty()) return;
+    std::vector<Vertex> v;
+    v.reserve(in.size());
+    for (const UiVert& u : in) v.push_back(Vertex{ { u.x, u.y, 0.0f }, u.c });
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(Vertex), v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)v.size());
+}
+
+void Renderer::setTitleFont(TTF_Font* font) {
+    for (auto& entry : titleWords_) {
+        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
+    }
+    titleWords_.clear();
+    titleFont_ = font;
+}
+
+const TextTex& Renderer::titleWord(const std::string& text) {
+    auto it = titleWords_.find(text);
+    if (it != titleWords_.end()) return it->second;
+    TextTex t;
+    if (titleFont_ && !text.empty()) {
+        t = makeGlyphTexture(titleFont_, text.c_str(), SDL_Color{ 255, 255, 255, 255 });
+        if (t.tex) {
+            // Mipmaps, so the large picture shrinks smoothly to whatever size the name is drawn at
+            glBindTexture(GL_TEXTURE_2D, t.tex);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        }
+    }
+    return titleWords_.emplace(text, t).first->second;
+}
+
+void Renderer::noteHover(const Rect& r) {
+    if (hoverAny_) return;   // the first one drawn under the pointer counts
+    hoverAny_ = true;
+    hoverNow_ = r;
+}
+
+bool Renderer::hoverFrameEnd() {
+    auto same = [](const Rect& a, const Rect& b) {
+        return std::fabs(a.x - b.x) < 1.0f && std::fabs(a.y - b.y) < 1.0f && std::fabs(a.w - b.w) < 1.0f && std::fabs(a.h - b.h) < 1.0f;
+    };
+    const bool ping = hoverAny_ && (!hoverHad_ || !same(hoverNow_, hoverLast_));
+    hoverHad_ = hoverAny_;
+    hoverLast_ = hoverNow_;
+    return ping;
+}
+
+void Renderer::drawRectGradientH(const Rect& r, RGBA left, RGBA right) {
+    const float x0 = r.x, x1 = r.x + r.w, y0 = r.y, y1 = r.y + r.h;
+    drawUiTris({ { x0, y0, left }, { x1, y0, right }, { x1, y1, right }, { x0, y0, left }, { x1, y1, right }, { x0, y1, left } });
+}
+
 void Renderer::drawTitleBackground() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (!title_.tex) return;
+    const float W = (float)uiW_, H = (float)uiH_;
+    if (W <= 0.0f || H <= 0.0f) return;
+    const float s = H / 720.0f;
+    const float t = (float)(SDL_GetTicks() % 100000000ULL);   // milliseconds
 
-    // Cover the screen, keeping the aspect ratio and cropping whatever overflows
-    float screenAspect = (float)uiW_ / (float)uiH_;
-    float wd, h;
-    if (title_.aspect > screenAspect) {
-        h = (float)uiH_;
-        wd = h * title_.aspect;
-    } else {
-        wd = (float)uiW_;
-        h = wd / title_.aspect;
+    // The mouse sways the bands a little, eased toward where it is
+    {
+        float mx = 0.0f, my = 0.0f;
+        SDL_GetMouseState(&mx, &my);
+        const float target = std::clamp((mx / W - 0.5f) * 2.0f, -1.0f, 1.0f);
+        const unsigned long long now = SDL_GetTicks();
+        const float frames = titleMouseAt_ == 0 ? 0.0f : std::min(10.0f, (float)(now - titleMouseAt_) / 16.7f);
+        titleMouse_ += (target - titleMouse_) * (1.0f - std::pow(1.0f - 0.07f, frames));
+        titleMouseAt_ = now;
     }
-    float x0 = uiW_ * 0.5f - wd * 0.5f, x1 = x0 + wd;
-    float y0 = uiH_ * 0.5f - h * 0.5f,  y1 = y0 + h;
-    float v[4 * 5] = {
-        x0, y1, 0.0f, 0.0f, 1.0f,
-        x1, y1, 0.0f, 1.0f, 1.0f,
-        x1, y0, 0.0f, 1.0f, 0.0f,
-        x0, y0, 0.0f, 0.0f, 0.0f
+
+    // A grid of corners, each coloured by fn, as triangles
+    auto mesh = [&](int cols, int rows, auto fn) {
+        std::vector<UiVert> v;
+        v.reserve((size_t)cols * rows * 6);
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                const float x0 = W * c / cols, x1 = W * (c + 1) / cols;
+                const float y0 = H * r / rows, y1 = H * (r + 1) / rows;
+                const UiVert a{ x0, y0, fn(x0, y0) }, b{ x1, y0, fn(x1, y0) }, cc{ x1, y1, fn(x1, y1) }, d{ x0, y1, fn(x0, y1) };
+                v.insert(v.end(), { a, b, cc, a, cc, d });
+            }
+        }
+        drawUiTris(v);
     };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(title_.tex, v, WHITE);
+
+    // The night: a deep purple glow high in the middle, fading to black at the edges
+    const std::vector<std::pair<float, RGBA>> sky{ { 0.0f, rgb255(16, 11, 28, 1.0f) }, { 0.58f, rgb255(7, 6, 13, 1.0f) },
+                                                   { 1.0f, rgb255(3, 3, 6, 1.0f) } };
+    const RGBA purple = rgb255(109, 40, 217, 1.0f);
+    mesh(32, 18, [&](float x, float y) {
+        const float r1 = std::hypot((x - 0.5f * W) / (1.4f * W), (y - 0.38f * H) / (1.1f * H));
+        RGBA c = stopColor(sky, r1);
+        const float r2 = std::hypot((x - 0.5f * W) / (0.8f * W), (y - 0.26f * H) / (0.55f * H));
+        const float a = 0.22f * std::clamp(1.0f - r2 / 0.65f, 0.0f, 1.0f);
+        c = mixColor(c, purple, a);
+        c.a = 1.0f;
+        return c;
+    });
+
+    // The bands: green further in, pink over it nearer each side. Their edges wander, and drift up the screen.
+    static BandEdge edges[4] = {
+        { 0, -1, 0.335f, 0.082f, 0.020f, 0.0019f, 0.0079f, 0.000130f, 0.00037f, EdgeNoise(10771) },
+        { 0, 1, 0.355f, 0.074f, 0.024f, 0.0023f, 0.0068f, 0.000094f, 0.00051f, EdgeNoise(55219) },
+        { 1, -1, 0.185f, 0.058f, 0.015f, 0.0027f, 0.0096f, 0.000171f, 0.00029f, EdgeNoise(90413) },
+        { 1, 1, 0.168f, 0.065f, 0.013f, 0.0016f, 0.0110f, 0.000212f, 0.00044f, EdgeNoise(31867) },
+    };
+    struct Layer {
+        float speed, mouse;
+        std::vector<std::pair<float, RGBA>> fill;
+        RGBA stroke;
+        float lw;
+        RGBA glow;
+        float gb;
+    };
+    const Layer layers[2] = {
+        { 0.050f, 10.0f, { { 0.0f, rgb255(124, 184, 0, 0.92f) }, { 0.55f, rgb255(70, 112, 0, 0.9f) }, { 1.0f, rgb255(16, 26, 2, 0.92f) } },
+          rgb255(159, 230, 0, 0.95f), 2.0f, rgb255(159, 230, 0, 0.55f), 16.0f },
+        { 0.019f, 28.0f, { { 0.0f, rgb255(122, 11, 71, 0.96f) }, { 0.6f, rgb255(58, 5, 33, 0.96f) }, { 1.0f, rgb255(14, 2, 9, 0.97f) } },
+          rgb255(224, 33, 138, 0.9f), 2.5f, rgb255(224, 33, 138, 0.5f), 14.0f },
+    };
+    const float S = std::min(W, 1500.0f);
+    const float step = std::max(4.0f, 9.0f * s);
+    for (int li = 0; li < 2; ++li) {
+        const Layer& L = layers[li];
+        const float scroll = -t * L.speed;
+        const float push = titleMouse_ * L.mouse * s;
+        for (const BandEdge& e : edges) {
+            if (e.layer != li) continue;
+            std::vector<std::pair<float, float>> pts;   // x, y
+            for (float y = -step * 2.0f; y <= H + step * 2.0f; y += step) {
+                const float yy = y / s * 1.25f + scroll;   // in the units the shapes were drawn for (a 900-high screen)
+                const float n1 = e.noise(yy * e.f1, t * e.m1);
+                const float n2 = e.noise(yy * e.f2 + 400.0f, t * e.m2 + 90.0f);
+                const float v = e.base * W + n1 * e.a1 * S + n2 * e.a2 * S;
+                pts.push_back({ e.side < 0 ? v + push : W - v + push, y });
+            }
+            const float off = e.side < 0 ? -2.0f : W + 2.0f;
+            std::vector<UiVert> fill;
+            for (size_t i = 1; i < pts.size(); ++i) {
+                const auto [xa, ya] = pts[i - 1];
+                const auto [xb, yb] = pts[i];
+                const RGBA ca = stopColor(L.fill, ya / H), cb = stopColor(L.fill, yb / H);
+                fill.insert(fill.end(), { { xa, ya, ca }, { xb, yb, cb }, { off, yb, cb }, { xa, ya, ca }, { off, yb, cb }, { off, ya, ca } });
+            }
+            drawUiTris(fill);
+            // The edge line and its glow: a soft strip either side of it, then the line
+            std::vector<UiVert> line;
+            auto strip = [&](float width, RGBA mid, bool soft) {
+                const float hw = width * 0.5f * s;
+                const RGBA edgeC = soft ? theme::alpha(mid, 0.0f) : mid;
+                for (size_t i = 1; i < pts.size(); ++i) {
+                    const auto [xa, ya] = pts[i - 1];
+                    const auto [xb, yb] = pts[i];
+                    line.insert(line.end(), { { xa - hw, ya, edgeC }, { xa, ya, mid }, { xb, yb, mid },
+                                              { xa - hw, ya, edgeC }, { xb, yb, mid }, { xb - hw, yb, edgeC },
+                                              { xa, ya, mid }, { xa + hw, ya, edgeC }, { xb + hw, yb, edgeC },
+                                              { xa, ya, mid }, { xb + hw, yb, edgeC }, { xb, yb, mid } });
+                }
+            };
+            strip(L.lw + L.gb * 1.6f, theme::alpha(L.glow, L.glow.a * 0.45f), true);
+            strip(L.lw + L.gb * 0.5f, theme::alpha(L.glow, L.glow.a * 0.8f), true);
+            strip(L.lw, L.stroke, false);
+            drawUiTris(line);
+        }
+    }
+
+    // The veil (darker at the top and much darker at the bottom) and the vignette, as one layer of black
+    const std::vector<std::pair<float, RGBA>> veil{ { 0.0f, RGBA{ 0, 0, 0, 0.6f } }, { 0.38f, RGBA{ 0, 0, 0, 0.12f } },
+                                                    { 1.0f, RGBA{ 0, 0, 0, 0.85f } } };
+    mesh(32, 18, [&](float x, float y) {
+        const float a1 = stopColor(veil, y / H).a;
+        const float r = std::hypot((x - 0.5f * W) / (1.18f * W), (y - 0.48f * H) / (0.78f * H));
+        const float a2 = r < 0.34f ? 0.0f : 0.88f * std::min(1.0f, (r - 0.34f) / 0.66f);
+        return RGBA{ 0.012f, 0.012f, 0.024f, 1.0f - (1.0f - a1) * (1.0f - a2) };
+    });
+
+    // Scan lines: a faint dark line every third pixel
+    std::vector<UiVert> lines;
+    lines.reserve((size_t)(H / 3.0f + 2.0f) * 6);
+    const RGBA scan{ 0.0f, 0.0f, 0.0f, 0.17f };
+    for (float y = 0.0f; y < H; y += 3.0f) {
+        lines.insert(lines.end(), { { 0, y, scan }, { W, y, scan }, { W, y + 1.0f, scan }, { 0, y, scan }, { W, y + 1.0f, scan }, { 0, y + 1.0f, scan } });
+    }
+    drawUiTris(lines);
 }
 
 void Renderer::drawRect(const Rect& r, RGBA c) {
@@ -815,7 +1062,7 @@ void Renderer::drawTip() {
     float x = mouseX_ + 14.0f * s, y = mouseY_ + 18.0f * s;
     if (x + w > uiW_) x = std::max(0.0f, uiW_ - w);
     if (y + h > uiH_) y = std::max(0.0f, mouseY_ - h - 4.0f * s);
-    drawRect(Rect{ x, y, w, h }, RGBA{ 0.05f, 0.05f, 0.08f, 0.96f });
+    drawRect(Rect{ x, y, w, h }, RGBA{ 0.05f, 0.035f, 0.075f, 0.96f });
     float ty = y + pad;
     for (const std::string& ln : lines) {
         drawListText(ln, x + pad, ty, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -942,16 +1189,24 @@ float Renderer::listTextWidth(const std::string& s) {
 }
 
 void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
-    drawRect(r, RGBA{ 0.14f, 0.17f, 0.22f, 0.90f });
-    if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, RGBA{ 0.75f, 0.20f, 0.20f, 0.95f });
-    drawUiTextInBox(label, r, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    // Held down, it fills with hot pink from the left
+    const float s = uiH_ / 720.0f;
+    drawRectGradientH(r, theme::alpha(theme::PINK_INK, 0.85f), theme::alpha(theme::PINK_DARK, 0.95f));
+    if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, theme::alpha(theme::PINK, 0.9f));
+    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, theme::PINK);
+    drawUiTextInBox(label, r, theme::BONE);
 }
 
 void Renderer::drawListButton(const Rect& r, const std::string& label, bool hovered) {
-    drawRect(r, hovered ? RGBA{ 0.60f, 0.18f, 0.18f, 0.95f } : RGBA{ 0.34f, 0.12f, 0.12f, 0.90f });
+    // A pink button, for a row's own action (Delete)
+    const float s = uiH_ / 720.0f;
+    if (hovered) noteHover(r);
+    drawRectGradientH(r, hovered ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.9f),
+                      hovered ? theme::alpha(theme::PINK, 0.95f) : theme::alpha(theme::PINK_DARK, 0.95f));
+    drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, hovered ? theme::BONE : theme::PINK);
     const float tw = listLine(label).w;
     const float th = listTextHeight(label);
-    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, theme::BONE);
 }
 
 void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
@@ -970,23 +1225,34 @@ void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
 }
 
 void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
-    RGBA bg = !enabled ? RGBA{ 0.10f, 0.10f, 0.12f, 0.70f }
-            : hovered  ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
-                       : RGBA{ 0.14f, 0.17f, 0.22f, 0.90f };
-    drawRect(r, bg);
-
-    RGBA fg = enabled ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
-    // A small inset keeps the text off the button's edge
+    // A dark band with an edge down its left side; under the pointer the band turns green and the edge lights up
     const float s = uiH_ / 720.0f;
-    drawUiTextInBox(label, Rect{ r.x + 4.0f * s, r.y + 2.0f * s, r.w - 8.0f * s, r.h - 4.0f * s }, fg);
+    const bool lit = enabled && hovered;
+    if (lit) noteHover(r);
+    if (!enabled) {
+        drawRect(r, theme::alpha(theme::NIGHT, 0.6f));
+    } else if (lit) {
+        drawRectGradientH(r, rgb255(20, 30, 0, 0.85f), rgb255(45, 66, 0, 0.95f));
+    } else {
+        drawRectGradientH(r, rgb255(18, 14, 26, 0.85f), rgb255(10, 8, 16, 0.95f));
+    }
+    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, lit ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
+    const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(204, 208, 218, 1.0f);
+    // A small inset keeps the text off the button's edge
+    drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, fg);
 }
 
-// The sprite for a unit, or the fallback symbol if its image is missing
+// The sprite for a unit, or the stand-in if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
     const UnitSprite* us = w.get<UnitSprite>(e);
-    int idx = us ? us->id - 1 : 0;
-    const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
-    return (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
+    return unitPicture(us ? us->id : 1);
+}
+
+// Picture number n (unit_<n>.png); unit_0.png when it is missing, and the pink square when that is missing too
+const TextTex& Renderer::unitPicture(int n) const {
+    const int idx = n - 1;
+    if (idx >= 0 && idx < (int)unitSprites_.size() && unitSprites_[(size_t)idx].tex) return unitSprites_[(size_t)idx];
+    return unitFallback_.tex ? unitFallback_ : pink_;
 }
 
 // Projects each unit's billboard to the screen and keeps those under the pixel.
@@ -1034,7 +1300,7 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
-        const Model& m = propModels_[(size_t)kind];
+        const Model& m = propModel(kind);
         const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
         float hx = 0.0f, hz = 0.0f, h = 0.0f;
         if (m.vao && extent > 0.0f) {
@@ -1304,10 +1570,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
-        if (propModels_[(size_t)kind].vao) {
-            drawModel(propModels_[(size_t)kind], tr->x, tr->y, tr->z, propInfo(kind).size);
+        if (propModel(kind).vao) {
+            drawModel(propModel(kind), tr->x, tr->y, tr->z, propInfo(kind).size);
         } else {
-            // No model: a pink square as tall as the prop's size, standing on its spot and turned to the camera
+            // No model, and no model_0.glb: a pink square as tall as the prop's size, standing on its spot and turned to the camera
             drawGlyph(white_, tr->x, tr->y, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
@@ -1315,14 +1581,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const UnitSprite* us = w.get<UnitSprite>(e);
-        int idx = us ? us->id - 1 : 0;
-        const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
-        const TextTex& g = (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
+        const TextTex& g = unitGlyph(w, e);
         RGBA tint = WHITE;
         if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
-        else if (w.has<Neutral>(e)) tint = WHITE;   // neutral sprites are never tinted
-        else if (w.has<Selected>(e)) tint = RGBA{ 1.0f, 1.0f, 0.6f, 1.0f };
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
 
@@ -1479,7 +1740,7 @@ namespace {
 const RGBA GOOD_CHANGE{ 0.42f, 0.95f, 0.45f, 1.0f };
 const RGBA BAD_CHANGE{ 1.0f, 0.38f, 0.36f, 1.0f };
 const RGBA TIP_TEXT{ 0.80f, 0.80f, 0.84f, 1.0f };
-const RGBA TIP_HEADING{ 0.62f, 0.72f, 0.90f, 1.0f };
+const RGBA TIP_HEADING{ 0.624f, 0.902f, 0.0f, 1.0f };
 const RGBA TIP_WARNING{ 1.0f, 0.72f, 0.35f, 1.0f };
 
 // The numbers a tooltip compares, summed over the items an item would replace
@@ -1765,7 +2026,7 @@ void Renderer::drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, f
 }
 
 void Renderer::drawMinimapToggle(const Rect& r, bool open) {
-    drawRect(r, RGBA{ 0.05f, 0.06f, 0.09f, 0.85f });
+    drawRect(r, RGBA{ 0.05f, 0.035f, 0.08f, 0.85f });
     const char* sym = open ? "-" : "+";
     const float tw = listTextWidth(sym), th = listTextHeight(sym);
     drawListText(sym, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -1799,11 +2060,11 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA playerTint{ 0.72f, 0.88f, 1.0f, 1.0f };
-    const RGBA rowBg{ 0.10f, 0.11f, 0.15f, 0.92f };
-    const RGBA plate{ 0.16f, 0.18f, 0.24f, 1.0f };
+    const RGBA rowBg{ 0.09f, 0.06f, 0.12f, 0.92f };
+    const RGBA plate{ 0.478f, 0.043f, 0.278f, 1.0f };
     const Rect& b = L.box;
-    drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, RGBA{ 0.50f, 0.55f, 0.66f, 1.0f });
-    drawRect(b, RGBA{ 0.04f, 0.05f, 0.08f, 0.96f });
+    drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, RGBA{ 0.878f, 0.129f, 0.541f, 1.0f });
+    drawRect(b, RGBA{ 0.04f, 0.03f, 0.07f, 0.96f });
 
     // The lines: the last ones said, the NPC's portrait on the left and the player's on the right
     const float lineH = listTextHeight("Ag");
@@ -1877,9 +2138,11 @@ void Renderer::drawPauseBar(bool hint) {
     const std::string tip = lang("UILABEL_PAUSE_HINT");
     const float tipH = hint ? uiTextHeight(tip) : 0.0f;
     const float h = pad + bigH + (hint ? pad + tipH : 0.0f) + pad;
-    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, RGBA{ 0.0f, 0.0f, 0.0f, 0.3f });
-    drawUiTextLarge(lang("UILABEL_PAUSED"), uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, theme::alpha(theme::NIGHT, 0.55f));
+    drawRectGradientH(Rect{ 0.0f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::alpha(theme::PINK, 0.0f), theme::PINK);
+    drawRectGradientH(Rect{ uiW_ * 0.5f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::PINK, theme::alpha(theme::PINK, 0.0f));
+    drawUiTextLarge(uiUpper(lang("UILABEL_PAUSED")), uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, theme::BONE);
+    if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, theme::ASH);
 }
 
 // The value bar's colour at t from 0 to 1: red at the start, yellow halfway, green at the end
@@ -1898,12 +2161,12 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
-    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
-    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.95f };
-    const RGBA bar{ 0.16f, 0.18f, 0.24f, 1.0f };
-    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
-    const RGBA plate{ 0.12f, 0.14f, 0.19f, 1.0f };
-    const RGBA plateHot{ 0.22f, 0.26f, 0.36f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
+    const RGBA panel{ 0.05f, 0.035f, 0.08f, 0.95f };
+    const RGBA bar{ 0.478f, 0.043f, 0.278f, 1.0f };
+    const RGBA well{ 0.03f, 0.02f, 0.045f, 1.0f };
+    const RGBA plate{ 0.09f, 0.06f, 0.12f, 1.0f };
+    const RGBA plateHot{ 0.14f, 0.21f, 0.0f, 1.0f };
     const float th = listTextHeight("Ag");
     const float pad = 10.0f * s, line = 20.0f * s;
 
@@ -1998,16 +2261,15 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
-    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
     const RGBA amber{ 0.91f, 0.65f, 0.24f, 1.0f };
-    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.95f };
-    const RGBA bar{ 0.16f, 0.18f, 0.24f, 1.0f };
-    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
-    const RGBA plate{ 0.12f, 0.14f, 0.19f, 1.0f };
-    const RGBA plateHot{ 0.22f, 0.26f, 0.36f, 1.0f };
+    const RGBA bar{ 0.478f, 0.043f, 0.278f, 1.0f };
+    const RGBA well{ 0.03f, 0.02f, 0.045f, 1.0f };
+    const RGBA plate{ 0.09f, 0.06f, 0.12f, 1.0f };
+    const RGBA plateHot{ 0.14f, 0.21f, 0.0f, 1.0f };
     const float th = listTextHeight("Ag");
 
-    drawRect(L.panel, panel);
+    drawThemedPanel(L.panel);
     drawRect(L.bar, bar);
     drawListText(fitText(lang("UILABEL_INTERACTION_PANEL"), L.bar.w - 12.0f * s, false), L.bar.x + 6.0f * s,
                  L.bar.y + (L.bar.h - th) * 0.5f, white);
@@ -2105,7 +2367,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         const int kind = w.get<Prop>(e)->kind;
         float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
         if (kind >= 0 && kind < PROP_KIND_COUNT) {
-            const Model& m = propModels_[(size_t)kind];
+            const Model& m = propModel(kind);
             const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
             if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;
         }
@@ -2120,15 +2382,244 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     propHops_.swap(seen);   // props no longer worked, or gone, are forgotten
 }
 
+namespace {
+// A shape with its bottom right corner cut off at 45 degrees, filled top to bottom from top to bottom colour
+void cutCornerShape(std::vector<UiVert>& v, const Rect& r, float cut, RGBA top, RGBA bottom) {
+    cut = std::min(cut, std::min(r.w, r.h));
+    auto at = [&](float x, float y) { return UiVert{ x, y, mixColor(top, bottom, r.h > 0.0f ? (y - r.y) / r.h : 0.0f) }; };
+    const UiVert a = at(r.x, r.y), b = at(r.x + r.w, r.y), c = at(r.x + r.w, r.y + r.h - cut);
+    const UiVert d = at(r.x + r.w - cut, r.y + r.h), e = at(r.x, r.y + r.h);
+    v.insert(v.end(), { a, b, c, a, c, d, a, d, e });
+}
+} // namespace
+
+void Renderer::drawThemedPanel(const Rect& r) {
+    const float s = uiH_ / 720.0f;
+    const float frame = std::max(1.0f, 2.0f * s), cut = 18.0f * s;
+    std::vector<UiVert> v;
+    cutCornerShape(v, r, cut, theme::PINK, theme::PINK_DEEP);
+    cutCornerShape(v, Rect{ r.x + frame, r.y + frame, r.w - 2.0f * frame, r.h - 2.0f * frame }, cut - frame * 0.6f,
+                   theme::alpha(rgb255(16, 10, 22, 1.0f), 0.97f), theme::alpha(rgb255(6, 5, 10, 1.0f), 0.98f));
+    drawUiTris(v);
+}
+
+void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWord, const std::string& secondWord,
+                               const std::string& eyebrow, const std::vector<std::string>& news) {
+    const float s = uiH_ / 720.0f;
+    const float sway = -titleMouse_ * 5.0f * s;   // the words lean against the backdrop's sway
+    const unsigned long long now = SDL_GetTicks();
+
+    // "Early Access": a short glowing green dash, then the words in small capitals
+    {
+        const float th = listTextHeight("Ag");
+        const float cy = L.eyebrow.y + L.eyebrow.h * 0.5f;
+        const float dx = L.eyebrow.x + sway + 3.0f * s;
+        drawRect(Rect{ dx - 3.0f * s, cy - 3.0f * s, 32.0f * s, 6.0f * s }, theme::alpha(theme::GREEN, 0.18f));
+        drawRect(Rect{ dx, cy - 1.0f * s, 26.0f * s, 2.0f * s }, theme::GREEN);
+        drawListText(uiUpper(eyebrow), dx + 26.0f * s + 10.0f * s, cy - th * 0.5f, theme::alpha(theme::GREEN, 0.85f));
+    }
+
+    // The name: the first word green, a pink bar, the second word bone-white, in capitals, as large as the line allows.
+    // The words are pictures drawn once in the very large title font and shrunk to size, so they stay sharp; without
+    // that font they fall back to the UI font, enlarged.
+    {
+        const std::string a = uiUpper(firstWord), b = uiUpper(secondWord);
+        const TextTex& ta = titleWord(a);
+        const TextTex& tb = titleWord(b);
+        const bool big = ta.tex && tb.tex;
+        float lineH = L.name.h * 1.3f;                       // the height of a line of the name, as drawn
+        const float baseH = std::max(1.0f, uiTextHeight("Ag"));
+        auto wordW = [&](const TextTex& t, const std::string& text, float h) {
+            return big ? t.aspect * h : uiTextWidth(text) * h / baseH;
+        };
+        float em = lineH / 1.36f;                            // the font's size, near enough
+        const float total = wordW(ta, a, lineH) + wordW(tb, b, lineH) + em * (0.09f + 0.44f);
+        if (total > L.name.w) {
+            lineH *= L.name.w / total;
+            em = lineH / 1.36f;
+        }
+        const float wa = wordW(ta, a, lineH);
+        const float barW = std::max(2.0f, em * 0.09f), barH = em * 0.72f, barGap = em * 0.22f;
+        // Now and then, for a moment, the name glitches: a jolt sideways and a pink and green ghost either side
+        const float phase = (float)(now % 11000ULL) / 11000.0f;
+        float jolt = 0.0f, pinkOff = 0.0f, greenOff = 0.0f;
+        if (phase >= 0.974f && phase < 0.978f) { jolt = -3.0f; pinkOff = 3.0f; greenOff = -3.0f; }
+        else if (phase >= 0.978f && phase < 0.982f) { jolt = 3.0f; pinkOff = -4.0f; greenOff = 2.0f; }
+        else if (phase >= 0.986f && phase < 0.990f) { jolt = -1.0f; pinkOff = 2.0f; }
+        const float x0 = L.name.x + sway + jolt * s;
+        const float cy = L.name.y + L.name.h * 0.5f;
+        const float top = cy - lineH * 0.5f;
+        const float barX = x0 + wa + barGap;
+        const float xb = barX + barW + barGap;
+        // One word at its left edge and the line's top
+        auto word = [&](const TextTex& t, const std::string& text, float left, float dx, float dy, RGBA tint) {
+            if (big) {
+                const float w = t.aspect * lineH, x = left + dx, y = top + dy;
+                const float v[4 * 5] = { x, y + lineH, 0.0f, 0.0f, 1.0f, x + w, y + lineH, 0.0f, 1.0f, 1.0f,
+                                         x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
+                glUseProgram(glyphProgram_);
+                glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+                drawQuadVerts(t.tex, v, tint);
+            } else {
+                drawUiTextLarge(text, left + wordW(t, text, lineH) * 0.5f + dx, cy + dy, lineH / baseH, tint);
+            }
+        };
+        auto words = [&](float dx, float dy, RGBA ca, RGBA cb) {
+            word(ta, a, x0, dx, dy, ca);
+            word(tb, b, xb, dx, dy, cb);
+        };
+        // A dark drop below, then the glitch ghosts, a green glow round the first word, and the words
+        words(0.0f, 6.0f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f });
+        if (pinkOff != 0.0f) words(pinkOff * s, 0.0f, theme::alpha(theme::PINK, 0.8f), theme::alpha(theme::PINK, 0.8f));
+        if (greenOff != 0.0f) words(greenOff * s, 0.0f, theme::alpha(theme::GREEN, 0.8f), theme::alpha(theme::GREEN, 0.8f));
+        for (int k = 0; k < 4; ++k) {
+            const float gx = (k == 0 ? -2.0f : k == 1 ? 2.0f : 0.0f) * s, gy = (k == 2 ? -2.0f : k == 3 ? 2.0f : 0.0f) * s;
+            word(ta, a, x0, gx, gy, theme::alpha(theme::GREEN, 0.14f));
+        }
+        words(0.0f, 0.0f, theme::GREEN, theme::BONE);
+        // The bar: hot pink, with a glow, standing on the words' baseline
+        const float barY = cy + barH * 0.5f - barH * 0.98f + em * 0.06f;
+        drawRect(Rect{ barX - 4.0f * s, barY - 4.0f * s, barW + 8.0f * s, barH + 8.0f * s }, theme::alpha(theme::PINK, 0.22f));
+        drawRect(Rect{ barX, barY, barW, barH }, theme::PINK);
+    }
+
+    // The rule: pink, fading out to the right
+    drawRectGradientH(Rect{ L.rule.x + sway, L.rule.y, L.rule.w, L.rule.h }, theme::PINK, theme::alpha(theme::PINK, 0.0f));
+
+    // The notice board: a pink frame, cut at the bottom right, over a dark pink inside with faint lines across it
+    const Rect board{ L.news.x + sway, L.news.y, L.news.w, L.news.h };
+    {
+        const float frame = 3.0f * s, cut = 22.0f * s;
+        std::vector<UiVert> v;
+        cutCornerShape(v, Rect{ board.x + 2.0f * s, board.y + 14.0f * s, board.w, board.h }, cut, RGBA{ 0, 0, 0, 0.55f },
+                       RGBA{ 0, 0, 0, 0.55f });   // its shadow
+        cutCornerShape(v, board, cut, theme::PINK, theme::PINK_DEEP);
+        const Rect in{ board.x + frame, board.y + frame, board.w - 2.0f * frame, board.h - 2.0f * frame };
+        cutCornerShape(v, in, cut - frame, theme::PINK_DARK, theme::PINK_INK);
+        const RGBA faint{ 1.0f, 1.0f, 1.0f, 0.035f };
+        for (float y = in.y; y < in.y + in.h; y += 4.0f * s) {
+            // The lines stop at the cut corner
+            const float into = y - (in.y + in.h - (cut - frame));
+            const float w = into > 0.0f ? in.w - into : in.w;
+            if (w <= 0.0f) break;
+            v.insert(v.end(), { { in.x, y, faint }, { in.x + w, y, faint }, { in.x + w, y + 1.0f, faint },
+                                { in.x, y, faint }, { in.x + w, y + 1.0f, faint }, { in.x, y + 1.0f, faint } });
+        }
+        drawUiTris(v);
+    }
+    const float th = listTextHeight("Ag");
+    const float textX = L.newsText.x + sway;
+    float y = L.newsText.y;
+    const float bottom = L.newsText.y + L.newsText.h;
+    for (const std::string& raw : news) {
+        if (raw.empty()) {
+            y += th * 0.6f;
+            continue;
+        }
+        const bool heading = raw.rfind("# ", 0) == 0;
+        const bool bullet = raw.rfind("- ", 0) == 0;
+        const std::string text = heading || bullet ? raw.substr(2) : raw;
+        if (heading) {
+            // A heading: pink capitals, with a pink line under them
+            if (y + th > bottom) break;
+            drawListText(uiUpper(text), textX, y, theme::PINK);
+            y += th + 5.0f * s;
+            drawRect(Rect{ textX, y, L.newsText.w, std::max(1.0f, 1.0f * s) }, theme::alpha(theme::PINK, 0.45f));
+            y += 9.0f * s;
+            continue;
+        }
+        // A point: a small green arrowhead, then the text, wrapped under itself. A point that doesn't fit whole is left
+        // off, with the rest after it.
+        const float indent = bullet ? th * 1.2f : 0.0f;
+        const std::vector<std::string> wrapped = wrapListText(text, L.newsText.w - indent);
+        if (y + th * (float)wrapped.size() > bottom) return;
+        bool first = true;
+        for (const std::string& ln : wrapped) {
+            if (bullet && first) {
+                const float cx = textX + 2.0f * s, cyy = y + th * 0.5f, h = 4.0f * s;
+                drawUiTris({ { cx, cyy - h, theme::alpha(theme::GREEN, 0.9f) }, { cx + h * 1.4f, cyy, theme::alpha(theme::GREEN, 0.9f) },
+                             { cx, cyy + h, theme::alpha(theme::GREEN, 0.9f) } });
+            }
+            drawListText(ln, textX + indent, y, theme::NOTICE_TEXT);
+            y += th;
+            first = false;
+        }
+        y += th * 0.35f;
+    }
+}
+
+void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std::string& sub, bool selected, bool enabled,
+                            float appear) {
+    const float s = uiH_ / 720.0f;
+    appear = std::clamp(appear, 0.0f, 1.0f);
+    const float fade = appear;
+    if (selected && enabled) noteHover(r0);
+    Rect r = r0;
+    r.x += (selected && enabled ? -14.0f * s : 0.0f) + (1.0f - appear) * 34.0f * s;   // lit items step out; new ones slide in
+    auto A = [&](RGBA c) { return theme::alpha(c, c.a * fade); };
+    // The band: dark, clearing to nothing on the left; lit, it turns green
+    const float split = r.x + r.w * (selected ? 0.40f : 0.45f);
+    const RGBA left = selected ? rgb255(159, 230, 0, 0.0f) : rgb255(10, 8, 16, 0.0f);
+    const RGBA mid = selected ? rgb255(20, 30, 0, 0.75f) : rgb255(10, 8, 16, 0.72f);
+    const RGBA right = selected ? rgb255(45, 66, 0, 0.9f) : rgb255(10, 8, 16, 0.9f);
+    drawRectGradientH(Rect{ r.x, r.y, split - r.x, r.h }, A(left), A(mid));
+    drawRectGradientH(Rect{ split, r.y, r.x + r.w - split, r.h }, A(mid), A(right));
+    if (selected) {
+        // A green glow along its right end, and a soft green halo
+        const float gw = r.w * 0.46f;
+        drawRectGradientH(Rect{ r.x + r.w - gw, r.y, gw, r.h }, A(rgb255(159, 230, 0, 0.0f)), A(rgb255(159, 230, 0, 0.16f)));
+        drawRect(Rect{ r.x - 4.0f * s, r.y - 3.0f * s, r.w + 8.0f * s, r.h + 6.0f * s }, A(rgb255(159, 230, 0, 0.05f)));
+    }
+    // The edge on the left
+    const RGBA edge = selected ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
+    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, A(edge));
+    if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GREEN));
+    // The words, in capitals
+    const RGBA ink = !enabled ? theme::alpha(theme::ASH, 0.4f) : selected ? theme::BONE : theme::ASH;
+    const std::string up = uiUpper(label);
+    const float lh = uiTextHeight(up);
+    const float subH = sub.empty() ? 0.0f : listTextHeight("Ag");
+    const float block = lh + (sub.empty() ? 0.0f : 2.0f * s + subH);
+    const float tx = r.x + 3.0f * s + 16.0f * s;
+    const float ty = r.y + (r.h - block) * 0.5f;
+    const float maxW = r.w - 3.0f * s - 28.0f * s;
+    if (uiTextWidth(up) > maxW) {
+        drawUiTextInBox(up, Rect{ tx, ty, maxW, lh }, A(ink));
+    } else {
+        drawUiText(up, tx, ty, A(ink));
+    }
+    if (!sub.empty()) {
+        const RGBA subInk = selected ? rgb255(159, 230, 0, 0.85f) : theme::alpha(theme::ASH, 0.6f);
+        drawListText(fitText(sub, maxW, false), tx, ty + lh + 2.0f * s, A(subInk));
+    }
+}
+
+void Renderer::drawTitleFooter(const Rect& f, const std::string& left, const std::string& right) {
+    const float s = uiH_ / 720.0f;
+    const RGBA ink = theme::alpha(theme::ASH, 0.75f);
+    const float th = listTextHeight("Ag");
+    const float y = f.y + (f.h - th) * 0.5f;
+    drawListText(uiUpper(left), f.x, y, ink);
+    // The arrow keys as two small arrowheads, up and down, then the words
+    const std::string words = uiUpper(right);
+    const float ww = listTextWidth(words);
+    const float h = 4.0f * s, w = 4.5f * s, gap = 4.0f * s;
+    const float x = f.x + f.w - ww;
+    const float ax = x - (4.0f * w + gap) - 8.0f * s, cy = f.y + f.h * 0.5f;
+    drawUiTris({ { ax, cy + h, ink }, { ax + w, cy - h, ink }, { ax + 2.0f * w, cy + h, ink },
+                 { ax + 2.0f * w + gap, cy - h, ink }, { ax + 3.0f * w + gap, cy + h, ink }, { ax + 4.0f * w + gap, cy - h, ink } });
+    drawListText(words, x, y, ink);
+}
+
 void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
                                float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
-    const RGBA accent{ 0.66f, 0.38f, 1.0f, 1.0f };
+    const RGBA accent{ 0.624f, 0.902f, 0.0f, 1.0f };
     const float th = listTextHeight("Ag");
     drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, RGBA{ 0.0f, 0.0f, 0.0f, 0.45f });   // dims the game behind it
-    drawRect(L.box, RGBA{ 0.05f, 0.06f, 0.09f, 0.98f });
+    drawThemedPanel(L.box);
     drawListText(fitText(lang("UILABEL_OPTIMIZE_ALL"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
     float ty = L.text.y;
     for (const std::string& ln : wrapListText(langf("MISC_OPTIMIZE_ALL_ASK", { std::to_string(unitCount) }), L.text.w)) {
@@ -2140,7 +2631,7 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
     const int share = std::clamp(attackShare, 0, 100);
     const std::string sl = langf("UILABEL_OPTIMIZE_BALANCE", { std::to_string(share), std::to_string(100 - share) });
     drawListText(fitText(sl, L.sliderLabel.w, false), L.sliderLabel.x, L.sliderLabel.y + (L.sliderLabel.h - th) * 0.5f, white);
-    drawRect(L.track, RGBA{ 0.18f, 0.18f, 0.24f, 1.0f });
+    drawRect(L.track, RGBA{ 0.16f, 0.10f, 0.20f, 1.0f });
     drawRect(Rect{ L.track.x, L.track.y, L.track.w * share / 100.0f, L.track.h }, accent);
     const float kx = L.track.x + L.track.w * share / 100.0f, kw = 8.0f * s, kh = L.track.h + 8.0f * s;
     drawRect(Rect{ kx - kw * 0.5f, L.track.y + (L.track.h - kh) * 0.5f, kw, kh }, white);
@@ -2151,9 +2642,10 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
         const float box = r.h - 6.0f * s;
         const Rect b{ r.x, r.y + 3.0f * s, box, box };
         const bool hot = r.contains(mx, my);
-        drawRect(b, hot ? RGBA{ 0.40f, 0.40f, 0.48f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.36f, 1.0f });
+        if (hot) noteHover(r);
+        drawRect(b, hot ? RGBA{ 0.30f, 0.42f, 0.06f, 1.0f } : RGBA{ 0.36f, 0.22f, 0.36f, 1.0f });
         drawRect(Rect{ b.x + 2.0f * s, b.y + 2.0f * s, b.w - 4.0f * s, b.h - 4.0f * s },
-                 toggles[(size_t)i] ? accent : RGBA{ 0.08f, 0.08f, 0.11f, 1.0f });
+                 toggles[(size_t)i] ? accent : RGBA{ 0.07f, 0.05f, 0.10f, 1.0f });
         const std::string label = lang(keys[i]);
         const float lx = b.x + box + 8.0f * s;
         const std::string shown = fitText(label, r.x + r.w - lx, false);
@@ -2168,10 +2660,9 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
                                   float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.98f };
-    const RGBA well{ 0.03f, 0.03f, 0.05f, 1.0f };
+    const RGBA well{ 0.03f, 0.02f, 0.045f, 1.0f };
     const float th = listTextHeight("Ag");
-    drawRect(L.box, panel);
+    drawThemedPanel(L.box);
     const std::string title = langf("UILABEL_CHOOSE_HOW_MANY", { itemName, std::to_string(available) });
     drawListText(fitText(title, L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
     drawRect(L.countBox, well);
@@ -2197,7 +2688,7 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
 void Renderer::drawCompass(const Rect& r, float bearingDeg) {
     const float s = uiH_ / 720.0f;
     drawRect(Rect{ r.x - 2.0f * s, r.y - 2.0f * s, r.w + 4.0f * s, r.h + 4.0f * s }, RGBA{ 0.02f, 0.02f, 0.03f, 0.9f });
-    drawRect(r, RGBA{ 0.05f, 0.05f, 0.08f, 0.8f });
+    drawRect(r, RGBA{ 0.05f, 0.035f, 0.075f, 0.8f });
 
     // The strip shows 60 degrees either side of the bearing, a tick every 15 degrees and a letter every 90
     const float half = 60.0f;
@@ -2223,14 +2714,14 @@ void Renderer::drawCompass(const Rect& r, float bearingDeg) {
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running) {
     const float s = uiH_ / 720.0f;
     const float bgAlpha = 0.5f;
-    drawRect(L.panel, RGBA{ 0.05f, 0.05f, 0.08f, bgAlpha });
+    drawRect(L.panel, RGBA{ 0.05f, 0.035f, 0.075f, bgAlpha });
     drawTitleBar(L.title, ICON_SQUAD_PANEL, lang("UILABEL_SQUAD_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
     // Walk and run: the lit one is the pace the squad is moving at
     auto mode = [&](const Rect& r, const std::string& text, bool on) {
-        drawRect(r, on ? RGBA{ 0.66f, 0.38f, 1.0f, 1.0f } : RGBA{ 0.14f, 0.14f, 0.18f, bgAlpha });
+        drawRect(r, on ? RGBA{ 0.40f, 0.60f, 0.0f, 1.0f } : RGBA{ 0.12f, 0.08f, 0.15f, bgAlpha });
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     };
@@ -2249,8 +2740,8 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const bool selected = w.has<Selected>(e);
         const Rect frame{ c.rect.x - 2.0f, c.rect.y - 2.0f, c.rect.w + 4.0f, c.rect.h + 4.0f };
         // A selected unit's frame is solid purple, so it stands out from the see-through frames
-        drawRect(frame, selected ? RGBA{ 0.66f, 0.38f, 1.0f, 1.0f } : RGBA{ 0.25f, 0.25f, 0.3f, bgAlpha });
-        drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.1f, 0.1f, 0.14f, bgAlpha });
+        drawRect(frame, selected ? RGBA{ 0.40f, 0.60f, 0.0f, 1.0f } : RGBA{ 0.30f, 0.20f, 0.32f, bgAlpha });
+        drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.10f, 0.07f, 0.13f, bgAlpha });
 
         // Portrait fitted inside the square, keeping its shape
         const TextTex& g = unitGlyph(w, e);
@@ -2285,7 +2776,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         // Health bar under the portrait
         const float frac = (nd && nd->maxHp > 0) ? std::clamp((float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f) : 0.0f;
         const float barY = c.rect.y + c.rect.w + 3.0f * s, barH = 4.0f * s;
-        drawRect(Rect{ c.rect.x, barY, c.rect.w, barH }, RGBA{ 0.16f, 0.16f, 0.19f, bgAlpha });
+        drawRect(Rect{ c.rect.x, barY, c.rect.w, barH }, RGBA{ 0.16f, 0.11f, 0.18f, bgAlpha });
         drawRect(Rect{ c.rect.x, barY, c.rect.w * frac, barH }, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
 
         // Name under the bar, cut at a word with "..." to fit the cell
@@ -2297,7 +2788,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 
     if (L.scrollable()) {
-        drawRect(L.track, RGBA{ 0.18f, 0.18f, 0.22f, bgAlpha });
+        drawRect(L.track, RGBA{ 0.16f, 0.10f, 0.20f, bgAlpha });
         drawRect(L.thumb, RGBA{ 0.7f, 0.7f, 0.8f, 1.0f });
     }
 }
@@ -2308,7 +2799,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
-    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
     const Rect& area = L.statsArea;
     const float rowH = L.statRowH;
     const float th = listTextHeight("Ag");
@@ -2346,7 +2837,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
             // Progress from this level toward the next one
             const float barY = y + rowH - 3.0f * s, barH = 3.0f * s;
             const float barW = barEnd - nameX;
-            drawRect(Rect{ nameX, barY, barW, barH }, RGBA{ 0.16f, 0.16f, 0.19f, 1.0f });
+            drawRect(Rect{ nameX, barY, barW, barH }, RGBA{ 0.16f, 0.11f, 0.18f, 1.0f });
             drawRect(Rect{ nameX, barY, barW * levelProgress(stats, i), barH }, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
             if (mx >= area.x && mx < area.x + area.w && my >= y && my < y + rowH) hovered = i;
             y += rowH;
@@ -2362,7 +2853,7 @@ void Renderer::drawStatTip(const Stats& stats, int stat, float mx, float my) {
     const int pct = (int)std::lround(levelProgress(stats, stat) * 100.0f);
     std::vector<TipRow> rows(5);
     rows[0].text = statName(stat);
-    rows[0].tint = RGBA{ 0.80f, 0.86f, 0.96f, 1.0f };
+    rows[0].tint = RGBA{ 0.624f, 0.902f, 0.0f, 1.0f };
     rows[1].text = langf("UILABEL_TIP_LEVEL", { std::to_string(lv) });
     rows[2].text = langf("UILABEL_TIP_PROGRESS", { std::to_string(pct) });
     rows[3].text = langf("UILABEL_TIP_CURRENT_XP", { withCommas(stats.xp[stat]) });
@@ -2390,12 +2881,14 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
             const Rect& t = L.tabs[i];
             if (t.w <= 0.0f) continue;
-            drawRect(t, i == L.tab ? RGBA{ 0.30f, 0.36f, 0.56f, 0.95f } : RGBA{ 0.12f, 0.14f, 0.20f, 0.9f });
+            drawRect(t, i == L.tab ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f } : RGBA{ 0.10f, 0.07f, 0.13f, 0.9f });
+            if (i == L.tab) drawRect(Rect{ t.x, t.y + t.h - 2.0f, t.w, 2.0f }, theme::GREEN);
+            if (t.contains(mx, my)) noteHover(t);
             const float tw = listTextWidth(names[i]), th = listTextHeight("Ag");
             drawListText(names[i], t.x + (t.w - tw) * 0.5f, t.y + (t.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
     };
-    drawRect(L.panel, RGBA{ 0.04f, 0.04f, 0.06f, bgAlpha });
+    drawRect(L.panel, RGBA{ 0.04f, 0.025f, 0.06f, bgAlpha });
     if (!L.open) {
         frame();
         return;
@@ -2421,8 +2914,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     int hoverStat = -1;   // the stat under the mouse in the Stats tab
     if (L.tab == UNIT_TAB_PROFILE) {
     // ---- Profile card: the unit's picture, name, health, hunger and carry ----
-    drawRect(L.profile, RGBA{ 0.08f, 0.08f, 0.11f, bgAlpha });
-    drawRect(L.portrait, RGBA{ 0.10f, 0.10f, 0.14f, bgAlpha });
+    drawRect(L.profile, RGBA{ 0.07f, 0.05f, 0.10f, bgAlpha });
+    drawRect(L.portrait, RGBA{ 0.10f, 0.07f, 0.13f, bgAlpha });
     const TextTex& g = unitGlyph(w, unit);
     if (g.tex) {
         const float sz = L.portrait.w;
@@ -2475,7 +2968,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawListText(value, rightEdge - listTextWidth(value), rowY, white);
         const float barY = rowY + listTextHeight("Ag") + 3.0f * s;
         const float barH = 8.0f * s;
-        drawRect(Rect{ tx, barY, colW, barH }, RGBA{ 0.16f, 0.16f, 0.19f, bgAlpha });
+        drawRect(Rect{ tx, barY, colW, barH }, RGBA{ 0.16f, 0.11f, 0.18f, bgAlpha });
         drawRect(Rect{ tx, barY, colW * std::clamp(frac, 0.0f, 1.0f), barH }, fill);
         return barY + barH + 9.0f * s;
     };
@@ -2498,7 +2991,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const ItemDef* dragDef = dragItem != 0 ? findItem(dragItem) : nullptr;
     // A two-handed weapon, held or dragged, dims the off hand
     const bool dimOff = offLocked || (dragDef && dragDef->equipSlot == "two_hand");
-    drawRect(L.gearPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
+    drawRect(L.gearPanel, RGBA{ 0.06f, 0.04f, 0.085f, bgAlpha });
     drawIconText(L.gearPanel.x + 10.0f * s, L.gearPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_EQUIPMENT, lang("UILABEL_EQUIPMENT"), white);
     // Optimize and Remove All, for a unit of yours. A label too long for its button is shortened, with the whole of it
     // in a tooltip.
@@ -2518,14 +3011,14 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float inset = 5.0f * s;
     for (size_t gi = 0; gi < L.gear.size() && gi < GEAR_SLOTS; ++gi) {
         const Rect& r = L.gear[gi];
-        RGBA edge{ 0.30f, 0.30f, 0.36f, bgAlpha };
+        RGBA edge{ 0.36f, 0.22f, 0.36f, bgAlpha };
         if (dragItem != 0) {
             std::string why;
             const bool fits = canEquip(eval, dragItem, (int)gi, why);
             edge = fits ? RGBA{ 0.35f, 0.90f, 0.45f, 1.0f } : RGBA{ 0.92f, 0.30f, 0.30f, 1.0f };
         }
         drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, edge);
-        drawRect(r, RGBA{ 0.10f, 0.10f, 0.13f, bgAlpha });
+        drawRect(r, RGBA{ 0.10f, 0.07f, 0.12f, bgAlpha });
         if (r.contains(mx, my)) hoverGear = (int)gi;
 
         const int item = worn ? worn->items[gi] : 0;
@@ -2569,7 +3062,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     }
     // ---- Inventory grid on its own background ----
     if (L.tab == UNIT_TAB_INVENTORY) {
-    drawRect(L.gridPanel, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
+    drawRect(L.gridPanel, RGBA{ 0.06f, 0.04f, 0.085f, bgAlpha });
     drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, lang("UILABEL_INVENTORY"), white);
     // The slot count sits left of the sort button, which is at the right of the heading
     const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
@@ -2579,8 +3072,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
         const Rect& r = L.slots[i];
-        drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.30f, 0.30f, 0.36f, bgAlpha });
-        drawRect(r, RGBA{ 0.10f, 0.10f, 0.13f, bgAlpha });
+        drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.36f, 0.22f, 0.36f, bgAlpha });
+        drawRect(r, RGBA{ 0.10f, 0.07f, 0.12f, bgAlpha });
 
         const ItemStack& st = inv->slots[i];
         if (st.item == 0 || st.count <= 0) continue;
@@ -2617,8 +3110,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const float totalH = L.maxScroll + L.body.h;
         const float thumbH = std::max(16.0f * s, track.h * L.body.h / totalH);
         const float thumbY = track.y + (track.h - thumbH) * (L.scroll / L.maxScroll);
-        drawRect(track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
-        drawRect(Rect{ track.x, thumbY, track.w, thumbH }, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+        drawRect(track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
+        drawRect(Rect{ track.x, thumbY, track.w, thumbH }, RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
     }
     endClip();
     frame();
@@ -2652,11 +3145,14 @@ void Renderer::endClip() {
 }
 
 void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
-    const RGBA bg = !enabled ? RGBA{ 0.10f, 0.10f, 0.12f, 0.70f }
-                  : hovered  ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
-                             : RGBA{ 0.14f, 0.17f, 0.22f, 0.90f };
-    drawRect(r, bg);
-    const RGBA fg = enabled ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
+    const float s = uiH_ / 720.0f;
+    const bool lit = enabled && hovered;
+    if (lit) noteHover(r);
+    if (!enabled) drawRect(r, theme::alpha(theme::NIGHT, 0.6f));
+    else if (lit) drawRectGradientH(r, rgb255(20, 30, 0, 0.85f), rgb255(45, 66, 0, 0.95f));
+    else drawRectGradientH(r, rgb255(18, 14, 26, 0.85f), rgb255(10, 8, 16, 0.95f));
+    drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, lit ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
+    const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(204, 208, 218, 1.0f);
     const float tw = listTextWidth(label), th = listTextHeight(label);
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
 }
@@ -2670,7 +3166,7 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
     const float listH = listTextHeight("Ag");
     const Rect& P = L.behaviorPanel;
 
-    drawRect(P, RGBA{ 0.06f, 0.06f, 0.09f, bgAlpha });
+    drawRect(P, RGBA{ 0.06f, 0.04f, 0.085f, bgAlpha });
     drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, lang("UILABEL_BEHAVIOR"), white);
     const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
     const float countX = P.x + P.w - 10.0f * s - listTextWidth(count);
@@ -2703,8 +3199,8 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
 
         // The on box: a dark square, with a blue fill while the rule is on
         drawRect(Rect{ R.toggle.x - 1.0f, R.toggle.y - 1.0f, R.toggle.w + 2.0f, R.toggle.h + 2.0f },
-                 RGBA{ 0.30f, 0.30f, 0.36f, bgAlpha });
-        drawRect(R.toggle, RGBA{ 0.10f, 0.10f, 0.13f, bgAlpha });
+                 RGBA{ 0.36f, 0.22f, 0.36f, bgAlpha });
+        drawRect(R.toggle, RGBA{ 0.10f, 0.07f, 0.12f, bgAlpha });
         if (r.on) {
             const float inset = 3.0f * s;
             drawRect(Rect{ R.toggle.x + inset, R.toggle.y + inset,
@@ -2715,7 +3211,7 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         // Each option cell shows its text, fitted to the cell, and lights up under the mouse
         auto cell = [&](const Rect& c, const std::string& label) {
             const bool hot = editable && c.contains(mx, my);
-            drawRect(c, hot ? RGBA{ 0.22f, 0.28f, 0.38f, 0.90f } : RGBA{ 0.10f, 0.10f, 0.13f, 0.90f });
+            drawRect(c, hot ? RGBA{ 0.176f, 0.259f, 0.0f, 0.90f } : RGBA{ 0.10f, 0.07f, 0.12f, 0.90f });
             drawListText(fitText(label, c.w - 8.0f * s, false), c.x + 4.0f * s, c.y + (c.h - listH) * 0.5f, text);
         };
         cell(R.conditionTarget, targetName(r.conditionTarget));
@@ -2755,13 +3251,13 @@ ConditionEditorLayout Renderer::conditionEditorLayout(float x, float y, int winW
 }
 
 void Renderer::drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my) {
-    drawRect(L.box, RGBA{ 0.04f, 0.04f, 0.06f, 0.92f });
+    drawThemedPanel(L.box);
     // A choice is lit when it is the rule's current one, and brighter still under the mouse
     auto choice = [&](const Rect& c, const std::string& label, bool current) {
         const bool hot = c.contains(mx, my);
         const RGBA bg = current ? RGBA{ 0.28f, 0.46f, 0.74f, 0.95f }
-                      : hot     ? RGBA{ 0.25f, 0.34f, 0.50f, 0.95f }
-                                : RGBA{ 0.14f, 0.17f, 0.22f, 0.95f };
+                      : hot     ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f }
+                                : RGBA{ 0.07f, 0.055f, 0.10f, 0.95f };
         drawRect(c, bg);
         const float tw = listTextWidth(label), th = listTextHeight(label);
         drawListText(label, c.x + (c.w - tw) * 0.5f, c.y + (c.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -2776,7 +3272,7 @@ void Renderer::drawConditionEditor(const ConditionEditorLayout& L, const Behavio
     for (size_t i = 0; i < L.steps.size() && i < 4; ++i) {
         choice(L.steps[i], stepLabels[i], false);
     }
-    drawRect(L.value, RGBA{ 0.10f, 0.10f, 0.13f, 0.95f });
+    drawRect(L.value, RGBA{ 0.10f, 0.07f, 0.12f, 0.95f });
     const std::string pct = std::to_string(r.percent) + "%";
     drawListText(pct, L.value.x + (L.value.w - listTextWidth(pct)) * 0.5f,
                  L.value.y + (L.value.h - listTextHeight(pct)) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -2806,11 +3302,7 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const GroundItem* gi = w.get<GroundItem>(e);
-        if (const TextTex* pic = itemTexture(gi->item)) {
-            drawGlyph(*pic, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
-        } else {
-            drawGlyph(white_, tr->x, tr->y, tr->z, ITEM_GLYPH_H, ITEM_PINK);
-        }
+        drawGlyph(*itemTexture(gi->item), tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
     }
 }
 
@@ -2818,20 +3310,29 @@ const TextTex* Renderer::itemTexture(int item) {
     auto it = itemPics_.find(item);
     if (it == itemPics_.end()) {
         char path[64];
-        std::snprintf(path, sizeof(path), "data/item/%d.png", item);
+        std::snprintf(path, sizeof(path), "data/item/item_%d.png", item);
         it = itemPics_.emplace(item, loadOptionalImage(path)).first;
     }
     if (it->second.tex) return &it->second;
-    return itemNone_.tex ? &itemNone_ : nullptr;
+    return itemNone_.tex ? &itemNone_ : &pink_;
 }
 
-// An emote's picture from data/emote, loaded once. Null when the pak has none for it.
+// An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, emote_0.png, and the pink square when that
+// is missing too.
 const TextTex* Renderer::emoteTexture(int id) {
     auto it = emotePics_.find(id);
     if (it == emotePics_.end()) {
-        it = emotePics_.emplace(id, loadOptionalImage(("data/emote/" + std::to_string(id) + ".png").c_str())).first;
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/emote/emote_%d.png", id);
+        it = emotePics_.emplace(id, loadOptionalImage(path)).first;
     }
-    return it->second.tex ? &it->second : nullptr;
+    if (it->second.tex) return &it->second;
+    return emoteFallback_.tex ? &emoteFallback_ : &pink_;
+}
+
+const Model& Renderer::propModel(int kind) const {
+    const Model& own = propModels_[(size_t)kind];
+    return own.vao ? own : fallbackModel_;
 }
 
 void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown) {
@@ -2861,12 +3362,16 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     }
 }
 
-// The UI icon with this id: its picture from data/ui, loaded once. An id with no picture has no texture.
+// The UI icon with this id: its picture from data/icon (icon_<n>.png), loaded once. An id with no picture uses
+// icon_0.png; with neither, the texture is empty and the pink placeholder (with the id) is drawn.
 const TextTex& Renderer::uiIconTexture(int icon) {
     auto it = uiIcons_.find(icon);
-    if (it != uiIcons_.end()) return it->second;
-    const std::string num = icon < 10 ? "0" + std::to_string(icon) : std::to_string(icon);
-    return uiIcons_.emplace(icon, loadOptionalImage(("data/ui/icon_" + num + ".png").c_str())).first->second;
+    if (it == uiIcons_.end()) {
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/icon/icon_%d.png", icon);
+        it = uiIcons_.emplace(icon, loadOptionalImage(path)).first;
+    }
+    return it->second.tex ? it->second : iconFallback_;
 }
 
 void Renderer::drawUiIcon(int icon, const Rect& r) {
@@ -2877,7 +3382,7 @@ void Renderer::drawUiIcon(int icon, const Rect& r) {
     }
     // The placeholder until the picture is packed: a pink square with its id in it
     drawRect(r, RGBA{ 1.0f, 0.42f, 0.78f, 1.0f });
-    const std::string num = icon < 10 ? "0" + std::to_string(icon) : std::to_string(icon);
+    const std::string num = std::to_string(icon);
     const float tw = listTextWidth(num), th = listTextHeight("Ag");
     drawListText(num, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 0.12f, 0.02f, 0.08f, 1.0f });
 }
@@ -2914,7 +3419,9 @@ void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, R
 void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    drawRect(bar, RGBA{ 0.14f, 0.18f, 0.28f, 0.95f });
+    // A panel's bar: deep pink fading to near black, with a hot pink line along its foot
+    drawRectGradientH(bar, theme::alpha(theme::PINK_DEEP, 0.95f), theme::alpha(theme::PINK_INK, 0.92f));
+    drawRect(Rect{ bar.x, bar.y + bar.h - std::max(1.0f, 1.0f * s), bar.w, std::max(1.0f, 1.0f * s) }, theme::alpha(theme::PINK, 0.85f));
     if (icon == ICON_NONE) {
         drawListText(title, bar.x + 6.0f * s, bar.y + (bar.h - listTextHeight("Ag")) * 0.5f, white);
         return;
@@ -2923,7 +3430,8 @@ void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title)
 }
 
 void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
-    drawRect(r, RGBA{ 0.22f, 0.26f, 0.36f, 0.95f });
+    drawRect(r, theme::alpha(theme::PINK, 0.9f));
+    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f }, theme::alpha(theme::PINK_INK, 0.95f));
     const char* sign = collapsed ? "+" : "-";
     const float tw = listTextWidth(sign), th = listTextHeight("Ag");
     drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -2958,8 +3466,10 @@ void Renderer::drawNotice(const std::string& text, int winW, int winH) {
     const float w = uiTextWidth(text) + 2.0f * pad;
     const float h = uiTextHeight("Ag") + pad;
     const Rect box{ (winW - w) * 0.5f, top, w, h };
-    drawRect(box, RGBA{ 0.04f, 0.04f, 0.05f, 0.5f });
-    drawUiText(text, box.x + pad, top + pad * 0.5f, RGBA{ 1.0f, 1.0f, 0.6f, 1.0f });
+    // A dark band with a green edge on its left, like a lit menu item
+    drawRectGradientH(box, rgb255(20, 30, 0, 0.85f), theme::alpha(theme::NIGHT, 0.85f));
+    drawRect(Rect{ box.x, box.y, 3.0f * s, box.h }, theme::GREEN);
+    drawUiText(text, box.x + pad, top + pad * 0.5f, theme::BONE);
 }
 
 StatsPanelLayout Renderer::statsPanelLayout(int winW, int winH) {
@@ -2972,14 +3482,14 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
-    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
     const float bgAlpha = 0.5f;
     const float rowH = fontTextHeight(statsRow_, "Ag") + 1.0f * s;
     const float pad = L.left.x - L.box.x;
     const float iconH = fontTextHeight(statsRow_, "Ag");
     const float nameIndent = iconH + 4.0f * s;   // the stat names sit after their icons
 
-    drawRect(L.box, RGBA{ 0.04f, 0.05f, 0.08f, bgAlpha });
+    drawRect(L.box, RGBA{ 0.04f, 0.03f, 0.07f, bgAlpha });
     const std::string caption = langf("UILABEL_STATS_CAPTION", { name });
     drawFontText(statsTitle_, caption, L.box.x + (L.box.w - fontTextWidth(statsTitle_, caption)) * 0.5f,
                  L.box.y + pad, white);
@@ -3018,7 +3528,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
     column(L.right, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
 
     const bool hot = L.close.contains(mx, my);
-    drawRect(L.close, hot ? RGBA{ 0.25f, 0.34f, 0.50f, bgAlpha } : RGBA{ 0.14f, 0.17f, 0.22f, bgAlpha });
+    drawRect(L.close, hot ? RGBA{ 0.176f, 0.259f, 0.0f, bgAlpha } : RGBA{ 0.07f, 0.055f, 0.10f, bgAlpha });
     const float tw = fontTextWidth(statsRow_, lang("UILABEL_CLOSE")), th = fontTextHeight(statsRow_, lang("UILABEL_CLOSE"));
     drawFontText(statsRow_, lang("UILABEL_CLOSE"), L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, white);
 }
@@ -3028,14 +3538,17 @@ ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int w
 }
 
 void Renderer::drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my) {
-    const float bgAlpha = 0.5f;
-    drawRect(L.box, RGBA{ 0.04f, 0.04f, 0.06f, bgAlpha });
+    const float s = uiH_ / 720.0f;
+    drawRect(L.box, theme::alpha(theme::PINK, 0.8f));
+    drawRect(Rect{ L.box.x + 1.0f, L.box.y + 1.0f, L.box.w - 2.0f, L.box.h - 2.0f }, theme::alpha(theme::NIGHT, 0.92f));
     for (size_t i = 0; i < L.buttons.size() && i < labels.size(); ++i) {
         const Rect& r = L.buttons[i];
         const bool hot = r.contains(mx, my);
-        drawRect(r, hot ? RGBA{ 0.25f, 0.34f, 0.50f, bgAlpha } : RGBA{ 0.14f, 0.17f, 0.22f, bgAlpha });
+        if (hot) noteHover(r);
+        if (hot) drawRectGradientH(r, rgb255(20, 30, 0, 0.85f), rgb255(45, 66, 0, 0.95f));
+        drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, hot ? theme::GREEN : theme::alpha(theme::ASH, 0.35f));
         const float tw = listTextWidth(labels[i]), th = listTextHeight(labels[i]);
-        drawListText(labels[i], r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawListText(labels[i], r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, hot ? theme::BONE : rgb255(204, 208, 218, 1.0f));
     }
 }
 
@@ -3139,10 +3652,7 @@ void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, i
 }
 
 void Renderer::drawUnitPicture(int sprite, const Rect& r) {
-    const int idx = sprite - 1;
-    const bool inRange = idx >= 0 && idx < (int)unitSprites_.size();
-    const TextTex& g = (inRange && unitSprites_[idx].tex) ? unitSprites_[idx] : unitFallback_;
-    drawFitted(g, r, WHITE);
+    drawFitted(unitPicture(sprite), r, WHITE);
 }
 
 void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
@@ -3347,10 +3857,10 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
-    const RGBA lit{ 0.22f, 0.26f, 0.36f, 0.95f };
-    const RGBA dim{ 0.10f, 0.11f, 0.15f, 0.90f };
+    const RGBA lit{ 0.14f, 0.21f, 0.0f, 0.95f };
+    const RGBA dim{ 0.09f, 0.06f, 0.12f, 0.90f };
 
-    drawRect(L.panel, RGBA{ 0.05f, 0.06f, 0.09f, 0.86f });
+    drawRect(L.panel, RGBA{ 0.05f, 0.035f, 0.08f, 0.86f });
     drawTitleBar(L.bar, ICON_COMBAT_LOG, lang("UILABEL_INFORMATION_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
@@ -3377,17 +3887,17 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
         drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
     }
     if (L.scrollable()) {
-        drawRect(L.track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
-        drawRect(L.thumb, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+        drawRect(L.track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
+        drawRect(L.thumb, RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
     }
 
     // The filter menu, over the lines. Each kind reads On or Off.
     if (L.filterOpen) {
-        drawRect(L.filterMenu, RGBA{ 0.04f, 0.05f, 0.08f, 0.97f });
+        drawRect(L.filterMenu, RGBA{ 0.04f, 0.03f, 0.07f, 0.97f });
         const float th = listTextHeight("Ag");
         for (const CombatLogLayout::FilterRow& fr : L.filterRows) {
             if (fr.heading) {
-                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.80f, 0.86f, 0.96f, 1.0f });
+                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.624f, 0.902f, 0.0f, 1.0f });
                 continue;
             }
             if (fr.r.contains(mx, my)) drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
@@ -3401,19 +3911,19 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
 }
 
 void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
-                              const PartyPanels& P, const std::string& mapName, float mx, float my) {
+                              const PartyPanels& P, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
     const RGBA faint{ 0.45f, 0.45f, 0.50f, 1.0f };
-    const RGBA heading{ 0.80f, 0.86f, 0.96f, 1.0f };
-    const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
+    const RGBA hover{ 0.624f, 0.902f, 0.0f, 1.0f };
     const RGBA warn{ 1.0f, 0.72f, 0.55f, 1.0f };
-    const RGBA panel{ 0.05f, 0.06f, 0.09f, 0.92f };
-    const RGBA plate{ 0.12f, 0.14f, 0.19f, 0.95f };
-    const RGBA plateHot{ 0.20f, 0.25f, 0.36f, 0.95f };
-    const RGBA plateOn{ 0.28f, 0.22f, 0.44f, 0.95f };    // the purple used for the selected unit
-    const RGBA plateOff{ 0.10f, 0.10f, 0.12f, 0.70f };
+    const RGBA panel{ 0.05f, 0.035f, 0.08f, 0.92f };
+    const RGBA plate{ 0.09f, 0.06f, 0.12f, 0.95f };
+    const RGBA plateHot{ 0.14f, 0.21f, 0.0f, 0.95f };
+    const RGBA plateOn{ 0.176f, 0.259f, 0.0f, 0.95f };    // the purple used for the selected unit
+    const RGBA plateOff{ 0.07f, 0.05f, 0.10f, 0.70f };
     const float lineH = listTextHeight("Ag");
     const PartyMember& picked = pickedMember(p, ui);
 
@@ -3438,11 +3948,18 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     drawRect(P.left, panel);
     drawRect(P.center, panel);
     drawRect(P.right, panel);
-    drawRect(P.bottom, RGBA{ 0.03f, 0.03f, 0.05f, 0.95f });
-    drawUiTextCentered(langf("UILABEL_STARTING_PARTY", { mapName }), uiW_ * 0.5f, (P.topH - uiTextHeight("Ag")) * 0.5f, white);
+    drawRect(P.bottom, RGBA{ 0.03f, 0.02f, 0.045f, 0.95f });
+    // The unit list's scroll bar, when it has more units than fit
+    const PartyListBar bar = partyListBar((int)uiW_, (int)uiH_, (int)p.size(), ui.listScroll);
+    if (bar.track.h > 0.0f) {
+        drawRect(bar.track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
+        const bool barHot = ui.listDrag || bar.thumb.contains(mx, my);
+        drawRect(bar.thumb, barHot ? RGBA{ 1.0f, 0.36f, 0.70f, 1.0f } : RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
+    }
 
     for (const Button& b : buttons) {
         const bool hot = b.enabled && b.rect.contains(mx, my);
+        if (hot) noteHover(b.rect);
         switch (b.action) {
         case Action::PartyPick: {
             const PartyMember& u = p[static_cast<size_t>(b.param)];
@@ -3453,9 +3970,8 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const float tx = b.rect.x + pic + 16.0f * s, tw = b.rect.x + b.rect.w - tx - 8.0f * s;
             const bool named = !cleanName(u.name).empty();
             const std::string shown = named ? cleanName(u.name) : std::string(lang("UILABEL_NO_NAME"));
-            drawListText(fitText(shown, tw, false), tx, b.rect.y + 22.0f * s,
+            drawListText(fitText(shown, tw, false), tx, b.rect.y + (b.rect.h - lineH) * 0.5f,
                          !named ? warn : chosen ? hover : white);
-            drawListText(langf("UILABEL_SPRITE_N", { std::to_string(u.sprite) }), tx, b.rect.y + 22.0f * s + lineH + 6.0f * s, gray);
             break;
         }
 
@@ -3561,7 +4077,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyDropBack:
             drawRect(Rect{ b.rect.x - 1.0f, b.rect.y - 1.0f, b.rect.w + 2.0f, b.rect.h + 2.0f }, RGBA{ 0.45f, 0.50f, 0.70f, 0.9f });
-            drawRect(b.rect, RGBA{ 0.04f, 0.05f, 0.08f, 0.98f });
+            drawRect(b.rect, RGBA{ 0.04f, 0.03f, 0.07f, 0.98f });
             break;
 
         case Action::PartyDropScroll:

@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Rullning vid kanten
 UILABEL_GLOBAL_VOLUME	Global volym
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Omgivningsljud
+UILABEL_INTERFACE_SOUNDS	Gränssnittsljud
 UILABEL_SOUND_EFFECTS	Ljudeffekter
 UILABEL_RESTORE_DEFAULTS	Återställ standardvärden
 UILABEL_WINDOWED	Fönster
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Statistik
 UILABEL_CLICK_TO_TYPE	Klicka för att skriva ett namn
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Startgrupp: {0}
 UILABEL_HEALTH	Hälsa
 UILABEL_HUNGER	Hunger
 UILABEL_CARRY	Bärkapacitet
@@ -606,6 +606,8 @@ FACTION_RED	Den röda fraktionen
 MISC_PROP_UNREACHABLE	Onåbar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	En ensam vandrare utan något eget: inga föremål, ingen utrustning och varje egenskap mellan 1 och 5.
 SCENARIO_RANDOM_NAME	Helt slumpmässigt
 SCENARIO_RANDOM_DESC	En grupp på 1 till 32 enheter, var och en med alla egenskaper mellan 1 och 99 och slumpade föremål och utrustning som de orkar bära.
 SCENARIO_CARAVAN_NAME	Resande karavan
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Svältande ingen
 SCENARIO_NOBODY_DESC	En enhet utan någonting: inga föremål, ingen utrustning, alla egenskaper på 1 och en tom mage.
 SCENARIO_DIGGERS_NAME	Fängelsehålegrävare
 SCENARIO_DIGGERS_DESC	Sju gruvarbetare i full utrustning. Deras egenskaper ligger mellan 5 och 20, men var och en har Gruvdrift 50 och bär 3 järnmalm.
+SCENARIO_CUSTOM_NAME	Anpassat scenario
+SCENARIO_CUSTOM_DESC	Bygg din egen grupp. Den börjar med tre enheter, och du kan lägga till eller ta bort enheter, upp till 32.
 PROP_LOCKED_CHEST	Låst kista
 PROP_PRISONER_CAGE	Fångbur
 UILABEL_UNLOCK	Dyrka upp
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Vid lika vinner det mest värdefulla
 MISC_OPTIMIZE_ALL_SAME	Alla enheter bär redan sin bästa utrustning
 MISC_OPTIMIZE_ALL_DONE	Utrustning optimerad för {0} enheter
 MISC_OPTIMIZE_ALL_SOME_ROOM	Utrustning optimerad för {0} enheter; {1} saknade plats i inventariet
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Överlevnad
+UILABEL_EARLY_ACCESS	Early Access
+MISC_TITLE_KEYS	Välj  //  Enter Bekräfta
+UILABEL_LANGUAGE_LABEL	Språk:

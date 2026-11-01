@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Bahasa Melayu
+UILABEL_CONTINUE	Teruskan
+UILABEL_NEW_GAME	Permainan Baharu
+UILABEL_LOAD_GAME	Muat Permainan
+UILABEL_SETTINGS	Tetapan
+UILABEL_LANGUAGE_BUTTON	Bahasa ({0})
+UILABEL_QUIT	Keluar
+UILABEL_RESUME	Sambung
+UILABEL_SAVE_GAME	Simpan Permainan
+UILABEL_RETURN_TO_TITLE	Kembali ke Skrin Tajuk
+UILABEL_CLOSE	Tutup
+UILABEL_BACK	Kembali
+UILABEL_SAVE	Simpan
+UILABEL_DELETE	Padam
+UILABEL_CANCEL	Batal
+UILABEL_CONFIRM	Sahkan
+UILABEL_YES	Ya
+UILABEL_NO	Tidak
+UILABEL_NAME	Nama
+UILABEL_TIME	Masa
+UILABEL_CREATED	Dicipta
+UILABEL_TYPE	Jenis
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUAL
+UILABEL_NO_SAVES	Belum ada simpanan
+UILABEL_UNSAVED_WARNING	Kemajuan yang belum disimpan dalam permainan ini akan hilang.
+UILABEL_HOLD_DELETE	Tahan Padam selama 3 saat untuk mengesahkan.
+UILABEL_CLICK_SAVE	Klik simpanan untuk memuatkannya
+UILABEL_CLICK_MAP	Klik peta untuk memulakan permainan baharu
+UILABEL_NO_MAPS	Tiada peta ditemui. Buat satu dengan worldgen.py.
+UILABEL_BUILT_IN	DIBINA DALAM
+UILABEL_WORLD	DUNIA
+UILABEL_MAP_FILE	FAIL PETA
+UILABEL_BUILT_IN_WHEN	dibina dalam
+UILABEL_UNKNOWN	tidak diketahui
+UILABEL_ON	Hidup
+UILABEL_OFF	Mati
+UILABEL_EMPTY	Kosong
+UILABEL_NONE_AVAILABLE	Tiada yang tersedia
+UILABEL_TWO_HANDED	Dua tangan
+UILABEL_WILL_BE_REPLACED	Akan diganti
+UILABEL_GRAPHICS	Grafik
+UILABEL_INTERFACE	Antara muka
+UILABEL_LANGUAGE_TAB	Bahasa
+UILABEL_CONTROLS	Kawalan
+UILABEL_AUDIO	Audio
+UILABEL_DISPLAY_MODE	Mod paparan
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Resolusi
+UILABEL_REFRESH_RATE	Kadar segar semula
+UILABEL_DEFAULT	Lalai
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Had kadar bingkai
+UILABEL_UNLIMITED	Tanpa had
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Simpan automatik
+UILABEL_MINUTE	1 minit
+UILABEL_MINUTES	{0} minit
+UILABEL_UNIT_NAMES	Nama unit
+UILABEL_FONT_SIZE	Saiz fon
+UILABEL_RESET_PANELS	Set semula semua panel UI
+UILABEL_RESET	Set semula
+UILABEL_FONT	Fon
+UILABEL_FONT_AUTOMATIC	Automatik
+UILABEL_EDGE_SCROLL	Tatal di tepi
+UILABEL_GLOBAL_VOLUME	Kelantangan global
+UILABEL_MUSIC	Muzik
+UILABEL_AMBIENT	Bunyi persekitaran
+UILABEL_INTERFACE_SOUNDS	Bunyi antara muka
+UILABEL_SOUND_EFFECTS	Kesan bunyi
+UILABEL_RESTORE_DEFAULTS	Pulihkan lalai
+UILABEL_WINDOWED	Tetingkap
+UILABEL_BORDERLESS	Tanpa sempadan
+UILABEL_FULL_SCREEN	Skrin penuh
+CONTROL_KEYS_1	W A S D, atau kekunci anak panah
+CONTROL_DOES_1	Gerakkan kamera
+CONTROL_KEYS_2	Roda tetikus
+CONTROL_DOES_2	Zum masuk dan keluar
+CONTROL_KEYS_3	Tahan butang tengah tetikus dan seret
+CONTROL_DOES_3	Putar kamera
+CONTROL_KEYS_4	Klik kiri, atau seret kotak
+CONTROL_DOES_4	Pilih unit
+CONTROL_KEYS_5	Shift atau Alt dengan klik
+CONTROL_DOES_5	Tambah pada pilihan
+CONTROL_KEYS_6	Klik kanan
+CONTROL_DOES_6	Gerak atau serang dengan unit yang dipilih
+CONTROL_KEYS_7	Tahan Alt
+CONTROL_DOES_7	Tunjukkan nama barang di atas tanah
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Buka menu, atau kembali
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Ambil tangkapan skrin
+UILABEL_PAUSED	DIJEDA
+UILABEL_PACE_RUN	Rentak: lari
+UILABEL_PACE_WALK	Rentak: jalan
+UILABEL_SQUAD_PANEL	Panel Skuad
+UILABEL_UNIT_PANEL	Panel Unit
+UILABEL_INFORMATION_PANEL	Panel Maklumat
+UILABEL_INTERACTION_PANEL	Panel Interaksi
+UILABEL_TRADE_PANEL	Panel Perdagangan
+UILABEL_INVENTORY	Inventori
+UILABEL_EQUIPMENT	Peralatan
+UILABEL_BEHAVIOR	Gelagat
+UILABEL_TRADE	Perdagangan
+UILABEL_END_DIALOGUE	Tamatkan Dialog
+UILABEL_TRADE_DROP_THEIRS	Seret atau klik kanan barang dari inventori mereka ke sini
+UILABEL_TRADE_DROP_YOURS	Seret atau klik kanan barang anda dari inventori anda ke sini
+UILABEL_SINGLE	Satu
+UILABEL_MAX	Maks
+UILABEL_SORT	Isih
+UILABEL_WORLD_MAP_HINT	Peta dunia. Tatal untuk zum. Tekan M atau Esc untuk tutup.
+UILABEL_NO_UNIT_SELECTED	Tiada unit dipilih
+UILABEL_UNNAMED_UNIT	Unit tanpa nama
+UILABEL_NO_NAME	Tiada nama
+UILABEL_PROFILE	Profil
+UILABEL_STATS	Statistik
+UILABEL_CLICK_TO_TYPE	Klik untuk menaip nama
+UILABEL_SPRITE	Sprite
+UILABEL_HEALTH	Kesihatan
+UILABEL_HUNGER	Lapar
+UILABEL_CARRY	Muatan
+UILABEL_NEXT_LEVEL_XP_LINE	XP aras seterusnya: {0}
+UILABEL_STAT	Statistik
+UILABEL_LEVEL	Aras
+UILABEL_TOTAL_XP	Jumlah XP
+UILABEL_TO_NEXT	Ke seterusnya
+UILABEL_ATTRIBUTES	Atribut
+UILABEL_COMBAT	Pertempuran
+UILABEL_RESOURCE_GATHERING	Pengumpulan Sumber
+UILABEL_CRAFTING	Kraftangan
+UILABEL_UTILITY	Utiliti
+UILABEL_GEAR	Peralatan
+UILABEL_ITEMS	Barang
+UILABEL_IDENTITY	Identiti
+UILABEL_RANDOMIZE_UNIT	Rawakkan unit ini
+UILABEL_RANDOMIZE_ALL	Rawakkan semua
+UILABEL_ADD_UNIT	Tambah unit
+UILABEL_REMOVE_UNIT	Alih keluar unit
+UILABEL_CONFIRM_STARTS	Pengesahan memulakan permainan dengan kumpulan ini.
+UILABEL_NEEDS_NAMES	Setiap unit perlu mempunyai nama sebelum permainan boleh dimulakan.
+UILABEL_CLICK_UNIT_EDIT	Klik unit untuk menyuntingnya.
+UILABEL_SHIFT_CLICK	Shift + klik mengubah statistik sebanyak 10.
+UILABEL_LEVELS_HINT	Aras dari 1 hingga 99.
+UILABEL_CLICK_SLOT	Klik slot untuk memilih barang. Hanya barang yang muat disenaraikan.
+UILABEL_CLICK_SLOT_STACK	Klik slot untuk memilih barang. Timbunan memuatkan sehingga had barang.
+UILABEL_SCROLL_UP	Tatal ke atas
+UILABEL_SCROLL_DOWN	Tatal ke bawah
+UILABEL_SLOT_HEAD	Kepala
+UILABEL_SLOT_TORSO	Badan
+UILABEL_SLOT_MAIN_HAND	Tangan utama
+UILABEL_SLOT_OFF_HAND	Tangan sokongan
+UILABEL_SLOT_LEGS	Kaki
+UILABEL_SLOT_FEET	Kaki (tapak)
+UILABEL_SLOT_ACCESSORY	Aksesori
+UILABEL_BEHAVIOR_ON	Hidup
+UILABEL_TARGET	Sasaran
+UILABEL_CONDITION	Syarat
+UILABEL_ACTION	Tindakan
+UILABEL_COMBAT_MESSAGES	Mesej Pertempuran
+UILABEL_SEEN	Dilihat
+UILABEL_HIT	Kena
+UILABEL_MISS	Tersasar
+UILABEL_DAMAGE	Kerosakan
+UILABEL_EXPERIENCE_MESSAGES	Mesej Pengalaman
+UILABEL_EXPERIENCE	Pengalaman
+UILABEL_ITEM_MESSAGES	Mesej Barang
+UILABEL_PICKUP	Ambil
+UILABEL_DROP	Jatuhkan
+UILABEL_LOOT	Rampasan
+UILABEL_USE	Guna
+UILABEL_MESSAGE	Mesej
+UILABEL_GAME	Permainan
+UILABEL_FILTER	Penapis
+UILABEL_STAT_HEAD_STAT	Statistik
+UILABEL_UNKNOWN_SLOT	Tidak diketahui
+UILABEL_MONTH_NAME	Bulan {0}
+UILABEL_STRENGTH_STAT	Kekuatan
+MISC_GAME_SAVED	Permainan disimpan
+MISC_SAVE_FAILED	Permainan tidak dapat disimpan
+MISC_READ_FAILED	Simpanan itu tidak dapat dibaca
+MISC_SAVE_OLD	Simpanan itu dibuat sebelum peta wujud dan tidak boleh dimuatkan
+MISC_AUTOSAVED	Disimpan automatik
+MISC_SCREENSHOT_FAILED	Tangkapan skrin tidak dapat disimpan
+MISC_SCREENSHOT_SAVED	Disimpan {0}
+MISC_TRADE_FULL	Perdagangan penuh
+MISC_TRADE_ALREADY	Barang itu sudah ada dalam perdagangan, atau perdagangan penuh.
+MISC_TRADE_NO_MORE	Tiada lagi barang itu untuk diperdagangkan
+MISC_NO_UNIT_TO_TRADE	Tiada unit untuk berdagang
+MISC_TRADE_ADD_BOTH	Tambah barang di kedua-dua belah
+MISC_TRADE_NO_ROOM_YOURS	Unit anda tiada ruang untuk barang mereka
+MISC_TRADE_NO_ROOM_THEIRS	Mereka tiada ruang untuk barang anda
+MISC_TRADE_FAILED	Perdagangan gagal
+MISC_TRADE_COMPLETE	Perdagangan selesai.
+MISC_PICKUP_SELECT	Pilih unit untuk mengambil barang itu
+MISC_TRADE_ONLY_TALKING	Anda hanya boleh berdagang dengan unit yang sedang anda ajak bercakap.
+MISC_DROPS	{0} menjatuhkan {1} {2}
+MISC_AN_ITEM	satu barang
+MISC_UNIT	Unit
+MISC_TWO_HANDED_IN_MAIN	Senjata dua tangan berada di tangan utama
+MISC_YOU	Anda
+MISC_UNKNOWN_ITEM	Barang tidak diketahui
+MISC_ITEM_FALLBACK	Barang
+MISC_THAT_ITEM	Itu
+MISC_REASON_FEES	membayar yuran perdagangan
+MISC_REASON_WALKING	berjalan
+MISC_REASON_CARRYING	membawa muatan
+MISC_REASON_CLIMBING	memanjat
+MISC_REASON_SWINGING	mengayun
+MISC_REASON_DODGING	mengelak
+MISC_REASON_DEALING	memberi kerosakan
+MISC_REASON_TAKING	menerima kerosakan
+MISC_REASON_BLOCKING	menyekat
+MISC_REASON_SPOTTING	mengesan musuh
+MISC_REASON_UNNOTICED	kekal tidak disedari
+MISC_REASON_GEAR	menukar peralatan
+NPC_GREETING	Helo dunia.
+NPC_OPTION_WARES	Tunjukkan barangan anda kepada saya.
+NPC_OPTION_QUEST	Apa lagi yang boleh anda beritahu tentang misi ini?
+MISC_ORD_1	Pertama
+MISC_ORD_2	Kedua
+MISC_ORD_3	Ketiga
+MISC_ORD_4	Keempat
+MISC_ORD_5	Kelima
+MISC_ORD_6	Keenam
+MISC_ORD_7	Ketujuh
+MISC_ORD_8	Kelapan
+MISC_ORD_9	Kesembilan
+MISC_ORD_10	Kesepuluh
+MISC_ORD_11	Kesebelas
+MISC_ORD_12	Kedua belas
+MISC_SKY_DAY_ZENITH	Zenit siang
+MISC_SKY_DAY_HORIZON	Ufuk siang
+MISC_SKY_NIGHT_ZENITH	Zenit malam
+MISC_SKY_NIGHT_HORIZON	Ufuk malam
+MISC_SKY_DUSK_HORIZON	Ufuk senja
+MISC_SKY_DUSK_SUN	Matahari senja
+MISC_SKY_SUN	Matahari
+MISC_SKY_MOON	Bulan
+MISC_TARGET_SELF	Diri sendiri
+MISC_TARGET_ALLY	Sekutu
+MISC_TARGET_ENEMY	Musuh
+MISC_COND_HEALTH	Kesihatan
+MISC_COND_HUNGER	Lapar
+MISC_ACT_HEAL	Guna barang penyembuh
+MISC_ACT_FOOD	Makan makanan
+UILABEL_STAT_DESC_STRENGTH	Kerosakan jarak dekat, kapasiti muatan
+UILABEL_STAT_DESC_DEXTERITY	Kelajuan serangan
+UILABEL_STAT_DESC_VITALITY	Kesihatan maksimum
+UILABEL_STAT_DESC_ENDURANCE	Stamina maksimum
+UILABEL_STAT_DESC_AGILITY	Peluang mengelak
+UILABEL_STAT_DESC_INTELLIGENCE	Kolam mana
+UILABEL_STAT_DESC_WISDOM	Bilangan mantera yang boleh dipelajari
+UILABEL_STAT_DESC_CHARISMA	Harga dagangan NPC, pilihan dialog unik
+UILABEL_STAT_DESC_PERCEPTION	Julat pengesanan
+UILABEL_STAT_DESC_ATHLETICS	Kelajuan larian
+UILABEL_STAT_DESC_STEALTH	Lebih baik mengelak dikesan semasa mengendap
+UILABEL_STAT_DESC_MELEE	Ketepatan jarak dekat
+UILABEL_STAT_DESC_PROJECTILES	Ketepatan jarak jauh
+UILABEL_STAT_DESC_ARCANE	Kuasa mantera
+UILABEL_STAT_DESC_BLOCK	Peluang menyekat atau menangkis
+UILABEL_STAT_DESC_MINING	Hasil bijih
+UILABEL_STAT_DESC_HERBALISM	Hasil pengumpulan tumbuhan liar
+UILABEL_STAT_DESC_WOODCUTTING	Hasil kayu
+UILABEL_STAT_DESC_SKINNING	Hasil kulit/daging
+UILABEL_STAT_DESC_FARMING	Hasil tanaman
+UILABEL_STAT_DESC_COOKING	Kekuatan bonus makanan
+UILABEL_STAT_DESC_SMELTING	Hasil peleburan bijih
+UILABEL_STAT_DESC_FORGING	Kraf logam
+UILABEL_STAT_DESC_CARPENTRY	Kraf kayu
+UILABEL_STAT_DESC_STONEWORKING	Kraf batu
+UILABEL_STAT_DESC_LOCKPICKING	Tahap kesukaran kunci
+UILABEL_STAT_DESC_THIEVERY	Kejayaan mencuri
+UILABEL_STAT_DESC_MEDICAL	Keberkesanan perubatan
+UILABEL_DEXTERITY_STAT	Kemahiran
+UILABEL_VITALITY_STAT	Daya hidup
+UILABEL_ENDURANCE_STAT	Ketahanan
+UILABEL_AGILITY_STAT	Kelincahan
+UILABEL_INTELLIGENCE_STAT	Kecerdasan
+UILABEL_WISDOM_STAT	Kebijaksanaan
+UILABEL_CHARISMA_STAT	Karisma
+UILABEL_PERCEPTION_STAT	Persepsi
+UILABEL_ATHLETICS_STAT	Atletik
+UILABEL_STEALTH_STAT	Penyelindapan
+UILABEL_MELEE_STAT	Jarak dekat
+UILABEL_PROJECTILES_STAT	Peluru
+UILABEL_ARCANE_STAT	Ilmu sihir
+UILABEL_BLOCK_STAT	Sekat
+UILABEL_MINING_STAT	Perlombongan
+UILABEL_HERBALISM_STAT	Herbalisme
+UILABEL_WOODCUTTING_STAT	Menebang
+UILABEL_SKINNING_STAT	Menguliti
+UILABEL_FARMING_STAT	Pertanian
+UILABEL_COOKING_STAT	Memasak
+UILABEL_SMELTING_STAT	Peleburan
+UILABEL_FORGING_STAT	Menempa
+UILABEL_CARPENTRY_STAT	Pertukangan kayu
+UILABEL_STONEWORKING_STAT	Pertukangan batu
+UILABEL_LOCKPICKING_STAT	Membuka kunci
+UILABEL_THIEVERY_STAT	Mencuri
+UILABEL_MEDICAL_STAT	Perubatan
+MISC_CANT_BE_WORN	{0} tidak boleh dipakai
+MISC_ITEM_NAME_FORMAT	{1} daripada {0}
+MISC_MATERIAL_IRON	besi
+MISC_MATERIAL_STEEL	keluli
+MISC_MATERIAL_BRONZE	gangsa
+MISC_MATERIAL_SILVER	perak
+MISC_MATERIAL_LEATHER	kulit
+MISC_MATERIAL_BONE	tulang
+MISC_MATERIAL_WOOD	kayu
+MISC_NEED_MORE_VALUE	Mereka memerlukan {0} nilai lagi
+MISC_TRADE_READY_FEE	Sedia. Yuran perdagangan: {0}
+MISC_LOAD_FAILED	{0} tidak dapat dimuatkan: {1}
+MISC_MAP_MISSING	Peta untuk "{0}" hilang
+MISC_MAP_LOAD_FAILED	Peta "{0}" tidak dapat dimuatkan: {1}
+MISC_LOADED	Dimuatkan {0}
+MISC_DELETE_FAILED	"{0}" tidak dapat dipadamkan
+MISC_DELETED	Dipadamkan "{0}"
+MISC_USED	Digunakan {0}
+MISC_OVERWRITE_Q	Tulis ganti "{0}"?
+MISC_LOAD_Q	Muatkan "{0}"?
+MISC_DELETE_Q	Padamkan "{0}"?
+MISC_NOT_FIT_SLOT	{0} tidak muat dalam slot {1}
+MISC_EMPTY_OFF_HAND	Kosongkan tangan sokongan sebelum memegang {0}
+MISC_NO_ROOM_INV	Tiada ruang dalam inventori untuk {0}
+MISC_SLOT_HOLDS	Slot itu sudah mengandungi {0}
+UILABEL_TIP_TYPE	Jenis: {0}
+UILABEL_TIP_MATERIAL	Bahan: {0}
+UILABEL_TIP_SLOT	Slot: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Aras diperlukan: {0}
+UILABEL_TIP_ATTACK	Serangan {0}
+UILABEL_TIP_DEFENSE	Pertahanan {0}
+UILABEL_TIP_WEIGHT	Berat {0}
+UILABEL_TIP_EACH	 setiap satu
+UILABEL_TIP_STACKS	Ditimbun hingga {0}
+UILABEL_TIP_BUY	Harga beli: {0}
+UILABEL_TIP_SELL	Harga jual: {0}
+UILABEL_TIP_USE	Guna: {0}
+UILABEL_TOTAL_VALUE	Jumlah nilai: {0}
+UILABEL_CHOOSE_HOW_MANY	Pilih berapa: {0} ({1} tersedia)
+UILABEL_TIP_LEVEL	Aras: {0}
+UILABEL_TIP_PROGRESS	Kemajuan: {0}%
+UILABEL_TIP_CURRENT_XP	XP semasa: {0}
+UILABEL_ATTACK_DEFENSE	Serangan {0}      Pertahanan {1}
+UILABEL_STATS_CAPTION	Statistik: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Slot {0}: {1}
+UILABEL_SLOT_N_EMPTY	Slot {0}: kosong
+UILABEL_COUNT	Kiraan {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Serangan {0}    Pertahanan {1}    Muatan {2}
+MISC_IS_DOWN	{0} telah rebah
+MISC_PICKS_UP	{0} mengambil {1} {2}
+MISC_CANNOT_READ	{0} tidak dapat dibaca
+UILABEL_TIP_DURABILITY	Ketahanan {0} / {1}
+UILABEL_DATE_LINE	HARI {0} · {1} · TAHUN {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} mendapat {1} {2} XP untuk {3}
+UILABEL_PAUSE_HINT	(Tekan bar ruang untuk menyambung semula.)
+MISC_DRINKS	{0} minum {1}
+UILABEL_COMPASS_N	U
+UILABEL_COMPASS_E	T
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	B
+ITEM_1_NAME	Bijih Besi
+ITEM_1_DESC	Bijih mentah yang boleh dilebur menjadi jongkong besi.
+ITEM_2_NAME	Balak Oak
+ITEM_2_DESC	Balak kukuh yang digunakan dalam kraf dan pembinaan.
+ITEM_3_NAME	Herba Penyembuh
+ITEM_3_DESC	Herba biasa dengan sifat memulihkan yang ringan.
+ITEM_4_NAME	Syiling Emas
+ITEM_4_DESC	Mata wang standard kerajaan.
+ITEM_5_NAME	Kulit Serigala
+ITEM_5_DESC	Kulit kasar daripada serigala yang dibunuh. Dicari oleh penyamak.
+ITEM_6_NAME	Peninggalan Purba
+ITEM_6_DESC	Artifak misteri yang berdengung perlahan dengan tenaga.
+ITEM_7_NAME	Ubat Kesihatan
+ITEM_7_DESC	Memulihkan 50 kesihatan apabila diminum.
+ITEM_8_NAME	Ubat Mana
+ITEM_8_DESC	Memulihkan 50 mana apabila diminum.
+ITEM_9_NAME	Minuman Stamina
+ITEM_9_DESC	Memulihkan 40 stamina dan meningkatkan penjanaan semula seketika.
+ITEM_10_NAME	Eliksir Kekuatan
+ITEM_10_DESC	Memberi +10 serangan selama 60 saat.
+ITEM_11_NAME	Roti
+ITEM_11_DESC	Makanan perjalanan ringkas. Memulihkan 15 kesihatan.
+ITEM_12_NAME	Penawar
+ITEM_12_DESC	Menyembuhkan racun dan mengurangkan kerosakan racun selama 30 saat.
+ITEM_13_NAME	Epal
+ITEM_13_DESC	Memulihkan 8 lapar apabila dimakan.
+ITEM_14_NAME	Beri Liar
+ITEM_14_DESC	Memulihkan 6 lapar apabila dimakan.
+ITEM_15_NAME	Biskut Keras
+ITEM_15_DESC	Memulihkan 12 lapar apabila dimakan.
+ITEM_16_NAME	Kepingan Keju
+ITEM_16_DESC	Memulihkan 15 lapar apabila dimakan.
+ITEM_17_NAME	Ikan Salai
+ITEM_17_DESC	Memulihkan 20 lapar apabila dimakan.
+ITEM_18_NAME	Kek Madu
+ITEM_18_DESC	Memulihkan 18 lapar apabila dimakan.
+ITEM_19_NAME	Pai Daging Kambing
+ITEM_19_DESC	Memulihkan 26 lapar apabila dimakan.
+ITEM_20_NAME	Mangkuk Sup
+ITEM_20_DESC	Memulihkan 30 lapar apabila dimakan.
+ITEM_21_NAME	Paha Khinzir Hutan Panggang
+ITEM_21_DESC	Memulihkan 40 lapar apabila dimakan.
+ITEM_22_NAME	Bekalan Perjalanan
+ITEM_22_DESC	Memulihkan 50 lapar apabila dimakan.
+ITEM_23_NAME	Topi
+ITEM_23_DESC	Melindungi kepala.
+ITEM_24_NAME	Tudung
+ITEM_24_DESC	Melindungi kepala.
+ITEM_25_NAME	Koif Rantai
+ITEM_25_DESC	Melindungi kepala.
+ITEM_26_NAME	Topi Keledar
+ITEM_26_DESC	Melindungi kepala.
+ITEM_27_NAME	Topi Besi Berpelindung
+ITEM_27_DESC	Melindungi kepala.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Melindungi kepala.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Melindungi kepala.
+ITEM_30_NAME	Topi Besi Besar
+ITEM_30_DESC	Melindungi kepala.
+ITEM_31_NAME	Ikat Dahi
+ITEM_31_DESC	Melindungi kepala.
+ITEM_32_NAME	Mahkota
+ITEM_32_DESC	Melindungi kepala.
+ITEM_33_NAME	Tunik
+ITEM_33_DESC	Menutupi dada dan badan.
+ITEM_34_NAME	Jaket Kulit
+ITEM_34_DESC	Menutupi dada dan badan.
+ITEM_35_NAME	Rompi Lamelar
+ITEM_35_DESC	Menutupi dada dan badan.
+ITEM_36_NAME	Brigandin
+ITEM_36_DESC	Menutupi dada dan badan.
+ITEM_37_NAME	Baju Zirah Rantai
+ITEM_37_DESC	Menutupi dada dan badan.
+ITEM_38_NAME	Perisai Dada
+ITEM_38_DESC	Menutupi dada dan badan.
+ITEM_39_NAME	Kiras
+ITEM_39_DESC	Menutupi dada dan badan.
+ITEM_40_NAME	Plat Dada
+ITEM_40_DESC	Menutupi dada dan badan.
+ITEM_41_NAME	Zirah Plat Penuh
+ITEM_41_DESC	Menutupi dada dan badan.
+ITEM_42_NAME	Zirah Istiadat
+ITEM_42_DESC	Menutupi dada dan badan.
+ITEM_43_NAME	Seluar Tunggang
+ITEM_43_DESC	Menutupi kaki.
+ITEM_44_NAME	Seluar
+ITEM_44_DESC	Menutupi kaki.
+ITEM_45_NAME	Legging
+ITEM_45_DESC	Menutupi kaki.
+ITEM_46_NAME	Seluar Rantai
+ITEM_46_DESC	Menutupi kaki.
+ITEM_47_NAME	Pelindung Paha
+ITEM_47_DESC	Menutupi kaki.
+ITEM_48_NAME	Kuisse
+ITEM_48_DESC	Menutupi kaki.
+ITEM_49_NAME	Pelindung Betis
+ITEM_49_DESC	Menutupi kaki.
+ITEM_50_NAME	Seluar Plat
+ITEM_50_DESC	Menutupi kaki.
+ITEM_51_NAME	Pelindung Betis Rantai
+ITEM_51_DESC	Menutupi kaki.
+ITEM_52_NAME	Pelindung Betis Bersalut Emas
+ITEM_52_DESC	Menutupi kaki.
+ITEM_53_NAME	Sandal
+ITEM_53_DESC	Melindungi kaki.
+ITEM_54_NAME	Kasut
+ITEM_54_DESC	Melindungi kaki.
+ITEM_55_NAME	But
+ITEM_55_DESC	Melindungi kaki.
+ITEM_56_NAME	But Menunggang
+ITEM_56_DESC	Melindungi kaki.
+ITEM_57_NAME	But Paku
+ITEM_57_DESC	Melindungi kaki.
+ITEM_58_NAME	Balutan Kaki
+ITEM_58_DESC	Melindungi kaki.
+ITEM_59_NAME	But Perarakan
+ITEM_59_DESC	Melindungi kaki.
+ITEM_60_NAME	Sabaton
+ITEM_60_DESC	Melindungi kaki.
+ITEM_61_NAME	Solleret
+ITEM_61_DESC	Melindungi kaki.
+ITEM_62_NAME	But Perang
+ITEM_62_DESC	Melindungi kaki.
+ITEM_63_NAME	Ikat Pinggang Kecil
+ITEM_63_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_64_NAME	Azimat
+ITEM_64_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_65_NAME	Gelang
+ITEM_65_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_66_NAME	Kerongsang
+ITEM_66_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_67_NAME	Cincin
+ITEM_67_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_68_NAME	Rantai Leher
+ITEM_68_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_69_NAME	Loket
+ITEM_69_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_70_NAME	Tangkal
+ITEM_70_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_71_NAME	Torc
+ITEM_71_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_72_NAME	Jubah
+ITEM_72_DESC	Perhiasan kecil yang lusuh. Dua boleh dipakai serentak.
+ITEM_73_NAME	Pedang Pendek
+ITEM_73_DESC	Dipegang di tangan utama.
+ITEM_74_NAME	Pedang Panjang
+ITEM_74_DESC	Dipegang di tangan utama.
+ITEM_75_NAME	Kapak
+ITEM_75_DESC	Dipegang di tangan utama.
+ITEM_76_NAME	Gada
+ITEM_76_DESC	Dipegang di tangan utama.
+ITEM_77_NAME	Flail
+ITEM_77_DESC	Dipegang di tangan utama.
+ITEM_78_NAME	Rapier
+ITEM_78_DESC	Dipegang di tangan utama.
+ITEM_79_NAME	Dagger
+ITEM_79_DESC	Dipegang dengan mana-mana tangan. Muat tangan utama atau tangan sokongan.
+ITEM_80_NAME	Pisau
+ITEM_80_DESC	Dipegang dengan mana-mana tangan. Muat tangan utama atau tangan sokongan.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Dipegang dengan mana-mana tangan. Muat tangan utama atau tangan sokongan.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Dipegang di tangan sokongan. Menyekat pukulan.
+ITEM_83_NAME	Perisai Layang-layang
+ITEM_83_DESC	Dipegang di tangan sokongan. Menyekat pukulan.
+ITEM_84_NAME	Perisai Menara
+ITEM_84_DESC	Dipegang di tangan sokongan. Menyekat pukulan.
+ITEM_85_NAME	Pedang Besar Dua Tangan
+ITEM_85_DESC	Memerlukan kedua-dua tangan. Tangan sokongan mesti kosong.
+ITEM_86_NAME	Tukul Perang
+ITEM_86_DESC	Memerlukan kedua-dua tangan. Tangan sokongan mesti kosong.
+ITEM_87_NAME	Kapak Perang
+ITEM_87_DESC	Memerlukan kedua-dua tangan. Tangan sokongan mesti kosong.
+UILABEL_UI_SCALE	Skala antara muka
+NAME_MASCULINE	["Amir", "Hafiz", "Razak", "Syafiq", "Danial"]
+NAME_FEMININE	["Aisyah", "Nur", "Siti", "Zara", "Farah"]
+NAME_ANDROGYNOUS	["Alif", "Iman", "Adi", "Rian", "Jaya"]
+UILABEL_BODY_TYPE	Jenis badan
+UILABEL_BODY_MASCULINE	Maskulin
+UILABEL_BODY_FEMININE	Feminin
+UILABEL_BODY_ANDROGYNOUS	Androgini
+UILABEL_TYPE_ITEM	Item
+UILABEL_TYPE_CONSUMABLE	Bahan pakai habis
+UILABEL_TYPE_WEAPON	Senjata
+UILABEL_TYPE_ARMOR	Perisai badan
+UILABEL_TYPE_ACCESSORY	Aksesori
+UILABEL_SLOT_EITHER_HAND	Mana-mana tangan
+UILABEL_SLOT_TWO_HAND	Dua tangan
+MISC_TRADE_CHANGE	Dagangan: {0}
+UILABEL_NEEDS_UNITS	Tambah sekurang-kurangnya satu unit untuk mula.
+PROP_WAGON	Gerabak
+PROP_CAMPFIRE	Unggun api
+PROP_BEDROLL	Tikar tidur
+PROP_BED	Katil
+PROP_BARREL	Tong
+PROP_ORE	Bijih
+PROP_TREE	Pokok
+PROP_BOULDER	Batu besar
+PROP_MUSHROOM	Cendawan
+PROP_BONES	Tulang
+PROP_WALL	Tembok
+PROP_STALL	Gerai
+MISC_STORAGE_FULL	Tiada ruang dalam simpanan
+MISC_PROP_TAKEN	Sudah digunakan
+MISC_PROP_WORKERS_FULL	Paling banyak {0} unit boleh mengerjakannya serentak
+MISC_GATHERS	{0} mengumpul {1}
+MISC_GATHER_NO_ROOM	{0} tiada ruang untuk {1} dan berhenti bekerja
+MISC_REASON_GATHERING	mengumpul
+UILABEL_TASK	Tugas: {0}
+UILABEL_TASK_IDLE	Terbiar
+UILABEL_TASK_MOVING	Bergerak
+UILABEL_TASK_RESTING	Berehat
+UILABEL_STORAGE_HINT	Klik kanan item untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unit anda berdiri. Klik kanan item unit anda untuk menyimpannya.
+ITEM_88_NAME	Batang kayu
+ITEM_88_DESC	Kayu yang ditebang daripada pokok, untuk kraf dan binaan.
+UILABEL_CRAFT_HINT	Klik kanan item unit anda untuk memasukkannya. Hasilnya masuk ke inventori unit yang bekerja. Untuk mula bekerja, klik kanan {0} dan pilih Guna.
+MISC_CRAFT_WRONG_ITEM	{0} tidak boleh digunakan di sini
+MISC_CRAFT_NEEDS	Masukkan {0} ke input untuk bermula
+MISC_CRAFTS	{0} membuat {1}
+MISC_CRAFT_STOPS	{0} tiada apa-apa lagi untuk dikerjakan dan berhenti
+MISC_REASON_CRAFTING	kraf
+ITEM_89_NAME	Daging beruang mentah
+ITEM_89_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_90_NAME	Daging beruang masak
+ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+UILABEL_TALK	Bercakap
+UILABEL_ATTACK	Serang
+UILABEL_ATTACK_UNPROVOKED	Serang (tanpa provokasi)
+UILABEL_FOLLOW	Ikut
+UILABEL_DEFEND	Pertahan
+UILABEL_TASK_FOLLOWING	Mengikut
+UILABEL_TASK_DEFENDING	Mempertahan
+MISC_FREE_TRADE_ADD	Tambah item ke mana-mana pihak
+MISC_FREE_TRADE_READY	Sedia untuk bertukar
+MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
+MISC_SELECT_UNIT_FIRST	Pilih unit dahulu
+FACTION_PLAYER	Puak Pemain
+FACTION_GRAY	Puak Kelabu
+FACTION_RED	Puak Merah
+MISC_PROP_UNREACHABLE	Tidak dapat dicapai
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Senario
+SCENARIO_VAGABOND_NAME	Pengembara
+SCENARIO_VAGABOND_DESC	Seorang pengembara yang tidak memiliki apa-apa: tiada barang, tiada kelengkapan, dan setiap statistik antara 1 hingga 5.
+SCENARIO_RANDOM_NAME	Rawak sepenuhnya
+SCENARIO_RANDOM_DESC	Kumpulan 1 hingga 32 unit, setiap satu dengan semua statistik antara 1 dan 99, serta item dan kelengkapan rawak yang mampu dibawanya.
+SCENARIO_CARAVAN_NAME	Karavan pengembara
+SCENARIO_CARAVAN_DESC	Sepuluh pengembara di jalan bersama. Semua statistik bermula pada 5, dan setiap seorang membawa 10 syiling emas.
+SCENARIO_SHABBY_NAME	Kru lusuh
+SCENARIO_SHABBY_DESC	Tiga kobold yang malang, setiap seekor dengan satu item rawak dan semua statistik antara 1 dan 10.
+SCENARIO_NOBODY_NAME	Si lapar tiada nama
+SCENARIO_NOBODY_DESC	Satu unit tanpa apa-apa: tiada item, tiada kelengkapan, semua statistik 1, dan perut kosong.
+SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
+SCENARIO_DIGGERS_DESC	Tujuh pelombong berkelengkapan penuh. Statistik mereka antara 5 dan 20, tetapi setiap seorang mempunyai Perlombongan 50 dan membawa 3 bijih besi.
+SCENARIO_CUSTOM_NAME	Senario Tersuai
+SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, dan anda boleh menambah atau membuang unit, sehingga 32.
+PROP_LOCKED_CHEST	Peti berkunci
+PROP_PRISONER_CAGE	Sangkar tahanan
+UILABEL_UNLOCK	Buka kunci
+MISC_PROP_LOCKED	Berkunci
+MISC_LOCKPICK_NEEDS	Perlu Membuka kunci {0}
+MISC_UNLOCKED	Dibuka!
+MISC_LOCKPICK_FAILED	Gagal mengopek kunci
+MISC_UNLOCKS	{0} membuka kunci {1}
+MISC_REASON_LOCKPICKING	mengopek kunci
+MISC_LOCKED_NAME	{0} (berkunci)
+PROP_CHAIR	Kerusi
+PROP_BENCH	Bangku panjang
+PROP_STOOL	Bangku kecil
+PROP_TABLE	Meja
+PROP_END_TABLE	Meja sisi
+PROP_ROUND_TABLE	Meja bulat
+PROP_METAL_TABLE	Meja logam
+PROP_STANDING_TORCH	Obor berdiri
+PROP_SUPPORT_BEAM	Rasuk sokongan
+PROP_TRAINING_DUMMY	Patung latihan
+PROP_RAW_FOOD_STORAGE	Stor makanan mentah
+PROP_FOOD_STORAGE	Stor makanan
+PROP_WEAPON_RACK	Rak senjata
+PROP_ARMOR_STAND	Pendirian perisai
+PROP_WATER_TANK	Tangki air
+PROP_WATER_PUMP	Pam air
+PROP_FORGE	Tempaan
+FILTER_RAW_FOOD	makanan mentah
+FILTER_FOOD	makanan
+FILTER_WEAPON	senjata
+FILTER_ARMOR	perisai
+FILTER_WATER	air
+MISC_STORAGE_ONLY	Hanya menerima: {0}
+UILABEL_STORAGE_TAKES	Hanya menerima: {0}.
+UILABEL_TASK_SITTING	Duduk
+UILABEL_TASK_LOCKED_IN	Terkunci
+MISC_LOCKED_IN	{0} terkunci di {1}
+MISC_REASON_TRAINING	latihan
+MISC_XP_GAINED	+{0} XP {1}
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_FUEL_LEFT	Menyala: baki bahan api {0} min
+MISC_NO_FUEL	Tiada bahan api
+MISC_OUTPUT_FULL	Output penuh: dijeda
+UILABEL_PASSIVE_HINT	Menggunakan {0} sebagai bahan api: setiap satu menyala {1} minit dalam permainan dan membuat {2} dalam output, dengan atau tanpa pekerja. Ia berhenti selagi output penuh. Klik kanan item untuk memasukkan atau mengeluarkannya.
+ITEM_91_NAME	Air
+ITEM_91_DESC	Air segar dari pam.
+ITEM_92_NAME	Jongkong besi
+ITEM_92_DESC	Sebatang besi yang dilebur daripada bijih di tempaan.
+ITEM_93_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_93_NAME	Daging lembu mentah
+ITEM_94_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_94_NAME	Daging lembu masak
+ITEM_95_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_95_NAME	Daging ayam mentah
+ITEM_96_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_96_NAME	Daging ayam masak
+ITEM_97_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_97_NAME	Daging babi hutan mentah
+ITEM_98_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_98_NAME	Daging babi hutan masak
+ITEM_99_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_99_NAME	Daging serigala mentah
+ITEM_100_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_100_NAME	Daging serigala masak
+ITEM_101_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_101_NAME	Daging rusa mentah
+ITEM_102_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_102_NAME	Daging rusa masak
+ITEM_103_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_103_NAME	Daging arnab mentah
+ITEM_104_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_104_NAME	Daging arnab masak
+ITEM_105_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_105_NAME	Ikan mentah
+ITEM_106_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_106_NAME	Ikan masak
+ITEM_107_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_107_NAME	Daging ketam mentah
+ITEM_108_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_108_NAME	Daging ketam masak
+ITEM_109_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_109_NAME	Daging biawak mentah
+ITEM_110_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_110_NAME	Daging biawak masak
+ITEM_111_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_111_NAME	Daging ular mentah
+ITEM_112_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_112_NAME	Daging ular masak
+ITEM_113_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_113_NAME	Daging babi mentah
+ITEM_114_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_114_NAME	Daging babi masak
+ITEM_115_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_115_NAME	Daging biri-biri mentah
+ITEM_116_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_116_NAME	Daging biri-biri masak
+ITEM_117_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_117_NAME	Daging itik mentah
+ITEM_118_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_118_NAME	Daging itik masak
+ITEM_119_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_119_NAME	Daging penyu mentah
+ITEM_120_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_120_NAME	Daging penyu masak
+ITEM_121_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_121_NAME	Daging kelawar mentah
+ITEM_122_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_122_NAME	Daging kelawar masak
+ITEM_123_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_123_NAME	Daging katak mentah
+ITEM_124_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
+ITEM_124_NAME	Daging katak masak
+ITEM_125_DESC	Cendawan liar yang kecil. Dimakan mentah, ia hanya sedikit membantu kesihatan dan lapar.
+ITEM_125_NAME	Cendawan
+MISC_FOOD_TO_COOK	daging mentah
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Cendawan beracun
+ITEM_126_DESC	Cendawan liar yang kelihatan seperti yang lain. Memakannya mengurangkan kesihatan dan rasa kenyang.
+UILABEL_OPTIMIZE	Optimumkan
+UILABEL_REMOVE_ALL	Tanggalkan semua
+MISC_GEAR_NO_ROOM	Ruang inventori tidak mencukupi
+MISC_GEAR_ALREADY_BEST	Sudah memakai kelengkapan terbaik
+MISC_GEAR_NONE_WORN	Tiada kelengkapan untuk ditanggalkan
+UILABEL_OPTIMIZE_ALL	Optimumkan semua
+MISC_OPTIMIZE_ALL_ASK	Optimumkan kelengkapan kesemua {0} unit dalam skuad? Setiap unit memilih daripada apa yang dipakai dan dibawanya. Unit tanpa ruang untuk barang yang ditanggalkan dibiarkan seperti biasa.
+UILABEL_OPTIMIZE_BALANCE	Serangan {0}% / Pertahanan {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Tukar aksesori
+UILABEL_OPTIMIZE_TWO_HANDED	Benarkan senjata dua tangan
+UILABEL_OPTIMIZE_VALUE_TIES	Jika seri, barang lebih bernilai menang
+MISC_OPTIMIZE_ALL_SAME	Semua unit sudah memakai kelengkapan terbaik
+MISC_OPTIMIZE_ALL_DONE	Kelengkapan {0} unit dioptimumkan
+MISC_OPTIMIZE_ALL_SOME_ROOM	Kelengkapan {0} unit dioptimumkan; {1} tiada ruang inventori
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Kelangsungan Hidup
+UILABEL_EARLY_ACCESS	Akses Awal
+MISC_TITLE_KEYS	Pilih  //  Enter Sahkan
+UILABEL_LANGUAGE_LABEL	Bahasa:

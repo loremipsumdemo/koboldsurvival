@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Edge scrolling
 UILABEL_GLOBAL_VOLUME	Global volume
 UILABEL_MUSIC	Music
 UILABEL_AMBIENT	Ambient
+UILABEL_INTERFACE_SOUNDS	Interface sounds
 UILABEL_SOUND_EFFECTS	Sound effects
 UILABEL_RESTORE_DEFAULTS	Restore defaults
 UILABEL_WINDOWED	Windowed
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profile
 UILABEL_STATS	Stats
 UILABEL_CLICK_TO_TYPE	Click to type a name
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Starting party: {0}
 UILABEL_HEALTH	Health
 UILABEL_HUNGER	Hunger
 UILABEL_CARRY	Carry
@@ -606,6 +606,8 @@ FACTION_RED	Red Faction
 MISC_PROP_UNREACHABLE	Unreachable
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat from 1 to 5.
 SCENARIO_RANDOM_NAME	Full Random
 SCENARIO_RANDOM_DESC	A party of 1 to 32 units, each with every stat somewhere from 1 to 99, and random items and gear they can carry.
 SCENARIO_CARAVAN_NAME	Traveling Caravan
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Starving Nobody
 SCENARIO_NOBODY_DESC	One unit with nothing at all: no items, no gear, every stat at 1, and an empty stomach.
 SCENARIO_DIGGERS_NAME	Dungeon Diggers
 SCENARIO_DIGGERS_DESC	Seven miners in full gear. Their stats run from 5 to 20, but each has Mining at 50 and carries 3 Iron Ore.
+SCENARIO_CUSTOM_NAME	Custom Scenario
+SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you can add or remove units, up to 32.
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 UILABEL_UNLOCK	Unlock
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Ties go to the more valuable item
 MISC_OPTIMIZE_ALL_SAME	Every unit already wears its best gear
 MISC_OPTIMIZE_ALL_DONE	Optimized gear for {0} units
 MISC_OPTIMIZE_ALL_SOME_ROOM	Optimized gear for {0} units; {1} lacked inventory space
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Survival
+UILABEL_EARLY_ACCESS	Early Access
+MISC_TITLE_KEYS	Select  //  Enter Confirm
+UILABEL_LANGUAGE_LABEL	Language:

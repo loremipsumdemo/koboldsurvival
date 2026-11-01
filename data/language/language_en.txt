@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	English
+UILABEL_CONTINUE	Continue
+UILABEL_NEW_GAME	New Game
+UILABEL_LOAD_GAME	Load Game
+UILABEL_SETTINGS	Settings
+UILABEL_LANGUAGE_BUTTON	Language ({0})
+UILABEL_QUIT	Quit
+UILABEL_RESUME	Resume
+UILABEL_SAVE_GAME	Save Game
+UILABEL_RETURN_TO_TITLE	Return to Title
+UILABEL_CLOSE	Close
+UILABEL_BACK	Back
+UILABEL_SAVE	Save
+UILABEL_DELETE	Delete
+UILABEL_CANCEL	Cancel
+UILABEL_CONFIRM	Confirm
+UILABEL_YES	Yes
+UILABEL_NO	No
+UILABEL_NAME	Name
+UILABEL_TIME	Time
+UILABEL_CREATED	Created
+UILABEL_TYPE	Type
+UILABEL_AUTO	AUTO
+UILABEL_MANUAL	MANUAL
+UILABEL_NO_SAVES	No saves yet
+UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
+UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
+UILABEL_CLICK_SAVE	Click a save to load it
+UILABEL_CLICK_MAP	Click a map to start a new game
+UILABEL_NO_MAPS	No maps found. Make one with worldgen.py.
+UILABEL_BUILT_IN	BUILT-IN
+UILABEL_WORLD	WORLD
+UILABEL_MAP_FILE	MAP FILE
+UILABEL_BUILT_IN_WHEN	built in
+UILABEL_UNKNOWN	unknown
+UILABEL_ON	On
+UILABEL_OFF	Off
+UILABEL_EMPTY	Empty
+UILABEL_NONE_AVAILABLE	None available
+UILABEL_TWO_HANDED	Two-handed
+UILABEL_WILL_BE_REPLACED	Will be replaced
+UILABEL_GRAPHICS	Graphics
+UILABEL_INTERFACE	Interface
+UILABEL_LANGUAGE_TAB	Language
+UILABEL_CONTROLS	Controls
+UILABEL_AUDIO	Audio
+UILABEL_DISPLAY_MODE	Display mode
+UILABEL_MONITOR	Monitor
+UILABEL_RESOLUTION	Resolution
+UILABEL_REFRESH_RATE	Refresh rate
+UILABEL_DEFAULT	Default
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Frame rate limit
+UILABEL_UNLIMITED	Unlimited
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Autosave
+UILABEL_MINUTE	1 minute
+UILABEL_MINUTES	{0} minutes
+UILABEL_UNIT_NAMES	Unit names
+UILABEL_FONT_SIZE	Font size
+UILABEL_RESET_PANELS	Reset All UI Panels
+UILABEL_RESET	Reset
+UILABEL_FONT	Font
+UILABEL_FONT_AUTOMATIC	Automatic
+UILABEL_EDGE_SCROLL	Edge scrolling
+UILABEL_GLOBAL_VOLUME	Global volume
+UILABEL_MUSIC	Music
+UILABEL_AMBIENT	Ambient
+UILABEL_INTERFACE_SOUNDS	Interface sounds
+UILABEL_SOUND_EFFECTS	Sound effects
+UILABEL_RESTORE_DEFAULTS	Restore defaults
+UILABEL_WINDOWED	Windowed
+UILABEL_BORDERLESS	Borderless
+UILABEL_FULL_SCREEN	Full screen
+CONTROL_KEYS_1	W A S D, or the arrow keys
+CONTROL_DOES_1	Move the camera
+CONTROL_KEYS_2	Mouse wheel
+CONTROL_DOES_2	Zoom in and out
+CONTROL_KEYS_3	Hold middle mouse and drag
+CONTROL_DOES_3	Rotate the camera
+CONTROL_KEYS_4	Left click, or drag a box
+CONTROL_DOES_4	Select units
+CONTROL_KEYS_5	Shift or Alt with a click
+CONTROL_DOES_5	Add to the selection
+CONTROL_KEYS_6	Right click
+CONTROL_DOES_6	Move or attack with the selected units
+CONTROL_KEYS_7	Hold Alt
+CONTROL_DOES_7	Show the names of items on the ground
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Open the menu, or go back
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Take a screenshot
+UILABEL_PAUSED	PAUSED
+UILABEL_PACE_RUN	Pace: Run
+UILABEL_PACE_WALK	Pace: Walk
+UILABEL_SQUAD_PANEL	Squad Panel
+UILABEL_UNIT_PANEL	Unit Panel
+UILABEL_INFORMATION_PANEL	Information Panel
+UILABEL_INTERACTION_PANEL	Interaction Panel
+UILABEL_TRADE_PANEL	Trade Panel
+UILABEL_INVENTORY	Inventory
+UILABEL_EQUIPMENT	Equipment
+UILABEL_BEHAVIOR	Behavior
+UILABEL_TRADE	Trade
+UILABEL_END_DIALOGUE	End Dialogue
+UILABEL_TRADE_DROP_THEIRS	Drag or right-click items from their inventory here
+UILABEL_TRADE_DROP_YOURS	Drag or right-click your items from your inventory here
+UILABEL_SINGLE	Single
+UILABEL_MAX	Max
+UILABEL_SORT	Sort
+UILABEL_WORLD_MAP_HINT	World map. Scroll to zoom. Press M or Escape to close.
+UILABEL_NO_UNIT_SELECTED	No unit selected
+UILABEL_UNNAMED_UNIT	Unnamed Unit
+UILABEL_NO_NAME	No name
+UILABEL_PROFILE	Profile
+UILABEL_STATS	Stats
+UILABEL_CLICK_TO_TYPE	Click to type a name
+UILABEL_SPRITE	Sprite
+UILABEL_HEALTH	Health
+UILABEL_HUNGER	Hunger
+UILABEL_CARRY	Carry
+UILABEL_NEXT_LEVEL_XP_LINE	Next Level XP: {0}
+UILABEL_STAT	Stat
+UILABEL_LEVEL	Level
+UILABEL_TOTAL_XP	Total XP
+UILABEL_TO_NEXT	To next
+UILABEL_ATTRIBUTES	Attributes
+UILABEL_COMBAT	Combat
+UILABEL_RESOURCE_GATHERING	Resource Gathering
+UILABEL_CRAFTING	Crafting
+UILABEL_UTILITY	Utility
+UILABEL_GEAR	Gear
+UILABEL_ITEMS	Items
+UILABEL_IDENTITY	Identity
+UILABEL_RANDOMIZE_UNIT	Randomize this unit
+UILABEL_RANDOMIZE_ALL	Randomize all
+UILABEL_ADD_UNIT	Add unit
+UILABEL_REMOVE_UNIT	Remove unit
+UILABEL_CONFIRM_STARTS	Confirm starts the game with this party.
+UILABEL_NEEDS_NAMES	Every unit needs a name before the game can start.
+UILABEL_CLICK_UNIT_EDIT	Click a unit to edit it.
+UILABEL_SHIFT_CLICK	Shift + click changes a stat by 10.
+UILABEL_LEVELS_HINT	Levels run from 1 to 99.
+UILABEL_CLICK_SLOT	Click a slot to choose its item. Only items that fit are listed.
+UILABEL_CLICK_SLOT_STACK	Click a slot to choose its item. Stacks hold up to the item's limit.
+UILABEL_SCROLL_UP	Scroll up
+UILABEL_SCROLL_DOWN	Scroll down
+UILABEL_SLOT_HEAD	Head
+UILABEL_SLOT_TORSO	Torso
+UILABEL_SLOT_MAIN_HAND	Main hand
+UILABEL_SLOT_OFF_HAND	Off hand
+UILABEL_SLOT_LEGS	Legs
+UILABEL_SLOT_FEET	Feet
+UILABEL_SLOT_ACCESSORY	Accessory
+UILABEL_BEHAVIOR_ON	On
+UILABEL_TARGET	Target
+UILABEL_CONDITION	Condition
+UILABEL_ACTION	Action
+UILABEL_COMBAT_MESSAGES	Combat Messages
+UILABEL_SEEN	Seen
+UILABEL_HIT	Hit
+UILABEL_MISS	Miss
+UILABEL_DAMAGE	Damage
+UILABEL_EXPERIENCE_MESSAGES	Experience Messages
+UILABEL_EXPERIENCE	Experience
+UILABEL_ITEM_MESSAGES	Item Messages
+UILABEL_PICKUP	Pickup
+UILABEL_DROP	Drop
+UILABEL_LOOT	Loot
+UILABEL_USE	Use
+UILABEL_MESSAGE	Message
+UILABEL_GAME	Game
+UILABEL_FILTER	Filter
+UILABEL_STAT_HEAD_STAT	Stat
+UILABEL_UNKNOWN_SLOT	Unknown
+UILABEL_MONTH_NAME	{0} Month
+UILABEL_STRENGTH_STAT	Strength
+MISC_GAME_SAVED	Game saved
+MISC_SAVE_FAILED	Could not save the game
+MISC_READ_FAILED	Could not read that save
+MISC_SAVE_OLD	That save is from before maps and can't be loaded
+MISC_AUTOSAVED	Autosaved
+MISC_SCREENSHOT_FAILED	Could not save the screenshot
+MISC_SCREENSHOT_SAVED	Saved {0}
+MISC_TRADE_FULL	The trade is full
+MISC_TRADE_ALREADY	That item is already in the trade, or the trade is full.
+MISC_TRADE_NO_MORE	There is no more of that item to trade
+MISC_NO_UNIT_TO_TRADE	No unit to trade with
+MISC_TRADE_ADD_BOTH	Add items to both sides
+MISC_TRADE_NO_ROOM_YOURS	Your unit has no room for their items
+MISC_TRADE_NO_ROOM_THEIRS	They have no room for your items
+MISC_TRADE_FAILED	Trade failed
+MISC_TRADE_COMPLETE	Trade complete.
+MISC_PICKUP_SELECT	Select units to pick the item up
+MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
+MISC_DROPS	{0} drops {1} {2}
+MISC_AN_ITEM	an item
+MISC_UNIT	Unit
+MISC_TWO_HANDED_IN_MAIN	A two-handed weapon is in the main hand
+MISC_YOU	You
+MISC_UNKNOWN_ITEM	Unknown item
+MISC_ITEM_FALLBACK	Item
+MISC_THAT_ITEM	That
+MISC_REASON_FEES	paying trade fees
+MISC_REASON_WALKING	walking
+MISC_REASON_CARRYING	carrying a load
+MISC_REASON_CLIMBING	climbing
+MISC_REASON_SWINGING	swinging
+MISC_REASON_DODGING	dodging
+MISC_REASON_DEALING	dealing damage
+MISC_REASON_TAKING	taking damage
+MISC_REASON_BLOCKING	blocking
+MISC_REASON_SPOTTING	spotting an enemy
+MISC_REASON_UNNOTICED	staying unnoticed
+MISC_REASON_GEAR	changing gear
+NPC_GREETING	Hello world.
+NPC_OPTION_WARES	Show me your wares.
+NPC_OPTION_QUEST	What else can you tell me about the quest?
+MISC_ORD_1	First
+MISC_ORD_2	Second
+MISC_ORD_3	Third
+MISC_ORD_4	Fourth
+MISC_ORD_5	Fifth
+MISC_ORD_6	Sixth
+MISC_ORD_7	Seventh
+MISC_ORD_8	Eighth
+MISC_ORD_9	Ninth
+MISC_ORD_10	Tenth
+MISC_ORD_11	Eleventh
+MISC_ORD_12	Twelfth
+MISC_SKY_DAY_ZENITH	Day zenith
+MISC_SKY_DAY_HORIZON	Day horizon
+MISC_SKY_NIGHT_ZENITH	Night zenith
+MISC_SKY_NIGHT_HORIZON	Night horizon
+MISC_SKY_DUSK_HORIZON	Dusk horizon
+MISC_SKY_DUSK_SUN	Dusk sun
+MISC_SKY_SUN	Sun
+MISC_SKY_MOON	Moon
+MISC_TARGET_SELF	Self
+MISC_TARGET_ALLY	Ally
+MISC_TARGET_ENEMY	Enemy
+MISC_COND_HEALTH	Health
+MISC_COND_HUNGER	Hunger
+MISC_ACT_HEAL	Consume healing item
+MISC_ACT_FOOD	Consume food item
+UILABEL_STAT_DESC_STRENGTH	Melee damage, weight carry capacity
+UILABEL_STAT_DESC_DEXTERITY	Attack speed
+UILABEL_STAT_DESC_VITALITY	Max health
+UILABEL_STAT_DESC_ENDURANCE	Max stamina
+UILABEL_STAT_DESC_AGILITY	Dodge chance
+UILABEL_STAT_DESC_INTELLIGENCE	Mana pool
+UILABEL_STAT_DESC_WISDOM	Learnable spell number capacity
+UILABEL_STAT_DESC_CHARISMA	NPC trade prices, unique dialogue options
+UILABEL_STAT_DESC_PERCEPTION	Detection range
+UILABEL_STAT_DESC_ATHLETICS	Running speed
+UILABEL_STAT_DESC_STEALTH	Better at avoiding sneak detection
+UILABEL_STAT_DESC_MELEE	Melee accuracy
+UILABEL_STAT_DESC_PROJECTILES	Ranged accuracy
+UILABEL_STAT_DESC_ARCANE	Spell power
+UILABEL_STAT_DESC_BLOCK	Block/parry chance
+UILABEL_STAT_DESC_MINING	Ore yield
+UILABEL_STAT_DESC_HERBALISM	Wild plant gather yield
+UILABEL_STAT_DESC_WOODCUTTING	Log yield
+UILABEL_STAT_DESC_SKINNING	Hide/meat yield
+UILABEL_STAT_DESC_FARMING	Crop yield
+UILABEL_STAT_DESC_COOKING	Food buff strength
+UILABEL_STAT_DESC_SMELTING	Ore smelting yield
+UILABEL_STAT_DESC_FORGING	Metal crafting
+UILABEL_STAT_DESC_CARPENTRY	Wood crafting
+UILABEL_STAT_DESC_STONEWORKING	Stone crafting
+UILABEL_STAT_DESC_LOCKPICKING	Lock difficulty
+UILABEL_STAT_DESC_THIEVERY	Stealing success
+UILABEL_STAT_DESC_MEDICAL	Healing effectiveness
+UILABEL_DEXTERITY_STAT	Dexterity
+UILABEL_VITALITY_STAT	Vitality
+UILABEL_ENDURANCE_STAT	Endurance
+UILABEL_AGILITY_STAT	Agility
+UILABEL_INTELLIGENCE_STAT	Intelligence
+UILABEL_WISDOM_STAT	Wisdom
+UILABEL_CHARISMA_STAT	Charisma
+UILABEL_PERCEPTION_STAT	Perception
+UILABEL_ATHLETICS_STAT	Athletics
+UILABEL_STEALTH_STAT	Stealth
+UILABEL_MELEE_STAT	Melee
+UILABEL_PROJECTILES_STAT	Projectiles
+UILABEL_ARCANE_STAT	Arcane
+UILABEL_BLOCK_STAT	Block
+UILABEL_MINING_STAT	Mining
+UILABEL_HERBALISM_STAT	Herbalism
+UILABEL_WOODCUTTING_STAT	Woodcutting
+UILABEL_SKINNING_STAT	Skinning
+UILABEL_FARMING_STAT	Farming
+UILABEL_COOKING_STAT	Cooking
+UILABEL_SMELTING_STAT	Smelting
+UILABEL_FORGING_STAT	Forging
+UILABEL_CARPENTRY_STAT	Carpentry
+UILABEL_STONEWORKING_STAT	Stoneworking
+UILABEL_LOCKPICKING_STAT	Lockpicking
+UILABEL_THIEVERY_STAT	Thievery
+UILABEL_MEDICAL_STAT	Medical
+MISC_CANT_BE_WORN	{0} can't be worn
+MISC_ITEM_NAME_FORMAT	{0} {1}
+MISC_MATERIAL_IRON	Iron
+MISC_MATERIAL_STEEL	Steel
+MISC_MATERIAL_BRONZE	Bronze
+MISC_MATERIAL_SILVER	Silver
+MISC_MATERIAL_LEATHER	Leather
+MISC_MATERIAL_BONE	Bone
+MISC_MATERIAL_WOOD	Wood
+MISC_NEED_MORE_VALUE	They need {0} more value
+MISC_TRADE_READY_FEE	Ready. Trade fee: {0}
+MISC_LOAD_FAILED	Could not load {0}: {1}
+MISC_MAP_MISSING	The map for "{0}" is missing
+MISC_MAP_LOAD_FAILED	Map "{0}" could not be loaded: {1}
+MISC_LOADED	Loaded {0}
+MISC_DELETE_FAILED	Could not delete "{0}"
+MISC_DELETED	Deleted "{0}"
+MISC_USED	Used {0}
+MISC_OVERWRITE_Q	Overwrite "{0}"?
+MISC_LOAD_Q	Load "{0}"?
+MISC_DELETE_Q	Delete "{0}"?
+MISC_NOT_FIT_SLOT	{0} doesn't fit the {1} slot
+MISC_EMPTY_OFF_HAND	Empty the off hand before holding {0}
+MISC_NO_ROOM_INV	No room in the inventory for {0}
+MISC_SLOT_HOLDS	That slot already holds {0}
+UILABEL_TIP_TYPE	Type: {0}
+UILABEL_TIP_MATERIAL	Material: {0}
+UILABEL_TIP_SLOT	Slot: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Required level: {0}
+UILABEL_TIP_ATTACK	Attack {0}
+UILABEL_TIP_DEFENSE	Defense {0}
+UILABEL_TIP_WEIGHT	Weight {0}
+UILABEL_TIP_EACH	 each
+UILABEL_TIP_STACKS	Stacks to {0}
+UILABEL_TIP_BUY	Buy price: {0}
+UILABEL_TIP_SELL	Sell price: {0}
+UILABEL_TIP_USE	Use: {0}
+UILABEL_TOTAL_VALUE	Total value: {0}
+UILABEL_CHOOSE_HOW_MANY	Choose how many: {0} ({1} available)
+UILABEL_TIP_LEVEL	Level: {0}
+UILABEL_TIP_PROGRESS	Progress: {0}%
+UILABEL_TIP_CURRENT_XP	Current XP: {0}
+UILABEL_ATTACK_DEFENSE	Attack {0}      Defense {1}
+UILABEL_STATS_CAPTION	Stats: {0}
+UILABEL_SPRITE_N	Sprite {0}
+UILABEL_SLOT_N_ITEM	Slot {0}: {1}
+UILABEL_SLOT_N_EMPTY	Slot {0}: empty
+UILABEL_COUNT	Count {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Defense {1}    Carry {2}
+MISC_IS_DOWN	{0} is down
+MISC_PICKS_UP	{0} picks up {1} {2}
+MISC_CANNOT_READ	Could not read {0}
+UILABEL_TIP_DURABILITY	Durability {0} / {1}
+UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
+UILABEL_MONITOR_N	Monitor {0}
+MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
+UILABEL_PAUSE_HINT	(Used the space bar to unpause.)
+MISC_DRINKS	{0} drinks {1}
+UILABEL_COMPASS_N	N
+UILABEL_COMPASS_E	E
+UILABEL_COMPASS_S	S
+UILABEL_COMPASS_W	W
+ITEM_1_NAME	Iron Ore
+ITEM_1_DESC	Raw ore that can be smelted into iron ingots.
+ITEM_2_NAME	Oak Log
+ITEM_2_DESC	A sturdy log used in crafting and construction.
+ITEM_3_NAME	Healing Herb
+ITEM_3_DESC	A common herb with mild restorative properties.
+ITEM_4_NAME	Gold Coin
+ITEM_4_DESC	Standard currency of the realm.
+ITEM_5_NAME	Wolf Pelt
+ITEM_5_DESC	A rough pelt taken from a slain wolf. Sought by tanners.
+ITEM_6_NAME	Ancient Relic
+ITEM_6_DESC	A mysterious artifact humming with faint energy.
+ITEM_7_NAME	Health Potion
+ITEM_7_DESC	Restores 50 HP when consumed.
+ITEM_8_NAME	Mana Potion
+ITEM_8_DESC	Restores 50 MP when consumed.
+ITEM_9_NAME	Stamina Draught
+ITEM_9_DESC	Restores 40 stamina and briefly boosts regeneration.
+ITEM_10_NAME	Elixir of Might
+ITEM_10_DESC	Grants +10 attack for 60 seconds.
+ITEM_11_NAME	Bread
+ITEM_11_DESC	Simple travel food. Restores 15 HP.
+ITEM_12_NAME	Antidote
+ITEM_12_DESC	Cures poison and reduces poison damage for 30 seconds.
+ITEM_13_NAME	Apple
+ITEM_13_DESC	Restores 8 hunger when eaten.
+ITEM_14_NAME	Wild Berries
+ITEM_14_DESC	Restores 6 hunger when eaten.
+ITEM_15_NAME	Hard Biscuit
+ITEM_15_DESC	Restores 12 hunger when eaten.
+ITEM_16_NAME	Cheese Wedge
+ITEM_16_DESC	Restores 15 hunger when eaten.
+ITEM_17_NAME	Smoked Fish
+ITEM_17_DESC	Restores 20 hunger when eaten.
+ITEM_18_NAME	Honey Cake
+ITEM_18_DESC	Restores 18 hunger when eaten.
+ITEM_19_NAME	Mutton Pie
+ITEM_19_DESC	Restores 26 hunger when eaten.
+ITEM_20_NAME	Stew Bowl
+ITEM_20_DESC	Restores 30 hunger when eaten.
+ITEM_21_NAME	Roast Boar Leg
+ITEM_21_DESC	Restores 40 hunger when eaten.
+ITEM_22_NAME	Trail Ration
+ITEM_22_DESC	Restores 50 hunger when eaten.
+ITEM_23_NAME	Cap
+ITEM_23_DESC	Protects the head.
+ITEM_24_NAME	Hood
+ITEM_24_DESC	Protects the head.
+ITEM_25_NAME	Coif
+ITEM_25_DESC	Protects the head.
+ITEM_26_NAME	Helm
+ITEM_26_DESC	Protects the head.
+ITEM_27_NAME	Visor
+ITEM_27_DESC	Protects the head.
+ITEM_28_NAME	Bascinet
+ITEM_28_DESC	Protects the head.
+ITEM_29_NAME	Sallet
+ITEM_29_DESC	Protects the head.
+ITEM_30_NAME	Great Helm
+ITEM_30_DESC	Protects the head.
+ITEM_31_NAME	Circlet
+ITEM_31_DESC	Protects the head.
+ITEM_32_NAME	Crown
+ITEM_32_DESC	Protects the head.
+ITEM_33_NAME	Tunic
+ITEM_33_DESC	Covers the chest and body.
+ITEM_34_NAME	Jerkin
+ITEM_34_DESC	Covers the chest and body.
+ITEM_35_NAME	Lamellar Vest
+ITEM_35_DESC	Covers the chest and body.
+ITEM_36_NAME	Brigandine
+ITEM_36_DESC	Covers the chest and body.
+ITEM_37_NAME	Hauberk
+ITEM_37_DESC	Covers the chest and body.
+ITEM_38_NAME	Breastplate
+ITEM_38_DESC	Covers the chest and body.
+ITEM_39_NAME	Cuirass
+ITEM_39_DESC	Covers the chest and body.
+ITEM_40_NAME	Chestplate
+ITEM_40_DESC	Covers the chest and body.
+ITEM_41_NAME	Full Plate
+ITEM_41_DESC	Covers the chest and body.
+ITEM_42_NAME	Ceremonial Plate
+ITEM_42_DESC	Covers the chest and body.
+ITEM_43_NAME	Breeches
+ITEM_43_DESC	Covers the legs.
+ITEM_44_NAME	Trousers
+ITEM_44_DESC	Covers the legs.
+ITEM_45_NAME	Leggings
+ITEM_45_DESC	Covers the legs.
+ITEM_46_NAME	Chausses
+ITEM_46_DESC	Covers the legs.
+ITEM_47_NAME	Tassets
+ITEM_47_DESC	Covers the legs.
+ITEM_48_NAME	Cuisses
+ITEM_48_DESC	Covers the legs.
+ITEM_49_NAME	Greaves
+ITEM_49_DESC	Covers the legs.
+ITEM_50_NAME	Plate Leggings
+ITEM_50_DESC	Covers the legs.
+ITEM_51_NAME	Mail Leggings
+ITEM_51_DESC	Covers the legs.
+ITEM_52_NAME	Gilded Greaves
+ITEM_52_DESC	Covers the legs.
+ITEM_53_NAME	Sandals
+ITEM_53_DESC	Protects the feet.
+ITEM_54_NAME	Shoes
+ITEM_54_DESC	Protects the feet.
+ITEM_55_NAME	Boots
+ITEM_55_DESC	Protects the feet.
+ITEM_56_NAME	Riding Boots
+ITEM_56_DESC	Protects the feet.
+ITEM_57_NAME	Hobnail Boots
+ITEM_57_DESC	Protects the feet.
+ITEM_58_NAME	Wrappings
+ITEM_58_DESC	Protects the feet.
+ITEM_59_NAME	Marching Boots
+ITEM_59_DESC	Protects the feet.
+ITEM_60_NAME	Sabatons
+ITEM_60_DESC	Protects the feet.
+ITEM_61_NAME	Sollerets
+ITEM_61_DESC	Protects the feet.
+ITEM_62_NAME	Warboots
+ITEM_62_DESC	Protects the feet.
+ITEM_63_NAME	Band
+ITEM_63_DESC	A small worn trinket. Two can be worn at once.
+ITEM_64_NAME	Charm
+ITEM_64_DESC	A small worn trinket. Two can be worn at once.
+ITEM_65_NAME	Bracelet
+ITEM_65_DESC	A small worn trinket. Two can be worn at once.
+ITEM_66_NAME	Brooch
+ITEM_66_DESC	A small worn trinket. Two can be worn at once.
+ITEM_67_NAME	Ring
+ITEM_67_DESC	A small worn trinket. Two can be worn at once.
+ITEM_68_NAME	Amulet
+ITEM_68_DESC	A small worn trinket. Two can be worn at once.
+ITEM_69_NAME	Pendant
+ITEM_69_DESC	A small worn trinket. Two can be worn at once.
+ITEM_70_NAME	Talisman
+ITEM_70_DESC	A small worn trinket. Two can be worn at once.
+ITEM_71_NAME	Torc
+ITEM_71_DESC	A small worn trinket. Two can be worn at once.
+ITEM_72_NAME	Cloak
+ITEM_72_DESC	A small worn trinket. Two can be worn at once.
+ITEM_73_NAME	Short Sword
+ITEM_73_DESC	Held in the main hand.
+ITEM_74_NAME	Long Sword
+ITEM_74_DESC	Held in the main hand.
+ITEM_75_NAME	Axe
+ITEM_75_DESC	Held in the main hand.
+ITEM_76_NAME	Mace
+ITEM_76_DESC	Held in the main hand.
+ITEM_77_NAME	Flail
+ITEM_77_DESC	Held in the main hand.
+ITEM_78_NAME	Rapier
+ITEM_78_DESC	Held in the main hand.
+ITEM_79_NAME	Dagger
+ITEM_79_DESC	Held in either hand. Fits the main hand or the off hand.
+ITEM_80_NAME	Knife
+ITEM_80_DESC	Held in either hand. Fits the main hand or the off hand.
+ITEM_81_NAME	Stiletto
+ITEM_81_DESC	Held in either hand. Fits the main hand or the off hand.
+ITEM_82_NAME	Buckler
+ITEM_82_DESC	Held in the off hand. Blocks blows.
+ITEM_83_NAME	Kite Shield
+ITEM_83_DESC	Held in the off hand. Blocks blows.
+ITEM_84_NAME	Tower Shield
+ITEM_84_DESC	Held in the off hand. Blocks blows.
+ITEM_85_NAME	Greatsword
+ITEM_85_DESC	Needs both hands. The off hand must be empty.
+ITEM_86_NAME	Warhammer
+ITEM_86_DESC	Needs both hands. The off hand must be empty.
+ITEM_87_NAME	Battleaxe
+ITEM_87_DESC	Needs both hands. The off hand must be empty.
+UILABEL_UI_SCALE	UI scale
+NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin"]
+NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren"]
+NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin"]
+UILABEL_BODY_TYPE	Body type
+UILABEL_BODY_MASCULINE	Masculine
+UILABEL_BODY_FEMININE	Feminine
+UILABEL_BODY_ANDROGYNOUS	Androgynous
+UILABEL_TYPE_ITEM	Item
+UILABEL_TYPE_CONSUMABLE	Consumable
+UILABEL_TYPE_WEAPON	Weapon
+UILABEL_TYPE_ARMOR	Armor
+UILABEL_TYPE_ACCESSORY	Accessory
+UILABEL_SLOT_EITHER_HAND	Either hand
+UILABEL_SLOT_TWO_HAND	Two-handed
+MISC_TRADE_CHANGE	Trade: {0}
+UILABEL_NEEDS_UNITS	Add at least one unit to start.
+PROP_WAGON	Wagon
+PROP_CAMPFIRE	Campfire
+PROP_BEDROLL	Bedroll
+PROP_BED	Bed
+PROP_BARREL	Barrel
+PROP_ORE	Ore
+PROP_TREE	Tree
+PROP_BOULDER	Boulder
+PROP_MUSHROOM	Mushroom
+PROP_BONES	Bones
+PROP_WALL	Wall
+PROP_STALL	Stall
+MISC_STORAGE_FULL	No room in storage
+MISC_PROP_TAKEN	Already in use
+MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
+MISC_GATHERS	{0} gathers {1}
+MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
+MISC_REASON_GATHERING	gathering
+UILABEL_TASK	Task: {0}
+UILABEL_TASK_IDLE	Idle
+UILABEL_TASK_MOVING	Moving
+UILABEL_TASK_RESTING	Resting
+UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
+ITEM_88_NAME	Wood Log
+ITEM_88_DESC	Wood cut from a tree, used in crafting and building.
+UILABEL_CRAFT_HINT	Right-click your unit's items to put them in. What is made goes to the worker's inventory. To start working, right-click the {0} and choose Use.
+MISC_CRAFT_WRONG_ITEM	{0} can't be used here
+MISC_CRAFT_NEEDS	Put {0} in the input to start
+MISC_CRAFTS	{0} makes {1}
+MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
+MISC_REASON_CRAFTING	crafting
+ITEM_89_NAME	Raw Bear Meat
+ITEM_89_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_90_NAME	Cooked Bear Meat
+ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
+UILABEL_TALK	Talk
+UILABEL_ATTACK	Attack
+UILABEL_ATTACK_UNPROVOKED	Attack (Unprovoked)
+UILABEL_FOLLOW	Follow
+UILABEL_DEFEND	Defend
+UILABEL_TASK_FOLLOWING	Following
+UILABEL_TASK_DEFENDING	Defending
+MISC_FREE_TRADE_ADD	Add items to either side
+MISC_FREE_TRADE_READY	Ready to trade
+MISC_TURNS_HOSTILE	{0} turns hostile
+MISC_SELECT_UNIT_FIRST	Select a unit first
+FACTION_PLAYER	Player Faction
+FACTION_GRAY	Gray Faction
+FACTION_RED	Red Faction
+MISC_PROP_UNREACHABLE	Unreachable
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat from 1 to 5.
+SCENARIO_RANDOM_NAME	Full Random
+SCENARIO_RANDOM_DESC	A party of 1 to 32 units, each with every stat somewhere from 1 to 99, and random items and gear they can carry.
+SCENARIO_CARAVAN_NAME	Traveling Caravan
+SCENARIO_CARAVAN_DESC	Ten travelers on the road together. Every stat starts at 5, and each carries 10 Gold Coins.
+SCENARIO_SHABBY_NAME	Shabby Crew
+SCENARIO_SHABBY_DESC	Three down-on-their-luck kobolds with one random item each and every stat from 1 to 10.
+SCENARIO_NOBODY_NAME	Starving Nobody
+SCENARIO_NOBODY_DESC	One unit with nothing at all: no items, no gear, every stat at 1, and an empty stomach.
+SCENARIO_DIGGERS_NAME	Dungeon Diggers
+SCENARIO_DIGGERS_DESC	Seven miners in full gear. Their stats run from 5 to 20, but each has Mining at 50 and carries 3 Iron Ore.
+SCENARIO_CUSTOM_NAME	Custom Scenario
+SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you can add or remove units, up to 32.
+PROP_LOCKED_CHEST	Locked Chest
+PROP_PRISONER_CAGE	Prisoner Cage
+UILABEL_UNLOCK	Unlock
+MISC_PROP_LOCKED	Locked
+MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
+MISC_UNLOCKED	Unlocked!
+MISC_LOCKPICK_FAILED	Lockpick failed
+MISC_UNLOCKS	{0} unlocks the {1}
+MISC_REASON_LOCKPICKING	picking locks
+MISC_LOCKED_NAME	{0} (Locked)
+PROP_CHAIR	Chair
+PROP_BENCH	Bench
+PROP_STOOL	Stool
+PROP_TABLE	Table
+PROP_END_TABLE	End Table
+PROP_ROUND_TABLE	Round Table
+PROP_METAL_TABLE	Metal Table
+PROP_STANDING_TORCH	Standing Torch
+PROP_SUPPORT_BEAM	Support Beam
+PROP_TRAINING_DUMMY	Training Dummy
+PROP_RAW_FOOD_STORAGE	Raw Food Storage
+PROP_FOOD_STORAGE	Food Storage
+PROP_WEAPON_RACK	Weapon Rack
+PROP_ARMOR_STAND	Armor Stand
+PROP_WATER_TANK	Water Tank
+PROP_WATER_PUMP	Water Pump
+PROP_FORGE	Forge
+FILTER_RAW_FOOD	raw food
+FILTER_FOOD	food
+FILTER_WEAPON	weapons
+FILTER_ARMOR	armor
+FILTER_WATER	water
+MISC_STORAGE_ONLY	Only takes {0}
+UILABEL_STORAGE_TAKES	Takes only {0}.
+UILABEL_TASK_SITTING	Sitting
+UILABEL_TASK_LOCKED_IN	Locked in
+MISC_LOCKED_IN	{0} is locked in the {1}
+MISC_REASON_TRAINING	training
+MISC_XP_GAINED	+{0} {1} XP
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_FUEL_LEFT	Burning: {0} min of fuel left
+MISC_NO_FUEL	No fuel
+MISC_OUTPUT_FULL	Output full: paused
+UILABEL_PASSIVE_HINT	Takes {0} as fuel: each burns for {1} in-game minutes and makes {2} in the output, with or without a worker. It pauses while the output is full. Right-click items to move them in or out.
+ITEM_91_NAME	Water
+ITEM_91_DESC	Fresh water from a pump.
+ITEM_92_NAME	Iron Ingot
+ITEM_92_DESC	A bar of iron smelted from ore at a forge.
+ITEM_93_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_93_NAME	Raw Cow Meat
+ITEM_94_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_94_NAME	Cooked Cow Meat
+ITEM_95_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_95_NAME	Raw Chicken Meat
+ITEM_96_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_96_NAME	Cooked Chicken Meat
+ITEM_97_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_97_NAME	Raw Boar Meat
+ITEM_98_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_98_NAME	Cooked Boar Meat
+ITEM_99_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_99_NAME	Raw Wolf Meat
+ITEM_100_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_100_NAME	Cooked Wolf Meat
+ITEM_101_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_101_NAME	Raw Deer Meat
+ITEM_102_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_102_NAME	Cooked Deer Meat
+ITEM_103_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_103_NAME	Raw Rabbit Meat
+ITEM_104_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_104_NAME	Cooked Rabbit Meat
+ITEM_105_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_105_NAME	Raw Fish
+ITEM_106_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_106_NAME	Cooked Fish
+ITEM_107_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_107_NAME	Raw Crab Meat
+ITEM_108_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_108_NAME	Cooked Crab Meat
+ITEM_109_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_109_NAME	Raw Lizard Meat
+ITEM_110_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_110_NAME	Cooked Lizard Meat
+ITEM_111_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_111_NAME	Raw Snake Meat
+ITEM_112_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_112_NAME	Cooked Snake Meat
+ITEM_113_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_113_NAME	Raw Pig Meat
+ITEM_114_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_114_NAME	Cooked Pig Meat
+ITEM_115_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_115_NAME	Raw Sheep Meat
+ITEM_116_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_116_NAME	Cooked Sheep Meat
+ITEM_117_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_117_NAME	Raw Duck Meat
+ITEM_118_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_118_NAME	Cooked Duck Meat
+ITEM_119_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_119_NAME	Raw Turtle Meat
+ITEM_120_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_120_NAME	Cooked Turtle Meat
+ITEM_121_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_121_NAME	Raw Bat Meat
+ITEM_122_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_122_NAME	Cooked Bat Meat
+ITEM_123_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_123_NAME	Raw Frog Meat
+ITEM_124_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_124_NAME	Cooked Frog Meat
+ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
+ITEM_125_NAME	Mushroom
+MISC_FOOD_TO_COOK	raw meat
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Poison Mushroom
+ITEM_126_DESC	A wild mushroom that looks like any other. Eating it costs health and hunger.
+UILABEL_OPTIMIZE	Optimize
+UILABEL_REMOVE_ALL	Remove All
+MISC_GEAR_NO_ROOM	Not enough inventory space
+MISC_GEAR_ALREADY_BEST	Already wearing the best gear
+MISC_GEAR_NONE_WORN	No gear to remove
+UILABEL_OPTIMIZE_ALL	Optimize All
+MISC_OPTIMIZE_ALL_ASK	Optimize the gear of all {0} units in your squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is.
+UILABEL_OPTIMIZE_BALANCE	Attack {0}% / Defense {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Change accessories
+UILABEL_OPTIMIZE_TWO_HANDED	Allow two-handed weapons
+UILABEL_OPTIMIZE_VALUE_TIES	Ties go to the more valuable item
+MISC_OPTIMIZE_ALL_SAME	Every unit already wears its best gear
+MISC_OPTIMIZE_ALL_DONE	Optimized gear for {0} units
+MISC_OPTIMIZE_ALL_SOME_ROOM	Optimized gear for {0} units; {1} lacked inventory space
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Survival
+UILABEL_EARLY_ACCESS	Early Access
+MISC_TITLE_KEYS	Select  //  Enter Confirm
+UILABEL_LANGUAGE_LABEL	Language:

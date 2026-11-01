@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	한국어
+UILABEL_CONTINUE	계속하기
+UILABEL_NEW_GAME	새 게임
+UILABEL_LOAD_GAME	게임 불러오기
+UILABEL_SETTINGS	설정
+UILABEL_LANGUAGE_BUTTON	언어 ({0})
+UILABEL_QUIT	종료
+UILABEL_RESUME	재개
+UILABEL_SAVE_GAME	게임 저장
+UILABEL_RETURN_TO_TITLE	타이틀로 돌아가기
+UILABEL_CLOSE	닫기
+UILABEL_BACK	뒤로
+UILABEL_SAVE	저장
+UILABEL_DELETE	삭제
+UILABEL_CANCEL	취소
+UILABEL_CONFIRM	확인
+UILABEL_YES	예
+UILABEL_NO	아니오
+UILABEL_NAME	이름
+UILABEL_TIME	시간
+UILABEL_CREATED	생성일
+UILABEL_TYPE	종류
+UILABEL_AUTO	자동
+UILABEL_MANUAL	수동
+UILABEL_NO_SAVES	아직 저장된 데이터가 없습니다
+UILABEL_UNSAVED_WARNING	이 게임의 저장되지 않은 진행 상황은 사라집니다.
+UILABEL_HOLD_DELETE	삭제를 3초 동안 누르고 있으면 확인됩니다.
+UILABEL_CLICK_SAVE	저장 데이터를 클릭하면 불러옵니다
+UILABEL_CLICK_MAP	맵을 클릭하면 새 게임을 시작합니다
+UILABEL_NO_MAPS	맵을 찾을 수 없습니다. worldgen.py로 만들어 주세요.
+UILABEL_BUILT_IN	내장
+UILABEL_WORLD	월드
+UILABEL_MAP_FILE	맵 파일
+UILABEL_BUILT_IN_WHEN	내장
+UILABEL_UNKNOWN	알 수 없음
+UILABEL_ON	켜기
+UILABEL_OFF	끄기
+UILABEL_EMPTY	비어 있음
+UILABEL_NONE_AVAILABLE	사용 가능한 항목 없음
+UILABEL_TWO_HANDED	양손
+UILABEL_WILL_BE_REPLACED	교체됩니다
+UILABEL_GRAPHICS	그래픽
+UILABEL_INTERFACE	인터페이스
+UILABEL_LANGUAGE_TAB	언어
+UILABEL_CONTROLS	조작
+UILABEL_AUDIO	오디오
+UILABEL_DISPLAY_MODE	디스플레이 모드
+UILABEL_MONITOR	모니터
+UILABEL_RESOLUTION	해상도
+UILABEL_REFRESH_RATE	주사율
+UILABEL_DEFAULT	기본값
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	프레임 제한
+UILABEL_UNLIMITED	제한 없음
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	자동 저장
+UILABEL_MINUTE	1분
+UILABEL_MINUTES	{0}분
+UILABEL_UNIT_NAMES	유닛 이름
+UILABEL_FONT_SIZE	글꼴 크기
+UILABEL_RESET_PANELS	모든 UI 패널 초기화
+UILABEL_RESET	초기화
+UILABEL_FONT	글꼴
+UILABEL_FONT_AUTOMATIC	자동
+UILABEL_EDGE_SCROLL	화면 가장자리 스크롤
+UILABEL_GLOBAL_VOLUME	전체 음량
+UILABEL_MUSIC	음악
+UILABEL_AMBIENT	환경음
+UILABEL_INTERFACE_SOUNDS	인터페이스 소리
+UILABEL_SOUND_EFFECTS	효과음
+UILABEL_RESTORE_DEFAULTS	기본값으로 복원
+UILABEL_WINDOWED	창 모드
+UILABEL_BORDERLESS	테두리 없는 창
+UILABEL_FULL_SCREEN	전체 화면
+CONTROL_KEYS_1	W A S D 또는 방향키
+CONTROL_DOES_1	카메라 이동
+CONTROL_KEYS_2	마우스 휠
+CONTROL_DOES_2	확대 및 축소
+CONTROL_KEYS_3	마우스 가운데 버튼을 누른 채 드래그
+CONTROL_DOES_3	카메라 회전
+CONTROL_KEYS_4	왼쪽 클릭 또는 상자 드래그
+CONTROL_DOES_4	유닛 선택
+CONTROL_KEYS_5	Shift 또는 Alt 를 누르고 클릭
+CONTROL_DOES_5	선택에 추가
+CONTROL_KEYS_6	오른쪽 클릭
+CONTROL_DOES_6	선택한 유닛으로 이동 또는 공격
+CONTROL_KEYS_7	Alt 누르고 있기
+CONTROL_DOES_7	바닥에 있는 아이템 이름 표시
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	메뉴 열기 또는 뒤로 가기
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	스크린샷 찍기
+UILABEL_PAUSED	일시정지
+UILABEL_PACE_RUN	이동: 달리기
+UILABEL_PACE_WALK	이동: 걷기
+UILABEL_SQUAD_PANEL	분대 패널
+UILABEL_UNIT_PANEL	유닛 패널
+UILABEL_INFORMATION_PANEL	정보 패널
+UILABEL_INTERACTION_PANEL	상호작용 패널
+UILABEL_TRADE_PANEL	거래 패널
+UILABEL_INVENTORY	인벤토리
+UILABEL_EQUIPMENT	장비
+UILABEL_BEHAVIOR	행동
+UILABEL_TRADE	거래
+UILABEL_END_DIALOGUE	대화 종료
+UILABEL_TRADE_DROP_THEIRS	상대의 인벤토리 아이템을 여기로 드래그하거나 오른쪽 클릭하여 추가
+UILABEL_TRADE_DROP_YOURS	내 인벤토리 아이템을 여기로 드래그하거나 오른쪽 클릭하여 추가
+UILABEL_SINGLE	하나씩
+UILABEL_MAX	최대
+UILABEL_SORT	정렬
+UILABEL_WORLD_MAP_HINT	월드 맵입니다. 스크롤로 확대합니다. M 또는 Esc 를 누르면 닫힙니다.
+UILABEL_NO_UNIT_SELECTED	선택된 유닛이 없습니다
+UILABEL_UNNAMED_UNIT	이름 없는 유닛
+UILABEL_NO_NAME	이름 없음
+UILABEL_PROFILE	프로필
+UILABEL_STATS	능력치
+UILABEL_CLICK_TO_TYPE	클릭하여 이름 입력
+UILABEL_SPRITE	스프라이트
+UILABEL_HEALTH	체력
+UILABEL_HUNGER	허기
+UILABEL_CARRY	운반 중량
+UILABEL_NEXT_LEVEL_XP_LINE	다음 레벨까지 경험치: {0}
+UILABEL_STAT	능력치
+UILABEL_LEVEL	레벨
+UILABEL_TOTAL_XP	총 경험치
+UILABEL_TO_NEXT	다음까지
+UILABEL_ATTRIBUTES	속성
+UILABEL_COMBAT	전투
+UILABEL_RESOURCE_GATHERING	자원 채집
+UILABEL_CRAFTING	제작
+UILABEL_UTILITY	보조 기술
+UILABEL_GEAR	장비
+UILABEL_ITEMS	아이템
+UILABEL_IDENTITY	정체성
+UILABEL_RANDOMIZE_UNIT	이 유닛 무작위로 설정
+UILABEL_RANDOMIZE_ALL	전부 무작위로 설정
+UILABEL_ADD_UNIT	유닛 추가
+UILABEL_REMOVE_UNIT	유닛 제거
+UILABEL_CONFIRM_STARTS	확인하면 이 파티로 게임을 시작합니다.
+UILABEL_NEEDS_NAMES	게임을 시작하려면 모든 유닛에 이름이 있어야 합니다.
+UILABEL_CLICK_UNIT_EDIT	유닛을 클릭하면 편집합니다.
+UILABEL_SHIFT_CLICK	Shift + 클릭은 능력치를 10씩 변경합니다.
+UILABEL_LEVELS_HINT	레벨은 1부터 99까지입니다.
+UILABEL_CLICK_SLOT	슬롯을 클릭해 아이템을 고르세요. 들어갈 수 있는 아이템만 표시됩니다.
+UILABEL_CLICK_SLOT_STACK	슬롯을 클릭해 아이템을 고르세요. 묶음은 아이템의 한도까지 담깁니다.
+UILABEL_SCROLL_UP	위로 스크롤
+UILABEL_SCROLL_DOWN	아래로 스크롤
+UILABEL_SLOT_HEAD	머리
+UILABEL_SLOT_TORSO	몸통
+UILABEL_SLOT_MAIN_HAND	주무기 손
+UILABEL_SLOT_OFF_HAND	보조 손
+UILABEL_SLOT_LEGS	다리
+UILABEL_SLOT_FEET	발
+UILABEL_SLOT_ACCESSORY	액세서리
+UILABEL_BEHAVIOR_ON	켜기
+UILABEL_TARGET	대상
+UILABEL_CONDITION	조건
+UILABEL_ACTION	행동
+UILABEL_COMBAT_MESSAGES	전투 메시지
+UILABEL_SEEN	발견
+UILABEL_HIT	명중
+UILABEL_MISS	빗나감
+UILABEL_DAMAGE	피해
+UILABEL_EXPERIENCE_MESSAGES	경험치 메시지
+UILABEL_EXPERIENCE	경험치
+UILABEL_ITEM_MESSAGES	아이템 메시지
+UILABEL_PICKUP	줍기
+UILABEL_DROP	버리기
+UILABEL_LOOT	전리품
+UILABEL_USE	사용
+UILABEL_MESSAGE	메시지
+UILABEL_GAME	게임
+UILABEL_FILTER	필터
+UILABEL_STAT_HEAD_STAT	능력치
+UILABEL_UNKNOWN_SLOT	알 수 없음
+UILABEL_MONTH_NAME	{0}월
+UILABEL_STRENGTH_STAT	힘
+MISC_GAME_SAVED	게임을 저장했습니다
+MISC_SAVE_FAILED	게임을 저장할 수 없습니다
+MISC_READ_FAILED	해당 저장 데이터를 읽을 수 없습니다
+MISC_SAVE_OLD	이 저장 데이터는 맵 기능 이전의 것이라 불러올 수 없습니다
+MISC_AUTOSAVED	자동 저장되었습니다
+MISC_SCREENSHOT_FAILED	스크린샷을 저장할 수 없습니다
+MISC_SCREENSHOT_SAVED	{0} 저장됨
+MISC_TRADE_FULL	거래 칸이 가득 찼습니다
+MISC_TRADE_ALREADY	그 아이템은 이미 거래에 있거나 거래 칸이 가득 찼습니다.
+MISC_TRADE_NO_MORE	그 아이템은 더 이상 거래할 수 없습니다
+MISC_NO_UNIT_TO_TRADE	거래할 유닛이 없습니다
+MISC_TRADE_ADD_BOTH	양쪽 모두에 아이템을 추가하세요
+MISC_TRADE_NO_ROOM_YOURS	내 유닛에 상대 아이템을 넣을 공간이 없습니다
+MISC_TRADE_NO_ROOM_THEIRS	상대에게 내 아이템을 넣을 공간이 없습니다
+MISC_TRADE_FAILED	거래에 실패했습니다
+MISC_TRADE_COMPLETE	거래가 완료되었습니다.
+MISC_PICKUP_SELECT	아이템을 주울 유닛을 선택하세요
+MISC_TRADE_ONLY_TALKING	지금 대화 중인 유닛과만 거래할 수 있습니다.
+MISC_DROPS	{0}이(가) {1} {2}을(를) 떨어뜨립니다
+MISC_AN_ITEM	아이템 하나
+MISC_UNIT	유닛
+MISC_TWO_HANDED_IN_MAIN	양손 무기가 주무기 손에 있습니다
+MISC_YOU	당신
+MISC_UNKNOWN_ITEM	알 수 없는 아이템
+MISC_ITEM_FALLBACK	아이템
+MISC_THAT_ITEM	그
+MISC_REASON_FEES	거래 수수료 지불
+MISC_REASON_WALKING	걷기
+MISC_REASON_CARRYING	짐 나르기
+MISC_REASON_CLIMBING	등반
+MISC_REASON_SWINGING	휘두르기
+MISC_REASON_DODGING	회피
+MISC_REASON_DEALING	피해 입히기
+MISC_REASON_TAKING	피해 받기
+MISC_REASON_BLOCKING	방어
+MISC_REASON_SPOTTING	적 발견
+MISC_REASON_UNNOTICED	들키지 않기
+MISC_REASON_GEAR	장비 교체
+NPC_GREETING	안녕, 세상아.
+NPC_OPTION_WARES	상품 좀 보여 주시오.
+NPC_OPTION_QUEST	이 퀘스트에 대해 더 알려 줄 게 있소?
+MISC_ORD_1	첫 번째
+MISC_ORD_2	두 번째
+MISC_ORD_3	세 번째
+MISC_ORD_4	네 번째
+MISC_ORD_5	다섯 번째
+MISC_ORD_6	여섯 번째
+MISC_ORD_7	일곱 번째
+MISC_ORD_8	여덟 번째
+MISC_ORD_9	아홉 번째
+MISC_ORD_10	열 번째
+MISC_ORD_11	열한 번째
+MISC_ORD_12	열두 번째
+MISC_SKY_DAY_ZENITH	낮 천정
+MISC_SKY_DAY_HORIZON	낮 지평선
+MISC_SKY_NIGHT_ZENITH	밤 천정
+MISC_SKY_NIGHT_HORIZON	밤 지평선
+MISC_SKY_DUSK_HORIZON	황혼 지평선
+MISC_SKY_DUSK_SUN	황혼의 태양
+MISC_SKY_SUN	태양
+MISC_SKY_MOON	달
+MISC_TARGET_SELF	자신
+MISC_TARGET_ALLY	아군
+MISC_TARGET_ENEMY	적
+MISC_COND_HEALTH	체력
+MISC_COND_HUNGER	허기
+MISC_ACT_HEAL	회복 아이템 사용
+MISC_ACT_FOOD	음식 먹기
+UILABEL_STAT_DESC_STRENGTH	근접 피해, 운반 중량
+UILABEL_STAT_DESC_DEXTERITY	공격 속도
+UILABEL_STAT_DESC_VITALITY	최대 체력
+UILABEL_STAT_DESC_ENDURANCE	최대 스태미나
+UILABEL_STAT_DESC_AGILITY	회피 확률
+UILABEL_STAT_DESC_INTELLIGENCE	마나 풀
+UILABEL_STAT_DESC_WISDOM	배울 수 있는 주문 수
+UILABEL_STAT_DESC_CHARISMA	NPC 거래 가격, 특별한 대화 선택지
+UILABEL_STAT_DESC_PERCEPTION	탐지 범위
+UILABEL_STAT_DESC_ATHLETICS	달리기 속도
+UILABEL_STAT_DESC_STEALTH	몰래 이동할 때 발각되지 않는 능력
+UILABEL_STAT_DESC_MELEE	근접 명중률
+UILABEL_STAT_DESC_PROJECTILES	원거리 명중률
+UILABEL_STAT_DESC_ARCANE	주문 위력
+UILABEL_STAT_DESC_BLOCK	막기 또는 받아넘기기 확률
+UILABEL_STAT_DESC_MINING	광석 산출량
+UILABEL_STAT_DESC_HERBALISM	야생 식물 채집량
+UILABEL_STAT_DESC_WOODCUTTING	목재 산출량
+UILABEL_STAT_DESC_SKINNING	가죽과 고기 산출량
+UILABEL_STAT_DESC_FARMING	작물 수확량
+UILABEL_STAT_DESC_COOKING	음식 보너스 효과
+UILABEL_STAT_DESC_SMELTING	광석 제련 산출량
+UILABEL_STAT_DESC_FORGING	금속 가공
+UILABEL_STAT_DESC_CARPENTRY	목공 가공
+UILABEL_STAT_DESC_STONEWORKING	석공 가공
+UILABEL_STAT_DESC_LOCKPICKING	자물쇠 난이도
+UILABEL_STAT_DESC_THIEVERY	도둑질 성공률
+UILABEL_STAT_DESC_MEDICAL	치료 효과
+UILABEL_DEXTERITY_STAT	재주
+UILABEL_VITALITY_STAT	활력
+UILABEL_ENDURANCE_STAT	지구력
+UILABEL_AGILITY_STAT	민첩
+UILABEL_INTELLIGENCE_STAT	지능
+UILABEL_WISDOM_STAT	지혜
+UILABEL_CHARISMA_STAT	카리스마
+UILABEL_PERCEPTION_STAT	지각
+UILABEL_ATHLETICS_STAT	운동
+UILABEL_STEALTH_STAT	은신
+UILABEL_MELEE_STAT	근접 전투
+UILABEL_PROJECTILES_STAT	투척 무기
+UILABEL_ARCANE_STAT	비전
+UILABEL_BLOCK_STAT	방어
+UILABEL_MINING_STAT	채광
+UILABEL_HERBALISM_STAT	약초학
+UILABEL_WOODCUTTING_STAT	벌목
+UILABEL_SKINNING_STAT	가죽 벗기기
+UILABEL_FARMING_STAT	농사
+UILABEL_COOKING_STAT	요리
+UILABEL_SMELTING_STAT	제련
+UILABEL_FORGING_STAT	단조
+UILABEL_CARPENTRY_STAT	목공
+UILABEL_STONEWORKING_STAT	석공
+UILABEL_LOCKPICKING_STAT	자물쇠 따기
+UILABEL_THIEVERY_STAT	도둑질
+UILABEL_MEDICAL_STAT	의술
+MISC_CANT_BE_WORN	{0}은(는) 착용할 수 없습니다
+MISC_ITEM_NAME_FORMAT	{0} {1}
+MISC_MATERIAL_IRON	철
+MISC_MATERIAL_STEEL	강철
+MISC_MATERIAL_BRONZE	청동
+MISC_MATERIAL_SILVER	은
+MISC_MATERIAL_LEATHER	가죽
+MISC_MATERIAL_BONE	뼈
+MISC_MATERIAL_WOOD	나무
+MISC_NEED_MORE_VALUE	{0} 가치가 더 필요합니다
+MISC_TRADE_READY_FEE	준비 완료. 거래 수수료: {0}
+MISC_LOAD_FAILED	{0}을(를) 불러올 수 없습니다: {1}
+MISC_MAP_MISSING	"{0}" 맵이 없습니다
+MISC_MAP_LOAD_FAILED	"{0}" 맵을 불러올 수 없습니다: {1}
+MISC_LOADED	{0} 불러옴
+MISC_DELETE_FAILED	"{0}"을(를) 삭제할 수 없습니다
+MISC_DELETED	"{0}" 삭제됨
+MISC_USED	{0} 사용됨
+MISC_OVERWRITE_Q	"{0}"을(를) 덮어쓸까요?
+MISC_LOAD_Q	"{0}"을(를) 불러올까요?
+MISC_DELETE_Q	"{0}"을(를) 삭제할까요?
+MISC_NOT_FIT_SLOT	{0}은(는) {1} 슬롯에 맞지 않습니다
+MISC_EMPTY_OFF_HAND	{0}을(를) 들기 전에 보조 손을 비우세요
+MISC_NO_ROOM_INV	인벤토리에 {0}을(를) 넣을 공간이 없습니다
+MISC_SLOT_HOLDS	그 슬롯에는 이미 {0}이(가) 있습니다
+UILABEL_TIP_TYPE	종류: {0}
+UILABEL_TIP_MATERIAL	재질: {0}
+UILABEL_TIP_SLOT	슬롯: {0}
+UILABEL_TIP_REQUIRED_LEVEL	필요 레벨: {0}
+UILABEL_TIP_ATTACK	공격 {0}
+UILABEL_TIP_DEFENSE	방어 {0}
+UILABEL_TIP_WEIGHT	무게 {0}
+UILABEL_TIP_EACH	 개당
+UILABEL_TIP_STACKS	최대 {0}개까지 쌓임
+UILABEL_TIP_BUY	구매가: {0}
+UILABEL_TIP_SELL	판매가: {0}
+UILABEL_TIP_USE	효과: {0}
+UILABEL_TOTAL_VALUE	총 가치: {0}
+UILABEL_CHOOSE_HOW_MANY	개수 선택: {0} ({1}개 보유)
+UILABEL_TIP_LEVEL	레벨: {0}
+UILABEL_TIP_PROGRESS	진행도: {0}%
+UILABEL_TIP_CURRENT_XP	현재 경험치: {0}
+UILABEL_ATTACK_DEFENSE	공격 {0}      방어 {1}
+UILABEL_STATS_CAPTION	능력치: {0}
+UILABEL_SPRITE_N	스프라이트 {0}
+UILABEL_SLOT_N_ITEM	슬롯 {0}: {1}
+UILABEL_SLOT_N_EMPTY	슬롯 {0}: 비어 있음
+UILABEL_COUNT	수량 {0}
+UILABEL_ATTACK_DEFENSE_CARRY	공격 {0}    방어 {1}    운반 {2}
+MISC_IS_DOWN	{0}이(가) 쓰러졌습니다
+MISC_PICKS_UP	{0}이(가) {1} {2}을(를) 줍니다
+MISC_CANNOT_READ	{0}을(를) 읽을 수 없습니다
+UILABEL_TIP_DURABILITY	내구도 {0} / {1}
+UILABEL_DATE_LINE	{0}일차 · {1} · {2}년
+UILABEL_MONITOR_N	모니터 {0}
+MISC_GAINS_XP	{0}이(가) {3}(으)로 {1} {2} 경험치를 얻습니다
+UILABEL_PAUSE_HINT	(스페이스바를 누르면 재개합니다.)
+MISC_DRINKS	{0}이(가) {1}을(를) 마십니다
+UILABEL_COMPASS_N	북
+UILABEL_COMPASS_E	동
+UILABEL_COMPASS_S	남
+UILABEL_COMPASS_W	서
+ITEM_1_NAME	철광석
+ITEM_1_DESC	제련하면 철 주괴가 되는 원석입니다.
+ITEM_2_NAME	참나무 통나무
+ITEM_2_DESC	제작과 건설에 쓰이는 튼튼한 통나무입니다.
+ITEM_3_NAME	치유 약초
+ITEM_3_DESC	약하게 회복시켜 주는 흔한 약초입니다.
+ITEM_4_NAME	금화
+ITEM_4_DESC	왕국의 표준 화폐입니다.
+ITEM_5_NAME	늑대 가죽
+ITEM_5_DESC	쓰러뜨린 늑대에게서 얻은 거친 가죽입니다. 무두장이들이 찾습니다.
+ITEM_6_NAME	고대 유물
+ITEM_6_DESC	희미한 에너지로 웅웅거리는 신비한 유물입니다.
+ITEM_7_NAME	체력 물약
+ITEM_7_DESC	마시면 체력을 50 회복합니다.
+ITEM_8_NAME	마나 물약
+ITEM_8_DESC	마시면 마나를 50 회복합니다.
+ITEM_9_NAME	스태미나 음료
+ITEM_9_DESC	스태미나를 40 회복하고 잠시 회복 속도를 높입니다.
+ITEM_10_NAME	힘의 영약
+ITEM_10_DESC	60초 동안 공격력 +10.
+ITEM_11_NAME	빵
+ITEM_11_DESC	간단한 여행 식량입니다. 체력을 15 회복합니다.
+ITEM_12_NAME	해독제
+ITEM_12_DESC	독을 치료하고 30초 동안 독 피해를 줄입니다.
+ITEM_13_NAME	사과
+ITEM_13_DESC	먹으면 허기를 8 회복합니다.
+ITEM_14_NAME	야생 열매
+ITEM_14_DESC	먹으면 허기를 6 회복합니다.
+ITEM_15_NAME	딱딱한 비스킷
+ITEM_15_DESC	먹으면 허기를 12 회복합니다.
+ITEM_16_NAME	치즈 한 조각
+ITEM_16_DESC	먹으면 허기를 15 회복합니다.
+ITEM_17_NAME	훈제 생선
+ITEM_17_DESC	먹으면 허기를 20 회복합니다.
+ITEM_18_NAME	꿀 케이크
+ITEM_18_DESC	먹으면 허기를 18 회복합니다.
+ITEM_19_NAME	양고기 파이
+ITEM_19_DESC	먹으면 허기를 26 회복합니다.
+ITEM_20_NAME	스튜 한 그릇
+ITEM_20_DESC	먹으면 허기를 30 회복합니다.
+ITEM_21_NAME	구운 멧돼지 다리
+ITEM_21_DESC	먹으면 허기를 40 회복합니다.
+ITEM_22_NAME	여행용 식량
+ITEM_22_DESC	먹으면 허기를 50 회복합니다.
+ITEM_23_NAME	캡
+ITEM_23_DESC	머리를 보호합니다.
+ITEM_24_NAME	후드
+ITEM_24_DESC	머리를 보호합니다.
+ITEM_25_NAME	사슬 코이프
+ITEM_25_DESC	머리를 보호합니다.
+ITEM_26_NAME	투구
+ITEM_26_DESC	머리를 보호합니다.
+ITEM_27_NAME	면갑 투구
+ITEM_27_DESC	머리를 보호합니다.
+ITEM_28_NAME	바시넷
+ITEM_28_DESC	머리를 보호합니다.
+ITEM_29_NAME	살레트
+ITEM_29_DESC	머리를 보호합니다.
+ITEM_30_NAME	대형 투구
+ITEM_30_DESC	머리를 보호합니다.
+ITEM_31_NAME	이마 장식띠
+ITEM_31_DESC	머리를 보호합니다.
+ITEM_32_NAME	왕관
+ITEM_32_DESC	머리를 보호합니다.
+ITEM_33_NAME	튜닉
+ITEM_33_DESC	가슴과 몸통을 가립니다.
+ITEM_34_NAME	가죽 조끼
+ITEM_34_DESC	가슴과 몸통을 가립니다.
+ITEM_35_NAME	라멜라 조끼
+ITEM_35_DESC	가슴과 몸통을 가립니다.
+ITEM_36_NAME	브리건다인
+ITEM_36_DESC	가슴과 몸통을 가립니다.
+ITEM_37_NAME	사슬 갑옷
+ITEM_37_DESC	가슴과 몸통을 가립니다.
+ITEM_38_NAME	흉갑
+ITEM_38_DESC	가슴과 몸통을 가립니다.
+ITEM_39_NAME	큐라스
+ITEM_39_DESC	가슴과 몸통을 가립니다.
+ITEM_40_NAME	판금 흉갑
+ITEM_40_DESC	가슴과 몸통을 가립니다.
+ITEM_41_NAME	풀 플레이트 아머
+ITEM_41_DESC	가슴과 몸통을 가립니다.
+ITEM_42_NAME	의례용 갑옷
+ITEM_42_DESC	가슴과 몸통을 가립니다.
+ITEM_43_NAME	승마 바지
+ITEM_43_DESC	다리를 가립니다.
+ITEM_44_NAME	바지
+ITEM_44_DESC	다리를 가립니다.
+ITEM_45_NAME	각반
+ITEM_45_DESC	다리를 가립니다.
+ITEM_46_NAME	사슬 바지
+ITEM_46_DESC	다리를 가립니다.
+ITEM_47_NAME	허벅지 보호대
+ITEM_47_DESC	다리를 가립니다.
+ITEM_48_NAME	퀴스
+ITEM_48_DESC	다리를 가립니다.
+ITEM_49_NAME	정강이 보호대
+ITEM_49_DESC	다리를 가립니다.
+ITEM_50_NAME	판금 바지
+ITEM_50_DESC	다리를 가립니다.
+ITEM_51_NAME	사슬 정강이 보호대
+ITEM_51_DESC	다리를 가립니다.
+ITEM_52_NAME	도금 정강이 보호대
+ITEM_52_DESC	다리를 가립니다.
+ITEM_53_NAME	샌들
+ITEM_53_DESC	발을 보호합니다.
+ITEM_54_NAME	신발
+ITEM_54_DESC	발을 보호합니다.
+ITEM_55_NAME	부츠
+ITEM_55_DESC	발을 보호합니다.
+ITEM_56_NAME	승마 부츠
+ITEM_56_DESC	발을 보호합니다.
+ITEM_57_NAME	징 박힌 부츠
+ITEM_57_DESC	발을 보호합니다.
+ITEM_58_NAME	발싸개
+ITEM_58_DESC	발을 보호합니다.
+ITEM_59_NAME	행군 부츠
+ITEM_59_DESC	발을 보호합니다.
+ITEM_60_NAME	사바톤
+ITEM_60_DESC	발을 보호합니다.
+ITEM_61_NAME	솔레렛
+ITEM_61_DESC	발을 보호합니다.
+ITEM_62_NAME	전투 부츠
+ITEM_62_DESC	발을 보호합니다.
+ITEM_63_NAME	띠
+ITEM_63_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_64_NAME	부적
+ITEM_64_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_65_NAME	팔찌
+ITEM_65_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_66_NAME	브로치
+ITEM_66_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_67_NAME	반지
+ITEM_67_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_68_NAME	목걸이
+ITEM_68_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_69_NAME	펜던트
+ITEM_69_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_70_NAME	부적 목걸이
+ITEM_70_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_71_NAME	토크
+ITEM_71_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_72_NAME	망토
+ITEM_72_DESC	작고 낡은 장신구입니다. 동시에 두 개를 착용할 수 있습니다.
+ITEM_73_NAME	숏소드
+ITEM_73_DESC	주무기 손에 듭니다.
+ITEM_74_NAME	롱소드
+ITEM_74_DESC	주무기 손에 듭니다.
+ITEM_75_NAME	도끼
+ITEM_75_DESC	주무기 손에 듭니다.
+ITEM_76_NAME	메이스
+ITEM_76_DESC	주무기 손에 듭니다.
+ITEM_77_NAME	도리깨
+ITEM_77_DESC	주무기 손에 듭니다.
+ITEM_78_NAME	레이피어
+ITEM_78_DESC	주무기 손에 듭니다.
+ITEM_79_NAME	단검
+ITEM_79_DESC	한 손으로 듭니다. 주무기 손이나 보조 손에 맞습니다.
+ITEM_80_NAME	나이프
+ITEM_80_DESC	한 손으로 듭니다. 주무기 손이나 보조 손에 맞습니다.
+ITEM_81_NAME	스틸레토
+ITEM_81_DESC	한 손으로 듭니다. 주무기 손이나 보조 손에 맞습니다.
+ITEM_82_NAME	버클러
+ITEM_82_DESC	보조 손에 듭니다. 공격을 막아 냅니다.
+ITEM_83_NAME	연 모양 방패
+ITEM_83_DESC	보조 손에 듭니다. 공격을 막아 냅니다.
+ITEM_84_NAME	타워 실드
+ITEM_84_DESC	보조 손에 듭니다. 공격을 막아 냅니다.
+ITEM_85_NAME	양손검
+ITEM_85_DESC	양손이 필요합니다. 보조 손은 비어 있어야 합니다.
+ITEM_86_NAME	전쟁 망치
+ITEM_86_DESC	양손이 필요합니다. 보조 손은 비어 있어야 합니다.
+ITEM_87_NAME	전투 도끼
+ITEM_87_DESC	양손이 필요합니다. 보조 손은 비어 있어야 합니다.
+UILABEL_UI_SCALE	UI 배율
+NAME_MASCULINE	["민준", "준호", "성민", "태윤", "도현"]
+NAME_FEMININE	["서연", "지우", "하은", "수빈", "다은"]
+NAME_ANDROGYNOUS	["한별", "시우", "유진", "은우", "하람"]
+UILABEL_BODY_TYPE	체형
+UILABEL_BODY_MASCULINE	남성형
+UILABEL_BODY_FEMININE	여성형
+UILABEL_BODY_ANDROGYNOUS	중성형
+UILABEL_TYPE_ITEM	아이템
+UILABEL_TYPE_CONSUMABLE	소모품
+UILABEL_TYPE_WEAPON	무기
+UILABEL_TYPE_ARMOR	방어구
+UILABEL_TYPE_ACCESSORY	장신구
+UILABEL_SLOT_EITHER_HAND	아무 손
+UILABEL_SLOT_TWO_HAND	양손
+MISC_TRADE_CHANGE	거래: {0}
+UILABEL_NEEDS_UNITS	시작하려면 유닛을 최소 한 명 추가하세요.
+PROP_WAGON	마차
+PROP_CAMPFIRE	모닥불
+PROP_BEDROLL	침낭
+PROP_BED	침대
+PROP_BARREL	통
+PROP_ORE	광석
+PROP_TREE	나무
+PROP_BOULDER	바위
+PROP_MUSHROOM	버섯
+PROP_BONES	뼈
+PROP_WALL	벽
+PROP_STALL	노점
+MISC_STORAGE_FULL	보관함에 공간이 없습니다
+MISC_PROP_TAKEN	이미 사용 중입니다
+MISC_PROP_WORKERS_FULL	한 번에 최대 {0}개 유닛이 작업할 수 있습니다
+MISC_GATHERS	{0}이(가) {1}을(를) 채집합니다
+MISC_GATHER_NO_ROOM	{0}이(가) {1}을(를) 넣을 공간이 없어 작업을 멈춥니다
+MISC_REASON_GATHERING	채집
+UILABEL_TASK	작업: {0}
+UILABEL_TASK_IDLE	대기
+UILABEL_TASK_MOVING	이동 중
+UILABEL_TASK_RESTING	휴식 중
+UILABEL_STORAGE_HINT	아이템을 우클릭하면 가져가고, 밖으로 끌어내면 유닛이 서 있는 곳에 떨어뜨립니다. 유닛의 아이템을 우클릭하면 보관합니다.
+ITEM_88_NAME	통나무
+ITEM_88_DESC	나무에서 벤 목재로, 제작과 건축에 쓰인다.
+UILABEL_CRAFT_HINT	유닛의 아이템을 우클릭해 안에 넣습니다. 만들어진 것은 작업한 유닛의 인벤토리로 들어갑니다. 작업을 시작하려면 {0}을(를) 우클릭하고 사용을 선택하세요.
+MISC_CRAFT_WRONG_ITEM	{0}은(는) 여기에 쓸 수 없습니다
+MISC_CRAFT_NEEDS	시작하려면 재료 칸에 {0}을(를) 넣으세요
+MISC_CRAFTS	{0}이(가) {1}을(를) 만듭니다
+MISC_CRAFT_STOPS	{0}이(가) 더 작업할 재료가 없어 멈춥니다
+MISC_REASON_CRAFTING	제작
+ITEM_89_NAME	날 곰고기
+ITEM_89_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_90_NAME	구운 곰고기
+ITEM_90_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+UILABEL_TALK	대화
+UILABEL_ATTACK	공격
+UILABEL_ATTACK_UNPROVOKED	공격 (선제)
+UILABEL_FOLLOW	따라가기
+UILABEL_DEFEND	방어
+UILABEL_TASK_FOLLOWING	따라가는 중
+UILABEL_TASK_DEFENDING	방어 중
+MISC_FREE_TRADE_ADD	어느 쪽에든 아이템을 넣으세요
+MISC_FREE_TRADE_READY	교환 준비 완료
+MISC_TURNS_HOSTILE	{0}이(가) 적대적으로 변했습니다
+MISC_SELECT_UNIT_FIRST	먼저 유닛을 선택하세요
+FACTION_PLAYER	플레이어 세력
+FACTION_GRAY	회색 세력
+FACTION_RED	붉은 세력
+MISC_PROP_UNREACHABLE	도달할 수 없습니다
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	시나리오
+SCENARIO_VAGABOND_NAME	방랑자
+SCENARIO_VAGABOND_DESC	가진 것 하나 없는 외로운 방랑자. 아이템도 장비도 없고, 모든 능력치는 1에서 5 사이입니다.
+SCENARIO_RANDOM_NAME	완전 무작위
+SCENARIO_RANDOM_DESC	1~32명의 유닛으로, 각 유닛의 모든 능력치가 1~99이며 들 수 있는 만큼 무작위 아이템과 장비를 지닌다.
+SCENARIO_CARAVAN_NAME	떠도는 상단
+SCENARIO_CARAVAN_DESC	함께 길을 떠난 여행자 10명. 모든 능력치가 5에서 시작하고, 각자 금화 10닢을 지닌다.
+SCENARIO_SHABBY_NAME	초라한 무리
+SCENARIO_SHABBY_DESC	운 없는 코볼트 3명. 각자 무작위 아이템 하나를 지니며 모든 능력치가 1~10이다.
+SCENARIO_NOBODY_NAME	굶주린 무명인
+SCENARIO_NOBODY_DESC	아무것도 없는 유닛 1명. 아이템도 장비도 없고, 모든 능력치가 1이며 배가 텅 비었다.
+SCENARIO_DIGGERS_NAME	던전 굴착꾼
+SCENARIO_DIGGERS_DESC	완전 무장한 광부 7명. 능력치는 5~20이지만 모두 채광이 50이며 철광석을 3개씩 지닌다.
+SCENARIO_CUSTOM_NAME	사용자 지정 시나리오
+SCENARIO_CUSTOM_DESC	나만의 일행을 꾸리세요. 유닛 세 명으로 시작하며, 최대 32명까지 유닛을 추가하거나 제거할 수 있습니다.
+PROP_LOCKED_CHEST	잠긴 상자
+PROP_PRISONER_CAGE	죄수 우리
+UILABEL_UNLOCK	자물쇠 열기
+MISC_PROP_LOCKED	잠겨 있습니다
+MISC_LOCKPICK_NEEDS	자물쇠 따기 {0} 필요
+MISC_UNLOCKED	잠금 해제!
+MISC_LOCKPICK_FAILED	자물쇠 따기 실패
+MISC_UNLOCKS	{0}이(가) {1}의 잠금을 풀었습니다
+MISC_REASON_LOCKPICKING	자물쇠 따기
+MISC_LOCKED_NAME	{0} (잠김)
+PROP_CHAIR	의자
+PROP_BENCH	벤치
+PROP_STOOL	걸상
+PROP_TABLE	탁자
+PROP_END_TABLE	협탁
+PROP_ROUND_TABLE	원탁
+PROP_METAL_TABLE	금속 탁자
+PROP_STANDING_TORCH	스탠드 횃불
+PROP_SUPPORT_BEAM	지지대
+PROP_TRAINING_DUMMY	훈련용 허수아비
+PROP_RAW_FOOD_STORAGE	날음식 저장고
+PROP_FOOD_STORAGE	음식 저장고
+PROP_WEAPON_RACK	무기 거치대
+PROP_ARMOR_STAND	갑옷 거치대
+PROP_WATER_TANK	물탱크
+PROP_WATER_PUMP	물 펌프
+PROP_FORGE	대장간 화로
+FILTER_RAW_FOOD	날음식
+FILTER_FOOD	음식
+FILTER_WEAPON	무기
+FILTER_ARMOR	갑옷
+FILTER_WATER	물
+MISC_STORAGE_ONLY	{0}만 넣을 수 있습니다
+UILABEL_STORAGE_TAKES	{0}만 넣을 수 있습니다.
+UILABEL_TASK_SITTING	앉아 있음
+UILABEL_TASK_LOCKED_IN	갇힘
+MISC_LOCKED_IN	{0}이(가) {1}에 갇혔습니다
+MISC_REASON_TRAINING	훈련
+MISC_XP_GAINED	+{0} {1} 경험치
+UILABEL_INPUT	투입
+UILABEL_OUTPUT	산출
+MISC_FUEL_LEFT	연소 중: 연료 {0}분 남음
+MISC_NO_FUEL	연료 없음
+MISC_OUTPUT_FULL	산출 가득 참: 일시 정지
+UILABEL_PASSIVE_HINT	{0}을(를) 연료로 씁니다: 하나당 게임 시간 {1}분 동안 타며, 일꾼이 없어도 산출에 {2}을(를) 만듭니다. 산출이 가득 차 있는 동안은 멈춥니다. 아이템을 우클릭해 넣거나 꺼내세요.
+ITEM_91_NAME	물
+ITEM_91_DESC	펌프에서 길어 온 신선한 물.
+ITEM_92_NAME	철 주괴
+ITEM_92_DESC	대장간 화로에서 광석을 녹여 만든 철 막대.
+ITEM_93_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_93_NAME	날 소고기
+ITEM_94_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_94_NAME	구운 소고기
+ITEM_95_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_95_NAME	날 닭고기
+ITEM_96_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_96_NAME	구운 닭고기
+ITEM_97_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_97_NAME	날 멧돼지고기
+ITEM_98_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_98_NAME	구운 멧돼지고기
+ITEM_99_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_99_NAME	날 늑대고기
+ITEM_100_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_100_NAME	구운 늑대고기
+ITEM_101_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_101_NAME	날 사슴고기
+ITEM_102_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_102_NAME	구운 사슴고기
+ITEM_103_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_103_NAME	날 토끼고기
+ITEM_104_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_104_NAME	구운 토끼고기
+ITEM_105_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_105_NAME	날 생선
+ITEM_106_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_106_NAME	구운 생선
+ITEM_107_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_107_NAME	날 게살
+ITEM_108_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_108_NAME	구운 게살
+ITEM_109_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_109_NAME	날 도마뱀고기
+ITEM_110_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_110_NAME	구운 도마뱀고기
+ITEM_111_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_111_NAME	날 뱀고기
+ITEM_112_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_112_NAME	구운 뱀고기
+ITEM_113_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_113_NAME	날 돼지고기
+ITEM_114_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_114_NAME	구운 돼지고기
+ITEM_115_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_115_NAME	날 양고기
+ITEM_116_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_116_NAME	구운 양고기
+ITEM_117_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_117_NAME	날 오리고기
+ITEM_118_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_118_NAME	구운 오리고기
+ITEM_119_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_119_NAME	날 거북이고기
+ITEM_120_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_120_NAME	구운 거북이고기
+ITEM_121_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_121_NAME	날 박쥐고기
+ITEM_122_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_122_NAME	구운 박쥐고기
+ITEM_123_DESC	익히지 않은 고기. 모닥불에서 구우세요.
+ITEM_123_NAME	날 개구리고기
+ITEM_124_DESC	불에 구운 고기. 체력과 허기를 회복한다.
+ITEM_124_NAME	구운 개구리고기
+ITEM_125_DESC	작은 야생 버섯. 날로 먹으면 체력과 허기를 조금만 채워 줍니다.
+ITEM_125_NAME	버섯
+MISC_FOOD_TO_COOK	날고기
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	독버섯
+ITEM_126_DESC	다른 버섯과 똑같아 보이는 야생 버섯. 먹으면 체력과 포만감이 줄어듭니다.
+UILABEL_OPTIMIZE	최적화
+UILABEL_REMOVE_ALL	모두 해제
+MISC_GEAR_NO_ROOM	인벤토리 공간이 부족합니다
+MISC_GEAR_ALREADY_BEST	이미 최고의 장비를 착용 중입니다
+MISC_GEAR_NONE_WORN	해제할 장비가 없습니다
+UILABEL_OPTIMIZE_ALL	전체 최적화
+MISC_OPTIMIZE_ALL_ASK	분대의 {0}명 모두 장비를 최적화할까요? 각 유닛은 착용하고 가진 것 중에서 고릅니다. 벗은 장비를 넣을 공간이 없는 유닛은 그대로 둡니다.
+UILABEL_OPTIMIZE_BALANCE	공격 {0}% / 방어 {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	장신구 변경
+UILABEL_OPTIMIZE_TWO_HANDED	양손 무기 허용
+UILABEL_OPTIMIZE_VALUE_TIES	동점이면 더 비싼 아이템
+MISC_OPTIMIZE_ALL_SAME	모든 유닛이 이미 최고의 장비를 착용 중입니다
+MISC_OPTIMIZE_ALL_DONE	{0}명의 장비를 최적화했습니다
+MISC_OPTIMIZE_ALL_SOME_ROOM	{0}명의 장비를 최적화했습니다. {1}명은 인벤토리 공간이 부족합니다
+GAME_TITLE_FIRST	코볼트
+GAME_TITLE_SECOND	서바이벌
+UILABEL_EARLY_ACCESS	앞서 해보기
+MISC_TITLE_KEYS	선택  //  Enter 확인
+UILABEL_LANGUAGE_LABEL	언어:

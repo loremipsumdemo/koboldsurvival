@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	التمرير عند الحواف
 UILABEL_GLOBAL_VOLUME	مستوى الصوت العام
 UILABEL_MUSIC	الموسيقى
 UILABEL_AMBIENT	الأجواء
+UILABEL_INTERFACE_SOUNDS	أصوات الواجهة
 UILABEL_SOUND_EFFECTS	المؤثرات الصوتية
 UILABEL_RESTORE_DEFAULTS	استعادة الإعدادات الافتراضية
 UILABEL_WINDOWED	نافذة
@@ -118,7 +119,6 @@ UILABEL_PROFILE	الملف الشخصي
 UILABEL_STATS	الإحصائيات
 UILABEL_CLICK_TO_TYPE	انقر لكتابة اسم
 UILABEL_SPRITE	الصورة
-UILABEL_STARTING_PARTY	المجموعة الأولية: {0}
 UILABEL_HEALTH	الصحة
 UILABEL_HUNGER	الجوع
 UILABEL_CARRY	الحمل
@@ -606,6 +606,8 @@ FACTION_RED	الفصيل الأحمر
 MISC_PROP_UNREACHABLE	لا يمكن الوصول
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	السيناريو
+SCENARIO_VAGABOND_NAME	المتشرد
+SCENARIO_VAGABOND_DESC	رحّالة وحيد لا يملك شيئًا: بلا أغراض ولا عتاد، وكل إحصائية بين 1 و5.
 SCENARIO_RANDOM_NAME	عشوائي بالكامل
 SCENARIO_RANDOM_DESC	فرقة من 1 إلى 32 وحدة، لكل منها كل الإحصاءات بين 1 و99، مع عناصر وعتاد عشوائية تستطيع حملها.
 SCENARIO_CARAVAN_NAME	القافلة المتنقلة
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	الجائع النكرة
 SCENARIO_NOBODY_DESC	وحدة واحدة لا تملك شيئًا: لا عناصر ولا عتاد، وكل الإحصاءات عند 1، ومعدة فارغة.
 SCENARIO_DIGGERS_NAME	حفارو الزنزانات
 SCENARIO_DIGGERS_DESC	سبعة عمال مناجم بعتاد كامل. إحصاءاتهم بين 5 و20، لكن التعدين لكل منهم 50 ويحمل 3 من خام الحديد.
+SCENARIO_CUSTOM_NAME	سيناريو مخصص
+SCENARIO_CUSTOM_DESC	كوّن فريقك بنفسك. يبدأ بثلاث وحدات، ويمكنك إضافة وحدات أو إزالتها حتى 32.
 PROP_LOCKED_CHEST	صندوق مقفل
 PROP_PRISONER_CAGE	قفص السجين
 UILABEL_UNLOCK	افتح القفل
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	عند التعادل يُختار العنصر ال
 MISC_OPTIMIZE_ALL_SAME	كل الوحدات ترتدي أفضل عتاد لديها بالفعل
 MISC_OPTIMIZE_ALL_DONE	تم تحسين عتاد {0} وحدة
 MISC_OPTIMIZE_ALL_SOME_ROOM	تم تحسين عتاد {0} وحدة؛ {1} بلا مساحة كافية في المخزون
+GAME_TITLE_FIRST	الكوبولد
+GAME_TITLE_SECOND	نجاة
+UILABEL_EARLY_ACCESS	الوصول المبكر
+MISC_TITLE_KEYS	اختيار  //  Enter تأكيد
+UILABEL_LANGUAGE_LABEL	اللغة:

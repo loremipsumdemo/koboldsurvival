@@ -42,6 +42,7 @@
 #include "behavior.h"
 #include "combat.h"
 #include "equip.h"
+#include "textcase.h"
 #include "items.h"
 #include "systems.h"
 #include "terrain.h"
@@ -214,6 +215,7 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     }
     *from = ItemStack{};
     giveOrDrop(w, storageUnit, stack.item, stack.count);   // checked to fit above; anything that didn't would fall
+    queueSound(Sfx::Take);
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     const ItemDef* got = findItem(stack.item);
     queueUnitLabel(storageUnit, itemGainLabel(stack.count, got ? itemDisplayName(*got) : std::string(lang("MISC_AN_ITEM"))));
@@ -233,6 +235,7 @@ bool dropFromStorage(World& w, int slot) {
     w.add(e, Transform{ ut->x, ut->y, ut->z });
     w.add(e, GroundItem{ stack.item, stack.count });
     *from = ItemStack{};
+    queueSound(Sfx::Drop);
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
 }
@@ -305,6 +308,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
     addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
     propStorageChanged(w, storageProp);
     queueUnitLabel(storageUnit, itemLossLabelFor(count, item), true);   // "-3x Iron Ore" over the unit that stored it
+    queueSound(Sfx::Store);
     return true;
 }
 
@@ -1292,14 +1296,24 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
 
     switch (screen) {
     case Screen::Title: {
-        // Right-hand side of the screen. The left side is left clear for the logo.
-        float x = W * 0.62f, y = H * 0.34f;
-        add(lang("UILABEL_CONTINUE"), Action::Continue, x, y, hasSave);        y += bh + gap;
-        add(lang("UILABEL_NEW_GAME"), Action::NewGame, x, y);                  y += bh + gap;
-        add(lang("UILABEL_LOAD_GAME"), Action::LoadGame, x, y, hasSave);       y += bh + gap;
-        add(lang("UILABEL_SETTINGS"), Action::Settings, x, y);                 y += bh + gap;
-        add(langf("UILABEL_LANGUAGE_BUTTON", { languageDisplayName() }), Action::Language, x, y); y += bh + gap;
-        add(lang("UILABEL_QUIT"), Action::Quit, x, y);
+        // A column down the right of the screen, centered on its height, its right edge on the screen's margin. The
+        // Language item is taller: it shows the language in use on a second line (titleItemSub).
+        const TitleLayout tl = layoutTitle(W, H);
+        const float iw = titleClamp(240.0f * s, W * 0.25f, 380.0f * s);
+        const float ih = 44.0f * s, langH = 60.0f * s, ig = titleClamp(5.0f * s, H * 0.008f, 10.0f * s);
+        const float total = 5.0f * ih + langH + 5.0f * ig;
+        const float x = W - tl.side - iw;
+        float y = (H - total) * 0.5f;
+        auto item = [&](const std::string& label, Action action, float h, bool enabled = true) {
+            out.push_back(Button{ label, Rect{ x, y, iw, h }, action, enabled });
+            y += h + ig;
+        };
+        item(lang("UILABEL_CONTINUE"), Action::Continue, ih, hasSave);
+        item(lang("UILABEL_NEW_GAME"), Action::NewGame, ih);
+        item(lang("UILABEL_LOAD_GAME"), Action::LoadGame, ih, hasSave);
+        item(lang("UILABEL_SETTINGS"), Action::Settings, ih);
+        item(lang("UILABEL_LANGUAGE_LABEL"), Action::Language, langH);
+        item(lang("UILABEL_QUIT"), Action::Quit, ih);
         break;
     }
     case Screen::Pause: {
@@ -1329,6 +1343,37 @@ struct Soundtrack {
     const char* ambient = nullptr;   // the ambient bus
 };
 
+// The game's name is in the language files, in two words: GAME_TITLE_FIRST (shown green on the title screen) and
+// GAME_TITLE_SECOND. gameTitle() is the two together, for the window's title bar.
+std::string gameTitle() {
+    return lang("GAME_TITLE_FIRST") + " " + lang("GAME_TITLE_SECOND");
+}
+
+// The title screen's notice board: the lines of data/motd.txt (the Message of the Day) in the pak, read once. Edit that
+// file for update notes. Missing, the board is empty.
+const std::vector<std::string>& messageOfTheDay() {
+    static std::vector<std::string> lines;
+    static bool read = false;
+    if (read) return lines;
+    read = true;
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind("data/motd.txt", bytes, size)) return lines;
+    std::string line;
+    for (size_t i = 0; i <= size; ++i) {
+        const char c = i < size ? (char)bytes[i] : '\n';
+        if (c == '\r') continue;
+        if (c == '\n') {
+            lines.push_back(line);
+            line.clear();
+        } else {
+            line += c;
+        }
+    }
+    while (!lines.empty() && lines.back().empty()) lines.pop_back();
+    return lines;
+}
+
 Soundtrack soundtrackFor(Screen screen) {
     switch (screen) {
     case Screen::Title:
@@ -1345,11 +1390,21 @@ Soundtrack soundtrackFor(Screen screen) {
     return {};
 }
 
-// Sound effect files, in the SFX folder
-const char* const SFX_MENU = "sfx_01.mp3";   // a confirmed click on a menu button or control
-const char* const SFX_HIT = "sfx_02.mp3";    // a swing that lands
-const char* const SFX_MISS = "sfx_03.mp3";   // a swing that misses or is dodged
-const char* const SFX_ITEM = "sfx_04.mp3";   // an item picked up, moved between inventory and gear, or dropped from inventory
+// Plays a sound effect now, on the slider it follows (sounds.h lists them all, with their files)
+void playSfx(Sfx s) {
+    const SfxInfo& info = sfxInfo(s);
+    audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects);
+}
+
+// The size the title screen's name is drawn in before it is shrunk to fit: large enough that it is never enlarged,
+// even on a 4K screen
+constexpr float TITLE_NAME_POINTS = 200.0f;
+
+// Working sounds: how often each plays while a prop is worked (real seconds), and how far from the camera's focus a
+// worked prop is still heard, in tiles
+constexpr float WORK_SOUND_SECONDS = 1.6f;
+constexpr float FORGE_SOUND_SECONDS = 3.0f;
+constexpr float WORK_SOUND_RANGE = 30.0f;
 
 } // namespace
 
@@ -1412,7 +1467,7 @@ void startLogFile() {
 // Logs why the game has to close and shows it in a message box. Returns the exit code.
 int fatalError(SDL_Window* window, const std::string& message) {
     SDL_Log("FATAL: %s", message.c_str());
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Kobold Game", message.c_str(), window);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Kobold Survival", message.c_str(), window);
     return 1;
 }
 
@@ -1470,7 +1525,7 @@ int main(int, char**) {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
     // One window, made once. Destroying an OpenGL window and making another left the new one black on Windows.
-    SDL_Window* window = SDL_CreateWindow("Kobold Game", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("Kobold Survival", 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window) return fatalError(nullptr, std::string("Could not create the game window: ") + SDL_GetError());
     SDL_GLContext ctx = SDL_GL_CreateContext(window);
     if (!ctx || !SDL_GL_MakeCurrent(window, ctx))
@@ -1513,6 +1568,9 @@ int main(int, char**) {
         return fatalError(window, "Loading the game's textures, models or shaders failed. log.txt beside the game has the details.");
     SDL_Log("Renderer loaded");
     renderer.setListFont(fonts.list);
+    // The game's name on the title screen: a very large font, drawn shrunk so it stays sharp
+    std::vector<TTF_Font*> nameFontOwned;
+    renderer.setTitleFont(openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nameFontOwned));
     renderer.setStatsFonts(fonts.statsTitle, fonts.statsRow);
 
     Terrain terrain;
@@ -1578,6 +1636,16 @@ int main(int, char**) {
     BehaviorEditor behaviorEditor;
 
     Screen screen = Screen::Title;
+    // The title and pause menus: the item lit by the arrow keys or the mouse, the screen it is for, and when that screen
+    // opened (its items slide in)
+    int menuSel = -1;
+    // Sounds: each worked prop's time to its next working sound, the selection last frame, and how many units were down
+    std::map<Entity, float> workSoundTimers;
+    size_t lastSelectionKey = 0;
+    int lastDownCount = 0;
+    Screen menuScreen = Screen::Playing;
+    unsigned long long menuShownAt = 0;
+    float menuMouseX = -1.0f, menuMouseY = -1.0f;
     Screen backScreen = Screen::Title;    // where Back goes from Settings
     SettingsMenuState settingsUi;         // the Settings screen's tab, open dropdown and dragged slider
 
@@ -1585,8 +1653,9 @@ int main(int, char**) {
     // first time that menu opens, then kept for the session, so edits survive a trip back to the map list.
     Party party{};
     PartyUi partyUi;
-    // The scenario page: the scenario picked (Full Random each time the page opens) and how far its list is scrolled
-    ScenarioId scenarioPick = ScenarioId::FullRandom;
+    // The scenario page: the scenario picked (the top one, Vagabond, each time the page opens) and how far its list is
+    // scrolled
+    ScenarioId scenarioPick = ScenarioId::Vagabond;
     int scenarioScroll = 0;
     MapChoice pendingMap;                 // the map picked, which starts once the party is confirmed
     Rng partyRng;
@@ -1678,6 +1747,11 @@ int main(int, char**) {
         notice = text;
         noticeSec = seconds;
     };
+    // A notice that something was refused (locked, taken, no room, out of reach...), with the refusal sound
+    auto refuse = [&](const std::string& text) {
+        showNotice(text);
+        playSfx(Sfx::UiError);
+    };
 
     // Closes the popout and drops any pending question
     auto closePanel = [&]() {
@@ -1725,7 +1799,7 @@ int main(int, char**) {
         audio::stopTracks();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
                           [&](float p) { loadingFrame(window, renderer, p); })) {
-            showNotice(langf("MISC_LOAD_FAILED", { choice.name, err }));
+            refuse(langf("MISC_LOAD_FAILED", { choice.name, err }));
             return;
         }
         // The party from the menu replaces the three units that the seed made
@@ -1751,10 +1825,10 @@ int main(int, char**) {
         screen = Screen::Playing;
     };
 
-    // Opens the scenario page for a picked map, with Full Random picked. The party menu comes after it.
+    // Opens the scenario page for a picked map, with the top scenario (Vagabond) picked. The party menu comes after it.
     auto openParty = [&](const MapChoice& choice) {
         pendingMap = choice;
-        scenarioPick = ScenarioId::FullRandom;
+        scenarioPick = ScenarioId::Vagabond;
         scenarioScroll = 0;
         screen = Screen::ScenarioSelect;
     };
@@ -1763,6 +1837,7 @@ int main(int, char**) {
     auto openPartyMenu = [&]() {
         party = scenarioParty(scenarioPick, partyRng);
         partyUi = PartyUi{};
+        partyUi.resizable = scenarioResizable(scenarioPick);
         backScreen = Screen::ScenarioSelect;
         screen = Screen::PartySetup;
     };
@@ -1794,7 +1869,7 @@ int main(int, char**) {
     auto loadSave = [&](std::string path) {
         SaveData d;
         if (!readSaveFile(path, d)) {
-            showNotice(lang("MISC_READ_FAILED"));
+            refuse(lang("MISC_READ_FAILED"));
             refreshSaves();
             return;
         }
@@ -1805,7 +1880,7 @@ int main(int, char**) {
         }
         std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
         if (!found) {
-            showNotice(langf("MISC_MAP_MISSING", { d.name }));
+            refuse(langf("MISC_MAP_MISSING", { d.name }));
             refreshSaves();
             return;
         }
@@ -1814,7 +1889,7 @@ int main(int, char**) {
         // The title music ends as a saved game starts, before its level loads
         audio::stopTracks();
         if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
-            showNotice(langf("MISC_MAP_LOAD_FAILED", { choice.name, err }));
+            refuse(langf("MISC_MAP_LOAD_FAILED", { choice.name, err }));
             refreshSaves();
             return;
         }
@@ -1838,6 +1913,7 @@ int main(int, char**) {
         screen = Screen::Playing;
         closePanel();
         showNotice(langf("MISC_LOADED", { d.name }));
+        playSfx(Sfx::UiLoaded);
     };
 
     // Writes an autosave into the next slot. Slots rotate: an empty one first, otherwise the oldest.
@@ -1897,6 +1973,7 @@ int main(int, char**) {
         audio::setBus(audio::Bus::Music, settings.musicVolume, settings.musicOn);
         audio::setBus(audio::Bus::Ambient, settings.ambientVolume, settings.ambientOn);
         audio::setBus(audio::Bus::Effects, settings.effectsVolume, settings.effectsOn);
+        audio::setBus(audio::Bus::Interface, settings.interfaceVolume, settings.interfaceOn);
     };
     // Reads the monitors again, then makes the window show the settings, which are normalized to what it can show
     auto applyVideo = [&]() {
@@ -1927,6 +2004,13 @@ int main(int, char**) {
         renderer.setFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
         closeUiFonts(fonts);
         fonts = next;
+        // The name's font follows the language and the font picked, too
+        std::vector<TTF_Font*> nextName;
+        if (TTF_Font* f = openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nextName)) {
+            renderer.setTitleFont(f);
+            closeFonts(nameFontOwned);
+            nameFontOwned = nextName;
+        }
         appliedFontScale = settings.fontScale;
         appliedFontPath = settings.fontPath;
         appliedLanguage = settings.language;
@@ -1970,7 +2054,16 @@ int main(int, char**) {
         const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
         const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
         // Every control that does something clicks. Closing a dropdown, and a click on nothing, do not.
-        if (c.kind != ClickKind::None && c.kind != ClickKind::CloseDropdown) audio::playEffect(SFX_MENU);
+        // A tab, a switch, a dropdown and Back each have their own sound. Closing a dropdown, a slider drag (it sounds as
+        // it is let go) and a click on nothing are silent.
+        switch (c.kind) {
+        case ClickKind::None: case ClickKind::CloseDropdown: case ClickKind::LevelDrag: break;
+        case ClickKind::Tab: playSfx(Sfx::UiTab); break;
+        case ClickKind::ToggleRow: case ClickKind::LevelToggle: playSfx(Sfx::UiToggle); break;
+        case ClickKind::OpenDropdown: playSfx(Sfx::UiMenuOpen); break;
+        case ClickKind::Back: playSfx(Sfx::UiBack); break;
+        default: playSfx(Sfx::UiClick); break;
+        }
         switch (c.kind) {
         case ClickKind::Tab:
             settingsSelectTab(settingsUi, static_cast<SettingsTab>(c.index));
@@ -2010,7 +2103,10 @@ int main(int, char**) {
 
     // Runs a button's action
     auto performAction = [&](Action action, int param) {
-        audio::playEffect(SFX_MENU);
+        // Going back or saying no has its own sound, and so does resuming the game
+        const bool back = action == Action::Back || action == Action::ReturnToTitle || action == Action::CancelName ||
+                          action == Action::OverwriteNo || action == Action::LoadNo || action == Action::DeleteNo;
+        playSfx(back ? Sfx::UiBack : action == Action::Resume ? Sfx::UiResume : Sfx::UiClick);
         switch (action) {
         case Action::Continue:
             if (!saves.empty()) loadSave(saves.front().path);
@@ -2163,7 +2259,7 @@ int main(int, char**) {
             return;
         case Action::PartyAddUnit:
             // A random unit at the end of the party. The list is scrolled to the end, and the layout clamps it.
-            if ((int)party.size() < PARTY_MAX_UNITS) {
+            if (partyUi.resizable && (int)party.size() < PARTY_MAX_UNITS) {
                 addRandomMember(party, partyRng);
                 partyUi.selected = (int)party.size() - 1;
                 partyUi.listScroll = (int)party.size();
@@ -2173,7 +2269,7 @@ int main(int, char**) {
             return;
         case Action::PartyRemoveUnit:
             // The picked unit leaves the party. The party can be emptied, but a game needs at least one unit to start.
-            if (!party.empty()) {
+            if (partyUi.resizable && !party.empty()) {
                 const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
                 party.erase(party.begin() + picked);
                 partyUi.selected = std::clamp(picked, 0, (int)party.size() - 1);
@@ -2276,6 +2372,7 @@ int main(int, char**) {
             bool ok = writeSave(manualSavePath(nowMs()), name, false);
             closePanel();
             showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
+            playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
             return;
         }
         case Action::OverwriteYes: {
@@ -2288,6 +2385,7 @@ int main(int, char**) {
             bool ok = writeSave(target.path, target.name, target.autosave);
             closePanel();
             showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
+            playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
             return;
         }
         case Action::OverwriteNo:
@@ -2378,7 +2476,7 @@ int main(int, char**) {
             Inventory* inv = world.get<Inventory>(unit);
             if (!inv) return;
             sortInventoryByType(*inv);
-            audio::playEffect(SFX_MENU);
+            playSfx(Sfx::UiClick);
         };
         // Adds a behavior with the default rule, unless the list is full
         auto addBehavior = [&](Entity unit) {
@@ -2386,7 +2484,7 @@ int main(int, char**) {
             if (!b || (int)b->rules.size() >= BEHAVIOR_LIMIT) return;
             b->rules.push_back(BehaviorRule{});
             b->pending = true;   // the new rule is checked on the next behavior pass
-            audio::playEffect(SFX_MENU);
+            playSfx(Sfx::UiClick);
         };
         // A click on one part of a behavior row. Toggles and choices change the rule at once, the priority and delete
         // buttons move or remove it, and the Condition cell opens the editor for it.
@@ -2428,7 +2526,7 @@ int main(int, char**) {
                 return;
             }
             b->pending = true;   // every rule is checked again, so the change takes effect at once
-            audio::playEffect(SFX_MENU);
+            playSfx(Sfx::UiClick);
         };
         // A click on the open condition editor: a kind, an operator, or a step of the percent
         auto editorClick = [&](const ConditionEditorLayout& ed, float mx, float my) {
@@ -2447,7 +2545,7 @@ int main(int, char**) {
             else if (step >= 0) r.percent = std::clamp(r.percent + stepSizes[step], 0, 100);
             else return;
             b->pending = true;
-            audio::playEffect(SFX_MENU);
+            playSfx(Sfx::UiClick);
         };
         // Whether the mouse is over the bottom unit panel
         auto unitPanelHovered = [&](int W, int H) {
@@ -2480,7 +2578,7 @@ int main(int, char**) {
                 showNotice(langf("MISC_USED", { itemName }));
                 break;
             case UseResult::NotUsable:
-                showNotice(itemName + " can't be used");
+                refuse(itemName + " can't be used");
                 break;
             case UseResult::Empty:
                 break;
@@ -2526,12 +2624,12 @@ int main(int, char**) {
             std::vector<TradeGhost>& side = npcSide ? tradeNpc : tradePlayer;
             const int item = inv->slots[slot].item;
             if (inv->slots[slot].count <= 1) {
-                if (tradeAddItems(side, *inv, slot, 1) == 0) showNotice(lang("MISC_TRADE_ALREADY"));
+                if (tradeAddItems(side, *inv, slot, 1) == 0) refuse(lang("MISC_TRADE_ALREADY"));
                 return;
             }
             const int avail = tradeAvailable(*inv, side, item);
             if (avail <= 0) {
-                showNotice(lang("MISC_TRADE_NO_MORE"));
+                refuse(lang("MISC_TRADE_NO_MORE"));
                 return;
             }
             const ItemDef* def = findItem(item);
@@ -2542,9 +2640,9 @@ int main(int, char**) {
                 std::string why;
                 if (storageProp != NULL_ENTITY && quantity.owner == storageUnit &&
                     storeCountInStorage(world, quantity.slot, quantity.chosen, why)) {
-                    audio::playEffect(SFX_ITEM);
+                    queueSound(Sfx::ItemMove);
                 } else if (!why.empty()) {
-                    showNotice(why);
+                    refuse(why);
                 }
                 quantity.open = false;
                 return;
@@ -2552,7 +2650,7 @@ int main(int, char**) {
             const Inventory* inv = world.get<Inventory>(quantity.owner);
             std::vector<TradeGhost>& side = quantity.npcSide ? tradeNpc : tradePlayer;
             const int added = inv ? tradeAddItems(side, *inv, quantity.slot, quantity.chosen) : 0;
-            if (added == 0) showNotice(lang("MISC_TRADE_FULL"));
+            if (added == 0) refuse(lang("MISC_TRADE_FULL"));
             quantity.open = false;
         };
         // A click on the how-many prompt, for a trade or for a storage: the -100 to +100 steps, Single and Max set the
@@ -2582,17 +2680,17 @@ int main(int, char**) {
             const int item = inv->slots[slot].item;
             std::string why;
             if (inv->slots[slot].count <= 1) {
-                if (storeCountInStorage(world, slot, 1, why)) audio::playEffect(SFX_ITEM);
-                else if (!why.empty()) showNotice(why);
+                if (storeCountInStorage(world, slot, 1, why)) queueSound(Sfx::ItemMove);
+                else if (!why.empty()) refuse(why);
                 return;
             }
             if (const std::string no = refusalFor(world, item); !no.empty()) {
-                showNotice(no);
+                refuse(no);
                 return;
             }
             const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
             if (cap <= 0) {
-                showNotice(lang("MISC_STORAGE_FULL"));
+                refuse(lang("MISC_STORAGE_FULL"));
                 return;
             }
             const ItemDef* def = findItem(item);
@@ -2612,6 +2710,7 @@ int main(int, char**) {
             dialogueUnit = npc;
             dialogueConvo.clear();
             dialoguePlayer = talker;
+            playSfx(Sfx::TalkOpen);
             const Dialogue* dg = world.get<Dialogue>(npc);
             sayAs(npc, dg ? dg->text : std::string(lang("NPC_GREETING")), false);
         };
@@ -2648,7 +2747,7 @@ int main(int, char**) {
         auto noteLockedIn = [&](const std::vector<Entity>& units) {
             for (Entity u : units) {
                 if (!lockedIn(world, u)) continue;
-                showNotice(langf("MISC_LOCKED_IN", { nameOf(world, u), propNameOf(world, occupiedProp(world, u)) }));
+                refuse(langf("MISC_LOCKED_IN", { nameOf(world, u), propNameOf(world, occupiedProp(world, u)) }));
                 return true;
             }
             return false;
@@ -2700,7 +2799,7 @@ int main(int, char**) {
                 if (world.has<Commandable>(target)) {
                     out = { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend };
                 } else if (world.has<Hostile>(target)) {
-                    out = { MenuAction::Follow, MenuAction::Attack };
+                    out = { MenuAction::Attack };   // a hostile unit is only fought, never followed
                 } else {
                     out = { MenuAction::Talk, MenuAction::Follow, MenuAction::Defend, MenuAction::AttackUnprovoked };
                 }
@@ -2743,10 +2842,11 @@ int main(int, char**) {
             if (menuActors(target).empty()) {
                 // Your lone selected unit clicked on itself: a move order, as on the ground under it
                 if (world.has<Selected>(target) && world.has<Commandable>(target)) return false;
-                if (!noteLockedIn(selectedUnits(world))) showNotice(lang("MISC_SELECT_UNIT_FIRST"));
+                if (!noteLockedIn(selectedUnits(world))) refuse(lang("MISC_SELECT_UNIT_FIRST"));
                 return true;
             }
             contextMenu = ContextMenu{ true, mx, my, target, actions };
+            playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
             return true;
         };
@@ -2756,7 +2856,7 @@ int main(int, char**) {
             contextMenu.open = false;
             const std::vector<Entity> actors = menuActors(target);
             if (actors.empty()) {
-                showNotice(lang("MISC_SELECT_UNIT_FIRST"));
+                refuse(lang("MISC_SELECT_UNIT_FIRST"));
                 return;
             }
             if (!world.has<Unit>(target) && !world.has<Prop>(target)) return;
@@ -2809,7 +2909,7 @@ int main(int, char**) {
                     }
                 }
                 if (best == NULL_ENTITY || bestLevel < lock->level) {
-                    showNotice(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock->level) }));
+                    refuse(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock->level) }));
                     return;
                 }
                 issuePropOrder(world, terrain, { best }, target, PropAction::Unlock);
@@ -2833,12 +2933,12 @@ int main(int, char**) {
                 }
                 const int room = std::max(0, info.workers - others);
                 if (room == 0) {
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
+                    refuse(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                     return;
                 }
                 if ((int)units.size() > room) {
                     units.resize((size_t)room);
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
+                    refuse(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 }
                 issuePropOrder(world, terrain, units, target, PropAction::Use);
                 break;
@@ -2849,7 +2949,7 @@ int main(int, char**) {
                 actionZ = tt->z;
                 actionAlpha = 1.0f;
             }
-            audio::playEffect(SFX_MENU);
+            playSfx(Sfx::UiClick);
         };
         auto chooseOption = [&](size_t i) {
             const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
@@ -3009,6 +3109,7 @@ int main(int, char**) {
             actionZ = z;
             actionAlpha = 1.0f;
             steerUnits(world, units, Vec2{ x, z });
+            playSfx(Sfx::UiOrder);
         };
         auto moveSelectedTo = [&](float x, float z) {
             const std::vector<Entity> units = selectedUnits(world);
@@ -3117,6 +3218,28 @@ int main(int, char**) {
                     }
                     break;
                 }
+                // The title and pause menus: up and down (or W and S) light the next item, Enter (or Space on the title)
+                // picks it. Items that can't be used are passed over.
+                if (screen == Screen::Title || screen == Screen::Pause) {
+                    const std::vector<Button> items = layoutButtons(screen, winW, winH, saves);
+                    const SDL_Keycode k = e.key.key;
+                    const bool up = k == SDLK_UP || k == SDLK_W, down = k == SDLK_DOWN || k == SDLK_S;
+                    if ((up || down) && !items.empty()) {
+                        const int n = (int)items.size();
+                        int i = menuSel;
+                        for (int tries = 0; tries < n; ++tries) {
+                            i = ((i < 0 ? (down ? -1 : 0) : i) + (down ? 1 : -1) + n) % n;
+                            if (items[(size_t)i].enabled) break;
+                        }
+                        if (items[(size_t)i].enabled && i != menuSel) menuSel = i;   // the hover sound plays as it lights
+                        break;
+                    }
+                    const bool pick = k == SDLK_RETURN || k == SDLK_KP_ENTER || (k == SDLK_SPACE && screen == Screen::Title);
+                    if (pick && !e.key.repeat && menuSel >= 0 && menuSel < (int)items.size() && items[(size_t)menuSel].enabled) {
+                        performAction(items[(size_t)menuSel].action, items[(size_t)menuSel].param);
+                        break;
+                    }
+                }
                 if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
                     mapOpen = !mapOpen;   // M opens and closes the world map
                     break;
@@ -3124,6 +3247,7 @@ int main(int, char**) {
                 // Space pauses and resumes the game, but not while a talk or a trade is open
                 if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat && dialogueUnit == NULL_ENTITY) {
                     paused = !paused;
+                    playSfx(paused ? Sfx::UiPause : Sfx::UiResume);
                 }
                 if (e.key.key == SDLK_ESCAPE) {
                     // A talk only ends with its End Dialogue button, so Escape does nothing while one is open
@@ -3131,6 +3255,7 @@ int main(int, char**) {
                     if (screen == Screen::Playing && optimizeAllOpen) {
                         optimizeAllOpen = false;   // Escape is Cancel on the Optimize All dialog
                         optimizeSliderDrag = false;
+                        playSfx(Sfx::UiBack);
                     } else if (screen == Screen::Playing && mapOpen) {
                         mapOpen = false;  // Escape closes the world map first
                     } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
@@ -3145,8 +3270,10 @@ int main(int, char**) {
                         behaviorEditor.open = false;
                         screen = Screen::Pause;
                         refreshSaves();
+                        playSfx(Sfx::UiPause);
                     } else if (screen == Screen::Pause) {
                         screen = Screen::Playing;
+                        playSfx(Sfx::UiResume);
                     } else if (screen == Screen::Settings) {
                         // Escape closes an open dropdown first, then leaves the menu
                         if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
@@ -3261,11 +3388,11 @@ int main(int, char**) {
                         for (size_t i = 0; i < sl.rows.size(); ++i) {
                             if (sl.rows[i].contains(mx, my)) {
                                 scenarioPick = (ScenarioId)(sl.first + (int)i);
-                                audio::playEffect(SFX_MENU);
+                                playSfx(Sfx::UiClick);
                             }
                         }
                         if (sl.next.contains(mx, my)) {
-                            audio::playEffect(SFX_MENU);
+                            playSfx(Sfx::UiClick);
                             openPartyMenu();
                         } else if (sl.back.contains(mx, my)) {
                             performAction(Action::ReturnToTitle, 0);
@@ -3275,6 +3402,17 @@ int main(int, char**) {
                 }
 
                 if (screen == Screen::PartySetup) {
+                    // The unit list's scroll bar: the thumb is taken where it was clicked; a click on the track moves
+                    // the thumb's middle there, and it can be dragged on from that point
+                    const PartyListBar bar = partyListBar(winW, winH, (int)party.size(), partyUi.listScroll);
+                    const Rect barGrab{ bar.track.x - 4.0f, bar.track.y, bar.track.w + 8.0f, bar.track.h };
+                    if (e.button.button == SDL_BUTTON_LEFT && partyUi.dropKind == DropKind::None && bar.track.h > 0.0f
+                        && barGrab.contains(e.button.x, e.button.y)) {
+                        partyUi.listGrab = bar.thumb.contains(bar.thumb.x, e.button.y) ? e.button.y - bar.thumb.y : bar.thumb.h * 0.5f;
+                        partyUi.listScroll = partyListScrollAt(winW, winH, (int)party.size(), e.button.y - partyUi.listGrab);
+                        partyUi.listDrag = true;
+                        break;
+                    }
                     if (e.button.button == SDL_BUTTON_LEFT) {
                         const float mx = e.button.x, my = e.button.y;
                         const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
@@ -3336,15 +3474,18 @@ int main(int, char**) {
                         } else if (ol.toggles[0].contains(x, y)) {
                             settings.optimizeAccessories = !settings.optimizeAccessories;
                             saveSettingsFile();
+                            playSfx(Sfx::UiToggle);
                         } else if (ol.toggles[1].contains(x, y)) {
                             settings.optimizeTwoHanded = !settings.optimizeTwoHanded;
                             saveSettingsFile();
+                            playSfx(Sfx::UiToggle);
                         } else if (ol.toggles[2].contains(x, y)) {
                             settings.optimizeValueTies = !settings.optimizeValueTies;
                             saveSettingsFile();
+                            playSfx(Sfx::UiToggle);
                         } else if (ol.cancel.contains(x, y)) {
                             optimizeAllOpen = false;
-                            audio::playEffect(SFX_MENU);
+                            playSfx(Sfx::UiBack);
                         } else if (ol.confirm.contains(x, y)) {
                             // Each unit of the squad, on its own: one without the room to change stays as it was
                             const std::vector<Entity> squad = ownUnitList();
@@ -3357,7 +3498,7 @@ int main(int, char**) {
                             } else {
                                 showNotice(langf("MISC_OPTIMIZE_ALL_SOME_ROOM", { std::to_string(r.changed), std::to_string(r.noRoom) }));
                             }
-                            audio::playEffect(r.changed > 0 ? SFX_ITEM : SFX_MENU);
+                            if (r.changed == 0) playSfx(r.noRoom > 0 ? Sfx::UiError : Sfx::UiClick);   // a change plays its own sound
                         }
                     }
                     break;
@@ -3399,6 +3540,7 @@ int main(int, char**) {
                                     // Something offered is no longer in its inventory: the trade fails and the talk ends
                                     tradeLabels.push_back(TradeLabel{ dialogueUnit, lang("MISC_TRADE_FAILED"), 0.0f });
                                     tradeLabels.push_back(TradeLabel{ dialoguePlayer, lang("MISC_TRADE_FAILED"), 0.0f });
+                                    playSfx(Sfx::TradeFailed);
                                     endTalk();
                                 } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
                                     // Each side shows its own gain or loss: what it receives minus what it gives
@@ -3410,6 +3552,7 @@ int main(int, char**) {
                                         tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
                                     }
                                     completeTrade(world, dialogueUnit, dialoguePlayer);
+                                    playSfx(Sfx::TradeDone);
                                     endTalk();
                                     showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);
                                 }
@@ -3472,7 +3615,7 @@ int main(int, char**) {
                     if (stl.panel.contains(x, y)) {
                         if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {
                             closeStorage();
-                            audio::playEffect(SFX_MENU);
+                            playSfx(Sfx::UiBack);
                         } else {
                             // The input (or only) grid's cells are panel slots 0 and up, a forge's output cells follow
                             std::vector<Rect> cells = stl.slots;
@@ -3484,8 +3627,8 @@ int main(int, char**) {
                                     storageDrag = (int)i;
                                 } else if (e.button.button == SDL_BUTTON_RIGHT) {
                                     std::string why;
-                                    if (takeFromStorage(world, (int)i, why)) audio::playEffect(SFX_ITEM);
-                                    else if (!why.empty()) showNotice(why);
+                                    if (takeFromStorage(world, (int)i, why)) queueSound(Sfx::ItemMove);
+                                    else if (!why.empty()) refuse(why);
                                 }
                                 break;
                             }
@@ -3578,10 +3721,10 @@ int main(int, char**) {
                             itemMenu.open = false;
                             if (hit >= 0 && labels[hit] == lang("UILABEL_USE")) {
                                 useSlot(unit, slot);
-                                audio::playEffect(SFX_MENU);
+                                playSfx(Sfx::UiClick);
                             } else if (hit >= 0 && labels[hit] == lang("UILABEL_DROP")) {
                                 // A drop from the inventory plays its own sound, in place of the menu click
-                                audio::playEffect(dropStack(world, unit, slot) ? SFX_ITEM : SFX_MENU);
+                                if (!dropStack(world, unit, slot)) playSfx(Sfx::UiError);
                             }
                             if (onMenu) break;
                         }
@@ -3605,6 +3748,7 @@ int main(int, char**) {
                         bool tabHit = false;
                         for (int t = 0; t < UNIT_TAB_COUNT && st.open; ++t) {
                             if (st.tabs[t].contains(mx, my)) {
+                                if (unitTab != t) playSfx(Sfx::UiTab);
                                 unitTab = t;
                                 sidebarScroll = 0.0f;
                                 tabHit = true;
@@ -3616,13 +3760,13 @@ int main(int, char**) {
 
                     if (overPanels(mx, my, winW, winH)) {
                         // The pace toggle and the View Map button on the bottom panel
-                        if (pl.paceButton.contains(mx, my)) { runMode = !runMode; break; }
+                        if (pl.paceButton.contains(mx, my)) { runMode = !runMode; playSfx(Sfx::UiToggle); break; }
                         if (pl.optimizeAllButton.contains(mx, my)) {
                             contextMenu.open = false;
                             itemMenu.open = false;
                             optimizeAllOpen = true;
                             optimizeSliderDrag = false;
-                            audio::playEffect(SFX_MENU);
+                            playSfx(Sfx::UiMenuOpen);
                             break;
                         }
 
@@ -3647,10 +3791,9 @@ int main(int, char**) {
                                     std::string why;
                                     const GearAction done = optimize ? optimizeGear(world, shown, why, gearPrefs()) : removeAllGear(world, shown, why);
                                     if (done == GearAction::Done) {
-                                        audio::playEffect(SFX_ITEM);
+                                        queueSound(Sfx::ItemMove);
                                     } else if (done == GearAction::NoRoom) {
-                                        showNotice(why);
-                                        audio::playEffect(SFX_MENU);
+                                        refuse(why);
                                     } else {
                                         showNotice(lang(optimize ? "MISC_GEAR_ALREADY_BEST" : "MISC_GEAR_NONE_WORN"));
                                     }
@@ -3715,7 +3858,7 @@ int main(int, char**) {
                         const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH);
                         if (item != NULL_ENTITY) {
                             const std::vector<Entity> picked = selectedUnits(world);
-                            if (picked.empty()) showNotice(lang("MISC_PICKUP_SELECT"));
+                            if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
                             else {
                                 noteLockedIn(picked);
                                 issuePickupOrder(world, terrain, picked, item);
@@ -3757,8 +3900,8 @@ int main(int, char**) {
                         const Equipment* wornHere = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
                         if (wornHere && gear >= 0 && wornHere->items[gear] != 0) {
                             std::string why;
-                            if (unequipToInventory(world, picked[0], gear, why)) audio::playEffect(SFX_ITEM);
-                            else if (!why.empty()) showNotice(why);
+                            if (unequipToInventory(world, picked[0], gear, why)) queueSound(Sfx::ItemMove);
+                            else if (!why.empty()) refuse(why);
                         } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && tradeOpen) {
                             // During a trade a right-click puts the item in the trade, whatever it is
                             requestTrade(false, picked[0], slot);
@@ -3774,12 +3917,13 @@ int main(int, char**) {
                                 const int target = worn ? gearSlotFor(*worn, item) : -1;
                                 std::string why;
                                 if (target < 0 || !equipFromInventory(world, picked[0], slot, target, why)) {
-                                    showNotice(why.empty() ? langf("MISC_CANT_BE_WORN", { itemDisplayName(*def) }) : why);
+                                    refuse(why.empty() ? langf("MISC_CANT_BE_WORN", { itemDisplayName(*def) }) : why);
                                 } else {
-                                    audio::playEffect(SFX_ITEM);
+                                    queueSound(Sfx::ItemMove);
                                 }
                             } else {
                                 itemMenu = ItemMenu{ true, picked[0], slot, e.button.x, e.button.y };
+                                playSfx(Sfx::UiMenuOpen);
                             }
                         }
                     } else {
@@ -3796,9 +3940,14 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (partyUi.listDrag && e.button.button == SDL_BUTTON_LEFT) {
+                    partyUi.listDrag = false;
+                    break;
+                }
                 if (optimizeSliderDrag && e.button.button == SDL_BUTTON_LEFT) {
                     optimizeSliderDrag = false;
                     saveSettingsFile();   // its last place is kept
+                    playSfx(Sfx::UiSlider);
                     break;
                 }
                 // Letting go of the right button plans the route to where it was held
@@ -3828,10 +3977,10 @@ int main(int, char**) {
                             // back where it was
                         } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                             std::string why;
-                            if (takeFromStorage(world, from, why)) audio::playEffect(SFX_ITEM);
-                            else if (!why.empty()) showNotice(why);
+                            if (takeFromStorage(world, from, why)) queueSound(Sfx::ItemMove);
+                            else if (!why.empty()) refuse(why);
                         } else if (dropFromStorage(world, from)) {
-                            audio::playEffect(SFX_ITEM);
+                            queueSound(Sfx::ItemMove);
                         }
                     }
                     break;
@@ -3858,7 +4007,7 @@ int main(int, char**) {
                     if (itemDrag && !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                         if (tl.yourBox.contains(x, y) && dragGear < 0) {
                             if (dragUnit == dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
-                            else showNotice(lang("MISC_TRADE_ONLY_TALKING"));
+                            else refuse(lang("MISC_TRADE_ONLY_TALKING"));
                         }
                         itemDrag = false;
                         dragUnit = NULL_ENTITY;
@@ -3879,19 +4028,19 @@ int main(int, char**) {
                             // An inventory stack: onto a gear slot it equips, out of the sidebar it drops
                             // under the unit. Released on the rest of the sidebar, nothing happens.
                             if (gear >= 0) {
-                                if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) audio::playEffect(SFX_ITEM);
-                                else if (!why.empty()) showNotice(why);
+                                if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) queueSound(Sfx::ItemMove);
+                                else if (!why.empty()) refuse(why);
                             } else if (!overSidebar) {
-                                if (dropStack(world, dragUnit, dragSlot)) audio::playEffect(SFX_ITEM);
+                                if (dropStack(world, dragUnit, dragSlot)) queueSound(Sfx::ItemMove);
                             }
                         } else {
                             // A gear item: onto another gear slot it moves, onto the inventory it comes off,
                             // out of the sidebar it drops. Released on the rest of the sidebar, nothing happens.
                             if (gear >= 0 && gear != dragGear) {
-                                if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) showNotice(why);
+                                if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) refuse(why);
                             } else if (onGrid) {
-                                if (unequipToInventory(world, dragUnit, dragGear, why)) audio::playEffect(SFX_ITEM);
-                                else if (!why.empty()) showNotice(why);
+                                if (unequipToInventory(world, dragUnit, dragGear, why)) queueSound(Sfx::ItemMove);
+                                else if (!why.empty()) refuse(why);
                             } else if (!overSidebar) {
                                 dropEquipped(world, dragUnit, dragGear);
                             }
@@ -3917,6 +4066,15 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_MOTION:
+                // The party menu's unit list follows its scroll bar thumb while it is held
+                if (screen == Screen::PartySetup && partyUi.listDrag) {
+                    if (e.motion.state & SDL_BUTTON_LMASK) {
+                        partyUi.listScroll = partyListScrollAt(winW, winH, (int)party.size(), e.motion.y - partyUi.listGrab);
+                    } else {
+                        partyUi.listDrag = false;
+                    }
+                    break;
+                }
                 // The Optimize All slider follows the mouse while its button is held
                 if (screen == Screen::Playing && optimizeAllOpen && optimizeSliderDrag) {
                     if (e.motion.state & SDL_BUTTON_LMASK) {
@@ -4080,15 +4238,15 @@ int main(int, char**) {
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
             behaviorSystem(world, combatLog);
-            if (combatLog.hits > hitsBefore) audio::playEffect(SFX_HIT);
-            else if (combatLog.misses > missesBefore) audio::playEffect(SFX_MISS);
+            if (combatLog.hits > hitsBefore) playSfx(Sfx::Hit);
+            else if (combatLog.misses > missesBefore) playSfx(Sfx::Miss);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
             const size_t logCount = combatLog.lines.size();
             if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
             logSeen = logCount;
             squadSystem(world, dt, runMode);
             steeringSystem(world, terrain, dt, runMode);
-            if (pickupSystem(world) > 0) audio::playEffect(SFX_ITEM);
+            pickupSystem(world);   // a pickup plays its own sound
             // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
             // prop had all its workers, or a campfire had nothing to cook or no room.
             for (const PropArrival& a : propOrderSystem(world)) {
@@ -4096,15 +4254,15 @@ int main(int, char**) {
                 if (!p) continue;
                 const PropInfo& info = propInfo(p->kind);
                 if (a.locked || a.craft == WorkStart::Locked) {
-                    showNotice(lang("MISC_PROP_LOCKED"));   // locked: it can't be opened or used until it is unlocked
+                    refuse(lang("MISC_PROP_LOCKED"));   // locked: it can't be opened or used until it is unlocked
                     continue;
                 }
                 if (a.action == PropAction::Unlock) {
                     if (a.craft == WorkStart::SkillTooLow) {
                         const Lock* lock = world.get<Lock>(a.prop);
-                        showNotice(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock ? lock->level : 1) }));
+                        refuse(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock ? lock->level : 1) }));
                     } else if (a.craft == WorkStart::Full) {
-                        showNotice(lang("MISC_PROP_TAKEN"));
+                        refuse(lang("MISC_PROP_TAKEN"));
                     }
                     continue;
                 }
@@ -4118,13 +4276,13 @@ int main(int, char**) {
                     continue;
                 }
                 if (a.unreachable) {
-                    showNotice(lang("MISC_PROP_UNREACHABLE"));
+                    refuse(lang("MISC_PROP_UNREACHABLE"));
                 } else if (a.taken && info.use == PropUse::Occupy) {
-                    showNotice(lang("MISC_PROP_TAKEN"));
+                    refuse(lang("MISC_PROP_TAKEN"));
                 } else if (a.taken) {
-                    showNotice(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
+                    refuse(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
                 } else if (info.use == PropUse::Crafting && a.craft == WorkStart::NoInput) {
-                    showNotice(langf("MISC_CRAFT_NEEDS", { info.input == INPUT_COOKABLE ? std::string(lang("MISC_FOOD_TO_COOK"))
+                    refuse(langf("MISC_CRAFT_NEEDS", { info.input == INPUT_COOKABLE ? std::string(lang("MISC_FOOD_TO_COOK"))
                                                                                          : itemNameOf(info.input) }));
                 }
             }
@@ -4146,27 +4304,78 @@ int main(int, char**) {
                 switch (g.kind) {
                 case WorkGain::Kind::Item:
                     tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
+                    // Each prop has its own sound for an item finished
+                    switch (g.propKind) {
+                    case PROP_ORE: queueSound(Sfx::DoneOre); break;
+                    case PROP_TREE: queueSound(Sfx::DoneTree); break;
+                    case PROP_MUSHROOM: queueSound(Sfx::DoneMushroom); break;
+                    case PROP_CAMPFIRE: queueSound(Sfx::DoneCooking); break;
+                    case PROP_WATER_PUMP: queueSound(Sfx::DoneWater); break;
+                    default: queueSound(Sfx::ItemMove); break;
+                    }
                     break;
                 case WorkGain::Kind::Unlocked:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
-                    audio::playEffect(SFX_ITEM);
+                    queueSound(Sfx::Unlocked);
                     break;
                 case WorkGain::Kind::LockpickFailed:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_LOCKPICK_FAILED"), 0.0f });
+                    queueSound(Sfx::LockpickFailed);
                     break;
                 case WorkGain::Kind::Trained:
+                    queueSound(Sfx::DoneTraining);
                     tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_XP_GAINED", { std::to_string((int)std::lround(g.xp)), statName(g.item) }), 0.0f });
                     break;
                 }
             }
             // Passive crafting props (the forge) burn their fuel and fill their output by themselves
             passiveCraftSystem(world, gameSecs);
+            // While a prop is worked, its working sound now and then: the pick on the ore, the axe on the tree, the
+            // lockpick in the lock. Only props near the camera are heard, and each kind of sound plays at most once
+            // at a time.
+            if (sky.clockRunning) {
+                std::map<Entity, float> nextTicks;
+                for (Entity e : world.view<PropWork, Prop, Transform>()) {
+                    const PropWork* pw = world.get<PropWork>(e);
+                    if (pw->workers <= 0) continue;
+                    const Transform* pt = world.get<Transform>(e);
+                    if (std::hypot(pt->x - cam.focusX, pt->z - cam.focusZ) > WORK_SOUND_RANGE) continue;
+                    const int kind = world.get<Prop>(e)->kind;
+                    bool picking = false;
+                    for (Entity u : world.view<Working>()) {
+                        const Working* wk = world.get<Working>(u);
+                        if (wk->prop == e && wk->unlocking) picking = true;
+                    }
+                    Sfx sound = Sfx::Count;
+                    if (picking) sound = Sfx::WorkLockpick;
+                    else if (kind == PROP_ORE) sound = Sfx::WorkMining;
+                    else if (kind == PROP_TREE) sound = Sfx::WorkWoodcutting;
+                    else if (kind == PROP_MUSHROOM) sound = Sfx::WorkHerbalism;
+                    else if (kind == PROP_CAMPFIRE) sound = Sfx::WorkCooking;
+                    else if (kind == PROP_WATER_PUMP) sound = Sfx::WorkPump;
+                    else if (kind == PROP_TRAINING_DUMMY) sound = Sfx::WorkTraining;
+                    else if (kind == PROP_FORGE) sound = Sfx::ForgeBurning;
+                    if (sound == Sfx::Count) continue;
+                    const float every = sound == Sfx::ForgeBurning ? FORGE_SOUND_SECONDS : WORK_SOUND_SECONDS;
+                    float t = workSoundTimers.count(e) ? workSoundTimers[e] : every * 0.5f;
+                    t += dt;
+                    if (t >= every) {
+                        t = 0.0f;
+                        queueSound(sound);
+                    }
+                    nextTicks[e] = t;
+                }
+                workSoundTimers.swap(nextTicks);
+            }
 
             // Autosave every N minutes of play
             autoTimer += dt;
             if (settings.autosaveMinutes > 0 && autoTimer >= settings.autosaveMinutes * 60.0f) {
                 autoTimer = 0.0f;
-                if (autosaveNow()) showNotice(lang("MISC_AUTOSAVED"));
+                if (autosaveNow()) {
+                    showNotice(lang("MISC_AUTOSAVED"));
+                    playSfx(Sfx::UiSaved);
+                }
             }
         }
 
@@ -4188,8 +4397,34 @@ int main(int, char**) {
             contextMenu.open = false;
         }
 
+        // ---- Sounds the systems asked for this frame. The plain item sound gives way to any more particular one. ----
+        {
+            const std::vector<Sfx> queued = takeQueuedSounds();
+            const bool particular = std::any_of(queued.begin(), queued.end(), [](Sfx q) {
+                return q == Sfx::Equip || q == Sfx::Unequip || q == Sfx::Drop || q == Sfx::Pickup || q == Sfx::Store ||
+                       q == Sfx::Take || q == Sfx::GearChanged || q == Sfx::Eat || q == Sfx::Drink || q == Sfx::Poison;
+            });
+            for (Sfx q : queued) {
+                if (q == Sfx::ItemMove && particular) continue;
+                playSfx(q);
+            }
+            // Units selected: a sound when the selection changes to some units
+            size_t selKey = 0, selCount = 0;
+            for (Entity u : world.view<Selected>()) {
+                selKey = selKey * 31u + (size_t)u + 1u;
+                ++selCount;
+            }
+            if (screen == Screen::Playing && selKey != lastSelectionKey && selCount > 0) playSfx(Sfx::UiSelect);
+            lastSelectionKey = selKey;
+            // A unit of any side dropping to no health
+            int down = 0;
+            for (Entity u : world.view<Unit, Needs>()) down += world.get<Needs>(u)->hp <= 0 ? 1 : 0;
+            if (screen == Screen::Playing && down > lastDownCount) playSfx(Sfx::Downed);
+            lastDownCount = down;
+        }
+
         // ---- HUD: shown in the window title, since there's no text rendering there ----
-        std::string title = "Kobold Game   " + formatDate(gs.clockSeconds);
+        std::string title = gameTitle() + "   " + formatDate(gs.clockSeconds);
         if (title != lastTitle) {
             SDL_SetWindowTitle(window, title.c_str());
             lastTitle = title;
@@ -4237,6 +4472,32 @@ int main(int, char**) {
                 renderer.drawButton(b.rect, b.label, b.enabled, b.rect.contains(mouseX, mouseY));
             }
         };
+        // The title and pause menus' items. A new screen lights its first usable item, and its items slide in one after
+        // another. Moving the mouse onto an item lights it.
+        auto drawMenuItems = [&](Screen which, const std::vector<Button>& buttons) {
+            const unsigned long long now = SDL_GetTicks();
+            if (menuScreen != which) {
+                menuScreen = which;
+                menuShownAt = now;
+                menuSel = -1;
+                for (size_t i = 0; i < buttons.size(); ++i) {
+                    if (buttons[i].enabled) { menuSel = (int)i; break; }
+                }
+            }
+            const bool moved = mouseX != menuMouseX || mouseY != menuMouseY;
+            menuMouseX = mouseX;
+            menuMouseY = mouseY;
+            for (size_t i = 0; i < buttons.size(); ++i) {
+                if (moved && buttons[i].enabled && buttons[i].rect.contains(mouseX, mouseY)) menuSel = (int)i;
+            }
+            const float since = (float)(now - menuShownAt) / 1000.0f;
+            for (size_t i = 0; i < buttons.size(); ++i) {
+                const Button& b = buttons[i];
+                const float appear = std::clamp((since - (0.055f * (float)i + 0.1f)) / 0.34f, 0.0f, 1.0f);
+                const std::string sub = b.action == Action::Language ? languageDisplayName() : std::string();
+                renderer.drawMenuItem(b.rect, b.label, sub, (int)i == menuSel && b.enabled, b.enabled, appear);
+            }
+        };
         // Notices sit at the top middle of the window
         auto drawNotice = [&]() {
             if (noticeSec > 0.0f) renderer.drawNotice(notice, winW, winH);
@@ -4245,13 +4506,21 @@ int main(int, char**) {
             renderer.drawRect(Rect{ 0.0f, 0.0f, (float)winW, (float)winH }, RGBA{ 0.0f, 0.0f, 0.0f, alpha });
         };
 
+        if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;   // the next menu opens fresh
+        renderer.hoverFrameStart();
         switch (screen) {
         case Screen::Title:
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
-            // The build stamp sits in the bottom left corner, in the smaller list font
-            renderer.drawListText(BUILD_STAMP, 16.0f, winH - 44.0f, RGBA{ 1.0f, 1.0f, 1.0f, 0.6f });
-            drawButtons(layoutButtons(Screen::Title, winW, winH, saves));
+            {
+                // The game's name and the notice board, top left; the menu down the right; along the bottom, the build
+                // stamp and the keys
+                const TitleLayout tl = layoutTitle(winW, winH);
+                renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"), lang("UILABEL_EARLY_ACCESS"),
+                                         messageOfTheDay());
+                drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves));
+                renderer.drawTitleFooter(tl.footer, BUILD_STAMP, lang("MISC_TITLE_KEYS"));
+            }
             renderer.endUi();
             break;
 
@@ -4479,16 +4748,16 @@ int main(int, char**) {
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
             const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
-            const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
-            const RGBA hint{ 0.75f, 0.85f, 1.0f, 1.0f };
-            const RGBA builtIn{ 0.6f, 0.85f, 1.0f, 1.0f };
+            const RGBA hover{ 0.624f, 0.902f, 0.0f, 1.0f };
+            const RGBA hint{ 0.91f, 0.925f, 0.949f, 1.0f };
+            const RGBA builtIn{ 1.0f, 0.55f, 0.80f, 1.0f };
             const float cx = g.box.x + g.box.w * 0.5f;
 
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
             dim(0.45f);
-            renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
-            renderer.drawUiTextCentered(lang("UILABEL_NEW_GAME"), cx, g.box.y + g.pad, white);
+            renderer.drawThemedPanel(g.box);
+            renderer.drawUiTextCentered(uiUpper(lang("UILABEL_NEW_GAME")), cx, g.box.y + g.pad, white);
             renderer.drawUiTextCentered(maps.empty() ? lang("UILABEL_NO_MAPS")
                                                      : lang("UILABEL_CLICK_MAP"),
                                         cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
@@ -4561,7 +4830,7 @@ int main(int, char**) {
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
             dim(0.45f);
-            renderer.drawRect(sl.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
+            renderer.drawThemedPanel(sl.box);
             renderer.drawListText(lang("UILABEL_SCENARIO"), sl.heading.x, sl.heading.y, gray);
             const std::string name = lang(scenarioNameKey(scenarioPick));
             renderer.drawUiTextInBox(name, Rect{ sl.name.x, sl.name.y, sl.name.w, sl.name.h }, accent);
@@ -4572,7 +4841,7 @@ int main(int, char**) {
                 renderer.drawListText(ln, sl.desc.x, ty, white);
                 ty += lh;
             }
-            renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.3f, 0.32f, 0.4f, 1.0f });
+            renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.478f, 0.043f, 0.278f, 1.0f });
             for (size_t i = 0; i < sl.rows.size(); ++i) {
                 const ScenarioId id = (ScenarioId)(sl.first + (int)i);
                 const Rect& r = sl.rows[i];
@@ -4586,8 +4855,8 @@ int main(int, char**) {
                 }
             }
             if (sl.track.h > 0.0f) {
-                renderer.drawRect(sl.track, RGBA{ 0.14f, 0.16f, 0.21f, 0.9f });
-                renderer.drawRect(sl.thumb, RGBA{ 0.50f, 0.55f, 0.66f, 0.9f });
+                renderer.drawRect(sl.track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
+                renderer.drawRect(sl.thumb, RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
             }
             renderer.drawButton(sl.back, lang("UILABEL_BACK"), true, sl.back.contains(mouseX, mouseY));
             renderer.drawButton(sl.next, lang("UILABEL_CONTINUE"), true, sl.next.contains(mouseX, mouseY));
@@ -4601,7 +4870,7 @@ int main(int, char**) {
             renderer.drawTitleBackground();
             dim(0.45f);
             renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop), party, partyUi,
-                                    partyPanels(winW, winH), pendingMap.name, mouseX, mouseY);
+                                    partyPanels(winW, winH), mouseX, mouseY);
             renderer.endUi();
             break;
         }
@@ -4611,7 +4880,7 @@ int main(int, char**) {
             renderer.beginUi(winW, winH);
             dim(0.55f);
             renderer.drawPauseBar(false);
-            drawButtons(layoutButtons(Screen::Pause, winW, winH, saves));
+            drawMenuItems(Screen::Pause, layoutButtons(Screen::Pause, winW, winH, saves));
             renderer.endUi();
             break;
         }
@@ -4622,18 +4891,18 @@ int main(int, char**) {
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
             const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
-            const RGBA hover{ 1.0f, 1.0f, 0.6f, 1.0f };
-            const RGBA hint{ 0.75f, 0.85f, 1.0f, 1.0f };
+            const RGBA hover{ 0.624f, 0.902f, 0.0f, 1.0f };
+            const RGBA hint{ 0.91f, 0.925f, 0.949f, 1.0f };
             const float cx = g.box.x + g.box.w * 0.5f;
 
             renderer.beginUi(winW, winH);
             dim(0.25f);
-            renderer.drawRect(g.box, RGBA{ 0.06f, 0.07f, 0.10f, 0.97f });
-            renderer.drawUiTextCentered(panelSaveMode ? lang("UILABEL_SAVE_GAME") : lang("UILABEL_LOAD_GAME"), cx, g.box.y + g.pad, white);
+            renderer.drawThemedPanel(g.box);
+            renderer.drawUiTextCentered(uiUpper(panelSaveMode ? lang("UILABEL_SAVE_GAME") : lang("UILABEL_LOAD_GAME")), cx, g.box.y + g.pad, white);
 
             if (ask != Ask::None) {
                 DialogGeometry d = questionGeometry(winW, winH);
-                renderer.drawRect(d.box, RGBA{ 0.13f, 0.07f, 0.07f, 1.0f });
+                renderer.drawThemedPanel(d.box);
                 if (ask == Ask::Overwrite) {
                     std::string who = pendingOverwrite ? pendingOverwrite->name : std::string();
                     renderer.drawUiTextCentered(langf("MISC_OVERWRITE_Q", { who }),
@@ -4667,7 +4936,7 @@ int main(int, char**) {
                 if (panelSaveMode) {
                     // Name field with a blinking cursor, shown even while the name is empty
                     // so it's clear the field has focus as soon as the popout opens
-                    renderer.drawRect(g.nameBox, RGBA{ 0.10f, 0.11f, 0.15f, 1.0f });
+                    renderer.drawRect(g.nameBox, RGBA{ 0.09f, 0.06f, 0.12f, 1.0f });
                     float textY = g.nameBox.y + g.nameBox.h * 0.22f;
                     bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
                     renderer.drawUiText(saveName + (cursorOn ? "|" : ""), g.nameBox.x + 12.0f, textY, white);
@@ -4723,7 +4992,7 @@ int main(int, char**) {
                         renderer.drawListText(sv.name, b.rect.x + textInset, ry, isHover ? hover : white);
                         renderer.drawListText(sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
                                               b.rect.x + COL_TYPE * b.rect.w, ry,
-                                              sv.autosave ? RGBA{ 0.6f, 0.85f, 1.0f, 1.0f } : white);
+                                              sv.autosave ? RGBA{ 1.0f, 0.55f, 0.80f, 1.0f } : white);
                         renderer.drawListText(timeString(sv.timestamp),
                                               b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
                     } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown
@@ -4751,6 +5020,7 @@ int main(int, char**) {
             showNotice(saved.empty() ? std::string(lang("MISC_SCREENSHOT_FAILED")) : langf("MISC_SCREENSHOT_SAVED", { saved }));
         }
 
+        if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);   // the pointer came onto another button
         SDL_GL_SwapWindow(window);
         // Holds the frame to the limit, counted from the frame's start
         limitFrameRate(frameStart, settings.fpsLimit);
@@ -4759,6 +5029,8 @@ int main(int, char**) {
     // ---- Shutdown ----
     audio::shutdown();
     renderer.shutdown();
+    renderer.setTitleFont(nullptr);
+    closeFonts(nameFontOwned);
     closeUiFonts(fonts);
     closeFonts(titleFontOwned);
     TTF_Quit();

@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	เลื่อนเมื่อชี้ที่ขอบ
 UILABEL_GLOBAL_VOLUME	ระดับเสียงรวม
 UILABEL_MUSIC	เพลง
 UILABEL_AMBIENT	เสียงบรรยากาศ
+UILABEL_INTERFACE_SOUNDS	เสียงอินเทอร์เฟซ
 UILABEL_SOUND_EFFECTS	เสียงเอฟเฟกต์
 UILABEL_RESTORE_DEFAULTS	คืนค่าเริ่มต้น
 UILABEL_WINDOWED	หน้าต่าง
@@ -118,7 +119,6 @@ UILABEL_PROFILE	โปรไฟล์
 UILABEL_STATS	สถิติ
 UILABEL_CLICK_TO_TYPE	คลิกเพื่อพิมพ์ชื่อ
 UILABEL_SPRITE	สไปรต์
-UILABEL_STARTING_PARTY	ทีมเริ่มต้น: {0}
 UILABEL_HEALTH	พลังชีวิต
 UILABEL_HUNGER	ความหิว
 UILABEL_CARRY	น้ำหนักที่แบกได้
@@ -606,6 +606,8 @@ FACTION_RED	ฝ่ายแดง
 MISC_PROP_UNREACHABLE	เข้าถึงไม่ได้
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	ฉากเริ่มต้น
+SCENARIO_VAGABOND_NAME	คนพเนจร
+SCENARIO_VAGABOND_DESC	นักเดินทางผู้โดดเดี่ยวที่ไม่มีอะไรติดตัว: ไม่มีไอเทม ไม่มีอุปกรณ์ และค่าสถานะทุกค่าอยู่ระหว่าง 1 ถึง 5
 SCENARIO_RANDOM_NAME	สุ่มทั้งหมด
 SCENARIO_RANDOM_DESC	กลุ่มยูนิต 1 ถึง 32 ตัว แต่ละตัวมีค่าสถานะทุกค่าระหว่าง 1 ถึง 99 พร้อมไอเทมและอุปกรณ์สุ่มที่แบกไหว
 SCENARIO_CARAVAN_NAME	กองคาราวานพเนจร
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	ไร้นามผู้หิวโหย
 SCENARIO_NOBODY_DESC	ยูนิตเดียวที่ไม่มีอะไรเลย ไม่มีไอเทม ไม่มีอุปกรณ์ ค่าสถานะทุกค่าเป็น 1 และท้องว่าง
 SCENARIO_DIGGERS_NAME	นักขุดดันเจี้ยน
 SCENARIO_DIGGERS_DESC	คนงานเหมืองเจ็ดคนในชุดอุปกรณ์เต็มชุด ค่าสถานะอยู่ระหว่าง 5 ถึง 20 แต่ทุกคนมีการขุดเหมือง 50 และพกแร่เหล็ก 3 ก้อน
+SCENARIO_CUSTOM_NAME	สถานการณ์กำหนดเอง
+SCENARIO_CUSTOM_DESC	สร้างกลุ่มของคุณเอง เริ่มต้นด้วยสามยูนิต และคุณสามารถเพิ่มหรือลบยูนิตได้สูงสุด 32
 PROP_LOCKED_CHEST	หีบที่ล็อกไว้
 PROP_PRISONER_CAGE	กรงขังนักโทษ
 UILABEL_UNLOCK	สะเดาะกุญแจ
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	ถ้าเท่ากันเลือกชิ�
 MISC_OPTIMIZE_ALL_SAME	ทุกหน่วยสวมอุปกรณ์ที่ดีที่สุดอยู่แล้ว
 MISC_OPTIMIZE_ALL_DONE	ปรับอุปกรณ์ของ {0} หน่วยแล้ว
 MISC_OPTIMIZE_ALL_SOME_ROOM	ปรับอุปกรณ์ของ {0} หน่วยแล้ว; {1} หน่วยช่องเก็บของไม่พอ
+GAME_TITLE_FIRST	โคโบลด์
+GAME_TITLE_SECOND	เอาชีวิตรอด
+UILABEL_EARLY_ACCESS	เข้าถึงก่อนใคร
+MISC_TITLE_KEYS	เลือก  //  Enter ยืนยัน
+UILABEL_LANGUAGE_LABEL	ภาษา:

@@ -35,6 +35,28 @@ struct RGBA {
     float r, g, b, a;
 };
 
+// The look of the menus and panels: deep purple-black, hot pink and acid green, with bone-white and ash-gray text
+namespace theme {
+inline constexpr RGBA PINK{ 0.878f, 0.129f, 0.541f, 1.0f };        // #e0218a
+inline constexpr RGBA PINK_DEEP{ 0.478f, 0.043f, 0.278f, 1.0f };   // #7a0b47
+inline constexpr RGBA PINK_DARK{ 0.239f, 0.016f, 0.137f, 1.0f };   // #3d0423
+inline constexpr RGBA PINK_INK{ 0.078f, 0.012f, 0.047f, 1.0f };    // #14030c
+inline constexpr RGBA GREEN{ 0.624f, 0.902f, 0.0f, 1.0f };         // #9fe600
+inline constexpr RGBA GREEN_DEEP{ 0.176f, 0.259f, 0.0f, 1.0f };    // the lit button's fill
+inline constexpr RGBA GREEN_DARK{ 0.078f, 0.118f, 0.0f, 1.0f };
+inline constexpr RGBA BONE{ 0.910f, 0.925f, 0.949f, 1.0f };        // #e8ecf2, text
+inline constexpr RGBA ASH{ 0.553f, 0.576f, 0.631f, 1.0f };         // #8d93a1, quiet text
+inline constexpr RGBA NOTICE_TEXT{ 0.796f, 0.729f, 0.765f, 1.0f }; // #cbbac3
+inline constexpr RGBA NIGHT{ 0.039f, 0.031f, 0.063f, 1.0f };       // rgb(10,8,16), panels
+inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
+} // namespace theme
+
+// A corner of a flat shape drawn with drawUiTris, in window pixels, with its own colour
+struct UiVert {
+    float x, y;
+    RGBA c;
+};
+
 // One line of the hover list in the top-left corner: what is under the mouse, in the colour for its sort
 struct HudEntry {
     std::string text;
@@ -245,7 +267,7 @@ public:
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
     // Items lying on the ground, drawn as billboards over loaded ground (called by drawFrame). Each shows
-    // its picture from data/item, or the pink quad when there is none.
+    // its picture from data/item (item_<n>.png, else item_0.png), or the pink square when there is neither.
     // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
     // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite. The name
     // line on top under (mx, my) is drawn highlighted.
@@ -269,16 +291,47 @@ public:
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
     // party's pictures, names and totals. Call between beginUi and endUi.
     void drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
-                        const PartyPanels& P, const std::string& mapName, float mx, float my);
+                        const PartyPanels& P, float mx, float my);
     // A unit's picture, fitted inside r and kept in its proportions
     void drawUnitPicture(int sprite, const Rect& r);
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
     void endUi();
-    void drawTitleBackground();                  // clears, then draws title.png covering the screen
+    // Clears, then draws the menus' moving backdrop: a deep purple night, a jagged band of acid green and one of hot pink
+    // drifting up each side, a veil, a vignette and scan lines. Behind the title screen and every menu.
+    void drawTitleBackground();
+    // The title screen's header: the game's name, large, in the top left, and the pink notice board under it with
+    // the lines of data/motd.txt. A line starting "# " is a heading, "- " a bullet point, and an empty line a gap.
+    // Lines that don't fit the board are left off.
+    // The title screen's top left: the "Early Access" line, the game's name (first word green, a pink bar, the second
+    // word bone-white, in capitals), the pink rule, and the notice board with the lines of data/motd.txt
+    void drawTitleHeader(const TitleLayout& L, const std::string& first, const std::string& second,
+                         const std::string& eyebrow, const std::vector<std::string>& news);
+    // A title or pause menu item: capitals, ash-gray on a dark band with a gray edge on the left; selected, bone-white
+    // on a green band with a green edge, moved a little left. sub is a second, smaller line (the language in use).
+    // appear runs 0 to 1 as the item slides in when the screen opens.
+    void drawMenuItem(const Rect& r, const std::string& label, const std::string& sub, bool selected, bool enabled,
+                      float appear);
+    // The line along the bottom of the title screen: left text on the left; the arrow keys, then right text, on the right
+    void drawTitleFooter(const Rect& footer, const std::string& left, const std::string& right);
+    // A menu panel: a pink frame with its bottom right corner cut off, over a near-black purple fill
+    void drawThemedPanel(const Rect& r);
+    // Flat triangles in window pixels, three corners each, each corner its own colour (blended between)
+    void drawUiTris(const std::vector<UiVert>& v);
+    // A rectangle shaded from left to right
+    void drawRectGradientH(const Rect& r, RGBA left, RGBA right);
+    // Hover sounds. Buttons, menu items and tabs note the one under the pointer as they are drawn. The game calls
+    // hoverFrameStart before drawing a frame and hoverFrameEnd after: true when the pointer (or the arrow keys) has
+    // just come onto a different one.
+    void noteHover(const Rect& r);
+    // The font the game's name is drawn in on the title screen: a very large one, so the name is drawn shrunk, never
+    // stretched, and stays sharp. The renderer does not own it. Setting it drops the name's old pictures.
+    void setTitleFont(TTF_Font* font);
+    void hoverFrameStart() { hoverAny_ = false; }
+    bool hoverFrameEnd();
     void drawRect(const Rect& r, RGBA c);
-    // A UI icon in r: its picture from data/ui, or the pink placeholder with its id as the number
+    // A UI icon in r: its picture from data/icon (icon_<n>.png, else icon_0.png), or the pink placeholder with its id
     void drawUiIcon(int icon, const Rect& r);
     // An icon of height h at (x, y), with its text beside it in the list font
     void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);
@@ -370,8 +423,8 @@ private:
     GLuint dotWhiteTex_ = 0;   // a white dot, tinted for the red and neutral units
     float hudTop_ = 12.0f;
 
-    // The picture for an item, from data/item/<id>.png. An item without one uses data/item/none.png.
-    // Null when neither is packed, and the item is drawn as its colored block instead.
+    // The picture for an item, from data/item/item_<n>.png. An item without one uses data/item/item_0.png, and the pink
+    // square without that. Never null.
     const TextTex* itemTexture(int item);
     // A picture fitted inside r, keeping its proportions, multiplied by tint
     void drawFitted(const TextTex& g, const Rect& r, RGBA tint);
@@ -473,15 +526,28 @@ private:
     void releaseTerrainGl();
     void uploadSurfaceTiles(const Terrain& t);
 
-    TextTex title_;
+    TTF_Font* titleFont_ = nullptr;
+    std::map<std::string, TextTex> titleWords_;   // the name's words, drawn once in titleFont_, with mipmaps
+    // A word of the name as a picture: its texture, and width over height
+    const TextTex& titleWord(const std::string& text);
+    bool hoverAny_ = false;       // something was noted under the pointer this frame
+    Rect hoverNow_{ 0.0f, 0.0f, 0.0f, 0.0f }, hoverLast_{ 0.0f, 0.0f, 0.0f, 0.0f };
+    bool hoverHad_ = false;       // something was under the pointer last frame
+    float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
+    unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds
     std::vector<TextTex> unitSprites_;
-    // Text symbols, used only when a sprite file could not be loaded
+    // data/unit/unit_0.png, used when a unit's picture could not be loaded (empty if it is missing too: then pink_)
     TextTex unitFallback_;
+    // Picture n of the units, or its stand-in: unit_0.png, else the pink square
+    const TextTex& unitPicture(int n) const;
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
-    std::map<int, TextTex> emotePics_;   // data/emote/<id>.png, loaded the first time each is shown
-    const TextTex* emoteTexture(int id);
-    TextTex itemNone_;   // data/item/none.png, for items without a picture of their own
+    std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown
+    const TextTex* emoteTexture(int id);   // never null: emote_0.png or the pink square stands in
+    TextTex itemNone_;        // data/item/item_0.png, for items without a picture of their own
+    TextTex emoteFallback_;   // data/emote/emote_0.png, for emotes without a picture of their own
+    TextTex iconFallback_;    // data/icon/icon_0.png, for UI icons without a picture of their own
+    TextTex pink_;            // one pink texel: the square drawn for a picture missing along with its _0 stand-in
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.
     TextTex white_;
     // Each worked prop's count of finished items as last drawn, and when its ring last hopped (seconds), so the ring
@@ -493,8 +559,11 @@ private:
     std::map<Entity, PropHop> propHops_;
     // A flat ring, or a part of one, in window pixels: the part from `from` to `to` (0 to 1, clockwise from the top)
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
-    // One model per prop kind (props.h). A kind whose model failed to load has an empty model and is not drawn.
+    // One model per prop kind (props.h). A kind whose model failed to load has an empty model, and propModel gives
+    // the stand-in, model_0.glb, in its place (also empty if that failed, and the kind is drawn as a pink square).
     std::array<Model, PROP_KIND_COUNT> propModels_{};
+    Model fallbackModel_{};
+    const Model& propModel(int kind) const;
 
     // Hover label: one cached texture per line, rebuilt only when its text changes
     TTF_Font* font_ = nullptr;

@@ -124,7 +124,7 @@ bool readLanguageFile(const std::string& id, bool inFolder, Table& into) {
     }
     const unsigned char* bytes = nullptr;
     size_t size = 0;
-    if (!pakFind("data/" + id + ".txt", bytes, size)) {
+    if (!pakFind("data/language/" + id + ".txt", bytes, size)) {
         into.clear();
         return false;
     }
@@ -195,8 +195,9 @@ void scanLanguages() {
         const std::string file = it->path().filename().string();
         if (file.size() > 4 && file.compare(file.size() - 4, 4, ".txt") == 0) ids.push_back(file.substr(0, file.size() - 4));
     }
-    for (const std::string& name : pakNames("data/" + prefix, ".txt")) {
-        ids.push_back(name.substr(5, name.size() - 9));   // "data/" and ".txt" removed
+    const std::string pakFolder = "data/language/";
+    for (const std::string& name : pakNames(pakFolder + prefix, ".txt")) {
+        ids.push_back(name.substr(pakFolder.size(), name.size() - pakFolder.size() - 4));   // the folder and ".txt" removed
     }
 
     Table t;

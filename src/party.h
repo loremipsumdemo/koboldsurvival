@@ -13,7 +13,8 @@
 // The starting party: the units a new game begins with, as set up in the party menu. Plain
 // functions over the data, so they can be tested without the game running.
 
-// Unit pictures are data/unit/01.png to 71.png
+// Unit pictures are data/unit/unit_1.png to unit_71.png; unit_0.png stands in for a missing one, and a pink square
+// when that is missing too
 inline constexpr int UNIT_SPRITE_COUNT = 71;
 
 // Longest name a unit can have, in characters. A character is one UTF-8 code point, so a name can be typed in any
@@ -90,19 +91,24 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::ar
                           const Stats& stats);
 
 // ---- Scenarios: the start a new game is set up from, picked on the page before the party menu ----
+// Listed in this order, Vagabond at the top and Custom at the bottom. Only Custom lets the party menu add or remove units.
 enum class ScenarioId : int {
-    FullRandom = 0,     // 1 to 32 units, every stat 1 to 99, random items and gear they can carry
+    Vagabond = 0,       // 1 unit, every stat 1 to 5, nothing carried or worn
+    FullRandom,         // 1 to 32 units, every stat 1 to 99, random items and gear they can carry
     TravelingCaravan,   // 10 units, every stat 5, 10 Gold Coins each
     ShabbyCrew,         // 3 units, one random item each, every stat 1 to 10
     StarvingNobody,     // 1 unit, nothing carried or worn, every stat 1, hunger 0
     DungeonDiggers,     // 7 units in full gear, every stat 5 to 20 but Mining 50, 3 Iron Ore each
+    Custom,             // 3 units rolled as new units are (randomMember), and units can be added and removed
     Count
 };
 // The language keys for a scenario's name and description
 const char* scenarioNameKey(ScenarioId id);
 const char* scenarioDescKey(ScenarioId id);
-// A party for a scenario, with distinct names and sprites. count, when 1 or more, sets the size of a Full Random party
-// (the other scenarios have their own sizes).
+// Whether the party menu may add and remove units for this scenario: only Custom
+inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
+// A party for a scenario, with distinct names and sprites. count, when 1 or more, sets the size of a Full Random or
+// Custom party (the other scenarios have their own sizes).
 Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
 
 // Adds a random member to the end of the party, with a name and sprite that no member has yet

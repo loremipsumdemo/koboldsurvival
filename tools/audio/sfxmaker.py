@@ -157,10 +157,11 @@ class SFXApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Sound Effects Generator")
-        self.geometry("620x720")
+        self.geometry("620x760")
         self.resizable(False, False)
 
         self.sliders = {}   # name -> (label, var, scale, formatter)
+        self._exporting = False
         self._build_ui()
         self._randomize()
 
@@ -190,6 +191,31 @@ class SFXApp(tk.Tk):
         tk.Button(top, text="💾 Export MP3", command=self.export_mp3,
                   bg="#FF9800", fg="white", width=14).grid(
             row=0, column=4, padx=4)
+
+        # Batch export frame ----------------------------------------------------
+        batch = tk.LabelFrame(self, text="Batch Export")
+        batch.pack(fill="x", **pad)
+
+        tk.Label(batch, text="Count:").pack(side="left", padx=(8, 2))
+        self.batch_count_var = tk.IntVar(value=99)
+        tk.Spinbox(batch, from_=1, to=999, textvariable=self.batch_count_var,
+                   width=5).pack(side="left", padx=2)
+
+        tk.Label(batch, text="Min ms:").pack(side="left", padx=(12, 2))
+        self.batch_min_ms_var = tk.IntVar(value=100)
+        tk.Spinbox(batch, from_=10, to=10000, textvariable=self.batch_min_ms_var,
+                   width=6).pack(side="left", padx=2)
+
+        tk.Label(batch, text="Max ms:").pack(side="left", padx=(12, 2))
+        self.batch_max_ms_var = tk.IntVar(value=500)
+        tk.Spinbox(batch, from_=10, to=10000, textvariable=self.batch_max_ms_var,
+                   width=6).pack(side="left", padx=2)
+
+        self.batch_btn = tk.Button(
+            batch, text="📦 Export Batch (Random)", command=self.export_batch,
+            bg="#9C27B0", fg="white", width=22,
+        )
+        self.batch_btn.pack(side="left", padx=12, pady=6)
 
         # Sliders frame ---------------------------------------------------------
         sliders_frame = tk.LabelFrame(self, text="Parameters")
@@ -265,6 +291,21 @@ class SFXApp(tk.Tk):
         self.kind_var.set(random.choice(KINDS))
         self.status.set("Randomized all parameters")
 
+    def _random_params_for_batch(self, min_ms, max_ms):
+        """Fully random params with duration constrained to [min_ms, max_ms]."""
+        duration = random.uniform(min_ms / 1000.0, max_ms / 1000.0)
+        return {
+            "kind": random.choice(KINDS),
+            "duration": duration,
+            "base_freq": random.uniform(40, 3000),
+            "freq_sweep": random.uniform(0.2, 8.0),
+            "noise_amount": random.uniform(0.0, 0.7),
+            "distortion": random.uniform(1.0, 6.0),
+            "lowpass_hz": random.uniform(300, 20000),
+            "highpass_hz": random.uniform(20, 800),
+            "volume": random.uniform(0.5, 1.0),
+        }
+
     def _generate(self):
         try:
             params = self._get_params()
@@ -297,6 +338,90 @@ class SFXApp(tk.Tk):
             self.status.set(f"Exported: {os.path.basename(path)}")
         except Exception as e:
             messagebox.showerror("Export error", str(e))
+
+    # ---- Batch export -----------------------------------------------------
+
+    def export_batch(self):
+        if self._exporting:
+            return
+
+        count = self.batch_count_var.get()
+        min_ms = self.batch_min_ms_var.get()
+        max_ms = self.batch_max_ms_var.get()
+
+        if count < 1:
+            messagebox.showwarning("Batch export", "Count must be at least 1.")
+            return
+        if min_ms < 10 or max_ms < 10 or min_ms > max_ms:
+            messagebox.showwarning(
+                "Batch export",
+                "Duration range invalid: require 10 ≤ min ≤ max (ms).",
+            )
+            return
+
+        out_dir = filedialog.askdirectory(title="Choose output folder for batch export")
+        if not out_dir:
+            return
+
+        self._exporting = True
+        self.batch_btn.config(state="disabled")
+        self.status.set(f"Exporting {count} random SFX…")
+
+        # Run in a thread so the UI stays responsive
+        t = threading.Thread(
+            target=self._batch_worker,
+            args=(out_dir, count, min_ms, max_ms),
+            daemon=True,
+        )
+        t.start()
+
+    def _batch_worker(self, out_dir, count, min_ms, max_ms):
+        errors = 0
+        try:
+            for i in range(count):
+                try:
+                    params = self._random_params_for_batch(min_ms, max_ms)
+                    samples = generate_sound(**params)
+                    # Zero-pad to 2 digits: sfx_01.mp3 … sfx_99.mp3
+                    filename = f"sfx_{i + 1:02d}.mp3"
+                    path = os.path.join(out_dir, filename)
+                    save_mp3(samples, path)
+                except Exception:
+                    errors += 1
+
+                # Update status from the worker thread safely
+                self.after(
+                    0,
+                    lambda idx=i: self.status.set(
+                        f"Exporting {idx + 1}/{count}…"
+                    ),
+                )
+
+            self.after(
+                0,
+                lambda: self._batch_done(out_dir, count, errors),
+            )
+        finally:
+            self._exporting = False
+
+    def _batch_done(self, out_dir, count, errors):
+        self.batch_btn.config(state="normal")
+        if errors:
+            self.status.set(
+                f"Batch complete: {count - errors}/{count} exported "
+                f"({errors} failed) → {out_dir}"
+            )
+            messagebox.showwarning(
+                "Batch export",
+                f"Exported {count - errors} of {count} files.\n"
+                f"{errors} failed. See status bar for folder.",
+            )
+        else:
+            self.status.set(f"Batch complete: {count} files → {out_dir}")
+            messagebox.showinfo(
+                "Batch export",
+                f"Successfully exported {count} random SFX to:\n{out_dir}",
+            )
 
 
 if __name__ == "__main__":

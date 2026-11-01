@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Tatal di tepi
 UILABEL_GLOBAL_VOLUME	Kelantangan global
 UILABEL_MUSIC	Muzik
 UILABEL_AMBIENT	Bunyi persekitaran
+UILABEL_INTERFACE_SOUNDS	Bunyi antara muka
 UILABEL_SOUND_EFFECTS	Kesan bunyi
 UILABEL_RESTORE_DEFAULTS	Pulihkan lalai
 UILABEL_WINDOWED	Tetingkap
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Statistik
 UILABEL_CLICK_TO_TYPE	Klik untuk menaip nama
 UILABEL_SPRITE	Sprite
-UILABEL_STARTING_PARTY	Kumpulan permulaan: {0}
 UILABEL_HEALTH	Kesihatan
 UILABEL_HUNGER	Lapar
 UILABEL_CARRY	Muatan
@@ -606,6 +606,8 @@ FACTION_RED	Puak Merah
 MISC_PROP_UNREACHABLE	Tidak dapat dicapai
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senario
+SCENARIO_VAGABOND_NAME	Pengembara
+SCENARIO_VAGABOND_DESC	Seorang pengembara yang tidak memiliki apa-apa: tiada barang, tiada kelengkapan, dan setiap statistik antara 1 hingga 5.
 SCENARIO_RANDOM_NAME	Rawak sepenuhnya
 SCENARIO_RANDOM_DESC	Kumpulan 1 hingga 32 unit, setiap satu dengan semua statistik antara 1 dan 99, serta item dan kelengkapan rawak yang mampu dibawanya.
 SCENARIO_CARAVAN_NAME	Karavan pengembara
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Si lapar tiada nama
 SCENARIO_NOBODY_DESC	Satu unit tanpa apa-apa: tiada item, tiada kelengkapan, semua statistik 1, dan perut kosong.
 SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
 SCENARIO_DIGGERS_DESC	Tujuh pelombong berkelengkapan penuh. Statistik mereka antara 5 dan 20, tetapi setiap seorang mempunyai Perlombongan 50 dan membawa 3 bijih besi.
+SCENARIO_CUSTOM_NAME	Senario Tersuai
+SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, dan anda boleh menambah atau membuang unit, sehingga 32.
 PROP_LOCKED_CHEST	Peti berkunci
 PROP_PRISONER_CAGE	Sangkar tahanan
 UILABEL_UNLOCK	Buka kunci
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Jika seri, barang lebih bernilai menang
 MISC_OPTIMIZE_ALL_SAME	Semua unit sudah memakai kelengkapan terbaik
 MISC_OPTIMIZE_ALL_DONE	Kelengkapan {0} unit dioptimumkan
 MISC_OPTIMIZE_ALL_SOME_ROOM	Kelengkapan {0} unit dioptimumkan; {1} tiada ruang inventori
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Kelangsungan Hidup
+UILABEL_EARLY_ACCESS	Akses Awal
+MISC_TITLE_KEYS	Pilih  //  Enter Sahkan
+UILABEL_LANGUAGE_LABEL	Bahasa:

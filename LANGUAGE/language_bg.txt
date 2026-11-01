@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Превъртане при ръбовете
 UILABEL_GLOBAL_VOLUME	Глобална сила на звука
 UILABEL_MUSIC	Музика
 UILABEL_AMBIENT	Околна среда
+UILABEL_INTERFACE_SOUNDS	Звуци на интерфейса
 UILABEL_SOUND_EFFECTS	Звукови ефекти
 UILABEL_RESTORE_DEFAULTS	Възстановяване на настройките по подразбиране
 UILABEL_WINDOWED	Прозорец
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Профил
 UILABEL_STATS	Показатели
 UILABEL_CLICK_TO_TYPE	Щракнете, за да въведете име
 UILABEL_SPRITE	Спрайт
-UILABEL_STARTING_PARTY	Начален отряд: {0}
 UILABEL_HEALTH	Здраве
 UILABEL_HUNGER	Глад
 UILABEL_CARRY	Товароносимост
@@ -606,6 +606,8 @@ FACTION_RED	Червена фракция
 MISC_PROP_UNREACHABLE	Недостъпно
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
+SCENARIO_VAGABOND_NAME	Скитник
+SCENARIO_VAGABOND_DESC	Самотен странник без нищо свое: без предмети, без екипировка и всяка характеристика от 1 до 5.
 SCENARIO_RANDOM_NAME	Напълно случаен
 SCENARIO_RANDOM_DESC	Група от 1 до 32 единици, всяка с всички показатели между 1 и 99 и случайни предмети и екипировка, които може да носи.
 SCENARIO_CARAVAN_NAME	Пътуващ керван
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Гладен никой
 SCENARIO_NOBODY_DESC	Една единица без нищо: без предмети, без екипировка, всички показатели на 1 и празен стомах.
 SCENARIO_DIGGERS_NAME	Подземни копачи
 SCENARIO_DIGGERS_DESC	Седем миньори в пълна екипировка. Показателите им са от 5 до 20, но всеки има Копаене 50 и носи 3 железни руди.
+SCENARIO_CUSTOM_NAME	Персонализиран сценарий
+SCENARIO_CUSTOM_DESC	Съберете своя група. Започва с три единици и можете да добавяте или премахвате единици, до 32.
 PROP_LOCKED_CHEST	Заключен сандък
 PROP_PRISONER_CAGE	Клетка за затворници
 UILABEL_UNLOCK	Отключи
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	При равенство – по-ценният п
 MISC_OPTIMIZE_ALL_SAME	Всички единици вече носят най-добрата си екипировка
 MISC_OPTIMIZE_ALL_DONE	Оптимизирана е екипировката на {0} единици
 MISC_OPTIMIZE_ALL_SOME_ROOM	Оптимизирана е екипировката на {0} единици; {1} нямаха място в инвентара
+GAME_TITLE_FIRST	Коболд
+GAME_TITLE_SECOND	Оцеляване
+UILABEL_EARLY_ACCESS	Ранен достъп
+MISC_TITLE_KEYS	Избор  //  Enter Потвърди
+UILABEL_LANGUAGE_LABEL	Език:

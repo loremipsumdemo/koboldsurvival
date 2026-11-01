@@ -1,6 +1,7 @@
 #include "party_ui.h"
 #include "language.h"
 #include <algorithm>
+#include <cmath>
 #include "inventory.h"
 #include "items.h"
 #include "stats.h"
@@ -81,6 +82,29 @@ int partyListMaxScroll(int count, int H) {
     return std::max(0, count - partyListVisible(H));
 }
 
+PartyListBar partyListBar(int W, int H, int count, int scroll) {
+    PartyListBar b;
+    const int maxScroll = partyListMaxScroll(count, H);
+    if (maxScroll <= 0) return b;
+    const float s = H / 720.0f;
+    const PartyPanels P = partyPanels(W, H);
+    const float top = P.left.y + 12.0f * s, bottom = P.left.y + P.left.h - 64.0f * s;
+    b.track = Rect{ P.left.x + P.left.w - 14.0f * s, top, 8.0f * s, std::max(0.0f, bottom - top) };
+    const float thumbH = std::max(24.0f * s, b.track.h * partyListVisible(H) / (float)count);
+    const float frac = std::clamp(scroll, 0, maxScroll) / (float)maxScroll;
+    b.thumb = Rect{ b.track.x, b.track.y + (b.track.h - thumbH) * frac, b.track.w, thumbH };
+    return b;
+}
+
+int partyListScrollAt(int W, int H, int count, float thumbTop) {
+    const int maxScroll = partyListMaxScroll(count, H);
+    const PartyListBar b = partyListBar(W, H, count, 0);
+    const float room = b.track.h - b.thumb.h;
+    if (maxScroll <= 0 || room <= 0.0f) return 0;
+    const float frac = std::clamp((thumbTop - b.track.y) / room, 0.0f, 1.0f);
+    return std::clamp((int)std::lround(frac * maxScroll), 0, maxScroll);
+}
+
 PartyPanels partyPanels(int W, int H) {
     const float s = H / 720.0f;
     const float m = 16.0f * s, topH = 64.0f * s, bottomH = 72.0f * s;
@@ -119,9 +143,11 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const int visible = partyListVisible(H);
     const int first = std::clamp(ui.listScroll, 0, partyListMaxScroll(count, H));
     const float listTop = P.left.y + 12.0f * s;
+    // With more units than fit, the cards make room for the scroll bar at the column's right edge
+    const float cardW = P.left.w - 20.0f * s - (partyListMaxScroll(count, H) > 0 ? 14.0f * s : 0.0f);
     for (int i = first; i < count && i < first + visible; ++i) {
         const float cy = listTop + (i - first) * (cardH + cardGap);
-        out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, cy, P.left.w - 20.0f * s, cardH },
+        out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, cy, cardW, cardH },
                               Action::PartyPick, true, i });
     }
     const float hintY = P.left.y + P.left.h - 56.0f * s;
@@ -251,12 +277,14 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
     out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
     out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
-    // Add and remove units: the party has up to PARTY_MAX_UNITS, and any unit can be removed
-    const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
-    out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
-                          (int)p.size() < PARTY_MAX_UNITS, 0 });
-    out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
-                          !p.empty(), 0 });
+    // Add and remove units, in the Custom scenario only: the party has up to PARTY_MAX_UNITS, and any unit can be removed
+    if (ui.resizable) {
+        const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
+        out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
+                              (int)p.size() < PARTY_MAX_UNITS, 0 });
+        out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
+                              !p.empty(), 0 });
+    }
     out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },

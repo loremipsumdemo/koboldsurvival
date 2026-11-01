@@ -1,0 +1,763 @@
+# Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
+# A missing key shows the English, and a key missing everywhere shows its key name.
+
+LANGUAGE_NAME	Ελληνικά
+UILABEL_CONTINUE	Συνέχεια
+UILABEL_NEW_GAME	Νέο παιχνίδι
+UILABEL_LOAD_GAME	Φόρτωση παιχνιδιού
+UILABEL_SETTINGS	Ρυθμίσεις
+UILABEL_LANGUAGE_BUTTON	Γλώσσα ({0})
+UILABEL_QUIT	Έξοδος
+UILABEL_RESUME	Συνέχισε
+UILABEL_SAVE_GAME	Αποθήκευση παιχνιδιού
+UILABEL_RETURN_TO_TITLE	Επιστροφή στον τίτλο
+UILABEL_CLOSE	Κλείσιμο
+UILABEL_BACK	Πίσω
+UILABEL_SAVE	Αποθήκευση
+UILABEL_DELETE	Διαγραφή
+UILABEL_CANCEL	Ακύρωση
+UILABEL_CONFIRM	Επιβεβαίωση
+UILABEL_YES	Ναι
+UILABEL_NO	Όχι
+UILABEL_NAME	Όνομα
+UILABEL_TIME	Ώρα
+UILABEL_CREATED	Δημιουργήθηκε
+UILABEL_TYPE	Τύπος
+UILABEL_AUTO	ΑΥΤΟΜΑΤΟ
+UILABEL_MANUAL	ΧΕΙΡΟΚΙΝΗΤΟ
+UILABEL_NO_SAVES	Δεν υπάρχουν αποθηκεύσεις ακόμη
+UILABEL_UNSAVED_WARNING	Η μη αποθηκευμένη πρόοδος σε αυτό το παιχνίδι θα χαθεί.
+UILABEL_HOLD_DELETE	Κράτα πατημένο το Διαγραφή για 3 δευτερόλεπτα για επιβεβαίωση.
+UILABEL_CLICK_SAVE	Κάνε κλικ σε μια αποθήκευση για να τη φορτώσεις
+UILABEL_CLICK_MAP	Κάνε κλικ σε έναν χάρτη για να ξεκινήσεις νέο παιχνίδι
+UILABEL_NO_MAPS	Δεν βρέθηκαν χάρτες. Δημιούργησε έναν με το worldgen.py.
+UILABEL_BUILT_IN	ΕΝΣΩΜΑΤΩΜΕΝΟΣ
+UILABEL_WORLD	ΚΟΣΜΟΣ
+UILABEL_MAP_FILE	ΑΡΧΕΙΟ ΧΑΡΤΗ
+UILABEL_BUILT_IN_WHEN	ενσωματωμένος
+UILABEL_UNKNOWN	άγνωστο
+UILABEL_ON	Ενεργό
+UILABEL_OFF	Ανενεργό
+UILABEL_EMPTY	Κενό
+UILABEL_NONE_AVAILABLE	Κανένα διαθέσιμο
+UILABEL_TWO_HANDED	Δίχειρο
+UILABEL_WILL_BE_REPLACED	Θα αντικατασταθεί
+UILABEL_GRAPHICS	Γραφικά
+UILABEL_INTERFACE	Διεπαφή
+UILABEL_LANGUAGE_TAB	Γλώσσα
+UILABEL_CONTROLS	Χειρισμός
+UILABEL_AUDIO	Ήχος
+UILABEL_DISPLAY_MODE	Λειτουργία οθόνης
+UILABEL_MONITOR	Οθόνη
+UILABEL_RESOLUTION	Ανάλυση
+UILABEL_REFRESH_RATE	Ρυθμός ανανέωσης
+UILABEL_DEFAULT	Προεπιλογή
+UILABEL_VSYNC	V-Sync
+UILABEL_FRAME_LIMIT	Όριο ρυθμού καρέ
+UILABEL_UNLIMITED	Χωρίς όριο
+UILABEL_FPS	{0} FPS
+UILABEL_AUTOSAVE	Αυτόματη αποθήκευση
+UILABEL_MINUTE	1 λεπτό
+UILABEL_MINUTES	{0} λεπτά
+UILABEL_UNIT_NAMES	Ονόματα μονάδων
+UILABEL_FONT_SIZE	Μέγεθος γραμματοσειράς
+UILABEL_RESET_PANELS	Επαναφορά όλων των πάνελ
+UILABEL_RESET	Επαναφορά
+UILABEL_FONT	Γραμματοσειρά
+UILABEL_FONT_AUTOMATIC	Αυτόματη
+UILABEL_EDGE_SCROLL	Κύλιση στις άκρες
+UILABEL_GLOBAL_VOLUME	Γενική ένταση
+UILABEL_MUSIC	Μουσική
+UILABEL_AMBIENT	Περιβάλλον
+UILABEL_INTERFACE_SOUNDS	Ήχοι διεπαφής
+UILABEL_SOUND_EFFECTS	Ηχητικά εφέ
+UILABEL_RESTORE_DEFAULTS	Επαναφορά προεπιλεγμένων
+UILABEL_WINDOWED	Παράθυρο
+UILABEL_BORDERLESS	Χωρίς πλαίσιο
+UILABEL_FULL_SCREEN	Πλήρης οθόνη
+CONTROL_KEYS_1	W A S D ή τα βελάκια
+CONTROL_DOES_1	Μετακίνηση κάμερας
+CONTROL_KEYS_2	Τροχός ποντικιού
+CONTROL_DOES_2	Μεγέθυνση και σμίκρυνση
+CONTROL_KEYS_3	Κράτα πατημένο το μεσαίο κουμπί και σύρε
+CONTROL_DOES_3	Περιστροφή κάμερας
+CONTROL_KEYS_4	Αριστερό κλικ ή σύρσιμο πλαισίου
+CONTROL_DOES_4	Επιλογή μονάδων
+CONTROL_KEYS_5	Shift ή Alt με κλικ
+CONTROL_DOES_5	Προσθήκη στην επιλογή
+CONTROL_KEYS_6	Δεξί κλικ
+CONTROL_DOES_6	Μετακίνηση ή επίθεση με τις επιλεγμένες μονάδες
+CONTROL_KEYS_7	Κράτα πατημένο το Alt
+CONTROL_DOES_7	Εμφάνιση των ονομάτων των αντικειμένων στο έδαφος
+CONTROL_KEYS_8	Esc
+CONTROL_DOES_8	Άνοιγμα μενού ή επιστροφή
+CONTROL_KEYS_9	F12
+CONTROL_DOES_9	Λήψη στιγμιότυπου οθόνης
+UILABEL_PAUSED	ΣΕ ΠΑΥΣΗ
+UILABEL_PACE_RUN	Ρυθμός: τρέξιμο
+UILABEL_PACE_WALK	Ρυθμός: περπάτημα
+UILABEL_SQUAD_PANEL	Πάνελ ομάδας
+UILABEL_UNIT_PANEL	Πάνελ μονάδας
+UILABEL_INFORMATION_PANEL	Πάνελ πληροφοριών
+UILABEL_INTERACTION_PANEL	Πάνελ αλληλεπίδρασης
+UILABEL_TRADE_PANEL	Πάνελ εμπορίου
+UILABEL_INVENTORY	Απόθεμα
+UILABEL_EQUIPMENT	Εξοπλισμός
+UILABEL_BEHAVIOR	Συμπεριφορά
+UILABEL_TRADE	Εμπόριο
+UILABEL_END_DIALOGUE	Τέλος διαλόγου
+UILABEL_TRADE_DROP_THEIRS	Σύρε ή κάνε δεξί κλικ σε αντικείμενα από το απόθεμά τους εδώ
+UILABEL_TRADE_DROP_YOURS	Σύρε ή κάνε δεξί κλικ στα δικά σου αντικείμενα από το απόθεμά σου εδώ
+UILABEL_SINGLE	Μονό
+UILABEL_MAX	Μέγιστο
+UILABEL_SORT	Ταξινόμηση
+UILABEL_WORLD_MAP_HINT	Χάρτης κόσμου. Κύλισε για ζουμ. Πάτα M ή Esc για κλείσιμο.
+UILABEL_NO_UNIT_SELECTED	Δεν έχει επιλεγεί μονάδα
+UILABEL_UNNAMED_UNIT	Ανώνυμη μονάδα
+UILABEL_NO_NAME	Χωρίς όνομα
+UILABEL_PROFILE	Προφίλ
+UILABEL_STATS	Στατιστικά
+UILABEL_CLICK_TO_TYPE	Κάνε κλικ για να γράψεις όνομα
+UILABEL_SPRITE	Εικόνα
+UILABEL_HEALTH	Υγεία
+UILABEL_HUNGER	Πείνα
+UILABEL_CARRY	Φορτίο
+UILABEL_NEXT_LEVEL_XP_LINE	Εμπειρία για το επόμενο επίπεδο: {0}
+UILABEL_STAT	Στατιστικό
+UILABEL_LEVEL	Επίπεδο
+UILABEL_TOTAL_XP	Συνολική εμπειρία
+UILABEL_TO_NEXT	Μέχρι το επόμενο
+UILABEL_ATTRIBUTES	Χαρακτηριστικά
+UILABEL_COMBAT	Μάχη
+UILABEL_RESOURCE_GATHERING	Συλλογή πόρων
+UILABEL_CRAFTING	Τεχνουργία
+UILABEL_UTILITY	Βοηθητικά
+UILABEL_GEAR	Εξοπλισμός
+UILABEL_ITEMS	Αντικείμενα
+UILABEL_IDENTITY	Ταυτότητα
+UILABEL_RANDOMIZE_UNIT	Τυχαία μονάδα
+UILABEL_RANDOMIZE_ALL	Τυχαία όλα
+UILABEL_ADD_UNIT	Προσθήκη μονάδας
+UILABEL_REMOVE_UNIT	Αφαίρεση μονάδας
+UILABEL_CONFIRM_STARTS	Η επιβεβαίωση ξεκινά το παιχνίδι με αυτή την ομάδα.
+UILABEL_NEEDS_NAMES	Κάθε μονάδα χρειάζεται όνομα πριν ξεκινήσει το παιχνίδι.
+UILABEL_CLICK_UNIT_EDIT	Κάνε κλικ σε μια μονάδα για να την επεξεργαστείς.
+UILABEL_SHIFT_CLICK	Shift + κλικ αλλάζει ένα στατιστικό κατά 10.
+UILABEL_LEVELS_HINT	Τα επίπεδα κυμαίνονται από 1 έως 99.
+UILABEL_CLICK_SLOT	Κάνε κλικ σε μια θέση για να επιλέξεις το αντικείμενό της. Εμφανίζονται μόνο τα αντικείμενα που χωράνε.
+UILABEL_CLICK_SLOT_STACK	Κάνε κλικ σε μια θέση για να επιλέξεις το αντικείμενό της. Οι στοίβες χωράνε έως το όριο του αντικειμένου.
+UILABEL_SCROLL_UP	Κύλιση πάνω
+UILABEL_SCROLL_DOWN	Κύλιση κάτω
+UILABEL_SLOT_HEAD	Κεφάλι
+UILABEL_SLOT_TORSO	Κορμός
+UILABEL_SLOT_MAIN_HAND	Κύριο χέρι
+UILABEL_SLOT_OFF_HAND	Δευτερεύον χέρι
+UILABEL_SLOT_LEGS	Πόδια
+UILABEL_SLOT_FEET	Πέλματα
+UILABEL_SLOT_ACCESSORY	Αξεσουάρ
+UILABEL_BEHAVIOR_ON	Ενεργό
+UILABEL_TARGET	Στόχος
+UILABEL_CONDITION	Συνθήκη
+UILABEL_ACTION	Ενέργεια
+UILABEL_COMBAT_MESSAGES	Μηνύματα μάχης
+UILABEL_SEEN	Εντοπίστηκε
+UILABEL_HIT	Χτύπημα
+UILABEL_MISS	Αστοχία
+UILABEL_DAMAGE	Ζημιά
+UILABEL_EXPERIENCE_MESSAGES	Μηνύματα εμπειρίας
+UILABEL_EXPERIENCE	Εμπειρία
+UILABEL_ITEM_MESSAGES	Μηνύματα αντικειμένων
+UILABEL_PICKUP	Συλλογή
+UILABEL_DROP	Απόθεση
+UILABEL_LOOT	Λάφυρα
+UILABEL_USE	Χρήση
+UILABEL_MESSAGE	Μήνυμα
+UILABEL_GAME	Παιχνίδι
+UILABEL_FILTER	Φίλτρο
+UILABEL_STAT_HEAD_STAT	Στατιστικό
+UILABEL_UNKNOWN_SLOT	Άγνωστο
+UILABEL_MONTH_NAME	{0} μήνας
+UILABEL_STRENGTH_STAT	Δύναμη
+MISC_GAME_SAVED	Το παιχνίδι αποθηκεύτηκε
+MISC_SAVE_FAILED	Δεν ήταν δυνατή η αποθήκευση του παιχνιδιού
+MISC_READ_FAILED	Δεν ήταν δυνατή η ανάγνωση αυτής της αποθήκευσης
+MISC_SAVE_OLD	Αυτή η αποθήκευση είναι από πριν τους χάρτες και δεν μπορεί να φορτωθεί
+MISC_AUTOSAVED	Αυτόματη αποθήκευση
+MISC_SCREENSHOT_FAILED	Δεν ήταν δυνατή η αποθήκευση του στιγμιότυπου
+MISC_SCREENSHOT_SAVED	Αποθηκεύτηκε το {0}
+MISC_TRADE_FULL	Η συναλλαγή είναι γεμάτη
+MISC_TRADE_ALREADY	Αυτό το αντικείμενο είναι ήδη στη συναλλαγή ή η συναλλαγή είναι γεμάτη.
+MISC_TRADE_NO_MORE	Δεν υπάρχει άλλο από αυτό το αντικείμενο για συναλλαγή
+MISC_NO_UNIT_TO_TRADE	Δεν υπάρχει μονάδα για συναλλαγή
+MISC_TRADE_ADD_BOTH	Πρόσθεσε αντικείμενα και στις δύο πλευρές
+MISC_TRADE_NO_ROOM_YOURS	Η μονάδα σου δεν έχει χώρο για τα αντικείμενά τους
+MISC_TRADE_NO_ROOM_THEIRS	Δεν έχουν χώρο για τα αντικείμενά σου
+MISC_TRADE_FAILED	Η συναλλαγή απέτυχε
+MISC_TRADE_COMPLETE	Η συναλλαγή ολοκληρώθηκε.
+MISC_PICKUP_SELECT	Επίλεξε μονάδες για να σηκώσουν το αντικείμενο
+MISC_TRADE_ONLY_TALKING	Μπορείς να κάνεις συναλλαγή μόνο με τη μονάδα με την οποία μιλάς.
+MISC_DROPS	Ο/Η {0} αφήνει {1} {2}
+MISC_AN_ITEM	ένα αντικείμενο
+MISC_UNIT	Μονάδα
+MISC_TWO_HANDED_IN_MAIN	Ένα δίχειρο όπλο είναι στο κύριο χέρι
+MISC_YOU	Εσύ
+MISC_UNKNOWN_ITEM	Άγνωστο αντικείμενο
+MISC_ITEM_FALLBACK	Αντικείμενο
+MISC_THAT_ITEM	Αυτό
+MISC_REASON_FEES	πληρωμή τελών συναλλαγής
+MISC_REASON_WALKING	περπάτημα
+MISC_REASON_CARRYING	μεταφορά φορτίου
+MISC_REASON_CLIMBING	αναρρίχηση
+MISC_REASON_SWINGING	κραδασμός όπλου
+MISC_REASON_DODGING	αποφυγή
+MISC_REASON_DEALING	πρόκληση ζημιάς
+MISC_REASON_TAKING	δέχεσαι ζημιά
+MISC_REASON_BLOCKING	μπλοκάρισμα
+MISC_REASON_SPOTTING	εντοπισμός εχθρού
+MISC_REASON_UNNOTICED	παραμονή απαρατήρητος
+MISC_REASON_GEAR	αλλαγή εξοπλισμού
+NPC_GREETING	Γεια σου, κόσμε.
+NPC_OPTION_WARES	Δείξε μου τα εμπορεύματά σου.
+NPC_OPTION_QUEST	Τι άλλο μπορείς να μου πεις για την αποστολή;
+MISC_ORD_1	Πρώτη
+MISC_ORD_2	Δεύτερη
+MISC_ORD_3	Τρίτη
+MISC_ORD_4	Τέταρτη
+MISC_ORD_5	Πέμπτη
+MISC_ORD_6	Έκτη
+MISC_ORD_7	Έβδομη
+MISC_ORD_8	Όγδοη
+MISC_ORD_9	Ένατη
+MISC_ORD_10	Δέκατη
+MISC_ORD_11	Ενδέκατη
+MISC_ORD_12	Δωδέκατη
+MISC_SKY_DAY_ZENITH	Ζενίθ ημέρας
+MISC_SKY_DAY_HORIZON	Ορίζοντας ημέρας
+MISC_SKY_NIGHT_ZENITH	Ζενίθ νύχτας
+MISC_SKY_NIGHT_HORIZON	Ορίζοντας νύχτας
+MISC_SKY_DUSK_HORIZON	Ορίζοντας σούρουπου
+MISC_SKY_DUSK_SUN	Ήλιος σούρουπου
+MISC_SKY_SUN	Ήλιος
+MISC_SKY_MOON	Φεγγάρι
+MISC_TARGET_SELF	Ο ίδιος
+MISC_TARGET_ALLY	Σύμμαχος
+MISC_TARGET_ENEMY	Εχθρός
+MISC_COND_HEALTH	Υγεία
+MISC_COND_HUNGER	Πείνα
+MISC_ACT_HEAL	Χρήση αντικειμένου θεραπείας
+MISC_ACT_FOOD	Κατανάλωση τροφής
+UILABEL_STAT_DESC_STRENGTH	Ζημιά σε μάχη σώμα με σώμα, χωρητικότητα φορτίου
+UILABEL_STAT_DESC_DEXTERITY	Ταχύτητα επίθεσης
+UILABEL_STAT_DESC_VITALITY	Μέγιστη υγεία
+UILABEL_STAT_DESC_ENDURANCE	Μέγιστη αντοχή
+UILABEL_STAT_DESC_AGILITY	Πιθανότητα αποφυγής
+UILABEL_STAT_DESC_INTELLIGENCE	Δεξαμενή μάνας
+UILABEL_STAT_DESC_WISDOM	Αριθμός μαγειών που μπορούν να μαθευτούν
+UILABEL_STAT_DESC_CHARISMA	Τιμές συναλλαγής με ΜΧ, ειδικές επιλογές διαλόγου
+UILABEL_STAT_DESC_PERCEPTION	Απόσταση εντοπισμού
+UILABEL_STAT_DESC_ATHLETICS	Ταχύτητα τρεξίματος
+UILABEL_STAT_DESC_STEALTH	Καλύτερη στο να αποφεύγεις την ανίχνευση όταν κρύβεσαι
+UILABEL_STAT_DESC_MELEE	Ακρίβεια σώμα με σώμα
+UILABEL_STAT_DESC_PROJECTILES	Ακρίβεια εξ αποστάσεως
+UILABEL_STAT_DESC_ARCANE	Ισχύς μαγείας
+UILABEL_STAT_DESC_BLOCK	Πιθανότητα αποκλεισμού ή απόκρουσης
+UILABEL_STAT_DESC_MINING	Απόδοση μεταλλεύματος
+UILABEL_STAT_DESC_HERBALISM	Απόδοση συλλογής άγριων φυτών
+UILABEL_STAT_DESC_WOODCUTTING	Απόδοση ξυλείας
+UILABEL_STAT_DESC_SKINNING	Απόδοση δερμάτων/κρέατος
+UILABEL_STAT_DESC_FARMING	Απόδοση σοδειάς
+UILABEL_STAT_DESC_COOKING	Ισχύς μπόνους τροφής
+UILABEL_STAT_DESC_SMELTING	Απόδοση τήξης μεταλλεύματος
+UILABEL_STAT_DESC_FORGING	Κατεργασία μετάλλου
+UILABEL_STAT_DESC_CARPENTRY	Ξυλουργική
+UILABEL_STAT_DESC_STONEWORKING	Λιθοξοΐα
+UILABEL_STAT_DESC_LOCKPICKING	Δυσκολία κλειδαριών
+UILABEL_STAT_DESC_THIEVERY	Επιτυχία κλοπής
+UILABEL_STAT_DESC_MEDICAL	Αποτελεσματικότητα θεραπείας
+UILABEL_DEXTERITY_STAT	Ευκινησία
+UILABEL_VITALITY_STAT	Ζωτικότητα
+UILABEL_ENDURANCE_STAT	Αντοχή
+UILABEL_AGILITY_STAT	Ευελιξία
+UILABEL_INTELLIGENCE_STAT	Νοημοσύνη
+UILABEL_WISDOM_STAT	Σοφία
+UILABEL_CHARISMA_STAT	Χαρισματικότητα
+UILABEL_PERCEPTION_STAT	Αντίληψη
+UILABEL_ATHLETICS_STAT	Αθλητισμός
+UILABEL_STEALTH_STAT	Κρυφότητα
+UILABEL_MELEE_STAT	Σώμα με σώμα
+UILABEL_PROJECTILES_STAT	Εξ αποστάσεως
+UILABEL_ARCANE_STAT	Μαγεία
+UILABEL_BLOCK_STAT	Αποκλεισμός
+UILABEL_MINING_STAT	Εξόρυξη
+UILABEL_HERBALISM_STAT	Βοτανολογία
+UILABEL_WOODCUTTING_STAT	Υλοτομία
+UILABEL_SKINNING_STAT	Γδαρσιά
+UILABEL_FARMING_STAT	Γεωργία
+UILABEL_COOKING_STAT	Μαγείρεμα
+UILABEL_SMELTING_STAT	Τήξη
+UILABEL_FORGING_STAT	Σφυρηλάτηση
+UILABEL_CARPENTRY_STAT	Ξυλουργική
+UILABEL_STONEWORKING_STAT	Λιθουργία
+UILABEL_LOCKPICKING_STAT	Ανοίγματα κλειδαριών
+UILABEL_THIEVERY_STAT	Κλεψιά
+UILABEL_MEDICAL_STAT	Ιατρική
+MISC_CANT_BE_WORN	Το {0} δεν μπορεί να φορεθεί
+MISC_ITEM_NAME_FORMAT	{1} από {0}
+MISC_MATERIAL_IRON	σίδερο
+MISC_MATERIAL_STEEL	ατσάλι
+MISC_MATERIAL_BRONZE	μπρούντζος
+MISC_MATERIAL_SILVER	ασήμι
+MISC_MATERIAL_LEATHER	δέρμα
+MISC_MATERIAL_BONE	οστό
+MISC_MATERIAL_WOOD	ξύλο
+MISC_NEED_MORE_VALUE	Χρειάζονται άλλα {0} σε αξία
+MISC_TRADE_READY_FEE	Έτοιμο. Τέλος συναλλαγής: {0}
+MISC_LOAD_FAILED	Δεν ήταν δυνατή η φόρτωση του {0}: {1}
+MISC_MAP_MISSING	Λείπει ο χάρτης για το "{0}"
+MISC_MAP_LOAD_FAILED	Ο χάρτης "{0}" δεν φορτώθηκε: {1}
+MISC_LOADED	Φορτώθηκε το {0}
+MISC_DELETE_FAILED	Δεν ήταν δυνατή η διαγραφή του "{0}"
+MISC_DELETED	Διαγράφηκε το "{0}"
+MISC_USED	Χρησιμοποιήθηκε το {0}
+MISC_OVERWRITE_Q	Να αντικατασταθεί το "{0}";
+MISC_LOAD_Q	Να φορτωθεί το "{0}";
+MISC_DELETE_Q	Να διαγραφεί το "{0}";
+MISC_NOT_FIT_SLOT	Το {0} δεν χωράει στη θέση {1}
+MISC_EMPTY_OFF_HAND	Άδειασε το δευτερεύον χέρι πριν κρατήσεις το {0}
+MISC_NO_ROOM_INV	Δεν υπάρχει χώρος στο απόθεμα για το {0}
+MISC_SLOT_HOLDS	Αυτή η θέση κρατά ήδη το {0}
+UILABEL_TIP_TYPE	Τύπος: {0}
+UILABEL_TIP_MATERIAL	Υλικό: {0}
+UILABEL_TIP_SLOT	Θέση: {0}
+UILABEL_TIP_REQUIRED_LEVEL	Απαιτούμενο επίπεδο: {0}
+UILABEL_TIP_ATTACK	Επίθεση {0}
+UILABEL_TIP_DEFENSE	Άμυνα {0}
+UILABEL_TIP_WEIGHT	Βάρος {0}
+UILABEL_TIP_EACH	 έκαστο
+UILABEL_TIP_STACKS	Στοιβάζεται έως {0}
+UILABEL_TIP_BUY	Τιμή αγοράς: {0}
+UILABEL_TIP_SELL	Τιμή πώλησης: {0}
+UILABEL_TIP_USE	Χρήση: {0}
+UILABEL_TOTAL_VALUE	Συνολική αξία: {0}
+UILABEL_CHOOSE_HOW_MANY	Διάλεξε πόσα: {0} ({1} διαθέσιμα)
+UILABEL_TIP_LEVEL	Επίπεδο: {0}
+UILABEL_TIP_PROGRESS	Πρόοδος: {0}%
+UILABEL_TIP_CURRENT_XP	Τρέχουσα εμπειρία: {0}
+UILABEL_ATTACK_DEFENSE	Επίθεση {0}      Άμυνα {1}
+UILABEL_STATS_CAPTION	Στατιστικά: {0}
+UILABEL_SPRITE_N	Εικόνα {0}
+UILABEL_SLOT_N_ITEM	Θέση {0}: {1}
+UILABEL_SLOT_N_EMPTY	Θέση {0}: κενή
+UILABEL_COUNT	Πλήθος {0}
+UILABEL_ATTACK_DEFENSE_CARRY	Επίθεση {0}    Άμυνα {1}    Φορτίο {2}
+MISC_IS_DOWN	Ο/Η {0} έπεσε
+MISC_PICKS_UP	Ο/Η {0} σηκώνει {1} {2}
+MISC_CANNOT_READ	Δεν ήταν δυνατή η ανάγνωση του {0}
+UILABEL_TIP_DURABILITY	Αντοχή {0} / {1}
+UILABEL_DATE_LINE	ΗΜΕΡΑ {0} · {1} · ΕΤΟΣ {2}
+UILABEL_MONITOR_N	Οθόνη {0}
+MISC_GAINS_XP	Ο/Η {0} κερδίζει {1} {2} εμπειρία για {3}
+UILABEL_PAUSE_HINT	(Πάτα το διάστημα για να συνεχίσεις.)
+MISC_DRINKS	Ο/Η {0} πίνει {1}
+UILABEL_COMPASS_N	Β
+UILABEL_COMPASS_E	Α
+UILABEL_COMPASS_S	Ν
+UILABEL_COMPASS_W	Δ
+ITEM_1_NAME	Μετάλλευμα σιδήρου
+ITEM_1_DESC	Ακατέργαστο μετάλλευμα που μπορεί να τηχθεί σε σιδερένιους ράβδους.
+ITEM_2_NAME	Κορμός βελανιδιάς
+ITEM_2_DESC	Ένας γερός κορμός που χρησιμοποιείται στην τεχνουργία και την οικοδομή.
+ITEM_3_NAME	Θεραπευτικό βότανο
+ITEM_3_DESC	Ένα συνηθισμένο βότανο με ήπιες αναζωογονητικές ιδιότητες.
+ITEM_4_NAME	Χρυσό νόμισμα
+ITEM_4_DESC	Το τυπικό νόμισμα του βασιλείου.
+ITEM_5_NAME	Τομάρι λύκου
+ITEM_5_DESC	Ένα τραχύ τομάρι από έναν σκοτωμένο λύκο. Το ζητούν οι βυρσοδέψες.
+ITEM_6_NAME	Αρχαίο κειμήλιο
+ITEM_6_DESC	Ένα μυστηριώδες αντικείμενο που βουίζει αχνά από ενέργεια.
+ITEM_7_NAME	Φίλτρο υγείας
+ITEM_7_DESC	Αποκαθιστά 50 υγεία όταν πιωθεί.
+ITEM_8_NAME	Φίλτρο μάνας
+ITEM_8_DESC	Αποκαθιστά 50 μάνα όταν πιωθεί.
+ITEM_9_NAME	Φίλτρο αντοχής
+ITEM_9_DESC	Αποκαθιστά 40 αντοχή και ενισχύει για λίγο την αναγέννηση.
+ITEM_10_NAME	Ελιξίριο δύναμης
+ITEM_10_DESC	Δίνει +10 επίθεση για 60 δευτερόλεπτα.
+ITEM_11_NAME	Ψωμί
+ITEM_11_DESC	Απλό ταξιδιωτικό φαγητό. Αποκαθιστά 15 υγεία.
+ITEM_12_NAME	Αντίδοτο
+ITEM_12_DESC	Θεραπεύει τη δηλητηρίαση και μειώνει τη ζημιά του δηλητηρίου για 30 δευτερόλεπτα.
+ITEM_13_NAME	Μήλο
+ITEM_13_DESC	Αποκαθιστά 8 πείνα όταν φαγωθεί.
+ITEM_14_NAME	Άγρια μούρα
+ITEM_14_DESC	Αποκαθιστά 6 πείνα όταν φαγωθούν.
+ITEM_15_NAME	Σκληρό μπισκότο
+ITEM_15_DESC	Αποκαθιστά 12 πείνα όταν φαγωθεί.
+ITEM_16_NAME	Κομμάτι τυριού
+ITEM_16_DESC	Αποκαθιστά 15 πείνα όταν φαγωθεί.
+ITEM_17_NAME	Καπνιστό ψάρι
+ITEM_17_DESC	Αποκαθιστά 20 πείνα όταν φαγωθεί.
+ITEM_18_NAME	Κέικ με μέλι
+ITEM_18_DESC	Αποκαθιστά 18 πείνα όταν φαγωθεί.
+ITEM_19_NAME	Πίτα με αρνί
+ITEM_19_DESC	Αποκαθιστά 26 πείνα όταν φαγωθεί.
+ITEM_20_NAME	Μπολ με στιφάδο
+ITEM_20_DESC	Αποκαθιστά 30 πείνα όταν φαγωθεί.
+ITEM_21_NAME	Ψητό μπούτι αγριογούρουνου
+ITEM_21_DESC	Αποκαθιστά 40 πείνα όταν φαγωθεί.
+ITEM_22_NAME	Μερίδα ταξιδιού
+ITEM_22_DESC	Αποκαθιστά 50 πείνα όταν φαγωθεί.
+ITEM_23_NAME	Σκούφος
+ITEM_23_DESC	Προστατεύει το κεφάλι.
+ITEM_24_NAME	Κουκούλα
+ITEM_24_DESC	Προστατεύει το κεφάλι.
+ITEM_25_NAME	Αλυσιδωτή κουκούλα
+ITEM_25_DESC	Προστατεύει το κεφάλι.
+ITEM_26_NAME	Κράνος
+ITEM_26_DESC	Προστατεύει το κεφάλι.
+ITEM_27_NAME	Ρύγχος
+ITEM_27_DESC	Προστατεύει το κεφάλι.
+ITEM_28_NAME	Μπασινέτο
+ITEM_28_DESC	Προστατεύει το κεφάλι.
+ITEM_29_NAME	Σάλετ
+ITEM_29_DESC	Προστατεύει το κεφάλι.
+ITEM_30_NAME	Μεγάλο κράνος
+ITEM_30_DESC	Προστατεύει το κεφάλι.
+ITEM_31_NAME	Στεφάνι
+ITEM_31_DESC	Προστατεύει το κεφάλι.
+ITEM_32_NAME	Στέμμα
+ITEM_32_DESC	Προστατεύει το κεφάλι.
+ITEM_33_NAME	Χιτώνας
+ITEM_33_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_34_NAME	Δερμάτινο γιλέκο
+ITEM_34_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_35_NAME	Γιλέκο από πλάκες
+ITEM_35_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_36_NAME	Μπριγκαντίνη
+ITEM_36_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_37_NAME	Αλυσιδωτός θώρακας
+ITEM_37_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_38_NAME	Θώρακας
+ITEM_38_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_39_NAME	Κουιράσο
+ITEM_39_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_40_NAME	Θωρακικό
+ITEM_40_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_41_NAME	Πλήρης πανοπλία
+ITEM_41_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_42_NAME	Τελετουργική πανοπλία
+ITEM_42_DESC	Καλύπτει το στήθος και το σώμα.
+ITEM_43_NAME	Καβάλες
+ITEM_43_DESC	Καλύπτει τα πόδια.
+ITEM_44_NAME	Παντελόνι
+ITEM_44_DESC	Καλύπτει τα πόδια.
+ITEM_45_NAME	Γκέτες
+ITEM_45_DESC	Καλύπτει τα πόδια.
+ITEM_46_NAME	Αλυσιδωτά παντελόνια
+ITEM_46_DESC	Καλύπτει τα πόδια.
+ITEM_47_NAME	Ποδιές μηρού
+ITEM_47_DESC	Καλύπτει τα πόδια.
+ITEM_48_NAME	Μηροπλάκες
+ITEM_48_DESC	Καλύπτει τα πόδια.
+ITEM_49_NAME	Κνημιδες
+ITEM_49_DESC	Καλύπτει τα πόδια.
+ITEM_50_NAME	Κνημιδες από πλάκες
+ITEM_50_DESC	Καλύπτει τα πόδια.
+ITEM_51_NAME	Αλυσιδωτές κνημιδες
+ITEM_51_DESC	Καλύπτει τα πόδια.
+ITEM_52_NAME	Επιχρυσωμένες κνημιδες
+ITEM_52_DESC	Καλύπτει τα πόδια.
+ITEM_53_NAME	Σανδάλια
+ITEM_53_DESC	Προστατεύει τα πόδια.
+ITEM_54_NAME	Παπούτσια
+ITEM_54_DESC	Προστατεύει τα πόδια.
+ITEM_55_NAME	Μπότες
+ITEM_55_DESC	Προστατεύει τα πόδια.
+ITEM_56_NAME	Μπότες ιππασίας
+ITEM_56_DESC	Προστατεύει τα πόδια.
+ITEM_57_NAME	Καρφωτές μπότες
+ITEM_57_DESC	Προστατεύει τα πόδια.
+ITEM_58_NAME	Επιποδίδες
+ITEM_58_DESC	Προστατεύει τα πόδια.
+ITEM_59_NAME	Μπότες πορείας
+ITEM_59_DESC	Προστατεύει τα πόδια.
+ITEM_60_NAME	Σαμπατόν
+ITEM_60_DESC	Προστατεύει τα πόδια.
+ITEM_61_NAME	Σολερέτ
+ITEM_61_DESC	Προστατεύει τα πόδια.
+ITEM_62_NAME	Πολεμικές μπότες
+ITEM_62_DESC	Προστατεύει τα πόδια.
+ITEM_63_NAME	Ταινία
+ITEM_63_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_64_NAME	Φυλαχτό
+ITEM_64_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_65_NAME	Βραχιόλι
+ITEM_65_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_66_NAME	Καρφίτσα
+ITEM_66_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_67_NAME	Δαχτυλίδι
+ITEM_67_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_68_NAME	Κολιέ
+ITEM_68_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_69_NAME	Μενταγιόν
+ITEM_69_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_70_NAME	Τάλισμαν
+ITEM_70_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_71_NAME	Τόρκ
+ITEM_71_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_72_NAME	Manto
+ITEM_72_DESC	Ένα μικρό φθαρμένο στολίδι. Μπορούν να φορεθούν δύο ταυτόχρονα.
+ITEM_73_NAME	Κοντό ξίφος
+ITEM_73_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_74_NAME	Μακρύ ξίφος
+ITEM_74_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_75_NAME	Τσεκούρι
+ITEM_75_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_76_NAME	Ρόπαλο
+ITEM_76_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_77_NAME	Κοπάνι
+ITEM_77_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_78_NAME	Ραπιέρα
+ITEM_78_DESC	Κρατιέται στο κύριο χέρι.
+ITEM_79_NAME	Στιλέτο
+ITEM_79_DESC	Κρατιέται με το ένα χέρι. Χωράει στο κύριο ή στο δευτερεύον χέρι.
+ITEM_80_NAME	Μαχαίρι
+ITEM_80_DESC	Κρατιέται με το ένα χέρι. Χωράει στο κύριο ή στο δευτερεύον χέρι.
+ITEM_81_NAME	Ξιφίδιο
+ITEM_81_DESC	Κρατιέται με το ένα χέρι. Χωράει στο κύριο ή στο δευτερεύον χέρι.
+ITEM_82_NAME	Μικρή ασπίδα
+ITEM_82_DESC	Κρατιέται στο δευτερεύον χέρι. Αποκρούει χτυπήματα.
+ITEM_83_NAME	Ασπίδα χαρταετός
+ITEM_83_DESC	Κρατιέται στο δευτερεύον χέρι. Αποκρούει χτυπήματα.
+ITEM_84_NAME	Πύργος ασπίδα
+ITEM_84_DESC	Κρατιέται στο δευτερεύον χέρι. Αποκρούει χτυπήματα.
+ITEM_85_NAME	Δίχειρο σπαθί
+ITEM_85_DESC	Χρειάζεται και τα δύο χέρια. Το δευτερεύον χέρι πρέπει να είναι άδειο.
+ITEM_86_NAME	Πολεμικό σφυρί
+ITEM_86_DESC	Χρειάζεται και τα δύο χέρια. Το δευτερεύον χέρι πρέπει να είναι άδειο.
+ITEM_87_NAME	Πολεμικό τσεκούρι
+ITEM_87_DESC	Χρειάζεται και τα δύο χέρια. Το δευτερεύον χέρι πρέπει να είναι άδειο.
+UILABEL_UI_SCALE	Κλίμακα διεπαφής
+NAME_MASCULINE	["Nikos", "Giorgos", "Stavros", "Kostas", "Dimitris"]
+NAME_FEMININE	["Eleni", "Maria", "Sofia", "Katerina", "Anna"]
+NAME_ANDROGYNOUS	["Ari", "Noa", "Sami", "Alexi", "Dani"]
+UILABEL_BODY_TYPE	Τύπος σώματος
+UILABEL_BODY_MASCULINE	Ανδρικό
+UILABEL_BODY_FEMININE	Γυναικείο
+UILABEL_BODY_ANDROGYNOUS	Ανδρόγυνο
+UILABEL_TYPE_ITEM	Αντικείμενο
+UILABEL_TYPE_CONSUMABLE	Αναλώσιμο
+UILABEL_TYPE_WEAPON	Όπλο
+UILABEL_TYPE_ARMOR	Πανοπλία
+UILABEL_TYPE_ACCESSORY	Εξάρτημα
+UILABEL_SLOT_EITHER_HAND	Οποιοδήποτε χέρι
+UILABEL_SLOT_TWO_HAND	Δίχειρο
+MISC_TRADE_CHANGE	Συναλλαγή: {0}
+UILABEL_NEEDS_UNITS	Προσθέστε τουλάχιστον μία μονάδα για να ξεκινήσετε.
+PROP_WAGON	Άμαξα
+PROP_CAMPFIRE	Φωτιά κατασκήνωσης
+PROP_BEDROLL	Στρωμνή
+PROP_BED	Κρεβάτι
+PROP_BARREL	Βαρέλι
+PROP_ORE	Μετάλλευμα
+PROP_TREE	Δέντρο
+PROP_BOULDER	Βράχος
+PROP_MUSHROOM	Μανιτάρι
+PROP_BONES	Κόκαλα
+PROP_WALL	Τείχος
+PROP_STALL	Πάγκος
+MISC_STORAGE_FULL	Δεν υπάρχει χώρος στην αποθήκη
+MISC_PROP_TAKEN	Χρησιμοποιείται ήδη
+MISC_PROP_WORKERS_FULL	Έως {0} μονάδες μπορούν να το δουλεύουν ταυτόχρονα
+MISC_GATHERS	{0} συλλέγει {1}
+MISC_GATHER_NO_ROOM	{0} δεν έχει χώρο για {1} και σταματά να δουλεύει
+MISC_REASON_GATHERING	συλλογή
+UILABEL_TASK	Εργασία: {0}
+UILABEL_TASK_IDLE	Αδρανής
+UILABEL_TASK_MOVING	Κινείται
+UILABEL_TASK_RESTING	Ξεκουράζεται
+UILABEL_STORAGE_HINT	Δεξί κλικ σε ένα αντικείμενο για να το πάρεις ή σύρε το έξω για να το αφήσεις εκεί όπου στέκεται η μονάδα σου. Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα αποθηκεύσεις.
+ITEM_88_NAME	Κορμός ξύλου
+ITEM_88_DESC	Ξύλο κομμένο από δέντρο, για κατασκευές και χειροτεχνία.
+UILABEL_CRAFT_HINT	Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα βάλεις μέσα. Ό,τι φτιάχνεται πηγαίνει στα αντικείμενα της μονάδας που δουλεύει. Για να αρχίσει δουλειά, κάνε δεξί κλικ στο {0} και διάλεξε Χρήση.
+MISC_CRAFT_WRONG_ITEM	Το {0} δεν μπορεί να χρησιμοποιηθεί εδώ
+MISC_CRAFT_NEEDS	Βάλε {0} στην είσοδο για να ξεκινήσεις
+MISC_CRAFTS	{0} φτιάχνει {1}
+MISC_CRAFT_STOPS	{0} δεν έχει άλλο να δουλέψει και σταματά
+MISC_REASON_CRAFTING	χειροτεχνία
+ITEM_89_NAME	Ωμό κρέας αρκούδας
+ITEM_89_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_90_NAME	Ψητό κρέας αρκούδας
+ITEM_90_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+UILABEL_TALK	Μίλα
+UILABEL_ATTACK	Επίθεση
+UILABEL_ATTACK_UNPROVOKED	Επίθεση (απρόκλητη)
+UILABEL_FOLLOW	Ακολούθησε
+UILABEL_DEFEND	Υπεράσπισε
+UILABEL_TASK_FOLLOWING	Ακολουθεί
+UILABEL_TASK_DEFENDING	Υπερασπίζεται
+MISC_FREE_TRADE_ADD	Πρόσθεσε αντικείμενα σε όποια πλευρά θες
+MISC_FREE_TRADE_READY	Έτοιμο για ανταλλαγή
+MISC_TURNS_HOSTILE	{0} γίνεται εχθρικός
+MISC_SELECT_UNIT_FIRST	Επίλεξε πρώτα μια μονάδα
+FACTION_PLAYER	Φατρία του παίκτη
+FACTION_GRAY	Γκρίζα φατρία
+FACTION_RED	Κόκκινη φατρία
+MISC_PROP_UNREACHABLE	Απρόσιτο
+MISC_ITEM_GAINED	+{0}
+UILABEL_SCENARIO	Σενάριο
+SCENARIO_VAGABOND_NAME	Αλήτης
+SCENARIO_VAGABOND_DESC	Ένας μοναχικός περιπλανώμενος χωρίς τίποτα δικό του: χωρίς αντικείμενα, χωρίς εξοπλισμό και κάθε στατιστικό από 1 έως 5.
+SCENARIO_RANDOM_NAME	Εντελώς τυχαίο
+SCENARIO_RANDOM_DESC	Μια ομάδα από 1 έως 32 μονάδες, καθεμία με όλα τα χαρακτηριστικά από 1 έως 99 και τυχαία αντικείμενα και εξοπλισμό που μπορεί να κουβαλήσει.
+SCENARIO_CARAVAN_NAME	Περιπλανώμενο καραβάνι
+SCENARIO_CARAVAN_DESC	Δέκα ταξιδιώτες μαζί στον δρόμο. Όλα τα χαρακτηριστικά ξεκινούν από 5 και ο καθένας κουβαλά 10 χρυσά νομίσματα.
+SCENARIO_SHABBY_NAME	Κουρελιασμένο πλήρωμα
+SCENARIO_SHABBY_DESC	Τρία άτυχα κόμπολντ με ένα τυχαίο αντικείμενο το καθένα και όλα τα χαρακτηριστικά από 1 έως 10.
+SCENARIO_NOBODY_NAME	Πεινασμένος κανένας
+SCENARIO_NOBODY_DESC	Μία μονάδα χωρίς τίποτα: χωρίς αντικείμενα, χωρίς εξοπλισμό, όλα τα χαρακτηριστικά στο 1 και άδειο στομάχι.
+SCENARIO_DIGGERS_NAME	Σκαφτιάδες μπουντρουμιών
+SCENARIO_DIGGERS_DESC	Επτά μεταλλωρύχοι με πλήρη εξοπλισμό. Τα χαρακτηριστικά τους είναι από 5 έως 20, αλλά ο καθένας έχει Εξόρυξη 50 και κουβαλά 3 σιδηρομεταλλεύματα.
+SCENARIO_CUSTOM_NAME	Προσαρμοσμένο σενάριο
+SCENARIO_CUSTOM_DESC	Φτιάξε τη δική σου ομάδα. Ξεκινά με τρεις μονάδες και μπορείς να προσθέτεις ή να αφαιρείς μονάδες, έως 32.
+PROP_LOCKED_CHEST	Κλειδωμένο σεντούκι
+PROP_PRISONER_CAGE	Κλουβί κρατουμένων
+UILABEL_UNLOCK	Ξεκλείδωμα
+MISC_PROP_LOCKED	Κλειδωμένο
+MISC_LOCKPICK_NEEDS	Απαιτεί Ανοίγματα κλειδαριών {0}
+MISC_UNLOCKED	Ξεκλειδώθηκε!
+MISC_LOCKPICK_FAILED	Η παραβίαση απέτυχε
+MISC_UNLOCKS	{0} ξεκλειδώνει: {1}
+MISC_REASON_LOCKPICKING	παραβίαση κλειδαριών
+MISC_LOCKED_NAME	{0} (κλειδωμένο)
+PROP_CHAIR	Καρέκλα
+PROP_BENCH	Πάγκος
+PROP_STOOL	Σκαμπό
+PROP_TABLE	Τραπέζι
+PROP_END_TABLE	Κομοδίνο
+PROP_ROUND_TABLE	Στρογγυλό τραπέζι
+PROP_METAL_TABLE	Μεταλλικό τραπέζι
+PROP_STANDING_TORCH	Όρθιος πυρσός
+PROP_SUPPORT_BEAM	Δοκός στήριξης
+PROP_TRAINING_DUMMY	Ομοίωμα εκπαίδευσης
+PROP_RAW_FOOD_STORAGE	Αποθήκη ωμών τροφίμων
+PROP_FOOD_STORAGE	Αποθήκη τροφίμων
+PROP_WEAPON_RACK	Ράφι όπλων
+PROP_ARMOR_STAND	Βάση πανοπλίας
+PROP_WATER_TANK	Δεξαμενή νερού
+PROP_WATER_PUMP	Αντλία νερού
+PROP_FORGE	Σιδηρουργείο
+FILTER_RAW_FOOD	ωμά τρόφιμα
+FILTER_FOOD	τρόφιμα
+FILTER_WEAPON	όπλα
+FILTER_ARMOR	πανοπλία
+FILTER_WATER	νερό
+MISC_STORAGE_ONLY	Δέχεται μόνο: {0}
+UILABEL_STORAGE_TAKES	Δέχεται μόνο: {0}.
+UILABEL_TASK_SITTING	Κάθεται
+UILABEL_TASK_LOCKED_IN	Κλειδωμένος
+MISC_LOCKED_IN	Ο/Η {0} είναι κλειδωμένος/η: {1}
+MISC_REASON_TRAINING	εκπαίδευση
+MISC_XP_GAINED	+{0} εμπειρία {1}
+UILABEL_INPUT	Είσοδος
+UILABEL_OUTPUT	Έξοδος
+MISC_FUEL_LEFT	Καίει: απομένουν {0} λεπτά καυσίμου
+MISC_NO_FUEL	Χωρίς καύσιμο
+MISC_OUTPUT_FULL	Η έξοδος είναι γεμάτη: σε παύση
+UILABEL_PASSIVE_HINT	Δέχεται {0} ως καύσιμο: το καθένα καίει {1} λεπτά παιχνιδιού και φτιάχνει {2} στην έξοδο, με ή χωρίς εργάτη. Σταματά όσο η έξοδος είναι γεμάτη. Δεξί κλικ στα αντικείμενα για να τα βάλεις ή να τα βγάλεις.
+ITEM_91_NAME	Νερό
+ITEM_91_DESC	Φρέσκο νερό από αντλία.
+ITEM_92_NAME	Ράβδος σιδήρου
+ITEM_92_DESC	Μια ράβδος σιδήρου λιωμένη από μετάλλευμα σε σιδηρουργείο.
+ITEM_93_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_93_NAME	Ωμό μοσχαρίσιο κρέας
+ITEM_94_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_94_NAME	Ψητό μοσχαρίσιο κρέας
+ITEM_95_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_95_NAME	Ωμό κρέας κοτόπουλου
+ITEM_96_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_96_NAME	Ψητό κρέας κοτόπουλου
+ITEM_97_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_97_NAME	Ωμό κρέας αγριόχοιρου
+ITEM_98_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_98_NAME	Ψητό κρέας αγριόχοιρου
+ITEM_99_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_99_NAME	Ωμό κρέας λύκου
+ITEM_100_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_100_NAME	Ψητό κρέας λύκου
+ITEM_101_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_101_NAME	Ωμό κρέας ελαφιού
+ITEM_102_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_102_NAME	Ψητό κρέας ελαφιού
+ITEM_103_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_103_NAME	Ωμό κρέας κουνελιού
+ITEM_104_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_104_NAME	Ψητό κρέας κουνελιού
+ITEM_105_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_105_NAME	Ωμό ψάρι
+ITEM_106_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_106_NAME	Ψητό ψάρι
+ITEM_107_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_107_NAME	Ωμό κρέας καβουριού
+ITEM_108_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_108_NAME	Ψητό κρέας καβουριού
+ITEM_109_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_109_NAME	Ωμό κρέας σαύρας
+ITEM_110_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_110_NAME	Ψητό κρέας σαύρας
+ITEM_111_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_111_NAME	Ωμό κρέας φιδιού
+ITEM_112_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_112_NAME	Ψητό κρέας φιδιού
+ITEM_113_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_113_NAME	Ωμό χοιρινό κρέας
+ITEM_114_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_114_NAME	Ψητό χοιρινό κρέας
+ITEM_115_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_115_NAME	Ωμό πρόβειο κρέας
+ITEM_116_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_116_NAME	Ψητό πρόβειο κρέας
+ITEM_117_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_117_NAME	Ωμό κρέας πάπιας
+ITEM_118_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_118_NAME	Ψητό κρέας πάπιας
+ITEM_119_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_119_NAME	Ωμό κρέας χελώνας
+ITEM_120_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_120_NAME	Ψητό κρέας χελώνας
+ITEM_121_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_121_NAME	Ωμό κρέας νυχτερίδας
+ITEM_122_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_122_NAME	Ψητό κρέας νυχτερίδας
+ITEM_123_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_123_NAME	Ωμό κρέας βατράχου
+ITEM_124_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
+ITEM_124_NAME	Ψητό κρέας βατράχου
+ITEM_125_DESC	Ένα μικρό άγριο μανιτάρι. Ωμό βοηθά ελάχιστα την υγεία και την πείνα.
+ITEM_125_NAME	Μανιτάρι
+MISC_FOOD_TO_COOK	ωμό κρέας
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+ITEM_126_NAME	Δηλητηριώδες μανιτάρι
+ITEM_126_DESC	Ένα άγριο μανιτάρι που μοιάζει με όλα τα άλλα. Αν το φας, χάνεις υγεία και χορτασμό.
+UILABEL_OPTIMIZE	Βελτιστοποίηση
+UILABEL_REMOVE_ALL	Αφαίρεση όλων
+MISC_GEAR_NO_ROOM	Δεν υπάρχει αρκετός χώρος στο απόθεμα
+MISC_GEAR_ALREADY_BEST	Φορά ήδη τον καλύτερο εξοπλισμό
+MISC_GEAR_NONE_WORN	Δεν υπάρχει εξοπλισμός για αφαίρεση
+UILABEL_OPTIMIZE_ALL	Βελτιστοποίηση όλων
+MISC_OPTIMIZE_ALL_ASK	Να βελτιστοποιηθεί ο εξοπλισμός και των {0} μονάδων της ομάδας; Κάθε μονάδα διαλέγει από ό,τι φορά και κουβαλά. Μια μονάδα χωρίς χώρο για ό,τι βγάζει μένει ως έχει.
+UILABEL_OPTIMIZE_BALANCE	Επίθεση {0}% / Άμυνα {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Αλλαγή αξεσουάρ
+UILABEL_OPTIMIZE_TWO_HANDED	Να επιτρέπονται δίχειρα όπλα
+UILABEL_OPTIMIZE_VALUE_TIES	Στην ισοπαλία κερδίζει το πολυτιμότερο
+MISC_OPTIMIZE_ALL_SAME	Όλες οι μονάδες φορούν ήδη τον καλύτερο εξοπλισμό τους
+MISC_OPTIMIZE_ALL_DONE	Βελτιστοποιήθηκε ο εξοπλισμός {0} μονάδων
+MISC_OPTIMIZE_ALL_SOME_ROOM	Βελτιστοποιήθηκε ο εξοπλισμός {0} μονάδων· {1} δεν είχαν χώρο στο απόθεμα
+GAME_TITLE_FIRST	Κόμπολντ
+GAME_TITLE_SECOND	Επιβίωση
+UILABEL_EARLY_ACCESS	Πρώιμη πρόσβαση
+MISC_TITLE_KEYS	Επιλογή  //  Enter Επιβεβαίωση
+UILABEL_LANGUAGE_LABEL	Γλώσσα:

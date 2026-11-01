@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Görgetés a szélnél
 UILABEL_GLOBAL_VOLUME	Globális hangerő
 UILABEL_MUSIC	Zene
 UILABEL_AMBIENT	Környezeti hangok
+UILABEL_INTERFACE_SOUNDS	Kezelőfelület hangjai
 UILABEL_SOUND_EFFECTS	Hangeffektek
 UILABEL_RESTORE_DEFAULTS	Alapértékek visszaállítása
 UILABEL_WINDOWED	Ablakos
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Statisztikák
 UILABEL_CLICK_TO_TYPE	Kattints a név beírásához
 UILABEL_SPRITE	Figura
-UILABEL_STARTING_PARTY	Kezdő csapat: {0}
 UILABEL_HEALTH	Életerő
 UILABEL_HUNGER	Éhség
 UILABEL_CARRY	Teherbírás
@@ -606,6 +606,8 @@ FACTION_RED	Vörös frakció
 MISC_PROP_UNREACHABLE	Elérhetetlen
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Forgatókönyv
+SCENARIO_VAGABOND_NAME	Csavargó
+SCENARIO_VAGABOND_DESC	Magányos vándor, akinek semmije sincs: se tárgy, se felszerelés, és minden érték 1 és 5 között.
 SCENARIO_RANDOM_NAME	Teljesen véletlen
 SCENARIO_RANDOM_DESC	1–32 egységből álló csapat, mindegyik minden tulajdonsága 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír.
 SCENARIO_CARAVAN_NAME	Vándorló karaván
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Éhező senki
 SCENARIO_NOBODY_DESC	Egyetlen egység, semmi nélkül: se tárgy, se felszerelés, minden tulajdonság 1, és üres gyomor.
 SCENARIO_DIGGERS_NAME	Tömlöcásók
 SCENARIO_DIGGERS_DESC	Hét bányász teljes felszerelésben. Tulajdonságaik 5 és 20 közöttiek, de mindegyiknek 50 a Bányászata, és 3 vasércet visz.
+SCENARIO_CUSTOM_NAME	Egyéni forgatókönyv
+SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel indul, és egységeket adhatsz hozzá vagy vehetsz el, legfeljebb 32-ig.
 PROP_LOCKED_CHEST	Lezárt láda
 PROP_PRISONER_CAGE	Fogolyketrec
 UILABEL_UNLOCK	Feltörés
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Döntetlennél az értékesebb tárgy nyer
 MISC_OPTIMIZE_ALL_SAME	Minden egység már a legjobb felszerelését viseli
 MISC_OPTIMIZE_ALL_DONE	{0} egység felszerelése optimalizálva
 MISC_OPTIMIZE_ALL_SOME_ROOM	{0} egység felszerelése optimalizálva; {1} egységnek nem volt helye
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Túlélés
+UILABEL_EARLY_ACCESS	Korai hozzáférés
+MISC_TITLE_KEYS	Kiválasztás  //  Enter Megerősítés
+UILABEL_LANGUAGE_LABEL	Nyelv:

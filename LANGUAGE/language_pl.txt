@@ -69,6 +69,7 @@ UILABEL_EDGE_SCROLL	Przewijanie przy krawędzi
 UILABEL_GLOBAL_VOLUME	Głośność globalna
 UILABEL_MUSIC	Muzyka
 UILABEL_AMBIENT	Odgłosy otoczenia
+UILABEL_INTERFACE_SOUNDS	Dźwięki interfejsu
 UILABEL_SOUND_EFFECTS	Efekty dźwiękowe
 UILABEL_RESTORE_DEFAULTS	Przywróć domyślne
 UILABEL_WINDOWED	Okno
@@ -118,7 +119,6 @@ UILABEL_PROFILE	Profil
 UILABEL_STATS	Statystyki
 UILABEL_CLICK_TO_TYPE	Kliknij, aby wpisać nazwę
 UILABEL_SPRITE	Wygląd
-UILABEL_STARTING_PARTY	Drużyna startowa: {0}
 UILABEL_HEALTH	Zdrowie
 UILABEL_HUNGER	Głód
 UILABEL_CARRY	Udźwig
@@ -606,6 +606,8 @@ FACTION_RED	Czerwona frakcja
 MISC_PROP_UNREACHABLE	Nieosiągalne
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariusz
+SCENARIO_VAGABOND_NAME	Włóczęga
+SCENARIO_VAGABOND_DESC	Samotny wędrowiec, który nic nie ma: bez przedmiotów, bez ekwipunku, a każda statystyka od 1 do 5.
 SCENARIO_RANDOM_NAME	W pełni losowy
 SCENARIO_RANDOM_DESC	Drużyna od 1 do 32 jednostek, każda ze wszystkimi cechami od 1 do 99 oraz losowymi przedmiotami i wyposażeniem, które jest w stanie unieść.
 SCENARIO_CARAVAN_NAME	Wędrowna karawana
@@ -616,6 +618,8 @@ SCENARIO_NOBODY_NAME	Głodny nikt
 SCENARIO_NOBODY_DESC	Jedna jednostka bez niczego: bez przedmiotów, bez wyposażenia, wszystkie cechy na 1 i pusty żołądek.
 SCENARIO_DIGGERS_NAME	Kopacze lochów
 SCENARIO_DIGGERS_DESC	Siedmiu górników w pełnym wyposażeniu. Ich cechy wynoszą od 5 do 20, ale każdy ma Górnictwo 50 i niesie 3 rudy żelaza.
+SCENARIO_CUSTOM_NAME	Własny scenariusz
+SCENARIO_CUSTOM_DESC	Zbuduj własną drużynę. Zaczyna się od trzech jednostek, a jednostki możesz dodawać lub usuwać, do 32.
 PROP_LOCKED_CHEST	Zamknięta skrzynia
 PROP_PRISONER_CAGE	Klatka na więźniów
 UILABEL_UNLOCK	Otwórz zamek
@@ -752,3 +756,8 @@ UILABEL_OPTIMIZE_VALUE_TIES	Przy remisie wygrywa cenniejszy przedmiot
 MISC_OPTIMIZE_ALL_SAME	Wszystkie jednostki noszą już najlepszy ekwipunek
 MISC_OPTIMIZE_ALL_DONE	Zoptymalizowano ekwipunek {0} jednostek
 MISC_OPTIMIZE_ALL_SOME_ROOM	Zoptymalizowano ekwipunek {0} jednostek; {1} nie miało miejsca w ekwipunku
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Przetrwanie
+UILABEL_EARLY_ACCESS	Wczesny dostęp
+MISC_TITLE_KEYS	Wybór  //  Enter Potwierdź
+UILABEL_LANGUAGE_LABEL	Język:
