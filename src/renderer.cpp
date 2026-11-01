@@ -549,9 +549,8 @@ void Renderer::setSaturation(float sat) {
 // How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
 // its carrier's shoulders if it is carried
 float Renderer::unitTop(World& w, Entity u) {
-    if (const Unconscious* un = w.get<Unconscious>(u)) {
-        return GLYPH_H * unitGlyph(w, u).aspect + (un->carrier != NULL_ENTITY ? CARRIED_LIFT : 0.0f);
-    }
+    if (w.has<Carried>(u)) return GLYPH_H * unitGlyph(w, u).aspect + CARRIED_LIFT;
+    if (w.has<Unconscious>(u)) return GLYPH_H * unitGlyph(w, u).aspect;
     return GLYPH_H;
 }
 
@@ -1405,10 +1404,10 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         float heightPx = std::fabs(bottomY - topY);
         float halfW = heightPx * 0.5f * unitGlyph(w, u).aspect;
         float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
-        if (const Unconscious* un = w.get<Unconscious>(u)) {
+        if (w.has<Unconscious>(u) || w.has<Carried>(u)) {
             // Lying on its side: as wide as it is tall standing, and as high as it is wide; carried ones higher up
             float liftX = 0.0f, liftY = 0.0f;
-            const float lift = un->carrier != NULL_ENTITY ? CARRIED_LIFT : 0.0f;
+            const float lift = w.has<Carried>(u) ? CARRIED_LIFT : 0.0f;
             if (!project(tr->x, tr->y + lift, tr->z, liftX, liftY)) continue;
             const float lyingH = heightPx * unitGlyph(w, u).aspect;
             halfW = heightPx * 0.5f;
@@ -1720,9 +1719,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const TextTex& g = unitGlyph(w, e);
         RGBA tint = WHITE;
         if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
-        if (const Unconscious* un = w.get<Unconscious>(e)) {
+        if (w.has<Unconscious>(e) || w.has<Carried>(e)) {
             setSaturation(unitSaturation(w, e));
-            const bool carried = un->carrier != NULL_ENTITY;
+            const bool carried = w.has<Carried>(e);
             drawLyingGlyph(g, tr->x, tr->y + (carried ? CARRIED_LIFT : 0.0f), tr->z, GLYPH_H, tint, carried ? 0.15f : 0.0f);
             setSaturation(1.0f);
             continue;
@@ -3614,6 +3613,22 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (!pic) continue;
         drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     }
+}
+
+void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown) {
+    const Transform* tr = w.get<Transform>(u);
+    if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
+    const float s = winH / 720.0f;
+    const float size = 28.0f * s;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    float sx = 0.0f, sy = 0.0f;
+    if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) return;
+    // Above its name, and above its own emote if it shows one, so both can be seen
+    float bottom = sy - 2.0f * s;
+    if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
+    if (!emotesOf(w, u).empty()) bottom -= size + 4.0f * s;
+    const TextTex* pic = emoteTexture(emote);
+    if (pic) drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
 // The UI icon with this id: its picture from data/icon (icon_<n>.png), loaded once. An id with no picture uses

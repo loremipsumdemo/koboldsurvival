@@ -240,6 +240,8 @@ public:
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
+    // A hint over the unit under the pointer of what a right-click does to it (EMOTE_CUE_PUT_DOWN, EMOTE_CUE_TALK)
+    void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown);
     // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
     // clockwise from the top, as its next item nears. Each time an item is finished the ring hops up and back down once.
     // The work rings over worked props; with names set they sit above the props' name tags

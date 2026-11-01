@@ -220,6 +220,7 @@ struct PickupOrder {
 struct TalkOrder {
     Entity npc = NULL_ENTITY;
     bool trade = false;   // a free trade with another unit of yours, in place of a talk
+    bool shop = false;    // Shop: the talk opens straight to the trade, as if Show me your wares were picked
 };
 
 // A standing order to follow a unit: the unit walks after it and stays within FOLLOW_DISTANCE of it, until it is
@@ -238,20 +239,29 @@ struct DefendOrder {
 // A unit at 0 health is Unconscious: it lies still, takes no orders, does nothing, and nothing fights it. It stays
 // that way until it recovers in a bed or a bedroll, or dies. Its Doom starts at 0 each time it is knocked out and rises
 // every in-game hour (doomPerHour in systems.h); in a bed or bedroll it falls instead. Doom 0 in a bed: it wakes with
-// a little health. Doom 100: it becomes a Corpse for good. carrier is the unit carrying it, if any: a carried unit
-// moves with its carrier and pushes nothing. Doom is always between 0 and 100.
+// a little health. Doom 100: it becomes a Corpse for good. Doom is always between 0 and 100.
 struct Unconscious {
     float doom = 0.0f;
-    Entity carrier = NULL_ENTITY;
 };
+// A unit being carried, by the unit `by` (which has Carrying). It lies over its carrier, moves with it and pushes
+// nothing. Unconscious units and corpses can be carried by anyone; a unit that is awake only by its own squad, and it
+// stays put on its carrier until put down. Awake and carried by a hostile, it plays dead (PlayingDead); awake and carried
+// by anyone else, it gets free at once.
+struct Carried {
+    Entity by = NULL_ENTITY;
+};
+// A unit that is awake but carried by a hostile lies still, playing dead, until it is given an order: then it breaks
+// free (it is put down where its carrier is) and does it. Never at the same time as Unconscious, and never with its
+// own squad carrying it.
+struct PlayingDead {};
 // An Unconscious unit whose Doom reached 100: it never recovers. It keeps its Unconscious, with Doom 100, so it can
 // still be carried and looted, and it is no longer anyone's to command.
 struct Corpse {};
-// A unit carrying an Unconscious unit (one at a time). It can put it down on the ground or into a bed or bedroll.
+// A unit carrying another (one at a time). It can put it down on the ground or into a bed or bedroll.
 struct Carrying {
     Entity unit = NULL_ENTITY;
 };
-// An order to walk to an Unconscious unit and pick it up
+// An order to walk to a unit and pick it up: one that is Unconscious, or one of your own squad
 struct CarryOrder {
     Entity target = NULL_ENTITY;
 };

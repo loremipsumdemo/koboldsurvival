@@ -627,8 +627,12 @@ PROP_PRISONER_CAGE	Κλουβί κρατουμένων
 UILABEL_UNLOCK	Ξεκλείδωμα
 UILABEL_PICK_UP	Σήκωσε
 UILABEL_PUT_IN_BED	Βάλε στο κρεβάτι
-UILABEL_MOVE_HERE	Πήγαινε εδώ
 UILABEL_PUT_DOWN	Άφησε κάτω
+UILABEL_SHOP	Αγορά
+UILABEL_TASK_CARRIED	Μεταφέρεται
+UILABEL_TASK_PLAYING_DEAD	Κάνει τον νεκρό
+MISC_BREAKS_FREE	Ο {0} ελευθερώνεται
+MISC_PLAYS_DEAD	Ο {0} κάνει τον νεκρό
 UILABEL_DOOM	Χαμός
 UILABEL_TASK_UNCONSCIOUS	Αναίσθητος
 UILABEL_TASK_DEAD	Νεκρός

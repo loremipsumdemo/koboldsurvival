@@ -627,8 +627,12 @@ PROP_PRISONER_CAGE	Jaula de prisioneiro
 UILABEL_UNLOCK	Destrancar
 UILABEL_PICK_UP	Levantar
 UILABEL_PUT_IN_BED	Deitar na cama
-UILABEL_MOVE_HERE	Ir para cá
 UILABEL_PUT_DOWN	Colocar no chão
+UILABEL_SHOP	Loja
+UILABEL_TASK_CARRIED	Sendo carregado
+UILABEL_TASK_PLAYING_DEAD	Fingindo-se de morto
+MISC_BREAKS_FREE	{0} se solta
+MISC_PLAYS_DEAD	{0} se finge de morto
 UILABEL_DOOM	Perdição
 UILABEL_TASK_UNCONSCIOUS	Inconsciente
 UILABEL_TASK_DEAD	Morto

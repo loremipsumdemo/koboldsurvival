@@ -627,8 +627,12 @@ PROP_PRISONER_CAGE	Клетка за затворници
 UILABEL_UNLOCK	Отключи
 UILABEL_PICK_UP	Вдигни
 UILABEL_PUT_IN_BED	Сложи в леглото
-UILABEL_MOVE_HERE	Иди тук
 UILABEL_PUT_DOWN	Остави
+UILABEL_SHOP	Пазарувай
+UILABEL_TASK_CARRIED	Носен
+UILABEL_TASK_PLAYING_DEAD	Прави се на умрял
+MISC_BREAKS_FREE	{0} се освобождава
+MISC_PLAYS_DEAD	{0} се прави на умрял
 UILABEL_DOOM	Обреченост
 UILABEL_TASK_UNCONSCIOUS	В безсъзнание
 UILABEL_TASK_DEAD	Мъртъв

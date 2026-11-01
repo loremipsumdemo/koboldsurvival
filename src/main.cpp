@@ -165,16 +165,13 @@ void closeStorage() {
 
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
-enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock, PickUp, PutInBed,
-                        Move, PutDown };
+enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock, PickUp,
+                        PutInBed, PutDown };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
     Entity target = NULL_ENTITY;
     std::vector<MenuAction> actions;
-    // A menu on the ground (Move, Put down) has no target, only the ground point clicked
-    bool ground = false;
-    float gx = 0.0f, gz = 0.0f;
 };
 ContextMenu contextMenu;
 
@@ -852,7 +849,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Commandable{});   // one of yours; a corpse is nobody's
         }
         if (u.unconscious) {
-            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom, NULL_ENTITY });
+            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom });
             if (u.corpse) world.add(e, Corpse{});
         }
         if (u.hostile || u.neutral) world.add(e, Dialogue{});
@@ -882,11 +879,11 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
     // Who was carrying whom: the carrier is named by its place in the save
     for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
         const int by = d.units[i].carriedBy;
-        Unconscious* un = world.get<Unconscious>(restoredUnits[i]);
-        if (!un || by < 0 || by >= (int)restoredUnits.size() || by == (int)i) continue;
+        if (by < 0 || by >= (int)restoredUnits.size() || by == (int)i) continue;
         const Entity carrier = restoredUnits[(size_t)by];
-        if (world.has<Carrying>(carrier) || world.has<Unconscious>(carrier)) continue;
-        un->carrier = carrier;
+        if (world.has<Carrying>(carrier) || world.has<Unconscious>(carrier) || world.has<Carried>(carrier)) continue;
+        world.add(restoredUnits[i], Carried{ carrier });
+        if (d.units[i].playingDead && !d.units[i].unconscious) world.add(restoredUnits[i], PlayingDead{});
         world.add(carrier, Carrying{ restoredUnits[i] });
     }
 
@@ -982,7 +979,10 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.unconscious = true;
             su.doom = un->doom;
             su.corpse = w.has<Corpse>(u);
-            su.carriedBy = un->carrier != NULL_ENTITY ? indexOf(un->carrier) : -1;
+        }
+        if (const Carried* cd = w.get<Carried>(u)) {
+            su.carriedBy = indexOf(cd->by);
+            su.playingDead = w.has<PlayingDead>(u);
         }
         su.x = t->x;
         su.y = t->y;
@@ -2806,7 +2806,7 @@ int main(int, char**) {
             quantity = QuantityPrompt{ true, false, storageUnit, slot, item,
                                        def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, cap, true };
         };
-        auto startTalk = [&](Entity npc, Entity talker) {
+        auto startTalk = [&](Entity npc, Entity talker, bool shop) {
             // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
             std::vector<Entity> others;
             for (Entity u : selectedUnits(world)) {
@@ -2822,12 +2822,26 @@ int main(int, char**) {
             playSfx(Sfx::TalkOpen);
             const Dialogue* dg = world.get<Dialogue>(npc);
             sayAs(npc, dg ? dg->text : std::string(lang("NPC_GREETING")), false);
+            // Shop: the trade option is picked at once, as if "Show me your wares" were clicked
+            if (shop && dg) {
+                for (const DialogueOption& o : dg->options) {
+                    if (!o.opensTrade) continue;
+                    sayAs(talker, o.prompt, true);
+                    sayAs(npc, o.reply, false);
+                    tradeOpen = true;
+                    freeTrade = false;
+                    tradeNpc.clear();
+                    tradePlayer.clear();
+                    tradeNpcDrag = -1;
+                    break;
+                }
+            }
         };
         // Picking an option: the player says its prompt, and the unit answers with its reply
         // Starts a talk, unless one ended too recently. Then no dialogue starts, but the units still walk to the NPC.
-        auto tryStartTalk = [&](Entity npc, Entity talker, std::vector<Entity> units) {
+        auto tryStartTalk = [&](Entity npc, Entity talker, std::vector<Entity> units, bool shop = false) {
             if (talkCooldown <= 0.0f) {
-                startTalk(npc, talker);
+                startTalk(npc, talker, shop);
                 return;
             }
             for (Entity u : world.view<TalkOrder>()) units.push_back(u);
@@ -2902,6 +2916,7 @@ int main(int, char**) {
             std::vector<Entity> units;
             for (Entity u : selectedUnits(world)) {
                 if (world.has<Unconscious>(u)) continue;   // out cold: it does nothing
+                if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;   // carried: it does nothing
                 if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
             }
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
@@ -2910,21 +2925,49 @@ int main(int, char**) {
             return units;
         };
         // The options for a target, in the order the menu lists them
+        // Whether an NPC can be talked to, and whether its talk has a trade (Show me your wares)
+        auto talkable = [&](Entity u) {
+            return world.has<Unit>(u) && world.has<Dialogue>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
+                   !world.has<Unconscious>(u) && !world.has<Carried>(u);
+        };
+        auto sells = [&](Entity u) {
+            const Dialogue* dg = world.get<Dialogue>(u);
+            if (!dg || !talkable(u)) return false;
+            for (const DialogueOption& o : dg->options) {
+                if (o.opensTrade) return true;
+            }
+            return false;
+        };
+        // The selected unit that could put a unit down: the one carrying it, or the unit itself if it is the carrier.
+        // NULL_ENTITY when neither is one of your selected units.
+        auto putDownCarrier = [&](Entity target) {
+            if (world.has<Carrying>(target) && world.has<Selected>(target) && !cannotAct(world, target)) return target;
+            if (const Carried* c = world.get<Carried>(target)) {
+                if (world.has<Selected>(c->by) && !cannotAct(world, c->by)) return c->by;
+            }
+            return NULL_ENTITY;
+        };
         auto menuActionsFor = [&](Entity target) {
             std::vector<MenuAction> out;
-            if (const Unconscious* un = world.get<Unconscious>(target)) {
+            // A selected unit carrying someone, or the unit it carries: Put down comes first
+            if (world.has<Unit>(target) && putDownCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::PutDown);
+            if (world.has<Unconscious>(target)) {
                 // Out cold or dead: carried off (unless someone has it already) and looted
-                if (un->carrier == NULL_ENTITY) out.push_back(MenuAction::PickUp);
+                if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
                 out.push_back(MenuAction::Inventory);
                 return out;
             }
             if (world.has<Unit>(target)) {
                 if (world.has<Commandable>(target)) {
-                    out = { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend };
+                    // One of your squad: trade, follow, defend, and pick it up (unless it carries or is carried)
+                    out.insert(out.end(), { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend });
+                    if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
                 } else if (world.has<Hostile>(target)) {
-                    out = { MenuAction::Attack };   // a hostile unit is only fought, never followed
+                    out.push_back(MenuAction::Attack);   // a hostile unit is only fought, never followed
                 } else {
-                    out = { MenuAction::Talk, MenuAction::Follow, MenuAction::Defend, MenuAction::AttackUnprovoked };
+                    if (talkable(target)) out.push_back(MenuAction::Talk);
+                    if (sells(target)) out.push_back(MenuAction::Shop);
+                    out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend, MenuAction::AttackUnprovoked });
                 }
             } else if (const Prop* p = world.get<Prop>(target)) {
                 const PropUse use = propInfo(p->kind).use;
@@ -2944,6 +2987,7 @@ int main(int, char**) {
             for (MenuAction a : contextMenu.actions) {
                 switch (a) {
                 case MenuAction::Talk: labels.push_back(lang("UILABEL_TALK")); break;
+                case MenuAction::Shop: labels.push_back(lang("UILABEL_SHOP")); break;
                 case MenuAction::Trade: labels.push_back(lang("UILABEL_TRADE")); break;
                 case MenuAction::Follow: labels.push_back(lang("UILABEL_FOLLOW")); break;
                 case MenuAction::Defend: labels.push_back(lang("UILABEL_DEFEND")); break;
@@ -2954,7 +2998,6 @@ int main(int, char**) {
                 case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
                 case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
                 case MenuAction::PutInBed: labels.push_back(lang("UILABEL_PUT_IN_BED")); break;
-                case MenuAction::Move: labels.push_back(lang("UILABEL_MOVE_HERE")); break;
                 case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
                 }
             }
@@ -2965,12 +3008,18 @@ int main(int, char**) {
         };
         // Opens the menu for what is under the pointer. False if nothing there can be acted on, so the right-click is
         // a move order instead.
-        auto openContextMenu = [&](float mx, float my) {
-            const Entity target = menuTargetAt(mx, my);
+        auto openContextMenuOn = [&](Entity target, float mx, float my) {
             if (target == NULL_ENTITY) return false;
-            const std::vector<MenuAction> actions = menuActionsFor(target);
+            std::vector<MenuAction> actions = menuActionsFor(target);
             if (actions.empty()) return false;
             if (menuActors(target).empty()) {
+                // Only Put down needs no other unit: the carrier does it
+                if (actions[0] == MenuAction::PutDown) {
+                    contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::PutDown } };
+                    playSfx(Sfx::UiMenuOpen);
+                    itemMenu.open = false;
+                    return true;
+                }
                 // Your lone selected unit clicked on itself: a move order, as on the ground under it
                 if (world.has<Selected>(target) && world.has<Commandable>(target)) return false;
                 if (!noteLockedIn(selectedUnits(world))) refuse(lang("MISC_SELECT_UNIT_FIRST"));
@@ -2981,34 +3030,15 @@ int main(int, char**) {
             itemMenu.open = false;
             return true;
         };
-        // The menu on the ground for selected units that carry someone: walk there, or walk there and put them down
-        auto openGroundMenu = [&](float mx, float my, float gx, float gz) {
-            bool carrying = false;
-            for (Entity u : selectedUnits(world)) carrying = carrying || (world.has<Carrying>(u) && !cannotAct(world, u));
-            if (!carrying) return false;
-            ContextMenu m;
-            m.open = true;
-            m.x = mx;
-            m.y = my;
-            m.ground = true;
-            m.gx = gx;
-            m.gz = gz;
-            m.actions = { MenuAction::Move, MenuAction::PutDown };
-            contextMenu = m;
-            playSfx(Sfx::UiMenuOpen);
-            itemMenu.open = false;
-            return true;
-        };
+        auto openContextMenu = [&](float mx, float my) { return openContextMenuOn(menuTargetAt(mx, my), mx, my); };
         // Does the picked option with the selected units
         auto pickMenuAction = [&](MenuAction a) {
             const Entity target = contextMenu.target;
             contextMenu.open = false;
-            if (contextMenu.ground) {
-                if (a == MenuAction::Move) {
-                    issueMoveOrder(world, terrain, selectedUnits(world), Vec2{ contextMenu.gx, contextMenu.gz });
-                } else if (a == MenuAction::PutDown) {
-                    issuePutDownOrder(world, terrain, selectedUnits(world), Vec2{ contextMenu.gx, contextMenu.gz });
-                }
+            if (a == MenuAction::PutDown) {
+                // Put down at once, where the carrier stands
+                const Entity carrier = putDownCarrier(target);
+                if (carrier != NULL_ENTITY) putDown(world, carrier);
                 return;
             }
             const std::vector<Entity> actors = menuActors(target);
@@ -3079,9 +3109,21 @@ int main(int, char**) {
                 if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Use);
                 break;
             }
-            case MenuAction::Move:
             case MenuAction::PutDown:
-                break;   // ground menu only, above
+                break;   // done above
+            case MenuAction::Shop: {
+                // As Talk, then Show me your wares at once
+                Entity talker = NULL_ENTITY;
+                for (Entity u : actors) {
+                    if (gapBetween(world, u, target) <= TALK_RANGE) {
+                        talker = u;
+                        break;
+                    }
+                }
+                if (talker != NULL_ENTITY) tryStartTalk(target, talker, actors, true);
+                else issueTalkOrder(world, actors, target, false, true);
+                break;
+            }
             case MenuAction::Unlock: {
                 // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
                 const Lock* lock = world.get<Lock>(target);
@@ -4115,6 +4157,19 @@ int main(int, char**) {
                         // The minimap: the selected units walk to the point clicked on it
                         beginRightHold(mgx, mgz);
                     } else if (overPanels(e.button.x, e.button.y, winW, winH)) {
+                        // Right-click on a unit in the Squad Panel: its menu, as on the unit in the world
+                        {
+                            const std::vector<Entity> own = ownUnitList();
+                            const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
+                            bool onCell = false;
+                            for (const UnitCell& c : squadL.cells) {
+                                if (!c.rect.contains(e.button.x, e.button.y) || c.index < 0 || c.index >= (int)own.size()) continue;
+                                onCell = true;
+                                openContextMenuOn(own[(size_t)c.index], e.button.x, e.button.y);
+                                break;
+                            }
+                            if (onCell) break;
+                        }
                         // Right-click on an inventory item: gear goes straight to its slot, and anything
                         // else opens the menu with Use and Drop. Right-click on a worn gear item takes it off
                         // into the inventory. Elsewhere on the panels, nothing happens. A red unit's sidebar
@@ -4161,11 +4216,7 @@ int main(int, char**) {
                             rightHold = false;
                         } else {
                             float gx = 0.0f, gz = 0.0f;
-                            if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
-                                // Units carrying someone get a menu on the ground: Move, or Put down there
-                                if (openGroundMenu(e.button.x, e.button.y, gx, gz)) rightHold = false;
-                                else beginRightHold(gx, gz);
-                            }
+                            if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) beginRightHold(gx, gz);
                         }
                     }
                 }
@@ -4441,7 +4492,7 @@ int main(int, char**) {
         // A talk order ends the first time one of its units is in talk range of its NPC
         if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
             Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
-            bool tradeTalk = false;
+            bool tradeTalk = false, shopTalk = false;
             for (Entity u : world.view<TalkOrder>()) {
                 const Entity npcOf = world.get<TalkOrder>(u)->npc;
                 if (!world.has<Unit>(npcOf)) {
@@ -4452,11 +4503,12 @@ int main(int, char**) {
                     talkNpc = npcOf;
                     talker = u;
                     tradeTalk = world.get<TalkOrder>(u)->trade;
+                    shopTalk = world.get<TalkOrder>(u)->shop;
                     break;
                 }
             }
             if (talker != NULL_ENTITY && tradeTalk) startFreeTrade(talkNpc, talker);
-            else if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {});
+            else if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {}, shopTalk);
         }
         if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) {
             panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
@@ -4673,7 +4725,7 @@ int main(int, char**) {
         // A unit that is not in your squad shows only its Profile
         if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UNIT_TAB_PROFILE;
         // The right-click menu closes if its target is gone or a talk or trade opens
-        if (contextMenu.open && ((!contextMenu.ground && !world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
+        if (contextMenu.open && ((!world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
                                  dialogueUnit != NULL_ENTITY)) {
             contextMenu.open = false;
         }
@@ -4857,6 +4909,22 @@ int main(int, char**) {
             }
             // What each unit is doing: mining, woodcutting, cooking, sleeping, encumbered
             renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
+            // What a right-click would do to the unit under the pointer: put down a unit your selected unit carries, or
+            // talk to an NPC
+            if (!overPanels(mouseX, mouseY, winW, winH) && !contextMenu.open && !itemMenu.open && dialogueUnit == NULL_ENTITY) {
+                for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
+                    const Carried* cd = world.get<Carried>(u);
+                    const bool names = world.has<Commandable>(u) ? settings.showUnitNames : settings.showNpcNames;
+                    if (cd && world.has<Selected>(cd->by)) {
+                        renderer.drawHoverCue(world, cam, winW, winH, u, EMOTE_CUE_PUT_DOWN, names);
+                        break;
+                    }
+                    if (talkable(u)) {
+                        renderer.drawHoverCue(world, cam, winW, winH, u, EMOTE_CUE_TALK, names);
+                        break;
+                    }
+                }
+            }
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
             // Labels the systems queued this frame: items gained, and what used items did

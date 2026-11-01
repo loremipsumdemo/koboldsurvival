@@ -46,12 +46,13 @@ struct SaveUnit {
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
     int occupying = -1;        // the serial of the bed, chair or cage it is on, or -1
-    // Unconscious (components.h): its Doom, whether it is a corpse, and the index of the unit carrying it, or -1.
-    // Older saves have none of these, so their units are awake.
+    // Unconscious (components.h): its Doom and whether it is a corpse. Older saves have none, so their units are awake.
     bool unconscious = false;
     float doom = 0.0f;
     bool corpse = false;
+    // Carried: the index of the unit carrying it, or -1, and whether it is playing dead
     int carriedBy = -1;
+    bool playingDead = false;
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
     bool hasNeeds = false;
@@ -173,9 +174,8 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
-        if (u.unconscious) {
-            out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << " " << u.carriedBy << "\n";
-        }
+        if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
+        if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -295,12 +295,23 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 size_t i = 0;
                 float doom = 0.0f;
                 int corpse = 0, carrier = -1;
-                ss >> i >> doom >> corpse >> carrier;
+                ss >> i >> doom >> corpse;
                 if (!ss.fail() && i < d.units.size()) {
                     d.units[i].unconscious = true;
                     d.units[i].doom = std::clamp(doom, 0.0f, 100.0f);
                     d.units[i].corpse = corpse != 0;
-                    d.units[i].carriedBy = carrier;
+                    // A save from the first version of this line also named the carrier here
+                    if (ss >> carrier) d.units[i].carriedBy = carrier;
+                }
+            }
+            else if (line.rfind("carried ", 0) == 0) {
+                std::istringstream ss(line.substr(8));
+                size_t i = 0;
+                int by = -1, dead = 0;
+                ss >> i >> by >> dead;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].carriedBy = by;
+                    d.units[i].playingDead = dead != 0;
                 }
             }
             else if (line.rfind("occupy ", 0) == 0) {

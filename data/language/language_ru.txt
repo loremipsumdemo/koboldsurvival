@@ -627,8 +627,12 @@ PROP_PRISONER_CAGE	Клетка для пленника
 UILABEL_UNLOCK	Взломать
 UILABEL_PICK_UP	Поднять
 UILABEL_PUT_IN_BED	Уложить в постель
-UILABEL_MOVE_HERE	Идти сюда
 UILABEL_PUT_DOWN	Опустить
+UILABEL_SHOP	Торговать
+UILABEL_TASK_CARRIED	Его несут
+UILABEL_TASK_PLAYING_DEAD	Притворяется мёртвым
+MISC_BREAKS_FREE	{0} вырывается
+MISC_PLAYS_DEAD	{0} притворяется мёртвым
 UILABEL_DOOM	Гибель
 UILABEL_TASK_UNCONSCIOUS	Без сознания
 UILABEL_TASK_DEAD	Мёртв

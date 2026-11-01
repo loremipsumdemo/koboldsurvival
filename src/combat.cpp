@@ -483,7 +483,8 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
 
     const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
     const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
-    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e); };
+    // Out cold, or carried (playing dead or not), a unit does not fight
+    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e); };
 
     // Hostiles notice player units in range, and chase until the target is gone or out of the leash
     for (Entity h : hostiles) {

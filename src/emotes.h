@@ -16,6 +16,9 @@ enum EmoteId : int {
     EMOTE_HERBALISM = 9,     // gathering mushrooms
     EMOTE_UNCONSCIOUS = 10,  // at 0 health, out cold (components.h, Unconscious)
     EMOTE_DEAD = 11,         // a corpse: its Doom reached 100
+    EMOTE_PLAYING_DEAD = 12, // awake, carried by a hostile, lying still until given an order
+    EMOTE_CUE_PUT_DOWN = 13, // over a carried unit under the pointer whose carrier you have selected: right-click to put down
+    EMOTE_CUE_TALK = 14,     // over an NPC under the pointer that can be talked to
 };
 
 constexpr unsigned EMOTE_CYCLE_MS = 1000;   // how long each emote shows when a unit has more than one

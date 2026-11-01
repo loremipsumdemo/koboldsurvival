@@ -317,7 +317,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     // A unit locked in a cage stays where it is
     std::vector<Entity> units;
     for (Entity u : given) {
-        if (!cannotAct(w, u)) units.push_back(u);
+        if (!cannotTakeOrder(w, u)) units.push_back(u);
     }
     if (units.empty()) return;
 
@@ -393,7 +393,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
-        if (cannotAct(w, u)) continue;
+        if (cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -406,7 +406,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 
 void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
     for (Entity u : units) {
-        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<SquadMember>(u)) w.remove<SquadMember>(u);
         if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -423,7 +423,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;   // only your own units fight on order
-        if (cannotAct(w, u)) continue;
+        if (cannotTakeOrder(w, u)) continue;
         // A fight replaces any move, pickup or formation the unit was on
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
@@ -437,17 +437,17 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
 }
 
 // Right-click on an NPC: each selected unit walks up to it. The first in talk range starts the talk.
-void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade) {
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade, bool shop) {
     if (!w.has<Unit>(npc) || !w.get<Transform>(npc)) return;
     for (Entity u : units) {
-        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
         endPropTasks(w, u);
-        w.add(u, TalkOrder{ npc, trade });
+        w.add(u, TalkOrder{ npc, trade, shop });
     }
 }
 
@@ -625,7 +625,8 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // Every unit that moves: player units by their orders, hostiles by their chase. An Unconscious unit does not move
     // and is not pushed, nor does it push anyone: it lies where it fell, or goes with the unit carrying it.
     std::vector<Entity> units = w.view<Unit, Transform>();
-    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return w.has<Unconscious>(e); }), units.end());
+    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return w.has<Unconscious>(e) || w.has<Carried>(e); }),
+                units.end());
     std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
     std::vector<float> speeds(units.size(), 0.0f);
     // Each unit's goal this frame, whether it is going somewhere of its own (else it is idle, holding its spot), and
@@ -996,7 +997,9 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     const Transform* pt = w.get<Transform>(prop);
     if (!pt || !w.has<Prop>(prop)) return;
     for (Entity u : units) {
-        if (!w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Unconscious>(u)) continue;
+        if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
+        if (w.has<PlayingDead>(u)) breakFree(w, u);
+        if (w.has<Unconscious>(u) || w.has<Carried>(u)) continue;
         if (lockedIn(w, u)) {
             // Locked in: the only order it takes is to unlock the prop it is in, which it does from where it is
             if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
@@ -1016,7 +1019,7 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
 void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target) {
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
-        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -1030,7 +1033,7 @@ void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target)
 void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
     if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
     for (Entity u : units) {
-        if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -1146,7 +1149,8 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                         a.taken = true;
                     } else if (Transform* ct = w.get<Transform>(carried)) {
                         w.remove<Carrying>(u);
-                        if (Unconscious* un = w.get<Unconscious>(carried)) un->carrier = NULL_ENTITY;
+                        w.remove<Carried>(carried);
+                        w.remove<PlayingDead>(carried);
                         ct->x = pt->x;
                         ct->y = pt->y;
                         ct->z = pt->z;
@@ -1484,6 +1488,8 @@ void propStorageChanged(World& w, Entity prop) {
 std::string taskNameOf(World& w, Entity u) {
     if (w.has<Corpse>(u)) return lang("UILABEL_TASK_DEAD");
     if (w.has<Unconscious>(u)) return lang("UILABEL_TASK_UNCONSCIOUS");
+    if (w.has<PlayingDead>(u)) return lang("UILABEL_TASK_PLAYING_DEAD");
+    if (w.has<Carried>(u)) return lang("UILABEL_TASK_CARRIED");
     Entity prop = NULL_ENTITY;
     if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(STAT_LOCKPICKING);
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
@@ -1509,6 +1515,7 @@ std::vector<int> emotesOf(World& w, Entity u) {
     // Out cold or dead, that is all it shows
     if (w.has<Corpse>(u)) return { EMOTE_DEAD };
     if (w.has<Unconscious>(u)) return { EMOTE_UNCONSCIOUS };
+    if (w.has<PlayingDead>(u)) return { EMOTE_PLAYING_DEAD };
     std::vector<int> out;
     auto propEmoteOf = [&](Entity prop) {
         const Prop* p = w.get<Prop>(prop);
@@ -1631,7 +1638,31 @@ void passiveCraftSystem(World& w, double gameSeconds) {
 }
 
 bool cannotAct(World& w, Entity u) {
-    return w.has<Unconscious>(u) || lockedIn(w, u);
+    // Out cold, shut in a cage, or carried (one playing dead can still break free with an order: cannotTakeOrder)
+    return w.has<Unconscious>(u) || lockedIn(w, u) || (w.has<Carried>(u) && !w.has<PlayingDead>(u));
+}
+
+bool cannotTakeOrder(World& w, Entity u) {
+    if (w.has<PlayingDead>(u)) breakFree(w, u);
+    return cannotAct(w, u);
+}
+
+void breakFree(World& w, Entity u) {
+    w.remove<PlayingDead>(u);
+    const Carried* c = w.get<Carried>(u);
+    if (!c) return;
+    const Entity carrier = c->by;
+    w.remove<Carried>(u);
+    if (const Carrying* cr = w.get<Carrying>(carrier); cr && cr->unit == u) w.remove<Carrying>(carrier);
+    if (Transform* t = w.get<Transform>(u)) {
+        if (const Transform* ct = w.get<Transform>(carrier)) *t = *ct;
+    }
+    queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other);
+}
+
+bool canBeCarried(World& w, Entity target) {
+    if (!w.has<Unit>(target) || !w.has<Transform>(target) || w.has<Carried>(target) || w.has<Carrying>(target)) return false;
+    return w.has<Unconscious>(target) || w.has<Commandable>(target);
 }
 
 // ---- Unconscious, Doom and Corpses ----
@@ -1670,6 +1701,7 @@ void knockOut(World& w, Entity u) {
         if (n->hp != 0) n->changed |= NEEDS_HP_CHANGED;
         n->hp = 0;
     }
+    w.remove<PlayingDead>(u);
     w.add(u, Unconscious{});
     queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other);
     queueSound(Sfx::Downed);
@@ -1721,11 +1753,11 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
 }
 
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target) {
-    const Unconscious* un = w.get<Unconscious>(target);
     const Transform* tt = w.get<Transform>(target);
-    if (!un || !tt || un->carrier != NULL_ENTITY) return false;
+    if (!tt || !canBeCarried(w, target)) return false;
     for (Entity u : units) {
-        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotAct(w, u) || w.has<Carrying>(u)) continue;
+        if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Carrying>(u)) continue;
+        if (cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
@@ -1741,7 +1773,7 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
 
 void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point) {
     for (Entity u : units) {
-        if (!w.has<Carrying>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (!w.has<Carrying>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
@@ -1758,7 +1790,8 @@ void putDown(World& w, Entity carrier) {
     if (!cr) return;
     const Entity carried = cr->unit;
     w.remove<Carrying>(carrier);
-    if (Unconscious* un = w.get<Unconscious>(carried)) un->carrier = NULL_ENTITY;
+    w.remove<Carried>(carried);
+    w.remove<PlayingDead>(carried);
     if (Transform* ct = w.get<Transform>(carried)) {
         if (const Transform* t = w.get<Transform>(carrier)) *ct = *t;
         queueLog(langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other);
@@ -1777,8 +1810,7 @@ CarryEvents carrySystem(World& w) {
     // Walking to pick someone up: in reach, it is lifted, unless someone else got there first
     for (Entity u : w.view<CarryOrder, Transform>()) {
         const Entity target = w.get<CarryOrder>(u)->target;
-        Unconscious* un = w.get<Unconscious>(target);
-        if (!un || un->carrier != NULL_ENTITY || w.has<Carrying>(u) || w.has<Unconscious>(u)) {
+        if (!canBeCarried(w, target) || w.has<Carrying>(u) || cannotAct(w, u)) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             continue;
@@ -1786,8 +1818,19 @@ CarryEvents carrySystem(World& w) {
         if (gap(u, target) <= CARRY_REACH) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
-            w.remove<Occupying>(target);   // lifted out of a bed, if it lay in one
-            un->carrier = u;
+            // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
+            if (const SquadMember* sm = w.get<SquadMember>(target)) {
+                if (Squad* sq = w.get<Squad>(sm->squad); sq && sq->size > 0) --sq->size;
+                w.remove<SquadMember>(target);
+            }
+            w.remove<SoloMove>(target);
+            w.remove<PickupOrder>(target);
+            w.remove<AttackOrder>(target);
+            w.remove<TalkOrder>(target);
+            endPropTasks(w, target);
+            w.remove<IdleSpot>(target);
+            if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
+            w.add(target, Carried{ u });
             w.add(u, Carrying{ target });
             queueLog(langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other);
             queueSound(Sfx::CarryUp);
@@ -1817,24 +1860,36 @@ CarryEvents carrySystem(World& w) {
             putDown(w, u);
         }
     }
-    // Every carried unit goes where its carrier is. A carrier that is gone or knocked out drops it.
-    for (Entity u : w.view<Carrying>()) {
-        const Entity carried = w.get<Carrying>(u)->unit;
-        Unconscious* un = w.get<Unconscious>(carried);
-        if (!un || un->carrier != u) {
-            w.remove<Carrying>(u);
+    // Every carried unit goes where its carrier is. A carrier that is gone, knocked out or no longer holding it drops it.
+    // Awake: with its own squad it rides along; with a hostile it plays dead; with anyone else it gets free at once.
+    for (Entity c : w.view<Carried>()) {
+        const Entity by = w.get<Carried>(c)->by;
+        const Carrying* cr = w.get<Carrying>(by);
+        if (!cr || cr->unit != c || w.has<Unconscious>(by) || !w.has<Transform>(by)) {
+            w.remove<Carried>(c);
+            w.remove<PlayingDead>(c);
+            if (cr && cr->unit == c) w.remove<Carrying>(by);
             continue;
         }
-        if (Transform* ct = w.get<Transform>(carried)) {
-            if (const Transform* t = w.get<Transform>(u)) *ct = *t;
+        if (w.has<Unconscious>(c)) {
+            w.remove<PlayingDead>(c);
+        } else if (w.has<Commandable>(c) && w.has<Commandable>(by)) {
+            w.remove<PlayingDead>(c);
+        } else if (w.has<Hostile>(by)) {
+            if (!w.has<PlayingDead>(c)) {
+                w.add(c, PlayingDead{});
+                queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other);
+            }
+        } else {
+            breakFree(w, c);
+            continue;
         }
+        if (Transform* ct = w.get<Transform>(c)) *ct = *w.get<Transform>(by);
     }
-    for (Entity c : w.view<Unconscious>()) {
-        Unconscious* un = w.get<Unconscious>(c);
-        if (un->carrier != NULL_ENTITY) {
-            const Carrying* cr = w.get<Carrying>(un->carrier);
-            if (!cr || cr->unit != c) un->carrier = NULL_ENTITY;
-        }
+    for (Entity u : w.view<Carrying>()) {
+        const Entity c = w.get<Carrying>(u)->unit;
+        const Carried* cd = w.get<Carried>(c);
+        if (!cd || cd->by != u) w.remove<Carrying>(u);
     }
     // Walking to loot: in reach, the game opens the panel
     for (Entity u : w.view<LootOrder, Transform>()) {
@@ -1863,7 +1918,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     const Transform* tt = w.get<Transform>(target);
     if (!w.has<Unconscious>(target) || !tt) return false;
     for (Entity u : units) {
-        if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotAct(w, u)) continue;
+        if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);

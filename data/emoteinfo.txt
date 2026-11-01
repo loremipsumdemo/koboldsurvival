@@ -15,3 +15,6 @@ Emote	File	Shown when
 9	emote_9.png	Herbalism: gathering at a Mushroom
 10	emote_10.png	Unconscious: at 0 health, out cold until it recovers in a bed or bedroll
 11	emote_11.png	Dead: a corpse, its Doom reached 100
+12	emote_12.png	Playing dead: awake but carried by a hostile, lying still until given an order
+13	emote_13.png	Hover cue: over a carried unit whose carrier you have selected, right-click to Put down
+14	emote_14.png	Hover cue: over an NPC you can talk to

@@ -39,7 +39,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target);
 // Right-click talk: each selected unit walks up to the NPC; the first in talk range starts the talk
 // With trade set, it is a free trade with another unit of yours instead: the first in range starts the trade.
-void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade = false);
+void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade = false, bool shop = false);
 // Standing orders from the right-click menu. Follow: each unit walks after the target and keeps close to it.
 // Defend: the same, and each unit fights whatever is attacking the unit it defends (defendSystem). The target itself
 // is skipped if it is among the units. Any other order ends them.
@@ -142,8 +142,15 @@ int recipeOutput(int kind, int input);
 bool lockedIn(World& w, Entity u);
 // The prop a unit occupies, or NULL_ENTITY
 Entity occupiedProp(World& w, Entity u);
-// Whether a unit can take no orders: locked in a cage, or Unconscious (or a Corpse)
+// Whether a unit can take no orders: locked in a cage, Unconscious (or a Corpse), or carried (unless it is playing dead)
 bool cannotAct(World& w, Entity u);
+// For an order about to be given: a unit playing dead breaks free first (breakFree), then as cannotAct
+bool cannotTakeOrder(World& w, Entity u);
+// A carried unit gets free: it stops playing dead and stands where its carrier is
+void breakFree(World& w, Entity u);
+// Whether a unit can be picked up: it is Unconscious (or a corpse), or one of your squad; and nobody carries it, nor
+// is it carrying anyone
+bool canBeCarried(World& w, Entity target);
 
 // ---- Unconscious, Doom and Corpses (components.h) ----
 // How far a unit carrying, or picking up, another must be from it, in tiles
@@ -166,7 +173,7 @@ struct DoomChanges {
     std::vector<Entity> woke, died;
 };
 DoomChanges doomSystem(World& w, double gameSeconds);
-// Sends the first unit that can (the list is nearest first) to pick up an Unconscious unit. False if none can.
+// Sends the first unit that can (the list is nearest first) to pick up a unit that canBeCarried. False if none can.
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
 // Sends each unit that is carrying someone to a ground point, to put it down there
 void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point);
