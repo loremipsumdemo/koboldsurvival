@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + nhấp chuột thay đổi chỉ số 10 điểm.
 UILABEL_LEVELS_HINT	Cấp độ từ 1 đến 99.
 UILABEL_CLICK_SLOT	Nhấp vào một ô để chọn vật phẩm. Chỉ hiện các vật phẩm vừa vặn.
 UILABEL_CLICK_SLOT_STACK	Nhấp vào một ô để chọn vật phẩm. Chồng vật phẩm tối đa theo giới hạn của nó.
+UILABEL_CUSTOM_ONLY	Chỉ Kịch bản tùy chỉnh mới đổi được chỉ số, trang bị và vật phẩm.
 UILABEL_SCROLL_UP	Cuộn lên
 UILABEL_SCROLL_DOWN	Cuộn xuống
 UILABEL_SLOT_HEAD	Đầu

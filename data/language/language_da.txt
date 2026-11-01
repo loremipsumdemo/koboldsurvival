@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + klik ændrer en værdi med 10.
 UILABEL_LEVELS_HINT	Niveauerne går fra 1 til 99.
 UILABEL_CLICK_SLOT	Klik på en plads for at vælge dens genstand. Kun genstande, der passer, vises.
 UILABEL_CLICK_SLOT_STACK	Klik på en plads for at vælge dens genstand. Stakke rummer op til genstandens grænse.
+UILABEL_CUSTOM_ONLY	Kun et brugerdefineret scenarie kan ændre evner, udstyr og genstande.
 UILABEL_SCROLL_UP	Rul op
 UILABEL_SCROLL_DOWN	Rul ned
 UILABEL_SLOT_HEAD	Hoved

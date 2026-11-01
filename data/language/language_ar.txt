@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + النقر يغيّر الإحصائية بمقدا�
 UILABEL_LEVELS_HINT	تتراوح المستويات من 1 إلى 99.
 UILABEL_CLICK_SLOT	انقر على خانة لاختيار غرضها. تُعرض الأغراض المناسبة فقط.
 UILABEL_CLICK_SLOT_STACK	انقر على خانة لاختيار غرضها. تحمل الأكداس حتى حد الغرض.
+UILABEL_CUSTOM_ONLY	لا يمكن تغيير الإحصائيات والعتاد والأغراض إلا في سيناريو مخصص.
 UILABEL_SCROLL_UP	التمرير لأعلى
 UILABEL_SCROLL_DOWN	التمرير لأسفل
 UILABEL_SLOT_HEAD	الرأس

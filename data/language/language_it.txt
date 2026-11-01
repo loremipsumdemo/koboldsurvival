@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Maiusc + clic cambia una statistica di 10.
 UILABEL_LEVELS_HINT	I livelli vanno da 1 a 99.
 UILABEL_CLICK_SLOT	Clicca uno slot per scegliere il suo oggetto. Sono elencati solo gli oggetti che ci stanno.
 UILABEL_CLICK_SLOT_STACK	Clicca uno slot per scegliere il suo oggetto. Le pile contengono fino al limite dell'oggetto.
+UILABEL_CUSTOM_ONLY	Solo uno scenario personalizzato può cambiare statistiche, equipaggiamento e oggetti.
 UILABEL_SCROLL_UP	Scorri su
 UILABEL_SCROLL_DOWN	Scorri giù
 UILABEL_SLOT_HEAD	Testa

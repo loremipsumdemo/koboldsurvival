@@ -331,6 +331,8 @@ public:
     void hoverFrameStart() { hoverAny_ = false; }
     bool hoverFrameEnd();
     void drawRect(const Rect& r, RGBA c);
+    // A rectangle with round corners, in window pixels
+    void drawRoundedRect(const Rect& r, float radius, RGBA c);
     // A UI icon in r: its picture from data/icon (icon_<n>.png, else icon_0.png), or the pink placeholder with its id
     void drawUiIcon(int icon, const Rect& r);
     // An icon of height h at (x, y), with its text beside it in the list font
@@ -363,6 +365,16 @@ public:
     // Fonts for the Stats popout: NotoSans Regular, or Bold if the Regular file is not packed. Owned by the caller.
     void setStatsFonts(TTF_Font* title, TTF_Font* rows);
     void setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    // The menus' text: the same five fonts at a larger size (MENU_FONT_SCALE), for the title, New Game, the scenarios,
+    // the party menu, Settings and the Esc menu. setMenuText picks which set every text call uses until it is called
+    // again; each set keeps its own text pictures, so switching is cheap. The fonts are owned by the caller.
+    void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void setMenuText(bool on);
+    bool menuText() const { return menuText_; }
+    // Text drawn from the very large title font and shrunk to height h, centered on (cx, cy), so large text stays sharp.
+    // Without that font, the UI font enlarged.
+    void drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint);
+
     void drawListText(const std::string& s, float x, float y, RGBA tint);
     float listTextHeight(const std::string& s);
     float listTextWidth(const std::string& s);
@@ -578,9 +590,24 @@ private:
     TTF_Font* listFont_ = nullptr;
     std::map<std::string, HudLine> listText_;
     TextFont statsTitle_, statsRow_;
+    // The text set not in use (the menus' while the game's is, and the other way round), swapped in by setMenuText
+    struct TextSet {
+        TTF_Font* hud = nullptr;
+        std::vector<HudLine> hudLines;
+        TTF_Font* ui = nullptr;
+        std::map<std::string, HudLine> uiText;
+        TTF_Font* list = nullptr;
+        std::map<std::string, HudLine> listText;
+        TextFont statsTitle, statsRow;
+    };
+    TextSet parked_;
+    bool menuText_ = false;
+    void swapTextSet();
+    void replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void clearActiveText();
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
-    float mouseX_ = 0.0f, mouseY_ = 0.0f;   // the mouse, for tooltips
+    float mouseX_ = 0.0f, mouseY_ = 0.0f;   // the mouse, for tooltips and for hover sounds in panels drawn without it
     std::string tip_;                        // the full text to show as a tooltip, or empty
     void drawTip();
 

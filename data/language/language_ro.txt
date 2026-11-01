@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + clic modifică o statistică cu 10.
 UILABEL_LEVELS_HINT	Nivelurile merg de la 1 la 99.
 UILABEL_CLICK_SLOT	Fă clic pe un loc pentru a alege obiectul. Sunt listate doar obiectele care încap.
 UILABEL_CLICK_SLOT_STACK	Fă clic pe un loc pentru a alege obiectul. Stivele țin până la limita obiectului.
+UILABEL_CUSTOM_ONLY	Doar un scenariu personalizat poate schimba statisticile, echipamentul și obiectele.
 UILABEL_SCROLL_UP	Derulează în sus
 UILABEL_SCROLL_DOWN	Derulează în jos
 UILABEL_SLOT_HEAD	Cap

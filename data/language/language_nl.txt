@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + klik verandert een statistiek met 10.
 UILABEL_LEVELS_HINT	Niveaus lopen van 1 tot 99.
 UILABEL_CLICK_SLOT	Klik op een plek om het voorwerp te kiezen. Alleen passende voorwerpen worden getoond.
 UILABEL_CLICK_SLOT_STACK	Klik op een plek om het voorwerp te kiezen. Stapels bevatten tot de limiet van het voorwerp.
+UILABEL_CUSTOM_ONLY	Alleen een eigen scenario kan eigenschappen, uitrusting en voorwerpen wijzigen.
 UILABEL_SCROLL_UP	Omhoog scrollen
 UILABEL_SCROLL_DOWN	Omlaag scrollen
 UILABEL_SLOT_HEAD	Hoofd

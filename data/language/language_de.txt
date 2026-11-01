@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Umschalt + Klick ändert einen Wert um 10.
 UILABEL_LEVELS_HINT	Stufen reichen von 1 bis 99.
 UILABEL_CLICK_SLOT	Klicke auf einen Platz, um seinen Gegenstand zu wählen. Es werden nur passende Gegenstände angezeigt.
 UILABEL_CLICK_SLOT_STACK	Klicke auf einen Platz, um seinen Gegenstand zu wählen. Stapel fassen bis zum Limit des Gegenstands.
+UILABEL_CUSTOM_ONLY	Nur ein eigenes Szenario kann Werte, Ausrüstung und Gegenstände ändern.
 UILABEL_SCROLL_UP	Nach oben scrollen
 UILABEL_SCROLL_DOWN	Nach unten scrollen
 UILABEL_SLOT_HEAD	Kopf

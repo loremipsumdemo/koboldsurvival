@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + klik mengubah statistik sebesar 10.
 UILABEL_LEVELS_HINT	Level berkisar dari 1 sampai 99.
 UILABEL_CLICK_SLOT	Klik slot untuk memilih barang. Hanya barang yang muat yang ditampilkan.
 UILABEL_CLICK_SLOT_STACK	Klik slot untuk memilih barang. Tumpukan memuat sampai batas barang.
+UILABEL_CUSTOM_ONLY	Hanya Skenario Kustom yang dapat mengubah stat, perlengkapan, dan barang.
 UILABEL_SCROLL_UP	Gulir ke atas
 UILABEL_SCROLL_DOWN	Gulir ke bawah
 UILABEL_SLOT_HEAD	Kepala

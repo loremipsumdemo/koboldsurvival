@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + clique altera uma estatística em 10.
 UILABEL_LEVELS_HINT	Os níveis vão de 1 a 99.
 UILABEL_CLICK_SLOT	Clique num espaço para escolher o item. Só são listados os itens que cabem.
 UILABEL_CLICK_SLOT_STACK	Clique num espaço para escolher o item. As pilhas têm o limite do item.
+UILABEL_CUSTOM_ONLY	Só um cenário personalizado pode alterar estatísticas, equipamento e objetos.
 UILABEL_SCROLL_UP	Deslocar para cima
 UILABEL_SCROLL_DOWN	Deslocar para baixo
 UILABEL_SLOT_HEAD	Cabeça

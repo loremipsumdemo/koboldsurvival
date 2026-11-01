@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Maj + clic modifie une statistique de 10.
 UILABEL_LEVELS_HINT	Les niveaux vont de 1 à 99.
 UILABEL_CLICK_SLOT	Cliquez sur un emplacement pour choisir son objet. Seuls les objets qui y tiennent sont listés.
 UILABEL_CLICK_SLOT_STACK	Cliquez sur un emplacement pour choisir son objet. Les piles vont jusqu'à la limite de l'objet.
+UILABEL_CUSTOM_ONLY	Seul un scénario personnalisé permet de modifier les statistiques, l'équipement et les objets.
 UILABEL_SCROLL_UP	Défiler vers le haut
 UILABEL_SCROLL_DOWN	Défiler vers le bas
 UILABEL_SLOT_HEAD	Tête

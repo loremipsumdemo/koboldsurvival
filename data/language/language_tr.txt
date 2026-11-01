@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + tıklama bir istatistiği 10 artırır/azaltır.
 UILABEL_LEVELS_HINT	Seviyeler 1 ile 99 arasındadır.
 UILABEL_CLICK_SLOT	Eşya seçmek için bir yuvaya tıklayın. Yalnızca sığan eşyalar listelenir.
 UILABEL_CLICK_SLOT_STACK	Eşya seçmek için bir yuvaya tıklayın. Yığınlar eşyanın sınırına kadar tutar.
+UILABEL_CUSTOM_ONLY	İstatistikler, teçhizat ve eşyalar yalnızca Özel Senaryoda değiştirilebilir.
 UILABEL_SCROLL_UP	Yukarı kaydır
 UILABEL_SCROLL_DOWN	Aşağı kaydır
 UILABEL_SLOT_HEAD	Baş

@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + クリックで能力値を10単位で変更しま�
 UILABEL_LEVELS_HINT	レベルは 1 から 99 まであります。
 UILABEL_CLICK_SLOT	スロットをクリックしてアイテムを選びます。収まるアイテムだけが表示されます。
 UILABEL_CLICK_SLOT_STACK	スロットをクリックしてアイテムを選びます。スタックはアイテムの上限まで入ります。
+UILABEL_CUSTOM_ONLY	能力値・装備・アイテムを変更できるのはカスタムシナリオだけです。
 UILABEL_SCROLL_UP	上にスクロール
 UILABEL_SCROLL_DOWN	下にスクロール
 UILABEL_SLOT_HEAD	頭

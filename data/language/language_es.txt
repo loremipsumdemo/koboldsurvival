@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Mayús + clic cambia una estadística en 10.
 UILABEL_LEVELS_HINT	Los niveles van de 1 a 99.
 UILABEL_CLICK_SLOT	Haz clic en un hueco para elegir su objeto. Solo aparecen los que caben.
 UILABEL_CLICK_SLOT_STACK	Haz clic en un hueco para elegir su objeto. Las pilas admiten hasta el límite del objeto.
+UILABEL_CUSTOM_ONLY	Solo un escenario personalizado puede cambiar estadísticas, equipo y objetos.
 UILABEL_SCROLL_UP	Subir
 UILABEL_SCROLL_DOWN	Bajar
 UILABEL_SLOT_HEAD	Cabeza

@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + kliknutí změní vlastnost o 10.
 UILABEL_LEVELS_HINT	Levely jsou od 1 do 99.
 UILABEL_CLICK_SLOT	Kliknutím na slot vyberte jeho předmět. Zobrazeny jsou jen předměty, které se vejdou.
 UILABEL_CLICK_SLOT_STACK	Kliknutím na slot vyberte jeho předmět. Hromady obsahují až limit předmětu.
+UILABEL_CUSTOM_ONLY	Statistiky, výbavu a předměty lze měnit jen ve vlastním scénáři.
 UILABEL_SCROLL_UP	Posunout nahoru
 UILABEL_SCROLL_DOWN	Posunout dolů
 UILABEL_SLOT_HEAD	Hlava

@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + คลิก จะเปลี่ยนค่าส
 UILABEL_LEVELS_HINT	เลเวลมีตั้งแต่ 1 ถึง 99
 UILABEL_CLICK_SLOT	คลิกช่องเพื่อเลือกไอเทม จะแสดงเฉพาะไอเทมที่ใส่ได้
 UILABEL_CLICK_SLOT_STACK	คลิกช่องเพื่อเลือกไอเทม กองจะเก็บได้ตามขีดจำกัดของไอเทม
+UILABEL_CUSTOM_ONLY	เปลี่ยนค่าสถานะ อุปกรณ์ และไอเทมได้เฉพาะในสถานการณ์กำหนดเองเท่านั้น
 UILABEL_SCROLL_UP	เลื่อนขึ้น
 UILABEL_SCROLL_DOWN	เลื่อนลง
 UILABEL_SLOT_HEAD	ศีรษะ

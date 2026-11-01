@@ -508,25 +508,11 @@ void Renderer::shutdown() {
         if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
     }
     emotePics_.clear();
-    for (HudLine& hl : hudLines_) {
-        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
-    }
-    hudLines_.clear();
-    for (auto& entry : uiText_) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    uiText_.clear();
-    for (auto& entry : listText_) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    listText_.clear();
-    TextFont* statsFonts[] = { &statsTitle_, &statsRow_ };
-    for (TextFont* f : statsFonts) {
-        for (auto& entry : f->lines) {
-            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-        }
-        f->lines.clear();
-    }
+    // Both text sets: the one in use, then the parked one
+    clearActiveText();
+    swapTextSet();
+    clearActiveText();
+    swapTextSet();
     for (Model& m : propModels_) destroyModel(m);
     destroyModel(fallbackModel_);
 
@@ -617,37 +603,73 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-// Loading screen: black, with a progress bar across the bottom 4% of the screen (white fill)
+// Loading screen: the title screen's moving backdrop, with a rounded progress bar across the middle, the stage that is
+// running above it and how far along it is below
 void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label) {
-    glViewport(0, 0, winW, winH);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
+    beginUi(winW, winH);
+    drawTitleBackground();
+    const float W = (float)winW, H = (float)winH;
+    const float s = H / 720.0f;
+    const float p = std::clamp(progress, 0.0f, 1.0f);
 
-    Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
-
-    // Progress bar: fills left to right across the bottom 4% of the screen
-    float barTop = winH * 0.96f;
-    float fill = winW * std::clamp(progress, 0.0f, 1.0f);
-    Batch bar;
-    bar.quad({ 0.0f, barTop, 0.0f }, { fill, barTop, 0.0f },
-             { fill, (float)winH, 0.0f }, { 0.0f, (float)winH, 0.0f }, WHITE);
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, bar.v.size() * sizeof(Vertex), bar.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)bar.v.size());
-    glBindVertexArray(0);
-
-    // The name of the stage that is running, above the bar
-    if (!label.empty()) {
-        beginUi(winW, winH);
-        drawUiTextCentered(label, winW * 0.5f, winH * 0.90f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-        endUi();
+    const float barW = std::min(W * 0.6f, 760.0f * s), barH = 26.0f * s;
+    const Rect outer{ (W - barW) * 0.5f, (H - barH) * 0.5f, barW, barH };
+    const float border = std::max(2.0f, 2.0f * s), gap = std::max(2.0f, 3.0f * s);
+    // A soft glow, the pink border, the dark inside, then the green fill
+    drawRoundedRect(Rect{ outer.x - 6.0f * s, outer.y - 6.0f * s, outer.w + 12.0f * s, outer.h + 12.0f * s },
+                    (outer.h + 12.0f * s) * 0.5f, theme::alpha(theme::PINK, 0.12f));
+    drawRoundedRect(outer, outer.h * 0.5f, theme::PINK);
+    const Rect inside{ outer.x + border, outer.y + border, outer.w - 2.0f * border, outer.h - 2.0f * border };
+    drawRoundedRect(inside, inside.h * 0.5f, theme::alpha(theme::NIGHT, 0.96f));
+    const Rect track{ inside.x + gap, inside.y + gap, inside.w - 2.0f * gap, inside.h - 2.0f * gap };
+    if (p > 0.0f) {
+        const Rect fill{ track.x, track.y, std::max(track.h, track.w * p), track.h };
+        drawRoundedRect(fill, fill.h * 0.5f, theme::GREEN);
+        // A lighter line along its top, so the fill reads as lit
+        drawRoundedRect(Rect{ fill.x + fill.h * 0.3f, fill.y + fill.h * 0.18f, std::max(0.0f, fill.w - fill.h * 0.6f), fill.h * 0.22f },
+                        fill.h * 0.11f, RGBA{ 1.0f, 1.0f, 1.0f, 0.28f });
     }
 
+    // The stage above the bar, and the share done below it
+    if (!label.empty()) {
+        drawUiTextCentered(label, W * 0.5f, outer.y - 14.0f * s - uiTextHeight("Ag"), theme::BONE);
+    }
+    const std::string pct = std::to_string((int)std::lround(p * 100.0f)) + "%";
+    drawUiTextCentered(pct, W * 0.5f, outer.y + outer.h + 12.0f * s, theme::ASH);
+    endUi();
     glEnable(GL_DEPTH_TEST);
+}
+
+// A rectangle with round corners of radius `radius` (at most half its shorter side), in window pixels
+void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
+    if (r.w <= 0.0f || r.h <= 0.0f) return;
+    const float rad = std::clamp(radius, 0.0f, std::min(r.w, r.h) * 0.5f);
+    std::vector<UiVert> v;
+    auto quad = [&](float x0, float y0, float x1, float y1) {
+        if (x1 <= x0 || y1 <= y0) return;
+        v.insert(v.end(), { { x0, y0, c }, { x1, y0, c }, { x1, y1, c }, { x0, y0, c }, { x1, y1, c }, { x0, y1, c } });
+    };
+    // The middle band the full height, and the two side bands between the corners
+    quad(r.x + rad, r.y, r.x + r.w - rad, r.y + r.h);
+    quad(r.x, r.y + rad, r.x + rad, r.y + r.h - rad);
+    quad(r.x + r.w - rad, r.y + rad, r.x + r.w, r.y + r.h - rad);
+    // Each corner a fan of thin wedges
+    if (rad > 0.0f) {
+        const int steps = std::clamp((int)(rad * 0.6f), 4, 24);
+        const float cx[4] = { r.x + rad, r.x + r.w - rad, r.x + r.w - rad, r.x + rad };
+        const float cy[4] = { r.y + rad, r.y + rad, r.y + r.h - rad, r.y + r.h - rad };
+        const float start[4] = { 3.14159265f, 4.71238898f, 0.0f, 1.57079633f };
+        for (int k = 0; k < 4; ++k) {
+            for (int i = 0; i < steps; ++i) {
+                const float a0 = start[k] + 1.57079633f * (float)i / (float)steps;
+                const float a1 = start[k] + 1.57079633f * (float)(i + 1) / (float)steps;
+                v.push_back({ cx[k], cy[k], c });
+                v.push_back({ cx[k] + std::cos(a0) * rad, cy[k] + std::sin(a0) * rad, c });
+                v.push_back({ cx[k] + std::cos(a1) * rad, cy[k] + std::sin(a1) * rad, c });
+            }
+        }
+    }
+    drawUiTris(v);
 }
 
 // ---- Menus ----
@@ -1102,8 +1124,8 @@ Renderer::HudLine& Renderer::listLine(const std::string& s) {
 }
 
 // Stats popout fonts: each one keeps its own cache of text textures
-// Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
-void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
+// Drops every text picture of the set in use
+void Renderer::clearActiveText() {
     for (HudLine& hl : hudLines_) {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
@@ -1116,10 +1138,68 @@ void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* s
         if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
     }
     listText_.clear();
+    TextFont* statsFonts[] = { &statsTitle_, &statsRow_ };
+    for (TextFont* f : statsFonts) {
+        for (auto& entry : f->lines) {
+            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
+        }
+        f->lines.clear();
+    }
+}
+
+void Renderer::replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
+    clearActiveText();
     hudFont_ = hud;
     uiFont_ = ui;
     listFont_ = list;
-    setStatsFonts(statsTitle, statsRow);
+    statsTitle_.font = statsTitle;
+    statsRow_.font = statsRow;
+}
+
+void Renderer::swapTextSet() {
+    std::swap(hudFont_, parked_.hud);
+    std::swap(hudLines_, parked_.hudLines);
+    std::swap(uiFont_, parked_.ui);
+    std::swap(uiText_, parked_.uiText);
+    std::swap(listFont_, parked_.list);
+    std::swap(listText_, parked_.listText);
+    std::swap(statsTitle_, parked_.statsTitle);
+    std::swap(statsRow_, parked_.statsRow);
+}
+
+void Renderer::setMenuText(bool on) {
+    if (on == menuText_) return;
+    // Without menu fonts there is nothing to swap to
+    if (on && !parked_.ui) return;
+    swapTextSet();
+    menuText_ = on;
+}
+
+// Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
+void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
+    if (menuText_) swapTextSet();
+    replaceActiveFonts(hud, ui, list, statsTitle, statsRow);
+    if (menuText_) swapTextSet();
+}
+
+void Renderer::setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
+    if (!menuText_) swapTextSet();
+    replaceActiveFonts(hud, ui, list, statsTitle, statsRow);
+    if (!menuText_) swapTextSet();
+}
+
+void Renderer::drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint) {
+    const TextTex& t = titleWord(text);
+    if (!t.tex) {
+        drawUiTextLarge(text, cx, cy, h / std::max(1.0f, uiTextHeight("Ag")), tint);
+        return;
+    }
+    const float w = t.aspect * h, x = cx - w * 0.5f, y = cy - h * 0.5f;
+    const float v[4 * 5] = { x, y + h, 0.0f, 0.0f, 1.0f, x + w, y + h, 0.0f, 1.0f, 1.0f,
+                             x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(t.tex, v, tint);
 }
 
 void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
@@ -2141,7 +2221,7 @@ void Renderer::drawPauseBar(bool hint) {
     drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, theme::alpha(theme::NIGHT, 0.55f));
     drawRectGradientH(Rect{ 0.0f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::alpha(theme::PINK, 0.0f), theme::PINK);
     drawRectGradientH(Rect{ uiW_ * 0.5f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::PINK, theme::alpha(theme::PINK, 0.0f));
-    drawUiTextLarge(uiUpper(lang("UILABEL_PAUSED")), uiW_ * 0.5f, pad + bigH * 0.5f, 2.6f, theme::BONE);
+    drawBigText(uiUpper(lang("UILABEL_PAUSED")), uiW_ * 0.5f, pad + bigH * 0.5f, bigH, theme::BONE);
     if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, theme::ASH);
 }
 
@@ -2721,6 +2801,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
 
     // Walk and run: the lit one is the pace the squad is moving at
     auto mode = [&](const Rect& r, const std::string& text, bool on) {
+        if (r.contains(mouseX_, mouseY_)) noteHover(r);
         drawRect(r, on ? RGBA{ 0.40f, 0.60f, 0.0f, 1.0f } : RGBA{ 0.12f, 0.08f, 0.15f, bgAlpha });
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -2739,6 +2820,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const Entity e = units[c.index];
         const bool selected = w.has<Selected>(e);
         const Rect frame{ c.rect.x - 2.0f, c.rect.y - 2.0f, c.rect.w + 4.0f, c.rect.h + 4.0f };
+        if (c.rect.contains(mouseX_, mouseY_)) noteHover(c.rect);
         // A selected unit's frame is solid purple, so it stands out from the see-through frames
         drawRect(frame, selected ? RGBA{ 0.40f, 0.60f, 0.0f, 1.0f } : RGBA{ 0.30f, 0.20f, 0.32f, bgAlpha });
         drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.10f, 0.07f, 0.13f, bgAlpha });
@@ -3430,6 +3512,7 @@ void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title)
 }
 
 void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
+    if (r.contains(mouseX_, mouseY_)) noteHover(r);
     drawRect(r, theme::alpha(theme::PINK, 0.9f));
     drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f }, theme::alpha(theme::PINK_INK, 0.95f));
     const char* sign = collapsed ? "+" : "-";
@@ -3867,6 +3950,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
 
     // The two tabs: the one shown is lit
     auto tab = [&](const Rect& r, const std::string& label, bool selected) {
+        if (r.contains(mx, my)) noteHover(r);
         drawRect(r, selected ? lit : dim);
         drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listTextHeight("Ag")) * 0.5f,
                      selected ? white : gray);
@@ -3900,7 +3984,10 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
                 drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.624f, 0.902f, 0.0f, 1.0f });
                 continue;
             }
-            if (fr.r.contains(mx, my)) drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
+            if (fr.r.contains(mx, my)) {
+                noteHover(fr.r);
+                drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
+            }
             const bool on = filter.on[(int)fr.kind];
             drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, white);
             const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
@@ -3924,7 +4011,8 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const RGBA plateHot{ 0.14f, 0.21f, 0.0f, 0.95f };
     const RGBA plateOn{ 0.176f, 0.259f, 0.0f, 0.95f };    // the purple used for the selected unit
     const RGBA plateOff{ 0.07f, 0.05f, 0.10f, 0.70f };
-    const float lineH = listTextHeight("Ag");
+    const float menuLineH = listTextHeight("Ag");
+    float lineH = menuLineH;   // changes to the game's size for the Stats tab's rows
     const PartyMember& picked = pickedMember(p, ui);
 
     // Background for a plate: purple when chosen, lighter when hovered, dim when disabled
@@ -3957,7 +4045,13 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         drawRect(bar.thumb, barHot ? RGBA{ 1.0f, 0.36f, 0.70f, 1.0f } : RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
     }
 
+    const bool menuSet = menuText_;
     for (const Button& b : buttons) {
+        // The Stats tab's rows (headings, stats and their - and +) are drawn in the game's fonts: there are many of them
+        const bool statRow = b.action == Action::PartyStatLabel || b.action == Action::PartyStep
+                          || b.action == Action::PartyHeading;
+        setMenuText(menuSet && !statRow);
+        lineH = statRow ? listTextHeight("Ag") : menuLineH;
         const bool hot = b.enabled && b.rect.contains(mx, my);
         if (hot) noteHover(b.rect);
         switch (b.action) {
@@ -4045,9 +4139,32 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             leftText(b.rect, b.label, heading, 0.0f);
             break;
 
-        case Action::PartyNote:
-            leftText(b.rect, b.label, gray, 0.0f);
+        case Action::PartyNote: {
+            // A note with room for more than one line is wrapped, a line per paragraph and more as needed; a one-line
+            // note is shortened to fit
+            std::vector<std::string> lines;
+            if (b.rect.h >= 2.0f * lineH) {
+                size_t from = 0;
+                while (from <= b.label.size()) {
+                    const size_t nl = b.label.find('\n', from);
+                    const std::string para = b.label.substr(from, nl == std::string::npos ? std::string::npos : nl - from);
+                    for (const std::string& l : wrapListText(para, b.rect.w)) lines.push_back(l);
+                    if (nl == std::string::npos) break;
+                    from = nl + 1;
+                }
+            }
+            if (lines.size() <= 1) {
+                leftText(b.rect, b.label, gray, 0.0f);
+                break;
+            }
+            const float pitch = lineH * 1.05f;
+            const int fit = std::max(1, (int)(b.rect.h / pitch));
+            float y = b.rect.y;
+            for (int k = 0; k < (int)lines.size() && k < fit; ++k, y += pitch) {
+                drawListText(lines[(size_t)k], b.rect.x, y, gray);
+            }
             break;
+        }
 
         case Action::PartyInvSlot: {
             const ItemStack& st = picked.items[b.param];
@@ -4101,6 +4218,8 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
         }
     }
+    setMenuText(menuSet);
+    lineH = menuLineH;
 
     // Middle: the picked unit, large, with its name and totals under it. With no units, only the message.
     if (p.empty()) {

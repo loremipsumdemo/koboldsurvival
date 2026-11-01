@@ -105,8 +105,10 @@ enum class ScenarioId : int {
 // The language keys for a scenario's name and description
 const char* scenarioNameKey(ScenarioId id);
 const char* scenarioDescKey(ScenarioId id);
-// Whether the party menu may add and remove units for this scenario: only Custom
+// Whether the party menu may add and remove units for this scenario, and change their stats, gear and items: only
+// Custom. The other scenarios keep what they roll; their units' names, pictures and body types can still be changed.
 inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
+inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom; }
 // A party for a scenario, with distinct names and sprites. count, when 1 or more, sets the size of a Full Random or
 // Custom party (the other scenarios have their own sizes).
 Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);

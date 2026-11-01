@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + 点击可将属性调整 10 点。
 UILABEL_LEVELS_HINT	等级范围为 1 至 99。
 UILABEL_CLICK_SLOT	点击栏位即可选择物品。只列出可放入的物品。
 UILABEL_CLICK_SLOT_STACK	点击栏位即可选择物品。堆叠数量不超过物品上限。
+UILABEL_CUSTOM_ONLY	只有自定义剧本才能更改属性、装备和物品。
 UILABEL_SCROLL_UP	向上滚动
 UILABEL_SCROLL_DOWN	向下滚动
 UILABEL_SLOT_HEAD	头部

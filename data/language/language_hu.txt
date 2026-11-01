@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	A Shift + kattintás 10-zel módosítja a statisztikát.
 UILABEL_LEVELS_HINT	A szintek 1-től 99-ig terjednek.
 UILABEL_CLICK_SLOT	Kattints egy helyre a tárgy kiválasztásához. Csak a ráférő tárgyak jelennek meg.
 UILABEL_CLICK_SLOT_STACK	Kattints egy helyre a tárgy kiválasztásához. A halmok a tárgy határáig tartalmaznak.
+UILABEL_CUSTOM_ONLY	Csak egyéni forgatókönyvben lehet módosítani az értékeket, a felszerelést és a tárgyakat.
 UILABEL_SCROLL_UP	Görgetés felfelé
 UILABEL_SCROLL_DOWN	Görgetés lefelé
 UILABEL_SLOT_HEAD	Fej

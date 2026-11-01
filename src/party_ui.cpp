@@ -73,8 +73,8 @@ int clampDropScroll(int scroll, int count) {
 int partyListVisible(int H) {
     const float s = H / 720.0f;
     const PartyPanels P = partyPanels(0, H);
-    // Each card is 96 px with a 10 px gap, and 60 px at the bottom of the column is kept for the hints
-    const float area = P.left.h - 12.0f * s - 60.0f * s;
+    // Each card is 96 px with a 10 px gap, and PARTY_HINT_H at the bottom of the column is kept for the hints
+    const float area = P.left.h - 12.0f * s - PARTY_HINT_H * s;
     return std::max(1, (int)std::floor((area + 10.0f * s) / (96.0f * s + 10.0f * s)));
 }
 
@@ -88,7 +88,7 @@ PartyListBar partyListBar(int W, int H, int count, int scroll) {
     if (maxScroll <= 0) return b;
     const float s = H / 720.0f;
     const PartyPanels P = partyPanels(W, H);
-    const float top = P.left.y + 12.0f * s, bottom = P.left.y + P.left.h - 64.0f * s;
+    const float top = P.left.y + 12.0f * s, bottom = P.left.y + P.left.h - (PARTY_HINT_H + 4.0f) * s;
     b.track = Rect{ P.left.x + P.left.w - 14.0f * s, top, 8.0f * s, std::max(0.0f, bottom - top) };
     const float thumbH = std::max(24.0f * s, b.track.h * partyListVisible(H) / (float)count);
     const float frac = std::clamp(scroll, 0, maxScroll) / (float)maxScroll;
@@ -150,10 +150,11 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, cy, cardW, cardH },
                               Action::PartyPick, true, i });
     }
-    const float hintY = P.left.y + P.left.h - 56.0f * s;
-    out.push_back(Button{ lang("UILABEL_CLICK_UNIT_EDIT"), Rect{ P.left.x + 10.0f * s, hintY, P.left.w - 20.0f * s, 22.0f * s },
-                          Action::PartyNote, false, 0 });
-    out.push_back(Button{ lang("UILABEL_SHIFT_CLICK"), Rect{ P.left.x + 10.0f * s, hintY + 24.0f * s, P.left.w - 20.0f * s, 22.0f * s },
+    // The hints, one block wrapped to the column's width: how to pick a unit, and in Custom how Shift steps a stat
+    const float hintH = PARTY_HINT_H - 8.0f;
+    std::string hints = lang("UILABEL_CLICK_UNIT_EDIT");
+    if (ui.editable) hints += "\n" + lang("UILABEL_SHIFT_CLICK");
+    out.push_back(Button{ hints, Rect{ P.left.x + 10.0f * s, P.left.y + P.left.h - (hintH + 4.0f) * s, P.left.w - 20.0f * s, hintH * s },
                           Action::PartyNote, false, 0 });
 
     // Right column: the tabs, then the picked tab's contents. Only with a unit to pick.
@@ -200,12 +201,15 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                 ry += pitch;
                 for (int i = 0; i < STAT_COUNT; ++i) {
                     if (statInfo(i).group != g) continue;
-                    out.push_back(Button{ statName(i), Rect{ x, ry, colW - 2.0f * (btn + 4.0f * s), rowH },
-                                          Action::PartyStatLabel, false, i });
-                    out.push_back(Button{ "-", Rect{ x + colW - 2.0f * btn - 4.0f * s, ry, btn, rowH },
-                                          Action::PartyStep, true, i * 2 });
-                    out.push_back(Button{ "+", Rect{ x + colW - btn, ry, btn, rowH },
-                                          Action::PartyStep, true, i * 2 + 1 });
+                    // Outside Custom the levels are only shown, with no - and +
+                    const float labelW = ui.editable ? colW - 2.0f * (btn + 4.0f * s) : colW;
+                    out.push_back(Button{ statName(i), Rect{ x, ry, labelW, rowH }, Action::PartyStatLabel, false, i });
+                    if (ui.editable) {
+                        out.push_back(Button{ "-", Rect{ x + colW - 2.0f * btn - 4.0f * s, ry, btn, rowH },
+                                              Action::PartyStep, true, i * 2 });
+                        out.push_back(Button{ "+", Rect{ x + colW - btn, ry, btn, rowH },
+                                              Action::PartyStep, true, i * 2 + 1 });
+                    }
                     ry += pitch;
                 }
                 ry += groupGap;
@@ -214,8 +218,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         };
         column(inX, { StatGroup::Attributes, StatGroup::Combat });
         column(inX + colW + colGap, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
-        out.push_back(Button{ lang("UILABEL_LEVELS_HINT"), Rect{ inX, P.right.y + P.right.h - 46.0f * s, inW, 22.0f * s },
-                              Action::PartyNote, false, 0 });
+        // Two lines of room, for the longer note outside Custom
+        out.push_back(Button{ lang(ui.editable ? "UILABEL_LEVELS_HINT" : "UILABEL_CUSTOM_ONLY"),
+                              Rect{ inX, P.right.y + P.right.h - 82.0f * s, inW, 64.0f * s }, Action::PartyNote, false, 0 });
         break;
     }
 
@@ -226,7 +231,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             const Rect r{ inX + col * (tileW + gap), top + row * pitch, tileW, tileH };
             if (ui.dropKind == DropKind::Gear && ui.dropSlot == g) gearAnchor = r;
             out.push_back(Button{ m.gear[g] != 0 ? itemNameOf(m.gear[g]) : std::string(lang("UILABEL_EMPTY")), r,
-                                  Action::PartyGearSlot, true, g });
+                                  Action::PartyGearSlot, ui.editable, g });
         }
         const Equipment worn = wornBy(m);
         int attack = 0, defense = 0;
@@ -234,8 +239,8 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         const float noteY = top + 4.0f * pitch + 2.0f * s;
         out.push_back(Button{ langf("UILABEL_ATTACK_DEFENSE", { std::to_string(attack), std::to_string(defense) }),
                               Rect{ inX, noteY, inW, 22.0f * s }, Action::PartyNote, false, 0 });
-        out.push_back(Button{ lang("UILABEL_CLICK_SLOT"),
-                              Rect{ inX, noteY + 26.0f * s, inW, 22.0f * s }, Action::PartyNote, false, 0 });
+        out.push_back(Button{ lang(ui.editable ? "UILABEL_CLICK_SLOT" : "UILABEL_CUSTOM_ONLY"),
+                              Rect{ inX, noteY + 26.0f * s, inW, 64.0f * s }, Action::PartyNote, false, 0 });
         break;
     }
 
@@ -260,14 +265,20 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
 
         const float countY = infoY + 30.0f * s, btnW = 40.0f * s, labelW = 120.0f * s;
         const bool hasItem = st.item > 0;
-        out.push_back(Button{ "-", Rect{ inX, countY, btnW, 32.0f * s }, Action::PartyCount,
-                              hasItem && st.count > 1, -1 });
-        out.push_back(Button{ langf("UILABEL_COUNT", { std::to_string(st.count) }),
-                              Rect{ inX + btnW + 8.0f * s, countY, labelW, 32.0f * s }, Action::PartyNote, false, 0 });
-        out.push_back(Button{ "+", Rect{ inX + btnW + labelW + 16.0f * s, countY, btnW, 32.0f * s }, Action::PartyCount,
-                              hasItem && st.count < stackLimit(st.item), 1 });
-        out.push_back(Button{ lang("UILABEL_CLICK_SLOT_STACK"),
-                              Rect{ inX, countY + 44.0f * s, inW, 22.0f * s }, Action::PartyNote, false, 0 });
+        if (ui.editable) {
+            out.push_back(Button{ "-", Rect{ inX, countY, btnW, 32.0f * s }, Action::PartyCount,
+                                  hasItem && st.count > 1, -1 });
+            out.push_back(Button{ langf("UILABEL_COUNT", { std::to_string(st.count) }),
+                                  Rect{ inX + btnW + 8.0f * s, countY, labelW, 32.0f * s }, Action::PartyNote, false, 0 });
+            out.push_back(Button{ "+", Rect{ inX + btnW + labelW + 16.0f * s, countY, btnW, 32.0f * s }, Action::PartyCount,
+                                  hasItem && st.count < stackLimit(st.item), 1 });
+        } else if (hasItem) {
+            // Outside Custom: the count is only shown, and a slot click only picks the slot to read about
+            out.push_back(Button{ langf("UILABEL_COUNT", { std::to_string(st.count) }),
+                                  Rect{ inX, countY, inW, 32.0f * s }, Action::PartyNote, false, 0 });
+        }
+        out.push_back(Button{ lang(ui.editable ? "UILABEL_CLICK_SLOT_STACK" : "UILABEL_CUSTOM_ONLY"),
+                              Rect{ inX, countY + 44.0f * s, inW, 64.0f * s }, Action::PartyNote, false, 0 });
         break;
     }
     }

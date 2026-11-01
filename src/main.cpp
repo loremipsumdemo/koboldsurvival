@@ -1399,6 +1399,15 @@ void playSfx(Sfx s) {
 // The size the title screen's name is drawn in before it is shrunk to fit: large enough that it is never enlarged,
 // even on a 4K screen
 constexpr float TITLE_NAME_POINTS = 200.0f;
+// The menus' text (the title, New Game, the scenarios, the party menu, Settings and the Esc menu) is this much larger
+// than the game's. The stat rows of the party menu's Stats tab stay at the game's size. The menus are laid out for a
+// 720 pixel high window and grow with it, so in a smaller window the text grows less, to keep fitting its boxes:
+// the full 1.5 times from 1080 pixels high, and the game's own size at 720.
+constexpr float MENU_FONT_SCALE = 1.5f;
+int menuFontPercent(int uiScale, int windowH) {
+    const float grow = std::clamp(windowH / 720.0f, 1.0f, MENU_FONT_SCALE);
+    return (int)std::lround(uiScale * grow);
+}
 
 // Working sounds: how often each plays while a prop is worked (real seconds), and how far from the camera's focus a
 // worked prop is still heard, in tiles
@@ -1497,6 +1506,8 @@ int main(int, char**) {
     // Settings come first: the saved text size decides the fonts
     GameSettings settings = loadSettings(SETTINGS_PATH);
     UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
+    UiFonts menuFonts;            // opened in the loop, once the window's height is known (menuFontPercent)
+    int appliedMenuPercent = 0;   // the size they were opened at; 0 to open them again
     int appliedFontScale = settings.fontScale;
     std::string appliedFontPath = settings.fontPath;
     std::string appliedLanguage = settings.language;
@@ -1702,7 +1713,7 @@ int main(int, char**) {
     CombatLog combatLog;
     std::vector<FloatingNumber> floatingNumbers;
     std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+item" from work
-    int infoTab = 0;        // the Information Panel's tab: 0 Message, 1 Game
+    int infoTab = 1;        // the Information Panel's tab: 0 Message, 1 Game (shown first)
     LogFilter logFilter;    // which game message kinds the Game tab shows
     bool logFilterOpen = false;
     int logOffset = 0;      // lines the combat log is scrolled up from its newest line; 0 follows new lines
@@ -1838,6 +1849,7 @@ int main(int, char**) {
         party = scenarioParty(scenarioPick, partyRng);
         partyUi = PartyUi{};
         partyUi.resizable = scenarioResizable(scenarioPick);
+        partyUi.editable = scenarioEditable(scenarioPick);
         backScreen = Screen::ScenarioSelect;
         screen = Screen::PartySetup;
     };
@@ -2004,6 +2016,7 @@ int main(int, char**) {
         renderer.setFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
         closeUiFonts(fonts);
         fonts = next;
+        appliedMenuPercent = 0;   // the menu fonts follow at the top of the next frame
         // The name's font follows the language and the font picked, too
         std::vector<TTF_Font*> nextName;
         if (TTF_Font* f = openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nextName)) {
@@ -2183,12 +2196,22 @@ int main(int, char**) {
             for (int i = 0; i < (int)party.size(); ++i) {
                 if (i != picked) others.push_back(party[i].name);
             }
-            party[picked] = randomMember(partyRng, others);
+            PartyMember fresh = randomMember(partyRng, others);
+            if (!partyUi.editable) {
+                // Outside Custom only who the unit is changes: its stats, gear, items and hunger stay as the scenario made them
+                const PartyMember& old = party[picked];
+                fresh.stats = old.stats;
+                fresh.gear = old.gear;
+                fresh.items = old.items;
+                fresh.hunger = old.hunger;
+            }
+            party[picked] = fresh;
             stopNameEdit();
             closeDropdown();
             return;
         }
         case Action::PartyGearSlot:
+            if (!partyUi.editable) return;
             stopNameEdit();
             partyUi.dropKind = DropKind::Gear;
             partyUi.dropSlot = std::clamp(param, 0, GEAR_SLOTS - 1);
@@ -2196,6 +2219,7 @@ int main(int, char**) {
             return;
         case Action::PartyStep: {
             // Minus is the even parameter and plus the odd one. Holding Shift moves a level by ten.
+            if (!partyUi.editable) return;
             const int stat = param / 2;
             const int step = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 10 : 1;
             Stats& st = pickedMember(party, partyUi).stats;
@@ -2205,11 +2229,13 @@ int main(int, char**) {
         case Action::PartyInvSlot:
             stopNameEdit();
             partyUi.stackSlot = std::clamp(param, 0, INVENTORY_SLOTS - 1);
+            if (!partyUi.editable) return;   // the slot is picked to read about, with no list to change it
             partyUi.dropKind = DropKind::Item;
             partyUi.dropSlot = partyUi.stackSlot;
             partyUi.dropScroll = 0;
             return;
         case Action::PartyCount: {
+            if (!partyUi.editable) return;
             ItemStack& st = pickedMember(party, partyUi).items[partyUi.stackSlot];
             if (st.item > 0) st.count = std::clamp(st.count + param, 1, stackLimit(st.item));
             return;
@@ -2227,9 +2253,10 @@ int main(int, char**) {
                 m.body = value;
                 break;
             case DropKind::Gear:
-                m.gear[partyUi.dropSlot] = value;
+                if (partyUi.editable) m.gear[partyUi.dropSlot] = value;
                 break;
             case DropKind::Item: {
+                if (!partyUi.editable) break;
                 ItemStack& st = m.items[partyUi.dropSlot];
                 if (value == 0) {
                     st = ItemStack{};
@@ -2449,6 +2476,19 @@ int main(int, char**) {
         int winW, winH;
         SDL_GetWindowSizeInPixels(window, &winW, &winH);
         viewH = winH;
+
+        // The menu fonts, opened again when the window's height or the text settings call for another size
+        if (const int pct = menuFontPercent(settings.fontScale, winH); pct != appliedMenuPercent) {
+            UiFonts next = openUiFonts(pct, settings.fontPath, settings.language);
+            if (next.valid()) {
+                renderer.setMenuFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
+                closeUiFonts(menuFonts);
+                menuFonts = next;
+            } else {
+                closeUiFonts(next);
+            }
+            appliedMenuPercent = pct;
+        }
 
         // Own units by entity number, lowest first. The bottom panel shows them in this order, and the
         // camera starts on the first of them, which is also the first party member.
@@ -3145,6 +3185,10 @@ int main(int, char**) {
             SDL_GetMouseState(&mx, &my);
             return overPanels(mx, my, W, H);
         };
+
+        // The menus measure and draw their text in the larger menu fonts, the game in its own: set before the input,
+        // so a click is matched against the same layout that was drawn
+        renderer.setMenuText(screen != Screen::Playing);
 
         // ---- Input ----
         while (SDL_PollEvent(&e)) {
@@ -4507,6 +4551,7 @@ int main(int, char**) {
         };
 
         if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;   // the next menu opens fresh
+        renderer.setMenuText(screen != Screen::Playing);
         renderer.hoverFrameStart();
         switch (screen) {
         case Screen::Title:
@@ -4876,10 +4921,13 @@ int main(int, char**) {
         }
 
         case Screen::Pause:
+            // The world and its PAUSED bar as in the game, then the menu over them in the menu fonts
+            renderer.setMenuText(false);
             renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
             renderer.beginUi(winW, winH);
             dim(0.55f);
             renderer.drawPauseBar(false);
+            renderer.setMenuText(true);
             drawMenuItems(Screen::Pause, layoutButtons(Screen::Pause, winW, winH, saves));
             renderer.endUi();
             break;
@@ -5032,6 +5080,7 @@ int main(int, char**) {
     renderer.setTitleFont(nullptr);
     closeFonts(nameFontOwned);
     closeUiFonts(fonts);
+    closeUiFonts(menuFonts);
     closeFonts(titleFontOwned);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);

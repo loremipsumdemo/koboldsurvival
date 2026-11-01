@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + клик меняет характеристику �
 UILABEL_LEVELS_HINT	Уровни от 1 до 99.
 UILABEL_CLICK_SLOT	Нажмите на ячейку, чтобы выбрать предмет. Показаны только подходящие предметы.
 UILABEL_CLICK_SLOT_STACK	Нажмите на ячейку, чтобы выбрать предмет. В стопке до предела предмета.
+UILABEL_CUSTOM_ONLY	Менять характеристики, снаряжение и предметы можно только в своём сценарии.
 UILABEL_SCROLL_UP	Прокрутить вверх
 UILABEL_SCROLL_DOWN	Прокрутить вниз
 UILABEL_SLOT_HEAD	Голова

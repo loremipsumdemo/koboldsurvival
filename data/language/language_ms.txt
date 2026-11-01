@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + klik mengubah statistik sebanyak 10.
 UILABEL_LEVELS_HINT	Aras dari 1 hingga 99.
 UILABEL_CLICK_SLOT	Klik slot untuk memilih barang. Hanya barang yang muat disenaraikan.
 UILABEL_CLICK_SLOT_STACK	Klik slot untuk memilih barang. Timbunan memuatkan sehingga had barang.
+UILABEL_CUSTOM_ONLY	Hanya Senario Tersuai boleh mengubah statistik, kelengkapan dan barang.
 UILABEL_SCROLL_UP	Tatal ke atas
 UILABEL_SCROLL_DOWN	Tatal ke bawah
 UILABEL_SLOT_HEAD	Kepala

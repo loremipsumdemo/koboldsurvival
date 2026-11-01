@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + napsautus muuttaa ominaisuutta 10:llä.
 UILABEL_LEVELS_HINT	Tasot vaihtelevat välillä 1–99.
 UILABEL_CLICK_SLOT	Napsauta paikkaa valitaksesi sen esineen. Vain sopivat esineet näytetään.
 UILABEL_CLICK_SLOT_STACK	Napsauta paikkaa valitaksesi sen esineen. Pinoihin mahtuu esineen rajaan asti.
+UILABEL_CUSTOM_ONLY	Vain omassa skenaariossa voi muuttaa ominaisuuksia, varusteita ja esineitä.
 UILABEL_SCROLL_UP	Vieritä ylös
 UILABEL_SCROLL_DOWN	Vieritä alas
 UILABEL_SLOT_HEAD	Pää

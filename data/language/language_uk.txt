@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + клік змінює характеристику �
 UILABEL_LEVELS_HINT	Рівні від 1 до 99.
 UILABEL_CLICK_SLOT	Натисніть на комірку, щоб вибрати предмет. Показано лише ті, що підходять.
 UILABEL_CLICK_SLOT_STACK	Натисніть на комірку, щоб вибрати предмет. Стоси вміщують до ліміту предмета.
+UILABEL_CUSTOM_ONLY	Змінювати характеристики, спорядження та предмети можна лише у власному сценарії.
 UILABEL_SCROLL_UP	Прокрутити вгору
 UILABEL_SCROLL_DOWN	Прокрутити вниз
 UILABEL_SLOT_HEAD	Голова

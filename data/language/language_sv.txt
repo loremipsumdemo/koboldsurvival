@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + klick ändrar en statistik med 10.
 UILABEL_LEVELS_HINT	Nivåerna går från 1 till 99.
 UILABEL_CLICK_SLOT	Klicka på en plats för att välja föremål. Endast föremål som får plats visas.
 UILABEL_CLICK_SLOT_STACK	Klicka på en plats för att välja föremål. Staplar rymmer upp till föremålets gräns.
+UILABEL_CUSTOM_ONLY	Bara ett anpassat scenario kan ändra egenskaper, utrustning och föremål.
 UILABEL_SCROLL_UP	Rulla upp
 UILABEL_SCROLL_DOWN	Rulla ned
 UILABEL_SLOT_HEAD	Huvud

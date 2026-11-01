@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + click changes a stat by 10.
 UILABEL_LEVELS_HINT	Levels run from 1 to 99.
 UILABEL_CLICK_SLOT	Click a slot to choose its item. Only items that fit are listed.
 UILABEL_CLICK_SLOT_STACK	Click a slot to choose its item. Stacks hold up to the item's limit.
+UILABEL_CUSTOM_ONLY	Only a Custom Scenario can change stats, gear and items.
 UILABEL_SCROLL_UP	Scroll up
 UILABEL_SCROLL_DOWN	Scroll down
 UILABEL_SLOT_HEAD	Head
@@ -357,7 +358,7 @@ UILABEL_TIP_DURABILITY	Durability {0} / {1}
 UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
-UILABEL_PAUSE_HINT	(Used the space bar to unpause.)
+UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
 MISC_DRINKS	{0} drinks {1}
 UILABEL_COMPASS_N	N
 UILABEL_COMPASS_E	E

@@ -146,6 +146,7 @@ UILABEL_SHIFT_CLICK	Shift + kliknięcie zmienia statystykę o 10.
 UILABEL_LEVELS_HINT	Poziomy sięgają od 1 do 99.
 UILABEL_CLICK_SLOT	Kliknij miejsce, aby wybrać przedmiot. Wyświetlane są tylko pasujące przedmioty.
 UILABEL_CLICK_SLOT_STACK	Kliknij miejsce, aby wybrać przedmiot. Stosy mieszczą do limitu przedmiotu.
+UILABEL_CUSTOM_ONLY	Tylko własny scenariusz pozwala zmieniać statystyki, ekwipunek i przedmioty.
 UILABEL_SCROLL_UP	Przewiń w górę
 UILABEL_SCROLL_DOWN	Przewiń w dół
 UILABEL_SLOT_HEAD	Głowa
