@@ -26,16 +26,18 @@ inline Rect BarToggle(const Rect& bar, float s) {
 }
 
 // The height of the bottom panels when they are open. It is the Unit Panel's bar, its tabs and enough room for the
-// inventory grid, so the Squad Panel and the Combat Log are as tall as the Unit Panel. Never more than 60% of the window.
+// gear and the inventory grid, so the Squad Panel and the Combat Log are as tall as the Unit Panel. Never more than 60%
+// of the window: past that the Inventory tab scrolls.
 inline float unitPanelBodyHeight(int H, float override = 0.0f) {
     if (override > 0.0f) return std::min(override, (float)H);
     const float s = H / 720.0f;
-    const float width = 380.0f * s, pad = 14.0f * s, gap = 6.0f * s, headH = 30.0f * s;
+    const float pad = 14.0f * s, gap = 6.0f * s, headH = 30.0f * s;
     const float innerPad = 10.0f * s, barH = 22.0f * s, tabH = 26.0f * s;
-    const float slot = (width - 2.0f * pad - 2.0f * innerPad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
+    const float slot = ITEM_CELL_PX;   // fixed: a wider panel leaves room beside the grid instead
     const float gridRows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
     const float gridPanelH = headH + gridRows * slot + (gridRows - 1.0f) * gap + innerPad;
-    return std::min(barH + tabH + gridPanelH + 2.0f * pad, H * 0.6f);
+    const float gearPanelH = headH + 2.0f * (ITEM_CELL_PX + 34.0f) + 2.0f * gap + 26.0f * s + innerPad;
+    return std::min(barH + tabH + gearPanelH + gap + gridPanelH + 2.0f * pad, H * 0.6f);
 }
 
 // Where a bottom panel was dragged. dx and dy move it from its default place, which sits against the bottom edge of the
@@ -53,7 +55,12 @@ inline float squadMinWidth(int H) { return squadWidthFor(2, H); }
 inline float squadDefaultX(int W, int H) { return (W - squadDefaultWidth(H)) * 0.5f; }
 
 // The Unit Panel's default width, and its default left edge: it sits against the right edge of the window
-inline float sidebarDefaultWidth(int H) { return 380.0f * H / 720.0f; }
+// The narrowest the Unit Panel can be: eight inventory cells of ITEM_CELL_PX in a row, with its gaps and padding
+inline float sidebarMinWidth(int H) {
+    const float s = H / 720.0f;
+    return INVENTORY_COLUMNS * ITEM_CELL_PX + (INVENTORY_COLUMNS - 1) * 6.0f * s + 2.0f * 14.0f * s + 2.0f * 10.0f * s;
+}
+inline float sidebarDefaultWidth(int H) { return std::max(380.0f * H / 720.0f, sidebarMinWidth(H)); }
 inline float sidebarDefaultX(int W, int H) { return W - 8.0f * H / 720.0f - sidebarDefaultWidth(H); }
 
 // A bottom panel's rectangle: its default left edge and bottom edge moved by the place, kept on the screen
@@ -216,14 +223,14 @@ inline TradeLayout layoutTrade(int W, int H) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, gap = 12.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 110.0f * s;
     const float barH = 12.0f * s;
-    const float cell = 26.0f * s, cellGap = 2.0f * s;
+    const float cell = ITEM_CELL_PX, cellGap = 2.0f * s;
     const int cols = INVENTORY_COLUMNS, rows = INVENTORY_SLOTS / cols;
     const float gridW = cols * cell + (cols - 1) * cellGap;
     const float gridH = rows * cell + (rows - 1) * cellGap;
     const float interW = gridW + 2.0f * pad;
     const float interH = bar + pad + 2.0f * line + gridH + 8.0f * s + pad;
 
-    const float cellT = 34.0f * s, cellTGap = 4.0f * s;
+    const float cellT = ITEM_CELL_PX, cellTGap = 4.0f * s;
     const int tcols = 4, trows = TRADE_SLOTS / tcols;
     const float boxW = tcols * cellT + (tcols - 1) * cellTGap + 2.0f * pad;
     const float boxH = trows * cellT + (trows - 1) * cellTGap + 2.0f * pad;
@@ -339,12 +346,65 @@ struct StorageLayout {
     Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
     Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
+// The panel for looting an Unconscious unit or a corpse: its gear in one row, then its inventory, 8 cells across, each
+// cell ITEM_CELL_PX. Then a hint, and Take All and Close.
+struct LootLayout {
+    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect gearHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect gearGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> gear;    // GEAR_SLOTS cells
+    Rect invHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect invGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> slots;   // INVENTORY_SLOTS cells
+    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect takeAllBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+inline LootLayout layoutLoot(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
+    const float btnH = 28.0f * s, btnW = 110.0f * s;
+    const float cell = ITEM_CELL_PX, cellGap = 4.0f * s, inset = 4.0f * s;
+    const int cols = INVENTORY_COLUMNS;
+    const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
+    const float gearH = cell + 2.0f * inset;
+    const int invRows = INVENTORY_SLOTS / cols;
+    const float invH = invRows * cell + (invRows - 1) * cellGap + 2.0f * inset;
+    const float panelW = gridW + 2.0f * pad;
+    const float hintH = 2.0f * line;
+    const float panelH = bar + pad + line + line + gearH + gap + line + invH + gap + hintH + gap + btnH + pad;
+    const float x0 = std::floor((W - panelW) * 0.5f);
+    const float y0 = std::floor(std::max(8.0f * s, (H - panelH) * 0.5f));
+    LootLayout L;
+    L.panel = Rect{ x0, y0, panelW, panelH };
+    L.bar = Rect{ x0, y0, panelW, bar };
+    L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
+    L.gearHeading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
+    L.gearGrid = Rect{ x0 + pad, L.gearHeading.y + line, gridW, gearH };
+    for (int i = 0; i < GEAR_SLOTS; ++i) {
+        L.gear.push_back(Rect{ L.gearGrid.x + inset + i * (cell + cellGap), L.gearGrid.y + inset, cell, cell });
+    }
+    L.invHeading = Rect{ x0 + pad, L.gearGrid.y + gearH + gap, panelW - 2.0f * pad, line };
+    L.invGrid = Rect{ x0 + pad, L.invHeading.y + line, gridW, invH };
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        const int c = i % cols, r = i / cols;
+        L.slots.push_back(Rect{ L.invGrid.x + inset + c * (cell + cellGap), L.invGrid.y + inset + r * (cell + cellGap), cell, cell });
+    }
+    L.hint = Rect{ x0 + pad, L.invGrid.y + invH + gap, panelW - 2.0f * pad, hintH };
+    const float btnY = y0 + panelH - pad - btnH;
+    L.takeAllBtn = Rect{ x0 + pad, btnY, btnW * 1.3f, btnH };
+    L.closeBtn = Rect{ x0 + panelW - pad - btnW, btnY, btnW, btnH };
+    return L;
+}
+
 // The storage panel. With output set (a passive crafting prop) it has a second grid, for the output, and a status line.
 inline StorageLayout layoutStorage(int W, int H, bool output = false) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
-    const float cell = 36.0f * s, cellGap = 4.0f * s, inset = 4.0f * s;
+    const float cell = ITEM_CELL_PX, cellGap = 4.0f * s, inset = 4.0f * s;
     const int cols = STORAGE_COLUMNS, rows = (STORAGE_SLOTS + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
     const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
     const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
@@ -608,8 +668,14 @@ enum class BehaviorPart { None, Toggle, ConditionTarget, Condition, Action, Acti
 // then the unit's behavior rules. The sidebar sits on a see-through panel, which does not scroll, and each
 // section has a background of its own.
 // The Unit Panel's tabs, left to right
-enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_EQUIPMENT, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR,
-                     UNIT_TAB_COUNT };
+// Inventory holds the gear at the top and the inventory grid under it. A unit that is not in your squad (an NPC, or a
+// corpse) shows only its Profile: the other tabs are off.
+enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR, UNIT_TAB_COUNT };
+// Whether a tab of the Unit Panel can be picked for a unit: every tab for one of your squad, only Profile for any other
+// unit (an NPC, or a corpse)
+inline bool unitTabEnabled(World& w, Entity unit, int tab) {
+    return tab == UNIT_TAB_PROFILE || unit == NULL_ENTITY || w.has<Commandable>(unit);
+}
 // The groups the Stats tab lists its stats under
 constexpr int STAT_GROUP_COUNT = 5;
 
@@ -652,7 +718,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float s = H / 720.0f;
     const float pad = 14.0f * s, gap = 6.0f * s, margin = 8.0f * s;
     // Its default width, or as dragged between a minimum and the screen
-    const float width = place.w > 0.0f ? std::min(std::max(place.w, 200.0f * s), W - 16.0f * s) : sidebarDefaultWidth(H);
+    const float width = place.w > 0.0f ? std::min(std::max(place.w, sidebarMinWidth(H)), W - 16.0f * s) : sidebarDefaultWidth(H);
     const float baseCardH = 200.0f * s;
     const float cardH = std::max(baseCardH, profileH), cardInset = 8.0f * s, headH = 30.0f * s, innerPad = 10.0f * s;
     const float barH = 22.0f * s, tabH = 26.0f * s, tabGap = 3.0f * s;
@@ -672,17 +738,18 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         return L;
     }
 
-    const float innerW = width - 2.0f * pad - 2.0f * innerPad;
     // The height each tab's contents need
     const int gearCols = 4, gearRows = GEAR_SLOTS / gearCols;
-    const float gearH = 56.0f * s, totalsH = 26.0f * s;
+    // A gear slot holds its name over a full-size item picture. Its size is fixed, like the inventory cells': two
+    // cells wide and a cell and a name high, whatever the panel's width.
+    const float gearH = ITEM_CELL_PX + 34.0f, totalsH = 26.0f * s;
     const float gearPanelH = headH + gearRows * gearH + gearRows * gap + totalsH + innerPad;
     const float gridRows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
-    const float slot = (width - 2.0f * pad - 2.0f * innerPad - (INVENTORY_COLUMNS - 1) * gap) / INVENTORY_COLUMNS;
+    const float slot = ITEM_CELL_PX;   // fixed: a wider panel leaves room beside the grid instead
     const float gridPanelH = headH + gridRows * slot + (gridRows - 1.0f) * gap + innerPad;
     const float behaviorPanelH = headH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
-    const float contents[UNIT_TAB_COUNT] = { gridPanelH, gearPanelH, cardH, statsH, behaviorPanelH };
+    const float contents[UNIT_TAB_COUNT] = { gearPanelH + gap + gridPanelH, cardH, statsH, behaviorPanelH };
 
     const float bodyVis = unitPanelBodyHeight(H, place.h) - barH - tabH;
     const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
@@ -707,9 +774,9 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         const float side = baseCardH - 2.0f * cardInset;   // the picture keeps its size when the card grows
         L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
     }
-    if (tab == UNIT_TAB_EQUIPMENT) {
-        // Four gear slots to a row, two rows, then a line of attack and defense totals
-        const float gearW = (innerW - (gearCols - 1) * gap) / gearCols;
+    if (tab == UNIT_TAB_INVENTORY) {
+        // The gear first: four gear slots to a row, two rows, then a line of attack and defense totals
+        const float gearW = 2.0f * ITEM_CELL_PX + gap;
         L.gearPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gearPanelH };
         // Optimize and Remove All, side by side at the right of the heading
         const float btnW = 84.0f * s, btnGap = 6.0f * s;
@@ -722,13 +789,15 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         }
     }
     if (tab == UNIT_TAB_INVENTORY) {
-        L.gridPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gridPanelH };
-        L.sortButton = Rect{ L.gridPanel.x + L.gridPanel.w - innerPad - sortW, top + (headH - sortH) * 0.5f,
+        // Then the inventory grid, under the gear
+        const float gridTop = top + gearPanelH + gap;
+        L.gridPanel = Rect{ L.panel.x + pad, gridTop, width - 2.0f * pad, gridPanelH };
+        L.sortButton = Rect{ L.gridPanel.x + L.gridPanel.w - innerPad - sortW, gridTop + (headH - sortH) * 0.5f,
                              sortW, sortH };
         for (int i = 0; i < INVENTORY_SLOTS; ++i) {
             const int c = i % INVENTORY_COLUMNS, r = i / INVENTORY_COLUMNS;
             L.slots.push_back(Rect{ L.gridPanel.x + innerPad + c * (slot + gap),
-                                    top + headH + r * (slot + gap), slot, slot });
+                                    gridTop + headH + r * (slot + gap), slot, slot });
         }
     }
     if (tab == UNIT_TAB_STATS) {

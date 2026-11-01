@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autosave
 UILABEL_MINUTE	1 minute
 UILABEL_MINUTES	{0} minutes
-UILABEL_UNIT_NAMES	Unit names
+UILABEL_UNIT_NAMES	Player unit names
+UILABEL_NPC_NAMES	Non-player unit names
+UILABEL_PROP_NAMES	Prop names
 UILABEL_FONT_SIZE	Font size
 UILABEL_RESET_PANELS	Reset All UI Panels
 UILABEL_RESET	Reset
@@ -592,7 +594,6 @@ ITEM_90_NAME	Cooked Bear Meat
 ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
 UILABEL_TALK	Talk
 UILABEL_ATTACK	Attack
-UILABEL_ATTACK_UNPROVOKED	Attack (Unprovoked)
 UILABEL_FOLLOW	Follow
 UILABEL_DEFEND	Defend
 UILABEL_TASK_FOLLOWING	Following
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you c
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 UILABEL_UNLOCK	Unlock
+UILABEL_PICK_UP	Pick up
+UILABEL_PUT_IN_BED	Put in bed
+UILABEL_MOVE_HERE	Move here
+UILABEL_PUT_DOWN	Put down
+UILABEL_DOOM	Doom
+UILABEL_TASK_UNCONSCIOUS	Unconscious
+UILABEL_TASK_DEAD	Dead
+UILABEL_TASK_CARRYING	Carrying
+UILABEL_TAKE_ALL	Take all
+UILABEL_LOOT_HINT	Click an item to take it into your unit's inventory.
+UILABEL_CORPSE_OF	Corpse of {0}
+MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
+MISC_DIES	{0} dies
+MISC_RECOVERS	{0} wakes up
+MISC_PICKS_UP_UNIT	{0} picks up {1}
+MISC_PUTS_DOWN	{0} puts down {1}
+MISC_PUTS_IN_BED	{0} puts {1} in the {2}
+MISC_CORPSE_NO_BED	A bed can do nothing for the dead
+MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything
+MISC_ALREADY_CARRYING	None of your selected units can carry them
+MISC_LOOT_NO_ROOM	No room in the inventory
+MISC_LOOT_NOTHING	Nothing more fits
 MISC_PROP_LOCKED	Locked
 MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
 MISC_UNLOCKED	Unlocked!

@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Simpan automatik
 UILABEL_MINUTE	1 minit
 UILABEL_MINUTES	{0} minit
-UILABEL_UNIT_NAMES	Nama unit
+UILABEL_UNIT_NAMES	Nama unit pemain
+UILABEL_NPC_NAMES	Nama unit lain
+UILABEL_PROP_NAMES	Nama objek
 UILABEL_FONT_SIZE	Saiz fon
 UILABEL_RESET_PANELS	Set semula semua panel UI
 UILABEL_RESET	Set semula
@@ -592,7 +594,6 @@ ITEM_90_NAME	Daging beruang masak
 ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesihatan dan lapar.
 UILABEL_TALK	Bercakap
 UILABEL_ATTACK	Serang
-UILABEL_ATTACK_UNPROVOKED	Serang (tanpa provokasi)
 UILABEL_FOLLOW	Ikut
 UILABEL_DEFEND	Pertahan
 UILABEL_TASK_FOLLOWING	Mengikut
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, da
 PROP_LOCKED_CHEST	Peti berkunci
 PROP_PRISONER_CAGE	Sangkar tahanan
 UILABEL_UNLOCK	Buka kunci
+UILABEL_PICK_UP	Angkat
+UILABEL_PUT_IN_BED	Baringkan di katil
+UILABEL_MOVE_HERE	Pergi ke sini
+UILABEL_PUT_DOWN	Letak
+UILABEL_DOOM	Ajal
+UILABEL_TASK_UNCONSCIOUS	Pengsan
+UILABEL_TASK_DEAD	Mati
+UILABEL_TASK_CARRYING	Mengangkat
+UILABEL_TAKE_ALL	Ambil semua
+UILABEL_LOOT_HINT	Klik barang untuk mengambilnya ke inventori unit anda.
+UILABEL_CORPSE_OF	Mayat {0}
+MISC_FALLS_UNCONSCIOUS	{0} jatuh pengsan
+MISC_DIES	{0} mati
+MISC_RECOVERS	{0} sedar semula
+MISC_PICKS_UP_UNIT	{0} mengangkat {1}
+MISC_PUTS_DOWN	{0} meletakkan {1}
+MISC_PUTS_IN_BED	{0} membaringkan {1} di {2}
+MISC_CORPSE_NO_BED	Katil tidak dapat membantu yang mati
+MISC_IS_UNCONSCIOUS	{0} pengsan dan tidak dapat berbuat apa-apa
+MISC_ALREADY_CARRYING	Tiada unit pilihan anda boleh mengangkatnya
+MISC_LOOT_NO_ROOM	Tiada ruang dalam inventori
+MISC_LOOT_NOTHING	Tiada lagi yang muat
 MISC_PROP_LOCKED	Berkunci
 MISC_LOCKPICK_NEEDS	Perlu Membuka kunci {0}
 MISC_UNLOCKED	Dibuka!

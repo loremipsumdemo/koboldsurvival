@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autozapis
 UILABEL_MINUTE	1 minuta
 UILABEL_MINUTES	{0} minut
-UILABEL_UNIT_NAMES	Nazwy jednostek
+UILABEL_UNIT_NAMES	Nazwy jednostek gracza
+UILABEL_NPC_NAMES	Nazwy innych jednostek
+UILABEL_PROP_NAMES	Nazwy obiektów
 UILABEL_FONT_SIZE	Rozmiar czcionki
 UILABEL_RESET_PANELS	Zresetuj wszystkie panele interfejsu
 UILABEL_RESET	Resetuj
@@ -592,7 +594,6 @@ ITEM_90_NAME	Pieczone mięso niedźwiedzia
 ITEM_90_DESC	Mięso upieczone nad ogniem. Przywraca zdrowie i zaspokaja głód.
 UILABEL_TALK	Rozmawiaj
 UILABEL_ATTACK	Atakuj
-UILABEL_ATTACK_UNPROVOKED	Atakuj (bez prowokacji)
 UILABEL_FOLLOW	Podążaj
 UILABEL_DEFEND	Broń
 UILABEL_TASK_FOLLOWING	Podąża
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Zbuduj własną drużynę. Zaczyna się od trzech jednostek
 PROP_LOCKED_CHEST	Zamknięta skrzynia
 PROP_PRISONER_CAGE	Klatka na więźniów
 UILABEL_UNLOCK	Otwórz zamek
+UILABEL_PICK_UP	Podnieś
+UILABEL_PUT_IN_BED	Połóż do łóżka
+UILABEL_MOVE_HERE	Idź tutaj
+UILABEL_PUT_DOWN	Połóż na ziemi
+UILABEL_DOOM	Zguba
+UILABEL_TASK_UNCONSCIOUS	Nieprzytomny
+UILABEL_TASK_DEAD	Martwy
+UILABEL_TASK_CARRYING	Niesie
+UILABEL_TAKE_ALL	Weź wszystko
+UILABEL_LOOT_HINT	Kliknij przedmiot, aby wziąć go do ekwipunku swojej jednostki.
+UILABEL_CORPSE_OF	Zwłoki: {0}
+MISC_FALLS_UNCONSCIOUS	{0} traci przytomność
+MISC_DIES	{0} umiera
+MISC_RECOVERS	{0} odzyskuje przytomność
+MISC_PICKS_UP_UNIT	{0} podnosi: {1}
+MISC_PUTS_DOWN	{0} kładzie na ziemi: {1}
+MISC_PUTS_IN_BED	{0} kładzie {1} do: {2}
+MISC_CORPSE_NO_BED	Łóżko nic nie pomoże zmarłym
+MISC_IS_UNCONSCIOUS	{0} jest nieprzytomny i nic nie może zrobić
+MISC_ALREADY_CARRYING	Żadna z wybranych jednostek nie może go nieść
+MISC_LOOT_NO_ROOM	Brak miejsca w ekwipunku
+MISC_LOOT_NOTHING	Nic więcej się nie zmieści
 MISC_PROP_LOCKED	Zamknięte
 MISC_LOCKPICK_NEEDS	Wymaga: Otwieranie zamków {0}
 MISC_UNLOCKED	Otwarte!

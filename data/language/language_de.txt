@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisch speichern
 UILABEL_MINUTE	1 Minute
 UILABEL_MINUTES	{0} Minuten
-UILABEL_UNIT_NAMES	Einheitennamen
+UILABEL_UNIT_NAMES	Namen eigener Einheiten
+UILABEL_NPC_NAMES	Namen fremder Einheiten
+UILABEL_PROP_NAMES	Namen von Objekten
 UILABEL_FONT_SIZE	Schriftgröße
 UILABEL_RESET_PANELS	Alle UI-Fenster zurücksetzen
 UILABEL_RESET	Zurücksetzen
@@ -592,7 +594,6 @@ ITEM_90_NAME	Gebratenes Bärenfleisch
 ITEM_90_DESC	Über dem Feuer gebratenes Fleisch. Stellt Gesundheit her und stillt Hunger.
 UILABEL_TALK	Sprechen
 UILABEL_ATTACK	Angreifen
-UILABEL_ATTACK_UNPROVOKED	Angreifen (unprovoziert)
 UILABEL_FOLLOW	Folgen
 UILABEL_DEFEND	Verteidigen
 UILABEL_TASK_FOLLOWING	Folgt
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Stelle deine eigene Gruppe zusammen. Sie beginnt mit drei E
 PROP_LOCKED_CHEST	Verschlossene Truhe
 PROP_PRISONER_CAGE	Gefangenenkäfig
 UILABEL_UNLOCK	Aufschließen
+UILABEL_PICK_UP	Aufheben
+UILABEL_PUT_IN_BED	Ins Bett legen
+UILABEL_MOVE_HERE	Hierher gehen
+UILABEL_PUT_DOWN	Absetzen
+UILABEL_DOOM	Verderben
+UILABEL_TASK_UNCONSCIOUS	Bewusstlos
+UILABEL_TASK_DEAD	Tot
+UILABEL_TASK_CARRYING	Trägt
+UILABEL_TAKE_ALL	Alles nehmen
+UILABEL_LOOT_HINT	Klicke auf einen Gegenstand, um ihn ins Inventar deiner Einheit zu nehmen.
+UILABEL_CORPSE_OF	Leiche von {0}
+MISC_FALLS_UNCONSCIOUS	{0} wird bewusstlos
+MISC_DIES	{0} stirbt
+MISC_RECOVERS	{0} wacht auf
+MISC_PICKS_UP_UNIT	{0} hebt {1} auf
+MISC_PUTS_DOWN	{0} setzt {1} ab
+MISC_PUTS_IN_BED	{0} legt {1} in: {2}
+MISC_CORPSE_NO_BED	Ein Bett kann für Tote nichts tun
+MISC_IS_UNCONSCIOUS	{0} ist bewusstlos und kann nichts tun
+MISC_ALREADY_CARRYING	Keine deiner gewählten Einheiten kann sie tragen
+MISC_LOOT_NO_ROOM	Kein Platz im Inventar
+MISC_LOOT_NOTHING	Es passt nichts mehr hinein
 MISC_PROP_LOCKED	Verschlossen
 MISC_LOCKPICK_NEEDS	Benötigt Schlösserknacken {0}
 MISC_UNLOCKED	Aufgeschlossen!

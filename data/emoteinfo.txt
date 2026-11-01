@@ -13,3 +13,5 @@ Emote	File	Shown when
 7	emote_7.png	Lockpicking: picking a lock
 8	emote_8.png	Locked in: in a locked occupiable prop (the Prisoner Cage)
 9	emote_9.png	Herbalism: gathering at a Mushroom
+10	emote_10.png	Unconscious: at 0 health, out cold until it recovers in a bed or bedroll
+11	emote_11.png	Dead: a corpse, its Doom reached 100

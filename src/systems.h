@@ -91,6 +91,8 @@ struct PropArrival {
     bool started = false;
     bool unreachable = false;
     bool locked = false;       // the prop is locked, so it could not be opened or used
+    bool putInBed = false;     // the unit it carried was put into the bed or bedroll
+    bool corpse = false;       // it carried a corpse to a bed, which can do nothing for it
     WorkStart craft = WorkStart::Started;
 };
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
@@ -140,6 +142,53 @@ int recipeOutput(int kind, int input);
 bool lockedIn(World& w, Entity u);
 // The prop a unit occupies, or NULL_ENTITY
 Entity occupiedProp(World& w, Entity u);
+// Whether a unit can take no orders: locked in a cage, or Unconscious (or a Corpse)
+bool cannotAct(World& w, Entity u);
+
+// ---- Unconscious, Doom and Corpses (components.h) ----
+// How far a unit carrying, or picking up, another must be from it, in tiles
+constexpr float CARRY_REACH = 1.2f;
+// Doom gained each in-game hour while Unconscious and not in a bed: 20, plus 30 less 1% of it for each Vitality level
+float doomPerHour(const Stats& s);
+// Doom lost each in-game hour lying Unconscious in a bed (20) or a bedroll (10); 0 for anything else
+float doomRecoveryPerHour(int propKind);
+// Health a unit wakes with when its Doom falls to 0 in a bed or bedroll
+constexpr int RECOVERY_HEALTH = 10;
+// Knocks a unit out: it gets Unconscious with Doom 0, every order and task it had ends, it drops whatever unit it
+// carried, and it leaves its squad. A unit already on a bed or bedroll stays on it. Does nothing to one already out.
+void knockOut(World& w, Entity u);
+// After anything that hurts: each unit at 0 health that is not yet Unconscious is knocked out
+void downedSystem(World& w);
+// Doom for the in-game seconds that passed: up while out on the ground or carried, down in a bed or bedroll. Doom 0 in
+// a bed or bedroll wakes the unit with RECOVERY_HEALTH; Doom 100 makes it a Corpse, no longer yours to command.
+// Returns the units that woke and the units that died this call.
+struct DoomChanges {
+    std::vector<Entity> woke, died;
+};
+DoomChanges doomSystem(World& w, double gameSeconds);
+// Sends the first unit that can (the list is nearest first) to pick up an Unconscious unit. False if none can.
+bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
+// Sends each unit that is carrying someone to a ground point, to put it down there
+void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point);
+// Puts down the unit a unit carries, where the carrier stands
+void putDown(World& w, Entity carrier);
+// Sends the first unit that can (nearest first) to an Unconscious unit or a corpse to loot it. False if none can.
+bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
+// How near a looter must stay to what it loots for the panel to stay open, in tiles
+constexpr float LOOT_RANGE = 2.0f;
+// Takes from an Unconscious unit or a corpse into the looter's inventory: a gear slot (gear set) or an inventory slot,
+// as much as fits. False, with why, if nothing could be taken.
+bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::string& why);
+// Takes everything that fits, gear first. Returns how many stacks or gear items moved.
+int lootAll(World& w, Entity looter, Entity target);
+// After steering: units that reached the unit they were sent for pick it up, carriers that reached their spot put
+// down what they carry, and every carried unit is moved to its carrier. Units sent to loot that got there are
+// returned, with what they loot, for the game to open its panel.
+struct CarryEvents {
+    std::vector<Entity> picked;
+    std::vector<std::pair<Entity, Entity>> loot;   // looter, then the unit looted
+};
+CarryEvents carrySystem(World& w);
 
 // Passive crafting props (the forge): each burns its fuel and makes items into its output, with no unit needed, for
 // the in-game seconds that passed. One input item is taken as fuel whenever the last has burned out. It pauses,

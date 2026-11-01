@@ -20,7 +20,8 @@
 namespace {
 
 constexpr float GLYPH_H = 1.2f;          // world height of unit sprites
-constexpr float ITEM_GLYPH_H = 0.32f;    // world height of an item sprite on the ground
+constexpr float CARRIED_LIFT = 0.55f;    // how high a carried unit lies, over its carrier's shoulders
+constexpr float ITEM_GLYPH_H = GLYPH_H * 0.5f;   // world height of an item sprite on the ground: half a unit's
 constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible across the screen
 constexpr float TWO_PI = 6.28318530f;
 
@@ -57,7 +58,8 @@ struct ItemOnScreen {
     float cx = 0.0f, top = 0.0f, bottom = 0.0f, halfW = 0.0f;
 };
 
-// aspect is the width over the height of the item's picture (1 for the pink quad)
+// An item on the ground stands in the world as a square picture ITEM_GLYPH_H high, half a unit's height, so it grows
+// and shrinks with the zoom like the units. aspect is the picture's width over its height (1 for an item).
 bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspect, ItemOnScreen& out) {
     float bx, by, tx, ty, mx, my;
     if (!projectPoint(vp, tr.x, tr.y, tr.z, W, H, bx, by)) return false;
@@ -68,17 +70,6 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
     out.bottom = std::max(by, ty);
     out.halfW = (out.bottom - out.top) * 0.5f * aspect;
     return true;
-}
-
-// Color that marks an item's kind in the inventory
-RGBA categoryColor(int item) {
-    const ItemDef* d = findItem(item);
-    if (!d) return RGBA{ 0.5f, 0.5f, 0.5f, 1.0f };
-    if (d->typeId == "consumable") return RGBA{ 0.30f, 0.65f, 0.35f, 1.0f };
-    if (d->typeId == "weapon")     return RGBA{ 0.75f, 0.30f, 0.28f, 1.0f };
-    if (d->typeId == "armor")      return RGBA{ 0.30f, 0.45f, 0.78f, 1.0f };
-    if (d->typeId == "accessory")  return RGBA{ 0.85f, 0.72f, 0.30f, 1.0f };
-    return RGBA{ 0.55f, 0.46f, 0.34f, 1.0f };   // plain items
 }
 
 // The name of an item for display
@@ -128,10 +119,13 @@ const char* GLYPH_FS = R"(
 in vec2 vUV;
 uniform sampler2D uTex;
 uniform vec4 uTint;
+uniform float uSat;   // 1 keeps the colors, 0 is fully gray
 out vec4 FragColor;
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;   // keep only the visible pixels
+    float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    c.rgb = mix(vec3(l), c.rgb, uSat);
     FragColor = c * uTint;
 }
 )";
@@ -369,9 +363,11 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glyphProgram_ = linkProgram(GLYPH_VS, GLYPH_FS);
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
     uTint_ = glGetUniformLocation(glyphProgram_, "uTint");
+    uSat_ = glGetUniformLocation(glyphProgram_, "uSat");
     glUseProgram(glyphProgram_);
     glUniform1i(glGetUniformLocation(glyphProgram_, "uTex"), 0);
     glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniform1f(uSat_, 1.0f);
     glUseProgram(0);
 
     if (!initTerrainGl()) return false;
@@ -543,6 +539,51 @@ void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
 // stands like a unit would, whatever the kind
 float missingPropSide(int) {
     return GLYPH_H;
+}
+
+void Renderer::setSaturation(float sat) {
+    glUseProgram(glyphProgram_);
+    glUniform1f(uSat_, sat);
+}
+
+// How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
+// its carrier's shoulders if it is carried
+float Renderer::unitTop(World& w, Entity u) {
+    if (const Unconscious* un = w.get<Unconscious>(u)) {
+        return GLYPH_H * unitGlyph(w, u).aspect + (un->carrier != NULL_ENTITY ? CARRIED_LIFT : 0.0f);
+    }
+    return GLYPH_H;
+}
+
+// How gray a unit is drawn: half for one Unconscious, fully for a corpse, not at all otherwise
+static float unitSaturation(World& w, Entity u) {
+    if (w.has<Corpse>(u)) return 0.0f;
+    if (w.has<Unconscious>(u)) return 0.5f;
+    return 1.0f;
+}
+
+void Renderer::drawLyingGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint, float toward) {
+    if (!g.tex) return;
+    // The sprite turned 90 degrees, lying on its side across the camera's view: its height runs along the right
+    // vector and its width up from the ground. Its head is to the right.
+    float dx = billX_ - x, dz = billZ_ - z;
+    float len = std::sqrt(dx * dx + dz * dz);
+    if (len < 1e-4f) { dx = 0.0f; dz = 1.0f; len = 1.0f; }
+    dx /= len;
+    dz /= len;
+    const float rx = dz, rz = -dx;
+    const float hw = h * 0.5f;                 // half its length, lying
+    const float up = h * g.aspect;             // how high it is, lying: its width
+    // Moved a little toward the camera, so a carried unit shows in front of its carrier
+    const float cx = x + dx * toward, cz = z + dz * toward;
+    const float y0 = y, y1 = y + up;
+    float v[4 * 5] = {
+        cx - rx * hw, y0, cz - rz * hw, 1.0f, 1.0f,   // bottom-left: the sprite's bottom right
+        cx + rx * hw, y0, cz + rz * hw, 1.0f, 0.0f,   // bottom-right: its top right
+        cx + rx * hw, y1, cz + rz * hw, 0.0f, 0.0f,   // top-right: its top left
+        cx - rx * hw, y1, cz - rz * hw, 0.0f, 1.0f    // top-left: its bottom left
+    };
+    drawQuadVerts(g.tex, v, tint);
 }
 
 void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint) {
@@ -970,7 +1011,8 @@ float Renderer::profileCardHeight(int H) {
     const float s = H / 720.0f;
     const float line = listTextHeight("Ag");
     const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
-    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 3.0f * statRow + 4.0f * s;
+    // Health, Doom (while Unconscious), Hunger and Carry
+    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 4.0f * statRow + 4.0f * s;
 }
 
 Renderer::HudLine& Renderer::uiLine(const std::string& s) {
@@ -1363,6 +1405,17 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         float heightPx = std::fabs(bottomY - topY);
         float halfW = heightPx * 0.5f * unitGlyph(w, u).aspect;
         float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
+        if (const Unconscious* un = w.get<Unconscious>(u)) {
+            // Lying on its side: as wide as it is tall standing, and as high as it is wide; carried ones higher up
+            float liftX = 0.0f, liftY = 0.0f;
+            const float lift = un->carrier != NULL_ENTITY ? CARRIED_LIFT : 0.0f;
+            if (!project(tr->x, tr->y + lift, tr->z, liftX, liftY)) continue;
+            const float lyingH = heightPx * unitGlyph(w, u).aspect;
+            halfW = heightPx * 0.5f;
+            midX = liftX;
+            bottom = liftY;
+            top = liftY - lyingH;
+        }
         if (mx >= midX - halfW && mx <= midX + halfW && my >= top && my <= bottom) {
             out.push_back(u);
         }
@@ -1420,9 +1473,10 @@ std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, con
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         ItemOnScreen os;
-        const TextTex* pic = itemTexture(gi->item);
-        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
-        if (mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom) out.push_back(e);
+        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
+        if (!(mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom)) continue;
+        if (os.bottom - os.top < 1.0f) continue;
+        if (itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) out.push_back(e);
     }
     std::sort(out.begin(), out.end());
     return out;
@@ -1658,12 +1712,21 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         }
     }
 
+    // Standing units upright. An Unconscious unit lies on its side, half gray (a corpse all gray), on the ground or, if
+    // it is being carried, over its carrier's shoulders and in front of it.
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const TextTex& g = unitGlyph(w, e);
         RGBA tint = WHITE;
         if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
+        if (const Unconscious* un = w.get<Unconscious>(e)) {
+            setSaturation(unitSaturation(w, e));
+            const bool carried = un->carrier != NULL_ENTITY;
+            drawLyingGlyph(g, tr->x, tr->y + (carried ? CARRIED_LIFT : 0.0f), tr->z, GLYPH_H, tint, carried ? 0.15f : 0.0f);
+            setSaturation(1.0f);
+            continue;
+        }
         drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
     }
 
@@ -2175,17 +2238,25 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
     drawButton(L.end, lang("UILABEL_END_DIALOGUE"), true, L.end.contains(mx, my));
 }
 
+// The item's picture at exactly ITEM_PICTURE_PX square, its top left on a whole pixel, centered on (cx, cy)
+void Renderer::drawItemPictureAt(float cx, float cy, int item, float alpha) {
+    const float x = std::floor(cx - ITEM_PICTURE_PX * 0.5f + 0.5f), y = std::floor(cy - ITEM_PICTURE_PX * 0.5f + 0.5f);
+    const float w = ITEM_PICTURE_PX, h = ITEM_PICTURE_PX;
+    const float v[4 * 5] = { x, y + h, 0.0f, 0.0f, 1.0f, x + w, y + h, 0.0f, 1.0f, 1.0f,
+                             x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+    drawQuadVerts(itemTexture(item)->tex, v, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
+}
+
+void Renderer::drawItemPicture(const Rect& cell, int item, float alpha) {
+    drawItemPictureAt(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, item, alpha);
+}
+
 void Renderer::drawItemCell(const Rect& r, int item, int count) {
     if (item == 0) return;
     const float s = uiH_ / 720.0f;
-    const Rect inner{ r.x + 3.0f * s, r.y + 3.0f * s, r.w - 6.0f * s, r.h - 6.0f * s };
-    if (const TextTex* pic = itemTexture(item)) {
-        drawFitted(*pic, inner, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    } else {
-        RGBA c = categoryColor(item);
-        c.a = 0.9f;
-        drawRect(inner, c);
-    }
+    drawItemPicture(r, item, 1.0f);
     if (count > 1) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight("Ag") - 1.0f * s,
@@ -2391,6 +2462,66 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     if (hoverStack.item != 0 && dragFrom < 0) drawItemTooltip(hoverStack.item, hoverStack.count, mx, my);
 }
 
+void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv,
+                        float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
+    const RGBA heading{ 0.624f, 0.902f, 0.0f, 1.0f };
+    const RGBA bar{ 0.478f, 0.043f, 0.278f, 1.0f };
+    const RGBA well{ 0.03f, 0.02f, 0.045f, 1.0f };
+    const RGBA plate{ 0.09f, 0.06f, 0.12f, 1.0f };
+    const RGBA plateHot{ 0.14f, 0.21f, 0.0f, 1.0f };
+    const float th = listTextHeight("Ag");
+    drawThemedPanel(L.panel);
+    drawRect(L.bar, bar);
+    drawListText(fitText(lang("UILABEL_INTERACTION_PANEL"), L.bar.w - 12.0f * s, false), L.bar.x + 6.0f * s,
+                 L.bar.y + (L.bar.h - th) * 0.5f, white);
+    const std::string shown = fitText(name, L.name.w, false);
+    if (shown != name) noteTip(name, L.name);
+    drawListText(shown, L.name.x, L.name.y, white);
+    int hoverItem = 0, hoverCount = 0;
+    // Gear: each slot shows its item, or its name dimmed when empty
+    drawListText(lang("UILABEL_EQUIPMENT"), L.gearHeading.x, L.gearHeading.y, heading);
+    drawRect(L.gearGrid, well);
+    for (size_t i = 0; i < L.gear.size() && i < (size_t)GEAR_SLOTS; ++i) {
+        const Rect& r = L.gear[i];
+        const int item = worn ? worn->items[i] : 0;
+        const bool hot = item != 0 && r.contains(mx, my);
+        drawRect(r, hot ? plateHot : plate);
+        if (hot) noteHover(r);
+        if (item == 0) {
+            const std::string slot = fitText(gearSlotName((int)i), r.w - 4.0f, false);
+            drawListText(slot, r.x + (r.w - listTextWidth(slot)) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 0.72f, 0.72f, 0.76f, 0.4f });
+            continue;
+        }
+        drawItemCell(r, item, 1);
+        if (hot) { hoverItem = item; hoverCount = 1; }
+    }
+    // Inventory
+    drawListText(lang("UILABEL_INVENTORY"), L.invHeading.x, L.invHeading.y, heading);
+    drawRect(L.invGrid, well);
+    for (size_t i = 0; i < L.slots.size() && i < (size_t)INVENTORY_SLOTS; ++i) {
+        const Rect& r = L.slots[i];
+        const ItemStack st = inv ? inv->slots[i] : ItemStack{};
+        const bool hot = st.item != 0 && r.contains(mx, my);
+        drawRect(r, hot ? plateHot : plate);
+        if (hot) noteHover(r);
+        if (st.item == 0 || st.count <= 0) continue;
+        drawItemCell(r, st.item, st.count);
+        if (hot) { hoverItem = st.item; hoverCount = st.count; }
+    }
+    float ty = L.hint.y;
+    for (const std::string& ln : wrapListText(lang("UILABEL_LOOT_HINT"), L.hint.w)) {
+        if (ty + th > L.hint.y + L.hint.h + 0.5f) break;
+        drawListText(ln, L.hint.x, ty, gray);
+        ty += th;
+    }
+    drawButton(L.takeAllBtn, lang("UILABEL_TAKE_ALL"), true, L.takeAllBtn.contains(mx, my));
+    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
+    if (hoverItem != 0) drawItemTooltip(hoverItem, hoverCount, mx, my);
+}
+
 void Renderer::drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color) {
     from = std::clamp(from, 0.0f, 1.0f);
     to = std::clamp(to, 0.0f, 1.0f);
@@ -2418,7 +2549,7 @@ void Renderer::drawRing(float cx, float cy, float outer, float inner, float from
 // The ring sits over the top of the prop's model, in window pixels, and fills as the next item nears. When an item is
 // finished, the ring hops: up and back down once, quickly. It stays up for the hop even if the work stopped with that
 // item, so the last one shows too.
-void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH) {
+void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names) {
     const float s = uiH_ / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float outer = 11.0f * s, inner = 4.3f * s;          // the hole is about two fifths of the ring
@@ -2445,15 +2576,12 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
-        float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
-        if (kind >= 0 && kind < PROP_KIND_COUNT) {
-            const Model& m = propModel(kind);
-            const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-            if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;
-        }
+        const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, tr->y + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
-        const float cy = sy - outer - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
+        // Above the prop's name tag when names are shown
+        const float lift = names ? listTextHeight("Ag") + 2.0f * s : 0.0f;
+        const float cy = sy - outer - lift - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
         // Just finished: the ring shows full for the hop, then the next item's progress
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
@@ -2841,7 +2969,9 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             };
             glUseProgram(glyphProgram_);
             glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+            setSaturation(unitSaturation(w, e));
             drawQuadVerts(g.tex, v, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+            setSaturation(1.0f);
         }
 
         const Needs* nd = w.get<Needs>(e);
@@ -2959,15 +3089,18 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawTitleBar(L.title, ICON_UNIT_PANEL, lang("UILABEL_UNIT_PANEL"));
         if (L.minus.w > 0.0f) drawCollapseButton(L.minus, false);
         if (L.plus.w > 0.0f) drawCollapseButton(L.plus, true);
-        const std::string names[UNIT_TAB_COUNT] = { lang("UILABEL_INVENTORY"), lang("UILABEL_EQUIPMENT"), lang("UILABEL_PROFILE"), lang("UILABEL_STATS"), lang("UILABEL_BEHAVIOR") };
+        const std::string names[UNIT_TAB_COUNT] = { lang("UILABEL_INVENTORY"), lang("UILABEL_PROFILE"), lang("UILABEL_STATS"), lang("UILABEL_BEHAVIOR") };
         for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
             const Rect& t = L.tabs[i];
             if (t.w <= 0.0f) continue;
-            drawRect(t, i == L.tab ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f } : RGBA{ 0.10f, 0.07f, 0.13f, 0.9f });
+            // A unit not in your squad shows only its Profile: the other tabs are dimmed and do nothing
+            const bool on = unitTabEnabled(w, unit, i);
+            drawRect(t, i == L.tab ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f } : RGBA{ 0.10f, 0.07f, 0.13f, on ? 0.9f : 0.45f });
             if (i == L.tab) drawRect(Rect{ t.x, t.y + t.h - 2.0f, t.w, 2.0f }, theme::GREEN);
-            if (t.contains(mx, my)) noteHover(t);
+            if (on && t.contains(mx, my)) noteHover(t);
             const float tw = listTextWidth(names[i]), th = listTextHeight("Ag");
-            drawListText(names[i], t.x + (t.w - tw) * 0.5f, t.y + (t.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+            drawListText(names[i], t.x + (t.w - tw) * 0.5f, t.y + (t.h - th) * 0.5f,
+                         on ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.55f, 0.52f, 0.60f, 0.6f });
         }
     };
     drawRect(L.panel, RGBA{ 0.04f, 0.025f, 0.06f, bgAlpha });
@@ -3013,7 +3146,9 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         };
         glUseProgram(glyphProgram_);
         glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+        setSaturation(unitSaturation(w, unit));
         drawQuadVerts(g.tex, v, WHITE);
+        setSaturation(1.0f);
     }
     // Low health: a red gradient rises from the bottom of the picture by the share of health lost
     if (needs.maxHp > 0 && needs.hp < needs.maxHp) {
@@ -3056,6 +3191,12 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     };
     y = statRow(y, lang("UILABEL_HEALTH"), std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
                 needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
+    // Doom, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full
+    if (const Unconscious* un = w.get<Unconscious>(unit)) {
+        const int doom = (int)std::floor(std::clamp(un->doom, 0.0f, 100.0f));
+        y = statRow(y, lang("UILABEL_DOOM"), std::to_string(doom) + " / 100", un->doom / 100.0f,
+                    RGBA{ 0.56f, 0.20f, 0.78f, 1.0f });
+    }
     y = statRow(y, lang("UILABEL_HUNGER"), std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
                 needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
 
@@ -3067,7 +3208,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     statRow(y, lang("UILABEL_CARRY"), carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
     }
 
-    if (L.tab == UNIT_TAB_EQUIPMENT) {
+    if (L.tab == UNIT_TAB_INVENTORY) {
     // ---- Gear: what the unit wears, four slots to a row, then the totals ----
     const bool offLocked = worn && offHandBlocked(*worn);
     const ItemDef* dragDef = dragItem != 0 ? findItem(dragItem) : nullptr;
@@ -3119,21 +3260,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         float alpha = 1.0f;
         if ((int)gi == dimGear) alpha = 0.30f;
         else if ((int)gi == GEAR_OFF_HAND && dimOff) alpha = 0.35f;
-        const float top = r.y + inset + listH + 2.0f * s;
-        const Rect area{ r.x + inset, top, r.w - 2.0f * inset, r.y + r.h - inset - top };
-        if (const TextTex* pic = itemTexture(item)) {
-            drawFitted(*pic, area, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
-        } else {
-            // Without a picture, the item's kind shows as a color block with its initials
-            const float side = std::min(area.w, area.h) * 0.8f;
-            const Rect block{ area.x + (area.w - side) * 0.5f, area.y + (area.h - side) * 0.5f, side, side };
-            RGBA c = categoryColor(item);
-            c.a = alpha;
-            drawRect(block, c);
-            const std::string ini = itemInitials(itemName(item));
-            drawListText(ini, block.x + (block.w - listTextWidth(ini)) * 0.5f, block.y + (block.h - listH) * 0.5f,
-                         RGBA{ 1.0f, 1.0f, 1.0f, alpha });
-        }
+        // The picture, at its full size, sits at the foot of the slot under the name
+        drawItemPictureAt(r.x + r.w * 0.5f, r.y + r.h - 4.0f - ITEM_PICTURE_PX * 0.5f, item, alpha);
     }
 
     int attack = 0, defense = 0;
@@ -3160,18 +3288,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const ItemStack& st = inv->slots[i];
         if (st.item == 0 || st.count <= 0) continue;
 
-        // An item shows its picture, or else a block in its kind's color with its initials. The count sits in the corner.
-        RGBA c = categoryColor(st.item);
-        if ((int)i == dimSlot) c.a = 0.30f;
-        const Rect block{ r.x + r.w * 0.12f, r.y + r.h * 0.12f, r.w * 0.76f, r.h * 0.76f };
-        if (const TextTex* pic = itemTexture(st.item)) {
-            drawFitted(*pic, block, RGBA{ 1.0f, 1.0f, 1.0f, c.a });
-        } else {
-            drawRect(block, c);
-            const std::string ini = itemInitials(itemName(st.item));
-            drawListText(ini, block.x + (block.w - listTextWidth(ini)) * 0.5f,
-                         block.y + (block.h - listH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, c.a });
-        }
+        // An item shows its picture, dimmed while it is being dragged. The count sits in the corner.
+        drawItemPicture(r, st.item, (int)i == dimSlot ? 0.30f : 1.0f);
         if (st.count > 1) {
             const std::string n = std::to_string(st.count);
             drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listH - 1.0f * s, white);
@@ -3362,15 +3480,9 @@ void Renderer::drawConditionEditor(const ConditionEditorLayout& L, const Behavio
 
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     const float s = uiH_ / 720.0f;
-    const float sz = 40.0f * s;
-    const Rect r{ mx - sz * 0.5f, my - sz * 0.5f, sz, sz };
-    if (const TextTex* pic = itemTexture(item)) {
-        drawFitted(*pic, r, RGBA{ 1.0f, 1.0f, 1.0f, 0.85f });
-    } else {
-        RGBA c = categoryColor(item);
-        c.a = 0.85f;
-        drawRect(r, c);
-    }
+    const float sz = ITEM_PICTURE_PX;
+    const Rect r{ std::floor(mx - sz * 0.5f + 0.5f), std::floor(my - sz * 0.5f + 0.5f), sz, sz };
+    drawItemPicture(r, item, 0.85f);
     if (count > 1) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, WHITE);
@@ -3380,11 +3492,15 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
 }
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
+    // Each item stands on its ground point, turned to the camera, half as tall as a unit
     for (Entity e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const GroundItem* gi = w.get<GroundItem>(e);
-        drawGlyph(*itemTexture(gi->item), tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
+        const TextTex* pic = itemTexture(gi->item);
+        TextTex square = *pic;
+        square.aspect = 1.0f;   // item pictures are square, whatever size the file is
+        drawGlyph(square, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
     }
 }
 
@@ -3397,6 +3513,61 @@ const TextTex* Renderer::itemTexture(int item) {
     }
     if (it->second.tex) return &it->second;
     return itemNone_.tex ? &itemNone_ : &pink_;
+}
+
+// The alpha of a picture in the pak, row by row; empty if it is not there
+Renderer::ItemMask Renderer::loadMask(const std::string& path) {
+    ItemMask m;
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(path, bytes, size)) return m;
+    SDL_Surface* s = IMG_Load_IO(SDL_IOFromConstMem(bytes, size), true);
+    if (!s) return m;
+    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
+    SDL_DestroySurface(s);
+    if (!conv) return m;
+    m.w = conv->w;
+    m.h = conv->h;
+    m.alpha.resize((size_t)m.w * (size_t)m.h);
+    for (int y = 0; y < m.h; ++y) {
+        const unsigned char* row = static_cast<const unsigned char*>(conv->pixels) + (size_t)y * (size_t)conv->pitch;
+        for (int x = 0; x < m.w; ++x) m.alpha[(size_t)y * (size_t)m.w + (size_t)x] = row[(size_t)x * 4 + 3];
+    }
+    SDL_DestroySurface(conv);
+    return m;
+}
+
+const Renderer::ItemMask& Renderer::itemMask(int item) {
+    auto it = itemMasks_.find(item);
+    if (it != itemMasks_.end()) return it->second;
+    ItemMask m = loadMask("data/item/item_" + std::to_string(item) + ".png");
+    if (m.alpha.empty() && item != 0) m = itemMask(0);   // the stand-in picture, or a solid square without it
+    return itemMasks_.emplace(item, std::move(m)).first->second;
+}
+
+bool Renderer::itemPixelSolid(int item, float u, float v) {
+    const ItemMask& m = itemMask(item);
+    if (m.alpha.empty()) return true;   // no picture at all: the pink square, solid all over
+    const int x = std::clamp((int)(u * (float)m.w), 0, m.w - 1);
+    const int y = std::clamp((int)(v * (float)m.h), 0, m.h - 1);
+    return m.alpha[(size_t)y * (size_t)m.w + (size_t)x] >= 26;   // as the glyph shader: under 0.1 is not drawn
+}
+
+void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item) {
+    const GroundItem* gi = w.get<GroundItem>(item);
+    const Transform* tr = w.get<Transform>(item);
+    if (!gi || !tr) return;
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    ItemOnScreen os;
+    if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) return;
+    const std::string name = gi->count > 1 ? std::to_string(gi->count) + "x " + itemName(gi->item) : itemName(gi->item);
+    const float padX = 7.0f * s, padY = 3.0f * s, lineH = listTextHeight("Ag");
+    const float boxW = listTextWidth(name) + 2.0f * padX, boxH = lineH + 2.0f * padY;
+    const Rect box{ std::floor(os.cx - boxW * 0.5f), std::floor(os.top - 4.0f * s - boxH), boxW, boxH };
+    drawRect(Rect{ box.x - 1.0f, box.y - 1.0f, box.w + 2.0f, box.h + 2.0f }, LABEL_EDGE);
+    drawRect(box, LABEL_HOT_FILL);
+    drawListText(name, box.x + padX, box.y + padY, LABEL_HOT_TEXT);
 }
 
 // An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, emote_0.png, and the pink square when that
@@ -3417,7 +3588,7 @@ const Model& Renderer::propModel(int kind) const {
     return own.vao ? own : fallbackModel_;
 }
 
-void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown) {
+void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames) {
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float size = 28.0f * s;
@@ -3434,9 +3605,10 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // Above the head, where the name tag is, and above the tag when names are shown
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
-        if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
+        const bool named = w.has<Name>(u) && (w.has<Commandable>(u) ? playerNames : otherNames);
+        if (named) bottom -= listTextHeight("Ag") + 2.0f * s;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         const TextTex* pic = emoteTexture(emotes[(size_t)(turn % emotes.size())]);
         if (!pic) continue;
@@ -3655,8 +3827,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         seen.dist2 = dx * dx + dy * dy + dz * dz;
         if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES) continue;
-        const TextTex* pic = itemTexture(gi->item);
-        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, seen.os)) continue;
+        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, seen.os)) continue;
         tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
     }
 
@@ -3760,7 +3931,7 @@ void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
     drawQuadVerts(g.tex, v, tint);
 }
 
-void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
+void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others) {
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA player{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -3770,10 +3941,11 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
     for (Entity u : w.view<Unit, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
         const Name* nm = w.get<Name>(u);
+        if (!(w.has<Commandable>(u) ? players : others)) continue;
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // The tag sits just above the top of the unit's picture
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
 
         const std::string tag = "[" + nm->text + "]";
         const float tw = listTextWidth(tag), th = listTextHeight(tag);
@@ -3783,6 +3955,38 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH) {
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
         drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : player);
     }
+}
+
+void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const RGBA purple{ 0.80f, 0.56f, 1.0f, 1.0f };
+    const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
+    for (Entity e : w.view<Prop, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        const int kind = w.get<Prop>(e)->kind;
+        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        // Just above the top of the prop, as a unit's tag is above its picture
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, tr->y + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        const std::string tag = "[" + lang(propInfo(kind).nameKey) + "]";
+        const float tw = listTextWidth(tag), th = listTextHeight(tag);
+        if (sx < -tw || sx > winW + tw || sy < -th || sy > winH + th) continue;
+        const float x = sx - tw * 0.5f, y = sy - th;
+        drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
+        drawListText(tag, x, y, purple);
+    }
+}
+
+float Renderer::propTop(int kind) const {
+    float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
+    if (kind >= 0 && kind < PROP_KIND_COUNT) {
+        const Model& m = propModel(kind);
+        const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+        if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;
+    }
+    return top;
 }
 
 // The color of a damage number or log line: green for a player unit's, red for a hostile's, gray otherwise
@@ -4170,12 +4374,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const ItemStack& st = picked.items[b.param];
             drawRect(b.rect, plateFor(hot, b.param == ui.stackSlot, true));
             if (st.item > 0) {
-                if (const TextTex* pic = itemTexture(st.item)) {
-                    drawFitted(*pic, Rect{ b.rect.x + b.rect.w * 0.12f, b.rect.y + b.rect.h * 0.12f,
-                                           b.rect.w * 0.76f, b.rect.h * 0.76f }, white);
-                } else {
-                    centerd(b.rect, itemInitials(itemNameOf(st.item)), white);
-                }
+                drawItemPicture(b.rect, st.item, 1.0f);
                 const std::string n = std::to_string(st.count);
                 drawListText(n, b.rect.x + b.rect.w - listTextWidth(n) - 3.0f * s,
                              b.rect.y + b.rect.h - lineH - 2.0f * s, gray);
@@ -4242,11 +4441,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                  P.center.y + P.center.h - 62.0f * s, gray);
 }
 
-Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH) {
+Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
+                                   bool labels) {
     // A name line in a label box picks its item. The box on top wins, so the nearer item is picked.
-    const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
-    size_t k = 0, j = 0;
-    if (topLabelRow(stacks, mx, my, k, j)) return stacks[k].items[j];
+    if (labels) {
+        const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
+        size_t k = 0, j = 0;
+        if (topLabelRow(stacks, mx, my, k, j)) return stacks[k].items[j];
+    }
 
     // Otherwise the sprite under the mouse
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
@@ -4258,10 +4460,11 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
 
         ItemOnScreen os;
-        const TextTex* pic = itemTexture(gi->item);
-        if (!itemOnScreen(vp, winW, winH, *tr, pic ? pic->aspect : white_.aspect, os)) continue;
+        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
         const bool onSprite = mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom;
-        if (!onSprite) continue;
+        if (!onSprite || os.bottom - os.top < 1.0f) continue;
+        // Only the visible part of its picture counts, not the clear pixels around it
+        if (!itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) continue;
 
         // The item nearest the mouse wins when several overlap
         const float cy = (os.top + os.bottom) * 0.5f;

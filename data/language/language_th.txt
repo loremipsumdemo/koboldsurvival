@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	บันทึกอัตโนมัติ
 UILABEL_MINUTE	1 นาที
 UILABEL_MINUTES	{0} นาที
-UILABEL_UNIT_NAMES	ชื่อยูนิต
+UILABEL_UNIT_NAMES	ชื่อยูนิตของผู้เล่น
+UILABEL_NPC_NAMES	ชื่อยูนิตอื่น
+UILABEL_PROP_NAMES	ชื่อวัตถุ
 UILABEL_FONT_SIZE	ขนาดตัวอักษร
 UILABEL_RESET_PANELS	รีเซ็ตแผงอินเทอร์เฟซทั้งหมด
 UILABEL_RESET	รีเซ็ต
@@ -592,7 +594,6 @@ ITEM_90_NAME	เนื้อหมีย่าง
 ITEM_90_DESC	เนื้อที่ย่างบนไฟ ฟื้นฟูพลังชีวิตและความหิว
 UILABEL_TALK	พูดคุย
 UILABEL_ATTACK	โจมตี
-UILABEL_ATTACK_UNPROVOKED	โจมตี (ไม่ถูกยั่ว)
 UILABEL_FOLLOW	ติดตาม
 UILABEL_DEFEND	ปกป้อง
 UILABEL_TASK_FOLLOWING	กำลังติดตาม
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	สร้างกลุ่มของคุณเอง �
 PROP_LOCKED_CHEST	หีบที่ล็อกไว้
 PROP_PRISONER_CAGE	กรงขังนักโทษ
 UILABEL_UNLOCK	สะเดาะกุญแจ
+UILABEL_PICK_UP	อุ้มขึ้น
+UILABEL_PUT_IN_BED	วางบนเตียง
+UILABEL_MOVE_HERE	ไปที่นี่
+UILABEL_PUT_DOWN	วางลง
+UILABEL_DOOM	ความพินาศ
+UILABEL_TASK_UNCONSCIOUS	หมดสติ
+UILABEL_TASK_DEAD	ตาย
+UILABEL_TASK_CARRYING	กำลังแบก
+UILABEL_TAKE_ALL	เอาทั้งหมด
+UILABEL_LOOT_HINT	คลิกไอเทมเพื่อนำเข้าช่องเก็บของของยูนิตคุณ
+UILABEL_CORPSE_OF	ศพของ {0}
+MISC_FALLS_UNCONSCIOUS	{0} หมดสติ
+MISC_DIES	{0} ตาย
+MISC_RECOVERS	{0} ฟื้นขึ้นมา
+MISC_PICKS_UP_UNIT	{0} อุ้ม {1} ขึ้น
+MISC_PUTS_DOWN	{0} วาง {1} ลง
+MISC_PUTS_IN_BED	{0} วาง {1} ลงบน {2}
+MISC_CORPSE_NO_BED	เตียงช่วยคนตายไม่ได้
+MISC_IS_UNCONSCIOUS	{0} หมดสติและทำอะไรไม่ได้
+MISC_ALREADY_CARRYING	ไม่มียูนิตที่เลือกไว้ตัวไหนแบกได้
+MISC_LOOT_NO_ROOM	ไม่มีที่ว่างในช่องเก็บของ
+MISC_LOOT_NOTHING	ใส่เพิ่มไม่ได้อีกแล้ว
 MISC_PROP_LOCKED	ล็อกอยู่
 MISC_LOCKPICK_NEEDS	ต้องมี การงัดกุญแจ {0}
 MISC_UNLOCKED	ปลดล็อกแล้ว!

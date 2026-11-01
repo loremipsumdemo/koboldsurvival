@@ -235,6 +235,35 @@ struct DefendOrder {
     Entity engaged = NULL_ENTITY;
 };
 
+// A unit at 0 health is Unconscious: it lies still, takes no orders, does nothing, and nothing fights it. It stays
+// that way until it recovers in a bed or a bedroll, or dies. Its Doom starts at 0 each time it is knocked out and rises
+// every in-game hour (doomPerHour in systems.h); in a bed or bedroll it falls instead. Doom 0 in a bed: it wakes with
+// a little health. Doom 100: it becomes a Corpse for good. carrier is the unit carrying it, if any: a carried unit
+// moves with its carrier and pushes nothing. Doom is always between 0 and 100.
+struct Unconscious {
+    float doom = 0.0f;
+    Entity carrier = NULL_ENTITY;
+};
+// An Unconscious unit whose Doom reached 100: it never recovers. It keeps its Unconscious, with Doom 100, so it can
+// still be carried and looted, and it is no longer anyone's to command.
+struct Corpse {};
+// A unit carrying an Unconscious unit (one at a time). It can put it down on the ground or into a bed or bedroll.
+struct Carrying {
+    Entity unit = NULL_ENTITY;
+};
+// An order to walk to an Unconscious unit and pick it up
+struct CarryOrder {
+    Entity target = NULL_ENTITY;
+};
+// An order to walk to an Unconscious unit or a corpse and open its gear and inventory to take from
+struct LootOrder {
+    Entity target = NULL_ENTITY;
+};
+// An order to walk to a point and put down the unit being carried there
+struct PutDownOrder {
+    float x = 0.0f, z = 0.0f;
+};
+
 // A player unit's order to fight one red unit. The unit walks at it and keeps it as its target, choosing no
 // other, until the red unit is gone. A move or pickup order cancels it.
 struct AttackOrder {

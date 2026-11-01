@@ -59,7 +59,9 @@ UILABEL_FPS	{0} إطارًا في الثانية
 UILABEL_AUTOSAVE	الحفظ التلقائي
 UILABEL_MINUTE	دقيقة واحدة
 UILABEL_MINUTES	{0} دقائق
-UILABEL_UNIT_NAMES	أسماء الوحدات
+UILABEL_UNIT_NAMES	أسماء وحدات اللاعب
+UILABEL_NPC_NAMES	أسماء الوحدات غير التابعة للاعب
+UILABEL_PROP_NAMES	أسماء العناصر
 UILABEL_FONT_SIZE	حجم الخط
 UILABEL_RESET_PANELS	إعادة تعيين جميع اللوحات
 UILABEL_RESET	إعادة التعيين
@@ -592,7 +594,6 @@ ITEM_90_NAME	لحم دب مطبوخ
 ITEM_90_DESC	لحم مطبوخ على النار. يعيد الصحة ويسد الجوع.
 UILABEL_TALK	تحدث
 UILABEL_ATTACK	هاجم
-UILABEL_ATTACK_UNPROVOKED	هاجم (دون استفزاز)
 UILABEL_FOLLOW	اتبع
 UILABEL_DEFEND	دافع
 UILABEL_TASK_FOLLOWING	يتبع
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	كوّن فريقك بنفسك. يبدأ بثلاث وحد�
 PROP_LOCKED_CHEST	صندوق مقفل
 PROP_PRISONER_CAGE	قفص السجين
 UILABEL_UNLOCK	افتح القفل
+UILABEL_PICK_UP	حمل
+UILABEL_PUT_IN_BED	ضعه في السرير
+UILABEL_MOVE_HERE	تحرك هنا
+UILABEL_PUT_DOWN	ضعه أرضًا
+UILABEL_DOOM	الهلاك
+UILABEL_TASK_UNCONSCIOUS	فاقد الوعي
+UILABEL_TASK_DEAD	ميت
+UILABEL_TASK_CARRYING	يحمل
+UILABEL_TAKE_ALL	خذ الكل
+UILABEL_LOOT_HINT	انقر على غرض لنقله إلى مخزون وحدتك.
+UILABEL_CORPSE_OF	جثة {0}
+MISC_FALLS_UNCONSCIOUS	{0} يفقد الوعي
+MISC_DIES	{0} يموت
+MISC_RECOVERS	{0} يستيقظ
+MISC_PICKS_UP_UNIT	{0} يحمل {1}
+MISC_PUTS_DOWN	{0} يضع {1} أرضًا
+MISC_PUTS_IN_BED	{0} يضع {1} في {2}
+MISC_CORPSE_NO_BED	لا يستطيع السرير فعل شيء للموتى
+MISC_IS_UNCONSCIOUS	{0} فاقد الوعي ولا يستطيع فعل شيء
+MISC_ALREADY_CARRYING	لا تستطيع أي من وحداتك المحددة حمله
+MISC_LOOT_NO_ROOM	لا مكان في المخزون
+MISC_LOOT_NOTHING	لم يعد هناك مكان لشيء
 MISC_PROP_LOCKED	مقفل
 MISC_LOCKPICK_NEEDS	يتطلب فتح الأقفال {0}
 MISC_UNLOCKED	فُتح القفل!

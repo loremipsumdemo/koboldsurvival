@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisk sparning
 UILABEL_MINUTE	1 minut
 UILABEL_MINUTES	{0} minuter
-UILABEL_UNIT_NAMES	Enhetsnamn
+UILABEL_UNIT_NAMES	Namn på spelarens enheter
+UILABEL_NPC_NAMES	Namn på andra enheter
+UILABEL_PROP_NAMES	Namn på föremål i världen
 UILABEL_FONT_SIZE	Teckenstorlek
 UILABEL_RESET_PANELS	Återställ alla gränssnittspaneler
 UILABEL_RESET	Återställ
@@ -592,7 +594,6 @@ ITEM_90_NAME	Stekt björnkött
 ITEM_90_DESC	Kött stekt över eld. Återställer hälsa och mättar.
 UILABEL_TALK	Prata
 UILABEL_ATTACK	Anfall
-UILABEL_ATTACK_UNPROVOKED	Anfall (oprovocerat)
 UILABEL_FOLLOW	Följ
 UILABEL_DEFEND	Försvara
 UILABEL_TASK_FOLLOWING	Följer
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Bygg din egen grupp. Den börjar med tre enheter, och du ka
 PROP_LOCKED_CHEST	Låst kista
 PROP_PRISONER_CAGE	Fångbur
 UILABEL_UNLOCK	Dyrka upp
+UILABEL_PICK_UP	Lyft upp
+UILABEL_PUT_IN_BED	Lägg i säng
+UILABEL_MOVE_HERE	Gå hit
+UILABEL_PUT_DOWN	Lägg ner
+UILABEL_DOOM	Undergång
+UILABEL_TASK_UNCONSCIOUS	Medvetslös
+UILABEL_TASK_DEAD	Död
+UILABEL_TASK_CARRYING	Bär
+UILABEL_TAKE_ALL	Ta allt
+UILABEL_LOOT_HINT	Klicka på ett föremål för att ta det till din enhets inventarie.
+UILABEL_CORPSE_OF	Liket av {0}
+MISC_FALLS_UNCONSCIOUS	{0} förlorar medvetandet
+MISC_DIES	{0} dör
+MISC_RECOVERS	{0} vaknar
+MISC_PICKS_UP_UNIT	{0} lyfter upp {1}
+MISC_PUTS_DOWN	{0} lägger ner {1}
+MISC_PUTS_IN_BED	{0} lägger {1} i {2}
+MISC_CORPSE_NO_BED	En säng kan inte göra något för de döda
+MISC_IS_UNCONSCIOUS	{0} är medvetslös och kan inte göra något
+MISC_ALREADY_CARRYING	Ingen av dina valda enheter kan bära dem
+MISC_LOOT_NO_ROOM	Ingen plats i inventariet
+MISC_LOOT_NOTHING	Inget mer får plats
 MISC_PROP_LOCKED	Låst
 MISC_LOCKPICK_NEEDS	Kräver Låsöppning {0}
 MISC_UNLOCKED	Upplåst!

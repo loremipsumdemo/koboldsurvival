@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automaattinen tallennus
 UILABEL_MINUTE	1 minuutti
 UILABEL_MINUTES	{0} minuuttia
-UILABEL_UNIT_NAMES	Yksiköiden nimet
+UILABEL_UNIT_NAMES	Pelaajan yksiköiden nimet
+UILABEL_NPC_NAMES	Muiden yksiköiden nimet
+UILABEL_PROP_NAMES	Kohteiden nimet
 UILABEL_FONT_SIZE	Fontin koko
 UILABEL_RESET_PANELS	Palauta kaikki paneelit
 UILABEL_RESET	Palauta
@@ -592,7 +594,6 @@ ITEM_90_NAME	Kypsä karhunliha
 ITEM_90_DESC	Tulella kypsennettyä lihaa. Palauttaa terveyttä ja vie nälkää.
 UILABEL_TALK	Puhu
 UILABEL_ATTACK	Hyökkää
-UILABEL_ATTACK_UNPROVOKED	Hyökkää (provosoimatta)
 UILABEL_FOLLOW	Seuraa
 UILABEL_DEFEND	Puolusta
 UILABEL_TASK_FOLLOWING	Seuraa
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Kokoa oma ryhmäsi. Se alkaa kolmella yksiköllä, ja voit 
 PROP_LOCKED_CHEST	Lukittu arkku
 PROP_PRISONER_CAGE	Vankihäkki
 UILABEL_UNLOCK	Avaa lukko
+UILABEL_PICK_UP	Nosta
+UILABEL_PUT_IN_BED	Pane sänkyyn
+UILABEL_MOVE_HERE	Mene tänne
+UILABEL_PUT_DOWN	Laske maahan
+UILABEL_DOOM	Tuho
+UILABEL_TASK_UNCONSCIOUS	Tajuton
+UILABEL_TASK_DEAD	Kuollut
+UILABEL_TASK_CARRYING	Kantaa
+UILABEL_TAKE_ALL	Ota kaikki
+UILABEL_LOOT_HINT	Napsauta esinettä ottaaksesi sen yksikkösi tavaraluetteloon.
+UILABEL_CORPSE_OF	Ruumis: {0}
+MISC_FALLS_UNCONSCIOUS	{0} menettää tajuntansa
+MISC_DIES	{0} kuolee
+MISC_RECOVERS	{0} herää
+MISC_PICKS_UP_UNIT	{0} nostaa: {1}
+MISC_PUTS_DOWN	{0} laskee maahan: {1}
+MISC_PUTS_IN_BED	{0} panee {1}: {2}
+MISC_CORPSE_NO_BED	Sänky ei voi auttaa kuolleita
+MISC_IS_UNCONSCIOUS	{0} on tajuton eikä voi tehdä mitään
+MISC_ALREADY_CARRYING	Mikään valituista yksiköistä ei voi kantaa häntä
+MISC_LOOT_NO_ROOM	Tavaraluettelossa ei ole tilaa
+MISC_LOOT_NOTHING	Enempää ei mahdu
 MISC_PROP_LOCKED	Lukittu
 MISC_LOCKPICK_NEEDS	Vaatii: Lukkojen avaus {0}
 MISC_UNLOCKED	Avattu!

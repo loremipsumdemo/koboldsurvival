@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Guardado automático
 UILABEL_MINUTE	1 minuto
 UILABEL_MINUTES	{0} minutos
-UILABEL_UNIT_NAMES	Nombres de unidades
+UILABEL_UNIT_NAMES	Nombres de unidades del jugador
+UILABEL_NPC_NAMES	Nombres de otras unidades
+UILABEL_PROP_NAMES	Nombres de objetos del mundo
 UILABEL_FONT_SIZE	Tamaño de letra
 UILABEL_RESET_PANELS	Restablecer todos los paneles
 UILABEL_RESET	Restablecer
@@ -592,7 +594,6 @@ ITEM_90_NAME	Carne de oso cocida
 ITEM_90_DESC	Carne cocinada al fuego. Restaura salud y hambre.
 UILABEL_TALK	Hablar
 UILABEL_ATTACK	Atacar
-UILABEL_ATTACK_UNPROVOKED	Atacar (sin provocación)
 UILABEL_FOLLOW	Seguir
 UILABEL_DEFEND	Defender
 UILABEL_TASK_FOLLOWING	Siguiendo
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Arma tu propio grupo. Empieza con tres unidades y puedes ag
 PROP_LOCKED_CHEST	Cofre cerrado con llave
 PROP_PRISONER_CAGE	Jaula de prisionero
 UILABEL_UNLOCK	Abrir cerradura
+UILABEL_PICK_UP	Levantar
+UILABEL_PUT_IN_BED	Acostar en la cama
+UILABEL_MOVE_HERE	Ir aquí
+UILABEL_PUT_DOWN	Dejar en el suelo
+UILABEL_DOOM	Perdición
+UILABEL_TASK_UNCONSCIOUS	Inconsciente
+UILABEL_TASK_DEAD	Muerto
+UILABEL_TASK_CARRYING	Cargando
+UILABEL_TAKE_ALL	Tomar todo
+UILABEL_LOOT_HINT	Haz clic en un objeto para llevarlo al inventario de tu unidad.
+UILABEL_CORPSE_OF	Cadáver de {0}
+MISC_FALLS_UNCONSCIOUS	{0} pierde el conocimiento
+MISC_DIES	{0} muere
+MISC_RECOVERS	{0} se despierta
+MISC_PICKS_UP_UNIT	{0} levanta a {1}
+MISC_PUTS_DOWN	{0} deja a {1} en el suelo
+MISC_PUTS_IN_BED	{0} acuesta a {1} en: {2}
+MISC_CORPSE_NO_BED	Una cama no puede hacer nada por los muertos
+MISC_IS_UNCONSCIOUS	{0} está inconsciente y no puede hacer nada
+MISC_ALREADY_CARRYING	Ninguna de tus unidades seleccionadas puede cargarlo
+MISC_LOOT_NO_ROOM	No hay espacio en el inventario
+MISC_LOOT_NOTHING	No cabe nada más
 MISC_PROP_LOCKED	Cerrado con llave
 MISC_LOCKPICK_NEEDS	Requiere Ganzúa {0}
 MISC_UNLOCKED	¡Abierto!

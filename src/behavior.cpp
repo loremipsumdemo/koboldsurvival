@@ -135,6 +135,7 @@ size_t behaviorSystem(World& w, CombatLog& log) {
 
     size_t checked = 0;
     for (Entity actor : w.view<Behaviors, Needs>()) {
+        if (w.has<Unconscious>(actor)) continue;   // out cold: it does nothing
         Behaviors* b = w.get<Behaviors>(actor);
         // Every rule is checked when the list was edited, otherwise only those watching a value that changed
         const bool all = b->pending;

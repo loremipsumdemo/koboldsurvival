@@ -59,7 +59,9 @@ UILABEL_FPS	{0} кадъра/сек.
 UILABEL_AUTOSAVE	Автоматично запазване
 UILABEL_MINUTE	1 минута
 UILABEL_MINUTES	{0} минути
-UILABEL_UNIT_NAMES	Имена на единиците
+UILABEL_UNIT_NAMES	Имена на вашите единици
+UILABEL_NPC_NAMES	Имена на чуждите единици
+UILABEL_PROP_NAMES	Имена на предметите в света
 UILABEL_FONT_SIZE	Размер на шрифта
 UILABEL_RESET_PANELS	Нулиране на всички панели
 UILABEL_RESET	Нулиране
@@ -592,7 +594,6 @@ ITEM_90_NAME	Печено мечешко месо
 ITEM_90_DESC	Месо, изпечено на огън. Възстановява здраве и засища глада.
 UILABEL_TALK	Говори
 UILABEL_ATTACK	Атакувай
-UILABEL_ATTACK_UNPROVOKED	Атакувай (без повод)
 UILABEL_FOLLOW	Следвай
 UILABEL_DEFEND	Защитавай
 UILABEL_TASK_FOLLOWING	Следва
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Съберете своя група. Започва с т�
 PROP_LOCKED_CHEST	Заключен сандък
 PROP_PRISONER_CAGE	Клетка за затворници
 UILABEL_UNLOCK	Отключи
+UILABEL_PICK_UP	Вдигни
+UILABEL_PUT_IN_BED	Сложи в леглото
+UILABEL_MOVE_HERE	Иди тук
+UILABEL_PUT_DOWN	Остави
+UILABEL_DOOM	Обреченост
+UILABEL_TASK_UNCONSCIOUS	В безсъзнание
+UILABEL_TASK_DEAD	Мъртъв
+UILABEL_TASK_CARRYING	Носи
+UILABEL_TAKE_ALL	Вземи всичко
+UILABEL_LOOT_HINT	Щракнете върху предмет, за да го вземете в инвентара на единицата си.
+UILABEL_CORPSE_OF	Тялото на {0}
+MISC_FALLS_UNCONSCIOUS	{0} губи съзнание
+MISC_DIES	{0} умира
+MISC_RECOVERS	{0} се събужда
+MISC_PICKS_UP_UNIT	{0} вдига {1}
+MISC_PUTS_DOWN	{0} оставя {1}
+MISC_PUTS_IN_BED	{0} слага {1} в {2}
+MISC_CORPSE_NO_BED	Леглото не може да помогне на мъртвите
+MISC_IS_UNCONSCIOUS	{0} е в безсъзнание и не може да прави нищо
+MISC_ALREADY_CARRYING	Никоя от избраните ви единици не може да го носи
+MISC_LOOT_NO_ROOM	Няма място в инвентара
+MISC_LOOT_NOTHING	Нищо повече не се побира
 MISC_PROP_LOCKED	Заключено
 MISC_LOCKPICK_NEEDS	Нужно е Отваряне на ключалки {0}
 MISC_UNLOCKED	Отключено!

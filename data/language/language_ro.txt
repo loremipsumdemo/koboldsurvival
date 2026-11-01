@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Salvare automată
 UILABEL_MINUTE	1 minut
 UILABEL_MINUTES	{0} minute
-UILABEL_UNIT_NAMES	Nume unități
+UILABEL_UNIT_NAMES	Numele unităților jucătorului
+UILABEL_NPC_NAMES	Numele altor unități
+UILABEL_PROP_NAMES	Numele obiectelor
 UILABEL_FONT_SIZE	Dimensiune font
 UILABEL_RESET_PANELS	Resetează toate panourile UI
 UILABEL_RESET	Resetează
@@ -592,7 +594,6 @@ ITEM_90_NAME	Carne de urs friptă
 ITEM_90_DESC	Carne friptă la foc. Reface viața și potolește foamea.
 UILABEL_TALK	Vorbește
 UILABEL_ATTACK	Atacă
-UILABEL_ATTACK_UNPROVOKED	Atacă (neprovocat)
 UILABEL_FOLLOW	Urmează
 UILABEL_DEFEND	Apără
 UILABEL_TASK_FOLLOWING	Urmează
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Alcătuiește-ți propriul grup. Începe cu trei unități 
 PROP_LOCKED_CHEST	Cufăr încuiat
 PROP_PRISONER_CAGE	Cușcă pentru prizonieri
 UILABEL_UNLOCK	Descuie
+UILABEL_PICK_UP	Ridică
+UILABEL_PUT_IN_BED	Pune în pat
+UILABEL_MOVE_HERE	Mergi aici
+UILABEL_PUT_DOWN	Lasă jos
+UILABEL_DOOM	Pieire
+UILABEL_TASK_UNCONSCIOUS	Inconștient
+UILABEL_TASK_DEAD	Mort
+UILABEL_TASK_CARRYING	Cară
+UILABEL_TAKE_ALL	Ia tot
+UILABEL_LOOT_HINT	Fă clic pe un obiect ca să-l iei în inventarul unității tale.
+UILABEL_CORPSE_OF	Cadavrul lui {0}
+MISC_FALLS_UNCONSCIOUS	{0} își pierde cunoștința
+MISC_DIES	{0} moare
+MISC_RECOVERS	{0} se trezește
+MISC_PICKS_UP_UNIT	{0} îl ridică pe {1}
+MISC_PUTS_DOWN	{0} îl lasă jos pe {1}
+MISC_PUTS_IN_BED	{0} îl pune pe {1} în: {2}
+MISC_CORPSE_NO_BED	Un pat nu poate face nimic pentru morți
+MISC_IS_UNCONSCIOUS	{0} este inconștient și nu poate face nimic
+MISC_ALREADY_CARRYING	Niciuna dintre unitățile selectate nu-l poate căra
+MISC_LOOT_NO_ROOM	Nu e loc în inventar
+MISC_LOOT_NOTHING	Nu mai încape nimic
 MISC_PROP_LOCKED	Încuiat
 MISC_LOCKPICK_NEEDS	Necesită Deschiderea lacătelor {0}
 MISC_UNLOCKED	Descuiat!

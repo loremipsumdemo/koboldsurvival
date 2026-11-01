@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Simpan otomatis
 UILABEL_MINUTE	1 menit
 UILABEL_MINUTES	{0} menit
-UILABEL_UNIT_NAMES	Nama unit
+UILABEL_UNIT_NAMES	Nama unit pemain
+UILABEL_NPC_NAMES	Nama unit lain
+UILABEL_PROP_NAMES	Nama objek
 UILABEL_FONT_SIZE	Ukuran font
 UILABEL_RESET_PANELS	Setel ulang semua panel UI
 UILABEL_RESET	Setel ulang
@@ -592,7 +594,6 @@ ITEM_90_NAME	Daging beruang matang
 ITEM_90_DESC	Daging yang dimasak di atas api. Memulihkan kesehatan dan rasa lapar.
 UILABEL_TALK	Bicara
 UILABEL_ATTACK	Serang
-UILABEL_ATTACK_UNPROVOKED	Serang (tanpa provokasi)
 UILABEL_FOLLOW	Ikuti
 UILABEL_DEFEND	Lindungi
 UILABEL_TASK_FOLLOWING	Mengikuti
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Susun kelompokmu sendiri. Dimulai dengan tiga unit, dan kam
 PROP_LOCKED_CHEST	Peti terkunci
 PROP_PRISONER_CAGE	Kandang tahanan
 UILABEL_UNLOCK	Buka kunci
+UILABEL_PICK_UP	Angkat
+UILABEL_PUT_IN_BED	Baringkan di ranjang
+UILABEL_MOVE_HERE	Pindah ke sini
+UILABEL_PUT_DOWN	Turunkan
+UILABEL_DOOM	Ajal
+UILABEL_TASK_UNCONSCIOUS	Pingsan
+UILABEL_TASK_DEAD	Mati
+UILABEL_TASK_CARRYING	Menggendong
+UILABEL_TAKE_ALL	Ambil semua
+UILABEL_LOOT_HINT	Klik barang untuk mengambilnya ke inventaris unitmu.
+UILABEL_CORPSE_OF	Mayat {0}
+MISC_FALLS_UNCONSCIOUS	{0} jatuh pingsan
+MISC_DIES	{0} mati
+MISC_RECOVERS	{0} sadar kembali
+MISC_PICKS_UP_UNIT	{0} mengangkat {1}
+MISC_PUTS_DOWN	{0} menurunkan {1}
+MISC_PUTS_IN_BED	{0} membaringkan {1} di {2}
+MISC_CORPSE_NO_BED	Ranjang tak bisa menolong yang sudah mati
+MISC_IS_UNCONSCIOUS	{0} pingsan dan tidak bisa berbuat apa-apa
+MISC_ALREADY_CARRYING	Tidak ada unit terpilihmu yang bisa menggendongnya
+MISC_LOOT_NO_ROOM	Tidak ada ruang di inventaris
+MISC_LOOT_NOTHING	Tidak ada lagi yang muat
 MISC_PROP_LOCKED	Terkunci
 MISC_LOCKPICK_NEEDS	Butuh Membuka kunci {0}
 MISC_UNLOCKED	Terbuka!

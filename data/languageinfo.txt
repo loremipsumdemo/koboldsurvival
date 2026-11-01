@@ -1,7 +1,7 @@
 Languages: data/language/language_<code>.txt, packed into data.pak and also copied next to the game as the
 LANGUAGE folder, where an edited file overrides the packed one key by key (src/language.h). Each line is
 KEY<TAB>text. English (language_en.txt) is the reference: a key missing from another language shows its English.
-The first line, LANGUAGE_NAME, is the name the menus show. English has 761 keys.
+The first line, LANGUAGE_NAME, is the name the menus show. English has 784 keys.
 
 File	Code	Name	Font
 language_ar.txt	ar	العربية	NotoSansArabic-Regular.ttf

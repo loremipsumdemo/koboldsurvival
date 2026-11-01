@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatické ukládání
 UILABEL_MINUTE	1 minuta
 UILABEL_MINUTES	{0} minut
-UILABEL_UNIT_NAMES	Jména jednotek
+UILABEL_UNIT_NAMES	Jména hráčových jednotek
+UILABEL_NPC_NAMES	Jména ostatních jednotek
+UILABEL_PROP_NAMES	Názvy objektů
 UILABEL_FONT_SIZE	Velikost písma
 UILABEL_RESET_PANELS	Obnovit všechny panely rozhraní
 UILABEL_RESET	Obnovit
@@ -592,7 +594,6 @@ ITEM_90_NAME	Pečené medvědí maso
 ITEM_90_DESC	Maso pečené na ohni. Obnovuje zdraví a zahání hlad.
 UILABEL_TALK	Mluvit
 UILABEL_ATTACK	Zaútočit
-UILABEL_ATTACK_UNPROVOKED	Zaútočit (bez provokace)
 UILABEL_FOLLOW	Následovat
 UILABEL_DEFEND	Bránit
 UILABEL_TASK_FOLLOWING	Následuje
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Sestavte si vlastní družinu. Začíná se třemi jednotka
 PROP_LOCKED_CHEST	Zamčená truhla
 PROP_PRISONER_CAGE	Vězeňská klec
 UILABEL_UNLOCK	Odemknout
+UILABEL_PICK_UP	Zvednout
+UILABEL_PUT_IN_BED	Uložit do postele
+UILABEL_MOVE_HERE	Jdi sem
+UILABEL_PUT_DOWN	Položit
+UILABEL_DOOM	Zkáza
+UILABEL_TASK_UNCONSCIOUS	V bezvědomí
+UILABEL_TASK_DEAD	Mrtvý
+UILABEL_TASK_CARRYING	Nese
+UILABEL_TAKE_ALL	Vzít vše
+UILABEL_LOOT_HINT	Kliknutím na předmět jej vezmete do inventáře své jednotky.
+UILABEL_CORPSE_OF	Mrtvola: {0}
+MISC_FALLS_UNCONSCIOUS	{0} upadá do bezvědomí
+MISC_DIES	{0} umírá
+MISC_RECOVERS	{0} se probouzí
+MISC_PICKS_UP_UNIT	{0} zvedá {1}
+MISC_PUTS_DOWN	{0} pokládá {1}
+MISC_PUTS_IN_BED	{0} ukládá {1} do: {2}
+MISC_CORPSE_NO_BED	Postel mrtvým nepomůže
+MISC_IS_UNCONSCIOUS	{0} je v bezvědomí a nemůže nic dělat
+MISC_ALREADY_CARRYING	Žádná z vybraných jednotek ho nemůže nést
+MISC_LOOT_NO_ROOM	V inventáři není místo
+MISC_LOOT_NOTHING	Víc se už nevejde
 MISC_PROP_LOCKED	Zamčeno
 MISC_LOCKPICK_NEEDS	Vyžaduje Odemykání zámků {0}
 MISC_UNLOCKED	Odemčeno!

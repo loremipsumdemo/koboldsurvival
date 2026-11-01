@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisch opslaan
 UILABEL_MINUTE	1 minuut
 UILABEL_MINUTES	{0} minuten
-UILABEL_UNIT_NAMES	Eenheidsnamen
+UILABEL_UNIT_NAMES	Namen van eigen eenheden
+UILABEL_NPC_NAMES	Namen van andere eenheden
+UILABEL_PROP_NAMES	Namen van objecten
 UILABEL_FONT_SIZE	Lettergrootte
 UILABEL_RESET_PANELS	Alle UI-panelen resetten
 UILABEL_RESET	Resetten
@@ -592,7 +594,6 @@ ITEM_90_NAME	Gebakken berenvlees
 ITEM_90_DESC	Boven het vuur gebakken vlees. Herstelt gezondheid en honger.
 UILABEL_TALK	Praten
 UILABEL_ATTACK	Aanvallen
-UILABEL_ATTACK_UNPROVOKED	Aanvallen (onuitgelokt)
 UILABEL_FOLLOW	Volgen
 UILABEL_DEFEND	Verdedigen
 UILABEL_TASK_FOLLOWING	Volgt
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Stel je eigen groep samen. Hij begint met drie eenheden, en
 PROP_LOCKED_CHEST	Afgesloten kist
 PROP_PRISONER_CAGE	Gevangenenkooi
 UILABEL_UNLOCK	Openbreken
+UILABEL_PICK_UP	Optillen
+UILABEL_PUT_IN_BED	In bed leggen
+UILABEL_MOVE_HERE	Ga hierheen
+UILABEL_PUT_DOWN	Neerleggen
+UILABEL_DOOM	Ondergang
+UILABEL_TASK_UNCONSCIOUS	Bewusteloos
+UILABEL_TASK_DEAD	Dood
+UILABEL_TASK_CARRYING	Draagt
+UILABEL_TAKE_ALL	Alles pakken
+UILABEL_LOOT_HINT	Klik op een voorwerp om het in de inventaris van je eenheid te nemen.
+UILABEL_CORPSE_OF	Lijk van {0}
+MISC_FALLS_UNCONSCIOUS	{0} raakt bewusteloos
+MISC_DIES	{0} sterft
+MISC_RECOVERS	{0} komt bij
+MISC_PICKS_UP_UNIT	{0} tilt {1} op
+MISC_PUTS_DOWN	{0} legt {1} neer
+MISC_PUTS_IN_BED	{0} legt {1} in: {2}
+MISC_CORPSE_NO_BED	Een bed kan niets doen voor de doden
+MISC_IS_UNCONSCIOUS	{0} is bewusteloos en kan niets doen
+MISC_ALREADY_CARRYING	Geen van je geselecteerde eenheden kan hen dragen
+MISC_LOOT_NO_ROOM	Geen ruimte in de inventaris
+MISC_LOOT_NOTHING	Er past niets meer bij
 MISC_PROP_LOCKED	Op slot
 MISC_LOCKPICK_NEEDS	Vereist Slotbreken {0}
 MISC_UNLOCKED	Opengebroken!

@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Автосохранение
 UILABEL_MINUTE	1 минута
 UILABEL_MINUTES	{0} мин.
-UILABEL_UNIT_NAMES	Имена юнитов
+UILABEL_UNIT_NAMES	Имена юнитов игрока
+UILABEL_NPC_NAMES	Имена других юнитов
+UILABEL_PROP_NAMES	Названия объектов
 UILABEL_FONT_SIZE	Размер шрифта
 UILABEL_RESET_PANELS	Сбросить все панели интерфейса
 UILABEL_RESET	Сбросить
@@ -592,7 +594,6 @@ ITEM_90_NAME	Жареное мясо медведя
 ITEM_90_DESC	Мясо, зажаренное на огне. Восстанавливает здоровье и утоляет голод.
 UILABEL_TALK	Говорить
 UILABEL_ATTACK	Атаковать
-UILABEL_ATTACK_UNPROVOKED	Атаковать (без повода)
 UILABEL_FOLLOW	Следовать
 UILABEL_DEFEND	Защищать
 UILABEL_TASK_FOLLOWING	Следует
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Соберите свой отряд. Он начинает
 PROP_LOCKED_CHEST	Запертый сундук
 PROP_PRISONER_CAGE	Клетка для пленника
 UILABEL_UNLOCK	Взломать
+UILABEL_PICK_UP	Поднять
+UILABEL_PUT_IN_BED	Уложить в постель
+UILABEL_MOVE_HERE	Идти сюда
+UILABEL_PUT_DOWN	Опустить
+UILABEL_DOOM	Гибель
+UILABEL_TASK_UNCONSCIOUS	Без сознания
+UILABEL_TASK_DEAD	Мёртв
+UILABEL_TASK_CARRYING	Несёт
+UILABEL_TAKE_ALL	Взять всё
+UILABEL_LOOT_HINT	Щёлкните предмет, чтобы взять его в инвентарь своего юнита.
+UILABEL_CORPSE_OF	Тело: {0}
+MISC_FALLS_UNCONSCIOUS	{0} теряет сознание
+MISC_DIES	{0} умирает
+MISC_RECOVERS	{0} приходит в себя
+MISC_PICKS_UP_UNIT	{0} поднимает: {1}
+MISC_PUTS_DOWN	{0} опускает: {1}
+MISC_PUTS_IN_BED	{0} укладывает {1}: {2}
+MISC_CORPSE_NO_BED	Постель не поможет мёртвым
+MISC_IS_UNCONSCIOUS	{0} без сознания и ничего не может сделать
+MISC_ALREADY_CARRYING	Ни один из выбранных юнитов не может его нести
+MISC_LOOT_NO_ROOM	В инвентаре нет места
+MISC_LOOT_NOTHING	Больше ничего не помещается
 MISC_PROP_LOCKED	Заперто
 MISC_LOCKPICK_NEEDS	Нужно: Взлом замков {0}
 MISC_UNLOCKED	Открыто!

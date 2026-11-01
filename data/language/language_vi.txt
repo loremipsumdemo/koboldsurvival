@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Tự động lưu
 UILABEL_MINUTE	1 phút
 UILABEL_MINUTES	{0} phút
-UILABEL_UNIT_NAMES	Tên đơn vị
+UILABEL_UNIT_NAMES	Tên đơn vị của người chơi
+UILABEL_NPC_NAMES	Tên đơn vị khác
+UILABEL_PROP_NAMES	Tên vật thể
 UILABEL_FONT_SIZE	Cỡ chữ
 UILABEL_RESET_PANELS	Đặt lại tất cả bảng giao diện
 UILABEL_RESET	Đặt lại
@@ -592,7 +594,6 @@ ITEM_90_NAME	Thịt gấu nướng
 ITEM_90_DESC	Thịt nướng trên lửa. Hồi máu và cơn đói.
 UILABEL_TALK	Nói chuyện
 UILABEL_ATTACK	Tấn công
-UILABEL_ATTACK_UNPROVOKED	Tấn công (vô cớ)
 UILABEL_FOLLOW	Đi theo
 UILABEL_DEFEND	Bảo vệ
 UILABEL_TASK_FOLLOWING	Đang đi theo
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Bắt đầu với ba đơn v
 PROP_LOCKED_CHEST	Rương bị khóa
 PROP_PRISONER_CAGE	Lồng tù nhân
 UILABEL_UNLOCK	Mở khóa
+UILABEL_PICK_UP	Nhấc lên
+UILABEL_PUT_IN_BED	Đặt lên giường
+UILABEL_MOVE_HERE	Đi tới đây
+UILABEL_PUT_DOWN	Đặt xuống
+UILABEL_DOOM	Diệt vong
+UILABEL_TASK_UNCONSCIOUS	Bất tỉnh
+UILABEL_TASK_DEAD	Đã chết
+UILABEL_TASK_CARRYING	Đang mang
+UILABEL_TAKE_ALL	Lấy hết
+UILABEL_LOOT_HINT	Nhấp vào một vật phẩm để lấy nó vào túi đồ của đơn vị bạn.
+UILABEL_CORPSE_OF	Xác của {0}
+MISC_FALLS_UNCONSCIOUS	{0} ngất đi
+MISC_DIES	{0} chết
+MISC_RECOVERS	{0} tỉnh lại
+MISC_PICKS_UP_UNIT	{0} nhấc {1} lên
+MISC_PUTS_DOWN	{0} đặt {1} xuống
+MISC_PUTS_IN_BED	{0} đặt {1} lên {2}
+MISC_CORPSE_NO_BED	Giường không giúp được người chết
+MISC_IS_UNCONSCIOUS	{0} đang bất tỉnh và không thể làm gì
+MISC_ALREADY_CARRYING	Không đơn vị nào bạn chọn có thể mang họ
+MISC_LOOT_NO_ROOM	Túi đồ không còn chỗ
+MISC_LOOT_NOTHING	Không thể chứa thêm
 MISC_PROP_LOCKED	Đã khóa
 MISC_LOCKPICK_NEEDS	Cần Mở khóa {0}
 MISC_UNLOCKED	Đã mở khóa!

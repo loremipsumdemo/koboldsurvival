@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Gravação automática
 UILABEL_MINUTE	1 minuto
 UILABEL_MINUTES	{0} minutos
-UILABEL_UNIT_NAMES	Nomes das unidades
+UILABEL_UNIT_NAMES	Nomes das unidades do jogador
+UILABEL_NPC_NAMES	Nomes das outras unidades
+UILABEL_PROP_NAMES	Nomes dos objetos
 UILABEL_FONT_SIZE	Tamanho do texto
 UILABEL_RESET_PANELS	Repor todos os painéis da interface
 UILABEL_RESET	Repor
@@ -592,7 +594,6 @@ ITEM_90_NAME	Carne de urso assada
 ITEM_90_DESC	Carne assada ao lume. Restaura vida e fome.
 UILABEL_TALK	Falar
 UILABEL_ATTACK	Atacar
-UILABEL_ATTACK_UNPROVOKED	Atacar (sem provocação)
 UILABEL_FOLLOW	Seguir
 UILABEL_DEFEND	Defender
 UILABEL_TASK_FOLLOWING	A seguir
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Constrói o teu próprio grupo. Começa com três unidades 
 PROP_LOCKED_CHEST	Baú trancado
 PROP_PRISONER_CAGE	Jaula de prisioneiro
 UILABEL_UNLOCK	Destrancar
+UILABEL_PICK_UP	Levantar
+UILABEL_PUT_IN_BED	Deitar na cama
+UILABEL_MOVE_HERE	Ir para aqui
+UILABEL_PUT_DOWN	Pousar
+UILABEL_DOOM	Perdição
+UILABEL_TASK_UNCONSCIOUS	Inconsciente
+UILABEL_TASK_DEAD	Morto
+UILABEL_TASK_CARRYING	A carregar
+UILABEL_TAKE_ALL	Levar tudo
+UILABEL_LOOT_HINT	Clica num objeto para o levar para o inventário da tua unidade.
+UILABEL_CORPSE_OF	Cadáver de {0}
+MISC_FALLS_UNCONSCIOUS	{0} perde os sentidos
+MISC_DIES	{0} morre
+MISC_RECOVERS	{0} acorda
+MISC_PICKS_UP_UNIT	{0} levanta {1}
+MISC_PUTS_DOWN	{0} pousa {1}
+MISC_PUTS_IN_BED	{0} deita {1} em: {2}
+MISC_CORPSE_NO_BED	Uma cama nada pode fazer pelos mortos
+MISC_IS_UNCONSCIOUS	{0} está inconsciente e não pode fazer nada
+MISC_ALREADY_CARRYING	Nenhuma das tuas unidades selecionadas o pode carregar
+MISC_LOOT_NO_ROOM	Sem espaço no inventário
+MISC_LOOT_NOTHING	Não cabe mais nada
 MISC_PROP_LOCKED	Trancado
 MISC_LOCKPICK_NEEDS	Requer Arrombamento {0}
 MISC_UNLOCKED	Destrancado!

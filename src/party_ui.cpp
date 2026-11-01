@@ -246,7 +246,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
 
     case PartyTab::Items: {
         const float gap = 4.0f * s;
-        const float cell = (inW - 7.0f * gap) / 8.0f;
+        const float cell = ITEM_CELL_PX;
         for (int i = 0; i < INVENTORY_SLOTS; ++i) {
             const int col = i % INVENTORY_COLUMNS, row = i / INVENTORY_COLUMNS;
             const Rect r{ inX + col * (cell + gap), top + row * (cell + gap), cell, cell };

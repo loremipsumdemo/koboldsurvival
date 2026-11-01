@@ -232,15 +232,18 @@ public:
     // out), a hint and Close. A hovered item shows its tooltip.
     // The storage panel. output is a passive crafting prop's output, or null; its cells are panel slots STORAGE_SLOTS
     // and up, as is dragFrom when it is one of them. status is the forge's fuel line, empty for other props.
+    // The looting panel over an Unconscious unit or a corpse: its gear and its inventory, each item taken with a click
+    void drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv, float mx, float my);
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                      const Storage* storage, const Output* output, const std::string& status, int dragFrom,
                      float mx, float my);
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
-    void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool namesShown);
+    void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
     // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
     // clockwise from the top, as its next item nears. Each time an item is finished the ring hops up and back down once.
-    void drawPropProgress(World& w, const Camera& cam, int winW, int winH);
+    // The work rings over worked props; with names set they sit above the props' name tags
+    void drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names = false);
     // yourName: your trading unit's name, over your side. showValue: whether to draw the value bar, which a trade
     // with an NPC has and a free trade between your own units does not.
     void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
@@ -272,10 +275,17 @@ public:
     // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite. The name
     // line on top under (mx, my) is drawn highlighted.
     void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my);
-    Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH);
+    // labels: also the name lines of the Alt boxes (only while they are shown); the sprite's visible part always counts
+    Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
+                             bool labels = true);
+    // An item's name in a box over its sprite on the ground ("3x Iron Ore" for a stack), for the item under the pointer
+    void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item);
 
     // Each unit's name over its head, in brackets with a drop shadow. Hostile units are shown in red.
-    void drawUnitNames(World& w, const Camera& cam, int winW, int winH);
+    // Name tags over the units: yours when players is set, every other unit's when others is set
+    void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
+    // Each prop's name over it, in brackets and purple, like a unit's tag
+    void drawPropNames(World& w, const Camera& cam, int winW, int winH);
 
     // Damage numbers over the units they hit, rising and fading from the combat system's list. They draw
     // between beginUi and endUi, after the names.
@@ -438,11 +448,30 @@ private:
     // The picture for an item, from data/item/item_<n>.png. An item without one uses data/item/item_0.png, and the pink
     // square without that. Never null.
     const TextTex* itemTexture(int item);
+    // Which pixels of an item's picture can be seen, for picking a ground item by its visible part only. Loaded once
+    // per item from its picture (item_0.png, else a solid square, standing in when it has none).
+    struct ItemMask {
+        int w = 0, h = 0;
+        std::vector<unsigned char> alpha;
+    };
+    std::map<int, ItemMask> itemMasks_;
+    const ItemMask& itemMask(int item);
+    static ItemMask loadMask(const std::string& path);
+    // Whether the picture of an item is visible at (u, v), each 0 to 1 across and down
+    bool itemPixelSolid(int item, float u, float v);
+    // An item's picture at exactly ITEM_PICTURE_PX square (ui.h), on whole pixels: centered in a cell, or on a point
+    void drawItemPicture(const Rect& cell, int item, float alpha);
+    void drawItemPictureAt(float cx, float cy, int item, float alpha);
     // A picture fitted inside r, keeping its proportions, multiplied by tint
     void drawFitted(const TextTex& g, const Rect& r, RGBA tint);
 
     // Symbol-style billboard that stands on (x, y, z) and turns to face a point 200 units behind the camera
     void drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint);
+    // A sprite lying on its side (an Unconscious unit), h long, moved `toward` the camera
+    void drawLyingGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint, float toward);
+    // How colorful the glyph program draws: 1 as the picture is, 0 fully gray. Set back to 1 after use.
+    void setSaturation(float sat);
+    float unitTop(World& w, Entity u);
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize);
@@ -489,7 +518,7 @@ private:
     float fontTextHeight(TextFont& f, const std::string& s);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
-    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1;
+    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
@@ -576,6 +605,8 @@ private:
     std::array<Model, PROP_KIND_COUNT> propModels_{};
     Model fallbackModel_{};
     const Model& propModel(int kind) const;
+    // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
+    float propTop(int kind) const;
 
     // Hover label: one cached texture per line, rebuilt only when its text changes
     TTF_Font* font_ = nullptr;

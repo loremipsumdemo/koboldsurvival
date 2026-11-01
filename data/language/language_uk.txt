@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Автозбереження
 UILABEL_MINUTE	1 хвилина
 UILABEL_MINUTES	{0} хв
-UILABEL_UNIT_NAMES	Імена юнітів
+UILABEL_UNIT_NAMES	Імена юнітів гравця
+UILABEL_NPC_NAMES	Імена інших юнітів
+UILABEL_PROP_NAMES	Назви об'єктів
 UILABEL_FONT_SIZE	Розмір шрифту
 UILABEL_RESET_PANELS	Скинути всі панелі інтерфейсу
 UILABEL_RESET	Скинути
@@ -592,7 +594,6 @@ ITEM_90_NAME	Смажене м'ясо ведмедя
 ITEM_90_DESC	М'ясо, засмажене на вогні. Відновлює здоров'я і втамовує голод.
 UILABEL_TALK	Говорити
 UILABEL_ATTACK	Атакувати
-UILABEL_ATTACK_UNPROVOKED	Атакувати (без приводу)
 UILABEL_FOLLOW	Слідувати
 UILABEL_DEFEND	Захищати
 UILABEL_TASK_FOLLOWING	Слідує
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Зберіть власний загін. Він почин
 PROP_LOCKED_CHEST	Замкнена скриня
 PROP_PRISONER_CAGE	Клітка для в'язня
 UILABEL_UNLOCK	Зламати замок
+UILABEL_PICK_UP	Підняти
+UILABEL_PUT_IN_BED	Покласти в ліжко
+UILABEL_MOVE_HERE	Іти сюди
+UILABEL_PUT_DOWN	Опустити
+UILABEL_DOOM	Загибель
+UILABEL_TASK_UNCONSCIOUS	Непритомний
+UILABEL_TASK_DEAD	Мертвий
+UILABEL_TASK_CARRYING	Несе
+UILABEL_TAKE_ALL	Взяти все
+UILABEL_LOOT_HINT	Клацніть предмет, щоб узяти його в інвентар свого юніта.
+UILABEL_CORPSE_OF	Тіло: {0}
+MISC_FALLS_UNCONSCIOUS	{0} непритомніє
+MISC_DIES	{0} помирає
+MISC_RECOVERS	{0} опритомнює
+MISC_PICKS_UP_UNIT	{0} піднімає: {1}
+MISC_PUTS_DOWN	{0} опускає: {1}
+MISC_PUTS_IN_BED	{0} кладе {1}: {2}
+MISC_CORPSE_NO_BED	Ліжко не допоможе мертвим
+MISC_IS_UNCONSCIOUS	{0} непритомний і нічого не може зробити
+MISC_ALREADY_CARRYING	Жоден із вибраних юнітів не може його нести
+MISC_LOOT_NO_ROOM	В інвентарі немає місця
+MISC_LOOT_NOTHING	Більше нічого не вміщається
 MISC_PROP_LOCKED	Замкнено
 MISC_LOCKPICK_NEEDS	Потрібно: Відмикання замків {0}
 MISC_UNLOCKED	Відчинено!

@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatikus mentés
 UILABEL_MINUTE	1 perc
 UILABEL_MINUTES	{0} perc
-UILABEL_UNIT_NAMES	Egységnevek
+UILABEL_UNIT_NAMES	Saját egységek neve
+UILABEL_NPC_NAMES	Más egységek neve
+UILABEL_PROP_NAMES	Tárgyak neve
 UILABEL_FONT_SIZE	Betűméret
 UILABEL_RESET_PANELS	Minden panel visszaállítása
 UILABEL_RESET	Visszaállítás
@@ -592,7 +594,6 @@ ITEM_90_NAME	Sült medvehús
 ITEM_90_DESC	Tűzön sült hús. Életerőt ad és csillapítja az éhséget.
 UILABEL_TALK	Beszéd
 UILABEL_ATTACK	Támadás
-UILABEL_ATTACK_UNPROVOKED	Támadás (provokálatlanul)
 UILABEL_FOLLOW	Követés
 UILABEL_DEFEND	Védelem
 UILABEL_TASK_FOLLOWING	Követ
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel ind
 PROP_LOCKED_CHEST	Lezárt láda
 PROP_PRISONER_CAGE	Fogolyketrec
 UILABEL_UNLOCK	Feltörés
+UILABEL_PICK_UP	Felvesz
+UILABEL_PUT_IN_BED	Ágyba fektet
+UILABEL_MOVE_HERE	Menj ide
+UILABEL_PUT_DOWN	Letesz
+UILABEL_DOOM	Végzet
+UILABEL_TASK_UNCONSCIOUS	Eszméletlen
+UILABEL_TASK_DEAD	Halott
+UILABEL_TASK_CARRYING	Visz valakit
+UILABEL_TAKE_ALL	Mindet elvesz
+UILABEL_LOOT_HINT	Kattints egy tárgyra, hogy az egységed felszerelésébe kerüljön.
+UILABEL_CORPSE_OF	{0} holtteste
+MISC_FALLS_UNCONSCIOUS	{0} elveszíti az eszméletét
+MISC_DIES	{0} meghal
+MISC_RECOVERS	{0} magához tér
+MISC_PICKS_UP_UNIT	{0} felveszi: {1}
+MISC_PUTS_DOWN	{0} leteszi: {1}
+MISC_PUTS_IN_BED	{0} befekteti {1} egységet ide: {2}
+MISC_CORPSE_NO_BED	Az ágy nem segíthet a halottakon
+MISC_IS_UNCONSCIOUS	{0} eszméletlen, és nem tud semmit tenni
+MISC_ALREADY_CARRYING	Egyik kijelölt egységed sem tudja vinni
+MISC_LOOT_NO_ROOM	Nincs hely a felszerelésben
+MISC_LOOT_NOTHING	Több nem fér el
 MISC_PROP_LOCKED	Zárva
 MISC_LOCKPICK_NEEDS	Szükséges: Zárnyitás {0}
 MISC_UNLOCKED	Kinyitva!

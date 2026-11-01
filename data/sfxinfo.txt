@@ -1,6 +1,6 @@
 Sound effects: the files in the SFX folder and what plays them.
 Each line: the file, the volume slider it follows (Interface sounds or Sound effects), then when it plays.
-A missing file is silent. sfx_53.mp3 to sfx_99.mp3 are free: to give a sound its own file, change its number
+A missing file is silent. sfx_57.mp3 to sfx_99.mp3 are free: to give a sound its own file, change its number
 in src/sounds.h (and here). Working sounds play every 1.6 seconds while a unit works a prop near the camera
 (the Forge's every 3 seconds while it burns).
 
@@ -54,6 +54,10 @@ sfx_46.mp3	Sound effects	Units: a unit turned hostile
 sfx_47.mp3	Sound effects	Units: a cage locked behind a unit
 sfx_48.mp3	Sound effects	Units: a unit sat or lay down on a prop
 sfx_49.mp3	Sound effects	Items: Optimize, Remove All or Optimize All changed gear
-sfx_50.mp3	Sound effects	Units: a unit dropped to no health
+sfx_50.mp3	Sound effects	Units: a unit dropped to no health and fell Unconscious
 sfx_51.mp3	Sound effects	Units: a skill or stat went up a level
 sfx_52.mp3	Interface sounds	Interface: a talk began
+sfx_53.mp3	Sound effects	Units: an Unconscious unit picked up to be carried
+sfx_54.mp3	Sound effects	Units: a carried unit put down on the ground
+sfx_55.mp3	Sound effects	Units: an Unconscious unit died (its Doom reached 100)
+sfx_56.mp3	Sound effects	Units: an Unconscious unit woke up in a bed or bedroll

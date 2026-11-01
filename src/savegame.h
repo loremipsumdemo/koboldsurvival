@@ -46,6 +46,12 @@ struct SaveUnit {
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
     int occupying = -1;        // the serial of the bed, chair or cage it is on, or -1
+    // Unconscious (components.h): its Doom, whether it is a corpse, and the index of the unit carrying it, or -1.
+    // Older saves have none of these, so their units are awake.
+    bool unconscious = false;
+    float doom = 0.0f;
+    bool corpse = false;
+    int carriedBy = -1;
     std::string name;
     // Older saves have no needs or items. Those units start at full health and hunger, empty-handed.
     bool hasNeeds = false;
@@ -167,6 +173,9 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
+        if (u.unconscious) {
+            out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << " " << u.carriedBy << "\n";
+        }
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -279,6 +288,19 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> i >> g.slot >> g.item;
                 if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
                     d.units[i].gear.push_back(g);
+                }
+            }
+            else if (line.rfind("down ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                float doom = 0.0f;
+                int corpse = 0, carrier = -1;
+                ss >> i >> doom >> corpse >> carrier;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].unconscious = true;
+                    d.units[i].doom = std::clamp(doom, 0.0f, 100.0f);
+                    d.units[i].corpse = corpse != 0;
+                    d.units[i].carriedBy = carrier;
                 }
             }
             else if (line.rfind("occupy ", 0) == 0) {

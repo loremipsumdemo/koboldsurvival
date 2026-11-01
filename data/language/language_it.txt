@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Salvataggio automatico
 UILABEL_MINUTE	1 minuto
 UILABEL_MINUTES	{0} minuti
-UILABEL_UNIT_NAMES	Nomi delle unità
+UILABEL_UNIT_NAMES	Nomi delle unità del giocatore
+UILABEL_NPC_NAMES	Nomi delle altre unità
+UILABEL_PROP_NAMES	Nomi degli oggetti
 UILABEL_FONT_SIZE	Dimensione carattere
 UILABEL_RESET_PANELS	Ripristina tutti i pannelli
 UILABEL_RESET	Ripristina
@@ -592,7 +594,6 @@ ITEM_90_NAME	Carne d'orso cotta
 ITEM_90_DESC	Carne cotta sul fuoco. Ripristina salute e fame.
 UILABEL_TALK	Parla
 UILABEL_ATTACK	Attacca
-UILABEL_ATTACK_UNPROVOKED	Attacca (senza provocazione)
 UILABEL_FOLLOW	Segui
 UILABEL_DEFEND	Difendi
 UILABEL_TASK_FOLLOWING	Segue
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Crea il tuo gruppo. Inizia con tre unità e puoi aggiungere
 PROP_LOCKED_CHEST	Forziere chiuso a chiave
 PROP_PRISONER_CAGE	Gabbia per prigionieri
 UILABEL_UNLOCK	Scassina
+UILABEL_PICK_UP	Solleva
+UILABEL_PUT_IN_BED	Metti a letto
+UILABEL_MOVE_HERE	Vai qui
+UILABEL_PUT_DOWN	Posa a terra
+UILABEL_DOOM	Rovina
+UILABEL_TASK_UNCONSCIOUS	Svenuto
+UILABEL_TASK_DEAD	Morto
+UILABEL_TASK_CARRYING	Trasporta
+UILABEL_TAKE_ALL	Prendi tutto
+UILABEL_LOOT_HINT	Fai clic su un oggetto per prenderlo nell'inventario della tua unità.
+UILABEL_CORPSE_OF	Cadavere di {0}
+MISC_FALLS_UNCONSCIOUS	{0} perde i sensi
+MISC_DIES	{0} muore
+MISC_RECOVERS	{0} si risveglia
+MISC_PICKS_UP_UNIT	{0} solleva {1}
+MISC_PUTS_DOWN	{0} posa a terra {1}
+MISC_PUTS_IN_BED	{0} mette {1} in: {2}
+MISC_CORPSE_NO_BED	Un letto non può fare nulla per i morti
+MISC_IS_UNCONSCIOUS	{0} è svenuto e non può fare nulla
+MISC_ALREADY_CARRYING	Nessuna delle unità selezionate può trasportarlo
+MISC_LOOT_NO_ROOM	Non c'è spazio nell'inventario
+MISC_LOOT_NOTHING	Non entra nient'altro
 MISC_PROP_LOCKED	Chiuso a chiave
 MISC_LOCKPICK_NEEDS	Richiede Scasso {0}
 MISC_UNLOCKED	Aperto!

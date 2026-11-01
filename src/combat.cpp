@@ -59,8 +59,9 @@ CombatNumbers numbersOf(World& w, Entity e) {
     return deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
 }
 
+// An Unconscious unit (or a corpse) is out of the fight: nobody swings at it
 bool targetable(World& w, Entity e) {
-    return w.has<Unit>(e) && w.has<Transform>(e);
+    return w.has<Unit>(e) && w.has<Transform>(e) && !w.has<Unconscious>(e);
 }
 
 float distanceBetween(World& w, Entity a, Entity b) {
@@ -129,13 +130,9 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
         return;
     }
 
-    // The swing landed. A hit on a downed unit kills it.
+    // The swing landed. A unit already at 0 health takes no more: it is Unconscious (downedSystem in systems.h).
     ++log.hits;
-    if (downed) {
-        log.add(attacker + " slays " + defender, tint, LogKind::Damage);
-        removeUnit(w, d);
-        return;
-    }
+    if (downed) return;
 
     Needs* nd = w.get<Needs>(d);
     const int before = nd ? nd->hp : 0;
@@ -486,7 +483,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
 
     const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
     const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
-    auto standing = [&](Entity e) { return hpOf(w, e) > 0; };
+    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e); };
 
     // Hostiles notice player units in range, and chase until the target is gone or out of the leash
     for (Entity h : hostiles) {

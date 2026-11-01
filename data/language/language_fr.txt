@@ -59,7 +59,9 @@ UILABEL_FPS	{0} IPS
 UILABEL_AUTOSAVE	Sauvegarde auto
 UILABEL_MINUTE	1 minute
 UILABEL_MINUTES	{0} minutes
-UILABEL_UNIT_NAMES	Noms des unités
+UILABEL_UNIT_NAMES	Noms des unités du joueur
+UILABEL_NPC_NAMES	Noms des autres unités
+UILABEL_PROP_NAMES	Noms des objets
 UILABEL_FONT_SIZE	Taille du texte
 UILABEL_RESET_PANELS	Réinitialiser tous les panneaux
 UILABEL_RESET	Réinitialiser
@@ -592,7 +594,6 @@ ITEM_90_NAME	Viande d'ours cuite
 ITEM_90_DESC	Viande cuite sur le feu. Rend de la santé et calme la faim.
 UILABEL_TALK	Parler
 UILABEL_ATTACK	Attaquer
-UILABEL_ATTACK_UNPROVOKED	Attaquer (sans provocation)
 UILABEL_FOLLOW	Suivre
 UILABEL_DEFEND	Défendre
 UILABEL_TASK_FOLLOWING	Suit
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Composez votre propre groupe. Il commence avec trois unité
 PROP_LOCKED_CHEST	Coffre verrouillé
 PROP_PRISONER_CAGE	Cage de prisonnier
 UILABEL_UNLOCK	Crocheter
+UILABEL_PICK_UP	Porter
+UILABEL_PUT_IN_BED	Mettre au lit
+UILABEL_MOVE_HERE	Aller ici
+UILABEL_PUT_DOWN	Poser
+UILABEL_DOOM	Funeste
+UILABEL_TASK_UNCONSCIOUS	Inconscient
+UILABEL_TASK_DEAD	Mort
+UILABEL_TASK_CARRYING	Porte quelqu'un
+UILABEL_TAKE_ALL	Tout prendre
+UILABEL_LOOT_HINT	Cliquez sur un objet pour le prendre dans l'inventaire de votre unité.
+UILABEL_CORPSE_OF	Cadavre de {0}
+MISC_FALLS_UNCONSCIOUS	{0} perd connaissance
+MISC_DIES	{0} meurt
+MISC_RECOVERS	{0} se réveille
+MISC_PICKS_UP_UNIT	{0} soulève {1}
+MISC_PUTS_DOWN	{0} pose {1}
+MISC_PUTS_IN_BED	{0} met {1} dans : {2}
+MISC_CORPSE_NO_BED	Un lit ne peut rien pour les morts
+MISC_IS_UNCONSCIOUS	{0} est inconscient et ne peut rien faire
+MISC_ALREADY_CARRYING	Aucune de vos unités sélectionnées ne peut le porter
+MISC_LOOT_NO_ROOM	Plus de place dans l'inventaire
+MISC_LOOT_NOTHING	Plus rien ne rentre
 MISC_PROP_LOCKED	Verrouillé
 MISC_LOCKPICK_NEEDS	Nécessite Crochetage {0}
 MISC_UNLOCKED	Déverrouillé !

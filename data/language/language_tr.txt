@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Otomatik kaydetme
 UILABEL_MINUTE	1 dakika
 UILABEL_MINUTES	{0} dakika
-UILABEL_UNIT_NAMES	Birim adları
+UILABEL_UNIT_NAMES	Oyuncu birimi adları
+UILABEL_NPC_NAMES	Diğer birimlerin adları
+UILABEL_PROP_NAMES	Nesne adları
 UILABEL_FONT_SIZE	Yazı boyutu
 UILABEL_RESET_PANELS	Tüm arayüz panellerini sıfırla
 UILABEL_RESET	Sıfırla
@@ -592,7 +594,6 @@ ITEM_90_NAME	Pişmiş ayı eti
 ITEM_90_DESC	Ateşte pişmiş et. Sağlık ve açlığı yeniler.
 UILABEL_TALK	Konuş
 UILABEL_ATTACK	Saldır
-UILABEL_ATTACK_UNPROVOKED	Saldır (kışkırtılmadan)
 UILABEL_FOLLOW	Takip et
 UILABEL_DEFEND	Savun
 UILABEL_TASK_FOLLOWING	Takip ediyor
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Kendi grubunu kur. Üç birimle başlar ve 32'ye kadar biri
 PROP_LOCKED_CHEST	Kilitli sandık
 PROP_PRISONER_CAGE	Esir kafesi
 UILABEL_UNLOCK	Kilidi aç
+UILABEL_PICK_UP	Kaldır
+UILABEL_PUT_IN_BED	Yatağa yatır
+UILABEL_MOVE_HERE	Buraya git
+UILABEL_PUT_DOWN	Yere bırak
+UILABEL_DOOM	Kıyamet
+UILABEL_TASK_UNCONSCIOUS	Baygın
+UILABEL_TASK_DEAD	Ölü
+UILABEL_TASK_CARRYING	Taşıyor
+UILABEL_TAKE_ALL	Hepsini al
+UILABEL_LOOT_HINT	Biriminin envanterine almak için bir eşyaya tıkla.
+UILABEL_CORPSE_OF	{0} cesedi
+MISC_FALLS_UNCONSCIOUS	{0} bayıldı
+MISC_DIES	{0} öldü
+MISC_RECOVERS	{0} uyandı
+MISC_PICKS_UP_UNIT	{0}, {1} birimini kaldırdı
+MISC_PUTS_DOWN	{0}, {1} birimini yere bıraktı
+MISC_PUTS_IN_BED	{0}, {1} birimini {2} üzerine yatırdı
+MISC_CORPSE_NO_BED	Yatak ölülere bir şey yapamaz
+MISC_IS_UNCONSCIOUS	{0} baygın ve hiçbir şey yapamaz
+MISC_ALREADY_CARRYING	Seçili birimlerinden hiçbiri onu taşıyamaz
+MISC_LOOT_NO_ROOM	Envanterde yer yok
+MISC_LOOT_NOTHING	Daha fazlası sığmıyor
 MISC_PROP_LOCKED	Kilitli
 MISC_LOCKPICK_NEEDS	Gerekli: Kilit açma {0}
 MISC_UNLOCKED	Kilit açıldı!

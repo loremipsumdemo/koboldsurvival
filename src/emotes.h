@@ -14,6 +14,8 @@ enum EmoteId : int {
     EMOTE_LOCKPICKING = 7,   // picking a lock
     EMOTE_LOCKED_IN = 8,     // in an occupiable prop that is locked (the Prisoner Cage), so it can't get out
     EMOTE_HERBALISM = 9,     // gathering mushrooms
+    EMOTE_UNCONSCIOUS = 10,  // at 0 health, out cold (components.h, Unconscious)
+    EMOTE_DEAD = 11,         // a corpse: its Doom reached 100
 };
 
 constexpr unsigned EMOTE_CYCLE_MS = 1000;   // how long each emote shows when a unit has more than one

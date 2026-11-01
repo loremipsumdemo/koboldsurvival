@@ -52,6 +52,14 @@ struct Rect {
     }
 };
 
+// Item pictures (data/item/item_<n>.png) are 64 x 64 pixels and are always drawn at exactly that size, on whole
+// pixels, wherever an item shows in a panel: inventories, gear, storage, the trade and a dragged stack. Every cell that
+// holds an item is exactly ITEM_CELL_PX across, the picture with a 4 pixel border, whatever the window's or the
+// panel's size: a wider panel has more room around its grid, never bigger cells. (On the ground an item is drawn in
+// the world, half a unit's height.)
+constexpr float ITEM_PICTURE_PX = 64.0f;
+constexpr float ITEM_CELL_PX = 72.0f;
+
 struct Button {
     std::string label;
     Rect rect;

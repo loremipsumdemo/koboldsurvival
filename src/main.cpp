@@ -165,14 +165,31 @@ void closeStorage() {
 
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
-enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock };
+enum class MenuAction { Talk, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock, PickUp, PutInBed,
+                        Move, PutDown };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
     Entity target = NULL_ENTITY;
     std::vector<MenuAction> actions;
+    // A menu on the ground (Move, Put down) has no target, only the ground point clicked
+    bool ground = false;
+    float gx = 0.0f, gz = 0.0f;
 };
 ContextMenu contextMenu;
+
+// The looting panel: the Unconscious unit or corpse it shows and the unit of yours taking from it. It stays open while
+// the looter is within LOOT_RANGE of it. NULL_ENTITY when closed.
+Entity lootUnit = NULL_ENTITY;
+Entity lootBy = NULL_ENTITY;
+void closeLoot() {
+    lootUnit = NULL_ENTITY;
+    lootBy = NULL_ENTITY;
+}
+
+// The unit the Unit Panel shows when it is not one of your squad: an NPC or a corpse clicked on. Clicking one of your
+// squad, or empty ground, goes back to showing your selection. Selecting your squad is separate: see selectedUnits.
+Entity inspectUnit = NULL_ENTITY;
 
 // The name of a prop in the language in use
 std::string propNameOf(World& w, Entity prop) {
@@ -491,27 +508,30 @@ void completeTrade(World& w, Entity npc, Entity player) {
 Entity sidebarUnitOf(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return dialoguePlayer;
     if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return storageUnit;
+    if (lootUnit != NULL_ENTITY && w.has<Unit>(lootBy)) return lootBy;
+    if (inspectUnit != NULL_ENTITY && w.has<Unit>(inspectUnit)) return inspectUnit;
     const std::vector<Entity> mine = selectedUnits(w);
-    if (mine.size() == 1) return mine[0];
-    if (!mine.empty()) return NULL_ENTITY;
-    const std::vector<Entity> any = w.view<Unit, Selected>();
-    return any.size() == 1 ? any[0] : NULL_ENTITY;
+    return mine.size() == 1 ? mine[0] : NULL_ENTITY;
 }
 
 // The units the Unit Panel acts on: the talking unit during a trade, the storage panel's unit, otherwise the selected units
 std::vector<Entity> panelUnits(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return { dialoguePlayer };
     if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return { storageUnit };
+    if (lootUnit != NULL_ENTITY && w.has<Unit>(lootBy)) return { lootBy };
     return selectedUnits(w);
 }
 
-// Click selection: nearest unit within one tile of the clicked ground point
-void clickSelect(World& w, const Terrain& t, const Camera& cam,
-                 float mx, float my, int W, int H, bool additive) {
-    if (!additive) clearSelection(w);
+// The unit a click lands on: the one whose picture is under the pointer (yours first), else the nearest within one
+// tile of the clicked ground point. NULL_ENTITY for none.
+Entity unitClicked(World& w, const Terrain& t, const Camera& cam, const std::vector<Entity>& underPointer,
+                   float mx, float my, int W, int H) {
+    for (Entity u : underPointer) {
+        if (w.has<Commandable>(u)) return u;
+    }
+    if (!underPointer.empty()) return underPointer[0];
     auto hit = pickGround(cam, t, mx, my, W, H);
-    if (!hit) return;
-
+    if (!hit) return NULL_ENTITY;
     Entity best = NULL_ENTITY;
     float bestD2 = 1.0f;
     for (Entity u : w.view<Unit, Transform>()) {
@@ -520,25 +540,49 @@ void clickSelect(World& w, const Terrain& t, const Camera& cam,
         float d2 = dx * dx + dz * dz;
         if (d2 < bestD2) { bestD2 = d2; best = u; }
     }
-    if (best) w.add(best, Selected{});
+    return best;
 }
 
-// Box selection: every unit whose screen position falls inside the rectangle
+// Click selection. One of your squad is selected (added, with Shift or Alt; else in place of the others), and the Unit
+// Panel goes back to your selection. Any other unit (an NPC, a corpse) is shown in the Unit Panel without touching your
+// selection. Empty ground changes nothing: your squad stays selected.
+void clickSelect(World& w, Entity hit, bool additive) {
+    if (hit == NULL_ENTITY) {
+        inspectUnit = NULL_ENTITY;
+        return;
+    }
+    if (!w.has<Commandable>(hit)) {
+        inspectUnit = hit;
+        return;
+    }
+    inspectUnit = NULL_ENTITY;
+    if (!additive) clearSelection(w);
+    if (!w.has<Selected>(hit)) w.add(hit, Selected{});
+}
+
+// Box selection: every unit of your squad whose screen position falls inside the rectangle. A box with none of them in
+// it changes nothing, so your squad is never left with nobody selected.
 void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
                int W, int H, bool additive) {
-    if (!additive) clearSelection(w);
     float minX = std::min(x0, x1), maxX = std::max(x0, x1);
     float minY = std::min(y0, y1), maxY = std::max(y0, y1);
     Mat4 vp = cam.viewProj((float)W / (float)H);
 
+    std::vector<Entity> inBox;
     for (Entity u : w.view<Unit, Transform, Commandable>()) {
         Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx, sy;
         if (worldToScreen(vp, tr->x, tr->y + 0.5f, tr->z, W, H, sx, sy)
             && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
-            w.add(u, Selected{});
+            inBox.push_back(u);
         }
+    }
+    if (inBox.empty()) return;
+    inspectUnit = NULL_ENTITY;
+    if (!additive) clearSelection(w);
+    for (Entity u : inBox) {
+        if (!w.has<Selected>(u)) w.add(u, Selected{});
     }
 }
 
@@ -804,8 +848,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Hostile{});
         } else if (u.neutral) {
             world.add(e, Neutral{});
-        } else {
-            world.add(e, Commandable{});
+        } else if (!u.corpse) {
+            world.add(e, Commandable{});   // one of yours; a corpse is nobody's
+        }
+        if (u.unconscious) {
+            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom, NULL_ENTITY });
+            if (u.corpse) world.add(e, Corpse{});
         }
         if (u.hostile || u.neutral) world.add(e, Dialogue{});
         // Every unit carries items and has behaviors, whichever side it is on
@@ -829,6 +877,17 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
         // Older saves have no faction: it comes from the side the unit is on
         world.add(e, Faction{ u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_GRAY : FACTION_PLAYER });
+    }
+
+    // Who was carrying whom: the carrier is named by its place in the save
+    for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
+        const int by = d.units[i].carriedBy;
+        Unconscious* un = world.get<Unconscious>(restoredUnits[i]);
+        if (!un || by < 0 || by >= (int)restoredUnits.size() || by == (int)i) continue;
+        const Entity carrier = restoredUnits[(size_t)by];
+        if (world.has<Carrying>(carrier) || world.has<Unconscious>(carrier)) continue;
+        un->carrier = carrier;
+        world.add(carrier, Carrying{ restoredUnits[i] });
     }
 
     if (d.hasItems) {
@@ -909,11 +968,22 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.cam.pitch = cam.pitch;
     d.cam.distance = cam.distance;
 
-    for (Entity u : w.view<Unit, Transform>()) {
+    const std::vector<Entity> saved = w.view<Unit, Transform>();
+    auto indexOf = [&](Entity e) {
+        const auto it = std::find(saved.begin(), saved.end(), e);
+        return it == saved.end() ? -1 : (int)(it - saved.begin());
+    };
+    for (Entity u : saved) {
         Transform* t = w.get<Transform>(u);
         Name* n = w.get<Name>(u);
         UnitSprite* us = w.get<UnitSprite>(u);
         SaveUnit su;
+        if (const Unconscious* un = w.get<Unconscious>(u)) {
+            su.unconscious = true;
+            su.doom = un->doom;
+            su.corpse = w.has<Corpse>(u);
+            su.carriedBy = un->carrier != NULL_ENTITY ? indexOf(un->carrier) : -1;
+        }
         su.x = t->x;
         su.y = t->y;
         su.z = t->z;
@@ -1653,7 +1723,6 @@ int main(int, char**) {
     // Sounds: each worked prop's time to its next working sound, the selection last frame, and how many units were down
     std::map<Entity, float> workSoundTimers;
     size_t lastSelectionKey = 0;
-    int lastDownCount = 0;
     Screen menuScreen = Screen::Playing;
     unsigned long long menuShownAt = 0;
     float menuMouseX = -1.0f, menuMouseY = -1.0f;
@@ -2785,6 +2854,13 @@ int main(int, char**) {
         };
         // Tells the player when a unit given an order can't follow it because it is locked in a cage. True if one is.
         auto noteLockedIn = [&](const std::vector<Entity>& units) {
+            // Unconscious ones can't do anything at all; say so when they are all there is
+            bool anyAwake = false;
+            for (Entity u : units) anyAwake = anyAwake || !world.has<Unconscious>(u);
+            if (!units.empty() && !anyAwake) {
+                refuse(langf("MISC_IS_UNCONSCIOUS", { nameOf(world, units[0]) }));
+                return true;
+            }
             for (Entity u : units) {
                 if (!lockedIn(world, u)) continue;
                 refuse(langf("MISC_LOCKED_IN", { nameOf(world, u), propNameOf(world, occupiedProp(world, u)) }));
@@ -2825,6 +2901,7 @@ int main(int, char**) {
         auto menuActors = [&](Entity target) {
             std::vector<Entity> units;
             for (Entity u : selectedUnits(world)) {
+                if (world.has<Unconscious>(u)) continue;   // out cold: it does nothing
                 if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
             }
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
@@ -2835,6 +2912,12 @@ int main(int, char**) {
         // The options for a target, in the order the menu lists them
         auto menuActionsFor = [&](Entity target) {
             std::vector<MenuAction> out;
+            if (const Unconscious* un = world.get<Unconscious>(target)) {
+                // Out cold or dead: carried off (unless someone has it already) and looted
+                if (un->carrier == NULL_ENTITY) out.push_back(MenuAction::PickUp);
+                out.push_back(MenuAction::Inventory);
+                return out;
+            }
             if (world.has<Unit>(target)) {
                 if (world.has<Commandable>(target)) {
                     out = { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend };
@@ -2847,6 +2930,10 @@ int main(int, char**) {
                 const PropUse use = propInfo(p->kind).use;
                 // A locked prop offers only Unlock, until it is open
                 if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) return std::vector<MenuAction>{ MenuAction::Unlock };
+                // A bed or bedroll, with a selected unit carrying someone: put them in it
+                bool carrying = false;
+                for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
+                if (carrying && doomRecoveryPerHour(p->kind) > 0.0f) out.push_back(MenuAction::PutInBed);
                 if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
                 if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
             }
@@ -2861,10 +2948,14 @@ int main(int, char**) {
                 case MenuAction::Follow: labels.push_back(lang("UILABEL_FOLLOW")); break;
                 case MenuAction::Defend: labels.push_back(lang("UILABEL_DEFEND")); break;
                 case MenuAction::Attack: labels.push_back(lang("UILABEL_ATTACK")); break;
-                case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK_UNPROVOKED")); break;
+                case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK")); break;   // it turns them hostile
                 case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
                 case MenuAction::Use: labels.push_back(lang("UILABEL_USE")); break;
                 case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
+                case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
+                case MenuAction::PutInBed: labels.push_back(lang("UILABEL_PUT_IN_BED")); break;
+                case MenuAction::Move: labels.push_back(lang("UILABEL_MOVE_HERE")); break;
+                case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
                 }
             }
             return labels;
@@ -2890,10 +2981,36 @@ int main(int, char**) {
             itemMenu.open = false;
             return true;
         };
+        // The menu on the ground for selected units that carry someone: walk there, or walk there and put them down
+        auto openGroundMenu = [&](float mx, float my, float gx, float gz) {
+            bool carrying = false;
+            for (Entity u : selectedUnits(world)) carrying = carrying || (world.has<Carrying>(u) && !cannotAct(world, u));
+            if (!carrying) return false;
+            ContextMenu m;
+            m.open = true;
+            m.x = mx;
+            m.y = my;
+            m.ground = true;
+            m.gx = gx;
+            m.gz = gz;
+            m.actions = { MenuAction::Move, MenuAction::PutDown };
+            contextMenu = m;
+            playSfx(Sfx::UiMenuOpen);
+            itemMenu.open = false;
+            return true;
+        };
         // Does the picked option with the selected units
         auto pickMenuAction = [&](MenuAction a) {
             const Entity target = contextMenu.target;
             contextMenu.open = false;
+            if (contextMenu.ground) {
+                if (a == MenuAction::Move) {
+                    issueMoveOrder(world, terrain, selectedUnits(world), Vec2{ contextMenu.gx, contextMenu.gz });
+                } else if (a == MenuAction::PutDown) {
+                    issuePutDownOrder(world, terrain, selectedUnits(world), Vec2{ contextMenu.gx, contextMenu.gz });
+                }
+                return;
+            }
             const std::vector<Entity> actors = menuActors(target);
             if (actors.empty()) {
                 refuse(lang("MISC_SELECT_UNIT_FIRST"));
@@ -2933,8 +3050,38 @@ int main(int, char**) {
                 issueAttackOrder(world, actors, target);
                 break;
             case MenuAction::Inventory:
+                if (world.has<Unconscious>(target)) {
+                    // Looting: the nearest unit that can goes, and the panel opens when it gets there (or now, if it is)
+                    if (gapBetween(world, actors[0], target) <= CARRY_REACH && !cannotAct(world, actors[0])) {
+                        closeStorage();
+                        lootUnit = target;
+                        lootBy = actors[0];
+                        playSfx(Sfx::UiMenuOpen);
+                    } else if (!issueLootOrder(world, terrain, actors, target)) {
+                        refuse(lang("MISC_SELECT_UNIT_FIRST"));
+                    }
+                    break;
+                }
                 issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Inventory);
                 break;
+            case MenuAction::PickUp:
+                if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
+                break;
+            case MenuAction::PutInBed: {
+                // The nearest selected unit that carries someone takes them there
+                Entity carrier = NULL_ENTITY;
+                for (Entity u : actors) {
+                    if (world.has<Carrying>(u)) {
+                        carrier = u;
+                        break;
+                    }
+                }
+                if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Use);
+                break;
+            }
+            case MenuAction::Move:
+            case MenuAction::PutDown:
+                break;   // ground menu only, above
             case MenuAction::Unlock: {
                 // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
                 const Lock* lock = world.get<Lock>(target);
@@ -3085,7 +3232,7 @@ int main(int, char**) {
             if (grabKind == 1) {
                 p.h = std::clamp(grabH + (grabMouseY - y), 0.0f, (float)H);
             } else if (grabKind == 2) {
-                const float minW = grabWhich == 0 ? squadMinWidth(H) : grabWhich == 1 ? 200.0f * s : 120.0f * s;
+                const float minW = grabWhich == 0 ? squadMinWidth(H) : grabWhich == 1 ? sidebarMinWidth(H) : 120.0f * s;
                 p.w = std::clamp(grabW + (x - grabMouseX), minW, std::max(minW, W - grabX));
             } else if (grabKind == 3) {
                 const float left = std::clamp(grabX + (x - grabMouseX), 0.0f, std::max(0.0f, W - grabW));
@@ -3164,6 +3311,7 @@ int main(int, char**) {
             return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace),
                                   sidebarFor(W, H, sidebarScroll), true, x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
+                || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
                 || (!mapOpen && (minimapFor(W, H).map.contains(x, y) || minimapFor(W, H).compass.contains(x, y)))
                 || (behaviorEditor.open
                     && renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, W, H).box.contains(x, y))
@@ -3651,6 +3799,34 @@ int main(int, char**) {
                     if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
                     break;
                 }
+                // The looting panel takes every click on it: a click on an item takes it (as much as fits), Take All takes
+                // everything that fits, Close closes it
+                if (screen == Screen::Playing && lootUnit != NULL_ENTITY) {
+                    const LootLayout ll = layoutLoot(winW, winH);
+                    const float x = e.button.x, y = e.button.y;
+                    if (ll.panel.contains(x, y)) {
+                        if (e.button.button == SDL_BUTTON_LEFT && ll.closeBtn.contains(x, y)) {
+                            closeLoot();
+                            playSfx(Sfx::UiBack);
+                        } else if (e.button.button == SDL_BUTTON_LEFT && ll.takeAllBtn.contains(x, y)) {
+                            if (lootAll(world, lootBy, lootUnit) == 0) refuse(lang("MISC_LOOT_NOTHING"));
+                        } else {
+                            std::string why;
+                            bool hitCell = false;
+                            for (int g = 0; g < GEAR_SLOTS && !hitCell; ++g) {
+                                if (!ll.gear[(size_t)g].contains(x, y)) continue;
+                                hitCell = true;
+                                if (!lootTake(world, lootBy, lootUnit, true, g, why) && !why.empty()) refuse(why);
+                            }
+                            for (int i = 0; i < INVENTORY_SLOTS && !hitCell; ++i) {
+                                if (!ll.slots[(size_t)i].contains(x, y)) continue;
+                                hitCell = true;
+                                if (!lootTake(world, lootBy, lootUnit, false, i, why) && !why.empty()) refuse(why);
+                            }
+                        }
+                        break;
+                    }
+                }
                 // The storage panel takes every click on it. Left button on an item starts dragging it out; right button
                 // moves its whole stack into the unit's inventory, if all of it fits.
                 if (screen == Screen::Playing && storageProp != NULL_ENTITY) {
@@ -3792,6 +3968,10 @@ int main(int, char**) {
                         bool tabHit = false;
                         for (int t = 0; t < UNIT_TAB_COUNT && st.open; ++t) {
                             if (st.tabs[t].contains(mx, my)) {
+                                if (!unitTabEnabled(world, sidebarUnitOf(world), t)) {
+                                    tabHit = true;   // off for a unit not in your squad: the click does nothing
+                                    break;
+                                }
                                 if (unitTab != t) playSfx(Sfx::UiTab);
                                 unitTab = t;
                                 sidebarScroll = 0.0f;
@@ -3881,8 +4061,10 @@ int main(int, char**) {
                             const SDL_Keymod mods = SDL_GetModState();
                             const bool shift = (mods & SDL_KMOD_SHIFT) != 0;
                             const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
+                            inspectUnit = NULL_ENTITY;
                             if (shift && world.has<Selected>(u)) {
-                                world.remove<Selected>(u);
+                                // Shift takes it out of the selection, but never the last one
+                                if (selectedUnits(world).size() > 1) world.remove<Selected>(u);
                             } else {
                                 if (!additive) clearSelection(world);
                                 if (!world.has<Selected>(u)) world.add(u, Selected{});
@@ -3897,9 +4079,11 @@ int main(int, char**) {
                         break;
                     }
 
-                    // Holding Alt shows the items on the ground. A click on one sends the selected units to pick it up.
-                    if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
-                        const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH);
+                    // A click on the visible part of an item on the ground (or, while Alt shows them, on its name)
+                    // sends the selected units to pick it up
+                    {
+                        const bool alt = (SDL_GetModState() & SDL_KMOD_ALT) != 0;
+                        const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH, alt);
                         if (item != NULL_ENTITY) {
                             const std::vector<Entity> picked = selectedUnits(world);
                             if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
@@ -3977,7 +4161,11 @@ int main(int, char**) {
                             rightHold = false;
                         } else {
                             float gx = 0.0f, gz = 0.0f;
-                            if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) beginRightHold(gx, gz);
+                            if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) {
+                                // Units carrying someone get a menu on the ground: Move, or Put down there
+                                if (openGroundMenu(e.button.x, e.button.y, gx, gz)) rightHold = false;
+                                else beginRightHold(gx, gz);
+                            }
                         }
                     }
                 }
@@ -4102,7 +4290,8 @@ int main(int, char**) {
                     if (sel.dragging) {
                         boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive);
                     } else {
-                        clickSelect(world, terrain, cam, e.button.x, e.button.y, winW, winH, additive);
+                        const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
+                        clickSelect(world, unitClicked(world, terrain, cam, under, e.button.x, e.button.y, winW, winH), additive);
                     }
                     sel.dragging = false;
                 }
@@ -4282,6 +4471,8 @@ int main(int, char**) {
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
             behaviorSystem(world, combatLog);
+            // Anyone left at 0 health falls Unconscious
+            downedSystem(world);
             if (combatLog.hits > hitsBefore) playSfx(Sfx::Hit);
             else if (combatLog.misses > missesBefore) playSfx(Sfx::Miss);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
@@ -4319,6 +4510,11 @@ int main(int, char**) {
                     }
                     continue;
                 }
+                if (a.corpse) {
+                    refuse(lang("MISC_CORPSE_NO_BED"));
+                    continue;
+                }
+                if (a.putInBed) continue;
                 if (a.unreachable) {
                     refuse(lang("MISC_PROP_UNREACHABLE"));
                 } else if (a.taken && info.use == PropUse::Occupy) {
@@ -4329,6 +4525,14 @@ int main(int, char**) {
                     refuse(langf("MISC_CRAFT_NEEDS", { info.input == INPUT_COOKABLE ? std::string(lang("MISC_FOOD_TO_COOK"))
                                                                                          : itemNameOf(info.input) }));
                 }
+            }
+            // Picking up, putting down and carrying Unconscious units; looters that got there open the panel
+            const CarryEvents carried = carrySystem(world);
+            for (const auto& [looter, looted] : carried.loot) {
+                closeStorage();
+                lootUnit = looted;
+                lootBy = looter;
+                playSfx(Sfx::UiMenuOpen);
             }
             cleanupSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
@@ -4342,6 +4546,14 @@ int main(int, char**) {
                 hoursPassed = advanceClock(gs.clockSeconds, dt);
             }
             needsSystem(world, hoursPassed, gameSecs);
+            downedSystem(world);   // starving to 0 knocks a unit out too
+            // Doom: up while Unconscious, down in a bed or bedroll; 0 there wakes the unit, 100 makes it a corpse
+            const DoomChanges doom = doomSystem(world, gameSecs);
+            for (Entity u : doom.woke) {
+                tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
+                queueSound(Sfx::Recovers);
+            }
+            if (!doom.died.empty()) queueSound(Sfx::Dies);
             // Resource and crafting props: the units working them make items by the in-game time that passed
             // Each item a worker receives shows over it, as "+Iron Ore", like a trade's label
             for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
@@ -4435,8 +4647,33 @@ int main(int, char**) {
             }
         }
         if (quantity.open && quantity.toStorage && storageProp == NULL_ENTITY) quantity.open = false;
+        // The looting panel closes once its looter is out of reach, is knocked out, or either is gone, or the unit it
+        // shows wakes up
+        if (lootUnit != NULL_ENTITY) {
+            if (!world.has<Unconscious>(lootUnit) || !world.has<Unit>(lootBy) || world.has<Unconscious>(lootBy) ||
+                gapBetween(world, lootBy, lootUnit) > LOOT_RANGE) {
+                closeLoot();
+            }
+        }
+        // A unit of your squad is always selected while there is one: when none is (a new game, the selected unit
+        // died), the first in the Squad Panel is, preferring one that is awake. With none left, nobody is.
+        if (screen == Screen::Playing && selectedUnits(world).empty()) {
+            const std::vector<Entity> squad = world.view<Unit, Commandable>();   // creation order, as the Squad Panel
+            Entity first = NULL_ENTITY;
+            for (Entity u : squad) {
+                if (!world.has<Unconscious>(u)) {
+                    first = u;
+                    break;
+                }
+            }
+            if (first == NULL_ENTITY && !squad.empty()) first = squad[0];
+            if (first != NULL_ENTITY) world.add(first, Selected{});
+        }
+        if (inspectUnit != NULL_ENTITY && !world.has<Unit>(inspectUnit)) inspectUnit = NULL_ENTITY;
+        // A unit that is not in your squad shows only its Profile
+        if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UNIT_TAB_PROFILE;
         // The right-click menu closes if its target is gone or a talk or trade opens
-        if (contextMenu.open && ((!world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
+        if (contextMenu.open && ((!contextMenu.ground && !world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
                                  dialogueUnit != NULL_ENTITY)) {
             contextMenu.open = false;
         }
@@ -4460,11 +4697,7 @@ int main(int, char**) {
             }
             if (screen == Screen::Playing && selKey != lastSelectionKey && selCount > 0) playSfx(Sfx::UiSelect);
             lastSelectionKey = selKey;
-            // A unit of any side dropping to no health
-            int down = 0;
-            for (Entity u : world.view<Unit, Needs>()) down += world.get<Needs>(u)->hp <= 0 ? 1 : 0;
-            if (screen == Screen::Playing && down > lastDownCount) playSfx(Sfx::Downed);
-            lastDownCount = down;
+            // (A unit falling Unconscious plays its own sound, from knockOut)
         }
 
         // ---- HUD: shown in the window title, since there's no text rendering there ----
@@ -4618,9 +4851,12 @@ int main(int, char**) {
                 else if (!world.has<Commandable>(e)) continue;
                 mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, kind });
             }
-            if (settings.showUnitNames) renderer.drawUnitNames(world, cam, winW, winH);
+            if (settings.showPropNames) renderer.drawPropNames(world, cam, winW, winH);
+            if (settings.showUnitNames || settings.showNpcNames) {
+                renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
+            }
             // What each unit is doing: mining, woodcutting, cooking, sleeping, encumbered
-            renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames);
+            renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
             // Damage numbers rise over the units they hit
             renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
             // Labels the systems queued this frame: items gained, and what used items did
@@ -4630,9 +4866,13 @@ int main(int, char**) {
                                              [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),
                               tradeLabels.end());
             renderer.drawTradeLabels(tradeLabels, world, cam, winW, winH);
-            renderer.drawPropProgress(world, cam, winW, winH);
+            renderer.drawPropProgress(world, cam, winW, winH, settings.showPropNames);
             if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
                 renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
+            } else if (!overPanels(mouseX, mouseY, winW, winH) && !contextMenu.open && !itemMenu.open) {
+                // The item under the pointer (its visible part) shows its name over it; a click picks it up
+                const Entity hovered = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH, false);
+                if (hovered != NULL_ENTITY) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
             }
             // The minimap and clock draw over the names and labels
             if (!mapOpen) {
@@ -4704,6 +4944,13 @@ int main(int, char**) {
                         }
                     }
                 }
+            }
+            // The looting panel over an Unconscious unit or a corpse
+            if (lootUnit != NULL_ENTITY) {
+                const std::string who = world.has<Corpse>(lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, lootUnit) })
+                                                                   : nameOf(world, lootUnit);
+                renderer.drawLoot(layoutLoot(winW, winH), who, world.get<Equipment>(lootUnit), world.get<Inventory>(lootUnit),
+                                  mouseX, mouseY);
             }
             // The storage panel, and the item being dragged out of it
             if (storageProp != NULL_ENTITY) {

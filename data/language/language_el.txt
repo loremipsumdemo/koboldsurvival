@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Αυτόματη αποθήκευση
 UILABEL_MINUTE	1 λεπτό
 UILABEL_MINUTES	{0} λεπτά
-UILABEL_UNIT_NAMES	Ονόματα μονάδων
+UILABEL_UNIT_NAMES	Ονόματα μονάδων παίκτη
+UILABEL_NPC_NAMES	Ονόματα άλλων μονάδων
+UILABEL_PROP_NAMES	Ονόματα αντικειμένων
 UILABEL_FONT_SIZE	Μέγεθος γραμματοσειράς
 UILABEL_RESET_PANELS	Επαναφορά όλων των πάνελ
 UILABEL_RESET	Επαναφορά
@@ -592,7 +594,6 @@ ITEM_90_NAME	Ψητό κρέας αρκούδας
 ITEM_90_DESC	Κρέας ψημένο στη φωτιά. Αποκαθιστά υγεία και πείνα.
 UILABEL_TALK	Μίλα
 UILABEL_ATTACK	Επίθεση
-UILABEL_ATTACK_UNPROVOKED	Επίθεση (απρόκλητη)
 UILABEL_FOLLOW	Ακολούθησε
 UILABEL_DEFEND	Υπεράσπισε
 UILABEL_TASK_FOLLOWING	Ακολουθεί
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Φτιάξε τη δική σου ομάδα. Ξεκινά 
 PROP_LOCKED_CHEST	Κλειδωμένο σεντούκι
 PROP_PRISONER_CAGE	Κλουβί κρατουμένων
 UILABEL_UNLOCK	Ξεκλείδωμα
+UILABEL_PICK_UP	Σήκωσε
+UILABEL_PUT_IN_BED	Βάλε στο κρεβάτι
+UILABEL_MOVE_HERE	Πήγαινε εδώ
+UILABEL_PUT_DOWN	Άφησε κάτω
+UILABEL_DOOM	Χαμός
+UILABEL_TASK_UNCONSCIOUS	Αναίσθητος
+UILABEL_TASK_DEAD	Νεκρός
+UILABEL_TASK_CARRYING	Μεταφέρει
+UILABEL_TAKE_ALL	Πάρε όλα
+UILABEL_LOOT_HINT	Κάνε κλικ σε ένα αντικείμενο για να το πάρεις στο απόθεμα της μονάδας σου.
+UILABEL_CORPSE_OF	Πτώμα του {0}
+MISC_FALLS_UNCONSCIOUS	Ο {0} χάνει τις αισθήσεις του
+MISC_DIES	Ο {0} πεθαίνει
+MISC_RECOVERS	Ο {0} ξυπνά
+MISC_PICKS_UP_UNIT	Ο {0} σηκώνει τον {1}
+MISC_PUTS_DOWN	Ο {0} αφήνει κάτω τον {1}
+MISC_PUTS_IN_BED	Ο {0} βάζει τον {1} στο {2}
+MISC_CORPSE_NO_BED	Ένα κρεβάτι δεν μπορεί να κάνει τίποτα για τους νεκρούς
+MISC_IS_UNCONSCIOUS	Ο {0} είναι αναίσθητος και δεν μπορεί να κάνει τίποτα
+MISC_ALREADY_CARRYING	Καμία επιλεγμένη μονάδα σου δεν μπορεί να τον μεταφέρει
+MISC_LOOT_NO_ROOM	Δεν υπάρχει χώρος στο απόθεμα
+MISC_LOOT_NOTHING	Δεν χωράει τίποτα άλλο
 MISC_PROP_LOCKED	Κλειδωμένο
 MISC_LOCKPICK_NEEDS	Απαιτεί Ανοίγματα κλειδαριών {0}
 MISC_UNLOCKED	Ξεκλειδώθηκε!

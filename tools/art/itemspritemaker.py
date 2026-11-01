@@ -5,12 +5,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SIZE = 256
-IMAGE_COUNT = 100
-SHAPES_PER_IMAGE = 4
+SIZE = 64
+IMAGE_COUNT = 1000
+SHAPES_PER_IMAGE = 5
 OUTPUT_DIR = Path("img")
-OUTLINE_WIDTH = 12
-MARGIN = 36
+OUTLINE_WIDTH = 3
+MARGIN = 2
+SHAPE_SIZE = 32
 
 
 def vivid_color(hue):
@@ -29,10 +30,9 @@ def star_points(cx, cy, outer_radius, inner_radius, points=5, rotation=-math.pi 
 
 def draw_random_shape(draw, rng, hue):
     shape_type = rng.choice(("circle", "rectangle", "triangle", "star", "diamond", "hexagon"))
-    x1 = rng.randint(MARGIN, SIZE - MARGIN - 120)
-    y1 = rng.randint(MARGIN, SIZE - MARGIN - 120)
-    width = rng.randint(90, min(220, SIZE - MARGIN - x1))
-    height = rng.randint(90, min(220, SIZE - MARGIN - y1))
+    x1 = rng.randint(MARGIN, SIZE - MARGIN - SHAPE_SIZE)
+    y1 = rng.randint(MARGIN, SIZE - MARGIN - SHAPE_SIZE)
+    width = height = SHAPE_SIZE
     x2, y2 = x1 + width, y1 + height
     color = vivid_color(hue)
     outline = (255, 255, 255, 255)
@@ -42,7 +42,7 @@ def draw_random_shape(draw, rng, hue):
         draw.ellipse((x1, y1, x2, y2), fill=fill, outline=outline, width=OUTLINE_WIDTH)
     elif shape_type == "rectangle":
         draw.rounded_rectangle(
-            (x1, y1, x2, y2), radius=rng.randint(0, 28),
+            (x1, y1, x2, y2), radius=rng.randint(0, 7),
             fill=fill, outline=outline, width=OUTLINE_WIDTH
         )
     elif shape_type == "triangle":

@@ -59,7 +59,9 @@ UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisk lagring
 UILABEL_MINUTE	1 minutt
 UILABEL_MINUTES	{0} minutter
-UILABEL_UNIT_NAMES	Enhetsnavn
+UILABEL_UNIT_NAMES	Navn på spillerens enheter
+UILABEL_NPC_NAMES	Navn på andre enheter
+UILABEL_PROP_NAMES	Navn på gjenstander i verden
 UILABEL_FONT_SIZE	Skriftstørrelse
 UILABEL_RESET_PANELS	Tilbakestill alle grensesnittpaneler
 UILABEL_RESET	Tilbakestill
@@ -592,7 +594,6 @@ ITEM_90_NAME	Stekt bjørnekjøtt
 ITEM_90_DESC	Kjøtt stekt over bål. Gjenoppretter helse og metter.
 UILABEL_TALK	Snakk
 UILABEL_ATTACK	Angrip
-UILABEL_ATTACK_UNPROVOKED	Angrip (uprovosert)
 UILABEL_FOLLOW	Følg
 UILABEL_DEFEND	Forsvar
 UILABEL_TASK_FOLLOWING	Følger
@@ -624,6 +625,28 @@ SCENARIO_CUSTOM_DESC	Bygg din egen gruppe. Den starter med tre enheter, og du ka
 PROP_LOCKED_CHEST	Låst kiste
 PROP_PRISONER_CAGE	Fangebur
 UILABEL_UNLOCK	Lås opp
+UILABEL_PICK_UP	Løft opp
+UILABEL_PUT_IN_BED	Legg i seng
+UILABEL_MOVE_HERE	Gå hit
+UILABEL_PUT_DOWN	Legg ned
+UILABEL_DOOM	Undergang
+UILABEL_TASK_UNCONSCIOUS	Bevisstløs
+UILABEL_TASK_DEAD	Død
+UILABEL_TASK_CARRYING	Bærer
+UILABEL_TAKE_ALL	Ta alt
+UILABEL_LOOT_HINT	Klikk på en gjenstand for å ta den i enhetens inventar.
+UILABEL_CORPSE_OF	Liket av {0}
+MISC_FALLS_UNCONSCIOUS	{0} mister bevisstheten
+MISC_DIES	{0} dør
+MISC_RECOVERS	{0} våkner
+MISC_PICKS_UP_UNIT	{0} løfter opp {1}
+MISC_PUTS_DOWN	{0} legger ned {1}
+MISC_PUTS_IN_BED	{0} legger {1} i {2}
+MISC_CORPSE_NO_BED	En seng kan ikke gjøre noe for de døde
+MISC_IS_UNCONSCIOUS	{0} er bevisstløs og kan ikke gjøre noe
+MISC_ALREADY_CARRYING	Ingen av de valgte enhetene dine kan bære dem
+MISC_LOOT_NO_ROOM	Ingen plass i inventaret
+MISC_LOOT_NOTHING	Ikke plass til mer
 MISC_PROP_LOCKED	Låst
 MISC_LOCKPICK_NEEDS	Krever Låsing {0}
 MISC_UNLOCKED	Låst opp!
