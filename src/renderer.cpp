@@ -2400,13 +2400,20 @@ void Renderer::drawUiTextLarge(const std::string& s, float cx, float cy, float s
 
 // A black bar across the top at 30% opacity, with PAUSED in large white letters, centred. With a hint, a line under
 // it says how to resume.
+float Renderer::pauseBarHeight(bool hint) {
+    const float s = uiH_ / 720.0f;
+    const float pad = 10.0f * s;
+    const float bigH = uiTextHeight(lang("UILABEL_PAUSED")) * 2.6f;
+    const float tipH = hint ? uiTextHeight(lang("UILABEL_PAUSE_HINT")) : 0.0f;
+    return pad + bigH + (hint ? pad + tipH : 0.0f) + pad;
+}
+
 void Renderer::drawPauseBar(bool hint) {
     const float s = uiH_ / 720.0f;
     const float pad = 10.0f * s;
     const float bigH = uiTextHeight(lang("UILABEL_PAUSED")) * 2.6f;
     const std::string tip = lang("UILABEL_PAUSE_HINT");
-    const float tipH = hint ? uiTextHeight(tip) : 0.0f;
-    const float h = pad + bigH + (hint ? pad + tipH : 0.0f) + pad;
+    const float h = pauseBarHeight(hint);
     drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, h }, theme::alpha(theme::NIGHT, 0.55f));
     drawRectGradientH(Rect{ 0.0f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::alpha(theme::PINK, 0.0f), theme::PINK);
     drawRectGradientH(Rect{ uiW_ * 0.5f, h - 2.0f * s, uiW_ * 0.5f, 2.0f * s }, theme::PINK, theme::alpha(theme::PINK, 0.0f));

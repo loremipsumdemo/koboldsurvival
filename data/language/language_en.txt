@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Defending
 MISC_FREE_TRADE_ADD	Add items to either side
 MISC_FREE_TRADE_READY	Ready to trade
 MISC_TURNS_HOSTILE	{0} turns hostile
+MISC_CALMS_DOWN	{0} calms down
 MISC_SELECT_UNIT_FIRST	Select a unit first
 FACTION_PLAYER	Player Faction
 FACTION_RED	Red Faction

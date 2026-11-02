@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Apără
 MISC_FREE_TRADE_ADD	Adaugă obiecte în oricare parte
 MISC_FREE_TRADE_READY	Gata de schimb
 MISC_TURNS_HOSTILE	{0} devine ostil
+MISC_CALMS_DOWN	{0} se calmează
 MISC_SELECT_UNIT_FIRST	Selectează mai întâi o unitate
 FACTION_PLAYER	Facțiunea jucătorului
 FACTION_RED	Facțiunea roșie

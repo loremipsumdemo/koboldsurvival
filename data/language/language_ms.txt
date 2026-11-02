@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Mempertahan
 MISC_FREE_TRADE_ADD	Tambah item ke mana-mana pihak
 MISC_FREE_TRADE_READY	Sedia untuk bertukar
 MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
+MISC_CALMS_DOWN	{0} kembali tenang
 MISC_SELECT_UNIT_FIRST	Pilih unit dahulu
 FACTION_PLAYER	Puak Pemain
 FACTION_RED	Puak Merah

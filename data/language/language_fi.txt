@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Puolustaa
 MISC_FREE_TRADE_ADD	Lisää esineitä kummalle puolelle tahansa
 MISC_FREE_TRADE_READY	Valmis vaihtoon
 MISC_TURNS_HOSTILE	{0} muuttuu vihamieliseksi
+MISC_CALMS_DOWN	{0} rauhoittuu
 MISC_SELECT_UNIT_FIRST	Valitse ensin yksikkö
 FACTION_PLAYER	Pelaajan ryhmittymä
 FACTION_RED	Punainen ryhmittymä

@@ -175,6 +175,8 @@ void onAttacked(World& w, Entity a, Entity d) {
             w.add(u, AttackOrder{ a });
             c.target = a;
         } else if (c.target == NULL_ENTITY) {
+            // An NPC that steps in fights the attacker's faction too, until it loses sight of it (Provoked)
+            if (!factionsHostile(fu, fa)) provoke(w, u, fa);
             c.target = a;
         }
     }
@@ -578,6 +580,14 @@ bool hostileToPlayer(World& w, Entity e) {
     return f != FACTION_PLAYER && (factionsHostile(f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
 }
 
+void forgetSpotted(World& w) {
+    for (Entity u : w.view<Combat>()) {
+        std::vector<Entity>& s = w.get<Combat>(u)->spotted;
+        s.clear();
+        s.shrink_to_fit();
+    }
+}
+
 void provoke(World& w, Entity unit, int faction) {
     if (!w.has<Unit>(unit) || factionOf(w, unit) == faction) return;
     Provoked& p = w.has<Provoked>(unit) ? *w.get<Provoked>(unit) : w.add(unit, Provoked{});
@@ -591,9 +601,25 @@ void provoke(World& w, Entity unit, int faction) {
 }
 
 void factionSystem(World& w, float dt) {
+    const std::vector<Entity> units = w.view<Unit, Transform>();
     for (Entity u : w.view<Provoked>()) {
         Provoked* p = w.get<Provoked>(u);
-        for (Provoked::Entry& en : p->against) en.secondsLeft -= dt;
+        const Transform* tu = w.get<Transform>(u);
+        // Out cold, it sees nothing; awake, any standing unit of the faction within sight keeps the grudge fresh
+        const bool awake = tu && !w.has<Unconscious>(u);
+        for (Provoked::Entry& en : p->against) {
+            bool seen = false;
+            for (Entity o : units) {
+                if (!awake || o == u || factionOf(w, o) != en.faction || w.has<Unconscious>(o)) continue;
+                const Transform* to = w.get<Transform>(o);
+                const float dx = to->x - tu->x, dz = to->z - tu->z;
+                if (dx * dx + dz * dz <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {
+                    seen = true;
+                    break;
+                }
+            }
+            en.secondsLeft = seen ? PROVOKED_SECONDS : en.secondsLeft - dt;
+        }
         p->against.erase(std::remove_if(p->against.begin(), p->against.end(),
                                         [](const Provoked::Entry& en) { return en.secondsLeft <= 0.0f; }),
                          p->against.end());
@@ -615,8 +641,16 @@ void factionSystem(World& w, float dt) {
                 queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen);
             }
         } else if (!hostile && !w.has<Neutral>(u)) {
+            const bool wasHostile = w.has<Hostile>(u);
             w.remove<Hostile>(u);
             w.add(u, Neutral{});
+            // It lost sight of your units long enough to calm down: it drops its fight with them
+            if (wasHostile && !w.has<Unconscious>(u)) {
+                queueLog(langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
+                if (Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY && w.has<Commandable>(c->target)) {
+                    c->target = NULL_ENTITY;
+                }
+            }
         }
     }
 }
@@ -712,7 +746,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
         if (hc.target != NULL_ENTITY) {
-            if (targetable(w, hc.target) && distanceBetween(w, h, hc.target) <= LEASH_RANGE) continue;
+            if (targetable(w, hc.target) && distanceBetween(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target)) continue;
             hc.target = NULL_ENTITY;
         }
         if (isPassive(w, h)) continue;
@@ -728,14 +762,22 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         }
     }
 
-    // Spotting and stealth XP for each standing unit, against the opposing side: player units spot red units, and
-    // red units spot player units
+    // A hostile is aware of your squad while it is fighting one of your units; one that is not (it has no target, or
+    // fights another faction) has not noticed you
+    auto awareOfYou = [&](Entity h) {
+        const Combat* c = w.get<Combat>(h);
+        return c && c->target != NULL_ENTITY && w.has<Commandable>(c->target);
+    };
+    // Spotting and stealth XP, for your units only, against the units hostile to you (the Hostile marker, which follows
+    // the reputations and provocations): Perception for each one first seen this in-game hour, and Stealth for standing close to one
+    // that has not noticed you
     for (Entity p : everyone) {
         if (!standing(p) || !w.has<Combat>(p)) continue;
         Combat& pc = *w.get<Combat>(p);
         const Stats st = statsOf(w, p);
         const float spotRange = AGGRO_RANGE * (1.0f + PERCEPTION_RANGE_PER_LEVEL * (levelOf(st, STAT_PERCEPTION) - 1));
-        const std::vector<Entity>& foes = w.has<Commandable>(p) ? hostiles : players;
+        if (!w.has<Commandable>(p)) continue;   // only your units gain XP
+        const std::vector<Entity>& foes = hostiles;
         bool unnoticedInRange = false;
         for (Entity h : foes) {
             if (!standing(h)) continue;
@@ -744,7 +786,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
                 pc.spotted.push_back(h);
                 grantXp(w, p, STAT_PERCEPTION, PERCEPTION_XP_PER_SPOT, lang("MISC_REASON_SPOTTING"));
             }
-            if (d <= STEALTH_RANGE && w.get<Combat>(h)->target != p) unnoticedInRange = true;
+            if (d <= STEALTH_RANGE && !awareOfYou(h)) unnoticedInRange = true;
         }
         if (unnoticedInRange) grantXp(w, p, STAT_STEALTH, STEALTH_XP_PER_SECOND * dt, lang("MISC_REASON_UNNOTICED"));
     }

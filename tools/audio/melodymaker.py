@@ -33,9 +33,10 @@ So the engine is motif-first:
 
 Features
 --------
-Pitch      18 scales, any root, adjustable register, singable-span and
-           max-leap limits, leap-recovery, chord-tone gravity from a silent
-           harmonic guide (structural notes only, so intervals survive).
+Pitch      10 consonant scales, any root, adjustable register,
+           singable-span and max-leap limits, leap-recovery, chord-tone
+           gravity from a silent harmonic guide (structural notes only, so
+           intervals survive).
 Form       Seven forms - period, sentence, AABA, ABAC, bar form, chain, call
            and response - with open/closed cadences and 13 variation
            operators (repeat, sequence, new ending, ornament, diminution,
@@ -44,12 +45,19 @@ Form       Seven forms - period, sentence, AABA, ABAC, bar form, chain, call
 Rhythm     Grid subdivision, swing, syncopation, rhythmic space, note length,
            gate/legato, accents, phrase-level dynamic arc, and humanised
            timing + velocity.
-Voice      Five waveforms, additive partials with rolloff, full ADSR, vibrato,
-           unison detune, portamento, plus instrument presets.
-Space      Tone (low-pass), delay with feedback, reverb, stereo width, drive.
+Voice      Four waveforms (each floored at a minimum harmonic rolloff),
+           additive partials, full ADSR, vibrato, unison detune, portamento,
+           plus instrument presets.
+Space      Tone (low-pass), delay with feedback, reverb, stereo width.
 Output     Live playback with looping, a piano roll coloured by form unit, a
            readout of the chosen motif and why it won, WAV / MP3 / MIDI
-           export, JSON preset save & load.
+           export, JSON preset save & load, and a batch tab that writes
+           bgm_01 ... bgm_99 with an index of what each track is.
+
+Everything is kept listenable by construction: dissonant scales and the saw
+waveform are gone, distortion is gone, and every parameter set - from the
+sliders, a preset, a loaded file or the batch generator - passes through
+make_pleasant() before a sample is rendered.
 
 Requirements
 ------------
@@ -142,25 +150,22 @@ APP_VERSION = "2.0"
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
+# Consonant scales only.  Locrian, Whole Tone, Chromatic, Blues, Harmonic
+# Minor, Phrygian, Phrygian Dominant and Hungarian Minor were removed: a
+# tritone tonic, a diminished fifth, an augmented second or a flat second
+# against the triadic harmonic guide is exactly what makes a randomly
+# generated line sound wrong rather than merely unexpected.
 SCALES = {
     "Major (Ionian)":         [0, 2, 4, 5, 7, 9, 11],
     "Natural Minor":          [0, 2, 3, 5, 7, 8, 10],
-    "Harmonic Minor":         [0, 2, 3, 5, 7, 8, 11],
     "Melodic Minor":          [0, 2, 3, 5, 7, 9, 11],
     "Dorian":                 [0, 2, 3, 5, 7, 9, 10],
-    "Phrygian":               [0, 1, 3, 5, 7, 8, 10],
     "Lydian":                 [0, 2, 4, 6, 7, 9, 11],
     "Mixolydian":             [0, 2, 4, 5, 7, 9, 10],
-    "Locrian":                [0, 1, 3, 5, 6, 8, 10],
-    "Phrygian Dominant":      [0, 1, 4, 5, 7, 8, 10],
-    "Hungarian Minor":        [0, 2, 3, 6, 7, 8, 11],
     "Major Pentatonic":       [0, 2, 4, 7, 9],
     "Minor Pentatonic":       [0, 3, 5, 7, 10],
-    "Blues":                  [0, 3, 5, 6, 7, 10],
     "Hirajoshi":              [0, 2, 3, 7, 8],
     "Kumoi":                  [0, 2, 3, 7, 9],
-    "Whole Tone":             [0, 2, 4, 6, 8, 10],
-    "Chromatic":              list(range(12)),
 }
 
 # Silent harmonic guide: scale-degree indices, one chord per bar.  Nothing is
@@ -191,11 +196,17 @@ CONTOURS = {
     "Level":           lambda u: 0.5,
 }
 
-WAVEFORMS = ["Sine", "Triangle", "Square", "Saw", "Pulse"]
+# Saw is gone - it is the one waveform whose every harmonic is present at
+# full 1/k strength, which is what "buzzy" means.  The three that remain are
+# floored at a minimum harmonic rolloff below, so even Square and Pulse
+# arrive filtered rather than raw.
+WAVEFORMS = ["Sine", "Triangle", "Square", "Pulse"]
+
+MIN_ROLLOFF = {"Sine": 0.0, "Triangle": 0.0, "Square": 1.25, "Pulse": 1.25}
 
 # Voice presets write directly into the Voice tab parameters.
 VOICE_PRESETS = {
-    "Pluck": dict(wave="Saw", rolloff=1.35, attack=0.004, decay=0.28,
+    "Pluck": dict(wave="Triangle", rolloff=1.05, attack=0.004, decay=0.28,
                   sustain=0.10, release=0.30, vib_rate=5.0, vib_depth=0.0,
                   unison=2, detune=6.0, glide=0.0, pulse_width=0.5),
     "Music Box": dict(wave="Sine", rolloff=0.70, attack=0.002, decay=0.55,
@@ -208,9 +219,9 @@ VOICE_PRESETS = {
     "Soft Flute": dict(wave="Sine", rolloff=1.80, attack=0.090, decay=0.22,
                        sustain=0.78, release=0.30, vib_rate=5.5, vib_depth=0.11,
                        unison=1, detune=0.0, glide=0.02, pulse_width=0.5),
-    "Analog Lead": dict(wave="Saw", rolloff=0.95, attack=0.012, decay=0.18,
+    "Analog Lead": dict(wave="Triangle", rolloff=0.85, attack=0.012, decay=0.18,
                         sustain=0.65, release=0.22, vib_rate=5.8, vib_depth=0.06,
-                        unison=3, detune=12.0, glide=0.04, pulse_width=0.5),
+                        unison=3, detune=10.0, glide=0.04, pulse_width=0.5),
     "Square Chip": dict(wave="Square", rolloff=1.10, attack=0.001, decay=0.10,
                         sustain=0.55, release=0.06, vib_rate=7.0, vib_depth=0.04,
                         unison=1, detune=0.0, glide=0.0, pulse_width=0.5),
@@ -236,6 +247,67 @@ GM_PROGRAMS = {
     "Oboe": 68, "Flute": 73, "Pan Flute": 75, "Square Lead": 80,
     "Saw Lead": 81, "Warm Pad": 89, "Kalimba": 108,
 }
+
+
+# ---------------------------------------------------------------------------
+#  Pleasantness guard
+# ---------------------------------------------------------------------------
+#  Every path into the engine - the sliders, a style preset, a loaded JSON
+#  file, the batch generator - goes through make_pleasant() before a single
+#  sample is rendered.  The point is that there is no combination of settings
+#  reachable from the UI that produces a harsh result, rather than a set of
+#  ranges a user is trusted to stay inside.
+
+PLEASANT_LIMITS = {
+    # key:            (min,   max)
+    "bpm":            (52,    152),
+    "max_leap":       (2,     9),      # no octave-plus jumps mid-phrase
+    "singable_span":  (5,     16),
+    "gate":           (0.20,  1.00),
+    "humanize_time":  (0.00,  0.40),   # beyond this it reads as sloppy
+    "humanize_vel":   (0.00,  0.45),
+    "attack":         (0.003, 0.60),   # floor avoids a click on every note
+    "release":        (0.05,  2.50),
+    "vib_depth":      (0.00,  0.20),   # beyond this it is seasick, not warm
+    "vib_rate":       (3.0,   7.5),
+    "detune":         (0.0,   12.0),   # beyond this it is out of tune
+    "tone":           (0.30,  0.82),   # top end is where fizz lives
+    "delay_mix":      (0.00,  0.40),
+    "delay_feedback": (0.00,  0.55),   # higher runs away into mush
+    "reverb_mix":     (0.00,  0.55),
+    "output_gain":    (0.10,  1.20),
+}
+
+
+def make_pleasant(p):
+    """Return a copy of the parameters with harsh settings ruled out."""
+    q = dict(p)
+
+    if q.get("scale") not in SCALES:
+        q["scale"] = "Major (Ionian)"
+    if q.get("wave") not in WAVEFORMS:
+        q["wave"] = "Triangle"
+    if q.get("contour") not in CONTOURS:
+        q["contour"] = "Arch"
+    if q.get("progression") not in PROGRESSIONS:
+        q["progression"] = "I - V - vi - IV"
+    if q.get("form") not in FORMS:
+        q["form"] = "Period (a a' a a'')"
+
+    for key, (lo, hi) in PLEASANT_LIMITS.items():
+        if key in q:
+            try:
+                q[key] = type(lo)(min(max(float(q[key]), lo), hi))
+            except (TypeError, ValueError):
+                pass
+
+    # The bright waveforms are never allowed to arrive raw.
+    floor = MIN_ROLLOFF.get(q.get("wave"), 0.0)
+    q["rolloff"] = max(float(q.get("rolloff", 1.0)), floor)
+
+    # Distortion was removed outright; ignore it if an old preset carries it.
+    q.pop("drive", None)
+    return q
 
 
 def midi_to_freq(midi):
@@ -1034,6 +1106,7 @@ def generate_melody(p, rng=None, info=None):
 
     Pass a dict as `info` to receive the chosen motif and its scoring.
     """
+    p = make_pleasant(p)
     rng = rng or np.random.default_rng(int(p["seed"]))
 
     scale = SCALES.get(p["scale"], SCALES["Major (Ionian)"])
@@ -1226,7 +1299,8 @@ def synth_note(midi, dur_s, v, sr=SAMPLE_RATE, prev_midi=None):
 
     nyq = sr * 0.45
     n_max = max(1, min(40, int(nyq / max(40.0, freq))))
-    parts = _partials(v["wave"], float(v["rolloff"]),
+    parts = _partials(v["wave"],
+                      max(float(v["rolloff"]), MIN_ROLLOFF.get(v["wave"], 0.0)),
                       float(v["pulse_width"]), n_max)
 
     unison = max(1, int(round(v["unison"])))
@@ -1342,19 +1416,13 @@ def _loudness_normalize(x, target_rms=0.105, ceiling=0.89, sr=SAMPLE_RATE):
     return y.astype(np.float32)
 
 
-def _drive(x, amount):
-    if amount <= 0.001:
-        return x
-    k = 1.0 + amount * 12.0
-    return (np.tanh(x * k) / np.tanh(k)).astype(np.float32)
-
-
 # ===========================================================================
 #  RENDER
 # ===========================================================================
 
 def render_melody(notes, p, sr=SAMPLE_RATE, progress=None):
     """Render Notes to a stereo float32 array."""
+    p = make_pleasant(p)
     bpm = float(p["bpm"])
     beat = 60.0 / bpm
     bars = int(round(p["bars"]))
@@ -1385,11 +1453,12 @@ def render_melody(notes, p, sr=SAMPLE_RATE, progress=None):
         if progress and count and i % 16 == 0:
             progress(i / count)
 
-    # ---- Tone / drive ---------------------------------------------------
+    # ---- Tone -----------------------------------------------------------
+    # Drive (soft-clip distortion) was removed from the signal path: there is
+    # no amount of it that makes a single-voice melody nicer to sit with.
     tone = float(p["tone"])
-    cutoff = 240.0 * (2.0 ** (tone * 7.2))      # ~240 Hz .. ~19 kHz
+    cutoff = 240.0 * (2.0 ** (tone * 7.2))      # ~300 Hz .. ~11 kHz
     buf = _fft_lowpass(buf, sr, cutoff, slope=2.0)
-    buf = _drive(buf, float(p["drive"]))
 
     peak = float(np.max(np.abs(buf))) or 1.0
     buf = buf / peak
@@ -2059,8 +2128,8 @@ P_MELODY = [
      "Rewards mixed intervals over the same one repeated"),
     ("stepwise", "num", "Step / leap balance", 0.0, 1.0, 0.62, 2,
      "High = mostly steps, low = leapy"),
-    ("max_leap", "int", "Max leap (semitones)", 2, 14, 7, 0, None),
-    ("singable_span", "int", "Singable span", 5, 24, 12, 0,
+    ("max_leap", "int", "Max leap (semitones)", 2, 9, 7, 0, None),
+    ("singable_span", "int", "Singable span", 5, 16, 12, 0,
      "Semitones the motif may cover - keep it voice-sized"),
     ("leap_recovery", "bool", "Answer leaps with a step", None, None, True, 0,
      None),
@@ -2074,7 +2143,7 @@ P_MELODY = [
 ]
 
 P_RHYTHM = [
-    ("bpm", "int", "Tempo (BPM)", 40, 220, 104, 0, None),
+    ("bpm", "int", "Tempo (BPM)", 52, 152, 104, 0, None),
     ("bars", "int", "Length (bars)", 1, 64, 16, 0, None),
     ("beats_per_bar", "int", "Beats per bar", 2, 7, 4, 0, None),
     ("subdivision", "int", "Grid (per beat)", 1, 6, 2, 0,
@@ -2101,31 +2170,30 @@ P_RHYTHM = [
 ]
 
 P_VOICE = [
-    ("wave", "choice", "Waveform", None, None, "Saw", 0, None),
-    ("pulse_width", "num", "Pulse width", 0.05, 0.95, 0.5, 2,
+    ("wave", "choice", "Waveform", None, None, "Triangle", 0, None),
+    ("pulse_width", "num", "Pulse width", 0.15, 0.85, 0.5, 2,
      "Pulse waveform only"),
-    ("rolloff", "num", "Harmonic rolloff", 0.0, 2.5, 1.35, 2,
+    ("rolloff", "num", "Harmonic rolloff", 0.0, 2.5, 1.05, 2,
      "Higher = darker, fewer upper partials"),
-    ("attack", "num", "Attack (s)", 0.001, 0.6, 0.004, 3, None),
+    ("attack", "num", "Attack (s)", 0.003, 0.6, 0.005, 3, None),
     ("decay", "num", "Decay (s)", 0.01, 2.0, 0.28, 3, None),
     ("sustain", "num", "Sustain level", 0.0, 1.0, 0.10, 2, None),
     ("release", "num", "Release (s)", 0.01, 2.5, 0.30, 3, None),
-    ("vib_rate", "num", "Vibrato rate (Hz)", 0.5, 10.0, 5.0, 2, None),
-    ("vib_depth", "num", "Vibrato depth", 0.0, 1.0, 0.0, 2, "In semitones"),
+    ("vib_rate", "num", "Vibrato rate (Hz)", 3.0, 7.5, 5.0, 2, None),
+    ("vib_depth", "num", "Vibrato depth", 0.0, 0.2, 0.0, 2, "In semitones"),
     ("unison", "int", "Unison voices", 1, 4, 2, 0, None),
-    ("detune", "num", "Detune (cents)", 0.0, 30.0, 6.0, 1, None),
+    ("detune", "num", "Detune (cents)", 0.0, 12.0, 6.0, 1, None),
     ("glide", "num", "Portamento (s)", 0.0, 0.3, 0.0, 3, None),
 ]
 
 P_FX = [
-    ("tone", "num", "Tone", 0.0, 1.0, 0.72, 2, "Low-pass brightness"),
-    ("drive", "num", "Drive", 0.0, 1.0, 0.08, 2, None),
-    ("delay_mix", "num", "Delay mix", 0.0, 1.0, 0.22, 2, None),
+    ("tone", "num", "Tone", 0.30, 0.82, 0.70, 2, "Low-pass brightness"),
+    ("delay_mix", "num", "Delay mix", 0.0, 0.40, 0.22, 2, None),
     ("delay_time", "num", "Delay time", 0.05, 2.0, 0.75, 2,
      "In beats when synced, else seconds"),
     ("delay_sync", "bool", "Sync delay to tempo", None, None, True, 0, None),
-    ("delay_feedback", "num", "Delay feedback", 0.0, 0.85, 0.35, 2, None),
-    ("reverb_mix", "num", "Reverb mix", 0.0, 1.0, 0.25, 2, None),
+    ("delay_feedback", "num", "Delay feedback", 0.0, 0.55, 0.35, 2, None),
+    ("reverb_mix", "num", "Reverb mix", 0.0, 0.55, 0.25, 2, None),
     ("reverb_size", "num", "Reverb size (s)", 0.2, 4.0, 1.6, 2, None),
     ("width", "num", "Stereo width", 0.0, 1.0, 0.45, 2, None),
     ("output_gain", "num", "Output level", 0.1, 1.5, 1.0, 2,
@@ -2133,6 +2201,8 @@ P_FX = [
 ]
 
 ALL_PARAMS = P_MELODY + P_RHYTHM + P_VOICE + P_FX
+
+DEFAULTS = {spec[0]: spec[5] for spec in ALL_PARAMS}
 
 CHOICE_VALUES = {
     "root_note": [f"{n}{o}" for o in (2, 3, 4, 5) for n in NOTE_NAMES],
@@ -2156,22 +2226,21 @@ NO_RANDOM = {"bars", "beats_per_bar", "output_gain", "delay_sync",
 RANDOM_RANGE = {
     # -- melody ---------------------------------------------------------
     "root_note": [f"{n}{o}" for o in (3, 4) for n in NOTE_NAMES],
-    "scale": [s for s in SCALES
-              if s not in ("Chromatic", "Whole Tone", "Locrian")],
+    "scale": list(SCALES),
     "range_lo": (-5, 2),
     "range_hi": (14, 21),
-    "motif_notes": (4, 8),
+    "motif_notes": (4, 7),
     "contour": [c for c in CONTOURS if c != "Level"],
     "contour_strength": (0.40, 0.90),
     "interval_variety": (0.40, 0.90),
     "stepwise": (0.45, 0.85),
-    "max_leap": (4, 9),
+    "max_leap": (4, 8),
     "note_repeat": (0.30, 0.70),
     "progression": [k for k in PROGRESSIONS if k != "Free (no guide)"],
     "chord_bias": (0.30, 0.80),
     "sevenths": [False, False, True],
     # -- rhythm ---------------------------------------------------------
-    "bpm": (72, 148),
+    "bpm": (72, 132),
     "subdivision": (2, 4),
     "variation": (0.20, 0.60),
     "note_length": (0.25, 0.70),
@@ -2182,27 +2251,26 @@ RANDOM_RANGE = {
     "swing": (0.00, 0.60),
     "accent": (0.30, 0.70),
     "dyn_arc": (0.35, 0.80),
-    "humanize_time": (0.05, 0.40),
-    "humanize_vel": (0.10, 0.45),
+    "humanize_time": (0.05, 0.28),
+    "humanize_vel": (0.10, 0.40),
     # -- voice ----------------------------------------------------------
-    "pulse_width": (0.20, 0.60),
-    "rolloff": (0.70, 1.90),
-    "attack": (0.002, 0.120),
+    "pulse_width": (0.25, 0.60),
+    "rolloff": (0.80, 1.90),
+    "attack": (0.004, 0.120),
     "decay": (0.10, 0.80),
     "sustain": (0.05, 0.70),
     "release": (0.10, 0.80),
     "vib_rate": (4.0, 6.5),
     "vib_depth": (0.00, 0.12),
     "unison": (1, 3),
-    "detune": (0.0, 12.0),
+    "detune": (0.0, 10.0),
     "glide": (0.00, 0.06),
     # -- space ----------------------------------------------------------
-    "tone": (0.50, 0.90),
-    "drive": (0.00, 0.30),
-    "delay_mix": (0.00, 0.40),
+    "tone": (0.45, 0.80),
+    "delay_mix": (0.00, 0.35),
     "delay_time": (0.25, 1.00),
-    "delay_feedback": (0.10, 0.50),
-    "reverb_mix": (0.08, 0.45),
+    "delay_feedback": (0.10, 0.45),
+    "reverb_mix": (0.10, 0.45),
     "reverb_size": (0.80, 2.60),
     "width": (0.20, 0.80),
 }
@@ -2228,7 +2296,7 @@ STYLE_PRESETS = {
                           dyn_arc=0.45, wave="Pulse", pulse_width=0.25,
                           rolloff=1.0, attack=0.001, decay=0.1, sustain=0.5,
                           release=0.06, unison=1, detune=0.0, tone=0.85,
-                          drive=0.15, delay_mix=0.3, delay_feedback=0.3,
+                          delay_mix=0.3, delay_feedback=0.3,
                           reverb_mix=0.12, width=0.3),
     "Music Box": dict(scale="Major (Ionian)", progression="I - IV - V - I",
                       form="Period (a a\' a a\'\')", unit_bars=2,
@@ -2248,10 +2316,11 @@ STYLE_PRESETS = {
                         stepwise=0.58, max_leap=8, singable_span=14,
                         subdivision=2, bpm=112, note_length=0.55, gate=0.95,
                         rest_density=0.18, syncopation=0.30, variation=0.40,
-                        dyn_arc=0.60, wave="Saw", rolloff=1.2, attack=0.02,
+                        dyn_arc=0.60, wave="Triangle", rolloff=1.0,
+                        attack=0.02,
                         decay=0.3, sustain=0.6, release=0.35, unison=3,
-                        detune=14.0, glide=0.05, vib_depth=0.05, tone=0.6,
-                        drive=0.2, delay_mix=0.35, delay_feedback=0.45,
+                        detune=11.0, glide=0.05, vib_depth=0.05, tone=0.6,
+                        delay_mix=0.35, delay_feedback=0.45,
                         reverb_mix=0.3, width=0.75),
     "Ambient Flute": dict(scale="Kumoi", progression="Pedal (tonic only)",
                           form="Chain (a a\' a\'\' a\'\'\')", unit_bars=2,
@@ -2270,8 +2339,8 @@ STYLE_PRESETS = {
                       form="Sentence (a a\' dev cad)", unit_bars=2,
                       motif_notes=8, contour="Double Arch",
                       contour_strength=0.45, interval_variety=0.85,
-                      stepwise=0.80, max_leap=10, singable_span=18,
-                      subdivision=4, bpm=168, note_length=0.15, gate=0.8,
+                      stepwise=0.80, max_leap=9, singable_span=16,
+                      subdivision=4, bpm=150, note_length=0.15, gate=0.8,
                       rest_density=0.18, syncopation=0.50, swing=0.62,
                       variation=0.65, dyn_arc=0.50, humanize_time=0.35,
                       humanize_vel=0.40, wave="Triangle", rolloff=1.0,
@@ -2280,19 +2349,19 @@ STYLE_PRESETS = {
     "Bass Line": dict(scale="Minor Pentatonic", progression="i - iv - VI - V",
                       range_lo=-24, range_hi=-3, form="AABA", unit_bars=1,
                       motif_notes=5, contour="Level", contour_strength=0.30,
-                      interval_variety=0.70, stepwise=0.55, max_leap=12,
+                      interval_variety=0.70, stepwise=0.55, max_leap=9,
                       singable_span=14, subdivision=4, bpm=118,
                       note_length=0.25, gate=0.70, rest_density=0.25,
                       syncopation=0.55, variation=0.25, dyn_arc=0.35,
                       wave="Square", rolloff=1.6, attack=0.006, decay=0.3,
                       sustain=0.45, release=0.18, unison=2, detune=3.0,
-                      glide=0.05, tone=0.42, drive=0.25, delay_mix=0.0,
+                      glide=0.05, tone=0.42, delay_mix=0.0,
                       reverb_mix=0.08, width=0.15),
     "Glass Arpeggio": dict(scale="Lydian", progression="I - iii - IV - iv",
                            form="ABAC", unit_bars=2, motif_notes=6,
                            contour="Rising", contour_strength=0.65,
-                           interval_variety=0.75, stepwise=0.30, max_leap=12,
-                           singable_span=19, subdivision=4, bpm=128,
+                           interval_variety=0.75, stepwise=0.30, max_leap=9,
+                           singable_span=16, subdivision=4, bpm=128,
                            note_length=0.20, gate=0.60, rest_density=0.08,
                            syncopation=0.15, variation=0.35, dyn_arc=0.55,
                            wave="Triangle", rolloff=1.3, attack=0.004,
@@ -2315,6 +2384,185 @@ STYLE_PRESETS = {
                                   sustain=0.25, release=0.4, tone=0.72,
                                   reverb_mix=0.28, delay_mix=0.18, width=0.5),
 }
+
+
+# ===========================================================================
+#  BATCH BGM
+# ===========================================================================
+#  Ninety-nine files that are all pleasant and none of which are the same
+#  track twice.  Variety comes from picking a mood and then jittering inside
+#  it, not from rolling every parameter independently - independent rolls are
+#  what produce the one file in ten that nobody wants to hear.
+
+# Each mood is a complete, hand-checked voicing, plus the scales and tempo
+# band that suit it.  "_scales" and "_bpm" are consumed by the generator and
+# stripped before the parameters reach the engine.
+BGM_MOODS = {
+    "Music Box": dict(
+        STYLE_PRESETS["Music Box"],
+        _scales=["Major (Ionian)", "Major Pentatonic", "Lydian", "Kumoi"],
+        _bpm=(72, 96)),
+    "Ambient Flute": dict(
+        STYLE_PRESETS["Ambient Flute"],
+        _scales=["Kumoi", "Hirajoshi", "Dorian", "Major Pentatonic"],
+        _bpm=(58, 80)),
+    "Folk Song": dict(
+        STYLE_PRESETS["Folk Song"],
+        _scales=["Major (Ionian)", "Mixolydian", "Dorian", "Major Pentatonic"],
+        _bpm=(84, 112)),
+    "Glass Arpeggio": dict(
+        STYLE_PRESETS["Glass Arpeggio"],
+        _scales=["Lydian", "Major (Ionian)", "Major Pentatonic"],
+        _bpm=(96, 128)),
+    "Soft Hook": dict(
+        STYLE_PRESETS["Hook (short & sticky)"],
+        _scales=["Dorian", "Natural Minor", "Minor Pentatonic"],
+        _bpm=(88, 116)),
+    "Night Keys": dict(
+        STYLE_PRESETS["Night Drive"],
+        _scales=["Natural Minor", "Dorian", "Minor Pentatonic"],
+        _bpm=(84, 112)),
+    "Marimba Garden": dict(
+        scale="Major Pentatonic", progression="I - V - vi - IV",
+        form="AABA", unit_bars=2, motif_notes=6, contour="Wave",
+        contour_strength=0.65, interval_variety=0.65, stepwise=0.68,
+        max_leap=7, singable_span=12, subdivision=2, note_length=0.30,
+        gate=0.80, rest_density=0.25, variation=0.35, dyn_arc=0.60,
+        wave="Sine", rolloff=0.55, attack=0.003, decay=0.32, sustain=0.04,
+        release=0.30, unison=1, detune=0.0, tone=0.66, reverb_mix=0.30,
+        reverb_size=1.8, delay_mix=0.14, width=0.5,
+        _scales=["Major Pentatonic", "Major (Ionian)", "Mixolydian"],
+        _bpm=(88, 120)),
+    "Chip Lullaby": dict(
+        scale="Major Pentatonic", progression="I - vi - IV - V",
+        form="Period (a a' a a'')", unit_bars=2, motif_notes=6,
+        contour="Arch", contour_strength=0.70, interval_variety=0.60,
+        stepwise=0.70, max_leap=7, singable_span=12, subdivision=2,
+        note_length=0.40, gate=0.85, rest_density=0.20, variation=0.30,
+        dyn_arc=0.55, wave="Pulse", pulse_width=0.35, rolloff=1.45,
+        attack=0.004, decay=0.18, sustain=0.40, release=0.20, unison=1,
+        detune=0.0, tone=0.62, delay_mix=0.24, delay_feedback=0.30,
+        reverb_mix=0.26, width=0.45,
+        _scales=["Major Pentatonic", "Major (Ionian)", "Kumoi"],
+        _bpm=(80, 108)),
+}
+
+# Jitter applied on top of the chosen mood.  These are narrow on purpose:
+# enough that no two of the 99 are the same piece, not so much that the mood
+# stops being the mood.
+BGM_JITTER = {
+    "motif_notes":      (4, 7),
+    "contour_strength": (0.50, 0.85),
+    "interval_variety": (0.45, 0.80),
+    "stepwise":         (0.58, 0.85),
+    "chord_bias":       (0.40, 0.80),
+    "note_length":      (0.28, 0.70),
+    "gate":             (0.72, 1.00),
+    "rest_density":     (0.08, 0.35),
+    "syncopation":      (0.00, 0.35),
+    "variation":        (0.20, 0.50),
+    "accent":           (0.35, 0.65),
+    "dyn_arc":          (0.45, 0.75),
+    "humanize_time":    (0.08, 0.26),
+    "humanize_vel":     (0.12, 0.35),
+    "reverb_mix":       (0.15, 0.45),
+    "delay_mix":        (0.05, 0.30),
+    "width":            (0.30, 0.75),
+}
+
+BGM_CONTOURS = ["Arch", "Wave", "Rising", "Falling", "Double Arch"]
+
+
+def random_bgm_params(rng, bars=16, mood=None, seed=None):
+    """One complete, pleasant parameter set for a single BGM track."""
+    name = mood if mood in BGM_MOODS else rng.choice(list(BGM_MOODS))
+    recipe = dict(BGM_MOODS[name])
+    scales = recipe.pop("_scales", list(SCALES))
+    bpm_lo, bpm_hi = recipe.pop("_bpm", (80, 120))
+
+    p = dict(DEFAULTS)
+    p.update(recipe)
+
+    for key, (lo, hi) in BGM_JITTER.items():
+        if key not in p:
+            continue
+        if isinstance(DEFAULTS.get(key), bool):
+            continue
+        if key in ("motif_notes",):
+            p[key] = rng.randint(int(lo), int(hi))
+        else:
+            p[key] = round(rng.uniform(lo, hi), 3)
+
+    p["scale"] = rng.choice(scales)
+    p["root_note"] = rng.choice([f"{n}{o}" for o in (3, 4) for n in NOTE_NAMES])
+    p["contour"] = rng.choice(BGM_CONTOURS)
+    p["form"] = rng.choice(list(FORMS))
+    p["bpm"] = rng.randint(int(bpm_lo), int(bpm_hi))
+    p["bars"] = int(bars)
+    p["seed"] = int(seed if seed is not None else rng.randint(1, 999_999))
+    p["candidates"] = 64
+
+    return name, make_pleasant(p)
+
+
+def render_bgm_track(p):
+    """Notes plus stereo audio for one track."""
+    rng = np.random.default_rng(int(p["seed"]))
+    notes = generate_melody(p, rng)
+    return notes, render_melody(notes, p)
+
+
+def export_bgm_batch(out_dir, count=99, bars=16, mood=None, seed=None,
+                     fmt="mp3", on_progress=None, should_stop=None):
+    """Write bgm_01 … bgm_99 and an index of what each one is.
+
+    Nothing here previews, plays or draws anything: each track is generated,
+    written and dropped.  on_progress(done, count, filename, mood, finished)
+    fires twice per track - once when it starts, once when the file is on
+    disk - so a caller can show a count rather than a spinner.  should_stop()
+    is polled so the UI can cancel mid-run.
+
+    Returns (written, failed).
+    """
+    count = int(max(1, min(99, count)))
+    rng = random.Random(seed)
+    os.makedirs(out_dir, exist_ok=True)
+
+    written, failed = [], []
+    index = ["#  file            mood             key / scale                "
+             "tempo  bars  seed"]
+    for i in range(count):
+        if should_stop is not None and should_stop():
+            break
+        name, p = random_bgm_params(rng, bars=bars, mood=mood)
+        filename = f"bgm_{i + 1:02d}.{fmt}"
+        if on_progress:
+            on_progress(len(written), count, filename, name, False)
+        path = os.path.join(out_dir, filename)
+        try:
+            _notes, audio = render_bgm_track(p)
+            if fmt == "wav":
+                export_wav(audio, path)
+            else:
+                export_mp3(audio, path)
+            written.append(filename)
+            if on_progress:
+                on_progress(len(written), count, filename, name, True)
+            index.append(f"   {filename:<15} {name:<16} "
+                         f"{p['root_note'] + ' ' + p['scale']:<26} "
+                         f"{p['bpm']:<6} {p['bars']:<5} {p['seed']}")
+        except Exception:
+            traceback.print_exc()
+            failed.append(filename)
+
+    try:
+        with open(os.path.join(out_dir, "bgm_index.txt"), "w",
+                  encoding="utf-8") as fh:
+            fh.write("\n".join(index) + "\n")
+    except Exception:
+        pass
+
+    return written, failed
 
 
 # ===========================================================================
@@ -2348,6 +2596,14 @@ class MelodyMakerApp:
         self.voice_var = tk.StringVar(value="Pluck")
         self.midi_prog_var = tk.StringVar(value="Flute")
         self.seed_var = tk.IntVar(value=1)
+
+        # Batch BGM
+        self.batch_count_var = tk.IntVar(value=99)
+        self.batch_bars_var = tk.IntVar(value=16)
+        self.batch_mood_var = tk.StringVar(value="Mixed")
+        self.batch_fmt_var = tk.StringVar(value="mp3")
+        self._batch_stop = threading.Event()
+        self._batch_running = False
 
         self._build_header()
         self._build_body()
@@ -2487,6 +2743,36 @@ class MelodyMakerApp:
                                           command=self.do_export_midi)
         self.export_midi_btn.pack(side="right")
 
+        # ---- one-click batch ---------------------------------------------
+        # Generates and writes 99 tracks without previewing, playing or
+        # drawing any of them - the only feedback is the count below.
+        row4 = ttk.Frame(tr, style="Card.TFrame")
+        row4.pack(fill="x", pady=(12, 0))
+
+        self.batch99_btn = ttk.Button(
+            row4, text="Generate & Export 99", style="Accent.TButton",
+            width=22, command=self.quick_export_99)
+        self.batch99_btn.pack(side="left", padx=(0, 10))
+
+        self.batch_cancel_btn = ttk.Button(row4, text="Cancel", width=8,
+                                           state="disabled",
+                                           command=self.cancel_bgm_batch)
+        self.batch_cancel_btn.pack(side="left", padx=(0, 12))
+
+        self.batch_count_lbl = ttk.Label(row4, text="0 / 99 exported",
+                                         style="Clock.TLabel")
+        self.batch_count_lbl.pack(side="right")
+
+        row5 = ttk.Frame(tr, style="Card.TFrame")
+        row5.pack(fill="x", pady=(8, 0))
+        self.batch_prog = ttk.Progressbar(row5, maximum=99, value=0)
+        self.batch_prog.pack(fill="x")
+        self.batch_status = ttk.Label(
+            row5, text="Writes bgm_01 … bgm_99 to a folder you pick. "
+                       "Settings are on the Batch tab.",
+            style="Hint.TLabel")
+        self.batch_status.pack(anchor="w", pady=(4, 0))
+
         # ---- right: parameter tabs ---------------------------------------
         right = ttk.Frame(body, style="App.TFrame", width=400)
         right.pack(side="right", fill="y")
@@ -2500,6 +2786,7 @@ class MelodyMakerApp:
         self._make_tab(nb, "Voice", P_VOICE, voice_presets=True)
         self._make_tab(nb, "Space", P_FX)
         self._make_output_tab(nb)
+        self._make_batch_tab(nb)
 
     def _make_tab(self, nb, title, specs, voice_presets=False):
         page = ttk.Frame(nb, style="Card.TFrame")
@@ -2569,6 +2856,67 @@ class MelodyMakerApp:
         self.analysis = ttk.Label(body, text="-", style="Hint.TLabel",
                                   justify="left")
         self.analysis.pack(anchor="w", pady=(4, 0))
+
+    def _make_batch_tab(self, nb):
+        page = ttk.Frame(nb, style="Card.TFrame")
+        nb.add(page, text="Batch")
+        area = ScrollArea(page)
+        area.pack(fill="both", expand=True)
+        body = ttk.Frame(area.inner, style="Card.TFrame", padding=(16, 14))
+        body.pack(fill="both", expand=True)
+
+        ttk.Label(body, text="BATCH BGM", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(body,
+                  text="Writes bgm_01 … bgm_99 plus an index listing each "
+                       "track's mood, key, tempo and seed. Every track is "
+                       "generated fresh - this ignores the sliders.",
+                  style="Hint.TLabel", wraplength=330,
+                  justify="left").pack(anchor="w", pady=(2, 12))
+
+        def row(label):
+            fr = ttk.Frame(body, style="Card.TFrame")
+            fr.pack(fill="x", pady=4)
+            ttk.Label(fr, text=label, style="Param.TLabel",
+                      width=14).pack(side="left")
+            return fr
+
+        fr = row("Tracks")
+        ttk.Spinbox(fr, from_=1, to=99, width=6,
+                    textvariable=self.batch_count_var).pack(side="left")
+
+        fr = row("Bars each")
+        ttk.Spinbox(fr, from_=4, to=48, width=6,
+                    textvariable=self.batch_bars_var).pack(side="left")
+
+        fr = row("Mood")
+        ttk.Combobox(fr, textvariable=self.batch_mood_var, state="readonly",
+                     width=18,
+                     values=["Mixed"] + list(BGM_MOODS)).pack(side="left")
+
+        fr = row("Format")
+        ttk.Combobox(fr, textvariable=self.batch_fmt_var, state="readonly",
+                     width=8, values=["mp3", "wav"]).pack(side="left")
+
+        ttk.Separator(body, orient="horizontal").pack(fill="x", pady=(14, 12))
+
+        self.batch_btn = ttk.Button(body, text="Export batch…",
+                                    style="Accent.TButton",
+                                    command=self.do_export_bgm_batch)
+        self.batch_btn.pack(fill="x")
+
+        self.batch_tab_status = ttk.Label(
+            body, text="Idle", style="Hint.TLabel", wraplength=330,
+            justify="left")
+        self.batch_tab_status.pack(anchor="w", pady=(10, 0))
+
+        ttk.Label(body,
+                  text="The same run as the Generate & Export 99 button "
+                       "under the transport, which uses these settings. "
+                       "Nothing is played or drawn while it runs; the count "
+                       "and progress bar are below the transport. Cancel "
+                       "stops after the track in progress.",
+                  style="Hint.TLabel", wraplength=330,
+                  justify="left").pack(anchor="w", pady=(12, 0))
 
     def _add_param(self, parent, spec):
         key, kind, label, lo, hi, default, dec, hint = spec
@@ -3062,6 +3410,114 @@ class MelodyMakerApp:
         self._export_async(
             lambda: export_midi(self.notes, path, p["bpm"],
                                 p["beats_per_bar"], prog), path)
+
+    # -- batch BGM ---------------------------------------------------------
+    def quick_export_99(self):
+        """One click: pick a folder, write 99 tracks, show the count."""
+        if self._batch_running:
+            return
+        self.batch_count_var.set(99)
+        self.do_export_bgm_batch()
+
+    def do_export_bgm_batch(self):
+        if self._batch_running:
+            return
+        fmt = self.batch_fmt_var.get()
+        if fmt == "mp3" and (AudioSegment is None or not FFMPEG_PATH):
+            messagebox.showerror(
+                "MP3 unavailable",
+                "MP3 export needs pydub and ffmpeg.\n\n"
+                "pip install pydub imageio-ffmpeg\n\n"
+                "Choose WAV in the Format box to export without them.")
+            return
+
+        try:
+            count = int(np.clip(self.batch_count_var.get(), 1, 99))
+            bars = int(np.clip(self.batch_bars_var.get(), 4, 48))
+        except Exception:
+            messagebox.showwarning("Batch", "Tracks and bars must be numbers.")
+            return
+
+        out_dir = filedialog.askdirectory(title="Folder for the BGM batch")
+        if not out_dir:
+            return
+
+        mood = self.batch_mood_var.get()
+        mood = None if mood == "Mixed" else mood
+
+        # Stop playback and let go of the rendered track: a batch run holds
+        # no audio in memory and touches neither the player nor the roll.
+        self.player.stop()
+        self._set_play_state(False)
+
+        self._batch_running = True
+        self._batch_stop.clear()
+        self.batch_btn.config(state="disabled")
+        self.batch99_btn.config(state="disabled", text="Exporting…")
+        self.batch_cancel_btn.config(state="normal")
+        self.batch_prog.config(maximum=count, value=0)
+        self.batch_count_lbl.config(text=f"0 / {count} exported")
+        self.set_status(f"Writing {count} BGM tracks…")
+
+        def progress(done, total, filename, name, finished):
+            def ui():
+                self.batch_prog.config(value=done)
+                self.batch_count_lbl.config(text=f"{done} / {total} exported")
+                text = (f"Wrote {filename}" if finished
+                        else f"Generating {filename} ({name})…")
+                self.batch_status.config(text=text)
+                self.batch_tab_status.config(text=f"{done} / {total} — {text}")
+            self.root.after(0, ui)
+
+        def worker():
+            try:
+                written, failed = export_bgm_batch(
+                    out_dir, count=count, bars=bars, mood=mood,
+                    fmt=self.batch_fmt_var.get(),
+                    on_progress=progress,
+                    should_stop=self._batch_stop.is_set)
+                self.root.after(
+                    0, lambda: self._bgm_batch_done(out_dir, written, failed))
+            except Exception as exc:
+                traceback.print_exc()
+                msg = str(exc)
+                self.root.after(0, lambda: self._bgm_batch_done(
+                    out_dir, [], [], msg))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def cancel_bgm_batch(self):
+        if self._batch_running:
+            self._batch_stop.set()
+            self.batch_status.config(text="Stopping after this track…")
+
+    def _bgm_batch_done(self, out_dir, written, failed, error=None):
+        self._batch_running = False
+        self.batch_btn.config(state="normal")
+        self.batch99_btn.config(state="normal", text="Generate & Export 99")
+        self.batch_cancel_btn.config(state="disabled")
+
+        if error:
+            self.batch_status.config(text=f"Failed: {error}")
+            self.batch_tab_status.config(text=f"Failed: {error}")
+            self.set_status("Batch failed")
+            messagebox.showerror("Batch export failed", error)
+            return
+
+        stopped = self._batch_stop.is_set()
+        n = len(written)
+        last = written[-1] if written else "-"
+        summary = (f"{n} written"
+                   + (f", {len(failed)} failed" if failed else "")
+                   + (" (cancelled)" if stopped else ""))
+        self.batch_count_lbl.config(text=f"{n} / {n} exported")
+        self.batch_status.config(text=f"{summary} — bgm_01 … {last}")
+        self.batch_tab_status.config(text=f"{summary}\nbgm_01 … {last}\n{out_dir}")
+        self.set_status(f"Batch complete: {summary}")
+        messagebox.showinfo(
+            "Batch export",
+            f"{summary}\n\nWritten to:\n{out_dir}\n\n"
+            "bgm_index.txt lists each track's mood, key, tempo and seed.")
 
     def _export_async(self, fn, path):
         self.set_status(f"Writing {os.path.basename(path)}…")

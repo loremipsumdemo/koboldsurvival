@@ -88,10 +88,11 @@ struct Faction {
     int id = FACTION_PLAYER;
 };
 
-// A unit that saw its faction attacked (or was attacked itself) by a unit of a faction it was not hostile to. For a
-// while it treats each faction listed as hostile, as if their reputation were REP_HOSTILE, whatever it really is: it
-// and the others of its faction that saw it fight back against the attacker and the attacker's whole faction (for the
-// Player Faction, your whole squad). Each entry lasts PROVOKED_SECONDS from the last attack it saw. Not saved.
+// A unit that saw its faction attacked (or was attacked itself) by a unit of a faction it was not hostile to. It treats
+// each faction listed as hostile, as if their reputation were REP_HOSTILE, whatever it really is: it and the others of
+// its faction that saw it fight back against the attacker and the attacker's whole faction (for the Player Faction,
+// your whole squad). It calms down once it has seen none of that faction's units (within PROVOKED_SIGHT_RANGE) for
+// PROVOKED_SECONDS in a row, so running out of its sight ends it, unless the factions are hostile anyway. Not saved.
 struct Provoked {
     struct Entry {
         int faction = 0;
@@ -99,7 +100,8 @@ struct Provoked {
     };
     std::vector<Entry> against;
 };
-constexpr float PROVOKED_SECONDS = 90.0f;
+constexpr float PROVOKED_SECONDS = 10.0f;
+constexpr float PROVOKED_SIGHT_RANGE = 9.0f;   // tiles: a provoking faction's unit this close keeps it provoked
 
 // Where a unit came to rest the last time it stopped by its own movement. While it has nowhere to go, it walks back
 // here, so a unit pushed aside by others passing returns to its place once they have gone. Set when the unit stops,
@@ -214,7 +216,7 @@ struct Combat {
     float stamina = -1.0f;            // below zero until the first combat frame sets it to the maximum
     float encumbrance = 0.0f;         // 0..1, from the last frame's movement
     float moved = 0.0f;               // tiles walked in the last frame
-    std::vector<Entity> spotted;      // hostiles this unit has already spotted, for Perception XP
+    std::vector<Entity> spotted;      // hostiles this unit has spotted this in-game hour, for Perception XP (forgetSpotted)
     int downedByFaction = -1;         // the faction of the unit whose hit just took it to 0 health, until it is knocked out
 };
 

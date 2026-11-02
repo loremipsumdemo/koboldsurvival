@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Brání
 MISC_FREE_TRADE_ADD	Přidejte předměty na kteroukoli stranu
 MISC_FREE_TRADE_READY	Připraveno k výměně
 MISC_TURNS_HOSTILE	{0} se stává nepřátelským
+MISC_CALMS_DOWN	{0} se uklidní
 MISC_SELECT_UNIT_FIRST	Nejprve vyberte jednotku
 FACTION_PLAYER	Frakce hráče
 FACTION_RED	Rudá frakce

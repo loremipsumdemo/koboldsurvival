@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Véd
 MISC_FREE_TRADE_ADD	Tegyél tárgyakat bármelyik oldalra
 MISC_FREE_TRADE_READY	Kész a cserére
 MISC_TURNS_HOSTILE	{0} ellenségessé válik
+MISC_CALMS_DOWN	{0} megnyugszik
 MISC_SELECT_UNIT_FIRST	Előbb válassz egy egységet
 FACTION_PLAYER	Játékos frakció
 FACTION_RED	Vörös frakció

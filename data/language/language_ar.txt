@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	يدافع
 MISC_FREE_TRADE_ADD	أضف عناصر إلى أي جانب
 MISC_FREE_TRADE_READY	جاهز للتبادل
 MISC_TURNS_HOSTILE	{0} يصبح معاديًا
+MISC_CALMS_DOWN	يهدأ {0}
 MISC_SELECT_UNIT_FIRST	اختر وحدة أولًا
 FACTION_PLAYER	فصيل اللاعب
 FACTION_RED	الفصيل الأحمر

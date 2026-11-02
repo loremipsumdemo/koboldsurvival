@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Захищає
 MISC_FREE_TRADE_ADD	Додайте предмети на будь-який бік
 MISC_FREE_TRADE_READY	Готово до обміну
 MISC_TURNS_HOSTILE	{0} стає ворожим
+MISC_CALMS_DOWN	{0} заспокоюється
 MISC_SELECT_UNIT_FIRST	Спершу виберіть юніта
 FACTION_PLAYER	Фракція гравця
 FACTION_RED	Червона фракція

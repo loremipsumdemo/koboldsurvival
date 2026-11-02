@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Verdedigt
 MISC_FREE_TRADE_ADD	Voeg aan een van beide kanten voorwerpen toe
 MISC_FREE_TRADE_READY	Klaar om te ruilen
 MISC_TURNS_HOSTILE	{0} wordt vijandig
+MISC_CALMS_DOWN	{0} kalmeert
 MISC_SELECT_UNIT_FIRST	Selecteer eerst een eenheid
 FACTION_PLAYER	Spelersfactie
 FACTION_RED	Rode factie

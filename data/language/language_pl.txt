@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Broni
 MISC_FREE_TRADE_ADD	Dodaj przedmioty po dowolnej stronie
 MISC_FREE_TRADE_READY	Gotowe do wymiany
 MISC_TURNS_HOSTILE	{0} staje się wrogi
+MISC_CALMS_DOWN	{0} uspokaja się
 MISC_SELECT_UNIT_FIRST	Najpierw wybierz jednostkę
 FACTION_PLAYER	Frakcja gracza
 FACTION_RED	Czerwona frakcja

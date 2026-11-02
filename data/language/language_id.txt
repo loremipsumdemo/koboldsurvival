@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Melindungi
 MISC_FREE_TRADE_ADD	Tambahkan barang ke sisi mana saja
 MISC_FREE_TRADE_READY	Siap bertukar
 MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
+MISC_CALMS_DOWN	{0} tenang kembali
 MISC_SELECT_UNIT_FIRST	Pilih unit dulu
 FACTION_PLAYER	Faksi Pemain
 FACTION_RED	Faksi Merah

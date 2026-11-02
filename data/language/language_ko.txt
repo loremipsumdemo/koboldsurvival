@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	방어 중
 MISC_FREE_TRADE_ADD	어느 쪽에든 아이템을 넣으세요
 MISC_FREE_TRADE_READY	교환 준비 완료
 MISC_TURNS_HOSTILE	{0}이(가) 적대적으로 변했습니다
+MISC_CALMS_DOWN	{0}이(가) 진정했습니다
 MISC_SELECT_UNIT_FIRST	먼저 유닛을 선택하세요
 FACTION_PLAYER	플레이어 세력
 FACTION_RED	붉은 세력

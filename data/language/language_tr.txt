@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Savunuyor
 MISC_FREE_TRADE_ADD	Herhangi bir tarafa eşya ekle
 MISC_FREE_TRADE_READY	Takasa hazır
 MISC_TURNS_HOSTILE	{0} düşmanca oldu
+MISC_CALMS_DOWN	{0} sakinleşti
 MISC_SELECT_UNIT_FIRST	Önce bir birim seç
 FACTION_PLAYER	Oyuncu Hizbi
 FACTION_RED	Kızıl Hizip

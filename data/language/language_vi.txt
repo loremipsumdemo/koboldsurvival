@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Đang bảo vệ
 MISC_FREE_TRADE_ADD	Thêm vật phẩm vào bên nào cũng được
 MISC_FREE_TRADE_READY	Sẵn sàng trao đổi
 MISC_TURNS_HOSTILE	{0} trở nên thù địch
+MISC_CALMS_DOWN	{0} bình tĩnh lại
 MISC_SELECT_UNIT_FIRST	Hãy chọn một đơn vị trước
 FACTION_PLAYER	Phe người chơi
 FACTION_RED	Phe Đỏ

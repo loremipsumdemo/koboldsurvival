@@ -1706,8 +1706,8 @@ int main(int, char**) {
     // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
     // double hunger at the next hour. Not saved: a game starts walking.
     bool runMode = false;
-    // The title bars' [-] buttons. The Information Panel starts folded; the Squad Panel and the Unit Panel start open.
-    bool combatCollapsed = true, squadCollapsed = false;
+    // The title bars' [-] buttons. Every panel starts open.
+    bool combatCollapsed = false, squadCollapsed = false;
     // The Faction Panel: its tab (Squad or Reputation), the faction the Reputation tab shows, and how far its list is
     // scrolled. It shows the Player Faction's reputations until another faction's name is clicked.
     int factionTab = FACTION_TAB_SQUAD;
@@ -2871,6 +2871,16 @@ int main(int, char**) {
             quantity = QuantityPrompt{ true, false, storageUnit, slot, item,
                                        def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, cap, true };
         };
+        // A trade begins: the Unit Panel opens (if folded) on the Inventory tab, gear and inventory, of your unit doing the
+        // trading, at the top of its list, so it is ready before the game pauses for the trade
+        auto showTraderInventory = [&]() {
+            if (!unitOpen) {
+                unitPlace = settlePanel(PANEL_UNIT, unitPlace, winW, winH, true);
+                unitOpen = true;
+            }
+            unitTab = UNIT_TAB_INVENTORY;
+            sidebarScroll = 0.0f;
+        };
         auto startTalk = [&](Entity npc, Entity talker, bool shop) {
             // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
             std::vector<Entity> others;
@@ -2894,6 +2904,7 @@ int main(int, char**) {
                     sayAs(talker, o.prompt, true);
                     sayAs(npc, o.reply, false);
                     tradeOpen = true;
+                    showTraderInventory();
                     freeTrade = false;
                     tradeNpc.clear();
                     tradePlayer.clear();
@@ -2926,6 +2937,7 @@ int main(int, char**) {
             dialoguePlayer = unit;
             dialogueConvo.clear();
             tradeOpen = true;
+            showTraderInventory();
             freeTrade = true;
             tradeNpc.clear();
             tradePlayer.clear();
@@ -3268,6 +3280,7 @@ int main(int, char**) {
             sayAs(dialogueUnit, reply, false);
             if (trade) {
                 tradeOpen = true;
+                showTraderInventory();
                 freeTrade = false;
                 tradeNpc.clear();
                 tradePlayer.clear();
@@ -3279,6 +3292,15 @@ int main(int, char**) {
             const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
             const int lines = (int)std::min<size_t>(2, dialogueConvo.size());
             return layoutDialogue(W, H, lines, dg ? (int)dg->options.size() : 0);
+        };
+        // Whether a point is on the talk box, or on the trade's two panels while it is open
+        auto onTalkOrTrade = [&](int W, int H, float x, float y) {
+            if (dialogueUnit == NULL_ENTITY) return false;
+            if (tradeOpen) {
+                const TradeLayout tl = layoutTrade(W, H, renderer.pauseBarHeight(false));
+                return tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
+            }
+            return dialogueBox(W, H).box.contains(x, y);
         };
         // A click on the Information Panel's tabs, its Filter button or its menu. True if the click was used.
         auto infoPanelClick = [&](int W, int H, float tx, float ty) {
@@ -3636,8 +3658,25 @@ int main(int, char**) {
                     playSfx(paused ? Sfx::UiPause : Sfx::UiResume);
                 }
                 if (e.key.key == SDLK_ESCAPE) {
-                    // A talk only ends with its End Dialogue button, so Escape does nothing while one is open
-                    if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) break;
+                    // In a talk, Escape backs out a step at a time, as the buttons do: a "how many" prompt is closed,
+                    // the trade is Cancelled (back to the talk, or ended if it was a trade between your own units),
+                    // and the talk itself is ended as with End Dialogue
+                    if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) {
+                        if (quantity.open && tradeOpen && !quantity.toStorage) {
+                            quantity.open = false;
+                        } else if (tradeOpen && freeTrade) {
+                            endTalk();
+                        } else if (tradeOpen) {
+                            tradeOpen = false;
+                            tradeNpc.clear();
+                            tradePlayer.clear();
+                            tradeNpcDrag = -1;
+                        } else {
+                            endTalk();
+                        }
+                        playSfx(Sfx::UiBack);
+                        break;
+                    }
                     if (screen == Screen::Playing && optimizeAllOpen) {
                         optimizeAllOpen = false;   // Escape is Cancel on the Optimize All dialog
                         optimizeSliderDrag = false;
@@ -3739,7 +3778,7 @@ int main(int, char**) {
                         unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
                                                        unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).scrollRow;
                     }
-                } else if (screen == Screen::Playing
+                } else if (screen == Screen::Playing && !onTalkOrTrade(winW, winH, e.wheel.mouse_x, e.wheel.mouse_y)
                            && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
                     // Scrolls the sidebar, 40 pixels a notch. Wheel up goes back toward the top.
                     const float notch = 40.0f * (winH / 720.0f);
@@ -3900,7 +3939,9 @@ int main(int, char**) {
                 }
                 // The world map window is over everything, and a click inside it is its own: the X closes it, and a right
                 // click on the map is a move order to that point. Outside the window, clicks go on as if it were shut.
-                if (screen == Screen::Playing && mapOpen && worldMapFor(winW, winH).window.contains(e.button.x, e.button.y)) {
+                // The talk box and the trade are drawn over the map, so a click on them is theirs
+                if (screen == Screen::Playing && mapOpen && !onTalkOrTrade(winW, winH, e.button.x, e.button.y) &&
+                    worldMapFor(winW, winH).window.contains(e.button.x, e.button.y)) {
                     const WorldMapLayout wm = worldMapFor(winW, winH);
                     float mgx = 0.0f, mgz = 0.0f;
                     if (e.button.button == SDL_BUTTON_LEFT && wm.close.contains(e.button.x, e.button.y)) {
@@ -3932,10 +3973,14 @@ int main(int, char**) {
                         break;
                     }
                     const float x = e.button.x, y = e.button.y;
-                    const bool unitPanelClick = tradeOpen && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
+                    // The trade's two panels are drawn over the Unit Panel, so a click on them is theirs even where the
+                    // Unit Panel is under it; only a click on the Unit Panel's uncovered part goes to the Unit Panel
+                    const TradeLayout tradeL = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
+                    const bool onTrade = tradeOpen && (tradeL.interaction.contains(x, y) || tradeL.tradePanel.contains(x, y));
+                    const bool unitPanelClick = tradeOpen && !onTrade && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
                     if (!unitPanelClick) {
                         if (tradeOpen) {
-                            const TradeLayout tl = layoutTrade(winW, winH);
+                            const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
                             const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
                             const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
                             if (leftButton && tl.cancelBtn.contains(x, y) && freeTrade) {
@@ -4512,12 +4557,14 @@ int main(int, char**) {
                 // does too, if it is the unit being traded with. Either way the drag ends with nothing moved.
                 if (e.button.button == SDL_BUTTON_LEFT && tradeOpen && dialogueUnit != NULL_ENTITY) {
                     const float x = e.button.x, y = e.button.y;
-                    const TradeLayout tl = layoutTrade(winW, winH);
+                    const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
                     if (tradeNpcDrag >= 0) {
                         if (tl.theirBox.contains(x, y)) requestTrade(true, dialogueUnit, tradeNpcDrag);
                         tradeNpcDrag = -1;
                     }
-                    if (itemDrag && !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
+                    // The trade's panels are over the Unit Panel: a drop on them is theirs, wherever the Unit Panel is
+                    const bool onTrade = tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
+                    if (itemDrag && (onTrade || !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y))) {
                         if (tl.yourBox.contains(x, y) && dragGear < 0) {
                             if (dragUnit == dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
                             else refuse(lang("MISC_TRADE_ONLY_TALKING"));
@@ -4853,6 +4900,7 @@ int main(int, char**) {
                 hoursPassed = advanceClock(gs.clockSeconds, dt);
             }
             needsSystem(world, hoursPassed, gameSecs);
+            if (hoursPassed > 0) forgetSpotted(world);   // each in-game hour, spotting a unit gives Perception XP again
             downedSystem(world);   // starving to 0 knocks a unit out too
             // Doom: up while Unconscious, down in a bed or bedroll; 0 there wakes the unit, 100 makes it a corpse
             const DoomChanges doom = doomSystem(world, gameSecs);
@@ -5334,7 +5382,7 @@ int main(int, char**) {
                     if (dialogueUnit == NULL_ENTITY) quantity.open = false;
                     if (tradeOpen) {
                         const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
-                        renderer.drawTrade(layoutTrade(winW, winH), nameOf(world, dialogueUnit), nameOf(world, dialoguePlayer),
+                        renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(false)), nameOf(world, dialogueUnit), nameOf(world, dialoguePlayer),
                                            npcInv, tradeNpc, tradePlayer, tradeNpcDrag,
                                            checkTrade(world, dialogueUnit, dialoguePlayer), !freeTrade, mhx, mhy);
                         if (npcInv && tradeNpcDrag >= 0 && npcInv->slots[tradeNpcDrag].item != 0) {

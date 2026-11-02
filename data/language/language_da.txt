@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Forsvarer
 MISC_FREE_TRADE_ADD	Læg genstande på en af siderne
 MISC_FREE_TRADE_READY	Klar til handel
 MISC_TURNS_HOSTILE	{0} bliver fjendtlig
+MISC_CALMS_DOWN	{0} falder til ro
 MISC_SELECT_UNIT_FIRST	Vælg først en enhed
 FACTION_PLAYER	Spillerens fraktion
 FACTION_RED	Den røde fraktion

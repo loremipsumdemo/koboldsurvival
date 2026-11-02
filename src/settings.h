@@ -42,8 +42,8 @@ struct GameSettings {
     // Interface
     int autosaveMinutes = 5;        // 0 for off
     bool showUnitNames = true;      // each of your units' names over its head, in brackets
-    bool showNpcNames = false;      // the same for every other unit: neutral and hostile
-    bool showPropNames = false;     // each prop's name over it, in purple
+    bool showNpcNames = true;       // the same for every other unit: neutral and hostile
+    bool showPropNames = true;      // each prop's name over it, in purple
     int fontScale = 100;            // UI scale as a percentage of the base sizes, 50 to 200 in steps of 5
     std::string fontPath;           // the UI font file, or empty for Automatic (the built-in fonts)
     std::string language = LANGUAGE_DEFAULT_ID;   // the language's id, e.g. "language_fr"
@@ -61,13 +61,13 @@ struct GameSettings {
     // scales all three: a bus is heard at its level times the global level.
     int globalVolume = 50;
     bool globalOn = true;
-    int musicVolume = 5;
+    int musicVolume = 50;
     bool musicOn = true;
     int ambientVolume = 50;
     bool ambientOn = true;
     int effectsVolume = 50;
     bool effectsOn = true;
-    int interfaceVolume = 5;    // the menus' and buttons' sounds
+    int interfaceVolume = 50;   // the menus' and buttons' sounds
     bool interfaceOn = true;
 
     // The in-game panels' places, as last locked: the Squad Panel, the Unit Panel and the Information Panel, each as

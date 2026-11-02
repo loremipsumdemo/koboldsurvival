@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Verteidigt
 MISC_FREE_TRADE_ADD	Lege auf eine der Seiten Gegenstände
 MISC_FREE_TRADE_READY	Bereit zum Tauschen
 MISC_TURNS_HOSTILE	{0} wird feindselig
+MISC_CALMS_DOWN	{0} beruhigt sich
 MISC_SELECT_UNIT_FIRST	Wähle zuerst eine Einheit
 FACTION_PLAYER	Spielerfraktion
 FACTION_RED	Rote Fraktion

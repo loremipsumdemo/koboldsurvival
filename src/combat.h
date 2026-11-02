@@ -227,10 +227,14 @@ int factionOf(World& w, Entity e);
 bool unitsHostile(World& w, Entity a, Entity b);
 // Whether a unit that is not yours fights your units: the Hostile marker it carries (and Neutral when not)
 bool hostileToPlayer(World& w, Entity e);
-// Makes a unit treat a faction as hostile for PROVOKED_SECONDS (Provoked)
+// Empties every unit's list of the hostiles it has spotted, once each in-game hour: the list stays short, and a hostile
+// seen again in a later hour gives Perception XP again
+void forgetSpotted(World& w);
+// Makes a unit treat a faction as hostile until it has seen none of its units for PROVOKED_SECONDS (Provoked)
 void provoke(World& w, Entity unit, int faction);
-// Each frame: counts down the provocations, and keeps every other unit's Hostile or Neutral marker in step with its
-// faction's reputation with yours and with Provoked. A unit that turns hostile says so in the log.
+// Each frame: counts down each provocation while the unit sees none of that faction's units (and starts it over while
+// it sees one), and keeps every other unit's Hostile or Neutral marker in step with its faction's reputation with yours
+// and with Provoked. A unit that turns hostile, or calms down again, says so in the log.
 void factionSystem(World& w, float dt);
 // A unit's fighting modes from its Behavior tab (Behaviors): never false for a unit without one
 bool isPassive(World& w, Entity e);

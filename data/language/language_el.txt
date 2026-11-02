@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	Υπερασπίζεται
 MISC_FREE_TRADE_ADD	Πρόσθεσε αντικείμενα σε όποια πλευρά θες
 MISC_FREE_TRADE_READY	Έτοιμο για ανταλλαγή
 MISC_TURNS_HOSTILE	{0} γίνεται εχθρικός
+MISC_CALMS_DOWN	Ο {0} ηρεμεί
 MISC_SELECT_UNIT_FIRST	Επίλεξε πρώτα μια μονάδα
 FACTION_PLAYER	Φατρία του παίκτη
 FACTION_RED	Κόκκινη φατρία

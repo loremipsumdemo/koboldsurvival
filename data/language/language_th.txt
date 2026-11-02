@@ -600,6 +600,7 @@ UILABEL_TASK_DEFENDING	กำลังปกป้อง
 MISC_FREE_TRADE_ADD	ใส่ไอเทมฝั่งใดก็ได้
 MISC_FREE_TRADE_READY	พร้อมแลกเปลี่ยน
 MISC_TURNS_HOSTILE	{0} กลายเป็นศัตรู
+MISC_CALMS_DOWN	{0} สงบลง
 MISC_SELECT_UNIT_FIRST	เลือกยูนิตก่อน
 FACTION_PLAYER	ฝ่ายผู้เล่น
 FACTION_RED	ฝ่ายแดง

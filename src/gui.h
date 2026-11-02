@@ -32,8 +32,8 @@ inline Rect BarLock(const Rect& bar, float s) {
 }
 
 // ---- The three panels that can be moved and resized ----
-// Each sits in its own corner by default: the Information Panel in the top left, the Squad Panel in the bottom left and
-// the Unit Panel in the bottom right. Where a panel's title bar is depends on where the panel is: a panel mostly in the
+// Each sits in its own corner by default: the Information Panel in the top right, the Squad Panel in the bottom left and
+// the Unit Panel in the bottom right, under the Information Panel. Where a panel's title bar is depends on where the panel is: a panel mostly in the
 // top half of the window has its bar along its top, and one mostly in the bottom half has it along its bottom. Folding
 // leaves the bar where it is and takes the rest away, so a panel at the top folds up and one at the bottom folds down;
 // opening grows it back away from the bar, downward from a bar in the top half and upward from one in the bottom half.
@@ -110,7 +110,14 @@ inline float unitPanelDefaultHeight(int H) {
 }
 
 inline float infoDefaultWidth(int H) { return 340.0f * H / 720.0f; }
-inline float infoDefaultHeight(int H) { return 220.0f * H / 720.0f; }
+// 220 pixels at 720p, but never so tall that it reaches the Unit Panel under it in the same corner: in a short window
+// it takes what room is left above the Unit Panel, down to its smallest
+inline float infoDefaultHeight(int H) {
+    const float s = H / 720.0f;
+    const float room = H - 2.0f * PANEL_MARGIN * s - unitPanelDefaultHeight(H) - PANEL_MARGIN * s;
+    const float smallest = (PANEL_BAR_H + 20.0f + 40.0f) * s;
+    return std::max(smallest, std::min(220.0f * s, room));
+}
 
 inline void panelDefaultSize(int which, int H, float& w, float& h) {
     if (which == PANEL_SQUAD) { w = squadDefaultWidth(H); h = squadDefaultHeight(H); }
@@ -136,7 +143,7 @@ inline void panelMinSize(int which, int H, float& w, float& h) {
 // The panel's default top-left corner for an open size of w by h
 inline float panelAnchorX(int which, float w, int W, int H) {
     const float m = PANEL_MARGIN * H / 720.0f;
-    return which == PANEL_UNIT ? W - m - w : m;
+    return which == PANEL_SQUAD ? m : W - m - w;   // the Squad Panel on the left, the other two on the right
 }
 inline float panelAnchorY(int which, float h, int H) {
     const float m = PANEL_MARGIN * H / 720.0f;
@@ -392,7 +399,9 @@ struct TradeLayout {
     Rect cancelBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect tradeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
-inline TradeLayout layoutTrade(int W, int H) {
+// top: how far down the window something else is already drawn across the top (the pause bar, which shows during a
+// trade); the panels start under it
+inline TradeLayout layoutTrade(int W, int H, float top = 0.0f) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, gap = 12.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 110.0f * s;
     const float barH = 12.0f * s;
@@ -410,10 +419,12 @@ inline TradeLayout layoutTrade(int W, int H) {
     const float tradeW = 2.0f * boxW + 3.0f * pad;
     const float tradeH = bar + pad + line + boxH + 2.0f * s + line + 4.0f * s + barH + 4.0f * s + line + gap + btnH + pad;
 
-    // The two panels side by side, centred on the window
+    // The two panels side by side in the top left corner, under the pause bar (pulled left past the margin if the window
+    // is too narrow, and up if it is too short)
     const float totalW = interW + gap + tradeW;
-    const float x0 = (W - totalW) * 0.5f;
-    const float y0 = (H - std::max(interH, tradeH)) * 0.5f;
+    const float margin = PANEL_MARGIN * s;
+    const float x0 = std::max(0.0f, std::min(margin, W - totalW));
+    const float y0 = std::max(0.0f, std::min(top + margin, H - std::max(interH, tradeH)));
 
     TradeLayout L;
     L.interaction = Rect{ x0, y0, interW, interH };

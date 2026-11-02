@@ -240,6 +240,8 @@ public:
     void drawItemCell(const Rect& r, int item, int count);
     // The PAUSED bar across the top of the window, and text drawn scaled up about its centre
     void drawPauseBar(bool hint);
+    // The pause bar's height, with or without its hint line, so what must not hide under it can start below it
+    float pauseBarHeight(bool hint);
     // Trade value lines over their units
     void drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH);
     void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
