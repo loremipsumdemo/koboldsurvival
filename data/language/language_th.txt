@@ -114,7 +114,6 @@ UILABEL_SINGLE	ทีละชิ้น
 UILABEL_MAX	สูงสุด
 UILABEL_SORT	เรียงลำดับ
 UILABEL_WORLD_MAP	แผนที่โลก
-UILABEL_WORLD_MAP_HINT	เลื่อนเพื่อซูม คลิกขวาเพื่อเดินไปที่นั่น กด M หรือ Escape เพื่อปิด
 UILABEL_DAYS_PASSED	วันที่ผ่านไป: {0}
 UILABEL_NO_UNIT_SELECTED	ยังไม่ได้เลือกยูนิต
 UILABEL_UNNAMED_UNIT	ยูนิตที่ไม่มีชื่อ
@@ -171,6 +170,8 @@ UILABEL_MISS	พลาด
 UILABEL_DAMAGE	ความเสียหาย
 UILABEL_EXPERIENCE_MESSAGES	ข้อความ EXP
 UILABEL_EXPERIENCE	ประสบการณ์
+UILABEL_XP_ATHLETICS	ค่าประสบการณ์กรีฑา
+UILABEL_XP_ENDURANCE	ค่าประสบการณ์ความอดทน
 UILABEL_ITEM_MESSAGES	ข้อความไอเทม
 UILABEL_PICKUP	เก็บขึ้น
 UILABEL_DROP	ทิ้ง

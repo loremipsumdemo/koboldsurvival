@@ -114,7 +114,6 @@ UILABEL_SINGLE	Tekli
 UILABEL_MAX	Maks
 UILABEL_SORT	Sırala
 UILABEL_WORLD_MAP	Dünya Haritası
-UILABEL_WORLD_MAP_HINT	Yakınlaştırmak için kaydırın. Oraya gitmek için sağ tıklayın. Kapatmak için M veya Esc'ye basın.
 UILABEL_DAYS_PASSED	Geçen günler: {0}
 UILABEL_NO_UNIT_SELECTED	Birim seçilmedi
 UILABEL_UNNAMED_UNIT	İsimsiz birim
@@ -171,6 +170,8 @@ UILABEL_MISS	Iska
 UILABEL_DAMAGE	Hasar
 UILABEL_EXPERIENCE_MESSAGES	Tecrübe Mesajları
 UILABEL_EXPERIENCE	Tecrübe
+UILABEL_XP_ATHLETICS	Atletizm Deneyimi
+UILABEL_XP_ENDURANCE	Dayanıklılık Deneyimi
 UILABEL_ITEM_MESSAGES	Eşya Mesajları
 UILABEL_PICKUP	Alma
 UILABEL_DROP	Bırakma

@@ -225,7 +225,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
 
     case PartyTab::Gear: {
-        const float gap = 8.0f * s, tileW = (inW - gap) / 2.0f, tileH = 54.0f * s, pitch = tileH + gap;
+        // Each tile holds the item's 64 x 64 picture in an item cell, with the slot's and the item's names beside it
+        const float gap = 8.0f * s, tileW = (inW - gap) / 2.0f, tileH = std::max(54.0f * s, ITEM_CELL_PX + 8.0f * s);
+        const float pitch = tileH + gap;
         for (int g = 0; g < GEAR_SLOTS; ++g) {
             const int col = g % 2, row = g / 2;
             const Rect r{ inX + col * (tileW + gap), top + row * pitch, tileW, tileH };

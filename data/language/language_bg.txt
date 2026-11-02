@@ -114,7 +114,6 @@ UILABEL_SINGLE	Един
 UILABEL_MAX	Макс.
 UILABEL_SORT	Сортиране
 UILABEL_WORLD_MAP	Карта на света
-UILABEL_WORLD_MAP_HINT	Превъртете за мащабиране. Десен бутон за придвижване дотам. Натиснете M или Esc за затваряне.
 UILABEL_DAYS_PASSED	Изминали дни: {0}
 UILABEL_NO_UNIT_SELECTED	Няма избрана единица
 UILABEL_UNNAMED_UNIT	Безименна единица
@@ -171,6 +170,8 @@ UILABEL_MISS	Промах
 UILABEL_DAMAGE	Щета
 UILABEL_EXPERIENCE_MESSAGES	Съобщения за опит
 UILABEL_EXPERIENCE	Опит
+UILABEL_XP_ATHLETICS	Опит в атлетика
+UILABEL_XP_ENDURANCE	Опит в издръжливост
 UILABEL_ITEM_MESSAGES	Съобщения за предмети
 UILABEL_PICKUP	Вземи
 UILABEL_DROP	Пусни

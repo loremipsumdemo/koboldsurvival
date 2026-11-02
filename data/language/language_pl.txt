@@ -114,7 +114,6 @@ UILABEL_SINGLE	Pojedynczo
 UILABEL_MAX	Maks.
 UILABEL_SORT	Sortuj
 UILABEL_WORLD_MAP	Mapa świata
-UILABEL_WORLD_MAP_HINT	Przewiń, aby przybliżyć. Prawy przycisk, aby tam iść. Naciśnij M lub Esc, aby zamknąć.
 UILABEL_DAYS_PASSED	Minione dni: {0}
 UILABEL_NO_UNIT_SELECTED	Nie wybrano jednostki
 UILABEL_UNNAMED_UNIT	Jednostka bez nazwy
@@ -171,6 +170,8 @@ UILABEL_MISS	Pudło
 UILABEL_DAMAGE	Obrażenia
 UILABEL_EXPERIENCE_MESSAGES	Komunikaty doświadczenia
 UILABEL_EXPERIENCE	Doświadczenie
+UILABEL_XP_ATHLETICS	Doświadczenie atletyki
+UILABEL_XP_ENDURANCE	Doświadczenie wytrzymałości
 UILABEL_ITEM_MESSAGES	Komunikaty przedmiotów
 UILABEL_PICKUP	Podniesienie
 UILABEL_DROP	Upuszczenie

@@ -114,7 +114,6 @@ UILABEL_SINGLE	واحد
 UILABEL_MAX	الحد الأقصى
 UILABEL_SORT	ترتيب
 UILABEL_WORLD_MAP	خريطة العالم
-UILABEL_WORLD_MAP_HINT	مرّر للتكبير. انقر بزر الفأرة الأيمن للتحرك إلى هناك. اضغط M أو Escape للإغلاق.
 UILABEL_DAYS_PASSED	الأيام المنقضية: {0}
 UILABEL_NO_UNIT_SELECTED	لم يتم تحديد أي وحدة
 UILABEL_UNNAMED_UNIT	وحدة بلا اسم
@@ -171,6 +170,8 @@ UILABEL_MISS	إخفاق
 UILABEL_DAMAGE	الضرر
 UILABEL_EXPERIENCE_MESSAGES	رسائل الخبرة
 UILABEL_EXPERIENCE	الخبرة
+UILABEL_XP_ATHLETICS	خبرة اللياقة
+UILABEL_XP_ENDURANCE	خبرة التحمّل
 UILABEL_ITEM_MESSAGES	رسائل الأغراض
 UILABEL_PICKUP	التقاط
 UILABEL_DROP	إسقاط

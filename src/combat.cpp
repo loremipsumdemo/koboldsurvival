@@ -379,7 +379,10 @@ void grantXp(World& w, Entity e, int stat, float amount, const std::string& why)
     addXp(*st, stat, (int)whole);
     if (levelOf(*st, stat) > before) queueSound(Sfx::LevelUp);
     if (!why.empty()) {
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), LogKind::Xp);
+        const LogKind kind = stat == STAT_ATHLETICS ? LogKind::XpAthletics
+                           : stat == STAT_ENDURANCE ? LogKind::XpEndurance
+                                                    : LogKind::Xp;
+        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), kind);
     }
 }
 

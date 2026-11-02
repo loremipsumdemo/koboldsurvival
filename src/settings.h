@@ -1,6 +1,8 @@
 #pragma once
 #include <algorithm>
 #include "language.h"
+#include <array>
+#include <cstdio>
 #include <fstream>
 #include <string>
 
@@ -67,7 +69,17 @@ struct GameSettings {
     bool effectsOn = true;
     int interfaceVolume = 5;    // the menus' and buttons' sounds
     bool interfaceOn = true;
+
+    // The in-game panels' places, as last locked: the Squad Panel, the Unit Panel and the Information Panel, each as
+    // dx, dy, w, h (a PanelPlace in gui.h, in pixels of a 720-pixel-high window). All zero is the default place.
+    std::array<std::array<float, 4>, 3> panels{};
 };
+
+// The keys the panels' places are kept under, in PanelId order
+inline const char* panelSettingKey(int i) {
+    static const char* keys[3] = { "panelSquad", "panelUnit", "panelInfo" };
+    return keys[i];
+}
 
 inline int parseInt(const std::string& v, int fallback) {
     try { return std::stoi(v); } catch (...) { return fallback; }
@@ -115,6 +127,16 @@ inline GameSettings loadSettings(const std::string& path) {
         }
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "optimizeAttackShare") s.optimizeAttackShare = parseInt(val, s.optimizeAttackShare);
+        else if (key == panelSettingKey(0) || key == panelSettingKey(1) || key == panelSettingKey(2)) {
+            const int i = key == panelSettingKey(0) ? 0 : key == panelSettingKey(1) ? 1 : 2;
+            float v[4] = {};
+            if (std::sscanf(val.c_str(), "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]) == 4) {
+                for (int k = 0; k < 4; ++k) s.panels[(size_t)i][(size_t)k] = std::clamp(v[k], -20000.0f, 20000.0f);
+                // A size is never negative
+                s.panels[(size_t)i][2] = std::max(0.0f, s.panels[(size_t)i][2]);
+                s.panels[(size_t)i][3] = std::max(0.0f, s.panels[(size_t)i][3]);
+            }
+        }
         else if (key == "optimizeAccessories") s.optimizeAccessories = (val == "1");
         else if (key == "optimizeTwoHanded")   s.optimizeTwoHanded = (val == "1");
         else if (key == "optimizeValueTies")   s.optimizeValueTies = (val == "1");
@@ -190,6 +212,12 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "effectsOn=" << (s.effectsOn ? 1 : 0) << "\n";
     out << "interfaceVolume=" << s.interfaceVolume << "\n";
     out << "interfaceOn=" << (s.interfaceOn ? 1 : 0) << "\n";
+    for (int i = 0; i < 3; ++i) {
+        const std::array<float, 4>& p = s.panels[(size_t)i];
+        char buf[128];
+        std::snprintf(buf, sizeof(buf), "%.1f,%.1f,%.1f,%.1f", p[0], p[1], p[2], p[3]);
+        out << panelSettingKey(i) << "=" << buf << "\n";
+    }
     out.close();                       // flushes, so a failed write shows up in the state
     return !out.fail();
 }

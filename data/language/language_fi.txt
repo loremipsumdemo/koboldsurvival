@@ -114,7 +114,6 @@ UILABEL_SINGLE	Yksi
 UILABEL_MAX	Enimmäismäärä
 UILABEL_SORT	Lajittele
 UILABEL_WORLD_MAP	Maailmankartta
-UILABEL_WORLD_MAP_HINT	Vieritä zoomataksesi. Napsauta hiiren oikealla siirtyäksesi sinne. Sulje painamalla M tai Esc.
 UILABEL_DAYS_PASSED	Päiviä kulunut: {0}
 UILABEL_NO_UNIT_SELECTED	Yksikköä ei ole valittu
 UILABEL_UNNAMED_UNIT	Nimetön yksikkö
@@ -171,6 +170,8 @@ UILABEL_MISS	Huti
 UILABEL_DAMAGE	Vahinko
 UILABEL_EXPERIENCE_MESSAGES	Kokemusviestit
 UILABEL_EXPERIENCE	Kokemus
+UILABEL_XP_ATHLETICS	Urheilullisuuden kokemus
+UILABEL_XP_ENDURANCE	Kestävyyden kokemus
 UILABEL_ITEM_MESSAGES	Esineviestit
 UILABEL_PICKUP	Nosta
 UILABEL_DROP	Pudota

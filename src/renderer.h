@@ -66,8 +66,6 @@ inline constexpr RGBA HUD_UNIT_COLOR{ 1.0f, 1.0f, 1.0f, 1.0f };    // unit names
 inline constexpr RGBA HUD_ITEM_COLOR{ 1.0f, 0.72f, 0.2f, 1.0f };   // items on the ground: orange-yellow
 inline constexpr RGBA HUD_PROP_COLOR{ 0.68f, 0.68f, 0.68f, 1.0f }; // props: gray
 
-// The combat log panel in the bottom left corner. The newest line is at the bottom, and offset counts
-// the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
 // The Information Panel's Time tab: the time of day, the date written out and as numbers, and the days since the start
 struct InfoTime {
     std::string clock;     // "14:05"
@@ -76,6 +74,8 @@ struct InfoTime {
     std::string days;      // "Days passed: 71"
 };
 
+// The Information Panel, in the top left corner by default. The newest line is at the bottom, and offset counts
+// the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
 struct CombatLogLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Combat Log" bar across the top
@@ -91,6 +91,8 @@ struct CombatLogLayout {
 
     bool collapsed = false;                  // only the bar shows
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };  // the [-] or [+] button in the bar
+    Rect lock{ 0.0f, 0.0f, 0.0f, 0.0f };    // the lock beside it
+    float bodyTop = 0.0f, bodyBottom = 0.0f;   // the panel less its bar, which runs along its top or its bottom
     // The three tabs under the bar: Message (0), Game (1) and Time (2). On the Game tab, the Filter button and its menu.
     int tab = 0;
     Rect tabMessage{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -303,7 +305,7 @@ public:
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
     // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
-    CombatLogLayout combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount, float rightLimit,
+    CombatLogLayout combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
     // The Information Panel: rows are the lines of the tab shown, oldest first. The Time tab shows `time` instead.
     void drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
@@ -366,6 +368,8 @@ public:
     void drawCollapseButton(const Rect& r, bool collapsed);
     // The X that closes a window, at the right end of its title bar
     void drawCloseButton(const Rect& r);
+    // The lock beside a panel's [-] or [+]: closed while locked, open and green while the panel can be moved and resized
+    void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);

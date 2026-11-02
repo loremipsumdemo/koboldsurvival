@@ -114,7 +114,6 @@ UILABEL_SINGLE	Jeden
 UILABEL_MAX	Max
 UILABEL_SORT	Řadit
 UILABEL_WORLD_MAP	Mapa světa
-UILABEL_WORLD_MAP_HINT	Kolečkem přiblížíte. Pravým tlačítkem se tam přesunete. M nebo Esc mapu zavře.
 UILABEL_DAYS_PASSED	Uplynulé dny: {0}
 UILABEL_NO_UNIT_SELECTED	Není vybrána žádná jednotka
 UILABEL_UNNAMED_UNIT	Jednotka bez jména
@@ -171,6 +170,8 @@ UILABEL_MISS	Minul
 UILABEL_DAMAGE	Poškození
 UILABEL_EXPERIENCE_MESSAGES	Zprávy o zkušenostech
 UILABEL_EXPERIENCE	Zkušenosti
+UILABEL_XP_ATHLETICS	Zkušenosti z atletiky
+UILABEL_XP_ENDURANCE	Zkušenosti z výdrže
 UILABEL_ITEM_MESSAGES	Zprávy o předmětech
 UILABEL_PICKUP	Sebrat
 UILABEL_DROP	Odložit

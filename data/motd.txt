@@ -1,12 +1,11 @@
 # Update notes
-- Optimize and Remove All buttons in the Gear tab, and Optimize All beside Walk/Run.
-- Items gained and lost show over your units, losses in red.
-- Mushrooms can be gathered with Herbalism, and one in ten is poisonous.
-- Seventeen kinds of meat to cook at the campfire.
-- The Forge smelts Iron Ore into Iron Ingots by itself.
-- Locked chests and prisoner cages, opened with Lockpicking.
-
-# Coming up
-- More props, more recipes and more to discover.
+- New panel layout. Unlock a panel to move it or resize it from any edge, then lock it to keep it. Reset All UI Panels is in Settings.
+- The Squad Panel shows three rows of five, with arrow buttons and a draggable scroll bar.
+- Gear slots are item cells, like the inventory.
+- The world map is a window you can drag. Right-click it to move, and see props and your camera on it.
+- The Information Panel has a Time tab, and filters for Athletics and Endurance experience.
+- Units at 0 health fall unconscious. Carry them to a bed before their Doom fills, or loot their corpse.
+- Shop with traders from the right-click menu.
+- The Vagabond scenario: one unit, no gear, no items.
 
 Thanks for playing!

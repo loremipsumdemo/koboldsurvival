@@ -114,7 +114,6 @@ UILABEL_SINGLE	Μονό
 UILABEL_MAX	Μέγιστο
 UILABEL_SORT	Ταξινόμηση
 UILABEL_WORLD_MAP	Παγκόσμιος χάρτης
-UILABEL_WORLD_MAP_HINT	Κύλιση για ζουμ. Δεξί κλικ για μετακίνηση εκεί. Πατήστε M ή Escape για κλείσιμο.
 UILABEL_DAYS_PASSED	Ημέρες που πέρασαν: {0}
 UILABEL_NO_UNIT_SELECTED	Δεν έχει επιλεγεί μονάδα
 UILABEL_UNNAMED_UNIT	Ανώνυμη μονάδα
@@ -171,6 +170,8 @@ UILABEL_MISS	Αστοχία
 UILABEL_DAMAGE	Ζημιά
 UILABEL_EXPERIENCE_MESSAGES	Μηνύματα εμπειρίας
 UILABEL_EXPERIENCE	Εμπειρία
+UILABEL_XP_ATHLETICS	Εμπειρία αθλητισμού
+UILABEL_XP_ENDURANCE	Εμπειρία αντοχής
 UILABEL_ITEM_MESSAGES	Μηνύματα αντικειμένων
 UILABEL_PICKUP	Συλλογή
 UILABEL_DROP	Απόθεση

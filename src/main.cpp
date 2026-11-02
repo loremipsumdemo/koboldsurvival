@@ -1682,19 +1682,40 @@ int main(int, char**) {
     // Walk or run for the squad. Run moves faster, and each unit that moves at run pace in an in-game hour pays
     // double hunger at the next hour. Not saved: a game starts walking.
     bool runMode = false;
-    bool combatCollapsed = false, squadCollapsed = false;   // the title bars' [-] buttons
-    bool unitOpen = false;          // the Unit Panel: open shows its tabs, closed shows its bar alone
+    // The title bars' [-] buttons. The Information Panel starts folded; the Squad Panel and the Unit Panel start open.
+    bool combatCollapsed = true, squadCollapsed = false;
+    bool unitOpen = true;           // the Unit Panel: open shows its tabs, closed shows its bar alone
     int unitTab = 0;                // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
     Entity lastLone = NULL_ENTITY;  // the lone unit the Unit Panel showed last frame
-    // Where the Squad Panel, the Unit Panel and the Combat Log were dragged. 0 is the default size.
-    PanelPlace squadPlace, unitPlace, logPlace;
-    // The panel being dragged (0 squad, 1 Unit Panel, 2 combat log) and what the drag does: 1 its top edge (height),
-    // 2 its right edge (width), 3 its title bar (move). The mouse, and the panel's rectangle, where the drag began.
+    // Where the Squad Panel, the Unit Panel and the Information Panel are, as last locked (kept in the settings). 0 is
+    // the default size and place.
+    auto placeFromSettings = [&](int i) {
+        const std::array<float, 4>& v = settings.panels[(size_t)i];
+        PanelPlace p = defaultPanelPlace(i);   // its bar's side, until the first frame settles it from its place
+        p.dx = v[0];
+        p.dy = v[1];
+        p.w = v[2];
+        p.h = v[3];
+        return p;
+    };
+    PanelPlace squadPlace = placeFromSettings(PANEL_SQUAD), unitPlace = placeFromSettings(PANEL_UNIT),
+               logPlace = placeFromSettings(PANEL_INFO);
+    // Each panel's lock: locked, it cannot be moved or resized. They start locked; locking one again keeps its place in
+    // the settings.
+    bool panelLocked[PANEL_COUNT] = { true, true, true };
+    // The panel being dragged (a PanelId) and what the drag does: a mix of the GRAB_ edges, or GRAB_MOVE for its title
+    // bar. The mouse, and the panel's open rectangle, where the drag began.
     int grabWhich = -1, grabKind = 0;
+    // The Squad Panel's scroll bar thumb while it is held, and how far down the thumb the mouse took hold
+    bool squadThumbDrag = false;
+    float squadThumbGrab = 0.0f;
     float grabMouseX = 0.0f, grabMouseY = 0.0f;
     float grabX = 0.0f, grabY = 0.0f, grabW = 0.0f, grabH = 0.0f;
     float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;   // the world map's view: its centre and height in tiles, 0 while closed
     float moveMarkX = 0.0f, moveMarkZ = 0.0f, moveMarkTime = 0.0f;   // the world map's green X: the last move order
+    float mapDragX = 0.0f, mapDragY = 0.0f;   // how far the world map window has been dragged from the middle
+    bool mapDragging = false;                 // its title bar is held
+    float mapGrabX = 0.0f, mapGrabY = 0.0f;   // where the mouse took hold, less the drag at that moment
     bool mapOpen = false;          // the world map covers the ground: M or the View Map button
     bool rightHold = false;        // the right button is held over a point for the selected units
     // The Optimize All dialog, from the button beside Walk/Run: open, and whether its slider is being dragged
@@ -2137,11 +2158,17 @@ int main(int, char**) {
         screen = backScreen;
     };
     // A left click on the Settings screen: a tab, a dropdown or one of its options, a toggle, a slider or a button
-    // Puts the Squad Panel, the Combat Log and the Unit Panel back in their default places and sizes
+    // Puts the Squad Panel, the Information Panel and the Unit Panel back in their default places and sizes, locked,
+    // and keeps that in the settings
     auto resetPanels = [&]() {
-        squadPlace = PanelPlace{};
-        logPlace = PanelPlace{};
-        unitPlace = PanelPlace{};
+        squadPlace = defaultPanelPlace(PANEL_SQUAD);
+        logPlace = defaultPanelPlace(PANEL_INFO);
+        unitPlace = defaultPanelPlace(PANEL_UNIT);
+        for (int i = 0; i < PANEL_COUNT; ++i) {
+            panelLocked[i] = true;
+            settings.panels[(size_t)i] = {};
+        }
+        saveSettingsFile();
     };
     auto settingsClick = [&](float x, float y, int W, int H) {
         const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
@@ -2706,11 +2733,8 @@ int main(int, char**) {
         };
         // The combat log in the bottom left, stopping short of the unit panel. Its offset is kept in range.
         auto combatLogPanel = [&](int W, int H) {
-            const float s = H / 720.0f;
-            const float unitLeft = layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel.x;
             return renderer.combatLogLayout(W, H, infoTab, logFilterOpen, logOffset,
-                                            (int)infoLines(combatLog, infoTab, logFilter).size(),
-                                            unitLeft - 8.0f * s, combatCollapsed, logPlace);
+                                            (int)infoLines(combatLog, infoTab, logFilter).size(), combatCollapsed, logPlace);
         };
         // The talk: each line said goes into the talk's lines and the Message tab. The player's side speaks as the
         // first player unit that is selected, or else the first one there is.
@@ -3246,70 +3270,141 @@ int main(int, char**) {
             }
             return false;
         };
-        // The rectangle of each bottom panel: 0 squad, 1 Unit Panel, 2 combat log
-        auto resizablePanel = [&](int which, int W, int H) -> Rect {
-            if (which == 0) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel;
-            if (which == 1) return sidebarFor(W, H, sidebarScroll).panel;
+        // A panel's place, by its PanelId
+        auto placeOf = [&](int which) -> PanelPlace& {
+            return which == PANEL_SQUAD ? squadPlace : which == PANEL_UNIT ? unitPlace : logPlace;
+        };
+        // Whether a panel is folded to its title bar
+        auto panelFolded = [&](int which) {
+            return which == PANEL_SQUAD ? squadCollapsed : which == PANEL_UNIT ? !unitOpen : combatCollapsed;
+        };
+        // What a panel shows on the screen: its open rectangle, or its title bar where it is folded
+        auto shownPanel = [&](int which, int W, int H) -> Rect {
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel;
+            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).panel;
             return combatLogPanel(W, H).panel;
         };
-        // What a press or the mouse over a point would grab: the panel, and the kind of grab. Kind 1 is the top edge
-        // (height), 2 the right edge (width), 3 the title bar (move). A folded panel can only be moved. Panel -1 means none.
+        // A panel's title bar, wherever it runs: along the panel's top, or along its bottom
+        auto panelBarOf = [&](int which, int W, int H) -> Rect {
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).title;
+            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).title;
+            return combatLogPanel(W, H).bar;
+        };
+        // What a press or the mouse over a point would grab on an unlocked panel: the panel, and a mix of the GRAB_ edges
+        // under the mouse (an edge or a corner resizes it), or GRAB_MOVE on its title bar. A folded panel can only be
+        // moved. Panel -1 means none. A locked panel grabs nothing.
         auto grabAt = [&](int W, int H, float x, float y) -> std::pair<int, int> {
-            const float barH = 22.0f * H / 720.0f;
-            for (int which = 0; which < 3; ++which) {
-                const bool folded = which == 0 ? squadCollapsed : which == 1 ? !unitOpen : combatCollapsed;
-                const Rect r = resizablePanel(which, W, H);
-                const bool inX = x >= r.x && x < r.x + r.w;
-                if (inX && !folded && y >= r.y - 5.0f && y <= r.y + 3.0f) return { which, 1 };
-                if (!folded && y >= r.y && y < r.y + r.h && x >= r.x + r.w - 4.0f && x <= r.x + r.w + 4.0f) return { which, 2 };
-                if (inX && y >= r.y + 3.0f && y < r.y + barH) return { which, 3 };
+            const float out = 5.0f, in = 4.0f;   // how far outside and inside an edge still grabs it
+            for (int which : { PANEL_INFO, PANEL_UNIT, PANEL_SQUAD }) {
+                if (panelLocked[which]) continue;
+                const Rect r = shownPanel(which, W, H);
+                const bool nearX = x >= r.x - out && x < r.x + r.w + out;
+                const bool nearY = y >= r.y - out && y < r.y + r.h + out;
+                if (!nearX || !nearY) continue;
+                int kind = 0;
+                if (!panelFolded(which)) {
+                    if (y < r.y + in) kind |= GRAB_TOP;
+                    if (y >= r.y + r.h - in) kind |= GRAB_BOTTOM;
+                    if (x < r.x + in) kind |= GRAB_LEFT;
+                    if (x >= r.x + r.w - in) kind |= GRAB_RIGHT;
+                }
+                if (kind != 0) return { which, kind };
+                if (panelBarOf(which, W, H).contains(x, y)) return { which, GRAB_MOVE };
             }
             return { -1, 0 };
         };
-        // The up-and-down or left-and-right arrow cursor shows over a top or right edge
+        // The arrows that show over an edge or a corner, and the hand-move arrows over an unlocked title bar
         auto setGrabCursor = [&](int kind) {
-            static SDL_Cursor* upDown = nullptr;
-            static SDL_Cursor* leftRight = nullptr;
-            static int shown = 0;
-            const int want = kind == 1 || kind == 2 ? kind : 0;
-            if (want == shown) return;
-            shown = want;
-            if (want == 1 && !upDown) upDown = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NS_RESIZE);
-            if (want == 2 && !leftRight) leftRight = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_EW_RESIZE);
-            SDL_Cursor* c = want == 1 ? upDown : want == 2 ? leftRight : nullptr;
-            SDL_SetCursor(c ? c : SDL_GetDefaultCursor());
-        };
-        // The place of a panel by its number: 0 squad, 1 Unit Panel, 2 combat log
-        auto placeOf = [&](int which) -> PanelPlace& {
-            return which == 0 ? squadPlace : which == 1 ? unitPlace : logPlace;
-        };
-        // Moves the grabbed panel to follow the mouse, from where the press began. It stays on the screen.
-        auto applyGrab = [&](int W, int H, float x, float y) {
-            const float s = H / 720.0f;
-            PanelPlace& p = placeOf(grabWhich);
-            if (grabKind == 1) {
-                p.h = std::clamp(grabH + (grabMouseY - y), 0.0f, (float)H);
-            } else if (grabKind == 2) {
-                const float minW = grabWhich == 0 ? squadMinWidth(H) : grabWhich == 1 ? sidebarMinWidth(H) : 120.0f * s;
-                p.w = std::clamp(grabW + (x - grabMouseX), minW, std::max(minW, W - grabX));
-            } else if (grabKind == 3) {
-                const float left = std::clamp(grabX + (x - grabMouseX), 0.0f, std::max(0.0f, W - grabW));
-                const float top = std::clamp(grabY + (y - grabMouseY), 0.0f, std::max(0.0f, H - grabH));
-                const float defaultLeft = grabWhich == 0 ? squadDefaultX(W, H) : grabWhich == 1 ? sidebarDefaultX(W, H) : 8.0f * s;
-                p.dx = left - defaultLeft;
-                p.dy = top + grabH - (H - 8.0f * s);
+            static SDL_Cursor* cursors[SDL_SYSTEM_CURSOR_COUNT] = {};
+            static int shown = -1;
+            SDL_SystemCursor want = SDL_SYSTEM_CURSOR_DEFAULT;
+            const bool tb = (kind & (GRAB_TOP | GRAB_BOTTOM)) != 0, lr = (kind & (GRAB_LEFT | GRAB_RIGHT)) != 0;
+            if (kind == GRAB_MOVE) want = SDL_SYSTEM_CURSOR_MOVE;
+            else if (tb && lr) {
+                const bool nwse = ((kind & GRAB_TOP) && (kind & GRAB_LEFT)) || ((kind & GRAB_BOTTOM) && (kind & GRAB_RIGHT));
+                want = nwse ? SDL_SYSTEM_CURSOR_NWSE_RESIZE : SDL_SYSTEM_CURSOR_NESW_RESIZE;
+            } else if (tb) want = SDL_SYSTEM_CURSOR_NS_RESIZE;
+            else if (lr) want = SDL_SYSTEM_CURSOR_EW_RESIZE;
+            if ((int)want == shown) return;
+            shown = (int)want;
+            if (want == SDL_SYSTEM_CURSOR_DEFAULT) {
+                SDL_SetCursor(SDL_GetDefaultCursor());
+                return;
             }
+            if (!cursors[want]) cursors[want] = SDL_CreateSystemCursor(want);
+            SDL_SetCursor(cursors[want] ? cursors[want] : SDL_GetDefaultCursor());
         };
-        // Lets go of the grab. A panel whose top edge was dragged under 64 pixels folds and goes back to its default size.
+        // Moves or resizes the grabbed panel to follow the mouse, from where the press began. Each edge stops at the
+        // panel's smallest size and at the window's edge.
+        auto applyGrab = [&](int W, int H, float x, float y) {
+            const float dx = x - grabMouseX, dy = y - grabMouseY;
+            float mw = 0.0f, mh = 0.0f;
+            panelMinSize(grabWhich, H, mw, mh);
+            mw = std::min(mw, (float)W);
+            mh = std::min(mh, (float)H);
+            float left = grabX, top = grabY, right = grabX + grabW, bottom = grabY + grabH;
+            if (grabKind == GRAB_MOVE) {
+                // The whole panel moves; only the bar it shows is kept on the screen (below)
+                left = grabX + dx;
+                top = grabY + dy;
+                right = left + grabW;
+                bottom = top + grabH;
+            } else {
+                if (grabKind & GRAB_LEFT) left = std::clamp(grabX + dx, 0.0f, right - mw);
+                if (grabKind & GRAB_RIGHT) right = std::clamp(grabX + grabW + dx, left + mw, (float)W);
+                if (grabKind & GRAB_TOP) top = std::clamp(grabY + dy, 0.0f, bottom - mh);
+                if (grabKind & GRAB_BOTTOM) bottom = std::clamp(grabY + grabH + dy, top + mh, std::max((float)H, grabY + grabH));
+            }
+            PanelPlace& p = placeOf(grabWhich);
+            p = placeForRect(grabWhich, Rect{ left, top, right - left, bottom - top }, W, H, p.barBottom);
+            p = placeForRect(grabWhich, panelRect(grabWhich, p, W, H), W, H, p.barBottom);   // its bar on the screen
+        };
+        // Lets go of the grab. The panel stays as it was left, and its bar goes to the side its new place calls for.
         auto endGrab = [&](int W, int H) {
-            const int which = grabWhich, kind = grabKind;
+            if (grabWhich >= 0) placeOf(grabWhich) = settlePanel(grabWhich, placeOf(grabWhich), W, H, panelFolded(grabWhich));
             grabWhich = -1;
             grabKind = 0;
-            if (kind != 1 || which < 0 || resizablePanel(which, W, H).h >= 64.0f) return;
-            placeOf(which).w = placeOf(which).h = 0.0f;
-            if (which == 0) squadCollapsed = true;
-            else if (which == 1) { unitOpen = false; unitTab = 0; }
-            else combatCollapsed = true;
+        };
+        // Folds or opens a panel. Its bar stays where it is: folding takes the rest of the panel away, and opening grows
+        // it back away from the bar, toward the middle of the window.
+        auto setFolded = [&](int which, bool fold, int W, int H) {
+            PanelPlace& p = placeOf(which);
+            p = settlePanel(which, p, W, H, !fold);   // the bar on its side before it changes
+            if (which == PANEL_SQUAD) squadCollapsed = fold;
+            else if (which == PANEL_UNIT) unitOpen = !fold;
+            else combatCollapsed = fold;
+        };
+        // The lock on a panel's bar was pressed: unlocking lets it be moved and resized; locking it again keeps its
+        // place and size in the settings
+        auto toggleLock = [&](int which) {
+            panelLocked[which] = !panelLocked[which];
+            if (panelLocked[which]) {
+                const PanelPlace& p = placeOf(which);
+                settings.panels[(size_t)which] = { p.dx, p.dy, p.w, p.h };
+                saveSettingsFile();
+            }
+            playSfx(Sfx::UiClick);
+        };
+        // The lock buttons, by PanelId
+        auto lockRectOf = [&](int which, int W, int H) -> Rect {
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).lock;
+            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).lock;
+            return combatLogPanel(W, H).lock;
+        };
+        // A panel's lock on its title bar, drawn just after the panel. An unlocked panel also gets a green edge, to show
+        // it can be moved and resized.
+        auto drawPanelLock = [&](int which) {
+            const int W = winW, H = winH;
+            if (!panelLocked[which]) {
+                const Rect r = shownPanel(which, W, H);
+                const float e = std::max(1.0f, 2.0f * H / 720.0f);
+                const RGBA g = theme::alpha(theme::GREEN, 0.9f);
+                renderer.drawRect(Rect{ r.x - e, r.y - e, r.w + 2.0f * e, e }, g);
+                renderer.drawRect(Rect{ r.x - e, r.y + r.h, r.w + 2.0f * e, e }, g);
+                renderer.drawRect(Rect{ r.x - e, r.y, e, r.h }, g);
+                renderer.drawRect(Rect{ r.x + r.w, r.y, e, r.h }, g);
+            }
+            renderer.drawLockButton(lockRectOf(which, W, H), panelLocked[which]);
         };
         // Whether the mouse is over the combat log
         auto combatLogHovered = [&](int W, int H) {
@@ -3319,7 +3414,7 @@ int main(int, char**) {
         };
         // The world map window, 800 by 600 in the middle of the screen
         auto worldMapFor = [&](int W, int H) {
-            return layoutWorldMap(W, H);
+            return layoutWorldMap(W, H, mapDragX, mapDragY);
         };
         // The ground point under the mouse on the world map, while it is open
         auto mapGroundAt = [&](int W, int H, float x, float y, float& gx, float& gz) {
@@ -3421,6 +3516,9 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_KEY_DOWN:
+                // Escape acts once per press: the repeats sent while it is held down are ignored, so holding it does
+                // not back out of several menus at once
+                if (e.key.key == SDLK_ESCAPE && e.key.repeat) break;
                 if (screen == Screen::PartySetup) {
                     // Escape backs out one step at a time: the dropdown, then the name box, then the map list
                     if (e.key.key == SDLK_ESCAPE) {
@@ -3759,6 +3857,15 @@ int main(int, char**) {
                     if (e.button.button == SDL_BUTTON_LEFT && wm.close.contains(e.button.x, e.button.y)) {
                         mapOpen = false;
                         playSfx(Sfx::UiClick);
+                    } else if (e.button.button == SDL_BUTTON_LEFT && wm.bar.contains(e.button.x, e.button.y)) {
+                        // The title bar moves the window while it is held
+                        const float dx = wm.window.x - std::floor((winW - wm.window.w) * 0.5f);
+                        const float dy = wm.window.y - std::floor((winH - wm.window.h) * 0.5f);
+                        mapDragX = dx;
+                        mapDragY = dy;
+                        mapDragging = true;
+                        mapGrabX = e.button.x - dx;
+                        mapGrabY = e.button.y - dy;
                     } else if (e.button.button == SDL_BUTTON_RIGHT && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
                         contextMenu.open = false;
                         itemMenu.open = false;
@@ -3918,38 +4025,62 @@ int main(int, char**) {
                         break;
                     }
                 }
-                // The [-] and [+] buttons on the title bars fold their panels up or down
+                // The locks and the [-] and [+] buttons on the title bars. Folding keeps the panel's size for when it opens.
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const float tx = e.button.x, ty = e.button.y;
+                    bool hitLock = false;
+                    for (int which = 0; which < PANEL_COUNT && !hitLock; ++which) {
+                        if (lockRectOf(which, winW, winH).contains(tx, ty)) {
+                            toggleLock(which);
+                            hitLock = true;
+                        }
+                    }
+                    if (hitLock) break;
                     const SidebarLayout sbl = sidebarFor(winW, winH, sidebarScroll);
                     if (sbl.plus.contains(tx, ty)) {
-                        unitOpen = true;
-                        unitPlace.w = unitPlace.h = 0.0f;
+                        setFolded(PANEL_UNIT, false, winW, winH);
                         break;
                     }
                     if (sbl.minus.contains(tx, ty)) {
-                        unitOpen = false;
-                        unitTab = 0;
-                        unitPlace.w = unitPlace.h = 0.0f;
+                        setFolded(PANEL_UNIT, true, winW, winH);
                         break;
                     }
                     if (infoPanelClick(winW, winH, tx, ty)) break;
                     if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).toggle.contains(tx, ty)) {
-                        squadCollapsed = !squadCollapsed;
-                        squadPlace.w = squadPlace.h = 0.0f;
+                        setFolded(PANEL_SQUAD, !squadCollapsed, winW, winH);
                         break;
                     }
                     if (combatLogPanel(winW, winH).toggle.contains(tx, ty)) {
-                        combatCollapsed = !combatCollapsed;
-                        logPlace.w = logPlace.h = 0.0f;
+                        setFolded(PANEL_INFO, !combatCollapsed, winW, winH);
                         break;
                     }
                 }
-                // The top edge, right edge or title bar of a bottom panel grabs it, to resize or move it
+                // The Squad Panel's scroll bar: an arrow moves the list a row, the thumb can be dragged, and a press on
+                // the track moves a row toward it
+                if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
+                    const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace);
+                    const float tx = e.button.x, ty = e.button.y;
+                    if (sq.scrollUp.contains(tx, ty) || sq.scrollDown.contains(tx, ty)) {
+                        const int next = std::clamp(sq.scrollRow + (sq.scrollUp.contains(tx, ty) ? -1 : 1), 0, sq.maxScroll());
+                        if (next != sq.scrollRow) playSfx(Sfx::UiClick);
+                        unitPanelRow = next;
+                        break;
+                    }
+                    if (sq.scrollable() && sq.thumb.contains(tx, ty)) {
+                        squadThumbDrag = true;
+                        squadThumbGrab = ty - sq.thumb.y;
+                        break;
+                    }
+                    if (sq.track.contains(tx, ty)) {
+                        unitPanelRow = std::clamp(sq.scrollRow + (ty < sq.thumb.y ? -1 : 1), 0, sq.maxScroll());
+                        break;
+                    }
+                }
+                // An edge, a corner or the title bar of an unlocked panel grabs it, to resize or move it
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const auto g = grabAt(winW, winH, e.button.x, e.button.y);
                     if (g.first >= 0) {
-                        const Rect r = resizablePanel(g.first, winW, winH);
+                        const Rect r = panelRect(g.first, placeOf(g.first), winW, winH);
                         grabWhich = g.first;
                         grabKind = g.second;
                         grabMouseX = e.button.x;
@@ -4222,6 +4353,14 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
+                    squadThumbDrag = false;
+                    break;
+                }
+                if (mapDragging && e.button.button == SDL_BUTTON_LEFT) {
+                    mapDragging = false;
+                    break;
+                }
                 if (partyUi.listDrag && e.button.button == SDL_BUTTON_LEFT) {
                     partyUi.listDrag = false;
                     break;
@@ -4368,8 +4507,31 @@ int main(int, char**) {
                     }
                     break;
                 }
+                // The world map window follows the mouse while its title bar is held, kept inside the screen
+                if (mapDragging) {
+                    if ((e.motion.state & SDL_BUTTON_LMASK) && mapOpen && screen == Screen::Playing) {
+                        mapDragX = e.motion.x - mapGrabX;
+                        mapDragY = e.motion.y - mapGrabY;
+                        const WorldMapLayout wm = worldMapFor(winW, winH);   // clamped
+                        mapDragX = wm.window.x - std::floor((winW - wm.window.w) * 0.5f);
+                        mapDragY = wm.window.y - std::floor((winH - wm.window.h) * 0.5f);
+                    } else {
+                        mapDragging = false;
+                    }
+                    break;
+                }
                 if (grabWhich >= 0) {
                     applyGrab(winW, winH, e.motion.x, e.motion.y);
+                    break;
+                }
+                // The Squad Panel follows its scroll bar thumb while it is held
+                if (squadThumbDrag) {
+                    if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
+                        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace);
+                        unitPanelRow = squadRowAtThumb(sq, e.motion.y - squadThumbGrab);
+                    } else {
+                        squadThumbDrag = false;
+                    }
                     break;
                 }
                 if (screen == Screen::Playing) {
@@ -4433,17 +4595,16 @@ int main(int, char**) {
         if (screen == Screen::Playing) {
             const Entity shown = sidebarUnitOf(world);
             const bool lone = shown != NULL_ENTITY;
-            // The Unit Panel opens when one unit is selected on its own, and folds when there is none
-            if (!lone) {
-                unitOpen = false;
-                unitTab = 0;
-                unitPlace.w = unitPlace.h = 0.0f;
-            } else if (shown != lastLone) {
-                unitOpen = true;
-                unitPlace.w = unitPlace.h = 0.0f;
-                sidebarScroll = 0.0f;
-            }
+            // The Unit Panel stays as the player left it, open or folded, whatever is selected. Its contents start at the
+            // top for each new unit.
+            if (lone && shown != lastLone) sidebarScroll = 0.0f;
             lastLone = shown;
+            // A folded panel opens toward the middle of the window from wherever its bar is, also after the window
+            // changes size (not while it is being dragged). An open panel's bar changes side only when it is moved or
+            // resized (endGrab), so it never jumps just after opening.
+            for (int which = 0; which < PANEL_COUNT; ++which) {
+                if (which != grabWhich && panelFolded(which)) placeOf(which) = settlePanel(which, placeOf(which), winW, winH, true);
+            }
             if (itemMenu.open) {
                 const Inventory* inv = world.get<Inventory>(itemMenu.unit);
                 const bool same = lone && shown == itemMenu.unit;
@@ -4945,7 +5106,8 @@ int main(int, char**) {
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
                 unitPanelRow = L.scrollRow;
                 renderer.drawUnitPanel(world, L, own, runMode);
-                // The combat log, bottom left. Its offset is written back, so it stays in range.
+                drawPanelLock(PANEL_SQUAD);
+                // The Information Panel, top left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);
                 logOffset = cl.offset;
                 InfoTime timeInfo;
@@ -4956,6 +5118,7 @@ int main(int, char**) {
                     timeInfo.days = langf("UILABEL_DAYS_PASSED", { std::to_string(dayIndexOf(gs.clockSeconds)) });
                 }
                 renderer.drawCombatLog(cl, infoLines(combatLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
+                if (!cl.filterOpen) drawPanelLock(PANEL_INFO);   // the open filter menu covers it
                 // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
                 // are only shown: the mouse handling never starts a drag or a menu on them.
                 const Entity shown = sidebarUnitOf(world);
@@ -4978,6 +5141,7 @@ int main(int, char**) {
                     // The full text of the rule under the mouse, when nothing else is open over it
                     if (shown != NULL_ENTITY && !itemDrag && !behaviorEditor.open) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
                 }
+                drawPanelLock(PANEL_UNIT);
                 if (itemMenu.open) {
                     const std::vector<std::string> labels = menuLabels();
                     if (!labels.empty()) {

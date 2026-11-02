@@ -114,7 +114,6 @@ UILABEL_SINGLE	Satu
 UILABEL_MAX	Maks
 UILABEL_SORT	Urutkan
 UILABEL_WORLD_MAP	Peta Dunia
-UILABEL_WORLD_MAP_HINT	Gulir untuk memperbesar. Klik kanan untuk bergerak ke sana. Tekan M atau Escape untuk menutup.
 UILABEL_DAYS_PASSED	Hari berlalu: {0}
 UILABEL_NO_UNIT_SELECTED	Tidak ada unit yang dipilih
 UILABEL_UNNAMED_UNIT	Unit tanpa nama
@@ -171,6 +170,8 @@ UILABEL_MISS	Meleset
 UILABEL_DAMAGE	Kerusakan
 UILABEL_EXPERIENCE_MESSAGES	Pesan Pengalaman
 UILABEL_EXPERIENCE	Pengalaman
+UILABEL_XP_ATHLETICS	Pengalaman Atletik
+UILABEL_XP_ENDURANCE	Pengalaman Ketahanan
 UILABEL_ITEM_MESSAGES	Pesan Barang
 UILABEL_PICKUP	Ambil
 UILABEL_DROP	Jatuhkan

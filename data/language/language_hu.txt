@@ -114,7 +114,6 @@ UILABEL_SINGLE	Egy
 UILABEL_MAX	Max
 UILABEL_SORT	Rendezés
 UILABEL_WORLD_MAP	Világtérkép
-UILABEL_WORLD_MAP_HINT	Görgess a nagyításhoz. Jobb kattintással odamész. Bezárás: M vagy Esc.
 UILABEL_DAYS_PASSED	Eltelt napok: {0}
 UILABEL_NO_UNIT_SELECTED	Nincs kijelölt egység
 UILABEL_UNNAMED_UNIT	Névtelen egység
@@ -171,6 +170,8 @@ UILABEL_MISS	Mellé
 UILABEL_DAMAGE	Sebzés
 UILABEL_EXPERIENCE_MESSAGES	Tapasztalati üzenetek
 UILABEL_EXPERIENCE	Tapasztalat
+UILABEL_XP_ATHLETICS	Atlétika tapasztalat
+UILABEL_XP_ENDURANCE	Állóképesség tapasztalat
 UILABEL_ITEM_MESSAGES	Tárgyüzenetek
 UILABEL_PICKUP	Felvétel
 UILABEL_DROP	Eldobás

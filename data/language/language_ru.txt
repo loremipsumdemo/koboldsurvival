@@ -114,7 +114,6 @@ UILABEL_SINGLE	Один
 UILABEL_MAX	Макс.
 UILABEL_SORT	Сортировка
 UILABEL_WORLD_MAP	Карта мира
-UILABEL_WORLD_MAP_HINT	Прокрутка — масштаб. Правый щелчок — идти туда. M или Esc — закрыть.
 UILABEL_DAYS_PASSED	Прошло дней: {0}
 UILABEL_NO_UNIT_SELECTED	Юнит не выбран
 UILABEL_UNNAMED_UNIT	Безымянный юнит
@@ -171,6 +170,8 @@ UILABEL_MISS	Промах
 UILABEL_DAMAGE	Урон
 UILABEL_EXPERIENCE_MESSAGES	Сообщения об опыте
 UILABEL_EXPERIENCE	Опыт
+UILABEL_XP_ATHLETICS	Опыт атлетики
+UILABEL_XP_ENDURANCE	Опыт выносливости
 UILABEL_ITEM_MESSAGES	Сообщения о предметах
 UILABEL_PICKUP	Подобрать
 UILABEL_DROP	Выбросить

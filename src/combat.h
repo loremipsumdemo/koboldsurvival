@@ -105,8 +105,10 @@ enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, Entity attacker, Entity target);
 
 // What a game message is about, so the Game tab can hide each kind. Other messages are never hidden.
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot };
-constexpr int LOG_KIND_COUNT = 9;
+// XpAthletics and XpEndurance are experience in those two stats, which comes from walking and running so often that
+// it has its own filter toggles, off at first
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance };
+constexpr int LOG_KIND_COUNT = 11;
 
 struct LogLine {
     std::string text;
@@ -114,10 +116,14 @@ struct LogLine {
     LogKind kind = LogKind::Other;
 };
 
-// Which kinds the Game tab shows. All are on at first.
+// Which kinds the Game tab shows. All are on at first, except Athletics and Endurance experience.
 struct LogFilter {
     bool on[LOG_KIND_COUNT];
-    LogFilter() { for (bool& b : on) b = true; }
+    LogFilter() {
+        for (bool& b : on) b = true;
+        on[(int)LogKind::XpAthletics] = false;
+        on[(int)LogKind::XpEndurance] = false;
+    }
 };
 
 // Every line the fight has written, oldest first, up to LOG_LIMIT

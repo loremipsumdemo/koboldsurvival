@@ -114,7 +114,6 @@ UILABEL_SINGLE	Uno
 UILABEL_MAX	Máx.
 UILABEL_SORT	Ordenar
 UILABEL_WORLD_MAP	Mapa del mundo
-UILABEL_WORLD_MAP_HINT	Desplázate para hacer zoom. Clic derecho para ir allí. Presiona M o Escape para cerrar.
 UILABEL_DAYS_PASSED	Días transcurridos: {0}
 UILABEL_NO_UNIT_SELECTED	Ninguna unidad seleccionada
 UILABEL_UNNAMED_UNIT	Unidad sin nombre
@@ -171,6 +170,8 @@ UILABEL_MISS	Fallo
 UILABEL_DAMAGE	Daño
 UILABEL_EXPERIENCE_MESSAGES	Mensajes de experiencia
 UILABEL_EXPERIENCE	Experiencia
+UILABEL_XP_ATHLETICS	Experiencia de Atletismo
+UILABEL_XP_ENDURANCE	Experiencia de Resistencia
 UILABEL_ITEM_MESSAGES	Mensajes de objetos
 UILABEL_PICKUP	Recoger
 UILABEL_DROP	Soltar

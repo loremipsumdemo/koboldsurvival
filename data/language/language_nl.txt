@@ -114,7 +114,6 @@ UILABEL_SINGLE	Enkel
 UILABEL_MAX	Max
 UILABEL_SORT	Sorteren
 UILABEL_WORLD_MAP	Wereldkaart
-UILABEL_WORLD_MAP_HINT	Scroll om te zoomen. Rechtsklik om erheen te gaan. Druk op M of Escape om te sluiten.
 UILABEL_DAYS_PASSED	Verstreken dagen: {0}
 UILABEL_NO_UNIT_SELECTED	Geen eenheid geselecteerd
 UILABEL_UNNAMED_UNIT	Naamloze eenheid
@@ -171,6 +170,8 @@ UILABEL_MISS	Mis
 UILABEL_DAMAGE	Schade
 UILABEL_EXPERIENCE_MESSAGES	Ervaringsberichten
 UILABEL_EXPERIENCE	Ervaring
+UILABEL_XP_ATHLETICS	Atletiek-ervaring
+UILABEL_XP_ENDURANCE	Uithoudingservaring
 UILABEL_ITEM_MESSAGES	Voorwerpberichten
 UILABEL_PICKUP	Oppakken
 UILABEL_DROP	Laten vallen

@@ -114,7 +114,6 @@ UILABEL_SINGLE	Đơn
 UILABEL_MAX	Tối đa
 UILABEL_SORT	Sắp xếp
 UILABEL_WORLD_MAP	Bản đồ thế giới
-UILABEL_WORLD_MAP_HINT	Cuộn để thu phóng. Nhấp chuột phải để đi tới đó. Nhấn M hoặc Escape để đóng.
 UILABEL_DAYS_PASSED	Số ngày đã qua: {0}
 UILABEL_NO_UNIT_SELECTED	Chưa chọn đơn vị nào
 UILABEL_UNNAMED_UNIT	Đơn vị không tên
@@ -171,6 +170,8 @@ UILABEL_MISS	Trượt
 UILABEL_DAMAGE	Sát thương
 UILABEL_EXPERIENCE_MESSAGES	Thông báo kinh nghiệm
 UILABEL_EXPERIENCE	Kinh nghiệm
+UILABEL_XP_ATHLETICS	Kinh nghiệm Thể lực
+UILABEL_XP_ENDURANCE	Kinh nghiệm Sức bền
 UILABEL_ITEM_MESSAGES	Thông báo vật phẩm
 UILABEL_PICKUP	Nhặt
 UILABEL_DROP	Vứt

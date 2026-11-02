@@ -114,7 +114,6 @@ UILABEL_SINGLE	Unic
 UILABEL_MAX	Max
 UILABEL_SORT	Sortează
 UILABEL_WORLD_MAP	Harta lumii
-UILABEL_WORLD_MAP_HINT	Derulează pentru zoom. Clic dreapta pentru a merge acolo. Apasă M sau Escape pentru a închide.
 UILABEL_DAYS_PASSED	Zile trecute: {0}
 UILABEL_NO_UNIT_SELECTED	Nicio unitate selectată
 UILABEL_UNNAMED_UNIT	Unitate fără nume
@@ -171,6 +170,8 @@ UILABEL_MISS	Ratat
 UILABEL_DAMAGE	Daune
 UILABEL_EXPERIENCE_MESSAGES	Mesaje de experiență
 UILABEL_EXPERIENCE	Experiență
+UILABEL_XP_ATHLETICS	Experiență la Atletism
+UILABEL_XP_ENDURANCE	Experiență la Rezistență
 UILABEL_ITEM_MESSAGES	Mesaje despre obiecte
 UILABEL_PICKUP	Ridicare
 UILABEL_DROP	Aruncare

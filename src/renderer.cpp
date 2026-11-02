@@ -2126,16 +2126,11 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
     const Rect& w = L.window;
     const Rect& r = L.map;
 
-    // The window: a pink edge, a dark body, the title bar with its X, and the help line at the foot
+    // The window: a pink edge, a dark body, and the title bar with its X
     drawRect(Rect{ w.x - 1.5f * s, w.y - 1.5f * s, w.w + 3.0f * s, w.h + 3.0f * s }, theme::alpha(theme::PINK, 0.95f));
     drawRect(w, RGBA{ 0.04f, 0.03f, 0.07f, 0.97f });
     drawTitleBar(L.bar, ICON_NONE, lang("UILABEL_WORLD_MAP"));
     drawCloseButton(L.close);
-    {
-        const std::string hint = fitText(lang("UILABEL_WORLD_MAP_HINT"), L.hint.w - 16.0f * s, false);
-        drawListText(hint, L.hint.x + 8.0f * s, L.hint.y + (L.hint.h - listTextHeight("Ag")) * 0.5f,
-                     RGBA{ 0.85f, 0.85f, 0.9f, 1.0f });
-    }
 
     drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });   // sea, where the view is past the edge of the level
     if (span <= 0.0f || r.w <= 0.0f || r.h <= 0.0f) return;
@@ -3081,10 +3076,48 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         drawListText(label, c.rect.x, c.rect.y + c.rect.w + 8.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     }
 
-    if (L.scrollable()) {
+    // The scroll bar: the track and its thumb, with an arrow button at each end that moves the list a row. The arrows
+    // dim at the end of the list.
+    if (L.track.h > 0.0f || L.scrollUp.h > 0.0f) {
         drawRect(L.track, RGBA{ 0.16f, 0.10f, 0.20f, bgAlpha });
-        drawRect(L.thumb, RGBA{ 0.7f, 0.7f, 0.8f, 1.0f });
+        if (L.scrollable()) drawRect(L.thumb, L.thumb.contains(mouseX_, mouseY_) ? RGBA{ 0.85f, 0.85f, 0.95f, 1.0f }
+                                                                                : RGBA{ 0.7f, 0.7f, 0.8f, 1.0f });
+        auto arrow = [&](const Rect& r, bool up, bool can) {
+            if (r.h <= 0.0f) return;
+            const bool hot = can && r.contains(mouseX_, mouseY_);
+            if (hot) noteHover(r);
+            drawRect(r, hot ? RGBA{ 0.30f, 0.20f, 0.36f, 1.0f } : RGBA{ 0.20f, 0.13f, 0.25f, 0.9f });
+            const RGBA c = can ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.5f, 0.5f, 0.55f, 0.6f };
+            const float cx = r.x + r.w * 0.5f, cy = r.y + r.h * 0.5f, hw = r.w * 0.3f, hh = r.h * 0.22f;
+            if (up) drawUiTris({ { cx, cy - hh, c }, { cx + hw, cy + hh, c }, { cx - hw, cy + hh, c } });
+            else drawUiTris({ { cx - hw, cy - hh, c }, { cx + hw, cy - hh, c }, { cx, cy + hh, c } });
+        };
+        arrow(L.scrollUp, true, L.scrollRow > 0);
+        arrow(L.scrollDown, false, L.scrollRow < L.maxScroll());
     }
+}
+
+// The lock at the left of a panel's [-] or [+]: closed while the panel's size and place are fixed, open (and green)
+// while it can be moved and resized
+void Renderer::drawLockButton(const Rect& r, bool locked) {
+    const float s = uiH_ / 720.0f;
+    if (r.contains(mouseX_, mouseY_)) noteHover(r);
+    drawRect(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GREEN);
+    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
+             locked ? theme::alpha(theme::PINK_INK, 0.95f) : RGBA{ 0.12f, 0.22f, 0.0f, 0.95f });
+    const RGBA c{ 1.0f, 1.0f, 1.0f, 1.0f };
+    // The body: a small block in the lower half
+    const float bw = r.w * 0.52f, bh = r.h * 0.34f;
+    const float bx = r.x + (r.w - bw) * 0.5f, by = r.y + r.h * 0.50f;
+    drawRect(Rect{ bx, by, bw, bh }, c);
+    // The shackle: a hoop over the body, its right leg lifted out when open
+    const float lw = std::max(1.0f, 1.3f * s);
+    const float sx0 = bx + bw * 0.18f, sx1 = bx + bw * 0.82f;
+    const float top = r.y + r.h * 0.18f + (locked ? 0.0f : -r.h * 0.06f);
+    const float legBottom = locked ? by : by - r.h * 0.12f;
+    drawRect(Rect{ sx0, top, sx1 - sx0, lw }, c);                 // across the top
+    drawRect(Rect{ sx0, top, lw, by - top }, c);                  // left leg, down into the body
+    drawRect(Rect{ sx1 - lw, top, lw, legBottom - top }, c);      // right leg
 }
 
 // The Stats tab: every stat's level under the heading of its group, with its progress bar. Returns the stat under
@@ -3329,21 +3362,28 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const int item = worn ? worn->items[gi] : 0;
         const bool locked = (int)gi == GEAR_OFF_HAND && offLocked;
         if (item == 0) {
-            // An empty slot shows its name, or lang("UILABEL_TWO_HANDED") for a locked off hand, centerd and dimmed
+            // An empty slot shows its name, or lang("UILABEL_TWO_HANDED") for a locked off hand, centred, dimmed and
+            // wrapped onto two lines if it needs them. The full name is in the hover tooltip.
             const std::string text = locked ? lang("UILABEL_TWO_HANDED") : gearSlotName((int)gi);
-            const float tw = listTextWidth(text);
-            drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - listH) * 0.5f,
-                         locked ? gray : RGBA{ 0.72f, 0.72f, 0.76f, 0.45f });
+            std::vector<std::string> lines = wrapListText(text, r.w - 2.0f * inset);
+            if (lines.size() > 2) lines.resize(2);
+            const float lh = listH;
+            float ty = r.y + (r.h - lh * lines.size()) * 0.5f;
+            for (const std::string& ln : lines) {
+                const std::string shown = fitText(ln, r.w - 2.0f * inset, false);
+                drawListText(shown, r.x + (r.w - listTextWidth(shown)) * 0.5f, ty,
+                             locked ? gray : RGBA{ 0.72f, 0.72f, 0.76f, 0.45f });
+                ty += lh;
+            }
             continue;
         }
 
-        // The slot's name stays, and the item is shown by its picture below it. Its name is in the hover tooltip.
-        drawListText(gearSlotName((int)gi), r.x + inset, r.y + inset, gray);
+        // The item's 64 x 64 picture fills the cell, as in the inventory. The slot's and the item's names are in the
+        // hover tooltip.
         float alpha = 1.0f;
         if ((int)gi == dimGear) alpha = 0.30f;
         else if ((int)gi == GEAR_OFF_HAND && dimOff) alpha = 0.35f;
-        // The picture, at its full size, sits at the foot of the slot under the name
-        drawItemPictureAt(r.x + r.w * 0.5f, r.y + r.h - 4.0f - ITEM_PICTURE_PX * 0.5f, item, alpha);
+        drawItemPictureAt(r.x + r.w * 0.5f, r.y + r.h * 0.5f, item, alpha);
     }
 
     int attack = 0, defense = 0;
@@ -4136,6 +4176,8 @@ static const FilterEntry kFilterEntries[] = {
     { "UILABEL_DAMAGE", LogKind::Damage, false },
     { "UILABEL_EXPERIENCE_MESSAGES", LogKind::Other, true },
     { "UILABEL_EXPERIENCE", LogKind::Xp, false },
+    { "UILABEL_XP_ATHLETICS", LogKind::XpAthletics, false },
+    { "UILABEL_XP_ENDURANCE", LogKind::XpEndurance, false },
     { "UILABEL_ITEM_MESSAGES", LogKind::Other, true },
     { "UILABEL_PICKUP", LogKind::Pickup, false },
     { "UILABEL_DROP", LogKind::Drop, false },
@@ -4144,13 +4186,14 @@ static const FilterEntry kFilterEntries[] = {
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
 
 CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
-                                          float rightLimit, bool collapsed, const PanelPlace& place) {
+                                          bool collapsed, const PanelPlace& place) {
     const float s = winH / 720.0f;
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
-    const float barH = 22.0f * s, tabH = 20.0f * s;
+    const float barH = PANEL_BAR_H * s, tabH = 20.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;
-    // Half the height of the Unit Panel by default, or as dragged. As many lines as that has room for, under the tabs.
-    const float bodyH = place.h > 0.0f ? std::min(place.h, (float)winH) : unitPanelBodyHeight(winH) * 0.5f;
+    // Its open size and place: the top left corner by default. As many lines as its height has room for, under the tabs.
+    const Rect open = panelRect(PANEL_INFO, place, winW, winH);
+    const float bodyH = open.h;
     const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - tabH - 2.0f * pad) / lineH));
 
     CombatLogLayout L;
@@ -4161,15 +4204,17 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
     L.tab = std::clamp(tab, 0, 2);
     L.filterOpen = filterOpen && L.tab == 1 && !collapsed;
 
-    // By default its width stops short of the Squad Panel. A dragged width stays between its minimum and the screen.
-    const float w = place.w > 0.0f
-        ? std::min(std::max(place.w, 120.0f * s), winW - 16.0f * s)
-        : std::max(180.0f * s, std::min(340.0f * s, rightLimit - 8.0f * s));
-    const float h = collapsed ? barH : bodyH;
-    L.panel = placedRect(place, 8.0f * s, w, h, winW, winH, 8.0f * s);
-    const float x = L.panel.x, y = L.panel.y;
-    L.bar = Rect{ x, y, w, barH };
+    // Its bar runs along its top or its bottom; folded, it is the bar alone. y and h are the body's: the panel less its bar.
+    const float w = open.w;
+    L.panel = panelShownRect(open, collapsed, place.barBottom, barH);
+    L.bar = panelBarRect(open, place.barBottom, barH);
+    const Rect bodyR = panelBodyRect(open, place.barBottom, barH);
+    L.bodyTop = bodyR.y;
+    L.bodyBottom = bodyR.y + bodyR.h;
+    const float x = open.x, y = bodyR.y - barH;   // laid out as if the bar were above the body
+    const float h = bodyR.h + barH;
     L.toggle = BarToggle(L.bar, s);
+    L.lock = BarLock(L.bar, s);
     L.collapsed = collapsed;
     L.textX = x + pad;
     L.textW = w - 2.0f * pad - scrollW - gap;
@@ -4197,14 +4242,29 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
     L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, tabW("UILABEL_MESSAGE"), tabH - 2.0f * s };
     L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_GAME"), tabH - 2.0f * s };
     L.tabTime = Rect{ L.tabGame.x + L.tabGame.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_TIME"), tabH - 2.0f * s };
-    L.filterBtn = Rect{ x + w - pad - scrollW - 62.0f * s, tabY + 2.0f * s, 62.0f * s, tabH - 2.0f * s };
+    // The Filter button: at the right of the row, but never over the Time tab
+    {
+        const float tabsEnd = L.tabTime.x + L.tabTime.w + 4.0f * s;
+        const float fw = listTextWidth(lang("UILABEL_FILTER")) + 14.0f * s;
+        const float fx = std::max(tabsEnd, x + w - pad - scrollW - fw);
+        L.filterBtn = Rect{ fx, tabY + 2.0f * s, std::max(0.0f, std::min(fw, x + w - 2.0f * s - fx)), tabH - 2.0f * s };
+    }
 
-    // The filter menu opens upward from the Filter button, so it stays on screen at the bottom of the window
+    // The filter menu opens downward from the Filter button, or upward where the window has no room below it
     if (L.filterOpen) {
         const float rowH = listTextHeight("Ag") + 6.0f * s;
-        const float menuW = 160.0f * s;
+        // As wide as its longest row needs: the indented name, a gap, then On or Off
+        float longest = 0.0f;
+        for (const FilterEntry& fe : kFilterEntries) {
+            longest = std::max(longest, listTextWidth(lang(fe.label)) + (fe.heading ? 6.0f : 16.0f) * s);
+        }
+        const float stateW = std::max(listTextWidth(lang("UILABEL_ON")), listTextWidth(lang("UILABEL_OFF")));
+        const float menuW = std::min((float)winW, std::max({ 160.0f * s, L.filterBtn.w, longest + 20.0f * s + stateW + 10.0f * s }));
         const float menuH = kFilterRowCount * rowH + 8.0f * s;
-        L.filterMenu = Rect{ L.filterBtn.x + L.filterBtn.w - menuW, std::max(0.0f, tabY + tabH - menuH), menuW, menuH };
+        const float below = tabY + tabH;
+        const float menuY = below + menuH <= winH ? below : std::max(0.0f, tabY - menuH);
+        const float menuX = std::clamp(L.filterBtn.x + L.filterBtn.w - menuW, 0.0f, std::max(0.0f, winW - menuW));
+        L.filterMenu = Rect{ menuX, menuY, menuW, menuH };
         for (int i = 0; i < kFilterRowCount; ++i) {
             const Rect r{ L.filterMenu.x, L.filterMenu.y + 4.0f * s + i * rowH, menuW, rowH };
             L.filterRows.push_back(CombatLogLayout::FilterRow{ r, kFilterEntries[i].kind, kFilterEntries[i].heading,
@@ -4245,7 +4305,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
 
     // The rows are centred in the space under the tabs
     const float tabH = 20.0f * s;
-    const float bodyTop = L.bar.y + L.bar.h + tabH;
+    const float bodyTop = L.bodyTop + tabH;
 
     // The Time tab: the time of day large, then the date written out, the date as numbers and the days passed, each
     // line centred, the block centred in the space under the tabs
@@ -4253,7 +4313,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
         const RGBA gray{ 0.78f, 0.78f, 0.82f, 1.0f };
         const float bigH = uiTextHeight("Ag"), smallH = listTextHeight("Ag"), gap = 4.0f * s;
         const float blockH = bigH + 3.0f * (gap + smallH);
-        const float bodyH = L.panel.y + L.panel.h - bodyTop;
+        const float bodyH = L.bodyBottom - bodyTop;
         float y = bodyTop + std::max(0.0f, (bodyH - blockH) * 0.5f);
         const float midX = L.panel.x + L.panel.w * 0.5f, maxW = L.panel.w - 16.0f * s;
         drawClockText(time.clock, midX - clockTextWidth(time.clock) * 0.5f, y, white);
@@ -4265,7 +4325,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
         }
         return;
     }
-    const float top = bodyTop + (L.panel.y + L.panel.h - bodyTop - L.linesVisible * L.lineH) * 0.5f;
+    const float top = bodyTop + (L.bodyBottom - bodyTop - L.linesVisible * L.lineH) * 0.5f;
     const int count = (int)rows.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
         const LogLine& ln = *rows[(size_t)(L.first + k)];
@@ -4416,9 +4476,15 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyGearSlot: {
             const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
             drawRect(b.rect, plateFor(hot, open, true));
-            leftText(Rect{ b.rect.x, b.rect.y + 4.0f * s, b.rect.w, lineH }, gearSlotName(b.param), gray, 8.0f * s);
-            leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 4.0f * s, b.rect.w, lineH }, b.label,
-                     b.label == lang("UILABEL_EMPTY") ? faint : white, 8.0f * s);
+            // The item cell on the left, with the item's 64 x 64 picture; the names to its right
+            const Rect cell{ b.rect.x + 4.0f, b.rect.y + std::floor((b.rect.h - ITEM_CELL_PX) * 0.5f), ITEM_CELL_PX, ITEM_CELL_PX };
+            drawRect(cell, RGBA{ 0.0f, 0.0f, 0.0f, 0.30f });
+            const int item = b.param >= 0 && b.param < GEAR_SLOTS ? picked.gear[(size_t)b.param] : 0;
+            if (item != 0) drawItemPictureAt(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, item, 1.0f);
+            const float inset = ITEM_CELL_PX + 4.0f + 8.0f * s;
+            leftText(Rect{ b.rect.x, b.rect.y + 6.0f * s, b.rect.w, lineH }, gearSlotName(b.param), gray, inset);
+            leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 6.0f * s, b.rect.w, lineH }, b.label,
+                     b.label == lang("UILABEL_EMPTY") ? faint : white, inset);
             break;
         }
 

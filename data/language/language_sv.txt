@@ -114,7 +114,6 @@ UILABEL_SINGLE	Enkel
 UILABEL_MAX	Max
 UILABEL_SORT	Sortera
 UILABEL_WORLD_MAP	Världskarta
-UILABEL_WORLD_MAP_HINT	Scrolla för att zooma. Högerklicka för att gå dit. Tryck M eller Escape för att stänga.
 UILABEL_DAYS_PASSED	Dagar som gått: {0}
 UILABEL_NO_UNIT_SELECTED	Ingen enhet vald
 UILABEL_UNNAMED_UNIT	Namnlös enhet
@@ -171,6 +170,8 @@ UILABEL_MISS	Miss
 UILABEL_DAMAGE	Skada
 UILABEL_EXPERIENCE_MESSAGES	Erfarenhetsmeddelanden
 UILABEL_EXPERIENCE	Erfarenhet
+UILABEL_XP_ATHLETICS	Atletikerfarenhet
+UILABEL_XP_ENDURANCE	Uthållighetserfarenhet
 UILABEL_ITEM_MESSAGES	Föremålsmeddelanden
 UILABEL_PICKUP	Plocka upp
 UILABEL_DROP	Släpp

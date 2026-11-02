@@ -114,7 +114,6 @@ UILABEL_SINGLE	Enkelt
 UILABEL_MAX	Maks
 UILABEL_SORT	Sortér
 UILABEL_WORLD_MAP	Verdenskort
-UILABEL_WORLD_MAP_HINT	Rul for at zoome. Højreklik for at gå derhen. Tryk M eller Escape for at lukke.
 UILABEL_DAYS_PASSED	Dage gået: {0}
 UILABEL_NO_UNIT_SELECTED	Ingen enhed valgt
 UILABEL_UNNAMED_UNIT	Unavngiven enhed
@@ -171,6 +170,8 @@ UILABEL_MISS	Bom
 UILABEL_DAMAGE	Skade
 UILABEL_EXPERIENCE_MESSAGES	Erfaringsmeddelelser
 UILABEL_EXPERIENCE	Erfaring
+UILABEL_XP_ATHLETICS	Atletik-erfaring
+UILABEL_XP_ENDURANCE	Udholdenheds-erfaring
 UILABEL_ITEM_MESSAGES	Genstandsmeddelelser
 UILABEL_PICKUP	Saml op
 UILABEL_DROP	Smid
