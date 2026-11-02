@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Húzd ide, vagy jobb kattintással add hozzá a saját 
 UILABEL_SINGLE	Egy
 UILABEL_MAX	Max
 UILABEL_SORT	Rendezés
-UILABEL_WORLD_MAP_HINT	Világtérkép. Görgetéssel nagyíthatsz. Az M vagy az Esc megnyomásával bezárhatod.
+UILABEL_WORLD_MAP	Világtérkép
+UILABEL_WORLD_MAP_HINT	Görgess a nagyításhoz. Jobb kattintással odamész. Bezárás: M vagy Esc.
+UILABEL_DAYS_PASSED	Eltelt napok: {0}
 UILABEL_NO_UNIT_SELECTED	Nincs kijelölt egység
 UILABEL_UNNAMED_UNIT	Névtelen egység
 UILABEL_NO_NAME	Névtelen
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} {1} {2} tapasztalatot szerez ezért: {3}
 UILABEL_PAUSE_HINT	(A folytatáshoz nyomd meg a szóköz billentyűt.)
 MISC_DRINKS	{0} megissza: {1}
-UILABEL_COMPASS_N	É
-UILABEL_COMPASS_E	K
-UILABEL_COMPASS_S	D
-UILABEL_COMPASS_W	NY
 ITEM_1_NAME	Vasérc
 ITEM_1_DESC	Nyers érc, amelyből vasrudak olvaszthatók.
 ITEM_2_NAME	Tölgyfarönk

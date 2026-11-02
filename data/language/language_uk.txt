@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Перетягніть сюди або клацніть
 UILABEL_SINGLE	Один
 UILABEL_MAX	Макс.
 UILABEL_SORT	Сортувати
-UILABEL_WORLD_MAP_HINT	Карта світу. Прокрутіть, щоб наблизити. Натисніть M або Esc, щоб закрити.
+UILABEL_WORLD_MAP	Карта світу
+UILABEL_WORLD_MAP_HINT	Прокрутка — масштаб. Правий клік — іти туди. M або Esc — закрити.
+UILABEL_DAYS_PASSED	Минуло днів: {0}
 UILABEL_NO_UNIT_SELECTED	Юніта не вибрано
 UILABEL_UNNAMED_UNIT	Юніт без імені
 UILABEL_NO_NAME	Без імені
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Монітор {0}
 MISC_GAINS_XP	{0} отримує {1} {2} досвіду за {3}
 UILABEL_PAUSE_HINT	(Натисніть пробіл, щоб продовжити.)
 MISC_DRINKS	{0} п'є {1}
-UILABEL_COMPASS_N	Пн
-UILABEL_COMPASS_E	Сх
-UILABEL_COMPASS_S	Пд
-UILABEL_COMPASS_W	Зх
 ITEM_1_NAME	Залізна руда
 ITEM_1_DESC	Сира руда, яку можна переплавити на залізні зливки.
 ITEM_2_NAME	Дубове поліно

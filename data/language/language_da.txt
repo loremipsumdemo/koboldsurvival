@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Træk eller højreklik på dine genstande fra din behol
 UILABEL_SINGLE	Enkelt
 UILABEL_MAX	Maks
 UILABEL_SORT	Sortér
-UILABEL_WORLD_MAP_HINT	Verdenskort. Rul for at zoome. Tryk M eller Esc for at lukke.
+UILABEL_WORLD_MAP	Verdenskort
+UILABEL_WORLD_MAP_HINT	Rul for at zoome. Højreklik for at gå derhen. Tryk M eller Escape for at lukke.
+UILABEL_DAYS_PASSED	Dage gået: {0}
 UILABEL_NO_UNIT_SELECTED	Ingen enhed valgt
 UILABEL_UNNAMED_UNIT	Unavngiven enhed
 UILABEL_NO_NAME	Intet navn
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Skærm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
 UILABEL_PAUSE_HINT	(Tryk mellemrum for at fortsætte.)
 MISC_DRINKS	{0} drikker {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	Ø
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	V
 ITEM_1_NAME	Jernmalm
 ITEM_1_DESC	Råmalm, der kan smeltes til jernbarrer.
 ITEM_2_NAME	Egetræsstamme

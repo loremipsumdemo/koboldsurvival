@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Kendi envanterinizden eşya eklemek için buraya sürü
 UILABEL_SINGLE	Tekli
 UILABEL_MAX	Maks
 UILABEL_SORT	Sırala
-UILABEL_WORLD_MAP_HINT	Dünya haritası. Yakınlaştırmak için kaydırın. Kapatmak için M veya Esc tuşuna basın.
+UILABEL_WORLD_MAP	Dünya Haritası
+UILABEL_WORLD_MAP_HINT	Yakınlaştırmak için kaydırın. Oraya gitmek için sağ tıklayın. Kapatmak için M veya Esc'ye basın.
+UILABEL_DAYS_PASSED	Geçen günler: {0}
 UILABEL_NO_UNIT_SELECTED	Birim seçilmedi
 UILABEL_UNNAMED_UNIT	İsimsiz birim
 UILABEL_NO_NAME	İsimsiz
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitör {0}
 MISC_GAINS_XP	{0}, {3} için {1} {2} TP kazanır
 UILABEL_PAUSE_HINT	(Devam etmek için boşluk tuşuna basın.)
 MISC_DRINKS	{0} {1} içer
-UILABEL_COMPASS_N	K
-UILABEL_COMPASS_E	D
-UILABEL_COMPASS_S	G
-UILABEL_COMPASS_W	B
 ITEM_1_NAME	Demir Cevheri
 ITEM_1_DESC	Demir külçesine eritilebilecek ham cevher.
 ITEM_2_NAME	Meşe Kütüğü

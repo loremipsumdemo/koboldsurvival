@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	اسحب أغراضك من مخزونك إلى هنا �
 UILABEL_SINGLE	واحد
 UILABEL_MAX	الحد الأقصى
 UILABEL_SORT	ترتيب
-UILABEL_WORLD_MAP_HINT	خريطة العالم. مرّر لتكبير الخريطة. اضغط M أو Esc للإغلاق.
+UILABEL_WORLD_MAP	خريطة العالم
+UILABEL_WORLD_MAP_HINT	مرّر للتكبير. انقر بزر الفأرة الأيمن للتحرك إلى هناك. اضغط M أو Escape للإغلاق.
+UILABEL_DAYS_PASSED	الأيام المنقضية: {0}
 UILABEL_NO_UNIT_SELECTED	لم يتم تحديد أي وحدة
 UILABEL_UNNAMED_UNIT	وحدة بلا اسم
 UILABEL_NO_NAME	بلا اسم
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	الشاشة {0}
 MISC_GAINS_XP	{0} يكتسب {1} {2} خبرة مقابل {3}
 UILABEL_PAUSE_HINT	(اضغط شريط المسافة للاستئناف.)
 MISC_DRINKS	{0} يشرب {1}
-UILABEL_COMPASS_N	ش
-UILABEL_COMPASS_E	ق
-UILABEL_COMPASS_S	ج
-UILABEL_COMPASS_W	غ
 ITEM_1_NAME	خام الحديد
 ITEM_1_DESC	خام يمكن صهره إلى سبائك حديد.
 ITEM_2_NAME	جذع بلوط

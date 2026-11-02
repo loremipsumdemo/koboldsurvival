@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Arraste ou clique com o direito nos seus itens do inven
 UILABEL_SINGLE	Um
 UILABEL_MAX	Máx
 UILABEL_SORT	Ordenar
-UILABEL_WORLD_MAP_HINT	Mapa do mundo. Role para dar zoom. Pressione M ou Esc para fechar.
+UILABEL_WORLD_MAP	Mapa do mundo
+UILABEL_WORLD_MAP_HINT	Role para dar zoom. Clique direito para ir até lá. Pressione M ou Esc para fechar.
+UILABEL_DAYS_PASSED	Dias passados: {0}
 UILABEL_NO_UNIT_SELECTED	Nenhuma unidade selecionada
 UILABEL_UNNAMED_UNIT	Unidade sem nome
 UILABEL_NO_NAME	Sem nome
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ganha {1} {2} XP por {3}
 UILABEL_PAUSE_HINT	(Use a barra de espaço para retomar.)
 MISC_DRINKS	{0} bebe {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	L
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	O
 ITEM_1_NAME	Minério de Ferro
 ITEM_1_DESC	Minério bruto que pode ser fundido em lingotes de ferro.
 ITEM_2_NAME	Tora de Carvalho

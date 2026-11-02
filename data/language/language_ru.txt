@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Перетащите сюда или нажмите п�
 UILABEL_SINGLE	Один
 UILABEL_MAX	Макс.
 UILABEL_SORT	Сортировка
-UILABEL_WORLD_MAP_HINT	Карта мира. Прокрутка — масштаб. M или Esc — закрыть.
+UILABEL_WORLD_MAP	Карта мира
+UILABEL_WORLD_MAP_HINT	Прокрутка — масштаб. Правый щелчок — идти туда. M или Esc — закрыть.
+UILABEL_DAYS_PASSED	Прошло дней: {0}
 UILABEL_NO_UNIT_SELECTED	Юнит не выбран
 UILABEL_UNNAMED_UNIT	Безымянный юнит
 UILABEL_NO_NAME	Без имени
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Монитор {0}
 MISC_GAINS_XP	{0} получает {1} {2} опыта за {3}
 UILABEL_PAUSE_HINT	(Нажмите пробел, чтобы продолжить.)
 MISC_DRINKS	{0} пьёт {1}
-UILABEL_COMPASS_N	С
-UILABEL_COMPASS_E	В
-UILABEL_COMPASS_S	Ю
-UILABEL_COMPASS_W	З
 ITEM_1_NAME	Железная руда
 ITEM_1_DESC	Сырая руда, которую можно переплавить в железные слитки.
 ITEM_2_NAME	Дубовое бревно

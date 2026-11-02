@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Sem přetáhněte nebo pravým kliknutím vložte své 
 UILABEL_SINGLE	Jeden
 UILABEL_MAX	Max
 UILABEL_SORT	Řadit
-UILABEL_WORLD_MAP_HINT	Mapa světa. Rolováním přibližte. Stiskněte M nebo Esc pro zavření.
+UILABEL_WORLD_MAP	Mapa světa
+UILABEL_WORLD_MAP_HINT	Kolečkem přiblížíte. Pravým tlačítkem se tam přesunete. M nebo Esc mapu zavře.
+UILABEL_DAYS_PASSED	Uplynulé dny: {0}
 UILABEL_NO_UNIT_SELECTED	Není vybrána žádná jednotka
 UILABEL_UNNAMED_UNIT	Jednotka bez jména
 UILABEL_NO_NAME	Bez jména
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} získá {1} {2} zkušeností za {3}
 UILABEL_PAUSE_HINT	(Pro pokračování stiskněte mezerník.)
 MISC_DRINKS	{0} pije {1}
-UILABEL_COMPASS_N	S
-UILABEL_COMPASS_E	V
-UILABEL_COMPASS_S	J
-UILABEL_COMPASS_W	Z
 ITEM_1_NAME	Železná ruda
 ITEM_1_DESC	Surová ruda, kterou lze přetavit na železné ingoty.
 ITEM_2_NAME	Dubové poleno

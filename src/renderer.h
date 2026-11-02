@@ -68,6 +68,14 @@ inline constexpr RGBA HUD_PROP_COLOR{ 0.68f, 0.68f, 0.68f, 1.0f }; // props: gra
 
 // The combat log panel in the bottom left corner. The newest line is at the bottom, and offset counts
 // the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
+// The Information Panel's Time tab: the time of day, the date written out and as numbers, and the days since the start
+struct InfoTime {
+    std::string clock;     // "14:05"
+    std::string date;      // "DAY 12 · THIRD MONTH · YEAR 500"
+    std::string ymd;       // "500-03-12"
+    std::string days;      // "Days passed: 71"
+};
+
 struct CombatLogLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Combat Log" bar across the top
@@ -83,10 +91,11 @@ struct CombatLogLayout {
 
     bool collapsed = false;                  // only the bar shows
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };  // the [-] or [+] button in the bar
-    // The two tabs under the bar: Message (0) and Game (1). On the Game tab, the Filter button and its menu.
+    // The three tabs under the bar: Message (0), Game (1) and Time (2). On the Game tab, the Filter button and its menu.
     int tab = 0;
     Rect tabMessage{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect tabGame{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tabTime{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect filterBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
     bool filterOpen = false;
     Rect filterMenu{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -127,11 +136,20 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) {
 constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
 float missingPropSide(int kind);
 
-// A dot on the minimap: a unit's place, and whose it is
-enum class MapDotKind { Player, Hostile, Neutral, Resource };   // Resource: ore, a tree or a mushroom
+// A mark on the world map: a unit's place and whose it is, or a prop (any kind) as a purple square
+enum class MapDotKind { Player, Hostile, Neutral, Prop };
 struct MapDot {
     Vec2 at{ 0.0f, 0.0f };
     MapDotKind kind = MapDotKind::Player;
+};
+
+// What the world map shows besides the dots: the camera's pivot and the way it faces, and the green X where the last
+// move order went (faded out by its alpha)
+struct WorldMapMarks {
+    float camX = 0.0f, camZ = 0.0f;
+    float camYaw = 0.0f;          // the camera's yaw: it looks along -sin(yaw), -cos(yaw) on the ground
+    float moveX = 0.0f, moveZ = 0.0f;
+    float moveAlpha = 0.0f;       // 0 hides the X
 };
 
 class Renderer {
@@ -180,22 +198,17 @@ public:
     // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
     // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running);
-    // The minimap: a square r showing spanTiles across, centred on (centreX, centreZ), north up, with the
-    // level's ground and a green dot for each position in dots (tile x and z). Past the edge of the level
-    // it is sea. The whole level, fitted in area (kept square), with the same dots. A compass strip r shows
-    // the bearing ahead, in degrees from north, with the marks in view. The overview picture is built when
-    // a level is uploaded, and drawn once it is ready.
-    void drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float centreX, float centreZ, float spanTiles);
-    void drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, float cx, float cz, float span);
-    // The + or - that expands the minimap, or collapses the full map back into it
-    void drawMinimapToggle(const Rect& r, bool open);
+    // The world map window: its title bar with the X that closes it, the level's ground `span` tiles from top to
+    // bottom centred on cx, cz (sea past the edge), the props as purple squares, the units as dots, the camera's pivot
+    // as a ring with a triangle pointing the way it faces, and a green X where the last move order went
+    void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
+                      const WorldMapMarks& marks);
     // The talk box: a unit's name and what it says, with a Close button
     // The talk box: the last lines said with their portraits, the options, and End Dialogue
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
                       const std::vector<DialogueOption>& options, float mx, float my);
     // The text split into lines no wider than maxW, at spaces
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
-    void drawCompass(const Rect& r, float bearingDeg);
     // Where the hover names in the top left start, from the top of the window
     void setHudTop(float y) { hudTop_ = y; }
     // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
@@ -258,10 +271,6 @@ public:
                          float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
-    // The in-game clock and date in a box at the top right. right is the x the box lines up against:
-    // the window's right edge, or the sidebar's left edge while the sidebar shows. Both lines are
-    // right aligned, and the clock's digits keep the same width as they change.
-    void drawClock(const std::string& clock, const std::string& date, float right, float top, int winH);
     // A notice, drawn centerd at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
     // The stats popout for one unit, and its layout (which depends on the fonts)
@@ -296,9 +305,9 @@ public:
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
     CombatLogLayout combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount, float rightLimit,
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
-    // The Information Panel: rows are the lines of the tab shown, oldest first
+    // The Information Panel: rows are the lines of the tab shown, oldest first. The Time tab shows `time` instead.
     void drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
-                       float mx, float my);
+                       float mx, float my, const InfoTime& time = InfoTime{});
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
     // party's pictures, names and totals. Call between beginUi and endUi.
@@ -355,6 +364,8 @@ public:
     void drawTitleBar(const Rect& bar, int icon, const std::string& title);
     // The [-] when the panel is open, the [+] when it is folded
     void drawCollapseButton(const Rect& r, bool collapsed);
+    // The X that closes a window, at the right end of its title bar
+    void drawCloseButton(const Rect& r);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);

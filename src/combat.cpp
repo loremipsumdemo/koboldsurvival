@@ -352,6 +352,7 @@ void discardQueuedLog() {
 
 std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFilter& f) {
     std::vector<const LogLine*> out;
+    if (tab == 2) return out;   // the Time tab has no lines
     if (tab == 0) {
         for (const LogLine& ln : log.spoken) out.push_back(&ln);
         return out;

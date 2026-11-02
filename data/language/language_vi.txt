@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Kéo vào đây hoặc nhấp chuột phải để thê
 UILABEL_SINGLE	Đơn
 UILABEL_MAX	Tối đa
 UILABEL_SORT	Sắp xếp
-UILABEL_WORLD_MAP_HINT	Bản đồ thế giới. Cuộn để phóng to. Nhấn M hoặc Esc để đóng.
+UILABEL_WORLD_MAP	Bản đồ thế giới
+UILABEL_WORLD_MAP_HINT	Cuộn để thu phóng. Nhấp chuột phải để đi tới đó. Nhấn M hoặc Escape để đóng.
+UILABEL_DAYS_PASSED	Số ngày đã qua: {0}
 UILABEL_NO_UNIT_SELECTED	Chưa chọn đơn vị nào
 UILABEL_UNNAMED_UNIT	Đơn vị không tên
 UILABEL_NO_NAME	Không tên
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Màn hình {0}
 MISC_GAINS_XP	{0} nhận {1} {2} kinh nghiệm nhờ {3}
 UILABEL_PAUSE_HINT	(Nhấn phím cách để tiếp tục.)
 MISC_DRINKS	{0} uống {1}
-UILABEL_COMPASS_N	B
-UILABEL_COMPASS_E	Đ
-UILABEL_COMPASS_S	N
-UILABEL_COMPASS_W	T
 ITEM_1_NAME	Quặng sắt
 ITEM_1_DESC	Quặng thô có thể luyện thành thỏi sắt.
 ITEM_2_NAME	Khúc gỗ sồi

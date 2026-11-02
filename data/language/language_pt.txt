@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Arraste ou clique com o botão direito para colocar aqu
 UILABEL_SINGLE	Único
 UILABEL_MAX	Máx.
 UILABEL_SORT	Ordenar
-UILABEL_WORLD_MAP_HINT	Mapa do mundo. Deslize para aproximar. Prima M ou Esc para fechar.
+UILABEL_WORLD_MAP	Mapa do mundo
+UILABEL_WORLD_MAP_HINT	Desloque para ampliar. Clique direito para ir até lá. Prima M ou Escape para fechar.
+UILABEL_DAYS_PASSED	Dias passados: {0}
 UILABEL_NO_UNIT_SELECTED	Nenhuma unidade selecionada
 UILABEL_UNNAMED_UNIT	Unidade sem nome
 UILABEL_NO_NAME	Sem nome
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ganha {1} {2} de XP por {3}
 UILABEL_PAUSE_HINT	(Use a barra de espaço para retomar.)
 MISC_DRINKS	{0} bebe {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	O
 ITEM_1_NAME	Minério de ferro
 ITEM_1_DESC	Minério em bruto que pode ser fundido em lingotes de ferro.
 ITEM_2_NAME	Tronco de carvalho

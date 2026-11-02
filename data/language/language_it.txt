@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Trascina o clicca con il destro i tuoi oggetti dal tuo 
 UILABEL_SINGLE	Singolo
 UILABEL_MAX	Massimo
 UILABEL_SORT	Ordina
-UILABEL_WORLD_MAP_HINT	Mappa del mondo. Scorri per ingrandire. Premi M o Esc per chiudere.
+UILABEL_WORLD_MAP	Mappa del mondo
+UILABEL_WORLD_MAP_HINT	Scorri per lo zoom. Clic destro per spostarti lì. Premi M o Esc per chiudere.
+UILABEL_DAYS_PASSED	Giorni trascorsi: {0}
 UILABEL_NO_UNIT_SELECTED	Nessuna unità selezionata
 UILABEL_UNNAMED_UNIT	Unità senza nome
 UILABEL_NO_NAME	Senza nome
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ottiene {1} {2} XP per {3}
 UILABEL_PAUSE_HINT	(Usa la barra spaziatrice per riprendere.)
 MISC_DRINKS	{0} beve {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	O
 ITEM_1_NAME	Minerale di ferro
 ITEM_1_DESC	Minerale grezzo che può essere fuso in lingotti di ferro.
 ITEM_2_NAME	Tronco di quercia

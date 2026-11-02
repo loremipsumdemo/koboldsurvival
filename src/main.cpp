@@ -142,6 +142,7 @@ std::vector<SpokenLine> dialogueConvo;    // the lines of the talk so far
 bool tradeOpen = false;                   // the trade popout is up, in place of the talk box
 // A free trade between two of your own units, from the right-click menu's Trade: no value or fee, only room counts
 bool freeTrade = false;
+constexpr float MOVE_MARK_SECONDS = 3.0f;  // how long the green X stays on the world map after a move order, fading in its last second
 constexpr float TALK_COOLDOWN = 1.0f;     // seconds after a talk ends before another one can start
 float talkCooldown = 0.0f;                // seconds of that cooldown left
 bool paused = false;                      // paused with Space, until Space is pressed again
@@ -741,9 +742,6 @@ bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
     terrain.load(data);
     return true;
 }
-
-// Tiles across the minimap
-constexpr float MINIMAP_TILES = 160.0f;
 
 // Every item in the database is put on the ground this many times when a level starts
 constexpr int ITEM_COPIES_PER_LEVEL = 10;
@@ -1461,7 +1459,19 @@ Soundtrack soundtrackFor(Screen screen) {
 }
 
 // Plays a sound effect now, on the slider it follows (sounds.h lists them all, with their files)
+// A sound effect is not played again within this long of its last start: a click that lands on several things at once,
+// or an order given to many units, plays it once
+constexpr Uint64 SFX_REPEAT_GAP_MS = 50;
 void playSfx(Sfx s) {
+    static Uint64 lastStart[(int)Sfx::Count] = {};
+    static bool started[(int)Sfx::Count] = {};
+    const int i = (int)s;
+    if (i >= 0 && i < (int)Sfx::Count) {
+        const Uint64 now = SDL_GetTicks();
+        if (started[i] && now - lastStart[i] < SFX_REPEAT_GAP_MS) return;
+        started[i] = true;
+        lastStart[i] = now;
+    }
     const SfxInfo& info = sfxInfo(s);
     audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects);
 }
@@ -1683,7 +1693,8 @@ int main(int, char**) {
     int grabWhich = -1, grabKind = 0;
     float grabMouseX = 0.0f, grabMouseY = 0.0f;
     float grabX = 0.0f, grabY = 0.0f, grabW = 0.0f, grabH = 0.0f;
-    float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;   // the world map's view: its centre and width in tiles, 0 while closed
+    float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;   // the world map's view: its centre and height in tiles, 0 while closed
+    float moveMarkX = 0.0f, moveMarkZ = 0.0f, moveMarkTime = 0.0f;   // the world map's green X: the last move order
     bool mapOpen = false;          // the world map covers the ground: M or the View Map button
     bool rightHold = false;        // the right button is held over a point for the selected units
     // The Optimize All dialog, from the button beside Walk/Run: open, and whether its slider is being dragged
@@ -1782,7 +1793,7 @@ int main(int, char**) {
     CombatLog combatLog;
     std::vector<FloatingNumber> floatingNumbers;
     std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+item" from work
-    int infoTab = 1;        // the Information Panel's tab: 0 Message, 1 Game (shown first)
+    int infoTab = 1;        // the Information Panel's tab: 0 Message, 1 Game (shown first), 2 Time
     LogFilter logFilter;    // which game message kinds the Game tab shows
     bool logFilterOpen = false;
     int logOffset = 0;      // lines the combat log is scrolled up from its newest line; 0 follows new lines
@@ -3215,6 +3226,11 @@ int main(int, char**) {
                 logFilterOpen = false;
                 return true;
             }
+            if (cl.tabTime.contains(tx, ty)) {
+                if (infoTab != 2) { infoTab = 2; logOffset = 0; }
+                logFilterOpen = false;
+                return true;
+            }
             if (infoTab == 1 && cl.filterBtn.contains(tx, ty)) {
                 logFilterOpen = !logFilterOpen;
                 return true;
@@ -3301,28 +3317,20 @@ int main(int, char**) {
             SDL_GetMouseState(&mx, &my);
             return combatLogPanel(W, H).panel.contains(mx, my);
         };
-        // The minimap sits in the top right corner, left of the sidebar while the sidebar shows
-        auto minimapFor = [&](int W, int H) {
-            return layoutMinimap(H, (float)W);
+        // The world map window, 800 by 600 in the middle of the screen
+        auto worldMapFor = [&](int W, int H) {
+            return layoutWorldMap(W, H);
         };
-        // Whether a panel is over a point, so that a click there goes to the panel rather than the minimap under it
-        auto panelsCover = [&](int W, int H, float x, float y) {
-            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel.contains(x, y)
-                || sidebarFor(W, H, sidebarScroll).panel.contains(x, y) || combatLogPanel(W, H).panel.contains(x, y);
-        };
-        // The world map's area: the window above the unit panel
-        auto worldMapArea = [&](int W, int H) {
-            return expandedMapRect(H, (float)W);
-        };
-        // The ground point under the mouse on the minimap, or on the world map while it is open
+        // The ground point under the mouse on the world map, while it is open
         auto mapGroundAt = [&](int W, int H, float x, float y, float& gx, float& gz) {
-            const float size = (float)terrain.size();
-            if (mapOpen) {
-                return minimapGround(WorldMapBox(worldMapArea(W, H), H / 720.0f), mapCx, mapCz, mapSpan, size, x, y, gx, gz);
-            }
-            // The sidebar covers the minimap, so a click on the sidebar is never a click on the minimap
-            if (sidebarFor(W, H, sidebarScroll).panel.contains(x, y)) return false;
-            return minimapGround(minimapFor(W, H).map, cam.focusX, cam.focusZ, MINIMAP_TILES, size, x, y, gx, gz);
+            if (!mapOpen) return false;
+            return mapGround(worldMapFor(W, H).map, mapCx, mapCz, mapSpan, (float)terrain.size(), x, y, gx, gz);
+        };
+        // The green X on the world map: where the last move order went, and how long it has left to show
+        auto markMove = [&](float x, float z) {
+            moveMarkX = x;
+            moveMarkZ = z;
+            moveMarkTime = MOVE_MARK_SECONDS;
         };
         // A move order to a ground point for the selected units, as a right click on the ground gives
         // The right button pressed on a point: the selected units walk straight at it while it is held, with the
@@ -3337,6 +3345,7 @@ int main(int, char**) {
             actionX = x;
             actionZ = z;
             actionAlpha = 1.0f;
+            markMove(x, z);
             steerUnits(world, units, Vec2{ x, z });
             playSfx(Sfx::UiOrder);
         };
@@ -3347,6 +3356,7 @@ int main(int, char**) {
             actionX = x;
             actionZ = z;
             actionAlpha = 1.0f;
+            markMove(x, z);
         };
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
@@ -3354,16 +3364,16 @@ int main(int, char**) {
                                   sidebarFor(W, H, sidebarScroll), true, x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
                 || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
-                || (!mapOpen && (minimapFor(W, H).map.contains(x, y) || minimapFor(W, H).compass.contains(x, y)))
+                || (mapOpen && worldMapFor(W, H).window.contains(x, y))
                 || (behaviorEditor.open
                     && renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, W, H).box.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
         };
-        // The point a held right button is over: the minimap or full map where the mouse is on it, or else the ground
-        // under the mouse. Over the panels, or over the full map away from its ground, there is none.
+        // The point a held right button is over: the world map's ground where the mouse is on it, or else the ground
+        // under the mouse. Over the panels, or over the world map window away from its ground, there is none.
         auto holdTarget = [&](int W, int H, float x, float y, float& gx, float& gz) {
             if (mapGroundAt(W, H, x, y, gx, gz)) return true;
-            if (mapOpen || overPanels(x, y, W, H)) return false;
+            if (overPanels(x, y, W, H)) return false;
             auto hit = pickGround(cam, terrain, x, y, W, H);
             if (!hit) return false;
             gx = hit->first;
@@ -3521,7 +3531,7 @@ int main(int, char**) {
             case SDL_EVENT_MOUSE_WHEEL: {
                 // The world map popout takes the wheel over everything under it
                 const bool wheelOverMap = mapOpen && screen == Screen::Playing
-                                          && worldMapArea(winW, winH).contains(e.wheel.mouse_x, e.wheel.mouse_y);
+                                          && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
                 if (panelOpen) {
                     // Scroll the save list, keeping the offset within range
                     int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
@@ -3557,16 +3567,20 @@ int main(int, char**) {
                     logOffset = std::clamp(logOffset + step, 0, combatLogPanel(winW, winH).maxOffset());
                 } else if (wheelOverMap) {
                     // Zooms the world map about the point under the mouse: wheel up zooms in, down zooms out
-                    const Rect box = WorldMapBox(worldMapArea(winW, winH), winH / 720.0f);
-                    const float fx = std::clamp((e.wheel.mouse_x - box.x) / box.w, 0.0f, 1.0f);
-                    const float fz = std::clamp((e.wheel.mouse_y - box.y) / box.h, 0.0f, 1.0f);
-                    const float oldSpan = mapSpan;
-                    const float gx = mapCx + oldSpan * 0.5f - fx * oldSpan;   // the ground under the mouse
-                    const float gz = mapCz + oldSpan * 0.5f - fz * oldSpan;
-                    const float size = (float)terrain.size();
-                    mapSpan = std::clamp(e.wheel.y > 0.0f ? oldSpan * 0.8f : oldSpan * 1.25f, std::min(64.0f, size), size);
-                    mapCx = gx - mapSpan * 0.5f + fx * mapSpan;
-                    mapCz = gz - mapSpan * 0.5f + fz * mapSpan;
+                    const Rect box = worldMapFor(winW, winH).map;
+                    const float px = std::clamp(e.wheel.mouse_x, box.x, box.x + box.w);
+                    const float py = std::clamp(e.wheel.mouse_y, box.y, box.y + box.h);
+                    const float oldK = mapTilesPerPixel(box, mapSpan);
+                    const float offX = box.x + box.w * 0.5f - px, offY = box.y + box.h * 0.5f - py;
+                    const float gx = mapCx + offX * oldK;   // the ground under the mouse
+                    const float gz = mapCz + offY * oldK;
+                    mapSpan = e.wheel.y > 0.0f ? mapSpan * 0.8f : mapSpan * 1.25f;
+                    float cx = mapCx, cz = mapCz;
+                    clampMapView(box, (float)terrain.size(), cx, cz, mapSpan);
+                    const float k = mapTilesPerPixel(box, mapSpan);
+                    mapCx = gx - offX * k;
+                    mapCz = gz - offY * k;
+                    clampMapView(box, (float)terrain.size(), mapCx, mapCz, mapSpan);
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list very slowly: a row for every SQUAD_WHEEL_NOTCHES_PER_ROW notches of the
                     // wheel. Turning the wheel the other way starts the count again.
@@ -3737,11 +3751,17 @@ int main(int, char**) {
                     }
                     break;
                 }
-                // With the world map open, only the panels take clicks; the ground and its units do not
-                if (screen == Screen::Playing && mapOpen && !overPanels(e.button.x, e.button.y, winW, winH)) {
-                    // With the world map open, a right click on the map is a move order; the rest is dropped
+                // The world map window is over everything, and a click inside it is its own: the X closes it, and a right
+                // click on the map is a move order to that point. Outside the window, clicks go on as if it were shut.
+                if (screen == Screen::Playing && mapOpen && worldMapFor(winW, winH).window.contains(e.button.x, e.button.y)) {
+                    const WorldMapLayout wm = worldMapFor(winW, winH);
                     float mgx = 0.0f, mgz = 0.0f;
-                    if (e.button.button == SDL_BUTTON_RIGHT && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
+                    if (e.button.button == SDL_BUTTON_LEFT && wm.close.contains(e.button.x, e.button.y)) {
+                        mapOpen = false;
+                        playSfx(Sfx::UiClick);
+                    } else if (e.button.button == SDL_BUTTON_RIGHT && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
+                        contextMenu.open = false;
+                        itemMenu.open = false;
                         beginRightHold(mgx, mgz);
                     }
                     break;
@@ -3895,27 +3915,6 @@ int main(int, char**) {
                                 break;
                             }
                         }
-                        break;
-                    }
-                }
-                // The expand button, on the minimap or on the full map it expands into
-                if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
-                    const float x = e.button.x, y = e.button.y;
-                    const bool hit = mapOpen ? mapToggleOf(worldMapArea(winW, winH), winH / 720.0f).contains(x, y)
-                                             : (minimapFor(winW, winH).toggle.contains(x, y) && !panelsCover(winW, winH, x, y));
-                    if (hit) {
-                        mapOpen = !mapOpen;
-                        break;
-                    }
-                }
-                // The world map popout is over everything: its top and right edges resize it, and a click inside it
-                // never reaches the panels or the ground under it
-                if (screen == Screen::Playing && mapOpen) {
-                    const float x = e.button.x, y = e.button.y;
-                    const Rect m = worldMapArea(winW, winH);
-                    if (m.contains(x, y)) {
-                        float mgx = 0.0f, mgz = 0.0f;
-                        if (e.button.button == SDL_BUTTON_RIGHT && mapGroundAt(winW, winH, x, y, mgx, mgz)) beginRightHold(mgx, mgz);
                         break;
                     }
                 }
@@ -4374,7 +4373,7 @@ int main(int, char**) {
                     break;
                 }
                 if (screen == Screen::Playing) {
-                    const bool onMap = mapOpen && worldMapArea(winW, winH).contains(e.motion.x, e.motion.y);
+                    const bool onMap = mapOpen && worldMapFor(winW, winH).window.contains(e.motion.x, e.motion.y);
                     setGrabCursor(onMap ? 0 : grabAt(winW, winH, e.motion.x, e.motion.y).second);
                 }
                 // A slider follows the mouse while its button is held
@@ -4477,10 +4476,12 @@ int main(int, char**) {
             actionX = holdX;
             actionZ = holdZ;
             actionAlpha = 1.0f;
+            markMove(holdX, holdZ);
         } else {
             rightHold = false;
             actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
         }
+        moveMarkTime = std::max(0.0f, moveMarkTime - dt);
 
         // Game messages written outside a fight (XP, pickups, drops) join the log every frame
         flushQueuedLog(combatLog);
@@ -4870,16 +4871,14 @@ int main(int, char**) {
                 mapSpan = 0.0f;
             } else {
                 const float size = (float)terrain.size();
+                const Rect box = worldMapFor(winW, winH).map;
                 if (mapSpan <= 0.0f) {
-                    mapSpan = size;
+                    mapSpan = mapMaxSpan(box, size);
                     mapCx = size * 0.5f;
                     mapCz = size * 0.5f;
                 }
                 // From one chunk across to the whole level
-                mapSpan = std::clamp(mapSpan, std::min(64.0f, size), size);
-                const float half = mapSpan * 0.5f;
-                mapCx = std::clamp(mapCx, half, size - half);
-                mapCz = std::clamp(mapCz, half, size - half);
+                clampMapView(box, size, mapCx, mapCz, mapSpan);
             }
             renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
             renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
@@ -4887,13 +4886,12 @@ int main(int, char**) {
             // In-game panels, drawn over the world: item names while Alt is held, the unit list along the
             // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
             renderer.beginUi(winW, winH);
-            // Every player unit is a green dot on the minimap and the world map
+            // The world map's marks: every prop of any kind as a purple square, every player unit as a green dot and
+            // the other units as red or gray dots
             std::vector<MapDot> mapDots;
-            // Resource props first, as small orange-yellow dots, so the units' dots draw over them
             for (Entity e : world.view<Prop, Transform>()) {
-                if (propInfo(world.get<Prop>(e)->kind).use != PropUse::Resource) continue;
                 const Transform* t = world.get<Transform>(e);
-                mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Resource });
+                mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Prop });
             }
             for (Entity e : world.view<Unit, Transform>()) {
                 const Transform* t = world.get<Transform>(e);
@@ -4942,18 +4940,6 @@ int main(int, char**) {
                 const Entity hovered = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH, false);
                 if (hovered != NULL_ENTITY) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
             }
-            // The minimap and clock draw over the names and labels
-            if (!mapOpen) {
-                const MinimapLayout mm = minimapFor(winW, winH);
-                renderer.drawMinimap(mm.map, mapDots, cam.focusX, cam.focusZ, MINIMAP_TILES);
-                renderer.drawCompass(mm.compass, cam.bearingDegrees());
-                renderer.drawMinimapToggle(mm.toggle, false);
-            }
-            {
-                const MinimapLayout mm = minimapFor(winW, winH);
-                renderer.drawClock(formatTime(gs.clockSeconds), formatYmd(gs.clockSeconds),
-                                   mm.map.x + mm.map.w, mm.clockTop, winH);
-            }
             {
                 const std::vector<Entity> own = ownUnitList();
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
@@ -4962,7 +4948,14 @@ int main(int, char**) {
                 // The combat log, bottom left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);
                 logOffset = cl.offset;
-                renderer.drawCombatLog(cl, infoLines(combatLog, infoTab, logFilter), logFilter, mouseX, mouseY);
+                InfoTime timeInfo;
+                if (infoTab == 2) {
+                    timeInfo.clock = formatTime(gs.clockSeconds);
+                    timeInfo.date = formatDate(gs.clockSeconds);
+                    timeInfo.ymd = formatYmd(gs.clockSeconds);
+                    timeInfo.days = langf("UILABEL_DAYS_PASSED", { std::to_string(dayIndexOf(gs.clockSeconds)) });
+                }
+                renderer.drawCombatLog(cl, infoLines(combatLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
                 // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
                 // are only shown: the mouse handling never starts a drag or a menu on them.
                 const Entity shown = sidebarUnitOf(world);
@@ -5063,9 +5056,14 @@ int main(int, char**) {
             }
             // The world map popout is over everything, the panels included
             if (mapOpen) {
-                const Rect area = worldMapArea(winW, winH);
-                renderer.drawWorldMap(area, mapDots, mapCx, mapCz, mapSpan);
-                renderer.drawMinimapToggle(mapToggleOf(area, winH / 720.0f), true);
+                WorldMapMarks marks;
+                marks.camX = cam.focusX;
+                marks.camZ = cam.focusZ;
+                marks.camYaw = cam.yaw;
+                marks.moveX = moveMarkX;
+                marks.moveZ = moveMarkZ;
+                marks.moveAlpha = std::clamp(moveMarkTime, 0.0f, 1.0f);   // the last second fades it out
+                renderer.drawWorldMap(worldMapFor(winW, winH), mapDots, mapCx, mapCz, mapSpan, marks);
             }
             // The talk box, over everything. It ends if the unit it is with is gone.
             if (dialogueUnit != NULL_ENTITY) {

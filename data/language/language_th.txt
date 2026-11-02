@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	ลากหรือคลิกขวาที่น�
 UILABEL_SINGLE	ทีละชิ้น
 UILABEL_MAX	สูงสุด
 UILABEL_SORT	เรียงลำดับ
-UILABEL_WORLD_MAP_HINT	แผนที่โลก เลื่อนเมาส์เพื่อซูม กด M หรือ Esc เพื่อปิด
+UILABEL_WORLD_MAP	แผนที่โลก
+UILABEL_WORLD_MAP_HINT	เลื่อนเพื่อซูม คลิกขวาเพื่อเดินไปที่นั่น กด M หรือ Escape เพื่อปิด
+UILABEL_DAYS_PASSED	วันที่ผ่านไป: {0}
 UILABEL_NO_UNIT_SELECTED	ยังไม่ได้เลือกยูนิต
 UILABEL_UNNAMED_UNIT	ยูนิตที่ไม่มีชื่อ
 UILABEL_NO_NAME	ไม่มีชื่อ
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	จอภาพ {0}
 MISC_GAINS_XP	{0} ได้รับ {1} {2} EXP จาก {3}
 UILABEL_PAUSE_HINT	(กดเว้นวรรคเพื่อกลับสู่เกม)
 MISC_DRINKS	{0} ดื่ม {1}
-UILABEL_COMPASS_N	เหนือ
-UILABEL_COMPASS_E	ออก
-UILABEL_COMPASS_S	ใต้
-UILABEL_COMPASS_W	ตก
 ITEM_1_NAME	แร่เหล็ก
 ITEM_1_DESC	แร่ดิบที่สามารถหลอมเป็นแท่งเหล็กได้
 ITEM_2_NAME	ท่อนไม้โอ๊ก

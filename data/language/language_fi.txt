@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Vedä tai napsauta hiiren oikealla painikkeella omia es
 UILABEL_SINGLE	Yksi
 UILABEL_MAX	Enimmäismäärä
 UILABEL_SORT	Lajittele
-UILABEL_WORLD_MAP_HINT	Maailmankartta. Zoomaa vierittämällä. Sulje painamalla M tai Esc.
+UILABEL_WORLD_MAP	Maailmankartta
+UILABEL_WORLD_MAP_HINT	Vieritä zoomataksesi. Napsauta hiiren oikealla siirtyäksesi sinne. Sulje painamalla M tai Esc.
+UILABEL_DAYS_PASSED	Päiviä kulunut: {0}
 UILABEL_NO_UNIT_SELECTED	Yksikköä ei ole valittu
 UILABEL_UNNAMED_UNIT	Nimetön yksikkö
 UILABEL_NO_NAME	Ei nimeä
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Näyttö {0}
 MISC_GAINS_XP	{0} saa {1} {2} kokemuspistettä: {3}
 UILABEL_PAUSE_HINT	(Jatka välilyönnillä.)
 MISC_DRINKS	{0} juo {1}
-UILABEL_COMPASS_N	P
-UILABEL_COMPASS_E	I
-UILABEL_COMPASS_S	E
-UILABEL_COMPASS_W	L
 ITEM_1_NAME	Rautamalmi
 ITEM_1_DESC	Raakamalmi, joka voidaan sulattaa rautaharkoiksi.
 ITEM_2_NAME	Tammipuu

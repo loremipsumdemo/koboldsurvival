@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Dra hit eller högerklicka för att lägga till dina f�
 UILABEL_SINGLE	Enkel
 UILABEL_MAX	Max
 UILABEL_SORT	Sortera
-UILABEL_WORLD_MAP_HINT	Världskarta. Rulla för att zooma. Tryck M eller Esc för att stänga.
+UILABEL_WORLD_MAP	Världskarta
+UILABEL_WORLD_MAP_HINT	Scrolla för att zooma. Högerklicka för att gå dit. Tryck M eller Escape för att stänga.
+UILABEL_DAYS_PASSED	Dagar som gått: {0}
 UILABEL_NO_UNIT_SELECTED	Ingen enhet vald
 UILABEL_UNNAMED_UNIT	Namnlös enhet
 UILABEL_NO_NAME	Inget namn
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Bildskärm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfarenhet för {3}
 UILABEL_PAUSE_HINT	(Tryck mellanslag för att återuppta.)
 MISC_DRINKS	{0} dricker {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	Ö
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	V
 ITEM_1_NAME	Järnmalm
 ITEM_1_DESC	Rå malm som kan smältas till järnbarrar.
 ITEM_2_NAME	Ekstock

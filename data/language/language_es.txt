@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Arrastra o haz clic derecho en tus objetos de tu invent
 UILABEL_SINGLE	Uno
 UILABEL_MAX	Máx.
 UILABEL_SORT	Ordenar
-UILABEL_WORLD_MAP_HINT	Mapa del mundo. Desplázate para acercar. Pulsa M o Escape para cerrar.
+UILABEL_WORLD_MAP	Mapa del mundo
+UILABEL_WORLD_MAP_HINT	Desplaza para hacer zoom. Clic derecho para ir allí. Pulsa M o Escape para cerrar.
+UILABEL_DAYS_PASSED	Días transcurridos: {0}
 UILABEL_NO_UNIT_SELECTED	Ninguna unidad seleccionada
 UILABEL_UNNAMED_UNIT	Unidad sin nombre
 UILABEL_NO_NAME	Sin nombre
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gana {1} XP de {2} por {3}
 UILABEL_PAUSE_HINT	(Usa la barra espaciadora para reanudar.)
 MISC_DRINKS	{0} bebe {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	O
 ITEM_1_NAME	Mineral de hierro
 ITEM_1_DESC	Mineral en bruto que puede fundirse en lingotes de hierro.
 ITEM_2_NAME	Tronco de roble

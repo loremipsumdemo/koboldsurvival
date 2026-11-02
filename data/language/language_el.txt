@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Σύρε ή κάνε δεξί κλικ στα δικά 
 UILABEL_SINGLE	Μονό
 UILABEL_MAX	Μέγιστο
 UILABEL_SORT	Ταξινόμηση
-UILABEL_WORLD_MAP_HINT	Χάρτης κόσμου. Κύλισε για ζουμ. Πάτα M ή Esc για κλείσιμο.
+UILABEL_WORLD_MAP	Παγκόσμιος χάρτης
+UILABEL_WORLD_MAP_HINT	Κύλιση για ζουμ. Δεξί κλικ για μετακίνηση εκεί. Πατήστε M ή Escape για κλείσιμο.
+UILABEL_DAYS_PASSED	Ημέρες που πέρασαν: {0}
 UILABEL_NO_UNIT_SELECTED	Δεν έχει επιλεγεί μονάδα
 UILABEL_UNNAMED_UNIT	Ανώνυμη μονάδα
 UILABEL_NO_NAME	Χωρίς όνομα
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Οθόνη {0}
 MISC_GAINS_XP	Ο/Η {0} κερδίζει {1} {2} εμπειρία για {3}
 UILABEL_PAUSE_HINT	(Πάτα το διάστημα για να συνεχίσεις.)
 MISC_DRINKS	Ο/Η {0} πίνει {1}
-UILABEL_COMPASS_N	Β
-UILABEL_COMPASS_E	Α
-UILABEL_COMPASS_S	Ν
-UILABEL_COMPASS_W	Δ
 ITEM_1_NAME	Μετάλλευμα σιδήρου
 ITEM_1_DESC	Ακατέργαστο μετάλλευμα που μπορεί να τηχθεί σε σιδερένιους ράβδους.
 ITEM_2_NAME	Κορμός βελανιδιάς

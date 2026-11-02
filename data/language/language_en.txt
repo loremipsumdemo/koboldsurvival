@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Drag or right-click your items from your inventory here
 UILABEL_SINGLE	Single
 UILABEL_MAX	Max
 UILABEL_SORT	Sort
-UILABEL_WORLD_MAP_HINT	World map. Scroll to zoom. Press M or Escape to close.
+UILABEL_WORLD_MAP	World Map
+UILABEL_WORLD_MAP_HINT	Scroll to zoom. Right-click to move there. Press M or Escape to close.
+UILABEL_DAYS_PASSED	Days passed: {0}
 UILABEL_NO_UNIT_SELECTED	No unit selected
 UILABEL_UNNAMED_UNIT	Unnamed Unit
 UILABEL_NO_NAME	No name
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
 UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
 MISC_DRINKS	{0} drinks {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	W
 ITEM_1_NAME	Iron Ore
 ITEM_1_DESC	Raw ore that can be smelted into iron ingots.
 ITEM_2_NAME	Oak Log

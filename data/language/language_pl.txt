@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Przeciągnij tutaj lub kliknij prawym, aby dodać swoje
 UILABEL_SINGLE	Pojedynczo
 UILABEL_MAX	Maks.
 UILABEL_SORT	Sortuj
-UILABEL_WORLD_MAP_HINT	Mapa świata. Przewiń, aby przybliżyć. Naciśnij M lub Esc, aby zamknąć.
+UILABEL_WORLD_MAP	Mapa świata
+UILABEL_WORLD_MAP_HINT	Przewiń, aby przybliżyć. Prawy przycisk, aby tam iść. Naciśnij M lub Esc, aby zamknąć.
+UILABEL_DAYS_PASSED	Minione dni: {0}
 UILABEL_NO_UNIT_SELECTED	Nie wybrano jednostki
 UILABEL_UNNAMED_UNIT	Jednostka bez nazwy
 UILABEL_NO_NAME	Bez nazwy
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} zdobywa {1} {2} doświadczenia za {3}
 UILABEL_PAUSE_HINT	(Naciśnij spację, aby wznowić.)
 MISC_DRINKS	{0} pije {1}
-UILABEL_COMPASS_N	P
-UILABEL_COMPASS_E	W
-UILABEL_COMPASS_S	Pd
-UILABEL_COMPASS_W	Z
 ITEM_1_NAME	Ruda żelaza
 ITEM_1_DESC	Surowa ruda, którą można przetopić na sztabki żelaza.
 ITEM_2_NAME	Dębowe drewno

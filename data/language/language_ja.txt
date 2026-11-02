@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	自分の所持品をここへドラッグ、または�
 UILABEL_SINGLE	単体
 UILABEL_MAX	最大
 UILABEL_SORT	並べ替え
-UILABEL_WORLD_MAP_HINT	ワールドマップ。スクロールで拡大縮小。M または Esc で閉じます。
+UILABEL_WORLD_MAP	ワールドマップ
+UILABEL_WORLD_MAP_HINT	スクロールで拡大縮小。右クリックでその地点へ移動。M または Esc で閉じます。
+UILABEL_DAYS_PASSED	経過日数：{0}
 UILABEL_NO_UNIT_SELECTED	ユニットが選択されていません
 UILABEL_UNNAMED_UNIT	名無しのユニット
 UILABEL_NO_NAME	名前なし
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	モニター {0}
 MISC_GAINS_XP	{0} は {3} で {1} {2} の経験値を得る
 UILABEL_PAUSE_HINT	（スペースキーで再開します。）
 MISC_DRINKS	{0} が {1} を飲む
-UILABEL_COMPASS_N	北
-UILABEL_COMPASS_E	東
-UILABEL_COMPASS_S	南
-UILABEL_COMPASS_W	西
 ITEM_1_NAME	鉄鉱石
 ITEM_1_DESC	製錬して鉄のインゴットにできる原石。
 ITEM_2_NAME	オークの丸太

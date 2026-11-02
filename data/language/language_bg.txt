@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Плъзнете или щракнете с десни�
 UILABEL_SINGLE	Един
 UILABEL_MAX	Макс.
 UILABEL_SORT	Сортиране
-UILABEL_WORLD_MAP_HINT	Карта на света. Превъртете, за да увеличите. Натиснете M или Esc, за да затворите.
+UILABEL_WORLD_MAP	Карта на света
+UILABEL_WORLD_MAP_HINT	Превъртете за мащабиране. Десен бутон за придвижване дотам. Натиснете M или Esc за затваряне.
+UILABEL_DAYS_PASSED	Изминали дни: {0}
 UILABEL_NO_UNIT_SELECTED	Няма избрана единица
 UILABEL_UNNAMED_UNIT	Безименна единица
 UILABEL_NO_NAME	Без име
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Монитор {0}
 MISC_GAINS_XP	{0} получава {1} {2} ОО за {3}
 UILABEL_PAUSE_HINT	(Натиснете интервал, за да продължите.)
 MISC_DRINKS	{0} пие {1}
-UILABEL_COMPASS_N	С
-UILABEL_COMPASS_E	И
-UILABEL_COMPASS_S	Ю
-UILABEL_COMPASS_W	З
 ITEM_1_NAME	Желязна руда
 ITEM_1_DESC	Суровата руда, която може да се претопи в железни блокове.
 ITEM_2_NAME	Дънер от дъб

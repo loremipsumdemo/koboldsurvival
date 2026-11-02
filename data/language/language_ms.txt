@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Seret atau klik kanan barang anda dari inventori anda k
 UILABEL_SINGLE	Satu
 UILABEL_MAX	Maks
 UILABEL_SORT	Isih
-UILABEL_WORLD_MAP_HINT	Peta dunia. Tatal untuk zum. Tekan M atau Esc untuk tutup.
+UILABEL_WORLD_MAP	Peta Dunia
+UILABEL_WORLD_MAP_HINT	Tatal untuk zum. Klik kanan untuk bergerak ke sana. Tekan M atau Escape untuk menutup.
+UILABEL_DAYS_PASSED	Hari berlalu: {0}
 UILABEL_NO_UNIT_SELECTED	Tiada unit dipilih
 UILABEL_UNNAMED_UNIT	Unit tanpa nama
 UILABEL_NO_NAME	Tiada nama
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} mendapat {1} {2} XP untuk {3}
 UILABEL_PAUSE_HINT	(Tekan bar ruang untuk menyambung semula.)
 MISC_DRINKS	{0} minum {1}
-UILABEL_COMPASS_N	U
-UILABEL_COMPASS_E	T
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	B
 ITEM_1_NAME	Bijih Besi
 ITEM_1_DESC	Bijih mentah yang boleh dilebur menjadi jongkong besi.
 ITEM_2_NAME	Balak Oak

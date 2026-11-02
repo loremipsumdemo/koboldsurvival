@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Deine Gegenstände aus deinem Inventar hierher ziehen o
 UILABEL_SINGLE	Einzeln
 UILABEL_MAX	Max
 UILABEL_SORT	Sortieren
-UILABEL_WORLD_MAP_HINT	Weltkarte. Scrollen zum Zoomen. M oder Esc drücken, um zu schließen.
+UILABEL_WORLD_MAP	Weltkarte
+UILABEL_WORLD_MAP_HINT	Scrollen zum Zoomen. Rechtsklick, um dorthin zu gehen. M oder Esc drücken, um zu schließen.
+UILABEL_DAYS_PASSED	Vergangene Tage: {0}
 UILABEL_NO_UNIT_SELECTED	Keine Einheit ausgewählt
 UILABEL_UNNAMED_UNIT	Namenlose Einheit
 UILABEL_NO_NAME	Kein Name
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} erhält {1} {2} XP für {3}
 UILABEL_PAUSE_HINT	(Leertaste zum Fortsetzen.)
 MISC_DRINKS	{0} trinkt {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	O
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	W
 ITEM_1_NAME	Eisenerz
 ITEM_1_DESC	Rohes Erz, das zu Eisenbarren geschmolzen werden kann.
 ITEM_2_NAME	Eichenstamm

@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Glissez ou faites un clic droit sur vos objets ici
 UILABEL_SINGLE	Un
 UILABEL_MAX	Max
 UILABEL_SORT	Trier
-UILABEL_WORLD_MAP_HINT	Carte du monde. Faites défiler pour zoomer. Appuyez sur M ou Échap pour fermer.
+UILABEL_WORLD_MAP	Carte du monde
+UILABEL_WORLD_MAP_HINT	Molette pour zoomer. Clic droit pour s'y rendre. Appuyez sur M ou Échap pour fermer.
+UILABEL_DAYS_PASSED	Jours écoulés : {0}
 UILABEL_NO_UNIT_SELECTED	Aucune unité sélectionnée
 UILABEL_UNNAMED_UNIT	Unité sans nom
 UILABEL_NO_NAME	Sans nom
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Écran {0}
 MISC_GAINS_XP	{0} gagne {1} XP en {2} pour {3}
 UILABEL_PAUSE_HINT	(Utilisez la barre d'espace pour reprendre.)
 MISC_DRINKS	{0} boit {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	O
 ITEM_1_NAME	Minerai de fer
 ITEM_1_DESC	Minerai brut qui peut être fondu en lingots de fer.
 ITEM_2_NAME	Bûche de chêne

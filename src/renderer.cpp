@@ -2116,62 +2116,171 @@ void Renderer::drawDot(float cx, float cy, float d) {
     drawUiQuad(dotTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-void Renderer::drawMinimap(const Rect& r, const std::vector<MapDot>& dots, float cx, float cz, float span) {
+// The world map window. Every shape on the map is drawn in window pixels with drawUiTris.
+void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
+                            const WorldMapMarks& marks) {
     pollOverview();
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    drawRect(Rect{ r.x - 2.0f * s, r.y - 2.0f * s, r.w + 4.0f * s, r.h + 4.0f * s }, RGBA{ 0.02f, 0.02f, 0.03f, 0.9f });
-    drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });   // sea, where the window is past the edge of the level
-    if (span <= 0.0f) return;
+    const RGBA black{ 0.0f, 0.0f, 0.0f, 1.0f };
+    const Rect& w = L.window;
+    const Rect& r = L.map;
 
-    // The window in tiles. Its left edge is the largest x and its top edge the largest z.
-    const float xHi = cx + span * 0.5f, xLo = cx - span * 0.5f;
+    // The window: a pink edge, a dark body, the title bar with its X, and the help line at the foot
+    drawRect(Rect{ w.x - 1.5f * s, w.y - 1.5f * s, w.w + 3.0f * s, w.h + 3.0f * s }, theme::alpha(theme::PINK, 0.95f));
+    drawRect(w, RGBA{ 0.04f, 0.03f, 0.07f, 0.97f });
+    drawTitleBar(L.bar, ICON_NONE, lang("UILABEL_WORLD_MAP"));
+    drawCloseButton(L.close);
+    {
+        const std::string hint = fitText(lang("UILABEL_WORLD_MAP_HINT"), L.hint.w - 16.0f * s, false);
+        drawListText(hint, L.hint.x + 8.0f * s, L.hint.y + (L.hint.h - listTextHeight("Ag")) * 0.5f,
+                     RGBA{ 0.85f, 0.85f, 0.9f, 1.0f });
+    }
+
+    drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });   // sea, where the view is past the edge of the level
+    if (span <= 0.0f || r.w <= 0.0f || r.h <= 0.0f) return;
+
+    // The view in tiles. Its left edge is the largest x and its top edge the largest z.
+    const float across = mapSpanAcross(r, span);
+    const float xHi = cx + across * 0.5f, xLo = cx - across * 0.5f;
     const float zHi = cz + span * 0.5f, zLo = cz - span * 0.5f;
-    auto sx = [&](float x) { return r.x + (xHi - x) / span * r.w; };
+    auto sx = [&](float x) { return r.x + (xHi - x) / across * r.w; };
     auto sy = [&](float z) { return r.y + (zHi - z) / span * r.h; };
 
     if (overviewTex_ && overviewSize_ > 0.0f) {
         const float size = overviewSize_, ext = overviewExtent_;
         auto u = [&](float x) { return (size - x) / ext; };
         auto v = [&](float z) { return (size - z) / ext; };
-        // The part of the window inside the level
+        // The part of the view inside the level
         const float ax = std::min(xHi, size), bx = std::max(xLo, 0.0f);
         const float az = std::min(zHi, size), bz = std::max(zLo, 0.0f);
         if (ax > bx && az > bz) drawUiQuad(overviewTex_, sx(ax), sy(az), sx(bx), sy(bz), u(ax), v(az), u(bx), v(bz), white);
     }
 
-    const float d = std::max(5.0f, r.w * 0.045f);
+    // A thick line from one point to another, its ends pushed out by half its width so corners meet
+    std::vector<UiVert> tris;
+    auto line = [&](float x0, float y0, float x1, float y1, float width, RGBA c) {
+        const float dx = x1 - x0, dy = y1 - y0, len = std::sqrt(dx * dx + dy * dy);
+        if (len <= 0.0f) return;
+        const float ux = dx / len, uy = dy / len, h = width * 0.5f;
+        const float nx = -uy * h, ny = ux * h;
+        x0 -= ux * h; y0 -= uy * h; x1 += ux * h; y1 += uy * h;
+        tris.insert(tris.end(), { { x0 + nx, y0 + ny, c }, { x1 + nx, y1 + ny, c }, { x1 - nx, y1 - ny, c },
+                                  { x0 + nx, y0 + ny, c }, { x1 - nx, y1 - ny, c }, { x0 - nx, y0 - ny, c } });
+    };
+    // A ring of the given radius and width
+    auto ring = [&](float x, float y, float radius, float width, RGBA c) {
+        const int segs = 32;
+        const float rIn = radius - width * 0.5f, rOut = radius + width * 0.5f;
+        for (int i = 0; i < segs; ++i) {
+            const float a0 = 6.2831853f * i / segs, a1 = 6.2831853f * (i + 1) / segs;
+            const float c0 = std::cos(a0), s0 = std::sin(a0), c1 = std::cos(a1), s1 = std::sin(a1);
+            tris.insert(tris.end(), { { x + c0 * rIn, y + s0 * rIn, c }, { x + c0 * rOut, y + s0 * rOut, c },
+                                      { x + c1 * rOut, y + s1 * rOut, c }, { x + c0 * rIn, y + s0 * rIn, c },
+                                      { x + c1 * rOut, y + s1 * rOut, c }, { x + c1 * rIn, y + s1 * rIn, c } });
+        }
+    };
+    auto square = [&](float x, float y, float side, RGBA c) {
+        const float h = side * 0.5f;
+        tris.insert(tris.end(), { { x - h, y - h, c }, { x + h, y - h, c }, { x + h, y + h, c },
+                                  { x - h, y - h, c }, { x + h, y + h, c }, { x - h, y + h, c } });
+    };
+    auto inMap = [&](float px, float py) { return r.contains(px, py); };
+
+    // Every prop, of any kind: a purple square with a black edge, under the units
+    const RGBA purple{ 0.62f, 0.25f, 0.88f, 1.0f };
+    const float propSide = std::max(4.0f, 6.0f * s);
     for (const MapDot& dot : dots) {
-        const Vec2& p = dot.at;
-        if (p.x < xLo || p.x > xHi || p.z < zLo || p.z > zHi) continue;
+        if (dot.kind != MapDotKind::Prop) continue;
+        const float px = sx(dot.at.x), py = sy(dot.at.z);
+        if (!inMap(px, py)) continue;
+        square(px, py, propSide + 2.0f * std::max(1.0f, s), black);
+        square(px, py, propSide, purple);
+    }
+    drawUiTris(tris);
+    tris.clear();
+
+    // The units: a green dot for the player's, the white dot tinted red or gray, with its black ring, for the rest
+    const float d = std::max(6.0f, 9.0f * s);
+    for (const MapDot& dot : dots) {
+        if (dot.kind == MapDotKind::Prop) continue;
+        const float px = sx(dot.at.x), py = sy(dot.at.z);
+        if (!inMap(px, py)) continue;
         if (dot.kind == MapDotKind::Player) {
-            drawDot(sx(p.x), sy(p.z), d);
+            drawDot(px, py, d);
             continue;
         }
-        // Red and gray dots: the white dot tinted, with its black ring
         if (!dotWhiteTex_) dotWhiteTex_ = MakeDotTexture(true);
-        const RGBA tint = dot.kind == MapDotKind::Hostile    ? RGBA{ 1.0f, 0.25f, 0.25f, 1.0f }
-                        : dot.kind == MapDotKind::Resource ? RGBA{ 0.91f, 0.65f, 0.24f, 1.0f }   // orange-yellow
-                                                           : RGBA{ 0.6f, 0.6f, 0.6f, 1.0f };
-        const float cx = sx(p.x), cy = sy(p.z), h = d * (dot.kind == MapDotKind::Resource ? 0.35f : 0.5f);
-        drawUiQuad(dotWhiteTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
+        const RGBA tint = dot.kind == MapDotKind::Hostile ? RGBA{ 1.0f, 0.25f, 0.25f, 1.0f } : RGBA{ 0.6f, 0.6f, 0.6f, 1.0f };
+        const float h = d * 0.5f;
+        drawUiQuad(dotWhiteTex_, px - h, py - h, px + h, py + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
     }
+
+    const float edge = std::max(1.0f, 1.0f * s);   // the black edge around each line
+    // The green X where the last move order went, fading out
+    if (marks.moveAlpha > 0.0f) {
+        const float px = sx(marks.moveX), py = sy(marks.moveZ);
+        if (inMap(px, py)) {
+            const float h = 6.0f * s, lw = std::max(2.0f, 2.5f * s);
+            const RGBA k{ 0.0f, 0.0f, 0.0f, marks.moveAlpha };
+            const RGBA g{ 0.30f, 1.0f, 0.30f, marks.moveAlpha };
+            line(px - h, py - h, px + h, py + h, lw + 2.0f * edge, k);
+            line(px - h, py + h, px + h, py - h, lw + 2.0f * edge, k);
+            line(px - h, py - h, px + h, py + h, lw, g);
+            line(px - h, py + h, px + h, py - h, lw, g);
+        }
+    }
+
+    // The camera's pivot: a hollow ring round the point the camera turns about, and a hollow triangle over it pointing
+    // the way the camera looks. On the map the larger x is to the left and the larger z to the top, so the camera's
+    // ground direction (-sin yaw, -cos yaw) points along (sin yaw, cos yaw) in window pixels.
+    {
+        const float px = sx(marks.camX), py = sy(marks.camZ);
+        if (inMap(px, py)) {
+            const float rad = 7.0f * s, lw = std::max(1.5f, 1.5f * s);
+            const float fx = std::sin(marks.camYaw), fy = std::cos(marks.camYaw);   // ahead
+            const float qx = -fy, qy = fx;                                            // to one side
+            auto at = [&](float ahead, float side, float& ox, float& oy) {
+                ox = px + fx * ahead * rad + qx * side * rad;
+                oy = py + fy * ahead * rad + qy * side * rad;
+            };
+            float ax, ay, bx, by, cx2, cy2;
+            at(2.1f, 0.0f, ax, ay);      // the tip
+            at(-0.45f, 1.8f, bx, by);    // the base corners
+            at(-0.45f, -1.8f, cx2, cy2);
+            const RGBA yellow{ 1.0f, 0.86f, 0.18f, 1.0f };
+            for (int pass = 0; pass < 2; ++pass) {
+                const RGBA c = pass == 0 ? black : yellow;
+                const float wdt = pass == 0 ? lw + 2.0f * edge : lw;
+                line(ax, ay, bx, by, wdt, c);
+                line(bx, by, cx2, cy2, wdt, c);
+                line(cx2, cy2, ax, ay, wdt, c);
+                ring(px, py, rad, wdt, c);
+            }
+        }
+    }
+    drawUiTris(tris);
 }
 
-// The world map: the part of the level `span` tiles wide centred on cx, cz, in the square under the title
-void Renderer::drawWorldMap(const Rect& area, const std::vector<MapDot>& dots, float cx, float cz, float span) {
+// The X at the right end of a window's title bar, framed like the [-] and [+] buttons
+void Renderer::drawCloseButton(const Rect& r) {
     const float s = uiH_ / 720.0f;
-    drawRect(area, RGBA{ 0.0f, 0.0f, 0.02f, 0.72f });
-    drawListText(lang("UILABEL_WORLD_MAP_HINT"), area.x + 28.0f * s, area.y + 8.0f * s,
-                 RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    drawMinimap(WorldMapBox(area, s), dots, cx, cz, span);
-}
-
-void Renderer::drawMinimapToggle(const Rect& r, bool open) {
-    drawRect(r, RGBA{ 0.05f, 0.035f, 0.08f, 0.85f });
-    const char* sym = open ? "-" : "+";
-    const float tw = listTextWidth(sym), th = listTextHeight(sym);
-    drawListText(sym, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    const bool hot = r.contains(mouseX_, mouseY_);
+    if (hot) noteHover(r);
+    drawRect(r, theme::alpha(theme::PINK, 0.9f));
+    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
+             hot ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.95f));
+    const float m = r.w * 0.3f, lw = std::max(1.5f, 1.5f * s);
+    const RGBA c{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const float x0 = r.x + m, y0 = r.y + m, x1 = r.x + r.w - m, y1 = r.y + r.h - m;
+    auto line = [&](float ax, float ay, float bx, float by) {
+        const float dx = bx - ax, dy = by - ay, len = std::sqrt(dx * dx + dy * dy);
+        const float nx = -dy / len * lw * 0.5f, ny = dx / len * lw * 0.5f;
+        drawUiTris({ { ax + nx, ay + ny, c }, { bx + nx, by + ny, c }, { bx - nx, by - ny, c },
+                     { ax + nx, ay + ny, c }, { bx - nx, by - ny, c }, { ax - nx, ay - ny, c } });
+    };
+    line(x0, y0, x1, y1);
+    line(x0, y1, x1, y0);
 }
 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
@@ -2890,32 +2999,6 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     btn(L.confirm, lang("UILABEL_CONFIRM"), true);
     btn(L.cancel, lang("UILABEL_CANCEL"), true);
     (void)s;
-}
-
-void Renderer::drawCompass(const Rect& r, float bearingDeg) {
-    const float s = uiH_ / 720.0f;
-    drawRect(Rect{ r.x - 2.0f * s, r.y - 2.0f * s, r.w + 4.0f * s, r.h + 4.0f * s }, RGBA{ 0.02f, 0.02f, 0.03f, 0.9f });
-    drawRect(r, RGBA{ 0.05f, 0.035f, 0.075f, 0.8f });
-
-    // The strip shows 60 degrees either side of the bearing, a tick every 15 degrees and a letter every 90
-    const float half = 60.0f;
-    const float perDeg = r.w / (2.0f * half);
-    const float cx = r.x + r.w * 0.5f;
-    const std::string names[4] = { lang("UILABEL_COMPASS_N"), lang("UILABEL_COMPASS_E"), lang("UILABEL_COMPASS_S"), lang("UILABEL_COMPASS_W") };
-    for (int a = 0; a < 360; a += 15) {
-        const float d = std::fmod(static_cast<float>(a) - bearingDeg + 540.0f, 360.0f) - 180.0f;
-        if (std::fabs(d) > half) continue;
-        const float x = cx + d * perDeg;
-        const bool major = a % 90 == 0;
-        const float tick = (major ? 8.0f : 5.0f) * s;
-        drawRect(Rect{ x - 0.5f, r.y + r.h - tick, 1.0f, tick }, RGBA{ 0.9f, 0.9f, 0.95f, 0.9f });
-        if (major) {
-            const std::string name = names[a / 90];
-            drawListText(name, x - listTextWidth(name) * 0.5f, r.y + 2.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-        }
-    }
-    // The bearing the camera looks along: a small mark at the centre
-    drawRect(Rect{ cx - 1.5f * s, r.y, 3.0f * s, 4.0f * s }, RGBA{ 1.0f, 0.85f, 0.3f, 1.0f });
 }
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running) {
@@ -3707,28 +3790,6 @@ void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
     drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-// The clock: the time in the larger line, and the date under it in the list font, as 500-01-01.
-// The block's right edge is `right`, and it starts at `top`.
-void Renderer::drawClock(const std::string& clock, const std::string& date, float right, float top, int winH) {
-    const float s = winH / 720.0f;
-    const float pad = 10.0f * s, lineGap = 4.0f * s;
-    const RGBA fill{ 0.04f, 0.04f, 0.05f, 0.5f };
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA gray{ 0.78f, 0.78f, 0.82f, 1.0f };
-
-    const float bigW = clockTextWidth(clock), bigH = uiTextHeight("Ag");
-    const float smallW = listTextWidth(date), smallH = listTextHeight("Ag");
-    const float w = std::max(bigW, smallW) + 2.0f * pad;
-    const float h = bigH + lineGap + smallH + 2.0f * pad;
-    const Rect box{ right - w, top, w, h };
-    // Both lines are right aligned to the same edge
-    const float textRight = box.x + box.w - pad;
-
-    drawRect(box, fill);
-    drawClockText(clock, textRight - bigW, box.y + pad, white);
-    drawListText(date, textRight - smallW, box.y + pad + bigH + lineGap, gray);
-}
-
 void Renderer::drawNotice(const std::string& text, int winW, int winH) {
     if (text.empty()) return;
     const float s = winH / 720.0f;
@@ -4097,7 +4158,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
     L.lineCount = lineCount;
     L.lineH = lineH;
     L.offset = std::clamp(offset, 0, L.maxOffset());
-    L.tab = std::clamp(tab, 0, 1);
+    L.tab = std::clamp(tab, 0, 2);
     L.filterOpen = filterOpen && L.tab == 1 && !collapsed;
 
     // By default its width stops short of the Squad Panel. A dragged width stays between its minimum and the screen.
@@ -4131,8 +4192,11 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
 
     // The tabs under the bar. The Filter button sits at the right of the row.
     const float tabY = y + barH;
-    L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, 84.0f * s, tabH - 2.0f * s };
-    L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, 60.0f * s, tabH - 2.0f * s };
+    // Each tab is as wide as its name needs
+    auto tabW = [&](const char* key) { return std::max(48.0f * s, listTextWidth(lang(key)) + 16.0f * s); };
+    L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, tabW("UILABEL_MESSAGE"), tabH - 2.0f * s };
+    L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_GAME"), tabH - 2.0f * s };
+    L.tabTime = Rect{ L.tabGame.x + L.tabGame.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_TIME"), tabH - 2.0f * s };
     L.filterBtn = Rect{ x + w - pad - scrollW - 62.0f * s, tabY + 2.0f * s, 62.0f * s, tabH - 2.0f * s };
 
     // The filter menu opens upward from the Filter button, so it stays on screen at the bottom of the window
@@ -4149,13 +4213,13 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
     }
     if (collapsed) {
         L.track = L.thumb = Rect{};
-        L.tabMessage = L.tabGame = L.filterBtn = Rect{};
+        L.tabMessage = L.tabGame = L.tabTime = L.filterBtn = Rect{};
     }
     return L;
 }
 
 void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
-                             float mx, float my) {
+                             float mx, float my, const InfoTime& time) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -4176,11 +4240,31 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
     };
     tab(L.tabMessage, lang("UILABEL_MESSAGE"), L.tab == 0);
     tab(L.tabGame, lang("UILABEL_GAME"), L.tab == 1);
+    tab(L.tabTime, lang("UILABEL_TIME"), L.tab == 2);
     if (L.tab == 1) drawButton(L.filterBtn, lang("UILABEL_FILTER"), true, L.filterBtn.contains(mx, my) || L.filterOpen);
 
     // The rows are centred in the space under the tabs
     const float tabH = 20.0f * s;
     const float bodyTop = L.bar.y + L.bar.h + tabH;
+
+    // The Time tab: the time of day large, then the date written out, the date as numbers and the days passed, each
+    // line centred, the block centred in the space under the tabs
+    if (L.tab == 2) {
+        const RGBA gray{ 0.78f, 0.78f, 0.82f, 1.0f };
+        const float bigH = uiTextHeight("Ag"), smallH = listTextHeight("Ag"), gap = 4.0f * s;
+        const float blockH = bigH + 3.0f * (gap + smallH);
+        const float bodyH = L.panel.y + L.panel.h - bodyTop;
+        float y = bodyTop + std::max(0.0f, (bodyH - blockH) * 0.5f);
+        const float midX = L.panel.x + L.panel.w * 0.5f, maxW = L.panel.w - 16.0f * s;
+        drawClockText(time.clock, midX - clockTextWidth(time.clock) * 0.5f, y, white);
+        y += bigH + gap;
+        for (const std::string* line : { &time.date, &time.ymd, &time.days }) {
+            const std::string t = fitText(*line, maxW, false);
+            drawListText(t, midX - listTextWidth(t) * 0.5f, y, line == &time.date ? white : gray);
+            y += smallH + gap;
+        }
+        return;
+    }
     const float top = bodyTop + (L.panel.y + L.panel.h - bodyTop - L.linesVisible * L.lineH) * 0.5f;
     const int count = (int)rows.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {

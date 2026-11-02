@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Sleep hier of klik met rechts om je eigen voorwerpen ui
 UILABEL_SINGLE	Enkel
 UILABEL_MAX	Max
 UILABEL_SORT	Sorteren
-UILABEL_WORLD_MAP_HINT	Wereldkaart. Scrol om te zoomen. Druk op M of Esc om te sluiten.
+UILABEL_WORLD_MAP	Wereldkaart
+UILABEL_WORLD_MAP_HINT	Scroll om te zoomen. Rechtsklik om erheen te gaan. Druk op M of Escape om te sluiten.
+UILABEL_DAYS_PASSED	Verstreken dagen: {0}
 UILABEL_NO_UNIT_SELECTED	Geen eenheid geselecteerd
 UILABEL_UNNAMED_UNIT	Naamloze eenheid
 UILABEL_NO_NAME	Geen naam
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} krijgt {1} {2} XP voor {3}
 UILABEL_PAUSE_HINT	(Druk op de spatiebalk om verder te gaan.)
 MISC_DRINKS	{0} drinkt {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	O
-UILABEL_COMPASS_S	Z
-UILABEL_COMPASS_W	W
 ITEM_1_NAME	IJzererts
 ITEM_1_DESC	Ruw erts dat tot ijzeren staven gesmolten kan worden.
 ITEM_2_NAME	Eikenblok

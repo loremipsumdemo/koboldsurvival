@@ -590,60 +590,72 @@ inline QuantityLayout layoutQuantity(int W, int H) {
     return L;
 }
 
-// The expand button in the top left corner of the minimap, or of the full map it expands into
-inline Rect mapToggleOf(const Rect& r, float s) { return Rect{ r.x + 4.0f * s, r.y + 4.0f * s, 18.0f * s, 18.0f * s }; }
-
-// The full map: the minimap expanded from its top right corner, to 80% of the window's height. It does not depend on
-// the other panels.
-inline Rect expandedMapRect(int H, float right) {
-    const float s = H / 720.0f;
-    const float margin = 12.0f * s, side = H * 0.8f;
-    return Rect{ right - margin - side, margin, side, side };
-}
-
-struct MinimapLayout {
-    Rect map{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect compass{ 0.0f, 0.0f, 0.0f, 0.0f };
-    float right = 0.0f;       // the edge the block lines up against, its margin not included
-    float clockTop = 0.0f;    // where the clock box starts
-    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };   // the + that expands the minimap into the full map
+// The world map window: 800 by 600 pixels in the middle of the screen (less in a smaller window). A title bar runs
+// across its top with the X that closes it at the right end, a line of help sits at its foot, and the map fills the rest.
+constexpr float WORLD_MAP_W = 800.0f;
+constexpr float WORLD_MAP_H = 600.0f;
+struct WorldMapLayout {
+    Rect window{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the title bar
+    Rect close{ 0.0f, 0.0f, 0.0f, 0.0f };   // the X at the right end of the bar
+    Rect map{ 0.0f, 0.0f, 0.0f, 0.0f };     // the map itself
+    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };    // the line of help under the map
 };
 
-inline MinimapLayout layoutMinimap(int H, float right) {
+inline WorldMapLayout layoutWorldMap(int W, int H) {
     const float s = H / 720.0f;
-    const float margin = 12.0f * s, size = 180.0f * s, gap = 6.0f * s, compassH = 30.0f * s;
-    MinimapLayout L;
-    L.right = right;
-    L.map = Rect{ right - margin - size, margin, size, size };
-    L.compass = Rect{ right - margin - size, margin + size + gap, size, compassH };
-    L.clockTop = L.compass.y + compassH + gap;
-    L.toggle = mapToggleOf(L.map, s);
+    const float margin = 8.0f * s, barH = 22.0f * s, hintH = 22.0f * s, pad = 4.0f * s;
+    const float w = std::max(0.0f, std::min(WORLD_MAP_W, (float)W - 2.0f * margin));
+    const float h = std::max(0.0f, std::min(WORLD_MAP_H, (float)H - 2.0f * margin));
+    WorldMapLayout L;
+    L.window = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
+    L.bar = Rect{ L.window.x, L.window.y, w, barH };
+    L.close = BarToggle(L.bar, s);
+    L.hint = Rect{ L.window.x, L.window.y + h - hintH, w, hintH };
+    const float mapTop = L.bar.y + barH + pad;
+    L.map = Rect{ L.window.x + pad, mapTop, std::max(0.0f, w - 2.0f * pad), std::max(0.0f, L.hint.y - mapTop) };
     return L;
 }
 
-// The part of the world map's area that holds the map: a square under a line of text, centred
-inline Rect WorldMapBox(const Rect& area, float s) {
-    const float top = area.y + 30.0f * s;
-    const float side = std::max(0.0f, std::min(area.w, area.h - 30.0f * s));
-    return Rect{ area.x + (area.w - side) * 0.5f, top, side, side };
-}
+// The world map shows `span` tiles from its top to its bottom, and as many more across as its shape gives, so a tile is
+// square. Its centre is the ground point cx, cz; the largest x is at its left and the largest z at its top.
+inline float mapTilesPerPixel(const Rect& r, float span) { return r.h > 0.0f ? span / r.h : 0.0f; }
+// The tiles across the map from left to right
+inline float mapSpanAcross(const Rect& r, float span) { return r.h > 0.0f ? span * r.w / r.h : 0.0f; }
 
-// The ground point under a pixel of the minimap, false outside the minimap or outside the level. The minimap
-// shows a window of `span` tiles centred on cx, cz, with the largest x at its left and the largest z at its top.
-inline bool minimapGround(const Rect& r, float cx, float cz, float span, float levelSize, float px, float py,
-                          float& x, float& z) {
+// The ground point under a pixel of the map, false off the map or off the level
+inline bool mapGround(const Rect& r, float cx, float cz, float span, float levelSize, float px, float py,
+                      float& x, float& z) {
     if (!r.contains(px, py) || span <= 0.0f || r.w <= 0.0f || r.h <= 0.0f) return false;
-    x = cx + span * 0.5f - (px - r.x) / r.w * span;
-    z = cz + span * 0.5f - (py - r.y) / r.h * span;
+    const float k = mapTilesPerPixel(r, span);
+    x = cx + (r.x + r.w * 0.5f - px) * k;
+    z = cz + (r.y + r.h * 0.5f - py) * k;
     return x >= 0.0f && z >= 0.0f && x <= levelSize && z <= levelSize;
 }
 
-// The ground point under a pixel of the world map box, which shows the whole level
-inline bool worldMapGround(const Rect& box, float levelSize, float px, float py, float& x, float& z) {
-    if (!box.contains(px, py) || box.w <= 0.0f || levelSize <= 0.0f) return false;
-    x = levelSize - (px - box.x) / box.w * levelSize;
-    z = levelSize - (py - box.y) / box.h * levelSize;
-    return x >= 0.0f && z >= 0.0f && x <= levelSize && z <= levelSize;
+// The pixel on the map over a ground point
+inline std::pair<float, float> mapPixel(const Rect& r, float cx, float cz, float span, float x, float z) {
+    const float k = mapTilesPerPixel(r, span);
+    if (k <= 0.0f) return { r.x, r.y };
+    return { r.x + r.w * 0.5f - (x - cx) / k, r.y + r.h * 0.5f - (z - cz) / k };
+}
+
+// The widest view of the map: the whole level fits both ways
+inline float mapMaxSpan(const Rect& r, float levelSize) {
+    if (r.w <= 0.0f || r.h <= 0.0f) return levelSize;
+    return levelSize * std::max(1.0f, r.h / r.w);
+}
+
+// Keeps the map's view on the level: no closer in than one chunk, no further out than the whole level, and the centre
+// placed so the view does not run off an edge (or centred on the level where the view is wider than it)
+inline void clampMapView(const Rect& r, float levelSize, float& cx, float& cz, float& span) {
+    span = std::clamp(span, std::min(64.0f, levelSize), mapMaxSpan(r, levelSize));
+    auto keep = [&](float& c, float across) {
+        if (across >= levelSize) c = levelSize * 0.5f;
+        else c = std::clamp(c, across * 0.5f, levelSize - across * 0.5f);
+    };
+    keep(cx, mapSpanAcross(r, span));
+    keep(cz, span);
 }
 
 // One row of the Behavior list: the on box, the four option cells, then the priority and delete buttons,

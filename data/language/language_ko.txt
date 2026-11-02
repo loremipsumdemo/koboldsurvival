@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	내 인벤토리 아이템을 여기로 드래그하거
 UILABEL_SINGLE	하나씩
 UILABEL_MAX	최대
 UILABEL_SORT	정렬
-UILABEL_WORLD_MAP_HINT	월드 맵입니다. 스크롤로 확대합니다. M 또는 Esc 를 누르면 닫힙니다.
+UILABEL_WORLD_MAP	월드 맵
+UILABEL_WORLD_MAP_HINT	스크롤하여 확대/축소. 우클릭하면 그곳으로 이동. M 또는 Esc로 닫기.
+UILABEL_DAYS_PASSED	지난 날: {0}
 UILABEL_NO_UNIT_SELECTED	선택된 유닛이 없습니다
 UILABEL_UNNAMED_UNIT	이름 없는 유닛
 UILABEL_NO_NAME	이름 없음
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	모니터 {0}
 MISC_GAINS_XP	{0}이(가) {3}(으)로 {1} {2} 경험치를 얻습니다
 UILABEL_PAUSE_HINT	(스페이스바를 누르면 재개합니다.)
 MISC_DRINKS	{0}이(가) {1}을(를) 마십니다
-UILABEL_COMPASS_N	북
-UILABEL_COMPASS_E	동
-UILABEL_COMPASS_S	남
-UILABEL_COMPASS_W	서
 ITEM_1_NAME	철광석
 ITEM_1_DESC	제련하면 철 주괴가 되는 원석입니다.
 ITEM_2_NAME	참나무 통나무

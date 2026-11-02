@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Trage aici sau fă clic dreapta pentru a adăuga obiect
 UILABEL_SINGLE	Unic
 UILABEL_MAX	Max
 UILABEL_SORT	Sortează
-UILABEL_WORLD_MAP_HINT	Harta lumii. Derulează pentru zoom. Apasă M sau Esc pentru a închide.
+UILABEL_WORLD_MAP	Harta lumii
+UILABEL_WORLD_MAP_HINT	Derulează pentru zoom. Clic dreapta pentru a merge acolo. Apasă M sau Escape pentru a închide.
+UILABEL_DAYS_PASSED	Zile trecute: {0}
 UILABEL_NO_UNIT_SELECTED	Nicio unitate selectată
 UILABEL_UNNAMED_UNIT	Unitate fără nume
 UILABEL_NO_NAME	Fără nume
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} câștigă {1} {2} XP pentru {3}
 UILABEL_PAUSE_HINT	(Apasă bara de spațiu pentru a continua.)
 MISC_DRINKS	{0} bea {1}
-UILABEL_COMPASS_N	N
-UILABEL_COMPASS_E	E
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	V
 ITEM_1_NAME	Minereu de fier
 ITEM_1_DESC	Minereu brut care poate fi topit în lingouri de fier.
 ITEM_2_NAME	Buștean de stejar

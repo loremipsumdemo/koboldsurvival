@@ -113,7 +113,9 @@ UILABEL_TRADE_DROP_YOURS	Seret atau klik kanan barang Anda dari inventaris ke si
 UILABEL_SINGLE	Satu
 UILABEL_MAX	Maks
 UILABEL_SORT	Urutkan
-UILABEL_WORLD_MAP_HINT	Peta dunia. Gulir untuk memperbesar. Tekan M atau Esc untuk menutup.
+UILABEL_WORLD_MAP	Peta Dunia
+UILABEL_WORLD_MAP_HINT	Gulir untuk memperbesar. Klik kanan untuk bergerak ke sana. Tekan M atau Escape untuk menutup.
+UILABEL_DAYS_PASSED	Hari berlalu: {0}
 UILABEL_NO_UNIT_SELECTED	Tidak ada unit yang dipilih
 UILABEL_UNNAMED_UNIT	Unit tanpa nama
 UILABEL_NO_NAME	Tanpa nama
@@ -362,10 +364,6 @@ UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} mendapat {1} {2} XP dari {3}
 UILABEL_PAUSE_HINT	(Tekan spasi untuk melanjutkan.)
 MISC_DRINKS	{0} minum {1}
-UILABEL_COMPASS_N	U
-UILABEL_COMPASS_E	T
-UILABEL_COMPASS_S	S
-UILABEL_COMPASS_W	B
 ITEM_1_NAME	Bijih Besi
 ITEM_1_DESC	Bijih mentah yang dapat dilebur menjadi batang besi.
 ITEM_2_NAME	Batang Kayu Ek
