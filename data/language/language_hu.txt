@@ -98,7 +98,7 @@ CONTROL_DOES_9	Képernyőkép készítése
 UILABEL_PAUSED	SZÜNETEL
 UILABEL_PACE_RUN	Tempó: futás
 UILABEL_PACE_WALK	Tempó: séta
-UILABEL_SQUAD_PANEL	Csapatpanel
+UILABEL_SQUAD_PANEL	Frakciópanel
 UILABEL_UNIT_PANEL	Egységpanel
 UILABEL_INFORMATION_PANEL	Információs panel
 UILABEL_INTERACTION_PANEL	Interakciós panel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Kész a cserére
 MISC_TURNS_HOSTILE	{0} ellenségessé válik
 MISC_SELECT_UNIT_FIRST	Előbb válassz egy egységet
 FACTION_PLAYER	Játékos frakció
-FACTION_GRAY	Szürke frakció
 FACTION_RED	Vörös frakció
+FACTION_GREEN	Zöld frakció
+FACTION_BLUE	Kék frakció
+FACTION_YELLOW	Sárga frakció
+MISC_REPUTATION_DROPS	A hírnév ennél: {0}, {1} ponttal csökken, {2} lett
+UILABEL_MODE_PASSIVE	Passzív
+UILABEL_MODE_BLOCK	Hárítás
+UILABEL_MODE_SNEAK	Lopakodás
+UILABEL_MODE_RANGED	Távolsági
+UILABEL_MODE_PASSIVE_TIP	Passzív: soha nem kezd harcot, és nem száll be, hogy segítsen. A parancsokat, a támadást is, végrehajtja.
+UILABEL_MODE_BLOCK_TIP	Hárítás: soha nem támad, és kétszer olyan gyakran hárít, üres kézzel is.
+UILABEL_MODE_SNEAK_TIP	Lopakodás: fele sebességgel jár, és sokkal nehezebb észrevenni. Minél magasabb a Lopakodás, annál jobb.
+UILABEL_MODE_RANGED_TIP	Távolsági: magától bekapcsol, amíg íj vagy számszeríj van a fő kézben. Minden lövés egy nyílvesszőt vagy vasvesszőt fogyaszt.
+UILABEL_SQUAD_TAB	Csapat
+UILABEL_REPUTATION	Hírnév
+UILABEL_REP_HOSTILE	Ellenséges: látásra megtámadják egymást (-25 vagy kevesebb)
+UILABEL_REP_ALLIED	Szövetséges: segítenek egymásnak, ha valakit megtámadnak (50 vagy több)
+UILABEL_REP_NEUTRAL	Semleges: békén hagyják egymást
 MISC_PROP_UNREACHABLE	Elérhetetlen
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Forgatókönyv
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Mérges gomba
 ITEM_126_DESC	Vadgomba, amely olyan, mint bármelyik másik. Megenni egészségbe és jóllakottságba kerül.
+ITEM_127_NAME	Rövid íj
+ITEM_127_DESC	Két kéz kell hozzá. Közelről lő nyilakat, pontosan.
+ITEM_128_NAME	Hosszú íj
+ITEM_128_DESC	Két kéz kell hozzá. Messziről lő nyilakat, de kevésbé biztosan.
+ITEM_129_NAME	Számszeríj
+ITEM_129_DESC	Két kéz kell hozzá. Kétszer olyan gyorsan lő vesszőket, mint egy íj, fele sebzéssel.
+ITEM_130_NAME	Fa nyílvesszők
+ITEM_130_DESC	Egyszerű nyílvesszők rövid vagy hosszú íjhoz.
+ITEM_131_NAME	Csont nyílvesszők
+ITEM_131_DESC	Csonthegyű nyílvesszők rövid vagy hosszú íjhoz. Erősebben sebeznek a fánál.
+ITEM_132_NAME	Tüzes nyílvesszők
+ITEM_132_DESC	Égő nyílvesszők rövid vagy hosszú íjhoz. A legerősebb nyílvesszők.
+ITEM_133_NAME	Számszeríjvesszők
+ITEM_133_DESC	Rövid, nehéz vesszők számszeríjhoz.
 UILABEL_OPTIMIZE	Optimalizálás
 UILABEL_REMOVE_ALL	Mindet levesz
 MISC_GEAR_NO_ROOM	Nincs elég hely a tárgylistában

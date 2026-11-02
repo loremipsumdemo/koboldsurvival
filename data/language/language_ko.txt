@@ -98,7 +98,7 @@ CONTROL_DOES_9	스크린샷 찍기
 UILABEL_PAUSED	일시정지
 UILABEL_PACE_RUN	이동: 달리기
 UILABEL_PACE_WALK	이동: 걷기
-UILABEL_SQUAD_PANEL	분대 패널
+UILABEL_SQUAD_PANEL	세력 패널
 UILABEL_UNIT_PANEL	유닛 패널
 UILABEL_INFORMATION_PANEL	정보 패널
 UILABEL_INTERACTION_PANEL	상호작용 패널
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	교환 준비 완료
 MISC_TURNS_HOSTILE	{0}이(가) 적대적으로 변했습니다
 MISC_SELECT_UNIT_FIRST	먼저 유닛을 선택하세요
 FACTION_PLAYER	플레이어 세력
-FACTION_GRAY	회색 세력
 FACTION_RED	붉은 세력
+FACTION_GREEN	녹색 세력
+FACTION_BLUE	푸른 세력
+FACTION_YELLOW	노란 세력
+MISC_REPUTATION_DROPS	{0} 평판이 {1} 떨어져 {2}이(가) 되었습니다
+UILABEL_MODE_PASSIVE	비전투
+UILABEL_MODE_BLOCK	방어
+UILABEL_MODE_SNEAK	잠행
+UILABEL_MODE_RANGED	원거리
+UILABEL_MODE_PASSIVE_TIP	비전투: 먼저 싸움을 걸거나 도우러 끼어들지 않습니다. 공격을 포함한 명령은 따릅니다.
+UILABEL_MODE_BLOCK_TIP	방어: 공격하지 않고, 맨손이어도 두 배로 자주 막아 냅니다.
+UILABEL_MODE_SNEAK_TIP	잠행: 절반 속도로 걷고 훨씬 눈에 띄지 않습니다. 은신이 높을수록 좋습니다.
+UILABEL_MODE_RANGED_TIP	원거리: 주 손에 활이나 석궁이 있는 동안 저절로 켜집니다. 한 발마다 화살이나 볼트를 하나 씁니다.
+UILABEL_SQUAD_TAB	분대
+UILABEL_REPUTATION	평판
+UILABEL_REP_HOSTILE	적대: 보자마자 서로 공격합니다 (-25 이하)
+UILABEL_REP_ALLIED	동맹: 한쪽이 공격받으면 서로 돕습니다 (50 이상)
+UILABEL_REP_NEUTRAL	중립: 서로 건드리지 않습니다
 MISC_PROP_UNREACHABLE	도달할 수 없습니다
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	시나리오
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	독버섯
 ITEM_126_DESC	다른 버섯과 똑같아 보이는 야생 버섯. 먹으면 체력과 포만감이 줄어듭니다.
+ITEM_127_NAME	단궁
+ITEM_127_DESC	양손이 필요합니다. 가까운 거리에서 화살을 정확하게 쏩니다.
+ITEM_128_NAME	장궁
+ITEM_128_DESC	양손이 필요합니다. 먼 거리에서 화살을 쏘지만 덜 정확합니다.
+ITEM_129_NAME	석궁
+ITEM_129_DESC	양손이 필요합니다. 활보다 두 배 빠르게 볼트를 쏘지만 피해는 절반입니다.
+ITEM_130_NAME	나무 화살
+ITEM_130_DESC	단궁이나 장궁에 쓰는 평범한 화살입니다.
+ITEM_131_NAME	뼈 화살
+ITEM_131_DESC	뼈 촉을 단 화살로 단궁이나 장궁에 씁니다. 나무 화살보다 강합니다.
+ITEM_132_NAME	불화살
+ITEM_132_DESC	불붙은 화살로 단궁이나 장궁에 씁니다. 가장 강한 화살입니다.
+ITEM_133_NAME	석궁 볼트
+ITEM_133_DESC	석궁에 쓰는 짧고 무거운 볼트입니다.
 UILABEL_OPTIMIZE	최적화
 UILABEL_REMOVE_ALL	모두 해제
 MISC_GEAR_NO_ROOM	인벤토리 공간이 부족합니다

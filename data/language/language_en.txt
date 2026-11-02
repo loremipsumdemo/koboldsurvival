@@ -98,7 +98,7 @@ CONTROL_DOES_9	Take a screenshot
 UILABEL_PAUSED	PAUSED
 UILABEL_PACE_RUN	Pace: Run
 UILABEL_PACE_WALK	Pace: Walk
-UILABEL_SQUAD_PANEL	Squad Panel
+UILABEL_SQUAD_PANEL	Faction Panel
 UILABEL_UNIT_PANEL	Unit Panel
 UILABEL_INFORMATION_PANEL	Information Panel
 UILABEL_INTERACTION_PANEL	Interaction Panel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Ready to trade
 MISC_TURNS_HOSTILE	{0} turns hostile
 MISC_SELECT_UNIT_FIRST	Select a unit first
 FACTION_PLAYER	Player Faction
-FACTION_GRAY	Gray Faction
 FACTION_RED	Red Faction
+FACTION_GREEN	Green Faction
+FACTION_BLUE	Blue Faction
+FACTION_YELLOW	Yellow Faction
+MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
+UILABEL_MODE_PASSIVE	Passive
+UILABEL_MODE_BLOCK	Block
+UILABEL_MODE_SNEAK	Sneak
+UILABEL_MODE_RANGED	Ranged
+UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
+UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
+UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice. The higher the Stealth, the better.
+UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
+UILABEL_SQUAD_TAB	Squad
+UILABEL_REPUTATION	Reputation
+UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
+UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)
+UILABEL_REP_NEUTRAL	Neutral: they leave each other alone
 MISC_PROP_UNREACHABLE	Unreachable
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Poison Mushroom
 ITEM_126_DESC	A wild mushroom that looks like any other. Eating it costs health and hunger.
+ITEM_127_NAME	Short Bow
+ITEM_127_DESC	Needs both hands. Shoots arrows from a short range, and aims true.
+ITEM_128_NAME	Long Bow
+ITEM_128_DESC	Needs both hands. Shoots arrows from a long range, but less surely.
+ITEM_129_NAME	Crossbow
+ITEM_129_DESC	Needs both hands. Shoots bolts twice as fast as a bow, for half the damage.
+ITEM_130_NAME	Wood Arrows
+ITEM_130_DESC	Plain arrows for a Short Bow or a Long Bow.
+ITEM_131_NAME	Bone Arrows
+ITEM_131_DESC	Arrows tipped with bone, for a Short Bow or a Long Bow. They hit harder than wood.
+ITEM_132_NAME	Fire Arrows
+ITEM_132_DESC	Burning arrows for a Short Bow or a Long Bow. The hardest-hitting arrows.
+ITEM_133_NAME	Crossbow Bolts
+ITEM_133_DESC	Short, heavy bolts for a Crossbow.
 UILABEL_OPTIMIZE	Optimize
 UILABEL_REMOVE_ALL	Remove All
 MISC_GEAR_NO_ROOM	Not enough inventory space

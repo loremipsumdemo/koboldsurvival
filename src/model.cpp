@@ -2,6 +2,7 @@
 #include "pak.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -181,6 +182,10 @@ bool loadGLBModel(const char* path, Model& m) {
 
     m.minX = minX; m.minY = minY; m.minZ = minZ;
     m.maxX = maxX; m.maxY = maxY; m.maxZ = maxZ;
+    // Positions and triangles kept for picking
+    m.positions.reserve(verts.size() / 5 * 3);
+    for (size_t i = 0; i + 4 < verts.size(); i += 5) m.positions.insert(m.positions.end(), { verts[i], verts[i + 1], verts[i + 2] });
+    m.triangles = indices;
 
     glGenVertexArrays(1, &m.vao);
     glGenBuffers(1, &m.vbo);

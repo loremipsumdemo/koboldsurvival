@@ -1,4 +1,5 @@
 #pragma once
+#include "factions.h"
 #include <array>
 #include "language.h"
 #include <string>
@@ -81,17 +82,24 @@ inline const char* bodyTypeKey(int type) {
          : type == BODY_ANDROGYNOUS ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
 }
 
-// The side a unit belongs to. Your units are the Player Faction, the units that start neutral the Gray Faction, and the
-// hostile ones the Red Faction. A unit keeps its faction if it turns hostile (Attack (Unprovoked)).
-enum FactionId : int { FACTION_PLAYER = 0, FACTION_GRAY = 1, FACTION_RED = 2, FACTION_COUNT };
+// The faction a unit belongs to (factions.h): the Player Faction for your units, one from data/factioninfo.txt for the
+// rest. Whether two units fight comes from their factions' reputation, and from Provoked.
 struct Faction {
     int id = FACTION_PLAYER;
 };
 
-// The language key for a faction's name
-inline const char* factionKey(int id) {
-    return id == FACTION_GRAY ? "FACTION_GRAY" : id == FACTION_RED ? "FACTION_RED" : "FACTION_PLAYER";
-}
+// A unit that saw its faction attacked (or was attacked itself) by a unit of a faction it was not hostile to. For a
+// while it treats each faction listed as hostile, as if their reputation were REP_HOSTILE, whatever it really is: it
+// and the others of its faction that saw it fight back against the attacker and the attacker's whole faction (for the
+// Player Faction, your whole squad). Each entry lasts PROVOKED_SECONDS from the last attack it saw. Not saved.
+struct Provoked {
+    struct Entry {
+        int faction = 0;
+        float secondsLeft = 0.0f;
+    };
+    std::vector<Entry> against;
+};
+constexpr float PROVOKED_SECONDS = 90.0f;
 
 // Where a unit came to rest the last time it stopped by its own movement. While it has nowhere to go, it walks back
 // here, so a unit pushed aside by others passing returns to its place once they have gone. Set when the unit stops,
@@ -183,9 +191,18 @@ struct Needs {
 
 // A unit's behavior rules, highest priority first. pending is set when a rule is added or edited, so the next
 // behavior pass checks every rule, not only those whose values changed.
+// A unit's behavior rules, and its fighting modes from the Behavior tab:
+//   passive: it never starts a fight on its own: it does not attack on sight or join in to defend others, though it
+//            still does what it is ordered to, an attack included
+//   block:   it never swings, and blocks hits more often (BLOCK_MODE_FACTOR), even with nothing in its hands
+//   sneak:   it walks at SNEAK_SPEED and is harder to notice, more so the higher its Stealth
+// Whether it fights at range is not a choice: it does whenever a ranged weapon is in its main hand (isRangedWeapon).
 struct Behaviors {
     std::vector<BehaviorRule> rules = defaultBehaviors();
     bool pending = true;
+    bool passive = false;
+    bool block = false;
+    bool sneak = false;
 };
 
 // Fighting state for a unit. Nothing here is saved: a loaded unit starts fresh, with its stamina full.
@@ -198,6 +215,7 @@ struct Combat {
     float encumbrance = 0.0f;         // 0..1, from the last frame's movement
     float moved = 0.0f;               // tiles walked in the last frame
     std::vector<Entity> spotted;      // hostiles this unit has already spotted, for Perception XP
+    int downedByFaction = -1;         // the faction of the unit whose hit just took it to 0 health, until it is knocked out
 };
 
 // Fractional XP waiting to become whole points, one per stat. Walking and fighting give fractions of a point.
@@ -242,6 +260,9 @@ struct DefendOrder {
 // a little health. Doom 100: it becomes a Corpse for good. Doom is always between 0 and 100.
 struct Unconscious {
     float doom = 0.0f;
+    // The faction whose unit knocked it out, or -1 (hunger, or nobody). A unit of another faction knocked out by your
+    // units has cost you reputation with its faction, and costs more if it dies before it wakes.
+    int koFaction = -1;
 };
 // A unit being carried, by the unit `by` (which has Carrying). It lies over its carrier, moves with it and pushes
 // nothing. Unconscious units and corpses can be carried by anyone; a unit that is awake only by its own squad, and it

@@ -11,7 +11,7 @@
 #   buy_value         : price to buy from a vendor
 #   sell_value        : price when sold to a vendor
 #   required_level   : minimum level to use or equip
-#   attack_value      : attack stat, weapons only
+#   attack_value      : attack stat, weapons only; for arrows and bolts, the attack each one adds to a shot
 #   defense_value     : defense stat, armor and shields only
 #   on_use            : right-click script, e.g. health +50; hunger +10; attack +10 for 60s
 #   material          : gear material, e.g. Iron. Empty for none
@@ -21,6 +21,8 @@
 #                       raw_food (Raw Food Storage, which takes it only if it is not a consumable), water (Water Tank),
 #                       ore. Food Storage takes every consumable, the Weapon Rack every weapon, and the Armor Stand
 #                       every armor item (shields included).
+#                       Ranged weapons: bow_short (Short Bow), bow_long (Long Bow) and crossbow; they shoot items
+#                       tagged arrow (the bows) or bolt (the crossbow), one for each shot.
 #   cooks_into        : optional, the id of the item a campfire cooks this one into, e.g. Raw Bear Meat into Cooked
 #                       Bear Meat. A campfire takes any item that has one.
 
@@ -2327,3 +2329,136 @@ on_use = health -10; hunger -10
 material = 
 tier = 0
 equip_slot = 
+
+[127]
+type = weapon
+max_stack_size = 1
+name = Short Bow
+description = Needs both hands. Shoots arrows from a short range, and aims true.
+max_durability = 80
+current_durability = 80
+weight = 1.2
+buy_value = 80
+sell_value = 40
+required_level = 1
+attack_value = 8
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = two_hand
+tags = bow_short
+
+[128]
+type = weapon
+max_stack_size = 1
+name = Long Bow
+description = Needs both hands. Shoots arrows from a long range, but less surely.
+max_durability = 100
+current_durability = 100
+weight = 1.8
+buy_value = 160
+sell_value = 80
+required_level = 3
+attack_value = 12
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = two_hand
+tags = bow_long
+
+[129]
+type = weapon
+max_stack_size = 1
+name = Crossbow
+description = Needs both hands. Shoots bolts twice as fast as a bow, for half the damage.
+max_durability = 120
+current_durability = 120
+weight = 3.0
+buy_value = 200
+sell_value = 100
+required_level = 3
+attack_value = 18
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = two_hand
+tags = crossbow
+
+[130]
+type = item
+max_stack_size = 99
+name = Wood Arrows
+description = Plain arrows for a Short Bow or a Long Bow.
+max_durability = 0
+current_durability = 0
+weight = 0.05
+buy_value = 1
+sell_value = 0
+required_level = 1
+attack_value = 2
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = arrow
+
+[131]
+type = item
+max_stack_size = 99
+name = Bone Arrows
+description = Arrows tipped with bone, for a Short Bow or a Long Bow. They hit harder than wood.
+max_durability = 0
+current_durability = 0
+weight = 0.05
+buy_value = 2
+sell_value = 1
+required_level = 1
+attack_value = 3
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = arrow
+
+[132]
+type = item
+max_stack_size = 99
+name = Fire Arrows
+description = Burning arrows for a Short Bow or a Long Bow. The hardest-hitting arrows.
+max_durability = 0
+current_durability = 0
+weight = 0.06
+buy_value = 5
+sell_value = 2
+required_level = 1
+attack_value = 6
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = arrow
+
+[133]
+type = item
+max_stack_size = 99
+name = Crossbow Bolts
+description = Short, heavy bolts for a Crossbow.
+max_durability = 0
+current_durability = 0
+weight = 0.06
+buy_value = 2
+sell_value = 1
+required_level = 1
+attack_value = 4
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bolt

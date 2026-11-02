@@ -98,7 +98,7 @@ CONTROL_DOES_9	Ta et skjermbilde
 UILABEL_PAUSED	PAUSET
 UILABEL_PACE_RUN	Tempo: løp
 UILABEL_PACE_WALK	Tempo: gå
-UILABEL_SQUAD_PANEL	Troppspanel
+UILABEL_SQUAD_PANEL	Fraksjonspanel
 UILABEL_UNIT_PANEL	Enhetspanel
 UILABEL_INFORMATION_PANEL	Informasjonspanel
 UILABEL_INTERACTION_PANEL	Samhandlingspanel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Klar til handel
 MISC_TURNS_HOSTILE	{0} blir fiendtlig
 MISC_SELECT_UNIT_FIRST	Velg en enhet først
 FACTION_PLAYER	Spillerens fraksjon
-FACTION_GRAY	Den grå fraksjonen
 FACTION_RED	Den røde fraksjonen
+FACTION_GREEN	Den grønne fraksjonen
+FACTION_BLUE	Den blå fraksjonen
+FACTION_YELLOW	Den gule fraksjonen
+MISC_REPUTATION_DROPS	Omdømmet hos {0} faller med {1}, til {2}
+UILABEL_MODE_PASSIVE	Passiv
+UILABEL_MODE_BLOCK	Blokker
+UILABEL_MODE_SNEAK	Snik
+UILABEL_MODE_RANGED	Avstand
+UILABEL_MODE_PASSIVE_TIP	Passiv: starter aldri en kamp og blander seg ikke inn for å hjelpe. Følger likevel ordre, også angrep.
+UILABEL_MODE_BLOCK_TIP	Blokker: angriper aldri og blokkerer slag dobbelt så ofte, selv med tomme hender.
+UILABEL_MODE_SNEAK_TIP	Snik: går i halv fart og er mye vanskeligere å oppdage. Jo høyere Sniking, jo bedre.
+UILABEL_MODE_RANGED_TIP	Avstand: slår seg på selv så lenge det er en bue eller armbrøst i hovedhånden. Hvert skudd bruker én pil eller bolt.
+UILABEL_SQUAD_TAB	Tropp
+UILABEL_REPUTATION	Omdømme
+UILABEL_REP_HOSTILE	Fiendtlig: angriper hverandre ved synet (-25 eller lavere)
+UILABEL_REP_ALLIED	Allierte: hjelper hverandre når en blir angrepet (50 eller høyere)
+UILABEL_REP_NEUTRAL	Nøytral: lar hverandre være
 MISC_PROP_UNREACHABLE	Utilgjengelig
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig sopp
 ITEM_126_DESC	En vill sopp som ser ut som alle andre. Å spise den koster helse og metthet.
+ITEM_127_NAME	Kortbue
+ITEM_127_DESC	Krever begge hender. Skyter piler på kort hold og treffer godt.
+ITEM_128_NAME	Langbue
+ITEM_128_DESC	Krever begge hender. Skyter piler på langt hold, men mindre sikkert.
+ITEM_129_NAME	Armbrøst
+ITEM_129_DESC	Krever begge hender. Skyter bolter dobbelt så raskt som en bue, med halv skade.
+ITEM_130_NAME	Trepiler
+ITEM_130_DESC	Vanlige piler til kortbue eller langbue.
+ITEM_131_NAME	Beinpiler
+ITEM_131_DESC	Piler med beinspiss til kortbue eller langbue. Treffer hardere enn tre.
+ITEM_132_NAME	Ildpiler
+ITEM_132_DESC	Brennende piler til kortbue eller langbue. De hardest treffende pilene.
+ITEM_133_NAME	Armbrøstbolter
+ITEM_133_DESC	Korte, tunge bolter til en armbrøst.
 UILABEL_OPTIMIZE	Optimaliser
 UILABEL_REMOVE_ALL	Ta av alt
 MISC_GEAR_NO_ROOM	Ikke nok plass i inventaret

@@ -98,7 +98,7 @@ CONTROL_DOES_9	Tag et skærmbillede
 UILABEL_PAUSED	PAUSET
 UILABEL_PACE_RUN	Tempo: løb
 UILABEL_PACE_WALK	Tempo: gang
-UILABEL_SQUAD_PANEL	Troppepanel
+UILABEL_SQUAD_PANEL	Fraktionspanel
 UILABEL_UNIT_PANEL	Enhedspanel
 UILABEL_INFORMATION_PANEL	Informationspanel
 UILABEL_INTERACTION_PANEL	Interaktionspanel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Klar til handel
 MISC_TURNS_HOSTILE	{0} bliver fjendtlig
 MISC_SELECT_UNIT_FIRST	Vælg først en enhed
 FACTION_PLAYER	Spillerens fraktion
-FACTION_GRAY	Den grå fraktion
 FACTION_RED	Den røde fraktion
+FACTION_GREEN	Den grønne fraktion
+FACTION_BLUE	Den blå fraktion
+FACTION_YELLOW	Den gule fraktion
+MISC_REPUTATION_DROPS	Omdømmet hos {0} falder med {1} til {2}
+UILABEL_MODE_PASSIVE	Passiv
+UILABEL_MODE_BLOCK	Blokér
+UILABEL_MODE_SNEAK	Snig
+UILABEL_MODE_RANGED	Afstand
+UILABEL_MODE_PASSIVE_TIP	Passiv: starter aldrig en kamp og hjælper ikke andre i en. Følger stadig ordrer, også angreb.
+UILABEL_MODE_BLOCK_TIP	Blokér: angriber aldrig og blokerer slag dobbelt så ofte, selv med tomme hænder.
+UILABEL_MODE_SNEAK_TIP	Snig: går med halv fart og er meget sværere at opdage. Jo højere Snigen, jo bedre.
+UILABEL_MODE_RANGED_TIP	Afstand: slår selv til, mens der er en bue eller armbrøst i hovedhånden. Hvert skud bruger én pil eller bolt.
+UILABEL_SQUAD_TAB	Trop
+UILABEL_REPUTATION	Omdømme
+UILABEL_REP_HOSTILE	Fjendtlig: angriber hinanden ved synet (-25 eller lavere)
+UILABEL_REP_ALLIED	Allierede: hjælper hinanden, når en bliver angrebet (50 eller højere)
+UILABEL_REP_NEUTRAL	Neutral: lader hinanden være
 MISC_PROP_UNREACHABLE	Kan ikke nås
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenarie
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig svamp
 ITEM_126_DESC	En vild svamp, der ligner alle andre. Spiser man den, koster det helbred og mæthed.
+ITEM_127_NAME	Kort bue
+ITEM_127_DESC	Kræver begge hænder. Skyder pile på kort afstand og rammer sikkert.
+ITEM_128_NAME	Langbue
+ITEM_128_DESC	Kræver begge hænder. Skyder pile på lang afstand, men mindre sikkert.
+ITEM_129_NAME	Armbrøst
+ITEM_129_DESC	Kræver begge hænder. Skyder bolte dobbelt så hurtigt som en bue, med halv skade.
+ITEM_130_NAME	Træpile
+ITEM_130_DESC	Almindelige pile til en kort bue eller langbue.
+ITEM_131_NAME	Benpile
+ITEM_131_DESC	Pile med spids af ben til en kort bue eller langbue. Rammer hårdere end træ.
+ITEM_132_NAME	Ildpile
+ITEM_132_DESC	Brændende pile til en kort bue eller langbue. De hårdest rammende pile.
+ITEM_133_NAME	Armbrøstbolte
+ITEM_133_DESC	Korte, tunge bolte til en armbrøst.
 UILABEL_OPTIMIZE	Optimer
 UILABEL_REMOVE_ALL	Tag alt af
 MISC_GEAR_NO_ROOM	Ikke nok plads i inventaret

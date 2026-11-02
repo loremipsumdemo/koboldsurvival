@@ -98,7 +98,7 @@ CONTROL_DOES_9	Wykonuje zrzut ekranu
 UILABEL_PAUSED	PAUZA
 UILABEL_PACE_RUN	Tempo: bieg
 UILABEL_PACE_WALK	Tempo: marsz
-UILABEL_SQUAD_PANEL	Panel oddziału
+UILABEL_SQUAD_PANEL	Panel frakcji
 UILABEL_UNIT_PANEL	Panel jednostki
 UILABEL_INFORMATION_PANEL	Panel informacji
 UILABEL_INTERACTION_PANEL	Panel interakcji
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Gotowe do wymiany
 MISC_TURNS_HOSTILE	{0} staje się wrogi
 MISC_SELECT_UNIT_FIRST	Najpierw wybierz jednostkę
 FACTION_PLAYER	Frakcja gracza
-FACTION_GRAY	Szara frakcja
 FACTION_RED	Czerwona frakcja
+FACTION_GREEN	Zielona frakcja
+FACTION_BLUE	Niebieska frakcja
+FACTION_YELLOW	Żółta frakcja
+MISC_REPUTATION_DROPS	Reputacja u: {0} spada o {1}, do {2}
+UILABEL_MODE_PASSIVE	Bierny
+UILABEL_MODE_BLOCK	Blok
+UILABEL_MODE_SNEAK	Skradanie
+UILABEL_MODE_RANGED	Dystans
+UILABEL_MODE_PASSIVE_TIP	Bierny: nigdy nie zaczyna walki ani nie włącza się, by pomóc. Nadal wykonuje rozkazy, także ataki.
+UILABEL_MODE_BLOCK_TIP	Blok: nigdy nie atakuje i blokuje ciosy dwa razy częściej, nawet gołymi rękami.
+UILABEL_MODE_SNEAK_TIP	Skradanie: idzie z połową prędkości i znacznie trudniej go zauważyć. Im wyższe Skradanie, tym lepiej.
+UILABEL_MODE_RANGED_TIP	Dystans: włącza się sam, gdy w głównej ręce jest łuk lub kusza. Każdy strzał zużywa jedną strzałę lub bełt.
+UILABEL_SQUAD_TAB	Oddział
+UILABEL_REPUTATION	Reputacja
+UILABEL_REP_HOSTILE	Wrogowie: atakują się od razu (-25 lub mniej)
+UILABEL_REP_ALLIED	Sojusznicy: pomagają sobie, gdy ktoś zostanie zaatakowany (50 lub więcej)
+UILABEL_REP_NEUTRAL	Neutralni: zostawiają się w spokoju
 MISC_PROP_UNREACHABLE	Nieosiągalne
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariusz
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Trujący grzyb
 ITEM_126_DESC	Dziki grzyb, który wygląda jak każdy inny. Zjedzenie go kosztuje zdrowie i sytość.
+ITEM_127_NAME	Krótki łuk
+ITEM_127_DESC	Wymaga obu rąk. Strzela z bliska i celnie.
+ITEM_128_NAME	Długi łuk
+ITEM_128_DESC	Wymaga obu rąk. Strzela z daleka, ale mniej pewnie.
+ITEM_129_NAME	Kusza
+ITEM_129_DESC	Wymaga obu rąk. Strzela bełtami dwa razy szybciej niż łuk, za połowę obrażeń.
+ITEM_130_NAME	Drewniane strzały
+ITEM_130_DESC	Zwykłe strzały do krótkiego lub długiego łuku.
+ITEM_131_NAME	Kościane strzały
+ITEM_131_DESC	Strzały z grotem z kości do krótkiego lub długiego łuku. Bardziej bolesne niż drewniane.
+ITEM_132_NAME	Ogniste strzały
+ITEM_132_DESC	Płonące strzały do krótkiego lub długiego łuku. Najmocniejsze strzały.
+ITEM_133_NAME	Bełty
+ITEM_133_DESC	Krótkie, ciężkie bełty do kuszy.
 UILABEL_OPTIMIZE	Optymalizuj
 UILABEL_REMOVE_ALL	Zdejmij wszystko
 MISC_GEAR_NO_ROOM	Za mało miejsca w ekwipunku

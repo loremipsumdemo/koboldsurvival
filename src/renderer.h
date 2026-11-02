@@ -199,7 +199,9 @@ public:
     // In-game panels, drawn between beginUi and endUi. The bottom panel shows the walk and run toggle
     // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
     // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
-    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running);
+    // The Faction Panel: its tabs, then the Squad tab's units or the Reputation tab's list for the faction repView
+    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
+                       int repView = FACTION_PLAYER);
     // The world map window: its title bar with the X that closes it, the level's ground `span` tiles from top to
     // bottom centred on cx, cz (sea past the edge), the props as purple squares, the units as dots, the camera's pivot
     // as a ring with a triangle pointing the way it faces, and a green X where the last move order went
@@ -368,6 +370,8 @@ public:
     void drawCollapseButton(const Rect& r, bool collapsed);
     // The X that closes a window, at the right end of its title bar
     void drawCloseButton(const Rect& r);
+    // The Faction Panel's Reputation tab (drawUnitPanel)
+    void drawReputationList(const UnitPanelLayout& L, int repView);
     // The lock beside a panel's [-] or [+]: closed while locked, open and green while the panel can be moved and resized
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
@@ -422,8 +426,9 @@ private:
     std::string fitText(const std::string& text, float maxW, bool ui);
     // The behavior list under the inventory: its heading, column headings, one row per rule and the add button
     // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
+    // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
     void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                             float mx, float my, bool editable);
+                             float mx, float my, bool editable, const std::array<bool, 4>& modes = {});
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom

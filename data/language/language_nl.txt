@@ -98,7 +98,7 @@ CONTROL_DOES_9	Een screenshot maken
 UILABEL_PAUSED	GEPAUZEERD
 UILABEL_PACE_RUN	Tempo: rennen
 UILABEL_PACE_WALK	Tempo: lopen
-UILABEL_SQUAD_PANEL	Groepspaneel
+UILABEL_SQUAD_PANEL	Factiepaneel
 UILABEL_UNIT_PANEL	Eenheidspaneel
 UILABEL_INFORMATION_PANEL	Informatiepaneel
 UILABEL_INTERACTION_PANEL	Interactiepaneel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Klaar om te ruilen
 MISC_TURNS_HOSTILE	{0} wordt vijandig
 MISC_SELECT_UNIT_FIRST	Selecteer eerst een eenheid
 FACTION_PLAYER	Spelersfactie
-FACTION_GRAY	Grijze factie
 FACTION_RED	Rode factie
+FACTION_GREEN	Groene factie
+FACTION_BLUE	Blauwe factie
+FACTION_YELLOW	Gele factie
+MISC_REPUTATION_DROPS	Reputatie bij {0} daalt met {1}, naar {2}
+UILABEL_MODE_PASSIVE	Passief
+UILABEL_MODE_BLOCK	Blokkeren
+UILABEL_MODE_SNEAK	Sluipen
+UILABEL_MODE_RANGED	Afstand
+UILABEL_MODE_PASSIVE_TIP	Passief: begint nooit een gevecht en mengt zich er niet in om te helpen. Volgt wel bevelen, aanvallen ook.
+UILABEL_MODE_BLOCK_TIP	Blokkeren: valt nooit aan en blokkeert twee keer zo vaak, zelfs met lege handen.
+UILABEL_MODE_SNEAK_TIP	Sluipen: loopt op halve snelheid en valt veel minder op. Hoe hoger Sluipen, hoe beter.
+UILABEL_MODE_RANGED_TIP	Afstand: gaat vanzelf aan zolang er een boog of kruisboog in de hoofdhand zit. Elk schot kost één pijl of bout.
+UILABEL_SQUAD_TAB	Groep
+UILABEL_REPUTATION	Reputatie
+UILABEL_REP_HOSTILE	Vijandig: vallen elkaar meteen aan (-25 of lager)
+UILABEL_REP_ALLIED	Bondgenoten: helpen elkaar als er een wordt aangevallen (50 of hoger)
+UILABEL_REP_NEUTRAL	Neutraal: laten elkaar met rust
 MISC_PROP_UNREACHABLE	Onbereikbaar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftige paddenstoel
 ITEM_126_DESC	Een wilde paddenstoel die eruitziet als elke andere. Opeten kost gezondheid en verzadiging.
+ITEM_127_NAME	Korte boog
+ITEM_127_DESC	Vraagt beide handen. Schiet pijlen van dichtbij en raak.
+ITEM_128_NAME	Handboog
+ITEM_128_DESC	Vraagt beide handen. Schiet pijlen van ver, maar minder zeker.
+ITEM_129_NAME	Kruisboog
+ITEM_129_DESC	Vraagt beide handen. Schiet bouten twee keer zo snel als een boog, voor de halve schade.
+ITEM_130_NAME	Houten pijlen
+ITEM_130_DESC	Gewone pijlen voor een korte boog of handboog.
+ITEM_131_NAME	Benen pijlen
+ITEM_131_DESC	Pijlen met een punt van been voor een korte boog of handboog. Raken harder dan hout.
+ITEM_132_NAME	Brandpijlen
+ITEM_132_DESC	Brandende pijlen voor een korte boog of handboog. De hardst rakende pijlen.
+ITEM_133_NAME	Kruisboogbouten
+ITEM_133_DESC	Korte, zware bouten voor een kruisboog.
 UILABEL_OPTIMIZE	Optimaliseren
 UILABEL_REMOVE_ALL	Alles afdoen
 MISC_GEAR_NO_ROOM	Niet genoeg ruimte in de inventaris

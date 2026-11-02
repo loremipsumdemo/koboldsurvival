@@ -98,7 +98,7 @@ CONTROL_DOES_9	Λήψη στιγμιότυπου οθόνης
 UILABEL_PAUSED	ΣΕ ΠΑΥΣΗ
 UILABEL_PACE_RUN	Ρυθμός: τρέξιμο
 UILABEL_PACE_WALK	Ρυθμός: περπάτημα
-UILABEL_SQUAD_PANEL	Πάνελ ομάδας
+UILABEL_SQUAD_PANEL	Πάνελ φατρίας
 UILABEL_UNIT_PANEL	Πάνελ μονάδας
 UILABEL_INFORMATION_PANEL	Πάνελ πληροφοριών
 UILABEL_INTERACTION_PANEL	Πάνελ αλληλεπίδρασης
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Έτοιμο για ανταλλαγή
 MISC_TURNS_HOSTILE	{0} γίνεται εχθρικός
 MISC_SELECT_UNIT_FIRST	Επίλεξε πρώτα μια μονάδα
 FACTION_PLAYER	Φατρία του παίκτη
-FACTION_GRAY	Γκρίζα φατρία
 FACTION_RED	Κόκκινη φατρία
+FACTION_GREEN	Πράσινη φατρία
+FACTION_BLUE	Μπλε φατρία
+FACTION_YELLOW	Κίτρινη φατρία
+MISC_REPUTATION_DROPS	Η φήμη με {0} πέφτει κατά {1}, στο {2}
+UILABEL_MODE_PASSIVE	Παθητικός
+UILABEL_MODE_BLOCK	Απόκρουση
+UILABEL_MODE_SNEAK	Αθόρυβα
+UILABEL_MODE_RANGED	Από απόσταση
+UILABEL_MODE_PASSIVE_TIP	Παθητικός: δεν ξεκινά ποτέ μάχη ούτε μπαίνει σε μία για να βοηθήσει. Εκτελεί όμως εντολές, και επιθέσεις.
+UILABEL_MODE_BLOCK_TIP	Απόκρουση: δεν επιτίθεται ποτέ και αποκρούει χτυπήματα διπλάσιες φορές, ακόμη και με άδεια χέρια.
+UILABEL_MODE_SNEAK_TIP	Αθόρυβα: περπατά με μισή ταχύτητα και γίνεται πολύ δύσκολα αντιληπτός. Όσο υψηλότερη η Μυστικότητα, τόσο καλύτερα.
+UILABEL_MODE_RANGED_TIP	Από απόσταση: ενεργοποιείται μόνο του όσο υπάρχει τόξο ή βαλλίστρα στο κύριο χέρι. Κάθε βολή ξοδεύει ένα βέλος ή βλήμα.
+UILABEL_SQUAD_TAB	Ομάδα
+UILABEL_REPUTATION	Φήμη
+UILABEL_REP_HOSTILE	Εχθρικοί: επιτίθενται με το που βλέπονται (-25 ή λιγότερο)
+UILABEL_REP_ALLIED	Σύμμαχοι: βοηθούν ο ένας τον άλλον όταν δέχονται επίθεση (50 ή περισσότερο)
+UILABEL_REP_NEUTRAL	Ουδέτεροι: αφήνουν ο ένας τον άλλον ήσυχο
 MISC_PROP_UNREACHABLE	Απρόσιτο
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Σενάριο
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Δηλητηριώδες μανιτάρι
 ITEM_126_DESC	Ένα άγριο μανιτάρι που μοιάζει με όλα τα άλλα. Αν το φας, χάνεις υγεία και χορτασμό.
+ITEM_127_NAME	Κοντό τόξο
+ITEM_127_DESC	Χρειάζεται και τα δύο χέρια. Ρίχνει βέλη από κοντά και με ακρίβεια.
+ITEM_128_NAME	Μακρύ τόξο
+ITEM_128_DESC	Χρειάζεται και τα δύο χέρια. Ρίχνει βέλη από μακριά, αλλά με λιγότερη ακρίβεια.
+ITEM_129_NAME	Βαλλίστρα
+ITEM_129_DESC	Χρειάζεται και τα δύο χέρια. Ρίχνει βλήματα δύο φορές πιο γρήγορα από τόξο, με μισή ζημιά.
+ITEM_130_NAME	Ξύλινα βέλη
+ITEM_130_DESC	Απλά βέλη για κοντό ή μακρύ τόξο.
+ITEM_131_NAME	Οστέινα βέλη
+ITEM_131_DESC	Βέλη με αιχμή από κόκαλο για κοντό ή μακρύ τόξο. Χτυπούν πιο δυνατά από τα ξύλινα.
+ITEM_132_NAME	Φλεγόμενα βέλη
+ITEM_132_DESC	Φλεγόμενα βέλη για κοντό ή μακρύ τόξο. Τα πιο δυνατά βέλη.
+ITEM_133_NAME	Βλήματα βαλλίστρας
+ITEM_133_DESC	Κοντά, βαριά βλήματα για βαλλίστρα.
 UILABEL_OPTIMIZE	Βελτιστοποίηση
 UILABEL_REMOVE_ALL	Αφαίρεση όλων
 MISC_GEAR_NO_ROOM	Δεν υπάρχει αρκετός χώρος στο απόθεμα

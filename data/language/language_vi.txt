@@ -98,7 +98,7 @@ CONTROL_DOES_9	Chụp ảnh màn hình
 UILABEL_PAUSED	TẠM DỪNG
 UILABEL_PACE_RUN	Nhịp độ: chạy
 UILABEL_PACE_WALK	Nhịp độ: đi bộ
-UILABEL_SQUAD_PANEL	Bảng đội hình
+UILABEL_SQUAD_PANEL	Bảng phe
 UILABEL_UNIT_PANEL	Bảng đơn vị
 UILABEL_INFORMATION_PANEL	Bảng thông tin
 UILABEL_INTERACTION_PANEL	Bảng tương tác
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Sẵn sàng trao đổi
 MISC_TURNS_HOSTILE	{0} trở nên thù địch
 MISC_SELECT_UNIT_FIRST	Hãy chọn một đơn vị trước
 FACTION_PLAYER	Phe người chơi
-FACTION_GRAY	Phe Xám
 FACTION_RED	Phe Đỏ
+FACTION_GREEN	Phe Xanh Lá
+FACTION_BLUE	Phe Xanh Lam
+FACTION_YELLOW	Phe Vàng
+MISC_REPUTATION_DROPS	Danh tiếng với {0} giảm {1}, còn {2}
+UILABEL_MODE_PASSIVE	Hòa hoãn
+UILABEL_MODE_BLOCK	Đỡ đòn
+UILABEL_MODE_SNEAK	Lén lút
+UILABEL_MODE_RANGED	Tầm xa
+UILABEL_MODE_PASSIVE_TIP	Hòa hoãn: không bao giờ gây chiến hay xen vào giúp người khác. Vẫn làm theo lệnh, kể cả tấn công.
+UILABEL_MODE_BLOCK_TIP	Đỡ đòn: không bao giờ tấn công và đỡ đòn thường gấp đôi, kể cả tay không.
+UILABEL_MODE_SNEAK_TIP	Lén lút: đi với nửa tốc độ và khó bị phát hiện hơn nhiều. Chỉ số Ẩn nấp càng cao càng tốt.
+UILABEL_MODE_RANGED_TIP	Tầm xa: tự bật khi tay chính cầm cung hoặc nỏ. Mỗi phát bắn dùng một mũi tên hoặc một mũi nỏ.
+UILABEL_SQUAD_TAB	Đội
+UILABEL_REPUTATION	Danh tiếng
+UILABEL_REP_HOSTILE	Thù địch: thấy nhau là đánh (-25 trở xuống)
+UILABEL_REP_ALLIED	Đồng minh: giúp nhau khi một bên bị tấn công (50 trở lên)
+UILABEL_REP_NEUTRAL	Trung lập: không đụng đến nhau
 MISC_PROP_UNREACHABLE	Không thể đến
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Kịch bản
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Nấm độc
 ITEM_126_DESC	Một cây nấm dại trông như mọi cây khác. Ăn vào sẽ mất máu và độ no.
+ITEM_127_NAME	Cung ngắn
+ITEM_127_DESC	Cần hai tay. Bắn tên ở tầm gần và rất chuẩn.
+ITEM_128_NAME	Cung dài
+ITEM_128_DESC	Cần hai tay. Bắn tên ở tầm xa nhưng kém chuẩn hơn.
+ITEM_129_NAME	Nỏ
+ITEM_129_DESC	Cần hai tay. Bắn mũi nỏ nhanh gấp đôi cung, với một nửa sát thương.
+ITEM_130_NAME	Tên gỗ
+ITEM_130_DESC	Tên thường cho cung ngắn hoặc cung dài.
+ITEM_131_NAME	Tên xương
+ITEM_131_DESC	Tên đầu xương cho cung ngắn hoặc cung dài. Đánh mạnh hơn tên gỗ.
+ITEM_132_NAME	Tên lửa
+ITEM_132_DESC	Tên bốc cháy cho cung ngắn hoặc cung dài. Loại tên mạnh nhất.
+ITEM_133_NAME	Mũi nỏ
+ITEM_133_DESC	Mũi nỏ ngắn và nặng dùng cho nỏ.
 UILABEL_OPTIMIZE	Tối ưu
 UILABEL_REMOVE_ALL	Tháo hết
 MISC_GEAR_NO_ROOM	Không đủ chỗ trong túi đồ

@@ -98,7 +98,7 @@ CONTROL_DOES_9	Tar en skärmbild
 UILABEL_PAUSED	PAUSAD
 UILABEL_PACE_RUN	Tempo: spring
 UILABEL_PACE_WALK	Tempo: gå
-UILABEL_SQUAD_PANEL	Truppanel
+UILABEL_SQUAD_PANEL	Fraktionspanel
 UILABEL_UNIT_PANEL	Enhetspanel
 UILABEL_INFORMATION_PANEL	Informationspanel
 UILABEL_INTERACTION_PANEL	Interaktionspanel
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Redo att byta
 MISC_TURNS_HOSTILE	{0} blir fientlig
 MISC_SELECT_UNIT_FIRST	Välj en enhet först
 FACTION_PLAYER	Spelarens fraktion
-FACTION_GRAY	Den grå fraktionen
 FACTION_RED	Den röda fraktionen
+FACTION_GREEN	Den gröna fraktionen
+FACTION_BLUE	Den blå fraktionen
+FACTION_YELLOW	Den gula fraktionen
+MISC_REPUTATION_DROPS	Ryktet hos {0} sjunker med {1}, till {2}
+UILABEL_MODE_PASSIVE	Passiv
+UILABEL_MODE_BLOCK	Blockera
+UILABEL_MODE_SNEAK	Smyg
+UILABEL_MODE_RANGED	Avstånd
+UILABEL_MODE_PASSIVE_TIP	Passiv: startar aldrig en strid och går inte in för att hjälpa. Följer ändå order, även anfall.
+UILABEL_MODE_BLOCK_TIP	Blockera: anfaller aldrig och blockerar dubbelt så ofta, även med tomma händer.
+UILABEL_MODE_SNEAK_TIP	Smyg: går i halv fart och är mycket svårare att upptäcka. Ju högre Smygande, desto bättre.
+UILABEL_MODE_RANGED_TIP	Avstånd: slås på av sig själv så länge en båge eller ett armborst finns i huvudhanden. Varje skott kostar en pil eller bult.
+UILABEL_SQUAD_TAB	Trupp
+UILABEL_REPUTATION	Rykte
+UILABEL_REP_HOSTILE	Fientliga: anfaller varandra direkt (-25 eller lägre)
+UILABEL_REP_ALLIED	Allierade: hjälper varandra när någon anfalls (50 eller högre)
+UILABEL_REP_NEUTRAL	Neutrala: låter varandra vara
 MISC_PROP_UNREACHABLE	Onåbar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftig svamp
 ITEM_126_DESC	En vild svamp som ser ut som alla andra. Att äta den kostar hälsa och mättnad.
+ITEM_127_NAME	Kortbåge
+ITEM_127_DESC	Kräver båda händerna. Skjuter pilar på kort håll och träffar säkert.
+ITEM_128_NAME	Långbåge
+ITEM_128_DESC	Kräver båda händerna. Skjuter pilar på långt håll, men mindre säkert.
+ITEM_129_NAME	Armborst
+ITEM_129_DESC	Kräver båda händerna. Skjuter bultar dubbelt så snabbt som en båge, med halva skadan.
+ITEM_130_NAME	Träpilar
+ITEM_130_DESC	Vanliga pilar till kortbåge eller långbåge.
+ITEM_131_NAME	Benpilar
+ITEM_131_DESC	Pilar med benspets till kortbåge eller långbåge. Träffar hårdare än trä.
+ITEM_132_NAME	Eldpilar
+ITEM_132_DESC	Brinnande pilar till kortbåge eller långbåge. De hårdast träffande pilarna.
+ITEM_133_NAME	Armborstbultar
+ITEM_133_DESC	Korta, tunga bultar till ett armborst.
 UILABEL_OPTIMIZE	Optimera
 UILABEL_REMOVE_ALL	Ta av allt
 MISC_GEAR_NO_ROOM	Inte tillräckligt med plats i inventariet

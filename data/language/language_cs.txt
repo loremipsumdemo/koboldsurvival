@@ -98,7 +98,7 @@ CONTROL_DOES_9	Pořídí snímek obrazovky
 UILABEL_PAUSED	POZASTAVENO
 UILABEL_PACE_RUN	Tempo: běh
 UILABEL_PACE_WALK	Tempo: chůze
-UILABEL_SQUAD_PANEL	Panel oddílu
+UILABEL_SQUAD_PANEL	Panel frakce
 UILABEL_UNIT_PANEL	Panel jednotky
 UILABEL_INFORMATION_PANEL	Panel informací
 UILABEL_INTERACTION_PANEL	Panel interakce
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Připraveno k výměně
 MISC_TURNS_HOSTILE	{0} se stává nepřátelským
 MISC_SELECT_UNIT_FIRST	Nejprve vyberte jednotku
 FACTION_PLAYER	Frakce hráče
-FACTION_GRAY	Šedá frakce
 FACTION_RED	Rudá frakce
+FACTION_GREEN	Zelená frakce
+FACTION_BLUE	Modrá frakce
+FACTION_YELLOW	Žlutá frakce
+MISC_REPUTATION_DROPS	Reputace u frakce {0} klesá o {1} na {2}
+UILABEL_MODE_PASSIVE	Pasivní
+UILABEL_MODE_BLOCK	Krytí
+UILABEL_MODE_SNEAK	Plížení
+UILABEL_MODE_RANGED	Na dálku
+UILABEL_MODE_PASSIVE_TIP	Pasivní: nikdy nezačne boj ani se nepřidá, aby pomohl ostatním. Rozkazy, včetně útoků, plní dál.
+UILABEL_MODE_BLOCK_TIP	Krytí: nikdy neútočí a kryje rány dvakrát častěji, i s prázdnýma rukama.
+UILABEL_MODE_SNEAK_TIP	Plížení: chodí polovinou rychlosti a je mnohem hůř vidět. Čím vyšší Plížení, tím lépe.
+UILABEL_MODE_RANGED_TIP	Na dálku: zapne se samo, dokud je v hlavní ruce luk nebo kuše. Každý výstřel spotřebuje jeden šíp nebo šipku.
+UILABEL_SQUAD_TAB	Oddíl
+UILABEL_REPUTATION	Reputace
+UILABEL_REP_HOSTILE	Nepřátelé: napadnou se, jakmile se uvidí (-25 a méně)
+UILABEL_REP_ALLIED	Spojenci: pomáhají si, když je někdo napaden (50 a více)
+UILABEL_REP_NEUTRAL	Neutrální: nechávají se na pokoji
 MISC_PROP_UNREACHABLE	Nedosažitelné
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénář
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Jedovatá houba
 ITEM_126_DESC	Lesní houba, která vypadá jako každá jiná. Snědení stojí zdraví i sytost.
+ITEM_127_NAME	Krátký luk
+ITEM_127_DESC	Potřebuje obě ruce. Střílí šípy na krátkou vzdálenost a přesně.
+ITEM_128_NAME	Dlouhý luk
+ITEM_128_DESC	Potřebuje obě ruce. Střílí šípy na dlouhou vzdálenost, ale méně jistě.
+ITEM_129_NAME	Kuše
+ITEM_129_DESC	Potřebuje obě ruce. Střílí šipky dvakrát rychleji než luk, za poloviční poškození.
+ITEM_130_NAME	Dřevěné šípy
+ITEM_130_DESC	Obyčejné šípy pro krátký nebo dlouhý luk.
+ITEM_131_NAME	Kostěné šípy
+ITEM_131_DESC	Šípy s kostěným hrotem pro krátký nebo dlouhý luk. Zasahují silněji než dřevěné.
+ITEM_132_NAME	Ohnivé šípy
+ITEM_132_DESC	Hořící šípy pro krátký nebo dlouhý luk. Nejsilnější šípy.
+ITEM_133_NAME	Šipky do kuše
+ITEM_133_DESC	Krátké, těžké šipky do kuše.
 UILABEL_OPTIMIZE	Optimalizovat
 UILABEL_REMOVE_ALL	Sundat vše
 MISC_GEAR_NO_ROOM	V inventáři není dost místa

@@ -55,8 +55,32 @@ float buffOf(World& w, Entity e) {
     return c ? c->buffAttack : 0.0f;
 }
 
+const Behaviors* behaviorsOf(World& w, Entity e) { return w.get<Behaviors>(e); }
+
+// The fight numbers for a unit, with its Block mode counted: it blocks more often, even empty-handed
 CombatNumbers numbersOf(World& w, Entity e) {
-    return deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
+    CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
+    if (const Behaviors* b = behaviorsOf(w, e); b && b->block) {
+        n.blockChance = std::min(BLOCK_MODE_CAP, std::max(n.blockChance, BLOCK_CHANCE_BASE) * BLOCK_MODE_FACTOR);
+    }
+    return n;
+}
+
+// The inventory slot of the first ammo a ranged weapon can shoot, or -1
+int ammoSlotFor(World& w, Entity e, const RangedProfile& rp) {
+    const Inventory* inv = w.get<Inventory>(e);
+    if (!inv) return -1;
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        const ItemDef* d = findItem(inv->slots[i].item);
+        if (d && inv->slots[i].count > 0 && hasTag(*d, rp.ammoTag)) return i;
+    }
+    return -1;
+}
+
+// The ranged weapon in a unit's main hand, or nullptr
+const RangedProfile* rangedOf(World& w, Entity e) {
+    const Equipment* q = w.get<Equipment>(e);
+    return q ? rangedProfileOf(q->items[GEAR_MAIN_HAND]) : nullptr;
 }
 
 // An Unconscious unit (or a corpse) is out of the fight: nobody swings at it
@@ -72,10 +96,14 @@ float distanceBetween(World& w, Entity a, Entity b) {
     return std::sqrt(dx * dx + dz * dz);
 }
 
-// Share of hostile notices that fail against this player unit
+// Share of notices that fail against this unit. Sneaking, more fail, and Stealth counts twice.
 float noticeFailChance(World& w, Entity p) {
-    return std::min(NOTICE_FAIL_CAP, NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), STAT_STEALTH) - 1));
+    const float stealth = NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), STAT_STEALTH) - 1);
+    if (isSneaking(w, p)) return std::min(SNEAK_FAIL_CAP, SNEAK_FAIL_BASE + 2.0f * stealth);
+    return std::min(NOTICE_FAIL_CAP, stealth);
 }
+// How close another unit must be to notice this one
+float noticeRangeOf(World& w, Entity p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
 
 // Inventory slot holding an item with this name, or -1
 int slotNamed(World& w, Entity e, const char* name) {
@@ -93,8 +121,9 @@ int slotNamed(World& w, Entity e, const char* name) {
 Entity pickInReach(World& w, Entity p, const std::vector<Entity>& hostiles) {
     Entity best = NULL_ENTITY;
     int bestHp = 0;
+    const float reach = reachOf(w, p);
     for (Entity h : hostiles) {
-        if (!targetable(w, h) || distanceBetween(w, p, h) > ATTACK_REACH) continue;
+        if (!targetable(w, h) || distanceBetween(w, p, h) > reach) continue;
         const int hp = hpOf(w, h);
         if (best == NULL_ENTITY || hp < bestHp) {
             best = h;
@@ -104,12 +133,76 @@ Entity pickInReach(World& w, Entity p, const std::vector<Entity>& hostiles) {
     return best;
 }
 
-// One swing: rolls, the outcome, the log lines, damage numbers and the XP it gives
+// An attack seen: a unit d attacked by a. If a's faction was not already at war with d (hostile, or d already
+// provoked by it), d and every other unit of d's faction that sees it (within WITNESS_RANGE of d) are provoked by a's
+// faction: they fight back against a and its whole faction. Then every unit of d's faction or an ally's that is
+// close by and free (not passive, not already fighting, and for your units not busy with an order) goes after a. Your
+// units do this for each other: a squad unit attacked brings the others near it.
+void onAttacked(World& w, Entity a, Entity d) {
+    const int fa = factionOf(w, a), fd = factionOf(w, d);
+    if (fa == fd) return;
+    const bool atWar = factionsHostile(fa, fd) || unitsHostile(w, a, d);
+    const Transform* td = w.get<Transform>(d);
+    if (!td) return;
+    const std::vector<Entity> near = w.view<Unit, Transform, Faction>();
+    auto sees = [&](Entity u) {
+        const Transform* tu = w.get<Transform>(u);
+        const float dx = tu->x - td->x, dz = tu->z - td->z;
+        return dx * dx + dz * dz <= WITNESS_RANGE * WITNESS_RANGE;
+    };
+    if (!atWar && fd != FACTION_PLAYER) {
+        for (Entity u : near) {
+            if (factionOf(w, u) == fd && (u == d || sees(u)) && !w.has<Unconscious>(u)) provoke(w, u, fa);
+        }
+    }
+    // Helpers: the defender's faction and its allies, never an ally of the attacker
+    for (Entity u : near) {
+        if (u == a || w.has<Unconscious>(u) || w.has<Carried>(u) || !w.has<Combat>(u)) continue;
+        const int fu = factionOf(w, u);
+        if (!factionsAllied(fu, fd) || factionsAllied(fu, fa) || !sees(u)) continue;
+        if (isPassive(w, u) || isBlocking(w, u)) continue;
+        Combat& c = *w.get<Combat>(u);
+        if (w.has<Commandable>(u)) {
+            // Your units step in only when they are free: no order of their own under way
+            const bool busy = w.has<AttackOrder>(u) || w.has<SoloMove>(u) || w.has<PickupOrder>(u) ||
+                              w.has<TalkOrder>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
+                              w.has<PutDownOrder>(u) || w.has<PropOrder>(u) || w.has<Working>(u) ||
+                              w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
+            const Squad* sq = w.has<SquadMember>(u) ? w.get<Squad>(w.get<SquadMember>(u)->squad) : nullptr;
+            if (busy || (sq && !sq->arrived) || c.target != NULL_ENTITY) continue;
+            if (Squad* s = w.has<SquadMember>(u) ? w.get<Squad>(w.get<SquadMember>(u)->squad) : nullptr; s && s->size > 0) --s->size;
+            w.remove<SquadMember>(u);
+            w.add(u, AttackOrder{ a });
+            c.target = a;
+        } else if (c.target == NULL_ENTITY) {
+            c.target = a;
+        }
+    }
+}
+
+// One swing, or one shot from a ranged weapon: rolls, the outcome, the log lines, damage numbers and the XP it gives
 void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<FloatingNumber>& floats) {
-    const CombatNumbers an = numbersOf(w, a);
+    CombatNumbers an = numbersOf(w, a);
     const CombatNumbers dn = numbersOf(w, d);
     const bool downed = hpOf(w, d) <= 0;
+    // A ranged weapon shoots one piece of its ammo, which adds its attack. Without ammo it fights hand to hand.
+    bool shot = false;
+    if (const RangedProfile* rp = an.ranged ? rangedOf(w, a) : nullptr) {
+        const int slot = ammoSlotFor(w, a, *rp);
+        if (slot >= 0) {
+            Inventory* inv = w.get<Inventory>(a);
+            const ItemDef* ammo = findItem(inv->slots[slot].item);
+            an.attack += ammo ? (float)ammo->attackValue * rp->damageMul : 0.0f;
+            if (--inv->slots[slot].count <= 0) inv->slots[slot] = ItemStack{};
+            shot = true;
+        } else {
+            const Stats st = statsOf(w, a);
+            an.attack = UNARMED_ATTACK + STRENGTH_ATTACK * (float)levelOf(st, STAT_STRENGTH) + buffOf(w, a);
+            an.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(st, STAT_MELEE));
+        }
+    }
     const SwingResult r = resolveSwing(an, dn, downed, rng.unit(), rng.unit(), rng.unit());
+    onAttacked(w, a, d);
 
     if (Combat* ca = w.get<Combat>(a)) ca->swingLeft = an.swingTime;
     grantXp(w, a, STAT_DEXTERITY, DEXTERITY_XP_PER_SWING, lang("MISC_REASON_SWINGING"));
@@ -120,7 +213,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 
     if (r.outcome == Outcome::Miss) {
         ++log.misses;
-        log.add(attacker + " misses " + defender, tint, LogKind::Miss);
+        log.add(attacker + (shot ? " shoots at " : " misses ") + defender + (shot ? " and misses" : ""), tint, LogKind::Miss);
         return;
     }
     if (r.outcome == Outcome::Dodge) {
@@ -142,18 +235,22 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     }
     const int lost = nd ? before - nd->hp : r.damage;
 
-    log.add(attacker + " hits " + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit);
+    log.add(attacker + (shot ? " shoots " : " hits ") + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit);
     if (r.damage > 0) log.add(defender + " takes " + std::to_string(r.damage) + " damage", tint, LogKind::Damage);
     if (const Transform* td = w.get<Transform>(d)) {
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
 
-    grantXp(w, a, STAT_MELEE, MELEE_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
+    grantXp(w, a, shot ? STAT_PROJECTILES : STAT_MELEE, MELEE_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
     grantXp(w, a, STAT_STRENGTH, STRENGTH_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
     grantXp(w, d, STAT_VITALITY, VITALITY_XP_PER_HP_LOST * lost, lang("MISC_REASON_TAKING"));
     if (r.blocked) grantXp(w, d, STAT_BLOCK, BLOCK_XP_PER_BLOCK, lang("MISC_REASON_BLOCKING"));
 
-    if (nd && nd->hp == 0) log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage);
+    if (nd && nd->hp == 0) {
+        log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage);
+        // Whose hit it was, for the reputation when it is knocked out
+        if (Combat* cd = w.get<Combat>(d)) cd->downedByFaction = factionOf(w, a);
+    }
 }
 
 // A unit that has just picked a fight drinks an elixir first, if it has one and none is active
@@ -194,6 +291,15 @@ CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAtta
     n.mitigation = MITIGATION_K / (MITIGATION_K + n.defense);
 
     n.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, STAT_MELEE));
+    n.reach = ATTACK_REACH;
+    // A ranged weapon: Projectiles for the aim, its own accuracy, damage and speed, and its range
+    if (const RangedProfile* rp = rangedProfileOf(worn.items[GEAR_MAIN_HAND])) {
+        n.ranged = true;
+        n.reach = rp->range;
+        n.accuracy = std::clamp(ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, STAT_PROJECTILES) + rp->accuracyAdd,
+                                0.05f, ACCURACY_CAP);
+        n.attack = base * rp->damageMul + STRENGTH_ATTACK * (float)levelOf(s, STAT_STRENGTH) + buffAttack;
+    }
     n.dodge = std::min(DODGE_CAP, DODGE_PER_LEVEL * levelOf(s, STAT_AGILITY));
 
     const bool canBlock = worn.items[GEAR_MAIN_HAND] != 0 || worn.items[GEAR_OFF_HAND] != 0;
@@ -203,6 +309,7 @@ CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAtta
 
     const float dexFactor = 1.0f + DEXTERITY_SWING_PER_LEVEL * (levelOf(s, STAT_DEXTERITY) - 1);
     n.swingTime = (1.0f + weight / 5.0f) / dexFactor;
+    if (const RangedProfile* rp = rangedProfileOf(worn.items[GEAR_MAIN_HAND])) n.swingTime *= rp->shotTimeMul;
 
     n.maxStamina = STAMINA_BASE + STAMINA_PER_ENDURANCE * levelOf(s, STAT_ENDURANCE);
     return n;
@@ -261,6 +368,10 @@ float walkSpeedOf(World& w, Entity e, bool running) {
     const float stamina = c ? c->stamina : 1.0f;
     const float load = encumbranceOf(w, e);
     float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1)) * (1.0f - load);
+    if (isSneaking(w, e)) {
+        running = false;          // a sneaking unit never runs
+        speed *= SNEAK_SPEED;
+    }
     if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1);
     if (stamina <= 0.0f) speed *= 0.5f;
     return std::max(0.0f, speed);
@@ -424,6 +535,110 @@ void ensureCombat(World& w, Entity e) {
     if (!w.has<Combat>(e)) w.add(e, Combat{});
 }
 
+const RangedProfile* rangedProfileOf(int item) {
+    static const RangedProfile shortBow{ 8.0f, 0.10f, 1.0f, 1.0f, "arrow" };
+    static const RangedProfile longBow{ 14.0f, -0.10f, 1.0f, 1.0f, "arrow" };
+    static const RangedProfile crossbow{ 8.0f, 0.10f, 0.5f, 0.5f, "bolt" };
+    const ItemDef* d = findItem(item);
+    if (!d || d->typeId != "weapon") return nullptr;
+    if (hasTag(*d, "bow_short")) return &shortBow;
+    if (hasTag(*d, "bow_long")) return &longBow;
+    if (hasTag(*d, "crossbow")) return &crossbow;
+    return nullptr;
+}
+
+int factionOf(World& w, Entity e) {
+    if (const Faction* f = w.get<Faction>(e)) return f->id;
+    // A unit with no faction goes by its side: yours, a hostile (Red) or a neutral (Green)
+    if (w.has<Commandable>(e)) return FACTION_PLAYER;
+    return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
+}
+
+namespace {
+bool provokedBy(World& w, Entity e, int faction) {
+    const Provoked* p = w.get<Provoked>(e);
+    if (!p) return false;
+    for (const Provoked::Entry& en : p->against) {
+        if (en.faction == faction && en.secondsLeft > 0.0f) return true;
+    }
+    return false;
+}
+} // namespace
+
+bool unitsHostile(World& w, Entity a, Entity b) {
+    if (a == b) return false;
+    const int fa = factionOf(w, a), fb = factionOf(w, b);
+    if (fa == fb) return false;
+    return factionsHostile(fa, fb) || provokedBy(w, a, fb) || provokedBy(w, b, fa);
+}
+
+bool hostileToPlayer(World& w, Entity e) {
+    if (w.has<Commandable>(e)) return false;
+    const int f = factionOf(w, e);
+    return f != FACTION_PLAYER && (factionsHostile(f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
+}
+
+void provoke(World& w, Entity unit, int faction) {
+    if (!w.has<Unit>(unit) || factionOf(w, unit) == faction) return;
+    Provoked& p = w.has<Provoked>(unit) ? *w.get<Provoked>(unit) : w.add(unit, Provoked{});
+    for (Provoked::Entry& en : p.against) {
+        if (en.faction == faction) {
+            en.secondsLeft = PROVOKED_SECONDS;
+            return;
+        }
+    }
+    p.against.push_back(Provoked::Entry{ faction, PROVOKED_SECONDS });
+}
+
+void factionSystem(World& w, float dt) {
+    for (Entity u : w.view<Provoked>()) {
+        Provoked* p = w.get<Provoked>(u);
+        for (Provoked::Entry& en : p->against) en.secondsLeft -= dt;
+        p->against.erase(std::remove_if(p->against.begin(), p->against.end(),
+                                        [](const Provoked::Entry& en) { return en.secondsLeft <= 0.0f; }),
+                         p->against.end());
+        if (p->against.empty()) w.remove<Provoked>(u);
+    }
+    for (Entity u : w.view<Unit>()) {
+        if (w.has<Commandable>(u)) {
+            w.remove<Hostile>(u);
+            w.remove<Neutral>(u);
+            continue;
+        }
+        const bool hostile = hostileToPlayer(w, u);
+        if (hostile && !w.has<Hostile>(u)) {
+            const bool wasNeutral = w.has<Neutral>(u);
+            w.remove<Neutral>(u);
+            w.add(u, Hostile{});
+            if (wasNeutral && !w.has<Unconscious>(u)) {
+                queueSound(Sfx::TurnHostile);
+                queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen);
+            }
+        } else if (!hostile && !w.has<Neutral>(u)) {
+            w.remove<Hostile>(u);
+            w.add(u, Neutral{});
+        }
+    }
+}
+
+bool isPassive(World& w, Entity e) {
+    const Behaviors* b = w.get<Behaviors>(e);
+    return b && b->passive;
+}
+bool isBlocking(World& w, Entity e) {
+    const Behaviors* b = w.get<Behaviors>(e);
+    return b && b->block;
+}
+bool isSneaking(World& w, Entity e) {
+    const Behaviors* b = w.get<Behaviors>(e);
+    return b && b->sneak;
+}
+
+float reachOf(World& w, Entity e) {
+    if (const RangedProfile* rp = rangedOf(w, e); rp && ammoSlotFor(w, e, *rp) >= 0) return rp->range;
+    return ATTACK_REACH;
+}
+
 Equipment randomHostileGear(Rng& rng) {
     Equipment worn;
     for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
@@ -490,19 +705,23 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
     // Out cold, or carried (playing dead or not), a unit does not fight
     auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e); };
 
-    // Hostiles notice player units in range, and chase until the target is gone or out of the leash
-    for (Entity h : hostiles) {
-        if (!standing(h)) continue;
+    // Every unit that is not yours notices the units it fights in range (its enemies by faction, or by provocation),
+    // and chases until the target is gone or out of the leash. A passive one starts no fight, but keeps one it has.
+    // Only notices of your units are written to the log.
+    for (Entity h : everyone) {
+        if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
         if (hc.target != NULL_ENTITY) {
             if (targetable(w, hc.target) && distanceBetween(w, h, hc.target) <= LEASH_RANGE) continue;
             hc.target = NULL_ENTITY;
         }
-        for (Entity p : players) {
-            if (!standing(p) || distanceBetween(w, h, p) > AGGRO_RANGE) continue;
+        if (isPassive(w, h)) continue;
+        for (Entity p : everyone) {
+            if (p == h || !standing(p) || !unitsHostile(w, h, p)) continue;
+            if (distanceBetween(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {
                 hc.target = p;
-                log.add(nameOf(w, h) + " notices " + nameOf(w, p), Tint::Gray, LogKind::Seen);
+                if (w.has<Commandable>(p)) log.add(nameOf(w, h) + " notices " + nameOf(w, p), Tint::Gray, LogKind::Seen);
                 drinkForFight(w, h, hc, log);
                 break;
             }
@@ -547,7 +766,12 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             w.remove<AttackOrder>(p);   // the red unit is gone, so the order is done
             pc.target = NULL_ENTITY;
         }
-        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && distanceBetween(w, p, pc.target) <= ATTACK_REACH) {
+        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && distanceBetween(w, p, pc.target) <= reachOf(w, p)) {
+            continue;
+        }
+        // A passive unit, or one only blocking, picks no fight of its own
+        if (isPassive(w, p) || isBlocking(w, p)) {
+            pc.target = NULL_ENTITY;
             continue;
         }
         pc.target = pickInReach(w, p, hostiles);
@@ -560,8 +784,9 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         if (!w.has<Combat>(e) || !w.has<Transform>(e) || !standing(e)) continue;
         Combat& c = *w.get<Combat>(e);
         if (c.target == NULL_ENTITY || c.swingLeft > 0.0f) continue;
+        if (isBlocking(w, e)) continue;   // Block mode: it only blocks, and never swings
         const Entity t = c.target;
-        if (!targetable(w, t) || distanceBetween(w, e, t) > ATTACK_REACH) continue;
+        if (!targetable(w, t) || distanceBetween(w, e, t) > reachOf(w, e)) continue;
         strike(w, rng, e, t, log, floats);
     }
 }

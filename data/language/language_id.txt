@@ -98,7 +98,7 @@ CONTROL_DOES_9	Mengambil tangkapan layar
 UILABEL_PAUSED	DIJEDA
 UILABEL_PACE_RUN	Kecepatan: lari
 UILABEL_PACE_WALK	Kecepatan: jalan
-UILABEL_SQUAD_PANEL	Panel Pasukan
+UILABEL_SQUAD_PANEL	Panel Faksi
 UILABEL_UNIT_PANEL	Panel Unit
 UILABEL_INFORMATION_PANEL	Panel Informasi
 UILABEL_INTERACTION_PANEL	Panel Interaksi
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Siap bertukar
 MISC_TURNS_HOSTILE	{0} menjadi bermusuhan
 MISC_SELECT_UNIT_FIRST	Pilih unit dulu
 FACTION_PLAYER	Faksi Pemain
-FACTION_GRAY	Faksi Kelabu
 FACTION_RED	Faksi Merah
+FACTION_GREEN	Faksi Hijau
+FACTION_BLUE	Faksi Biru
+FACTION_YELLOW	Faksi Kuning
+MISC_REPUTATION_DROPS	Reputasi dengan {0} turun {1}, menjadi {2}
+UILABEL_MODE_PASSIVE	Pasif
+UILABEL_MODE_BLOCK	Tangkis
+UILABEL_MODE_SNEAK	Mengendap
+UILABEL_MODE_RANGED	Jarak jauh
+UILABEL_MODE_PASSIVE_TIP	Pasif: tidak pernah memulai pertarungan atau ikut membantu yang lain. Tetap menjalankan perintah, termasuk menyerang.
+UILABEL_MODE_BLOCK_TIP	Tangkis: tidak pernah menyerang, dan menangkis dua kali lebih sering, bahkan dengan tangan kosong.
+UILABEL_MODE_SNEAK_TIP	Mengendap: berjalan setengah kecepatan dan jauh lebih sulit terlihat. Makin tinggi Mengendap, makin baik.
+UILABEL_MODE_RANGED_TIP	Jarak jauh: menyala sendiri selama ada busur atau busur silang di tangan utama. Tiap tembakan memakai satu anak panah atau baut.
+UILABEL_SQUAD_TAB	Pasukan
+UILABEL_REPUTATION	Reputasi
+UILABEL_REP_HOSTILE	Bermusuhan: saling serang begitu terlihat (-25 atau kurang)
+UILABEL_REP_ALLIED	Sekutu: saling bantu saat ada yang diserang (50 atau lebih)
+UILABEL_REP_NEUTRAL	Netral: saling membiarkan
 MISC_PROP_UNREACHABLE	Tidak terjangkau
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Jamur beracun
 ITEM_126_DESC	Jamur liar yang tampak seperti jamur lainnya. Memakannya mengurangi kesehatan dan rasa kenyang.
+ITEM_127_NAME	Busur Pendek
+ITEM_127_DESC	Perlu dua tangan. Menembakkan anak panah dari jarak dekat dengan tepat.
+ITEM_128_NAME	Busur Panjang
+ITEM_128_DESC	Perlu dua tangan. Menembakkan anak panah dari jarak jauh, tapi kurang pasti.
+ITEM_129_NAME	Busur Silang
+ITEM_129_DESC	Perlu dua tangan. Menembakkan baut dua kali lebih cepat dari busur, dengan setengah kerusakan.
+ITEM_130_NAME	Anak Panah Kayu
+ITEM_130_DESC	Anak panah biasa untuk busur pendek atau panjang.
+ITEM_131_NAME	Anak Panah Tulang
+ITEM_131_DESC	Anak panah bermata tulang untuk busur pendek atau panjang. Lebih kuat dari kayu.
+ITEM_132_NAME	Anak Panah Api
+ITEM_132_DESC	Anak panah menyala untuk busur pendek atau panjang. Anak panah terkuat.
+ITEM_133_NAME	Baut Busur Silang
+ITEM_133_DESC	Baut pendek dan berat untuk busur silang.
 UILABEL_OPTIMIZE	Optimalkan
 UILABEL_REMOVE_ALL	Lepas semua
 MISC_GEAR_NO_ROOM	Ruang inventaris tidak cukup

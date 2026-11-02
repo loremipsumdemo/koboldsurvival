@@ -98,7 +98,7 @@ CONTROL_DOES_9	Ottaa kuvakaappauksen
 UILABEL_PAUSED	TAUOLLA
 UILABEL_PACE_RUN	Vauhti: juoksu
 UILABEL_PACE_WALK	Vauhti: kävely
-UILABEL_SQUAD_PANEL	Joukkopaneeli
+UILABEL_SQUAD_PANEL	Ryhmittymäpaneeli
 UILABEL_UNIT_PANEL	Yksikköpaneeli
 UILABEL_INFORMATION_PANEL	Tietopaneeli
 UILABEL_INTERACTION_PANEL	Vuorovaikutuspaneeli
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Valmis vaihtoon
 MISC_TURNS_HOSTILE	{0} muuttuu vihamieliseksi
 MISC_SELECT_UNIT_FIRST	Valitse ensin yksikkö
 FACTION_PLAYER	Pelaajan ryhmittymä
-FACTION_GRAY	Harmaa ryhmittymä
 FACTION_RED	Punainen ryhmittymä
+FACTION_GREEN	Vihreä ryhmittymä
+FACTION_BLUE	Sininen ryhmittymä
+FACTION_YELLOW	Keltainen ryhmittymä
+MISC_REPUTATION_DROPS	Maine ryhmittymässä {0} laskee {1}, lukemaan {2}
+UILABEL_MODE_PASSIVE	Passiivinen
+UILABEL_MODE_BLOCK	Torjunta
+UILABEL_MODE_SNEAK	Hiiviskely
+UILABEL_MODE_RANGED	Kaukotaistelu
+UILABEL_MODE_PASSIVE_TIP	Passiivinen: ei koskaan aloita taistelua eikä liity siihen auttaakseen. Tottelee silti käskyjä, myös hyökkäyksiä.
+UILABEL_MODE_BLOCK_TIP	Torjunta: ei koskaan hyökkää ja torjuu iskuja kaksi kertaa useammin, tyhjin käsinkin.
+UILABEL_MODE_SNEAK_TIP	Hiiviskely: kulkee puolella nopeudella ja on paljon vaikeampi huomata. Mitä parempi Hiiviskely, sitä parempi.
+UILABEL_MODE_RANGED_TIP	Kaukotaistelu: päällä itsestään, kun pääkädessä on jousi tai varsijousi. Jokainen laukaus kuluttaa yhden nuolen tai pultin.
+UILABEL_SQUAD_TAB	Joukko
+UILABEL_REPUTATION	Maine
+UILABEL_REP_HOSTILE	Vihamielinen: hyökkäävät toistensa kimppuun heti nähdessään (-25 tai alle)
+UILABEL_REP_ALLIED	Liittolaiset: auttavat toisiaan, kun joku joutuu hyökkäyksen kohteeksi (50 tai yli)
+UILABEL_REP_NEUTRAL	Neutraali: jättävät toisensa rauhaan
 MISC_PROP_UNREACHABLE	Ei saavutettavissa
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenaario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Myrkkysieni
 ITEM_126_DESC	Metsäsieni, joka näyttää muiden kaltaiselta. Sen syöminen vie terveyttä ja kylläisyyttä.
+ITEM_127_NAME	Lyhytjousi
+ITEM_127_DESC	Vaatii molemmat kädet. Ampuu nuolia lyhyeltä matkalta ja osuu tarkasti.
+ITEM_128_NAME	Pitkäjousi
+ITEM_128_DESC	Vaatii molemmat kädet. Ampuu nuolia pitkältä matkalta, mutta epävarmemmin.
+ITEM_129_NAME	Varsijousi
+ITEM_129_DESC	Vaatii molemmat kädet. Ampuu pultteja kaksi kertaa jousta nopeammin, puolella vahingolla.
+ITEM_130_NAME	Puunuolet
+ITEM_130_DESC	Tavallisia nuolia lyhyt- tai pitkäjouselle.
+ITEM_131_NAME	Luunuolet
+ITEM_131_DESC	Luukärkisiä nuolia lyhyt- tai pitkäjouselle. Osuvat puuta kovemmin.
+ITEM_132_NAME	Tulinuolet
+ITEM_132_DESC	Palavia nuolia lyhyt- tai pitkäjouselle. Kovimmin osuvat nuolet.
+ITEM_133_NAME	Varsijousen pultit
+ITEM_133_DESC	Lyhyitä, raskaita pultteja varsijouselle.
 UILABEL_OPTIMIZE	Optimoi
 UILABEL_REMOVE_ALL	Riisu kaikki
 MISC_GEAR_NO_ROOM	Tavaraluettelossa ei ole tarpeeksi tilaa

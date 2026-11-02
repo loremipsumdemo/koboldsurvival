@@ -1,0 +1,29 @@
+# Factions. Tab-separated lines; blank lines and lines starting with # are skipped.
+#
+# faction <id> <name key> <color> <units>
+#   id: a whole number that never changes or gets reused, since saves keep it. 0 is the Player Faction (your
+#       units) and must be listed. 1 was the old Gray Faction: saves that have it load into Green (3).
+#   name key: the language key of its name (FACTION_... in data/language). A key the language files lack is
+#       shown as written.
+#   color: #rrggbb, for its dot in the Reputation tab
+#   units: how many of its units a new level places, together in one camp. 0 for the Player Faction.
+#
+# relation <id> <id> <reputation>
+#   The starting reputation between two factions, the same both ways, from -100 to 100. Pairs not listed start
+#   at 0 (neutral); a faction is always at 100 with itself. At -25 or below their units attack each other on
+#   sight; at 50 or above they are allies. Reputations between two other factions never change; the Player
+#   Faction's change in play.
+
+faction	0	FACTION_PLAYER	#c77dff	0
+faction	2	FACTION_RED	#ff4d4d	30
+faction	3	FACTION_GREEN	#5ccf5c	10
+faction	4	FACTION_BLUE	#4d7dff	10
+faction	5	FACTION_YELLOW	#f5d43a	10
+
+relation	0	2	-100
+relation	2	3	-100
+relation	2	4	-100
+relation	2	5	-100
+relation	4	3	75
+relation	4	5	-40
+relation	3	5	0

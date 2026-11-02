@@ -611,21 +611,17 @@ void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, R
 
 void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize) {
     if (!m.vao) return;
-    float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-    if (extent <= 0.0f) return;
-    float s = targetSize / extent;
-    float cx = (m.minX + m.maxX) * 0.5f;
-    float cz = (m.minZ + m.maxZ) * 0.5f;
-
-    // Scale, then move so the center of the bottom sits on (x, y, z)
+    // Scale, then move so the center of the bottom sits on (x, y, z): the same placement picking uses (placeModel)
+    const ModelPlacement p = placeModel(m, x, y, z, targetSize);
+    if (!p.ok) return;
     Mat4 model{};
-    model.m[0] = s;
-    model.m[5] = s;
-    model.m[10] = s;
+    model.m[0] = p.k;
+    model.m[5] = p.k;
+    model.m[10] = p.k;
     model.m[15] = 1.0f;
-    model.m[12] = x - s * cx;
-    model.m[13] = y - s * m.minY;
-    model.m[14] = z - s * cz;
+    model.m[12] = p.ox;
+    model.m[13] = p.oy;
+    model.m[14] = p.oz;
 
     Mat4 mvp = mul(viewProj_, model);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
@@ -1422,30 +1418,44 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     return out;
 }
 
-// Projects each prop's model box (the box drawModel scales and places) to the screen, and keeps the props
-// whose box on screen covers the pixel. A prop whose model did not load is found by its pink stand-in.
+// The props under a pixel, nearest first. A prop with a model is hit only on the model's own triangles, placed exactly
+// as drawModel places them (placeModel), so the mouse finds a prop by its shape and never where it is not drawn. A
+// prop whose model did not load is found by its pink stand-in, a square facing the camera.
 std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
-    std::vector<Entity> out;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    // The ray through the pixel, from the near plane toward the far one
+    float o[3] = {}, d[3] = {};
+    {
+        float inv[16];
+        if (!invert4x4(vp.m, inv)) return {};
+        const float ndcX = 2.0f * mx / (float)winW - 1.0f, ndcY = 1.0f - 2.0f * my / (float)winH;
+        auto unproject = [&](float ndcZ, float out3[3]) {
+            const float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
+            float r[4];
+            for (int i = 0; i < 4; ++i) r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1] + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
+            out3[0] = r[0] / r[3];
+            out3[1] = r[1] / r[3];
+            out3[2] = r[2] / r[3];
+        };
+        float f[3];
+        unproject(-1.0f, o);
+        unproject(1.0f, f);
+        for (int i = 0; i < 3; ++i) d[i] = f[i] - o[i];
+    }
+    std::vector<std::pair<float, Entity>> hits;
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
         const Model& m = propModel(kind);
-        const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-        float hx = 0.0f, hz = 0.0f, h = 0.0f;
-        if (m.vao && extent > 0.0f) {
-            const float k = propInfo(kind).size / extent;
-            hx = 0.5f * k * (m.maxX - m.minX);
-            hz = 0.5f * k * (m.maxZ - m.minZ);
-            h = k * (m.maxY - m.minY);
-        } else {
-            // The pink stand-in: a square facing the camera, so a box that holds it from any side
-            hx = hz = 0.5f * missingPropSide(kind);
-            h = missingPropSide(kind);
+        if (m.vao) {
+            const float t = rayHitModel(m, placeModel(m, tr->x, tr->y, tr->z, propInfo(kind).size), o, d);
+            if (t >= 0.0f) hits.push_back({ t, e });
+            continue;
         }
-
+        // The pink stand-in: the box that holds the square from any side, on the screen
+        const float hx = 0.5f * missingPropSide(kind), hz = hx, h = missingPropSide(kind);
         float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
         bool seen = true;
         for (int c = 0; c < 8 && seen; ++c) {
@@ -1456,9 +1466,15 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
             x0 = std::min(x0, sx); x1 = std::max(x1, sx);
             y0 = std::min(y0, sy); y1 = std::max(y1, sy);
         }
-        if (seen && mx >= x0 && mx <= x1 && my >= y0 && my <= y1) out.push_back(e);
+        if (seen && mx >= x0 && mx <= x1 && my >= y0 && my <= y1) {
+            const float dx = tr->x - o[0], dy = tr->y - o[1], dz = tr->z - o[2];
+            const float len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+            hits.push_back({ len2 > 0.0f ? (dx * d[0] + dy * d[1] + dz * d[2]) / len2 : 0.0f, e });
+        }
     }
-    std::sort(out.begin(), out.end());
+    std::sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    std::vector<Entity> out;
+    for (const auto& h : hits) out.push_back(h.second);
     return out;
 }
 
@@ -1717,8 +1733,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const TextTex& g = unitGlyph(w, e);
-        RGBA tint = WHITE;
-        if (w.has<Hostile>(e)) tint = RGBA{ 1.0f, 0.3f, 0.3f, 1.0f };
+        const RGBA tint = WHITE;   // every unit in its own colours: a hostile one is not tinted
         if (w.has<Unconscious>(e) || w.has<Carried>(e)) {
             setSaturation(unitSaturation(w, e));
             const bool carried = w.has<Carried>(e);
@@ -2996,13 +3011,35 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     (void)s;
 }
 
-void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running) {
+void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
+                             int repView) {
     const float s = uiH_ / 720.0f;
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.05f, 0.035f, 0.075f, bgAlpha });
     drawTitleBar(L.title, ICON_SQUAD_PANEL, lang("UILABEL_SQUAD_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
+
+    // The tabs: the one shown is lit
+    {
+        const float th = listTextHeight("Ag");
+        auto tab = [&](const Rect& r, const std::string& label, bool on) {
+            if (r.w <= 0.0f) return;
+            const bool hot = !on && r.contains(mouseX_, mouseY_);
+            if (hot) noteHover(r);
+            drawRect(r, on ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f } : RGBA{ 0.10f, 0.07f, 0.13f, hot ? 1.0f : 0.9f });
+            if (on) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GREEN);
+            const std::string t = fitText(label, r.w - 6.0f * s, false);
+            drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - th) * 0.5f,
+                         on ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.72f, 0.72f, 0.76f, 1.0f });
+        };
+        tab(L.tabSquad, lang("UILABEL_SQUAD_TAB"), L.tab == FACTION_TAB_SQUAD);
+        tab(L.tabReputation, lang("UILABEL_REPUTATION"), L.tab == FACTION_TAB_REPUTATION);
+    }
+    if (L.tab == FACTION_TAB_REPUTATION) {
+        drawReputationList(L, repView);
+        return;
+    }
 
     // Walk and run: the lit one is the pace the squad is moving at
     auto mode = [&](const Rect& r, const std::string& text, bool on) {
@@ -3094,6 +3131,57 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         };
         arrow(L.scrollUp, true, L.scrollRow > 0);
         arrow(L.scrollDown, false, L.scrollRow < L.maxScroll());
+    }
+}
+
+// The Reputation tab: the faction shown, with its colour, then each faction's reputation with it. The faction shown is
+// always at 100 with itself, so its own row reads (...). Each value is red where the two fight on sight, green where
+// they are allies, and gray between; its tooltip says which. A row is pressed to show that faction's reputations.
+void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
+    const float s = uiH_ / 720.0f;
+    const float th = listTextHeight("Ag");
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    auto swatch = [&](float x, float cy, float d, int faction) {
+        const FactionColor c = factionColor(faction);
+        drawRect(Rect{ x - 1.0f, cy - d * 0.5f - 1.0f, d + 2.0f, d + 2.0f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.9f });
+        drawRect(Rect{ x, cy - d * 0.5f, d, d }, RGBA{ c.r, c.g, c.b, 1.0f });
+    };
+    // The heading: the faction shown
+    {
+        const Rect& h = L.repHeading;
+        drawRect(h, RGBA{ 0.0f, 0.0f, 0.0f, 0.25f });
+        const float d = 12.0f * s;
+        swatch(h.x + 6.0f * s, h.y + h.h * 0.5f, d, repView);
+        const std::string name = fitText(factionName(repView), h.w - d - 16.0f * s, false);
+        drawListText(name, h.x + d + 12.0f * s, h.y + (h.h - th) * 0.5f, RGBA{ 0.624f, 0.902f, 0.0f, 1.0f });
+    }
+    const std::vector<FactionDef>& list = factions();
+    for (size_t i = 0; i < L.repRows.size(); ++i) {
+        const size_t idx = (size_t)L.repFirst + i;
+        if (idx >= list.size()) break;
+        const Rect& r = L.repRows[i];
+        const int other = list[idx].id;
+        const bool self = other == repView;
+        const bool hot = r.contains(mouseX_, mouseY_);
+        if (hot && !self) noteHover(r);
+        drawRect(r, self ? RGBA{ 0.176f, 0.259f, 0.0f, 0.55f } : RGBA{ 0.10f, 0.07f, 0.13f, hot ? 0.95f : 0.6f });
+        const float d = 10.0f * s;
+        swatch(r.x + 6.0f * s, r.y + r.h * 0.5f, d, other);
+        const int value = reputation(repView, other);
+        const std::string valueText = self ? std::string("(...)") : std::to_string(value);
+        const RGBA valueTint = self ? gray
+                             : value <= REP_HOSTILE ? RGBA{ 1.0f, 0.42f, 0.42f, 1.0f }
+                             : value >= REP_ALLIED ? RGBA{ 0.5f, 0.95f, 0.5f, 1.0f } : gray;
+        const float vw = listTextWidth(valueText);
+        const float nameX = r.x + d + 12.0f * s;
+        const std::string name = fitText(factionName(other), r.x + r.w - 8.0f * s - vw - 8.0f * s - nameX, false);
+        drawListText(name, nameX, r.y + (r.h - th) * 0.5f, white);
+        drawListText(valueText, r.x + r.w - 8.0f * s - vw, r.y + (r.h - th) * 0.5f, valueTint);
+        if (!self) {
+            noteTip(lang(value <= REP_HOSTILE ? "UILABEL_REP_HOSTILE" : value >= REP_ALLIED ? "UILABEL_REP_ALLIED" : "UILABEL_REP_NEUTRAL"),
+                    Rect{ r.x + r.w - 8.0f * s - vw, r.y, vw + 8.0f * s, r.h });
+        }
     }
 }
 
@@ -3291,7 +3379,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawListText(shown, tx, y, gray);
         y += listTextHeight("Ag") + 6.0f * s;
     };
-    if (const Faction* fa = w.get<Faction>(unit)) infoLine(lang(factionKey(fa->id)));
+    if (const Faction* fa = w.get<Faction>(unit)) infoLine(factionName(fa->id));
     if (const Body* bd = w.get<Body>(unit)) infoLine(lang(bodyTypeKey(bd->type)));
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
@@ -3423,7 +3511,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     // The behavior list
     if (L.tab == UNIT_TAB_BEHAVIOR) {
         const Behaviors* beh = w.get<Behaviors>(unit);
-        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable);
+        const Equipment* worn = w.get<Equipment>(unit);
+        const std::array<bool, 4> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
+                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]) };
+        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes);
     }
     if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
     if (L.maxScroll > 0.0f) {
@@ -3480,7 +3571,7 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
 }
 
 void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                                   float mx, float my, bool editable) {
+                                   float mx, float my, bool editable, const std::array<bool, 4>& modes) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
@@ -3503,6 +3594,29 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
             const Rect area{ left, P.y + 6.0f * s, room, listTextHeight("Ag") };
             if (shown != full) noteTip(full, area);
             drawListText(shown, left + (room - listTextWidth(shown)) * 0.5f, P.y + 6.0f * s, RGBA{ 1.0f, 0.86f, 0.55f, 1.0f });
+        }
+    }
+
+    // The fighting modes: a lit button for each one that is on. Ranged follows the weapon, so it is never pressed; its
+    // tooltip says so, as each mode's says what it does.
+    {
+        static const char* const names[4] = { "UILABEL_MODE_PASSIVE", "UILABEL_MODE_BLOCK", "UILABEL_MODE_SNEAK", "UILABEL_MODE_RANGED" };
+        static const char* const tips[4] = { "UILABEL_MODE_PASSIVE_TIP", "UILABEL_MODE_BLOCK_TIP", "UILABEL_MODE_SNEAK_TIP", "UILABEL_MODE_RANGED_TIP" };
+        for (int i = 0; i < 4; ++i) {
+            const Rect& r = L.modes[(size_t)i];
+            if (r.w <= 0.0f) continue;
+            const bool pressable = editable && i < 3;
+            const bool hot = pressable && r.contains(mx, my);
+            if (hot) noteHover(r);
+            const RGBA fill = modes[(size_t)i] ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f }
+                                               : RGBA{ 0.10f, 0.07f, 0.13f, hot ? 1.0f : 0.85f };
+            drawRect(r, fill);
+            if (modes[(size_t)i]) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GREEN);
+            if (hot) drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.08f });
+            const std::string label = fitText(lang(names[i]), r.w - 6.0f * s, false);
+            const RGBA tint = modes[(size_t)i] ? white : (i == 3 ? RGBA{ 0.55f, 0.52f, 0.60f, 1.0f } : gray);
+            drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listH) * 0.5f, tint);
+            noteTip(lang(tips[i]), r);
         }
     }
 

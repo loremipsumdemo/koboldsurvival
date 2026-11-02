@@ -98,7 +98,7 @@ CONTROL_DOES_9	التقاط لقطة شاشة
 UILABEL_PAUSED	متوقف مؤقتًا
 UILABEL_PACE_RUN	الوتيرة: ركض
 UILABEL_PACE_WALK	الوتيرة: مشي
-UILABEL_SQUAD_PANEL	لوحة الفريق
+UILABEL_SQUAD_PANEL	لوحة الفصيل
 UILABEL_UNIT_PANEL	لوحة الوحدة
 UILABEL_INFORMATION_PANEL	لوحة المعلومات
 UILABEL_INTERACTION_PANEL	لوحة التفاعل
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	جاهز للتبادل
 MISC_TURNS_HOSTILE	{0} يصبح معاديًا
 MISC_SELECT_UNIT_FIRST	اختر وحدة أولًا
 FACTION_PLAYER	فصيل اللاعب
-FACTION_GRAY	الفصيل الرمادي
 FACTION_RED	الفصيل الأحمر
+FACTION_GREEN	الفصيل الأخضر
+FACTION_BLUE	الفصيل الأزرق
+FACTION_YELLOW	الفصيل الأصفر
+MISC_REPUTATION_DROPS	تنخفض السمعة لدى {0} بمقدار {1} إلى {2}
+UILABEL_MODE_PASSIVE	مسالم
+UILABEL_MODE_BLOCK	صدّ
+UILABEL_MODE_SNEAK	تسلّل
+UILABEL_MODE_RANGED	بعيد المدى
+UILABEL_MODE_PASSIVE_TIP	مسالم: لا يبدأ قتالًا أبدًا ولا ينضم إلى قتال لمساعدة غيره. يظل ينفذ الأوامر، ومنها الهجوم.
+UILABEL_MODE_BLOCK_TIP	صدّ: لا يهاجم أبدًا، ويصدّ الضربات ضعف المرات، حتى بيدين فارغتين.
+UILABEL_MODE_SNEAK_TIP	تسلّل: يمشي بنصف السرعة ويصعب ملاحظته كثيرًا. كلما ارتفع التخفي كان أفضل.
+UILABEL_MODE_RANGED_TIP	بعيد المدى: يعمل تلقائيًا ما دام قوس أو قوس نشاب في اليد الرئيسية. كل رمية تستهلك سهمًا أو مسمارًا.
+UILABEL_SQUAD_TAB	الفريق
+UILABEL_REPUTATION	السمعة
+UILABEL_REP_HOSTILE	عدائي: يهاجم كلٌّ منهما الآخر فور رؤيته (‎-25 أو أقل)
+UILABEL_REP_ALLIED	حلفاء: يساعد كلٌّ منهما الآخر عند الهجوم عليه (50 أو أكثر)
+UILABEL_REP_NEUTRAL	محايد: يترك كلٌّ منهما الآخر وشأنه
 MISC_PROP_UNREACHABLE	لا يمكن الوصول
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	السيناريو
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	فطر سام
 ITEM_126_DESC	فطر بري يشبه أي فطر آخر. أكله يكلّف الصحة والشبع.
+ITEM_127_NAME	قوس قصير
+ITEM_127_DESC	يحتاج إلى اليدين. يرمي السهام من مدى قصير ويصيب بدقة.
+ITEM_128_NAME	قوس طويل
+ITEM_128_DESC	يحتاج إلى اليدين. يرمي السهام من مدى بعيد لكن بدقة أقل.
+ITEM_129_NAME	قوس نشاب
+ITEM_129_DESC	يحتاج إلى اليدين. يرمي المسامير أسرع من القوس مرتين، بنصف الضرر.
+ITEM_130_NAME	سهام خشبية
+ITEM_130_DESC	سهام عادية للقوس القصير أو القوس الطويل.
+ITEM_131_NAME	سهام عظمية
+ITEM_131_DESC	سهام برؤوس من عظم للقوس القصير أو الطويل. تضرب أقوى من الخشب.
+ITEM_132_NAME	سهام نارية
+ITEM_132_DESC	سهام مشتعلة للقوس القصير أو الطويل. أقوى السهام ضربًا.
+ITEM_133_NAME	مسامير قوس النشاب
+ITEM_133_DESC	مسامير قصيرة ثقيلة لقوس النشاب.
 UILABEL_OPTIMIZE	تحسين
 UILABEL_REMOVE_ALL	نزع الكل
 MISC_GEAR_NO_ROOM	لا توجد مساحة كافية في المخزون

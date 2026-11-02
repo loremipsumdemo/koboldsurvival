@@ -23,6 +23,13 @@ constexpr float TALK_RANGE = 1.0f;           // tiles between a unit and an NPC 
 constexpr float STEALTH_RANGE = 2.0f;        // tiles from a hostile within which an unnoticed unit earns stealth XP
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
 constexpr float LEASH_RANGE = 12.0f;        // a hostile gives up a chase past this distance
+constexpr float WITNESS_RANGE = 9.0f;       // units this close to an attack see it, and may join in
+constexpr float SNEAK_SPEED = 0.5f;         // a sneaking unit walks at this share of its speed, and never runs
+constexpr float SNEAK_NOTICE_RANGE = 0.6f;  // and can only be noticed from this share of the usual range
+constexpr float SNEAK_FAIL_BASE = 0.20f;    // its share of notices that fail: this, plus twice the usual for Stealth
+constexpr float SNEAK_FAIL_CAP = 0.80f;
+constexpr float BLOCK_MODE_FACTOR = 2.0f;   // a unit in Block mode blocks this many times as often
+constexpr float BLOCK_MODE_CAP = 0.75f;
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
 constexpr float CHASE_STOP_SHARE = 0.8f;    // a hostile stops walking once it is this share of reach away
 constexpr float ENCUMBRANCE_XP_FROM = 0.5f; // Strength XP starts once encumbrance reaches this
@@ -42,9 +49,29 @@ struct CombatNumbers {
     float accuracy = 0.0f;     // chance a swing lands before dodging
     float dodge = 0.0f;        // chance to dodge a swing that would land
     float blockChance = 0.0f;  // chance to block a hit that lands; 0 with nothing to block with
-    float swingTime = 1.0f;    // seconds between swings
+    float swingTime = 1.0f;    // seconds between swings (or shots)
     float maxStamina = 0.0f;
+    bool ranged = false;       // a ranged weapon is in the main hand: it shoots, with Projectiles in place of Melee
+    float reach = 1.4f;        // tiles from which it can hit: ATTACK_REACH, or its ranged weapon's range
 };
+
+// ---- Ranged weapons ----
+// A bow or a crossbow in the main hand shoots instead of swinging, from its range, using up one piece of its ammo (an
+// item tagged with its ammo tag) for each shot. The ammo's attack_value is added to the shot's attack. With no ammo
+// left it fights hand to hand. Which weapon is which comes from its tags in data/itemdb.txt:
+//   bow_short: Short Bow, a shorter range and more accurate; arrows
+//   bow_long:  Long Bow, a longer range and less accurate; arrows
+//   crossbow:  Crossbow, like the Short Bow but half the damage and twice as fast; crossbow bolts (tag bolt)
+struct RangedProfile {
+    float range = 0.0f;          // tiles
+    float accuracyAdd = 0.0f;    // added to the chance to hit
+    float damageMul = 1.0f;
+    float shotTimeMul = 1.0f;    // times the seconds between shots
+    const char* ammoTag = "";
+};
+// The ranged profile of a weapon item, or nullptr for anything that is not a ranged weapon
+const RangedProfile* rangedProfileOf(int item);
+inline bool isRangedWeapon(int item) { return rangedProfileOf(item) != nullptr; }
 
 // The numbers for a unit from its stats, its worn gear and the attack its elixir adds
 CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAttack);
@@ -191,6 +218,26 @@ bool isDowned(World& w, Entity e);
 
 // Adds the Combat component to a unit that doesn't have one
 void ensureCombat(World& w, Entity e);
+
+// ---- Factions in the fight ----
+// A unit's faction id (factions.h); the Player Faction for one with none
+int factionOf(World& w, Entity e);
+// Whether two units fight each other: their factions are hostile, or one was provoked by the other's faction. Units of
+// the same faction never fight.
+bool unitsHostile(World& w, Entity a, Entity b);
+// Whether a unit that is not yours fights your units: the Hostile marker it carries (and Neutral when not)
+bool hostileToPlayer(World& w, Entity e);
+// Makes a unit treat a faction as hostile for PROVOKED_SECONDS (Provoked)
+void provoke(World& w, Entity unit, int faction);
+// Each frame: counts down the provocations, and keeps every other unit's Hostile or Neutral marker in step with its
+// faction's reputation with yours and with Provoked. A unit that turns hostile says so in the log.
+void factionSystem(World& w, float dt);
+// A unit's fighting modes from its Behavior tab (Behaviors): never false for a unit without one
+bool isPassive(World& w, Entity e);
+bool isBlocking(World& w, Entity e);
+bool isSneaking(World& w, Entity e);
+// The tiles from which a unit can hit now: its ranged weapon's range while it has ammo for it, else ATTACK_REACH
+float reachOf(World& w, Entity e);
 
 // Random gear for a hostile: each slot about half the time, with something that fits it
 Equipment randomHostileGear(Rng& rng);

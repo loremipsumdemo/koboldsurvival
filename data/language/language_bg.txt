@@ -98,7 +98,7 @@ CONTROL_DOES_9	Прави снимка на екрана
 UILABEL_PAUSED	ПАУЗА
 UILABEL_PACE_RUN	Темпо: тичане
 UILABEL_PACE_WALK	Темпо: ходене
-UILABEL_SQUAD_PANEL	Панел на отряда
+UILABEL_SQUAD_PANEL	Панел на фракцията
 UILABEL_UNIT_PANEL	Панел на единицата
 UILABEL_INFORMATION_PANEL	Информационен панел
 UILABEL_INTERACTION_PANEL	Панел за взаимодействие
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Готово за размяна
 MISC_TURNS_HOSTILE	{0} става враждебен
 MISC_SELECT_UNIT_FIRST	Първо изберете единица
 FACTION_PLAYER	Фракция на играча
-FACTION_GRAY	Сива фракция
 FACTION_RED	Червена фракция
+FACTION_GREEN	Зелена фракция
+FACTION_BLUE	Синя фракция
+FACTION_YELLOW	Жълта фракция
+MISC_REPUTATION_DROPS	Репутацията при {0} пада с {1}, до {2}
+UILABEL_MODE_PASSIVE	Пасивен
+UILABEL_MODE_BLOCK	Блок
+UILABEL_MODE_SNEAK	Промъкване
+UILABEL_MODE_RANGED	Далечен бой
+UILABEL_MODE_PASSIVE_TIP	Пасивен: никога не започва бой и не се включва, за да помогне. Пак изпълнява заповеди, включително атаки.
+UILABEL_MODE_BLOCK_TIP	Блок: никога не атакува и блокира удари два пъти по-често, дори с празни ръце.
+UILABEL_MODE_SNEAK_TIP	Промъкване: върви с половин скорост и много по-трудно се забелязва. Колкото по-висока е Скритостта, толкова по-добре.
+UILABEL_MODE_RANGED_TIP	Далечен бой: включва се сам, докато в основната ръка има лък или арбалет. Всеки изстрел изразходва една стрела или болт.
+UILABEL_SQUAD_TAB	Отряд
+UILABEL_REPUTATION	Репутация
+UILABEL_REP_HOSTILE	Враждебни: нападат се щом се видят (-25 или по-малко)
+UILABEL_REP_ALLIED	Съюзници: помагат си, когато някой е нападнат (50 или повече)
+UILABEL_REP_NEUTRAL	Неутрални: оставят се на мира
 MISC_PROP_UNREACHABLE	Недостъпно
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Отровна гъба
 ITEM_126_DESC	Дива гъба, която изглежда като всяка друга. Изяждането ѝ отнема здраве и ситост.
+ITEM_127_NAME	Къс лък
+ITEM_127_DESC	Нужни са и двете ръце. Стреля със стрели отблизо и точно.
+ITEM_128_NAME	Дълъг лък
+ITEM_128_DESC	Нужни са и двете ръце. Стреля със стрели отдалеч, но по-неточно.
+ITEM_129_NAME	Арбалет
+ITEM_129_DESC	Нужни са и двете ръце. Стреля с болтове два пъти по-бързо от лък, с половината щета.
+ITEM_130_NAME	Дървени стрели
+ITEM_130_DESC	Обикновени стрели за къс или дълъг лък.
+ITEM_131_NAME	Костени стрели
+ITEM_131_DESC	Стрели с костени върхове за къс или дълъг лък. Удрят по-силно от дървените.
+ITEM_132_NAME	Огнени стрели
+ITEM_132_DESC	Горящи стрели за къс или дълъг лък. Най-силните стрели.
+ITEM_133_NAME	Арбалетни болтове
+ITEM_133_DESC	Къси, тежки болтове за арбалет.
 UILABEL_OPTIMIZE	Оптимизирай
 UILABEL_REMOVE_ALL	Свали всичко
 MISC_GEAR_NO_ROOM	Няма достатъчно място в инвентара

@@ -98,7 +98,7 @@ CONTROL_DOES_9	Toma una captura de pantalla
 UILABEL_PAUSED	PAUSADO
 UILABEL_PACE_RUN	Ritmo: correr
 UILABEL_PACE_WALK	Ritmo: caminar
-UILABEL_SQUAD_PANEL	Panel de escuadrón
+UILABEL_SQUAD_PANEL	Panel de facción
 UILABEL_UNIT_PANEL	Panel de unidad
 UILABEL_INFORMATION_PANEL	Panel de información
 UILABEL_INTERACTION_PANEL	Panel de interacción
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Listo para intercambiar
 MISC_TURNS_HOSTILE	{0} se vuelve hostil
 MISC_SELECT_UNIT_FIRST	Primero selecciona una unidad
 FACTION_PLAYER	Facción del jugador
-FACTION_GRAY	Facción gris
 FACTION_RED	Facción roja
+FACTION_GREEN	Facción verde
+FACTION_BLUE	Facción azul
+FACTION_YELLOW	Facción amarilla
+MISC_REPUTATION_DROPS	La reputación con {0} baja {1}, hasta {2}
+UILABEL_MODE_PASSIVE	Pasivo
+UILABEL_MODE_BLOCK	Bloquear
+UILABEL_MODE_SNEAK	Sigilo
+UILABEL_MODE_RANGED	A distancia
+UILABEL_MODE_PASSIVE_TIP	Pasivo: nunca empieza una pelea ni se une a una para ayudar. Sigue cumpliendo órdenes, ataques incluidos.
+UILABEL_MODE_BLOCK_TIP	Bloquear: nunca ataca y bloquea el doble de golpes, incluso con las manos vacías.
+UILABEL_MODE_SNEAK_TIP	Sigilo: camina a la mitad de velocidad y es mucho más difícil de detectar. Mientras más Sigilo, mejor.
+UILABEL_MODE_RANGED_TIP	A distancia: se activa solo mientras haya un arco o una ballesta en la mano principal. Cada disparo gasta una flecha o un virote.
+UILABEL_SQUAD_TAB	Escuadrón
+UILABEL_REPUTATION	Reputación
+UILABEL_REP_HOSTILE	Hostil: se atacan en cuanto se ven (-25 o menos)
+UILABEL_REP_ALLIED	Aliados: se ayudan cuando atacan a uno (50 o más)
+UILABEL_REP_NEUTRAL	Neutral: se dejan en paz
 MISC_PROP_UNREACHABLE	Inalcanzable
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Escenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Hongo venenoso
 ITEM_126_DESC	Un hongo silvestre que parece uno cualquiera. Comerlo cuesta salud y saciedad.
+ITEM_127_NAME	Arco corto
+ITEM_127_DESC	Requiere ambas manos. Dispara flechas a corta distancia y con buena puntería.
+ITEM_128_NAME	Arco largo
+ITEM_128_DESC	Requiere ambas manos. Dispara flechas a larga distancia, pero con menos acierto.
+ITEM_129_NAME	Ballesta
+ITEM_129_DESC	Requiere ambas manos. Dispara virotes el doble de rápido que un arco, con la mitad de daño.
+ITEM_130_NAME	Flechas de madera
+ITEM_130_DESC	Flechas sencillas para un arco corto o largo.
+ITEM_131_NAME	Flechas de hueso
+ITEM_131_DESC	Flechas con punta de hueso para un arco corto o largo. Golpean más fuerte que las de madera.
+ITEM_132_NAME	Flechas de fuego
+ITEM_132_DESC	Flechas ardientes para un arco corto o largo. Las flechas que más golpean.
+ITEM_133_NAME	Virotes de ballesta
+ITEM_133_DESC	Virotes cortos y pesados para una ballesta.
 UILABEL_OPTIMIZE	Optimizar
 UILABEL_REMOVE_ALL	Quitar todo
 MISC_GEAR_NO_ROOM	No hay suficiente espacio en el inventario

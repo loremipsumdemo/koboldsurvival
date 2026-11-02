@@ -98,7 +98,7 @@ CONTROL_DOES_9	スクリーンショットを撮る
 UILABEL_PAUSED	一時停止中
 UILABEL_PACE_RUN	歩調：走る
 UILABEL_PACE_WALK	歩調：歩く
-UILABEL_SQUAD_PANEL	分隊パネル
+UILABEL_SQUAD_PANEL	勢力パネル
 UILABEL_UNIT_PANEL	ユニットパネル
 UILABEL_INFORMATION_PANEL	情報パネル
 UILABEL_INTERACTION_PANEL	インタラクションパネル
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	交換の準備ができました
 MISC_TURNS_HOSTILE	{0} が敵対した
 MISC_SELECT_UNIT_FIRST	先にユニットを選択してください
 FACTION_PLAYER	プレイヤー勢力
-FACTION_GRAY	灰の勢力
 FACTION_RED	赤の勢力
+FACTION_GREEN	緑の勢力
+FACTION_BLUE	青の勢力
+FACTION_YELLOW	黄の勢力
+MISC_REPUTATION_DROPS	{0}の評判が{1}下がり、{2}になった
+UILABEL_MODE_PASSIVE	非戦
+UILABEL_MODE_BLOCK	防御
+UILABEL_MODE_SNEAK	忍び足
+UILABEL_MODE_RANGED	遠距離
+UILABEL_MODE_PASSIVE_TIP	非戦：自分から戦いを始めず、仲間を助けるためにも加わらない。攻撃を含む命令には従う。
+UILABEL_MODE_BLOCK_TIP	防御：攻撃せず、素手でも2倍の頻度で攻撃を防ぐ。
+UILABEL_MODE_SNEAK_TIP	忍び足：半分の速さで歩き、ずっと気づかれにくくなる。隠密が高いほど効果が上がる。
+UILABEL_MODE_RANGED_TIP	遠距離：弓かクロスボウをメインハンドに持つ間、自動でオンになる。1射ごとに矢かボルトを1本使う。
+UILABEL_SQUAD_TAB	分隊
+UILABEL_REPUTATION	評判
+UILABEL_REP_HOSTILE	敵対：見つけ次第攻撃し合う（-25以下）
+UILABEL_REP_ALLIED	同盟：どちらかが攻撃されると助け合う（50以上）
+UILABEL_REP_NEUTRAL	中立：互いに干渉しない
 MISC_PROP_UNREACHABLE	たどり着けません
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	シナリオ
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	毒キノコ
 ITEM_126_DESC	ほかと見分けのつかない野生のキノコ。食べると体力と満腹度が減る。
+ITEM_127_NAME	ショートボウ
+ITEM_127_DESC	両手で持つ。近い距離から矢を放ち、狙いが正確。
+ITEM_128_NAME	ロングボウ
+ITEM_128_DESC	両手で持つ。遠い距離から矢を放つが、狙いはやや甘い。
+ITEM_129_NAME	クロスボウ
+ITEM_129_DESC	両手で持つ。弓の2倍の速さでボルトを放つが、ダメージは半分。
+ITEM_130_NAME	木の矢
+ITEM_130_DESC	ショートボウやロングボウ用のふつうの矢。
+ITEM_131_NAME	骨の矢
+ITEM_131_DESC	骨の矢じりの矢。ショートボウやロングボウ用で、木の矢より強い。
+ITEM_132_NAME	火矢
+ITEM_132_DESC	燃える矢。ショートボウやロングボウ用で、最も強い矢。
+ITEM_133_NAME	クロスボウのボルト
+ITEM_133_DESC	クロスボウ用の短く重いボルト。
 UILABEL_OPTIMIZE	最適化
 UILABEL_REMOVE_ALL	すべて外す
 MISC_GEAR_NO_ROOM	所持品の空きが足りません

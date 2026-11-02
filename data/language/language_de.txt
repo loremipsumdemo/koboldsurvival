@@ -98,7 +98,7 @@ CONTROL_DOES_9	Screenshot machen
 UILABEL_PAUSED	PAUSIERT
 UILABEL_PACE_RUN	Tempo: Laufen
 UILABEL_PACE_WALK	Tempo: Gehen
-UILABEL_SQUAD_PANEL	Truppenfenster
+UILABEL_SQUAD_PANEL	Fraktionsfenster
 UILABEL_UNIT_PANEL	Einheitenfenster
 UILABEL_INFORMATION_PANEL	Informationsfenster
 UILABEL_INTERACTION_PANEL	Interaktionsfenster
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Bereit zum Tauschen
 MISC_TURNS_HOSTILE	{0} wird feindselig
 MISC_SELECT_UNIT_FIRST	Wähle zuerst eine Einheit
 FACTION_PLAYER	Spielerfraktion
-FACTION_GRAY	Graue Fraktion
 FACTION_RED	Rote Fraktion
+FACTION_GREEN	Grüne Fraktion
+FACTION_BLUE	Blaue Fraktion
+FACTION_YELLOW	Gelbe Fraktion
+MISC_REPUTATION_DROPS	Ruf bei {0} sinkt um {1} auf {2}
+UILABEL_MODE_PASSIVE	Passiv
+UILABEL_MODE_BLOCK	Blocken
+UILABEL_MODE_SNEAK	Schleichen
+UILABEL_MODE_RANGED	Fernkampf
+UILABEL_MODE_PASSIVE_TIP	Passiv: beginnt nie einen Kampf und greift nicht ein, um anderen zu helfen. Befolgt aber Befehle, auch Angriffe.
+UILABEL_MODE_BLOCK_TIP	Blocken: greift nie an und blockt doppelt so oft, auch mit leeren Händen.
+UILABEL_MODE_SNEAK_TIP	Schleichen: geht mit halber Geschwindigkeit und wird viel schwerer bemerkt. Je höher Heimlichkeit, desto besser.
+UILABEL_MODE_RANGED_TIP	Fernkampf: schaltet sich von selbst ein, solange ein Bogen oder eine Armbrust in der Haupthand ist. Jeder Schuss verbraucht einen Pfeil oder Bolzen.
+UILABEL_SQUAD_TAB	Trupp
+UILABEL_REPUTATION	Ruf
+UILABEL_REP_HOSTILE	Feindlich: greifen sich sofort an (-25 oder weniger)
+UILABEL_REP_ALLIED	Verbündet: helfen sich, wenn einer angegriffen wird (50 oder mehr)
+UILABEL_REP_NEUTRAL	Neutral: lassen sich in Ruhe
 MISC_PROP_UNREACHABLE	Unerreichbar
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Szenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Giftpilz
 ITEM_126_DESC	Ein Wildpilz, der wie jeder andere aussieht. Ihn zu essen kostet Gesundheit und Sättigung.
+ITEM_127_NAME	Kurzbogen
+ITEM_127_DESC	Braucht beide Hände. Schießt Pfeile auf kurze Entfernung und trifft genau.
+ITEM_128_NAME	Langbogen
+ITEM_128_DESC	Braucht beide Hände. Schießt Pfeile auf große Entfernung, aber weniger sicher.
+ITEM_129_NAME	Armbrust
+ITEM_129_DESC	Braucht beide Hände. Schießt Bolzen doppelt so schnell wie ein Bogen, mit halbem Schaden.
+ITEM_130_NAME	Holzpfeile
+ITEM_130_DESC	Einfache Pfeile für Kurz- oder Langbogen.
+ITEM_131_NAME	Knochenpfeile
+ITEM_131_DESC	Pfeile mit Knochenspitze für Kurz- oder Langbogen. Treffen härter als Holz.
+ITEM_132_NAME	Feuerpfeile
+ITEM_132_DESC	Brennende Pfeile für Kurz- oder Langbogen. Die stärksten Pfeile.
+ITEM_133_NAME	Armbrustbolzen
+ITEM_133_DESC	Kurze, schwere Bolzen für eine Armbrust.
 UILABEL_OPTIMIZE	Optimieren
 UILABEL_REMOVE_ALL	Alles ablegen
 MISC_GEAR_NO_ROOM	Nicht genug Platz im Inventar

@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <algorithm>
 #include "language.h"
 #include <cstdio>
@@ -50,6 +51,7 @@ struct SaveUnit {
     bool unconscious = false;
     float doom = 0.0f;
     bool corpse = false;
+    int koFaction = -1;        // the faction that knocked it out, or -1 (Unconscious::koFaction)
     // Carried: the index of the unit carrying it, or -1, and whether it is playing dead
     int carriedBy = -1;
     bool playingDead = false;
@@ -65,6 +67,8 @@ struct SaveUnit {
     // Older saves have no behaviors. Those units get defaultBehaviors().
     bool hasBehaviors = false;
     std::vector<BehaviorRule> behaviors;   // highest priority first
+    // Its fighting modes from the Behavior tab. Older saves have none: all off.
+    bool passive = false, block = false, sneak = false;
 };
 
 // An item lying on the ground when the game was saved
@@ -125,6 +129,8 @@ struct SaveData {
     std::vector<SaveLock> locks;
     std::vector<SaveStorage> output;    // what the forges' outputs hold
     std::vector<SaveFuel> fuel;
+    // The Player Faction's reputation with each faction. Older saves have none: every one starts at its default.
+    std::map<int, int> reputation;
 };
 
 struct SaveSummary {
@@ -175,6 +181,10 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
+        if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
+        if (u.passive || u.block || u.sneak) {
+            out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
+        }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
@@ -196,6 +206,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         out << "storage " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
     for (const SaveLock& l : d.locks) out << "lock " << l.prop << " " << (l.locked ? 1 : 0) << "\n";
+    for (const auto& [faction, value] : d.reputation) out << "rep " << faction << " " << value << "\n";
     for (const SaveStorage& st : d.output) {
         out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
@@ -340,8 +351,32 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> i >> f;
                 if (!ss.fail() && i < d.units.size()) {
                     d.units[i].hasFaction = true;
-                    d.units[i].faction = std::clamp(f, 0, (int)FACTION_COUNT - 1);
+                    d.units[i].faction = std::max(0, f);   // an id no longer listed is mapped when the unit loads
                 }
+            }
+            else if (line.rfind("koby ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                int f = -1;
+                ss >> i >> f;
+                if (!ss.fail() && i < d.units.size()) d.units[i].koFaction = f;
+            }
+            else if (line.rfind("modes ", 0) == 0) {
+                std::istringstream ss(line.substr(6));
+                size_t i = 0;
+                int pa = 0, bl = 0, sn = 0;
+                ss >> i >> pa >> bl >> sn;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].passive = pa != 0;
+                    d.units[i].block = bl != 0;
+                    d.units[i].sneak = sn != 0;
+                }
+            }
+            else if (line.rfind("rep ", 0) == 0) {
+                std::istringstream ss(line.substr(4));
+                int f = 0, v = 0;
+                ss >> f >> v;
+                if (!ss.fail() && f > 0) d.reputation[f] = std::clamp(v, -100, 100);
             }
             else if (line.rfind("body ", 0) == 0) {
                 std::istringstream ss(line.substr(5));

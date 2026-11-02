@@ -98,7 +98,7 @@ CONTROL_DOES_9	Ekran görüntüsü alır
 UILABEL_PAUSED	DURAKLATILDI
 UILABEL_PACE_RUN	Hız: koşma
 UILABEL_PACE_WALK	Hız: yürüme
-UILABEL_SQUAD_PANEL	Müfreze Paneli
+UILABEL_SQUAD_PANEL	Hizip Paneli
 UILABEL_UNIT_PANEL	Birim Paneli
 UILABEL_INFORMATION_PANEL	Bilgi Paneli
 UILABEL_INTERACTION_PANEL	Etkileşim Paneli
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Takasa hazır
 MISC_TURNS_HOSTILE	{0} düşmanca oldu
 MISC_SELECT_UNIT_FIRST	Önce bir birim seç
 FACTION_PLAYER	Oyuncu Hizbi
-FACTION_GRAY	Gri Hizip
 FACTION_RED	Kızıl Hizip
+FACTION_GREEN	Yeşil Hizip
+FACTION_BLUE	Mavi Hizip
+FACTION_YELLOW	Sarı Hizip
+MISC_REPUTATION_DROPS	{0} ile itibar {1} düşerek {2} oldu
+UILABEL_MODE_PASSIVE	Pasif
+UILABEL_MODE_BLOCK	Blok
+UILABEL_MODE_SNEAK	Gizlen
+UILABEL_MODE_RANGED	Menzilli
+UILABEL_MODE_PASSIVE_TIP	Pasif: asla kavga başlatmaz, yardım için de katılmaz. Saldırı dahil emirlere yine uyar.
+UILABEL_MODE_BLOCK_TIP	Blok: asla saldırmaz ve boş elle bile iki kat sık bloklar.
+UILABEL_MODE_SNEAK_TIP	Gizlen: yarı hızda yürür ve çok daha zor fark edilir. Gizlilik ne kadar yüksekse o kadar iyi.
+UILABEL_MODE_RANGED_TIP	Menzilli: ana elde yay ya da arbalet varken kendiliğinden açılır. Her atış bir ok ya da cıvata harcar.
+UILABEL_SQUAD_TAB	Müfreze
+UILABEL_REPUTATION	İtibar
+UILABEL_REP_HOSTILE	Düşman: görür görmez birbirine saldırırlar (-25 veya daha az)
+UILABEL_REP_ALLIED	Müttefik: biri saldırıya uğrayınca birbirine yardım ederler (50 veya daha fazla)
+UILABEL_REP_NEUTRAL	Tarafsız: birbirine karışmazlar
 MISC_PROP_UNREACHABLE	Ulaşılamıyor
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senaryo
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Zehirli mantar
 ITEM_126_DESC	Diğerlerinden farksız görünen yabani bir mantar. Yemek sağlık ve tokluk kaybettirir.
+ITEM_127_NAME	Kısa Yay
+ITEM_127_DESC	İki el gerekir. Yakından ve isabetli ok atar.
+ITEM_128_NAME	Uzun Yay
+ITEM_128_DESC	İki el gerekir. Uzaktan ok atar ama daha az isabetli.
+ITEM_129_NAME	Arbalet
+ITEM_129_DESC	İki el gerekir. Yaydan iki kat hızlı cıvata atar, yarı hasarla.
+ITEM_130_NAME	Tahta Oklar
+ITEM_130_DESC	Kısa ya da uzun yay için sıradan oklar.
+ITEM_131_NAME	Kemik Oklar
+ITEM_131_DESC	Kısa ya da uzun yay için kemik uçlu oklar. Tahtadan daha sert vurur.
+ITEM_132_NAME	Ateş Okları
+ITEM_132_DESC	Kısa ya da uzun yay için yanan oklar. En sert vuran oklar.
+ITEM_133_NAME	Arbalet Cıvataları
+ITEM_133_DESC	Arbalet için kısa, ağır cıvatalar.
 UILABEL_OPTIMIZE	En iyisini kuşan
 UILABEL_REMOVE_ALL	Hepsini çıkar
 MISC_GEAR_NO_ROOM	Envanterde yeterli yer yok

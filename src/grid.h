@@ -2,8 +2,6 @@
 
 constexpr int DEFAULT_MAP_SIZE = 1024;      // tiles per side for a new map. Each map sets its own size.
 constexpr int START_UNIT_COUNT = 3;         // player units a new game starts with
-constexpr int NEUTRAL_COUNT = 30;            // neutral units: as many as the red ones
-constexpr int ENEMY_COUNT = 30;             // red units: they can be selected, not commanded
 constexpr int SQUAD_COLUMNS = 5;            // formation width
 constexpr float SLOT_SPACING = 1.3f;        // distance between formation slots in a full squad
 constexpr float MIN_SLOT_SPACING = 1.0f;    // closest slots may sit, so units don't overlap

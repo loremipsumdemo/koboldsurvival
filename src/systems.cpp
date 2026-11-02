@@ -71,6 +71,10 @@ constexpr int SPAWN_SEARCH_STEP = 32;      // spacing of the spawn candidates, i
 constexpr int SPAWN_LOAD_RADIUS = 4;       // chunks read in around the spawn, so units can be placed on them
 constexpr float ENEMY_RANGE = 128.0f;      // red units are placed within this many tiles of the spawn
 constexpr float ENEMY_MIN_RANGE = 12.0f;   // and no closer than this, so the start is clear
+constexpr float CAMP_DISTANCE_MIN = 45.0f;  // a faction's camp is centred this far from the spawn, or up to
+constexpr float CAMP_DISTANCE_MAX = 75.0f;  // this far
+constexpr float CAMP_RADIUS_BASE = 4.0f;    // and its units stand within this many tiles of its centre,
+constexpr float CAMP_RADIUS_PER_UNIT = 1.6f; // plus this times the square root of how many there are
 
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
@@ -193,6 +197,12 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
 // Stacks of loot an NPC carries when it spawns: a few random items, each stack a random count up to its stack limit
 constexpr int NPC_LOOT_MIN = 2;
 constexpr int NPC_LOOT_MAX = 5;
+constexpr int STORAGE_STACKS_MIN = 2;   // stacks a new storage prop starts with
+constexpr int STORAGE_STACKS_MAX = 5;
+constexpr int STORAGE_STACK_MOST = 10;  // most of one item in a starting stack
+constexpr int STORAGE_VALUABLE = 30;    // buy value from which a non-gear item counts as a Locked Chest's treasure
+constexpr int NPC_AMMO_MIN = 10;   // arrows or bolts an NPC with a ranged weapon starts with
+constexpr int NPC_AMMO_MAX = 30;
 
 Inventory randomNpcLoot(Rng& rng) {
     Inventory inv;
@@ -206,6 +216,31 @@ Inventory randomNpcLoot(Rng& rng) {
     return inv;
 }
 
+// What a storage prop holds when a level places it: a few stacks of what belongs in it. A filtered one (the Weapon
+// Rack, the Food Storage, ...) holds what it takes; the Barrel holds supplies (anything that is not gear); the Locked
+// Chest holds the valuable things: gear, and anything worth STORAGE_VALUABLE or more.
+Storage startingStorage(int kind, Rng& rng) {
+    Storage st;
+    std::vector<int> choices;
+    for (const ItemDef& d : itemDatabase()) {
+        if (!propAcceptsItem(kind, d.id)) continue;
+        const bool gear = !d.equipSlot.empty();
+        if (kind == PROP_BARREL && gear) continue;
+        if (kind == PROP_LOCKED_CHEST && !gear && d.buyValue < STORAGE_VALUABLE) continue;
+        choices.push_back(d.id);
+    }
+    if (choices.empty()) return st;
+    const bool chest = kind == PROP_LOCKED_CHEST;
+    const int stacks = rng.range(chest ? 3 : STORAGE_STACKS_MIN, chest ? 6 : STORAGE_STACKS_MAX);
+    int slot = 0;
+    for (int i = 0; i < stacks && slot < STORAGE_SLOTS; ++i) {
+        const int item = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
+        const int most = std::max(1, std::min(stackLimit(item), STORAGE_STACK_MOST));
+        st.slots[(size_t)slot++] = ItemStack{ item, rng.range(1, most) };
+    }
+    return st;
+}
+
 void setupWorld(World& w, Terrain& t, Rng& rng) {
     const Vec2 spawn = findSpawn(t);
     // Read in the ground around the spawn, so the units and red units can stand on it
@@ -216,44 +251,65 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // Units: a block centred on the spawn
     for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 
-    // Red units and neutral units: the same kind of unit, but they stand still and can't be commanded. A red unit
-    // fights a player unit that comes close; a neutral one can be talked to. Both are placed on walkable tiles within
-    // range of the spawn, but not close to it. The attempt limit stops a small map from looping forever when it has
-    // fewer free tiles than units.
+    // The other factions' units (data/factioninfo.txt): the same kind of unit, but they can't be commanded. Each
+    // faction's units stand together in a camp of their own, the camps spread around the spawn at even angles and far
+    // enough apart that two camps don't see each other at the start. A camp's units are on walkable tiles, one each;
+    // a camp that can't find room for all of them (water, a small map) spills over into the wider area. The attempt
+    // limits stop a small map from looping forever.
     std::vector<GridPos> enemyTiles;
-    auto placeNpcs = [&](int count, bool neutral) {
-        const size_t target = enemyTiles.size() + count;
-        for (int attempt = 0; attempt < 20000 && enemyTiles.size() < target; ++attempt) {
+    auto tileFree = [&](GridPos g) {
+        if (!t.walkable(g.x, g.y)) return false;
+        const float x = g.x + 0.5f, z = g.y + 0.5f;
+        const float dx = x - spawn.x, dz = z - spawn.z;
+        if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) return false;
+        return std::none_of(enemyTiles.begin(), enemyTiles.end(), [&](GridPos k) { return k == g; });
+    };
+    auto placeUnit = [&](GridPos g, int faction) {
+        enemyTiles.push_back(g);
+        const float x = g.x + 0.5f, z = g.y + 0.5f;
+        Entity e = w.create();
+        w.add(e, Transform{ x, t.heightAt(x, z), z });
+        w.add(e, Unit{ HOSTILE_WALK_SPEED });
+        if (factionsHostile(faction, FACTION_PLAYER)) w.add(e, Hostile{});
+        else w.add(e, Neutral{});
+        w.add(e, Faction{ faction });
+        w.add(e, randomNpcLoot(rng));
+        w.add(e, Equipment{});
+        w.add(e, Needs{});
+        w.add(e, Behaviors{});
+        w.add(e, Combat{});
+        w.add(e, Name{});
+        w.add(e, Dialogue{});
+        w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+    };
+    std::vector<const FactionDef*> camps;
+    for (const FactionDef& f : factions()) {
+        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
+    }
+    const float turn = rng.unit() * 6.2831853f;
+    for (size_t ci = 0; ci < camps.size(); ++ci) {
+        const FactionDef& f = *camps[ci];
+        const float angle = turn + 6.2831853f * (float)ci / (float)camps.size() + (rng.unit() - 0.5f) * 0.4f;
+        const float dist = CAMP_DISTANCE_MIN + rng.unit() * (CAMP_DISTANCE_MAX - CAMP_DISTANCE_MIN);
+        const float cx = spawn.x + std::cos(angle) * dist, cz = spawn.z + std::sin(angle) * dist;
+        const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)f.units);
+        int placed = 0;
+        for (int attempt = 0; attempt < 4000 && placed < f.units; ++attempt) {
+            GridPos g{ rng.range(tileAt(cx - radius), tileAt(cx + radius)), rng.range(tileAt(cz - radius), tileAt(cz + radius)) };
+            const float dx = g.x + 0.5f - cx, dz = g.y + 0.5f - cz;
+            if (dx * dx + dz * dz > radius * radius || !tileFree(g)) continue;
+            placeUnit(g, f.id);
+            ++placed;
+        }
+        for (int attempt = 0; attempt < 20000 && placed < f.units; ++attempt) {
             GridPos g{ rng.range(tileAt(spawn.x - ENEMY_RANGE), tileAt(spawn.x + ENEMY_RANGE)),
                        rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
-            if (!t.walkable(g.x, g.y)) continue;
-            const float x = g.x + 0.5f, z = g.y + 0.5f;
-            const float dx = x - spawn.x, dz = z - spawn.z;
-            if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) continue;
-            if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE) continue;
-            bool taken = std::any_of(enemyTiles.begin(), enemyTiles.end(),
-                                     [&](GridPos k) { return k == g; });
-            if (taken) continue;
-
-            enemyTiles.push_back(g);
-            Entity e = w.create();
-            w.add(e, Transform{ x, t.heightAt(x, z), z });
-            w.add(e, Unit{ HOSTILE_WALK_SPEED });
-            if (neutral) w.add(e, Neutral{});
-            else w.add(e, Hostile{});
-            w.add(e, Faction{ neutral ? FACTION_GRAY : FACTION_RED });
-            w.add(e, randomNpcLoot(rng));
-            w.add(e, Equipment{});
-            w.add(e, Needs{});
-            w.add(e, Behaviors{});
-            w.add(e, Combat{});
-            w.add(e, Name{});
-            w.add(e, Dialogue{});
-            w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+            const float dx = g.x + 0.5f - spawn.x, dz = g.y + 0.5f - spawn.z;
+            if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
+            placeUnit(g, f.id);
+            ++placed;
         }
-    };
-    placeNpcs(ENEMY_COUNT, false);
-    placeNpcs(NEUTRAL_COUNT, true);
+    }
 
     // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
     // own tile. They do not block movement. They go down a round of every kind at a time (wagon, campfire, ... forge,
@@ -273,7 +329,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         Entity prop = w.create();
         w.add(prop, Transform{ x, t.heightAt(x, z), z });
         w.add(prop, Prop{ kind, serial });
-        if (hasStorage(propInfo(kind))) w.add(prop, Storage{});   // a barrel or a campfire starts empty
+        if (hasStorage(propInfo(kind))) {
+            // A storage prop starts with a few things that belong in it; a crafting prop (the campfire) starts empty
+            w.add(prop, propInfo(kind).use == PropUse::Storage ? startingStorage(kind, rng) : Storage{});
+        }
         if (propInfo(kind).use == PropUse::PassiveCrafting) {     // a forge starts cold, with an empty output
             w.add(prop, Output{});
             w.add(prop, Fuel{});
@@ -291,7 +350,21 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             nd->maxHp = maxHealthFor(*w.get<Stats>(u));
             nd->hp = nd->maxHp;
         }
-        if (w.has<Hostile>(u) || w.has<Neutral>(u)) w.add(u, randomHostileGear(rng));
+        if (w.has<Hostile>(u) || w.has<Neutral>(u)) {
+            w.add(u, randomHostileGear(rng));
+            // An NPC given a bow or a crossbow gets some of its ammo to shoot, so it fights at range
+            const Equipment* worn = w.get<Equipment>(u);
+            if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GEAR_MAIN_HAND]) : nullptr) {
+                std::vector<int> ammo;
+                for (const ItemDef& d : itemDatabase()) {
+                    if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
+                }
+                Inventory* inv = w.get<Inventory>(u);
+                if (inv && !ammo.empty()) {
+                    addToInventory(*inv, ammo[(size_t)rng.range(0, (int)ammo.size() - 1)], rng.range(NPC_AMMO_MIN, NPC_AMMO_MAX));
+                }
+            }
+        }
         // No unit starts out carrying so much that it is encumbered
         if (Inventory* inv = w.get<Inventory>(u)) {
             Equipment* worn = w.get<Equipment>(u);
@@ -717,7 +790,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             // An ordered fight: walk at the red unit, and stop once it is close enough to swing
             if (const Transform* tt = w.get<Transform>(ao->target)) {
                 const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-                if (std::sqrt(gx * gx + gz * gz) > ATTACK_REACH * CHASE_STOP_SHARE) {
+                if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
                     tx = tt->x;
                     tz = tt->z;
                 }
@@ -744,12 +817,12 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             } else {
                 w.remove<FollowOrder>(e);   // the unit it followed is gone
             }
-        } else if (w.has<Hostile>(e)) {
-            // A hostile walks at its target while it has one, and stops once it is close enough to swing
+        } else if (!w.has<Commandable>(e)) {
+            // A unit that is not yours walks at its target while it has one, and stops once it is close enough to hit
             if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
                 if (const Transform* tt = w.get<Transform>(c->target)) {
                     const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-                    if (std::sqrt(gx * gx + gz * gz) > ATTACK_REACH * CHASE_STOP_SHARE) {
+                    if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
                         tx = tt->x;
                         tz = tt->z;
                     }
@@ -1087,7 +1160,10 @@ void defendSystem(World& w) {
 }
 
 void makeHostile(World& w, Entity unit) {
-    if (!w.has<Unit>(unit) || w.has<Commandable>(unit) || w.has<Hostile>(unit)) return;
+    // It is provoked by your faction (factionSystem keeps it hostile while that lasts), and turns at once
+    if (!w.has<Unit>(unit) || w.has<Commandable>(unit)) return;
+    provoke(w, unit, FACTION_PLAYER);
+    if (w.has<Hostile>(unit)) return;
     w.remove<Neutral>(unit);
     w.add(unit, Hostile{});
     queueSound(Sfx::TurnHostile);
@@ -1702,9 +1778,22 @@ void knockOut(World& w, Entity u) {
         n->hp = 0;
     }
     w.remove<PlayingDead>(u);
-    w.add(u, Unconscious{});
+    // Who knocked it out: a hit from a unit of some faction, or nothing (hunger). Your units knocking out a unit of
+    // another faction cost reputation with it.
+    Unconscious un;
+    if (Combat* c = w.get<Combat>(u)) {
+        un.koFaction = c->downedByFaction;
+        c->downedByFaction = -1;
+    }
+    w.add(u, un);
     queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other);
     queueSound(Sfx::Downed);
+    const int victim = factionOf(w, u);
+    if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER) {
+        const int now = changePlayerReputation(victim, -REP_KO_PENALTY);
+        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_KO_PENALTY), std::to_string(now) }),
+                 LogKind::Other);
+    }
 }
 
 void downedSystem(World& w) {
@@ -1747,6 +1836,14 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
             w.remove<Occupying>(u);
             queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other);
             out.died.push_back(u);
+            // Knocked out by your units, and dead before it woke: more reputation lost with its faction
+            const int victim = factionOf(w, u);
+            if (un->koFaction == FACTION_PLAYER && victim != FACTION_PLAYER) {
+                const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
+                queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY),
+                                                          std::to_string(now) }),
+                         LogKind::Other);
+            }
         }
     }
     return out;

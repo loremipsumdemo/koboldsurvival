@@ -192,9 +192,9 @@ constexpr int STORAGE_COLUMNS = 6;
 
 constexpr int PROP_COPIES = 3;         // how many of each kind a new level places
 // Names how a level lays its props out, so a save can tell whether its prop serials still name the same props. It
-// changes whenever the number of kinds or copies does. Props are placed a round of every kind at a time, so serial s
-// is kind s % PROP_KIND_COUNT.
-constexpr int PROP_LAYOUT = PROP_KIND_COUNT * 1000 + PROP_COPIES * 10 + 1;
+// changes whenever the number of kinds or copies does, and its last digit whenever the placement itself changes (2: the
+// factions' camps come first). Props are placed a round of every kind at a time, so serial s is kind s % PROP_KIND_COUNT.
+constexpr int PROP_LAYOUT = PROP_KIND_COUNT * 1000 + PROP_COPIES * 10 + 2;
 constexpr float PROP_RANGE = 40.0f;    // props are placed within this many tiles of the spawn, each on its own tile
 
 // A unit within this many tiles of a prop can use it: work a resource or crafting prop, open a storage, take a bed.

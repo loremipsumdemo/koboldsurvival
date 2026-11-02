@@ -1,11 +1,11 @@
 # Update notes
-- New panel layout. Unlock a panel to move it or resize it from any edge, then lock it to keep it. Reset All UI Panels is in Settings.
-- The Squad Panel shows three rows of five, with arrow buttons and a draggable scroll bar.
-- Gear slots are item cells, like the inventory.
-- The world map is a window you can drag. Right-click it to move, and see props and your camera on it.
-- The Information Panel has a Time tab, and filters for Athletics and Endurance experience.
-- Units at 0 health fall unconscious. Carry them to a bed before their Doom fills, or loot their corpse.
-- Shop with traders from the right-click menu.
-- The Vagabond scenario: one unit, no gear, no items.
+- Four factions, Red, Green, Blue and Yellow, each in its own camp. The Faction Panel's new Reputation tab shows where they all stand.
+- Knocking out a faction's units costs reputation with it. Attack one, and others of its faction that see it join in.
+- Short Bow, Long Bow and Crossbow, with arrows and bolts.
+- Behavior modes: Passive, Block and Sneak. Ranged turns on by itself with a bow or crossbow.
+- Right-clicking a hostile unit attacks it.
+- Storage props start with things in them, and props are clicked by their actual shape.
+- Panels can be unlocked, moved and resized from any edge. Reset All UI Panels is in Settings.
+- The world map is a window you can drag. Right-click it to move.
 
 Thanks for playing!

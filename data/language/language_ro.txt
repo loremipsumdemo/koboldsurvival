@@ -98,7 +98,7 @@ CONTROL_DOES_9	Fă o captură de ecran
 UILABEL_PAUSED	ÎN PAUZĂ
 UILABEL_PACE_RUN	Ritm: alergare
 UILABEL_PACE_WALK	Ritm: mers
-UILABEL_SQUAD_PANEL	Panou echipă
+UILABEL_SQUAD_PANEL	Panou facțiune
 UILABEL_UNIT_PANEL	Panou unitate
 UILABEL_INFORMATION_PANEL	Panou de informații
 UILABEL_INTERACTION_PANEL	Panou de interacțiune
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Gata de schimb
 MISC_TURNS_HOSTILE	{0} devine ostil
 MISC_SELECT_UNIT_FIRST	Selectează mai întâi o unitate
 FACTION_PLAYER	Facțiunea jucătorului
-FACTION_GRAY	Facțiunea gri
 FACTION_RED	Facțiunea roșie
+FACTION_GREEN	Facțiunea verde
+FACTION_BLUE	Facțiunea albastră
+FACTION_YELLOW	Facțiunea galbenă
+MISC_REPUTATION_DROPS	Reputația la {0} scade cu {1}, la {2}
+UILABEL_MODE_PASSIVE	Pasiv
+UILABEL_MODE_BLOCK	Blocare
+UILABEL_MODE_SNEAK	Furișare
+UILABEL_MODE_RANGED	La distanță
+UILABEL_MODE_PASSIVE_TIP	Pasiv: nu începe niciodată o luptă și nu intră în una ca să ajute. Execută totuși ordinele, inclusiv atacuri.
+UILABEL_MODE_BLOCK_TIP	Blocare: nu atacă niciodată și blochează loviturile de două ori mai des, chiar cu mâinile goale.
+UILABEL_MODE_SNEAK_TIP	Furișare: merge cu jumătate de viteză și e mult mai greu de observat. Cu cât Furișarea e mai mare, cu atât mai bine.
+UILABEL_MODE_RANGED_TIP	La distanță: pornește singur cât timp în mâna principală e un arc sau o arbaletă. Fiecare tragere folosește o săgeată sau un bolț.
+UILABEL_SQUAD_TAB	Echipă
+UILABEL_REPUTATION	Reputație
+UILABEL_REP_HOSTILE	Ostili: se atacă de cum se văd (-25 sau mai puțin)
+UILABEL_REP_ALLIED	Aliați: se ajută când unul e atacat (50 sau mai mult)
+UILABEL_REP_NEUTRAL	Neutri: se lasă în pace
 MISC_PROP_UNREACHABLE	Inaccesibil
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariu
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Ciupercă otrăvitoare
 ITEM_126_DESC	O ciupercă de pădure care arată ca oricare alta. Mâncată, costă sănătate și sațietate.
+ITEM_127_NAME	Arc scurt
+ITEM_127_DESC	Necesită ambele mâini. Trage săgeți de aproape și precis.
+ITEM_128_NAME	Arc lung
+ITEM_128_DESC	Necesită ambele mâini. Trage săgeți de departe, dar mai puțin sigur.
+ITEM_129_NAME	Arbaletă
+ITEM_129_DESC	Necesită ambele mâini. Trage bolțuri de două ori mai repede decât un arc, cu jumătate din daune.
+ITEM_130_NAME	Săgeți de lemn
+ITEM_130_DESC	Săgeți simple pentru arc scurt sau lung.
+ITEM_131_NAME	Săgeți de os
+ITEM_131_DESC	Săgeți cu vârf de os pentru arc scurt sau lung. Lovesc mai tare decât cele de lemn.
+ITEM_132_NAME	Săgeți de foc
+ITEM_132_DESC	Săgeți arzânde pentru arc scurt sau lung. Cele mai puternice săgeți.
+ITEM_133_NAME	Bolțuri de arbaletă
+ITEM_133_DESC	Bolțuri scurte și grele pentru o arbaletă.
 UILABEL_OPTIMIZE	Optimizează
 UILABEL_REMOVE_ALL	Scoate tot
 MISC_GEAR_NO_ROOM	Nu e destul loc în inventar

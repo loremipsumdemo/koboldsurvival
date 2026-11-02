@@ -98,7 +98,7 @@ CONTROL_DOES_9	ถ่ายภาพหน้าจอ
 UILABEL_PAUSED	หยุดชั่วคราว
 UILABEL_PACE_RUN	จังหวะ: วิ่ง
 UILABEL_PACE_WALK	จังหวะ: เดิน
-UILABEL_SQUAD_PANEL	แผงกลุ่ม
+UILABEL_SQUAD_PANEL	แผงฝ่าย
 UILABEL_UNIT_PANEL	แผงยูนิต
 UILABEL_INFORMATION_PANEL	แผงข้อมูล
 UILABEL_INTERACTION_PANEL	แผงปฏิสัมพันธ์
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	พร้อมแลกเปลี่ยน
 MISC_TURNS_HOSTILE	{0} กลายเป็นศัตรู
 MISC_SELECT_UNIT_FIRST	เลือกยูนิตก่อน
 FACTION_PLAYER	ฝ่ายผู้เล่น
-FACTION_GRAY	ฝ่ายเทา
 FACTION_RED	ฝ่ายแดง
+FACTION_GREEN	ฝ่ายเขียว
+FACTION_BLUE	ฝ่ายน้ำเงิน
+FACTION_YELLOW	ฝ่ายเหลือง
+MISC_REPUTATION_DROPS	ชื่อเสียงกับ{0}ลดลง {1} เหลือ {2}
+UILABEL_MODE_PASSIVE	ไม่สู้
+UILABEL_MODE_BLOCK	ป้องกัน
+UILABEL_MODE_SNEAK	ย่อง
+UILABEL_MODE_RANGED	ระยะไกล
+UILABEL_MODE_PASSIVE_TIP	ไม่สู้: ไม่เริ่มการต่อสู้และไม่เข้าไปช่วยคนอื่น แต่ยังทำตามคำสั่ง รวมถึงการโจมตี
+UILABEL_MODE_BLOCK_TIP	ป้องกัน: ไม่โจมตีเลย และป้องกันการโจมตีได้บ่อยขึ้นสองเท่า แม้มือเปล่า
+UILABEL_MODE_SNEAK_TIP	ย่อง: เดินด้วยความเร็วครึ่งหนึ่งและถูกสังเกตเห็นยากขึ้นมาก ยิ่งค่าลอบเร้นสูงยิ่งดี
+UILABEL_MODE_RANGED_TIP	ระยะไกล: เปิดเองเมื่อถือธนูหรือหน้าไม้ในมือหลัก ยิงแต่ละครั้งใช้ลูกธนูหรือลูกดอกหนึ่งดอก
+UILABEL_SQUAD_TAB	กลุ่ม
+UILABEL_REPUTATION	ชื่อเสียง
+UILABEL_REP_HOSTILE	ศัตรู: โจมตีกันทันทีที่เห็น (-25 หรือต่ำกว่า)
+UILABEL_REP_ALLIED	พันธมิตร: ช่วยกันเมื่อมีใครถูกโจมตี (50 หรือสูงกว่า)
+UILABEL_REP_NEUTRAL	เป็นกลาง: ไม่ยุ่งกัน
 MISC_PROP_UNREACHABLE	เข้าถึงไม่ได้
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	ฉากเริ่มต้น
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	เห็ดพิษ
 ITEM_126_DESC	เห็ดป่าที่ดูเหมือนเห็ดทั่วไป กินแล้วเสียพลังชีวิตและความอิ่ม
+ITEM_127_NAME	ธนูสั้น
+ITEM_127_DESC	ต้องใช้สองมือ ยิงลูกธนูระยะใกล้และแม่นยำ
+ITEM_128_NAME	ธนูยาว
+ITEM_128_DESC	ต้องใช้สองมือ ยิงลูกธนูได้ไกล แต่แม่นน้อยกว่า
+ITEM_129_NAME	หน้าไม้
+ITEM_129_DESC	ต้องใช้สองมือ ยิงลูกดอกเร็วกว่าธนูสองเท่า แต่ความเสียหายครึ่งเดียว
+ITEM_130_NAME	ลูกธนูไม้
+ITEM_130_DESC	ลูกธนูธรรมดาสำหรับธนูสั้นหรือธนูยาว
+ITEM_131_NAME	ลูกธนูกระดูก
+ITEM_131_DESC	ลูกธนูหัวกระดูกสำหรับธนูสั้นหรือธนูยาว แรงกว่าลูกธนูไม้
+ITEM_132_NAME	ลูกธนูไฟ
+ITEM_132_DESC	ลูกธนูติดไฟสำหรับธนูสั้นหรือธนูยาว ลูกธนูที่แรงที่สุด
+ITEM_133_NAME	ลูกดอกหน้าไม้
+ITEM_133_DESC	ลูกดอกสั้นและหนักสำหรับหน้าไม้
 UILABEL_OPTIMIZE	ปรับให้ดีที่สุด
 UILABEL_REMOVE_ALL	ถอดทั้งหมด
 MISC_GEAR_NO_ROOM	ช่องเก็บของไม่พอ

@@ -57,12 +57,12 @@ constexpr float PANEL_BAR_H = 22.0f;     // every panel's title bar, at 720p
 
 // The Squad Panel: its cells, gaps and padding
 struct SquadMetrics {
-    float cell, gap, pad, label, scrollW, toggleH, barH;
+    float cell, gap, pad, label, scrollW, toggleH, barH, tabH;
     explicit SquadMetrics(float s)
         : cell(44.0f * s), gap(5.0f * s), pad(10.0f * s), label(34.0f * s), scrollW(14.0f * s), toggleH(22.0f * s),
-          barH(PANEL_BAR_H * s) {}
-    // Everything but the rows: the bar, the pace row and the padding
-    float chromeH() const { return barH + pad + toggleH + gap + pad; }
+          barH(PANEL_BAR_H * s), tabH(24.0f * s) {}
+    // Everything but the rows: the bar, the tabs, the pace row and the padding
+    float chromeH() const { return barH + tabH + pad + toggleH + gap + pad; }
     float rowsH(int rows) const { return rows * (cell + label) + (rows - 1) * gap; }
 };
 // Each cell: the portrait square, then a thin health bar, then the name
@@ -220,6 +220,15 @@ struct UnitPanelLayout {
     Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };       // the "Squad Panel" bar across the top
     Rect paceButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel, on the left
     Rect optimizeAllButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // Optimize All, beside the pace toggle
+    // The tabs under the bar: Squad (FACTION_TAB_SQUAD, the units) and Reputation (FACTION_TAB_REPUTATION)
+    int tab = 0;
+    Rect tabSquad{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tabReputation{ 0.0f, 0.0f, 0.0f, 0.0f };
+    // The Reputation tab: a heading naming the faction shown, then one row per faction, from repFirst on
+    Rect repHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<Rect> repRows;
+    int repFirst = 0;                       // the first faction shown, clamped to the list
+    int repVisible = 0;                     // how many rows have room
     Rect scrollUp{ 0.0f, 0.0f, 0.0f, 0.0f };    // the button at the top of the scroll bar: up a row
     Rect scrollDown{ 0.0f, 0.0f, 0.0f, 0.0f };  // the button at the bottom of the scroll bar: down a row
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track, between the two buttons
@@ -236,11 +245,17 @@ struct UnitPanelLayout {
 
 // The squad panel scrolls very slowly: this many wheel notches move it one row
 constexpr float SQUAD_WHEEL_NOTCHES_PER_ROW = 4.0f;
+// The Faction Panel's tabs
+constexpr int FACTION_TAB_SQUAD = 0;
+constexpr int FACTION_TAB_REPUTATION = 1;
 
-// The Squad Panel: the walk and run toggle and Optimize All across the top, then a grid of portraits with names, scrolled
-// a row at a time. Its scroll bar has a button at each end that moves it a row, and a thumb that can be dragged.
+// The Faction Panel (the panel once called the Squad Panel): two tabs under its bar. The Squad tab has the walk and run
+// toggle and Optimize All across the top, then a grid of portraits with names, scrolled a row at a time; its scroll
+// bar has a button at each end that moves it a row, and a thumb that can be dragged. The Reputation tab has a heading
+// for the faction shown, then a row for each of factionCount factions, from repScroll on.
 inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
-                                       const PanelPlace& place = PanelPlace{}) {
+                                       const PanelPlace& place = PanelPlace{}, int tab = FACTION_TAB_SQUAD,
+                                       int factionCount = 0, int repScroll = 0) {
     const float s = H / 720.0f;
     const SquadMetrics m(s);
     const Rect open = panelRect(PANEL_SQUAD, place, W, H);
@@ -262,9 +277,28 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     L.collapsed = collapsed;
     if (collapsed) return L;   // only the bar shows, so nothing in the body can be pressed
 
-    // The body is the panel less its bar, which runs along its top or its bottom
+    // The body is the panel less its bar, which runs along its top or its bottom. The tabs run across its top.
     const Rect body = panelBodyRect(open, place.barBottom, m.barH);
-    const float bodyY = body.y;
+    L.tab = tab == FACTION_TAB_REPUTATION ? FACTION_TAB_REPUTATION : FACTION_TAB_SQUAD;
+    {
+        const float tw = (open.w - 2.0f * m.pad - m.gap) * 0.5f;
+        L.tabSquad = Rect{ open.x + m.pad, body.y + 2.0f * s, tw, m.tabH - 4.0f * s };
+        L.tabReputation = Rect{ L.tabSquad.x + tw + m.gap, body.y + 2.0f * s, tw, m.tabH - 4.0f * s };
+    }
+    const float bodyY = body.y + m.tabH;
+    if (L.tab == FACTION_TAB_REPUTATION) {
+        // A heading, then a row per faction; the rows that have no room are scrolled to with the wheel
+        const float rowH = 24.0f * s, rowGap = 2.0f * s;
+        L.repHeading = Rect{ open.x + m.pad, bodyY + m.pad * 0.5f, open.w - 2.0f * m.pad, rowH };
+        const float listTop = L.repHeading.y + rowH + rowGap;
+        const float room = body.y + body.h - m.pad * 0.5f - listTop;
+        L.repVisible = std::max(1, (int)std::floor((room + rowGap) / (rowH + rowGap) + 0.001f));
+        L.repFirst = std::clamp(repScroll, 0, std::max(0, factionCount - L.repVisible));
+        for (int i = L.repFirst; i < factionCount && i < L.repFirst + L.repVisible; ++i) {
+            L.repRows.push_back(Rect{ open.x + m.pad, listTop + (i - L.repFirst) * (rowH + rowGap), open.w - 2.0f * m.pad, rowH });
+        }
+        return L;   // the units' scroll stays as it was, for when the Squad tab is back
+    }
     // The top row holds the pace toggle and Optimize All, half each. The grid starts under it.
     const float rowW = open.w - 2.0f * m.pad;
     const float halfW = (rowW - m.gap) * 0.5f;
@@ -854,6 +888,8 @@ struct SidebarLayout {
     Rect statsArea{ 0.0f, 0.0f, 0.0f, 0.0f };  // the stats list, in the Stats tab
     float statRowH = 0.0f;                     // the height of each row in the stats list
     Rect behaviorPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the behavior list
+    // The fighting modes over the rules, in BehaviorMode order: Passive, Block, Sneak, Ranged (shown, not pressed)
+    std::array<Rect, 4> modes{};
     std::array<Rect, 5> behaviorHeads{};       // column headings: On, Target, Condition, Action, Target
     std::vector<BehaviorRowLayout> behaviorRows;   // one per rule, highest priority first
     Rect addButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // adds a rule, under the last one
@@ -898,7 +934,8 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float gearPanelH = um.gearPanelH();
     const float slot = ITEM_CELL_PX;   // fixed: a wider panel leaves room beside the grid instead
     const float gridPanelH = um.gridPanelH();
-    const float behaviorPanelH = headH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
+    const float modeRowH = 30.0f * s;   // the row of fighting modes under the heading, with a gap under it
+    const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     const float contents[UNIT_TAB_COUNT] = { um.inventoryTabH(), cardH, statsH, behaviorPanelH };
 
@@ -976,7 +1013,14 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
             cursor += colWidth[i + 1];
         }
         const float buttonsX = rowX + colsW + gap;
-        const float headY = L.behaviorPanel.y + headH;
+        // The fighting modes: four equal buttons across the panel, under its heading
+        {
+            const float mGap = 4.0f * s, mW = (rowW - 3.0f * mGap) / 4.0f;
+            for (int i = 0; i < 4; ++i) {
+                L.modes[(size_t)i] = Rect{ rowX + i * (mW + mGap), L.behaviorPanel.y + headH, mW, modeRowH - 8.0f * s };
+            }
+        }
+        const float headY = L.behaviorPanel.y + headH + modeRowH;
         const float rowsY = headY + colHeadH;
         for (int i = 0; i < rules; ++i) {
             BehaviorRowLayout R;

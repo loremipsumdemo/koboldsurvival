@@ -98,7 +98,7 @@ CONTROL_DOES_9	Fa uno screenshot
 UILABEL_PAUSED	IN PAUSA
 UILABEL_PACE_RUN	Ritmo: corsa
 UILABEL_PACE_WALK	Ritmo: passo
-UILABEL_SQUAD_PANEL	Pannello squadra
+UILABEL_SQUAD_PANEL	Pannello fazione
 UILABEL_UNIT_PANEL	Pannello unità
 UILABEL_INFORMATION_PANEL	Pannello informazioni
 UILABEL_INTERACTION_PANEL	Pannello interazione
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Pronto allo scambio
 MISC_TURNS_HOSTILE	{0} diventa ostile
 MISC_SELECT_UNIT_FIRST	Seleziona prima un'unità
 FACTION_PLAYER	Fazione del giocatore
-FACTION_GRAY	Fazione grigia
 FACTION_RED	Fazione rossa
+FACTION_GREEN	Fazione verde
+FACTION_BLUE	Fazione blu
+FACTION_YELLOW	Fazione gialla
+MISC_REPUTATION_DROPS	La reputazione con {0} cala di {1}, a {2}
+UILABEL_MODE_PASSIVE	Passivo
+UILABEL_MODE_BLOCK	Parare
+UILABEL_MODE_SNEAK	Furtività
+UILABEL_MODE_RANGED	A distanza
+UILABEL_MODE_PASSIVE_TIP	Passivo: non inizia mai uno scontro né si unisce per aiutare. Esegue comunque gli ordini, attacchi compresi.
+UILABEL_MODE_BLOCK_TIP	Parare: non attacca mai e para i colpi il doppio delle volte, anche a mani vuote.
+UILABEL_MODE_SNEAK_TIP	Furtività: cammina a metà velocità ed è molto più difficile da notare. Più alta la Furtività, meglio è.
+UILABEL_MODE_RANGED_TIP	A distanza: si attiva da solo finché c'è un arco o una balestra nella mano principale. Ogni tiro consuma una freccia o un dardo.
+UILABEL_SQUAD_TAB	Squadra
+UILABEL_REPUTATION	Reputazione
+UILABEL_REP_HOSTILE	Ostili: si attaccano appena si vedono (-25 o meno)
+UILABEL_REP_ALLIED	Alleati: si aiutano quando uno viene attaccato (50 o più)
+UILABEL_REP_NEUTRAL	Neutrali: si lasciano in pace
 MISC_PROP_UNREACHABLE	Irraggiungibile
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Fungo velenoso
 ITEM_126_DESC	Un fungo selvatico che sembra uguale agli altri. Mangiarlo costa salute e sazietà.
+ITEM_127_NAME	Arco corto
+ITEM_127_DESC	Richiede due mani. Scocca frecce da vicino e con precisione.
+ITEM_128_NAME	Arco lungo
+ITEM_128_DESC	Richiede due mani. Scocca frecce da lontano, ma con meno sicurezza.
+ITEM_129_NAME	Balestra
+ITEM_129_DESC	Richiede due mani. Scaglia dardi due volte più in fretta di un arco, con metà danno.
+ITEM_130_NAME	Frecce di legno
+ITEM_130_DESC	Frecce semplici per arco corto o lungo.
+ITEM_131_NAME	Frecce d'osso
+ITEM_131_DESC	Frecce con punta d'osso per arco corto o lungo. Colpiscono più forte del legno.
+ITEM_132_NAME	Frecce di fuoco
+ITEM_132_DESC	Frecce infuocate per arco corto o lungo. Le frecce più potenti.
+ITEM_133_NAME	Dardi da balestra
+ITEM_133_DESC	Dardi corti e pesanti per una balestra.
 UILABEL_OPTIMIZE	Ottimizza
 UILABEL_REMOVE_ALL	Togli tutto
 MISC_GEAR_NO_ROOM	Spazio insufficiente nell'inventario

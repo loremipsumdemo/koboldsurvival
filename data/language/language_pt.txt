@@ -98,7 +98,7 @@ CONTROL_DOES_9	Tira uma captura de ecrã
 UILABEL_PAUSED	EM PAUSA
 UILABEL_PACE_RUN	Ritmo: correr
 UILABEL_PACE_WALK	Ritmo: andar
-UILABEL_SQUAD_PANEL	Painel do grupo
+UILABEL_SQUAD_PANEL	Painel da fação
 UILABEL_UNIT_PANEL	Painel da unidade
 UILABEL_INFORMATION_PANEL	Painel de informação
 UILABEL_INTERACTION_PANEL	Painel de interação
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Pronto para trocar
 MISC_TURNS_HOSTILE	{0} torna-se hostil
 MISC_SELECT_UNIT_FIRST	Selecione primeiro uma unidade
 FACTION_PLAYER	Fação do Jogador
-FACTION_GRAY	Fação Cinzenta
 FACTION_RED	Fação Vermelha
+FACTION_GREEN	Fação Verde
+FACTION_BLUE	Fação Azul
+FACTION_YELLOW	Fação Amarela
+MISC_REPUTATION_DROPS	A reputação com {0} desce {1}, para {2}
+UILABEL_MODE_PASSIVE	Passivo
+UILABEL_MODE_BLOCK	Bloquear
+UILABEL_MODE_SNEAK	Furtivo
+UILABEL_MODE_RANGED	À distância
+UILABEL_MODE_PASSIVE_TIP	Passivo: nunca começa uma luta nem entra numa para ajudar. Continua a cumprir ordens, ataques incluídos.
+UILABEL_MODE_BLOCK_TIP	Bloquear: nunca ataca e bloqueia o dobro das vezes, mesmo de mãos vazias.
+UILABEL_MODE_SNEAK_TIP	Furtivo: anda a metade da velocidade e é muito mais difícil de notar. Quanto mais Furtividade, melhor.
+UILABEL_MODE_RANGED_TIP	À distância: liga-se sozinho enquanto houver um arco ou uma besta na mão principal. Cada tiro gasta uma flecha ou um virote.
+UILABEL_SQUAD_TAB	Grupo
+UILABEL_REPUTATION	Reputação
+UILABEL_REP_HOSTILE	Hostis: atacam-se mal se veem (-25 ou menos)
+UILABEL_REP_ALLIED	Aliados: ajudam-se quando um é atacado (50 ou mais)
+UILABEL_REP_NEUTRAL	Neutros: deixam-se em paz
 MISC_PROP_UNREACHABLE	Inalcançável
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Cenário
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Cogumelo venenoso
 ITEM_126_DESC	Um cogumelo selvagem igual a qualquer outro. Comê-lo custa saúde e saciedade.
+ITEM_127_NAME	Arco Curto
+ITEM_127_DESC	Precisa das duas mãos. Dispara flechas de perto e com pontaria.
+ITEM_128_NAME	Arco Longo
+ITEM_128_DESC	Precisa das duas mãos. Dispara flechas de longe, mas com menos certeza.
+ITEM_129_NAME	Besta
+ITEM_129_DESC	Precisa das duas mãos. Dispara virotes ao dobro da velocidade de um arco, com metade do dano.
+ITEM_130_NAME	Flechas de Madeira
+ITEM_130_DESC	Flechas simples para arco curto ou longo.
+ITEM_131_NAME	Flechas de Osso
+ITEM_131_DESC	Flechas com ponta de osso para arco curto ou longo. Acertam com mais força que as de madeira.
+ITEM_132_NAME	Flechas de Fogo
+ITEM_132_DESC	Flechas a arder para arco curto ou longo. As flechas mais fortes.
+ITEM_133_NAME	Virotes de Besta
+ITEM_133_DESC	Virotes curtos e pesados para uma besta.
 UILABEL_OPTIMIZE	Otimizar
 UILABEL_REMOVE_ALL	Remover tudo
 MISC_GEAR_NO_ROOM	Espaço insuficiente no inventário

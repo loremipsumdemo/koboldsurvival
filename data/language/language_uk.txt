@@ -98,7 +98,7 @@ CONTROL_DOES_9	Робить знімок екрана
 UILABEL_PAUSED	ПАУЗА
 UILABEL_PACE_RUN	Темп: біг
 UILABEL_PACE_WALK	Темп: хода
-UILABEL_SQUAD_PANEL	Панель загону
+UILABEL_SQUAD_PANEL	Панель фракції
 UILABEL_UNIT_PANEL	Панель юніта
 UILABEL_INFORMATION_PANEL	Інформаційна панель
 UILABEL_INTERACTION_PANEL	Панель взаємодії
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Готово до обміну
 MISC_TURNS_HOSTILE	{0} стає ворожим
 MISC_SELECT_UNIT_FIRST	Спершу виберіть юніта
 FACTION_PLAYER	Фракція гравця
-FACTION_GRAY	Сіра фракція
 FACTION_RED	Червона фракція
+FACTION_GREEN	Зелена фракція
+FACTION_BLUE	Синя фракція
+FACTION_YELLOW	Жовта фракція
+MISC_REPUTATION_DROPS	Репутація у {0} падає на {1}, до {2}
+UILABEL_MODE_PASSIVE	Пасивний
+UILABEL_MODE_BLOCK	Блок
+UILABEL_MODE_SNEAK	Крадькома
+UILABEL_MODE_RANGED	Дальній бій
+UILABEL_MODE_PASSIVE_TIP	Пасивний: ніколи не починає бій і не втручається, щоб допомогти. Накази, зокрема атаку, виконує.
+UILABEL_MODE_BLOCK_TIP	Блок: ніколи не атакує й блокує удари вдвічі частіше, навіть порожніми руками.
+UILABEL_MODE_SNEAK_TIP	Крадькома: іде вдвічі повільніше, і його набагато важче помітити. Що вища Скритність, то краще.
+UILABEL_MODE_RANGED_TIP	Дальній бій: вмикається сам, поки в основній руці лук або арбалет. Кожен постріл витрачає одну стрілу чи болт.
+UILABEL_SQUAD_TAB	Загін
+UILABEL_REPUTATION	Репутація
+UILABEL_REP_HOSTILE	Ворожі: нападають одне на одного одразу (-25 і нижче)
+UILABEL_REP_ALLIED	Союзники: допомагають одне одному, коли когось атакують (50 і вище)
+UILABEL_REP_NEUTRAL	Нейтральні: не чіпають одне одного
 MISC_PROP_UNREACHABLE	Недосяжно
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарій
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Отруйний гриб
 ITEM_126_DESC	Лісовий гриб, схожий на будь-який інший. З'їсти його — втратити здоров'я і ситість.
+ITEM_127_NAME	Короткий лук
+ITEM_127_DESC	Потрібні обидві руки. Стріляє стрілами зблизька й влучно.
+ITEM_128_NAME	Довгий лук
+ITEM_128_DESC	Потрібні обидві руки. Стріляє стрілами здалеку, але менш влучно.
+ITEM_129_NAME	Арбалет
+ITEM_129_DESC	Потрібні обидві руки. Стріляє болтами вдвічі швидше за лук, з половиною шкоди.
+ITEM_130_NAME	Дерев'яні стріли
+ITEM_130_DESC	Прості стріли для короткого чи довгого лука.
+ITEM_131_NAME	Кістяні стріли
+ITEM_131_DESC	Стріли з кістяним вістрям для короткого чи довгого лука. Б'ють сильніше за дерев'яні.
+ITEM_132_NAME	Вогняні стріли
+ITEM_132_DESC	Палаючі стріли для короткого чи довгого лука. Найсильніші стріли.
+ITEM_133_NAME	Арбалетні болти
+ITEM_133_DESC	Короткі важкі болти для арбалета.
 UILABEL_OPTIMIZE	Оптимізувати
 UILABEL_REMOVE_ALL	Зняти все
 MISC_GEAR_NO_ROOM	Недостатньо місця в інвентарі

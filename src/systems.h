@@ -134,6 +134,8 @@ int propWorkerCount(World& w, Entity prop);
 // Whether a prop of this kind takes this item into its inventory: a crafting or passive crafting prop only its input
 // item, a storage prop the items its ItemFilter allows (props.h)
 bool propAcceptsItem(int kind, int item);
+// What a storage prop holds when a level places it: a few stacks of what belongs in it (setupWorld)
+Storage startingStorage(int kind, Rng& rng);
 // What a crafting or passive crafting prop of this kind makes from an input item: its item for its own input, or the
 // input's cooks_into at a campfire (INPUT_COOKABLE). 0 if it takes no such input.
 int recipeOutput(int kind, int input);

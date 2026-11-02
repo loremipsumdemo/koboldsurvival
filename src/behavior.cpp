@@ -8,28 +8,34 @@
 
 namespace {
 
-// The side a unit fights on: 0 for player units, 1 for red units, -1 for neither
-int sideOf(World& w, Entity e) {
-    if (w.has<Commandable>(e)) return 0;
-    if (w.has<Hostile>(e)) return 1;
-    return -1;
+// A unit's faction (factions.h); the Player Faction for one with none
+int factionIdOf(World& w, Entity e) {
+    if (const Faction* f = w.get<Faction>(e)) return f->id;
+    if (w.has<Commandable>(e)) return FACTION_PLAYER;
+    return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
+}
+bool provokedAgainst(World& w, Entity e, int faction) {
+    const Provoked* p = w.get<Provoked>(e);
+    if (!p) return false;
+    for (const Provoked::Entry& en : p->against) {
+        if (en.faction == faction && en.secondsLeft > 0.0f) return true;
+    }
+    return false;
 }
 
 // Whether unit c is in the group a rule names, as seen from the unit that owns the rule. Ally includes the unit
-// itself, and Self is only the unit.
+// itself, its faction and allied factions (reputation REP_ALLIED or more); Enemy is a unit it fights (its faction is
+// hostile, or one has provoked the other); Self is only the unit.
 bool inGroup(World& w, Entity actor, BehaviorTarget group, Entity c) {
+    const int fa = factionIdOf(w, actor), fc = factionIdOf(w, c);
     switch (group) {
     case BehaviorTarget::Self:
         return c == actor;
-    case BehaviorTarget::Ally: {
-        const int side = sideOf(w, actor);
-        return side >= 0 && sideOf(w, c) == side;
-    }
-    case BehaviorTarget::Enemy: {
-        const int side = sideOf(w, actor);
-        const int other = sideOf(w, c);
-        return side >= 0 && other >= 0 && other != side;
-    }
+    case BehaviorTarget::Ally:
+        return c == actor || factionsAllied(fa, fc);
+    case BehaviorTarget::Enemy:
+        return c != actor && fa != fc &&
+               (factionsHostile(fa, fc) || provokedAgainst(w, actor, fc) || provokedAgainst(w, c, fa));
     case BehaviorTarget::Count:
         break;
     }

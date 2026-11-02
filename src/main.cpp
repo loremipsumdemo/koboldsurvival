@@ -768,6 +768,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     freeTrade = false;
     paused = false;
     rng.gen.seed(seed);
+    resetPlayerReputation();   // a new game starts every faction at its default standing
     setupWorld(world, terrain, rng);
     // log.txt: how many of each prop kind went down, and how far the nearest is from the first unit
     {
@@ -847,7 +848,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Commandable{});   // one of yours; a corpse is nobody's
         }
         if (u.unconscious) {
-            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom });
+            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom, u.koFaction });
             if (u.corpse) world.add(e, Corpse{});
         }
         if (u.hostile || u.neutral) world.add(e, Dialogue{});
@@ -865,13 +866,18 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, u.hasNeeds ? u.needs : Needs{});
         Behaviors behaviors;   // older saves have none, so their units get the defaults
         if (u.hasBehaviors) behaviors.rules = u.behaviors;
+        behaviors.passive = u.passive;
+        behaviors.block = u.block;
+        behaviors.sneak = u.sneak;
         world.add(e, behaviors);
         world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
         world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
-        // Older saves have no faction: it comes from the side the unit is on
-        world.add(e, Faction{ u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_GRAY : FACTION_PLAYER });
+        // Older saves have no faction: it comes from the side the unit is on. A faction no longer listed (the old Gray
+        // Faction) maps to the one that replaced it.
+        const int savedFaction = u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_RETIRED_GRAY : FACTION_PLAYER;
+        world.add(e, Faction{ savedFaction == FACTION_PLAYER ? FACTION_PLAYER : knownFactionId(savedFaction) });
     }
 
     // Who was carrying whom: the carrier is named by its place in the save
@@ -954,6 +960,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.mapStem = map.stem;
     d.gs = gs;
     d.propLayout = PROP_LAYOUT;
+    d.reputation = playerReputation();
 
     d.cam.present = true;
     d.cam.fx = cam.focusX;
@@ -990,6 +997,12 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         if (const Faction* f = w.get<Faction>(u)) {
             su.hasFaction = true;
             su.faction = f->id;
+        }
+        if (const Unconscious* un = w.get<Unconscious>(u)) su.koFaction = un->koFaction;
+        if (const Behaviors* bh = w.get<Behaviors>(u)) {
+            su.passive = bh->passive;
+            su.block = bh->block;
+            su.sneak = bh->sneak;
         }
         su.sprite = us ? us->id : 1;
         su.name = n ? n->text : lang("UILABEL_UNNAMED_UNIT");
@@ -1583,6 +1596,17 @@ int main(int, char**) {
     // files in the BGM and SFX folders beside it, read by the audio module.
     if (!pakOpen("data.pak")) return fatalError(nullptr, "Could not open data.pak. It must sit next to the game executable.");
     SDL_Log("data.pak open");
+    // The factions and their reputations, from data/factioninfo.txt. Missing or bad, the built-in list is used.
+    {
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        std::string err;
+        if (!pakFind("data/factioninfo.txt", bytes, size)) {
+            SDL_Log("data/factioninfo.txt is missing; using the built-in factions");
+        } else if (!loadFactions(std::string((const char*)bytes, size), err)) {
+            SDL_Log("data/factioninfo.txt: %s; using the built-in factions", err.c_str());
+        }
+    }
     // Settings come first: the saved text size decides the fonts
     GameSettings settings = loadSettings(SETTINGS_PATH);
     UiFonts fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
@@ -1684,6 +1708,11 @@ int main(int, char**) {
     bool runMode = false;
     // The title bars' [-] buttons. The Information Panel starts folded; the Squad Panel and the Unit Panel start open.
     bool combatCollapsed = true, squadCollapsed = false;
+    // The Faction Panel: its tab (Squad or Reputation), the faction the Reputation tab shows, and how far its list is
+    // scrolled. It shows the Player Faction's reputations until another faction's name is clicked.
+    int factionTab = FACTION_TAB_SQUAD;
+    int repView = FACTION_PLAYER;
+    int repScroll = 0;
     bool unitOpen = true;           // the Unit Panel: open shows its tabs, closed shows its bar alone
     int unitTab = 0;                // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
     Entity lastLone = NULL_ENTITY;  // the lone unit the Unit Panel showed last frame
@@ -2010,6 +2039,7 @@ int main(int, char**) {
         levelSeed = d.seed;
         clearCombatText();
         gs = d.gs;
+        setPlayerReputation(d.reputation);   // older saves have none, so every standing is its default
         // Older saves have no camera, so they start from the default one, not the last game's view
         cam = Camera{};
         cam.mapSize = (float)terrain.size();
@@ -2698,7 +2728,7 @@ int main(int, char**) {
         auto unitPanelHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
             SDL_GetMouseState(&mx, &my);
-            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel.contains(mx, my);
+            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).panel.contains(mx, my);
         };
         // Whether a point is over the bottom unit panel or the inventory sidebar. Those belong to the
         // interface: clicks and wheel turns there never reach the world behind them.
@@ -3060,6 +3090,19 @@ int main(int, char**) {
                 if (!noteLockedIn(selectedUnits(world))) refuse(lang("MISC_SELECT_UNIT_FIRST"));
                 return true;
             }
+            // A hostile unit offers only Attack, so the right click is the attack order itself, with no menu
+            if (actions.size() == 1 && actions[0] == MenuAction::Attack) {
+                issueAttackOrder(world, menuActors(target), target);
+                if (const Transform* tt = world.get<Transform>(target)) {
+                    actionX = tt->x;
+                    actionZ = tt->z;
+                    actionAlpha = 1.0f;
+                }
+                contextMenu.open = false;
+                itemMenu.open = false;
+                playSfx(Sfx::UiOrder);
+                return true;
+            }
             contextMenu = ContextMenu{ true, mx, my, target, actions };
             playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
@@ -3108,6 +3151,7 @@ int main(int, char**) {
                 issueDefendOrder(world, actors, target);
                 break;
             case MenuAction::AttackUnprovoked:
+                // The unit attacked fights back at once; others of its faction that see the attack join in
                 makeHostile(world, target);
                 issueAttackOrder(world, actors, target);
                 break;
@@ -3280,13 +3324,13 @@ int main(int, char**) {
         };
         // What a panel shows on the screen: its open rectangle, or its title bar where it is folded
         auto shownPanel = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).panel;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).panel;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).panel;
             return combatLogPanel(W, H).panel;
         };
         // A panel's title bar, wherever it runs: along the panel's top, or along its bottom
         auto panelBarOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).title;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).title;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).title;
             return combatLogPanel(W, H).bar;
         };
@@ -3387,7 +3431,7 @@ int main(int, char**) {
         };
         // The lock buttons, by PanelId
         auto lockRectOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).lock;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).lock;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).lock;
             return combatLogPanel(W, H).lock;
         };
@@ -3455,7 +3499,7 @@ int main(int, char**) {
         };
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
-            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace),
+            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll),
                                   sidebarFor(W, H, sidebarScroll), true, x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
                 || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
@@ -3679,6 +3723,11 @@ int main(int, char**) {
                     mapCx = gx - offX * k;
                     mapCz = gz - offY * k;
                     clampMapView(box, (float)terrain.size(), mapCx, mapCz, mapSpan);
+                } else if (screen == Screen::Playing && unitPanelHovered(winW, winH) && factionTab == FACTION_TAB_REPUTATION) {
+                    // The Reputation tab's list scrolls a faction a notch
+                    const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
+                    repScroll = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace,
+                                                factionTab, (int)factions().size(), repScroll + step).repFirst;
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list very slowly: a row for every SQUAD_WHEEL_NOTCHES_PER_ROW notches of the
                     // wheel. Turning the wheel the other way starts the count again.
@@ -3688,7 +3737,7 @@ int main(int, char**) {
                     if (rows != 0) {
                         unitPanelWheel -= rows * SQUAD_WHEEL_NOTCHES_PER_ROW;
                         unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
-                                                       unitPanelRow - rows, squadCollapsed, squadPlace).scrollRow;
+                                                       unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).scrollRow;
                     }
                 } else if (screen == Screen::Playing
                            && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
@@ -4046,7 +4095,7 @@ int main(int, char**) {
                         break;
                     }
                     if (infoPanelClick(winW, winH, tx, ty)) break;
-                    if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace).toggle.contains(tx, ty)) {
+                    if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).toggle.contains(tx, ty)) {
                         setFolded(PANEL_SQUAD, !squadCollapsed, winW, winH);
                         break;
                     }
@@ -4055,10 +4104,33 @@ int main(int, char**) {
                         break;
                     }
                 }
+                // The Faction Panel's tabs, and in its Reputation tab a faction's row: that faction's reputations show
+                if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
+                    const UnitPanelLayout fp = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed,
+                                                               squadPlace, factionTab, (int)factions().size(), repScroll);
+                    const float tx = e.button.x, ty = e.button.y;
+                    if (fp.tabSquad.contains(tx, ty) || fp.tabReputation.contains(tx, ty)) {
+                        const int next = fp.tabSquad.contains(tx, ty) ? FACTION_TAB_SQUAD : FACTION_TAB_REPUTATION;
+                        if (next != factionTab) playSfx(Sfx::UiClick);
+                        factionTab = next;
+                        break;
+                    }
+                    bool picked = false;
+                    for (size_t i = 0; i < fp.repRows.size(); ++i) {
+                        const size_t idx = (size_t)fp.repFirst + i;
+                        if (!fp.repRows[i].contains(tx, ty) || idx >= factions().size()) continue;
+                        if (factions()[idx].id != repView) playSfx(Sfx::UiClick);
+                        repView = factions()[idx].id;
+                        picked = true;
+                        break;
+                    }
+                    if (picked) break;
+                    if (factionTab == FACTION_TAB_REPUTATION && fp.repHeading.contains(tx, ty)) break;
+                }
                 // The Squad Panel's scroll bar: an arrow moves the list a row, the thumb can be dragged, and a press on
                 // the track moves a row toward it
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
-                    const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace);
+                    const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
                     const float tx = e.button.x, ty = e.button.y;
                     if (sq.scrollUp.contains(tx, ty) || sq.scrollDown.contains(tx, ty)) {
                         const int next = std::clamp(sq.scrollRow + (sq.scrollUp.contains(tx, ty) ? -1 : 1), 0, sq.maxScroll());
@@ -4096,7 +4168,7 @@ int main(int, char**) {
                     // The unit panel and sidebar take the click, so it never reaches the ground
                     const float mx = e.button.x, my = e.button.y;
                     const std::vector<Entity> own = ownUnitList();
-                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
+                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
 
                     // The right-click menu: a click on one of its buttons does that action. A click
                     // anywhere else just closes it, and the click still does what it would have done.
@@ -4199,6 +4271,26 @@ int main(int, char**) {
                                     addBehavior(shown);
                                     break;
                                 }
+                                // The fighting modes: Passive, Block and Sneak switch on and off; Ranged follows the
+                                // weapon. Passive and Block end any fight the unit was picking.
+                                {
+                                    int mode = -1;
+                                    for (int i = 0; i < 3; ++i) {
+                                        if (sl.modes[(size_t)i].contains(mx, my)) mode = i;
+                                    }
+                                    if (sl.modes[3].contains(mx, my)) break;
+                                    if (mode >= 0) {
+                                        if (Behaviors* b = world.get<Behaviors>(shown)) {
+                                            bool& flag = mode == 0 ? b->passive : mode == 1 ? b->block : b->sneak;
+                                            flag = !flag;
+                                            if (flag && mode < 2 && !world.has<AttackOrder>(shown)) {
+                                                if (Combat* c = world.get<Combat>(shown)) c->target = NULL_ENTITY;
+                                            }
+                                            playSfx(Sfx::UiClick);
+                                        }
+                                        break;
+                                    }
+                                }
                                 const BehaviorHit bh = behaviorHitAt(sl, mx, my);
                                 if (bh.row >= 0) {
                                     behaviorClick(shown, bh, mx, my);
@@ -4290,7 +4382,7 @@ int main(int, char**) {
                         // Right-click on a unit in the Squad Panel: its menu, as on the unit in the world
                         {
                             const std::vector<Entity> own = ownUnitList();
-                            const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
+                            const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
                             bool onCell = false;
                             for (const UnitCell& c : squadL.cells) {
                                 if (!c.rect.contains(e.button.x, e.button.y) || c.index < 0 || c.index >= (int)own.size()) continue;
@@ -4527,7 +4619,7 @@ int main(int, char**) {
                 // The Squad Panel follows its scroll bar thumb while it is held
                 if (squadThumbDrag) {
                     if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
-                        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace);
+                        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
                         unitPanelRow = squadRowAtThumb(sq, e.motion.y - squadThumbGrab);
                     } else {
                         squadThumbDrag = false;
@@ -4681,6 +4773,7 @@ int main(int, char**) {
             // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
             const size_t hitsBefore = combatLog.hits;
             const size_t missesBefore = combatLog.misses;
+            factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
@@ -5103,9 +5196,9 @@ int main(int, char**) {
             }
             {
                 const std::vector<Entity> own = ownUnitList();
-                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace);
+                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
                 unitPanelRow = L.scrollRow;
-                renderer.drawUnitPanel(world, L, own, runMode);
+                renderer.drawUnitPanel(world, L, own, runMode, repView);
                 drawPanelLock(PANEL_SQUAD);
                 // The Information Panel, top left. Its offset is written back, so it stays in range.
                 const CombatLogLayout cl = combatLogPanel(winW, winH);

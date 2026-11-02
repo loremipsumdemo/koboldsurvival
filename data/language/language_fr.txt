@@ -98,7 +98,7 @@ CONTROL_DOES_9	Faire une capture d'écran
 UILABEL_PAUSED	PAUSE
 UILABEL_PACE_RUN	Allure : course
 UILABEL_PACE_WALK	Allure : marche
-UILABEL_SQUAD_PANEL	Panneau d'escouade
+UILABEL_SQUAD_PANEL	Panneau de faction
 UILABEL_UNIT_PANEL	Panneau d'unité
 UILABEL_INFORMATION_PANEL	Panneau d'informations
 UILABEL_INTERACTION_PANEL	Panneau d'interaction
@@ -602,8 +602,24 @@ MISC_FREE_TRADE_READY	Prêt à échanger
 MISC_TURNS_HOSTILE	{0} devient hostile
 MISC_SELECT_UNIT_FIRST	Sélectionnez d'abord une unité
 FACTION_PLAYER	Faction du joueur
-FACTION_GRAY	Faction grise
 FACTION_RED	Faction rouge
+FACTION_GREEN	Faction verte
+FACTION_BLUE	Faction bleue
+FACTION_YELLOW	Faction jaune
+MISC_REPUTATION_DROPS	La réputation auprès de {0} baisse de {1}, à {2}
+UILABEL_MODE_PASSIVE	Passif
+UILABEL_MODE_BLOCK	Parer
+UILABEL_MODE_SNEAK	Discrétion
+UILABEL_MODE_RANGED	À distance
+UILABEL_MODE_PASSIVE_TIP	Passif : ne lance jamais un combat et n'y entre pas pour aider. Obéit toujours aux ordres, attaques comprises.
+UILABEL_MODE_BLOCK_TIP	Parer : n'attaque jamais et pare deux fois plus souvent, même à mains nues.
+UILABEL_MODE_SNEAK_TIP	Discrétion : marche à mi-vitesse et se fait bien moins remarquer. Plus la Discrétion est haute, mieux c'est.
+UILABEL_MODE_RANGED_TIP	À distance : s'active tout seul tant qu'un arc ou une arbalète est en main principale. Chaque tir consomme une flèche ou un carreau.
+UILABEL_SQUAD_TAB	Escouade
+UILABEL_REPUTATION	Réputation
+UILABEL_REP_HOSTILE	Hostile : ils s'attaquent dès qu'ils se voient (-25 ou moins)
+UILABEL_REP_ALLIED	Alliés : ils s'entraident quand l'un est attaqué (50 ou plus)
+UILABEL_REP_NEUTRAL	Neutre : ils se laissent tranquilles
 MISC_PROP_UNREACHABLE	Inaccessible
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénario
@@ -769,6 +785,20 @@ MISC_ITEM_LOST	-{0}
 MISC_ITEMS_LOST	-{0}x {1}
 ITEM_126_NAME	Champignon vénéneux
 ITEM_126_DESC	Un champignon sauvage qui ressemble à tous les autres. Le manger coûte de la santé et de la satiété.
+ITEM_127_NAME	Arc court
+ITEM_127_DESC	Se tient à deux mains. Tire des flèches de près, avec précision.
+ITEM_128_NAME	Arc long
+ITEM_128_DESC	Se tient à deux mains. Tire des flèches de loin, mais moins sûrement.
+ITEM_129_NAME	Arbalète
+ITEM_129_DESC	Se tient à deux mains. Tire des carreaux deux fois plus vite qu'un arc, pour moitié moins de dégâts.
+ITEM_130_NAME	Flèches en bois
+ITEM_130_DESC	Flèches simples pour arc court ou arc long.
+ITEM_131_NAME	Flèches en os
+ITEM_131_DESC	Flèches à pointe d'os pour arc court ou arc long. Elles frappent plus fort que le bois.
+ITEM_132_NAME	Flèches de feu
+ITEM_132_DESC	Flèches enflammées pour arc court ou arc long. Les flèches les plus puissantes.
+ITEM_133_NAME	Carreaux d'arbalète
+ITEM_133_DESC	Carreaux courts et lourds pour une arbalète.
 UILABEL_OPTIMIZE	Optimiser
 UILABEL_REMOVE_ALL	Tout retirer
 MISC_GEAR_NO_ROOM	Pas assez de place dans l'inventaire

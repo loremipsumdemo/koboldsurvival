@@ -64,6 +64,7 @@ add_executable(koboldgame
     src/fonts.cpp
     src/inventory.cpp
     src/combat.cpp
+    src/factions.cpp
     src/equip.cpp
     src/stats.cpp
     src/party.cpp
@@ -78,6 +79,7 @@ add_executable(koboldgame
     src/world_format.cpp
     src/map.cpp
     src/model.cpp
+    src/model_pick.cpp
     src/pak.cpp
     src/audio.cpp
     src/display.cpp
