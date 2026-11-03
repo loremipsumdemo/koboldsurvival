@@ -1,5 +1,0 @@
-# Tier | Radius | UpkeepLogs | UpgradeCost
-1 | 25 | 2 | wood:20,stone:20
-2 | 40 | 5 | wood:50,stone:50
-3 | 60 | 10 | wood:100,stone:100
-4 | 85 | 20 | wood:200,stone:200
