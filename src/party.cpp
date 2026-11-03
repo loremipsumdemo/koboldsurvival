@@ -70,11 +70,17 @@ std::vector<int> allItemChoices() {
     return sortedByName(out);
 }
 
+std::string modelLabel(int n) {
+    char num[16];
+    std::snprintf(num, sizeof(num), "%02d", n);
+    return langf("UILABEL_MODEL_N", { num });
+}
+
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     PartyMember m;
     m.body = randomBodyType(rng);
     m.name = randomUnitName(rng, m.body, taken);
-    m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
+    m.sprite = modelForBody(m.body);
     m.stats = randomStartingStats(rng);
 
     // Gear: each slot is filled about half the time, with an item that fits it
@@ -261,16 +267,9 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
 Party randomParty(Rng& rng, int count) {
     Party p(count);
     std::vector<std::string> names;
-    std::vector<int> sprites;
     for (PartyMember& m : p) {
         m = randomMember(rng, names);
-        // Distinct while there are models left to give out; past that, any one will do
-        while ((int)sprites.size() < UNIT_SPRITE_COUNT
-               && std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
-            m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
-        }
         names.push_back(m.name);
-        sprites.push_back(m.sprite);
     }
     return p;
 }
@@ -304,15 +303,6 @@ void applyParty(World& w, const Party& p) {
 
 void addRandomMember(Party& p, Rng& rng) {
     std::vector<std::string> names;
-    std::vector<int> sprites;
-    for (const PartyMember& m : p) {
-        names.push_back(m.name);
-        sprites.push_back(m.sprite);
-    }
-    PartyMember m = randomMember(rng, names);
-    while ((int)sprites.size() < UNIT_SPRITE_COUNT
-           && std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
-        m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
-    }
-    p.push_back(m);
+    for (const PartyMember& m : p) names.push_back(m.name);
+    p.push_back(randomMember(rng, names));
 }

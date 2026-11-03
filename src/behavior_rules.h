@@ -32,12 +32,15 @@
 //           needs doing.
 //   Roam: wanders the open map, anywhere walkable outside the flags' claims, ROAM_STEP_MIN to ROAM_STEP_MAX tiles at a
 //         time with a pause between. Wild mobs (mobs.h) have it.
+//   Patrol Spawn: walks about within SPAWN_PATROL_RADIUS of where it was placed (SpawnHome), pausing as Patrol does.
+//         Past SPAWN_LEASH_RANGE from there it gives up any chase and walks home (patrolSpawnSystem). The Gorlicorn
+//         has it in place of Roam.
 // A behavior that is on but can't be done now (no prop with room, no item) waits BEHAVIOR_RETRY_SECONDS before it is
 // tried again, and keeps why (BehaviorWait), for its row's hover text. This header is the behavior data and the pure
 // functions over it, so they can be checked without a world.
 
 // The numbers are kept in saves, so a new kind goes at the end
-enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, Count };
+enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, Count };
 
 // Why a behavior could not be done the last time it was tried
 enum class BehaviorWait : int {
@@ -124,12 +127,15 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 
 // The automated behaviors, which the automation works and which can be deleted
 inline bool isAutomated(BehaviorKind k) {
-    return k == BehaviorKind::AutoHarvest || k == BehaviorKind::AutoHaul || k == BehaviorKind::Patrol || k == BehaviorKind::Roam;
+    return k == BehaviorKind::AutoHarvest || k == BehaviorKind::AutoHaul || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
+           k == BehaviorKind::PatrolSpawn;
 }
 // The behaviors the automation works step by step: the automated ones, Rest and Rescue
 inline bool isAutoStep(BehaviorKind k) { return isAutomated(k) || k == BehaviorKind::Rest || k == BehaviorKind::Rescue; }
 // The automated behaviors whose steps are walks to a spot on the ground, not to a prop
-inline bool isWalkBehavior(BehaviorKind k) { return k == BehaviorKind::Patrol || k == BehaviorKind::Roam; }
+inline bool isWalkBehavior(BehaviorKind k) {
+    return k == BehaviorKind::Patrol || k == BehaviorKind::Roam || k == BehaviorKind::PatrolSpawn;
+}
 
 // Whether two behaviors are the same one: Auto-Harvest of the same kind, Auto-Haul to the same prop, or the same
 // needs behavior. A unit holds each behavior once.
@@ -160,6 +166,7 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::Rest: return langf("UILABEL_BEHAVIOR_REST", { std::to_string(r.percent) });
     case BehaviorKind::LeaveBed: return lang("UILABEL_BEHAVIOR_LEAVE_BED");
     case BehaviorKind::Rescue: return lang("UILABEL_BEHAVIOR_RESCUE");
+    case BehaviorKind::PatrolSpawn: return lang("UILABEL_BEHAVIOR_PATROL_SPAWN");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -179,6 +186,7 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::Rest: return langf("UILABEL_BEHAVIOR_REST_TIP", { std::to_string(r.percent) });
     case BehaviorKind::LeaveBed: return lang("UILABEL_BEHAVIOR_LEAVE_BED_TIP");
     case BehaviorKind::Rescue: return lang("UILABEL_BEHAVIOR_RESCUE_TIP");
+    case BehaviorKind::PatrolSpawn: return lang("UILABEL_BEHAVIOR_PATROL_SPAWN_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";

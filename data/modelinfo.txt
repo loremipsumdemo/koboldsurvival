@@ -45,3 +45,18 @@ Model	File	Prop	Kind
 39	model_39.glb	Shop	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
 40	model_40.glb	Farm	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
 41	model_41.glb	Turbine	Built prop: decor, usually on a foundation. Owned; breaks if its foundation goes
+
+Unit models: data/model/unit/unit_<nn>.glb (two digits), one per unit Model number (the party menu's Model dropdown). A
+body type starts with its own: Feminine unit_01.glb, Masculine unit_02.glb, Androgynous unit_03.glb. A missing one is
+drawn as a pink square.
+
+Model	File	Used for
+1	unit/unit_01.glb	Model 01 (Feminine by default)
+2	unit/unit_02.glb	Model 02 (Masculine by default)
+3	unit/unit_03.glb	Model 03 (Androgynous by default)
+
+Mob models: data/model/mob/mob_<nn>.glb (two digits), for the kinds of mob that have one (MobInfo::model in src/mobs.h).
+A kind with no model, or whose model is missing, is drawn by its picture (data/mobinfo.txt).
+
+Model	File	Mob
+1	mob/mob_01.glb	Gorlicorn (mob kind 18), 2.4 tiles tall

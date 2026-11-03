@@ -192,8 +192,9 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     w.add(u, Behaviors{});
     w.add(u, Combat{});
     w.add(u, Name{});
-    w.add(u, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
-    w.add(u, Body{ randomBodyType(rng) });
+    const int body = randomBodyType(rng);
+    w.add(u, UnitSprite{ modelForBody(body) });
+    w.add(u, Body{ body });
     w.add(u, Faction{ FACTION_PLAYER });
 }
 
@@ -273,6 +274,12 @@ Stats mobStats(int kind, Rng& rng) {
     s.xp[STAT_AGILITY] = xpForLevel(level(m.agility));
     s.xp[STAT_MELEE] = xpForLevel(level(m.melee));
     s.xp[STAT_BLOCK] = xpForLevel(level(m.block));
+    // A kind at its most: every stat a mob has at MAX_LEVEL
+    if (m.maxStats) {
+        for (int i = 0; i < STAT_COUNT; ++i) {
+            if (mobHasStat(i)) s.xp[i] = xpForLevel(MAX_LEVEL);
+        }
+    }
     return s;
 }
 
@@ -298,15 +305,16 @@ Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, flo
     const Stats st = mobStats(kind, rng);
     w.add(e, st);
     Needs n;
-    n.maxHp = n.hp = maxHealthFor(st);
+    n.maxHp = n.hp = m.hp > 0 ? m.hp : maxHealthFor(st);
     w.add(e, n);
     Behaviors b;
     b.rules = mobBehaviors();
     if (isMobFaction(faction)) {
-        // A wild mob roams, and an Avoidant or Passive one never fights
+        // A wild mob roams (or Patrols Spawn, keeping near where it was put), and an Avoidant or Passive one never fights
         BehaviorRule roam;
-        roam.kind = BehaviorKind::Roam;
+        roam.kind = m.patrolSpawn ? BehaviorKind::PatrolSpawn : BehaviorKind::Roam;
         addBehavior(b.rules, roam);
+        if (m.patrolSpawn) w.add(e, SpawnHome{ x, z, false });
         const MobTemperament tm = mobTemperament(kind);
         b.passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
     }
@@ -599,9 +607,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
             if (worn) worn->items = gear;
         }
-        // The body comes first: the name is drawn from the set for it
+        // The body comes first: the name is drawn from the set for it, and the model matches it
         if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
         const int body = w.get<Body>(u)->type;
+        if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
         Name* nm = w.get<Name>(u);
         if (!nm) continue;
         if (w.has<Commandable>(u)) {
@@ -630,7 +639,9 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         if (!kit.placed) continue;
         for (int i = 0; i < CAMP_MOBS; ++i) {
             float x = 0.0f, z = 0.0f;
-            if (freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) spawnMob(w, t, rng, rng.range(1, MOB_KIND_COUNT), kit.faction, x, z);
+            int kind = rng.range(1, MOB_KIND_COUNT);
+            while (!campMobKind(kind)) kind = rng.range(1, MOB_KIND_COUNT);
+            if (freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) spawnMob(w, t, rng, kind, kit.faction, x, z);
         }
     }
     float farthest = 0.0f;   // how far out the camps reach from the spawn
@@ -644,10 +655,23 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
         const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
         const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
-        for (int i = 0; i < WILD_MOBS; ++i) {
+        for (int i = 0; i < mobInfo(kind).wild; ++i) {
             float x = 0.0f, z = 0.0f;
             if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
-                spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
+                const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
+                if (kind != MOB_GORLICORN) continue;
+                // The Gorlicorn's Rabbits: placed about it, and Patrolling Spawn round the same spot, so they stay by it
+                const SpawnHome home = *w.get<SpawnHome>(m);
+                for (int r = 0; r < GORLICORN_RABBITS; ++r) {
+                    float rx = 0.0f, rz = 0.0f;
+                    if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
+                    const Entity rabbit = spawnMob(w, t, rng, MOB_RABBIT, mobFaction(MOB_RABBIT), rx, rz);
+                    Behaviors* rb = w.get<Behaviors>(rabbit);
+                    for (BehaviorRule& rule : rb->rules) {
+                        if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;
+                    }
+                    w.add(rabbit, SpawnHome{ home.x, home.z, false });
+                }
             }
         }
     }
@@ -816,7 +840,7 @@ bool dropStack(World& w, Entity unit, int slot) {
 
     const ItemDef* def = findItem(s.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }),
-             LogKind::Drop);
+             LogKind::Drop, npcOnly(w, unit));
     queueUnitLabel(unit, itemLossLabelFor(s.count, s.item), true);   // "-Iron Ore" over its head
     queueSound(Sfx::Drop);
     Entity e = w.create();
@@ -897,7 +921,7 @@ int pickupSystem(World& w) {
             const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left < count) {
-                queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup);
+                queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup, npcOnly(w, u));
                 queueUnitLabel(u, itemGainLabel(count - left, itemName));   // "+Iron Ore" over its head
                 queueSoundFrom(w, Sfx::Pickup, u);
             }
@@ -1155,7 +1179,12 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         speeds[i] = walkSpeedOf(w, e, running);
     }
 
+    // How big each unit is: a smaller one can't push a bigger one, which walks on through and shoves it aside
+    std::vector<float> sizes(units.size(), 1.0f);
+    for (size_t i = 0; i < units.size(); ++i) sizes[i] = unitSize(w, units[i]);
+
     // Pass 1b: each unit's velocity: toward its goal, plus separation from the units too close to it.
+    // A unit is pushed only by units at least as big as it is.
     // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
     // aside, off the other unit's way. Once nothing pushes it, it walks back to its spot.
     for (size_t i = 0; i < units.size(); ++i) {
@@ -1175,6 +1204,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
             const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
             if (overX <= 0.0f || overZ <= 0.0f) continue;
+            if (sizes[j] < sizes[i] - 1e-3f) continue;   // a smaller unit can't move this one
             // Two settled units following the same unit leave each other be: no pushing back and forth between them
             if (calmLead[i] != NULL_ENTITY && calmLead[i] == calmLead[j]) continue;
             if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;   // right on top: pick a side
@@ -1319,7 +1349,7 @@ namespace {
 void stopWorkersAt(World& w, Entity prop) {
     for (Entity u : w.view<Working>()) {
         if (w.get<Working>(u)->prop != prop) continue;
-        queueLog(langf("MISC_CRAFT_STOPS", { nameOf(w, u) }), LogKind::Other);
+        queueLog(langf("MISC_CRAFT_STOPS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         w.remove<Working>(u);
     }
     if (PropWork* pw = w.get<PropWork>(prop)) {
@@ -1549,7 +1579,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                         a.putInBed = true;
                         a.started = true;
                         queueSoundFrom(w, Sfx::Occupy, prop);
-                        queueLog(langf("MISC_PUTS_IN_BED", { nameOf(w, u), nameOf(w, carried), lang(info.nameKey) }), LogKind::Other);
+                        queueLog(langf("MISC_PUTS_IN_BED", { nameOf(w, u), nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, carried));
                     }
                     break;
                 }
@@ -1573,7 +1603,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                     // A lockable one (the Prisoner Cage) locks behind the unit
                     if (Lock* lk = w.get<Lock>(prop)) {
                         lk->locked = true;
-                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other);
+                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
                     }
                 }
                 break;
@@ -1682,7 +1712,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 if ((double)rng.unit() < lockpickChance(level)) {
                     lock->locked = false;
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
-                    queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other);
+                    queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other, npcOnly(w, picker));
                     grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_SUCCESS, lang("MISC_REASON_LOCKPICKING"));
                 } else {
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
@@ -1766,7 +1796,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 if (got == NULL_ENTITY) {
                     for (Entity u : workers) {
-                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other);
+                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other, npcOnly(w, u));
                         w.remove<Working>(u);
                     }
                     workers.clear();
@@ -1786,7 +1816,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 if (outItem > 0) {
                     giveOrDrop(w, got, outItem, 1);   // checked to fit above; should it not, it falls at the cook's feet
                     addGain(WorkGain{ got, outItem });
-                    queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup);
+                    queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup, npcOnly(w, got));
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
                 } else {
                     // Training: no item, only the skill's XP
@@ -1814,7 +1844,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 const bool yours = w.has<Commandable>(got);
                 if (yours) {
                     addGain(WorkGain{ got, gives });
-                    queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
+                    queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup, npcOnly(w, got));
                 }
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, yours ? lang("MISC_REASON_GATHERING") : std::string());
             } else {
@@ -1824,7 +1854,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     w.add(drop, Transform{ ut->x, ut->y, ut->z });
                     w.add(drop, GroundItem{ gives, 1 });
                 }
-                queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop);
+                queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop, npcOnly(w, got));
                 queueUnitLabel(got, itemLossLabel(1, itemName), true);   // it fell at the unit's feet
                 queueSoundFrom(w, Sfx::Drop, got);
                 w.remove<Working>(got);
@@ -1860,7 +1890,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
         propStorageChanged(w, prop);
         if (w.has<Commandable>(unit)) {
             queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameFor(movedItem),
-                                                    lang(propInfo(p->kind).nameKey) }), LogKind::Pickup);
+                                                    lang(propInfo(p->kind).nameKey) }), LogKind::Pickup, npcOnly(w, unit));
         }
     }
     return moved;
@@ -2110,6 +2140,20 @@ Entity rescueTarget(World& w, Entity u) {
     return best;
 }
 
+// Patrol Spawn: a walkable spot within SPAWN_PATROL_RADIUS of where the mob was placed
+BehaviorWait spawnSpot(World& w, const Terrain& t, Entity u, Rng& rng, Vec2& to) {
+    const SpawnHome* h = w.get<SpawnHome>(u);
+    if (!h) return BehaviorWait::NowhereToRoam;
+    for (int attempt = 0; attempt < 12; ++attempt) {
+        const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * SPAWN_PATROL_RADIUS;
+        const float x = h->x + std::cos(a) * d, z = h->z + std::sin(a) * d;
+        if (!openTile(t, x, z)) continue;
+        to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };
+        return BehaviorWait::None;
+    }
+    return BehaviorWait::NowhereToRoam;
+}
+
 // Tries to start an automated behavior's step. False, with nothing else changed, when it can't be done now; r.why
 // then says why.
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
@@ -2155,7 +2199,8 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
     }
     if (isWalkBehavior(r.kind)) {
         Vec2 to{ 0.0f, 0.0f };
-        r.why = r.kind == BehaviorKind::Patrol ? patrolSpot(w, t, claims, u, rng, to) : roamSpot(w, t, claims, u, rng, to);
+        r.why = r.kind == BehaviorKind::Patrol ? patrolSpot(w, t, claims, u, rng, to)
+              : r.kind == BehaviorKind::PatrolSpawn ? spawnSpot(w, t, u, rng, to) : roamSpot(w, t, claims, u, rng, to);
         if (r.why != BehaviorWait::None) return false;
         b.busy = true;
         b.step = r;
@@ -2340,7 +2385,9 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 b->busy = false;
                 if (BehaviorRule* r = stepRule(*b)) {
                     if (b->step.kind == BehaviorKind::AutoHarvest) r->cooldown = BEHAVIOR_RETRY_SECONDS;
-                    if (b->step.kind == BehaviorKind::Patrol) r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
+                    if (b->step.kind == BehaviorKind::Patrol || b->step.kind == BehaviorKind::PatrolSpawn) {
+                        r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
+                    }
                     if (b->step.kind == BehaviorKind::Roam) r->cooldown = ROAM_PAUSE_MIN + rng.unit() * (ROAM_PAUSE_MAX - ROAM_PAUSE_MIN);
                 }
                 w.remove<SoloMove>(u);
@@ -2367,13 +2414,65 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     }
 }
 
+void patrolSpawnSystem(World& w, Terrain& t) {
+    for (Entity u : w.view<SpawnHome, Transform, Behaviors>()) {
+        if (w.has<Unconscious>(u) || w.has<Carried>(u)) continue;
+        SpawnHome* h = w.get<SpawnHome>(u);
+        Behaviors* b = w.get<Behaviors>(u);
+        BehaviorRule* rule = nullptr;
+        for (BehaviorRule& r : b->rules) {
+            if (r.kind == BehaviorKind::PatrolSpawn) rule = &r;
+        }
+        if (!rule || !rule->on) {
+            h->returning = false;
+            continue;
+        }
+        const Transform* tr = w.get<Transform>(u);
+        const float away = std::hypot(tr->x - h->x, tr->z - h->z);
+        if (!h->returning && away > SPAWN_LEASH_RANGE) {
+            // Too far from home: the chase is given up, it is whole again, and it walks back
+            h->returning = true;
+            queueLog(langf("MISC_GOES_HOME", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+        }
+        if (!h->returning) continue;
+        // On the way home: no fight, no damage taken (combat.cpp), and everything back to full
+        if (Combat* c = w.get<Combat>(u)) {
+            c->target = NULL_ENTITY;
+            c->stamina = -1.0f;   // refilled to its most by the combat step
+        }
+        w.remove<AttackOrder>(u);
+        b->passive = true;
+        if (Needs* n = w.get<Needs>(u); n && n->hp != n->maxHp) {
+            n->hp = n->maxHp;
+            n->changed |= NEEDS_HP_CHANGED;
+        }
+        if (away <= SPAWN_HOME_REACH) {
+            // Home: back to its patrol, and it can be hurt again
+            h->returning = false;
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            rule->cooldown = 0.0f;
+            continue;
+        }
+        const SoloMove* so = w.get<SoloMove>(u);
+        const bool walking = so && so->next < so->waypoints.size();
+        if (!walking || !b->busy || b->step.kind != BehaviorKind::PatrolSpawn) {
+            b->busy = true;
+            b->step = *rule;
+            b->stepProp = NULL_ENTITY;
+            autoWalk(w, t, u, Vec2{ h->x, h->z });
+        }
+    }
+}
+
 void wildMobSystem(World& w, Terrain& t, float dt) {
     for (Entity u : w.view<Mob, Behaviors, Transform, Faction>()) {
         const int faction = w.get<Faction>(u)->id;
         if (!isMobFaction(faction)) continue;   // a camp's mob is its faction's, and goes by its reputations
         Behaviors* b = w.get<Behaviors>(u);
         const MobTemperament tm = mobTemperament(w.get<Mob>(u)->kind);
-        b->passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
+        const SpawnHome* home = w.get<SpawnHome>(u);
+        b->passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive || (home && home->returning);
         if (tm != MobTemperament::Avoidant) continue;
         const Needs* n = w.get<Needs>(u);
         if (w.has<Unconscious>(u) || w.has<Carried>(u) || (n && n->hp <= 0)) continue;
@@ -2388,6 +2487,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
             if (o == u || w.has<Unconscious>(o) || w.has<Carried>(o)) continue;
             const Faction* of = w.get<Faction>(o);
             if ((of ? of->id : FACTION_PLAYER) == faction) continue;
+            if (const Mob* om = w.get<Mob>(o); om && mobKindsFriendly(w.get<Mob>(u)->kind, om->kind)) continue;
             const Transform* ot = w.get<Transform>(o);
             const float d2 = (ot->x - ut->x) * (ot->x - ut->x) + (ot->z - ut->z) * (ot->z - ut->z);
             if (d2 < nearD2) {
@@ -2680,7 +2780,7 @@ void breakFree(World& w, Entity u) {
     if (Transform* t = w.get<Transform>(u)) {
         if (const Transform* ct = w.get<Transform>(carrier)) *t = *ct;
     }
-    queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other);
+    queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
 }
 
 bool canBeCarried(World& w, Entity target) {
@@ -2739,7 +2839,7 @@ void knockOut(World& w, Entity u) {
         un.wake = RESTED_WAKE_HOURS;
     }
     w.add(u, un);
-    queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other);
+    queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     queueSoundFrom(w, Sfx::Downed, u);
     const int victim = factionOf(w, u);
     if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
@@ -2777,11 +2877,11 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
                 }
                 // Carried by anyone but a hostile, it is put down and stands up again
                 if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
-                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other);
+                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
                 out.woke.push_back(u);
                 if (!w.has<Carried>(u) && hostileNear(w, u)) {
                     w.add(u, PlayingDead{});
-                    queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other);
+                    queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
                 }
             }
             continue;
@@ -2798,7 +2898,7 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
                     n->hp = std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH);
                     n->changed |= NEEDS_HP_CHANGED;
                 }
-                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other);
+                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
                 out.woke.push_back(u);
             }
             continue;
@@ -2831,7 +2931,7 @@ void playDeadSystem(World& w) {
         if (w.has<Carried>(u) || w.has<Unconscious>(u)) continue;   // carried: carrySystem looks after it
         if (hostileNear(w, u)) continue;
         w.remove<PlayingDead>(u);
-        queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other);
+        queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }
 }
 
@@ -2844,7 +2944,7 @@ void finishDoom(World& w, Entity u) {
     w.remove<Commandable>(u);
     w.remove<Selected>(u);
     w.remove<Occupying>(u);
-    queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other);
+    queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     // Knocked out by your units, and dead before it woke: more reputation lost with its faction (a mob of a mob
     // faction is game, and costs none)
     const int victim = factionOf(w, u);
@@ -2897,7 +2997,7 @@ void putDown(World& w, Entity carrier) {
     w.remove<PlayingDead>(carried);
     if (Transform* ct = w.get<Transform>(carried)) {
         if (const Transform* t = w.get<Transform>(carrier)) *ct = *t;
-        queueLog(langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other);
+        queueLog(langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other, npcOnly(w, carrier, carried));
         queueSoundFrom(w, Sfx::PutDown, carrier);
     }
 }
@@ -2935,7 +3035,7 @@ CarryEvents carrySystem(World& w) {
             if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
             w.add(target, Carried{ u });
             w.add(u, Carrying{ target });
-            queueLog(langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other);
+            queueLog(langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other, npcOnly(w, u, target));
             queueSoundFrom(w, Sfx::CarryUp, u);
             picked.push_back(u);
             continue;
@@ -2981,7 +3081,7 @@ CarryEvents carrySystem(World& w) {
         } else if (w.has<Hostile>(by)) {
             if (!w.has<PlayingDead>(c)) {
                 w.add(c, PlayingDead{});
-                queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other);
+                queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other, npcOnly(w, c));
             }
         } else {
             breakFree(w, c);
@@ -3085,7 +3185,7 @@ bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::
             n->hp = 0;
             n->changed |= NEEDS_HP_CHANGED;
         }
-        queueLog(langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other);
+        queueLog(langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other, npcOnly(w, target));
         finishDoom(w, target);
         queueSoundFrom(w, Sfx::Dies, target);
     }

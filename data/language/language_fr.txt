@@ -121,7 +121,6 @@ UILABEL_NO_NAME	Sans nom
 UILABEL_PROFILE	Profil
 UILABEL_STATS	Statistiques
 UILABEL_CLICK_TO_TYPE	Cliquez pour saisir un nom
-UILABEL_SPRITE	Sprite
 UILABEL_HEALTH	Santé
 UILABEL_HUNGER	Faim
 UILABEL_CARRY	Charge
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	Progression : {0}%
 UILABEL_TIP_CURRENT_XP	XP actuel : {0}
 UILABEL_ATTACK_DEFENSE	Attaque {0}      Défense {1}
 UILABEL_STATS_CAPTION	Statistiques : {0}
-UILABEL_SPRITE_N	Sprite {0}
 UILABEL_SLOT_N_ITEM	Emplacement {0} : {1}
 UILABEL_SLOT_N_EMPTY	Emplacement {0} : vide
 UILABEL_COUNT	Quantité {0}

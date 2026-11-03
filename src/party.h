@@ -17,6 +17,17 @@
 // A unit's sprite number picks its model, and a number past the last (from an older save) wraps round to one of them.
 inline constexpr int UNIT_SPRITE_COUNT = 3;
 
+// The model a body type starts with: Feminine unit_01.glb, Masculine unit_02.glb, Androgynous unit_03.glb. A new party
+// member and every NPC get theirs; in the party menu the model can then be changed on its own.
+inline int modelForBody(int body) {
+    if (body == BODY_FEMININE) return 1;
+    if (body == BODY_ANDROGYNOUS) return 3;
+    return 2;
+}
+
+// A model's name in the lists: "Model 01" for unit_01.glb, from the one language key UILABEL_MODEL_N
+std::string modelLabel(int n);
+
 // Longest name a unit can have, in characters. A character is one UTF-8 code point, so a name can be typed in any
 // language, and a character takes up to 4 bytes, so the bytes are capped at PARTY_NAME_LIMIT.
 inline constexpr size_t PARTY_NAME_CHARS = 32;
@@ -82,7 +93,7 @@ std::vector<int> allItemChoices();
 // and a few stacks of items
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken);
 
-// A random party of distinct names and distinct sprites
+// A random party of distinct names, each with its body type's model
 Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
 
 // Takes items off a unit until it carries less than ENCUMBERED_SHARE of its carry limit (emotes.h): the last stacks

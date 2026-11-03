@@ -14,6 +14,7 @@
 #include "combat.h"
 #include "components.h"
 #include "ecs.h"
+#include "mobs.h"
 #include "model.h"
 #include "resources.h"
 #include "terrain.h"
@@ -181,7 +182,7 @@ public:
     // font: large font for the symbol fallbacks. hudFont: small font for the hover label.
     // uiFont: font for menu buttons and headings.
     bool init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
-              const std::function<void(float)>& progress = {});
+              const std::function<void(float, const std::string&)>& progress = {});
     void shutdown();
 
     // In-game time of day in minutes, 0..1440. Sets the sun position and sky colors.
@@ -194,7 +195,10 @@ public:
     void uploadTerrain(const Terrain& t);
 
     // Loading screen: black, with a progress bar (progress 0..1) along the bottom 4%
-    void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string());
+    // category: what kind of asset is loading now, named under the bar. backdrop: the title screen's moving backdrop
+    // behind it; without it (the first load, before the game has started) the screen is plain dark.
+    void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string(),
+                           const std::string& category = std::string(), bool backdrop = true);
 
     // Units whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
@@ -636,6 +640,11 @@ private:
     float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
     unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds
     std::vector<TextTex> mobSprites_;   // data/mob/mob_<kind>.png, kind 1 first
+    // data/profile/profile_<nn>.png: the portrait of a unit drawn by model nn, so a unit's picture always goes with its
+    // model. A missing one is the pink square.
+    std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
+    // A unit's portrait for the squad panel and its Profile tab: its model's profile picture, or its mob kind's picture
+    const TextTex& unitPortrait(World& w, Entity e) const;
     TextTex mobFallback_;
     // A unit's flat picture, for the portraits: the pink square for every unit until units have 2D art again
     const TextTex& unitPicture(int n) const;
@@ -643,6 +652,10 @@ private:
     // unitModelFor_[n - 1] points at the model sprite n draws, or is null when its file is missing or unreadable.
     std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};
     std::array<const Model*, UNIT_SPRITE_COUNT> unitModelFor_{};
+    // One model per kind of mob that has one (MobInfo::model): data/model/mob/mob_<nn>.glb. Empty for the rest.
+    std::array<Model, MOB_KIND_COUNT> mobModels_{};
+    // How tall a unit stands as drawn: its mob kind's model height, or GLYPH_H
+    float unitHeight(World& w, Entity e) const;
     // The model for sprite number n (wrapped into range), or null
     const Model* unitModelNumber(int n) const;
     // A unit's model, or null for a mob (drawn by its sprite) or a unit whose model is missing
@@ -651,7 +664,8 @@ private:
     float unitAspect(World& w, Entity e) const;
     // A unit model standing on (x, y, z) GLYPH_H tall, facing yaw (0 faces +z); lying on its side when lying, on top
     // of y, moved `toward` the camera
-    void drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried = false);
+    void drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried = false,
+                       float height = 1.2f);
     // The color a unit's model is tinted toward: its faction's, or none (alpha 0) for your own units and mobs
     RGBA unitFactionTint(World& w, Entity e) const;
     // Which way each unit's model faces: turned toward the way it last walked

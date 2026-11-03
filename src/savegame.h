@@ -51,6 +51,10 @@ struct SaveUnit {
     int sprite = 1;
     // Older saves have no body type, so it is worked out from the name (bodyForSavedName)
     int mob = 0;   // a mob's kind (mobs.h); 0 for a person, and for every unit of an older save
+    // Patrol Spawn: where it was placed, and whether it is walking back there (SpawnHome)
+    bool hasHome = false;
+    float homeX = 0.0f, homeZ = 0.0f;
+    bool homeReturning = false;
     bool hasBody = false;
     int body = 0;
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
@@ -198,6 +202,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         }
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
         if (u.mob > 0) out << "mob " << i << " " << u.mob << "\n";
+        if (u.hasHome) out << "home " << i << " " << u.homeX << " " << u.homeZ << " " << (u.homeReturning ? 1 : 0) << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
@@ -452,6 +457,19 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 int kind = 0;
                 ss >> i >> kind;
                 if (!ss.fail() && i < d.units.size() && kind >= 1 && kind <= MOB_KIND_COUNT) d.units[i].mob = kind;
+            }
+            else if (line.rfind("home ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                float x = 0.0f, z = 0.0f;
+                int back = 0;
+                ss >> i >> x >> z >> back;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasHome = true;
+                    d.units[i].homeX = x;
+                    d.units[i].homeZ = z;
+                    d.units[i].homeReturning = back != 0;
+                }
             }
             else if (line.rfind("body ", 0) == 0) {
                 std::istringstream ss(line.substr(5));

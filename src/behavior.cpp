@@ -71,7 +71,7 @@ bool consume(World& w, Entity giver, Entity taker, int slot, bool food, CombatLo
     if (giver != taker) line += " shared by " + nameOf(w, giver);
     line += food ? ": hunger " : ": HP ";
     line += std::to_string(was) + " -> " + std::to_string(now) + " of " + std::to_string(max);
-    log.add(line);
+    log.add(line, Tint::Gray, LogKind::Other, npcOnly(w, giver, taker));
     return true;
 }
 

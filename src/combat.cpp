@@ -61,6 +61,9 @@ const Behaviors* behaviorsOf(World& w, Entity e) { return w.get<Behaviors>(e); }
 // The fight numbers for a unit, with its Block mode counted: it blocks more often, even empty-handed
 CombatNumbers numbersOf(World& w, Entity e) {
     CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
+    // A kind of mob with its own health (the Gorlicorn) has that, not the usual from Vitality
+    if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) n.maxHp = mobInfo(m->kind).hp;
+    if (!n.ranged) n.reach = meleeReachOf(w, e);   // a big unit reaches further
     if (const Behaviors* b = behaviorsOf(w, e); b && b->block) {
         n.blockChance = std::min(BLOCK_MODE_CAP, std::max(n.blockChance, BLOCK_CHANCE_BASE) * BLOCK_MODE_FACTOR);
     }
@@ -217,13 +220,13 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     if (r.outcome == Outcome::Miss) {
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(attacker + (shot ? " shoots at " : " misses ") + defender + (shot ? " and misses" : ""), tint, LogKind::Miss);
+        log.add(attacker + (shot ? " shoots at " : " misses ") + defender + (shot ? " and misses" : ""), tint, LogKind::Miss, npcOnly(w, a, d));
         return;
     }
     if (r.outcome == Outcome::Dodge) {
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss);
+        log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss, npcOnly(w, a, d));
         grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
         return;
     }
@@ -233,6 +236,11 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     queueSoundFrom(w, Sfx::Hit, d);
     if (downed) return;
 
+    // A mob walking home after giving up a chase (Patrol Spawn) takes no damage until it is there
+    if (const SpawnHome* home = w.get<SpawnHome>(d); home && home->returning) {
+        log.add(defender + " shrugs off " + attacker + "'s hit", tint, LogKind::Hit, npcOnly(w, a, d));
+        return;
+    }
     Needs* nd = w.get<Needs>(d);
     const int before = nd ? nd->hp : 0;
     if (nd) {
@@ -241,8 +249,8 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     }
     const int lost = nd ? before - nd->hp : r.damage;
 
-    log.add(attacker + (shot ? " shoots " : " hits ") + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit);
-    if (r.damage > 0) log.add(defender + " takes " + std::to_string(r.damage) + " damage", tint, LogKind::Damage);
+    log.add(attacker + (shot ? " shoots " : " hits ") + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit, npcOnly(w, a, d));
+    if (r.damage > 0) log.add(defender + " takes " + std::to_string(r.damage) + " damage", tint, LogKind::Damage, npcOnly(w, a, d));
     if (const Transform* td = w.get<Transform>(d)) {
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
@@ -253,7 +261,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
     if (r.blocked) grantXp(w, d, STAT_BLOCK, BLOCK_XP_PER_BLOCK, lang("MISC_REASON_BLOCKING"));
 
     if (nd && nd->hp == 0) {
-        log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage);
+        log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage, npcOnly(w, a, d));
         // Whose hit it was, for the reputation when it is knocked out
         if (Combat* cd = w.get<Combat>(d)) cd->downedByFaction = factionOf(w, a);
     }
@@ -265,7 +273,7 @@ void drinkForFight(World& w, Entity p, Combat& pc, CombatLog& log) {
     const int slot = slotNamed(w, p, ELIXIR);
     const ItemDef* elixir = slot >= 0 ? findItem(w.get<Inventory>(p)->slots[slot].item) : nullptr;
     if (elixir && useStackInSlot(w, p, slot) == UseResult::Used) {
-        log.add(langf("MISC_DRINKS", { nameOf(w, p), itemDisplayName(*elixir) }));
+        log.add(langf("MISC_DRINKS", { nameOf(w, p), itemDisplayName(*elixir) }), Tint::Gray, LogKind::Other, npcOnly(w, p));
     }
 }
 
@@ -461,8 +469,13 @@ std::string labelItemName(int item) {
 std::string itemGainLabelFor(int count, int item) { return itemGainLabel(count, labelItemName(item)); }
 std::string itemLossLabelFor(int count, int item) { return itemLossLabel(count, labelItemName(item)); }
 
-void queueLog(const std::string& text, LogKind kind) {
-    gQueued.push_back(LogLine{ text, Tint::Gray, kind });
+void queueLog(const std::string& text, LogKind kind, bool npc) {
+    gQueued.push_back(LogLine{ text, Tint::Gray, kind, npc });
+}
+
+bool npcOnly(World& w, Entity a, Entity b) {
+    const bool yours = (a != NULL_ENTITY && w.has<Commandable>(a)) || (b != NULL_ENTITY && w.has<Commandable>(b));
+    return !yours;
 }
 
 void CombatLog::say(const std::string& text) {
@@ -471,7 +484,7 @@ void CombatLog::say(const std::string& text) {
 }
 
 void flushQueuedLog(CombatLog& log) {
-    for (const LogLine& ln : gQueued) log.add(ln.text, ln.tint, ln.kind);
+    for (const LogLine& ln : gQueued) log.add(ln.text, ln.tint, ln.kind, ln.npc);
     gQueued.clear();
 }
 
@@ -487,6 +500,7 @@ std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFi
         return out;
     }
     for (const LogLine& ln : log.lines) {
+        if (ln.npc && !f.on[(int)LogKind::Npc]) continue;   // about NPCs only, and Show NPC Info is off
         if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) out.push_back(&ln);
     }
     // The Game tab shows only the newest LOG_LIMIT of what passes the filter
@@ -513,7 +527,7 @@ void grantXp(World& w, Entity e, int stat, float amount, const std::string& why,
                             : stat == STAT_ATHLETICS ? LogKind::XpAthletics
                             : stat == STAT_ENDURANCE ? LogKind::XpEndurance
                                                      : LogKind::Xp;
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown);
+        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown, npcOnly(w, e));
     }
 }
 
@@ -525,17 +539,19 @@ Tint tintFor(World& w, Entity attacker, Entity target) {
     return Tint::Gray;
 }
 
-void CombatLog::add(const std::string& text, Tint tint, LogKind kind) {
-    lines.push_back(LogLine{ text, tint, kind });
-    // Each kind keeps its own newest LOG_LIMIT, so a flood of one kind never pushes out the others
-    if (++kindCount[(int)kind] > LOG_LIMIT) {
+void CombatLog::add(const std::string& text, Tint tint, LogKind kind, bool npc) {
+    lines.push_back(LogLine{ text, tint, kind, npc });
+    // Each kind keeps its own newest LOG_LIMIT, so a flood of one kind never pushes out the others. The lines about
+    // NPCs only are a kind of their own here, so their flood never pushes out the lines about your units.
+    const LogKind bucket = npc ? LogKind::Npc : kind;
+    if (++kindCount[(int)bucket] > LOG_LIMIT) {
         for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (it->kind == kind) {
+            if ((it->npc ? LogKind::Npc : it->kind) == bucket) {
                 lines.erase(it);
                 break;
             }
         }
-        --kindCount[(int)kind];
+        --kindCount[(int)bucket];
     }
 }
 
@@ -688,7 +704,16 @@ bool isSneaking(World& w, Entity e) {
 
 float reachOf(World& w, Entity e) {
     if (const RangedProfile* rp = rangedOf(w, e); rp && ammoSlotFor(w, e, *rp) >= 0) return rp->range;
-    return ATTACK_REACH;
+    return meleeReachOf(w, e);
+}
+
+float unitSize(World& w, Entity e) {
+    const Mob* m = w.get<Mob>(e);
+    return m ? mobSize(m->kind) : 1.0f;
+}
+
+float meleeReachOf(World& w, Entity e) {
+    return ATTACK_REACH * std::sqrt(std::max(1.0f, unitSize(w, e)));
 }
 
 Equipment randomHostileGear(Rng& rng) {
@@ -746,7 +771,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             if (c.buffLeft <= 0.0f) {
                 c.buffLeft = 0.0f;
                 c.buffAttack = 0.0f;
-                log.add(nameOf(w, e) + "'s Elixir of Might wears off");
+                log.add(nameOf(w, e) + "'s Elixir of Might wears off", Tint::Gray, LogKind::Other, npcOnly(w, e));
             }
         }
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);

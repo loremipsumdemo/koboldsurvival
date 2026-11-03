@@ -121,7 +121,6 @@ UILABEL_NO_NAME	ไม่มีชื่อ
 UILABEL_PROFILE	โปรไฟล์
 UILABEL_STATS	สถิติ
 UILABEL_CLICK_TO_TYPE	คลิกเพื่อพิมพ์ชื่อ
-UILABEL_SPRITE	สไปรต์
 UILABEL_HEALTH	พลังชีวิต
 UILABEL_HUNGER	ความหิว
 UILABEL_CARRY	น้ำหนักที่แบกได้
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	ความคืบหน้า: {0}%
 UILABEL_TIP_CURRENT_XP	EXP ปัจจุบัน: {0}
 UILABEL_ATTACK_DEFENSE	โจมตี {0}      ป้องกัน {1}
 UILABEL_STATS_CAPTION	ค่าสถานะ: {0}
-UILABEL_SPRITE_N	สไปรต์ {0}
 UILABEL_SLOT_N_ITEM	ช่อง {0}: {1}
 UILABEL_SLOT_N_EMPTY	ช่อง {0}: ว่าง
 UILABEL_COUNT	จำนวน {0}

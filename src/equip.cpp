@@ -199,7 +199,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     // Copy what's needed before creating an entity, which can move the stored components
     const Transform at = *tr;
     const ItemDef* def = findItem(item);
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop);
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop, npcOnly(w, unit));
     queueUnitLabel(unit, itemLossLabelFor(1, item), true);
     queueSound(Sfx::Drop);
     worn->items[gearSlot] = 0;
@@ -217,7 +217,7 @@ int giveOrDrop(World& w, Entity unit, int item, int count) {
         // No room for the rest: it falls where the unit stands
         if (const Transform* tr = w.get<Transform>(unit)) {
             const Transform at = *tr;   // creating an entity can move the stored components
-            queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), nameOf(item) }), LogKind::Drop);
+            queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), nameOf(item) }), LogKind::Drop, npcOnly(w, unit));
             queueUnitLabel(unit, itemLossLabel(left, nameOf(item)), true);
             queueSound(Sfx::Drop);
             const Entity e = w.create();

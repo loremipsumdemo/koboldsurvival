@@ -28,8 +28,8 @@ struct Camera {
 
     float focusX = 13.0f, focusY = 0.0f, focusZ = 13.0f;
     float yaw = 0.8f;
-    float pitch = 1.0f;
-    float distance = 20.0f;
+    float pitch = 0.8f;       // starts a little closer to the ground
+    float distance = 16.0f;   // and a little zoomed in
     float lift = 0.0f;   // temporary height added to the eye while it is near or under the ground
     float mapSize = 1024.0f;   // tiles per side of the loaded map. The game sets this each frame.
     float eyeClearance = 1000.0f;   // the eye's height above the ground under it, set by updateClearance

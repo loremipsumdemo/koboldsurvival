@@ -1,3 +1,4 @@
+#include "loading.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>   // the WinMain entry point for a Windows GUI program (no console window)
 #include "language.h"
@@ -290,7 +291,7 @@ bool dropFromStorage(World& w, int slot) {
     const ItemStack stack = *from;
     const ItemDef* def = findItem(stack.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
-                                   def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) }), LogKind::Drop);
+                                   def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) }), LogKind::Drop, npcOnly(w, storageUnit));
     const Entity e = w.create();
     w.add(e, Transform{ ut->x, ut->y, ut->z });
     w.add(e, GroundItem{ stack.item, stack.count });
@@ -647,11 +648,12 @@ bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
 }
 
 // Draws one loading frame and keeps the window responsive while things load
-void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label = std::string()) {
+void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label = std::string(),
+                  const std::string& category = std::string(), bool backdrop = true) {
     SDL_PumpEvents();
     int winW, winH;
     SDL_GetWindowSizeInPixels(window, &winW, &winH);
-    renderer.drawLoadingScreen(progress, winW, winH, label);
+    renderer.drawLoadingScreen(progress, winW, winH, label, category, backdrop);
     SDL_GL_SwapWindow(window);
 }
 
@@ -799,12 +801,15 @@ constexpr int ITEM_COPIES_PER_LEVEL = 10;
 // Builds a fresh level on a map: the ground, then the entities from the seed, then the items on the
 // ground if spawnItems is set. progress, if given, is called as the level loads (0..1), for the loading screen.
 bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& renderer, Rng& rng,
-                  unsigned seed, bool spawnItems, std::string& err, const std::function<void(float)>& progress = {}) {
-    auto report = [&](float p) { if (progress) progress(p); };
+                  unsigned seed, bool spawnItems, std::string& err,
+                  const std::function<void(float, const std::string&)>& progress = {}) {
+    // Each stage named under the bar, and timed in log.txt
+    LoadStages stages("Level", progress);
+    stages.stage(0.0f, "LOADING_MAP");
     if (!loadTerrain(c, terrain, err)) return false;
-    report(0.35f);
+    stages.stage(0.35f, "LOADING_MAP_GROUND");
     renderer.uploadTerrain(terrain);
-    report(0.7f);
+    stages.stage(0.7f, "LOADING_WORLD");
     world = World{};
     dialogueUnit = NULL_ENTITY;   // entity ids restart with the new world, so a talk box can't keep pointing at one
     dialogueConvo.clear();
@@ -847,8 +852,11 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
         }
         SDL_Log("Props placed, with the nearest one's distance in tiles: %s", line.c_str());
     }
-    if (spawnItems) spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
-    report(0.9f);
+    if (spawnItems) {
+        stages.stage(0.85f, "LOADING_GROUND_ITEMS");
+        spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
+    }
+    stages.finish();
     return true;
 }
 
@@ -909,6 +917,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         }
         if ((u.hostile || u.neutral) && u.mob <= 0) world.add(e, Dialogue{});   // a mob has nothing to say
         if (u.mob > 0) world.add(e, Mob{ u.mob });
+        if (u.hasHome) world.add(e, SpawnHome{ u.homeX, u.homeZ, u.homeReturning });
         // Every unit carries items and has behaviors, whichever side it is on
         Inventory inv;
         for (const SaveStack& s : u.stacks) {
@@ -1130,6 +1139,12 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.body = bd->type;
         }
         if (const Mob* m = w.get<Mob>(u)) su.mob = m->kind;
+        if (const SpawnHome* h = w.get<SpawnHome>(u)) {
+            su.hasHome = true;
+            su.homeX = h->x;
+            su.homeZ = h->z;
+            su.homeReturning = h->returning;
+        }
         if (const Occupying* oc = w.get<Occupying>(u)) {
             if (const Prop* p = w.get<Prop>(oc->prop)) su.occupying = p->serial;
         }
@@ -1811,7 +1826,9 @@ int main(int, char**) {
 
     // ---- Loading phase: textures and models load before the title screen appears ----
     Renderer renderer;
-    if (!renderer.init(font, fonts.hud, fonts.ui, [&](float p) { loadingFrame(window, renderer, p); }))
+    // The first load has no backdrop behind the bar, and names what is loading under it
+    if (!renderer.init(font, fonts.hud, fonts.ui,
+                       [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what, false); }))
         return fatalError(window, "Loading the game's textures, models or shaders failed. log.txt beside the game has the details.");
     SDL_Log("Renderer loaded");
     renderer.setListFont(fonts.list);
@@ -2067,7 +2084,7 @@ int main(int, char**) {
         // The title music ends as a new game starts, before its level loads
         audio::stopTracks();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
-                          [&](float p) { loadingFrame(window, renderer, p); })) {
+                          [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what); })) {
             refuse(langf("MISC_LOAD_FAILED", { choice.name, err }));
             return;
         }
@@ -2515,7 +2532,9 @@ int main(int, char**) {
                 m.sprite = value;
                 break;
             case DropKind::Body:
+                // A new body type brings its own model with it; the model can still be changed after
                 m.body = value;
+                m.sprite = modelForBody(value);
                 break;
             case DropKind::Gear:
                 if (partyUi.editable) m.gear[partyUi.dropSlot] = value;
@@ -5082,6 +5101,7 @@ int main(int, char**) {
             factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
+            patrolSpawnSystem(world, terrain);   // a mob gone too far from its spawn gives up and walks home
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
             behaviorSystem(world, combatLog, dt);
             // Anyone left at 0 health falls Unconscious

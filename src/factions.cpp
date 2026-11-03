@@ -178,6 +178,7 @@ int reputation(int a, int b) {
     if (a == b) return REP_MAX;
     // A mob faction has no reputation: an Aggressive kind is at war with everyone else, any other at peace (mobs.h)
     if (isMobFaction(a) || isMobFaction(b)) {
+        if (isMobFaction(a) && isMobFaction(b) && mobKindsFriendly(mobKindOfFaction(a), mobKindOfFaction(b))) return false;
         const bool aggressive = (isMobFaction(a) && mobTemperament(mobKindOfFaction(a)) == MobTemperament::Aggressive) ||
                                 (isMobFaction(b) && mobTemperament(mobKindOfFaction(b)) == MobTemperament::Aggressive);
         return aggressive ? REP_MIN : 0;

@@ -209,6 +209,10 @@ bool hostileNear(World& w, Entity u);
 // Units playing dead on the ground (woken from a rested knock-out near hostile units) get up once no hostile unit is
 // near. An order gets them up sooner (cannotTakeOrder).
 void playDeadSystem(World& w);
+// Patrol Spawn (mobs.h): a mob too far from its SpawnHome gives up its chase, is made whole, and walks home taking no
+// damage and starting no fight; once home it patrols again. Runs after the combat step, so the chase it drops is not
+// walked this frame.
+void patrolSpawnSystem(World& w, Terrain& t);
 // Sends the first unit that can (the list is nearest first) to pick up a unit that canBeCarried. False if none can.
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
 // Sends each unit that is carrying someone to a ground point, to put it down there

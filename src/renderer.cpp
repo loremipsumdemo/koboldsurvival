@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "language.h"
+#include "loading.h"
 #include "terrain_mesh.h"
 #include "equip.h"
 #include "factions.h"
@@ -361,8 +362,11 @@ void main() {
 } // namespace
 
 bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
-                    const std::function<void(float)>& progress) {
-    auto report = [&](float p) { if (progress) progress(p); };
+                    const std::function<void(float, const std::string&)>& progress) {
+    // How far along it is, and the kind of asset loading now with how many of it are done, named under the loading
+    // bar; log.txt gets how long each kind took. Nothing is shown until the fonts and shaders the loading screen draws
+    // with are ready.
+    LoadStages stages("Start-up", progress);
     font_ = font;
     hudFont_ = hudFont;
     uiFont_ = uiFont;
@@ -398,10 +402,20 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 
     // Images and models
     // The _0 file of each kind of picture stands in for one that is missing (and pink_ when that is missing too)
+    const int pictureCount = 3 + UNIT_SPRITE_COUNT;
+    stages.stage(0.0f, "LOADING_PICTURES", pictureCount);
     itemNone_ = loadOptionalImage("data/item/item_0.png");
     emoteFallback_ = loadOptionalImage("data/emote/emote_0.png");
     iconFallback_ = loadOptionalImage("data/icon/icon_0.png");
-    report(0.05f);
+    stages.step(0.03f, 3);
+    // Each unit model's profile picture, numbered as the models are
+    for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/profile/profile_%02d.png", i);
+        profilePics_[(size_t)i - 1] = loadOptionalImage(path);
+        stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 3 + i);
+    }
+    stages.stage(0.05f, "LOADING_UNIT_MODELS", UNIT_SPRITE_COUNT);
     // Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
     // again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
@@ -411,6 +425,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         size_t size = 0;
         if (!pakFind(path, bytes, size)) {
             SDL_Log("Unit model %s not in data.pak: units with sprite %d are drawn as pink squares", path, i);
+            stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
             continue;
         }
         for (int j = 1; j < i && !unitModelFor_[(size_t)i - 1]; ++j) {
@@ -434,17 +449,42 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
                         path, i);
             }
         }
-        report(0.05f + 0.75f * (float)i / (float)UNIT_SPRITE_COUNT);
+        stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
     }
-    report(0.82f);
+    int mobModelCount = 0;
+    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) mobModelCount += mobInfo(kind).model > 0 ? 1 : 0;
+    stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
+    // Each mob kind's model, when it has one: data/model/mob/mob_<nn>.glb. A missing one leaves it drawn by its picture.
+    int mobModelsDone = 0;
+    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) {
+        const int n = mobInfo(kind).model;
+        if (n <= 0) continue;
+        ++mobModelsDone;
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/model/mob/mob_%02d.glb", n);
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        Model& m = mobModels_[(size_t)kind - 1];
+        if (!pakFind(path, bytes, size)) {
+            SDL_Log("Mob model %s not in data.pak: the %s is drawn by its picture", path, lang(mobInfo(kind).nameKey).c_str());
+        } else if (!loadGLBModel(path, m) || !m.vao || m.draws.empty() || !(m.maxY > m.minY)) {
+            destroyModel(m);
+            m = Model{};
+            SDL_Log("Mob model %s could not be read or has nothing to draw: the %s is drawn by its picture", path,
+                    lang(mobInfo(kind).nameKey).c_str());
+        }
+        stages.step(0.4f + 0.1f * (float)mobModelsDone / (float)std::max(1, mobModelCount), mobModelsDone);
+    }
+    stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT + 1);
     mobFallback_ = loadOptionalImage("data/mob/mob_0.png");
     mobSprites_.reserve(MOB_KIND_COUNT);
     for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/mob/mob_%d.png", i);
         mobSprites_.push_back(loadOptionalImage(path));
+        stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i + 1);
     }
-    report(0.86f);
+    stages.stage(0.55f, "LOADING_SKY");
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
     uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
@@ -483,7 +523,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         texel(white_, 255, 255, 255);
         texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
     }
-    report(0.9f);
+    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT + 1);
 
     // The stand-in model, model_0.glb, for a kind whose own model is missing or unreadable
     {
@@ -501,6 +541,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
             }
         }
     }
+    stages.step(0.58f, 1);
     const char* standIn = fallbackModel_.vao ? "with model_0.glb" : "as a pink square";
     // Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
     // missing or misnamed shows up at once: that kind is drawn with the stand-in (propModel), and log.txt names it.
@@ -522,8 +563,9 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
                         info.file, lang(info.nameKey).c_str(), standIn);
             }
         }
+        stages.step(0.58f + 0.4f * (float)(kind + 1) / (float)PROP_KIND_COUNT, kind + 2);
     }
-    report(0.97f);
+    stages.finish();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -537,7 +579,12 @@ void Renderer::shutdown() {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
     }
+    for (TextTex& g : profilePics_) {
+        if (g.tex) glDeleteTextures(1, &g.tex);
+        g = TextTex{};
+    }
     for (Model& m : unitModels_) destroyModel(m);
+    for (Model& m : mobModels_) destroyModel(m);
     unitModelFor_.fill(nullptr);
     unitFacing_.clear();
     for (auto& entry : itemPics_) {
@@ -593,9 +640,10 @@ void Renderer::setSaturation(float sat) {
 // How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
 // its carrier's shoulders if it is carried
 float Renderer::unitTop(World& w, Entity u) {
-    if (w.has<Carried>(u)) return GLYPH_H * unitAspect(w, u) + (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT);
-    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u)) return GLYPH_H * unitAspect(w, u);
-    return GLYPH_H;
+    const float h = unitHeight(w, u);
+    if (w.has<Carried>(u)) return h * unitAspect(w, u) + (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT);
+    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u)) return h * unitAspect(w, u);
+    return h;
 }
 
 // How gray a unit is drawn: half for one Unconscious, fully for a corpse, not at all otherwise
@@ -692,8 +740,9 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
 // The unit models face their own +x, so they are turned a quarter turn more to face +z at yaw 0
 constexpr float UNIT_MODEL_FRONT_YAW = -1.5707963f;
 
-static Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, bool flip = false) {
-    const float k = GLYPH_H / (m.maxY - m.minY);
+static Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, bool flip = false,
+                            float height = GLYPH_H) {
+    const float k = height / (m.maxY - m.minY);
     yaw += UNIT_MODEL_FRONT_YAW;
     const float cs = std::cos(yaw), sn = std::sin(yaw);
     // R row by row: the turn by yaw, after the tip onto its side when lying: (x, y, z) -> (y, -x, z), its head along
@@ -716,7 +765,8 @@ static Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw
     return out;
 }
 
-void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried) {
+void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried,
+                             float height) {
     if (!m.vao || !(m.maxY > m.minY)) return;
     // Moved a little toward the camera, so a carried unit shows in front of its carrier
     float dx = billX_ - x, dz = billZ_ - z;
@@ -725,7 +775,7 @@ void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float ya
         x += dx / len * toward;
         z += dz / len * toward;
     }
-    const Mat4 mvp = mul(viewProj_, unitModelMatrix(m, x, y, z, yaw, lying, carried));
+    const Mat4 mvp = mul(viewProj_, unitModelMatrix(m, x, y, z, yaw, lying, carried, height));
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
     glBindVertexArray(m.vao);
     for (const DrawRange& d : m.draws) {
@@ -761,7 +811,7 @@ float Renderer::unitYaw(Entity e, float x, float z) {
 void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
     const Model* m = unitModelNumber(sprite);
     if (!m || r.w < 1.0f || r.h < 1.0f) {
-        drawUnitPicture(sprite, r);
+        drawFitted(pink_, r, WHITE);   // the stand-in for a missing model
         return;
     }
     const int vx = (int)std::lround(r.x), vy = (int)std::lround((float)uiH_ - r.y - r.h);
@@ -802,9 +852,16 @@ void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
 
 // Loading screen: the title screen's moving backdrop, with a rounded progress bar across the middle, the stage that is
 // running above it and how far along it is below
-void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label) {
+void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label, const std::string& category,
+                                 bool backdrop) {
+    if (!backdrop) {
+        // Plain dark behind the bar
+        glViewport(0, 0, winW, winH);
+        glClearColor(0.03f, 0.02f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
     beginUi(winW, winH);
-    drawTitleBackground();
+    if (backdrop) drawTitleBackground();
     const float W = (float)winW, H = (float)winH;
     const float s = H / 720.0f;
     const float p = std::clamp(progress, 0.0f, 1.0f);
@@ -833,6 +890,10 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     }
     const std::string pct = std::to_string((int)std::lround(p * 100.0f)) + "%";
     drawUiTextCentered(pct, W * 0.5f, outer.y + outer.h + 12.0f * s, theme::ASH);
+    // What is loading now, under the share done
+    if (!category.empty()) {
+        drawUiTextCentered(category, W * 0.5f, outer.y + outer.h + 18.0f * s + uiTextHeight("Ag"), theme::BONE);
+    }
     endUi();
     glEnable(GL_DEPTH_TEST);
 }
@@ -1522,19 +1583,29 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
 
 // The sprite for a unit, or the stand-in if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
-    // A mob's picture is its kind's (mob_<kind>.png), with mob_0.png for a missing one
+    // A mob's picture is its kind's (mob_<kind>.png), with mob_0.png for a missing one. A kind drawn by a model has the
+    // pink square for its portrait, as a person has.
     if (const Mob* m = w.get<Mob>(e)) {
         const int idx = m->kind - 1;
+        // A kind meant to be drawn by a model has no picture of its own: the pink square, standing in the world as a
+        // billboard when the model is missing, and its portrait always
+        if (mobInfo(m->kind).model > 0) return pink_;
         if (idx >= 0 && idx < (int)mobSprites_.size() && mobSprites_[(size_t)idx].tex) return mobSprites_[(size_t)idx];
         return mobFallback_.tex ? mobFallback_ : pink_;
     }
-    const UnitSprite* us = w.get<UnitSprite>(e);
-    return unitPicture(us ? us->id : 1);
+    return pink_;   // a person is drawn by a model; the pink square stands in for a missing one
 }
 
-// Units are drawn by their models now, and have no flat pictures yet: every portrait is the pink square
-const TextTex& Renderer::unitPicture(int) const {
-    return pink_;
+// The profile picture of model n (profile_<nn>.png), or the pink square when it is missing
+const TextTex& Renderer::unitPicture(int n) const {
+    const int idx = ((n - 1) % UNIT_SPRITE_COUNT + UNIT_SPRITE_COUNT) % UNIT_SPRITE_COUNT;
+    return profilePics_[(size_t)idx].tex ? profilePics_[(size_t)idx] : pink_;
+}
+
+const TextTex& Renderer::unitPortrait(World& w, Entity e) const {
+    if (w.has<Mob>(e)) return unitGlyph(w, e);
+    const UnitSprite* us = w.get<UnitSprite>(e);
+    return unitPicture(us ? us->id : 1);
 }
 
 const Model* Renderer::unitModelNumber(int n) const {
@@ -1549,8 +1620,19 @@ RGBA Renderer::unitFactionTint(World& w, Entity e) const {
     return RGBA{ c.r, c.g, c.b, FACTION_TINT };
 }
 
+float Renderer::unitHeight(World& w, Entity e) const {
+    if (const Mob* mb = w.get<Mob>(e)) {
+        return unitModel(w, e) ? mobInfo(mb->kind).modelHeight : GLYPH_H * mobSpriteScale(mb->kind);
+    }
+    return GLYPH_H;
+}
+
 const Model* Renderer::unitModel(World& w, Entity e) const {
-    if (w.has<Mob>(e)) return nullptr;
+    if (const Mob* mb = w.get<Mob>(e)) {
+        const int idx = mb->kind - 1;
+        if (idx >= 0 && idx < MOB_KIND_COUNT && mobModels_[(size_t)idx].vao) return &mobModels_[(size_t)idx];
+        return nullptr;
+    }
     const UnitSprite* us = w.get<UnitSprite>(e);
     return unitModelNumber(us ? us->id : 1);
 }
@@ -1584,8 +1666,9 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float bottomX, bottomY, topX, topY, midX, midY;
         if (!project(tr->x, tr->y, tr->z, bottomX, bottomY)) continue;
-        if (!project(tr->x, tr->y + GLYPH_H, tr->z, topX, topY)) continue;
-        if (!project(tr->x, tr->y + GLYPH_H * 0.5f, tr->z, midX, midY)) continue;
+        const float tall = unitHeight(w, u);
+        if (!project(tr->x, tr->y + tall, tr->z, topX, topY)) continue;
+        if (!project(tr->x, tr->y + tall * 0.5f, tr->z, midX, midY)) continue;
 
         float heightPx = std::fabs(bottomY - topY);
         const float aspect = unitAspect(w, u);
@@ -1936,7 +2019,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
             // A carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth
             drawUnitModel(*m, tr->x, tr->y + (carried ? CARRIED_MODEL_LIFT : 0.0f), tr->z, yaw, lying,
-                          carried ? 0.15f : 0.0f, carried);
+                          carried ? 0.15f : 0.0f, carried, unitHeight(w, e));
             glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
             if (lying) setSaturation(1.0f);
             continue;
@@ -1946,11 +2029,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e)) {
             setSaturation(unitSaturation(w, e));
             const bool carried = w.has<Carried>(e);
-            drawLyingGlyph(g, tr->x, tr->y + (carried ? CARRIED_LIFT : 0.0f), tr->z, GLYPH_H, tint, carried ? 0.15f : 0.0f);
+            drawLyingGlyph(g, tr->x, tr->y + (carried ? CARRIED_LIFT : 0.0f), tr->z, unitHeight(w, e), tint,
+                           carried ? 0.15f : 0.0f);
             setSaturation(1.0f);
             continue;
         }
-        drawGlyph(g, tr->x, tr->y, tr->z, GLYPH_H, tint);
+        drawGlyph(g, tr->x, tr->y, tr->z, unitHeight(w, e), tint);
     }
 
     drawGroundItems(w, t, cam);
@@ -3290,7 +3374,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.10f, 0.07f, 0.13f, bgAlpha });
 
         // Portrait fitted inside the square, keeping its shape
-        const TextTex& g = unitGlyph(w, e);
+        const TextTex& g = unitPortrait(w, e);
         if (g.tex) {
             const float sz = c.rect.w;
             float pw = sz, ph = sz;
@@ -3570,10 +3654,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     int hoverSlot = -1;
     int hoverStat = -1;   // the stat under the mouse in the Stats tab
     if (L.tab == UNIT_TAB_PROFILE) {
-    // ---- Profile card: the unit's picture, name, health, hunger and carry ----
+    // ---- Profile card: the unit's name, health, hunger and carry, then its picture under them ----
     drawRect(L.profile, RGBA{ 0.07f, 0.05f, 0.10f, bgAlpha });
     drawRect(L.portrait, RGBA{ 0.10f, 0.07f, 0.13f, bgAlpha });
-    const TextTex& g = unitGlyph(w, unit);
+    const TextTex& g = unitPortrait(w, unit);
     if (g.tex) {
         const float sz = L.portrait.w;
         float pw = sz, ph = sz;
@@ -3602,7 +3686,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         }
     }
 
-    const float tx = L.portrait.x + L.portrait.w + 12.0f * s;
+    // The text across the whole card, over the picture
+    const float tx = L.profile.x + 10.0f * s;
     const float rightEdge = L.profile.x + L.profile.w - 10.0f * s;
     const float colW = rightEdge - tx;
 
@@ -4736,6 +4821,8 @@ struct FilterEntry {
     bool heading;
 };
 static const FilterEntry kFilterEntries[] = {
+    { "UILABEL_NPC_MESSAGES", LogKind::Other, true },
+    { "UILABEL_SHOW_NPC_INFO", LogKind::Npc, false },
     { "UILABEL_COMBAT_MESSAGES", LogKind::Other, true },
     { "UILABEL_SEEN", LogKind::Seen, false },
     { "UILABEL_HIT", LogKind::Hit, false },
@@ -5019,7 +5106,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartySpriteBox:
-            drawListText(lang("UILABEL_SPRITE"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            {
+                // The heading is the model label with no number: the word for Model alone
+                std::string heading = langf("UILABEL_MODEL_N", { "" });
+                while (!heading.empty() && heading.back() == ' ') heading.pop_back();
+                drawListText(heading, b.rect.x, b.rect.y - 22.0f * s, gray);
+            }
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
             leftText(b.rect, b.label, white, 10.0f * s);
             break;

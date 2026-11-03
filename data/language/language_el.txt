@@ -121,7 +121,6 @@ UILABEL_NO_NAME	Χωρίς όνομα
 UILABEL_PROFILE	Προφίλ
 UILABEL_STATS	Στατιστικά
 UILABEL_CLICK_TO_TYPE	Κάνε κλικ για να γράψεις όνομα
-UILABEL_SPRITE	Εικόνα
 UILABEL_HEALTH	Υγεία
 UILABEL_HUNGER	Πείνα
 UILABEL_CARRY	Φορτίο
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	Πρόοδος: {0}%
 UILABEL_TIP_CURRENT_XP	Τρέχουσα εμπειρία: {0}
 UILABEL_ATTACK_DEFENSE	Επίθεση {0}      Άμυνα {1}
 UILABEL_STATS_CAPTION	Στατιστικά: {0}
-UILABEL_SPRITE_N	Εικόνα {0}
 UILABEL_SLOT_N_ITEM	Θέση {0}: {1}
 UILABEL_SLOT_N_EMPTY	Θέση {0}: κενή
 UILABEL_COUNT	Πλήθος {0}

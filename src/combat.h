@@ -125,8 +125,10 @@ float strengthXpWhileWalking(float encumbrance, float seconds);
 // XpAthletics and XpEndurance are experience in those two stats, which comes from walking and running so often that
 // it has its own filter toggles, off at first. XpCarrying is the Strength gained for carrying a load while walking,
 // which comes as often, and is off at first too.
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance, XpCarrying };
-constexpr int LOG_KIND_COUNT = 12;
+// Npc is no message's kind: it is the filter toggle "Show NPC Info", for the lines about NPCs only (LogLine::npc),
+// off at first.
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance, XpCarrying, Npc };
+constexpr int LOG_KIND_COUNT = 13;
 
 // Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
 // XpBuffer until it adds up to a point. Only player units gain XP.
@@ -146,7 +148,11 @@ struct LogLine {
     std::string text;
     Tint tint = Tint::Gray;
     LogKind kind = LogKind::Other;
+    bool npc = false;   // about NPCs only: none of your units is in it. Hidden unless Show NPC Info is on.
 };
+
+// Whether a message about these units is about NPCs only: none of them is one of yours
+bool npcOnly(World& w, Entity a, Entity b = NULL_ENTITY);
 
 // Which kinds the Game tab shows. All are on at first, except Athletics and Endurance experience and the Strength
 // experience for carrying a load.
@@ -157,6 +163,7 @@ struct LogFilter {
         on[(int)LogKind::XpAthletics] = false;
         on[(int)LogKind::XpEndurance] = false;
         on[(int)LogKind::XpCarrying] = false;
+        on[(int)LogKind::Npc] = false;
     }
 };
 
@@ -173,12 +180,12 @@ struct CombatLog {
     size_t kindCount[LOG_KIND_COUNT] = {};
     // Adds a line to the talk log, keeping the newest LOG_LIMIT
     void say(const std::string& text);
-    void add(const std::string& text, Tint tint = Tint::Gray, LogKind kind = LogKind::Other);
+    void add(const std::string& text, Tint tint = Tint::Gray, LogKind kind = LogKind::Other, bool npc = false);
 };
 
 // Game messages written outside a fight (XP, pickups, drops). They wait until flushQueuedLog adds them to a log, on
 // the next frame. discardQueuedLog drops them, when a new level starts.
-void queueLog(const std::string& text, LogKind kind);
+void queueLog(const std::string& text, LogKind kind, bool npc = false);
 void flushQueuedLog(CombatLog& log);
 void discardQueuedLog();
 
@@ -249,8 +256,12 @@ void factionSystem(World& w, float dt);
 bool isPassive(World& w, Entity e);
 bool isBlocking(World& w, Entity e);
 bool isSneaking(World& w, Entity e);
-// The tiles from which a unit can hit now: its ranged weapon's range while it has ammo for it, else ATTACK_REACH
+// The tiles from which a unit can hit now: its ranged weapon's range while it has ammo for it, else its melee reach
 float reachOf(World& w, Entity e);
+// How big a unit is against a person (1): a mob kind's size (mobSize), else 1
+float unitSize(World& w, Entity e);
+// Melee reach: ATTACK_REACH, longer for a unit bigger than a person (by the square root of its size), never shorter
+float meleeReachOf(World& w, Entity e);
 
 // Random gear for a hostile: each slot about half the time, with something that fits it
 Equipment randomHostileGear(Rng& rng);

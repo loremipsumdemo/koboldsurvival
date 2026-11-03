@@ -121,7 +121,6 @@ UILABEL_NO_NAME	Névtelen
 UILABEL_PROFILE	Profil
 UILABEL_STATS	Statisztikák
 UILABEL_CLICK_TO_TYPE	Kattints a név beírásához
-UILABEL_SPRITE	Figura
 UILABEL_HEALTH	Életerő
 UILABEL_HUNGER	Éhség
 UILABEL_CARRY	Teherbírás
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	Haladás: {0}%
 UILABEL_TIP_CURRENT_XP	Jelenlegi tapasztalat: {0}
 UILABEL_ATTACK_DEFENSE	Támadás {0}      Védelem {1}
 UILABEL_STATS_CAPTION	Statisztikák: {0}
-UILABEL_SPRITE_N	Figura {0}
 UILABEL_SLOT_N_ITEM	Hely {0}: {1}
 UILABEL_SLOT_N_EMPTY	Hely {0}: üres
 UILABEL_COUNT	Darabszám {0}

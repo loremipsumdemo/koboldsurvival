@@ -121,7 +121,6 @@ UILABEL_NO_NAME	بلا اسم
 UILABEL_PROFILE	الملف الشخصي
 UILABEL_STATS	الإحصائيات
 UILABEL_CLICK_TO_TYPE	انقر لكتابة اسم
-UILABEL_SPRITE	الصورة
 UILABEL_HEALTH	الصحة
 UILABEL_HUNGER	الجوع
 UILABEL_CARRY	الحمل
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	التقدم: {0}%
 UILABEL_TIP_CURRENT_XP	الخبرة الحالية: {0}
 UILABEL_ATTACK_DEFENSE	الهجوم {0}      الدفاع {1}
 UILABEL_STATS_CAPTION	الإحصائيات: {0}
-UILABEL_SPRITE_N	الصورة {0}
 UILABEL_SLOT_N_ITEM	الخانة {0}: {1}
 UILABEL_SLOT_N_EMPTY	الخانة {0}: فارغة
 UILABEL_COUNT	العدد {0}

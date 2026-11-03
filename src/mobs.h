@@ -14,10 +14,16 @@
 //     nothing up, takes nothing from anyone and is given nothing. While it is awake its inventory can't be opened,
 //     traded from or dropped from. Once it is Unconscious it can be looted, and taking anything out of it kills it:
 //     it goes to 0 health and its Doom completes at once, so it is a corpse.
-//   - Its picture is data/mob/mob_<kind>.png (mob_0.png stands in for a missing one, data/mobinfo.txt lists them).
+//   - Its picture is data/mob/mob_<kind>.png (mob_0.png stands in for a missing one, data/mobinfo.txt lists them). A
+//     kind with a model (MobInfo::model) is drawn in the world by data/model/mob/mob_<nn>.glb instead, and its
+//     portrait is the pink square, as a person's is.
 //   - It belongs to its kind's own faction (MOB_FACTION_BASE + kind - 1, data/factioninfo.txt), unless it was placed in
 //     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction, the player's
-//     included. Beyond the camps, WILD_MOBS of every kind roam in herds, in their own factions.
+//     included. Beyond the camps, MobInfo::wild of every kind (WILD_MOBS for most) roam in herds, in their own
+//     factions. A kind placed only once (the Gorlicorn) is never one of a camp's.
+// The Gorlicorn: one in the world, Aggressive, every stat at its most and GORLICORN_HP health. It does not Roam but
+// Patrols Spawn: it walks about near where it was placed, chases outsiders, and past SPAWN_LEASH_RANGE from that spot
+// gives up, heals fully and walks home, taking no damage until it gets there (patrolSpawnSystem in systems.h).
 // Wild mobs: those in their kind's own faction. A mob faction has no reputation. Instead its kind's temperament
 // (mobTemperament) says how its mobs take to any unit outside their faction:
 //   Avoidant: keeps away. It runs from any outsider within WILD_AVOID_RANGE, and never fights, even when hit.
@@ -31,7 +37,7 @@
 enum MobKind : int {
     MOB_NONE = 0,
     MOB_BEAR, MOB_COW, MOB_CHICKEN, MOB_BOAR, MOB_WOLF, MOB_DEER, MOB_RABBIT, MOB_FISH, MOB_CRAB, MOB_LIZARD,
-    MOB_SNAKE, MOB_PIG, MOB_SHEEP, MOB_DUCK, MOB_TURTLE, MOB_BAT, MOB_FROG,
+    MOB_SNAKE, MOB_PIG, MOB_SHEEP, MOB_DUCK, MOB_TURTLE, MOB_BAT, MOB_FROG, MOB_GORLICORN,
     MOB_KIND_END
 };
 constexpr int MOB_KIND_COUNT = MOB_KIND_END - 1;   // kinds 1 to MOB_KIND_COUNT
@@ -41,13 +47,28 @@ constexpr int WILD_MOBS = 10;                      // mobs of each kind placed o
 
 // What a kind of mob is: its name, the raw meat it carries and how much, its attributes and its Melee and Block, all
 // as levels. Only these are set; the other attributes start at the unit's usual 10, the rest at 1.
+// The rest have defaults: how many roam the world (wild), whether every stat it has is at MAX_LEVEL (maxStats), its
+// health if not the usual from Vitality (hp, 0 for the usual), its model (data/model/mob/mob_<nn>.glb, 0 for none: it
+// is drawn by its picture) and how tall that model stands in tiles, and whether it Patrols Spawn instead of Roaming.
 struct MobInfo {
     const char* nameKey;
     int meat;          // its raw meat's item id
     int meatCount;
     int strength, dexterity, vitality, endurance, agility;
     int melee, block;
+    int wild = WILD_MOBS;
+    int boneCount = 0;   // bones it carries; 0 for the usual, about half its meat (mobBoneCount)
+    bool maxStats = false;
+    int hp = 0;
+    int model = 0;
+    float modelHeight = 1.2f;
+    bool patrolSpawn = false;
 };
+
+constexpr int GORLICORN_HP = 2000;
+constexpr float SPAWN_PATROL_RADIUS = 8.0f;   // Patrol Spawn: its walks end within this many tiles of its spawn
+constexpr float SPAWN_LEASH_RANGE = 25.0f;    // past this far from its spawn it gives up a chase and goes home
+constexpr float SPAWN_HOME_REACH = 1.0f;      // within this of its spawn it is home again
 
 inline const MobInfo& mobInfo(int kind) {
     static const MobInfo info[MOB_KIND_COUNT] = {
@@ -68,6 +89,8 @@ inline const MobInfo& mobInfo(int kind) {
         { "MOB_TURTLE",  119, 2, 6,  4,  14, 10, 3,  3,  16 },
         { "MOB_BAT",     121, 1, 3,  16, 3,  10, 20, 4,  1 },
         { "MOB_FROG",    123, 1, 2,  12, 3,  8,  16, 1,  1 },
+        { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
+          1, 100, true, GORLICORN_HP, 1, 9.6f, true },
     };
     const int i = kind - 1;
     return info[(i >= 0 && i < MOB_KIND_COUNT) ? i : 0];
@@ -77,14 +100,17 @@ inline const MobInfo& mobInfo(int kind) {
 // its meat
 constexpr int MOB_BONES_FIRST = 134;
 inline int mobBones(int kind) { return MOB_BONES_FIRST + kind - 1; }
-inline int mobBoneCount(int kind) { return std::max(1, (mobInfo(kind).meatCount + 1) / 2); }
+inline int mobBoneCount(int kind) {
+    if (mobInfo(kind).boneCount > 0) return mobInfo(kind).boneCount;
+    return std::max(1, (mobInfo(kind).meatCount + 1) / 2);
+}
 // Whether a mob of this kind may hold an item: its own meat or bones only
 inline bool mobCanHold(int kind, int item) { return item == mobInfo(kind).meat || item == mobBones(kind); }
 
 enum class MobTemperament { Avoidant, Passive, Neutral, Aggressive };
 inline MobTemperament mobTemperament(int kind) {
     switch (kind) {
-    case MOB_BEAR: case MOB_WOLF: case MOB_SNAKE: case MOB_BAT: return MobTemperament::Aggressive;
+    case MOB_BEAR: case MOB_WOLF: case MOB_SNAKE: case MOB_BAT: case MOB_GORLICORN: return MobTemperament::Aggressive;
     case MOB_BOAR: case MOB_CRAB: case MOB_TURTLE: return MobTemperament::Neutral;
     case MOB_COW: case MOB_FISH: case MOB_PIG: case MOB_SHEEP: return MobTemperament::Passive;
     default: return MobTemperament::Avoidant;   // chicken, deer, rabbit, lizard, duck, frog
@@ -102,6 +128,35 @@ inline const char* temperamentKey(MobTemperament t) {
 }
 constexpr float WILD_AVOID_RANGE = 6.0f;    // an Avoidant wild mob runs from an outsider this close
 constexpr float WILD_FLEE_DISTANCE = 12.0f; // and runs this far from it
+
+// How tall a kind drawn by its picture stands, against a person's height: the Bear twice as tall, the small creatures
+// half as tall, the rest as tall as a person
+inline float mobSpriteScale(int kind) {
+    switch (kind) {
+    case MOB_BEAR: return 2.0f;
+    case MOB_CRAB: case MOB_SNAKE: case MOB_DUCK: case MOB_RABBIT: case MOB_FROG: case MOB_TURTLE: case MOB_BAT:
+    case MOB_CHICKEN:
+        return 0.5f;
+    default: return 1.0f;
+    }
+}
+
+// How big a kind is against a person (1): its model's height against a person's 1.2 tiles, or its picture's scale.
+// A smaller unit can't push a bigger one, and a bigger one reaches further in melee (meleeReachFor).
+inline float mobSize(int kind) {
+    const MobInfo& info = mobInfo(kind);
+    return info.model > 0 ? info.modelHeight / 1.2f : mobSpriteScale(kind);
+}
+
+// Kinds that leave each other be, whatever their temperaments: the Gorlicorn and the Rabbits that keep it company. They
+// do not fight each other, and an Avoidant one does not run from the other.
+inline bool mobKindsFriendly(int a, int b) {
+    return (a == MOB_GORLICORN && b == MOB_RABBIT) || (a == MOB_RABBIT && b == MOB_GORLICORN);
+}
+constexpr int GORLICORN_RABBITS = 3;   // Rabbits placed by the Gorlicorn, keeping near it
+
+// Whether a camp may be given a mob of this kind: not one the world has only one of
+inline bool campMobKind(int kind) { return mobInfo(kind).wild > 1; }
 
 // The faction a kind of mob belongs to when it is not placed in another one
 inline int mobFaction(int kind) { return MOB_FACTION_BASE + kind - 1; }

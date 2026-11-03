@@ -121,7 +121,6 @@ UILABEL_NO_NAME	Ei nimeä
 UILABEL_PROFILE	Profiili
 UILABEL_STATS	Ominaisuudet
 UILABEL_CLICK_TO_TYPE	Napsauta kirjoittaaksesi nimen
-UILABEL_SPRITE	Hahmo
 UILABEL_HEALTH	Terveys
 UILABEL_HUNGER	Nälkä
 UILABEL_CARRY	Kantokyky
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	Edistyminen: {0} %
 UILABEL_TIP_CURRENT_XP	Nykyiset kokemuspisteet: {0}
 UILABEL_ATTACK_DEFENSE	Hyökkäys {0}      Puolustus {1}
 UILABEL_STATS_CAPTION	Ominaisuudet: {0}
-UILABEL_SPRITE_N	Hahmo {0}
 UILABEL_SLOT_N_ITEM	Paikka {0}: {1}
 UILABEL_SLOT_N_EMPTY	Paikka {0}: tyhjä
 UILABEL_COUNT	Määrä {0}

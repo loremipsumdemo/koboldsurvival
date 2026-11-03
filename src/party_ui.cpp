@@ -46,7 +46,7 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     case DropKind::None:
         break;
     case DropKind::Sprite:
-        for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ langf("UILABEL_SPRITE_N", { std::to_string(i) }), i });
+        for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ modelLabel(i), i });
         break;
     case DropKind::Body:
         for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey(i)), i });
@@ -185,7 +185,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
 
         const Rect sprBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
         sprAnchor = sprBox;
-        out.push_back(Button{ std::to_string(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
+        out.push_back(Button{ modelLabel(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
 
         const Rect bodyBox{ inX, sprBox.y + sprBox.h + 26.0f * s, 220.0f * s, 40.0f * s };
         bodyAnchor = bodyBox;

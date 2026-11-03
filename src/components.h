@@ -75,6 +75,13 @@ struct Mob {
     int kind = 1;
 };
 
+// Patrol Spawn (behavior_rules.h): where a mob was placed, and whether it is walking back there after giving up a chase.
+// Walking back it takes no damage and starts no fight.
+struct SpawnHome {
+    float x = 0.0f, z = 0.0f;
+    bool returning = false;
+};
+
 // The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
 // the time, feminine 45% and androgynous 10% (randomBodyType in systems.h).
 enum BodyType : int { BODY_MASCULINE = 0, BODY_FEMININE = 1, BODY_ANDROGYNOUS = 2 };

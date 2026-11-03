@@ -125,7 +125,6 @@ UILABEL_NO_NAME	No name
 UILABEL_PROFILE	Profile
 UILABEL_STATS	Stats
 UILABEL_CLICK_TO_TYPE	Click to type a name
-UILABEL_SPRITE	Sprite
 UILABEL_HEALTH	Health
 UILABEL_HUNGER	Hunger
 UILABEL_RESTED	Rested
@@ -196,6 +195,8 @@ UILABEL_BEHAVIOR_RESCUE_TIP	Rescue: carries a unit of its own faction that lies 
 UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
 UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+UILABEL_NPC_MESSAGES	NPCs
+UILABEL_SHOW_NPC_INFO	Show NPC Info
 UILABEL_COMBAT_MESSAGES	Combat Messages
 UILABEL_SEEN	Seen
 UILABEL_HIT	Hit
@@ -378,7 +379,7 @@ UILABEL_TIP_PROGRESS	Progress: {0}%
 UILABEL_TIP_CURRENT_XP	Current XP: {0}
 UILABEL_ATTACK_DEFENSE	Attack {0}      Defense {1}
 UILABEL_STATS_CAPTION	Stats: {0}
-UILABEL_SPRITE_N	Sprite {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: empty
 UILABEL_COUNT	Count {0}
@@ -697,6 +698,17 @@ UILABEL_CORPSE_OF	Corpse of {0}
 MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
 MISC_DIES	{0} dies
 MISC_RECOVERS	{0} wakes up
+LOADING_PICTURES	Pictures
+LOADING_UNIT_MODELS	Unit models
+LOADING_MOB_MODELS	Mob models
+LOADING_MOB_PICTURES	Mob pictures
+LOADING_SKY	Sky
+LOADING_PROP_MODELS	Prop models
+LOADING_MAP	Map
+LOADING_MAP_GROUND	Map ground
+LOADING_WORLD	World
+LOADING_GROUND_ITEMS	Ground items
+MISC_GOES_HOME	{0} gives up the chase and heads home
 MISC_GETS_UP	{0} gets up, the danger gone
 MISC_PICKS_UP_UNIT	{0} picks up {1}
 MISC_PUTS_DOWN	{0} puts down {1}
@@ -873,6 +885,12 @@ ITEM_149_NAME	Bat Bones
 ITEM_149_DESC	Bones from a bat. Good for crafting.
 ITEM_150_NAME	Frog Bones
 ITEM_150_DESC	Bones from a frog. Good for crafting.
+ITEM_151_NAME	Gorlicorn Bones
+ITEM_151_DESC	Bones from a gorlicorn. Good for crafting.
+ITEM_152_NAME	Raw Gorlicorn Meat
+ITEM_152_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_153_NAME	Cooked Gorlicorn Meat
+ITEM_153_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
 UILABEL_OPTIMIZE	Optimize
 UILABEL_REMOVE_ALL	Remove All
 MISC_GEAR_NO_ROOM	Not enough inventory space
@@ -952,6 +970,7 @@ MOB_DUCK	Duck
 MOB_TURTLE	Turtle
 MOB_BAT	Bat
 MOB_FROG	Frog
+MOB_GORLICORN	Gorlicorn
 FACTION_MOB_BEAR	Bears
 FACTION_MOB_COW	Cows
 FACTION_MOB_CHICKEN	Chickens
@@ -969,6 +988,7 @@ FACTION_MOB_DUCK	Ducks
 FACTION_MOB_TURTLE	Turtles
 FACTION_MOB_BAT	Bats
 FACTION_MOB_FROG	Frogs
+FACTION_MOB_GORLICORN	Gorlicorns
 MISC_MOB_NO_GEAR	Mobs can't wear gear
 MISC_MOB_NO_HEALING	Mobs can't use healing items
 MISC_MOB_CANT_WORK	Mobs can't work props
@@ -981,8 +1001,10 @@ UILABEL_TASK_CLEARING	Clearing debris
 MISC_CLEARS_DEBRIS	{0} clears away the Debris
 UILABEL_MOB_INVENTORY_HIDDEN	Not available
 UILABEL_BEHAVIOR_PATROL	Patrol
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol Spawn
 UILABEL_BEHAVIOR_ROAM	Roam
 UILABEL_BEHAVIOR_PATROL_TIP	Patrol: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first appeared. Chased too far from there, it gives up, heals fully and walks back, taking no damage until it is home.
 UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the flags' claims.
 UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
 UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims

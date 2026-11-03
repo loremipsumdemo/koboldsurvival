@@ -121,7 +121,6 @@ UILABEL_NO_NAME	Без имени
 UILABEL_PROFILE	Профиль
 UILABEL_STATS	Характеристики
 UILABEL_CLICK_TO_TYPE	Нажмите, чтобы ввести имя
-UILABEL_SPRITE	Спрайт
 UILABEL_HEALTH	Здоровье
 UILABEL_HUNGER	Голод
 UILABEL_CARRY	Грузоподъёмность
@@ -341,7 +340,6 @@ UILABEL_TIP_PROGRESS	Прогресс: {0}%
 UILABEL_TIP_CURRENT_XP	Текущий опыт: {0}
 UILABEL_ATTACK_DEFENSE	Атака {0}      Защита {1}
 UILABEL_STATS_CAPTION	Характеристики: {0}
-UILABEL_SPRITE_N	Спрайт {0}
 UILABEL_SLOT_N_ITEM	Ячейка {0}: {1}
 UILABEL_SLOT_N_EMPTY	Ячейка {0}: пусто
 UILABEL_COUNT	Количество {0}

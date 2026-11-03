@@ -923,8 +923,8 @@ struct SidebarLayout {
 // the open panel would be. Open, it has its tabs under the bar and the picked tab's contents, which scroll when they are
 // taller than the panel. Everything is in window pixels, scaled from a 720-pixel-high window, except the item cells,
 // which are always ITEM_CELL_PX.
-// profileH: the height the profile card's text needs, from the renderer (profileCardHeight). The card is at least its
-// usual 200 pixels at 720p, and taller when its text needs more, as at a large UI scale.
+// profileH: the height the profile card's text needs, from the renderer (profileCardHeight). Under the text is the
+// unit's picture, PROFILE_PICTURE_PX on a side whatever the UI scale (smaller only when the panel is too narrow).
 inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
                                             const PanelPlace& place = PanelPlace{}, float profileH = 0.0f) {
     const float s = H / 720.0f;
@@ -932,8 +932,10 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float pad = um.pad, gap = um.gap;
     const Rect openRect = panelRect(PANEL_UNIT, place, W, H);
     const float width = openRect.w;
-    const float baseCardH = 200.0f * s;
-    const float cardH = std::max(baseCardH, profileH), cardInset = 8.0f * s, headH = um.headH, innerPad = um.innerPad;
+    const float cardInset = 8.0f * s;
+    constexpr float PROFILE_PICTURE_PX = 256.0f;   // the profile pictures' own size, in screen pixels
+    const float pictureSide = std::max(0.0f, std::min(PROFILE_PICTURE_PX, width - 2.0f * pad - 2.0f * cardInset));
+    const float cardH = profileH + pictureSide + cardInset, headH = um.headH, innerPad = um.innerPad;
     const float barH = um.barH, tabH = um.tabH, tabGap = 3.0f * s;
     const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s;
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
@@ -985,8 +987,9 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
 
     if (tab == UNIT_TAB_PROFILE) {
         L.profile = Rect{ L.panel.x + pad, top, width - 2.0f * pad, cardH };
-        const float side = baseCardH - 2.0f * cardInset;   // the picture keeps its size when the card grows
-        L.portrait = Rect{ L.profile.x + cardInset, L.profile.y + cardInset, side, side };
+        // The picture at the bottom, under all the text, centred
+        L.portrait = Rect{ std::floor(L.profile.x + (L.profile.w - pictureSide) * 0.5f), std::floor(L.profile.y + profileH),
+                           pictureSide, pictureSide };
     }
     if (tab == UNIT_TAB_INVENTORY) {
         // The gear first: the eight gear slots in one row of item cells, lined up with the inventory grid's columns,
