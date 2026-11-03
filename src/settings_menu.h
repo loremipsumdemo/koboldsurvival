@@ -30,7 +30,7 @@ inline std::string settingsTabName(SettingsTab tab) {
 // What a row changes
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
-    Autosave, UnitNames, NpcNames, PropNames, FontScale, ResetPanels,   // Interface
+    Autosave, UnitNames, NpcNames, PropNames, PropInfo, FontScale, ResetPanels,   // Interface
     Language, Font,                                             // Language
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines
     GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel   // Audio
@@ -57,6 +57,7 @@ struct RowSpec {
     std::vector<DropOption> options;   // dropdown only
     int current = 0;                   // dropdown: index of the current option; level: 0 to 100
     bool on = true;                    // toggle: its state; level: whether the bus is heard
+    bool sub = false;                  // a sub-option of the row above: its label is indented
 };
 
 // The Controls tab's description of the game's controls. These match the input code in main.cpp.

@@ -1,4 +1,8 @@
 #pragma once
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <vector>
 #include "emotes.h"
 #include "stats.h"
 
@@ -23,6 +27,9 @@
 // Lockpicking can right-click it and Unlock it, a timed attempt at a time, like working ore. A lockable occupiable
 // prop (the Prisoner Cage) locks again as soon as a unit gets in, and the unit can't leave until it is unlocked, by
 // itself from the inside or by another unit from the outside.
+// Built props: the kinds from PROP_FLAG on are not placed by a new level. The player builds them from the Build tab:
+// a Flag, a Debris, four Foundations and a Vault. A Vault is a passive crafting prop that burns Wood Logs as upkeep
+// (the Forge's fuel code, with no output), and it can only stand on a foundation, within its shape.
 
 enum PropKind : int {
     PROP_WAGON,
@@ -56,8 +63,24 @@ enum PropKind : int {
     PROP_WATER_TANK,
     PROP_WATER_PUMP,
     PROP_FORGE,
+    PROP_FLAG,                 // built: marks a claim (towns); placed by the player only
+    PROP_DEBRIS,               // built: what is left of a decayed or destroyed building
+    PROP_FOUNDATION_SMALL,     // built: a one-tile square ground base
+    PROP_FOUNDATION_LARGE,     // built: a two-tile square base
+    PROP_FOUNDATION_LONG,      // built: a three-by-one base
+    PROP_FOUNDATION_CIRCLE,    // built: a round base, two tiles across
+    PROP_VAULT,                // built: keeps upkeep (Wood Logs) and sits on a foundation
+    PROP_SHOP,                 // built: a storage prop, usually on a foundation
+    PROP_FARM,                 // built: a storage prop, usually on a foundation
+    PROP_TURBINE,              // built: decor, usually on a foundation
     PROP_KIND_COUNT
 };
+// The Build tab's rows: row 0 is Destroy, a tool that takes buildings down (never flags, which decay on their own). Then
+// the Flag, the Vault, the four foundations, and every other kind in order. BUILD_NONE: nothing picked.
+constexpr int BUILD_NONE = -1;
+constexpr int BUILD_DESTROY = -2;
+// The kinds a new level places (PROP_COPIES of each, props.h below). The kinds after them are built by the player.
+constexpr int PROP_PLACED_KIND_COUNT = PROP_FLAG;
 
 // What a prop can be used for, by right-clicking it with units selected. None is a decor prop.
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
@@ -81,8 +104,9 @@ inline const char* itemFilterKey(ItemFilter f) {
 }
 
 // What a unit sent to a prop does there, as picked from the right-click menu: Inventory opens a storage or crafting
-// prop's items; Use takes a bed, works a resource prop, or starts crafting; Unlock picks a locked prop's lock
-enum class PropAction { Inventory, Use, Unlock };
+// prop's items; Use takes a bed, works a resource prop, or starts crafting; Unlock picks a locked prop's lock; Store
+// (a Routine's step, never on the menu) puts what the unit carries for the routine into the prop
+enum class PropAction { Inventory, Use, Unlock, Store };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists
@@ -107,6 +131,32 @@ enum class PropAction { Inventory, Use, Unlock };
 // altItem, altOneIn: for a resource prop, an item it gives instead of its item one time in altOneIn (the Mushroom's
 //                    Poison Mushroom, 1 in 10). None if left out.
 constexpr int INPUT_COOKABLE = -1;
+
+// The ground a prop's shape covers, in tiles from its centre, before its facing turns it (yaw). A rectangle is 2*halfW
+// across along the prop's own x axis and 2*halfD along its z axis. A circle (radius above 0) replaces the rectangle.
+// A foundation is marked foundation. Most props stand on one tile, which is the default.
+struct Footprint {
+    float halfW = 0.5f;
+    float halfD = 0.5f;
+    float radius = 0.0f;
+    bool foundation = false;
+};
+
+// The farthest a footprint reaches from its centre, for a quick check that two shapes are near each other
+inline float footprintReach(const Footprint& f) {
+    return f.radius > 0.0f ? f.radius : std::sqrt(f.halfW * f.halfW + f.halfD * f.halfD);
+}
+
+// Whether the point (dx, dz) from a shape's centre lies inside it, turned by yaw. The turn is the one the model is drawn
+// with (placeModel in model.h): the prop's x axis points along (cos yaw, -sin yaw), its z axis along (sin yaw, cos yaw).
+inline bool insideFootprint(const Footprint& f, float dx, float dz, float yaw) {
+    if (f.radius > 0.0f) return dx * dx + dz * dz <= f.radius * f.radius;
+    const float c = std::cos(yaw), s = std::sin(yaw);
+    const float u = dx * c - dz * s;   // along the prop's x axis
+    const float v = dx * s + dz * c;   // along its z axis
+    return std::fabs(u) <= f.halfW && std::fabs(v) <= f.halfD;
+}
+
 struct PropInfo {
     const char* file;
     const char* nameKey;
@@ -121,6 +171,10 @@ struct PropInfo {
     double fuelHours = 1.0;
     int altItem = 0;
     int altOneIn = 0;
+    Footprint foot{};            // the ground it covers: one tile, unless it is a foundation or larger
+    bool onFoundation = false;   // built on a foundation only (the Vault): its shape must lie inside one
+    bool built = false;          // a kind the player builds from the Build tab: owned by a faction (claims.h)
+    bool canSitOnFoundation = false;   // a built kind that may stand on a foundation, wholly or partly (vault: must)
 };
 
 inline const PropInfo& propInfo(int kind) {
@@ -158,6 +212,28 @@ inline const PropInfo& propInfo(int kind) {
         { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, STAT_STRENGTH, 91, 0, 1, 0 },    // Water
         { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, STAT_SMELTING, 92, 1, 0, 0,
           ItemFilter::Any, 1.0 },                                                                            // Iron Ore -> Iron Ingot
+        // Built props (see the top of this file). The foundations' models are drawn so their longest side is their size.
+        { "data/model/model_32.glb", "PROP_FLAG",              1.2f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, false },
+        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::None, -1, 0, 0, 0, 0 },
+        { "data/model/model_34.glb", "PROP_FOUNDATION_SMALL",  1.0f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, true }, false, true, false },
+        { "data/model/model_35.glb", "PROP_FOUNDATION_LARGE",  2.0f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 0.0f, true }, false, true, false },
+        { "data/model/model_36.glb", "PROP_FOUNDATION_LONG",   3.0f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.5f, 0.5f, 0.0f, true }, false, true, false },   // long along its own x axis
+        { "data/model/model_37.glb", "PROP_FOUNDATION_CIRCLE", 2.0f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 1.0f, true }, false, true, false },   // radius 1 tile
+        // The Vault: passive crafting with no output. Wood Logs are its upkeep, one burning for each in-game hour (the
+        // Forge's fuel code), so the Vault's input is the Wood Log and it makes nothing (item 0).
+        { "data/model/model_38.glb", "PROP_VAULT",             1.0f, PropUse::PassiveCrafting, -1, 0, 88, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, false }, true, true, true },
+        { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+        { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+        { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, -1, 0, 0, 0, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
     };
     return info[(kind >= 0 && kind < PROP_KIND_COUNT) ? kind : 0];
 }
@@ -193,8 +269,26 @@ constexpr int STORAGE_COLUMNS = 6;
 constexpr int PROP_COPIES = 3;         // how many of each kind a new level places
 // Names how a level lays its props out, so a save can tell whether its prop serials still name the same props. It
 // changes whenever the number of kinds or copies does, and its last digit whenever the placement itself changes (2: the
-// factions' camps come first). Props are placed a round of every kind at a time, so serial s is kind s % PROP_KIND_COUNT.
-constexpr int PROP_LAYOUT = PROP_KIND_COUNT * 1000 + PROP_COPIES * 10 + 2;
+// factions' camps come first; 3: every faction and the player get a camp at the compass points, with trees, extra props
+// and serials from CAMP_SERIAL_BASE). Props are placed a round of every placed kind at a time, so serial s is kind
+// s % PROP_PLACED_KIND_COUNT.
+constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 3;   // built kinds are not placed
+// The order of the Build tab's rows after Destroy: the claim pieces first, then every other kind in PropKind order
+inline int buildRowCount() { return PROP_KIND_COUNT + 1; }
+inline int buildRowKind(int row) {
+    static const int first[] = { PROP_FLAG, PROP_VAULT, PROP_FOUNDATION_SMALL, PROP_FOUNDATION_LARGE, PROP_FOUNDATION_LONG,
+                                 PROP_FOUNDATION_CIRCLE };
+    static const std::vector<int> order = [] {
+        std::vector<int> o(std::begin(first), std::end(first));
+        for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+            if (std::find(o.begin(), o.end(), k) == o.end()) o.push_back(k);
+        }
+        return o;
+    }();
+    if (row <= 0) return BUILD_DESTROY;
+    return row - 1 < (int)order.size() ? order[(size_t)row - 1] : BUILD_NONE;
+}
+
 constexpr float PROP_RANGE = 40.0f;    // props are placed within this many tiles of the spawn, each on its own tile
 
 // A unit within this many tiles of a prop can use it: work a resource or crafting prop, open a storage, take a bed.

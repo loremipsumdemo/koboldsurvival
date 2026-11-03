@@ -83,6 +83,8 @@ add_executable(koboldgame
     src/pak.cpp
     src/audio.cpp
     src/display.cpp
+    src/build.cpp
+    src/claims.cpp
     src/settings_menu.cpp
     src/settings_draw.cpp
     src/app.rc         # embeds the exe icon (src/app.ico) on Windows

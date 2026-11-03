@@ -4,23 +4,34 @@
 #include <algorithm>
 #include <cmath>
 
-ModelPlacement placeModel(const Model& m, float x, float y, float z, float targetSize) {
+ModelPlacement placeModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
     ModelPlacement p;
     const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
     if (extent <= 0.0f || targetSize <= 0.0f) return p;
     p.k = targetSize / extent;
-    p.ox = x - p.k * (m.minX + m.maxX) * 0.5f;
-    p.oy = y - p.k * m.minY;
-    p.oz = z - p.k * (m.minZ + m.maxZ) * 0.5f;
+    p.cs = std::cos(yaw);
+    p.sn = std::sin(yaw);
+    p.px = (m.minX + m.maxX) * 0.5f;
+    p.py = m.minY;
+    p.pz = (m.minZ + m.maxZ) * 0.5f;
+    p.tx = x;
+    p.ty = y;
+    p.tz = z;
+    // world = k * R(p - pivot) + t, so the translation is t - k * R(pivot); R turns (x, z) by (cs, sn)
+    p.ox = x - p.k * (p.cs * p.px + p.sn * p.pz);
+    p.oy = y - p.k * p.py;
+    p.oz = z - p.k * (-p.sn * p.px + p.cs * p.pz);
     p.ok = true;
     return p;
 }
 
 float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]) {
     if (!p.ok || m.triangles.size() < 3) return -1.0f;
-    // Into the model's own space: o' = (o - offset) / k, d' = d / k, so the distance along the ray stays the same
-    const float ro[3] = { (o[0] - p.ox) / p.k, (o[1] - p.oy) / p.k, (o[2] - p.oz) / p.k };
-    const float rd[3] = { d[0] / p.k, d[1] / p.k, d[2] / p.k };
+    // Into the model's own space: p = R^-1((o - t) / k) + pivot, and d' = R^-1(d) / k, so the distance along the
+    // ray stays the same
+    const float lx = (o[0] - p.tx) / p.k, ly = (o[1] - p.ty) / p.k, lz = (o[2] - p.tz) / p.k;
+    const float ro[3] = { p.cs * lx - p.sn * lz + p.px, ly + p.py, p.sn * lx + p.cs * lz + p.pz };
+    const float rd[3] = { (p.cs * d[0] - p.sn * d[2]) / p.k, d[1] / p.k, (p.sn * d[0] + p.cs * d[2]) / p.k };
     // A miss of the model's box needs no triangle tests
     {
         float t0 = -1e30f, t1 = 1e30f;

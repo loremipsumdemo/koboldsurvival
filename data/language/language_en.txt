@@ -62,6 +62,7 @@ UILABEL_MINUTES	{0} minutes
 UILABEL_UNIT_NAMES	Player unit names
 UILABEL_NPC_NAMES	Non-player unit names
 UILABEL_PROP_NAMES	Prop names
+UILABEL_PROP_INFO	Show prop info
 UILABEL_FONT_SIZE	Font size
 UILABEL_RESET_PANELS	Reset All UI Panels
 UILABEL_RESET	Reset
@@ -572,6 +573,7 @@ MISC_STORAGE_FULL	No room in storage
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
 MISC_GATHERS	{0} gathers {1}
+MISC_ROUTINE_STORES	{0} stores {1} {2} in the {3}
 MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
 MISC_REASON_GATHERING	gathering
 UILABEL_TASK	Task: {0}
@@ -612,10 +614,13 @@ UILABEL_MODE_PASSIVE	Passive
 UILABEL_MODE_BLOCK	Block
 UILABEL_MODE_SNEAK	Sneak
 UILABEL_MODE_RANGED	Ranged
+UILABEL_MODE_ROUTINE	Routine
 UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
 UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
 UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice. The higher the Stealth, the better.
 UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
+UILABEL_MODE_ROUTINE_TIP	Routine: cuts wood at its tree and stores the logs in its vault, over and over. An order of yours pauses it; it starts again once the unit has stood idle a few seconds. Click to switch it on or off.
+UILABEL_MODE_ROUTINE_NONE_TIP	Routine: this unit has no routine.
 UILABEL_SQUAD_TAB	Squad
 UILABEL_REPUTATION	Reputation
 UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
@@ -653,6 +658,7 @@ UILABEL_DOOM	Doom
 UILABEL_TASK_UNCONSCIOUS	Unconscious
 UILABEL_TASK_DEAD	Dead
 UILABEL_TASK_CARRYING	Carrying
+UILABEL_TASK_STORING	Storing
 UILABEL_TAKE_ALL	Take all
 UILABEL_LOOT_HINT	Click an item to take it into your unit's inventory.
 UILABEL_CORPSE_OF	Corpse of {0}
@@ -819,3 +825,47 @@ GAME_TITLE_SECOND	Survival
 UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Select  //  Enter Confirm
 UILABEL_LANGUAGE_LABEL	Language:
+PROP_FLAG	Flag
+PROP_DEBRIS	Debris
+PROP_FOUNDATION_SMALL	Small Foundation
+PROP_FOUNDATION_LARGE	Large Foundation
+PROP_FOUNDATION_LONG	Long Foundation
+PROP_FOUNDATION_CIRCLE	Circle Foundation
+PROP_VAULT	Vault
+UILABEL_BUILD	Build
+UILABEL_BUILD_SELECTED	Selected: {0}
+UILABEL_BUILD_NONE	Selected: None
+UILABEL_BUILD_SELECT	Select
+UILABEL_BUILD_PICKED	Picked
+UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Hold R and move the mouse left or right to turn it. Right-click or Escape cancels.
+UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
+MISC_BUILD_BLOCKED	No room to build here
+MISC_BUILD_UNWALKABLE	The ground here can't be built on
+MISC_BUILD_NO_FOUNDATION	A vault goes wholly on a foundation
+MISC_NO_UPKEEP	No upkeep: no logs
+MISC_UPKEEP_LEFT	Upkeep: {0} min left
+PROP_SHOP	Shop
+PROP_FARM	Farm
+PROP_TURBINE	Turbine
+UILABEL_BUILD_DESTROY	Destroy
+UILABEL_BUILD_DESTROY_HINT	Left-click a foundation or building to take it down. Flags are not taken down: they wear away when their vault runs dry. Right-click or Escape cancels.
+UILABEL_LOCK	Lock
+MISC_BUILD_NO_CLAIM	A foundation or vault goes inside your own claim
+MISC_BUILD_SEALED	That ground is sealed by another faction's vault
+MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another flag's claim
+MISC_BUILD_VAULT_TAKEN	That claim already has a vault
+MISC_BUILD_VAULT_CAP	Your faction already has as many vaults as it can hold
+MISC_DESTROY_FLAG	Flags are not taken down. A flag goes when its vault runs dry.
+MISC_DESTROY_NOTHING	Nothing built to destroy there
+MISC_FLAG_FACTION	Owner: {0}
+MISC_FLAG_HEALTH	Health: {0} of {1}
+MISC_FLAG_VAULT_YES	Vault: standing, the claim is held
+MISC_FLAG_VAULT_NO	Vault: none, the flag is wearing down
+MISC_PROP_CONDITION	Condition: {0}%
+MISC_PROP_DECAYING	Decaying
+MISC_PROP_HOLDING	Not decaying
+MISC_PROP_LOCK_OPEN	Unlocked
+MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
+MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
+MISC_PROP_UPKEEP	Upkeep: {0} hours left
+MISC_PROP_VAULT_UNCLAIMED	Outside any claim: gives no upkeep

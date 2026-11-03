@@ -74,7 +74,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             continue;
         }
 
-        r.drawUiText(row.label, R.band.x + 14.0f * u,
+        r.drawUiText(row.label, R.band.x + (row.sub ? 34.0f : 14.0f) * u,
                      R.band.y + (R.band.h - r.uiTextHeight(row.label)) * 0.5f,
                      row.enabled ? kText : kDisabledText);
 

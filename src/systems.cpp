@@ -1,4 +1,5 @@
 #include "systems.h"
+#include "claims.h"
 #include "language.h"
 #include <algorithm>
 #include <cmath>
@@ -12,6 +13,7 @@
 #include "needs.h"
 #include "party.h"
 #include "props.h"
+#include "emotes.h"
 
 namespace {
 
@@ -71,8 +73,14 @@ constexpr int SPAWN_SEARCH_STEP = 32;      // spacing of the spawn candidates, i
 constexpr int SPAWN_LOAD_RADIUS = 4;       // chunks read in around the spawn, so units can be placed on them
 constexpr float ENEMY_RANGE = 128.0f;      // red units are placed within this many tiles of the spawn
 constexpr float ENEMY_MIN_RANGE = 12.0f;   // and no closer than this, so the start is clear
-constexpr float CAMP_DISTANCE_MIN = 45.0f;  // a faction's camp is centred this far from the spawn, or up to
-constexpr float CAMP_DISTANCE_MAX = 75.0f;  // this far
+constexpr float CAMP_DISTANCE = 90.0f;      // a faction's camp is centred this far from the player's camp, at a compass point
+constexpr float CAMP_SHIFT = 18.0f;         // how far a camp may move off its spot to find ground the kit fits on
+constexpr float CAMP_GAP = 2.0f * CLAIM_RADIUS + 6.0f;   // the least distance between two camps' flags: no claims overlap
+constexpr float PLAYER_CAMP_OFFSET = 8.0f;  // the player's camp is this far south of the spawn, clear of the squad
+constexpr int CAMP_EXTRA_MIN = 3;           // random props each claim gets besides its kit
+constexpr int CAMP_EXTRA_MAX = 5;
+constexpr float CAMP_EXTRA_NEAR = 5.0f;     // placed this many tiles from the flag, or more,
+constexpr float CAMP_EXTRA_FAR = 12.0f;     // up to this many
 constexpr float CAMP_RADIUS_BASE = 4.0f;    // and its units stand within this many tiles of its centre,
 constexpr float CAMP_RADIUS_PER_UNIT = 1.6f; // plus this times the square root of how many there are
 
@@ -264,7 +272,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) return false;
         return std::none_of(enemyTiles.begin(), enemyTiles.end(), [&](GridPos k) { return k == g; });
     };
-    auto placeUnit = [&](GridPos g, int faction) {
+    auto placeUnit = [&](GridPos g, int faction) -> Entity {
         enemyTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity e = w.create();
@@ -281,24 +289,141 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         w.add(e, Name{});
         w.add(e, Dialogue{});
         w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
+        return e;
     };
     std::vector<const FactionDef*> camps;
     for (const FactionDef& f : factions()) {
         if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
     }
-    const float turn = rng.unit() * 6.2831853f;
+
+    // Camps (claims.h): every faction's, the player's included, gets the kit: a flag, a vault on a small foundation with
+    // three days of logs, a campfire with four bedrolls, a barrel and two trees, all owned by the faction. The player's
+    // is in the middle, just south of the squad; the others are at the compass points around it (north, east, south,
+    // west, then the corners between, should there be more), CAMP_DISTANCE away, so no two claims overlap. A camp whose
+    // spot the kit doesn't fit on moves to the nearest one it does, within CAMP_SHIFT. The kits go down before the level's
+    // props, so those don't take their ground.
+    int campSerial = CAMP_SERIAL_BASE;
+    std::vector<Vec2> flagSpots;
+    auto clearOfCamps = [&](float x, float z) {
+        for (const Vec2& f : flagSpots) {
+            if ((f.x - x) * (f.x - x) + (f.z - z) * (f.z - z) < CAMP_GAP * CAMP_GAP) return false;
+        }
+        return true;
+    };
+    // The kit at (cx, cz), or the nearest spot within CAMP_SHIFT it fits on, ring by ring outward
+    auto placeCamp = [&](int faction, float cx, float cz) {
+        for (int ring = 0; ring <= (int)CAMP_SHIFT; ++ring) {
+            const int steps = ring == 0 ? 1 : 8 * ring;
+            for (int k = 0; k < steps; ++k) {
+                const float a = 6.2831853f * (float)k / (float)steps;
+                const float x = cx + std::cos(a) * (float)ring, z = cz + std::sin(a) * (float)ring;
+                if (x < 8.0f || z < 8.0f || x > size - 8.0f || z > size - 8.0f) continue;
+                if (!clearOfCamps(x, z) || !campKitFits(w, t, x, z)) continue;
+                CampKit kit = placeCampKit(w, t, faction, x, z, 0.0f, &campSerial);
+                if (kit.placed) {
+                    flagSpots.push_back(Vec2{ kit.x, kit.z });
+                    return kit;
+                }
+            }
+        }
+        return CampKit{};
+    };
+    // A few random props in the claim, owned by its faction: storage holds what belongs in it and is locked to the
+    // faction (as anything with contents in a claim is), a forge starts cold
+    static const int EXTRA_KINDS[] = {
+        PROP_WAGON, PROP_BARREL, PROP_ORE, PROP_BOULDER, PROP_MUSHROOM, PROP_BONES, PROP_STALL, PROP_LOCKED_CHEST,
+        PROP_CHAIR, PROP_BENCH, PROP_STOOL, PROP_TABLE, PROP_END_TABLE, PROP_ROUND_TABLE, PROP_STANDING_TORCH,
+        PROP_TRAINING_DUMMY, PROP_RAW_FOOD_STORAGE, PROP_FOOD_STORAGE, PROP_WEAPON_RACK, PROP_ARMOR_STAND,
+        PROP_WATER_TANK, PROP_WATER_PUMP, PROP_FORGE,
+    };
+    auto addCampExtras = [&](int faction, const CampKit& kit) {
+        if (!kit.placed) return;
+        const int want = rng.range(CAMP_EXTRA_MIN, CAMP_EXTRA_MAX);
+        int placed = 0;
+        for (int attempt = 0; attempt < 400 && placed < want; ++attempt) {
+            const float a = rng.unit() * 6.2831853f;
+            const float d = CAMP_EXTRA_NEAR + rng.unit() * (CAMP_EXTRA_FAR - CAMP_EXTRA_NEAR);
+            const int gx = tileAt(kit.x + std::cos(a) * d), gz = tileAt(kit.z + std::sin(a) * d);
+            if (!t.walkable(gx, gz)) continue;
+            const float x = gx + 0.5f, z = gz + 0.5f;
+            bool taken = false;
+            for (Entity e : w.view<Prop, Transform>()) {
+                const Transform* pt = w.get<Transform>(e);
+                if (std::fabs(pt->x - x) < 0.5f && std::fabs(pt->z - z) < 0.5f) { taken = true; break; }
+            }
+            if (taken) continue;
+            const int kind = EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)];
+            const PropInfo& info = propInfo(kind);
+            Entity prop = w.create();
+            w.add(prop, Transform{ x, t.heightAt(x, z), z });
+            w.add(prop, Prop{ kind, campSerial++, rng.unit() * 6.2831853f });
+            if (info.use != PropUse::Resource) w.add(prop, Owner{ faction });
+            if (hasStorage(info)) w.add(prop, info.use == PropUse::Storage ? startingStorage(kind, rng) : Storage{});
+            if (info.use == PropUse::PassiveCrafting) {
+                w.add(prop, Output{});
+                w.add(prop, Fuel{});
+                w.add(prop, PropWork{});
+            }
+            if (info.lockLevel > 0) w.add(prop, Lock{ true, info.lockLevel, faction });
+            else if (info.use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
+            ++placed;
+        }
+    };
+    // One unit of each camp keeps its vault fed: it cuts wood at one of the camp's trees and stores it in the vault
+    auto giveRoutine = [&](Entity u, const CampKit& kit) {
+        if (u == NULL_ENTITY || !kit.placed || kit.vault == NULL_ENTITY || kit.trees.empty()) return;
+        // A camp's woodcutter starts with an empty pack, so the logs it carries don't weigh it down
+        if (!w.has<Commandable>(u)) {
+            if (Inventory* inv = w.get<Inventory>(u)) *inv = Inventory{};
+        }
+        Routine r;
+        r.store = kit.vault;
+        r.gather = kit.trees[0];
+        r.item = propInfo(PROP_TREE).item;
+        w.add(u, r);
+    };
+
+    // The player's camp, in the middle
+    const CampKit playerKit = placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET);
+    addCampExtras(FACTION_PLAYER, playerKit);
+    {
+        Entity first = NULL_ENTITY;
+        for (Entity u : w.view<Unit, Commandable>()) {
+            if (first == NULL_ENTITY || u < first) first = u;
+        }
+        giveRoutine(first, playerKit);
+    }
+    const Vec2 middle = playerKit.placed ? Vec2{ playerKit.x, playerKit.z } : spawn;
+
     for (size_t ci = 0; ci < camps.size(); ++ci) {
         const FactionDef& f = *camps[ci];
-        const float angle = turn + 6.2831853f * (float)ci / (float)camps.size() + (rng.unit() - 0.5f) * 0.4f;
-        const float dist = CAMP_DISTANCE_MIN + rng.unit() * (CAMP_DISTANCE_MAX - CAMP_DISTANCE_MIN);
-        const float cx = spawn.x + std::cos(angle) * dist, cz = spawn.z + std::sin(angle) * dist;
+        // North, east, south, west first; any more go between them
+        static const float DIRS[8][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 },
+                                          { 0.7071f, -0.7071f }, { 0.7071f, 0.7071f }, { -0.7071f, 0.7071f }, { -0.7071f, -0.7071f } };
+        float dirX = DIRS[ci % 8][0], dirZ = DIRS[ci % 8][1];
+        if (ci >= 8) {
+            const float a = 6.2831853f * (float)ci / (float)camps.size();
+            dirX = std::cos(a);
+            dirZ = std::sin(a);
+        }
+        const float dist = CAMP_DISTANCE * (ci >= 4 ? 1.4f : 1.0f);   // the corners sit farther out, clear of their neighbours
+        CampKit kit = placeCamp(f.id, middle.x + dirX * dist, middle.z + dirZ * dist);
+        // A map too small for the full distance: try closer in, down to just clear of the other claims
+        for (float d = dist - 10.0f; !kit.placed && d >= CAMP_GAP; d -= 10.0f) {
+            kit = placeCamp(f.id, middle.x + dirX * d, middle.z + dirZ * d);
+        }
+        addCampExtras(f.id, kit);
+        // The camp's units stand around its flag
+        const float cx = kit.placed ? kit.x : middle.x + dirX * dist, cz = kit.placed ? kit.z : middle.z + dirZ * dist;
+        Entity firstUnit = NULL_ENTITY;
         const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)f.units);
         int placed = 0;
         for (int attempt = 0; attempt < 4000 && placed < f.units; ++attempt) {
             GridPos g{ rng.range(tileAt(cx - radius), tileAt(cx + radius)), rng.range(tileAt(cz - radius), tileAt(cz + radius)) };
             const float dx = g.x + 0.5f - cx, dz = g.y + 0.5f - cz;
             if (dx * dx + dz * dz > radius * radius || !tileFree(g)) continue;
-            placeUnit(g, f.id);
+            const Entity e = placeUnit(g, f.id);
+            if (firstUnit == NULL_ENTITY) firstUnit = e;
             ++placed;
         }
         for (int attempt = 0; attempt < 20000 && placed < f.units; ++attempt) {
@@ -306,9 +431,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
                        rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
             const float dx = g.x + 0.5f - spawn.x, dz = g.y + 0.5f - spawn.z;
             if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
-            placeUnit(g, f.id);
+            const Entity e = placeUnit(g, f.id);
+            if (firstUnit == NULL_ENTITY) firstUnit = e;
             ++placed;
         }
+        giveRoutine(firstUnit, kit);
     }
 
     // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
@@ -316,14 +443,21 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // then wagon again), so if the ground near the spawn ever runs out, every kind has been placed before any has its
     // last copies.
     std::vector<GridPos> propTiles;
-    const int propTotal = PROP_KIND_COUNT * PROP_COPIES;
+    const int propTotal = PROP_PLACED_KIND_COUNT * PROP_COPIES;
     for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
         GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
                    rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
         if (!t.walkable(g.x, g.y)) continue;
         if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
+        // A tile a camp's kit already stands on is not free: the kit was placed first
+        bool kitHere = false;
+        for (Entity e : w.view<Prop, Transform>()) {
+            const Transform* kt = w.get<Transform>(e);
+            if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
+        }
+        if (kitHere) continue;
         const int serial = (int)propTiles.size();
-        const int kind = serial % PROP_KIND_COUNT;
+        const int kind = serial % PROP_PLACED_KIND_COUNT;
         propTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity prop = w.create();
@@ -1183,12 +1317,20 @@ std::vector<PropArrival> propOrderSystem(World& w) {
         }
         if (flatGap(w, u, prop) <= PROP_REACH) {
             const PropAction action = w.get<PropOrder>(u)->action;
+            const bool byRoutine = w.get<PropOrder>(u)->routine;
             w.remove<PropOrder>(u);
             w.remove<SoloMove>(u);
+            if (action == PropAction::Store) {
+                // A routine's store step: what the unit carries for it goes in, if the prop is open to it
+                const Routine* r = w.get<Routine>(u);
+                if (!lockShutFor(w, prop, u)) storeCarried(w, u, prop, r ? r->item : 0);
+                continue;
+            }
             PropArrival a;
             a.unit = u;
             a.prop = prop;
             a.action = action;
+            a.routine = byRoutine;
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
             const Lock* lock = w.get<Lock>(prop);
             if (action == PropAction::Unlock) {
@@ -1198,7 +1340,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 out.push_back(a);
                 continue;
             }
-            if (lock && lock->locked) {
+            if (lockShutFor(w, prop, u)) {
                 // A locked prop can't be opened or used
                 a.locked = true;
                 out.push_back(a);
@@ -1321,9 +1463,9 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     for (Entity u : w.view<Working, Transform>()) {
         const Working* wk = w.get<Working>(u);
         const Entity prop = wk->prop;
-        const Lock* lock = w.get<Lock>(prop);
-        // Picking a lock that is still locked, or working a prop that is not
-        const bool valid = wk->unlocking ? (lock && lock->locked) : (isWorkProp(useOf(w, prop)) && !(lock && lock->locked));
+        // Picking a lock that is still shut to this unit, or working a prop that is not
+        const bool shut = lockShutFor(w, prop, u);
+        const bool valid = wk->unlocking ? shut : (isWorkProp(useOf(w, prop)) && !shut);
         if (!valid) {
             w.remove<Working>(u);
             continue;
@@ -1478,9 +1620,13 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             const std::string itemName = itemNameFor(gives);
             Inventory* inv = w.get<Inventory>(got);
             if (inv && addToInventory(*inv, gives, 1) == 0) {
-                addGain(WorkGain{ got, gives });
-                queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
-                grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_GATHERING"));
+                // A unit that is not yours (a camp's woodcutter) gathers quietly: no label, log line or sound
+                const bool yours = w.has<Commandable>(got);
+                if (yours) {
+                    addGain(WorkGain{ got, gives });
+                    queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup);
+                }
+                grantXp(w, got, info.stat, WORK_XP_PER_ITEM, yours ? lang("MISC_REASON_GATHERING") : std::string());
             } else {
                 // No room: the item falls at the unit's feet, and the unit stops working
                 if (const Transform* ut = w.get<Transform>(got)) {
@@ -1503,13 +1649,192 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     return gains;
 }
 
+int storeCarried(World& w, Entity unit, Entity prop, int item) {
+    Inventory* inv = w.get<Inventory>(unit);
+    Storage* st = w.get<Storage>(prop);
+    const Prop* p = w.get<Prop>(prop);
+    if (!inv || !st || !p) return 0;
+    int moved = 0;
+    int movedItem = 0;
+    for (ItemStack& s : inv->slots) {
+        if (s.item <= 0 || s.count <= 0) continue;
+        if (item != 0 && s.item != item) continue;
+        if (!propAcceptsItem(p->kind, s.item)) continue;
+        const int left = addToSlots(st->slots.data(), STORAGE_SLOTS, s.item, s.count);
+        moved += s.count - left;
+        if (s.count - left > 0) movedItem = s.item;
+        s.count = left;
+        if (left <= 0) s = ItemStack{};
+    }
+    if (moved > 0) {
+        propStorageChanged(w, prop);
+        if (w.has<Commandable>(unit)) {
+            queueLog(langf("MISC_ROUTINE_STORES", { nameOf(w, unit), std::to_string(moved), itemNameFor(movedItem),
+                                                    lang(propInfo(p->kind).nameKey) }), LogKind::Pickup);
+        }
+    }
+    return moved;
+}
+
+namespace {
+
+// How many of an item a unit carries
+int carriedCount(World& w, Entity u, int item) {
+    int n = 0;
+    if (const Inventory* inv = w.get<Inventory>(u)) {
+        for (const ItemStack& s : inv->slots) {
+            if (s.item == item && s.count > 0) n += s.count;
+        }
+    }
+    return n;
+}
+
+// Whether a unit is busy with something that is not its routine: an order of yours, a seat or bed, carrying someone
+bool onOtherOrder(World& w, Entity u, const Routine& r) {
+    if (const PropOrder* po = w.get<PropOrder>(u); po && !po->routine) return true;
+    if (const Working* wk = w.get<Working>(u); wk && (wk->unlocking || wk->prop != r.gather)) return true;
+    if (w.has<Occupying>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) || w.has<PickupOrder>(u) ||
+        w.has<LootOrder>(u) || w.has<CarryOrder>(u) || w.has<PutDownOrder>(u) || w.has<TalkOrder>(u) ||
+        w.has<Carrying>(u) || w.has<AttackOrder>(u)) {
+        return true;
+    }
+    if (const SoloMove* so = w.get<SoloMove>(u); so && so->next < so->waypoints.size() && !w.has<PropOrder>(u)) return true;
+    if (const SquadMember* sm = w.get<SquadMember>(u)) {
+        if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return true;
+    }
+    return false;
+}
+
+// Sends a unit on a routine step: it walks to the prop, and in reach does the action
+void routineGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
+    const Transform* pt = w.get<Transform>(prop);
+    if (!pt) return;
+    w.remove<SquadMember>(u);
+    w.remove<PickupOrder>(u);
+    w.remove<TalkOrder>(u);
+    endPropTasks(w, u);
+    w.remove<IdleSpot>(u);
+    w.add(u, SoloMove{});
+    planSolo(w, t, u, Vec2{ pt->x, pt->z });
+    w.add(u, PropOrder{ prop, action, true });
+}
+
+// Ends the routine's own step, if the unit is on one
+void stopRoutineStep(World& w, Entity u, const Routine& r) {
+    if (const PropOrder* po = w.get<PropOrder>(u); po && po->routine) {
+        w.remove<PropOrder>(u);
+        w.remove<SoloMove>(u);
+    }
+    if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && wk->prop == r.gather) w.remove<Working>(u);
+}
+
+}  // namespace
+
+void setRoutineOn(World& w, Entity u, bool on) {
+    Routine* r = w.get<Routine>(u);
+    if (!r) return;
+    r->on = on;
+    if (!on && r->busy) stopRoutineStep(w, u, *r);
+    r->busy = false;
+    r->wait = 0.0f;
+}
+
+void routineSystem(World& w, Terrain& t, float dt) {
+    for (Entity u : w.view<Routine, Transform>()) {
+        Routine* r = w.get<Routine>(u);
+        if (!r->on) continue;
+        const bool yours = w.has<Commandable>(u);
+        const float resume = yours ? ROUTINE_RESUME_SECONDS : 0.0f;
+        // Out cold, carried, shut in, or its props are gone: nothing to do
+        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) ||
+            !w.has<Prop>(r->store) || !w.has<Prop>(r->gather)) {
+            r->busy = false;
+            continue;
+        }
+        // A fight comes first: the step stops, and the routine waits for the fight to end
+        const Combat* c = w.get<Combat>(u);
+        if ((c && c->target != NULL_ENTITY) || w.has<AttackOrder>(u)) {
+            if (r->busy) stopRoutineStep(w, u, *r);
+            r->busy = false;
+            r->wait = resume;
+            continue;
+        }
+        const PropOrder* po = w.get<PropOrder>(u);
+        const bool going = po && po->routine;
+        const Working* wk = w.get<Working>(u);
+        const bool gathering = wk && !wk->unlocking && wk->prop == r->gather;
+        const Inventory* inv = w.get<Inventory>(u);
+        const int have = carriedCount(w, u, r->item);
+        // Full: no room for another, or another would weigh it down to Encumbered (and soon to a stop)
+        const ItemDef* def = findItem(r->item);
+        const float nextLoad = encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u));
+        const bool full = !inv || slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, r->item) <= 0 ||
+                          nextLoad >= ENCUMBERED_SHARE;
+
+        if (r->busy) {
+            if (going) continue;   // on its way
+            if (gathering) {
+                // A full load goes to the store (a unit already too laden to carry any keeps at it, rather than
+                // walking back and forth with nothing)
+                if (have > 0 && (have >= ROUTINE_LOAD || full)) {
+                    w.remove<Working>(u);
+                    r->step = 1;
+                    routineGo(w, t, u, r->store, PropAction::Store);
+                }
+                continue;
+            }
+            if (onOtherOrder(w, u, *r)) {   // you gave it something else to do
+                r->busy = false;
+                r->wait = resume;
+                continue;
+            }
+            // The step ended by itself. After storing, back to the tree. A gather that did not start (the tree had all
+            // its workers, or the way was blocked) stores what it has, or tries again in a while.
+            if (r->step == 0 && have <= 0) {
+                r->busy = false;
+                r->wait = ROUTINE_RETRY_SECONDS;
+                continue;
+            }
+        } else {
+            if (onOtherOrder(w, u, *r) || gathering || going) {
+                // Busy with something of yours (or picked up its step by hand): wait until it has been idle a while
+                r->wait = resume;
+                continue;
+            }
+            if (r->wait > 0.0f) {
+                r->wait -= dt;
+                continue;
+            }
+        }
+
+        // The next step: a load to store, or more to gather
+        const bool storeNext = (r->busy && r->step == 0) ? have > 0 : (have >= ROUTINE_LOAD || (full && have > 0));
+        if (storeNext) {
+            const Storage* st = w.get<Storage>(r->store);
+            if (!st || slotsRoomFor(st->slots.data(), STORAGE_SLOTS, r->item) <= 0) {
+                // The store is full: wait, and look again later
+                r->busy = false;
+                r->wait = ROUTINE_RETRY_SECONDS * 2.0f;
+                continue;
+            }
+            r->step = 1;
+            r->busy = true;
+            routineGo(w, t, u, r->store, PropAction::Store);
+        } else {
+            r->step = 0;
+            r->busy = true;
+            routineGo(w, t, u, r->gather, PropAction::Use);
+        }
+    }
+}
+
 WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p || !isWorkProp(propInfo(p->kind).use) || !w.get<Transform>(unit)) return WorkStart::TooFar;
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop) return WorkStart::Started;   // already at it
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
-    if (const Lock* lock = w.get<Lock>(prop); lock && lock->locked) return WorkStart::Locked;
+    if (lockShutFor(w, prop, unit)) return WorkStart::Locked;
     if (lockedIn(w, unit)) return WorkStart::Locked;   // shut in a cage, it can't get to work
     if (workersAt(w, prop) >= propInfo(p->kind).workers) return WorkStart::Full;
     if (propInfo(p->kind).use == PropUse::Crafting) {
@@ -1529,7 +1854,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
 WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     const Lock* lock = w.get<Lock>(prop);
     if (!lock || !w.has<Prop>(prop) || !w.get<Transform>(unit)) return WorkStart::NotLocked;
-    if (!lock->locked) return WorkStart::NotLocked;
+    if (!lockShutFor(w, prop, unit)) return WorkStart::NotLocked;
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop && wk->unlocking) return WorkStart::Started;
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
@@ -1542,6 +1867,14 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     w.remove<PickupOrder>(unit);
     w.remove<AttackOrder>(unit);
     w.remove<TalkOrder>(unit);
+    // A caught lockpick: one of your units picking another faction's lock is an attack on that faction, and costs
+    // its standing the way knocking one of its units out does
+    if (const Faction* f = w.get<Faction>(unit); (!f || f->id == FACTION_PLAYER) && lock->faction >= 0 &&
+                                                 lock->faction != FACTION_PLAYER) {
+        const int now = changePlayerReputation(lock->faction, -REP_LOCKPICK_PENALTY);
+        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(lock->faction), std::to_string(REP_LOCKPICK_PENALTY),
+                                                  std::to_string(now) }), LogKind::Other);
+    }
     if (inside) {
         // It stays in the cage while it works at the lock, and after the lock opens, until it is ordered out
         w.remove<PropOrder>(unit);
@@ -1577,6 +1910,7 @@ std::string taskNameOf(World& w, Entity u) {
         return lang(p && isSeat(p->kind) ? "UILABEL_TASK_SITTING" : "UILABEL_TASK_RESTING");
     }
     if (w.has<Carrying>(u) || w.has<CarryOrder>(u)) return lang("UILABEL_TASK_CARRYING");
+    if (const PropOrder* po = w.get<PropOrder>(u); po && po->action == PropAction::Store) return lang("UILABEL_TASK_STORING");
     if (w.has<DefendOrder>(u)) return lang("UILABEL_TASK_DEFENDING");
     if (w.has<FollowOrder>(u)) return lang("UILABEL_TASK_FOLLOWING");
     const SoloMove* so = w.get<SoloMove>(u);
@@ -1614,6 +1948,7 @@ std::vector<int> emotesOf(World& w, Entity u) {
 bool propAcceptsItem(int kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
+    if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;   // a Vault: its upkeep only
     if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
     const ItemDef* def = findItem(item);
     switch (info.accepts) {
@@ -1645,8 +1980,7 @@ Entity occupiedProp(World& w, Entity u) {
 bool lockedIn(World& w, Entity u) {
     const Occupying* oc = w.get<Occupying>(u);
     if (!oc) return false;
-    const Lock* lock = w.get<Lock>(oc->prop);
-    return lock && lock->locked;
+    return lockShutFor(w, oc->prop, u);
 }
 
 PassiveState passiveStateOf(World& w, Entity prop) {
@@ -1655,7 +1989,7 @@ PassiveState passiveStateOf(World& w, Entity prop) {
     const Fuel* fuel = w.get<Fuel>(prop);
     if (!p || !out || !fuel) return PassiveState::NoFuel;
     const PropInfo& info = propInfo(p->kind);
-    if (!slotsCanTake(out->slots.data(), STORAGE_SLOTS, info.item, 1)) return PassiveState::OutputFull;
+    if (info.item > 0 && !slotsCanTake(out->slots.data(), STORAGE_SLOTS, info.item, 1)) return PassiveState::OutputFull;
     if (fuel->hours > 1e-9) return PassiveState::Burning;
     const Storage* st = w.get<Storage>(prop);
     if (st) {
@@ -1681,15 +2015,18 @@ void passiveCraftSystem(World& w, double gameSeconds) {
         // A long jump of the clock can finish several items, so this goes round until the time is used up or it stops
         for (int guard = 0; guard < 100000; ++guard) {
             // A finished item goes into the output, if it has room. If not, it waits there, finished.
+            // A prop with no output item (a Vault's upkeep) finishes nothing: its hour of fuel is all it does.
             if (pw.progress >= 1.0 - 1e-9) {
-                if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
-                addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
+                if (info.item > 0) {
+                    if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
+                    addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
+                    ++pw.made;   // the ring hops for it
+                    queueSound(Sfx::DoneForge);
+                }
                 pw.progress = 0.0;
-                ++pw.made;   // the ring hops for it
-                queueSound(Sfx::DoneForge);
             }
             // No room for the next item: pause, burning nothing
-            if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
+            if (info.item > 0 && !slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
             if (hours <= 1e-12) {
                 burning = fuel.hours > 1e-9 || (st && std::any_of(st->slots.begin(), st->slots.end(), [&](const ItemStack& s) {
                     return s.item == info.input && s.count > 0;

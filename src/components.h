@@ -305,17 +305,48 @@ struct AttackOrder {
 
 // A prop: a 3D model on the map, such as a wagon or a campfire. It does not block movement.
 // kind is a PropKind; props.h gives each kind its model, name, size and use. serial is its place in the order the
-// level placed the props, which is the same each time the level is built from its seed, so a save can name it.
+// level placed the props, which is the same each time the level is built from its seed, so a save can name it. A built
+// prop has serial -1: it is not placed by a seed, so a save does not name it (yet).
 struct Prop {
     int kind = 0;
     int serial = 0;
+    float yaw = 0.0f;   // the facing, in radians, turning its model and footprint about the vertical axis. Built props
+                        // keep the facing they were placed with; a level's props face 0.
 };
 
 // A lockable prop's lock (props.h: PropInfo::lockLevel). While locked, the prop can't be opened or used. level is the
 // Lockpicking level a unit needs to try to unlock it.
+// faction is the faction that owns the lock (-1 for none). Its own units open it as if it were unlocked; every other unit
+// has to lockpick it while it is locked. Built props inside a claim are locked to the claim's faction (claims.h).
 struct Lock {
     bool locked = true;
     int level = 1;
+    int faction = -1;
+};
+
+// Ownership tag of a built prop, or of a flag's claim: the faction whose it is (factions.h). Only built props have one;
+// props a level places belong to no faction.
+struct Owner {
+    int faction = 0;
+};
+
+// A flag's health: it starts at FLAG_HEALTH and is never hit, but it falls while its claim has no vault and recovers
+// one point an hour while the vault stands in its claim (claims.h). At 0 the flag breaks.
+struct Health {
+    double value = 10.0;
+    double max = 10.0;
+};
+
+// How much of a built foundation or flag is left, 1 when new, falling while it is not held up (claims.h). At 0 it breaks
+// into debris. A flag decays on its own when its claim's vault is dry or missing; a foundation when it lies outside any
+// claim of its faction, or in one whose vault is dry or missing.
+struct Wear {
+    double value = 1.0;
+};
+
+// The foundation a built prop stands on. The prop breaks when that foundation is gone (claims.h).
+struct OnBase {
+    Entity foundation = NULL_ENTITY;
 };
 
 // The items a storage prop (a barrel) or a crafting prop (a campfire, which takes only its input item) holds, one stack
@@ -340,6 +371,21 @@ struct Fuel {
 struct PropOrder {
     Entity prop = NULL_ENTITY;
     PropAction action = PropAction::Use;
+    bool routine = false;   // given by the unit's Routine, not by you: its arrival says nothing to the player
+};
+
+// A work loop a unit follows by itself, switched on and off with the Routine button on the Behavior tab. It works the
+// gather prop (a tree) until it carries ROUTINE_LOAD of the item or has no room for more, takes them to the store prop
+// (a vault) and puts them in, then goes back to gathering. An order of yours, or a fight, pauses it; it picks up again
+// once the unit has stood idle for ROUTINE_RESUME_SECONDS (a unit that is not yours picks up again at once).
+struct Routine {
+    Entity store = NULL_ENTITY;
+    Entity gather = NULL_ENTITY;
+    int item = 0;            // what it gathers and stores (the Wood Log)
+    bool on = true;
+    bool busy = false;       // the unit's current step was given by the routine
+    int step = 0;            // 0 gathering, 1 storing
+    float wait = 0.0f;       // real seconds before it takes the next step
 };
 
 // A unit on an occupiable prop (a bed, a chair, a cage). It stays on the prop until it is given another order.

@@ -201,6 +201,13 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     rows.push_back(makeToggle(RowId::UnitNames, lang("UILABEL_UNIT_NAMES"), s.showUnitNames));
     rows.push_back(makeToggle(RowId::NpcNames, lang("UILABEL_NPC_NAMES"), s.showNpcNames));
     rows.push_back(makeToggle(RowId::PropNames, lang("UILABEL_PROP_NAMES"), s.showPropNames));
+    {
+        // Under Prop names, and only usable while they show
+        RowSpec info = makeToggle(RowId::PropInfo, lang("UILABEL_PROP_INFO"), s.showPropInfo);
+        info.sub = true;
+        info.enabled = s.showPropNames;
+        rows.push_back(info);
+    }
     rows.push_back(makeScale(RowId::FontScale, lang("UILABEL_UI_SCALE"), s.fontScale));
     rows.push_back(makeAction(RowId::ResetPanels, lang("UILABEL_RESET_PANELS"), lang("UILABEL_RESET")));
     return rows;
@@ -486,6 +493,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::PropNames:
         s.showPropNames = on;
+        break;
+    case RowId::PropInfo:
+        s.showPropInfo = on;
         break;
     case RowId::EdgeScroll:
         s.edgeScroll = on;

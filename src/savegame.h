@@ -69,6 +69,12 @@ struct SaveUnit {
     std::vector<BehaviorRule> behaviors;   // highest priority first
     // Its fighting modes from the Behavior tab. Older saves have none: all off.
     bool passive = false, block = false, sneak = false;
+    // Its routine (components.h), if it has one: the props are named by where they stand, since a camp's props are
+    // placed again from the seed on the same spots. Older saves have none.
+    bool hasRoutine = false;
+    bool routineOn = true;
+    int routineItem = 0;
+    float storeX = 0.0f, storeZ = 0.0f, gatherX = 0.0f, gatherZ = 0.0f;
 };
 
 // An item lying on the ground when the game was saved
@@ -186,6 +192,10 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
         }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
+        if (u.hasRoutine) {
+            out << "routine " << i << " " << (u.routineOn ? 1 : 0) << " " << u.routineItem << " " << u.storeX << " "
+                << u.storeZ << " " << u.gatherX << " " << u.gatherZ << "\n";
+        }
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
             for (const BehaviorRule& b : u.behaviors) {
@@ -360,6 +370,23 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 int f = -1;
                 ss >> i >> f;
                 if (!ss.fail() && i < d.units.size()) d.units[i].koFaction = f;
+            }
+            else if (line.rfind("routine ", 0) == 0) {
+                std::istringstream ss(line.substr(8));
+                size_t i = 0;
+                int on = 1, item = 0;
+                float sx = 0.0f, sz = 0.0f, gx = 0.0f, gz = 0.0f;
+                ss >> i >> on >> item >> sx >> sz >> gx >> gz;
+                if (!ss.fail() && i < d.units.size() && item > 0) {
+                    SaveUnit& u = d.units[i];
+                    u.hasRoutine = true;
+                    u.routineOn = on != 0;
+                    u.routineItem = item;
+                    u.storeX = sx;
+                    u.storeZ = sz;
+                    u.gatherX = gx;
+                    u.gatherZ = gz;
+                }
             }
             else if (line.rfind("modes ", 0) == 0) {
                 std::istringstream ss(line.substr(6));

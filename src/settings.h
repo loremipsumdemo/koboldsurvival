@@ -44,6 +44,7 @@ struct GameSettings {
     bool showUnitNames = true;      // each of your units' names over its head, in brackets
     bool showNpcNames = true;       // the same for every other unit: neutral and hostile
     bool showPropNames = true;      // each prop's name over it, in purple
+    bool showPropInfo = false;      // with prop names on: owner, health, decay and lock under each name
     int fontScale = 100;            // UI scale as a percentage of the base sizes, 50 to 200 in steps of 5
     std::string fontPath;           // the UI font file, or empty for Automatic (the built-in fonts)
     std::string language = LANGUAGE_DEFAULT_ID;   // the language's id, e.g. "language_fr"
@@ -115,6 +116,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "npcNames")        s.showNpcNames = (val == "1");
         else if (key == "propNames")       s.showPropNames = (val == "1");
+        else if (key == "propInfo")        s.showPropInfo = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "fontPath")        s.fontPath = val;
         else if (key == "language") {
@@ -194,6 +196,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "npcNames=" << (s.showNpcNames ? 1 : 0) << "\n";
     out << "propNames=" << (s.showPropNames ? 1 : 0) << "\n";
+    out << "propInfo=" << (s.showPropInfo ? 1 : 0) << "\n";
     out << "fontScale=" << s.fontScale << "\n";
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";

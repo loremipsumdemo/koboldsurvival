@@ -7,6 +7,7 @@
 #include "pak.h"
 #include "party.h"
 #include "systems.h"
+#include "claims.h"
 #include "textcase.h"
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
@@ -609,15 +610,18 @@ void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, R
     drawQuadVerts(g.tex, v, tint);
 }
 
-void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize) {
+void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
     if (!m.vao) return;
-    // Scale, then move so the center of the bottom sits on (x, y, z): the same placement picking uses (placeModel)
-    const ModelPlacement p = placeModel(m, x, y, z, targetSize);
+    // Scale, turn by yaw, then move so the center of the bottom sits on (x, y, z): the same placement picking uses
+    const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
     if (!p.ok) return;
     Mat4 model{};
-    model.m[0] = p.k;
+    // Column-major: the turn about the vertical axis, scaled by k. x' = cs*x + sn*z, z' = -sn*x + cs*z
+    model.m[0] = p.k * p.cs;
+    model.m[2] = -p.k * p.sn;
     model.m[5] = p.k;
-    model.m[10] = p.k;
+    model.m[8] = p.k * p.sn;
+    model.m[10] = p.k * p.cs;
     model.m[15] = 1.0f;
     model.m[12] = p.ox;
     model.m[13] = p.oy;
@@ -1449,8 +1453,10 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
         const Model& m = propModel(kind);
+        const float baseY = propBaseY(w, e);
         if (m.vao) {
-            const float t = rayHitModel(m, placeModel(m, tr->x, tr->y, tr->z, propInfo(kind).size), o, d);
+            const float t = rayHitModel(m, placeModel(m, tr->x, baseY, tr->z, propInfo(kind).size,
+                                                      w.get<Prop>(e)->yaw), o, d);
             if (t >= 0.0f) hits.push_back({ t, e });
             continue;
         }
@@ -1460,14 +1466,14 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         bool seen = true;
         for (int c = 0; c < 8 && seen; ++c) {
             float sx = 0.0f, sy = 0.0f;
-            seen = projectPoint(vp, tr->x + ((c & 1) ? hx : -hx), tr->y + ((c & 2) ? h : 0.0f),
+            seen = projectPoint(vp, tr->x + ((c & 1) ? hx : -hx), baseY + ((c & 2) ? h : 0.0f),
                                 tr->z + ((c & 4) ? hz : -hz), winW, winH, sx, sy);
             if (c == 0) { x0 = x1 = sx; y0 = y1 = sy; }
             x0 = std::min(x0, sx); x1 = std::max(x1, sx);
             y0 = std::min(y0, sy); y1 = std::max(y1, sy);
         }
         if (seen && mx >= x0 && mx <= x1 && my >= y0 && my <= y1) {
-            const float dx = tr->x - o[0], dy = tr->y - o[1], dz = tr->z - o[2];
+            const float dx = tr->x - o[0], dy = baseY - o[1], dz = tr->z - o[2];
             const float len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
             hits.push_back({ len2 > 0.0f ? (dx * d[0] + dy * d[1] + dz * d[2]) / len2 : 0.0f, e });
         }
@@ -1719,11 +1725,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const int kind = w.get<Prop>(e)->kind;
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        const float baseY = propBaseY(w, e);
         if (propModel(kind).vao) {
-            drawModel(propModel(kind), tr->x, tr->y, tr->z, propInfo(kind).size);
+            drawModel(propModel(kind), tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
         } else {
             // No model, and no model_0.glb: a pink square as tall as the prop's size, standing on its spot and turned to the camera
-            drawGlyph(white_, tr->x, tr->y, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
+            drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
 
@@ -1745,6 +1752,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
 
     drawGroundItems(w, t, cam);
+    drawBuildPreview(t);
 
     // 3. Color overlays: selection rings and the drag box
     auto flush = [&](const Batch& batch, const Mat4& m) {
@@ -2533,7 +2541,7 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
 
 void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                            const Storage* storage, const Output* output, const std::string& status, int dragFrom,
-                           float mx, float my) {
+                           float mx, float my, const std::string& toggleLabel) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -2583,6 +2591,7 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
         drawListText(ln, L.hint.x, ty, gray);
         ty += th;
     }
+    if (L.lockToggle && !toggleLabel.empty()) drawButton(L.lockBtn, toggleLabel, true, L.lockBtn.contains(mx, my));
     drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
     if (hoverStack.item != 0 && dragFrom < 0) drawItemTooltip(hoverStack.item, hoverStack.count, mx, my);
 }
@@ -2703,10 +2712,14 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         const int kind = w.get<Prop>(e)->kind;
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
+        if (!projectPoint(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
         // Above the prop's name tag when names are shown
-        const float lift = names ? listTextHeight("Ag") + 2.0f * s : 0.0f;
-        const float cy = sy - outer - lift - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
+        // Above the prop's block of name lines when names are shown (the block's top, from drawPropNames this frame)
+        float above = sy - (names ? listTextHeight("Ag") + 2.0f * s : 0.0f);
+        if (names) {
+            if (const auto it = propLabelTop_.find(e); it != propLabelTop_.end()) above = std::min(above, it->second - 2.0f * s);
+        }
+        const float cy = above - outer - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
         // Just finished: the ring shows full for the hop, then the next item's progress
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
@@ -3299,7 +3312,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         drawTitleBar(L.title, ICON_UNIT_PANEL, lang("UILABEL_UNIT_PANEL"));
         if (L.minus.w > 0.0f) drawCollapseButton(L.minus, false);
         if (L.plus.w > 0.0f) drawCollapseButton(L.plus, true);
-        const std::string names[UNIT_TAB_COUNT] = { lang("UILABEL_INVENTORY"), lang("UILABEL_PROFILE"), lang("UILABEL_STATS"), lang("UILABEL_BEHAVIOR") };
+        const std::string names[UNIT_TAB_COUNT] = { lang("UILABEL_INVENTORY"), lang("UILABEL_PROFILE"), lang("UILABEL_STATS"), lang("UILABEL_BEHAVIOR"), lang("UILABEL_BUILD") };
         for (int i = 0; i < UNIT_TAB_COUNT; ++i) {
             const Rect& t = L.tabs[i];
             if (t.w <= 0.0f) continue;
@@ -3315,6 +3328,22 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     };
     drawRect(L.panel, RGBA{ 0.04f, 0.025f, 0.06f, bgAlpha });
     if (!L.open) {
+        frame();
+        return;
+    }
+    if (L.tab == UNIT_TAB_BUILD) {
+        // The Build tab needs no unit: it lists the props to pick and place. Its rows scroll like the other tabs.
+        beginClip(L.panel);
+        drawBuildSection(L, mx, my);
+        if (L.maxScroll > 0.0f) {
+            const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
+            const float totalH = L.maxScroll + L.body.h;
+            const float thumbH = std::max(16.0f * s, track.h * L.body.h / totalH);
+            const float thumbY = track.y + (track.h - thumbH) * (L.scroll / L.maxScroll);
+            drawRect(track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
+            drawRect(Rect{ track.x, thumbY, track.w, thumbH }, RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
+        }
+        endClip();
         frame();
         return;
     }
@@ -3519,9 +3548,11 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (L.tab == UNIT_TAB_BEHAVIOR) {
         const Behaviors* beh = w.get<Behaviors>(unit);
         const Equipment* worn = w.get<Equipment>(unit);
-        const std::array<bool, 4> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
-                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]) };
-        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes);
+        const Routine* routine = w.get<Routine>(unit);
+        const std::array<bool, 5> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
+                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]), routine && routine->on };
+        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes,
+                            routine != nullptr);
     }
     if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
     if (L.maxScroll > 0.0f) {
@@ -3564,6 +3595,110 @@ void Renderer::endClip() {
     glDisable(GL_SCISSOR_TEST);
 }
 
+// The Build tab's body. The heading says what is picked; each row has a select button (which picks the kind, or puts it
+// down if it is picked already) and the prop's name. Row 0 is Destroy, the tool that takes buildings down.
+void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    auto kindName = [](int kind) {
+        return kind == BUILD_DESTROY ? lang("UILABEL_BUILD_DESTROY") : lang(propInfo(kind).nameKey);
+    };
+    const std::string head = buildSelected_ != BUILD_NONE
+        ? langf("UILABEL_BUILD_SELECTED", { kindName(buildSelected_) })
+        : lang("UILABEL_BUILD_NONE");
+    const float headTextH = listTextHeight("Ag");
+    drawListText(head, L.buildHeading.x + 4.0f * s, L.buildHeading.y + (L.buildHeading.h - headTextH) * 0.5f,
+                 buildSelected_ != BUILD_NONE ? theme::GREEN : RGBA{ 0.72f, 0.72f, 0.76f, 1.0f });
+    const float btnW = 64.0f * s, gap = 8.0f * s;
+    for (size_t i = 0; i < L.buildRows.size(); ++i) {
+        const Rect& row = L.buildRows[i];
+        const int kind = buildRowKind((int)i);
+        if (kind == BUILD_NONE) continue;
+        const bool picked = kind == buildSelected_;
+        const bool hovered = row.contains(mx, my);
+        if (hovered) drawRect(row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
+        const Rect btn{ row.x + 2.0f * s, row.y + 2.0f * s, btnW, row.h - 4.0f * s };
+        drawSmallButton(btn, lang(picked ? "UILABEL_BUILD_PICKED" : "UILABEL_BUILD_SELECT"), true, hovered);
+        const float th = listTextHeight("Ag");
+        drawListText(kindName(kind), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, picked ? theme::GREEN : white);
+    }
+}
+
+// The placement preview: the footprint of the picked prop, as a grid of quarter-tile squares on the ground, lined in
+// red, and filled green where it can be placed or red where it can't. Only squares whose centre lies in the shape are
+// drawn, so the grid follows the shape, turned as the prop will be.
+void Renderer::drawBuildPreview(const Terrain& t) {
+    if (!buildPreview_.on && buildPreview_.ringR <= 0.0f) return;
+    const float lift = 0.04f;      // off the ground, so the grid does not flicker into it
+    const float lineW = 0.03f;     // a grid line, in tiles
+    auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift; };
+    Batch b;
+
+    if (buildPreview_.on) {
+        const Footprint& f = propInfo(buildPreview_.kind).foot;
+        const float x0 = buildPreview_.x, z0 = buildPreview_.z, yaw = buildPreview_.yaw;
+        const float reach = footprintReach(f);
+        const float cell = 0.25f;      // grid squares are a quarter of a tile
+        const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
+        const RGBA line{ 1.0f, 0.15f, 0.15f, 0.9f };
+        auto strip = [&](float ax, float az, float bx, float bz) {
+            const float dx = bx - ax, dz = bz - az;
+            const float len = std::hypot(dx, dz);
+            if (len <= 0.0f) return;
+            const float px = -dz / len * lineW * 0.5f, pz = dx / len * lineW * 0.5f;
+            b.quad(V3{ ax + px, hgt(ax + px, az + pz), az + pz }, V3{ bx + px, hgt(bx + px, bz + pz), bz + pz },
+                   V3{ bx - px, hgt(bx - px, bz - pz), bz - pz }, V3{ ax - px, hgt(ax - px, az - pz), az - pz }, line);
+        };
+        const float startX = std::floor((x0 - reach) / cell) * cell, endX = x0 + reach;
+        const float startZ = std::floor((z0 - reach) / cell) * cell, endZ = z0 + reach;
+        for (float gx = startX; gx < endX; gx += cell) {
+            for (float gz = startZ; gz < endZ; gz += cell) {
+                const float cx = gx + cell * 0.5f, cz = gz + cell * 0.5f;
+                if (!insideFootprint(f, cx - x0, cz - z0, yaw)) continue;
+                const V3 a{ gx, hgt(gx, gz), gz }, bb{ gx + cell, hgt(gx + cell, gz), gz };
+                const V3 c{ gx + cell, hgt(gx + cell, gz + cell), gz + cell }, d{ gx, hgt(gx, gz + cell), gz + cell };
+                b.quad(a, bb, c, d, fill);
+                strip(gx, gz, gx + cell, gz);
+                strip(gx + cell, gz, gx + cell, gz + cell);
+                strip(gx + cell, gz + cell, gx, gz + cell);
+                strip(gx, gz + cell, gx, gz);
+            }
+        }
+    }
+
+    // The claim circle: a band a third of a tile wide, on the ground around the flag's spot. While it shows, every
+    // other flag's circle is drawn too, in white.
+    auto ring = [&](float cx, float cz, float r, const RGBA& tone) {
+        const float ro = r, ri = r - 0.3f;
+        const int segments = 96;
+        const float twoPi = 6.2831853f;
+        for (int i = 0; i < segments; ++i) {
+            const float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
+            const float o0x = cx + ro * std::cos(a0), o0z = cz + ro * std::sin(a0);
+            const float o1x = cx + ro * std::cos(a1), o1z = cz + ro * std::sin(a1);
+            const float i0x = cx + ri * std::cos(a0), i0z = cz + ri * std::sin(a0);
+            const float i1x = cx + ri * std::cos(a1), i1z = cz + ri * std::sin(a1);
+            b.quad(V3{ o0x, hgt(o0x, o0z), o0z }, V3{ o1x, hgt(o1x, o1z), o1z },
+                   V3{ i1x, hgt(i1x, i1z), i1z }, V3{ i0x, hgt(i0x, i0z), i0z }, tone);
+        }
+    };
+    if (buildPreview_.ringR > 0.0f && buildPreview_.ringTone > 0) {
+        for (const auto& o : buildPreview_.otherRings) ring(o.first, o.second, buildPreview_.ringR, RGBA{ 0.95f, 0.95f, 1.0f, 0.85f });
+        const RGBA tone = buildPreview_.ringTone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.85f }
+                        : buildPreview_.ringTone == 2 ? RGBA{ 1.0f, 0.2f, 0.2f, 0.85f }
+                                                      : RGBA{ 0.95f, 0.95f, 1.0f, 0.85f };
+        ring(buildPreview_.x, buildPreview_.z, buildPreview_.ringR, tone);
+    }
+    if (b.v.empty()) return;
+
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
+    glBindVertexArray(dynVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
+    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+}
+
 void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
     const float s = uiH_ / 720.0f;
     const bool lit = enabled && hovered;
@@ -3578,7 +3713,7 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
 }
 
 void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                                   float mx, float my, bool editable, const std::array<bool, 4>& modes) {
+                                   float mx, float my, bool editable, const std::array<bool, 5>& modes, bool hasRoutine) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
@@ -3604,15 +3739,16 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         }
     }
 
-    // The fighting modes: a lit button for each one that is on. Ranged follows the weapon, so it is never pressed; its
-    // tooltip says so, as each mode's says what it does.
+    // The modes: a lit button for each one that is on. Ranged follows the weapon, so it is never pressed; Routine can
+    // be pressed only by a unit that has one. Each tooltip says what its mode does.
     {
-        static const char* const names[4] = { "UILABEL_MODE_PASSIVE", "UILABEL_MODE_BLOCK", "UILABEL_MODE_SNEAK", "UILABEL_MODE_RANGED" };
-        static const char* const tips[4] = { "UILABEL_MODE_PASSIVE_TIP", "UILABEL_MODE_BLOCK_TIP", "UILABEL_MODE_SNEAK_TIP", "UILABEL_MODE_RANGED_TIP" };
-        for (int i = 0; i < 4; ++i) {
+        static const char* const names[5] = { "UILABEL_MODE_PASSIVE", "UILABEL_MODE_BLOCK", "UILABEL_MODE_SNEAK", "UILABEL_MODE_RANGED", "UILABEL_MODE_ROUTINE" };
+        static const char* const tips[5] = { "UILABEL_MODE_PASSIVE_TIP", "UILABEL_MODE_BLOCK_TIP", "UILABEL_MODE_SNEAK_TIP", "UILABEL_MODE_RANGED_TIP",
+                                             "UILABEL_MODE_ROUTINE_TIP" };
+        for (int i = 0; i < 5; ++i) {
             const Rect& r = L.modes[(size_t)i];
             if (r.w <= 0.0f) continue;
-            const bool pressable = editable && i < 3;
+            const bool pressable = editable && (i < 3 || (i == 4 && hasRoutine));
             const bool hot = pressable && r.contains(mx, my);
             if (hot) noteHover(r);
             const RGBA fill = modes[(size_t)i] ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f }
@@ -3621,9 +3757,10 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
             if (modes[(size_t)i]) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GREEN);
             if (hot) drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.08f });
             const std::string label = fitText(lang(names[i]), r.w - 6.0f * s, false);
-            const RGBA tint = modes[(size_t)i] ? white : (i == 3 ? RGBA{ 0.55f, 0.52f, 0.60f, 1.0f } : gray);
+            const bool dim = i == 3 || (i == 4 && !hasRoutine);
+            const RGBA tint = modes[(size_t)i] ? white : (dim ? RGBA{ 0.55f, 0.52f, 0.60f, 1.0f } : gray);
             drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listH) * 0.5f, tint);
-            noteTip(lang(tips[i]), r);
+            noteTip(lang(i == 4 && !hasRoutine ? "UILABEL_MODE_ROUTINE_NONE_TIP" : tips[i]), r);
         }
     }
 
@@ -4194,11 +4331,25 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
     }
 }
 
-void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH) {
+void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo) {
+    // Stacked as the Alt item names are, without their box: the props that share a spot (a foundation and what stands
+    // on it, or props on one tile) share one block of lines over them, each prop's name in purple with its info lines
+    // (Show Prop Info) under it in a paler purple, the lines left-aligned, the last prop nearest the props. Blocks are
+    // drawn farthest first, so a nearer one is drawn over the ones behind it.
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA purple{ 0.80f, 0.56f, 1.0f, 1.0f };
+    const RGBA pale{ 0.88f, 0.82f, 0.96f, 1.0f };
     const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
+    const float lineGap = 2.0f * s;
+    const float lineH = listTextHeight("Ag");
+    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+    cam.eye(ex, ey, ez);
+    propLabelTop_.clear();
+
+    struct Seen { Entity e; float sx, sy, dist2; bool base; };
+    // The group a prop joins: the foundation it stands on (or is), otherwise its tile
+    std::map<std::pair<int, long long>, std::vector<Seen>> groups;
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
@@ -4206,14 +4357,73 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH) {
         if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
         // Just above the top of the prop, as a unit's tag is above its picture
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
-        const std::string tag = "[" + lang(propInfo(kind).nameKey) + "]";
-        const float tw = listTextWidth(tag), th = listTextHeight(tag);
-        if (sx < -tw || sx > winW + tw || sy < -th || sy > winH + th) continue;
-        const float x = sx - tw * 0.5f, y = sy - th;
-        drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
-        drawListText(tag, x, y, purple);
+        if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
+        const bool base = propInfo(kind).foot.foundation;
+        std::pair<int, long long> key{ 1, ((long long)std::floor(tr->x) << 32) ^ (long long)(unsigned)(int)std::floor(tr->z) };
+        if (base) key = { 0, (long long)e };
+        else if (const OnBase* ob = w.get<OnBase>(e); ob && w.has<Prop>(ob->foundation)) key = { 0, (long long)ob->foundation };
+        groups[key].push_back(Seen{ e, sx, sy, dx * dx + dy * dy + dz * dz, base });
     }
+
+    struct Block {
+        float x = 0.0f, y = 0.0f, dist2 = 0.0f;
+        std::vector<std::pair<std::string, RGBA>> lines;
+    };
+    std::vector<Block> blocks;
+    for (auto& entry : groups) {
+        std::vector<Seen>& seen = entry.second;
+        // Entity order, so the names keep their places from frame to frame; the foundation last, nearest the props
+        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) {
+            if (a.base != b.base) return !a.base;
+            return a.e < b.e;
+        });
+        Block b;
+        float cx = 0.0f, top = 0.0f, maxW = 0.0f;
+        b.dist2 = seen[0].dist2;
+        for (size_t i = 0; i < seen.size(); ++i) {
+            const Seen& sn = seen[i];
+            cx += sn.sx;
+            top = i == 0 ? sn.sy : std::min(top, sn.sy);
+            b.dist2 = std::min(b.dist2, sn.dist2);
+            b.lines.push_back({ "[" + lang(propInfo(w.get<Prop>(sn.e)->kind).nameKey) + "]", purple });
+            if (showInfo) {
+                for (const std::string& line : propInfoLines(w, sn.e)) b.lines.push_back({ line, pale });
+            }
+        }
+        for (const auto& line : b.lines) maxW = std::max(maxW, listTextWidth(line.first));
+        cx /= (float)seen.size();
+        const float n = (float)b.lines.size();
+        const float blockH = n * lineH + (n - 1.0f) * lineGap;
+        b.x = cx - maxW * 0.5f;
+        b.y = top - blockH;
+        if (b.x + maxW < 0.0f || b.x > winW || b.y + blockH < 0.0f || b.y > winH) continue;
+        for (const Seen& sn : seen) propLabelTop_[sn.e] = b.y;
+        blocks.push_back(std::move(b));
+    }
+    std::stable_sort(blocks.begin(), blocks.end(), [](const Block& a, const Block& b) { return a.dist2 > b.dist2; });
+    for (const Block& b : blocks) {
+        for (size_t i = 0; i < b.lines.size(); ++i) {
+            const float y = b.y + (float)i * (lineH + lineGap);
+            drawListText(b.lines[i].first, b.x + 1.5f * s, y + 1.5f * s, shadow);
+            drawListText(b.lines[i].first, b.x, y, b.lines[i].second);
+        }
+    }
+}
+
+float Renderer::propBaseY(World& w, Entity e) const {
+    const Transform* tr = w.get<Transform>(e);
+    float y = tr ? tr->y : 0.0f;
+    if (const OnBase* ob = w.get<OnBase>(e)) {
+        const Transform* ft = w.get<Transform>(ob->foundation);
+        const Prop* fp = w.get<Prop>(ob->foundation);
+        if (ft && fp && fp->kind >= 0 && fp->kind < PROP_KIND_COUNT) {
+            // The foundation's top, held to a slab's height in case its model is missing (the pink stand-in is tall)
+            const float top = std::clamp(propTop(fp->kind), 0.0f, 0.6f);
+            y = std::max(y, ft->y + top);
+        }
+    }
+    return y;
 }
 
 float Renderer::propTop(int kind) const {

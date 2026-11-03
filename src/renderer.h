@@ -154,6 +154,23 @@ struct WorldMapMarks {
     float moveAlpha = 0.0f;       // 0 hides the X
 };
 
+// The placement preview of a prop picked on the Build tab: its footprint drawn on the ground as a red grid, green where
+// it can be placed (valid) and red where it can't. Drawn over drawFrame while a prop is picked and the mouse is on the
+// ground. kind is the PropKind; (x, z) its centre; yaw its facing.
+struct BuildPreview {
+    bool on = false;
+    int kind = 0;
+    float x = 0.0f, z = 0.0f, yaw = 0.0f;
+    bool valid = false;
+    // A claim circle drawn around (x, z) with this radius, when ringR is above 0. ringTone: 1 green (a flag that can be
+    // placed), 2 red (one that can't), 3 white (an existing flag under the mouse). It shows without a footprint too.
+    float ringR = 0.0f;
+    int ringTone = 0;
+    // Every other flag in the world, by its spot: while any claim circle shows, all of these show theirs too (white),
+    // so the claims around can be seen at once. The flag the main circle belongs to is left out.
+    std::vector<std::pair<float, float>> otherRings;
+};
+
 class Renderer {
 public:
     // Creates the GL programs, then loads every image and model. progress (0..1) is
@@ -191,6 +208,14 @@ public:
     // Tile-sized ring on the ground under the camera's pivot point, drawn over drawFrame.
     // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
+
+    // The Build tab's state, set each frame before drawing: the prop picked (-1 for none), and its placement preview
+    void setBuildSelected(int kind) { buildSelected_ = kind; }
+    void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
+    // The footprint preview on the ground (called by drawFrame)
+    void drawBuildPreview(const Terrain& t);
+    // The Build tab's body: the heading (what is picked), then one row a kind, with its select button and name
+    void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
     // Crystal marking where a right-click order was given, standing on the ground at (x, z).
     // alpha 0..1 fades it.
@@ -255,7 +280,7 @@ public:
     void drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv, float mx, float my);
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                      const Storage* storage, const Output* output, const std::string& status, int dragFrom,
-                     float mx, float my);
+                     float mx, float my, const std::string& toggleLabel = std::string());
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
@@ -302,7 +327,8 @@ public:
     // Name tags over the units: yours when players is set, every other unit's when others is set
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
     // Each prop's name over it, in brackets and purple, like a unit's tag
-    void drawPropNames(World& w, const Camera& cam, int winW, int winH);
+    // showInfo: each name gets its prop's info lines under it (owner, health, decay, lock; see propInfoLines)
+    void drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo = false);
 
     // Damage numbers over the units they hit, rising and fading from the combat system's list. They draw
     // between beginUi and endUi, after the names.
@@ -430,7 +456,8 @@ private:
     // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
     // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
     void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                             float mx, float my, bool editable, const std::array<bool, 4>& modes = {});
+                             float mx, float my, bool editable, const std::array<bool, 5>& modes = {},
+                             bool hasRoutine = false);
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom
@@ -498,7 +525,7 @@ private:
     float unitTop(World& w, Entity u);
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
-    void drawModel(const Model& m, float x, float y, float z, float targetSize);
+    void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
 
     // Text lines in the top-left corner, each on a dark panel, each in its own colour
     void drawHud(const std::vector<HudEntry>& lines, int winW, int winH);
@@ -545,6 +572,8 @@ private:
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
+    int buildSelected_ = -1;                  // the prop picked on the Build tab, or -1
+    BuildPreview buildPreview_;               // its placement preview this frame
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
     // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
     // One slot per chunk of the level, indexed by chunk id. Buffers exist only while the chunk is loaded.
@@ -631,6 +660,11 @@ private:
     const Model& propModel(int kind) const;
     // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
     float propTop(int kind) const;
+    // The height a prop stands at: its own spot on the ground, or the top of the foundation it sits on (OnBase), so a
+    // vault on a foundation is drawn on top of it rather than sunk into it
+    float propBaseY(World& w, Entity e) const;
+    // The top of each prop's block of name lines, as drawPropNames last drew it, so the progress ring sits above it
+    std::map<Entity, float> propLabelTop_;
 
     // Hover label: one cached texture per line, rebuilt only when its text changes
     TTF_Font* font_ = nullptr;

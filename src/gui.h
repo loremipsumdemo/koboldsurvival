@@ -6,6 +6,7 @@
 #include <vector>
 #include "components.h"
 #include "items.h"
+#include "props.h"
 #include "ui.h"
 
 // Layout for the in-game panels. Pure functions of the window size and the state,
@@ -529,6 +530,9 @@ struct StorageLayout {
     Rect status{ 0.0f, 0.0f, 0.0f, 0.0f };    // a forge's fuel line; zero height for other props
     Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
     Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    // The owner's lock toggle, bottom left, beside Close: shown for a prop your faction owns, when lockToggle is set
+    bool lockToggle = false;
+    Rect lockBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 // The panel for looting an Unconscious unit or a corpse: its gear in one row, then its inventory, 8 cells across, each
 // cell ITEM_CELL_PX. Then a hint, and Take All and Close.
@@ -584,7 +588,7 @@ inline LootLayout layoutLoot(int W, int H) {
 }
 
 // The storage panel. With output set (a passive crafting prop) it has a second grid, for the output, and a status line.
-inline StorageLayout layoutStorage(int W, int H, bool output = false) {
+inline StorageLayout layoutStorage(int W, int H, bool output = false, bool lockToggle = false) {
     const float s = H / 720.0f;
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
@@ -623,6 +627,12 @@ inline StorageLayout layoutStorage(int W, int H, bool output = false) {
     }
     L.hint = Rect{ x0 + pad, below + gap, panelW - 2.0f * pad, hintH };
     L.closeBtn = Rect{ x0 + (panelW - btnW) * 0.5f, y0 + panelH - pad - btnH, btnW, btnH };
+    L.lockToggle = lockToggle;
+    if (lockToggle) {
+        // With the toggle, Close moves to the right so the two sit side by side at the bottom
+        L.lockBtn = Rect{ x0 + pad, y0 + panelH - pad - btnH, btnW, btnH };
+        L.closeBtn.x = x0 + panelW - pad - btnW;
+    }
     return L;
 }
 
@@ -868,11 +878,12 @@ enum class BehaviorPart { None, Toggle, ConditionTarget, Condition, Action, Acti
 // The Unit Panel's tabs, left to right
 // Inventory holds the gear at the top and the inventory grid under it. A unit that is not in your squad (an NPC, or a
 // corpse) shows only its Profile: the other tabs are off.
-enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR, UNIT_TAB_COUNT };
+// Build is the fifth tab: the props to pick and place. It is not about a unit, so it is on whatever unit is shown.
+enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR, UNIT_TAB_BUILD, UNIT_TAB_COUNT };
 // Whether a tab of the Unit Panel can be picked for a unit: every tab for one of your squad, only Profile for any other
 // unit (an NPC, or a corpse)
 inline bool unitTabEnabled(World& w, Entity unit, int tab) {
-    return tab == UNIT_TAB_PROFILE || unit == NULL_ENTITY || w.has<Commandable>(unit);
+    return tab == UNIT_TAB_PROFILE || tab == UNIT_TAB_BUILD || unit == NULL_ENTITY || w.has<Commandable>(unit);
 }
 // The groups the Stats tab lists its stats under
 constexpr int STAT_GROUP_COUNT = 5;
@@ -899,11 +910,14 @@ struct SidebarLayout {
     Rect statsArea{ 0.0f, 0.0f, 0.0f, 0.0f };  // the stats list, in the Stats tab
     float statRowH = 0.0f;                     // the height of each row in the stats list
     Rect behaviorPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the behavior list
-    // The fighting modes over the rules, in BehaviorMode order: Passive, Block, Sneak, Ranged (shown, not pressed)
-    std::array<Rect, 4> modes{};
+    // The modes over the rules: Passive, Block, Sneak, Ranged (shown, not pressed), then Routine (pressable when the
+    // unit has one: it switches the routine on and off)
+    std::array<Rect, 5> modes{};
     std::array<Rect, 5> behaviorHeads{};       // column headings: On, Target, Condition, Action, Target
     std::vector<BehaviorRowLayout> behaviorRows;   // one per rule, highest priority first
     Rect addButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // adds a rule, under the last one
+    Rect buildHeading{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Build tab's line saying what is picked
+    std::vector<Rect> buildRows;               // the Build tab: one row per PropKind, in order. Picking one picks it.
     float scroll = 0.0f;                       // the scroll offset used, in pixels, within 0..maxScroll
     float maxScroll = 0.0f;                    // how far the picked tab can scroll
 };
@@ -948,7 +962,10 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float modeRowH = 30.0f * s;   // the row of fighting modes under the heading, with a gap under it
     const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
-    const float contents[UNIT_TAB_COUNT] = { um.inventoryTabH(), cardH, statsH, behaviorPanelH };
+    // The Build tab: the heading line, then a row for Destroy and each prop kind, then a little space under the last
+    const float buildRowH = 22.0f * s, buildHeadH = 22.0f * s;
+    const float buildH = buildHeadH + buildRowCount() * (buildRowH + rowGap) + innerPad;
+    const float contents[UNIT_TAB_COUNT] = { um.inventoryTabH(), cardH, statsH, behaviorPanelH, buildH };
 
     const float bodyVis = std::max(0.0f, openRect.h - barH - tabH);
     const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
@@ -1002,6 +1019,13 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         L.statsArea = Rect{ L.panel.x + pad, top, width - 2.0f * pad, statsH };
         L.statRowH = statRowH;
     }
+    if (tab == UNIT_TAB_BUILD) {
+        L.buildHeading = Rect{ L.panel.x + pad, top, width - 2.0f * pad, buildHeadH };
+        for (int i = 0; i < buildRowCount(); ++i) {
+            L.buildRows.push_back(Rect{ L.panel.x + pad, top + buildHeadH + i * (buildRowH + rowGap),
+                                        width - 2.0f * pad, buildRowH });
+        }
+    }
     if (tab == UNIT_TAB_BEHAVIOR) {
         // Behaviors: the on box has a fixed width, and the four option columns share what the priority buttons
         // leave, in the proportions below. The buttons sit at the right end of each row.
@@ -1024,10 +1048,10 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
             cursor += colWidth[i + 1];
         }
         const float buttonsX = rowX + colsW + gap;
-        // The fighting modes: four equal buttons across the panel, under its heading
+        // The modes: five equal buttons across the panel, under its heading
         {
-            const float mGap = 4.0f * s, mW = (rowW - 3.0f * mGap) / 4.0f;
-            for (int i = 0; i < 4; ++i) {
+            const float mGap = 4.0f * s, mW = (rowW - 4.0f * mGap) / 5.0f;
+            for (int i = 0; i < 5; ++i) {
                 L.modes[(size_t)i] = Rect{ rowX + i * (mW + mGap), L.behaviorPanel.y + headH, mW, modeRowH - 8.0f * s };
             }
         }

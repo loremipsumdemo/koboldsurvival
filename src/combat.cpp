@@ -490,7 +490,7 @@ void grantXp(World& w, Entity e, int stat, float amount, const std::string& why)
     if (whole < 1.0f) return;
     const int before = levelOf(*st, stat);
     addXp(*st, stat, (int)whole);
-    if (levelOf(*st, stat) > before) queueSound(Sfx::LevelUp);
+    if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);   // only yours are heard
     if (!why.empty()) {
         const LogKind kind = stat == STAT_ATHLETICS ? LogKind::XpAthletics
                            : stat == STAT_ENDURANCE ? LogKind::XpEndurance

@@ -40,6 +40,8 @@
 #include "party.h"
 #include "party_ui.h"
 #include "behavior.h"
+#include "build.h"
+#include "claims.h"
 #include "combat.h"
 #include "equip.h"
 #include "textcase.h"
@@ -146,6 +148,13 @@ constexpr float MOVE_MARK_SECONDS = 3.0f;  // how long the green X stays on the 
 constexpr float TALK_COOLDOWN = 1.0f;     // seconds after a talk ends before another one can start
 float talkCooldown = 0.0f;                // seconds of that cooldown left
 bool paused = false;                      // paused with Space, until Space is pressed again
+// The Build tab: the prop picked to place (a PropKind, or -1 for none), its facing while placed, and the mouse's x last
+// frame, which turns it while R is held
+int buildKind = -1;
+float buildYaw = 0.0f;
+float buildPrevX = -1.0f;
+// Radians a pixel of mouse movement turns a prop being placed
+constexpr float BUILD_TURN_PER_PIXEL = 0.01f;
 std::vector<TradeGhost> tradeNpc;         // items shown on the NPC's side of the trade
 std::vector<TradeGhost> tradePlayer;      // items shown on your side of the trade
 int tradeNpcDrag = -1;                    // the NPC's inventory slot being dragged into the trade, or -1
@@ -202,8 +211,14 @@ PropUse storageUse(World& w) {
 }
 
 // The storage panel's layout: one grid for a barrel or a campfire, an input and an output grid for a forge
+// A lock the player's faction owns: its owner may flip it open or shut from the storage panel
+bool ownedLockOf(World& w, Entity prop) {
+    const Lock* l = w.get<Lock>(prop);
+    return l && w.has<Owner>(prop) && l->faction == FACTION_PLAYER;
+}
+
 StorageLayout storageLayout(World& w, int W, int H) {
-    return layoutStorage(W, H, w.has<Output>(storageProp));
+    return layoutStorage(W, H, w.has<Output>(storageProp), ownedLockOf(w, storageProp));
 }
 
 // A panel slot of the open storage (see storageDrag), or null if there is no such slot
@@ -768,6 +783,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     freeTrade = false;
     paused = false;
     rng.gen.seed(seed);
+    buildKind = -1;   // a new level starts with nothing picked to build
     resetPlayerReputation();   // a new game starts every faction at its default standing
     setupWorld(world, terrain, rng);
     // log.txt: how many of each prop kind went down, and how far the nearest is from the first unit
@@ -899,6 +915,35 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, GroundItem{ g.item, g.count });
         }
     }
+    // Routines: their props are found by where they stand (a camp's props are placed again from the seed, on the same
+    // spots). One whose props are not there any more is dropped.
+    {
+        auto propNear = [&](float x, float z, bool storage) {
+            Entity best = NULL_ENTITY;
+            float bestD2 = 0.25f;   // within half a tile
+            for (Entity p : world.view<Prop, Transform>()) {
+                const PropUse use = propInfo(world.get<Prop>(p)->kind).use;
+                if (storage ? !world.has<Storage>(p) : use != PropUse::Resource) continue;
+                const Transform* pt = world.get<Transform>(p);
+                const float d2 = (pt->x - x) * (pt->x - x) + (pt->z - z) * (pt->z - z);
+                if (d2 <= bestD2) {
+                    best = p;
+                    bestD2 = d2;
+                }
+            }
+            return best;
+        };
+        for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
+            const SaveUnit& u = d.units[i];
+            if (!u.hasRoutine) continue;
+            Routine r;
+            r.store = propNear(u.storeX, u.storeZ, true);
+            r.gather = propNear(u.gatherX, u.gatherZ, false);
+            r.item = u.routineItem;
+            r.on = u.routineOn;
+            if (r.store != NULL_ENTITY && r.gather != NULL_ENTITY) world.add(restoredUnits[i], r);
+        }
+    }
     // The props' states below name each prop by its serial. A save made when the level laid its props out another way
     // (other kinds, or another number of each) would put them on the wrong props, so they are left out.
     if (d.propLayout != PROP_LAYOUT) {
@@ -1024,6 +1069,19 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         if (const Behaviors* b = w.get<Behaviors>(u)) {
             su.hasBehaviors = true;
             su.behaviors = b->rules;
+        }
+        if (const Routine* r = w.get<Routine>(u)) {
+            const Transform* st = w.get<Transform>(r->store);
+            const Transform* gt = w.get<Transform>(r->gather);
+            if (st && gt) {
+                su.hasRoutine = true;
+                su.routineOn = r->on;
+                su.routineItem = r->item;
+                su.storeX = st->x;
+                su.storeZ = st->z;
+                su.gatherX = gt->x;
+                su.gatherZ = gt->z;
+            }
         }
         if (const Inventory* inv = w.get<Inventory>(u)) {
             for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -3048,8 +3106,14 @@ int main(int, char**) {
                 }
             } else if (const Prop* p = world.get<Prop>(target)) {
                 const PropUse use = propInfo(p->kind).use;
-                // A locked prop offers only Unlock, until it is open
-                if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) return std::vector<MenuAction>{ MenuAction::Unlock };
+                // A prop locked to all the selected units offers only Unlock, until it is open. One of their own
+                // faction's, or inside their faction's claim, is open to them.
+                if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) {
+                    const std::vector<Entity> sel = selectedUnits(world);
+                    bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
+                    for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
+                    if (shut) return std::vector<MenuAction>{ MenuAction::Unlock };
+                }
                 // A bed or bedroll, with a selected unit carrying someone: put them in it
                 bool carrying = false;
                 for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
@@ -3648,6 +3712,12 @@ int main(int, char**) {
                         break;
                     }
                 }
+                // While a prop is picked to build, Escape puts the pick down, and does nothing else
+                if (screen == Screen::Playing && buildKind != BUILD_NONE && e.key.key == SDLK_ESCAPE) {
+                    buildKind = -1;
+                    playSfx(Sfx::UiBack);
+                    break;
+                }
                 if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
                     mapOpen = !mapOpen;   // M opens and closes the world map
                     break;
@@ -3792,6 +3862,12 @@ int main(int, char**) {
             }
 
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                // While a prop is picked to build, a right click puts the pick down and does nothing else
+                if (buildKind != BUILD_NONE && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
+                    buildKind = -1;
+                    playSfx(Sfx::UiBack);
+                    break;
+                }
                 if (panelOpen) {
                     // The popout takes all clicks while it's open
                     if (e.button.button == SDL_BUTTON_LEFT) {
@@ -4096,7 +4172,11 @@ int main(int, char**) {
                     const StorageLayout stl = storageLayout(world, winW, winH);
                     const float x = e.button.x, y = e.button.y;
                     if (stl.panel.contains(x, y)) {
-                        if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {
+                        if (e.button.button == SDL_BUTTON_LEFT && stl.lockToggle && stl.lockBtn.contains(x, y)) {
+                            // The owner opens the lock to everyone, or shuts it again for outsiders to pick
+                            if (Lock* l = world.get<Lock>(storageProp)) l->locked = !l->locked;
+                            playSfx(Sfx::UiToggle);
+                        } else if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {
                             closeStorage();
                             playSfx(Sfx::UiBack);
                         } else {
@@ -4286,6 +4366,24 @@ int main(int, char**) {
                         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
                         const bool onSidebar = sl.panel.contains(mx, my);
                         if (onSidebar) {
+                            // The Build tab: a row picks its prop to place, and picking the same one again puts it down
+                            if (sl.open && sl.tab == UNIT_TAB_BUILD) {
+                                for (size_t i = 0; i < sl.buildRows.size(); ++i) {
+                                    if (!sl.buildRows[i].contains(mx, my)) continue;
+                                    const int kind = buildRowKind((int)i);
+                                    if (kind == BUILD_NONE) break;
+                                    if (buildKind == kind) {
+                                        buildKind = BUILD_NONE;
+                                    } else {
+                                        buildKind = kind;
+                                        showNotice(lang(kind == BUILD_DESTROY ? "UILABEL_BUILD_DESTROY_HINT"
+                                                                              : "UILABEL_BUILD_PLACE_HINT"), 4.0f);
+                                    }
+                                    playSfx(Sfx::UiClick);
+                                    break;
+                                }
+                                break;
+                            }
                             // Sort, add and the behavior rows change your unit, when the sidebar shows one. They
                             // come before the drags, which start on the inventory and gear.
                             if (shownIsYours()) {
@@ -4324,6 +4422,14 @@ int main(int, char**) {
                                         if (sl.modes[(size_t)i].contains(mx, my)) mode = i;
                                     }
                                     if (sl.modes[3].contains(mx, my)) break;
+                                    // Routine: on and off, for a unit that has one
+                                    if (sl.modes[4].contains(mx, my)) {
+                                        if (const Routine* r = world.get<Routine>(shown)) {
+                                            setRoutineOn(world, shown, !r->on);
+                                            playSfx(Sfx::UiClick);
+                                        }
+                                        break;
+                                    }
                                     if (mode >= 0) {
                                         if (Behaviors* b = world.get<Behaviors>(shown)) {
                                             bool& flag = mode == 0 ? b->passive : mode == 1 ? b->block : b->sneak;
@@ -4384,6 +4490,43 @@ int main(int, char**) {
                                 followUnit = u;
                             }
                             break;
+                        }
+                        break;
+                    }
+
+                    // While a prop is picked to build, a left click on the ground places it. A refusal says why, and
+                    // the pick stays, so another spot can be tried. The click finds the same spot the preview shows.
+                    if (buildKind != BUILD_NONE && dialogueUnit == NULL_ENTITY && !mapOpen) {
+                        if (buildKind == BUILD_DESTROY) {
+                            // Destroy takes down the first built prop under the mouse: a foundation, a building. Flags
+                            // are not taken down; they wear away with their vault. Other factions' buildings cost standing.
+                            bool took = false;
+                            for (Entity e : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
+                                if (!world.has<Owner>(e)) continue;
+                                if (world.get<Prop>(e)->kind == PROP_FLAG) {
+                                    refuse(lang("MISC_DESTROY_FLAG"));
+                                    took = true;
+                                    break;
+                                }
+                                const int owner = world.get<Owner>(e)->faction;
+                                if (destroyBuilding(world, e)) {
+                                    if (owner != FACTION_PLAYER) changePlayerReputation(owner, -REP_DESTROY_PENALTY);
+                                    playSfx(Sfx::Drop);
+                                    took = true;
+                                    break;
+                                }
+                            }
+                            if (!took) refuse(lang("MISC_DESTROY_NOTHING"));
+                        } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
+                            float bx = 0.0f, bz = 0.0f;
+                            snapBuildSpot(buildKind, hit->first, hit->second, bx, bz);
+                            const BuildCheck why = checkBuildSpot(world, terrain, buildKind, bx, bz, buildYaw);
+                            if (why == BuildCheck::Ok) {
+                                placeBuiltProp(world, terrain, buildKind, bx, bz, buildYaw);
+                                playSfx(Sfx::UiClick);
+                            } else {
+                                refuse(lang(buildRefusalKey(why)));
+                            }
                         }
                         break;
                     }
@@ -4839,6 +4982,7 @@ int main(int, char**) {
             // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
             // prop had all its workers, or a campfire had nothing to cook or no room.
             for (const PropArrival& a : propOrderSystem(world)) {
+                if (a.routine) continue;   // a routine's step: nothing to tell you, and no panel to open
                 const Prop* p = world.get<Prop>(a.prop);
                 if (!p) continue;
                 const PropInfo& info = propInfo(p->kind);
@@ -4880,6 +5024,8 @@ int main(int, char**) {
                                                                                          : itemNameOf(info.input) }));
                 }
             }
+            // Units on a routine (a camp's woodcutter) take their next step: to the tree, or to the vault with a load
+            routineSystem(world, terrain, dt);
             // Picking up, putting down and carrying Unconscious units; looters that got there open the panel
             const CarryEvents carried = carrySystem(world);
             for (const auto& [looter, looted] : carried.loot) {
@@ -4941,6 +5087,8 @@ int main(int, char**) {
             }
             // Passive crafting props (the forge) burn their fuel and fill their output by themselves
             passiveCraftSystem(world, gameSecs);
+            // Flags and foundations wear when their vault is dry; what is worn through breaks into debris
+            claimDecaySystem(world, gameSecs);
             // While a prop is worked, its working sound now and then: the pick on the ore, the axe on the tree, the
             // lockpick in the lock. Only props near the camera are heard, and each kind of sound plays at most once
             // at a time.
@@ -5086,14 +5234,67 @@ int main(int, char**) {
             }
 
             for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
-                // A locked prop says so: "Locked Chest (Locked)"
+                // A prop locked against the player says so: "Chest (Locked)". The player's own, or one in a player
+                // claim, does not.
                 const std::string name = lang(propInfo(world.get<Prop>(e)->kind).nameKey);
-                const Lock* lock = world.get<Lock>(e);
-                under.push_back({ lock && lock->locked ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
+                under.push_back({ lockShutFor(world, e, NULL_ENTITY) ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
+                // A flag also shows its faction, health and vault
+                for (const std::string& line : flagInfoLines(world, e)) under.push_back({ line, HUD_PROP_COLOR });
             }
 
             for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) hud.push_back(under[i]);
             if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
+        }
+
+        // ---- Build placement: while a prop is picked, its footprint follows the mouse over the ground. Holding R,
+        // the mouse's left and right movement turns it. The preview shows exactly what a click would do. ----
+        {
+            const bool* keys = SDL_GetKeyboardState(nullptr);
+            float bmx = 0.0f, bmy = 0.0f;
+            SDL_GetMouseState(&bmx, &bmy);
+            const bool placing = buildKind >= 0 && screen == Screen::Playing && !panelOpen && !mapOpen
+                                 && dialogueUnit == NULL_ENTITY && !optimizeAllOpen;
+            if (placing && keys[SDL_SCANCODE_R] && buildPrevX >= 0.0f) buildYaw += (bmx - buildPrevX) * BUILD_TURN_PER_PIXEL;
+            buildPrevX = bmx;
+            BuildPreview bp;
+            if (placing && !overPanels(bmx, bmy, winW, winH)) {
+                if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
+                    bp.on = true;
+                    bp.kind = buildKind;
+                    bp.yaw = buildYaw;
+                    snapBuildSpot(buildKind, hit->first, hit->second, bp.x, bp.z);
+                    bp.valid = checkBuildSpot(world, terrain, buildKind, bp.x, bp.z, buildYaw) == BuildCheck::Ok;
+                }
+            }
+            if (bp.on && buildKind == PROP_FLAG) {
+                bp.ringR = CLAIM_RADIUS;
+                bp.ringTone = bp.valid ? 1 : 2;
+            }
+            Entity hoverFlag = NULL_ENTITY;
+            // Not placing anything: an existing flag under the mouse shows its claim circle
+            if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !overPanels(bmx, bmy, winW, winH)) {
+                for (Entity e : renderer.propsAtPixel(world, cam, bmx, bmy, winW, winH)) {
+                    const Prop* fp = world.get<Prop>(e);
+                    const Transform* ft = world.get<Transform>(e);
+                    if (!fp || !ft || fp->kind != PROP_FLAG) continue;
+                    bp.ringR = CLAIM_RADIUS;
+                    bp.ringTone = 3;
+                    bp.x = ft->x;
+                    bp.z = ft->z;
+                    hoverFlag = e;
+                    break;
+                }
+            }
+            // When one claim circle shows, every flag's circle shows with it
+            if (bp.ringR > 0.0f) {
+                for (Entity e : world.view<Prop, Transform>()) {
+                    if (e == hoverFlag || world.get<Prop>(e)->kind != PROP_FLAG) continue;
+                    const Transform* ft = world.get<Transform>(e);
+                    bp.otherRings.push_back({ ft->x, ft->z });
+                }
+            }
+            renderer.setBuildPreview(bp);
+            renderer.setBuildSelected(buildKind);
         }
 
         // ---- Render ----
@@ -5203,7 +5404,7 @@ int main(int, char**) {
                 else if (!world.has<Commandable>(e)) continue;
                 mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, kind });
             }
-            if (settings.showPropNames) renderer.drawPropNames(world, cam, winW, winH);
+            if (settings.showPropNames) renderer.drawPropNames(world, cam, winW, winH, settings.showPropInfo);
             if (settings.showUnitNames || settings.showNpcNames) {
                 renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
             }
@@ -5327,24 +5528,29 @@ int main(int, char**) {
                 if (sinfo.use == PropUse::Crafting) {
                     hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) });
                 } else if (sinfo.use == PropUse::PassiveCrafting) {
-                    hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
+                    if (sinfo.item == 0) hint = langf("UILABEL_UPKEEP_HINT", { itemNameOf(sinfo.input) });
+                    else hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
                                                            std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                            itemNameOf(sinfo.item) });
                     const Fuel* fuel = world.get<Fuel>(storageProp);
                     switch (passiveStateOf(world, storageProp)) {
                     case PassiveState::OutputFull: status = lang("MISC_OUTPUT_FULL"); break;
-                    case PassiveState::NoFuel: status = lang("MISC_NO_FUEL"); break;
-                    case PassiveState::Burning:
-                        status = langf("MISC_FUEL_LEFT", { std::to_string((int)std::ceil((fuel ? fuel->hours : 0.0) * 60.0 - 1e-6)) });
+                    case PassiveState::NoFuel: status = lang(sinfo.item == 0 ? "MISC_NO_UPKEEP" : "MISC_NO_FUEL"); break;
+                    case PassiveState::Burning: {
+                        const std::string mins = std::to_string((int)std::ceil((fuel ? fuel->hours : 0.0) * 60.0 - 1e-6));
+                        status = langf(sinfo.item == 0 ? "MISC_UPKEEP_LEFT" : "MISC_FUEL_LEFT", { mins });
                         break;
+                    }
                     }
                 } else if (sinfo.accepts != ItemFilter::Any) {
                     hint = langf("UILABEL_STORAGE_TAKES", { lang(itemFilterKey(sinfo.accepts)) }) + " " + lang("UILABEL_STORAGE_HINT");
                 } else {
                     hint = lang("UILABEL_STORAGE_HINT");
                 }
+                const Lock* ownLock = ownedLockOf(world, storageProp) ? world.get<Lock>(storageProp) : nullptr;
                 renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), hint, st,
-                                     world.get<Output>(storageProp), status, storageDrag, mouseX, mouseY);
+                                     world.get<Output>(storageProp), status, storageDrag, mouseX, mouseY,
+                                     ownLock ? lang(ownLock->locked ? "UILABEL_UNLOCK" : "UILABEL_LOCK") : std::string());
                 if (const ItemStack* dragged = storageSlot(world, storageDrag); dragged && dragged->item != 0) {
                     renderer.drawDraggedStack(mouseX, mouseY, dragged->item, dragged->count);
                 }
