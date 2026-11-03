@@ -1,4 +1,3 @@
-# pip install dearpygui trimesh numpy scipy pillow moderngl fast-simplification DearPyGui-DragAndDrop
 """
 GLB Check - inspect and optimize .glb / .gltf models.
 
@@ -6,7 +5,9 @@ Open a model (button, Ctrl+O, drag-and-drop on Windows, or pass a path on the
 command line) to get a lit, textured preview, key stats and a list of common
 asset problems. The Optimize panel can then cut the polygon count, shrink and
 re-encode textures, clean up geometry and fix units / pivot, with a side-by-side
-before/after comparison and one-click save to a new .glb.
+before/after comparison and one-click save to a new .glb. "Batch optimize a
+folder" applies the same settings to every model in a folder (no preview),
+with a progress bar, writing results and a CSV report to an output folder.
 
 Requirements:
     pip install dearpygui trimesh numpy scipy pillow moderngl fast-simplification
@@ -89,7 +90,8 @@ PRESETS = {
 TEX_ATTRS = ("baseColorTexture", "metallicRoughnessTexture", "normalTexture",
              "occlusionTexture", "emissiveTexture", "image")
 JPEG_QUALITY = 90
-INPUT_TAGS = ("opt_target", "opt_min_tris")
+BATCH_MODES = ["Keep a percentage", "Cap triangles per file"]
+INPUT_TAGS = ("opt_target", "opt_min_tris", "batch_in", "batch_out", "batch_cap")
 
 STATE = {
     "renderer": None,
@@ -136,6 +138,19 @@ STATE = {
     "opt_bytes": None,
     "opt_opts": None,
     "saved_path": None,
+    # batch
+    "batch_running": False,
+    "batch_cancel": False,
+    "batch_progress": (0.0, ""),
+    "batch_events": [],
+    "batch_results": [],
+    "batch_started": 0.0,
+    "dir_target": None,
+    "batch_out_auto": True,
+    "batch_scan_at": None,
+    "batch_total": 0,
+    "batch_out_dir": None,
+    "batch_report": None,
 }
 LOCK = threading.Lock()
 
@@ -158,6 +173,10 @@ def fmt_len(v):
 
 
 def fmt_mb(b):
+    if b < 1024 * 1024:
+        return f"{max(b, 0) / 1024:.0f} KB" if b >= 1024 else f"{int(b)} B"
+    if b >= 1024 ** 3:
+        return f"{b / 1024 ** 3:.2f} GB"
     return f"{b / 1024 / 1024:.2f} MB"
 
 
@@ -686,7 +705,7 @@ def optimize_scene(scene, opts, progress):
     for node in scene.graph.nodes_geometry:
         uses[scene.graph[node][1]] = uses.get(scene.graph[node][1], 0) + 1
 
-    progress("Preparing geometry...")
+    progress("Preparing geometry...", 0.15)
     data = {}
     for n in names:
         d = _extract(scene.geometry[n])
@@ -705,7 +724,7 @@ def optimize_scene(scene, opts, progress):
         if ratio < 0.999:
             todo = [n for n in names if len(data[n]["faces"]) >= opts["min_tris"]]
             for i, n in enumerate(todo):
-                progress(f"Decimating mesh {i + 1}/{len(todo)}...")
+                progress(f"Decimating mesh {i + 1}/{len(todo)}...", 0.25 + 0.45 * i / len(todo))
                 t = max(4, int(len(data[n]["faces"]) * ratio))
                 try:
                     data[n] = _decimate(data[n], t, opts["borders"], opts["smooth_angle"])
@@ -723,7 +742,7 @@ def optimize_scene(scene, opts, progress):
     elif opts["ratio"] < 0.999:
         log.append("Polygon reduction skipped: pip install fast-simplification")
 
-    progress("Processing textures...")
+    progress("Processing textures...", 0.72)
     img_cache, mat_cache = {}, {}
     new = trimesh.Scene(base_frame=scene.graph.base_frame)
     for n, g in scene.geometry.items():
@@ -754,7 +773,7 @@ def optimize_scene(scene, opts, progress):
 def _optimize_worker(scene, opts, name, folder):
     t0 = time.perf_counter()
 
-    def progress(msg):
+    def progress(msg, frac=None):
         STATE["opt_progress"] = msg
 
     try:
@@ -771,6 +790,135 @@ def _optimize_worker(scene, opts, name, folder):
         result = ("err", e, None, [])
     with LOCK:
         STATE["opt_result"] = result
+
+
+# =====================================================================
+# Batch optimizer (worker thread, no preview)
+# =====================================================================
+class BatchCancelled(Exception):
+    pass
+
+
+def find_models(folder, recursive, exclude=None):
+    exclude = os.path.normcase(os.path.abspath(exclude)) if exclude else None
+    found = []
+    for root, dirs, files in os.walk(folder):
+        if exclude:
+            dirs[:] = [d for d in dirs
+                       if os.path.normcase(os.path.abspath(os.path.join(root, d))) != exclude]
+        dirs.sort()
+        for f in sorted(files):
+            if f.lower().endswith((".glb", ".gltf")):
+                found.append(os.path.join(root, f))
+        if not recursive:
+            break
+    return found
+
+
+def rendered_tris(scene):
+    total = 0
+    for node in scene.graph.nodes_geometry:
+        g = scene.geometry.get(scene.graph[node][1])
+        if isinstance(g, trimesh.Trimesh):
+            total += len(g.faces)
+    return total
+
+
+def _batch_worker(files, in_root, out_root, base_opts, budget, overwrite):
+    n = len(files)
+    used_outputs = set()
+    all_results = []
+
+    def push(event):
+        if event[0] == "result":
+            all_results.append(event[1])
+        with LOCK:
+            STATE["batch_events"].append(event)
+
+    for i, path in enumerate(files):
+        rel = os.path.relpath(path, in_root)
+        res = {"file": rel, "status": "", "tris_before": "", "tris_after": "",
+               "bytes_before": "", "bytes_after": "", "notes": "", "output": ""}
+
+        def progress(msg, frac=None, _i=i, _rel=rel):
+            if STATE["batch_cancel"]:
+                raise BatchCancelled()
+            if frac is not None:
+                STATE["batch_progress"] = ((_i + frac) / n, f"{_rel}: {msg}")
+
+        try:
+            out = os.path.join(out_root, os.path.splitext(rel)[0] + ".glb")
+            if os.path.normcase(out) in used_outputs:  # a.glb and a.gltf side by side
+                out = os.path.join(out_root, os.path.splitext(rel)[0] + "_gltf.glb")
+            used_outputs.add(os.path.normcase(out))
+            res["output"] = out
+            if os.path.exists(out) and not overwrite:
+                res["status"] = "Skipped"
+                res["notes"] = "Output already exists"
+                push(("result", res))
+                continue
+
+            progress("Loading...", 0.02)
+            js = read_gltf_json(path)
+            info = gltf_info(js)
+            res["bytes_before"] = model_size(path, js)
+            try:
+                scene = trimesh.load(path, force="scene")
+            except Exception as e:
+                if "KHR_draco_mesh_compression" in info["extensions"]:
+                    raise RuntimeError("Draco-compressed, not supported") from e
+                raise
+            tris = rendered_tris(scene)
+            if tris == 0:
+                raise RuntimeError("No triangle meshes")
+            res["tris_before"] = tris
+
+            opts = dict(base_opts)
+            opts["orig_tris"] = tris
+            if budget[0] == "pct":
+                opts["ratio"] = budget[1] / 100.0
+            else:
+                opts["ratio"] = min(1.0, budget[1] / tris)
+            progress("Optimizing...", 0.1)
+            new, log = optimize_scene(scene, opts, progress)
+            progress("Writing GLB...", 0.85)
+            data = new.export(file_type="glb", include_normals=True)
+            res["tris_after"] = rendered_tris(new)
+            progress("Saving...", 0.95)
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            with open(out, "wb") as f:
+                f.write(data)
+            res["bytes_after"] = len(data)
+            notes = list(log)
+            lost = [k for k in ("animations", "skins", "morphs") if info.get(k)]
+            if lost:
+                notes.append("Dropped " + ", ".join(lost))
+            res["notes"] = " ".join(notes)
+            res["status"] = "Done"
+        except BatchCancelled:
+            res["status"] = "Cancelled"
+            push(("result", res))
+            break
+        except Exception as e:
+            res["status"] = "Failed"
+            res["notes"] = str(e) or type(e).__name__
+        push(("result", res))
+        STATE["batch_progress"] = ((i + 1) / n, rel)
+
+    report = None
+    try:
+        import csv
+        os.makedirs(out_root, exist_ok=True)
+        report = os.path.join(out_root, "batch_report.csv")
+        rows = all_results
+        with open(report, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=["file", "status", "tris_before", "tris_after",
+                                              "bytes_before", "bytes_after", "notes", "output"])
+            w.writeheader()
+            w.writerows(rows)
+    except Exception:
+        report = None
+    push(("done", report))
 
 
 # =====================================================================
@@ -1252,7 +1400,7 @@ def open_model(path):
     if not os.path.isfile(path):
         set_status(f"File not found: {path}", "warn")
         return
-    if STATE["loading"] or STATE["opt_running"]:
+    if STATE["loading"] or STATE["opt_running"] or STATE["batch_running"]:
         set_status("Busy - wait for the current job to finish.", "warn")
         return
     STATE["loading"] = True
@@ -1439,10 +1587,14 @@ def on_opt_changed(*_):
     if dpg.get_value("opt_preset") != "Custom":
         dpg.set_value("opt_preset", "Custom")
     update_stale_hint()
+    update_batch_summary()
 
 
 def set_target(tris):
-    total = max(orig_tris(), 1)
+    total = orig_tris()
+    if not total:  # no model loaded: the target is just a number for batch use
+        dpg.set_value("opt_target", int(max(tris, 1)))
+        return
     tris = int(min(max(tris, 1), total))
     dpg.set_value("opt_target", tris)
     dpg.set_value("opt_pct", max(1, int(round(100 * tris / total))))
@@ -1464,11 +1616,20 @@ def apply_preset(sender, name):
     if not p:
         return
     total = orig_tris()
-    set_target(p["target"] if "target" in p else total * p["pct"] / 100)
+    if "target" in p:
+        set_target(p["target"])
+        dpg.set_value("batch_cap", p["target"])
+        dpg.set_value("batch_mode", BATCH_MODES[1])
+    else:
+        dpg.set_value("opt_pct", p["pct"])
+        set_target(total * p["pct"] / 100 if total else dpg.get_value("opt_target"))
+        dpg.set_value("batch_pct", p["pct"])
+        dpg.set_value("batch_mode", BATCH_MODES[0])
     dpg.set_value("opt_tex_max", p["tex"])
     dpg.set_value("opt_tex_pot", p["pot"])
     dpg.set_value("opt_tex_fmt", p["fmt"])
     update_stale_hint()
+    update_batch_summary()
 
 
 def reset_optimizer_ui(rep):
@@ -1493,7 +1654,7 @@ def reset_optimizer_ui(rep):
 
 
 def run_optimize():
-    if STATE["scene"] is None or STATE["opt_running"] or STATE["loading"]:
+    if STATE["scene"] is None or STATE["opt_running"] or STATE["loading"] or STATE["batch_running"]:
         return
     opts = get_opts()
     STATE["opt_running"] = True
@@ -1605,6 +1766,374 @@ def toggle_version():
     if "Optimized" not in STATE["versions"]:
         return
     show_version("Original" if STATE["view"] == "Optimized" else "Optimized")
+
+
+# =====================================================================
+# Batch UI
+# =====================================================================
+def open_folder(path):
+    if not path or not os.path.isdir(path):
+        return
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(path)  # noqa: S606 - opens Explorer
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+    except OSError as e:
+        set_status(f"Could not open folder: {e}", "warn")
+
+
+def _clean_path(p):
+    p = (p or "").strip().strip('"')
+    return os.path.abspath(os.path.expanduser(p)) if p else ""
+
+
+def opts_summary(o):
+    parts = []
+    if fast_simplification is None:
+        parts.append("no polygon reduction (fast-simplification missing)")
+    else:
+        parts.append("protect edges" if o["borders"] else "edges not protected")
+        parts.append(f"skip meshes under {o['min_tris']} tris")
+    parts.append("clean geometry" if o["clean"] else "no cleanup")
+    tex = []
+    if o["tex_max"]:
+        tex.append(f"max {o['tex_max']}px")
+    if o["tex_fmt"] != "Keep":
+        tex.append(o["tex_fmt"].split()[0])
+    if o["tex_pot"]:
+        tex.append("power of two")
+    parts.append("textures " + (", ".join(tex) if tex else "unchanged"))
+    if o["scale"] != 1.0:
+        parts.append(f"scale x{o['scale']:g}")
+    if o["center"]:
+        parts.append("center on origin")
+    if o["ground"]:
+        parts.append("place on ground")
+    return "Uses the Optimize panel settings: " + "; ".join(parts) + "."
+
+
+def update_batch_summary():
+    if dpg.does_item_exist("batch_settings"):
+        dpg.set_value("batch_settings", opts_summary(get_opts()))
+    if dpg.does_item_exist("batch_mode"):
+        pct = dpg.get_value("batch_mode") == BATCH_MODES[0]
+        dpg.configure_item("batch_pct", show=pct)
+        dpg.configure_item("batch_cap", show=not pct)
+
+
+def open_batch_window():
+    if STATE["path"] and not dpg.get_value("batch_in"):
+        dpg.set_value("batch_in", os.path.dirname(STATE["path"]))
+        on_batch_in_changed()
+    update_batch_summary()
+    scan_batch()
+    dpg.configure_item("batch_win", show=True)
+    with contextlib.suppress(Exception):
+        dpg.focus_item("batch_win")
+
+
+def on_batch_in_changed(*_):
+    folder = _clean_path(dpg.get_value("batch_in"))
+    if folder and STATE.get("batch_out_auto", True):
+        dpg.set_value("batch_out", os.path.join(folder, "optimized"))
+    STATE["batch_scan_at"] = time.time() + 0.4  # rescan once typing pauses
+
+
+def on_batch_out_changed(*_):
+    STATE["batch_out_auto"] = False
+    STATE["batch_scan_at"] = time.time() + 0.4
+
+
+def scan_batch():
+    folder = _clean_path(dpg.get_value("batch_in"))
+    if not folder or not os.path.isdir(folder):
+        dpg.set_value("batch_found", "Choose a folder that contains .glb / .gltf files."
+                      if not folder else "Input folder not found.")
+        dpg.configure_item("batch_found", color=COL_MUTED if not folder else LEVEL_COLORS["warn"])
+        return []
+    files = find_models(folder, dpg.get_value("batch_recursive"),
+                        exclude=_clean_path(dpg.get_value("batch_out")))
+    size = 0
+    for f in files:
+        with contextlib.suppress(OSError):
+            size += os.path.getsize(f)
+    if files:
+        dpg.set_value("batch_found", f"{len(files)} model(s) found, {fmt_mb(size)}"
+                      + (" (+ external .bin/textures)" if any(f.lower().endswith(".gltf")
+                                                              for f in files) else ""))
+        dpg.configure_item("batch_found", color=COL_TEXT)
+    else:
+        dpg.set_value("batch_found", "No .glb / .gltf files in this folder"
+                      + ("" if dpg.get_value("batch_recursive") else " (try Include subfolders)") + ".")
+        dpg.configure_item("batch_found", color=LEVEL_COLORS["warn"])
+    return files
+
+
+def browse_dir(target):
+    STATE["dir_target"] = target
+    current = _clean_path(dpg.get_value("batch_in" if target == "in" else "batch_out"))
+    if current and os.path.isdir(current):
+        dpg.configure_item("dir_dialog", default_path=current)
+    STATE["dialog_open"] = True
+    dpg.show_item("dir_dialog")
+
+
+def on_dir_selected(sender, app_data):
+    STATE["dialog_open"] = False
+    path = app_data.get("file_path_name") or ""
+    if not os.path.isdir(path):
+        path = app_data.get("current_path") or path
+    if not path:
+        return
+    if STATE["dir_target"] == "in":
+        dpg.set_value("batch_in", path)
+        on_batch_in_changed()
+    else:
+        dpg.set_value("batch_out", path)
+        on_batch_out_changed()
+    scan_batch()
+
+
+def set_batch_controls(running):
+    for tag in ("batch_in", "batch_out", "batch_in_browse", "batch_out_browse", "batch_recursive",
+                "batch_overwrite", "batch_mode", "batch_pct", "batch_cap"):
+        (dpg.disable_item if running else dpg.enable_item)(tag)
+    (dpg.disable_item if running else dpg.enable_item)("btn_batch_start")
+    (dpg.enable_item if running else dpg.disable_item)("btn_batch_cancel")
+    dpg.configure_item("btn_batch_cancel", label="Cancel")
+    if running:
+        dpg.disable_item("btn_optimize")
+    elif STATE["scene"] is not None:
+        dpg.enable_item("btn_optimize")
+
+
+def start_batch():
+    if STATE["batch_running"] or STATE["opt_running"] or STATE["loading"]:
+        set_status("Busy - wait for the current job to finish.", "warn")
+        return
+    in_dir = _clean_path(dpg.get_value("batch_in"))
+    out_dir = _clean_path(dpg.get_value("batch_out"))
+    if not in_dir or not os.path.isdir(in_dir):
+        dpg.set_value("batch_done", "Choose an input folder first.")
+        return
+    if not out_dir:
+        dpg.set_value("batch_done", "Choose an output folder.")
+        return
+    if os.path.normcase(out_dir) == os.path.normcase(in_dir):
+        dpg.set_value("batch_done", "Output folder must differ from the input folder, "
+                                    "so the originals are never overwritten.")
+        return
+    files = scan_batch()
+    if not files:
+        dpg.set_value("batch_done", "Nothing to do: no models found.")
+        return
+    if dpg.get_value("batch_mode") == BATCH_MODES[0]:
+        budget = ("pct", max(1, min(100, dpg.get_value("batch_pct"))))
+    else:
+        budget = ("cap", max(1, dpg.get_value("batch_cap")))
+
+    STATE.update(batch_running=True, batch_cancel=False, batch_events=[], batch_results=[],
+                 batch_progress=(0.0, ""), batch_started=time.time(), batch_total=len(files),
+                 batch_out_dir=out_dir, batch_report=None)
+    dpg.delete_item("batch_table", children_only=True, slot=1)  # rows only, keep columns
+    dpg.set_value("batch_done", "")
+    dpg.configure_item("batch_open_out", show=False)
+    dpg.configure_item("batch_open_report", show=False)
+    dpg.set_value("batch_bar", 0.0)
+    dpg.configure_item("batch_bar", overlay=f"0 / {len(files)}")
+    set_batch_controls(True)
+    set_status(f"Batch optimizing {len(files)} model(s)...")
+    threading.Thread(target=_batch_worker, daemon=True,
+                     args=(files, in_dir, out_dir, get_opts(), budget,
+                           dpg.get_value("batch_overwrite"))).start()
+
+
+def cancel_batch():
+    if STATE["batch_running"]:
+        STATE["batch_cancel"] = True
+        dpg.configure_item("btn_batch_cancel", label="Cancelling...")
+        dpg.disable_item("btn_batch_cancel")
+
+
+def _fmt_eta(seconds):
+    seconds = int(max(0, seconds))
+    return f"{seconds // 60}m {seconds % 60:02d}s" if seconds >= 60 else f"{seconds}s"
+
+
+def add_batch_row(r):
+    status_color = {"Done": COL_GOOD, "Skipped": COL_MUTED, "Failed": COL_BAD,
+                    "Cancelled": LEVEL_COLORS["warn"]}.get(r["status"], COL_TEXT)
+
+    def pair(a, b, f):
+        if a == "" or a is None:
+            return "-"
+        return f(a) if b == "" or b is None else f"{f(a)} -> {f(b)}"
+
+    with dpg.table_row(parent="batch_table"):
+        dpg.add_text(r["file"])
+        dpg.add_text(pair(r["tris_before"], r["tris_after"], lambda v: f"{v:,}"))
+        dpg.add_text(pair(r["bytes_before"], r["bytes_after"], fmt_mb))
+        t = dpg.add_text(r["status"], color=status_color)
+        if r["notes"]:
+            with dpg.tooltip(t):
+                dpg.add_text(r["notes"], wrap=360)
+    with contextlib.suppress(Exception):
+        dpg.set_y_scroll("batch_results_box", dpg.get_y_scroll_max("batch_results_box") + 100)
+
+
+def poll_batch():
+    if STATE.get("batch_scan_at") and time.time() >= STATE["batch_scan_at"]:
+        STATE["batch_scan_at"] = None
+        if dpg.is_item_shown("batch_win") and not STATE["batch_running"]:
+            scan_batch()
+    if not STATE["batch_running"]:
+        return
+    with LOCK:
+        events, STATE["batch_events"] = STATE["batch_events"], []
+    finished = None
+    for kind, payload in events:
+        if kind == "result":
+            STATE["batch_results"].append(payload)
+            add_batch_row(payload)
+        elif kind == "done":
+            finished = (payload,)
+
+    total = STATE["batch_total"]
+    done = len(STATE["batch_results"])
+    frac, current = STATE["batch_progress"]
+    frac = min(1.0, max(frac, done / total))
+    elapsed = time.time() - STATE["batch_started"]
+    eta = f"   ~{_fmt_eta(elapsed / frac - elapsed)} left" if 0.02 < frac < 1 else ""
+    dpg.set_value("batch_bar", frac)
+    dpg.configure_item("batch_bar", overlay=f"{done} / {total}   {frac * 100:.0f}%{eta}")
+    dpg.set_value("batch_current", current)
+    if finished:
+        finish_batch(finished[0])
+
+
+def finish_batch(report):
+    STATE["batch_running"] = False
+    STATE["batch_report"] = report
+    set_batch_controls(False)
+    rs = STATE["batch_results"]
+    count = {k: sum(1 for r in rs if r["status"] == k) for k in ("Done", "Skipped", "Failed", "Cancelled")}
+    before = sum(r["bytes_before"] for r in rs if r["status"] == "Done")
+    after = sum(r["bytes_after"] for r in rs if r["status"] == "Done")
+    t_before = sum(r["tris_before"] for r in rs if r["status"] == "Done")
+    t_after = sum(r["tris_after"] for r in rs if r["status"] == "Done")
+    parts = [f"{count['Done']} optimized"]
+    if count["Skipped"]:
+        parts.append(f"{count['Skipped']} skipped (already in output)")
+    if count["Failed"]:
+        parts.append(f"{count['Failed']} failed (hover status for why)")
+    remaining = STATE["batch_total"] - len(rs) + count["Cancelled"]
+    if STATE["batch_cancel"]:
+        parts.append(f"cancelled with {remaining} not processed")
+    text = ", ".join(parts) + f"  in {_fmt_eta(time.time() - STATE['batch_started'])}."
+    if count["Done"] and before:
+        text += (f"\nTotal: {t_before:,} -> {t_after:,} triangles, {fmt_mb(before)} -> {fmt_mb(after)}"
+                 f" ({(after - before) / before * 100:+.0f}%).")
+    dpg.set_value("batch_done", text)
+    dpg.set_value("batch_current", f"Output: {STATE['batch_out_dir']}")
+    if not STATE["batch_cancel"]:
+        dpg.set_value("batch_bar", 1.0)
+    dpg.configure_item("batch_open_out", show=os.path.isdir(STATE["batch_out_dir"]))
+    dpg.configure_item("batch_open_report", show=bool(report))
+    level = "warn" if count["Failed"] or STATE["batch_cancel"] else "ok"
+    set_status("Batch " + ("cancelled" if STATE["batch_cancel"] else "finished") + ": "
+               + ", ".join(parts) + ".", level)
+
+
+def open_report():
+    report = STATE.get("batch_report")
+    if not report or not os.path.exists(report):
+        return
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(report)  # noqa: S606
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", report])
+        else:
+            subprocess.Popen(["xdg-open", report])
+    except OSError as e:
+        set_status(f"Could not open report: {e}", "warn")
+
+
+def build_batch_window():
+    with dpg.window(label="Batch optimize folder", tag="batch_win", show=False, width=760,
+                    height=640, pos=(180, 70), no_collapse=True,
+                    on_close=lambda *_: STATE.__setitem__("dialog_open", False)):
+        dpg.add_text("Optimizes every .glb / .gltf in a folder with the Optimize panel settings "
+                     "and writes .glb files to the output folder. Originals are never changed.",
+                     wrap=730, color=COL_MUTED)
+        dpg.add_spacer(height=2)
+        with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+            dpg.add_table_column(init_width_or_weight=0.17)
+            dpg.add_table_column(init_width_or_weight=0.68)
+            dpg.add_table_column(init_width_or_weight=0.15)
+            with dpg.table_row():
+                dpg.add_text("Input folder", color=COL_MUTED)
+                dpg.add_input_text(tag="batch_in", width=-1, hint="Folder with .glb / .gltf files",
+                                   callback=on_batch_in_changed)
+                dpg.add_button(label="Browse...", tag="batch_in_browse", width=-1,
+                               callback=lambda *_: browse_dir("in"))
+            with dpg.table_row():
+                dpg.add_text("Output folder", color=COL_MUTED)
+                dpg.add_input_text(tag="batch_out", width=-1, hint="Where optimized files go",
+                                   callback=on_batch_out_changed)
+                dpg.add_button(label="Browse...", tag="batch_out_browse", width=-1,
+                               callback=lambda *_: browse_dir("out"))
+        with dpg.group(horizontal=True):
+            dpg.add_checkbox(label="Include subfolders", tag="batch_recursive", default_value=True,
+                             callback=lambda *_: scan_batch())
+            dpg.add_spacer(width=12)
+            dpg.add_checkbox(label="Overwrite files already in output", tag="batch_overwrite",
+                             default_value=False)
+        with dpg.group(horizontal=True):
+            dpg.add_text("Polygons", color=COL_MUTED)
+            dpg.add_radio_button(BATCH_MODES, tag="batch_mode", horizontal=True,
+                                 default_value=BATCH_MODES[0],
+                                 callback=lambda *_: update_batch_summary())
+            dpg.add_slider_int(tag="batch_pct", default_value=50, min_value=1, max_value=100,
+                               format="keep %d%%", width=160)
+            dpg.add_input_int(tag="batch_cap", default_value=60_000, step=0, min_value=1,
+                              min_clamped=True, width=160, show=False)
+        with dpg.tooltip("batch_mode"):
+            dpg.add_text("Percentage: every file keeps that share of its triangles.\n"
+                         "Cap: files above the number are reduced to it; smaller files keep "
+                         "their geometry (but still get cleanup, texture and transform settings).",
+                         wrap=380)
+        dpg.add_text("", tag="batch_settings", wrap=730, color=COL_MUTED)
+        dpg.add_text("", tag="batch_found")
+        dpg.add_spacer(height=2)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Start", tag="btn_batch_start", width=120, height=28,
+                           callback=lambda *_: start_batch())
+            dpg.bind_item_theme("btn_batch_start", "primary_btn")
+            dpg.add_button(label="Cancel", tag="btn_batch_cancel", width=110, height=28,
+                           enabled=False, callback=lambda *_: cancel_batch())
+            dpg.add_button(label="Open output folder", tag="batch_open_out", height=28, show=False,
+                           callback=lambda *_: open_folder(STATE.get("batch_out_dir")))
+            dpg.add_button(label="Open report (CSV)", tag="batch_open_report", height=28,
+                           show=False, callback=lambda *_: open_report())
+        dpg.add_progress_bar(tag="batch_bar", default_value=0.0, width=-1, height=22, overlay="")
+        dpg.add_text("", tag="batch_current", color=COL_MUTED)
+        with dpg.child_window(tag="batch_results_box", height=-48, border=True):
+            with dpg.table(tag="batch_table", header_row=True, policy=dpg.mvTable_SizingStretchProp,
+                           row_background=True, borders_innerV=False):
+                dpg.add_table_column(label="File", init_width_or_weight=0.40)
+                dpg.add_table_column(label="Triangles", init_width_or_weight=0.25)
+                dpg.add_table_column(label="Size", init_width_or_weight=0.22)
+                dpg.add_table_column(label="Status", init_width_or_weight=0.13)
+        dpg.add_text("", tag="batch_done", wrap=730)
+
+    with dpg.file_dialog(directory_selector=True, show=False, modal=True, tag="dir_dialog",
+                         callback=on_dir_selected, cancel_callback=on_file_cancel,
+                         width=720, height=440):
+        pass
 
 
 # =====================================================================
@@ -1747,6 +2276,8 @@ def on_key_press(sender, key):
             open_browser()
         elif key == dpg.mvKey_S:
             save_optimized()
+        elif key == dpg.mvKey_B:
+            open_batch_window()
         return
     actions = {
         dpg.mvKey_F: frame_model,
@@ -1782,6 +2313,7 @@ CONTROLS_TEXT = (
     "V original / optimized\n"
     "1 front  2 right  3 top  4 3/4 view\n"
     "Ctrl+O open   Ctrl+S save optimized\n"
+    "Ctrl+B batch optimize a folder\n"
     "F5 reload   F12 screenshot"
 )
 
@@ -1835,6 +2367,7 @@ def apply_theme():
                 (dpg.mvThemeCol_SliderGrab, COL_ACCENT),
                 (dpg.mvThemeCol_SliderGrabActive, (150, 190, 255)),
                 (dpg.mvThemeCol_TableRowBgAlt, (33, 34, 40)),
+                (dpg.mvThemeCol_PlotHistogram, (70, 130, 220)),
                 (dpg.mvThemeCol_TitleBgActive, (36, 38, 46)),
             ):
                 dpg.add_theme_color(col, val)
@@ -1948,6 +2481,8 @@ def build_optimize_panel(inner):
         dpg.add_button(label="Optimize", tag="btn_optimize", width=-1, height=30,
                        enabled=False, callback=lambda *_: run_optimize())
         dpg.bind_item_theme("btn_optimize", "primary_btn")
+        dpg.add_button(label="Batch optimize a folder...", width=-1,
+                       callback=lambda *_: open_batch_window())
         dpg.add_text("Settings changed since the last run.", tag="opt_stale",
                      color=COL_MUTED, show=False)
         dpg.add_radio_button(["Original", "Optimized"], tag="view_radio", horizontal=True,
@@ -2029,6 +2564,8 @@ def build_ui(dnd_ok):
         dpg.add_file_extension("glTF models (*.glb *.gltf){.glb,.gltf}", color=(150, 255, 150, 255))
         dpg.add_file_extension(".*")
 
+    build_batch_window()
+
     with dpg.handler_registry():
         dpg.add_mouse_click_handler(callback=on_mouse_click)
         dpg.add_mouse_release_handler(callback=on_mouse_release)
@@ -2084,6 +2621,7 @@ def main():
         STATE["frame"] += 1
         poll_load_result()
         poll_optimize()
+        poll_batch()
         sync_preview_size()
         process_mouse()
         process_keys(dpg.get_delta_time())
