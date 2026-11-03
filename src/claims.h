@@ -19,7 +19,7 @@
 
 constexpr double FLAG_HEALTH = 10.0;                // a flag's health when new: it breaks at 0 (see Health)
 constexpr double FLAG_RECOVER_PER_HOUR = 1.0;       // health a flag regains each in-game hour while its claim has a vault
-constexpr float CLAIM_RADIUS = 25.0f;               // tiles: a flag's claim (tier one; claiminfo.txt will set the tiers)
+constexpr float CLAIM_RADIUS = 25.0f;               // tiles: a flag's claim
 constexpr int VAULT_CAP = 3;                        // vaults one faction may have standing
 constexpr double FLAG_DECAY_HOURS = 48.0;           // in-game hours for an unheld flag to wear down from whole to broken
 constexpr double FOUNDATION_DECAY_HOURS = 72.0;     // and for an unheld foundation
@@ -51,10 +51,15 @@ bool vaultFueled(World& w, Entity vault);
 bool lockShutFor(World& w, Entity prop, Entity unit);
 // The same, for any unit of this faction
 bool lockShutForFaction(World& w, Entity prop, int faction);
-// Takes a building down: its items fall where it stood, it becomes Debris, and a foundation takes the props on it too
+// Takes a prop down: whoever lies or sits on it gets off (a cage's prisoner goes free), whoever works it or is
+// walking to it stops, an Auto-Haul to it is dropped, its items fall where it stood, and it becomes Debris. A foundation
+// takes the props on it too. Debris itself is just removed.
 void breakBuilding(World& w, Entity e);
-// The Destroy tool: takes a building down. Refuses flags, debris and anything that is not a built prop.
+// The Destroy tool: takes any prop down (breakBuilding). False only if e is not a prop.
 bool destroyBuilding(World& w, Entity e);
+// Gives a new prop to the faction whose claim it stands in, and locks a storage prop there to it, as anything with
+// contents in a claim is. Flags and vaults are left as they are: they make the claims. A prop outside every claim
+// keeps the owner it was given (a built prop its builder's, a level's prop none). Every new prop goes through this.
 // The starting kit a faction's camp is given (claims.h): a flag, a small foundation for a vault, four bedrolls around a
 // campfire, and a barrel. Put down with the faction as its owner. Two trees stand just past the bedrolls, for the camp's
 // wood. Each piece takes the next number from *serial (when given), so saves can name the camp's props. Returns what was
@@ -75,10 +80,10 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
 // Puts a placed kit's vault on its foundation, holding CAMP_UPKEEP_DAYS of logs, and sets kit.vault. The vault takes
 // the next number from *serial (when given).
 void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial = nullptr);
-// Gives each sealed claim (one with a vault in it) to the vault's faction: its flag, and every prop in its circle other
-// than resource props (trees, ore), which stay nobody's. A storage prop it takes is locked to that faction, as anything
-// with contents in a claim is. A new game runs this once its vaults are down.
+// Runs claimOwnership on every prop. A new game runs this once its vaults are down, so each sealed claim's props are
+// its vault's faction's.
 void settleClaimOwnership(World& w);
+void claimOwnership(World& w, Entity prop);
 // Whether the whole kit fits around (cx, cz): every piece's tile walkable and free of props
 bool campKitFits(World& w, const Terrain& t, float cx, float cz);
 // Serials of the camps' props start here, after any a level places, so they never meet

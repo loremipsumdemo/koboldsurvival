@@ -9,22 +9,54 @@
 
 // Behaviors: what a unit does on its own. Each unit has a list, checked from the top: the first behavior is the
 // highest priority. Every unit has the three needs behaviors, which can be switched off and moved but not deleted:
-//   Eat: below BEHAVIOR_NEED_PERCENT hunger, it eats the food item that restores the most hunger.
-//   Heal: below BEHAVIOR_NEED_PERCENT health, it uses the healing item that restores the most health.
+//   Eat: below its percent of hunger (BEHAVIOR_NEED_PERCENT unless changed with the row's - and +), it eats the food
+//        item that restores the most hunger.
+//   Heal: below its percent of health, it uses the healing item that restores the most health.
 //   Share: with Eat or Heal needing an item it does not carry, it takes one from a unit within SHARE_RANGE that has
-//          Share on too, is of an allied faction, and needs the item less (a higher share of that stat).
+//          Share on too, is of an allied faction, and needs the item less (a higher share of that stat). With no
+//          such unit that close but one within SHARE_SEEK_RANGE, it walks over to it first.
 // The automated behaviors are added from a prop's right-click menu and can be deleted. They are worked by the unit's
 // automation (automationSystem, systems.h), one step at a time, while the unit has nothing else to do:
 //   Auto-Harvest: works the nearest resource prop of a kind (a Tree, Ore) inside a claim of the unit's faction.
 //   Auto-Haul: takes the items in the unit's inventory (never its worn gear) that a storage prop takes, to that prop.
 //              The prop must stand inside a claim of the unit's faction and have room.
+//   Patrol: walks about inside the claim it stands in, when that claim is its faction's, pausing PATROL_PAUSE between
+//           walks. The units of the other factions have it last on their lists, so they patrol when nothing else
+//           needs doing.
+//   Roam: wanders the open map, anywhere walkable outside the flags' claims, ROAM_STEP_MIN to ROAM_STEP_MAX tiles at a
+//         time with a pause between. Wild mobs (mobs.h) have it.
 // A behavior that is on but can't be done now (no prop with room, no item) waits BEHAVIOR_RETRY_SECONDS before it is
-// tried again. This header is the behavior data and the pure functions over it, so they can be checked without a world.
+// tried again, and keeps why (BehaviorWait), for its row's hover text. This header is the behavior data and the pure
+// functions over it, so they can be checked without a world.
 
-enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Count };
+enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Count };
+
+// Why a behavior could not be done the last time it was tried
+enum class BehaviorWait : int {
+    None = 0,
+    NoItem,          // Eat or Heal: no item to use, and none to share
+    WalkingToShare,  // Eat or Heal: on its way to a unit that can share one
+    NoProp,          // Auto-Harvest: no prop of its kind in the claim with room for another worker
+    CarryFull,       // Auto-Harvest: no room to carry another
+    LoadWaiting,     // Auto-Harvest: it carries a load for an Auto-Haul to take first
+    PropGone,        // Auto-Haul: its prop is not there any more
+    OutsideClaim,    // Auto-Haul: its prop is not in a claim of the unit's faction
+    Locked,          // Auto-Haul: its prop is locked to the unit
+    NothingToHaul,   // Auto-Haul: the unit carries nothing the prop takes
+    PropFull,        // Auto-Haul: the prop has no room for what the unit carries
+    NotInClaim,      // Patrol: the unit is not inside a claim of its faction
+    NowhereToRoam,   // Roam: no open walkable ground near it outside the claims
+};
+
+// Patrol and Roam: how far a walk goes, and the pause between walks (real seconds, a random time in the range)
+constexpr float PATROL_PAUSE_MIN = 4.0f, PATROL_PAUSE_MAX = 12.0f;
+constexpr float ROAM_PAUSE_MIN = 5.0f, ROAM_PAUSE_MAX = 20.0f;
+constexpr float ROAM_STEP_MIN = 6.0f, ROAM_STEP_MAX = 18.0f;
 
 constexpr int BEHAVIOR_LIMIT = 16;               // most behaviors one unit can hold
-constexpr int BEHAVIOR_NEED_PERCENT = 50;        // Eat and Heal act below this share of hunger or health
+constexpr int BEHAVIOR_NEED_PERCENT = 50;        // Eat and Heal act below this share of hunger or health, at first
+constexpr int BEHAVIOR_PERCENT_STEP = 10;        // the row's - and + change it by this much
+constexpr int BEHAVIOR_PERCENT_MIN = 10, BEHAVIOR_PERCENT_MAX = 90;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;   // a behavior that could not be done waits this long to try again
 
 struct BehaviorRule {
@@ -32,9 +64,42 @@ struct BehaviorRule {
     BehaviorKind kind = BehaviorKind::Eat;
     int propKind = -1;            // Auto-Harvest: the resource kind it works. Auto-Haul: the kind of its prop.
     Entity prop = NULL_ENTITY;    // Auto-Haul: the storage prop it takes items to
-    // Not saved: real seconds before a behavior that could not be done is tried again
+    int percent = BEHAVIOR_NEED_PERCENT;   // Eat and Heal: they act below this share of hunger or health
+    // Not saved: real seconds before a behavior that could not be done is tried again, and why it could not be
     float cooldown = 0.0f;
+    BehaviorWait why = BehaviorWait::None;
 };
+
+// Whether a behavior has a percent to set: Eat and Heal
+inline bool hasPercent(BehaviorKind k) { return k == BehaviorKind::Eat || k == BehaviorKind::Heal; }
+// Steps a behavior's percent by delta steps, kept within its range. False when it has no percent or is at that end.
+inline bool stepPercent(BehaviorRule& r, int delta) {
+    if (!hasPercent(r.kind)) return false;
+    const int to = std::clamp(r.percent + delta * BEHAVIOR_PERCENT_STEP, BEHAVIOR_PERCENT_MIN, BEHAVIOR_PERCENT_MAX);
+    if (to == r.percent) return false;
+    r.percent = to;
+    return true;
+}
+
+// The text for why a behavior is waiting, or "" when it is not. other: the unit it is walking to, for WalkingToShare.
+inline std::string waitReason(const BehaviorRule& r, const std::string& other = std::string()) {
+    switch (r.why) {
+    case BehaviorWait::None: return std::string();
+    case BehaviorWait::NoItem: return lang(r.kind == BehaviorKind::Eat ? "UILABEL_WAIT_NO_FOOD" : "UILABEL_WAIT_NO_HEALING");
+    case BehaviorWait::WalkingToShare: return langf("UILABEL_WAIT_WALKING_TO_SHARE", { other });
+    case BehaviorWait::NoProp: return langf("UILABEL_WAIT_NO_PROP", { r.propKind >= 0 && r.propKind < PROP_KIND_COUNT ? lang(propInfo(r.propKind).nameKey) : std::string() });
+    case BehaviorWait::CarryFull: return lang("UILABEL_WAIT_CARRY_FULL");
+    case BehaviorWait::LoadWaiting: return lang("UILABEL_WAIT_LOAD_WAITING");
+    case BehaviorWait::PropGone: return lang("UILABEL_WAIT_PROP_GONE");
+    case BehaviorWait::OutsideClaim: return lang("UILABEL_WAIT_OUTSIDE_CLAIM");
+    case BehaviorWait::Locked: return lang("UILABEL_WAIT_LOCKED");
+    case BehaviorWait::NothingToHaul: return lang("UILABEL_WAIT_NOTHING_TO_HAUL");
+    case BehaviorWait::PropFull: return lang("UILABEL_WAIT_PROP_FULL");
+    case BehaviorWait::NotInClaim: return lang("UILABEL_WAIT_NOT_IN_CLAIM");
+    case BehaviorWait::NowhereToRoam: return lang("UILABEL_WAIT_NOWHERE_TO_ROAM");
+    }
+    return std::string();
+}
 
 // The behaviors every unit starts with, all on: Eat, Heal and Share
 inline std::vector<BehaviorRule> defaultBehaviors() {
@@ -45,7 +110,11 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 }
 
 // The automated behaviors, which the automation works and which can be deleted
-inline bool isAutomated(BehaviorKind k) { return k == BehaviorKind::AutoHarvest || k == BehaviorKind::AutoHaul; }
+inline bool isAutomated(BehaviorKind k) {
+    return k == BehaviorKind::AutoHarvest || k == BehaviorKind::AutoHaul || k == BehaviorKind::Patrol || k == BehaviorKind::Roam;
+}
+// The automated behaviors whose steps are walks to a spot on the ground, not to a prop
+inline bool isWalkBehavior(BehaviorKind k) { return k == BehaviorKind::Patrol || k == BehaviorKind::Roam; }
 
 // Whether two behaviors are the same one: Auto-Harvest of the same kind, Auto-Haul to the same prop, or the same
 // needs behavior. A unit holds each behavior once.
@@ -66,11 +135,13 @@ inline std::string behaviorPropName(const BehaviorRule& r) {
 inline std::string behaviorName(const BehaviorRule& r) {
     const std::string propName = behaviorPropName(r);
     switch (r.kind) {
-    case BehaviorKind::Eat: return langf("UILABEL_BEHAVIOR_EAT", { std::to_string(BEHAVIOR_NEED_PERCENT) });
-    case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL", { std::to_string(BEHAVIOR_NEED_PERCENT) });
+    case BehaviorKind::Eat: return langf("UILABEL_BEHAVIOR_EAT", { std::to_string(r.percent) });
+    case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL", { std::to_string(r.percent) });
     case BehaviorKind::Share: return lang("UILABEL_BEHAVIOR_SHARE");
     case BehaviorKind::AutoHarvest: return langf("UILABEL_BEHAVIOR_AUTO_HARVEST", { propName });
     case BehaviorKind::AutoHaul: return langf("UILABEL_BEHAVIOR_AUTO_HAUL", { propName });
+    case BehaviorKind::Patrol: return lang("UILABEL_BEHAVIOR_PATROL");
+    case BehaviorKind::Roam: return lang("UILABEL_BEHAVIOR_ROAM");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -80,11 +151,13 @@ inline std::string behaviorName(const BehaviorRule& r) {
 inline std::string describeBehavior(const BehaviorRule& r) {
     const std::string propName = behaviorPropName(r);
     switch (r.kind) {
-    case BehaviorKind::Eat: return langf("UILABEL_BEHAVIOR_EAT_TIP", { std::to_string(BEHAVIOR_NEED_PERCENT) });
-    case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL_TIP", { std::to_string(BEHAVIOR_NEED_PERCENT) });
+    case BehaviorKind::Eat: return langf("UILABEL_BEHAVIOR_EAT_TIP", { std::to_string(r.percent) });
+    case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL_TIP", { std::to_string(r.percent) });
     case BehaviorKind::Share: return lang("UILABEL_BEHAVIOR_SHARE_TIP");
     case BehaviorKind::AutoHarvest: return langf("UILABEL_BEHAVIOR_AUTO_HARVEST_TIP", { propName });
     case BehaviorKind::AutoHaul: return langf("UILABEL_BEHAVIOR_AUTO_HAUL_TIP", { propName });
+    case BehaviorKind::Patrol: return lang("UILABEL_BEHAVIOR_PATROL_TIP");
+    case BehaviorKind::Roam: return lang("UILABEL_BEHAVIOR_ROAM_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -98,17 +171,31 @@ inline int percentOf(int value, int maximum) {
 
 // Builds a behavior from the numbers in a save file. Anything out of range is brought into range. The prop of an
 // Auto-Haul is found by the caller.
-inline BehaviorRule behaviorFromFields(int on, int kind, int propKind) {
+inline BehaviorRule behaviorFromFields(int on, int kind, int propKind, int percent = BEHAVIOR_NEED_PERCENT) {
     BehaviorRule r;
     r.on = on != 0;
     r.kind = (BehaviorKind)std::clamp(kind, 0, (int)BehaviorKind::Count - 1);
     r.propKind = isAutomated(r.kind) ? propKind : -1;
+    r.percent = std::clamp(percent, BEHAVIOR_PERCENT_MIN, BEHAVIOR_PERCENT_MAX);
     return r;
 }
 
-// Puts back any needs behavior a list is missing, at the end and on, so every unit keeps Eat, Heal and Share
-inline void ensureNeedsBehaviors(std::vector<BehaviorRule>& rules) {
-    for (const BehaviorRule& d : defaultBehaviors()) {
+// A mob's behaviors: Eat and Share. It can't use healing items, so it has no Heal (mobs.h).
+inline std::vector<BehaviorRule> mobBehaviors() {
+    std::vector<BehaviorRule> out = defaultBehaviors();
+    out.erase(std::remove_if(out.begin(), out.end(), [](const BehaviorRule& r) { return r.kind == BehaviorKind::Heal; }),
+              out.end());
+    return out;
+}
+
+// Puts back any needs behavior a list is missing, at the end and on, so every unit keeps Eat, Heal and Share (a mob
+// Eat and Share, and never Heal)
+inline void ensureNeedsBehaviors(std::vector<BehaviorRule>& rules, bool mob = false) {
+    if (mob) {
+        rules.erase(std::remove_if(rules.begin(), rules.end(), [](const BehaviorRule& r) { return r.kind == BehaviorKind::Heal; }),
+                    rules.end());
+    }
+    for (const BehaviorRule& d : mob ? mobBehaviors() : defaultBehaviors()) {
         bool have = false;
         for (const BehaviorRule& r : rules) have = have || r.kind == d.kind;
         if (!have) rules.push_back(d);

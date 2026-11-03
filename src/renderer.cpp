@@ -4,6 +4,7 @@
 #include "equip.h"
 #include "inventory.h"
 #include "items.h"
+#include "mobs.h"
 #include "pak.h"
 #include "party.h"
 #include "systems.h"
@@ -400,6 +401,13 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         report(0.05f + 0.75f * (float)i / (float)UNIT_SPRITE_COUNT);
     }
     report(0.82f);
+    mobFallback_ = loadOptionalImage("data/mob/mob_0.png");
+    mobSprites_.reserve(MOB_KIND_COUNT);
+    for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
+        char path[64];
+        std::snprintf(path, sizeof(path), "data/mob/mob_%d.png", i);
+        mobSprites_.push_back(loadOptionalImage(path));
+    }
     report(0.86f);
 
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
@@ -1365,6 +1373,12 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
 
 // The sprite for a unit, or the stand-in if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
+    // A mob's picture is its kind's (mob_<kind>.png), with mob_0.png for a missing one
+    if (const Mob* m = w.get<Mob>(e)) {
+        const int idx = m->kind - 1;
+        if (idx >= 0 && idx < (int)mobSprites_.size() && mobSprites_[(size_t)idx].tex) return mobSprites_[(size_t)idx];
+        return mobFallback_.tex ? mobFallback_ : pink_;
+    }
     const UnitSprite* us = w.get<UnitSprite>(e);
     return unitPicture(us ? us->id : 1);
 }
@@ -3176,7 +3190,7 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
         const std::string name = fitText(factionName(repView), h.w - d - 16.0f * s, false);
         drawListText(name, h.x + d + 12.0f * s, h.y + (h.h - th) * 0.5f, RGBA{ 0.624f, 0.902f, 0.0f, 1.0f });
     }
-    const std::vector<FactionDef>& list = factions();
+    const std::vector<FactionDef>& list = reputationFactions();
     for (size_t i = 0; i < L.repRows.size(); ++i) {
         const size_t idx = (size_t)L.repFirst + i;
         if (idx >= list.size()) break;
@@ -3230,7 +3244,7 @@ void Renderer::drawLockButton(const Rect& r, bool locked) {
 
 // The Stats tab: every stat's level under the heading of its group, with its progress bar. Returns the stat under
 // the mouse, or -1. The hover tooltip is drawn later, outside the panel's clip (drawStatTip).
-int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my) {
+int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.66f, 0.66f, 0.72f, 1.0f };
@@ -3259,6 +3273,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
     const StatGroup groups[] = { StatGroup::Attributes, StatGroup::Combat, StatGroup::Gathering,
                                  StatGroup::Crafting, StatGroup::Utility };
     for (StatGroup group : groups) {
+        if (mob && group != StatGroup::Attributes && group != StatGroup::Combat) continue;
         const std::string title = group == StatGroup::Attributes ? lang("UILABEL_ATTRIBUTES")
                           : group == StatGroup::Combat ? lang("UILABEL_COMBAT")
                           : group == StatGroup::Gathering ? lang("UILABEL_RESOURCE_GATHERING")
@@ -3417,6 +3432,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     };
     if (const Faction* fa = w.get<Faction>(unit)) infoLine(factionName(fa->id));
     if (const Body* bd = w.get<Body>(unit)) infoLine(lang(bodyTypeKey(bd->type)));
+    // A wild mob has no reputation with anyone: its temperament says how it takes to outsiders (mobs.h)
+    if (const Mob* mb = w.get<Mob>(unit); mb && w.has<Faction>(unit) && isMobFaction(w.get<Faction>(unit)->id)) {
+        infoLine(langf("UILABEL_TEMPERAMENT", { lang(temperamentKey(mobTemperament(mb->kind))) }));
+    }
 
     // A stat: its label and value on one line, and a bar under them. Returns the y for the next stat.
     auto statRow = [&](float rowY, const std::string& label, const std::string& value, float frac, RGBA fill) {
@@ -3462,8 +3481,14 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (shown != label) noteTip(label, r);
         drawSmallButton(r, shown, editable, editable && r.contains(mx, my));
     };
-    gearButton(L.optimizeButton, lang("UILABEL_OPTIMIZE"));
-    gearButton(L.removeAllButton, lang("UILABEL_REMOVE_ALL"));
+    // A mob has no gear slots: the panel says so in their place
+    if (w.has<Mob>(unit)) {
+        drawListText(lang("UILABEL_MOB_NO_GEAR"), L.gearPanel.x + 10.0f * s, L.gearPanel.y + L.gearPanel.h * 0.5f - listH * 0.5f,
+                     RGBA{ 0.72f, 0.72f, 0.76f, 1.0f });
+    } else {
+        gearButton(L.optimizeButton, lang("UILABEL_OPTIMIZE"));
+        gearButton(L.removeAllButton, lang("UILABEL_REMOVE_ALL"));
+    }
 
     // While an item is dragged, each gear slot shows whether it may go there: green if so, red if not.
     // A gear item leaving its own slot is not in the way of itself.
@@ -3520,13 +3545,20 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (L.tab == UNIT_TAB_INVENTORY) {
     drawRect(L.gridPanel, RGBA{ 0.06f, 0.04f, 0.085f, bgAlpha });
     drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, lang("UILABEL_INVENTORY"), white);
-    // The slot count sits left of the sort button, which is at the right of the heading
-    const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " +
-                             std::to_string(INVENTORY_SLOTS) + " slots";
-    drawListText(used, L.sortButton.x - 8.0f * s - listTextWidth(used), L.gridPanel.y + 6.0f * s, gray);
-    drawSmallButton(L.sortButton, lang("UILABEL_SORT"), editable, editable && L.sortButton.contains(mx, my));
+    // A mob's inventory is not shown until it is a corpse (mobs.h): the panel says Not available in place of its slots,
+    // its slot count and its sort button
+    const bool hidden = w.has<Mob>(unit) && !w.has<Corpse>(unit);
+    if (hidden) {
+        const std::string na = lang("UILABEL_MOB_INVENTORY_HIDDEN");
+        drawListText(na, L.gridPanel.x + (L.gridPanel.w - listTextWidth(na)) * 0.5f, L.gridPanel.y + (L.gridPanel.h - listH) * 0.5f, gray);
+    } else {
+        // The slot count sits left of the sort button, which is at the right of the heading
+        const std::string used = std::to_string(inv ? occupiedSlots(*inv) : 0) + " / " + std::to_string(INVENTORY_SLOTS) + " slots";
+        drawListText(used, L.sortButton.x - 8.0f * s - listTextWidth(used), L.gridPanel.y + 6.0f * s, gray);
+        drawSmallButton(L.sortButton, lang("UILABEL_SORT"), editable, editable && L.sortButton.contains(mx, my));
+    }
 
-    for (size_t i = 0; inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
+    for (size_t i = 0; !hidden && inv && i < L.slots.size() && i < INVENTORY_SLOTS; ++i) {
         const Rect& r = L.slots[i];
         drawRect(Rect{ r.x - 1.0f, r.y - 1.0f, r.w + 2.0f, r.h + 2.0f }, RGBA{ 0.36f, 0.22f, 0.36f, bgAlpha });
         drawRect(r, RGBA{ 0.10f, 0.07f, 0.12f, bgAlpha });
@@ -3552,7 +3584,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
                                          worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]) };
         drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes);
     }
-    if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
+    if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my, w.has<Mob>(unit));
     if (L.maxScroll > 0.0f) {
         // The scroll bar down the right side: its thumb is the part of the tab in view
         const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
@@ -3792,6 +3824,13 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         drawListText(fitText(label, R.label.w - 8.0f * s, false), R.label.x + 4.0f * s, R.label.y + (R.label.h - listH) * 0.5f,
                      text);
 
+        // Eat and Heal have their percent's - and +, each lit while it can still go that way
+        if (hasPercent(r.kind)) {
+            const bool lessOn = editable && r.percent > BEHAVIOR_PERCENT_MIN;
+            const bool moreOn = editable && r.percent < BEHAVIOR_PERCENT_MAX;
+            drawSmallButton(R.less, "-", lessOn, lessOn && R.less.contains(mx, my));
+            drawSmallButton(R.more, "+", moreOn, moreOn && R.more.contains(mx, my));
+        }
         // Only an automated behavior can be deleted: every unit keeps Eat, Heal and Share
         const bool upOn = editable && i > 0;
         const bool downOn = editable && i + 1 < rules.size();
@@ -3807,8 +3846,15 @@ void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, fl
     const Behaviors* b = w.get<Behaviors>(unit);
     if (hit.row < 0 || !b || hit.row >= (int)b->rules.size()) return;
     const float s = uiH_ / 720.0f;
+    // What it does, then why it is waiting, when it is
+    const BehaviorRule& r = b->rules[(size_t)hit.row];
     std::vector<TipRow> rows(1);
-    rows[0].text = describeBehavior(b->rules[(size_t)hit.row]);
+    rows[0].text = describeBehavior(r);
+    const std::string why = r.on ? waitReason(r, b->seek != NULL_ENTITY ? nameOf(w, b->seek) : std::string()) : std::string();
+    if (!why.empty()) {
+        rows.push_back(TipRow{});
+        rows.back().text = langf("UILABEL_BEHAVIOR_WAIT_TIP", { why });
+    }
     const float width = tipWidth(rows), height = tipHeight(rows.size());
     // Beside the mouse, moved to the other side or up when the window has no room for it
     float x = mx + 14.0f * s, y = my + 14.0f * s;
@@ -4468,6 +4514,7 @@ static const FilterEntry kFilterEntries[] = {
     { "UILABEL_EXPERIENCE", LogKind::Xp, false },
     { "UILABEL_XP_ATHLETICS", LogKind::XpAthletics, false },
     { "UILABEL_XP_ENDURANCE", LogKind::XpEndurance, false },
+    { "UILABEL_XP_CARRYING", LogKind::XpCarrying, false },
     { "UILABEL_ITEM_MESSAGES", LogKind::Other, true },
     { "UILABEL_PICKUP", LogKind::Pickup, false },
     { "UILABEL_DROP", LogKind::Drop, false },

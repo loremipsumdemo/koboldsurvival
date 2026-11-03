@@ -106,14 +106,61 @@ bool lockShutForFaction(World& w, Entity prop, int faction) {
     return true;
 }
 
+void claimOwnership(World& w, Entity prop) {
+    const Prop* p = w.get<Prop>(prop);
+    const Transform* t = w.get<Transform>(prop);
+    if (!p || !t || p->kind == PROP_FLAG || p->kind == PROP_VAULT) return;
+    const Claim* c = claimAt(claimsOf(w), t->x, t->z);
+    if (!c) return;
+    const int faction = c->sealer >= 0 ? c->sealer : c->owner;
+    if (Owner* own = w.get<Owner>(prop)) own->faction = faction;
+    else w.add(prop, Owner{ faction });
+    if (Lock* lock = w.get<Lock>(prop)) lock->faction = faction;
+    else if (propInfo(p->kind).use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
+}
+
+namespace {
+
+// Everything that points at a prop about to go lets go of it: units lying, sitting or shut in it get off, units
+// working it or walking to it stop, and Auto-Hauls to it are dropped
+void releaseProp(World& w, Entity prop) {
+    for (Entity u : w.view<Occupying>()) {
+        if (w.get<Occupying>(u)->prop == prop) w.remove<Occupying>(u);
+    }
+    for (Entity u : w.view<Working>()) {
+        if (w.get<Working>(u)->prop == prop) w.remove<Working>(u);
+    }
+    for (Entity u : w.view<PropOrder>()) {
+        if (w.get<PropOrder>(u)->prop != prop) continue;
+        w.remove<PropOrder>(u);
+        w.remove<SoloMove>(u);
+    }
+    for (Entity u : w.view<Behaviors>()) {
+        Behaviors* b = w.get<Behaviors>(u);
+        if (b->busy && b->stepProp == prop) b->busy = false;
+        b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) {
+                           return r.kind == BehaviorKind::AutoHaul && r.prop == prop;
+                       }),
+                       b->rules.end());
+    }
+}
+
+}  // namespace
+
 void breakBuilding(World& w, Entity e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
+    if (w.get<Prop>(e)->kind == PROP_DEBRIS) {
+        releaseProp(w, e);
+        w.destroy(e);
+        return;
+    }
     std::vector<Entity> gone{ e };
     if (isFoundationKind(w.get<Prop>(e)->kind)) {
         for (Entity c : w.view<Prop, OnBase>()) {
             if (w.get<OnBase>(c)->foundation == e) gone.push_back(c);
         }
     }
+    for (Entity g : gone) releaseProp(w, g);
     // Copy what is needed before creating entities, which can move the stored components
     struct Drop { Transform at; int item; int count; };
     std::vector<Drop> drops;
@@ -121,7 +168,6 @@ void breakBuilding(World& w, Entity e) {
     for (Entity g : gone) {
         const Transform at = *w.get<Transform>(g);
         spots.push_back(at);
-        const Prop* p = w.get<Prop>(g);
         auto collect = [&](const ItemStack* slots) {
             for (int i = 0; i < STORAGE_SLOTS; ++i) {
                 if (slots[i].item > 0 && slots[i].count > 0) drops.push_back(Drop{ at, slots[i].item, slots[i].count });
@@ -130,6 +176,7 @@ void breakBuilding(World& w, Entity e) {
         if (const Storage* st = w.get<Storage>(g)) collect(st->slots.data());
         if (const Output* out = w.get<Output>(g)) collect(out->slots.data());
     }
+    for (Entity g : gone) w.destroy(g);
     for (const Drop& d : drops) {
         const Entity item = w.create();
         w.add(item, Transform{ d.at.x, d.at.y, d.at.z });
@@ -139,14 +186,12 @@ void breakBuilding(World& w, Entity e) {
         const Entity debris = w.create();
         w.add(debris, Transform{ at.x, at.y, at.z });
         w.add(debris, Prop{ PROP_DEBRIS, -1, 0.0f });
+        claimOwnership(w, debris);
     }
-    for (Entity g : gone) w.destroy(g);
 }
 
 bool destroyBuilding(World& w, Entity e) {
-    const Prop* p = w.get<Prop>(e);
-    if (!p || !w.has<Owner>(e)) return false;
-    if (p->kind == PROP_FLAG || p->kind == PROP_DEBRIS) return false;
+    if (!w.has<Prop>(e)) return false;
     breakBuilding(w, e);
     return true;
 }
@@ -297,6 +342,7 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             w.add(e, Prop{ k.kind, -1, yaw });
             if (k.kind != PROP_TREE) w.add(e, Owner{ faction });
             if (hasStorage(propInfo(k.kind))) w.add(e, Storage{});   // the camp's barrel starts empty
+            claimOwnership(w, e);   // it stands in the camp's own claim, so the trees are the camp's too
         }
         stamp(e);
         if (k.kind == PROP_FLAG) kit.flag = e;
@@ -315,27 +361,13 @@ void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial) {
     const Entity vault = placeBuiltProp(w, t, PROP_VAULT, at.x, at.z, kit.yaw, kit.faction);
     if (vault == NULL_ENTITY) return;
     if (serial) w.get<Prop>(vault)->serial = (*serial)++;
-    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PROP_VAULT).input, CAMP_UPKEEP_DAYS * 24 };   // three days of logs
+    const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / propInfo(PROP_VAULT).fuelHours);   // three days of logs
+    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PROP_VAULT).input, logs };
     kit.vault = vault;
 }
 
 void settleClaimOwnership(World& w) {
-    for (const Claim& c : claimsOf(w)) {
-        if (c.vault == NULL_ENTITY) continue;
-        const int faction = c.sealer;
-        for (Entity e : w.view<Prop, Transform>()) {
-            const Transform* tr = w.get<Transform>(e);
-            const float dx = tr->x - c.x, dz = tr->z - c.z;
-            if (dx * dx + dz * dz > CLAIM_RADIUS * CLAIM_RADIUS) continue;
-            const int kind = w.get<Prop>(e)->kind;
-            const PropInfo& info = propInfo(kind);
-            if (info.use == PropUse::Resource || kind == PROP_DEBRIS) continue;
-            if (Owner* own = w.get<Owner>(e)) own->faction = faction;
-            else w.add(e, Owner{ faction });
-            if (Lock* lock = w.get<Lock>(e)) lock->faction = faction;
-            else if (info.use == PropUse::Storage) w.add(e, Lock{ true, BUILT_LOCK_LEVEL, faction });
-        }
-    }
+    for (Entity e : w.view<Prop, Transform>()) claimOwnership(w, e);
 }
 
 std::vector<std::string> propInfoLines(World& w, Entity e) {
@@ -390,13 +422,13 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
         out.push_back(lang(c && c->vault != NULL_ENTITY ? "MISC_FLAG_VAULT_YES" : "MISC_FLAG_VAULT_NO"));
     }
     if (p->kind == PROP_VAULT) {
-        // Upkeep left: the hour burning now, and an hour for each log waiting
+        // Upkeep left: what is left of the log burning now, and the hours of each log waiting
         double hours = 0.0;
         if (const Fuel* f = w.get<Fuel>(e)) hours += f->hours;
         const int input = propInfo(p->kind).input;
         if (const Storage* st = w.get<Storage>(e)) {
             for (const ItemStack& s : st->slots) {
-                if (s.item == input && s.count > 0) hours += s.count;
+                if (s.item == input && s.count > 0) hours += s.count * propInfo(p->kind).fuelHours;
             }
         }
         out.push_back(langf("MISC_PROP_UPKEEP", { std::to_string((int)std::floor(hours)) }));

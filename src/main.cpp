@@ -42,6 +42,7 @@
 #include "behavior.h"
 #include "build.h"
 #include "claims.h"
+#include "mobs.h"
 #include "combat.h"
 #include "equip.h"
 #include "textcase.h"
@@ -98,20 +99,49 @@ std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terra
     unproject(-1.0f, n);
     unproject(1.0f, f);
 
-    // Iterate: intersect with the plane at the terrain height under the last hit
-    float groundY = 0.0f, hx = 0.0f, hz = 0.0f;
-    for (int iter = 0; iter < 6; ++iter) {
-        float dy = f[1] - n[1];
-        if (std::fabs(dy) < 1e-6f) return std::nullopt;
-        float s = (groundY - n[1]) / dy;
-        hx = n[0] + (f[0] - n[0]) * s;
-        hz = n[2] + (f[2] - n[2]) * s;
-        groundY = t.heightAt(hx, hz);
+    // March along the ray from the eye and stop at the first point under the surface the player sees: the ground,
+    // or the sea where the ground lies under it (the sea is drawn at sea level, so a click on the water lands where
+    // the water is, not on the seabed far below it). Then halve the last step until the point is on the surface.
+    // A plane fitted at the height under the last guess would slide through a hill to the ground behind it, or
+    // wander on a slope, when the ray meets the ground at a low angle.
+    const float dir[3] = { f[0] - n[0], f[1] - n[1], f[2] - n[2] };
+    const float len = std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+    if (len < 1e-6f) return std::nullopt;
+    const float ux = dir[0] / len, uy = dir[1] / len, uz = dir[2] / len;
+    auto surface = [&](float x, float z) { return std::max(t.heightAt(x, z), 0.0f); };
+    auto gap = [&](float d) { return n[1] + uy * d - surface(n[0] + ux * d, n[2] + uz * d); };
+    auto below = [&](float d) { return gap(d) <= 0.0f; };
+    // Steps grow with the distance, up to a hundredth of it, but shrink to a quarter of the ray's height over the
+    // ground, so a ray that skims a ridge seen against the sky slows down over it and can't step through its crest
+    constexpr float MAX_PICK = 4000.0f;          // tiles along the ray; past this the ground is fogged out anyway
+    constexpr float MIN_STEP = 0.02f, FIRST_STEP = 0.1f, STEP_SHARE = 0.01f;
+    float lo = 0.0f, hi = -1.0f;
+    for (float d = FIRST_STEP; d <= MAX_PICK;) {
+        const float g = gap(d);
+        if (g <= 0.0f) {
+            hi = d;
+            break;
+        }
+        lo = d;
+        d += std::clamp(g * 0.25f, MIN_STEP, std::max(FIRST_STEP, d * STEP_SHARE));
+        // Going up and already above the highest ground there is, it will meet nothing
+        if (uy >= 0.0f && n[1] + uy * d > 2000.0f) break;
     }
-
+    if (hi < 0.0f) return std::nullopt;
+    for (int i = 0; i < 20; ++i) {
+        const float mid = 0.5f * (lo + hi);
+        if (below(mid)) hi = mid;
+        else lo = mid;
+    }
+    const float hx = n[0] + ux * hi, hz = n[2] + uz * hi;
     if (hx < 0.0f || hz < 0.0f || hx >= t.size() || hz >= t.size()) return std::nullopt;
     return std::make_pair(hx, hz);
 }
+
+// A unit or prop whose picture is under the pointer, but more than this many tiles farther from the eye than the
+// ground the pointer is over, stands behind that ground and is not what was clicked. It allows for a tall prop (a
+// tree) whose top is seen over the ground in front of its foot.
+constexpr float HIDDEN_BEHIND_GROUND = 3.0f;
 
 // World point to pixel coordinates. Returns false if it's behind the camera.
 bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
@@ -527,12 +557,17 @@ Entity sidebarUnitOf(World& w) {
     return mine.size() == 1 ? mine[0] : NULL_ENTITY;
 }
 
-// The units the Unit Panel acts on: the talking unit during a trade, the storage panel's unit, otherwise the selected units
+// The units the Unit Panel acts on: the talking unit during a trade, the storage panel's unit, otherwise the selected units.
+// An awake mob's inventory is shut (mobs.h), so a mob is never one of them: its items can't be dragged, used or dropped.
 std::vector<Entity> panelUnits(World& w) {
     if (tradeOpen && dialoguePlayer != NULL_ENTITY && w.has<Unit>(dialoguePlayer)) return { dialoguePlayer };
     if (storageProp != NULL_ENTITY && w.has<Unit>(storageUnit)) return { storageUnit };
     if (lootUnit != NULL_ENTITY && w.has<Unit>(lootBy)) return { lootBy };
-    return selectedUnits(w);
+    std::vector<Entity> out;
+    for (Entity u : selectedUnits(w)) {
+        if (!inventoryLocked(w, u)) out.push_back(u);
+    }
+    return out;
 }
 
 // The unit a click lands on: the one whose picture is under the pointer (yours first), else the nearest within one
@@ -867,7 +902,8 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom, u.koFaction });
             if (u.corpse) world.add(e, Corpse{});
         }
-        if (u.hostile || u.neutral) world.add(e, Dialogue{});
+        if ((u.hostile || u.neutral) && u.mob <= 0) world.add(e, Dialogue{});   // a mob has nothing to say
+        if (u.mob > 0) world.add(e, Mob{ u.mob });
         // Every unit carries items and has behaviors, whichever side it is on
         Inventory inv;
         for (const SaveStack& s : u.stacks) {
@@ -881,11 +917,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, worn);
         world.add(e, u.hasNeeds ? u.needs : Needs{});
         Behaviors behaviors;   // older saves have none, so their units get the defaults
+        if (u.mob > 0) behaviors.rules = mobBehaviors();
         if (u.hasBehaviors) {
             // An Auto-Haul's prop is found below, once the props are all there
             behaviors.rules.clear();
             for (const SaveBehavior& b : u.behaviors) behaviors.rules.push_back(b.rule);
-            ensureNeedsBehaviors(behaviors.rules);
+            ensureNeedsBehaviors(behaviors.rules, u.mob > 0);
         }
         behaviors.passive = u.passive;
         behaviors.block = u.block;
@@ -894,7 +931,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
-        world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
+        if (u.mob <= 0) world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
         // Older saves have no faction: it comes from the side the unit is on. A faction no longer listed (the old Gray
         // Faction) maps to the one that replaced it.
         const int savedFaction = u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_RETIRED_GRAY : FACTION_PLAYER;
@@ -1087,6 +1124,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.hasBody = true;
             su.body = bd->type;
         }
+        if (const Mob* m = w.get<Mob>(u)) su.mob = m->kind;
         if (const Occupying* oc = w.get<Occupying>(u)) {
             if (const Prop* p = w.get<Prop>(oc->prop)) su.occupying = p->serial;
         }
@@ -1561,10 +1599,12 @@ Soundtrack soundtrackFor(Screen screen) {
 // Plays a sound effect now, on the slider it follows (sounds.h lists them all, with their files)
 // A sound effect is not played again within this long of its last start: a click that lands on several things at once,
 // or an order given to many units, plays it once
+// volume and pan are for a world sound, heard from the camera (sounds.h); one too far off to hear is not played at all.
 constexpr Uint64 SFX_REPEAT_GAP_MS = 50;
-void playSfx(Sfx s) {
+void playSfx(Sfx s, float volume = 1.0f, float pan = 0.0f) {
     static Uint64 lastStart[(int)Sfx::Count] = {};
     static bool started[(int)Sfx::Count] = {};
+    if (volume <= 0.0f) return;
     const int i = (int)s;
     if (i >= 0 && i < (int)Sfx::Count) {
         const Uint64 now = SDL_GetTicks();
@@ -1573,7 +1613,7 @@ void playSfx(Sfx s) {
         lastStart[i] = now;
     }
     const SfxInfo& info = sfxInfo(s);
-    audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects);
+    audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects, volume, pan);
 }
 
 // The size the title screen's name is drawn in before it is shrunk to fit: large enough that it is never enlarged,
@@ -2719,8 +2759,19 @@ int main(int, char**) {
         auto sidebarFor = [&](int W, int H, float scroll) {
             const Entity shown = sidebarUnitOf(world);
             const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
-            return layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
-                                          renderer.profileCardHeight(H));
+            SidebarLayout L = layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
+                                                     renderer.profileCardHeight(H));
+            // A mob has no gear slots, nor gear buttons, so nothing there can be clicked or dragged. Its inventory is
+            // Not available until it is a corpse: no slots, and no sort button.
+            if (shown != NULL_ENTITY && world.has<Mob>(shown)) {
+                L.gear.clear();
+                L.optimizeButton = L.removeAllButton = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
+                if (!world.has<Corpse>(shown)) {
+                    L.slots.clear();
+                    L.sortButton = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
+                }
+            }
+            return L;
         };
         // Only your own units can be changed from the sidebar. A red unit's sidebar is for looking at.
         auto shownIsYours = [&]() {
@@ -2747,6 +2798,11 @@ int main(int, char**) {
                 r.cooldown = 0.0f;
                 if (r.on) b->wait = 0.0f;   // an automated behavior switched on looks for its step at once
                 break;
+            case BehaviorPart::Less:
+            case BehaviorPart::More:
+                if (!stepPercent(r, hit.part == BehaviorPart::More ? 1 : -1)) return;
+                r.cooldown = 0.0f;
+                break;
             case BehaviorPart::Up:
                 if (!moveBehavior(b->rules, row, -1)) return;
                 break;
@@ -2766,7 +2822,7 @@ int main(int, char**) {
         auto unitPanelHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
             SDL_GetMouseState(&mx, &my);
-            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).panel.contains(mx, my);
+            return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel.contains(mx, my);
         };
         // Whether a point is over the bottom unit panel or the inventory sidebar. Those belong to the
         // interface: clicks and wheel turns there never reach the world behind them.
@@ -2920,6 +2976,7 @@ int main(int, char**) {
             sidebarScroll = 0.0f;
         };
         auto startTalk = [&](Entity npc, Entity talker, bool shop) {
+            if (world.has<Mob>(npc) || world.has<Mob>(talker)) return;   // mobs have no dialogue (mobs.h)
             // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
             std::vector<Entity> others;
             for (Entity u : selectedUnits(world)) {
@@ -2966,6 +3023,7 @@ int main(int, char**) {
         };
         // A free trade between two of your own units: the trade screen, with the other unit's items on the left
         auto startFreeTrade = [&](Entity other, Entity unit) {
+            if (world.has<Mob>(other) || world.has<Mob>(unit)) return;   // mobs don't trade (mobs.h)
             clearTalkOrders(world);
             closeStorage();
             contextMenu.open = false;
@@ -3001,7 +3059,23 @@ int main(int, char**) {
         // What is under the pointer: a unit (one that is not selected, if there is one), or else the nearest prop
         // that can be used
         auto menuTargetAt = [&](float mx, float my) {
-            const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
+            // What the pointer is on is in front of the ground it is over: a unit or prop farther from the eye than
+            // that ground (behind a hill, past a ridge) is hidden by it, so it is passed over
+            float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+            cam.eye(ex, ey, ez);
+            float groundD2 = 1e30f;
+            if (auto g = pickGround(cam, terrain, mx, my, winW, winH)) {
+                const float gy = std::max(terrain.heightAt(g->first, g->second), 0.0f);
+                groundD2 = (g->first - ex) * (g->first - ex) + (gy - ey) * (gy - ey) + (g->second - ez) * (g->second - ez);
+            }
+            auto hidden = [&](Entity e) {
+                const Transform* tr = world.get<Transform>(e);
+                if (!tr) return false;
+                const float d = std::sqrt((tr->x - ex) * (tr->x - ex) + (tr->y - ey) * (tr->y - ey) + (tr->z - ez) * (tr->z - ez));
+                return d > std::sqrt(groundD2) + HIDDEN_BEHIND_GROUND;
+            };
+            std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
+            under.erase(std::remove_if(under.begin(), under.end(), hidden), under.end());
             // A unit locked in a cage stands for the cage: the menu offers to unlock it
             for (Entity u : under) {
                 if (lockedIn(world, u)) return occupiedProp(world, u);
@@ -3010,12 +3084,10 @@ int main(int, char**) {
                 if (!world.has<Selected>(u)) return u;
             }
             if (!under.empty()) return under[0];
-            float ex = 0.0f, ey = 0.0f, ez = 0.0f;
-            cam.eye(ex, ey, ez);
             Entity prop = NULL_ENTITY;
             float best = 0.0f;
             for (Entity p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
-                if (propInfo(world.get<Prop>(p)->kind).use == PropUse::None) continue;
+                if (propInfo(world.get<Prop>(p)->kind).use == PropUse::None || hidden(p)) continue;
                 const Transform* pt = world.get<Transform>(p);
                 const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
                 if (prop == NULL_ENTITY || d2 < best) {
@@ -3032,6 +3104,8 @@ int main(int, char**) {
             for (Entity u : selectedUnits(world)) {
                 if (world.has<Unconscious>(u)) continue;   // out cold: it does nothing
                 if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;   // carried: it does nothing
+                // A mob works no props: of a prop, it can only lie or sit on one (a bed to rest in)
+                if (world.has<Mob>(u) && world.has<Prop>(target) && propInfo(world.get<Prop>(target)->kind).use != PropUse::Occupy) continue;
                 if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
             }
             std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
@@ -3042,7 +3116,7 @@ int main(int, char**) {
         // The options for a target, in the order the menu lists them
         // Whether an NPC can be talked to, and whether its talk has a trade (Show me your wares)
         auto talkable = [&](Entity u) {
-            return world.has<Unit>(u) && world.has<Dialogue>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
+            return world.has<Unit>(u) && world.has<Dialogue>(u) && !world.has<Mob>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
                    !world.has<Unconscious>(u) && !world.has<Carried>(u);
         };
         auto sells = [&](Entity u) {
@@ -3074,11 +3148,15 @@ int main(int, char**) {
             }
             if (world.has<Unit>(target)) {
                 if (world.has<Commandable>(target)) {
-                    // One of your squad: trade, follow, defend, and pick it up (unless it carries or is carried)
-                    out.insert(out.end(), { MenuAction::Trade, MenuAction::Follow, MenuAction::Defend });
+                    // One of your squad: trade, follow, defend, and pick it up (unless it carries or is carried). A
+                    // mob is not traded with: its inventory is shut while it is awake.
+                    if (!world.has<Mob>(target)) out.push_back(MenuAction::Trade);
+                    out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
                     if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
                 } else if (world.has<Hostile>(target)) {
                     out.push_back(MenuAction::Attack);   // a hostile unit is only fought, never followed
+                } else if (world.has<Mob>(target) && world.has<Faction>(target) && isMobFaction(world.get<Faction>(target)->id)) {
+                    out.push_back(MenuAction::AttackUnprovoked);   // a wild mob is only hunted, never followed or defended
                 } else {
                     if (talkable(target)) out.push_back(MenuAction::Talk);
                     if (sells(target)) out.push_back(MenuAction::Shop);
@@ -3101,7 +3179,7 @@ int main(int, char**) {
                 if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
                 if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
                 // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
-                if (use == PropUse::Resource) out.push_back(MenuAction::AutoHarvest);
+                if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);   // not the Debris, which gives nothing
                 if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
             }
             return out;
@@ -3118,7 +3196,12 @@ int main(int, char**) {
                 case MenuAction::Attack: labels.push_back(lang("UILABEL_ATTACK")); break;
                 case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK")); break;   // it turns them hostile
                 case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
-                case MenuAction::Use: labels.push_back(lang("UILABEL_USE")); break;
+                case MenuAction::Use: {
+                    // Debris is cleared, not used
+                    const Prop* tp = world.get<Prop>(contextMenu.target);
+                    labels.push_back(lang(tp && tp->kind == PROP_DEBRIS ? "UILABEL_CLEAR" : "UILABEL_USE"));
+                    break;
+                }
                 case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
                 case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
                 case MenuAction::PutInBed: labels.push_back(lang("UILABEL_PUT_IN_BED")); break;
@@ -3151,8 +3234,10 @@ int main(int, char**) {
                 if (!noteLockedIn(selectedUnits(world))) refuse(lang("MISC_SELECT_UNIT_FIRST"));
                 return true;
             }
-            // A hostile unit offers only Attack, so the right click is the attack order itself, with no menu
-            if (actions.size() == 1 && actions[0] == MenuAction::Attack) {
+            // A hostile unit, or a wild mob, offers only Attack, so the right click is the attack order itself, with no
+            // menu. A wild mob that was not hostile turns on the attackers, as any unit attacked unprovoked does.
+            if (actions.size() == 1 && (actions[0] == MenuAction::Attack || actions[0] == MenuAction::AttackUnprovoked)) {
+                if (actions[0] == MenuAction::AttackUnprovoked) makeHostile(world, target);
                 issueAttackOrder(world, menuActors(target), target);
                 if (const Transform* tt = world.get<Transform>(target)) {
                     actionX = tt->x;
@@ -3188,9 +3273,11 @@ int main(int, char**) {
             if (!world.has<Unit>(target) && !world.has<Prop>(target)) return;
             switch (a) {
             case MenuAction::Talk: {
-                // A selected unit already in talk range talks now; otherwise they walk up, and the first there talks
+                // A selected unit already in talk range talks now; otherwise they walk up, and the first there talks.
+                // A mob never talks.
                 Entity talker = NULL_ENTITY;
                 for (Entity u : actors) {
+                    if (world.has<Mob>(u)) continue;
                     if (gapBetween(world, u, target) <= TALK_RANGE) {
                         talker = u;
                         break;
@@ -3200,11 +3287,17 @@ int main(int, char**) {
                 else issueTalkOrder(world, actors, target);
                 break;
             }
-            case MenuAction::Trade:
-                // The nearest selected unit trades: now if it is close enough, or once it has walked up
-                if (gapBetween(world, actors[0], target) <= TALK_RANGE) startFreeTrade(target, actors[0]);
-                else issueTalkOrder(world, { actors[0] }, target, true);
+            case MenuAction::Trade: {
+                // The nearest selected unit that is not a mob trades: now if it is close enough, or once it has walked up
+                const auto trader = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
+                if (trader == actors.end()) {
+                    refuse(lang("MISC_MOB_INVENTORY_LOCKED"));
+                    break;
+                }
+                if (gapBetween(world, *trader, target) <= TALK_RANGE) startFreeTrade(target, *trader);
+                else issueTalkOrder(world, { *trader }, target, true);
                 break;
+            }
             case MenuAction::Follow:
                 issueFollowOrder(world, actors, target);
                 break;
@@ -3221,13 +3314,22 @@ int main(int, char**) {
                 break;
             case MenuAction::Inventory:
                 if (world.has<Unconscious>(target)) {
-                    // Looting: the nearest unit that can goes, and the panel opens when it gets there (or now, if it is)
-                    if (gapBetween(world, actors[0], target) <= CARRY_REACH && !cannotAct(world, actors[0])) {
+                    // Looting: the nearest unit that can goes (never a mob, which takes nothing), and the panel opens
+                    // when it gets there (or now, if it is)
+                    std::vector<Entity> looters;
+                    for (Entity u : actors) {
+                        if (!world.has<Mob>(u)) looters.push_back(u);
+                    }
+                    if (looters.empty()) {
+                        refuse(lang("MISC_MOB_CANT_HOLD"));
+                        break;
+                    }
+                    if (gapBetween(world, looters[0], target) <= CARRY_REACH && !cannotAct(world, looters[0])) {
                         closeStorage();
                         lootUnit = target;
-                        lootBy = actors[0];
+                        lootBy = looters[0];
                         playSfx(Sfx::UiMenuOpen);
-                    } else if (!issueLootOrder(world, terrain, actors, target)) {
+                    } else if (!issueLootOrder(world, terrain, looters, target)) {
                         refuse(lang("MISC_SELECT_UNIT_FIRST"));
                     }
                     break;
@@ -3286,6 +3388,7 @@ int main(int, char**) {
                 // As Talk, then Show me your wares at once
                 Entity talker = NULL_ENTITY;
                 for (Entity u : actors) {
+                    if (world.has<Mob>(u)) continue;
                     if (gapBetween(world, u, target) <= TALK_RANGE) {
                         talker = u;
                         break;
@@ -3426,13 +3529,13 @@ int main(int, char**) {
         };
         // What a panel shows on the screen: its open rectangle, or its title bar where it is folded
         auto shownPanel = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).panel;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).panel;
             return combatLogPanel(W, H).panel;
         };
         // A panel's title bar, wherever it runs: along the panel's top, or along its bottom
         auto panelBarOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).title;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).title;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).title;
             return combatLogPanel(W, H).bar;
         };
@@ -3533,7 +3636,7 @@ int main(int, char**) {
         };
         // The lock buttons, by PanelId
         auto lockRectOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).lock;
+            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).lock;
             if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).lock;
             return combatLogPanel(W, H).lock;
         };
@@ -3601,7 +3704,7 @@ int main(int, char**) {
         };
         auto overPanels = [&](float x, float y, int W, int H) {
             const std::vector<std::string> labels = menuLabels();
-            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll),
+            return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll),
                                   sidebarFor(W, H, sidebarScroll), true, x, y)
                 || combatLogPanel(W, H).panel.contains(x, y)
                 || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
@@ -3848,7 +3951,7 @@ int main(int, char**) {
                     // The Reputation tab's list scrolls a faction a notch
                     const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
                     repScroll = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace,
-                                                factionTab, (int)factions().size(), repScroll + step).repFirst;
+                                                factionTab, (int)reputationFactions().size(), repScroll + step).repFirst;
                 } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
                     // Scrolls the unit list very slowly: a row for every SQUAD_WHEEL_NOTCHES_PER_ROW notches of the
                     // wheel. Turning the wheel the other way starts the count again.
@@ -3858,7 +3961,7 @@ int main(int, char**) {
                     if (rows != 0) {
                         unitPanelWheel -= rows * SQUAD_WHEEL_NOTCHES_PER_ROW;
                         unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
-                                                       unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).scrollRow;
+                                                       unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).scrollRow;
                     }
                 } else if (screen == Screen::Playing && !onTalkOrTrade(winW, winH, e.wheel.mouse_x, e.wheel.mouse_y)
                            && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
@@ -4232,7 +4335,7 @@ int main(int, char**) {
                         break;
                     }
                     if (infoPanelClick(winW, winH, tx, ty)) break;
-                    if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll).toggle.contains(tx, ty)) {
+                    if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).toggle.contains(tx, ty)) {
                         setFolded(PANEL_SQUAD, !squadCollapsed, winW, winH);
                         break;
                     }
@@ -4244,7 +4347,7 @@ int main(int, char**) {
                 // The Faction Panel's tabs, and in its Reputation tab a faction's row: that faction's reputations show
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const UnitPanelLayout fp = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed,
-                                                               squadPlace, factionTab, (int)factions().size(), repScroll);
+                                                               squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                     const float tx = e.button.x, ty = e.button.y;
                     if (fp.tabSquad.contains(tx, ty) || fp.tabReputation.contains(tx, ty)) {
                         const int next = fp.tabSquad.contains(tx, ty) ? FACTION_TAB_SQUAD : FACTION_TAB_REPUTATION;
@@ -4256,8 +4359,8 @@ int main(int, char**) {
                     for (size_t i = 0; i < fp.repRows.size(); ++i) {
                         const size_t idx = (size_t)fp.repFirst + i;
                         if (!fp.repRows[i].contains(tx, ty) || idx >= factions().size()) continue;
-                        if (factions()[idx].id != repView) playSfx(Sfx::UiClick);
-                        repView = factions()[idx].id;
+                        if (reputationFactions()[idx].id != repView) playSfx(Sfx::UiClick);
+                        repView = reputationFactions()[idx].id;
                         picked = true;
                         break;
                     }
@@ -4267,7 +4370,7 @@ int main(int, char**) {
                 // The Squad Panel's scroll bar: an arrow moves the list a row, the thumb can be dragged, and a press on
                 // the track moves a row toward it
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
-                    const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
+                    const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                     const float tx = e.button.x, ty = e.button.y;
                     if (sq.scrollUp.contains(tx, ty) || sq.scrollDown.contains(tx, ty)) {
                         const int next = std::clamp(sq.scrollRow + (sq.scrollUp.contains(tx, ty) ? -1 : 1), 0, sq.maxScroll());
@@ -4305,7 +4408,7 @@ int main(int, char**) {
                     // The unit panel and sidebar take the click, so it never reaches the ground
                     const float mx = e.button.x, my = e.button.y;
                     const std::vector<Entity> own = ownUnitList();
-                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
+                    const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
 
                     // The right-click menu: a click on one of its buttons does that action. A click
                     // anywhere else just closes it, and the click still does what it would have done.
@@ -4390,7 +4493,7 @@ int main(int, char**) {
                                 const Entity shown = sidebarUnitOf(world);
                                 if (sl.sortButton.contains(mx, my)) {
                                     itemMenu.open = false;
-                                    sortInventory(shown);
+                                    if (!inventoryLocked(world, shown)) sortInventory(shown);   // a mob's is shut
                                     break;
                                 }
                                 // The Gear tab: Optimize wears the best gear on hand, Remove All takes it all off.
@@ -4486,25 +4589,29 @@ int main(int, char**) {
                     // the pick stays, so another spot can be tried. The click finds the same spot the preview shows.
                     if (buildKind != BUILD_NONE && dialogueUnit == NULL_ENTITY && !mapOpen) {
                         if (buildKind == BUILD_DESTROY) {
-                            // Destroy takes down the first built prop under the mouse: a foundation, a building. Flags
-                            // are not taken down; they wear away with their vault. Other factions' buildings cost standing.
-                            bool took = false;
+                            // Destroy takes down the prop under the mouse nearest the eye, whatever it is: its
+                            // items fall where it stood and it becomes Debris (Debris itself is cleared away). Anyone on
+                            // it gets off first (breakBuilding). Another faction's prop costs standing with it.
+                            Entity target = NULL_ENTITY;
+                            float ex = 0.0f, ey = 0.0f, ez = 0.0f, best = 0.0f;
+                            cam.eye(ex, ey, ez);
                             for (Entity e : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
-                                if (!world.has<Owner>(e)) continue;
-                                if (world.get<Prop>(e)->kind == PROP_FLAG) {
-                                    refuse(lang("MISC_DESTROY_FLAG"));
-                                    took = true;
-                                    break;
-                                }
-                                const int owner = world.get<Owner>(e)->faction;
-                                if (destroyBuilding(world, e)) {
-                                    if (owner != FACTION_PLAYER) changePlayerReputation(owner, -REP_DESTROY_PENALTY);
-                                    playSfx(Sfx::Drop);
-                                    took = true;
-                                    break;
+                                const Transform* pt = world.get<Transform>(e);
+                                const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
+                                if (target == NULL_ENTITY || d2 < best) {
+                                    target = e;
+                                    best = d2;
                                 }
                             }
-                            if (!took) refuse(lang("MISC_DESTROY_NOTHING"));
+                            const Owner* own = target != NULL_ENTITY ? world.get<Owner>(target) : nullptr;
+                            const int owner = own ? own->faction : FACTION_PLAYER;
+                            if (target != NULL_ENTITY && storageProp == target) closeStorage();
+                            if (target != NULL_ENTITY && destroyBuilding(world, target)) {
+                                if (owner != FACTION_PLAYER) changePlayerReputation(owner, -REP_DESTROY_PENALTY);
+                                playSfx(Sfx::Drop);
+                            } else {
+                                refuse(lang("MISC_DESTROY_NOTHING"));
+                            }
                         } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
                             float bx = 0.0f, bz = 0.0f;
                             snapBuildSpot(buildKind, hit->first, hit->second, bx, bz);
@@ -4558,7 +4665,7 @@ int main(int, char**) {
                         // Right-click on a unit in the Squad Panel: its menu, as on the unit in the world
                         {
                             const std::vector<Entity> own = ownUnitList();
-                            const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
+                            const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                             bool onCell = false;
                             for (const UnitCell& c : squadL.cells) {
                                 if (!c.rect.contains(e.button.x, e.button.y) || c.index < 0 || c.index >= (int)own.size()) continue;
@@ -4797,7 +4904,7 @@ int main(int, char**) {
                 // The Squad Panel follows its scroll bar thumb while it is held
                 if (squadThumbDrag) {
                     if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
-                        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
+                        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                         unitPanelRow = squadRowAtThumb(sq, e.motion.y - squadThumbGrab);
                     } else {
                         squadThumbDrag = false;
@@ -4943,8 +5050,6 @@ int main(int, char**) {
 
             // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
             // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
-            const size_t hitsBefore = combatLog.hits;
-            const size_t missesBefore = combatLog.misses;
             factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
@@ -4952,8 +5057,6 @@ int main(int, char**) {
             behaviorSystem(world, combatLog, dt);
             // Anyone left at 0 health falls Unconscious
             downedSystem(world);
-            if (combatLog.hits > hitsBefore) playSfx(Sfx::Hit);
-            else if (combatLog.misses > missesBefore) playSfx(Sfx::Miss);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
             const size_t logCount = combatLog.lines.size();
             if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
@@ -5008,7 +5111,8 @@ int main(int, char**) {
             }
             // Units with automated behaviors (a camp's woodcutter) take their next step: to a tree, or to the vault with
             // a load
-            automationSystem(world, terrain, dt);
+            wildMobSystem(world, terrain, dt);   // wild mobs keep to their temperament: the Avoidant ones run off
+            automationSystem(world, terrain, dt, rng);
             // Picking up, putting down and carrying Unconscious units; looters that got there open the panel
             const CarryEvents carried = carrySystem(world);
             for (const auto& [looter, looted] : carried.loot) {
@@ -5035,9 +5139,9 @@ int main(int, char**) {
             const DoomChanges doom = doomSystem(world, gameSecs);
             for (Entity u : doom.woke) {
                 tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
-                queueSound(Sfx::Recovers);
+                queueSoundFrom(world, Sfx::Recovers, u);
             }
-            if (!doom.died.empty()) queueSound(Sfx::Dies);
+            for (Entity u : doom.died) queueSoundFrom(world, Sfx::Dies, u);
             // Resource and crafting props: the units working them make items by the in-game time that passed
             // Each item a worker receives shows over it, as "+Iron Ore", like a trade's label
             for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
@@ -5046,24 +5150,24 @@ int main(int, char**) {
                     tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
                     // Each prop has its own sound for an item finished
                     switch (g.propKind) {
-                    case PROP_ORE: queueSound(Sfx::DoneOre); break;
-                    case PROP_TREE: queueSound(Sfx::DoneTree); break;
-                    case PROP_MUSHROOM: queueSound(Sfx::DoneMushroom); break;
-                    case PROP_CAMPFIRE: queueSound(Sfx::DoneCooking); break;
-                    case PROP_WATER_PUMP: queueSound(Sfx::DoneWater); break;
-                    default: queueSound(Sfx::ItemMove); break;
+                    case PROP_ORE: queueSoundFrom(world, Sfx::DoneOre, g.unit); break;
+                    case PROP_TREE: queueSoundFrom(world, Sfx::DoneTree, g.unit); break;
+                    case PROP_MUSHROOM: queueSoundFrom(world, Sfx::DoneMushroom, g.unit); break;
+                    case PROP_CAMPFIRE: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
+                    case PROP_WATER_PUMP: queueSoundFrom(world, Sfx::DoneWater, g.unit); break;
+                    default: queueSoundFrom(world, Sfx::ItemMove, g.unit); break;
                     }
                     break;
                 case WorkGain::Kind::Unlocked:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
-                    queueSound(Sfx::Unlocked);
+                    queueSoundFrom(world, Sfx::Unlocked, g.unit);
                     break;
                 case WorkGain::Kind::LockpickFailed:
                     tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_LOCKPICK_FAILED"), 0.0f });
-                    queueSound(Sfx::LockpickFailed);
+                    queueSoundFrom(world, Sfx::LockpickFailed, g.unit);
                     break;
                 case WorkGain::Kind::Trained:
-                    queueSound(Sfx::DoneTraining);
+                    queueSoundFrom(world, Sfx::DoneTraining, g.unit);
                     tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_XP_GAINED", { std::to_string((int)std::lround(g.xp)), statName(g.item) }), 0.0f });
                     break;
                 }
@@ -5103,7 +5207,7 @@ int main(int, char**) {
                     t += dt;
                     if (t >= every) {
                         t = 0.0f;
-                        queueSound(sound);
+                        queueSoundFrom(world, sound, e);
                     }
                     nextTicks[e] = t;
                 }
@@ -5166,14 +5270,36 @@ int main(int, char**) {
 
         // ---- Sounds the systems asked for this frame. The plain item sound gives way to any more particular one. ----
         {
-            const std::vector<Sfx> queued = takeQueuedSounds();
-            const bool particular = std::any_of(queued.begin(), queued.end(), [](Sfx q) {
-                return q == Sfx::Equip || q == Sfx::Unequip || q == Sfx::Drop || q == Sfx::Pickup || q == Sfx::Store ||
-                       q == Sfx::Take || q == Sfx::GearChanged || q == Sfx::Eat || q == Sfx::Drink || q == Sfx::Poison;
-            });
-            for (Sfx q : queued) {
-                if (q == Sfx::ItemMove && particular) continue;
-                playSfx(q);
+            // A world sound is as loud as its nearest copy this frame, and is panned to its side of the screen. A
+            // frame of fighting plays one swing sound: a hit if any landed, else a miss.
+            const std::vector<QueuedSound> queued = takeQueuedSounds();
+            std::array<float, (size_t)Sfx::Count> volume{}, pan{};
+            volume.fill(-1.0f);
+            float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+            cam.eye(ex, ey, ez);
+            const Mat4 vp = cam.viewProj((float)winW / (float)std::max(1, winH));
+            for (const QueuedSound& q : queued) {
+                float v = 1.0f, p = 0.0f;
+                if (q.placed) {
+                    v = soundGain(std::sqrt((q.x - ex) * (q.x - ex) + (q.y - ey) * (q.y - ey) + (q.z - ez) * (q.z - ez)));
+                    const float cx = vp.m[0] * q.x + vp.m[4] * q.y + vp.m[8] * q.z + vp.m[12];
+                    const float cw = vp.m[3] * q.x + vp.m[7] * q.y + vp.m[11] * q.z + vp.m[15];
+                    p = cw > 1e-4f ? soundPan(cx / cw) : 0.0f;   // behind the eye: centred
+                }
+                const size_t i = (size_t)q.sfx;
+                if (i < volume.size() && v > volume[i]) {
+                    volume[i] = v;
+                    pan[i] = p;
+                }
+            }
+            auto heard = [&](Sfx s) { return volume[(size_t)s] >= 0.0f; };
+            const bool particular = heard(Sfx::Equip) || heard(Sfx::Unequip) || heard(Sfx::Drop) || heard(Sfx::Pickup) ||
+                                    heard(Sfx::Store) || heard(Sfx::Take) || heard(Sfx::GearChanged) || heard(Sfx::Eat) ||
+                                    heard(Sfx::Drink) || heard(Sfx::Poison);
+            if (heard(Sfx::Hit)) volume[(size_t)Sfx::Miss] = -1.0f;
+            if (particular) volume[(size_t)Sfx::ItemMove] = -1.0f;
+            for (size_t i = 0; i < volume.size(); ++i) {
+                if (volume[i] >= 0.0f) playSfx((Sfx)i, volume[i], pan[i]);
             }
             // Units selected: a sound when the selection changes to some units
             size_t selKey = 0, selCount = 0;
@@ -5428,7 +5554,7 @@ int main(int, char**) {
             }
             {
                 const std::vector<Entity> own = ownUnitList();
-                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)factions().size(), repScroll);
+                const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                 unitPanelRow = L.scrollRow;
                 renderer.drawUnitPanel(world, L, own, runMode, repView);
                 drawPanelLock(PANEL_SQUAD);

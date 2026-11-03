@@ -186,8 +186,8 @@ std::string trackPlaying(Bus bus) {
     return slot >= 0 && tracks[slot].ready ? tracks[slot].requested : std::string();
 }
 
-void playEffect(const std::string& file, Bus bus) {
-    if (!engineReady || file.empty()) return;
+void playEffect(const std::string& file, Bus bus, float volume, float pan) {
+    if (!engineReady || file.empty() || volume <= 0.0f) return;
     if (bus != Bus::Interface) bus = Bus::Effects;   // only these two play one-shot sounds
 
     // Each file has its own copies on each bus it is played on
@@ -206,6 +206,8 @@ void playEffect(const std::string& file, Bus bus) {
     fx.next = (fx.next + 1) % fx.copies.size();
     ma_sound_stop(&copy.sound);               // a copy still playing from its last use starts again
     ma_sound_seek_to_pcm_frame(&copy.sound, 0);
+    ma_sound_set_volume(&copy.sound, std::clamp(volume, 0.0f, 1.0f));
+    ma_sound_set_pan(&copy.sound, std::clamp(pan, -1.0f, 1.0f));
     ma_sound_start(&copy.sound);
 }
 

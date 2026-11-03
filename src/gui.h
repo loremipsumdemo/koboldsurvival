@@ -854,18 +854,21 @@ inline void clampMapView(const Rect& r, float levelSize, float& cx, float& cz, f
     keep(cz, span);
 }
 
-// One row of the Behavior list: the on box, the behavior's name, then the priority and delete buttons
+// One row of the Behavior list: the on box, the behavior's name, then its percent buttons (Eat and Heal only) and
+// the priority and delete buttons
 struct BehaviorRowLayout {
     Rect row{ 0.0f, 0.0f, 0.0f, 0.0f };             // the whole row, which the hover text is for
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };          // on or off
     Rect label{ 0.0f, 0.0f, 0.0f, 0.0f };           // what it does, such as Eat when hunger < 50%
+    Rect less{ 0.0f, 0.0f, 0.0f, 0.0f };            // [-] lowers the percent Eat or Heal acts below
+    Rect more{ 0.0f, 0.0f, 0.0f, 0.0f };            // [+] raises it
     Rect up{ 0.0f, 0.0f, 0.0f, 0.0f };              // [^] moves the behavior up the priority list
     Rect down{ 0.0f, 0.0f, 0.0f, 0.0f };            // [v] moves it down
     Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it (an automated behavior only)
 };
 
 // The parts of a behavior row that a click or hover can land on
-enum class BehaviorPart { None, Toggle, Up, Down, Remove };
+enum class BehaviorPart { None, Toggle, Less, More, Up, Down, Remove };
 
 // Right sidebar for the one unit shown. From the top, the content scrolls as one: a profile card with the
 // unit's picture, name, stats and carry bar, then the gear, then the inventory grid of 8 columns of slots,
@@ -1021,13 +1024,13 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         }
     }
     if (tab == UNIT_TAB_BEHAVIOR) {
-        // Behaviors: the on box has a fixed width, and the name takes what the priority and delete buttons leave.
-        // The buttons sit at the right end of each row.
+        // Behaviors: the on box has a fixed width, and the name takes what the buttons leave. The percent buttons,
+        // then the priority and delete buttons, sit at the right end of each row.
         L.behaviorPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, behaviorPanelH };
         const float rowX = L.behaviorPanel.x + innerPad;
         const float rowW = L.behaviorPanel.w - 2.0f * innerPad;
         const float toggleW = 18.0f * s, colGap = 3.0f * s;
-        const float buttonsW = 3.0f * buttonW + 2.0f * buttonGap;
+        const float buttonsW = 5.0f * buttonW + 4.0f * buttonGap;
         const float colsW = rowW - buttonsW - gap;                 // the toggle and the name
         const std::array<float, 2> colX{ rowX, rowX + toggleW + colGap };
         const std::array<float, 2> colWidth{ toggleW, colsW - toggleW - colGap };
@@ -1048,9 +1051,11 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
             R.toggle = Rect{ colX[0], y + (rowH - toggleW) * 0.5f, toggleW, toggleW };
             R.label = Rect{ colX[1], y, colWidth[1], rowH };
             const float by = y + 2.0f * s, bh = rowH - 4.0f * s;
-            R.up = Rect{ buttonsX, by, buttonW, bh };
-            R.down = Rect{ buttonsX + buttonW + buttonGap, by, buttonW, bh };
-            R.remove = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
+            R.less = Rect{ buttonsX, by, buttonW, bh };
+            R.more = Rect{ buttonsX + (buttonW + buttonGap), by, buttonW, bh };
+            R.up = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
+            R.down = Rect{ buttonsX + 3.0f * (buttonW + buttonGap), by, buttonW, bh };
+            R.remove = Rect{ buttonsX + 4.0f * (buttonW + buttonGap), by, buttonW, bh };
             L.behaviorRows.push_back(R);
         }
         for (size_t i = 0; i < 2; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
@@ -1074,6 +1079,8 @@ inline BehaviorHit behaviorHitAt(const SidebarLayout& L, float x, float y) {
         hit.row = (int)i;
         const struct { Rect r; BehaviorPart part; } parts[] = {
             { R.toggle, BehaviorPart::Toggle },
+            { R.less, BehaviorPart::Less },
+            { R.more, BehaviorPart::More },
             { R.up, BehaviorPart::Up },
             { R.down, BehaviorPart::Down },
             { R.remove, BehaviorPart::Remove },

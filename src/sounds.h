@@ -135,7 +135,36 @@ inline const SfxInfo& sfxInfo(Sfx s) {
 }
 
 // For systems that have no audio of their own: sounds asked for this frame, played by the game after its systems run.
-// The same sound asked for twice in a frame plays once.
+// A sound queued with a place (queueSoundAt, or queueSoundFrom in combat.h for a unit or prop) is a world sound: the
+// game plays it quieter the farther it is from the camera, and to the side of the screen it is on (soundGain and
+// soundPan below). One queued without a place, such as a sound for something you did in a panel, is heard in full.
+// The same sound asked for several times in a frame plays once, as loud as its nearest one.
+struct QueuedSound {
+    Sfx sfx = Sfx::UiClick;
+    bool placed = false;
+    float x = 0.0f, y = 0.0f, z = 0.0f;
+};
 void queueSound(Sfx s);
-std::vector<Sfx> takeQueuedSounds();
+void queueSoundAt(Sfx s, float x, float y, float z);
+std::vector<QueuedSound> takeQueuedSounds();
 void discardQueuedSounds();
+
+// World sounds, by their distance from the camera's eye: full volume within SOUND_FULL_DISTANCE, falling away to
+// silence at SOUND_SILENT_DISTANCE. The fall is squared, so a sound some way off is quiet well before it is gone.
+// At the default zoom (the eye 20 tiles from what it looks at) the units in the middle of the view are heard at
+// about four fifths.
+constexpr float SOUND_FULL_DISTANCE = 15.0f;
+constexpr float SOUND_SILENT_DISTANCE = 70.0f;
+// How far a sound at the very edge of the screen is panned toward that side: 0 is centred, 1 wholly to one side
+constexpr float SOUND_PAN_EDGE = 0.6f;
+inline float soundGain(float distance) {
+    if (distance <= SOUND_FULL_DISTANCE) return 1.0f;
+    if (distance >= SOUND_SILENT_DISTANCE) return 0.0f;
+    const float f = (SOUND_SILENT_DISTANCE - distance) / (SOUND_SILENT_DISTANCE - SOUND_FULL_DISTANCE);
+    return f * f;
+}
+// The pan for a sound at clip-space x (-1 the left edge of the screen, 1 the right), kept within the edge's pan
+inline float soundPan(float clipX) {
+    const float x = clipX < -1.0f ? -1.0f : clipX > 1.0f ? 1.0f : clipX;
+    return x * SOUND_PAN_EDGE;
+}

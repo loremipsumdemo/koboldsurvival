@@ -117,6 +117,10 @@ void gearTotals(const Equipment& worn, int& attack, int& defense) {
 
 bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::string& why) {
     why.clear();
+    if (w.has<Mob>(unit)) {   // a mob has no gear slots (mobs.h)
+        why = lang("MISC_MOB_NO_GEAR");
+        return false;
+    }
     Inventory* inv = w.get<Inventory>(unit);
     Equipment* worn = w.get<Equipment>(unit);
     if (!inv || !worn || invSlot < 0 || invSlot >= INVENTORY_SLOTS) return false;
@@ -379,6 +383,7 @@ namespace {
 // tried on a copy of the inventory first: if what comes off doesn't fit, nothing changes.
 GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string& why) {
     why.clear();
+    if (w.has<Mob>(unit)) return GearAction::NoChange;   // a mob has no gear to wear or take off
     Inventory* inv = w.get<Inventory>(unit);
     Equipment* worn = w.get<Equipment>(unit);
     if (!inv || !worn) return GearAction::NoChange;

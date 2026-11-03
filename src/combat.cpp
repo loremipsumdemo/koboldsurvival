@@ -5,6 +5,7 @@
 #include "equip.h"
 #include "inventory.h"
 #include "items.h"
+#include "mobs.h"
 #include "useitem.h"
 
 namespace {
@@ -215,11 +216,13 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 
     if (r.outcome == Outcome::Miss) {
         ++log.misses;
+        queueSoundFrom(w, Sfx::Miss, d);
         log.add(attacker + (shot ? " shoots at " : " misses ") + defender + (shot ? " and misses" : ""), tint, LogKind::Miss);
         return;
     }
     if (r.outcome == Outcome::Dodge) {
         ++log.misses;
+        queueSoundFrom(w, Sfx::Miss, d);
         log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss);
         grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
         return;
@@ -227,6 +230,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 
     // The swing landed. A unit already at 0 health takes no more: it is Unconscious (downedSystem in systems.h).
     ++log.hits;
+    queueSoundFrom(w, Sfx::Hit, d);
     if (downed) return;
 
     Needs* nd = w.get<Needs>(d);
@@ -393,15 +397,27 @@ std::vector<LogLine> gQueued;   // game messages waiting for the next frame's lo
 
 namespace {
 std::vector<TradeLabel> gQueuedLabels;
-std::vector<Sfx> gQueuedSounds;
+std::vector<QueuedSound> gQueuedSounds;
 }
 
 void queueSound(Sfx s) {
-    if (std::find(gQueuedSounds.begin(), gQueuedSounds.end(), s) == gQueuedSounds.end()) gQueuedSounds.push_back(s);
+    for (const QueuedSound& q : gQueuedSounds) {
+        if (q.sfx == s && !q.placed) return;
+    }
+    gQueuedSounds.push_back(QueuedSound{ s, false });
 }
 
-std::vector<Sfx> takeQueuedSounds() {
-    std::vector<Sfx> out;
+void queueSoundAt(Sfx s, float x, float y, float z) {
+    gQueuedSounds.push_back(QueuedSound{ s, true, x, y, z });
+}
+
+void queueSoundFrom(World& w, Sfx s, Entity e) {
+    if (const Transform* t = w.get<Transform>(e)) queueSoundAt(s, t->x, t->y + 0.5f, t->z);
+    else queueSound(s);
+}
+
+std::vector<QueuedSound> takeQueuedSounds() {
+    std::vector<QueuedSound> out;
     out.swap(gQueuedSounds);
     return out;
 }
@@ -478,10 +494,11 @@ std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFi
     return out;
 }
 
-void grantXp(World& w, Entity e, int stat, float amount, const std::string& why) {
+void grantXp(World& w, Entity e, int stat, float amount, const std::string& why, LogKind kind) {
     if (amount <= 0.0f || stat < 0 || stat >= STAT_COUNT) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;
+    if (w.has<Mob>(e) && !mobHasStat(stat)) return;   // a mob has only its attributes and combat skills
 
     XpBuffer& buf = w.has<XpBuffer>(e) ? *w.get<XpBuffer>(e) : w.add(e, XpBuffer{});
     const float total = buf.frac[stat] + amount;
@@ -492,10 +509,11 @@ void grantXp(World& w, Entity e, int stat, float amount, const std::string& why)
     addXp(*st, stat, (int)whole);
     if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);   // only yours are heard
     if (!why.empty()) {
-        const LogKind kind = stat == STAT_ATHLETICS ? LogKind::XpAthletics
-                           : stat == STAT_ENDURANCE ? LogKind::XpEndurance
-                                                    : LogKind::Xp;
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), kind);
+        const LogKind shown = kind != LogKind::Xp           ? kind
+                            : stat == STAT_ATHLETICS ? LogKind::XpAthletics
+                            : stat == STAT_ENDURANCE ? LogKind::XpEndurance
+                                                     : LogKind::Xp;
+        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown);
     }
 }
 

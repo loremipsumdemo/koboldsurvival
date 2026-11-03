@@ -1,4 +1,5 @@
 #include "factions.h"
+#include "mobs.h"
 #include <algorithm>
 #include <cstdio>
 #include <sstream>
@@ -175,6 +176,12 @@ int defaultReputation(int a, int b) {
 
 int reputation(int a, int b) {
     if (a == b) return REP_MAX;
+    // A mob faction has no reputation: an Aggressive kind is at war with everyone else, any other at peace (mobs.h)
+    if (isMobFaction(a) || isMobFaction(b)) {
+        const bool aggressive = (isMobFaction(a) && mobTemperament(mobKindOfFaction(a)) == MobTemperament::Aggressive) ||
+                                (isMobFaction(b) && mobTemperament(mobKindOfFaction(b)) == MobTemperament::Aggressive);
+        return aggressive ? REP_MIN : 0;
+    }
     if (a == FACTION_PLAYER || b == FACTION_PLAYER) {
         const int other = a == FACTION_PLAYER ? b : a;
         const auto it = standings().find(other);
@@ -189,7 +196,16 @@ bool factionsAllied(int a, int b) { return a == b || reputation(a, b) >= REP_ALL
 std::map<int, int> playerReputation() {
     std::map<int, int> out;
     for (const FactionDef& f : table().list) {
-        if (f.id != FACTION_PLAYER) out[f.id] = reputation(FACTION_PLAYER, f.id);
+        if (f.id != FACTION_PLAYER && !isMobFaction(f.id)) out[f.id] = reputation(FACTION_PLAYER, f.id);
+    }
+    return out;
+}
+
+const std::vector<FactionDef>& reputationFactions() {
+    static std::vector<FactionDef> out;
+    out.clear();
+    for (const FactionDef& f : table().list) {
+        if (!isMobFaction(f.id)) out.push_back(f);
     }
     return out;
 }
@@ -199,12 +215,13 @@ void resetPlayerReputation() { standings().clear(); }
 void setPlayerReputation(const std::map<int, int>& s) {
     standings().clear();
     for (const auto& [id, v] : s) {
-        if (id != FACTION_PLAYER && findFaction(id)) standings()[id] = std::clamp(v, REP_MIN, REP_MAX);
+        if (id != FACTION_PLAYER && !isMobFaction(id) && findFaction(id)) standings()[id] = std::clamp(v, REP_MIN, REP_MAX);
     }
 }
 
 int changePlayerReputation(int faction, int delta) {
     if (faction == FACTION_PLAYER || !findFaction(faction)) return REP_MAX;
+    if (isMobFaction(faction)) return reputation(FACTION_PLAYER, faction);   // no reputation to change
     const int next = std::clamp(reputation(FACTION_PLAYER, faction) + delta, REP_MIN, REP_MAX);
     standings()[faction] = next;
     return next;

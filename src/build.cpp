@@ -173,7 +173,10 @@ Entity placeBuiltProp(World& w, const Terrain& t, int kind, float x, float z, fl
     w.add(e, Transform{ x, t.heightAt(x, z), z });
     w.add(e, Prop{ kind, -1, yaw });
     addBuiltPropParts(w, e, kind);
-    if (!info.built) return e;
+    if (!info.built) {
+        claimOwnership(w, e);
+        return e;
+    }
 
     w.add(e, Owner{ owner });
     if (kind == PROP_FLAG) w.add(e, Health{});
@@ -192,9 +195,11 @@ Entity placeBuiltProp(World& w, const Terrain& t, int kind, float x, float z, fl
         }
     }
 
-    // Inside a claim of its faction, a prop with contents is locked to that faction
+    // Inside a claim of its faction, a prop with contents is locked to that faction. Inside any claim, the claim's
+    // faction owns it (claimOwnership).
     if (hasStorage(info) && claimAt(claimsOf(w), x, z, owner)) {
         w.add(e, Lock{ true, BUILT_LOCK_LEVEL, owner });
     }
+    claimOwnership(w, e);
     return e;
 }

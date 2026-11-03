@@ -173,6 +173,12 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
         return UseResult::NotUsable;
     }
     if (effects.empty()) return UseResult::NotUsable;
+    // A mob can't use healing items, on itself or another, nor have one used on it (mobs.h)
+    if (w.has<Mob>(target) || w.has<Mob>(consumer)) {
+        for (const UseEffect& e : effects) {
+            if (e.stat == UseEffect::Stat::Health && e.amount > 0) return UseResult::NotUsable;
+        }
+    }
 
     // The effects land on the target. The healing scales with the consumer's Medical skill, and the Medical XP
     // from it goes to the consumer.
@@ -218,7 +224,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
             if (e.amount < 0) hurt = true;
             if (e.stat == UseEffect::Stat::Hunger) food = true;
         }
-        queueSound(hurt ? Sfx::Poison : food ? Sfx::Eat : Sfx::Drink);
+        queueSoundFrom(w, hurt ? Sfx::Poison : food ? Sfx::Eat : Sfx::Drink, target);
     }
     if (--s.count <= 0) s = ItemStack{};
     grantXp(w, consumer, STAT_MEDICAL, (float)restored, "healing");

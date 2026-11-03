@@ -119,10 +119,18 @@ float strengthXpWhileWalking(float encumbrance, float seconds);
 
 // ---- Experience ----
 
+// What a game message is about, so the Game tab can hide each kind. Other messages are never hidden.
+// XpAthletics and XpEndurance are experience in those two stats, which comes from walking and running so often that
+// it has its own filter toggles, off at first. XpCarrying is the Strength gained for carrying a load while walking,
+// which comes as often, and is off at first too.
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance, XpCarrying };
+constexpr int LOG_KIND_COUNT = 12;
+
 // Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
 // XpBuffer until it adds up to a point. Only player units gain XP.
-// why names the action the XP came from, for the log; nullptr writes no message
-void grantXp(World& w, Entity e, int stat, float amount, const std::string& why = std::string());
+// why names the action the XP came from, for the log; nullptr writes no message. kind is the Game tab filter its
+// message falls under: Xp sorts it by the stat (Athletics and Endurance have their own), or a kind given here.
+void grantXp(World& w, Entity e, int stat, float amount, const std::string& why = std::string(), LogKind kind = LogKind::Xp);
 Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit
 
 // ---- Log and damage numbers ----
@@ -131,11 +139,6 @@ Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on th
 enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, Entity attacker, Entity target);
 
-// What a game message is about, so the Game tab can hide each kind. Other messages are never hidden.
-// XpAthletics and XpEndurance are experience in those two stats, which comes from walking and running so often that
-// it has its own filter toggles, off at first
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance };
-constexpr int LOG_KIND_COUNT = 11;
 
 struct LogLine {
     std::string text;
@@ -143,13 +146,15 @@ struct LogLine {
     LogKind kind = LogKind::Other;
 };
 
-// Which kinds the Game tab shows. All are on at first, except Athletics and Endurance experience.
+// Which kinds the Game tab shows. All are on at first, except Athletics and Endurance experience and the Strength
+// experience for carrying a load.
 struct LogFilter {
     bool on[LOG_KIND_COUNT];
     LogFilter() {
         for (bool& b : on) b = true;
         on[(int)LogKind::XpAthletics] = false;
         on[(int)LogKind::XpEndurance] = false;
+        on[(int)LogKind::XpCarrying] = false;
     }
 };
 
@@ -199,6 +204,8 @@ struct TradeLabel {
 // used item did ("Health +15"). The game takes them each frame and shows them with its trade labels.
 void queueUnitLabel(Entity unit, const std::string& text, bool red = false);
 std::vector<TradeLabel> takeQueuedLabels();
+// A world sound from where a unit or prop stands (sounds.h); heard in full when it has no place
+void queueSoundFrom(World& w, Sfx s, Entity e);
 void discardQueuedLabels();
 // The label for count of an item gained: "+Iron Ore" for one, "+3x Iron Ore" for more
 std::string itemGainLabel(int count, const std::string& itemName);

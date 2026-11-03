@@ -60,8 +60,10 @@ int reputation(int a, int b);
 bool factionsHostile(int a, int b);   // at or below REP_HOSTILE (never a faction with itself)
 bool factionsAllied(int a, int b);    // at or above REP_ALLIED, or the same faction
 
-// The Player Faction's standing with each faction, for the save and the Reputation tab
+// The Player Faction's standing with each faction, for the save and the Reputation tab. Mob factions have none.
 std::map<int, int> playerReputation();
+// The factions the Reputation tab lists: every faction but the mob factions, in the same order (mobs.h)
+const std::vector<FactionDef>& reputationFactions();
 // Starts every standing at its default (a new game)
 void resetPlayerReputation();
 // Sets the standings from a save; factions the save does not name keep their defaults

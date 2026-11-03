@@ -274,7 +274,10 @@ Party randomParty(Rng& rng, int count) {
 }
 
 void applyParty(World& w, const Party& p) {
-    std::vector<Entity> players = w.view<Unit, Commandable>();
+    std::vector<Entity> players;   // your people: your mobs are not the party's
+    for (Entity u : w.view<Unit, Commandable>()) {
+        if (!w.has<Mob>(u)) players.push_back(u);
+    }
     std::sort(players.begin(), players.end());
     for (size_t i = 0; i < players.size() && i < p.size(); ++i) {
         const Entity u = players[i];

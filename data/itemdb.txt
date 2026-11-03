@@ -2462,3 +2462,326 @@ material =
 tier = 0
 equip_slot = 
 tags = bolt
+
+[134]
+type = item
+max_stack_size = 20
+name = Bear Bones
+description = Bones from a bear. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[135]
+type = item
+max_stack_size = 20
+name = Cow Bones
+description = Bones from a cow. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[136]
+type = item
+max_stack_size = 20
+name = Chicken Bones
+description = Bones from a chicken. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[137]
+type = item
+max_stack_size = 20
+name = Boar Bones
+description = Bones from a boar. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[138]
+type = item
+max_stack_size = 20
+name = Wolf Bones
+description = Bones from a wolf. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[139]
+type = item
+max_stack_size = 20
+name = Deer Bones
+description = Bones from a deer. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[140]
+type = item
+max_stack_size = 20
+name = Rabbit Bones
+description = Bones from a rabbit. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[141]
+type = item
+max_stack_size = 20
+name = Fish Bones
+description = Bones from a fish. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[142]
+type = item
+max_stack_size = 20
+name = Crab Bones
+description = Bones from a crab. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[143]
+type = item
+max_stack_size = 20
+name = Lizard Bones
+description = Bones from a lizard. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[144]
+type = item
+max_stack_size = 20
+name = Snake Bones
+description = Bones from a snake. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[145]
+type = item
+max_stack_size = 20
+name = Pig Bones
+description = Bones from a pig. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[146]
+type = item
+max_stack_size = 20
+name = Sheep Bones
+description = Bones from a sheep. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[147]
+type = item
+max_stack_size = 20
+name = Duck Bones
+description = Bones from a duck. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[148]
+type = item
+max_stack_size = 20
+name = Turtle Bones
+description = Bones from a turtle. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[149]
+type = item
+max_stack_size = 20
+name = Bat Bones
+description = Bones from a bat. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones
+
+[150]
+type = item
+max_stack_size = 20
+name = Frog Bones
+description = Bones from a frog. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = bones

@@ -1,5 +1,7 @@
 #include "systems.h"
+#include "behavior.h"
 #include "claims.h"
+#include "mobs.h"
 #include "language.h"
 #include <algorithm>
 #include <cmath>
@@ -75,7 +77,11 @@ constexpr float ENEMY_RANGE = 128.0f;      // red units are placed within this m
 constexpr float ENEMY_MIN_RANGE = 12.0f;   // and no closer than this, so the start is clear
 constexpr float CAMP_DISTANCE = 90.0f;      // a faction's camp is centred this far from the player's camp, at a compass point
 constexpr float CAMP_SHIFT = 18.0f;         // how far a camp may move off its spot to find ground the kit fits on
-constexpr float CAMP_GAP = 2.0f * CLAIM_RADIUS + 6.0f;   // the least distance between two camps' flags: no claims overlap
+constexpr float CAMP_GAP = 2.0f * CLAIM_RADIUS + 6.0f;
+constexpr float CAMP_MOB_RADIUS = 10.0f;    // a camp's mobs stand within this many tiles of its flag
+constexpr float WILD_MOB_NEAR = 30.0f;      // the wild herds are this far past the farthest camp's claim, and up to
+constexpr float WILD_MOB_FAR = 70.0f;       // this far
+constexpr float WILD_HERD_RADIUS = 8.0f;    // a herd's mobs stand within this many tiles of its middle   // the least distance between two camps' flags: no claims overlap
 constexpr float PLAYER_CAMP_OFFSET = 8.0f;  // the player's camp is this far south of the spawn, clear of the squad
 constexpr int CAMP_EXTRA_MIN = 3;           // random props each claim gets besides its kit
 constexpr int CAMP_EXTRA_MAX = 5;
@@ -193,7 +199,10 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
 // Makes there be exactly `count` player units: the missing ones are added at the spawn, and any beyond count go. The
 // party is put into them in the order they were made (applyParty), so the last made are the ones that go.
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
-    std::vector<Entity> players = w.view<Unit, Commandable>();
+    std::vector<Entity> players;   // your people: your mobs are not the party's
+    for (Entity u : w.view<Unit, Commandable>()) {
+        if (!w.has<Mob>(u)) players.push_back(u);
+    }
     std::sort(players.begin(), players.end());
     for (size_t i = (size_t)std::max(0, count); i < players.size(); ++i) w.destroy(players[i]);
     const int have = std::min((int)players.size(), std::max(0, count));
@@ -247,6 +256,64 @@ Storage startingStorage(int kind, Rng& rng) {
         st.slots[(size_t)slot++] = ItemStack{ item, rng.range(1, most) };
     }
     return st;
+}
+
+Stats mobStats(int kind, Rng& rng) {
+    const MobInfo& m = mobInfo(kind);
+    Stats s;
+    auto level = [&](int base) { return std::clamp(base + rng.range(-1, 1), 1, MAX_LEVEL); };
+    for (int i = 0; i < STAT_COUNT; ++i) {
+        s.xp[i] = xpForLevel(mobHasStat(i) && statInfo(i).group == StatGroup::Attributes ? level(10) : 1);
+    }
+    s.xp[STAT_STRENGTH] = xpForLevel(level(m.strength));
+    s.xp[STAT_DEXTERITY] = xpForLevel(level(m.dexterity));
+    s.xp[STAT_VITALITY] = xpForLevel(level(m.vitality));
+    s.xp[STAT_ENDURANCE] = xpForLevel(level(m.endurance));
+    s.xp[STAT_AGILITY] = xpForLevel(level(m.agility));
+    s.xp[STAT_MELEE] = xpForLevel(level(m.melee));
+    s.xp[STAT_BLOCK] = xpForLevel(level(m.block));
+    return s;
+}
+
+Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, float x, float z) {
+    const MobInfo& m = mobInfo(kind);
+    Entity e = w.create();
+    w.add(e, Transform{ x, t.heightAt(x, z), z });
+    w.add(e, Mob{ kind });
+    w.add(e, Faction{ faction });
+    if (faction == FACTION_PLAYER) {
+        w.add(e, Unit{});
+        w.add(e, Commandable{});
+    } else {
+        w.add(e, Unit{ HOSTILE_WALK_SPEED });
+        if (factionsHostile(faction, FACTION_PLAYER)) w.add(e, Hostile{});
+        else w.add(e, Neutral{});
+    }
+    Inventory inv;
+    addToInventory(inv, m.meat, m.meatCount);
+    addToInventory(inv, mobBones(kind), mobBoneCount(kind));
+    w.add(e, inv);
+    w.add(e, Equipment{});   // always empty: a mob has no gear slots
+    const Stats st = mobStats(kind, rng);
+    w.add(e, st);
+    Needs n;
+    n.maxHp = n.hp = maxHealthFor(st);
+    w.add(e, n);
+    Behaviors b;
+    b.rules = mobBehaviors();
+    if (isMobFaction(faction)) {
+        // A wild mob roams, and an Avoidant or Passive one never fights
+        BehaviorRule roam;
+        roam.kind = BehaviorKind::Roam;
+        addBehavior(b.rules, roam);
+        const MobTemperament tm = mobTemperament(kind);
+        b.passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
+    }
+    w.add(e, b);
+    w.add(e, Combat{});
+    w.add(e, Name{ lang(m.nameKey) });
+    w.add(e, UnitSprite{ 1 });
+    return e;
 }
 
 void setupWorld(World& w, Terrain& t, Rng& rng) {
@@ -366,6 +433,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             }
             if (info.lockLevel > 0) w.add(prop, Lock{ true, info.lockLevel, faction });
             else if (info.use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
+            claimOwnership(w, prop);
             ++placed;
         }
     };
@@ -484,6 +552,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             w.add(prop, PropWork{});
         }
         if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
+        claimOwnership(w, prop);   // one that lands in a camp's claim is the camp's
     }
 
     // The vaults go down last, once every other prop stands, each on its camp's foundation. Then each sealed claim's
@@ -501,6 +570,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // stand doesn't depend on them.
     std::vector<std::string> takenNames;
     for (Entity u : w.view<Unit>()) {
+        if (w.has<Mob>(u)) continue;   // a mob is made whole by spawnMob
         if (!w.has<Stats>(u)) w.add(u, startingStats(rng));
         if (Needs* nd = w.get<Needs>(u)) {
             nd->maxHp = maxHealthFor(*w.get<Stats>(u));
@@ -539,6 +609,56 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
         } else {
             nm->text = randomUnitName(rng, body, {});
         }
+    }
+
+    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its flag, the player's included.
+    // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
+    auto freeSpot = [&](float cx, float cz, float radius, float& x, float& z) {
+        for (int attempt = 0; attempt < 200; ++attempt) {
+            const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * radius;
+            const GridPos g{ tileAt(cx + std::cos(a) * d), tileAt(cz + std::sin(a) * d) };
+            if (!t.walkable(g.x, g.y) || std::find(enemyTiles.begin(), enemyTiles.end(), g) != enemyTiles.end()) continue;
+            enemyTiles.push_back(g);
+            x = g.x + 0.5f;
+            z = g.y + 0.5f;
+            return true;
+        }
+        return false;
+    };
+    for (const CampKit& kit : kits) {
+        if (!kit.placed) continue;
+        for (int i = 0; i < CAMP_MOBS; ++i) {
+            float x = 0.0f, z = 0.0f;
+            if (freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) spawnMob(w, t, rng, rng.range(1, MOB_KIND_COUNT), kit.faction, x, z);
+        }
+    }
+    float farthest = 0.0f;   // how far out the camps reach from the spawn
+    for (const CampKit& kit : kits) {
+        if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
+    }
+    const float turn = rng.unit() * 6.2831853f;
+    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) {
+        // Each herd at its own bearing, out between WILD_MOB_NEAR and WILD_MOB_FAR past the camps
+        const float a = turn + 6.2831853f * (float)(kind - 1) / (float)MOB_KIND_COUNT;
+        const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
+        const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
+        const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
+        for (int i = 0; i < WILD_MOBS; ++i) {
+            float x = 0.0f, z = 0.0f;
+            if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
+                spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
+            }
+        }
+    }
+
+    // Every unit of the other factions (their mobs too) patrols its faction's claim when it has nothing else to do:
+    // Patrol is the last behavior on its list
+    for (Entity u : w.view<Unit, Behaviors, Faction>()) {
+        const int f = w.get<Faction>(u)->id;
+        if (f == FACTION_PLAYER || isMobFaction(f)) continue;
+        BehaviorRule patrol;
+        patrol.kind = BehaviorKind::Patrol;
+        addBehavior(w.get<Behaviors>(u)->rules, patrol);
     }
 }
 
@@ -622,7 +742,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
 
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
-        if (cannotTakeOrder(w, u)) continue;
+        if (cannotTakeOrder(w, u) || !canHoldItem(w, u, w.get<GroundItem>(item)->item)) continue;
         w.remove<SquadMember>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -667,9 +787,10 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
 
 // Right-click on an NPC: each selected unit walks up to it. The first in talk range starts the talk.
 void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade, bool shop) {
-    if (!w.has<Unit>(npc) || !w.get<Transform>(npc)) return;
+    if (!w.has<Unit>(npc) || !w.get<Transform>(npc) || w.has<Mob>(npc)) return;   // a mob has nothing to say
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
+        if (w.has<Mob>(u)) continue;   // nor does one of yours talk or trade for you (mobs.h)
         w.remove<SquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<PickupOrder>(u);
@@ -740,7 +861,11 @@ int pickupSystem(World& w) {
         const float dx = it->x - ut->x, dz = it->z - ut->z;
         if (dx * dx + dz * dz <= PICKUP_REACH * PICKUP_REACH) {
             // Take what fits. Whatever is left stays on the ground. If nothing fits the order ends,
-            // and the unit stays where it is.
+            // and the unit stays where it is. A mob takes nothing that is not its own (mobs.h).
+            if (!canHoldItem(w, u, gi->item)) {
+                endPickup(w, u);
+                continue;
+            }
             const int count = gi->count;
             const ItemDef* def = findItem(gi->item);
             const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
@@ -748,7 +873,7 @@ int pickupSystem(World& w) {
             if (left < count) {
                 queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup);
                 queueUnitLabel(u, itemGainLabel(count - left, itemName));   // "+Iron Ore" over its head
-                queueSound(Sfx::Pickup);
+                queueSoundFrom(w, Sfx::Pickup, u);
             }
             if (left == 0) w.destroy(item);
             else gi->count = left;
@@ -1100,7 +1225,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         }
         if (moved > 0.0f) {
             grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
-            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"));
+            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
             if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0, lang("MISC_REASON_CLIMBING"));
             // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
             // a hundredth of a tile or less in a frame, is not walking.
@@ -1396,7 +1521,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                         w.add(carried, Occupying{ prop });
                         a.putInBed = true;
                         a.started = true;
-                        queueSound(Sfx::Occupy);
+                        queueSoundFrom(w, Sfx::Occupy, prop);
                         queueLog(langf("MISC_PUTS_IN_BED", { nameOf(w, u), nameOf(w, carried), lang(info.nameKey) }), LogKind::Other);
                     }
                     break;
@@ -1417,7 +1542,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                     w.remove<IdleSpot>(u);
                     w.add(u, Occupying{ prop });
                     a.started = true;
-                    queueSound(w.has<Lock>(prop) ? Sfx::LockedIn : Sfx::Occupy);
+                    queueSoundFrom(w, w.has<Lock>(prop) ? Sfx::LockedIn : Sfx::Occupy, prop);
                     // A lockable one (the Prisoner Cage) locks behind the unit
                     if (Lock* lk = w.get<Lock>(prop)) {
                         lk->locked = true;
@@ -1427,6 +1552,7 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 break;
             }
             case PropUse::Resource:
+                if (w.has<Mob>(u)) break;   // a mob works no props (mobs.h)
                 if (workersAt(w, prop) >= info.workers) {
                     a.taken = true;
                 } else {
@@ -1540,6 +1666,22 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 for (Entity u : workers) w.remove<Working>(u);
                 pw.progress = 0.0;
                 pw.workers = 0;
+            }
+            continue;
+        }
+        if (propKind == PROP_DEBRIS) {
+            // Debris: DEBRIS_CLEAR_HOURS of work, shared among those at it, whatever their skill, and it is gone
+            PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
+            pw.workers = (int)workers.size();
+            pw.progress += gameSeconds / 3600.0 * (double)workers.size() / DEBRIS_CLEAR_HOURS;
+            if (pw.progress >= 1.0) {
+                for (Entity u : workers) {
+                    w.remove<Working>(u);
+                    grantXp(w, u, STAT_STRENGTH, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? lang("MISC_REASON_CLEARING") : std::string());
+                }
+                if (w.has<Commandable>(workers[0])) queueLog(langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
+                queueSoundFrom(w, Sfx::Drop, prop);
+                w.destroy(prop);
             }
             continue;
         }
@@ -1657,7 +1799,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop);
                 queueUnitLabel(got, itemLossLabel(1, itemName), true);   // it fell at the unit's feet
-                queueSound(Sfx::Drop);
+                queueSoundFrom(w, Sfx::Drop, got);
                 w.remove<Working>(got);
                 workers.erase(workers.begin() + (long)pick);
             }
@@ -1731,18 +1873,26 @@ bool fullFor(World& w, Entity u, int item) {
     return encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u)) >= ENCUMBERED_SHARE;
 }
 
-// Whether an Auto-Haul can be done now: its prop is there, open to the unit, in a claim of the unit's faction, and has
-// room for at least one item the unit carries. item 0: any item the prop takes; otherwise only that item.
-bool haulable(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
+// Why an Auto-Haul can't be done now, or BehaviorWait::None when it can: its prop is there, open to the unit, in a
+// claim of the unit's faction, and has room for at least one item the unit carries. item 0: any item the prop takes;
+// otherwise only that item.
+BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
     const Prop* p = w.get<Prop>(r.prop);
     const Storage* st = w.get<Storage>(r.prop);
     const Inventory* inv = w.get<Inventory>(u);
-    if (!p || !st || !inv || lockShutFor(w, r.prop, u) || !inOwnClaim(w, claims, r.prop, unitFaction(w, u))) return false;
+    if (!p || !st || !inv) return BehaviorWait::PropGone;
+    if (!inOwnClaim(w, claims, r.prop, unitFaction(w, u))) return BehaviorWait::OutsideClaim;
+    if (lockShutFor(w, r.prop, u)) return BehaviorWait::Locked;
+    bool carries = false;
     for (const ItemStack& s : inv->slots) {
-        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item)) continue;
-        if (propAcceptsItem(p->kind, s.item) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return true;
+        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !propAcceptsItem(p->kind, s.item)) continue;
+        carries = true;
+        if (slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return BehaviorWait::None;
     }
-    return false;
+    return carries ? BehaviorWait::PropFull : BehaviorWait::NothingToHaul;
+}
+bool haulable(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
+    return haulWait(w, claims, u, r, item) == BehaviorWait::None;
 }
 
 // Whether one of the unit's Auto-Hauls that is on could take this item now
@@ -1764,7 +1914,7 @@ bool harvestLoaded(World& w, const std::vector<Claim>& claims, Entity u, const B
 // room for another worker. NULL_ENTITY when there is none.
 Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int kind) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut || kind < 0 || kind >= PROP_KIND_COUNT || propInfo(kind).use != PropUse::Resource) return NULL_ENTITY;
+    if (!ut || kind < 0 || kind >= PROP_KIND_COUNT || !yieldsItems(kind)) return NULL_ENTITY;
     const int faction = unitFaction(w, u);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
@@ -1790,7 +1940,10 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
         w.has<Carrying>(u) || w.has<AttackOrder>(u)) {
         return true;
     }
-    if (const SoloMove* so = w.get<SoloMove>(u); so && so->next < so->waypoints.size() && !w.has<PropOrder>(u)) return true;
+    if (const SoloMove* so = w.get<SoloMove>(u); so && so->next < so->waypoints.size() && !w.has<PropOrder>(u) && !b.seeking &&
+        !(b.busy && isWalkBehavior(b.step.kind))) {
+        return true;
+    }
     if (const SquadMember* sm = w.get<SquadMember>(u)) {
         if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return true;
     }
@@ -1817,6 +1970,7 @@ void stopAutoStep(World& w, Entity u, Behaviors& b) {
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
     }
+    if (b.busy && isWalkBehavior(b.step.kind)) w.remove<SoloMove>(u);
     if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && b.busy && wk->prop == b.stepProp) w.remove<Working>(u);
     b.busy = false;
 }
@@ -1829,19 +1983,79 @@ BehaviorRule* stepRule(Behaviors& b) {
     return nullptr;
 }
 
-// Tries to start an automated behavior's step. False, with nothing changed, when it can't be done now.
-bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, const BehaviorRule& r) {
+// Sends a unit on a walk step: it walks to the spot, and the step ends when it gets there
+void autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
+    w.remove<SquadMember>(u);
+    w.remove<PickupOrder>(u);
+    w.remove<TalkOrder>(u);
+    endPropTasks(w, u);
+    w.remove<IdleSpot>(u);
+    w.add(u, SoloMove{});
+    planSolo(w, t, u, to);
+}
+
+// Whether a tile is walkable ground a walk may end on
+bool openTile(const Terrain& t, float x, float z) {
+    return x >= 0.0f && z >= 0.0f && x < t.size() && z < t.size() && t.walkable((int)std::floor(x), (int)std::floor(z));
+}
+
+// Patrol: a walkable spot inside the claim the unit stands in, when that claim is its faction's
+BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, Entity u, Rng& rng, Vec2& to) {
+    const Transform* ut = w.get<Transform>(u);
+    const Claim* c = ut ? claimAt(claims, ut->x, ut->z, unitFaction(w, u)) : nullptr;
+    if (!c) return BehaviorWait::NotInClaim;
+    for (int attempt = 0; attempt < 12; ++attempt) {
+        const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * (CLAIM_RADIUS - 2.0f);
+        const float x = c->x + std::cos(a) * d, z = c->z + std::sin(a) * d;
+        if (!openTile(t, x, z)) continue;
+        to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };
+        return BehaviorWait::None;
+    }
+    return BehaviorWait::NotInClaim;
+}
+
+// Roam: a walkable spot a short way off, outside every claim
+BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, Entity u, Rng& rng, Vec2& to) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return BehaviorWait::NowhereToRoam;
+    for (int attempt = 0; attempt < 12; ++attempt) {
+        const float a = rng.unit() * 6.2831853f, d = ROAM_STEP_MIN + rng.unit() * (ROAM_STEP_MAX - ROAM_STEP_MIN);
+        const float x = ut->x + std::cos(a) * d, z = ut->z + std::sin(a) * d;
+        if (!openTile(t, x, z) || claimAt(claims, x, z)) continue;
+        to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };
+        return BehaviorWait::None;
+    }
+    return BehaviorWait::NowhereToRoam;
+}
+
+// Tries to start an automated behavior's step. False, with nothing else changed, when it can't be done now; r.why
+// then says why.
+bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    if (isWalkBehavior(r.kind)) {
+        Vec2 to{ 0.0f, 0.0f };
+        r.why = r.kind == BehaviorKind::Patrol ? patrolSpot(w, t, claims, u, rng, to) : roamSpot(w, t, claims, u, rng, to);
+        if (r.why != BehaviorWait::None) return false;
+        b.busy = true;
+        b.step = r;
+        b.stepProp = NULL_ENTITY;
+        autoWalk(w, t, u, to);
+        return true;
+    }
     Entity prop = NULL_ENTITY;
     PropAction action = PropAction::Use;
     if (r.kind == BehaviorKind::AutoHaul) {
-        if (!haulable(w, claims, u, r)) return false;
+        r.why = haulWait(w, claims, u, r);
+        if (r.why != BehaviorWait::None) return false;
         prop = r.prop;
         action = PropAction::Store;
     } else {
-        if (harvestLoaded(w, claims, u, b, propInfo(r.propKind).item)) return false;   // a load waiting, or no room
-        prop = harvestTarget(w, claims, u, r.propKind);
-        if (prop == NULL_ENTITY) return false;
+        const int item = propInfo(r.propKind).item;
+        if (fullFor(w, u, item)) r.why = BehaviorWait::CarryFull;
+        else if (harvestLoaded(w, claims, u, b, item)) r.why = BehaviorWait::LoadWaiting;
+        else if ((prop = harvestTarget(w, claims, u, r.propKind)) == NULL_ENTITY) r.why = BehaviorWait::NoProp;
+        if (r.why != BehaviorWait::None) return false;
     }
+    r.why = BehaviorWait::None;
     b.busy = true;
     b.step = r;
     b.stepProp = prop;
@@ -1851,7 +2065,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
 
 }  // namespace
 
-void automationSystem(World& w, Terrain& t, float dt) {
+void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     const std::vector<Claim> claims = claimsOf(w);
     for (Entity u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
@@ -1859,6 +2073,7 @@ void automationSystem(World& w, Terrain& t, float dt) {
         for (BehaviorRule& r : b->rules) {
             if (!isAutomated(r.kind)) continue;
             r.cooldown = std::max(0.0f, r.cooldown - dt);
+            if (!r.on) r.why = BehaviorWait::None;
             any = any || r.on;
         }
         // The step's behavior was switched off or deleted: the step stops
@@ -1866,24 +2081,64 @@ void automationSystem(World& w, Terrain& t, float dt) {
             const BehaviorRule* current = stepRule(*b);
             if (!current || !current->on) stopAutoStep(w, u, *b);
         }
-        if (!any) continue;
+        if (!any && b->seek == NULL_ENTITY && !b->seeking) continue;
         const bool yours = w.has<Commandable>(u);
         const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
         // Out cold, carried, shut in or downed: nothing to do
         const Needs* n = w.get<Needs>(u);
         if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) || (n && n->hp <= 0)) {
             b->busy = false;
+            b->seeking = false;
             continue;
         }
         // A fight comes first: the step stops, and the automation waits for the fight to end
         const Combat* c = w.get<Combat>(u);
         if ((c && c->target != NULL_ENTITY) || w.has<AttackOrder>(u)) {
             if (b->busy) stopAutoStep(w, u, *b);
+            if (b->seeking) w.remove<SoloMove>(u);
+            b->seeking = false;
             b->wait = resume;
             continue;
         }
+        // Share: a unit in need walks to the unit that can share with it. The walk ends when it is close enough (Eat or
+        // Heal then takes the item), when the need is gone, or when you give it an order. It may cut an automated
+        // step short, but never an order of yours.
+        if (b->seeking) {
+            const SoloMove* so = w.get<SoloMove>(u);
+            const bool walking = so && so->next < so->waypoints.size();
+            if (b->seek == NULL_ENTITY || !walking || flatGap(w, u, b->seek) <= SHARE_RANGE) {
+                if (walking) w.remove<SoloMove>(u);
+                b->seeking = false;
+            } else if (onOtherOrder(w, u, *b)) {
+                b->seeking = false;
+                b->wait = resume;
+            }
+            continue;
+        }
+        if (b->seek != NULL_ENTITY && w.has<Transform>(b->seek) && flatGap(w, u, b->seek) > SHARE_RANGE &&
+            !onOtherOrder(w, u, *b) && (b->busy || b->wait <= 0.0f)) {
+            if (b->busy) stopAutoStep(w, u, *b);
+            const Transform* gt = w.get<Transform>(b->seek);
+            const Transform* ut = w.get<Transform>(u);
+            // Stop just short of the giver, on the near side, so the two don't push each other about
+            const float dx = gt->x - ut->x, dz = gt->z - ut->z, d = std::max(1e-3f, std::hypot(dx, dz));
+            const float stop = std::min(SHARE_WALK_STOP, d);
+            w.remove<SquadMember>(u);
+            w.remove<IdleSpot>(u);
+            w.add(u, SoloMove{});
+            planSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
+            b->seeking = true;
+            continue;
+        }
+        if (!any) {
+            // No automated behavior: only the wait before a walk to a sharer is kept
+            b->wait = onOtherOrder(w, u, *b) ? resume : std::max(0.0f, b->wait - dt);
+            continue;
+        }
         const PropOrder* po = w.get<PropOrder>(u);
-        const bool going = po && po->automatic;
+        const SoloMove* walk = w.get<SoloMove>(u);
+        const bool walkingStep = b->busy && isWalkBehavior(b->step.kind) && walk && walk->next < walk->waypoints.size();
+        const bool going = (po && po->automatic) || walkingStep;
         const Working* wk = w.get<Working>(u);
         const bool working = b->busy && wk && !wk->unlocking && wk->prop == b->stepProp;
 
@@ -1899,12 +2154,16 @@ void automationSystem(World& w, Terrain& t, float dt) {
                 b->wait = resume;
                 continue;
             } else {
-                // The step ended by itself: the haul was put in, or the harvest did not start (the prop had all its
-                // workers, or the way was blocked). A harvest that did not start waits before it is tried again.
+                // The step ended by itself: the haul was put in, the walk got there, or the harvest did not start (the
+                // prop had all its workers, or the way was blocked). A harvest that did not start waits before it is
+                // tried again; a Patrol or a Roam pauses where it got to before its next walk.
                 b->busy = false;
-                if (b->step.kind == BehaviorKind::AutoHarvest) {
-                    if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                if (BehaviorRule* r = stepRule(*b)) {
+                    if (b->step.kind == BehaviorKind::AutoHarvest) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                    if (b->step.kind == BehaviorKind::Patrol) r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
+                    if (b->step.kind == BehaviorKind::Roam) r->cooldown = ROAM_PAUSE_MIN + rng.unit() * (ROAM_PAUSE_MAX - ROAM_PAUSE_MIN);
                 }
+                w.remove<SoloMove>(u);
             }
         } else {
             if (onOtherOrder(w, u, *b) || going) {
@@ -1922,8 +2181,66 @@ void automationSystem(World& w, Terrain& t, float dt) {
         // waits BEHAVIOR_RETRY_SECONDS before it is tried again.
         for (BehaviorRule& r : b->rules) {
             if (!isAutomated(r.kind) || !r.on || r.cooldown > 0.0f) continue;
-            if (startStep(w, t, claims, u, *b, r)) break;
+            if (startStep(w, t, claims, u, *b, r, rng)) break;
             r.cooldown = BEHAVIOR_RETRY_SECONDS;
+        }
+    }
+}
+
+void wildMobSystem(World& w, Terrain& t, float dt) {
+    for (Entity u : w.view<Mob, Behaviors, Transform, Faction>()) {
+        const int faction = w.get<Faction>(u)->id;
+        if (!isMobFaction(faction)) continue;   // a camp's mob is its faction's, and goes by its reputations
+        Behaviors* b = w.get<Behaviors>(u);
+        const MobTemperament tm = mobTemperament(w.get<Mob>(u)->kind);
+        b->passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
+        if (tm != MobTemperament::Avoidant) continue;
+        const Needs* n = w.get<Needs>(u);
+        if (w.has<Unconscious>(u) || w.has<Carried>(u) || (n && n->hp <= 0)) continue;
+        b->sense -= dt;
+        if (b->sense > 0.0f) continue;
+        b->sense = 0.5f;
+        // The nearest outsider on its feet within WILD_AVOID_RANGE
+        const Transform* ut = w.get<Transform>(u);
+        Entity near = NULL_ENTITY;
+        float nearD2 = WILD_AVOID_RANGE * WILD_AVOID_RANGE;
+        for (Entity o : w.view<Unit, Transform>()) {
+            if (o == u || w.has<Unconscious>(o) || w.has<Carried>(o)) continue;
+            const Faction* of = w.get<Faction>(o);
+            if ((of ? of->id : FACTION_PLAYER) == faction) continue;
+            const Transform* ot = w.get<Transform>(o);
+            const float d2 = (ot->x - ut->x) * (ot->x - ut->x) + (ot->z - ut->z) * (ot->z - ut->z);
+            if (d2 < nearD2) {
+                near = o;
+                nearD2 = d2;
+            }
+        }
+        if (near == NULL_ENTITY) continue;
+        // Already running: let it run
+        const SoloMove* so = w.get<SoloMove>(u);
+        if (b->busy && b->step.kind == BehaviorKind::Roam && so && so->next < so->waypoints.size()) continue;
+        // Away from it, turning a little either side when the way straight off is not walkable
+        const Transform* ot = w.get<Transform>(near);
+        const float away = std::atan2(ut->z - ot->z, ut->x - ot->x);
+        static const float TURNS[] = { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f, 1.6f, -1.6f };
+        for (float turn : TURNS) {
+            const float x = ut->x + std::cos(away + turn) * WILD_FLEE_DISTANCE;
+            const float z = ut->z + std::sin(away + turn) * WILD_FLEE_DISTANCE;
+            if (!openTile(t, x, z)) continue;
+            if (b->busy) stopAutoStep(w, u, *b);
+            BehaviorRule roam;
+            roam.kind = BehaviorKind::Roam;
+            if (const BehaviorRule* own = [&]() -> const BehaviorRule* {
+                    for (const BehaviorRule& r : b->rules) if (r.kind == BehaviorKind::Roam) return &r;
+                    return nullptr;
+                }()) {
+                roam = *own;
+            }
+            b->busy = true;
+            b->step = roam;
+            b->stepProp = NULL_ENTITY;
+            autoWalk(w, t, u, Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f });
+            break;
         }
     }
 }
@@ -1931,6 +2248,7 @@ void automationSystem(World& w, Terrain& t, float dt) {
 WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p || !isWorkProp(propInfo(p->kind).use) || !w.get<Transform>(unit)) return WorkStart::TooFar;
+    if (w.has<Mob>(unit)) return WorkStart::TooFar;   // a mob works no props (mobs.h)
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop) return WorkStart::Started;   // already at it
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
@@ -1954,6 +2272,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
 WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     const Lock* lock = w.get<Lock>(prop);
     if (!lock || !w.has<Prop>(prop) || !w.get<Transform>(unit)) return WorkStart::NotLocked;
+    if (w.has<Mob>(unit)) return WorkStart::SkillTooLow;   // a mob has no Lockpicking (mobs.h)
     if (!lockShutFor(w, prop, unit)) return WorkStart::NotLocked;
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop && wk->unlocking) return WorkStart::Started;
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
@@ -1999,8 +2318,19 @@ std::string taskNameOf(World& w, Entity u) {
     if (w.has<Unconscious>(u)) return lang("UILABEL_TASK_UNCONSCIOUS");
     if (w.has<PlayingDead>(u)) return lang("UILABEL_TASK_PLAYING_DEAD");
     if (w.has<Carried>(u)) return lang("UILABEL_TASK_CARRIED");
+    // A step of its own behaviors: the behavior's name, such as Auto-Harvest: Tree, while it is on its way or at it
+    if (const Behaviors* b = w.get<Behaviors>(u)) {
+        if (b->seeking) return langf("UILABEL_TASK_SHARE_WALK", { nameOf(w, b->seek) });
+        const PropOrder* po = w.get<PropOrder>(u);
+        const Working* wk = w.get<Working>(u);
+        if (b->busy && po && po->automatic) return langf("UILABEL_TASK_AUTO_GOING", { behaviorName(b->step) });
+        if (b->busy && wk && !wk->unlocking && wk->prop == b->stepProp) return behaviorName(b->step);
+    }
     Entity prop = NULL_ENTITY;
     if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(STAT_LOCKPICKING);
+    if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && w.get<Prop>(g->prop)->kind == PROP_DEBRIS) {
+        return lang("UILABEL_TASK_CLEARING");
+    }
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
     else if (const PropOrder* po = w.get<PropOrder>(u); po && useOf(w, po->prop) == PropUse::Resource) prop = po->prop;
     if (const Prop* p = prop != NULL_ENTITY ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
@@ -2121,7 +2451,7 @@ void passiveCraftSystem(World& w, double gameSeconds) {
                     if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
                     addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
                     ++pw.made;   // the ring hops for it
-                    queueSound(Sfx::DoneForge);
+                    queueSoundFrom(w, Sfx::DoneForge, e);
                 }
                 pw.progress = 0.0;
             }
@@ -2224,9 +2554,9 @@ void knockOut(World& w, Entity u) {
     }
     w.add(u, un);
     queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other);
-    queueSound(Sfx::Downed);
+    queueSoundFrom(w, Sfx::Downed, u);
     const int victim = factionOf(w, u);
-    if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER) {
+    if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(victim, -REP_KO_PENALTY);
         queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_KO_PENALTY), std::to_string(now) }),
                  LogKind::Other);
@@ -2265,25 +2595,31 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
         }
         un->doom = std::clamp(un->doom + doomPerHour(statsOf(w, u)) * hours, 0.0f, 100.0f);
         if (un->doom >= 100.0f) {
-            // Dead for good: a corpse, no longer anyone's to command, still there to carry and to loot
-            un->doom = 100.0f;
-            w.add(u, Corpse{});
-            w.remove<Commandable>(u);
-            w.remove<Selected>(u);
-            w.remove<Occupying>(u);
-            queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other);
+            finishDoom(w, u);
             out.died.push_back(u);
-            // Knocked out by your units, and dead before it woke: more reputation lost with its faction
-            const int victim = factionOf(w, u);
-            if (un->koFaction == FACTION_PLAYER && victim != FACTION_PLAYER) {
-                const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
-                queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY),
-                                                          std::to_string(now) }),
-                         LogKind::Other);
-            }
         }
     }
     return out;
+}
+
+void finishDoom(World& w, Entity u) {
+    Unconscious* un = w.get<Unconscious>(u);
+    if (!un || w.has<Corpse>(u)) return;
+    // Dead for good: a corpse, no longer anyone's to command, still there to carry and to loot
+    un->doom = 100.0f;
+    w.add(u, Corpse{});
+    w.remove<Commandable>(u);
+    w.remove<Selected>(u);
+    w.remove<Occupying>(u);
+    queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other);
+    // Knocked out by your units, and dead before it woke: more reputation lost with its faction (a mob of a mob
+    // faction is game, and costs none)
+    const int victim = factionOf(w, u);
+    if (un->koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
+        const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
+        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),
+                 LogKind::Other);
+    }
 }
 
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target) {
@@ -2329,7 +2665,7 @@ void putDown(World& w, Entity carrier) {
     if (Transform* ct = w.get<Transform>(carried)) {
         if (const Transform* t = w.get<Transform>(carrier)) *ct = *t;
         queueLog(langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other);
-        queueSound(Sfx::PutDown);
+        queueSoundFrom(w, Sfx::PutDown, carrier);
     }
 }
 
@@ -2367,7 +2703,7 @@ CarryEvents carrySystem(World& w) {
             w.add(target, Carried{ u });
             w.add(u, Carrying{ target });
             queueLog(langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other);
-            queueSound(Sfx::CarryUp);
+            queueSoundFrom(w, Sfx::CarryUp, u);
             picked.push_back(u);
             continue;
         }
@@ -2453,6 +2789,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     if (!w.has<Unconscious>(target) || !tt) return false;
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
+        if (w.has<Mob>(u)) continue;   // a mob takes nothing (mobs.h)
         w.remove<SquadMember>(u);
         w.remove<PickupOrder>(u);
         w.remove<AttackOrder>(u);
@@ -2466,9 +2803,22 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     return false;
 }
 
+bool canHoldItem(World& w, Entity unit, int item) {
+    const Mob* m = w.get<Mob>(unit);
+    return !m || mobCanHold(m->kind, item);
+}
+
+bool inventoryLocked(World& w, Entity unit) {
+    return w.has<Mob>(unit) && !w.has<Unconscious>(unit);
+}
+
 bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::string& why) {
     Inventory* into = w.get<Inventory>(looter);
     if (!into || !w.has<Unconscious>(target)) return false;
+    if (w.has<Mob>(looter)) {   // a mob takes nothing but what it was born with
+        why = lang("MISC_MOB_CANT_HOLD");
+        return false;
+    }
     int item = 0, count = 0;
     if (gear) {
         Equipment* worn = w.get<Equipment>(target);
@@ -2496,6 +2846,16 @@ bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::
     }
     queueUnitLabel(looter, itemGainLabelFor(count, item));
     queueSound(Sfx::Take);
+    // Anything taken out of an Unconscious mob kills it: it goes to 0 health and its Doom completes at once
+    if (w.has<Mob>(target) && !w.has<Corpse>(target)) {
+        if (Needs* n = w.get<Needs>(target)) {
+            n->hp = 0;
+            n->changed |= NEEDS_HP_CHANGED;
+        }
+        queueLog(langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other);
+        finishDoom(w, target);
+        queueSoundFrom(w, Sfx::Dies, target);
+    }
     return true;
 }
 

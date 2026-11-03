@@ -10,6 +10,17 @@ void setupWorld(World& w, Terrain& t, Rng& rng);
 
 // Makes there be exactly count player units: adds them at the spawn, or removes the last made, as needed
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
+// Puts a mob of this kind (mobs.h) at (x, z), in the faction given, carrying its raw meat. One of the Player Faction's
+// is yours to command. Returns it.
+Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, float x, float z);
+// A mob's stats for its kind: its attributes and combat skills, each a level or two either way of the kind's
+Stats mobStats(int kind, Rng& rng);
+// Ends an Unconscious unit's Doom at once: it is a corpse, as when its Doom reaches 100 (doomSystem)
+void finishDoom(World& w, Entity u);
+// Whether a unit may take this item into its inventory: any unit may, but a mob only its own meat and bones (mobs.h)
+bool canHoldItem(World& w, Entity unit, int item);
+// Whether a unit's inventory is shut to everyone: a mob's, while it is awake (mobs.h)
+bool inventoryLocked(World& w, Entity unit);
 
 // Starting stats drawn the way new units get them: attributes at levels 5..15, skills at 1..5
 Stats randomStartingStats(Rng& rng);
@@ -111,7 +122,11 @@ int storeCarried(World& w, Entity unit, Entity prop, int item);
 // stood idle AUTO_RESUME_SECONDS (at once for a unit that is not yours).
 constexpr int AUTO_LOAD = 10;
 constexpr float AUTO_RESUME_SECONDS = 8.0f;
-void automationSystem(World& w, Terrain& t, float dt);
+void automationSystem(World& w, Terrain& t, float dt, Rng& rng);
+// Wild mobs (mobs.h) by their temperament: an Avoidant or Passive one never fights (its passive mode is on), and an
+// Avoidant one runs WILD_FLEE_DISTANCE from any outsider that comes within WILD_AVOID_RANGE, as a Roam step. Run before
+// automationSystem, each frame, with the real seconds that passed.
+void wildMobSystem(World& w, Terrain& t, float dt);
 // What a unit's work gave this frame, for the label over it: an item ("+item"), a lock opened, or a lockpick that failed
 struct WorkGain {
     enum class Kind { Item, Unlocked, LockpickFailed, Trained };

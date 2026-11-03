@@ -246,7 +246,8 @@ public:
     // show green or red for whether it may go there. editable says whether the sort and the behavior edits work; for
     // a red unit they are drawn dimmed.
     // The Stats tab's rows; returns the stat under the mouse, or -1
-    int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my);
+    // A mob's (mob) lists only its attributes and combat skills
+    int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob = false);
     void drawStatTip(const Stats& stats, int stat, float mx, float my);
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
@@ -626,6 +627,8 @@ private:
     float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
     unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds
     std::vector<TextTex> unitSprites_;
+    std::vector<TextTex> mobSprites_;   // data/mob/mob_<kind>.png, kind 1 first
+    TextTex mobFallback_;
     // data/unit/unit_0.png, used when a unit's picture could not be loaded (empty if it is missing too: then pink_)
     TextTex unitFallback_;
     // Picture n of the units, or its stand-in: unit_0.png, else the pink square

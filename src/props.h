@@ -75,7 +75,7 @@ enum PropKind : int {
     PROP_TURBINE,              // built: decor, usually on a foundation
     PROP_KIND_COUNT
 };
-// The Build tab's rows: row 0 is Destroy, a tool that takes buildings down (never flags, which decay on their own). Then
+// The Build tab's rows: row 0 is Destroy, a tool that takes any prop down (Debris is cleared away). Then
 // the Flag, the Vault, the four foundations, and every other kind in order. BUILD_NONE: nothing picked.
 constexpr int BUILD_NONE = -1;
 constexpr int BUILD_DESTROY = -2;
@@ -131,6 +131,7 @@ enum class PropAction { Inventory, Use, Unlock, Store };
 // altItem, altOneIn: for a resource prop, an item it gives instead of its item one time in altOneIn (the Mushroom's
 //                    Poison Mushroom, 1 in 10). None if left out.
 constexpr int INPUT_COOKABLE = -1;
+constexpr double VAULT_LOG_HOURS = 4.0;   // in-game hours of upkeep one Wood Log gives a Vault: six logs a day
 
 // The ground a prop's shape covers, in tiles from its centre, before its facing turns it (yaw). A rectangle is 2*halfW
 // across along the prop's own x axis and 2*halfD along its z axis. A circle (radius above 0) replaces the rectangle.
@@ -215,7 +216,8 @@ inline const PropInfo& propInfo(int kind) {
         // Built props (see the top of this file). The foundations' models are drawn so their longest side is their size.
         { "data/model/model_32.glb", "PROP_FLAG",              1.2f, PropUse::None, -1, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, false },
-        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::None, -1, 0, 0, 0, 0 },
+        // Debris: worked like ore, but it gives no item. DEBRIS_CLEAR_HOURS of one unit's work clears it away.
+        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::Resource, STAT_STRENGTH, 0, 0, 3, 0 },
         { "data/model/model_34.glb", "PROP_FOUNDATION_SMALL",  1.0f, PropUse::None, -1, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, true }, false, true, false },
         { "data/model/model_35.glb", "PROP_FOUNDATION_LARGE",  2.0f, PropUse::None, -1, 0, 0, 0, 0,
@@ -224,10 +226,11 @@ inline const PropInfo& propInfo(int kind) {
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.5f, 0.5f, 0.0f, true }, false, true, false },   // long along its own x axis
         { "data/model/model_37.glb", "PROP_FOUNDATION_CIRCLE", 2.0f, PropUse::None, -1, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 1.0f, true }, false, true, false },   // radius 1 tile
-        // The Vault: passive crafting with no output. Wood Logs are its upkeep, one burning for each in-game hour (the
-        // Forge's fuel code), so the Vault's input is the Wood Log and it makes nothing (item 0).
+        // The Vault: passive crafting with no output. Wood Logs are its upkeep, each burning VAULT_LOG_HOURS in-game
+        // hours (the Forge's fuel code), so the Vault's input is the Wood Log and it makes nothing (item 0). One camp
+        // woodcutter stores ten or more logs a day, so it keeps a vault burning six a day fed with some to spare.
         { "data/model/model_38.glb", "PROP_VAULT",             1.0f, PropUse::PassiveCrafting, -1, 0, 88, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, false }, true, true, true },
+          ItemFilter::Any, VAULT_LOG_HOURS, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, false }, true, true, true },
         { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, -1, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
         { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, -1, 0, 0, 0, 0,
@@ -250,6 +253,12 @@ inline int propEmote(int kind) {
     default: return EMOTE_NONE;
     }
 }
+
+// In-game hours of one unit's work that clear a Debris away, whatever its skill. Two units take half as long.
+constexpr double DEBRIS_CLEAR_HOURS = 1.0;
+constexpr float DEBRIS_CLEAR_XP = 20.0f;   // Strength XP for each unit that helped clear one
+// Whether a resource prop gives items when worked: everything but the Debris, which is only cleared
+inline bool yieldsItems(int kind) { return propInfo(kind).use == PropUse::Resource && propInfo(kind).item > 0; }
 
 // Whether units are put to work on a prop of this use. A passive crafting prop works by itself.
 inline bool isWorkProp(PropUse use) { return use == PropUse::Resource || use == PropUse::Crafting; }

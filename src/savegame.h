@@ -14,6 +14,7 @@
 #include <system_error>
 #include <vector>
 #include "components.h"
+#include "mobs.h"
 #include "resources.h"
 #include "timefmt.h"
 
@@ -49,6 +50,7 @@ struct SaveUnit {
     bool neutral = false;
     int sprite = 1;
     // Older saves have no body type, so it is worked out from the name (bodyForSavedName)
+    int mob = 0;   // a mob's kind (mobs.h); 0 for a person, and for every unit of an older save
     bool hasBody = false;
     int body = 0;
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
@@ -191,6 +193,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "\n";
         }
         if (u.hasBody) out << "body " << i << " " << u.body << "\n";
+        if (u.mob > 0) out << "mob " << i << " " << u.mob << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
@@ -203,7 +206,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "behaviors " << i << "\n";
             for (const SaveBehavior& b : u.behaviors) {
                 out << "task " << i << " " << (b.rule.on ? 1 : 0) << " " << (int)b.rule.kind << " " << b.rule.propKind
-                    << " " << b.x << " " << b.z << "\n";
+                    << " " << b.x << " " << b.z << " " << b.rule.percent << "\n";
             }
         }
     }
@@ -407,6 +410,13 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> f >> v;
                 if (!ss.fail() && f > 0) d.reputation[f] = std::clamp(v, -100, 100);
             }
+            else if (line.rfind("mob ", 0) == 0) {
+                std::istringstream ss(line.substr(4));
+                size_t i = 0;
+                int kind = 0;
+                ss >> i >> kind;
+                if (!ss.fail() && i < d.units.size() && kind >= 1 && kind <= MOB_KIND_COUNT) d.units[i].mob = kind;
+            }
             else if (line.rfind("body ", 0) == 0) {
                 std::istringstream ss(line.substr(5));
                 size_t i = 0;
@@ -443,7 +453,9 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 SaveBehavior b;
                 ss >> i >> on >> kind >> propKind >> b.x >> b.z;
                 if (!ss.fail() && i < d.units.size() && d.units[i].behaviors.size() < (size_t)BEHAVIOR_LIMIT) {
-                    b.rule = behaviorFromFields(on, kind, propKind);
+                    int percent = BEHAVIOR_NEED_PERCENT;   // a save from before the percent could be set has none
+                    if (!(ss >> percent)) percent = BEHAVIOR_NEED_PERCENT;
+                    b.rule = behaviorFromFields(on, kind, propKind, percent);
                     d.units[i].behaviors.push_back(b);
                 }
             }

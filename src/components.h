@@ -69,6 +69,12 @@ struct UnitSprite {
     int id = 1;
 };
 
+// A mob (mobs.h): an animal or creature, of this kind (MobKind). Its picture is data/mob/mob_<kind>.png, not its
+// UnitSprite.
+struct Mob {
+    int kind = 1;
+};
+
 // The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
 // the time, feminine 45% and androgynous 10% (randomBodyType in systems.h).
 enum BodyType : int { BODY_MASCULINE = 0, BODY_FEMININE = 1, BODY_ANDROGYNOUS = 2 };
@@ -209,6 +215,10 @@ struct Behaviors {
     BehaviorRule step;          // the automated behavior whose step the unit is on, while busy
     Entity stepProp = NULL_ENTITY;   // the prop that step goes to
     float wait = 0.0f;          // real seconds before the automation takes its next step
+    // Share: the unit it should walk to for an item it needs (set by Eat or Heal), and whether it is on that walk
+    Entity seek = NULL_ENTITY;
+    bool seeking = false;
+    float sense = 0.0f;         // a wild Avoidant mob: real seconds before it looks about for outsiders again
     bool passive = false;
     bool block = false;
     bool sneak = false;

@@ -167,9 +167,21 @@ UILABEL_BEHAVIOR_SHARE	Share
 UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
 UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
 UILABEL_BEHAVIOR_WAITING	(waiting)
-UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger.
-UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health.
-UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less. Others that share can take from this one the same way.
+UILABEL_BEHAVIOR_WAIT_TIP	Waiting: {0}
+UILABEL_WAIT_NO_FOOD	no food to eat, and none to share nearby
+UILABEL_WAIT_NO_HEALING	no healing item, and none to share nearby
+UILABEL_WAIT_WALKING_TO_SHARE	walking to {0}, who can share one
+UILABEL_WAIT_NO_PROP	no {0} inside your claim with room for another worker
+UILABEL_WAIT_CARRY_FULL	no room to carry any more
+UILABEL_WAIT_LOAD_WAITING	carrying a load for Auto-Haul to take first
+UILABEL_WAIT_PROP_GONE	the prop is gone
+UILABEL_WAIT_OUTSIDE_CLAIM	the prop is not inside your faction's claim
+UILABEL_WAIT_LOCKED	the prop is locked
+UILABEL_WAIT_NOTHING_TO_HAUL	carrying nothing the prop takes
+UILABEL_WAIT_PROP_FULL	the prop has no room for what it carries
+UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Use - and + to change when.
+UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Use - and + to change when.
+UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
 UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_COMBAT_MESSAGES	Combat Messages
@@ -181,6 +193,7 @@ UILABEL_EXPERIENCE_MESSAGES	Experience Messages
 UILABEL_EXPERIENCE	Experience
 UILABEL_XP_ATHLETICS	Athletics Experience
 UILABEL_XP_ENDURANCE	Endurance Experience
+UILABEL_XP_CARRYING	Strength Experience (Carrying)
 UILABEL_ITEM_MESSAGES	Item Messages
 UILABEL_PICKUP	Pickup
 UILABEL_DROP	Drop
@@ -577,8 +590,11 @@ MISC_GATHERS	{0} gathers {1}
 MISC_AUTO_HAUL_STORES	{0} stores {1} {2} in the {3}
 MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
 MISC_REASON_GATHERING	gathering
+MISC_REASON_CLEARING	clearing debris
 UILABEL_TASK	Task: {0}
 UILABEL_TASK_IDLE	Idle
+UILABEL_TASK_AUTO_GOING	{0} (on the way)
+UILABEL_TASK_SHARE_WALK	Going to {0} to share
 UILABEL_TASK_MOVING	Moving
 UILABEL_TASK_RESTING	Resting
 UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
@@ -810,6 +826,40 @@ ITEM_132_NAME	Fire Arrows
 ITEM_132_DESC	Burning arrows for a Short Bow or a Long Bow. The hardest-hitting arrows.
 ITEM_133_NAME	Crossbow Bolts
 ITEM_133_DESC	Short, heavy bolts for a Crossbow.
+ITEM_134_NAME	Bear Bones
+ITEM_134_DESC	Bones from a bear. Good for crafting.
+ITEM_135_NAME	Cow Bones
+ITEM_135_DESC	Bones from a cow. Good for crafting.
+ITEM_136_NAME	Chicken Bones
+ITEM_136_DESC	Bones from a chicken. Good for crafting.
+ITEM_137_NAME	Boar Bones
+ITEM_137_DESC	Bones from a boar. Good for crafting.
+ITEM_138_NAME	Wolf Bones
+ITEM_138_DESC	Bones from a wolf. Good for crafting.
+ITEM_139_NAME	Deer Bones
+ITEM_139_DESC	Bones from a deer. Good for crafting.
+ITEM_140_NAME	Rabbit Bones
+ITEM_140_DESC	Bones from a rabbit. Good for crafting.
+ITEM_141_NAME	Fish Bones
+ITEM_141_DESC	Bones from a fish. Good for crafting.
+ITEM_142_NAME	Crab Bones
+ITEM_142_DESC	Bones from a crab. Good for crafting.
+ITEM_143_NAME	Lizard Bones
+ITEM_143_DESC	Bones from a lizard. Good for crafting.
+ITEM_144_NAME	Snake Bones
+ITEM_144_DESC	Bones from a snake. Good for crafting.
+ITEM_145_NAME	Pig Bones
+ITEM_145_DESC	Bones from a pig. Good for crafting.
+ITEM_146_NAME	Sheep Bones
+ITEM_146_DESC	Bones from a sheep. Good for crafting.
+ITEM_147_NAME	Duck Bones
+ITEM_147_DESC	Bones from a duck. Good for crafting.
+ITEM_148_NAME	Turtle Bones
+ITEM_148_DESC	Bones from a turtle. Good for crafting.
+ITEM_149_NAME	Bat Bones
+ITEM_149_DESC	Bones from a bat. Good for crafting.
+ITEM_150_NAME	Frog Bones
+ITEM_150_DESC	Bones from a frog. Good for crafting.
 UILABEL_OPTIMIZE	Optimize
 UILABEL_REMOVE_ALL	Remove All
 MISC_GEAR_NO_ROOM	Not enough inventory space
@@ -852,15 +902,14 @@ PROP_SHOP	Shop
 PROP_FARM	Farm
 PROP_TURBINE	Turbine
 UILABEL_BUILD_DESTROY	Destroy
-UILABEL_BUILD_DESTROY_HINT	Left-click a foundation or building to take it down. Flags are not taken down: they wear away when their vault runs dry. Right-click or Escape cancels.
+UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
 UILABEL_LOCK	Lock
 MISC_BUILD_NO_CLAIM	A foundation or vault goes inside your own claim
 MISC_BUILD_SEALED	That ground is sealed by another faction's vault
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another flag's claim
 MISC_BUILD_VAULT_TAKEN	That claim already has a vault
 MISC_BUILD_VAULT_CAP	Your faction already has as many vaults as it can hold
-MISC_DESTROY_FLAG	Flags are not taken down. A flag goes when its vault runs dry.
-MISC_DESTROY_NOTHING	Nothing built to destroy there
+MISC_DESTROY_NOTHING	Nothing to destroy there
 MISC_FLAG_FACTION	Owner: {0}
 MISC_FLAG_HEALTH	Health: {0} of {1}
 MISC_FLAG_VAULT_YES	Vault: standing, the claim is held
@@ -873,3 +922,59 @@ MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
 MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
 MISC_PROP_UPKEEP	Upkeep: {0} hours left
 MISC_PROP_VAULT_UNCLAIMED	Outside any claim: gives no upkeep
+MOB_BEAR	Bear
+MOB_COW	Cow
+MOB_CHICKEN	Chicken
+MOB_BOAR	Boar
+MOB_WOLF	Wolf
+MOB_DEER	Deer
+MOB_RABBIT	Rabbit
+MOB_FISH	Fish
+MOB_CRAB	Crab
+MOB_LIZARD	Lizard
+MOB_SNAKE	Snake
+MOB_PIG	Pig
+MOB_SHEEP	Sheep
+MOB_DUCK	Duck
+MOB_TURTLE	Turtle
+MOB_BAT	Bat
+MOB_FROG	Frog
+FACTION_MOB_BEAR	Bears
+FACTION_MOB_COW	Cows
+FACTION_MOB_CHICKEN	Chickens
+FACTION_MOB_BOAR	Boars
+FACTION_MOB_WOLF	Wolfs
+FACTION_MOB_DEER	Deer
+FACTION_MOB_RABBIT	Rabbits
+FACTION_MOB_FISH	Fish
+FACTION_MOB_CRAB	Crabs
+FACTION_MOB_LIZARD	Lizards
+FACTION_MOB_SNAKE	Snakes
+FACTION_MOB_PIG	Pigs
+FACTION_MOB_SHEEP	Sheep
+FACTION_MOB_DUCK	Ducks
+FACTION_MOB_TURTLE	Turtles
+FACTION_MOB_BAT	Bats
+FACTION_MOB_FROG	Frogs
+MISC_MOB_NO_GEAR	Mobs can't wear gear
+MISC_MOB_NO_HEALING	Mobs can't use healing items
+MISC_MOB_CANT_WORK	Mobs can't work props
+UILABEL_MOB_NO_GEAR	No gear slots: mobs can't wear gear
+MISC_MEAT_TAKEN_DIES	{0} dies
+MISC_MOB_INVENTORY_LOCKED	Not available
+MISC_MOB_CANT_HOLD	A mob holds nothing but its own meat and bones
+UILABEL_CLEAR	Clear
+UILABEL_TASK_CLEARING	Clearing debris
+MISC_CLEARS_DEBRIS	{0} clears away the Debris
+UILABEL_MOB_INVENTORY_HIDDEN	Not available
+UILABEL_BEHAVIOR_PATROL	Patrol
+UILABEL_BEHAVIOR_ROAM	Roam
+UILABEL_BEHAVIOR_PATROL_TIP	Patrol: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
+UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the flags' claims.
+UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
+UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims
+UILABEL_TEMPERAMENT_AVOIDANT	Avoidant
+UILABEL_TEMPERAMENT_PASSIVE	Passive
+UILABEL_TEMPERAMENT_NEUTRAL	Neutral
+UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressive
+UILABEL_TEMPERAMENT	Temperament: {0}

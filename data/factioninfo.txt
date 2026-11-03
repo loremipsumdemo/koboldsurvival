@@ -27,3 +27,24 @@ relation	2	5	-100
 relation	4	3	75
 relation	4	5	-40
 relation	3	5	0
+
+# Mob factions (src/mobs.h): one for each kind of mob, MOB_FACTION_BASE (10) + its kind - 1. They have no camps (units 0);
+# their mobs are placed out in the world. They have no reputation and take no relation lines: each kind's temperament
+# (Avoidant, Passive, Neutral or Aggressive, in src/mobs.h) says how it takes to everyone else.
+faction	10	FACTION_MOB_BEAR	#8b5a2b	0
+faction	11	FACTION_MOB_COW	#d9d2c5	0
+faction	12	FACTION_MOB_CHICKEN	#f2e6a0	0
+faction	13	FACTION_MOB_BOAR	#7a4b3a	0
+faction	14	FACTION_MOB_WOLF	#8f8f99	0
+faction	15	FACTION_MOB_DEER	#c48a4a	0
+faction	16	FACTION_MOB_RABBIT	#cbb9a0	0
+faction	17	FACTION_MOB_FISH	#5aa0c8	0
+faction	18	FACTION_MOB_CRAB	#e0603a	0
+faction	19	FACTION_MOB_LIZARD	#6aa84f	0
+faction	20	FACTION_MOB_SNAKE	#4f8a3a	0
+faction	21	FACTION_MOB_PIG	#f0a0b0	0
+faction	22	FACTION_MOB_SHEEP	#eeeeee	0
+faction	23	FACTION_MOB_DUCK	#3a8a6a	0
+faction	24	FACTION_MOB_TURTLE	#4a7a4a	0
+faction	25	FACTION_MOB_BAT	#5a4a6a	0
+faction	26	FACTION_MOB_FROG	#5ab04a	0
