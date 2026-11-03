@@ -30,6 +30,8 @@ struct PartyUi {
     float listGrab = 0.0f;                 // where on the thumb it was taken, from its top
     bool resizable = false;                // Add Unit and Remove Unit are offered (the Custom scenario only)
     bool editable = false;                 // stats, gear and items can be changed (the Custom scenario only)
+    float previewYaw = 0.0f;               // how far the picked unit's model is turned about its vertical axis, radians
+    bool previewDrag = false;              // the model is held with the right button and turns as the mouse moves
 };
 
 // One entry in an open dropdown: its text, and the value it sets (a sprite number or an item id,
@@ -61,6 +63,9 @@ struct PartyPanels {
     Rect bottom{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 PartyPanels partyPanels(int W, int H);
+// Where the picked unit's model is shown in the middle panel, above its name and totals. Dragging in it with the right
+// button turns the model.
+Rect partyPreviewRect(int W, int H);
 
 // The room kept at the foot of the left column for its hints, in pixels at 720 high
 inline constexpr float PARTY_HINT_H = 130.0f;

@@ -33,6 +33,7 @@ struct Camera {
     float lift = 0.0f;   // temporary height added to the eye while it is near or under the ground
     float mapSize = 1024.0f;   // tiles per side of the loaded map. The game sets this each frame.
     float eyeClearance = 1000.0f;   // the eye's height above the ground under it, set by updateClearance
+    float viewRange = 96.0f;   // entities further than this across the ground from the focus are not drawn. The game sets this each frame.
 
     // Eye position, including the temporary lift
     // The compass bearing the camera looks along, in degrees from north (0) clockwise through east (90).

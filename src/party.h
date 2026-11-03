@@ -13,9 +13,9 @@
 // The starting party: the units a new game begins with, as set up in the party menu. Plain
 // functions over the data, so they can be tested without the game running.
 
-// Unit pictures are data/unit/unit_1.png to unit_71.png; unit_0.png stands in for a missing one, and a pink square
-// when that is missing too
-inline constexpr int UNIT_SPRITE_COUNT = 71;
+// Unit models are data/model/unit/unit_01.glb to unit_03.glb; a unit whose model is missing is drawn as a pink square.
+// A unit's sprite number picks its model, and a number past the last (from an older save) wraps round to one of them.
+inline constexpr int UNIT_SPRITE_COUNT = 3;
 
 // Longest name a unit can have, in characters. A character is one UTF-8 code point, so a name can be typed in any
 // language, and a character takes up to 4 bytes, so the bytes are capped at PARTY_NAME_LIMIT.

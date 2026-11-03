@@ -61,6 +61,8 @@ struct SaveUnit {
     float doom = 0.0f;
     bool corpse = false;
     int koFaction = -1;        // the faction that knocked it out, or -1 (Unconscious::koFaction)
+    bool downRested = false;   // knocked out well rested: no Doom, and wakes when wake (in-game hours) runs out
+    float wake = 0.0f;
     // Carried: the index of the unit carrying it, or -1, and whether it is playing dead
     int carriedBy = -1;
     bool playingDead = false;
@@ -180,6 +182,8 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.hasNeeds) {
             out << "needs " << i << " " << u.needs.hp << " " << u.needs.maxHp << " "
                 << u.needs.hunger << " " << u.needs.maxHunger << "\n";
+            out << "rest " << i << " " << u.needs.rested << " " << u.needs.maxRested << " "
+                << u.needs.comfort << " " << u.needs.maxComfort << "\n";
         }
         for (const SaveStack& s : u.stacks) {
             out << "slot " << i << " " << s.slot << " " << s.stack.item << " " << s.stack.count << "\n";
@@ -198,6 +202,8 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
         if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
+        if (u.unconscious && u.downRested) out << "downrest " << i << " " << u.wake << "\n";
+        if (u.playingDead && u.carriedBy < 0) out << "still " << i << "\n";
         if (u.passive || u.block || u.sneak) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
         }
@@ -299,6 +305,36 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                     d.units[i].hasNeeds = true;
                     d.units[i].needs = n;
                 }
+            }
+            else if (line.rfind("rest ", 0) == 0) {
+                // Older saves have no line: their units are fully rested and comfortable
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                int rested = 100, maxRested = 100, comfort = 100, maxComfort = 100;
+                ss >> i >> rested >> maxRested >> comfort >> maxComfort;
+                if (!ss.fail() && i < d.units.size() && maxRested > 0 && maxComfort > 0) {
+                    Needs& n = d.units[i].needs;
+                    n.maxRested = maxRested;
+                    n.rested = std::clamp(rested, 0, maxRested);
+                    n.maxComfort = maxComfort;
+                    n.comfort = std::clamp(comfort, 0, maxComfort);
+                }
+            }
+            else if (line.rfind("downrest ", 0) == 0) {
+                std::istringstream ss(line.substr(9));
+                size_t i = 0;
+                float wake = 0.0f;
+                ss >> i >> wake;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].downRested = true;
+                    d.units[i].wake = std::max(0.0f, wake);
+                }
+            }
+            else if (line.rfind("still ", 0) == 0) {
+                std::istringstream ss(line.substr(6));
+                size_t i = 0;
+                ss >> i;
+                if (!ss.fail() && i < d.units.size()) d.units[i].playingDead = true;
             }
             else if (line.rfind("slot ", 0) == 0) {
                 std::istringstream ss(line.substr(5));

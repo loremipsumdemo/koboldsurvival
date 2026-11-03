@@ -29,6 +29,12 @@ inline constexpr int UI_SCALE_MIN = 50;
 inline constexpr int UI_SCALE_MAX = 200;
 inline constexpr int UI_SCALE_STEP = 5;
 
+// How far from the camera's focus units, mobs, props and items on the ground (and their names) are drawn, in tiles
+// across the ground, and the steps the slider moves in
+inline constexpr int VIEW_RANGE_MIN = 16;
+inline constexpr int VIEW_RANGE_MAX = 224;
+inline constexpr int VIEW_RANGE_STEP = 8;
+
 struct GameSettings {
     // Graphics
     int displayMode = DISPLAY_BORDERLESS;
@@ -38,6 +44,8 @@ struct GameSettings {
     int refreshHz = 0;              // fullscreen refresh rate, 0 for the monitor's default
     bool vsync = true;
     int fpsLimit = 60;              // frames per second, 0 for no limit
+    int viewRange = 96;             // tiles from the camera's focus that entities are drawn within (VIEW_RANGE_MIN to MAX)
+    bool showFps = false;           // the frame rate in the bottom-left corner
 
     // Interface
     int autosaveMinutes = 5;        // 0 for off
@@ -112,6 +120,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "refreshHz")       s.refreshHz = parseInt(val, s.refreshHz);
         else if (key == "vsync")           s.vsync = (val == "1");
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
+        else if (key == "viewRange")       s.viewRange = parseInt(val, s.viewRange);
+        else if (key == "showFps")         s.showFps = (val == "1");
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "npcNames")        s.showNpcNames = (val == "1");
@@ -169,6 +179,8 @@ inline GameSettings loadSettings(const std::string& path) {
     s.height = std::clamp(s.height, 480, 8640);
     s.refreshHz = std::clamp(s.refreshHz, 0, 1000);
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
+    s.viewRange = std::clamp(s.viewRange, VIEW_RANGE_MIN, VIEW_RANGE_MAX);
+    s.viewRange = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((s.viewRange - VIEW_RANGE_MIN + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
     s.globalVolume = std::clamp(s.globalVolume, 0, 100);
     s.optimizeAttackShare = std::clamp(s.optimizeAttackShare, 0, 100);
@@ -192,6 +204,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "refreshHz=" << s.refreshHz << "\n";
     out << "vsync=" << (s.vsync ? 1 : 0) << "\n";
     out << "fpsLimit=" << s.fpsLimit << "\n";
+    out << "viewRange=" << s.viewRange << "\n";
+    out << "showFps=" << (s.showFps ? 1 : 0) << "\n";
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "npcNames=" << (s.showNpcNames ? 1 : 0) << "\n";

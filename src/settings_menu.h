@@ -29,7 +29,7 @@ inline std::string settingsTabName(SettingsTab tab) {
 
 // What a row changes
 enum class RowId : int {
-    Display, Monitor, Resolution, Refresh, VSync, FpsLimit,     // Graphics
+    Display, Monitor, Resolution, Refresh, VSync, FpsLimit, ViewRange, ShowFps,   // Graphics
     Autosave, UnitNames, NpcNames, PropNames, PropInfo, FontScale, ResetPanels,   // Interface
     Language, Font,                                             // Language
     EdgeScroll, Reference,                                      // Controls: the toggle, then text lines

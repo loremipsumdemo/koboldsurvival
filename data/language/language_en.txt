@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Refresh rate
 UILABEL_DEFAULT	Default
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Frame rate limit
+UILABEL_VIEW_RANGE	View range
+UILABEL_TILES_N	{0} tiles
+UILABEL_SHOW_FPS	Show FPS
 UILABEL_UNLIMITED	Unlimited
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autosave
@@ -125,6 +128,8 @@ UILABEL_CLICK_TO_TYPE	Click to type a name
 UILABEL_SPRITE	Sprite
 UILABEL_HEALTH	Health
 UILABEL_HUNGER	Hunger
+UILABEL_RESTED	Rested
+UILABEL_COMFORT	Comfort
 UILABEL_CARRY	Carry
 UILABEL_NEXT_LEVEL_XP_LINE	Next Level XP: {0}
 UILABEL_STAT	Stat
@@ -162,6 +167,9 @@ UILABEL_SLOT_FEET	Feet
 UILABEL_SLOT_ACCESSORY	Accessory
 UILABEL_BEHAVIOR_ON	On
 UILABEL_BEHAVIOR_EAT	Eat when hunger < {0}%
+UILABEL_BEHAVIOR_REST	Rest when rested < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Leave bed when recovered
+UILABEL_BEHAVIOR_RESCUE	Rescue downed allies
 UILABEL_BEHAVIOR_HEAL	Heal when health < {0}%
 UILABEL_BEHAVIOR_SHARE	Share
 UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
@@ -169,6 +177,7 @@ UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
 UILABEL_BEHAVIOR_WAITING	(waiting)
 UILABEL_BEHAVIOR_WAIT_TIP	Waiting: {0}
 UILABEL_WAIT_NO_FOOD	no food to eat, and none to share nearby
+UILABEL_WAIT_NO_BED	no free bed or bedroll to rest in
 UILABEL_WAIT_NO_HEALING	no healing item, and none to share nearby
 UILABEL_WAIT_WALKING_TO_SHARE	walking to {0}, who can share one
 UILABEL_WAIT_NO_PROP	no {0} inside your claim with room for another worker
@@ -181,6 +190,9 @@ UILABEL_WAIT_NOTHING_TO_HAUL	carrying nothing the prop takes
 UILABEL_WAIT_PROP_FULL	the prop has no room for what it carries
 UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Use - and + to change when.
 UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Use - and + to change when.
+UILABEL_BEHAVIOR_REST_TIP	Rest: below {0}% rested, lies down in the nearest free bed or bedroll and gets up when fully rested. Use - and + to change when.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Leave bed: gets out of a bed or bedroll after 30 seconds at full health and fully rested.
+UILABEL_BEHAVIOR_RESCUE_TIP	Rescue: carries a unit of its own faction that lies unconscious nearby to the nearest free bed or bedroll.
 UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
 UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
@@ -685,6 +697,7 @@ UILABEL_CORPSE_OF	Corpse of {0}
 MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
 MISC_DIES	{0} dies
 MISC_RECOVERS	{0} wakes up
+MISC_GETS_UP	{0} gets up, the danger gone
 MISC_PICKS_UP_UNIT	{0} picks up {1}
 MISC_PUTS_DOWN	{0} puts down {1}
 MISC_PUTS_IN_BED	{0} puts {1} in the {2}

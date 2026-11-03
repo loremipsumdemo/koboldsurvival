@@ -285,8 +285,8 @@ namespace {
 
 // The camp kit's pieces, offsets in tiles from the camp centre (which is snapped to a tile middle). The flag stands on
 // the centre. The foundation, with its vault, sits two tiles east; the campfire two tiles west; four bedrolls around
-// the campfire; the barrel two tiles south; two trees just past the bedrolls, for the camp's wood. Every piece is on
-// its own tile, so none shares ground with another.
+// the campfire; the barrel two tiles south; two trees just past the bedrolls, for the camp's wood, and three mushrooms
+// by them, for its food. Every piece is on its own tile, so none shares ground with another.
 struct KitSpot { int kind; float dx, dz; };
 const KitSpot CAMP_KIT[] = {
     { PROP_FLAG, 0.0f, 0.0f },
@@ -299,6 +299,9 @@ const KitSpot CAMP_KIT[] = {
     { PROP_BARREL, 0.0f, 2.0f },
     { PROP_TREE, -5.0f, -2.0f },
     { PROP_TREE, -5.0f, 2.0f },
+    { PROP_MUSHROOM, -5.0f, 0.0f },
+    { PROP_MUSHROOM, -6.0f, -1.0f },
+    { PROP_MUSHROOM, -6.0f, 1.0f },
 };
 
 }  // namespace
@@ -335,12 +338,12 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
         if (propInfo(k.kind).built) {
             e = placeBuiltProp(w, t, k.kind, x, z, yaw, faction);
         } else {
-            // A level kind (the campfire, bedrolls, barrel, trees): placed as the level places them. All but the trees
-            // are owned by the camp; a tree is nobody's.
+            // A level kind (the campfire, bedrolls, barrel, trees, mushrooms): placed as the level places them. All but
+            // the trees and mushrooms are owned by the camp; those are nobody's.
             e = w.create();
             w.add(e, Transform{ x, t.heightAt(x, z), z });
             w.add(e, Prop{ k.kind, -1, yaw });
-            if (k.kind != PROP_TREE) w.add(e, Owner{ faction });
+            if (k.kind != PROP_TREE && k.kind != PROP_MUSHROOM) w.add(e, Owner{ faction });
             if (hasStorage(propInfo(k.kind))) w.add(e, Storage{});   // the camp's barrel starts empty
             claimOwnership(w, e);   // it stands in the camp's own claim, so the trees are the camp's too
         }
@@ -370,16 +373,23 @@ void settleClaimOwnership(World& w) {
     for (Entity e : w.view<Prop, Transform>()) claimOwnership(w, e);
 }
 
-std::vector<std::string> propInfoLines(World& w, Entity e) {
-    std::vector<std::string> out;
+bool vaultHasUpkeep(World& w, Entity vault) {
+    const Prop* p = w.get<Prop>(vault);
+    const Storage* st = w.get<Storage>(vault);
+    if (!p || !st) return false;
+    const int input = propInfo(p->kind).input;
+    for (const ItemStack& s : st->slots) {
+        if (s.item == input && s.count > 0) return true;
+    }
+    return false;
+}
+
+bool propDecaying(World& w, Entity e, const std::vector<Claim>& claims) {
     const Prop* p = w.get<Prop>(e);
     const Transform* tr = w.get<Transform>(e);
-    if (!p || !tr) return out;
-    const std::vector<Claim> claims = claimsOf(w);
+    if (!p || !tr) return false;
     const Owner* own = w.get<Owner>(e);
-    if (own) out.push_back(langf("MISC_FLAG_FACTION", { factionName(own->faction) }));
-
-    // Whether it is wearing down now, by the same rules as claimDecaySystem
+    // By the same rules as claimDecaySystem
     bool decaying = false;
     if (p->kind == PROP_FLAG) {
         size_t idx = claims.size();
@@ -397,6 +407,20 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
         const Claim* c = claimAt(claims, tr->x, tr->z, own->faction);
         decaying = !(c && c->vault != NULL_ENTITY && w.get<Owner>(c->vault)->faction == own->faction && vaultFueled(w, c->vault));
     }
+    return decaying;
+}
+
+std::vector<std::string> propInfoLines(World& w, Entity e) {
+    std::vector<std::string> out;
+    const Prop* p = w.get<Prop>(e);
+    const Transform* tr = w.get<Transform>(e);
+    if (!p || !tr) return out;
+    const std::vector<Claim> claims = claimsOf(w);
+    const Owner* own = w.get<Owner>(e);
+    if (own) out.push_back(langf("MISC_FLAG_FACTION", { factionName(own->faction) }));
+
+    // Whether it is wearing down now
+    const bool decaying = propDecaying(w, e, claims);
 
     if (const Health* hp = w.get<Health>(e)) {
         const int shown = (int)std::ceil(hp->value - 1e-9);

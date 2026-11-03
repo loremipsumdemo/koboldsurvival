@@ -145,7 +145,7 @@ size_t behaviorSystem(World& w, CombatLog& log, float dt) {
         b->pending = false;
         n->changed = 0;
         for (BehaviorRule& r : b->rules) {
-            if (isAutomated(r.kind)) continue;   // the automation counts down its own
+            if (isAutoStep(r.kind)) continue;   // the automation counts down its own (Rest too)
             const bool waited = r.cooldown > 0.0f && (r.cooldown -= dt) <= 0.0f;
             if (!r.on || !hasPercent(r.kind)) {
                 r.why = BehaviorWait::None;

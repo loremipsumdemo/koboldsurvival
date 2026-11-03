@@ -86,7 +86,7 @@ const RangedProfile* rangedOf(World& w, Entity e) {
 
 // An Unconscious unit (or a corpse) is out of the fight: nobody swings at it
 bool targetable(World& w, Entity e) {
-    return w.has<Unit>(e) && w.has<Transform>(e) && !w.has<Unconscious>(e);
+    return w.has<Unit>(e) && w.has<Transform>(e) && !w.has<Unconscious>(e) && !w.has<PlayingDead>(e);
 }
 
 float distanceBetween(World& w, Entity a, Entity b) {

@@ -2,6 +2,7 @@
 #include "language.h"
 #include "terrain_mesh.h"
 #include "equip.h"
+#include "factions.h"
 #include "inventory.h"
 #include "items.h"
 #include "mobs.h"
@@ -23,6 +24,8 @@ namespace {
 
 constexpr float GLYPH_H = 1.2f;          // world height of unit sprites
 constexpr float CARRIED_LIFT = 0.55f;    // how high a carried unit lies, over its carrier's shoulders
+constexpr float CARRIED_MODEL_LIFT = 0.95f;   // the same for a unit drawn by its model
+constexpr float FACTION_TINT = 0.85f;    // how far a unit model's colors are pulled toward its faction's color
 constexpr float ITEM_GLYPH_H = GLYPH_H * 0.5f;   // world height of an item sprite on the ground: half a unit's
 constexpr float SKY_SPAN = 0.2f;         // fraction of the panorama visible across the screen
 constexpr float TWO_PI = 6.28318530f;
@@ -122,11 +125,16 @@ in vec2 vUV;
 uniform sampler2D uTex;
 uniform vec4 uTint;
 uniform float uSat;   // 1 keeps the colors, 0 is fully gray
+uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
 out vec4 FragColor;
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;   // keep only the visible pixels
     float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    // The faction's color at the texture's own brightness, so shading and detail stay
+    vec3 fl = uFaction.rgb / max(dot(uFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
+    c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), uFaction.a);
+    l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
     c.rgb = mix(vec3(l), c.rgb, uSat);
     FragColor = c * uTint;
 }
@@ -366,10 +374,12 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
     uTint_ = glGetUniformLocation(glyphProgram_, "uTint");
     uSat_ = glGetUniformLocation(glyphProgram_, "uSat");
+    uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     glUseProgram(glyphProgram_);
     glUniform1i(glGetUniformLocation(glyphProgram_, "uTex"), 0);
     glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
     glUniform1f(uSat_, 1.0f);
+    glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
     glUseProgram(0);
 
     if (!initTerrainGl()) return false;
@@ -391,13 +401,39 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     itemNone_ = loadOptionalImage("data/item/item_0.png");
     emoteFallback_ = loadOptionalImage("data/emote/emote_0.png");
     iconFallback_ = loadOptionalImage("data/icon/icon_0.png");
-    unitFallback_ = loadOptionalImage("data/unit/unit_0.png");
     report(0.05f);
-    unitSprites_.reserve(UNIT_SPRITE_COUNT);
+    // Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
+    // again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
-        std::snprintf(path, sizeof(path), "data/unit/unit_%d.png", i);
-        unitSprites_.push_back(loadImage(path, false));
+        std::snprintf(path, sizeof(path), "data/model/unit/unit_%02d.glb", i);
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (!pakFind(path, bytes, size)) {
+            SDL_Log("Unit model %s not in data.pak: units with sprite %d are drawn as pink squares", path, i);
+            continue;
+        }
+        for (int j = 1; j < i && !unitModelFor_[(size_t)i - 1]; ++j) {
+            char other[64];
+            std::snprintf(other, sizeof(other), "data/model/unit/unit_%02d.glb", j);
+            const unsigned char* otherBytes = nullptr;
+            size_t otherSize = 0;
+            if (unitModelFor_[(size_t)j - 1] && pakFind(other, otherBytes, otherSize) && otherSize == size
+                && std::memcmp(otherBytes, bytes, size) == 0) {
+                unitModelFor_[(size_t)i - 1] = unitModelFor_[(size_t)j - 1];
+            }
+        }
+        if (!unitModelFor_[(size_t)i - 1]) {
+            Model& m = unitModels_[(size_t)i - 1];
+            if (loadGLBModel(path, m) && m.vao && !m.draws.empty() && m.maxY > m.minY) {
+                unitModelFor_[(size_t)i - 1] = &m;
+            } else {
+                destroyModel(m);
+                m = Model{};
+                SDL_Log("Unit model %s could not be read or has nothing to draw: units with sprite %d are drawn as pink squares",
+                        path, i);
+            }
+        }
         report(0.05f + 0.75f * (float)i / (float)UNIT_SPRITE_COUNT);
     }
     report(0.82f);
@@ -496,15 +532,14 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &unitFallback_, &white_, &pink_, &itemNone_, &emoteFallback_, &iconFallback_ };
+    TextTex* textures[] = { &white_, &pink_, &itemNone_, &emoteFallback_, &iconFallback_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
     }
-    for (TextTex& g : unitSprites_) {
-        if (g.tex) glDeleteTextures(1, &g.tex);
-    }
-    unitSprites_.clear();
+    for (Model& m : unitModels_) destroyModel(m);
+    unitModelFor_.fill(nullptr);
+    unitFacing_.clear();
     for (auto& entry : itemPics_) {
         if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
     }
@@ -558,8 +593,8 @@ void Renderer::setSaturation(float sat) {
 // How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
 // its carrier's shoulders if it is carried
 float Renderer::unitTop(World& w, Entity u) {
-    if (w.has<Carried>(u)) return GLYPH_H * unitGlyph(w, u).aspect + CARRIED_LIFT;
-    if (w.has<Unconscious>(u)) return GLYPH_H * unitGlyph(w, u).aspect;
+    if (w.has<Carried>(u)) return GLYPH_H * unitAspect(w, u) + (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT);
+    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u)) return GLYPH_H * unitAspect(w, u);
     return GLYPH_H;
 }
 
@@ -649,6 +684,120 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
 
     // Restore the shared matrix for the sprites that follow
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+}
+
+// Where a unit model stands: scaled to GLYPH_H tall, turned by yaw about the vertical axis (0 faces +z), with the centre
+// of its bottom on (x, y, z). Lying, it is first tipped onto its side so its head points along its facing's right, and
+// it rests on y.
+// The unit models face their own +x, so they are turned a quarter turn more to face +z at yaw 0
+constexpr float UNIT_MODEL_FRONT_YAW = -1.5707963f;
+
+static Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, bool flip = false) {
+    const float k = GLYPH_H / (m.maxY - m.minY);
+    yaw += UNIT_MODEL_FRONT_YAW;
+    const float cs = std::cos(yaw), sn = std::sin(yaw);
+    // R row by row: the turn by yaw, after the tip onto its side when lying: (x, y, z) -> (y, -x, z), its head along
+    // its +x, or flipped (x, y, z) -> (-y, x, z), its head the other way and its other side up
+    const float f = flip ? -1.0f : 1.0f;
+    const float R[3][3] = {
+        { lying ? 0.0f : cs, lying ? f * cs : 0.0f, sn },
+        { lying ? -f : 0.0f, lying ? 0.0f : 1.0f, 0.0f },
+        { lying ? 0.0f : -sn, lying ? -f * sn : 0.0f, cs }
+    };
+    // The model point put on the world point: the centre of its bottom standing, its middle lying
+    const float c[3] = { (m.minX + m.maxX) * 0.5f, lying ? (m.minY + m.maxY) * 0.5f : m.minY, (m.minZ + m.maxZ) * 0.5f };
+    const float t[3] = { x, lying ? y + k * (m.maxX - m.minX) * 0.5f : y, z };
+    Mat4 out{};
+    for (int r = 0; r < 3; ++r) {
+        for (int col = 0; col < 3; ++col) out.m[col * 4 + r] = k * R[r][col];
+        out.m[12 + r] = t[r] - k * (R[r][0] * c[0] + R[r][1] * c[1] + R[r][2] * c[2]);
+    }
+    out.m[15] = 1.0f;
+    return out;
+}
+
+void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried) {
+    if (!m.vao || !(m.maxY > m.minY)) return;
+    // Moved a little toward the camera, so a carried unit shows in front of its carrier
+    float dx = billX_ - x, dz = billZ_ - z;
+    const float len = std::sqrt(dx * dx + dz * dz);
+    if (len > 1e-4f) {
+        x += dx / len * toward;
+        z += dz / len * toward;
+    }
+    const Mat4 mvp = mul(viewProj_, unitModelMatrix(m, x, y, z, yaw, lying, carried));
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
+    glBindVertexArray(m.vao);
+    for (const DrawRange& d : m.draws) {
+        glBindTexture(GL_TEXTURE_2D, d.texture);
+        glDrawElements(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT, (void*)(size_t)(d.firstIndex * sizeof(GLuint)));
+    }
+    glBindVertexArray(0);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+}
+
+// A unit turns toward the way it walks, easing round rather than snapping. One seen for the first time faces the camera.
+float Renderer::unitYaw(Entity e, float x, float z) {
+    auto it = unitFacing_.find(e);
+    if (it == unitFacing_.end()) {
+        UnitFacing f{ x, z, std::atan2(billX_ - x, billZ_ - z) };
+        unitFacing_[e] = f;
+        return f.yaw;
+    }
+    UnitFacing& f = it->second;
+    const float dx = x - f.x, dz = z - f.z;
+    if (dx * dx + dz * dz > 1e-6f) {
+        const float want = std::atan2(dx, dz);
+        float turn = std::remainder(want - f.yaw, 6.2831853f);
+        f.yaw += turn * 0.25f;
+    }
+    f.x = x;
+    f.z = z;
+    return f.yaw;
+}
+
+// A unit's model seen in a box of the UI, with its own depth: it stands in the middle, the whole of it in view, and
+// turns about its vertical axis only
+void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
+    const Model* m = unitModelNumber(sprite);
+    if (!m || r.w < 1.0f || r.h < 1.0f) {
+        drawUnitPicture(sprite, r);
+        return;
+    }
+    const int vx = (int)std::lround(r.x), vy = (int)std::lround((float)uiH_ - r.y - r.h);
+    const int vw = (int)std::lround(r.w), vh = (int)std::lround(r.h);
+    glViewport(vx, vy, vw, vh);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(vx, vy, vw, vh);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    // The model GLYPH_H tall with its feet at the origin; the camera in front of it on +z, far enough back that its
+    // height and width both fit
+    const float aspect = r.w / r.h;
+    const float fov = 30.0f * 3.14159265f / 180.0f, tanHalf = std::tan(fov * 0.5f);
+    const float k = GLYPH_H / (m->maxY - m->minY);
+    const float halfH = GLYPH_H * 0.5f;
+    const float halfW = k * std::max(m->maxX - m->minX, m->maxZ - m->minZ) * 0.5f;
+    const float dist = std::max(halfH / tanHalf, halfW / (tanHalf * aspect)) * 1.12f + halfW;
+    const Mat4 vp = mul(perspective(fov, aspect, 0.05f, dist * 4.0f), lookAt(0.0f, halfH, dist, 0.0f, halfH, 0.0f, 0.0f, 1.0f, 0.0f));
+    const Mat4 mvp = mul(vp, unitModelMatrix(*m, 0.0f, 0.0f, 0.0f, yaw, false));
+
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
+    glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
+    glBindVertexArray(m->vao);
+    for (const DrawRange& d : m->draws) {
+        glBindTexture(GL_TEXTURE_2D, d.texture);
+        glDrawElements(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT, (void*)(size_t)(d.firstIndex * sizeof(GLuint)));
+    }
+    glBindVertexArray(0);
+
+    // Back to the flat UI over the whole window
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glViewport(0, 0, uiW_, uiH_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
 }
 
 // Loading screen: the title screen's moving backdrop, with a rounded progress bar across the middle, the stage that is
@@ -1018,8 +1167,8 @@ float Renderer::profileCardHeight(int H) {
     const float s = H / 720.0f;
     const float line = listTextHeight("Ag");
     const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
-    // Health, Doom (while Unconscious), Hunger and Carry
-    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 4.0f * statRow + 4.0f * s;
+    // Health, Doom (while Unconscious), Hunger, Rested, Comfort and Carry
+    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 6.0f * statRow + 4.0f * s;
 }
 
 Renderer::HudLine& Renderer::uiLine(const std::string& s) {
@@ -1383,11 +1532,34 @@ const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
     return unitPicture(us ? us->id : 1);
 }
 
-// Picture number n (unit_<n>.png); unit_0.png when it is missing, and the pink square when that is missing too
-const TextTex& Renderer::unitPicture(int n) const {
-    const int idx = n - 1;
-    if (idx >= 0 && idx < (int)unitSprites_.size() && unitSprites_[(size_t)idx].tex) return unitSprites_[(size_t)idx];
-    return unitFallback_.tex ? unitFallback_ : pink_;
+// Units are drawn by their models now, and have no flat pictures yet: every portrait is the pink square
+const TextTex& Renderer::unitPicture(int) const {
+    return pink_;
+}
+
+const Model* Renderer::unitModelNumber(int n) const {
+    const int idx = ((n - 1) % UNIT_SPRITE_COUNT + UNIT_SPRITE_COUNT) % UNIT_SPRITE_COUNT;
+    return unitModelFor_[(size_t)idx];
+}
+
+RGBA Renderer::unitFactionTint(World& w, Entity e) const {
+    const Faction* f = w.get<Faction>(e);
+    if (!f || f->id == FACTION_PLAYER || w.has<Mob>(e)) return RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
+    const FactionColor c = factionColor(f->id);
+    return RGBA{ c.r, c.g, c.b, FACTION_TINT };
+}
+
+const Model* Renderer::unitModel(World& w, Entity e) const {
+    if (w.has<Mob>(e)) return nullptr;
+    const UnitSprite* us = w.get<UnitSprite>(e);
+    return unitModelNumber(us ? us->id : 1);
+}
+
+float Renderer::unitAspect(World& w, Entity e) const {
+    if (const Model* m = unitModel(w, e)) {
+        return std::max(m->maxX - m->minX, m->maxZ - m->minZ) / (m->maxY - m->minY);
+    }
+    return unitGlyph(w, e).aspect;
 }
 
 // Projects each unit's billboard to the screen and keeps those under the pixel.
@@ -1416,14 +1588,15 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         if (!project(tr->x, tr->y + GLYPH_H * 0.5f, tr->z, midX, midY)) continue;
 
         float heightPx = std::fabs(bottomY - topY);
-        float halfW = heightPx * 0.5f * unitGlyph(w, u).aspect;
+        const float aspect = unitAspect(w, u);
+        float halfW = heightPx * 0.5f * aspect;
         float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
-        if (w.has<Unconscious>(u) || w.has<Carried>(u)) {
+        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u)) {
             // Lying on its side: as wide as it is tall standing, and as high as it is wide; carried ones higher up
             float liftX = 0.0f, liftY = 0.0f;
-            const float lift = w.has<Carried>(u) ? CARRIED_LIFT : 0.0f;
+            const float lift = w.has<Carried>(u) ? (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT) : 0.0f;
             if (!project(tr->x, tr->y + lift, tr->z, liftX, liftY)) continue;
-            const float lyingH = heightPx * unitGlyph(w, u).aspect;
+            const float lyingH = heightPx * aspect;
             halfW = heightPx * 0.5f;
             midX = liftX;
             bottom = liftY;
@@ -1753,9 +1926,24 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        // A unit with a model is drawn by it, turned the way it walks; a mob, or a unit whose model is missing, by its sprite
+        if (const Model* m = unitModel(w, e)) {
+            const float yaw = unitYaw(e, tr->x, tr->z);
+            const bool lying = w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e);
+            const bool carried = w.has<Carried>(e);
+            if (lying) setSaturation(unitSaturation(w, e));
+            const RGBA tint = unitFactionTint(w, e);
+            glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
+            // A carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth
+            drawUnitModel(*m, tr->x, tr->y + (carried ? CARRIED_MODEL_LIFT : 0.0f), tr->z, yaw, lying,
+                          carried ? 0.15f : 0.0f, carried);
+            glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
+            if (lying) setSaturation(1.0f);
+            continue;
+        }
         const TextTex& g = unitGlyph(w, e);
         const RGBA tint = WHITE;   // every unit in its own colours: a hostile one is not tinted
-        if (w.has<Unconscious>(e) || w.has<Carried>(e)) {
+        if (w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e)) {
             setSaturation(unitSaturation(w, e));
             const bool carried = w.has<Carried>(e);
             drawLyingGlyph(g, tr->x, tr->y + (carried ? CARRIED_LIFT : 0.0f), tr->z, GLYPH_H, tint, carried ? 0.15f : 0.0f);
@@ -3449,14 +3637,21 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     };
     y = statRow(y, lang("UILABEL_HEALTH"), std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
                 needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
-    // Doom, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full
-    if (const Unconscious* un = w.get<Unconscious>(unit)) {
+    // Doom, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full. One
+    // knocked out well rested has no Doom: it just lies out until it wakes.
+    if (const Unconscious* un = w.get<Unconscious>(unit); un && !un->rested) {
         const int doom = (int)std::floor(std::clamp(un->doom, 0.0f, 100.0f));
         y = statRow(y, lang("UILABEL_DOOM"), std::to_string(doom) + " / 100", un->doom / 100.0f,
                     RGBA{ 0.56f, 0.20f, 0.78f, 1.0f });
     }
+    // A mob has no hunger, Rested, Comfort or carry: it can't feed itself, sleeps in no bed and carries nothing
+    if (!w.has<Mob>(unit)) {
     y = statRow(y, lang("UILABEL_HUNGER"), std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
                 needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
+    y = statRow(y, lang("UILABEL_RESTED"), std::to_string(needs.rested) + " / " + std::to_string(needs.maxRested),
+                needs.maxRested > 0 ? (float)needs.rested / (float)needs.maxRested : 0.0f, RGBA{ 0.38f, 0.55f, 0.95f, 1.0f });
+    y = statRow(y, lang("UILABEL_COMFORT"), std::to_string(needs.comfort) + " / " + std::to_string(needs.maxComfort),
+                needs.maxComfort > 0 ? (float)needs.comfort / (float)needs.maxComfort : 0.0f, RGBA{ 0.35f, 0.78f, 0.62f, 1.0f });
 
     // Carried weight against what Strength lets the unit carry
     const float carried = carriedWeightOf(w, unit);
@@ -3464,6 +3659,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     char carry[48];
     std::snprintf(carry, sizeof(carry), "%.1f / %.0f", carried, limit);
     statRow(y, lang("UILABEL_CARRY"), carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+    }
     }
 
     if (L.tab == UNIT_TAB_INVENTORY) {
@@ -4001,6 +4197,41 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     }
 }
 
+void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames) {
+    const float s = winH / 720.0f;
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const float size = 28.0f * s;
+    const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
+    const float hop = sinceHop < EMOTE_HOP_MS
+        ? std::sin(3.14159265f * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
+    std::vector<Claim> claims;
+    bool haveClaims = false;
+    for (Entity e : w.view<Prop, Transform>()) {
+        const int kind = w.get<Prop>(e)->kind;
+        if (kind != PROP_VAULT && kind != PROP_FLAG) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        int emote = EMOTE_NONE;
+        if (kind == PROP_VAULT && !vaultHasUpkeep(w, e)) emote = EMOTE_NO_UPKEEP;
+        if (kind == PROP_FLAG) {
+            if (!haveClaims) {
+                claims = claimsOf(w);
+                haveClaims = true;
+            }
+            if (propDecaying(w, e, claims)) emote = EMOTE_DECAYING;
+        }
+        if (emote == EMOTE_NONE) continue;
+        float sx = 0.0f, sy = 0.0f;
+        if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        float bottom = sy - 2.0f * s;
+        if (propNames) bottom -= listTextHeight("Ag") + 2.0f * s;
+        if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
+        if (const TextTex* pic = emoteTexture(emote)) {
+            drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+    }
+}
+
 void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown) {
     const Transform* tr = w.get<Transform>(u);
     if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
@@ -4205,7 +4436,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         Seen seen{ e, ItemOnScreen{}, itemName(gi->item), 0.0f };
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         seen.dist2 = dx * dx + dy * dy + dz * dz;
-        if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES) continue;
+        if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, seen.os)) continue;
         tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
     }
@@ -4929,8 +5160,8 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         return;
     }
     const float cw = P.center.w;
-    drawUnitPicture(picked.sprite, Rect{ P.center.x + 20.0f * s, P.center.y + 20.0f * s, cw - 40.0f * s,
-                                         P.center.h - 130.0f * s });
+    // The picked unit's model, turned by dragging in it with the right button
+    drawUnitModelPreview(picked.sprite, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));
     drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,

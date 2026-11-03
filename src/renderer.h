@@ -131,7 +131,10 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
     const float dx = x - ex, dy = y - ey, dz = z - ez;
-    return dx * dx + dy * dy + dz * dz <= LOD_MID_TILES * LOD_MID_TILES;
+    if (dx * dx + dy * dy + dz * dz > LOD_MID_TILES * LOD_MID_TILES) return false;
+    // And within the view range (the Graphics setting) of the camera's focus, measured across the ground
+    const float fx = x - cam.focusX, fz = z - cam.focusZ;
+    return fx * fx + fz * fz <= cam.viewRange * cam.viewRange;
 }
 
 // The stand-in for a prop whose model is not in data.pak: a pink square, missingPropSide(kind) tiles on a side
@@ -282,6 +285,9 @@ public:
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
+    // Emotes over props: No upkeep over a vault with no logs in it, Decaying over a flag wearing down. Above the prop's
+    // name when prop names are shown.
+    void drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames);
     // A hint over the unit under the pointer of what a right-click does to it (EMOTE_CUE_PUT_DOWN, EMOTE_CUE_TALK)
     void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown);
     // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
@@ -345,6 +351,9 @@ public:
                         const PartyPanels& P, float mx, float my);
     // A unit's picture, fitted inside r and kept in its proportions
     void drawUnitPicture(int sprite, const Rect& r);
+    // A unit's model filling r, standing and turned by yaw about its vertical axis, seen from the front; its picture
+    // when it has no model. Call between beginUi and endUi.
+    void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -566,7 +575,7 @@ private:
     float fontTextHeight(TextFont& f, const std::string& s);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
-    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1;
+    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uFaction_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
     int buildSelected_ = -1;                  // the prop picked on the Build tab, or -1
@@ -626,13 +635,32 @@ private:
     bool hoverHad_ = false;       // something was under the pointer last frame
     float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
     unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds
-    std::vector<TextTex> unitSprites_;
     std::vector<TextTex> mobSprites_;   // data/mob/mob_<kind>.png, kind 1 first
     TextTex mobFallback_;
-    // data/unit/unit_0.png, used when a unit's picture could not be loaded (empty if it is missing too: then pink_)
-    TextTex unitFallback_;
-    // Picture n of the units, or its stand-in: unit_0.png, else the pink square
+    // A unit's flat picture, for the portraits: the pink square for every unit until units have 2D art again
     const TextTex& unitPicture(int n) const;
+    // One model per unit sprite number, data/model/unit/unit_<nn>.glb. Files with the same bytes share one copy:
+    // unitModelFor_[n - 1] points at the model sprite n draws, or is null when its file is missing or unreadable.
+    std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};
+    std::array<const Model*, UNIT_SPRITE_COUNT> unitModelFor_{};
+    // The model for sprite number n (wrapped into range), or null
+    const Model* unitModelNumber(int n) const;
+    // A unit's model, or null for a mob (drawn by its sprite) or a unit whose model is missing
+    const Model* unitModel(World& w, Entity e) const;
+    // A unit's width over its height as drawn standing: its model's, or its sprite's
+    float unitAspect(World& w, Entity e) const;
+    // A unit model standing on (x, y, z) GLYPH_H tall, facing yaw (0 faces +z); lying on its side when lying, on top
+    // of y, moved `toward` the camera
+    void drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried = false);
+    // The color a unit's model is tinted toward: its faction's, or none (alpha 0) for your own units and mobs
+    RGBA unitFactionTint(World& w, Entity e) const;
+    // Which way each unit's model faces: turned toward the way it last walked
+    struct UnitFacing {
+        float x = 0.0f, z = 0.0f;   // where it was last frame
+        float yaw = 0.0f;
+    };
+    std::map<Entity, UnitFacing> unitFacing_;
+    float unitYaw(Entity e, float x, float z);
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
     std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown

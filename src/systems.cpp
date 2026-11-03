@@ -19,7 +19,8 @@
 
 namespace {
 
-constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units
+constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units in a formation
+constexpr float UNIT_BOX = 1.0f;         // the side of the square every unit and mob takes up: one tile
 constexpr float PICKUP_REACH = 2.0f;     // a unit this close to a ground item (in tiles) can take it
 
 constexpr float FOLLOW_DISTANCE = 1.6f;   // a unit following or defending another keeps within this many tiles of it
@@ -829,19 +830,44 @@ void needsSystem(World& w, int hours, double gameSeconds) {
     for (Entity e : w.view<Needs>()) {
         if (w.has<Corpse>(e)) continue;   // a corpse needs nothing
         Needs* n = w.get<Needs>(e);
-        // A unit that moved at run pace in the hour that just ended pays double for its next tick. The mark is
-        // used up here, so later hours cost the usual amount.
-        int ticks = hours;
-        if (hours > 0 && n->hurried) {
-            ticks += 1;
+        const bool mob = w.has<Mob>(e);
+        if (mob) {
+            // A mob can't feed itself, so it has no hunger to lose (and none to starve from), and no Rested or Comfort
+            n->hunger = n->maxHunger;
             n->hurried = false;
-        }
-        tickNeeds(*n, ticks);
+        } else {
+            // A unit that moved at run pace in the hour that just ended pays double for its next tick. The mark is
+            // used up here, so later hours cost the usual amount.
+            int ticks = hours;
+            if (hours > 0 && n->hurried) {
+                ticks += 1;
+                n->hurried = false;
+            }
+            tickNeeds(*n, ticks);
 
-        // An Unconscious unit does not heal: only Doom falling to 0 in a bed wakes it
+            // Rested rises lying in a bed or bedroll and falls while awake anywhere else; Comfort rises in a seat or
+            // bed without a lock and falls anywhere else
+            const double gameHours = gameSeconds / 3600.0;
+            // The most Rested follows Vitality. A unit that was fully rested stays fully rested as it grows.
+            if (const int maxR = maxRestedFor(statsOf(w, e)); maxR != n->maxRested) {
+                const bool full = n->rested >= n->maxRested;
+                n->maxRested = maxR;
+                n->rested = full ? maxR : std::min(n->rested, maxR);
+            }
+            const Entity seat = occupiedProp(w, e);
+            const Prop* sp = seat != NULL_ENTITY ? w.get<Prop>(seat) : nullptr;
+            const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
+            const double comfortGain = sp ? comfortGainPerHour(sp->kind) : 0.0;
+            const double restRate = restGain > 0.0 ? restGain : w.has<Unconscious>(e) ? 0.0 : -RESTED_LOSS_PER_HOUR;
+            driftNeed(n->rested, n->maxRested, n->restedPart, restRate, gameHours);
+            driftNeed(n->comfort, n->maxComfort, n->comfortPart, comfortGain > 0.0 ? comfortGain : -COMFORT_LOSS_PER_HOUR,
+                      gameHours);
+        }
+
+        // An Unconscious unit does not heal: only Doom falling to 0 in a bed, or a rested one's wait running out, wakes it
         if (w.has<Unconscious>(e)) continue;
         const Combat* c = w.get<Combat>(e);
-        regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds);
+        regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds, mob);
     }
 }
 
@@ -998,7 +1024,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
     std::sort(attacked.begin(), attacked.end());
     auto underAttack = [&](Entity e) { return std::binary_search(attacked.begin(), attacked.end(), e); };
-    const float unitWidth = 2.0f * 0.4f + UNIT_CLEARANCE;   // one unit's room, at the usual radius
+    const float unitWidth = 2.0f * 0.5f + UNIT_CLEARANCE;   // one unit's room: its tile, and the gap
 
     // Pass 1a: each unit's goal: where its orders take it, or the spot it is idling at.
     // Positions are read here but not changed, so the order of units doesn't matter.
@@ -1145,16 +1171,17 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             const Transform* o = w.get<Transform>(units[j]);
             const Unit* ou = w.get<Unit>(units[j]);
             float sx = tr->x - o->x, sz = tr->z - o->z;
-            const float minD = u->radius + ou->radius + UNIT_CLEARANCE;
-            const float d2 = sx * sx + sz * sz;
-            if (d2 >= minD * minD) continue;
+            // Every unit and mob is the same one-tile square, lined up with the tiles: two overlap when they are less
+            // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
+            const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
+            if (overX <= 0.0f || overZ <= 0.0f) continue;
             // Two settled units following the same unit leave each other be: no pushing back and forth between them
             if (calmLead[i] != NULL_ENTITY && calmLead[i] == calmLead[j]) continue;
-            float d = std::sqrt(d2);
-            if (d < 1e-4f) { sx = 1.0f; sz = 0.0f; d = 1.0f; }
-            const float push = (minD - d) * 8.0f;
-            vx += sx / d * push;
-            vz += sz / d * push;
+            if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;   // right on top: pick a side
+            const bool alongX = overX < overZ;
+            const float push = (alongX ? overX : overZ) * 8.0f;
+            if (alongX) vx += (sx >= 0.0f ? 1.0f : -1.0f) * push;
+            else vz += (sz >= 0.0f ? 1.0f : -1.0f) * push;
             if (going[i] && pinned[j]) {
                 // Against a unit that can't give way (one lying on a bed): slide around it, on the side already nearer
                 float hx = goal[i].first - tr->x, hz = goal[i].second - tr->z;
@@ -1698,9 +1725,9 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
         pw.workers = (int)workers.size();
 
-        // Each worker adds one item per workHoursFor(its level) in-game hours
+        // Each worker adds one item per workHoursFor(its level) in-game hours, sped up at a resource prop
         double perHour = 0.0;
-        for (Entity u : workers) perHour += 1.0 / workHoursFor(levelOf(statsOf(w, u), info.stat));
+        for (Entity u : workers) perHour += resourceSpeedFor(w.get<Prop>(prop)->kind) / workHoursFor(levelOf(statsOf(w, u), info.stat));
         pw.progress += gameSeconds / 3600.0 * perHour;
 
         while (pw.progress >= 1.0 && !workers.empty()) {
@@ -1971,6 +1998,9 @@ void stopAutoStep(World& w, Entity u, Behaviors& b) {
         w.remove<SoloMove>(u);
     }
     if (b.busy && isWalkBehavior(b.step.kind)) w.remove<SoloMove>(u);
+    if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && b.step.kind == BehaviorKind::Rest && oc->prop == b.stepProp) {
+        w.remove<Occupying>(u);
+    }
     if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && b.busy && wk->prop == b.stepProp) w.remove<Working>(u);
     b.busy = false;
 }
@@ -2028,9 +2058,101 @@ BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& clai
     return BehaviorWait::NowhereToRoam;
 }
 
+// Rest: the nearest bed or bedroll nobody lies in or is on the way to, that is not locked to the unit
+Entity restTarget(World& w, Entity u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NULL_ENTITY;
+    std::vector<Entity> wanted;   // the beds others are already on their way to
+    for (Entity o : w.view<PropOrder>()) {
+        if (o != u) wanted.push_back(w.get<PropOrder>(o)->prop);
+    }
+    Entity best = NULL_ENTITY;
+    float bestD2 = 0.0f;
+    for (Entity p : w.view<Prop, Transform>()) {
+        const int kind = w.get<Prop>(p)->kind;
+        if (restedGainPerHour(kind) <= 0.0) continue;
+        if (propOccupant(w, p) != NULL_ENTITY || lockShutFor(w, p, u)) continue;
+        if (std::find(wanted.begin(), wanted.end(), p) != wanted.end()) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (best == NULL_ENTITY || d2 < bestD2) {
+            best = p;
+            bestD2 = d2;
+        }
+    }
+    return best;
+}
+
+// Rescue: the nearest unit of its own faction lying out cold on the ground (not a corpse, not in a bed, carried by
+// nobody and not being fetched by anyone else) within RESCUE_RANGE
+Entity rescueTarget(World& w, Entity u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NULL_ENTITY;
+    const int mine = factionOf(w, u);
+    std::vector<Entity> fetched;
+    for (Entity o : w.view<CarryOrder>()) {
+        if (o != u) fetched.push_back(w.get<CarryOrder>(o)->target);
+    }
+    Entity best = NULL_ENTITY;
+    float bestD2 = RESCUE_RANGE * RESCUE_RANGE;
+    for (Entity v : w.view<Unconscious, Transform>()) {
+        if (v == u || w.has<Corpse>(v) || w.has<Carried>(v) || w.has<Mob>(v) || factionOf(w, v) != mine) continue;
+        const Entity bed = occupiedProp(w, v);
+        if (bed != NULL_ENTITY && w.has<Prop>(bed) && restedGainPerHour(w.get<Prop>(bed)->kind) > 0.0) continue;
+        if (std::find(fetched.begin(), fetched.end(), v) != fetched.end()) continue;
+        const Transform* vt = w.get<Transform>(v);
+        const float d2 = (vt->x - ut->x) * (vt->x - ut->x) + (vt->z - ut->z) * (vt->z - ut->z);
+        if (d2 <= bestD2) {
+            best = v;
+            bestD2 = d2;
+        }
+    }
+    return best;
+}
+
 // Tries to start an automated behavior's step. False, with nothing else changed, when it can't be done now; r.why
 // then says why.
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    if (r.kind == BehaviorKind::Rescue) {
+        // To a unit of its faction out cold, to pick it up, when there is a bed or bedroll to take it to
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
+        const Entity target = rescueTarget(w, u);
+        if (target == NULL_ENTITY) return false;
+        if (restTarget(w, u) == NULL_ENTITY) {
+            r.why = BehaviorWait::NoBed;
+            return false;
+        }
+        const Transform* tt = w.get<Transform>(target);
+        b.busy = true;
+        b.step = r;
+        b.stepProp = NULL_ENTITY;
+        w.remove<SquadMember>(u);
+        w.remove<PickupOrder>(u);
+        w.remove<TalkOrder>(u);
+        endPropTasks(w, u);
+        w.remove<IdleSpot>(u);
+        w.add(u, SoloMove{});
+        planSolo(w, t, u, Vec2{ tt->x, tt->z });
+        w.add(u, CarryOrder{ target });
+        return true;
+    }
+    if (r.kind == BehaviorKind::Rest) {
+        // Only below its percent of Rested: then to the nearest free bed or bedroll, to lie in it
+        const Needs* n = w.get<Needs>(u);
+        r.why = BehaviorWait::None;
+        if (!n || w.has<Mob>(u) || percentOf(n->rested, n->maxRested) >= r.percent) return false;
+        const Entity bed = restTarget(w, u);
+        if (bed == NULL_ENTITY) {
+            r.why = BehaviorWait::NoBed;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = bed;
+        autoGo(w, t, u, bed, PropAction::Use);
+        return true;
+    }
     if (isWalkBehavior(r.kind)) {
         Vec2 to{ 0.0f, 0.0f };
         r.why = r.kind == BehaviorKind::Patrol ? patrolSpot(w, t, claims, u, rng, to) : roamSpot(w, t, claims, u, rng, to);
@@ -2071,7 +2193,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         Behaviors* b = w.get<Behaviors>(u);
         bool any = false;
         for (BehaviorRule& r : b->rules) {
-            if (!isAutomated(r.kind)) continue;
+            if (!isAutoStep(r.kind)) continue;
             r.cooldown = std::max(0.0f, r.cooldown - dt);
             if (!r.on) r.why = BehaviorWait::None;
             any = any || r.on;
@@ -2089,7 +2211,25 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) || (n && n->hp <= 0)) {
             b->busy = false;
             b->seeking = false;
+            b->recovered = 0.0f;
             continue;
+        }
+        // Leave Bed: lying in a bed or bedroll at full health and fully rested for a while, it gets up
+        {
+            const Entity bed = occupiedProp(w, u);
+            const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
+            bool leaveOn = false;
+            for (const BehaviorRule& r : b->rules) leaveOn = leaveOn || (r.on && r.kind == BehaviorKind::LeaveBed);
+            if (leaveOn && bp && restedGainPerHour(bp->kind) > 0.0 && n && n->hp >= n->maxHp && n->rested >= n->maxRested) {
+                b->recovered += dt;
+                if (b->recovered >= LEAVE_BED_SECONDS) {
+                    w.remove<Occupying>(u);
+                    b->recovered = 0.0f;
+                    if (b->busy && b->step.kind == BehaviorKind::Rest) b->busy = false;
+                }
+            } else {
+                b->recovered = 0.0f;
+            }
         }
         // A fight comes first: the step stops, and the automation waits for the fight to end
         const Combat* c = w.get<Combat>(u);
@@ -2142,6 +2282,46 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         const Working* wk = w.get<Working>(u);
         const bool working = b->busy && wk && !wk->unlocking && wk->prop == b->stepProp;
 
+        // Rescue: on its way to pick the unit up, then carrying it to a bed or bedroll; done once it is put in one.
+        // An order of yours takes over.
+        if (b->busy && b->step.kind == BehaviorKind::Rescue) {
+            const PropOrder* rpo = w.get<PropOrder>(u);
+            const bool yoursNow = w.has<SquadMember>(u) || w.has<PutDownOrder>(u) || (rpo && !rpo->automatic) ||
+                                  w.has<AttackOrder>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) ||
+                                  w.has<PickupOrder>(u) || w.has<LootOrder>(u) || w.has<TalkOrder>(u);
+            if (yoursNow) {
+                b->busy = false;
+                b->wait = resume;
+                continue;
+            }
+            if (w.has<CarryOrder>(u)) continue;   // on its way to pick it up
+            if (w.has<Carrying>(u)) {
+                if (rpo && rpo->automatic) continue;   // taking it to the bed
+                // To the nearest free bed: a new one if the last could not be got into, else it is put down here
+                const Entity bed = restTarget(w, u);
+                if (bed != NULL_ENTITY && bed != b->stepProp) {
+                    b->stepProp = bed;
+                    autoGo(w, t, u, bed, PropAction::Use);
+                    continue;
+                }
+                putDown(w, u);
+            }
+            b->busy = false;
+            w.remove<SoloMove>(u);
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+            continue;
+        }
+        // Resting: it stays in the bed until fully rested, then gets up and the automation goes on
+        if (b->busy && b->step.kind == BehaviorKind::Rest) {
+            const Occupying* oc = w.get<Occupying>(u);
+            if (oc && oc->prop == b->stepProp) {
+                if (n && n->rested < n->maxRested) continue;
+                w.remove<Occupying>(u);
+                b->busy = false;
+                if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                continue;
+            }
+        }
         if (b->busy) {
             if (going) continue;   // on its way
             if (working) {
@@ -2180,7 +2360,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         // The next step: the first automated behavior, from the top, that is on and can be done now. One that can't
         // waits BEHAVIOR_RETRY_SECONDS before it is tried again.
         for (BehaviorRule& r : b->rules) {
-            if (!isAutomated(r.kind) || !r.on || r.cooldown > 0.0f) continue;
+            if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) continue;
             if (startStep(w, t, claims, u, *b, r, rng)) break;
             r.cooldown = BEHAVIOR_RETRY_SECONDS;
         }
@@ -2552,6 +2732,12 @@ void knockOut(World& w, Entity u) {
         un.koFaction = c->downedByFaction;
         c->downedByFaction = -1;
     }
+    // Well rested, and not starving: no Doom, and it wakes by itself after a while (a mob has no Rested)
+    if (const Needs* n = w.get<Needs>(u); n && !w.has<Mob>(u) && n->hunger > 0
+        && percentOf(n->rested, n->maxRested) >= RESTED_SAFE_PERCENT) {
+        un.rested = true;
+        un.wake = RESTED_WAKE_HOURS;
+    }
     w.add(u, un);
     queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other);
     queueSoundFrom(w, Sfx::Downed, u);
@@ -2576,6 +2762,30 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
     for (Entity u : w.view<Unconscious>()) {
         if (w.has<Corpse>(u)) continue;
         Unconscious* un = w.get<Unconscious>(u);
+        if (un->rested) {
+            // Knocked out well rested: no Doom. It wakes when its wait runs out, and lies still playing dead if a
+            // hostile unit is near (a carried one: carrySystem decides, by who carries it).
+            un->doom = 0.0f;
+            un->wake -= hours;
+            if (un->wake <= 0.0f) {
+                w.remove<Unconscious>(u);
+                if (Needs* n = w.get<Needs>(u)) {
+                    n->hp = std::max(n->hp, std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH));
+                    n->changed |= NEEDS_HP_CHANGED;
+                    // Coming round from a knock-out is tiring
+                    n->rested = std::max(0, n->rested - RESTED_WAKE_COST);
+                }
+                // Carried by anyone but a hostile, it is put down and stands up again
+                if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
+                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other);
+                out.woke.push_back(u);
+                if (!w.has<Carried>(u) && hostileNear(w, u)) {
+                    w.add(u, PlayingDead{});
+                    queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other);
+                }
+            }
+            continue;
+        }
         const Entity bed = occupiedProp(w, u);
         const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
         const float rest = bp ? doomRecoveryPerHour(bp->kind) : 0.0f;
@@ -2600,6 +2810,29 @@ DoomChanges doomSystem(World& w, double gameSeconds) {
         }
     }
     return out;
+}
+
+bool hostileNear(World& w, Entity u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    const int mine = factionOf(w, u);
+    for (Entity o : w.view<Unit, Transform>()) {
+        if (o == u || w.has<Unconscious>(o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
+        if (!factionsHostile(mine, factionOf(w, o))) continue;
+        const Transform* ot = w.get<Transform>(o);
+        const float dx = ot->x - ut->x, dz = ot->z - ut->z;
+        if (dx * dx + dz * dz <= RESTED_HOSTILE_RANGE * RESTED_HOSTILE_RANGE) return true;
+    }
+    return false;
+}
+
+void playDeadSystem(World& w) {
+    for (Entity u : w.view<PlayingDead>()) {
+        if (w.has<Carried>(u) || w.has<Unconscious>(u)) continue;   // carried: carrySystem looks after it
+        if (hostileNear(w, u)) continue;
+        w.remove<PlayingDead>(u);
+        queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other);
+    }
 }
 
 void finishDoom(World& w, Entity u) {

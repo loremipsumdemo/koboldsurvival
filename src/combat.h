@@ -18,7 +18,9 @@ constexpr float UNARMED_WEIGHT = 0.5f;
 constexpr float STRENGTH_ATTACK = 0.2f;     // attack added per Strength level
 constexpr float MITIGATION_K = 50.0f;       // share of damage taken is K / (K + defense)
 constexpr float BLOCK_DAMAGE = 0.25f;       // damage kept on a blocked hit
-constexpr float ATTACK_REACH = 1.4f;        // tiles between unit centers that allow a swing
+// Tiles between unit centers that allow a swing: more than a tile's diagonal, so units on their one-tile squares
+// (steerUnits) can reach a foe that stands corner to corner with them
+constexpr float ATTACK_REACH = 1.6f;
 constexpr float TALK_RANGE = 1.0f;           // tiles between a unit and an NPC that allow a talk
 constexpr float STEALTH_RANGE = 2.0f;        // tiles from a hostile within which an unnoticed unit earns stealth XP
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
@@ -52,7 +54,7 @@ struct CombatNumbers {
     float swingTime = 1.0f;    // seconds between swings (or shots)
     float maxStamina = 0.0f;
     bool ranged = false;       // a ranged weapon is in the main hand: it shoots, with Projectiles in place of Melee
-    float reach = 1.4f;        // tiles from which it can hit: ATTACK_REACH, or its ranged weapon's range
+    float reach = ATTACK_REACH;   // tiles from which it can hit: ATTACK_REACH, or its ranged weapon's range
 };
 
 // ---- Ranged weapons ----

@@ -98,6 +98,11 @@ void claimDecaySystem(World& w, double gameSeconds);
 // entity that is not a flag.
 std::vector<std::string> flagInfoLines(World& w, Entity e);
 
+// Whether a flag or foundation is wearing down now, by claimDecaySystem's rules. claims: claimsOf(w).
+bool propDecaying(World& w, Entity e, const std::vector<Claim>& claims);
+// Whether a vault has any of its upkeep item (logs) in its inventory
+bool vaultHasUpkeep(World& w, Entity vault);
+
 // The lines Show Prop Info puts under a prop's name: who owns it, its health or condition and whether it is decaying,
 // its lock (and whether it is open to the player), and a vault's upkeep. Empty when there is nothing to say.
 std::vector<std::string> propInfoLines(World& w, Entity e);

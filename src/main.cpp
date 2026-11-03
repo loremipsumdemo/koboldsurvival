@@ -899,8 +899,13 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Commandable{});   // one of yours; a corpse is nobody's
         }
         if (u.unconscious) {
-            world.add(e, Unconscious{ u.corpse ? 100.0f : u.doom, u.koFaction });
+            Unconscious un{ u.corpse ? 100.0f : u.doom, u.koFaction };
+            un.rested = u.downRested && !u.corpse;
+            un.wake = u.wake;
+            world.add(e, un);
             if (u.corpse) world.add(e, Corpse{});
+        } else if (u.playingDead && u.carriedBy < 0) {
+            world.add(e, PlayingDead{});   // woke near hostile units, and lies still on the ground
         }
         if ((u.hostile || u.neutral) && u.mob <= 0) world.add(e, Dialogue{});   // a mob has nothing to say
         if (u.mob > 0) world.add(e, Mob{ u.mob });
@@ -1098,11 +1103,11 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.unconscious = true;
             su.doom = un->doom;
             su.corpse = w.has<Corpse>(u);
+            su.downRested = un->rested;
+            su.wake = un->wake;
         }
-        if (const Carried* cd = w.get<Carried>(u)) {
-            su.carriedBy = indexOf(cd->by);
-            su.playingDead = w.has<PlayingDead>(u);
-        }
+        su.playingDead = w.has<PlayingDead>(u);
+        if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = indexOf(cd->by);
         su.x = t->x;
         su.y = t->y;
         su.z = t->z;
@@ -1991,6 +1996,10 @@ int main(int, char**) {
     float noticeSec = 0.0f;
 
     Uint64 lastTicks = SDL_GetTicks();
+    // The frame rate shown in the corner (Show FPS): frames counted over half a second at a time
+    Uint64 fpsSince = lastTicks;
+    int fpsFrames = 0;
+    std::string fpsText = "-- FPS";
     SDL_Event e;
 
     auto refreshSaves = [&]() {
@@ -4038,6 +4047,12 @@ int main(int, char**) {
                         partyUi.listDrag = true;
                         break;
                     }
+                    // The right button held on the picked unit's model turns it about its vertical axis
+                    if (e.button.button == SDL_BUTTON_RIGHT && partyUi.dropKind == DropKind::None && !party.empty()
+                        && partyPreviewRect(winW, winH).contains(e.button.x, e.button.y)) {
+                        partyUi.previewDrag = true;
+                        break;
+                    }
                     if (e.button.button == SDL_BUTTON_LEFT) {
                         const float mx = e.button.x, my = e.button.y;
                         const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
@@ -4740,6 +4755,10 @@ int main(int, char**) {
                     partyUi.listDrag = false;
                     break;
                 }
+                if (partyUi.previewDrag && e.button.button == SDL_BUTTON_RIGHT) {
+                    partyUi.previewDrag = false;
+                    break;
+                }
                 if (optimizeSliderDrag && e.button.button == SDL_BUTTON_LEFT) {
                     optimizeSliderDrag = false;
                     saveSettingsFile();   // its last place is kept
@@ -4871,6 +4890,15 @@ int main(int, char**) {
                         partyUi.listScroll = partyListScrollAt(winW, winH, (int)party.size(), e.motion.y - partyUi.listGrab);
                     } else {
                         partyUi.listDrag = false;
+                    }
+                    break;
+                }
+                // The held model turns with the mouse's sideways movement only: about its vertical axis, never tipping
+                if (screen == Screen::PartySetup && partyUi.previewDrag) {
+                    if (e.motion.state & SDL_BUTTON_RMASK) {
+                        partyUi.previewYaw = std::remainder(partyUi.previewYaw + e.motion.xrel * 0.012f, 6.2831853f);
+                    } else {
+                        partyUi.previewDrag = false;
                     }
                     break;
                 }
@@ -5018,6 +5046,7 @@ int main(int, char**) {
         // Game messages written outside a fight (XP, pickups, drops) join the log every frame
         flushQueuedLog(combatLog);
         cam.mapSize = (float)terrain.size();
+        cam.viewRange = (float)settings.viewRange;
 
         // ---- Game update: only while playing ----
         // The game stands still while a talk is open, and only End Dialogue starts it again
@@ -5137,6 +5166,7 @@ int main(int, char**) {
             downedSystem(world);   // starving to 0 knocks a unit out too
             // Doom: up while Unconscious, down in a bed or bedroll; 0 there wakes the unit, 100 makes it a corpse
             const DoomChanges doom = doomSystem(world, gameSecs);
+            playDeadSystem(world);
             for (Entity u : doom.woke) {
                 tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
                 queueSoundFrom(world, Sfx::Recovers, u);
@@ -5519,6 +5549,7 @@ int main(int, char**) {
             }
             // What each unit is doing: mining, woodcutting, cooking, sleeping, encumbered
             renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
+            renderer.drawPropEmotes(world, cam, winW, winH, settings.showPropNames);
             // What a right-click would do to the unit under the pointer: put down a unit your selected unit carries, or
             // talk to an NPC
             if (!overPanels(mouseX, mouseY, winW, winH) && !contextMenu.open && !itemMenu.open && dialogueUnit == NULL_ENTITY) {
@@ -5984,6 +6015,19 @@ int main(int, char**) {
 
         renderer.beginUi(winW, winH);
         drawNotice();
+        // The frame rate in the bottom-left corner, white on a black box, over everything else
+        ++fpsFrames;
+        if (const Uint64 at = SDL_GetTicks(); at - fpsSince >= 500) {
+            fpsText = std::to_string((int)std::lround(fpsFrames * 1000.0 / (double)(at - fpsSince))) + " FPS";
+            fpsSince = at;
+            fpsFrames = 0;
+        }
+        if (settings.showFps) {
+            const float pad = 4.0f, tw = renderer.uiTextWidth(fpsText), th = renderer.uiTextHeight(fpsText);
+            const float bx = 6.0f, by = (float)winH - th - 2.0f * pad - 6.0f;
+            renderer.drawRect(Rect{ bx, by, tw + 2.0f * pad, th + 2.0f * pad }, RGBA{ 0.0f, 0.0f, 0.0f, 0.85f });
+            renderer.drawUiText(fpsText, bx + pad, by + pad, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
         renderer.endUi();
 
         // The frame is complete but not yet shown, so it is the one saved

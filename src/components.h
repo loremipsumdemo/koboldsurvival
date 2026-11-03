@@ -19,7 +19,7 @@ struct Transform {
 // A player-controlled unit
 struct Unit {
     float speed = 3.0f;      // tiles per second
-    float radius = 0.4f;     // used for separation from other units
+    float radius = 0.5f;     // half a tile: every unit and mob takes up one tile square (steerUnits)
 };
 
 struct Selected {};
@@ -64,7 +64,7 @@ struct Name {
     std::string text = lang("UILABEL_UNNAMED_UNIT");
 };
 
-// Which unit image this unit uses: data/unit/unit_1.png up to UNIT_SPRITE_COUNT (party.h)
+// Which unit model this unit uses: data/model/unit/unit_01.glb up to UNIT_SPRITE_COUNT (party.h)
 struct UnitSprite {
     int id = 1;
 };
@@ -190,6 +190,12 @@ constexpr unsigned NEEDS_HUNGER_CHANGED = 2u;
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
+    // Rested: falls while awake and rises lying in a bed or bedroll (needs.h). Well rested, a unit knocked out gets no
+    // Doom and wakes by itself. Comfort: rises sitting or lying in an occupiable prop that has no lock, falls otherwise.
+    // A mob has neither, and no hunger either: it can't feed itself.
+    int rested = 100, maxRested = 100;
+    int comfort = 100, maxComfort = 100;
+    double restedPart = 0.0, comfortPart = 0.0;   // the part of a point each has moved toward its next whole point
     bool hurried = false;        // moved at run pace this in-game hour, so the next hunger tick costs double
     double healSeconds = 0.0;    // in-game seconds saved toward the next point of health
     // Which values changed since the behavior pass last checked them. Every place that changes one sets its bit,
@@ -211,6 +217,7 @@ struct Needs {
 struct Behaviors {
     std::vector<BehaviorRule> rules = defaultBehaviors();
     bool pending = true;
+    float recovered = 0.0f;     // Leave Bed: real seconds it has lain in a bed fully recovered (not saved)
     bool busy = false;
     BehaviorRule step;          // the automated behavior whose step the unit is on, while busy
     Entity stepProp = NULL_ENTITY;   // the prop that step goes to
@@ -282,6 +289,10 @@ struct Unconscious {
     // The faction whose unit knocked it out, or -1 (hunger, or nobody). A unit of another faction knocked out by your
     // units has cost you reputation with its faction, and costs more if it dies before it wakes.
     int koFaction = -1;
+    // Knocked out well rested (RESTED_SAFE_PERCENT, needs.h): no Doom, and it wakes by itself once wake (in-game hours)
+    // runs out, playing dead if hostile units are near
+    bool rested = false;
+    float wake = 0.0f;
 };
 // A unit being carried, by the unit `by` (which has Carrying). It lies over its carrier, moves with it and pushes
 // nothing. Unconscious units and corpses can be carried by anyone; a unit that is awake only by its own squad, and it
@@ -292,7 +303,8 @@ struct Carried {
 };
 // A unit that is awake but carried by a hostile lies still, playing dead, until it is given an order: then it breaks
 // free (it is put down where its carrier is) and does it. Never at the same time as Unconscious, and never with its
-// own squad carrying it.
+// own squad carrying it. A unit that wakes from a rested knock-out with hostile units near plays dead on the ground the
+// same way, until it is given an order or they have gone (playDeadSystem). Nobody attacks a unit playing dead.
 struct PlayingDead {};
 // An Unconscious unit whose Doom reached 100: it never recovers. It keeps its Unconscious, with Doom 100, so it can
 // still be carried and looted, and it is no longer anyone's to command.

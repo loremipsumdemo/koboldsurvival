@@ -315,6 +315,13 @@ inline double workHoursFor(int level) {
     return 1.0 + (double)(MAX_LEVEL - lv) / (double)(MAX_LEVEL - 1);
 }
 
+// How many times faster than workHoursFor a resource prop is worked: a Mushroom 8 times, any other resource 4 times.
+// Crafting is not sped up.
+inline double resourceSpeedFor(int kind) {
+    if (kind == PROP_MUSHROOM) return 8.0;
+    return propInfo(kind).use == PropUse::Resource ? 4.0 : 1.0;
+}
+
 constexpr float WORK_XP_PER_ITEM = 20.0f;   // skill XP for each item made, to the unit credited with it
 
 // Lockpicking: each attempt takes LOCKPICK_SHARE of the time an item of work would at the same skill (a quarter hour to

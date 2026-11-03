@@ -114,6 +114,18 @@ RowSpec makeScale(RowId id, const std::string& label, int percent) {
     return r;
 }
 
+// The view range slider: VIEW_RANGE_MIN to VIEW_RANGE_MAX tiles, shown as a count of tiles
+RowSpec makeRange(RowId id, const std::string& label, int tiles) {
+    RowSpec r;
+    r.id = id;
+    r.kind = RowKind::Scale;
+    r.label = label;
+    const int span = VIEW_RANGE_MAX - VIEW_RANGE_MIN;
+    r.current = std::clamp(((tiles - VIEW_RANGE_MIN) * 100 + span / 2) / span, 0, 100);
+    r.text = langf("UILABEL_TILES_N", { std::to_string(tiles) });
+    return r;
+}
+
 RowSpec makeLevel(RowId id, const std::string& label, int level, bool on) {
     RowSpec r;
     r.id = id;
@@ -183,6 +195,8 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
         fps.push_back(DropOption{ v == 0 ? std::string(lang("UILABEL_UNLIMITED")) : langf("UILABEL_FPS", { std::to_string(v) }), v, 0, 0, true });
     }
     rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
+    rows.push_back(makeRange(RowId::ViewRange, lang("UILABEL_VIEW_RANGE"), s.viewRange));
+    rows.push_back(makeToggle(RowId::ShowFps, lang("UILABEL_SHOW_FPS"), s.showFps));
     return rows;
 }
 
@@ -500,6 +514,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
     case RowId::EdgeScroll:
         s.edgeScroll = on;
         break;
+    case RowId::ShowFps:
+        s.showFps = on;
+        break;
     case RowId::GlobalLevel:
         s.globalOn = on;
         c.audio = true;
@@ -537,6 +554,17 @@ SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
         if (s.fontScale != pct) {
             s.fontScale = pct;
             c.fonts = true;
+            c.any = true;
+        }
+        return c;
+    }
+    if (id == RowId::ViewRange) {
+        // The level 0 to 100 spans VIEW_RANGE_MIN to VIEW_RANGE_MAX tiles, snapped to the nearest step
+        const int span = VIEW_RANGE_MAX - VIEW_RANGE_MIN;
+        const int offset = std::clamp(level, 0, 100) * span / 100;
+        const int tiles = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((offset + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
+        if (s.viewRange != tiles) {
+            s.viewRange = tiles;
             c.any = true;
         }
         return c;

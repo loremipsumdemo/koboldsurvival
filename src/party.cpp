@@ -264,7 +264,9 @@ Party randomParty(Rng& rng, int count) {
     std::vector<int> sprites;
     for (PartyMember& m : p) {
         m = randomMember(rng, names);
-        while (std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
+        // Distinct while there are models left to give out; past that, any one will do
+        while ((int)sprites.size() < UNIT_SPRITE_COUNT
+               && std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
             m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
         }
         names.push_back(m.name);
@@ -308,7 +310,8 @@ void addRandomMember(Party& p, Rng& rng) {
         sprites.push_back(m.sprite);
     }
     PartyMember m = randomMember(rng, names);
-    while (std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
+    while ((int)sprites.size() < UNIT_SPRITE_COUNT
+           && std::find(sprites.begin(), sprites.end(), m.sprite) != sprites.end()) {
         m.sprite = rng.range(1, UNIT_SPRITE_COUNT);
     }
     p.push_back(m);

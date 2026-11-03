@@ -121,6 +121,12 @@ PartyPanels partyPanels(int W, int H) {
     return P;
 }
 
+Rect partyPreviewRect(int W, int H) {
+    const float s = H / 720.0f;
+    const Rect c = partyPanels(W, H).center;
+    return Rect{ c.x + 20.0f * s, c.y + 20.0f * s, c.w - 40.0f * s, c.h - 130.0f * s };
+}
+
 std::string partyMessage(const Party& p) {
     if (p.empty()) return std::string(lang("UILABEL_NEEDS_UNITS"));
     return partyNamesValid(p) ? std::string(lang("UILABEL_CONFIRM_STARTS"))

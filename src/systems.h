@@ -204,6 +204,11 @@ struct DoomChanges {
     std::vector<Entity> woke, died;
 };
 DoomChanges doomSystem(World& w, double gameSeconds);
+// Whether a hostile unit that is up and about stands within RESTED_HOSTILE_RANGE of u
+bool hostileNear(World& w, Entity u);
+// Units playing dead on the ground (woken from a rested knock-out near hostile units) get up once no hostile unit is
+// near. An order gets them up sooner (cannotTakeOrder).
+void playDeadSystem(World& w);
 // Sends the first unit that can (the list is nearest first) to pick up a unit that canBeCarried. False if none can.
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
 // Sends each unit that is carrying someone to a ground point, to put it down there
