@@ -3548,11 +3548,9 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (L.tab == UNIT_TAB_BEHAVIOR) {
         const Behaviors* beh = w.get<Behaviors>(unit);
         const Equipment* worn = w.get<Equipment>(unit);
-        const Routine* routine = w.get<Routine>(unit);
-        const std::array<bool, 5> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
-                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]), routine && routine->on };
-        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes,
-                            routine != nullptr);
+        const std::array<bool, 4> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
+                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]) };
+        drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes);
     }
     if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my);
     if (L.maxScroll > 0.0f) {
@@ -3713,7 +3711,7 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
 }
 
 void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                                   float mx, float my, bool editable, const std::array<bool, 5>& modes, bool hasRoutine) {
+                                   float mx, float my, bool editable, const std::array<bool, 4>& modes) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
@@ -3739,16 +3737,15 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         }
     }
 
-    // The modes: a lit button for each one that is on. Ranged follows the weapon, so it is never pressed; Routine can
-    // be pressed only by a unit that has one. Each tooltip says what its mode does.
+    // The modes: a lit button for each one that is on. Ranged follows the weapon, so it is never pressed. Each tooltip
+    // says what its mode does.
     {
-        static const char* const names[5] = { "UILABEL_MODE_PASSIVE", "UILABEL_MODE_BLOCK", "UILABEL_MODE_SNEAK", "UILABEL_MODE_RANGED", "UILABEL_MODE_ROUTINE" };
-        static const char* const tips[5] = { "UILABEL_MODE_PASSIVE_TIP", "UILABEL_MODE_BLOCK_TIP", "UILABEL_MODE_SNEAK_TIP", "UILABEL_MODE_RANGED_TIP",
-                                             "UILABEL_MODE_ROUTINE_TIP" };
-        for (int i = 0; i < 5; ++i) {
+        static const char* const names[4] = { "UILABEL_MODE_PASSIVE", "UILABEL_MODE_BLOCK", "UILABEL_MODE_SNEAK", "UILABEL_MODE_RANGED" };
+        static const char* const tips[4] = { "UILABEL_MODE_PASSIVE_TIP", "UILABEL_MODE_BLOCK_TIP", "UILABEL_MODE_SNEAK_TIP", "UILABEL_MODE_RANGED_TIP" };
+        for (int i = 0; i < 4; ++i) {
             const Rect& r = L.modes[(size_t)i];
             if (r.w <= 0.0f) continue;
-            const bool pressable = editable && (i < 3 || (i == 4 && hasRoutine));
+            const bool pressable = editable && i < 3;
             const bool hot = pressable && r.contains(mx, my);
             if (hot) noteHover(r);
             const RGBA fill = modes[(size_t)i] ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f }
@@ -3757,15 +3754,15 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
             if (modes[(size_t)i]) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GREEN);
             if (hot) drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.08f });
             const std::string label = fitText(lang(names[i]), r.w - 6.0f * s, false);
-            const bool dim = i == 3 || (i == 4 && !hasRoutine);
+            const bool dim = i == 3;
             const RGBA tint = modes[(size_t)i] ? white : (dim ? RGBA{ 0.55f, 0.52f, 0.60f, 1.0f } : gray);
             drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listH) * 0.5f, tint);
-            noteTip(lang(i == 4 && !hasRoutine ? "UILABEL_MODE_ROUTINE_NONE_TIP" : tips[i]), r);
+            noteTip(lang(tips[i]), r);
         }
     }
 
-    const std::string heads[5] = { lang("UILABEL_BEHAVIOR_ON"), lang("UILABEL_TARGET"), lang("UILABEL_CONDITION"), lang("UILABEL_ACTION"), lang("UILABEL_TARGET") };
-    for (size_t i = 0; i < 5; ++i) {
+    const std::string heads[2] = { lang("UILABEL_BEHAVIOR_ON"), lang("UILABEL_BEHAVIOR") };
+    for (size_t i = 0; i < 2; ++i) {
         const Rect& h = L.behaviorHeads[i];
         drawListText(fitText(heads[i], h.w, false), h.x, h.y + (h.h - listH) * 0.5f, gray);
     }
@@ -3774,7 +3771,7 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         const BehaviorRowLayout& R = L.behaviorRows[i];
         const BehaviorRule& r = rules[i];
         if (editable && R.row.contains(mx, my)) drawRect(R.row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
-        // A rule that is off reads gray, so the list shows at a glance which ones work
+        // A behavior that is off reads gray, so the list shows at a glance which ones work
         const RGBA text = r.on ? white : gray;
 
         // The on box: a dark square, with a blue fill while the rule is on
@@ -3788,27 +3785,21 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
                      RGBA{ 0.35f, 0.62f, 0.95f, editable ? 1.0f : 0.5f });
         }
 
-        // Each option cell shows its text, fitted to the cell, and lights up under the mouse
-        auto cell = [&](const Rect& c, const std::string& label) {
-            const bool hot = editable && c.contains(mx, my);
-            drawRect(c, hot ? RGBA{ 0.176f, 0.259f, 0.0f, 0.90f } : RGBA{ 0.10f, 0.07f, 0.12f, 0.90f });
-            drawListText(fitText(label, c.w - 8.0f * s, false), c.x + 4.0f * s, c.y + (c.h - listH) * 0.5f, text);
-        };
-        cell(R.conditionTarget, targetName(r.conditionTarget));
-        cell(R.condition, std::string(conditionName(r.condition)) + " " + opName(r.op) + " " +
-                          std::to_string(r.percent) + "%");
-        cell(R.action, actionName(r.action));
-        cell(R.actionTarget, targetName(r.actionTarget));
+        // The behavior's name, fitted to its cell. A behavior waiting after a try that could not be done says so.
+        drawRect(R.label, RGBA{ 0.10f, 0.07f, 0.12f, 0.90f });
+        std::string label = behaviorName(r);
+        if (r.on && r.cooldown > 0.0f) label += "  " + lang("UILABEL_BEHAVIOR_WAITING");
+        drawListText(fitText(label, R.label.w - 8.0f * s, false), R.label.x + 4.0f * s, R.label.y + (R.label.h - listH) * 0.5f,
+                     text);
 
+        // Only an automated behavior can be deleted: every unit keeps Eat, Heal and Share
         const bool upOn = editable && i > 0;
         const bool downOn = editable && i + 1 < rules.size();
+        const bool removeOn = editable && isAutomated(r.kind);
         drawSmallButton(R.up, "^", upOn, upOn && R.up.contains(mx, my));
         drawSmallButton(R.down, "v", downOn, downOn && R.down.contains(mx, my));
-        drawSmallButton(R.remove, "x", editable, editable && R.remove.contains(mx, my));
+        drawSmallButton(R.remove, "x", removeOn, removeOn && R.remove.contains(mx, my));
     }
-
-    const bool canAdd = editable && rules.size() < (size_t)BEHAVIOR_LIMIT;
-    drawButton(L.addButton, "+ Add behavior", canAdd, canAdd && L.addButton.contains(mx, my));
 }
 
 void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my) {
@@ -3817,45 +3808,13 @@ void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, fl
     if (hit.row < 0 || !b || hit.row >= (int)b->rules.size()) return;
     const float s = uiH_ / 720.0f;
     std::vector<TipRow> rows(1);
-    rows[0].text = describeRule(b->rules[(size_t)hit.row]);
+    rows[0].text = describeBehavior(b->rules[(size_t)hit.row]);
     const float width = tipWidth(rows), height = tipHeight(rows.size());
     // Beside the mouse, moved to the other side or up when the window has no room for it
     float x = mx + 14.0f * s, y = my + 14.0f * s;
     if (x + width > uiW_) x = mx - 14.0f * s - width;
     if (y + height > uiH_) y = uiH_ - height;
     drawTip(rows, std::max(0.0f, x), std::max(0.0f, y), width);
-}
-
-ConditionEditorLayout Renderer::conditionEditorLayout(float x, float y, int winW, int winH) {
-    return layoutConditionEditor(x, y, listTextHeight("Ag"), winW, winH);
-}
-
-void Renderer::drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my) {
-    drawThemedPanel(L.box);
-    // A choice is lit when it is the rule's current one, and brighter still under the mouse
-    auto choice = [&](const Rect& c, const std::string& label, bool current) {
-        const bool hot = c.contains(mx, my);
-        const RGBA bg = current ? RGBA{ 0.28f, 0.46f, 0.74f, 0.95f }
-                      : hot     ? RGBA{ 0.176f, 0.259f, 0.0f, 0.95f }
-                                : RGBA{ 0.07f, 0.055f, 0.10f, 0.95f };
-        drawRect(c, bg);
-        const float tw = listTextWidth(label), th = listTextHeight(label);
-        drawListText(label, c.x + (c.w - tw) * 0.5f, c.y + (c.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    };
-    for (size_t i = 0; i < L.kinds.size(); ++i) {
-        choice(L.kinds[i], conditionName((BehaviorCondition)i), (int)r.condition == (int)i);
-    }
-    for (size_t i = 0; i < L.ops.size(); ++i) {
-        choice(L.ops[i], opName((BehaviorOp)i), (int)r.op == (int)i);
-    }
-    static const char* const stepLabels[4] = { "-10", "-1", "+1", "+10" };
-    for (size_t i = 0; i < L.steps.size() && i < 4; ++i) {
-        choice(L.steps[i], stepLabels[i], false);
-    }
-    drawRect(L.value, RGBA{ 0.10f, 0.07f, 0.12f, 0.95f });
-    const std::string pct = std::to_string(r.percent) + "%";
-    drawListText(pct, L.value.x + (L.value.w - listTextWidth(pct)) * 0.5f,
-                 L.value.y + (L.value.h - listTextHeight(pct)) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {

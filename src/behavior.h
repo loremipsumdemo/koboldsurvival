@@ -3,8 +3,11 @@
 #include "combat.h"
 #include "ecs.h"
 
-// Runs every unit's behavior rules, from the top of each list down. A rule is checked only when the value it
-// watches has changed, for a unit in its condition group, or when the rule's unit was edited, so a value that no
-// enabled rule watches is never looked at. A rule whose condition holds carries out its action once. Actions change
-// values, and those changes are checked on the next call. Returns how many rules were checked.
-size_t behaviorSystem(World& w, CombatLog& log);
+// Share hands items over at trading range: a unit this close to another can take its food or healing item
+constexpr float SHARE_RANGE = TALK_RANGE;
+
+// Runs every unit's Eat and Heal behaviors (behavior_rules.h), from the top of each list down. One is checked when the
+// stat it watches has changed, when the unit's list was edited, or when the wait after a failed try (no item to use,
+// none to share) has run out. dt is the real seconds since the last call, for those waits. The automated behaviors are
+// worked by automationSystem (systems.h). Returns how many behaviors were checked.
+size_t behaviorSystem(World& w, CombatLog& log, float dt);

@@ -160,9 +160,6 @@ UILABEL_SLOT_LEGS	Ноги
 UILABEL_SLOT_FEET	Стопы
 UILABEL_SLOT_ACCESSORY	Аксессуар
 UILABEL_BEHAVIOR_ON	Вкл.
-UILABEL_TARGET	Цель
-UILABEL_CONDITION	Условие
-UILABEL_ACTION	Действие
 UILABEL_COMBAT_MESSAGES	Сообщения боя
 UILABEL_SEEN	Замечен
 UILABEL_HIT	Попадание
@@ -245,13 +242,6 @@ MISC_SKY_DUSK_HORIZON	Горизонт сумерек
 MISC_SKY_DUSK_SUN	Солнце в сумерках
 MISC_SKY_SUN	Солнце
 MISC_SKY_MOON	Луна
-MISC_TARGET_SELF	Себя
-MISC_TARGET_ALLY	Союзник
-MISC_TARGET_ENEMY	Враг
-MISC_COND_HEALTH	Здоровье
-MISC_COND_HUNGER	Голод
-MISC_ACT_HEAL	Использовать лечебный предмет
-MISC_ACT_FOOD	Съесть пищу
 UILABEL_STAT_DESC_STRENGTH	Урон в ближнем бою, грузоподъёмность
 UILABEL_STAT_DESC_DEXTERITY	Скорость атаки
 UILABEL_STAT_DESC_VITALITY	Максимальное здоровье

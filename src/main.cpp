@@ -176,7 +176,7 @@ void closeStorage() {
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock, PickUp,
-                        PutInBed, PutDown };
+                        PutInBed, PutDown, AutoHarvest, AutoHaul };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -881,7 +881,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, worn);
         world.add(e, u.hasNeeds ? u.needs : Needs{});
         Behaviors behaviors;   // older saves have none, so their units get the defaults
-        if (u.hasBehaviors) behaviors.rules = u.behaviors;
+        if (u.hasBehaviors) {
+            // An Auto-Haul's prop is found below, once the props are all there
+            behaviors.rules.clear();
+            for (const SaveBehavior& b : u.behaviors) behaviors.rules.push_back(b.rule);
+            ensureNeedsBehaviors(behaviors.rules);
+        }
         behaviors.passive = u.passive;
         behaviors.block = u.block;
         behaviors.sneak = u.sneak;
@@ -915,8 +920,9 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, GroundItem{ g.item, g.count });
         }
     }
-    // Routines: their props are found by where they stand (a camp's props are placed again from the seed, on the same
-    // spots). One whose props are not there any more is dropped.
+    // Auto-Haul props are found by where they stand (a camp's props are placed again from the seed, on the same spots).
+    // One whose prop is not there any more is dropped. An older save's routine becomes Auto-Haul to its store prop
+    // and Auto-Harvest of its gather prop's kind.
     {
         auto propNear = [&](float x, float z, bool storage) {
             Entity best = NULL_ENTITY;
@@ -935,13 +941,39 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         };
         for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
             const SaveUnit& u = d.units[i];
-            if (!u.hasRoutine) continue;
-            Routine r;
-            r.store = propNear(u.storeX, u.storeZ, true);
-            r.gather = propNear(u.gatherX, u.gatherZ, false);
-            r.item = u.routineItem;
-            r.on = u.routineOn;
-            if (r.store != NULL_ENTITY && r.gather != NULL_ENTITY) world.add(restoredUnits[i], r);
+            Behaviors* b = world.get<Behaviors>(restoredUnits[i]);
+            if (!b) continue;
+            size_t at = 0;
+            for (const SaveBehavior& sb : u.behaviors) {
+                if (at >= b->rules.size()) break;
+                if (b->rules[at].kind == BehaviorKind::AutoHaul) {
+                    const Entity prop = propNear(sb.x, sb.z, true);
+                    if (prop == NULL_ENTITY) {
+                        b->rules.erase(b->rules.begin() + (long)at);
+                        continue;
+                    }
+                    b->rules[at].prop = prop;
+                    b->rules[at].propKind = world.get<Prop>(prop)->kind;
+                }
+                ++at;
+            }
+            if (u.hasRoutine) {
+                const Entity store = propNear(u.storeX, u.storeZ, true);
+                const Entity gather = propNear(u.gatherX, u.gatherZ, false);
+                if (store != NULL_ENTITY && gather != NULL_ENTITY) {
+                    BehaviorRule haul;
+                    haul.kind = BehaviorKind::AutoHaul;
+                    haul.on = u.routineOn;
+                    haul.prop = store;
+                    haul.propKind = world.get<Prop>(store)->kind;
+                    BehaviorRule harvest;
+                    harvest.kind = BehaviorKind::AutoHarvest;
+                    harvest.on = u.routineOn;
+                    harvest.propKind = world.get<Prop>(gather)->kind;
+                    addBehavior(b->rules, haul);
+                    addBehavior(b->rules, harvest);
+                }
+            }
         }
     }
     // The props' states below name each prop by its serial. A save made when the level laid its props out another way
@@ -1068,19 +1100,16 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         }
         if (const Behaviors* b = w.get<Behaviors>(u)) {
             su.hasBehaviors = true;
-            su.behaviors = b->rules;
-        }
-        if (const Routine* r = w.get<Routine>(u)) {
-            const Transform* st = w.get<Transform>(r->store);
-            const Transform* gt = w.get<Transform>(r->gather);
-            if (st && gt) {
-                su.hasRoutine = true;
-                su.routineOn = r->on;
-                su.routineItem = r->item;
-                su.storeX = st->x;
-                su.storeZ = st->z;
-                su.gatherX = gt->x;
-                su.gatherZ = gt->z;
+            for (const BehaviorRule& r : b->rules) {
+                SaveBehavior sb;
+                sb.rule = r;
+                if (r.kind == BehaviorKind::AutoHaul) {
+                    const Transform* pt = w.get<Transform>(r.prop);
+                    if (!pt) continue;   // its prop is gone
+                    sb.x = pt->x;
+                    sb.z = pt->z;
+                }
+                su.behaviors.push_back(sb);
             }
         }
         if (const Inventory* inv = w.get<Inventory>(u)) {
@@ -1826,14 +1855,6 @@ int main(int, char**) {
     // How far the sidebar is scrolled, in pixels, and the unit that scroll was for. A different unit starts at the top.
     float sidebarScroll = 0.0f;
     Entity sidebarScrollUnit = NULL_ENTITY;
-    // The condition editor for one behavior of a unit, opened from the behavior's Condition cell at (x, y)
-    struct BehaviorEditor {
-        bool open = false;
-        Entity unit = NULL_ENTITY;
-        size_t row = 0;
-        float x = 0.0f, y = 0.0f;
-    };
-    BehaviorEditor behaviorEditor;
 
     Screen screen = Screen::Title;
     // The title and pause menus: the item lit by the arrow keys or the mouse, the screen it is for, and when that screen
@@ -2713,17 +2734,9 @@ int main(int, char**) {
             sortInventoryByType(*inv);
             playSfx(Sfx::UiClick);
         };
-        // Adds a behavior with the default rule, unless the list is full
-        auto addBehavior = [&](Entity unit) {
-            Behaviors* b = world.get<Behaviors>(unit);
-            if (!b || (int)b->rules.size() >= BEHAVIOR_LIMIT) return;
-            b->rules.push_back(BehaviorRule{});
-            b->pending = true;   // the new rule is checked on the next behavior pass
-            playSfx(Sfx::UiClick);
-        };
-        // A click on one part of a behavior row. Toggles and choices change the rule at once, the priority and delete
-        // buttons move or remove it, and the Condition cell opens the editor for it.
-        auto behaviorClick = [&](Entity unit, const BehaviorHit& hit, float mx, float my) {
+        // A click on one part of a behavior row: the on box switches it, the priority buttons move it, and the delete
+        // button removes it (an automated behavior only)
+        auto behaviorClick = [&](Entity unit, const BehaviorHit& hit) {
             Behaviors* b = world.get<Behaviors>(unit);
             if (!b || hit.row < 0 || hit.row >= (int)b->rules.size()) return;
             const size_t row = (size_t)hit.row;
@@ -2731,55 +2744,22 @@ int main(int, char**) {
             switch (hit.part) {
             case BehaviorPart::Toggle:
                 r.on = !r.on;
+                r.cooldown = 0.0f;
+                if (r.on) b->wait = 0.0f;   // an automated behavior switched on looks for its step at once
                 break;
-            case BehaviorPart::ConditionTarget:
-                r.conditionTarget = (BehaviorTarget)(((int)r.conditionTarget + 1) % (int)BehaviorTarget::Count);
-                break;
-            case BehaviorPart::Action:
-                r.action = (BehaviorAction)(((int)r.action + 1) % (int)BehaviorAction::Count);
-                break;
-            case BehaviorPart::ActionTarget:
-                r.actionTarget = (BehaviorTarget)(((int)r.actionTarget + 1) % (int)BehaviorTarget::Count);
-                break;
-            case BehaviorPart::Condition:
-                itemMenu.open = false;
-                behaviorEditor = BehaviorEditor{ true, unit, row, mx, my };
-                return;
             case BehaviorPart::Up:
                 if (!moveBehavior(b->rules, row, -1)) return;
-                behaviorEditor.open = false;   // the rule's row has changed, so the editor is closed
                 break;
             case BehaviorPart::Down:
                 if (!moveBehavior(b->rules, row, +1)) return;
-                behaviorEditor.open = false;
                 break;
             case BehaviorPart::Remove:
                 if (!removeBehavior(b->rules, row)) return;
-                behaviorEditor.open = false;
                 break;
             case BehaviorPart::None:
                 return;
             }
-            b->pending = true;   // every rule is checked again, so the change takes effect at once
-            playSfx(Sfx::UiClick);
-        };
-        // A click on the open condition editor: a kind, an operator, or a step of the percent
-        auto editorClick = [&](const ConditionEditorLayout& ed, float mx, float my) {
-            Behaviors* b = world.get<Behaviors>(behaviorEditor.unit);
-            if (!b || behaviorEditor.row >= b->rules.size()) {
-                behaviorEditor.open = false;
-                return;
-            }
-            BehaviorRule& r = b->rules[behaviorEditor.row];
-            const int kind = rectIndexAt(ed.kinds, mx, my);
-            const int op = rectIndexAt(ed.ops, mx, my);
-            const int step = rectIndexAt(ed.steps, mx, my);
-            static const int stepSizes[4] = { -10, -1, 1, 10 };
-            if (kind >= 0) r.condition = (BehaviorCondition)kind;
-            else if (op >= 0) r.op = (BehaviorOp)op;
-            else if (step >= 0) r.percent = std::clamp(r.percent + stepSizes[step], 0, 100);
-            else return;
-            b->pending = true;
+            b->pending = true;   // Eat and Heal are checked again, so the change takes effect at once
             playSfx(Sfx::UiClick);
         };
         // Whether the mouse is over the bottom unit panel
@@ -3120,6 +3100,9 @@ int main(int, char**) {
                 if (carrying && doomRecoveryPerHour(p->kind) > 0.0f) out.push_back(MenuAction::PutInBed);
                 if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
                 if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
+                // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
+                if (use == PropUse::Resource) out.push_back(MenuAction::AutoHarvest);
+                if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
             }
             return out;
         };
@@ -3140,6 +3123,8 @@ int main(int, char**) {
                 case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
                 case MenuAction::PutInBed: labels.push_back(lang("UILABEL_PUT_IN_BED")); break;
                 case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
+                case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
+                case MenuAction::AutoHaul: labels.push_back(lang("UILABEL_AUTO_HAUL")); break;
                 }
             }
             return labels;
@@ -3266,6 +3251,37 @@ int main(int, char**) {
             }
             case MenuAction::PutDown:
                 break;   // done above
+            case MenuAction::AutoHarvest:
+            case MenuAction::AutoHaul: {
+                // Every selected unit gets the behavior, at the bottom of its list (or switched on, if it has it), and
+                // looks for its first step at once. Both work only on props in your faction's claim, so a prop outside
+                // one is refused.
+                const int kind = world.get<Prop>(target)->kind;
+                const Transform* pt = world.get<Transform>(target);
+                if (!pt || !claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
+                    refuse(lang("MISC_AUTO_OUTSIDE_CLAIM"));
+                    return;
+                }
+                BehaviorRule add;
+                add.kind = a == MenuAction::AutoHarvest ? BehaviorKind::AutoHarvest : BehaviorKind::AutoHaul;
+                add.propKind = kind;
+                if (a == MenuAction::AutoHaul) add.prop = target;
+                int given = 0;
+                for (Entity u : actors) {
+                    Behaviors* b = world.get<Behaviors>(u);
+                    if (!b || !addBehavior(b->rules, add)) continue;
+                    b->wait = 0.0f;
+                    ++given;
+                }
+                if (given == 0) {
+                    refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+                    return;
+                }
+                showNotice(langf(a == MenuAction::AutoHarvest ? "MISC_AUTO_HARVEST_SET" : "MISC_AUTO_HAUL_SET",
+                                 { std::to_string(given), lang(propInfo(kind).nameKey) }));
+                playSfx(Sfx::UiOrder);
+                return;
+            }
             case MenuAction::Shop: {
                 // As Talk, then Show me your wares at once
                 Entity talker = NULL_ENTITY;
@@ -3590,8 +3606,6 @@ int main(int, char**) {
                 || combatLogPanel(W, H).panel.contains(x, y)
                 || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
                 || (mapOpen && worldMapFor(W, H).window.contains(x, y))
-                || (behaviorEditor.open
-                    && renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, W, H).box.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
         };
         // The point a held right button is over: the world map's ground where the mouse is on it, or else the ground
@@ -3753,16 +3767,14 @@ int main(int, char**) {
                         playSfx(Sfx::UiBack);
                     } else if (screen == Screen::Playing && mapOpen) {
                         mapOpen = false;  // Escape closes the world map first
-                    } else if (screen == Screen::Playing && (itemMenu.open || behaviorEditor.open)) {
-                        // Escape closes the open menu, editor or popout first, and only then pauses the game
+                    } else if (screen == Screen::Playing && itemMenu.open) {
+                        // Escape closes the open menu or popout first, and only then pauses the game
                         itemMenu.open = false;
-                        behaviorEditor.open = false;
                     } else if (screen == Screen::Playing) {
                         leftDown = middleDown = false;
                         sel.dragging = false;
                         itemDrag = false;
                         itemMenu.open = false;
-                        behaviorEditor.open = false;
                         screen = Screen::Pause;
                         refreshSaves();
                         playSfx(Sfx::UiPause);
@@ -4319,18 +4331,6 @@ int main(int, char**) {
                         }
                     }
 
-                    // The condition editor takes the clicks on it. A click anywhere else closes it, and that click
-                    // still does whatever it would have done.
-                    if (behaviorEditor.open) {
-                        const ConditionEditorLayout ed =
-                            renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, winW, winH);
-                        if (ed.box.contains(mx, my)) {
-                            editorClick(ed, mx, my);
-                            break;
-                        }
-                        behaviorEditor.open = false;
-                    }
-
                     // The Unit Panel's tabs pick what it shows
                     {
                         const SidebarLayout st = sidebarFor(winW, winH, sidebarScroll);
@@ -4384,7 +4384,7 @@ int main(int, char**) {
                                 }
                                 break;
                             }
-                            // Sort, add and the behavior rows change your unit, when the sidebar shows one. They
+                            // Sort and the behavior rows change your unit, when the sidebar shows one. They
                             // come before the drags, which start on the inventory and gear.
                             if (shownIsYours()) {
                                 const Entity shown = sidebarUnitOf(world);
@@ -4410,10 +4410,6 @@ int main(int, char**) {
                                     }
                                     break;
                                 }
-                                if (sl.addButton.contains(mx, my)) {
-                                    addBehavior(shown);
-                                    break;
-                                }
                                 // The fighting modes: Passive, Block and Sneak switch on and off; Ranged follows the
                                 // weapon. Passive and Block end any fight the unit was picking.
                                 {
@@ -4422,14 +4418,6 @@ int main(int, char**) {
                                         if (sl.modes[(size_t)i].contains(mx, my)) mode = i;
                                     }
                                     if (sl.modes[3].contains(mx, my)) break;
-                                    // Routine: on and off, for a unit that has one
-                                    if (sl.modes[4].contains(mx, my)) {
-                                        if (const Routine* r = world.get<Routine>(shown)) {
-                                            setRoutineOn(world, shown, !r->on);
-                                            playSfx(Sfx::UiClick);
-                                        }
-                                        break;
-                                    }
                                     if (mode >= 0) {
                                         if (Behaviors* b = world.get<Behaviors>(shown)) {
                                             bool& flag = mode == 0 ? b->passive : mode == 1 ? b->block : b->sneak;
@@ -4444,7 +4432,7 @@ int main(int, char**) {
                                 }
                                 const BehaviorHit bh = behaviorHitAt(sl, mx, my);
                                 if (bh.row >= 0) {
-                                    behaviorClick(shown, bh, mx, my);
+                                    behaviorClick(shown, bh);
                                     break;
                                 }
                             }
@@ -4899,12 +4887,6 @@ int main(int, char**) {
                 sidebarScrollUnit = shown;
                 sidebarScroll = 0.0f;
             }
-            if (behaviorEditor.open) {
-                const Behaviors* b = world.get<Behaviors>(behaviorEditor.unit);
-                if (!b || shown != behaviorEditor.unit || behaviorEditor.row >= b->rules.size()) {
-                    behaviorEditor.open = false;
-                }
-            }
         }
         pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
         if (rightHold && screen == Screen::Playing) {
@@ -4967,7 +4949,7 @@ int main(int, char**) {
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
-            behaviorSystem(world, combatLog);
+            behaviorSystem(world, combatLog, dt);
             // Anyone left at 0 health falls Unconscious
             downedSystem(world);
             if (combatLog.hits > hitsBefore) playSfx(Sfx::Hit);
@@ -4982,7 +4964,7 @@ int main(int, char**) {
             // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
             // prop had all its workers, or a campfire had nothing to cook or no room.
             for (const PropArrival& a : propOrderSystem(world)) {
-                if (a.routine) continue;   // a routine's step: nothing to tell you, and no panel to open
+                if (a.automatic) continue;   // an automated behavior's step: nothing to tell you, and no panel to open
                 const Prop* p = world.get<Prop>(a.prop);
                 if (!p) continue;
                 const PropInfo& info = propInfo(p->kind);
@@ -5024,8 +5006,9 @@ int main(int, char**) {
                                                                                          : itemNameOf(info.input) }));
                 }
             }
-            // Units on a routine (a camp's woodcutter) take their next step: to the tree, or to the vault with a load
-            routineSystem(world, terrain, dt);
+            // Units with automated behaviors (a camp's woodcutter) take their next step: to a tree, or to the vault with
+            // a load
+            automationSystem(world, terrain, dt);
             // Picking up, putting down and carrying Unconscious units; looters that got there open the panel
             const CarryEvents carried = carrySystem(world);
             for (const auto& [looter, looted] : carried.loot) {
@@ -5480,8 +5463,8 @@ int main(int, char**) {
                                                   itemDrag && dragGear < 0 ? dragSlot : -1,
                                                   itemDrag && dragGear >= 0 ? dragGear : -1,
                                                   draggedId, shownIsYours());
-                    // The full text of the rule under the mouse, when nothing else is open over it
-                    if (shown != NULL_ENTITY && !itemDrag && !behaviorEditor.open) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
+                    // What the behavior under the mouse does, when nothing else is open over it
+                    if (shown != NULL_ENTITY && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
                 }
                 drawPanelLock(PANEL_UNIT);
                 if (itemMenu.open) {
@@ -5489,14 +5472,6 @@ int main(int, char**) {
                     if (!labels.empty()) {
                         renderer.drawItemMenu(renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH),
                                               labels, mouseX, mouseY);
-                    }
-                }
-                if (behaviorEditor.open && shown == behaviorEditor.unit) {
-                    const Behaviors* b = world.get<Behaviors>(shown);
-                    if (b && behaviorEditor.row < b->rules.size()) {
-                        renderer.drawConditionEditor(
-                            renderer.conditionEditorLayout(behaviorEditor.x, behaviorEditor.y, winW, winH),
-                            b->rules[behaviorEditor.row], mouseX, mouseY);
                     }
                 }
                 if (itemDrag) {

@@ -160,9 +160,6 @@ UILABEL_SLOT_LEGS	Ноги
 UILABEL_SLOT_FEET	Стопи
 UILABEL_SLOT_ACCESSORY	Аксесуар
 UILABEL_BEHAVIOR_ON	Увімк.
-UILABEL_TARGET	Ціль
-UILABEL_CONDITION	Умова
-UILABEL_ACTION	Дія
 UILABEL_COMBAT_MESSAGES	Повідомлення бою
 UILABEL_SEEN	Помічено
 UILABEL_HIT	Влучання
@@ -245,13 +242,6 @@ MISC_SKY_DUSK_HORIZON	Горизонт присмерку
 MISC_SKY_DUSK_SUN	Сонце на присмерку
 MISC_SKY_SUN	Сонце
 MISC_SKY_MOON	Місяць
-MISC_TARGET_SELF	Себе
-MISC_TARGET_ALLY	Союзник
-MISC_TARGET_ENEMY	Ворог
-MISC_COND_HEALTH	Здоров'я
-MISC_COND_HUNGER	Голод
-MISC_ACT_HEAL	Використати лікувальний предмет
-MISC_ACT_FOOD	Їсти їжу
 UILABEL_STAT_DESC_STRENGTH	Шкода в ближньому бою, вантажопідйомність
 UILABEL_STAT_DESC_DEXTERITY	Швидкість атаки
 UILABEL_STAT_DESC_VITALITY	Максимальне здоров'я

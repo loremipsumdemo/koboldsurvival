@@ -191,9 +191,12 @@ struct Needs {
     unsigned changed = NEEDS_HP_CHANGED | NEEDS_HUNGER_CHANGED;
 };
 
-// A unit's behavior rules, highest priority first. pending is set when a rule is added or edited, so the next
-// behavior pass checks every rule, not only those whose values changed.
-// A unit's behavior rules, and its fighting modes from the Behavior tab:
+// A unit's behaviors (behavior_rules.h), highest priority first. pending is set when the list is edited, so the next
+// behavior pass checks Eat and Heal at once, not only when hunger or health changes.
+// Its automation: busy while it is on a step an automated behavior gave it (the walk to a prop, its work there), and
+// step names that behavior, so the step can be told apart from an order of yours. An order of yours, or a fight,
+// pauses the automation; it picks up again once the unit has stood idle AUTO_RESUME_SECONDS (systems.h).
+// Its fighting modes from the Behavior tab:
 //   passive: it never starts a fight on its own: it does not attack on sight or join in to defend others, though it
 //            still does what it is ordered to, an attack included
 //   block:   it never swings, and blocks hits more often (BLOCK_MODE_FACTOR), even with nothing in its hands
@@ -202,6 +205,10 @@ struct Needs {
 struct Behaviors {
     std::vector<BehaviorRule> rules = defaultBehaviors();
     bool pending = true;
+    bool busy = false;
+    BehaviorRule step;          // the automated behavior whose step the unit is on, while busy
+    Entity stepProp = NULL_ENTITY;   // the prop that step goes to
+    float wait = 0.0f;          // real seconds before the automation takes its next step
     bool passive = false;
     bool block = false;
     bool sneak = false;
@@ -324,8 +331,9 @@ struct Lock {
     int faction = -1;
 };
 
-// Ownership tag of a built prop, or of a flag's claim: the faction whose it is (factions.h). Only built props have one;
-// props a level places belong to no faction.
+// Ownership tag of a built prop, or of a flag's claim: the faction whose it is (factions.h). Built props have one, and so
+// does any prop other than a resource prop standing in a sealed claim when a new game starts (settleClaimOwnership,
+// claims.h). Other props a level places belong to no faction.
 struct Owner {
     int faction = 0;
 };
@@ -371,21 +379,7 @@ struct Fuel {
 struct PropOrder {
     Entity prop = NULL_ENTITY;
     PropAction action = PropAction::Use;
-    bool routine = false;   // given by the unit's Routine, not by you: its arrival says nothing to the player
-};
-
-// A work loop a unit follows by itself, switched on and off with the Routine button on the Behavior tab. It works the
-// gather prop (a tree) until it carries ROUTINE_LOAD of the item or has no room for more, takes them to the store prop
-// (a vault) and puts them in, then goes back to gathering. An order of yours, or a fight, pauses it; it picks up again
-// once the unit has stood idle for ROUTINE_RESUME_SECONDS (a unit that is not yours picks up again at once).
-struct Routine {
-    Entity store = NULL_ENTITY;
-    Entity gather = NULL_ENTITY;
-    int item = 0;            // what it gathers and stores (the Wood Log)
-    bool on = true;
-    bool busy = false;       // the unit's current step was given by the routine
-    int step = 0;            // 0 gathering, 1 storing
-    float wait = 0.0f;       // real seconds before it takes the next step
+    bool automatic = false;   // given by the unit's automation, not by you: its arrival says nothing to the player
 };
 
 // A unit on an occupiable prop (a bed, a chair, a cage). It stays on the prop until it is given another order.

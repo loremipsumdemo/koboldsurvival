@@ -243,8 +243,8 @@ public:
     // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
     // is the mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
-    // show green or red for whether it may go there. editable says whether the sort, the behavior edits and
-    // the add button work; for a red unit they are drawn dimmed.
+    // show green or red for whether it may go there. editable says whether the sort and the behavior edits work; for
+    // a red unit they are drawn dimmed.
     // The Stats tab's rows; returns the stat under the mouse, or -1
     int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my);
     void drawStatTip(const Stats& stats, int stat, float mx, float my);
@@ -256,9 +256,6 @@ public:
     // content scrolls under its panel, so it is clipped to the panel.
     void beginClip(const Rect& r);
     void endClip();
-    // The condition editor for a behavior, opened at (x, y), and its drawing. r is the rule being edited.
-    ConditionEditorLayout conditionEditorLayout(float x, float y, int winW, int winH);
-    void drawConditionEditor(const ConditionEditorLayout& L, const BehaviorRule& r, float mx, float my);
     // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
     // One item in a cell: its picture, and its count when more than one
@@ -452,12 +449,11 @@ private:
 
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
-    // The behavior list under the inventory: its heading, column headings, one row per rule and the add button
+    // The behavior list: its heading, the modes, column headings and one row per behavior
     // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
     // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
     void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
-                             float mx, float my, bool editable, const std::array<bool, 5>& modes = {},
-                             bool hasRoutine = false);
+                             float mx, float my, bool editable, const std::array<bool, 4>& modes = {});
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom

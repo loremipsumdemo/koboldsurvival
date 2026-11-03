@@ -94,7 +94,7 @@ struct PropArrival {
     bool putInBed = false;     // the unit it carried was put into the bed or bedroll
     bool corpse = false;       // it carried a corpse to a bed, which can do nothing for it
     WorkStart craft = WorkStart::Started;
-    bool routine = false;      // the unit's Routine sent it: the game says nothing about it
+    bool automatic = false;    // the unit's automation sent it: the game says nothing about it
 };
 // After steering: units in reach of their prop use it. Returns those arrivals, so the game can open a storage panel
 // or say why a unit could not start. Units on beds are kept on them.
@@ -103,16 +103,15 @@ std::vector<PropArrival> propOrderSystem(World& w);
 // Returns how many items went in.
 int storeCarried(World& w, Entity unit, Entity prop, int item);
 
-// Routines (components.h): a unit with one on gathers at its gather prop until it carries ROUTINE_LOAD of the item or
-// has no room, takes it to the store prop, and goes back. Run after propOrderSystem, each frame, with the real seconds
-// that passed. A unit on another order or in a fight is left to it; the routine picks up again once the unit has stood
-// idle ROUTINE_RESUME_SECONDS (at once for a unit that is not yours).
-constexpr int ROUTINE_LOAD = 10;
-constexpr float ROUTINE_RESUME_SECONDS = 8.0f;
-constexpr float ROUTINE_RETRY_SECONDS = 5.0f;   // after a step that could not be done (the tree had all its workers)
-void routineSystem(World& w, Terrain& t, float dt);
-// Switches a unit's routine on or off. Off, the step it was on stops.
-void setRoutineOn(World& w, Entity u, bool on);
+// The automated behaviors (behavior_rules.h): a unit with Auto-Harvest or Auto-Haul on takes one step at a time, the
+// first from the top of its list that can be done now. A harvest goes on until the unit carries AUTO_LOAD of the item
+// and an Auto-Haul can take it, or until it has no room; a haul takes what the prop takes and comes back. Only props in
+// a claim of the unit's faction are worked or hauled to. Run after propOrderSystem, each frame, with the real seconds
+// that passed. A unit on another order or in a fight is left to it; the automation picks up again once the unit has
+// stood idle AUTO_RESUME_SECONDS (at once for a unit that is not yours).
+constexpr int AUTO_LOAD = 10;
+constexpr float AUTO_RESUME_SECONDS = 8.0f;
+void automationSystem(World& w, Terrain& t, float dt);
 // What a unit's work gave this frame, for the label over it: an item ("+item"), a lock opened, or a lockpick that failed
 struct WorkGain {
     enum class Kind { Item, Unlocked, LockpickFailed, Trained };

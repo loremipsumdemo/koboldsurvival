@@ -160,9 +160,6 @@ UILABEL_SLOT_LEGS	Πόδια
 UILABEL_SLOT_FEET	Πέλματα
 UILABEL_SLOT_ACCESSORY	Αξεσουάρ
 UILABEL_BEHAVIOR_ON	Ενεργό
-UILABEL_TARGET	Στόχος
-UILABEL_CONDITION	Συνθήκη
-UILABEL_ACTION	Ενέργεια
 UILABEL_COMBAT_MESSAGES	Μηνύματα μάχης
 UILABEL_SEEN	Εντοπίστηκε
 UILABEL_HIT	Χτύπημα
@@ -245,13 +242,6 @@ MISC_SKY_DUSK_HORIZON	Ορίζοντας σούρουπου
 MISC_SKY_DUSK_SUN	Ήλιος σούρουπου
 MISC_SKY_SUN	Ήλιος
 MISC_SKY_MOON	Φεγγάρι
-MISC_TARGET_SELF	Ο ίδιος
-MISC_TARGET_ALLY	Σύμμαχος
-MISC_TARGET_ENEMY	Εχθρός
-MISC_COND_HEALTH	Υγεία
-MISC_COND_HUNGER	Πείνα
-MISC_ACT_HEAL	Χρήση αντικειμένου θεραπείας
-MISC_ACT_FOOD	Κατανάλωση τροφής
 UILABEL_STAT_DESC_STRENGTH	Ζημιά σε μάχη σώμα με σώμα, χωρητικότητα φορτίου
 UILABEL_STAT_DESC_DEXTERITY	Ταχύτητα επίθεσης
 UILABEL_STAT_DESC_VITALITY	Μέγιστη υγεία

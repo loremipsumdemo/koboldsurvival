@@ -160,9 +160,6 @@ UILABEL_SLOT_LEGS	Крака
 UILABEL_SLOT_FEET	Стъпала
 UILABEL_SLOT_ACCESSORY	Аксесоар
 UILABEL_BEHAVIOR_ON	Вкл.
-UILABEL_TARGET	Цел
-UILABEL_CONDITION	Условие
-UILABEL_ACTION	Действие
 UILABEL_COMBAT_MESSAGES	Съобщения от боя
 UILABEL_SEEN	Видян
 UILABEL_HIT	Попадение
@@ -245,13 +242,6 @@ MISC_SKY_DUSK_HORIZON	Хоризонт на здрачаване
 MISC_SKY_DUSK_SUN	Слънце на здрачаване
 MISC_SKY_SUN	Слънце
 MISC_SKY_MOON	Луна
-MISC_TARGET_SELF	Себе си
-MISC_TARGET_ALLY	Съюзник
-MISC_TARGET_ENEMY	Враг
-MISC_COND_HEALTH	Здраве
-MISC_COND_HUNGER	Глад
-MISC_ACT_HEAL	Използване на лечебен предмет
-MISC_ACT_FOOD	Консумиране на храна
 UILABEL_STAT_DESC_STRENGTH	Щета при ближен бой, товароносимост
 UILABEL_STAT_DESC_DEXTERITY	Скорост на атака
 UILABEL_STAT_DESC_VITALITY	Максимално здраве

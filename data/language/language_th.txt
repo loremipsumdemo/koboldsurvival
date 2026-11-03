@@ -160,9 +160,6 @@ UILABEL_SLOT_LEGS	ขา
 UILABEL_SLOT_FEET	เท้า
 UILABEL_SLOT_ACCESSORY	เครื่องประดับ
 UILABEL_BEHAVIOR_ON	เปิด
-UILABEL_TARGET	เป้าหมาย
-UILABEL_CONDITION	เงื่อนไข
-UILABEL_ACTION	การกระทำ
 UILABEL_COMBAT_MESSAGES	ข้อความการต่อสู้
 UILABEL_SEEN	พบเห็น
 UILABEL_HIT	โดน
@@ -245,13 +242,6 @@ MISC_SKY_DUSK_HORIZON	ขอบฟ้ายามพลบค่ำ
 MISC_SKY_DUSK_SUN	ดวงอาทิตย์ยามพลบค่ำ
 MISC_SKY_SUN	ดวงอาทิตย์
 MISC_SKY_MOON	ดวงจันทร์
-MISC_TARGET_SELF	ตัวเอง
-MISC_TARGET_ALLY	พันธมิตร
-MISC_TARGET_ENEMY	ศัตรู
-MISC_COND_HEALTH	พลังชีวิต
-MISC_COND_HUNGER	ความหิว
-MISC_ACT_HEAL	ใช้ไอเทมรักษา
-MISC_ACT_FOOD	กินอาหาร
 UILABEL_STAT_DESC_STRENGTH	ความเสียหายระยะประชิด น้ำหนักที่แบกได้
 UILABEL_STAT_DESC_DEXTERITY	ความเร็วในการโจมตี
 UILABEL_STAT_DESC_VITALITY	พลังชีวิตสูงสุด

@@ -24,6 +24,13 @@
 inline constexpr const char* SAVE_DIR = "saves";
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
 
+// One of a unit's behaviors. An Auto-Haul's prop is named by where it stands (x, z), since a camp's props are placed
+// again from the seed on the same spots, and a built prop has no serial.
+struct SaveBehavior {
+    BehaviorRule rule;
+    float x = 0.0f, z = 0.0f;
+};
+
 // One occupied inventory slot of a unit
 struct SaveStack {
     int slot = 0;
@@ -64,13 +71,13 @@ struct SaveUnit {
     // Older saves have no stats. Those units get defaultStats().
     bool hasStats = false;
     Stats stats;
-    // Older saves have no behaviors. Those units get defaultBehaviors().
+    // Older saves have no behaviors, or the rules that came before them. Those units get defaultBehaviors().
     bool hasBehaviors = false;
-    std::vector<BehaviorRule> behaviors;   // highest priority first
+    std::vector<SaveBehavior> behaviors;   // highest priority first
     // Its fighting modes from the Behavior tab. Older saves have none: all off.
     bool passive = false, block = false, sneak = false;
-    // Its routine (components.h), if it has one: the props are named by where they stand, since a camp's props are
-    // placed again from the seed on the same spots. Older saves have none.
+    // An older save's routine, which became Auto-Haul to the store prop and Auto-Harvest of the gather prop's kind. The
+    // props are named by where they stand. Only read, never written.
     bool hasRoutine = false;
     bool routineOn = true;
     int routineItem = 0;
@@ -192,16 +199,11 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
         }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
-        if (u.hasRoutine) {
-            out << "routine " << i << " " << (u.routineOn ? 1 : 0) << " " << u.routineItem << " " << u.storeX << " "
-                << u.storeZ << " " << u.gatherX << " " << u.gatherZ << "\n";
-        }
         if (u.hasBehaviors) {
             out << "behaviors " << i << "\n";
-            for (const BehaviorRule& b : u.behaviors) {
-                out << "behavior " << i << " " << (b.on ? 1 : 0) << " " << (int)b.conditionTarget << " "
-                    << (int)b.condition << " " << (int)b.op << " " << b.percent << " " << (int)b.action << " "
-                    << (int)b.actionTarget << "\n";
+            for (const SaveBehavior& b : u.behaviors) {
+                out << "task " << i << " " << (b.rule.on ? 1 : 0) << " " << (int)b.rule.kind << " " << b.rule.propKind
+                    << " " << b.x << " " << b.z << "\n";
             }
         }
     }
@@ -432,15 +434,17 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> i;
                 if (!ss.fail() && i < d.units.size()) d.units[i].hasBehaviors = true;
             }
-            else if (line.rfind("behavior ", 0) == 0) {
-                std::istringstream ss(line.substr(9));
+            // An older save's "behavior" lines were the rules that came before: they are left out, and the unit gets
+            // the default behaviors
+            else if (line.rfind("task ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
                 size_t i = 0;
-                int on = 0, conditionTarget = 0, condition = 0, op = 0, percent = 0, action = 0, actionTarget = 0;
-                ss >> i >> on >> conditionTarget >> condition >> op >> percent >> action >> actionTarget;
-                if (!ss.fail() && i < d.units.size() &&
-                    d.units[i].behaviors.size() < (size_t)BEHAVIOR_LIMIT) {
-                    d.units[i].behaviors.push_back(ruleFromFields(on, conditionTarget, condition, op, percent,
-                                                                  action, actionTarget));
+                int on = 0, kind = 0, propKind = -1;
+                SaveBehavior b;
+                ss >> i >> on >> kind >> propKind >> b.x >> b.z;
+                if (!ss.fail() && i < d.units.size() && d.units[i].behaviors.size() < (size_t)BEHAVIOR_LIMIT) {
+                    b.rule = behaviorFromFields(on, kind, propKind);
+                    d.units[i].behaviors.push_back(b);
                 }
             }
         }

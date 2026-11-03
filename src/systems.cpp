@@ -301,7 +301,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
     // is in the middle, just south of the squad; the others are at the compass points around it (north, east, south,
     // west, then the corners between, should there be more), CAMP_DISTANCE away, so no two claims overlap. A camp whose
     // spot the kit doesn't fit on moves to the nearest one it does, within CAMP_SHIFT. The kits go down before the level's
-    // props, so those don't take their ground.
+    // props, so those don't take their ground; their vaults go down after all of them (below).
     int campSerial = CAMP_SERIAL_BASE;
     std::vector<Vec2> flagSpots;
     auto clearOfCamps = [&](float x, float z) {
@@ -369,29 +369,39 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             ++placed;
         }
     };
-    // One unit of each camp keeps its vault fed: it cuts wood at one of the camp's trees and stores it in the vault
-    auto giveRoutine = [&](Entity u, const CampKit& kit) {
+    // One unit of each camp keeps its vault fed: Auto-Haul to the vault above Auto-Harvest of Trees, so it cuts wood at
+    // the camp's trees and stores each load in the vault. It is given once the vaults are down, below.
+    std::vector<std::pair<Entity, CampKit>> woodcutters;
+    auto giveWoodcutting = [&](Entity u, const CampKit& kit) {
         if (u == NULL_ENTITY || !kit.placed || kit.vault == NULL_ENTITY || kit.trees.empty()) return;
         // A camp's woodcutter starts with an empty pack, so the logs it carries don't weigh it down
         if (!w.has<Commandable>(u)) {
             if (Inventory* inv = w.get<Inventory>(u)) *inv = Inventory{};
         }
-        Routine r;
-        r.store = kit.vault;
-        r.gather = kit.trees[0];
-        r.item = propInfo(PROP_TREE).item;
-        w.add(u, r);
+        Behaviors* b = w.get<Behaviors>(u);
+        if (!b) return;
+        BehaviorRule haul;
+        haul.kind = BehaviorKind::AutoHaul;
+        haul.prop = kit.vault;
+        haul.propKind = PROP_VAULT;
+        BehaviorRule harvest;
+        harvest.kind = BehaviorKind::AutoHarvest;
+        harvest.propKind = PROP_TREE;
+        addBehavior(b->rules, haul);
+        addBehavior(b->rules, harvest);
     };
+    std::vector<CampKit> kits;
 
     // The player's camp, in the middle
     const CampKit playerKit = placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET);
     addCampExtras(FACTION_PLAYER, playerKit);
+    kits.push_back(playerKit);
     {
         Entity first = NULL_ENTITY;
         for (Entity u : w.view<Unit, Commandable>()) {
             if (first == NULL_ENTITY || u < first) first = u;
         }
-        giveRoutine(first, playerKit);
+        woodcutters.push_back({ first, playerKit });
     }
     const Vec2 middle = playerKit.placed ? Vec2{ playerKit.x, playerKit.z } : spawn;
 
@@ -435,7 +445,8 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             if (firstUnit == NULL_ENTITY) firstUnit = e;
             ++placed;
         }
-        giveRoutine(firstUnit, kit);
+        kits.push_back(kit);
+        woodcutters.push_back({ firstUnit, kit });
     }
 
     // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
@@ -473,6 +484,17 @@ void setupWorld(World& w, Terrain& t, Rng& rng) {
             w.add(prop, PropWork{});
         }
         if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
+    }
+
+    // The vaults go down last, once every other prop stands, each on its camp's foundation. Then each sealed claim's
+    // props become its faction's, and each camp's woodcutter is given its vault to haul to.
+    for (CampKit& kit : kits) placeCampVault(w, t, kit, &campSerial);
+    settleClaimOwnership(w);
+    for (auto& [unit, kit] : woodcutters) {
+        for (const CampKit& k : kits) {
+            if (k.flag == kit.flag) kit.vault = k.vault;
+        }
+        giveWoodcutting(unit, kit);
     }
 
     // Names, stats, health and gear for every unit. These draw after the placement above, so where units
@@ -1317,20 +1339,19 @@ std::vector<PropArrival> propOrderSystem(World& w) {
         }
         if (flatGap(w, u, prop) <= PROP_REACH) {
             const PropAction action = w.get<PropOrder>(u)->action;
-            const bool byRoutine = w.get<PropOrder>(u)->routine;
+            const bool automatic = w.get<PropOrder>(u)->automatic;
             w.remove<PropOrder>(u);
             w.remove<SoloMove>(u);
             if (action == PropAction::Store) {
-                // A routine's store step: what the unit carries for it goes in, if the prop is open to it
-                const Routine* r = w.get<Routine>(u);
-                if (!lockShutFor(w, prop, u)) storeCarried(w, u, prop, r ? r->item : 0);
+                // An Auto-Haul's step: what the unit carries that the prop takes goes in, if the prop is open to it
+                if (!lockShutFor(w, prop, u)) storeCarried(w, u, prop, 0);
                 continue;
             }
             PropArrival a;
             a.unit = u;
             a.prop = prop;
             a.action = action;
-            a.routine = byRoutine;
+            a.automatic = automatic;
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
             const Lock* lock = w.get<Lock>(prop);
             if (action == PropAction::Unlock) {
@@ -1669,7 +1690,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
     if (moved > 0) {
         propStorageChanged(w, prop);
         if (w.has<Commandable>(unit)) {
-            queueLog(langf("MISC_ROUTINE_STORES", { nameOf(w, unit), std::to_string(moved), itemNameFor(movedItem),
+            queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameFor(movedItem),
                                                     lang(propInfo(p->kind).nameKey) }), LogKind::Pickup);
         }
     }
@@ -1689,10 +1710,81 @@ int carriedCount(World& w, Entity u, int item) {
     return n;
 }
 
-// Whether a unit is busy with something that is not its routine: an order of yours, a seat or bed, carrying someone
-bool onOtherOrder(World& w, Entity u, const Routine& r) {
-    if (const PropOrder* po = w.get<PropOrder>(u); po && !po->routine) return true;
-    if (const Working* wk = w.get<Working>(u); wk && (wk->unlocking || wk->prop != r.gather)) return true;
+// A unit's faction, the Player Faction for one with none
+int unitFaction(World& w, Entity u) {
+    const Faction* f = w.get<Faction>(u);
+    return f ? f->id : FACTION_PLAYER;
+}
+
+// Whether a prop stands inside a claim of this faction, and so may be worked or hauled to by its automation
+bool inOwnClaim(World& w, const std::vector<Claim>& claims, Entity prop, int faction) {
+    const Transform* t = w.get<Transform>(prop);
+    return t && claimAt(claims, t->x, t->z, faction) != nullptr;
+}
+
+// Whether a unit is full for an item: no room for another, or another would weigh it down to Encumbered (and soon to a
+// stop)
+bool fullFor(World& w, Entity u, int item) {
+    const Inventory* inv = w.get<Inventory>(u);
+    if (!inv || slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, item) <= 0) return true;
+    const ItemDef* def = findItem(item);
+    return encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u)) >= ENCUMBERED_SHARE;
+}
+
+// Whether an Auto-Haul can be done now: its prop is there, open to the unit, in a claim of the unit's faction, and has
+// room for at least one item the unit carries. item 0: any item the prop takes; otherwise only that item.
+bool haulable(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
+    const Prop* p = w.get<Prop>(r.prop);
+    const Storage* st = w.get<Storage>(r.prop);
+    const Inventory* inv = w.get<Inventory>(u);
+    if (!p || !st || !inv || lockShutFor(w, r.prop, u) || !inOwnClaim(w, claims, r.prop, unitFaction(w, u))) return false;
+    for (const ItemStack& s : inv->slots) {
+        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item)) continue;
+        if (propAcceptsItem(p->kind, s.item) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return true;
+    }
+    return false;
+}
+
+// Whether one of the unit's Auto-Hauls that is on could take this item now
+bool canHaulItem(World& w, const std::vector<Claim>& claims, Entity u, const Behaviors& b, int item) {
+    for (const BehaviorRule& r : b.rules) {
+        if (r.on && r.kind == BehaviorKind::AutoHaul && haulable(w, claims, u, r, item)) return true;
+    }
+    return false;
+}
+
+// Whether an Auto-Harvest has a load: the unit carries AUTO_LOAD of what it gathers and an Auto-Haul can take it, or
+// it has no room for more
+bool harvestLoaded(World& w, const std::vector<Claim>& claims, Entity u, const Behaviors& b, int item) {
+    if (fullFor(w, u, item)) return true;
+    return carriedCount(w, u, item) >= AUTO_LOAD && canHaulItem(w, claims, u, b, item);
+}
+
+// The nearest resource prop of the kind an Auto-Harvest works, in a claim of the unit's faction, open to it and with
+// room for another worker. NULL_ENTITY when there is none.
+Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int kind) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut || kind < 0 || kind >= PROP_KIND_COUNT || propInfo(kind).use != PropUse::Resource) return NULL_ENTITY;
+    const int faction = unitFaction(w, u);
+    Entity best = NULL_ENTITY;
+    float bestD2 = 0.0f;
+    for (Entity p : w.view<Prop, Transform>()) {
+        if (w.get<Prop>(p)->kind != kind || !inOwnClaim(w, claims, p, faction) || lockShutFor(w, p, u)) continue;
+        if (workersAt(w, p) >= propInfo(kind).workers) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (best == NULL_ENTITY || d2 < bestD2) {
+            best = p;
+            bestD2 = d2;
+        }
+    }
+    return best;
+}
+
+// Whether a unit is busy with something that is not its automation: an order of yours, a seat or bed, carrying someone
+bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
+    if (const PropOrder* po = w.get<PropOrder>(u); po && !po->automatic) return true;
+    if (const Working* wk = w.get<Working>(u); wk && (wk->unlocking || !b.busy || wk->prop != b.stepProp)) return true;
     if (w.has<Occupying>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) || w.has<PickupOrder>(u) ||
         w.has<LootOrder>(u) || w.has<CarryOrder>(u) || w.has<PutDownOrder>(u) || w.has<TalkOrder>(u) ||
         w.has<Carrying>(u) || w.has<AttackOrder>(u)) {
@@ -1705,8 +1797,8 @@ bool onOtherOrder(World& w, Entity u, const Routine& r) {
     return false;
 }
 
-// Sends a unit on a routine step: it walks to the prop, and in reach does the action
-void routineGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
+// Sends a unit on an automated step: it walks to the prop, and in reach does the action
+void autoGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt) return;
     w.remove<SquadMember>(u);
@@ -1719,111 +1811,119 @@ void routineGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
     w.add(u, PropOrder{ prop, action, true });
 }
 
-// Ends the routine's own step, if the unit is on one
-void stopRoutineStep(World& w, Entity u, const Routine& r) {
-    if (const PropOrder* po = w.get<PropOrder>(u); po && po->routine) {
+// Ends the automation's own step, if the unit is on one
+void stopAutoStep(World& w, Entity u, Behaviors& b) {
+    if (const PropOrder* po = w.get<PropOrder>(u); po && po->automatic) {
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
     }
-    if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && wk->prop == r.gather) w.remove<Working>(u);
+    if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && b.busy && wk->prop == b.stepProp) w.remove<Working>(u);
+    b.busy = false;
+}
+
+// The behavior in the list that the unit's step is for, or nullptr if it was deleted
+BehaviorRule* stepRule(Behaviors& b) {
+    for (BehaviorRule& r : b.rules) {
+        if (sameBehavior(r, b.step)) return &r;
+    }
+    return nullptr;
+}
+
+// Tries to start an automated behavior's step. False, with nothing changed, when it can't be done now.
+bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, const BehaviorRule& r) {
+    Entity prop = NULL_ENTITY;
+    PropAction action = PropAction::Use;
+    if (r.kind == BehaviorKind::AutoHaul) {
+        if (!haulable(w, claims, u, r)) return false;
+        prop = r.prop;
+        action = PropAction::Store;
+    } else {
+        if (harvestLoaded(w, claims, u, b, propInfo(r.propKind).item)) return false;   // a load waiting, or no room
+        prop = harvestTarget(w, claims, u, r.propKind);
+        if (prop == NULL_ENTITY) return false;
+    }
+    b.busy = true;
+    b.step = r;
+    b.stepProp = prop;
+    autoGo(w, t, u, prop, action);
+    return true;
 }
 
 }  // namespace
 
-void setRoutineOn(World& w, Entity u, bool on) {
-    Routine* r = w.get<Routine>(u);
-    if (!r) return;
-    r->on = on;
-    if (!on && r->busy) stopRoutineStep(w, u, *r);
-    r->busy = false;
-    r->wait = 0.0f;
-}
-
-void routineSystem(World& w, Terrain& t, float dt) {
-    for (Entity u : w.view<Routine, Transform>()) {
-        Routine* r = w.get<Routine>(u);
-        if (!r->on) continue;
+void automationSystem(World& w, Terrain& t, float dt) {
+    const std::vector<Claim> claims = claimsOf(w);
+    for (Entity u : w.view<Behaviors, Transform>()) {
+        Behaviors* b = w.get<Behaviors>(u);
+        bool any = false;
+        for (BehaviorRule& r : b->rules) {
+            if (!isAutomated(r.kind)) continue;
+            r.cooldown = std::max(0.0f, r.cooldown - dt);
+            any = any || r.on;
+        }
+        // The step's behavior was switched off or deleted: the step stops
+        if (b->busy) {
+            const BehaviorRule* current = stepRule(*b);
+            if (!current || !current->on) stopAutoStep(w, u, *b);
+        }
+        if (!any) continue;
         const bool yours = w.has<Commandable>(u);
-        const float resume = yours ? ROUTINE_RESUME_SECONDS : 0.0f;
-        // Out cold, carried, shut in, or its props are gone: nothing to do
-        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) ||
-            !w.has<Prop>(r->store) || !w.has<Prop>(r->gather)) {
-            r->busy = false;
+        const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
+        // Out cold, carried, shut in or downed: nothing to do
+        const Needs* n = w.get<Needs>(u);
+        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) || (n && n->hp <= 0)) {
+            b->busy = false;
             continue;
         }
-        // A fight comes first: the step stops, and the routine waits for the fight to end
+        // A fight comes first: the step stops, and the automation waits for the fight to end
         const Combat* c = w.get<Combat>(u);
         if ((c && c->target != NULL_ENTITY) || w.has<AttackOrder>(u)) {
-            if (r->busy) stopRoutineStep(w, u, *r);
-            r->busy = false;
-            r->wait = resume;
+            if (b->busy) stopAutoStep(w, u, *b);
+            b->wait = resume;
             continue;
         }
         const PropOrder* po = w.get<PropOrder>(u);
-        const bool going = po && po->routine;
+        const bool going = po && po->automatic;
         const Working* wk = w.get<Working>(u);
-        const bool gathering = wk && !wk->unlocking && wk->prop == r->gather;
-        const Inventory* inv = w.get<Inventory>(u);
-        const int have = carriedCount(w, u, r->item);
-        // Full: no room for another, or another would weigh it down to Encumbered (and soon to a stop)
-        const ItemDef* def = findItem(r->item);
-        const float nextLoad = encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u));
-        const bool full = !inv || slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, r->item) <= 0 ||
-                          nextLoad >= ENCUMBERED_SHARE;
+        const bool working = b->busy && wk && !wk->unlocking && wk->prop == b->stepProp;
 
-        if (r->busy) {
+        if (b->busy) {
             if (going) continue;   // on its way
-            if (gathering) {
-                // A full load goes to the store (a unit already too laden to carry any keeps at it, rather than
-                // walking back and forth with nothing)
-                if (have > 0 && (have >= ROUTINE_LOAD || full)) {
-                    w.remove<Working>(u);
-                    r->step = 1;
-                    routineGo(w, t, u, r->store, PropAction::Store);
+            if (working) {
+                // A harvest goes on until the unit has a load for its haul, or no room
+                if (!harvestLoaded(w, claims, u, *b, propInfo(b->step.propKind).item)) continue;
+                w.remove<Working>(u);
+                b->busy = false;
+            } else if (onOtherOrder(w, u, *b)) {   // you gave it something else to do
+                b->busy = false;
+                b->wait = resume;
+                continue;
+            } else {
+                // The step ended by itself: the haul was put in, or the harvest did not start (the prop had all its
+                // workers, or the way was blocked). A harvest that did not start waits before it is tried again.
+                b->busy = false;
+                if (b->step.kind == BehaviorKind::AutoHarvest) {
+                    if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
                 }
-                continue;
-            }
-            if (onOtherOrder(w, u, *r)) {   // you gave it something else to do
-                r->busy = false;
-                r->wait = resume;
-                continue;
-            }
-            // The step ended by itself. After storing, back to the tree. A gather that did not start (the tree had all
-            // its workers, or the way was blocked) stores what it has, or tries again in a while.
-            if (r->step == 0 && have <= 0) {
-                r->busy = false;
-                r->wait = ROUTINE_RETRY_SECONDS;
-                continue;
             }
         } else {
-            if (onOtherOrder(w, u, *r) || gathering || going) {
-                // Busy with something of yours (or picked up its step by hand): wait until it has been idle a while
-                r->wait = resume;
+            if (onOtherOrder(w, u, *b) || going) {
+                // Busy with something of yours: wait until it has been idle a while
+                b->wait = resume;
                 continue;
             }
-            if (r->wait > 0.0f) {
-                r->wait -= dt;
+            if (b->wait > 0.0f) {
+                b->wait -= dt;
                 continue;
             }
         }
 
-        // The next step: a load to store, or more to gather
-        const bool storeNext = (r->busy && r->step == 0) ? have > 0 : (have >= ROUTINE_LOAD || (full && have > 0));
-        if (storeNext) {
-            const Storage* st = w.get<Storage>(r->store);
-            if (!st || slotsRoomFor(st->slots.data(), STORAGE_SLOTS, r->item) <= 0) {
-                // The store is full: wait, and look again later
-                r->busy = false;
-                r->wait = ROUTINE_RETRY_SECONDS * 2.0f;
-                continue;
-            }
-            r->step = 1;
-            r->busy = true;
-            routineGo(w, t, u, r->store, PropAction::Store);
-        } else {
-            r->step = 0;
-            r->busy = true;
-            routineGo(w, t, u, r->gather, PropAction::Use);
+        // The next step: the first automated behavior, from the top, that is on and can be done now. One that can't
+        // waits BEHAVIOR_RETRY_SECONDS before it is tried again.
+        for (BehaviorRule& r : b->rules) {
+            if (!isAutomated(r.kind) || !r.on || r.cooldown > 0.0f) continue;
+            if (startStep(w, t, claims, u, *b, r)) break;
+            r.cooldown = BEHAVIOR_RETRY_SECONDS;
         }
     }
 }

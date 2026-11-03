@@ -854,22 +854,18 @@ inline void clampMapView(const Rect& r, float levelSize, float& cx, float& cz, f
     keep(cz, span);
 }
 
-// One row of the Behavior list: the on box, the four option cells, then the priority and delete buttons,
-// which sit outside the columns
+// One row of the Behavior list: the on box, the behavior's name, then the priority and delete buttons
 struct BehaviorRowLayout {
     Rect row{ 0.0f, 0.0f, 0.0f, 0.0f };             // the whole row, which the hover text is for
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };          // on or off
-    Rect conditionTarget{ 0.0f, 0.0f, 0.0f, 0.0f }; // Self, Ally or Enemy
-    Rect condition{ 0.0f, 0.0f, 0.0f, 0.0f };       // Health or Hunger, the operator and the percent
-    Rect action{ 0.0f, 0.0f, 0.0f, 0.0f };          // what the rule does
-    Rect actionTarget{ 0.0f, 0.0f, 0.0f, 0.0f };    // who it does it to
-    Rect up{ 0.0f, 0.0f, 0.0f, 0.0f };              // [^] moves the rule up the priority list
+    Rect label{ 0.0f, 0.0f, 0.0f, 0.0f };           // what it does, such as Eat when hunger < 50%
+    Rect up{ 0.0f, 0.0f, 0.0f, 0.0f };              // [^] moves the behavior up the priority list
     Rect down{ 0.0f, 0.0f, 0.0f, 0.0f };            // [v] moves it down
-    Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it
+    Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it (an automated behavior only)
 };
 
 // The parts of a behavior row that a click or hover can land on
-enum class BehaviorPart { None, Toggle, ConditionTarget, Condition, Action, ActionTarget, Up, Down, Remove };
+enum class BehaviorPart { None, Toggle, Up, Down, Remove };
 
 // Right sidebar for the one unit shown. From the top, the content scrolls as one: a profile card with the
 // unit's picture, name, stats and carry bar, then the gear, then the inventory grid of 8 columns of slots,
@@ -910,12 +906,10 @@ struct SidebarLayout {
     Rect statsArea{ 0.0f, 0.0f, 0.0f, 0.0f };  // the stats list, in the Stats tab
     float statRowH = 0.0f;                     // the height of each row in the stats list
     Rect behaviorPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the behavior list
-    // The modes over the rules: Passive, Block, Sneak, Ranged (shown, not pressed), then Routine (pressable when the
-    // unit has one: it switches the routine on and off)
-    std::array<Rect, 5> modes{};
-    std::array<Rect, 5> behaviorHeads{};       // column headings: On, Target, Condition, Action, Target
-    std::vector<BehaviorRowLayout> behaviorRows;   // one per rule, highest priority first
-    Rect addButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // adds a rule, under the last one
+    // The modes over the behaviors: Passive, Block, Sneak, then Ranged (shown, not pressed)
+    std::array<Rect, 4> modes{};
+    std::array<Rect, 2> behaviorHeads{};       // column headings: On, Behavior
+    std::vector<BehaviorRowLayout> behaviorRows;   // one per behavior, highest priority first
     Rect buildHeading{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Build tab's line saying what is picked
     std::vector<Rect> buildRows;               // the Build tab: one row per PropKind, in order. Picking one picks it.
     float scroll = 0.0f;                       // the scroll offset used, in pixels, within 0..maxScroll
@@ -938,7 +932,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float baseCardH = 200.0f * s;
     const float cardH = std::max(baseCardH, profileH), cardInset = 8.0f * s, headH = um.headH, innerPad = um.innerPad;
     const float barH = um.barH, tabH = um.tabH, tabGap = 3.0f * s;
-    const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s, addH = 24.0f * s;
+    const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s;
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
     const float sortW = 56.0f * s, sortH = 22.0f * s, statRowH = 20.0f * s;
     const int rules = std::clamp(ruleCount, 0, BEHAVIOR_LIMIT);
@@ -960,7 +954,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float slot = ITEM_CELL_PX;   // fixed: a wider panel leaves room beside the grid instead
     const float gridPanelH = um.gridPanelH();
     const float modeRowH = 30.0f * s;   // the row of fighting modes under the heading, with a gap under it
-    const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + addH + innerPad;
+    const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     // The Build tab: the heading line, then a row for Destroy and each prop kind, then a little space under the last
     const float buildRowH = 22.0f * s, buildHeadH = 22.0f * s;
@@ -1027,31 +1021,21 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         }
     }
     if (tab == UNIT_TAB_BEHAVIOR) {
-        // Behaviors: the on box has a fixed width, and the four option columns share what the priority buttons
-        // leave, in the proportions below. The buttons sit at the right end of each row.
+        // Behaviors: the on box has a fixed width, and the name takes what the priority and delete buttons leave.
+        // The buttons sit at the right end of each row.
         L.behaviorPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, behaviorPanelH };
         const float rowX = L.behaviorPanel.x + innerPad;
         const float rowW = L.behaviorPanel.w - 2.0f * innerPad;
         const float toggleW = 18.0f * s, colGap = 3.0f * s;
         const float buttonsW = 3.0f * buttonW + 2.0f * buttonGap;
-        const float colsW = rowW - buttonsW - gap;                 // the toggle and the four option columns
-        const float optionsW = colsW - toggleW - 4.0f * colGap;    // the four option columns, with their gaps taken out
-        const float share[4] = { 0.19f, 0.31f, 0.33f, 0.17f };     // condition target, condition, action, action target
-        std::array<float, 5> colX{}, colWidth{};                   // the toggle, then the four option columns
-        colX[0] = rowX;
-        colWidth[0] = toggleW;
-        float cursor = rowX + toggleW;
-        for (int i = 0; i < 4; ++i) {
-            cursor += colGap;
-            colX[i + 1] = cursor;
-            colWidth[i + 1] = optionsW * share[i];
-            cursor += colWidth[i + 1];
-        }
+        const float colsW = rowW - buttonsW - gap;                 // the toggle and the name
+        const std::array<float, 2> colX{ rowX, rowX + toggleW + colGap };
+        const std::array<float, 2> colWidth{ toggleW, colsW - toggleW - colGap };
         const float buttonsX = rowX + colsW + gap;
-        // The modes: five equal buttons across the panel, under its heading
+        // The modes: four equal buttons across the panel, under its heading
         {
-            const float mGap = 4.0f * s, mW = (rowW - 4.0f * mGap) / 5.0f;
-            for (int i = 0; i < 5; ++i) {
+            const float mGap = 4.0f * s, mW = (rowW - 3.0f * mGap) / 4.0f;
+            for (int i = 0; i < 4; ++i) {
                 L.modes[(size_t)i] = Rect{ rowX + i * (mW + mGap), L.behaviorPanel.y + headH, mW, modeRowH - 8.0f * s };
             }
         }
@@ -1062,18 +1046,14 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
             const float y = rowsY + i * (rowH + rowGap);
             R.row = Rect{ rowX, y, rowW, rowH };
             R.toggle = Rect{ colX[0], y + (rowH - toggleW) * 0.5f, toggleW, toggleW };
-            R.conditionTarget = Rect{ colX[1], y, colWidth[1], rowH };
-            R.condition = Rect{ colX[2], y, colWidth[2], rowH };
-            R.action = Rect{ colX[3], y, colWidth[3], rowH };
-            R.actionTarget = Rect{ colX[4], y, colWidth[4], rowH };
+            R.label = Rect{ colX[1], y, colWidth[1], rowH };
             const float by = y + 2.0f * s, bh = rowH - 4.0f * s;
             R.up = Rect{ buttonsX, by, buttonW, bh };
             R.down = Rect{ buttonsX + buttonW + buttonGap, by, buttonW, bh };
             R.remove = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
             L.behaviorRows.push_back(R);
         }
-        for (size_t i = 0; i < 5; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
-        L.addButton = Rect{ rowX, rowsY + rules * (rowH + rowGap), rowW, addH };
+        for (size_t i = 0; i < 2; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
     }
     return L;
 }
@@ -1094,10 +1074,6 @@ inline BehaviorHit behaviorHitAt(const SidebarLayout& L, float x, float y) {
         hit.row = (int)i;
         const struct { Rect r; BehaviorPart part; } parts[] = {
             { R.toggle, BehaviorPart::Toggle },
-            { R.conditionTarget, BehaviorPart::ConditionTarget },
-            { R.condition, BehaviorPart::Condition },
-            { R.action, BehaviorPart::Action },
-            { R.actionTarget, BehaviorPart::ActionTarget },
             { R.up, BehaviorPart::Up },
             { R.down, BehaviorPart::Down },
             { R.remove, BehaviorPart::Remove },
@@ -1203,49 +1179,4 @@ inline int itemMenuButtonAt(const ItemMenuLayout& L, float x, float y) {
         if (L.buttons[i].contains(x, y)) return (int)i;
     }
     return -1;
-}
-
-// The condition editor, opened from a behavior's Condition cell. Three rows: the kind (Health or Hunger), the
-// six operators, then the percent with its steps: -10 and -1 on the left, +1 and +10 on the right.
-struct ConditionEditorLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    std::vector<Rect> kinds;   // Health, Hunger, in BehaviorCondition order
-    std::vector<Rect> ops;     // one per BehaviorOp, in order
-    std::vector<Rect> steps;   // -10, -1, +1, +10
-    Rect value{ 0.0f, 0.0f, 0.0f, 0.0f };   // the percent, between the two halves of the steps
-};
-
-// The editor with its top-left corner at (x, y), kept inside the window. rowH is the height of one line of text.
-inline ConditionEditorLayout layoutConditionEditor(float x, float y, float rowH, int W, int H) {
-    const float s = H / 720.0f;
-    const float pad = 6.0f * s, gap = 4.0f * s;
-    const float btnH = rowH + 8.0f * s;
-    const float w = 216.0f * s;
-    const float inner = w - 2.0f * pad;
-    const float h = pad + btnH + gap + btnH + gap + btnH + pad;
-    const float bx = std::clamp(x, 0.0f, std::max(0.0f, W - w));
-    const float by = std::clamp(y, 0.0f, std::max(0.0f, H - h));
-
-    ConditionEditorLayout L;
-    L.box = Rect{ bx, by, w, h };
-    const float kindW = (inner - gap) / 2.0f;
-    for (int i = 0; i < 2; ++i) {
-        L.kinds.push_back(Rect{ bx + pad + i * (kindW + gap), by + pad, kindW, btnH });
-    }
-    const float opW = (inner - 5.0f * gap) / 6.0f;
-    const float opsY = by + pad + btnH + gap;
-    for (int i = 0; i < 6; ++i) {
-        L.ops.push_back(Rect{ bx + pad + i * (opW + gap), opsY, opW, btnH });
-    }
-    const float valueW = 60.0f * s;
-    const float stepW = (inner - valueW - 4.0f * gap) / 4.0f;
-    const float stepsY = opsY + btnH + gap;
-    const float left = bx + pad;
-    L.steps.push_back(Rect{ left, stepsY, stepW, btnH });
-    L.steps.push_back(Rect{ left + stepW + gap, stepsY, stepW, btnH });
-    L.value = Rect{ left + 2.0f * (stepW + gap), stepsY, valueW, btnH };
-    const float right = L.value.x + valueW + gap;
-    L.steps.push_back(Rect{ right, stepsY, stepW, btnH });
-    L.steps.push_back(Rect{ right + stepW + gap, stepsY, stepW, btnH });
-    return L;
 }

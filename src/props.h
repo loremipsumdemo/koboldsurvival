@@ -105,7 +105,7 @@ inline const char* itemFilterKey(ItemFilter f) {
 
 // What a unit sent to a prop does there, as picked from the right-click menu: Inventory opens a storage or crafting
 // prop's items; Use takes a bed, works a resource prop, or starts crafting; Unlock picks a locked prop's lock; Store
-// (a Routine's step, never on the menu) puts what the unit carries for the routine into the prop
+// (an Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
 enum class PropAction { Inventory, Use, Unlock, Store };
 
 // What a kind of prop looks like, is called and does.
@@ -270,9 +270,9 @@ constexpr int PROP_COPIES = 3;         // how many of each kind a new level plac
 // Names how a level lays its props out, so a save can tell whether its prop serials still name the same props. It
 // changes whenever the number of kinds or copies does, and its last digit whenever the placement itself changes (2: the
 // factions' camps come first; 3: every faction and the player get a camp at the compass points, with trees, extra props
-// and serials from CAMP_SERIAL_BASE). Props are placed a round of every placed kind at a time, so serial s is kind
-// s % PROP_PLACED_KIND_COUNT.
-constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 3;   // built kinds are not placed
+// and serials from CAMP_SERIAL_BASE; 4: the camps' vaults are placed last, so they take the last camp serials). Props
+// are placed a round of every placed kind at a time, so serial s is kind s % PROP_PLACED_KIND_COUNT.
+constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 4;   // built kinds are not placed
 // The order of the Build tab's rows after Destroy: the claim pieces first, then every other kind in PropKind order
 inline int buildRowCount() { return PROP_KIND_COUNT + 1; }
 inline int buildRowKind(int row) {

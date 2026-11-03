@@ -301,15 +301,41 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
         stamp(e);
         if (k.kind == PROP_FLAG) kit.flag = e;
         if (k.kind == PROP_TREE) kit.trees.push_back(e);
-        if (k.kind == PROP_FOUNDATION_SMALL) {
-            const Entity vault = placeBuiltProp(w, t, PROP_VAULT, x, z, yaw, faction);
-            stamp(vault);
-            w.get<Storage>(vault)->slots[0] = ItemStack{ 88, CAMP_UPKEEP_DAYS * 24 };   // three days of logs
-            kit.vault = vault;
-        }
+        if (k.kind == PROP_FOUNDATION_SMALL) kit.foundation = e;
     }
+    kit.faction = faction;
+    kit.yaw = yaw;
     kit.placed = true;
     return kit;
+}
+
+void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial) {
+    if (!kit.placed || !w.has<Prop>(kit.foundation)) return;
+    const Transform at = *w.get<Transform>(kit.foundation);
+    const Entity vault = placeBuiltProp(w, t, PROP_VAULT, at.x, at.z, kit.yaw, kit.faction);
+    if (vault == NULL_ENTITY) return;
+    if (serial) w.get<Prop>(vault)->serial = (*serial)++;
+    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PROP_VAULT).input, CAMP_UPKEEP_DAYS * 24 };   // three days of logs
+    kit.vault = vault;
+}
+
+void settleClaimOwnership(World& w) {
+    for (const Claim& c : claimsOf(w)) {
+        if (c.vault == NULL_ENTITY) continue;
+        const int faction = c.sealer;
+        for (Entity e : w.view<Prop, Transform>()) {
+            const Transform* tr = w.get<Transform>(e);
+            const float dx = tr->x - c.x, dz = tr->z - c.z;
+            if (dx * dx + dz * dz > CLAIM_RADIUS * CLAIM_RADIUS) continue;
+            const int kind = w.get<Prop>(e)->kind;
+            const PropInfo& info = propInfo(kind);
+            if (info.use == PropUse::Resource || kind == PROP_DEBRIS) continue;
+            if (Owner* own = w.get<Owner>(e)) own->faction = faction;
+            else w.add(e, Owner{ faction });
+            if (Lock* lock = w.get<Lock>(e)) lock->faction = faction;
+            else if (info.use == PropUse::Storage) w.add(e, Lock{ true, BUILT_LOCK_LEVEL, faction });
+        }
+    }
 }
 
 std::vector<std::string> propInfoLines(World& w, Entity e) {

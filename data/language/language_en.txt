@@ -161,9 +161,17 @@ UILABEL_SLOT_LEGS	Legs
 UILABEL_SLOT_FEET	Feet
 UILABEL_SLOT_ACCESSORY	Accessory
 UILABEL_BEHAVIOR_ON	On
-UILABEL_TARGET	Target
-UILABEL_CONDITION	Condition
-UILABEL_ACTION	Action
+UILABEL_BEHAVIOR_EAT	Eat when hunger < {0}%
+UILABEL_BEHAVIOR_HEAL	Heal when health < {0}%
+UILABEL_BEHAVIOR_SHARE	Share
+UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
+UILABEL_BEHAVIOR_WAITING	(waiting)
+UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger.
+UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health.
+UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less. Others that share can take from this one the same way.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_COMBAT_MESSAGES	Combat Messages
 UILABEL_SEEN	Seen
 UILABEL_HIT	Hit
@@ -246,13 +254,6 @@ MISC_SKY_DUSK_HORIZON	Dusk horizon
 MISC_SKY_DUSK_SUN	Dusk sun
 MISC_SKY_SUN	Sun
 MISC_SKY_MOON	Moon
-MISC_TARGET_SELF	Self
-MISC_TARGET_ALLY	Ally
-MISC_TARGET_ENEMY	Enemy
-MISC_COND_HEALTH	Health
-MISC_COND_HUNGER	Hunger
-MISC_ACT_HEAL	Consume healing item
-MISC_ACT_FOOD	Consume food item
 UILABEL_STAT_DESC_STRENGTH	Melee damage, weight carry capacity
 UILABEL_STAT_DESC_DEXTERITY	Attack speed
 UILABEL_STAT_DESC_VITALITY	Max health
@@ -573,7 +574,7 @@ MISC_STORAGE_FULL	No room in storage
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
 MISC_GATHERS	{0} gathers {1}
-MISC_ROUTINE_STORES	{0} stores {1} {2} in the {3}
+MISC_AUTO_HAUL_STORES	{0} stores {1} {2} in the {3}
 MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
 MISC_REASON_GATHERING	gathering
 UILABEL_TASK	Task: {0}
@@ -614,13 +615,10 @@ UILABEL_MODE_PASSIVE	Passive
 UILABEL_MODE_BLOCK	Block
 UILABEL_MODE_SNEAK	Sneak
 UILABEL_MODE_RANGED	Ranged
-UILABEL_MODE_ROUTINE	Routine
 UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
 UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
 UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice. The higher the Stealth, the better.
 UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
-UILABEL_MODE_ROUTINE_TIP	Routine: cuts wood at its tree and stores the logs in its vault, over and over. An order of yours pauses it; it starts again once the unit has stood idle a few seconds. Click to switch it on or off.
-UILABEL_MODE_ROUTINE_NONE_TIP	Routine: this unit has no routine.
 UILABEL_SQUAD_TAB	Squad
 UILABEL_REPUTATION	Reputation
 UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
@@ -646,6 +644,12 @@ SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you c
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 UILABEL_UNLOCK	Unlock
+UILABEL_AUTO_HARVEST	Auto-Harvest
+UILABEL_AUTO_HAUL	Auto-Haul
+MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside your faction's claim
+MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
+MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
+MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
 UILABEL_PICK_UP	Pick up
 UILABEL_PUT_IN_BED	Put in bed
 UILABEL_PUT_DOWN	Put down

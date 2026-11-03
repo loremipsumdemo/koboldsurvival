@@ -14,47 +14,29 @@ int factionIdOf(World& w, Entity e) {
     if (w.has<Commandable>(e)) return FACTION_PLAYER;
     return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
 }
-bool provokedAgainst(World& w, Entity e, int faction) {
-    const Provoked* p = w.get<Provoked>(e);
-    if (!p) return false;
-    for (const Provoked::Entry& en : p->against) {
-        if (en.faction == faction && en.secondsLeft > 0.0f) return true;
+
+// Whether a unit has a behavior of this kind switched on
+bool hasOn(const Behaviors& b, BehaviorKind kind) {
+    for (const BehaviorRule& r : b.rules) {
+        if (r.kind == kind && r.on) return true;
     }
     return false;
 }
 
-// Whether unit c is in the group a rule names, as seen from the unit that owns the rule. Ally includes the unit
-// itself, its faction and allied factions (reputation REP_ALLIED or more); Enemy is a unit it fights (its faction is
-// hostile, or one has provoked the other); Self is only the unit.
-bool inGroup(World& w, Entity actor, BehaviorTarget group, Entity c) {
-    const int fa = factionIdOf(w, actor), fc = factionIdOf(w, c);
-    switch (group) {
-    case BehaviorTarget::Self:
-        return c == actor;
-    case BehaviorTarget::Ally:
-        return c == actor || factionsAllied(fa, fc);
-    case BehaviorTarget::Enemy:
-        return c != actor && fa != fc &&
-               (factionsHostile(fa, fc) || provokedAgainst(w, actor, fc) || provokedAgainst(w, c, fa));
-    case BehaviorTarget::Count:
-        break;
-    }
-    return false;
+// Whether a unit can act at all: not out cold, carried or at 0 health
+bool canAct(World& w, Entity e) {
+    const Needs* n = w.get<Needs>(e);
+    return n && n->hp > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e);
 }
 
-// The value a condition reads from a unit's needs, as a whole percent
-int valueOf(const Needs& n, BehaviorCondition c) {
-    return c == BehaviorCondition::Health ? percentOf(n.hp, n.maxHp) : percentOf(n.hunger, n.maxHunger);
-}
+// The share of a stat a unit has, as a whole percent
+int valueOf(const Needs& n, bool food) { return food ? percentOf(n.hunger, n.maxHunger) : percentOf(n.hp, n.maxHp); }
 
-// Carries out a consumable action: the actor's item that restores the most of the stat, used on the target. False if
-// the actor has no such item, so nothing happened.
-bool carryOut(World& w, Entity actor, Entity target, BehaviorAction action, CombatLog& log) {
-    const bool food = action == BehaviorAction::ConsumeFood;
+// The slot of a unit's item that restores the most of the stat, or -1 when it carries none
+int bestSlot(World& w, Entity unit, bool food) {
+    const Inventory* inv = w.get<Inventory>(unit);
+    if (!inv) return -1;
     const UseEffect::Stat stat = food ? UseEffect::Stat::Hunger : UseEffect::Stat::Health;
-
-    const Inventory* inv = w.get<Inventory>(actor);
-    if (!inv) return false;
     int best = -1;
     int bestAmount = 0;
     for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -68,90 +50,92 @@ bool carryOut(World& w, Entity actor, Entity target, BehaviorAction action, Comb
             bestAmount = amount;
         }
     }
-    if (best < 0) return false;
+    return best;
+}
 
-    const std::string itemName = itemDisplayName(*findItem(inv->slots[best].item));
-    const Needs* before = w.get<Needs>(target);
+// Uses the item in the giver's slot on the taker, and logs it. The giver is the taker itself, or a unit sharing with
+// it. False if the item could not be used, so nothing happened.
+bool consume(World& w, Entity giver, Entity taker, int slot, bool food, CombatLog& log) {
+    const Inventory* inv = w.get<Inventory>(giver);
+    const ItemDef* def = inv ? findItem(inv->slots[slot].item) : nullptr;
+    if (!def) return false;
+    const std::string itemName = itemDisplayName(*def);
+    const Needs* before = w.get<Needs>(taker);
     const int was = before ? (food ? before->hunger : before->hp) : 0;
-    if (useStackOn(w, actor, target, best) != UseResult::Used) return false;
+    if (useStackOn(w, giver, taker, slot) != UseResult::Used) return false;
 
-    const Needs* after = w.get<Needs>(target);
+    const Needs* after = w.get<Needs>(taker);
     const int now = after ? (food ? after->hunger : after->hp) : 0;
     const int max = after ? (food ? after->maxHunger : after->maxHp) : 0;
-    std::string line = nameOf(w, actor) + " uses " + itemName;
-    if (target != actor) line += " on " + nameOf(w, target);
+    std::string line = nameOf(w, taker) + " uses " + itemName;
+    if (giver != taker) line += " shared by " + nameOf(w, giver);
     line += food ? ": hunger " : ": HP ";
     line += std::to_string(was) + " -> " + std::to_string(now) + " of " + std::to_string(max);
     log.add(line);
     return true;
 }
 
-// Checks one rule for its unit. The condition is read from every unit in its condition group, and the unit that
-// meets it with the lowest value is the match. The action then goes to the rule's action target: the unit itself for
-// Self, or the match when the match is in that group. Returns true if the action was carried out.
-bool evaluateRule(World& w, Entity actor, const BehaviorRule& r, CombatLog& log) {
-    const Needs* own = w.get<Needs>(actor);
-    if (!own || own->hp <= 0) return false;   // a downed unit does nothing
-
-    Entity match = NULL_ENTITY;
-    int matchValue = 0;
-    for (Entity c : w.view<Needs>()) {
-        if (!inGroup(w, actor, r.conditionTarget, c)) continue;
-        const int v = valueOf(*w.get<Needs>(c), r.condition);
-        if (!compareValue(v, r.op, r.percent)) continue;
-        if (match == NULL_ENTITY || v < matchValue) {
-            match = c;
-            matchValue = v;
-        }
+// Share: the unit within SHARE_RANGE that can give the taker an item for the stat, or NULL_ENTITY. It has Share on,
+// is of an allied faction, can act, carries such an item and needs it less than the taker does. The one that needs it
+// least gives.
+Entity sharerFor(World& w, Entity taker, bool food, int takerValue) {
+    const Transform* tt = w.get<Transform>(taker);
+    if (!tt) return NULL_ENTITY;
+    const int fa = factionIdOf(w, taker);
+    Entity best = NULL_ENTITY;
+    int bestValue = takerValue;
+    for (Entity g : w.view<Behaviors, Needs, Transform>()) {
+        if (g == taker || !canAct(w, g) || !hasOn(*w.get<Behaviors>(g), BehaviorKind::Share)) continue;
+        if (!factionsAllied(fa, factionIdOf(w, g))) continue;
+        const Transform* gt = w.get<Transform>(g);
+        const float dx = gt->x - tt->x, dz = gt->z - tt->z;
+        if (dx * dx + dz * dz > SHARE_RANGE * SHARE_RANGE) continue;
+        const int v = valueOf(*w.get<Needs>(g), food);
+        if (v <= bestValue || bestSlot(w, g, food) < 0) continue;
+        best = g;
+        bestValue = v;
     }
-    if (match == NULL_ENTITY) return false;
-
-    Entity target = NULL_ENTITY;
-    if (r.actionTarget == BehaviorTarget::Self) target = actor;
-    else if (inGroup(w, actor, r.actionTarget, match)) target = match;
-    else return false;
-
-    return carryOut(w, actor, target, r.action, log);
+    return best;
 }
 
-// Whether a rule watches a value that changed for a unit in its condition group
-bool watchTriggered(World& w, Entity actor, const BehaviorRule& r, const std::vector<Entity>& hpChanged,
-                    const std::vector<Entity>& hungerChanged) {
-    const std::vector<Entity>& changed = r.condition == BehaviorCondition::Health ? hpChanged : hungerChanged;
-    for (Entity c : changed) {
-        if (inGroup(w, actor, r.conditionTarget, c)) return true;
+// Eat or Heal for one unit: below BEHAVIOR_NEED_PERCENT, it uses its own best item, or with Share on takes one from a
+// unit sharing with it. True when it is in need and nothing could be used, so the behavior waits before trying again.
+bool needFailed(World& w, Entity actor, const Behaviors& b, bool food, CombatLog& log) {
+    const int v = valueOf(*w.get<Needs>(actor), food);
+    if (v >= BEHAVIOR_NEED_PERCENT) return false;
+    const int own = bestSlot(w, actor, food);
+    if (own >= 0 && consume(w, actor, actor, own, food, log)) return false;
+    if (hasOn(b, BehaviorKind::Share)) {
+        const Entity giver = sharerFor(w, actor, food, v);
+        if (giver != NULL_ENTITY && consume(w, giver, actor, bestSlot(w, giver, food), food, log)) return false;
     }
-    return false;
+    return true;
 }
 
 } // namespace
 
-size_t behaviorSystem(World& w, CombatLog& log) {
-    // Which units' health or hunger changed since the last call. Their bits are cleared here, and anything the
-    // actions change below sets them again for the next call.
-    std::vector<Entity> hpChanged;
-    std::vector<Entity> hungerChanged;
-    for (Entity e : w.view<Needs>()) {
-        Needs* n = w.get<Needs>(e);
-        if (n->changed == 0) continue;
-        if (n->changed & NEEDS_HP_CHANGED) hpChanged.push_back(e);
-        if (n->changed & NEEDS_HUNGER_CHANGED) hungerChanged.push_back(e);
-        n->changed = 0;
-    }
-
+size_t behaviorSystem(World& w, CombatLog& log, float dt) {
     size_t checked = 0;
     for (Entity actor : w.view<Behaviors, Needs>()) {
-        if (w.has<Unconscious>(actor) || w.has<Carried>(actor)) continue;   // out cold or carried: it does nothing
         Behaviors* b = w.get<Behaviors>(actor);
-        // Every rule is checked when the list was edited, otherwise only those watching a value that changed
+        Needs* n = w.get<Needs>(actor);
+        // Every behavior is checked when the list was edited, otherwise only those whose stat changed or whose wait
+        // after a failed try has run out
         const bool all = b->pending;
+        const unsigned changed = n->changed;
         b->pending = false;
-        for (size_t i = 0; i < b->rules.size(); ++i) {
-            const BehaviorRule rule = b->rules[i];   // a copy: the action can't change the list, but this keeps it simple
-            if (!rule.on) continue;
-            if (!all && !watchTriggered(w, actor, rule, hpChanged, hungerChanged)) continue;
+        n->changed = 0;
+        for (BehaviorRule& r : b->rules) {
+            if (isAutomated(r.kind)) continue;   // the automation counts down its own
+            const bool waited = r.cooldown > 0.0f && (r.cooldown -= dt) <= 0.0f;
+            if (!r.on || (r.kind != BehaviorKind::Eat && r.kind != BehaviorKind::Heal)) continue;
+            if (!canAct(w, actor)) continue;   // out cold, carried or downed: it does nothing
+            const bool food = r.kind == BehaviorKind::Eat;
+            const bool statChanged = (changed & (food ? NEEDS_HUNGER_CHANGED : NEEDS_HP_CHANGED)) != 0;
+            if (r.cooldown > 0.0f) continue;
+            if (!all && !statChanged && !waited) continue;
             ++checked;
-            evaluateRule(w, actor, rule, log);
+            if (needFailed(w, actor, *b, food, log)) r.cooldown = BEHAVIOR_RETRY_SECONDS;
         }
     }
     return checked;

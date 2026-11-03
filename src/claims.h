@@ -55,19 +55,30 @@ bool lockShutForFaction(World& w, Entity prop, int faction);
 void breakBuilding(World& w, Entity e);
 // The Destroy tool: takes a building down. Refuses flags, debris and anything that is not a built prop.
 bool destroyBuilding(World& w, Entity e);
-// The starting kit a faction's camp is given (claims.h): a flag, a small foundation with a vault on it holding three days
-// of upkeep, four bedrolls around a campfire, and a barrel. Put down with the faction as its owner.
-// Two trees stand just past the bedrolls, for the camp's wood. Each piece takes the next number from *serial (when
-// given), so saves can name the camp's props. Returns what was placed; placed is false (and nothing is put down) when
-// the ground can't hold all of it.
+// The starting kit a faction's camp is given (claims.h): a flag, a small foundation for a vault, four bedrolls around a
+// campfire, and a barrel. Put down with the faction as its owner. Two trees stand just past the bedrolls, for the camp's
+// wood. Each piece takes the next number from *serial (when given), so saves can name the camp's props. Returns what was
+// placed; placed is false (and nothing is put down) when the ground can't hold all of it.
+// The vault is not part of it: a new game puts every camp's vault down last, with placeCampVault, once every other prop
+// stands, and then settles who owns what with settleClaimOwnership.
 struct CampKit {
     bool placed = false;
+    int faction = 0;
     float x = 0.0f, z = 0.0f;          // the flag's spot
+    float yaw = 0.0f;
     Entity flag = NULL_ENTITY;
-    Entity vault = NULL_ENTITY;
+    Entity foundation = NULL_ENTITY;   // where the vault goes
+    Entity vault = NULL_ENTITY;        // NULL_ENTITY until placeCampVault puts it down
     std::vector<Entity> trees;
 };
 CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, float yaw, int* serial = nullptr);
+// Puts a placed kit's vault on its foundation, holding CAMP_UPKEEP_DAYS of logs, and sets kit.vault. The vault takes
+// the next number from *serial (when given).
+void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial = nullptr);
+// Gives each sealed claim (one with a vault in it) to the vault's faction: its flag, and every prop in its circle other
+// than resource props (trees, ore), which stay nobody's. A storage prop it takes is locked to that faction, as anything
+// with contents in a claim is. A new game runs this once its vaults are down.
+void settleClaimOwnership(World& w);
 // Whether the whole kit fits around (cx, cz): every piece's tile walkable and free of props
 bool campKitFits(World& w, const Terrain& t, float cx, float cz);
 // Serials of the camps' props start here, after any a level places, so they never meet
