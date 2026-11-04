@@ -29,6 +29,12 @@ void snapBuildSpot(int kind, float gx, float gz, float& x, float& z);
 // NoFoundation: a vault whose shape does not lie wholly inside a foundation.
 BuildCheck checkBuildSpot(World& w, const Terrain& t, int kind, float x, float z, float yaw);
 
+// Whether a Build tab kind can be picked anywhere: Destroy, the Bedroll and the Campfire. Every other kind can be picked
+// only while a selected unit of yours stands inside one of your claims (selectionInClaim).
+bool buildAnywhere(int kind);
+// Whether any selected unit of yours stands inside a claim of the Player Faction
+bool selectionInClaim(World& w);
+
 // The language key of the notice for a refused spot (empty for Ok)
 const char* buildRefusalKey(BuildCheck c);
 

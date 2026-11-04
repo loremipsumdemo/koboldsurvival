@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Vereist Slotbreken {0}
 MISC_UNLOCKED	Opengebroken!
 MISC_LOCKPICK_FAILED	Slot openbreken mislukt
 MISC_UNLOCKS	{0} breekt {1} open
+MISC_LOCKS	{0} doet {1} op slot
 MISC_REASON_LOCKPICKING	sloten openbreken
 MISC_LOCKED_NAME	{0} (op slot)
 PROP_CHAIR	Stoel
@@ -868,6 +869,7 @@ ITEM_124_NAME	Gebakken kikkervlees
 ITEM_125_DESC	Een kleine wilde paddenstoel. Rauw doet hij weinig voor gezondheid of honger.
 ITEM_125_NAME	Paddenstoel
 MISC_FOOD_TO_COOK	rauw vlees
+MISC_COOKED_FOOD	gaar vlees
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Onderhoud: nog {0} min
 PROP_SHOP	Winkel
 PROP_FARM	Boerderij
 PROP_TURBINE	Windturbine
+PROP_STOVE	Fornuis
 UILABEL_BUILD_DESTROY	Slopen
 UILABEL_BUILD_DESTROY_HINT	Linksklik op een object om het te slopen: wat erin zit valt op de grond en er blijft puin achter. Linksklik op puin om het op te ruimen. Rechtsklik of Escape annuleert.
 UILABEL_LOCK	Op slot

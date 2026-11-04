@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Requer Arrombamento {0}
 MISC_UNLOCKED	Destrancado!
 MISC_LOCKPICK_FAILED	Falha ao arrombar
 MISC_UNLOCKS	{0} destranca {1}
+MISC_LOCKS	{0} tranca {1}
 MISC_REASON_LOCKPICKING	arrombar fechaduras
 MISC_LOCKED_NAME	{0} (trancado)
 PROP_CHAIR	Cadeira
@@ -868,6 +869,7 @@ ITEM_124_NAME	Carne de rã assada
 ITEM_125_DESC	Um pequeno cogumelo selvagem. Cru, ajuda pouco a saúde e a fome.
 ITEM_125_NAME	Cogumelo
 MISC_FOOD_TO_COOK	carne crua
+MISC_COOKED_FOOD	carne cozida
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Manutenção: faltam {0} min
 PROP_SHOP	Loja
 PROP_FARM	Fazenda
 PROP_TURBINE	Turbina
+PROP_STOVE	Fogão
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clique esquerdo em qualquer objeto para derrubá-lo: o que ele guarda cai no chão e fica entulho no lugar. Clique esquerdo no entulho para limpá-lo. Clique direito ou Esc cancela.
 UILABEL_LOCK	Trancar

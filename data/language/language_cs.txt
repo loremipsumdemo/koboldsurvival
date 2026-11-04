@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Vyžaduje Odemykání zámků {0}
 MISC_UNLOCKED	Odemčeno!
 MISC_LOCKPICK_FAILED	Páčení selhalo
 MISC_UNLOCKS	{0} odemyká: {1}
+MISC_LOCKS	{0} zamyká: {1}
 MISC_REASON_LOCKPICKING	páčení zámků
 MISC_LOCKED_NAME	{0} (zamčeno)
 PROP_CHAIR	Židle
@@ -868,6 +869,7 @@ ITEM_124_NAME	Pečené žabí maso
 ITEM_125_DESC	Malá lesní houba. Syrová moc nepomůže zdraví ani hladu.
 ITEM_125_NAME	Houba
 MISC_FOOD_TO_COOK	syrové maso
+MISC_COOKED_FOOD	pečené maso
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Údržba: zbývá {0} min
 PROP_SHOP	Obchod
 PROP_FARM	Farma
 PROP_TURBINE	Větrná turbína
+PROP_STOVE	Kamna
 UILABEL_BUILD_DESTROY	Zbořit
 UILABEL_BUILD_DESTROY_HINT	Levým kliknutím na objekt ho zboříš: jeho obsah spadne na zem a na jeho místě zůstanou sutiny. Levým kliknutím na sutiny je odklidíš. Pravé kliknutí nebo Escape zruší.
 UILABEL_LOCK	Zamknout

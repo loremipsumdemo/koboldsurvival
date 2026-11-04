@@ -178,10 +178,10 @@ void onAttacked(World& w, Entity a, Entity d) {
                               w.has<TalkOrder>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
                               w.has<PutDownOrder>(u) || w.has<PropOrder>(u) || w.has<Working>(u) ||
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
-            const Squad* sq = w.has<SquadMember>(u) ? w.get<Squad>(w.get<SquadMember>(u)->squad) : nullptr;
+            const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
             if (busy || (sq && !sq->arrived) || c.target != NULL_ENTITY) continue;
-            if (Squad* s = w.has<SquadMember>(u) ? w.get<Squad>(w.get<SquadMember>(u)->squad) : nullptr; s && s->size > 0) --s->size;
-            w.remove<SquadMember>(u);
+            if (ActiveSquad* s = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr; s && s->size > 0) --s->size;
+            w.remove<ActiveSquadMember>(u);
             w.add(u, AttackOrder{ a });
             c.target = a;
         } else if (c.target == NULL_ENTITY) {
@@ -394,6 +394,12 @@ float walkSpeedOf(World& w, Entity e, bool running) {
     }
     if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1);
     if (stamina <= 0.0f) speed *= 0.5f;
+    // A boss walking home after giving up a chase (and taking no damage) hurries
+    if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
+        if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {
+            speed *= BOSS_RETURN_SPEED_FACTOR;
+        }
+    }
     return std::max(0.0f, speed);
 }
 
@@ -737,8 +743,8 @@ Equipment randomHostileGear(Rng& rng) {
 }
 
 void removeUnit(World& w, Entity e) {
-    if (const SquadMember* sm = w.get<SquadMember>(e)) {
-        if (Squad* sq = w.get<Squad>(sm->squad)) {
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
+        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
             if (sq->size > 0) --sq->size;
         }
     }

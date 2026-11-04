@@ -139,6 +139,19 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, int kind, float x, float z
     return BuildCheck::Ok;
 }
 
+bool buildAnywhere(int kind) {
+    return kind == BUILD_DESTROY || kind == PROP_BEDROLL || kind == PROP_CAMPFIRE;
+}
+
+bool selectionInClaim(World& w) {
+    const std::vector<Claim> claims = claimsOf(w);
+    for (Entity u : w.view<Unit, Selected, Commandable, Transform>()) {
+        const Transform* tr = w.get<Transform>(u);
+        if (claimAt(claims, tr->x, tr->z, FACTION_PLAYER)) return true;
+    }
+    return false;
+}
+
 const char* buildRefusalKey(BuildCheck c) {
     switch (c) {
     case BuildCheck::Blocked: return "MISC_BUILD_BLOCKED";

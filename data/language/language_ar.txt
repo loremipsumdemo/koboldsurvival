@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	يتطلب فتح الأقفال {0}
 MISC_UNLOCKED	فُتح القفل!
 MISC_LOCKPICK_FAILED	فشل فتح القفل
 MISC_UNLOCKS	{0} يفتح قفل {1}
+MISC_LOCKS	{0} يقفل {1}
 MISC_REASON_LOCKPICKING	فتح الأقفال
 MISC_LOCKED_NAME	{0} (مقفل)
 PROP_CHAIR	كرسي
@@ -868,6 +869,7 @@ ITEM_124_NAME	لحم ضفدع مطبوخ
 ITEM_125_DESC	فطر بري صغير. إذا أُكل نيئًا لا يفيد الصحة أو الجوع إلا قليلًا.
 ITEM_125_NAME	فطر
 MISC_FOOD_TO_COOK	لحمًا نيئًا
+MISC_COOKED_FOOD	لحمًا مطهوًا
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	الصيانة: بقي {0} دقيقة
 PROP_SHOP	متجر
 PROP_FARM	مزرعة
 PROP_TURBINE	توربين رياح
+PROP_STOVE	موقد
 UILABEL_BUILD_DESTROY	هدم
 UILABEL_BUILD_DESTROY_HINT	انقر بالزر الأيسر على أي عنصر لهدمه: يسقط ما فيه على الأرض وتبقى الأنقاض مكانه. انقر بالزر الأيسر على الأنقاض لإزالتها. النقر بالزر الأيمن أو Escape يلغي.
 UILABEL_LOCK	قفل

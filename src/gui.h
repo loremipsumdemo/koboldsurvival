@@ -676,13 +676,10 @@ struct QuantityLayout {
     Rect single{ 0.0f, 0.0f, 0.0f, 0.0f }, max{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
-// The title screen's header, top left: the game's name, large, and under it the pink notice board for update notes.
-// The board reaches across to the menu buttons (which start at 62% of the width) and down to two thirds of the window.
-// The title screen, top left: a small "Early Access" line, the game's name, a pink rule, and the notice board of
-// update notes. Along the bottom: the build stamp on the left and the keys on the right.
+// The title screen, top left: the game's logo, a pink rule, and the notice board of update notes. Along the bottom:
+// the build stamp on the left and the keys on the right.
 struct TitleLayout {
     float side = 0.0f;                          // the screen's left and right margin
-    Rect eyebrow{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };        // the name's line: its height is the size the name is drawn at
     Rect rule{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect news{ 0.0f, 0.0f, 0.0f, 0.0f };        // the notice board, frame included
@@ -696,13 +693,12 @@ inline TitleLayout layoutTitle(int W, int H) {
     L.side = titleClamp(24.0f * s, W * 0.05f, 90.0f * s);
     const float top = titleClamp(26.0f * s, H * 0.07f, 80.0f * s);
     const float gap = titleClamp(18.0f * s, H * 0.034f, 38.0f * s);
-    const float eyebrowH = 14.0f * s;
-    const float nameH = titleClamp(28.0f * s, W * 0.058f, 86.0f * s);
+    // Tall enough for the logo (data/illustration/title.png, 1280x600), which is drawn as large as this line allows
+    const float nameH = titleClamp(120.0f * s, std::min(H * 0.36f, (W * 0.56f - L.side) * (600.0f / 1280.0f)), 300.0f * s);
     const float boardW = titleClamp(280.0f * s, W * 0.34f, 470.0f * s);
     const float footerH = 18.0f * s, footerPad = titleClamp(16.0f * s, H * 0.03f, 30.0f * s);
     L.footer = Rect{ L.side, H - footerPad - footerH, W - 2.0f * L.side, footerH };
-    L.eyebrow = Rect{ L.side, top, W * 0.5f, eyebrowH };
-    L.name = Rect{ L.side, L.eyebrow.y + eyebrowH + gap * 0.6f, W * 0.56f - L.side, nameH };
+    L.name = Rect{ L.side, top, W * 0.56f - L.side, nameH };
     L.rule = Rect{ L.side, L.name.y + nameH + gap * 0.45f, boardW, std::max(1.0f, 2.0f * s) };
     const float boardY = L.rule.y + L.rule.h + gap;
     const float boardH = std::max(160.0f * s, L.footer.y - 28.0f * s - boardY);

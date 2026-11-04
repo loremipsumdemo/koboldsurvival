@@ -13,20 +13,25 @@
 //   item (PropInfo::accepts): the Weapon Rack only weapons, the Water Tank only water.
 //   Occupiable props (beds, chairs) hold one unit, which stays on them until it is given another order.
 //   Resource props (ore, trees and mushrooms) are worked by units, and give an item now and then.
-//   Crafting props (the campfire) have an inventory that takes only the items they use (raw meat for the campfire).
+//   Crafting props (the stove) have an inventory that takes only the items they use (raw meat for the stove).
 //   A unit working one is like one working a resource prop, except that each item it makes uses up one input item,
 //   checked at the moment the item is finished, and goes straight into the worker's inventory. A crafting prop with
 //   no input has no inventory: the Water Pump gives water for the work alone, and the Training Dummy gives no item,
 //   only skill XP.
-//   Passive crafting props (the forge) work by themselves, with no unit at them. Each input item they take is burned
-//   as fuel for fuelHours in-game hours, and while it burns they make one output item every PASSIVE_CRAFT_HOURS into
-//   their own output inventory. They pause while the output has no room, and go on once it has.
+//   Passive crafting props (the forge, the campfire) work by themselves, with no unit at them. Each input item they
+//   take is burned as fuel for fuelHours in-game hours, and while it burns they make one output item every
+//   PASSIVE_CRAFT_HOURS into their own output inventory. They pause while the output has no room, and go on once it
+//   has. The campfire (INPUT_COOKABLE) takes any raw meat, and what it makes is that meat cooked.
 // Storage and crafting props keep their items in a Storage component; a passive crafting prop's output is an Output.
 // Lockable: a tag any storage or occupiable prop kind can have (PropInfo::lockLevel above 0). A lockable prop has a
 // Lock (components.h), which starts locked. While locked it can't be opened or used; a unit with at least lockLevel in
 // Lockpicking can right-click it and Unlock it, a timed attempt at a time, like working ore. A lockable occupiable
-// prop (the Prisoner Cage) locks again as soon as a unit gets in, and the unit can't leave until it is unlocked, by
-// itself from the inside or by another unit from the outside.
+// prop (the Prisoner Cage) locks again as soon as a new unit gets in, and the unit can't leave until it is unlocked, by
+// itself from the inside or by another unit from the outside. A mob can't work a lock, so a mob in a locked cage is shut
+// in even when the lock is its own faction's. Otherwise an unlocked prop stays unlocked until a unit is sent to Lock it
+// (the right-click menu); one whose lock is open to the selected units (their own) can likewise be Unlocked with no
+// lockpicking. A prop with no lock owner takes the faction of whoever locks it.
+// Camps keep their mobs in locked Prisoner Cages, and such a mob's name ends in " [!]" (mobs.h).
 // Built props: the kinds from PROP_FLAG on are not placed by a new level. The player builds them from the Build tab:
 // a Flag, a Debris, four Foundations and a Vault. A Vault is a passive crafting prop that burns Wood Logs as upkeep
 // (the Forge's fuel code, with no output), and it can only stand on a foundation, within its shape.
@@ -73,10 +78,11 @@ enum PropKind : int {
     PROP_SHOP,                 // built: a storage prop, usually on a foundation
     PROP_FARM,                 // built: a storage prop, usually on a foundation
     PROP_TURBINE,              // built: decor, usually on a foundation
+    PROP_STOVE,                // built: a crafting prop that cooks raw meat, worked by a unit, fast
     PROP_KIND_COUNT
 };
-// The Build tab's rows: row 0 is Destroy, a tool that takes any prop down (Debris is cleared away). Then
-// the Flag, the Vault, the four foundations, and every other kind in order. BUILD_NONE: nothing picked.
+// The Build tab's rows: row 0 is Destroy, a tool that takes any prop down (Debris is cleared away). Then the Bedroll,
+// the Campfire, the Flag, the Vault, the four foundations, and every other kind in order. BUILD_NONE: nothing picked.
 constexpr int BUILD_NONE = -1;
 constexpr int BUILD_DESTROY = -2;
 // The kinds a new level places (PROP_COPIES of each, props.h below). The kinds after them are built by the player.
@@ -107,7 +113,7 @@ inline const char* itemFilterKey(ItemFilter f) {
 // prop's items; Use works a resource prop or starts crafting; Occupy takes an occupiable prop (a bed, a chair, a cage)
 // itself; Place puts the unit it carries on an occupiable prop; Unlock picks a locked prop's lock; Store (an
 // Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
-enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store };
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists
@@ -121,7 +127,8 @@ enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store };
 //         data/itemdb.txt)
 //   input: the item a crafting prop uses up, one for each item it makes; 0 for a resource prop, and for a crafting
 //          prop that needs none (then it has no inventory). A passive crafting prop burns it as fuel.
-//          INPUT_COOKABLE: any item with a cooks_into in data/itemdb.txt, made into that item (the campfire). Its item
+//          INPUT_COOKABLE: any item with a cooks_into in data/itemdb.txt, made into that item (the campfire, the
+//          stove). Its item
 //          is then 0, as what it makes depends on what goes in.
 //   item 0 at a crafting prop: nothing is made, and each finished bar gives the worker skill XP only (training).
 //   workers: the most units that can work it at once (0 for a passive crafting prop, which no unit works)
@@ -182,7 +189,8 @@ struct PropInfo {
 inline const PropInfo& propInfo(int kind) {
     static const PropInfo info[PROP_KIND_COUNT] = {
         { "data/model/model_1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::Crafting, STAT_COOKING, 0, INPUT_COOKABLE, 1, 0 },   // raw meat -> cooked
+        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::PassiveCrafting, STAT_COOKING, 0, INPUT_COOKABLE, 0, 0,
+          ItemFilter::Any, 1.0 },                                                                            // raw meat -> cooked, by itself
         { "data/model/model_3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
         { "data/model/model_4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
         { "data/model/model_5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  -1, 0, 0, 0, 0 },
@@ -238,6 +246,9 @@ inline const PropInfo& propInfo(int kind) {
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
         { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, -1, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+        // The Stove: a crafting prop a unit works, cooking raw meat like the Campfire but CRAFT_SPEED_STOVE times faster
+        { "data/model/model_42.glb", "PROP_STOVE",             1.2f, PropUse::Crafting, STAT_COOKING, 0, INPUT_COOKABLE, 1, 0,
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
     };
     return info[(kind >= 0 && kind < PROP_KIND_COUNT) ? kind : 0];
 }
@@ -248,7 +259,7 @@ inline int propEmote(int kind) {
     case PROP_ORE: return EMOTE_MINING;
     case PROP_TREE: return EMOTE_WOODCUTTING;
     case PROP_MUSHROOM: return EMOTE_HERBALISM;
-    case PROP_CAMPFIRE: return EMOTE_COOKING;
+    case PROP_STOVE: return EMOTE_COOKING;
     case PROP_BED:
     case PROP_BEDROLL: return EMOTE_SLEEPING;
     default: return EMOTE_NONE;
@@ -283,10 +294,11 @@ constexpr int PROP_COPIES = 3;         // how many of each kind a new level plac
 // and serials from CAMP_SERIAL_BASE; 4: the camps' vaults are placed last, so they take the last camp serials). Props
 // are placed a round of every placed kind at a time, so serial s is kind s % PROP_PLACED_KIND_COUNT.
 constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 4;   // built kinds are not placed
-// The order of the Build tab's rows after Destroy: the claim pieces first, then every other kind in PropKind order
+// The order of the Build tab's rows after Destroy: the Bedroll and Campfire (which can be built anywhere), then the
+// claim pieces, then every other kind in PropKind order
 inline int buildRowCount() { return PROP_KIND_COUNT + 1; }
 inline int buildRowKind(int row) {
-    static const int first[] = { PROP_FLAG, PROP_VAULT, PROP_FOUNDATION_SMALL, PROP_FOUNDATION_LARGE, PROP_FOUNDATION_LONG,
+    static const int first[] = { PROP_BEDROLL, PROP_CAMPFIRE, PROP_FLAG, PROP_VAULT, PROP_FOUNDATION_SMALL, PROP_FOUNDATION_LARGE, PROP_FOUNDATION_LONG,
                                  PROP_FOUNDATION_CIRCLE };
     static const std::vector<int> order = [] {
         std::vector<int> o(std::begin(first), std::end(first));
@@ -317,9 +329,11 @@ inline double workHoursFor(int level) {
 }
 
 // How many times faster than workHoursFor a resource prop is worked: a Mushroom 8 times, any other resource 4 times.
-// Crafting is not sped up.
+// Crafting is not sped up, but for the Stove: CRAFT_SPEED_STOVE times, a tenth of the Campfire's hour or less an item.
+constexpr double CRAFT_SPEED_STOVE = 10.0;
 inline double resourceSpeedFor(int kind) {
     if (kind == PROP_MUSHROOM) return 8.0;
+    if (kind == PROP_STOVE) return CRAFT_SPEED_STOVE;
     return propInfo(kind).use == PropUse::Resource ? 4.0 : 1.0;
 }
 

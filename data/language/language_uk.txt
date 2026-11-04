@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Потрібно: Відмикання замків {0}
 MISC_UNLOCKED	Відчинено!
 MISC_LOCKPICK_FAILED	Зламати не вдалося
 MISC_UNLOCKS	{0} відмикає: {1}
+MISC_LOCKS	{0} замикає: {1}
 MISC_REASON_LOCKPICKING	зламування замків
 MISC_LOCKED_NAME	{0} (замкнено)
 PROP_CHAIR	Стілець
@@ -868,6 +869,7 @@ ITEM_124_NAME	Смажене м'ясо жаби
 ITEM_125_DESC	Маленький лісовий гриб. Сирим майже не допомагає ні здоров'ю, ні від голоду.
 ITEM_125_NAME	Гриб
 MISC_FOOD_TO_COOK	сире м'ясо
+MISC_COOKED_FOOD	готове м'ясо
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Утримання: лишилося {0} хв
 PROP_SHOP	Крамниця
 PROP_FARM	Ферма
 PROP_TURBINE	Вітряк
+PROP_STOVE	Піч
 UILABEL_BUILD_DESTROY	Знести
 UILABEL_BUILD_DESTROY_HINT	Клацніть лівою кнопкою по будь-якому об'єкту, щоб знести його: вміст впаде на землю, а на його місці лишаться уламки. Клацніть лівою кнопкою по уламках, щоб прибрати їх. Права кнопка або Escape — скасування.
 UILABEL_LOCK	Замкнути

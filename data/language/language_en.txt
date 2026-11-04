@@ -751,6 +751,7 @@ MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
 MISC_UNLOCKED	Unlocked!
 MISC_LOCKPICK_FAILED	Lockpick failed
 MISC_UNLOCKS	{0} unlocks the {1}
+MISC_LOCKS	{0} locks the {1}
 MISC_REASON_LOCKPICKING	picking locks
 MISC_LOCKED_NAME	{0} (Locked)
 PROP_CHAIR	Chair
@@ -859,6 +860,7 @@ ITEM_124_NAME	Cooked Frog Meat
 ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
 ITEM_125_NAME	Mushroom
 MISC_FOOD_TO_COOK	raw meat
+MISC_COOKED_FOOD	cooked meat
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -960,6 +962,7 @@ MISC_UPKEEP_LEFT	Upkeep: {0} min left
 PROP_SHOP	Shop
 PROP_FARM	Farm
 PROP_TURBINE	Turbine
+PROP_STOVE	Stove
 UILABEL_BUILD_DESTROY	Destroy
 UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
 UILABEL_LOCK	Lock

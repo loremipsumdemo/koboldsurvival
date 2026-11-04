@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Nécessite Crochetage {0}
 MISC_UNLOCKED	Déverrouillé !
 MISC_LOCKPICK_FAILED	Crochetage raté
 MISC_UNLOCKS	{0} déverrouille : {1}
+MISC_LOCKS	{0} verrouille : {1}
 MISC_REASON_LOCKPICKING	crocheter des serrures
 MISC_LOCKED_NAME	{0} (verrouillé)
 PROP_CHAIR	Chaise
@@ -868,6 +869,7 @@ ITEM_124_NAME	Viande de grenouille cuite
 ITEM_125_DESC	Un petit champignon sauvage. Cru, il aide peu la santé et la faim.
 ITEM_125_NAME	Champignon
 MISC_FOOD_TO_COOK	de la viande crue
+MISC_COOKED_FOOD	de la viande cuite
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Entretien : {0} min restantes
 PROP_SHOP	Boutique
 PROP_FARM	Ferme
 PROP_TURBINE	Éolienne
+PROP_STOVE	Fourneau
 UILABEL_BUILD_DESTROY	Détruire
 UILABEL_BUILD_DESTROY_HINT	Clic gauche sur un objet pour l'abattre : son contenu tombe au sol et des débris restent à sa place. Clic gauche sur des débris pour les déblayer. Clic droit ou Échap pour annuler.
 UILABEL_LOCK	Verrouiller

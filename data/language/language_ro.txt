@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Necesită Deschiderea lacătelor {0}
 MISC_UNLOCKED	Descuiat!
 MISC_LOCKPICK_FAILED	Descuierea a eșuat
 MISC_UNLOCKS	{0} descuie: {1}
+MISC_LOCKS	{0} încuie: {1}
 MISC_REASON_LOCKPICKING	descuierea lacătelor
 MISC_LOCKED_NAME	{0} (încuiat)
 PROP_CHAIR	Scaun
@@ -868,6 +869,7 @@ ITEM_124_NAME	Carne de broască friptă
 ITEM_125_DESC	O ciupercă mică de pădure. Crudă, ajută puțin la sănătate și la foame.
 ITEM_125_NAME	Ciupercă
 MISC_FOOD_TO_COOK	carne crudă
+MISC_COOKED_FOOD	carne gătită
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Întreținere: {0} min rămase
 PROP_SHOP	Magazin
 PROP_FARM	Fermă
 PROP_TURBINE	Turbină eoliană
+PROP_STOVE	Sobă
 UILABEL_BUILD_DESTROY	Dărâmă
 UILABEL_BUILD_DESTROY_HINT	Clic stânga pe orice obiect ca să-l dărâmi: ce conține cade pe jos și în locul lui rămâne moloz. Clic stânga pe moloz ca să-l cureți. Clic dreapta sau Escape anulează.
 UILABEL_LOCK	Încuie

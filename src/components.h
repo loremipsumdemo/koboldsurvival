@@ -76,10 +76,12 @@ struct Mob {
 };
 
 // Patrol Spawn (behavior_rules.h): where a mob was placed, and whether it is walking back there after giving up a chase.
-// Walking back it takes no damage and starts no fight.
+// Walking back it takes no damage and starts no fight. A boss walks back at BOSS_RETURN_SPEED_FACTOR its speed, and is
+// put straight home if it is not there within BOSS_RETURN_TELEPORT_SECONDS (mobs.h).
 struct SpawnHome {
     float x = 0.0f, z = 0.0f;
     bool returning = false;
+    float returnSeconds = 0.0f;   // how long it has been walking back (not saved: a loaded game starts it again)
 };
 
 // The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
@@ -125,15 +127,15 @@ struct IdleSpot {
     float leadGap = -1.0f;
 };
 
-// Links a unit to its squad and to its formation slot
-struct SquadMember {
+// Links a unit to its active squad and to its formation slot
+struct ActiveSquadMember {
     Entity squad = NULL_ENTITY;
     int slot = 0;
 };
 
-// A squad is one group movement order. Its center walks a path, and its
-// members seek formation slots around the center.
-struct Squad {
+// An active squad is one group movement order, not your squad of units: it lasts only for that move. Its center walks
+// a path, and its members seek formation slots around the center.
+struct ActiveSquad {
     float cx = 0.0f, cz = 0.0f;       // formation center
     float headX = 0.0f, headZ = 1.0f; // facing, from the direction of travel
     std::vector<Vec2> waypoints;      // smooth path, world units
@@ -143,7 +145,7 @@ struct Squad {
     int size = 0;                     // number of units, which sets the formation's spacing
 };
 
-// A single unit's own route. Used instead of a squad when one unit is ordered.
+// A single unit's own route. Used instead of an active squad when one unit is ordered.
 struct SoloMove {
     std::vector<Vec2> waypoints;      // smooth path, world units
     size_t next = 0;
@@ -414,6 +416,7 @@ struct Output {
 // input item only once this has run out, so an item is used up only when it starts to burn.
 struct Fuel {
     double hours = 0.0;
+    int item = 0;   // the input item burning: at a campfire, the raw meat being cooked (what it makes depends on it)
 };
 
 // A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, occupies the prop,

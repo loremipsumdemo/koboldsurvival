@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Нужно: Взлом замков {0}
 MISC_UNLOCKED	Открыто!
 MISC_LOCKPICK_FAILED	Взлом не удался
 MISC_UNLOCKS	{0} вскрывает: {1}
+MISC_LOCKS	{0} запирает: {1}
 MISC_REASON_LOCKPICKING	взлом замков
 MISC_LOCKED_NAME	{0} (заперто)
 PROP_CHAIR	Стул
@@ -868,6 +869,7 @@ ITEM_124_NAME	Жареное мясо лягушки
 ITEM_125_DESC	Маленький лесной гриб. Сырым почти не помогает ни здоровью, ни от голода.
 ITEM_125_NAME	Гриб
 MISC_FOOD_TO_COOK	сырое мясо
+MISC_COOKED_FOOD	готовое мясо
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Содержание: осталось {0} мин
 PROP_SHOP	Лавка
 PROP_FARM	Ферма
 PROP_TURBINE	Ветряк
+PROP_STOVE	Печь
 UILABEL_BUILD_DESTROY	Снести
 UILABEL_BUILD_DESTROY_HINT	Щёлкните левой кнопкой по любому объекту, чтобы снести его: содержимое упадёт на землю, а на его месте останутся обломки. Щёлкните левой кнопкой по обломкам, чтобы убрать их. Правая кнопка или Escape — отмена.
 UILABEL_LOCK	Запереть

@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Szükséges: Zárnyitás {0}
 MISC_UNLOCKED	Kinyitva!
 MISC_LOCKPICK_FAILED	A zárfeltörés nem sikerült
 MISC_UNLOCKS	{0} kinyitja: {1}
+MISC_LOCKS	{0} bezárja: {1}
 MISC_REASON_LOCKPICKING	zárfeltörés
 MISC_LOCKED_NAME	{0} (zárva)
 PROP_CHAIR	Szék
@@ -868,6 +869,7 @@ ITEM_124_NAME	Sült békahús
 ITEM_125_DESC	Kis vadgomba. Nyersen alig segít az egészségen és az éhségen.
 ITEM_125_NAME	Gomba
 MISC_FOOD_TO_COOK	nyers hús
+MISC_COOKED_FOOD	főtt hús
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Fenntartás: {0} perc van hátra
 PROP_SHOP	Bolt
 PROP_FARM	Farm
 PROP_TURBINE	Szélturbina
+PROP_STOVE	Tűzhely
 UILABEL_BUILD_DESTROY	Lebontás
 UILABEL_BUILD_DESTROY_HINT	Bal kattintás bármely tárgyra a lebontásához: a tartalma a földre hullik, és törmelék marad a helyén. Bal kattintás a törmelékre az eltakarításához. Jobb kattintás vagy Escape: mégse.
 UILABEL_LOCK	Bezárás

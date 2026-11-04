@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Benötigt Schlösserknacken {0}
 MISC_UNLOCKED	Aufgeschlossen!
 MISC_LOCKPICK_FAILED	Schlossknacken misslungen
 MISC_UNLOCKS	{0} schließt {1} auf
+MISC_LOCKS	{0} schließt {1} ab
 MISC_REASON_LOCKPICKING	Schlösserknacken
 MISC_LOCKED_NAME	{0} (verschlossen)
 PROP_CHAIR	Stuhl
@@ -868,6 +869,7 @@ ITEM_124_NAME	Gebratenes Froschfleisch
 ITEM_125_DESC	Ein kleiner Wildpilz. Roh gegessen hilft er Gesundheit und Hunger kaum.
 ITEM_125_NAME	Pilz
 MISC_FOOD_TO_COOK	rohes Fleisch
+MISC_COOKED_FOOD	gegartes Fleisch
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Unterhalt: noch {0} Min.
 PROP_SHOP	Laden
 PROP_FARM	Bauernhof
 PROP_TURBINE	Windrad
+PROP_STOVE	Herd
 UILABEL_BUILD_DESTROY	Abreißen
 UILABEL_BUILD_DESTROY_HINT	Linksklick auf ein Objekt reißt es ab: sein Inhalt fällt zu Boden und Schutt bleibt zurück. Linksklick auf Schutt räumt ihn weg. Rechtsklick oder Escape bricht ab.
 UILABEL_LOCK	Abschließen

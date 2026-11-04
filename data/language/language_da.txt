@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Kræver Låseoplukning {0}
 MISC_UNLOCKED	Låst op!
 MISC_LOCKPICK_FAILED	Dirkning mislykkedes
 MISC_UNLOCKS	{0} låser {1} op
+MISC_LOCKS	{0} låser {1}
 MISC_REASON_LOCKPICKING	dirke låse
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -868,6 +869,7 @@ ITEM_124_NAME	Stegt frøkød
 ITEM_125_DESC	En lille vild svamp. Rå gør den ikke meget for helbred eller sult.
 ITEM_125_NAME	Svamp
 MISC_FOOD_TO_COOK	råt kød
+MISC_COOKED_FOOD	tilberedt kød
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Vedligehold: {0} min tilbage
 PROP_SHOP	Butik
 PROP_FARM	Gård
 PROP_TURBINE	Vindmølle
+PROP_STOVE	Komfur
 UILABEL_BUILD_DESTROY	Riv ned
 UILABEL_BUILD_DESTROY_HINT	Venstreklik på en genstand for at rive den ned: det, den rummer, falder på jorden, og der ligger murbrokker tilbage. Venstreklik på murbrokker for at rydde dem væk. Højreklik eller Escape annullerer.
 UILABEL_LOCK	Lås

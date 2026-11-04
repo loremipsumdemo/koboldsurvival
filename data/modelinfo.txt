@@ -5,7 +5,7 @@ square, and log.txt names the missing file. A new kind of prop takes the next fr
 Model	File	Prop	Kind
 0	model_0.glb	(stand-in)	Used for any prop whose own model is missing or unreadable
 1	model_1.glb	Wagon	Decor prop
-2	model_2.glb	Campfire	Crafting prop: any raw meat into its cooked meat (Cooking)
+2	model_2.glb	Campfire	Passive Crafting prop: any raw meat as fuel (1 hour each) into its cooked meat
 3	model_3.glb	Bedroll	Occupiable prop
 4	model_4.glb	Bed	Occupiable prop
 5	model_5.glb	Barrel	Storage prop (takes anything)
@@ -45,6 +45,7 @@ Model	File	Prop	Kind
 39	model_39.glb	Shop	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
 40	model_40.glb	Farm	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
 41	model_41.glb	Turbine	Built prop: decor, usually on a foundation. Owned; breaks if its foundation goes
+42	model_42.glb	Stove	Built crafting prop: any raw meat into its cooked meat (Cooking), 10x the Campfire's speed
 
 Unit models: data/model/unit/unit_<nn>.glb (two digits), one per unit Model number (the party menu's Model dropdown). A
 body type starts with its own: Feminine unit_01.glb, Masculine unit_02.glb, Androgynous unit_03.glb. A missing one is

@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Gerekli: Kilit açma {0}
 MISC_UNLOCKED	Kilit açıldı!
 MISC_LOCKPICK_FAILED	Maymuncuk başarısız
 MISC_UNLOCKS	{0}, {1} kilidini açıyor
+MISC_LOCKS	{0}, {1} kilidini kapatıyor
 MISC_REASON_LOCKPICKING	kilit açmak
 MISC_LOCKED_NAME	{0} (kilitli)
 PROP_CHAIR	Sandalye
@@ -868,6 +869,7 @@ ITEM_124_NAME	Pişmiş kurbağa eti
 ITEM_125_DESC	Küçük bir yabani mantar. Çiğ yenince sağlığa ve açlığa pek az iyi gelir.
 ITEM_125_NAME	Mantar
 MISC_FOOD_TO_COOK	çiğ et
+MISC_COOKED_FOOD	pişmiş et
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Bakım: {0} dk kaldı
 PROP_SHOP	Dükkân
 PROP_FARM	Çiftlik
 PROP_TURBINE	Rüzgâr Türbini
+PROP_STOVE	Ocak
 UILABEL_BUILD_DESTROY	Yık
 UILABEL_BUILD_DESTROY_HINT	Yıkmak için herhangi bir nesneye sol tıkla: içindekiler yere düşer ve yerinde enkaz kalır. Temizlemek için enkaza sol tıkla. Sağ tık ya da Escape iptal eder.
 UILABEL_LOCK	Kilitle

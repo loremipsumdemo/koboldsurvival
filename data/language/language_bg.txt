@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Нужно е Отваряне на ключалки {0}
 MISC_UNLOCKED	Отключено!
 MISC_LOCKPICK_FAILED	Неуспешно отключване
 MISC_UNLOCKS	{0} отключва {1}
+MISC_LOCKS	{0} заключва {1}
 MISC_REASON_LOCKPICKING	разбиване на ключалки
 MISC_LOCKED_NAME	{0} (заключено)
 PROP_CHAIR	Стол
@@ -868,6 +869,7 @@ ITEM_124_NAME	Печено жабешко месо
 ITEM_125_DESC	Малка дива гъба. Сурова почти не помага на здравето и глада.
 ITEM_125_NAME	Гъба
 MISC_FOOD_TO_COOK	сурово месо
+MISC_COOKED_FOOD	сготвено месо
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Поддръжка: остават {0} мин
 PROP_SHOP	Магазин
 PROP_FARM	Ферма
 PROP_TURBINE	Вятърна турбина
+PROP_STOVE	Печка
 UILABEL_BUILD_DESTROY	Събори
 UILABEL_BUILD_DESTROY_HINT	Ляв клик върху който и да е обект, за да го събориш: съдържанието му пада на земята, а на мястото му остават отломки. Ляв клик върху отломките, за да ги разчистиш. Десен клик или Escape отказва.
 UILABEL_LOCK	Заключи

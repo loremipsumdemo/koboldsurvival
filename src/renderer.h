@@ -36,19 +36,20 @@ struct RGBA {
     float r, g, b, a;
 };
 
-// The look of the menus and panels: deep purple-black, hot pink and acid green, with bone-white and ash-gray text
+// The look of the menus and panels, after the logo: deep maroon-black, coral pink and warm parchment gold, with cream
+// and dusty taupe text. (PINK is the coral accent; GREEN, by its old name, is now the gold highlight.)
 namespace theme {
-inline constexpr RGBA PINK{ 0.878f, 0.129f, 0.541f, 1.0f };        // #e0218a
-inline constexpr RGBA PINK_DEEP{ 0.478f, 0.043f, 0.278f, 1.0f };   // #7a0b47
-inline constexpr RGBA PINK_DARK{ 0.239f, 0.016f, 0.137f, 1.0f };   // #3d0423
-inline constexpr RGBA PINK_INK{ 0.078f, 0.012f, 0.047f, 1.0f };    // #14030c
-inline constexpr RGBA GREEN{ 0.624f, 0.902f, 0.0f, 1.0f };         // #9fe600
-inline constexpr RGBA GREEN_DEEP{ 0.176f, 0.259f, 0.0f, 1.0f };    // the lit button's fill
-inline constexpr RGBA GREEN_DARK{ 0.078f, 0.118f, 0.0f, 1.0f };
-inline constexpr RGBA BONE{ 0.910f, 0.925f, 0.949f, 1.0f };        // #e8ecf2, text
-inline constexpr RGBA ASH{ 0.553f, 0.576f, 0.631f, 1.0f };         // #8d93a1, quiet text
-inline constexpr RGBA NOTICE_TEXT{ 0.796f, 0.729f, 0.765f, 1.0f }; // #cbbac3
-inline constexpr RGBA NIGHT{ 0.039f, 0.031f, 0.063f, 1.0f };       // rgb(10,8,16), panels
+inline constexpr RGBA PINK{ 0.910f, 0.376f, 0.431f, 1.0f };        // #e8606e, coral
+inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };   // #963242
+inline constexpr RGBA PINK_DARK{ 0.298f, 0.086f, 0.125f, 1.0f };   // #4c1620
+inline constexpr RGBA PINK_INK{ 0.098f, 0.027f, 0.039f, 1.0f };    // #19070a
+inline constexpr RGBA GREEN{ 0.961f, 0.788f, 0.459f, 1.0f };       // #f5c975, gold
+inline constexpr RGBA GREEN_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };  // #5a3c1c, the lit button's fill
+inline constexpr RGBA GREEN_DARK{ 0.157f, 0.098f, 0.039f, 1.0f };  // #28190a
+inline constexpr RGBA BONE{ 0.957f, 0.902f, 0.796f, 1.0f };        // #f4e6cb, cream text
+inline constexpr RGBA ASH{ 0.643f, 0.553f, 0.510f, 1.0f };         // #a48d82, quiet text
+inline constexpr RGBA NOTICE_TEXT{ 0.871f, 0.776f, 0.690f, 1.0f }; // #dec6b0
+inline constexpr RGBA NIGHT{ 0.082f, 0.039f, 0.047f, 1.0f };       // #150a0c, panels
 inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
 } // namespace theme
 
@@ -218,6 +219,8 @@ public:
 
     // The Build tab's state, set each frame before drawing: the prop picked (-1 for none), and its placement preview
     void setBuildSelected(int kind) { buildSelected_ = kind; }
+    // Whether a selected unit of yours is in one of your claims: when not, only the kinds buildAnywhere allows are lit
+    void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
     // The footprint preview on the ground (called by drawFrame)
     void drawBuildPreview(const Terrain& t);
@@ -371,7 +374,7 @@ public:
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
     void endUi();
-    // Clears, then draws the menus' moving backdrop: a deep purple night, a jagged band of acid green and one of hot pink
+    // Clears, then draws the menus' moving backdrop: a deep maroon night, a jagged band of parchment gold and one of coral
     // drifting up each side, a veil, a vignette and scan lines. Behind the title screen and every menu.
     void drawTitleBackground();
     // The title screen's header: the game's name, large, in the top left, and the pink notice board under it with
@@ -380,7 +383,7 @@ public:
     // The title screen's top left: the "Early Access" line, the game's name (first word green, a pink bar, the second
     // word bone-white, in capitals), the pink rule, and the notice board with the lines of data/motd.txt
     void drawTitleHeader(const TitleLayout& L, const std::string& first, const std::string& second,
-                         const std::string& eyebrow, const std::vector<std::string>& news);
+                         const std::vector<std::string>& news);
     // A title or pause menu item: capitals, ash-gray on a dark band with a gray edge on the left; selected, bone-white
     // on a green band with a green edge, moved a little left. sub is a second, smaller line (the language in use).
     // appear runs 0 to 1 as the item slides in when the screen opens.
@@ -388,7 +391,7 @@ public:
                       float appear);
     // The line along the bottom of the title screen: left text on the left; the arrow keys, then right text, on the right
     void drawTitleFooter(const Rect& footer, const std::string& left, const std::string& right);
-    // A menu panel: a pink frame with its bottom right corner cut off, over a near-black purple fill
+    // A menu panel: a pink frame with its bottom right corner cut off, over a near-black maroon fill
     void drawThemedPanel(const Rect& r);
     // Flat triangles in window pixels, three corners each, each corner its own colour (blended between)
     void drawUiTris(const std::vector<UiVert>& v);
@@ -552,6 +555,10 @@ private:
     // How far above its feet a unit's sprite or model is drawn: a flying mob's hover (mobHoverFraction, mobs.h) while it
     // is up and about, else 0
     float unitHover(World& w, Entity u) const;
+    // A unit lying in a bed or bedroll: how far above its feet it is drawn (half the bed's height, from the bed's base),
+    // or below 0 when it is not in one. It counts only while the unit is still on the bed's spot and not carried, so a
+    // unit that somehow left the bed with its Occupying still on is drawn standing, never stuck tilted or raised.
+    float bedLift(World& w, Entity u) const;
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
@@ -602,6 +609,7 @@ private:
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
     int buildSelected_ = -1;                  // the prop picked on the Build tab, or -1
+    bool buildInClaim_ = false;               // a selected unit of yours stands in one of your claims
     BuildPreview buildPreview_;               // its placement preview this frame
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
     // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
@@ -653,6 +661,7 @@ private:
     std::map<std::string, TextTex> titleWords_;   // the name's words, drawn once in titleFont_, with mipmaps
     // A word of the name as a picture: its texture, and width over height
     const TextTex& titleWord(const std::string& text);
+    TextTex titleLogo_;           // data/illustration/title.png: the game's logo, drawn in place of the name's words
     bool hoverAny_ = false;       // something was noted under the pointer this frame
     Rect hoverNow_{ 0.0f, 0.0f, 0.0f, 0.0f }, hoverLast_{ 0.0f, 0.0f, 0.0f, 0.0f };
     bool hoverHad_ = false;       // something was under the pointer last frame

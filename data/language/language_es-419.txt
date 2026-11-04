@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Requiere Ganzúa {0}
 MISC_UNLOCKED	¡Abierto!
 MISC_LOCKPICK_FAILED	Falló la ganzúa
 MISC_UNLOCKS	{0} abre {1}
+MISC_LOCKS	{0} cierra con llave {1}
 MISC_REASON_LOCKPICKING	forzar cerraduras
 MISC_LOCKED_NAME	{0} (cerrado)
 PROP_CHAIR	Silla
@@ -868,6 +869,7 @@ ITEM_124_NAME	Carne de rana cocida
 ITEM_125_DESC	Un pequeño hongo silvestre. Crudo, ayuda poco a la salud y al hambre.
 ITEM_125_NAME	Hongo
 MISC_FOOD_TO_COOK	carne cruda
+MISC_COOKED_FOOD	carne cocinada
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Mantenimiento: quedan {0} min
 PROP_SHOP	Tienda
 PROP_FARM	Granja
 PROP_TURBINE	Turbina eólica
+PROP_STOVE	Estufa
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clic izquierdo en cualquier objeto para derribarlo: lo que contiene cae al suelo y quedan escombros en su lugar. Clic izquierdo en los escombros para retirarlos. Clic derecho o Esc cancela.
 UILABEL_LOCK	Cerrar con llave

@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Απαιτεί Ανοίγματα κλειδαριών {0}
 MISC_UNLOCKED	Ξεκλειδώθηκε!
 MISC_LOCKPICK_FAILED	Η παραβίαση απέτυχε
 MISC_UNLOCKS	{0} ξεκλειδώνει: {1}
+MISC_LOCKS	{0} κλειδώνει: {1}
 MISC_REASON_LOCKPICKING	παραβίαση κλειδαριών
 MISC_LOCKED_NAME	{0} (κλειδωμένο)
 PROP_CHAIR	Καρέκλα
@@ -868,6 +869,7 @@ ITEM_124_NAME	Ψητό κρέας βατράχου
 ITEM_125_DESC	Ένα μικρό άγριο μανιτάρι. Ωμό βοηθά ελάχιστα την υγεία και την πείνα.
 ITEM_125_NAME	Μανιτάρι
 MISC_FOOD_TO_COOK	ωμό κρέας
+MISC_COOKED_FOOD	μαγειρεμένο κρέας
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Συντήρηση: απομένουν {0} λεπτά
 PROP_SHOP	Κατάστημα
 PROP_FARM	Αγρόκτημα
 PROP_TURBINE	Ανεμογεννήτρια
+PROP_STOVE	Κουζίνα
 UILABEL_BUILD_DESTROY	Κατεδάφιση
 UILABEL_BUILD_DESTROY_HINT	Αριστερό κλικ σε οποιοδήποτε αντικείμενο για να το γκρεμίσεις: ό,τι περιέχει πέφτει στο έδαφος και στη θέση του μένουν συντρίμμια. Αριστερό κλικ στα συντρίμμια για να τα καθαρίσεις. Δεξί κλικ ή Escape για ακύρωση.
 UILABEL_LOCK	Κλείδωμα

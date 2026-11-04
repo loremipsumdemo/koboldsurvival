@@ -18,12 +18,16 @@
 //     kind with a model (MobInfo::model) is drawn in the world by data/model/mob/mob_<nn>.glb instead, and its
 //     portrait is the pink square, as a person's is.
 //   - It belongs to its kind's own faction (MOB_FACTION_BASE + kind - 1, data/factioninfo.txt), unless it was placed in
-//     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction. Yours are the
+//     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction, each locked in a
+//     Prisoner Cage of its own, with " [!]" after its name to show it is a faction's, not wild. Yours are the
 //     party's own (PartyMember::mob, party.h), as its scenario rolled them or the party menu chose them. Beyond the camps, MobInfo::wild of every kind (WILD_MOBS for most) roam in herds, in their own
 //     factions. A kind placed only once (the Gorlicorn) is never one of a camp's.
 // The Gorlicorn: one in the world, Aggressive, every stat at its most and GORLICORN_HP health. It does not Roam but
 // Patrols Spawn: it walks about near where it was placed, chases outsiders, and past SPAWN_LEASH_RANGE from that spot
-// gives up, heals fully and walks home, taking no damage until it gets there (patrolSpawnSystem in systems.h).
+// gives up, heals fully and walks home, taking no damage until it gets there (patrolSpawnSystem in systems.h). Being a
+// boss, it goes home at BOSS_RETURN_SPEED_FACTOR its speed, and is put there if it takes too long.
+// Every mob has Rested (it follows Vitality, as a person's does), which never falls by itself and rises by
+// MOB_RESTED_GAIN_PER_HOUR each in-game hour.
 // Wild mobs: those in their kind's own faction. A mob faction has no reputation. Instead its kind's temperament
 // (mobTemperament) says how its mobs take to any unit outside their faction:
 //   Avoidant: keeps away. It runs from any outsider within WILD_AVOID_RANGE, and never fights, even when hit.
@@ -74,6 +78,12 @@ constexpr int GORLICORN_HP = 2000;
 constexpr float SPAWN_PATROL_RADIUS = 8.0f;   // Patrol Spawn: its walks end within this many tiles of its spawn
 constexpr float SPAWN_LEASH_RANGE = 25.0f;    // past this far from its spawn it gives up a chase and goes home
 constexpr float SPAWN_HOME_REACH = 1.0f;      // within this of its spawn it is home again
+// A boss walking home (taking no damage) moves this many times its usual speed, and if it is not home within this many
+// seconds it is put there at once
+constexpr float BOSS_RETURN_SPEED_FACTOR = 10.0f;
+constexpr float BOSS_RETURN_TELEPORT_SECONDS = 10.0f;
+// Rested a mob gains each in-game hour, wherever it is, while below its most (more in a bed or bedroll)
+constexpr double MOB_RESTED_GAIN_PER_HOUR = 10.0;
 
 inline const MobInfo& mobInfo(int kind) {
     static const MobInfo info[MOB_KIND_COUNT] = {

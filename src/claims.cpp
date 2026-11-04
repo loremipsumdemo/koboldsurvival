@@ -345,6 +345,11 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             w.add(e, Prop{ k.kind, -1, yaw });
             if (k.kind != PROP_TREE && k.kind != PROP_MUSHROOM) w.add(e, Owner{ faction });
             if (hasStorage(propInfo(k.kind))) w.add(e, Storage{});   // the camp's barrel starts empty
+            if (propInfo(k.kind).use == PropUse::PassiveCrafting) {   // the campfire: cold, with an empty output
+                w.add(e, Output{});
+                w.add(e, Fuel{});
+                w.add(e, PropWork{});
+            }
             claimOwnership(w, e);   // it stands in the camp's own claim, so the trees are the camp's too
         }
         stamp(e);

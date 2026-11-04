@@ -124,6 +124,7 @@ struct SaveFuel {
     int prop = 0;
     double hours = 0.0;
     double progress = 0.0;
+    int item = 0;   // the input item burning (a campfire's meat). Older saves have none: 0
 };
 
 struct SaveCamera {
@@ -243,7 +244,8 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
     for (const SaveFuel& f : d.fuel) {
-        out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9) << "\n";
+        out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9)
+            << " " << f.item << "\n";
     }
     return (bool)out;
 }
@@ -405,7 +407,10 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 std::istringstream ss(line.substr(5));
                 SaveFuel f;
                 ss >> f.prop >> f.hours >> f.progress;
-                if (!ss.fail()) d.fuel.push_back(f);
+                if (!ss.fail()) {
+                    if (!(ss >> f.item)) f.item = 0;   // older saves end before the item
+                    d.fuel.push_back(f);
+                }
             }
             else if (line.rfind("faction ", 0) == 0) {
                 std::istringstream ss(line.substr(8));

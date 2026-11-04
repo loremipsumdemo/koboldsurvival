@@ -51,9 +51,9 @@ void cancelPickup(World& w, Entity u) {
     w.remove<PickupChain>(u);
 }
 
-// Plans a new route for a squad's center. Only the center paths; members follow slots.
-void planSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
-    Squad* sq = w.get<Squad>(squadE);
+// Plans a new route for an active squad's center. Only the center paths; members follow slots.
+void planActiveSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
+    ActiveSquad* sq = w.get<ActiveSquad>(squadE);
     sq->waypoints = t.findPath({ sq->cx, sq->cz }, target);
     sq->next = 0;
     sq->arrived = sq->waypoints.empty();
@@ -67,8 +67,8 @@ void planSolo(World& w, Terrain& t, Entity e, Vec2 target) {
     so->next = 0;
 }
 
-// Formation spacing grows with the squad size, up to the full spacing at 10 units.
-// Small squads stay compact so they don't spread out around the click point.
+// Formation spacing grows with the active squad's size, up to the full spacing at 10 units.
+// Small active squads stay compact so they don't spread out around the click point.
 float slotSpacing(int size) {
     float scale = std::min(1.0f, std::sqrt(size / 10.0f));
     return std::max(MIN_SLOT_SPACING, SLOT_SPACING * scale);
@@ -87,6 +87,7 @@ constexpr float CAMP_DISTANCE = 90.0f;      // a faction's camp is centred this 
 constexpr float CAMP_SHIFT = 18.0f;         // how far a camp may move off its spot to find ground the kit fits on
 constexpr float CAMP_GAP = 2.0f * CLAIM_RADIUS + 6.0f;
 constexpr float CAMP_MOB_RADIUS = 10.0f;    // a camp's mobs stand within this many tiles of its flag
+constexpr float CAMP_CAGE_GAP = 1.5f;       // a camp mob's cage stands at least this far from any other prop
 constexpr float WILD_MOB_NEAR = 30.0f;      // the wild herds are this far past the farthest camp's claim, and up to
 constexpr float WILD_MOB_FAR = 70.0f;       // this far
 constexpr float WILD_HERD_RADIUS = 8.0f;    // a herd's mobs stand within this many tiles of its middle   // the least distance between two camps' flags: no claims overlap
@@ -653,6 +654,14 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         }
         return false;
     };
+    // Whether no prop stands within CAMP_CAGE_GAP of (x, z), so a cage put there sits clear of the others
+    auto clearOfProps = [&](float x, float z) {
+        for (Entity e : w.view<Prop, Transform>()) {
+            const Transform* pt = w.get<Transform>(e);
+            if ((pt->x - x) * (pt->x - x) + (pt->z - z) * (pt->z - z) < CAMP_CAGE_GAP * CAMP_CAGE_GAP) return false;
+        }
+        return true;
+    };
     for (const CampKit& kit : kits) {
         // Your camp's mobs are the party's own (ensurePlayerMobs), placed once the party is known
         if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
@@ -660,7 +669,26 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             float x = 0.0f, z = 0.0f;
             int kind = rng.range(1, MOB_KIND_COUNT);
             while (!campMobKind(kind)) kind = rng.range(1, MOB_KIND_COUNT);
-            if (freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) spawnMob(w, t, rng, kind, kit.faction, x, z);
+            // Each in a Prisoner Cage of its own, locked to the camp's faction, on a spot clear of the camp's props
+            bool found = false;
+            for (int tries = 0; tries < 20 && !found; ++tries) {
+                if (!freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) break;
+                found = clearOfProps(x, z);
+            }
+            if (!found) continue;
+            const Entity mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
+            const PropInfo& cageInfo = propInfo(PROP_PRISONER_CAGE);
+            const Entity cage = w.create();
+            w.add(cage, Transform{ x, t.heightAt(x, z), z });
+            w.add(cage, Prop{ PROP_PRISONER_CAGE, campSerial++, 0.0f });
+            w.add(cage, Owner{ kit.faction });
+            w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
+            claimOwnership(w, cage);
+            w.add(mob, Occupying{ cage });
+            // A regular faction's mob, not a wild one: its name says so
+            if (!isMobFaction(kit.faction)) {
+                if (Name* nm = w.get<Name>(mob)) nm->text += " [!]";
+            }
         }
     }
     float farthest = 0.0f;   // how far out the camps reach from the spawn
@@ -717,7 +745,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     // A single unit walks its own route, with no formation. A move order replaces any pickup.
     if (units.size() == 1) {
         Entity u = units[0];
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -737,24 +765,24 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     cx /= units.size();
     cz /= units.size();
 
-    Squad s;
+    ActiveSquad s;
     s.cx = cx;
     s.cz = cz;
     s.size = (int)units.size();
     Entity sq = w.create();
     w.add(sq, s);
 
-    // Each selected unit joins the new squad. Overwriting SquadMember drops any old squad.
+    // Each selected unit joins the new active squad. Overwriting ActiveSquadMember drops any old one.
     for (size_t i = 0; i < units.size(); ++i) {
         w.remove<SoloMove>(units[i]);
         cancelPickup(w, units[i]);
         w.remove<AttackOrder>(units[i]);
         w.remove<TalkOrder>(units[i]);
         endPropTasks(w, units[i]);
-        w.add(units[i], SquadMember{ sq, (int)i });
+        w.add(units[i], ActiveSquadMember{ sq, (int)i });
     }
 
-    planSquad(w, t, sq, clickPoint);
+    planActiveSquad(w, t, sq, clickPoint);
 }
 
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem) {
@@ -788,7 +816,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
         if (cannotTakeOrder(w, u) || !canHoldItem(w, u, w.get<GroundItem>(item)->item)) continue;
         cancelPickup(w, u);
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
         endPropTasks(w, u);
@@ -809,7 +837,7 @@ void issuePickupChain(World& w, Terrain& t, const std::vector<Entity>& units, co
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;   // only units that carry items
         cancelPickup(w, u);
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<SoloMove>(u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -916,7 +944,7 @@ void pickupChainSystem(World& w, Terrain& t) {
 void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        if (w.has<SquadMember>(u)) w.remove<SquadMember>(u);
+        if (w.has<ActiveSquadMember>(u)) w.remove<ActiveSquadMember>(u);
         if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
         endPropTasks(w, u);
@@ -934,7 +962,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;   // only your own units fight on order
         if (cannotTakeOrder(w, u)) continue;
         // A fight replaces any move, pickup or formation the unit was on
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<SoloMove>(u);
         cancelPickup(w, u);
         w.remove<TalkOrder>(u);
@@ -951,7 +979,7 @@ void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;   // nor does one of yours talk or trade for you (mobs.h)
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<SoloMove>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
@@ -990,10 +1018,22 @@ void needsSystem(World& w, int hours, double gameSeconds) {
         if (w.has<Corpse>(e)) continue;   // a corpse needs nothing
         Needs* n = w.get<Needs>(e);
         const bool mob = w.has<Mob>(e);
+        const double gameHours = gameSeconds / 3600.0;
+        // The most Rested follows Vitality. A unit that was fully rested stays fully rested as it grows.
+        if (const int maxR = maxRestedFor(statsOf(w, e)); maxR != n->maxRested) {
+            const bool full = n->rested >= n->maxRested;
+            n->maxRested = maxR;
+            n->rested = full ? maxR : std::min(n->rested, maxR);
+        }
         if (mob) {
-            // A mob can't feed itself, so it has no hunger to lose (and none to starve from), and no Rested or Comfort
+            // A mob can't feed itself, so it has no hunger to lose (and none to starve from), and no Comfort. Its
+            // Rested never falls by itself and rises a little every hour, more in a bed or bedroll.
             n->hunger = n->maxHunger;
             n->hurried = false;
+            const Entity bed = occupiedProp(w, e);
+            const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
+            const double restGain = std::max(MOB_RESTED_GAIN_PER_HOUR, bp ? restedGainPerHour(bp->kind) : 0.0);
+            driftNeed(n->rested, n->maxRested, n->restedPart, restGain, gameHours);
         } else {
             // A unit that moved at run pace in the hour that just ended pays double for its next tick. The mark is
             // used up here, so later hours cost the usual amount.
@@ -1008,13 +1048,6 @@ void needsSystem(World& w, int hours, double gameSeconds) {
 
             // Rested rises lying in a bed or bedroll and falls while awake anywhere else; Comfort rises in a seat or
             // bed without a lock and falls anywhere else
-            const double gameHours = gameSeconds / 3600.0;
-            // The most Rested follows Vitality. A unit that was fully rested stays fully rested as it grows.
-            if (const int maxR = maxRestedFor(statsOf(w, e)); maxR != n->maxRested) {
-                const bool full = n->rested >= n->maxRested;
-                n->maxRested = maxR;
-                n->rested = full ? maxR : std::min(n->rested, maxR);
-            }
             const Entity seat = occupiedProp(w, e);
             const Prop* sp = seat != NULL_ENTITY ? w.get<Prop>(seat) : nullptr;
             const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
@@ -1090,17 +1123,17 @@ int pickupSystem(World& w, Terrain& t) {
 }
 
 void squadSystem(World& w, float dt, bool running) {
-    for (Entity e : w.view<Squad>()) {
-        Squad* sq = w.get<Squad>(e);
+    for (Entity e : w.view<ActiveSquad>()) {
+        ActiveSquad* sq = w.get<ActiveSquad>(e);
         if (sq->arrived) continue;
 
-        // The squad keeps to the pace of its slowest member that can still move. Members that can't
-        // move at all (downed, or carrying too much) are left behind, and don't hold the squad back.
-        // Walking, the squad is also held to its own pace. Running, each member runs at its own speed,
+        // The active squad keeps to the pace of its slowest member that can still move. Members that can't
+        // move at all (downed, or carrying too much) are left behind, and don't hold the active squad back.
+        // Walking, the active squad is also held to its own pace. Running, each member runs at its own speed,
         // so the center goes at the slowest member's run pace.
         float slowest = -1.0f;
-        for (Entity m : w.view<SquadMember, Unit>()) {
-            if (w.get<SquadMember>(m)->squad != e) continue;
+        for (Entity m : w.view<ActiveSquadMember, Unit>()) {
+            if (w.get<ActiveSquadMember>(m)->squad != e) continue;
             const float s = walkSpeedOf(w, m, running);
             if (s > 0.0f && (slowest < 0.0f || s < slowest)) slowest = s;
         }
@@ -1232,9 +1265,9 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
                 tx = nt->x;
                 tz = nt->z;
             }
-        } else if (SquadMember* sm = w.get<SquadMember>(e)) {
-            if (Squad* sq = w.get<Squad>(sm->squad)) {
-                // Slots are centerd on the squad center, so the group's middle sits on
+        } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
+            if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
+                // Slots are centerd on the active squad's center, so the group's middle sits on
                 // the click point: columns across the heading, rows behind it.
                 int cols = std::min(SQUAD_COLUMNS, sq->size);
                 int rows = (sq->size + cols - 1) / cols;
@@ -1443,11 +1476,11 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
 }
 
-void cleanupSquads(World& w) {
+void cleanupActiveSquads(World& w) {
     std::vector<Entity> used;
-    for (Entity e : w.view<SquadMember>()) used.push_back(w.get<SquadMember>(e)->squad);
+    for (Entity e : w.view<ActiveSquadMember>()) used.push_back(w.get<ActiveSquadMember>(e)->squad);
 
-    for (Entity sq : w.view<Squad>()) {
+    for (Entity sq : w.view<ActiveSquad>()) {
         if (std::find(used.begin(), used.end(), sq) == used.end()) w.destroy(sq);
     }
 }
@@ -1566,7 +1599,7 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
             if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
             continue;
         }
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -1581,7 +1614,7 @@ void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target)
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<SoloMove>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
@@ -1595,7 +1628,7 @@ void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
     if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
     for (Entity u : units) {
         if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         w.remove<SoloMove>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
@@ -1686,6 +1719,36 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             a.automatic = automatic;
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
             const Lock* lock = w.get<Lock>(prop);
+            if (action == PropAction::Lock) {
+                // Lock: shut an open lock again. It stays shut until someone unlocks it. A lock with no owner becomes
+                // the locker's faction's. A mob works no locks.
+                if (Lock* lk = w.get<Lock>(prop); lk && !lk->locked && !w.has<Mob>(u)) {
+                    lk->locked = true;
+                    if (lk->faction < 0) {
+                        const Faction* f = w.get<Faction>(u);
+                        lk->faction = f ? f->id : FACTION_PLAYER;
+                    }
+                    a.started = true;
+                    queueSoundFrom(w, Sfx::LockedIn, prop);
+                    queueLog(langf("MISC_LOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
+                    const Entity inside = propOccupant(w, prop);
+                    if (inside != NULL_ENTITY && lockedIn(w, inside)) {
+                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, inside));
+                    }
+                }
+                out.push_back(a);
+                continue;
+            }
+            if (action == PropAction::Unlock && lock && lock->locked && !lockShutFor(w, prop, u) && !w.has<Mob>(u)) {
+                // Unlock of a lock that is the unit's own (its faction's, or in its faction's claim): opened with the
+                // key, at once, no lockpicking
+                w.get<Lock>(prop)->locked = false;
+                a.started = true;
+                queueSoundFrom(w, Sfx::Unlocked, prop);
+                queueLog(langf("MISC_UNLOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
+                out.push_back(a);
+                continue;
+            }
             if (action == PropAction::Unlock) {
                 // Unlock: start picking the lock, if the unit has the skill and nobody else is at it
                 a.craft = tryStartUnlock(w, u, prop);
@@ -1753,6 +1816,8 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 } else if (occupant != NULL_ENTITY && occupant != u) {
                     a.taken = true;
                 } else {
+                    // A unit already in it (left in after the lock was opened) does not lock itself in again
+                    const bool newOccupant = occupant != u;
                     Transform* ut = w.get<Transform>(u);
                     ut->x = pt->x;
                     ut->y = pt->y;
@@ -1761,9 +1826,9 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                     w.remove<IdleSpot>(u);
                     w.add(u, Occupying{ prop });
                     a.started = true;
-                    queueSoundFrom(w, w.has<Lock>(prop) ? Sfx::LockedIn : Sfx::Occupy, prop);
-                    // A lockable one (the Prisoner Cage) locks behind the unit
-                    if (Lock* lk = w.get<Lock>(prop)) {
+                    queueSoundFrom(w, w.has<Lock>(prop) && newOccupant ? Sfx::LockedIn : Sfx::Occupy, prop);
+                    // A lockable one (the Prisoner Cage) locks behind a new unit
+                    if (Lock* lk = newOccupant ? w.get<Lock>(prop) : nullptr) {
                         lk->locked = true;
                         queueLog(langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
                     }
@@ -1802,13 +1867,17 @@ std::vector<PropArrival> propOrderSystem(World& w) {
 
     // A unit on a bed stays exactly on it: nothing but an order of yours moves it off. If the bed is gone, it gets
     // up. One unit to a bed: should two ever be on one, the first to have been made keeps it and the other gets up.
+    // A unit being carried, or on a prop that is no longer one to occupy, is not on it either: its Occupying goes, so
+    // it is never left drawn lying on a bed it is not in (Renderer::bedLift).
     std::vector<Entity> lying = w.view<Occupying, Transform>();
     std::sort(lying.begin(), lying.end());
     std::vector<Entity> bedsTaken;
     for (Entity u : lying) {
         const Entity bed = w.get<Occupying>(u)->prop;
         const Transform* pt = w.get<Transform>(bed);
-        if (!pt || std::find(bedsTaken.begin(), bedsTaken.end(), bed) != bedsTaken.end()) {
+        const Prop* bp = w.get<Prop>(bed);
+        if (!pt || !bp || propInfo(bp->kind).use != PropUse::Occupy || w.has<Carried>(u) ||
+            std::find(bedsTaken.begin(), bedsTaken.end(), bed) != bedsTaken.end()) {
             w.remove<Occupying>(u);
             continue;
         }
@@ -2163,8 +2232,8 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
         !(b.busy && isWalkBehavior(b.step.kind))) {
         return true;
     }
-    if (const SquadMember* sm = w.get<SquadMember>(u)) {
-        if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return true;
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (const ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && !sq->arrived) return true;
     }
     return false;
 }
@@ -2173,7 +2242,7 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
 void autoGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt) return;
-    w.remove<SquadMember>(u);
+    w.remove<ActiveSquadMember>(u);
     cancelPickup(w, u);
     w.remove<TalkOrder>(u);
     endPropTasks(w, u);
@@ -2207,7 +2276,7 @@ BehaviorRule* stepRule(Behaviors& b) {
 
 // Sends a unit on a walk step: it walks to the spot, and the step ends when it gets there
 void autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
-    w.remove<SquadMember>(u);
+    w.remove<ActiveSquadMember>(u);
     cancelPickup(w, u);
     w.remove<TalkOrder>(u);
     endPropTasks(w, u);
@@ -2333,7 +2402,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         b.busy = true;
         b.step = r;
         b.stepProp = NULL_ENTITY;
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<TalkOrder>(u);
         endPropTasks(w, u);
@@ -2539,7 +2608,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             // Stop just short of the giver, on the near side, so the two don't push each other about
             const float dx = gt->x - ut->x, dz = gt->z - ut->z, d = std::max(1e-3f, std::hypot(dx, dz));
             const float stop = std::min(SHARE_WALK_STOP, d);
-            w.remove<SquadMember>(u);
+            w.remove<ActiveSquadMember>(u);
             w.remove<IdleSpot>(u);
             w.add(u, SoloMove{});
             planSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
@@ -2562,7 +2631,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         // An order of yours takes over.
         if (b->busy && b->step.kind == BehaviorKind::Rescue) {
             const PropOrder* rpo = w.get<PropOrder>(u);
-            const bool yoursNow = w.has<SquadMember>(u) || w.has<PutDownOrder>(u) || (rpo && !rpo->automatic) ||
+            const bool yoursNow = w.has<ActiveSquadMember>(u) || w.has<PutDownOrder>(u) || (rpo && !rpo->automatic) ||
                                   w.has<AttackOrder>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) ||
                                   w.has<PickupOrder>(u) || w.has<PickupChain>(u) || w.has<LootOrder>(u) || w.has<TalkOrder>(u);
             if (yoursNow) {
@@ -2645,7 +2714,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     }
 }
 
-void patrolSpawnSystem(World& w, Terrain& t) {
+void patrolSpawnSystem(World& w, Terrain& t, float dt) {
     for (Entity u : w.view<SpawnHome, Transform, Behaviors>()) {
         if (w.has<Unconscious>(u) || w.has<Carried>(u)) continue;
         SpawnHome* h = w.get<SpawnHome>(u);
@@ -2656,16 +2725,27 @@ void patrolSpawnSystem(World& w, Terrain& t) {
         }
         if (!rule || !rule->on) {
             h->returning = false;
+            h->returnSeconds = 0.0f;
             continue;
         }
-        const Transform* tr = w.get<Transform>(u);
-        const float away = std::hypot(tr->x - h->x, tr->z - h->z);
+        Transform* tr = w.get<Transform>(u);
+        float away = std::hypot(tr->x - h->x, tr->z - h->z);
         if (!h->returning && away > SPAWN_LEASH_RANGE) {
             // Too far from home: the chase is given up, it is whole again, and it walks back
             h->returning = true;
+            h->returnSeconds = 0.0f;
             queueLog(langf("MISC_GOES_HOME", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         }
         if (!h->returning) continue;
+        // A boss that has not made it home in time is put there at once
+        h->returnSeconds += dt;
+        if (const Mob* m = w.get<Mob>(u); m && mobInfo(m->kind).category == MobCategory::Boss
+            && h->returnSeconds >= BOSS_RETURN_TELEPORT_SECONDS && away > SPAWN_HOME_REACH) {
+            tr->x = h->x;
+            tr->z = h->z;
+            tr->y = t.heightAt(h->x, h->z);
+            away = 0.0f;
+        }
         // On the way home: no fight, no damage taken (combat.cpp), and everything back to full
         if (Combat* c = w.get<Combat>(u)) {
             c->target = NULL_ENTITY;
@@ -2680,6 +2760,7 @@ void patrolSpawnSystem(World& w, Terrain& t) {
         if (away <= SPAWN_HOME_REACH) {
             // Home: back to its patrol, and it can be hurt again
             h->returning = false;
+            h->returnSeconds = 0.0f;
             w.remove<SoloMove>(u);
             b->busy = false;
             rule->cooldown = 0.0f;
@@ -2803,7 +2884,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
         const CraftState cs = craftStateOf(w, prop);
         if (cs == CraftState::NoInput) return WorkStart::NoInput;
     }
-    w.remove<SquadMember>(unit);
+    w.remove<ActiveSquadMember>(unit);
     w.remove<SoloMove>(unit);
     cancelPickup(w, unit);
     w.remove<AttackOrder>(unit);
@@ -2825,7 +2906,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     if (workersAt(w, prop) >= 1) return WorkStart::Full;   // one unit at a lock at a time
     const bool inside = occupiedProp(w, unit) == prop;     // picking the cage it is shut in, from the inside
     if (!inside && lockedIn(w, unit)) return WorkStart::Locked;
-    w.remove<SquadMember>(unit);
+    w.remove<ActiveSquadMember>(unit);
     w.remove<SoloMove>(unit);
     cancelPickup(w, unit);
     w.remove<AttackOrder>(unit);
@@ -2860,9 +2941,9 @@ void propStorageChanged(World& w, Entity prop) {
 bool disbandUnit(World& w, Entity u) {
     if (!w.has<Commandable>(u) || !w.has<Unit>(u)) return false;
     // Whatever it was doing ends. One locked in a cage stays in it; anyone it carried is put down.
-    if (const SquadMember* sm = w.get<SquadMember>(u)) {
-        if (Squad* sq = w.get<Squad>(sm->squad); sq && sq->size > 0) --sq->size;
-        w.remove<SquadMember>(u);
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
+        w.remove<ActiveSquadMember>(u);
     }
     const bool caged = lockedIn(w, u);
     const Occupying keep = w.has<Occupying>(u) ? *w.get<Occupying>(u) : Occupying{};
@@ -2926,8 +3007,8 @@ bool unitIdle(World& w, Entity u) {
     }
     if (const Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY) return false;
     if (const SoloMove* so = w.get<SoloMove>(u); so && so->next < so->waypoints.size()) return false;
-    if (const SquadMember* sm = w.get<SquadMember>(u)) {
-        if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return false;
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (const ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && !sq->arrived) return false;
     }
     return true;
 }
@@ -2964,8 +3045,8 @@ std::string taskNameOf(World& w, Entity u) {
     if (w.has<FollowOrder>(u)) return lang("UILABEL_TASK_FOLLOWING");
     const SoloMove* so = w.get<SoloMove>(u);
     if (so && so->next < so->waypoints.size()) return lang("UILABEL_TASK_MOVING");
-    if (const SquadMember* sm = w.get<SquadMember>(u)) {
-        if (const Squad* sq = w.get<Squad>(sm->squad); sq && !sq->arrived) return lang("UILABEL_TASK_MOVING");
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (const ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && !sq->arrived) return lang("UILABEL_TASK_MOVING");
     }
     return lang("UILABEL_TASK_IDLE");
 }
@@ -3029,7 +3110,34 @@ Entity occupiedProp(World& w, Entity u) {
 bool lockedIn(World& w, Entity u) {
     const Occupying* oc = w.get<Occupying>(u);
     if (!oc) return false;
-    return lockShutFor(w, oc->prop, u);
+    if (lockShutFor(w, oc->prop, u)) return true;
+    // A mob can't work a lock, even its own faction's: in a locked cage it stays in
+    const Lock* lk = w.get<Lock>(oc->prop);
+    return lk && lk->locked && w.has<Mob>(u);
+}
+
+// The first item in a passive crafting prop's input that it burns: its input item, or at a campfire any raw meat it
+// can cook. 0 when there is none.
+static int nextPassiveInput(const Storage* st, int kind) {
+    if (!st) return 0;
+    const PropInfo& info = propInfo(kind);
+    for (const ItemStack& s : st->slots) {
+        if (s.count <= 0 || s.item <= 0) continue;
+        if (info.input == INPUT_COOKABLE ? recipeOutput(kind, s.item) > 0 : s.item == info.input) return s.item;
+    }
+    return 0;
+}
+
+// What a passive crafting prop's next finished item is: its item, or at a campfire the burning meat cooked (or, with
+// nothing burning, the next meat in its input cooked). 0 for a Vault, and for a campfire with nothing to cook.
+static int nextPassiveOutput(const Storage* st, const Fuel& fuel, int kind) {
+    const PropInfo& info = propInfo(kind);
+    if (info.input != INPUT_COOKABLE) return info.item;
+    if (fuel.item > 0) {
+        if (const int made = recipeOutput(kind, fuel.item); made > 0) return made;
+    }
+    const int next = nextPassiveInput(st, kind);
+    return next > 0 ? recipeOutput(kind, next) : 0;
 }
 
 PassiveState passiveStateOf(World& w, Entity prop) {
@@ -3037,22 +3145,20 @@ PassiveState passiveStateOf(World& w, Entity prop) {
     const Output* out = w.get<Output>(prop);
     const Fuel* fuel = w.get<Fuel>(prop);
     if (!p || !out || !fuel) return PassiveState::NoFuel;
-    const PropInfo& info = propInfo(p->kind);
-    if (info.item > 0 && !slotsCanTake(out->slots.data(), STORAGE_SLOTS, info.item, 1)) return PassiveState::OutputFull;
-    if (fuel->hours > 1e-9) return PassiveState::Burning;
     const Storage* st = w.get<Storage>(prop);
-    if (st) {
-        for (const ItemStack& s : st->slots) {
-            if (s.item == info.input && s.count > 0) return PassiveState::Burning;   // it lights the next one now
-        }
-    }
+    const int made = nextPassiveOutput(st, *fuel, p->kind);
+    if (made > 0 && !slotsCanTake(out->slots.data(), STORAGE_SLOTS, made, 1)) return PassiveState::OutputFull;
+    if (fuel->hours > 1e-9) return PassiveState::Burning;
+    if (nextPassiveInput(st, p->kind) > 0) return PassiveState::Burning;   // it lights the next one now
     return PassiveState::NoFuel;
 }
 
 void passiveCraftSystem(World& w, double gameSeconds) {
     for (Entity e : w.view<Prop, Output, Fuel>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        const int kind = w.get<Prop>(e)->kind;
+        const PropInfo& info = propInfo(kind);
         if (info.use != PropUse::PassiveCrafting) continue;
+        const bool cooks = info.input == INPUT_COOKABLE;   // the campfire: what it makes is the meat it burns, cooked
         Output& out = *w.get<Output>(e);
         Fuel& fuel = *w.get<Fuel>(e);
         Storage* st = w.get<Storage>(e);
@@ -3066,27 +3172,31 @@ void passiveCraftSystem(World& w, double gameSeconds) {
             // A finished item goes into the output, if it has room. If not, it waits there, finished.
             // A prop with no output item (a Vault's upkeep) finishes nothing: its hour of fuel is all it does.
             if (pw.progress >= 1.0 - 1e-9) {
-                if (info.item > 0) {
-                    if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
-                    addToSlots(out.slots.data(), STORAGE_SLOTS, info.item, 1);
+                // A campfire makes the meat that burned cooked; a forge its item
+                const int made = cooks ? (fuel.item > 0 ? recipeOutput(kind, fuel.item) : 0) : info.item;
+                if (made > 0) {
+                    if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, made, 1)) break;
+                    addToSlots(out.slots.data(), STORAGE_SLOTS, made, 1);
                     ++pw.made;   // the ring hops for it
-                    queueSoundFrom(w, Sfx::DoneForge, e);
+                    queueSoundFrom(w, cooks ? Sfx::DoneCooking : Sfx::DoneForge, e);
                 }
                 pw.progress = 0.0;
+                if (cooks && fuel.hours <= 1e-9) fuel.item = 0;   // that meat is done
             }
             // No room for the next item: pause, burning nothing
-            if (info.item > 0 && !slotsCanTake(out.slots.data(), STORAGE_SLOTS, info.item, 1)) break;
+            const int next = nextPassiveOutput(st, fuel, kind);
+            if (next > 0 && !slotsCanTake(out.slots.data(), STORAGE_SLOTS, next, 1)) break;
             if (hours <= 1e-12) {
-                burning = fuel.hours > 1e-9 || (st && std::any_of(st->slots.begin(), st->slots.end(), [&](const ItemStack& s) {
-                    return s.item == info.input && s.count > 0;
-                }));
+                burning = fuel.hours > 1e-9 || nextPassiveInput(st, kind) > 0;
                 break;
             }
             // Out of fuel: the next input item is used up, and burns for its hours
             if (fuel.hours <= 1e-9) {
                 fuel.hours = 0.0;
-                if (!st || !takeOne(st->slots.data(), STORAGE_SLOTS, info.input)) break;
+                const int in = nextPassiveInput(st, kind);
+                if (in <= 0 || !takeOne(st->slots.data(), STORAGE_SLOTS, in)) break;
                 fuel.hours = perInput;
+                fuel.item = in;
             }
             const double step = std::min({ hours, fuel.hours, (1.0 - pw.progress) * craftHours });
             if (step <= 0.0) break;
@@ -3147,9 +3257,9 @@ void knockOut(World& w, Entity u) {
     const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
     const bool keepBed = bp && doomRecoveryPerHour(bp->kind) > 0.0f;
     if (w.has<Carrying>(u)) putDown(w, u);
-    if (const SquadMember* sm = w.get<SquadMember>(u)) {
-        if (Squad* sq = w.get<Squad>(sm->squad); sq && sq->size > 0) --sq->size;
-        w.remove<SquadMember>(u);
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
+        w.remove<ActiveSquadMember>(u);
     }
     w.remove<SoloMove>(u);
     cancelPickup(w, u);
@@ -3300,7 +3410,7 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Carrying>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -3316,7 +3426,7 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
 void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point) {
     for (Entity u : units) {
         if (!w.has<Carrying>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);
@@ -3361,9 +3471,9 @@ CarryEvents carrySystem(World& w) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
-            if (const SquadMember* sm = w.get<SquadMember>(target)) {
-                if (Squad* sq = w.get<Squad>(sm->squad); sq && sq->size > 0) --sq->size;
-                w.remove<SquadMember>(target);
+            if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(target)) {
+                if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
+                w.remove<ActiveSquadMember>(target);
             }
             w.remove<SoloMove>(target);
             cancelPickup(w, target);
@@ -3463,7 +3573,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;   // a mob takes nothing (mobs.h)
-        w.remove<SquadMember>(u);
+        w.remove<ActiveSquadMember>(u);
         cancelPickup(w, u);
         w.remove<AttackOrder>(u);
         w.remove<TalkOrder>(u);

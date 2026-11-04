@@ -21,15 +21,17 @@ inline constexpr float CAMERA_NEAR_CLEARANCE = 0.5f;
 
 struct Camera {
     static constexpr float PI_F = 3.14159265f;
-    // Pitch stops at 95% of straight up or down, so the view never goes directly over or under
-    static constexpr float MAX_PITCH = 0.95f * (PI_F * 0.5f);
+    // How high the eye can go above the focus: 65 degrees, well short of looking straight down. Below, pitch stops at 95%
+    // of straight under, so the view never goes directly under.
+    static constexpr float MAX_PITCH = 65.0f * PI_F / 180.0f;
+    static constexpr float MIN_PITCH = -0.95f * (PI_F * 0.5f);
     static constexpr float MIN_CLEARANCE = 0.6f;   // how far above the ground the eye must stay
     static constexpr float FOCUS_HEIGHT = 0.5f;    // the focus point sits this far above the ground
 
     float focusX = 13.0f, focusY = 0.0f, focusZ = 13.0f;
     float yaw = 0.8f;
-    float pitch = 0.8f;       // starts a little closer to the ground
-    float distance = 16.0f;   // and a little zoomed in
+    float pitch = 0.6f;       // starts low, about 34 degrees above the focus, looking out across the ground
+    float distance = 13.0f;   // and zoomed in
     float lift = 0.0f;   // temporary height added to the eye while it is near or under the ground
     float mapSize = 1024.0f;   // tiles per side of the loaded map. The game sets this each frame.
     float eyeClearance = 1000.0f;   // the eye's height above the ground under it, set by updateClearance
@@ -96,6 +98,6 @@ struct Camera {
         focusX = std::clamp(focusX, 0.0f, mapSize);
         focusZ = std::clamp(focusZ, 0.0f, mapSize);
         distance = std::clamp(distance, 1.5f, 200.0f);
-        pitch = std::clamp(pitch, -MAX_PITCH, MAX_PITCH);
+        pitch = std::clamp(pitch, MIN_PITCH, MAX_PITCH);
     }
 };

@@ -42,7 +42,7 @@ int bodyForSavedName(const std::string& name);
 // the whole level. Each copy is a single item.
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem);
 
-// Creates a squad from the given units and sends it to a ground point
+// Creates an active squad (a group move order) from the given units and sends it to a ground point
 void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 clickPoint);
 // Walks units straight at a point, with no route planned, for a right button that is still held
 void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target);
@@ -85,7 +85,7 @@ void squadSystem(World& w, float dt, bool running = false);
 void steeringSystem(World& w, Terrain& t, float dt, bool running = false);
 // After steering, so units that just arrived can take items. Returns how many player units took something this frame.
 int pickupSystem(World& w, Terrain& t);
-void cleanupSquads(World& w);
+void cleanupActiveSquads(World& w);
 // Health and hunger, after each whole in-game hour that passed (hours) and the in-game seconds that
 // passed (gameSeconds, which can be fractional). Out of combat, units regain health as in regenHealth.
 void needsSystem(World& w, int hours, double gameSeconds = 0.0);
@@ -204,7 +204,8 @@ float doomRecoveryPerHour(int propKind);
 // Health a unit wakes with when its Doom falls to 0 in a bed or bedroll
 constexpr int RECOVERY_HEALTH = 10;
 // Knocks a unit out: it gets Unconscious with Doom 0, every order and task it had ends, it drops whatever unit it
-// carried, and it leaves its squad. A unit already on a bed or bedroll stays on it. Does nothing to one already out.
+// carried, and it drops out of the active squad (group move) it was in. A unit already on a bed or bedroll stays on
+// it. Does nothing to one already out.
 void knockOut(World& w, Entity u);
 // After anything that hurts: each unit at 0 health that is not yet Unconscious is knocked out
 void downedSystem(World& w);
@@ -222,8 +223,9 @@ bool hostileNear(World& w, Entity u);
 void playDeadSystem(World& w);
 // Patrol Spawn (mobs.h): a mob too far from its SpawnHome gives up its chase, is made whole, and walks home taking no
 // damage and starting no fight; once home it patrols again. Runs after the combat step, so the chase it drops is not
-// walked this frame.
-void patrolSpawnSystem(World& w, Terrain& t);
+// walked this frame. A boss goes home faster (walkSpeedOf), and after BOSS_RETURN_TELEPORT_SECONDS of dt on the way it
+// is put home at once.
+void patrolSpawnSystem(World& w, Terrain& t, float dt);
 // Sends the first unit that can (the list is nearest first) to pick up a unit that canBeCarried. False if none can.
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
 // Sends each unit that is carrying someone to a ground point, to put it down there

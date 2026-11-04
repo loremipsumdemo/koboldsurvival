@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Krever Låsing {0}
 MISC_UNLOCKED	Låst opp!
 MISC_LOCKPICK_FAILED	Dirking mislyktes
 MISC_UNLOCKS	{0} låser opp {1}
+MISC_LOCKS	{0} låser {1}
 MISC_REASON_LOCKPICKING	dirke låser
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -868,6 +869,7 @@ ITEM_124_NAME	Stekt froskekjøtt
 ITEM_125_DESC	En liten vill sopp. Rå hjelper den lite på helse og sult.
 ITEM_125_NAME	Sopp
 MISC_FOOD_TO_COOK	rått kjøtt
+MISC_COOKED_FOOD	tilberedt kjøtt
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Vedlikehold: {0} min igjen
 PROP_SHOP	Butikk
 PROP_FARM	Gård
 PROP_TURBINE	Vindmølle
+PROP_STOVE	Komfyr
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Venstreklikk på en gjenstand for å rive den: det den holder faller på bakken, og det blir liggende rusk igjen. Venstreklikk på rusk for å rydde det bort. Høyreklikk eller Escape avbryter.
 UILABEL_LOCK	Lås

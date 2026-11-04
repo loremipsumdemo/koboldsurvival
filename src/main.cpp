@@ -209,7 +209,7 @@ void closeStorage() {
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
-                        Unlock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband };
+                        Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -242,13 +242,13 @@ std::string propNameOf(World& w, Entity prop) {
     return p ? lang(propInfo(p->kind).nameKey) : std::string();
 }
 
-// What the open storage panel's prop is used for: PropUse::Storage for a barrel, PropUse::Crafting for a campfire
+// What the open storage panel's prop is used for: PropUse::Storage for a barrel, PropUse::Crafting for a stove
 PropUse storageUse(World& w) {
     const Prop* p = w.get<Prop>(storageProp);
     return p ? propInfo(p->kind).use : PropUse::None;
 }
 
-// The storage panel's layout: one grid for a barrel or a campfire, an input and an output grid for a forge
+// The storage panel's layout: one grid for a barrel or a stove, an input and an output grid for a forge or a campfire
 // A lock the player's faction owns: its owner may flip it open or shut from the storage panel
 bool ownedLockOf(World& w, Entity prop) {
     const Lock* l = w.get<Lock>(prop);
@@ -1090,7 +1090,10 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         }
         for (const SaveFuel& f : d.fuel) {
             if (f.prop != serial) continue;
-            if (Fuel* fuel = world.get<Fuel>(e)) fuel->hours = std::max(0.0, f.hours);
+            if (Fuel* fuel = world.get<Fuel>(e)) {
+                fuel->hours = std::max(0.0, f.hours);
+                fuel->item = std::max(0, f.item);
+            }
             if (PropWork* pw = world.get<PropWork>(e)) pw->progress = std::clamp(f.progress, 0.0, 1.0);
         }
     }
@@ -1242,7 +1245,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         }
         const Fuel* fuel = w.get<Fuel>(e);
         const PropWork* pw = w.get<PropWork>(e);
-        d.fuel.push_back(SaveFuel{ serial, fuel ? fuel->hours : 0.0, pw ? pw->progress : 0.0 });
+        d.fuel.push_back(SaveFuel{ serial, fuel ? fuel->hours : 0.0, pw ? pw->progress : 0.0, fuel ? fuel->item : 0 });
     }
     return d;
 }
@@ -3468,6 +3471,9 @@ int main(int, char**) {
                 // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
                 if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);   // not the Debris, which gives nothing
                 if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
+                // A lockable prop: Lock it when it is open (it stays open until then), or, when the lock is the
+                // selected units' own, Unlock it with the key
+                if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
             }
             return out;
         };
@@ -3492,6 +3498,7 @@ int main(int, char**) {
                 case MenuAction::Occupy: labels.push_back(lang("UILABEL_OCCUPY")); break;
                 case MenuAction::Place: labels.push_back(lang("UILABEL_PLACE")); break;
                 case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
+                case MenuAction::Lock: labels.push_back(lang("UILABEL_LOCK")); break;
                 case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
                 case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
                 case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
@@ -3727,6 +3734,18 @@ int main(int, char**) {
                 // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
                 const Lock* lock = world.get<Lock>(target);
                 if (!lock || !lock->locked) return;
+                // A lock that is the selected units' own: the nearest that is not a mob opens it with the key
+                Entity keyholder = NULL_ENTITY;
+                for (Entity u : actors) {
+                    if (!world.has<Mob>(u) && !lockShutFor(world, target, u)) {
+                        keyholder = u;
+                        break;
+                    }
+                }
+                if (keyholder != NULL_ENTITY) {
+                    issuePropOrder(world, terrain, { keyholder }, target, PropAction::Unlock);
+                    break;
+                }
                 Entity best = NULL_ENTITY;
                 int bestLevel = 0;
                 for (Entity u : actors) {   // nearest first
@@ -3741,6 +3760,16 @@ int main(int, char**) {
                     return;
                 }
                 issuePropOrder(world, terrain, { best }, target, PropAction::Unlock);
+                break;
+            }
+            case MenuAction::Lock: {
+                // The nearest selected unit that is not a mob goes and locks it
+                const auto locker = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
+                if (locker == actors.end()) {
+                    refuse(lang("MISC_SELECT_UNIT_FIRST"));
+                    return;
+                }
+                issuePropOrder(world, terrain, { *locker }, target, PropAction::Lock);
                 break;
             }
             case MenuAction::Use: {
@@ -4859,6 +4888,9 @@ int main(int, char**) {
                                     if (!sl.buildRows[i].contains(mx, my)) continue;
                                     const int kind = buildRowKind((int)i);
                                     if (kind == BUILD_NONE) break;
+                                    // Grayed out: only Destroy, the Bedroll and the Campfire, unless a selected
+                                    // unit of yours stands in one of your claims
+                                    if (!buildAnywhere(kind) && !selectionInClaim(world)) break;
                                     if (buildKind == kind) {
                                         buildKind = BUILD_NONE;
                                     } else {
@@ -5469,7 +5501,7 @@ int main(int, char**) {
             factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
             combatSystem(world, rng, dt, combatLog, floatingNumbers);
-            patrolSpawnSystem(world, terrain);   // a mob gone too far from its spawn gives up and walks home
+            patrolSpawnSystem(world, terrain, dt);   // a mob gone too far from its spawn gives up and walks home
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
             behaviorSystem(world, combatLog, dt);
             // Anyone left at 0 health falls Unconscious
@@ -5499,6 +5531,10 @@ int main(int, char**) {
                     } else if (a.craft == WorkStart::Full) {
                         refuse(lang("MISC_PROP_TAKEN"));
                     }
+                    continue;
+                }
+                if (a.action == PropAction::Lock) {
+                    if (a.started) playSfx(Sfx::UiToggle);
                     continue;
                 }
                 if (a.action == PropAction::Inventory) {
@@ -5538,7 +5574,7 @@ int main(int, char**) {
                 lootBy = looter;
                 playSfx(Sfx::UiMenuOpen);
             }
-            cleanupSquads(world);
+            cleanupActiveSquads(world);
             // Open worlds: read in the ground near the camera and the units, a few chunks each frame
             if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
             // The in-game clock runs while it is not stopped. Hunger ticks once for each in-game hour it passes,
@@ -5571,7 +5607,7 @@ int main(int, char**) {
                     case PROP_ORE: queueSoundFrom(world, Sfx::DoneOre, g.unit); break;
                     case PROP_TREE: queueSoundFrom(world, Sfx::DoneTree, g.unit); break;
                     case PROP_MUSHROOM: queueSoundFrom(world, Sfx::DoneMushroom, g.unit); break;
-                    case PROP_CAMPFIRE: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
+                    case PROP_STOVE: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
                     case PROP_WATER_PUMP: queueSoundFrom(world, Sfx::DoneWater, g.unit); break;
                     default: queueSoundFrom(world, Sfx::ItemMove, g.unit); break;
                     }
@@ -5615,7 +5651,7 @@ int main(int, char**) {
                     else if (kind == PROP_ORE) sound = Sfx::WorkMining;
                     else if (kind == PROP_TREE) sound = Sfx::WorkWoodcutting;
                     else if (kind == PROP_MUSHROOM) sound = Sfx::WorkHerbalism;
-                    else if (kind == PROP_CAMPFIRE) sound = Sfx::WorkCooking;
+                    else if (kind == PROP_CAMPFIRE || kind == PROP_STOVE) sound = Sfx::WorkCooking;
                     else if (kind == PROP_WATER_PUMP) sound = Sfx::WorkPump;
                     else if (kind == PROP_TRAINING_DUMMY) sound = Sfx::WorkTraining;
                     else if (kind == PROP_FORGE) sound = Sfx::ForgeBurning;
@@ -5769,6 +5805,10 @@ int main(int, char**) {
         // ---- Build placement: while a prop is picked, its footprint follows the mouse over the ground. Holding R,
         // the mouse's left and right movement turns it. The preview shows exactly what a click would do. ----
         {
+            // A kind that needs a claim is put down once no selected unit of yours stands in one
+            const bool inClaim = selectionInClaim(world);
+            if (buildKind != BUILD_NONE && !buildAnywhere(buildKind) && !inClaim) buildKind = BUILD_NONE;
+            renderer.setBuildInClaim(inClaim);
             const bool* keys = SDL_GetKeyboardState(nullptr);
             float bmx = 0.0f, bmy = 0.0f;
             SDL_GetMouseState(&bmx, &bmy);
@@ -5870,7 +5910,7 @@ int main(int, char**) {
                 // The game's name and the notice board, top left; the menu down the right; along the bottom, the build
                 // stamp and the keys
                 const TitleLayout tl = layoutTitle(winW, winH);
-                renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"), lang("UILABEL_EARLY_ACCESS"),
+                renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"),
                                          messageOfTheDay());
                 drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves));
                 renderer.drawTitleFooter(tl.footer, BUILD_STAMP, lang("MISC_TITLE_KEYS"));
@@ -6041,7 +6081,11 @@ int main(int, char**) {
                 if (sinfo.use == PropUse::Crafting) {
                     hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) });
                 } else if (sinfo.use == PropUse::PassiveCrafting) {
-                    if (sinfo.item == 0) hint = langf("UILABEL_UPKEEP_HINT", { itemNameOf(sinfo.input) });
+                    if (sinfo.input == INPUT_COOKABLE) {   // the campfire: any raw meat, cooked
+                        hint = langf("UILABEL_PASSIVE_HINT", { lang("MISC_FOOD_TO_COOK"),
+                                                               std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
+                                                               lang("MISC_COOKED_FOOD") });
+                    } else if (sinfo.item == 0) hint = langf("UILABEL_UPKEEP_HINT", { itemNameOf(sinfo.input) });
                     else hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
                                                            std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                            itemNameOf(sinfo.item) });
@@ -6164,10 +6208,10 @@ int main(int, char**) {
             const float s = winH / 720.0f;
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-            const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
-            const RGBA hover{ 0.624f, 0.902f, 0.0f, 1.0f };
-            const RGBA hint{ 0.91f, 0.925f, 0.949f, 1.0f };
-            const RGBA builtIn{ 1.0f, 0.55f, 0.80f, 1.0f };
+            const RGBA gray{ 0.68f, 0.60f, 0.54f, 1.0f };
+            const RGBA hover{ 0.961f, 0.788f, 0.459f, 1.0f };
+            const RGBA hint{ 0.957f, 0.902f, 0.796f, 1.0f };
+            const RGBA builtIn{ 1.0f, 0.62f, 0.62f, 1.0f };
             const float cx = g.box.x + g.box.w * 0.5f;
 
             renderer.beginUi(winW, winH);
@@ -6242,7 +6286,7 @@ int main(int, char**) {
             const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
             scenarioScroll = sl.first;
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-            const RGBA gray{ 0.72f, 0.74f, 0.80f, 1.0f };
+            const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f };
             const RGBA accent{ 1.0f, 0.78f, 0.30f, 1.0f };
             renderer.beginUi(winW, winH);
             renderer.drawTitleBackground();
@@ -6258,7 +6302,7 @@ int main(int, char**) {
                 renderer.drawListText(ln, sl.desc.x, ty, white);
                 ty += lh;
             }
-            renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.478f, 0.043f, 0.278f, 1.0f });
+            renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.588f, 0.196f, 0.259f, 1.0f });
             for (size_t i = 0; i < sl.rows.size(); ++i) {
                 const ScenarioId id = (ScenarioId)(sl.first + (int)i);
                 const Rect& r = sl.rows[i];
@@ -6272,8 +6316,8 @@ int main(int, char**) {
                 }
             }
             if (sl.track.h > 0.0f) {
-                renderer.drawRect(sl.track, RGBA{ 0.13f, 0.08f, 0.17f, 0.9f });
-                renderer.drawRect(sl.thumb, RGBA{ 0.878f, 0.129f, 0.541f, 0.9f });
+                renderer.drawRect(sl.track, RGBA{ 0.20f, 0.09f, 0.11f, 0.9f });
+                renderer.drawRect(sl.thumb, RGBA{ 0.910f, 0.376f, 0.431f, 0.9f });
             }
             renderer.drawButton(sl.back, lang("UILABEL_BACK"), true, sl.back.contains(mouseX, mouseY));
             renderer.drawButton(sl.next, lang("UILABEL_CONTINUE"), true, sl.next.contains(mouseX, mouseY));
@@ -6310,9 +6354,9 @@ int main(int, char**) {
             const float s = winH / 720.0f;
             PanelGeometry g = panelGeometry(winW, winH);
             const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-            const RGBA gray{ 0.6f, 0.6f, 0.65f, 1.0f };
-            const RGBA hover{ 0.624f, 0.902f, 0.0f, 1.0f };
-            const RGBA hint{ 0.91f, 0.925f, 0.949f, 1.0f };
+            const RGBA gray{ 0.68f, 0.60f, 0.54f, 1.0f };
+            const RGBA hover{ 0.961f, 0.788f, 0.459f, 1.0f };
+            const RGBA hint{ 0.957f, 0.902f, 0.796f, 1.0f };
             const float cx = g.box.x + g.box.w * 0.5f;
 
             renderer.beginUi(winW, winH);
@@ -6356,7 +6400,7 @@ int main(int, char**) {
                 if (panelSaveMode) {
                     // Name field with a blinking cursor, shown even while the name is empty
                     // so it's clear the field has focus as soon as the popout opens
-                    renderer.drawRect(g.nameBox, RGBA{ 0.09f, 0.06f, 0.12f, 1.0f });
+                    renderer.drawRect(g.nameBox, RGBA{ 0.14f, 0.06f, 0.075f, 1.0f });
                     float textY = g.nameBox.y + g.nameBox.h * 0.22f;
                     bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
                     renderer.drawUiText(saveName + (cursorOn ? "|" : ""), g.nameBox.x + 12.0f, textY, white);
@@ -6412,7 +6456,7 @@ int main(int, char**) {
                         renderer.drawListText(sv.name, b.rect.x + textInset, ry, isHover ? hover : white);
                         renderer.drawListText(sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
                                               b.rect.x + COL_TYPE * b.rect.w, ry,
-                                              sv.autosave ? RGBA{ 1.0f, 0.55f, 0.80f, 1.0f } : white);
+                                              sv.autosave ? RGBA{ 1.0f, 0.62f, 0.62f, 1.0f } : white);
                         renderer.drawListText(timeString(sv.timestamp),
                                               b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
                     } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown

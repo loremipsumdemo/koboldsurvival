@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Vaatii: Lukkojen avaus {0}
 MISC_UNLOCKED	Avattu!
 MISC_LOCKPICK_FAILED	Tiirikointi epäonnistui
 MISC_UNLOCKS	{0} avaa: {1}
+MISC_LOCKS	{0} lukitsee: {1}
 MISC_REASON_LOCKPICKING	tiirikointi
 MISC_LOCKED_NAME	{0} (lukittu)
 PROP_CHAIR	Tuoli
@@ -868,6 +869,7 @@ ITEM_124_NAME	Kypsä sammakonliha
 ITEM_125_DESC	Pieni metsäsieni. Raakana syötynä se auttaa vain vähän terveyteen ja nälkään.
 ITEM_125_NAME	Sieni
 MISC_FOOD_TO_COOK	raakaa lihaa
+MISC_COOKED_FOOD	kypsää lihaa
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Ylläpito: {0} min jäljellä
 PROP_SHOP	Kauppa
 PROP_FARM	Maatila
 PROP_TURBINE	Tuulivoimala
+PROP_STOVE	Liesi
 UILABEL_BUILD_DESTROY	Pura
 UILABEL_BUILD_DESTROY_HINT	Napsauta mitä tahansa kohdetta vasemmalla purkaaksesi sen: sen sisältö putoaa maahan ja tilalle jää roinaa. Napsauta roinaa vasemmalla raivataksesi sen. Oikea napsautus tai Escape peruu.
 UILABEL_LOCK	Lukitse

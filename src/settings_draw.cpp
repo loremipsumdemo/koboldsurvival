@@ -9,18 +9,18 @@ namespace {
 
 const RGBA kText = theme::BONE;
 const RGBA kSlider = theme::GREEN;   // a slider's filled part, while its sound is on
-const RGBA kSecondary{ 0.553f, 0.576f, 0.631f, 1.0f };
-const RGBA kDisabledText{ 0.50f, 0.52f, 0.56f, 1.0f };
-const RGBA kPanel{ 0.05f, 0.035f, 0.08f, 0.96f };
-const RGBA kEdge{ 0.478f, 0.043f, 0.278f, 1.0f };
-const RGBA kTabIdle{ 0.10f, 0.07f, 0.13f, 1.0f };
-const RGBA kTabHover{ 0.14f, 0.21f, 0.0f, 1.0f };
-const RGBA kAccent{ 0.176f, 0.259f, 0.0f, 1.0f };
-const RGBA kTrack{ 0.13f, 0.08f, 0.17f, 1.0f };
-const RGBA kFillOff{ 0.553f, 0.576f, 0.631f, 1.0f };
-const RGBA kThumbDrag{ 0.91f, 0.925f, 0.949f, 1.0f };
-const RGBA kListBg{ 0.07f, 0.05f, 0.10f, 1.0f };
-const RGBA kListHover{ 0.176f, 0.259f, 0.0f, 1.0f };
+const RGBA kSecondary{ 0.643f, 0.553f, 0.510f, 1.0f };
+const RGBA kDisabledText{ 0.52f, 0.46f, 0.43f, 1.0f };
+const RGBA kPanel{ 0.085f, 0.035f, 0.045f, 0.96f };
+const RGBA kEdge{ 0.588f, 0.196f, 0.259f, 1.0f };
+const RGBA kTabIdle{ 0.16f, 0.07f, 0.085f, 1.0f };
+const RGBA kTabHover{ 0.26f, 0.16f, 0.07f, 1.0f };
+const RGBA kAccent{ 0.353f, 0.235f, 0.110f, 1.0f };
+const RGBA kTrack{ 0.20f, 0.09f, 0.11f, 1.0f };
+const RGBA kFillOff{ 0.643f, 0.553f, 0.510f, 1.0f };
+const RGBA kThumbDrag{ 0.957f, 0.902f, 0.796f, 1.0f };
+const RGBA kListBg{ 0.11f, 0.05f, 0.06f, 1.0f };
+const RGBA kListHover{ 0.353f, 0.235f, 0.110f, 1.0f };
 
 bool over(const Rect& r, float x, float y) {
     return r.contains(x, y);

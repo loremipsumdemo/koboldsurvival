@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Butuh Membuka kunci {0}
 MISC_UNLOCKED	Terbuka!
 MISC_LOCKPICK_FAILED	Gagal membobol kunci
 MISC_UNLOCKS	{0} membuka kunci {1}
+MISC_LOCKS	{0} mengunci {1}
 MISC_REASON_LOCKPICKING	membobol kunci
 MISC_LOCKED_NAME	{0} (terkunci)
 PROP_CHAIR	Kursi
@@ -868,6 +869,7 @@ ITEM_124_NAME	Daging katak matang
 ITEM_125_DESC	Jamur liar kecil. Dimakan mentah, hanya sedikit membantu kesehatan dan rasa lapar.
 ITEM_125_NAME	Jamur
 MISC_FOOD_TO_COOK	daging mentah
+MISC_COOKED_FOOD	daging matang
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Perawatan: sisa {0} menit
 PROP_SHOP	Toko
 PROP_FARM	Ladang
 PROP_TURBINE	Turbin Angin
+PROP_STOVE	Kompor
 UILABEL_BUILD_DESTROY	Hancurkan
 UILABEL_BUILD_DESTROY_HINT	Klik kiri objek apa pun untuk merobohkannya: isinya jatuh ke tanah dan puing tertinggal di tempatnya. Klik kiri puing untuk membersihkannya. Klik kanan atau Escape untuk batal.
 UILABEL_LOCK	Kunci

@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Kräver Låsöppning {0}
 MISC_UNLOCKED	Upplåst!
 MISC_LOCKPICK_FAILED	Dyrkningen misslyckades
 MISC_UNLOCKS	{0} låser upp {1}
+MISC_LOCKS	{0} låser {1}
 MISC_REASON_LOCKPICKING	dyrka lås
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -868,6 +869,7 @@ ITEM_124_NAME	Stekt grodkött
 ITEM_125_DESC	En liten vild svamp. Rå hjälper den knappt mot hunger eller för hälsan.
 ITEM_125_NAME	Svamp
 MISC_FOOD_TO_COOK	rått kött
+MISC_COOKED_FOOD	tillagat kött
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Underhåll: {0} min kvar
 PROP_SHOP	Butik
 PROP_FARM	Gård
 PROP_TURBINE	Vindkraftverk
+PROP_STOVE	Spis
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Vänsterklicka på ett föremål för att riva det: det som finns i det faller till marken och bråte blir kvar. Vänsterklicka på bråte för att röja bort det. Högerklick eller Escape avbryter.
 UILABEL_LOCK	Lås

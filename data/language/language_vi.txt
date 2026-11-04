@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Cần Mở khóa {0}
 MISC_UNLOCKED	Đã mở khóa!
 MISC_LOCKPICK_FAILED	Cạy khóa thất bại
 MISC_UNLOCKS	{0} mở khóa {1}
+MISC_LOCKS	{0} khóa {1}
 MISC_REASON_LOCKPICKING	cạy khóa
 MISC_LOCKED_NAME	{0} (đã khóa)
 PROP_CHAIR	Ghế
@@ -868,6 +869,7 @@ ITEM_124_NAME	Thịt ếch nướng
 ITEM_125_DESC	Một cây nấm dại nhỏ. Ăn sống chỉ hồi chút ít máu và cơn đói.
 ITEM_125_NAME	Nấm
 MISC_FOOD_TO_COOK	thịt sống
+MISC_COOKED_FOOD	thịt chín
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Bảo trì: còn {0} phút
 PROP_SHOP	Cửa hàng
 PROP_FARM	Nông trại
 PROP_TURBINE	Tua-bin gió
+PROP_STOVE	Bếp
 UILABEL_BUILD_DESTROY	Phá hủy
 UILABEL_BUILD_DESTROY_HINT	Nhấp trái vào vật thể bất kỳ để phá nó: đồ bên trong rơi xuống đất và để lại đống đổ nát. Nhấp trái vào đống đổ nát để dọn đi. Nhấp phải hoặc Escape để hủy.
 UILABEL_LOCK	Khóa

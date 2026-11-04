@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	ต้องมี การงัดกุญแจ {0}
 MISC_UNLOCKED	ปลดล็อกแล้ว!
 MISC_LOCKPICK_FAILED	สะเดาะกุญแจไม่สำเร็จ
 MISC_UNLOCKS	{0} ปลดล็อก {1}
+MISC_LOCKS	{0} ล็อก {1}
 MISC_REASON_LOCKPICKING	การสะเดาะกุญแจ
 MISC_LOCKED_NAME	{0} (ล็อกอยู่)
 PROP_CHAIR	เก้าอี้
@@ -868,6 +869,7 @@ ITEM_124_NAME	เนื้อกบย่าง
 ITEM_125_DESC	เห็ดป่าดอกเล็ก กินดิบ ๆ ช่วยเรื่องพลังชีวิตและความหิวได้นิดเดียว
 ITEM_125_NAME	เห็ด
 MISC_FOOD_TO_COOK	เนื้อดิบ
+MISC_COOKED_FOOD	เนื้อสุก
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	บำรุงรักษา: เหลือ {0} นาท�
 PROP_SHOP	ร้านค้า
 PROP_FARM	ฟาร์ม
 PROP_TURBINE	กังหันลม
+PROP_STOVE	เตา
 UILABEL_BUILD_DESTROY	รื้อถอน
 UILABEL_BUILD_DESTROY_HINT	คลิกซ้ายที่วัตถุใดก็ได้เพื่อรื้อ: ของข้างในจะหล่นลงพื้นและเหลือเศษซากไว้แทน คลิกซ้ายที่เศษซากเพื่อเก็บกวาด คลิกขวาหรือ Escape เพื่อยกเลิก
 UILABEL_LOCK	ล็อก

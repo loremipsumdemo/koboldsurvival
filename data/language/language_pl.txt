@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Wymaga: Otwieranie zamków {0}
 MISC_UNLOCKED	Otwarte!
 MISC_LOCKPICK_FAILED	Nie udało się otworzyć zamka
 MISC_UNLOCKS	{0} otwiera: {1}
+MISC_LOCKS	{0} zamyka: {1}
 MISC_REASON_LOCKPICKING	otwieranie zamków
 MISC_LOCKED_NAME	{0} (zamknięte)
 PROP_CHAIR	Krzesło
@@ -868,6 +869,7 @@ ITEM_124_NAME	Pieczone mięso żaby
 ITEM_125_DESC	Mały dziki grzyb. Zjedzony na surowo niewiele pomaga na zdrowie i głód.
 ITEM_125_NAME	Grzyb
 MISC_FOOD_TO_COOK	surowe mięso
+MISC_COOKED_FOOD	pieczone mięso
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Utrzymanie: zostało {0} min
 PROP_SHOP	Sklep
 PROP_FARM	Farma
 PROP_TURBINE	Turbina
+PROP_STOVE	Piec
 UILABEL_BUILD_DESTROY	Zburz
 UILABEL_BUILD_DESTROY_HINT	Kliknij lewym przyciskiem dowolny obiekt, aby go zburzyć: jego zawartość spada na ziemię, a w jego miejscu zostaje gruz. Kliknij lewym przyciskiem gruz, aby go uprzątnąć. Prawy przycisk lub Escape anuluje.
 UILABEL_LOCK	Zamknij

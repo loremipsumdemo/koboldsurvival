@@ -760,6 +760,7 @@ MISC_LOCKPICK_NEEDS	Richiede Scasso {0}
 MISC_UNLOCKED	Aperto!
 MISC_LOCKPICK_FAILED	Scasso fallito
 MISC_UNLOCKS	{0} apre {1}
+MISC_LOCKS	{0} chiude a chiave {1}
 MISC_REASON_LOCKPICKING	scassinare serrature
 MISC_LOCKED_NAME	{0} (chiuso)
 PROP_CHAIR	Sedia
@@ -868,6 +869,7 @@ ITEM_124_NAME	Carne di rana cotta
 ITEM_125_DESC	Un piccolo fungo selvatico. Crudo, aiuta poco la salute e la fame.
 ITEM_125_NAME	Fungo
 MISC_FOOD_TO_COOK	carne cruda
+MISC_COOKED_FOOD	carne cotta
 MISC_ITEMS_GAINED	+{0}x {1}
 MISC_EFFECT_LABEL	{0} {1}
 MISC_ITEM_LOST	-{0}
@@ -969,6 +971,7 @@ MISC_UPKEEP_LEFT	Manutenzione: {0} min rimasti
 PROP_SHOP	Negozio
 PROP_FARM	Fattoria
 PROP_TURBINE	Turbina
+PROP_STOVE	Stufa
 UILABEL_BUILD_DESTROY	Distruggi
 UILABEL_BUILD_DESTROY_HINT	Clic sinistro su un oggetto per abbatterlo: ciò che contiene cade a terra e al suo posto restano macerie. Clic sinistro sulle macerie per sgomberarle. Clic destro o Esc annulla.
 UILABEL_LOCK	Chiudi a chiave
