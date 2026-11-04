@@ -2650,6 +2650,13 @@ void Renderer::drawCloseButton(const Rect& r) {
 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
     std::vector<std::string> out;
+    if (!listFont_) return out;
+    // Measured without making a texture for every trial line
+    const auto width = [this](const std::string& s) {
+        int tw = 0, th = 0;
+        if (!s.empty()) TTF_GetStringSize(listFont_, s.c_str(), s.size(), &tw, &th);
+        return (float)tw;
+    };
     std::string cur;
     size_t start = 0;
     while (start <= text.size()) {
@@ -2658,11 +2665,29 @@ std::vector<std::string> Renderer::wrapListText(const std::string& text, float m
         const std::string word = text.substr(start, end - start);
         if (!word.empty()) {
             const std::string trial = cur.empty() ? word : cur + " " + word;
-            // A word wider than the line keeps a line of its own; the caller shortens what does not fit
-            if (cur.empty() || listTextWidth(trial) <= maxW) cur = trial;
-            else {
+            if (width(trial) <= maxW) {
+                cur = trial;
+            } else if (width(word) <= maxW) {
                 out.push_back(cur);
                 cur = word;
+            } else {
+                // A word wider than the line (or text with no spaces, as in Japanese, Chinese and Thai) breaks
+                // between its characters
+                std::string piece = cur.empty() ? std::string() : cur + " ";
+                for (size_t i = 0; i < word.size();) {
+                    const unsigned char c = (unsigned char)word[i];
+                    const size_t n = c >= 0xF0 ? 4 : c >= 0xE0 ? 3 : c >= 0xC0 ? 2 : 1;
+                    const std::string ch = word.substr(i, n);
+                    i += n;
+                    if (!piece.empty() && width(piece + ch) > maxW) {
+                        if (piece.back() == ' ') piece.pop_back();
+                        if (!piece.empty()) out.push_back(piece);
+                        piece = ch;
+                    } else {
+                        piece += ch;
+                    }
+                }
+                cur = piece;
             }
         }
         start = end + 1;
