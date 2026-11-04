@@ -4,6 +4,7 @@
 #include <cmath>
 #include "inventory.h"
 #include "items.h"
+#include "mobs.h"
 #include "stats.h"
 
 namespace {
@@ -60,6 +61,9 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     case DropKind::Item:
         out.push_back(DropEntry{ lang("UILABEL_EMPTY"), 0 });
         for (int id : allItemChoices()) out.push_back(DropEntry{ itemNameOf(id), id });
+        break;
+    case DropKind::MobKind:
+        for (int k : regularMobKinds()) out.push_back(DropEntry{ lang(mobInfo(k).nameKey), k });
         break;
     }
     return out;
@@ -142,6 +146,8 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     std::vector<Button> dropGroup;   // added last, so an open dropdown draws over everything
     Rect sprAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, gearAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, invAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bodyAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect mobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, addMobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
+    const bool mob = !p.empty() && m.mob > 0;   // the picked member is a mob: no model, body, gear or items to set
 
     // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
@@ -183,6 +189,16 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         const Rect nameBox{ inX, top + 24.0f * s, inW, 40.0f * s };
         out.push_back(Button{ m.name, nameBox, Action::PartyNameField, true, sel });
 
+        if (mob) {
+            // A mob's kind in place of the model and body type: changed only in Custom and Beastmaster
+            const Rect kindBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
+            mobAnchor = kindBox;
+            out.push_back(Button{ lang(mobInfo(m.mob).nameKey) + (ui.mobKindEditable ? "   v" : ""), kindBox,
+                                  Action::PartyMobBox, ui.mobKindEditable, sel });
+            out.push_back(Button{ lang("UILABEL_RANDOMIZE_UNIT"), Rect{ inX, kindBox.y + kindBox.h + 26.0f * s, 240.0f * s, 36.0f * s },
+                                  Action::PartyRandomUnit, true, sel });
+            break;
+        }
         const Rect sprBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
         sprAnchor = sprBox;
         out.push_back(Button{ modelLabel(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
@@ -223,7 +239,8 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             return ry;
         };
         column(inX, { StatGroup::Attributes, StatGroup::Combat });
-        column(inX + colW + colGap, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
+        // A mob has only the attributes and the combat skills (mobs.h)
+        if (!mob) column(inX + colW + colGap, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
         // Two lines of room, for the longer note outside Custom
         out.push_back(Button{ lang(ui.editable ? "UILABEL_LEVELS_HINT" : "UILABEL_CUSTOM_ONLY"),
                               Rect{ inX, P.right.y + P.right.h - 82.0f * s, inW, 64.0f * s }, Action::PartyNote, false, 0 });
@@ -231,6 +248,10 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
 
     case PartyTab::Gear: {
+        if (mob) {
+            out.push_back(Button{ lang("UILABEL_MOB_NO_GEAR"), Rect{ inX, top, inW, 64.0f * s }, Action::PartyNote, false, 0 });
+            break;
+        }
         // Each tile holds the item's 64 x 64 picture in an item cell, with the slot's and the item's names beside it
         const float gap = 8.0f * s, tileW = (inW - gap) / 2.0f, tileH = std::max(54.0f * s, ITEM_CELL_PX + 8.0f * s);
         const float pitch = tileH + gap;
@@ -253,6 +274,10 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
 
     case PartyTab::Items: {
+        if (mob) {
+            out.push_back(Button{ lang("UILABEL_MOB_NO_ITEMS"), Rect{ inX, top, inW, 64.0f * s }, Action::PartyNote, false, 0 });
+            break;
+        }
         const float gap = 4.0f * s;
         const float cell = ITEM_CELL_PX;
         for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -303,6 +328,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                               (int)p.size() < PARTY_MAX_UNITS, 0 });
         out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
                               !p.empty(), 0 });
+        // Add mob: a regular mob, of a kind picked from its list
+        addMobAnchor = Rect{ unitsX + 2.0f * (unitW + bGap), bY, unitW, bH };
+        out.push_back(Button{ lang("UILABEL_ADD_MOB"), addMobAnchor, Action::PartyAddMob, (int)p.size() < PARTY_MAX_UNITS, 0 });
     }
     out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
@@ -313,6 +341,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     if (ui.dropKind != DropKind::None) {
         const Rect anchor = ui.dropKind == DropKind::Sprite ? sprAnchor
                           : ui.dropKind == DropKind::Body ? bodyAnchor
+                          : ui.dropKind == DropKind::MobKind ? (ui.dropSlot < 0 ? addMobAnchor : mobAnchor)
                           : ui.dropKind == DropKind::Gear ? gearAnchor : invAnchor;
         const int total = (int)drop.size();
         const int first = clampDropScroll(ui.dropScroll, total);
@@ -339,6 +368,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         if (ui.dropKind == DropKind::Body) current = m.body;
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
+        if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : m.mob;
         for (int i = first; i < first + shown; ++i) {
             const bool isCurrent = drop[i].value == current;
             dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, listW, rowH },

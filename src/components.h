@@ -267,6 +267,19 @@ struct PickupOrder {
     Entity item = NULL_ENTITY;
 };
 
+// A pickup chain from a box drawn around ground items only: the job entity lists the items, and every unit sent on it
+// has a PickupChain. A unit with no PickupOrder of its own takes the nearest listed item no other unit of the job is
+// walking to. An item that is gone is just skipped, so one unit's pickup never ends the chain for the others. Any
+// order of yours, or the unit being attacked, ends the unit's chain; being pushed aside does not.
+struct PickupJob {
+    std::vector<Entity> items;
+};
+struct PickupChain {
+    Entity job = NULL_ENTITY;
+    std::vector<Entity> skipped;   // items this unit could not hold or reach; others of the job may still take them
+    int replans = 0;               // new routes planned to the current item after stopping short of it
+};
+
 // A selected unit's order to talk to an NPC. It walks up to the NPC and the first unit in talk range starts the talk.
 struct TalkOrder {
     Entity npc = NULL_ENTITY;
@@ -403,8 +416,9 @@ struct Fuel {
     double hours = 0.0;
 };
 
-// A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, takes the bed or
-// starts working, by the prop's use (a crafting prop opens its panel too). Any other order replaces it.
+// A unit's order to use a prop: it walks to the prop, and once in reach it opens the storage, occupies the prop,
+// places the unit it carries on it, or starts working, by the action (a crafting prop opens its panel too). Any other
+// order replaces it.
 struct PropOrder {
     Entity prop = NULL_ENTITY;
     PropAction action = PropAction::Use;

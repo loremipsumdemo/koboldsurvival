@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Frissítési gyakoriság
 UILABEL_DEFAULT	Alapértelmezett
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Képkockasebesség-korlát
+UILABEL_VIEW_RANGE	Látótávolság
+UILABEL_TILES_N	{0} mező
+UILABEL_SHOW_FPS	FPS megjelenítése
 UILABEL_UNLIMITED	Korlátlan
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatikus mentés
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} perc
 UILABEL_UNIT_NAMES	Saját egységek neve
 UILABEL_NPC_NAMES	Más egységek neve
 UILABEL_PROP_NAMES	Tárgyak neve
+UILABEL_PROP_INFO	Tárgyinfó megjelenítése
 UILABEL_FONT_SIZE	Betűméret
 UILABEL_RESET_PANELS	Minden panel visszaállítása
 UILABEL_RESET	Visszaállítás
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Globális hangerő
 UILABEL_MUSIC	Zene
 UILABEL_AMBIENT	Környezeti hangok
 UILABEL_INTERFACE_SOUNDS	Kezelőfelület hangjai
+UILABEL_CRAFT_GATHER_SOUNDS	Készítés és gyűjtés hangjai
 UILABEL_SOUND_EFFECTS	Hangeffektek
 UILABEL_RESTORE_DEFAULTS	Alapértékek visszaállítása
 UILABEL_WINDOWED	Ablakos
@@ -123,6 +128,8 @@ UILABEL_STATS	Statisztikák
 UILABEL_CLICK_TO_TYPE	Kattints a név beírásához
 UILABEL_HEALTH	Életerő
 UILABEL_HUNGER	Éhség
+UILABEL_RESTED	Kipihentség
+UILABEL_COMFORT	Kényelem
 UILABEL_CARRY	Teherbírás
 UILABEL_NEXT_LEVEL_XP_LINE	Következő szint tapasztalata: {0}
 UILABEL_STAT	Statisztika
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Egység véletlenszerűsítése
 UILABEL_RANDOMIZE_ALL	Mindent véletlenszerűen
 UILABEL_ADD_UNIT	Egység hozzáadása
 UILABEL_REMOVE_UNIT	Egység eltávolítása
+UILABEL_ADD_MOB	Lény hozzáadása
+UILABEL_MOB_KIND	Fajta
+UILABEL_MOB_NO_GEAR	A lény nem visel felszerelést.
+MISC_MEAT_TAKEN_DIES	{0} elpusztul
+MISC_MOB_INVENTORY_LOCKED	Nem elérhető
+MISC_MOB_CANT_HOLD	Egy lény csak a saját húsát és csontjait viszi
+UILABEL_CLEAR	Eltakarítás
+UILABEL_TASK_CLEARING	Törmeléket takarít
+MISC_CLEARS_DEBRIS	{0} eltakarítja a törmeléket
+UILABEL_MOB_INVENTORY_HIDDEN	Nem elérhető
+UILABEL_BEHAVIOR_PATROL	Járőr
+UILABEL_BEHAVIOR_PATROL_SPAWN	Járőr a kezdőhelyen
+UILABEL_BEHAVIOR_ROAM	Kóborlás
+UILABEL_BEHAVIOR_PATROL_TIP	Járőr: körbejár azon a területen, ahol áll, ha az a frakciójáé, és időnként megáll.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Járőr a kezdőhelyen: ott jár körbe, ahol megjelent. Ha túl messzire üldözik, feladja, teljesen meggyógyul és visszasétál, és amíg haza nem ér, nem sebződik.
+UILABEL_BEHAVIOR_ROAM_TIP	Kóborlás: a nyílt vidéken kóborol, bárhol, ahol a zászlók területein kívül járni tud.
+UILABEL_WAIT_NOT_IN_CLAIM	nincs a frakciója területén
+UILABEL_WAIT_NOWHERE_TO_ROAM	a közelben nincs nyílt talaj a területeken kívül
+UILABEL_TEMPERAMENT_AVOIDANT	Kerülő
+UILABEL_TEMPERAMENT_PASSIVE	Passzív
+UILABEL_TEMPERAMENT_NEUTRAL	Semleges
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agresszív
+UILABEL_TEMPERAMENT	Vérmérséklet: {0}
+UILABEL_MOB_NO_ITEMS	A lény csak a saját húsát és csontjait hordja.
 UILABEL_CONFIRM_STARTS	A megerősítéssel ezzel a csapattal indul a játék.
 UILABEL_NEEDS_NAMES	Minden egységnek kell neve, mielőtt a játék elindulhat.
 UILABEL_CLICK_UNIT_EDIT	Kattints egy egységre a szerkesztéséhez.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Lábak
 UILABEL_SLOT_FEET	Lábfejek
 UILABEL_SLOT_ACCESSORY	Kiegészítő
 UILABEL_BEHAVIOR_ON	Be
+UILABEL_BEHAVIOR_EAT	Evés, ha éhség < {0}%
+UILABEL_BEHAVIOR_REST	Pihenés, ha kipihentség < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Ágy elhagyása felépülés után
+UILABEL_BEHAVIOR_RESCUE	Elesett szövetségesek mentése
+UILABEL_BEHAVIOR_HEAL	Gyógyulás, ha életerő < {0}%
+UILABEL_BEHAVIOR_SHARE	Megosztás
+UILABEL_BEHAVIOR_AUTO_HARVEST	Automatikus gyűjtés: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Automatikus hordás: {0}
+UILABEL_BEHAVIOR_WAITING	(várakozik)
+UILABEL_BEHAVIOR_WAIT_TIP	Várakozik: {0}
+UILABEL_WAIT_NO_FOOD	nincs mit ennie, és senki sincs a közelben, aki megosztaná
+UILABEL_WAIT_NO_BED	nincs szabad ágy vagy fekhely a pihenéshez
+UILABEL_WAIT_NO_HEALING	nincs gyógyító tárgya, és senki sincs a közelben, aki megosztaná
+UILABEL_WAIT_WALKING_TO_SHARE	{0} felé tart, aki tud adni egyet
+UILABEL_WAIT_NO_PROP	nincs {0} a területeden, ahol még egy dolgozónak hely lenne
+UILABEL_WAIT_CARRY_FULL	nincs hely, hogy többet vigyen
+UILABEL_WAIT_LOAD_WAITING	olyan rakományt visz, amit előbb az automatikus hordásnak kell elvinnie
+UILABEL_WAIT_PROP_GONE	a tárgy eltűnt
+UILABEL_WAIT_OUTSIDE_CLAIM	a tárgy nincs a frakciód területén
+UILABEL_WAIT_LOCKED	a tárgy zárva van
+UILABEL_WAIT_NOTHING_TO_HAUL	semmit sem visz, amit a tárgy elfogad
+UILABEL_WAIT_PROP_FULL	a tárgyban nincs hely annak, amit visz
+UILABEL_BEHAVIOR_EAT_TIP	Evés: {0}% éhség alatt megeszi azt az ételt, amely a legjobban csillapítja az éhséget. A - és + gombbal állíthatod, mikor.
+UILABEL_BEHAVIOR_HEAL_TIP	Gyógyulás: {0}% életerő alatt azt a gyógyító tárgyat használja, amely a legtöbb életerőt adja vissza. A - és + gombbal állíthatod, mikor.
+UILABEL_BEHAVIOR_REST_TIP	Pihenés: {0}% kipihentség alatt lefekszik a legközelebbi szabad ágyba vagy fekhelyre, és teljesen kipihenten kel fel. A - és + gombbal állíthatod, mikor.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Ágy elhagyása: 30 másodperc teljes életerő és teljes kipihentség után kikel az ágyból vagy a fekhelyről.
+UILABEL_BEHAVIOR_RESCUE_TIP	Mentés: a közelben eszméletlenül fekvő saját frakcióbeli egységet a legközelebbi szabad ágyhoz vagy fekhelyhez viszi.
+UILABEL_BEHAVIOR_SHARE_TIP	Megosztás: ha az Evéshez vagy a Gyógyuláshoz olyan tárgy kell, ami ennek az egységnek nincs, elvesz egyet egy kereskedési távolságon belüli egységtől, amely szintén megoszt és kevésbé van rá szüksége, és előbb odamegy, ha az kicsit távolabb áll. A többi megosztó egység ugyanígy vehet ettől.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Automatikus gyűjtés: a frakciód területén a legközelebbi {0} tárgynál dolgozik. Ha van rakománya és egy automatikus hordás el tudja vinni, megáll hordani. Egy parancsod szünetelteti; újraindul, ha az egység néhány másodpercig tétlen.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Automatikus hordás: elviszi a leltárban lévő tárgyakat (nem a viselt felszerelést), amelyeket a(z) {0} elfogad, amíg van hely és az egység a frakciód területén áll. Egy parancsod szünetelteti; újraindul, ha az egység néhány másodpercig tétlen.
+UILABEL_NPC_MESSAGES	NJK-k
+UILABEL_SHOW_NPC_INFO	NJK-infó megjelenítése
 UILABEL_COMBAT_MESSAGES	Harci üzenetek
 UILABEL_SEEN	Látva
 UILABEL_HIT	Találat
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Tapasztalati üzenetek
 UILABEL_EXPERIENCE	Tapasztalat
 UILABEL_XP_ATHLETICS	Atlétika tapasztalat
 UILABEL_XP_ENDURANCE	Állóképesség tapasztalat
+UILABEL_XP_CARRYING	Erő tapasztalat (cipelés)
 UILABEL_ITEM_MESSAGES	Tárgyüzenetek
 UILABEL_PICKUP	Felvétel
 UILABEL_DROP	Eldobás
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Haladás: {0}%
 UILABEL_TIP_CURRENT_XP	Jelenlegi tapasztalat: {0}
 UILABEL_ATTACK_DEFENSE	Támadás {0}      Védelem {1}
 UILABEL_STATS_CAPTION	Statisztikák: {0}
+UILABEL_MODEL_N	{0}. modell
 UILABEL_SLOT_N_ITEM	Hely {0}: {1}
 UILABEL_SLOT_N_EMPTY	Hely {0}: üres
 UILABEL_COUNT	Darabszám {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Mindkét kéz szükséges hozzá. A másik kéznek üresnek kell le
 ITEM_87_NAME	Hadibalta
 ITEM_87_DESC	Mindkét kéz szükséges hozzá. A másik kéznek üresnek kell lennie.
 UILABEL_UI_SCALE	Felület mérete
-NAME_MASCULINE	["Gábor", "Balázs", "Zoltán", "Ferenc", "Márton"]
-NAME_FEMININE	["Eszter", "Zsófia", "Réka", "Viola", "Hajnal"]
-NAME_ANDROGYNOUS	["Dani", "Kiri", "Nóri", "Sasha", "Robi"]
+NAME_MASCULINE	["Gábor", "Balázs", "Zoltán", "Ferenc", "Márton", "Ádám", "András", "Attila", "Barnabás", "Béla", "Bence", "Csaba", "Dániel", "Dávid", "Dezső", "Endre", "Ernő", "Gergely", "Géza", "György", "Gyula", "Imre", "István", "János", "József", "Kálmán", "Károly", "Kristóf", "László", "Lajos", "Levente", "Lőrinc", "Máté", "Mátyás", "Miklós", "Mihály", "Norbert", "Ottó", "Pál", "Péter", "Róbert", "Sándor", "Szabolcs", "Tamás", "Tibor", "Viktor", "Vilmos", "Zsolt", "Botond", "Huba"]
+NAME_FEMININE	["Eszter", "Zsófia", "Réka", "Viola", "Hajnal", "Adrienn", "Ágnes", "Andrea", "Anikó", "Anna", "Boglárka", "Csilla", "Dóra", "Edit", "Emese", "Enikő", "Erika", "Erzsébet", "Fanni", "Flóra", "Gabriella", "Gizella", "Hanna", "Ibolya", "Ildikó", "Ilona", "Írisz", "Judit", "Júlia", "Katalin", "Klára", "Krisztina", "Lili", "Luca", "Margit", "Mária", "Melinda", "Mónika", "Noémi", "Orsolya", "Petra", "Piroska", "Rozália", "Szilvia", "Tímea", "Tünde", "Vanda", "Veronika", "Zsuzsanna", "Kinga"]
+NAME_ANDROGYNOUS	["Dani", "Kiri", "Nóri", "Sasha", "Robi", "Alex", "Ari", "Bo", "Charlie", "Eli", "Jo", "Kai", "Kim", "Lou", "Mika", "Niki", "Noa", "Nova", "Rio", "Sam", "Sky", "Toni", "Vic", "Mező", "Remény", "Erdő", "Gabi", "Álom", "Kriszti", "Napfény", "Hold", "Szivárvány", "Patak", "Fenyő", "Szikra", "Láng", "Csillag", "Bársony", "Derű", "Fény", "Hajna", "Ég", "Szellő", "Felhő", "Harmat", "Liget", "Rét", "Tavasz", "Vihar", "Zápor"]
 UILABEL_BODY_TYPE	Testtípus
 UILABEL_BODY_MASCULINE	Férfias
 UILABEL_BODY_FEMININE	Nőies
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Nincs hely a tárolóban
 MISC_PROP_TAKEN	Már használatban van
 MISC_PROP_WORKERS_FULL	Egyszerre legfeljebb {0} egység dolgozhat rajta
 MISC_GATHERS	{0} gyűjt: {1}
+MISC_AUTO_HAUL_STORES	{0} betesz {1} db {2} tárgyat ide: {3}
 MISC_GATHER_NO_ROOM	{0} nem fér el a(z) {1}, ezért abbahagyja a munkát
 MISC_REASON_GATHERING	gyűjtés
+MISC_REASON_CLEARING	törmeléket takarít el
 UILABEL_TASK	Feladat: {0}
 UILABEL_TASK_IDLE	Tétlen
+UILABEL_TASK_AUTO_GOING	{0} (úton)
+UILABEL_TASK_SHARE_WALK	Megy hozzá: {0}, megosztani
 UILABEL_TASK_MOVING	Mozog
 UILABEL_TASK_RESTING	Pihen
 UILABEL_STORAGE_HINT	Jobb kattintással elveheted a tárgyat, vagy húzd ki, hogy oda tedd le, ahol az egységed áll. Jobb kattintással az egységed tárgyait berakhatod.
@@ -595,6 +664,7 @@ FACTION_RED	Vörös frakció
 FACTION_GREEN	Zöld frakció
 FACTION_BLUE	Kék frakció
 FACTION_YELLOW	Sárga frakció
+FACTION_EXILE	Száműzöttek
 MISC_REPUTATION_DROPS	A hírnév ennél: {0}, {1} ponttal csökken, {2} lett
 UILABEL_MODE_PASSIVE	Passzív
 UILABEL_MODE_BLOCK	Hárítás
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Forgatókönyv
 SCENARIO_VAGABOND_NAME	Csavargó
 SCENARIO_VAGABOND_DESC	Magányos vándor, akinek semmije sincs: se tárgy, se felszerelés, és minden érték 1 és 5 között.
-SCENARIO_RANDOM_NAME	Teljesen véletlen
-SCENARIO_RANDOM_DESC	1–32 egységből álló csapat, mindegyik minden tulajdonsága 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír.
+SCENARIO_PACK_NAME	Kettes falka
+SCENARIO_PACK_DESC	Egy magányos vándor és egy hűséges farkas. A vándornak nincs tárgya vagy felszerelése, és minden értéke 1 és 5 között van.
+SCENARIO_BEASTMASTER_NAME	Vadak ura
+SCENARIO_BEASTMASTER_DESC	Egy magányos vándor 20 véletlen fajtájú lény élén. A vándornak nincs tárgya vagy felszerelése, és minden értéke 1 és 5 között van.
+SCENARIO_RANDOM_NAME	Teljesen véletlen tábor
+SCENARIO_RANDOM_DESC	Saját tábor egy legalább 20 egységből álló csapattal, mindegyiknek minden értéke 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír, és 3–7 lénnyel.
 SCENARIO_CARAVAN_NAME	Vándorló karaván
 SCENARIO_CARAVAN_DESC	Tíz utazó együtt az úton. Minden tulajdonság 5-ről indul, és mindenkinél 10 aranyérme van.
 SCENARIO_SHABBY_NAME	Ütött-kopott banda
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Egyetlen egység, semmi nélkül: se tárgy, se felszerelé
 SCENARIO_DIGGERS_NAME	Tömlöcásók
 SCENARIO_DIGGERS_DESC	Hét bányász teljes felszerelésben. Tulajdonságaik 5 és 20 közöttiek, de mindegyiknek 50 a Bányászata, és 3 vasércet visz.
 SCENARIO_CUSTOM_NAME	Egyéni forgatókönyv
-SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel indul, és egységeket adhatsz hozzá vagy vehetsz el, legfeljebb 32-ig.
+SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel indul, és egységeket és közönséges lényeket adhatsz hozzá vagy vehetsz el, legfeljebb 32-ig.
 PROP_LOCKED_CHEST	Lezárt láda
 PROP_PRISONER_CAGE	Fogolyketrec
 UILABEL_UNLOCK	Feltörés
+UILABEL_AUTO_HARVEST	Automatikus gyűjtés
+UILABEL_AUTO_HAUL	Automatikus hordás
+MISC_AUTO_OUTSIDE_CLAIM	Az automatikus gyűjtés és hordás csak a frakciód területén lévő tárgyaknál működik
+MISC_AUTO_HARVEST_SET	{0} egység automatikusan gyűjt: {1}
+MISC_AUTO_HAUL_SET	{0} egység automatikusan hord ide: {1}
+MISC_BEHAVIOR_LIST_FULL	A viselkedéslista megtelt (legfeljebb {0})
 UILABEL_PICK_UP	Felvesz
-UILABEL_PUT_IN_BED	Ágyba fektet
+UILABEL_PLACE	Elhelyez
+UILABEL_OCCUPY	Elfoglal
+UILABEL_DISBAND	Elbocsát
+UILABEL_DISBAND_HOLD	Tartsd lenyomva az Elbocsát gombot {0} másodpercig a megerősítéshez
 UILABEL_PUT_DOWN	Letesz
 UILABEL_SHOP	Vásárlás
 UILABEL_TASK_CARRIED	Viszik
@@ -641,16 +724,33 @@ UILABEL_DOOM	Végzet
 UILABEL_TASK_UNCONSCIOUS	Eszméletlen
 UILABEL_TASK_DEAD	Halott
 UILABEL_TASK_CARRYING	Visz valakit
+UILABEL_TASK_STORING	Elrakás
 UILABEL_TAKE_ALL	Mindet elvesz
 UILABEL_LOOT_HINT	Kattints egy tárgyra, hogy az egységed felszerelésébe kerüljön.
 UILABEL_CORPSE_OF	{0} holtteste
 MISC_FALLS_UNCONSCIOUS	{0} elveszíti az eszméletét
 MISC_DIES	{0} meghal
 MISC_RECOVERS	{0} magához tér
+LOADING_PICTURES	Képek
+LOADING_UNIT_MODELS	Egységmodellek
+LOADING_MOB_MODELS	Lénymodellek
+LOADING_MOB_PICTURES	Lényképek
+LOADING_SKY	Égbolt
+LOADING_PROP_MODELS	Tárgymodellek
+LOADING_MAP	Térkép
+LOADING_MAP_GROUND	Térkép talaja
+LOADING_WORLD	Világ
+LOADING_GROUND_ITEMS	Tárgyak a földön
+MISC_GOES_HOME	{0} feladja az üldözést, és hazaindul
+MISC_GETS_UP	{0} feláll, a veszély elmúlt
 MISC_PICKS_UP_UNIT	{0} felveszi: {1}
 MISC_PUTS_DOWN	{0} leteszi: {1}
-MISC_PUTS_IN_BED	{0} befekteti {1} egységet ide: {2}
-MISC_CORPSE_NO_BED	Az ágy nem segíthet a halottakon
+MISC_PLACES_IN	{0} befekteti {1} egységet ide: {2}
+MISC_DISBAND_ASK	{0} végleg elhagyja az osztagodat és a frakciódat, és Száműzött lesz: mindenkivel semleges, és egyedül kóborol.
+MISC_DISBAND_ASK_MOB	{0} végleg elhagyja az osztagodat és a frakciódat, és visszatér a vadonba.
+MISC_DISBANDED	{0} Száműzöttként elhagyja az osztagodat
+MISC_DISBANDED_MOB	{0} elhagyja az osztagodat, és visszatér a vadonba
+MISC_CORPSE_NO_PLACE	A halottakat nem lehet oda helyezni
 MISC_IS_UNCONSCIOUS	{0} eszméletlen, és nem tud semmit tenni
 MISC_ALREADY_CARRYING	Egyik kijelölt egységed sem tudja vinni
 MISC_LOOT_NO_ROOM	Nincs hely a felszerelésben
@@ -788,6 +888,46 @@ ITEM_132_NAME	Tüzes nyílvesszők
 ITEM_132_DESC	Égő nyílvesszők rövid vagy hosszú íjhoz. A legerősebb nyílvesszők.
 ITEM_133_NAME	Számszeríjvesszők
 ITEM_133_DESC	Rövid, nehéz vesszők számszeríjhoz.
+ITEM_134_NAME	Medvecsont
+ITEM_134_DESC	Egy medve csontjai. Jók kézművességhez.
+ITEM_135_NAME	Tehéncsont
+ITEM_135_DESC	Egy tehén csontjai. Jók kézművességhez.
+ITEM_136_NAME	Csirkecsont
+ITEM_136_DESC	Egy csirke csontjai. Jók kézművességhez.
+ITEM_137_NAME	Vaddisznócsont
+ITEM_137_DESC	Egy vaddisznó csontjai. Jók kézművességhez.
+ITEM_138_NAME	Farkascsont
+ITEM_138_DESC	Egy farkas csontjai. Jók kézművességhez.
+ITEM_139_NAME	Szarvascsont
+ITEM_139_DESC	Egy szarvas csontjai. Jók kézművességhez.
+ITEM_140_NAME	Nyúlcsont
+ITEM_140_DESC	Egy nyúl csontjai. Jók kézművességhez.
+ITEM_141_NAME	Halszálka
+ITEM_141_DESC	Egy hal szálkái. Jók kézművességhez.
+ITEM_142_NAME	Rákpáncél
+ITEM_142_DESC	Egy rák páncéljának maradványai. Jók kézművességhez.
+ITEM_143_NAME	Gyíkcsont
+ITEM_143_DESC	Egy gyík csontjai. Jók kézművességhez.
+ITEM_144_NAME	Kígyócsont
+ITEM_144_DESC	Egy kígyó csontjai. Jók kézművességhez.
+ITEM_145_NAME	Disznócsont
+ITEM_145_DESC	Egy disznó csontjai. Jók kézművességhez.
+ITEM_146_NAME	Birkacsont
+ITEM_146_DESC	Egy birka csontjai. Jók kézművességhez.
+ITEM_147_NAME	Kacsacsont
+ITEM_147_DESC	Egy kacsa csontjai. Jók kézművességhez.
+ITEM_148_NAME	Teknőscsont
+ITEM_148_DESC	Egy teknős csontjai. Jók kézművességhez.
+ITEM_149_NAME	Denevércsont
+ITEM_149_DESC	Egy denevér csontjai. Jók kézművességhez.
+ITEM_150_NAME	Békacsont
+ITEM_150_DESC	Egy béka csontjai. Jók kézművességhez.
+ITEM_151_NAME	Gorlikornis-csont
+ITEM_151_DESC	Egy gorlikornis csontjai. Jók kézművességhez.
+ITEM_152_NAME	Nyers gorlikornishús
+ITEM_152_DESC	Nyers hús. Süsd meg egy tábortűznél.
+ITEM_153_NAME	Sült gorlikornishús
+ITEM_153_DESC	Laktató, tűzön sült hús. Sok életerőt ad és nagyon csillapítja az éhséget.
 UILABEL_OPTIMIZE	Optimalizálás
 UILABEL_REMOVE_ALL	Mindet levesz
 MISC_GEAR_NO_ROOM	Nincs elég hely a tárgylistában
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Túlélés
 UILABEL_EARLY_ACCESS	Korai hozzáférés
 MISC_TITLE_KEYS	Kiválasztás  //  Enter Megerősítés
 UILABEL_LANGUAGE_LABEL	Nyelv:
+PROP_FLAG	Zászló
+PROP_DEBRIS	Törmelék
+PROP_FOUNDATION_SMALL	Kis alap
+PROP_FOUNDATION_LARGE	Nagy alap
+PROP_FOUNDATION_LONG	Hosszú alap
+PROP_FOUNDATION_CIRCLE	Kerek alap
+PROP_VAULT	Páncélterem
+UILABEL_BUILD	Építés
+UILABEL_BUILD_SELECTED	Kiválasztva: {0}
+UILABEL_BUILD_NONE	Kiválasztva: semmi
+UILABEL_BUILD_SELECT	Kiválaszt
+UILABEL_BUILD_PICKED	Kiválasztva
+UILABEL_BUILD_PLACE_HINT	Bal kattintás a talajra a lehelyezéshez. Tartsd lenyomva az R-t, és mozgasd az egeret balra vagy jobbra a forgatáshoz. Jobb kattintás vagy Escape: mégse.
+UILABEL_UPKEEP_HINT	Óránként egy {0} tárgyat fogyaszt fenntartásként. Tedd ide őket.
+MISC_BUILD_BLOCKED	Itt nincs hely építeni
+MISC_BUILD_UNWALKABLE	Erre a talajra nem lehet építeni
+MISC_BUILD_NO_FOUNDATION	A páncélteremnek teljesen alapon kell állnia
+MISC_NO_UPKEEP	Nincs fenntartás: nincs rönk
+MISC_UPKEEP_LEFT	Fenntartás: {0} perc van hátra
+PROP_SHOP	Bolt
+PROP_FARM	Farm
+PROP_TURBINE	Szélturbina
+UILABEL_BUILD_DESTROY	Lebontás
+UILABEL_BUILD_DESTROY_HINT	Bal kattintás bármely tárgyra a lebontásához: a tartalma a földre hullik, és törmelék marad a helyén. Bal kattintás a törmelékre az eltakarításához. Jobb kattintás vagy Escape: mégse.
+UILABEL_LOCK	Bezárás
+MISC_BUILD_NO_CLAIM	Alap vagy páncélterem csak a saját területeden állhat
+MISC_BUILD_SEALED	Ezt a talajt egy másik frakció páncélterme lepecsételte
+MISC_BUILD_CLAIM_OVERLAP	Ez a terület átfedné egy másik zászló területét
+MISC_BUILD_VAULT_TAKEN	Ezen a területen már van páncélterem
+MISC_BUILD_VAULT_CAP	A frakciódnak már annyi páncélterme van, amennyi lehet
+MISC_DESTROY_NOTHING	Ott nincs mit lebontani
+MISC_FLAG_FACTION	Tulajdonos: {0}
+MISC_FLAG_HEALTH	Életerő: {0} / {1}
+MISC_FLAG_VAULT_YES	Páncélterem: áll, a terület megmarad
+MISC_FLAG_VAULT_NO	Páncélterem: nincs, a zászló kopik
+MISC_PROP_CONDITION	Állapot: {0}%
+MISC_PROP_DECAYING	Pusztul
+MISC_PROP_HOLDING	Nem pusztul
+MISC_PROP_LOCK_OPEN	Nyitva
+MISC_PROP_LOCK_YOURS	Idegenek elől zárva (neked nyitva)
+MISC_PROP_LOCK_SHUT	Zárva (Zárnyitás {0})
+MISC_PROP_UPKEEP	Fenntartás: {0} óra van hátra
+MISC_PROP_VAULT_UNCLAIMED	Minden területen kívül: nem ad fenntartást
+MOB_BEAR	Medve
+MOB_COW	Tehén
+MOB_CHICKEN	Csirke
+MOB_BOAR	Vaddisznó
+MOB_WOLF	Farkas
+MOB_DEER	Szarvas
+MOB_RABBIT	Nyúl
+MOB_FISH	Hal
+MOB_CRAB	Rák
+MOB_LIZARD	Gyík
+MOB_SNAKE	Kígyó
+MOB_PIG	Disznó
+MOB_SHEEP	Birka
+MOB_DUCK	Kacsa
+MOB_TURTLE	Teknős
+MOB_BAT	Denevér
+MOB_FROG	Béka
+MOB_GORLICORN	Gorlikornis
+FACTION_MOB_BEAR	Medvék
+FACTION_MOB_COW	Tehenek
+FACTION_MOB_CHICKEN	Csirkék
+FACTION_MOB_BOAR	Vaddisznók
+FACTION_MOB_WOLF	Farkasok
+FACTION_MOB_DEER	Szarvasok
+FACTION_MOB_RABBIT	Nyulak
+FACTION_MOB_FISH	Halak
+FACTION_MOB_CRAB	Rákok
+FACTION_MOB_LIZARD	Gyíkok
+FACTION_MOB_SNAKE	Kígyók
+FACTION_MOB_PIG	Disznók
+FACTION_MOB_SHEEP	Birkák
+FACTION_MOB_DUCK	Kacsák
+FACTION_MOB_TURTLE	Teknősök
+FACTION_MOB_BAT	Denevérek
+FACTION_MOB_FROG	Békák
+FACTION_MOB_GORLICORN	Gorlikornisok
+MISC_MOB_NO_GEAR	A lények nem viselhetnek felszerelést
+MISC_MOB_NO_HEALING	A lények nem használhatnak gyógyító tárgyakat
+MISC_MOB_CANT_WORK	A lények nem dolgozhatnak tárgyaknál

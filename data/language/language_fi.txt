@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Virkistystaajuus
 UILABEL_DEFAULT	Oletus
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Kuvataajuusraja
+UILABEL_VIEW_RANGE	Näköetäisyys
+UILABEL_TILES_N	{0} ruutua
+UILABEL_SHOW_FPS	Näytä FPS
 UILABEL_UNLIMITED	Rajoittamaton
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automaattinen tallennus
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minuuttia
 UILABEL_UNIT_NAMES	Pelaajan yksiköiden nimet
 UILABEL_NPC_NAMES	Muiden yksiköiden nimet
 UILABEL_PROP_NAMES	Kohteiden nimet
+UILABEL_PROP_INFO	Näytä kohteiden tiedot
 UILABEL_FONT_SIZE	Fontin koko
 UILABEL_RESET_PANELS	Palauta kaikki paneelit
 UILABEL_RESET	Palauta
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Yleinen äänenvoimakkuus
 UILABEL_MUSIC	Musiikki
 UILABEL_AMBIENT	Ympäristöäänet
 UILABEL_INTERFACE_SOUNDS	Käyttöliittymän äänet
+UILABEL_CRAFT_GATHER_SOUNDS	Valmistuksen ja keräilyn äänet
 UILABEL_SOUND_EFFECTS	Äänitehosteet
 UILABEL_RESTORE_DEFAULTS	Palauta oletusasetukset
 UILABEL_WINDOWED	Ikkuna
@@ -123,6 +128,8 @@ UILABEL_STATS	Ominaisuudet
 UILABEL_CLICK_TO_TYPE	Napsauta kirjoittaaksesi nimen
 UILABEL_HEALTH	Terveys
 UILABEL_HUNGER	Nälkä
+UILABEL_RESTED	Levänneisyys
+UILABEL_COMFORT	Mukavuus
 UILABEL_CARRY	Kantokyky
 UILABEL_NEXT_LEVEL_XP_LINE	Seuraavalle tasolle: {0} kokemuspistettä
 UILABEL_STAT	Ominaisuus
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Arvo tämän yksikön tiedot satunnaisesti
 UILABEL_RANDOMIZE_ALL	Arvo kaikki satunnaisesti
 UILABEL_ADD_UNIT	Lisää yksikkö
 UILABEL_REMOVE_UNIT	Poista yksikkö
+UILABEL_ADD_MOB	Lisää otus
+UILABEL_MOB_KIND	Laji
+UILABEL_MOB_NO_GEAR	Otus ei käytä varusteita.
+MISC_MEAT_TAKEN_DIES	{0} kuolee
+MISC_MOB_INVENTORY_LOCKED	Ei saatavilla
+MISC_MOB_CANT_HOLD	Otus kantaa vain omaa lihaansa ja luitaan
+UILABEL_CLEAR	Raivaa
+UILABEL_TASK_CLEARING	Raivaa roinaa
+MISC_CLEARS_DEBRIS	{0} raivaa roinan pois
+UILABEL_MOB_INVENTORY_HIDDEN	Ei saatavilla
+UILABEL_BEHAVIOR_PATROL	Partio
+UILABEL_BEHAVIOR_PATROL_SPAWN	Partio syntypaikalla
+UILABEL_BEHAVIOR_ROAM	Vaellus
+UILABEL_BEHAVIOR_PATROL_TIP	Partio: kävelee sillä alueella, jolla se seisoo, jos alue kuuluu sen ryhmittymälle, ja pysähtyy välillä.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Partio syntypaikalla: kävelee lähellä paikkaa, jossa se ilmestyi. Liian kauas ajettuna se luovuttaa, paranee täysin ja kävelee takaisin ottamatta vahinkoa ennen kuin on perillä.
+UILABEL_BEHAVIOR_ROAM_TIP	Vaellus: vaeltaa avoimilla mailla, missä tahansa se voi kulkea lippujen alueiden ulkopuolella.
+UILABEL_WAIT_NOT_IN_CLAIM	ei ole ryhmittymänsä alueella
+UILABEL_WAIT_NOWHERE_TO_ROAM	lähellä ei ole avointa maata alueiden ulkopuolella
+UILABEL_TEMPERAMENT_AVOIDANT	Arka
+UILABEL_TEMPERAMENT_PASSIVE	Passiivinen
+UILABEL_TEMPERAMENT_NEUTRAL	Neutraali
+UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressiivinen
+UILABEL_TEMPERAMENT	Luonne: {0}
+UILABEL_MOB_NO_ITEMS	Otus kantaa vain omaa lihaansa ja luitaan.
 UILABEL_CONFIRM_STARTS	Vahvistus aloittaa pelin tällä ryhmällä.
 UILABEL_NEEDS_NAMES	Jokaisella yksiköllä on oltava nimi, ennen kuin peli voi alkaa.
 UILABEL_CLICK_UNIT_EDIT	Napsauta yksikköä muokataksesi sitä.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Jalat
 UILABEL_SLOT_FEET	Jalkineet
 UILABEL_SLOT_ACCESSORY	Lisäke
 UILABEL_BEHAVIOR_ON	Päällä
+UILABEL_BEHAVIOR_EAT	Syö, kun nälkä < {0} %
+UILABEL_BEHAVIOR_REST	Lepää, kun levänneisyys < {0} %
+UILABEL_BEHAVIOR_LEAVE_BED	Nouse sängystä toivuttua
+UILABEL_BEHAVIOR_RESCUE	Pelasta kaatuneet liittolaiset
+UILABEL_BEHAVIOR_HEAL	Paranna, kun terveys < {0} %
+UILABEL_BEHAVIOR_SHARE	Jaa
+UILABEL_BEHAVIOR_AUTO_HARVEST	Automaattinen keruu: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Automaattinen kanto: {0}
+UILABEL_BEHAVIOR_WAITING	(odottaa)
+UILABEL_BEHAVIOR_WAIT_TIP	Odottaa: {0}
+UILABEL_WAIT_NO_FOOD	ei ruokaa syötäväksi eikä ketään lähellä jakamassa
+UILABEL_WAIT_NO_BED	ei vapaata sänkyä tai makuualustaa lepoon
+UILABEL_WAIT_NO_HEALING	ei parantavaa esinettä eikä ketään lähellä jakamassa
+UILABEL_WAIT_WALKING_TO_SHARE	kävelee luokse: {0}, joka voi jakaa yhden
+UILABEL_WAIT_NO_PROP	alueellasi ei ole kohdetta {0}, jossa olisi tilaa uudelle työntekijälle
+UILABEL_WAIT_CARRY_FULL	ei tilaa kantaa enempää
+UILABEL_WAIT_LOAD_WAITING	kantaa kuormaa, joka automaattisen kannon on vietävä ensin
+UILABEL_WAIT_PROP_GONE	kohde on poissa
+UILABEL_WAIT_OUTSIDE_CLAIM	kohde ei ole ryhmittymäsi alueella
+UILABEL_WAIT_LOCKED	kohde on lukittu
+UILABEL_WAIT_NOTHING_TO_HAUL	ei kanna mitään, minkä kohde ottaa vastaan
+UILABEL_WAIT_PROP_FULL	kohteessa ei ole tilaa sille, mitä se kantaa
+UILABEL_BEHAVIOR_EAT_TIP	Syö: kun nälkä on alle {0} %, syö eniten nälkää vievän ruoan. Muuta rajaa - ja + -painikkeilla.
+UILABEL_BEHAVIOR_HEAL_TIP	Paranna: kun terveys on alle {0} %, käyttää eniten terveyttä palauttavan parantavan esineen. Muuta rajaa - ja + -painikkeilla.
+UILABEL_BEHAVIOR_REST_TIP	Lepää: kun levänneisyys on alle {0} %, käy makuulle lähimpään vapaaseen sänkyyn tai makuualustalle ja nousee täysin levänneenä. Muuta rajaa - ja + -painikkeilla.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Nouse sängystä: nousee sängystä tai makuualustalta 30 sekunnin jälkeen täysissä voimissa ja täysin levänneenä.
+UILABEL_BEHAVIOR_RESCUE_TIP	Pelasta: kantaa lähellä tajuttomana makaavan oman ryhmittymän yksikön lähimpään vapaaseen sänkyyn tai makuualustalle.
+UILABEL_BEHAVIOR_SHARE_TIP	Jaa: kun Syö tai Paranna tarvitsee esineen, jota tällä yksiköllä ei ole, se ottaa sellaisen kaupankäyntietäisyydellä olevalta yksiköltä, joka myös jakaa ja tarvitsee sitä vähemmän, ja kävelee ensin luokse, jos tämä on vähän kauempana. Muut jakavat yksiköt voivat ottaa tältä samalla tavalla.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Automaattinen keruu: työskentelee lähimmässä kohteessa {0} ryhmittymäsi alueella. Kun sillä on kuorma ja automaattinen kanto voi ottaa sen, se pysähtyy kantamaan. Antamasi käsky keskeyttää sen; se jatkuu, kun yksikkö on ollut toimettomana muutaman sekunnin.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Automaattinen kanto: vie tavaraluettelon esineet (ei puettuja varusteita), jotka kohde {0} ottaa vastaan, niin kauan kuin tilaa on ja yksikkö on ryhmittymäsi alueella. Antamasi käsky keskeyttää sen; se jatkuu, kun yksikkö on ollut toimettomana muutaman sekunnin.
+UILABEL_NPC_MESSAGES	NPC:t
+UILABEL_SHOW_NPC_INFO	Näytä NPC-tiedot
 UILABEL_COMBAT_MESSAGES	Taisteluviestit
 UILABEL_SEEN	Nähty
 UILABEL_HIT	Osuma
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Kokemusviestit
 UILABEL_EXPERIENCE	Kokemus
 UILABEL_XP_ATHLETICS	Urheilullisuuden kokemus
 UILABEL_XP_ENDURANCE	Kestävyyden kokemus
+UILABEL_XP_CARRYING	Voiman kokemus (kantaminen)
 UILABEL_ITEM_MESSAGES	Esineviestit
 UILABEL_PICKUP	Nosta
 UILABEL_DROP	Pudota
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Edistyminen: {0} %
 UILABEL_TIP_CURRENT_XP	Nykyiset kokemuspisteet: {0}
 UILABEL_ATTACK_DEFENSE	Hyökkäys {0}      Puolustus {1}
 UILABEL_STATS_CAPTION	Ominaisuudet: {0}
+UILABEL_MODEL_N	Malli {0}
 UILABEL_SLOT_N_ITEM	Paikka {0}: {1}
 UILABEL_SLOT_N_EMPTY	Paikka {0}: tyhjä
 UILABEL_COUNT	Määrä {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Vaatii molemmat kädet. Toisen käden on oltava tyhjä.
 ITEM_87_NAME	Sotakirves
 ITEM_87_DESC	Vaatii molemmat kädet. Toisen käden on oltava tyhjä.
 UILABEL_UI_SCALE	Käyttöliittymän koko
-NAME_MASCULINE	["Eero", "Mikko", "Juhani", "Tuomas", "Aleksi"]
-NAME_FEMININE	["Aino", "Helmi", "Liisa", "Sanna", "Veera"]
-NAME_ANDROGYNOUS	["Ilari", "Noa", "Kaisa", "Sasha", "Remi"]
+NAME_MASCULINE	["Eero", "Mikko", "Juhani", "Tuomas", "Aleksi", "Aapo", "Antti", "Arttu", "Eino", "Elias", "Erkki", "Heikki", "Ilmari", "Jaakko", "Janne", "Jari", "Joonas", "Jukka", "Jussi", "Kalle", "Kari", "Lauri", "Leevi", "Markku", "Matti", "Niilo", "Niko", "Olli", "Onni", "Oskari", "Otto", "Paavo", "Pekka", "Pentti", "Petteri", "Risto", "Sakari", "Samuli", "Seppo", "Teemu", "Timo", "Topi", "Tapio", "Toivo", "Unto", "Urho", "Valtteri", "Veikko", "Väinö", "Ville"]
+NAME_FEMININE	["Aino", "Helmi", "Liisa", "Sanna", "Veera", "Aila", "Anni", "Anu", "Eeva", "Elina", "Ella", "Emilia", "Hanna", "Heidi", "Hilja", "Iida", "Inkeri", "Johanna", "Kaarina", "Katja", "Kerttu", "Kirsi", "Laura", "Leena", "Lotta", "Maarit", "Maija", "Marjatta", "Minna", "Netta", "Oona", "Outi", "Päivi", "Pirkko", "Riikka", "Ronja", "Saara", "Satu", "Selma", "Siiri", "Sofia", "Suvi", "Taru", "Tiina", "Tuulia", "Ulla", "Venla", "Vilma", "Hilkka", "Kukka"]
+NAME_ANDROGYNOUS	["Ilari", "Noa", "Kaisa", "Sasha", "Remi", "Aamu", "Alex", "Ari", "Eeli", "Ilo", "Kai", "Kim", "Kuura", "Lumi", "Luka", "Miro", "Mika", "Nuppu", "Onerva", "Pilvi", "Rae", "Saga", "Sam", "Sini", "Sisu", "Taika", "Talvi", "Tuisku", "Tuuli", "Usva", "Utu", "Vesa", "Viri", "Aava", "Hely", "Ilta", "Kaste", "Kide", "Kielo", "Lempi", "Lyyti", "Meri", "Pyry", "Revontuli", "Sade", "Seela", "Tähti", "Toive", "Uni", "Valo"]
 UILABEL_BODY_TYPE	Vartalotyyppi
 UILABEL_BODY_MASCULINE	Maskuliininen
 UILABEL_BODY_FEMININE	Feminiininen
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Säiliössä ei ole tilaa
 MISC_PROP_TAKEN	Jo käytössä
 MISC_PROP_WORKERS_FULL	Enintään {0} yksikköä voi työstää sitä kerralla
 MISC_GATHERS	{0} kerää: {1}
+MISC_AUTO_HAUL_STORES	{0} varastoi {1} × {2} kohteeseen {3}
 MISC_GATHER_NO_ROOM	{0}: ei tilaa kohteelle {1}, lopettaa työn
 MISC_REASON_GATHERING	keräily
+MISC_REASON_CLEARING	raivaa roinaa
 UILABEL_TASK	Tehtävä: {0}
 UILABEL_TASK_IDLE	Toimeton
+UILABEL_TASK_AUTO_GOING	{0} (matkalla)
+UILABEL_TASK_SHARE_WALK	Menee jakamaan: {0}
 UILABEL_TASK_MOVING	Liikkeellä
 UILABEL_TASK_RESTING	Lepää
 UILABEL_STORAGE_HINT	Ota esine napsauttamalla sitä hiiren oikealla painikkeella tai vedä se ulos pudottaaksesi sen yksikkösi kohdalle. Säilö yksikkösi esineitä napsauttamalla niitä hiiren oikealla painikkeella.
@@ -595,6 +664,7 @@ FACTION_RED	Punainen ryhmittymä
 FACTION_GREEN	Vihreä ryhmittymä
 FACTION_BLUE	Sininen ryhmittymä
 FACTION_YELLOW	Keltainen ryhmittymä
+FACTION_EXILE	Maanpakolaiset
 MISC_REPUTATION_DROPS	Maine ryhmittymässä {0} laskee {1}, lukemaan {2}
 UILABEL_MODE_PASSIVE	Passiivinen
 UILABEL_MODE_BLOCK	Torjunta
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenaario
 SCENARIO_VAGABOND_NAME	Kulkuri
 SCENARIO_VAGABOND_DESC	Yksinäinen vaeltaja, jolla ei ole mitään: ei esineitä, ei varusteita ja jokainen ominaisuus 1–5.
-SCENARIO_RANDOM_NAME	Täysin satunnainen
-SCENARIO_RANDOM_DESC	1–32 yksikön joukko, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa.
+SCENARIO_PACK_NAME	Kahden lauma
+SCENARIO_PACK_DESC	Yksinäinen kulkija ja uskollinen susi. Kulkijalla ei ole esineitä eikä varusteita, ja jokainen ominaisuus on väliltä 1–5.
+SCENARIO_BEASTMASTER_NAME	Petojen herra
+SCENARIO_BEASTMASTER_DESC	Yksinäinen kulkija 20 satunnaisen lajin otuksen johdossa. Kulkijalla ei ole esineitä eikä varusteita, ja jokainen ominaisuus on väliltä 1–5.
+SCENARIO_RANDOM_NAME	Täysin satunnainen leiri
+SCENARIO_RANDOM_DESC	Oma leiri ja vähintään 20 yksikön ryhmä, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa, sekä 3–7 otusta.
 SCENARIO_CARAVAN_NAME	Matkaava karavaani
 SCENARIO_CARAVAN_DESC	Kymmenen matkalaista yhdessä tiellä. Kaikki ominaisuudet alkavat viidestä, ja jokaisella on 10 kultakolikkoa.
 SCENARIO_SHABBY_NAME	Nuhjuinen porukka
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Yksi yksikkö ilman mitään: ei esineitä, ei varusteita, 
 SCENARIO_DIGGERS_NAME	Luolastonkaivajat
 SCENARIO_DIGGERS_DESC	Seitsemän kaivostyöläistä täysissä varusteissa. Ominaisuudet ovat 5–20, mutta jokaisella on Louhinta 50 ja 3 rautamalmia mukana.
 SCENARIO_CUSTOM_NAME	Oma skenaario
-SCENARIO_CUSTOM_DESC	Kokoa oma ryhmäsi. Se alkaa kolmella yksiköllä, ja voit lisätä tai poistaa yksiköitä, enintään 32.
+SCENARIO_CUSTOM_DESC	Kokoa oma ryhmäsi. Se alkaa kolmella yksiköllä, ja voit lisätä tai poistaa yksiköitä ja tavallisia otuksia, enintään 32.
 PROP_LOCKED_CHEST	Lukittu arkku
 PROP_PRISONER_CAGE	Vankihäkki
 UILABEL_UNLOCK	Avaa lukko
+UILABEL_AUTO_HARVEST	Automaattinen keruu
+UILABEL_AUTO_HAUL	Automaattinen kanto
+MISC_AUTO_OUTSIDE_CLAIM	Automaattinen keruu ja kanto toimivat vain ryhmittymäsi alueella olevissa kohteissa
+MISC_AUTO_HARVEST_SET	{0} yksikkö(ä) kerää automaattisesti: {1}
+MISC_AUTO_HAUL_SET	{0} yksikkö(ä) kantaa automaattisesti kohteeseen {1}
+MISC_BEHAVIOR_LIST_FULL	Käytöslista on täynnä (enintään {0})
 UILABEL_PICK_UP	Nosta
-UILABEL_PUT_IN_BED	Pane sänkyyn
+UILABEL_PLACE	Aseta
+UILABEL_OCCUPY	Asetu
+UILABEL_DISBAND	Erota
+UILABEL_DISBAND_HOLD	Vahvista pitämällä Erota-painiketta {0} sekuntia
 UILABEL_PUT_DOWN	Laske maahan
 UILABEL_SHOP	Kauppa
 UILABEL_TASK_CARRIED	Kannetaan
@@ -641,16 +724,33 @@ UILABEL_DOOM	Tuho
 UILABEL_TASK_UNCONSCIOUS	Tajuton
 UILABEL_TASK_DEAD	Kuollut
 UILABEL_TASK_CARRYING	Kantaa
+UILABEL_TASK_STORING	Varastoi
 UILABEL_TAKE_ALL	Ota kaikki
 UILABEL_LOOT_HINT	Napsauta esinettä ottaaksesi sen yksikkösi tavaraluetteloon.
 UILABEL_CORPSE_OF	Ruumis: {0}
 MISC_FALLS_UNCONSCIOUS	{0} menettää tajuntansa
 MISC_DIES	{0} kuolee
 MISC_RECOVERS	{0} herää
+LOADING_PICTURES	Kuvat
+LOADING_UNIT_MODELS	Yksiköiden mallit
+LOADING_MOB_MODELS	Otusten mallit
+LOADING_MOB_PICTURES	Otusten kuvat
+LOADING_SKY	Taivas
+LOADING_PROP_MODELS	Kohteiden mallit
+LOADING_MAP	Kartta
+LOADING_MAP_GROUND	Kartan maasto
+LOADING_WORLD	Maailma
+LOADING_GROUND_ITEMS	Esineet maassa
+MISC_GOES_HOME	{0} luopuu takaa-ajosta ja palaa kotiin
+MISC_GETS_UP	{0} nousee ylös, vaara on ohi
 MISC_PICKS_UP_UNIT	{0} nostaa: {1}
 MISC_PUTS_DOWN	{0} laskee maahan: {1}
-MISC_PUTS_IN_BED	{0} panee {1}: {2}
-MISC_CORPSE_NO_BED	Sänky ei voi auttaa kuolleita
+MISC_PLACES_IN	{0} panee {1}: {2}
+MISC_DISBAND_ASK	{0} jättää ryhmäsi ja ryhmittymäsi lopullisesti ja ryhtyy Maanpakolaiseksi: neutraali kaikille ja vaeltaa yksin.
+MISC_DISBAND_ASK_MOB	{0} jättää ryhmäsi ja ryhmittymäsi lopullisesti ja palaa luontoon.
+MISC_DISBANDED	{0} jättää ryhmäsi Maanpakolaisena
+MISC_DISBANDED_MOB	{0} jättää ryhmäsi ja palaa luontoon
+MISC_CORPSE_NO_PLACE	Kuolleita ei voi asettaa sinne
 MISC_IS_UNCONSCIOUS	{0} on tajuton eikä voi tehdä mitään
 MISC_ALREADY_CARRYING	Mikään valituista yksiköistä ei voi kantaa häntä
 MISC_LOOT_NO_ROOM	Tavaraluettelossa ei ole tilaa
@@ -788,6 +888,46 @@ ITEM_132_NAME	Tulinuolet
 ITEM_132_DESC	Palavia nuolia lyhyt- tai pitkäjouselle. Kovimmin osuvat nuolet.
 ITEM_133_NAME	Varsijousen pultit
 ITEM_133_DESC	Lyhyitä, raskaita pultteja varsijouselle.
+ITEM_134_NAME	Karhunluut
+ITEM_134_DESC	Karhun luita. Hyviä käsityöhön.
+ITEM_135_NAME	Lehmänluut
+ITEM_135_DESC	Lehmän luita. Hyviä käsityöhön.
+ITEM_136_NAME	Kananluut
+ITEM_136_DESC	Kanan luita. Hyviä käsityöhön.
+ITEM_137_NAME	Villisianluut
+ITEM_137_DESC	Villisian luita. Hyviä käsityöhön.
+ITEM_138_NAME	Sudenluut
+ITEM_138_DESC	Suden luita. Hyviä käsityöhön.
+ITEM_139_NAME	Peuranluut
+ITEM_139_DESC	Peuran luita. Hyviä käsityöhön.
+ITEM_140_NAME	Kaniininluut
+ITEM_140_DESC	Kaniinin luita. Hyviä käsityöhön.
+ITEM_141_NAME	Kalanruodot
+ITEM_141_DESC	Kalan ruotoja. Hyviä käsityöhön.
+ITEM_142_NAME	Ravunkuori
+ITEM_142_DESC	Ravun kuoren palasia. Hyviä käsityöhön.
+ITEM_143_NAME	Liskonluut
+ITEM_143_DESC	Liskon luita. Hyviä käsityöhön.
+ITEM_144_NAME	Käärmeenluut
+ITEM_144_DESC	Käärmeen luita. Hyviä käsityöhön.
+ITEM_145_NAME	Sianluut
+ITEM_145_DESC	Sian luita. Hyviä käsityöhön.
+ITEM_146_NAME	Lampaanluut
+ITEM_146_DESC	Lampaan luita. Hyviä käsityöhön.
+ITEM_147_NAME	Ankanluut
+ITEM_147_DESC	Ankan luita. Hyviä käsityöhön.
+ITEM_148_NAME	Kilpikonnanluut
+ITEM_148_DESC	Kilpikonnan luita. Hyviä käsityöhön.
+ITEM_149_NAME	Lepakonluut
+ITEM_149_DESC	Lepakon luita. Hyviä käsityöhön.
+ITEM_150_NAME	Sammakonluut
+ITEM_150_DESC	Sammakon luita. Hyviä käsityöhön.
+ITEM_151_NAME	Gorlisarvisen luut
+ITEM_151_DESC	Gorlisarvisen luita. Hyviä käsityöhön.
+ITEM_152_NAME	Raaka gorlisarvisenliha
+ITEM_152_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
+ITEM_153_NAME	Kypsä gorlisarvisenliha
+ITEM_153_DESC	Täyteläistä tulella kypsennettyä lihaa. Palauttaa paljon terveyttä ja vie paljon nälkää.
 UILABEL_OPTIMIZE	Optimoi
 UILABEL_REMOVE_ALL	Riisu kaikki
 MISC_GEAR_NO_ROOM	Tavaraluettelossa ei ole tarpeeksi tilaa
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Selviytyminen
 UILABEL_EARLY_ACCESS	Ennakkojulkaisu
 MISC_TITLE_KEYS	Valitse  //  Enter Vahvista
 UILABEL_LANGUAGE_LABEL	Kieli:
+PROP_FLAG	Lippu
+PROP_DEBRIS	Roina
+PROP_FOUNDATION_SMALL	Pieni perustus
+PROP_FOUNDATION_LARGE	Suuri perustus
+PROP_FOUNDATION_LONG	Pitkä perustus
+PROP_FOUNDATION_CIRCLE	Pyöreä perustus
+PROP_VAULT	Holvi
+UILABEL_BUILD	Rakenna
+UILABEL_BUILD_SELECTED	Valittu: {0}
+UILABEL_BUILD_NONE	Valittu: ei mitään
+UILABEL_BUILD_SELECT	Valitse
+UILABEL_BUILD_PICKED	Valittu
+UILABEL_BUILD_PLACE_HINT	Napsauta maata vasemmalla sijoittaaksesi. Pidä R pohjassa ja liikuta hiirtä vasemmalle tai oikealle kääntääksesi. Oikea napsautus tai Escape peruu.
+UILABEL_UPKEEP_HINT	Kuluttaa ylläpitoon yhden kohteen {0} tunnissa. Laita niitä tänne.
+MISC_BUILD_BLOCKED	Täällä ei ole tilaa rakentaa
+MISC_BUILD_UNWALKABLE	Tälle maalle ei voi rakentaa
+MISC_BUILD_NO_FOUNDATION	Holvin on oltava kokonaan perustuksen päällä
+MISC_NO_UPKEEP	Ei ylläpitoa: ei pölkkyjä
+MISC_UPKEEP_LEFT	Ylläpito: {0} min jäljellä
+PROP_SHOP	Kauppa
+PROP_FARM	Maatila
+PROP_TURBINE	Tuulivoimala
+UILABEL_BUILD_DESTROY	Pura
+UILABEL_BUILD_DESTROY_HINT	Napsauta mitä tahansa kohdetta vasemmalla purkaaksesi sen: sen sisältö putoaa maahan ja tilalle jää roinaa. Napsauta roinaa vasemmalla raivataksesi sen. Oikea napsautus tai Escape peruu.
+UILABEL_LOCK	Lukitse
+MISC_BUILD_NO_CLAIM	Perustus tai holvi on rakennettava omalle alueellesi
+MISC_BUILD_SEALED	Toisen ryhmittymän holvi on sinetöinyt tämän maan
+MISC_BUILD_CLAIM_OVERLAP	Alue menisi päällekkäin toisen lipun alueen kanssa
+MISC_BUILD_VAULT_TAKEN	Alueella on jo holvi
+MISC_BUILD_VAULT_CAP	Ryhmittymälläsi on jo niin monta holvia kuin se voi pitää
+MISC_DESTROY_NOTHING	Siellä ei ole mitään purettavaa
+MISC_FLAG_FACTION	Omistaja: {0}
+MISC_FLAG_HEALTH	Kunto: {0}/{1}
+MISC_FLAG_VAULT_YES	Holvi: pystyssä, alue pysyy hallussa
+MISC_FLAG_VAULT_NO	Holvi: ei ole, lippu kuluu
+MISC_PROP_CONDITION	Kunto: {0} %
+MISC_PROP_DECAYING	Rapistuu
+MISC_PROP_HOLDING	Ei rapistu
+MISC_PROP_LOCK_OPEN	Lukitsematon
+MISC_PROP_LOCK_YOURS	Lukittu ulkopuolisilta (auki sinulle)
+MISC_PROP_LOCK_SHUT	Lukittu (Lukkojen avaus {0})
+MISC_PROP_UPKEEP	Ylläpito: {0} tuntia jäljellä
+MISC_PROP_VAULT_UNCLAIMED	Minkään alueen ulkopuolella: ei anna ylläpitoa
+MOB_BEAR	Karhu
+MOB_COW	Lehmä
+MOB_CHICKEN	Kana
+MOB_BOAR	Villisika
+MOB_WOLF	Susi
+MOB_DEER	Peura
+MOB_RABBIT	Kaniini
+MOB_FISH	Kala
+MOB_CRAB	Rapu
+MOB_LIZARD	Lisko
+MOB_SNAKE	Käärme
+MOB_PIG	Sika
+MOB_SHEEP	Lammas
+MOB_DUCK	Ankka
+MOB_TURTLE	Kilpikonna
+MOB_BAT	Lepakko
+MOB_FROG	Sammakko
+MOB_GORLICORN	Gorlisarvinen
+FACTION_MOB_BEAR	Karhut
+FACTION_MOB_COW	Lehmät
+FACTION_MOB_CHICKEN	Kanat
+FACTION_MOB_BOAR	Villisiat
+FACTION_MOB_WOLF	Sudet
+FACTION_MOB_DEER	Peurat
+FACTION_MOB_RABBIT	Kaniinit
+FACTION_MOB_FISH	Kalat
+FACTION_MOB_CRAB	Ravut
+FACTION_MOB_LIZARD	Liskot
+FACTION_MOB_SNAKE	Käärmeet
+FACTION_MOB_PIG	Siat
+FACTION_MOB_SHEEP	Lampaat
+FACTION_MOB_DUCK	Ankat
+FACTION_MOB_TURTLE	Kilpikonnat
+FACTION_MOB_BAT	Lepakot
+FACTION_MOB_FROG	Sammakot
+FACTION_MOB_GORLICORN	Gorlisarviset
+MISC_MOB_NO_GEAR	Otukset eivät voi pukea varusteita
+MISC_MOB_NO_HEALING	Otukset eivät voi käyttää parantavia esineitä
+MISC_MOB_CANT_WORK	Otukset eivät voi työskennellä kohteissa

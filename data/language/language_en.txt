@@ -76,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Global volume
 UILABEL_MUSIC	Music
 UILABEL_AMBIENT	Ambient
 UILABEL_INTERFACE_SOUNDS	Interface sounds
+UILABEL_CRAFT_GATHER_SOUNDS	Crafting and gathering sounds
 UILABEL_SOUND_EFFECTS	Sound effects
 UILABEL_RESTORE_DEFAULTS	Restore defaults
 UILABEL_WINDOWED	Windowed
@@ -147,6 +148,9 @@ UILABEL_RANDOMIZE_UNIT	Randomize this unit
 UILABEL_RANDOMIZE_ALL	Randomize all
 UILABEL_ADD_UNIT	Add unit
 UILABEL_REMOVE_UNIT	Remove unit
+UILABEL_ADD_MOB	Add mob
+UILABEL_MOB_KIND	Kind
+UILABEL_MOB_NO_ITEMS	A mob carries only its own meat and bones.
 UILABEL_CONFIRM_STARTS	Confirm starts the game with this party.
 UILABEL_NEEDS_NAMES	Every unit needs a name before the game can start.
 UILABEL_CLICK_UNIT_EDIT	Click a unit to edit it.
@@ -175,6 +179,16 @@ UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
 UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
 UILABEL_BEHAVIOR_WAITING	(waiting)
 UILABEL_BEHAVIOR_WAIT_TIP	Waiting: {0}
+UILABEL_BEHAVIOR_ADD	Add Behavior
+UILABEL_BEHAVIOR_HAVE	(have)
+UILABEL_BEHAVIOR_FULL	(list full)
+UILABEL_BEHAVIOR_NUMBER_TIP	Set the percent ({0}-{1}%)
+UILABEL_BEHAVIOR_PROMPT_EAT	Eat when hunger is below what percent?
+UILABEL_BEHAVIOR_PROMPT_HEAL	Heal when health is below what percent?
+UILABEL_BEHAVIOR_PROMPT_REST	Rest when rested is below what percent?
+UILABEL_BEHAVIOR_PROMPT_RANGE	From {0} to {1}. Enter sets it, Escape cancels.
+UILABEL_BEHAVIOR_PROMPT_BAD	Enter a whole number from {0} to {1}
+UILABEL_BEHAVIOR_PROMPT_SET	Set
 UILABEL_WAIT_NO_FOOD	no food to eat, and none to share nearby
 UILABEL_WAIT_NO_BED	no free bed or bedroll to rest in
 UILABEL_WAIT_NO_HEALING	no healing item, and none to share nearby
@@ -187,9 +201,9 @@ UILABEL_WAIT_OUTSIDE_CLAIM	the prop is not inside your faction's claim
 UILABEL_WAIT_LOCKED	the prop is locked
 UILABEL_WAIT_NOTHING_TO_HAUL	carrying nothing the prop takes
 UILABEL_WAIT_PROP_FULL	the prop has no room for what it carries
-UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Use - and + to change when.
-UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Use - and + to change when.
-UILABEL_BEHAVIOR_REST_TIP	Rest: below {0}% rested, lies down in the nearest free bed or bedroll and gets up when fully rested. Use - and + to change when.
+UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Press # to set when.
+UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Press # to set when.
+UILABEL_BEHAVIOR_REST_TIP	Rest: below {0}% rested, lies down in the nearest free bed or bedroll and gets up when fully rested. Press # to set when.
 UILABEL_BEHAVIOR_LEAVE_BED_TIP	Leave bed: gets out of a bed or bedroll after 30 seconds at full health and fully rested.
 UILABEL_BEHAVIOR_RESCUE_TIP	Rescue: carries a unit of its own faction that lies unconscious nearby to the nearest free bed or bedroll.
 UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
@@ -568,9 +582,9 @@ ITEM_86_DESC	Needs both hands. The off hand must be empty.
 ITEM_87_NAME	Battleaxe
 ITEM_87_DESC	Needs both hands. The off hand must be empty.
 UILABEL_UI_SCALE	UI scale
-NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin"]
-NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren"]
-NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin"]
+NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin", "Alaric", "Bertram", "Cedric", "Corwin", "Darian", "Edmund", "Edric", "Falk", "Gareth", "Godwin", "Hadrian", "Harold", "Ivor", "Jasper", "Kendrick", "Leofric", "Lorcan", "Magnus", "Malcolm", "Merrick", "Osric", "Oswin", "Percival", "Roderick", "Roland", "Silas", "Stellan", "Thaddeus", "Torin", "Tristan", "Ulric", "Victor", "Walter", "Wystan", "Aiden", "Brandt", "Callum", "Desmond", "Emrys", "Finnian", "Garrick", "Hector", "Lucan", "Rowan", "Tobias"]
+NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren", "Adela", "Alys", "Anwen", "Beatrix", "Brienne", "Catrin", "Celia", "Delphine", "Edith", "Elspeth", "Esme", "Fenna", "Freya", "Gisela", "Hazel", "Helena", "Ilsa", "Imogen", "Ivy", "Juliet", "Leda", "Linnea", "Lorelei", "Mabel", "Matilda", "Mirabel", "Nell", "Odette", "Petra", "Rosalind", "Rowena", "Seren", "Sybil", "Tamsin", "Thea", "Una", "Vera", "Viola", "Wilhelmina", "Yara", "Agnes", "Bryony", "Clara", "Ottilie", "Signe"]
+NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin", "Ash", "Avery", "Blair", "Briar", "Corin", "Dale", "Ember", "Ellis", "Emery", "Fallon", "Finch", "Gray", "Haven", "Hollis", "Indigo", "Jules", "Kai", "Lark", "Linden", "Marlow", "Merritt", "Morgan", "Nova", "Oakley", "Onyx", "Perrin", "Quinn", "Raven", "Reed", "Rook", "Rory", "Sage", "Shay", "Sparrow", "Sterling", "Tarn", "Teagan", "Vale", "Wynn", "Yarrow", "Zephyr", "Arden", "Cypress", "Ellery", "Lumen"]
 UILABEL_BODY_TYPE	Body type
 UILABEL_BODY_MASCULINE	Masculine
 UILABEL_BODY_FEMININE	Feminine
@@ -639,6 +653,7 @@ FACTION_RED	Red Faction
 FACTION_GREEN	Green Faction
 FACTION_BLUE	Blue Faction
 FACTION_YELLOW	Yellow Faction
+FACTION_EXILE	Exile
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
 UILABEL_MODE_PASSIVE	Passive
 UILABEL_MODE_BLOCK	Block
@@ -658,8 +673,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat from 1 to 5.
-SCENARIO_RANDOM_NAME	Full Random
-SCENARIO_RANDOM_DESC	A party of 1 to 32 units, each with every stat somewhere from 1 to 99, and random items and gear they can carry.
+SCENARIO_PACK_NAME	Pack of Two
+SCENARIO_PACK_DESC	A lone wanderer and a loyal wolf. The wanderer has no items or gear, and every stat from 1 to 5.
+SCENARIO_BEASTMASTER_NAME	Beastmaster
+SCENARIO_BEASTMASTER_DESC	A lone wanderer at the head of 20 mobs of random kinds. The wanderer has no items or gear, and every stat from 1 to 5.
+SCENARIO_RANDOM_NAME	Full Random Camp
+SCENARIO_RANDOM_DESC	Your own camp, with a party of 20 or more units, each with every stat somewhere from 1 to 99 and random items and gear they can carry, and 3 to 7 mobs.
 SCENARIO_CARAVAN_NAME	Traveling Caravan
 SCENARIO_CARAVAN_DESC	Ten travelers on the road together. Every stat starts at 5, and each carries 10 Gold Coins.
 SCENARIO_SHABBY_NAME	Shabby Crew
@@ -669,7 +688,7 @@ SCENARIO_NOBODY_DESC	One unit with nothing at all: no items, no gear, every stat
 SCENARIO_DIGGERS_NAME	Dungeon Diggers
 SCENARIO_DIGGERS_DESC	Seven miners in full gear. Their stats run from 5 to 20, but each has Mining at 50 and carries 3 Iron Ore.
 SCENARIO_CUSTOM_NAME	Custom Scenario
-SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you can add or remove units, up to 32.
+SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you can add or remove units and regular mobs, up to 32.
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 UILABEL_UNLOCK	Unlock
@@ -679,8 +698,13 @@ MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside you
 MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
 MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
 MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
+MISC_BEHAVIOR_ADDED	Added: {0}
+MISC_BEHAVIOR_SWITCHED_ON	Already on the list, switched on: {0}
 UILABEL_PICK_UP	Pick up
-UILABEL_PUT_IN_BED	Put in bed
+UILABEL_PLACE	Place
+UILABEL_OCCUPY	Occupy
+UILABEL_DISBAND	Disband
+UILABEL_DISBAND_HOLD	Hold Disband for {0} seconds to confirm
 UILABEL_PUT_DOWN	Put down
 UILABEL_SHOP	Shop
 UILABEL_TASK_CARRIED	Being carried
@@ -712,8 +736,12 @@ MISC_GOES_HOME	{0} gives up the chase and heads home
 MISC_GETS_UP	{0} gets up, the danger gone
 MISC_PICKS_UP_UNIT	{0} picks up {1}
 MISC_PUTS_DOWN	{0} puts down {1}
-MISC_PUTS_IN_BED	{0} puts {1} in the {2}
-MISC_CORPSE_NO_BED	A bed can do nothing for the dead
+MISC_PLACES_IN	{0} places {1} in the {2}
+MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become an Exile: neutral to everyone and roaming alone.
+MISC_DISBAND_ASK_MOB	{0} will leave your squad and faction for good and go back to the wild.
+MISC_DISBANDED	{0} leaves your squad as an Exile
+MISC_DISBANDED_MOB	{0} leaves your squad and returns to the wild
+MISC_CORPSE_NO_PLACE	The dead can't be placed there
 MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything
 MISC_ALREADY_CARRYING	None of your selected units can carry them
 MISC_LOOT_NO_ROOM	No room in the inventory
@@ -975,7 +1003,7 @@ FACTION_MOB_BEAR	Bears
 FACTION_MOB_COW	Cows
 FACTION_MOB_CHICKEN	Chickens
 FACTION_MOB_BOAR	Boars
-FACTION_MOB_WOLF	Wolfs
+FACTION_MOB_WOLF	Wolves
 FACTION_MOB_DEER	Deer
 FACTION_MOB_RABBIT	Rabbits
 FACTION_MOB_FISH	Fish

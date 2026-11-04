@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Opdateringsfrekvens
 UILABEL_DEFAULT	Standard
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Billedhastighedsgrænse
+UILABEL_VIEW_RANGE	Sigtevidde
+UILABEL_TILES_N	{0} felter
+UILABEL_SHOW_FPS	Vis FPS
 UILABEL_UNLIMITED	Ubegrænset
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisk gem
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minutter
 UILABEL_UNIT_NAMES	Navne på spillerens enheder
 UILABEL_NPC_NAMES	Navne på andre enheder
 UILABEL_PROP_NAMES	Navne på genstande i verden
+UILABEL_PROP_INFO	Vis info om genstande
 UILABEL_FONT_SIZE	Skriftstørrelse
 UILABEL_RESET_PANELS	Nulstil alle paneler
 UILABEL_RESET	Nulstil
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Global lydstyrke
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Omgivelser
 UILABEL_INTERFACE_SOUNDS	Brugerfladelyde
+UILABEL_CRAFT_GATHER_SOUNDS	Lyde fra fremstilling og indsamling
 UILABEL_SOUND_EFFECTS	Lydeffekter
 UILABEL_RESTORE_DEFAULTS	Gendan standardindstillinger
 UILABEL_WINDOWED	Vindue
@@ -123,6 +128,8 @@ UILABEL_STATS	Værdier
 UILABEL_CLICK_TO_TYPE	Klik for at skrive et navn
 UILABEL_HEALTH	Helbred
 UILABEL_HUNGER	Sult
+UILABEL_RESTED	Udhvilet
+UILABEL_COMFORT	Komfort
 UILABEL_CARRY	Bærekapacitet
 UILABEL_NEXT_LEVEL_XP_LINE	Erfaring til næste niveau: {0}
 UILABEL_STAT	Værdi
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Gør denne enhed tilfældig
 UILABEL_RANDOMIZE_ALL	Gør alle tilfældige
 UILABEL_ADD_UNIT	Tilføj enhed
 UILABEL_REMOVE_UNIT	Fjern enhed
+UILABEL_ADD_MOB	Tilføj dyr
+UILABEL_MOB_KIND	Art
+UILABEL_MOB_NO_GEAR	Et dyr bærer intet udstyr.
+MISC_MEAT_TAKEN_DIES	{0} dør
+MISC_MOB_INVENTORY_LOCKED	Ikke tilgængelig
+MISC_MOB_CANT_HOLD	Et dyr bærer kun sit eget kød og sine knogler
+UILABEL_CLEAR	Ryd
+UILABEL_TASK_CLEARING	Rydder murbrokker
+MISC_CLEARS_DEBRIS	{0} rydder murbrokkerne væk
+UILABEL_MOB_INVENTORY_HIDDEN	Ikke tilgængelig
+UILABEL_BEHAVIOR_PATROL	Patrulje
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulje ved oprindelse
+UILABEL_BEHAVIOR_ROAM	Strejf
+UILABEL_BEHAVIOR_PATROL_TIP	Patrulje: går rundt i det område, enheden står i, hvis området tilhører dens fraktion, og holder ind en gang imellem.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulje ved oprindelse: går rundt nær stedet, hvor den dukkede op. Jagtet for langt væk opgiver den, helbreder sig helt og går tilbage uden at tage skade, før den er hjemme.
+UILABEL_BEHAVIOR_ROAM_TIP	Strejf: vandrer rundt i det åbne land, overalt hvor den kan gå uden for flagenes områder.
+UILABEL_WAIT_NOT_IN_CLAIM	ikke i et område tilhørende dens fraktion
+UILABEL_WAIT_NOWHERE_TO_ROAM	ingen åben jord i nærheden uden for områderne
+UILABEL_TEMPERAMENT_AVOIDANT	Sky
+UILABEL_TEMPERAMENT_PASSIVE	Passiv
+UILABEL_TEMPERAMENT_NEUTRAL	Neutral
+UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressiv
+UILABEL_TEMPERAMENT	Temperament: {0}
+UILABEL_MOB_NO_ITEMS	Et dyr bærer kun sit eget kød og sine knogler.
 UILABEL_CONFIRM_STARTS	Bekræft starter spillet med denne gruppe.
 UILABEL_NEEDS_NAMES	Hver enhed skal have et navn, før spillet kan starte.
 UILABEL_CLICK_UNIT_EDIT	Klik på en enhed for at redigere den.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Ben
 UILABEL_SLOT_FEET	Fødder
 UILABEL_SLOT_ACCESSORY	Tilbehør
 UILABEL_BEHAVIOR_ON	Til
+UILABEL_BEHAVIOR_EAT	Spis ved sult < {0} %
+UILABEL_BEHAVIOR_REST	Hvil ved udhvilet < {0} %
+UILABEL_BEHAVIOR_LEAVE_BED	Forlad sengen når kommet sig
+UILABEL_BEHAVIOR_RESCUE	Red faldne allierede
+UILABEL_BEHAVIOR_HEAL	Helbred ved helbred < {0} %
+UILABEL_BEHAVIOR_SHARE	Del
+UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-høst: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Auto-slæb: {0}
+UILABEL_BEHAVIOR_WAITING	(venter)
+UILABEL_BEHAVIOR_WAIT_TIP	Venter: {0}
+UILABEL_WAIT_NO_FOOD	ingen mad at spise, og ingen i nærheden der deler
+UILABEL_WAIT_NO_BED	ingen ledig seng eller ledigt soveunderlag at hvile i
+UILABEL_WAIT_NO_HEALING	ingen helbredende genstand, og ingen i nærheden der deler
+UILABEL_WAIT_WALKING_TO_SHARE	går hen til {0}, som kan dele en
+UILABEL_WAIT_NO_PROP	ingen {0} i dit område med plads til endnu en arbejder
+UILABEL_WAIT_CARRY_FULL	ikke plads til at bære mere
+UILABEL_WAIT_LOAD_WAITING	bærer en last, som Auto-slæb skal tage først
+UILABEL_WAIT_PROP_GONE	genstanden er væk
+UILABEL_WAIT_OUTSIDE_CLAIM	genstanden er ikke i din fraktions område
+UILABEL_WAIT_LOCKED	genstanden er låst
+UILABEL_WAIT_NOTHING_TO_HAUL	bærer intet, som genstanden tager imod
+UILABEL_WAIT_PROP_FULL	genstanden har ikke plads til det, den bærer
+UILABEL_BEHAVIOR_EAT_TIP	Spis: under {0} % sult spises den mad, der mætter mest. Brug - og + til at ændre hvornår.
+UILABEL_BEHAVIOR_HEAL_TIP	Helbred: under {0} % helbred bruges den helbredende genstand, der genopretter mest helbred. Brug - og + til at ændre hvornår.
+UILABEL_BEHAVIOR_REST_TIP	Hvil: under {0} % udhvilet lægger enheden sig i den nærmeste ledige seng eller det nærmeste soveunderlag og står op, når den er helt udhvilet. Brug - og + til at ændre hvornår.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Forlad sengen: står op af en seng eller et soveunderlag efter 30 sekunder med fuldt helbred og helt udhvilet.
+UILABEL_BEHAVIOR_RESCUE_TIP	Red: bærer en bevidstløs enhed fra egen fraktion i nærheden hen til den nærmeste ledige seng eller det nærmeste soveunderlag.
+UILABEL_BEHAVIOR_SHARE_TIP	Del: når Spis eller Helbred har brug for en genstand, denne enhed mangler, tager den en fra en enhed inden for handelsafstand, som også deler og har mindre brug for den, og går først derhen, hvis den står lidt væk. Andre enheder, der deler, kan tage fra denne på samme måde.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-høst: arbejder ved den nærmeste {0} i din fraktions område. Med en last og et Auto-slæb, der kan tage den, stopper den for at slæbe. En ordre fra dig sætter det på pause; det starter igen, når enheden har stået stille et par sekunder.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-slæb: bringer de genstande i inventaret (ikke det bårne udstyr), som {0} tager imod, så længe der er plads, og enheden står i din fraktions område. En ordre fra dig sætter det på pause; det starter igen, når enheden har stået stille et par sekunder.
+UILABEL_NPC_MESSAGES	NPC'er
+UILABEL_SHOW_NPC_INFO	Vis NPC-info
 UILABEL_COMBAT_MESSAGES	Kampmeddelelser
 UILABEL_SEEN	Set
 UILABEL_HIT	Ramt
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Erfaringsmeddelelser
 UILABEL_EXPERIENCE	Erfaring
 UILABEL_XP_ATHLETICS	Atletik-erfaring
 UILABEL_XP_ENDURANCE	Udholdenheds-erfaring
+UILABEL_XP_CARRYING	Styrke-erfaring (bæring)
 UILABEL_ITEM_MESSAGES	Genstandsmeddelelser
 UILABEL_PICKUP	Saml op
 UILABEL_DROP	Smid
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Fremskridt: {0}%
 UILABEL_TIP_CURRENT_XP	Nuværende erfaring: {0}
 UILABEL_ATTACK_DEFENSE	Angreb {0}      Forsvar {1}
 UILABEL_STATS_CAPTION	Værdier: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Plads {0}: {1}
 UILABEL_SLOT_N_EMPTY	Plads {0}: tom
 UILABEL_COUNT	Antal {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Kræver begge hænder. Den sekundære hånd skal være tom.
 ITEM_87_NAME	Krigsøkse
 ITEM_87_DESC	Kræver begge hænder. Den sekundære hånd skal være tom.
 UILABEL_UI_SCALE	Skala for brugerfladen
-NAME_MASCULINE	["Mikkel", "Jesper", "Anders", "Søren", "Frederik"]
-NAME_FEMININE	["Ida", "Karoline", "Sofie", "Freja", "Astrid"]
-NAME_ANDROGYNOUS	["Ask", "Kim", "Sascha", "Remi", "Lou"]
+NAME_MASCULINE	["Mikkel", "Jesper", "Anders", "Søren", "Frederik", "Asger", "Bjarke", "Bo", "Carsten", "Christian", "Emil", "Erik", "Esben", "Finn", "Gustav", "Hans", "Henrik", "Holger", "Jakob", "Jens", "Johan", "Jonas", "Kasper", "Kristian", "Lars", "Magnus", "Mads", "Malthe", "Martin", "Morten", "Niels", "Nikolaj", "Oliver", "Ole", "Oscar", "Peter", "Poul", "Rasmus", "Rune", "Sebastian", "Simon", "Steen", "Svend", "Thomas", "Torben", "Troels", "Ulrik", "Valdemar", "Viggo", "Aksel"]
+NAME_FEMININE	["Ida", "Karoline", "Sofie", "Freja", "Astrid", "Agnes", "Anna", "Anne", "Birgitte", "Camilla", "Cecilie", "Clara", "Dagmar", "Ellen", "Emma", "Frida", "Gry", "Hanne", "Helle", "Inge", "Johanne", "Josefine", "Julie", "Karen", "Kirsten", "Laura", "Lene", "Line", "Lærke", "Maja", "Malene", "Marie", "Mette", "Nanna", "Pernille", "Rikke", "Signe", "Silje", "Sille", "Stine", "Sus", "Thea", "Tove", "Trine", "Ulla", "Vibeke", "Viola", "Asta", "Ingrid", "Liva"]
+NAME_ANDROGYNOUS	["Ask", "Kim", "Sascha", "Remi", "Lou", "Alex", "Andrea", "Brisa", "Charlie", "Eli", "Eske", "Skov", "Glimt", "Isak", "Jo", "Kai", "Kris", "Lui", "Luca", "Mika", "Mio", "Nikita", "Noa", "Noel", "Nova", "Lærk", "Sam", "Sky", "Sol", "Storm", "Tal", "Toke", "Toni", "Ulv", "Vigga", "Ylva", "Yan", "Zola", "Aske", "Bjørk", "Dan", "Elm", "Fjord", "Høst", "Lind", "Mos", "Rønne", "Siv", "Tue", "Vind"]
 UILABEL_BODY_TYPE	Kropstype
 UILABEL_BODY_MASCULINE	Maskulin
 UILABEL_BODY_FEMININE	Feminin
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Ingen plads i lageret
 MISC_PROP_TAKEN	Allerede i brug
 MISC_PROP_WORKERS_FULL	Op til {0} enheder kan arbejde på den ad gangen
 MISC_GATHERS	{0} samler {1}
+MISC_AUTO_HAUL_STORES	{0} lægger {1} {2} i {3}
 MISC_GATHER_NO_ROOM	{0} har ikke plads til {1} og holder op med at arbejde
 MISC_REASON_GATHERING	indsamling
+MISC_REASON_CLEARING	rydder murbrokker
 UILABEL_TASK	Opgave: {0}
 UILABEL_TASK_IDLE	Ledig
+UILABEL_TASK_AUTO_GOING	{0} (på vej)
+UILABEL_TASK_SHARE_WALK	Går hen til {0} for at dele
 UILABEL_TASK_MOVING	Bevæger sig
 UILABEL_TASK_RESTING	Hviler
 UILABEL_STORAGE_HINT	Højreklik på en genstand for at tage den, eller træk den ud for at lægge den, hvor din enhed står. Højreklik på din enheds genstande for at lægge dem i lageret.
@@ -595,6 +664,7 @@ FACTION_RED	Den røde fraktion
 FACTION_GREEN	Den grønne fraktion
 FACTION_BLUE	Den blå fraktion
 FACTION_YELLOW	Den gule fraktion
+FACTION_EXILE	Landsforviste
 MISC_REPUTATION_DROPS	Omdømmet hos {0} falder med {1} til {2}
 UILABEL_MODE_PASSIVE	Passiv
 UILABEL_MODE_BLOCK	Blokér
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenarie
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	En ensom vandrer uden noget at kalde sit eget: ingen genstande, intet udstyr og hver evne fra 1 til 5.
-SCENARIO_RANDOM_NAME	Helt tilfældig
-SCENARIO_RANDOM_DESC	En gruppe på 1 til 32 enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære.
+SCENARIO_PACK_NAME	Flok på to
+SCENARIO_PACK_DESC	En ensom vandrer og en trofast ulv. Vandreren har ingen genstande eller udstyr, og hver evne fra 1 til 5.
+SCENARIO_BEASTMASTER_NAME	Dyretæmmer
+SCENARIO_BEASTMASTER_DESC	En ensom vandrer i spidsen for 20 dyr af tilfældige arter. Vandreren har ingen genstande eller udstyr, og hver evne fra 1 til 5.
+SCENARIO_RANDOM_NAME	Fuldt tilfældig lejr
+SCENARIO_RANDOM_DESC	Din egen lejr med en gruppe på 20 eller flere enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære, og 3 til 7 dyr.
 SCENARIO_CARAVAN_NAME	Rejsende karavane
 SCENARIO_CARAVAN_DESC	Ti rejsende på vejen sammen. Alle evner starter på 5, og hver bærer 10 guldmønter.
 SCENARIO_SHABBY_NAME	Lurvet bande
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Én enhed uden noget som helst: ingen genstande, intet udst
 SCENARIO_DIGGERS_NAME	Fangekældergravere
 SCENARIO_DIGGERS_DESC	Syv minearbejdere i fuld udrustning. Deres evner ligger fra 5 til 20, men hver har Minedrift 50 og bærer 3 jernmalm.
 SCENARIO_CUSTOM_NAME	Brugerdefineret scenarie
-SCENARIO_CUSTOM_DESC	Byg din egen gruppe. Den starter med tre enheder, og du kan tilføje eller fjerne enheder, op til 32.
+SCENARIO_CUSTOM_DESC	Byg din egen gruppe. Den starter med tre enheder, og du kan tilføje eller fjerne enheder og almindelige dyr, op til 32.
 PROP_LOCKED_CHEST	Låst kiste
 PROP_PRISONER_CAGE	Fangebur
 UILABEL_UNLOCK	Lås op
+UILABEL_AUTO_HARVEST	Auto-høst
+UILABEL_AUTO_HAUL	Auto-slæb
+MISC_AUTO_OUTSIDE_CLAIM	Auto-høst og Auto-slæb virker kun på genstande i din fraktions område
+MISC_AUTO_HARVEST_SET	{0} enhed(er) vil auto-høste: {1}
+MISC_AUTO_HAUL_SET	{0} enhed(er) vil auto-slæbe til {1}
+MISC_BEHAVIOR_LIST_FULL	Adfærdslisten er fuld (højst {0})
 UILABEL_PICK_UP	Løft op
-UILABEL_PUT_IN_BED	Læg i seng
+UILABEL_PLACE	Placér
+UILABEL_OCCUPY	Indtag
+UILABEL_DISBAND	Afskedig
+UILABEL_DISBAND_HOLD	Hold Afskedig nede i {0} sekunder for at bekræfte
 UILABEL_PUT_DOWN	Læg ned
 UILABEL_SHOP	Handl
 UILABEL_TASK_CARRIED	Bliver båret
@@ -641,16 +724,33 @@ UILABEL_DOOM	Undergang
 UILABEL_TASK_UNCONSCIOUS	Bevidstløs
 UILABEL_TASK_DEAD	Død
 UILABEL_TASK_CARRYING	Bærer
+UILABEL_TASK_STORING	Lægger på lager
 UILABEL_TAKE_ALL	Tag alt
 UILABEL_LOOT_HINT	Klik på en genstand for at tage den i din enheds inventar.
 UILABEL_CORPSE_OF	Liget af {0}
 MISC_FALLS_UNCONSCIOUS	{0} mister bevidstheden
 MISC_DIES	{0} dør
 MISC_RECOVERS	{0} vågner
+LOADING_PICTURES	Billeder
+LOADING_UNIT_MODELS	Enhedsmodeller
+LOADING_MOB_MODELS	Dyremodeller
+LOADING_MOB_PICTURES	Dyrebilleder
+LOADING_SKY	Himmel
+LOADING_PROP_MODELS	Genstandsmodeller
+LOADING_MAP	Kort
+LOADING_MAP_GROUND	Kortets jord
+LOADING_WORLD	Verden
+LOADING_GROUND_ITEMS	Genstande på jorden
+MISC_GOES_HOME	{0} opgiver jagten og går hjem
+MISC_GETS_UP	{0} rejser sig, faren er drevet over
 MISC_PICKS_UP_UNIT	{0} løfter {1}
 MISC_PUTS_DOWN	{0} lægger {1} ned
-MISC_PUTS_IN_BED	{0} lægger {1} i {2}
-MISC_CORPSE_NO_BED	En seng kan intet gøre for de døde
+MISC_PLACES_IN	{0} lægger {1} i {2}
+MISC_DISBAND_ASK	{0} forlader din gruppe og fraktion for altid og bliver en Landsforvist: neutral over for alle og strejfer alene omkring.
+MISC_DISBAND_ASK_MOB	{0} forlader din gruppe og fraktion for altid og vender tilbage til naturen.
+MISC_DISBANDED	{0} forlader din gruppe som Landsforvist
+MISC_DISBANDED_MOB	{0} forlader din gruppe og vender tilbage til naturen
+MISC_CORPSE_NO_PLACE	De døde kan ikke placeres der
 MISC_IS_UNCONSCIOUS	{0} er bevidstløs og kan ikke gøre noget
 MISC_ALREADY_CARRYING	Ingen af dine valgte enheder kan bære dem
 MISC_LOOT_NO_ROOM	Ingen plads i inventaret
@@ -788,6 +888,46 @@ ITEM_132_NAME	Ildpile
 ITEM_132_DESC	Brændende pile til en kort bue eller langbue. De hårdest rammende pile.
 ITEM_133_NAME	Armbrøstbolte
 ITEM_133_DESC	Korte, tunge bolte til en armbrøst.
+ITEM_134_NAME	Bjørneknogler
+ITEM_134_DESC	Knogler fra en bjørn. Gode til håndværk.
+ITEM_135_NAME	Koknogler
+ITEM_135_DESC	Knogler fra en ko. Gode til håndværk.
+ITEM_136_NAME	Kyllingeknogler
+ITEM_136_DESC	Knogler fra en kylling. Gode til håndværk.
+ITEM_137_NAME	Vildsvineknogler
+ITEM_137_DESC	Knogler fra et vildsvin. Gode til håndværk.
+ITEM_138_NAME	Ulveknogler
+ITEM_138_DESC	Knogler fra en ulv. Gode til håndværk.
+ITEM_139_NAME	Hjorteknogler
+ITEM_139_DESC	Knogler fra en hjort. Gode til håndværk.
+ITEM_140_NAME	Kaninknogler
+ITEM_140_DESC	Knogler fra en kanin. Gode til håndværk.
+ITEM_141_NAME	Fiskeben
+ITEM_141_DESC	Ben fra en fisk. Gode til håndværk.
+ITEM_142_NAME	Krabbeskal
+ITEM_142_DESC	Rester af en krabbes skal. Gode til håndværk.
+ITEM_143_NAME	Firbenknogler
+ITEM_143_DESC	Knogler fra et firben. Gode til håndværk.
+ITEM_144_NAME	Slangeknogler
+ITEM_144_DESC	Knogler fra en slange. Gode til håndværk.
+ITEM_145_NAME	Griseknogler
+ITEM_145_DESC	Knogler fra en gris. Gode til håndværk.
+ITEM_146_NAME	Fåreknogler
+ITEM_146_DESC	Knogler fra et får. Gode til håndværk.
+ITEM_147_NAME	Andeknogler
+ITEM_147_DESC	Knogler fra en and. Gode til håndværk.
+ITEM_148_NAME	Skildpaddeknogler
+ITEM_148_DESC	Knogler fra en skildpadde. Gode til håndværk.
+ITEM_149_NAME	Flagermusknogler
+ITEM_149_DESC	Knogler fra en flagermus. Gode til håndværk.
+ITEM_150_NAME	Frøknogler
+ITEM_150_DESC	Knogler fra en frø. Gode til håndværk.
+ITEM_151_NAME	Gorlicornknogler
+ITEM_151_DESC	Knogler fra en gorlicorn. Gode til håndværk.
+ITEM_152_NAME	Råt gorlicornkød
+ITEM_152_DESC	Utilberedt kød. Steg det ved et lejrbål.
+ITEM_153_NAME	Stegt gorlicornkød
+ITEM_153_DESC	Kraftigt kød stegt over ild. Genopretter meget helbred og mætter godt.
 UILABEL_OPTIMIZE	Optimer
 UILABEL_REMOVE_ALL	Tag alt af
 MISC_GEAR_NO_ROOM	Ikke nok plads i inventaret
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Overlevelse
 UILABEL_EARLY_ACCESS	Tidlig adgang
 MISC_TITLE_KEYS	Vælg  //  Enter Bekræft
 UILABEL_LANGUAGE_LABEL	Sprog:
+PROP_FLAG	Flag
+PROP_DEBRIS	Murbrokker
+PROP_FOUNDATION_SMALL	Lille fundament
+PROP_FOUNDATION_LARGE	Stort fundament
+PROP_FOUNDATION_LONG	Langt fundament
+PROP_FOUNDATION_CIRCLE	Rundt fundament
+PROP_VAULT	Boks
+UILABEL_BUILD	Byg
+UILABEL_BUILD_SELECTED	Valgt: {0}
+UILABEL_BUILD_NONE	Valgt: intet
+UILABEL_BUILD_SELECT	Vælg
+UILABEL_BUILD_PICKED	Valgt
+UILABEL_BUILD_PLACE_HINT	Venstreklik på jorden for at placere. Hold R og bevæg musen til venstre eller højre for at dreje. Højreklik eller Escape annullerer.
+UILABEL_UPKEEP_HINT	Bruger én {0} i timen til vedligehold. Læg dem herind.
+MISC_BUILD_BLOCKED	Ikke plads til at bygge her
+MISC_BUILD_UNWALKABLE	Der kan ikke bygges på denne jord
+MISC_BUILD_NO_FOUNDATION	En boks skal stå helt på et fundament
+MISC_NO_UPKEEP	Intet vedligehold: ingen stammer
+MISC_UPKEEP_LEFT	Vedligehold: {0} min tilbage
+PROP_SHOP	Butik
+PROP_FARM	Gård
+PROP_TURBINE	Vindmølle
+UILABEL_BUILD_DESTROY	Riv ned
+UILABEL_BUILD_DESTROY_HINT	Venstreklik på en genstand for at rive den ned: det, den rummer, falder på jorden, og der ligger murbrokker tilbage. Venstreklik på murbrokker for at rydde dem væk. Højreklik eller Escape annullerer.
+UILABEL_LOCK	Lås
+MISC_BUILD_NO_CLAIM	Et fundament eller en boks skal stå i dit eget område
+MISC_BUILD_SEALED	Den jord er forseglet af en anden fraktions boks
+MISC_BUILD_CLAIM_OVERLAP	Det område ville overlappe et andet flags område
+MISC_BUILD_VAULT_TAKEN	Det område har allerede en boks
+MISC_BUILD_VAULT_CAP	Din fraktion har allerede så mange bokse, som den kan have
+MISC_DESTROY_NOTHING	Intet at rive ned der
+MISC_FLAG_FACTION	Ejer: {0}
+MISC_FLAG_HEALTH	Helbred: {0} af {1}
+MISC_FLAG_VAULT_YES	Boks: står, området holdes
+MISC_FLAG_VAULT_NO	Boks: ingen, flaget slides ned
+MISC_PROP_CONDITION	Tilstand: {0} %
+MISC_PROP_DECAYING	Forfalder
+MISC_PROP_HOLDING	Forfalder ikke
+MISC_PROP_LOCK_OPEN	Ulåst
+MISC_PROP_LOCK_YOURS	Låst for udefrakommende (åben for dig)
+MISC_PROP_LOCK_SHUT	Låst (Låseoplukning {0})
+MISC_PROP_UPKEEP	Vedligehold: {0} timer tilbage
+MISC_PROP_VAULT_UNCLAIMED	Uden for alle områder: giver intet vedligehold
+MOB_BEAR	Bjørn
+MOB_COW	Ko
+MOB_CHICKEN	Kylling
+MOB_BOAR	Vildsvin
+MOB_WOLF	Ulv
+MOB_DEER	Hjort
+MOB_RABBIT	Kanin
+MOB_FISH	Fisk
+MOB_CRAB	Krabbe
+MOB_LIZARD	Firben
+MOB_SNAKE	Slange
+MOB_PIG	Gris
+MOB_SHEEP	Får
+MOB_DUCK	And
+MOB_TURTLE	Skildpadde
+MOB_BAT	Flagermus
+MOB_FROG	Frø
+MOB_GORLICORN	Gorlicorn
+FACTION_MOB_BEAR	Bjørne
+FACTION_MOB_COW	Køer
+FACTION_MOB_CHICKEN	Kyllinger
+FACTION_MOB_BOAR	Vildsvin
+FACTION_MOB_WOLF	Ulve
+FACTION_MOB_DEER	Hjorte
+FACTION_MOB_RABBIT	Kaniner
+FACTION_MOB_FISH	Fisk
+FACTION_MOB_CRAB	Krabber
+FACTION_MOB_LIZARD	Firben
+FACTION_MOB_SNAKE	Slanger
+FACTION_MOB_PIG	Grise
+FACTION_MOB_SHEEP	Får
+FACTION_MOB_DUCK	Ænder
+FACTION_MOB_TURTLE	Skildpadder
+FACTION_MOB_BAT	Flagermus
+FACTION_MOB_FROG	Frøer
+FACTION_MOB_GORLICORN	Gorlicorner
+MISC_MOB_NO_GEAR	Dyr kan ikke bære udstyr
+MISC_MOB_NO_HEALING	Dyr kan ikke bruge helbredende genstande
+MISC_MOB_CANT_WORK	Dyr kan ikke arbejde ved genstande

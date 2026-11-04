@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	อัตรารีเฟรช
 UILABEL_DEFAULT	ค่าเริ่มต้น
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	จำกัดเฟรมเรต
+UILABEL_VIEW_RANGE	ระยะการมองเห็น
+UILABEL_TILES_N	{0} ช่อง
+UILABEL_SHOW_FPS	แสดง FPS
 UILABEL_UNLIMITED	ไม่จำกัด
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	บันทึกอัตโนมัติ
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} นาที
 UILABEL_UNIT_NAMES	ชื่อยูนิตของผู้เล่น
 UILABEL_NPC_NAMES	ชื่อยูนิตอื่น
 UILABEL_PROP_NAMES	ชื่อวัตถุ
+UILABEL_PROP_INFO	แสดงข้อมูลวัตถุ
 UILABEL_FONT_SIZE	ขนาดตัวอักษร
 UILABEL_RESET_PANELS	รีเซ็ตแผงอินเทอร์เฟซทั้งหมด
 UILABEL_RESET	รีเซ็ต
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	ระดับเสียงรวม
 UILABEL_MUSIC	เพลง
 UILABEL_AMBIENT	เสียงบรรยากาศ
 UILABEL_INTERFACE_SOUNDS	เสียงอินเทอร์เฟซ
+UILABEL_CRAFT_GATHER_SOUNDS	เสียงการประดิษฐ์และการเก็บรวบรวม
 UILABEL_SOUND_EFFECTS	เสียงเอฟเฟกต์
 UILABEL_RESTORE_DEFAULTS	คืนค่าเริ่มต้น
 UILABEL_WINDOWED	หน้าต่าง
@@ -123,6 +128,8 @@ UILABEL_STATS	สถิติ
 UILABEL_CLICK_TO_TYPE	คลิกเพื่อพิมพ์ชื่อ
 UILABEL_HEALTH	พลังชีวิต
 UILABEL_HUNGER	ความหิว
+UILABEL_RESTED	ความสดชื่น
+UILABEL_COMFORT	ความสบาย
 UILABEL_CARRY	น้ำหนักที่แบกได้
 UILABEL_NEXT_LEVEL_XP_LINE	EXP ถึงเลเวลถัดไป: {0}
 UILABEL_STAT	ค่าสถานะ
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	สุ่มยูนิตนี้
 UILABEL_RANDOMIZE_ALL	สุ่มทั้งหมด
 UILABEL_ADD_UNIT	เพิ่มยูนิต
 UILABEL_REMOVE_UNIT	ลบยูนิต
+UILABEL_ADD_MOB	เพิ่มสัตว์
+UILABEL_MOB_KIND	ชนิด
+UILABEL_MOB_NO_GEAR	สัตว์ไม่สวมอุปกรณ์
+MISC_MEAT_TAKEN_DIES	{0} ตายแล้ว
+MISC_MOB_INVENTORY_LOCKED	ไม่พร้อมใช้งาน
+MISC_MOB_CANT_HOLD	สัตว์ถือได้แค่เนื้อและกระดูกของตัวเอง
+UILABEL_CLEAR	เก็บกวาด
+UILABEL_TASK_CLEARING	กำลังเก็บกวาดเศษซาก
+MISC_CLEARS_DEBRIS	{0} เก็บกวาดเศษซากออกไป
+UILABEL_MOB_INVENTORY_HIDDEN	ไม่พร้อมใช้งาน
+UILABEL_BEHAVIOR_PATROL	ลาดตระเวน
+UILABEL_BEHAVIOR_PATROL_SPAWN	ลาดตระเวนที่จุดเกิด
+UILABEL_BEHAVIOR_ROAM	เร่ร่อน
+UILABEL_BEHAVIOR_PATROL_TIP	ลาดตระเวน: เดินไปมาในเขตที่ยืนอยู่ ถ้าเขตนั้นเป็นของฝ่ายตน และหยุดพักเป็นระยะ
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	ลาดตระเวนที่จุดเกิด: เดินไปมาใกล้ที่ที่ปรากฏตัวครั้งแรก ถ้าถูกไล่ไปไกลเกินไปจะยอมแพ้ ฟื้นพลังชีวิตเต็มแล้วเดินกลับ โดยไม่ได้รับความเสียหายจนกว่าจะถึง
+UILABEL_BEHAVIOR_ROAM_TIP	เร่ร่อน: ท่องไปในพื้นที่เปิด ทุกที่ที่เดินได้นอกเขตของธง
+UILABEL_WAIT_NOT_IN_CLAIM	ไม่ได้อยู่ในเขตของฝ่ายตน
+UILABEL_WAIT_NOWHERE_TO_ROAM	ไม่มีพื้นที่เปิดใกล้ๆ นอกเขต
+UILABEL_TEMPERAMENT_AVOIDANT	หลีกเลี่ยง
+UILABEL_TEMPERAMENT_PASSIVE	เชื่อง
+UILABEL_TEMPERAMENT_NEUTRAL	เป็นกลาง
+UILABEL_TEMPERAMENT_AGGRESSIVE	ดุร้าย
+UILABEL_TEMPERAMENT	นิสัย: {0}
+UILABEL_MOB_NO_ITEMS	สัตว์พกได้เพียงเนื้อและกระดูกของตัวเอง
 UILABEL_CONFIRM_STARTS	การยืนยันจะเริ่มเกมด้วยทีมนี้
 UILABEL_NEEDS_NAMES	ทุกยูนิตต้องมีชื่อก่อนจึงจะเริ่มเกมได้
 UILABEL_CLICK_UNIT_EDIT	คลิกยูนิตเพื่อแก้ไข
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	ขา
 UILABEL_SLOT_FEET	เท้า
 UILABEL_SLOT_ACCESSORY	เครื่องประดับ
 UILABEL_BEHAVIOR_ON	เปิด
+UILABEL_BEHAVIOR_EAT	กินเมื่ออิ่ม < {0}%
+UILABEL_BEHAVIOR_REST	พักเมื่อสดชื่น < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	ลุกจากเตียงเมื่อฟื้นตัว
+UILABEL_BEHAVIOR_RESCUE	ช่วยพันธมิตรที่ล้มลง
+UILABEL_BEHAVIOR_HEAL	รักษาเมื่อพลังชีวิต < {0}%
+UILABEL_BEHAVIOR_SHARE	แบ่งปัน
+UILABEL_BEHAVIOR_AUTO_HARVEST	เก็บเกี่ยวอัตโนมัติ: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	ขนส่งอัตโนมัติ: {0}
+UILABEL_BEHAVIOR_WAITING	(กำลังรอ)
+UILABEL_BEHAVIOR_WAIT_TIP	กำลังรอ: {0}
+UILABEL_WAIT_NO_FOOD	ไม่มีอาหารให้กิน และไม่มีใครใกล้ๆ แบ่งให้
+UILABEL_WAIT_NO_BED	ไม่มีเตียงหรือที่นอนม้วนว่างให้พัก
+UILABEL_WAIT_NO_HEALING	ไม่มีไอเทมรักษา และไม่มีใครใกล้ๆ แบ่งให้
+UILABEL_WAIT_WALKING_TO_SHARE	กำลังเดินไปหา {0} ซึ่งแบ่งให้ได้หนึ่งชิ้น
+UILABEL_WAIT_NO_PROP	ไม่มี {0} ในเขตของคุณที่ยังมีที่ว่างให้คนงานอีกคน
+UILABEL_WAIT_CARRY_FULL	ไม่มีที่ว่างจะแบกเพิ่ม
+UILABEL_WAIT_LOAD_WAITING	กำลังแบกของที่การขนส่งอัตโนมัติต้องรับไปก่อน
+UILABEL_WAIT_PROP_GONE	วัตถุหายไปแล้ว
+UILABEL_WAIT_OUTSIDE_CLAIM	วัตถุไม่อยู่ในเขตของฝ่ายคุณ
+UILABEL_WAIT_LOCKED	วัตถุถูกล็อก
+UILABEL_WAIT_NOTHING_TO_HAUL	ไม่ได้แบกสิ่งที่วัตถุรับ
+UILABEL_WAIT_PROP_FULL	วัตถุไม่มีที่ว่างสำหรับของที่แบกมา
+UILABEL_BEHAVIOR_EAT_TIP	กิน: เมื่อความอิ่มต่ำกว่า {0}% จะกินอาหารที่ฟื้นความหิวได้มากที่สุด ใช้ - และ + เพื่อเปลี่ยนเวลา
+UILABEL_BEHAVIOR_HEAL_TIP	รักษา: เมื่อพลังชีวิตต่ำกว่า {0}% จะใช้ไอเทมรักษาที่ฟื้นพลังชีวิตได้มากที่สุด ใช้ - และ + เพื่อเปลี่ยนเวลา
+UILABEL_BEHAVIOR_REST_TIP	พัก: เมื่อความสดชื่นต่ำกว่า {0}% จะนอนบนเตียงหรือที่นอนม้วนว่างที่ใกล้ที่สุด แล้วลุกเมื่อสดชื่นเต็มที่ ใช้ - และ + เพื่อเปลี่ยนเวลา
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	ลุกจากเตียง: ลุกจากเตียงหรือที่นอนม้วนหลังพลังชีวิตเต็มและสดชื่นเต็มที่ครบ 30 วินาที
+UILABEL_BEHAVIOR_RESCUE_TIP	ช่วยเหลือ: แบกยูนิตฝ่ายเดียวกันที่หมดสติอยู่ใกล้ๆ ไปยังเตียงหรือที่นอนม้วนว่างที่ใกล้ที่สุด
+UILABEL_BEHAVIOR_SHARE_TIP	แบ่งปัน: เมื่อการกินหรือการรักษาต้องใช้ไอเทมที่ยูนิตนี้ไม่มี จะรับมาหนึ่งชิ้นจากยูนิตในระยะค้าขายที่แบ่งปันเช่นกันและต้องการมันน้อยกว่า โดยเดินไปหาก่อนถ้าอยู่ห่างออกไปเล็กน้อย ยูนิตอื่นที่แบ่งปันก็รับจากยูนิตนี้ได้แบบเดียวกัน
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	เก็บเกี่ยวอัตโนมัติ: ทำงานที่ {0} ที่ใกล้ที่สุดในเขตของฝ่ายคุณ เมื่อมีของและมีการขนส่งอัตโนมัติที่รับได้ จะหยุดเพื่อขนไป คำสั่งของคุณจะหยุดมันชั่วคราว และจะเริ่มใหม่เมื่อยูนิตว่างอยู่สักครู่
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	ขนส่งอัตโนมัติ: ขนไอเทมในกระเป๋า (ไม่รวมอุปกรณ์ที่สวมอยู่) ที่ {0} รับไปเก็บ ตราบที่ยังมีที่ว่างและยูนิตอยู่ในเขตของฝ่ายคุณ คำสั่งของคุณจะหยุดมันชั่วคราว และจะเริ่มใหม่เมื่อยูนิตว่างอยู่สักครู่
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	แสดงข้อมูล NPC
 UILABEL_COMBAT_MESSAGES	ข้อความการต่อสู้
 UILABEL_SEEN	พบเห็น
 UILABEL_HIT	โดน
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	ข้อความ EXP
 UILABEL_EXPERIENCE	ประสบการณ์
 UILABEL_XP_ATHLETICS	ค่าประสบการณ์กรีฑา
 UILABEL_XP_ENDURANCE	ค่าประสบการณ์ความอดทน
+UILABEL_XP_CARRYING	ค่าประสบการณ์พละกำลัง (การแบก)
 UILABEL_ITEM_MESSAGES	ข้อความไอเทม
 UILABEL_PICKUP	เก็บขึ้น
 UILABEL_DROP	ทิ้ง
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	ความคืบหน้า: {0}%
 UILABEL_TIP_CURRENT_XP	EXP ปัจจุบัน: {0}
 UILABEL_ATTACK_DEFENSE	โจมตี {0}      ป้องกัน {1}
 UILABEL_STATS_CAPTION	ค่าสถานะ: {0}
+UILABEL_MODEL_N	โมเดล {0}
 UILABEL_SLOT_N_ITEM	ช่อง {0}: {1}
 UILABEL_SLOT_N_EMPTY	ช่อง {0}: ว่าง
 UILABEL_COUNT	จำนวน {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	ต้องใช้สองมือ มือรองต้อ
 ITEM_87_NAME	ขวานศึก
 ITEM_87_DESC	ต้องใช้สองมือ มือรองต้องว่าง
 UILABEL_UI_SCALE	ขนาดส่วนติดต่อ
-NAME_MASCULINE	["สมชาย", "ธนพล", "วิชัย", "ชนะ", "ประเสริฐ"]
-NAME_FEMININE	["สุดา", "นภา", "พิมพ์", "กัญญา", "อรทัย"]
-NAME_ANDROGYNOUS	["ตะวัน", "ปาน", "นนท์", "ดาว", "เอก"]
+NAME_MASCULINE	["สมชาย", "ธนพล", "วิชัย", "ชนะ", "ประเสริฐ", "กิตติ", "เกียรติศักดิ์", "ไกรสร", "ณัฐพล", "ทวีศักดิ์", "ธีรวัฒน์", "นพดล", "บุญชัย", "ปิยะ", "พงศกร", "พิชิต", "ภาณุ", "มานพ", "ยุทธนา", "รัฐพล", "วรวุฒิ", "วีระ", "ศักดิ์ชัย", "สมบัติ", "สมศักดิ์", "สุรชัย", "อนุชา", "อภิชาติ", "อรรถพล", "เอกชัย", "ชัยวัฒน์", "ณรงค์", "ถนอม", "ธวัชชัย", "นิพนธ์", "ประยุทธ", "พีระ", "ไพโรจน์", "มงคล", "วัชระ", "ศุภชัย", "สมพงษ์", "สุเทพ", "อดิศร", "อำนาจ", "จักรพันธ์", "ชาตรี", "ทรงพล", "บรรจง", "ภูมิ"]
+NAME_FEMININE	["สุดา", "นภา", "พิมพ์", "กัญญา", "อรทัย", "กมลา", "กาญจนา", "จันทร์เพ็ญ", "จารุวรรณ", "ชไมพร", "ดวงใจ", "ทิพวรรณ", "นงลักษณ์", "นันทนา", "บุษบา", "ปวีณา", "ปิยะนุช", "พรทิพย์", "พัชรี", "มณีรัตน์", "มาลี", "รัชนี", "รุ่งนภา", "ลำดวน", "วนิดา", "วราภรณ์", "ศิริพร", "สมใจ", "สายสุนีย์", "สุนิสา", "สุภาพร", "อัมพร", "อุไรวรรณ", "เบญจมาศ", "เพ็ญศรี", "แพรวา", "ไพลิน", "ขวัญใจ", "จิราพร", "ชนิดา", "ณัฐธิดา", "ธิดารัตน์", "นิภา", "ปราณี", "พรรณี", "ยุพิน", "รสริน", "วิไล", "สร้อยทิพย์", "อัญชลี"]
+NAME_ANDROGYNOUS	["ตะวัน", "ปาน", "นนท์", "ดาว", "เอก", "ฟ้า", "ฝน", "หมอก", "ลม", "ทะเล", "ภูผา", "ธารา", "นที", "เมฆ", "รุ้ง", "แสง", "ใบไม้", "ไผ่", "สายน้ำ", "ทราย", "ขวัญ", "แก้ว", "จันทร์", "ดิน", "เดือน", "ธาร", "นภ", "บัว", "พลอย", "ภู", "มิ่ง", "ยิ้ม", "รัก", "วาด", "ศิลา", "สกาย", "หนึ่ง", "อรุณ", "อิง", "เพลง", "ข้าว", "ต้นกล้า", "น้ำ", "ปุยฝ้าย", "พิงค์", "ภพ", "มีน", "วิว", "เอิร์ธ", "ฟาง"]
 UILABEL_BODY_TYPE	ประเภทร่างกาย
 UILABEL_BODY_MASCULINE	ชาย
 UILABEL_BODY_FEMININE	หญิง
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	ไม่มีที่ว่างในที่เก็�
 MISC_PROP_TAKEN	มีผู้ใช้อยู่แล้ว
 MISC_PROP_WORKERS_FULL	ทำงานพร้อมกันได้สูงสุด {0} ยูนิต
 MISC_GATHERS	{0} เก็บ {1}
+MISC_AUTO_HAUL_STORES	{0} เก็บ {2} {1} ชิ้นไว้ใน {3}
 MISC_GATHER_NO_ROOM	{0} ไม่มีที่ว่างสำหรับ {1} จึงหยุดทำงาน
 MISC_REASON_GATHERING	การเก็บเกี่ยว
+MISC_REASON_CLEARING	กำลังเก็บกวาดเศษซาก
 UILABEL_TASK	งาน: {0}
 UILABEL_TASK_IDLE	ว่าง
+UILABEL_TASK_AUTO_GOING	{0} (กำลังไป)
+UILABEL_TASK_SHARE_WALK	กำลังไปหา {0} เพื่อแบ่งปัน
 UILABEL_TASK_MOVING	กำลังเดิน
 UILABEL_TASK_RESTING	กำลังพัก
 UILABEL_STORAGE_HINT	คลิกขวาที่ไอเทมเพื่อหยิบ หรือลากออกไปเพื่อวางไว้ตรงที่ยูนิตของคุณยืนอยู่ คลิกขวาที่ไอเทมของยูนิตเพื่อเก็บเข้าไป
@@ -595,6 +664,7 @@ FACTION_RED	ฝ่ายแดง
 FACTION_GREEN	ฝ่ายเขียว
 FACTION_BLUE	ฝ่ายน้ำเงิน
 FACTION_YELLOW	ฝ่ายเหลือง
+FACTION_EXILE	ผู้ถูกเนรเทศ
 MISC_REPUTATION_DROPS	ชื่อเสียงกับ{0}ลดลง {1} เหลือ {2}
 UILABEL_MODE_PASSIVE	ไม่สู้
 UILABEL_MODE_BLOCK	ป้องกัน
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	ฉากเริ่มต้น
 SCENARIO_VAGABOND_NAME	คนพเนจร
 SCENARIO_VAGABOND_DESC	นักเดินทางผู้โดดเดี่ยวที่ไม่มีอะไรติดตัว: ไม่มีไอเทม ไม่มีอุปกรณ์ และค่าสถานะทุกค่าอยู่ระหว่าง 1 ถึง 5
-SCENARIO_RANDOM_NAME	สุ่มทั้งหมด
-SCENARIO_RANDOM_DESC	กลุ่มยูนิต 1 ถึง 32 ตัว แต่ละตัวมีค่าสถานะทุกค่าระหว่าง 1 ถึง 99 พร้อมไอเทมและอุปกรณ์สุ่มที่แบกไหว
+SCENARIO_PACK_NAME	ฝูงสองตัว
+SCENARIO_PACK_DESC	นักพเนจรผู้โดดเดี่ยวกับหมาป่าผู้ซื่อสัตย์ นักพเนจรไม่มีไอเทมหรืออุปกรณ์ และค่าสถานะทุกค่าอยู่ระหว่าง 1 ถึง 5
+SCENARIO_BEASTMASTER_NAME	เจ้าแห่งสัตว์ร้าย
+SCENARIO_BEASTMASTER_DESC	นักพเนจรผู้โดดเดี่ยวที่นำสัตว์ 20 ตัวจากชนิดสุ่ม นักพเนจรไม่มีไอเทมหรืออุปกรณ์ และค่าสถานะทุกค่าอยู่ระหว่าง 1 ถึง 5
+SCENARIO_RANDOM_NAME	ค่ายสุ่มทั้งหมด
+SCENARIO_RANDOM_DESC	ค่ายของคุณเอง พร้อมกลุ่มตั้งแต่ 20 ยูนิตขึ้นไป แต่ละยูนิตมีค่าสถานะทุกค่าระหว่าง 1 ถึง 99 พร้อมไอเทมและอุปกรณ์สุ่มที่ถือไหว และสัตว์อีก 3 ถึง 7 ตัว
 SCENARIO_CARAVAN_NAME	กองคาราวานพเนจร
 SCENARIO_CARAVAN_DESC	นักเดินทางสิบคนบนเส้นทางด้วยกัน ค่าสถานะทุกค่าเริ่มที่ 5 และแต่ละคนพกเหรียญทอง 10 เหรียญ
 SCENARIO_SHABBY_NAME	ลูกเรือซอมซ่อ
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	ยูนิตเดียวที่ไม่มีอ�
 SCENARIO_DIGGERS_NAME	นักขุดดันเจี้ยน
 SCENARIO_DIGGERS_DESC	คนงานเหมืองเจ็ดคนในชุดอุปกรณ์เต็มชุด ค่าสถานะอยู่ระหว่าง 5 ถึง 20 แต่ทุกคนมีการขุดเหมือง 50 และพกแร่เหล็ก 3 ก้อน
 SCENARIO_CUSTOM_NAME	สถานการณ์กำหนดเอง
-SCENARIO_CUSTOM_DESC	สร้างกลุ่มของคุณเอง เริ่มต้นด้วยสามยูนิต และคุณสามารถเพิ่มหรือลบยูนิตได้สูงสุด 32
+SCENARIO_CUSTOM_DESC	สร้างกลุ่มของคุณเอง เริ่มด้วยสามยูนิต และคุณเพิ่มหรือนำยูนิตและสัตว์ทั่วไปออกได้ สูงสุด 32
 PROP_LOCKED_CHEST	หีบที่ล็อกไว้
 PROP_PRISONER_CAGE	กรงขังนักโทษ
 UILABEL_UNLOCK	สะเดาะกุญแจ
+UILABEL_AUTO_HARVEST	เก็บเกี่ยวอัตโนมัติ
+UILABEL_AUTO_HAUL	ขนส่งอัตโนมัติ
+MISC_AUTO_OUTSIDE_CLAIM	การเก็บเกี่ยวและขนส่งอัตโนมัติใช้ได้กับวัตถุในเขตของฝ่ายคุณเท่านั้น
+MISC_AUTO_HARVEST_SET	{0} ยูนิตจะเก็บเกี่ยวอัตโนมัติ: {1}
+MISC_AUTO_HAUL_SET	{0} ยูนิตจะขนส่งอัตโนมัติไปยัง {1}
+MISC_BEHAVIOR_LIST_FULL	รายการพฤติกรรมเต็มแล้ว (สูงสุด {0})
 UILABEL_PICK_UP	อุ้มขึ้น
-UILABEL_PUT_IN_BED	วางบนเตียง
+UILABEL_PLACE	วาง
+UILABEL_OCCUPY	เข้าใช้
+UILABEL_DISBAND	ปลดออก
+UILABEL_DISBAND_HOLD	กดปุ่มปลดออกค้างไว้ {0} วินาทีเพื่อยืนยัน
 UILABEL_PUT_DOWN	วางลง
 UILABEL_SHOP	ร้านค้า
 UILABEL_TASK_CARRIED	ถูกแบก
@@ -641,16 +724,33 @@ UILABEL_DOOM	ความพินาศ
 UILABEL_TASK_UNCONSCIOUS	หมดสติ
 UILABEL_TASK_DEAD	ตาย
 UILABEL_TASK_CARRYING	กำลังแบก
+UILABEL_TASK_STORING	กำลังเก็บของ
 UILABEL_TAKE_ALL	เอาทั้งหมด
 UILABEL_LOOT_HINT	คลิกไอเทมเพื่อนำเข้าช่องเก็บของของยูนิตคุณ
 UILABEL_CORPSE_OF	ศพของ {0}
 MISC_FALLS_UNCONSCIOUS	{0} หมดสติ
 MISC_DIES	{0} ตาย
 MISC_RECOVERS	{0} ฟื้นขึ้นมา
+LOADING_PICTURES	รูปภาพ
+LOADING_UNIT_MODELS	โมเดลยูนิต
+LOADING_MOB_MODELS	โมเดลสัตว์
+LOADING_MOB_PICTURES	รูปสัตว์
+LOADING_SKY	ท้องฟ้า
+LOADING_PROP_MODELS	โมเดลวัตถุ
+LOADING_MAP	แผนที่
+LOADING_MAP_GROUND	พื้นแผนที่
+LOADING_WORLD	โลก
+LOADING_GROUND_ITEMS	ไอเทมบนพื้น
+MISC_GOES_HOME	{0} เลิกไล่ตามแล้วกลับบ้าน
+MISC_GETS_UP	{0} ลุกขึ้น อันตรายผ่านไปแล้ว
 MISC_PICKS_UP_UNIT	{0} อุ้ม {1} ขึ้น
 MISC_PUTS_DOWN	{0} วาง {1} ลง
-MISC_PUTS_IN_BED	{0} วาง {1} ลงบน {2}
-MISC_CORPSE_NO_BED	เตียงช่วยคนตายไม่ได้
+MISC_PLACES_IN	{0} วาง {1} ลงบน {2}
+MISC_DISBAND_ASK	{0} จะออกจากหน่วยและฝ่ายของคุณตลอดไปและกลายเป็นผู้ถูกเนรเทศ: เป็นกลางกับทุกฝ่ายและเร่ร่อนตามลำพัง
+MISC_DISBAND_ASK_MOB	{0} จะออกจากหน่วยและฝ่ายของคุณตลอดไปและกลับคืนสู่ป่า
+MISC_DISBANDED	{0} ออกจากหน่วยของคุณในฐานะผู้ถูกเนรเทศ
+MISC_DISBANDED_MOB	{0} ออกจากหน่วยของคุณและกลับคืนสู่ป่า
+MISC_CORPSE_NO_PLACE	วางคนตายไว้ที่นั่นไม่ได้
 MISC_IS_UNCONSCIOUS	{0} หมดสติและทำอะไรไม่ได้
 MISC_ALREADY_CARRYING	ไม่มียูนิตที่เลือกไว้ตัวไหนแบกได้
 MISC_LOOT_NO_ROOM	ไม่มีที่ว่างในช่องเก็บของ
@@ -788,6 +888,46 @@ ITEM_132_NAME	ลูกธนูไฟ
 ITEM_132_DESC	ลูกธนูติดไฟสำหรับธนูสั้นหรือธนูยาว ลูกธนูที่แรงที่สุด
 ITEM_133_NAME	ลูกดอกหน้าไม้
 ITEM_133_DESC	ลูกดอกสั้นและหนักสำหรับหน้าไม้
+ITEM_134_NAME	กระดูกหมี
+ITEM_134_DESC	กระดูกของหมี ใช้ในการประดิษฐ์ได้ดี
+ITEM_135_NAME	กระดูกวัว
+ITEM_135_DESC	กระดูกของวัว ใช้ในการประดิษฐ์ได้ดี
+ITEM_136_NAME	กระดูกไก่
+ITEM_136_DESC	กระดูกของไก่ ใช้ในการประดิษฐ์ได้ดี
+ITEM_137_NAME	กระดูกหมูป่า
+ITEM_137_DESC	กระดูกของหมูป่า ใช้ในการประดิษฐ์ได้ดี
+ITEM_138_NAME	กระดูกหมาป่า
+ITEM_138_DESC	กระดูกของหมาป่า ใช้ในการประดิษฐ์ได้ดี
+ITEM_139_NAME	กระดูกกวาง
+ITEM_139_DESC	กระดูกของกวาง ใช้ในการประดิษฐ์ได้ดี
+ITEM_140_NAME	กระดูกกระต่าย
+ITEM_140_DESC	กระดูกของกระต่าย ใช้ในการประดิษฐ์ได้ดี
+ITEM_141_NAME	ก้างปลา
+ITEM_141_DESC	ก้างของปลา ใช้ในการประดิษฐ์ได้ดี
+ITEM_142_NAME	กระดองปู
+ITEM_142_DESC	เศษกระดองปู ใช้ในการประดิษฐ์ได้ดี
+ITEM_143_NAME	กระดูกกิ้งก่า
+ITEM_143_DESC	กระดูกของกิ้งก่า ใช้ในการประดิษฐ์ได้ดี
+ITEM_144_NAME	กระดูกงู
+ITEM_144_DESC	กระดูกของงู ใช้ในการประดิษฐ์ได้ดี
+ITEM_145_NAME	กระดูกหมู
+ITEM_145_DESC	กระดูกของหมู ใช้ในการประดิษฐ์ได้ดี
+ITEM_146_NAME	กระดูกแกะ
+ITEM_146_DESC	กระดูกของแกะ ใช้ในการประดิษฐ์ได้ดี
+ITEM_147_NAME	กระดูกเป็ด
+ITEM_147_DESC	กระดูกของเป็ด ใช้ในการประดิษฐ์ได้ดี
+ITEM_148_NAME	กระดูกเต่า
+ITEM_148_DESC	กระดูกของเต่า ใช้ในการประดิษฐ์ได้ดี
+ITEM_149_NAME	กระดูกค้างคาว
+ITEM_149_DESC	กระดูกของค้างคาว ใช้ในการประดิษฐ์ได้ดี
+ITEM_150_NAME	กระดูกกบ
+ITEM_150_DESC	กระดูกของกบ ใช้ในการประดิษฐ์ได้ดี
+ITEM_151_NAME	กระดูกกอร์ลิคอร์น
+ITEM_151_DESC	กระดูกของกอร์ลิคอร์น ใช้ในการประดิษฐ์ได้ดี
+ITEM_152_NAME	เนื้อกอร์ลิคอร์นดิบ
+ITEM_152_DESC	เนื้อที่ยังไม่สุก ย่างที่กองไฟ
+ITEM_153_NAME	เนื้อกอร์ลิคอร์นย่าง
+ITEM_153_DESC	เนื้อเข้มข้นที่ย่างบนไฟ ฟื้นฟูพลังชีวิตและความหิวได้มาก
 UILABEL_OPTIMIZE	ปรับให้ดีที่สุด
 UILABEL_REMOVE_ALL	ถอดทั้งหมด
 MISC_GEAR_NO_ROOM	ช่องเก็บของไม่พอ
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	เอาชีวิตรอด
 UILABEL_EARLY_ACCESS	เข้าถึงก่อนใคร
 MISC_TITLE_KEYS	เลือก  //  Enter ยืนยัน
 UILABEL_LANGUAGE_LABEL	ภาษา:
+PROP_FLAG	ธง
+PROP_DEBRIS	เศษซาก
+PROP_FOUNDATION_SMALL	ฐานรากเล็ก
+PROP_FOUNDATION_LARGE	ฐานรากใหญ่
+PROP_FOUNDATION_LONG	ฐานรากยาว
+PROP_FOUNDATION_CIRCLE	ฐานรากวงกลม
+PROP_VAULT	ห้องนิรภัย
+UILABEL_BUILD	สร้าง
+UILABEL_BUILD_SELECTED	เลือก: {0}
+UILABEL_BUILD_NONE	เลือก: ไม่มี
+UILABEL_BUILD_SELECT	เลือก
+UILABEL_BUILD_PICKED	เลือกแล้ว
+UILABEL_BUILD_PLACE_HINT	คลิกซ้ายบนพื้นเพื่อวาง กด R ค้างแล้วเลื่อนเมาส์ซ้ายหรือขวาเพื่อหมุน คลิกขวาหรือ Escape เพื่อยกเลิก
+UILABEL_UPKEEP_HINT	เผา {0} หนึ่งชิ้นต่อชั่วโมงเป็นค่าบำรุงรักษา ใส่ไว้ในนี้
+MISC_BUILD_BLOCKED	ไม่มีที่ว่างให้สร้างตรงนี้
+MISC_BUILD_UNWALKABLE	สร้างบนพื้นนี้ไม่ได้
+MISC_BUILD_NO_FOUNDATION	ห้องนิรภัยต้องตั้งอยู่บนฐานรากทั้งหมด
+MISC_NO_UPKEEP	ไม่มีการบำรุงรักษา: ไม่มีท่อนไม้
+MISC_UPKEEP_LEFT	บำรุงรักษา: เหลือ {0} นาที
+PROP_SHOP	ร้านค้า
+PROP_FARM	ฟาร์ม
+PROP_TURBINE	กังหันลม
+UILABEL_BUILD_DESTROY	รื้อถอน
+UILABEL_BUILD_DESTROY_HINT	คลิกซ้ายที่วัตถุใดก็ได้เพื่อรื้อ: ของข้างในจะหล่นลงพื้นและเหลือเศษซากไว้แทน คลิกซ้ายที่เศษซากเพื่อเก็บกวาด คลิกขวาหรือ Escape เพื่อยกเลิก
+UILABEL_LOCK	ล็อก
+MISC_BUILD_NO_CLAIM	ฐานรากหรือห้องนิรภัยต้องอยู่ในเขตของคุณเอง
+MISC_BUILD_SEALED	พื้นที่นั้นถูกผนึกด้วยห้องนิรภัยของฝ่ายอื่น
+MISC_BUILD_CLAIM_OVERLAP	เขตนั้นจะทับซ้อนกับเขตของธงอื่น
+MISC_BUILD_VAULT_TAKEN	เขตนั้นมีห้องนิรภัยอยู่แล้ว
+MISC_BUILD_VAULT_CAP	ฝ่ายของคุณมีห้องนิรภัยครบจำนวนสูงสุดแล้ว
+MISC_DESTROY_NOTHING	ไม่มีอะไรให้รื้อตรงนั้น
+MISC_FLAG_FACTION	เจ้าของ: {0}
+MISC_FLAG_HEALTH	ความทนทาน: {0}/{1}
+MISC_FLAG_VAULT_YES	ห้องนิรภัย: ยังตั้งอยู่ เขตยังถูกยึดครอง
+MISC_FLAG_VAULT_NO	ห้องนิรภัย: ไม่มี ธงกำลังสึกกร่อน
+MISC_PROP_CONDITION	สภาพ: {0}%
+MISC_PROP_DECAYING	กำลังผุพัง
+MISC_PROP_HOLDING	ไม่ผุพัง
+MISC_PROP_LOCK_OPEN	ไม่ได้ล็อก
+MISC_PROP_LOCK_YOURS	ล็อกสำหรับคนนอก (เปิดให้คุณ)
+MISC_PROP_LOCK_SHUT	ล็อกอยู่ (การงัดกุญแจ {0})
+MISC_PROP_UPKEEP	บำรุงรักษา: เหลือ {0} ชั่วโมง
+MISC_PROP_VAULT_UNCLAIMED	อยู่นอกเขตใดๆ: ไม่ให้การบำรุงรักษา
+MOB_BEAR	หมี
+MOB_COW	วัว
+MOB_CHICKEN	ไก่
+MOB_BOAR	หมูป่า
+MOB_WOLF	หมาป่า
+MOB_DEER	กวาง
+MOB_RABBIT	กระต่าย
+MOB_FISH	ปลา
+MOB_CRAB	ปู
+MOB_LIZARD	กิ้งก่า
+MOB_SNAKE	งู
+MOB_PIG	หมู
+MOB_SHEEP	แกะ
+MOB_DUCK	เป็ด
+MOB_TURTLE	เต่า
+MOB_BAT	ค้างคาว
+MOB_FROG	กบ
+MOB_GORLICORN	กอร์ลิคอร์น
+FACTION_MOB_BEAR	ฝูงหมี
+FACTION_MOB_COW	ฝูงวัว
+FACTION_MOB_CHICKEN	ฝูงไก่
+FACTION_MOB_BOAR	ฝูงหมูป่า
+FACTION_MOB_WOLF	ฝูงหมาป่า
+FACTION_MOB_DEER	ฝูงกวาง
+FACTION_MOB_RABBIT	ฝูงกระต่าย
+FACTION_MOB_FISH	ฝูงปลา
+FACTION_MOB_CRAB	ฝูงปู
+FACTION_MOB_LIZARD	ฝูงกิ้งก่า
+FACTION_MOB_SNAKE	ฝูงงู
+FACTION_MOB_PIG	ฝูงหมู
+FACTION_MOB_SHEEP	ฝูงแกะ
+FACTION_MOB_DUCK	ฝูงเป็ด
+FACTION_MOB_TURTLE	ฝูงเต่า
+FACTION_MOB_BAT	ฝูงค้างคาว
+FACTION_MOB_FROG	ฝูงกบ
+FACTION_MOB_GORLICORN	ฝูงกอร์ลิคอร์น
+MISC_MOB_NO_GEAR	สัตว์สวมอุปกรณ์ไม่ได้
+MISC_MOB_NO_HEALING	สัตว์ใช้ไอเทมรักษาไม่ได้
+MISC_MOB_CANT_WORK	สัตว์ทำงานกับวัตถุไม่ได้

@@ -13,7 +13,8 @@ enum class PartyTab : int { Identity = 0, Stats, Gear, Items };
 inline constexpr int PARTY_TAB_COUNT = 4;
 
 // Which dropdown list is open, and what picking an entry sets
-enum class DropKind { None, Sprite, Body, Gear, Item };
+// MobKind: the regular mob kinds, for the picked mob member's kind (dropSlot 0), or for Add mob (dropSlot -1)
+enum class DropKind { None, Sprite, Body, Gear, Item, MobKind };
 
 // What the menu shows and what it is editing. The party itself is kept by the caller.
 struct PartyUi {
@@ -30,6 +31,7 @@ struct PartyUi {
     float listGrab = 0.0f;                 // where on the thumb it was taken, from its top
     bool resizable = false;                // Add Unit and Remove Unit are offered (the Custom scenario only)
     bool editable = false;                 // stats, gear and items can be changed (the Custom scenario only)
+    bool mobKindEditable = false;          // a mob member's kind can be changed (Custom and Beastmaster)
     float previewYaw = 0.0f;               // how far the picked unit's model is turned about its vertical axis, radians
     bool previewDrag = false;              // the model is held with the right button and turns as the mouse moves
 };

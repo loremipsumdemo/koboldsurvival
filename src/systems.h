@@ -6,10 +6,15 @@
 #include "terrain.h"
 
 // Spawns the units, the red units and the props
-void setupWorld(World& w, Terrain& t, Rng& rng);
+// playerCamp: whether your camp is placed (only Full Random Camp has one, scenarioHasCamp in party.h). The level is
+// rebuilt from its seed when a save loads, so a save keeps this too.
+void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp = true);
 
 // Makes there be exactly count player units: adds them at the spawn, or removes the last made, as needed
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
+// Makes your mobs exactly these kinds, in order: any you have go, and each kind is placed at the spawn, in the squad's
+// block from slot firstSlot on (after your people)
+void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<int>& kinds, int firstSlot);
 // Puts a mob of this kind (mobs.h) at (x, z), in the faction given, carrying its raw meat. One of the Player Faction's
 // is yours to command. Returns it.
 Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, float x, float z);
@@ -44,6 +49,12 @@ void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target);
 
 // Sends each unit that carries items to a ground item. Whichever gets in reach first takes it.
 void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity item);
+// A box drawn around ground items only: the units share one pickup chain (PickupChain) over the items. Each unit goes
+// for the nearest item no other unit of the chain is walking to, then the next, until the items are gone. Any other
+// order, or being attacked, ends a unit's chain.
+void issuePickupChain(World& w, Terrain& t, const std::vector<Entity>& units, const std::vector<Entity>& items);
+// Hands the next item of its chain to each unit on one that has no item to walk to (run by pickupSystem)
+void pickupChainSystem(World& w, Terrain& t);
 
 // Orders each unit to fight one red unit: each walks at it on its own, with no formation, and keeps it as its
 // target until it is gone. Units with no place in the fight (red ones, or not your own) are skipped.
@@ -73,7 +84,7 @@ bool dropStack(World& w, Entity unit, int slot);
 void squadSystem(World& w, float dt, bool running = false);
 void steeringSystem(World& w, Terrain& t, float dt, bool running = false);
 // After steering, so units that just arrived can take items. Returns how many player units took something this frame.
-int pickupSystem(World& w);
+int pickupSystem(World& w, Terrain& t);
 void cleanupSquads(World& w);
 // Health and hunger, after each whole in-game hour that passed (hours) and the in-game seconds that
 // passed (gameSeconds, which can be fractional). Out of combat, units regain health as in regenHealth.
@@ -102,8 +113,8 @@ struct PropArrival {
     bool started = false;
     bool unreachable = false;
     bool locked = false;       // the prop is locked, so it could not be opened or used
-    bool putInBed = false;     // the unit it carried was put into the bed or bedroll
-    bool corpse = false;       // it carried a corpse to a bed, which can do nothing for it
+    bool placed = false;       // Place: the unit it carried was placed on the occupiable prop
+    bool corpse = false;       // Place: it carried a corpse, which is never placed
     WorkStart craft = WorkStart::Started;
     bool automatic = false;    // the unit's automation sent it: the game says nothing about it
 };
@@ -251,3 +262,13 @@ std::vector<int> emotesOf(World& w, Entity u);
 // What a unit is doing, for the Unit Panel: the skill it is working with (such as Mining or Cooking), Resting,
 // Sitting, Locked in, Moving or Idle
 std::string taskNameOf(World& w, Entity u);
+// Whether a unit or mob is idle: awake, on no order, step, prop, fight or walk of any kind. The renderer stops turning
+// one that has stood idle a while (Renderer::unitYaw), so units nudged by others close by don't keep turning.
+bool unitIdle(World& w, Entity u);
+
+// Disband: a unit of yours leaves your squad and faction for good. Whatever it was doing ends, and it drops anyone it
+// carried. A person becomes an Exile (FACTION_EXILE): neutral to everyone, fighting back as any neutral unit does but
+// running from attacks once its health is low (EXILE_FLEE_PERCENT), its
+// hunger kept full, with only Eat, Heal and Roam. A mob goes back to the wild, in its kind's own faction, roaming (or
+// Patrolling Spawn where it stands) with its kind's temperament. False if it is not one of yours.
+bool disbandUnit(World& w, Entity u);

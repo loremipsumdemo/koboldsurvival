@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Kadar segar semula
 UILABEL_DEFAULT	Lalai
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Had kadar bingkai
+UILABEL_VIEW_RANGE	Jarak pandangan
+UILABEL_TILES_N	{0} petak
+UILABEL_SHOW_FPS	Papar FPS
 UILABEL_UNLIMITED	Tanpa had
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Simpan automatik
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minit
 UILABEL_UNIT_NAMES	Nama unit pemain
 UILABEL_NPC_NAMES	Nama unit lain
 UILABEL_PROP_NAMES	Nama objek
+UILABEL_PROP_INFO	Papar maklumat objek
 UILABEL_FONT_SIZE	Saiz fon
 UILABEL_RESET_PANELS	Set semula semua panel UI
 UILABEL_RESET	Set semula
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Kelantangan global
 UILABEL_MUSIC	Muzik
 UILABEL_AMBIENT	Bunyi persekitaran
 UILABEL_INTERFACE_SOUNDS	Bunyi antara muka
+UILABEL_CRAFT_GATHER_SOUNDS	Bunyi pertukangan dan pengumpulan
 UILABEL_SOUND_EFFECTS	Kesan bunyi
 UILABEL_RESTORE_DEFAULTS	Pulihkan lalai
 UILABEL_WINDOWED	Tetingkap
@@ -123,6 +128,8 @@ UILABEL_STATS	Statistik
 UILABEL_CLICK_TO_TYPE	Klik untuk menaip nama
 UILABEL_HEALTH	Kesihatan
 UILABEL_HUNGER	Lapar
+UILABEL_RESTED	Kesegaran
+UILABEL_COMFORT	Keselesaan
 UILABEL_CARRY	Muatan
 UILABEL_NEXT_LEVEL_XP_LINE	XP aras seterusnya: {0}
 UILABEL_STAT	Statistik
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Rawakkan unit ini
 UILABEL_RANDOMIZE_ALL	Rawakkan semua
 UILABEL_ADD_UNIT	Tambah unit
 UILABEL_REMOVE_UNIT	Alih keluar unit
+UILABEL_ADD_MOB	Tambah makhluk
+UILABEL_MOB_KIND	Jenis
+UILABEL_MOB_NO_GEAR	Makhluk tidak memakai kelengkapan.
+MISC_MEAT_TAKEN_DIES	{0} mati
+MISC_MOB_INVENTORY_LOCKED	Tidak tersedia
+MISC_MOB_CANT_HOLD	Makhluk hanya membawa daging dan tulangnya sendiri
+UILABEL_CLEAR	Bersihkan
+UILABEL_TASK_CLEARING	Membersihkan serpihan
+MISC_CLEARS_DEBRIS	{0} membersihkan serpihan
+UILABEL_MOB_INVENTORY_HIDDEN	Tidak tersedia
+UILABEL_BEHAVIOR_PATROL	Rondaan
+UILABEL_BEHAVIOR_PATROL_SPAWN	Rondaan Tempat Muncul
+UILABEL_BEHAVIOR_ROAM	Merayau
+UILABEL_BEHAVIOR_PATROL_TIP	Rondaan: berjalan di dalam kawasan tempat ia berdiri, jika kawasan itu milik puaknya, sambil berhenti sekali-sekala.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Rondaan Tempat Muncul: berjalan berhampiran tempat ia mula-mula muncul. Jika dikejar terlalu jauh, ia mengalah, pulih sepenuhnya dan berjalan pulang tanpa menerima kerosakan sehingga tiba.
+UILABEL_BEHAVIOR_ROAM_TIP	Merayau: merayau di tanah lapang, di mana-mana ia boleh berjalan di luar kawasan bendera.
+UILABEL_WAIT_NOT_IN_CLAIM	tidak berada dalam kawasan puaknya
+UILABEL_WAIT_NOWHERE_TO_ROAM	tiada tanah lapang berdekatan di luar kawasan
+UILABEL_TEMPERAMENT_AVOIDANT	Pengelak
+UILABEL_TEMPERAMENT_PASSIVE	Pasif
+UILABEL_TEMPERAMENT_NEUTRAL	Neutral
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agresif
+UILABEL_TEMPERAMENT	Perangai: {0}
+UILABEL_MOB_NO_ITEMS	Makhluk hanya membawa daging dan tulangnya sendiri.
 UILABEL_CONFIRM_STARTS	Pengesahan memulakan permainan dengan kumpulan ini.
 UILABEL_NEEDS_NAMES	Setiap unit perlu mempunyai nama sebelum permainan boleh dimulakan.
 UILABEL_CLICK_UNIT_EDIT	Klik unit untuk menyuntingnya.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Kaki
 UILABEL_SLOT_FEET	Kaki (tapak)
 UILABEL_SLOT_ACCESSORY	Aksesori
 UILABEL_BEHAVIOR_ON	Hidup
+UILABEL_BEHAVIOR_EAT	Makan apabila kenyang < {0}%
+UILABEL_BEHAVIOR_REST	Berehat apabila segar < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Bangun dari katil apabila pulih
+UILABEL_BEHAVIOR_RESCUE	Selamatkan sekutu yang tumbang
+UILABEL_BEHAVIOR_HEAL	Pulihkan apabila kesihatan < {0}%
+UILABEL_BEHAVIOR_SHARE	Berkongsi
+UILABEL_BEHAVIOR_AUTO_HARVEST	Tuai automatik: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Angkut automatik: {0}
+UILABEL_BEHAVIOR_WAITING	(menunggu)
+UILABEL_BEHAVIOR_WAIT_TIP	Menunggu: {0}
+UILABEL_WAIT_NO_FOOD	tiada makanan, dan tiada sesiapa berdekatan untuk berkongsi
+UILABEL_WAIT_NO_BED	tiada katil atau tikar tidur kosong untuk berehat
+UILABEL_WAIT_NO_HEALING	tiada barang penyembuh, dan tiada sesiapa berdekatan untuk berkongsi
+UILABEL_WAIT_WALKING_TO_SHARE	berjalan ke {0}, yang boleh berkongsi satu
+UILABEL_WAIT_NO_PROP	tiada {0} dalam kawasan anda yang muat untuk seorang lagi pekerja
+UILABEL_WAIT_CARRY_FULL	tiada ruang untuk membawa lebih banyak
+UILABEL_WAIT_LOAD_WAITING	membawa muatan yang perlu diambil oleh angkut automatik dahulu
+UILABEL_WAIT_PROP_GONE	objek itu sudah hilang
+UILABEL_WAIT_OUTSIDE_CLAIM	objek tidak berada dalam kawasan puak anda
+UILABEL_WAIT_LOCKED	objek berkunci
+UILABEL_WAIT_NOTHING_TO_HAUL	tidak membawa apa-apa yang diterima objek
+UILABEL_WAIT_PROP_FULL	objek tiada ruang untuk barang yang dibawanya
+UILABEL_BEHAVIOR_EAT_TIP	Makan: di bawah {0}% kenyang, memakan makanan yang paling banyak menghilangkan lapar. Gunakan - dan + untuk menukar bila.
+UILABEL_BEHAVIOR_HEAL_TIP	Pulihkan: di bawah {0}% kesihatan, menggunakan barang penyembuh yang paling banyak memulihkan kesihatan. Gunakan - dan + untuk menukar bila.
+UILABEL_BEHAVIOR_REST_TIP	Berehat: di bawah {0}% segar, berbaring di katil atau tikar tidur kosong yang terdekat dan bangun apabila benar-benar segar. Gunakan - dan + untuk menukar bila.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Bangun dari katil: bangun dari katil atau tikar tidur selepas 30 saat dengan kesihatan penuh dan benar-benar segar.
+UILABEL_BEHAVIOR_RESCUE_TIP	Selamatkan: mengusung unit puaknya sendiri yang pengsan berdekatan ke katil atau tikar tidur kosong yang terdekat.
+UILABEL_BEHAVIOR_SHARE_TIP	Berkongsi: apabila Makan atau Pulihkan memerlukan barang yang tiada pada unit ini, ia mengambil satu daripada unit dalam jarak dagangan yang juga berkongsi dan kurang memerlukannya, berjalan ke sana dahulu jika unit itu agak jauh. Unit lain yang berkongsi boleh mengambil daripada unit ini dengan cara yang sama.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Tuai automatik: bekerja di {0} terdekat dalam kawasan puak anda. Dengan muatan dan angkut automatik yang boleh menerimanya, ia berhenti untuk mengangkut. Arahan anda menjedanya; ia bermula semula selepas unit melahu beberapa saat.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Angkut automatik: membawa barang dalam inventori (bukan kelengkapan yang dipakai) yang diterima {0}, selagi ada ruang dan unit berdiri dalam kawasan puak anda. Arahan anda menjedanya; ia bermula semula selepas unit melahu beberapa saat.
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	Papar maklumat NPC
 UILABEL_COMBAT_MESSAGES	Mesej Pertempuran
 UILABEL_SEEN	Dilihat
 UILABEL_HIT	Kena
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Mesej Pengalaman
 UILABEL_EXPERIENCE	Pengalaman
 UILABEL_XP_ATHLETICS	Pengalaman Atletik
 UILABEL_XP_ENDURANCE	Pengalaman Ketahanan
+UILABEL_XP_CARRYING	Pengalaman Kekuatan (Membawa)
 UILABEL_ITEM_MESSAGES	Mesej Barang
 UILABEL_PICKUP	Ambil
 UILABEL_DROP	Jatuhkan
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Kemajuan: {0}%
 UILABEL_TIP_CURRENT_XP	XP semasa: {0}
 UILABEL_ATTACK_DEFENSE	Serangan {0}      Pertahanan {1}
 UILABEL_STATS_CAPTION	Statistik: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: kosong
 UILABEL_COUNT	Kiraan {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Memerlukan kedua-dua tangan. Tangan sokongan mesti kosong.
 ITEM_87_NAME	Kapak Perang
 ITEM_87_DESC	Memerlukan kedua-dua tangan. Tangan sokongan mesti kosong.
 UILABEL_UI_SCALE	Skala antara muka
-NAME_MASCULINE	["Amir", "Hafiz", "Razak", "Syafiq", "Danial"]
-NAME_FEMININE	["Aisyah", "Nur", "Siti", "Zara", "Farah"]
-NAME_ANDROGYNOUS	["Alif", "Iman", "Adi", "Rian", "Jaya"]
+NAME_MASCULINE	["Amir", "Hafiz", "Razak", "Syafiq", "Danial", "Adam", "Afiq", "Aiman", "Akmal", "Amirul", "Ariff", "Azlan", "Azman", "Badrul", "Faizal", "Farid", "Hakim", "Hamzah", "Haris", "Harith", "Haziq", "Ikhwan", "Ilham", "Irfan", "Iskandar", "Izzat", "Jamal", "Kamal", "Khairul", "Luqman", "Mazlan", "Mukhriz", "Nazri", "Rahim", "Rashid", "Ridhwan", "Rizal", "Shahrul", "Sulaiman", "Taufik", "Umar", "Wafi", "Yazid", "Zaid", "Zainal", "Zakuan", "Zulkifli", "Hadi", "Hasbullah", "Rosli"]
+NAME_FEMININE	["Aisyah", "Nur", "Siti", "Zara", "Farah", "Adibah", "Aina", "Alya", "Amalina", "Amira", "Anis", "Atikah", "Aziah", "Balqis", "Damia", "Diana", "Fatimah", "Hanis", "Haslinda", "Hidayah", "Izzati", "Khadijah", "Liyana", "Mardhiah", "Maryam", "Mastura", "Nabilah", "Najwa", "Nadia", "Natasha", "Norazlina", "Nurul", "Puteri", "Qistina", "Rabiatul", "Rohana", "Rosnah", "Safiya", "Salmah", "Sarah", "Shahira", "Suraya", "Syahirah", "Wani", "Yasmin", "Zaharah", "Zalikha", "Zulaikha", "Melur", "Kemboja"]
+NAME_ANDROGYNOUS	["Alif", "Iman", "Adi", "Rian", "Jaya", "Ehsan", "Nur Iman", "Ain", "Ari", "Awan", "Bayu", "Bintang", "Cahaya", "Dani", "Embun", "Fajar", "Gemilang", "Hujan", "Ikhlas", "Indera", "Kasih", "Laut", "Mentari", "Nadi", "Pelangi", "Purnama", "Rimba", "Sam", "Samudera", "Senja", "Sinar", "Suria", "Tasik", "Teja", "Ufuk", "Wira", "Zahin", "Angkasa", "Badai", "Cempaka", "Damai", "Gunung", "Intan", "Kembara", "Lestari", "Murni", "Nilam", "Permata", "Sentosa", "Zamrud"]
 UILABEL_BODY_TYPE	Jenis badan
 UILABEL_BODY_MASCULINE	Maskulin
 UILABEL_BODY_FEMININE	Feminin
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Tiada ruang dalam simpanan
 MISC_PROP_TAKEN	Sudah digunakan
 MISC_PROP_WORKERS_FULL	Paling banyak {0} unit boleh mengerjakannya serentak
 MISC_GATHERS	{0} mengumpul {1}
+MISC_AUTO_HAUL_STORES	{0} menyimpan {1} {2} di dalam {3}
 MISC_GATHER_NO_ROOM	{0} tiada ruang untuk {1} dan berhenti bekerja
 MISC_REASON_GATHERING	mengumpul
+MISC_REASON_CLEARING	membersihkan serpihan
 UILABEL_TASK	Tugas: {0}
 UILABEL_TASK_IDLE	Terbiar
+UILABEL_TASK_AUTO_GOING	{0} (dalam perjalanan)
+UILABEL_TASK_SHARE_WALK	Pergi ke {0} untuk berkongsi
 UILABEL_TASK_MOVING	Bergerak
 UILABEL_TASK_RESTING	Berehat
 UILABEL_STORAGE_HINT	Klik kanan item untuk mengambilnya, atau seret keluar untuk menjatuhkannya di tempat unit anda berdiri. Klik kanan item unit anda untuk menyimpannya.
@@ -595,6 +664,7 @@ FACTION_RED	Puak Merah
 FACTION_GREEN	Puak Hijau
 FACTION_BLUE	Puak Biru
 FACTION_YELLOW	Puak Kuning
+FACTION_EXILE	Orang Buangan
 MISC_REPUTATION_DROPS	Reputasi dengan {0} jatuh {1}, kepada {2}
 UILABEL_MODE_PASSIVE	Pasif
 UILABEL_MODE_BLOCK	Tangkis
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senario
 SCENARIO_VAGABOND_NAME	Pengembara
 SCENARIO_VAGABOND_DESC	Seorang pengembara yang tidak memiliki apa-apa: tiada barang, tiada kelengkapan, dan setiap statistik antara 1 hingga 5.
-SCENARIO_RANDOM_NAME	Rawak sepenuhnya
-SCENARIO_RANDOM_DESC	Kumpulan 1 hingga 32 unit, setiap satu dengan semua statistik antara 1 dan 99, serta item dan kelengkapan rawak yang mampu dibawanya.
+SCENARIO_PACK_NAME	Kawanan Berdua
+SCENARIO_PACK_DESC	Seorang pengembara dan seekor serigala yang setia. Pengembara itu tiada barang atau kelengkapan, dan setiap statistik antara 1 dan 5.
+SCENARIO_BEASTMASTER_NAME	Tuan Binatang
+SCENARIO_BEASTMASTER_DESC	Seorang pengembara yang mengetuai 20 makhluk jenis rawak. Pengembara itu tiada barang atau kelengkapan, dan setiap statistik antara 1 dan 5.
+SCENARIO_RANDOM_NAME	Kem Rawak Penuh
+SCENARIO_RANDOM_DESC	Kem anda sendiri, dengan kumpulan 20 unit atau lebih, setiap satu dengan setiap statistik antara 1 dan 99 serta barang dan kelengkapan rawak yang mampu dibawa, dan 3 hingga 7 makhluk.
 SCENARIO_CARAVAN_NAME	Karavan pengembara
 SCENARIO_CARAVAN_DESC	Sepuluh pengembara di jalan bersama. Semua statistik bermula pada 5, dan setiap seorang membawa 10 syiling emas.
 SCENARIO_SHABBY_NAME	Kru lusuh
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Satu unit tanpa apa-apa: tiada item, tiada kelengkapan, sem
 SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
 SCENARIO_DIGGERS_DESC	Tujuh pelombong berkelengkapan penuh. Statistik mereka antara 5 dan 20, tetapi setiap seorang mempunyai Perlombongan 50 dan membawa 3 bijih besi.
 SCENARIO_CUSTOM_NAME	Senario Tersuai
-SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, dan anda boleh menambah atau membuang unit, sehingga 32.
+SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, dan anda boleh menambah atau membuang unit dan makhluk biasa, hingga 32.
 PROP_LOCKED_CHEST	Peti berkunci
 PROP_PRISONER_CAGE	Sangkar tahanan
 UILABEL_UNLOCK	Buka kunci
+UILABEL_AUTO_HARVEST	Tuai automatik
+UILABEL_AUTO_HAUL	Angkut automatik
+MISC_AUTO_OUTSIDE_CLAIM	Tuai dan angkut automatik hanya berfungsi pada objek dalam kawasan puak anda
+MISC_AUTO_HARVEST_SET	{0} unit akan menuai secara automatik: {1}
+MISC_AUTO_HAUL_SET	{0} unit akan mengangkut secara automatik ke {1}
+MISC_BEHAVIOR_LIST_FULL	Senarai gelagat penuh (paling banyak {0})
 UILABEL_PICK_UP	Angkat
-UILABEL_PUT_IN_BED	Baringkan di katil
+UILABEL_PLACE	Letakkan
+UILABEL_OCCUPY	Duduki
+UILABEL_DISBAND	Bubarkan
+UILABEL_DISBAND_HOLD	Tahan Bubarkan selama {0} saat untuk mengesahkan
 UILABEL_PUT_DOWN	Letak
 UILABEL_SHOP	Beli-belah
 UILABEL_TASK_CARRIED	Sedang diangkat
@@ -641,16 +724,33 @@ UILABEL_DOOM	Ajal
 UILABEL_TASK_UNCONSCIOUS	Pengsan
 UILABEL_TASK_DEAD	Mati
 UILABEL_TASK_CARRYING	Mengangkat
+UILABEL_TASK_STORING	Menyimpan
 UILABEL_TAKE_ALL	Ambil semua
 UILABEL_LOOT_HINT	Klik barang untuk mengambilnya ke inventori unit anda.
 UILABEL_CORPSE_OF	Mayat {0}
 MISC_FALLS_UNCONSCIOUS	{0} jatuh pengsan
 MISC_DIES	{0} mati
 MISC_RECOVERS	{0} sedar semula
+LOADING_PICTURES	Gambar
+LOADING_UNIT_MODELS	Model unit
+LOADING_MOB_MODELS	Model makhluk
+LOADING_MOB_PICTURES	Gambar makhluk
+LOADING_SKY	Langit
+LOADING_PROP_MODELS	Model objek
+LOADING_MAP	Peta
+LOADING_MAP_GROUND	Permukaan peta
+LOADING_WORLD	Dunia
+LOADING_GROUND_ITEMS	Barang di tanah
+MISC_GOES_HOME	{0} berhenti mengejar dan pulang
+MISC_GETS_UP	{0} bangun semula, bahaya sudah berlalu
 MISC_PICKS_UP_UNIT	{0} mengangkat {1}
 MISC_PUTS_DOWN	{0} meletakkan {1}
-MISC_PUTS_IN_BED	{0} membaringkan {1} di {2}
-MISC_CORPSE_NO_BED	Katil tidak dapat membantu yang mati
+MISC_PLACES_IN	{0} membaringkan {1} di {2}
+MISC_DISBAND_ASK	{0} akan meninggalkan skuad dan puak anda buat selamanya dan menjadi Orang Buangan: berkecuali terhadap semua dan merayau sendirian.
+MISC_DISBAND_ASK_MOB	{0} akan meninggalkan skuad dan puak anda buat selamanya dan kembali ke alam liar.
+MISC_DISBANDED	{0} meninggalkan skuad anda sebagai Orang Buangan
+MISC_DISBANDED_MOB	{0} meninggalkan skuad anda dan kembali ke alam liar
+MISC_CORPSE_NO_PLACE	Yang mati tidak boleh diletakkan di sana
 MISC_IS_UNCONSCIOUS	{0} pengsan dan tidak dapat berbuat apa-apa
 MISC_ALREADY_CARRYING	Tiada unit pilihan anda boleh mengangkatnya
 MISC_LOOT_NO_ROOM	Tiada ruang dalam inventori
@@ -788,6 +888,46 @@ ITEM_132_NAME	Anak Panah Api
 ITEM_132_DESC	Anak panah berapi untuk busur pendek atau panjang. Anak panah paling kuat.
 ITEM_133_NAME	Bolt Busur Silang
 ITEM_133_DESC	Bolt pendek dan berat untuk busur silang.
+ITEM_134_NAME	Tulang Beruang
+ITEM_134_DESC	Tulang daripada beruang. Baik untuk kraf.
+ITEM_135_NAME	Tulang Lembu
+ITEM_135_DESC	Tulang daripada lembu. Baik untuk kraf.
+ITEM_136_NAME	Tulang Ayam
+ITEM_136_DESC	Tulang daripada ayam. Baik untuk kraf.
+ITEM_137_NAME	Tulang Babi Hutan
+ITEM_137_DESC	Tulang daripada babi hutan. Baik untuk kraf.
+ITEM_138_NAME	Tulang Serigala
+ITEM_138_DESC	Tulang daripada serigala. Baik untuk kraf.
+ITEM_139_NAME	Tulang Rusa
+ITEM_139_DESC	Tulang daripada rusa. Baik untuk kraf.
+ITEM_140_NAME	Tulang Arnab
+ITEM_140_DESC	Tulang daripada arnab. Baik untuk kraf.
+ITEM_141_NAME	Tulang Ikan
+ITEM_141_DESC	Tulang daripada ikan. Baik untuk kraf.
+ITEM_142_NAME	Cengkerang Ketam
+ITEM_142_DESC	Sisa cengkerang ketam. Baik untuk kraf.
+ITEM_143_NAME	Tulang Biawak
+ITEM_143_DESC	Tulang daripada biawak. Baik untuk kraf.
+ITEM_144_NAME	Tulang Ular
+ITEM_144_DESC	Tulang daripada ular. Baik untuk kraf.
+ITEM_145_NAME	Tulang Babi
+ITEM_145_DESC	Tulang daripada babi. Baik untuk kraf.
+ITEM_146_NAME	Tulang Biri-biri
+ITEM_146_DESC	Tulang daripada biri-biri. Baik untuk kraf.
+ITEM_147_NAME	Tulang Itik
+ITEM_147_DESC	Tulang daripada itik. Baik untuk kraf.
+ITEM_148_NAME	Tulang Penyu
+ITEM_148_DESC	Tulang daripada penyu. Baik untuk kraf.
+ITEM_149_NAME	Tulang Kelawar
+ITEM_149_DESC	Tulang daripada kelawar. Baik untuk kraf.
+ITEM_150_NAME	Tulang Katak
+ITEM_150_DESC	Tulang daripada katak. Baik untuk kraf.
+ITEM_151_NAME	Tulang Gorlikorn
+ITEM_151_DESC	Tulang daripada gorlikorn. Baik untuk kraf.
+ITEM_152_NAME	Daging Gorlikorn Mentah
+ITEM_152_DESC	Daging yang belum dimasak. Masak di unggun api.
+ITEM_153_NAME	Daging Gorlikorn Masak
+ITEM_153_DESC	Daging berlemak yang dimasak di atas api. Memulihkan banyak kesihatan dan lapar.
 UILABEL_OPTIMIZE	Optimumkan
 UILABEL_REMOVE_ALL	Tanggalkan semua
 MISC_GEAR_NO_ROOM	Ruang inventori tidak mencukupi
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Kelangsungan Hidup
 UILABEL_EARLY_ACCESS	Akses Awal
 MISC_TITLE_KEYS	Pilih  //  Enter Sahkan
 UILABEL_LANGUAGE_LABEL	Bahasa:
+PROP_FLAG	Bendera
+PROP_DEBRIS	Serpihan
+PROP_FOUNDATION_SMALL	Asas Kecil
+PROP_FOUNDATION_LARGE	Asas Besar
+PROP_FOUNDATION_LONG	Asas Panjang
+PROP_FOUNDATION_CIRCLE	Asas Bulat
+PROP_VAULT	Bilik Kebal
+UILABEL_BUILD	Bina
+UILABEL_BUILD_SELECTED	Dipilih: {0}
+UILABEL_BUILD_NONE	Dipilih: Tiada
+UILABEL_BUILD_SELECT	Pilih
+UILABEL_BUILD_PICKED	Dipilih
+UILABEL_BUILD_PLACE_HINT	Klik kiri pada tanah untuk meletak. Tahan R dan gerakkan tetikus ke kiri atau kanan untuk memusing. Klik kanan atau Escape untuk batal.
+UILABEL_UPKEEP_HINT	Membakar satu {0} sejam sebagai penyelenggaraan. Letakkan di sini.
+MISC_BUILD_BLOCKED	Tiada ruang untuk membina di sini
+MISC_BUILD_UNWALKABLE	Tanah ini tidak boleh dibina
+MISC_BUILD_NO_FOUNDATION	Bilik kebal mesti berada sepenuhnya di atas asas
+MISC_NO_UPKEEP	Tiada penyelenggaraan: tiada balak
+MISC_UPKEEP_LEFT	Penyelenggaraan: tinggal {0} min
+PROP_SHOP	Kedai
+PROP_FARM	Ladang
+PROP_TURBINE	Turbin Angin
+UILABEL_BUILD_DESTROY	Musnahkan
+UILABEL_BUILD_DESTROY_HINT	Klik kiri mana-mana objek untuk merobohkannya: isinya jatuh ke tanah dan serpihan tertinggal di tempatnya. Klik kiri serpihan untuk membersihkannya. Klik kanan atau Escape untuk batal.
+UILABEL_LOCK	Kunci
+MISC_BUILD_NO_CLAIM	Asas atau bilik kebal mesti berada dalam kawasan anda sendiri
+MISC_BUILD_SEALED	Tanah itu dimeterai oleh bilik kebal puak lain
+MISC_BUILD_CLAIM_OVERLAP	Kawasan itu akan bertindih dengan kawasan bendera lain
+MISC_BUILD_VAULT_TAKEN	Kawasan itu sudah ada bilik kebal
+MISC_BUILD_VAULT_CAP	Puak anda sudah ada seberapa banyak bilik kebal yang dibenarkan
+MISC_DESTROY_NOTHING	Tiada apa-apa untuk dimusnahkan di situ
+MISC_FLAG_FACTION	Pemilik: {0}
+MISC_FLAG_HEALTH	Ketahanan: {0} daripada {1}
+MISC_FLAG_VAULT_YES	Bilik kebal: berdiri, kawasan dipertahankan
+MISC_FLAG_VAULT_NO	Bilik kebal: tiada, bendera semakin haus
+MISC_PROP_CONDITION	Keadaan: {0}%
+MISC_PROP_DECAYING	Semakin rosak
+MISC_PROP_HOLDING	Tidak rosak
+MISC_PROP_LOCK_OPEN	Tidak berkunci
+MISC_PROP_LOCK_YOURS	Berkunci untuk orang luar (terbuka untuk anda)
+MISC_PROP_LOCK_SHUT	Berkunci (Membuka kunci {0})
+MISC_PROP_UPKEEP	Penyelenggaraan: tinggal {0} jam
+MISC_PROP_VAULT_UNCLAIMED	Di luar mana-mana kawasan: tidak memberi penyelenggaraan
+MOB_BEAR	Beruang
+MOB_COW	Lembu
+MOB_CHICKEN	Ayam
+MOB_BOAR	Babi Hutan
+MOB_WOLF	Serigala
+MOB_DEER	Rusa
+MOB_RABBIT	Arnab
+MOB_FISH	Ikan
+MOB_CRAB	Ketam
+MOB_LIZARD	Biawak
+MOB_SNAKE	Ular
+MOB_PIG	Babi
+MOB_SHEEP	Biri-biri
+MOB_DUCK	Itik
+MOB_TURTLE	Penyu
+MOB_BAT	Kelawar
+MOB_FROG	Katak
+MOB_GORLICORN	Gorlikorn
+FACTION_MOB_BEAR	Kawanan Beruang
+FACTION_MOB_COW	Kawanan Lembu
+FACTION_MOB_CHICKEN	Kawanan Ayam
+FACTION_MOB_BOAR	Kawanan Babi Hutan
+FACTION_MOB_WOLF	Kawanan Serigala
+FACTION_MOB_DEER	Kawanan Rusa
+FACTION_MOB_RABBIT	Kawanan Arnab
+FACTION_MOB_FISH	Kawanan Ikan
+FACTION_MOB_CRAB	Kawanan Ketam
+FACTION_MOB_LIZARD	Kawanan Biawak
+FACTION_MOB_SNAKE	Kawanan Ular
+FACTION_MOB_PIG	Kawanan Babi
+FACTION_MOB_SHEEP	Kawanan Biri-biri
+FACTION_MOB_DUCK	Kawanan Itik
+FACTION_MOB_TURTLE	Kawanan Penyu
+FACTION_MOB_BAT	Kawanan Kelawar
+FACTION_MOB_FROG	Kawanan Katak
+FACTION_MOB_GORLICORN	Kawanan Gorlikorn
+MISC_MOB_NO_GEAR	Makhluk tidak boleh memakai kelengkapan
+MISC_MOB_NO_HEALING	Makhluk tidak boleh menggunakan barang penyembuh
+MISC_MOB_CANT_WORK	Makhluk tidak boleh bekerja di objek

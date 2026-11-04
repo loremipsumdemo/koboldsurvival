@@ -18,6 +18,9 @@ constexpr int FACTION_PLAYER = 0;
 constexpr int FACTION_RETIRED_GRAY = 1;   // the old Gray Faction: units saved with it load into FACTION_GREEN
 constexpr int FACTION_RED = 2;
 constexpr int FACTION_GREEN = 3;
+// The Exiles: units disbanded from your squad (disbandUnit, systems.h). They have no camp and no reputation: they are
+// neutral to every faction, always, and it never changes.
+constexpr int FACTION_EXILE = 6;
 
 constexpr int REP_MIN = -100;
 constexpr int REP_MAX = 100;

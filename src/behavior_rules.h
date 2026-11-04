@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -8,8 +9,9 @@
 #include "props.h"
 
 // Behaviors: what a unit does on its own. Each unit has a list, checked from the top: the first behavior is the
-// highest priority. Every unit has the three needs behaviors, which can be switched off and moved but not deleted:
-//   Eat: below its percent of hunger (BEHAVIOR_NEED_PERCENT unless changed with the row's - and +), it eats the food
+// highest priority. Every unit starts with the needs behaviors. Any behavior can be switched off, moved or deleted, and
+// the tab's Add Behavior list (addableKinds) puts back any that exists:
+//   Eat: below its percent of hunger (BEHAVIOR_NEED_PERCENT unless changed with the row's # button, within percentRange), it eats the food
 //        item that restores the most hunger.
 //   Heal: below its percent of health, it uses the healing item that restores the most health.
 //   Share: with Eat or Heal needing an item it does not carry, it takes one from a unit within SHARE_RANGE that has
@@ -67,8 +69,6 @@ constexpr float ROAM_STEP_MIN = 6.0f, ROAM_STEP_MAX = 18.0f;
 
 constexpr int BEHAVIOR_LIMIT = 16;               // most behaviors one unit can hold
 constexpr int BEHAVIOR_NEED_PERCENT = 50;        // Eat and Heal act below this share of hunger or health, at first
-constexpr int BEHAVIOR_PERCENT_STEP = 10;        // the row's - and + change it by this much
-constexpr int BEHAVIOR_PERCENT_MIN = 10, BEHAVIOR_PERCENT_MAX = 90;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;   // a behavior that could not be done waits this long to try again
 
 struct BehaviorRule {
@@ -84,12 +84,30 @@ struct BehaviorRule {
 
 // Whether a behavior has a percent to set: Eat, Heal and Rest
 inline bool hasPercent(BehaviorKind k) { return k == BehaviorKind::Eat || k == BehaviorKind::Heal || k == BehaviorKind::Rest; }
-// Steps a behavior's percent by delta steps, kept within its range. False when it has no percent or is at that end.
-inline bool stepPercent(BehaviorRule& r, int delta) {
-    if (!hasPercent(r.kind)) return false;
-    const int to = std::clamp(r.percent + delta * BEHAVIOR_PERCENT_STEP, BEHAVIOR_PERCENT_MIN, BEHAVIOR_PERCENT_MAX);
-    if (to == r.percent) return false;
-    r.percent = to;
+// The percents a behavior can be set to, both ends included: the range the # prompt takes. Eat may wait until the
+// unit is nearly starving or snack early; Heal is kept off 100 so a scratch does not use up the healing items; Rest is
+// kept off the top so a unit is not forever lying down.
+struct PercentRange {
+    int lo = 0, hi = 0;
+};
+inline PercentRange percentRange(BehaviorKind k) {
+    switch (k) {
+    case BehaviorKind::Eat: return { 5, 95 };
+    case BehaviorKind::Heal: return { 10, 95 };
+    case BehaviorKind::Rest: return { 5, 90 };
+    default: break;
+    }
+    return { BEHAVIOR_NEED_PERCENT, BEHAVIOR_NEED_PERCENT };
+}
+// Whether a value is a percent the behavior can take
+inline bool percentInRange(BehaviorKind k, int value) {
+    const PercentRange r = percentRange(k);
+    return hasPercent(k) && value >= r.lo && value <= r.hi;
+}
+// Sets a behavior's percent. False when it has no percent, the value is outside its range, or it is that already.
+inline bool setPercent(BehaviorRule& r, int value) {
+    if (!percentInRange(r.kind, value) || value == r.percent) return false;
+    r.percent = value;
     return true;
 }
 
@@ -205,8 +223,28 @@ inline BehaviorRule behaviorFromFields(int on, int kind, int propKind, int perce
     r.on = on != 0;
     r.kind = (BehaviorKind)std::clamp(kind, 0, (int)BehaviorKind::Count - 1);
     r.propKind = isAutomated(r.kind) ? propKind : -1;
-    r.percent = std::clamp(percent, BEHAVIOR_PERCENT_MIN, BEHAVIOR_PERCENT_MAX);
+    const PercentRange range = percentRange(r.kind);
+    r.percent = hasPercent(r.kind) ? std::clamp(percent, range.lo, range.hi) : BEHAVIOR_NEED_PERCENT;
     return r;
+}
+
+// An Exile's behaviors (FACTION_EXILE, disbandUnit in systems.h): Eat and Heal first, then Roam, as the wild mobs do
+inline std::vector<BehaviorRule> exileBehaviors() {
+    BehaviorRule eat, heal, roam;
+    heal.kind = BehaviorKind::Heal;
+    roam.kind = BehaviorKind::Roam;
+    return { eat, heal, roam };
+}
+// Keeps only an Exile's behaviors in a list (a loaded one, which ensureNeedsBehaviors filled out), in their order, with
+// Roam last if it was missing
+inline void keepExileBehaviors(std::vector<BehaviorRule>& rules) {
+    rules.erase(std::remove_if(rules.begin(), rules.end(), [](const BehaviorRule& r) {
+                    return r.kind != BehaviorKind::Eat && r.kind != BehaviorKind::Heal && r.kind != BehaviorKind::Roam;
+                }),
+                rules.end());
+    for (const BehaviorRule& d : exileBehaviors()) {
+        if (std::none_of(rules.begin(), rules.end(), [&](const BehaviorRule& r) { return r.kind == d.kind; })) rules.push_back(d);
+    }
 }
 
 // A mob's behaviors: no needs behaviors at all. It has no hunger, can't use healing items or share, and does not
@@ -234,8 +272,9 @@ inline void ensureNeedsBehaviors(std::vector<BehaviorRule>& rules, bool mob = fa
     }
 }
 
-// Adds a behavior to the end of a list, unless the list already holds it (then it is only switched on) or is full.
-// False when it is full.
+// Adds a behavior to a list, unless the list already holds it (then it is only switched on) or is full. An automated
+// behavior goes at the end; a needs behavior goes after the last needs behavior, so before the automated ones. False
+// when it is full.
 inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& add) {
     for (BehaviorRule& r : rules) {
         if (sameBehavior(r, add)) {
@@ -245,8 +284,41 @@ inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& ad
         }
     }
     if ((int)rules.size() >= BEHAVIOR_LIMIT) return false;
-    rules.push_back(add);
+    if (isAutomated(add.kind)) {
+        rules.push_back(add);
+        return true;
+    }
+    size_t after = 0;
+    for (size_t i = 0; i < rules.size(); ++i) {
+        if (!isAutomated(rules[i].kind)) after = i + 1;
+    }
+    rules.insert(rules.begin() + (long)after, add);
     return true;
+}
+
+// One entry of the Add Behavior list: a behavior a unit can be given, with whether it already holds it
+struct BehaviorOption {
+    BehaviorRule rule;
+    std::string label;   // the text in the list
+    bool have = false;   // the unit holds it already: adding it again only switches it on
+};
+
+// The kinds the Add Behavior list offers, in its order: the needs behaviors, then the walks. Auto-Harvest and Auto-Haul
+// come after these, one entry per resource kind and per storage prop, which the caller finds in the world. A mob has
+// no needs, so it is offered the walks alone.
+inline std::vector<BehaviorKind> addableKinds(bool mob) {
+    std::vector<BehaviorKind> out;
+    if (!mob) {
+        out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
+                BehaviorKind::Rescue };
+    }
+    out.insert(out.end(), { BehaviorKind::Patrol, BehaviorKind::Roam, BehaviorKind::PatrolSpawn });
+    return out;
+}
+
+// Whether a list holds a behavior (sameBehavior)
+inline bool holdsBehavior(const std::vector<BehaviorRule>& rules, const BehaviorRule& r) {
+    return std::any_of(rules.begin(), rules.end(), [&](const BehaviorRule& x) { return sameBehavior(x, r); });
 }
 
 // Moves a behavior up (delta -1) or down (delta +1) the priority list. False when it is already at that end.
@@ -258,9 +330,9 @@ inline bool moveBehavior(std::vector<BehaviorRule>& rules, size_t index, int del
     return true;
 }
 
-// Deletes the behavior at index. False if there is none there, or it is a needs behavior, which every unit keeps.
+// Deletes the behavior at index, any kind: a deleted one can be put back with Add Behavior. False if there is none there.
 inline bool removeBehavior(std::vector<BehaviorRule>& rules, size_t index) {
-    if (index >= rules.size() || !isAutomated(rules[index].kind)) return false;
+    if (index >= rules.size()) return false;
     rules.erase(rules.begin() + (long)index);
     return true;
 }

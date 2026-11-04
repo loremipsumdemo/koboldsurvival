@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Rată de reîmprospătare
 UILABEL_DEFAULT	Implicit
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Limită de cadre pe secundă
+UILABEL_VIEW_RANGE	Distanță de vizibilitate
+UILABEL_TILES_N	{0} pătrățele
+UILABEL_SHOW_FPS	Afișează FPS
 UILABEL_UNLIMITED	Nelimitat
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Salvare automată
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minute
 UILABEL_UNIT_NAMES	Numele unităților jucătorului
 UILABEL_NPC_NAMES	Numele altor unități
 UILABEL_PROP_NAMES	Numele obiectelor
+UILABEL_PROP_INFO	Afișează informații despre obiecte
 UILABEL_FONT_SIZE	Dimensiune font
 UILABEL_RESET_PANELS	Resetează toate panourile UI
 UILABEL_RESET	Resetează
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Volum global
 UILABEL_MUSIC	Muzică
 UILABEL_AMBIENT	Ambient
 UILABEL_INTERFACE_SOUNDS	Sunetele interfeței
+UILABEL_CRAFT_GATHER_SOUNDS	Sunete de meșteșug și adunare
 UILABEL_SOUND_EFFECTS	Efecte sonore
 UILABEL_RESTORE_DEFAULTS	Restabilește implicitele
 UILABEL_WINDOWED	În fereastră
@@ -123,6 +128,8 @@ UILABEL_STATS	Statistici
 UILABEL_CLICK_TO_TYPE	Fă clic pentru a scrie un nume
 UILABEL_HEALTH	Sănătate
 UILABEL_HUNGER	Foame
+UILABEL_RESTED	Odihnă
+UILABEL_COMFORT	Confort
 UILABEL_CARRY	Capacitate de transport
 UILABEL_NEXT_LEVEL_XP_LINE	XP până la nivelul următor: {0}
 UILABEL_STAT	Statistică
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Randomizează această unitate
 UILABEL_RANDOMIZE_ALL	Randomizează tot
 UILABEL_ADD_UNIT	Adaugă unitate
 UILABEL_REMOVE_UNIT	Elimină unitatea
+UILABEL_ADD_MOB	Adaugă creatură
+UILABEL_MOB_KIND	Specie
+UILABEL_MOB_NO_GEAR	O creatură nu poartă echipament.
+MISC_MEAT_TAKEN_DIES	{0} moare
+MISC_MOB_INVENTORY_LOCKED	Indisponibil
+MISC_MOB_CANT_HOLD	O creatură poartă doar propria carne și propriile oase
+UILABEL_CLEAR	Curăță
+UILABEL_TASK_CLEARING	Curăță molozul
+MISC_CLEARS_DEBRIS	{0} curăță molozul
+UILABEL_MOB_INVENTORY_HIDDEN	Indisponibil
+UILABEL_BEHAVIOR_PATROL	Patrulare
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulare la origine
+UILABEL_BEHAVIOR_ROAM	Hoinăreală
+UILABEL_BEHAVIOR_PATROL_TIP	Patrulare: se plimbă prin teritoriul în care se află, dacă e al facțiunii sale, oprindu-se din când în când.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulare la origine: se plimbă lângă locul unde a apărut. Urmărită prea departe, renunță, se vindecă complet și se întoarce, fără să primească daune până ajunge.
+UILABEL_BEHAVIOR_ROAM_TIP	Hoinăreală: rătăcește prin ținuturile deschise, oriunde poate merge în afara teritoriilor steagurilor.
+UILABEL_WAIT_NOT_IN_CLAIM	nu e pe un teritoriu al facțiunii sale
+UILABEL_WAIT_NOWHERE_TO_ROAM	niciun teren deschis în apropiere în afara teritoriilor
+UILABEL_TEMPERAMENT_AVOIDANT	Sfios
+UILABEL_TEMPERAMENT_PASSIVE	Pasiv
+UILABEL_TEMPERAMENT_NEUTRAL	Neutru
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agresiv
+UILABEL_TEMPERAMENT	Temperament: {0}
+UILABEL_MOB_NO_ITEMS	O creatură poartă doar propria carne și propriile oase.
 UILABEL_CONFIRM_STARTS	Confirmă pornește jocul cu această echipă.
 UILABEL_NEEDS_NAMES	Fiecare unitate trebuie să aibă un nume înainte de a începe jocul.
 UILABEL_CLICK_UNIT_EDIT	Fă clic pe o unitate pentru a o edita.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Picioare
 UILABEL_SLOT_FEET	Tălpi
 UILABEL_SLOT_ACCESSORY	Accesoriu
 UILABEL_BEHAVIOR_ON	Pornit
+UILABEL_BEHAVIOR_EAT	Mănâncă la foame < {0}%
+UILABEL_BEHAVIOR_REST	Odihnește-te la odihnă < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Părăsește patul după refacere
+UILABEL_BEHAVIOR_RESCUE	Salvează aliații căzuți
+UILABEL_BEHAVIOR_HEAL	Vindecă-te la viață < {0}%
+UILABEL_BEHAVIOR_SHARE	Împarte
+UILABEL_BEHAVIOR_AUTO_HARVEST	Recoltare automată: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Transport automat: {0}
+UILABEL_BEHAVIOR_WAITING	(așteaptă)
+UILABEL_BEHAVIOR_WAIT_TIP	Așteaptă: {0}
+UILABEL_WAIT_NO_FOOD	nu are mâncare și nimeni din apropiere nu împarte
+UILABEL_WAIT_NO_BED	niciun pat sau așternut liber pentru odihnă
+UILABEL_WAIT_NO_HEALING	nu are obiect de vindecare și nimeni din apropiere nu împarte
+UILABEL_WAIT_WALKING_TO_SHARE	merge spre {0}, care poate împărți unul
+UILABEL_WAIT_NO_PROP	niciun {0} pe teritoriul tău cu loc pentru încă un lucrător
+UILABEL_WAIT_CARRY_FULL	nu mai are loc să care nimic
+UILABEL_WAIT_LOAD_WAITING	cară o încărcătură pe care transportul automat trebuie s-o ia întâi
+UILABEL_WAIT_PROP_GONE	obiectul a dispărut
+UILABEL_WAIT_OUTSIDE_CLAIM	obiectul nu e pe teritoriul facțiunii tale
+UILABEL_WAIT_LOCKED	obiectul e încuiat
+UILABEL_WAIT_NOTHING_TO_HAUL	nu cară nimic din ce primește obiectul
+UILABEL_WAIT_PROP_FULL	obiectul nu are loc pentru ce cară
+UILABEL_BEHAVIOR_EAT_TIP	Mănâncă: sub {0}% foame, mănâncă hrana care potolește cel mai mult foamea. Folosește - și + ca să schimbi pragul.
+UILABEL_BEHAVIOR_HEAL_TIP	Vindecă-te: sub {0}% viață, folosește obiectul de vindecare care reface cea mai multă viață. Folosește - și + ca să schimbi pragul.
+UILABEL_BEHAVIOR_REST_TIP	Odihnește-te: sub {0}% odihnă, se întinde în cel mai apropiat pat sau așternut liber și se ridică odihnit complet. Folosește - și + ca să schimbi pragul.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Părăsește patul: se ridică dintr-un pat sau așternut după 30 de secunde cu viața plină și complet odihnit.
+UILABEL_BEHAVIOR_RESCUE_TIP	Salvează: duce o unitate din propria facțiune, căzută inconștientă în apropiere, la cel mai apropiat pat sau așternut liber.
+UILABEL_BEHAVIOR_SHARE_TIP	Împarte: când Mănâncă sau Vindecă-te are nevoie de un obiect pe care unitatea nu îl are, ia unul de la o unitate aflată la distanță de negoț care împarte și ea și are mai puțină nevoie de el, mergând întâi la ea dacă e puțin mai departe. Alte unități care împart pot lua de la aceasta la fel.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Recoltare automată: lucrează la cel mai apropiat {0} de pe teritoriul facțiunii tale. Cu o încărcătură și un transport automat care o poate lua, se oprește să o care. Un ordin de-al tău o pune pe pauză; reîncepe după ce unitatea a stat câteva secunde.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Transport automat: duce obiectele din inventar (nu echipamentul purtat) pe care {0} le primește, cât timp are loc și stă pe teritoriul facțiunii tale. Un ordin de-al tău îl pune pe pauză; reîncepe după ce unitatea a stat câteva secunde.
+UILABEL_NPC_MESSAGES	NPC-uri
+UILABEL_SHOW_NPC_INFO	Afișează informații NPC
 UILABEL_COMBAT_MESSAGES	Mesaje de luptă
 UILABEL_SEEN	Văzut
 UILABEL_HIT	Lovit
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Mesaje de experiență
 UILABEL_EXPERIENCE	Experiență
 UILABEL_XP_ATHLETICS	Experiență la Atletism
 UILABEL_XP_ENDURANCE	Experiență la Rezistență
+UILABEL_XP_CARRYING	Experiență la Forță (cărat)
 UILABEL_ITEM_MESSAGES	Mesaje despre obiecte
 UILABEL_PICKUP	Ridicare
 UILABEL_DROP	Aruncare
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Progres: {0}%
 UILABEL_TIP_CURRENT_XP	XP curent: {0}
 UILABEL_ATTACK_DEFENSE	Atac {0}      Apărare {1}
 UILABEL_STATS_CAPTION	Statistici: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Loc {0}: {1}
 UILABEL_SLOT_N_EMPTY	Loc {0}: gol
 UILABEL_COUNT	Număr {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Necesită ambele mâini. Mâna secundară trebuie să fie goală.
 ITEM_87_NAME	Secure de luptă
 ITEM_87_DESC	Necesită ambele mâini. Mâna secundară trebuie să fie goală.
 UILABEL_UI_SCALE	Scara interfeței
-NAME_MASCULINE	["Andrei", "Mihai", "Radu", "Vlad", "Ionuț"]
-NAME_FEMININE	["Ioana", "Maria", "Elena", "Corina", "Andreea"]
-NAME_ANDROGYNOUS	["Alex", "Sasha", "Dani", "Ariel", "Noa"]
+NAME_MASCULINE	["Andrei", "Mihai", "Radu", "Vlad", "Ionuț", "Adrian", "Alexandru", "Bogdan", "Cătălin", "Ciprian", "Claudiu", "Constantin", "Cosmin", "Costel", "Cristian", "Dan", "Daniel", "Dorin", "Dragoș", "Emil", "Eugen", "Florin", "Gabriel", "George", "Gheorghe", "Horia", "Ion", "Iulian", "Laurențiu", "Liviu", "Lucian", "Marian", "Marius", "Matei", "Mircea", "Nicolae", "Octavian", "Ovidiu", "Paul", "Petru", "Răzvan", "Remus", "Sebastian", "Sergiu", "Silviu", "Ștefan", "Teodor", "Tudor", "Valentin", "Victor"]
+NAME_FEMININE	["Ioana", "Maria", "Elena", "Corina", "Andreea", "Adina", "Alina", "Ana", "Anca", "Bianca", "Camelia", "Carmen", "Cristina", "Daniela", "Delia", "Diana", "Doina", "Ecaterina", "Florentina", "Gabriela", "Georgiana", "Ileana", "Irina", "Iulia", "Larisa", "Laura", "Lavinia", "Lucia", "Luminița", "Magdalena", "Mădălina", "Mihaela", "Mirela", "Monica", "Natalia", "Oana", "Raluca", "Ramona", "Roxana", "Ruxandra", "Simona", "Smaranda", "Sorina", "Ștefania", "Teodora", "Valentina", "Veronica", "Viorica", "Zamfira", "Sânziana"]
+NAME_ANDROGYNOUS	["Alex", "Sasha", "Dani", "Ariel", "Noa", "Ari", "Bo", "Charlie", "Eli", "Jo", "Kai", "Kim", "Lou", "Luca", "Mika", "Niki", "Nova", "Rio", "Sam", "Sky", "Toni", "Vic", "Cami", "Cris", "Gabi", "Vânt", "Mio", "Nico", "Remi", "Robi", "Sevi", "Stef", "Vali", "Aurel", "Brad", "Cer", "Codru", "Dor", "Floare", "Iris", "Lumin", "Lună", "Mugur", "Nor", "Paltin", "Rouă", "Senin", "Soare", "Stea", "Zori"]
 UILABEL_BODY_TYPE	Tip de corp
 UILABEL_BODY_MASCULINE	Masculin
 UILABEL_BODY_FEMININE	Feminin
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Nu mai este loc în depozit
 MISC_PROP_TAKEN	Este deja folosit
 MISC_PROP_WORKERS_FULL	Cel mult {0} unități pot lucra la el deodată
 MISC_GATHERS	{0} adună {1}
+MISC_AUTO_HAUL_STORES	{0} depozitează {1} {2} în {3}
 MISC_GATHER_NO_ROOM	{0} nu are loc pentru {1} și se oprește din lucru
 MISC_REASON_GATHERING	adunare
+MISC_REASON_CLEARING	curăță molozul
 UILABEL_TASK	Sarcină: {0}
 UILABEL_TASK_IDLE	Inactiv
+UILABEL_TASK_AUTO_GOING	{0} (pe drum)
+UILABEL_TASK_SHARE_WALK	Merge spre {0} ca să împartă
 UILABEL_TASK_MOVING	În mișcare
 UILABEL_TASK_RESTING	Se odihnește
 UILABEL_STORAGE_HINT	Clic dreapta pe un obiect ca să-l iei sau trage-l afară ca să-l lași unde stă unitatea ta. Clic dreapta pe obiectele unității tale ca să le depozitezi.
@@ -595,6 +664,7 @@ FACTION_RED	Facțiunea roșie
 FACTION_GREEN	Facțiunea verde
 FACTION_BLUE	Facțiunea albastră
 FACTION_YELLOW	Facțiunea galbenă
+FACTION_EXILE	Exilați
 MISC_REPUTATION_DROPS	Reputația la {0} scade cu {1}, la {2}
 UILABEL_MODE_PASSIVE	Pasiv
 UILABEL_MODE_BLOCK	Blocare
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariu
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	Un rătăcitor singuratic fără nimic al său: fără obiecte, fără echipament și fiecare statistică între 1 și 5.
-SCENARIO_RANDOM_NAME	Complet aleatoriu
-SCENARIO_RANDOM_DESC	Un grup de 1 până la 32 de unități, fiecare cu toate atributele între 1 și 99 și cu obiecte și echipament aleatorii pe care le poate căra.
+SCENARIO_PACK_NAME	Haită de doi
+SCENARIO_PACK_DESC	Un rătăcitor singuratic și un lup credincios. Rătăcitorul nu are obiecte sau echipament, iar fiecare statistică e între 1 și 5.
+SCENARIO_BEASTMASTER_NAME	Stăpânul fiarelor
+SCENARIO_BEASTMASTER_DESC	Un rătăcitor singuratic în fruntea a 20 de creaturi de specii aleatorii. Rătăcitorul nu are obiecte sau echipament, iar fiecare statistică e între 1 și 5.
+SCENARIO_RANDOM_NAME	Tabără complet aleatorie
+SCENARIO_RANDOM_DESC	Propria ta tabără, cu un grup de 20 sau mai multe unități, fiecare cu toate statisticile între 1 și 99 și obiecte și echipament aleatorii pe care le poate căra, plus 3 până la 7 creaturi.
 SCENARIO_CARAVAN_NAME	Caravana călătoare
 SCENARIO_CARAVAN_DESC	Zece călători împreună pe drum. Toate atributele încep de la 5 și fiecare are 10 monede de aur.
 SCENARIO_SHABBY_NAME	Echipa zdrențăroasă
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	O singură unitate fără nimic: fără obiecte, fără ech
 SCENARIO_DIGGERS_NAME	Săpătorii de temnițe
 SCENARIO_DIGGERS_DESC	Șapte mineri cu echipament complet. Atributele lor sunt între 5 și 20, dar fiecare are Minerit 50 și cară 3 minereuri de fier.
 SCENARIO_CUSTOM_NAME	Scenariu personalizat
-SCENARIO_CUSTOM_DESC	Alcătuiește-ți propriul grup. Începe cu trei unități și poți adăuga sau elimina unități, până la 32.
+SCENARIO_CUSTOM_DESC	Formează-ți propriul grup. Începe cu trei unități și poți adăuga sau elimina unități și creaturi obișnuite, până la 32.
 PROP_LOCKED_CHEST	Cufăr încuiat
 PROP_PRISONER_CAGE	Cușcă pentru prizonieri
 UILABEL_UNLOCK	Descuie
+UILABEL_AUTO_HARVEST	Recoltare automată
+UILABEL_AUTO_HAUL	Transport automat
+MISC_AUTO_OUTSIDE_CLAIM	Recoltarea și transportul automat merg doar pe obiecte de pe teritoriul facțiunii tale
+MISC_AUTO_HARVEST_SET	{0} unitate(ăți) vor recolta automat: {1}
+MISC_AUTO_HAUL_SET	{0} unitate(ăți) vor căra automat la {1}
+MISC_BEHAVIOR_LIST_FULL	Lista de comportamente e plină (cel mult {0})
 UILABEL_PICK_UP	Ridică
-UILABEL_PUT_IN_BED	Pune în pat
+UILABEL_PLACE	Așază
+UILABEL_OCCUPY	Ocupă
+UILABEL_DISBAND	Concediază
+UILABEL_DISBAND_HOLD	Ține apăsat Concediază {0} secunde pentru a confirma
 UILABEL_PUT_DOWN	Lasă jos
 UILABEL_SHOP	Cumpără
 UILABEL_TASK_CARRIED	Este purtat
@@ -641,16 +724,33 @@ UILABEL_DOOM	Pieire
 UILABEL_TASK_UNCONSCIOUS	Inconștient
 UILABEL_TASK_DEAD	Mort
 UILABEL_TASK_CARRYING	Cară
+UILABEL_TASK_STORING	Depozitează
 UILABEL_TAKE_ALL	Ia tot
 UILABEL_LOOT_HINT	Fă clic pe un obiect ca să-l iei în inventarul unității tale.
 UILABEL_CORPSE_OF	Cadavrul lui {0}
 MISC_FALLS_UNCONSCIOUS	{0} își pierde cunoștința
 MISC_DIES	{0} moare
 MISC_RECOVERS	{0} se trezește
+LOADING_PICTURES	Imagini
+LOADING_UNIT_MODELS	Modele de unități
+LOADING_MOB_MODELS	Modele de creaturi
+LOADING_MOB_PICTURES	Imagini de creaturi
+LOADING_SKY	Cer
+LOADING_PROP_MODELS	Modele de obiecte
+LOADING_MAP	Hartă
+LOADING_MAP_GROUND	Terenul hărții
+LOADING_WORLD	Lume
+LOADING_GROUND_ITEMS	Obiecte pe jos
+MISC_GOES_HOME	{0} renunță la urmărire și pleacă acasă
+MISC_GETS_UP	{0} se ridică, pericolul a trecut
 MISC_PICKS_UP_UNIT	{0} îl ridică pe {1}
 MISC_PUTS_DOWN	{0} îl lasă jos pe {1}
-MISC_PUTS_IN_BED	{0} îl pune pe {1} în: {2}
-MISC_CORPSE_NO_BED	Un pat nu poate face nimic pentru morți
+MISC_PLACES_IN	{0} îl pune pe {1} în: {2}
+MISC_DISBAND_ASK	{0} va părăsi pentru totdeauna echipa și facțiunea ta și va deveni un Exilat: neutru față de toți și rătăcind singur.
+MISC_DISBAND_ASK_MOB	{0} va părăsi pentru totdeauna echipa și facțiunea ta și se va întoarce în sălbăticie.
+MISC_DISBANDED	{0} părăsește echipa ta ca Exilat
+MISC_DISBANDED_MOB	{0} părăsește echipa ta și se întoarce în sălbăticie
+MISC_CORPSE_NO_PLACE	Morții nu pot fi așezați acolo
 MISC_IS_UNCONSCIOUS	{0} este inconștient și nu poate face nimic
 MISC_ALREADY_CARRYING	Niciuna dintre unitățile selectate nu-l poate căra
 MISC_LOOT_NO_ROOM	Nu e loc în inventar
@@ -788,6 +888,46 @@ ITEM_132_NAME	Săgeți de foc
 ITEM_132_DESC	Săgeți arzânde pentru arc scurt sau lung. Cele mai puternice săgeți.
 ITEM_133_NAME	Bolțuri de arbaletă
 ITEM_133_DESC	Bolțuri scurte și grele pentru o arbaletă.
+ITEM_134_NAME	Oase de urs
+ITEM_134_DESC	Oase de la un urs. Bune pentru meșteșuguri.
+ITEM_135_NAME	Oase de vacă
+ITEM_135_DESC	Oase de la o vacă. Bune pentru meșteșuguri.
+ITEM_136_NAME	Oase de pui
+ITEM_136_DESC	Oase de la un pui. Bune pentru meșteșuguri.
+ITEM_137_NAME	Oase de mistreț
+ITEM_137_DESC	Oase de la un mistreț. Bune pentru meșteșuguri.
+ITEM_138_NAME	Oase de lup
+ITEM_138_DESC	Oase de la un lup. Bune pentru meșteșuguri.
+ITEM_139_NAME	Oase de cerb
+ITEM_139_DESC	Oase de la un cerb. Bune pentru meșteșuguri.
+ITEM_140_NAME	Oase de iepure
+ITEM_140_DESC	Oase de la un iepure. Bune pentru meșteșuguri.
+ITEM_141_NAME	Oase de pește
+ITEM_141_DESC	Oase de la un pește. Bune pentru meșteșuguri.
+ITEM_142_NAME	Carapace de crab
+ITEM_142_DESC	Resturi din carapacea unui crab. Bune pentru meșteșuguri.
+ITEM_143_NAME	Oase de șopârlă
+ITEM_143_DESC	Oase de la o șopârlă. Bune pentru meșteșuguri.
+ITEM_144_NAME	Oase de șarpe
+ITEM_144_DESC	Oase de la un șarpe. Bune pentru meșteșuguri.
+ITEM_145_NAME	Oase de porc
+ITEM_145_DESC	Oase de la un porc. Bune pentru meșteșuguri.
+ITEM_146_NAME	Oase de oaie
+ITEM_146_DESC	Oase de la o oaie. Bune pentru meșteșuguri.
+ITEM_147_NAME	Oase de rață
+ITEM_147_DESC	Oase de la o rață. Bune pentru meșteșuguri.
+ITEM_148_NAME	Oase de țestoasă
+ITEM_148_DESC	Oase de la o țestoasă. Bune pentru meșteșuguri.
+ITEM_149_NAME	Oase de liliac
+ITEM_149_DESC	Oase de la un liliac. Bune pentru meșteșuguri.
+ITEM_150_NAME	Oase de broască
+ITEM_150_DESC	Oase de la o broască. Bune pentru meșteșuguri.
+ITEM_151_NAME	Oase de gorlicorn
+ITEM_151_DESC	Oase de la un gorlicorn. Bune pentru meșteșuguri.
+ITEM_152_NAME	Carne de gorlicorn crudă
+ITEM_152_DESC	Carne negătită. Gătește-o la un foc de tabără.
+ITEM_153_NAME	Carne de gorlicorn friptă
+ITEM_153_DESC	Carne consistentă friptă la foc. Reface multă viață și potolește bine foamea.
 UILABEL_OPTIMIZE	Optimizează
 UILABEL_REMOVE_ALL	Scoate tot
 MISC_GEAR_NO_ROOM	Nu e destul loc în inventar
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Kobold
 UILABEL_EARLY_ACCESS	Acces timpuriu
 MISC_TITLE_KEYS	Alege  //  Enter Confirmă
 UILABEL_LANGUAGE_LABEL	Limbă:
+PROP_FLAG	Steag
+PROP_DEBRIS	Moloz
+PROP_FOUNDATION_SMALL	Fundație mică
+PROP_FOUNDATION_LARGE	Fundație mare
+PROP_FOUNDATION_LONG	Fundație lungă
+PROP_FOUNDATION_CIRCLE	Fundație rotundă
+PROP_VAULT	Seif
+UILABEL_BUILD	Construiește
+UILABEL_BUILD_SELECTED	Selectat: {0}
+UILABEL_BUILD_NONE	Selectat: nimic
+UILABEL_BUILD_SELECT	Alege
+UILABEL_BUILD_PICKED	Ales
+UILABEL_BUILD_PLACE_HINT	Clic stânga pe sol pentru a plasa. Ține apăsat R și mișcă mouse-ul la stânga sau la dreapta pentru a roti. Clic dreapta sau Escape anulează.
+UILABEL_UPKEEP_HINT	Consumă un {0} pe oră pentru întreținere. Pune-le aici.
+MISC_BUILD_BLOCKED	Nu e loc de construit aici
+MISC_BUILD_UNWALKABLE	Pe acest teren nu se poate construi
+MISC_BUILD_NO_FOUNDATION	Un seif trebuie să stea în întregime pe o fundație
+MISC_NO_UPKEEP	Fără întreținere: nu sunt bușteni
+MISC_UPKEEP_LEFT	Întreținere: {0} min rămase
+PROP_SHOP	Magazin
+PROP_FARM	Fermă
+PROP_TURBINE	Turbină eoliană
+UILABEL_BUILD_DESTROY	Dărâmă
+UILABEL_BUILD_DESTROY_HINT	Clic stânga pe orice obiect ca să-l dărâmi: ce conține cade pe jos și în locul lui rămâne moloz. Clic stânga pe moloz ca să-l cureți. Clic dreapta sau Escape anulează.
+UILABEL_LOCK	Încuie
+MISC_BUILD_NO_CLAIM	O fundație sau un seif trebuie să fie pe propriul tău teritoriu
+MISC_BUILD_SEALED	Acest teren e sigilat de seiful altei facțiuni
+MISC_BUILD_CLAIM_OVERLAP	Acest teritoriu s-ar suprapune cu al altui steag
+MISC_BUILD_VAULT_TAKEN	Acest teritoriu are deja un seif
+MISC_BUILD_VAULT_CAP	Facțiunea ta are deja câte seifuri poate avea
+MISC_DESTROY_NOTHING	Nu e nimic de dărâmat acolo
+MISC_FLAG_FACTION	Proprietar: {0}
+MISC_FLAG_HEALTH	Viață: {0} din {1}
+MISC_FLAG_VAULT_YES	Seif: în picioare, teritoriul e păstrat
+MISC_FLAG_VAULT_NO	Seif: niciunul, steagul se uzează
+MISC_PROP_CONDITION	Stare: {0}%
+MISC_PROP_DECAYING	Se degradează
+MISC_PROP_HOLDING	Nu se degradează
+MISC_PROP_LOCK_OPEN	Descuiat
+MISC_PROP_LOCK_YOURS	Încuiat pentru străini (deschis pentru tine)
+MISC_PROP_LOCK_SHUT	Încuiat (Deschiderea lacătelor {0})
+MISC_PROP_UPKEEP	Întreținere: {0} ore rămase
+MISC_PROP_VAULT_UNCLAIMED	În afara oricărui teritoriu: nu oferă întreținere
+MOB_BEAR	Urs
+MOB_COW	Vacă
+MOB_CHICKEN	Pui
+MOB_BOAR	Mistreț
+MOB_WOLF	Lup
+MOB_DEER	Cerb
+MOB_RABBIT	Iepure
+MOB_FISH	Pește
+MOB_CRAB	Crab
+MOB_LIZARD	Șopârlă
+MOB_SNAKE	Șarpe
+MOB_PIG	Porc
+MOB_SHEEP	Oaie
+MOB_DUCK	Rață
+MOB_TURTLE	Țestoasă
+MOB_BAT	Liliac
+MOB_FROG	Broască
+MOB_GORLICORN	Gorlicorn
+FACTION_MOB_BEAR	Urși
+FACTION_MOB_COW	Vaci
+FACTION_MOB_CHICKEN	Pui
+FACTION_MOB_BOAR	Mistreți
+FACTION_MOB_WOLF	Lupi
+FACTION_MOB_DEER	Cerbi
+FACTION_MOB_RABBIT	Iepuri
+FACTION_MOB_FISH	Pești
+FACTION_MOB_CRAB	Crabi
+FACTION_MOB_LIZARD	Șopârle
+FACTION_MOB_SNAKE	Șerpi
+FACTION_MOB_PIG	Porci
+FACTION_MOB_SHEEP	Oi
+FACTION_MOB_DUCK	Rațe
+FACTION_MOB_TURTLE	Țestoase
+FACTION_MOB_BAT	Lilieci
+FACTION_MOB_FROG	Broaște
+FACTION_MOB_GORLICORN	Gorlicorni
+MISC_MOB_NO_GEAR	Creaturile nu pot purta echipament
+MISC_MOB_NO_HEALING	Creaturile nu pot folosi obiecte de vindecare
+MISC_MOB_CANT_WORK	Creaturile nu pot lucra la obiecte

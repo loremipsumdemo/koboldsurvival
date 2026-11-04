@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Bildwiederholrate
 UILABEL_DEFAULT	Standard
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Bildratenbegrenzung
+UILABEL_VIEW_RANGE	Sichtweite
+UILABEL_TILES_N	{0} Felder
+UILABEL_SHOW_FPS	FPS anzeigen
 UILABEL_UNLIMITED	Unbegrenzt
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisch speichern
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} Minuten
 UILABEL_UNIT_NAMES	Namen eigener Einheiten
 UILABEL_NPC_NAMES	Namen fremder Einheiten
 UILABEL_PROP_NAMES	Namen von Objekten
+UILABEL_PROP_INFO	Objektinfos anzeigen
 UILABEL_FONT_SIZE	Schriftgröße
 UILABEL_RESET_PANELS	Alle UI-Fenster zurücksetzen
 UILABEL_RESET	Zurücksetzen
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Globale Lautstärke
 UILABEL_MUSIC	Musik
 UILABEL_AMBIENT	Umgebung
 UILABEL_INTERFACE_SOUNDS	Oberflächengeräusche
+UILABEL_CRAFT_GATHER_SOUNDS	Herstellungs- und Sammelgeräusche
 UILABEL_SOUND_EFFECTS	Soundeffekte
 UILABEL_RESTORE_DEFAULTS	Standardwerte wiederherstellen
 UILABEL_WINDOWED	Fenster
@@ -123,6 +128,8 @@ UILABEL_STATS	Werte
 UILABEL_CLICK_TO_TYPE	Klicken, um einen Namen einzugeben
 UILABEL_HEALTH	Gesundheit
 UILABEL_HUNGER	Hunger
+UILABEL_RESTED	Ausgeruht
+UILABEL_COMFORT	Komfort
 UILABEL_CARRY	Tragkraft
 UILABEL_NEXT_LEVEL_XP_LINE	Nächste Stufe XP: {0}
 UILABEL_STAT	Wert
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Diese Einheit zufällig gestalten
 UILABEL_RANDOMIZE_ALL	Alle zufällig gestalten
 UILABEL_ADD_UNIT	Einheit hinzufügen
 UILABEL_REMOVE_UNIT	Einheit entfernen
+UILABEL_ADD_MOB	Tier hinzufügen
+UILABEL_MOB_KIND	Art
+UILABEL_MOB_NO_GEAR	Ein Tier trägt keine Ausrüstung.
+MISC_MEAT_TAKEN_DIES	{0} stirbt
+MISC_MOB_INVENTORY_LOCKED	Nicht verfügbar
+MISC_MOB_CANT_HOLD	Ein Tier trägt nur sein eigenes Fleisch und seine Knochen
+UILABEL_CLEAR	Räumen
+UILABEL_TASK_CLEARING	Räumt Schutt weg
+MISC_CLEARS_DEBRIS	{0} räumt den Schutt weg
+UILABEL_MOB_INVENTORY_HIDDEN	Nicht verfügbar
+UILABEL_BEHAVIOR_PATROL	Patrouille
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrouille am Ursprung
+UILABEL_BEHAVIOR_ROAM	Umherstreifen
+UILABEL_BEHAVIOR_PATROL_TIP	Patrouille: läuft im Gebiet umher, in dem die Einheit steht, wenn es ihrer Fraktion gehört, und hält ab und zu an.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrouille am Ursprung: läuft nahe dem Ort umher, an dem sie erschienen ist. Zu weit verfolgt, gibt sie auf, heilt sich voll und kehrt zurück, ohne Schaden zu nehmen, bis sie dort ist.
+UILABEL_BEHAVIOR_ROAM_TIP	Umherstreifen: wandert durch das offene Land, überall dort, wo sie außerhalb der Flaggengebiete gehen kann.
+UILABEL_WAIT_NOT_IN_CLAIM	nicht in einem Gebiet ihrer Fraktion
+UILABEL_WAIT_NOWHERE_TO_ROAM	kein offener Boden in der Nähe außerhalb der Gebiete
+UILABEL_TEMPERAMENT_AVOIDANT	Scheu
+UILABEL_TEMPERAMENT_PASSIVE	Passiv
+UILABEL_TEMPERAMENT_NEUTRAL	Neutral
+UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressiv
+UILABEL_TEMPERAMENT	Temperament: {0}
+UILABEL_MOB_NO_ITEMS	Ein Tier trägt nur sein eigenes Fleisch und seine Knochen.
 UILABEL_CONFIRM_STARTS	Bestätigen startet das Spiel mit dieser Gruppe.
 UILABEL_NEEDS_NAMES	Jede Einheit braucht einen Namen, bevor das Spiel starten kann.
 UILABEL_CLICK_UNIT_EDIT	Klicke auf eine Einheit, um sie zu bearbeiten.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Beine
 UILABEL_SLOT_FEET	Füße
 UILABEL_SLOT_ACCESSORY	Accessoire
 UILABEL_BEHAVIOR_ON	An
+UILABEL_BEHAVIOR_EAT	Essen bei Hunger < {0} %
+UILABEL_BEHAVIOR_REST	Ruhen bei Ausgeruht < {0} %
+UILABEL_BEHAVIOR_LEAVE_BED	Bett verlassen, wenn erholt
+UILABEL_BEHAVIOR_RESCUE	Bewusstlose Verbündete retten
+UILABEL_BEHAVIOR_HEAL	Heilen bei Gesundheit < {0} %
+UILABEL_BEHAVIOR_SHARE	Teilen
+UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Ernten: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Tragen: {0}
+UILABEL_BEHAVIOR_WAITING	(wartet)
+UILABEL_BEHAVIOR_WAIT_TIP	Wartet: {0}
+UILABEL_WAIT_NO_FOOD	kein Essen vorhanden und niemand in der Nähe, der teilt
+UILABEL_WAIT_NO_BED	kein freies Bett und keine freie Schlafrolle zum Ruhen
+UILABEL_WAIT_NO_HEALING	kein Heilgegenstand vorhanden und niemand in der Nähe, der teilt
+UILABEL_WAIT_WALKING_TO_SHARE	geht zu {0}, der einen teilen kann
+UILABEL_WAIT_NO_PROP	kein(e) {0} in deinem Gebiet mit Platz für einen weiteren Arbeiter
+UILABEL_WAIT_CARRY_FULL	kein Platz, um mehr zu tragen
+UILABEL_WAIT_LOAD_WAITING	trägt eine Ladung, die Auto-Tragen zuerst wegbringen muss
+UILABEL_WAIT_PROP_GONE	das Objekt ist weg
+UILABEL_WAIT_OUTSIDE_CLAIM	das Objekt liegt nicht im Gebiet deiner Fraktion
+UILABEL_WAIT_LOCKED	das Objekt ist verschlossen
+UILABEL_WAIT_NOTHING_TO_HAUL	trägt nichts, was das Objekt annimmt
+UILABEL_WAIT_PROP_FULL	das Objekt hat keinen Platz für das Getragene
+UILABEL_BEHAVIOR_EAT_TIP	Essen: unter {0} % Hunger wird das Essen gegessen, das am meisten Hunger stillt. Mit - und + änderst du den Wert.
+UILABEL_BEHAVIOR_HEAL_TIP	Heilen: unter {0} % Gesundheit wird der Heilgegenstand benutzt, der am meisten Gesundheit herstellt. Mit - und + änderst du den Wert.
+UILABEL_BEHAVIOR_REST_TIP	Ruhen: unter {0} % Ausgeruht legt sich die Einheit ins nächste freie Bett oder die nächste Schlafrolle und steht voll ausgeruht wieder auf. Mit - und + änderst du den Wert.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Bett verlassen: steht nach 30 Sekunden mit voller Gesundheit und voll ausgeruht aus einem Bett oder einer Schlafrolle auf.
+UILABEL_BEHAVIOR_RESCUE_TIP	Retten: trägt eine bewusstlose Einheit der eigenen Fraktion in der Nähe zum nächsten freien Bett oder zur nächsten Schlafrolle.
+UILABEL_BEHAVIOR_SHARE_TIP	Teilen: Braucht Essen oder Heilen einen Gegenstand, den diese Einheit nicht hat, nimmt sie einen von einer Einheit in Handelsreichweite, die auch teilt und ihn weniger braucht, und geht zuerst hin, wenn diese etwas entfernt ist. Andere teilende Einheiten können sich bei dieser genauso bedienen.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Ernten: bearbeitet das nächste {0} im Gebiet deiner Fraktion. Mit einer Ladung und einem Auto-Tragen, das sie aufnehmen kann, hält sie zum Tragen an. Ein Befehl von dir pausiert es; es beginnt erneut, sobald die Einheit ein paar Sekunden untätig war.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Tragen: bringt die Gegenstände im Inventar (nicht die getragene Ausrüstung), die das {0} annimmt, solange Platz ist und die Einheit im Gebiet deiner Fraktion steht. Ein Befehl von dir pausiert es; es beginnt erneut, sobald die Einheit ein paar Sekunden untätig war.
+UILABEL_NPC_MESSAGES	NPCs
+UILABEL_SHOW_NPC_INFO	NPC-Infos anzeigen
 UILABEL_COMBAT_MESSAGES	Kampfmeldungen
 UILABEL_SEEN	Gesehen
 UILABEL_HIT	Treffer
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Erfahrungsmeldungen
 UILABEL_EXPERIENCE	Erfahrung
 UILABEL_XP_ATHLETICS	Athletik-Erfahrung
 UILABEL_XP_ENDURANCE	Ausdauer-Erfahrung
+UILABEL_XP_CARRYING	Stärke-Erfahrung (Tragen)
 UILABEL_ITEM_MESSAGES	Gegenstandsmeldungen
 UILABEL_PICKUP	Aufheben
 UILABEL_DROP	Ablegen
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Fortschritt: {0}%
 UILABEL_TIP_CURRENT_XP	Aktuelle XP: {0}
 UILABEL_ATTACK_DEFENSE	Angriff {0}      Verteidigung {1}
 UILABEL_STATS_CAPTION	Werte: {0}
+UILABEL_MODEL_N	Modell {0}
 UILABEL_SLOT_N_ITEM	Platz {0}: {1}
 UILABEL_SLOT_N_EMPTY	Platz {0}: leer
 UILABEL_COUNT	Anzahl {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Braucht beide Hände. Die Nebenhand muss leer sein.
 ITEM_87_NAME	Streitaxt
 ITEM_87_DESC	Braucht beide Hände. Die Nebenhand muss leer sein.
 UILABEL_UI_SCALE	UI-Skalierung
-NAME_MASCULINE	["Konrad", "Lukas", "Jonas", "Matthias", "Ulrich"]
-NAME_FEMININE	["Greta", "Liesel", "Mathilde", "Ottilie", "Hanna"]
-NAME_ANDROGYNOUS	["Robin", "Kim", "Sascha", "Remi", "Ari"]
+NAME_MASCULINE	["Konrad", "Lukas", "Jonas", "Matthias", "Ulrich", "Albrecht", "Anton", "Arno", "Benedikt", "Bernhard", "Dieter", "Emil", "Erich", "Falk", "Florian", "Franz", "Friedrich", "Georg", "Gerhard", "Gottfried", "Günther", "Hans", "Heinrich", "Helmut", "Jakob", "Johann", "Jörg", "Jürgen", "Karl", "Klaus", "Leopold", "Ludwig", "Manfred", "Markus", "Moritz", "Niklas", "Oskar", "Otto", "Paul", "Rainer", "Rolf", "Rudolf", "Sebastian", "Siegfried", "Stefan", "Tobias", "Uwe", "Volker", "Werner", "Wilhelm"]
+NAME_FEMININE	["Greta", "Liesel", "Mathilde", "Ottilie", "Hanna", "Adelheid", "Agnes", "Anja", "Annika", "Barbara", "Brigitte", "Charlotte", "Clara", "Dagmar", "Elke", "Elisabeth", "Emma", "Frieda", "Gabriele", "Gertrud", "Hedwig", "Heidi", "Helga", "Hildegard", "Ilse", "Ingrid", "Irmgard", "Johanna", "Jutta", "Katharina", "Klara", "Lena", "Lieselotte", "Luise", "Magdalena", "Margarete", "Marlene", "Monika", "Paula", "Petra", "Renate", "Rosa", "Sabine", "Sieglinde", "Sophie", "Susanne", "Ursula", "Wiebke", "Wilhelmine", "Wiltrud"]
+NAME_ANDROGYNOUS	["Robin", "Kim", "Sascha", "Remi", "Ari", "Alex", "Andrea", "Charlie", "Chris", "Eike", "Elia", "Finn", "Friedel", "Gerrit", "Ilja", "Jannis", "Jo", "Jule", "Kai", "Kay", "Kiran", "Lenny", "Lou", "Luca", "Maxi", "Mika", "Momo", "Nicola", "Nikita", "Noah", "Noel", "Nika", "Ole", "Pat", "Quinn", "Rene", "Ricky", "Rio", "Sam", "Sandy", "Sigi", "Toni", "Ulli", "Vic", "Wilke", "Yannik", "Yuri", "Zola", "Bente", "Eli"]
 UILABEL_BODY_TYPE	Körpertyp
 UILABEL_BODY_MASCULINE	Maskulin
 UILABEL_BODY_FEMININE	Feminin
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Kein Platz im Lager
 MISC_PROP_TAKEN	Bereits belegt
 MISC_PROP_WORKERS_FULL	Bis zu {0} Einheiten können gleichzeitig daran arbeiten
 MISC_GATHERS	{0} sammelt {1}
+MISC_AUTO_HAUL_STORES	{0} lagert {1} {2} im {3} ein
 MISC_GATHER_NO_ROOM	{0} hat keinen Platz für {1} und hört auf zu arbeiten
 MISC_REASON_GATHERING	Sammeln
+MISC_REASON_CLEARING	räumt Schutt weg
 UILABEL_TASK	Aufgabe: {0}
 UILABEL_TASK_IDLE	Untätig
+UILABEL_TASK_AUTO_GOING	{0} (unterwegs)
+UILABEL_TASK_SHARE_WALK	Geht zu {0}, um zu teilen
 UILABEL_TASK_MOVING	Unterwegs
 UILABEL_TASK_RESTING	Ruht
 UILABEL_STORAGE_HINT	Rechtsklick auf einen Gegenstand nimmt ihn, Herausziehen legt ihn dort ab, wo deine Einheit steht. Rechtsklick auf die Gegenstände deiner Einheit lagert sie ein.
@@ -595,6 +664,7 @@ FACTION_RED	Rote Fraktion
 FACTION_GREEN	Grüne Fraktion
 FACTION_BLUE	Blaue Fraktion
 FACTION_YELLOW	Gelbe Fraktion
+FACTION_EXILE	Verbannte
 MISC_REPUTATION_DROPS	Ruf bei {0} sinkt um {1} auf {2}
 UILABEL_MODE_PASSIVE	Passiv
 UILABEL_MODE_BLOCK	Blocken
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Szenario
 SCENARIO_VAGABOND_NAME	Vagabund
 SCENARIO_VAGABOND_DESC	Ein einsamer Wanderer, der nichts besitzt: keine Gegenstände, keine Ausrüstung und jeder Wert zwischen 1 und 5.
-SCENARIO_RANDOM_NAME	Völlig zufällig
-SCENARIO_RANDOM_DESC	Eine Gruppe aus 1 bis 32 Einheiten, jede mit allen Werten zwischen 1 und 99 und zufälligen Gegenständen und Ausrüstung, die sie tragen kann.
+SCENARIO_PACK_NAME	Rudel aus zwei
+SCENARIO_PACK_DESC	Ein einsamer Wanderer und ein treuer Wolf. Der Wanderer hat keine Gegenstände oder Ausrüstung, und jeder Wert liegt zwischen 1 und 5.
+SCENARIO_BEASTMASTER_NAME	Bestienmeister
+SCENARIO_BEASTMASTER_DESC	Ein einsamer Wanderer an der Spitze von 20 Tieren zufälliger Arten. Der Wanderer hat keine Gegenstände oder Ausrüstung, und jeder Wert liegt zwischen 1 und 5.
+SCENARIO_RANDOM_NAME	Völlig zufälliges Lager
+SCENARIO_RANDOM_DESC	Dein eigenes Lager mit einer Gruppe aus 20 oder mehr Einheiten, jede mit allen Werten irgendwo zwischen 1 und 99 und zufälligen Gegenständen und Ausrüstung, die sie tragen kann, und 3 bis 7 Tieren.
 SCENARIO_CARAVAN_NAME	Reisende Karawane
 SCENARIO_CARAVAN_DESC	Zehn Reisende gemeinsam unterwegs. Alle Werte beginnen bei 5, und jeder trägt 10 Goldmünzen.
 SCENARIO_SHABBY_NAME	Schäbige Truppe
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Eine Einheit mit gar nichts: keine Gegenstände, keine Ausr
 SCENARIO_DIGGERS_NAME	Verliesgräber
 SCENARIO_DIGGERS_DESC	Sieben Bergleute in voller Ausrüstung. Ihre Werte liegen zwischen 5 und 20, doch jeder hat Bergbau 50 und trägt 3 Eisenerz.
 SCENARIO_CUSTOM_NAME	Eigenes Szenario
-SCENARIO_CUSTOM_DESC	Stelle deine eigene Gruppe zusammen. Sie beginnt mit drei Einheiten, und du kannst Einheiten hinzufügen oder entfernen, bis zu 32.
+SCENARIO_CUSTOM_DESC	Stelle deine eigene Gruppe zusammen. Sie beginnt mit drei Einheiten, und du kannst Einheiten und gewöhnliche Tiere hinzufügen oder entfernen, bis zu 32.
 PROP_LOCKED_CHEST	Verschlossene Truhe
 PROP_PRISONER_CAGE	Gefangenenkäfig
 UILABEL_UNLOCK	Aufschließen
+UILABEL_AUTO_HARVEST	Auto-Ernten
+UILABEL_AUTO_HAUL	Auto-Tragen
+MISC_AUTO_OUTSIDE_CLAIM	Auto-Ernten und Auto-Tragen funktionieren nur bei Objekten im Gebiet deiner Fraktion
+MISC_AUTO_HARVEST_SET	{0} Einheit(en) ernten automatisch: {1}
+MISC_AUTO_HAUL_SET	{0} Einheit(en) tragen automatisch zum {1}
+MISC_BEHAVIOR_LIST_FULL	Die Verhaltensliste ist voll (höchstens {0})
 UILABEL_PICK_UP	Aufheben
-UILABEL_PUT_IN_BED	Ins Bett legen
+UILABEL_PLACE	Platzieren
+UILABEL_OCCUPY	Belegen
+UILABEL_DISBAND	Entlassen
+UILABEL_DISBAND_HOLD	Halte Entlassen {0} Sekunden lang gedrückt, um zu bestätigen
 UILABEL_PUT_DOWN	Absetzen
 UILABEL_SHOP	Handeln
 UILABEL_TASK_CARRIED	Wird getragen
@@ -641,16 +724,33 @@ UILABEL_DOOM	Verderben
 UILABEL_TASK_UNCONSCIOUS	Bewusstlos
 UILABEL_TASK_DEAD	Tot
 UILABEL_TASK_CARRYING	Trägt
+UILABEL_TASK_STORING	Lagert ein
 UILABEL_TAKE_ALL	Alles nehmen
 UILABEL_LOOT_HINT	Klicke auf einen Gegenstand, um ihn ins Inventar deiner Einheit zu nehmen.
 UILABEL_CORPSE_OF	Leiche von {0}
 MISC_FALLS_UNCONSCIOUS	{0} wird bewusstlos
 MISC_DIES	{0} stirbt
 MISC_RECOVERS	{0} wacht auf
+LOADING_PICTURES	Bilder
+LOADING_UNIT_MODELS	Einheitenmodelle
+LOADING_MOB_MODELS	Tiermodelle
+LOADING_MOB_PICTURES	Tierbilder
+LOADING_SKY	Himmel
+LOADING_PROP_MODELS	Objektmodelle
+LOADING_MAP	Karte
+LOADING_MAP_GROUND	Kartenboden
+LOADING_WORLD	Welt
+LOADING_GROUND_ITEMS	Gegenstände am Boden
+MISC_GOES_HOME	{0} gibt die Verfolgung auf und kehrt heim
+MISC_GETS_UP	{0} steht auf, die Gefahr ist vorbei
 MISC_PICKS_UP_UNIT	{0} hebt {1} auf
 MISC_PUTS_DOWN	{0} setzt {1} ab
-MISC_PUTS_IN_BED	{0} legt {1} in: {2}
-MISC_CORPSE_NO_BED	Ein Bett kann für Tote nichts tun
+MISC_PLACES_IN	{0} legt {1} in: {2}
+MISC_DISBAND_ASK	{0} verlässt deinen Trupp und deine Fraktion für immer und wird zum Verbannten: neutral gegenüber allen und allein unterwegs.
+MISC_DISBAND_ASK_MOB	{0} verlässt deinen Trupp und deine Fraktion für immer und kehrt in die Wildnis zurück.
+MISC_DISBANDED	{0} verlässt deinen Trupp als Verbannter
+MISC_DISBANDED_MOB	{0} verlässt deinen Trupp und kehrt in die Wildnis zurück
+MISC_CORPSE_NO_PLACE	Tote können dort nicht platziert werden
 MISC_IS_UNCONSCIOUS	{0} ist bewusstlos und kann nichts tun
 MISC_ALREADY_CARRYING	Keine deiner gewählten Einheiten kann sie tragen
 MISC_LOOT_NO_ROOM	Kein Platz im Inventar
@@ -788,6 +888,46 @@ ITEM_132_NAME	Feuerpfeile
 ITEM_132_DESC	Brennende Pfeile für Kurz- oder Langbogen. Die stärksten Pfeile.
 ITEM_133_NAME	Armbrustbolzen
 ITEM_133_DESC	Kurze, schwere Bolzen für eine Armbrust.
+ITEM_134_NAME	Bärenknochen
+ITEM_134_DESC	Knochen eines Bären. Gut zum Herstellen.
+ITEM_135_NAME	Kuhknochen
+ITEM_135_DESC	Knochen einer Kuh. Gut zum Herstellen.
+ITEM_136_NAME	Hühnerknochen
+ITEM_136_DESC	Knochen eines Huhns. Gut zum Herstellen.
+ITEM_137_NAME	Eberknochen
+ITEM_137_DESC	Knochen eines Ebers. Gut zum Herstellen.
+ITEM_138_NAME	Wolfsknochen
+ITEM_138_DESC	Knochen eines Wolfs. Gut zum Herstellen.
+ITEM_139_NAME	Hirschknochen
+ITEM_139_DESC	Knochen eines Hirschs. Gut zum Herstellen.
+ITEM_140_NAME	Hasenknochen
+ITEM_140_DESC	Knochen eines Hasen. Gut zum Herstellen.
+ITEM_141_NAME	Fischgräten
+ITEM_141_DESC	Gräten eines Fischs. Gut zum Herstellen.
+ITEM_142_NAME	Krabbenschale
+ITEM_142_DESC	Schalenreste einer Krabbe. Gut zum Herstellen.
+ITEM_143_NAME	Echsenknochen
+ITEM_143_DESC	Knochen einer Echse. Gut zum Herstellen.
+ITEM_144_NAME	Schlangenknochen
+ITEM_144_DESC	Knochen einer Schlange. Gut zum Herstellen.
+ITEM_145_NAME	Schweineknochen
+ITEM_145_DESC	Knochen eines Schweins. Gut zum Herstellen.
+ITEM_146_NAME	Schafsknochen
+ITEM_146_DESC	Knochen eines Schafs. Gut zum Herstellen.
+ITEM_147_NAME	Entenknochen
+ITEM_147_DESC	Knochen einer Ente. Gut zum Herstellen.
+ITEM_148_NAME	Schildkrötenknochen
+ITEM_148_DESC	Knochen einer Schildkröte. Gut zum Herstellen.
+ITEM_149_NAME	Fledermausknochen
+ITEM_149_DESC	Knochen einer Fledermaus. Gut zum Herstellen.
+ITEM_150_NAME	Froschknochen
+ITEM_150_DESC	Knochen eines Froschs. Gut zum Herstellen.
+ITEM_151_NAME	Gorlikornknochen
+ITEM_151_DESC	Knochen eines Gorlikorns. Gut zum Herstellen.
+ITEM_152_NAME	Rohes Gorlikornfleisch
+ITEM_152_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
+ITEM_153_NAME	Gebratenes Gorlikornfleisch
+ITEM_153_DESC	Kräftiges, über dem Feuer gebratenes Fleisch. Stellt viel Gesundheit her und stillt viel Hunger.
 UILABEL_OPTIMIZE	Optimieren
 UILABEL_REMOVE_ALL	Alles ablegen
 MISC_GEAR_NO_ROOM	Nicht genug Platz im Inventar
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Überleben
 UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Auswählen  //  Enter Bestätigen
 UILABEL_LANGUAGE_LABEL	Sprache:
+PROP_FLAG	Flagge
+PROP_DEBRIS	Schutt
+PROP_FOUNDATION_SMALL	Kleines Fundament
+PROP_FOUNDATION_LARGE	Großes Fundament
+PROP_FOUNDATION_LONG	Langes Fundament
+PROP_FOUNDATION_CIRCLE	Rundes Fundament
+PROP_VAULT	Tresorraum
+UILABEL_BUILD	Bauen
+UILABEL_BUILD_SELECTED	Ausgewählt: {0}
+UILABEL_BUILD_NONE	Ausgewählt: Nichts
+UILABEL_BUILD_SELECT	Wählen
+UILABEL_BUILD_PICKED	Gewählt
+UILABEL_BUILD_PLACE_HINT	Linksklick auf den Boden zum Platzieren. R halten und die Maus nach links oder rechts bewegen zum Drehen. Rechtsklick oder Escape bricht ab.
+UILABEL_UPKEEP_HINT	Verbraucht stündlich ein(e) {0} als Unterhalt. Leg sie hier hinein.
+MISC_BUILD_BLOCKED	Kein Platz zum Bauen hier
+MISC_BUILD_UNWALKABLE	Auf diesem Boden kann nicht gebaut werden
+MISC_BUILD_NO_FOUNDATION	Ein Tresorraum muss ganz auf einem Fundament stehen
+MISC_NO_UPKEEP	Kein Unterhalt: keine Stämme
+MISC_UPKEEP_LEFT	Unterhalt: noch {0} Min.
+PROP_SHOP	Laden
+PROP_FARM	Bauernhof
+PROP_TURBINE	Windrad
+UILABEL_BUILD_DESTROY	Abreißen
+UILABEL_BUILD_DESTROY_HINT	Linksklick auf ein Objekt reißt es ab: sein Inhalt fällt zu Boden und Schutt bleibt zurück. Linksklick auf Schutt räumt ihn weg. Rechtsklick oder Escape bricht ab.
+UILABEL_LOCK	Abschließen
+MISC_BUILD_NO_CLAIM	Ein Fundament oder Tresorraum muss in deinem eigenen Gebiet stehen
+MISC_BUILD_SEALED	Dieser Boden ist durch den Tresorraum einer anderen Fraktion versiegelt
+MISC_BUILD_CLAIM_OVERLAP	Dieses Gebiet würde sich mit dem Gebiet einer anderen Flagge überschneiden
+MISC_BUILD_VAULT_TAKEN	Dieses Gebiet hat schon einen Tresorraum
+MISC_BUILD_VAULT_CAP	Deine Fraktion hat schon so viele Tresorräume, wie sie haben kann
+MISC_DESTROY_NOTHING	Dort gibt es nichts abzureißen
+MISC_FLAG_FACTION	Besitzer: {0}
+MISC_FLAG_HEALTH	Gesundheit: {0} von {1}
+MISC_FLAG_VAULT_YES	Tresorraum: steht, das Gebiet wird gehalten
+MISC_FLAG_VAULT_NO	Tresorraum: keiner, die Flagge nutzt sich ab
+MISC_PROP_CONDITION	Zustand: {0} %
+MISC_PROP_DECAYING	Verfällt
+MISC_PROP_HOLDING	Verfällt nicht
+MISC_PROP_LOCK_OPEN	Offen
+MISC_PROP_LOCK_YOURS	Für Fremde verschlossen (für dich offen)
+MISC_PROP_LOCK_SHUT	Verschlossen (Schlösserknacken {0})
+MISC_PROP_UPKEEP	Unterhalt: noch {0} Stunden
+MISC_PROP_VAULT_UNCLAIMED	Außerhalb jedes Gebiets: gibt keinen Unterhalt
+MOB_BEAR	Bär
+MOB_COW	Kuh
+MOB_CHICKEN	Huhn
+MOB_BOAR	Eber
+MOB_WOLF	Wolf
+MOB_DEER	Hirsch
+MOB_RABBIT	Hase
+MOB_FISH	Fisch
+MOB_CRAB	Krabbe
+MOB_LIZARD	Echse
+MOB_SNAKE	Schlange
+MOB_PIG	Schwein
+MOB_SHEEP	Schaf
+MOB_DUCK	Ente
+MOB_TURTLE	Schildkröte
+MOB_BAT	Fledermaus
+MOB_FROG	Frosch
+MOB_GORLICORN	Gorlikorn
+FACTION_MOB_BEAR	Bären
+FACTION_MOB_COW	Kühe
+FACTION_MOB_CHICKEN	Hühner
+FACTION_MOB_BOAR	Eber
+FACTION_MOB_WOLF	Wölfe
+FACTION_MOB_DEER	Hirsche
+FACTION_MOB_RABBIT	Hasen
+FACTION_MOB_FISH	Fische
+FACTION_MOB_CRAB	Krabben
+FACTION_MOB_LIZARD	Echsen
+FACTION_MOB_SNAKE	Schlangen
+FACTION_MOB_PIG	Schweine
+FACTION_MOB_SHEEP	Schafe
+FACTION_MOB_DUCK	Enten
+FACTION_MOB_TURTLE	Schildkröten
+FACTION_MOB_BAT	Fledermäuse
+FACTION_MOB_FROG	Frösche
+FACTION_MOB_GORLICORN	Gorlikorne
+MISC_MOB_NO_GEAR	Tiere können keine Ausrüstung tragen
+MISC_MOB_NO_HEALING	Tiere können keine Heilgegenstände benutzen
+MISC_MOB_CANT_WORK	Tiere können nicht an Objekten arbeiten

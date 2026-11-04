@@ -78,6 +78,7 @@ struct GameSettings {
     bool effectsOn = true;
     int interfaceVolume = 50;   // the menus' and buttons' sounds
     bool interfaceOn = true;
+    bool craftGatherSounds = false;   // the gathering and crafting sound effects (isCraftGatherSfx in sounds.h)
 
     // The in-game panels' places, as last locked: the Squad Panel, the Unit Panel and the Information Panel, each as
     // dx, dy, w, h (a PanelPlace in gui.h, in pixels of a 720-pixel-high window). All zero is the default place.
@@ -163,6 +164,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "effectsOn")       s.effectsOn = (val == "1");
         else if (key == "interfaceVolume") s.interfaceVolume = parseInt(val, s.interfaceVolume);
         else if (key == "interfaceOn")     s.interfaceOn = (val == "1");
+        else if (key == "craftGatherSounds") s.craftGatherSounds = (val == "1");
     }
 
     // Old files: the preset index used the four sizes that were offered before
@@ -229,6 +231,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "effectsOn=" << (s.effectsOn ? 1 : 0) << "\n";
     out << "interfaceVolume=" << s.interfaceVolume << "\n";
     out << "interfaceOn=" << (s.interfaceOn ? 1 : 0) << "\n";
+    out << "craftGatherSounds=" << (s.craftGatherSounds ? 1 : 0) << "\n";
     for (int i = 0; i < 3; ++i) {
         const std::array<float, 4>& p = s.panels[(size_t)i];
         char buf[128];

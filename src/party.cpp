@@ -4,6 +4,7 @@
 #include "combat.h"
 #include "inventory.h"
 #include "items.h"
+#include "mobs.h"
 #include "systems.h"
 #include "emotes.h"
 #include "equip.h"
@@ -140,6 +141,8 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::ar
 const char* scenarioNameKey(ScenarioId id) {
     switch (id) {
     case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_NAME";
+    case ScenarioId::PackOfTwo: return "SCENARIO_PACK_NAME";
+    case ScenarioId::Beastmaster: return "SCENARIO_BEASTMASTER_NAME";
     case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_NAME";
     case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_NAME";
     case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_NAME";
@@ -152,6 +155,8 @@ const char* scenarioNameKey(ScenarioId id) {
 const char* scenarioDescKey(ScenarioId id) {
     switch (id) {
     case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_DESC";
+    case ScenarioId::PackOfTwo: return "SCENARIO_PACK_DESC";
+    case ScenarioId::Beastmaster: return "SCENARIO_BEASTMASTER_DESC";
     case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_DESC";
     case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_DESC";
     case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_DESC";
@@ -165,6 +170,16 @@ namespace {
 
 constexpr int GOLD_COIN = 4;   // item ids in data/itemdb.txt
 constexpr int IRON_ORE = 1;
+constexpr int BEASTMASTER_MOBS = 20;                       // regular mobs a Beastmaster starts with
+constexpr const char* PACK_WOLF_NAME = "Buddy";            // Pack of Two's wolf, until it is renamed
+constexpr int CAMP_PARTY_PEOPLE = 20;                      // Full Random Camp's fewest people
+constexpr int CAMP_PARTY_MOBS_MIN = 3, CAMP_PARTY_MOBS_MAX = 7;   // and its camp mobs
+
+// A regular mob kind picked at random
+int randomRegularMob(Rng& rng) {
+    const std::vector<int> kinds = regularMobKinds();
+    return kinds[(size_t)rng.range(0, (int)kinds.size() - 1)];
+}
 
 // Every stat at a random level from lo to hi
 Stats statsBetween(Rng& rng, int lo, int hi) {
@@ -194,11 +209,39 @@ void fullGear(PartyMember& m, Rng& rng, float reserve) {
 
 } // namespace
 
+PartyMember mobMember(int kind, Rng& rng) {
+    PartyMember m;
+    m.mob = isRegularMob(kind) ? kind : MOB_WOLF;
+    m.name = lang(mobInfo(m.mob).nameKey);
+    m.stats = mobStats(m.mob, rng);
+    return m;
+}
+
+std::vector<int> regularMobKinds() {
+    std::vector<int> out;
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+        if (isRegularMob(k)) out.push_back(k);
+    }
+    return out;
+}
+
+int partyPeople(const Party& p) {
+    return (int)std::count_if(p.begin(), p.end(), [](const PartyMember& m) { return m.mob <= 0; });
+}
+
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     int size = 1;
+    // Full Random Camp's mobs are counted first, so its people fill the rest of the room
+    const int campMobs = id == ScenarioId::FullRandom ? rng.range(CAMP_PARTY_MOBS_MIN, CAMP_PARTY_MOBS_MAX) : 0;
     switch (id) {
     case ScenarioId::Vagabond: size = 1; break;
-    case ScenarioId::FullRandom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : rng.range(1, PARTY_MAX_UNITS); break;
+    case ScenarioId::PackOfTwo: size = 1; break;
+    case ScenarioId::Beastmaster: size = 1; break;
+    case ScenarioId::FullRandom: {
+        const int most = PARTY_MAX_UNITS - campMobs;
+        size = count >= CAMP_PARTY_PEOPLE ? std::min(count, most) : rng.range(CAMP_PARTY_PEOPLE, most);
+        break;
+    }
     case ScenarioId::TravelingCaravan: size = 10; break;
     case ScenarioId::ShabbyCrew: size = 3; break;
     case ScenarioId::StarvingNobody: size = 1; break;
@@ -219,7 +262,9 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         m.items = {};
         switch (id) {
         case ScenarioId::Vagabond:
-            m.stats = statsBetween(rng, 1, 5);
+        case ScenarioId::PackOfTwo:
+        case ScenarioId::Beastmaster:
+            m.stats = statsBetween(rng, 1, 5);   // a Vagabond, with or without its beasts
             break;
         case ScenarioId::FullRandom: {
             m.stats = statsBetween(rng, 1, MAX_LEVEL);
@@ -261,6 +306,15 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         }
         keepUnderEncumbrance(m.items, m.gear, m.stats);
     }
+    // The scenario's mobs come after its people
+    if (id == ScenarioId::PackOfTwo) {
+        p.push_back(mobMember(MOB_WOLF, rng));
+        p.back().name = PACK_WOLF_NAME;   // the wanderer's wolf has a name of its own
+    }
+    if (id == ScenarioId::Beastmaster) {
+        for (int i = 0; i < BEASTMASTER_MOBS; ++i) p.push_back(mobMember(randomRegularMob(rng), rng));
+    }
+    for (int i = 0; i < campMobs; ++i) p.push_back(mobMember(randomRegularMob(rng), rng));
     return p;
 }
 
@@ -275,14 +329,28 @@ Party randomParty(Rng& rng, int count) {
 }
 
 void applyParty(World& w, const Party& p) {
-    std::vector<Entity> players;   // your people: your mobs are not the party's
+    std::vector<Entity> players, mobs;   // your people, and your mobs
     for (Entity u : w.view<Unit, Commandable>()) {
-        if (!w.has<Mob>(u)) players.push_back(u);
+        (w.has<Mob>(u) ? mobs : players).push_back(u);
     }
     std::sort(players.begin(), players.end());
-    for (size_t i = 0; i < players.size() && i < p.size(); ++i) {
+    std::sort(mobs.begin(), mobs.end());
+    std::vector<const PartyMember*> people, beasts;
+    for (const PartyMember& m : p) (m.mob > 0 ? beasts : people).push_back(&m);
+    // A mob keeps its kind's meat and bones (spawnMob); it takes the member's name and stats, and its health from them
+    for (size_t i = 0; i < mobs.size() && i < beasts.size(); ++i) {
+        const PartyMember& m = *beasts[i];
+        const std::string name = cleanName(m.name);
+        w.add(mobs[i], Name{ name.empty() ? std::string(lang(mobInfo(m.mob).nameKey)) : name });
+        w.add(mobs[i], m.stats);
+        if (Needs* n = w.get<Needs>(mobs[i])) {
+            const int hp = mobInfo(m.mob).hp;
+            n->maxHp = n->hp = hp > 0 ? hp : maxHealthFor(m.stats);
+        }
+    }
+    for (size_t i = 0; i < players.size() && i < people.size(); ++i) {
         const Entity u = players[i];
-        const PartyMember& m = p[i];
+        const PartyMember& m = *people[i];
         const std::string name = cleanName(m.name);
         w.add(u, Name{ name.empty() ? std::string(lang("UILABEL_UNNAMED_UNIT")) : name });
         w.add(u, UnitSprite{ m.sprite });

@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Tần số quét
 UILABEL_DEFAULT	Mặc định
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Giới hạn khung hình
+UILABEL_VIEW_RANGE	Tầm nhìn
+UILABEL_TILES_N	{0} ô
+UILABEL_SHOW_FPS	Hiện FPS
 UILABEL_UNLIMITED	Không giới hạn
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Tự động lưu
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} phút
 UILABEL_UNIT_NAMES	Tên đơn vị của người chơi
 UILABEL_NPC_NAMES	Tên đơn vị khác
 UILABEL_PROP_NAMES	Tên vật thể
+UILABEL_PROP_INFO	Hiện thông tin vật thể
 UILABEL_FONT_SIZE	Cỡ chữ
 UILABEL_RESET_PANELS	Đặt lại tất cả bảng giao diện
 UILABEL_RESET	Đặt lại
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Âm lượng chung
 UILABEL_MUSIC	Nhạc nền
 UILABEL_AMBIENT	Âm thanh môi trường
 UILABEL_INTERFACE_SOUNDS	Âm thanh giao diện
+UILABEL_CRAFT_GATHER_SOUNDS	Âm thanh chế tạo và thu thập
 UILABEL_SOUND_EFFECTS	Hiệu ứng âm thanh
 UILABEL_RESTORE_DEFAULTS	Khôi phục mặc định
 UILABEL_WINDOWED	Cửa sổ
@@ -123,6 +128,8 @@ UILABEL_STATS	Chỉ số
 UILABEL_CLICK_TO_TYPE	Nhấp để nhập tên
 UILABEL_HEALTH	Sinh lực
 UILABEL_HUNGER	Đói
+UILABEL_RESTED	Độ tỉnh táo
+UILABEL_COMFORT	Độ thoải mái
 UILABEL_CARRY	Sức mang
 UILABEL_NEXT_LEVEL_XP_LINE	Kinh nghiệm đến cấp tiếp theo: {0}
 UILABEL_STAT	Chỉ số
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Ngẫu nhiên hóa đơn vị này
 UILABEL_RANDOMIZE_ALL	Ngẫu nhiên hóa tất cả
 UILABEL_ADD_UNIT	Thêm đơn vị
 UILABEL_REMOVE_UNIT	Xóa đơn vị
+UILABEL_ADD_MOB	Thêm sinh vật
+UILABEL_MOB_KIND	Loài
+UILABEL_MOB_NO_GEAR	Sinh vật không mặc trang bị.
+MISC_MEAT_TAKEN_DIES	{0} chết
+MISC_MOB_INVENTORY_LOCKED	Không khả dụng
+MISC_MOB_CANT_HOLD	Sinh vật chỉ mang thịt và xương của chính nó
+UILABEL_CLEAR	Dọn dẹp
+UILABEL_TASK_CLEARING	Đang dọn đống đổ nát
+MISC_CLEARS_DEBRIS	{0} dọn sạch đống đổ nát
+UILABEL_MOB_INVENTORY_HIDDEN	Không khả dụng
+UILABEL_BEHAVIOR_PATROL	Tuần tra
+UILABEL_BEHAVIOR_PATROL_SPAWN	Tuần tra nơi xuất hiện
+UILABEL_BEHAVIOR_ROAM	Lang thang
+UILABEL_BEHAVIOR_PATROL_TIP	Tuần tra: đi quanh lãnh thổ nơi nó đứng, nếu lãnh thổ đó thuộc phe nó, thỉnh thoảng dừng lại.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Tuần tra nơi xuất hiện: đi quanh gần nơi nó xuất hiện lần đầu. Bị đuổi quá xa, nó bỏ cuộc, hồi đầy máu và đi về, không chịu sát thương cho tới khi về tới nơi.
+UILABEL_BEHAVIOR_ROAM_TIP	Lang thang: đi khắp vùng đất trống, bất cứ đâu nó có thể đi bên ngoài lãnh thổ của các cờ.
+UILABEL_WAIT_NOT_IN_CLAIM	không ở trong lãnh thổ của phe mình
+UILABEL_WAIT_NOWHERE_TO_ROAM	không có đất trống gần đó ngoài các lãnh thổ
+UILABEL_TEMPERAMENT_AVOIDANT	Né tránh
+UILABEL_TEMPERAMENT_PASSIVE	Thụ động
+UILABEL_TEMPERAMENT_NEUTRAL	Trung lập
+UILABEL_TEMPERAMENT_AGGRESSIVE	Hung hăng
+UILABEL_TEMPERAMENT	Tính khí: {0}
+UILABEL_MOB_NO_ITEMS	Sinh vật chỉ mang thịt và xương của chính nó.
 UILABEL_CONFIRM_STARTS	Xác nhận sẽ bắt đầu trò chơi với đội hình này.
 UILABEL_NEEDS_NAMES	Mọi đơn vị cần có tên trước khi trò chơi có thể bắt đầu.
 UILABEL_CLICK_UNIT_EDIT	Nhấp vào một đơn vị để chỉnh sửa.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Chân
 UILABEL_SLOT_FEET	Bàn chân
 UILABEL_SLOT_ACCESSORY	Phụ kiện
 UILABEL_BEHAVIOR_ON	Bật
+UILABEL_BEHAVIOR_EAT	Ăn khi no < {0}%
+UILABEL_BEHAVIOR_REST	Nghỉ khi tỉnh táo < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Rời giường khi hồi phục
+UILABEL_BEHAVIOR_RESCUE	Cứu đồng minh bị gục
+UILABEL_BEHAVIOR_HEAL	Chữa trị khi máu < {0}%
+UILABEL_BEHAVIOR_SHARE	Chia sẻ
+UILABEL_BEHAVIOR_AUTO_HARVEST	Tự thu hoạch: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Tự vận chuyển: {0}
+UILABEL_BEHAVIOR_WAITING	(đang chờ)
+UILABEL_BEHAVIOR_WAIT_TIP	Đang chờ: {0}
+UILABEL_WAIT_NO_FOOD	không có đồ ăn, và không ai gần đó chia sẻ
+UILABEL_WAIT_NO_BED	không có giường hay chiếu ngủ trống để nghỉ
+UILABEL_WAIT_NO_HEALING	không có vật phẩm hồi máu, và không ai gần đó chia sẻ
+UILABEL_WAIT_WALKING_TO_SHARE	đang đi tới {0}, người có thể chia sẻ một cái
+UILABEL_WAIT_NO_PROP	không có {0} nào trong lãnh thổ của bạn còn chỗ cho thêm một người làm
+UILABEL_WAIT_CARRY_FULL	không còn chỗ để mang thêm
+UILABEL_WAIT_LOAD_WAITING	đang mang một món hàng mà Tự vận chuyển phải lấy trước
+UILABEL_WAIT_PROP_GONE	vật thể đã biến mất
+UILABEL_WAIT_OUTSIDE_CLAIM	vật thể không nằm trong lãnh thổ phe bạn
+UILABEL_WAIT_LOCKED	vật thể đang bị khóa
+UILABEL_WAIT_NOTHING_TO_HAUL	không mang thứ gì vật thể nhận
+UILABEL_WAIT_PROP_FULL	vật thể không còn chỗ cho thứ nó mang
+UILABEL_BEHAVIOR_EAT_TIP	Ăn: dưới {0}% no, ăn món hồi cơn đói nhiều nhất. Dùng - và + để đổi ngưỡng.
+UILABEL_BEHAVIOR_HEAL_TIP	Chữa trị: dưới {0}% máu, dùng vật phẩm hồi máu nhiều nhất. Dùng - và + để đổi ngưỡng.
+UILABEL_BEHAVIOR_REST_TIP	Nghỉ: dưới {0}% tỉnh táo, nằm vào giường hoặc chiếu ngủ trống gần nhất và dậy khi đã hoàn toàn tỉnh táo. Dùng - và + để đổi ngưỡng.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Rời giường: rời giường hoặc chiếu ngủ sau 30 giây khi đầy máu và hoàn toàn tỉnh táo.
+UILABEL_BEHAVIOR_RESCUE_TIP	Cứu: mang một đơn vị cùng phe đang bất tỉnh gần đó tới giường hoặc chiếu ngủ trống gần nhất.
+UILABEL_BEHAVIOR_SHARE_TIP	Chia sẻ: khi Ăn hoặc Chữa trị cần một vật phẩm mà đơn vị này không có, nó lấy một cái từ đơn vị trong tầm giao dịch cũng chia sẻ và ít cần hơn, đi tới trước nếu đơn vị đó hơi xa. Các đơn vị chia sẻ khác có thể lấy từ đơn vị này theo cách tương tự.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Tự thu hoạch: làm việc ở {0} gần nhất trong lãnh thổ phe bạn. Khi có hàng và một Tự vận chuyển nhận được nó, sẽ dừng lại để chở đi. Lệnh của bạn sẽ tạm dừng nó; nó tiếp tục khi đơn vị đứng yên vài giây.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Tự vận chuyển: mang các vật phẩm trong túi đồ (không phải trang bị đang mặc) mà {0} nhận, khi còn chỗ và đơn vị đứng trong lãnh thổ phe bạn. Lệnh của bạn sẽ tạm dừng nó; nó tiếp tục khi đơn vị đứng yên vài giây.
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	Hiện thông tin NPC
 UILABEL_COMBAT_MESSAGES	Thông báo chiến đấu
 UILABEL_SEEN	Đã thấy
 UILABEL_HIT	Trúng
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Thông báo kinh nghiệm
 UILABEL_EXPERIENCE	Kinh nghiệm
 UILABEL_XP_ATHLETICS	Kinh nghiệm Thể lực
 UILABEL_XP_ENDURANCE	Kinh nghiệm Sức bền
+UILABEL_XP_CARRYING	Kinh nghiệm Sức mạnh (Mang vác)
 UILABEL_ITEM_MESSAGES	Thông báo vật phẩm
 UILABEL_PICKUP	Nhặt
 UILABEL_DROP	Vứt
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Tiến độ: {0}%
 UILABEL_TIP_CURRENT_XP	Kinh nghiệm hiện tại: {0}
 UILABEL_ATTACK_DEFENSE	Tấn công {0}      Phòng thủ {1}
 UILABEL_STATS_CAPTION	Chỉ số: {0}
+UILABEL_MODEL_N	Mẫu {0}
 UILABEL_SLOT_N_ITEM	Ô {0}: {1}
 UILABEL_SLOT_N_EMPTY	Ô {0}: trống
 UILABEL_COUNT	Số lượng {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Cần cả hai tay. Tay phụ phải trống.
 ITEM_87_NAME	Rìu chiến
 ITEM_87_DESC	Cần cả hai tay. Tay phụ phải trống.
 UILABEL_UI_SCALE	Tỷ lệ giao diện
-NAME_MASCULINE	["Minh", "Hùng", "Long", "Tuấn", "Đức"]
-NAME_FEMININE	["Lan", "Hương", "Mai", "Linh", "Thảo"]
-NAME_ANDROGYNOUS	["An", "Tâm", "Hạ", "Thiên", "Vân"]
+NAME_MASCULINE	["Minh", "Hùng", "Long", "Tuấn", "Đức", "Anh Tuấn", "Bảo", "Bình", "Cường", "Dũng", "Duy", "Đạt", "Định", "Giang", "Hải", "Hiếu", "Hoàng", "Huy", "Khải", "Khang", "Khánh", "Khoa", "Kiên", "Lâm", "Lộc", "Luân", "Mạnh", "Nam", "Nghĩa", "Nhân", "Phát", "Phong", "Phúc", "Quân", "Quang", "Quốc", "Sơn", "Tài", "Thắng", "Thành", "Thịnh", "Toàn", "Trí", "Trọng", "Trung", "Tùng", "Văn", "Việt", "Vinh", "Vũ"]
+NAME_FEMININE	["Lan", "Hương", "Mai", "Linh", "Thảo", "Anh", "Ánh", "Bích", "Chi", "Cúc", "Diệp", "Diễm", "Dung", "Duyên", "Giao", "Hà", "Hạnh", "Hằng", "Hiền", "Hoa", "Hồng", "Huệ", "Huyền", "Khánh Linh", "Kiều", "Lệ", "Liên", "Loan", "Ly", "My", "Nga", "Ngân", "Ngọc", "Nguyệt", "Nhi", "Nhung", "Oanh", "Phương", "Quỳnh", "Tâm Anh", "Thanh", "Thơ", "Thu", "Thủy", "Trang", "Trâm", "Tuyết", "Uyên", "Vy", "Yến"]
+NAME_ANDROGYNOUS	["An", "Tâm", "Hạ", "Thiên", "Vân", "Bảo An", "Cát", "Châu", "Đông", "Gia", "Hạnh An", "Hải Âu", "Hiền An", "Hòa", "Khanh", "Khiêm", "Kim", "Lam", "Lâm An", "Minh An", "Mộc", "Nguyên", "Nhật", "Như", "Phúc An", "Quế", "Sa", "Sương", "Thái", "Thanh Tâm", "Thông", "Thuận", "Tiên", "Tín", "Trúc", "Tú", "Tường", "Vĩnh", "Xuân", "Yên", "Ân", "Bách", "Duy An", "Hy", "Khải An", "Lạc", "Nhiên", "Phong Vân", "Sang", "Thư"]
 UILABEL_BODY_TYPE	Kiểu cơ thể
 UILABEL_BODY_MASCULINE	Nam tính
 UILABEL_BODY_FEMININE	Nữ tính
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Không còn chỗ trong kho
 MISC_PROP_TAKEN	Đang có người dùng
 MISC_PROP_WORKERS_FULL	Tối đa {0} đơn vị có thể làm cùng lúc
 MISC_GATHERS	{0} thu được {1}
+MISC_AUTO_HAUL_STORES	{0} cất {1} {2} vào {3}
 MISC_GATHER_NO_ROOM	{0} không còn chỗ cho {1} nên ngừng làm việc
 MISC_REASON_GATHERING	thu thập
+MISC_REASON_CLEARING	đang dọn đống đổ nát
 UILABEL_TASK	Nhiệm vụ: {0}
 UILABEL_TASK_IDLE	Rảnh
+UILABEL_TASK_AUTO_GOING	{0} (đang tới)
+UILABEL_TASK_SHARE_WALK	Đi tới {0} để chia sẻ
 UILABEL_TASK_MOVING	Đang di chuyển
 UILABEL_TASK_RESTING	Đang nghỉ
 UILABEL_STORAGE_HINT	Nhấp chuột phải vào vật phẩm để lấy, hoặc kéo ra ngoài để thả tại chỗ đơn vị của bạn đang đứng. Nhấp chuột phải vào vật phẩm của đơn vị để cất vào.
@@ -595,6 +664,7 @@ FACTION_RED	Phe Đỏ
 FACTION_GREEN	Phe Xanh Lá
 FACTION_BLUE	Phe Xanh Lam
 FACTION_YELLOW	Phe Vàng
+FACTION_EXILE	Kẻ lưu đày
 MISC_REPUTATION_DROPS	Danh tiếng với {0} giảm {1}, còn {2}
 UILABEL_MODE_PASSIVE	Hòa hoãn
 UILABEL_MODE_BLOCK	Đỡ đòn
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Kịch bản
 SCENARIO_VAGABOND_NAME	Kẻ lang thang
 SCENARIO_VAGABOND_DESC	Một kẻ lữ hành đơn độc không có gì trong tay: không vật phẩm, không trang bị, và mọi chỉ số từ 1 đến 5.
-SCENARIO_RANDOM_NAME	Ngẫu nhiên hoàn toàn
-SCENARIO_RANDOM_DESC	Một nhóm từ 1 đến 32 đơn vị, mỗi đơn vị có mọi chỉ số từ 1 đến 99, cùng vật phẩm và trang bị ngẫu nhiên mà nó mang nổi.
+SCENARIO_PACK_NAME	Bầy đôi
+SCENARIO_PACK_DESC	Một kẻ lang thang cô độc và một con sói trung thành. Kẻ lang thang không có vật phẩm hay trang bị, mọi chỉ số từ 1 đến 5.
+SCENARIO_BEASTMASTER_NAME	Chúa tể muông thú
+SCENARIO_BEASTMASTER_DESC	Một kẻ lang thang cô độc dẫn đầu 20 sinh vật thuộc loài ngẫu nhiên. Kẻ lang thang không có vật phẩm hay trang bị, mọi chỉ số từ 1 đến 5.
+SCENARIO_RANDOM_NAME	Trại ngẫu nhiên hoàn toàn
+SCENARIO_RANDOM_DESC	Trại của riêng bạn, cùng một nhóm từ 20 đơn vị trở lên, mỗi đơn vị có mọi chỉ số trong khoảng 1 đến 99 và vật phẩm, trang bị ngẫu nhiên mang vác được, cùng 3 đến 7 sinh vật.
 SCENARIO_CARAVAN_NAME	Đoàn lữ hành
 SCENARIO_CARAVAN_DESC	Mười lữ khách cùng nhau trên đường. Mọi chỉ số bắt đầu ở 5, và mỗi người mang 10 đồng vàng.
 SCENARIO_SHABBY_NAME	Băng lôi thôi
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Một đơn vị chẳng có gì: không vật phẩm, khô
 SCENARIO_DIGGERS_NAME	Thợ đào ngục tối
 SCENARIO_DIGGERS_DESC	Bảy thợ mỏ trang bị đầy đủ. Chỉ số của họ từ 5 đến 20, nhưng ai cũng có Khai khoáng 50 và mang 3 quặng sắt.
 SCENARIO_CUSTOM_NAME	Kịch bản tùy chỉnh
-SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Bắt đầu với ba đơn vị, và bạn có thể thêm hoặc bớt đơn vị, tối đa 32.
+SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Nhóm bắt đầu với ba đơn vị, và bạn có thể thêm hoặc bớt đơn vị và sinh vật thường, tối đa 32.
 PROP_LOCKED_CHEST	Rương bị khóa
 PROP_PRISONER_CAGE	Lồng tù nhân
 UILABEL_UNLOCK	Mở khóa
+UILABEL_AUTO_HARVEST	Tự thu hoạch
+UILABEL_AUTO_HAUL	Tự vận chuyển
+MISC_AUTO_OUTSIDE_CLAIM	Tự thu hoạch và Tự vận chuyển chỉ hoạt động với vật thể trong lãnh thổ phe bạn
+MISC_AUTO_HARVEST_SET	{0} đơn vị sẽ tự thu hoạch: {1}
+MISC_AUTO_HAUL_SET	{0} đơn vị sẽ tự vận chuyển tới {1}
+MISC_BEHAVIOR_LIST_FULL	Danh sách hành vi đã đầy (tối đa {0})
 UILABEL_PICK_UP	Nhấc lên
-UILABEL_PUT_IN_BED	Đặt lên giường
+UILABEL_PLACE	Đặt vào
+UILABEL_OCCUPY	Chiếm chỗ
+UILABEL_DISBAND	Giải ngũ
+UILABEL_DISBAND_HOLD	Giữ nút Giải ngũ trong {0} giây để xác nhận
 UILABEL_PUT_DOWN	Đặt xuống
 UILABEL_SHOP	Mua bán
 UILABEL_TASK_CARRIED	Đang được mang
@@ -641,16 +724,33 @@ UILABEL_DOOM	Diệt vong
 UILABEL_TASK_UNCONSCIOUS	Bất tỉnh
 UILABEL_TASK_DEAD	Đã chết
 UILABEL_TASK_CARRYING	Đang mang
+UILABEL_TASK_STORING	Đang cất
 UILABEL_TAKE_ALL	Lấy hết
 UILABEL_LOOT_HINT	Nhấp vào một vật phẩm để lấy nó vào túi đồ của đơn vị bạn.
 UILABEL_CORPSE_OF	Xác của {0}
 MISC_FALLS_UNCONSCIOUS	{0} ngất đi
 MISC_DIES	{0} chết
 MISC_RECOVERS	{0} tỉnh lại
+LOADING_PICTURES	Hình ảnh
+LOADING_UNIT_MODELS	Mô hình đơn vị
+LOADING_MOB_MODELS	Mô hình sinh vật
+LOADING_MOB_PICTURES	Hình sinh vật
+LOADING_SKY	Bầu trời
+LOADING_PROP_MODELS	Mô hình vật thể
+LOADING_MAP	Bản đồ
+LOADING_MAP_GROUND	Mặt đất bản đồ
+LOADING_WORLD	Thế giới
+LOADING_GROUND_ITEMS	Vật phẩm trên mặt đất
+MISC_GOES_HOME	{0} bỏ cuộc truy đuổi và trở về
+MISC_GETS_UP	{0} đứng dậy, nguy hiểm đã qua
 MISC_PICKS_UP_UNIT	{0} nhấc {1} lên
 MISC_PUTS_DOWN	{0} đặt {1} xuống
-MISC_PUTS_IN_BED	{0} đặt {1} lên {2}
-MISC_CORPSE_NO_BED	Giường không giúp được người chết
+MISC_PLACES_IN	{0} đặt {1} lên {2}
+MISC_DISBAND_ASK	{0} sẽ rời đội và phe của bạn mãi mãi và trở thành Kẻ lưu đày: trung lập với mọi người và lang thang một mình.
+MISC_DISBAND_ASK_MOB	{0} sẽ rời đội và phe của bạn mãi mãi và trở về hoang dã.
+MISC_DISBANDED	{0} rời đội của bạn và trở thành Kẻ lưu đày
+MISC_DISBANDED_MOB	{0} rời đội của bạn và trở về hoang dã
+MISC_CORPSE_NO_PLACE	Không thể đặt người chết vào đó
 MISC_IS_UNCONSCIOUS	{0} đang bất tỉnh và không thể làm gì
 MISC_ALREADY_CARRYING	Không đơn vị nào bạn chọn có thể mang họ
 MISC_LOOT_NO_ROOM	Túi đồ không còn chỗ
@@ -788,6 +888,46 @@ ITEM_132_NAME	Tên lửa
 ITEM_132_DESC	Tên bốc cháy cho cung ngắn hoặc cung dài. Loại tên mạnh nhất.
 ITEM_133_NAME	Mũi nỏ
 ITEM_133_DESC	Mũi nỏ ngắn và nặng dùng cho nỏ.
+ITEM_134_NAME	Xương gấu
+ITEM_134_DESC	Xương của một con gấu. Tốt cho chế tạo.
+ITEM_135_NAME	Xương bò
+ITEM_135_DESC	Xương của một con bò. Tốt cho chế tạo.
+ITEM_136_NAME	Xương gà
+ITEM_136_DESC	Xương của một con gà. Tốt cho chế tạo.
+ITEM_137_NAME	Xương lợn rừng
+ITEM_137_DESC	Xương của một con lợn rừng. Tốt cho chế tạo.
+ITEM_138_NAME	Xương sói
+ITEM_138_DESC	Xương của một con sói. Tốt cho chế tạo.
+ITEM_139_NAME	Xương hươu
+ITEM_139_DESC	Xương của một con hươu. Tốt cho chế tạo.
+ITEM_140_NAME	Xương thỏ
+ITEM_140_DESC	Xương của một con thỏ. Tốt cho chế tạo.
+ITEM_141_NAME	Xương cá
+ITEM_141_DESC	Xương của một con cá. Tốt cho chế tạo.
+ITEM_142_NAME	Mai cua
+ITEM_142_DESC	Mảnh mai của một con cua. Tốt cho chế tạo.
+ITEM_143_NAME	Xương thằn lằn
+ITEM_143_DESC	Xương của một con thằn lằn. Tốt cho chế tạo.
+ITEM_144_NAME	Xương rắn
+ITEM_144_DESC	Xương của một con rắn. Tốt cho chế tạo.
+ITEM_145_NAME	Xương lợn
+ITEM_145_DESC	Xương của một con lợn. Tốt cho chế tạo.
+ITEM_146_NAME	Xương cừu
+ITEM_146_DESC	Xương của một con cừu. Tốt cho chế tạo.
+ITEM_147_NAME	Xương vịt
+ITEM_147_DESC	Xương của một con vịt. Tốt cho chế tạo.
+ITEM_148_NAME	Xương rùa
+ITEM_148_DESC	Xương của một con rùa. Tốt cho chế tạo.
+ITEM_149_NAME	Xương dơi
+ITEM_149_DESC	Xương của một con dơi. Tốt cho chế tạo.
+ITEM_150_NAME	Xương ếch
+ITEM_150_DESC	Xương của một con ếch. Tốt cho chế tạo.
+ITEM_151_NAME	Xương gorlicorn
+ITEM_151_DESC	Xương của một con gorlicorn. Tốt cho chế tạo.
+ITEM_152_NAME	Thịt gorlicorn sống
+ITEM_152_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
+ITEM_153_NAME	Thịt gorlicorn nướng
+ITEM_153_DESC	Thịt béo ngậy nướng trên lửa. Hồi nhiều máu và cơn đói.
 UILABEL_OPTIMIZE	Tối ưu
 UILABEL_REMOVE_ALL	Tháo hết
 MISC_GEAR_NO_ROOM	Không đủ chỗ trong túi đồ
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Kobold
 UILABEL_EARLY_ACCESS	Truy cập sớm
 MISC_TITLE_KEYS	Chọn  //  Enter Xác nhận
 UILABEL_LANGUAGE_LABEL	Ngôn ngữ:
+PROP_FLAG	Cờ
+PROP_DEBRIS	Đống đổ nát
+PROP_FOUNDATION_SMALL	Nền nhỏ
+PROP_FOUNDATION_LARGE	Nền lớn
+PROP_FOUNDATION_LONG	Nền dài
+PROP_FOUNDATION_CIRCLE	Nền tròn
+PROP_VAULT	Kho kiên cố
+UILABEL_BUILD	Xây dựng
+UILABEL_BUILD_SELECTED	Đã chọn: {0}
+UILABEL_BUILD_NONE	Đã chọn: Không có
+UILABEL_BUILD_SELECT	Chọn
+UILABEL_BUILD_PICKED	Đã chọn
+UILABEL_BUILD_PLACE_HINT	Nhấp trái lên mặt đất để đặt. Giữ R và di chuột sang trái hoặc phải để xoay. Nhấp phải hoặc Escape để hủy.
+UILABEL_UPKEEP_HINT	Đốt một {0} mỗi giờ để bảo trì. Hãy bỏ chúng vào đây.
+MISC_BUILD_BLOCKED	Không có chỗ để xây ở đây
+MISC_BUILD_UNWALKABLE	Không thể xây trên mặt đất này
+MISC_BUILD_NO_FOUNDATION	Kho kiên cố phải nằm hoàn toàn trên nền
+MISC_NO_UPKEEP	Không có bảo trì: không có khúc gỗ
+MISC_UPKEEP_LEFT	Bảo trì: còn {0} phút
+PROP_SHOP	Cửa hàng
+PROP_FARM	Nông trại
+PROP_TURBINE	Tua-bin gió
+UILABEL_BUILD_DESTROY	Phá hủy
+UILABEL_BUILD_DESTROY_HINT	Nhấp trái vào vật thể bất kỳ để phá nó: đồ bên trong rơi xuống đất và để lại đống đổ nát. Nhấp trái vào đống đổ nát để dọn đi. Nhấp phải hoặc Escape để hủy.
+UILABEL_LOCK	Khóa
+MISC_BUILD_NO_CLAIM	Nền hoặc kho kiên cố phải nằm trong lãnh thổ của bạn
+MISC_BUILD_SEALED	Mặt đất đó bị phong ấn bởi kho kiên cố của phe khác
+MISC_BUILD_CLAIM_OVERLAP	Lãnh thổ đó sẽ chồng lên lãnh thổ của một cờ khác
+MISC_BUILD_VAULT_TAKEN	Lãnh thổ đó đã có kho kiên cố
+MISC_BUILD_VAULT_CAP	Phe bạn đã có đủ số kho kiên cố tối đa
+MISC_DESTROY_NOTHING	Không có gì để phá ở đó
+MISC_FLAG_FACTION	Chủ sở hữu: {0}
+MISC_FLAG_HEALTH	Độ bền: {0}/{1}
+MISC_FLAG_VAULT_YES	Kho kiên cố: còn đứng, lãnh thổ được giữ
+MISC_FLAG_VAULT_NO	Kho kiên cố: không có, cờ đang mòn dần
+MISC_PROP_CONDITION	Tình trạng: {0}%
+MISC_PROP_DECAYING	Đang xuống cấp
+MISC_PROP_HOLDING	Không xuống cấp
+MISC_PROP_LOCK_OPEN	Không khóa
+MISC_PROP_LOCK_YOURS	Khóa với người ngoài (mở với bạn)
+MISC_PROP_LOCK_SHUT	Đã khóa (Mở khóa {0})
+MISC_PROP_UPKEEP	Bảo trì: còn {0} giờ
+MISC_PROP_VAULT_UNCLAIMED	Ngoài mọi lãnh thổ: không cung cấp bảo trì
+MOB_BEAR	Gấu
+MOB_COW	Bò
+MOB_CHICKEN	Gà
+MOB_BOAR	Lợn rừng
+MOB_WOLF	Sói
+MOB_DEER	Hươu
+MOB_RABBIT	Thỏ
+MOB_FISH	Cá
+MOB_CRAB	Cua
+MOB_LIZARD	Thằn lằn
+MOB_SNAKE	Rắn
+MOB_PIG	Lợn
+MOB_SHEEP	Cừu
+MOB_DUCK	Vịt
+MOB_TURTLE	Rùa
+MOB_BAT	Dơi
+MOB_FROG	Ếch
+MOB_GORLICORN	Gorlicorn
+FACTION_MOB_BEAR	Bầy gấu
+FACTION_MOB_COW	Đàn bò
+FACTION_MOB_CHICKEN	Đàn gà
+FACTION_MOB_BOAR	Bầy lợn rừng
+FACTION_MOB_WOLF	Bầy sói
+FACTION_MOB_DEER	Đàn hươu
+FACTION_MOB_RABBIT	Đàn thỏ
+FACTION_MOB_FISH	Đàn cá
+FACTION_MOB_CRAB	Đàn cua
+FACTION_MOB_LIZARD	Bầy thằn lằn
+FACTION_MOB_SNAKE	Bầy rắn
+FACTION_MOB_PIG	Đàn lợn
+FACTION_MOB_SHEEP	Đàn cừu
+FACTION_MOB_DUCK	Đàn vịt
+FACTION_MOB_TURTLE	Bầy rùa
+FACTION_MOB_BAT	Bầy dơi
+FACTION_MOB_FROG	Bầy ếch
+FACTION_MOB_GORLICORN	Bầy gorlicorn
+MISC_MOB_NO_GEAR	Sinh vật không thể mặc trang bị
+MISC_MOB_NO_HEALING	Sinh vật không thể dùng vật phẩm hồi máu
+MISC_MOB_CANT_WORK	Sinh vật không thể làm việc ở vật thể

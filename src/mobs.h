@@ -18,8 +18,8 @@
 //     kind with a model (MobInfo::model) is drawn in the world by data/model/mob/mob_<nn>.glb instead, and its
 //     portrait is the pink square, as a person's is.
 //   - It belongs to its kind's own faction (MOB_FACTION_BASE + kind - 1, data/factioninfo.txt), unless it was placed in
-//     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction, the player's
-//     included. Beyond the camps, MobInfo::wild of every kind (WILD_MOBS for most) roam in herds, in their own
+//     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction. Yours are the
+//     party's own (PartyMember::mob, party.h), as its scenario rolled them or the party menu chose them. Beyond the camps, MobInfo::wild of every kind (WILD_MOBS for most) roam in herds, in their own
 //     factions. A kind placed only once (the Gorlicorn) is never one of a camp's.
 // The Gorlicorn: one in the world, Aggressive, every stat at its most and GORLICORN_HP health. It does not Roam but
 // Patrols Spawn: it walks about near where it was placed, chases outsiders, and past SPAWN_LEASH_RANGE from that spot
@@ -45,6 +45,10 @@ constexpr int MOB_FACTION_BASE = 10;               // kind k's own faction is MO
 constexpr int CAMP_MOBS = 3;                       // mobs of random kinds each camp's faction starts with
 constexpr int WILD_MOBS = 10;                      // mobs of each kind placed out in the world, in their own faction
 
+// A kind's category: Regular for most, Boss for one of a kind (the Gorlicorn). Only Regular kinds stand in camps or
+// can join a party from the scenarios and the party menu.
+enum class MobCategory { Regular, Boss };
+
 // What a kind of mob is: its name, the raw meat it carries and how much, its attributes and its Melee and Block, all
 // as levels. Only these are set; the other attributes start at the unit's usual 10, the rest at 1.
 // The rest have defaults: how many roam the world (wild), whether every stat it has is at MAX_LEVEL (maxStats), its
@@ -63,6 +67,7 @@ struct MobInfo {
     int model = 0;
     float modelHeight = 1.2f;
     bool patrolSpawn = false;
+    MobCategory category = MobCategory::Regular;
 };
 
 constexpr int GORLICORN_HP = 2000;
@@ -90,7 +95,7 @@ inline const MobInfo& mobInfo(int kind) {
         { "MOB_BAT",     121, 1, 3,  16, 3,  10, 20, 4,  1 },
         { "MOB_FROG",    123, 1, 2,  12, 3,  8,  16, 1,  1 },
         { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
-          1, 100, true, GORLICORN_HP, 1, 9.6f, true },
+          1, 100, true, GORLICORN_HP, 1, 9.6f, true, MobCategory::Boss },
     };
     const int i = kind - 1;
     return info[(i >= 0 && i < MOB_KIND_COUNT) ? i : 0];
@@ -128,6 +133,7 @@ inline const char* temperamentKey(MobTemperament t) {
 }
 constexpr float WILD_AVOID_RANGE = 6.0f;    // an Avoidant wild mob runs from an outsider this close
 constexpr float WILD_FLEE_DISTANCE = 12.0f; // and runs this far from it
+constexpr int EXILE_FLEE_PERCENT = 25;      // an Exile at this share of its health or less stops fighting and runs
 
 // How tall a kind drawn by its picture stands, against a person's height: the Bear twice as tall, the small creatures
 // half as tall, the rest as tall as a person
@@ -148,6 +154,12 @@ inline float mobSize(int kind) {
     return info.model > 0 ? info.modelHeight / 1.2f : mobSpriteScale(kind);
 }
 
+// How far above the ground a kind is drawn while it is up and about, as a share of its height: the Bat flies. Lying
+// (Unconscious, playing dead, a corpse), carried, or occupying a prop, it is on the ground like any other.
+inline float mobHoverFraction(int kind) {
+    return kind == MOB_BAT ? 0.8f : 0.0f;
+}
+
 // Kinds that leave each other be, whatever their temperaments: the Gorlicorn and the Rabbits that keep it company. They
 // do not fight each other, and an Avoidant one does not run from the other.
 inline bool mobKindsFriendly(int a, int b) {
@@ -155,8 +167,12 @@ inline bool mobKindsFriendly(int a, int b) {
 }
 constexpr int GORLICORN_RABBITS = 3;   // Rabbits placed by the Gorlicorn, keeping near it
 
-// Whether a camp may be given a mob of this kind: not one the world has only one of
-inline bool campMobKind(int kind) { return mobInfo(kind).wild > 1; }
+// Whether a kind is a regular mob, not a boss
+inline bool isRegularMob(int kind) {
+    return kind >= 1 && kind <= MOB_KIND_COUNT && mobInfo(kind).category == MobCategory::Regular;
+}
+// Whether a camp may be given a mob of this kind: a regular one
+inline bool campMobKind(int kind) { return isRegularMob(kind); }
 
 // The faction a kind of mob belongs to when it is not placed in another one
 inline int mobFaction(int kind) { return MOB_FACTION_BASE + kind - 1; }

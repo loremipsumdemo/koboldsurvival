@@ -81,6 +81,9 @@ struct SaveUnit {
     Stats stats;
     // Older saves have no behaviors, or the rules that came before them. Those units get defaultBehaviors().
     bool hasBehaviors = false;
+    // Its list is kept whole as saved, any needs behavior it lacks having been deleted. An older save's list may be
+    // missing needs behaviors that came later, so it gets them back.
+    bool behaviorsWhole = false;
     std::vector<SaveBehavior> behaviors;   // highest priority first
     // Its fighting modes from the Behavior tab. Older saves have none: all off.
     bool passive = false, block = false, sneak = false;
@@ -152,6 +155,8 @@ struct SaveData {
     std::vector<SaveFuel> fuel;
     // The Player Faction's reputation with each faction. Older saves have none: every one starts at its default.
     std::map<int, int> reputation;
+    // Whether the level has your camp (setupWorld). It is rebuilt from the seed, so this must match. Older saves all have one.
+    bool playerCamp = true;
 };
 
 struct SaveSummary {
@@ -171,6 +176,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
     out << "name=" << d.name << "\n";
     out << "timestamp=" << d.timestamp << "\n";
     out << "seed=" << d.seed << "\n";
+    out << "playerCamp=" << (d.playerCamp ? 1 : 0) << "\n";
     out << "map " << d.mapSource << " " << d.mapStem << "\n";
     out << "clockSeconds=" << std::setprecision(15) << d.gs.clockSeconds << std::setprecision(9) << "\n";
     out << "autosave=" << (d.autosave ? 1 : 0) << "\n";
@@ -214,7 +220,7 @@ inline bool writeSaveFile(const std::string& path, const SaveData& d) {
         }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
         if (u.hasBehaviors) {
-            out << "behaviors " << i << "\n";
+            out << "behaviors " << i << " " << (u.behaviorsWhole ? 1 : 0) << "\n";
             for (const SaveBehavior& b : u.behaviors) {
                 out << "task " << i << " " << (b.rule.on ? 1 : 0) << " " << (int)b.rule.kind << " " << b.rule.propKind
                     << " " << b.x << " " << b.z << " " << b.rule.percent << "\n";
@@ -254,6 +260,7 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
             if (line.rfind("name=", 0) == 0)                   d.name = line.substr(5);
             else if (line.rfind("timestamp=", 0) == 0)        d.timestamp = std::stoll(line.substr(10));
             else if (line.rfind("seed=", 0) == 0)             d.seed = (unsigned)std::stoul(line.substr(5));
+            else if (line.rfind("playerCamp=", 0) == 0)       d.playerCamp = line.substr(11) != "0";
             else if (line.rfind("map ", 0) == 0) {
                 std::istringstream ss(line.substr(4));
                 ss >> d.mapSource;
@@ -496,7 +503,11 @@ inline bool readSaveFile(const std::string& path, SaveData& d) {
                 std::istringstream ss(line.substr(10));
                 size_t i = 0;
                 ss >> i;
-                if (!ss.fail() && i < d.units.size()) d.units[i].hasBehaviors = true;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasBehaviors = true;
+                    int whole = 0;   // older saves have no flag
+                    if (ss >> whole) d.units[i].behaviorsWhole = whole != 0;
+                }
             }
             // An older save's "behavior" lines were the rules that came before: they are left out, and the unit gets
             // the default behaviors

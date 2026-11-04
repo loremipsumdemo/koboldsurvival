@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	معدل التحديث
 UILABEL_DEFAULT	افتراضي
 UILABEL_VSYNC	مزامنة العمودي
 UILABEL_FRAME_LIMIT	حد معدل الإطارات
+UILABEL_VIEW_RANGE	مدى الرؤية
+UILABEL_TILES_N	{0} مربعات
+UILABEL_SHOW_FPS	إظهار FPS
 UILABEL_UNLIMITED	غير محدود
 UILABEL_FPS	{0} إطارًا في الثانية
 UILABEL_AUTOSAVE	الحفظ التلقائي
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} دقائق
 UILABEL_UNIT_NAMES	أسماء وحدات اللاعب
 UILABEL_NPC_NAMES	أسماء الوحدات غير التابعة للاعب
 UILABEL_PROP_NAMES	أسماء العناصر
+UILABEL_PROP_INFO	إظهار معلومات العناصر
 UILABEL_FONT_SIZE	حجم الخط
 UILABEL_RESET_PANELS	إعادة تعيين جميع اللوحات
 UILABEL_RESET	إعادة التعيين
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	مستوى الصوت العام
 UILABEL_MUSIC	الموسيقى
 UILABEL_AMBIENT	الأجواء
 UILABEL_INTERFACE_SOUNDS	أصوات الواجهة
+UILABEL_CRAFT_GATHER_SOUNDS	أصوات الصناعة والجمع
 UILABEL_SOUND_EFFECTS	المؤثرات الصوتية
 UILABEL_RESTORE_DEFAULTS	استعادة الإعدادات الافتراضية
 UILABEL_WINDOWED	نافذة
@@ -123,6 +128,8 @@ UILABEL_STATS	الإحصائيات
 UILABEL_CLICK_TO_TYPE	انقر لكتابة اسم
 UILABEL_HEALTH	الصحة
 UILABEL_HUNGER	الجوع
+UILABEL_RESTED	الراحة
+UILABEL_COMFORT	الرفاهية
 UILABEL_CARRY	الحمل
 UILABEL_NEXT_LEVEL_XP_LINE	خبرة المستوى التالي: {0}
 UILABEL_STAT	الإحصائية
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	توليد هذه الوحدة عشوائيًا
 UILABEL_RANDOMIZE_ALL	توليد الكل عشوائيًا
 UILABEL_ADD_UNIT	إضافة وحدة
 UILABEL_REMOVE_UNIT	إزالة وحدة
+UILABEL_ADD_MOB	إضافة مخلوق
+UILABEL_MOB_KIND	النوع
+UILABEL_MOB_NO_GEAR	المخلوق لا يرتدي عتاداً.
+MISC_MEAT_TAKEN_DIES	{0} يموت
+MISC_MOB_INVENTORY_LOCKED	غير متاح
+MISC_MOB_CANT_HOLD	لا يحمل المخلوق إلا لحمه وعظامه
+UILABEL_CLEAR	إزالة
+UILABEL_TASK_CLEARING	يزيل الأنقاض
+MISC_CLEARS_DEBRIS	{0} يزيل الأنقاض
+UILABEL_MOB_INVENTORY_HIDDEN	غير متاح
+UILABEL_BEHAVIOR_PATROL	دورية
+UILABEL_BEHAVIOR_PATROL_SPAWN	دورية عند نقطة الظهور
+UILABEL_BEHAVIOR_ROAM	التجوال
+UILABEL_BEHAVIOR_PATROL_TIP	دورية: يتجول داخل المنطقة التي يقف فيها، إن كانت لفصيله، ويتوقف بين حين وآخر.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	دورية عند نقطة الظهور: يتجول قرب المكان الذي ظهر فيه أولاً. إن طوردَ بعيداً جداً، يستسلم ويُشفى تماماً ويعود ماشياً دون أن يتلقى ضرراً حتى يصل.
+UILABEL_BEHAVIOR_ROAM_TIP	التجوال: يتجول في الأراضي المفتوحة، في أي مكان يمكنه السير فيه خارج مناطق الرايات.
+UILABEL_WAIT_NOT_IN_CLAIM	ليس داخل منطقة لفصيله
+UILABEL_WAIT_NOWHERE_TO_ROAM	لا أرض مفتوحة قريبة خارج المناطق
+UILABEL_TEMPERAMENT_AVOIDANT	متجنِّب
+UILABEL_TEMPERAMENT_PASSIVE	مسالم
+UILABEL_TEMPERAMENT_NEUTRAL	محايد
+UILABEL_TEMPERAMENT_AGGRESSIVE	عدواني
+UILABEL_TEMPERAMENT	الطبع: {0}
+UILABEL_MOB_NO_ITEMS	المخلوق لا يحمل إلا لحمه وعظامه.
 UILABEL_CONFIRM_STARTS	التأكيد يبدأ اللعبة بهذه المجموعة.
 UILABEL_NEEDS_NAMES	يجب أن يكون لكل وحدة اسم قبل بدء اللعبة.
 UILABEL_CLICK_UNIT_EDIT	انقر على وحدة لتحريرها.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	الساقان
 UILABEL_SLOT_FEET	القدمان
 UILABEL_SLOT_ACCESSORY	إكسسوار
 UILABEL_BEHAVIOR_ON	تشغيل
+UILABEL_BEHAVIOR_EAT	كُل عندما الشبع < {0}%
+UILABEL_BEHAVIOR_REST	استرح عندما الراحة < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	غادر السرير بعد التعافي
+UILABEL_BEHAVIOR_RESCUE	أنقذ الحلفاء الساقطين
+UILABEL_BEHAVIOR_HEAL	عالج نفسك عندما الصحة < {0}%
+UILABEL_BEHAVIOR_SHARE	المشاركة
+UILABEL_BEHAVIOR_AUTO_HARVEST	حصاد تلقائي: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	نقل تلقائي: {0}
+UILABEL_BEHAVIOR_WAITING	(ينتظر)
+UILABEL_BEHAVIOR_WAIT_TIP	ينتظر: {0}
+UILABEL_WAIT_NO_FOOD	لا طعام ليأكله، ولا أحد قريب يشاركه
+UILABEL_WAIT_NO_BED	لا سرير ولا فراش ملفوف شاغر للراحة
+UILABEL_WAIT_NO_HEALING	لا عنصر علاج، ولا أحد قريب يشاركه
+UILABEL_WAIT_WALKING_TO_SHARE	يمشي نحو {0}، الذي يمكنه مشاركة واحد
+UILABEL_WAIT_NO_PROP	لا يوجد {0} داخل منطقتك فيه مكان لعامل آخر
+UILABEL_WAIT_CARRY_FULL	لا مكان لحمل المزيد
+UILABEL_WAIT_LOAD_WAITING	يحمل حمولة يجب أن يأخذها النقل التلقائي أولاً
+UILABEL_WAIT_PROP_GONE	العنصر اختفى
+UILABEL_WAIT_OUTSIDE_CLAIM	العنصر ليس داخل منطقة فصيلك
+UILABEL_WAIT_LOCKED	العنصر مقفل
+UILABEL_WAIT_NOTHING_TO_HAUL	لا يحمل شيئاً يقبله العنصر
+UILABEL_WAIT_PROP_FULL	لا مكان في العنصر لما يحمله
+UILABEL_BEHAVIOR_EAT_TIP	كُل: عندما ينخفض الشبع عن {0}%، يأكل الطعام الذي يسد الجوع أكثر من غيره. استخدم - و + لتغيير الحد.
+UILABEL_BEHAVIOR_HEAL_TIP	عالج: عندما تنخفض الصحة عن {0}%، يستخدم عنصر العلاج الذي يعيد أكبر قدر من الصحة. استخدم - و + لتغيير الحد.
+UILABEL_BEHAVIOR_REST_TIP	استرح: عندما تنخفض الراحة عن {0}%، يستلقي في أقرب سرير أو فراش ملفوف شاغر وينهض عندما يرتاح تماماً. استخدم - و + لتغيير الحد.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	غادر السرير: ينهض من السرير أو الفراش الملفوف بعد 30 ثانية بصحة كاملة وراحة تامة.
+UILABEL_BEHAVIOR_RESCUE_TIP	أنقذ: يحمل وحدة من فصيله ملقاة فاقدة الوعي في الجوار إلى أقرب سرير أو فراش ملفوف شاغر.
+UILABEL_BEHAVIOR_SHARE_TIP	المشاركة: عندما يحتاج الأكل أو العلاج عنصراً لا تملكه هذه الوحدة، تأخذ واحداً من وحدة ضمن مسافة التجارة تشارك أيضاً وحاجتها إليه أقل، وتمشي إليها أولاً إن كانت بعيدة قليلاً. ويمكن للوحدات الأخرى التي تشارك أن تأخذ من هذه بالطريقة نفسها.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	حصاد تلقائي: يعمل عند أقرب {0} داخل منطقة فصيلك. عندما تكون معه حمولة ونقل تلقائي يمكنه استلامها، يتوقف لنقلها. أي أمر منك يوقفه مؤقتاً؛ ويعود عندما تبقى الوحدة خاملة بضع ثوانٍ.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	نقل تلقائي: ينقل عناصر المخزون (لا العتاد الملبوس) التي يقبلها {0}، ما دام هناك مكان والوحدة داخل منطقة فصيلك. أي أمر منك يوقفه مؤقتاً؛ ويعود عندما تبقى الوحدة خاملة بضع ثوانٍ.
+UILABEL_NPC_MESSAGES	الشخصيات غير القابلة للعب
+UILABEL_SHOW_NPC_INFO	إظهار معلومات الشخصيات
 UILABEL_COMBAT_MESSAGES	رسائل القتال
 UILABEL_SEEN	مرئي
 UILABEL_HIT	إصابة
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	رسائل الخبرة
 UILABEL_EXPERIENCE	الخبرة
 UILABEL_XP_ATHLETICS	خبرة اللياقة
 UILABEL_XP_ENDURANCE	خبرة التحمّل
+UILABEL_XP_CARRYING	خبرة القوة (الحمل)
 UILABEL_ITEM_MESSAGES	رسائل الأغراض
 UILABEL_PICKUP	التقاط
 UILABEL_DROP	إسقاط
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	التقدم: {0}%
 UILABEL_TIP_CURRENT_XP	الخبرة الحالية: {0}
 UILABEL_ATTACK_DEFENSE	الهجوم {0}      الدفاع {1}
 UILABEL_STATS_CAPTION	الإحصائيات: {0}
+UILABEL_MODEL_N	النموذج {0}
 UILABEL_SLOT_N_ITEM	الخانة {0}: {1}
 UILABEL_SLOT_N_EMPTY	الخانة {0}: فارغة
 UILABEL_COUNT	العدد {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	يحتاج اليدين معًا. يجب أن تكون اليد ا�
 ITEM_87_NAME	فأس حربية
 ITEM_87_DESC	يحتاج اليدين معًا. يجب أن تكون اليد الثانوية فارغة.
 UILABEL_UI_SCALE	مقياس الواجهة
-NAME_MASCULINE	["Karim", "Yusuf", "Tariq", "Samir", "Nasser"]
-NAME_FEMININE	["Layla", "Amira", "Nour", "Salma", "Hala"]
-NAME_ANDROGYNOUS	["Nadim", "Safi", "Anwar", "Rami", "Zaki"]
+NAME_MASCULINE	["Karim", "Yusuf", "Tariq", "Samir", "Nasser", "Adel", "Ahmad", "Ali", "Amjad", "Bassam", "Bilal", "Fadi", "Faisal", "Fares", "Ghassan", "Hadi", "Hamza", "Hassan", "Hisham", "Ibrahim", "Imad", "Issa", "Jamal", "Jamil", "Khaled", "Khalil", "Mahmoud", "Majid", "Malik", "Marwan", "Mazen", "Mohammed", "Mustafa", "Nabil", "Omar", "Osama", "Qasim", "Rashid", "Saeed", "Salim", "Sami", "Talal", "Waleed", "Yahya", "Yasser", "Zaid", "Ziad", "Hatem", "Munir", "Raed"]
+NAME_FEMININE	["Layla", "Amira", "Nour", "Salma", "Hala", "Aisha", "Alia", "Amal", "Asma", "Basma", "Dalia", "Dana", "Fatima", "Ghada", "Hana", "Hanan", "Huda", "Iman", "Jamila", "Jana", "Lama", "Lina", "Lubna", "Maha", "Maryam", "May", "Mona", "Nada", "Nadia", "Najwa", "Rana", "Rania", "Rasha", "Reem", "Ruba", "Rula", "Sahar", "Samar", "Sana", "Sara", "Suha", "Yasmin", "Zahra", "Zainab", "Farah", "Ghalia", "Haya", "Jumana", "Shatha", "Wafa"]
+NAME_ANDROGYNOUS	["Nadim", "Safi", "Anwar", "Rami", "Zaki", "Ihsan", "Wisam", "Nur", "Jihad", "Kamal", "Najah", "Rida", "Safa", "Salam", "Wafiq", "Bahar", "Badr", "Dunya", "Fajr", "Hilal", "Inas", "Jud", "Karam", "Lail", "Majd", "Nasim", "Qamar", "Rabi", "Sirr", "Sama", "Shams", "Taj", "Wiam", "Yaman", "Ziya", "Aman", "Bayan", "Diyar", "Ghaith", "Hikmat", "Ishraq", "Najm", "Nawal", "Rawda", "Sabah", "Sanad", "Tasnim", "Wahid", "Yaqin", "Zuhur"]
 UILABEL_BODY_TYPE	نوع الجسم
 UILABEL_BODY_MASCULINE	مذكر
 UILABEL_BODY_FEMININE	مؤنث
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	لا توجد مساحة في المخزن
 MISC_PROP_TAKEN	مستخدم بالفعل
 MISC_PROP_WORKERS_FULL	يمكن لـ {0} وحدات كحد أقصى العمل عليه في وقت واحد
 MISC_GATHERS	{0} يجمع {1}
+MISC_AUTO_HAUL_STORES	{0} يخزن {1} {2} في {3}
 MISC_GATHER_NO_ROOM	لا توجد مساحة لدى {0} لـ {1} فيتوقف عن العمل
 MISC_REASON_GATHERING	الجمع
+MISC_REASON_CLEARING	يزيل الأنقاض
 UILABEL_TASK	المهمة: {0}
 UILABEL_TASK_IDLE	خامل
+UILABEL_TASK_AUTO_GOING	{0} (في الطريق)
+UILABEL_TASK_SHARE_WALK	يذهب إلى {0} للمشاركة
 UILABEL_TASK_MOVING	يتحرك
 UILABEL_TASK_RESTING	يستريح
 UILABEL_STORAGE_HINT	انقر بزر الفأرة الأيمن على عنصر لأخذه، أو اسحبه للخارج لإسقاطه حيث تقف وحدتك. انقر بزر الفأرة الأيمن على عناصر وحدتك لتخزينها.
@@ -595,6 +664,7 @@ FACTION_RED	الفصيل الأحمر
 FACTION_GREEN	الفصيل الأخضر
 FACTION_BLUE	الفصيل الأزرق
 FACTION_YELLOW	الفصيل الأصفر
+FACTION_EXILE	المنفيون
 MISC_REPUTATION_DROPS	تنخفض السمعة لدى {0} بمقدار {1} إلى {2}
 UILABEL_MODE_PASSIVE	مسالم
 UILABEL_MODE_BLOCK	صدّ
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	السيناريو
 SCENARIO_VAGABOND_NAME	المتشرد
 SCENARIO_VAGABOND_DESC	رحّالة وحيد لا يملك شيئًا: بلا أغراض ولا عتاد، وكل إحصائية بين 1 و5.
-SCENARIO_RANDOM_NAME	عشوائي بالكامل
-SCENARIO_RANDOM_DESC	فرقة من 1 إلى 32 وحدة، لكل منها كل الإحصاءات بين 1 و99، مع عناصر وعتاد عشوائية تستطيع حملها.
+SCENARIO_PACK_NAME	ثنائي القطيع
+SCENARIO_PACK_DESC	متجول وحيد وذئب وفيّ. لا يملك المتجول أغراضاً ولا عتاداً، وكل إحصاءاته بين 1 و5.
+SCENARIO_BEASTMASTER_NAME	سيد الوحوش
+SCENARIO_BEASTMASTER_DESC	متجول وحيد يقود 20 مخلوقاً من أنواع عشوائية. لا يملك المتجول أغراضاً ولا عتاداً، وكل إحصاءاته بين 1 و5.
+SCENARIO_RANDOM_NAME	مخيم عشوائي بالكامل
+SCENARIO_RANDOM_DESC	مخيمك الخاص، مع فريق من 20 وحدة أو أكثر، لكل منها كل الإحصاءات بين 1 و99 وأغراض وعتاد عشوائية يمكنها حملها، و3 إلى 7 مخلوقات.
 SCENARIO_CARAVAN_NAME	القافلة المتنقلة
 SCENARIO_CARAVAN_DESC	عشرة مسافرين على الطريق معًا. تبدأ كل الإحصاءات عند 5، ويحمل كل منهم 10 قطع ذهبية.
 SCENARIO_SHABBY_NAME	الطاقم الرث
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	وحدة واحدة لا تملك شيئًا: لا عناص
 SCENARIO_DIGGERS_NAME	حفارو الزنزانات
 SCENARIO_DIGGERS_DESC	سبعة عمال مناجم بعتاد كامل. إحصاءاتهم بين 5 و20، لكن التعدين لكل منهم 50 ويحمل 3 من خام الحديد.
 SCENARIO_CUSTOM_NAME	سيناريو مخصص
-SCENARIO_CUSTOM_DESC	كوّن فريقك بنفسك. يبدأ بثلاث وحدات، ويمكنك إضافة وحدات أو إزالتها حتى 32.
+SCENARIO_CUSTOM_DESC	كوّن فريقك بنفسك. يبدأ بثلاث وحدات، ويمكنك إضافة الوحدات والمخلوقات العادية أو إزالتها، حتى 32.
 PROP_LOCKED_CHEST	صندوق مقفل
 PROP_PRISONER_CAGE	قفص السجين
 UILABEL_UNLOCK	افتح القفل
+UILABEL_AUTO_HARVEST	حصاد تلقائي
+UILABEL_AUTO_HAUL	نقل تلقائي
+MISC_AUTO_OUTSIDE_CLAIM	الحصاد والنقل التلقائيان يعملان فقط على العناصر داخل منطقة فصيلك
+MISC_AUTO_HARVEST_SET	{0} وحدة ستحصد تلقائياً: {1}
+MISC_AUTO_HAUL_SET	{0} وحدة ستنقل تلقائياً إلى {1}
+MISC_BEHAVIOR_LIST_FULL	قائمة السلوك ممتلئة ({0} كحد أقصى)
 UILABEL_PICK_UP	حمل
-UILABEL_PUT_IN_BED	ضعه في السرير
+UILABEL_PLACE	ضع
+UILABEL_OCCUPY	اشغل
+UILABEL_DISBAND	تسريح
+UILABEL_DISBAND_HOLD	اضغط مطولاً على تسريح لمدة {0} ثوانٍ للتأكيد
 UILABEL_PUT_DOWN	ضعه أرضًا
 UILABEL_SHOP	تسوّق
 UILABEL_TASK_CARRIED	محمول
@@ -641,16 +724,33 @@ UILABEL_DOOM	الهلاك
 UILABEL_TASK_UNCONSCIOUS	فاقد الوعي
 UILABEL_TASK_DEAD	ميت
 UILABEL_TASK_CARRYING	يحمل
+UILABEL_TASK_STORING	يخزّن
 UILABEL_TAKE_ALL	خذ الكل
 UILABEL_LOOT_HINT	انقر على غرض لنقله إلى مخزون وحدتك.
 UILABEL_CORPSE_OF	جثة {0}
 MISC_FALLS_UNCONSCIOUS	{0} يفقد الوعي
 MISC_DIES	{0} يموت
 MISC_RECOVERS	{0} يستيقظ
+LOADING_PICTURES	الصور
+LOADING_UNIT_MODELS	نماذج الوحدات
+LOADING_MOB_MODELS	نماذج المخلوقات
+LOADING_MOB_PICTURES	صور المخلوقات
+LOADING_SKY	السماء
+LOADING_PROP_MODELS	نماذج العناصر
+LOADING_MAP	الخريطة
+LOADING_MAP_GROUND	أرض الخريطة
+LOADING_WORLD	العالم
+LOADING_GROUND_ITEMS	الأغراض على الأرض
+MISC_GOES_HOME	{0} يتخلى عن المطاردة ويعود إلى موطنه
+MISC_GETS_UP	{0} ينهض، فقد زال الخطر
 MISC_PICKS_UP_UNIT	{0} يحمل {1}
 MISC_PUTS_DOWN	{0} يضع {1} أرضًا
-MISC_PUTS_IN_BED	{0} يضع {1} في {2}
-MISC_CORPSE_NO_BED	لا يستطيع السرير فعل شيء للموتى
+MISC_PLACES_IN	{0} يضع {1} في {2}
+MISC_DISBAND_ASK	سيغادر {0} فرقتك وفصيلك نهائياً ويصبح منفياً: محايداً تجاه الجميع ويتجول وحيداً.
+MISC_DISBAND_ASK_MOB	سيغادر {0} فرقتك وفصيلك نهائياً ويعود إلى البرية.
+MISC_DISBANDED	غادر {0} فرقتك منفياً
+MISC_DISBANDED_MOB	غادر {0} فرقتك وعاد إلى البرية
+MISC_CORPSE_NO_PLACE	لا يمكن وضع الموتى هنا
 MISC_IS_UNCONSCIOUS	{0} فاقد الوعي ولا يستطيع فعل شيء
 MISC_ALREADY_CARRYING	لا تستطيع أي من وحداتك المحددة حمله
 MISC_LOOT_NO_ROOM	لا مكان في المخزون
@@ -788,6 +888,46 @@ ITEM_132_NAME	سهام نارية
 ITEM_132_DESC	سهام مشتعلة للقوس القصير أو الطويل. أقوى السهام ضربًا.
 ITEM_133_NAME	مسامير قوس النشاب
 ITEM_133_DESC	مسامير قصيرة ثقيلة لقوس النشاب.
+ITEM_134_NAME	عظام دب
+ITEM_134_DESC	عظام من دب. جيدة للصناعة.
+ITEM_135_NAME	عظام بقرة
+ITEM_135_DESC	عظام من بقرة. جيدة للصناعة.
+ITEM_136_NAME	عظام دجاجة
+ITEM_136_DESC	عظام من دجاجة. جيدة للصناعة.
+ITEM_137_NAME	عظام خنزير بري
+ITEM_137_DESC	عظام من خنزير بري. جيدة للصناعة.
+ITEM_138_NAME	عظام ذئب
+ITEM_138_DESC	عظام من ذئب. جيدة للصناعة.
+ITEM_139_NAME	عظام غزال
+ITEM_139_DESC	عظام من غزال. جيدة للصناعة.
+ITEM_140_NAME	عظام أرنب
+ITEM_140_DESC	عظام من أرنب. جيدة للصناعة.
+ITEM_141_NAME	عظام سمكة
+ITEM_141_DESC	عظام من سمكة. جيدة للصناعة.
+ITEM_142_NAME	صدفة سلطعون
+ITEM_142_DESC	بقايا صدفة سلطعون. جيدة للصناعة.
+ITEM_143_NAME	عظام سحلية
+ITEM_143_DESC	عظام من سحلية. جيدة للصناعة.
+ITEM_144_NAME	عظام ثعبان
+ITEM_144_DESC	عظام من ثعبان. جيدة للصناعة.
+ITEM_145_NAME	عظام خنزير
+ITEM_145_DESC	عظام من خنزير. جيدة للصناعة.
+ITEM_146_NAME	عظام خروف
+ITEM_146_DESC	عظام من خروف. جيدة للصناعة.
+ITEM_147_NAME	عظام بطة
+ITEM_147_DESC	عظام من بطة. جيدة للصناعة.
+ITEM_148_NAME	عظام سلحفاة
+ITEM_148_DESC	عظام من سلحفاة. جيدة للصناعة.
+ITEM_149_NAME	عظام خفاش
+ITEM_149_DESC	عظام من خفاش. جيدة للصناعة.
+ITEM_150_NAME	عظام ضفدع
+ITEM_150_DESC	عظام من ضفدع. جيدة للصناعة.
+ITEM_151_NAME	عظام غورليكورن
+ITEM_151_DESC	عظام من غورليكورن. جيدة للصناعة.
+ITEM_152_NAME	لحم غورليكورن نيء
+ITEM_152_DESC	لحم غير مطبوخ. اطبخه على نار المخيم.
+ITEM_153_NAME	لحم غورليكورن مطبوخ
+ITEM_153_DESC	لحم دسم مطبوخ على النار. يعيد الكثير من الصحة ويسد الجوع جيداً.
 UILABEL_OPTIMIZE	تحسين
 UILABEL_REMOVE_ALL	نزع الكل
 MISC_GEAR_NO_ROOM	لا توجد مساحة كافية في المخزون
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	نجاة
 UILABEL_EARLY_ACCESS	الوصول المبكر
 MISC_TITLE_KEYS	اختيار  //  Enter تأكيد
 UILABEL_LANGUAGE_LABEL	اللغة:
+PROP_FLAG	راية
+PROP_DEBRIS	أنقاض
+PROP_FOUNDATION_SMALL	أساس صغير
+PROP_FOUNDATION_LARGE	أساس كبير
+PROP_FOUNDATION_LONG	أساس طويل
+PROP_FOUNDATION_CIRCLE	أساس دائري
+PROP_VAULT	خزنة
+UILABEL_BUILD	بناء
+UILABEL_BUILD_SELECTED	المحدد: {0}
+UILABEL_BUILD_NONE	المحدد: لا شيء
+UILABEL_BUILD_SELECT	اختر
+UILABEL_BUILD_PICKED	تم الاختيار
+UILABEL_BUILD_PLACE_HINT	انقر بالزر الأيسر على الأرض للوضع. اضغط R مع تحريك الفأرة يميناً أو يساراً للتدوير. النقر بالزر الأيمن أو Escape يلغي.
+UILABEL_UPKEEP_HINT	يحرق {0} واحداً كل ساعة للصيانة. ضعها هنا.
+MISC_BUILD_BLOCKED	لا مكان للبناء هنا
+MISC_BUILD_UNWALKABLE	لا يمكن البناء على هذه الأرض
+MISC_BUILD_NO_FOUNDATION	يجب أن تقوم الخزنة كلها على أساس
+MISC_NO_UPKEEP	لا صيانة: لا جذوع
+MISC_UPKEEP_LEFT	الصيانة: بقي {0} دقيقة
+PROP_SHOP	متجر
+PROP_FARM	مزرعة
+PROP_TURBINE	توربين رياح
+UILABEL_BUILD_DESTROY	هدم
+UILABEL_BUILD_DESTROY_HINT	انقر بالزر الأيسر على أي عنصر لهدمه: يسقط ما فيه على الأرض وتبقى الأنقاض مكانه. انقر بالزر الأيسر على الأنقاض لإزالتها. النقر بالزر الأيمن أو Escape يلغي.
+UILABEL_LOCK	قفل
+MISC_BUILD_NO_CLAIM	يجب أن يكون الأساس أو الخزنة داخل منطقتك
+MISC_BUILD_SEALED	هذه الأرض مختومة بخزنة فصيل آخر
+MISC_BUILD_CLAIM_OVERLAP	ستتداخل هذه المنطقة مع منطقة راية أخرى
+MISC_BUILD_VAULT_TAKEN	لهذه المنطقة خزنة بالفعل
+MISC_BUILD_VAULT_CAP	لدى فصيلك بالفعل أقصى عدد من الخزائن
+MISC_DESTROY_NOTHING	لا شيء لهدمه هناك
+MISC_FLAG_FACTION	المالك: {0}
+MISC_FLAG_HEALTH	المتانة: {0} من {1}
+MISC_FLAG_VAULT_YES	الخزنة: قائمة، والمنطقة محفوظة
+MISC_FLAG_VAULT_NO	الخزنة: لا توجد، والراية تتآكل
+MISC_PROP_CONDITION	الحالة: {0}%
+MISC_PROP_DECAYING	يتآكل
+MISC_PROP_HOLDING	لا يتآكل
+MISC_PROP_LOCK_OPEN	غير مقفل
+MISC_PROP_LOCK_YOURS	مقفل أمام الغرباء (مفتوح لك)
+MISC_PROP_LOCK_SHUT	مقفل (فتح الأقفال {0})
+MISC_PROP_UPKEEP	الصيانة: بقي {0} ساعات
+MISC_PROP_VAULT_UNCLAIMED	خارج أي منطقة: لا تمنح صيانة
+MOB_BEAR	دب
+MOB_COW	بقرة
+MOB_CHICKEN	دجاجة
+MOB_BOAR	خنزير بري
+MOB_WOLF	ذئب
+MOB_DEER	غزال
+MOB_RABBIT	أرنب
+MOB_FISH	سمكة
+MOB_CRAB	سلطعون
+MOB_LIZARD	سحلية
+MOB_SNAKE	ثعبان
+MOB_PIG	خنزير
+MOB_SHEEP	خروف
+MOB_DUCK	بطة
+MOB_TURTLE	سلحفاة
+MOB_BAT	خفاش
+MOB_FROG	ضفدع
+MOB_GORLICORN	غورليكورن
+FACTION_MOB_BEAR	الدببة
+FACTION_MOB_COW	الأبقار
+FACTION_MOB_CHICKEN	الدجاج
+FACTION_MOB_BOAR	الخنازير البرية
+FACTION_MOB_WOLF	الذئاب
+FACTION_MOB_DEER	الغزلان
+FACTION_MOB_RABBIT	الأرانب
+FACTION_MOB_FISH	الأسماك
+FACTION_MOB_CRAB	السلطعونات
+FACTION_MOB_LIZARD	السحالي
+FACTION_MOB_SNAKE	الثعابين
+FACTION_MOB_PIG	الخنازير
+FACTION_MOB_SHEEP	الخراف
+FACTION_MOB_DUCK	البط
+FACTION_MOB_TURTLE	السلاحف
+FACTION_MOB_BAT	الخفافيش
+FACTION_MOB_FROG	الضفادع
+FACTION_MOB_GORLICORN	الغورليكورنات
+MISC_MOB_NO_GEAR	لا تستطيع المخلوقات ارتداء العتاد
+MISC_MOB_NO_HEALING	لا تستطيع المخلوقات استخدام عناصر العلاج
+MISC_MOB_CANT_WORK	لا تستطيع المخلوقات العمل على العناصر

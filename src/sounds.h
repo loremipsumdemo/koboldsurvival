@@ -65,6 +65,20 @@ enum class Sfx : int {
     Count
 };
 
+// The gathering and crafting sounds: working ore, trees, mushrooms and the water pump, cooking at a campfire and the
+// forge, and the sound of each piece made. The Crafting and gathering setting switches them all off together.
+inline bool isCraftGatherSfx(Sfx s) {
+    switch (s) {
+    case Sfx::WorkMining: case Sfx::WorkWoodcutting: case Sfx::WorkHerbalism: case Sfx::WorkCooking:
+    case Sfx::WorkPump: case Sfx::ForgeBurning:
+    case Sfx::DoneOre: case Sfx::DoneTree: case Sfx::DoneMushroom: case Sfx::DoneCooking:
+    case Sfx::DoneWater: case Sfx::DoneForge:
+        return true;
+    default:
+        return false;
+    }
+}
+
 struct SfxInfo {
     const char* file;
     bool ui;            // follows the Interface sounds slider, else Sound effects

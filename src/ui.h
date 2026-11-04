@@ -29,6 +29,8 @@ enum class Action {
     PartyRandomUnit,  // gives the picked unit a new random member
     PartyAddUnit,     // adds a random unit to the end of the party
     PartyRemoveUnit,  // removes the picked unit, down to an empty party (Start needs one)
+    PartyAddMob,      // opens the list of regular mob kinds; picking one adds a mob of it to the party
+    PartyMobBox,      // a mob member's kind; in Custom, opens the list of regular mob kinds to change it
     PartyGearSlot,    // opens the item dropdown for a gear slot; param is the slot
     PartyStatLabel,   // a stat's name and level, drawn only; param is the stat
     PartyStep,        // a stat's minus or plus; param is stat * 2 for minus, stat * 2 + 1 for plus

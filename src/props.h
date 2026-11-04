@@ -104,9 +104,10 @@ inline const char* itemFilterKey(ItemFilter f) {
 }
 
 // What a unit sent to a prop does there, as picked from the right-click menu: Inventory opens a storage or crafting
-// prop's items; Use takes a bed, works a resource prop, or starts crafting; Unlock picks a locked prop's lock; Store
-// (an Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
-enum class PropAction { Inventory, Use, Unlock, Store };
+// prop's items; Use works a resource prop or starts crafting; Occupy takes an occupiable prop (a bed, a chair, a cage)
+// itself; Place puts the unit it carries on an occupiable prop; Unlock picks a locked prop's lock; Store (an
+// Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists

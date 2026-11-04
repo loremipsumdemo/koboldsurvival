@@ -643,7 +643,16 @@ float Renderer::unitTop(World& w, Entity u) {
     const float h = unitHeight(w, u);
     if (w.has<Carried>(u)) return h * unitAspect(w, u) + (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT);
     if (w.has<Unconscious>(u) || w.has<PlayingDead>(u)) return h * unitAspect(w, u);
-    return h;
+    return h + unitHover(w, u);
+}
+
+float Renderer::unitHover(World& w, Entity u) const {
+    const Mob* mb = w.get<Mob>(u);
+    if (!mb) return 0.0f;
+    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u) || w.has<Corpse>(u) || w.has<Carried>(u) || w.has<Occupying>(u)) {
+        return 0.0f;
+    }
+    return mobHoverFraction(mb->kind) * unitHeight(w, u);
 }
 
 // How gray a unit is drawn: half for one Unconscious, fully for a corpse, not at all otherwise
@@ -787,14 +796,46 @@ void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float ya
 }
 
 // A unit turns toward the way it walks, easing round rather than snapping. One seen for the first time faces the camera.
-float Renderer::unitYaw(Entity e, float x, float z) {
+// One idle for UNIT_SETTLE_MS settles and keeps its facing: being pushed about by units near it no longer turns it, until
+// it stops being idle or is moved more than UNIT_SETTLE_SLIP tiles from where it settled.
+namespace {
+constexpr unsigned long long UNIT_SETTLE_MS = 3000;
+constexpr float UNIT_SETTLE_SLIP = 0.25f;
+}
+float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
+    const unsigned long long now = std::max<unsigned long long>(1, SDL_GetTicks());
     auto it = unitFacing_.find(e);
     if (it == unitFacing_.end()) {
-        UnitFacing f{ x, z, std::atan2(billX_ - x, billZ_ - z) };
+        UnitFacing f;
+        f.x = x;
+        f.z = z;
+        f.yaw = std::atan2(billX_ - x, billZ_ - z);
+        f.idleSince = idle ? now : 0;
         unitFacing_[e] = f;
         return f.yaw;
     }
     UnitFacing& f = it->second;
+    if (!idle) {
+        f.idleSince = 0;
+        f.settled = false;
+    } else if (f.idleSince == 0) {
+        f.idleSince = now;
+    }
+    if (f.settled) {
+        const float sx = x - f.settleX, sz = z - f.settleZ;
+        if (sx * sx + sz * sz <= UNIT_SETTLE_SLIP * UNIT_SETTLE_SLIP) {
+            f.x = x;
+            f.z = z;
+            return f.yaw;   // settled: nudges don't turn it
+        }
+        f.settled = false;   // pushed well off its spot: it turns again, and settles anew once idle long enough
+        f.idleSince = now;
+    }
+    if (idle && now - f.idleSince >= UNIT_SETTLE_MS) {
+        f.settled = true;
+        f.settleX = x;
+        f.settleZ = z;
+    }
     const float dx = x - f.x, dz = z - f.z;
     if (dx * dx + dz * dz > 1e-6f) {
         const float want = std::atan2(dx, dz);
@@ -809,7 +850,26 @@ float Renderer::unitYaw(Entity e, float x, float z) {
 // A unit's model seen in a box of the UI, with its own depth: it stands in the middle, the whole of it in view, and
 // turns about its vertical axis only
 void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
-    const Model* m = unitModelNumber(sprite);
+    drawModelPreview(unitModelNumber(sprite), r, yaw);
+}
+
+void Renderer::drawMobPreview(int kind, const Rect& r, float yaw) {
+    const int idx = kind - 1;
+    if (idx >= 0 && idx < MOB_KIND_COUNT && mobModels_[(size_t)idx].vao) {
+        drawModelPreview(&mobModels_[(size_t)idx], r, yaw);
+        return;
+    }
+    drawFitted(mobPicture(kind), r, WHITE);
+}
+
+const TextTex& Renderer::mobPicture(int kind) const {
+    const int idx = kind - 1;
+    if (kind >= 1 && kind <= MOB_KIND_COUNT && mobInfo(kind).model > 0) return pink_;
+    if (idx >= 0 && idx < (int)mobSprites_.size() && mobSprites_[(size_t)idx].tex) return mobSprites_[(size_t)idx];
+    return mobFallback_.tex ? mobFallback_ : pink_;
+}
+
+void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     if (!m || r.w < 1.0f || r.h < 1.0f) {
         drawFitted(pink_, r, WHITE);   // the stand-in for a missing model
         return;
@@ -1665,10 +1725,11 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float bottomX, bottomY, topX, topY, midX, midY;
-        if (!project(tr->x, tr->y, tr->z, bottomX, bottomY)) continue;
+        const float hover = unitHover(w, u);   // a flying mob is found where it is drawn, up off the ground
+        if (!project(tr->x, tr->y + hover, tr->z, bottomX, bottomY)) continue;
         const float tall = unitHeight(w, u);
-        if (!project(tr->x, tr->y + tall, tr->z, topX, topY)) continue;
-        if (!project(tr->x, tr->y + tall * 0.5f, tr->z, midX, midY)) continue;
+        if (!project(tr->x, tr->y + hover + tall, tr->z, topX, topY)) continue;
+        if (!project(tr->x, tr->y + hover + tall * 0.5f, tr->z, midX, midY)) continue;
 
         float heightPx = std::fabs(bottomY - topY);
         const float aspect = unitAspect(w, u);
@@ -2011,14 +2072,14 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // A unit with a model is drawn by it, turned the way it walks; a mob, or a unit whose model is missing, by its sprite
         if (const Model* m = unitModel(w, e)) {
-            const float yaw = unitYaw(e, tr->x, tr->z);
+            const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
             const bool lying = w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e);
             const bool carried = w.has<Carried>(e);
             if (lying) setSaturation(unitSaturation(w, e));
             const RGBA tint = unitFactionTint(w, e);
             glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
             // A carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth
-            drawUnitModel(*m, tr->x, tr->y + (carried ? CARRIED_MODEL_LIFT : 0.0f), tr->z, yaw, lying,
+            drawUnitModel(*m, tr->x, tr->y + (carried ? CARRIED_MODEL_LIFT : unitHover(w, e)), tr->z, yaw, lying,
                           carried ? 0.15f : 0.0f, carried, unitHeight(w, e));
             glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
             if (lying) setSaturation(1.0f);
@@ -2034,7 +2095,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             setSaturation(1.0f);
             continue;
         }
-        drawGlyph(g, tr->x, tr->y, tr->z, unitHeight(w, e), tint);
+        drawGlyph(g, tr->x, tr->y + unitHover(w, e), tr->z, unitHeight(w, e), tint);
     }
 
     drawGroundItems(w, t, cam);
@@ -3288,6 +3349,80 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
     drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
 }
 
+void Renderer::drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    const float th = listTextHeight("Ag");
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, RGBA{ 0.0f, 0.0f, 0.0f, 0.45f });   // dims the game behind it
+    drawThemedPanel(L.box);
+    drawListText(fitText(lang("UILABEL_DISBAND"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, white);
+
+    // The portrait, as on the Profile tab
+    drawRect(L.portrait, RGBA{ 0.10f, 0.07f, 0.13f, 1.0f });
+    const TextTex& g = unitPortrait(w, unit);
+    if (g.tex) {
+        const float sz = L.portrait.w;
+        float pw = sz, ph = sz;
+        if (g.aspect > 1.0f) ph = sz / g.aspect;
+        else pw = sz * g.aspect;
+        const float x = L.portrait.x + (sz - pw) * 0.5f, y = L.portrait.y + (sz - ph) * 0.5f;
+        const float v[4 * 5] = {
+            x,      y + ph, 0.0f, 0.0f, 1.0f,
+            x + pw, y + ph, 0.0f, 1.0f, 1.0f,
+            x + pw, y,      0.0f, 1.0f, 0.0f,
+            x,      y,      0.0f, 0.0f, 0.0f
+        };
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+        setSaturation(unitSaturation(w, unit));
+        drawQuadVerts(g.tex, v, WHITE);
+        setSaturation(1.0f);
+    }
+
+    // Beside it: the name, then its kind or body, its health, and its hunger (a person) or temperament (a mob)
+    const Name* nm = w.get<Name>(unit);
+    const std::string name = nm && !nm->text.empty() ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
+    const float rowH = L.info.h / (float)(1 + DISBAND_INFO_LINES);
+    drawUiText(fitText(name, L.info.w, true), L.info.x, L.info.y + (rowH - uiTextHeight("Ag")) * 0.5f, white);
+    std::vector<std::string> lines;
+    const Mob* mb = w.get<Mob>(unit);
+    if (mb) lines.push_back(lang(mobInfo(mb->kind).nameKey));
+    else if (const Body* bd = w.get<Body>(unit)) lines.push_back(lang(bodyTypeKey(bd->type)));
+    if (const Needs* n = w.get<Needs>(unit)) {
+        lines.push_back(lang("UILABEL_HEALTH") + ": " + std::to_string(n->hp) + " / " + std::to_string(n->maxHp));
+        if (!mb) lines.push_back(lang("UILABEL_HUNGER") + ": " + std::to_string(n->hunger) + " / " + std::to_string(n->maxHunger));
+    }
+    if (mb) lines.push_back(langf("UILABEL_TEMPERAMENT", { lang(temperamentKey(mobTemperament(mb->kind))) }));
+    for (size_t i = 0; i < lines.size() && i < (size_t)DISBAND_INFO_LINES; ++i) {
+        const float ry = L.info.y + rowH * (float)(i + 1);
+        drawListText(fitText(lines[i], L.info.w, false), L.info.x, ry + (rowH - th) * 0.5f, gray);
+    }
+
+    // What it does, and how to confirm
+    const std::string what = mb ? langf("MISC_DISBAND_ASK_MOB", { name }) : langf("MISC_DISBAND_ASK", { name });
+    float ty = L.text.y;
+    for (const std::string& ln : wrapListText(what, L.text.w)) {
+        if (ty + th > L.text.y + L.text.h + 0.5f) break;
+        drawListText(ln, L.text.x, ty, gray);
+        ty += th;
+    }
+    const std::string hint = langf("UILABEL_DISBAND_HOLD", { std::to_string(DISBAND_HOLD_MS / 1000) });
+    drawListText(fitText(hint, L.hint.w, false), L.hint.x + (L.hint.w - std::min(L.hint.w, listTextWidth(hint))) * 0.5f,
+                 L.hint.y + (L.hint.h - th) * 0.5f, white);
+
+    // Disband fills from the left with red while it is held
+    drawButton(L.disband, lang("UILABEL_DISBAND"), true, L.disband.contains(mx, my));
+    const float f = std::clamp(held, 0.0f, 1.0f);
+    if (f > 0.0f) {
+        drawRect(Rect{ L.disband.x, L.disband.y, L.disband.w * f, L.disband.h }, RGBA{ 0.85f, 0.12f, 0.12f, 0.55f });
+        const std::string label = lang("UILABEL_DISBAND");
+        drawListText(label, L.disband.x + (L.disband.w - listTextWidth(label)) * 0.5f, L.disband.y + (L.disband.h - th) * 0.5f, white);
+    }
+    drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
+    (void)s;
+}
+
 void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                                   float mx, float my) {
     const float s = uiH_ / 720.0f;
@@ -4105,21 +4240,78 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
         drawListText(fitText(label, R.label.w - 8.0f * s, false), R.label.x + 4.0f * s, R.label.y + (R.label.h - listH) * 0.5f,
                      text);
 
-        // Eat and Heal have their percent's - and +, each lit while it can still go that way
+        // Eat, Heal and Rest have a # button, which asks for the percent they act below
         if (hasPercent(r.kind)) {
-            const bool lessOn = editable && r.percent > BEHAVIOR_PERCENT_MIN;
-            const bool moreOn = editable && r.percent < BEHAVIOR_PERCENT_MAX;
-            drawSmallButton(R.less, "-", lessOn, lessOn && R.less.contains(mx, my));
-            drawSmallButton(R.more, "+", moreOn, moreOn && R.more.contains(mx, my));
+            drawSmallButton(R.number, "#", editable, editable && R.number.contains(mx, my));
+            if (editable) {
+                const PercentRange range = percentRange(r.kind);
+                noteTip(langf("UILABEL_BEHAVIOR_NUMBER_TIP", { std::to_string(range.lo), std::to_string(range.hi) }), R.number);
+            }
         }
-        // Only an automated behavior can be deleted: every unit keeps Eat, Heal and Share
+        // Any behavior can be deleted: Add Behavior puts it back
         const bool upOn = editable && i > 0;
         const bool downOn = editable && i + 1 < rules.size();
-        const bool removeOn = editable && isAutomated(r.kind);
+        const bool removeOn = editable;
         drawSmallButton(R.up, "^", upOn, upOn && R.up.contains(mx, my));
         drawSmallButton(R.down, "v", downOn, downOn && R.down.contains(mx, my));
         drawSmallButton(R.remove, "x", removeOn, removeOn && R.remove.contains(mx, my));
+
     }
+
+    // + Add Behavior, lit while its list is open, then the list: a behavior the unit holds already reads gray and
+    // says so, and picking it only switches it on
+    if (L.behaviorAdd.w > 0.0f) {
+        const bool full = rules.size() >= (size_t)BEHAVIOR_LIMIT;
+        const bool open = !L.behaviorOptions.empty();
+        const std::string label = (open ? "- " : "+ ") + lang("UILABEL_BEHAVIOR_ADD");
+        drawSmallButton(L.behaviorAdd, label, editable, editable && L.behaviorAdd.contains(mx, my));
+        if (open) drawRect(Rect{ L.behaviorAdd.x, L.behaviorAdd.y + L.behaviorAdd.h - 2.0f * s, L.behaviorAdd.w, 2.0f * s }, theme::GREEN);
+        for (size_t i = 0; i < L.behaviorOptions.size() && i < L.behaviorOptionInfo.size(); ++i) {
+            const Rect& o = L.behaviorOptions[i];
+            const BehaviorOption& opt = L.behaviorOptionInfo[i];
+            const bool usable = editable && (opt.have || !full);
+            const bool hot = usable && o.contains(mx, my);
+            if (hot) noteHover(o);
+            drawRect(o, hot ? RGBA{ 0.18f, 0.26f, 0.06f, 0.95f } : RGBA{ 0.10f, 0.07f, 0.12f, 0.90f });
+            drawRect(Rect{ o.x, o.y, 2.0f * s, o.h }, hot ? theme::GREEN : theme::alpha(theme::ASH, 0.45f));
+            const std::string tag = opt.have ? lang("UILABEL_BEHAVIOR_HAVE") : (full ? lang("UILABEL_BEHAVIOR_FULL") : std::string());
+            const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
+            drawListText(fitText(opt.label, o.w - 10.0f * s - tagW, false), o.x + 6.0f * s, o.y + (o.h - listH) * 0.5f,
+                         opt.have || !usable ? gray : white);
+            if (!tag.empty()) drawListText(tag, o.x + o.w - tagW, o.y + (o.h - listH) * 0.5f, theme::alpha(theme::ASH, 0.8f));
+            noteTip(describeBehavior(opt.rule), o);
+        }
+    }
+}
+
+void Renderer::drawPercentPrompt(const PercentPromptLayout& P, const std::string& title, const std::string& typed,
+                                 const std::string& range, const std::string& error, float mx, float my) {
+    const float s = uiH_ / 720.0f;
+    const float listH = listTextHeight("Ag");
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.72f, 0.72f, 0.76f, 1.0f };
+    // The rest of the window dims behind it, as it takes every click until it is answered
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, RGBA{ 0.0f, 0.0f, 0.0f, 0.45f });
+    drawRect(Rect{ P.box.x - 1.0f, P.box.y - 1.0f, P.box.w + 2.0f, P.box.h + 2.0f }, theme::alpha(theme::ASH, 0.6f));
+    drawRect(P.box, RGBA{ 0.07f, 0.05f, 0.10f, 0.97f });
+    drawRect(Rect{ P.box.x, P.box.y, P.box.w, 2.0f * s }, theme::GREEN);
+    const std::string t = fitText(title, P.box.w - 20.0f * s, false);
+    drawListText(t, P.box.x + (P.box.w - listTextWidth(t)) * 0.5f, P.titleY, white);
+    // The box: what is typed, a blinking caret, and the % sign
+    const Rect& in = P.input;
+    drawRect(Rect{ in.x - 1.0f, in.y - 1.0f, in.w + 2.0f, in.h + 2.0f }, theme::GREEN);
+    drawRect(in, RGBA{ 0.03f, 0.02f, 0.05f, 1.0f });
+    std::string shown = typed;
+    shown += (SDL_GetTicks() / 500) % 2 == 0 ? "|" : " ";
+    shown += "%";
+    drawListText(shown, in.x + (in.w - listTextWidth(shown)) * 0.5f, in.y + (in.h - listH) * 0.5f, white);
+    drawListText(range, P.box.x + (P.box.w - listTextWidth(range)) * 0.5f, P.rangeY, gray);
+    if (!error.empty()) {
+        const std::string e = fitText(error, P.box.w - 20.0f * s, false);
+        drawListText(e, P.box.x + (P.box.w - listTextWidth(e)) * 0.5f, P.errorY, RGBA{ 1.0f, 0.45f, 0.40f, 1.0f });
+    }
+    drawSmallButton(P.ok, lang("UILABEL_BEHAVIOR_PROMPT_SET"), true, P.ok.contains(mx, my));
+    drawSmallButton(P.cancel, lang("UILABEL_CANCEL"), true, P.cancel.contains(mx, my));
 }
 
 void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my) {
@@ -5078,7 +5270,9 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const bool chosen = b.param == std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
             drawRect(b.rect, plateFor(hot, chosen, true));
             const float pic = b.rect.h - 14.0f * s;
-            drawUnitPicture(u.sprite, Rect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic });
+            const Rect picRect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic };
+            if (u.mob > 0) drawFitted(mobPicture(u.mob), picRect, WHITE);
+            else drawUnitPicture(u.sprite, picRect);
             const float tx = b.rect.x + pic + 16.0f * s, tw = b.rect.x + b.rect.w - tx - 8.0f * s;
             const bool named = !cleanName(u.name).empty();
             const std::string shown = named ? cleanName(u.name) : std::string(lang("UILABEL_NO_NAME"));
@@ -5122,6 +5316,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             leftText(b.rect, b.label, white, 10.0f * s);
             break;
 
+        case Action::PartyMobBox:
+            drawListText(lang("UILABEL_MOB_KIND"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::MobKind && ui.dropSlot >= 0, true));
+            leftText(b.rect, b.label, b.enabled ? white : gray, 10.0f * s);
+            break;
+
         case Action::PartyRandomUnit:
             drawRect(b.rect, plateFor(hot, false, true));
             centerd(b.rect, b.label, white);
@@ -5129,6 +5329,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyAddUnit:
         case Action::PartyRemoveUnit:
+        case Action::PartyAddMob:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
             centerd(b.rect, b.label, b.enabled ? white : faint);
             break;
@@ -5253,7 +5454,8 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     }
     const float cw = P.center.w;
     // The picked unit's model, turned by dragging in it with the right button
-    drawUnitModelPreview(picked.sprite, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
+    if (picked.mob > 0) drawMobPreview(picked.mob, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
+    else drawUnitModelPreview(picked.sprite, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));
     drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,

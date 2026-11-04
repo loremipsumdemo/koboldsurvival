@@ -1,11 +1,13 @@
 # Update notes
-- Four factions, Red, Green, Blue and Yellow, each in its own camp. The Faction Panel's new Reputation tab shows where they all stand.
-- Knocking out a faction's units costs reputation with it. Attack one, and others of its faction that see it join in.
-- Short Bow, Long Bow and Crossbow, with arrows and bolts.
-- Behavior modes: Passive, Block and Sneak. Ranged turns on by itself with a bow or crossbow.
-- Right-clicking a hostile unit attacks it.
-- Storage props start with things in them, and props are clicked by their actual shape.
-- Panels can be unlocked, moved and resized from any edge. Reset All UI Panels is in Settings.
-- The world map is a window you can drag. Right-click it to move.
+- Plant a flag to claim ground for your faction. Inside your claim you can build foundations and a vault. A vault burns logs as upkeep, and its flag wears away when the vault runs dry.
+- Build mode: left-click to place, hold R and move the mouse to turn, and Destroy takes down foundations and buildings.
+- New behaviors: Auto-Harvest, Auto-Haul, Eat, Heal, Share, Rest, Leave Bed and Rescue Downed Allies. A behavior that can't run shows why it is waiting.
+- Units now have Rested and Comfort needs. Beds and bedrolls can be occupied, and an unconscious unit you carry can be placed in one.
+- Mobs roam the world: bears, cows, chickens, boars, wolves, deer, rabbits, fish, crabs, lizards, snakes, pigs, sheep, ducks, turtles, bats, frogs and gorlicorns. They drop meat and bones.
+- New scenarios: Pack of Two, Beastmaster and Full Random Camp. Custom Scenario can add mobs to your party.
+- Disband sends a unit away for good as an Exile, or a mob back to the wild. Hold the button to confirm.
+- Three new unit models, and many more names to pick from.
+- Sneaking earns Stealth experience, and carrying earns Strength experience. Angry units calm down after a while.
+- New settings: View Range, Show FPS and Show Prop Info.
 
 Thanks for playing!

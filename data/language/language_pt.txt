@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Taxa de atualização
 UILABEL_DEFAULT	Predefinido
 UILABEL_VSYNC	Sincronização vertical
 UILABEL_FRAME_LIMIT	Limite de imagens por segundo
+UILABEL_VIEW_RANGE	Distância de visão
+UILABEL_TILES_N	{0} quadrados
+UILABEL_SHOW_FPS	Mostrar FPS
 UILABEL_UNLIMITED	Ilimitado
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Gravação automática
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minutos
 UILABEL_UNIT_NAMES	Nomes das unidades do jogador
 UILABEL_NPC_NAMES	Nomes das outras unidades
 UILABEL_PROP_NAMES	Nomes dos objetos
+UILABEL_PROP_INFO	Mostrar info dos objetos
 UILABEL_FONT_SIZE	Tamanho do texto
 UILABEL_RESET_PANELS	Repor todos os painéis da interface
 UILABEL_RESET	Repor
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Volume global
 UILABEL_MUSIC	Música
 UILABEL_AMBIENT	Ambiente
 UILABEL_INTERFACE_SOUNDS	Sons da interface
+UILABEL_CRAFT_GATHER_SOUNDS	Sons de fabrico e recolha
 UILABEL_SOUND_EFFECTS	Efeitos sonoros
 UILABEL_RESTORE_DEFAULTS	Repor predefinições
 UILABEL_WINDOWED	Janela
@@ -123,6 +128,8 @@ UILABEL_STATS	Estatísticas
 UILABEL_CLICK_TO_TYPE	Clique para escrever um nome
 UILABEL_HEALTH	Saúde
 UILABEL_HUNGER	Fome
+UILABEL_RESTED	Descanso
+UILABEL_COMFORT	Conforto
 UILABEL_CARRY	Carga
 UILABEL_NEXT_LEVEL_XP_LINE	XP para o próximo nível: {0}
 UILABEL_STAT	Estatística
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Aleatorizar esta unidade
 UILABEL_RANDOMIZE_ALL	Aleatorizar tudo
 UILABEL_ADD_UNIT	Adicionar unidade
 UILABEL_REMOVE_UNIT	Remover unidade
+UILABEL_ADD_MOB	Adicionar criatura
+UILABEL_MOB_KIND	Espécie
+UILABEL_MOB_NO_GEAR	Uma criatura não usa equipamento.
+MISC_MEAT_TAKEN_DIES	{0} morre
+MISC_MOB_INVENTORY_LOCKED	Indisponível
+MISC_MOB_CANT_HOLD	Uma criatura só carrega a própria carne e os próprios ossos
+UILABEL_CLEAR	Limpar
+UILABEL_TASK_CLEARING	A limpar entulho
+MISC_CLEARS_DEBRIS	{0} limpa o entulho
+UILABEL_MOB_INVENTORY_HIDDEN	Indisponível
+UILABEL_BEHAVIOR_PATROL	Patrulha
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulha de origem
+UILABEL_BEHAVIOR_ROAM	Vagar
+UILABEL_BEHAVIOR_PATROL_TIP	Patrulha: anda pelo território onde está, se for da tua fação, parando de vez em quando.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulha de origem: anda perto de onde apareceu. Se for perseguida longe demais, desiste, cura-se totalmente e volta, sem sofrer dano até chegar.
+UILABEL_BEHAVIOR_ROAM_TIP	Vagar: deambula pelas terras abertas, onde puder andar fora dos territórios das bandeiras.
+UILABEL_WAIT_NOT_IN_CLAIM	não está num território da tua fação
+UILABEL_WAIT_NOWHERE_TO_ROAM	nenhum terreno aberto por perto fora dos territórios
+UILABEL_TEMPERAMENT_AVOIDANT	Arredio
+UILABEL_TEMPERAMENT_PASSIVE	Passivo
+UILABEL_TEMPERAMENT_NEUTRAL	Neutro
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agressivo
+UILABEL_TEMPERAMENT	Temperamento: {0}
+UILABEL_MOB_NO_ITEMS	Uma criatura só carrega a sua própria carne e os seus ossos.
 UILABEL_CONFIRM_STARTS	Confirmar inicia o jogo com este grupo.
 UILABEL_NEEDS_NAMES	Cada unidade precisa de um nome antes de o jogo poder começar.
 UILABEL_CLICK_UNIT_EDIT	Clique numa unidade para a editar.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Pernas
 UILABEL_SLOT_FEET	Pés
 UILABEL_SLOT_ACCESSORY	Acessório
 UILABEL_BEHAVIOR_ON	Ligado
+UILABEL_BEHAVIOR_EAT	Comer com fome < {0}%
+UILABEL_BEHAVIOR_REST	Descansar com descanso < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Sair da cama ao recuperar
+UILABEL_BEHAVIOR_RESCUE	Resgatar aliados caídos
+UILABEL_BEHAVIOR_HEAL	Curar com vida < {0}%
+UILABEL_BEHAVIOR_SHARE	Partilhar
+UILABEL_BEHAVIOR_AUTO_HARVEST	Coleta auto: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Transporte auto: {0}
+UILABEL_BEHAVIOR_WAITING	(à espera)
+UILABEL_BEHAVIOR_WAIT_TIP	À espera: {0}
+UILABEL_WAIT_NO_FOOD	sem comida, e ninguém por perto para partilhar
+UILABEL_WAIT_NO_BED	nenhuma cama ou esteira livre para descansar
+UILABEL_WAIT_NO_HEALING	sem item de cura, e ninguém por perto para partilhar
+UILABEL_WAIT_WALKING_TO_SHARE	a ir ter com {0}, que pode partilhar um
+UILABEL_WAIT_NO_PROP	nenhum(a) {0} no teu território com espaço para mais um trabalhador
+UILABEL_WAIT_CARRY_FULL	sem espaço para carregar mais nada
+UILABEL_WAIT_LOAD_WAITING	a carregar uma carga que o transporte auto precisa levar antes
+UILABEL_WAIT_PROP_GONE	o objeto desapareceu
+UILABEL_WAIT_OUTSIDE_CLAIM	o objeto não está no território da tua fação
+UILABEL_WAIT_LOCKED	o objeto está trancado
+UILABEL_WAIT_NOTHING_TO_HAUL	não carrega nada que o objeto aceite
+UILABEL_WAIT_PROP_FULL	o objeto não tem espaço para o que ele carrega
+UILABEL_BEHAVIOR_EAT_TIP	Comer: abaixo de {0}% de fome, come o alimento que mais restaura a fome. Usa - e + para mudar quando.
+UILABEL_BEHAVIOR_HEAL_TIP	Curar: abaixo de {0}% de vida, usa o item de cura que mais restaura a vida. Usa - e + para mudar quando.
+UILABEL_BEHAVIOR_REST_TIP	Descansar: abaixo de {0}% de descanso, deita-se na cama ou esteira livre mais próximo e levanta-se quando estiver totalmente descansado. Usa - e + para mudar quando.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Sair da cama: sai de uma cama ou esteira depois de 30 segundos com vida cheia e totalmente descansado.
+UILABEL_BEHAVIOR_RESCUE_TIP	Resgatar: leva uma unidade da própria fação caída inconsciente por perto até a cama ou esteira livre mais próximo.
+UILABEL_BEHAVIOR_SHARE_TIP	Partilhar: quando Comer ou Curar precisa de um item que esta unidade não tem, ela tira um de uma unidade ao alcance de troca que também partilha e precisa menos dele, indo ter com ela antes se estiver um pouco longe. Outras unidades que partilham podem tirar desta da mesma forma.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Coleta auto: trabalha no(a) {0} mais próximo(a) dentro do território da tua fação. Com uma carga e um transporte auto que possa levá-la, ela para para transportar. Uma ordem tua pausa-a; ela recomeça quando a unidade fica parada alguns segundos.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Transporte auto: leva os itens do inventário (não o equipamento vestido) que o(a) {0} aceita, enquanto tiver espaço e estiver dentro do território da tua fação. Uma ordem tua pausa-o; ele recomeça quando a unidade fica parada alguns segundos.
+UILABEL_NPC_MESSAGES	PNJ
+UILABEL_SHOW_NPC_INFO	Mostrar info dos PNJ
 UILABEL_COMBAT_MESSAGES	Mensagens de combate
 UILABEL_SEEN	Visto
 UILABEL_HIT	Acerto
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Mensagens de experiência
 UILABEL_EXPERIENCE	Experiência
 UILABEL_XP_ATHLETICS	Experiência de Atletismo
 UILABEL_XP_ENDURANCE	Experiência de Resistência
+UILABEL_XP_CARRYING	Experiência de Força (carregar)
 UILABEL_ITEM_MESSAGES	Mensagens de itens
 UILABEL_PICKUP	Apanhar
 UILABEL_DROP	Largar
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Progresso: {0}%
 UILABEL_TIP_CURRENT_XP	XP atual: {0}
 UILABEL_ATTACK_DEFENSE	Ataque {0}      Defesa {1}
 UILABEL_STATS_CAPTION	Estatísticas: {0}
+UILABEL_MODEL_N	Modelo {0}
 UILABEL_SLOT_N_ITEM	Espaço {0}: {1}
 UILABEL_SLOT_N_EMPTY	Espaço {0}: vazio
 UILABEL_COUNT	Quantidade {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Requer as duas mãos. A mão secundária tem de estar vazia.
 ITEM_87_NAME	Machado de guerra
 ITEM_87_DESC	Requer as duas mãos. A mão secundária tem de estar vazia.
 UILABEL_UI_SCALE	Escala da interface
-NAME_MASCULINE	["Duarte", "Tomás", "Afonso", "Rui", "Gonçalo"]
-NAME_FEMININE	["Inês", "Beatriz", "Matilde", "Leonor", "Teresa"]
-NAME_ANDROGYNOUS	["Alex", "Noa", "Sol", "Ari", "Lou"]
+NAME_MASCULINE	["Duarte", "Tomás", "Afonso", "Rui", "Gonçalo", "Alexandre", "Álvaro", "André", "António", "Artur", "Bernardo", "Bruno", "Carlos", "Cristiano", "Daniel", "Diogo", "Eduardo", "Fábio", "Filipe", "Francisco", "Frederico", "Guilherme", "Gustavo", "Henrique", "Hugo", "Jaime", "João", "Joaquim", "Jorge", "José", "Lourenço", "Luís", "Manuel", "Marco", "Martim", "Miguel", "Nuno", "Paulo", "Pedro", "Ricardo", "Rodrigo", "Salvador", "Santiago", "Sebastião", "Sérgio", "Simão", "Tiago", "Vasco", "Vicente", "Xavier"]
+NAME_FEMININE	["Inês", "Beatriz", "Matilde", "Leonor", "Teresa", "Alice", "Ana", "Bárbara", "Benedita", "Carolina", "Catarina", "Clara", "Constança", "Diana", "Eduarda", "Filipa", "Francisca", "Graça", "Helena", "Irene", "Isabel", "Joana", "Júlia", "Laura", "Lara", "Leonora", "Luísa", "Madalena", "Mafalda", "Margarida", "Maria", "Mariana", "Marta", "Mónica", "Patrícia", "Raquel", "Rita", "Rosa", "Sara", "Sílvia", "Sofia", "Susana", "Vera", "Vitória", "Rosário", "Camila", "Fátima", "Glória", "Lúcia", "Noémia"]
+NAME_ANDROGYNOUS	["Alex", "Noa", "Sol", "Ari", "Lou", "Andrea", "Ariel", "Cris", "Dani", "Eli", "Gabi", "Jo", "Kim", "Lu", "Luca", "Mika", "Nic", "Paz", "Rafa", "Sam", "Sasha", "Tai", "Teo", "Tom", "Val", "Vic", "Zoe", "Céu", "Lua", "Mar", "Rio", "Elis", "Juli", "Max", "Neca", "Nini", "Quim", "Remi", "Sami", "Tó", "Xana", "Zé", "Bia", "Dominique", "Isa", "Jesse", "Lírio", "Nanda", "Lulu", "Didi"]
 UILABEL_BODY_TYPE	Tipo de corpo
 UILABEL_BODY_MASCULINE	Masculino
 UILABEL_BODY_FEMININE	Feminino
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Sem espaço no armazém
 MISC_PROP_TAKEN	Já está em uso
 MISC_PROP_WORKERS_FULL	Até {0} unidades podem trabalhá-lo ao mesmo tempo
 MISC_GATHERS	{0} recolhe {1}
+MISC_AUTO_HAUL_STORES	{0} guarda {1} {2} no(a) {3}
 MISC_GATHER_NO_ROOM	{0} não tem espaço para {1} e deixa de trabalhar
 MISC_REASON_GATHERING	recolher
+MISC_REASON_CLEARING	a limpar entulho
 UILABEL_TASK	Tarefa: {0}
 UILABEL_TASK_IDLE	Inativa
+UILABEL_TASK_AUTO_GOING	{0} (a caminho)
+UILABEL_TASK_SHARE_WALK	Vai ter com {0} para partilhar
 UILABEL_TASK_MOVING	Em movimento
 UILABEL_TASK_RESTING	A descansar
 UILABEL_STORAGE_HINT	Clique com o botão direito num item para o tirar, ou arraste-o para fora para o largar onde a sua unidade está. Clique com o botão direito nos itens da sua unidade para os guardar.
@@ -595,6 +664,7 @@ FACTION_RED	Fação Vermelha
 FACTION_GREEN	Fação Verde
 FACTION_BLUE	Fação Azul
 FACTION_YELLOW	Fação Amarela
+FACTION_EXILE	Exilados
 MISC_REPUTATION_DROPS	A reputação com {0} desce {1}, para {2}
 UILABEL_MODE_PASSIVE	Passivo
 UILABEL_MODE_BLOCK	Bloquear
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Cenário
 SCENARIO_VAGABOND_NAME	Vagabundo
 SCENARIO_VAGABOND_DESC	Um andarilho solitário sem nada de seu: sem objetos, sem equipamento e todas as estatísticas entre 1 e 5.
-SCENARIO_RANDOM_NAME	Totalmente aleatório
-SCENARIO_RANDOM_DESC	Um grupo de 1 a 32 unidades, cada uma com todos os atributos entre 1 e 99, e itens e equipamento aleatórios que consegue carregar.
+SCENARIO_PACK_NAME	Matilha de dois
+SCENARIO_PACK_DESC	Um vagabundo solitário e um lobo leal. O vagabundo não tem itens nem equipamento, e cada atributo entre 1 e 5.
+SCENARIO_BEASTMASTER_NAME	Senhor das feras
+SCENARIO_BEASTMASTER_DESC	Um vagabundo solitário à frente de 20 criaturas de espécies aleatórias. O vagabundo não tem itens nem equipamento, e cada atributo entre 1 e 5.
+SCENARIO_RANDOM_NAME	Acampamento totalmente aleatório
+SCENARIO_RANDOM_DESC	O teu próprio acampamento, com um grupo de 20 ou mais unidades, cada uma com todos os atributos entre 1 e 99 e itens e equipamento aleatórios que consegue carregar, e 3 a 7 criaturas.
 SCENARIO_CARAVAN_NAME	Caravana itinerante
 SCENARIO_CARAVAN_DESC	Dez viajantes juntos na estrada. Todos os atributos começam em 5, e cada um leva 10 moedas de ouro.
 SCENARIO_SHABBY_NAME	Bando andrajoso
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Uma unidade sem nada: sem itens, sem equipamento, todos os 
 SCENARIO_DIGGERS_NAME	Escavadores de masmorra
 SCENARIO_DIGGERS_DESC	Sete mineiros com equipamento completo. Os atributos vão de 5 a 20, mas cada um tem Mineração a 50 e leva 3 minérios de ferro.
 SCENARIO_CUSTOM_NAME	Cenário personalizado
-SCENARIO_CUSTOM_DESC	Constrói o teu próprio grupo. Começa com três unidades e podes adicionar ou remover unidades, até 32.
+SCENARIO_CUSTOM_DESC	Cria o teu próprio grupo. Começa com três unidades, e podes adicionar ou remover unidades e criaturas comuns, até 32.
 PROP_LOCKED_CHEST	Baú trancado
 PROP_PRISONER_CAGE	Jaula de prisioneiro
 UILABEL_UNLOCK	Destrancar
+UILABEL_AUTO_HARVEST	Coleta auto
+UILABEL_AUTO_HAUL	Transporte auto
+MISC_AUTO_OUTSIDE_CLAIM	Coleta e transporte auto só funcionam em objetos dentro do território da tua fação
+MISC_AUTO_HARVEST_SET	{0} unidade(s) farão coleta auto: {1}
+MISC_AUTO_HAUL_SET	{0} unidade(s) farão transporte auto para o(a) {1}
+MISC_BEHAVIOR_LIST_FULL	A lista de comportamentos está cheia (no máximo {0})
 UILABEL_PICK_UP	Levantar
-UILABEL_PUT_IN_BED	Deitar na cama
+UILABEL_PLACE	Colocar
+UILABEL_OCCUPY	Ocupar
+UILABEL_DISBAND	Dispensar
+UILABEL_DISBAND_HOLD	Mantém Dispensar premido durante {0} segundos para confirmar
 UILABEL_PUT_DOWN	Pousar
 UILABEL_SHOP	Loja
 UILABEL_TASK_CARRIED	A ser carregado
@@ -641,16 +724,33 @@ UILABEL_DOOM	Perdição
 UILABEL_TASK_UNCONSCIOUS	Inconsciente
 UILABEL_TASK_DEAD	Morto
 UILABEL_TASK_CARRYING	A carregar
+UILABEL_TASK_STORING	A guardar
 UILABEL_TAKE_ALL	Levar tudo
 UILABEL_LOOT_HINT	Clica num objeto para o levar para o inventário da tua unidade.
 UILABEL_CORPSE_OF	Cadáver de {0}
 MISC_FALLS_UNCONSCIOUS	{0} perde os sentidos
 MISC_DIES	{0} morre
 MISC_RECOVERS	{0} acorda
+LOADING_PICTURES	Imagens
+LOADING_UNIT_MODELS	Modelos de unidades
+LOADING_MOB_MODELS	Modelos de criaturas
+LOADING_MOB_PICTURES	Imagens de criaturas
+LOADING_SKY	Céu
+LOADING_PROP_MODELS	Modelos de objetos
+LOADING_MAP	Mapa
+LOADING_MAP_GROUND	Terreno do mapa
+LOADING_WORLD	Mundo
+LOADING_GROUND_ITEMS	Itens no chão
+MISC_GOES_HOME	{0} desiste da perseguição e volta para casa
+MISC_GETS_UP	{0} levanta-se, o perigo passou
 MISC_PICKS_UP_UNIT	{0} levanta {1}
 MISC_PUTS_DOWN	{0} pousa {1}
-MISC_PUTS_IN_BED	{0} deita {1} em: {2}
-MISC_CORPSE_NO_BED	Uma cama nada pode fazer pelos mortos
+MISC_PLACES_IN	{0} deita {1} em: {2}
+MISC_DISBAND_ASK	{0} deixará o teu esquadrão e a tua fação para sempre e tornar-se-á um Exilado: neutro para com todos e a vaguear sozinho.
+MISC_DISBAND_ASK_MOB	{0} deixará o teu esquadrão e a tua fação para sempre e voltará à natureza.
+MISC_DISBANDED	{0} deixa o teu esquadrão como Exilado
+MISC_DISBANDED_MOB	{0} deixa o teu esquadrão e volta à natureza
+MISC_CORPSE_NO_PLACE	Os mortos não podem ser colocados ali
 MISC_IS_UNCONSCIOUS	{0} está inconsciente e não pode fazer nada
 MISC_ALREADY_CARRYING	Nenhuma das tuas unidades selecionadas o pode carregar
 MISC_LOOT_NO_ROOM	Sem espaço no inventário
@@ -788,6 +888,46 @@ ITEM_132_NAME	Flechas de Fogo
 ITEM_132_DESC	Flechas a arder para arco curto ou longo. As flechas mais fortes.
 ITEM_133_NAME	Virotes de Besta
 ITEM_133_DESC	Virotes curtos e pesados para uma besta.
+ITEM_134_NAME	Ossos de urso
+ITEM_134_DESC	Ossos de um urso. Bons para fabrico.
+ITEM_135_NAME	Ossos de vaca
+ITEM_135_DESC	Ossos de uma vaca. Bons para fabrico.
+ITEM_136_NAME	Ossos de galinha
+ITEM_136_DESC	Ossos de uma galinha. Bons para fabrico.
+ITEM_137_NAME	Ossos de javali
+ITEM_137_DESC	Ossos de um javali. Bons para fabrico.
+ITEM_138_NAME	Ossos de lobo
+ITEM_138_DESC	Ossos de um lobo. Bons para fabrico.
+ITEM_139_NAME	Ossos de cervo
+ITEM_139_DESC	Ossos de um cervo. Bons para fabrico.
+ITEM_140_NAME	Ossos de coelho
+ITEM_140_DESC	Ossos de um coelho. Bons para fabrico.
+ITEM_141_NAME	Espinhas de peixe
+ITEM_141_DESC	Espinhas de um peixe. Boas para fabrico.
+ITEM_142_NAME	Casca de caranguejo
+ITEM_142_DESC	Restos da casca de um caranguejo. Bons para fabrico.
+ITEM_143_NAME	Ossos de lagarto
+ITEM_143_DESC	Ossos de um lagarto. Bons para fabrico.
+ITEM_144_NAME	Ossos de cobra
+ITEM_144_DESC	Ossos de uma cobra. Bons para fabrico.
+ITEM_145_NAME	Ossos de porco
+ITEM_145_DESC	Ossos de um porco. Bons para fabrico.
+ITEM_146_NAME	Ossos de ovelha
+ITEM_146_DESC	Ossos de uma ovelha. Bons para fabrico.
+ITEM_147_NAME	Ossos de pato
+ITEM_147_DESC	Ossos de um pato. Bons para fabrico.
+ITEM_148_NAME	Ossos de tartaruga
+ITEM_148_DESC	Ossos de uma tartaruga. Bons para fabrico.
+ITEM_149_NAME	Ossos de morcego
+ITEM_149_DESC	Ossos de um morcego. Bons para fabrico.
+ITEM_150_NAME	Ossos de sapo
+ITEM_150_DESC	Ossos de um sapo. Bons para fabrico.
+ITEM_151_NAME	Ossos de gorlicórnio
+ITEM_151_DESC	Ossos de um gorlicórnio. Bons para fabrico.
+ITEM_152_NAME	Carne de gorlicórnio crua
+ITEM_152_DESC	Carne não cozida. Asse-a numa fogueira.
+ITEM_153_NAME	Carne de gorlicórnio assada
+ITEM_153_DESC	Carne farta assada ao lume. Restaura muita vida e fome.
 UILABEL_OPTIMIZE	Otimizar
 UILABEL_REMOVE_ALL	Remover tudo
 MISC_GEAR_NO_ROOM	Espaço insuficiente no inventário
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Kobold
 UILABEL_EARLY_ACCESS	Acesso antecipado
 MISC_TITLE_KEYS	Escolher  //  Enter Confirmar
 UILABEL_LANGUAGE_LABEL	Idioma:
+PROP_FLAG	Bandeira
+PROP_DEBRIS	Entulho
+PROP_FOUNDATION_SMALL	Fundação pequena
+PROP_FOUNDATION_LARGE	Fundação grande
+PROP_FOUNDATION_LONG	Fundação longa
+PROP_FOUNDATION_CIRCLE	Fundação circular
+PROP_VAULT	Cofre-forte
+UILABEL_BUILD	Construir
+UILABEL_BUILD_SELECTED	Selecionado: {0}
+UILABEL_BUILD_NONE	Selecionado: nenhum
+UILABEL_BUILD_SELECT	Escolher
+UILABEL_BUILD_PICKED	Escolhido
+UILABEL_BUILD_PLACE_HINT	Clique esquerdo no chão para posicionar. Segure R e mova o rato para a esquerda ou direita para girar. Clique direito ou Esc cancela.
+UILABEL_UPKEEP_HINT	Consome um(a) {0} por hora como manutenção. Coloca-os aqui.
+MISC_BUILD_BLOCKED	Sem espaço para construir aqui
+MISC_BUILD_UNWALKABLE	Não se pode construir neste terreno
+MISC_BUILD_NO_FOUNDATION	Um cofre-forte precisa ficar todo sobre uma fundação
+MISC_NO_UPKEEP	Sem manutenção: nenhum tronco
+MISC_UPKEEP_LEFT	Manutenção: faltam {0} min
+PROP_SHOP	Loja
+PROP_FARM	Quinta
+PROP_TURBINE	Turbina
+UILABEL_BUILD_DESTROY	Destruir
+UILABEL_BUILD_DESTROY_HINT	Clique esquerdo em qualquer objeto para derrubá-lo: o que ele guarda cai no chão e fica entulho no lugar. Clique esquerdo no entulho para limpá-lo. Clique direito ou Esc cancela.
+UILABEL_LOCK	Trancar
+MISC_BUILD_NO_CLAIM	Uma fundação ou cofre-forte precisa ficar dentro do teu próprio território
+MISC_BUILD_SEALED	Esse terreno está selado pelo cofre-forte de outra fação
+MISC_BUILD_CLAIM_OVERLAP	Esse território sobrepor-se-ia ao de outra bandeira
+MISC_BUILD_VAULT_TAKEN	Esse território já tem um cofre-forte
+MISC_BUILD_VAULT_CAP	A tua fação já tem todos os cofres-fortes que pode ter
+MISC_DESTROY_NOTHING	Nada para destruir aí
+MISC_FLAG_FACTION	Dono: {0}
+MISC_FLAG_HEALTH	Vida: {0} de {1}
+MISC_FLAG_VAULT_YES	Cofre-forte: de pé, o território está garantido
+MISC_FLAG_VAULT_NO	Cofre-forte: nenhum, a bandeira está a desgastar-se
+MISC_PROP_CONDITION	Condição: {0}%
+MISC_PROP_DECAYING	A deteriorar-se
+MISC_PROP_HOLDING	Sem deterioração
+MISC_PROP_LOCK_OPEN	Destrancado
+MISC_PROP_LOCK_YOURS	Trancado para estranhos (aberto para ti)
+MISC_PROP_LOCK_SHUT	Trancado (Arrombamento {0})
+MISC_PROP_UPKEEP	Manutenção: faltam {0} horas
+MISC_PROP_VAULT_UNCLAIMED	Fora de qualquer território: não dá manutenção
+MOB_BEAR	Urso
+MOB_COW	Vaca
+MOB_CHICKEN	Galinha
+MOB_BOAR	Javali
+MOB_WOLF	Lobo
+MOB_DEER	Cervo
+MOB_RABBIT	Coelho
+MOB_FISH	Peixe
+MOB_CRAB	Caranguejo
+MOB_LIZARD	Lagarto
+MOB_SNAKE	Cobra
+MOB_PIG	Porco
+MOB_SHEEP	Ovelha
+MOB_DUCK	Pato
+MOB_TURTLE	Tartaruga
+MOB_BAT	Morcego
+MOB_FROG	Sapo
+MOB_GORLICORN	Gorlicórnio
+FACTION_MOB_BEAR	Ursos
+FACTION_MOB_COW	Vacas
+FACTION_MOB_CHICKEN	Galinhas
+FACTION_MOB_BOAR	Javalis
+FACTION_MOB_WOLF	Lobos
+FACTION_MOB_DEER	Cervos
+FACTION_MOB_RABBIT	Coelhos
+FACTION_MOB_FISH	Peixes
+FACTION_MOB_CRAB	Caranguejos
+FACTION_MOB_LIZARD	Lagartos
+FACTION_MOB_SNAKE	Cobras
+FACTION_MOB_PIG	Porcos
+FACTION_MOB_SHEEP	Ovelhas
+FACTION_MOB_DUCK	Patos
+FACTION_MOB_TURTLE	Tartarugas
+FACTION_MOB_BAT	Morcegos
+FACTION_MOB_FROG	Sapos
+FACTION_MOB_GORLICORN	Gorlicórnios
+MISC_MOB_NO_GEAR	Criaturas não podem usar equipamento
+MISC_MOB_NO_HEALING	Criaturas não podem usar itens de cura
+MISC_MOB_CANT_WORK	Criaturas não podem trabalhar em objetos

@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Yenileme hızı
 UILABEL_DEFAULT	Varsayılan
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Kare hızı sınırı
+UILABEL_VIEW_RANGE	Görüş mesafesi
+UILABEL_TILES_N	{0} kare
+UILABEL_SHOW_FPS	FPS'yi göster
 UILABEL_UNLIMITED	Sınırsız
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Otomatik kaydetme
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} dakika
 UILABEL_UNIT_NAMES	Oyuncu birimi adları
 UILABEL_NPC_NAMES	Diğer birimlerin adları
 UILABEL_PROP_NAMES	Nesne adları
+UILABEL_PROP_INFO	Nesne bilgilerini göster
 UILABEL_FONT_SIZE	Yazı boyutu
 UILABEL_RESET_PANELS	Tüm arayüz panellerini sıfırla
 UILABEL_RESET	Sıfırla
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Genel ses düzeyi
 UILABEL_MUSIC	Müzik
 UILABEL_AMBIENT	Ortam sesleri
 UILABEL_INTERFACE_SOUNDS	Arayüz sesleri
+UILABEL_CRAFT_GATHER_SOUNDS	Üretim ve toplama sesleri
 UILABEL_SOUND_EFFECTS	Ses efektleri
 UILABEL_RESTORE_DEFAULTS	Varsayılanları geri yükle
 UILABEL_WINDOWED	Pencereli
@@ -123,6 +128,8 @@ UILABEL_STATS	İstatistikler
 UILABEL_CLICK_TO_TYPE	Ad yazmak için tıklayın
 UILABEL_HEALTH	Can
 UILABEL_HUNGER	Açlık
+UILABEL_RESTED	Dinçlik
+UILABEL_COMFORT	Konfor
 UILABEL_CARRY	Taşıma kapasitesi
 UILABEL_NEXT_LEVEL_XP_LINE	Sonraki seviyeye TP: {0}
 UILABEL_STAT	İstatistik
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Bu birimi rastgele yap
 UILABEL_RANDOMIZE_ALL	Hepsini rastgele yap
 UILABEL_ADD_UNIT	Birim ekle
 UILABEL_REMOVE_UNIT	Birimi kaldır
+UILABEL_ADD_MOB	Yaratık ekle
+UILABEL_MOB_KIND	Tür
+UILABEL_MOB_NO_GEAR	Yaratık teçhizat giymez.
+MISC_MEAT_TAKEN_DIES	{0} ölüyor
+MISC_MOB_INVENTORY_LOCKED	Kullanılamaz
+MISC_MOB_CANT_HOLD	Bir yaratık yalnızca kendi etini ve kemiklerini taşır
+UILABEL_CLEAR	Temizle
+UILABEL_TASK_CLEARING	Enkaz temizliyor
+MISC_CLEARS_DEBRIS	{0} enkazı temizliyor
+UILABEL_MOB_INVENTORY_HIDDEN	Kullanılamaz
+UILABEL_BEHAVIOR_PATROL	Devriye
+UILABEL_BEHAVIOR_PATROL_SPAWN	Doğduğu yerde devriye
+UILABEL_BEHAVIOR_ROAM	Dolaş
+UILABEL_BEHAVIOR_PATROL_TIP	Devriye: durduğu bölge kendi hizbininse o bölgede dolaşır, arada bir durur.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Doğduğu yerde devriye: ilk belirdiği yerin yakınında dolaşır. Oradan çok uzağa kovalanırsa vazgeçer, tamamen iyileşir ve geri yürür; eve varana dek hasar almaz.
+UILABEL_BEHAVIOR_ROAM_TIP	Dolaş: açık arazide, bayrakların bölgeleri dışında yürüyebildiği her yerde gezinir.
+UILABEL_WAIT_NOT_IN_CLAIM	kendi hizbinin bir bölgesinde değil
+UILABEL_WAIT_NOWHERE_TO_ROAM	yakında bölgeler dışında açık arazi yok
+UILABEL_TEMPERAMENT_AVOIDANT	Ürkek
+UILABEL_TEMPERAMENT_PASSIVE	Pasif
+UILABEL_TEMPERAMENT_NEUTRAL	Tarafsız
+UILABEL_TEMPERAMENT_AGGRESSIVE	Saldırgan
+UILABEL_TEMPERAMENT	Mizaç: {0}
+UILABEL_MOB_NO_ITEMS	Yaratık yalnızca kendi etini ve kemiklerini taşır.
 UILABEL_CONFIRM_STARTS	Onaylayınca oyun bu grupla başlar.
 UILABEL_NEEDS_NAMES	Oyunun başlayabilmesi için her birimin bir adı olmalı.
 UILABEL_CLICK_UNIT_EDIT	Düzenlemek için bir birime tıklayın.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Bacaklar
 UILABEL_SLOT_FEET	Ayaklar
 UILABEL_SLOT_ACCESSORY	Aksesuar
 UILABEL_BEHAVIOR_ON	Açık
+UILABEL_BEHAVIOR_EAT	Tokluk < %{0} ise ye
+UILABEL_BEHAVIOR_REST	Dinçlik < %{0} ise dinlen
+UILABEL_BEHAVIOR_LEAVE_BED	İyileşince yataktan kalk
+UILABEL_BEHAVIOR_RESCUE	Yere düşen müttefikleri kurtar
+UILABEL_BEHAVIOR_HEAL	Sağlık < %{0} ise iyileş
+UILABEL_BEHAVIOR_SHARE	Paylaş
+UILABEL_BEHAVIOR_AUTO_HARVEST	Otomatik toplama: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Otomatik taşıma: {0}
+UILABEL_BEHAVIOR_WAITING	(bekliyor)
+UILABEL_BEHAVIOR_WAIT_TIP	Bekliyor: {0}
+UILABEL_WAIT_NO_FOOD	yiyecek yemek yok, yakında paylaşacak kimse de yok
+UILABEL_WAIT_NO_BED	dinlenmek için boş yatak ya da yer yatağı yok
+UILABEL_WAIT_NO_HEALING	iyileştirici eşya yok, yakında paylaşacak kimse de yok
+UILABEL_WAIT_WALKING_TO_SHARE	bir tane paylaşabilecek {0} yanına gidiyor
+UILABEL_WAIT_NO_PROP	bölgende başka bir işçiye yer olan {0} yok
+UILABEL_WAIT_CARRY_FULL	daha fazla taşımaya yer yok
+UILABEL_WAIT_LOAD_WAITING	otomatik taşımanın önce alması gereken bir yük taşıyor
+UILABEL_WAIT_PROP_GONE	nesne yok olmuş
+UILABEL_WAIT_OUTSIDE_CLAIM	nesne hizbinin bölgesinde değil
+UILABEL_WAIT_LOCKED	nesne kilitli
+UILABEL_WAIT_NOTHING_TO_HAUL	nesnenin kabul ettiği hiçbir şey taşımıyor
+UILABEL_WAIT_PROP_FULL	nesnede taşıdıklarına yer yok
+UILABEL_BEHAVIOR_EAT_TIP	Ye: tokluk %{0} altına düşünce açlığı en çok gideren yiyeceği yer. Ne zaman olacağını - ve + ile değiştir.
+UILABEL_BEHAVIOR_HEAL_TIP	İyileş: sağlık %{0} altına düşünce en çok sağlık veren iyileştirici eşyayı kullanır. Ne zaman olacağını - ve + ile değiştir.
+UILABEL_BEHAVIOR_REST_TIP	Dinlen: dinçlik %{0} altına düşünce en yakın boş yatağa ya da yer yatağına uzanır ve tamamen dinlenince kalkar. Ne zaman olacağını - ve + ile değiştir.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Yataktan kalk: tam sağlık ve tam dinçlikte 30 saniye geçince yataktan ya da yer yatağından kalkar.
+UILABEL_BEHAVIOR_RESCUE_TIP	Kurtar: yakında baygın yatan kendi hizbinden bir birimi en yakın boş yatağa ya da yer yatağına taşır.
+UILABEL_BEHAVIOR_SHARE_TIP	Paylaş: Ye ya da İyileş bu birimde olmayan bir eşyaya ihtiyaç duyunca, ticaret menzilindeki, aynı şekilde paylaşan ve ona daha az ihtiyacı olan bir birimden bir tane alır; o birim biraz uzaktaysa önce yanına yürür. Paylaşan diğer birimler de bundan aynı şekilde alabilir.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Otomatik toplama: hizbinin bölgesindeki en yakın {0} üzerinde çalışır. Yükü varsa ve bir otomatik taşıma onu alabiliyorsa taşımak için durur. Verdiğin bir emir onu duraklatır; birim birkaç saniye boşta kalınca yeniden başlar.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Otomatik taşıma: envanterdeki (giyilen teçhizat hariç) {0} nesnesinin kabul ettiği eşyaları, yer olduğu ve birim hizbinin bölgesinde durduğu sürece götürür. Verdiğin bir emir onu duraklatır; birim birkaç saniye boşta kalınca yeniden başlar.
+UILABEL_NPC_MESSAGES	NPC'ler
+UILABEL_SHOW_NPC_INFO	NPC bilgilerini göster
 UILABEL_COMBAT_MESSAGES	Savaş Mesajları
 UILABEL_SEEN	Görüldü
 UILABEL_HIT	İsabet
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Tecrübe Mesajları
 UILABEL_EXPERIENCE	Tecrübe
 UILABEL_XP_ATHLETICS	Atletizm Deneyimi
 UILABEL_XP_ENDURANCE	Dayanıklılık Deneyimi
+UILABEL_XP_CARRYING	Güç Deneyimi (Taşıma)
 UILABEL_ITEM_MESSAGES	Eşya Mesajları
 UILABEL_PICKUP	Alma
 UILABEL_DROP	Bırakma
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	İlerleme: {0}%
 UILABEL_TIP_CURRENT_XP	Mevcut TP: {0}
 UILABEL_ATTACK_DEFENSE	Saldırı {0}      Savunma {1}
 UILABEL_STATS_CAPTION	İstatistikler: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Yuva {0}: {1}
 UILABEL_SLOT_N_EMPTY	Yuva {0}: boş
 UILABEL_COUNT	Adet {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	İki el gerektirir. Yardımcı el boş olmalıdır.
 ITEM_87_NAME	Savaş Baltası
 ITEM_87_DESC	İki el gerektirir. Yardımcı el boş olmalıdır.
 UILABEL_UI_SCALE	Arayüz ölçeği
-NAME_MASCULINE	["Mehmet", "Emre", "Burak", "Kerem", "Yusuf"]
-NAME_FEMININE	["Elif", "Zeynep", "Ayşe", "Defne", "Selin"]
-NAME_ANDROGYNOUS	["Deniz", "Ege", "Umut", "Kuzey", "Derin"]
+NAME_MASCULINE	["Mehmet", "Emre", "Burak", "Kerem", "Yusuf", "Ahmet", "Ali", "Alper", "Arda", "Barış", "Batuhan", "Berk", "Cem", "Cengiz", "Doğan", "Efe", "Emir", "Enes", "Erdem", "Eren", "Erkan", "Fatih", "Furkan", "Gökhan", "Hakan", "Halil", "Hasan", "Hüseyin", "İbrahim", "İsmail", "Kaan", "Kemal", "Mert", "Murat", "Mustafa", "Okan", "Onur", "Orhan", "Osman", "Ömer", "Selim", "Serkan", "Sinan", "Taner", "Tarık", "Tolga", "Uğur", "Volkan", "Yiğit", "Yunus"]
+NAME_FEMININE	["Elif", "Zeynep", "Ayşe", "Defne", "Selin", "Aslı", "Ayla", "Aylin", "Başak", "Belgin", "Berna", "Büşra", "Ceren", "Cansu", "Damla", "Dilek", "Ebru", "Ece", "Emine", "Esra", "Fatma", "Feride", "Gamze", "Gizem", "Gül", "Hande", "Hatice", "Irmak", "İpek", "Kübra", "Leyla", "Melek", "Melis", "Meltem", "Merve", "Nazlı", "Nehir", "Nur", "Özlem", "Pınar", "Seda", "Sevgi", "Sibel", "Şeyma", "Tuba", "Tuğba", "Yasemin", "Yeliz", "Zehra", "Zerrin"]
+NAME_ANDROGYNOUS	["Deniz", "Ege", "Umut", "Kuzey", "Derin", "Aydın", "Ay", "Bahar", "Barlas", "Bulut", "Can", "Çağ", "Çınar", "Doğa", "Duru", "Evren", "Gönül", "Güneş", "Ilgaz", "Ilgın", "Işık", "Kıvanç", "Mehtap", "Ümit", "Ozan", "Rüzgâr", "Sevgin", "Sonat", "Şafak", "Tan", "Tuna", "Tümay", "Ufuk", "Yağmur", "Yaz", "Yıldız", "Akın", "Ata", "Aysu", "Evrim", "Mutlu", "Dinç", "Eser", "Gökçe", "Ilkay", "Özgür", "Oya", "Su", "Toprak", "Yücel"]
 UILABEL_BODY_TYPE	Vücut tipi
 UILABEL_BODY_MASCULINE	Erkeksi
 UILABEL_BODY_FEMININE	Kadınsı
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Depoda yer yok
 MISC_PROP_TAKEN	Zaten kullanımda
 MISC_PROP_WORKERS_FULL	Aynı anda en fazla {0} birim çalışabilir
 MISC_GATHERS	{0}, {1} topluyor
+MISC_AUTO_HAUL_STORES	{0}, {1} {2} eşyasını {3} içine koyuyor
 MISC_GATHER_NO_ROOM	{0} için {1} yer yok, çalışmayı bırakıyor
 MISC_REASON_GATHERING	toplamak
+MISC_REASON_CLEARING	enkaz temizliyor
 UILABEL_TASK	Görev: {0}
 UILABEL_TASK_IDLE	Boşta
+UILABEL_TASK_AUTO_GOING	{0} (yolda)
+UILABEL_TASK_SHARE_WALK	Paylaşmak için {0} yanına gidiyor
 UILABEL_TASK_MOVING	Hareket ediyor
 UILABEL_TASK_RESTING	Dinleniyor
 UILABEL_STORAGE_HINT	Bir eşyayı almak için sağ tıkla ya da biriminin durduğu yere bırakmak için dışarı sürükle. Biriminin eşyalarını depolamak için sağ tıkla.
@@ -595,6 +664,7 @@ FACTION_RED	Kızıl Hizip
 FACTION_GREEN	Yeşil Hizip
 FACTION_BLUE	Mavi Hizip
 FACTION_YELLOW	Sarı Hizip
+FACTION_EXILE	Sürgünler
 MISC_REPUTATION_DROPS	{0} ile itibar {1} düşerek {2} oldu
 UILABEL_MODE_PASSIVE	Pasif
 UILABEL_MODE_BLOCK	Blok
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senaryo
 SCENARIO_VAGABOND_NAME	Serseri
 SCENARIO_VAGABOND_DESC	Hiçbir şeyi olmayan yalnız bir gezgin: eşya yok, teçhizat yok ve her istatistik 1 ile 5 arasında.
-SCENARIO_RANDOM_NAME	Tamamen rastgele
-SCENARIO_RANDOM_DESC	1 ile 32 birimlik bir grup; her birinin tüm nitelikleri 1 ile 99 arasında ve taşıyabileceği rastgele eşya ve teçhizatı var.
+SCENARIO_PACK_NAME	İkili Sürü
+SCENARIO_PACK_DESC	Yalnız bir gezgin ve sadık bir kurt. Gezginin eşyası ya da teçhizatı yok, her istatistiği 1 ile 5 arasında.
+SCENARIO_BEASTMASTER_NAME	Canavar Efendisi
+SCENARIO_BEASTMASTER_DESC	Rastgele türlerden 20 yaratığın başındaki yalnız bir gezgin. Gezginin eşyası ya da teçhizatı yok, her istatistiği 1 ile 5 arasında.
+SCENARIO_RANDOM_NAME	Tamamen Rastgele Kamp
+SCENARIO_RANDOM_DESC	Kendi kampın ve 20 ya da daha fazla birimden oluşan bir grup; her birinin tüm istatistikleri 1 ile 99 arasında, taşıyabileceği rastgele eşyaları ve teçhizatı var, ayrıca 3 ile 7 arası yaratık.
 SCENARIO_CARAVAN_NAME	Gezgin kervan
 SCENARIO_CARAVAN_DESC	Yolda birlikte on gezgin. Tüm nitelikler 5'ten başlar ve her biri 10 altın sikke taşır.
 SCENARIO_SHABBY_NAME	Pejmürde tayfa
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Hiçbir şeyi olmayan tek bir birim: eşya yok, teçhizat y
 SCENARIO_DIGGERS_NAME	Zindan kazıcıları
 SCENARIO_DIGGERS_DESC	Tam teçhizatlı yedi madenci. Nitelikleri 5 ile 20 arasında, ama her birinin Madenciliği 50 ve 3 demir cevheri taşıyor.
 SCENARIO_CUSTOM_NAME	Özel Senaryo
-SCENARIO_CUSTOM_DESC	Kendi grubunu kur. Üç birimle başlar ve 32'ye kadar birim ekleyip çıkarabilirsin.
+SCENARIO_CUSTOM_DESC	Kendi grubunu kur. Üç birimle başlar; 32’ye kadar birim ve sıradan yaratık ekleyip çıkarabilirsin.
 PROP_LOCKED_CHEST	Kilitli sandık
 PROP_PRISONER_CAGE	Esir kafesi
 UILABEL_UNLOCK	Kilidi aç
+UILABEL_AUTO_HARVEST	Otomatik toplama
+UILABEL_AUTO_HAUL	Otomatik taşıma
+MISC_AUTO_OUTSIDE_CLAIM	Otomatik toplama ve taşıma yalnızca hizbinin bölgesindeki nesnelerde çalışır
+MISC_AUTO_HARVEST_SET	{0} birim otomatik toplayacak: {1}
+MISC_AUTO_HAUL_SET	{0} birim otomatik olarak {1} nesnesine taşıyacak
+MISC_BEHAVIOR_LIST_FULL	Davranış listesi dolu (en fazla {0})
 UILABEL_PICK_UP	Kaldır
-UILABEL_PUT_IN_BED	Yatağa yatır
+UILABEL_PLACE	Yerleştir
+UILABEL_OCCUPY	Yerleş
+UILABEL_DISBAND	Dağıt
+UILABEL_DISBAND_HOLD	Onaylamak için Dağıt düğmesini {0} saniye basılı tut
 UILABEL_PUT_DOWN	Yere bırak
 UILABEL_SHOP	Alışveriş
 UILABEL_TASK_CARRIED	Taşınıyor
@@ -641,16 +724,33 @@ UILABEL_DOOM	Kıyamet
 UILABEL_TASK_UNCONSCIOUS	Baygın
 UILABEL_TASK_DEAD	Ölü
 UILABEL_TASK_CARRYING	Taşıyor
+UILABEL_TASK_STORING	Depoluyor
 UILABEL_TAKE_ALL	Hepsini al
 UILABEL_LOOT_HINT	Biriminin envanterine almak için bir eşyaya tıkla.
 UILABEL_CORPSE_OF	{0} cesedi
 MISC_FALLS_UNCONSCIOUS	{0} bayıldı
 MISC_DIES	{0} öldü
 MISC_RECOVERS	{0} uyandı
+LOADING_PICTURES	Resimler
+LOADING_UNIT_MODELS	Birim modelleri
+LOADING_MOB_MODELS	Yaratık modelleri
+LOADING_MOB_PICTURES	Yaratık resimleri
+LOADING_SKY	Gökyüzü
+LOADING_PROP_MODELS	Nesne modelleri
+LOADING_MAP	Harita
+LOADING_MAP_GROUND	Harita zemini
+LOADING_WORLD	Dünya
+LOADING_GROUND_ITEMS	Yerdeki eşyalar
+MISC_GOES_HOME	{0} kovalamayı bırakıp evine dönüyor
+MISC_GETS_UP	{0} ayağa kalkıyor, tehlike geçti
 MISC_PICKS_UP_UNIT	{0}, {1} birimini kaldırdı
 MISC_PUTS_DOWN	{0}, {1} birimini yere bıraktı
-MISC_PUTS_IN_BED	{0}, {1} birimini {2} üzerine yatırdı
-MISC_CORPSE_NO_BED	Yatak ölülere bir şey yapamaz
+MISC_PLACES_IN	{0}, {1} birimini {2} üzerine yatırdı
+MISC_DISBAND_ASK	{0} biriminden ve hizbinden sonsuza dek ayrılıp bir Sürgün olacak: herkese karşı tarafsız ve tek başına dolaşan biri.
+MISC_DISBAND_ASK_MOB	{0} biriminden ve hizbinden sonsuza dek ayrılıp vahşi doğaya dönecek.
+MISC_DISBANDED	{0} biriminden Sürgün olarak ayrıldı
+MISC_DISBANDED_MOB	{0} biriminden ayrılıp vahşi doğaya döndü
+MISC_CORPSE_NO_PLACE	Ölüler oraya yerleştirilemez
 MISC_IS_UNCONSCIOUS	{0} baygın ve hiçbir şey yapamaz
 MISC_ALREADY_CARRYING	Seçili birimlerinden hiçbiri onu taşıyamaz
 MISC_LOOT_NO_ROOM	Envanterde yer yok
@@ -788,6 +888,46 @@ ITEM_132_NAME	Ateş Okları
 ITEM_132_DESC	Kısa ya da uzun yay için yanan oklar. En sert vuran oklar.
 ITEM_133_NAME	Arbalet Cıvataları
 ITEM_133_DESC	Arbalet için kısa, ağır cıvatalar.
+ITEM_134_NAME	Ayı Kemikleri
+ITEM_134_DESC	Bir ayının kemikleri. Zanaat için iyidir.
+ITEM_135_NAME	İnek Kemikleri
+ITEM_135_DESC	Bir ineğin kemikleri. Zanaat için iyidir.
+ITEM_136_NAME	Tavuk Kemikleri
+ITEM_136_DESC	Bir tavuğun kemikleri. Zanaat için iyidir.
+ITEM_137_NAME	Yaban Domuzu Kemikleri
+ITEM_137_DESC	Bir yaban domuzunun kemikleri. Zanaat için iyidir.
+ITEM_138_NAME	Kurt Kemikleri
+ITEM_138_DESC	Bir kurdun kemikleri. Zanaat için iyidir.
+ITEM_139_NAME	Geyik Kemikleri
+ITEM_139_DESC	Bir geyiğin kemikleri. Zanaat için iyidir.
+ITEM_140_NAME	Tavşan Kemikleri
+ITEM_140_DESC	Bir tavşanın kemikleri. Zanaat için iyidir.
+ITEM_141_NAME	Balık Kılçıkları
+ITEM_141_DESC	Bir balığın kılçıkları. Zanaat için iyidir.
+ITEM_142_NAME	Yengeç Kabuğu
+ITEM_142_DESC	Bir yengeç kabuğunun parçaları. Zanaat için iyidir.
+ITEM_143_NAME	Kertenkele Kemikleri
+ITEM_143_DESC	Bir kertenkelenin kemikleri. Zanaat için iyidir.
+ITEM_144_NAME	Yılan Kemikleri
+ITEM_144_DESC	Bir yılanın kemikleri. Zanaat için iyidir.
+ITEM_145_NAME	Domuz Kemikleri
+ITEM_145_DESC	Bir domuzun kemikleri. Zanaat için iyidir.
+ITEM_146_NAME	Koyun Kemikleri
+ITEM_146_DESC	Bir koyunun kemikleri. Zanaat için iyidir.
+ITEM_147_NAME	Ördek Kemikleri
+ITEM_147_DESC	Bir ördeğin kemikleri. Zanaat için iyidir.
+ITEM_148_NAME	Kaplumbağa Kemikleri
+ITEM_148_DESC	Bir kaplumbağanın kemikleri. Zanaat için iyidir.
+ITEM_149_NAME	Yarasa Kemikleri
+ITEM_149_DESC	Bir yarasanın kemikleri. Zanaat için iyidir.
+ITEM_150_NAME	Kurbağa Kemikleri
+ITEM_150_DESC	Bir kurbağanın kemikleri. Zanaat için iyidir.
+ITEM_151_NAME	Gorlikorn Kemikleri
+ITEM_151_DESC	Bir gorlikornun kemikleri. Zanaat için iyidir.
+ITEM_152_NAME	Çiğ Gorlikorn Eti
+ITEM_152_DESC	Pişmemiş et. Kamp ateşinde pişir.
+ITEM_153_NAME	Pişmiş Gorlikorn Eti
+ITEM_153_DESC	Ateşte pişmiş doyurucu et. Çok sağlık verir ve açlığı epey giderir.
 UILABEL_OPTIMIZE	En iyisini kuşan
 UILABEL_REMOVE_ALL	Hepsini çıkar
 MISC_GEAR_NO_ROOM	Envanterde yeterli yer yok
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Hayatta Kalma
 UILABEL_EARLY_ACCESS	Erken Erişim
 MISC_TITLE_KEYS	Seç  //  Enter Onayla
 UILABEL_LANGUAGE_LABEL	Dil:
+PROP_FLAG	Bayrak
+PROP_DEBRIS	Enkaz
+PROP_FOUNDATION_SMALL	Küçük Temel
+PROP_FOUNDATION_LARGE	Büyük Temel
+PROP_FOUNDATION_LONG	Uzun Temel
+PROP_FOUNDATION_CIRCLE	Yuvarlak Temel
+PROP_VAULT	Kasa Odası
+UILABEL_BUILD	İnşa
+UILABEL_BUILD_SELECTED	Seçili: {0}
+UILABEL_BUILD_NONE	Seçili: Yok
+UILABEL_BUILD_SELECT	Seç
+UILABEL_BUILD_PICKED	Seçildi
+UILABEL_BUILD_PLACE_HINT	Yerleştirmek için zemine sol tıkla. Döndürmek için R'yi basılı tutup fareyi sola ya da sağa kaydır. Sağ tık ya da Escape iptal eder.
+UILABEL_UPKEEP_HINT	Bakım için saatte bir {0} yakar. Onları buraya koy.
+MISC_BUILD_BLOCKED	Burada inşa için yer yok
+MISC_BUILD_UNWALKABLE	Bu zemine inşa edilemez
+MISC_BUILD_NO_FOUNDATION	Kasa odası tamamen bir temelin üstünde olmalı
+MISC_NO_UPKEEP	Bakım yok: kütük yok
+MISC_UPKEEP_LEFT	Bakım: {0} dk kaldı
+PROP_SHOP	Dükkân
+PROP_FARM	Çiftlik
+PROP_TURBINE	Rüzgâr Türbini
+UILABEL_BUILD_DESTROY	Yık
+UILABEL_BUILD_DESTROY_HINT	Yıkmak için herhangi bir nesneye sol tıkla: içindekiler yere düşer ve yerinde enkaz kalır. Temizlemek için enkaza sol tıkla. Sağ tık ya da Escape iptal eder.
+UILABEL_LOCK	Kilitle
+MISC_BUILD_NO_CLAIM	Temel ya da kasa odası kendi bölgende olmalı
+MISC_BUILD_SEALED	Bu zemin başka bir hizbin kasa odasıyla mühürlü
+MISC_BUILD_CLAIM_OVERLAP	Bu bölge başka bir bayrağın bölgesiyle çakışır
+MISC_BUILD_VAULT_TAKEN	Bu bölgede zaten bir kasa odası var
+MISC_BUILD_VAULT_CAP	Hizbin sahip olabileceği kadar kasa odasına zaten sahip
+MISC_DESTROY_NOTHING	Orada yıkılacak bir şey yok
+MISC_FLAG_FACTION	Sahibi: {0}
+MISC_FLAG_HEALTH	Dayanıklılık: {0} / {1}
+MISC_FLAG_VAULT_YES	Kasa odası: ayakta, bölge elde tutuluyor
+MISC_FLAG_VAULT_NO	Kasa odası: yok, bayrak yıpranıyor
+MISC_PROP_CONDITION	Durum: %{0}
+MISC_PROP_DECAYING	Çürüyor
+MISC_PROP_HOLDING	Çürümüyor
+MISC_PROP_LOCK_OPEN	Kilitsiz
+MISC_PROP_LOCK_YOURS	Yabancılara kilitli (sana açık)
+MISC_PROP_LOCK_SHUT	Kilitli (Kilit açma {0})
+MISC_PROP_UPKEEP	Bakım: {0} saat kaldı
+MISC_PROP_VAULT_UNCLAIMED	Hiçbir bölgede değil: bakım sağlamaz
+MOB_BEAR	Ayı
+MOB_COW	İnek
+MOB_CHICKEN	Tavuk
+MOB_BOAR	Yaban Domuzu
+MOB_WOLF	Kurt
+MOB_DEER	Geyik
+MOB_RABBIT	Tavşan
+MOB_FISH	Balık
+MOB_CRAB	Yengeç
+MOB_LIZARD	Kertenkele
+MOB_SNAKE	Yılan
+MOB_PIG	Domuz
+MOB_SHEEP	Koyun
+MOB_DUCK	Ördek
+MOB_TURTLE	Kaplumbağa
+MOB_BAT	Yarasa
+MOB_FROG	Kurbağa
+MOB_GORLICORN	Gorlikorn
+FACTION_MOB_BEAR	Ayılar
+FACTION_MOB_COW	İnekler
+FACTION_MOB_CHICKEN	Tavuklar
+FACTION_MOB_BOAR	Yaban Domuzları
+FACTION_MOB_WOLF	Kurtlar
+FACTION_MOB_DEER	Geyikler
+FACTION_MOB_RABBIT	Tavşanlar
+FACTION_MOB_FISH	Balıklar
+FACTION_MOB_CRAB	Yengeçler
+FACTION_MOB_LIZARD	Kertenkeleler
+FACTION_MOB_SNAKE	Yılanlar
+FACTION_MOB_PIG	Domuzlar
+FACTION_MOB_SHEEP	Koyunlar
+FACTION_MOB_DUCK	Ördekler
+FACTION_MOB_TURTLE	Kaplumbağalar
+FACTION_MOB_BAT	Yarasalar
+FACTION_MOB_FROG	Kurbağalar
+FACTION_MOB_GORLICORN	Gorlikornlar
+MISC_MOB_NO_GEAR	Yaratıklar teçhizat giyemez
+MISC_MOB_NO_HEALING	Yaratıklar iyileştirici eşya kullanamaz
+MISC_MOB_CANT_WORK	Yaratıklar nesnelerde çalışamaz

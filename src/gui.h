@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <string>
 #include <utility>
 #include <vector>
 #include "components.h"
@@ -751,6 +752,43 @@ inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
     return L;
 }
 
+// The Disband popout, from Disband on a squad unit's right-click menu: the title, the unit's portrait with its name and
+// a few lines about it beside it, what disbanding does, the hint to hold, and Disband and Cancel. Disband must be held
+// for DISBAND_HOLD_MS to confirm; its bar fills as it is held, and letting go starts it over.
+constexpr unsigned long long DISBAND_HOLD_MS = 5000;
+struct DisbandLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect info{ 0.0f, 0.0f, 0.0f, 0.0f };   // beside the portrait: the name, then DISBAND_INFO_LINES lines
+    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };   // what disbanding does, wrapped, up to three lines
+    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect disband{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+};
+constexpr int DISBAND_INFO_LINES = 3;
+inline DisbandLayout layoutDisband(int W, int H) {
+    const float s = H / 720.0f;
+    const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 160.0f * s;
+    const float boxW = 500.0f * s, pic = (1.0f + DISBAND_INFO_LINES) * line;
+    const float boxH = pad + line + gap + pic + gap + 3.0f * line + gap + line + gap + btnH + pad;
+    DisbandLayout L;
+    L.box = Rect{ (W - boxW) * 0.5f, (H - boxH) * 0.5f, boxW, boxH };
+    const float x = L.box.x + pad, w = boxW - 2.0f * pad;
+    float y = L.box.y + pad;
+    L.title = Rect{ x, y, w, line };
+    y += line + gap;
+    L.portrait = Rect{ x, y, pic, pic };
+    L.info = Rect{ x + pic + 12.0f * s, y, w - pic - 12.0f * s, pic };
+    y += pic + gap;
+    L.text = Rect{ x, y, w, 3.0f * line };
+    y += 3.0f * line + gap;
+    L.hint = Rect{ x, y, w, line };
+    y += line + gap;
+    L.disband = Rect{ L.box.x + boxW * 0.5f - gap * 0.5f - btnW, y, btnW, btnH };
+    L.cancel = Rect{ L.box.x + boxW * 0.5f + gap * 0.5f, y, btnW, btnH };
+    return L;
+}
+
 inline QuantityLayout layoutQuantity(int W, int H) {
     const float s = H / 720.0f;
     const float pad = 12.0f * s, gap = 6.0f * s, line = 22.0f * s, btnH = 28.0f * s;
@@ -854,21 +892,51 @@ inline void clampMapView(const Rect& r, float levelSize, float& cx, float& cz, f
     keep(cz, span);
 }
 
-// One row of the Behavior list: the on box, the behavior's name, then its percent buttons (Eat and Heal only) and
-// the priority and delete buttons
+// One row of the Behavior list: the on box, the behavior's name, then its # button (Eat, Heal and Rest only) and the
+// priority and delete buttons
 struct BehaviorRowLayout {
     Rect row{ 0.0f, 0.0f, 0.0f, 0.0f };             // the whole row, which the hover text is for
     Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };          // on or off
     Rect label{ 0.0f, 0.0f, 0.0f, 0.0f };           // what it does, such as Eat when hunger < 50%
-    Rect less{ 0.0f, 0.0f, 0.0f, 0.0f };            // [-] lowers the percent Eat or Heal acts below
-    Rect more{ 0.0f, 0.0f, 0.0f, 0.0f };            // [+] raises it
+    Rect number{ 0.0f, 0.0f, 0.0f, 0.0f };          // [#] asks for the percent Eat, Heal or Rest acts below
     Rect up{ 0.0f, 0.0f, 0.0f, 0.0f };              // [^] moves the behavior up the priority list
     Rect down{ 0.0f, 0.0f, 0.0f, 0.0f };            // [v] moves it down
-    Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it (an automated behavior only)
+    Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it (Add Behavior puts it back)
 };
 
-// The parts of a behavior row that a click or hover can land on
-enum class BehaviorPart { None, Toggle, Less, More, Up, Down, Remove };
+// The parts of a behavior row that a click or hover can land on. Number is the # button, which asks for the percent.
+enum class BehaviorPart { None, Toggle, Number, Up, Down, Remove };
+
+// What is open in the Behavior tab besides the rows: the Add Behavior list
+struct BehaviorUi {
+    int options = -1;        // the entries in the open Add Behavior list, or -1 while it is shut
+};
+
+// The prompt the # button opens, in the middle of the window: what it asks, the box the percent is typed in, the
+// range it takes, and OK and Cancel. It is modal: nothing else takes clicks or keys while it is up.
+struct PercentPromptLayout {
+    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect input{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect ok{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    float titleY = 0.0f, rangeY = 0.0f, errorY = 0.0f;   // the text lines' tops
+};
+inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
+    const float s = H / 720.0f;
+    PercentPromptLayout P;
+    const float w = 340.0f * s, h = 160.0f * s, pad = 14.0f * s, line = 20.0f * s;
+    P.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
+    P.titleY = P.box.y + pad;
+    const float inputW = 90.0f * s, inputH = 28.0f * s;
+    P.input = Rect{ P.box.x + (w - inputW) * 0.5f, P.titleY + line + 4.0f * s, inputW, inputH };
+    P.rangeY = P.input.y + inputH + 4.0f * s;
+    P.errorY = P.rangeY + line - 4.0f * s;
+    const float bw = 96.0f * s, bh = 24.0f * s, bgap = 12.0f * s;
+    const float by = P.box.y + h - pad - bh;
+    P.ok = Rect{ P.box.x + w * 0.5f - bgap * 0.5f - bw, by, bw, bh };
+    P.cancel = Rect{ P.box.x + w * 0.5f + bgap * 0.5f, by, bw, bh };
+    return P;
+}
 
 // Right sidebar for the one unit shown. From the top, the content scrolls as one: a profile card with the
 // unit's picture, name, stats and carry bar, then the gear, then the inventory grid of 8 columns of slots,
@@ -913,6 +981,9 @@ struct SidebarLayout {
     std::array<Rect, 4> modes{};
     std::array<Rect, 2> behaviorHeads{};       // column headings: On, Behavior
     std::vector<BehaviorRowLayout> behaviorRows;   // one per behavior, highest priority first
+    Rect behaviorAdd{ 0.0f, 0.0f, 0.0f, 0.0f };     // + Add Behavior, under the rows; it opens and shuts the list
+    std::vector<Rect> behaviorOptions;             // the Add Behavior list's entries, while it is open
+    std::vector<BehaviorOption> behaviorOptionInfo;   // filled by the caller, for drawing: what each entry adds
     Rect buildHeading{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Build tab's line saying what is picked
     std::vector<Rect> buildRows;               // the Build tab: one row per PropKind, in order. Picking one picks it.
     float scroll = 0.0f;                       // the scroll offset used, in pixels, within 0..maxScroll
@@ -926,7 +997,8 @@ struct SidebarLayout {
 // profileH: the height the profile card's text needs, from the renderer (profileCardHeight). Under the text is the
 // unit's picture, PROFILE_PICTURE_PX on a side whatever the UI scale (smaller only when the panel is too narrow).
 inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
-                                            const PanelPlace& place = PanelPlace{}, float profileH = 0.0f) {
+                                            const PanelPlace& place = PanelPlace{}, float profileH = 0.0f,
+                                            const BehaviorUi& bui = BehaviorUi{}) {
     const float s = H / 720.0f;
     const UnitPanelMetrics um(s);
     const float pad = um.pad, gap = um.gap;
@@ -959,7 +1031,11 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float slot = ITEM_CELL_PX;   // fixed: a wider panel leaves room beside the grid instead
     const float gridPanelH = um.gridPanelH();
     const float modeRowH = 30.0f * s;   // the row of fighting modes under the heading, with a gap under it
-    const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + innerPad;
+    // Under the rows: + Add Behavior and the open list's entries
+    const float addH = 24.0f * s, optionH = 22.0f * s;
+    const int optionCount = std::max(0, bui.options);
+    const float behaviorPanelH = headH + modeRowH + colHeadH + rules * (rowH + rowGap) + 4.0f * s + addH +
+                                 optionCount * (optionH + rowGap) + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     // The Build tab: the heading line, then a row for Destroy and each prop kind, then a little space under the last
     const float buildRowH = 22.0f * s, buildHeadH = 22.0f * s;
@@ -1027,13 +1103,13 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         }
     }
     if (tab == UNIT_TAB_BEHAVIOR) {
-        // Behaviors: the on box has a fixed width, and the name takes what the buttons leave. The percent buttons,
-        // then the priority and delete buttons, sit at the right end of each row.
+        // Behaviors: the on box has a fixed width, and the name takes what the buttons leave. The # button, then the
+        // priority and delete buttons, sit at the right end of each row.
         L.behaviorPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, behaviorPanelH };
         const float rowX = L.behaviorPanel.x + innerPad;
         const float rowW = L.behaviorPanel.w - 2.0f * innerPad;
         const float toggleW = 18.0f * s, colGap = 3.0f * s;
-        const float buttonsW = 5.0f * buttonW + 4.0f * buttonGap;
+        const float buttonsW = 4.0f * buttonW + 3.0f * buttonGap;
         const float colsW = rowW - buttonsW - gap;                 // the toggle and the name
         const std::array<float, 2> colX{ rowX, rowX + toggleW + colGap };
         const std::array<float, 2> colWidth{ toggleW, colsW - toggleW - colGap };
@@ -1047,19 +1123,27 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
         }
         const float headY = L.behaviorPanel.y + headH + modeRowH;
         const float rowsY = headY + colHeadH;
+        float y = rowsY;
         for (int i = 0; i < rules; ++i) {
             BehaviorRowLayout R;
-            const float y = rowsY + i * (rowH + rowGap);
             R.row = Rect{ rowX, y, rowW, rowH };
             R.toggle = Rect{ colX[0], y + (rowH - toggleW) * 0.5f, toggleW, toggleW };
             R.label = Rect{ colX[1], y, colWidth[1], rowH };
             const float by = y + 2.0f * s, bh = rowH - 4.0f * s;
-            R.less = Rect{ buttonsX, by, buttonW, bh };
-            R.more = Rect{ buttonsX + (buttonW + buttonGap), by, buttonW, bh };
-            R.up = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
-            R.down = Rect{ buttonsX + 3.0f * (buttonW + buttonGap), by, buttonW, bh };
-            R.remove = Rect{ buttonsX + 4.0f * (buttonW + buttonGap), by, buttonW, bh };
+            R.number = Rect{ buttonsX, by, buttonW, bh };
+            R.up = Rect{ buttonsX + (buttonW + buttonGap), by, buttonW, bh };
+            R.down = Rect{ buttonsX + 2.0f * (buttonW + buttonGap), by, buttonW, bh };
+            R.remove = Rect{ buttonsX + 3.0f * (buttonW + buttonGap), by, buttonW, bh };
             L.behaviorRows.push_back(R);
+            y += rowH + rowGap;
+        }
+        // + Add Behavior across the panel, and the list it opens under it
+        y += 4.0f * s;
+        L.behaviorAdd = Rect{ rowX, y, rowW, addH };
+        y += addH + rowGap;
+        for (int i = 0; i < optionCount; ++i) {
+            L.behaviorOptions.push_back(Rect{ rowX + toggleW + colGap, y, rowW - toggleW - colGap, optionH });
+            y += optionH + rowGap;
         }
         for (size_t i = 0; i < 2; ++i) L.behaviorHeads[i] = Rect{ colX[i], headY, colWidth[i], colHeadH };
     }
@@ -1082,8 +1166,7 @@ inline BehaviorHit behaviorHitAt(const SidebarLayout& L, float x, float y) {
         hit.row = (int)i;
         const struct { Rect r; BehaviorPart part; } parts[] = {
             { R.toggle, BehaviorPart::Toggle },
-            { R.less, BehaviorPart::Less },
-            { R.more, BehaviorPart::More },
+            { R.number, BehaviorPart::Number },
             { R.up, BehaviorPart::Up },
             { R.down, BehaviorPart::Down },
             { R.remove, BehaviorPart::Remove },
@@ -1095,6 +1178,21 @@ inline BehaviorHit behaviorHitAt(const SidebarLayout& L, float x, float y) {
             }
         }
         return hit;
+    }
+    return hit;
+}
+
+// The part of the Behavior tab's Add Behavior button and list under a point
+struct BehaviorExtraHit {
+    bool add = false;    // + Add Behavior
+    int option = -1;     // an entry of the Add Behavior list
+};
+inline BehaviorExtraHit behaviorExtraHitAt(const SidebarLayout& L, float x, float y) {
+    BehaviorExtraHit hit;
+    if (!L.body.contains(x, y)) return hit;   // scrolled out of view
+    hit.add = L.behaviorAdd.contains(x, y);
+    for (size_t i = 0; i < L.behaviorOptions.size(); ++i) {
+        if (L.behaviorOptions[i].contains(x, y)) hit.option = (int)i;
     }
     return hit;
 }

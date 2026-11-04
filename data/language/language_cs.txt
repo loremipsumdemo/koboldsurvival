@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Obnovovací frekvence
 UILABEL_DEFAULT	Výchozí
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Omezení snímkové frekvence
+UILABEL_VIEW_RANGE	Dohled
+UILABEL_TILES_N	{0} polí
+UILABEL_SHOW_FPS	Zobrazit FPS
 UILABEL_UNLIMITED	Neomezeno
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatické ukládání
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minut
 UILABEL_UNIT_NAMES	Jména hráčových jednotek
 UILABEL_NPC_NAMES	Jména ostatních jednotek
 UILABEL_PROP_NAMES	Názvy objektů
+UILABEL_PROP_INFO	Zobrazit informace o objektech
 UILABEL_FONT_SIZE	Velikost písma
 UILABEL_RESET_PANELS	Obnovit všechny panely rozhraní
 UILABEL_RESET	Obnovit
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Globální hlasitost
 UILABEL_MUSIC	Hudba
 UILABEL_AMBIENT	Atmosféra
 UILABEL_INTERFACE_SOUNDS	Zvuky rozhraní
+UILABEL_CRAFT_GATHER_SOUNDS	Zvuky výroby a sběru
 UILABEL_SOUND_EFFECTS	Zvukové efekty
 UILABEL_RESTORE_DEFAULTS	Obnovit výchozí nastavení
 UILABEL_WINDOWED	V okně
@@ -123,6 +128,8 @@ UILABEL_STATS	Vlastnosti
 UILABEL_CLICK_TO_TYPE	Kliknutím zadejte jméno
 UILABEL_HEALTH	Zdraví
 UILABEL_HUNGER	Hlad
+UILABEL_RESTED	Odpočinutí
+UILABEL_COMFORT	Pohodlí
 UILABEL_CARRY	Nosnost
 UILABEL_NEXT_LEVEL_XP_LINE	Zkušenosti do dalšího levelu: {0}
 UILABEL_STAT	Vlastnost
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Náhodně vygenerovat tuto jednotku
 UILABEL_RANDOMIZE_ALL	Náhodně vygenerovat vše
 UILABEL_ADD_UNIT	Přidat jednotku
 UILABEL_REMOVE_UNIT	Odebrat jednotku
+UILABEL_ADD_MOB	Přidat tvora
+UILABEL_MOB_KIND	Druh
+UILABEL_MOB_NO_GEAR	Tvor nenosí žádnou výbavu.
+MISC_MEAT_TAKEN_DIES	{0} umírá
+MISC_MOB_INVENTORY_LOCKED	Nedostupné
+MISC_MOB_CANT_HOLD	Tvor nese jen vlastní maso a kosti
+UILABEL_CLEAR	Odklidit
+UILABEL_TASK_CLEARING	Odklízí sutiny
+MISC_CLEARS_DEBRIS	{0} odklízí sutiny
+UILABEL_MOB_INVENTORY_HIDDEN	Nedostupné
+UILABEL_BEHAVIOR_PATROL	Hlídka
+UILABEL_BEHAVIOR_PATROL_SPAWN	Hlídka u místa zrození
+UILABEL_BEHAVIOR_ROAM	Toulání
+UILABEL_BEHAVIOR_PATROL_TIP	Hlídka: prochází se po území, na kterém stojí, pokud patří její frakci, a občas se zastaví.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Hlídka u místa zrození: prochází se poblíž místa, kde se objevila. Pronásledována příliš daleko to vzdá, plně se vyléčí a vrátí se, přičemž do návratu neutrpí žádné zranění.
+UILABEL_BEHAVIOR_ROAM_TIP	Toulání: toulá se volnou krajinou, všude, kam může dojít mimo území vlajek.
+UILABEL_WAIT_NOT_IN_CLAIM	není na území své frakce
+UILABEL_WAIT_NOWHERE_TO_ROAM	poblíž není volná země mimo území
+UILABEL_TEMPERAMENT_AVOIDANT	Plachý
+UILABEL_TEMPERAMENT_PASSIVE	Pasivní
+UILABEL_TEMPERAMENT_NEUTRAL	Neutrální
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agresivní
+UILABEL_TEMPERAMENT	Povaha: {0}
+UILABEL_MOB_NO_ITEMS	Tvor nese jen své vlastní maso a kosti.
 UILABEL_CONFIRM_STARTS	Potvrzení spustí hru s touto družinou.
 UILABEL_NEEDS_NAMES	Každá jednotka musí mít jméno, než může hra začít.
 UILABEL_CLICK_UNIT_EDIT	Kliknutím na jednotku ji upravíte.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Nohy
 UILABEL_SLOT_FEET	Chodidla
 UILABEL_SLOT_ACCESSORY	Doplněk
 UILABEL_BEHAVIOR_ON	Zap.
+UILABEL_BEHAVIOR_EAT	Jíst při hladu < {0} %
+UILABEL_BEHAVIOR_REST	Odpočívat při odpočinutí < {0} %
+UILABEL_BEHAVIOR_LEAVE_BED	Opustit postel po zotavení
+UILABEL_BEHAVIOR_RESCUE	Zachraňovat padlé spojence
+UILABEL_BEHAVIOR_HEAL	Léčit se při zdraví < {0} %
+UILABEL_BEHAVIOR_SHARE	Sdílet
+UILABEL_BEHAVIOR_AUTO_HARVEST	Automatická sklizeň: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Automatické nošení: {0}
+UILABEL_BEHAVIOR_WAITING	(čeká)
+UILABEL_BEHAVIOR_WAIT_TIP	Čeká: {0}
+UILABEL_WAIT_NO_FOOD	žádné jídlo k snědku a nikdo poblíž, kdo by se rozdělil
+UILABEL_WAIT_NO_BED	žádná volná postel ani rohož k odpočinku
+UILABEL_WAIT_NO_HEALING	žádný léčivý předmět a nikdo poblíž, kdo by se rozdělil
+UILABEL_WAIT_WALKING_TO_SHARE	jde k: {0}, kdo se může o jeden rozdělit
+UILABEL_WAIT_NO_PROP	žádný objekt {0} na tvém území s místem pro dalšího pracovníka
+UILABEL_WAIT_CARRY_FULL	žádné místo, aby unesl víc
+UILABEL_WAIT_LOAD_WAITING	nese náklad, který musí automatické nošení odnést jako první
+UILABEL_WAIT_PROP_GONE	objekt zmizel
+UILABEL_WAIT_OUTSIDE_CLAIM	objekt není na území tvé frakce
+UILABEL_WAIT_LOCKED	objekt je zamčený
+UILABEL_WAIT_NOTHING_TO_HAUL	nenese nic, co objekt přijímá
+UILABEL_WAIT_PROP_FULL	objekt nemá místo pro to, co nese
+UILABEL_BEHAVIOR_EAT_TIP	Jíst: pod {0} % hladu sní jídlo, které nejvíc zažene hlad. Použij - a + ke změně hranice.
+UILABEL_BEHAVIOR_HEAL_TIP	Léčit se: pod {0} % zdraví použije léčivý předmět, který obnoví nejvíc zdraví. Použij - a + ke změně hranice.
+UILABEL_BEHAVIOR_REST_TIP	Odpočívat: pod {0} % odpočinutí si lehne do nejbližší volné postele nebo rohože a vstane, až bude plně odpočatý. Použij - a + ke změně hranice.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Opustit postel: vstane z postele nebo rohože po 30 sekundách s plným zdravím a plně odpočatý.
+UILABEL_BEHAVIOR_RESCUE_TIP	Zachraňovat: odnese poblíž ležící jednotku vlastní frakce v bezvědomí do nejbližší volné postele nebo rohože.
+UILABEL_BEHAVIOR_SHARE_TIP	Sdílet: když Jíst nebo Léčit se potřebuje předmět, který tato jednotka nemá, vezme si ho od jednotky v obchodním dosahu, která také sdílí a potřebuje ho méně, a pokud stojí kousek dál, nejdřív k ní dojde. Ostatní sdílející jednotky si mohou od této brát stejně.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Automatická sklizeň: pracuje u nejbližšího objektu {0} na území tvé frakce. S nákladem a automatickým nošením, které ho může přijmout, se zastaví, aby ho odnesla. Tvůj rozkaz ji pozastaví; znovu začne, když jednotka pár sekund nic nedělá.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Automatické nošení: odnáší předměty z inventáře (ne nošené vybavení), které objekt {0} přijímá, dokud je místo a jednotka stojí na území tvé frakce. Tvůj rozkaz ho pozastaví; znovu začne, když jednotka pár sekund nic nedělá.
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	Zobrazit informace o NPC
 UILABEL_COMBAT_MESSAGES	Zprávy o boji
 UILABEL_SEEN	Spatřen
 UILABEL_HIT	Zásah
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Zprávy o zkušenostech
 UILABEL_EXPERIENCE	Zkušenosti
 UILABEL_XP_ATHLETICS	Zkušenosti z atletiky
 UILABEL_XP_ENDURANCE	Zkušenosti z výdrže
+UILABEL_XP_CARRYING	Zkušenosti síly (nošení)
 UILABEL_ITEM_MESSAGES	Zprávy o předmětech
 UILABEL_PICKUP	Sebrat
 UILABEL_DROP	Odložit
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Postup: {0} %
 UILABEL_TIP_CURRENT_XP	Aktuální zkušenosti: {0}
 UILABEL_ATTACK_DEFENSE	Útok {0}      Obrana {1}
 UILABEL_STATS_CAPTION	Vlastnosti: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: prázdný
 UILABEL_COUNT	Počet {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Potřebuje obě ruce. Vedlejší ruka musí být prázdná.
 ITEM_87_NAME	Bojová sekera
 ITEM_87_DESC	Potřebuje obě ruce. Vedlejší ruka musí být prázdná.
 UILABEL_UI_SCALE	Měřítko rozhraní
-NAME_MASCULINE	["Vojtěch", "Jaromír", "Radek", "Tomáš", "Milan"]
-NAME_FEMININE	["Barbora", "Kateřina", "Lenka", "Veronika", "Eliška"]
-NAME_ANDROGYNOUS	["Robin", "Nikol", "Sasha", "Kris", "Dani"]
+NAME_MASCULINE	["Vojtěch", "Jaromír", "Radek", "Tomáš", "Milan", "Adam", "Aleš", "Antonín", "Bohumil", "Bořivoj", "Břetislav", "Čestmír", "Dalibor", "Daniel", "David", "Dušan", "Filip", "František", "Hynek", "Ivan", "Jakub", "Jan", "Jaroslav", "Jindřich", "Jiří", "Josef", "Karel", "Kryštof", "Ladislav", "Libor", "Lubomír", "Lukáš", "Marek", "Martin", "Matěj", "Michal", "Miroslav", "Ondřej", "Otakar", "Pavel", "Petr", "Přemysl", "Richard", "Roman", "Stanislav", "Štěpán", "Václav", "Vladimír", "Zbyněk", "Zdeněk"]
+NAME_FEMININE	["Barbora", "Kateřina", "Lenka", "Veronika", "Eliška", "Adéla", "Alena", "Alžběta", "Anežka", "Anna", "Blanka", "Božena", "Dagmar", "Dana", "Eva", "Hana", "Helena", "Ilona", "Irena", "Iveta", "Jana", "Jarmila", "Jitka", "Johana", "Klára", "Kristýna", "Lucie", "Ludmila", "Magdalena", "Marie", "Markéta", "Martina", "Michaela", "Milada", "Monika", "Natálie", "Olga", "Pavla", "Petra", "Radka", "Simona", "Šárka", "Tereza", "Vendula", "Věra", "Vlasta", "Zdenka", "Zuzana", "Libuše", "Bára"]
+NAME_ANDROGYNOUS	["Robin", "Nikol", "Sasha", "Kris", "Dani", "Alex", "Ari", "Bo", "Charlie", "Eli", "Jo", "Kai", "Kim", "Lou", "Luca", "Mika", "Nikola", "Noa", "Nova", "Rio", "Sam", "Sky", "Toni", "Vic", "Saša", "Míša", "Jiskra", "Mlha", "Ája", "Rosa", "Duha", "Jaro", "Mráz", "Péťa", "Bouře", "Vlasta", "Hvězda", "Jindra", "Les", "Áďa", "Vítr", "Luna", "Míla", "Mech", "Řeka", "Sníh", "Úsvit", "Zora", "Den", "Jas"]
 UILABEL_BODY_TYPE	Typ postavy
 UILABEL_BODY_MASCULINE	Mužská
 UILABEL_BODY_FEMININE	Ženská
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Ve skladu není místo
 MISC_PROP_TAKEN	Už se používá
 MISC_PROP_WORKERS_FULL	Najednou na tom může pracovat nejvýše {0} jednotek
 MISC_GATHERS	{0} získává {1}
+MISC_AUTO_HAUL_STORES	{0} ukládá {1}× {2} do: {3}
 MISC_GATHER_NO_ROOM	{0} nemá místo pro {1} a přestává pracovat
 MISC_REASON_GATHERING	sběr
+MISC_REASON_CLEARING	odklízí sutiny
 UILABEL_TASK	Úkol: {0}
 UILABEL_TASK_IDLE	Nečinný
+UILABEL_TASK_AUTO_GOING	{0} (na cestě)
+UILABEL_TASK_SHARE_WALK	Jde k: {0}, aby se rozdělili
 UILABEL_TASK_MOVING	Pohybuje se
 UILABEL_TASK_RESTING	Odpočívá
 UILABEL_STORAGE_HINT	Pravým kliknutím předmět vezmete, přetažením ven ho položíte tam, kde stojí vaše jednotka. Pravým kliknutím na předměty své jednotky je uložíte.
@@ -595,6 +664,7 @@ FACTION_RED	Rudá frakce
 FACTION_GREEN	Zelená frakce
 FACTION_BLUE	Modrá frakce
 FACTION_YELLOW	Žlutá frakce
+FACTION_EXILE	Vyhnanci
 MISC_REPUTATION_DROPS	Reputace u frakce {0} klesá o {1} na {2}
 UILABEL_MODE_PASSIVE	Pasivní
 UILABEL_MODE_BLOCK	Krytí
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénář
 SCENARIO_VAGABOND_NAME	Tulák
 SCENARIO_VAGABOND_DESC	Osamělý poutník, který nemá nic: žádné předměty, žádnou výbavu a každou statistiku od 1 do 5.
-SCENARIO_RANDOM_NAME	Zcela náhodný
-SCENARIO_RANDOM_DESC	Družina 1 až 32 jednotek, každá se všemi vlastnostmi od 1 do 99 a s náhodnými předměty a výstrojí, kterou unese.
+SCENARIO_PACK_NAME	Smečka dvou
+SCENARIO_PACK_DESC	Osamělý poutník a věrný vlk. Poutník nemá předměty ani výbavu a každou vlastnost od 1 do 5.
+SCENARIO_BEASTMASTER_NAME	Pán šelem
+SCENARIO_BEASTMASTER_DESC	Osamělý poutník v čele 20 tvorů náhodných druhů. Poutník nemá předměty ani výbavu a každou vlastnost od 1 do 5.
+SCENARIO_RANDOM_NAME	Zcela náhodný tábor
+SCENARIO_RANDOM_DESC	Vlastní tábor a družina 20 nebo více jednotek, každá se všemi vlastnostmi od 1 do 99 a s náhodnými předměty a výbavou, které unese, a k tomu 3 až 7 tvorů.
 SCENARIO_CARAVAN_NAME	Putovní karavana
 SCENARIO_CARAVAN_DESC	Deset poutníků společně na cestě. Všechny vlastnosti začínají na 5 a každý nese 10 zlatých mincí.
 SCENARIO_SHABBY_NAME	Ošuntělá parta
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Jedna jednotka bez ničeho: bez předmětů, bez výstroje,
 SCENARIO_DIGGERS_NAME	Kopáči podzemí
 SCENARIO_DIGGERS_DESC	Sedm horníků v plné výstroji. Vlastnosti mají od 5 do 20, ale Těžba je u každého na 50 a každý nese 3 železné rudy.
 SCENARIO_CUSTOM_NAME	Vlastní scénář
-SCENARIO_CUSTOM_DESC	Sestavte si vlastní družinu. Začíná se třemi jednotkami a jednotky můžete přidávat nebo odebírat, až do 32.
+SCENARIO_CUSTOM_DESC	Sestav si vlastní družinu. Začíná se třemi jednotkami a můžeš přidávat či odebírat jednotky i běžné tvory, až do 32.
 PROP_LOCKED_CHEST	Zamčená truhla
 PROP_PRISONER_CAGE	Vězeňská klec
 UILABEL_UNLOCK	Odemknout
+UILABEL_AUTO_HARVEST	Automatická sklizeň
+UILABEL_AUTO_HAUL	Automatické nošení
+MISC_AUTO_OUTSIDE_CLAIM	Automatická sklizeň a nošení fungují jen u objektů na území tvé frakce
+MISC_AUTO_HARVEST_SET	Jednotky ({0}) budou automaticky sklízet: {1}
+MISC_AUTO_HAUL_SET	Jednotky ({0}) budou automaticky nosit do: {1}
+MISC_BEHAVIOR_LIST_FULL	Seznam chování je plný (nejvýše {0})
 UILABEL_PICK_UP	Zvednout
-UILABEL_PUT_IN_BED	Uložit do postele
+UILABEL_PLACE	Umístit
+UILABEL_OCCUPY	Obsadit
+UILABEL_DISBAND	Propustit
+UILABEL_DISBAND_HOLD	Pro potvrzení drž Propustit {0} sekund
 UILABEL_PUT_DOWN	Položit
 UILABEL_SHOP	Nakupovat
 UILABEL_TASK_CARRIED	Nesen
@@ -641,16 +724,33 @@ UILABEL_DOOM	Zkáza
 UILABEL_TASK_UNCONSCIOUS	V bezvědomí
 UILABEL_TASK_DEAD	Mrtvý
 UILABEL_TASK_CARRYING	Nese
+UILABEL_TASK_STORING	Ukládá
 UILABEL_TAKE_ALL	Vzít vše
 UILABEL_LOOT_HINT	Kliknutím na předmět jej vezmete do inventáře své jednotky.
 UILABEL_CORPSE_OF	Mrtvola: {0}
 MISC_FALLS_UNCONSCIOUS	{0} upadá do bezvědomí
 MISC_DIES	{0} umírá
 MISC_RECOVERS	{0} se probouzí
+LOADING_PICTURES	Obrázky
+LOADING_UNIT_MODELS	Modely jednotek
+LOADING_MOB_MODELS	Modely tvorů
+LOADING_MOB_PICTURES	Obrázky tvorů
+LOADING_SKY	Obloha
+LOADING_PROP_MODELS	Modely objektů
+LOADING_MAP	Mapa
+LOADING_MAP_GROUND	Terén mapy
+LOADING_WORLD	Svět
+LOADING_GROUND_ITEMS	Předměty na zemi
+MISC_GOES_HOME	{0} vzdává pronásledování a vrací se domů
+MISC_GETS_UP	{0} vstává, nebezpečí pominulo
 MISC_PICKS_UP_UNIT	{0} zvedá {1}
 MISC_PUTS_DOWN	{0} pokládá {1}
-MISC_PUTS_IN_BED	{0} ukládá {1} do: {2}
-MISC_CORPSE_NO_BED	Postel mrtvým nepomůže
+MISC_PLACES_IN	{0} ukládá {1} do: {2}
+MISC_DISBAND_ASK	{0} navždy opustí tvou družinu i frakci a stane se Vyhnancem: neutrální ke všem a potulující se sám.
+MISC_DISBAND_ASK_MOB	{0} navždy opustí tvou družinu i frakci a vrátí se do divočiny.
+MISC_DISBANDED	{0} opouští tvou družinu jako Vyhnanec
+MISC_DISBANDED_MOB	{0} opouští tvou družinu a vrací se do divočiny
+MISC_CORPSE_NO_PLACE	Mrtvé sem nelze umístit
 MISC_IS_UNCONSCIOUS	{0} je v bezvědomí a nemůže nic dělat
 MISC_ALREADY_CARRYING	Žádná z vybraných jednotek ho nemůže nést
 MISC_LOOT_NO_ROOM	V inventáři není místo
@@ -788,6 +888,46 @@ ITEM_132_NAME	Ohnivé šípy
 ITEM_132_DESC	Hořící šípy pro krátký nebo dlouhý luk. Nejsilnější šípy.
 ITEM_133_NAME	Šipky do kuše
 ITEM_133_DESC	Krátké, těžké šipky do kuše.
+ITEM_134_NAME	Medvědí kosti
+ITEM_134_DESC	Kosti medvěda. Dobré na výrobu.
+ITEM_135_NAME	Kravské kosti
+ITEM_135_DESC	Kosti krávy. Dobré na výrobu.
+ITEM_136_NAME	Kuřecí kosti
+ITEM_136_DESC	Kosti kuřete. Dobré na výrobu.
+ITEM_137_NAME	Kančí kosti
+ITEM_137_DESC	Kosti kance. Dobré na výrobu.
+ITEM_138_NAME	Vlčí kosti
+ITEM_138_DESC	Kosti vlka. Dobré na výrobu.
+ITEM_139_NAME	Jelení kosti
+ITEM_139_DESC	Kosti jelena. Dobré na výrobu.
+ITEM_140_NAME	Králičí kosti
+ITEM_140_DESC	Kosti králíka. Dobré na výrobu.
+ITEM_141_NAME	Rybí kosti
+ITEM_141_DESC	Kosti ryby. Dobré na výrobu.
+ITEM_142_NAME	Krabí krunýř
+ITEM_142_DESC	Zbytky krabího krunýře. Dobré na výrobu.
+ITEM_143_NAME	Ještěrčí kosti
+ITEM_143_DESC	Kosti ještěrky. Dobré na výrobu.
+ITEM_144_NAME	Hadí kosti
+ITEM_144_DESC	Kosti hada. Dobré na výrobu.
+ITEM_145_NAME	Vepřové kosti
+ITEM_145_DESC	Kosti prasete. Dobré na výrobu.
+ITEM_146_NAME	Ovčí kosti
+ITEM_146_DESC	Kosti ovce. Dobré na výrobu.
+ITEM_147_NAME	Kachní kosti
+ITEM_147_DESC	Kosti kachny. Dobré na výrobu.
+ITEM_148_NAME	Želví kosti
+ITEM_148_DESC	Kosti želvy. Dobré na výrobu.
+ITEM_149_NAME	Netopýří kosti
+ITEM_149_DESC	Kosti netopýra. Dobré na výrobu.
+ITEM_150_NAME	Žabí kosti
+ITEM_150_DESC	Kosti žáby. Dobré na výrobu.
+ITEM_151_NAME	Gorlirožcovy kosti
+ITEM_151_DESC	Kosti gorlirožce. Dobré na výrobu.
+ITEM_152_NAME	Syrové gorlirožcové maso
+ITEM_152_DESC	Nevařené maso. Upečte ho u táboráku.
+ITEM_153_NAME	Pečené gorlirožcové maso
+ITEM_153_DESC	Vydatné maso pečené na ohni. Obnoví hodně zdraví a hodně zažene hlad.
 UILABEL_OPTIMIZE	Optimalizovat
 UILABEL_REMOVE_ALL	Sundat vše
 MISC_GEAR_NO_ROOM	V inventáři není dost místa
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Přežití
 UILABEL_EARLY_ACCESS	Předběžný přístup
 MISC_TITLE_KEYS	Výběr  //  Enter Potvrdit
 UILABEL_LANGUAGE_LABEL	Jazyk:
+PROP_FLAG	Vlajka
+PROP_DEBRIS	Sutiny
+PROP_FOUNDATION_SMALL	Malý základ
+PROP_FOUNDATION_LARGE	Velký základ
+PROP_FOUNDATION_LONG	Dlouhý základ
+PROP_FOUNDATION_CIRCLE	Kruhový základ
+PROP_VAULT	Trezor
+UILABEL_BUILD	Stavět
+UILABEL_BUILD_SELECTED	Vybráno: {0}
+UILABEL_BUILD_NONE	Vybráno: nic
+UILABEL_BUILD_SELECT	Vybrat
+UILABEL_BUILD_PICKED	Vybráno
+UILABEL_BUILD_PLACE_HINT	Levým kliknutím na zem umístíš. Drž R a pohybuj myší doleva či doprava pro otočení. Pravé kliknutí nebo Escape zruší.
+UILABEL_UPKEEP_HINT	Spotřebuje za hodinu jeden předmět {0} na údržbu. Vlož je sem.
+MISC_BUILD_BLOCKED	Tady není místo ke stavbě
+MISC_BUILD_UNWALKABLE	Na této zemi nelze stavět
+MISC_BUILD_NO_FOUNDATION	Trezor musí celý stát na základu
+MISC_NO_UPKEEP	Bez údržby: žádná polena
+MISC_UPKEEP_LEFT	Údržba: zbývá {0} min
+PROP_SHOP	Obchod
+PROP_FARM	Farma
+PROP_TURBINE	Větrná turbína
+UILABEL_BUILD_DESTROY	Zbořit
+UILABEL_BUILD_DESTROY_HINT	Levým kliknutím na objekt ho zboříš: jeho obsah spadne na zem a na jeho místě zůstanou sutiny. Levým kliknutím na sutiny je odklidíš. Pravé kliknutí nebo Escape zruší.
+UILABEL_LOCK	Zamknout
+MISC_BUILD_NO_CLAIM	Základ nebo trezor musí stát na tvém vlastním území
+MISC_BUILD_SEALED	Tato země je zapečetěna trezorem jiné frakce
+MISC_BUILD_CLAIM_OVERLAP	Toto území by se překrývalo s územím jiné vlajky
+MISC_BUILD_VAULT_TAKEN	Toto území už trezor má
+MISC_BUILD_VAULT_CAP	Tvá frakce už má tolik trezorů, kolik může mít
+MISC_DESTROY_NOTHING	Tady není co zbořit
+MISC_FLAG_FACTION	Vlastník: {0}
+MISC_FLAG_HEALTH	Zdraví: {0} z {1}
+MISC_FLAG_VAULT_YES	Trezor: stojí, území je drženo
+MISC_FLAG_VAULT_NO	Trezor: žádný, vlajka chátrá
+MISC_PROP_CONDITION	Stav: {0} %
+MISC_PROP_DECAYING	Chátrá
+MISC_PROP_HOLDING	Nechátrá
+MISC_PROP_LOCK_OPEN	Odemčeno
+MISC_PROP_LOCK_YOURS	Zamčeno pro cizí (otevřeno pro tebe)
+MISC_PROP_LOCK_SHUT	Zamčeno (Odemykání zámků {0})
+MISC_PROP_UPKEEP	Údržba: zbývá {0} h
+MISC_PROP_VAULT_UNCLAIMED	Mimo jakékoli území: neposkytuje údržbu
+MOB_BEAR	Medvěd
+MOB_COW	Kráva
+MOB_CHICKEN	Kuře
+MOB_BOAR	Kanec
+MOB_WOLF	Vlk
+MOB_DEER	Jelen
+MOB_RABBIT	Králík
+MOB_FISH	Ryba
+MOB_CRAB	Krab
+MOB_LIZARD	Ještěrka
+MOB_SNAKE	Had
+MOB_PIG	Prase
+MOB_SHEEP	Ovce
+MOB_DUCK	Kachna
+MOB_TURTLE	Želva
+MOB_BAT	Netopýr
+MOB_FROG	Žába
+MOB_GORLICORN	Gorlirožec
+FACTION_MOB_BEAR	Medvědi
+FACTION_MOB_COW	Krávy
+FACTION_MOB_CHICKEN	Kuřata
+FACTION_MOB_BOAR	Kanci
+FACTION_MOB_WOLF	Vlci
+FACTION_MOB_DEER	Jeleni
+FACTION_MOB_RABBIT	Králíci
+FACTION_MOB_FISH	Ryby
+FACTION_MOB_CRAB	Krabi
+FACTION_MOB_LIZARD	Ještěrky
+FACTION_MOB_SNAKE	Hadi
+FACTION_MOB_PIG	Prasata
+FACTION_MOB_SHEEP	Ovce
+FACTION_MOB_DUCK	Kachny
+FACTION_MOB_TURTLE	Želvy
+FACTION_MOB_BAT	Netopýři
+FACTION_MOB_FROG	Žáby
+FACTION_MOB_GORLICORN	Gorlirožci
+MISC_MOB_NO_GEAR	Tvorové nemohou nosit vybavení
+MISC_MOB_NO_HEALING	Tvorové nemohou používat léčivé předměty
+MISC_MOB_CANT_WORK	Tvorové nemohou pracovat u objektů

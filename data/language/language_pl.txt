@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Częstotliwość odświeżania
 UILABEL_DEFAULT	Domyślny
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Limit liczby klatek
+UILABEL_VIEW_RANGE	Zasięg widzenia
+UILABEL_TILES_N	{0} pól
+UILABEL_SHOW_FPS	Pokaż FPS
 UILABEL_UNLIMITED	Bez limitu
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autozapis
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minut
 UILABEL_UNIT_NAMES	Nazwy jednostek gracza
 UILABEL_NPC_NAMES	Nazwy innych jednostek
 UILABEL_PROP_NAMES	Nazwy obiektów
+UILABEL_PROP_INFO	Pokaż informacje o obiektach
 UILABEL_FONT_SIZE	Rozmiar czcionki
 UILABEL_RESET_PANELS	Zresetuj wszystkie panele interfejsu
 UILABEL_RESET	Resetuj
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Głośność globalna
 UILABEL_MUSIC	Muzyka
 UILABEL_AMBIENT	Odgłosy otoczenia
 UILABEL_INTERFACE_SOUNDS	Dźwięki interfejsu
+UILABEL_CRAFT_GATHER_SOUNDS	Dźwięki wytwarzania i zbierania
 UILABEL_SOUND_EFFECTS	Efekty dźwiękowe
 UILABEL_RESTORE_DEFAULTS	Przywróć domyślne
 UILABEL_WINDOWED	Okno
@@ -123,6 +128,8 @@ UILABEL_STATS	Statystyki
 UILABEL_CLICK_TO_TYPE	Kliknij, aby wpisać nazwę
 UILABEL_HEALTH	Zdrowie
 UILABEL_HUNGER	Głód
+UILABEL_RESTED	Wypoczęcie
+UILABEL_COMFORT	Komfort
 UILABEL_CARRY	Udźwig
 UILABEL_NEXT_LEVEL_XP_LINE	Doświadczenie do następnego poziomu: {0}
 UILABEL_STAT	Statystyka
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Losuj tę jednostkę
 UILABEL_RANDOMIZE_ALL	Losuj wszystkie
 UILABEL_ADD_UNIT	Dodaj jednostkę
 UILABEL_REMOVE_UNIT	Usuń jednostkę
+UILABEL_ADD_MOB	Dodaj stworzenie
+UILABEL_MOB_KIND	Gatunek
+UILABEL_MOB_NO_GEAR	Stworzenie nie nosi ekwipunku.
+MISC_MEAT_TAKEN_DIES	{0} ginie
+MISC_MOB_INVENTORY_LOCKED	Niedostępne
+MISC_MOB_CANT_HOLD	Stworzenie nosi tylko własne mięso i kości
+UILABEL_CLEAR	Uprzątnij
+UILABEL_TASK_CLEARING	Uprząta gruz
+MISC_CLEARS_DEBRIS	{0} uprząta gruz
+UILABEL_MOB_INVENTORY_HIDDEN	Niedostępne
+UILABEL_BEHAVIOR_PATROL	Patrol
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol przy miejscu pojawienia
+UILABEL_BEHAVIOR_ROAM	Wędrówka
+UILABEL_BEHAVIOR_PATROL_TIP	Patrol: chodzi po terenie, na którym stoi, jeśli należy on do jego frakcji, co jakiś czas się zatrzymując.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol przy miejscu pojawienia: chodzi w pobliżu miejsca, w którym się pojawił. Ścigany zbyt daleko rezygnuje, w pełni się leczy i wraca, nie otrzymując obrażeń, dopóki nie dotrze na miejsce.
+UILABEL_BEHAVIOR_ROAM_TIP	Wędrówka: wędruje po otwartych terenach, wszędzie, gdzie może chodzić poza terenami flag.
+UILABEL_WAIT_NOT_IN_CLAIM	nie na terenie swojej frakcji
+UILABEL_WAIT_NOWHERE_TO_ROAM	brak otwartego terenu w pobliżu poza terenami flag
+UILABEL_TEMPERAMENT_AVOIDANT	Płochliwy
+UILABEL_TEMPERAMENT_PASSIVE	Bierny
+UILABEL_TEMPERAMENT_NEUTRAL	Neutralny
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agresywny
+UILABEL_TEMPERAMENT	Usposobienie: {0}
+UILABEL_MOB_NO_ITEMS	Stworzenie nosi tylko własne mięso i kości.
 UILABEL_CONFIRM_STARTS	Potwierdzenie rozpocznie grę z tą drużyną.
 UILABEL_NEEDS_NAMES	Każda jednostka musi mieć nazwę, zanim gra się rozpocznie.
 UILABEL_CLICK_UNIT_EDIT	Kliknij jednostkę, aby ją edytować.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Nogi
 UILABEL_SLOT_FEET	Stopy
 UILABEL_SLOT_ACCESSORY	Dodatek
 UILABEL_BEHAVIOR_ON	Wł.
+UILABEL_BEHAVIOR_EAT	Jedz przy głodzie < {0}%
+UILABEL_BEHAVIOR_REST	Odpoczywaj przy wypoczęciu < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Wstań z łóżka po wyzdrowieniu
+UILABEL_BEHAVIOR_RESCUE	Ratuj powalonych sojuszników
+UILABEL_BEHAVIOR_HEAL	Lecz się przy zdrowiu < {0}%
+UILABEL_BEHAVIOR_SHARE	Dziel się
+UILABEL_BEHAVIOR_AUTO_HARVEST	Autozbiór: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Autotransport: {0}
+UILABEL_BEHAVIOR_WAITING	(czeka)
+UILABEL_BEHAVIOR_WAIT_TIP	Czeka: {0}
+UILABEL_WAIT_NO_FOOD	brak jedzenia i nikogo w pobliżu, kto by się podzielił
+UILABEL_WAIT_NO_BED	brak wolnego łóżka lub posłania do odpoczynku
+UILABEL_WAIT_NO_HEALING	brak przedmiotu leczniczego i nikogo w pobliżu, kto by się podzielił
+UILABEL_WAIT_WALKING_TO_SHARE	idzie do: {0}, kto może się podzielić
+UILABEL_WAIT_NO_PROP	brak obiektu {0} na twoim terenie z miejscem dla kolejnego pracownika
+UILABEL_WAIT_CARRY_FULL	brak miejsca, by nieść więcej
+UILABEL_WAIT_LOAD_WAITING	niesie ładunek, który autotransport musi najpierw zabrać
+UILABEL_WAIT_PROP_GONE	obiekt zniknął
+UILABEL_WAIT_OUTSIDE_CLAIM	obiekt nie leży na terenie twojej frakcji
+UILABEL_WAIT_LOCKED	obiekt jest zamknięty
+UILABEL_WAIT_NOTHING_TO_HAUL	nie niesie niczego, co obiekt przyjmuje
+UILABEL_WAIT_PROP_FULL	obiekt nie ma miejsca na to, co niesie
+UILABEL_BEHAVIOR_EAT_TIP	Jedz: poniżej {0}% głodu zjada jedzenie, które najbardziej zaspokaja głód. Użyj - i +, aby zmienić próg.
+UILABEL_BEHAVIOR_HEAL_TIP	Lecz się: poniżej {0}% zdrowia używa przedmiotu leczniczego, który przywraca najwięcej zdrowia. Użyj - i +, aby zmienić próg.
+UILABEL_BEHAVIOR_REST_TIP	Odpoczywaj: poniżej {0}% wypoczęcia kładzie się w najbliższym wolnym łóżku lub posłaniu i wstaje w pełni wypoczęty. Użyj - i +, aby zmienić próg.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Wstań z łóżka: wstaje z łóżka lub posłania po 30 sekundach z pełnym zdrowiem i w pełni wypoczęty.
+UILABEL_BEHAVIOR_RESCUE_TIP	Ratuj: zanosi nieprzytomną jednostkę własnej frakcji leżącą w pobliżu do najbliższego wolnego łóżka lub posłania.
+UILABEL_BEHAVIOR_SHARE_TIP	Dziel się: gdy Jedz lub Lecz się potrzebuje przedmiotu, którego ta jednostka nie ma, bierze go od jednostki w zasięgu handlu, która też się dzieli i potrzebuje go mniej, najpierw do niej podchodząc, jeśli stoi nieco dalej. Inne dzielące się jednostki mogą brać od tej w ten sam sposób.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Autozbiór: pracuje przy najbliższym obiekcie {0} na terenie twojej frakcji. Z ładunkiem i autotransportem, który może go przyjąć, przerywa, by go zanieść. Twój rozkaz go wstrzymuje; wznawia się, gdy jednostka postoi bezczynnie kilka sekund.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Autotransport: zanosi przedmioty z ekwipunku (nie noszony sprzęt), które przyjmuje obiekt {0}, dopóki jest miejsce, a jednostka stoi na terenie twojej frakcji. Twój rozkaz go wstrzymuje; wznawia się, gdy jednostka postoi bezczynnie kilka sekund.
+UILABEL_NPC_MESSAGES	BN
+UILABEL_SHOW_NPC_INFO	Pokaż informacje o BN
 UILABEL_COMBAT_MESSAGES	Komunikaty walki
 UILABEL_SEEN	Widziany
 UILABEL_HIT	Trafienie
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Komunikaty doświadczenia
 UILABEL_EXPERIENCE	Doświadczenie
 UILABEL_XP_ATHLETICS	Doświadczenie atletyki
 UILABEL_XP_ENDURANCE	Doświadczenie wytrzymałości
+UILABEL_XP_CARRYING	Doświadczenie siły (noszenie)
 UILABEL_ITEM_MESSAGES	Komunikaty przedmiotów
 UILABEL_PICKUP	Podniesienie
 UILABEL_DROP	Upuszczenie
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Postęp: {0}%
 UILABEL_TIP_CURRENT_XP	Obecne doświadczenie: {0}
 UILABEL_ATTACK_DEFENSE	Atak {0}      Obrona {1}
 UILABEL_STATS_CAPTION	Statystyki: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Miejsce {0}: {1}
 UILABEL_SLOT_N_EMPTY	Miejsce {0}: puste
 UILABEL_COUNT	Liczba {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Wymaga obu rąk. Ręka pomocnicza musi być pusta.
 ITEM_87_NAME	Bojowa siekiera
 ITEM_87_DESC	Wymaga obu rąk. Ręka pomocnicza musi być pusta.
 UILABEL_UI_SCALE	Skala interfejsu
-NAME_MASCULINE	["Kacper", "Tomasz", "Bartek", "Jakub", "Wojtek"]
-NAME_FEMININE	["Zofia", "Agnieszka", "Julia", "Marta", "Ewa"]
-NAME_ANDROGYNOUS	["Ola", "Kris", "Sasha", "Dani", "Robin"]
+NAME_MASCULINE	["Kacper", "Tomasz", "Bartek", "Jakub", "Wojtek", "Adam", "Adrian", "Andrzej", "Antoni", "Bogdan", "Bolesław", "Czesław", "Damian", "Dariusz", "Dawid", "Filip", "Grzegorz", "Henryk", "Igor", "Jacek", "Jan", "Janusz", "Jarosław", "Jerzy", "Józef", "Kamil", "Karol", "Kazimierz", "Konrad", "Krzysztof", "Leszek", "Łukasz", "Maciej", "Marcin", "Marek", "Mateusz", "Michał", "Mikołaj", "Mirosław", "Paweł", "Piotr", "Przemysław", "Radosław", "Rafał", "Sebastian", "Stanisław", "Szymon", "Tadeusz", "Witold", "Zbigniew"]
+NAME_FEMININE	["Zofia", "Agnieszka", "Julia", "Marta", "Ewa", "Alicja", "Aleksandra", "Anna", "Barbara", "Beata", "Bożena", "Danuta", "Dorota", "Elżbieta", "Emilia", "Gabriela", "Grażyna", "Halina", "Hanna", "Helena", "Irena", "Iwona", "Jadwiga", "Joanna", "Justyna", "Karolina", "Katarzyna", "Krystyna", "Lena", "Magdalena", "Małgorzata", "Maja", "Maria", "Monika", "Natalia", "Oliwia", "Patrycja", "Paulina", "Renata", "Sylwia", "Teresa", "Urszula", "Wanda", "Weronika", "Wiktoria", "Zuzanna", "Bogna", "Dobrawa", "Jagoda", "Milena"]
+NAME_ANDROGYNOUS	["Ola", "Kris", "Sasha", "Dani", "Robin", "Alex", "Ari", "Bo", "Charlie", "Eli", "Jo", "Kai", "Kim", "Lou", "Luca", "Mika", "Nikola", "Noa", "Nova", "Rio", "Sam", "Sky", "Toni", "Vic", "Wiki", "Zuzu", "Bajka", "Gaja", "Iskra", "Deszcz", "Brzask", "Lumi", "Miko", "Nel", "Niko", "Las", "Echo", "Sawa", "Sol", "Szron", "Łuna", "Mgła", "Rzeka", "Grom", "Brzoza", "Jarzębina", "Rosa", "Świt", "Wiatr", "Zorza"]
 UILABEL_BODY_TYPE	Typ sylwetki
 UILABEL_BODY_MASCULINE	Męska
 UILABEL_BODY_FEMININE	Żeńska
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Brak miejsca w schowku
 MISC_PROP_TAKEN	Już zajęte
 MISC_PROP_WORKERS_FULL	Naraz może przy tym pracować najwyżej {0} jednostek
 MISC_GATHERS	{0} zbiera {1}
+MISC_AUTO_HAUL_STORES	{0} odkłada {1} × {2} do: {3}
 MISC_GATHER_NO_ROOM	{0} nie ma miejsca na {1} i przestaje pracować
 MISC_REASON_GATHERING	zbieranie
+MISC_REASON_CLEARING	uprząta gruz
 UILABEL_TASK	Zadanie: {0}
 UILABEL_TASK_IDLE	Bezczynny
+UILABEL_TASK_AUTO_GOING	{0} (w drodze)
+UILABEL_TASK_SHARE_WALK	Idzie do: {0}, by się podzielić
 UILABEL_TASK_MOVING	W ruchu
 UILABEL_TASK_RESTING	Odpoczywa
 UILABEL_STORAGE_HINT	Kliknij prawym przyciskiem przedmiot, aby go wziąć, lub przeciągnij go na zewnątrz, aby upuścić go tam, gdzie stoi twoja jednostka. Kliknij prawym przyciskiem przedmioty jednostki, aby je schować.
@@ -595,6 +664,7 @@ FACTION_RED	Czerwona frakcja
 FACTION_GREEN	Zielona frakcja
 FACTION_BLUE	Niebieska frakcja
 FACTION_YELLOW	Żółta frakcja
+FACTION_EXILE	Wygnańcy
 MISC_REPUTATION_DROPS	Reputacja u: {0} spada o {1}, do {2}
 UILABEL_MODE_PASSIVE	Bierny
 UILABEL_MODE_BLOCK	Blok
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariusz
 SCENARIO_VAGABOND_NAME	Włóczęga
 SCENARIO_VAGABOND_DESC	Samotny wędrowiec, który nic nie ma: bez przedmiotów, bez ekwipunku, a każda statystyka od 1 do 5.
-SCENARIO_RANDOM_NAME	W pełni losowy
-SCENARIO_RANDOM_DESC	Drużyna od 1 do 32 jednostek, każda ze wszystkimi cechami od 1 do 99 oraz losowymi przedmiotami i wyposażeniem, które jest w stanie unieść.
+SCENARIO_PACK_NAME	Wataha dwojga
+SCENARIO_PACK_DESC	Samotny wędrowiec i wierny wilk. Wędrowiec nie ma przedmiotów ani ekwipunku, a każda statystyka wynosi od 1 do 5.
+SCENARIO_BEASTMASTER_NAME	Władca bestii
+SCENARIO_BEASTMASTER_DESC	Samotny wędrowiec na czele 20 stworzeń losowych gatunków. Wędrowiec nie ma przedmiotów ani ekwipunku, a każda statystyka wynosi od 1 do 5.
+SCENARIO_RANDOM_NAME	W pełni losowy obóz
+SCENARIO_RANDOM_DESC	Własny obóz i drużyna 20 lub więcej jednostek, każda z wszystkimi statystykami od 1 do 99 i losowymi przedmiotami i ekwipunkiem, które udźwignie, a do tego od 3 do 7 stworzeń.
 SCENARIO_CARAVAN_NAME	Wędrowna karawana
 SCENARIO_CARAVAN_DESC	Dziesięciu podróżnych razem w drodze. Wszystkie cechy zaczynają od 5, a każdy niesie 10 złotych monet.
 SCENARIO_SHABBY_NAME	Obdarta załoga
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Jedna jednostka bez niczego: bez przedmiotów, bez wyposaż
 SCENARIO_DIGGERS_NAME	Kopacze lochów
 SCENARIO_DIGGERS_DESC	Siedmiu górników w pełnym wyposażeniu. Ich cechy wynoszą od 5 do 20, ale każdy ma Górnictwo 50 i niesie 3 rudy żelaza.
 SCENARIO_CUSTOM_NAME	Własny scenariusz
-SCENARIO_CUSTOM_DESC	Zbuduj własną drużynę. Zaczyna się od trzech jednostek, a jednostki możesz dodawać lub usuwać, do 32.
+SCENARIO_CUSTOM_DESC	Zbuduj własną drużynę. Zaczyna się od trzech jednostek, a możesz dodawać lub usuwać jednostki i zwykłe stworzenia, do 32.
 PROP_LOCKED_CHEST	Zamknięta skrzynia
 PROP_PRISONER_CAGE	Klatka na więźniów
 UILABEL_UNLOCK	Otwórz zamek
+UILABEL_AUTO_HARVEST	Autozbiór
+UILABEL_AUTO_HAUL	Autotransport
+MISC_AUTO_OUTSIDE_CLAIM	Autozbiór i autotransport działają tylko na obiektach na terenie twojej frakcji
+MISC_AUTO_HARVEST_SET	Jednostki ({0}) będą automatycznie zbierać: {1}
+MISC_AUTO_HAUL_SET	Jednostki ({0}) będą automatycznie zanosić do: {1}
+MISC_BEHAVIOR_LIST_FULL	Lista zachowań jest pełna (najwyżej {0})
 UILABEL_PICK_UP	Podnieś
-UILABEL_PUT_IN_BED	Połóż do łóżka
+UILABEL_PLACE	Umieść
+UILABEL_OCCUPY	Zajmij
+UILABEL_DISBAND	Zwolnij
+UILABEL_DISBAND_HOLD	Przytrzymaj Zwolnij przez {0} sekund, aby potwierdzić
 UILABEL_PUT_DOWN	Połóż na ziemi
 UILABEL_SHOP	Sklep
 UILABEL_TASK_CARRIED	Niesiony
@@ -641,16 +724,33 @@ UILABEL_DOOM	Zguba
 UILABEL_TASK_UNCONSCIOUS	Nieprzytomny
 UILABEL_TASK_DEAD	Martwy
 UILABEL_TASK_CARRYING	Niesie
+UILABEL_TASK_STORING	Odkłada
 UILABEL_TAKE_ALL	Weź wszystko
 UILABEL_LOOT_HINT	Kliknij przedmiot, aby wziąć go do ekwipunku swojej jednostki.
 UILABEL_CORPSE_OF	Zwłoki: {0}
 MISC_FALLS_UNCONSCIOUS	{0} traci przytomność
 MISC_DIES	{0} umiera
 MISC_RECOVERS	{0} odzyskuje przytomność
+LOADING_PICTURES	Obrazy
+LOADING_UNIT_MODELS	Modele jednostek
+LOADING_MOB_MODELS	Modele stworzeń
+LOADING_MOB_PICTURES	Obrazy stworzeń
+LOADING_SKY	Niebo
+LOADING_PROP_MODELS	Modele obiektów
+LOADING_MAP	Mapa
+LOADING_MAP_GROUND	Teren mapy
+LOADING_WORLD	Świat
+LOADING_GROUND_ITEMS	Przedmioty na ziemi
+MISC_GOES_HOME	{0} rezygnuje z pościgu i wraca do domu
+MISC_GETS_UP	{0} wstaje, niebezpieczeństwo minęło
 MISC_PICKS_UP_UNIT	{0} podnosi: {1}
 MISC_PUTS_DOWN	{0} kładzie na ziemi: {1}
-MISC_PUTS_IN_BED	{0} kładzie {1} do: {2}
-MISC_CORPSE_NO_BED	Łóżko nic nie pomoże zmarłym
+MISC_PLACES_IN	{0} kładzie {1} do: {2}
+MISC_DISBAND_ASK	{0} na zawsze opuści twój oddział i frakcję i zostanie Wygnańcem: neutralnym wobec wszystkich i wędrującym samotnie.
+MISC_DISBAND_ASK_MOB	{0} na zawsze opuści twój oddział i frakcję i wróci na łono natury.
+MISC_DISBANDED	{0} opuszcza twój oddział jako Wygnaniec
+MISC_DISBANDED_MOB	{0} opuszcza twój oddział i wraca na łono natury
+MISC_CORPSE_NO_PLACE	Zmarłych nie można tam umieścić
 MISC_IS_UNCONSCIOUS	{0} jest nieprzytomny i nic nie może zrobić
 MISC_ALREADY_CARRYING	Żadna z wybranych jednostek nie może go nieść
 MISC_LOOT_NO_ROOM	Brak miejsca w ekwipunku
@@ -788,6 +888,46 @@ ITEM_132_NAME	Ogniste strzały
 ITEM_132_DESC	Płonące strzały do krótkiego lub długiego łuku. Najmocniejsze strzały.
 ITEM_133_NAME	Bełty
 ITEM_133_DESC	Krótkie, ciężkie bełty do kuszy.
+ITEM_134_NAME	Kości niedźwiedzia
+ITEM_134_DESC	Kości niedźwiedzia. Przydatne w rzemiośle.
+ITEM_135_NAME	Kości krowy
+ITEM_135_DESC	Kości krowy. Przydatne w rzemiośle.
+ITEM_136_NAME	Kości kurczaka
+ITEM_136_DESC	Kości kurczaka. Przydatne w rzemiośle.
+ITEM_137_NAME	Kości dzika
+ITEM_137_DESC	Kości dzika. Przydatne w rzemiośle.
+ITEM_138_NAME	Kości wilka
+ITEM_138_DESC	Kości wilka. Przydatne w rzemiośle.
+ITEM_139_NAME	Kości jelenia
+ITEM_139_DESC	Kości jelenia. Przydatne w rzemiośle.
+ITEM_140_NAME	Kości królika
+ITEM_140_DESC	Kości królika. Przydatne w rzemiośle.
+ITEM_141_NAME	Ości ryby
+ITEM_141_DESC	Ości ryby. Przydatne w rzemiośle.
+ITEM_142_NAME	Pancerz kraba
+ITEM_142_DESC	Resztki pancerza kraba. Przydatne w rzemiośle.
+ITEM_143_NAME	Kości jaszczurki
+ITEM_143_DESC	Kości jaszczurki. Przydatne w rzemiośle.
+ITEM_144_NAME	Kości węża
+ITEM_144_DESC	Kości węża. Przydatne w rzemiośle.
+ITEM_145_NAME	Kości świni
+ITEM_145_DESC	Kości świni. Przydatne w rzemiośle.
+ITEM_146_NAME	Kości owcy
+ITEM_146_DESC	Kości owcy. Przydatne w rzemiośle.
+ITEM_147_NAME	Kości kaczki
+ITEM_147_DESC	Kości kaczki. Przydatne w rzemiośle.
+ITEM_148_NAME	Kości żółwia
+ITEM_148_DESC	Kości żółwia. Przydatne w rzemiośle.
+ITEM_149_NAME	Kości nietoperza
+ITEM_149_DESC	Kości nietoperza. Przydatne w rzemiośle.
+ITEM_150_NAME	Kości żaby
+ITEM_150_DESC	Kości żaby. Przydatne w rzemiośle.
+ITEM_151_NAME	Kości gorlirożca
+ITEM_151_DESC	Kości gorlirożca. Przydatne w rzemiośle.
+ITEM_152_NAME	Surowe mięso gorlirożca
+ITEM_152_DESC	Niegotowane mięso. Upiecz je przy ognisku.
+ITEM_153_NAME	Pieczone mięso gorlirożca
+ITEM_153_DESC	Treściwe mięso upieczone nad ogniem. Przywraca dużo zdrowia i mocno zaspokaja głód.
 UILABEL_OPTIMIZE	Optymalizuj
 UILABEL_REMOVE_ALL	Zdejmij wszystko
 MISC_GEAR_NO_ROOM	Za mało miejsca w ekwipunku
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Przetrwanie
 UILABEL_EARLY_ACCESS	Wczesny dostęp
 MISC_TITLE_KEYS	Wybór  //  Enter Potwierdź
 UILABEL_LANGUAGE_LABEL	Język:
+PROP_FLAG	Flaga
+PROP_DEBRIS	Gruz
+PROP_FOUNDATION_SMALL	Mały fundament
+PROP_FOUNDATION_LARGE	Duży fundament
+PROP_FOUNDATION_LONG	Długi fundament
+PROP_FOUNDATION_CIRCLE	Okrągły fundament
+PROP_VAULT	Skarbiec
+UILABEL_BUILD	Buduj
+UILABEL_BUILD_SELECTED	Wybrano: {0}
+UILABEL_BUILD_NONE	Wybrano: nic
+UILABEL_BUILD_SELECT	Wybierz
+UILABEL_BUILD_PICKED	Wybrane
+UILABEL_BUILD_PLACE_HINT	Kliknij lewym przyciskiem na ziemi, aby postawić. Przytrzymaj R i ruszaj myszą w lewo lub prawo, aby obrócić. Prawy przycisk lub Escape anuluje.
+UILABEL_UPKEEP_HINT	Zużywa jeden przedmiot {0} na godzinę na utrzymanie. Włóż je tutaj.
+MISC_BUILD_BLOCKED	Brak miejsca na budowę
+MISC_BUILD_UNWALKABLE	Na tym terenie nie można budować
+MISC_BUILD_NO_FOUNDATION	Skarbiec musi stać w całości na fundamencie
+MISC_NO_UPKEEP	Brak utrzymania: brak kłód
+MISC_UPKEEP_LEFT	Utrzymanie: zostało {0} min
+PROP_SHOP	Sklep
+PROP_FARM	Farma
+PROP_TURBINE	Turbina
+UILABEL_BUILD_DESTROY	Zburz
+UILABEL_BUILD_DESTROY_HINT	Kliknij lewym przyciskiem dowolny obiekt, aby go zburzyć: jego zawartość spada na ziemię, a w jego miejscu zostaje gruz. Kliknij lewym przyciskiem gruz, aby go uprzątnąć. Prawy przycisk lub Escape anuluje.
+UILABEL_LOCK	Zamknij
+MISC_BUILD_NO_CLAIM	Fundament lub skarbiec musi stać na twoim własnym terenie
+MISC_BUILD_SEALED	Ten teren jest zapieczętowany skarbcem innej frakcji
+MISC_BUILD_CLAIM_OVERLAP	Ten teren nachodziłby na teren innej flagi
+MISC_BUILD_VAULT_TAKEN	Ten teren ma już skarbiec
+MISC_BUILD_VAULT_CAP	Twoja frakcja ma już tyle skarbców, ile może mieć
+MISC_DESTROY_NOTHING	Nie ma tu nic do zburzenia
+MISC_FLAG_FACTION	Właściciel: {0}
+MISC_FLAG_HEALTH	Wytrzymałość: {0} z {1}
+MISC_FLAG_VAULT_YES	Skarbiec: stoi, teren jest utrzymany
+MISC_FLAG_VAULT_NO	Skarbiec: brak, flaga się niszczy
+MISC_PROP_CONDITION	Stan: {0}%
+MISC_PROP_DECAYING	Niszczeje
+MISC_PROP_HOLDING	Nie niszczeje
+MISC_PROP_LOCK_OPEN	Otwarte
+MISC_PROP_LOCK_YOURS	Zamknięte dla obcych (otwarte dla ciebie)
+MISC_PROP_LOCK_SHUT	Zamknięte (Otwieranie zamków {0})
+MISC_PROP_UPKEEP	Utrzymanie: zostało {0} godz.
+MISC_PROP_VAULT_UNCLAIMED	Poza wszelkim terenem: nie zapewnia utrzymania
+MOB_BEAR	Niedźwiedź
+MOB_COW	Krowa
+MOB_CHICKEN	Kurczak
+MOB_BOAR	Dzik
+MOB_WOLF	Wilk
+MOB_DEER	Jeleń
+MOB_RABBIT	Królik
+MOB_FISH	Ryba
+MOB_CRAB	Krab
+MOB_LIZARD	Jaszczurka
+MOB_SNAKE	Wąż
+MOB_PIG	Świnia
+MOB_SHEEP	Owca
+MOB_DUCK	Kaczka
+MOB_TURTLE	Żółw
+MOB_BAT	Nietoperz
+MOB_FROG	Żaba
+MOB_GORLICORN	Gorlirożec
+FACTION_MOB_BEAR	Niedźwiedzie
+FACTION_MOB_COW	Krowy
+FACTION_MOB_CHICKEN	Kurczaki
+FACTION_MOB_BOAR	Dziki
+FACTION_MOB_WOLF	Wilki
+FACTION_MOB_DEER	Jelenie
+FACTION_MOB_RABBIT	Króliki
+FACTION_MOB_FISH	Ryby
+FACTION_MOB_CRAB	Kraby
+FACTION_MOB_LIZARD	Jaszczurki
+FACTION_MOB_SNAKE	Węże
+FACTION_MOB_PIG	Świnie
+FACTION_MOB_SHEEP	Owce
+FACTION_MOB_DUCK	Kaczki
+FACTION_MOB_TURTLE	Żółwie
+FACTION_MOB_BAT	Nietoperze
+FACTION_MOB_FROG	Żaby
+FACTION_MOB_GORLICORN	Gorlirożce
+MISC_MOB_NO_GEAR	Stworzenia nie mogą nosić sprzętu
+MISC_MOB_NO_HEALING	Stworzenia nie mogą używać przedmiotów leczniczych
+MISC_MOB_CANT_WORK	Stworzenia nie mogą pracować przy obiektach

@@ -267,6 +267,7 @@ std::vector<RowSpec> audioRows(const GameSettings& s) {
     rows.push_back(makeLevel(RowId::AmbientLevel, lang("UILABEL_AMBIENT"), s.ambientVolume, s.ambientOn));
     rows.push_back(makeLevel(RowId::EffectsLevel, lang("UILABEL_SOUND_EFFECTS"), s.effectsVolume, s.effectsOn));
     rows.push_back(makeLevel(RowId::InterfaceLevel, lang("UILABEL_INTERFACE_SOUNDS"), s.interfaceVolume, s.interfaceOn));
+    rows.push_back(makeToggle(RowId::CraftGatherSounds, lang("UILABEL_CRAFT_GATHER_SOUNDS"), s.craftGatherSounds));
     return rows;
 }
 
@@ -516,6 +517,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::ShowFps:
         s.showFps = on;
+        break;
+    case RowId::CraftGatherSounds:
+        s.craftGatherSounds = on;
         break;
     case RowId::GlobalLevel:
         s.globalOn = on;

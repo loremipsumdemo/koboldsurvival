@@ -63,10 +63,19 @@ struct PartyMember {
     std::array<int, GEAR_SLOTS> gear{};               // item id in each gear slot, 0 for empty
     std::array<ItemStack, INVENTORY_SLOTS> items{};   // what the unit carries at the start
     int hunger = -1;                                   // hunger at the start, 0 to 100; -1 for full
+    int mob = 0;                                       // a mob's kind (mobs.h), a regular one; 0 for a person. A mob
+                                                       // has its kind's stats, no gear, and only its meat and bones.
 };
 
-// The units a new game starts with: START_UNIT_COUNT or more, up to PARTY_MAX_UNITS
+// The units a new game starts with: START_UNIT_COUNT or more, up to PARTY_MAX_UNITS, people and mobs
 using Party = std::vector<PartyMember>;
+
+// A party member that is a mob of a kind: named for its kind, with that kind's rolled stats
+PartyMember mobMember(int kind, Rng& rng);
+// The regular mob kinds (no bosses), in kind order
+std::vector<int> regularMobKinds();
+// How many of a party's members are people, not mobs
+int partyPeople(const Party& p);
 
 // The display name of an item, or an empty string for id 0 or an unknown id
 std::string itemNameOf(int item);
@@ -103,9 +112,13 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::ar
 
 // ---- Scenarios: the start a new game is set up from, picked on the page before the party menu ----
 // Listed in this order, Vagabond at the top and Custom at the bottom. Only Custom lets the party menu add or remove units.
+// Only Full Random Camp starts with your camp (scenarioHasCamp); the rest start with no camp, and no mobs but their own.
 enum class ScenarioId : int {
     Vagabond = 0,       // 1 unit, every stat 1 to 5, nothing carried or worn
-    FullRandom,         // 1 to 32 units, every stat 1 to 99, random items and gear they can carry
+    PackOfTwo,          // a Vagabond and a Wolf named Buddy
+    Beastmaster,        // a Vagabond and 20 regular mobs of random kinds; each mob's kind can be changed, not their number
+    FullRandom,         // Full Random Camp: your camp, 20 or more units with every stat 1 to 99 and random items and gear
+                        // they can carry, and 3 to 7 regular mobs
     TravelingCaravan,   // 10 units, every stat 5, 10 Gold Coins each
     ShabbyCrew,         // 3 units, one random item each, every stat 1 to 10
     StarvingNobody,     // 1 unit, nothing carried or worn, every stat 1, hunger 0
@@ -120,6 +133,11 @@ const char* scenarioDescKey(ScenarioId id);
 // Custom. The other scenarios keep what they roll; their units' names, pictures and body types can still be changed.
 inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
 inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom; }
+// Whether the party menu may change a mob member's kind: Custom, and Beastmaster, whose mobs can each be made any
+// regular kind though their number is fixed
+inline bool scenarioMobKindEditable(ScenarioId id) { return id == ScenarioId::Custom || id == ScenarioId::Beastmaster; }
+// Whether a new game of this scenario starts with your camp: only Full Random Camp
+inline bool scenarioHasCamp(ScenarioId id) { return id == ScenarioId::FullRandom; }
 // A party for a scenario, with distinct names and sprites. count, when 1 or more, sets the size of a Full Random or
 // Custom party (the other scenarios have their own sizes).
 Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
@@ -127,6 +145,6 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
 // Adds a random member to the end of the party, with a name and sprite that no member has yet
 void addRandomMember(Party& p, Rng& rng);
 
-// Puts the party into the player units (the Commandable ones), in the order they were created. Other
-// units are left as they are.
+// Puts the party into the player units (the Commandable ones), in the order they were created: its people into your
+// people, its mobs into your mobs. Other units are left as they are.
 void applyParty(World& w, const Party& p);

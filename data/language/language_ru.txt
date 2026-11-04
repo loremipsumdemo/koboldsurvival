@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Частота обновления
 UILABEL_DEFAULT	По умолчанию
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Ограничение частоты кадров
+UILABEL_VIEW_RANGE	Дальность обзора
+UILABEL_TILES_N	Клеток: {0}
+UILABEL_SHOW_FPS	Показывать FPS
 UILABEL_UNLIMITED	Без ограничения
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Автосохранение
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} мин.
 UILABEL_UNIT_NAMES	Имена юнитов игрока
 UILABEL_NPC_NAMES	Имена других юнитов
 UILABEL_PROP_NAMES	Названия объектов
+UILABEL_PROP_INFO	Показывать сведения об объектах
 UILABEL_FONT_SIZE	Размер шрифта
 UILABEL_RESET_PANELS	Сбросить все панели интерфейса
 UILABEL_RESET	Сбросить
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Общая громкость
 UILABEL_MUSIC	Музыка
 UILABEL_AMBIENT	Фоновые звуки
 UILABEL_INTERFACE_SOUNDS	Звуки интерфейса
+UILABEL_CRAFT_GATHER_SOUNDS	Звуки ремесла и сбора
 UILABEL_SOUND_EFFECTS	Звуковые эффекты
 UILABEL_RESTORE_DEFAULTS	Восстановить значения по умолчанию
 UILABEL_WINDOWED	В окне
@@ -123,6 +128,8 @@ UILABEL_STATS	Характеристики
 UILABEL_CLICK_TO_TYPE	Нажмите, чтобы ввести имя
 UILABEL_HEALTH	Здоровье
 UILABEL_HUNGER	Голод
+UILABEL_RESTED	Бодрость
+UILABEL_COMFORT	Комфорт
 UILABEL_CARRY	Грузоподъёмность
 UILABEL_NEXT_LEVEL_XP_LINE	Опыт до следующего уровня: {0}
 UILABEL_STAT	Характеристика
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Случайно настроить этого юнита
 UILABEL_RANDOMIZE_ALL	Случайно настроить всех
 UILABEL_ADD_UNIT	Добавить юнита
 UILABEL_REMOVE_UNIT	Удалить юнита
+UILABEL_ADD_MOB	Добавить животное
+UILABEL_MOB_KIND	Вид
+UILABEL_MOB_NO_GEAR	Животное не носит снаряжения.
+MISC_MEAT_TAKEN_DIES	{0} погибает
+MISC_MOB_INVENTORY_LOCKED	Недоступно
+MISC_MOB_CANT_HOLD	Животное несёт только своё мясо и кости
+UILABEL_CLEAR	Убрать
+UILABEL_TASK_CLEARING	Разбирает завалы
+MISC_CLEARS_DEBRIS	{0} убирает обломки
+UILABEL_MOB_INVENTORY_HIDDEN	Недоступно
+UILABEL_BEHAVIOR_PATROL	Патруль
+UILABEL_BEHAVIOR_PATROL_SPAWN	Патруль у места появления
+UILABEL_BEHAVIOR_ROAM	Бродяжничество
+UILABEL_BEHAVIOR_PATROL_TIP	Патруль: ходит по территории, на которой стоит, если она принадлежит его фракции, время от времени останавливаясь.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Патруль у места появления: ходит рядом с местом, где появился. Если его увели в погоне слишком далеко, сдаётся, полностью исцеляется и возвращается, не получая урона, пока не дойдёт.
+UILABEL_BEHAVIOR_ROAM_TIP	Бродяжничество: бродит по открытым землям, везде, где может пройти вне территорий флагов.
+UILABEL_WAIT_NOT_IN_CLAIM	не на территории своей фракции
+UILABEL_WAIT_NOWHERE_TO_ROAM	поблизости нет открытой земли вне территорий
+UILABEL_TEMPERAMENT_AVOIDANT	Пугливый
+UILABEL_TEMPERAMENT_PASSIVE	Пассивный
+UILABEL_TEMPERAMENT_NEUTRAL	Нейтральный
+UILABEL_TEMPERAMENT_AGGRESSIVE	Агрессивный
+UILABEL_TEMPERAMENT	Нрав: {0}
+UILABEL_MOB_NO_ITEMS	Животное несёт только собственное мясо и кости.
 UILABEL_CONFIRM_STARTS	Подтверждение начнёт игру с этим отрядом.
 UILABEL_NEEDS_NAMES	Каждому юниту нужно имя, прежде чем игра сможет начаться.
 UILABEL_CLICK_UNIT_EDIT	Нажмите на юнита, чтобы его изменить.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Ноги
 UILABEL_SLOT_FEET	Стопы
 UILABEL_SLOT_ACCESSORY	Аксессуар
 UILABEL_BEHAVIOR_ON	Вкл.
+UILABEL_BEHAVIOR_EAT	Есть при сытости < {0}%
+UILABEL_BEHAVIOR_REST	Отдыхать при бодрости < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Вставать с кровати после восстановления
+UILABEL_BEHAVIOR_RESCUE	Спасать павших союзников
+UILABEL_BEHAVIOR_HEAL	Лечиться при здоровье < {0}%
+UILABEL_BEHAVIOR_SHARE	Делиться
+UILABEL_BEHAVIOR_AUTO_HARVEST	Автосбор: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Автоперенос: {0}
+UILABEL_BEHAVIOR_WAITING	(ожидает)
+UILABEL_BEHAVIOR_WAIT_TIP	Ожидает: {0}
+UILABEL_WAIT_NO_FOOD	нет еды, и рядом никого, кто бы поделился
+UILABEL_WAIT_NO_BED	нет свободной кровати или подстилки для отдыха
+UILABEL_WAIT_NO_HEALING	нет лечебного предмета, и рядом никого, кто бы поделился
+UILABEL_WAIT_WALKING_TO_SHARE	идёт к {0}, кто может поделиться
+UILABEL_WAIT_NO_PROP	на вашей территории нет объекта «{0}» со свободным местом для работника
+UILABEL_WAIT_CARRY_FULL	нет места, чтобы нести больше
+UILABEL_WAIT_LOAD_WAITING	несёт груз, который сначала должен забрать автоперенос
+UILABEL_WAIT_PROP_GONE	объект исчез
+UILABEL_WAIT_OUTSIDE_CLAIM	объект не на территории вашей фракции
+UILABEL_WAIT_LOCKED	объект заперт
+UILABEL_WAIT_NOTHING_TO_HAUL	не несёт ничего, что принимает объект
+UILABEL_WAIT_PROP_FULL	в объекте нет места для того, что он несёт
+UILABEL_BEHAVIOR_EAT_TIP	Есть: при сытости ниже {0}% съедает еду, которая лучше всего утоляет голод. Кнопками - и + меняйте порог.
+UILABEL_BEHAVIOR_HEAL_TIP	Лечиться: при здоровье ниже {0}% использует лечебный предмет, восстанавливающий больше всего здоровья. Кнопками - и + меняйте порог.
+UILABEL_BEHAVIOR_REST_TIP	Отдыхать: при бодрости ниже {0}% ложится в ближайшую свободную кровать или на подстилку и встаёт, полностью отдохнув. Кнопками - и + меняйте порог.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Вставать с кровати: встаёт с кровати или подстилки через 30 секунд с полным здоровьем и полной бодростью.
+UILABEL_BEHAVIOR_RESCUE_TIP	Спасать: относит лежащего рядом без сознания юнита своей фракции к ближайшей свободной кровати или подстилке.
+UILABEL_BEHAVIOR_SHARE_TIP	Делиться: когда для «Есть» или «Лечиться» нужен предмет, которого у юнита нет, он берёт его у юнита в пределах торговой дистанции, который тоже делится и нуждается в нём меньше, сначала подходя, если тот стоит чуть дальше. Другие делящиеся юниты могут так же брать у этого.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Автосбор: работает на ближайшем объекте «{0}» на территории вашей фракции. С грузом и автопереносом, который может его принять, останавливается, чтобы отнести. Ваш приказ ставит его на паузу; он возобновляется, когда юнит постоит без дела несколько секунд.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Автоперенос: относит предметы из инвентаря (не надетое снаряжение), которые принимает «{0}», пока есть место и юнит стоит на территории вашей фракции. Ваш приказ ставит его на паузу; он возобновляется, когда юнит постоит без дела несколько секунд.
+UILABEL_NPC_MESSAGES	НИП
+UILABEL_SHOW_NPC_INFO	Показывать сведения о НИП
 UILABEL_COMBAT_MESSAGES	Сообщения боя
 UILABEL_SEEN	Замечен
 UILABEL_HIT	Попадание
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Сообщения об опыте
 UILABEL_EXPERIENCE	Опыт
 UILABEL_XP_ATHLETICS	Опыт атлетики
 UILABEL_XP_ENDURANCE	Опыт выносливости
+UILABEL_XP_CARRYING	Опыт силы (переноска)
 UILABEL_ITEM_MESSAGES	Сообщения о предметах
 UILABEL_PICKUP	Подобрать
 UILABEL_DROP	Выбросить
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Прогресс: {0}%
 UILABEL_TIP_CURRENT_XP	Текущий опыт: {0}
 UILABEL_ATTACK_DEFENSE	Атака {0}      Защита {1}
 UILABEL_STATS_CAPTION	Характеристики: {0}
+UILABEL_MODEL_N	Модель {0}
 UILABEL_SLOT_N_ITEM	Ячейка {0}: {1}
 UILABEL_SLOT_N_EMPTY	Ячейка {0}: пусто
 UILABEL_COUNT	Количество {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Требует обеих рук. Вторая рука должн�
 ITEM_87_NAME	Боевой топор
 ITEM_87_DESC	Требует обеих рук. Вторая рука должна быть свободна.
 UILABEL_UI_SCALE	Масштаб интерфейса
-NAME_MASCULINE	["Aleksei", "Dmitrii", "Ivan", "Mikhail", "Yaroslav"]
-NAME_FEMININE	["Anna", "Olga", "Natalia", "Svetlana", "Elena"]
-NAME_ANDROGYNOUS	["Sasha", "Zhenya", "Nika", "Yula", "Kisa"]
+NAME_MASCULINE	["Aleksei", "Dmitrii", "Ivan", "Mikhail", "Yaroslav", "Anatolii", "Andrei", "Anton", "Arkadii", "Artyom", "Bogdan", "Boris", "Daniil", "Denis", "Egor", "Evgenii", "Fyodor", "Gennadii", "Gleb", "Grigorii", "Igor", "Ilya", "Kirill", "Konstantin", "Lev", "Leonid", "Maksim", "Matvei", "Nikita", "Nikolai", "Oleg", "Pavel", "Pyotr", "Roman", "Ruslan", "Semyon", "Sergei", "Stanislav", "Stepan", "Timofei", "Timur", "Vadim", "Valentin", "Vasilii", "Viktor", "Vladimir", "Vladislav", "Vsevolod", "Yurii", "Zakhar"]
+NAME_FEMININE	["Anna", "Olga", "Natalia", "Svetlana", "Elena", "Alina", "Alisa", "Alla", "Anastasia", "Angelina", "Darya", "Ekaterina", "Elizaveta", "Galina", "Inna", "Irina", "Kira", "Kseniya", "Larisa", "Lidiya", "Lyubov", "Lyudmila", "Margarita", "Mariya", "Marina", "Milana", "Nadezhda", "Nina", "Oksana", "Polina", "Raisa", "Sofia", "Taisiya", "Tamara", "Tatyana", "Ulyana", "Valentina", "Valeriya", "Varvara", "Vasilisa", "Vera", "Veronika", "Viktoriya", "Yana", "Yuliya", "Zhanna", "Zinaida", "Zoya", "Arina", "Evdokiya"]
+NAME_ANDROGYNOUS	["Sasha", "Zhenya", "Nika", "Yula", "Kisa", "Valya", "Slava", "Shura", "Tosha", "Rosinka", "Zvezda", "Sol", "Shelest", "Yasya", "Sima", "Senya", "Yasno", "Rada", "Mila", "Lada", "Zlata", "Dana", "Vesna", "Zarya", "Zima", "Iva", "Rosa", "Sneg", "Luna", "Mir", "Dar", "Svet", "Yar", "Vetla", "Tishka", "Lesya", "Rusya", "Gora", "Ozyora", "Ryabina", "Iskra", "Ognya", "Zorya", "Polya", "Rechka", "Volya", "Tuman", "Grom", "Veter", "Ivushka"]
 UILABEL_BODY_TYPE	Тип телосложения
 UILABEL_BODY_MASCULINE	Мужской
 UILABEL_BODY_FEMININE	Женский
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	В хранилище нет места
 MISC_PROP_TAKEN	Уже занято
 MISC_PROP_WORKERS_FULL	Одновременно здесь могут работать не больше {0} юнитов
 MISC_GATHERS	{0} добывает {1}
+MISC_AUTO_HAUL_STORES	{0} кладёт {1} × {2} в «{3}»
 MISC_GATHER_NO_ROOM	У {0} нет места для {1}, работа прекращена
 MISC_REASON_GATHERING	добыча
+MISC_REASON_CLEARING	разбирает завалы
 UILABEL_TASK	Задача: {0}
 UILABEL_TASK_IDLE	Бездействует
+UILABEL_TASK_AUTO_GOING	{0} (в пути)
+UILABEL_TASK_SHARE_WALK	Идёт к {0}, чтобы поделиться
 UILABEL_TASK_MOVING	В пути
 UILABEL_TASK_RESTING	Отдыхает
 UILABEL_STORAGE_HINT	Щёлкните предмет правой кнопкой, чтобы взять его, или перетащите наружу, чтобы бросить там, где стоит ваш юнит. Щёлкните правой кнопкой предметы юнита, чтобы убрать их на хранение.
@@ -595,6 +664,7 @@ FACTION_RED	Красная фракция
 FACTION_GREEN	Зелёная фракция
 FACTION_BLUE	Синяя фракция
 FACTION_YELLOW	Жёлтая фракция
+FACTION_EXILE	Изгнанники
 MISC_REPUTATION_DROPS	Репутация у {0} падает на {1}, до {2}
 UILABEL_MODE_PASSIVE	Пассивный
 UILABEL_MODE_BLOCK	Блок
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Сценарий
 SCENARIO_VAGABOND_NAME	Бродяга
 SCENARIO_VAGABOND_DESC	Одинокий странник, у которого ничего нет: ни предметов, ни снаряжения, а каждая характеристика от 1 до 5.
-SCENARIO_RANDOM_NAME	Полностью случайный
-SCENARIO_RANDOM_DESC	Отряд из 1–32 юнитов, у каждого все характеристики от 1 до 99, а также случайные предметы и снаряжение, которые он может унести.
+SCENARIO_PACK_NAME	Стая из двух
+SCENARIO_PACK_DESC	Одинокий странник и верный волк. У странника нет предметов и снаряжения, а каждая характеристика от 1 до 5.
+SCENARIO_BEASTMASTER_NAME	Повелитель зверей
+SCENARIO_BEASTMASTER_DESC	Одинокий странник во главе 20 животных случайных видов. У странника нет предметов и снаряжения, а каждая характеристика от 1 до 5.
+SCENARIO_RANDOM_NAME	Полностью случайный лагерь
+SCENARIO_RANDOM_DESC	Собственный лагерь и отряд из 20 или более бойцов, у каждого все характеристики от 1 до 99 и случайные предметы и снаряжение, которые он может унести, а также от 3 до 7 животных.
 SCENARIO_CARAVAN_NAME	Странствующий караван
 SCENARIO_CARAVAN_DESC	Десять путников вместе в дороге. Все характеристики начинаются с 5, и у каждого 10 золотых монет.
 SCENARIO_SHABBY_NAME	Потрёпанная шайка
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Один юнит без всего: ни предмето�
 SCENARIO_DIGGERS_NAME	Копатели подземелий
 SCENARIO_DIGGERS_DESC	Семь шахтёров в полном снаряжении. Характеристики от 5 до 20, но у каждого Горное дело 50 и при себе 3 железные руды.
 SCENARIO_CUSTOM_NAME	Свой сценарий
-SCENARIO_CUSTOM_DESC	Соберите свой отряд. Он начинается с трёх юнитов, и вы можете добавлять или убирать юнитов, до 32.
+SCENARIO_CUSTOM_DESC	Соберите свой отряд. Он начинается с трёх бойцов, и вы можете добавлять или убирать бойцов и обычных животных, до 32.
 PROP_LOCKED_CHEST	Запертый сундук
 PROP_PRISONER_CAGE	Клетка для пленника
 UILABEL_UNLOCK	Взломать
+UILABEL_AUTO_HARVEST	Автосбор
+UILABEL_AUTO_HAUL	Автоперенос
+MISC_AUTO_OUTSIDE_CLAIM	Автосбор и автоперенос работают только с объектами на территории вашей фракции
+MISC_AUTO_HARVEST_SET	Юнитов на автосборе: {0} — {1}
+MISC_AUTO_HAUL_SET	Юнитов на автопереносе: {0} — в «{1}»
+MISC_BEHAVIOR_LIST_FULL	Список поведений заполнен (не более {0})
 UILABEL_PICK_UP	Поднять
-UILABEL_PUT_IN_BED	Уложить в постель
+UILABEL_PLACE	Поместить
+UILABEL_OCCUPY	Занять
+UILABEL_DISBAND	Распустить
+UILABEL_DISBAND_HOLD	Удерживайте «Распустить» {0} секунд для подтверждения
 UILABEL_PUT_DOWN	Опустить
 UILABEL_SHOP	Торговать
 UILABEL_TASK_CARRIED	Его несут
@@ -641,16 +724,33 @@ UILABEL_DOOM	Гибель
 UILABEL_TASK_UNCONSCIOUS	Без сознания
 UILABEL_TASK_DEAD	Мёртв
 UILABEL_TASK_CARRYING	Несёт
+UILABEL_TASK_STORING	Складывает
 UILABEL_TAKE_ALL	Взять всё
 UILABEL_LOOT_HINT	Щёлкните предмет, чтобы взять его в инвентарь своего юнита.
 UILABEL_CORPSE_OF	Тело: {0}
 MISC_FALLS_UNCONSCIOUS	{0} теряет сознание
 MISC_DIES	{0} умирает
 MISC_RECOVERS	{0} приходит в себя
+LOADING_PICTURES	Изображения
+LOADING_UNIT_MODELS	Модели юнитов
+LOADING_MOB_MODELS	Модели животных
+LOADING_MOB_PICTURES	Изображения животных
+LOADING_SKY	Небо
+LOADING_PROP_MODELS	Модели объектов
+LOADING_MAP	Карта
+LOADING_MAP_GROUND	Поверхность карты
+LOADING_WORLD	Мир
+LOADING_GROUND_ITEMS	Предметы на земле
+MISC_GOES_HOME	{0} прекращает погоню и уходит домой
+MISC_GETS_UP	{0} поднимается: опасность миновала
 MISC_PICKS_UP_UNIT	{0} поднимает: {1}
 MISC_PUTS_DOWN	{0} опускает: {1}
-MISC_PUTS_IN_BED	{0} укладывает {1}: {2}
-MISC_CORPSE_NO_BED	Постель не поможет мёртвым
+MISC_PLACES_IN	{0} укладывает {1}: {2}
+MISC_DISBAND_ASK	{0} навсегда покинет ваш отряд и фракцию и станет Изгнанником: нейтральным ко всем и бродящим в одиночку.
+MISC_DISBAND_ASK_MOB	{0} навсегда покинет ваш отряд и фракцию и вернётся в дикую природу.
+MISC_DISBANDED	{0} покидает отряд как Изгнанник
+MISC_DISBANDED_MOB	{0} покидает отряд и возвращается в дикую природу
+MISC_CORPSE_NO_PLACE	Мёртвых нельзя туда поместить
 MISC_IS_UNCONSCIOUS	{0} без сознания и ничего не может сделать
 MISC_ALREADY_CARRYING	Ни один из выбранных юнитов не может его нести
 MISC_LOOT_NO_ROOM	В инвентаре нет места
@@ -788,6 +888,46 @@ ITEM_132_NAME	Огненные стрелы
 ITEM_132_DESC	Горящие стрелы для короткого или длинного лука. Самые сильные стрелы.
 ITEM_133_NAME	Арбалетные болты
 ITEM_133_DESC	Короткие тяжёлые болты для арбалета.
+ITEM_134_NAME	Медвежьи кости
+ITEM_134_DESC	Кости медведя. Пригодятся для ремесла.
+ITEM_135_NAME	Коровьи кости
+ITEM_135_DESC	Кости коровы. Пригодятся для ремесла.
+ITEM_136_NAME	Куриные кости
+ITEM_136_DESC	Кости курицы. Пригодятся для ремесла.
+ITEM_137_NAME	Кабаньи кости
+ITEM_137_DESC	Кости кабана. Пригодятся для ремесла.
+ITEM_138_NAME	Волчьи кости
+ITEM_138_DESC	Кости волка. Пригодятся для ремесла.
+ITEM_139_NAME	Оленьи кости
+ITEM_139_DESC	Кости оленя. Пригодятся для ремесла.
+ITEM_140_NAME	Кроличьи кости
+ITEM_140_DESC	Кости кролика. Пригодятся для ремесла.
+ITEM_141_NAME	Рыбьи кости
+ITEM_141_DESC	Кости рыбы. Пригодятся для ремесла.
+ITEM_142_NAME	Крабий панцирь
+ITEM_142_DESC	Обломки панциря краба. Пригодятся для ремесла.
+ITEM_143_NAME	Кости ящерицы
+ITEM_143_DESC	Кости ящерицы. Пригодятся для ремесла.
+ITEM_144_NAME	Змеиные кости
+ITEM_144_DESC	Кости змеи. Пригодятся для ремесла.
+ITEM_145_NAME	Свиные кости
+ITEM_145_DESC	Кости свиньи. Пригодятся для ремесла.
+ITEM_146_NAME	Овечьи кости
+ITEM_146_DESC	Кости овцы. Пригодятся для ремесла.
+ITEM_147_NAME	Утиные кости
+ITEM_147_DESC	Кости утки. Пригодятся для ремесла.
+ITEM_148_NAME	Черепашьи кости
+ITEM_148_DESC	Кости черепахи. Пригодятся для ремесла.
+ITEM_149_NAME	Кости летучей мыши
+ITEM_149_DESC	Кости летучей мыши. Пригодятся для ремесла.
+ITEM_150_NAME	Лягушачьи кости
+ITEM_150_DESC	Кости лягушки. Пригодятся для ремесла.
+ITEM_151_NAME	Кости горликорна
+ITEM_151_DESC	Кости горликорна. Пригодятся для ремесла.
+ITEM_152_NAME	Сырое мясо горликорна
+ITEM_152_DESC	Неприготовленное мясо. Пожарьте его на костре.
+ITEM_153_NAME	Жареное мясо горликорна
+ITEM_153_DESC	Сытное мясо, зажаренное на огне. Восстанавливает много здоровья и хорошо утоляет голод.
 UILABEL_OPTIMIZE	Оптимизировать
 UILABEL_REMOVE_ALL	Снять всё
 MISC_GEAR_NO_ROOM	Недостаточно места в инвентаре
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Выживание
 UILABEL_EARLY_ACCESS	Ранний доступ
 MISC_TITLE_KEYS	Выбор  //  Enter Подтвердить
 UILABEL_LANGUAGE_LABEL	Язык:
+PROP_FLAG	Флаг
+PROP_DEBRIS	Обломки
+PROP_FOUNDATION_SMALL	Малый фундамент
+PROP_FOUNDATION_LARGE	Большой фундамент
+PROP_FOUNDATION_LONG	Длинный фундамент
+PROP_FOUNDATION_CIRCLE	Круглый фундамент
+PROP_VAULT	Хранилище
+UILABEL_BUILD	Строить
+UILABEL_BUILD_SELECTED	Выбрано: {0}
+UILABEL_BUILD_NONE	Выбрано: ничего
+UILABEL_BUILD_SELECT	Выбрать
+UILABEL_BUILD_PICKED	Выбрано
+UILABEL_BUILD_PLACE_HINT	Щёлкните левой кнопкой по земле, чтобы поставить. Удерживайте R и ведите мышь влево или вправо, чтобы повернуть. Правая кнопка или Escape — отмена.
+UILABEL_UPKEEP_HINT	Расходует по одному предмету «{0}» в час на содержание. Положите их сюда.
+MISC_BUILD_BLOCKED	Здесь нет места для строительства
+MISC_BUILD_UNWALKABLE	На этой земле строить нельзя
+MISC_BUILD_NO_FOUNDATION	Хранилище должно целиком стоять на фундаменте
+MISC_NO_UPKEEP	Нет содержания: нет брёвен
+MISC_UPKEEP_LEFT	Содержание: осталось {0} мин
+PROP_SHOP	Лавка
+PROP_FARM	Ферма
+PROP_TURBINE	Ветряк
+UILABEL_BUILD_DESTROY	Снести
+UILABEL_BUILD_DESTROY_HINT	Щёлкните левой кнопкой по любому объекту, чтобы снести его: содержимое упадёт на землю, а на его месте останутся обломки. Щёлкните левой кнопкой по обломкам, чтобы убрать их. Правая кнопка или Escape — отмена.
+UILABEL_LOCK	Запереть
+MISC_BUILD_NO_CLAIM	Фундамент или хранилище должны стоять на вашей собственной территории
+MISC_BUILD_SEALED	Эта земля запечатана хранилищем другой фракции
+MISC_BUILD_CLAIM_OVERLAP	Эта территория пересеклась бы с территорией другого флага
+MISC_BUILD_VAULT_TAKEN	На этой территории уже есть хранилище
+MISC_BUILD_VAULT_CAP	У вашей фракции уже столько хранилищ, сколько она может иметь
+MISC_DESTROY_NOTHING	Там нечего сносить
+MISC_FLAG_FACTION	Владелец: {0}
+MISC_FLAG_HEALTH	Прочность: {0} из {1}
+MISC_FLAG_VAULT_YES	Хранилище: стоит, территория удерживается
+MISC_FLAG_VAULT_NO	Хранилище: нет, флаг изнашивается
+MISC_PROP_CONDITION	Состояние: {0}%
+MISC_PROP_DECAYING	Разрушается
+MISC_PROP_HOLDING	Не разрушается
+MISC_PROP_LOCK_OPEN	Не заперто
+MISC_PROP_LOCK_YOURS	Заперто для чужих (открыто для вас)
+MISC_PROP_LOCK_SHUT	Заперто (Взлом замков {0})
+MISC_PROP_UPKEEP	Содержание: осталось {0} ч
+MISC_PROP_VAULT_UNCLAIMED	Вне любой территории: не даёт содержания
+MOB_BEAR	Медведь
+MOB_COW	Корова
+MOB_CHICKEN	Курица
+MOB_BOAR	Кабан
+MOB_WOLF	Волк
+MOB_DEER	Олень
+MOB_RABBIT	Кролик
+MOB_FISH	Рыба
+MOB_CRAB	Краб
+MOB_LIZARD	Ящерица
+MOB_SNAKE	Змея
+MOB_PIG	Свинья
+MOB_SHEEP	Овца
+MOB_DUCK	Утка
+MOB_TURTLE	Черепаха
+MOB_BAT	Летучая мышь
+MOB_FROG	Лягушка
+MOB_GORLICORN	Горликорн
+FACTION_MOB_BEAR	Медведи
+FACTION_MOB_COW	Коровы
+FACTION_MOB_CHICKEN	Куры
+FACTION_MOB_BOAR	Кабаны
+FACTION_MOB_WOLF	Волки
+FACTION_MOB_DEER	Олени
+FACTION_MOB_RABBIT	Кролики
+FACTION_MOB_FISH	Рыбы
+FACTION_MOB_CRAB	Крабы
+FACTION_MOB_LIZARD	Ящерицы
+FACTION_MOB_SNAKE	Змеи
+FACTION_MOB_PIG	Свиньи
+FACTION_MOB_SHEEP	Овцы
+FACTION_MOB_DUCK	Утки
+FACTION_MOB_TURTLE	Черепахи
+FACTION_MOB_BAT	Летучие мыши
+FACTION_MOB_FROG	Лягушки
+FACTION_MOB_GORLICORN	Горликорны
+MISC_MOB_NO_GEAR	Животные не могут носить снаряжение
+MISC_MOB_NO_HEALING	Животные не могут использовать лечебные предметы
+MISC_MOB_CANT_WORK	Животные не могут работать на объектах

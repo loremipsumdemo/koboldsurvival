@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	リフレッシュレート
 UILABEL_DEFAULT	標準
 UILABEL_VSYNC	垂直同期
 UILABEL_FRAME_LIMIT	フレームレート上限
+UILABEL_VIEW_RANGE	視界距離
+UILABEL_TILES_N	{0}マス
+UILABEL_SHOW_FPS	FPSを表示
 UILABEL_UNLIMITED	無制限
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	オートセーブ
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0}分
 UILABEL_UNIT_NAMES	プレイヤーユニット名
 UILABEL_NPC_NAMES	プレイヤー以外のユニット名
 UILABEL_PROP_NAMES	オブジェクト名
+UILABEL_PROP_INFO	オブジェクト情報を表示
 UILABEL_FONT_SIZE	文字サイズ
 UILABEL_RESET_PANELS	すべてのUIパネルをリセット
 UILABEL_RESET	リセット
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	全体音量
 UILABEL_MUSIC	音楽
 UILABEL_AMBIENT	環境音
 UILABEL_INTERFACE_SOUNDS	インターフェース音
+UILABEL_CRAFT_GATHER_SOUNDS	製作と採集の効果音
 UILABEL_SOUND_EFFECTS	効果音
 UILABEL_RESTORE_DEFAULTS	初期設定に戻す
 UILABEL_WINDOWED	ウィンドウ
@@ -123,6 +128,8 @@ UILABEL_STATS	ステータス
 UILABEL_CLICK_TO_TYPE	クリックして名前を入力
 UILABEL_HEALTH	体力
 UILABEL_HUNGER	空腹
+UILABEL_RESTED	休息度
+UILABEL_COMFORT	快適さ
 UILABEL_CARRY	携行重量
 UILABEL_NEXT_LEVEL_XP_LINE	次のレベルまでの経験値：{0}
 UILABEL_STAT	能力
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	このユニットをランダムに設定
 UILABEL_RANDOMIZE_ALL	すべてをランダムに設定
 UILABEL_ADD_UNIT	ユニットを追加
 UILABEL_REMOVE_UNIT	ユニットを削除
+UILABEL_ADD_MOB	動物を追加
+UILABEL_MOB_KIND	種類
+UILABEL_MOB_NO_GEAR	動物は装備を身につけません。
+MISC_MEAT_TAKEN_DIES	{0}は死んだ
+MISC_MOB_INVENTORY_LOCKED	利用不可
+MISC_MOB_CANT_HOLD	動物が持てるのは自分の肉と骨だけ
+UILABEL_CLEAR	撤去
+UILABEL_TASK_CLEARING	がれき撤去中
+MISC_CLEARS_DEBRIS	{0}ががれきを撤去した
+UILABEL_MOB_INVENTORY_HIDDEN	利用不可
+UILABEL_BEHAVIOR_PATROL	巡回
+UILABEL_BEHAVIOR_PATROL_SPAWN	出現地点を巡回
+UILABEL_BEHAVIOR_ROAM	放浪
+UILABEL_BEHAVIOR_PATROL_TIP	巡回: 自分がいる領地が自勢力のものなら、その中を時々立ち止まりながら歩き回る。
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	出現地点を巡回: 最初に現れた場所の近くを歩き回る。遠くまで追われるとあきらめ、体力を全回復して歩いて戻り、戻るまではダメージを受けない。
+UILABEL_BEHAVIOR_ROAM_TIP	放浪: 旗の領地の外で歩ける場所ならどこでも、開けた土地をさまよう。
+UILABEL_WAIT_NOT_IN_CLAIM	自勢力の領地内にいない
+UILABEL_WAIT_NOWHERE_TO_ROAM	近くに領地外の開けた土地がない
+UILABEL_TEMPERAMENT_AVOIDANT	臆病
+UILABEL_TEMPERAMENT_PASSIVE	温厚
+UILABEL_TEMPERAMENT_NEUTRAL	中立
+UILABEL_TEMPERAMENT_AGGRESSIVE	攻撃的
+UILABEL_TEMPERAMENT	気質: {0}
+UILABEL_MOB_NO_ITEMS	動物は自分の肉と骨しか持ちません。
 UILABEL_CONFIRM_STARTS	決定するとこのパーティでゲームを開始します。
 UILABEL_NEEDS_NAMES	ゲームを開始するには、すべてのユニットに名前が必要です。
 UILABEL_CLICK_UNIT_EDIT	ユニットをクリックして編集します。
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	脚
 UILABEL_SLOT_FEET	足
 UILABEL_SLOT_ACCESSORY	アクセサリー
 UILABEL_BEHAVIOR_ON	オン
+UILABEL_BEHAVIOR_EAT	満腹度{0}%未満で食べる
+UILABEL_BEHAVIOR_REST	休息度{0}%未満で休む
+UILABEL_BEHAVIOR_LEAVE_BED	回復したらベッドを出る
+UILABEL_BEHAVIOR_RESCUE	倒れた味方を救助
+UILABEL_BEHAVIOR_HEAL	体力{0}%未満で回復する
+UILABEL_BEHAVIOR_SHARE	分け合う
+UILABEL_BEHAVIOR_AUTO_HARVEST	自動採集: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	自動運搬: {0}
+UILABEL_BEHAVIOR_WAITING	(待機中)
+UILABEL_BEHAVIOR_WAIT_TIP	待機中: {0}
+UILABEL_WAIT_NO_FOOD	食べ物がなく、近くに分けてくれる者もいない
+UILABEL_WAIT_NO_BED	休める空きベッドも寝袋もない
+UILABEL_WAIT_NO_HEALING	回復アイテムがなく、近くに分けてくれる者もいない
+UILABEL_WAIT_WALKING_TO_SHARE	分けてくれる{0}のもとへ移動中
+UILABEL_WAIT_NO_PROP	領地内に作業員の空きがある{0}がない
+UILABEL_WAIT_CARRY_FULL	これ以上運ぶ余裕がない
+UILABEL_WAIT_LOAD_WAITING	自動運搬が先に運ぶべき荷物を持っている
+UILABEL_WAIT_PROP_GONE	オブジェクトがなくなった
+UILABEL_WAIT_OUTSIDE_CLAIM	オブジェクトが勢力の領地内にない
+UILABEL_WAIT_LOCKED	オブジェクトに鍵がかかっている
+UILABEL_WAIT_NOTHING_TO_HAUL	オブジェクトが受け取る物を持っていない
+UILABEL_WAIT_PROP_FULL	オブジェクトに持ち物を入れる空きがない
+UILABEL_BEHAVIOR_EAT_TIP	食べる: 満腹度が{0}%を下回ると、最も空腹を回復する食べ物を食べる。- と + でタイミングを変更。
+UILABEL_BEHAVIOR_HEAL_TIP	回復: 体力が{0}%を下回ると、最も体力を回復するアイテムを使う。- と + でタイミングを変更。
+UILABEL_BEHAVIOR_REST_TIP	休む: 休息度が{0}%を下回ると、最寄りの空きベッドか寝袋で横になり、完全に休まったら起きる。- と + でタイミングを変更。
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	ベッドを出る: 体力満タンかつ完全に休まった状態で30秒たつと、ベッドや寝袋から出る。
+UILABEL_BEHAVIOR_RESCUE_TIP	救助: 近くで気絶している自勢力のユニットを、最寄りの空きベッドか寝袋まで運ぶ。
+UILABEL_BEHAVIOR_SHARE_TIP	分け合う: 食べるや回復にこのユニットが持っていないアイテムが必要なとき、取引距離内にいる、同じく分け合いをしていてそれをあまり必要としないユニットから1つもらう。相手が少し離れていれば先に歩いて行く。分け合いをする他のユニットも同じようにこのユニットからもらえる。
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	自動採集: 勢力の領地内で最寄りの{0}で作業する。荷物があり、それを受け取れる自動運搬があれば、作業を止めて運ぶ。命令を出すと一時停止し、ユニットが数秒間何もしないと再開する。
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	自動運搬: 所持品(装備中の物は除く)のうち{0}が受け取る物を、空きがあり、ユニットが勢力の領地内にいる間、運び込む。命令を出すと一時停止し、ユニットが数秒間何もしないと再開する。
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	NPC情報を表示
 UILABEL_COMBAT_MESSAGES	戦闘メッセージ
 UILABEL_SEEN	発見
 UILABEL_HIT	命中
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	経験値メッセージ
 UILABEL_EXPERIENCE	経験値
 UILABEL_XP_ATHLETICS	運動の経験値
 UILABEL_XP_ENDURANCE	持久力の経験値
+UILABEL_XP_CARRYING	筋力の経験値(運搬)
 UILABEL_ITEM_MESSAGES	アイテムメッセージ
 UILABEL_PICKUP	拾う
 UILABEL_DROP	落とす
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	進捗：{0}%
 UILABEL_TIP_CURRENT_XP	現在の経験値：{0}
 UILABEL_ATTACK_DEFENSE	攻撃 {0}      防御 {1}
 UILABEL_STATS_CAPTION	ステータス：{0}
+UILABEL_MODEL_N	モデル{0}
 UILABEL_SLOT_N_ITEM	スロット {0}：{1}
 UILABEL_SLOT_N_EMPTY	スロット {0}：空
 UILABEL_COUNT	数 {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	両手が必要。副手は空でなければならない。
 ITEM_87_NAME	戦斧
 ITEM_87_DESC	両手が必要。副手は空でなければならない。
 UILABEL_UI_SCALE	UIの倍率
-NAME_MASCULINE	["翔太", "健太", "大輝", "陽介", "遼"]
-NAME_FEMININE	["美咲", "結衣", "葵", "陽菜", "凛"]
-NAME_ANDROGYNOUS	["陽", "空", "蒼", "光", "遥"]
+NAME_MASCULINE	["翔太", "健太", "大輝", "陽介", "遼", "蓮", "湊", "大和", "悠真", "陽翔", "颯太", "樹", "悠人", "大翔", "隼人", "海斗", "拓海", "健一", "誠", "浩二", "直樹", "達也", "和也", "哲也", "慎吾", "修", "剛", "勇気", "亮", "光太郎", "龍之介", "雄大", "康介", "優斗", "智也", "圭介", "秀樹", "正樹", "武", "隆", "一郎", "大地", "啓太", "俊介", "竜也", "颯", "陸", "朝陽", "律", "新"]
+NAME_FEMININE	["美咲", "結衣", "葵", "陽菜", "凛", "さくら", "花子", "芽依", "結菜", "莉子", "美優", "彩", "愛", "真央", "千尋", "菜々子", "由美", "恵", "友美", "裕子", "香織", "麻衣", "舞", "千夏", "奈緒", "沙織", "智子", "明美", "幸子", "和子", "優子", "紗希", "楓", "紬", "澪", "心春", "杏", "琴音", "綾乃", "桃子", "絵里", "里奈", "瑞希", "茜", "椿", "雪菜", "朱里", "詩織", "百合", "環"]
+NAME_ANDROGYNOUS	["陽", "空", "蒼", "光", "遥", "薫", "忍", "望", "司", "渚", "晶", "翼", "瑞穂", "真琴", "歩", "唯", "要", "優", "慧", "純", "千秋", "和美", "静", "楓真", "七海", "ひかる", "あきら", "いずみ", "かおる", "まこと", "ゆう", "れい", "ひなた", "そら", "あおい", "みずき", "なぎさ", "つばさ", "しのぶ", "のぞむ", "朔", "灯", "岬", "凪", "環奈", "伊吹", "絢", "暁", "雫", "碧"]
 UILABEL_BODY_TYPE	体型
 UILABEL_BODY_MASCULINE	男性的
 UILABEL_BODY_FEMININE	女性的
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	収納に空きがありません
 MISC_PROP_TAKEN	すでに使用中です
 MISC_PROP_WORKERS_FULL	同時に作業できるのは最大 {0} ユニットです
 MISC_GATHERS	{0} が {1} を採集した
+MISC_AUTO_HAUL_STORES	{0}が{2}を{1}個{3}にしまった
 MISC_GATHER_NO_ROOM	{0} は {1} を持つ空きがないため作業をやめた
 MISC_REASON_GATHERING	採集
+MISC_REASON_CLEARING	がれき撤去中
 UILABEL_TASK	作業: {0}
 UILABEL_TASK_IDLE	待機
+UILABEL_TASK_AUTO_GOING	{0}(移動中)
+UILABEL_TASK_SHARE_WALK	分けてもらいに{0}のもとへ
 UILABEL_TASK_MOVING	移動中
 UILABEL_TASK_RESTING	休息中
 UILABEL_STORAGE_HINT	アイテムを右クリックで受け取り、外へドラッグするとユニットの足元に落とします。ユニットのアイテムを右クリックすると収納します。
@@ -595,6 +664,7 @@ FACTION_RED	赤の勢力
 FACTION_GREEN	緑の勢力
 FACTION_BLUE	青の勢力
 FACTION_YELLOW	黄の勢力
+FACTION_EXILE	追放者
 MISC_REPUTATION_DROPS	{0}の評判が{1}下がり、{2}になった
 UILABEL_MODE_PASSIVE	非戦
 UILABEL_MODE_BLOCK	防御
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	シナリオ
 SCENARIO_VAGABOND_NAME	放浪者
 SCENARIO_VAGABOND_DESC	何も持たない孤独な旅人。アイテムも装備もなく、すべての能力値は1から5。
-SCENARIO_RANDOM_NAME	完全ランダム
-SCENARIO_RANDOM_DESC	1〜32人のユニットで、それぞれ全ステータスが1〜99、運べる範囲でランダムなアイテムと装備を持つ。
+SCENARIO_PACK_NAME	二匹の群れ
+SCENARIO_PACK_DESC	孤独な放浪者と忠実な狼。放浪者はアイテムも装備も持たず、全ステータスは1〜5です。
+SCENARIO_BEASTMASTER_NAME	獣使い
+SCENARIO_BEASTMASTER_DESC	ランダムな種類の動物20体を率いる孤独な放浪者。放浪者はアイテムも装備も持たず、全ステータスは1〜5です。
+SCENARIO_RANDOM_NAME	完全ランダム野営地
+SCENARIO_RANDOM_DESC	自分の野営地と、20体以上のユニットの部隊。各ユニットの全ステータスは1〜99のどこかで、持てる範囲のランダムなアイテムと装備を持ち、さらに3〜7体の動物がいます。
 SCENARIO_CARAVAN_NAME	旅の隊商
 SCENARIO_CARAVAN_DESC	共に旅をする10人。全ステータスは5から始まり、それぞれ金貨を10枚持つ。
 SCENARIO_SHABBY_NAME	みすぼらしい一味
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	何も持たないユニット1人。アイテムも装備�
 SCENARIO_DIGGERS_NAME	ダンジョン掘り
 SCENARIO_DIGGERS_DESC	完全装備の鉱夫7人。ステータスは5〜20だが、全員の採掘が50で、鉄鉱石を3個ずつ持つ。
 SCENARIO_CUSTOM_NAME	カスタムシナリオ
-SCENARIO_CUSTOM_DESC	自分だけの一行を作ろう。3体のユニットから始まり、最大32体までユニットを追加・削除できる。
+SCENARIO_CUSTOM_DESC	自分だけの部隊を作りましょう。3体のユニットから始まり、ユニットと通常の動物を最大32体まで追加・削除できます。
 PROP_LOCKED_CHEST	鍵付きの宝箱
 PROP_PRISONER_CAGE	囚人の檻
 UILABEL_UNLOCK	解錠
+UILABEL_AUTO_HARVEST	自動採集
+UILABEL_AUTO_HAUL	自動運搬
+MISC_AUTO_OUTSIDE_CLAIM	自動採集と自動運搬は勢力の領地内のオブジェクトでしか働かない
+MISC_AUTO_HARVEST_SET	{0}体のユニットが自動採集: {1}
+MISC_AUTO_HAUL_SET	{0}体のユニットが{1}へ自動運搬
+MISC_BEHAVIOR_LIST_FULL	行動リストがいっぱいです(最大{0})
 UILABEL_PICK_UP	担ぐ
-UILABEL_PUT_IN_BED	寝床に寝かせる
+UILABEL_PLACE	置く
+UILABEL_OCCUPY	占有する
+UILABEL_DISBAND	解雇
+UILABEL_DISBAND_HOLD	確定するには「解雇」を{0}秒間押し続けてください
 UILABEL_PUT_DOWN	降ろす
 UILABEL_SHOP	買い物
 UILABEL_TASK_CARRIED	運ばれている
@@ -641,16 +724,33 @@ UILABEL_DOOM	死期
 UILABEL_TASK_UNCONSCIOUS	気絶
 UILABEL_TASK_DEAD	死亡
 UILABEL_TASK_CARRYING	運搬中
+UILABEL_TASK_STORING	収納中
 UILABEL_TAKE_ALL	すべて取る
 UILABEL_LOOT_HINT	アイテムをクリックすると、自分のユニットの所持品に入れます。
 UILABEL_CORPSE_OF	{0}の遺体
 MISC_FALLS_UNCONSCIOUS	{0}は気を失った
 MISC_DIES	{0}は死んだ
 MISC_RECOVERS	{0}は目を覚ました
+LOADING_PICTURES	画像
+LOADING_UNIT_MODELS	ユニットモデル
+LOADING_MOB_MODELS	動物モデル
+LOADING_MOB_PICTURES	動物画像
+LOADING_SKY	空
+LOADING_PROP_MODELS	オブジェクトモデル
+LOADING_MAP	マップ
+LOADING_MAP_GROUND	マップの地面
+LOADING_WORLD	ワールド
+LOADING_GROUND_ITEMS	地面のアイテム
+MISC_GOES_HOME	{0}は追跡をあきらめて帰っていく
+MISC_GETS_UP	{0}は起き上がった。危険は去った
 MISC_PICKS_UP_UNIT	{0}は{1}を担いだ
 MISC_PUTS_DOWN	{0}は{1}を降ろした
-MISC_PUTS_IN_BED	{0}は{1}を{2}に寝かせた
-MISC_CORPSE_NO_BED	寝床では死者を救えない
+MISC_PLACES_IN	{0}は{1}を{2}に寝かせた
+MISC_DISBAND_ASK	{0}は部隊と勢力から永久に離れ、追放者になります。誰に対しても中立で、ひとりで放浪します。
+MISC_DISBAND_ASK_MOB	{0}は部隊と勢力から永久に離れ、野生に帰ります。
+MISC_DISBANDED	{0}が追放者として部隊を去った
+MISC_DISBANDED_MOB	{0}が部隊を去り、野生に帰った
+MISC_CORPSE_NO_PLACE	死者はそこに置けない
 MISC_IS_UNCONSCIOUS	{0}は気絶していて何もできない
 MISC_ALREADY_CARRYING	選択中のユニットは誰も運べない
 MISC_LOOT_NO_ROOM	所持品に空きがない
@@ -788,6 +888,46 @@ ITEM_132_NAME	火矢
 ITEM_132_DESC	燃える矢。ショートボウやロングボウ用で、最も強い矢。
 ITEM_133_NAME	クロスボウのボルト
 ITEM_133_DESC	クロスボウ用の短く重いボルト。
+ITEM_134_NAME	熊の骨
+ITEM_134_DESC	熊の骨。クラフトに使える。
+ITEM_135_NAME	牛の骨
+ITEM_135_DESC	牛の骨。クラフトに使える。
+ITEM_136_NAME	鶏の骨
+ITEM_136_DESC	鶏の骨。クラフトに使える。
+ITEM_137_NAME	猪の骨
+ITEM_137_DESC	猪の骨。クラフトに使える。
+ITEM_138_NAME	狼の骨
+ITEM_138_DESC	狼の骨。クラフトに使える。
+ITEM_139_NAME	鹿の骨
+ITEM_139_DESC	鹿の骨。クラフトに使える。
+ITEM_140_NAME	ウサギの骨
+ITEM_140_DESC	ウサギの骨。クラフトに使える。
+ITEM_141_NAME	魚の骨
+ITEM_141_DESC	魚の骨。クラフトに使える。
+ITEM_142_NAME	カニの甲羅
+ITEM_142_DESC	カニの甲羅のかけら。クラフトに使える。
+ITEM_143_NAME	トカゲの骨
+ITEM_143_DESC	トカゲの骨。クラフトに使える。
+ITEM_144_NAME	ヘビの骨
+ITEM_144_DESC	ヘビの骨。クラフトに使える。
+ITEM_145_NAME	豚の骨
+ITEM_145_DESC	豚の骨。クラフトに使える。
+ITEM_146_NAME	羊の骨
+ITEM_146_DESC	羊の骨。クラフトに使える。
+ITEM_147_NAME	アヒルの骨
+ITEM_147_DESC	アヒルの骨。クラフトに使える。
+ITEM_148_NAME	亀の骨
+ITEM_148_DESC	亀の骨。クラフトに使える。
+ITEM_149_NAME	コウモリの骨
+ITEM_149_DESC	コウモリの骨。クラフトに使える。
+ITEM_150_NAME	カエルの骨
+ITEM_150_DESC	カエルの骨。クラフトに使える。
+ITEM_151_NAME	ゴーリコーンの骨
+ITEM_151_DESC	ゴーリコーンの骨。クラフトに使える。
+ITEM_152_NAME	生のゴーリコーン肉
+ITEM_152_DESC	焼いていない肉。焚き火で焼こう。
+ITEM_153_NAME	焼いたゴーリコーン肉
+ITEM_153_DESC	火で焼いた濃厚な肉。体力と空腹を大きく回復する。
 UILABEL_OPTIMIZE	最適化
 UILABEL_REMOVE_ALL	すべて外す
 MISC_GEAR_NO_ROOM	所持品の空きが足りません
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	サバイバル
 UILABEL_EARLY_ACCESS	アーリーアクセス
 MISC_TITLE_KEYS	選択  //  Enter 決定
 UILABEL_LANGUAGE_LABEL	言語：
+PROP_FLAG	旗
+PROP_DEBRIS	がれき
+PROP_FOUNDATION_SMALL	小さな土台
+PROP_FOUNDATION_LARGE	大きな土台
+PROP_FOUNDATION_LONG	長い土台
+PROP_FOUNDATION_CIRCLE	円形の土台
+PROP_VAULT	金庫室
+UILABEL_BUILD	建築
+UILABEL_BUILD_SELECTED	選択中: {0}
+UILABEL_BUILD_NONE	選択中: なし
+UILABEL_BUILD_SELECT	選択
+UILABEL_BUILD_PICKED	選択済み
+UILABEL_BUILD_PLACE_HINT	地面を左クリックで設置。Rを押しながらマウスを左右に動かすと回転。右クリックかEscでキャンセル。
+UILABEL_UPKEEP_HINT	維持費として1時間に{0}を1つ燃やす。ここに入れておこう。
+MISC_BUILD_BLOCKED	ここには建てる場所がない
+MISC_BUILD_UNWALKABLE	この地面には建てられない
+MISC_BUILD_NO_FOUNDATION	金庫室は全体が土台の上にないといけない
+MISC_NO_UPKEEP	維持費なし: 丸太がない
+MISC_UPKEEP_LEFT	維持費: 残り{0}分
+PROP_SHOP	店
+PROP_FARM	農場
+PROP_TURBINE	風車
+UILABEL_BUILD_DESTROY	解体
+UILABEL_BUILD_DESTROY_HINT	オブジェクトを左クリックで解体: 中身は地面に落ち、跡にがれきが残る。がれきを左クリックで撤去。右クリックかEscでキャンセル。
+UILABEL_LOCK	施錠
+MISC_BUILD_NO_CLAIM	土台や金庫室は自分の領地内にしか置けない
+MISC_BUILD_SEALED	その地面は他勢力の金庫室によって封じられている
+MISC_BUILD_CLAIM_OVERLAP	その領地は他の旗の領地と重なってしまう
+MISC_BUILD_VAULT_TAKEN	その領地にはすでに金庫室がある
+MISC_BUILD_VAULT_CAP	あなたの勢力はすでに持てる上限まで金庫室を持っている
+MISC_DESTROY_NOTHING	そこには解体するものがない
+MISC_FLAG_FACTION	所有者: {0}
+MISC_FLAG_HEALTH	耐久: {0}/{1}
+MISC_FLAG_VAULT_YES	金庫室: 健在、領地は維持されている
+MISC_FLAG_VAULT_NO	金庫室: なし、旗が劣化している
+MISC_PROP_CONDITION	状態: {0}%
+MISC_PROP_DECAYING	劣化中
+MISC_PROP_HOLDING	劣化なし
+MISC_PROP_LOCK_OPEN	解錠
+MISC_PROP_LOCK_YOURS	部外者には施錠(あなたには開放)
+MISC_PROP_LOCK_SHUT	施錠(解錠 {0})
+MISC_PROP_UPKEEP	維持費: 残り{0}時間
+MISC_PROP_VAULT_UNCLAIMED	どの領地にも属さない: 維持費を賄わない
+MOB_BEAR	熊
+MOB_COW	牛
+MOB_CHICKEN	鶏
+MOB_BOAR	猪
+MOB_WOLF	狼
+MOB_DEER	鹿
+MOB_RABBIT	ウサギ
+MOB_FISH	魚
+MOB_CRAB	カニ
+MOB_LIZARD	トカゲ
+MOB_SNAKE	ヘビ
+MOB_PIG	豚
+MOB_SHEEP	羊
+MOB_DUCK	アヒル
+MOB_TURTLE	亀
+MOB_BAT	コウモリ
+MOB_FROG	カエル
+MOB_GORLICORN	ゴーリコーン
+FACTION_MOB_BEAR	熊の群れ
+FACTION_MOB_COW	牛の群れ
+FACTION_MOB_CHICKEN	鶏の群れ
+FACTION_MOB_BOAR	猪の群れ
+FACTION_MOB_WOLF	狼の群れ
+FACTION_MOB_DEER	鹿の群れ
+FACTION_MOB_RABBIT	ウサギの群れ
+FACTION_MOB_FISH	魚の群れ
+FACTION_MOB_CRAB	カニの群れ
+FACTION_MOB_LIZARD	トカゲの群れ
+FACTION_MOB_SNAKE	ヘビの群れ
+FACTION_MOB_PIG	豚の群れ
+FACTION_MOB_SHEEP	羊の群れ
+FACTION_MOB_DUCK	アヒルの群れ
+FACTION_MOB_TURTLE	亀の群れ
+FACTION_MOB_BAT	コウモリの群れ
+FACTION_MOB_FROG	カエルの群れ
+FACTION_MOB_GORLICORN	ゴーリコーンの群れ
+MISC_MOB_NO_GEAR	動物は装備を身につけられない
+MISC_MOB_NO_HEALING	動物は回復アイテムを使えない
+MISC_MOB_CANT_WORK	動物はオブジェクトで作業できない

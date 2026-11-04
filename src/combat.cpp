@@ -148,6 +148,12 @@ void onAttacked(World& w, Entity a, Entity d) {
     const bool atWar = factionsHostile(fa, fd) || unitsHostile(w, a, d);
     const Transform* td = w.get<Transform>(d);
     if (!td) return;
+    // An attack ends a pickup chain (PickupChain) the unit was on, so it is free to fight back below
+    if (w.has<PickupChain>(d)) {
+        w.remove<PickupChain>(d);
+        w.remove<PickupOrder>(d);
+        w.remove<SoloMove>(d);
+    }
     const std::vector<Entity> near = w.view<Unit, Transform, Faction>();
     auto sees = [&](Entity u) {
         const Transform* tu = w.get<Transform>(u);
@@ -168,7 +174,7 @@ void onAttacked(World& w, Entity a, Entity d) {
         Combat& c = *w.get<Combat>(u);
         if (w.has<Commandable>(u)) {
             // Your units step in only when they are free: no order of their own under way
-            const bool busy = w.has<AttackOrder>(u) || w.has<SoloMove>(u) || w.has<PickupOrder>(u) ||
+            const bool busy = w.has<AttackOrder>(u) || w.has<SoloMove>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u) ||
                               w.has<TalkOrder>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
                               w.has<PutDownOrder>(u) || w.has<PropOrder>(u) || w.has<Working>(u) ||
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);

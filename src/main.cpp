@@ -170,6 +170,8 @@ std::vector<Entity> selectedUnits(World& w) {
 // unit. NULL when nothing is selected or more than one of yours is.
 // The neutral unit being talked to, or NULL_ENTITY when no talk box is open
 Entity dialogueUnit = NULL_ENTITY;
+// Whether the level being built has your camp: set from the scenario for a new game, and from the save when one loads
+bool levelPlayerCamp = true;
 Entity dialoguePlayer = NULL_ENTITY;      // the player unit a talk is with, who speaks the player's lines
 std::vector<SpokenLine> dialogueConvo;    // the lines of the talk so far
 bool tradeOpen = false;                   // the trade popout is up, in place of the talk box
@@ -206,8 +208,8 @@ void closeStorage() {
 
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
-enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Unlock, PickUp,
-                        PutInBed, PutDown, AutoHarvest, AutoHaul };
+enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
+                        Unlock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -215,6 +217,11 @@ struct ContextMenu {
     std::vector<MenuAction> actions;
 };
 ContextMenu contextMenu;
+
+// The Disband popout (layoutDisband in gui.h): the unit of yours it asks about, or NULL_ENTITY when it is shut, and when
+// its Disband button was pressed (SDL milliseconds), or 0 while it is not held
+Entity disbandTarget = NULL_ENTITY;
+unsigned long long disbandHeldAt = 0;
 
 // The looting panel: the Unconscious unit or corpse it shows and the unit of yours taking from it. It stays open while
 // the looter is within LOOT_RANGE of it. NULL_ENTITY when closed.
@@ -610,8 +617,8 @@ void clickSelect(World& w, Entity hit, bool additive) {
 }
 
 // Box selection: every unit of your squad whose screen position falls inside the rectangle. A box with none of them in
-// it changes nothing, so your squad is never left with nobody selected.
-void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
+// it changes nothing, so your squad is never left with nobody selected, and returns false.
+bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
                int W, int H, bool additive) {
     float minX = std::min(x0, x1), maxX = std::max(x0, x1);
     float minY = std::min(y0, y1), maxY = std::max(y0, y1);
@@ -627,12 +634,31 @@ void boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
             inBox.push_back(u);
         }
     }
-    if (inBox.empty()) return;
+    if (inBox.empty()) return false;
     inspectUnit = NULL_ENTITY;
     if (!additive) clearSelection(w);
     for (Entity u : inBox) {
         if (!w.has<Selected>(u)) w.add(u, Selected{});
     }
+    return true;
+}
+
+// Every item on the ground whose screen position falls inside the rectangle
+std::vector<Entity> groundItemsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H) {
+    const float minX = std::min(x0, x1), maxX = std::max(x0, x1);
+    const float minY = std::min(y0, y1), maxY = std::max(y0, y1);
+    const Mat4 vp = cam.viewProj((float)W / (float)H);
+    std::vector<Entity> out;
+    for (Entity it : w.view<GroundItem, Transform>()) {
+        const Transform* tr = w.get<Transform>(it);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        float sx, sy;
+        if (worldToScreen(vp, tr->x, tr->y + 0.2f, tr->z, W, H, sx, sy)
+            && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
+            out.push_back(it);
+        }
+    }
+    return out;
 }
 
 // Right click: order the selected units to a ground point.
@@ -825,7 +851,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     rng.gen.seed(seed);
     buildKind = -1;   // a new level starts with nothing picked to build
     resetPlayerReputation();   // a new game starts every faction at its default standing
-    setupWorld(world, terrain, rng);
+    setupWorld(world, terrain, rng, levelPlayerCamp);
     // log.txt: how many of each prop kind went down, and how far the nearest is from the first unit
     {
         std::array<int, PROP_KIND_COUNT> placed{};
@@ -884,6 +910,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
                   const MapChoice& map, std::string& err) {
     // A save from before items existed has none, so its items are placed from the seed as on a new level.
     // A save that has items gets exactly those, and nothing is placed from the seed.
+    levelPlayerCamp = d.playerCamp;   // the level is rebuilt as it was first made: with your camp or without
     if (!prepareLevel(map, world, terrain, renderer, rng, d.seed, !d.hasItems, err)) return false;
 
     // Drop the units that setupWorld generated
@@ -936,7 +963,8 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             // An Auto-Haul's prop is found below, once the props are all there
             behaviors.rules.clear();
             for (const SaveBehavior& b : u.behaviors) behaviors.rules.push_back(b.rule);
-            ensureNeedsBehaviors(behaviors.rules, u.mob > 0);
+            // A list saved whole keeps any needs behavior deleted from it; a mob still never keeps one
+            if (!u.behaviorsWhole || u.mob > 0) ensureNeedsBehaviors(behaviors.rules, u.mob > 0);
         }
         behaviors.passive = u.passive;
         behaviors.block = u.block;
@@ -950,6 +978,10 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         // Faction) maps to the one that replaced it.
         const int savedFaction = u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_RETIRED_GRAY : FACTION_PLAYER;
         world.add(e, Faction{ savedFaction == FACTION_PLAYER ? FACTION_PLAYER : knownFactionId(savedFaction) });
+        if (world.get<Faction>(e)->id == FACTION_EXILE && u.mob <= 0) {
+            Behaviors* eb = world.get<Behaviors>(e);
+            keepExileBehaviors(eb->rules);
+        }
     }
 
     // Who was carrying whom: the carrier is named by its place in the save
@@ -1089,6 +1121,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.gs = gs;
     d.propLayout = PROP_LAYOUT;
     d.reputation = playerReputation();
+    d.playerCamp = levelPlayerCamp;
 
     d.cam.present = true;
     d.cam.fx = cam.focusX;
@@ -1158,6 +1191,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         }
         if (const Behaviors* b = w.get<Behaviors>(u)) {
             su.hasBehaviors = true;
+            su.behaviorsWhole = true;
             for (const BehaviorRule& r : b->rules) {
                 SaveBehavior sb;
                 sb.rule = r;
@@ -1213,13 +1247,28 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     return d;
 }
 
-// Puts the camera on the tile under the lowest-numbered unit, so the game starts there
-void focusCameraOnFirstUnit(World& w, Camera& cam) {
-    Entity first = NULL_ENTITY;
-    for (Entity u : w.view<Unit, Transform, Commandable>()) {
-        if (first == NULL_ENTITY || u < first) first = u;
+// The unit of your squad that is selected when none is (a new game, the selected unit died): the lowest-numbered one,
+// preferring a person to a mob and an awake unit to an unconscious one. NULL_ENTITY with no squad left. The world's
+// views come out in no set order, so the units are sorted to make the pick the same every time.
+Entity firstSquadUnit(World& w) {
+    std::vector<Entity> squad = w.view<Unit, Commandable>();
+    std::sort(squad.begin(), squad.end());
+    Entity best = NULL_ENTITY;
+    int bestRank = 4;
+    for (Entity u : squad) {
+        const int rank = (w.has<Mob>(u) ? 1 : 0) + (w.has<Unconscious>(u) ? 2 : 0);
+        if (rank < bestRank) {
+            best = u;
+            bestRank = rank;
+        }
     }
-    if (first == NULL_ENTITY) return;
+    return best;
+}
+
+// Puts the camera on the tile under the first unit of your squad (firstSquadUnit), the one selected at the start
+void focusCameraOnFirstUnit(World& w, Camera& cam) {
+    const Entity first = firstSquadUnit(w);
+    if (first == NULL_ENTITY || !w.get<Transform>(first)) return;
 
     const Transform* t = w.get<Transform>(first);
     cam.focusX = std::floor(t->x) + 0.5f;
@@ -1864,6 +1913,18 @@ int main(int, char**) {
     int repScroll = 0;
     bool unitOpen = true;           // the Unit Panel: open shows its tabs, closed shows its bar alone
     int unitTab = 0;                // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
+    // The Behavior tab: the Add Behavior list, which shuts when the panel shows another unit, and the # prompt asking
+    // for one behavior's percent. The prompt is modal and asked once: it takes every click and key until it is answered.
+    bool behaviorAddOpen = false;
+    Entity behaviorUiUnit = NULL_ENTITY;
+    struct PercentPrompt {
+        bool open = false;
+        Entity unit = NULL_ENTITY;
+        int row = -1;                       // the behavior's row when it was asked, checked again when it is answered
+        BehaviorKind kind = BehaviorKind::Eat;
+        std::string text;                   // the digits typed
+        std::string error;                  // why the last answer was refused
+    } percentPrompt;
     Entity lastLone = NULL_ENTITY;  // the lone unit the Unit Panel showed last frame
     // Where the Squad Panel, the Unit Panel and the Information Panel are, as last locked (kept in the settings). 0 is
     // the default size and place.
@@ -2081,6 +2142,7 @@ int main(int, char**) {
     auto startMapLevel = [&](const MapChoice& choice) {
         std::string err;
         levelSeed = (unsigned)std::time(nullptr);
+        levelPlayerCamp = scenarioHasCamp(scenarioPick);   // only Full Random Camp starts with your camp
         // The title music ends as a new game starts, before its level loads
         audio::stopTracks();
         if (!prepareLevel(choice, world, terrain, renderer, rng, levelSeed, true, err,
@@ -2088,9 +2150,24 @@ int main(int, char**) {
             refuse(langf("MISC_LOAD_FAILED", { choice.name, err }));
             return;
         }
-        // The party from the menu replaces the three units that the seed made
-        ensurePlayerUnits(world, terrain, rng, (int)party.size());
+        // The party from the menu replaces the three units that the seed made: its people, then its mobs after them
+        {
+            std::vector<int> mobKinds;
+            for (const PartyMember& m : party) {
+                if (m.mob > 0) mobKinds.push_back(m.mob);
+            }
+            const int people = partyPeople(party);
+            ensurePlayerUnits(world, terrain, rng, people);
+            ensurePlayerMobs(world, terrain, rng, mobKinds, people);
+        }
         applyParty(world, party);
+        // In Pack of Two the wolf starts out following its Vagabond
+        if (scenarioPick == ScenarioId::PackOfTwo) {
+            const Entity lead = firstSquadUnit(world);
+            std::vector<Entity> beasts;
+            for (Entity u : world.view<Unit, Commandable, Mob>()) beasts.push_back(u);
+            if (lead != NULL_ENTITY && !world.has<Mob>(lead)) issueFollowOrder(world, beasts, lead);
+        }
         clearCombatText();
         closePanel();
         currentMap = choice;
@@ -2102,9 +2179,14 @@ int main(int, char**) {
         primeStreaming(world, terrain, cam);
         gs = GameState{};
         sel = Selection{};
+        // The game starts with the unit the camera is on selected, and the camera following it as a double-click on its
+        // panel card would, until the first manual pan
+        clearSelection(world);
+        const Entity firstUnit = firstSquadUnit(world);
+        if (firstUnit != NULL_ENTITY) world.add(firstUnit, Selected{});
         leftDown = middleDown = false;
         itemDrag = false;
-        followUnit = NULL_ENTITY;
+        followUnit = firstUnit;
         autoTimer = 0.0f;
         gameActive = true;
         lastSaveTicks.reset();
@@ -2125,6 +2207,7 @@ int main(int, char**) {
         partyUi = PartyUi{};
         partyUi.resizable = scenarioResizable(scenarioPick);
         partyUi.editable = scenarioEditable(scenarioPick);
+        partyUi.mobKindEditable = scenarioMobKindEditable(scenarioPick);
         backScreen = Screen::ScenarioSelect;
         screen = Screen::PartySetup;
     };
@@ -2231,10 +2314,11 @@ int main(int, char**) {
     auto panWithKeys = [&](float dt, bool edgeScroll) {
         const bool* keys = SDL_GetKeyboardState(nullptr);
         float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
-        if (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) right += 1.0f;
-        if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) right -= 1.0f;
-        if (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) forward += 1.0f;
-        if (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) forward -= 1.0f;
+        if (percentPrompt.open) keys = nullptr;   // the keys go into the Behavior tab's # prompt
+        if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
+        if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
+        if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;
+        if (keys && (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])) forward -= 1.0f;
 
         if (edgeScroll) {
             int winW = 0, winH = 0;
@@ -2322,7 +2406,7 @@ int main(int, char**) {
         if (c.language) {
             applyLanguage();
             // The party's names came from the old language, so the party is rolled again in the new one
-            party = scenarioParty(scenarioPick, partyRng, (int)party.size());
+            party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
         }
         if (c.fonts || c.language) applyFontScale();
         if (save) saveSettingsFile();
@@ -2471,9 +2555,32 @@ int main(int, char**) {
             partyUi.dropScroll = clampDropScroll(pickedMember(party, partyUi).sprite - 1 - DROP_VISIBLE_ROWS / 2,
                                                  UNIT_SPRITE_COUNT);
             return;
+        case Action::PartyMobBox:
+            // A mob member's kind: a list of the regular kinds, in Custom and Beastmaster only
+            if (!partyUi.mobKindEditable) return;
+            stopNameEdit();
+            partyUi.dropKind = DropKind::MobKind;
+            partyUi.dropSlot = 0;
+            partyUi.dropScroll = 0;
+            return;
+        case Action::PartyAddMob:
+            // The list of regular kinds; picking one adds a mob of that kind
+            if (!partyUi.resizable || (int)party.size() >= PARTY_MAX_UNITS) return;
+            stopNameEdit();
+            partyUi.dropKind = DropKind::MobKind;
+            partyUi.dropSlot = -1;
+            partyUi.dropScroll = 0;
+            return;
         case Action::PartyRandomUnit: {
             // A new member for the picked unit, with a name that no other unit in the party has
             const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
+            if (party[picked].mob > 0) {
+                // A mob: in Custom a new one of the same kind, rolled afresh; elsewhere it stays as the scenario made it
+                if (partyUi.editable) party[picked] = mobMember(party[picked].mob, partyRng);
+                stopNameEdit();
+                closeDropdown();
+                return;
+            }
             std::vector<std::string> others;
             for (int i = 0; i < (int)party.size(); ++i) {
                 if (i != picked) others.push_back(party[i].name);
@@ -2551,6 +2658,23 @@ int main(int, char**) {
                 }
                 break;
             }
+            case DropKind::MobKind:
+                if (partyUi.dropSlot < 0) {
+                    // Add mob: a new member at the end of the party, picked and scrolled to
+                    if (partyUi.resizable && (int)party.size() < PARTY_MAX_UNITS) {
+                        party.push_back(mobMember(value, partyRng));
+                        partyUi.selected = (int)party.size() - 1;
+                        partyUi.listScroll = (int)party.size();
+                    }
+                } else if (partyUi.mobKindEditable && m.mob > 0 && m.mob != value) {
+                    // A mob of the new kind, with that kind's stats. A name typed for it is kept; the old kind's own
+                    // name gives way to the new kind's.
+                    const bool renamed = cleanName(m.name) != lang(mobInfo(m.mob).nameKey);
+                    const std::string name = m.name;
+                    m = mobMember(value, partyRng);
+                    if (renamed) m.name = name;
+                }
+                break;
             case DropKind::None:
                 break;
             }
@@ -2589,7 +2713,7 @@ int main(int, char**) {
             }
             return;
         case Action::PartyRandomAll:
-            party = scenarioParty(scenarioPick, partyRng, (int)party.size());
+            party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
             stopNameEdit();
             closeDropdown();
             return;
@@ -2783,12 +2907,83 @@ int main(int, char**) {
         };
         // The sidebar is up for the lone selected unit, yours or a red one
         auto sidebarUp = [&]() { return sidebarUnitOf(world) != NULL_ENTITY; };
+        // The Add Behavior list for a unit: every behavior in the game it can be given. The needs behaviors (not for a
+        // mob) and the walks first, then Auto-Harvest of each resource kind standing in your claims, then Auto-Haul to
+        // each storage prop in your claims, nearest first. Each says whether the unit holds it already.
+        auto behaviorOptionsFor = [&](Entity u) {
+            std::vector<BehaviorOption> out;
+            const Behaviors* b = world.get<Behaviors>(u);
+            if (!b) return out;
+            auto offer = [&](const BehaviorRule& r, std::string label) {
+                BehaviorOption o;
+                o.rule = r;
+                o.label = std::move(label);
+                o.have = holdsBehavior(b->rules, r);
+                out.push_back(std::move(o));
+            };
+            for (BehaviorKind k : addableKinds(world.has<Mob>(u))) {
+                BehaviorRule r;
+                r.kind = k;
+                offer(r, behaviorName(r));
+            }
+            const std::vector<Claim>& claims = claimsOf(world);
+            std::array<bool, PROP_KIND_COUNT> harvestable{};
+            std::vector<std::pair<float, Entity>> stores;
+            const Transform* ut = world.get<Transform>(u);
+            for (Entity p : world.view<Prop, Transform>()) {
+                const Transform* pt = world.get<Transform>(p);
+                if (!claimAt(claims, pt->x, pt->z, FACTION_PLAYER)) continue;
+                const int kind = world.get<Prop>(p)->kind;
+                if (kind >= 0 && kind < PROP_KIND_COUNT && yieldsItems(kind)) harvestable[(size_t)kind] = true;
+                if (world.has<Storage>(p)) {
+                    const float d = ut ? std::hypot(pt->x - ut->x, pt->z - ut->z) : 0.0f;
+                    stores.push_back({ d, p });
+                }
+            }
+            // Ones the unit holds count too, so a list can always show them, wherever their props are now
+            for (const BehaviorRule& r : b->rules) {
+                if (r.kind == BehaviorKind::AutoHarvest && r.propKind >= 0 && r.propKind < PROP_KIND_COUNT) harvestable[(size_t)r.propKind] = true;
+            }
+            for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+                if (!harvestable[(size_t)k]) continue;
+                BehaviorRule r;
+                r.kind = BehaviorKind::AutoHarvest;
+                r.propKind = k;
+                offer(r, behaviorName(r));
+            }
+            std::sort(stores.begin(), stores.end());
+            constexpr size_t STORES_SHOWN = 8;   // the nearest ones, so the list stays short in a big camp
+            for (size_t i = 0; i < stores.size() && i < STORES_SHOWN; ++i) {
+                BehaviorRule r;
+                r.kind = BehaviorKind::AutoHaul;
+                r.prop = stores[i].second;
+                r.propKind = world.get<Prop>(r.prop)->kind;
+                offer(r, behaviorName(r) + "  (" + std::to_string((int)std::lround(stores[i].first)) + "m)");
+            }
+            return out;
+        };
         // The sidebar's layout for a window of W by H, for the unit it shows, scrolled by the given pixels
         auto sidebarFor = [&](int W, int H, float scroll) {
             const Entity shown = sidebarUnitOf(world);
             const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
+            // The Behavior tab's list is for one unit: another one shown shuts it
+            if (shown != behaviorUiUnit) {
+                behaviorUiUnit = shown;
+                behaviorAddOpen = false;
+            }
+            const bool editable = shown != NULL_ENTITY && world.has<Commandable>(shown);
+            BehaviorUi bui;
+            std::vector<BehaviorOption> options;
+            if (b && editable && unitTab == UNIT_TAB_BEHAVIOR) {
+                if (behaviorAddOpen) {
+                    options = behaviorOptionsFor(shown);
+                    bui.options = (int)options.size();
+                }
+            }
             SidebarLayout L = layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
-                                                     renderer.profileCardHeight(H));
+                                                     renderer.profileCardHeight(H), bui);
+            if (!editable || unitTab != UNIT_TAB_BEHAVIOR) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };   // nothing to add to
+            L.behaviorOptionInfo = std::move(options);
             // A mob has no gear slots, nor gear buttons, so nothing there can be clicked or dragged. Its inventory is
             // Not available until it is a corpse: no slots, and no sort button.
             if (shown != NULL_ENTITY && world.has<Mob>(shown)) {
@@ -2813,8 +3008,8 @@ int main(int, char**) {
             sortInventoryByType(*inv);
             playSfx(Sfx::UiClick);
         };
-        // A click on one part of a behavior row: the on box switches it, the priority buttons move it, and the delete
-        // button removes it (an automated behavior only)
+        // A click on one part of a behavior row: the on box switches it, # asks for its percent, the priority buttons
+        // move it, and the delete button removes it
         auto behaviorClick = [&](Entity unit, const BehaviorHit& hit) {
             Behaviors* b = world.get<Behaviors>(unit);
             if (!b || hit.row < 0 || hit.row >= (int)b->rules.size()) return;
@@ -2826,16 +3021,21 @@ int main(int, char**) {
                 r.cooldown = 0.0f;
                 if (r.on) b->wait = 0.0f;   // an automated behavior switched on looks for its step at once
                 break;
-            case BehaviorPart::Less:
-            case BehaviorPart::More:
-                if (!stepPercent(r, hit.part == BehaviorPart::More ? 1 : -1)) return;
-                r.cooldown = 0.0f;
-                break;
+            case BehaviorPart::Number:
+                // Eat, Heal and Rest: the prompt asks for the percent, once
+                if (!hasPercent(r.kind)) return;
+                percentPrompt = PercentPrompt{};
+                percentPrompt.open = true;
+                percentPrompt.unit = unit;
+                percentPrompt.row = (int)row;
+                percentPrompt.kind = r.kind;
+                percentPrompt.text = std::to_string(r.percent);   // what it is now, to change or type over
+                SDL_StartTextInput(window);
+                playSfx(Sfx::UiClick);
+                return;
             case BehaviorPart::Up:
-                if (!moveBehavior(b->rules, row, -1)) return;
-                break;
             case BehaviorPart::Down:
-                if (!moveBehavior(b->rules, row, +1)) return;
+                if (!moveBehavior(b->rules, row, hit.part == BehaviorPart::Up ? -1 : 1)) return;
                 break;
             case BehaviorPart::Remove:
                 if (!removeBehavior(b->rules, row)) return;
@@ -2845,6 +3045,64 @@ int main(int, char**) {
             }
             b->pending = true;   // Eat and Heal are checked again, so the change takes effect at once
             playSfx(Sfx::UiClick);
+        };
+        // Shuts the # prompt. keep: the typed percent is set, if it is in the behavior's range; otherwise the prompt
+        // stays up and says why. Cancel (keep false) leaves the percent as it was.
+        auto answerPercentPrompt = [&](bool keep) {
+            if (!percentPrompt.open) return;
+            if (keep) {
+                Behaviors* b = world.get<Behaviors>(percentPrompt.unit);
+                const int row = percentPrompt.row;
+                // The list may have changed under it (the unit fell, was traded away): then there is nothing to set
+                if (!b || row < 0 || row >= (int)b->rules.size() || b->rules[(size_t)row].kind != percentPrompt.kind) {
+                    keep = false;
+                } else {
+                    const PercentRange range = percentRange(percentPrompt.kind);
+                    const int value = percentPrompt.text.empty() ? -1 : std::atoi(percentPrompt.text.c_str());
+                    if (!percentInRange(percentPrompt.kind, value)) {
+                        percentPrompt.error = langf("UILABEL_BEHAVIOR_PROMPT_BAD", { std::to_string(range.lo), std::to_string(range.hi) });
+                        playSfx(Sfx::UiBack);
+                        return;
+                    }
+                    BehaviorRule& r = b->rules[(size_t)row];
+                    if (setPercent(r, value)) {
+                        r.cooldown = 0.0f;
+                        b->pending = true;   // checked again at once
+                    }
+                }
+            }
+            percentPrompt = PercentPrompt{};
+            SDL_StopTextInput(window);
+            playSfx(keep ? Sfx::UiClick : Sfx::UiBack);
+        };
+        // A click on the Add Behavior button or its list. False when the click was on neither.
+        auto behaviorExtraClick = [&](Entity unit, const SidebarLayout& sl, float x, float y) {
+            const BehaviorExtraHit hit = behaviorExtraHitAt(sl, x, y);
+            if (hit.add) {
+                behaviorAddOpen = !behaviorAddOpen;
+                playSfx(Sfx::UiClick);
+                return true;
+            }
+            if (hit.option >= 0) {
+                const std::vector<BehaviorOption> options = behaviorOptionsFor(unit);
+                Behaviors* b = world.get<Behaviors>(unit);
+                if (!b || hit.option >= (int)options.size()) return true;
+                const BehaviorOption& o = options[(size_t)hit.option];
+                if (!addBehavior(b->rules, o.rule)) {
+                    refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+                    return true;
+                }
+                // Patrol Spawn walks about where it was given, for a unit that was not placed by a spawn
+                if (o.rule.kind == BehaviorKind::PatrolSpawn && !world.has<SpawnHome>(unit)) {
+                    if (const Transform* t = world.get<Transform>(unit)) world.add(unit, SpawnHome{ t->x, t->z, false });
+                }
+                b->pending = true;
+                b->wait = 0.0f;   // an automated behavior looks for its step at once
+                showNotice(langf(o.have ? "MISC_BEHAVIOR_SWITCHED_ON" : "MISC_BEHAVIOR_ADDED", { behaviorName(o.rule) }));
+                playSfx(Sfx::UiClick);
+                return true;
+            }
+            return false;
         };
         // Whether the mouse is over the bottom unit panel
         auto unitPanelHovered = [&](int W, int H) {
@@ -3200,12 +3458,13 @@ int main(int, char**) {
                     for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
                     if (shut) return std::vector<MenuAction>{ MenuAction::Unlock };
                 }
-                // A bed or bedroll, with a selected unit carrying someone: put them in it
+                // An occupiable prop (a bed, a chair, a cage): Occupy it, or, while a selected unit carries someone,
+                // Place them on it in its stead, so a carrier is never sent to occupy one
                 bool carrying = false;
                 for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
-                if (carrying && doomRecoveryPerHour(p->kind) > 0.0f) out.push_back(MenuAction::PutInBed);
                 if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
-                if (isWorkProp(use) || use == PropUse::Occupy) out.push_back(MenuAction::Use);
+                if (use == PropUse::Occupy) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+                if (isWorkProp(use)) out.push_back(MenuAction::Use);
                 // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
                 if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);   // not the Debris, which gives nothing
                 if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
@@ -3230,12 +3489,14 @@ int main(int, char**) {
                     labels.push_back(lang(tp && tp->kind == PROP_DEBRIS ? "UILABEL_CLEAR" : "UILABEL_USE"));
                     break;
                 }
+                case MenuAction::Occupy: labels.push_back(lang("UILABEL_OCCUPY")); break;
+                case MenuAction::Place: labels.push_back(lang("UILABEL_PLACE")); break;
                 case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
                 case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
-                case MenuAction::PutInBed: labels.push_back(lang("UILABEL_PUT_IN_BED")); break;
                 case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
                 case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
                 case MenuAction::AutoHaul: labels.push_back(lang("UILABEL_AUTO_HAUL")); break;
+                case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
                 }
             }
             return labels;
@@ -3245,11 +3506,24 @@ int main(int, char**) {
         };
         // Opens the menu for what is under the pointer. False if nothing there can be acted on, so the right-click is
         // a move order instead.
-        auto openContextMenuOn = [&](Entity target, float mx, float my) {
+        // squadPanel: opened on the unit's cell in the Squad Panel, which adds Disband for a unit of yours
+        auto openContextMenuOn = [&](Entity target, float mx, float my, bool squadPanel = false) {
             if (target == NULL_ENTITY) return false;
             std::vector<MenuAction> actions = menuActionsFor(target);
+            const bool disband = squadPanel && world.has<Commandable>(target);
+            if (disband) actions.push_back(MenuAction::Disband);
             if (actions.empty()) return false;
             if (menuActors(target).empty()) {
+                // Put down and Disband need no other unit
+                if (disband) {
+                    std::vector<MenuAction> own;
+                    if (actions[0] == MenuAction::PutDown) own.push_back(MenuAction::PutDown);
+                    own.push_back(MenuAction::Disband);
+                    contextMenu = ContextMenu{ true, mx, my, target, own };
+                    playSfx(Sfx::UiMenuOpen);
+                    itemMenu.open = false;
+                    return true;
+                }
                 // Only Put down needs no other unit: the carrier does it
                 if (actions[0] == MenuAction::PutDown) {
                     contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::PutDown } };
@@ -3287,6 +3561,16 @@ int main(int, char**) {
         auto pickMenuAction = [&](MenuAction a) {
             const Entity target = contextMenu.target;
             contextMenu.open = false;
+            if (a == MenuAction::Disband) {
+                // The popout asks first: Disband has to be held down to confirm
+                if (world.has<Commandable>(target)) {
+                    disbandTarget = target;
+                    disbandHeldAt = 0;
+                    itemMenu.open = false;
+                    playSfx(Sfx::UiMenuOpen);
+                }
+                return;
+            }
             if (a == MenuAction::PutDown) {
                 // Put down at once, where the carrier stands
                 const Entity carrier = putDownCarrier(target);
@@ -3367,8 +3651,8 @@ int main(int, char**) {
             case MenuAction::PickUp:
                 if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
                 break;
-            case MenuAction::PutInBed: {
-                // The nearest selected unit that carries someone takes them there
+            case MenuAction::Place: {
+                // The nearest selected unit that carries someone places them on the prop
                 Entity carrier = NULL_ENTITY;
                 for (Entity u : actors) {
                     if (world.has<Carrying>(u)) {
@@ -3376,10 +3660,23 @@ int main(int, char**) {
                         break;
                     }
                 }
-                if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Use);
+                if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Place);
+                break;
+            }
+            case MenuAction::Occupy: {
+                // The nearest selected unit that carries nobody occupies it
+                Entity occupier = NULL_ENTITY;
+                for (Entity u : actors) {
+                    if (!world.has<Carrying>(u)) {
+                        occupier = u;
+                        break;
+                    }
+                }
+                if (occupier != NULL_ENTITY) issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
                 break;
             }
             case MenuAction::PutDown:
+            case MenuAction::Disband:
                 break;   // done above
             case MenuAction::AutoHarvest:
             case MenuAction::AutoHaul: {
@@ -3773,6 +4070,17 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_TEXT_INPUT:
+                // The # prompt takes digits only, as many as the top of the behavior's range has
+                if (percentPrompt.open) {
+                    const size_t most = std::to_string(percentRange(percentPrompt.kind).hi).size();
+                    for (const char* c = e.text.text; *c; ++c) {
+                        if (*c < '0' || *c > '9') continue;
+                        if (percentPrompt.text == "0") percentPrompt.text.clear();   // no leading zero
+                        if (percentPrompt.text.size() < most) percentPrompt.text += *c;
+                    }
+                    percentPrompt.error.clear();
+                    break;
+                }
                 if (screen == Screen::PartySetup) {
                     // Typed text goes into the name being edited, up to the limit in characters. Any text an input
                     // method was composing is now committed, so it leaves the name box.
@@ -3794,6 +4102,19 @@ int main(int, char**) {
                 // Escape acts once per press: the repeats sent while it is held down are ignored, so holding it does
                 // not back out of several menus at once
                 if (e.key.key == SDLK_ESCAPE && e.key.repeat) break;
+                // The # prompt takes every key: Enter sets the percent, Escape cancels, Backspace takes off a digit.
+                // The game's keys (Space, M, the camera's) wait until it is answered.
+                if (percentPrompt.open) {
+                    if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) {
+                        answerPercentPrompt(true);
+                    } else if (e.key.key == SDLK_ESCAPE) {
+                        answerPercentPrompt(false);
+                    } else if (e.key.key == SDLK_BACKSPACE && !percentPrompt.text.empty()) {
+                        percentPrompt.text.pop_back();
+                        percentPrompt.error.clear();
+                    }
+                    break;
+                }
                 if (screen == Screen::PartySetup) {
                     // Escape backs out one step at a time: the dropdown, then the name box, then the map list
                     if (e.key.key == SDLK_ESCAPE) {
@@ -3892,7 +4213,11 @@ int main(int, char**) {
                         playSfx(Sfx::UiBack);
                         break;
                     }
-                    if (screen == Screen::Playing && optimizeAllOpen) {
+                    if (screen == Screen::Playing && disbandTarget != NULL_ENTITY) {
+                        disbandTarget = NULL_ENTITY;   // Escape is Cancel on the Disband popout
+                        disbandHeldAt = 0;
+                        playSfx(Sfx::UiBack);
+                    } else if (screen == Screen::Playing && optimizeAllOpen) {
                         optimizeAllOpen = false;   // Escape is Cancel on the Optimize All dialog
                         optimizeSliderDrag = false;
                         playSfx(Sfx::UiBack);
@@ -4005,6 +4330,15 @@ int main(int, char**) {
             }
 
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                // The # prompt takes every click: Set and Cancel answer it, a click outside it cancels it
+                if (percentPrompt.open) {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        const PercentPromptLayout pl = layoutPercentPrompt(winW, winH);
+                        if (pl.ok.contains(e.button.x, e.button.y)) answerPercentPrompt(true);
+                        else if (pl.cancel.contains(e.button.x, e.button.y) || !pl.box.contains(e.button.x, e.button.y)) answerPercentPrompt(false);
+                    }
+                    break;
+                }
                 // While a prop is picked to build, a right click puts the pick down and does nothing else
                 if (buildKind != BUILD_NONE && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
                     buildKind = -1;
@@ -4121,6 +4455,22 @@ int main(int, char**) {
                     break;
                 }
 
+                // The Disband popout is modal: only it answers while it is open. Pressing Disband starts the hold;
+                // letting go (or moving off it) before DISBAND_HOLD_MS starts it over.
+                if (screen == Screen::Playing && disbandTarget != NULL_ENTITY) {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        const DisbandLayout dl = layoutDisband(winW, winH);
+                        if (dl.disband.contains(e.button.x, e.button.y)) {
+                            disbandHeldAt = std::max<unsigned long long>(1, SDL_GetTicks());
+                            playSfx(Sfx::UiClick);
+                        } else if (dl.cancel.contains(e.button.x, e.button.y)) {
+                            disbandTarget = NULL_ENTITY;
+                            disbandHeldAt = 0;
+                            playSfx(Sfx::UiBack);
+                        }
+                    }
+                    break;
+                }
                 // The Optimize All dialog is modal: only it answers while it is open
                 if (screen == Screen::Playing && optimizeAllOpen) {
                     if (e.button.button == SDL_BUTTON_LEFT) {
@@ -4572,6 +4922,7 @@ int main(int, char**) {
                                     behaviorClick(shown, bh);
                                     break;
                                 }
+                                if (sl.tab == UNIT_TAB_BEHAVIOR && behaviorExtraClick(shown, sl, mx, my)) break;
                             }
 
                             // A filled inventory slot starts dragging its stack out of the inventory. A filled
@@ -4704,7 +5055,7 @@ int main(int, char**) {
                             for (const UnitCell& c : squadL.cells) {
                                 if (!c.rect.contains(e.button.x, e.button.y) || c.index < 0 || c.index >= (int)own.size()) continue;
                                 onCell = true;
-                                openContextMenuOn(own[(size_t)c.index], e.button.x, e.button.y);
+                                openContextMenuOn(own[(size_t)c.index], e.button.x, e.button.y, true);
                                 break;
                             }
                             if (onCell) break;
@@ -4762,6 +5113,10 @@ int main(int, char**) {
                 break;
 
             case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (disbandHeldAt != 0 && e.button.button == SDL_BUTTON_LEFT) {
+                    disbandHeldAt = 0;   // let go before it filled: the hold starts over
+                    break;
+                }
                 if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
                     squadThumbDrag = false;
                     break;
@@ -4892,7 +5247,20 @@ int main(int, char**) {
                     const SDL_Keymod mods = SDL_GetModState();
                     const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
                     if (sel.dragging) {
-                        boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive);
+                        // A box with none of your units in it but items on the ground sends the selected units to
+                        // pick them all up, as one chain shared between them
+                        if (!boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive)) {
+                            const std::vector<Entity> items =
+                                groundItemsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
+                            if (!items.empty()) {
+                                const std::vector<Entity> picked = selectedUnits(world);
+                                if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
+                                else {
+                                    noteLockedIn(picked);
+                                    issuePickupChain(world, terrain, picked, items);
+                                }
+                            }
+                        }
                     } else {
                         const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
                         clickSelect(world, unitClicked(world, terrain, cam, under, e.button.x, e.button.y, winW, winH), additive);
@@ -5112,7 +5480,7 @@ int main(int, char**) {
             logSeen = logCount;
             squadSystem(world, dt, runMode);
             steeringSystem(world, terrain, dt, runMode);
-            pickupSystem(world);   // a pickup plays its own sound
+            pickupSystem(world, terrain);   // a pickup plays its own sound
             // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
             // prop had all its workers, or a campfire had nothing to cook or no room.
             for (const PropArrival& a : propOrderSystem(world)) {
@@ -5143,10 +5511,10 @@ int main(int, char**) {
                     continue;
                 }
                 if (a.corpse) {
-                    refuse(lang("MISC_CORPSE_NO_BED"));
+                    refuse(lang("MISC_CORPSE_NO_PLACE"));
                     continue;
                 }
-                if (a.putInBed) continue;
+                if (a.placed) continue;
                 if (a.unreachable) {
                     refuse(lang("MISC_PROP_UNREACHABLE"));
                 } else if (a.taken && info.use == PropUse::Occupy) {
@@ -5296,17 +5664,9 @@ int main(int, char**) {
             }
         }
         // A unit of your squad is always selected while there is one: when none is (a new game, the selected unit
-        // died), the first in the Squad Panel is, preferring one that is awake. With none left, nobody is.
+        // died), the first of the squad is (firstSquadUnit), the one the camera starts on. With none left, nobody is.
         if (screen == Screen::Playing && selectedUnits(world).empty()) {
-            const std::vector<Entity> squad = world.view<Unit, Commandable>();   // creation order, as the Squad Panel
-            Entity first = NULL_ENTITY;
-            for (Entity u : squad) {
-                if (!world.has<Unconscious>(u)) {
-                    first = u;
-                    break;
-                }
-            }
-            if (first == NULL_ENTITY && !squad.empty()) first = squad[0];
+            const Entity first = firstSquadUnit(world);
             if (first != NULL_ENTITY) world.add(first, Selected{});
         }
         if (inspectUnit != NULL_ENTITY && !world.has<Unit>(inspectUnit)) inspectUnit = NULL_ENTITY;
@@ -5329,6 +5689,7 @@ int main(int, char**) {
             cam.eye(ex, ey, ez);
             const Mat4 vp = cam.viewProj((float)winW / (float)std::max(1, winH));
             for (const QueuedSound& q : queued) {
+                if (!settings.craftGatherSounds && isCraftGatherSfx(q.sfx)) continue;
                 float v = 1.0f, p = 0.0f;
                 if (q.placed) {
                     v = soundGain(std::sqrt((q.x - ex) * (q.x - ex) + (q.y - ey) * (q.y - ey) + (q.z - ez) * (q.z - ez)));
@@ -5412,7 +5773,7 @@ int main(int, char**) {
             float bmx = 0.0f, bmy = 0.0f;
             SDL_GetMouseState(&bmx, &bmy);
             const bool placing = buildKind >= 0 && screen == Screen::Playing && !panelOpen && !mapOpen
-                                 && dialogueUnit == NULL_ENTITY && !optimizeAllOpen;
+                                 && dialogueUnit == NULL_ENTITY && !optimizeAllOpen && disbandTarget == NULL_ENTITY;
             if (placing && keys[SDL_SCANCODE_R] && buildPrevX >= 0.0f) buildYaw += (bmx - buildPrevX) * BUILD_TURN_PER_PIXEL;
             buildPrevX = bmx;
             BuildPreview bp;
@@ -5712,6 +6073,41 @@ int main(int, char**) {
                 }
             }
             if (contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
+            // The Disband popout: the hold fills Disband's bar while the button is held and the pointer stays on it;
+            // full, the unit is disbanded. A unit no longer yours (it died, or was disbanded) shuts it.
+            if (disbandTarget != NULL_ENTITY && !world.has<Commandable>(disbandTarget)) {
+                disbandTarget = NULL_ENTITY;
+                disbandHeldAt = 0;
+            }
+            if (disbandTarget != NULL_ENTITY) {
+                const DisbandLayout dl = layoutDisband(winW, winH);
+                float held = 0.0f;
+                if (disbandHeldAt != 0) {
+                    if (!dl.disband.contains(mouseX, mouseY)) disbandHeldAt = 0;   // moved off it: starts over
+                    else held = (float)(SDL_GetTicks() - disbandHeldAt) / (float)DISBAND_HOLD_MS;
+                }
+                if (held >= 1.0f) {
+                    const Entity u = disbandTarget;
+                    disbandTarget = NULL_ENTITY;
+                    disbandHeldAt = 0;
+                    // Panels that were the unit's shut with it
+                    if (storageUnit == u) closeStorage();
+                    if (lootBy == u) closeLoot();
+                    if (dialoguePlayer == u) {
+                        endTalk();
+                        dialoguePlayer = NULL_ENTITY;
+                    }
+                    if (contextMenu.open && contextMenu.target == u) contextMenu.open = false;
+                    const bool mob = world.has<Mob>(u);
+                    const std::string who = nameOf(world, u);
+                    if (disbandUnit(world, u)) {
+                        showNotice(langf(mob ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { who }));
+                        playSfx(Sfx::UiOrder);
+                    }
+                } else {
+                    renderer.drawDisband(world, dl, disbandTarget, held, mouseX, mouseY);
+                }
+            }
             if (optimizeAllOpen) {
                 renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
                                          { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
@@ -6034,6 +6430,20 @@ int main(int, char**) {
         }
 
         renderer.beginUi(winW, winH);
+        // The Behavior tab's # prompt, over the whole game
+        if (percentPrompt.open) {
+            if (screen != Screen::Playing || !world.has<Behaviors>(percentPrompt.unit)) {
+                answerPercentPrompt(false);   // the game it was asked in is gone
+            } else {
+                const char* title = percentPrompt.kind == BehaviorKind::Eat    ? "UILABEL_BEHAVIOR_PROMPT_EAT"
+                                    : percentPrompt.kind == BehaviorKind::Heal ? "UILABEL_BEHAVIOR_PROMPT_HEAL"
+                                                                               : "UILABEL_BEHAVIOR_PROMPT_REST";
+                const PercentRange range = percentRange(percentPrompt.kind);
+                renderer.drawPercentPrompt(layoutPercentPrompt(winW, winH), lang(title), percentPrompt.text,
+                                           langf("UILABEL_BEHAVIOR_PROMPT_RANGE", { std::to_string(range.lo), std::to_string(range.hi) }),
+                                           percentPrompt.error, mouseX, mouseY);
+            }
+        }
         drawNotice();
         // The frame rate in the bottom-left corner, white on a black box, over everything else
         ++fpsFrames;

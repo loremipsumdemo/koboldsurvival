@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Vernieuwingsfrequentie
 UILABEL_DEFAULT	Standaard
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Limiet framesnelheid
+UILABEL_VIEW_RANGE	Zichtafstand
+UILABEL_TILES_N	{0} vakken
+UILABEL_SHOW_FPS	FPS tonen
 UILABEL_UNLIMITED	Onbeperkt
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Automatisch opslaan
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} minuten
 UILABEL_UNIT_NAMES	Namen van eigen eenheden
 UILABEL_NPC_NAMES	Namen van andere eenheden
 UILABEL_PROP_NAMES	Namen van objecten
+UILABEL_PROP_INFO	Objectinfo tonen
 UILABEL_FONT_SIZE	Lettergrootte
 UILABEL_RESET_PANELS	Alle UI-panelen resetten
 UILABEL_RESET	Resetten
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Globaal volume
 UILABEL_MUSIC	Muziek
 UILABEL_AMBIENT	Omgevingsgeluid
 UILABEL_INTERFACE_SOUNDS	Interfacegeluiden
+UILABEL_CRAFT_GATHER_SOUNDS	Geluiden van maken en verzamelen
 UILABEL_SOUND_EFFECTS	Geluidseffecten
 UILABEL_RESTORE_DEFAULTS	Standaardwaarden herstellen
 UILABEL_WINDOWED	Venster
@@ -123,6 +128,8 @@ UILABEL_STATS	Statistieken
 UILABEL_CLICK_TO_TYPE	Klik om een naam te typen
 UILABEL_HEALTH	Gezondheid
 UILABEL_HUNGER	Honger
+UILABEL_RESTED	Uitgerust
+UILABEL_COMFORT	Comfort
 UILABEL_CARRY	Draagvermogen
 UILABEL_NEXT_LEVEL_XP_LINE	Volgend niveau XP: {0}
 UILABEL_STAT	Statistiek
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Deze eenheid willekeurig maken
 UILABEL_RANDOMIZE_ALL	Alles willekeurig maken
 UILABEL_ADD_UNIT	Eenheid toevoegen
 UILABEL_REMOVE_UNIT	Eenheid verwijderen
+UILABEL_ADD_MOB	Dier toevoegen
+UILABEL_MOB_KIND	Soort
+UILABEL_MOB_NO_GEAR	Een dier draagt geen uitrusting.
+MISC_MEAT_TAKEN_DIES	{0} sterft
+MISC_MOB_INVENTORY_LOCKED	Niet beschikbaar
+MISC_MOB_CANT_HOLD	Een dier draagt alleen zijn eigen vlees en botten
+UILABEL_CLEAR	Opruimen
+UILABEL_TASK_CLEARING	Ruimt puin op
+MISC_CLEARS_DEBRIS	{0} ruimt het puin op
+UILABEL_MOB_INVENTORY_HIDDEN	Niet beschikbaar
+UILABEL_BEHAVIOR_PATROL	Patrouille
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrouille bij oorsprong
+UILABEL_BEHAVIOR_ROAM	Rondzwerven
+UILABEL_BEHAVIOR_PATROL_TIP	Patrouille: loopt rond in het gebied waar de eenheid staat, als dat van haar factie is, en stopt af en toe.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrouille bij oorsprong: loopt rond bij de plek waar ze verscheen. Te ver achtervolgd geeft ze het op, geneest volledig en loopt terug, zonder schade op te lopen tot ze thuis is.
+UILABEL_BEHAVIOR_ROAM_TIP	Rondzwerven: zwerft door het open land, overal waar ze buiten de vlaggebieden kan lopen.
+UILABEL_WAIT_NOT_IN_CLAIM	niet in een gebied van de eigen factie
+UILABEL_WAIT_NOWHERE_TO_ROAM	geen open grond in de buurt buiten de gebieden
+UILABEL_TEMPERAMENT_AVOIDANT	Schuw
+UILABEL_TEMPERAMENT_PASSIVE	Passief
+UILABEL_TEMPERAMENT_NEUTRAL	Neutraal
+UILABEL_TEMPERAMENT_AGGRESSIVE	Agressief
+UILABEL_TEMPERAMENT	Temperament: {0}
+UILABEL_MOB_NO_ITEMS	Een dier draagt alleen zijn eigen vlees en botten.
 UILABEL_CONFIRM_STARTS	Bevestigen start het spel met deze groep.
 UILABEL_NEEDS_NAMES	Elke eenheid moet een naam hebben voordat het spel kan beginnen.
 UILABEL_CLICK_UNIT_EDIT	Klik op een eenheid om deze te bewerken.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Benen
 UILABEL_SLOT_FEET	Voeten
 UILABEL_SLOT_ACCESSORY	Accessoire
 UILABEL_BEHAVIOR_ON	Aan
+UILABEL_BEHAVIOR_EAT	Eten bij honger < {0}%
+UILABEL_BEHAVIOR_REST	Rusten bij uitgerust < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Bed verlaten na herstel
+UILABEL_BEHAVIOR_RESCUE	Gevallen bondgenoten redden
+UILABEL_BEHAVIOR_HEAL	Genezen bij gezondheid < {0}%
+UILABEL_BEHAVIOR_SHARE	Delen
+UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-oogsten: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Auto-sjouwen: {0}
+UILABEL_BEHAVIOR_WAITING	(wacht)
+UILABEL_BEHAVIOR_WAIT_TIP	Wacht: {0}
+UILABEL_WAIT_NO_FOOD	geen eten, en niemand in de buurt die het deelt
+UILABEL_WAIT_NO_BED	geen vrij bed of vrije slaapmat om in te rusten
+UILABEL_WAIT_NO_HEALING	geen genezend voorwerp, en niemand in de buurt die het deelt
+UILABEL_WAIT_WALKING_TO_SHARE	loopt naar {0}, die er een kan delen
+UILABEL_WAIT_NO_PROP	geen {0} in je gebied met plaats voor nog een werker
+UILABEL_WAIT_CARRY_FULL	geen ruimte om meer te dragen
+UILABEL_WAIT_LOAD_WAITING	draagt een lading die Auto-sjouwen eerst moet wegbrengen
+UILABEL_WAIT_PROP_GONE	het object is weg
+UILABEL_WAIT_OUTSIDE_CLAIM	het object ligt niet in het gebied van je factie
+UILABEL_WAIT_LOCKED	het object is op slot
+UILABEL_WAIT_NOTHING_TO_HAUL	draagt niets wat het object aanneemt
+UILABEL_WAIT_PROP_FULL	het object heeft geen ruimte voor wat het draagt
+UILABEL_BEHAVIOR_EAT_TIP	Eten: onder {0}% honger eet de eenheid het voedsel dat de meeste honger herstelt. Gebruik - en + om aan te passen wanneer.
+UILABEL_BEHAVIOR_HEAL_TIP	Genezen: onder {0}% gezondheid gebruikt de eenheid het genezende voorwerp dat de meeste gezondheid herstelt. Gebruik - en + om aan te passen wanneer.
+UILABEL_BEHAVIOR_REST_TIP	Rusten: onder {0}% uitgerust gaat de eenheid in het dichtstbijzijnde vrije bed of de vrije slaapmat liggen en staat volledig uitgerust weer op. Gebruik - en + om aan te passen wanneer.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Bed verlaten: stapt na 30 seconden met volle gezondheid en volledig uitgerust uit een bed of slaapmat.
+UILABEL_BEHAVIOR_RESCUE_TIP	Redden: draagt een bewusteloze eenheid van de eigen factie in de buurt naar het dichtstbijzijnde vrije bed of de vrije slaapmat.
+UILABEL_BEHAVIOR_SHARE_TIP	Delen: als Eten of Genezen een voorwerp nodig heeft dat deze eenheid mist, neemt ze er een van een eenheid binnen handelsafstand die ook deelt en het minder nodig heeft, en loopt er eerst heen als die wat verder weg staat. Andere delende eenheden kunnen op dezelfde manier van deze nemen.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-oogsten: bewerkt de dichtstbijzijnde {0} in het gebied van je factie. Met een lading en een Auto-sjouwen dat die kan aannemen, stopt ze om te sjouwen. Een bevel van jou pauzeert het; het begint opnieuw zodra de eenheid een paar seconden stilstaat.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-sjouwen: brengt de voorwerpen in de inventaris (geen gedragen uitrusting) die de {0} aanneemt, zolang er ruimte is en de eenheid in het gebied van je factie staat. Een bevel van jou pauzeert het; het begint opnieuw zodra de eenheid een paar seconden stilstaat.
+UILABEL_NPC_MESSAGES	NPC's
+UILABEL_SHOW_NPC_INFO	NPC-info tonen
 UILABEL_COMBAT_MESSAGES	Gevechtsberichten
 UILABEL_SEEN	Gezien
 UILABEL_HIT	Raak
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Ervaringsberichten
 UILABEL_EXPERIENCE	Ervaring
 UILABEL_XP_ATHLETICS	Atletiek-ervaring
 UILABEL_XP_ENDURANCE	Uithoudingservaring
+UILABEL_XP_CARRYING	Kracht-ervaring (dragen)
 UILABEL_ITEM_MESSAGES	Voorwerpberichten
 UILABEL_PICKUP	Oppakken
 UILABEL_DROP	Laten vallen
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Voortgang: {0}%
 UILABEL_TIP_CURRENT_XP	Huidige XP: {0}
 UILABEL_ATTACK_DEFENSE	Aanval {0}      Verdediging {1}
 UILABEL_STATS_CAPTION	Statistieken: {0}
+UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Plek {0}: {1}
 UILABEL_SLOT_N_EMPTY	Plek {0}: leeg
 UILABEL_COUNT	Aantal {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Heeft twee handen nodig. De tweede hand moet leeg zijn.
 ITEM_87_NAME	Strijdbijl
 ITEM_87_DESC	Heeft twee handen nodig. De tweede hand moet leeg zijn.
 UILABEL_UI_SCALE	Schaal van de interface
-NAME_MASCULINE	["Daan", "Bram", "Joris", "Thijs", "Lars"]
-NAME_FEMININE	["Fleur", "Sanne", "Lotte", "Maud", "Eva"]
-NAME_ANDROGYNOUS	["Sam", "Noa", "Robin", "Kai", "Jesse"]
+NAME_MASCULINE	["Daan", "Bram", "Joris", "Thijs", "Lars", "Arjen", "Bart", "Bas", "Casper", "Dirk", "Floris", "Gerrit", "Gijs", "Hendrik", "Hugo", "Jan", "Jasper", "Jelle", "Jeroen", "Joost", "Jurre", "Kees", "Koen", "Lucas", "Maarten", "Mark", "Martijn", "Matthijs", "Niels", "Olivier", "Pieter", "Rik", "Roel", "Ruben", "Rutger", "Sander", "Sem", "Stijn", "Teun", "Thomas", "Tijmen", "Tom", "Vincent", "Willem", "Wouter", "Cornelis", "Diederik", "Freek", "Ivo", "Mees"]
+NAME_FEMININE	["Fleur", "Sanne", "Lotte", "Maud", "Eva", "Anne", "Anouk", "Annemiek", "Bente", "Brecht", "Danique", "Demi", "Elise", "Emma", "Esmée", "Fenna", "Femke", "Hanneke", "Ilse", "Inge", "Iris", "Isa", "Janneke", "Jasmijn", "Julia", "Kim", "Lieke", "Linde", "Lisa", "Lynn", "Marieke", "Marloes", "Merel", "Mila", "Myrthe", "Nienke", "Noor", "Puck", "Roos", "Saar", "Sophie", "Suze", "Tess", "Veerle", "Vera", "Wilhelmina", "Yara", "Zoë", "Liv", "Floor"]
+NAME_ANDROGYNOUS	["Sam", "Noa", "Robin", "Kai", "Jesse", "Alex", "Ari", "Bo", "Charlie", "Dani", "Dirkje", "Eli", "Ezra", "Fen", "Finn", "Jip", "Jo", "Jules", "Kris", "Lou", "Luca", "Mats", "Max", "Mika", "Mo", "Nikki", "Nova", "Pim", "Quinn", "Rens", "Rio", "Ronnie", "Sasha", "Senna", "Siem", "Sil", "Sky", "Stef", "Tamme", "Teije", "Toni", "Tjitske", "Wes", "Yuri", "Zev", "Brem", "Dewi", "Gerjo", "Jente", "Lenn"]
 UILABEL_BODY_TYPE	Lichaamstype
 UILABEL_BODY_MASCULINE	Mannelijk
 UILABEL_BODY_FEMININE	Vrouwelijk
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Geen ruimte in de opslag
 MISC_PROP_TAKEN	Al in gebruik
 MISC_PROP_WORKERS_FULL	Er kunnen maximaal {0} eenheden tegelijk aan werken
 MISC_GATHERS	{0} verzamelt {1}
+MISC_AUTO_HAUL_STORES	{0} slaat {1} {2} op in de {3}
 MISC_GATHER_NO_ROOM	{0} heeft geen ruimte voor {1} en stopt met werken
 MISC_REASON_GATHERING	verzamelen
+MISC_REASON_CLEARING	ruimt puin op
 UILABEL_TASK	Taak: {0}
 UILABEL_TASK_IDLE	Inactief
+UILABEL_TASK_AUTO_GOING	{0} (onderweg)
+UILABEL_TASK_SHARE_WALK	Gaat naar {0} om te delen
 UILABEL_TASK_MOVING	Onderweg
 UILABEL_TASK_RESTING	Rust
 UILABEL_STORAGE_HINT	Klik met rechts op een voorwerp om het te pakken, of sleep het eruit om het neer te leggen waar je eenheid staat. Klik met rechts op de voorwerpen van je eenheid om ze op te bergen.
@@ -595,6 +664,7 @@ FACTION_RED	Rode factie
 FACTION_GREEN	Groene factie
 FACTION_BLUE	Blauwe factie
 FACTION_YELLOW	Gele factie
+FACTION_EXILE	Verbannenen
 MISC_REPUTATION_DROPS	Reputatie bij {0} daalt met {1}, naar {2}
 UILABEL_MODE_PASSIVE	Passief
 UILABEL_MODE_BLOCK	Blokkeren
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Zwerver
 SCENARIO_VAGABOND_DESC	Een eenzame zwerver zonder bezit: geen voorwerpen, geen uitrusting en elke eigenschap van 1 tot 5.
-SCENARIO_RANDOM_NAME	Volledig willekeurig
-SCENARIO_RANDOM_DESC	Een groep van 1 tot 32 eenheden, elk met alle eigenschappen tussen 1 en 99, en willekeurige voorwerpen en uitrusting die ze kunnen dragen.
+SCENARIO_PACK_NAME	Roedel van twee
+SCENARIO_PACK_DESC	Een eenzame zwerver en een trouwe wolf. De zwerver heeft geen voorwerpen of uitrusting, en elke waarde van 1 tot 5.
+SCENARIO_BEASTMASTER_NAME	Dierenmeester
+SCENARIO_BEASTMASTER_DESC	Een eenzame zwerver aan het hoofd van 20 dieren van willekeurige soorten. De zwerver heeft geen voorwerpen of uitrusting, en elke waarde van 1 tot 5.
+SCENARIO_RANDOM_NAME	Volledig willekeurig kamp
+SCENARIO_RANDOM_DESC	Je eigen kamp, met een groep van 20 of meer eenheden, elk met alle waarden ergens tussen 1 en 99 en willekeurige voorwerpen en uitrusting die ze kunnen dragen, en 3 tot 7 dieren.
 SCENARIO_CARAVAN_NAME	Reizende karavaan
 SCENARIO_CARAVAN_DESC	Tien reizigers samen onderweg. Alle eigenschappen beginnen op 5, en ieder draagt 10 gouden munten.
 SCENARIO_SHABBY_NAME	Sjofele bende
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Eén eenheid met helemaal niets: geen voorwerpen, geen uitr
 SCENARIO_DIGGERS_NAME	Kerkergravers
 SCENARIO_DIGGERS_DESC	Zeven mijnwerkers in volle uitrusting. Hun eigenschappen lopen van 5 tot 20, maar ieder heeft Mijnbouw 50 en draagt 3 ijzererts.
 SCENARIO_CUSTOM_NAME	Eigen scenario
-SCENARIO_CUSTOM_DESC	Stel je eigen groep samen. Hij begint met drie eenheden, en je kunt eenheden toevoegen of verwijderen, tot 32.
+SCENARIO_CUSTOM_DESC	Stel je eigen groep samen. Hij begint met drie eenheden, en je kunt eenheden en gewone dieren toevoegen of verwijderen, tot 32.
 PROP_LOCKED_CHEST	Afgesloten kist
 PROP_PRISONER_CAGE	Gevangenenkooi
 UILABEL_UNLOCK	Openbreken
+UILABEL_AUTO_HARVEST	Auto-oogsten
+UILABEL_AUTO_HAUL	Auto-sjouwen
+MISC_AUTO_OUTSIDE_CLAIM	Auto-oogsten en Auto-sjouwen werken alleen bij objecten in het gebied van je factie
+MISC_AUTO_HARVEST_SET	{0} eenhe(i)d(en) gaan automatisch oogsten: {1}
+MISC_AUTO_HAUL_SET	{0} eenhe(i)d(en) gaan automatisch sjouwen naar de {1}
+MISC_BEHAVIOR_LIST_FULL	De gedragslijst is vol (hoogstens {0})
 UILABEL_PICK_UP	Optillen
-UILABEL_PUT_IN_BED	In bed leggen
+UILABEL_PLACE	Plaatsen
+UILABEL_OCCUPY	Bezetten
+UILABEL_DISBAND	Ontslaan
+UILABEL_DISBAND_HOLD	Houd Ontslaan {0} seconden ingedrukt om te bevestigen
 UILABEL_PUT_DOWN	Neerleggen
 UILABEL_SHOP	Winkelen
 UILABEL_TASK_CARRIED	Wordt gedragen
@@ -641,16 +724,33 @@ UILABEL_DOOM	Ondergang
 UILABEL_TASK_UNCONSCIOUS	Bewusteloos
 UILABEL_TASK_DEAD	Dood
 UILABEL_TASK_CARRYING	Draagt
+UILABEL_TASK_STORING	Opslaan
 UILABEL_TAKE_ALL	Alles pakken
 UILABEL_LOOT_HINT	Klik op een voorwerp om het in de inventaris van je eenheid te nemen.
 UILABEL_CORPSE_OF	Lijk van {0}
 MISC_FALLS_UNCONSCIOUS	{0} raakt bewusteloos
 MISC_DIES	{0} sterft
 MISC_RECOVERS	{0} komt bij
+LOADING_PICTURES	Afbeeldingen
+LOADING_UNIT_MODELS	Eenheidsmodellen
+LOADING_MOB_MODELS	Diermodellen
+LOADING_MOB_PICTURES	Dierafbeeldingen
+LOADING_SKY	Lucht
+LOADING_PROP_MODELS	Objectmodellen
+LOADING_MAP	Kaart
+LOADING_MAP_GROUND	Kaartgrond
+LOADING_WORLD	Wereld
+LOADING_GROUND_ITEMS	Voorwerpen op de grond
+MISC_GOES_HOME	{0} geeft de achtervolging op en gaat naar huis
+MISC_GETS_UP	{0} staat op, het gevaar is geweken
 MISC_PICKS_UP_UNIT	{0} tilt {1} op
 MISC_PUTS_DOWN	{0} legt {1} neer
-MISC_PUTS_IN_BED	{0} legt {1} in: {2}
-MISC_CORPSE_NO_BED	Een bed kan niets doen voor de doden
+MISC_PLACES_IN	{0} legt {1} in: {2}
+MISC_DISBAND_ASK	{0} verlaat je groep en factie voorgoed en wordt een Verbannene: neutraal tegenover iedereen en zwervend in z’n eentje.
+MISC_DISBAND_ASK_MOB	{0} verlaat je groep en factie voorgoed en keert terug naar de wildernis.
+MISC_DISBANDED	{0} verlaat je groep als Verbannene
+MISC_DISBANDED_MOB	{0} verlaat je groep en keert terug naar de wildernis
+MISC_CORPSE_NO_PLACE	De doden kunnen daar niet geplaatst worden
 MISC_IS_UNCONSCIOUS	{0} is bewusteloos en kan niets doen
 MISC_ALREADY_CARRYING	Geen van je geselecteerde eenheden kan hen dragen
 MISC_LOOT_NO_ROOM	Geen ruimte in de inventaris
@@ -788,6 +888,46 @@ ITEM_132_NAME	Brandpijlen
 ITEM_132_DESC	Brandende pijlen voor een korte boog of handboog. De hardst rakende pijlen.
 ITEM_133_NAME	Kruisboogbouten
 ITEM_133_DESC	Korte, zware bouten voor een kruisboog.
+ITEM_134_NAME	Berenbotten
+ITEM_134_DESC	Botten van een beer. Goed om mee te maken.
+ITEM_135_NAME	Koeienbotten
+ITEM_135_DESC	Botten van een koe. Goed om mee te maken.
+ITEM_136_NAME	Kippenbotten
+ITEM_136_DESC	Botten van een kip. Goed om mee te maken.
+ITEM_137_NAME	Zwijnenbotten
+ITEM_137_DESC	Botten van een zwijn. Goed om mee te maken.
+ITEM_138_NAME	Wolvenbotten
+ITEM_138_DESC	Botten van een wolf. Goed om mee te maken.
+ITEM_139_NAME	Hertenbotten
+ITEM_139_DESC	Botten van een hert. Goed om mee te maken.
+ITEM_140_NAME	Konijnenbotten
+ITEM_140_DESC	Botten van een konijn. Goed om mee te maken.
+ITEM_141_NAME	Visgraten
+ITEM_141_DESC	Graten van een vis. Goed om mee te maken.
+ITEM_142_NAME	Krabbenschaal
+ITEM_142_DESC	Resten van een krabbenschaal. Goed om mee te maken.
+ITEM_143_NAME	Hagedisbotten
+ITEM_143_DESC	Botten van een hagedis. Goed om mee te maken.
+ITEM_144_NAME	Slangenbotten
+ITEM_144_DESC	Botten van een slang. Goed om mee te maken.
+ITEM_145_NAME	Varkensbotten
+ITEM_145_DESC	Botten van een varken. Goed om mee te maken.
+ITEM_146_NAME	Schapenbotten
+ITEM_146_DESC	Botten van een schaap. Goed om mee te maken.
+ITEM_147_NAME	Eendenbotten
+ITEM_147_DESC	Botten van een eend. Goed om mee te maken.
+ITEM_148_NAME	Schildpadbotten
+ITEM_148_DESC	Botten van een schildpad. Goed om mee te maken.
+ITEM_149_NAME	Vleermuisbotten
+ITEM_149_DESC	Botten van een vleermuis. Goed om mee te maken.
+ITEM_150_NAME	Kikkerbotten
+ITEM_150_DESC	Botten van een kikker. Goed om mee te maken.
+ITEM_151_NAME	Gorlicornbotten
+ITEM_151_DESC	Botten van een gorlicorn. Goed om mee te maken.
+ITEM_152_NAME	Rauw gorlicornvlees
+ITEM_152_DESC	Ongekookt vlees. Bak het bij een kampvuur.
+ITEM_153_NAME	Gebakken gorlicornvlees
+ITEM_153_DESC	Rijk vlees, boven het vuur gebakken. Herstelt veel gezondheid en honger.
 UILABEL_OPTIMIZE	Optimaliseren
 UILABEL_REMOVE_ALL	Alles afdoen
 MISC_GEAR_NO_ROOM	Niet genoeg ruimte in de inventaris
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Overleven
 UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Kiezen  //  Enter Bevestigen
 UILABEL_LANGUAGE_LABEL	Taal:
+PROP_FLAG	Vlag
+PROP_DEBRIS	Puin
+PROP_FOUNDATION_SMALL	Kleine fundering
+PROP_FOUNDATION_LARGE	Grote fundering
+PROP_FOUNDATION_LONG	Lange fundering
+PROP_FOUNDATION_CIRCLE	Ronde fundering
+PROP_VAULT	Kluis
+UILABEL_BUILD	Bouwen
+UILABEL_BUILD_SELECTED	Gekozen: {0}
+UILABEL_BUILD_NONE	Gekozen: niets
+UILABEL_BUILD_SELECT	Kiezen
+UILABEL_BUILD_PICKED	Gekozen
+UILABEL_BUILD_PLACE_HINT	Linksklik op de grond om te plaatsen. Houd R ingedrukt en beweeg de muis naar links of rechts om te draaien. Rechtsklik of Escape annuleert.
+UILABEL_UPKEEP_HINT	Verbruikt één {0} per uur als onderhoud. Leg ze hierin.
+MISC_BUILD_BLOCKED	Geen ruimte om hier te bouwen
+MISC_BUILD_UNWALKABLE	Op deze grond kan niet gebouwd worden
+MISC_BUILD_NO_FOUNDATION	Een kluis moet helemaal op een fundering staan
+MISC_NO_UPKEEP	Geen onderhoud: geen blokken
+MISC_UPKEEP_LEFT	Onderhoud: nog {0} min
+PROP_SHOP	Winkel
+PROP_FARM	Boerderij
+PROP_TURBINE	Windturbine
+UILABEL_BUILD_DESTROY	Slopen
+UILABEL_BUILD_DESTROY_HINT	Linksklik op een object om het te slopen: wat erin zit valt op de grond en er blijft puin achter. Linksklik op puin om het op te ruimen. Rechtsklik of Escape annuleert.
+UILABEL_LOCK	Op slot
+MISC_BUILD_NO_CLAIM	Een fundering of kluis hoort in je eigen gebied
+MISC_BUILD_SEALED	Die grond is verzegeld door de kluis van een andere factie
+MISC_BUILD_CLAIM_OVERLAP	Dat gebied zou het gebied van een andere vlag overlappen
+MISC_BUILD_VAULT_TAKEN	Dat gebied heeft al een kluis
+MISC_BUILD_VAULT_CAP	Je factie heeft al zoveel kluizen als ze kan hebben
+MISC_DESTROY_NOTHING	Daar valt niets te slopen
+MISC_FLAG_FACTION	Eigenaar: {0}
+MISC_FLAG_HEALTH	Gezondheid: {0} van {1}
+MISC_FLAG_VAULT_YES	Kluis: staat, het gebied wordt behouden
+MISC_FLAG_VAULT_NO	Kluis: geen, de vlag slijt
+MISC_PROP_CONDITION	Staat: {0}%
+MISC_PROP_DECAYING	Vervalt
+MISC_PROP_HOLDING	Vervalt niet
+MISC_PROP_LOCK_OPEN	Open
+MISC_PROP_LOCK_YOURS	Op slot voor buitenstaanders (open voor jou)
+MISC_PROP_LOCK_SHUT	Op slot (Slotbreken {0})
+MISC_PROP_UPKEEP	Onderhoud: nog {0} uur
+MISC_PROP_VAULT_UNCLAIMED	Buiten elk gebied: geeft geen onderhoud
+MOB_BEAR	Beer
+MOB_COW	Koe
+MOB_CHICKEN	Kip
+MOB_BOAR	Zwijn
+MOB_WOLF	Wolf
+MOB_DEER	Hert
+MOB_RABBIT	Konijn
+MOB_FISH	Vis
+MOB_CRAB	Krab
+MOB_LIZARD	Hagedis
+MOB_SNAKE	Slang
+MOB_PIG	Varken
+MOB_SHEEP	Schaap
+MOB_DUCK	Eend
+MOB_TURTLE	Schildpad
+MOB_BAT	Vleermuis
+MOB_FROG	Kikker
+MOB_GORLICORN	Gorlicorn
+FACTION_MOB_BEAR	Beren
+FACTION_MOB_COW	Koeien
+FACTION_MOB_CHICKEN	Kippen
+FACTION_MOB_BOAR	Zwijnen
+FACTION_MOB_WOLF	Wolven
+FACTION_MOB_DEER	Herten
+FACTION_MOB_RABBIT	Konijnen
+FACTION_MOB_FISH	Vissen
+FACTION_MOB_CRAB	Krabben
+FACTION_MOB_LIZARD	Hagedissen
+FACTION_MOB_SNAKE	Slangen
+FACTION_MOB_PIG	Varkens
+FACTION_MOB_SHEEP	Schapen
+FACTION_MOB_DUCK	Eenden
+FACTION_MOB_TURTLE	Schildpadden
+FACTION_MOB_BAT	Vleermuizen
+FACTION_MOB_FROG	Kikkers
+FACTION_MOB_GORLICORN	Gorlicorns
+MISC_MOB_NO_GEAR	Dieren kunnen geen uitrusting dragen
+MISC_MOB_NO_HEALING	Dieren kunnen geen genezende voorwerpen gebruiken
+MISC_MOB_CANT_WORK	Dieren kunnen niet aan objecten werken

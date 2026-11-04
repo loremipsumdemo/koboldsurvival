@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	Ρυθμός ανανέωσης
 UILABEL_DEFAULT	Προεπιλογή
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Όριο ρυθμού καρέ
+UILABEL_VIEW_RANGE	Απόσταση θέασης
+UILABEL_TILES_N	{0} πλακίδια
+UILABEL_SHOW_FPS	Εμφάνιση FPS
 UILABEL_UNLIMITED	Χωρίς όριο
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Αυτόματη αποθήκευση
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} λεπτά
 UILABEL_UNIT_NAMES	Ονόματα μονάδων παίκτη
 UILABEL_NPC_NAMES	Ονόματα άλλων μονάδων
 UILABEL_PROP_NAMES	Ονόματα αντικειμένων
+UILABEL_PROP_INFO	Εμφάνιση πληροφοριών αντικειμένων
 UILABEL_FONT_SIZE	Μέγεθος γραμματοσειράς
 UILABEL_RESET_PANELS	Επαναφορά όλων των πάνελ
 UILABEL_RESET	Επαναφορά
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	Γενική ένταση
 UILABEL_MUSIC	Μουσική
 UILABEL_AMBIENT	Περιβάλλον
 UILABEL_INTERFACE_SOUNDS	Ήχοι διεπαφής
+UILABEL_CRAFT_GATHER_SOUNDS	Ήχοι κατασκευής και συλλογής
 UILABEL_SOUND_EFFECTS	Ηχητικά εφέ
 UILABEL_RESTORE_DEFAULTS	Επαναφορά προεπιλεγμένων
 UILABEL_WINDOWED	Παράθυρο
@@ -123,6 +128,8 @@ UILABEL_STATS	Στατιστικά
 UILABEL_CLICK_TO_TYPE	Κάνε κλικ για να γράψεις όνομα
 UILABEL_HEALTH	Υγεία
 UILABEL_HUNGER	Πείνα
+UILABEL_RESTED	Ξεκούραση
+UILABEL_COMFORT	Άνεση
 UILABEL_CARRY	Φορτίο
 UILABEL_NEXT_LEVEL_XP_LINE	Εμπειρία για το επόμενο επίπεδο: {0}
 UILABEL_STAT	Στατιστικό
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	Τυχαία μονάδα
 UILABEL_RANDOMIZE_ALL	Τυχαία όλα
 UILABEL_ADD_UNIT	Προσθήκη μονάδας
 UILABEL_REMOVE_UNIT	Αφαίρεση μονάδας
+UILABEL_ADD_MOB	Προσθήκη πλάσματος
+UILABEL_MOB_KIND	Είδος
+UILABEL_MOB_NO_GEAR	Ένα πλάσμα δεν φορά εξοπλισμό.
+MISC_MEAT_TAKEN_DIES	Ο/Η {0} πεθαίνει
+MISC_MOB_INVENTORY_LOCKED	Μη διαθέσιμο
+MISC_MOB_CANT_HOLD	Ένα πλάσμα κουβαλά μόνο το δικό του κρέας και κόκαλα
+UILABEL_CLEAR	Καθάρισε
+UILABEL_TASK_CLEARING	Καθαρίζει συντρίμμια
+MISC_CLEARS_DEBRIS	Ο/Η {0} καθαρίζει τα συντρίμμια
+UILABEL_MOB_INVENTORY_HIDDEN	Μη διαθέσιμο
+UILABEL_BEHAVIOR_PATROL	Περιπολία
+UILABEL_BEHAVIOR_PATROL_SPAWN	Περιπολία στο σημείο εμφάνισης
+UILABEL_BEHAVIOR_ROAM	Περιπλάνηση
+UILABEL_BEHAVIOR_PATROL_TIP	Περιπολία: περπατά μέσα στην περιοχή όπου στέκεται, αν ανήκει στη φατρία του, σταματώντας πού και πού.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Περιπολία στο σημείο εμφάνισης: περπατά κοντά στο σημείο όπου εμφανίστηκε. Αν το κυνηγήσουν πολύ μακριά, τα παρατά, θεραπεύεται πλήρως και γυρίζει πίσω χωρίς να δέχεται ζημιά μέχρι να φτάσει.
+UILABEL_BEHAVIOR_ROAM_TIP	Περιπλάνηση: περιπλανιέται στην ανοιχτή γη, όπου μπορεί να περπατήσει έξω από τις περιοχές των σημαιών.
+UILABEL_WAIT_NOT_IN_CLAIM	δεν είναι σε περιοχή της φατρίας του
+UILABEL_WAIT_NOWHERE_TO_ROAM	δεν υπάρχει ανοιχτό έδαφος κοντά έξω από τις περιοχές
+UILABEL_TEMPERAMENT_AVOIDANT	Φοβισμένο
+UILABEL_TEMPERAMENT_PASSIVE	Παθητικό
+UILABEL_TEMPERAMENT_NEUTRAL	Ουδέτερο
+UILABEL_TEMPERAMENT_AGGRESSIVE	Επιθετικό
+UILABEL_TEMPERAMENT	Ιδιοσυγκρασία: {0}
+UILABEL_MOB_NO_ITEMS	Ένα πλάσμα κουβαλά μόνο το δικό του κρέας και κόκαλα.
 UILABEL_CONFIRM_STARTS	Η επιβεβαίωση ξεκινά το παιχνίδι με αυτή την ομάδα.
 UILABEL_NEEDS_NAMES	Κάθε μονάδα χρειάζεται όνομα πριν ξεκινήσει το παιχνίδι.
 UILABEL_CLICK_UNIT_EDIT	Κάνε κλικ σε μια μονάδα για να την επεξεργαστείς.
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	Πόδια
 UILABEL_SLOT_FEET	Πέλματα
 UILABEL_SLOT_ACCESSORY	Αξεσουάρ
 UILABEL_BEHAVIOR_ON	Ενεργό
+UILABEL_BEHAVIOR_EAT	Φάε όταν χορτασμός < {0}%
+UILABEL_BEHAVIOR_REST	Ξεκουράσου όταν ξεκούραση < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Σήκω από το κρεβάτι όταν αναρρώσεις
+UILABEL_BEHAVIOR_RESCUE	Διάσωση πεσμένων συμμάχων
+UILABEL_BEHAVIOR_HEAL	Θεραπεύσου όταν υγεία < {0}%
+UILABEL_BEHAVIOR_SHARE	Μοιρασιά
+UILABEL_BEHAVIOR_AUTO_HARVEST	Αυτόματη συλλογή: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Αυτόματη μεταφορά: {0}
+UILABEL_BEHAVIOR_WAITING	(σε αναμονή)
+UILABEL_BEHAVIOR_WAIT_TIP	Σε αναμονή: {0}
+UILABEL_WAIT_NO_FOOD	δεν υπάρχει φαγητό, ούτε κάποιος κοντά να μοιραστεί
+UILABEL_WAIT_NO_BED	δεν υπάρχει ελεύθερο κρεβάτι ή στρωμνή για ξεκούραση
+UILABEL_WAIT_NO_HEALING	δεν υπάρχει θεραπευτικό αντικείμενο, ούτε κάποιος κοντά να μοιραστεί
+UILABEL_WAIT_WALKING_TO_SHARE	πηγαίνει προς {0}, που μπορεί να μοιραστεί ένα
+UILABEL_WAIT_NO_PROP	κανένα {0} στην περιοχή σου με θέση για ακόμα έναν εργάτη
+UILABEL_WAIT_CARRY_FULL	δεν υπάρχει χώρος για να κουβαλήσει άλλο
+UILABEL_WAIT_LOAD_WAITING	κουβαλά φορτίο που πρέπει πρώτα να πάρει η αυτόματη μεταφορά
+UILABEL_WAIT_PROP_GONE	το αντικείμενο χάθηκε
+UILABEL_WAIT_OUTSIDE_CLAIM	το αντικείμενο δεν είναι στην περιοχή της φατρίας σου
+UILABEL_WAIT_LOCKED	το αντικείμενο είναι κλειδωμένο
+UILABEL_WAIT_NOTHING_TO_HAUL	δεν κουβαλά τίποτα που δέχεται το αντικείμενο
+UILABEL_WAIT_PROP_FULL	το αντικείμενο δεν έχει χώρο για όσα κουβαλά
+UILABEL_BEHAVIOR_EAT_TIP	Φάε: κάτω από {0}% χορτασμό, τρώει το φαγητό που χορταίνει περισσότερο. Χρησιμοποίησε - και + για να αλλάξεις πότε.
+UILABEL_BEHAVIOR_HEAL_TIP	Θεραπεύσου: κάτω από {0}% υγεία, χρησιμοποιεί το θεραπευτικό αντικείμενο που επαναφέρει την περισσότερη υγεία. Χρησιμοποίησε - και + για να αλλάξεις πότε.
+UILABEL_BEHAVIOR_REST_TIP	Ξεκουράσου: κάτω από {0}% ξεκούραση, ξαπλώνει στο πλησιέστερο ελεύθερο κρεβάτι ή στρωμνή και σηκώνεται όταν ξεκουραστεί πλήρως. Χρησιμοποίησε - και + για να αλλάξεις πότε.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Σήκω από το κρεβάτι: σηκώνεται από κρεβάτι ή στρωμνή μετά από 30 δευτερόλεπτα με πλήρη υγεία και πλήρως ξεκούραστο.
+UILABEL_BEHAVIOR_RESCUE_TIP	Διάσωση: μεταφέρει μια αναίσθητη μονάδα της φατρίας του που κείτεται κοντά στο πλησιέστερο ελεύθερο κρεβάτι ή στρωμνή.
+UILABEL_BEHAVIOR_SHARE_TIP	Μοιρασιά: όταν το Φάε ή το Θεραπεύσου χρειάζεται αντικείμενο που λείπει από αυτή τη μονάδα, παίρνει ένα από μονάδα σε απόσταση εμπορίου που επίσης μοιράζεται και το χρειάζεται λιγότερο, πηγαίνοντας πρώτα κοντά της αν είναι λίγο μακριά. Άλλες μονάδες που μοιράζονται μπορούν να παίρνουν από αυτήν με τον ίδιο τρόπο.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Αυτόματη συλλογή: δουλεύει στο πλησιέστερο {0} μέσα στην περιοχή της φατρίας σου. Με φορτίο και μια αυτόματη μεταφορά που μπορεί να το πάρει, σταματά για να το μεταφέρει. Μια διαταγή σου τη διακόπτει· ξαναρχίζει όταν η μονάδα μείνει αδρανής λίγα δευτερόλεπτα.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Αυτόματη μεταφορά: πηγαίνει τα αντικείμενα του αποθέματος (όχι τον εξοπλισμό που φοράει) που δέχεται το {0}, όσο υπάρχει χώρος και η μονάδα στέκεται στην περιοχή της φατρίας σου. Μια διαταγή σου τη διακόπτει· ξαναρχίζει όταν η μονάδα μείνει αδρανής λίγα δευτερόλεπτα.
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	Εμφάνιση πληροφοριών NPC
 UILABEL_COMBAT_MESSAGES	Μηνύματα μάχης
 UILABEL_SEEN	Εντοπίστηκε
 UILABEL_HIT	Χτύπημα
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	Μηνύματα εμπειρίας
 UILABEL_EXPERIENCE	Εμπειρία
 UILABEL_XP_ATHLETICS	Εμπειρία αθλητισμού
 UILABEL_XP_ENDURANCE	Εμπειρία αντοχής
+UILABEL_XP_CARRYING	Εμπειρία δύναμης (κουβάλημα)
 UILABEL_ITEM_MESSAGES	Μηνύματα αντικειμένων
 UILABEL_PICKUP	Συλλογή
 UILABEL_DROP	Απόθεση
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	Πρόοδος: {0}%
 UILABEL_TIP_CURRENT_XP	Τρέχουσα εμπειρία: {0}
 UILABEL_ATTACK_DEFENSE	Επίθεση {0}      Άμυνα {1}
 UILABEL_STATS_CAPTION	Στατιστικά: {0}
+UILABEL_MODEL_N	Μοντέλο {0}
 UILABEL_SLOT_N_ITEM	Θέση {0}: {1}
 UILABEL_SLOT_N_EMPTY	Θέση {0}: κενή
 UILABEL_COUNT	Πλήθος {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	Χρειάζεται και τα δύο χέρια. Το δευτε
 ITEM_87_NAME	Πολεμικό τσεκούρι
 ITEM_87_DESC	Χρειάζεται και τα δύο χέρια. Το δευτερεύον χέρι πρέπει να είναι άδειο.
 UILABEL_UI_SCALE	Κλίμακα διεπαφής
-NAME_MASCULINE	["Nikos", "Giorgos", "Stavros", "Kostas", "Dimitris"]
-NAME_FEMININE	["Eleni", "Maria", "Sofia", "Katerina", "Anna"]
-NAME_ANDROGYNOUS	["Ari", "Noa", "Sami", "Alexi", "Dani"]
+NAME_MASCULINE	["Nikos", "Giorgos", "Stavros", "Kostas", "Dimitris", "Alexandros", "Andreas", "Angelos", "Antonis", "Apostolos", "Aristotelis", "Christos", "Evangelos", "Fotis", "Gerasimos", "Grigoris", "Ilias", "Ioannis", "Kyriakos", "Lambros", "Leonidas", "Manolis", "Markos", "Michalis", "Miltos", "Nektarios", "Odysseas", "Panagiotis", "Pavlos", "Periklis", "Petros", "Prodromos", "Sotiris", "Spyros", "Stathis", "Stelios", "Takis", "Thanasis", "Theodoros", "Thodoris", "Timos", "Vangelis", "Vasilis", "Yiannis", "Zacharias", "Achilleas", "Iason", "Konstantinos", "Orestis", "Platon"]
+NAME_FEMININE	["Eleni", "Maria", "Sofia", "Katerina", "Anna", "Aikaterini", "Alexandra", "Anastasia", "Angeliki", "Antigoni", "Argyro", "Athina", "Chrysa", "Christina", "Daphne", "Despina", "Dimitra", "Eirini", "Evangelia", "Fotini", "Georgia", "Ioanna", "Kalliopi", "Konstantina", "Kyriaki", "Lena", "Litsa", "Lydia", "Magda", "Marina", "Melina", "Nefeli", "Niki", "Olga", "Paraskevi", "Penelope", "Rena", "Roula", "Stella", "Stavroula", "Theodora", "Thekla", "Vasiliki", "Voula", "Xanthi", "Zoe", "Artemis", "Calliope", "Danae", "Ismini"]
+NAME_ANDROGYNOUS	["Ari", "Noa", "Sami", "Alexi", "Dani", "Alex", "Andrea", "Charlie", "Eli", "Jo", "Kai", "Kim", "Kris", "Lou", "Mika", "Nova", "Rio", "Sam", "Sky", "Toni", "Vic", "Aeras", "Anemos", "Astra", "Avra", "Delta", "Elia", "Fos", "Gaia", "Iris", "Kyma", "Lefki", "Lithos", "Meli", "Nyx", "Okeanos", "Petra", "Rodi", "Selini", "Thalassa", "Theia", "Valia", "Zefyros", "Anthi", "Ilios", "Krinos", "Myrto", "Notos", "Plias", "Xeni"]
 UILABEL_BODY_TYPE	Τύπος σώματος
 UILABEL_BODY_MASCULINE	Ανδρικό
 UILABEL_BODY_FEMININE	Γυναικείο
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	Δεν υπάρχει χώρος στην αποθήκη
 MISC_PROP_TAKEN	Χρησιμοποιείται ήδη
 MISC_PROP_WORKERS_FULL	Έως {0} μονάδες μπορούν να το δουλεύουν ταυτόχρονα
 MISC_GATHERS	{0} συλλέγει {1}
+MISC_AUTO_HAUL_STORES	Ο/Η {0} αποθηκεύει {1} {2} στο {3}
 MISC_GATHER_NO_ROOM	{0} δεν έχει χώρο για {1} και σταματά να δουλεύει
 MISC_REASON_GATHERING	συλλογή
+MISC_REASON_CLEARING	καθαρίζει τα συντρίμμια
 UILABEL_TASK	Εργασία: {0}
 UILABEL_TASK_IDLE	Αδρανής
+UILABEL_TASK_AUTO_GOING	{0} (καθ' οδόν)
+UILABEL_TASK_SHARE_WALK	Πηγαίνει στον/στην {0} για μοιρασιά
 UILABEL_TASK_MOVING	Κινείται
 UILABEL_TASK_RESTING	Ξεκουράζεται
 UILABEL_STORAGE_HINT	Δεξί κλικ σε ένα αντικείμενο για να το πάρεις ή σύρε το έξω για να το αφήσεις εκεί όπου στέκεται η μονάδα σου. Δεξί κλικ στα αντικείμενα της μονάδας σου για να τα αποθηκεύσεις.
@@ -595,6 +664,7 @@ FACTION_RED	Κόκκινη φατρία
 FACTION_GREEN	Πράσινη φατρία
 FACTION_BLUE	Μπλε φατρία
 FACTION_YELLOW	Κίτρινη φατρία
+FACTION_EXILE	Εξόριστοι
 MISC_REPUTATION_DROPS	Η φήμη με {0} πέφτει κατά {1}, στο {2}
 UILABEL_MODE_PASSIVE	Παθητικός
 UILABEL_MODE_BLOCK	Απόκρουση
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Σενάριο
 SCENARIO_VAGABOND_NAME	Αλήτης
 SCENARIO_VAGABOND_DESC	Ένας μοναχικός περιπλανώμενος χωρίς τίποτα δικό του: χωρίς αντικείμενα, χωρίς εξοπλισμό και κάθε στατιστικό από 1 έως 5.
-SCENARIO_RANDOM_NAME	Εντελώς τυχαίο
-SCENARIO_RANDOM_DESC	Μια ομάδα από 1 έως 32 μονάδες, καθεμία με όλα τα χαρακτηριστικά από 1 έως 99 και τυχαία αντικείμενα και εξοπλισμό που μπορεί να κουβαλήσει.
+SCENARIO_PACK_NAME	Αγέλη δύο
+SCENARIO_PACK_DESC	Ένας μοναχικός περιπλανώμενος και ένας πιστός λύκος. Ο περιπλανώμενος δεν έχει αντικείμενα ή εξοπλισμό, και κάθε στατιστικό από 1 έως 5.
+SCENARIO_BEASTMASTER_NAME	Θηριοδαμαστής
+SCENARIO_BEASTMASTER_DESC	Ένας μοναχικός περιπλανώμενος επικεφαλής 20 πλασμάτων τυχαίων ειδών. Ο περιπλανώμενος δεν έχει αντικείμενα ή εξοπλισμό, και κάθε στατιστικό από 1 έως 5.
+SCENARIO_RANDOM_NAME	Εντελώς τυχαίο στρατόπεδο
+SCENARIO_RANDOM_DESC	Το δικό σου στρατόπεδο, με ομάδα 20 ή περισσότερων μονάδων, καθεμία με όλα τα στατιστικά από 1 έως 99 και τυχαία αντικείμενα και εξοπλισμό που μπορεί να κουβαλήσει, και 3 έως 7 πλάσματα.
 SCENARIO_CARAVAN_NAME	Περιπλανώμενο καραβάνι
 SCENARIO_CARAVAN_DESC	Δέκα ταξιδιώτες μαζί στον δρόμο. Όλα τα χαρακτηριστικά ξεκινούν από 5 και ο καθένας κουβαλά 10 χρυσά νομίσματα.
 SCENARIO_SHABBY_NAME	Κουρελιασμένο πλήρωμα
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	Μία μονάδα χωρίς τίποτα: χωρίς α�
 SCENARIO_DIGGERS_NAME	Σκαφτιάδες μπουντρουμιών
 SCENARIO_DIGGERS_DESC	Επτά μεταλλωρύχοι με πλήρη εξοπλισμό. Τα χαρακτηριστικά τους είναι από 5 έως 20, αλλά ο καθένας έχει Εξόρυξη 50 και κουβαλά 3 σιδηρομεταλλεύματα.
 SCENARIO_CUSTOM_NAME	Προσαρμοσμένο σενάριο
-SCENARIO_CUSTOM_DESC	Φτιάξε τη δική σου ομάδα. Ξεκινά με τρεις μονάδες και μπορείς να προσθέτεις ή να αφαιρείς μονάδες, έως 32.
+SCENARIO_CUSTOM_DESC	Φτιάξε τη δική σου ομάδα. Ξεκινά με τρεις μονάδες και μπορείς να προσθέσεις ή να αφαιρέσεις μονάδες και κοινά πλάσματα, έως 32.
 PROP_LOCKED_CHEST	Κλειδωμένο σεντούκι
 PROP_PRISONER_CAGE	Κλουβί κρατουμένων
 UILABEL_UNLOCK	Ξεκλείδωμα
+UILABEL_AUTO_HARVEST	Αυτόματη συλλογή
+UILABEL_AUTO_HAUL	Αυτόματη μεταφορά
+MISC_AUTO_OUTSIDE_CLAIM	Η αυτόματη συλλογή και μεταφορά λειτουργούν μόνο σε αντικείμενα μέσα στην περιοχή της φατρίας σου
+MISC_AUTO_HARVEST_SET	{0} μονάδα(-ες) θα συλλέγουν αυτόματα: {1}
+MISC_AUTO_HAUL_SET	{0} μονάδα(-ες) θα μεταφέρουν αυτόματα στο {1}
+MISC_BEHAVIOR_LIST_FULL	Η λίστα συμπεριφορών είναι πλήρης (το πολύ {0})
 UILABEL_PICK_UP	Σήκωσε
-UILABEL_PUT_IN_BED	Βάλε στο κρεβάτι
+UILABEL_PLACE	Τοποθέτηση
+UILABEL_OCCUPY	Κατάληψη
+UILABEL_DISBAND	Αποδέσμευση
+UILABEL_DISBAND_HOLD	Κράτα πατημένη την Αποδέσμευση για {0} δευτερόλεπτα για επιβεβαίωση
 UILABEL_PUT_DOWN	Άφησε κάτω
 UILABEL_SHOP	Αγορά
 UILABEL_TASK_CARRIED	Μεταφέρεται
@@ -641,16 +724,33 @@ UILABEL_DOOM	Χαμός
 UILABEL_TASK_UNCONSCIOUS	Αναίσθητος
 UILABEL_TASK_DEAD	Νεκρός
 UILABEL_TASK_CARRYING	Μεταφέρει
+UILABEL_TASK_STORING	Αποθήκευση
 UILABEL_TAKE_ALL	Πάρε όλα
 UILABEL_LOOT_HINT	Κάνε κλικ σε ένα αντικείμενο για να το πάρεις στο απόθεμα της μονάδας σου.
 UILABEL_CORPSE_OF	Πτώμα του {0}
 MISC_FALLS_UNCONSCIOUS	Ο {0} χάνει τις αισθήσεις του
 MISC_DIES	Ο {0} πεθαίνει
 MISC_RECOVERS	Ο {0} ξυπνά
+LOADING_PICTURES	Εικόνες
+LOADING_UNIT_MODELS	Μοντέλα μονάδων
+LOADING_MOB_MODELS	Μοντέλα πλασμάτων
+LOADING_MOB_PICTURES	Εικόνες πλασμάτων
+LOADING_SKY	Ουρανός
+LOADING_PROP_MODELS	Μοντέλα αντικειμένων
+LOADING_MAP	Χάρτης
+LOADING_MAP_GROUND	Έδαφος χάρτη
+LOADING_WORLD	Κόσμος
+LOADING_GROUND_ITEMS	Αντικείμενα στο έδαφος
+MISC_GOES_HOME	Ο/Η {0} παρατά την καταδίωξη και γυρίζει σπίτι
+MISC_GETS_UP	Ο/Η {0} σηκώνεται, ο κίνδυνος πέρασε
 MISC_PICKS_UP_UNIT	Ο {0} σηκώνει τον {1}
 MISC_PUTS_DOWN	Ο {0} αφήνει κάτω τον {1}
-MISC_PUTS_IN_BED	Ο {0} βάζει τον {1} στο {2}
-MISC_CORPSE_NO_BED	Ένα κρεβάτι δεν μπορεί να κάνει τίποτα για τους νεκρούς
+MISC_PLACES_IN	Ο {0} βάζει τον {1} στο {2}
+MISC_DISBAND_ASK	Ο/Η {0} θα φύγει για πάντα από την ομάδα και τη φατρία σου και θα γίνει Εξόριστος: ουδέτερος προς όλους και περιπλανώμενος μόνος.
+MISC_DISBAND_ASK_MOB	Ο/Η {0} θα φύγει για πάντα από την ομάδα και τη φατρία σου και θα επιστρέψει στην άγρια φύση.
+MISC_DISBANDED	Ο/Η {0} φεύγει από την ομάδα σου ως Εξόριστος
+MISC_DISBANDED_MOB	Ο/Η {0} φεύγει από την ομάδα σου και επιστρέφει στην άγρια φύση
+MISC_CORPSE_NO_PLACE	Οι νεκροί δεν μπορούν να τοποθετηθούν εκεί
 MISC_IS_UNCONSCIOUS	Ο {0} είναι αναίσθητος και δεν μπορεί να κάνει τίποτα
 MISC_ALREADY_CARRYING	Καμία επιλεγμένη μονάδα σου δεν μπορεί να τον μεταφέρει
 MISC_LOOT_NO_ROOM	Δεν υπάρχει χώρος στο απόθεμα
@@ -788,6 +888,46 @@ ITEM_132_NAME	Φλεγόμενα βέλη
 ITEM_132_DESC	Φλεγόμενα βέλη για κοντό ή μακρύ τόξο. Τα πιο δυνατά βέλη.
 ITEM_133_NAME	Βλήματα βαλλίστρας
 ITEM_133_DESC	Κοντά, βαριά βλήματα για βαλλίστρα.
+ITEM_134_NAME	Κόκαλα αρκούδας
+ITEM_134_DESC	Κόκαλα από αρκούδα. Χρήσιμα για κατασκευές.
+ITEM_135_NAME	Κόκαλα αγελάδας
+ITEM_135_DESC	Κόκαλα από αγελάδα. Χρήσιμα για κατασκευές.
+ITEM_136_NAME	Κόκαλα κότας
+ITEM_136_DESC	Κόκαλα από κότα. Χρήσιμα για κατασκευές.
+ITEM_137_NAME	Κόκαλα αγριογούρουνου
+ITEM_137_DESC	Κόκαλα από αγριογούρουνο. Χρήσιμα για κατασκευές.
+ITEM_138_NAME	Κόκαλα λύκου
+ITEM_138_DESC	Κόκαλα από λύκο. Χρήσιμα για κατασκευές.
+ITEM_139_NAME	Κόκαλα ελαφιού
+ITEM_139_DESC	Κόκαλα από ελάφι. Χρήσιμα για κατασκευές.
+ITEM_140_NAME	Κόκαλα κουνελιού
+ITEM_140_DESC	Κόκαλα από κουνέλι. Χρήσιμα για κατασκευές.
+ITEM_141_NAME	Ψαροκόκαλα
+ITEM_141_DESC	Κόκαλα από ψάρι. Χρήσιμα για κατασκευές.
+ITEM_142_NAME	Όστρακο καβουριού
+ITEM_142_DESC	Κομμάτια από όστρακο καβουριού. Χρήσιμα για κατασκευές.
+ITEM_143_NAME	Κόκαλα σαύρας
+ITEM_143_DESC	Κόκαλα από σαύρα. Χρήσιμα για κατασκευές.
+ITEM_144_NAME	Κόκαλα φιδιού
+ITEM_144_DESC	Κόκαλα από φίδι. Χρήσιμα για κατασκευές.
+ITEM_145_NAME	Κόκαλα γουρουνιού
+ITEM_145_DESC	Κόκαλα από γουρούνι. Χρήσιμα για κατασκευές.
+ITEM_146_NAME	Κόκαλα προβάτου
+ITEM_146_DESC	Κόκαλα από πρόβατο. Χρήσιμα για κατασκευές.
+ITEM_147_NAME	Κόκαλα πάπιας
+ITEM_147_DESC	Κόκαλα από πάπια. Χρήσιμα για κατασκευές.
+ITEM_148_NAME	Κόκαλα χελώνας
+ITEM_148_DESC	Κόκαλα από χελώνα. Χρήσιμα για κατασκευές.
+ITEM_149_NAME	Κόκαλα νυχτερίδας
+ITEM_149_DESC	Κόκαλα από νυχτερίδα. Χρήσιμα για κατασκευές.
+ITEM_150_NAME	Κόκαλα βατράχου
+ITEM_150_DESC	Κόκαλα από βάτραχο. Χρήσιμα για κατασκευές.
+ITEM_151_NAME	Κόκαλα γκορλικόρνου
+ITEM_151_DESC	Κόκαλα από γκορλικόρνο. Χρήσιμα για κατασκευές.
+ITEM_152_NAME	Ωμό κρέας γκορλικόρνου
+ITEM_152_DESC	Άψητο κρέας. Ψήσ' το σε φωτιά κατασκήνωσης.
+ITEM_153_NAME	Ψητό κρέας γκορλικόρνου
+ITEM_153_DESC	Θρεπτικό κρέας ψημένο στη φωτιά. Αποκαθιστά πολλή υγεία και πείνα.
 UILABEL_OPTIMIZE	Βελτιστοποίηση
 UILABEL_REMOVE_ALL	Αφαίρεση όλων
 MISC_GEAR_NO_ROOM	Δεν υπάρχει αρκετός χώρος στο απόθεμα
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	Επιβίωση
 UILABEL_EARLY_ACCESS	Πρώιμη πρόσβαση
 MISC_TITLE_KEYS	Επιλογή  //  Enter Επιβεβαίωση
 UILABEL_LANGUAGE_LABEL	Γλώσσα:
+PROP_FLAG	Σημαία
+PROP_DEBRIS	Συντρίμμια
+PROP_FOUNDATION_SMALL	Μικρά θεμέλια
+PROP_FOUNDATION_LARGE	Μεγάλα θεμέλια
+PROP_FOUNDATION_LONG	Μακριά θεμέλια
+PROP_FOUNDATION_CIRCLE	Κυκλικά θεμέλια
+PROP_VAULT	Θησαυροφυλάκιο
+UILABEL_BUILD	Χτίσιμο
+UILABEL_BUILD_SELECTED	Επιλογή: {0}
+UILABEL_BUILD_NONE	Επιλογή: καμία
+UILABEL_BUILD_SELECT	Επίλεξε
+UILABEL_BUILD_PICKED	Επιλέχθηκε
+UILABEL_BUILD_PLACE_HINT	Αριστερό κλικ στο έδαφος για τοποθέτηση. Κράτα το R και κίνησε το ποντίκι αριστερά ή δεξιά για περιστροφή. Δεξί κλικ ή Escape για ακύρωση.
+UILABEL_UPKEEP_HINT	Καίει ένα {0} την ώρα για συντήρηση. Βάλε τα εδώ μέσα.
+MISC_BUILD_BLOCKED	Δεν υπάρχει χώρος για χτίσιμο εδώ
+MISC_BUILD_UNWALKABLE	Σε αυτό το έδαφος δεν χτίζεται τίποτα
+MISC_BUILD_NO_FOUNDATION	Ένα θησαυροφυλάκιο πρέπει να βρίσκεται ολόκληρο πάνω σε θεμέλια
+MISC_NO_UPKEEP	Χωρίς συντήρηση: δεν υπάρχουν κορμοί
+MISC_UPKEEP_LEFT	Συντήρηση: απομένουν {0} λεπτά
+PROP_SHOP	Κατάστημα
+PROP_FARM	Αγρόκτημα
+PROP_TURBINE	Ανεμογεννήτρια
+UILABEL_BUILD_DESTROY	Κατεδάφιση
+UILABEL_BUILD_DESTROY_HINT	Αριστερό κλικ σε οποιοδήποτε αντικείμενο για να το γκρεμίσεις: ό,τι περιέχει πέφτει στο έδαφος και στη θέση του μένουν συντρίμμια. Αριστερό κλικ στα συντρίμμια για να τα καθαρίσεις. Δεξί κλικ ή Escape για ακύρωση.
+UILABEL_LOCK	Κλείδωμα
+MISC_BUILD_NO_CLAIM	Θεμέλια ή θησαυροφυλάκιο μπαίνουν μόνο μέσα στη δική σου περιοχή
+MISC_BUILD_SEALED	Αυτό το έδαφος είναι σφραγισμένο από θησαυροφυλάκιο άλλης φατρίας
+MISC_BUILD_CLAIM_OVERLAP	Αυτή η περιοχή θα επικαλυπτόταν με την περιοχή άλλης σημαίας
+MISC_BUILD_VAULT_TAKEN	Αυτή η περιοχή έχει ήδη θησαυροφυλάκιο
+MISC_BUILD_VAULT_CAP	Η φατρία σου έχει ήδη όσα θησαυροφυλάκια μπορεί να έχει
+MISC_DESTROY_NOTHING	Δεν υπάρχει τίποτα για κατεδάφιση εκεί
+MISC_FLAG_FACTION	Ιδιοκτήτης: {0}
+MISC_FLAG_HEALTH	Αντοχή: {0} από {1}
+MISC_FLAG_VAULT_YES	Θησαυροφυλάκιο: όρθιο, η περιοχή κρατιέται
+MISC_FLAG_VAULT_NO	Θησαυροφυλάκιο: κανένα, η σημαία φθείρεται
+MISC_PROP_CONDITION	Κατάσταση: {0}%
+MISC_PROP_DECAYING	Φθείρεται
+MISC_PROP_HOLDING	Δεν φθείρεται
+MISC_PROP_LOCK_OPEN	Ξεκλείδωτο
+MISC_PROP_LOCK_YOURS	Κλειδωμένο για ξένους (ανοιχτό για σένα)
+MISC_PROP_LOCK_SHUT	Κλειδωμένο (Ανοίγματα κλειδαριών {0})
+MISC_PROP_UPKEEP	Συντήρηση: απομένουν {0} ώρες
+MISC_PROP_VAULT_UNCLAIMED	Εκτός κάθε περιοχής: δεν δίνει συντήρηση
+MOB_BEAR	Αρκούδα
+MOB_COW	Αγελάδα
+MOB_CHICKEN	Κότα
+MOB_BOAR	Αγριογούρουνο
+MOB_WOLF	Λύκος
+MOB_DEER	Ελάφι
+MOB_RABBIT	Κουνέλι
+MOB_FISH	Ψάρι
+MOB_CRAB	Καβούρι
+MOB_LIZARD	Σαύρα
+MOB_SNAKE	Φίδι
+MOB_PIG	Γουρούνι
+MOB_SHEEP	Πρόβατο
+MOB_DUCK	Πάπια
+MOB_TURTLE	Χελώνα
+MOB_BAT	Νυχτερίδα
+MOB_FROG	Βάτραχος
+MOB_GORLICORN	Γκορλικόρνος
+FACTION_MOB_BEAR	Αρκούδες
+FACTION_MOB_COW	Αγελάδες
+FACTION_MOB_CHICKEN	Κότες
+FACTION_MOB_BOAR	Αγριογούρουνα
+FACTION_MOB_WOLF	Λύκοι
+FACTION_MOB_DEER	Ελάφια
+FACTION_MOB_RABBIT	Κουνέλια
+FACTION_MOB_FISH	Ψάρια
+FACTION_MOB_CRAB	Καβούρια
+FACTION_MOB_LIZARD	Σαύρες
+FACTION_MOB_SNAKE	Φίδια
+FACTION_MOB_PIG	Γουρούνια
+FACTION_MOB_SHEEP	Πρόβατα
+FACTION_MOB_DUCK	Πάπιες
+FACTION_MOB_TURTLE	Χελώνες
+FACTION_MOB_BAT	Νυχτερίδες
+FACTION_MOB_FROG	Βάτραχοι
+FACTION_MOB_GORLICORN	Γκορλικόρνοι
+MISC_MOB_NO_GEAR	Τα πλάσματα δεν μπορούν να φορούν εξοπλισμό
+MISC_MOB_NO_HEALING	Τα πλάσματα δεν μπορούν να χρησιμοποιούν θεραπευτικά αντικείμενα
+MISC_MOB_CANT_WORK	Τα πλάσματα δεν μπορούν να δουλεύουν σε αντικείμενα

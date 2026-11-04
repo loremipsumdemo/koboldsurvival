@@ -310,6 +310,9 @@ public:
                          float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
+    // The Disband popout for a unit of yours: its portrait, name and a few lines about it, what disbanding it does, and
+    // Disband (filled by held, 0 to 1, while it is held down) and Cancel
+    void drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my);
     // A notice, drawn centerd at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
     // The stats popout for one unit, and its layout (which depends on the fonts)
@@ -358,6 +361,12 @@ public:
     // A unit's model filling r, standing and turned by yaw about its vertical axis, seen from the front; its picture
     // when it has no model. Call between beginUi and endUi.
     void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
+    // A mob kind seen the same way: its model, or its picture where it has none
+    void drawMobPreview(int kind, const Rect& r, float yaw);
+    // A model, turned by yaw, standing in a box of the UI with its own depth
+    void drawModelPreview(const Model* m, const Rect& r, float yaw);
+    // A mob kind's picture (mob_<kind>.png), the stand-in for a missing one, or the pink square for a kind with a model
+    const TextTex& mobPicture(int kind) const;
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -468,6 +477,13 @@ private:
     // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
     void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
                              float mx, float my, bool editable, const std::array<bool, 4>& modes = {});
+public:
+    // The Behavior tab's # prompt (layoutPercentPrompt): title says what is asked, typed is the digits so far, range
+    // the percents it takes, and error why the last try was refused (empty when none)
+    void drawPercentPrompt(const PercentPromptLayout& P, const std::string& title, const std::string& typed,
+                           const std::string& range, const std::string& error, float mx, float my);
+
+private:
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom
@@ -533,6 +549,9 @@ private:
     // How colorful the glyph program draws: 1 as the picture is, 0 fully gray. Set back to 1 after use.
     void setSaturation(float sat);
     float unitTop(World& w, Entity u);
+    // How far above its feet a unit's sprite or model is drawn: a flying mob's hover (mobHoverFraction, mobs.h) while it
+    // is up and about, else 0
+    float unitHover(World& w, Entity u) const;
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
@@ -668,13 +687,18 @@ private:
                        float height = 1.2f);
     // The color a unit's model is tinted toward: its faction's, or none (alpha 0) for your own units and mobs
     RGBA unitFactionTint(World& w, Entity e) const;
-    // Which way each unit's model faces: turned toward the way it last walked
+    // Which way each unit's model faces: turned toward the way it last walked. One idle for UNIT_SETTLE_MS is settled:
+    // it keeps its facing, however units close by nudge it, until it stops being idle or moves more than
+    // UNIT_SETTLE_SLIP tiles from where it settled.
     struct UnitFacing {
-        float x = 0.0f, z = 0.0f;   // where it was last frame
+        float x = 0.0f, z = 0.0f;              // where it was last frame
         float yaw = 0.0f;
+        unsigned long long idleSince = 0;      // when it went idle, in milliseconds; 0 while it is not idle
+        bool settled = false;
+        float settleX = 0.0f, settleZ = 0.0f;  // where it settled
     };
     std::map<Entity, UnitFacing> unitFacing_;
-    float unitYaw(Entity e, float x, float z);
+    float unitYaw(Entity e, float x, float z, bool idle);
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
     std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown

@@ -54,6 +54,9 @@ UILABEL_REFRESH_RATE	刷新率
 UILABEL_DEFAULT	默认
 UILABEL_VSYNC	垂直同步
 UILABEL_FRAME_LIMIT	帧率上限
+UILABEL_VIEW_RANGE	视野范围
+UILABEL_TILES_N	{0} 格
+UILABEL_SHOW_FPS	显示 FPS
 UILABEL_UNLIMITED	不限
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	自动存档
@@ -62,6 +65,7 @@ UILABEL_MINUTES	{0} 分钟
 UILABEL_UNIT_NAMES	玩家单位名称
 UILABEL_NPC_NAMES	非玩家单位名称
 UILABEL_PROP_NAMES	物体名称
+UILABEL_PROP_INFO	显示物体信息
 UILABEL_FONT_SIZE	字体大小
 UILABEL_RESET_PANELS	重置所有界面面板
 UILABEL_RESET	重置
@@ -72,6 +76,7 @@ UILABEL_GLOBAL_VOLUME	全局音量
 UILABEL_MUSIC	音乐
 UILABEL_AMBIENT	环境音
 UILABEL_INTERFACE_SOUNDS	界面音效
+UILABEL_CRAFT_GATHER_SOUNDS	制作与采集音效
 UILABEL_SOUND_EFFECTS	音效
 UILABEL_RESTORE_DEFAULTS	恢复默认设置
 UILABEL_WINDOWED	窗口
@@ -123,6 +128,8 @@ UILABEL_STATS	属性
 UILABEL_CLICK_TO_TYPE	点击以输入名称
 UILABEL_HEALTH	生命
 UILABEL_HUNGER	饥饿
+UILABEL_RESTED	休息度
+UILABEL_COMFORT	舒适度
 UILABEL_CARRY	负重
 UILABEL_NEXT_LEVEL_XP_LINE	升到下一级所需经验：{0}
 UILABEL_STAT	属性
@@ -141,6 +148,30 @@ UILABEL_RANDOMIZE_UNIT	随机生成此单位
 UILABEL_RANDOMIZE_ALL	全部随机生成
 UILABEL_ADD_UNIT	添加单位
 UILABEL_REMOVE_UNIT	移除单位
+UILABEL_ADD_MOB	添加动物
+UILABEL_MOB_KIND	种类
+UILABEL_MOB_NO_GEAR	动物不穿戴装备。
+MISC_MEAT_TAKEN_DIES	{0} 死了
+MISC_MOB_INVENTORY_LOCKED	不可用
+MISC_MOB_CANT_HOLD	动物只携带自己的肉和骨头
+UILABEL_CLEAR	清理
+UILABEL_TASK_CLEARING	正在清理残骸
+MISC_CLEARS_DEBRIS	{0} 清理了残骸
+UILABEL_MOB_INVENTORY_HIDDEN	不可用
+UILABEL_BEHAVIOR_PATROL	巡逻
+UILABEL_BEHAVIOR_PATROL_SPAWN	出生点巡逻
+UILABEL_BEHAVIOR_ROAM	漫游
+UILABEL_BEHAVIOR_PATROL_TIP	巡逻：如果所在的领地属于其阵营，就在领地内四处走动，不时停下。
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	出生点巡逻：在最初出现的地方附近走动。被追得太远时会放弃，完全恢复生命并走回去，回到原地前不受伤害。
+UILABEL_BEHAVIOR_ROAM_TIP	漫游：在开阔的土地上游荡，任何能在旗帜领地之外行走的地方都会去。
+UILABEL_WAIT_NOT_IN_CLAIM	不在其阵营的领地内
+UILABEL_WAIT_NOWHERE_TO_ROAM	附近领地之外没有开阔地
+UILABEL_TEMPERAMENT_AVOIDANT	回避
+UILABEL_TEMPERAMENT_PASSIVE	温顺
+UILABEL_TEMPERAMENT_NEUTRAL	中立
+UILABEL_TEMPERAMENT_AGGRESSIVE	好斗
+UILABEL_TEMPERAMENT	性情：{0}
+UILABEL_MOB_NO_ITEMS	动物只携带自己的肉和骨头。
 UILABEL_CONFIRM_STARTS	确认后将以此队伍开始游戏。
 UILABEL_NEEDS_NAMES	每个单位都需要名字，游戏才能开始。
 UILABEL_CLICK_UNIT_EDIT	点击单位即可编辑。
@@ -159,6 +190,38 @@ UILABEL_SLOT_LEGS	腿部
 UILABEL_SLOT_FEET	脚部
 UILABEL_SLOT_ACCESSORY	饰品
 UILABEL_BEHAVIOR_ON	开
+UILABEL_BEHAVIOR_EAT	饱食度 < {0}% 时进食
+UILABEL_BEHAVIOR_REST	休息度 < {0}% 时休息
+UILABEL_BEHAVIOR_LEAVE_BED	恢复后下床
+UILABEL_BEHAVIOR_RESCUE	救援倒地的盟友
+UILABEL_BEHAVIOR_HEAL	生命 < {0}% 时治疗
+UILABEL_BEHAVIOR_SHARE	分享
+UILABEL_BEHAVIOR_AUTO_HARVEST	自动采集：{0}
+UILABEL_BEHAVIOR_AUTO_HAUL	自动搬运：{0}
+UILABEL_BEHAVIOR_WAITING	（等待中）
+UILABEL_BEHAVIOR_WAIT_TIP	等待中：{0}
+UILABEL_WAIT_NO_FOOD	没有食物可吃，附近也没人能分享
+UILABEL_WAIT_NO_BED	没有空床或铺盖卷可以休息
+UILABEL_WAIT_NO_HEALING	没有治疗物品，附近也没人能分享
+UILABEL_WAIT_WALKING_TO_SHARE	正走向能分享一个的{0}
+UILABEL_WAIT_NO_PROP	你的领地内没有还能容纳工人的{0}
+UILABEL_WAIT_CARRY_FULL	没有空间再携带更多
+UILABEL_WAIT_LOAD_WAITING	携带着需要自动搬运先取走的货物
+UILABEL_WAIT_PROP_GONE	物体已经消失
+UILABEL_WAIT_OUTSIDE_CLAIM	物体不在你阵营的领地内
+UILABEL_WAIT_LOCKED	物体已上锁
+UILABEL_WAIT_NOTHING_TO_HAUL	没有携带该物体接收的东西
+UILABEL_WAIT_PROP_FULL	物体没有空间存放所携带的东西
+UILABEL_BEHAVIOR_EAT_TIP	进食：饱食度低于 {0}% 时，吃掉最能充饥的食物。用 - 和 + 调整时机。
+UILABEL_BEHAVIOR_HEAL_TIP	治疗：生命低于 {0}% 时，使用恢复生命最多的治疗物品。用 - 和 + 调整时机。
+UILABEL_BEHAVIOR_REST_TIP	休息：休息度低于 {0}% 时，躺到最近的空床或铺盖卷上，完全休息好后起身。用 - 和 + 调整时机。
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	下床：生命全满且完全休息好 30 秒后，从床或铺盖卷上起身。
+UILABEL_BEHAVIOR_RESCUE_TIP	救援：把附近昏迷的己方阵营单位背到最近的空床或铺盖卷上。
+UILABEL_BEHAVIOR_SHARE_TIP	分享：当进食或治疗需要该单位没有的物品时，它会从交易距离内同样开启分享且更不需要该物品的单位那里拿一个；对方稍远时会先走过去。其他开启分享的单位也能以同样方式从它这里拿。
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	自动采集：在你阵营领地内最近的{0}处工作。带着货物且有能接收的自动搬运时，会停下来搬运。你下达命令会暂停它；单位空闲几秒后重新开始。
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	自动搬运：把背包中（不含已穿戴装备）{0}接收的物品送过去，只要还有空间且单位在你阵营的领地内。你下达命令会暂停它；单位空闲几秒后重新开始。
+UILABEL_NPC_MESSAGES	NPC
+UILABEL_SHOW_NPC_INFO	显示 NPC 信息
 UILABEL_COMBAT_MESSAGES	战斗消息
 UILABEL_SEEN	已发现
 UILABEL_HIT	命中
@@ -168,6 +231,7 @@ UILABEL_EXPERIENCE_MESSAGES	经验消息
 UILABEL_EXPERIENCE	经验
 UILABEL_XP_ATHLETICS	运动经验
 UILABEL_XP_ENDURANCE	耐力经验
+UILABEL_XP_CARRYING	力量经验（负重）
 UILABEL_ITEM_MESSAGES	物品消息
 UILABEL_PICKUP	拾取
 UILABEL_DROP	丢弃
@@ -340,6 +404,7 @@ UILABEL_TIP_PROGRESS	进度：{0}%
 UILABEL_TIP_CURRENT_XP	当前经验：{0}
 UILABEL_ATTACK_DEFENSE	攻击 {0}      防御 {1}
 UILABEL_STATS_CAPTION	属性：{0}
+UILABEL_MODEL_N	模型 {0}
 UILABEL_SLOT_N_ITEM	栏位 {0}：{1}
 UILABEL_SLOT_N_EMPTY	栏位 {0}：空
 UILABEL_COUNT	数量 {0}
@@ -528,9 +593,9 @@ ITEM_86_DESC	需要双手持握。副手必须为空。
 ITEM_87_NAME	战斧
 ITEM_87_DESC	需要双手持握。副手必须为空。
 UILABEL_UI_SCALE	界面缩放
-NAME_MASCULINE	["陈伟", "林浩", "王磊", "赵峰", "刘洋"]
-NAME_FEMININE	["林雨", "苏婉", "李静", "张悦", "周婷"]
-NAME_ANDROGYNOUS	["安然", "云川", "沐阳", "辰逸", "闻笙"]
+NAME_MASCULINE	["陈伟", "林浩", "王磊", "赵峰", "刘洋", "张强", "李军", "杨勇", "黄涛", "周杰", "吴斌", "徐明", "孙鹏", "胡波", "朱辉", "高翔", "何俊", "郭亮", "马超", "罗毅", "梁宇", "宋健", "郑凯", "谢飞", "韩东", "唐昊", "冯刚", "于海", "董鑫", "萧然", "程远", "曹阳", "袁博", "邓林", "许诚", "傅晨", "沈渊", "曾磊", "彭涛", "吕航", "苏铭", "卢毅", "蒋川", "蔡旭", "贾森", "丁浩", "魏峰", "薛岳", "叶舟", "阎鹏"]
+NAME_FEMININE	["林雨", "苏婉", "李静", "张悦", "周婷", "王芳", "刘娜", "陈丽", "杨敏", "赵燕", "黄霞", "吴娟", "徐倩", "孙颖", "胡蓉", "朱琳", "高洁", "何萍", "郭瑶", "马莉", "罗兰", "梁雪", "宋佳", "郑欣", "谢晴", "韩梅", "唐诗", "冯露", "于薇", "董月", "程菲", "曹蕾", "袁媛", "邓瑾", "许蓓", "傅琪", "沈怡", "曾岚", "彭璐", "吕茜", "苏晓", "卢珊", "蒋瑶", "蔡霏", "贾宁", "丁香", "魏清", "薛琴", "叶青", "阎秀"]
+NAME_ANDROGYNOUS	["安然", "云川", "沐阳", "辰逸", "闻笙", "子墨", "一诺", "思远", "若水", "清欢", "星河", "明哲", "知秋", "听雨", "南风", "北辰", "千寻", "向晚", "初晴", "长安", "青山", "望舒", "未央", "如意", "默言", "无忧", "竹溪", "白露", "冬青", "江离", "林夕", "墨白", "暮云", "宁远", "秋水", "晴川", "书言", "随风", "天朗", "微澜", "文清", "惜时", "晓光", "行舟", "雅言", "一川", "逸尘", "雨桐", "远山", "知行"]
 UILABEL_BODY_TYPE	体型
 UILABEL_BODY_MASCULINE	男性化
 UILABEL_BODY_FEMININE	女性化
@@ -560,10 +625,14 @@ MISC_STORAGE_FULL	储物空间已满
 MISC_PROP_TAKEN	已被占用
 MISC_PROP_WORKERS_FULL	最多 {0} 个单位可同时作业
 MISC_GATHERS	{0} 采集了 {1}
+MISC_AUTO_HAUL_STORES	{0} 将 {1} 个{2}存入{3}
 MISC_GATHER_NO_ROOM	{0} 没有空间存放 {1}，停止作业
 MISC_REASON_GATHERING	采集
+MISC_REASON_CLEARING	正在清理残骸
 UILABEL_TASK	任务：{0}
 UILABEL_TASK_IDLE	空闲
+UILABEL_TASK_AUTO_GOING	{0}（前往中）
+UILABEL_TASK_SHARE_WALK	前往{0}处分享
 UILABEL_TASK_MOVING	移动中
 UILABEL_TASK_RESTING	休息中
 UILABEL_STORAGE_HINT	右键点击物品即可取出，或将其拖出，放在你的单位所站的位置。右键点击单位的物品即可存入。
@@ -595,6 +664,7 @@ FACTION_RED	红色阵营
 FACTION_GREEN	绿色阵营
 FACTION_BLUE	蓝色阵营
 FACTION_YELLOW	黄色阵营
+FACTION_EXILE	流放者
 MISC_REPUTATION_DROPS	与{0}的声望下降{1}，降至{2}
 UILABEL_MODE_PASSIVE	消极
 UILABEL_MODE_BLOCK	格挡
@@ -614,8 +684,12 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	开局设定
 SCENARIO_VAGABOND_NAME	流浪者
 SCENARIO_VAGABOND_DESC	一名身无分文的孤独旅人：没有物品，没有装备，所有属性在1到5之间。
-SCENARIO_RANDOM_NAME	完全随机
-SCENARIO_RANDOM_DESC	1 到 32 名单位组成的队伍，每名单位的所有属性都在 1 到 99 之间，并带有负重范围内的随机物品与装备。
+SCENARIO_PACK_NAME	双兽同行
+SCENARIO_PACK_DESC	一名孤独的流浪者和一匹忠诚的狼。流浪者没有物品和装备，每项属性在1到5之间。
+SCENARIO_BEASTMASTER_NAME	驯兽师
+SCENARIO_BEASTMASTER_DESC	一名孤独的流浪者，率领20只随机种类的动物。流浪者没有物品和装备，每项属性在1到5之间。
+SCENARIO_RANDOM_NAME	完全随机营地
+SCENARIO_RANDOM_DESC	你自己的营地，外加20名以上的单位，每名单位的所有属性都在1到99之间，并带有能背得动的随机物品和装备，另有3到7只动物。
 SCENARIO_CARAVAN_NAME	旅行商队
 SCENARIO_CARAVAN_DESC	十名旅人结伴上路。所有属性从 5 开始，每人携带 10 枚金币。
 SCENARIO_SHABBY_NAME	落魄团伙
@@ -625,12 +699,21 @@ SCENARIO_NOBODY_DESC	一名一无所有的单位：没有物品，没有装备�
 SCENARIO_DIGGERS_NAME	地牢挖掘者
 SCENARIO_DIGGERS_DESC	七名全副武装的矿工。属性在 5 到 20 之间，但每人的采矿都是 50，并各带 3 块铁矿石。
 SCENARIO_CUSTOM_NAME	自定义剧本
-SCENARIO_CUSTOM_DESC	组建你自己的队伍。开局有三名单位，你可以添加或移除单位，最多32名。
+SCENARIO_CUSTOM_DESC	组建你自己的队伍。开始时有三名单位，你可以添加或移除单位和普通动物，最多32个。
 PROP_LOCKED_CHEST	上锁的箱子
 PROP_PRISONER_CAGE	囚笼
 UILABEL_UNLOCK	开锁
+UILABEL_AUTO_HARVEST	自动采集
+UILABEL_AUTO_HAUL	自动搬运
+MISC_AUTO_OUTSIDE_CLAIM	自动采集和自动搬运只对你阵营领地内的物体有效
+MISC_AUTO_HARVEST_SET	{0} 个单位将自动采集：{1}
+MISC_AUTO_HAUL_SET	{0} 个单位将自动搬运到{1}
+MISC_BEHAVIOR_LIST_FULL	行为列表已满（最多 {0} 个）
 UILABEL_PICK_UP	扛起
-UILABEL_PUT_IN_BED	放到床上
+UILABEL_PLACE	放置
+UILABEL_OCCUPY	占用
+UILABEL_DISBAND	遣散
+UILABEL_DISBAND_HOLD	按住“遣散”{0}秒以确认
 UILABEL_PUT_DOWN	放下
 UILABEL_SHOP	购物
 UILABEL_TASK_CARRIED	被搬运
@@ -641,16 +724,33 @@ UILABEL_DOOM	厄运
 UILABEL_TASK_UNCONSCIOUS	昏迷
 UILABEL_TASK_DEAD	死亡
 UILABEL_TASK_CARRYING	搬运中
+UILABEL_TASK_STORING	存放中
 UILABEL_TAKE_ALL	全部拿取
 UILABEL_LOOT_HINT	点击物品，把它放进你单位的物品栏。
 UILABEL_CORPSE_OF	{0}的尸体
 MISC_FALLS_UNCONSCIOUS	{0}昏了过去
 MISC_DIES	{0}死了
 MISC_RECOVERS	{0}醒了过来
+LOADING_PICTURES	图片
+LOADING_UNIT_MODELS	单位模型
+LOADING_MOB_MODELS	动物模型
+LOADING_MOB_PICTURES	动物图片
+LOADING_SKY	天空
+LOADING_PROP_MODELS	物体模型
+LOADING_MAP	地图
+LOADING_MAP_GROUND	地图地面
+LOADING_WORLD	世界
+LOADING_GROUND_ITEMS	地上的物品
+MISC_GOES_HOME	{0} 放弃追击，回家去了
+MISC_GETS_UP	{0} 站了起来，危险已过
 MISC_PICKS_UP_UNIT	{0}扛起了{1}
 MISC_PUTS_DOWN	{0}放下了{1}
-MISC_PUTS_IN_BED	{0}把{1}放到{2}上
-MISC_CORPSE_NO_BED	床救不了死者
+MISC_PLACES_IN	{0}把{1}放到{2}上
+MISC_DISBAND_ASK	{0}将永远离开你的小队和阵营，成为流放者：对所有人保持中立，独自游荡。
+MISC_DISBAND_ASK_MOB	{0}将永远离开你的小队和阵营，回归野外。
+MISC_DISBANDED	{0}以流放者的身份离开了你的小队
+MISC_DISBANDED_MOB	{0}离开了你的小队，回归野外
+MISC_CORPSE_NO_PLACE	死者无法放在那里
 MISC_IS_UNCONSCIOUS	{0}昏迷了，什么也做不了
 MISC_ALREADY_CARRYING	你选中的单位都无法搬运他
 MISC_LOOT_NO_ROOM	物品栏没有空位
@@ -788,6 +888,46 @@ ITEM_132_NAME	火箭
 ITEM_132_DESC	燃烧的箭，供短弓或长弓使用。威力最大的箭。
 ITEM_133_NAME	弩矢
 ITEM_133_DESC	弩用的短而重的弩矢。
+ITEM_134_NAME	熊骨
+ITEM_134_DESC	熊的骨头。适合制作。
+ITEM_135_NAME	牛骨
+ITEM_135_DESC	牛的骨头。适合制作。
+ITEM_136_NAME	鸡骨
+ITEM_136_DESC	鸡的骨头。适合制作。
+ITEM_137_NAME	野猪骨
+ITEM_137_DESC	野猪的骨头。适合制作。
+ITEM_138_NAME	狼骨
+ITEM_138_DESC	狼的骨头。适合制作。
+ITEM_139_NAME	鹿骨
+ITEM_139_DESC	鹿的骨头。适合制作。
+ITEM_140_NAME	兔骨
+ITEM_140_DESC	兔子的骨头。适合制作。
+ITEM_141_NAME	鱼骨
+ITEM_141_DESC	鱼的骨头。适合制作。
+ITEM_142_NAME	蟹壳
+ITEM_142_DESC	螃蟹壳的碎片。适合制作。
+ITEM_143_NAME	蜥蜴骨
+ITEM_143_DESC	蜥蜴的骨头。适合制作。
+ITEM_144_NAME	蛇骨
+ITEM_144_DESC	蛇的骨头。适合制作。
+ITEM_145_NAME	猪骨
+ITEM_145_DESC	猪的骨头。适合制作。
+ITEM_146_NAME	羊骨
+ITEM_146_DESC	羊的骨头。适合制作。
+ITEM_147_NAME	鸭骨
+ITEM_147_DESC	鸭子的骨头。适合制作。
+ITEM_148_NAME	龟骨
+ITEM_148_DESC	乌龟的骨头。适合制作。
+ITEM_149_NAME	蝙蝠骨
+ITEM_149_DESC	蝙蝠的骨头。适合制作。
+ITEM_150_NAME	蛙骨
+ITEM_150_DESC	青蛙的骨头。适合制作。
+ITEM_151_NAME	戈利角兽骨
+ITEM_151_DESC	戈利角兽的骨头。适合制作。
+ITEM_152_NAME	生戈利角兽肉
+ITEM_152_DESC	未煮熟的肉。在篝火上烤熟它。
+ITEM_153_NAME	烤戈利角兽肉
+ITEM_153_DESC	在火上烤熟的浓郁肉块。恢复大量生命和饥饿。
 UILABEL_OPTIMIZE	最佳装备
 UILABEL_REMOVE_ALL	全部卸下
 MISC_GEAR_NO_ROOM	背包空间不足
@@ -807,3 +947,85 @@ GAME_TITLE_SECOND	生存
 UILABEL_EARLY_ACCESS	抢先体验
 MISC_TITLE_KEYS	选择  //  Enter 确认
 UILABEL_LANGUAGE_LABEL	语言：
+PROP_FLAG	旗帜
+PROP_DEBRIS	残骸
+PROP_FOUNDATION_SMALL	小地基
+PROP_FOUNDATION_LARGE	大地基
+PROP_FOUNDATION_LONG	长地基
+PROP_FOUNDATION_CIRCLE	圆形地基
+PROP_VAULT	金库
+UILABEL_BUILD	建造
+UILABEL_BUILD_SELECTED	已选：{0}
+UILABEL_BUILD_NONE	已选：无
+UILABEL_BUILD_SELECT	选择
+UILABEL_BUILD_PICKED	已选择
+UILABEL_BUILD_PLACE_HINT	左键点击地面放置。按住 R 并左右移动鼠标旋转。右键或 Esc 取消。
+UILABEL_UPKEEP_HINT	每小时燃烧一个{0}作为维护。把它们放在这里。
+MISC_BUILD_BLOCKED	这里没有空间建造
+MISC_BUILD_UNWALKABLE	这块地面无法建造
+MISC_BUILD_NO_FOUNDATION	金库必须完全建在地基上
+MISC_NO_UPKEEP	无维护：没有原木
+MISC_UPKEEP_LEFT	维护：剩余 {0} 分钟
+PROP_SHOP	商店
+PROP_FARM	农场
+PROP_TURBINE	风力涡轮机
+UILABEL_BUILD_DESTROY	拆除
+UILABEL_BUILD_DESTROY_HINT	左键点击任意物体将其拆除：里面的东西掉到地上，原地留下残骸。左键点击残骸将其清理。右键或 Esc 取消。
+UILABEL_LOCK	上锁
+MISC_BUILD_NO_CLAIM	地基或金库必须建在你自己的领地内
+MISC_BUILD_SEALED	这块地被另一个阵营的金库封锁了
+MISC_BUILD_CLAIM_OVERLAP	这片领地会与另一面旗帜的领地重叠
+MISC_BUILD_VAULT_TAKEN	这片领地已经有金库了
+MISC_BUILD_VAULT_CAP	你的阵营拥有的金库已达上限
+MISC_DESTROY_NOTHING	那里没有可拆除的东西
+MISC_FLAG_FACTION	所有者：{0}
+MISC_FLAG_HEALTH	耐久：{0}/{1}
+MISC_FLAG_VAULT_YES	金库：完好，领地保持
+MISC_FLAG_VAULT_NO	金库：无，旗帜正在损耗
+MISC_PROP_CONDITION	状态：{0}%
+MISC_PROP_DECAYING	正在损坏
+MISC_PROP_HOLDING	未在损坏
+MISC_PROP_LOCK_OPEN	未上锁
+MISC_PROP_LOCK_YOURS	对外人上锁（对你开放）
+MISC_PROP_LOCK_SHUT	已上锁（开锁 {0}）
+MISC_PROP_UPKEEP	维护：剩余 {0} 小时
+MISC_PROP_VAULT_UNCLAIMED	不在任何领地内：不提供维护
+MOB_BEAR	熊
+MOB_COW	牛
+MOB_CHICKEN	鸡
+MOB_BOAR	野猪
+MOB_WOLF	狼
+MOB_DEER	鹿
+MOB_RABBIT	兔子
+MOB_FISH	鱼
+MOB_CRAB	螃蟹
+MOB_LIZARD	蜥蜴
+MOB_SNAKE	蛇
+MOB_PIG	猪
+MOB_SHEEP	羊
+MOB_DUCK	鸭子
+MOB_TURTLE	乌龟
+MOB_BAT	蝙蝠
+MOB_FROG	青蛙
+MOB_GORLICORN	戈利角兽
+FACTION_MOB_BEAR	熊群
+FACTION_MOB_COW	牛群
+FACTION_MOB_CHICKEN	鸡群
+FACTION_MOB_BOAR	野猪群
+FACTION_MOB_WOLF	狼群
+FACTION_MOB_DEER	鹿群
+FACTION_MOB_RABBIT	兔群
+FACTION_MOB_FISH	鱼群
+FACTION_MOB_CRAB	蟹群
+FACTION_MOB_LIZARD	蜥蜴群
+FACTION_MOB_SNAKE	蛇群
+FACTION_MOB_PIG	猪群
+FACTION_MOB_SHEEP	羊群
+FACTION_MOB_DUCK	鸭群
+FACTION_MOB_TURTLE	龟群
+FACTION_MOB_BAT	蝙蝠群
+FACTION_MOB_FROG	蛙群
+FACTION_MOB_GORLICORN	戈利角兽群
+MISC_MOB_NO_GEAR	动物无法穿戴装备
+MISC_MOB_NO_HEALING	动物无法使用治疗物品
+MISC_MOB_CANT_WORK	动物无法操作物体

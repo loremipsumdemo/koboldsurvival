@@ -45,9 +45,9 @@ int utf8Length(unsigned char lead) {
 }
 
 // Makes a text safe to show: control characters (tabs, newlines and the rest) and broken UTF-8 are removed, the
-// ends are trimmed, and it is capped in length. Anything else, in any script, is kept.
-std::string cleanText(const std::string& raw) {
-    constexpr size_t MAX_BYTES = 500;
+// ends are trimmed, and it is capped at maxBytes. Anything else, in any script, is kept.
+std::string cleanText(const std::string& raw, size_t maxBytes) {
+    const size_t MAX_BYTES = maxBytes;
     std::string out;
     for (size_t i = 0; i < raw.size(); ) {
         const unsigned char c = (unsigned char)raw[i];
@@ -103,7 +103,10 @@ bool parseText(const std::string& text0, Table& into) {
         const size_t kFirst = key.find_first_not_of(' ');
         key = kFirst == std::string::npos ? std::string() : key.substr(kFirst, key.find_last_not_of(' ') - kFirst + 1);
         if (!validKey(key)) continue;
-        const std::string value = cleanText(line.substr(tab + 1));
+        // A text is capped at 1024 bytes (a long tip in a 3-byte script runs past 500); a name list (NAME_*) holds
+        // dozens of names, so it has more room
+        const bool nameList = key.compare(0, 5, "NAME_") == 0;
+        const std::string value = cleanText(line.substr(tab + 1), nameList ? 8192 : 1024);
         if (value.empty()) continue;           // an empty text falls back to English
         into[key] = value;
     }
