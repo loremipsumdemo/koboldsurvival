@@ -63,6 +63,7 @@ add_executable(koboldsurvival
     src/trade.cpp
     src/selection.cpp
     src/level.cpp
+    src/savegame.cpp
     src/menus.cpp
     src/app_support.cpp
     src/renderer.cpp
