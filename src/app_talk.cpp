@@ -18,9 +18,7 @@ void App::endTalk() {
     talkCooldown = TALK_COOLDOWN;
     tradeOpen = false;
     freeTrade = false;
-    tradeNpc.clear();
-    tradePlayer.clear();
-    tradeNpcDrag = -1;
+    clearTradeTable();
     quantity.open = false;
     dialogueUnit = NULL_ENTITY;
     dialogueConvo.clear();
@@ -40,8 +38,7 @@ void App::requestTrade(bool npcSide, Entity owner, int slot) {
         refuse(lang("MISC_TRADE_NO_MORE"));
         return;
     }
-    const ItemDef* def = findItem(item);
-    quantity = QuantityPrompt{ true, npcSide, owner, slot, item, def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, avail };
+    quantity = QuantityPrompt{ true, npcSide, owner, slot, item, itemNameOf(item), 1, avail };
 }
 
 void App::confirmQuantity() {
@@ -99,9 +96,8 @@ void App::requestStore(int slot) {
         refuse(lang("MISC_STORAGE_FULL"));
         return;
     }
-    const ItemDef* def = findItem(item);
     quantity = QuantityPrompt{ true, false, storageUnit, slot, item,
-                               def ? itemDisplayName(*def) : std::string(lang("MISC_ITEM_FALLBACK")), 1, cap, true };
+                               itemNameOf(item), 1, cap, true };
 }
 
 void App::showTraderInventory() {
@@ -136,12 +132,7 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
             if (!o.opensTrade) continue;
             sayAs(talker, o.prompt, true);
             sayAs(npc, o.reply, false);
-            tradeOpen = true;
-            showTraderInventory();
-            freeTrade = false;
-            tradeNpc.clear();
-            tradePlayer.clear();
-            tradeNpcDrag = -1;
+            openTrade(false);
             break;
         }
     }
@@ -169,12 +160,7 @@ void App::startFreeTrade(Entity other, Entity unit) {
     dialogueUnit = other;
     dialoguePlayer = unit;
     dialogueConvo.clear();
-    tradeOpen = true;
-    showTraderInventory();
-    freeTrade = true;
-    tradeNpc.clear();
-    tradePlayer.clear();
-    tradeNpcDrag = -1;
+    openTrade(true);
 }
 
 bool App::noteLockedIn(const std::vector<Entity>& units) {
@@ -663,11 +649,13 @@ void App::chooseOption(size_t i) {
     sayAs(dialoguePlayer, prompt, true);
     sayAs(dialogueUnit, reply, false);
     if (trade) {
-        tradeOpen = true;
-        showTraderInventory();
-        freeTrade = false;
-        tradeNpc.clear();
-        tradePlayer.clear();
-        tradeNpcDrag = -1;
+        openTrade(false);
     }
+}
+
+void App::openTrade(bool free) {
+    tradeOpen = true;
+    showTraderInventory();
+    freeTrade = free;
+    clearTradeTable();
 }

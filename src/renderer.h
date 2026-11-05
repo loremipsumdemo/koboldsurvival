@@ -325,7 +325,7 @@ public:
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
     // Items lying on the ground, drawn as billboards over loaded ground (called by drawFrame). Each shows
-    // its picture from data/item (item_<n>.png, else item_0.png), or the pink square when there is neither.
+    // its picture from data/item (item_<n>.png), or the pink square when it has none.
     // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
     // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite. The name
     // line on top under (mx, my) is drawn highlighted.
@@ -367,7 +367,7 @@ public:
     void drawMobPreview(MobKind kind, const Rect& r, float yaw);
     // A model, turned by yaw, standing in a box of the UI with its own depth
     void drawModelPreview(const Model* m, const Rect& r, float yaw);
-    // A mob kind's picture (mob_<kind>.png), the stand-in for a missing one, or the pink square for a kind with a model
+    // A mob kind's picture (mob_<kind>.png), or the pink square for a missing one or a kind with a model
     const TextTex& mobPicture(MobKind kind) const;
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
@@ -408,7 +408,7 @@ public:
     void drawRect(const Rect& r, RGBA c);
     // A rectangle with round corners, in window pixels
     void drawRoundedRect(const Rect& r, float radius, RGBA c);
-    // A UI icon in r: its picture from data/icon (icon_<n>.png, else icon_0.png), or the pink placeholder with its id
+    // A UI icon in r: its picture from data/icon (icon_<n>.png), or the pink placeholder with its id
     void drawUiIcon(int icon, const Rect& r);
     // An icon of height h at (x, y), with its text beside it in the list font
     void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);
@@ -507,6 +507,10 @@ private:
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
     // A textured UI quad from (x0, y0) top left to (x1, y1) bottom right, with texture coordinates u0 v0 at
     // the top left and u1 v1 at the bottom right
+    // A whole texture on the screen, its top left at (x, y), w by h pixels
+    void drawTexture(GLuint tex, float x, float y, float w, float h, RGBA tint);
+    // A unit's portrait fitted inside a square, keeping its shape, at the given saturation (unitSaturation)
+    void drawPortrait(const TextTex& g, const Rect& square, float saturation);
     void drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
                     RGBA tint);
     // A green dot with a black outline, d pixels across, centred on (cx, cy)
@@ -524,11 +528,10 @@ private:
     GLuint dotWhiteTex_ = 0;   // a white dot, tinted for the red and neutral units
     float hudTop_ = 12.0f;
 
-    // The picture for an item, from data/item/item_<n>.png. An item without one uses data/item/item_0.png, and the pink
-    // square without that. Never null.
+    // The picture for an item, from data/item/item_<n>.png, or the pink square without one. Never null.
     const TextTex* itemTexture(int item);
     // Which pixels of an item's picture can be seen, for picking a ground item by its visible part only. Loaded once
-    // per item from its picture (item_0.png, else a solid square, standing in when it has none).
+    // per item from its picture (a solid square, as the pink square is, when it has none).
     struct ItemMask {
         int w = 0, h = 0;
         std::vector<unsigned char> alpha;
@@ -589,15 +592,17 @@ private:
     static bool topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row);
 
     // Cached white text texture for a menu string, created on first use
-    HudLine& uiLine(const std::string& s);
+    HudLine& uiLine(const std::string& s) { return fontLine(ui_, s); }
 
     // Cached white text texture for a list string, using the list font
-    HudLine& listLine(const std::string& s);
-    // A font with its own cache of text textures, for the Stats popout
+    HudLine& listLine(const std::string& s) { return fontLine(list_, s); }
+    // A font with its own cache of text textures: the menus', the lists' and the Stats popout's
     struct TextFont {
         TTF_Font* font = nullptr;
         std::map<std::string, HudLine> lines;
     };
+    // Drops a font's cached text textures, for a new font or a cache that has grown too large
+    static void clearFont(TextFont& f);
     HudLine& fontLine(TextFont& f, const std::string& s);
     void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
     float fontTextWidth(TextFont& f, const std::string& s);
@@ -673,7 +678,6 @@ private:
     std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
     // A unit's portrait for the squad panel and its Profile tab: its model's profile picture, or its mob kind's picture
     const TextTex& unitPortrait(World& w, Entity e) const;
-    TextTex mobFallback_;
     // A unit's flat picture, for the portraits: the pink square for every unit until units have 2D art again
     const TextTex& unitPicture(int n) const;
     // One model per unit sprite number, data/model/unit/unit_<nn>.glb. Files with the same bytes share one copy:
@@ -711,11 +715,8 @@ private:
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
     std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown
-    const TextTex* emoteTexture(EmoteId emote);   // never null: emote_0.png or the pink square stands in
-    TextTex itemNone_;        // data/item/item_0.png, for items without a picture of their own
-    TextTex emoteFallback_;   // data/emote/emote_0.png, for emotes without a picture of their own
-    TextTex iconFallback_;    // data/icon/icon_0.png, for UI icons without a picture of their own
-    TextTex pink_;            // one pink texel: the square drawn for a picture missing along with its _0 stand-in
+    const TextTex* emoteTexture(EmoteId emote);   // never null: the pink square stands in for a missing picture
+    TextTex pink_;            // one pink texel: the square drawn for a missing picture
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.
     TextTex white_;
     // Each worked prop's count of finished items as last drawn, and when its ring last hopped (seconds), so the ring
@@ -727,10 +728,9 @@ private:
     std::map<Entity, PropHop> propHops_;
     // A flat ring, or a part of one, in window pixels: the part from `from` to `to` (0 to 1, clockwise from the top)
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
-    // One model per prop kind (props.h). A kind whose model failed to load has an empty model, and propModel gives
-    // the stand-in, model_0.glb, in its place (also empty if that failed, and the kind is drawn as a pink square).
+    // One model per prop kind (props.h). A kind whose model failed to load has an empty model, and is drawn as a pink
+    // square.
     std::array<Model, PROP_KIND_COUNT> propModels_{};
-    Model fallbackModel_{};
     const Model& propModel(PropKind kind) const;
     // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
     float propTop(PropKind kind) const;
@@ -745,23 +745,13 @@ private:
     TTF_Font* hudFont_ = nullptr;
     std::vector<HudLine> hudLines_;
 
-    // Menus
-    TTF_Font* uiFont_ = nullptr;
-    std::map<std::string, HudLine> uiText_;
-
-    // Smaller font for dense lists
-    TTF_Font* listFont_ = nullptr;
-    std::map<std::string, HudLine> listText_;
-    TextFont statsTitle_, statsRow_;
+    // The menus' font, the smaller font for dense lists, and the Stats popout's two, each with its cache of textures
+    TextFont ui_, list_, statsTitle_, statsRow_;
     // The text set not in use (the menus' while the game's is, and the other way round), swapped in by setMenuText
     struct TextSet {
         TTF_Font* hud = nullptr;
         std::vector<HudLine> hudLines;
-        TTF_Font* ui = nullptr;
-        std::map<std::string, HudLine> uiText;
-        TTF_Font* list = nullptr;
-        std::map<std::string, HudLine> listText;
-        TextFont statsTitle, statsRow;
+        TextFont ui, list, statsTitle, statsRow;
     };
     TextSet parked_;
     bool menuText_ = false;

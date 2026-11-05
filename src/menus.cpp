@@ -46,11 +46,6 @@ std::optional<SaveSummary> findSaveByName(const std::vector<SaveSummary>& saves,
     return std::nullopt;
 }
 
-std::string toLower(std::string s) {
-    for (char& c : s) c = (char)std::tolower((unsigned char)c);
-    return s;
-}
-
 // Sorts the save list. Autosaves always come first, then manual saves. Each group is sorted
 // by the chosen column; ties fall back to the other column.
 void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending) {

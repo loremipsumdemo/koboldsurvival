@@ -2,8 +2,8 @@
 #include "stats.h"
 
 // The UI icons: 32 x 32 pixel PNGs in data/icon/, named icon_<id>.png with no leading zeros, e.g. icon_7.png
-// (data/iconinfo.txt lists them). An id whose picture is missing is drawn with icon_0.png, or, without that either, as
-// a pink square with the id as its number. ICON_NONE (0) asks for no icon at all.
+// (data/iconinfo.txt lists them). An id whose picture is missing is drawn as a pink square with the id as
+// its number. ICON_NONE (0) asks for no icon at all.
 // The ids below are the ones the game asks for. They are file numbers, not an enum: each _FIRST one starts a range,
 // and a stat's icon is its StatId plus ICON_STAT_FIRST.
 

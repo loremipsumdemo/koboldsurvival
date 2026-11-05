@@ -23,8 +23,6 @@ bool dropFromStorage(World& w, int slot);
 // Why the open storage won't take an item: a crafting prop takes only its input, a filtered storage only its sort
 // (props.h: ItemFilter). Empty if it takes it.
 std::string refusalFor(World& w, int item);
-// How many of an item an inventory holds, over all its stacks
-int carriedCount(const Inventory& inv, int item);
 // Moves `count` of the clicked stack's item from the storage unit into the storage: the clicked stack first, then the
 // unit's other stacks of that item. Nothing moves unless all of them fit.
 bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why);

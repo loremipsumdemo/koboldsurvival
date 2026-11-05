@@ -15,7 +15,7 @@
 //     nothing up, takes nothing from anyone and is given nothing. While it is awake its inventory can't be opened,
 //     traded from or dropped from. Once it is Unconscious it can be looted, and taking anything out of it kills it:
 //     it goes to 0 health and its Doom completes at once, so it is a corpse.
-//   - Its picture is data/mob/mob_<kind>.png (mob_0.png stands in for a missing one, data/mobinfo.txt lists them). A
+//   - Its picture is data/mob/mob_<kind>.png (a missing one is the pink square, data/mobinfo.txt lists them). A
 //     kind with a model (MobInfo::model) is drawn in the world by data/model/mob/mob_<nn>.glb instead, and its
 //     portrait is the pink square, as a person's is.
 //   - It belongs to its kind's own faction (MOB_FACTION_BASE + kind - 1, data/factioninfo.txt), unless it was placed in

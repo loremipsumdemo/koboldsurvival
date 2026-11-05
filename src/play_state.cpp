@@ -27,6 +27,12 @@ void closeStorage() {
     storageDrag = -1;
 }
 
+void clearTradeTable() {
+    tradeNpc.clear();
+    tradePlayer.clear();
+    tradeNpcDrag = -1;
+}
+
 ContextMenu contextMenu;
 
 Entity disbandTarget = NULL_ENTITY;

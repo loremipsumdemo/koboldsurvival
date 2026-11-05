@@ -94,6 +94,19 @@ struct Vec2 {
     float x = 0.0f, z = 0.0f;
 };
 
+// World point to pixel coordinates, through a view-projection matrix, for a window W by H. False if it is behind the
+// camera.
+inline bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
+    float c[4];
+    for (int i = 0; i < 4; ++i) {
+        c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
+    }
+    if (c[3] <= 0.0f) return false;
+    sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)W;
+    sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)H;
+    return true;
+}
+
 // A point or direction in 3D, or an RGB color in x, y and z
 struct Vec3 {
     float x = 0.0f, y = 0.0f, z = 0.0f;

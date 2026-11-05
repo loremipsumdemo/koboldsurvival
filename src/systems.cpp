@@ -1002,8 +1002,7 @@ bool dropStack(World& w, Entity unit, int slot) {
     ItemStack& s = inv->slots[slot];
     if (s.item == 0 || s.count <= 0) return false;
 
-    const ItemDef* def = findItem(s.item);
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }),
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), itemNameOf(s.item) }),
              LogKind::Drop, npcOnly(w, unit));
     queueUnitLabel(unit, itemLossLabelFor(s.count, s.item), true);   // "-Iron Ore" over its head
     queueSound(Sfx::Drop);
@@ -1089,8 +1088,7 @@ int pickupSystem(World& w, Terrain& t) {
                 continue;
             }
             const int count = gi->count;
-            const ItemDef* def = findItem(gi->item);
-            const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
+            const std::string itemName = itemNameOf(gi->item);
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left < count) {
                 queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup, npcOnly(w, u));
@@ -1507,11 +1505,6 @@ int workersAt(World& w, Entity prop) {
     int n = 0;
     for (Entity o : w.view<Working>()) n += w.get<Working>(o)->prop == prop ? 1 : 0;
     return n;
-}
-
-std::string itemNameFor(int item) {
-    const ItemDef* def = findItem(item);
-    return def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
 }
 
 // Uses up one of an item from a row of slots. False if there is none.
@@ -2011,7 +2004,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                         }
                     }
                 }
-                const std::string outName = itemNameFor(outItem);
+                const std::string outName = itemNameOf(outItem);
                 // A finished item. The input is checked at this moment: if it is gone, nothing is made and the work
                 // stops. The item goes to the next worker in turn that has room for it. If none has, nothing is used
                 // up or made: the bar stays full, the workers stop, and the next unit with room to work here finishes it.
@@ -2069,7 +2062,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             // Now and then a resource prop gives its other item instead (a Poison Mushroom, one time in ten)
             int gives = info.item;
             if (info.altItem > 0 && info.altOneIn > 0 && rng.range(1, info.altOneIn) == 1) gives = info.altItem;
-            const std::string itemName = itemNameFor(gives);
+            const std::string itemName = itemNameOf(gives);
             Inventory* inv = w.get<Inventory>(got);
             if (inv && addToInventory(*inv, gives, 1) == 0) {
                 // A unit that is not yours (a camp's woodcutter) gathers quietly: no label, log line or sound
@@ -2121,7 +2114,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
     if (moved > 0) {
         propStorageChanged(w, prop);
         if (w.has<Commandable>(unit)) {
-            queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameFor(movedItem),
+            queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameOf(movedItem),
                                                     lang(propInfo(p->kind).nameKey) }), LogKind::Pickup, npcOnly(w, unit));
         }
     }
@@ -2132,13 +2125,8 @@ namespace {
 
 // How many of an item a unit carries
 int carriedCount(World& w, Entity u, int item) {
-    int n = 0;
-    if (const Inventory* inv = w.get<Inventory>(u)) {
-        for (const ItemStack& s : inv->slots) {
-            if (s.item == item && s.count > 0) n += s.count;
-        }
-    }
-    return n;
+    const Inventory* inv = w.get<Inventory>(u);
+    return inv ? carriedCount(*inv, item) : 0;
 }
 
 // A unit's faction, the Player Faction for one with none

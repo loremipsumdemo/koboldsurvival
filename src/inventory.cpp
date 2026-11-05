@@ -107,3 +107,11 @@ void sortInventoryByType(Inventory& inv) {
         return key(a) < key(b);
     });
 }
+
+int carriedCount(const Inventory& inv, int item) {
+    int total = 0;
+    for (const ItemStack& s : inv.slots) {
+        if (s.item == item && s.count > 0) total += s.count;
+    }
+    return total;
+}

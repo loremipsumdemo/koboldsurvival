@@ -1,3 +1,4 @@
+#include "textcase.h"
 #include "fontlist.h"
 #include <algorithm>
 #include <cstdlib>
@@ -15,7 +16,7 @@ void addFontsIn(const fs::path& dir, std::vector<std::string>& out) {
         std::error_code fileEc;
         if (!it->is_regular_file(fileEc)) continue;
         std::string ext = it->path().extension().string();
-        for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+        ext = toLower(ext);
         if (ext == ".ttf" || ext == ".otf") out.push_back(it->path().string());
         if (out.size() >= 2000) return;
     }

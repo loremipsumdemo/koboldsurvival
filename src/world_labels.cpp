@@ -32,11 +32,7 @@ std::string itemLossLabel(int count, const std::string& itemName) {
 }
 
 namespace {
-std::string labelItemName(int item) {
-    const ItemDef* def = findItem(item);
-    return def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
-}
 }
 
-std::string itemGainLabelFor(int count, int item) { return itemGainLabel(count, labelItemName(item)); }
-std::string itemLossLabelFor(int count, int item) { return itemLossLabel(count, labelItemName(item)); }
+std::string itemGainLabelFor(int count, int item) { return itemGainLabel(count, itemNameOf(item)); }
+std::string itemLossLabelFor(int count, int item) { return itemLossLabel(count, itemNameOf(item)); }

@@ -206,7 +206,7 @@ bool App::behaviorExtraClick(Entity unit, const SidebarLayout& sl, float x, floa
 bool App::unitPanelHovered(int W, int H) {
     float mx = 0.0f, my = 0.0f;
     SDL_GetMouseState(&mx, &my);
-    return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel.contains(mx, my);
+    return squadPanelLayout(W, H).panel.contains(mx, my);
 }
 
 std::vector<std::string> App::menuLabels() {
@@ -223,8 +223,7 @@ std::vector<std::string> App::menuLabels() {
 void App::useSlot(Entity unit, int slot) {
     const Inventory* inv = world.get<Inventory>(unit);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return;
-    const ItemDef* def = findItem(inv->slots[slot].item);
-    const std::string itemName = def ? itemDisplayName(*def) : std::string(lang("MISC_THAT_ITEM"));
+    const std::string itemName = itemNameOf(inv->slots[slot].item);
     switch (useStackInSlot(world, unit, slot)) {
     case UseResult::Used:
         showNotice(langf("MISC_USED", { itemName }));
@@ -300,13 +299,13 @@ bool App::panelFolded(PanelId which) {
 }
 
 Rect App::shownPanel(PanelId which, int W, int H) {
-    if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel;
+    if (which == PanelId::Squad) return squadPanelLayout(W, H).panel;
     if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).panel;
     return gameLogPanel(W, H).panel;
 }
 
 Rect App::panelBarOf(PanelId which, int W, int H) {
-    if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).title;
+    if (which == PanelId::Squad) return squadPanelLayout(W, H).title;
     if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).title;
     return gameLogPanel(W, H).bar;
 }
@@ -402,7 +401,7 @@ void App::toggleLock(PanelId which) {
 }
 
 Rect App::lockRectOf(PanelId which, int W, int H) {
-    if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).lock;
+    if (which == PanelId::Squad) return squadPanelLayout(W, H).lock;
     if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).lock;
     return gameLogPanel(W, H).lock;
 }
@@ -469,7 +468,7 @@ void App::moveSelectedTo(float x, float z) {
 
 bool App::overPanels(float x, float y, int W, int H) {
     const std::vector<std::string> labels = menuLabels();
-    return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll),
+    return overGamePanels(squadPanelLayout(W, H),
                           sidebarFor(W, H, sidebarScroll), true, x, y)
         || gameLogPanel(W, H).panel.contains(x, y)
         || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
@@ -491,4 +490,9 @@ bool App::pointerOverPanels(int W, int H) {
     float mx = 0.0f, my = 0.0f;
     SDL_GetMouseState(&mx, &my);
     return overPanels(mx, my, W, H);
+}
+
+UnitPanelLayout App::squadPanelLayout(int W, int H) {
+    return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
+                           (int)reputationFactions().size(), repScroll);
 }

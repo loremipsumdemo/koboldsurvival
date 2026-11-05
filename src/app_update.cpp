@@ -392,8 +392,7 @@ void App::updateHover() {
                 items.insert(items.begin(), labelled);
         }
         for (Entity e : items) {
-            const std::string name = itemNameOf(world.get<GroundItem>(e)->item);
-            under.push_back({ name.empty() ? std::string(lang("MISC_UNKNOWN_ITEM")) : name, HUD_ITEM_COLOR });
+            under.push_back({ itemNameOf(world.get<GroundItem>(e)->item), HUD_ITEM_COLOR });
         }
 
         for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {

@@ -19,11 +19,6 @@ std::vector<int> sortedByName(std::vector<int> ids) {
 
 } // namespace
 
-std::string itemNameOf(int item) {
-    const ItemDef* d = findItem(item);
-    return d ? itemDisplayName(*d) : std::string();
-}
-
 std::string cleanName(const std::string& s) {
     const size_t a = s.find_first_not_of(' ');
     if (a == std::string::npos) return "";

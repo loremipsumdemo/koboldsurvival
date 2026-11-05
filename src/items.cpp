@@ -1,4 +1,5 @@
 #include "items.h"
+#include "textcase.h"
 #include "language.h"
 #include <cctype>
 #include <cstdio>
@@ -9,13 +10,6 @@
 #include "pak.h"
 
 namespace {
-
-std::string trim(const std::string& s) {
-    size_t a = 0, b = s.size();
-    while (a < b && std::isspace((unsigned char)s[a])) ++a;
-    while (b > a && std::isspace((unsigned char)s[b - 1])) --b;
-    return s.substr(a, b - a);
-}
 
 bool parseIntText(const std::string& v, int& out) {
     if (v.empty()) return false;
@@ -67,7 +61,7 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
             size_t lead = 0;
             while (lead < tag.size() && std::isspace((unsigned char)tag[lead])) ++lead;
             tag = tag.substr(lead);
-            for (char& c : tag) c = (char)std::tolower((unsigned char)c);
+            tag = toLower(tag);
             if (!tag.empty()) item.tags.push_back(tag);
             at = comma + 1;
         }
@@ -244,4 +238,9 @@ std::string itemDisplayDescription(const ItemDef& d) {
     const std::string key = "ITEM_" + std::to_string(d.id) + "_DESC";
     const std::string text = lang(key);
     return text == key ? d.description : text;
+}
+
+std::string itemNameOf(int item) {
+    const ItemDef* d = findItem(item);
+    return d ? itemDisplayName(*d) : std::string(lang("MISC_UNKNOWN_ITEM"));
 }

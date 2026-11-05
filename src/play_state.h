@@ -43,6 +43,8 @@ extern Entity storageUnit;
 extern int storageDrag;
 
 void closeStorage();
+// Empties both sides of the trade and lets go of a dragged NPC stack
+void clearTradeTable();
 
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.

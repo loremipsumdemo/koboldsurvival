@@ -1,3 +1,4 @@
+#include "textcase.h"
 #include "world_format.h"
 
 #include <algorithm>
@@ -212,7 +213,7 @@ std::vector<WorldEntry> listWorlds(const std::string& mapsFolder) {
 
 void sortWorldEntries(std::vector<WorldEntry>& worlds, bool byName, bool ascending) {
     auto lower = [](std::string s) {
-        for (char& c : s) c = (char)std::tolower((unsigned char)c);
+        s = toLower(s);
         return s;
     };
     std::stable_sort(worlds.begin(), worlds.end(), [&](const WorldEntry& a, const WorldEntry& b) {

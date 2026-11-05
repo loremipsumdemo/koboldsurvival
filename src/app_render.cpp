@@ -152,7 +152,7 @@ void App::render() {
         }
         {
             const std::vector<Entity> own = ownUnitList();
-            const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+            const UnitPanelLayout L = squadPanelLayout(winW, winH);
             unitPanelRow = L.scrollRow;
             renderer.drawUnitPanel(world, L, own, runMode, repView);
             drawPanelLock(PanelId::Squad);

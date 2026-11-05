@@ -1,5 +1,20 @@
 #pragma once
+#include <cctype>
 #include <string>
+
+// The text in lower case (ASCII letters only; other bytes are kept as they are)
+inline std::string toLower(std::string s) {
+    for (char& c : s) c = (char)std::tolower((unsigned char)c);
+    return s;
+}
+
+// The text with the whitespace at both ends removed
+inline std::string trim(const std::string& s) {
+    size_t a = 0, b = s.size();
+    while (a < b && std::isspace((unsigned char)s[a])) ++a;
+    while (b > a && std::isspace((unsigned char)s[b - 1])) --b;
+    return s.substr(a, b - a);
+}
 
 // Upper case for UTF-8 text, for the title screen's and menus' capital-letter labels. It covers the letters of the
 // game's languages that have case: Latin (with Latin-1, Latin Extended-A, Romanian and Vietnamese letters), Greek and

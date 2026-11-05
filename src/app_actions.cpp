@@ -33,11 +33,7 @@ void App::refuse(const std::string& text) {
 
 void App::closePanel() {
     panelOpen = false;
-    ask = Ask::None;
-    pendingOverwrite.reset();
-    pendingLoad.reset();
-    pendingDelete.reset();
-    deleteHolding = false;
+    clearQuestion();
     SDL_StopTextInput(window);
 }
 
@@ -45,11 +41,7 @@ void App::openPanel(bool saveMode) {
     panelOpen = true;
     panelSaveMode = saveMode;
     panelFrom = screen;
-    ask = Ask::None;
-    pendingOverwrite.reset();
-    pendingLoad.reset();
-    pendingDelete.reset();
-    deleteHolding = false;
+    clearQuestion();
     saveName.clear();
     listOffset = 0;
     sortKey = SortKey::Time;
@@ -779,4 +771,12 @@ void App::performAction(Action action, int param) {
         running = false;
         return;
     }
+}
+
+void App::clearQuestion() {
+    ask = Ask::None;
+    pendingOverwrite.reset();
+    pendingLoad.reset();
+    pendingDelete.reset();
+    deleteHolding = false;
 }

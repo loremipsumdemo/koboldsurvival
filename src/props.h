@@ -131,7 +131,7 @@ enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists
-//       them). A missing model is logged and drawn with model_0.glb, or as a pink square if that is missing too.
+//       them). A missing model is logged and drawn as a pink square.
 // nameKey: its name in the language files, shown in the hover list and the storage panel.
 // size: the model is scaled so its longest side is this many tiles.
 // use: what right-clicking it does.

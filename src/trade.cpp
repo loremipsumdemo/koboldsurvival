@@ -191,7 +191,5 @@ void completeTrade(World& w, Entity npc, Entity player) {
     }
     if (fee > 0) grantXp(w, player, StatId::Charisma, fee, lang("MISC_REASON_FEES"));
     tradeOpen = false;
-    tradeNpc.clear();
-    tradePlayer.clear();
-    tradeNpcDrag = -1;
+    clearTradeTable();
 }

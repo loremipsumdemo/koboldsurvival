@@ -109,7 +109,8 @@ struct App {
     void render();                           // the frame (app_render.cpp)
 
     // ---- Methods made from main()'s lambdas ----
-// app_actions.cpp
+    // app_actions.cpp
+    void clearQuestion();                    // the save popout asks nothing, about no save
     void clearCombatText();
     void refreshSaves();
     void refreshMaps();
@@ -140,6 +141,7 @@ struct App {
     void settingsClick(float x, float y, int W, int H);
     void performAction(Action action, int param);
     // app_panels.cpp
+    UnitPanelLayout squadPanelLayout(int W, int H);   // the Squad Panel's layout as it stands
     std::vector<Entity> ownUnitList();
     bool sidebarUp();
     std::vector<BehaviorOption> behaviorOptionsFor(Entity u);
@@ -178,6 +180,7 @@ struct App {
     bool holdTarget(int W, int H, float x, float y, float& gx, float& gz);
     bool pointerOverPanels(int W, int H);
     // app_talk.cpp
+    void openTrade(bool free);               // the trade popout, on an empty table; free: between your own units
     void sayAs(Entity who, const std::string& text, bool player);
     void endTalk();
     void requestTrade(bool npcSide, Entity owner, int slot);

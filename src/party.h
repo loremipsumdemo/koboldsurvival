@@ -78,7 +78,6 @@ std::vector<MobKind> regularMobKinds();
 int partyPeople(const Party& p);
 
 // The display name of an item, or an empty string for id 0 or an unknown id
-std::string itemNameOf(int item);
 
 // The name with spaces removed from both ends, cut to PARTY_NAME_CHARS characters
 std::string cleanName(const std::string& s);

@@ -56,6 +56,8 @@ const ItemDef* findItem(int id);
 
 // The item's name and description in the language in use. A name the language lacks falls back to the English one.
 std::string itemDisplayName(const ItemDef& d);
+// The display name of an item by its id, or "Unknown item" for an id that is not in the item list
+std::string itemNameOf(int item);
 std::string itemDisplayDescription(const ItemDef& d);
 
 // Two capital letters for an item shown as a color block: the first letters of its first two

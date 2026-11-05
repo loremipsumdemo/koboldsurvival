@@ -1,3 +1,4 @@
+#include "textcase.h"
 #include "fonts.h"
 #include "fontlist.h"
 #include "pak.h"
@@ -35,7 +36,7 @@ int suitedIndex(const std::string& languageId) {
 // The file name of a path, in lower case
 std::string lowerFileName(const std::string& path) {
     std::string name = fs::path(path).filename().string();
-    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+    name = toLower(name);
     return name;
 }
 

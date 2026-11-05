@@ -43,18 +43,6 @@ const RGBA LABEL_TEXT{ 1.0f, 0.93f, 0.86f, 1.0f };
 const RGBA LABEL_HOT_FILL{ 0.12f, 0.04f, 0.02f, 0.85f };
 const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
 
-// World point to pixel coordinates. False if it is behind the camera.
-bool projectPoint(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
-    float c[4];
-    for (int i = 0; i < 4; ++i) {
-        c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
-    }
-    if (c[3] <= 0.0f) return false;
-    sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)W;
-    sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)H;
-    return true;
-}
-
 // Whether the chunk under (x, z) is loaded. Items on unloaded ground are not drawn.
 bool groundLoaded(const Terrain& t, float x, float z) {
     const int cx = (int)std::floor(x / CHUNK_TILES), cz = (int)std::floor(z / CHUNK_TILES);
@@ -70,20 +58,14 @@ struct ItemOnScreen {
 // and shrinks with the zoom like the units. aspect is the picture's width over its height (1 for an item).
 bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspect, ItemOnScreen& out) {
     float bx, by, tx, ty, mx, my;
-    if (!projectPoint(vp, tr.x, tr.y, tr.z, W, H, bx, by)) return false;
-    if (!projectPoint(vp, tr.x, tr.y + ITEM_GLYPH_H, tr.z, W, H, tx, ty)) return false;
-    if (!projectPoint(vp, tr.x, tr.y + ITEM_GLYPH_H * 0.5f, tr.z, W, H, mx, my)) return false;
+    if (!worldToScreen(vp, tr.x, tr.y, tr.z, W, H, bx, by)) return false;
+    if (!worldToScreen(vp, tr.x, tr.y + ITEM_GLYPH_H, tr.z, W, H, tx, ty)) return false;
+    if (!worldToScreen(vp, tr.x, tr.y + ITEM_GLYPH_H * 0.5f, tr.z, W, H, mx, my)) return false;
     out.cx = mx;
     out.top = std::min(by, ty);
     out.bottom = std::max(by, ty);
     out.halfW = (out.bottom - out.top) * 0.5f * aspect;
     return true;
-}
-
-// The name of an item for display
-std::string itemName(int item) {
-    const ItemDef* d = findItem(item);
-    return d ? itemDisplayName(*d) : std::string(lang("MISC_UNKNOWN_ITEM"));
 }
 
 struct V3 { float x, y, z; };
@@ -371,7 +353,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     LoadStages stages("Start-up", progress);
     font_ = font;
     hudFont_ = hudFont;
-    uiFont_ = uiFont;
+    ui_.font = uiFont;
 
     colorProgram_ = linkProgram(COLOR_VS, COLOR_FS);
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
@@ -433,12 +415,9 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     }
 
     // Images and models
-    // The _0 file of each kind of picture stands in for one that is missing (and pink_ when that is missing too)
-    const int pictureCount = 3 + UNIT_SPRITE_COUNT;
+    // A picture that is missing is drawn as the pink square (pink_)
+    const int pictureCount = 1 + UNIT_SPRITE_COUNT;
     stages.stage(0.0f, "LOADING_PICTURES", pictureCount);
-    itemNone_ = loadOptionalImage("data/item/item_0.png");
-    emoteFallback_ = loadOptionalImage("data/emote/emote_0.png");
-    iconFallback_ = loadOptionalImage("data/icon/icon_0.png");
     // The title screen's logo is drawn well under its own size, so it gets mipmaps to stay smooth
     titleLogo_ = loadOptionalImage("data/illustration/title.png");
     if (titleLogo_.tex) {
@@ -446,13 +425,13 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     }
-    stages.step(0.03f, 3);
+    stages.step(0.03f, 1);
     // Each unit model's profile picture, numbered as the models are
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/profile/profile_%02d.png", i);
         profilePics_[(size_t)i - 1] = loadOptionalImage(path);
-        stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 3 + i);
+        stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 1 + i);
     }
     stages.stage(0.05f, "LOADING_UNIT_MODELS", UNIT_SPRITE_COUNT);
     // Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
@@ -515,14 +494,13 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         }
         stages.step(0.4f + 0.1f * (float)mobModelsDone / (float)std::max(1, mobModelCount), mobModelsDone);
     }
-    stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT + 1);
-    mobFallback_ = loadOptionalImage("data/mob/mob_0.png");
+    stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT);
     mobSprites_.reserve(MOB_KIND_COUNT);
     for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/mob/mob_%d.png", i);
         mobSprites_.push_back(loadOptionalImage(path));
-        stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i + 1);
+        stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i);
     }
     stages.stage(0.55f, "LOADING_SKY");
 
@@ -549,7 +527,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glBindVertexArray(0);
     {
         // One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture
-        // that is missing along with its _0 stand-in
+        // that is missing
         auto texel = [](TextTex& t, unsigned char r, unsigned char g, unsigned char b) {
             const unsigned char px[4] = { r, g, b, 255 };
             glGenTextures(1, &t.tex);
@@ -563,28 +541,11 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         texel(white_, 255, 255, 255);
         texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
     }
-    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT + 1);
+    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT);
 
-    // The stand-in model, model_0.glb, for a kind whose own model is missing or unreadable
-    {
-        const char* fallbackFile = "data/model/model_0.glb";
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        if (pakFind(fallbackFile, bytes, size)) {
-            const bool read = loadGLBModel(fallbackFile, fallbackModel_);
-            const float extent = std::max({ fallbackModel_.maxX - fallbackModel_.minX, fallbackModel_.maxY - fallbackModel_.minY,
-                                            fallbackModel_.maxZ - fallbackModel_.minZ });
-            if (!read || !fallbackModel_.vao || fallbackModel_.draws.empty() || !(extent > 0.0f)) {
-                destroyModel(fallbackModel_);
-                fallbackModel_ = Model{};
-                SDL_Log("The stand-in model %s could not be read or has nothing to draw", fallbackFile);
-            }
-        }
-    }
-    stages.step(0.58f, 1);
-    const char* standIn = fallbackModel_.vao ? "with model_0.glb" : "as a pink square";
+    const char* standIn = "as a pink square";
     // Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
-    // missing or misnamed shows up at once: that kind is drawn with the stand-in (propModel), and log.txt names it.
+    // missing or misnamed shows up at once: that kind is drawn as a pink square, and log.txt names it.
     for (int k = 0; k < PROP_KIND_COUNT; ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
@@ -597,14 +558,14 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
             const bool read = loadGLBModel(info.file, m);
             const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
             if (!read || !m.vao || m.draws.empty() || !(extent > 0.0f)) {
-                // Unreadable, or nothing in it to draw: drop what was made, so the stand-in shows instead
+                // Unreadable, or nothing in it to draw: drop what was made, so the pink square shows instead
                 destroyModel(m);
                 m = Model{};
                 SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
                         info.file, lang(info.nameKey).c_str(), standIn);
             }
         }
-        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 2);
+        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
     }
     stages.finish();
 
@@ -615,7 +576,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &white_, &pink_, &itemNone_, &emoteFallback_, &iconFallback_ };
+    TextTex* textures[] = { &white_, &pink_ };
     for (TextTex* g : textures) {
         if (g->tex) glDeleteTextures(1, &g->tex);
         g->tex = 0;
@@ -642,7 +603,6 @@ void Renderer::shutdown() {
     clearActiveText();
     swapTextSet();
     for (Model& m : propModels_) destroyModel(m);
-    destroyModel(fallbackModel_);
 
     glDeleteProgram(skyProgram_);
     glDeleteBuffers(1, &skyVbo_);
@@ -920,7 +880,7 @@ const TextTex& Renderer::mobPicture(MobKind kind) const {
     const int i = idx(kind) - 1;
     if (i >= 0 && i < MOB_KIND_COUNT && mobInfo(kind).model > 0) return pink_;
     if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
-    return mobFallback_.tex ? mobFallback_ : pink_;
+    return pink_;
 }
 
 void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
@@ -1083,12 +1043,7 @@ void Renderer::beginUi(int winW, int winH) {
     // Game log lines are new strings in every fight, so the list cache would grow for the whole session.
     // It is cleared here, once a frame, when no text reference is held: anything drawn again is rebuilt.
     constexpr size_t LIST_CACHE_LIMIT = 512;
-    if (listText_.size() > LIST_CACHE_LIMIT) {
-        for (auto& entry : listText_) {
-            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-        }
-        listText_.clear();
-    }
+    if (list_.lines.size() > LIST_CACHE_LIMIT) clearFont(list_);
     uiW_ = winW;
     uiH_ = winH;
     glViewport(0, 0, winW, winH);
@@ -1379,27 +1334,6 @@ float Renderer::profileCardHeight(int H) {
     return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 6.0f * statRow + 4.0f * s;
 }
 
-Renderer::HudLine& Renderer::uiLine(const std::string& s) {
-    auto it = uiText_.find(s);
-    if (it != uiText_.end()) return it->second;
-
-    HudLine hl;
-    hl.text = s;
-    int tw = 0, th = 0;
-    TTF_GetStringSize(uiFont_, s.c_str(), s.size(), &tw, &th);
-    if (s.find_first_not_of(' ') == std::string::npos) {
-        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
-        TTF_GetStringSize(uiFont_, "Ag", 2, &tw, &th);
-        hl.w = 0.0f;
-        hl.h = (float)th;
-        return uiText_[s] = hl;
-    }
-    hl.tex = makeGlyphTexture(uiFont_, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
-    hl.w = (float)tw;
-    hl.h = (float)th;
-    return uiText_[s] = hl;
-}
-
 float Renderer::uiTextWidth(const std::string& s) {
     return uiLine(s).w;
 }
@@ -1409,17 +1343,7 @@ float Renderer::uiTextHeight(const std::string& s) {
 }
 
 void Renderer::drawUiText(const std::string& s, float x, float y, RGBA tint) {
-    HudLine& hl = uiLine(s);
-    if (!hl.tex.tex) return;
-    float v[4 * 5] = {
-        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
-        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
-        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
-        x,         y,        0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(hl.tex.tex, v, tint);
+    drawFontText(ui_, s, x, y, tint);
 }
 
 void Renderer::drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint) {
@@ -1450,15 +1374,7 @@ void Renderer::drawUiTextScaled(const std::string& s, float x, float y, float k,
     HudLine& hl = uiLine(s);
     if (!hl.tex.tex) return;
     const float w = hl.w * k, h = hl.h * k;
-    float v[4 * 5] = {
-        x,     y + h, 0.0f, 0.0f, 1.0f,
-        x + w, y + h, 0.0f, 1.0f, 1.0f,
-        x + w, y,     0.0f, 1.0f, 0.0f,
-        x,     y,     0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(hl.tex.tex, v, tint);
+    drawTexture(hl.tex.tex, x, y, w, h, tint);
 }
 
 // Draws ui text centred in a box, shrunk to fit it when automatic text fit is on
@@ -1501,32 +1417,15 @@ void Renderer::drawTip() {
 
 void Renderer::setListFont(TTF_Font* font) {
     // Textures made with the old font would be stale, so drop them
-    for (auto& entry : listText_) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    listText_.clear();
-    listFont_ = font;
+    clearFont(list_);
+    list_.font = font;
 }
 
-Renderer::HudLine& Renderer::listLine(const std::string& s) {
-    auto it = listText_.find(s);
-    if (it != listText_.end()) return it->second;
-
-    HudLine hl;
-    hl.text = s;
-    int tw = 0, th = 0;
-    TTF_GetStringSize(listFont_, s.c_str(), s.size(), &tw, &th);
-    if (s.find_first_not_of(' ') == std::string::npos) {
-        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
-        TTF_GetStringSize(listFont_, "Ag", 2, &tw, &th);
-        hl.w = 0.0f;
-        hl.h = (float)th;
-        return listText_[s] = hl;
+void Renderer::clearFont(TextFont& f) {
+    for (auto& entry : f.lines) {
+        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
     }
-    hl.tex = makeGlyphTexture(listFont_, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
-    hl.w = (float)tw;
-    hl.h = (float)th;
-    return listText_[s] = hl;
+    f.lines.clear();
 }
 
 // Stats popout fonts: each one keeps its own cache of text textures
@@ -1536,28 +1435,14 @@ void Renderer::clearActiveText() {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
     hudLines_.clear();
-    for (auto& entry : uiText_) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    uiText_.clear();
-    for (auto& entry : listText_) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    listText_.clear();
-    TextFont* statsFonts[] = { &statsTitle_, &statsRow_ };
-    for (TextFont* f : statsFonts) {
-        for (auto& entry : f->lines) {
-            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-        }
-        f->lines.clear();
-    }
+    for (TextFont* f : { &ui_, &list_, &statsTitle_, &statsRow_ }) clearFont(*f);
 }
 
 void Renderer::replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
     clearActiveText();
     hudFont_ = hud;
-    uiFont_ = ui;
-    listFont_ = list;
+    ui_.font = ui;
+    list_.font = list;
     statsTitle_.font = statsTitle;
     statsRow_.font = statsRow;
 }
@@ -1565,10 +1450,8 @@ void Renderer::replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, T
 void Renderer::swapTextSet() {
     std::swap(hudFont_, parked_.hud);
     std::swap(hudLines_, parked_.hudLines);
-    std::swap(uiFont_, parked_.ui);
-    std::swap(uiText_, parked_.uiText);
-    std::swap(listFont_, parked_.list);
-    std::swap(listText_, parked_.listText);
+    std::swap(ui_, parked_.ui);
+    std::swap(list_, parked_.list);
     std::swap(statsTitle_, parked_.statsTitle);
     std::swap(statsRow_, parked_.statsRow);
 }
@@ -1576,7 +1459,7 @@ void Renderer::swapTextSet() {
 void Renderer::setMenuText(bool on) {
     if (on == menuText_) return;
     // Without menu fonts there is nothing to swap to
-    if (on && !parked_.ui) return;
+    if (on && !parked_.ui.font) return;
     swapTextSet();
     menuText_ = on;
 }
@@ -1601,22 +1484,13 @@ void Renderer::drawBigText(const std::string& text, float cx, float cy, float h,
         return;
     }
     const float w = t.aspect * h, x = cx - w * 0.5f, y = cy - h * 0.5f;
-    const float v[4 * 5] = { x, y + h, 0.0f, 0.0f, 1.0f, x + w, y + h, 0.0f, 1.0f, 1.0f,
-                             x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(t.tex, v, tint);
+    drawTexture(t.tex, x, y, w, h, tint);
 }
 
 void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
     // Textures made with the old fonts would be stale, so drop them
-    TextFont* fonts[] = { &statsTitle_, &statsRow_ };
-    for (TextFont* f : fonts) {
-        for (auto& entry : f->lines) {
-            if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-        }
-        f->lines.clear();
-    }
+    clearFont(statsTitle_);
+    clearFont(statsRow_);
     statsTitle_.font = title;
     statsRow_.font = rows;
 }
@@ -1647,15 +1521,7 @@ Renderer::HudLine& Renderer::fontLine(TextFont& f, const std::string& s) {
 void Renderer::drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint) {
     HudLine& hl = fontLine(f, s);
     if (!hl.tex.tex) return;
-    float v[4 * 5] = {
-        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
-        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
-        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
-        x,         y,        0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(hl.tex.tex, v, tint);
+    drawTexture(hl.tex.tex, x, y, hl.w, hl.h, tint);
 }
 
 float Renderer::fontTextWidth(TextFont& f, const std::string& s) {
@@ -1696,18 +1562,7 @@ void Renderer::drawListButton(const Rect& r, const std::string& label, bool hove
 }
 
 void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
-    if (!listFont_) return;
-    HudLine& hl = listLine(s);
-    if (!hl.tex.tex) return;
-    float v[4 * 5] = {
-        x,         y + hl.h, 0.0f, 0.0f, 1.0f,
-        x + hl.w,  y + hl.h, 0.0f, 1.0f, 1.0f,
-        x + hl.w,  y,        0.0f, 1.0f, 0.0f,
-        x,         y,        0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(hl.tex.tex, v, tint);
+    drawFontText(list_, s, x, y, tint);
 }
 
 void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
@@ -1730,15 +1585,15 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
 
 // The sprite for a unit, or the stand-in if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
-    // A mob's picture is its kind's (mob_<kind>.png), with mob_0.png for a missing one. A kind drawn by a model has the
-    // pink square for its portrait, as a person has.
+    // A mob's picture is its kind's (mob_<kind>.png), with the pink square for a missing one. A kind drawn by a model has
+    // the pink square for its portrait, as a person has.
     if (const Mob* m = w.get<Mob>(e)) {
         const int i = idx(m->kind) - 1;
         // A kind meant to be drawn by a model has no picture of its own: the pink square, standing in the world as a
         // billboard when the model is missing, and its portrait always
         if (mobInfo(m->kind).model > 0) return pink_;
         if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
-        return mobFallback_.tex ? mobFallback_ : pink_;
+        return pink_;
     }
     return pink_;   // a person is drawn by a model; the pink square stands in for a missing one
 }
@@ -1887,7 +1742,7 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         bool seen = true;
         for (int c = 0; c < 8 && seen; ++c) {
             float sx = 0.0f, sy = 0.0f;
-            seen = projectPoint(vp, tr->x + ((c & 1) ? hx : -hx), baseY + ((c & 2) ? h : 0.0f),
+            seen = worldToScreen(vp, tr->x + ((c & 1) ? hx : -hx), baseY + ((c & 2) ? h : 0.0f),
                                 tr->z + ((c & 4) ? hz : -hz), winW, winH, sx, sy);
             if (c == 0) { x0 = x1 = sx; y0 = y1 = sy; }
             x0 = std::min(x0, sx); x1 = std::max(x1, sx);
@@ -2150,7 +2005,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (propModel(kind).vao) {
             drawModel(propModel(kind), tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
         } else {
-            // No model, and no model_0.glb: a pink square as tall as the prop's size, standing on its spot and turned to the camera
+            // No model: a pink square as tall as the prop's size, standing on its spot and turned to the camera
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
@@ -2562,6 +2417,17 @@ void Renderer::pollOverview() {
     overviewExtent_ = pic.px > 0 ? pic.extent() : 1.0f;
 }
 
+void Renderer::drawTexture(GLuint tex, float x, float y, float w, float h, RGBA tint) {
+    drawUiQuad(tex, x, y, x + w, y + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
+}
+
+void Renderer::drawPortrait(const TextTex& g, const Rect& square, float saturation) {
+    if (!g.tex) return;
+    setSaturation(saturation);
+    drawFitted(g, square, WHITE);
+    setSaturation(1.0f);
+}
+
 void Renderer::drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
                           RGBA tint) {
     // Vertices BL, BR, TR, TL: the top edge (y0) takes the top texture coordinate v0
@@ -2746,11 +2612,11 @@ void Renderer::drawCloseButton(const Rect& r) {
 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
     std::vector<std::string> out;
-    if (!listFont_) return out;
+    if (!list_.font) return out;
     // Measured without making a texture for every trial line
     const auto width = [this](const std::string& s) {
         int tw = 0, th = 0;
-        if (!s.empty()) TTF_GetStringSize(listFont_, s.c_str(), s.size(), &tw, &th);
+        if (!s.empty()) TTF_GetStringSize(list_.font, s.c_str(), s.size(), &tw, &th);
         return (float)tw;
     };
     std::string cur;
@@ -2836,11 +2702,7 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
 void Renderer::drawItemPictureAt(float cx, float cy, int item, float alpha) {
     const float x = std::floor(cx - ITEM_PICTURE_PX * 0.5f + 0.5f), y = std::floor(cy - ITEM_PICTURE_PX * 0.5f + 0.5f);
     const float w = ITEM_PICTURE_PX, h = ITEM_PICTURE_PX;
-    const float v[4 * 5] = { x, y + h, 0.0f, 0.0f, 1.0f, x + w, y + h, 0.0f, 1.0f, 1.0f,
-                             x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(itemTexture(item)->tex, v, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
+    drawTexture(itemTexture(item)->tex, x, y, w, h, RGBA{ 1.0f, 1.0f, 1.0f, alpha });
 }
 
 void Renderer::drawItemPicture(const Rect& cell, int item, float alpha) {
@@ -2863,15 +2725,7 @@ void Renderer::drawUiTextLarge(const std::string& s, float cx, float cy, float s
     if (!hl.tex.tex) return;
     const float w = hl.w * scale, h = hl.h * scale;
     const float x = cx - w * 0.5f, y = cy - h * 0.5f;
-    float v[4 * 5] = {
-        x,     y + h, 0.0f, 0.0f, 1.0f,
-        x + w, y + h, 0.0f, 1.0f, 1.0f,
-        x + w, y,     0.0f, 1.0f, 0.0f,
-        x,     y,     0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(hl.tex.tex, v, tint);
+    drawTexture(hl.tex.tex, x, y, w, h, tint);
 }
 
 // A black bar across the top at 30% opacity, with PAUSED in large white letters, centred. With a hint, a line under
@@ -3180,7 +3034,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         const PropKind kind = w.get<Prop>(e)->kind;
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
         // Above the prop's name tag when names are shown
         // Above the prop's block of name lines when names are shown (the block's top, from drawPropNames this frame)
         float above = sy - (names ? listTextHeight("Ag") + 2.0f * s : 0.0f);
@@ -3237,11 +3091,7 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         else if (phase >= 0.978f && phase < 0.982f) jolt = 3.0f;
         else if (phase >= 0.986f && phase < 0.990f) jolt = -1.0f;
         const float x = L.name.x + sway + jolt * s, y = L.name.y + (L.name.h - h) * 0.5f;
-        const float v[4 * 5] = { x, y + h, 0.0f, 0.0f, 1.0f, x + w, y + h, 0.0f, 1.0f, 1.0f,
-                                 x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
-        glUseProgram(glyphProgram_);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-        drawQuadVerts(titleLogo_.tex, v, WHITE);
+        drawTexture(titleLogo_.tex, x, y, w, h, WHITE);
     }
 
     // Without the logo, the name in words: the first word green, a pink bar, the second word bone-white, in capitals,
@@ -3280,11 +3130,7 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         auto word = [&](const TextTex& t, const std::string& text, float left, float dx, float dy, RGBA tint) {
             if (big) {
                 const float w = t.aspect * lineH, x = left + dx, y = top + dy;
-                const float v[4 * 5] = { x, y + lineH, 0.0f, 0.0f, 1.0f, x + w, y + lineH, 0.0f, 1.0f, 1.0f,
-                                         x + w, y, 0.0f, 1.0f, 0.0f, x, y, 0.0f, 0.0f, 0.0f };
-                glUseProgram(glyphProgram_);
-                glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-                drawQuadVerts(t.tex, v, tint);
+                drawTexture(t.tex, x, y, w, lineH, tint);
             } else {
                 drawUiTextLarge(text, left + wordW(t, text, lineH) * 0.5f + dx, cy + dy, lineH / baseH, tint);
             }
@@ -3493,24 +3339,7 @@ void Renderer::drawDisband(World& w, const DisbandLayout& L, Entity unit, float 
     // The portrait, as on the Profile tab
     drawRect(L.portrait, RGBA{ 0.16f, 0.07f, 0.085f, 1.0f });
     const TextTex& g = unitPortrait(w, unit);
-    if (g.tex) {
-        const float sz = L.portrait.w;
-        float pw = sz, ph = sz;
-        if (g.aspect > 1.0f) ph = sz / g.aspect;
-        else pw = sz * g.aspect;
-        const float x = L.portrait.x + (sz - pw) * 0.5f, y = L.portrait.y + (sz - ph) * 0.5f;
-        const float v[4 * 5] = {
-            x,      y + ph, 0.0f, 0.0f, 1.0f,
-            x + pw, y + ph, 0.0f, 1.0f, 1.0f,
-            x + pw, y,      0.0f, 1.0f, 0.0f,
-            x,      y,      0.0f, 0.0f, 0.0f
-        };
-        glUseProgram(glyphProgram_);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-        setSaturation(unitSaturation(w, unit));
-        drawQuadVerts(g.tex, v, WHITE);
-        setSaturation(1.0f);
-    }
+    drawPortrait(g, Rect{ L.portrait.x, L.portrait.y, L.portrait.w, L.portrait.w }, unitSaturation(w, unit));
 
     // Beside it: the name, then its kind or body, its health, and its hunger (a person) or temperament (a mob)
     const Name* nm = w.get<Name>(unit);
@@ -3642,24 +3471,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
 
         // Portrait fitted inside the square, keeping its shape
         const TextTex& g = unitPortrait(w, e);
-        if (g.tex) {
-            const float sz = c.rect.w;
-            float pw = sz, ph = sz;
-            if (g.aspect > 1.0f) ph = sz / g.aspect;
-            else pw = sz * g.aspect;
-            const float x = c.rect.x + (sz - pw) * 0.5f, y = c.rect.y + (sz - ph) * 0.5f;
-            const float v[4 * 5] = {
-                x,      y + ph, 0.0f, 0.0f, 1.0f,
-                x + pw, y + ph, 0.0f, 1.0f, 1.0f,
-                x + pw, y,      0.0f, 1.0f, 0.0f,
-                x,      y,      0.0f, 0.0f, 0.0f
-            };
-            glUseProgram(glyphProgram_);
-            glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-            setSaturation(unitSaturation(w, e));
-            drawQuadVerts(g.tex, v, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-            setSaturation(1.0f);
-        }
+        drawPortrait(g, Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, unitSaturation(w, e));
 
         const Needs* nd = w.get<Needs>(e);
         // Low health: a red gradient rises from the bottom of the portrait by the share of health lost, as in the sidebar
@@ -3925,24 +3737,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     drawRect(L.profile, RGBA{ 0.11f, 0.05f, 0.06f, bgAlpha });
     drawRect(L.portrait, RGBA{ 0.16f, 0.07f, 0.085f, bgAlpha });
     const TextTex& g = unitPortrait(w, unit);
-    if (g.tex) {
-        const float sz = L.portrait.w;
-        float pw = sz, ph = sz;
-        if (g.aspect > 1.0f) ph = sz / g.aspect;
-        else pw = sz * g.aspect;
-        const float x = L.portrait.x + (sz - pw) * 0.5f, y = L.portrait.y + (sz - ph) * 0.5f;
-        const float v[4 * 5] = {
-            x,      y + ph, 0.0f, 0.0f, 1.0f,
-            x + pw, y + ph, 0.0f, 1.0f, 1.0f,
-            x + pw, y,      0.0f, 1.0f, 0.0f,
-            x,      y,      0.0f, 0.0f, 0.0f
-        };
-        glUseProgram(glyphProgram_);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-        setSaturation(unitSaturation(w, unit));
-        drawQuadVerts(g.tex, v, WHITE);
-        setSaturation(1.0f);
-    }
+    drawPortrait(g, Rect{ L.portrait.x, L.portrait.y, L.portrait.w, L.portrait.w }, unitSaturation(w, unit));
     // Low health: a red gradient rises from the bottom of the picture by the share of health lost
     if (needs.maxHp > 0 && needs.hp < needs.maxHp) {
         const float lost = std::clamp(1.0f - (float)needs.hp / (float)needs.maxHp, 0.0f, 1.0f);
@@ -4482,7 +4277,7 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, WHITE);
     }
-    const std::string name = itemName(item);
+    const std::string name = itemNameOf(item);
     drawListText(name, r.x + r.w + 6.0f * s, my - listTextHeight(name) * 0.5f, WHITE);
 }
 
@@ -4506,8 +4301,7 @@ const TextTex* Renderer::itemTexture(int item) {
         std::snprintf(path, sizeof(path), "data/item/item_%d.png", item);
         it = itemPics_.emplace(item, loadOptionalImage(path)).first;
     }
-    if (it->second.tex) return &it->second;
-    return itemNone_.tex ? &itemNone_ : &pink_;
+    return it->second.tex ? &it->second : &pink_;
 }
 
 // The alpha of a picture in the pak, row by row; empty if it is not there
@@ -4536,7 +4330,7 @@ const Renderer::ItemMask& Renderer::itemMask(int item) {
     auto it = itemMasks_.find(item);
     if (it != itemMasks_.end()) return it->second;
     ItemMask m = loadMask("data/item/item_" + std::to_string(item) + ".png");
-    if (m.alpha.empty() && item != 0) m = itemMask(0);   // the stand-in picture, or a solid square without it
+    // No picture: the mask stays empty, and the pink square drawn for it is solid all over
     return itemMasks_.emplace(item, std::move(m)).first->second;
 }
 
@@ -4556,7 +4350,7 @@ void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int win
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     ItemOnScreen os;
     if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) return;
-    const std::string name = gi->count > 1 ? std::to_string(gi->count) + "x " + itemName(gi->item) : itemName(gi->item);
+    const std::string name = gi->count > 1 ? std::to_string(gi->count) + "x " + itemNameOf(gi->item) : itemNameOf(gi->item);
     const float padX = 7.0f * s, padY = 3.0f * s, lineH = listTextHeight("Ag");
     const float boxW = listTextWidth(name) + 2.0f * padX, boxH = lineH + 2.0f * padY;
     const Rect box{ std::floor(os.cx - boxW * 0.5f), std::floor(os.top - 4.0f * s - boxH), boxW, boxH };
@@ -4565,8 +4359,7 @@ void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int win
     drawListText(name, box.x + padX, box.y + padY, LABEL_HOT_TEXT);
 }
 
-// An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, emote_0.png, and the pink square when that
-// is missing too.
+// An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, the pink square.
 const TextTex* Renderer::emoteTexture(EmoteId emote) {
     const int id = idx(emote);
     auto it = emotePics_.find(id);
@@ -4575,13 +4368,11 @@ const TextTex* Renderer::emoteTexture(EmoteId emote) {
         std::snprintf(path, sizeof(path), "data/emote/emote_%d.png", id);
         it = emotePics_.emplace(id, loadOptionalImage(path)).first;
     }
-    if (it->second.tex) return &it->second;
-    return emoteFallback_.tex ? &emoteFallback_ : &pink_;
+    return it->second.tex ? &it->second : &pink_;
 }
 
 const Model& Renderer::propModel(PropKind kind) const {
-    const Model& own = propModels_[(size_t)kind];
-    return own.vao ? own : fallbackModel_;
+    return propModels_[(size_t)kind];
 }
 
 void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames) {
@@ -4601,7 +4392,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // Above the head, where the name tag is, and above the tag when names are shown
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
         const bool named = w.has<Name>(u) && (w.has<Commandable>(u) ? playerNames : otherNames);
         if (named) bottom -= listTextHeight("Ag") + 2.0f * s;
@@ -4637,7 +4428,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
         }
         if (emote == EmoteId::None) continue;
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
         if (propNames) bottom -= listTextHeight("Ag") + 2.0f * s;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
@@ -4654,7 +4445,7 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
     const float size = 28.0f * s;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float sx = 0.0f, sy = 0.0f;
-    if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) return;
+    if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) return;
     // Above its name, and above its own emote if it shows one, so both can be seen
     float bottom = sy - 2.0f * s;
     if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
@@ -4663,8 +4454,8 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
     if (pic) drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-// The UI icon with this id: its picture from data/icon (icon_<n>.png), loaded once. An id with no picture uses
-// icon_0.png; with neither, the texture is empty and the pink placeholder (with the id) is drawn.
+// The UI icon with this id: its picture from data/icon (icon_<n>.png), loaded once. An id with no picture has an empty
+// texture, and the pink placeholder (with the id) is drawn.
 const TextTex& Renderer::uiIconTexture(int icon) {
     auto it = uiIcons_.find(icon);
     if (it == uiIcons_.end()) {
@@ -4672,7 +4463,7 @@ const TextTex& Renderer::uiIconTexture(int icon) {
         std::snprintf(path, sizeof(path), "data/icon/icon_%d.png", icon);
         it = uiIcons_.emplace(icon, loadOptionalImage(path)).first;
     }
-    return it->second.tex ? it->second : iconFallback_;
+    return it->second;
 }
 
 void Renderer::drawUiIcon(int icon, const Rect& r) {
@@ -4848,7 +4639,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
-        Seen seen{ e, ItemOnScreen{}, itemName(gi->item), 0.0f };
+        Seen seen{ e, ItemOnScreen{}, itemNameOf(gi->item), 0.0f };
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         seen.dist2 = dx * dx + dy * dy + dz * dz;
         if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
@@ -4945,15 +4736,7 @@ void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
         h = r.w / aspect;
     }
     const float x = r.x + (r.w - w) * 0.5f, y = r.y + (r.h - h) * 0.5f;
-    float v[4 * 5] = {
-        x,     y + h, 0.0f, 0.0f, 1.0f,
-        x + w, y + h, 0.0f, 1.0f, 1.0f,
-        x + w, y,     0.0f, 1.0f, 0.0f,
-        x,     y,     0.0f, 0.0f, 0.0f
-    };
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
-    drawQuadVerts(g.tex, v, tint);
+    drawTexture(g.tex, x, y, w, h, tint);
 }
 
 void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others) {
@@ -4970,7 +4753,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         // The tag sits just above the top of the unit's picture
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
 
         const std::string tag = "[" + nm->text + "]";
         const float tw = listTextWidth(tag), th = listTextHeight(tag);
@@ -5008,7 +4791,7 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
         if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         // Just above the top of the prop, as a unit's tag is above its picture
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         const bool base = propInfo(kind).foot.foundation;
         std::pair<int, long long> key{ 1, ((long long)std::floor(tr->x) << 32) ^ (long long)(unsigned)(int)std::floor(tr->z) };
@@ -5104,7 +4887,7 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
         if (!withinDetail(cam, f.x, f.y, f.z)) continue;
         // Anchored just above the unit's head, like its name
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
 
         // Arc: up and to the right, then down, fading out over the last 40% of its life. The rise peaks
         // about two fifths of the way through (about 38 pixels up at 720 lines), then falls 60 pixels below its start.
@@ -5133,7 +4916,7 @@ void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, 
         const Transform* tr = w.get<Transform>(l.unit);
         if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
-        if (!projectPoint(vp, tr->x, tr->y + GLYPH_H * 2.2f, tr->z, winW, winH, sx, sy)) continue;
+        if (!worldToScreen(vp, tr->x, tr->y + GLYPH_H * 2.2f, tr->z, winW, winH, sx, sy)) continue;
         const int row = stacked[l.unit]++;
         const float t = std::clamp(l.age / TRADE_LABEL_LIFE, 0.0f, 1.0f);
         const float alpha = t < 0.7f ? 1.0f : (1.0f - t) / 0.3f;

@@ -104,11 +104,7 @@ void App::onKeyDown() {
         if (e.key.key == SDLK_ESCAPE) {
             // Escape backs out of a question first, then closes the popout
             if (ask != Ask::None) {
-                ask = Ask::None;
-                pendingOverwrite.reset();
-                pendingLoad.reset();
-                pendingDelete.reset();
-                deleteHolding = false;
+                clearQuestion();
             } else {
                 closePanel();
             }
@@ -169,9 +165,7 @@ void App::onKeyDown() {
                 endTalk();
             } else if (tradeOpen) {
                 tradeOpen = false;
-                tradeNpc.clear();
-                tradePlayer.clear();
-                tradeNpcDrag = -1;
+                clearTradeTable();
             } else {
                 endTalk();
             }
@@ -446,7 +440,7 @@ if (mouseDownOnPanels()) return;
             // Right-click on a unit in the Squad Panel: its menu, as on the unit in the world
             {
                 const std::vector<Entity> own = ownUnitList();
-                const UnitPanelLayout squadL = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+                const UnitPanelLayout squadL = squadPanelLayout(winW, winH);
                 bool onCell = false;
                 for (const UnitCell& c : squadL.cells) {
                     if (!c.rect.contains(e.button.x, e.button.y) || c.index < 0 || c.index >= (int)own.size()) continue;
@@ -618,9 +612,7 @@ bool App::mouseDownOnPopups() {
                     endTalk();   // a free trade has no talk to go back to
                 } else if (leftButton && tl.cancelBtn.contains(x, y)) {
                     tradeOpen = false;
-                    tradeNpc.clear();
-                    tradePlayer.clear();
-                    tradeNpcDrag = -1;
+                    clearTradeTable();
                 } else if (leftButton && tl.tradeBtn.contains(x, y)) {
                     if (!tradeItemsPresent(world, dialogueUnit, dialoguePlayer)) {
                         // Something offered is no longer in its inventory: the trade fails and the talk ends
@@ -776,7 +768,7 @@ bool App::mouseDownOnPopups() {
             return true;
         }
         if (infoPanelClick(winW, winH, tx, ty)) return true;
-        if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).toggle.contains(tx, ty)) {
+        if (squadPanelLayout(winW, winH).toggle.contains(tx, ty)) {
             setFolded(PanelId::Squad, !squadCollapsed, winW, winH);
             return true;
         }
@@ -787,8 +779,7 @@ bool App::mouseDownOnPopups() {
     }
     // The Faction Panel's tabs, and in its Reputation tab a faction's row: that faction's reputations show
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
-        const UnitPanelLayout fp = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed,
-                                                   squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+        const UnitPanelLayout fp = squadPanelLayout(winW, winH);
         const float tx = e.button.x, ty = e.button.y;
         if (fp.tabSquad.contains(tx, ty) || fp.tabReputation.contains(tx, ty)) {
             const int next = fp.tabSquad.contains(tx, ty) ? FACTION_TAB_SQUAD : FACTION_TAB_REPUTATION;
@@ -811,7 +802,7 @@ bool App::mouseDownOnPopups() {
     // The Squad Panel's scroll bar: an arrow moves the list a row, the thumb can be dragged, and a press on
     // the track moves a row toward it
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
-        const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+        const UnitPanelLayout sq = squadPanelLayout(winW, winH);
         const float tx = e.button.x, ty = e.button.y;
         if (sq.scrollUp.contains(tx, ty) || sq.scrollDown.contains(tx, ty)) {
             const int next = std::clamp(sq.scrollRow + (sq.scrollUp.contains(tx, ty) ? -1 : 1), 0, sq.maxScroll());
@@ -854,7 +845,7 @@ bool App::mouseDownOnPanels() {
         // The unit panel and sidebar take the click, so it never reaches the ground
         const float mx = e.button.x, my = e.button.y;
         const std::vector<Entity> own = ownUnitList();
-        const UnitPanelLayout pl = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+        const UnitPanelLayout pl = squadPanelLayout(winW, winH);
 
         // The right-click menu: a click on one of its buttons does that action. A click
         // anywhere else just closes it, and the click still does what it would have done.
@@ -1304,7 +1295,7 @@ void App::onMouseMotion() {
     // The Squad Panel follows its scroll bar thumb while it is held
     if (squadThumbDrag) {
         if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
-            const UnitPanelLayout sq = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
+            const UnitPanelLayout sq = squadPanelLayout(winW, winH);
             unitPanelRow = squadRowAtThumb(sq, e.motion.y - squadThumbGrab);
         } else {
             squadThumbDrag = false;

@@ -27,7 +27,6 @@ std::string trimmedName(const std::string& s);
 void popUtf8Char(std::string& s);
 // The save with exactly this name, if there is one
 std::optional<SaveSummary> findSaveByName(const std::vector<SaveSummary>& saves, const std::string& name);
-std::string toLower(std::string s);
 // Sorts the save list. Autosaves always come first, then manual saves. Each group is sorted
 // by the chosen column; ties fall back to the other column.
 void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending);

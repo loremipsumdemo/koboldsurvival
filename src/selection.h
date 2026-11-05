@@ -16,9 +16,6 @@ std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terra
 // tree) whose top is seen over the ground in front of its foot.
 constexpr float HIDDEN_BEHIND_GROUND = 3.0f;
 
-// World point to pixel coordinates. Returns false if it's behind the camera.
-bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy);
-
 void clearSelection(World& w);
 std::vector<Entity> selectedUnits(World& w);
 

@@ -12,11 +12,6 @@ constexpr float GEAR_CHANGE_XP = 2.0f;
 
 namespace {
 
-std::string nameOf(int item) {
-    const ItemDef* d = findItem(item);
-    return d ? itemDisplayName(*d) : std::string(lang("MISC_THAT_ITEM"));
-}
-
 // The gear slots an item fits, from its equip_slot
 std::vector<int> fittingSlots(const ItemDef& d) {
     const std::string& s = d.equipSlot;
@@ -54,16 +49,16 @@ bool canEquip(const Equipment& worn, int item, int slot, std::string& why) {
     why.clear();
     const ItemDef* d = findItem(item);
     if (!d || d->equipSlot.empty()) {
-        why = nameOf(item) + " can't be worn or held";
+        why = itemNameOf(item) + " can't be worn or held";
         return false;
     }
     const std::vector<int> fits = fittingSlots(*d);
     if (slot < 0 || slot >= GEAR_SLOTS || std::find(fits.begin(), fits.end(), slot) == fits.end()) {
-        why = langf("MISC_NOT_FIT_SLOT", { nameOf(item), gearSlotName(slot) });
+        why = langf("MISC_NOT_FIT_SLOT", { itemNameOf(item), gearSlotName(slot) });
         return false;
     }
     if (d->equipSlot == "two_hand" && slot == idx(GearSlot::MainHand) && worn.items[GearSlot::OffHand] != 0) {
-        why = langf("MISC_EMPTY_OFF_HAND", { nameOf(item) });
+        why = langf("MISC_EMPTY_OFF_HAND", { itemNameOf(item) });
         return false;
     }
     if (slot == idx(GearSlot::OffHand) && offHandBlocked(worn)) {
@@ -136,7 +131,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     ItemStack& taken = next.slots[invSlot];
     if (--taken.count <= 0) taken = ItemStack{};
     if (displaced != 0 && addToInventory(next, displaced, 1) > 0) {
-        why = langf("MISC_NO_ROOM_INV", { nameOf(displaced) });
+        why = langf("MISC_NO_ROOM_INV", { itemNameOf(displaced) });
         return false;
     }
     *inv = next;
@@ -155,7 +150,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
     const int item = worn->items[fromSlot];
     if (item == 0) return false;
     if (worn->items[toSlot] != 0) {
-        why = langf("MISC_SLOT_HOLDS", { nameOf(worn->items[toSlot]) });
+        why = langf("MISC_SLOT_HOLDS", { itemNameOf(worn->items[toSlot]) });
         return false;
     }
     Equipment after = *worn;
@@ -179,7 +174,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     if (item == 0) return false;
     Inventory next = *inv;
     if (addToInventory(next, item, 1) > 0) {
-        why = langf("MISC_NO_ROOM_INV", { nameOf(item) });
+        why = langf("MISC_NO_ROOM_INV", { itemNameOf(item) });
         return false;
     }
     *inv = next;
@@ -198,8 +193,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     if (item == 0) return false;
     // Copy what's needed before creating an entity, which can move the stored components
     const Transform at = *tr;
-    const ItemDef* def = findItem(item);
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", def ? itemDisplayName(*def) : lang("MISC_AN_ITEM") }), LogKind::Drop, npcOnly(w, unit));
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", itemNameOf(item) }), LogKind::Drop, npcOnly(w, unit));
     queueUnitLabel(unit, itemLossLabelFor(1, item), true);
     queueSound(Sfx::Drop);
     worn->items[gearSlot] = 0;
@@ -217,8 +211,8 @@ int giveOrDrop(World& w, Entity unit, int item, int count) {
         // No room for the rest: it falls where the unit stands
         if (const Transform* tr = w.get<Transform>(unit)) {
             const Transform at = *tr;   // creating an entity can move the stored components
-            queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), nameOf(item) }), LogKind::Drop, npcOnly(w, unit));
-            queueUnitLabel(unit, itemLossLabel(left, nameOf(item)), true);
+            queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), itemNameOf(item) }), LogKind::Drop, npcOnly(w, unit));
+            queueUnitLabel(unit, itemLossLabel(left, itemNameOf(item)), true);
             queueSound(Sfx::Drop);
             const Entity e = w.create();
             w.add(e, Transform{ at.x, at.y, at.z });

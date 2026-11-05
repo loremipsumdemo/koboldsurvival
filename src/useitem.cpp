@@ -6,21 +6,10 @@
 #include "combat.h"
 #include "inventory.h"
 #include "items.h"
+#include "textcase.h"
 #include "language.h"
 
 namespace {
-
-std::string trim(const std::string& s) {
-    size_t a = 0, b = s.size();
-    while (a < b && std::isspace((unsigned char)s[a])) ++a;
-    while (b > a && std::isspace((unsigned char)s[b - 1])) --b;
-    return s.substr(a, b - a);
-}
-
-std::string lower(std::string s) {
-    for (char& c : s) c = (char)std::tolower((unsigned char)c);
-    return s;
-}
 
 // Reads one statement such as "health +50", "hunger -10" or "attack +10 for 60s"
 bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
@@ -28,7 +17,7 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
 
     size_t i = 0;
     while (i < s.size() && std::isalpha((unsigned char)s[i])) ++i;
-    const std::string name = lower(s.substr(0, i));
+    const std::string name = toLower(s.substr(0, i));
     if (name == "health") e.stat = UseEffect::Stat::Health;
     else if (name == "hunger") e.stat = UseEffect::Stat::Hunger;
     else if (name == "attack") e.stat = UseEffect::Stat::Attack;

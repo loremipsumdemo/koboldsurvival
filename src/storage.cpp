@@ -65,15 +65,14 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     const ItemStack stack = *from;
     if (!slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, stack.item, stack.count)) {
         const ItemDef* def = findItem(stack.item);
-        why = langf("MISC_NO_ROOM_INV", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
+        why = langf("MISC_NO_ROOM_INV", { itemNameOf(stack.item) });
         return false;
     }
     *from = ItemStack{};
     giveOrDrop(w, storageUnit, stack.item, stack.count);   // checked to fit above; anything that didn't would fall
     queueSound(Sfx::Take);
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
-    const ItemDef* got = findItem(stack.item);
-    queueUnitLabel(storageUnit, itemGainLabel(stack.count, got ? itemDisplayName(*got) : std::string(lang("MISC_AN_ITEM"))));
+    queueUnitLabel(storageUnit, itemGainLabel(stack.count, itemNameOf(stack.item)));
     return true;
 }
 
@@ -85,7 +84,7 @@ bool dropFromStorage(World& w, int slot) {
     const ItemStack stack = *from;
     const ItemDef* def = findItem(stack.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
-                                   def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) }), LogKind::Drop, npcOnly(w, storageUnit));
+                                   itemNameOf(stack.item) }), LogKind::Drop, npcOnly(w, storageUnit));
     const Entity e = w.create();
     w.add(e, Transform{ ut->x, ut->y, ut->z });
     w.add(e, GroundItem{ stack.item, stack.count });
@@ -102,17 +101,7 @@ std::string refusalFor(World& w, int item) {
     if (!prop || propAcceptsItem(prop->kind, item)) return std::string();
     const PropInfo& info = propInfo(prop->kind);
     if (info.use == PropUse::Storage) return langf("MISC_STORAGE_ONLY", { lang(itemFilterKey(info.accepts)) });
-    const ItemDef* def = findItem(item);
-    return langf("MISC_CRAFT_WRONG_ITEM", { def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM")) });
-}
-
-// How many of an item the storage unit carries, over all its stacks
-int carriedCount(const Inventory& inv, int item) {
-    int total = 0;
-    for (const ItemStack& s : inv.slots) {
-        if (s.item == item) total += s.count;
-    }
-    return total;
+    return langf("MISC_CRAFT_WRONG_ITEM", { itemNameOf(item) });
 }
 
 // Moves `count` of the clicked stack's item from the storage unit into the storage: the clicked stack first, then the

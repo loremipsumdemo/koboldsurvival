@@ -122,9 +122,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     dialogueConvo.clear();
     discardQueuedLog();
     tradeOpen = false;
-    tradeNpc.clear();
-    tradePlayer.clear();
-    tradeNpcDrag = -1;
+    clearTradeTable();
     closeStorage();
     contextMenu = ContextMenu{};
     freeTrade = false;
