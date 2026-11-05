@@ -273,30 +273,33 @@ Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction,
     return e;
 }
 
-void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
-    const Vec2 spawn = findSpawn(t);
-    // Read in the ground around the spawn, so the units and red units can stand on it
-    if (t.streamed()) t.stream({ spawn }, SPAWN_LOAD_RADIUS, 0);
-    const int size = t.size();
-    auto tileAt = [&](float v) { return std::clamp((int)std::floor(v), 0, size - 1); };
+namespace {
 
-    // Units: a block centred on the spawn
-    for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
-
-    // The other factions' units (data/factioninfo.txt): the same kind of unit, but they can't be commanded. Each
-    // faction's units stand together in a camp of their own, the camps spread around the spawn at even angles and far
-    // enough apart that two camps don't see each other at the start. A camp's units are on walkable tiles, one each;
-    // a camp that can't find room for all of them (water, a small map) spills over into the wider area. The attempt
-    // limits stop a small map from looping forever.
+// What the stages of setting up a level share. The stages run in a fixed order and draw from one Rng, and a level is
+// rebuilt from its seed when a save loads, so the order of every draw must stay as it is.
+struct LevelBuilder {
+    World& w;
+    Terrain& t;
+    Rng& rng;
+    const Vec2 spawn;
+    const int size;
     std::vector<GridPos> enemyTiles;
-    auto tileFree = [&](GridPos g) {
+    int campSerial = CAMP_SERIAL_BASE;
+    std::vector<Vec2> flagSpots;
+    std::vector<std::pair<Entity, CampKit>> woodcutters;
+    std::vector<CampKit> kits;
+
+    int tileAt(float v) const { return std::clamp((int)std::floor(v), 0, size - 1); }
+
+    bool tileFree(GridPos g) {
         if (!t.walkable(g.x, g.y)) return false;
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         const float dx = x - spawn.x, dz = z - spawn.z;
         if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) return false;
         return std::none_of(enemyTiles.begin(), enemyTiles.end(), [&](GridPos k) { return k == g; });
-    };
-    auto placeUnit = [&](GridPos g, int faction) -> Entity {
+    }
+
+    Entity placeUnit(GridPos g, int faction) {
         enemyTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity e = w.create();
@@ -314,28 +317,17 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         w.add(e, Dialogue{});
         w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
         return e;
-    };
-    std::vector<const FactionDef*> camps;
-    for (const FactionDef& f : factions()) {
-        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
     }
 
-    // Camps (claims.h): every faction's, the player's included, gets the kit: a flag, a vault on a small foundation with
-    // three days of logs, a campfire with four bedrolls, a barrel and two trees, all owned by the faction. The player's
-    // is in the middle, just south of the squad; the others are at the compass points around it (north, east, south,
-    // west, then the corners between, should there be more), CAMP_DISTANCE away, so no two claims overlap. A camp whose
-    // spot the kit doesn't fit on moves to the nearest one it does, within CAMP_SHIFT. The kits go down before the level's
-    // props, so those don't take their ground; their vaults go down after all of them (below).
-    int campSerial = CAMP_SERIAL_BASE;
-    std::vector<Vec2> flagSpots;
-    auto clearOfCamps = [&](float x, float z) {
+    bool clearOfCamps(float x, float z) {
         for (const Vec2& f : flagSpots) {
             if ((f.x - x) * (f.x - x) + (f.z - z) * (f.z - z) < CAMP_GAP * CAMP_GAP) return false;
         }
         return true;
-    };
+    }
+
     // The kit at (cx, cz), or the nearest spot within CAMP_SHIFT it fits on, ring by ring outward
-    auto placeCamp = [&](int faction, float cx, float cz) {
+    CampKit placeCamp(int faction, float cx, float cz) {
         for (int ring = 0; ring <= (int)CAMP_SHIFT; ++ring) {
             const int steps = ring == 0 ? 1 : 8 * ring;
             for (int k = 0; k < steps; ++k) {
@@ -351,16 +343,17 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             }
         }
         return CampKit{};
-    };
+    }
+
     // A few random props in the claim, owned by its faction: storage holds what belongs in it and is locked to the
     // faction (as anything with contents in a claim is), a forge starts cold
-    static const PropKind EXTRA_KINDS[] = {
-        PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Bones, PropKind::Stall, PropKind::LockedChest,
-        PropKind::Chair, PropKind::Bench, PropKind::Stool, PropKind::Table, PropKind::EndTable, PropKind::RoundTable, PropKind::StandingTorch,
-        PropKind::TrainingDummy, PropKind::RawFoodStorage, PropKind::FoodStorage, PropKind::WeaponRack, PropKind::ArmorStand,
-        PropKind::WaterTank, PropKind::WaterPump, PropKind::Forge,
-    };
-    auto addCampExtras = [&](int faction, const CampKit& kit) {
+    void addCampExtras(int faction, const CampKit& kit) {
+        static const PropKind EXTRA_KINDS[] = {
+            PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Bones, PropKind::Stall, PropKind::LockedChest,
+            PropKind::Chair, PropKind::Bench, PropKind::Stool, PropKind::Table, PropKind::EndTable, PropKind::RoundTable, PropKind::StandingTorch,
+            PropKind::TrainingDummy, PropKind::RawFoodStorage, PropKind::FoodStorage, PropKind::WeaponRack, PropKind::ArmorStand,
+            PropKind::WaterTank, PropKind::WaterPump, PropKind::Forge,
+        };
         if (!kit.placed) return;
         const int want = rng.range(CAMP_EXTRA_MIN, CAMP_EXTRA_MAX);
         int placed = 0;
@@ -393,11 +386,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             claimOwnership(w, prop);
             ++placed;
         }
-    };
+    }
+
     // One unit of each camp keeps its vault fed: Auto-Haul to the vault above Auto-Harvest of Trees, so it cuts wood at
     // the camp's trees and stores each load in the vault. It is given once the vaults are down, below.
-    std::vector<std::pair<Entity, CampKit>> woodcutters;
-    auto giveWoodcutting = [&](Entity u, const CampKit& kit) {
+    void giveWoodcutting(Entity u, const CampKit& kit) {
         if (u == NULL_ENTITY || !kit.placed || kit.vault == NULL_ENTITY || kit.trees.empty()) return;
         // A camp's woodcutter starts with an empty pack, so the logs it carries don't weigh it down
         if (!w.has<Commandable>(u)) {
@@ -414,23 +407,49 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         harvest.propKind = idx(PropKind::Tree);
         addBehavior(b->rules, haul);
         addBehavior(b->rules, harvest);
-    };
-    std::vector<CampKit> kits;
-
-    // The player's camp, in the middle, when the scenario has one
-    const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET) : CampKit{};
-    addCampExtras(FACTION_PLAYER, playerKit);
-    if (playerKit.placed) kits.push_back(playerKit);
-    if (playerKit.placed) {
-        Entity first = NULL_ENTITY;
-        for (Entity u : w.view<Unit, Commandable>()) {
-            if (first == NULL_ENTITY || u < first) first = u;
-        }
-        woodcutters.push_back({ first, playerKit });
     }
-    const Vec2 middle = playerKit.placed ? Vec2{ playerKit.x, playerKit.z } : spawn;
 
-    for (size_t ci = 0; ci < camps.size(); ++ci) {
+    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its flag, the player's included.
+    // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
+    bool freeSpot(float cx, float cz, float radius, float& x, float& z) {
+        for (int attempt = 0; attempt < 200; ++attempt) {
+            const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * radius;
+            const GridPos g{ tileAt(cx + std::cos(a) * d), tileAt(cz + std::sin(a) * d) };
+            if (!t.walkable(g.x, g.y) || std::find(enemyTiles.begin(), enemyTiles.end(), g) != enemyTiles.end()) continue;
+            enemyTiles.push_back(g);
+            x = g.x + 0.5f;
+            z = g.y + 0.5f;
+            return true;
+        }
+        return false;
+    }
+
+    // Whether no prop stands within CAMP_CAGE_GAP of (x, z), so a cage put there sits clear of the others
+    bool clearOfProps(float x, float z) {
+        for (Entity e : w.view<Prop, Transform>()) {
+            const Transform* pt = w.get<Transform>(e);
+            if ((pt->x - x) * (pt->x - x) + (pt->z - z) * (pt->z - z) < CAMP_CAGE_GAP * CAMP_CAGE_GAP) return false;
+        }
+        return true;
+    }
+
+    // Where the other camps go around: the player's camp if it has one, else the spawn
+    Vec2 placePlayerCamp(bool playerCamp) {
+        // The player's camp, in the middle, when the scenario has one
+        const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET) : CampKit{};
+        addCampExtras(FACTION_PLAYER, playerKit);
+        if (playerKit.placed) kits.push_back(playerKit);
+        if (playerKit.placed) {
+            Entity first = NULL_ENTITY;
+            for (Entity u : w.view<Unit, Commandable>()) {
+                if (first == NULL_ENTITY || u < first) first = u;
+            }
+            woodcutters.push_back({ first, playerKit });
+        }
+        return playerKit.placed ? Vec2{ playerKit.x, playerKit.z } : spawn;
+    }
+
+    void placeFactionCamp(const std::vector<const FactionDef*>& camps, size_t ci, Vec2 middle) {
         const FactionDef& f = *camps[ci];
         // North, east, south, west first; any more go between them
         static const float DIRS[8][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 },
@@ -474,194 +493,226 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         woodcutters.push_back({ firstUnit, kit });
     }
 
-    // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
-    // own tile. They do not block movement. They go down a round of every kind at a time (wagon, campfire, ... forge,
-    // then wagon again), so if the ground near the spawn ever runs out, every kind has been placed before any has its
-    // last copies.
-    std::vector<GridPos> propTiles;
-    const int propTotal = PROP_PLACED_KIND_COUNT * PROP_COPIES;
-    for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
-        GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
-                   rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
-        if (!t.walkable(g.x, g.y)) continue;
-        if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
-        // A tile a camp's kit already stands on is not free: the kit was placed first
-        bool kitHere = false;
-        for (Entity e : w.view<Prop, Transform>()) {
-            const Transform* kt = w.get<Transform>(e);
-            if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
+    void placeLevelProps() {
+        // Props on free ground near the spawn: PROP_COPIES of each kind (props.h), wagons included, each on its
+        // own tile. They do not block movement. They go down a round of every kind at a time (wagon, campfire, ... forge,
+        // then wagon again), so if the ground near the spawn ever runs out, every kind has been placed before any has its
+        // last copies.
+        std::vector<GridPos> propTiles;
+        const int propTotal = PROP_PLACED_KIND_COUNT * PROP_COPIES;
+        for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
+            GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
+                       rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
+            if (!t.walkable(g.x, g.y)) continue;
+            if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
+            // A tile a camp's kit already stands on is not free: the kit was placed first
+            bool kitHere = false;
+            for (Entity e : w.view<Prop, Transform>()) {
+                const Transform* kt = w.get<Transform>(e);
+                if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
+            }
+            if (kitHere) continue;
+            const int serial = (int)propTiles.size();
+            const PropKind kind = (PropKind)(serial % PROP_PLACED_KIND_COUNT);
+            propTiles.push_back(g);
+            const float x = g.x + 0.5f, z = g.y + 0.5f;
+            Entity prop = w.create();
+            w.add(prop, Transform{ x, t.heightAt(x, z), z });
+            w.add(prop, Prop{ kind, serial });
+            if (hasStorage(propInfo(kind))) {
+                // A storage prop starts with a few things that belong in it; a crafting prop (the campfire) starts empty
+                w.add(prop, propInfo(kind).use == PropUse::Storage ? startingStorage(kind, rng) : Storage{});
+            }
+            if (propInfo(kind).use == PropUse::PassiveCrafting) {     // a forge starts cold, with an empty output
+                w.add(prop, Output{});
+                w.add(prop, Fuel{});
+                w.add(prop, PropWork{});
+            }
+            if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
+            claimOwnership(w, prop);   // one that lands in a camp's claim is the camp's
         }
-        if (kitHere) continue;
-        const int serial = (int)propTiles.size();
-        const PropKind kind = (PropKind)(serial % PROP_PLACED_KIND_COUNT);
-        propTiles.push_back(g);
-        const float x = g.x + 0.5f, z = g.y + 0.5f;
-        Entity prop = w.create();
-        w.add(prop, Transform{ x, t.heightAt(x, z), z });
-        w.add(prop, Prop{ kind, serial });
-        if (hasStorage(propInfo(kind))) {
-            // A storage prop starts with a few things that belong in it; a crafting prop (the campfire) starts empty
-            w.add(prop, propInfo(kind).use == PropUse::Storage ? startingStorage(kind, rng) : Storage{});
-        }
-        if (propInfo(kind).use == PropUse::PassiveCrafting) {     // a forge starts cold, with an empty output
-            w.add(prop, Output{});
-            w.add(prop, Fuel{});
-            w.add(prop, PropWork{});
-        }
-        if (propInfo(kind).lockLevel > 0) w.add(prop, Lock{ true, propInfo(kind).lockLevel });   // Lockable: starts locked
-        claimOwnership(w, prop);   // one that lands in a camp's claim is the camp's
     }
 
-    // The vaults go down last, once every other prop stands, each on its camp's foundation. Then each sealed claim's
-    // props become its faction's, and each camp's woodcutter is given its vault to haul to.
-    for (CampKit& kit : kits) placeCampVault(w, t, kit, &campSerial);
-    settleClaimOwnership(w);
-    for (auto& [unit, kit] : woodcutters) {
-        for (const CampKit& k : kits) {
-            if (k.flag == kit.flag) kit.vault = k.vault;
+    void placeVaults() {
+        // The vaults go down last, once every other prop stands, each on its camp's foundation. Then each sealed claim's
+        // props become its faction's, and each camp's woodcutter is given its vault to haul to.
+        for (CampKit& kit : kits) placeCampVault(w, t, kit, &campSerial);
+        settleClaimOwnership(w);
+        for (auto& [unit, kit] : woodcutters) {
+            for (const CampKit& k : kits) {
+                if (k.flag == kit.flag) kit.vault = k.vault;
+            }
+            giveWoodcutting(unit, kit);
         }
-        giveWoodcutting(unit, kit);
     }
 
-    // Names, stats, health and gear for every unit. These draw after the placement above, so where units
-    // stand doesn't depend on them.
-    std::vector<std::string> takenNames;
-    for (Entity u : w.view<Unit>()) {
-        if (w.has<Mob>(u)) continue;   // a mob is made whole by spawnMob
-        if (!w.has<Stats>(u)) w.add(u, startingStats(rng));
-        if (Needs* nd = w.get<Needs>(u)) {
-            nd->maxHp = maxHealthFor(*w.get<Stats>(u));
-            nd->hp = nd->maxHp;
-        }
-        if (w.has<Hostile>(u) || w.has<Neutral>(u)) {
-            w.add(u, randomHostileGear(rng));
-            // An NPC given a bow or a crossbow gets some of its ammo to shoot, so it fights at range
-            const Equipment* worn = w.get<Equipment>(u);
-            if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GearSlot::MainHand]) : nullptr) {
-                std::vector<int> ammo;
-                for (const ItemDef& d : itemDatabase()) {
-                    if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
+    void finishUnits() {
+        // Names, stats, health and gear for every unit. These draw after the placement above, so where units
+        // stand doesn't depend on them.
+        std::vector<std::string> takenNames;
+        for (Entity u : w.view<Unit>()) {
+            if (w.has<Mob>(u)) continue;   // a mob is made whole by spawnMob
+            if (!w.has<Stats>(u)) w.add(u, startingStats(rng));
+            if (Needs* nd = w.get<Needs>(u)) {
+                nd->maxHp = maxHealthFor(*w.get<Stats>(u));
+                nd->hp = nd->maxHp;
+            }
+            if (w.has<Hostile>(u) || w.has<Neutral>(u)) {
+                w.add(u, randomHostileGear(rng));
+                // An NPC given a bow or a crossbow gets some of its ammo to shoot, so it fights at range
+                const Equipment* worn = w.get<Equipment>(u);
+                if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GearSlot::MainHand]) : nullptr) {
+                    std::vector<int> ammo;
+                    for (const ItemDef& d : itemDatabase()) {
+                        if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
+                    }
+                    Inventory* inv = w.get<Inventory>(u);
+                    if (inv && !ammo.empty()) {
+                        addToInventory(*inv, ammo[(size_t)rng.range(0, (int)ammo.size() - 1)], rng.range(NPC_AMMO_MIN, NPC_AMMO_MAX));
+                    }
                 }
-                Inventory* inv = w.get<Inventory>(u);
-                if (inv && !ammo.empty()) {
-                    addToInventory(*inv, ammo[(size_t)rng.range(0, (int)ammo.size() - 1)], rng.range(NPC_AMMO_MIN, NPC_AMMO_MAX));
+            }
+            // No unit starts out carrying so much that it is encumbered
+            if (Inventory* inv = w.get<Inventory>(u)) {
+                Equipment* worn = w.get<Equipment>(u);
+                GearItems gear = worn ? worn->items : GearItems{};
+                keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
+                if (worn) worn->items = gear;
+            }
+            // The body comes first: the name is drawn from the set for it, and the model matches it
+            if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
+            const BodyType body = w.get<Body>(u)->type;
+            if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
+            Name* nm = w.get<Name>(u);
+            if (!nm) continue;
+            if (w.has<Commandable>(u)) {
+                nm->text = randomUnitName(rng, body, takenNames);
+                takenNames.push_back(nm->text);
+            } else {
+                nm->text = randomUnitName(rng, body, {});
+            }
+        }
+    }
+
+    void placeCampMobs() {
+        for (const CampKit& kit : kits) {
+            // Your camp's mobs are the party's own (ensurePlayerMobs), placed once the party is known
+            if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
+            for (int i = 0; i < CAMP_MOBS; ++i) {
+                float x = 0.0f, z = 0.0f;
+                MobKind kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
+                while (!campMobKind(kind)) kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
+                // Each in a Prisoner Cage of its own, locked to the camp's faction, on a spot clear of the camp's props
+                bool found = false;
+                for (int tries = 0; tries < 20 && !found; ++tries) {
+                    if (!freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) break;
+                    found = clearOfProps(x, z);
+                }
+                if (!found) continue;
+                const Entity mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
+                const PropInfo& cageInfo = propInfo(PropKind::PrisonerCage);
+                const Entity cage = w.create();
+                w.add(cage, Transform{ x, t.heightAt(x, z), z });
+                w.add(cage, Prop{ PropKind::PrisonerCage, campSerial++, 0.0f });
+                w.add(cage, Owner{ kit.faction });
+                w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
+                claimOwnership(w, cage);
+                w.add(mob, Occupying{ cage });
+                // A regular faction's mob, not a wild one: its name says so
+                if (!isMobFaction(kit.faction)) {
+                    if (Name* nm = w.get<Name>(mob)) nm->text += " [!]";
                 }
             }
         }
-        // No unit starts out carrying so much that it is encumbered
-        if (Inventory* inv = w.get<Inventory>(u)) {
-            Equipment* worn = w.get<Equipment>(u);
-            GearItems gear = worn ? worn->items : GearItems{};
-            keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
-            if (worn) worn->items = gear;
+    }
+
+    void placeWildMobs() {
+        float farthest = 0.0f;   // how far out the camps reach from the spawn
+        for (const CampKit& kit : kits) {
+            if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
         }
-        // The body comes first: the name is drawn from the set for it, and the model matches it
-        if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
-        const BodyType body = w.get<Body>(u)->type;
-        if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
-        Name* nm = w.get<Name>(u);
-        if (!nm) continue;
-        if (w.has<Commandable>(u)) {
-            nm->text = randomUnitName(rng, body, takenNames);
-            takenNames.push_back(nm->text);
-        } else {
-            nm->text = randomUnitName(rng, body, {});
+        const float turn = rng.unit() * 6.2831853f;
+        for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+            const MobKind kind = (MobKind)k;
+            // Each herd at its own bearing, out between WILD_MOB_NEAR and WILD_MOB_FAR past the camps
+            const float a = turn + 6.2831853f * (float)(k - 1) / (float)MOB_KIND_COUNT;
+            const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
+            const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
+            const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
+            for (int i = 0; i < mobInfo(kind).wild; ++i) {
+                float x = 0.0f, z = 0.0f;
+                if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
+                    const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
+                    if (kind != MobKind::Gorlicorn) continue;
+                    // The Gorlicorn's Rabbits: placed about it, and Patrolling Spawn round the same spot, so they stay by it
+                    const SpawnHome home = *w.get<SpawnHome>(m);
+                    for (int r = 0; r < GORLICORN_RABBITS; ++r) {
+                        float rx = 0.0f, rz = 0.0f;
+                        if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
+                        const Entity rabbit = spawnMob(w, t, rng, MobKind::Rabbit, mobFaction(MobKind::Rabbit), rx, rz);
+                        Behaviors* rb = w.get<Behaviors>(rabbit);
+                        for (BehaviorRule& rule : rb->rules) {
+                            if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;
+                        }
+                        w.add(rabbit, SpawnHome{ home.x, home.z, false });
+                    }
+                }
+            }
         }
     }
+
+    void giveFactionPatrols() {
+        // Every unit of the other factions (their mobs too) patrols its faction's claim when it has nothing else to do:
+        // Patrol is the last behavior on its list
+        for (Entity u : w.view<Unit, Behaviors, Faction>()) {
+            const int f = w.get<Faction>(u)->id;
+            if (f == FACTION_PLAYER || isMobFaction(f)) continue;
+            BehaviorRule patrol;
+            patrol.kind = BehaviorKind::Patrol;
+            addBehavior(w.get<Behaviors>(u)->rules, patrol);
+        }
+    }
+
+};
+
+} // namespace
+
+void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
+    const Vec2 spawn = findSpawn(t);
+    // Read in the ground around the spawn, so the units and red units can stand on it
+    if (t.streamed()) t.stream({ spawn }, SPAWN_LOAD_RADIUS, 0);
+    LevelBuilder b{ w, t, rng, spawn, t.size() };
+
+    // Units: a block centred on the spawn
+    for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
+
+    // The other factions' units (data/factioninfo.txt): the same kind of unit, but they can't be commanded. Each
+    // faction's units stand together in a camp of their own, the camps spread around the spawn at even angles and far
+    // enough apart that two camps don't see each other at the start. A camp's units are on walkable tiles, one each;
+    // a camp that can't find room for all of them (water, a small map) spills over into the wider area. The attempt
+    // limits stop a small map from looping forever.
+    std::vector<const FactionDef*> camps;
+    for (const FactionDef& f : factions()) {
+        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
+    }
+
+    // Camps (claims.h): every faction's, the player's included, gets the kit: a flag, a vault on a small foundation with
+    // three days of logs, a campfire with four bedrolls, a barrel and two trees, all owned by the faction. The player's
+    // is in the middle, just south of the squad; the others are at the compass points around it (north, east, south,
+    // west, then the corners between, should there be more), CAMP_DISTANCE away, so no two claims overlap. A camp whose
+    // spot the kit doesn't fit on moves to the nearest one it does, within CAMP_SHIFT. The kits go down before the level's
+    // props, so those don't take their ground; their vaults go down after all of them (below).
+    const Vec2 middle = b.placePlayerCamp(playerCamp);
+    for (size_t ci = 0; ci < camps.size(); ++ci) b.placeFactionCamp(camps, ci, middle);
+    b.placeLevelProps();
+    b.placeVaults();
+    b.finishUnits();
 
     // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its flag, the player's included.
     // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
-    auto freeSpot = [&](float cx, float cz, float radius, float& x, float& z) {
-        for (int attempt = 0; attempt < 200; ++attempt) {
-            const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * radius;
-            const GridPos g{ tileAt(cx + std::cos(a) * d), tileAt(cz + std::sin(a) * d) };
-            if (!t.walkable(g.x, g.y) || std::find(enemyTiles.begin(), enemyTiles.end(), g) != enemyTiles.end()) continue;
-            enemyTiles.push_back(g);
-            x = g.x + 0.5f;
-            z = g.y + 0.5f;
-            return true;
-        }
-        return false;
-    };
-    // Whether no prop stands within CAMP_CAGE_GAP of (x, z), so a cage put there sits clear of the others
-    auto clearOfProps = [&](float x, float z) {
-        for (Entity e : w.view<Prop, Transform>()) {
-            const Transform* pt = w.get<Transform>(e);
-            if ((pt->x - x) * (pt->x - x) + (pt->z - z) * (pt->z - z) < CAMP_CAGE_GAP * CAMP_CAGE_GAP) return false;
-        }
-        return true;
-    };
-    for (const CampKit& kit : kits) {
-        // Your camp's mobs are the party's own (ensurePlayerMobs), placed once the party is known
-        if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
-        for (int i = 0; i < CAMP_MOBS; ++i) {
-            float x = 0.0f, z = 0.0f;
-            MobKind kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
-            while (!campMobKind(kind)) kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
-            // Each in a Prisoner Cage of its own, locked to the camp's faction, on a spot clear of the camp's props
-            bool found = false;
-            for (int tries = 0; tries < 20 && !found; ++tries) {
-                if (!freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) break;
-                found = clearOfProps(x, z);
-            }
-            if (!found) continue;
-            const Entity mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
-            const PropInfo& cageInfo = propInfo(PropKind::PrisonerCage);
-            const Entity cage = w.create();
-            w.add(cage, Transform{ x, t.heightAt(x, z), z });
-            w.add(cage, Prop{ PropKind::PrisonerCage, campSerial++, 0.0f });
-            w.add(cage, Owner{ kit.faction });
-            w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
-            claimOwnership(w, cage);
-            w.add(mob, Occupying{ cage });
-            // A regular faction's mob, not a wild one: its name says so
-            if (!isMobFaction(kit.faction)) {
-                if (Name* nm = w.get<Name>(mob)) nm->text += " [!]";
-            }
-        }
-    }
-    float farthest = 0.0f;   // how far out the camps reach from the spawn
-    for (const CampKit& kit : kits) {
-        if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
-    }
-    const float turn = rng.unit() * 6.2831853f;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
-        const MobKind kind = (MobKind)k;
-        // Each herd at its own bearing, out between WILD_MOB_NEAR and WILD_MOB_FAR past the camps
-        const float a = turn + 6.2831853f * (float)(k - 1) / (float)MOB_KIND_COUNT;
-        const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
-        const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
-        const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
-        for (int i = 0; i < mobInfo(kind).wild; ++i) {
-            float x = 0.0f, z = 0.0f;
-            if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
-                const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
-                if (kind != MobKind::Gorlicorn) continue;
-                // The Gorlicorn's Rabbits: placed about it, and Patrolling Spawn round the same spot, so they stay by it
-                const SpawnHome home = *w.get<SpawnHome>(m);
-                for (int r = 0; r < GORLICORN_RABBITS; ++r) {
-                    float rx = 0.0f, rz = 0.0f;
-                    if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
-                    const Entity rabbit = spawnMob(w, t, rng, MobKind::Rabbit, mobFaction(MobKind::Rabbit), rx, rz);
-                    Behaviors* rb = w.get<Behaviors>(rabbit);
-                    for (BehaviorRule& rule : rb->rules) {
-                        if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;
-                    }
-                    w.add(rabbit, SpawnHome{ home.x, home.z, false });
-                }
-            }
-        }
-    }
-
-    // Every unit of the other factions (their mobs too) patrols its faction's claim when it has nothing else to do:
-    // Patrol is the last behavior on its list
-    for (Entity u : w.view<Unit, Behaviors, Faction>()) {
-        const int f = w.get<Faction>(u)->id;
-        if (f == FACTION_PLAYER || isMobFaction(f)) continue;
-        BehaviorRule patrol;
-        patrol.kind = BehaviorKind::Patrol;
-        addBehavior(w.get<Behaviors>(u)->rules, patrol);
-    }
+    b.placeCampMobs();
+    b.placeWildMobs();
+    b.giveFactionPatrols();
 }
 
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem) {
