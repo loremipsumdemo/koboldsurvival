@@ -23,12 +23,7 @@
 #include "props.h"
 #include "overview.h"
 #include "ui_icons.h"
-
-// A texture plus its width/height ratio
-struct TextTex {
-    GLuint tex = 0;
-    float aspect = 1.0f;
-};
+#include "text_cache.h"
 
 class LoadStages;
 
@@ -491,8 +486,8 @@ public:
     // the party menu, Settings and the Esc menu. setMenuText picks which set every text call uses until it is called
     // again; each set keeps its own text pictures, so switching is cheap. The fonts are owned by the caller.
     void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
-    void setMenuText(bool on);
-    bool menuText() const { return menuText_; }
+    void setMenuText(bool on) { text_.setMenuText(on); }
+    bool menuText() const { return text_.menuText(); }
     // Text drawn from the very large title font and shrunk to height h, centered on (cx, cy), so large text stays sharp.
     // Without that font, the UI font enlarged.
     void drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint);
@@ -515,13 +510,6 @@ private:
     void initSky();
     void makeTexels();
     void loadPropModels(LoadStages& stages);
-
-    // Text line with its texture and size in pixels
-    struct HudLine {
-        std::string text;
-        TextTex tex;
-        float w = 0.0f, h = 0.0f;
-    };
 
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
@@ -656,22 +644,11 @@ private:
     // behind it, so a line under a nearer box is not found. Returns false when there is none.
     static bool topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row);
 
-    // Cached white text texture for a menu string, created on first use
-    HudLine& uiLine(const std::string& s) { return fontLine(ui_, s); }
-
-    // Cached white text texture for a list string, using the list font
-    HudLine& listLine(const std::string& s) { return fontLine(list_, s); }
-    // A font with its own cache of text textures: the menus', the lists' and the Stats popout's
-    struct TextFont {
-        TTF_Font* font = nullptr;
-        std::map<std::string, HudLine> lines;
-    };
-    // Drops a font's cached text textures, for a new font or a cache that has grown too large
-    static void clearFont(TextFont& f);
-    HudLine& fontLine(TextFont& f, const std::string& s);
+    // A menu or list string's picture (text_cache.h), made on first use
+    const TextLine& uiLine(const std::string& s) { return text_.ui.line(s); }
+    const TextLine& listLine(const std::string& s) { return text_.list.line(s); }
+    // Text in one of the fonts, its top left at (x, y)
     void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
-    float fontTextWidth(TextFont& f, const std::string& s);
-    float fontTextHeight(TextFont& f, const std::string& s);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uFaction_ = -1;
@@ -804,24 +781,9 @@ private:
     // The top of each prop's block of name lines, as drawPropNames last drew it, so the progress ring sits above it
     std::map<Entity, float> propLabelTop_;
 
-    // Hover label: one cached texture per line, rebuilt only when its text changes
-    TTF_Font* font_ = nullptr;
-    TTF_Font* hudFont_ = nullptr;
-    std::vector<HudLine> hudLines_;
-
-    // The menus' font, the smaller font for dense lists, and the Stats popout's two, each with its cache of textures
-    TextFont ui_, list_, statsTitle_, statsRow_;
-    // The text set not in use (the menus' while the game's is, and the other way round), swapped in by setMenuText
-    struct TextSet {
-        TTF_Font* hud = nullptr;
-        std::vector<HudLine> hudLines;
-        TextFont ui, list, statsTitle, statsRow;
-    };
-    TextSet parked_;
-    bool menuText_ = false;
-    void swapTextSet();
-    void replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
-    void clearActiveText();
+    TTF_Font* font_ = nullptr;   // the large font for the symbol fallbacks
+    // Every other font, with the pictures of the text drawn in it, for the game's set and the menus'
+    TextCache text_;
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
     // How much the UI is scaled: the window's height over the 720 pixels it is laid out for

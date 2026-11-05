@@ -358,30 +358,30 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
 
 StatsPanelLayout Renderer::statsPanelLayout(int winW, int winH) {
     const float s = winH / 720.0f;
-    return layoutStatsPanel(winW, winH, fontTextHeight(statsRow_, "Ag") + 1.0f * s, fontTextHeight(statsTitle_, "Ag"));
+    return layoutStatsPanel(winW, winH, text_.statsRow.height("Ag") + 1.0f * s, text_.statsTitle.height("Ag"));
 }
 
 void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name, const Stats& stats,
                               float mx, float my) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
-    const float rowH = fontTextHeight(statsRow_, "Ag") + 1.0f * s;
+    const float rowH = text_.statsRow.height("Ag") + 1.0f * s;
     const float pad = L.left.x - L.box.x;
-    const float iconH = fontTextHeight(statsRow_, "Ag");
+    const float iconH = text_.statsRow.height("Ag");
     const float nameIndent = iconH + 4.0f * s;   // the stat names sit after their icons
 
     drawRect(L.box, RGBA{ 0.075f, 0.03f, 0.04f, bgAlpha });
     const std::string caption = langf("UILABEL_STATS_CAPTION", { name });
-    drawFontText(statsTitle_, caption, L.box.x + (L.box.w - fontTextWidth(statsTitle_, caption)) * 0.5f,
+    drawFontText(text_.statsTitle, caption, L.box.x + (L.box.w - text_.statsTitle.width(caption)) * 0.5f,
                  L.box.y + pad, WHITE);
 
     // Columns: the name at the left, then the level, the total XP and the XP still to go, right aligned
     auto row = [&](const Rect& col, float rowY, float indent, const std::string& a, const std::string& b,
                    const std::string& c, const std::string& d, RGBA tint) {
-        drawFontText(statsRow_, a, col.x + indent, rowY, tint);
-        drawFontText(statsRow_, b, col.x + 200.0f - fontTextWidth(statsRow_, b), rowY, tint);
-        drawFontText(statsRow_, c, col.x + 312.0f - fontTextWidth(statsRow_, c), rowY, tint);
-        drawFontText(statsRow_, d, col.x + col.w - fontTextWidth(statsRow_, d), rowY, tint);
+        drawFontText(text_.statsRow, a, col.x + indent, rowY, tint);
+        drawFontText(text_.statsRow, b, col.x + 200.0f - text_.statsRow.width(b), rowY, tint);
+        drawFontText(text_.statsRow, c, col.x + 312.0f - text_.statsRow.width(c), rowY, tint);
+        drawFontText(text_.statsRow, d, col.x + col.w - text_.statsRow.width(d), rowY, tint);
     };
     auto column = [&](const Rect& col, const std::vector<StatGroup>& groups) {
         float rowY = col.y;
@@ -392,7 +392,7 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
                               : group == StatGroup::Combat ? lang("UILABEL_COMBAT")
                               : group == StatGroup::Gathering ? lang("UILABEL_RESOURCE_GATHERING")
                               : group == StatGroup::Crafting ? lang("UILABEL_CRAFTING") : lang("UILABEL_UTILITY");
-            drawFontText(statsRow_, title, col.x + nameIndent, rowY, theme::GOLD);
+            drawFontText(text_.statsRow, title, col.x + nameIndent, rowY, theme::GOLD);
             rowY += rowH;
             for (int i = 0; i < STAT_COUNT; ++i) {
                 if (statInfo((StatId)i).group != group) continue;
@@ -410,8 +410,8 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
 
     const bool hot = L.close.contains(mx, my);
     drawRect(L.close, hot ? RGBA{ 0.353f, 0.235f, 0.110f, bgAlpha } : RGBA{ 0.11f, 0.05f, 0.06f, bgAlpha });
-    const float tw = fontTextWidth(statsRow_, lang("UILABEL_CLOSE")), th = fontTextHeight(statsRow_, lang("UILABEL_CLOSE"));
-    drawFontText(statsRow_, lang("UILABEL_CLOSE"), L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, WHITE);
+    const float tw = text_.statsRow.width(lang("UILABEL_CLOSE")), th = text_.statsRow.height(lang("UILABEL_CLOSE"));
+    drawFontText(text_.statsRow, lang("UILABEL_CLOSE"), L.close.x + (L.close.w - tw) * 0.5f, L.close.y + (L.close.h - th) * 0.5f, WHITE);
 }
 
 ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH) {

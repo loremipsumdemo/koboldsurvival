@@ -41,28 +41,13 @@ std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, con
 }
 
 void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
-    if (!hudFont_) return;
+    if (!text_.hud) return;
 
-    // Rebuild only the lines whose text changed. The text is made white and tinted to its colour when drawn.
-    for (size_t i = 0; i < lines.size(); ++i) {
-        if (i == hudLines_.size()) hudLines_.emplace_back();
-        HudLine& hl = hudLines_[i];
-        const std::string& text = lines[i].text;
-        if (hl.tex.tex && hl.text == text) continue;
-        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
-
-        int tw = 0, th = 0;
-        TTF_GetStringSize(hudFont_, text.c_str(), text.size(), &tw, &th);
-        hl.text = text;
-        hl.tex = makeGlyphTexture(hudFont_, text.c_str(), SDL_Color{ 255, 255, 255, 255 });
-        hl.w = (float)tw;
-        hl.h = (float)th;
-    }
-    // Drop lines that are no longer shown
-    while (hudLines_.size() > lines.size()) {
-        if (hudLines_.back().tex.tex) glDeleteTextures(1, &hudLines_.back().tex.tex);
-        hudLines_.pop_back();
-    }
+    // Only the lines whose text changed are made again. The text is white, and tinted to its colour when drawn.
+    std::vector<std::string> texts;
+    texts.reserve(lines.size());
+    for (const HudEntry& e : lines) texts.push_back(e.text);
+    const std::vector<TextLine>& hudLines = text_.hudLines(texts);
     if (lines.empty()) return;
 
     Mat4 pixels = ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f);
@@ -73,7 +58,7 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     // Dark panels behind the text
     Batch panels;
     float y = hudTop_;
-    for (const HudLine& hl : hudLines_) {
+    for (const TextLine& hl : hudLines) {
         float x0 = margin, x1 = margin + hl.w + pad * 2.0f;
         float y0 = y, y1 = y + hl.h + pad * 2.0f;
         panels.quad({ x0, y0, 0 }, { x1, y0, 0 }, { x1, y1, 0 }, { x0, y1, 0 },
@@ -91,8 +76,8 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
     y = hudTop_;   // the same top as the panels
-    for (size_t i = 0; i < hudLines_.size(); ++i) {
-        const HudLine& hl = hudLines_[i];
+    for (size_t i = 0; i < hudLines.size(); ++i) {
+        const TextLine& hl = hudLines[i];
         float x0 = margin + pad, x1 = x0 + hl.w;
         float y0 = y + pad, y1 = y0 + hl.h;
         float v[4 * 5] = {

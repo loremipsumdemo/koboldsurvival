@@ -521,7 +521,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const PartyListBar bar = partyListBar((int)uiW_, (int)uiH_, (int)p.size(), ui.listScroll);
     if (bar.track.h > 0.0f) drawScrollBar(bar.track, bar.thumb, ui.listDrag || bar.thumb.contains(mx, my));
 
-    const bool menuSet = menuText_;
+    const bool menuSet = text_.menuText();
     for (const Button& b : buttons) {
         // The Stats tab's rows (headings, stats and their - and +) are drawn in the game's fonts: there are many of them
         const bool statRow = b.action == Action::PartyStatLabel || b.action == Action::PartyStep

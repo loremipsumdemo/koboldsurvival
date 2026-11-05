@@ -72,6 +72,7 @@ add_executable(koboldsurvival
     src/renderer_panels.cpp
     src/renderer_sidebar.cpp
     src/renderer_popups.cpp
+    src/text_cache.cpp
     src/renderer_terrain.cpp
     src/items.cpp
     src/language.cpp

@@ -63,9 +63,6 @@ struct Batch {
     }
 };
 
-// Renders one character from the font into a texture
-TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color);
-
 // A texture from RGBA pixels, clamped at its edges and filtered linearly
 GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba);
 

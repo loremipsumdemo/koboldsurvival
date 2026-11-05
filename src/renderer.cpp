@@ -222,31 +222,6 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
     return true;
 }
 
-TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color) {
-    SDL_Surface* s = TTF_RenderText_Blended(font, text, strlen(text), color);
-    if (!s) {
-        SDL_Log("TTF_RenderText failed: %s", SDL_GetError());
-        return {};
-    }
-    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-    SDL_DestroySurface(s);
-
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
-
-    TextTex result{ t, (float)conv->w / (float)conv->h };
-    SDL_DestroySurface(conv);
-    return result;
-}
-
 GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba) {
     GLuint t = 0;
     glGenTextures(1, &t);
@@ -328,8 +303,8 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     // with are ready.
     LoadStages stages("Start-up", progress);
     font_ = font;
-    hudFont_ = hudFont;
-    ui_.font = uiFont;
+    text_.hud = hudFont;
+    text_.ui.font = uiFont;
 
     if (!initGl()) return false;
     loadLoadingArt();
@@ -598,11 +573,7 @@ void Renderer::shutdown() {
     itemPics_.clear();
     emotePics_.clear();
     uiIcons_.clear();
-    // Both text sets: the one in use, then the parked one
-    clearActiveText();
-    swapTextSet();
-    clearActiveText();
-    swapTextSet();
+    text_.clear();
     for (Model& m : propModels_) destroyModel(m);
 
     glDeleteProgram(skyProgram_);
@@ -669,7 +640,7 @@ void Renderer::beginUi(int winW, int winH) {
     // Game log lines are new strings in every fight, so the list cache would grow for the whole session.
     // It is cleared here, once a frame, when no text reference is held: anything drawn again is rebuilt.
     constexpr size_t LIST_CACHE_LIMIT = 512;
-    if (list_.lines.size() > LIST_CACHE_LIMIT) clearFont(list_);
+    if (text_.list.lines.size() > LIST_CACHE_LIMIT) text_.list.clear();
     uiW_ = winW;
     uiH_ = winH;
     glViewport(0, 0, winW, winH);

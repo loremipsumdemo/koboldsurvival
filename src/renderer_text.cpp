@@ -44,7 +44,7 @@ float Renderer::uiTextHeight(const std::string& s) {
 }
 
 void Renderer::drawUiText(const std::string& s, float x, float y, RGBA tint) {
-    drawFontText(ui_, s, x, y, tint);
+    drawFontText(text_.ui, s, x, y, tint);
 }
 
 void Renderer::drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint) {
@@ -58,7 +58,7 @@ std::string Renderer::fitShrinkText(const std::string& s, float boxW) {
 
 // The factor a line of ui text is drawn at to fit a box: 1 when it fits, otherwise smaller, never below kMinTextFit
 float Renderer::fitShrinkScale(const std::string& shown, float boxW, float boxH) {
-    const HudLine& hl = uiLine(shown);
+    const TextLine& hl = uiLine(shown);
     if (hl.w <= 0.0f || hl.h <= 0.0f) return 1.0f;
     float k = 1.0f;
     if (hl.w > boxW) k = std::min(k, boxW / hl.w);
@@ -68,7 +68,7 @@ float Renderer::fitShrinkScale(const std::string& shown, float boxW, float boxH)
 
 // Draws ui text with its top-left corner at (x, y), at k times its size
 void Renderer::drawUiTextScaled(const std::string& s, float x, float y, float k, RGBA tint) {
-    HudLine& hl = uiLine(s);
+    const TextLine& hl = uiLine(s);
     if (!hl.tex.tex) return;
     const float w = hl.w * k, h = hl.h * k;
     drawTexture(hl.tex.tex, x, y, w, h, tint);
@@ -90,64 +90,17 @@ void Renderer::noteTip(const std::string& full, const Rect& area) {
 
 void Renderer::setListFont(TTF_Font* font) {
     // Textures made with the old font would be stale, so drop them
-    clearFont(list_);
-    list_.font = font;
-}
-
-void Renderer::clearFont(TextFont& f) {
-    for (auto& entry : f.lines) {
-        if (entry.second.tex.tex) glDeleteTextures(1, &entry.second.tex.tex);
-    }
-    f.lines.clear();
-}
-
-// Stats popout fonts: each one keeps its own cache of text textures
-// Drops every text picture of the set in use
-void Renderer::clearActiveText() {
-    for (HudLine& hl : hudLines_) {
-        if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
-    }
-    hudLines_.clear();
-    for (TextFont* f : { &ui_, &list_, &statsTitle_, &statsRow_ }) clearFont(*f);
-}
-
-void Renderer::replaceActiveFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
-    clearActiveText();
-    hudFont_ = hud;
-    ui_.font = ui;
-    list_.font = list;
-    statsTitle_.font = statsTitle;
-    statsRow_.font = statsRow;
-}
-
-void Renderer::swapTextSet() {
-    std::swap(hudFont_, parked_.hud);
-    std::swap(hudLines_, parked_.hudLines);
-    std::swap(ui_, parked_.ui);
-    std::swap(list_, parked_.list);
-    std::swap(statsTitle_, parked_.statsTitle);
-    std::swap(statsRow_, parked_.statsRow);
-}
-
-void Renderer::setMenuText(bool on) {
-    if (on == menuText_) return;
-    // Without menu fonts there is nothing to swap to
-    if (on && !parked_.ui.font) return;
-    swapTextSet();
-    menuText_ = on;
+    text_.list.clear();
+    text_.list.font = font;
 }
 
 // Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
 void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
-    if (menuText_) swapTextSet();
-    replaceActiveFonts(hud, ui, list, statsTitle, statsRow);
-    if (menuText_) swapTextSet();
+    text_.setGameFonts(hud, ui, list, statsTitle, statsRow);
 }
 
 void Renderer::setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
-    if (!menuText_) swapTextSet();
-    replaceActiveFonts(hud, ui, list, statsTitle, statsRow);
-    if (!menuText_) swapTextSet();
+    text_.setMenuFonts(hud, ui, list, statsTitle, statsRow);
 }
 
 void Renderer::drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint) {
@@ -162,47 +115,16 @@ void Renderer::drawBigText(const std::string& text, float cx, float cy, float h,
 
 void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
     // Textures made with the old fonts would be stale, so drop them
-    clearFont(statsTitle_);
-    clearFont(statsRow_);
-    statsTitle_.font = title;
-    statsRow_.font = rows;
-}
-
-Renderer::HudLine& Renderer::fontLine(TextFont& f, const std::string& s) {
-    auto it = f.lines.find(s);
-    if (it != f.lines.end()) return it->second;
-
-    HudLine hl;
-    hl.text = s;
-    hl.w = 0.0f;
-    hl.h = 0.0f;
-    int tw = 0, th = 0;
-    if (!f.font) return f.lines[s] = hl;
-    if (s.find_first_not_of(' ') == std::string::npos) {
-        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
-        TTF_GetStringSize(f.font, "Ag", 2, &tw, &th);
-        hl.h = (float)th;
-        return f.lines[s] = hl;
-    }
-    TTF_GetStringSize(f.font, s.c_str(), s.size(), &tw, &th);
-    hl.tex = makeGlyphTexture(f.font, s.c_str(), SDL_Color{ 255, 255, 255, 255 });
-    hl.w = (float)tw;
-    hl.h = (float)th;
-    return f.lines[s] = hl;
+    text_.statsTitle.clear();
+    text_.statsRow.clear();
+    text_.statsTitle.font = title;
+    text_.statsRow.font = rows;
 }
 
 void Renderer::drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint) {
-    HudLine& hl = fontLine(f, s);
+    const TextLine& hl = f.line(s);
     if (!hl.tex.tex) return;
     drawTexture(hl.tex.tex, x, y, hl.w, hl.h, tint);
-}
-
-float Renderer::fontTextWidth(TextFont& f, const std::string& s) {
-    return fontLine(f, s).w;
-}
-
-float Renderer::fontTextHeight(TextFont& f, const std::string& s) {
-    return fontLine(f, s).h;
 }
 
 float Renderer::listTextHeight(const std::string& s) {
@@ -214,7 +136,7 @@ float Renderer::listTextWidth(const std::string& s) {
 }
 
 void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
-    drawFontText(list_, s, x, y, tint);
+    drawFontText(text_.list, s, x, y, tint);
 }
 
 // Shortens text to fit maxW. Whole words are kept where possible, so a name is cut at a word and
@@ -285,11 +207,11 @@ void Renderer::drawClockText(const std::string& s, float x, float y, RGBA tint) 
 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
     std::vector<std::string> out;
-    if (!list_.font) return out;
+    if (!text_.list.font) return out;
     // Measured without making a texture for every trial line
     const auto width = [this](const std::string& s) {
         int tw = 0, th = 0;
-        if (!s.empty()) TTF_GetStringSize(list_.font, s.c_str(), s.size(), &tw, &th);
+        if (!s.empty()) TTF_GetStringSize(text_.list.font, s.c_str(), s.size(), &tw, &th);
         return (float)tw;
     };
     std::string cur;
@@ -332,7 +254,7 @@ std::vector<std::string> Renderer::wrapListText(const std::string& text, float m
 }
 
 void Renderer::drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint) {
-    HudLine& hl = uiLine(s);
+    const TextLine& hl = uiLine(s);
     if (!hl.tex.tex) return;
     const float w = hl.w * scale, h = hl.h * scale;
     const float x = cx - w * 0.5f, y = cy - h * 0.5f;
