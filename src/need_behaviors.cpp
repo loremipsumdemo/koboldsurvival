@@ -1,7 +1,7 @@
-#include "behavior.h"
+#include "need_behaviors.h"
 #include <string>
 #include <vector>
-#include "behavior_rules.h"
+#include "behavior.h"
 #include "components.h"
 #include "items.h"
 #include "useitem.h"
@@ -55,7 +55,7 @@ int bestSlot(World& w, Entity unit, bool food) {
 
 // Uses the item in the giver's slot on the taker, and logs it. The giver is the taker itself, or a unit sharing with
 // it. False if the item could not be used, so nothing happened.
-bool consume(World& w, Entity giver, Entity taker, int slot, bool food, CombatLog& log) {
+bool consume(World& w, Entity giver, Entity taker, int slot, bool food, GameLog& log) {
     const Inventory* inv = w.get<Inventory>(giver);
     const ItemDef* def = inv ? findItem(inv->slots[slot].item) : nullptr;
     if (!def) return false;
@@ -98,7 +98,7 @@ Entity sharerFor(World& w, Entity taker, bool food, int takerValue, float range)
 // Eat or Heal for one unit: below its percent, it uses its own best item, or with Share on takes one from a unit
 // sharing with it, or walks to one a little farther off. True when it is in need and nothing could be used, so the
 // behavior waits before trying again; r.why says why.
-bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r, CombatLog& log) {
+bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r, GameLog& log) {
     const bool food = r.kind == BehaviorKind::Eat;
     const int v = valueOf(*w.get<Needs>(actor), food);
     r.why = BehaviorWait::None;
@@ -133,7 +133,7 @@ bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
     return gn && valueOf(*gn, food) > takerValue && bestSlot(w, g, food) >= 0;
 }
 
-size_t behaviorSystem(World& w, CombatLog& log, float dt) {
+size_t behaviorSystem(World& w, GameLog& log, float dt) {
     size_t checked = 0;
     for (Entity actor : w.view<Behaviors, Needs>()) {
         Behaviors* b = w.get<Behaviors>(actor);

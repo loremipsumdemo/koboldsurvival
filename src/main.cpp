@@ -23,13 +23,14 @@
 #include <vector>
 #include "build_info.h"
 #include "camera.h"
-#include "gui.h"
+#include "ui_layout.h"
 #include "sky.h"
 #include "components.h"
 #include "ecs.h"
 #include "renderer.h"
-#include "resources.h"
-#include "map.h"
+#include "game_state.h"
+#include "rng.h"
+#include "map_file.h"
 #include "audio.h"
 #include "pak.h"
 #include "fonts.h"
@@ -40,7 +41,7 @@
 #include "inventory.h"
 #include "party.h"
 #include "party_ui.h"
-#include "behavior.h"
+#include "need_behaviors.h"
 #include "build.h"
 #include "claims.h"
 #include "mobs.h"
@@ -50,7 +51,7 @@
 #include "items.h"
 #include "systems.h"
 #include "terrain.h"
-#include "ui.h"
+#include "ui_types.h"
 #include "useitem.h"
 #include "world_format.h"
 
@@ -183,7 +184,7 @@ float talkCooldown = 0.0f;                // seconds of that cooldown left
 bool paused = false;                      // paused with Space, until Space is pressed again
 // The Build tab: the prop picked to place (a PropKind, or -1 for none), its facing while placed, and the mouse's x last
 // frame, which turns it while R is held
-int buildKind = -1;
+BuildPick buildPick;
 float buildYaw = 0.0f;
 float buildPrevX = -1.0f;
 // Radians a pixel of mouse movement turns a prop being placed
@@ -218,7 +219,7 @@ struct ContextMenu {
 };
 ContextMenu contextMenu;
 
-// The Disband popout (layoutDisband in gui.h): the unit of yours it asks about, or NULL_ENTITY when it is shut, and when
+// The Disband popout (layoutDisband in ui_layout.h): the unit of yours it asks about, or NULL_ENTITY when it is shut, and when
 // its Disband button was pressed (SDL milliseconds), or 0 while it is not held
 Entity disbandTarget = NULL_ENTITY;
 unsigned long long disbandHeldAt = 0;
@@ -505,7 +506,7 @@ TradeStatus checkTrade(World& w, Entity npc, Entity player) {
     }
     const int npcValue = tradeValueOf(tradeNpc);
     const int offer = tradeValueOf(tradePlayer);
-    const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA));
+    const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), StatId::Charisma));
     st.progress = needed > 0 ? (float)offer / (float)needed : 1.0f;
     if (tradeNpc.empty() || tradePlayer.empty()) st.text = lang("MISC_TRADE_ADD_BOTH");
     else if (!tradeFits(*pi, tradePlayer, tradeNpc)) st.text = lang("MISC_TRADE_NO_ROOM_YOURS");
@@ -523,7 +524,7 @@ void completeTrade(World& w, Entity npc, Entity player) {
     Inventory* ni = w.get<Inventory>(npc);
     Inventory* pi = w.get<Inventory>(player);
     const int npcValue = tradeValueOf(tradeNpc);
-    const int fee = freeTrade ? 0 : requiredOffer(npcValue, levelOf(statsOf(w, player), STAT_CHARISMA)) - npcValue;
+    const int fee = freeTrade ? 0 : requiredOffer(npcValue, levelOf(statsOf(w, player), StatId::Charisma)) - npcValue;
     for (const TradeGhost& g : tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
     for (const TradeGhost& g : tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
     // The trade was checked to fit, but should anything not, it falls at the receiver's feet
@@ -547,7 +548,7 @@ void completeTrade(World& w, Entity npc, Entity player) {
         queueUnitLabel(npc, itemGainLabelFor(count, item));
         queueUnitLabel(player, itemLossLabelFor(count, item), true);
     }
-    if (fee > 0) grantXp(w, player, STAT_CHARISMA, fee, lang("MISC_REASON_FEES"));
+    if (fee > 0) grantXp(w, player, StatId::Charisma, fee, lang("MISC_REASON_FEES"));
     tradeOpen = false;
     tradeNpc.clear();
     tradePlayer.clear();
@@ -849,7 +850,7 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
     freeTrade = false;
     paused = false;
     rng.gen.seed(seed);
-    buildKind = -1;   // a new level starts with nothing picked to build
+    buildPick = {};   // a new level starts with nothing picked to build
     resetPlayerReputation();   // a new game starts every faction at its default standing
     setupWorld(world, terrain, rng, levelPlayerCamp);
     // log.txt: how many of each prop kind went down, and how far the nearest is from the first unit
@@ -863,16 +864,16 @@ bool prepareLevel(const MapChoice& c, World& world, Terrain& terrain, Renderer& 
             break;
         }
         for (Entity e : world.view<Prop, Transform>()) {
-            const int kind = world.get<Prop>(e)->kind;
-            if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
-            ++placed[(size_t)kind];
+            const PropKind kind = world.get<Prop>(e)->kind;
+            if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
+            ++placed[(size_t)idx(kind)];
             const Transform* pt = world.get<Transform>(e);
-            nearest[(size_t)kind] = std::min(nearest[(size_t)kind], std::hypot(pt->x - home.x, pt->z - home.z));
+            nearest[(size_t)idx(kind)] = std::min(nearest[(size_t)idx(kind)], std::hypot(pt->x - home.x, pt->z - home.z));
         }
         std::string line;
         for (int k = 0; k < PROP_KIND_COUNT; ++k) {
             char buf[96];
-            std::snprintf(buf, sizeof(buf), "%s%s %d (%.0f)", k ? ", " : "", lang(propInfo(k).nameKey).c_str(),
+            std::snprintf(buf, sizeof(buf), "%s%s %d (%.0f)", k ? ", " : "", lang(propInfo((PropKind)k).nameKey).c_str(),
                           placed[(size_t)k], placed[(size_t)k] ? nearest[(size_t)k] : -1.0f);
             line += buf;
         }
@@ -943,7 +944,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, PlayingDead{});   // woke near hostile units, and lies still on the ground
         }
         if ((u.hostile || u.neutral) && u.mob <= 0) world.add(e, Dialogue{});   // a mob has nothing to say
-        if (u.mob > 0) world.add(e, Mob{ u.mob });
+        if (u.mob > 0) world.add(e, Mob{ (MobKind)u.mob });
         if (u.hasHome) world.add(e, SpawnHome{ u.homeX, u.homeZ, u.homeReturning });
         // Every unit carries items and has behaviors, whichever side it is on
         Inventory inv;
@@ -973,7 +974,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
-        if (u.mob <= 0) world.add(e, Body{ u.hasBody ? u.body : bodyForSavedName(u.name) });
+        if (u.mob <= 0) world.add(e, Body{ u.hasBody ? (BodyType)u.body : bodyForSavedName(u.name) });
         // Older saves have no faction: it comes from the side the unit is on. A faction no longer listed (the old Gray
         // Faction) maps to the one that replaced it.
         const int savedFaction = u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_RETIRED_GRAY : FACTION_PLAYER;
@@ -1036,7 +1037,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
                         continue;
                     }
                     b->rules[at].prop = prop;
-                    b->rules[at].propKind = world.get<Prop>(prop)->kind;
+                    b->rules[at].propKind = idx(world.get<Prop>(prop)->kind);
                 }
                 ++at;
             }
@@ -1048,11 +1049,11 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
                     haul.kind = BehaviorKind::AutoHaul;
                     haul.on = u.routineOn;
                     haul.prop = store;
-                    haul.propKind = world.get<Prop>(store)->kind;
+                    haul.propKind = idx(world.get<Prop>(store)->kind);
                     BehaviorRule harvest;
                     harvest.kind = BehaviorKind::AutoHarvest;
                     harvest.on = u.routineOn;
-                    harvest.propKind = world.get<Prop>(gather)->kind;
+                    harvest.propKind = idx(world.get<Prop>(gather)->kind);
                     addBehavior(b->rules, haul);
                     addBehavior(b->rules, harvest);
                 }
@@ -1172,9 +1173,9 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         su.name = n ? n->text : lang("UILABEL_UNNAMED_UNIT");
         if (const Body* bd = w.get<Body>(u)) {
             su.hasBody = true;
-            su.body = bd->type;
+            su.body = idx(bd->type);
         }
-        if (const Mob* m = w.get<Mob>(u)) su.mob = m->kind;
+        if (const Mob* m = w.get<Mob>(u)) su.mob = idx(m->kind);
         if (const SpawnHome* h = w.get<SpawnHome>(u)) {
             su.hasHome = true;
             su.homeX = h->x;
@@ -1915,7 +1916,7 @@ int main(int, char**) {
     int repView = FACTION_PLAYER;
     int repScroll = 0;
     bool unitOpen = true;           // the Unit Panel: open shows its tabs, closed shows its bar alone
-    int unitTab = 0;                // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
+    UnitTab unitTab = UnitTab::Inventory;   // the tab shown: Inventory, Equipment, Profile, Stats or Behavior
     // The Behavior tab: the Add Behavior list, which shuts when the panel shows another unit, and the # prompt asking
     // for one behavior's percent. The prompt is modal and asked once: it takes every click and key until it is answered.
     bool behaviorAddOpen = false;
@@ -1931,23 +1932,24 @@ int main(int, char**) {
     Entity lastLone = NULL_ENTITY;  // the lone unit the Unit Panel showed last frame
     // Where the Squad Panel, the Unit Panel and the Information Panel are, as last locked (kept in the settings). 0 is
     // the default size and place.
-    auto placeFromSettings = [&](int i) {
-        const std::array<float, 4>& v = settings.panels[(size_t)i];
-        PanelPlace p = defaultPanelPlace(i);   // its bar's side, until the first frame settles it from its place
+    auto placeFromSettings = [&](PanelId which) {
+        const std::array<float, 4>& v = settings.panels[(size_t)idx(which)];
+        PanelPlace p = defaultPanelPlace(which);   // its bar's side, until the first frame settles it from its place
         p.dx = v[0];
         p.dy = v[1];
         p.w = v[2];
         p.h = v[3];
         return p;
     };
-    PanelPlace squadPlace = placeFromSettings(PANEL_SQUAD), unitPlace = placeFromSettings(PANEL_UNIT),
-               logPlace = placeFromSettings(PANEL_INFO);
+    PanelPlace squadPlace = placeFromSettings(PanelId::Squad), unitPlace = placeFromSettings(PanelId::Unit),
+               logPlace = placeFromSettings(PanelId::Info);
     // Each panel's lock: locked, it cannot be moved or resized. They start locked; locking one again keeps its place in
     // the settings.
     bool panelLocked[PANEL_COUNT] = { true, true, true };
     // The panel being dragged (a PanelId) and what the drag does: a mix of the GRAB_ edges, or GRAB_MOVE for its title
     // bar. The mouse, and the panel's open rectangle, where the drag began.
-    int grabWhich = -1, grabKind = 0;
+    std::optional<PanelId> grabWhich;
+    int grabKind = 0;
     // The Squad Panel's scroll bar thumb while it is held, and how far down the thumb the mouse took hold
     bool squadThumbDrag = false;
     float squadThumbGrab = 0.0f;
@@ -2044,17 +2046,17 @@ int main(int, char**) {
     // The unit the camera follows, set by a double-click on its panel card. A manual pan clears it.
     Entity followUnit = NULL_ENTITY;
 
-    // The combat log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
-    CombatLog combatLog;
+    // The game log and the damage numbers over the units. Neither is saved, so each new or loaded level starts empty.
+    GameLog gameLog;
     std::vector<FloatingNumber> floatingNumbers;
     std::vector<TradeLabel> tradeLabels;   // short labels over units for a second: trade values, and "+item" from work
     int infoTab = 1;        // the Information Panel's tab: 0 Message, 1 Game (shown first), 2 Time
     LogFilter logFilter;    // which game message kinds the Game tab shows
     bool logFilterOpen = false;
-    int logOffset = 0;      // lines the combat log is scrolled up from its newest line; 0 follows new lines
+    int logOffset = 0;      // lines the game log is scrolled up from its newest line; 0 follows new lines
     size_t logSeen = 0;     // lines the log held last frame, so a view scrolled up stays on the same lines
     auto clearCombatText = [&]() {
-        combatLog = CombatLog{};
+        gameLog = GameLog{};
         floatingNumbers.clear();
         tradeLabels.clear();
         discardQueuedLabels();
@@ -2155,9 +2157,9 @@ int main(int, char**) {
         }
         // The party from the menu replaces the three units that the seed made: its people, then its mobs after them
         {
-            std::vector<int> mobKinds;
+            std::vector<MobKind> mobKinds;
             for (const PartyMember& m : party) {
-                if (m.mob > 0) mobKinds.push_back(m.mob);
+                if (m.mob != MobKind::None) mobKinds.push_back(m.mob);
             }
             const int people = partyPeople(party);
             ensurePlayerUnits(world, terrain, rng, people);
@@ -2423,9 +2425,9 @@ int main(int, char**) {
     // Puts the Squad Panel, the Information Panel and the Unit Panel back in their default places and sizes, locked,
     // and keeps that in the settings
     auto resetPanels = [&]() {
-        squadPlace = defaultPanelPlace(PANEL_SQUAD);
-        logPlace = defaultPanelPlace(PANEL_INFO);
-        unitPlace = defaultPanelPlace(PANEL_UNIT);
+        squadPlace = defaultPanelPlace(PanelId::Squad);
+        logPlace = defaultPanelPlace(PanelId::Info);
+        unitPlace = defaultPanelPlace(PanelId::Unit);
         for (int i = 0; i < PANEL_COUNT; ++i) {
             panelLocked[i] = true;
             settings.panels[(size_t)i] = {};
@@ -2577,7 +2579,7 @@ int main(int, char**) {
         case Action::PartyRandomUnit: {
             // A new member for the picked unit, with a name that no other unit in the party has
             const int picked = std::clamp(partyUi.selected, 0, (int)party.size() - 1);
-            if (party[picked].mob > 0) {
+            if (party[picked].mob != MobKind::None) {
                 // A mob: in Custom a new one of the same kind, rolled afresh; elsewhere it stays as the scenario made it
                 if (partyUi.editable) party[picked] = mobMember(party[picked].mob, partyRng);
                 stopNameEdit();
@@ -2612,7 +2614,7 @@ int main(int, char**) {
         case Action::PartyStep: {
             // Minus is the even parameter and plus the odd one. Holding Shift moves a level by ten.
             if (!partyUi.editable) return;
-            const int stat = param / 2;
+            const StatId stat = (StatId)(param / 2);
             const int step = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 10 : 1;
             Stats& st = pickedMember(party, partyUi).stats;
             setStatLevel(st, stat, levelOf(st, stat) + ((param % 2) != 0 ? step : -step));
@@ -2643,8 +2645,8 @@ int main(int, char**) {
                 break;
             case DropKind::Body:
                 // A new body type brings its own model with it; the model can still be changed after
-                m.body = value;
-                m.sprite = modelForBody(value);
+                m.body = (BodyType)value;
+                m.sprite = modelForBody(m.body);
                 break;
             case DropKind::Gear:
                 if (partyUi.editable) m.gear[partyUi.dropSlot] = value;
@@ -2665,16 +2667,16 @@ int main(int, char**) {
                 if (partyUi.dropSlot < 0) {
                     // Add mob: a new member at the end of the party, picked and scrolled to
                     if (partyUi.resizable && (int)party.size() < PARTY_MAX_UNITS) {
-                        party.push_back(mobMember(value, partyRng));
+                        party.push_back(mobMember((MobKind)value, partyRng));
                         partyUi.selected = (int)party.size() - 1;
                         partyUi.listScroll = (int)party.size();
                     }
-                } else if (partyUi.mobKindEditable && m.mob > 0 && m.mob != value) {
+                } else if (partyUi.mobKindEditable && m.mob != MobKind::None && m.mob != (MobKind)value) {
                     // A mob of the new kind, with that kind's stats. A name typed for it is kept; the old kind's own
                     // name gives way to the new kind's.
                     const bool renamed = cleanName(m.name) != lang(mobInfo(m.mob).nameKey);
                     const std::string name = m.name;
-                    m = mobMember(value, partyRng);
+                    m = mobMember((MobKind)value, partyRng);
                     if (renamed) m.name = name;
                 }
                 break;
@@ -2936,8 +2938,8 @@ int main(int, char**) {
             for (Entity p : world.view<Prop, Transform>()) {
                 const Transform* pt = world.get<Transform>(p);
                 if (!claimAt(claims, pt->x, pt->z, FACTION_PLAYER)) continue;
-                const int kind = world.get<Prop>(p)->kind;
-                if (kind >= 0 && kind < PROP_KIND_COUNT && yieldsItems(kind)) harvestable[(size_t)kind] = true;
+                const PropKind kind = world.get<Prop>(p)->kind;
+                if (idx(kind) >= 0 && idx(kind) < PROP_KIND_COUNT && yieldsItems(kind)) harvestable[(size_t)idx(kind)] = true;
                 if (world.has<Storage>(p)) {
                     const float d = ut ? std::hypot(pt->x - ut->x, pt->z - ut->z) : 0.0f;
                     stores.push_back({ d, p });
@@ -2960,7 +2962,7 @@ int main(int, char**) {
                 BehaviorRule r;
                 r.kind = BehaviorKind::AutoHaul;
                 r.prop = stores[i].second;
-                r.propKind = world.get<Prop>(r.prop)->kind;
+                r.propKind = idx(world.get<Prop>(r.prop)->kind);
                 offer(r, behaviorName(r) + "  (" + std::to_string((int)std::lround(stores[i].first)) + "m)");
             }
             return out;
@@ -2977,7 +2979,7 @@ int main(int, char**) {
             const bool editable = shown != NULL_ENTITY && world.has<Commandable>(shown);
             BehaviorUi bui;
             std::vector<BehaviorOption> options;
-            if (b && editable && unitTab == UNIT_TAB_BEHAVIOR) {
+            if (b && editable && unitTab == UnitTab::Behavior) {
                 if (behaviorAddOpen) {
                     options = behaviorOptionsFor(shown);
                     bui.options = (int)options.size();
@@ -2985,7 +2987,7 @@ int main(int, char**) {
             }
             SidebarLayout L = layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
                                                      renderer.profileCardHeight(H), bui);
-            if (!editable || unitTab != UNIT_TAB_BEHAVIOR) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };   // nothing to add to
+            if (!editable || unitTab != UnitTab::Behavior) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };   // nothing to add to
             L.behaviorOptionInfo = std::move(options);
             // A mob has no gear slots, nor gear buttons, so nothing there can be clicked or dragged. Its inventory is
             // Not available until it is a corpse: no slots, and no sort button.
@@ -3144,10 +3146,10 @@ int main(int, char**) {
                 break;
             }
         };
-        // The combat log in the bottom left, stopping short of the unit panel. Its offset is kept in range.
-        auto combatLogPanel = [&](int W, int H) {
-            return renderer.combatLogLayout(W, H, infoTab, logFilterOpen, logOffset,
-                                            (int)infoLines(combatLog, infoTab, logFilter).size(), combatCollapsed, logPlace);
+        // The game log (the Information Panel), stopping short of the unit panel. Its offset is kept in range.
+        auto gameLogPanel = [&](int W, int H) {
+            return renderer.gameLogLayout(W, H, infoTab, logFilterOpen, logOffset,
+                                            (int)infoLines(gameLog, infoTab, logFilter).size(), combatCollapsed, logPlace);
         };
         // The talk: each line said goes into the talk's lines and the Message tab. The player's side speaks as the
         // first player unit that is selected, or else the first one there is.
@@ -3160,7 +3162,7 @@ int main(int, char**) {
             const UnitSprite* us = known ? world.get<UnitSprite>(who) : nullptr;
             ln.sprite = us ? us->id : 1;
             dialogueConvo.push_back(ln);
-            combatLog.say(ln.speaker + ": " + text);
+            gameLog.say(ln.speaker + ": " + text);
         };
         // Ends the talk and the trade with it
         auto endTalk = [&]() {
@@ -3258,10 +3260,10 @@ int main(int, char**) {
         // trading, at the top of its list, so it is ready before the game pauses for the trade
         auto showTraderInventory = [&]() {
             if (!unitOpen) {
-                unitPlace = settlePanel(PANEL_UNIT, unitPlace, winW, winH, true);
+                unitPlace = settlePanel(PanelId::Unit, unitPlace, winW, winH, true);
                 unitOpen = true;
             }
-            unitTab = UNIT_TAB_INVENTORY;
+            unitTab = UnitTab::Inventory;
             sidebarScroll = 0.0f;
         };
         auto startTalk = [&](Entity npc, Entity talker, bool shop) {
@@ -3492,7 +3494,7 @@ int main(int, char**) {
                 case MenuAction::Use: {
                     // Debris is cleared, not used
                     const Prop* tp = world.get<Prop>(contextMenu.target);
-                    labels.push_back(lang(tp && tp->kind == PROP_DEBRIS ? "UILABEL_CLEAR" : "UILABEL_USE"));
+                    labels.push_back(lang(tp && tp->kind == PropKind::Debris ? "UILABEL_CLEAR" : "UILABEL_USE"));
                     break;
                 }
                 case MenuAction::Occupy: labels.push_back(lang("UILABEL_OCCUPY")); break;
@@ -3690,7 +3692,7 @@ int main(int, char**) {
                 // Every selected unit gets the behavior, at the bottom of its list (or switched on, if it has it), and
                 // looks for its first step at once. Both work only on props in your faction's claim, so a prop outside
                 // one is refused.
-                const int kind = world.get<Prop>(target)->kind;
+                const PropKind kind = world.get<Prop>(target)->kind;
                 const Transform* pt = world.get<Transform>(target);
                 if (!pt || !claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
                     refuse(lang("MISC_AUTO_OUTSIDE_CLAIM"));
@@ -3698,7 +3700,7 @@ int main(int, char**) {
                 }
                 BehaviorRule add;
                 add.kind = a == MenuAction::AutoHarvest ? BehaviorKind::AutoHarvest : BehaviorKind::AutoHaul;
-                add.propKind = kind;
+                add.propKind = idx(kind);
                 if (a == MenuAction::AutoHaul) add.prop = target;
                 int given = 0;
                 for (Entity u : actors) {
@@ -3749,7 +3751,7 @@ int main(int, char**) {
                 Entity best = NULL_ENTITY;
                 int bestLevel = 0;
                 for (Entity u : actors) {   // nearest first
-                    const int lv = levelOf(statsOf(world, u), STAT_LOCKPICKING);
+                    const int lv = levelOf(statsOf(world, u), StatId::Lockpicking);
                     if (lv > bestLevel) {
                         best = u;
                         bestLevel = lv;
@@ -3841,7 +3843,7 @@ int main(int, char**) {
         };
         // A click on the Information Panel's tabs, its Filter button or its menu. True if the click was used.
         auto infoPanelClick = [&](int W, int H, float tx, float ty) {
-            const CombatLogLayout cl = combatLogPanel(W, H);
+            const GameLogLayout cl = gameLogPanel(W, H);
             if (cl.collapsed) return false;
             if (cl.tabMessage.contains(tx, ty)) {
                 if (infoTab != 0) { infoTab = 0; logOffset = 0; }
@@ -3863,7 +3865,7 @@ int main(int, char**) {
                 return true;
             }
             if (cl.filterOpen) {
-                for (const CombatLogLayout::FilterRow& fr : cl.filterRows) {
+                for (const GameLogLayout::FilterRow& fr : cl.filterRows) {
                     if (fr.heading || !fr.r.contains(tx, ty)) continue;
                     logFilter.on[(int)fr.kind] = !logFilter.on[(int)fr.kind];
                     return true;
@@ -3874,32 +3876,32 @@ int main(int, char**) {
             return false;
         };
         // A panel's place, by its PanelId
-        auto placeOf = [&](int which) -> PanelPlace& {
-            return which == PANEL_SQUAD ? squadPlace : which == PANEL_UNIT ? unitPlace : logPlace;
+        auto placeOf = [&](PanelId which) -> PanelPlace& {
+            return which == PanelId::Squad ? squadPlace : which == PanelId::Unit ? unitPlace : logPlace;
         };
         // Whether a panel is folded to its title bar
-        auto panelFolded = [&](int which) {
-            return which == PANEL_SQUAD ? squadCollapsed : which == PANEL_UNIT ? !unitOpen : combatCollapsed;
+        auto panelFolded = [&](PanelId which) {
+            return which == PanelId::Squad ? squadCollapsed : which == PanelId::Unit ? !unitOpen : combatCollapsed;
         };
         // What a panel shows on the screen: its open rectangle, or its title bar where it is folded
-        auto shownPanel = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel;
-            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).panel;
-            return combatLogPanel(W, H).panel;
+        auto shownPanel = [&](PanelId which, int W, int H) -> Rect {
+            if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).panel;
+            if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).panel;
+            return gameLogPanel(W, H).panel;
         };
         // A panel's title bar, wherever it runs: along the panel's top, or along its bottom
-        auto panelBarOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).title;
-            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).title;
-            return combatLogPanel(W, H).bar;
+        auto panelBarOf = [&](PanelId which, int W, int H) -> Rect {
+            if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).title;
+            if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).title;
+            return gameLogPanel(W, H).bar;
         };
         // What a press or the mouse over a point would grab on an unlocked panel: the panel, and a mix of the GRAB_ edges
         // under the mouse (an edge or a corner resizes it), or GRAB_MOVE on its title bar. A folded panel can only be
-        // moved. Panel -1 means none. A locked panel grabs nothing.
-        auto grabAt = [&](int W, int H, float x, float y) -> std::pair<int, int> {
+        // moved. No panel (nullopt) means none. A locked panel grabs nothing.
+        auto grabAt = [&](int W, int H, float x, float y) -> std::pair<std::optional<PanelId>, int> {
             const float out = 5.0f, in = 4.0f;   // how far outside and inside an edge still grabs it
-            for (int which : { PANEL_INFO, PANEL_UNIT, PANEL_SQUAD }) {
-                if (panelLocked[which]) continue;
+            for (PanelId which : { PanelId::Info, PanelId::Unit, PanelId::Squad }) {
+                if (panelLocked[idx(which)]) continue;
                 const Rect r = shownPanel(which, W, H);
                 const bool nearX = x >= r.x - out && x < r.x + r.w + out;
                 const bool nearY = y >= r.y - out && y < r.y + r.h + out;
@@ -3914,7 +3916,7 @@ int main(int, char**) {
                 if (kind != 0) return { which, kind };
                 if (panelBarOf(which, W, H).contains(x, y)) return { which, GRAB_MOVE };
             }
-            return { -1, 0 };
+            return { std::nullopt, 0 };
         };
         // The arrows that show over an edge or a corner, and the hand-move arrows over an unlocked title bar
         auto setGrabCursor = [&](int kind) {
@@ -3942,7 +3944,7 @@ int main(int, char**) {
         auto applyGrab = [&](int W, int H, float x, float y) {
             const float dx = x - grabMouseX, dy = y - grabMouseY;
             float mw = 0.0f, mh = 0.0f;
-            panelMinSize(grabWhich, H, mw, mh);
+            panelMinSize(*grabWhich, H, mw, mh);
             mw = std::min(mw, (float)W);
             mh = std::min(mh, (float)H);
             float left = grabX, top = grabY, right = grabX + grabW, bottom = grabY + grabH;
@@ -3958,47 +3960,47 @@ int main(int, char**) {
                 if (grabKind & GRAB_TOP) top = std::clamp(grabY + dy, 0.0f, bottom - mh);
                 if (grabKind & GRAB_BOTTOM) bottom = std::clamp(grabY + grabH + dy, top + mh, std::max((float)H, grabY + grabH));
             }
-            PanelPlace& p = placeOf(grabWhich);
-            p = placeForRect(grabWhich, Rect{ left, top, right - left, bottom - top }, W, H, p.barBottom);
-            p = placeForRect(grabWhich, panelRect(grabWhich, p, W, H), W, H, p.barBottom);   // its bar on the screen
+            PanelPlace& p = placeOf(*grabWhich);
+            p = placeForRect(*grabWhich, Rect{ left, top, right - left, bottom - top }, W, H, p.barBottom);
+            p = placeForRect(*grabWhich, panelRect(*grabWhich, p, W, H), W, H, p.barBottom);   // its bar on the screen
         };
         // Lets go of the grab. The panel stays as it was left, and its bar goes to the side its new place calls for.
         auto endGrab = [&](int W, int H) {
-            if (grabWhich >= 0) placeOf(grabWhich) = settlePanel(grabWhich, placeOf(grabWhich), W, H, panelFolded(grabWhich));
-            grabWhich = -1;
+            if (grabWhich) placeOf(*grabWhich) = settlePanel(*grabWhich, placeOf(*grabWhich), W, H, panelFolded(*grabWhich));
+            grabWhich.reset();
             grabKind = 0;
         };
         // Folds or opens a panel. Its bar stays where it is: folding takes the rest of the panel away, and opening grows
         // it back away from the bar, toward the middle of the window.
-        auto setFolded = [&](int which, bool fold, int W, int H) {
+        auto setFolded = [&](PanelId which, bool fold, int W, int H) {
             PanelPlace& p = placeOf(which);
             p = settlePanel(which, p, W, H, !fold);   // the bar on its side before it changes
-            if (which == PANEL_SQUAD) squadCollapsed = fold;
-            else if (which == PANEL_UNIT) unitOpen = !fold;
+            if (which == PanelId::Squad) squadCollapsed = fold;
+            else if (which == PanelId::Unit) unitOpen = !fold;
             else combatCollapsed = fold;
         };
         // The lock on a panel's bar was pressed: unlocking lets it be moved and resized; locking it again keeps its
         // place and size in the settings
-        auto toggleLock = [&](int which) {
-            panelLocked[which] = !panelLocked[which];
-            if (panelLocked[which]) {
+        auto toggleLock = [&](PanelId which) {
+            panelLocked[idx(which)] = !panelLocked[idx(which)];
+            if (panelLocked[idx(which)]) {
                 const PanelPlace& p = placeOf(which);
-                settings.panels[(size_t)which] = { p.dx, p.dy, p.w, p.h };
+                settings.panels[(size_t)idx(which)] = { p.dx, p.dy, p.w, p.h };
                 saveSettingsFile();
             }
             playSfx(Sfx::UiClick);
         };
         // The lock buttons, by PanelId
-        auto lockRectOf = [&](int which, int W, int H) -> Rect {
-            if (which == PANEL_SQUAD) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).lock;
-            if (which == PANEL_UNIT) return sidebarFor(W, H, sidebarScroll).lock;
-            return combatLogPanel(W, H).lock;
+        auto lockRectOf = [&](PanelId which, int W, int H) -> Rect {
+            if (which == PanelId::Squad) return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).lock;
+            if (which == PanelId::Unit) return sidebarFor(W, H, sidebarScroll).lock;
+            return gameLogPanel(W, H).lock;
         };
         // A panel's lock on its title bar, drawn just after the panel. An unlocked panel also gets a green edge, to show
         // it can be moved and resized.
-        auto drawPanelLock = [&](int which) {
+        auto drawPanelLock = [&](PanelId which) {
             const int W = winW, H = winH;
-            if (!panelLocked[which]) {
+            if (!panelLocked[idx(which)]) {
                 const Rect r = shownPanel(which, W, H);
                 const float e = std::max(1.0f, 2.0f * H / 720.0f);
                 const RGBA g = theme::alpha(theme::GREEN, 0.9f);
@@ -4007,13 +4009,13 @@ int main(int, char**) {
                 renderer.drawRect(Rect{ r.x - e, r.y, e, r.h }, g);
                 renderer.drawRect(Rect{ r.x + r.w, r.y, e, r.h }, g);
             }
-            renderer.drawLockButton(lockRectOf(which, W, H), panelLocked[which]);
+            renderer.drawLockButton(lockRectOf(which, W, H), panelLocked[idx(which)]);
         };
-        // Whether the mouse is over the combat log
-        auto combatLogHovered = [&](int W, int H) {
+        // Whether the mouse is over the game log
+        auto gameLogHovered = [&](int W, int H) {
             float mx = 0.0f, my = 0.0f;
             SDL_GetMouseState(&mx, &my);
-            return combatLogPanel(W, H).panel.contains(mx, my);
+            return gameLogPanel(W, H).panel.contains(mx, my);
         };
         // The world map window, 800 by 600 in the middle of the screen
         auto worldMapFor = [&](int W, int H) {
@@ -4060,7 +4062,7 @@ int main(int, char**) {
             const std::vector<std::string> labels = menuLabels();
             return overGamePanels(layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll),
                                   sidebarFor(W, H, sidebarScroll), true, x, y)
-                || combatLogPanel(W, H).panel.contains(x, y)
+                || gameLogPanel(W, H).panel.contains(x, y)
                 || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
                 || (mapOpen && worldMapFor(W, H).window.contains(x, y))
                 || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
@@ -4208,8 +4210,8 @@ int main(int, char**) {
                     }
                 }
                 // While a prop is picked to build, Escape puts the pick down, and does nothing else
-                if (screen == Screen::Playing && buildKind != BUILD_NONE && e.key.key == SDLK_ESCAPE) {
-                    buildKind = -1;
+                if (screen == Screen::Playing && buildPick.any() && e.key.key == SDLK_ESCAPE) {
+                    buildPick = {};
                     playSfx(Sfx::UiBack);
                     break;
                 }
@@ -4309,10 +4311,10 @@ int main(int, char**) {
                         const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
                         settingsScrollDropdown(settingsUi, layoutSettings(winW, winH, rows, settingsUi), (int)e.wheel.y);
                     }
-                } else if (screen == Screen::Playing && !wheelOverMap && combatLogHovered(winW, winH)) {
-                    // Scrolls the combat log, three lines a notch. Wheel up goes back in time.
+                } else if (screen == Screen::Playing && !wheelOverMap && gameLogHovered(winW, winH)) {
+                    // Scrolls the game log, three lines a notch. Wheel up goes back in time.
                     const int step = e.wheel.y > 0.0f ? 3 : e.wheel.y < 0.0f ? -3 : 0;
-                    logOffset = std::clamp(logOffset + step, 0, combatLogPanel(winW, winH).maxOffset());
+                    logOffset = std::clamp(logOffset + step, 0, gameLogPanel(winW, winH).maxOffset());
                 } else if (wheelOverMap) {
                     // Zooms the world map about the point under the mouse: wheel up zooms in, down zooms out
                     const Rect box = worldMapFor(winW, winH).map;
@@ -4369,8 +4371,8 @@ int main(int, char**) {
                     break;
                 }
                 // While a prop is picked to build, a right click puts the pick down and does nothing else
-                if (buildKind != BUILD_NONE && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
-                    buildKind = -1;
+                if (buildPick.any() && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
+                    buildPick = {};
                     playSfx(Sfx::UiBack);
                     break;
                 }
@@ -4731,7 +4733,8 @@ int main(int, char**) {
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const float tx = e.button.x, ty = e.button.y;
                     bool hitLock = false;
-                    for (int which = 0; which < PANEL_COUNT && !hitLock; ++which) {
+                    for (PanelId which : ALL_PANELS) {
+                        if (hitLock) break;
                         if (lockRectOf(which, winW, winH).contains(tx, ty)) {
                             toggleLock(which);
                             hitLock = true;
@@ -4740,20 +4743,20 @@ int main(int, char**) {
                     if (hitLock) break;
                     const SidebarLayout sbl = sidebarFor(winW, winH, sidebarScroll);
                     if (sbl.plus.contains(tx, ty)) {
-                        setFolded(PANEL_UNIT, false, winW, winH);
+                        setFolded(PanelId::Unit, false, winW, winH);
                         break;
                     }
                     if (sbl.minus.contains(tx, ty)) {
-                        setFolded(PANEL_UNIT, true, winW, winH);
+                        setFolded(PanelId::Unit, true, winW, winH);
                         break;
                     }
                     if (infoPanelClick(winW, winH, tx, ty)) break;
                     if (layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).toggle.contains(tx, ty)) {
-                        setFolded(PANEL_SQUAD, !squadCollapsed, winW, winH);
+                        setFolded(PanelId::Squad, !squadCollapsed, winW, winH);
                         break;
                     }
-                    if (combatLogPanel(winW, winH).toggle.contains(tx, ty)) {
-                        setFolded(PANEL_INFO, !combatCollapsed, winW, winH);
+                    if (gameLogPanel(winW, winH).toggle.contains(tx, ty)) {
+                        setFolded(PanelId::Info, !combatCollapsed, winW, winH);
                         break;
                     }
                 }
@@ -4804,8 +4807,8 @@ int main(int, char**) {
                 // An edge, a corner or the title bar of an unlocked panel grabs it, to resize or move it
                 if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
                     const auto g = grabAt(winW, winH, e.button.x, e.button.y);
-                    if (g.first >= 0) {
-                        const Rect r = panelRect(g.first, placeOf(g.first), winW, winH);
+                    if (g.first) {
+                        const Rect r = panelRect(*g.first, placeOf(*g.first), winW, winH);
                         grabWhich = g.first;
                         grabKind = g.second;
                         grabMouseX = e.button.x;
@@ -4853,12 +4856,12 @@ int main(int, char**) {
                         bool tabHit = false;
                         for (int t = 0; t < UNIT_TAB_COUNT && st.open; ++t) {
                             if (st.tabs[t].contains(mx, my)) {
-                                if (!unitTabEnabled(world, sidebarUnitOf(world), t)) {
+                                if (!unitTabEnabled(world, sidebarUnitOf(world), (UnitTab)t)) {
                                     tabHit = true;   // off for a unit not in your squad: the click does nothing
                                     break;
                                 }
-                                if (unitTab != t) playSfx(Sfx::UiTab);
-                                unitTab = t;
+                                if (unitTab != (UnitTab)t) playSfx(Sfx::UiTab);
+                                unitTab = (UnitTab)t;
                                 sidebarScroll = 0.0f;
                                 tabHit = true;
                                 break;
@@ -4883,19 +4886,19 @@ int main(int, char**) {
                         const bool onSidebar = sl.panel.contains(mx, my);
                         if (onSidebar) {
                             // The Build tab: a row picks its prop to place, and picking the same one again puts it down
-                            if (sl.open && sl.tab == UNIT_TAB_BUILD) {
+                            if (sl.open && sl.tab == UnitTab::Build) {
                                 for (size_t i = 0; i < sl.buildRows.size(); ++i) {
                                     if (!sl.buildRows[i].contains(mx, my)) continue;
-                                    const int kind = buildRowKind((int)i);
-                                    if (kind == BUILD_NONE) break;
+                                    const BuildPick pick = buildRowPick((int)i);
+                                    if (!pick.any()) break;
                                     // Grayed out: only Destroy, the Bedroll and the Campfire, unless a selected
                                     // unit of yours stands in one of your claims
-                                    if (!buildAnywhere(kind) && !selectionInClaim(world)) break;
-                                    if (buildKind == kind) {
-                                        buildKind = BUILD_NONE;
+                                    if (!buildAnywhere(pick) && !selectionInClaim(world)) break;
+                                    if (buildPick == pick) {
+                                        buildPick = {};
                                     } else {
-                                        buildKind = kind;
-                                        showNotice(lang(kind == BUILD_DESTROY ? "UILABEL_BUILD_DESTROY_HINT"
+                                        buildPick = pick;
+                                        showNotice(lang(!pick.placing() ? "UILABEL_BUILD_DESTROY_HINT"
                                                                               : "UILABEL_BUILD_PLACE_HINT"), 4.0f);
                                     }
                                     playSfx(Sfx::UiClick);
@@ -4954,7 +4957,7 @@ int main(int, char**) {
                                     behaviorClick(shown, bh);
                                     break;
                                 }
-                                if (sl.tab == UNIT_TAB_BEHAVIOR && behaviorExtraClick(shown, sl, mx, my)) break;
+                                if (sl.tab == UnitTab::Behavior && behaviorExtraClick(shown, sl, mx, my)) break;
                             }
 
                             // A filled inventory slot starts dragging its stack out of the inventory. A filled
@@ -5004,8 +5007,8 @@ int main(int, char**) {
 
                     // While a prop is picked to build, a left click on the ground places it. A refusal says why, and
                     // the pick stays, so another spot can be tried. The click finds the same spot the preview shows.
-                    if (buildKind != BUILD_NONE && dialogueUnit == NULL_ENTITY && !mapOpen) {
-                        if (buildKind == BUILD_DESTROY) {
+                    if (buildPick.any() && dialogueUnit == NULL_ENTITY && !mapOpen) {
+                        if (!buildPick.placing()) {
                             // Destroy takes down the prop under the mouse nearest the eye, whatever it is: its
                             // items fall where it stood and it becomes Debris (Debris itself is cleared away). Anyone on
                             // it gets off first (breakBuilding). Another faction's prop costs standing with it.
@@ -5031,10 +5034,10 @@ int main(int, char**) {
                             }
                         } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
                             float bx = 0.0f, bz = 0.0f;
-                            snapBuildSpot(buildKind, hit->first, hit->second, bx, bz);
-                            const BuildCheck why = checkBuildSpot(world, terrain, buildKind, bx, bz, buildYaw);
+                            snapBuildSpot(buildPick.kind, hit->first, hit->second, bx, bz);
+                            const BuildCheck why = checkBuildSpot(world, terrain, buildPick.kind, bx, bz, buildYaw);
                             if (why == BuildCheck::Ok) {
-                                placeBuiltProp(world, terrain, buildKind, bx, bz, buildYaw);
+                                placeBuiltProp(world, terrain, buildPick.kind, bx, bz, buildYaw);
                                 playSfx(Sfx::UiClick);
                             } else {
                                 refuse(lang(buildRefusalKey(why)));
@@ -5177,7 +5180,7 @@ int main(int, char**) {
                     moveSelectedTo(holdX, holdZ);
                     break;
                 }
-                if (grabWhich >= 0 && e.button.button == SDL_BUTTON_LEFT) {
+                if (grabWhich && e.button.button == SDL_BUTTON_LEFT) {
                     endGrab(winW, winH);
                     setGrabCursor(grabAt(winW, winH, e.button.x, e.button.y).second);
                     break;
@@ -5344,7 +5347,7 @@ int main(int, char**) {
                     }
                     break;
                 }
-                if (grabWhich >= 0) {
+                if (grabWhich) {
                     applyGrab(winW, winH, e.motion.x, e.motion.y);
                     break;
                 }
@@ -5426,7 +5429,7 @@ int main(int, char**) {
             // A folded panel opens toward the middle of the window from wherever its bar is, also after the window
             // changes size (not while it is being dragged). An open panel's bar changes side only when it is moved or
             // resized (endGrab), so it never jumps just after opening.
-            for (int which = 0; which < PANEL_COUNT; ++which) {
+            for (PanelId which : ALL_PANELS) {
                 if (which != grabWhich && panelFolded(which)) placeOf(which) = settlePanel(which, placeOf(which), winW, winH, true);
             }
             if (itemMenu.open) {
@@ -5463,7 +5466,7 @@ int main(int, char**) {
         moveMarkTime = std::max(0.0f, moveMarkTime - dt);
 
         // Game messages written outside a fight (XP, pickups, drops) join the log every frame
-        flushQueuedLog(combatLog);
+        flushQueuedLog(gameLog);
         cam.mapSize = (float)terrain.size();
         cam.viewRange = (float)settings.viewRange;
 
@@ -5500,14 +5503,14 @@ int main(int, char**) {
             // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
             factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
             defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
-            combatSystem(world, rng, dt, combatLog, floatingNumbers);
+            combatSystem(world, rng, dt, gameLog, floatingNumbers);
             patrolSpawnSystem(world, terrain, dt);   // a mob gone too far from its spawn gives up and walks home
             // Behaviors after the fight, so a unit hit this frame can drink in the same frame
-            behaviorSystem(world, combatLog, dt);
+            behaviorSystem(world, gameLog, dt);
             // Anyone left at 0 health falls Unconscious
             downedSystem(world);
             // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
-            const size_t logCount = combatLog.lines.size();
+            const size_t logCount = gameLog.lines.size();
             if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
             logSeen = logCount;
             squadSystem(world, dt, runMode);
@@ -5604,11 +5607,11 @@ int main(int, char**) {
                     tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
                     // Each prop has its own sound for an item finished
                     switch (g.propKind) {
-                    case PROP_ORE: queueSoundFrom(world, Sfx::DoneOre, g.unit); break;
-                    case PROP_TREE: queueSoundFrom(world, Sfx::DoneTree, g.unit); break;
-                    case PROP_MUSHROOM: queueSoundFrom(world, Sfx::DoneMushroom, g.unit); break;
-                    case PROP_STOVE: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
-                    case PROP_WATER_PUMP: queueSoundFrom(world, Sfx::DoneWater, g.unit); break;
+                    case PropKind::Ore: queueSoundFrom(world, Sfx::DoneOre, g.unit); break;
+                    case PropKind::Tree: queueSoundFrom(world, Sfx::DoneTree, g.unit); break;
+                    case PropKind::Mushroom: queueSoundFrom(world, Sfx::DoneMushroom, g.unit); break;
+                    case PropKind::Stove: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
+                    case PropKind::WaterPump: queueSoundFrom(world, Sfx::DoneWater, g.unit); break;
                     default: queueSoundFrom(world, Sfx::ItemMove, g.unit); break;
                     }
                     break;
@@ -5622,7 +5625,7 @@ int main(int, char**) {
                     break;
                 case WorkGain::Kind::Trained:
                     queueSoundFrom(world, Sfx::DoneTraining, g.unit);
-                    tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_XP_GAINED", { std::to_string((int)std::lround(g.xp)), statName(g.item) }), 0.0f });
+                    tradeLabels.push_back(TradeLabel{ g.unit, langf("MISC_XP_GAINED", { std::to_string((int)std::lround(g.xp)), statName((StatId)g.item) }), 0.0f });
                     break;
                 }
             }
@@ -5640,7 +5643,7 @@ int main(int, char**) {
                     if (pw->workers <= 0) continue;
                     const Transform* pt = world.get<Transform>(e);
                     if (std::hypot(pt->x - cam.focusX, pt->z - cam.focusZ) > WORK_SOUND_RANGE) continue;
-                    const int kind = world.get<Prop>(e)->kind;
+                    const PropKind kind = world.get<Prop>(e)->kind;
                     bool picking = false;
                     for (Entity u : world.view<Working>()) {
                         const Working* wk = world.get<Working>(u);
@@ -5648,13 +5651,13 @@ int main(int, char**) {
                     }
                     Sfx sound = Sfx::Count;
                     if (picking) sound = Sfx::WorkLockpick;
-                    else if (kind == PROP_ORE) sound = Sfx::WorkMining;
-                    else if (kind == PROP_TREE) sound = Sfx::WorkWoodcutting;
-                    else if (kind == PROP_MUSHROOM) sound = Sfx::WorkHerbalism;
-                    else if (kind == PROP_CAMPFIRE || kind == PROP_STOVE) sound = Sfx::WorkCooking;
-                    else if (kind == PROP_WATER_PUMP) sound = Sfx::WorkPump;
-                    else if (kind == PROP_TRAINING_DUMMY) sound = Sfx::WorkTraining;
-                    else if (kind == PROP_FORGE) sound = Sfx::ForgeBurning;
+                    else if (kind == PropKind::Ore) sound = Sfx::WorkMining;
+                    else if (kind == PropKind::Tree) sound = Sfx::WorkWoodcutting;
+                    else if (kind == PropKind::Mushroom) sound = Sfx::WorkHerbalism;
+                    else if (kind == PropKind::Campfire || kind == PropKind::Stove) sound = Sfx::WorkCooking;
+                    else if (kind == PropKind::WaterPump) sound = Sfx::WorkPump;
+                    else if (kind == PropKind::TrainingDummy) sound = Sfx::WorkTraining;
+                    else if (kind == PropKind::Forge) sound = Sfx::ForgeBurning;
                     if (sound == Sfx::Count) continue;
                     const float every = sound == Sfx::ForgeBurning ? FORGE_SOUND_SECONDS : WORK_SOUND_SECONDS;
                     float t = workSoundTimers.count(e) ? workSoundTimers[e] : every * 0.5f;
@@ -5707,7 +5710,7 @@ int main(int, char**) {
         }
         if (inspectUnit != NULL_ENTITY && !world.has<Unit>(inspectUnit)) inspectUnit = NULL_ENTITY;
         // A unit that is not in your squad shows only its Profile
-        if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UNIT_TAB_PROFILE;
+        if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UnitTab::Profile;
         // The right-click menu closes if its target is gone or a talk or trade opens
         if (contextMenu.open && ((!world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
                                  dialogueUnit != NULL_ENTITY)) {
@@ -5807,12 +5810,12 @@ int main(int, char**) {
         {
             // A kind that needs a claim is put down once no selected unit of yours stands in one
             const bool inClaim = selectionInClaim(world);
-            if (buildKind != BUILD_NONE && !buildAnywhere(buildKind) && !inClaim) buildKind = BUILD_NONE;
+            if (buildPick.any() && !buildAnywhere(buildPick) && !inClaim) buildPick = {};
             renderer.setBuildInClaim(inClaim);
             const bool* keys = SDL_GetKeyboardState(nullptr);
             float bmx = 0.0f, bmy = 0.0f;
             SDL_GetMouseState(&bmx, &bmy);
-            const bool placing = buildKind >= 0 && screen == Screen::Playing && !panelOpen && !mapOpen
+            const bool placing = buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
                                  && dialogueUnit == NULL_ENTITY && !optimizeAllOpen && disbandTarget == NULL_ENTITY;
             if (placing && keys[SDL_SCANCODE_R] && buildPrevX >= 0.0f) buildYaw += (bmx - buildPrevX) * BUILD_TURN_PER_PIXEL;
             buildPrevX = bmx;
@@ -5820,13 +5823,13 @@ int main(int, char**) {
             if (placing && !overPanels(bmx, bmy, winW, winH)) {
                 if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
                     bp.on = true;
-                    bp.kind = buildKind;
+                    bp.kind = buildPick.kind;
                     bp.yaw = buildYaw;
-                    snapBuildSpot(buildKind, hit->first, hit->second, bp.x, bp.z);
-                    bp.valid = checkBuildSpot(world, terrain, buildKind, bp.x, bp.z, buildYaw) == BuildCheck::Ok;
+                    snapBuildSpot(buildPick.kind, hit->first, hit->second, bp.x, bp.z);
+                    bp.valid = checkBuildSpot(world, terrain, buildPick.kind, bp.x, bp.z, buildYaw) == BuildCheck::Ok;
                 }
             }
-            if (bp.on && buildKind == PROP_FLAG) {
+            if (bp.on && buildPick.places(PropKind::Flag)) {
                 bp.ringR = CLAIM_RADIUS;
                 bp.ringTone = bp.valid ? 1 : 2;
             }
@@ -5836,7 +5839,7 @@ int main(int, char**) {
                 for (Entity e : renderer.propsAtPixel(world, cam, bmx, bmy, winW, winH)) {
                     const Prop* fp = world.get<Prop>(e);
                     const Transform* ft = world.get<Transform>(e);
-                    if (!fp || !ft || fp->kind != PROP_FLAG) continue;
+                    if (!fp || !ft || fp->kind != PropKind::Flag) continue;
                     bp.ringR = CLAIM_RADIUS;
                     bp.ringTone = 3;
                     bp.x = ft->x;
@@ -5848,13 +5851,13 @@ int main(int, char**) {
             // When one claim circle shows, every flag's circle shows with it
             if (bp.ringR > 0.0f) {
                 for (Entity e : world.view<Prop, Transform>()) {
-                    if (e == hoverFlag || world.get<Prop>(e)->kind != PROP_FLAG) continue;
+                    if (e == hoverFlag || world.get<Prop>(e)->kind != PropKind::Flag) continue;
                     const Transform* ft = world.get<Transform>(e);
                     bp.otherRings.push_back({ ft->x, ft->z });
                 }
             }
             renderer.setBuildPreview(bp);
-            renderer.setBuildSelected(buildKind);
+            renderer.setBuildSelected(buildPick);
         }
 
         // ---- Render ----
@@ -5978,11 +5981,11 @@ int main(int, char**) {
                     const Carried* cd = world.get<Carried>(u);
                     const bool names = world.has<Commandable>(u) ? settings.showUnitNames : settings.showNpcNames;
                     if (cd && world.has<Selected>(cd->by)) {
-                        renderer.drawHoverCue(world, cam, winW, winH, u, EMOTE_CUE_PUT_DOWN, names);
+                        renderer.drawHoverCue(world, cam, winW, winH, u, EmoteId::CuePutDown, names);
                         break;
                     }
                     if (talkable(u)) {
-                        renderer.drawHoverCue(world, cam, winW, winH, u, EMOTE_CUE_TALK, names);
+                        renderer.drawHoverCue(world, cam, winW, winH, u, EmoteId::CueTalk, names);
                         break;
                     }
                 }
@@ -6009,9 +6012,9 @@ int main(int, char**) {
                 const UnitPanelLayout L = layoutUnitPanel(winW, winH, (int)own.size(), unitPanelRow, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll);
                 unitPanelRow = L.scrollRow;
                 renderer.drawUnitPanel(world, L, own, runMode, repView);
-                drawPanelLock(PANEL_SQUAD);
+                drawPanelLock(PanelId::Squad);
                 // The Information Panel, top left. Its offset is written back, so it stays in range.
-                const CombatLogLayout cl = combatLogPanel(winW, winH);
+                const GameLogLayout cl = gameLogPanel(winW, winH);
                 logOffset = cl.offset;
                 InfoTime timeInfo;
                 if (infoTab == 2) {
@@ -6020,8 +6023,8 @@ int main(int, char**) {
                     timeInfo.ymd = formatYmd(gs.clockSeconds);
                     timeInfo.days = langf("UILABEL_DAYS_PASSED", { std::to_string(dayIndexOf(gs.clockSeconds)) });
                 }
-                renderer.drawCombatLog(cl, infoLines(combatLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
-                if (!cl.filterOpen) drawPanelLock(PANEL_INFO);   // the open filter menu covers it
+                renderer.drawGameLog(cl, infoLines(gameLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
+                if (!cl.filterOpen) drawPanelLock(PanelId::Info);   // the open filter menu covers it
                 // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
                 // are only shown: the mouse handling never starts a drag or a menu on them.
                 const Entity shown = sidebarUnitOf(world);
@@ -6044,7 +6047,7 @@ int main(int, char**) {
                     // What the behavior under the mouse does, when nothing else is open over it
                     if (shown != NULL_ENTITY && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
                 }
-                drawPanelLock(PANEL_UNIT);
+                drawPanelLock(PanelId::Unit);
                 if (itemMenu.open) {
                     const std::vector<std::string> labels = menuLabels();
                     if (!labels.empty()) {
@@ -6076,7 +6079,7 @@ int main(int, char**) {
             if (storageProp != NULL_ENTITY) {
                 const Storage* st = world.get<Storage>(storageProp);
                 const Prop* sp = world.get<Prop>(storageProp);
-                const PropInfo& sinfo = propInfo(sp ? sp->kind : 0);
+                const PropInfo& sinfo = propInfo(sp ? sp->kind : PropKind::Wagon);
                 std::string hint, status;
                 if (sinfo.use == PropUse::Crafting) {
                     hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) });

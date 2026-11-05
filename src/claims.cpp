@@ -7,9 +7,9 @@
 
 namespace {
 
-bool isFoundationKind(int kind) {
-    return kind == PROP_FOUNDATION_SMALL || kind == PROP_FOUNDATION_LARGE || kind == PROP_FOUNDATION_LONG ||
-           kind == PROP_FOUNDATION_CIRCLE;
+bool isFoundationKind(PropKind kind) {
+    return kind == PropKind::FoundationSmall || kind == PropKind::FoundationLarge || kind == PropKind::FoundationLong ||
+           kind == PropKind::FoundationCircle;
 }
 
 // Lowers a building's wear by hours / decayHours, if it has any
@@ -22,7 +22,7 @@ void wear(World& w, Entity e, double amount) {
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
     for (Entity e : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(e)->kind != PROP_FLAG) continue;
+        if (w.get<Prop>(e)->kind != PropKind::Flag) continue;
         Claim c;
         c.flag = e;
         c.x = w.get<Transform>(e)->x;
@@ -35,7 +35,7 @@ std::vector<Claim> claimsOf(World& w) {
     // where two stand in one circle, the one placed first holds it.
     std::vector<Entity> vaults;
     for (Entity v : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(v)->kind == PROP_VAULT) vaults.push_back(v);
+        if (w.get<Prop>(v)->kind == PropKind::Vault) vaults.push_back(v);
     }
     std::sort(vaults.begin(), vaults.end());
     for (Entity v : vaults) {
@@ -109,7 +109,7 @@ bool lockShutForFaction(World& w, Entity prop, int faction) {
 void claimOwnership(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     const Transform* t = w.get<Transform>(prop);
-    if (!p || !t || p->kind == PROP_FLAG || p->kind == PROP_VAULT) return;
+    if (!p || !t || p->kind == PropKind::Flag || p->kind == PropKind::Vault) return;
     const Claim* c = claimAt(claimsOf(w), t->x, t->z);
     if (!c) return;
     const int faction = c->sealer >= 0 ? c->sealer : c->owner;
@@ -149,7 +149,7 @@ void releaseProp(World& w, Entity prop) {
 
 void breakBuilding(World& w, Entity e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
-    if (w.get<Prop>(e)->kind == PROP_DEBRIS) {
+    if (w.get<Prop>(e)->kind == PropKind::Debris) {
         releaseProp(w, e);
         w.destroy(e);
         return;
@@ -185,7 +185,7 @@ void breakBuilding(World& w, Entity e) {
     for (const Transform& at : spots) {
         const Entity debris = w.create();
         w.add(debris, Transform{ at.x, at.y, at.z });
-        w.add(debris, Prop{ PROP_DEBRIS, -1, 0.0f });
+        w.add(debris, Prop{ PropKind::Debris, -1, 0.0f });
         claimOwnership(w, debris);
     }
 }
@@ -207,7 +207,7 @@ void resolveDuplicateVaults(World& w) {
     }
     std::vector<Entity> extra;
     for (Entity v : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(v)->kind != PROP_VAULT) continue;
+        if (w.get<Prop>(v)->kind != PropKind::Vault) continue;
         if (std::find(holders.begin(), holders.end(), v) != holders.end()) continue;
         const float vx = w.get<Transform>(v)->x, vz = w.get<Transform>(v)->z;
         for (const Claim& c : claimsOf(w)) {
@@ -287,21 +287,21 @@ namespace {
 // the centre. The foundation, with its vault, sits two tiles east; the campfire two tiles west; four bedrolls around
 // the campfire; the barrel two tiles south; two trees just past the bedrolls, for the camp's wood, and three mushrooms
 // by them, for its food. Every piece is on its own tile, so none shares ground with another.
-struct KitSpot { int kind; float dx, dz; };
+struct KitSpot { PropKind kind; float dx, dz; };
 const KitSpot CAMP_KIT[] = {
-    { PROP_FLAG, 0.0f, 0.0f },
-    { PROP_FOUNDATION_SMALL, 2.0f, 0.0f },
-    { PROP_CAMPFIRE, -2.0f, 0.0f },
-    { PROP_BEDROLL, -2.0f, -1.0f },
-    { PROP_BEDROLL, -2.0f, 1.0f },
-    { PROP_BEDROLL, -3.0f, 0.0f },
-    { PROP_BEDROLL, -1.0f, 0.0f },
-    { PROP_BARREL, 0.0f, 2.0f },
-    { PROP_TREE, -5.0f, -2.0f },
-    { PROP_TREE, -5.0f, 2.0f },
-    { PROP_MUSHROOM, -5.0f, 0.0f },
-    { PROP_MUSHROOM, -6.0f, -1.0f },
-    { PROP_MUSHROOM, -6.0f, 1.0f },
+    { PropKind::Flag, 0.0f, 0.0f },
+    { PropKind::FoundationSmall, 2.0f, 0.0f },
+    { PropKind::Campfire, -2.0f, 0.0f },
+    { PropKind::Bedroll, -2.0f, -1.0f },
+    { PropKind::Bedroll, -2.0f, 1.0f },
+    { PropKind::Bedroll, -3.0f, 0.0f },
+    { PropKind::Bedroll, -1.0f, 0.0f },
+    { PropKind::Barrel, 0.0f, 2.0f },
+    { PropKind::Tree, -5.0f, -2.0f },
+    { PropKind::Tree, -5.0f, 2.0f },
+    { PropKind::Mushroom, -5.0f, 0.0f },
+    { PropKind::Mushroom, -6.0f, -1.0f },
+    { PropKind::Mushroom, -6.0f, 1.0f },
 };
 
 }  // namespace
@@ -343,7 +343,7 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             e = w.create();
             w.add(e, Transform{ x, t.heightAt(x, z), z });
             w.add(e, Prop{ k.kind, -1, yaw });
-            if (k.kind != PROP_TREE && k.kind != PROP_MUSHROOM) w.add(e, Owner{ faction });
+            if (k.kind != PropKind::Tree && k.kind != PropKind::Mushroom) w.add(e, Owner{ faction });
             if (hasStorage(propInfo(k.kind))) w.add(e, Storage{});   // the camp's barrel starts empty
             if (propInfo(k.kind).use == PropUse::PassiveCrafting) {   // the campfire: cold, with an empty output
                 w.add(e, Output{});
@@ -353,9 +353,9 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             claimOwnership(w, e);   // it stands in the camp's own claim, so the trees are the camp's too
         }
         stamp(e);
-        if (k.kind == PROP_FLAG) kit.flag = e;
-        if (k.kind == PROP_TREE) kit.trees.push_back(e);
-        if (k.kind == PROP_FOUNDATION_SMALL) kit.foundation = e;
+        if (k.kind == PropKind::Flag) kit.flag = e;
+        if (k.kind == PropKind::Tree) kit.trees.push_back(e);
+        if (k.kind == PropKind::FoundationSmall) kit.foundation = e;
     }
     kit.faction = faction;
     kit.yaw = yaw;
@@ -366,11 +366,11 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
 void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial) {
     if (!kit.placed || !w.has<Prop>(kit.foundation)) return;
     const Transform at = *w.get<Transform>(kit.foundation);
-    const Entity vault = placeBuiltProp(w, t, PROP_VAULT, at.x, at.z, kit.yaw, kit.faction);
+    const Entity vault = placeBuiltProp(w, t, PropKind::Vault, at.x, at.z, kit.yaw, kit.faction);
     if (vault == NULL_ENTITY) return;
     if (serial) w.get<Prop>(vault)->serial = (*serial)++;
-    const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / propInfo(PROP_VAULT).fuelHours);   // three days of logs
-    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PROP_VAULT).input, logs };
+    const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / propInfo(PropKind::Vault).fuelHours);   // three days of logs
+    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PropKind::Vault).input, logs };
     kit.vault = vault;
 }
 
@@ -396,7 +396,7 @@ bool propDecaying(World& w, Entity e, const std::vector<Claim>& claims) {
     const Owner* own = w.get<Owner>(e);
     // By the same rules as claimDecaySystem
     bool decaying = false;
-    if (p->kind == PROP_FLAG) {
+    if (p->kind == PropKind::Flag) {
         size_t idx = claims.size();
         for (size_t i = 0; i < claims.size(); ++i) {
             if (claims[i].flag == e) idx = i;
@@ -443,14 +443,14 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
         else out.push_back(langf("MISC_PROP_LOCK_SHUT", { std::to_string(lock->level) }));
     }
 
-    if (p->kind == PROP_FLAG) {
+    if (p->kind == PropKind::Flag) {
         const Claim* c = nullptr;
         for (const Claim& k : claims) {
             if (k.flag == e) c = &k;
         }
         out.push_back(lang(c && c->vault != NULL_ENTITY ? "MISC_FLAG_VAULT_YES" : "MISC_FLAG_VAULT_NO"));
     }
-    if (p->kind == PROP_VAULT) {
+    if (p->kind == PropKind::Vault) {
         // Upkeep left: what is left of the log burning now, and the hours of each log waiting
         double hours = 0.0;
         if (const Fuel* f = w.get<Fuel>(e)) hours += f->hours;
@@ -469,7 +469,7 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
 std::vector<std::string> flagInfoLines(World& w, Entity e) {
     std::vector<std::string> out;
     const Prop* p = w.get<Prop>(e);
-    if (!p || p->kind != PROP_FLAG) return out;
+    if (!p || p->kind != PropKind::Flag) return out;
     const Owner* own = w.get<Owner>(e);
     const Health* hp = w.get<Health>(e);
     const std::vector<Claim> claims = claimsOf(w);

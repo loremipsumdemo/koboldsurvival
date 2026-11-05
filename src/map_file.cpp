@@ -1,4 +1,4 @@
-#include "map.h"
+#include "map_file.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -32,7 +32,7 @@ MapData flatMap(int size) {
     m.size = size;
     m.heights.assign(cornerCount((size_t)size), 0.0f);
     m.walkable.assign((size_t)size * size, 1);
-    m.biome.assign((size_t)size * size, BIOME_NONE);
+    m.biome.assign((size_t)size * size, (uint8_t)Biome::None);
     return m;
 }
 
@@ -82,7 +82,7 @@ std::vector<unsigned char> encodeMap(const MapData& m) {
         putU32(out, bits);
     }
     for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.walkable.size() ? m.walkable[i] : 1);
-    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.biome.size() ? m.biome[i] : BIOME_NONE);
+    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.biome.size() ? m.biome[i] : (uint8_t)Biome::None);
     return out;
 }
 

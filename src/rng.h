@@ -1,7 +1,7 @@
 #pragma once
 #include <random>
 
-// The random number generator every system draws from, so a seeded game can be played again the same way
+// The random number generator the game systems draw from
 struct Rng {
     std::mt19937 gen;
 

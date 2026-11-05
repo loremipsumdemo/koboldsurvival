@@ -3,7 +3,7 @@
 #include <vector>
 #include "display.h"
 #include "settings.h"
-#include "ui.h"
+#include "ui_types.h"
 #include "language.h"
 
 // The Settings screen: four tabs, each a list of rows. A row is a dropdown, an on/off toggle, a volume level

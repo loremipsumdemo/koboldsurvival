@@ -2,8 +2,8 @@
 // shaders, the same surface tiles and the same look, which the world folder stores. Split from renderer.cpp
 // to keep both files readable.
 #include "renderer.h"
-#include "render/surface_pixels.hpp"
-#include "theme/theme.hpp"
+#include "surface_tiles.h"
+#include "look.h"
 
 #include <algorithm>
 #include <chrono>
@@ -302,7 +302,7 @@ GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels) {
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, wm::SURFACE_TILE_SIZE, wm::SURFACE_TILE_SIZE, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, SURFACE_TILE_SIZE, SURFACE_TILE_SIZE, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -495,7 +495,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
     // The light and look the ground and sea are shaded with: the world's look, lit by the sun the sky shows
-    const wm::SkyState sky = wm::ComputeSkyForSun(t.surface().look, wm::V3{ skySun_[0], skySun_[1], skySun_[2] });
+    const SkyLight sky = skyLightFor(t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
     const float hs = t.heightScale();
     const float seaY = 0.0f;                        // sea level, in world units
     const float waterY = seaY - kWaterDrop * hs;    // the sea's surface, just under sea level

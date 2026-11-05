@@ -78,7 +78,9 @@ src/                 Game source (single executable, an ECS-style design)
   systems.cpp        Simulation systems: needs, behaviors, automation
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
-  worldmaker/        World look (sky, sun, rock and water colors) and surface textures
+  game_log, world_labels   The message log and the text drawn over units
+  look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
+  world_format, map_file   The world folder format, and the older single-file .map format
 tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen

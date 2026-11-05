@@ -10,7 +10,7 @@
 
 namespace {
 
-// Healing and food are not fixed here any more: each unit's behavior rules decide when it uses them (behavior.h).
+// Healing and food are not fixed here any more: each unit's behavior rules decide when it uses them (need_behaviors.h).
 const char* const ELIXIR = "Elixir of Might";
 
 constexpr float STAMINA_DRAIN = 2.0f;   // stamina lost per second walking at a full load (scaled by the load)
@@ -84,7 +84,7 @@ int ammoSlotFor(World& w, Entity e, const RangedProfile& rp) {
 // The ranged weapon in a unit's main hand, or nullptr
 const RangedProfile* rangedOf(World& w, Entity e) {
     const Equipment* q = w.get<Equipment>(e);
-    return q ? rangedProfileOf(q->items[GEAR_MAIN_HAND]) : nullptr;
+    return q ? rangedProfileOf(q->items[GearSlot::MainHand]) : nullptr;
 }
 
 // An Unconscious unit (or a corpse) is out of the fight: nobody swings at it
@@ -102,7 +102,7 @@ float distanceBetween(World& w, Entity a, Entity b) {
 
 // Share of notices that fail against this unit. Sneaking, more fail, and Stealth counts twice.
 float noticeFailChance(World& w, Entity p) {
-    const float stealth = NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), STAT_STEALTH) - 1);
+    const float stealth = NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), StatId::Stealth) - 1);
     if (isSneaking(w, p)) return std::min(SNEAK_FAIL_CAP, SNEAK_FAIL_BASE + 2.0f * stealth);
     return std::min(NOTICE_FAIL_CAP, stealth);
 }
@@ -193,7 +193,7 @@ void onAttacked(World& w, Entity a, Entity d) {
 }
 
 // One swing, or one shot from a ranged weapon: rolls, the outcome, the log lines, damage numbers and the XP it gives
-void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<FloatingNumber>& floats) {
+void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<FloatingNumber>& floats) {
     CombatNumbers an = numbersOf(w, a);
     const CombatNumbers dn = numbersOf(w, d);
     const bool downed = hpOf(w, d) <= 0;
@@ -209,15 +209,15 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
             shot = true;
         } else {
             const Stats st = statsOf(w, a);
-            an.attack = UNARMED_ATTACK + STRENGTH_ATTACK * (float)levelOf(st, STAT_STRENGTH) + buffOf(w, a);
-            an.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(st, STAT_MELEE));
+            an.attack = UNARMED_ATTACK + STRENGTH_ATTACK * (float)levelOf(st, StatId::Strength) + buffOf(w, a);
+            an.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(st, StatId::Melee));
         }
     }
     const SwingResult r = resolveSwing(an, dn, downed, rng.unit(), rng.unit(), rng.unit());
     onAttacked(w, a, d);
 
     if (Combat* ca = w.get<Combat>(a)) ca->swingLeft = an.swingTime;
-    grantXp(w, a, STAT_DEXTERITY, DEXTERITY_XP_PER_SWING, lang("MISC_REASON_SWINGING"));
+    grantXp(w, a, StatId::Dexterity, DEXTERITY_XP_PER_SWING, lang("MISC_REASON_SWINGING"));
 
     const std::string attacker = nameOf(w, a);
     const std::string defender = nameOf(w, d);
@@ -233,7 +233,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
         log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss, npcOnly(w, a, d));
-        grantXp(w, d, STAT_AGILITY, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
+        grantXp(w, d, StatId::Agility, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
         return;
     }
 
@@ -261,10 +261,10 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
 
-    grantXp(w, a, shot ? STAT_PROJECTILES : STAT_MELEE, MELEE_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
-    grantXp(w, a, STAT_STRENGTH, STRENGTH_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
-    grantXp(w, d, STAT_VITALITY, VITALITY_XP_PER_HP_LOST * lost, lang("MISC_REASON_TAKING"));
-    if (r.blocked) grantXp(w, d, STAT_BLOCK, BLOCK_XP_PER_BLOCK, lang("MISC_REASON_BLOCKING"));
+    grantXp(w, a, shot ? StatId::Projectiles : StatId::Melee, MELEE_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
+    grantXp(w, a, StatId::Strength, STRENGTH_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
+    grantXp(w, d, StatId::Vitality, VITALITY_XP_PER_HP_LOST * lost, lang("MISC_REASON_TAKING"));
+    if (r.blocked) grantXp(w, d, StatId::Block, BLOCK_XP_PER_BLOCK, lang("MISC_REASON_BLOCKING"));
 
     if (nd && nd->hp == 0) {
         log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage, npcOnly(w, a, d));
@@ -274,7 +274,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, CombatLog& log, std::vector<
 }
 
 // A unit that has just picked a fight drinks an elixir first, if it has one and none is active
-void drinkForFight(World& w, Entity p, Combat& pc, CombatLog& log) {
+void drinkForFight(World& w, Entity p, Combat& pc, GameLog& log) {
     if (pc.buffLeft > 0.0f) return;
     const int slot = slotNamed(w, p, ELIXIR);
     const ItemDef* elixir = slot >= 0 ? findItem(w.get<Inventory>(p)->slots[slot].item) : nullptr;
@@ -293,45 +293,45 @@ Stats statsOf(World& w, Entity e) {
 // ---- Formulas ----
 
 int maxHealthFor(const Stats& s) {
-    return BASE_HP + HP_PER_VITALITY * levelOf(s, STAT_VITALITY);
+    return BASE_HP + HP_PER_VITALITY * levelOf(s, StatId::Vitality);
 }
 
 CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAttack) {
     CombatNumbers n;
     n.maxHp = maxHealthFor(s);
 
-    const ItemDef* weapon = findItem(worn.items[GEAR_MAIN_HAND]);
+    const ItemDef* weapon = findItem(worn.items[GearSlot::MainHand]);
     const float base = weapon ? (float)weapon->attackValue : UNARMED_ATTACK;
     const float weight = weapon ? weapon->weight : UNARMED_WEIGHT;
-    n.attack = base + STRENGTH_ATTACK * (float)levelOf(s, STAT_STRENGTH) + buffAttack;
+    n.attack = base + STRENGTH_ATTACK * (float)levelOf(s, StatId::Strength) + buffAttack;
 
     int attack = 0, defense = 0;
     gearTotals(worn, attack, defense);
     n.defense = (float)defense;
     n.mitigation = MITIGATION_K / (MITIGATION_K + n.defense);
 
-    n.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, STAT_MELEE));
+    n.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, StatId::Melee));
     n.reach = ATTACK_REACH;
     // A ranged weapon: Projectiles for the aim, its own accuracy, damage and speed, and its range
-    if (const RangedProfile* rp = rangedProfileOf(worn.items[GEAR_MAIN_HAND])) {
+    if (const RangedProfile* rp = rangedProfileOf(worn.items[GearSlot::MainHand])) {
         n.ranged = true;
         n.reach = rp->range;
-        n.accuracy = std::clamp(ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, STAT_PROJECTILES) + rp->accuracyAdd,
+        n.accuracy = std::clamp(ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(s, StatId::Projectiles) + rp->accuracyAdd,
                                 0.05f, ACCURACY_CAP);
-        n.attack = base * rp->damageMul + STRENGTH_ATTACK * (float)levelOf(s, STAT_STRENGTH) + buffAttack;
+        n.attack = base * rp->damageMul + STRENGTH_ATTACK * (float)levelOf(s, StatId::Strength) + buffAttack;
     }
-    n.dodge = std::min(DODGE_CAP, DODGE_PER_LEVEL * levelOf(s, STAT_AGILITY));
+    n.dodge = std::min(DODGE_CAP, DODGE_PER_LEVEL * levelOf(s, StatId::Agility));
 
-    const bool canBlock = worn.items[GEAR_MAIN_HAND] != 0 || worn.items[GEAR_OFF_HAND] != 0;
+    const bool canBlock = worn.items[GearSlot::MainHand] != 0 || worn.items[GearSlot::OffHand] != 0;
     n.blockChance = canBlock
-        ? std::min(BLOCK_CHANCE_CAP, BLOCK_CHANCE_BASE + BLOCK_CHANCE_PER_LEVEL * levelOf(s, STAT_BLOCK))
+        ? std::min(BLOCK_CHANCE_CAP, BLOCK_CHANCE_BASE + BLOCK_CHANCE_PER_LEVEL * levelOf(s, StatId::Block))
         : 0.0f;
 
-    const float dexFactor = 1.0f + DEXTERITY_SWING_PER_LEVEL * (levelOf(s, STAT_DEXTERITY) - 1);
+    const float dexFactor = 1.0f + DEXTERITY_SWING_PER_LEVEL * (levelOf(s, StatId::Dexterity) - 1);
     n.swingTime = (1.0f + weight / 5.0f) / dexFactor;
-    if (const RangedProfile* rp = rangedProfileOf(worn.items[GEAR_MAIN_HAND])) n.swingTime *= rp->shotTimeMul;
+    if (const RangedProfile* rp = rangedProfileOf(worn.items[GearSlot::MainHand])) n.swingTime *= rp->shotTimeMul;
 
-    n.maxStamina = STAMINA_BASE + STAMINA_PER_ENDURANCE * levelOf(s, STAT_ENDURANCE);
+    n.maxStamina = STAMINA_BASE + STAMINA_PER_ENDURANCE * levelOf(s, StatId::Endurance);
     return n;
 }
 
@@ -387,12 +387,12 @@ float walkSpeedOf(World& w, Entity e, bool running) {
     const Combat* c = w.get<Combat>(e);
     const float stamina = c ? c->stamina : 1.0f;
     const float load = encumbranceOf(w, e);
-    float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1)) * (1.0f - load);
+    float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1)) * (1.0f - load);
     if (isSneaking(w, e)) {
         running = false;          // a sneaking unit never runs
         speed *= SNEAK_SPEED;
     }
-    if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, STAT_ATHLETICS) - 1);
+    if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1);
     if (stamina <= 0.0f) speed *= 0.5f;
     // A boss walking home after giving up a chase (and taking no damage) hurries
     if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
@@ -412,11 +412,6 @@ float strengthXpWhileWalking(float encumbrance, float seconds) {
 // ---- Experience ----
 
 namespace {
-std::vector<LogLine> gQueued;   // game messages waiting for the next frame's log
-}
-
-namespace {
-std::vector<TradeLabel> gQueuedLabels;
 std::vector<QueuedSound> gQueuedSounds;
 }
 
@@ -446,124 +441,26 @@ void discardQueuedSounds() {
     gQueuedSounds.clear();
 }
 
-void queueUnitLabel(Entity unit, const std::string& text, bool red) {
-    if (unit == NULL_ENTITY || text.empty()) return;
-    gQueuedLabels.push_back(TradeLabel{ unit, text, 0.0f, red });
-}
-
-std::vector<TradeLabel> takeQueuedLabels() {
-    std::vector<TradeLabel> out;
-    out.swap(gQueuedLabels);
-    return out;
-}
-
-void discardQueuedLabels() {
-    gQueuedLabels.clear();
-}
-
-std::string itemGainLabel(int count, const std::string& itemName) {
-    if (count <= 1) return langf("MISC_ITEM_GAINED", { itemName });
-    return langf("MISC_ITEMS_GAINED", { std::to_string(count), itemName });
-}
-
-std::string itemLossLabel(int count, const std::string& itemName) {
-    if (count <= 1) return langf("MISC_ITEM_LOST", { itemName });
-    return langf("MISC_ITEMS_LOST", { std::to_string(count), itemName });
-}
-
-namespace {
-std::string labelItemName(int item) {
-    const ItemDef* def = findItem(item);
-    return def ? itemDisplayName(*def) : std::string(lang("MISC_AN_ITEM"));
-}
-}
-
-std::string itemGainLabelFor(int count, int item) { return itemGainLabel(count, labelItemName(item)); }
-std::string itemLossLabelFor(int count, int item) { return itemLossLabel(count, labelItemName(item)); }
-
-void queueLog(const std::string& text, LogKind kind, bool npc) {
-    gQueued.push_back(LogLine{ text, Tint::Gray, kind, npc });
-}
-
-bool npcOnly(World& w, Entity a, Entity b) {
-    const bool yours = (a != NULL_ENTITY && w.has<Commandable>(a)) || (b != NULL_ENTITY && w.has<Commandable>(b));
-    return !yours;
-}
-
-void CombatLog::say(const std::string& text) {
-    spoken.push_back(LogLine{ text, Tint::Gray, LogKind::Other });
-    if (spoken.size() > LOG_LIMIT) spoken.erase(spoken.begin());
-}
-
-void flushQueuedLog(CombatLog& log) {
-    for (const LogLine& ln : gQueued) log.add(ln.text, ln.tint, ln.kind, ln.npc);
-    gQueued.clear();
-}
-
-void discardQueuedLog() {
-    gQueued.clear();
-}
-
-std::vector<const LogLine*> infoLines(const CombatLog& log, int tab, const LogFilter& f) {
-    std::vector<const LogLine*> out;
-    if (tab == 2) return out;   // the Time tab has no lines
-    if (tab == 0) {
-        for (const LogLine& ln : log.spoken) out.push_back(&ln);
-        return out;
-    }
-    for (const LogLine& ln : log.lines) {
-        if (ln.npc && !f.on[(int)LogKind::Npc]) continue;   // about NPCs only, and Show NPC Info is off
-        if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) out.push_back(&ln);
-    }
-    // The Game tab shows only the newest LOG_LIMIT of what passes the filter
-    if (out.size() > LOG_LIMIT) out.erase(out.begin(), out.begin() + (out.size() - LOG_LIMIT));
-    return out;
-}
-
-void grantXp(World& w, Entity e, int stat, float amount, const std::string& why, LogKind kind) {
-    if (amount <= 0.0f || stat < 0 || stat >= STAT_COUNT) return;
+void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why, LogKind kind) {
+    if (amount <= 0.0f || idx(stat) < 0 || idx(stat) >= STAT_COUNT) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;
     if (w.has<Mob>(e) && !mobHasStat(stat)) return;   // a mob has only its attributes and combat skills
 
     XpBuffer& buf = w.has<XpBuffer>(e) ? *w.get<XpBuffer>(e) : w.add(e, XpBuffer{});
-    const float total = buf.frac[stat] + amount;
+    const float total = buf.frac[idx(stat)] + amount;
     const float whole = std::floor(total);
-    buf.frac[stat] = total - whole;
+    buf.frac[idx(stat)] = total - whole;
     if (whole < 1.0f) return;
     const int before = levelOf(*st, stat);
     addXp(*st, stat, (int)whole);
     if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);   // only yours are heard
     if (!why.empty()) {
         const LogKind shown = kind != LogKind::Xp           ? kind
-                            : stat == STAT_ATHLETICS ? LogKind::XpAthletics
-                            : stat == STAT_ENDURANCE ? LogKind::XpEndurance
+                            : stat == StatId::Athletics ? LogKind::XpAthletics
+                            : stat == StatId::Endurance ? LogKind::XpEndurance
                                                      : LogKind::Xp;
         queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown, npcOnly(w, e));
-    }
-}
-
-// ---- Log and damage numbers ----
-
-Tint tintFor(World& w, Entity attacker, Entity target) {
-    if (w.has<Commandable>(attacker) && w.has<Hostile>(target)) return Tint::Green;
-    if (w.has<Hostile>(attacker) && w.has<Commandable>(target)) return Tint::Red;
-    return Tint::Gray;
-}
-
-void CombatLog::add(const std::string& text, Tint tint, LogKind kind, bool npc) {
-    lines.push_back(LogLine{ text, tint, kind, npc });
-    // Each kind keeps its own newest LOG_LIMIT, so a flood of one kind never pushes out the others. The lines about
-    // NPCs only are a kind of their own here, so their flood never pushes out the lines about your units.
-    const LogKind bucket = npc ? LogKind::Npc : kind;
-    if (++kindCount[(int)bucket] > LOG_LIMIT) {
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if ((it->npc ? LogKind::Npc : it->kind) == bucket) {
-                lines.erase(it);
-                break;
-            }
-        }
-        --kindCount[(int)bucket];
     }
 }
 
@@ -751,7 +648,7 @@ void removeUnit(World& w, Entity e) {
     w.destroy(e);
 }
 
-void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<FloatingNumber>& floats) {
+void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats) {
     // Damage numbers rise and fade, then go
     for (FloatingNumber& f : floats) f.age += dt;
     floats.erase(std::remove_if(floats.begin(), floats.end(),
@@ -830,7 +727,7 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
         if (!standing(p) || !w.has<Combat>(p)) continue;
         Combat& pc = *w.get<Combat>(p);
         const Stats st = statsOf(w, p);
-        const float spotRange = AGGRO_RANGE * (1.0f + PERCEPTION_RANGE_PER_LEVEL * (levelOf(st, STAT_PERCEPTION) - 1));
+        const float spotRange = AGGRO_RANGE * (1.0f + PERCEPTION_RANGE_PER_LEVEL * (levelOf(st, StatId::Perception) - 1));
         if (!w.has<Commandable>(p)) continue;   // only your units gain XP
         const std::vector<Entity>& foes = hostiles;
         bool unnoticedInRange = false;
@@ -839,11 +736,11 @@ void combatSystem(World& w, Rng& rng, float dt, CombatLog& log, std::vector<Floa
             const float d = distanceBetween(w, p, h);
             if (d <= spotRange && std::find(pc.spotted.begin(), pc.spotted.end(), h) == pc.spotted.end()) {
                 pc.spotted.push_back(h);
-                grantXp(w, p, STAT_PERCEPTION, PERCEPTION_XP_PER_SPOT, lang("MISC_REASON_SPOTTING"));
+                grantXp(w, p, StatId::Perception, PERCEPTION_XP_PER_SPOT, lang("MISC_REASON_SPOTTING"));
             }
             if (d <= STEALTH_RANGE && !awareOfYou(h)) unnoticedInRange = true;
         }
-        if (unnoticedInRange) grantXp(w, p, STAT_STEALTH, STEALTH_XP_PER_SECOND * dt, lang("MISC_REASON_UNNOTICED"));
+        if (unnoticedInRange) grantXp(w, p, StatId::Stealth, STEALTH_XP_PER_SECOND * dt, lang("MISC_REASON_UNNOTICED"));
     }
 
     // Targets. A player unit with an attack order keeps its ordered red unit until it is gone, and picks no

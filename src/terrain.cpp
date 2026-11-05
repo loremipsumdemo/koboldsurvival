@@ -1,5 +1,5 @@
 #include "terrain.h"
-#include "render/surface_pixels.hpp"
+#include "surface_tiles.h"
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -28,7 +28,7 @@ ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
             const size_t k = (size_t)tz * size + tx;
             const size_t t = (size_t)j * CHUNK_TILES + i;
             c.walk[t] = k < m.walkable.size() ? (m.walkable[k] ? 1 : 0) : 1;
-            c.biome[t] = k < m.biome.size() ? m.biome[k] : BIOME_NONE;
+            c.biome[t] = k < m.biome.size() ? m.biome[k] : (uint8_t)Biome::None;
         }
     }
     return c;
@@ -38,8 +38,8 @@ ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
 const WorldSurface& DefaultSurface() {
     static const WorldSurface s = [] {
         WorldSurface d;
-        d.ground = wm::SurfaceTilePixels(wm::kGroundTileSpec);
-        d.water = wm::SurfaceTilePixels(wm::kWaterTileSpec);
+        d.ground = surfaceTilePixels(GROUND_TILE_SPEC);
+        d.water = surfaceTilePixels(WATER_TILE_SPEC);
         return d;
     }();
     return s;
@@ -217,10 +217,10 @@ bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     return true;
 }
 
-uint8_t Terrain::biome(int x, int y) const {
+Biome Terrain::biome(int x, int y) const {
     const ChunkData* c = tileChunk(x, y);
-    if (!c) return BIOME_NONE;
-    return c->biome[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES];
+    if (!c) return Biome::None;
+    return (Biome)c->biome[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES];
 }
 
 bool Terrain::isFree(float x, float z) const {

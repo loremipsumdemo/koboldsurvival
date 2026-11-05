@@ -53,13 +53,13 @@ float snapCoord(float g, float halfExtent) {
 
 }  // namespace
 
-void snapBuildSpot(int kind, float gx, float gz, float& x, float& z) {
+void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
     const float h = snapExtent(propInfo(kind).foot);
     x = snapCoord(gx, h);
     z = snapCoord(gz, h);
 }
 
-BuildCheck checkBuildSpot(World& w, const Terrain& t, int kind, float x, float z, float yaw) {
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw) {
     const PropInfo& info = propInfo(kind);
     const Footprint& f = info.foot;
     const int builder = FACTION_PLAYER;
@@ -76,14 +76,14 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, int kind, float x, float z
     const int sealer = sealingFactionAt(claims, x, z);
     if (sealer >= 0 && sealer != builder) return BuildCheck::EnemySealed;
 
-    if (kind == PROP_FLAG) {
+    if (kind == PropKind::Flag) {
         for (const Claim& c : claims) {
             if (claimsOverlap(x, z, c.x, c.z)) return BuildCheck::ClaimOverlap;
         }
     }
 
-    if (kind == PROP_FOUNDATION_SMALL || kind == PROP_FOUNDATION_LARGE || kind == PROP_FOUNDATION_LONG ||
-        kind == PROP_FOUNDATION_CIRCLE) {
+    if (kind == PropKind::FoundationSmall || kind == PropKind::FoundationLarge || kind == PropKind::FoundationLong ||
+        kind == PropKind::FoundationCircle) {
         // A foundation lies wholly inside one of the builder's claim circles
         bool inClaim = false;
         for (const Claim& c : claims) {
@@ -139,8 +139,8 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, int kind, float x, float z
     return BuildCheck::Ok;
 }
 
-bool buildAnywhere(int kind) {
-    return kind == BUILD_DESTROY || kind == PROP_BEDROLL || kind == PROP_CAMPFIRE;
+bool buildAnywhere(const BuildPick& pick) {
+    return pick.tool == BuildPick::Tool::Destroy || pick.places(PropKind::Bedroll) || pick.places(PropKind::Campfire);
 }
 
 bool selectionInClaim(World& w) {
@@ -169,7 +169,7 @@ const char* buildRefusalKey(BuildCheck c) {
 
 // The parts a built prop starts with, as a placed one of its kind would have them (systems.cpp, a level's props).
 // A built storage has nothing in it; a passive crafting prop (the Vault) starts cold, with an empty output.
-static void addBuiltPropParts(World& w, Entity e, int kind) {
+static void addBuiltPropParts(World& w, Entity e, PropKind kind) {
     const PropInfo& info = propInfo(kind);
     if (hasStorage(info)) w.add(e, Storage{});
     if (info.use == PropUse::PassiveCrafting) {
@@ -180,7 +180,7 @@ static void addBuiltPropParts(World& w, Entity e, int kind) {
     if (info.lockLevel > 0) w.add(e, Lock{ true, info.lockLevel });
 }
 
-Entity placeBuiltProp(World& w, const Terrain& t, int kind, float x, float z, float yaw, int owner) {
+Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
     const PropInfo& info = propInfo(kind);
     const Entity e = w.create();
     w.add(e, Transform{ x, t.heightAt(x, z), z });
@@ -192,7 +192,7 @@ Entity placeBuiltProp(World& w, const Terrain& t, int kind, float x, float z, fl
     }
 
     w.add(e, Owner{ owner });
-    if (kind == PROP_FLAG) w.add(e, Health{});
+    if (kind == PropKind::Flag) w.add(e, Health{});
     if (info.foot.foundation) w.add(e, Wear{});
 
     // A prop that sits on a foundation is held by it: the foundation containing its centre

@@ -15,7 +15,7 @@
 #include <vector>
 #include "components.h"
 #include "mobs.h"
-#include "resources.h"
+#include "game_state.h"
 #include "timefmt.h"
 
 // Save files are plain text. The terrain comes from the map the save was made on, and the props

@@ -8,7 +8,7 @@
 #include "components.h"
 #include "items.h"
 #include "props.h"
-#include "ui.h"
+#include "ui_types.h"
 
 // Layout for the in-game panels. Pure functions of the window size and the state,
 // so the drawing code and the mouse handling use the same rectangles.
@@ -41,7 +41,9 @@ inline Rect BarLock(const Rect& bar, float s) {
 // opening grows it back away from the bar, downward from a bar in the top half and upward from one in the bottom half.
 // Their sizes never change by themselves: only the player resizes them, from any edge, while the panel's lock is open.
 // Only the title bar is kept inside the window; the rest of a panel may run past an edge.
-enum PanelId : int { PANEL_SQUAD = 0, PANEL_UNIT = 1, PANEL_INFO = 2, PANEL_COUNT = 3 };
+enum class PanelId : int { Squad = 0, Unit = 1, Info = 2, Count = 3 };
+constexpr int PANEL_COUNT = idx(PanelId::Count);
+constexpr PanelId ALL_PANELS[PANEL_COUNT] = { PanelId::Squad, PanelId::Unit, PanelId::Info };
 // What dragging a panel does: the edges it pulls (a corner pulls two), or moving it by its title bar
 constexpr int GRAB_TOP = 1, GRAB_RIGHT = 2, GRAB_BOTTOM = 4, GRAB_LEFT = 8, GRAB_MOVE = 16;
 
@@ -121,19 +123,19 @@ inline float infoDefaultHeight(int H) {
     return std::max(smallest, std::min(220.0f * s, room));
 }
 
-inline void panelDefaultSize(int which, int H, float& w, float& h) {
-    if (which == PANEL_SQUAD) { w = squadDefaultWidth(H); h = squadDefaultHeight(H); }
-    else if (which == PANEL_UNIT) { w = sidebarDefaultWidth(H); h = unitPanelDefaultHeight(H); }
+inline void panelDefaultSize(PanelId which, int H, float& w, float& h) {
+    if (which == PanelId::Squad) { w = squadDefaultWidth(H); h = squadDefaultHeight(H); }
+    else if (which == PanelId::Unit) { w = sidebarDefaultWidth(H); h = unitPanelDefaultHeight(H); }
     else { w = infoDefaultWidth(H); h = infoDefaultHeight(H); }
 }
 // The smallest a panel can be made: room for its bar and a little of what is under it
-inline void panelMinSize(int which, int H, float& w, float& h) {
+inline void panelMinSize(PanelId which, int H, float& w, float& h) {
     const float s = H / 720.0f;
-    if (which == PANEL_SQUAD) {
+    if (which == PanelId::Squad) {
         const SquadMetrics m(s);
         w = squadMinWidth(H);
         h = m.chromeH() + m.rowsH(1);
-    } else if (which == PANEL_UNIT) {
+    } else if (which == PanelId::Unit) {
         w = sidebarMinWidth(H);
         h = (PANEL_BAR_H + 26.0f + 60.0f) * s;
     } else {
@@ -143,17 +145,17 @@ inline void panelMinSize(int which, int H, float& w, float& h) {
 }
 
 // The panel's default top-left corner for an open size of w by h
-inline float panelAnchorX(int which, float w, int W, int H) {
+inline float panelAnchorX(PanelId which, float w, int W, int H) {
     const float m = PANEL_MARGIN * H / 720.0f;
-    return which == PANEL_SQUAD ? m : W - m - w;   // the Squad Panel on the left, the other two on the right
+    return which == PanelId::Squad ? m : W - m - w;   // the Squad Panel on the left, the other two on the right
 }
-inline float panelAnchorY(int which, float h, int H) {
+inline float panelAnchorY(PanelId which, float h, int H) {
     const float m = PANEL_MARGIN * H / 720.0f;
-    return which == PANEL_INFO ? m : H - m - h;
+    return which == PanelId::Info ? m : H - m - h;
 }
 
 // A panel's open rectangle in window pixels: its size and place. Only its title bar is kept inside the window.
-inline Rect panelRect(int which, const PanelPlace& p, int W, int H) {
+inline Rect panelRect(PanelId which, const PanelPlace& p, int W, int H) {
     const float s = H / 720.0f;
     const float barH = PANEL_BAR_H * s;
     float dw = 0.0f, dh = 0.0f, mw = 0.0f, mh = 0.0f;
@@ -171,7 +173,7 @@ inline Rect panelRect(int which, const PanelPlace& p, int W, int H) {
 }
 
 // The place that puts a panel's open rectangle at r, with its bar on the side given
-inline PanelPlace placeForRect(int which, const Rect& r, int W, int H, bool barBottom = false) {
+inline PanelPlace placeForRect(PanelId which, const Rect& r, int W, int H, bool barBottom = false) {
     const float s = H / 720.0f;
     PanelPlace p;
     p.barBottom = barBottom;
@@ -199,7 +201,7 @@ inline Rect panelBodyRect(const Rect& open, bool barBottom, float barH) {
 // panel mostly in the bottom half of the window has its bar along its bottom, otherwise along its top; the panel stays
 // where it is and its bar moves. A folded panel's bar stays where it is, and the panel it opens into goes the right way
 // from it: upward from a bar in the bottom half, downward from one in the top half.
-inline PanelPlace settlePanel(int which, const PanelPlace& p, int W, int H, bool folded) {
+inline PanelPlace settlePanel(PanelId which, const PanelPlace& p, int W, int H, bool folded) {
     const float barH = PANEL_BAR_H * H / 720.0f;
     const Rect open = panelRect(which, p, W, H);
     if (!folded) {
@@ -215,9 +217,9 @@ inline PanelPlace settlePanel(int which, const PanelPlace& p, int W, int H, bool
     return placeForRect(which, moved, W, H, bottom);
 }
 // A panel in its default place, with its bar on the right side: the Squad Panel's and the Unit Panel's at their bottom
-inline PanelPlace defaultPanelPlace(int which) {
+inline PanelPlace defaultPanelPlace(PanelId which) {
     PanelPlace p;
-    p.barBottom = which != PANEL_INFO;
+    p.barBottom = which != PanelId::Info;
     return p;
 }
 
@@ -267,7 +269,7 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
                                        int factionCount = 0, int repScroll = 0) {
     const float s = H / 720.0f;
     const SquadMetrics m(s);
-    const Rect open = panelRect(PANEL_SQUAD, place, W, H);
+    const Rect open = panelRect(PanelId::Squad, place, W, H);
     // As many rows as the height has room for, and as many columns as the width; at least one of each
     // (a hair over, so a size made for exactly n rows or columns is never read as n - 1)
     const int rowsVisible = std::max(1, (int)std::floor((open.h - m.chromeH() + m.gap) / (m.cell + m.label + m.gap) + 0.001f));
@@ -942,11 +944,12 @@ inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
 // Inventory holds the gear at the top and the inventory grid under it. A unit that is not in your squad (an NPC, or a
 // corpse) shows only its Profile: the other tabs are off.
 // Build is the fifth tab: the props to pick and place. It is not about a unit, so it is on whatever unit is shown.
-enum UnitTab : int { UNIT_TAB_INVENTORY = 0, UNIT_TAB_PROFILE, UNIT_TAB_STATS, UNIT_TAB_BEHAVIOR, UNIT_TAB_BUILD, UNIT_TAB_COUNT };
+enum class UnitTab : int { Inventory = 0, Profile, Stats, Behavior, Build, Count };
+constexpr int UNIT_TAB_COUNT = idx(UnitTab::Count);
 // Whether a tab of the Unit Panel can be picked for a unit: every tab for one of your squad, only Profile for any other
 // unit (an NPC, or a corpse)
-inline bool unitTabEnabled(World& w, Entity unit, int tab) {
-    return tab == UNIT_TAB_PROFILE || tab == UNIT_TAB_BUILD || unit == NULL_ENTITY || w.has<Commandable>(unit);
+inline bool unitTabEnabled(World& w, Entity unit, UnitTab tab) {
+    return tab == UnitTab::Profile || tab == UnitTab::Build || unit == NULL_ENTITY || w.has<Commandable>(unit);
 }
 // The groups the Stats tab lists its stats under
 constexpr int STAT_GROUP_COUNT = 5;
@@ -954,7 +957,7 @@ constexpr int STAT_GROUP_COUNT = 5;
 struct SidebarLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };      // the whole Unit Panel, bottom right
     bool open = false;                          // closed: the bar alone. open: the tabs and the picked tab
-    int tab = UNIT_TAB_INVENTORY;               // the tab shown, when open
+    UnitTab tab = UnitTab::Inventory;           // the tab shown, when open
     Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };      // the "Unit Panel" bar across the top, which does not scroll
     Rect minus{ 0.0f, 0.0f, 0.0f, 0.0f };      // [-], shown while open; empty otherwise
     Rect plus{ 0.0f, 0.0f, 0.0f, 0.0f };       // [+], shown while closed; empty otherwise
@@ -992,13 +995,13 @@ struct SidebarLayout {
 // which are always ITEM_CELL_PX.
 // profileH: the height the profile card's text needs, from the renderer (profileCardHeight). Under the text is the
 // unit's picture, PROFILE_PICTURE_PX on a side whatever the UI scale (smaller only when the panel is too narrow).
-inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, int tab = 0,
+inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, UnitTab tab = UnitTab::Inventory,
                                             const PanelPlace& place = PanelPlace{}, float profileH = 0.0f,
                                             const BehaviorUi& bui = BehaviorUi{}) {
     const float s = H / 720.0f;
     const UnitPanelMetrics um(s);
     const float pad = um.pad, gap = um.gap;
-    const Rect openRect = panelRect(PANEL_UNIT, place, W, H);
+    const Rect openRect = panelRect(PanelId::Unit, place, W, H);
     const float width = openRect.w;
     const float cardInset = 8.0f * s;
     constexpr float PROFILE_PICTURE_PX = 256.0f;   // the profile pictures' own size, in screen pixels
@@ -1009,7 +1012,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
     const float sortW = 56.0f * s, sortH = 22.0f * s, statRowH = 20.0f * s;
     const int rules = std::clamp(ruleCount, 0, BEHAVIOR_LIMIT);
-    tab = std::clamp(tab, 0, UNIT_TAB_COUNT - 1);
+    tab = (UnitTab)std::clamp(idx(tab), 0, UNIT_TAB_COUNT - 1);
 
     SidebarLayout L;
     L.open = open;
@@ -1039,7 +1042,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     const float contents[UNIT_TAB_COUNT] = { um.inventoryTabH(), cardH, statsH, behaviorPanelH, buildH };
 
     const float bodyVis = std::max(0.0f, openRect.h - barH - tabH);
-    const float maxScroll = std::max(0.0f, contents[tab] + 2.0f * pad - bodyVis);
+    const float maxScroll = std::max(0.0f, contents[idx(tab)] + 2.0f * pad - bodyVis);
     const float shift = -std::clamp(scroll, 0.0f, maxScroll);   // the contents move up by this much
     L.scroll = -shift;
     L.maxScroll = maxScroll;
@@ -1057,13 +1060,13 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
     L.body = Rect{ L.panel.x, tabY + tabH, width, bodyVis };
     const float top = L.body.y + pad + shift;   // the picked tab's contents, which scroll
 
-    if (tab == UNIT_TAB_PROFILE) {
+    if (tab == UnitTab::Profile) {
         L.profile = Rect{ L.panel.x + pad, top, width - 2.0f * pad, cardH };
         // The picture at the bottom, under all the text, centred
         L.portrait = Rect{ std::floor(L.profile.x + (L.profile.w - pictureSide) * 0.5f), std::floor(L.profile.y + profileH),
                            pictureSide, pictureSide };
     }
-    if (tab == UNIT_TAB_INVENTORY) {
+    if (tab == UnitTab::Inventory) {
         // The gear first: the eight gear slots in one row of item cells, lined up with the inventory grid's columns,
         // then a line of attack and defense totals
         L.gearPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, gearPanelH };
@@ -1075,7 +1078,7 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
             L.gear.push_back(Rect{ L.gearPanel.x + innerPad + i * (slot + gap), top + headH, slot, slot });
         }
     }
-    if (tab == UNIT_TAB_INVENTORY) {
+    if (tab == UnitTab::Inventory) {
         // Then the inventory grid, under the gear
         const float gridTop = top + gearPanelH + gap;
         L.gridPanel = Rect{ L.panel.x + pad, gridTop, width - 2.0f * pad, gridPanelH };
@@ -1087,18 +1090,18 @@ inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float s
                                     gridTop + headH + r * (slot + gap), slot, slot });
         }
     }
-    if (tab == UNIT_TAB_STATS) {
+    if (tab == UnitTab::Stats) {
         L.statsArea = Rect{ L.panel.x + pad, top, width - 2.0f * pad, statsH };
         L.statRowH = statRowH;
     }
-    if (tab == UNIT_TAB_BUILD) {
+    if (tab == UnitTab::Build) {
         L.buildHeading = Rect{ L.panel.x + pad, top, width - 2.0f * pad, buildHeadH };
         for (int i = 0; i < buildRowCount(); ++i) {
             L.buildRows.push_back(Rect{ L.panel.x + pad, top + buildHeadH + i * (buildRowH + rowGap),
                                         width - 2.0f * pad, buildRowH });
         }
     }
-    if (tab == UNIT_TAB_BEHAVIOR) {
+    if (tab == UnitTab::Behavior) {
         // Behaviors: the on box has a fixed width, and the name takes what the buttons leave. The # button, then the
         // priority and delete buttons, sit at the right end of each row.
         L.behaviorPanel = Rect{ L.panel.x + pad, top, width - 2.0f * pad, behaviorPanelH };

@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "chunk.h"
-#include "theme/theme.hpp"
+#include "look.h"
 
 struct WorldInfo {
     std::string name;            // the name the world was saved under
@@ -26,7 +26,7 @@ struct WorldInfo {
 
 // The look a world is drawn with, and the surface tiles the ground and sea use
 struct WorldSurface {
-    wm::Look look;               // the look, from look.json
+    Look look;               // the look, from look.json
     std::vector<uint8_t> ground; // ground tile, RGBA8, from surface.ksrf
     std::vector<uint8_t> water;  // sea tile, RGBA8
 };

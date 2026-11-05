@@ -9,16 +9,16 @@
 // in a bed, and falls anywhere else.
 constexpr double RESTED_LOSS_PER_HOUR = 4.0;
 constexpr double COMFORT_LOSS_PER_HOUR = 2.0;
-inline double restedGainPerHour(int propKind) {
-    if (propKind == PROP_BED) return 25.0;
-    if (propKind == PROP_BEDROLL) return 15.0;
+inline double restedGainPerHour(PropKind propKind) {
+    if (propKind == PropKind::Bed) return 25.0;
+    if (propKind == PropKind::Bedroll) return 15.0;
     return 0.0;
 }
-inline double comfortGainPerHour(int propKind) {
-    if (propKind < 0 || propKind >= PROP_KIND_COUNT) return 0.0;
+inline double comfortGainPerHour(PropKind propKind) {
+    if (idx(propKind) < 0 || idx(propKind) >= PROP_KIND_COUNT) return 0.0;
     const PropInfo& info = propInfo(propKind);
     if (info.use != PropUse::Occupy || info.lockLevel > 0) return 0.0;   // not a cage
-    return propKind == PROP_BED ? 20.0 : 10.0;
+    return propKind == PropKind::Bed ? 20.0 : 10.0;
 }
 
 // A unit knocked out with at least this share of Rested (and some hunger left) gets no Doom: it lies out for
@@ -30,7 +30,7 @@ constexpr float RESTED_HOSTILE_RANGE = 12.0f;
 
 // The most Rested a unit can have: 100, plus its Vitality level (1 to 99)
 inline int maxRestedFor(const Stats& s) {
-    return 100 + std::max(1, std::min(MAX_LEVEL, levelOf(s, STAT_VITALITY)));
+    return 100 + std::max(1, std::min(MAX_LEVEL, levelOf(s, StatId::Vitality)));
 }
 // Rested lost each time a unit comes round from being knocked out (not when Doom falls to 0 in a bed or bedroll)
 constexpr int RESTED_WAKE_COST = 40;

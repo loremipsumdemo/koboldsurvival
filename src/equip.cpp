@@ -20,14 +20,14 @@ std::string nameOf(int item) {
 // The gear slots an item fits, from its equip_slot
 std::vector<int> fittingSlots(const ItemDef& d) {
     const std::string& s = d.equipSlot;
-    if (s == "head") return { GEAR_HEAD };
-    if (s == "torso") return { GEAR_TORSO };
-    if (s == "legs") return { GEAR_LEGS };
-    if (s == "feet") return { GEAR_FEET };
-    if (s == "accessory") return { GEAR_ACCESSORY_1, GEAR_ACCESSORY_2 };
-    if (s == "main_hand" || s == "two_hand") return { GEAR_MAIN_HAND };
-    if (s == "off_hand") return { GEAR_OFF_HAND };
-    if (s == "either_hand") return { GEAR_MAIN_HAND, GEAR_OFF_HAND };
+    if (s == "head") return { idx(GearSlot::Head) };
+    if (s == "torso") return { idx(GearSlot::Torso) };
+    if (s == "legs") return { idx(GearSlot::Legs) };
+    if (s == "feet") return { idx(GearSlot::Feet) };
+    if (s == "accessory") return { idx(GearSlot::Accessory1), idx(GearSlot::Accessory2) };
+    if (s == "main_hand" || s == "two_hand") return { idx(GearSlot::MainHand) };
+    if (s == "off_hand") return { idx(GearSlot::OffHand) };
+    if (s == "either_hand") return { idx(GearSlot::MainHand), idx(GearSlot::OffHand) };
     return {};
 }
 
@@ -47,7 +47,7 @@ std::string gearSlotName(int slot) {
 }
 
 bool offHandBlocked(const Equipment& worn) {
-    return isTwoHanded(worn.items[GEAR_MAIN_HAND]);
+    return isTwoHanded(worn.items[GearSlot::MainHand]);
 }
 
 bool canEquip(const Equipment& worn, int item, int slot, std::string& why) {
@@ -62,11 +62,11 @@ bool canEquip(const Equipment& worn, int item, int slot, std::string& why) {
         why = langf("MISC_NOT_FIT_SLOT", { nameOf(item), gearSlotName(slot) });
         return false;
     }
-    if (d->equipSlot == "two_hand" && slot == GEAR_MAIN_HAND && worn.items[GEAR_OFF_HAND] != 0) {
+    if (d->equipSlot == "two_hand" && slot == idx(GearSlot::MainHand) && worn.items[GearSlot::OffHand] != 0) {
         why = langf("MISC_EMPTY_OFF_HAND", { nameOf(item) });
         return false;
     }
-    if (slot == GEAR_OFF_HAND && offHandBlocked(worn)) {
+    if (slot == idx(GearSlot::OffHand) && offHandBlocked(worn)) {
         why = lang("MISC_TWO_HANDED_IN_MAIN");
         return false;
     }
@@ -89,8 +89,8 @@ std::vector<int> comparisonSlots(int item) {
     if (!d || d->equipSlot.empty()) return {};
     const std::vector<int> fits = fittingSlots(*d);
     auto fitsSlot = [&](int slot) { return std::find(fits.begin(), fits.end(), slot) != fits.end(); };
-    if (fitsSlot(GEAR_MAIN_HAND) || fitsSlot(GEAR_OFF_HAND)) return { GEAR_MAIN_HAND, GEAR_OFF_HAND };
-    if (fitsSlot(GEAR_ACCESSORY_1)) return { GEAR_ACCESSORY_1, GEAR_ACCESSORY_2 };
+    if (fitsSlot(idx(GearSlot::MainHand)) || fitsSlot(idx(GearSlot::OffHand))) return { idx(GearSlot::MainHand), idx(GearSlot::OffHand) };
+    if (fitsSlot(idx(GearSlot::Accessory1))) return { idx(GearSlot::Accessory1), idx(GearSlot::Accessory2) };
     return fits;
 }
 
@@ -98,7 +98,7 @@ std::vector<int> displacedSlots(const Equipment& worn, int item) {
     const ItemDef* d = findItem(item);
     if (!d || d->equipSlot.empty()) return {};
     // A two-handed weapon needs both hands empty first
-    if (d->equipSlot == "two_hand") return { GEAR_MAIN_HAND, GEAR_OFF_HAND };
+    if (d->equipSlot == "two_hand") return { idx(GearSlot::MainHand), idx(GearSlot::OffHand) };
     const int slot = gearSlotFor(worn, item);
     if (slot < 0) return {};
     return { slot };
@@ -142,7 +142,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     *inv = next;
     worn->items[gearSlot] = item;
     queueSound(Sfx::Equip);
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -165,7 +165,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
     queueSound(Sfx::Equip);
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -185,7 +185,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     *inv = next;
     worn->items[gearSlot] = 0;
     queueSound(Sfx::Unequip);
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
     return true;
 }
 
@@ -316,7 +316,7 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
     };
     // The body slots, one item kind each
     const std::pair<int, const char*> body[] = {
-        { GEAR_HEAD, "head" }, { GEAR_TORSO, "torso" }, { GEAR_LEGS, "legs" }, { GEAR_FEET, "feet" },
+        { idx(GearSlot::Head), "head" }, { idx(GearSlot::Torso), "torso" }, { idx(GearSlot::Legs), "legs" }, { idx(GearSlot::Feet), "feet" },
     };
     for (const auto& [slot, kind] : body) {
         out.items[slot] = bestOf(c, { kind }, worn.items[slot]);
@@ -325,18 +325,18 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
     // Two accessories, the two best. Each stays in the slot it was already in, if it was. With accessories off, they
     // stay as they are.
     if (prefs.accessories) {
-        const int acc1 = bestOf(c, { "accessory" }, worn.items[GEAR_ACCESSORY_1]);
+        const int acc1 = bestOf(c, { "accessory" }, worn.items[GearSlot::Accessory1]);
         take(acc1);
-        const int acc2 = bestOf(c, { "accessory" }, worn.items[GEAR_ACCESSORY_2]);
+        const int acc2 = bestOf(c, { "accessory" }, worn.items[GearSlot::Accessory2]);
         take(acc2);
-        out.items[GEAR_ACCESSORY_1] = acc1;
-        out.items[GEAR_ACCESSORY_2] = acc2;
-        if ((acc1 == worn.items[GEAR_ACCESSORY_2] && acc1 != 0) || (acc2 == worn.items[GEAR_ACCESSORY_1] && acc2 != 0)) {
-            std::swap(out.items[GEAR_ACCESSORY_1], out.items[GEAR_ACCESSORY_2]);
+        out.items[GearSlot::Accessory1] = acc1;
+        out.items[GearSlot::Accessory2] = acc2;
+        if ((acc1 == worn.items[GearSlot::Accessory2] && acc1 != 0) || (acc2 == worn.items[GearSlot::Accessory1] && acc2 != 0)) {
+            std::swap(out.items[GearSlot::Accessory1], out.items[GearSlot::Accessory2]);
         }
     } else {
-        out.items[GEAR_ACCESSORY_1] = worn.items[GEAR_ACCESSORY_1];
-        out.items[GEAR_ACCESSORY_2] = worn.items[GEAR_ACCESSORY_2];
+        out.items[GearSlot::Accessory1] = worn.items[GearSlot::Accessory1];
+        out.items[GearSlot::Accessory2] = worn.items[GearSlot::Accessory2];
     }
 
     // The hands. Every main hand and off hand pair on hand is weighed, an empty hand included, and the best pair is
@@ -349,7 +349,7 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
         if (slotIs(item, "two_hand") && prefs.twoHanded) twos.push_back(item);
     }
     auto kept = [&](int mainItem, int offItem) {
-        return (mainItem == worn.items[GEAR_MAIN_HAND] ? 1 : 0) + (offItem == worn.items[GEAR_OFF_HAND] ? 1 : 0);
+        return (mainItem == worn.items[GearSlot::MainHand] ? 1 : 0) + (offItem == worn.items[GearSlot::OffHand] ? 1 : 0);
     };
     int bestMain = 0, bestOff = 0;
     GearScore bestScore;
@@ -372,8 +372,8 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
         }
     }
     for (int t : twos) consider(t, 0);
-    out.items[GEAR_MAIN_HAND] = bestMain;
-    out.items[GEAR_OFF_HAND] = bestOff;
+    out.items[GearSlot::MainHand] = bestMain;
+    out.items[GearSlot::OffHand] = bestOff;
     return out;
 }
 
@@ -423,7 +423,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
     *inv = next;
     worn->items = target.items;
     queueSound(Sfx::GearChanged);
-    grantXp(w, unit, STAT_DEXTERITY, GEAR_CHANGE_XP * (float)changed, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP * (float)changed, lang("MISC_REASON_GEAR"));
     return GearAction::Done;
 }
 

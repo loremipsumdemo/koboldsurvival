@@ -4,6 +4,7 @@
 #include <iterator>
 #include <vector>
 #include "emotes.h"
+#include "enum_index.h"
 #include "stats.h"
 
 // Props: 3D models placed on the map, such as wagons, campfires and trees. They do not block movement and cannot be
@@ -32,61 +33,74 @@
 // (the right-click menu); one whose lock is open to the selected units (their own) can likewise be Unlocked with no
 // lockpicking. A prop with no lock owner takes the faction of whoever locks it.
 // Camps keep their mobs in locked Prisoner Cages, and such a mob's name ends in " [!]" (mobs.h).
-// Built props: the kinds from PROP_FLAG on are not placed by a new level. The player builds them from the Build tab:
+// Built props: the kinds from PropKind::Flag on are not placed by a new level. The player builds them from the Build tab:
 // a Flag, a Debris, four Foundations and a Vault. A Vault is a passive crafting prop that burns Wood Logs as upkeep
 // (the Forge's fuel code, with no output), and it can only stand on a foundation, within its shape.
 
-enum PropKind : int {
-    PROP_WAGON,
-    PROP_CAMPFIRE,
-    PROP_BEDROLL,
-    PROP_BED,
-    PROP_BARREL,
-    PROP_ORE,
-    PROP_TREE,
-    PROP_BOULDER,
-    PROP_MUSHROOM,
-    PROP_BONES,
-    PROP_WALL,
-    PROP_STALL,
-    PROP_LOCKED_CHEST,
-    PROP_PRISONER_CAGE,
-    PROP_CHAIR,
-    PROP_BENCH,
-    PROP_STOOL,
-    PROP_TABLE,
-    PROP_END_TABLE,
-    PROP_ROUND_TABLE,
-    PROP_METAL_TABLE,
-    PROP_STANDING_TORCH,
-    PROP_SUPPORT_BEAM,
-    PROP_TRAINING_DUMMY,
-    PROP_RAW_FOOD_STORAGE,
-    PROP_FOOD_STORAGE,
-    PROP_WEAPON_RACK,
-    PROP_ARMOR_STAND,
-    PROP_WATER_TANK,
-    PROP_WATER_PUMP,
-    PROP_FORGE,
-    PROP_FLAG,                 // built: marks a claim (towns); placed by the player only
-    PROP_DEBRIS,               // built: what is left of a decayed or destroyed building
-    PROP_FOUNDATION_SMALL,     // built: a one-tile square ground base
-    PROP_FOUNDATION_LARGE,     // built: a two-tile square base
-    PROP_FOUNDATION_LONG,      // built: a three-by-one base
-    PROP_FOUNDATION_CIRCLE,    // built: a round base, two tiles across
-    PROP_VAULT,                // built: keeps upkeep (Wood Logs) and sits on a foundation
-    PROP_SHOP,                 // built: a storage prop, usually on a foundation
-    PROP_FARM,                 // built: a storage prop, usually on a foundation
-    PROP_TURBINE,              // built: decor, usually on a foundation
-    PROP_STOVE,                // built: a crafting prop that cooks raw meat, worked by a unit, fast
-    PROP_KIND_COUNT
+enum class PropKind : int {
+    Wagon,
+    Campfire,
+    Bedroll,
+    Bed,
+    Barrel,
+    Ore,
+    Tree,
+    Boulder,
+    Mushroom,
+    Bones,
+    Wall,
+    Stall,
+    LockedChest,
+    PrisonerCage,
+    Chair,
+    Bench,
+    Stool,
+    Table,
+    EndTable,
+    RoundTable,
+    MetalTable,
+    StandingTorch,
+    SupportBeam,
+    TrainingDummy,
+    RawFoodStorage,
+    FoodStorage,
+    WeaponRack,
+    ArmorStand,
+    WaterTank,
+    WaterPump,
+    Forge,
+    Flag,                 // built: marks a claim (towns); placed by the player only
+    Debris,               // built: what is left of a decayed or destroyed building
+    FoundationSmall,     // built: a one-tile square ground base
+    FoundationLarge,     // built: a two-tile square base
+    FoundationLong,      // built: a three-by-one base
+    FoundationCircle,    // built: a round base, two tiles across
+    Vault,                // built: keeps upkeep (Wood Logs) and sits on a foundation
+    Shop,                 // built: a storage prop, usually on a foundation
+    Farm,                 // built: a storage prop, usually on a foundation
+    Turbine,              // built: decor, usually on a foundation
+    Stove,                // built: a crafting prop that cooks raw meat, worked by a unit, fast
+    Count
 };
+constexpr int PROP_KIND_COUNT = idx(PropKind::Count);
 // The Build tab's rows: row 0 is Destroy, a tool that takes any prop down (Debris is cleared away). Then the Bedroll,
-// the Campfire, the Flag, the Vault, the four foundations, and every other kind in order. BUILD_NONE: nothing picked.
-constexpr int BUILD_NONE = -1;
-constexpr int BUILD_DESTROY = -2;
+// the Campfire, the Flag, the Vault, the four foundations, and every other kind in order.
+// What the Build tab has picked: nothing, the Destroy tool, or a kind of prop to place
+struct BuildPick {
+    enum class Tool { None, Destroy, Place };
+    Tool tool = Tool::None;
+    PropKind kind = PropKind::Wagon;   // the kind to place, when tool is Place
+
+    static BuildPick destroy() { return BuildPick{ Tool::Destroy }; }
+    static BuildPick place(PropKind k) { return BuildPick{ Tool::Place, k }; }
+    bool any() const { return tool != Tool::None; }
+    bool placing() const { return tool == Tool::Place; }
+    bool places(PropKind k) const { return tool == Tool::Place && kind == k; }
+    bool operator==(const BuildPick& o) const { return tool == o.tool && (tool != Tool::Place || kind == o.kind); }
+    bool operator!=(const BuildPick& o) const { return !(*this == o); }
+};
 // The kinds a new level places (PROP_COPIES of each, props.h below). The kinds after them are built by the player.
-constexpr int PROP_PLACED_KIND_COUNT = PROP_FLAG;
+constexpr int PROP_PLACED_KIND_COUNT = idx(PropKind::Flag);
 
 // What a prop can be used for, by right-clicking it with units selected. None is a decor prop.
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
@@ -171,7 +185,7 @@ struct PropInfo {
     const char* nameKey;
     float size;
     PropUse use;
-    int stat;
+    StatId stat;
     int item;
     int input;
     int workers;
@@ -186,83 +200,84 @@ struct PropInfo {
     bool canSitOnFoundation = false;   // a built kind that may stand on a foundation, wholly or partly (vault: must)
 };
 
-inline const PropInfo& propInfo(int kind) {
+inline const PropInfo& propInfo(PropKind kind) {
     static const PropInfo info[PROP_KIND_COUNT] = {
-        { "data/model/model_1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::PassiveCrafting, STAT_COOKING, 0, INPUT_COOKABLE, 0, 0,
+        { "data/model/model_1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::PassiveCrafting, StatId::Cooking, 0, INPUT_COOKABLE, 0, 0,
           ItemFilter::Any, 1.0 },                                                                            // raw meat -> cooked, by itself
-        { "data/model/model_3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/model/model_4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/model/model_5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  -1, 0, 0, 0, 0 },
-        { "data/model/model_6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, STAT_MINING, 1, 0, 3, 0 },       // Iron Ore
-        { "data/model/model_7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, STAT_WOODCUTTING, 88, 0, 3, 0 }, // Wood Log
-        { "data/model/model_8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, STAT_HERBALISM, 125, 0, 3, 0,
+        { "data/model/model_3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, StatId::Mining, 1, 0, 3, 0 },       // Iron Ore
+        { "data/model/model_7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, StatId::Woodcutting, 88, 0, 3, 0 }, // Wood Log
+        { "data/model/model_8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, StatId::Herbalism, 125, 0, 3, 0,
           ItemFilter::Any, 1.0, 126, 10 },                                                                   // Mushroom; 1 in 10 Poison Mushroom
-        { "data/model/model_10.glb", "PROP_BONES",          1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_11.glb", "PROP_WALL",           2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_12.glb", "PROP_STALL",          2.0f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_13.glb", "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  -1, 0, 0, 0, 5 },    // Lockable
-        { "data/model/model_14.glb", "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   -1, 0, 0, 0, 15 },   // Lockable
-        { "data/model/model_15.glb", "PROP_CHAIR",          0.9f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/model/model_16.glb", "PROP_BENCH",          1.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/model/model_17.glb", "PROP_STOOL",          0.5f, PropUse::Occupy,   -1, 0, 0, 0, 0 },
-        { "data/model/model_18.glb", "PROP_TABLE",          1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_19.glb", "PROP_END_TABLE",      0.7f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_20.glb", "PROP_ROUND_TABLE",    1.2f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_21.glb", "PROP_METAL_TABLE",    1.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_22.glb", "PROP_STANDING_TORCH", 1.6f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_23.glb", "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     -1, 0, 0, 0, 0 },
-        { "data/model/model_24.glb", "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, STAT_MELEE, 0, 0, 1, 0 },        // XP only
-        { "data/model/model_25.glb", "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, -1, 0, 0, 0, 0, ItemFilter::RawFood },
-        { "data/model/model_26.glb", "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Food },
-        { "data/model/model_27.glb", "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Weapon },
-        { "data/model/model_28.glb", "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Armor },
-        { "data/model/model_29.glb", "PROP_WATER_TANK",     1.4f, PropUse::Storage,  -1, 0, 0, 0, 0, ItemFilter::Water },
-        { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, STAT_STRENGTH, 91, 0, 1, 0 },    // Water
-        { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, STAT_SMELTING, 92, 1, 0, 0,
+        { "data/model/model_10.glb", "PROP_BONES",          1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_11.glb", "PROP_WALL",           2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_12.glb", "PROP_STALL",          2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_13.glb", "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  StatId::None, 0, 0, 0, 5 },    // Lockable
+        { "data/model/model_14.glb", "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   StatId::None, 0, 0, 0, 15 },   // Lockable
+        { "data/model/model_15.glb", "PROP_CHAIR",          0.9f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_16.glb", "PROP_BENCH",          1.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_17.glb", "PROP_STOOL",          0.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_18.glb", "PROP_TABLE",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_19.glb", "PROP_END_TABLE",      0.7f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_20.glb", "PROP_ROUND_TABLE",    1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_21.glb", "PROP_METAL_TABLE",    1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_22.glb", "PROP_STANDING_TORCH", 1.6f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_23.glb", "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "data/model/model_24.glb", "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, StatId::Melee, 0, 0, 1, 0 },        // XP only
+        { "data/model/model_25.glb", "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0, ItemFilter::RawFood },
+        { "data/model/model_26.glb", "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Food },
+        { "data/model/model_27.glb", "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Weapon },
+        { "data/model/model_28.glb", "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Armor },
+        { "data/model/model_29.glb", "PROP_WATER_TANK",     1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Water },
+        { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, StatId::Strength, 91, 0, 1, 0 },    // Water
+        { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, StatId::Smelting, 92, 1, 0, 0,
           ItemFilter::Any, 1.0 },                                                                            // Iron Ore -> Iron Ingot
         // Built props (see the top of this file). The foundations' models are drawn so their longest side is their size.
-        { "data/model/model_32.glb", "PROP_FLAG",              1.2f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_32.glb", "PROP_FLAG",              1.2f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, false },
         // Debris: worked like ore, but it gives no item. DEBRIS_CLEAR_HOURS of one unit's work clears it away.
-        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::Resource, STAT_STRENGTH, 0, 0, 3, 0 },
-        { "data/model/model_34.glb", "PROP_FOUNDATION_SMALL",  1.0f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::Resource, StatId::Strength, 0, 0, 3, 0 },
+        { "data/model/model_34.glb", "PROP_FOUNDATION_SMALL",  1.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, true }, false, true, false },
-        { "data/model/model_35.glb", "PROP_FOUNDATION_LARGE",  2.0f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_35.glb", "PROP_FOUNDATION_LARGE",  2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 0.0f, true }, false, true, false },
-        { "data/model/model_36.glb", "PROP_FOUNDATION_LONG",   3.0f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_36.glb", "PROP_FOUNDATION_LONG",   3.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.5f, 0.5f, 0.0f, true }, false, true, false },   // long along its own x axis
-        { "data/model/model_37.glb", "PROP_FOUNDATION_CIRCLE", 2.0f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_37.glb", "PROP_FOUNDATION_CIRCLE", 2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 1.0f, true }, false, true, false },   // radius 1 tile
         // The Vault: passive crafting with no output. Wood Logs are its upkeep, each burning VAULT_LOG_HOURS in-game
         // hours (the Forge's fuel code), so the Vault's input is the Wood Log and it makes nothing (item 0). One camp
         // woodcutter stores ten or more logs a day, so it keeps a vault burning six a day fed with some to spare.
-        { "data/model/model_38.glb", "PROP_VAULT",             1.0f, PropUse::PassiveCrafting, -1, 0, 88, 0, 0,
+        { "data/model/model_38.glb", "PROP_VAULT",             1.0f, PropUse::PassiveCrafting, StatId::None, 0, 88, 0, 0,
           ItemFilter::Any, VAULT_LOG_HOURS, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, false }, true, true, true },
-        { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, -1, 0, 0, 0, 0,
+        { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
-        { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, -1, 0, 0, 0, 0,
+        { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
-        { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, -1, 0, 0, 0, 0,
+        { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
         // The Stove: a crafting prop a unit works, cooking raw meat like the Campfire but CRAFT_SPEED_STOVE times faster
-        { "data/model/model_42.glb", "PROP_STOVE",             1.2f, PropUse::Crafting, STAT_COOKING, 0, INPUT_COOKABLE, 1, 0,
+        { "data/model/model_42.glb", "PROP_STOVE",             1.2f, PropUse::Crafting, StatId::Cooking, 0, INPUT_COOKABLE, 1, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
     };
-    return info[(kind >= 0 && kind < PROP_KIND_COUNT) ? kind : 0];
+    const int k = idx(kind);
+    return info[(k >= 0 && k < PROP_KIND_COUNT) ? k : 0];
 }
 
-// The emote shown over a unit using a prop of this kind: working it, or lying on it. EMOTE_NONE for none.
-inline int propEmote(int kind) {
+// The emote shown over a unit using a prop of this kind: working it, or lying on it. EmoteId::None for none.
+inline EmoteId propEmote(PropKind kind) {
     switch (kind) {
-    case PROP_ORE: return EMOTE_MINING;
-    case PROP_TREE: return EMOTE_WOODCUTTING;
-    case PROP_MUSHROOM: return EMOTE_HERBALISM;
-    case PROP_STOVE: return EMOTE_COOKING;
-    case PROP_BED:
-    case PROP_BEDROLL: return EMOTE_SLEEPING;
-    default: return EMOTE_NONE;
+    case PropKind::Ore: return EmoteId::Mining;
+    case PropKind::Tree: return EmoteId::Woodcutting;
+    case PropKind::Mushroom: return EmoteId::Herbalism;
+    case PropKind::Stove: return EmoteId::Cooking;
+    case PropKind::Bed:
+    case PropKind::Bedroll: return EmoteId::Sleeping;
+    default: return EmoteId::None;
     }
 }
 
@@ -270,7 +285,7 @@ inline int propEmote(int kind) {
 constexpr double DEBRIS_CLEAR_HOURS = 1.0;
 constexpr float DEBRIS_CLEAR_XP = 20.0f;   // Strength XP for each unit that helped clear one
 // Whether a resource prop gives items when worked: everything but the Debris, which is only cleared
-inline bool yieldsItems(int kind) { return propInfo(kind).use == PropUse::Resource && propInfo(kind).item > 0; }
+inline bool yieldsItems(PropKind kind) { return propInfo(kind).use == PropUse::Resource && propInfo(kind).item > 0; }
 
 // Whether units are put to work on a prop of this use. A passive crafting prop works by itself.
 inline bool isWorkProp(PropUse use) { return use == PropUse::Resource || use == PropUse::Crafting; }
@@ -281,7 +296,7 @@ inline bool hasStorage(const PropInfo& info) {
            (info.use == PropUse::Crafting && info.input != 0);
 }
 // The occupiable props a unit sits on, rather than lies in
-inline bool isSeat(int kind) { return kind == PROP_CHAIR || kind == PROP_BENCH || kind == PROP_STOOL; }
+inline bool isSeat(PropKind kind) { return kind == PropKind::Chair || kind == PropKind::Bench || kind == PropKind::Stool; }
 
 // The slots of a storage or crafting prop. A crafting prop's inventory takes only its input item.
 constexpr int STORAGE_SLOTS = 12;
@@ -297,9 +312,10 @@ constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 4
 // The order of the Build tab's rows after Destroy: the Bedroll and Campfire (which can be built anywhere), then the
 // claim pieces, then every other kind in PropKind order
 inline int buildRowCount() { return PROP_KIND_COUNT + 1; }
-inline int buildRowKind(int row) {
-    static const int first[] = { PROP_BEDROLL, PROP_CAMPFIRE, PROP_FLAG, PROP_VAULT, PROP_FOUNDATION_SMALL, PROP_FOUNDATION_LARGE, PROP_FOUNDATION_LONG,
-                                 PROP_FOUNDATION_CIRCLE };
+// What row picks: Destroy for row 0, a kind for the rest, nothing past the last row
+inline BuildPick buildRowPick(int row) {
+    static const int first[] = { idx(PropKind::Bedroll), idx(PropKind::Campfire), idx(PropKind::Flag), idx(PropKind::Vault), idx(PropKind::FoundationSmall), idx(PropKind::FoundationLarge), idx(PropKind::FoundationLong),
+                                 idx(PropKind::FoundationCircle) };
     static const std::vector<int> order = [] {
         std::vector<int> o(std::begin(first), std::end(first));
         for (int k = 0; k < PROP_KIND_COUNT; ++k) {
@@ -307,8 +323,8 @@ inline int buildRowKind(int row) {
         }
         return o;
     }();
-    if (row <= 0) return BUILD_DESTROY;
-    return row - 1 < (int)order.size() ? order[(size_t)row - 1] : BUILD_NONE;
+    if (row <= 0) return BuildPick::destroy();
+    return row - 1 < (int)order.size() ? BuildPick::place((PropKind)order[(size_t)row - 1]) : BuildPick{};
 }
 
 constexpr float PROP_RANGE = 40.0f;    // props are placed within this many tiles of the spawn, each on its own tile
@@ -331,9 +347,9 @@ inline double workHoursFor(int level) {
 // How many times faster than workHoursFor a resource prop is worked: a Mushroom 8 times, any other resource 4 times.
 // Crafting is not sped up, but for the Stove: CRAFT_SPEED_STOVE times, a tenth of the Campfire's hour or less an item.
 constexpr double CRAFT_SPEED_STOVE = 10.0;
-inline double resourceSpeedFor(int kind) {
-    if (kind == PROP_MUSHROOM) return 8.0;
-    if (kind == PROP_STOVE) return CRAFT_SPEED_STOVE;
+inline double resourceSpeedFor(PropKind kind) {
+    if (kind == PropKind::Mushroom) return 8.0;
+    if (kind == PropKind::Stove) return CRAFT_SPEED_STOVE;
     return propInfo(kind).use == PropUse::Resource ? 4.0 : 1.0;
 }
 

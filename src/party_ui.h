@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "party.h"
-#include "ui.h"
+#include "ui_types.h"
 
 // The starting party menu, shown after a map is picked in New Game and before the level starts.
 // Left: the three units. Middle: the picked unit's picture and totals. Right: tabs for its name and

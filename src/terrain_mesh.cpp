@@ -23,23 +23,23 @@ Rgb bandColor(float h) {
 
 // Color of a ground type, as the world maker draws it.
 // Water and shelf are not stored in worlds; an unknown type gets the default, seabed sand.
-Rgb biomeColor(uint8_t b) {
+Rgb biomeColor(Biome b) {
     switch (b) {
-        case BIOME_SAND:        return { 0.69f, 0.64f, 0.47f };   // seabed sand
-        case BIOME_GRASS:       return { 0.47f, 0.38f, 0.27f };   // loam, under grass
-        case BIOME_FOREST:      return { 0.38f, 0.33f, 0.23f };   // forest floor
-        case BIOME_DESERT:      return { 0.84f, 0.75f, 0.53f };   // desert sand
-        case BIOME_ROCK:        return { 0.43f, 0.42f, 0.40f };   // bedrock
-        case BIOME_SNOW:        return { 0.89f, 0.93f, 0.96f };   // ice
-        case BIOME_BEACH:       return { 0.87f, 0.81f, 0.63f };
-        case BIOME_SILT:        return { 0.36f, 0.34f, 0.31f };
-        case BIOME_FROZEN_CLAY: return { 0.59f, 0.61f, 0.62f };
-        case BIOME_CLAY:        return { 0.65f, 0.45f, 0.35f };
-        case BIOME_GRAVEL:      return { 0.58f, 0.55f, 0.50f };
-        case BIOME_ARID_SOIL:   return { 0.70f, 0.58f, 0.41f };
-        case BIOME_SCREE:       return { 0.49f, 0.47f, 0.44f };
-        case BIOME_FLOODPLAIN:  return { 0.59f, 0.54f, 0.41f };
-        case BIOME_CLIFF_ROCK:  return { 0.36f, 0.34f, 0.33f };
+        case Biome::Sand:        return { 0.69f, 0.64f, 0.47f };   // seabed sand
+        case Biome::Grass:       return { 0.47f, 0.38f, 0.27f };   // loam, under grass
+        case Biome::Forest:      return { 0.38f, 0.33f, 0.23f };   // forest floor
+        case Biome::Desert:      return { 0.84f, 0.75f, 0.53f };   // desert sand
+        case Biome::Rock:        return { 0.43f, 0.42f, 0.40f };   // bedrock
+        case Biome::Snow:        return { 0.89f, 0.93f, 0.96f };   // ice
+        case Biome::Beach:       return { 0.87f, 0.81f, 0.63f };
+        case Biome::Silt:        return { 0.36f, 0.34f, 0.31f };
+        case Biome::FrozenClay: return { 0.59f, 0.61f, 0.62f };
+        case Biome::Clay:        return { 0.65f, 0.45f, 0.35f };
+        case Biome::Gravel:      return { 0.58f, 0.55f, 0.50f };
+        case Biome::AridSoil:   return { 0.70f, 0.58f, 0.41f };
+        case Biome::Scree:       return { 0.49f, 0.47f, 0.44f };
+        case Biome::Floodplain:  return { 0.59f, 0.54f, 0.41f };
+        case Biome::CliffRock:  return { 0.36f, 0.34f, 0.33f };
         default:                return { 0.69f, 0.64f, 0.47f };
     }
 }
@@ -153,8 +153,8 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             }
             const int tx = std::min(x, std::max(a - 1, 0)), tz = std::min(z, std::max(b - 1, 0));
             const size_t ti = (size_t)tz * CHUNK_TILES + tx;
-            const uint8_t bt = c.biome[ti];
-            Rgb col = (bt == BIOME_NONE) ? bandColor(hh) : biomeColor(bt);
+            const Biome bt = (Biome)c.biome[ti];
+            Rgb col = (bt == Biome::None) ? bandColor(hh) : biomeColor(bt);
             if (c.veg.size() == (size_t)CHUNK_TILES * CHUNK_TILES) {
                 const float v = c.veg[ti] / 255.0f * kCanopyShare;
                 col = { col.r + (kCanopyR - col.r) * v, col.g + (kCanopyG - col.g) * v, col.b + (kCanopyB - col.b) * v };

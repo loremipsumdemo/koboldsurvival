@@ -14,8 +14,8 @@ constexpr float SHARE_WALK_STOP = 0.8f;
 // takerValue. Distance is not checked.
 bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue);
 
-// Runs every unit's Eat and Heal behaviors (behavior_rules.h), from the top of each list down. One is checked when the
+// Runs every unit's Eat and Heal behaviors (behavior.h), from the top of each list down. One is checked when the
 // stat it watches has changed, when the unit's list was edited, or when the wait after a failed try (no item to use,
 // none to share) has run out. dt is the real seconds since the last call, for those waits. The automated behaviors are
 // worked by automationSystem (systems.h). Returns how many behaviors were checked.
-size_t behaviorSystem(World& w, CombatLog& log, float dt);
+size_t behaviorSystem(World& w, GameLog& log, float dt);

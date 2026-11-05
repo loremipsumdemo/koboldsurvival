@@ -81,7 +81,7 @@ struct GameSettings {
     bool craftGatherSounds = false;   // the gathering and crafting sound effects (isCraftGatherSfx in sounds.h)
 
     // The in-game panels' places, as last locked: the Squad Panel, the Unit Panel and the Information Panel, each as
-    // dx, dy, w, h (a PanelPlace in gui.h, in pixels of a 720-pixel-high window). All zero is the default place.
+    // dx, dy, w, h (a PanelPlace in ui_layout.h, in pixels of a 720-pixel-high window). All zero is the default place.
     std::array<std::array<float, 4>, 3> panels{};
 };
 

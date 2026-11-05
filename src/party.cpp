@@ -44,8 +44,8 @@ bool partyNamesValid(const Party& p) {
     return std::all_of(p.begin(), p.end(), [](const PartyMember& m) { return !cleanName(m.name).empty(); });
 }
 
-void setStatLevel(Stats& s, int stat, int level) {
-    if (stat < 0 || stat >= STAT_COUNT) return;
+void setStatLevel(Stats& s, StatId stat, int level) {
+    if (idx(stat) < 0 || idx(stat) >= STAT_COUNT) return;
     s.xp[stat] = xpForLevel(std::clamp(level, 1, MAX_LEVEL));
 }
 
@@ -102,7 +102,7 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     return m;
 }
 
-void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::array<int, GEAR_SLOTS>& gear,
+void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearItems& gear,
                           const Stats& stats) {
     const float cap = ENCUMBERED_SHARE * carryLimit(stats);
     auto weightOf = [](int item) {
@@ -176,15 +176,15 @@ constexpr int CAMP_PARTY_PEOPLE = 20;                      // Full Random Camp's
 constexpr int CAMP_PARTY_MOBS_MIN = 3, CAMP_PARTY_MOBS_MAX = 7;   // and its camp mobs
 
 // A regular mob kind picked at random
-int randomRegularMob(Rng& rng) {
-    const std::vector<int> kinds = regularMobKinds();
+MobKind randomRegularMob(Rng& rng) {
+    const std::vector<MobKind> kinds = regularMobKinds();
     return kinds[(size_t)rng.range(0, (int)kinds.size() - 1)];
 }
 
 // Every stat at a random level from lo to hi
 Stats statsBetween(Rng& rng, int lo, int hi) {
     Stats s;
-    for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(s, i, rng.range(lo, hi));
+    for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(s, (StatId)i, rng.range(lo, hi));
     return s;
 }
 
@@ -199,7 +199,7 @@ void fullGear(PartyMember& m, Rng& rng, float reserve) {
         for (int item : gearChoices(m, slot)) {
             const ItemDef* d = findItem(item);
             if (!d) continue;
-            if (slot == GEAR_MAIN_HAND && d->equipSlot == "two_hand") continue;
+            if (slot == idx(GearSlot::MainHand) && d->equipSlot == "two_hand") continue;
             if (used + d->weight >= cap) continue;
             choices.push_back(item);
         }
@@ -209,24 +209,24 @@ void fullGear(PartyMember& m, Rng& rng, float reserve) {
 
 } // namespace
 
-PartyMember mobMember(int kind, Rng& rng) {
+PartyMember mobMember(MobKind kind, Rng& rng) {
     PartyMember m;
-    m.mob = isRegularMob(kind) ? kind : MOB_WOLF;
+    m.mob = isRegularMob(kind) ? kind : MobKind::Wolf;
     m.name = lang(mobInfo(m.mob).nameKey);
     m.stats = mobStats(m.mob, rng);
     return m;
 }
 
-std::vector<int> regularMobKinds() {
-    std::vector<int> out;
+std::vector<MobKind> regularMobKinds() {
+    std::vector<MobKind> out;
     for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
-        if (isRegularMob(k)) out.push_back(k);
+        if (isRegularMob((MobKind)k)) out.push_back((MobKind)k);
     }
     return out;
 }
 
 int partyPeople(const Party& p) {
-    return (int)std::count_if(p.begin(), p.end(), [](const PartyMember& m) { return m.mob <= 0; });
+    return (int)std::count_if(p.begin(), p.end(), [](const PartyMember& m) { return m.mob == MobKind::None; });
 }
 
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
@@ -294,7 +294,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
             break;
         case ScenarioId::DungeonDiggers: {
             m.stats = statsBetween(rng, 5, 20);
-            setStatLevel(m.stats, STAT_MINING, 50);
+            setStatLevel(m.stats, StatId::Mining, 50);
             const ItemDef* ore = findItem(IRON_ORE);
             fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);   // room is kept for the ore
             m.items[0] = ItemStack{ IRON_ORE, 3 };
@@ -308,7 +308,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     }
     // The scenario's mobs come after its people
     if (id == ScenarioId::PackOfTwo) {
-        p.push_back(mobMember(MOB_WOLF, rng));
+        p.push_back(mobMember(MobKind::Wolf, rng));
         p.back().name = PACK_WOLF_NAME;   // the wanderer's wolf has a name of its own
     }
     if (id == ScenarioId::Beastmaster) {
@@ -336,7 +336,7 @@ void applyParty(World& w, const Party& p) {
     std::sort(players.begin(), players.end());
     std::sort(mobs.begin(), mobs.end());
     std::vector<const PartyMember*> people, beasts;
-    for (const PartyMember& m : p) (m.mob > 0 ? beasts : people).push_back(&m);
+    for (const PartyMember& m : p) (m.mob != MobKind::None ? beasts : people).push_back(&m);
     // A mob keeps its kind's meat and bones (spawnMob); it takes the member's name and stats, and its health from them
     for (size_t i = 0; i < mobs.size() && i < beasts.size(); ++i) {
         const PartyMember& m = *beasts[i];

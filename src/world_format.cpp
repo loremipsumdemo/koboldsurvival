@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "pak.h"
-#include "render/surface_pixels.hpp"
-#include "theme/themefile.hpp"
+#include "surface_tiles.h"
+#include "look.h"
 
 namespace {
 
@@ -310,18 +310,18 @@ bool writeWorld(const std::string& folder, const WorldInfo& info,
 
 bool writeWorldSurface(const std::string& folder, const WorldSurface& s, std::string& err) {
     namespace fs = std::filesystem;
-    if (s.ground.size() != wm::SURFACE_TILE_BYTES || s.water.size() != wm::SURFACE_TILE_BYTES) {
+    if (s.ground.size() != SURFACE_TILE_BYTES || s.water.size() != SURFACE_TILE_BYTES) {
         err = "the surface tiles are the wrong size";
         return false;
     }
-    if (!wm::SaveLookFile(s.look, (fs::path(folder) / LOOK_FILE).string(), err)) return false;
+    if (!saveLookFile(s.look, (fs::path(folder) / LOOK_FILE).string(), err)) return false;
 
-    std::vector<uint8_t> bytes(SURFACE_HEADER + 2 * wm::SURFACE_TILE_BYTES);
+    std::vector<uint8_t> bytes(SURFACE_HEADER + 2 * SURFACE_TILE_BYTES);
     std::memcpy(bytes.data(), SURFACE_MAGIC, 4);
     putU32(bytes.data() + 4, SURFACE_VERSION);
-    putU32(bytes.data() + 8, (uint32_t)wm::SURFACE_TILE_SIZE);
-    std::memcpy(bytes.data() + SURFACE_HEADER, s.ground.data(), wm::SURFACE_TILE_BYTES);
-    std::memcpy(bytes.data() + SURFACE_HEADER + wm::SURFACE_TILE_BYTES, s.water.data(), wm::SURFACE_TILE_BYTES);
+    putU32(bytes.data() + 8, (uint32_t)SURFACE_TILE_SIZE);
+    std::memcpy(bytes.data() + SURFACE_HEADER, s.ground.data(), SURFACE_TILE_BYTES);
+    std::memcpy(bytes.data() + SURFACE_HEADER + SURFACE_TILE_BYTES, s.water.data(), SURFACE_TILE_BYTES);
     if (!writeFileAtomic(fs::path(folder) / SURFACE_FILE, bytes)) {
         err = "could not write " + std::string(SURFACE_FILE);
         return false;
@@ -332,18 +332,18 @@ bool writeWorldSurface(const std::string& folder, const WorldSurface& s, std::st
 bool readWorldSurface(const std::string& folder, WorldSurface& out, std::string& err) {
     std::vector<uint8_t> lookRaw;
     if (!readWorldFile(folder, LOOK_FILE, lookRaw)) { err = "no " + std::string(LOOK_FILE) + " in " + folder; return false; }
-    if (!wm::LoadLookText(std::string(lookRaw.begin(), lookRaw.end()), out.look, err)) return false;
+    if (!loadLookText(std::string(lookRaw.begin(), lookRaw.end()), out.look, err)) return false;
 
     std::vector<uint8_t> bytes;
     if (!readWorldFile(folder, SURFACE_FILE, bytes)) { err = "no " + std::string(SURFACE_FILE) + " in " + folder; return false; }
-    const bool sized = bytes.size() == SURFACE_HEADER + 2 * wm::SURFACE_TILE_BYTES;
+    const bool sized = bytes.size() == SURFACE_HEADER + 2 * SURFACE_TILE_BYTES;
     if (!sized || std::memcmp(bytes.data(), SURFACE_MAGIC, 4) != 0 ||
-        getU32(bytes.data() + 4) != SURFACE_VERSION || getU32(bytes.data() + 8) != (uint32_t)wm::SURFACE_TILE_SIZE) {
+        getU32(bytes.data() + 4) != SURFACE_VERSION || getU32(bytes.data() + 8) != (uint32_t)SURFACE_TILE_SIZE) {
         err = std::string(SURFACE_FILE) + " is not a version " + std::to_string(SURFACE_VERSION) + " surface";
         return false;
     }
     const uint8_t* g = bytes.data() + SURFACE_HEADER;
-    out.ground.assign(g, g + wm::SURFACE_TILE_BYTES);
-    out.water.assign(g + wm::SURFACE_TILE_BYTES, g + 2 * wm::SURFACE_TILE_BYTES);
+    out.ground.assign(g, g + SURFACE_TILE_BYTES);
+    out.water.assign(g + SURFACE_TILE_BYTES, g + 2 * SURFACE_TILE_BYTES);
     return true;
 }

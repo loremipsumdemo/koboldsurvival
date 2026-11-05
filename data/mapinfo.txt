@@ -7,4 +7,4 @@ map/main/world.txt	Plain text: format, name, created, size in tiles, chunk size,
 map/main/look.json	The look: sky, sun, rock and water colors, water motion
 map/main/surface.ksrf	The two surface tiles the ground and the sea are drawn with
 map/main/r.<rx>.<rz>.kreg	Region files, each 16 x 16 chunks (1024 tiles a side); read a chunk at a time
-map/<name>.map	A premade map in the older single-file format: heights, walkability and ground types (src/map.h)
+map/<name>.map	A premade map in the older single-file format: heights, walkability and ground types (src/map_file.h)

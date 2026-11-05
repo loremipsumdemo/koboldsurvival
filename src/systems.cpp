@@ -1,5 +1,5 @@
 #include "systems.h"
-#include "behavior.h"
+#include "need_behaviors.h"
 #include "claims.h"
 #include "mobs.h"
 #include "language.h"
@@ -151,7 +151,7 @@ namespace {
 Stats startingStats(Rng& rng) {
     Stats s;
     for (int i = 0; i < STAT_COUNT; ++i) {
-        const bool attribute = statInfo(i).group == StatGroup::Attributes;
+        const bool attribute = statInfo((StatId)i).group == StatGroup::Attributes;
         s.xp[i] = xpForLevel(attribute ? rng.range(5, 15) : rng.range(1, 5));
     }
     return s;
@@ -163,20 +163,20 @@ Stats randomStartingStats(Rng& rng) {
     return startingStats(rng);
 }
 
-int randomBodyType(Rng& rng) {
+BodyType randomBodyType(Rng& rng) {
     const int r = rng.range(1, 100);
-    return r <= 45 ? BODY_MASCULINE : r <= 90 ? BODY_FEMININE : BODY_ANDROGYNOUS;
+    return r <= 45 ? BodyType::Masculine : r <= 90 ? BodyType::Feminine : BodyType::Androgynous;
 }
 
-int bodyForSavedName(const std::string& name) {
+BodyType bodyForSavedName(const std::string& name) {
     const size_t h = std::hash<std::string>{}(name) % 100;
-    return h < 45 ? BODY_MASCULINE : h < 90 ? BODY_FEMININE : BODY_ANDROGYNOUS;
+    return h < 45 ? BodyType::Masculine : h < 90 ? BodyType::Feminine : BodyType::Androgynous;
 }
 
 // Player units never share a name. The names come from the set for the body type.
-std::string randomUnitName(Rng& rng, int body, const std::vector<std::string>& taken) {
-    const NameSet set = body == BODY_FEMININE ? NameSet::Feminine
-                      : body == BODY_ANDROGYNOUS ? NameSet::Androgynous : NameSet::Masculine;
+std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::string>& taken) {
+    const NameSet set = body == BodyType::Feminine ? NameSet::Feminine
+                      : body == BodyType::Androgynous ? NameSet::Androgynous : NameSet::Masculine;
     const std::vector<std::string> names = languageNames(set);
     if (names.empty()) return lang("UILABEL_UNNAMED_UNIT");
     for (int attempt = 0; attempt < 200; ++attempt) {
@@ -200,7 +200,7 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     w.add(u, Behaviors{});
     w.add(u, Combat{});
     w.add(u, Name{});
-    const int body = randomBodyType(rng);
+    const BodyType body = randomBodyType(rng);
     w.add(u, UnitSprite{ modelForBody(body) });
     w.add(u, Body{ body });
     w.add(u, Faction{ FACTION_PLAYER });
@@ -221,7 +221,7 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
     for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 }
 
-void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<int>& kinds, int firstSlot) {
+void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot) {
     for (Entity u : w.view<Mob, Commandable>()) w.destroy(u);
     if (kinds.empty()) return;
     const Vec2 spawn = findSpawn(t);
@@ -257,18 +257,18 @@ Inventory randomNpcLoot(Rng& rng) {
 // What a storage prop holds when a level places it: a few stacks of what belongs in it. A filtered one (the Weapon
 // Rack, the Food Storage, ...) holds what it takes; the Barrel holds supplies (anything that is not gear); the Locked
 // Chest holds the valuable things: gear, and anything worth STORAGE_VALUABLE or more.
-Storage startingStorage(int kind, Rng& rng) {
+Storage startingStorage(PropKind kind, Rng& rng) {
     Storage st;
     std::vector<int> choices;
     for (const ItemDef& d : itemDatabase()) {
         if (!propAcceptsItem(kind, d.id)) continue;
         const bool gear = !d.equipSlot.empty();
-        if (kind == PROP_BARREL && gear) continue;
-        if (kind == PROP_LOCKED_CHEST && !gear && d.buyValue < STORAGE_VALUABLE) continue;
+        if (kind == PropKind::Barrel && gear) continue;
+        if (kind == PropKind::LockedChest && !gear && d.buyValue < STORAGE_VALUABLE) continue;
         choices.push_back(d.id);
     }
     if (choices.empty()) return st;
-    const bool chest = kind == PROP_LOCKED_CHEST;
+    const bool chest = kind == PropKind::LockedChest;
     const int stacks = rng.range(chest ? 3 : STORAGE_STACKS_MIN, chest ? 6 : STORAGE_STACKS_MAX);
     int slot = 0;
     for (int i = 0; i < stacks && slot < STORAGE_SLOTS; ++i) {
@@ -279,30 +279,30 @@ Storage startingStorage(int kind, Rng& rng) {
     return st;
 }
 
-Stats mobStats(int kind, Rng& rng) {
+Stats mobStats(MobKind kind, Rng& rng) {
     const MobInfo& m = mobInfo(kind);
     Stats s;
     auto level = [&](int base) { return std::clamp(base + rng.range(-1, 1), 1, MAX_LEVEL); };
     for (int i = 0; i < STAT_COUNT; ++i) {
-        s.xp[i] = xpForLevel(mobHasStat(i) && statInfo(i).group == StatGroup::Attributes ? level(10) : 1);
+        s.xp[i] = xpForLevel(mobHasStat((StatId)i) && statInfo((StatId)i).group == StatGroup::Attributes ? level(10) : 1);
     }
-    s.xp[STAT_STRENGTH] = xpForLevel(level(m.strength));
-    s.xp[STAT_DEXTERITY] = xpForLevel(level(m.dexterity));
-    s.xp[STAT_VITALITY] = xpForLevel(level(m.vitality));
-    s.xp[STAT_ENDURANCE] = xpForLevel(level(m.endurance));
-    s.xp[STAT_AGILITY] = xpForLevel(level(m.agility));
-    s.xp[STAT_MELEE] = xpForLevel(level(m.melee));
-    s.xp[STAT_BLOCK] = xpForLevel(level(m.block));
+    s.xp[StatId::Strength] = xpForLevel(level(m.strength));
+    s.xp[StatId::Dexterity] = xpForLevel(level(m.dexterity));
+    s.xp[StatId::Vitality] = xpForLevel(level(m.vitality));
+    s.xp[StatId::Endurance] = xpForLevel(level(m.endurance));
+    s.xp[StatId::Agility] = xpForLevel(level(m.agility));
+    s.xp[StatId::Melee] = xpForLevel(level(m.melee));
+    s.xp[StatId::Block] = xpForLevel(level(m.block));
     // A kind at its most: every stat a mob has at MAX_LEVEL
     if (m.maxStats) {
         for (int i = 0; i < STAT_COUNT; ++i) {
-            if (mobHasStat(i)) s.xp[i] = xpForLevel(MAX_LEVEL);
+            if (mobHasStat((StatId)i)) s.xp[i] = xpForLevel(MAX_LEVEL);
         }
     }
     return s;
 }
 
-Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, float x, float z) {
+Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z) {
     const MobInfo& m = mobInfo(kind);
     Entity e = w.create();
     w.add(e, Transform{ x, t.heightAt(x, z), z });
@@ -425,11 +425,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
     };
     // A few random props in the claim, owned by its faction: storage holds what belongs in it and is locked to the
     // faction (as anything with contents in a claim is), a forge starts cold
-    static const int EXTRA_KINDS[] = {
-        PROP_WAGON, PROP_BARREL, PROP_ORE, PROP_BOULDER, PROP_MUSHROOM, PROP_BONES, PROP_STALL, PROP_LOCKED_CHEST,
-        PROP_CHAIR, PROP_BENCH, PROP_STOOL, PROP_TABLE, PROP_END_TABLE, PROP_ROUND_TABLE, PROP_STANDING_TORCH,
-        PROP_TRAINING_DUMMY, PROP_RAW_FOOD_STORAGE, PROP_FOOD_STORAGE, PROP_WEAPON_RACK, PROP_ARMOR_STAND,
-        PROP_WATER_TANK, PROP_WATER_PUMP, PROP_FORGE,
+    static const PropKind EXTRA_KINDS[] = {
+        PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Bones, PropKind::Stall, PropKind::LockedChest,
+        PropKind::Chair, PropKind::Bench, PropKind::Stool, PropKind::Table, PropKind::EndTable, PropKind::RoundTable, PropKind::StandingTorch,
+        PropKind::TrainingDummy, PropKind::RawFoodStorage, PropKind::FoodStorage, PropKind::WeaponRack, PropKind::ArmorStand,
+        PropKind::WaterTank, PropKind::WaterPump, PropKind::Forge,
     };
     auto addCampExtras = [&](int faction, const CampKit& kit) {
         if (!kit.placed) return;
@@ -447,7 +447,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
                 if (std::fabs(pt->x - x) < 0.5f && std::fabs(pt->z - z) < 0.5f) { taken = true; break; }
             }
             if (taken) continue;
-            const int kind = EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)];
+            const PropKind kind = EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)];
             const PropInfo& info = propInfo(kind);
             Entity prop = w.create();
             w.add(prop, Transform{ x, t.heightAt(x, z), z });
@@ -479,10 +479,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         BehaviorRule haul;
         haul.kind = BehaviorKind::AutoHaul;
         haul.prop = kit.vault;
-        haul.propKind = PROP_VAULT;
+        haul.propKind = idx(PropKind::Vault);
         BehaviorRule harvest;
         harvest.kind = BehaviorKind::AutoHarvest;
-        harvest.propKind = PROP_TREE;
+        harvest.propKind = idx(PropKind::Tree);
         addBehavior(b->rules, haul);
         addBehavior(b->rules, harvest);
     };
@@ -564,7 +564,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         }
         if (kitHere) continue;
         const int serial = (int)propTiles.size();
-        const int kind = serial % PROP_PLACED_KIND_COUNT;
+        const PropKind kind = (PropKind)(serial % PROP_PLACED_KIND_COUNT);
         propTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
         Entity prop = w.create();
@@ -608,7 +608,7 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             w.add(u, randomHostileGear(rng));
             // An NPC given a bow or a crossbow gets some of its ammo to shoot, so it fights at range
             const Equipment* worn = w.get<Equipment>(u);
-            if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GEAR_MAIN_HAND]) : nullptr) {
+            if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GearSlot::MainHand]) : nullptr) {
                 std::vector<int> ammo;
                 for (const ItemDef& d : itemDatabase()) {
                     if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
@@ -622,13 +622,13 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         // No unit starts out carrying so much that it is encumbered
         if (Inventory* inv = w.get<Inventory>(u)) {
             Equipment* worn = w.get<Equipment>(u);
-            std::array<int, GEAR_SLOTS> gear = worn ? worn->items : std::array<int, GEAR_SLOTS>{};
+            GearItems gear = worn ? worn->items : GearItems{};
             keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
             if (worn) worn->items = gear;
         }
         // The body comes first: the name is drawn from the set for it, and the model matches it
         if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
-        const int body = w.get<Body>(u)->type;
+        const BodyType body = w.get<Body>(u)->type;
         if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
         Name* nm = w.get<Name>(u);
         if (!nm) continue;
@@ -667,8 +667,8 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
         for (int i = 0; i < CAMP_MOBS; ++i) {
             float x = 0.0f, z = 0.0f;
-            int kind = rng.range(1, MOB_KIND_COUNT);
-            while (!campMobKind(kind)) kind = rng.range(1, MOB_KIND_COUNT);
+            MobKind kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
+            while (!campMobKind(kind)) kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
             // Each in a Prisoner Cage of its own, locked to the camp's faction, on a spot clear of the camp's props
             bool found = false;
             for (int tries = 0; tries < 20 && !found; ++tries) {
@@ -677,10 +677,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             }
             if (!found) continue;
             const Entity mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
-            const PropInfo& cageInfo = propInfo(PROP_PRISONER_CAGE);
+            const PropInfo& cageInfo = propInfo(PropKind::PrisonerCage);
             const Entity cage = w.create();
             w.add(cage, Transform{ x, t.heightAt(x, z), z });
-            w.add(cage, Prop{ PROP_PRISONER_CAGE, campSerial++, 0.0f });
+            w.add(cage, Prop{ PropKind::PrisonerCage, campSerial++, 0.0f });
             w.add(cage, Owner{ kit.faction });
             w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
             claimOwnership(w, cage);
@@ -696,9 +696,10 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
     }
     const float turn = rng.unit() * 6.2831853f;
-    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) {
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+        const MobKind kind = (MobKind)k;
         // Each herd at its own bearing, out between WILD_MOB_NEAR and WILD_MOB_FAR past the camps
-        const float a = turn + 6.2831853f * (float)(kind - 1) / (float)MOB_KIND_COUNT;
+        const float a = turn + 6.2831853f * (float)(k - 1) / (float)MOB_KIND_COUNT;
         const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
         const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
         const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
@@ -706,13 +707,13 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             float x = 0.0f, z = 0.0f;
             if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
                 const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
-                if (kind != MOB_GORLICORN) continue;
+                if (kind != MobKind::Gorlicorn) continue;
                 // The Gorlicorn's Rabbits: placed about it, and Patrolling Spawn round the same spot, so they stay by it
                 const SpawnHome home = *w.get<SpawnHome>(m);
                 for (int r = 0; r < GORLICORN_RABBITS; ++r) {
                     float rx = 0.0f, rz = 0.0f;
                     if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
-                    const Entity rabbit = spawnMob(w, t, rng, MOB_RABBIT, mobFaction(MOB_RABBIT), rx, rz);
+                    const Entity rabbit = spawnMob(w, t, rng, MobKind::Rabbit, mobFaction(MobKind::Rabbit), rx, rz);
                     Behaviors* rb = w.get<Behaviors>(rabbit);
                     for (BehaviorRule& rule : rb->rules) {
                         if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;
@@ -1464,9 +1465,9 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             c->encumbrance = load;
         }
         if (moved > 0.0f) {
-            grantXp(w, e, STAT_ENDURANCE, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
-            grantXp(w, e, STAT_STRENGTH, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
-            if (tr->y > y0) grantXp(w, e, STAT_ATHLETICS, tr->y - y0, lang("MISC_REASON_CLIMBING"));
+            grantXp(w, e, StatId::Endurance, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
+            grantXp(w, e, StatId::Strength, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
+            if (tr->y > y0) grantXp(w, e, StatId::Athletics, tr->y - y0, lang("MISC_REASON_CLIMBING"));
             // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
             // a hundredth of a tile or less in a frame, is not walking.
             if (player && running && moved >= 0.01f) {
@@ -1917,9 +1918,9 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     for (auto& [prop, workers] : workersOf) {
         std::sort(workers.begin(), workers.end());
         // Each gain says which kind of prop it came from, for its sound
-        const int propKind = w.get<Prop>(prop)->kind;
+        const PropKind propKind = w.get<Prop>(prop)->kind;
         auto addGain = [&](WorkGain g) {
-            g.propKind = propKind;
+            g.propKind = idx(propKind);
             gains.push_back(g);
         };
         const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
@@ -1930,7 +1931,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             pw.workers = (int)workers.size();
             double perHour = 0.0;
             for (Entity u : workers) {
-                perHour += 1.0 / (LOCKPICK_SHARE * workHoursFor(levelOf(statsOf(w, u), STAT_LOCKPICKING)));
+                perHour += 1.0 / (LOCKPICK_SHARE * workHoursFor(levelOf(statsOf(w, u), StatId::Lockpicking)));
             }
             pw.progress += gameSeconds / 3600.0 * perHour;
             Lock* lock = w.get<Lock>(prop);
@@ -1939,15 +1940,15 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 ++pw.made;   // the ring hops at the end of each attempt
                 const Entity picker = workers[pw.turn % workers.size()];
                 ++pw.turn;
-                const int level = levelOf(statsOf(w, picker), STAT_LOCKPICKING);
+                const int level = levelOf(statsOf(w, picker), StatId::Lockpicking);
                 if ((double)rng.unit() < lockpickChance(level)) {
                     lock->locked = false;
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
                     queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other, npcOnly(w, picker));
-                    grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_SUCCESS, lang("MISC_REASON_LOCKPICKING"));
+                    grantXp(w, picker, StatId::Lockpicking, LOCKPICK_XP_SUCCESS, lang("MISC_REASON_LOCKPICKING"));
                 } else {
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
-                    grantXp(w, picker, STAT_LOCKPICKING, LOCKPICK_XP_FAIL, lang("MISC_REASON_LOCKPICKING"));
+                    grantXp(w, picker, StatId::Lockpicking, LOCKPICK_XP_FAIL, lang("MISC_REASON_LOCKPICKING"));
                 }
             }
             if (!lock->locked) {
@@ -1957,7 +1958,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             }
             continue;
         }
-        if (propKind == PROP_DEBRIS) {
+        if (propKind == PropKind::Debris) {
             // Debris: DEBRIS_CLEAR_HOURS of work, shared among those at it, whatever their skill, and it is gone
             PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
             pw.workers = (int)workers.size();
@@ -1965,7 +1966,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             if (pw.progress >= 1.0) {
                 for (Entity u : workers) {
                     w.remove<Working>(u);
-                    grantXp(w, u, STAT_STRENGTH, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? lang("MISC_REASON_CLEARING") : std::string());
+                    grantXp(w, u, StatId::Strength, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? lang("MISC_REASON_CLEARING") : std::string());
                 }
                 if (w.has<Commandable>(workers[0])) queueLog(langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
                 queueSoundFrom(w, Sfx::Drop, prop);
@@ -2051,7 +2052,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_CRAFTING"));
                 } else {
                     // Training: no item, only the skill's XP
-                    addGain(WorkGain{ got, info.stat, WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
+                    addGain(WorkGain{ got, idx(info.stat), WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, lang("MISC_REASON_TRAINING"));
                 }
                 if (craftStateOf(w, prop) != CraftState::Ready) {
@@ -2199,10 +2200,12 @@ bool harvestLoaded(World& w, const std::vector<Claim>& claims, Entity u, const B
 }
 
 // The nearest resource prop of the kind an Auto-Harvest works, in a claim of the unit's faction, open to it and with
-// room for another worker. NULL_ENTITY when there is none.
-Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int kind) {
+// room for another worker. NULL_ENTITY when there is none. ruleKind is the rule's propKind, -1 for none.
+Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int ruleKind) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut || kind < 0 || kind >= PROP_KIND_COUNT || !yieldsItems(kind)) return NULL_ENTITY;
+    if (!ut || ruleKind < 0 || ruleKind >= PROP_KIND_COUNT) return NULL_ENTITY;
+    const PropKind kind = (PropKind)ruleKind;
+    if (!yieldsItems(kind)) return NULL_ENTITY;
     const int faction = unitFaction(w, u);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
@@ -2330,7 +2333,7 @@ Entity restTarget(World& w, Entity u) {
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
     for (Entity p : w.view<Prop, Transform>()) {
-        const int kind = w.get<Prop>(p)->kind;
+        const PropKind kind = w.get<Prop>(p)->kind;
         if (restedGainPerHour(kind) <= 0.0) continue;
         if (propOccupant(w, p) != NULL_ENTITY || lockShutFor(w, p, u)) continue;
         if (std::find(wanted.begin(), wanted.end(), p) != wanted.end()) continue;
@@ -2447,7 +2450,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         prop = r.prop;
         action = PropAction::Store;
     } else {
-        const int item = propInfo(r.propKind).item;
+        const int item = propInfo((PropKind)r.propKind).item;
         if (fullFor(w, u, item)) r.why = BehaviorWait::CarryFull;
         else if (harvestLoaded(w, claims, u, b, item)) r.why = BehaviorWait::LoadWaiting;
         else if ((prop = harvestTarget(w, claims, u, r.propKind)) == NULL_ENTITY) r.why = BehaviorWait::NoProp;
@@ -2671,7 +2674,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             if (going) continue;   // on its way
             if (working) {
                 // A harvest goes on until the unit has a load for its haul, or no room
-                if (!harvestLoaded(w, claims, u, *b, propInfo(b->step.propKind).item)) continue;
+                if (!harvestLoaded(w, claims, u, *b, propInfo((PropKind)b->step.propKind).item)) continue;
                 w.remove<Working>(u);
                 b->busy = false;
             } else if (onOtherOrder(w, u, *b)) {   // you gave it something else to do
@@ -2902,7 +2905,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     if (const Working* wk = w.get<Working>(unit); wk && wk->prop == prop && wk->unlocking) return WorkStart::Started;
     if (flatGap(w, unit, prop) > STORAGE_CLOSE_RANGE) return WorkStart::TooFar;
     if (const Needs* n = w.get<Needs>(unit); n && n->hp <= 0) return WorkStart::TooFar;
-    if (levelOf(statsOf(w, unit), STAT_LOCKPICKING) < lock->level) return WorkStart::SkillTooLow;
+    if (levelOf(statsOf(w, unit), StatId::Lockpicking) < lock->level) return WorkStart::SkillTooLow;
     if (workersAt(w, prop) >= 1) return WorkStart::Full;   // one unit at a lock at a time
     const bool inside = occupiedProp(w, unit) == prop;     // picking the cage it is shut in, from the inside
     if (!inside && lockedIn(w, unit)) return WorkStart::Locked;
@@ -2973,7 +2976,7 @@ bool disbandUnit(World& w, Entity u) {
     if (const Mob* mb = w.get<Mob>(u)) {
         // Back to the wild, in its kind's own faction, as a wild mob of that kind is made (spawnMob)
         const MobInfo& m = mobInfo(mb->kind);
-        faction = MOB_FACTION_BASE + mb->kind - 1;
+        faction = mobFaction(mb->kind);
         b.rules = mobBehaviors();
         BehaviorRule roam;
         roam.kind = m.patrolSpawn ? BehaviorKind::PatrolSpawn : BehaviorKind::Roam;
@@ -3027,8 +3030,8 @@ std::string taskNameOf(World& w, Entity u) {
         if (b->busy && wk && !wk->unlocking && wk->prop == b->stepProp) return behaviorName(b->step);
     }
     Entity prop = NULL_ENTITY;
-    if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(STAT_LOCKPICKING);
-    if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && w.get<Prop>(g->prop)->kind == PROP_DEBRIS) {
+    if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(StatId::Lockpicking);
+    if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && w.get<Prop>(g->prop)->kind == PropKind::Debris) {
         return lang("UILABEL_TASK_CLEARING");
     }
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
@@ -3051,31 +3054,31 @@ std::string taskNameOf(World& w, Entity u) {
     return lang("UILABEL_TASK_IDLE");
 }
 
-std::vector<int> emotesOf(World& w, Entity u) {
+std::vector<EmoteId> emotesOf(World& w, Entity u) {
     // Out cold or dead, that is all it shows
-    if (w.has<Corpse>(u)) return { EMOTE_DEAD };
-    if (w.has<Unconscious>(u)) return { EMOTE_UNCONSCIOUS };
-    if (w.has<PlayingDead>(u)) return { EMOTE_PLAYING_DEAD };
-    std::vector<int> out;
+    if (w.has<Corpse>(u)) return { EmoteId::Dead };
+    if (w.has<Unconscious>(u)) return { EmoteId::Unconscious };
+    if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
+    std::vector<EmoteId> out;
     auto propEmoteOf = [&](Entity prop) {
         const Prop* p = w.get<Prop>(prop);
-        return p ? propEmote(p->kind) : (int)EMOTE_NONE;
+        return p ? propEmote(p->kind) : EmoteId::None;
     };
     if (const Working* wk = w.get<Working>(u)) {
-        if (wk->unlocking) out.push_back(EMOTE_LOCKPICKING);
-        else if (propEmoteOf(wk->prop) != EMOTE_NONE) out.push_back(propEmoteOf(wk->prop));
+        if (wk->unlocking) out.push_back(EmoteId::Lockpicking);
+        else if (propEmoteOf(wk->prop) != EmoteId::None) out.push_back(propEmoteOf(wk->prop));
     }
-    if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EMOTE_NONE) out.push_back(propEmoteOf(oc->prop));
-    if (lockedIn(w, u)) out.push_back(EMOTE_LOCKED_IN);
+    if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EmoteId::None) out.push_back(propEmoteOf(oc->prop));
+    if (lockedIn(w, u)) out.push_back(EmoteId::LockedIn);
     if (w.has<Inventory>(u) && w.has<Stats>(u)) {
         const float limit = carryLimit(statsOf(w, u));
-        if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EMOTE_ENCUMBERED);
+        if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EmoteId::Encumbered);
     }
-    if (const Needs* n = w.get<Needs>(u); n && n->hunger < 1) out.push_back(EMOTE_HUNGRY);
+    if (const Needs* n = w.get<Needs>(u); n && n->hunger < 1) out.push_back(EmoteId::Hungry);
     return out;
 }
 
-bool propAcceptsItem(int kind, int item) {
+bool propAcceptsItem(PropKind kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
     if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;   // a Vault: its upkeep only
@@ -3092,7 +3095,7 @@ bool propAcceptsItem(int kind, int item) {
     return false;
 }
 
-int recipeOutput(int kind, int input) {
+int recipeOutput(PropKind kind, int input) {
     const PropInfo& info = propInfo(kind);
     if (input <= 0 || (info.use != PropUse::Crafting && info.use != PropUse::PassiveCrafting)) return 0;
     if (info.input == INPUT_COOKABLE) {
@@ -3118,7 +3121,7 @@ bool lockedIn(World& w, Entity u) {
 
 // The first item in a passive crafting prop's input that it burns: its input item, or at a campfire any raw meat it
 // can cook. 0 when there is none.
-static int nextPassiveInput(const Storage* st, int kind) {
+static int nextPassiveInput(const Storage* st, PropKind kind) {
     if (!st) return 0;
     const PropInfo& info = propInfo(kind);
     for (const ItemStack& s : st->slots) {
@@ -3130,7 +3133,7 @@ static int nextPassiveInput(const Storage* st, int kind) {
 
 // What a passive crafting prop's next finished item is: its item, or at a campfire the burning meat cooked (or, with
 // nothing burning, the next meat in its input cooked). 0 for a Vault, and for a campfire with nothing to cook.
-static int nextPassiveOutput(const Storage* st, const Fuel& fuel, int kind) {
+static int nextPassiveOutput(const Storage* st, const Fuel& fuel, PropKind kind) {
     const PropInfo& info = propInfo(kind);
     if (info.input != INPUT_COOKABLE) return info.item;
     if (fuel.item > 0) {
@@ -3155,7 +3158,7 @@ PassiveState passiveStateOf(World& w, Entity prop) {
 
 void passiveCraftSystem(World& w, double gameSeconds) {
     for (Entity e : w.view<Prop, Output, Fuel>()) {
-        const int kind = w.get<Prop>(e)->kind;
+        const PropKind kind = w.get<Prop>(e)->kind;
         const PropInfo& info = propInfo(kind);
         if (info.use != PropUse::PassiveCrafting) continue;
         const bool cooks = info.input == INPUT_COOKABLE;   // the campfire: what it makes is the meat it burns, cooked
@@ -3240,13 +3243,13 @@ bool canBeCarried(World& w, Entity target) {
 // ---- Unconscious, Doom and Corpses ----
 
 float doomPerHour(const Stats& s) {
-    const int vit = std::clamp(levelOf(s, STAT_VITALITY), 1, MAX_LEVEL);
+    const int vit = std::clamp(levelOf(s, StatId::Vitality), 1, MAX_LEVEL);
     return 20.0f + 30.0f * (1.0f - (float)vit / 100.0f);
 }
 
-float doomRecoveryPerHour(int propKind) {
-    if (propKind == PROP_BED) return 20.0f;
-    if (propKind == PROP_BEDROLL) return 10.0f;
+float doomRecoveryPerHour(PropKind propKind) {
+    if (propKind == PropKind::Bed) return 20.0f;
+    if (propKind == PropKind::Bedroll) return 10.0f;
     return 0.0f;
 }
 

@@ -4,9 +4,11 @@
 #include "language.h"
 #include <string>
 #include <vector>
-#include "behavior_rules.h"
+#include "behavior.h"
 #include "ecs.h"
+#include "enum_index.h"
 #include "grid.h"
+#include "mobs.h"
 #include "geometry.h"
 #include "props.h"
 #include "stats.h"
@@ -72,10 +74,10 @@ struct UnitSprite {
 // A mob (mobs.h): an animal or creature, of this kind (MobKind). Its picture is data/mob/mob_<kind>.png, not its
 // UnitSprite.
 struct Mob {
-    int kind = 1;
+    MobKind kind = MobKind::Bear;
 };
 
-// Patrol Spawn (behavior_rules.h): where a mob was placed, and whether it is walking back there after giving up a chase.
+// Patrol Spawn (behavior.h): where a mob was placed, and whether it is walking back there after giving up a chase.
 // Walking back it takes no damage and starts no fight. A boss walks back at BOSS_RETURN_SPEED_FACTOR its speed, and is
 // put straight home if it is not there within BOSS_RETURN_TELEPORT_SECONDS (mobs.h).
 struct SpawnHome {
@@ -86,15 +88,15 @@ struct SpawnHome {
 
 // The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
 // the time, feminine 45% and androgynous 10% (randomBodyType in systems.h).
-enum BodyType : int { BODY_MASCULINE = 0, BODY_FEMININE = 1, BODY_ANDROGYNOUS = 2 };
+enum class BodyType : int { Masculine = 0, Feminine = 1, Androgynous = 2 };
 struct Body {
-    int type = BODY_MASCULINE;
+    BodyType type = BodyType::Masculine;
 };
 
 // The language key for a body type's name
-inline const char* bodyTypeKey(int type) {
-    return type == BODY_FEMININE ? "UILABEL_BODY_FEMININE"
-         : type == BODY_ANDROGYNOUS ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
+inline const char* bodyTypeKey(BodyType type) {
+    return type == BodyType::Feminine ? "UILABEL_BODY_FEMININE"
+         : type == BodyType::Androgynous ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
 }
 
 // The faction a unit belongs to (factions.h): the Player Faction for your units, one from data/factioninfo.txt for the
@@ -172,20 +174,28 @@ struct Inventory {
 };
 
 // The gear a unit wears, one item per slot. The order is the order of the sidebar's gear panel.
-enum GearSlot : int {
-    GEAR_HEAD = 0,
-    GEAR_TORSO,
-    GEAR_MAIN_HAND,
-    GEAR_OFF_HAND,
-    GEAR_LEGS,
-    GEAR_FEET,
-    GEAR_ACCESSORY_1,
-    GEAR_ACCESSORY_2,
-    GEAR_SLOTS
+enum class GearSlot : int {
+    Head = 0,
+    Torso,
+    MainHand,
+    OffHand,
+    Legs,
+    Feet,
+    Accessory1,
+    Accessory2,
+    Count
+};
+constexpr int GEAR_SLOTS = idx(GearSlot::Count);
+
+// An item id for each gear slot, 0 for empty. It takes a GearSlot or a slot number as its index.
+struct GearItems : std::array<int, GEAR_SLOTS> {
+    using std::array<int, GEAR_SLOTS>::operator[];
+    int& operator[](GearSlot s) { return (*this)[idx(s)]; }
+    const int& operator[](GearSlot s) const { return (*this)[idx(s)]; }
 };
 
 struct Equipment {
-    std::array<int, GEAR_SLOTS> items{};   // item id in each slot, 0 for empty
+    GearItems items{};
 };
 
 // Health and hunger, for every unit. Hunger falls by one each in-game hour, on the clock's hour. A tick
@@ -212,7 +222,7 @@ struct Needs {
     unsigned changed = NEEDS_HP_CHANGED | NEEDS_HUNGER_CHANGED;
 };
 
-// A unit's behaviors (behavior_rules.h), highest priority first. pending is set when the list is edited, so the next
+// A unit's behaviors (behavior.h), highest priority first. pending is set when the list is edited, so the next
 // behavior pass checks Eat and Heal at once, not only when hunger or health changes.
 // Its automation: busy while it is on a step an automated behavior gave it (the walk to a prop, its work there), and
 // step names that behavior, so the step can be told apart from an order of yours. An order of yours, or a fight,
@@ -359,7 +369,7 @@ struct AttackOrder {
 // level placed the props, which is the same each time the level is built from its seed, so a save can name it. A built
 // prop has serial -1: it is not placed by a seed, so a save does not name it (yet).
 struct Prop {
-    int kind = 0;
+    PropKind kind = PropKind::Wagon;
     int serial = 0;
     float yaw = 0.0f;   // the facing, in radians, turning its model and footprint about the vertical axis. Built props
                         // keep the facing they were placed with; a level's props face 0.

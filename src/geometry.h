@@ -93,3 +93,8 @@ inline bool invert4x4(const float* m, float* out) {
 struct Vec2 {
     float x = 0.0f, z = 0.0f;
 };
+
+// A point or direction in 3D, or an RGB color in x, y and z
+struct Vec3 {
+    float x = 0.0f, y = 0.0f, z = 0.0f;
+};

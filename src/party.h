@@ -7,7 +7,7 @@
 #include "ecs.h"
 #include "equip.h"
 #include "grid.h"
-#include "resources.h"
+#include "rng.h"
 #include "stats.h"
 
 // The starting party: the units a new game begins with, as set up in the party menu. Plain
@@ -19,9 +19,9 @@ inline constexpr int UNIT_SPRITE_COUNT = 3;
 
 // The model a body type starts with: Feminine unit_01.glb, Masculine unit_02.glb, Androgynous unit_03.glb. A new party
 // member and every NPC get theirs; in the party menu the model can then be changed on its own.
-inline int modelForBody(int body) {
-    if (body == BODY_FEMININE) return 1;
-    if (body == BODY_ANDROGYNOUS) return 3;
+inline int modelForBody(BodyType body) {
+    if (body == BodyType::Feminine) return 1;
+    if (body == BodyType::Androgynous) return 3;
     return 2;
 }
 
@@ -57,13 +57,13 @@ inline constexpr int PARTY_MAX_UNITS = 32;
 // One unit of the starting party
 struct PartyMember {
     std::string name;
-    int body = BODY_MASCULINE;                         // the body type, which the name is drawn from
+    BodyType body = BodyType::Masculine;                      // the body type, which the name is drawn from
     int sprite = 1;                                    // 1..UNIT_SPRITE_COUNT
     Stats stats;                                       // total XP in each stat
-    std::array<int, GEAR_SLOTS> gear{};               // item id in each gear slot, 0 for empty
+    GearItems gear{};                                 // item id in each gear slot, 0 for empty
     std::array<ItemStack, INVENTORY_SLOTS> items{};   // what the unit carries at the start
     int hunger = -1;                                   // hunger at the start, 0 to 100; -1 for full
-    int mob = 0;                                       // a mob's kind (mobs.h), a regular one; 0 for a person. A mob
+    MobKind mob = MobKind::None;                       // a mob's kind (mobs.h), a regular one; 0 for a person. A mob
                                                        // has its kind's stats, no gear, and only its meat and bones.
 };
 
@@ -71,9 +71,9 @@ struct PartyMember {
 using Party = std::vector<PartyMember>;
 
 // A party member that is a mob of a kind: named for its kind, with that kind's rolled stats
-PartyMember mobMember(int kind, Rng& rng);
+PartyMember mobMember(MobKind kind, Rng& rng);
 // The regular mob kinds (no bosses), in kind order
-std::vector<int> regularMobKinds();
+std::vector<MobKind> regularMobKinds();
 // How many of a party's members are people, not mobs
 int partyPeople(const Party& p);
 
@@ -87,7 +87,7 @@ std::string cleanName(const std::string& s);
 bool partyNamesValid(const Party& p);
 
 // Sets one stat to a level from 1 to 99, by giving exactly the XP that level needs
-void setStatLevel(Stats& s, int stat, int level);
+void setStatLevel(Stats& s, StatId stat, int level);
 
 // The gear a member wears, as the gear rules read it
 Equipment wornBy(const PartyMember& m);
@@ -107,7 +107,7 @@ Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
 
 // Takes items off a unit until it carries less than ENCUMBERED_SHARE of its carry limit (emotes.h): the last stacks
 // of its inventory first, then its heaviest gear. Items that weigh nothing stay. Used on every unit a game generates.
-void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, std::array<int, GEAR_SLOTS>& gear,
+void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearItems& gear,
                           const Stats& stats);
 
 // ---- Scenarios: the start a new game is set up from, picked on the page before the party menu ----

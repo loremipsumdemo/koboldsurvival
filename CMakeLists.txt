@@ -33,14 +33,6 @@ FetchContent_Declare(miniaudio
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(miniaudio)
 
-# The look (the sky, sun, rock and water colors) and the surface textures, in the wm namespace under
-# src/worldmaker. The game reads and writes these with each world folder. The rest of the old world tool is gone.
-set(WORLDTOOL_SOURCES
-    src/worldmaker/render/surface_pixels.cpp
-    src/worldmaker/theme/theme.cpp
-    src/worldmaker/theme/themefile.cpp
-)
-
 # Build stamp for the title screen, BUILD.YYYY.MM.DD.HH.MM.SS (24-hour). The stamp is taken at build time, not configure time,
 # so build_stamp rewrites the generated source on every build. Listing that file as BYPRODUCTS makes Ninja run the
 # writer before it compiles the file; without it, the build can compile the previous build's stamp.
@@ -64,20 +56,24 @@ add_executable(koboldsurvival
     src/fonts.cpp
     src/inventory.cpp
     src/combat.cpp
+    src/game_log.cpp
+    src/world_labels.cpp
     src/factions.cpp
     src/equip.cpp
     src/stats.cpp
     src/party.cpp
     src/party_ui.cpp
     src/useitem.cpp
-    src/behavior.cpp
+    src/need_behaviors.cpp
     src/systems.cpp
     src/terrain.cpp
     src/overview.cpp
     src/terrain_mesh.cpp
     src/pathfind.cpp
     src/world_format.cpp
-    src/map.cpp
+    src/look.cpp
+    src/surface_tiles.cpp
+    src/map_file.cpp
     src/model.cpp
     src/model_pick.cpp
     src/pak.cpp
@@ -89,7 +85,6 @@ add_executable(koboldsurvival
     src/settings_draw.cpp
     src/app.rc         # embeds the exe icon (src/app.ico) on Windows
     ${BUILD_STAMP_CPP} # defines BUILD_STAMP, rewritten on every build
-    ${WORLDTOOL_SOURCES}
 )
 
 # Packs data/ into data.pak. Built as a normal C++ target so it works on any machine that builds the game.
@@ -98,7 +93,6 @@ set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BIN
 
 target_include_directories(koboldsurvival PRIVATE
     src
-    src/worldmaker          # the look and surface code the world files use
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
 )

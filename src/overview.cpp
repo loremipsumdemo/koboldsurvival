@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "map.h"
+#include "map_file.h"
 
 namespace {
 
@@ -15,27 +15,27 @@ struct Colour {
 };
 
 // The colour of a tile's ground. Sea is blue, deepening with the depth below sea level. A tile with
-// no type above sea level is a plain olive green. Biome colours match the worldmaker preview.
-Colour TileColour(uint8_t biome, float height) {
+// no type above sea level is a plain olive green. Biome colours match the world map.
+Colour TileColour(Biome biome, float height) {
     switch (biome) {
-    case BIOME_GRASS:        return {0.47f, 0.38f, 0.27f};
-    case BIOME_SAND:         return {0.86f, 0.79f, 0.60f};
-    case BIOME_FOREST:       return {0.38f, 0.33f, 0.23f};
-    case BIOME_DESERT:       return {0.84f, 0.75f, 0.53f};
-    case BIOME_SNOW:         return {0.89f, 0.93f, 0.96f};
-    case BIOME_ROCK:         return {0.43f, 0.42f, 0.40f};
-    case BIOME_BEACH:        return {0.87f, 0.81f, 0.63f};
-    case BIOME_SILT:         return {0.50f, 0.46f, 0.36f};
-    case BIOME_FROZEN_CLAY:  return {0.59f, 0.61f, 0.62f};
-    case BIOME_CLAY:         return {0.65f, 0.45f, 0.35f};
-    case BIOME_GRAVEL:       return {0.58f, 0.55f, 0.50f};
-    case BIOME_ARID_SOIL:    return {0.70f, 0.58f, 0.41f};
-    case BIOME_SCREE:        return {0.49f, 0.47f, 0.44f};
-    case BIOME_FLOODPLAIN:   return {0.59f, 0.54f, 0.41f};
-    case BIOME_CLIFF_ROCK:   return {0.36f, 0.34f, 0.33f};
+    case Biome::Grass:        return {0.47f, 0.38f, 0.27f};
+    case Biome::Sand:         return {0.86f, 0.79f, 0.60f};
+    case Biome::Forest:       return {0.38f, 0.33f, 0.23f};
+    case Biome::Desert:       return {0.84f, 0.75f, 0.53f};
+    case Biome::Snow:         return {0.89f, 0.93f, 0.96f};
+    case Biome::Rock:         return {0.43f, 0.42f, 0.40f};
+    case Biome::Beach:        return {0.87f, 0.81f, 0.63f};
+    case Biome::Silt:         return {0.50f, 0.46f, 0.36f};
+    case Biome::FrozenClay:  return {0.59f, 0.61f, 0.62f};
+    case Biome::Clay:         return {0.65f, 0.45f, 0.35f};
+    case Biome::Gravel:       return {0.58f, 0.55f, 0.50f};
+    case Biome::AridSoil:    return {0.70f, 0.58f, 0.41f};
+    case Biome::Scree:        return {0.49f, 0.47f, 0.44f};
+    case Biome::Floodplain:   return {0.59f, 0.54f, 0.41f};
+    case Biome::CliffRock:   return {0.36f, 0.34f, 0.33f};
     default: break;
     }
-    if (biome == BIOME_NONE && height > 0.0f) return {0.42f, 0.44f, 0.34f};
+    if (biome == Biome::None && height > 0.0f) return {0.42f, 0.44f, 0.34f};
     // Sea: shallow water at the shore, deep water further out
     const float depth = std::clamp(-height / 2.5f, 0.0f, 1.0f);
     const Colour shallow{0.24f, 0.48f, 0.62f}, deep{0.05f, 0.16f, 0.30f};
@@ -74,7 +74,7 @@ void BuildOverview(int size, const ChunkSource& source, OverviewPicture& out, co
                     const int col = (size - 1 - x) / step;
                     const uint8_t biome = c.biome[static_cast<size_t>(lz) * CHUNK_TILES + lx];
                     const float height = c.heights[static_cast<size_t>(lz) * CHUNK_CORNERS + lx];
-                    const Colour k = TileColour(biome, height);
+                    const Colour k = TileColour((Biome)biome, height);
                     uint8_t* p = &out.rgba[(static_cast<size_t>(row) * px + col) * 4];
                     p[0] = static_cast<uint8_t>(std::clamp(k.r, 0.0f, 1.0f) * 255.0f);
                     p[1] = static_cast<uint8_t>(std::clamp(k.g, 0.0f, 1.0f) * 255.0f);

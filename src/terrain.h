@@ -6,7 +6,7 @@
 #include "chunk.h"
 #include "geometry.h"
 #include "grid.h"
-#include "map.h"
+#include "map_file.h"
 #include "world_format.h"
 
 // A unit keeps this far from any blocked tile, so its center never sits against a wall
@@ -63,8 +63,8 @@ public:
     float heightScale() const { return heightScale_; }
     // Height of the seabed beyond the map, in world units
     float floorY() const { return floorY_; }
-    // Ground type of a tile, or BIOME_NONE
-    uint8_t biome(int x, int y) const;
+    // Ground type of a tile, or Biome::None
+    Biome biome(int x, int y) const;
 
     // Clearance queries, in world units
     bool isFree(float x, float z) const;

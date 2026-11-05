@@ -117,7 +117,7 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::None: return std::string();
     case BehaviorWait::NoItem: return lang(r.kind == BehaviorKind::Eat ? "UILABEL_WAIT_NO_FOOD" : "UILABEL_WAIT_NO_HEALING");
     case BehaviorWait::WalkingToShare: return langf("UILABEL_WAIT_WALKING_TO_SHARE", { other });
-    case BehaviorWait::NoProp: return langf("UILABEL_WAIT_NO_PROP", { r.propKind >= 0 && r.propKind < PROP_KIND_COUNT ? lang(propInfo(r.propKind).nameKey) : std::string() });
+    case BehaviorWait::NoProp: return langf("UILABEL_WAIT_NO_PROP", { r.propKind >= 0 && r.propKind < PROP_KIND_COUNT ? lang(propInfo((PropKind)r.propKind).nameKey) : std::string() });
     case BehaviorWait::CarryFull: return lang("UILABEL_WAIT_CARRY_FULL");
     case BehaviorWait::LoadWaiting: return lang("UILABEL_WAIT_LOAD_WAITING");
     case BehaviorWait::PropGone: return lang("UILABEL_WAIT_PROP_GONE");
@@ -167,7 +167,7 @@ inline bool sameBehavior(const BehaviorRule& a, const BehaviorRule& b) {
 // The name of an automated behavior's prop kind, in the language in use (empty for the needs behaviors)
 inline std::string behaviorPropName(const BehaviorRule& r) {
     if (!isAutomated(r.kind) || r.propKind < 0 || r.propKind >= PROP_KIND_COUNT) return std::string();
-    return lang(propInfo(r.propKind).nameKey);
+    return lang(propInfo((PropKind)r.propKind).nameKey);
 }
 
 // The row text for a behavior

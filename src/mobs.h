@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include "enum_index.h"
 #include "stats.h"
 
 // Mobs: animals and other creatures. A mob is a unit (it walks, fights, falls Unconscious and can be carried, looted
@@ -34,17 +35,17 @@
 //   Passive: lets them be, and never fights, even when hit.
 //   Neutral: lets them be, but fights back when attacked, and its herd joins in.
 //   Aggressive: attacks them on sight.
-// Wild mobs also Roam: they wander the open map, anywhere walkable outside the flags' claims (behavior_rules.h).
+// Wild mobs also Roam: they wander the open map, anywhere walkable outside the flags' claims (behavior.h).
 // Knocking out or killing a mob of a mob faction costs no reputation: hunting is not a slight to anyone.
 // Kinds are numbered from 1 in the order below, one for each raw meat in data/itemdb.txt.
 
-enum MobKind : int {
-    MOB_NONE = 0,
-    MOB_BEAR, MOB_COW, MOB_CHICKEN, MOB_BOAR, MOB_WOLF, MOB_DEER, MOB_RABBIT, MOB_FISH, MOB_CRAB, MOB_LIZARD,
-    MOB_SNAKE, MOB_PIG, MOB_SHEEP, MOB_DUCK, MOB_TURTLE, MOB_BAT, MOB_FROG, MOB_GORLICORN,
-    MOB_KIND_END
+enum class MobKind : int {
+    None = 0,
+    Bear, Cow, Chicken, Boar, Wolf, Deer, Rabbit, Fish, Crab, Lizard,
+    Snake, Pig, Sheep, Duck, Turtle, Bat, Frog, Gorlicorn,
+    End
 };
-constexpr int MOB_KIND_COUNT = MOB_KIND_END - 1;   // kinds 1 to MOB_KIND_COUNT
+constexpr int MOB_KIND_COUNT = idx(MobKind::End) - 1;   // kinds 1 to MOB_KIND_COUNT
 constexpr int MOB_FACTION_BASE = 10;               // kind k's own faction is MOB_FACTION_BASE + k - 1
 constexpr int CAMP_MOBS = 3;                       // mobs of random kinds each camp's faction starts with
 constexpr int WILD_MOBS = 10;                      // mobs of each kind placed out in the world, in their own faction
@@ -85,7 +86,7 @@ constexpr float BOSS_RETURN_TELEPORT_SECONDS = 10.0f;
 // Rested a mob gains each in-game hour, wherever it is, while below its most (more in a bed or bedroll)
 constexpr double MOB_RESTED_GAIN_PER_HOUR = 10.0;
 
-inline const MobInfo& mobInfo(int kind) {
+inline const MobInfo& mobInfo(MobKind kind) {
     static const MobInfo info[MOB_KIND_COUNT] = {
         { "MOB_BEAR",    89,  4, 22, 8,  22, 18, 8,  14, 8 },
         { "MOB_COW",     93,  4, 16, 5,  18, 14, 5,  3,  4 },
@@ -107,27 +108,27 @@ inline const MobInfo& mobInfo(int kind) {
         { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
           1, 100, true, GORLICORN_HP, 1, 9.6f, true, MobCategory::Boss },
     };
-    const int i = kind - 1;
+    const int i = idx(kind) - 1;
     return info[(i >= 0 && i < MOB_KIND_COUNT) ? i : 0];
 }
 
 // A kind's bones: items MOB_BONES_FIRST on, one for each kind in the same order, and how many it carries, about half
 // its meat
 constexpr int MOB_BONES_FIRST = 134;
-inline int mobBones(int kind) { return MOB_BONES_FIRST + kind - 1; }
-inline int mobBoneCount(int kind) {
+inline int mobBones(MobKind kind) { return MOB_BONES_FIRST + idx(kind) - 1; }
+inline int mobBoneCount(MobKind kind) {
     if (mobInfo(kind).boneCount > 0) return mobInfo(kind).boneCount;
     return std::max(1, (mobInfo(kind).meatCount + 1) / 2);
 }
 // Whether a mob of this kind may hold an item: its own meat or bones only
-inline bool mobCanHold(int kind, int item) { return item == mobInfo(kind).meat || item == mobBones(kind); }
+inline bool mobCanHold(MobKind kind, int item) { return item == mobInfo(kind).meat || item == mobBones(kind); }
 
 enum class MobTemperament { Avoidant, Passive, Neutral, Aggressive };
-inline MobTemperament mobTemperament(int kind) {
+inline MobTemperament mobTemperament(MobKind kind) {
     switch (kind) {
-    case MOB_BEAR: case MOB_WOLF: case MOB_SNAKE: case MOB_BAT: case MOB_GORLICORN: return MobTemperament::Aggressive;
-    case MOB_BOAR: case MOB_CRAB: case MOB_TURTLE: return MobTemperament::Neutral;
-    case MOB_COW: case MOB_FISH: case MOB_PIG: case MOB_SHEEP: return MobTemperament::Passive;
+    case MobKind::Bear: case MobKind::Wolf: case MobKind::Snake: case MobKind::Bat: case MobKind::Gorlicorn: return MobTemperament::Aggressive;
+    case MobKind::Boar: case MobKind::Crab: case MobKind::Turtle: return MobTemperament::Neutral;
+    case MobKind::Cow: case MobKind::Fish: case MobKind::Pig: case MobKind::Sheep: return MobTemperament::Passive;
     default: return MobTemperament::Avoidant;   // chicken, deer, rabbit, lizard, duck, frog
     }
 }
@@ -147,11 +148,11 @@ constexpr int EXILE_FLEE_PERCENT = 25;      // an Exile at this share of its hea
 
 // How tall a kind drawn by its picture stands, against a person's height: the Bear twice as tall, the small creatures
 // half as tall, the rest as tall as a person
-inline float mobSpriteScale(int kind) {
+inline float mobSpriteScale(MobKind kind) {
     switch (kind) {
-    case MOB_BEAR: return 2.0f;
-    case MOB_CRAB: case MOB_SNAKE: case MOB_DUCK: case MOB_RABBIT: case MOB_FROG: case MOB_TURTLE: case MOB_BAT:
-    case MOB_CHICKEN:
+    case MobKind::Bear: return 2.0f;
+    case MobKind::Crab: case MobKind::Snake: case MobKind::Duck: case MobKind::Rabbit: case MobKind::Frog: case MobKind::Turtle: case MobKind::Bat:
+    case MobKind::Chicken:
         return 0.5f;
     default: return 1.0f;
     }
@@ -159,39 +160,39 @@ inline float mobSpriteScale(int kind) {
 
 // How big a kind is against a person (1): its model's height against a person's 1.2 tiles, or its picture's scale.
 // A smaller unit can't push a bigger one, and a bigger one reaches further in melee (meleeReachFor).
-inline float mobSize(int kind) {
+inline float mobSize(MobKind kind) {
     const MobInfo& info = mobInfo(kind);
     return info.model > 0 ? info.modelHeight / 1.2f : mobSpriteScale(kind);
 }
 
 // How far above the ground a kind is drawn while it is up and about, as a share of its height: the Bat flies. Lying
 // (Unconscious, playing dead, a corpse), carried, or occupying a prop, it is on the ground like any other.
-inline float mobHoverFraction(int kind) {
-    return kind == MOB_BAT ? 0.8f : 0.0f;
+inline float mobHoverFraction(MobKind kind) {
+    return kind == MobKind::Bat ? 0.8f : 0.0f;
 }
 
 // Kinds that leave each other be, whatever their temperaments: the Gorlicorn and the Rabbits that keep it company. They
 // do not fight each other, and an Avoidant one does not run from the other.
-inline bool mobKindsFriendly(int a, int b) {
-    return (a == MOB_GORLICORN && b == MOB_RABBIT) || (a == MOB_RABBIT && b == MOB_GORLICORN);
+inline bool mobKindsFriendly(MobKind a, MobKind b) {
+    return (a == MobKind::Gorlicorn && b == MobKind::Rabbit) || (a == MobKind::Rabbit && b == MobKind::Gorlicorn);
 }
 constexpr int GORLICORN_RABBITS = 3;   // Rabbits placed by the Gorlicorn, keeping near it
 
 // Whether a kind is a regular mob, not a boss
-inline bool isRegularMob(int kind) {
-    return kind >= 1 && kind <= MOB_KIND_COUNT && mobInfo(kind).category == MobCategory::Regular;
+inline bool isRegularMob(MobKind kind) {
+    return idx(kind) >= 1 && idx(kind) <= MOB_KIND_COUNT && mobInfo(kind).category == MobCategory::Regular;
 }
 // Whether a camp may be given a mob of this kind: a regular one
-inline bool campMobKind(int kind) { return isRegularMob(kind); }
+inline bool campMobKind(MobKind kind) { return isRegularMob(kind); }
 
 // The faction a kind of mob belongs to when it is not placed in another one
-inline int mobFaction(int kind) { return MOB_FACTION_BASE + kind - 1; }
+inline int mobFaction(MobKind kind) { return MOB_FACTION_BASE + idx(kind) - 1; }
 // Whether a faction is a mob kind's own
 inline bool isMobFaction(int faction) { return faction >= MOB_FACTION_BASE && faction < MOB_FACTION_BASE + MOB_KIND_COUNT; }
 // The kind whose own faction this is (a mob faction only)
-inline int mobKindOfFaction(int faction) { return faction - MOB_FACTION_BASE + 1; }
+inline MobKind mobKindOfFaction(int faction) { return (MobKind)(faction - MOB_FACTION_BASE + 1); }
 // Whether a mob has this stat: the attributes and the combat skills
-inline bool mobHasStat(int stat) {
+inline bool mobHasStat(StatId stat) {
     const StatGroup g = statInfo(stat).group;
     return g == StatGroup::Attributes || g == StatGroup::Combat;
 }

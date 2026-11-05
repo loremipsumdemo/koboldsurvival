@@ -9,17 +9,16 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include "camera.h"
-#include "gui.h"
+#include "ui_layout.h"
 #include "sky.h"
 #include "combat.h"
 #include "components.h"
 #include "ecs.h"
 #include "mobs.h"
 #include "model.h"
-#include "resources.h"
 #include "terrain.h"
 #include "terrain_mesh.h"
-#include "ui.h"
+#include "ui_types.h"
 #include "party_ui.h"
 #include "props.h"
 #include "overview.h"
@@ -78,9 +77,9 @@ struct InfoTime {
 
 // The Information Panel, in the top left corner by default. The newest line is at the bottom, and offset counts
 // the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
-struct CombatLogLayout {
+struct GameLogLayout {
     Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Combat Log" bar across the top
+    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Information Panel" bar across the top
     Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
     Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
     float textX = 0.0f, textW = 0.0f;
@@ -141,7 +140,7 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) {
 
 // The stand-in for a prop whose model is not in data.pak: a pink square, missingPropSide(kind) tiles on a side
 constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
-float missingPropSide(int kind);
+float missingPropSide(PropKind kind);
 
 // A mark on the world map: a unit's place and whose it is, or a prop (any kind) as a purple square
 enum class MapDotKind { Player, Hostile, Neutral, Prop };
@@ -164,7 +163,7 @@ struct WorldMapMarks {
 // ground. kind is the PropKind; (x, z) its centre; yaw its facing.
 struct BuildPreview {
     bool on = false;
-    int kind = 0;
+    PropKind kind = PropKind::Wagon;
     float x = 0.0f, z = 0.0f, yaw = 0.0f;
     bool valid = false;
     // A claim circle drawn around (x, z) with this radius, when ringR is above 0. ringTone: 1 green (a flag that can be
@@ -218,7 +217,7 @@ public:
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
 
     // The Build tab's state, set each frame before drawing: the prop picked (-1 for none), and its placement preview
-    void setBuildSelected(int kind) { buildSelected_ = kind; }
+    void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     // Whether a selected unit of yours is in one of your claims: when not, only the kinds buildAnywhere allows are lit
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
@@ -258,7 +257,7 @@ public:
     // The Stats tab's rows; returns the stat under the mouse, or -1
     // A mob's (mob) lists only its attributes and combat skills
     int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob = false);
-    void drawStatTip(const Stats& stats, int stat, float mx, float my);
+    void drawStatTip(const Stats& stats, StatId stat, float mx, float my);
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
     // The full text of the behavior row under the mouse, beside it. Call after drawInventorySidebar.
@@ -295,8 +294,8 @@ public:
     // Emotes over props: No upkeep over a vault with no logs in it, Decaying over a flag wearing down. Above the prop's
     // name when prop names are shown.
     void drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames);
-    // A hint over the unit under the pointer of what a right-click does to it (EMOTE_CUE_PUT_DOWN, EMOTE_CUE_TALK)
-    void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown);
+    // A hint over the unit under the pointer of what a right-click does to it (EmoteId::CuePutDown, EmoteId::CueTalk)
+    void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown);
     // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
     // clockwise from the top, as its next item nears. Each time an item is finished the ring hops up and back down once.
     // The work rings over worked props; with names set they sit above the props' name tags
@@ -347,12 +346,12 @@ public:
     // Damage numbers over the units they hit, rising and fading from the combat system's list. They draw
     // between beginUi and endUi, after the names.
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
-    // The combat log in the bottom left. offset is how far it is scrolled up, and rightLimit is the x its
+    // The game log (the Information Panel). offset is how far it is scrolled up, and rightLimit is the x its
     // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
-    CombatLogLayout combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
+    GameLogLayout gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
     // The Information Panel: rows are the lines of the tab shown, oldest first. The Time tab shows `time` instead.
-    void drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
+    void drawGameLog(const GameLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
                        float mx, float my, const InfoTime& time = InfoTime{});
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
@@ -365,11 +364,11 @@ public:
     // when it has no model. Call between beginUi and endUi.
     void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
     // A mob kind seen the same way: its model, or its picture where it has none
-    void drawMobPreview(int kind, const Rect& r, float yaw);
+    void drawMobPreview(MobKind kind, const Rect& r, float yaw);
     // A model, turned by yaw, standing in a box of the UI with its own depth
     void drawModelPreview(const Model* m, const Rect& r, float yaw);
     // A mob kind's picture (mob_<kind>.png), the stand-in for a missing one, or the pink square for a kind with a model
-    const TextTex& mobPicture(int kind) const;
+    const TextTex& mobPicture(MobKind kind) const;
 
     // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
@@ -539,7 +538,7 @@ private:
     static ItemMask loadMask(const std::string& path);
     // Whether the picture of an item is visible at (u, v), each 0 to 1 across and down
     bool itemPixelSolid(int item, float u, float v);
-    // An item's picture at exactly ITEM_PICTURE_PX square (ui.h), on whole pixels: centered in a cell, or on a point
+    // An item's picture at exactly ITEM_PICTURE_PX square (ui_types.h), on whole pixels: centered in a cell, or on a point
     void drawItemPicture(const Rect& cell, int item, float alpha);
     void drawItemPictureAt(float cx, float cy, int item, float alpha);
     // A picture fitted inside r, keeping its proportions, multiplied by tint
@@ -608,7 +607,7 @@ private:
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uFaction_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
-    int buildSelected_ = -1;                  // the prop picked on the Build tab, or -1
+    BuildPick buildSelected_;                 // what the Build tab has picked
     bool buildInClaim_ = false;               // a selected unit of yours stands in one of your claims
     BuildPreview buildPreview_;               // its placement preview this frame
     GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
@@ -712,7 +711,7 @@ private:
     // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
     std::map<int, TextTex> itemPics_;
     std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown
-    const TextTex* emoteTexture(int id);   // never null: emote_0.png or the pink square stands in
+    const TextTex* emoteTexture(EmoteId emote);   // never null: emote_0.png or the pink square stands in
     TextTex itemNone_;        // data/item/item_0.png, for items without a picture of their own
     TextTex emoteFallback_;   // data/emote/emote_0.png, for emotes without a picture of their own
     TextTex iconFallback_;    // data/icon/icon_0.png, for UI icons without a picture of their own
@@ -732,9 +731,9 @@ private:
     // the stand-in, model_0.glb, in its place (also empty if that failed, and the kind is drawn as a pink square).
     std::array<Model, PROP_KIND_COUNT> propModels_{};
     Model fallbackModel_{};
-    const Model& propModel(int kind) const;
+    const Model& propModel(PropKind kind) const;
     // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
-    float propTop(int kind) const;
+    float propTop(PropKind kind) const;
     // The height a prop stands at: its own spot on the ground, or the top of the foundation it sits on (OnBase), so a
     // vault on a foundation is drawn on top of it rather than sunk into it
     float propBaseY(World& w, Entity e) const;

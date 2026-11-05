@@ -57,11 +57,11 @@ const std::array<int, MAX_LEVEL + 1>& xpTable() {
 
 } // namespace
 
-const StatInfo& statInfo(int stat) {
-    return infoTable()[std::clamp(stat, 0, STAT_COUNT - 1)];
+const StatInfo& statInfo(StatId stat) {
+    return infoTable()[std::clamp(idx(stat), 0, STAT_COUNT - 1)];
 }
 
-std::string statName(int stat) {
+std::string statName(StatId stat) {
     return lang(statInfo(stat).key);
 }
 
@@ -76,8 +76,8 @@ int levelForXp(int xp) {
     return 1;
 }
 
-int addXp(Stats& s, int stat, int amount) {
-    if (stat < 0 || stat >= STAT_COUNT || amount <= 0) return 0;
+int addXp(Stats& s, StatId stat, int amount) {
+    if (idx(stat) < 0 || idx(stat) >= STAT_COUNT || amount <= 0) return 0;
     const int before = levelOf(s, stat);
     const int cap = xpForLevel(MAX_LEVEL);
     s.xp[stat] = (int)std::min<long long>(cap, (long long)s.xp[stat] + amount);

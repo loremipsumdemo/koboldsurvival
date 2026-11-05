@@ -50,7 +50,7 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
         for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ modelLabel(i), i });
         break;
     case DropKind::Body:
-        for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey(i)), i });
+        for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey((BodyType)i)), i });
         break;
     case DropKind::Gear:
         out.push_back(DropEntry{ lang("UILABEL_EMPTY"), 0 });
@@ -63,7 +63,7 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
         for (int id : allItemChoices()) out.push_back(DropEntry{ itemNameOf(id), id });
         break;
     case DropKind::MobKind:
-        for (int k : regularMobKinds()) out.push_back(DropEntry{ lang(mobInfo(k).nameKey), k });
+        for (MobKind k : regularMobKinds()) out.push_back(DropEntry{ lang(mobInfo(k).nameKey), idx(k) });
         break;
     }
     return out;
@@ -147,7 +147,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     Rect sprAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, gearAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, invAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect bodyAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
     Rect mobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, addMobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
-    const bool mob = !p.empty() && m.mob > 0;   // the picked member is a mob: no model, body, gear or items to set
+    const bool mob = !p.empty() && m.mob != MobKind::None;   // the picked member is a mob: no model, body, gear or items to set
 
     // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
@@ -222,10 +222,10 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                 out.push_back(Button{ groupTitle(g), Rect{ x, ry, colW, rowH }, Action::PartyHeading, false, 0 });
                 ry += pitch;
                 for (int i = 0; i < STAT_COUNT; ++i) {
-                    if (statInfo(i).group != g) continue;
+                    if (statInfo((StatId)i).group != g) continue;
                     // Outside Custom the levels are only shown, with no - and +
                     const float labelW = ui.editable ? colW - 2.0f * (btn + 4.0f * s) : colW;
-                    out.push_back(Button{ statName(i), Rect{ x, ry, labelW, rowH }, Action::PartyStatLabel, false, i });
+                    out.push_back(Button{ statName((StatId)i), Rect{ x, ry, labelW, rowH }, Action::PartyStatLabel, false, i });
                     if (ui.editable) {
                         out.push_back(Button{ "-", Rect{ x + colW - 2.0f * btn - 4.0f * s, ry, btn, rowH },
                                               Action::PartyStep, true, i * 2 });
@@ -365,10 +365,10 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         }
         int current = 0;
         if (ui.dropKind == DropKind::Sprite) current = m.sprite;
-        if (ui.dropKind == DropKind::Body) current = m.body;
+        if (ui.dropKind == DropKind::Body) current = idx(m.body);
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
-        if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : m.mob;
+        if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : idx(m.mob);
         for (int i = first; i < first + shown; ++i) {
             const bool isCurrent = drop[i].value == current;
             dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, listW, rowH },

@@ -46,6 +46,12 @@ enum class Action {
     PartyMessage      // the line under the menu, drawn only
 };
 
+// Mouse drag rectangle in screen pixels, for box selection
+struct Selection {
+    bool dragging = false;
+    float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
+};
+
 // Pixel rectangle, origin at the top-left of the window
 struct Rect {
     float x, y, w, h;

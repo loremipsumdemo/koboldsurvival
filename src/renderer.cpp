@@ -491,11 +491,12 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
     }
     int mobModelCount = 0;
-    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) mobModelCount += mobInfo(kind).model > 0 ? 1 : 0;
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model > 0 ? 1 : 0;
     stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
     // Each mob kind's model, when it has one: data/model/mob/mob_<nn>.glb. A missing one leaves it drawn by its picture.
     int mobModelsDone = 0;
-    for (int kind = 1; kind <= MOB_KIND_COUNT; ++kind) {
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+        const MobKind kind = (MobKind)k;
         const int n = mobInfo(kind).model;
         if (n <= 0) continue;
         ++mobModelsDone;
@@ -503,7 +504,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         std::snprintf(path, sizeof(path), "data/model/mob/mob_%02d.glb", n);
         const unsigned char* bytes = nullptr;
         size_t size = 0;
-        Model& m = mobModels_[(size_t)kind - 1];
+        Model& m = mobModels_[(size_t)k - 1];
         if (!pakFind(path, bytes, size)) {
             SDL_Log("Mob model %s not in data.pak: the %s is drawn by its picture", path, lang(mobInfo(kind).nameKey).c_str());
         } else if (!loadGLBModel(path, m) || !m.vao || m.draws.empty() || !(m.maxY > m.minY)) {
@@ -584,7 +585,8 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     const char* standIn = fallbackModel_.vao ? "with model_0.glb" : "as a pink square";
     // Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
     // missing or misnamed shows up at once: that kind is drawn with the stand-in (propModel), and log.txt names it.
-    for (int kind = 0; kind < PROP_KIND_COUNT; ++kind) {
+    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+        const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
         const unsigned char* bytes = nullptr;
         size_t size = 0;
@@ -602,7 +604,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
                         info.file, lang(info.nameKey).c_str(), standIn);
             }
         }
-        stages.step(0.58f + 0.4f * (float)(kind + 1) / (float)PROP_KIND_COUNT, kind + 2);
+        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 2);
     }
     stages.finish();
 
@@ -667,7 +669,7 @@ void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
 
 // A prop kind with no model is drawn as a pink square this many tiles on a side: the height of a unit's sprite, so it
 // stands like a unit would, whatever the kind
-float missingPropSide(int) {
+float missingPropSide(PropKind) {
     return GLYPH_H;
 }
 
@@ -692,7 +694,7 @@ float Renderer::bedLift(World& w, Entity u) const {
     const Prop* p = w.get<Prop>(oc->prop);
     const Transform* pt = w.get<Transform>(oc->prop);
     const Transform* ut = w.get<Transform>(u);
-    if (!p || !pt || !ut || (p->kind != PROP_BED && p->kind != PROP_BEDROLL)) return -1.0f;
+    if (!p || !pt || !ut || (p->kind != PropKind::Bed && p->kind != PropKind::Bedroll)) return -1.0f;
     const float dx = ut->x - pt->x, dz = ut->z - pt->z;
     if (dx * dx + dz * dz > 0.25f * 0.25f) return -1.0f;   // not on the bed's spot: drawn as usual
     return std::max(0.0f, propBaseY(w, oc->prop) - ut->y + propTop(p->kind) * 0.5f);
@@ -905,19 +907,19 @@ void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
     drawModelPreview(unitModelNumber(sprite), r, yaw);
 }
 
-void Renderer::drawMobPreview(int kind, const Rect& r, float yaw) {
-    const int idx = kind - 1;
-    if (idx >= 0 && idx < MOB_KIND_COUNT && mobModels_[(size_t)idx].vao) {
-        drawModelPreview(&mobModels_[(size_t)idx], r, yaw);
+void Renderer::drawMobPreview(MobKind kind, const Rect& r, float yaw) {
+    const int i = idx(kind) - 1;
+    if (i >= 0 && i < MOB_KIND_COUNT && mobModels_[(size_t)i].vao) {
+        drawModelPreview(&mobModels_[(size_t)i], r, yaw);
         return;
     }
     drawFitted(mobPicture(kind), r, WHITE);
 }
 
-const TextTex& Renderer::mobPicture(int kind) const {
-    const int idx = kind - 1;
-    if (kind >= 1 && kind <= MOB_KIND_COUNT && mobInfo(kind).model > 0) return pink_;
-    if (idx >= 0 && idx < (int)mobSprites_.size() && mobSprites_[(size_t)idx].tex) return mobSprites_[(size_t)idx];
+const TextTex& Renderer::mobPicture(MobKind kind) const {
+    const int i = idx(kind) - 1;
+    if (i >= 0 && i < MOB_KIND_COUNT && mobInfo(kind).model > 0) return pink_;
+    if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
     return mobFallback_.tex ? mobFallback_ : pink_;
 }
 
@@ -1078,7 +1080,7 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
 // ---- Menus ----
 
 void Renderer::beginUi(int winW, int winH) {
-    // Combat log lines are new strings in every fight, so the list cache would grow for the whole session.
+    // Game log lines are new strings in every fight, so the list cache would grow for the whole session.
     // It is cleared here, once a frame, when no text reference is held: anything drawn again is rebuilt.
     constexpr size_t LIST_CACHE_LIMIT = 512;
     if (listText_.size() > LIST_CACHE_LIMIT) {
@@ -1731,11 +1733,11 @@ const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
     // A mob's picture is its kind's (mob_<kind>.png), with mob_0.png for a missing one. A kind drawn by a model has the
     // pink square for its portrait, as a person has.
     if (const Mob* m = w.get<Mob>(e)) {
-        const int idx = m->kind - 1;
+        const int i = idx(m->kind) - 1;
         // A kind meant to be drawn by a model has no picture of its own: the pink square, standing in the world as a
         // billboard when the model is missing, and its portrait always
         if (mobInfo(m->kind).model > 0) return pink_;
-        if (idx >= 0 && idx < (int)mobSprites_.size() && mobSprites_[(size_t)idx].tex) return mobSprites_[(size_t)idx];
+        if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
         return mobFallback_.tex ? mobFallback_ : pink_;
     }
     return pink_;   // a person is drawn by a model; the pink square stands in for a missing one
@@ -1774,8 +1776,8 @@ float Renderer::unitHeight(World& w, Entity e) const {
 
 const Model* Renderer::unitModel(World& w, Entity e) const {
     if (const Mob* mb = w.get<Mob>(e)) {
-        const int idx = mb->kind - 1;
-        if (idx >= 0 && idx < MOB_KIND_COUNT && mobModels_[(size_t)idx].vao) return &mobModels_[(size_t)idx];
+        const int i = idx(mb->kind) - 1;
+        if (i >= 0 && i < MOB_KIND_COUNT && mobModels_[(size_t)i].vao) return &mobModels_[(size_t)i];
         return nullptr;
     }
     const UnitSprite* us = w.get<UnitSprite>(e);
@@ -1869,8 +1871,8 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const int kind = w.get<Prop>(e)->kind;
-        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        const PropKind kind = w.get<Prop>(e)->kind;
+        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         const Model& m = propModel(kind);
         const float baseY = propBaseY(w, e);
         if (m.vao) {
@@ -2104,10 +2106,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
         const auto& C = sky_.colors;
         float zen[3], hor[3], horDusk[3], sunC[3];
-        lerp3(C[CT_NIGHT_ZENITH].data(), C[CT_DAY_ZENITH].data(), day, zen);
-        lerp3(C[CT_NIGHT_HORIZON].data(), C[CT_DAY_HORIZON].data(), day, hor);
-        lerp3(hor, C[CT_DUSK_HORIZON].data(), dusk * 0.8f, horDusk);
-        lerp3(C[CT_DUSK_SUN].data(), C[CT_SUN].data(), day, sunC);
+        lerp3(C[idx(ColorTarget::NightZenith)].data(), C[idx(ColorTarget::DayZenith)].data(), day, zen);
+        lerp3(C[idx(ColorTarget::NightHorizon)].data(), C[idx(ColorTarget::DayHorizon)].data(), day, hor);
+        lerp3(hor, C[idx(ColorTarget::DuskHorizon)].data(), dusk * 0.8f, horDusk);
+        lerp3(C[idx(ColorTarget::DuskSun)].data(), C[idx(ColorTarget::Sun)].data(), day, sunC);
         for (float& c : sunC) c *= sky_.sunBrightness;
 
         glUseProgram(skyProgram_);
@@ -2117,7 +2119,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUniform3fv(uSunCol_, 1, sunC);
         glUniform3fv(uMoonDir_, 1, moonDir);
         glUniform1f(uMoonAlpha_, moonAlpha);
-        glUniform3fv(uMoonCol_, 1, C[CT_MOON].data());
+        glUniform3fv(uMoonCol_, 1, C[idx(ColorTarget::Moon)].data());
         glUniform1f(uStarAlpha_, starAlpha);
         glUniform3fv(uZenith_, 1, zen);
         glUniform3fv(uHorizon_, 1, horDusk);
@@ -2142,8 +2144,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const int kind = w.get<Prop>(e)->kind;
-        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        const PropKind kind = w.get<Prop>(e)->kind;
+        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         const float baseY = propBaseY(w, e);
         if (propModel(kind).vao) {
             drawModel(propModel(kind), tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
@@ -3175,7 +3177,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
 
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const int kind = w.get<Prop>(e)->kind;
+        const PropKind kind = w.get<Prop>(e)->kind;
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
@@ -3818,14 +3820,14 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
         drawListText(title, area.x, y + (rowH - th) * 0.5f, heading);
         y += rowH;
         for (int i = 0; i < STAT_COUNT; ++i) {
-            if (statInfo(i).group != group) continue;
-            const int lv = levelOf(stats, i);
-            row(y, statIcon(i), statName(i), std::to_string(lv), white);
+            if (statInfo((StatId)i).group != group) continue;
+            const int lv = levelOf(stats, (StatId)i);
+            row(y, statIcon((StatId)i), statName((StatId)i), std::to_string(lv), white);
             // Progress from this level toward the next one
             const float barY = y + rowH - 3.0f * s, barH = 3.0f * s;
             const float barW = barEnd - nameX;
             drawRect(Rect{ nameX, barY, barW, barH }, RGBA{ 0.24f, 0.11f, 0.13f, 1.0f });
-            drawRect(Rect{ nameX, barY, barW * levelProgress(stats, i), barH }, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+            drawRect(Rect{ nameX, barY, barW * levelProgress(stats, (StatId)i), barH }, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
             if (mx >= area.x && mx < area.x + area.w && my >= y && my < y + rowH) hovered = i;
             y += rowH;
         }
@@ -3834,7 +3836,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
 }
 
 // The tooltip for a stat: its name, level, progress to the next level, its current XP and the XP the next level needs
-void Renderer::drawStatTip(const Stats& stats, int stat, float mx, float my) {
+void Renderer::drawStatTip(const Stats& stats, StatId stat, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const int lv = levelOf(stats, stat);
     const int pct = (int)std::lround(levelProgress(stats, stat) * 100.0f);
@@ -3869,9 +3871,9 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
             const Rect& t = L.tabs[i];
             if (t.w <= 0.0f) continue;
             // A unit not in your squad shows only its Profile: the other tabs are dimmed and do nothing
-            const bool on = unitTabEnabled(w, unit, i);
-            drawRect(t, i == L.tab ? RGBA{ 0.353f, 0.235f, 0.110f, 0.95f } : RGBA{ 0.16f, 0.07f, 0.085f, on ? 0.9f : 0.45f });
-            if (i == L.tab) drawRect(Rect{ t.x, t.y + t.h - 2.0f, t.w, 2.0f }, theme::GREEN);
+            const bool on = unitTabEnabled(w, unit, (UnitTab)i);
+            drawRect(t, i == idx(L.tab) ? RGBA{ 0.353f, 0.235f, 0.110f, 0.95f } : RGBA{ 0.16f, 0.07f, 0.085f, on ? 0.9f : 0.45f });
+            if (i == idx(L.tab)) drawRect(Rect{ t.x, t.y + t.h - 2.0f, t.w, 2.0f }, theme::GREEN);
             if (on && t.contains(mx, my)) noteHover(t);
             const float tw = listTextWidth(names[i]), th = listTextHeight("Ag");
             drawListText(names[i], t.x + (t.w - tw) * 0.5f, t.y + (t.h - th) * 0.5f,
@@ -3883,7 +3885,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         frame();
         return;
     }
-    if (L.tab == UNIT_TAB_BUILD) {
+    if (L.tab == UnitTab::Build) {
         // The Build tab needs no unit: it lists the props to pick and place. Its rows scroll like the other tabs.
         beginClip(L.panel);
         drawBuildSection(L, mx, my);
@@ -3918,7 +3920,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     int hoverGear = -1;
     int hoverSlot = -1;
     int hoverStat = -1;   // the stat under the mouse in the Stats tab
-    if (L.tab == UNIT_TAB_PROFILE) {
+    if (L.tab == UnitTab::Profile) {
     // ---- Profile card: the unit's name, health, hunger and carry, then its picture under them ----
     drawRect(L.profile, RGBA{ 0.11f, 0.05f, 0.06f, bgAlpha });
     drawRect(L.portrait, RGBA{ 0.16f, 0.07f, 0.085f, bgAlpha });
@@ -4015,7 +4017,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     }
     }
 
-    if (L.tab == UNIT_TAB_INVENTORY) {
+    if (L.tab == UnitTab::Inventory) {
     // ---- Gear: what the unit wears, four slots to a row, then the totals ----
     const bool offLocked = worn && offHandBlocked(*worn);
     const ItemDef* dragDef = dragItem != 0 ? findItem(dragItem) : nullptr;
@@ -4058,7 +4060,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (r.contains(mx, my)) hoverGear = (int)gi;
 
         const int item = worn ? worn->items[gi] : 0;
-        const bool locked = (int)gi == GEAR_OFF_HAND && offLocked;
+        const bool locked = (int)gi == idx(GearSlot::OffHand) && offLocked;
         if (item == 0) {
             // An empty slot shows its name, or lang("UILABEL_TWO_HANDED") for a locked off hand, centred, dimmed and
             // wrapped onto two lines if it needs them. The full name is in the hover tooltip.
@@ -4080,7 +4082,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         // hover tooltip.
         float alpha = 1.0f;
         if ((int)gi == dimGear) alpha = 0.30f;
-        else if ((int)gi == GEAR_OFF_HAND && dimOff) alpha = 0.35f;
+        else if ((int)gi == idx(GearSlot::OffHand) && dimOff) alpha = 0.35f;
         drawItemPictureAt(r.x + r.w * 0.5f, r.y + r.h * 0.5f, item, alpha);
     }
 
@@ -4091,7 +4093,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     }
     // ---- Inventory grid on its own background ----
-    if (L.tab == UNIT_TAB_INVENTORY) {
+    if (L.tab == UnitTab::Inventory) {
     drawRect(L.gridPanel, RGBA{ 0.10f, 0.04f, 0.05f, bgAlpha });
     drawIconText(L.gridPanel.x + 10.0f * s, L.gridPanel.y + 6.0f * s, listTextHeight("Ag"), ICON_INVENTORY, lang("UILABEL_INVENTORY"), white);
     // A mob's inventory is not shown until it is a corpse (mobs.h): the panel says Not available in place of its slots,
@@ -4126,14 +4128,14 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
 
     }
     // The behavior list
-    if (L.tab == UNIT_TAB_BEHAVIOR) {
+    if (L.tab == UnitTab::Behavior) {
         const Behaviors* beh = w.get<Behaviors>(unit);
         const Equipment* worn = w.get<Equipment>(unit);
         const std::array<bool, 4> modes{ beh && beh->passive, beh && beh->block, beh && beh->sneak,
-                                         worn && isRangedWeapon(worn->items[GEAR_MAIN_HAND]) };
+                                         worn && isRangedWeapon(worn->items[GearSlot::MainHand]) };
         drawBehaviorSection(L, beh ? beh->rules : std::vector<BehaviorRule>(), taskNameOf(w, unit), mx, my, editable, modes);
     }
-    if (L.tab == UNIT_TAB_STATS) hoverStat = drawStatsTab(L, stats, mx, my, w.has<Mob>(unit));
+    if (L.tab == UnitTab::Stats) hoverStat = drawStatsTab(L, stats, mx, my, w.has<Mob>(unit));
     if (L.maxScroll > 0.0f) {
         // The scroll bar down the right side: its thumb is the part of the tab in view
         const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
@@ -4147,7 +4149,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     frame();
 
     // Tooltips and highlights are for hovering, not while something is being dragged
-    if (dragItem == 0 && hoverStat >= 0) drawStatTip(stats, hoverStat, mx, my);
+    if (dragItem == 0 && hoverStat >= 0) drawStatTip(stats, (StatId)hoverStat, mx, my);
     if (dragItem == 0 && hoverSlot >= 0 && (int)hoverSlot != dimSlot) {
         const Rect& r = L.slots[hoverSlot];
         drawRect(r, RGBA{ 1.0f, 1.0f, 1.0f, 0.18f });
@@ -4179,29 +4181,29 @@ void Renderer::endClip() {
 void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    auto kindName = [](int kind) {
-        return kind == BUILD_DESTROY ? lang("UILABEL_BUILD_DESTROY") : lang(propInfo(kind).nameKey);
+    auto pickName = [](const BuildPick& pick) {
+        return pick.placing() ? lang(propInfo(pick.kind).nameKey) : lang("UILABEL_BUILD_DESTROY");
     };
-    const std::string head = buildSelected_ != BUILD_NONE
-        ? langf("UILABEL_BUILD_SELECTED", { kindName(buildSelected_) })
+    const std::string head = buildSelected_.any()
+        ? langf("UILABEL_BUILD_SELECTED", { pickName(buildSelected_) })
         : lang("UILABEL_BUILD_NONE");
     const float headTextH = listTextHeight("Ag");
     drawListText(head, L.buildHeading.x + 4.0f * s, L.buildHeading.y + (L.buildHeading.h - headTextH) * 0.5f,
-                 buildSelected_ != BUILD_NONE ? theme::GREEN : RGBA{ 0.80f, 0.72f, 0.64f, 1.0f });
+                 buildSelected_.any() ? theme::GREEN : RGBA{ 0.80f, 0.72f, 0.64f, 1.0f });
     const float btnW = 64.0f * s, gap = 8.0f * s;
     for (size_t i = 0; i < L.buildRows.size(); ++i) {
         const Rect& row = L.buildRows[i];
-        const int kind = buildRowKind((int)i);
-        if (kind == BUILD_NONE) continue;
-        const bool usable = buildInClaim_ || buildAnywhere(kind);
-        const bool picked = kind == buildSelected_;
+        const BuildPick pick = buildRowPick((int)i);
+        if (!pick.any()) continue;
+        const bool usable = buildInClaim_ || buildAnywhere(pick);
+        const bool picked = pick == buildSelected_;
         const bool hovered = usable && row.contains(mx, my);
         if (hovered) drawRect(row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
         const Rect btn{ row.x + 2.0f * s, row.y + 2.0f * s, btnW, row.h - 4.0f * s };
         drawSmallButton(btn, lang(picked ? "UILABEL_BUILD_PICKED" : "UILABEL_BUILD_SELECT"), usable, hovered);
         const float th = listTextHeight("Ag");
         const RGBA tone = !usable ? theme::alpha(theme::ASH, 0.5f) : picked ? theme::GREEN : white;
-        drawListText(kindName(kind), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
+        drawListText(pickName(pick), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
     }
 }
 
@@ -4565,7 +4567,8 @@ void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int win
 
 // An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, emote_0.png, and the pink square when that
 // is missing too.
-const TextTex* Renderer::emoteTexture(int id) {
+const TextTex* Renderer::emoteTexture(EmoteId emote) {
+    const int id = idx(emote);
     auto it = emotePics_.find(id);
     if (it == emotePics_.end()) {
         char path[64];
@@ -4576,7 +4579,7 @@ const TextTex* Renderer::emoteTexture(int id) {
     return emoteFallback_.tex ? &emoteFallback_ : &pink_;
 }
 
-const Model& Renderer::propModel(int kind) const {
+const Model& Renderer::propModel(PropKind kind) const {
     const Model& own = propModels_[(size_t)kind];
     return own.vao ? own : fallbackModel_;
 }
@@ -4592,7 +4595,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(3.14159265f * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (Entity u : w.view<Unit, Transform>()) {
-        const std::vector<int> emotes = emotesOf(w, u);
+        const std::vector<EmoteId> emotes = emotesOf(w, u);
         if (emotes.empty()) continue;
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
@@ -4619,20 +4622,20 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
     std::vector<Claim> claims;
     bool haveClaims = false;
     for (Entity e : w.view<Prop, Transform>()) {
-        const int kind = w.get<Prop>(e)->kind;
-        if (kind != PROP_VAULT && kind != PROP_FLAG) continue;
+        const PropKind kind = w.get<Prop>(e)->kind;
+        if (kind != PropKind::Vault && kind != PropKind::Flag) continue;
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        int emote = EMOTE_NONE;
-        if (kind == PROP_VAULT && !vaultHasUpkeep(w, e)) emote = EMOTE_NO_UPKEEP;
-        if (kind == PROP_FLAG) {
+        EmoteId emote = EmoteId::None;
+        if (kind == PropKind::Vault && !vaultHasUpkeep(w, e)) emote = EmoteId::NoUpkeep;
+        if (kind == PropKind::Flag) {
             if (!haveClaims) {
                 claims = claimsOf(w);
                 haveClaims = true;
             }
-            if (propDecaying(w, e, claims)) emote = EMOTE_DECAYING;
+            if (propDecaying(w, e, claims)) emote = EmoteId::Decaying;
         }
-        if (emote == EMOTE_NONE) continue;
+        if (emote == EmoteId::None) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
@@ -4644,7 +4647,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
     }
 }
 
-void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, int emote, bool namesShown) {
+void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown) {
     const Transform* tr = w.get<Transform>(u);
     if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
     const float s = winH / 720.0f;
@@ -4791,12 +4794,12 @@ void Renderer::drawStatsPanel(const StatsPanelLayout& L, const std::string& name
             drawFontText(statsRow_, title, col.x + nameIndent, rowY, heading);
             rowY += rowH;
             for (int i = 0; i < STAT_COUNT; ++i) {
-                if (statInfo(i).group != group) continue;
-                const int lv = levelOf(stats, i);
+                if (statInfo((StatId)i).group != group) continue;
+                const int lv = levelOf(stats, (StatId)i);
                 const std::string next = lv >= MAX_LEVEL ? std::string(lang("UILABEL_MAX"))
                                        : withCommas(xpForLevel(lv + 1) - stats.xp[i]);
-                drawUiIcon(statIcon(i), Rect{ col.x, rowY, iconH, iconH });
-                row(col, rowY, nameIndent, statName(i), std::to_string(lv), withCommas(stats.xp[i]), next, white);
+                drawUiIcon(statIcon((StatId)i), Rect{ col.x, rowY, iconH, iconH });
+                row(col, rowY, nameIndent, statName((StatId)i), std::to_string(lv), withCommas(stats.xp[i]), next, white);
                 rowY += rowH;
             }
         }
@@ -5001,8 +5004,8 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const int kind = w.get<Prop>(e)->kind;
-        if (kind < 0 || kind >= PROP_KIND_COUNT) continue;
+        const PropKind kind = w.get<Prop>(e)->kind;
+        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         // Just above the top of the prop, as a unit's tag is above its picture
         float sx = 0.0f, sy = 0.0f;
         if (!projectPoint(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
@@ -5065,7 +5068,7 @@ float Renderer::propBaseY(World& w, Entity e) const {
     if (const OnBase* ob = w.get<OnBase>(e)) {
         const Transform* ft = w.get<Transform>(ob->foundation);
         const Prop* fp = w.get<Prop>(ob->foundation);
-        if (ft && fp && fp->kind >= 0 && fp->kind < PROP_KIND_COUNT) {
+        if (ft && fp && idx(fp->kind) >= 0 && idx(fp->kind) < PROP_KIND_COUNT) {
             // The foundation's top, held to a slab's height in case its model is missing (the pink stand-in is tall)
             const float top = std::clamp(propTop(fp->kind), 0.0f, 0.6f);
             y = std::max(y, ft->y + top);
@@ -5074,9 +5077,9 @@ float Renderer::propBaseY(World& w, Entity e) const {
     return y;
 }
 
-float Renderer::propTop(int kind) const {
+float Renderer::propTop(PropKind kind) const {
     float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
-    if (kind >= 0 && kind < PROP_KIND_COUNT) {
+    if (idx(kind) >= 0 && idx(kind) < PROP_KIND_COUNT) {
         const Model& m = propModel(kind);
         const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
         if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;
@@ -5167,18 +5170,18 @@ static const FilterEntry kFilterEntries[] = {
 };
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
 
-CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
+GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
                                           bool collapsed, const PanelPlace& place) {
     const float s = winH / 720.0f;
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
     const float barH = PANEL_BAR_H * s, tabH = 20.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;
     // Its open size and place: the top left corner by default. As many lines as its height has room for, under the tabs.
-    const Rect open = panelRect(PANEL_INFO, place, winW, winH);
+    const Rect open = panelRect(PanelId::Info, place, winW, winH);
     const float bodyH = open.h;
     const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - tabH - 2.0f * pad) / lineH));
 
-    CombatLogLayout L;
+    GameLogLayout L;
     L.linesVisible = linesVisible;
     L.lineCount = lineCount;
     L.lineH = lineH;
@@ -5249,7 +5252,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
         L.filterMenu = Rect{ menuX, menuY, menuW, menuH };
         for (int i = 0; i < kFilterRowCount; ++i) {
             const Rect r{ L.filterMenu.x, L.filterMenu.y + 4.0f * s + i * rowH, menuW, rowH };
-            L.filterRows.push_back(CombatLogLayout::FilterRow{ r, kFilterEntries[i].kind, kFilterEntries[i].heading,
+            L.filterRows.push_back(GameLogLayout::FilterRow{ r, kFilterEntries[i].kind, kFilterEntries[i].heading,
                                                                lang(kFilterEntries[i].label) });
         }
     }
@@ -5260,7 +5263,7 @@ CombatLogLayout Renderer::combatLogLayout(int winW, int winH, int tab, bool filt
     return L;
 }
 
-void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
+void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
                              float mx, float my, const InfoTime& time) {
     const float s = uiH_ / 720.0f;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -5269,7 +5272,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
     const RGBA dim{ 0.14f, 0.06f, 0.075f, 0.90f };
 
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, 0.86f });
-    drawTitleBar(L.bar, ICON_COMBAT_LOG, lang("UILABEL_INFORMATION_PANEL"));
+    drawTitleBar(L.bar, ICON_GAME_LOG, lang("UILABEL_INFORMATION_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
@@ -5324,7 +5327,7 @@ void Renderer::drawCombatLog(const CombatLogLayout& L, const std::vector<const L
     if (L.filterOpen) {
         drawRect(L.filterMenu, RGBA{ 0.075f, 0.03f, 0.04f, 0.97f });
         const float th = listTextHeight("Ag");
-        for (const CombatLogLayout::FilterRow& fr : L.filterRows) {
+        for (const GameLogLayout::FilterRow& fr : L.filterRows) {
             if (fr.heading) {
                 drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.961f, 0.788f, 0.459f, 1.0f });
                 continue;
@@ -5406,7 +5409,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawRect(b.rect, plateFor(hot, chosen, true));
             const float pic = b.rect.h - 14.0f * s;
             const Rect picRect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic };
-            if (u.mob > 0) drawFitted(mobPicture(u.mob), picRect, WHITE);
+            if (u.mob != MobKind::None) drawFitted(mobPicture(u.mob), picRect, WHITE);
             else drawUnitPicture(u.sprite, picRect);
             const float tx = b.rect.x + pic + 16.0f * s, tw = b.rect.x + b.rect.w - tx - 8.0f * s;
             const bool named = !cleanName(u.name).empty();
@@ -5487,9 +5490,9 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyStatLabel: {
             drawRect(b.rect, RGBA{ 0.0f, 0.0f, 0.0f, 0.18f });
             const float isz = b.rect.h - 4.0f * s;
-            drawUiIcon(statIcon(b.param), Rect{ b.rect.x + 4.0f * s, b.rect.y + 2.0f * s, isz, isz });
+            drawUiIcon(statIcon((StatId)b.param), Rect{ b.rect.x + 4.0f * s, b.rect.y + 2.0f * s, isz, isz });
             leftText(Rect{ b.rect.x + isz + 8.0f * s, b.rect.y, b.rect.w - isz - 8.0f * s, b.rect.h }, b.label, white, 2.0f * s);
-            const std::string lv = std::to_string(levelOf(picked.stats, b.param));
+            const std::string lv = std::to_string(levelOf(picked.stats, (StatId)b.param));
             drawListText(lv, b.rect.x + b.rect.w - 6.0f * s - listTextWidth(lv),
                          b.rect.y + (b.rect.h - lineH) * 0.5f, hover);
             break;
@@ -5589,7 +5592,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     }
     const float cw = P.center.w;
     // The picked unit's model, turned by dragging in it with the right button
-    if (picked.mob > 0) drawMobPreview(picked.mob, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
+    if (picked.mob != MobKind::None) drawMobPreview(picked.mob, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     else drawUnitModelPreview(picked.sprite, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));

@@ -186,7 +186,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     t.needs = w.get<Needs>(target);
     t.combat = w.get<Combat>(target);
     if (const Stats* st = w.get<Stats>(consumer)) {
-        t.healScale = 1.0f + 0.01f * (float)(levelOf(*st, STAT_MEDICAL) - 1);
+        t.healScale = 1.0f + 0.01f * (float)(levelOf(*st, StatId::Medical) - 1);
     }
     const int hpBefore = t.needs ? t.needs->hp : 0, hungerBefore = t.needs ? t.needs->hunger : 0;
     const int restored = applyUse(effects, t);
@@ -227,7 +227,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
         queueSoundFrom(w, hurt ? Sfx::Poison : food ? Sfx::Eat : Sfx::Drink, target);
     }
     if (--s.count <= 0) s = ItemStack{};
-    grantXp(w, consumer, STAT_MEDICAL, (float)restored, "healing");
+    grantXp(w, consumer, StatId::Medical, (float)restored, "healing");
     return UseResult::Used;
 }
 

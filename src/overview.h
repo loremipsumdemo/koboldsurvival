@@ -2,7 +2,7 @@
 
 // The whole level as one small picture, for the minimap and the world map. A picture pixel covers
 // `step` tiles. Its left edge is the largest x and its top edge is the largest z, so it reads north up
-// with +X on the left, as the worldmaker overview and preview do. The picture covers px * step tiles,
+// with +X on the left. The picture covers px * step tiles,
 // which is at least the level's size; the part past the level is never drawn.
 
 #include <atomic>

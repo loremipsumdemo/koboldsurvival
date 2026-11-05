@@ -2,7 +2,7 @@
 #include <vector>
 #include "components.h"
 #include "ecs.h"
-#include "resources.h"
+#include "rng.h"
 #include "terrain.h"
 
 // Spawns the units, the red units and the props
@@ -14,12 +14,12 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp = true);
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 // Makes your mobs exactly these kinds, in order: any you have go, and each kind is placed at the spawn, in the squad's
 // block from slot firstSlot on (after your people)
-void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<int>& kinds, int firstSlot);
+void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot);
 // Puts a mob of this kind (mobs.h) at (x, z), in the faction given, carrying its raw meat. One of the Player Faction's
 // is yours to command. Returns it.
-Entity spawnMob(World& w, const Terrain& t, Rng& rng, int kind, int faction, float x, float z);
+Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z);
 // A mob's stats for its kind: its attributes and combat skills, each a level or two either way of the kind's
-Stats mobStats(int kind, Rng& rng);
+Stats mobStats(MobKind kind, Rng& rng);
 // Ends an Unconscious unit's Doom at once: it is a corpse, as when its Doom reaches 100 (doomSystem)
 void finishDoom(World& w, Entity u);
 // Whether a unit may take this item into its inventory: any unit may, but a mob only its own meat and bones (mobs.h)
@@ -32,11 +32,11 @@ Stats randomStartingStats(Rng& rng);
 
 // A unit name from the list that is not in taken
 // The body type a new unit gets: masculine 45% of the time, feminine 45%, androgynous 10%
-int randomBodyType(Rng& rng);
+BodyType randomBodyType(Rng& rng);
 // A name for a unit of this body type, from the language in use (English if it has none), not in taken if it can be
-std::string randomUnitName(Rng& rng, int body, const std::vector<std::string>& taken);
+std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::string>& taken);
 // The body type of a unit saved before body types existed: the same 45/45/10 split, worked out from its name
-int bodyForSavedName(const std::string& name);
+BodyType bodyForSavedName(const std::string& name);
 
 // Puts `perItem` copies of every item in the database on the ground at random walkable tiles across
 // the whole level. Each copy is a single item.
@@ -125,7 +125,7 @@ std::vector<PropArrival> propOrderSystem(World& w);
 // Returns how many items went in.
 int storeCarried(World& w, Entity unit, Entity prop, int item);
 
-// The automated behaviors (behavior_rules.h): a unit with Auto-Harvest or Auto-Haul on takes one step at a time, the
+// The automated behaviors (behavior.h): a unit with Auto-Harvest or Auto-Haul on takes one step at a time, the
 // first from the top of its list that can be done now. A harvest goes on until the unit carries AUTO_LOAD of the item
 // and an Auto-Haul can take it, or until it has no room; a haul takes what the prop takes and comes back. Only props in
 // a claim of the unit's faction are worked or hauled to. Run after propOrderSystem, each frame, with the real seconds
@@ -173,12 +173,12 @@ Entity propOccupant(World& w, Entity prop);
 int propWorkerCount(World& w, Entity prop);
 // Whether a prop of this kind takes this item into its inventory: a crafting or passive crafting prop only its input
 // item, a storage prop the items its ItemFilter allows (props.h)
-bool propAcceptsItem(int kind, int item);
+bool propAcceptsItem(PropKind kind, int item);
 // What a storage prop holds when a level places it: a few stacks of what belongs in it (setupWorld)
-Storage startingStorage(int kind, Rng& rng);
+Storage startingStorage(PropKind kind, Rng& rng);
 // What a crafting or passive crafting prop of this kind makes from an input item: its item for its own input, or the
 // input's cooks_into at a campfire (INPUT_COOKABLE). 0 if it takes no such input.
-int recipeOutput(int kind, int input);
+int recipeOutput(PropKind kind, int input);
 // Whether a unit is in an occupiable prop that is locked (the Prisoner Cage). Such a unit takes no orders except to
 // unlock that prop: every issue...Order function and steerUnits skip it.
 bool lockedIn(World& w, Entity u);
@@ -200,7 +200,7 @@ constexpr float CARRY_REACH = 1.2f;
 // Doom gained each in-game hour while Unconscious and not in a bed: 20, plus 30 less 1% of it for each Vitality level
 float doomPerHour(const Stats& s);
 // Doom lost each in-game hour lying Unconscious in a bed (20) or a bedroll (10); 0 for anything else
-float doomRecoveryPerHour(int propKind);
+float doomRecoveryPerHour(PropKind propKind);
 // Health a unit wakes with when its Doom falls to 0 in a bed or bedroll
 constexpr int RECOVERY_HEALTH = 10;
 // Knocks a unit out: it gets Unconscious with Doom 0, every order and task it had ends, it drops whatever unit it
@@ -260,7 +260,7 @@ PassiveState passiveStateOf(World& w, Entity prop);
 
 // The emotes to show over a unit's head (emotes.h), in the order they take turns: what it is working at or lying on,
 // then Encumbered when it carries ENCUMBERED_SHARE of its carry limit or more. Empty for none.
-std::vector<int> emotesOf(World& w, Entity u);
+std::vector<EmoteId> emotesOf(World& w, Entity u);
 // What a unit is doing, for the Unit Panel: the skill it is working with (such as Mining or Cooking), Resting,
 // Sitting, Locked in, Moving or Idle
 std::string taskNameOf(World& w, Entity u);
