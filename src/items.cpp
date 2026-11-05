@@ -178,7 +178,7 @@ bool& databaseLoaded() {
 } // namespace
 
 const std::vector<ItemDef>& itemDatabase() {
-    // Loaded from the pak the first time it is needed, unless replaceItemDatabase ran first
+    // Loaded from the pak the first time it is needed
     if (!databaseLoaded()) {
         databaseLoaded() = true;
         const unsigned char* bytes = nullptr;
@@ -195,11 +195,6 @@ const std::vector<ItemDef>& itemDatabase() {
         }
     }
     return databaseStorage();
-}
-
-void replaceItemDatabase(std::vector<ItemDef> items) {
-    databaseLoaded() = true;   // the pak is not read after this
-    databaseStorage() = std::move(items);
 }
 
 const ItemDef* findItem(int id) {

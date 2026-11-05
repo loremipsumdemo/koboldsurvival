@@ -75,7 +75,6 @@ void makeHostile(World& w, Entity unit);
 // Drops every talk order, once a talk has started or the NPC is gone
 void clearTalkOrders(World& w);
 
-
 // Systems, run once per frame in this order. combatSystem (combat.h) runs before all of them, so a unit
 // that dies this frame is gone before the others move. running is the squad's walk or run mode: when set,
 // player units move at run pace, and each one that moves is marked for a double hunger tick.
@@ -167,8 +166,6 @@ void propStorageChanged(World& w, Entity prop);
 bool propInTheWay(World& w, Entity unit, Entity prop);
 // The unit on an occupiable prop, or NULL_ENTITY
 Entity propOccupant(World& w, Entity prop);
-// Units working a resource or crafting prop, or on their way to it
-int propWorkerCount(World& w, Entity prop);
 // Whether a prop of this kind takes this item into its inventory: a crafting or passive crafting prop only its input
 // item, a storage prop the items its ItemFilter allows (props.h)
 bool propAcceptsItem(PropKind kind, int item);

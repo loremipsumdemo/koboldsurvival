@@ -42,7 +42,7 @@ struct TextFont {
 class TextCache {
 public:
     // The fonts of the set in use: the menus', the lists', and the Stats popout's two
-    TextFont ui, list, statsTitle, statsRow;
+    TextFont ui, list;
     // The hover list's font, and its lines as last drawn
     TTF_Font* hud = nullptr;
 
@@ -50,8 +50,8 @@ public:
     const std::vector<TextLine>& hudLines(const std::vector<std::string>& texts);
 
     // The game's fonts and the menus' fonts. Pictures made with the old fonts are dropped.
-    void setGameFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
-    void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void setGameFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
+    void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
     // Which set is in use. Without menu fonts the game's stay in use.
     void setMenuText(bool on);
     bool menuText() const { return menuText_; }
@@ -62,12 +62,12 @@ private:
     struct Set {
         TTF_Font* hud = nullptr;
         std::vector<TextLine> hudLines;
-        TextFont ui, list, statsTitle, statsRow;
+        TextFont ui, list;
     };
     std::vector<TextLine> hudLines_;
     Set parked_;               // the set not in use
     bool menuText_ = false;
     void swapSets();
     void clearActive();
-    void replaceActive(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void replaceActive(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
 };

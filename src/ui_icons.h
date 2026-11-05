@@ -18,7 +18,6 @@ constexpr int ICON_PARTY_TAB_FIRST = 34; // 34 to 37: Identity, Stats, Gear, Ite
 constexpr int ICON_SETTINGS_TAB_FIRST = 38; // 38 to 41: Graphics, Interface, Controls, Audio (Language is 43)
 constexpr int ICON_UNIT_PANEL = 42; // the Unit Panel's title bar
 constexpr int ICON_SETTINGS_LANGUAGE = 43; // the Language tab of the Settings screen
-constexpr int ICON_COUNT = 44;
 
 inline int statIcon(StatId stat) { return ICON_STAT_FIRST + idx(stat); }
 inline int partyTabIcon(int tab) { return ICON_PARTY_TAB_FIRST + tab; }

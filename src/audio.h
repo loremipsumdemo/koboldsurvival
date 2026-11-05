@@ -24,8 +24,6 @@ void setGlobal(int level, bool on);
 void playTrack(Bus bus, const std::string& file);
 // Stops the music and the ambient tracks
 void stopTracks();
-// The track a bus is playing, or "" when none is
-std::string trackPlaying(Bus bus);
 
 // Plays a sound effect once on a bus (the effects bus unless told otherwise). Each call starts it from the beginning
 // on the next of a few copies in turn, so the same effect can overlap itself a few times. A copy still playing is

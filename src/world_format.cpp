@@ -211,22 +211,6 @@ std::vector<WorldEntry> listWorlds(const std::string& mapsFolder) {
     return out;
 }
 
-void sortWorldEntries(std::vector<WorldEntry>& worlds, bool byName, bool ascending) {
-    auto lower = [](std::string s) {
-        s = toLower(s);
-        return s;
-    };
-    std::stable_sort(worlds.begin(), worlds.end(), [&](const WorldEntry& a, const WorldEntry& b) {
-        if (byName) {
-            const std::string la = lower(a.name), lb = lower(b.name);
-            if (la != lb) return ascending ? la < lb : lb < la;
-            return a.created > b.created;
-        }
-        if (a.created != b.created) return ascending ? a.created < b.created : a.created > b.created;
-        return a.name < b.name;
-    });
-}
-
 bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz, ChunkData& out) {
     const int cps = chunksPerSide(info.size);
     if (cx < 0 || cz < 0 || cx >= cps || cz >= cps) return false;

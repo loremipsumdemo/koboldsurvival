@@ -29,12 +29,6 @@ std::string propNameOf(World& w, Entity prop) {
     return p ? lang(propInfo(p->kind).nameKey) : std::string();
 }
 
-// What the open storage panel's prop is used for: PropUse::Storage for a barrel, PropUse::Crafting for a stove
-PropUse storageUse(World& w) {
-    const Prop* p = w.get<Prop>(storageProp);
-    return p ? propInfo(p->kind).use : PropUse::None;
-}
-
 // The storage panel's layout: one grid for a barrel or a stove, an input and an output grid for a forge or a campfire
 // A lock the player's faction owns: its owner may flip it open or shut from the storage panel
 bool ownedLockOf(World& w, Entity prop) {

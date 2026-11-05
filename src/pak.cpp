@@ -87,17 +87,6 @@ bool pakHas(const std::string& name) {
     return g_index.find(name) != g_index.end();
 }
 
-SDL_Surface* pakImage(const std::string& name) {
-    const unsigned char* bytes = nullptr;
-    size_t size = 0;
-    if (!pakFind(name, bytes, size)) {
-        SDL_Log("Not in data.pak: %s", name.c_str());
-        return nullptr;
-    }
-    // closeio = true: SDL frees its stream object. The bytes belong to the pak and are not freed.
-    return IMG_Load_IO(SDL_IOFromConstMem(bytes, size), true);
-}
-
 TTF_Font* pakFont(const std::string& name, float size) {
     const unsigned char* bytes = nullptr;
     size_t byteCount = 0;

@@ -63,8 +63,6 @@ struct SquadMetrics {
     float chromeH() const { return barH + tabH + pad + toggleH + gap + pad; }
     float rowsH(int rows) const { return rows * (cell + label) + (rows - 1) * gap; }
 };
-// Each cell: the portrait square, then a thin health bar, then the name
-inline float unitCellLabelHeight(float s) { return 34.0f * s; }
 
 // The Squad Panel's width for a number of columns: the cells, their gaps, the scroll bar and the margins
 inline float squadWidthFor(int cols, int H) {
@@ -623,14 +621,6 @@ inline BehaviorExtraHit behaviorExtraHitAt(const SidebarLayout& L, float x, floa
         if (L.behaviorOptions[i].contains(x, y)) hit.option = (int)i;
     }
     return hit;
-}
-
-// Index of the rectangle under a point, or -1
-inline int rectIndexAt(const std::vector<Rect>& rects, float x, float y) {
-    for (size_t i = 0; i < rects.size(); ++i) {
-        if (rects[i].contains(x, y)) return (int)i;
-    }
-    return -1;
 }
 
 // Whether a point is over the in-game panels: the unit list along the bottom, or the inventory

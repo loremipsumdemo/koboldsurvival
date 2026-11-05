@@ -28,9 +28,8 @@ inline int modelForBody(BodyType body) {
 std::string modelLabel(int n);
 
 // Longest name a unit can have, in characters. A character is one UTF-8 code point, so a name can be typed in any
-// language, and a character takes up to 4 bytes, so the bytes are capped at PARTY_NAME_LIMIT.
+// language.
 inline constexpr size_t PARTY_NAME_CHARS = 32;
-inline constexpr size_t PARTY_NAME_LIMIT = 4 * PARTY_NAME_CHARS;
 
 // The number of UTF-8 characters in a string
 inline size_t utf8Length(const std::string& s) {

@@ -76,17 +76,14 @@ void TextCache::clearActive() {
         if (hl.tex.tex) glDeleteTextures(1, &hl.tex.tex);
     }
     hudLines_.clear();
-    for (TextFont* f : { &ui, &list, &statsTitle, &statsRow }) f->clear();
+    for (TextFont* f : { &ui, &list }) f->clear();
 }
 
-void TextCache::replaceActive(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont, TTF_Font* statsTitleFont,
-                              TTF_Font* statsRowFont) {
+void TextCache::replaceActive(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont) {
     clearActive();
     hud = hudFont;
     ui.font = uiFont;
     list.font = listFont;
-    statsTitle.font = statsTitleFont;
-    statsRow.font = statsRowFont;
 }
 
 void TextCache::swapSets() {
@@ -94,21 +91,17 @@ void TextCache::swapSets() {
     std::swap(hudLines_, parked_.hudLines);
     std::swap(ui, parked_.ui);
     std::swap(list, parked_.list);
-    std::swap(statsTitle, parked_.statsTitle);
-    std::swap(statsRow, parked_.statsRow);
 }
 
-void TextCache::setGameFonts(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont, TTF_Font* statsTitleFont,
-                             TTF_Font* statsRowFont) {
+void TextCache::setGameFonts(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont) {
     if (menuText_) swapSets();
-    replaceActive(hudFont, uiFont, listFont, statsTitleFont, statsRowFont);
+    replaceActive(hudFont, uiFont, listFont);
     if (menuText_) swapSets();
 }
 
-void TextCache::setMenuFonts(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont, TTF_Font* statsTitleFont,
-                             TTF_Font* statsRowFont) {
+void TextCache::setMenuFonts(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* listFont) {
     if (!menuText_) swapSets();
-    replaceActive(hudFont, uiFont, listFont, statsTitleFont, statsRowFont);
+    replaceActive(hudFont, uiFont, listFont);
     if (!menuText_) swapSets();
 }
 

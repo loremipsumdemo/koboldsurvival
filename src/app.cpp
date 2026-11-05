@@ -96,7 +96,6 @@ int App::init() {
     renderer.setListFont(fonts.list);
     // The game's name on the title screen: a very large font, drawn shrunk so it stays sharp
     renderer.setTitleFont(openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nameFontOwned));
-    renderer.setStatsFonts(fonts.statsTitle, fonts.statsRow);
 
     // Where the Squad Panel, the Unit Panel and the Information Panel are, as last locked (kept in the settings). 0 is
     // the default size and place.
@@ -146,7 +145,7 @@ void App::beginFrame() {
     if (const int pct = menuFontPercent(settings.fontScale, winH); pct != appliedMenuPercent) {
         UiFonts next = openUiFonts(pct, settings.fontPath, settings.language);
         if (next.valid()) {
-            renderer.setMenuFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
+            renderer.setMenuFonts(next.hud, next.ui, next.list);
             closeUiFonts(menuFonts);
             menuFonts = next;
         } else {

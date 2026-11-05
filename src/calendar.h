@@ -76,14 +76,6 @@ inline std::string monthName(int month) {
     return langf("UILABEL_MONTH_NAME", { ordinalWord(month) });
 }
 
-// "23:59:47"
-inline std::string formatClock(double seconds) {
-    const ClockTime c = clockOf(seconds);
-    char buf[16];
-    std::snprintf(buf, sizeof(buf), "%02d:%02d:%02d", c.hour, c.minute, c.second);
-    return buf;
-}
-
 // "DAY 12 · THIRD MONTH · YEAR 500"
 inline std::string formatDate(double seconds) {
     const CalendarDate d = dateOf(seconds);

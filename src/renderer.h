@@ -52,7 +52,6 @@ struct TradeLayout;
 struct OptimizeAllLayout;
 struct QuantityLayout;
 struct DisbandLayout;
-struct StatsPanelLayout;
 struct ItemMenuLayout;
 struct TitleLayout;
 struct PercentPromptLayout;
@@ -328,8 +327,6 @@ public:
                       const std::vector<DialogueOption>& options, float mx, float my);
     // The text split into lines no wider than maxW, at spaces
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
-    // Where the hover names in the top left start, from the top of the window
-    void setHudTop(float y) { hudTop_ = y; }
     // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
     // is the mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
     // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
@@ -400,9 +397,6 @@ public:
     void drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my);
     // A notice, drawn centerd at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
-    // The stats popout for one unit, and its layout (which depends on the fonts)
-    StatsPanelLayout statsPanelLayout(int winW, int winH);
-    void drawStatsPanel(const StatsPanelLayout& L, const std::string& name, const Stats& stats, float mx, float my);
     // The right-click menu of an inventory item, opened at (x, y), and its drawing
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
@@ -530,13 +524,11 @@ public:
 
     // Smaller text for dense lists, such as the save list. The font is owned by the caller.
     void setListFont(TTF_Font* font);
-    // Fonts for the Stats popout: NotoSans Regular, or Bold if the Regular file is not packed. Owned by the caller.
-    void setStatsFonts(TTF_Font* title, TTF_Font* rows);
-    void setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
     // The menus' text: the same five fonts at a larger size (MENU_FONT_SCALE), for the title, New Game, the scenarios,
     // the party menu, Settings and the Esc menu. setMenuText picks which set every text call uses until it is called
     // again; each set keeps its own text pictures, so switching is cheap. The fonts are owned by the caller.
-    void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow);
+    void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
     void setMenuText(bool on) { text_.setMenuText(on); }
     bool menuText() const { return text_.menuText(); }
     // Text drawn from the very large title font and shrunk to height h, centered on (cx, cy), so large text stays sharp.

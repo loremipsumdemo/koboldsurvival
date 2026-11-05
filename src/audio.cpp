@@ -181,11 +181,6 @@ void stopTracks() {
     }
 }
 
-std::string trackPlaying(Bus bus) {
-    const int slot = trackSlot(bus);
-    return slot >= 0 && tracks[slot].ready ? tracks[slot].requested : std::string();
-}
-
 void playEffect(const std::string& file, Bus bus, float volume, float pan) {
     if (!engineReady || file.empty() || volume <= 0.0f) return;
     if (bus != Bus::Interface) bus = Bus::Effects;   // only these two play one-shot sounds

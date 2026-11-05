@@ -42,7 +42,6 @@ public:
     // a whole map in memory.
     int stream(const std::vector<Vec2>& focuses, int radius, int maxLoads);
     bool streamed() const { return streamed_; }
-    int loadedChunks() const;
 
     // Corner heights in world units, bilinear within a tile. Sea level is 0.
     float heightAt(float x, float z) const;

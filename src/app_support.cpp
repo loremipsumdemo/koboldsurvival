@@ -157,16 +157,14 @@ UiFonts openUiFonts(int pct, const std::string& fontPath, const std::string& lan
     // 100% is the default size: 20 points at 100%
     const float size = 20.0f * pct / 100.0f;
     UiFonts f;
-    // The HUD, the UI, the lists and the title are bold. The Stats popout is regular.
+    // The HUD, the UI, the lists and the title are bold
     f.hud = openFontChain(size, true, fontPath, languageId, f.owned);
     f.ui = openFontChain(size, true, fontPath, languageId, f.owned);
     f.list = openFontChain(size, true, fontPath, languageId, f.owned);
-    f.statsTitle = openFontChain(size, false, fontPath, languageId, f.owned);
-    f.statsRow = openFontChain(size, false, fontPath, languageId, f.owned);
     return f;
 }
 
 void closeUiFonts(UiFonts& f) {
     closeFonts(f.owned);
-    f.hud = f.ui = f.list = f.statsTitle = f.statsRow = nullptr;
+    f.hud = f.ui = f.list = nullptr;
 }

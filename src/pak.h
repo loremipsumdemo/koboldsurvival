@@ -18,10 +18,6 @@ bool pakFind(const std::string& name, const unsigned char*& bytes, size_t& size)
 // Whether a file is in the pak
 bool pakHas(const std::string& name);
 
-// Decodes an image from the pak. Returns null if it's missing or can't be decoded.
-// Free the result with SDL_DestroySurface.
-SDL_Surface* pakImage(const std::string& name);
-
 // Opens a font from the pak. Returns null if it's missing. Close it with TTF_CloseFont.
 TTF_Font* pakFont(const std::string& name, float size);
 

@@ -103,12 +103,6 @@ const ChunkData* Terrain::tileChunk(int x, int y) const {
     return chunkAt(x / CHUNK_TILES, y / CHUNK_TILES);
 }
 
-int Terrain::loadedChunks() const {
-    int n = 0;
-    for (const auto& c : chunks_) if (c) ++n;
-    return n;
-}
-
 int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) {
     if (!streamed_ || focuses.empty()) return 0;
 

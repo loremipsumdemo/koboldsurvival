@@ -38,14 +38,6 @@ struct Camera {
     float viewRange = 96.0f;   // entities further than this across the ground from the focus are not drawn. The game sets this each frame.
 
     // Eye position, including the temporary lift
-    // The compass bearing the camera looks along, in degrees from north (0) clockwise through east (90).
-    // North is +Z and east is -X, as the world's map is drawn.
-    float bearingDegrees() const {
-        float d = std::atan2(std::sin(yaw), -std::cos(yaw)) * 180.0f / PI_F;
-        if (d < 0.0f) d += 360.0f;
-        return d;
-    }
-
     void eye(float& ex, float& ey, float& ez) const {
         ex = focusX + distance * std::sin(yaw) * std::cos(pitch);
         ey = focusY + distance * std::sin(pitch) + lift;

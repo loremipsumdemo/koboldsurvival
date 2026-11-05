@@ -125,12 +125,6 @@ int applyUse(const std::vector<UseEffect>& effects, const UseTarget& t) {
     return restored;
 }
 
-void applyUseEffects(const std::vector<UseEffect>& effects, Needs& needs) {
-    UseTarget t;
-    t.needs = &needs;
-    applyUse(effects, t);
-}
-
 int restoreAmount(const ItemDef& def, UseEffect::Stat stat) {
     if (def.typeId != "consumable" || def.onUse.empty()) return 0;
     std::vector<UseEffect> effects;

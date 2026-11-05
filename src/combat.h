@@ -131,9 +131,6 @@ float meleeReachOf(World& w, Entity e);
 // Random gear for a hostile: each slot about half the time, with something that fits it
 Equipment randomHostileGear(Rng& rng);
 
-// Takes a unit out of the world, and out of its active squad's count
-void removeUnit(World& w, Entity e);
-
 // Runs once each frame, before movement. Updates timers, stamina and health; notices and spotting;
 // target choice; potions and elixirs; and every swing that is ready and in reach. Units that die are
 // removed here. Damage numbers are added to floats, and what happened is written to log.

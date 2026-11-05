@@ -27,7 +27,7 @@ void App::applyFontScale() {
         closeUiFonts(next);
         return;
     }
-    renderer.setFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
+    renderer.setFonts(next.hud, next.ui, next.list);
     closeUiFonts(fonts);
     fonts = next;
     appliedMenuPercent = 0;   // the menu fonts follow at the top of the next frame

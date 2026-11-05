@@ -26,10 +26,8 @@ struct UiFonts {
     TTF_Font* hud = nullptr;
     TTF_Font* ui = nullptr;
     TTF_Font* list = nullptr;
-    TTF_Font* statsTitle = nullptr;
-    TTF_Font* statsRow = nullptr;
     std::vector<TTF_Font*> owned;
-    bool valid() const { return hud && ui && list && statsTitle && statsRow; }
+    bool valid() const { return hud && ui && list; }
 };
 UiFonts openUiFonts(int pct, const std::string& fontPath, const std::string& languageId);
 void closeUiFonts(UiFonts& f);

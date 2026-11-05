@@ -49,9 +49,6 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err);
 // Every world in a maps folder: each subfolder holding a readable world.txt. Not sorted.
 std::vector<WorldEntry> listWorlds(const std::string& mapsFolder);
 
-// Sorts by name (ignoring case, then newest first) or by created date (ties by name)
-void sortWorldEntries(std::vector<WorldEntry>& worlds, bool byName, bool ascending);
-
 // Reads chunk (cx, cz). Returns false if the chunk is not in the folder.
 bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz, ChunkData& out);
 

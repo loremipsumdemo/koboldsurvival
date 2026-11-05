@@ -95,12 +95,12 @@ void Renderer::setListFont(TTF_Font* font) {
 }
 
 // Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
-void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
-    text_.setGameFonts(hud, ui, list, statsTitle, statsRow);
+void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list) {
+    text_.setGameFonts(hud, ui, list);
 }
 
-void Renderer::setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list, TTF_Font* statsTitle, TTF_Font* statsRow) {
-    text_.setMenuFonts(hud, ui, list, statsTitle, statsRow);
+void Renderer::setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list) {
+    text_.setMenuFonts(hud, ui, list);
 }
 
 void Renderer::drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint) {
@@ -111,14 +111,6 @@ void Renderer::drawBigText(const std::string& text, float cx, float cy, float h,
     }
     const float w = t.aspect * h, x = cx - w * 0.5f, y = cy - h * 0.5f;
     drawTexture(t.tex, x, y, w, h, tint);
-}
-
-void Renderer::setStatsFonts(TTF_Font* title, TTF_Font* rows) {
-    // Textures made with the old fonts would be stale, so drop them
-    text_.statsTitle.clear();
-    text_.statsRow.clear();
-    text_.statsTitle.font = title;
-    text_.statsRow.font = rows;
 }
 
 void Renderer::drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint) {

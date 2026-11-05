@@ -18,14 +18,6 @@ enum class ColorTarget : int {
 };
 constexpr int COLOR_TARGET_COUNT = idx(ColorTarget::Count);
 
-inline std::string colorTargetName(int i) {
-    static const char* const keys[COLOR_TARGET_COUNT] = {
-        "MISC_SKY_DAY_ZENITH", "MISC_SKY_DAY_HORIZON", "MISC_SKY_NIGHT_ZENITH", "MISC_SKY_NIGHT_HORIZON",
-        "MISC_SKY_DUSK_HORIZON", "MISC_SKY_DUSK_SUN", "MISC_SKY_SUN", "MISC_SKY_MOON"
-    };
-    return lang(keys[i]);
-}
-
 // Atmosphere settings. Colors are RGB, each 0..1.
 struct SkyTuning {
     bool clockRunning = true;     // the in-game clock advances during play

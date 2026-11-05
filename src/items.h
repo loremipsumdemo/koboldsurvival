@@ -47,10 +47,6 @@ bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string
 // missing or can't be parsed; the reason is printed to stderr.
 const std::vector<ItemDef>& itemDatabase();
 
-// Replaces the database with these items and stops the pak from being read. For tests, which
-// supply their own definitions. Any pointer from findItem before this call is no longer valid.
-void replaceItemDatabase(std::vector<ItemDef> items);
-
 // The definition with this id, or null if there is none. Id 0 means "no item".
 const ItemDef* findItem(int id);
 
@@ -60,24 +56,3 @@ std::string itemDisplayName(const ItemDef& d);
 std::string itemNameOf(int item);
 std::string itemDisplayDescription(const ItemDef& d);
 
-// Two capital letters for an item shown as a color block: the first letters of its first two
-// words, leaving out the +tier. "Iron Short Sword +4" gives "IS", "Bread" gives "BR".
-inline std::string itemInitials(const std::string& name) {
-    std::vector<std::string> words;
-    size_t i = 0;
-    while (i < name.size()) {
-        while (i < name.size() && name[i] == ' ') ++i;
-        size_t start = i;
-        while (i < name.size() && name[i] != ' ') ++i;
-        if (i > start && name[start] != '+') words.push_back(name.substr(start, i - start));
-    }
-    auto up = [](char c) { return (char)std::toupper((unsigned char)c); };
-    if (words.empty()) return "?";
-    if (words.size() == 1) {
-        std::string out;
-        out += up(words[0][0]);
-        if (words[0].size() > 1) out += up(words[0][1]);
-        return out;
-    }
-    return std::string(1, up(words[0][0])) + up(words[1][0]);
-}

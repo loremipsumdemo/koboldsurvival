@@ -26,9 +26,6 @@ struct UseEffect {
 // for a statement it can't read.
 bool parseUseScript(const std::string& script, std::vector<UseEffect>& out, std::string& err);
 
-// Applies each health and hunger effect to a unit's needs
-void applyUseEffects(const std::vector<UseEffect>& effects, Needs& needs);
-
 // Where effects land: the unit's needs, its combat state for attack boosts, and how much health the
 // unit's Medical skill lets it restore (1 is no change)
 struct UseTarget {

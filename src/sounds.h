@@ -167,7 +167,6 @@ void queueSoundAt(Sfx s, float x, float y, float z);
 // A world sound from where a unit or prop stands; heard in full when it has no place
 void queueSoundFrom(World& w, Sfx s, Entity e);
 std::vector<QueuedSound> takeQueuedSounds();
-void discardQueuedSounds();
 
 // World sounds, by their distance from the camera's eye: full volume within SOUND_FULL_DISTANCE, falling away to
 // silence at SOUND_SILENT_DISTANCE. The fall is squared, so a sound some way off is quiet well before it is gone.

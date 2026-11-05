@@ -60,12 +60,6 @@ Entity propOccupant(World& w, Entity prop) {
     return NULL_ENTITY;
 }
 
-int propWorkerCount(World& w, Entity prop) {
-    int n = workersAt(w, prop);
-    for (Entity u : w.view<PropOrder>()) n += w.get<PropOrder>(u)->prop == prop ? 1 : 0;
-    return n;
-}
-
 void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt || !w.has<Prop>(prop)) return;

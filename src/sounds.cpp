@@ -30,6 +30,3 @@ std::vector<QueuedSound> takeQueuedSounds() {
     return out;
 }
 
-void discardQueuedSounds() {
-    gQueuedSounds.clear();
-}

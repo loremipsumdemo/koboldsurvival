@@ -43,8 +43,6 @@ struct FactionDef {
 // Reads a factioninfo.txt text and makes it the game's faction list. A bad or empty text leaves the built-in list (the
 // same as the shipped file). Returns false, with err set, when the text could not be used.
 bool loadFactions(const std::string& text, std::string& err);
-// The text of the built-in list, as factioninfo.txt is shipped
-const std::string& defaultFactionText();
 
 // Every faction, the Player Faction first, then by id
 const std::vector<FactionDef>& factions();

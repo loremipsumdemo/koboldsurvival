@@ -126,11 +126,6 @@ std::map<int, int>& standings() {
 
 } // namespace
 
-const std::string& defaultFactionText() {
-    static const std::string s = DEFAULT_TEXT;
-    return s;
-}
-
 bool loadFactions(const std::string& text, std::string& err) {
     Table t;
     if (!parseTable(text, t, err)) return false;

@@ -20,7 +20,6 @@ constexpr float CONTENT_GAP = 18.0f;   // between the tabs and the first row
 constexpr float ROW_STEP = 44.0f;      // from one row to the next
 constexpr float ROW_H = 40.0f;         // a row's height
 constexpr float ROW_VPAD = 3.0f;       // a control's inset from the top and bottom of its row
-constexpr float LABEL_INSET = 14.0f;   // the label's inset from the left of the row
 constexpr float COL_SPLIT = 0.44f;     // the controls column starts this far across the row
 constexpr float COL_RIGHT = 14.0f;     // and stops this far from the row's right edge
 constexpr float TOGGLE_W = 180.0f;     // an on/off button's width

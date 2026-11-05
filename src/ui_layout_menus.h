@@ -141,13 +141,6 @@ inline bool mapGround(const Rect& r, float cx, float cz, float span, float level
     return x >= 0.0f && z >= 0.0f && x <= levelSize && z <= levelSize;
 }
 
-// The pixel on the map over a ground point
-inline std::pair<float, float> mapPixel(const Rect& r, float cx, float cz, float span, float x, float z) {
-    const float k = mapTilesPerPixel(r, span);
-    if (k <= 0.0f) return { r.x, r.y };
-    return { r.x + r.w * 0.5f - (x - cx) / k, r.y + r.h * 0.5f - (z - cz) / k };
-}
-
 // The widest view of the map: the whole level fits both ways
 inline float mapMaxSpan(const Rect& r, float levelSize) {
     if (r.w <= 0.0f || r.h <= 0.0f) return levelSize;

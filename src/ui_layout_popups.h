@@ -426,34 +426,6 @@ inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
     return P;
 }
 
-// The stats popout, centerd on the window. Two columns of stats, each row showing the level, the
-// total XP and the XP still needed for the next level. rowH is the height of one line of text and
-// titleH the height of the title, both from the fonts, so the box fits the text.
-struct StatsPanelLayout {
-    Rect box;
-    Rect close;
-    Rect left;     // Attributes and Combat, the first row being the column headings
-    Rect right;    // Resource Gathering, Crafting and Utility
-};
-
-inline StatsPanelLayout layoutStatsPanel(int W, int H, float rowH, float titleH) {
-    const float s = H / 720.0f;
-    const float colW = 420.0f, gap = 36.0f, pad = 24.0f;   // columns are fixed width, like the text
-    const int longestColumn = 17;                           // Attributes and Combat, headings included
-    const float bodyH = (longestColumn + 1) * rowH;         // one extra row for the column headings
-    const float closeH = rowH + 8.0f * s, closeW = 120.0f * s;
-    const float w = std::min(2.0f * colW + gap + 2.0f * pad, W - 20.0f);
-    const float h = pad + titleH + 12.0f * s + bodyH + 12.0f * s + closeH + pad;
-
-    StatsPanelLayout L;
-    L.box = Rect{ (W - w) * 0.5f, std::max(4.0f, (H - h) * 0.5f), w, h };
-    const float bodyY = L.box.y + pad + titleH + 12.0f * s;
-    L.left = Rect{ L.box.x + pad, bodyY, colW, bodyH };
-    L.right = Rect{ L.box.x + pad + colW + gap, bodyY, colW, bodyH };
-    L.close = Rect{ L.box.x + (w - closeW) * 0.5f, bodyY + bodyH + 12.0f * s, closeW, closeH };
-    return L;
-}
-
 // The right-click menu for an inventory item: one text button per action, top to bottom. It opens
 // at the mouse and is kept inside the window.
 struct ItemMenuLayout {

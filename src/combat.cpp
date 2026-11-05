@@ -414,11 +414,6 @@ Equipment randomHostileGear(Rng& rng) {
     return worn;
 }
 
-void removeUnit(World& w, Entity e) {
-    leaveSquad(w, e);
-    w.destroy(e);
-}
-
 void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats) {
     // Damage numbers rise and fade, then go
     for (FloatingNumber& f : floats) f.age += dt;
