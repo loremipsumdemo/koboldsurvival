@@ -1,6 +1,7 @@
 // The start of a level: finding the spawn, the starting units and their stats, the factions' camps, mobs,
 // starting loot and storage, and the items scattered on the ground.
 #include "systems_internal.h"
+#include "camp_kit.h"
 
 using namespace systems_detail;
 

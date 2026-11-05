@@ -1,5 +1,6 @@
 // Renderer: what floats over the world: name tags, emotes, ground item labels, damage numbers and work rings.
 #include "renderer_internal.h"
+#include "prop_info.h"
 
 using namespace render_detail;
 

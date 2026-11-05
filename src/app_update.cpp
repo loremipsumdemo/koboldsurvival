@@ -1,4 +1,5 @@
 #include "app.h"
+#include "prop_info.h"
 
 using namespace play;
 

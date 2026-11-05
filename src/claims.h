@@ -60,49 +60,15 @@ bool destroyBuilding(World& w, Entity e);
 // Gives a new prop to the faction whose claim it stands in, and locks a storage prop there to it, as anything with
 // contents in a claim is. Flags and vaults are left as they are: they make the claims. A prop outside every claim
 // keeps the owner it was given (a built prop its builder's, a level's prop none). Every new prop goes through this.
-// The starting kit a faction's camp is given (claims.h): a flag, a small foundation for a vault, four bedrolls around a
-// campfire, and a barrel. Put down with the faction as its owner. Two trees stand just past the bedrolls, for the camp's
-// wood. Each piece takes the next number from *serial (when given), so saves can name the camp's props. Returns what was
-// placed; placed is false (and nothing is put down) when the ground can't hold all of it.
-// The vault is not part of it: a new game puts every camp's vault down last, with placeCampVault, once every other prop
-// stands, and then settles who owns what with settleClaimOwnership.
-struct CampKit {
-    bool placed = false;
-    int faction = 0;
-    float x = 0.0f, z = 0.0f;          // the flag's spot
-    float yaw = 0.0f;
-    Entity flag = NULL_ENTITY;
-    Entity foundation = NULL_ENTITY;   // where the vault goes
-    Entity vault = NULL_ENTITY;        // NULL_ENTITY until placeCampVault puts it down
-    std::vector<Entity> trees;
-};
-CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, float yaw, int* serial = nullptr);
-// Puts a placed kit's vault on its foundation, holding CAMP_UPKEEP_DAYS of logs, and sets kit.vault. The vault takes
-// the next number from *serial (when given).
-void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial = nullptr);
+void claimOwnership(World& w, Entity prop);
 // Runs claimOwnership on every prop. A new game runs this once its vaults are down, so each sealed claim's props are
 // its vault's faction's.
 void settleClaimOwnership(World& w);
-void claimOwnership(World& w, Entity prop);
-// Whether the whole kit fits around (cx, cz): every piece's tile walkable and free of props
-bool campKitFits(World& w, const Terrain& t, float cx, float cz);
-// Serials of the camps' props start here, after any a level places, so they never meet
-constexpr int CAMP_SERIAL_BASE = 1000000;
-// The day's worth of logs a new vault starts with, in-game hours
-constexpr int CAMP_UPKEEP_DAYS = 3;
 // Wear and breakage for the game time that passed (gameSeconds): flags and foundations wear down as described above,
 // then whatever is worn through breaks, and props whose foundation is gone break with it
 void claimDecaySystem(World& w, double gameSeconds);
-
-// The lines the hover list shows for a flag: its faction, its health and whether its claim has a vault. Empty for any
-// entity that is not a flag.
-std::vector<std::string> flagInfoLines(World& w, Entity e);
 
 // Whether a flag or foundation is wearing down now, by claimDecaySystem's rules. claims: claimsOf(w).
 bool propDecaying(World& w, Entity e, const std::vector<Claim>& claims);
 // Whether a vault has any of its upkeep item (logs) in its inventory
 bool vaultHasUpkeep(World& w, Entity vault);
-
-// The lines Show Prop Info puts under a prop's name: who owns it, its health or condition and whether it is decaying,
-// its lock (and whether it is open to the player), and a vault's upkeep. Empty when there is nothing to say.
-std::vector<std::string> propInfoLines(World& w, Entity e);
