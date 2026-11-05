@@ -128,9 +128,6 @@ float strengthXpWhileWalking(float encumbrance, float seconds);
 void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why = std::string(), LogKind kind = LogKind::Xp);
 Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit
 
-// A world sound from where a unit or prop stands (sounds.h); heard in full when it has no place
-void queueSoundFrom(World& w, Sfx s, Entity e);
-
 // ---- Units and the fight ----
 
 // A unit's name, for the log

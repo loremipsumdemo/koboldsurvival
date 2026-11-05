@@ -1,5 +1,9 @@
 #pragma once
+#include <cstdint>
 #include <vector>
+
+class World;
+using Entity = std::uint32_t;   // as ecs.h
 
 // Every sound effect the game plays, the file it plays from the SFX folder, and which volume slider it follows:
 // Interface sounds (menus, buttons, notices) or Sound effects (the world). data/sfxinfo.txt lists the same table for
@@ -149,7 +153,7 @@ inline const SfxInfo& sfxInfo(Sfx s) {
 }
 
 // For systems that have no audio of their own: sounds asked for this frame, played by the game after its systems run.
-// A sound queued with a place (queueSoundAt, or queueSoundFrom in combat.h for a unit or prop) is a world sound: the
+// A sound queued with a place (queueSoundAt, or queueSoundFrom for a unit or prop) is a world sound: the
 // game plays it quieter the farther it is from the camera, and to the side of the screen it is on (soundGain and
 // soundPan below). One queued without a place, such as a sound for something you did in a panel, is heard in full.
 // The same sound asked for several times in a frame plays once, as loud as its nearest one.
@@ -160,6 +164,8 @@ struct QueuedSound {
 };
 void queueSound(Sfx s);
 void queueSoundAt(Sfx s, float x, float y, float z);
+// A world sound from where a unit or prop stands; heard in full when it has no place
+void queueSoundFrom(World& w, Sfx s, Entity e);
 std::vector<QueuedSound> takeQueuedSounds();
 void discardQueuedSounds();
 

@@ -89,6 +89,7 @@ add_executable(koboldsurvival
     src/party_ui.cpp
     src/useitem.cpp
     src/need_behaviors.cpp
+    src/sounds.cpp
     src/systems.cpp
     src/world_setup.cpp
     src/movement.cpp
