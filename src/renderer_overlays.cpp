@@ -71,7 +71,7 @@ void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int win
     const GroundItem* gi = w.get<GroundItem>(item);
     const Transform* tr = w.get<Transform>(item);
     if (!gi || !tr) return;
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     ItemOnScreen os;
     if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) return;
@@ -85,7 +85,7 @@ void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int win
 }
 
 void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float size = 28.0f * s;
     const unsigned long long ticks = (unsigned long long)SDL_GetTicks();
@@ -113,7 +113,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
 }
 
 void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float size = 28.0f * s;
     const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
@@ -150,7 +150,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
 void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown) {
     const Transform* tr = w.get<Transform>(u);
     if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const float size = 28.0f * s;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float sx = 0.0f, sy = 0.0f;
@@ -164,7 +164,7 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
 }
 
 void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     // Items on one tile share a box, with one line each, top line first and the last one nearest the item.
     // Boxes are drawn farthest first, so a nearer box covers the ones behind it. The one line on top under
     // (mx, my) gets a darker cell and gold text, so it is clear which item a click picks.
@@ -184,7 +184,7 @@ void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, i
 }
 
 void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA hostile{ 1.0f, 0.55f, 0.50f, 1.0f };
     const RGBA neutral{ 0.6f, 0.6f, 0.6f, 1.0f };
@@ -213,7 +213,7 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     // on it, or props on one tile) share one block of lines over them, each prop's name in purple with its info lines
     // (Show Prop Info) under it in a paler purple, the lines left-aligned, the last prop nearest the props. Blocks are
     // drawn farthest first, so a nearer one is drawn over the ones behind it.
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA purple{ 0.80f, 0.56f, 1.0f, 1.0f };
     const RGBA pale{ 0.88f, 0.82f, 0.96f, 1.0f };
@@ -289,7 +289,7 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
 }
 
 void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     for (const FloatingNumber& f : floats) {
         if (!withinDetail(cam, f.x, f.y, f.z)) continue;
@@ -316,7 +316,7 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
 
 // Trade values over their units: a second's life, fading out over its last 30%, above the name tag
 void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     // A unit with several labels at once (an item's Health and Hunger) shows them stacked, the newest on top
     std::map<Entity, int> stacked;

@@ -67,6 +67,9 @@ struct Rect {
     }
 };
 
+// The menus and panels are laid out for a 720 pixel high window and grow with it: their scale in a window this high
+inline float uiScaleFor(float H) { return H / 720.0f; }
+
 // A scroll bar's thumb in its track: its height is the share of the list in view, at least minH, and frac says how far
 // down the track it sits (0 at the top, 1 at the bottom)
 inline Rect scrollThumb(const Rect& track, float shownShare, float minH, float frac) {

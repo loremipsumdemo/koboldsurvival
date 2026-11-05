@@ -32,7 +32,7 @@ struct ScenarioLayout {
     Rect next;
 };
 inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 20.0f * s, rowH = 38.0f * s, rowGap = 6.0f * s, btnH = 36.0f * s, btnW = 170.0f * s;
     const float scrollW = 8.0f * s;
     const float boxW = std::min((float)W - 48.0f * s, 760.0f * s), boxH = (float)H - 64.0f * s;
@@ -75,7 +75,7 @@ struct TitleLayout {
 };
 inline float titleClamp(float lo, float v, float hi) { return std::max(lo, std::min(v, hi)); }
 inline TitleLayout layoutTitle(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     TitleLayout L;
     L.side = titleClamp(24.0f * s, W * 0.05f, 90.0f * s);
     const float top = titleClamp(26.0f * s, H * 0.07f, 80.0f * s);
@@ -110,7 +110,7 @@ struct WorldMapLayout {
 
 // dx, dy: how far the window has been dragged from the middle of the screen
 inline WorldMapLayout layoutWorldMap(int W, int H, float dx = 0.0f, float dy = 0.0f) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float barH = 22.0f * s, pad = 4.0f * s;
     const float w = std::max(0.0f, std::min(WORLD_MAP_W, (float)W));
     const float h = std::max(0.0f, std::min(WORLD_MAP_H, (float)H));

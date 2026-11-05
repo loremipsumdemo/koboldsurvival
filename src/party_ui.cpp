@@ -75,7 +75,7 @@ int clampDropScroll(int scroll, int count) {
 }
 
 int partyListVisible(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(0, H);
     // Each card is 96 px with a 10 px gap, and PARTY_HINT_H at the bottom of the column is kept for the hints
     const float area = P.left.h - 12.0f * s - PARTY_HINT_H * s;
@@ -90,7 +90,7 @@ PartyListBar partyListBar(int W, int H, int count, int scroll) {
     PartyListBar b;
     const int maxScroll = partyListMaxScroll(count, H);
     if (maxScroll <= 0) return b;
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(W, H);
     const float top = P.left.y + 12.0f * s, bottom = P.left.y + P.left.h - (PARTY_HINT_H + 4.0f) * s;
     b.track = Rect{ P.left.x + P.left.w - 14.0f * s, top, 8.0f * s, std::max(0.0f, bottom - top) };
@@ -107,7 +107,7 @@ int partyListScrollAt(int W, int H, int count, float thumbTop) {
 }
 
 PartyPanels partyPanels(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float m = 16.0f * s, topH = 64.0f * s, bottomH = 72.0f * s;
     const float bodyY = topH, bodyH = H - topH - bottomH - m;
     const float leftW = 250.0f * s, rightW = 470.0f * s;
@@ -123,7 +123,7 @@ PartyPanels partyPanels(int W, int H) {
 }
 
 Rect partyPreviewRect(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const Rect c = partyPanels(W, H).center;
     return Rect{ c.x + 20.0f * s, c.y + 20.0f * s, c.w - 40.0f * s, c.h - 130.0f * s };
 }
@@ -136,7 +136,7 @@ std::string partyMessage(const Party& p) {
 
 std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi& ui,
                                      const std::vector<DropEntry>& drop) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(W, H);
     const PartyMember& m = pickedMember(p, ui);
     std::vector<Button> out;

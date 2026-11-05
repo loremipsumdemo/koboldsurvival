@@ -142,7 +142,7 @@ void Renderer::drawTitleBackground() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     const float W = (float)uiW_, H = (float)uiH_;
     if (W <= 0.0f || H <= 0.0f) return;
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float t = (float)(SDL_GetTicks() % 100000000ULL);   // milliseconds
 
     // The mouse sways the bands a little, eased toward where it is

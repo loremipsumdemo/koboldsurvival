@@ -36,7 +36,7 @@ constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEnt
 } // namespace
 
 float Renderer::profileCardHeight(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float line = listTextHeight("Ag");
     const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
     // Health, Doom (while Unconscious), Hunger, Rested, Comfort and Carry
@@ -338,7 +338,7 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
 
 GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
                                           bool collapsed, const PanelPlace& place) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
     const float barH = PANEL_BAR_H * s, tabH = 20.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;

@@ -75,7 +75,7 @@ std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::
 // How many save rows fit the window height. The rows take whatever space is left under the fixed
 // parts of the popout, kept between MIN_SAVE_ROWS and MAX_SAVE_ROWS.
 size_t visibleSaveRows(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float fixed = 246.0f * s;      // heading, name field, headers, "..." rows, Close, margins
     const float pitch = 32.0f * s;       // one row plus its gap
     const float space = H - 16.0f * s - fixed;
@@ -85,7 +85,7 @@ size_t visibleSaveRows(int H) {
 
 PanelGeometry panelGeometry(int W, int H) {
     // Compact sizes so that LOAD_LIST_LIMIT rows fit on a 720p window
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float btnH = 44.0f * s, gap = 8.0f * s, rowGap = 4.0f * s;
     const float pad = 16.0f * s, hdrH = 30.0f * s, band = 24.0f * s;
     const float rowH = 28.0f * s, pitch = rowH + rowGap;
@@ -122,7 +122,7 @@ PanelGeometry panelGeometry(int W, int H) {
 }
 
 DialogGeometry questionGeometry(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float bh = 56.0f * s, bw = 200.0f * s;
     const float dw = 760.0f * s, dh = 190.0f * s;
     const float dx = (W - dw) * 0.5f, dy = H * 0.40f;
@@ -189,7 +189,7 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
 
 // Buttons for the main menus, in pixels
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float bh = 56.0f * s, gap = 14.0f * s;
     const float bw = 380.0f * s;
     std::vector<Button> out;

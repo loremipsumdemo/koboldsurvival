@@ -78,7 +78,7 @@ inline float squadDefaultHeight(int H) {
 
 // The narrowest the Unit Panel can be: eight inventory cells of ITEM_CELL_PX in a row, with its gaps and padding
 inline float sidebarMinWidth(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     return INVENTORY_COLUMNS * ITEM_CELL_PX + (INVENTORY_COLUMNS - 1) * 6.0f * s + 2.0f * 14.0f * s + 2.0f * 10.0f * s;
 }
 inline float sidebarDefaultWidth(int H) { return std::max(380.0f * H / 720.0f, sidebarMinWidth(H)); }
@@ -100,7 +100,7 @@ struct UnitPanelMetrics {
 // The Unit Panel's default height: tall enough for the gear and the whole inventory without scrolling, if the window has
 // the room
 inline float unitPanelDefaultHeight(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const UnitPanelMetrics m(s);
     return std::min(m.barH + m.tabH + m.inventoryTabH() + 2.0f * m.pad, H - 2.0f * PANEL_MARGIN * s);
 }
@@ -109,7 +109,7 @@ inline float infoDefaultWidth(int H) { return 340.0f * H / 720.0f; }
 // 220 pixels at 720p, but never so tall that it reaches the Unit Panel under it in the same corner: in a short window
 // it takes what room is left above the Unit Panel, down to its smallest
 inline float infoDefaultHeight(int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float room = H - 2.0f * PANEL_MARGIN * s - unitPanelDefaultHeight(H) - PANEL_MARGIN * s;
     const float smallest = (PANEL_BAR_H + 20.0f + 40.0f) * s;
     return std::max(smallest, std::min(220.0f * s, room));
@@ -122,7 +122,7 @@ inline void panelDefaultSize(PanelId which, int H, float& w, float& h) {
 }
 // The smallest a panel can be made: room for its bar and a little of what is under it
 inline void panelMinSize(PanelId which, int H, float& w, float& h) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     if (which == PanelId::Squad) {
         const SquadMetrics m(s);
         w = squadMinWidth(H);
@@ -148,7 +148,7 @@ inline float panelAnchorY(PanelId which, float h, int H) {
 
 // A panel's open rectangle in window pixels: its size and place. Only its title bar is kept inside the window.
 inline Rect panelRect(PanelId which, const PanelPlace& p, int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float barH = PANEL_BAR_H * s;
     float dw = 0.0f, dh = 0.0f, mw = 0.0f, mh = 0.0f;
     panelDefaultSize(which, H, dw, dh);
@@ -166,7 +166,7 @@ inline Rect panelRect(PanelId which, const PanelPlace& p, int W, int H) {
 
 // The place that puts a panel's open rectangle at r, with its bar on the side given
 inline PanelPlace placeForRect(PanelId which, const Rect& r, int W, int H, bool barBottom = false) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     PanelPlace p;
     p.barBottom = barBottom;
     p.w = r.w / s;
@@ -259,7 +259,7 @@ constexpr int FACTION_TAB_REPUTATION = 1;
 inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
                                        const PanelPlace& place = PanelPlace{}, int tab = FACTION_TAB_SQUAD,
                                        int factionCount = 0, int repScroll = 0) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const SquadMetrics m(s);
     const Rect open = panelRect(PanelId::Squad, place, W, H);
     // As many rows as the height has room for, and as many columns as the width; at least one of each
@@ -425,7 +425,7 @@ struct SidebarLayout {
 inline SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open = false, UnitTab tab = UnitTab::Inventory,
                                             const PanelPlace& place = PanelPlace{}, float profileH = 0.0f,
                                             const BehaviorUi& bui = BehaviorUi{}) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const UnitPanelMetrics um(s);
     const float pad = um.pad, gap = um.gap;
     const Rect openRect = panelRect(PanelId::Unit, place, W, H);

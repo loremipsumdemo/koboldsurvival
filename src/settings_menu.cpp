@@ -285,7 +285,7 @@ std::vector<RowSpec> settingsRows(SettingsTab tab, const GameSettings& s, const 
 
 SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, const SettingsMenuState& st) {
     SettingsLayout L;
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pw = std::min(W - 32.0f, PANEL_W * s);
     const float ph = std::min(H - 32.0f, PANEL_H * s);
     const float px = (W - pw) * 0.5f, py = (H - ph) * 0.5f;

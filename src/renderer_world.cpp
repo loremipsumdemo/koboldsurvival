@@ -414,7 +414,7 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
 
 std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrain& t, const Camera& cam,
                                                           int winW, int winH) {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float padX = 7.0f * s, padY = 3.0f * s, gapY = 4.0f * s, lineGap = 2.0f * s;
     const float lineH = listTextHeight("Ag");

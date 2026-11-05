@@ -109,7 +109,7 @@ void App::drawSettingsScreen() {
 
 void App::drawScenarioScreen() {
     // The picked scenario's name and description at the top, the list of scenarios at the bottom
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
     scenarioScroll = sl.first;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -175,7 +175,7 @@ void App::drawPauseScreen() {
 
 // The save and load popout, drawn over whichever screen is showing
 void App::drawSavePanel() {
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     PanelGeometry g = panelGeometry(winW, winH);
     const RGBA white = LIST_WHITE, gray = LIST_GRAY;
     const float cx = g.box.x + g.box.w * 0.5f;

@@ -499,7 +499,7 @@ void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
 
 void Renderer::drawNotice(const std::string& text, int winW, int winH) {
     if (text.empty()) return;
-    const float s = winH / 720.0f;
+    const float s = uiScaleFor(winH);
     const float pad = 12.0f * s, top = 14.0f * s;
     const float w = uiTextWidth(text) + 2.0f * pad;
     const float h = uiTextHeight("Ag") + pad;

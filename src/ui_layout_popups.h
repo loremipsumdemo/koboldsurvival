@@ -24,7 +24,7 @@ struct DialogueLayout {
     Rect end;      // End Dialogue
 };
 inline DialogueLayout layoutDialogue(int W, int H, int lineCount, int optionCount) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float w = 520.0f * s, pad = 12.0f * s, rowH = 66.0f * s, gap = 6.0f * s, btnH = 30.0f * s;
     const float h = pad + lineCount * (rowH + gap) + optionCount * (btnH + gap) + btnH + pad;
     DialogueLayout L;
@@ -67,7 +67,7 @@ struct TradeLayout {
 // top: how far down the window something else is already drawn across the top (the pause bar, which shows during a
 // trade); the panels start under it
 inline TradeLayout layoutTrade(int W, int H, float top = 0.0f) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 10.0f * s, bar = 22.0f * s, gap = 12.0f * s, line = 20.0f * s, btnH = 28.0f * s, btnW = 110.0f * s;
     const float barH = 12.0f * s;
     const float cell = ITEM_CELL_PX, cellGap = 2.0f * s;
@@ -166,7 +166,7 @@ struct LootLayout {
     Rect closeBtn;
 };
 inline LootLayout layoutLoot(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
     const float cell = ITEM_CELL_PX, cellGap = 4.0f * s, inset = 4.0f * s;
@@ -204,7 +204,7 @@ inline LootLayout layoutLoot(int W, int H) {
 
 // The storage panel. With output set (a passive crafting prop) it has a second grid, for the output, and a status line.
 inline StorageLayout layoutStorage(int W, int H, bool output = false, bool lockToggle = false) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
     const float cell = ITEM_CELL_PX, cellGap = 4.0f * s, inset = 4.0f * s;
@@ -303,7 +303,7 @@ struct OptimizeAllLayout {
     Rect confirm, cancel;
 };
 inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     // line: one line of the list font at its usual size (20 points), with a little room
     const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 160.0f * s;
     const float boxW = 560.0f * s;
@@ -345,7 +345,7 @@ struct DisbandLayout {
 };
 constexpr int DISBAND_INFO_LINES = 3;
 inline DisbandLayout layoutDisband(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 160.0f * s;
     const float boxW = 500.0f * s, pic = (1.0f + DISBAND_INFO_LINES) * line;
     const float boxH = pad + line + gap + pic + gap + 3.0f * line + gap + line + gap + btnH + pad;
@@ -368,7 +368,7 @@ inline DisbandLayout layoutDisband(int W, int H) {
 }
 
 inline QuantityLayout layoutQuantity(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 12.0f * s, gap = 6.0f * s, line = 22.0f * s, btnH = 28.0f * s;
     const float smallW = 58.0f * s, countW = 96.0f * s, wideW = 110.0f * s;
     const float rowW = 6.0f * smallW + countW + 6.0f * gap;
@@ -410,7 +410,7 @@ struct PercentPromptLayout {
     float titleY = 0.0f, rangeY = 0.0f, errorY = 0.0f;   // the text lines' tops
 };
 inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     PercentPromptLayout P;
     const float w = 340.0f * s, h = 160.0f * s, pad = 14.0f * s, line = 20.0f * s;
     P.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
@@ -434,7 +434,7 @@ struct ItemMenuLayout {
 };
 
 inline ItemMenuLayout layoutItemMenu(float x, float y, int buttonCount, float rowH, int W, int H) {
-    const float s = H / 720.0f;
+    const float s = uiScaleFor(H);
     const float pad = 4.0f * s, gap = 3.0f * s;
     const float btnW = 104.0f * s, btnH = rowH + 8.0f * s;
     const float w = btnW + 2.0f * pad;
