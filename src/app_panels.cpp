@@ -411,7 +411,7 @@ void App::drawPanelLock(PanelId which) {
     if (!panelLocked[idx(which)]) {
         const Rect r = shownPanel(which, W, H);
         const float e = std::max(1.0f, 2.0f * H / 720.0f);
-        const RGBA g = theme::alpha(theme::GREEN, 0.9f);
+        const RGBA g = theme::alpha(theme::GOLD, 0.9f);
         renderer.drawRect(Rect{ r.x - e, r.y - e, r.w + 2.0f * e, e }, g);
         renderer.drawRect(Rect{ r.x - e, r.y + r.h, r.w + 2.0f * e, e }, g);
         renderer.drawRect(Rect{ r.x - e, r.y, e, r.h }, g);

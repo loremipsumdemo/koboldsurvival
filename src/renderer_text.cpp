@@ -245,6 +245,12 @@ std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
     return t + "...";
 }
 
+std::string Renderer::fitTextTip(const std::string& text, float maxW, const Rect& tipArea) {
+    std::string shown = fitText(text, maxW, false);
+    if (shown != text) noteTip(text, tipArea);
+    return shown;
+}
+
 // Every digit takes the width of the widest digit, so numbers that change don't shift sideways.
 // Other characters keep their own width.
 float Renderer::digitCellWidth() {

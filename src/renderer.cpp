@@ -754,7 +754,7 @@ void Renderer::drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, fl
 void Renderer::drawDot(float cx, float cy, float d) {
     if (!dotTex_) dotTex_ = MakeDotTexture();
     const float h = d * 0.5f;
-    drawUiQuad(dotTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawUiQuad(dotTex_, cx - h, cy - h, cx + h, cy + h, 0.0f, 0.0f, 1.0f, 1.0f, WHITE);
 }
 
 void Renderer::drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color) {

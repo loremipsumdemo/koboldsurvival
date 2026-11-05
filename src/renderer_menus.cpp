@@ -115,7 +115,7 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     const Rect track{ inside.x + gap, inside.y + gap, inside.w - 2.0f * gap, inside.h - 2.0f * gap };
     if (p > 0.0f) {
         const Rect fill{ track.x, track.y, std::max(track.h, track.w * p), track.h };
-        drawRoundedRect(fill, fill.h * 0.5f, theme::GREEN);
+        drawRoundedRect(fill, fill.h * 0.5f, theme::GOLD);
         // A lighter line along its top, so the fill reads as lit
         drawRoundedRect(Rect{ fill.x + fill.h * 0.3f, fill.y + fill.h * 0.18f, std::max(0.0f, fill.w - fill.h * 0.6f), fill.h * 0.22f },
                         fill.h * 0.11f, RGBA{ 1.0f, 1.0f, 1.0f, 0.28f });
@@ -274,7 +274,7 @@ void Renderer::drawTitleBackground() {
 
 void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWord, const std::string& secondWord,
                                const std::vector<std::string>& news) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float sway = -titleMouse_ * 5.0f * s;   // the words lean against the backdrop's sway
     const unsigned long long now = SDL_GetTicks();
 
@@ -343,12 +343,12 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         // A dark drop below, then the glitch ghosts, a green glow round the first word, and the words
         words(0.0f, 6.0f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f });
         if (pinkOff != 0.0f) words(pinkOff * s, 0.0f, theme::alpha(theme::PINK, 0.8f), theme::alpha(theme::PINK, 0.8f));
-        if (greenOff != 0.0f) words(greenOff * s, 0.0f, theme::alpha(theme::GREEN, 0.8f), theme::alpha(theme::GREEN, 0.8f));
+        if (greenOff != 0.0f) words(greenOff * s, 0.0f, theme::alpha(theme::GOLD, 0.8f), theme::alpha(theme::GOLD, 0.8f));
         for (int k = 0; k < 4; ++k) {
             const float gx = (k == 0 ? -2.0f : k == 1 ? 2.0f : 0.0f) * s, gy = (k == 2 ? -2.0f : k == 3 ? 2.0f : 0.0f) * s;
-            word(ta, a, x0, gx, gy, theme::alpha(theme::GREEN, 0.14f));
+            word(ta, a, x0, gx, gy, theme::alpha(theme::GOLD, 0.14f));
         }
-        words(0.0f, 0.0f, theme::GREEN, theme::BONE);
+        words(0.0f, 0.0f, theme::GOLD, theme::BONE);
         // The bar: hot pink, with a glow, standing on the words' baseline
         const float barY = cy + barH * 0.5f - barH * 0.98f + em * 0.06f;
         drawRect(Rect{ barX - 4.0f * s, barY - 4.0f * s, barW + 8.0f * s, barH + 8.0f * s }, theme::alpha(theme::PINK, 0.22f));
@@ -409,8 +409,8 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         for (const std::string& ln : wrapped) {
             if (bullet && first) {
                 const float cx = textX + 2.0f * s, cyy = y + th * 0.5f, h = 4.0f * s;
-                drawUiTris({ { cx, cyy - h, theme::alpha(theme::GREEN, 0.9f) }, { cx + h * 1.4f, cyy, theme::alpha(theme::GREEN, 0.9f) },
-                             { cx, cyy + h, theme::alpha(theme::GREEN, 0.9f) } });
+                drawUiTris({ { cx, cyy - h, theme::alpha(theme::GOLD, 0.9f) }, { cx + h * 1.4f, cyy, theme::alpha(theme::GOLD, 0.9f) },
+                             { cx, cyy + h, theme::alpha(theme::GOLD, 0.9f) } });
             }
             drawListText(ln, textX + indent, y, theme::NOTICE_TEXT);
             y += th;
@@ -422,7 +422,7 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
 
 void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std::string& sub, bool selected, bool enabled,
                             float appear) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     appear = std::clamp(appear, 0.0f, 1.0f);
     const float fade = appear;
     if (selected && enabled) noteHover(r0);
@@ -443,9 +443,9 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
         drawRect(Rect{ r.x - 4.0f * s, r.y - 3.0f * s, r.w + 8.0f * s, r.h + 6.0f * s }, A(rgb255(245, 201, 117, 0.05f)));
     }
     // The edge on the left
-    const RGBA edge = selected ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
+    const RGBA edge = selected ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, A(edge));
-    if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GREEN));
+    if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GOLD));
     // The words, in capitals
     const RGBA ink = !enabled ? theme::alpha(theme::ASH, 0.4f) : selected ? theme::BONE : theme::ASH;
     const std::string up = uiUpper(label);
@@ -467,7 +467,7 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
 }
 
 void Renderer::drawTitleFooter(const Rect& f, const std::string& left, const std::string& right) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const RGBA ink = theme::alpha(theme::ASH, 0.75f);
     const float th = listTextHeight("Ag");
     const float y = f.y + (f.h - th) * 0.5f;
@@ -485,17 +485,13 @@ void Renderer::drawTitleFooter(const Rect& f, const std::string& left, const std
 
 void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
                               const PartyPanels& P, float mx, float my) {
-    const float s = uiH_ / 720.0f;
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA gray{ 0.74f, 0.66f, 0.59f, 1.0f };
+    const float s = uiScale();
     const RGBA faint{ 0.50f, 0.43f, 0.40f, 1.0f };
-    const RGBA heading{ 0.961f, 0.788f, 0.459f, 1.0f };
-    const RGBA hover{ 0.961f, 0.788f, 0.459f, 1.0f };
     const RGBA warn{ 1.0f, 0.72f, 0.55f, 1.0f };
     const RGBA panel{ 0.085f, 0.035f, 0.045f, 0.92f };
-    const RGBA plate{ 0.14f, 0.06f, 0.075f, 0.95f };
-    const RGBA plateHot{ 0.26f, 0.16f, 0.07f, 0.95f };
-    const RGBA plateOn{ 0.353f, 0.235f, 0.110f, 0.95f };    // the purple used for the selected unit
+    const RGBA plate = theme::alpha(theme::SLOT, 0.95f);
+    const RGBA plateHot = theme::alpha(theme::SLOT_HOT, 0.95f);
+    const RGBA plateOn = theme::alpha(theme::GOLD_DEEP, 0.95f);    // the purple used for the selected unit
     const RGBA plateOff{ 0.11f, 0.05f, 0.06f, 0.70f };
     const float menuLineH = listTextHeight("Ag");
     float lineH = menuLineH;   // changes to the game's size for the Stats tab's rows
@@ -514,22 +510,17 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     };
     // Text at the left of a box, vertically centerd, after an inset
     auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
-        const std::string t = fitText(text, r.w - inset - 6.0f * s, false);
-        if (t != text) noteTip(text, r);
+        const std::string t = fitTextTip(text, r.w - inset - 6.0f * s, r);
         drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
     };
 
     drawRect(P.left, panel);
     drawRect(P.center, panel);
     drawRect(P.right, panel);
-    drawRect(P.bottom, RGBA{ 0.055f, 0.02f, 0.03f, 0.95f });
+    drawRect(P.bottom, theme::alpha(theme::WELL, 0.95f));
     // The unit list's scroll bar, when it has more units than fit
     const PartyListBar bar = partyListBar((int)uiW_, (int)uiH_, (int)p.size(), ui.listScroll);
-    if (bar.track.h > 0.0f) {
-        drawRect(bar.track, RGBA{ 0.20f, 0.09f, 0.11f, 0.9f });
-        const bool barHot = ui.listDrag || bar.thumb.contains(mx, my);
-        drawRect(bar.thumb, barHot ? RGBA{ 1.0f, 0.565f, 0.565f, 1.0f } : RGBA{ 0.910f, 0.376f, 0.431f, 0.9f });
-    }
+    if (bar.track.h > 0.0f) drawScrollBar(bar.track, bar.thumb, ui.listDrag || bar.thumb.contains(mx, my));
 
     const bool menuSet = menuText_;
     for (const Button& b : buttons) {
@@ -553,24 +544,24 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const bool named = !cleanName(u.name).empty();
             const std::string shown = named ? cleanName(u.name) : std::string(lang("UILABEL_NO_NAME"));
             drawListText(fitText(shown, tw, false), tx, b.rect.y + (b.rect.h - lineH) * 0.5f,
-                         !named ? warn : chosen ? hover : white);
+                         !named ? warn : chosen ? theme::GOLD : WHITE);
             break;
         }
 
         case Action::PartyTabPick: {
             const bool on = b.param == (int)ui.tab;
             drawRect(b.rect, plateFor(hot, on, true));
-            drawIconLabel(b.rect, partyTabIcon(b.param), b.label, on ? hover : white, false);
+            drawIconLabel(b.rect, partyTabIcon(b.param), b.label, on ? theme::GOLD : WHITE, false);
             break;
         }
 
         case Action::PartyNameField: {
-            drawListText(lang("UILABEL_NAME"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawListText(lang("UILABEL_NAME"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             drawRect(b.rect, plateFor(hot, ui.editingName, true));
             if (b.label.empty() && !ui.editingName) {
                 leftText(b.rect, lang("UILABEL_CLICK_TO_TYPE"), faint, 10.0f * s);
             } else {
-                leftText(b.rect, b.label + (ui.editingName ? "|" : ""), white, 10.0f * s);
+                leftText(b.rect, b.label + (ui.editingName ? "|" : ""), WHITE, 10.0f * s);
             }
             break;
         }
@@ -580,34 +571,34 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                 // The heading is the model label with no number: the word for Model alone
                 std::string heading = langf("UILABEL_MODEL_N", { "" });
                 while (!heading.empty() && heading.back() == ' ') heading.pop_back();
-                drawListText(heading, b.rect.x, b.rect.y - 22.0f * s, gray);
+                drawListText(heading, b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             }
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
-            leftText(b.rect, b.label, white, 10.0f * s);
+            leftText(b.rect, b.label, WHITE, 10.0f * s);
             break;
 
         case Action::PartyBodyBox:
-            drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Body, true));
-            leftText(b.rect, b.label, white, 10.0f * s);
+            leftText(b.rect, b.label, WHITE, 10.0f * s);
             break;
 
         case Action::PartyMobBox:
-            drawListText(lang("UILABEL_MOB_KIND"), b.rect.x, b.rect.y - 22.0f * s, gray);
+            drawListText(lang("UILABEL_MOB_KIND"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::MobKind && ui.dropSlot >= 0, true));
-            leftText(b.rect, b.label, b.enabled ? white : gray, 10.0f * s);
+            leftText(b.rect, b.label, b.enabled ? WHITE : theme::TEXT_QUIET, 10.0f * s);
             break;
 
         case Action::PartyRandomUnit:
             drawRect(b.rect, plateFor(hot, false, true));
-            centerd(b.rect, b.label, white);
+            centerd(b.rect, b.label, WHITE);
             break;
 
         case Action::PartyAddUnit:
         case Action::PartyRemoveUnit:
         case Action::PartyAddMob:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyGearSlot: {
@@ -619,9 +610,9 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const int item = b.param >= 0 && b.param < GEAR_SLOTS ? picked.gear[(size_t)b.param] : 0;
             if (item != 0) drawItemPictureAt(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, item, 1.0f);
             const float inset = ITEM_CELL_PX + 4.0f + 8.0f * s;
-            leftText(Rect{ b.rect.x, b.rect.y + 6.0f * s, b.rect.w, lineH }, gearSlotName(b.param), gray, inset);
+            leftText(Rect{ b.rect.x, b.rect.y + 6.0f * s, b.rect.w, lineH }, gearSlotName(b.param), theme::TEXT_QUIET, inset);
             leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 6.0f * s, b.rect.w, lineH }, b.label,
-                     b.label == lang("UILABEL_EMPTY") ? faint : white, inset);
+                     b.label == lang("UILABEL_EMPTY") ? faint : WHITE, inset);
             break;
         }
 
@@ -629,20 +620,20 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawRect(b.rect, RGBA{ 0.0f, 0.0f, 0.0f, 0.18f });
             const float isz = b.rect.h - 4.0f * s;
             drawUiIcon(statIcon((StatId)b.param), Rect{ b.rect.x + 4.0f * s, b.rect.y + 2.0f * s, isz, isz });
-            leftText(Rect{ b.rect.x + isz + 8.0f * s, b.rect.y, b.rect.w - isz - 8.0f * s, b.rect.h }, b.label, white, 2.0f * s);
+            leftText(Rect{ b.rect.x + isz + 8.0f * s, b.rect.y, b.rect.w - isz - 8.0f * s, b.rect.h }, b.label, WHITE, 2.0f * s);
             const std::string lv = std::to_string(levelOf(picked.stats, (StatId)b.param));
             drawListText(lv, b.rect.x + b.rect.w - 6.0f * s - listTextWidth(lv),
-                         b.rect.y + (b.rect.h - lineH) * 0.5f, hover);
+                         b.rect.y + (b.rect.h - lineH) * 0.5f, theme::GOLD);
             break;
         }
 
         case Action::PartyStep:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyHeading:
-            leftText(b.rect, b.label, heading, 0.0f);
+            leftText(b.rect, b.label, theme::GOLD, 0.0f);
             break;
 
         case Action::PartyNote: {
@@ -660,14 +651,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                 }
             }
             if (lines.size() <= 1) {
-                leftText(b.rect, b.label, gray, 0.0f);
+                leftText(b.rect, b.label, theme::TEXT_QUIET, 0.0f);
                 break;
             }
             const float pitch = lineH * 1.05f;
             const int fit = std::max(1, (int)(b.rect.h / pitch));
             float y = b.rect.y;
             for (int k = 0; k < (int)lines.size() && k < fit; ++k, y += pitch) {
-                drawListText(lines[(size_t)k], b.rect.x, y, gray);
+                drawListText(lines[(size_t)k], b.rect.x, y, theme::TEXT_QUIET);
             }
             break;
         }
@@ -679,18 +670,18 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                 drawItemPicture(b.rect, st.item, 1.0f);
                 const std::string n = std::to_string(st.count);
                 drawListText(n, b.rect.x + b.rect.w - listTextWidth(n) - 3.0f * s,
-                             b.rect.y + b.rect.h - lineH - 2.0f * s, gray);
+                             b.rect.y + b.rect.h - lineH - 2.0f * s, theme::TEXT_QUIET);
             }
             break;
         }
 
         case Action::PartyCount:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyMessage:
-            centerd(b.rect, b.label, partyNamesValid(p) ? gray : warn);
+            centerd(b.rect, b.label, partyNamesValid(p) ? theme::TEXT_QUIET : warn);
             break;
 
         case Action::PartyDropBack:
@@ -700,19 +691,19 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyDropScroll:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? (hot ? hover : white) : faint);
+            centerd(b.rect, b.label, b.enabled ? (hot ? theme::GOLD : WHITE) : faint);
             break;
 
         case Action::PartyDropPick:
             if (hot) drawRect(b.rect, plateHot);
-            leftText(b.rect, b.label, hot ? hover : white, 10.0f * s);
+            leftText(b.rect, b.label, hot ? theme::GOLD : WHITE, 10.0f * s);
             break;
 
         case Action::PartyRandomAll:
         case Action::PartyConfirm:
         case Action::Back:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? white : faint);
+            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         default:
@@ -735,11 +726,11 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));
     drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,
-                       P.center.y + P.center.h - 100.0f * s, named ? white : warn);
+                       P.center.y + P.center.h - 100.0f * s, named ? WHITE : warn);
     int attack = 0, defense = 0;
     gearTotals(wornBy(picked), attack, defense);
     const std::string totals = langf("UILABEL_ATTACK_DEFENSE_CARRY", { std::to_string(attack), std::to_string(defense), std::to_string((int)carryLimit(picked.stats)) });
     const std::string shownTotals = fitText(totals, cw - 24.0f * s, false);
     drawListText(shownTotals, P.center.x + (cw - listTextWidth(shownTotals)) * 0.5f,
-                 P.center.y + P.center.h - 62.0f * s, gray);
+                 P.center.y + P.center.h - 62.0f * s, theme::TEXT_QUIET);
 }

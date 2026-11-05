@@ -7,7 +7,7 @@ namespace {
 
 // The color of an item's name by tier: gray at tier 1, rising to gold at tier 6. Tier 0 stays white.
 RGBA tierTint(int tier) {
-    if (tier <= 0) return RGBA{ 1.0f, 1.0f, 1.0f, 1.0f };
+    if (tier <= 0) return WHITE;
     const float t = std::clamp((tier - 1) / 5.0f, 0.0f, 1.0f);
     const RGBA gray{ 0.70f, 0.62f, 0.56f, 1.0f }, gold{ 1.0f, 0.84f, 0.32f, 1.0f };
     return RGBA{ gray.r + (gold.r - gray.r) * t, gray.g + (gold.g - gray.g) * t,
@@ -22,7 +22,7 @@ const RGBA BAD_CHANGE{ 1.0f, 0.38f, 0.36f, 1.0f };
 
 const RGBA TIP_TEXT{ 0.87f, 0.80f, 0.72f, 1.0f };
 
-const RGBA TIP_HEADING{ 0.961f, 0.788f, 0.459f, 1.0f };
+const RGBA TIP_HEADING = theme::GOLD;
 
 const RGBA TIP_WARNING{ 1.0f, 0.72f, 0.35f, 1.0f };
 
@@ -141,7 +141,7 @@ std::vector<TipRow> gearCardRows(int slot, bool replaced, int held, const TipWra
 // Draws the tooltip set this frame, beside the mouse and kept on screen, with its text wrapped
 void Renderer::drawTip() {
     if (tip_.empty()) return;
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float pad = 6.0f * s;
     const float maxW = std::min(360.0f * s, uiW_ * 0.5f);
     const std::vector<std::string> lines = wrapListText(tip_, maxW - 2.0f * pad);
@@ -156,7 +156,7 @@ void Renderer::drawTip() {
     drawRect(Rect{ x, y, w, h }, RGBA{ 0.085f, 0.035f, 0.045f, 0.96f });
     float ty = y + pad;
     for (const std::string& ln : lines) {
-        drawListText(ln, x + pad, ty, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawListText(ln, x + pad, ty, WHITE);
         ty += lh;
     }
     tip_.clear();
@@ -164,7 +164,7 @@ void Renderer::drawTip() {
 
 void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
     // Held down, it fills with hot pink from the left
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     drawRectGradientH(r, theme::alpha(theme::PINK_INK, 0.85f), theme::alpha(theme::PINK_DARK, 0.95f));
     if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, theme::alpha(theme::PINK, 0.9f));
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, theme::PINK);
@@ -173,7 +173,7 @@ void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fil
 
 void Renderer::drawListButton(const Rect& r, const std::string& label, bool hovered) {
     // A pink button, for a row's own action (Delete)
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     if (hovered) noteHover(r);
     drawRectGradientH(r, hovered ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.9f),
                       hovered ? theme::alpha(theme::PINK, 0.95f) : theme::alpha(theme::PINK_DARK, 0.95f));
@@ -185,7 +185,7 @@ void Renderer::drawListButton(const Rect& r, const std::string& label, bool hove
 
 void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
     // A dark band with an edge down its left side; under the pointer the band turns green and the edge lights up
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const bool lit = enabled && hovered;
     if (lit) noteHover(r);
     if (!enabled) {
@@ -195,14 +195,14 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
     } else {
         drawRectGradientH(r, rgb255(32, 14, 18, 0.85f), rgb255(22, 10, 12, 0.95f));
     }
-    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, lit ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
+    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
     const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
     // A small inset keeps the text off the button's edge
     drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, fg);
 }
 
 float Renderer::tipWidth(const std::vector<TipRow>& rows) {
-    const float s = uiH_ / 720.0f, gap = 6.0f * s, pad = 7.0f * s;
+    const float s = uiScale(), gap = 6.0f * s, pad = 7.0f * s;
     float w = 0.0f;
     for (const TipRow& r : rows) {
         float rowW = listTextWidth(r.text);
@@ -214,12 +214,12 @@ float Renderer::tipWidth(const std::vector<TipRow>& rows) {
 
 float Renderer::tipHeight(size_t rowCount) {
     if (rowCount == 0) return 0.0f;
-    const float s = uiH_ / 720.0f, gap = 2.0f * s, pad = 7.0f * s;
+    const float s = uiScale(), gap = 2.0f * s, pad = 7.0f * s;
     return rowCount * listTextHeight("Ag") + (rowCount - 1) * gap + 2.0f * pad;
 }
 
 void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float width) {
-    const float s = uiH_ / 720.0f, gap = 2.0f * s, pad = 7.0f * s;
+    const float s = uiScale(), gap = 2.0f * s, pad = 7.0f * s;
     const float lineH = listTextHeight("Ag");
     drawRect(Rect{ x, y, width, tipHeight(rows.size()) }, RGBA{ 0.0f, 0.0f, 0.0f, 0.5f });
     float ty = y + pad;
@@ -235,7 +235,7 @@ void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float 
 void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Equipment* compareTo) {
     const ItemDef* d = findItem(item);
     if (!d) return;
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float gap = 8.0f * s;
 
     // Gear is compared with the gear it would replace, and each gear slot of its kind gets a card
@@ -299,20 +299,19 @@ void Renderer::drawPortrait(const TextTex& g, const Rect& square, float saturati
 
 // The X at the right end of a window's title bar, framed like the [-] and [+] buttons
 void Renderer::drawCloseButton(const Rect& r) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const bool hot = r.contains(mouseX_, mouseY_);
     if (hot) noteHover(r);
     drawRect(r, theme::alpha(theme::PINK, 0.9f));
     drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
              hot ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.95f));
     const float m = r.w * 0.3f, lw = std::max(1.5f, 1.5f * s);
-    const RGBA c{ 1.0f, 1.0f, 1.0f, 1.0f };
     const float x0 = r.x + m, y0 = r.y + m, x1 = r.x + r.w - m, y1 = r.y + r.h - m;
     auto line = [&](float ax, float ay, float bx, float by) {
         const float dx = bx - ax, dy = by - ay, len = std::sqrt(dx * dx + dy * dy);
         const float nx = -dy / len * lw * 0.5f, ny = dx / len * lw * 0.5f;
-        drawUiTris({ { ax + nx, ay + ny, c }, { bx + nx, by + ny, c }, { bx - nx, by - ny, c },
-                     { ax + nx, ay + ny, c }, { bx - nx, by - ny, c }, { ax - nx, ay - ny, c } });
+        drawUiTris({ { ax + nx, ay + ny, WHITE }, { bx + nx, by + ny, WHITE }, { bx - nx, by - ny, WHITE },
+                     { ax + nx, ay + ny, WHITE }, { bx - nx, by - ny, WHITE }, { ax - nx, ay - ny, WHITE } });
     };
     line(x0, y0, x1, y1);
     line(x0, y1, x1, y0);
@@ -331,19 +330,19 @@ void Renderer::drawItemPicture(const Rect& cell, int item, float alpha) {
 
 void Renderer::drawItemCell(const Rect& r, int item, int count) {
     if (item == 0) return;
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     drawItemPicture(r, item, 1.0f);
     if (count > 1) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight("Ag") - 1.0f * s,
-                     RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+                     WHITE);
     }
 }
 
 // A black bar across the top at 30% opacity, with PAUSED in large white letters, centred. With a hint, a line under
 // it says how to resume.
 float Renderer::pauseBarHeight(bool hint) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float pad = 10.0f * s;
     const float bigH = uiTextHeight(lang("UILABEL_PAUSED")) * 2.6f;
     const float tipH = hint ? uiTextHeight(lang("UILABEL_PAUSE_HINT")) : 0.0f;
@@ -351,7 +350,7 @@ float Renderer::pauseBarHeight(bool hint) {
 }
 
 void Renderer::drawPauseBar(bool hint) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float pad = 10.0f * s;
     const float bigH = uiTextHeight(lang("UILABEL_PAUSED")) * 2.6f;
     const std::string tip = lang("UILABEL_PAUSE_HINT");
@@ -364,7 +363,7 @@ void Renderer::drawPauseBar(bool hint) {
 }
 
 void Renderer::drawThemedPanel(const Rect& r) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float frame = std::max(1.0f, 2.0f * s), cut = 18.0f * s;
     std::vector<UiVert> v;
     cutCornerShape(v, r, cut, theme::PINK, theme::PINK_DEEP);
@@ -373,44 +372,52 @@ void Renderer::drawThemedPanel(const Rect& r) {
     drawUiTris(v);
 }
 
+void Renderer::drawScrollBar(const Rect& track, const Rect& thumb, bool hot) {
+    drawRect(track, theme::SCROLL_TRACK);
+    drawRect(thumb, hot ? RGBA{ 1.0f, 0.565f, 0.565f, 1.0f } : theme::alpha(theme::PINK, 0.9f));
+}
+
+void Renderer::drawScrim() {
+    drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, theme::SCRIM);
+}
+
 // The lock at the left of a panel's [-] or [+]: closed while the panel's size and place are fixed, open (and green)
 // while it can be moved and resized
 void Renderer::drawLockButton(const Rect& r, bool locked) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     if (r.contains(mouseX_, mouseY_)) noteHover(r);
-    drawRect(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GREEN);
+    drawRect(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GOLD);
     drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
-             locked ? theme::alpha(theme::PINK_INK, 0.95f) : RGBA{ 0.26f, 0.16f, 0.07f, 0.95f });
-    const RGBA c{ 1.0f, 1.0f, 1.0f, 1.0f };
+             locked ? theme::alpha(theme::PINK_INK, 0.95f) : theme::alpha(theme::SLOT_HOT, 0.95f));
     // The body: a small block in the lower half
     const float bw = r.w * 0.52f, bh = r.h * 0.34f;
     const float bx = r.x + (r.w - bw) * 0.5f, by = r.y + r.h * 0.50f;
-    drawRect(Rect{ bx, by, bw, bh }, c);
+    drawRect(Rect{ bx, by, bw, bh }, WHITE);
     // The shackle: a hoop over the body, its right leg lifted out when open
     const float lw = std::max(1.0f, 1.3f * s);
     const float sx0 = bx + bw * 0.18f, sx1 = bx + bw * 0.82f;
     const float top = r.y + r.h * 0.18f + (locked ? 0.0f : -r.h * 0.06f);
     const float legBottom = locked ? by : by - r.h * 0.12f;
-    drawRect(Rect{ sx0, top, sx1 - sx0, lw }, c);                 // across the top
-    drawRect(Rect{ sx0, top, lw, by - top }, c);                  // left leg, down into the body
-    drawRect(Rect{ sx1 - lw, top, lw, legBottom - top }, c);      // right leg
+    drawRect(Rect{ sx0, top, sx1 - sx0, lw }, WHITE);                 // across the top
+    drawRect(Rect{ sx0, top, lw, by - top }, WHITE);                  // left leg, down into the body
+    drawRect(Rect{ sx1 - lw, top, lw, legBottom - top }, WHITE);      // right leg
 }
 
 void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const bool lit = enabled && hovered;
     if (lit) noteHover(r);
     if (!enabled) drawRect(r, theme::alpha(theme::NIGHT, 0.6f));
     else if (lit) drawRectGradientH(r, rgb255(52, 30, 16, 0.85f), rgb255(96, 58, 30, 0.95f));
     else drawRectGradientH(r, rgb255(32, 14, 18, 0.85f), rgb255(22, 10, 12, 0.95f));
-    drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, lit ? theme::GREEN : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
+    drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
     const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
     const float tw = listTextWidth(label), th = listTextHeight(label);
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
 }
 
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float sz = ITEM_PICTURE_PX;
     const Rect r{ std::floor(mx - sz * 0.5f + 0.5f), std::floor(my - sz * 0.5f + 0.5f), sz, sz };
     drawItemPicture(r, item, 0.85f);
@@ -425,25 +432,25 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
 void Renderer::drawUiIcon(int icon, const Rect& r) {
     const TextTex& t = uiIconTexture(icon);
     if (t.tex) {
-        drawFitted(t, r, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawFitted(t, r, WHITE);
         return;
     }
     // The placeholder until the picture is packed: a pink square with its id in it
-    drawRect(r, RGBA{ 0.910f, 0.376f, 0.431f, 1.0f });
+    drawRect(r, theme::PINK);
     const std::string num = std::to_string(icon);
     const float tw = listTextWidth(num), th = listTextHeight("Ag");
     drawListText(num, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 0.16f, 0.04f, 0.05f, 1.0f });
 }
 
 void Renderer::drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     drawUiIcon(icon, Rect{ x, y, h, h });
     const float th = listTextHeight("Ag");
     drawListText(text, x + h + 4.0f * s, y + (h - th) * 0.5f, tint);
 }
 
 void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, RGBA tint, bool uiFont) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float gap = 6.0f * s;
     const float sz = std::max(0.0f, r.h - 8.0f * s);
     if (uiFont) {
@@ -465,16 +472,15 @@ void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, R
 }
 
 void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title) {
-    const float s = uiH_ / 720.0f;
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const float s = uiScale();
     // A panel's bar: deep pink fading to near black, with a hot pink line along its foot
     drawRectGradientH(bar, theme::alpha(theme::PINK_DEEP, 0.95f), theme::alpha(theme::PINK_INK, 0.92f));
     drawRect(Rect{ bar.x, bar.y + bar.h - std::max(1.0f, 1.0f * s), bar.w, std::max(1.0f, 1.0f * s) }, theme::alpha(theme::PINK, 0.85f));
     if (icon == ICON_NONE) {
-        drawListText(title, bar.x + 6.0f * s, bar.y + (bar.h - listTextHeight("Ag")) * 0.5f, white);
+        drawListText(title, bar.x + 6.0f * s, bar.y + (bar.h - listTextHeight("Ag")) * 0.5f, WHITE);
         return;
     }
-    drawIconText(bar.x + 6.0f * s, bar.y + 3.0f * s, std::max(0.0f, bar.h - 6.0f * s), icon, title, white);
+    drawIconText(bar.x + 6.0f * s, bar.y + 3.0f * s, std::max(0.0f, bar.h - 6.0f * s), icon, title, WHITE);
 }
 
 void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
@@ -483,7 +489,7 @@ void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
     drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f }, theme::alpha(theme::PINK_INK, 0.95f));
     const char* sign = collapsed ? "+" : "-";
     const float tw = listTextWidth(sign), th = listTextHeight("Ag");
-    drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);
 }
 
 void Renderer::drawNotice(const std::string& text, int winW, int winH) {
@@ -495,7 +501,7 @@ void Renderer::drawNotice(const std::string& text, int winW, int winH) {
     const Rect box{ (winW - w) * 0.5f, top, w, h };
     // A dark band with a green edge on its left, like a lit menu item
     drawRectGradientH(box, rgb255(52, 30, 16, 0.85f), theme::alpha(theme::NIGHT, 0.85f));
-    drawRect(Rect{ box.x, box.y, 3.0f * s, box.h }, theme::GREEN);
+    drawRect(Rect{ box.x, box.y, 3.0f * s, box.h }, theme::GOLD);
     drawUiText(text, box.x + pad, top + pad * 0.5f, theme::BONE);
 }
 

@@ -8,7 +8,7 @@
 namespace {
 
 const RGBA kText = theme::BONE;
-const RGBA kSlider = theme::GREEN;   // a slider's filled part, while its sound is on
+const RGBA kSlider = theme::GOLD;   // a slider's filled part, while its sound is on
 const RGBA kSecondary{ 0.643f, 0.553f, 0.510f, 1.0f };
 const RGBA kDisabledText{ 0.52f, 0.46f, 0.43f, 1.0f };
 const RGBA kPanel{ 0.085f, 0.035f, 0.045f, 0.96f };
@@ -56,7 +56,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         if (over(t, mx, my)) r.noteHover(t);
         r.drawRect(t, fill);
         // The open tab has a green edge along its foot
-        if (static_cast<int>(i) == static_cast<int>(st.tab)) r.drawRect(Rect{ t.x, t.y + t.h - 2.0f * u, t.w, 2.0f * u }, theme::GREEN);
+        if (static_cast<int>(i) == static_cast<int>(st.tab)) r.drawRect(Rect{ t.x, t.y + t.h - 2.0f * u, t.w, 2.0f * u }, theme::GOLD);
         r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }
 

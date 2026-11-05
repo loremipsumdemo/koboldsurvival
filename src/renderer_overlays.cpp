@@ -23,7 +23,7 @@ const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
 // finished, the ring hops: up and back down once, quickly. It stays up for the hop even if the work stopped with that
 // item, so the last one shows too.
 void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float outer = 11.0f * s, inner = 4.3f * s;          // the hole is about two fifths of the ring
     const RGBA back{ 0.31f, 0.24f, 0.17f, 1.0f };             // dark brown
@@ -108,7 +108,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         const TextTex* pic = emoteTexture(emotes[(size_t)(turn % emotes.size())]);
         if (!pic) continue;
-        drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, WHITE);
     }
 }
 
@@ -142,7 +142,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
         if (propNames) bottom -= listTextHeight("Ag") + 2.0f * s;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         if (const TextTex* pic = emoteTexture(emote)) {
-            drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+            drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, WHITE);
         }
     }
 }
@@ -160,7 +160,7 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
     if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
     if (!emotesOf(w, u).empty()) bottom -= size + 4.0f * s;
     const TextTex* pic = emoteTexture(emote);
-    if (pic) drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    if (pic) drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size, size, size }, WHITE);
 }
 
 void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my) {
@@ -186,7 +186,6 @@ void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, i
 void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others) {
     const float s = winH / 720.0f;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    const RGBA player{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA hostile{ 1.0f, 0.55f, 0.50f, 1.0f };
     const RGBA neutral{ 0.6f, 0.6f, 0.6f, 1.0f };
     const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
@@ -205,7 +204,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const float x = sx - tw * 0.5f, y = sy - th;
         // The drop shadow is the same text in black, a little down and to the right
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
-        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : player);
+        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : WHITE);
     }
 }
 

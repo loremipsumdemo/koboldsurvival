@@ -36,19 +36,28 @@ struct RGBA {
 };
 
 // The look of the menus and panels, after the logo: deep maroon-black, coral pink and warm parchment gold, with cream
-// and dusty taupe text. (PINK is the coral accent; GREEN, by its old name, is now the gold highlight.)
+// and dusty taupe text. PINK is the coral accent and GOLD the highlight (headings, lit buttons).
 namespace theme {
 inline constexpr RGBA PINK{ 0.910f, 0.376f, 0.431f, 1.0f };        // #e8606e, coral
-inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };   // #963242
+inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };   // #963242, title bars
 inline constexpr RGBA PINK_DARK{ 0.298f, 0.086f, 0.125f, 1.0f };   // #4c1620
 inline constexpr RGBA PINK_INK{ 0.098f, 0.027f, 0.039f, 1.0f };    // #19070a
-inline constexpr RGBA GREEN{ 0.961f, 0.788f, 0.459f, 1.0f };       // #f5c975, gold
-inline constexpr RGBA GREEN_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };  // #5a3c1c, the lit button's fill
-inline constexpr RGBA GREEN_DARK{ 0.157f, 0.098f, 0.039f, 1.0f };  // #28190a
+inline constexpr RGBA GOLD{ 0.961f, 0.788f, 0.459f, 1.0f };        // #f5c975, headings and highlights
+inline constexpr RGBA GOLD_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };   // #5a3c1c, the lit button's fill
+inline constexpr RGBA GOLD_DARK{ 0.157f, 0.098f, 0.039f, 1.0f };   // #28190a
 inline constexpr RGBA BONE{ 0.957f, 0.902f, 0.796f, 1.0f };        // #f4e6cb, cream text
 inline constexpr RGBA ASH{ 0.643f, 0.553f, 0.510f, 1.0f };         // #a48d82, quiet text
 inline constexpr RGBA NOTICE_TEXT{ 0.871f, 0.776f, 0.690f, 1.0f }; // #dec6b0
 inline constexpr RGBA NIGHT{ 0.082f, 0.039f, 0.047f, 1.0f };       // #150a0c, panels
+// The in-game panels' text, cells and bars
+inline constexpr RGBA TEXT_DIM{ 0.80f, 0.72f, 0.64f, 1.0f };       // secondary text: labels, values, unlit tabs
+inline constexpr RGBA TEXT_QUIET{ 0.74f, 0.66f, 0.59f, 1.0f };     // hints and notes
+inline constexpr RGBA WELL{ 0.055f, 0.02f, 0.03f, 1.0f };          // the dark ground behind a grid of item cells
+inline constexpr RGBA SLOT{ 0.14f, 0.06f, 0.075f, 1.0f };          // an item cell, or a row
+inline constexpr RGBA SLOT_HOT{ 0.26f, 0.16f, 0.07f, 1.0f };       // the same under the mouse
+inline constexpr RGBA TAB_OFF{ 0.16f, 0.07f, 0.085f, 1.0f };       // a tab or toggle that is not picked
+inline constexpr RGBA SCROLL_TRACK{ 0.20f, 0.09f, 0.11f, 0.9f };   // a scroll bar's track; its thumb is PINK at 0.9
+inline constexpr RGBA SCRIM{ 0.0f, 0.0f, 0.0f, 0.45f };            // dims the game behind a modal dialog
 inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
 } // namespace theme
 
@@ -425,6 +434,10 @@ public:
     // The lock beside a panel's [-] or [+]: closed while locked, open and green while the panel can be moved and resized
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
+    // A scroll bar: its track, and the thumb on it, lit while hot (held or under the mouse)
+    void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);
+    // Dims the whole window behind a modal dialog
+    void drawScrim();
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);
     // Text that does not fit its box is drawn smaller, down to a floor, then shortened. The full text shows in a
@@ -474,6 +487,8 @@ private:
 
     // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
+    // fitText in the list font, and when the text had to be cut, its full text as the tooltip over tipArea
+    std::string fitTextTip(const std::string& text, float maxW, const Rect& tipArea);
     // The behavior list: its heading, the modes, column headings and one row per behavior
     // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
     // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
@@ -486,6 +501,18 @@ public:
                            const std::string& range, const std::string& error, float mx, float my);
 
 private:
+    // The sidebar's scroll bar, drawn when its tab is taller than the panel
+    void drawSidebarScrollBar(const SidebarLayout& L);
+    // Pieces of the dialogs (renderer_popups.cpp).
+    // Text wrapped to box's width in the list font, line by line from its top, stopping at its bottom
+    void drawWrappedText(const std::string& text, const Rect& box, RGBA tint);
+    // A grid of item cells on a dark well: each cell lit under the mouse, with stacks[i] in cell i (none past
+    // stackCount, or when stacks is null). The cell `skip` (a stack being dragged out) is left empty. Returns the cell
+    // under the mouse that holds an item, or -1.
+    int drawStackGrid(const Rect& area, const std::vector<Rect>& cells, const ItemStack* stacks, size_t stackCount,
+                      int skip, float mx, float my);
+    // The "Interaction Panel" bar of the storage and looting panels, and the name under it
+    void drawInteractionHeader(const Rect& bar, const Rect& nameBox, const std::string& name);
     // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     // A quad that changes color from top to bottom
@@ -760,6 +787,8 @@ private:
     void clearActiveText();
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
+    // How much the UI is scaled: the window's height over the 720 pixels it is laid out for
+    float uiScale() const { return uiH_ / 720.0f; }
     float mouseX_ = 0.0f, mouseY_ = 0.0f;   // the mouse, for tooltips and for hover sounds in panels drawn without it
     std::string tip_;                        // the full text to show as a tooltip, or empty
     void drawTip();

@@ -47,8 +47,7 @@ float Renderer::profileCardHeight(int H) {
 void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                             const WorldMapMarks& marks) {
     pollOverview();
-    const float s = uiH_ / 720.0f;
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const float s = uiScale();
     const RGBA black{ 0.0f, 0.0f, 0.0f, 1.0f };
     const Rect& w = L.window;
     const Rect& r = L.map;
@@ -76,7 +75,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         // The part of the view inside the level
         const float ax = std::min(xHi, size), bx = std::max(xLo, 0.0f);
         const float az = std::min(zHi, size), bz = std::max(zLo, 0.0f);
-        if (ax > bx && az > bz) drawUiQuad(overviewTex_, sx(ax), sy(az), sx(bx), sy(bz), u(ax), v(az), u(bx), v(bz), white);
+        if (ax > bx && az > bz) drawUiQuad(overviewTex_, sx(ax), sy(az), sx(bx), sy(bz), u(ax), v(az), u(bx), v(bz), WHITE);
     }
 
     // A thick line from one point to another, its ends pushed out by half its width so corners meet
@@ -186,7 +185,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
                              int repView) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, bgAlpha });
     drawTitleBar(L.title, ICON_SQUAD_PANEL, lang("UILABEL_SQUAD_PANEL"));
@@ -200,11 +199,11 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             if (r.w <= 0.0f) return;
             const bool hot = !on && r.contains(mouseX_, mouseY_);
             if (hot) noteHover(r);
-            drawRect(r, on ? RGBA{ 0.353f, 0.235f, 0.110f, 0.95f } : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.9f });
-            if (on) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GREEN);
+            drawRect(r, on ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.9f });
+            if (on) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GOLD);
             const std::string t = fitText(label, r.w - 6.0f * s, false);
             drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - th) * 0.5f,
-                         on ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.80f, 0.72f, 0.64f, 1.0f });
+                         on ? WHITE : theme::TEXT_DIM);
         };
         tab(L.tabSquad, lang("UILABEL_SQUAD_TAB"), L.tab == FACTION_TAB_SQUAD);
         tab(L.tabReputation, lang("UILABEL_REPUTATION"), L.tab == FACTION_TAB_REPUTATION);
@@ -219,15 +218,14 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         if (r.contains(mouseX_, mouseY_)) noteHover(r);
         drawRect(r, on ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, bgAlpha });
         const float tw = listTextWidth(text), th = listTextHeight(text);
-        drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);
     };
     // One toggle for the pace, lit while the squad runs, and the View Map button beside it
     mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
     // Optimize All, beside it: opens a dialog to confirm
     {
         const std::string label = lang("UILABEL_OPTIMIZE_ALL");
-        const std::string shown = fitText(label, L.optimizeAllButton.w - 6.0f * s, false);
-        if (shown != label) noteTip(label, L.optimizeAllButton);
+        const std::string shown = fitTextTip(label, L.optimizeAllButton.w - 6.0f * s, L.optimizeAllButton);
         mode(L.optimizeAllButton, shown, false);
     }
 
@@ -264,9 +262,8 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         // Name under the bar, cut at a word with "..." to fit the cell
         const Name* nm = w.get<Name>(e);
         const std::string full = nm ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
-        const std::string label = fitText(full, c.rect.w, false);
-        if (label != full) noteTip(full, c.rect);
-        drawListText(label, c.rect.x, c.rect.y + c.rect.w + 8.0f * s, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        const std::string label = fitTextTip(full, c.rect.w, c.rect);
+        drawListText(label, c.rect.x, c.rect.y + c.rect.w + 8.0f * s, WHITE);
     }
 
     // The scroll bar: the track and its thumb, with an arrow button at each end that moves the list a row. The arrows
@@ -280,7 +277,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             const bool hot = can && r.contains(mouseX_, mouseY_);
             if (hot) noteHover(r);
             drawRect(r, hot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.9f });
-            const RGBA c = can ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : RGBA{ 0.56f, 0.49f, 0.45f, 0.6f };
+            const RGBA c = can ? WHITE : RGBA{ 0.56f, 0.49f, 0.45f, 0.6f };
             const float cx = r.x + r.w * 0.5f, cy = r.y + r.h * 0.5f, hw = r.w * 0.3f, hh = r.h * 0.22f;
             if (up) drawUiTris({ { cx, cy - hh, c }, { cx + hw, cy + hh, c }, { cx - hw, cy + hh, c } });
             else drawUiTris({ { cx - hw, cy - hh, c }, { cx + hw, cy - hh, c }, { cx, cy + hh, c } });
@@ -294,10 +291,8 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
 // always at 100 with itself, so its own row reads (...). Each value is red where the two fight on sight, green where
 // they are allies, and gray between; its tooltip says which. A row is pressed to show that faction's reputations.
 void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
-    const float s = uiH_ / 720.0f;
+    const float s = uiScale();
     const float th = listTextHeight("Ag");
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f };
     auto swatch = [&](float x, float cy, float d, int faction) {
         const FactionColor c = factionColor(faction);
         drawRect(Rect{ x - 1.0f, cy - d * 0.5f - 1.0f, d + 2.0f, d + 2.0f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.9f });
@@ -310,7 +305,7 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
         const float d = 12.0f * s;
         swatch(h.x + 6.0f * s, h.y + h.h * 0.5f, d, repView);
         const std::string name = fitText(factionName(repView), h.w - d - 16.0f * s, false);
-        drawListText(name, h.x + d + 12.0f * s, h.y + (h.h - th) * 0.5f, RGBA{ 0.961f, 0.788f, 0.459f, 1.0f });
+        drawListText(name, h.x + d + 12.0f * s, h.y + (h.h - th) * 0.5f, theme::GOLD);
     }
     const std::vector<FactionDef>& list = reputationFactions();
     for (size_t i = 0; i < L.repRows.size(); ++i) {
@@ -321,18 +316,18 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
         const bool self = other == repView;
         const bool hot = r.contains(mouseX_, mouseY_);
         if (hot && !self) noteHover(r);
-        drawRect(r, self ? RGBA{ 0.353f, 0.235f, 0.110f, 0.55f } : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 0.95f : 0.6f });
+        drawRect(r, self ? theme::alpha(theme::GOLD_DEEP, 0.55f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 0.95f : 0.6f });
         const float d = 10.0f * s;
         swatch(r.x + 6.0f * s, r.y + r.h * 0.5f, d, other);
         const int value = reputation(repView, other);
         const std::string valueText = self ? std::string("(...)") : std::to_string(value);
-        const RGBA valueTint = self ? gray
+        const RGBA valueTint = self ? theme::TEXT_DIM
                              : value <= REP_HOSTILE ? RGBA{ 1.0f, 0.42f, 0.42f, 1.0f }
-                             : value >= REP_ALLIED ? RGBA{ 0.5f, 0.95f, 0.5f, 1.0f } : gray;
+                             : value >= REP_ALLIED ? RGBA{ 0.5f, 0.95f, 0.5f, 1.0f } : theme::TEXT_DIM;
         const float vw = listTextWidth(valueText);
         const float nameX = r.x + d + 12.0f * s;
         const std::string name = fitText(factionName(other), r.x + r.w - 8.0f * s - vw - 8.0f * s - nameX, false);
-        drawListText(name, nameX, r.y + (r.h - th) * 0.5f, white);
+        drawListText(name, nameX, r.y + (r.h - th) * 0.5f, WHITE);
         drawListText(valueText, r.x + r.w - 8.0f * s - vw, r.y + (r.h - th) * 0.5f, valueTint);
         if (!self) {
             noteTip(lang(value <= REP_HOSTILE ? "UILABEL_REP_HOSTILE" : value >= REP_ALLIED ? "UILABEL_REP_ALLIED" : "UILABEL_REP_NEUTRAL"),
@@ -436,11 +431,10 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
 
 void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
                              float mx, float my, const InfoTime& time) {
-    const float s = uiH_ / 720.0f;
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-    const RGBA gray{ 0.74f, 0.66f, 0.59f, 1.0f };
-    const RGBA lit{ 0.26f, 0.16f, 0.07f, 0.95f };
-    const RGBA dim{ 0.14f, 0.06f, 0.075f, 0.90f };
+    const float s = uiScale();
+    const RGBA gray = theme::TEXT_QUIET;
+    const RGBA lit = theme::alpha(theme::SLOT_HOT, 0.95f);
+    const RGBA dim = theme::alpha(theme::SLOT, 0.90f);
 
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, 0.86f });
     drawTitleBar(L.bar, ICON_GAME_LOG, lang("UILABEL_INFORMATION_PANEL"));
@@ -452,7 +446,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         if (r.contains(mx, my)) noteHover(r);
         drawRect(r, selected ? lit : dim);
         drawListText(label, r.x + (r.w - listTextWidth(label)) * 0.5f, r.y + (r.h - listTextHeight("Ag")) * 0.5f,
-                     selected ? white : gray);
+                     selected ? WHITE : gray);
     };
     tab(L.tabMessage, lang("UILABEL_MESSAGE"), L.tab == 0);
     tab(L.tabGame, lang("UILABEL_GAME"), L.tab == 1);
@@ -472,11 +466,11 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         const float bodyH = L.bodyBottom - bodyTop;
         float y = bodyTop + std::max(0.0f, (bodyH - blockH) * 0.5f);
         const float midX = L.panel.x + L.panel.w * 0.5f, maxW = L.panel.w - 16.0f * s;
-        drawClockText(time.clock, midX - clockTextWidth(time.clock) * 0.5f, y, white);
+        drawClockText(time.clock, midX - clockTextWidth(time.clock) * 0.5f, y, WHITE);
         y += bigH + gap;
         for (const std::string* line : { &time.date, &time.ymd, &time.days }) {
             const std::string t = fitText(*line, maxW, false);
-            drawListText(t, midX - listTextWidth(t) * 0.5f, y, line == &time.date ? white : gray);
+            drawListText(t, midX - listTextWidth(t) * 0.5f, y, line == &time.date ? WHITE : gray);
             y += smallH + gap;
         }
         return;
@@ -489,10 +483,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         const int row = L.linesVisible - L.shown + k;
         drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
     }
-    if (L.scrollable()) {
-        drawRect(L.track, RGBA{ 0.20f, 0.09f, 0.11f, 0.9f });
-        drawRect(L.thumb, RGBA{ 0.910f, 0.376f, 0.431f, 0.9f });
-    }
+    if (L.scrollable()) drawScrollBar(L.track, L.thumb);
 
     // The filter menu, over the lines. Each kind reads On or Off.
     if (L.filterOpen) {
@@ -500,7 +491,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         const float th = listTextHeight("Ag");
         for (const GameLogLayout::FilterRow& fr : L.filterRows) {
             if (fr.heading) {
-                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, RGBA{ 0.961f, 0.788f, 0.459f, 1.0f });
+                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, theme::GOLD);
                 continue;
             }
             if (fr.r.contains(mx, my)) {
@@ -508,7 +499,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
                 drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
             }
             const bool on = filter.on[(int)fr.kind];
-            drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, white);
+            drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, WHITE);
             const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
             drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
                          on ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : gray);
