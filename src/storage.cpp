@@ -81,11 +81,8 @@ bool dropFromStorage(World& w, int slot) {
     const Transform* ut = w.get<Transform>(storageUnit);
     if (!from || !ut || from->item == 0) return false;
     const ItemStack stack = *from;
-    queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
-                                   itemNameOf(stack.item) }), LogKind::Drop, npcOnly(w, storageUnit));
-    spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, stack.item, stack.count);
+    dropAtUnit(w, storageUnit, stack.item, stack.count);
     *from = ItemStack{};
-    queueSound(Sfx::Drop);
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work
     return true;
 }
