@@ -349,296 +349,329 @@ bool closeEnoughToLead(World& w, const std::vector<Entity>& units, Entity e, Ent
 
 } // namespace
 
-void steeringSystem(World& w, Terrain& t, float dt, bool running) {
-    // Every unit that moves: player units by their orders, hostiles by their chase. An Unconscious unit does not move
-    // and is not pushed, nor does it push anyone: it lies where it fell, or goes with the unit carrying it.
-    std::vector<Entity> units = w.view<Unit, Transform>();
-    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return w.has<Unconscious>(e) || w.has<Carried>(e); }),
-                units.end());
-    std::vector<std::pair<float, float>> vel(units.size(), { 0.0f, 0.0f });
-    std::vector<float> speeds(units.size(), 0.0f);
+namespace {
+
+constexpr float unitWidth = 2.0f * 0.5f + UNIT_CLEARANCE;   // one unit's room: its tile, and the gap
+
+using Vec2f = std::pair<float, float>;
+
+std::int64_t cellKey(int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); }
+
+// What one frame of steering works out for each unit that moves, by its place in units
+struct SteerFrame {
+    std::vector<Entity> units;
+    std::vector<Vec2f> vel;
+    std::vector<float> speeds;
     // Each unit's goal this frame, whether it is going somewhere of its own (else it is idle, holding its spot), and
     // whether it is pinned in place (lying on a bed)
-    std::vector<std::pair<float, float>> goal(units.size(), { 0.0f, 0.0f });
-    std::vector<char> going(units.size(), 0), pinned(units.size(), 0);
+    std::vector<Vec2f> goal;
+    std::vector<char> going, pinned;
     // For a unit settled while following or defending, and not in a fight, the unit it follows; for a worker settled
-    // at its prop, the prop (else NULL_ENTITY). Units that share one hold still among themselves: see pass 1b.
-    std::vector<Entity> calmLead(units.size(), NULL_ENTITY);
+    // at its prop, the prop (else NULL_ENTITY). Units that share one hold still among themselves: see steerVelocity.
+    std::vector<Entity> calmLead;
+    std::vector<Entity> attacked;   // the units something is attacking this frame, sorted
+    std::vector<float> sizes;       // how big each unit is: a smaller one can't push a bigger one
+    // Positions as they stand before anyone moves, and the units sorted by the one-tile cell they are in, so each
+    // unit looks only at the units in its own and the eight cells around it: only those can overlap its square
+    std::vector<Vec2f> pos;
+    std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
+    bool underAttack(Entity e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
+};
 
-    // The units something is attacking this frame
-    std::vector<Entity> attacked;
-    for (Entity e : units) {
-        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) attacked.push_back(c->target);
+// A unit's goal: where its orders take it, or the spot it is idling at. Positions are read here but not changed, so the
+// order of units doesn't matter.
+void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
+    const std::vector<Entity>& units = s.units;
+    auto underAttack = [&](Entity e) { return s.underAttack(e); };
+    Entity e = units[i];
+    Transform* tr = w.get<Transform>(e);
+
+    float tx = tr->x, tz = tr->z;   // default: stay put
+    float leadGap = -1.0f;          // how far a following or defending unit is from the unit it follows
+    // A unit on a bed or bedroll lies still on it: it does not move, and nothing pushes it off
+    if (w.has<Occupying>(e)) {
+        s.speeds[i] = 0.0f;
+        s.pinned[i] = 1;
+        s.goal[i] = { tr->x, tr->z };
+        return;
     }
-    std::sort(attacked.begin(), attacked.end());
-    auto underAttack = [&](Entity e) { return std::binary_search(attacked.begin(), attacked.end(), e); };
-    const float unitWidth = 2.0f * 0.5f + UNIT_CLEARANCE;   // one unit's room: its tile, and the gap
-
-    // Pass 1a: each unit's goal: where its orders take it, or the spot it is idling at.
-    // Positions are read here but not changed, so the order of units doesn't matter.
-    for (size_t i = 0; i < units.size(); ++i) {
-        Entity e = units[i];
-        Transform* tr = w.get<Transform>(e);
-
-        float tx = tr->x, tz = tr->z;   // default: stay put
-        float leadGap = -1.0f;          // how far a following or defending unit is from the unit it follows
-        // A unit on a bed or bedroll lies still on it: it does not move, and nothing pushes it off
-        if (w.has<Occupying>(e)) {
-            speeds[i] = 0.0f;
-            pinned[i] = 1;
-            goal[i] = { tr->x, tr->z };
-            continue;
+    if (const Working* g = w.get<Working>(e); g && !w.has<SoloMove>(e)) {
+        // A worker stays where it is while it is in reach. One pushed out of reach walks back toward the prop.
+        if (const Transform* pt = w.get<Transform>(g->prop)) {
+            const float gx = pt->x - tr->x, gz = pt->z - tr->z;
+            if (gx * gx + gz * gz > PROP_REACH * PROP_REACH) {
+                tx = pt->x;
+                tz = pt->z;
+            } else if (!underAttack(e)) {
+                s.calmLead[i] = g->prop;   // settled at its work, among the others working the same prop
+            }
         }
-        if (const Working* g = w.get<Working>(e); g && !w.has<SoloMove>(e)) {
-            // A worker stays where it is while it is in reach. One pushed out of reach walks back toward the prop.
-            if (const Transform* pt = w.get<Transform>(g->prop)) {
-                const float gx = pt->x - tr->x, gz = pt->z - tr->z;
-                if (gx * gx + gz * gz > PROP_REACH * PROP_REACH) {
-                    tx = pt->x;
-                    tz = pt->z;
-                } else if (!underAttack(e)) {
-                    calmLead[i] = g->prop;   // settled at its work, among the others working the same prop
-                }
-            }
-        } else if (const TalkOrder* talk = w.get<TalkOrder>(e)) {
-            // A talk: walk at the NPC until a unit is in talk range, which starts the talk
-            if (const Transform* nt = w.get<Transform>(talk->npc)) {
-                tx = nt->x;
-                tz = nt->z;
-            }
-        } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
-            if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
-                // Slots are centerd on the active squad's center, so the group's middle sits on
-                // the click point: columns across the heading, rows behind it.
-                int cols = std::min(SQUAD_COLUMNS, sq->size);
-                int rows = (sq->size + cols - 1) / cols;
-                float colOff = sm->slot % cols - (cols - 1) * 0.5f;
-                float rowOff = sm->slot / cols - (rows - 1) * 0.5f;
-                float spacing = slotSpacing(sq->size);
+    } else if (const TalkOrder* talk = w.get<TalkOrder>(e)) {
+        // A talk: walk at the NPC until a unit is in talk range, which starts the talk
+        if (const Transform* nt = w.get<Transform>(talk->npc)) {
+            tx = nt->x;
+            tz = nt->z;
+        }
+    } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
+        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
+            // Slots are centerd on the active squad's center, so the group's middle sits on
+            // the click point: columns across the heading, rows behind it.
+            int cols = std::min(SQUAD_COLUMNS, sq->size);
+            int rows = (sq->size + cols - 1) / cols;
+            float colOff = sm->slot % cols - (cols - 1) * 0.5f;
+            float rowOff = sm->slot / cols - (rows - 1) * 0.5f;
+            float spacing = slotSpacing(sq->size);
 
-                float rightX = -sq->headZ, rightZ = sq->headX;
-                float backX = -sq->headX, backZ = -sq->headZ;
-                tx = sq->cx + (rightX * colOff + backX * rowOff) * spacing;
-                tz = sq->cz + (rightZ * colOff + backZ * rowOff) * spacing;
+            float rightX = -sq->headZ, rightZ = sq->headX;
+            float backX = -sq->headX, backZ = -sq->headZ;
+            tx = sq->cx + (rightX * colOff + backX * rowOff) * spacing;
+            tz = sq->cz + (rightZ * colOff + backZ * rowOff) * spacing;
 
-                // Don't ask units to stand inside walls
-                Vec2 st = t.snap({ tx, tz });
-                tx = st.x;
-                tz = st.z;
+            // Don't ask units to stand inside walls
+            Vec2 st = t.snap({ tx, tz });
+            tx = st.x;
+            tz = st.z;
+        }
+    } else if (SoloMove* so = w.get<SoloMove>(e)) {
+        // Move past any waypoints the unit has already reached
+        while (so->next < so->waypoints.size()) {
+            Vec2 wp = so->waypoints[so->next];
+            float wx = wp.x - tr->x, wz = wp.z - tr->z;
+            // Corners can be passed loosely; the final point is where the unit should stop
+            bool last = so->next + 1 == so->waypoints.size();
+            float reach = last ? 0.05f : 0.2f;
+            if (wx * wx + wz * wz > reach * reach) break;
+            ++so->next;
+        }
+        if (so->next < so->waypoints.size()) {
+            tx = so->waypoints[so->next].x;
+            tz = so->waypoints[so->next].z;
+        }
+    } else if (const AttackOrder* ao = w.get<AttackOrder>(e)) {
+        // An ordered fight: walk at the red unit, and stop once it is close enough to swing
+        if (const Transform* tt = w.get<Transform>(ao->target)) {
+            const float gx = tt->x - tr->x, gz = tt->z - tr->z;
+            if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
+                tx = tt->x;
+                tz = tt->z;
             }
-        } else if (SoloMove* so = w.get<SoloMove>(e)) {
-            // Move past any waypoints the unit has already reached
-            while (so->next < so->waypoints.size()) {
-                Vec2 wp = so->waypoints[so->next];
-                float wx = wp.x - tr->x, wz = wp.z - tr->z;
-                // Corners can be passed loosely; the final point is where the unit should stop
-                bool last = so->next + 1 == so->waypoints.size();
-                float reach = last ? 0.05f : 0.2f;
-                if (wx * wx + wz * wz > reach * reach) break;
-                ++so->next;
+        }
+    } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
+        // Following or defending (with no attacker to fight): walk after the unit, and stop once close enough
+        const Entity lead = leadOf(w, e);
+        if (const Transform* lt = w.get<Transform>(lead)) {
+            leadGap = std::hypot(lt->x - tr->x, lt->z - tr->z);
+            // Once settled, a unit that is not in a fight stays put, without checking again, until the unit it
+            // follows has moved off by at least a whole unit's room. Small moves of the lead, or of the others
+            // around it, don't set it shuffling.
+            const IdleSpot* rest = w.get<IdleSpot>(e);
+            const bool calm = !underAttack(e) && !underAttack(lead);
+            const bool stay = calm && rest && rest->leadGap >= 0.0f && leadGap <= rest->leadGap + unitWidth;
+            if (stay) {
+                s.calmLead[i] = lead;
+            } else if (!closeEnoughToLead(w, units, e, lead)) {
+                tx = lt->x;
+                tz = lt->z;
+            } else if (calm) {
+                s.calmLead[i] = lead;
             }
-            if (so->next < so->waypoints.size()) {
-                tx = so->waypoints[so->next].x;
-                tz = so->waypoints[so->next].z;
-            }
-        } else if (const AttackOrder* ao = w.get<AttackOrder>(e)) {
-            // An ordered fight: walk at the red unit, and stop once it is close enough to swing
-            if (const Transform* tt = w.get<Transform>(ao->target)) {
+        } else {
+            w.remove<FollowOrder>(e);   // the unit it followed is gone
+        }
+    } else if (!w.has<Commandable>(e)) {
+        // A unit that is not yours walks at its target while it has one, and stops once it is close enough to hit
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
+            if (const Transform* tt = w.get<Transform>(c->target)) {
                 const float gx = tt->x - tr->x, gz = tt->z - tr->z;
                 if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
                     tx = tt->x;
                     tz = tt->z;
                 }
             }
-        } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
-            // Following or defending (with no attacker to fight): walk after the unit, and stop once close enough
-            const Entity lead = leadOf(w, e);
-            if (const Transform* lt = w.get<Transform>(lead)) {
-                leadGap = std::hypot(lt->x - tr->x, lt->z - tr->z);
-                // Once settled, a unit that is not in a fight stays put, without checking again, until the unit it
-                // follows has moved off by at least a whole unit's room. Small moves of the lead, or of the others
-                // around it, don't set it shuffling.
-                const IdleSpot* rest = w.get<IdleSpot>(e);
-                const bool calm = !underAttack(e) && !underAttack(lead);
-                const bool stay = calm && rest && rest->leadGap >= 0.0f && leadGap <= rest->leadGap + unitWidth;
-                if (stay) {
-                    calmLead[i] = lead;
-                } else if (!closeEnoughToLead(w, units, e, lead)) {
-                    tx = lt->x;
-                    tz = lt->z;
-                } else if (calm) {
-                    calmLead[i] = lead;
-                }
-            } else {
-                w.remove<FollowOrder>(e);   // the unit it followed is gone
-            }
-        } else if (!w.has<Commandable>(e)) {
-            // A unit that is not yours walks at its target while it has one, and stops once it is close enough to hit
-            if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
-                if (const Transform* tt = w.get<Transform>(c->target)) {
-                    const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-                    if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
-                        tx = tt->x;
-                        tz = tt->z;
-                    }
-                }
-            }
         }
-
-        // With nowhere to go, a unit holds the spot where it came to rest. With somewhere to go, the spot is dropped,
-        // and a new one is taken where it next stops.
-        const bool idle = tx == tr->x && tz == tr->z;
-        if (idle) {
-            IdleSpot* spot = w.get<IdleSpot>(e);
-            if (!spot) spot = &w.add(e, IdleSpot{ tr->x, tr->z, leadGap });
-            else if (spot->leadGap < 0.0f) spot->leadGap = leadGap;
-            tx = spot->x;
-            tz = spot->z;
-        } else if (w.has<IdleSpot>(e)) {
-            w.remove<IdleSpot>(e);
-        }
-        goal[i] = { tx, tz };
-        going[i] = idle ? 0 : 1;
-        // A downed unit has speed 0. A player unit's speed depends on its load, Athletics, stamina and pace.
-        speeds[i] = walkSpeedOf(w, e, running);
     }
 
-    // How big each unit is: a smaller one can't push a bigger one, which walks on through and shoves it aside
-    std::vector<float> sizes(units.size(), 1.0f);
-    for (size_t i = 0; i < units.size(); ++i) sizes[i] = unitSize(w, units[i]);
-
-    // Positions as they stand before anyone moves, and the units sorted by the one-tile cell they are in, so each
-    // unit looks only at the units in its own and the eight cells around it: only those can overlap its square
-    std::vector<std::pair<float, float>> pos(units.size());
-    std::vector<std::pair<std::int64_t, std::uint32_t>> byCell(units.size());
-    auto cellKey = [](int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); };
-    for (size_t i = 0; i < units.size(); ++i) {
-        const Transform* tr = w.get<Transform>(units[i]);
-        pos[i] = { tr->x, tr->z };
-        byCell[i] = { cellKey((int)std::floor(tr->x / UNIT_BOX), (int)std::floor(tr->z / UNIT_BOX)), (std::uint32_t)i };
+    // With nowhere to go, a unit holds the spot where it came to rest. With somewhere to go, the spot is dropped,
+    // and a new one is taken where it next stops.
+    const bool idle = tx == tr->x && tz == tr->z;
+    if (idle) {
+        IdleSpot* spot = w.get<IdleSpot>(e);
+        if (!spot) spot = &w.add(e, IdleSpot{ tr->x, tr->z, leadGap });
+        else if (spot->leadGap < 0.0f) spot->leadGap = leadGap;
+        tx = spot->x;
+        tz = spot->z;
+    } else if (w.has<IdleSpot>(e)) {
+        w.remove<IdleSpot>(e);
     }
-    std::sort(byCell.begin(), byCell.end());
-    std::vector<std::uint32_t> nearby;
+    s.goal[i] = { tx, tz };
+    s.going[i] = idle ? 0 : 1;
+    // A downed unit has speed 0. A player unit's speed depends on its load, Athletics, stamina and pace.
+    s.speeds[i] = walkSpeedOf(w, e, running);
+}
 
-    // Pass 1b: each unit's velocity: toward its goal, plus separation from the units too close to it.
+// The units in the nine cells around a unit
+void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector<std::uint32_t>& nearby) {
+    // The units in the nine cells around this one, in the order of units[] (so the pushes add up as before)
+    nearby.clear();
+    const int cx = (int)std::floor(tr->x / UNIT_BOX), cz = (int)std::floor(tr->z / UNIT_BOX);
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dz = -1; dz <= 1; ++dz) {
+            const std::int64_t key = cellKey(cx + dx, cz + dz);
+            auto it = std::lower_bound(s.byCell.begin(), s.byCell.end(), std::make_pair(key, (std::uint32_t)0));
+            for (; it != s.byCell.end() && it->first == key; ++it) {
+                if (it->second != i) nearby.push_back(it->second);
+            }
+        }
+    }
+    std::sort(nearby.begin(), nearby.end());
+}
+
+    // A unit's velocity: toward its goal, plus separation from the units too close to it.
     // A unit is pushed only by units at least as big as it is.
     // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
     // aside, off the other unit's way. Once nothing pushes it, it walks back to its spot.
-    for (size_t i = 0; i < units.size(); ++i) {
-        if (pinned[i]) continue;
-        const Entity e = units[i];
-        const Transform* tr = w.get<Transform>(e);
+void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
+    const Entity e = s.units[i];
+    const Transform* tr = w.get<Transform>(e);
+    unitsNearby(s, tr, i, nearby);
 
-        // The units in the nine cells around this one, in the order of units[] (so the pushes add up as before)
-        nearby.clear();
-        const int cx = (int)std::floor(tr->x / UNIT_BOX), cz = (int)std::floor(tr->z / UNIT_BOX);
-        for (int dx = -1; dx <= 1; ++dx) {
-            for (int dz = -1; dz <= 1; ++dz) {
-                const std::int64_t key = cellKey(cx + dx, cz + dz);
-                auto it = std::lower_bound(byCell.begin(), byCell.end(), std::make_pair(key, (std::uint32_t)0));
-                for (; it != byCell.end() && it->first == key; ++it) {
-                    if (it->second != i) nearby.push_back(it->second);
-                }
+    float vx = 0.0f, vz = 0.0f, sideX = 0.0f, sideZ = 0.0f;
+    bool shoved = false;
+    for (const std::uint32_t j : nearby) {
+        const std::pair<float, float>& o = s.pos[j];
+        float sx = tr->x - o.first, sz = tr->z - o.second;
+        // Every unit and mob is the same one-tile square, lined up with the tiles: two overlap when they are less
+        // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
+        const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
+        if (overX <= 0.0f || overZ <= 0.0f) continue;
+        if (s.sizes[j] < s.sizes[i] - 1e-3f) continue;   // a smaller unit can't move this one
+        // Two settled units following the same unit leave each other be: no pushing back and forth between them
+        if (s.calmLead[i] != NULL_ENTITY && s.calmLead[i] == s.calmLead[j]) continue;
+        if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;   // right on top: pick a side
+        const bool alongX = overX < overZ;
+        const float push = (alongX ? overX : overZ) * 8.0f;
+        if (alongX) vx += (sx >= 0.0f ? 1.0f : -1.0f) * push;
+        else vz += (sz >= 0.0f ? 1.0f : -1.0f) * push;
+        if (s.going[i] && s.pinned[j]) {
+            // Against a unit that can't give way (one lying on a bed): slide around it, on the side already nearer
+            float hx = s.goal[i].first - tr->x, hz = s.goal[i].second - tr->z;
+            const float hl = std::sqrt(hx * hx + hz * hz);
+            if (hl > 1e-4f) {
+                hx /= hl;
+                hz /= hl;
+                float side = -hz * sx + hx * sz;                          // which side of this unit's heading it is on
+                if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
+                const float sgn = side > 0.0f ? 1.0f : -1.0f;
+                vx += -hz * sgn * push * 1.5f;
+                vz += hx * sgn * push * 1.5f;
             }
         }
-        std::sort(nearby.begin(), nearby.end());
-
-        float vx = 0.0f, vz = 0.0f, sideX = 0.0f, sideZ = 0.0f;
-        bool shoved = false;
-        for (const std::uint32_t j : nearby) {
-            const std::pair<float, float>& o = pos[j];
-            float sx = tr->x - o.first, sz = tr->z - o.second;
-            // Every unit and mob is the same one-tile square, lined up with the tiles: two overlap when they are less
-            // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
-            const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
-            if (overX <= 0.0f || overZ <= 0.0f) continue;
-            if (sizes[j] < sizes[i] - 1e-3f) continue;   // a smaller unit can't move this one
-            // Two settled units following the same unit leave each other be: no pushing back and forth between them
-            if (calmLead[i] != NULL_ENTITY && calmLead[i] == calmLead[j]) continue;
-            if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;   // right on top: pick a side
-            const bool alongX = overX < overZ;
-            const float push = (alongX ? overX : overZ) * 8.0f;
-            if (alongX) vx += (sx >= 0.0f ? 1.0f : -1.0f) * push;
-            else vz += (sz >= 0.0f ? 1.0f : -1.0f) * push;
-            if (going[i] && pinned[j]) {
-                // Against a unit that can't give way (one lying on a bed): slide around it, on the side already nearer
-                float hx = goal[i].first - tr->x, hz = goal[i].second - tr->z;
-                const float hl = std::sqrt(hx * hx + hz * hz);
-                if (hl > 1e-4f) {
-                    hx /= hl;
-                    hz /= hl;
-                    float side = -hz * sx + hx * sz;                          // which side of this unit's heading it is on
-                    if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
-                    const float sgn = side > 0.0f ? 1.0f : -1.0f;
-                    vx += -hz * sgn * push * 1.5f;
-                    vz += hx * sgn * push * 1.5f;
-                }
-            }
-            if (!going[i] && going[j]) {
-                // Pushed by a unit on its way: step to the side of its path, the side this unit is already on
-                shoved = true;
-                float hx = goal[j].first - o.first, hz = goal[j].second - o.second;
-                const float hl = std::sqrt(hx * hx + hz * hz);
-                if (hl > 1e-4f) {
-                    hx /= hl;
-                    hz /= hl;
-                    float side = hx * sz - hz * sx;                      // which side of its heading this unit is on
-                    if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
-                    const float s = side > 0.0f ? 1.0f : -1.0f;
-                    sideX += -hz * s * push;
-                    sideZ += hx * s * push;
-                }
-            }
-        }
-        if (shoved) {
-            vx += sideX;
-            vz += sideZ;
-        } else {
-            const float dx = goal[i].first - tr->x, dz = goal[i].second - tr->z;
-            const float dist = std::sqrt(dx * dx + dz * dz);
-            // A settled follower only walks back to its spot when it is at least a whole unit's room away from it
-            const float deadZone = calmLead[i] != NULL_ENTITY ? unitWidth : 0.05f;
-            if (dist > deadZone && speeds[i] > 0.0f) {
-                const float sp = std::min(speeds[i], dist * 2.5f);   // slow down near the goal
-                vx += dx / dist * sp;
-                vz += dz / dist * sp;
-            }
-        }
-        vel[i] = { vx, vz };
-    }
-
-    // Pass 2: apply movement and slide along walls. Walking gives XP, and records the distance walked and
-    // the load for the combat step, which runs first next frame.
-    for (size_t i = 0; i < units.size(); ++i) {
-        const Entity e = units[i];
-        Transform* tr = w.get<Transform>(e);
-        const bool player = w.has<Commandable>(e);
-        const float load = encumbranceOf(w, e);
-        const float x0 = tr->x, z0 = tr->z, y0 = tr->y;
-
-        float nx = tr->x + vel[i].first * dt;
-        float nz = tr->z + vel[i].second * dt;
-        // Try each axis separately so units slide along walls instead of stopping
-        if (t.isFree(nx, tr->z)) tr->x = nx;
-        if (t.isFree(tr->x, nz)) tr->z = nz;
-        tr->y = t.heightAt(tr->x, tr->z);
-
-        const float moved = std::hypot(tr->x - x0, tr->z - z0);
-        if (Combat* c = w.get<Combat>(e)) {
-            c->moved = moved;
-            c->encumbrance = load;
-        }
-        if (moved > 0.0f) {
-            grantXp(w, e, StatId::Endurance, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
-            grantXp(w, e, StatId::Strength, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
-            if (tr->y > y0) grantXp(w, e, StatId::Athletics, tr->y - y0, lang("MISC_REASON_CLIMBING"));
-            // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
-            // a hundredth of a tile or less in a frame, is not walking.
-            if (player && running && moved >= 0.01f) {
-                if (Needs* nd = w.get<Needs>(e)) nd->hurried = true;
+        if (!s.going[i] && s.going[j]) {
+            // Pushed by a unit on its way: step to the side of its path, the side this unit is already on
+            shoved = true;
+            float hx = s.goal[j].first - o.first, hz = s.goal[j].second - o.second;
+            const float hl = std::sqrt(hx * hx + hz * hz);
+            if (hl > 1e-4f) {
+                hx /= hl;
+                hz /= hl;
+                float side = hx * sz - hz * sx;                      // which side of its heading this unit is on
+                if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;   // dead ahead: pick a side
+                const float s = side > 0.0f ? 1.0f : -1.0f;
+                sideX += -hz * s * push;
+                sideZ += hx * s * push;
             }
         }
     }
+    if (shoved) {
+        vx += sideX;
+        vz += sideZ;
+    } else {
+        const float dx = s.goal[i].first - tr->x, dz = s.goal[i].second - tr->z;
+        const float dist = std::sqrt(dx * dx + dz * dz);
+        // A settled follower only walks back to its spot when it is at least a whole unit's room away from it
+        const float deadZone = s.calmLead[i] != NULL_ENTITY ? unitWidth : 0.05f;
+        if (dist > deadZone && s.speeds[i] > 0.0f) {
+            const float sp = std::min(s.speeds[i], dist * 2.5f);   // slow down near the goal
+            vx += dx / dist * sp;
+            vz += dz / dist * sp;
+        }
+    }
+    s.vel[i] = { vx, vz };
+}
+
+// Applies a unit's movement and slide along walls. Walking gives XP, and records the distance walked and
+// the load for the combat step, which runs first next frame.
+void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, bool running) {
+    Transform* tr = w.get<Transform>(e);
+    const bool player = w.has<Commandable>(e);
+    const float load = encumbranceOf(w, e);
+    const float x0 = tr->x, z0 = tr->z, y0 = tr->y;
+
+    float nx = tr->x + velocity.first * dt;
+    float nz = tr->z + velocity.second * dt;
+    // Try each axis separately so units slide along walls instead of stopping
+    if (t.isFree(nx, tr->z)) tr->x = nx;
+    if (t.isFree(tr->x, nz)) tr->z = nz;
+    tr->y = t.heightAt(tr->x, tr->z);
+
+    const float moved = std::hypot(tr->x - x0, tr->z - z0);
+    if (Combat* c = w.get<Combat>(e)) {
+        c->moved = moved;
+        c->encumbrance = load;
+    }
+    if (moved > 0.0f) {
+        grantXp(w, e, StatId::Endurance, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
+        grantXp(w, e, StatId::Strength, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
+        if (tr->y > y0) grantXp(w, e, StatId::Athletics, tr->y - y0, lang("MISC_REASON_CLIMBING"));
+        // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
+        // a hundredth of a tile or less in a frame, is not walking.
+        if (player && running && moved >= 0.01f) {
+            if (Needs* nd = w.get<Needs>(e)) nd->hurried = true;
+        }
+    }
+}
+
+} // namespace
+
+void steeringSystem(World& w, Terrain& t, float dt, bool running) {
+    SteerFrame s;
+    // Every unit that moves: player units by their orders, hostiles by their chase. An Unconscious unit does not move
+    // and is not pushed, nor does it push anyone: it lies where it fell, or goes with the unit carrying it.
+    s.units = w.view<Unit, Transform>();
+    std::vector<Entity>& units = s.units;
+    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return w.has<Unconscious>(e) || w.has<Carried>(e); }),
+                units.end());
+    s.vel.assign(units.size(), { 0.0f, 0.0f });
+    s.speeds.assign(units.size(), 0.0f);
+    s.goal.assign(units.size(), { 0.0f, 0.0f });
+    s.going.assign(units.size(), 0);
+    s.pinned.assign(units.size(), 0);
+    s.calmLead.assign(units.size(), NULL_ENTITY);
+
+    for (Entity e : units) {
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) s.attacked.push_back(c->target);
+    }
+    std::sort(s.attacked.begin(), s.attacked.end());
+
+    for (size_t i = 0; i < units.size(); ++i) steerGoal(w, t, s, i, running);
+
+    s.sizes.assign(units.size(), 1.0f);
+    for (size_t i = 0; i < units.size(); ++i) s.sizes[i] = unitSize(w, units[i]);
+
+    s.pos.resize(units.size());
+    s.byCell.resize(units.size());
+    for (size_t i = 0; i < units.size(); ++i) {
+        const Transform* tr = w.get<Transform>(units[i]);
+        s.pos[i] = { tr->x, tr->z };
+        s.byCell[i] = { cellKey((int)std::floor(tr->x / UNIT_BOX), (int)std::floor(tr->z / UNIT_BOX)), (std::uint32_t)i };
+    }
+    std::sort(s.byCell.begin(), s.byCell.end());
+
+    std::vector<std::uint32_t> nearby;
+    for (size_t i = 0; i < units.size(); ++i) {
+        if (!s.pinned[i]) steerVelocity(w, s, i, nearby);
+    }
+    for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, units[i], s.vel[i], dt, running);
 }
 
 void cleanupActiveSquads(World& w) {
