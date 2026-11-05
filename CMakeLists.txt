@@ -90,6 +90,11 @@ add_executable(koboldsurvival
     src/useitem.cpp
     src/need_behaviors.cpp
     src/systems.cpp
+    src/world_setup.cpp
+    src/movement.cpp
+    src/prop_use.cpp
+    src/automation.cpp
+    src/downed.cpp
     src/terrain.cpp
     src/overview.cpp
     src/terrain_mesh.cpp
