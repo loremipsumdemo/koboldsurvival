@@ -7,7 +7,7 @@ bool unitIdle(World& w, Entity u) {
     if (w.has<Corpse>(u) || w.has<Unconscious>(u) || w.has<PlayingDead>(u) || w.has<Carried>(u)) return false;
     if (const Behaviors* b = w.get<Behaviors>(u); b && (b->busy || b->seeking)) return false;
     if (w.has<Working>(u) || w.has<PropOrder>(u) || w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<CarryOrder>(u) ||
-        w.has<PutDownOrder>(u) || w.has<LootOrder>(u) || w.has<DefendOrder>(u) || w.has<FollowOrder>(u) ||
+        w.has<LootOrder>(u) || w.has<DefendOrder>(u) || w.has<FollowOrder>(u) ||
         w.has<AttackOrder>(u) || w.has<TalkOrder>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u)) {
         return false;
     }

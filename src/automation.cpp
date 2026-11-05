@@ -99,7 +99,7 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
     if (const PropOrder* po = w.get<PropOrder>(u); po && !po->automatic) return true;
     if (const Working* wk = w.get<Working>(u); wk && (wk->unlocking || !b.busy || wk->prop != b.stepProp)) return true;
     if (w.has<Occupying>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u) ||
-        w.has<LootOrder>(u) || w.has<CarryOrder>(u) || w.has<PutDownOrder>(u) || w.has<TalkOrder>(u) ||
+        w.has<LootOrder>(u) || w.has<CarryOrder>(u) || w.has<TalkOrder>(u) ||
         w.has<Carrying>(u) || w.has<AttackOrder>(u)) {
         return true;
     }
@@ -491,7 +491,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         // An order of yours takes over.
         if (b->busy && b->step.kind == BehaviorKind::Rescue) {
             const PropOrder* rpo = w.get<PropOrder>(u);
-            const bool yoursNow = w.has<ActiveSquadMember>(u) || w.has<PutDownOrder>(u) || (rpo && !rpo->automatic) ||
+            const bool yoursNow = w.has<ActiveSquadMember>(u) || (rpo && !rpo->automatic) ||
                                   w.has<AttackOrder>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) ||
                                   w.has<PickupOrder>(u) || w.has<PickupChain>(u) || w.has<LootOrder>(u) || w.has<TalkOrder>(u);
             if (yoursNow) {

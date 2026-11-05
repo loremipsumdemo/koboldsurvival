@@ -169,7 +169,7 @@ void onAttacked(World& w, Entity a, Entity d) {
             // Your units step in only when they are free: no order of their own under way
             const bool busy = w.has<AttackOrder>(u) || w.has<SoloMove>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u) ||
                               w.has<TalkOrder>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
-                              w.has<PutDownOrder>(u) || w.has<PropOrder>(u) || w.has<Working>(u) ||
+                              w.has<PropOrder>(u) || w.has<Working>(u) ||
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
             const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
             if (busy || (sq && !sq->arrived) || c.target != NULL_ENTITY) continue;

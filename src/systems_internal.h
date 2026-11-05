@@ -34,7 +34,6 @@ inline constexpr float FOLLOW_DISTANCE = 1.6f;   // a unit following or defendin
 inline void endPropTasks(World& w, Entity u) {
     w.remove<LootOrder>(u);
     w.remove<CarryOrder>(u);
-    w.remove<PutDownOrder>(u);
     w.remove<PropOrder>(u);
     w.remove<Occupying>(u);
     w.remove<Working>(u);

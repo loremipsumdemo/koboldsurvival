@@ -223,8 +223,6 @@ void playDeadSystem(World& w);
 void patrolSpawnSystem(World& w, Terrain& t, float dt);
 // Sends the first unit that can (the list is nearest first) to pick up a unit that canBeCarried. False if none can.
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
-// Sends each unit that is carrying someone to a ground point, to put it down there
-void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point);
 // Puts down the unit a unit carries, where the carrier stands
 void putDown(World& w, Entity carrier);
 // Sends the first unit that can (nearest first) to an Unconscious unit or a corpse to loot it. False if none can.

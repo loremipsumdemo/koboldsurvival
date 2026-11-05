@@ -17,15 +17,6 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
     return false;
 }
 
-void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point) {
-    for (Entity u : units) {
-        if (!w.has<Carrying>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        clearOrders(w, u);
-        walkSolo(w, t, u, point);
-        w.add(u, PutDownOrder{ point.x, point.z });
-    }
-}
-
 void putDown(World& w, Entity carrier) {
     const Carrying* cr = w.get<Carrying>(carrier);
     if (!cr) return;
@@ -70,22 +61,6 @@ CarryEvents carrySystem(World& w) {
         if (!so || so->next >= so->waypoints.size()) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
-        }
-    }
-    // Walking to put someone down: at the spot, or as near as the route got, it is put down
-    for (Entity u : w.view<PutDownOrder, Transform>()) {
-        if (!w.has<Carrying>(u)) {
-            w.remove<PutDownOrder>(u);
-            continue;
-        }
-        const PutDownOrder pd = *w.get<PutDownOrder>(u);
-        const Transform* tr = w.get<Transform>(u);
-        const SoloMove* so = w.get<SoloMove>(u);
-        const bool there = std::hypot(pd.x - tr->x, pd.z - tr->z) <= 0.6f;
-        if (there || !so || so->next >= so->waypoints.size()) {
-            w.remove<PutDownOrder>(u);
-            w.remove<SoloMove>(u);
-            putDown(w, u);
         }
     }
     // Every carried unit goes where its carrier is. A carrier that is gone, knocked out or no longer holding it drops it.

@@ -353,11 +353,6 @@ struct CarryOrder {
 struct LootOrder {
     Entity target = NULL_ENTITY;
 };
-// An order to walk to a point and put down the unit being carried there
-struct PutDownOrder {
-    float x = 0.0f, z = 0.0f;
-};
-
 // A player unit's order to fight one red unit. The unit walks at it and keeps it as its target, choosing no
 // other, until the red unit is gone. A move or pickup order cancels it.
 struct AttackOrder {
