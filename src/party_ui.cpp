@@ -144,9 +144,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const PartyMember& m = pickedMember(p, ui);
     std::vector<Button> out;
     std::vector<Button> dropGroup;   // added last, so an open dropdown draws over everything
-    Rect sprAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, gearAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, invAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bodyAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect mobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f }, addMobAnchor{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect sprAnchor, gearAnchor, invAnchor;
+    Rect bodyAnchor;
+    Rect mobAnchor, addMobAnchor;
     const bool mob = !p.empty() && m.mob != MobKind::None;   // the picked member is a mob: no model, body, gear or items to set
 
     // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu

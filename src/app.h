@@ -348,7 +348,7 @@ struct App {
     std::optional<SaveSummary> pendingDelete;      // the save the delete question is about
     bool deleteHolding = false;           // the Delete button is being held down
     Uint64 deleteHoldStart = 0;           // when that hold began, in SDL ticks
-    Rect deleteHoldRect{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Delete button being held
+    Rect deleteHoldRect;   // the Delete button being held
     std::string saveName;                 // text typed in the popout for a manual save
     size_t listOffset = 0;                // first save shown in the popout
     int viewH = 720;                      // window height, for how many save rows fit

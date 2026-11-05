@@ -19,7 +19,6 @@ bool tradeItemsPresent(World& w, Entity npc, Entity player);
 // Takes back out the ghost shown in one of the cells. True if one was there.
 bool takeTradeGhostAt(std::vector<TradeGhost>& side, const std::vector<Rect>& cells, float x, float y);
 // The distance in tiles between two units on the ground
-float gapBetween(World& w, Entity a, Entity b);
 // Whether a side's inventory has room for what it receives, once what it gives is taken out of it
 bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::vector<TradeGhost>& receives);
 // Whether the trade on the table can be confirmed: both sides have items, each inventory has room for what it

@@ -103,15 +103,6 @@ bool takeTradeGhostAt(std::vector<TradeGhost>& side, const std::vector<Rect>& ce
     return false;
 }
 
-// The distance in tiles between two units on the ground
-float gapBetween(World& w, Entity a, Entity b) {
-    const Transform* ta = w.get<Transform>(a);
-    const Transform* tb = w.get<Transform>(b);
-    if (!ta || !tb) return 1e9f;
-    const float dx = ta->x - tb->x, dz = ta->z - tb->z;
-    return std::sqrt(dx * dx + dz * dz);
-}
-
 // Whether a side's inventory has room for what it receives, once what it gives is taken out of it
 bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::vector<TradeGhost>& receives) {
     for (const TradeGhost& g : gives) {

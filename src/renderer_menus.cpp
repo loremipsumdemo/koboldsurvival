@@ -76,7 +76,7 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     // 8 pixel black border, filled without stretching (a wider picture loses a little off its sides). The bar runs
     // across the bottom of the picture, with what is loading and the share done under the border.
     const bool art = !backdrop && loadingArt_.tex;
-    Rect pic{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect pic;
     if (art) {
         constexpr float PIC_W = 800.0f, PIC_H = 600.0f, PIC_BORDER = 8.0f;
         const float textRoom = 2.0f * uiTextHeight("Ag") + 40.0f;   // the lines under the picture

@@ -20,7 +20,7 @@ constexpr int SQUAD_DEFAULT_ROWS = 3;   // and its rows at its default height
 // One visible unit in the bottom panel: its index in the player's unit list, and its rectangle
 struct UnitCell {
     int index = 0;
-    Rect rect{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect rect;
 };
 
 // The [-] or [+] button at the right end of a title bar, which folds its panel up or down
@@ -219,25 +219,25 @@ inline PanelPlace defaultPanelPlace(PanelId which) {
 
 struct UnitPanelLayout {
     bool collapsed = false;                     // only the title bar shows
-    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };      // the [-] or [+] button in the bar
-    Rect lock{ 0.0f, 0.0f, 0.0f, 0.0f };        // the lock beside it
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };       // the "Squad Panel" bar across the top
-    Rect paceButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // walk and run toggle, across the top of the panel, on the left
-    Rect optimizeAllButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // Optimize All, beside the pace toggle
+    Rect toggle;      // the [-] or [+] button in the bar
+    Rect lock;        // the lock beside it
+    Rect panel;
+    Rect title;       // the "Squad Panel" bar across the top
+    Rect paceButton;  // walk and run toggle, across the top of the panel, on the left
+    Rect optimizeAllButton;   // Optimize All, beside the pace toggle
     // The tabs under the bar: Squad (FACTION_TAB_SQUAD, the units) and Reputation (FACTION_TAB_REPUTATION)
     int tab = 0;
-    Rect tabSquad{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect tabReputation{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tabSquad;
+    Rect tabReputation;
     // The Reputation tab: a heading naming the faction shown, then one row per faction, from repFirst on
-    Rect repHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect repHeading;
     std::vector<Rect> repRows;
     int repFirst = 0;                       // the first faction shown, clamped to the list
     int repVisible = 0;                     // how many rows have room
-    Rect scrollUp{ 0.0f, 0.0f, 0.0f, 0.0f };    // the button at the top of the scroll bar: up a row
-    Rect scrollDown{ 0.0f, 0.0f, 0.0f, 0.0f };  // the button at the bottom of the scroll bar: down a row
-    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track, between the two buttons
-    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb, which can be dragged
+    Rect scrollUp;    // the button at the top of the scroll bar: up a row
+    Rect scrollDown;  // the button at the bottom of the scroll bar: down a row
+    Rect track;   // scroll bar track, between the two buttons
+    Rect thumb;   // scroll bar thumb, which can be dragged
     std::vector<UnitCell> cells;            // visible units only
     int rowCount = 0;                       // total rows of units
     int rowsVisible = 0;
@@ -351,13 +351,13 @@ inline int squadRowAtThumb(const UnitPanelLayout& L, float thumbTop) {
 // One row of the Behavior list: the on box, the behavior's name, then its # button (Eat, Heal and Rest only) and the
 // priority and delete buttons
 struct BehaviorRowLayout {
-    Rect row{ 0.0f, 0.0f, 0.0f, 0.0f };             // the whole row, which the hover text is for
-    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };          // on or off
-    Rect label{ 0.0f, 0.0f, 0.0f, 0.0f };           // what it does, such as Eat when hunger < 50%
-    Rect number{ 0.0f, 0.0f, 0.0f, 0.0f };          // [#] asks for the percent Eat, Heal or Rest acts below
-    Rect up{ 0.0f, 0.0f, 0.0f, 0.0f };              // [^] moves the behavior up the priority list
-    Rect down{ 0.0f, 0.0f, 0.0f, 0.0f };            // [v] moves it down
-    Rect remove{ 0.0f, 0.0f, 0.0f, 0.0f };          // [x] deletes it (Add Behavior puts it back)
+    Rect row;             // the whole row, which the hover text is for
+    Rect toggle;          // on or off
+    Rect label;           // what it does, such as Eat when hunger < 50%
+    Rect number;          // [#] asks for the percent Eat, Heal or Rest acts below
+    Rect up;              // [^] moves the behavior up the priority list
+    Rect down;            // [v] moves it down
+    Rect remove;          // [x] deletes it (Add Behavior puts it back)
 };
 
 // The parts of a behavior row that a click or hover can land on. Number is the # button, which asks for the percent.
@@ -387,35 +387,35 @@ inline bool unitTabEnabled(World& w, Entity unit, UnitTab tab) {
 constexpr int STAT_GROUP_COUNT = 5;
 
 struct SidebarLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };      // the whole Unit Panel, bottom right
+    Rect panel;      // the whole Unit Panel, bottom right
     bool open = false;                          // closed: the bar alone. open: the tabs and the picked tab
     UnitTab tab = UnitTab::Inventory;           // the tab shown, when open
-    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };      // the "Unit Panel" bar across the top, which does not scroll
-    Rect minus{ 0.0f, 0.0f, 0.0f, 0.0f };      // [-], shown while open; empty otherwise
-    Rect plus{ 0.0f, 0.0f, 0.0f, 0.0f };       // [+], shown while closed; empty otherwise
-    Rect lock{ 0.0f, 0.0f, 0.0f, 0.0f };       // the lock beside the [-] or [+]
+    Rect title;      // the "Unit Panel" bar across the top, which does not scroll
+    Rect minus;      // [-], shown while open; empty otherwise
+    Rect plus;       // [+], shown while closed; empty otherwise
+    Rect lock;       // the lock beside the [-] or [+]
     std::array<Rect, UNIT_TAB_COUNT> tabs{};   // the tab buttons under the bar; empty while closed
-    Rect body{ 0.0f, 0.0f, 0.0f, 0.0f };       // the area under the tabs, where the picked tab's contents scroll
-    Rect profile{ 0.0f, 0.0f, 0.0f, 0.0f };    // profile card: name, health, hunger and carry
-    Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };   // the unit's picture, inside the card on the left
-    Rect gearPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the gear slots and their totals
+    Rect body;       // the area under the tabs, where the picked tab's contents scroll
+    Rect profile;    // profile card: name, health, hunger and carry
+    Rect portrait;   // the unit's picture, inside the card on the left
+    Rect gearPanel;  // background behind the gear slots and their totals
     std::vector<Rect> gear;                    // GEAR_SLOTS cells in GearSlot order, in one row like the inventory's
-    Rect optimizeButton{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Gear tab: wears the best gear on hand (optimizeGear)
-    Rect removeAllButton{ 0.0f, 0.0f, 0.0f, 0.0f };  // the Gear tab: takes all gear off (removeAllGear)
-    Rect gridPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the inventory grid
-    Rect sortButton{ 0.0f, 0.0f, 0.0f, 0.0f }; // sorts the grid by item type, top right of its heading
+    Rect optimizeButton;   // the Gear tab: wears the best gear on hand (optimizeGear)
+    Rect removeAllButton;  // the Gear tab: takes all gear off (removeAllGear)
+    Rect gridPanel;  // background behind the inventory grid
+    Rect sortButton; // sorts the grid by item type, top right of its heading
     std::vector<Rect> slots;                   // INVENTORY_SLOTS rectangles, row by row
-    Rect statsArea{ 0.0f, 0.0f, 0.0f, 0.0f };  // the stats list, in the Stats tab
+    Rect statsArea;  // the stats list, in the Stats tab
     float statRowH = 0.0f;                     // the height of each row in the stats list
-    Rect behaviorPanel{ 0.0f, 0.0f, 0.0f, 0.0f };  // background behind the behavior list
+    Rect behaviorPanel;  // background behind the behavior list
     // The modes over the behaviors: Passive, Block, Sneak, then Ranged (shown, not pressed)
     std::array<Rect, 4> modes{};
     std::array<Rect, 2> behaviorHeads{};       // column headings: On, Behavior
     std::vector<BehaviorRowLayout> behaviorRows;   // one per behavior, highest priority first
-    Rect behaviorAdd{ 0.0f, 0.0f, 0.0f, 0.0f };     // + Add Behavior, under the rows; it opens and shuts the list
+    Rect behaviorAdd;     // + Add Behavior, under the rows; it opens and shuts the list
     std::vector<Rect> behaviorOptions;             // the Add Behavior list's entries, while it is open
     std::vector<BehaviorOption> behaviorOptionInfo;   // filled by the caller, for drawing: what each entry adds
-    Rect buildHeading{ 0.0f, 0.0f, 0.0f, 0.0f };   // the Build tab's line saying what is picked
+    Rect buildHeading;   // the Build tab's line saying what is picked
     std::vector<Rect> buildRows;               // the Build tab: one row per PropKind, in order. Picking one picks it.
     float scroll = 0.0f;                       // the scroll offset used, in pixels, within 0..maxScroll
     float maxScroll = 0.0f;                    // how far the picked tab can scroll

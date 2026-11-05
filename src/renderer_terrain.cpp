@@ -5,6 +5,7 @@
 #include "frustum.h"
 #include "surface_tiles.h"
 #include "look.h"
+#include "gl_util.h"
 
 #include <algorithm>
 #include <chrono>
@@ -92,8 +93,8 @@ void main() {
 }
 )GLSL";
 
-// Sea and seabed build their quads in the vertex shader from gl_VertexID, so they need no
-// vertex buffer, only an empty VAO.
+// Sea and seabed share this vertex shader. It builds their quads from gl_VertexID, so they
+// need no vertex buffer, only an empty VAO.
 const char* const kSeaVS = R"GLSL(
 #version 330 core
 uniform mat4 uViewProj;
@@ -175,23 +176,6 @@ void main() {
 
 // Seabed beyond the map: a flat plane at the floor. Seen through the water it is just the
 // underwater tint, so one flat color is enough.
-const char* const kFloorVS = R"GLSL(
-#version 330 core
-uniform mat4 uViewProj;
-uniform vec3 uCenter;
-uniform float uHalf;
-out vec3 vWorld;
-const vec2 kCorner[6] = vec2[6](
-    vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
-    vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0));
-void main() {
-    vec2 c = kCorner[gl_VertexID];
-    vec3 p = vec3(uCenter.x + c.x * uHalf, uCenter.y, uCenter.z + c.y * uHalf);
-    vWorld = p;
-    gl_Position = uViewProj * vec4(p, 1.0);
-}
-)GLSL";
-
 const char* const kFloorFS = R"GLSL(
 #version 330 core
 in vec3 vWorld;
@@ -238,60 +222,12 @@ bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     return true;
 }
 
-// Compiles and links one shader program. Returns 0 and reports the log if it fails.
-GLuint buildProgram(const char* vsSrc, const char* fsSrc) {
-    auto compile = [](GLenum type, const char* src) {
-        GLuint s = glCreateShader(type);
-        glShaderSource(s, 1, &src, nullptr);
-        glCompileShader(s);
-        GLint ok = 0;
-        glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-        if (!ok) {
-            char log[1024] = {};
-            glGetShaderInfoLog(s, sizeof(log), nullptr, log);
-            std::fprintf(stderr, "terrain shader failed to compile: %s\n", log);
-            glDeleteShader(s);
-            return GLuint{ 0 };
-        }
-        return s;
-    };
-    const GLuint vs = compile(GL_VERTEX_SHADER, vsSrc);
-    const GLuint fs = vs ? compile(GL_FRAGMENT_SHADER, fsSrc) : 0;
-    if (!fs) {
-        if (vs) glDeleteShader(vs);
-        return 0;
-    }
-    const GLuint p = glCreateProgram();
-    glAttachShader(p, vs);
-    glAttachShader(p, fs);
-    glLinkProgram(p);
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    GLint ok = 0;
-    glGetProgramiv(p, GL_LINK_STATUS, &ok);
-    if (!ok) {
-        char log[1024] = {};
-        glGetProgramInfoLog(p, sizeof(log), nullptr, log);
-        std::fprintf(stderr, "terrain shader failed to link: %s\n", log);
-        glDeleteProgram(p);
-        return 0;
-    }
-    return p;
-}
-
 // One surface tile as a repeating, mipmapped texture
 GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels) {
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, SURFACE_TILE_SIZE, SURFACE_TILE_SIZE, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    const GLuint tex = makeTexture2D(SURFACE_TILE_SIZE, SURFACE_TILE_SIZE, GL_RGBA8, GL_RGBA, pixels.data(), GL_LINEAR,
+                                     GL_REPEAT);
     glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
@@ -309,7 +245,7 @@ float SecondsSinceStart() {
 // ---------------------------------------------------------------------------
 
 bool Renderer::initTerrainGl() {
-    groundShader_.prog = buildProgram(kGroundVS, kGroundFS);
+    groundShader_.prog = linkProgram("terrain", kGroundVS, kGroundFS);
     if (!groundShader_.prog) return false;
     GLuint g = groundShader_.prog;
     groundShader_.viewProj = glGetUniformLocation(g, "uViewProj");
@@ -326,7 +262,7 @@ bool Renderer::initTerrainGl() {
     groundShader_.fog = glGetUniformLocation(g, "uFog");
     groundShader_.tile = glGetUniformLocation(g, "uTile");
 
-    seaShader_.prog = buildProgram(kSeaVS, kSeaFS);
+    seaShader_.prog = linkProgram("sea", kSeaVS, kSeaFS);
     if (!seaShader_.prog) return false;
     GLuint s = seaShader_.prog;
     seaShader_.viewProj = glGetUniformLocation(s, "uViewProj");
@@ -347,7 +283,7 @@ bool Renderer::initTerrainGl() {
     seaShader_.fadeEnd = glGetUniformLocation(s, "uFadeEnd");
     seaShader_.tile = glGetUniformLocation(s, "uTile");
 
-    floorShader_.prog = buildProgram(kFloorVS, kFloorFS);
+    floorShader_.prog = linkProgram("seabed", kSeaVS, kFloorFS);
     if (!floorShader_.prog) return false;
     GLuint f = floorShader_.prog;
     floorShader_.viewProj = glGetUniformLocation(f, "uViewProj");

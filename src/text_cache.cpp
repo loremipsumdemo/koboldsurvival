@@ -1,4 +1,5 @@
 #include "text_cache.h"
+#include "gl_util.h"
 #include <cstring>
 #include <utility>
 
@@ -11,16 +12,7 @@ TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color) {
     SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
     SDL_DestroySurface(s);
 
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
+    const GLuint t = makeTexture2D(conv->w, conv->h, GL_RGBA, GL_RGBA, conv->pixels, GL_LINEAR, GL_CLAMP_TO_EDGE);
 
     TextTex result{ t, (float)conv->w / (float)conv->h };
     SDL_DestroySurface(conv);

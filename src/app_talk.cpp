@@ -229,7 +229,7 @@ std::vector<Entity> App::menuActors(Entity target) {
         if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
     }
     std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
-        return gapBetween(world, a, target) < gapBetween(world, b, target);
+        return flatGap(world, a, target) < flatGap(world, b, target);
     });
     return units;
 }
@@ -429,7 +429,7 @@ void App::pickMenuAction(MenuAction a) {
         Entity talker = NULL_ENTITY;
         for (Entity u : actors) {
             if (world.has<Mob>(u)) continue;
-            if (gapBetween(world, u, target) <= TALK_RANGE) {
+            if (flatGap(world, u, target) <= TALK_RANGE) {
                 talker = u;
                 break;
             }
@@ -445,7 +445,7 @@ void App::pickMenuAction(MenuAction a) {
             refuse(lang("MISC_MOB_INVENTORY_LOCKED"));
             break;
         }
-        if (gapBetween(world, *trader, target) <= TALK_RANGE) startFreeTrade(target, *trader);
+        if (flatGap(world, *trader, target) <= TALK_RANGE) startFreeTrade(target, *trader);
         else issueTalkOrder(world, { *trader }, target, true);
         break;
     }
@@ -475,7 +475,7 @@ void App::pickMenuAction(MenuAction a) {
                 refuse(lang("MISC_MOB_CANT_HOLD"));
                 break;
             }
-            if (gapBetween(world, looters[0], target) <= CARRY_REACH && !cannotAct(world, looters[0])) {
+            if (flatGap(world, looters[0], target) <= CARRY_REACH && !cannotAct(world, looters[0])) {
                 closeStorage();
                 lootUnit = target;
                 lootBy = looters[0];
@@ -553,7 +553,7 @@ void App::pickMenuAction(MenuAction a) {
         Entity talker = NULL_ENTITY;
         for (Entity u : actors) {
             if (world.has<Mob>(u)) continue;
-            if (gapBetween(world, u, target) <= TALK_RANGE) {
+            if (flatGap(world, u, target) <= TALK_RANGE) {
                 talker = u;
                 break;
             }

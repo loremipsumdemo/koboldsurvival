@@ -59,10 +59,10 @@ int clampDropScroll(int scroll, int count);
 // Where the parts of the menu sit, in pixels
 struct PartyPanels {
     float topH = 0.0f;           // the title strip above the panels
-    Rect left{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect center{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect right{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bottom{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect left;
+    Rect center;
+    Rect right;
+    Rect bottom;
 };
 PartyPanels partyPanels(int W, int H);
 // Where the picked unit's model is shown in the middle panel, above its name and totals. Dragging in it with the right
@@ -77,8 +77,8 @@ int partyListVisible(int H);
 int partyListMaxScroll(int count, int H);
 // The left column's scroll bar, down its right edge, when it has more units than fit; both rects empty otherwise
 struct PartyListBar {
-    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect track;
+    Rect thumb;
 };
 PartyListBar partyListBar(int W, int H, int count, int scroll);
 // The scroll that puts the thumb's top at thumbTop (the pointer's height less where the thumb was taken), in range

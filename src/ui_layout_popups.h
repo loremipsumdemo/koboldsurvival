@@ -18,10 +18,10 @@
 // The talk box: centred. It shows the last lines said, one row each, then one button per option, then End Dialogue at
 // the bottom. Its height follows how many lines and options there are.
 struct DialogueLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect box;
     std::vector<Rect> lines;                 // one row per line shown, oldest first
     std::vector<Rect> options;               // one button per option
-    Rect end{ 0.0f, 0.0f, 0.0f, 0.0f };      // End Dialogue
+    Rect end;      // End Dialogue
 };
 inline DialogueLayout layoutDialogue(int W, int H, int lineCount, int optionCount) {
     const float s = H / 720.0f;
@@ -46,23 +46,23 @@ inline DialogueLayout layoutDialogue(int W, int H, int lineCount, int optionCoun
 // trade has a box of TRADE_SLOTS cells, its total under it, a value bar, a status line, and Cancel and Trade.
 constexpr int TRADE_SLOTS = 12;
 struct TradeLayout {
-    Rect interaction{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect interBar{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect npcGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect interaction;
+    Rect interBar;
+    Rect npcGrid;
     std::vector<Rect> npcSlots;                   // one cell per inventory slot of the NPC
-    Rect tradePanel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect tradeBar{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect theirName{ 0.0f, 0.0f, 0.0f, 0.0f };    // the other unit's name, over its side
-    Rect yourName{ 0.0f, 0.0f, 0.0f, 0.0f };     // your unit's name, over your side
-    Rect theirBox{ 0.0f, 0.0f, 0.0f, 0.0f };     // the NPC's side
-    Rect yourBox{ 0.0f, 0.0f, 0.0f, 0.0f };      // your side
+    Rect tradePanel;
+    Rect tradeBar;
+    Rect theirName;    // the other unit's name, over its side
+    Rect yourName;     // your unit's name, over your side
+    Rect theirBox;     // the NPC's side
+    Rect yourBox;      // your side
     std::vector<Rect> theirCells, yourCells;
-    Rect theirTotal{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect yourTotal{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect valueBar{ 0.0f, 0.0f, 0.0f, 0.0f };     // how close the offer is to the NPC's price
-    Rect statusLine{ 0.0f, 0.0f, 0.0f, 0.0f };   // why the trade can't be confirmed, or that it can
-    Rect cancelBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect tradeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect theirTotal;
+    Rect yourTotal;
+    Rect valueBar;     // how close the offer is to the NPC's price
+    Rect statusLine;   // why the trade can't be confirmed, or that it can
+    Rect cancelBtn;
+    Rect tradeBtn;
 };
 // top: how far down the window something else is already drawn across the top (the pause bar, which shows during a
 // trade); the panels start under it
@@ -131,39 +131,39 @@ inline TradeLayout layoutTrade(int W, int H, float top = 0.0f) {
 // The storage panel, for a storage prop (a barrel) or a crafting prop (a campfire): an Interaction Panel with the
 // prop's name, its inventory, a hint and a Close button, in the top middle of the window, clear of the bottom panels
 struct StorageLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the prop's name
-    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Inventory", or "Input" over a forge's input
-    Rect grid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect panel;
+    Rect bar;
+    Rect name;      // the prop's name
+    Rect heading;   // "Inventory", or "Input" over a forge's input
+    Rect grid;
     std::vector<Rect> slots;                  // STORAGE_SLOTS cells, row by row
     // A passive crafting prop's output (a forge's): its heading, grid and STORAGE_SLOTS cells. Empty for other props.
     bool output = false;
-    Rect outHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect outGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect outHeading;
+    Rect outGrid;
     std::vector<Rect> outSlots;
-    Rect status{ 0.0f, 0.0f, 0.0f, 0.0f };    // a forge's fuel line; zero height for other props
-    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };      // how to take, drop and store items, wrapped
-    Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect status;    // a forge's fuel line; zero height for other props
+    Rect hint;      // how to take, drop and store items, wrapped
+    Rect closeBtn;
     // The owner's lock toggle, bottom left, beside Close: shown for a prop your faction owns, when lockToggle is set
     bool lockToggle = false;
-    Rect lockBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect lockBtn;
 };
 // The panel for looting an Unconscious unit or a corpse: its gear in one row, then its inventory, 8 cells across, each
 // cell ITEM_CELL_PX. Then a hint, and Take All and Close.
 struct LootLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect gearHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect gearGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect panel;
+    Rect bar;
+    Rect name;
+    Rect gearHeading;
+    Rect gearGrid;
     std::vector<Rect> gear;    // GEAR_SLOTS cells
-    Rect invHeading{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect invGrid{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect invHeading;
+    Rect invGrid;
     std::vector<Rect> slots;   // INVENTORY_SLOTS cells
-    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect takeAllBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect closeBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect hint;
+    Rect takeAllBtn;
+    Rect closeBtn;
 };
 inline LootLayout layoutLoot(int W, int H) {
     const float s = H / 720.0f;
@@ -282,25 +282,25 @@ inline int tradeValueOf(const std::vector<TradeGhost>& ghosts) {
 
 // The quantity prompt for a trade: how many of a stack's item go in the trade. It opens over the trade popout.
 struct QuantityLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect countBox{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect minus100{ 0.0f, 0.0f, 0.0f, 0.0f }, minus10{ 0.0f, 0.0f, 0.0f, 0.0f }, minus1{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect plus1{ 0.0f, 0.0f, 0.0f, 0.0f }, plus10{ 0.0f, 0.0f, 0.0f, 0.0f }, plus100{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect single{ 0.0f, 0.0f, 0.0f, 0.0f }, max{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect box;
+    Rect title;
+    Rect countBox;
+    Rect minus100, minus10, minus1;
+    Rect plus1, plus10, plus100;
+    Rect single, max;
+    Rect confirm, cancel;
 };
 
 // The Optimize All dialog: a title, a line saying what it will do, the Attack and Defense slider, three toggles, and
 // Confirm and Cancel
 struct OptimizeAllLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };          // wrapped, up to five lines
-    Rect sliderLabel{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Attack 60% / Defense 40%"
-    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };         // the slider: left is all defense, right all attack
+    Rect box;
+    Rect title;
+    Rect text;          // wrapped, up to five lines
+    Rect sliderLabel;   // "Attack 60% / Defense 40%"
+    Rect track;         // the slider: left is all defense, right all attack
     std::array<Rect, 3> toggles{};                // accessories, two-handed weapons, value on ties: the box and its label
-    Rect confirm{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect confirm, cancel;
 };
 inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
     const float s = H / 720.0f;
@@ -335,13 +335,13 @@ inline OptimizeAllLayout layoutOptimizeAll(int W, int H) {
 // for DISBAND_HOLD_MS to confirm; its bar fills as it is held, and letting go starts it over.
 constexpr unsigned long long DISBAND_HOLD_MS = 5000;
 struct DisbandLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect title{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect portrait{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect info{ 0.0f, 0.0f, 0.0f, 0.0f };   // beside the portrait: the name, then DISBAND_INFO_LINES lines
-    Rect text{ 0.0f, 0.0f, 0.0f, 0.0f };   // what disbanding does, wrapped, up to three lines
-    Rect hint{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect disband{ 0.0f, 0.0f, 0.0f, 0.0f }, cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect box;
+    Rect title;
+    Rect portrait;
+    Rect info;   // beside the portrait: the name, then DISBAND_INFO_LINES lines
+    Rect text;   // what disbanding does, wrapped, up to three lines
+    Rect hint;
+    Rect disband, cancel;
 };
 constexpr int DISBAND_INFO_LINES = 3;
 inline DisbandLayout layoutDisband(int W, int H) {
@@ -403,10 +403,10 @@ inline QuantityLayout layoutQuantity(int W, int H) {
 // The prompt the # button opens, in the middle of the window: what it asks, the box the percent is typed in, the
 // range it takes, and OK and Cancel. It is modal: nothing else takes clicks or keys while it is up.
 struct PercentPromptLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect input{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect ok{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect cancel{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect box;
+    Rect input;
+    Rect ok;
+    Rect cancel;
     float titleY = 0.0f, rangeY = 0.0f, errorY = 0.0f;   // the text lines' tops
 };
 inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
@@ -430,10 +430,10 @@ inline PercentPromptLayout layoutPercentPrompt(int W, int H) {
 // total XP and the XP still needed for the next level. rowH is the height of one line of text and
 // titleH the height of the title, both from the fonts, so the box fits the text.
 struct StatsPanelLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect close{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect left{ 0.0f, 0.0f, 0.0f, 0.0f };     // Attributes and Combat, the first row being the column headings
-    Rect right{ 0.0f, 0.0f, 0.0f, 0.0f };    // Resource Gathering, Crafting and Utility
+    Rect box;
+    Rect close;
+    Rect left;     // Attributes and Combat, the first row being the column headings
+    Rect right;    // Resource Gathering, Crafting and Utility
 };
 
 inline StatsPanelLayout layoutStatsPanel(int W, int H, float rowH, float titleH) {
@@ -457,7 +457,7 @@ inline StatsPanelLayout layoutStatsPanel(int W, int H, float rowH, float titleH)
 // The right-click menu for an inventory item: one text button per action, top to bottom. It opens
 // at the mouse and is kept inside the window.
 struct ItemMenuLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect box;
     std::vector<Rect> buttons;
 };
 

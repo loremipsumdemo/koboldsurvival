@@ -152,10 +152,10 @@ struct InfoTime {
 // The Information Panel, in the top left corner by default. The newest line is at the bottom, and offset counts
 // the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
 struct GameLogLayout {
-    Rect panel{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the "Information Panel" bar across the top
-    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar track
-    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };   // scroll bar thumb
+    Rect panel;
+    Rect bar;     // the "Information Panel" bar across the top
+    Rect track;   // scroll bar track
+    Rect thumb;   // scroll bar thumb
     float textX = 0.0f, textW = 0.0f;
     float lineH = 0.0f;
     int linesVisible = 0;
@@ -165,17 +165,17 @@ struct GameLogLayout {
     int shown = 0;                           // how many lines are visible
 
     bool collapsed = false;                  // only the bar shows
-    Rect toggle{ 0.0f, 0.0f, 0.0f, 0.0f };  // the [-] or [+] button in the bar
-    Rect lock{ 0.0f, 0.0f, 0.0f, 0.0f };    // the lock beside it
+    Rect toggle;  // the [-] or [+] button in the bar
+    Rect lock;    // the lock beside it
     float bodyTop = 0.0f, bodyBottom = 0.0f;   // the panel less its bar, which runs along its top or its bottom
     // The three tabs under the bar: Message (0), Game (1) and Time (2). On the Game tab, the Filter button and its menu.
     int tab = 0;
-    Rect tabMessage{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect tabGame{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect tabTime{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect filterBtn{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect tabMessage;
+    Rect tabGame;
+    Rect tabTime;
+    Rect filterBtn;
     bool filterOpen = false;
-    Rect filterMenu{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect filterMenu;
     struct FilterRow {
         Rect r;
         LogKind kind;
@@ -758,7 +758,7 @@ private:
     TextTex titleLogo_;           // data/illustration/title.png: the game's logo, drawn in place of the name's words
     TextTex loadingArt_;          // data/illustration/loading<1-3>.png, one picked at random: the start-up loading picture
     bool hoverAny_ = false;       // something was noted under the pointer this frame
-    Rect hoverNow_{ 0.0f, 0.0f, 0.0f, 0.0f }, hoverLast_{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect hoverNow_, hoverLast_;
     bool hoverHad_ = false;       // something was under the pointer last frame
     float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
     unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds

@@ -18,18 +18,18 @@
 // The scenario page, between New Game and the party menu: the picked scenario's name and description at the top, and
 // a list of the scenarios at the bottom, which scrolls when it has more than fit, with Back and Continue under it
 struct ScenarioLayout {
-    Rect box{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect heading{ 0.0f, 0.0f, 0.0f, 0.0f };   // "Scenario", over everything
-    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };      // the picked scenario's name
-    Rect desc{ 0.0f, 0.0f, 0.0f, 0.0f };      // and its description, wrapped
-    Rect list{ 0.0f, 0.0f, 0.0f, 0.0f };      // where the rows are
+    Rect box;
+    Rect heading;   // "Scenario", over everything
+    Rect name;      // the picked scenario's name
+    Rect desc;      // and its description, wrapped
+    Rect list;      // where the rows are
     std::vector<Rect> rows;                   // the rows shown, for scenarios first .. first + rows.size() - 1
     int first = 0;                            // the scroll, kept in range
     int visible = 0;                          // how many rows fit
-    Rect track{ 0.0f, 0.0f, 0.0f, 0.0f };     // the scroll bar, when the list scrolls
-    Rect thumb{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect back{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect next{ 0.0f, 0.0f, 0.0f, 0.0f };
+    Rect track;     // the scroll bar, when the list scrolls
+    Rect thumb;
+    Rect back;
+    Rect next;
 };
 inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
     const float s = H / 720.0f;
@@ -68,11 +68,11 @@ inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
 // the build stamp on the left and the keys on the right.
 struct TitleLayout {
     float side = 0.0f;                          // the screen's left and right margin
-    Rect name{ 0.0f, 0.0f, 0.0f, 0.0f };        // the name's line: its height is the size the name is drawn at
-    Rect rule{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect news{ 0.0f, 0.0f, 0.0f, 0.0f };        // the notice board, frame included
-    Rect newsText{ 0.0f, 0.0f, 0.0f, 0.0f };    // inside the board's padding
-    Rect footer{ 0.0f, 0.0f, 0.0f, 0.0f };      // the line along the bottom
+    Rect name;        // the name's line: its height is the size the name is drawn at
+    Rect rule;
+    Rect news;        // the notice board, frame included
+    Rect newsText;    // inside the board's padding
+    Rect footer;      // the line along the bottom
 };
 inline float titleClamp(float lo, float v, float hi) { return std::max(lo, std::min(v, hi)); }
 inline TitleLayout layoutTitle(int W, int H) {
@@ -103,10 +103,10 @@ inline TitleLayout layoutTitle(int W, int H) {
 constexpr float WORLD_MAP_W = 800.0f;
 constexpr float WORLD_MAP_H = 600.0f;
 struct WorldMapLayout {
-    Rect window{ 0.0f, 0.0f, 0.0f, 0.0f };
-    Rect bar{ 0.0f, 0.0f, 0.0f, 0.0f };     // the title bar
-    Rect close{ 0.0f, 0.0f, 0.0f, 0.0f };   // the X at the right end of the bar
-    Rect map{ 0.0f, 0.0f, 0.0f, 0.0f };     // the map itself
+    Rect window;
+    Rect bar;     // the title bar
+    Rect close;   // the X at the right end of the bar
+    Rect map;     // the map itself
 };
 
 // dx, dy: how far the window has been dragged from the middle of the screen

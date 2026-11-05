@@ -1,5 +1,6 @@
 #include "model.h"
 #include "pak.h"
+#include "gl_util.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cmath>
@@ -58,19 +59,6 @@ GLuint readIndex(const Accessor& a, size_t i) {
     }
 }
 
-GLuint makeTexture(int w, int h, GLenum internalFmt, GLenum fmt, const unsigned char* pixels) {
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFmt, w, h, 0, fmt, GL_UNSIGNED_BYTE, pixels);
-    return t;
-}
-
 } // namespace
 
 bool loadGLBModel(const char* path, Model& m) {
@@ -95,14 +83,14 @@ bool loadGLBModel(const char* path, Model& m) {
         const tinygltf::Image& img = gltf.images[i];
         if (img.image.empty() || (img.component != 3 && img.component != 4)) continue;
         GLenum fmt = img.component == 4 ? GL_RGBA : GL_RGB;
-        imageTex[i] = makeTexture(img.width, img.height, fmt, fmt, img.image.data());
+        imageTex[i] = makeTexture2D(img.width, img.height, fmt, fmt, img.image.data(), GL_LINEAR, GL_REPEAT);
         m.textures.push_back(imageTex[i]);
     }
 
     // 1x1 texture for primitives with a plain color instead of a texture
     auto solid = [&](unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
         unsigned char px[4] = { r, g, b, a };
-        GLuint t = makeTexture(1, 1, GL_RGBA, GL_RGBA, px);
+        GLuint t = makeTexture2D(1, 1, GL_RGBA, GL_RGBA, px, GL_LINEAR, GL_REPEAT);
         m.textures.push_back(t);
         return t;
     };

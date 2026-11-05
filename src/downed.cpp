@@ -220,11 +220,6 @@ void putDown(World& w, Entity carrier) {
 CarryEvents carrySystem(World& w) {
     CarryEvents ev;
     std::vector<Entity>& picked = ev.picked;
-    auto gap = [&](Entity a, Entity b) {
-        const Transform* ta = w.get<Transform>(a);
-        const Transform* tb = w.get<Transform>(b);
-        return ta && tb ? std::hypot(ta->x - tb->x, ta->z - tb->z) : 1e9f;
-    };
     // Walking to pick someone up: in reach, it is lifted, unless someone else got there first
     for (Entity u : w.view<CarryOrder, Transform>()) {
         const Entity target = w.get<CarryOrder>(u)->target;
@@ -233,7 +228,7 @@ CarryEvents carrySystem(World& w) {
             w.remove<SoloMove>(u);
             continue;
         }
-        if (gap(u, target) <= CARRY_REACH) {
+        if (flatGap(w, u, target) <= CARRY_REACH) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
@@ -318,7 +313,7 @@ CarryEvents carrySystem(World& w) {
             w.remove<SoloMove>(u);
             continue;
         }
-        if (gap(u, target) <= CARRY_REACH) {
+        if (flatGap(w, u, target) <= CARRY_REACH) {
             w.remove<LootOrder>(u);
             w.remove<SoloMove>(u);
             ev.loot.push_back({ u, target });

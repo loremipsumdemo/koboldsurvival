@@ -88,51 +88,6 @@ void main() {
 }
 )";
 
-// A compiled shader, or 0 with the error in log.txt. name says which program it is for.
-GLuint compileShader(GLenum type, const char* src, const char* name) {
-    GLuint s = glCreateShader(type);
-    glShaderSource(s, 1, &src, nullptr);
-    glCompileShader(s);
-    GLint ok = 0;
-    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-    if (!ok) {
-        char log[1024];
-        glGetShaderInfoLog(s, sizeof(log), nullptr, log);
-        SDL_Log("The %s program's %s shader did not compile: %s", name,
-                type == GL_VERTEX_SHADER ? "vertex" : "fragment", log);
-        glDeleteShader(s);
-        return 0;
-    }
-    return s;
-}
-
-// A linked program, or 0 with the error in log.txt when a shader does not compile or the program does not link
-GLuint linkProgram(const char* name, const char* vs, const char* fs) {
-    const GLuint v = compileShader(GL_VERTEX_SHADER, vs, name);
-    const GLuint f = compileShader(GL_FRAGMENT_SHADER, fs, name);
-    if (!v || !f) {
-        if (v) glDeleteShader(v);
-        if (f) glDeleteShader(f);
-        return 0;
-    }
-    GLuint p = glCreateProgram();
-    glAttachShader(p, v);
-    glAttachShader(p, f);
-    glLinkProgram(p);
-    glDeleteShader(v);
-    glDeleteShader(f);
-    GLint ok = 0;
-    glGetProgramiv(p, GL_LINK_STATUS, &ok);
-    if (!ok) {
-        char log[1024];
-        glGetProgramInfoLog(p, sizeof(log), nullptr, log);
-        SDL_Log("The %s program did not link: %s", name, log);
-        glDeleteProgram(p);
-        return 0;
-    }
-    return p;
-}
-
 // The glyph fragment shader's uniforms at their resting values: texture unit 0, no tint, full colour, no faction
 void setGlyphDefaults(GLuint program) {
     glUseProgram(program);
@@ -299,16 +254,7 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
 }
 
 GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba, GLint filter) {
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    return t;
+    return makeTexture2D(w, h, GL_RGBA, GL_RGBA, rgba, filter, GL_CLAMP_TO_EDGE);
 }
 
 GLuint MakeDotTexture(bool white) {

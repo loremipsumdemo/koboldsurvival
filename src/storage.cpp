@@ -64,7 +64,6 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     if (!from || !inv || from->item == 0) return false;
     const ItemStack stack = *from;
     if (!slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, stack.item, stack.count)) {
-        const ItemDef* def = findItem(stack.item);
         why = langf("MISC_NO_ROOM_INV", { itemNameOf(stack.item) });
         return false;
     }
@@ -82,7 +81,6 @@ bool dropFromStorage(World& w, int slot) {
     const Transform* ut = w.get<Transform>(storageUnit);
     if (!from || !ut || from->item == 0) return false;
     const ItemStack stack = *from;
-    const ItemDef* def = findItem(stack.item);
     queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
                                    itemNameOf(stack.item) }), LogKind::Drop, npcOnly(w, storageUnit));
     const Entity e = w.create();

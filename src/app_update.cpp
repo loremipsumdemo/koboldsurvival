@@ -86,7 +86,7 @@ void App::update() {
                 clearTalkOrders(world);
                 break;
             }
-            if (gapBetween(world, u, npcOf) <= TALK_RANGE) {
+            if (flatGap(world, u, npcOf) <= TALK_RANGE) {
                 talkNpc = npcOf;
                 talker = u;
                 tradeTalk = world.get<TalkOrder>(u)->trade;
@@ -294,7 +294,7 @@ void App::update() {
         const Needs* sn = world.get<Needs>(storageUnit);
         const std::vector<Entity> picked = selectedUnits(world);
         if (!world.has<Storage>(storageProp) || !world.has<Unit>(storageUnit) ||
-            (sn && sn->hp <= 0) || gapBetween(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE ||
+            (sn && sn->hp <= 0) || flatGap(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE ||
             (picked.size() == 1 && picked[0] != storageUnit)) {
             closeStorage();
         }
@@ -304,7 +304,7 @@ void App::update() {
     // shows wakes up
     if (lootUnit != NULL_ENTITY) {
         if (!world.has<Unconscious>(lootUnit) || !world.has<Unit>(lootBy) || world.has<Unconscious>(lootBy) ||
-            gapBetween(world, lootBy, lootUnit) > LOOT_RANGE) {
+            flatGap(world, lootBy, lootUnit) > LOOT_RANGE) {
             closeLoot();
         }
     }

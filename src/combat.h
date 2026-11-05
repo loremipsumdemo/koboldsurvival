@@ -11,6 +11,7 @@
 #include "encumbrance.h"
 #include "experience.h"
 #include "hostility.h"
+#include "spatial.h"
 
 // Combat: the formulas and the fight that runs each frame. What the fight writes goes to the game log (game_log.h)
 // and the damage numbers over units (world_labels.h). The formulas are plain functions over their inputs.

@@ -433,14 +433,7 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     Mat4 vp = cam.viewProj((float)winW / (float)winH);
 
     auto project = [&](float x, float y, float z, float& sx, float& sy) {
-        float c[4];
-        for (int i = 0; i < 4; ++i) {
-            c[i] = vp.m[0 * 4 + i] * x + vp.m[1 * 4 + i] * y + vp.m[2 * 4 + i] * z + vp.m[3 * 4 + i];
-        }
-        if (c[3] <= 0.0f) return false;
-        sx = (c[0] / c[3] * 0.5f + 0.5f) * (float)winW;
-        sy = (1.0f - (c[1] / c[3] * 0.5f + 0.5f)) * (float)winH;
-        return true;
+        return worldToScreen(vp, x, y, z, winW, winH, sx, sy);
     };
 
     for (Entity u : w.view<Unit, Transform, Name>()) {

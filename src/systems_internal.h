@@ -19,6 +19,7 @@
 #include "party.h"
 #include "props.h"
 #include "emotes.h"
+#include "spatial.h"
 
 namespace systems_detail {
 
@@ -78,14 +79,6 @@ inline float slotSpacing(int size) {
 }
 
 // ---- Props ----
-
-// The flat distance in tiles between two entities, or a large number if either has no place
-inline float flatGap(World& w, Entity a, Entity b) {
-    const Transform* ta = w.get<Transform>(a);
-    const Transform* tb = w.get<Transform>(b);
-    if (!ta || !tb) return 1e9f;
-    return std::hypot(ta->x - tb->x, ta->z - tb->z);
-}
 
 inline PropUse useOf(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);

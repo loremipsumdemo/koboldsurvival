@@ -91,14 +91,6 @@ bool targetable(World& w, Entity e) {
     return w.has<Unit>(e) && w.has<Transform>(e) && !w.has<Unconscious>(e) && !w.has<PlayingDead>(e);
 }
 
-float distanceBetween(World& w, Entity a, Entity b) {
-    const Transform* ta = w.get<Transform>(a);
-    const Transform* tb = w.get<Transform>(b);
-    if (!ta || !tb) return 1e9f;
-    const float dx = ta->x - tb->x, dz = ta->z - tb->z;
-    return std::sqrt(dx * dx + dz * dz);
-}
-
 // Share of notices that fail against this unit. Sneaking, more fail, and Stealth counts twice.
 float noticeFailChance(World& w, Entity p) {
     const float stealth = NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), StatId::Stealth) - 1);
@@ -128,7 +120,7 @@ Entity pickInReach(World& w, Entity p, const std::vector<Entity>& hostiles) {
     int bestHp = 0;
     const float reach = reachOf(w, p);
     for (Entity h : hostiles) {
-        if (!targetable(w, h) || distanceBetween(w, p, h) > reach) continue;
+        if (!targetable(w, h) || flatGap(w, p, h) > reach) continue;
         const int hp = hpOf(w, h);
         if (best == NULL_ENTITY || hp < bestHp) {
             best = h;
@@ -482,7 +474,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
         if (hc.target != NULL_ENTITY) {
-            if (targetable(w, hc.target) && distanceBetween(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target)) continue;
+            if (targetable(w, hc.target) && flatGap(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target)) continue;
             hc.target = NULL_ENTITY;
         }
         if (isPassive(w, h)) continue;
@@ -494,7 +486,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             const float gx = tp->x - th->x, gz = tp->z - th->z;
             if (gx * gx + gz * gz > MAX_NOTICE_RANGE * MAX_NOTICE_RANGE) continue;
             if (p == h || !standing(p) || !unitsHostile(w, h, p)) continue;
-            if (distanceBetween(w, h, p) > noticeRangeOf(w, p)) continue;
+            if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {
                 hc.target = p;
                 if (w.has<Commandable>(p)) log.add(nameOf(w, h) + " notices " + nameOf(w, p), Tint::Gray, LogKind::Seen);
@@ -523,7 +515,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
         bool unnoticedInRange = false;
         for (Entity h : foes) {
             if (!standing(h)) continue;
-            const float d = distanceBetween(w, p, h);
+            const float d = flatGap(w, p, h);
             if (d <= spotRange && std::find(pc.spotted.begin(), pc.spotted.end(), h) == pc.spotted.end()) {
                 pc.spotted.push_back(h);
                 grantXp(w, p, StatId::Perception, PERCEPTION_XP_PER_SPOT, lang("MISC_REASON_SPOTTING"));
@@ -550,7 +542,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             w.remove<AttackOrder>(p);   // the red unit is gone, so the order is done
             pc.target = NULL_ENTITY;
         }
-        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && distanceBetween(w, p, pc.target) <= reachOf(w, p)) {
+        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p)) {
             continue;
         }
         // A passive unit, or one only blocking, picks no fight of its own
@@ -570,7 +562,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
         if (c.target == NULL_ENTITY || c.swingLeft > 0.0f) continue;
         if (isBlocking(w, e)) continue;   // Block mode: it only blocks, and never swings
         const Entity t = c.target;
-        if (!targetable(w, t) || distanceBetween(w, e, t) > reachOf(w, e)) continue;
+        if (!targetable(w, t) || flatGap(w, e, t) > reachOf(w, e)) continue;
         strike(w, rng, e, t, log, floats);
     }
 }

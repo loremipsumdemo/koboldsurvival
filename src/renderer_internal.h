@@ -11,6 +11,7 @@
 #include "language.h"
 #include "loading.h"
 #include "terrain_mesh.h"
+#include "gl_util.h"
 #include "equip.h"
 #include "factions.h"
 #include "inventory.h"
