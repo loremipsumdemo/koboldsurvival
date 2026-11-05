@@ -2,6 +2,7 @@
 // The running game: everything main() used to hold as locals, and what it did each frame, as one object.
 // app.cpp starts it, runs the frame loop and shuts it down. The rest is split by job:
 //   app_actions.cpp  starting a level, notices, and the menus' buttons (performAction)
+//   app_party_actions.cpp  what the party menu's buttons do
 //   app_saves.cpp    the save list, the save and load panel, and deleting a save
 //   app_settings.cpp applying and saving settings, and clicks on the Settings screen
 //   app_panels.cpp   the Unit, Squad and Information panels: layout, grabbing, folding, locks, the world map
@@ -109,6 +110,7 @@ struct App {
     bool pressOnOptimizeAll();
     bool pressOnWorldMap();
     bool pressOnTalk();
+    void pressOnTrade(float x, float y);
     bool pressOnContextMenu();
     bool pressOnStoreQuantity();
     bool pressOnLoot();
@@ -157,6 +159,10 @@ struct App {
 
     // ---- Methods made from main()'s lambdas ----
     // app_actions.cpp, app_saves.cpp, app_settings.cpp (and panWithKeys, app_input.cpp)
+    bool partyAction(Action action, int param);
+    void partyRandomUnit();
+    void partyDropPick(int param);
+    bool savePanelAction(Action action, int param);
     void clearQuestion();                    // the save popout asks nothing, about no save
     void clearCombatText();
     void refreshSaves();

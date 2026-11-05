@@ -15,6 +15,19 @@ constexpr size_t MAX_SAVE_ROWS = 10;         // depending on how tall the window
 constexpr float COL_TYPE = 0.54f;
 constexpr float COL_TIME = 0.70f;
 
+// Moves a list's first row by a page
+inline void pageUp(size_t& offset, size_t page) { offset = offset > page ? offset - page : 0; }
+inline void pageDown(size_t& offset, size_t count, size_t page) {
+    offset = std::min(offset + page, count > page ? count - page : 0);
+}
+
+// Clicking the active column flips the order. A new column starts ascending.
+template <typename Key>
+inline void pickSortColumn(Key& column, Key picked, bool& ascending) {
+    ascending = column == picked ? !ascending : true;
+    column = picked;
+}
+
 // What the save list is sorted by. Autosaves always sit above manual saves, whatever the sort.
 enum class SortKey { Name, Time };
 

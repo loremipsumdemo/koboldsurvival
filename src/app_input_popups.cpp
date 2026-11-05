@@ -99,6 +99,54 @@ bool App::pressOnWorldMap() {
     return false;
 }
 
+// A press on the trade's two panels
+void App::pressOnTrade(float x, float y) {
+    const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
+    const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
+    const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
+    if (leftButton && tl.cancelBtn.contains(x, y) && freeTrade) {
+        endTalk();   // a free trade has no talk to go back to
+    } else if (leftButton && tl.cancelBtn.contains(x, y)) {
+        tradeOpen = false;
+        clearTradeTable();
+    } else if (leftButton && tl.tradeBtn.contains(x, y)) {
+        if (!tradeItemsPresent(world, dialogueUnit, dialoguePlayer)) {
+            // Something offered is no longer in its inventory: the trade fails and the talk ends
+            tradeLabels.push_back(TradeLabel{ dialogueUnit, lang("MISC_TRADE_FAILED"), 0.0f });
+            tradeLabels.push_back(TradeLabel{ dialoguePlayer, lang("MISC_TRADE_FAILED"), 0.0f });
+            playSfx(Sfx::TradeFailed);
+            endTalk();
+        } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
+            // Each side shows its own gain or loss: what it receives minus what it gives
+            const int theirGive = tradeValueOf(tradeNpc);
+            const int yourGive = tradeValueOf(tradePlayer);
+            auto signedValue = [](int v) { return (v > 0 ? "+" : "") + std::to_string(v); };
+            if (!freeTrade) {   // a free trade between your own units has no value to show
+                tradeLabels.push_back(TradeLabel{ dialogueUnit, langf("MISC_TRADE_CHANGE", { signedValue(yourGive - theirGive) }), 0.0f });
+                tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
+            }
+            completeTrade(world, dialogueUnit, dialoguePlayer);
+            playSfx(Sfx::TradeDone);
+            endTalk();
+            showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);
+        }
+    } else if (takeTradeGhostAt(tradeNpc, tl.theirCells, x, y)
+               || takeTradeGhostAt(tradePlayer, tl.yourCells, x, y)) {
+        // A ghost was taken back out of its cell
+    } else {
+        // An NPC item: left button drags it to the left box, right button puts it there
+        for (size_t i = 0; npcInv && i < tl.npcSlots.size(); ++i) {
+            if (!tl.npcSlots[i].contains(x, y) || npcInv->slots[i].item == 0) continue;
+            if (leftButton) {
+                tradeNpcDrag = (int)i;
+            } else if (e.button.button == SDL_BUTTON_RIGHT) {
+                requestTrade(true, dialogueUnit, (int)i);
+            }
+            break;
+        }
+    }
+}
+
 bool App::pressOnTalk() {
     // The talk owns the mouse while it is open. During a trade the Unit Panel still works, so a click there
     // passes on to the panel; everything else is the talk's or the trade's.
@@ -116,50 +164,7 @@ bool App::pressOnTalk() {
         const bool unitPanelClick = tradeOpen && !onTrade && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
         if (!unitPanelClick) {
             if (tradeOpen) {
-                const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
-                const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
-                const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
-                if (leftButton && tl.cancelBtn.contains(x, y) && freeTrade) {
-                    endTalk();   // a free trade has no talk to go back to
-                } else if (leftButton && tl.cancelBtn.contains(x, y)) {
-                    tradeOpen = false;
-                    clearTradeTable();
-                } else if (leftButton && tl.tradeBtn.contains(x, y)) {
-                    if (!tradeItemsPresent(world, dialogueUnit, dialoguePlayer)) {
-                        // Something offered is no longer in its inventory: the trade fails and the talk ends
-                        tradeLabels.push_back(TradeLabel{ dialogueUnit, lang("MISC_TRADE_FAILED"), 0.0f });
-                        tradeLabels.push_back(TradeLabel{ dialoguePlayer, lang("MISC_TRADE_FAILED"), 0.0f });
-                        playSfx(Sfx::TradeFailed);
-                        endTalk();
-                    } else if (checkTrade(world, dialogueUnit, dialoguePlayer).ok) {
-                        // Each side shows its own gain or loss: what it receives minus what it gives
-                        const int theirGive = tradeValueOf(tradeNpc);
-                        const int yourGive = tradeValueOf(tradePlayer);
-                        auto signedValue = [](int v) { return (v > 0 ? "+" : "") + std::to_string(v); };
-                        if (!freeTrade) {   // a free trade between your own units has no value to show
-                            tradeLabels.push_back(TradeLabel{ dialogueUnit, langf("MISC_TRADE_CHANGE", { signedValue(yourGive - theirGive) }), 0.0f });
-                            tradeLabels.push_back(TradeLabel{ dialoguePlayer, langf("MISC_TRADE_CHANGE", { signedValue(theirGive - yourGive) }), 0.0f });
-                        }
-                        completeTrade(world, dialogueUnit, dialoguePlayer);
-                        playSfx(Sfx::TradeDone);
-                        endTalk();
-                        showNotice(lang("MISC_TRADE_COMPLETE"), TRADE_LABEL_LIFE);
-                    }
-                } else if (takeTradeGhostAt(tradeNpc, tl.theirCells, x, y)
-                           || takeTradeGhostAt(tradePlayer, tl.yourCells, x, y)) {
-                    // A ghost was taken back out of its cell
-                } else {
-                    // An NPC item: left button drags it to the left box, right button puts it there
-                    for (size_t i = 0; npcInv && i < tl.npcSlots.size(); ++i) {
-                        if (!tl.npcSlots[i].contains(x, y) || npcInv->slots[i].item == 0) continue;
-                        if (leftButton) {
-                            tradeNpcDrag = (int)i;
-                        } else if (e.button.button == SDL_BUTTON_RIGHT) {
-                            requestTrade(true, dialogueUnit, (int)i);
-                        }
-                        break;
-                    }
-                }
+                pressOnTrade(x, y);
             } else if (e.button.button == SDL_BUTTON_LEFT) {
                 const DialogueLayout dl = dialogueBox(winW, winH);
                 if (dl.end.contains(x, y)) {

@@ -122,3 +122,107 @@ void App::clearQuestion() {
     pendingDelete.reset();
     deleteHolding = false;
 }
+
+// True if the action was one of the save and load panel's
+bool App::savePanelAction(Action action, int param) {
+    switch (action) {
+    case Action::LoadGame:
+    case Action::Load:
+        openPanel(false);
+        return true;
+    case Action::Save:
+        openPanel(true);
+        return true;
+    case Action::LoadSlot:
+        if (param < 0 || param >= (int)saves.size()) return true;
+        if (panelSaveMode) {
+            // Save mode: a click copies that save's name into the name field
+            saveName = saves[param].name;
+        } else if (wouldLoseProgress()) {
+            // Load mode, and the current game would be lost: ask first
+            pendingLoad = saves[param];
+            ask = Ask::LoadUnsaved;
+        } else {
+            loadSave(saves[param].path);
+        }
+        return true;
+    case Action::LoadYes: {
+        if (!pendingLoad) {
+            ask = Ask::None;
+            return true;
+        }
+        SaveSummary target = *pendingLoad;
+        loadSave(target.path);
+        return true;
+    }
+    case Action::LoadNo:
+        ask = Ask::None;
+        pendingLoad.reset();
+        return true;
+    case Action::DeleteSave:
+        if (param < 0 || param >= (int)saves.size()) return true;
+        pendingDelete = saves[param];
+        ask = Ask::Delete;
+        return true;
+    case Action::DeleteHold:
+        // Handled by the hold timer, not by clicks
+        return true;
+    case Action::DeleteNo:
+        ask = Ask::None;
+        pendingDelete.reset();
+        deleteHolding = false;
+        return true;
+    case Action::ScrollUp:
+        // Jump up one page of saves
+        pageUp(listOffset, visibleSaveRows(viewH));
+        return true;
+    case Action::ScrollDown:
+        pageDown(listOffset, saves.size(), visibleSaveRows(viewH));
+        return true;
+    case Action::SortName:
+    case Action::SortTime: {
+        pickSortColumn(sortKey, action == Action::SortName ? SortKey::Name : SortKey::Time, sortAsc);
+        sortSaves(saves, sortKey, sortAsc);
+        listOffset = 0;
+        return true;
+    }
+    case Action::ConfirmName: {
+        // Save button. A name that matches an existing save asks before overwriting it.
+        std::string name = trimmedName(saveName);
+        if (name.empty()) return true;
+        if (std::optional<SaveSummary> existing = findSaveByName(saves, name)) {
+            pendingOverwrite = existing;
+            ask = Ask::Overwrite;
+            return true;
+        }
+        bool ok = writeSave(manualSavePath(nowMs()), name, false);
+        closePanel();
+        showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
+        playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
+        return true;
+    }
+    case Action::OverwriteYes: {
+        if (!pendingOverwrite) {
+            ask = Ask::None;
+            return true;
+        }
+        SaveSummary target = *pendingOverwrite;
+        // Keep the save's file and its AUTO or MANUAL type; only the contents change
+        bool ok = writeSave(target.path, target.name, target.autosave);
+        closePanel();
+        showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
+        playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
+        return true;
+    }
+    case Action::OverwriteNo:
+        ask = Ask::None;
+        pendingOverwrite.reset();
+        return true;
+    case Action::CancelName:
+        // Close button
+        closePanel();
+        return true;
+    default:
+        return false;
+    }
+}
