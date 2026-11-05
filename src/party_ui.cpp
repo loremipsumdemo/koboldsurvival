@@ -94,19 +94,16 @@ PartyListBar partyListBar(int W, int H, int count, int scroll) {
     const PartyPanels P = partyPanels(W, H);
     const float top = P.left.y + 12.0f * s, bottom = P.left.y + P.left.h - (PARTY_HINT_H + 4.0f) * s;
     b.track = Rect{ P.left.x + P.left.w - 14.0f * s, top, 8.0f * s, std::max(0.0f, bottom - top) };
-    const float thumbH = std::max(24.0f * s, b.track.h * partyListVisible(H) / (float)count);
-    const float frac = std::clamp(scroll, 0, maxScroll) / (float)maxScroll;
-    b.thumb = Rect{ b.track.x, b.track.y + (b.track.h - thumbH) * frac, b.track.w, thumbH };
+    b.thumb = scrollThumb(b.track, partyListVisible(H) / (float)count, 24.0f * s,
+                          std::clamp(scroll, 0, maxScroll) / (float)maxScroll);
     return b;
 }
 
 int partyListScrollAt(int W, int H, int count, float thumbTop) {
     const int maxScroll = partyListMaxScroll(count, H);
     const PartyListBar b = partyListBar(W, H, count, 0);
-    const float room = b.track.h - b.thumb.h;
-    if (maxScroll <= 0 || room <= 0.0f) return 0;
-    const float frac = std::clamp((thumbTop - b.track.y) / room, 0.0f, 1.0f);
-    return std::clamp((int)std::lround(frac * maxScroll), 0, maxScroll);
+    if (maxScroll <= 0) return 0;
+    return std::clamp((int)std::lround(scrollFracAt(b.track, b.thumb, thumbTop) * maxScroll), 0, maxScroll);
 }
 
 PartyPanels partyPanels(int W, int H) {

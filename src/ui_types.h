@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <string>
 
 // Where a panel was put, in pixels of a 720-pixel-high window, so it scales with the window like the rest of the
@@ -68,6 +69,19 @@ struct Rect {
         return px >= x && px < x + w && py >= y && py < y + h;
     }
 };
+
+// A scroll bar's thumb in its track: its height is the share of the list in view, at least minH, and frac says how far
+// down the track it sits (0 at the top, 1 at the bottom)
+inline Rect scrollThumb(const Rect& track, float shownShare, float minH, float frac) {
+    const float h = std::max(minH, track.h * shownShare);
+    return Rect{ track.x, track.y + (track.h - h) * frac, track.w, h };
+}
+
+// How far down its track a thumb is, 0 to 1, with its top at thumbTop (dragging it). 0 if it has no room to move.
+inline float scrollFracAt(const Rect& track, const Rect& thumb, float thumbTop) {
+    const float room = track.h - thumb.h;
+    return room > 0.0f ? std::clamp((thumbTop - track.y) / room, 0.0f, 1.0f) : 0.0f;
+}
 
 // Item pictures (data/item/item_<n>.png) are 64 x 64 pixels and are always drawn at exactly that size, on whole
 // pixels, wherever an item shows in a panel: inventories, gear, storage, the trade and a dragged stack. Every cell that

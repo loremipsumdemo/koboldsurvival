@@ -379,11 +379,9 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     const float trackY = y + barH + tabH + pad, trackH = h - barH - tabH - 2.0f * pad;
     L.track = Rect{ trackX, trackY, scrollW * 0.5f, trackH };
     if (L.scrollable()) {
-        const float share = (float)linesVisible / (float)lineCount;
-        const float thumbH = std::max(16.0f * s, trackH * share);
         // At offset 0 the thumb sits at the bottom, and at the top of its range it sits at the top
         const float frac = L.maxOffset() > 0 ? (float)L.offset / (float)L.maxOffset() : 0.0f;
-        L.thumb = Rect{ trackX, trackY + (trackH - thumbH) * (1.0f - frac), scrollW * 0.5f, thumbH };
+        L.thumb = scrollThumb(L.track, (float)linesVisible / (float)lineCount, 16.0f * s, 1.0f - frac);
     }
 
     // The tabs under the bar. The Filter button sits at the right of the row.

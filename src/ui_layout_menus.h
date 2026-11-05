@@ -57,9 +57,8 @@ inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
     if (scrolls) {
         const float shownH = L.visible * (rowH + rowGap) - rowGap;
         L.track = Rect{ L.list.x + L.list.w - scrollW, listTop, scrollW, shownH };
-        const float th = std::max(16.0f * s, shownH * L.visible / count);
         const int maxFirst = count - L.visible;
-        L.thumb = Rect{ L.track.x, L.track.y + (shownH - th) * L.first / std::max(1, maxFirst), scrollW, th };
+        L.thumb = scrollThumb(L.track, (float)L.visible / (float)count, 16.0f * s, (float)L.first / (float)std::max(1, maxFirst));
     }
     return L;
 }

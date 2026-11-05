@@ -332,9 +332,8 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
     if (!L.scrollable()) {
         L.thumb = L.track;
     } else {
-        const float th = std::max(std::min(8.0f * s, L.track.h), L.track.h * rowsVisible / L.rowCount);
-        const float ty = L.track.y + (L.track.h - th) * L.scrollRow / L.maxScroll();
-        L.thumb = Rect{ L.track.x, ty, L.track.w, th };
+        L.thumb = scrollThumb(L.track, (float)rowsVisible / (float)L.rowCount, std::min(8.0f * s, L.track.h),
+                              (float)L.scrollRow / (float)L.maxScroll());
     }
     if (barH <= 0.0f) L.track = L.thumb = L.scrollUp = L.scrollDown = Rect{};   // no room for a scroll bar at all
     return L;
@@ -342,10 +341,8 @@ inline UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRo
 
 // The row the Squad Panel's thumb shows at when its top is at thumbTop (dragging the thumb)
 inline int squadRowAtThumb(const UnitPanelLayout& L, float thumbTop) {
-    const float room = L.track.h - L.thumb.h;
-    if (!L.scrollable() || room <= 0.0f) return 0;
-    const float f = std::clamp((thumbTop - L.track.y) / room, 0.0f, 1.0f);
-    return (int)std::lround(f * L.maxScroll());
+    if (!L.scrollable()) return 0;
+    return (int)std::lround(scrollFracAt(L.track, L.thumb, thumbTop) * L.maxScroll());
 }
 
 // One row of the Behavior list: the on box, the behavior's name, then its # button (Eat, Heal and Rest only) and the

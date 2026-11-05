@@ -9,9 +9,7 @@ void Renderer::drawSidebarScrollBar(const SidebarLayout& L) {
     const float s = uiScale();
     const Rect track{ L.panel.x + L.panel.w - 9.0f * s, L.body.y + 4.0f * s, 5.0f * s, L.body.h - 8.0f * s };
     const float totalH = L.maxScroll + L.body.h;
-    const float thumbH = std::max(16.0f * s, track.h * L.body.h / totalH);
-    const float thumbY = track.y + (track.h - thumbH) * (L.scroll / L.maxScroll);
-    drawScrollBar(track, Rect{ track.x, thumbY, track.w, thumbH });
+    drawScrollBar(track, scrollThumb(track, L.body.h / totalH, 16.0f * s, L.scroll / L.maxScroll));
 }
 
 // The Stats tab: every stat's level under the heading of its group, with its progress bar. Returns the stat under
