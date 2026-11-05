@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -400,6 +401,36 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glBufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
     glBindVertexArray(0);
     setupGlyphLayout(glyphVao_, glyphVbo_);
+
+    // The start-up loading picture, one of data/illustration/loading1.png to loading3.png at random, loaded before
+    // the first loading frame is drawn. Only the ones in data.pak are picked from; with none, the bar is drawn alone.
+    {
+        std::vector<std::string> found;
+        for (int i = 1; i <= 3; ++i) {
+            const std::string path = "data/illustration/loading" + std::to_string(i) + ".png";
+            const unsigned char* bytes = nullptr;
+            size_t size = 0;
+            if (pakFind(path.c_str(), bytes, size)) found.push_back(path);
+        }
+        if (!found.empty()) {
+            // Not SDL_rand: unseeded, it seeds itself from the performance counter, and its first number barely moves
+            // between launches a few seconds apart, so it picked the same picture nearly every time. The system's
+            // random source, mixed with the clock, gives a fair pick each launch.
+            std::random_device device;
+            std::seed_seq seed{ device(), device(), (unsigned)SDL_GetPerformanceCounter(),
+                                (unsigned)(SDL_GetPerformanceCounter() >> 32) };
+            std::mt19937 rng(seed);
+            const std::string& pick = found[std::uniform_int_distribution<size_t>(0, found.size() - 1)(rng)];
+            loadingArt_ = loadOptionalImage(pick.c_str());
+            if (loadingArt_.tex) {
+                // Drawn well under its own size, so it gets mipmaps to stay smooth
+                glBindTexture(GL_TEXTURE_2D, loadingArt_.tex);
+                glGenerateMipmap(GL_TEXTURE_2D);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                SDL_Log("Loading picture: %s", pick.c_str());
+            }
+        }
+    }
 
     // Images and models
     // The _0 file of each kind of picture stands in for one that is missing (and pink_ when that is missing too)
@@ -944,11 +975,42 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     beginUi(winW, winH);
     if (backdrop) drawTitleBackground();
     const float W = (float)winW, H = (float)winH;
-    const float s = H / 720.0f;
+    float s = H / 720.0f;
     const float p = std::clamp(progress, 0.0f, 1.0f);
 
-    const float barW = std::min(W * 0.6f, 760.0f * s), barH = 26.0f * s;
-    const Rect outer{ (W - barW) * 0.5f, (H - barH) * 0.5f, barW, barH };
+    // At start-up, the loading picture: 800 x 600 in the middle of the window (shrunk to fit a smaller one) inside an
+    // 8 pixel black border, filled without stretching (a wider picture loses a little off its sides). The bar runs
+    // across the bottom of the picture, with what is loading and the share done under the border.
+    const bool art = !backdrop && loadingArt_.tex;
+    Rect pic{ 0.0f, 0.0f, 0.0f, 0.0f };
+    if (art) {
+        constexpr float PIC_W = 800.0f, PIC_H = 600.0f, PIC_BORDER = 8.0f;
+        const float textRoom = 2.0f * uiTextHeight("Ag") + 40.0f;   // the lines under the picture
+        const float fit = std::min({ 1.0f, (W - 2.0f * PIC_BORDER - 32.0f) / PIC_W,
+                                     (H - 2.0f * PIC_BORDER - 32.0f - 2.0f * textRoom) / PIC_H });
+        const float pw = PIC_W * std::max(0.1f, fit), ph = PIC_H * std::max(0.1f, fit);
+        pic = Rect{ std::floor((W - pw) * 0.5f), std::floor((H - ph) * 0.5f), pw, ph };
+        drawRect(Rect{ pic.x - PIC_BORDER, pic.y - PIC_BORDER, pic.w + 2.0f * PIC_BORDER, pic.h + 2.0f * PIC_BORDER },
+                 RGBA{ 0.0f, 0.0f, 0.0f, 1.0f });
+        // The part of the picture that fills the frame at its own shape
+        float u0 = 0.0f, u1 = 1.0f, v0 = 0.0f, v1 = 1.0f;
+        const float frameAspect = pic.w / pic.h;
+        if (loadingArt_.aspect > frameAspect) {
+            const float keep = frameAspect / loadingArt_.aspect;
+            u0 = (1.0f - keep) * 0.5f;
+            u1 = 1.0f - u0;
+        } else if (loadingArt_.aspect < frameAspect) {
+            const float keep = loadingArt_.aspect / frameAspect;
+            v0 = (1.0f - keep) * 0.5f;
+            v1 = 1.0f - v0;
+        }
+        drawUiQuad(loadingArt_.tex, pic.x, pic.y, pic.x + pic.w, pic.y + pic.h, u0, v0, u1, v1, WHITE);
+        s = pic.h / 600.0f;   // the bar keeps its size against the picture
+    }
+
+    const float barW = art ? pic.w - 32.0f * s : std::min(W * 0.6f, 760.0f * s), barH = 26.0f * s;
+    const Rect outer = art ? Rect{ pic.x + 16.0f * s, pic.y + pic.h - 16.0f * s - barH, barW, barH }
+                           : Rect{ (W - barW) * 0.5f, (H - barH) * 0.5f, barW, barH };
     const float border = std::max(2.0f, 2.0f * s), gap = std::max(2.0f, 3.0f * s);
     // A soft glow, the pink border, the dark inside, then the green fill
     drawRoundedRect(Rect{ outer.x - 6.0f * s, outer.y - 6.0f * s, outer.w + 12.0f * s, outer.h + 12.0f * s },
@@ -965,15 +1027,17 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
                         fill.h * 0.11f, RGBA{ 1.0f, 1.0f, 1.0f, 0.28f });
     }
 
-    // The stage above the bar, and the share done below it
+    // The stage above the bar (above the picture's border, with the picture), and the share done below it (below the
+    // border), then what is loading now
+    const float above = art ? pic.y - 8.0f : outer.y;
+    const float below = art ? pic.y + pic.h + 8.0f : outer.y + outer.h;
     if (!label.empty()) {
-        drawUiTextCentered(label, W * 0.5f, outer.y - 14.0f * s - uiTextHeight("Ag"), theme::BONE);
+        drawUiTextCentered(label, W * 0.5f, above - 14.0f * s - uiTextHeight("Ag"), theme::BONE);
     }
     const std::string pct = std::to_string((int)std::lround(p * 100.0f)) + "%";
-    drawUiTextCentered(pct, W * 0.5f, outer.y + outer.h + 12.0f * s, theme::ASH);
-    // What is loading now, under the share done
+    drawUiTextCentered(pct, W * 0.5f, below + 12.0f * s, theme::ASH);
     if (!category.empty()) {
-        drawUiTextCentered(category, W * 0.5f, outer.y + outer.h + 18.0f * s + uiTextHeight("Ag"), theme::BONE);
+        drawUiTextCentered(category, W * 0.5f, below + 18.0f * s + uiTextHeight("Ag"), theme::BONE);
     }
     endUi();
     glEnable(GL_DEPTH_TEST);

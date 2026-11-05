@@ -662,6 +662,7 @@ private:
     // A word of the name as a picture: its texture, and width over height
     const TextTex& titleWord(const std::string& text);
     TextTex titleLogo_;           // data/illustration/title.png: the game's logo, drawn in place of the name's words
+    TextTex loadingArt_;          // data/illustration/loading<1-3>.png, one picked at random: the start-up loading picture
     bool hoverAny_ = false;       // something was noted under the pointer this frame
     Rect hoverNow_{ 0.0f, 0.0f, 0.0f, 0.0f }, hoverLast_{ 0.0f, 0.0f, 0.0f, 0.0f };
     bool hoverHad_ = false;       // something was under the pointer last frame
