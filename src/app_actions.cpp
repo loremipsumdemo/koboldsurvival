@@ -117,6 +117,23 @@ GearPrefs App::gearPrefs() {
     return p;
 }
 
+namespace {
+
+// Moves a list's first row by a page
+void pageUp(size_t& offset, size_t page) { offset = offset > page ? offset - page : 0; }
+void pageDown(size_t& offset, size_t count, size_t page) {
+    offset = std::min(offset + page, count > page ? count - page : 0);
+}
+
+// Clicking the active column flips the order. A new column starts ascending.
+template <typename Key>
+void pickSortColumn(Key& column, Key picked, bool& ascending) {
+    ascending = column == picked ? !ascending : true;
+    column = picked;
+}
+
+} // namespace
+
 void App::performAction(Action action, int param) {
     // Going back or saying no has its own sound, and so does resuming the game
     const bool back = action == Action::Back || action == Action::ReturnToTitle || action == Action::CancelName ||
@@ -141,29 +158,17 @@ void App::performAction(Action action, int param) {
         return;
     case Action::MapSortName:
     case Action::MapSortTime: {
-        // Clicking the active column flips the order. A new column starts ascending.
-        const bool byName = action == Action::MapSortName;
-        if (mapSortByName == byName) {
-            mapSortAsc = !mapSortAsc;
-        } else {
-            mapSortByName = byName;
-            mapSortAsc = true;
-        }
+        pickSortColumn(mapSortByName, action == Action::MapSortName, mapSortAsc);
         sortMaps(maps, mapSortByName, mapSortAsc);
         mapOffset = 0;
         return;
     }
-    case Action::MapScrollUp: {
-        const size_t page = visibleSaveRows(viewH);
-        mapOffset = (mapOffset > page) ? mapOffset - page : 0;
+    case Action::MapScrollUp:
+        pageUp(mapOffset, visibleSaveRows(viewH));
         return;
-    }
-    case Action::MapScrollDown: {
-        const size_t page = visibleSaveRows(viewH);
-        const size_t maxOffset = maps.size() > page ? maps.size() - page : 0;
-        mapOffset = std::min(mapOffset + page, maxOffset);
+    case Action::MapScrollDown:
+        pageDown(mapOffset, maps.size(), visibleSaveRows(viewH));
         return;
-    }
     case Action::PartyPick:
         partyUi.selected = std::clamp(param, 0, (int)party.size() - 1);
         stopNameEdit();
@@ -405,28 +410,16 @@ void App::performAction(Action action, int param) {
         pendingDelete.reset();
         deleteHolding = false;
         return;
-    case Action::ScrollUp: {
+    case Action::ScrollUp:
         // Jump up one page of saves
-        const size_t page = visibleSaveRows(viewH);
-        listOffset = (listOffset > page) ? listOffset - page : 0;
+        pageUp(listOffset, visibleSaveRows(viewH));
         return;
-    }
-    case Action::ScrollDown: {
-        const size_t page = visibleSaveRows(viewH);
-        size_t maxOffset = saves.size() > page ? saves.size() - page : 0;
-        listOffset = std::min(listOffset + page, maxOffset);
+    case Action::ScrollDown:
+        pageDown(listOffset, saves.size(), visibleSaveRows(viewH));
         return;
-    }
     case Action::SortName:
     case Action::SortTime: {
-        // Clicking the active column flips the direction. A new column starts ascending.
-        SortKey k = (action == Action::SortName) ? SortKey::Name : SortKey::Time;
-        if (sortKey == k) {
-            sortAsc = !sortAsc;
-        } else {
-            sortKey = k;
-            sortAsc = true;
-        }
+        pickSortColumn(sortKey, action == Action::SortName ? SortKey::Name : SortKey::Time, sortAsc);
         sortSaves(saves, sortKey, sortAsc);
         listOffset = 0;
         return;

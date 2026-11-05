@@ -2,6 +2,50 @@
 
 using namespace play;
 
+namespace {
+
+const RGBA LIST_WHITE{ 1.0f, 1.0f, 1.0f, 1.0f };
+const RGBA LIST_GRAY{ 0.68f, 0.60f, 0.54f, 1.0f };
+const RGBA LIST_HOVER{ 0.961f, 0.788f, 0.459f, 1.0f };
+const RGBA LIST_HINT{ 0.957f, 0.902f, 0.796f, 1.0f };
+const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };   // a built-in map's or an autosave's type
+
+// The column headers of the save and map lists. The active sort column shows its direction.
+void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::string& timeLabel, bool byName, bool ascending) {
+    const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
+    const float y = g.headerY + (g.headerH - r.listTextHeight("Ag")) * 0.5f;
+    auto label = [&](const std::string& text, bool active) { return active ? text + (ascending ? "  ^" : "  v") : text; };
+    r.drawListText(label(lang("UILABEL_NAME"), byName), innerX + 12.0f * s, y, byName ? LIST_WHITE : LIST_GRAY);
+    r.drawListText(lang("UILABEL_TYPE"), innerX + COL_TYPE * innerW, y, LIST_GRAY);
+    r.drawListText(label(timeLabel, !byName), innerX + COL_TIME * innerW, y, !byName ? LIST_WHITE : LIST_GRAY);
+}
+
+// The "..." rows: how many rows of the list are hidden above and below the visible ones
+void drawListMoreRows(Renderer& r, const PanelGeometry& g, float s, size_t offset, size_t total, int winH, float mx, float my) {
+    const float x = g.box.x + g.pad + 12.0f * s, listH = r.listTextHeight("Ag");
+    const size_t first = std::min(offset, total);
+    const size_t last = std::min(first + visibleSaveRows(winH), total);
+    auto row = [&](const Rect& band, const char* key, size_t count) {
+        r.drawListText(langf(key, { std::to_string(count) }), x, band.y + (band.h - listH) * 0.5f,
+                       band.contains(mx, my) ? LIST_HOVER : LIST_HINT);
+    };
+    if (first > 0) row(g.aboveBand, "UILABEL_LIST_MORE_ABOVE", first);
+    if (last < total) row(g.belowBand, "UILABEL_LIST_MORE_BELOW", total - last);
+}
+
+// One row of the save or map list: its background, then its name, type and time in the columns
+void drawListRow(Renderer& r, const Rect& rect, bool hot, float s, const std::string& name, const std::string& type,
+                 RGBA typeTint, const std::string& time) {
+    r.drawButton(rect, "", true, hot);
+    const float y = rect.y + (rect.h - r.listTextHeight("Ag")) * 0.5f;
+    const RGBA tint = hot ? LIST_HOVER : LIST_WHITE;
+    r.drawListText(name, rect.x + 12.0f * s, y, tint);
+    r.drawListText(type, rect.x + COL_TYPE * rect.w, y, typeTint);
+    r.drawListText(time, rect.x + COL_TIME * rect.w, y, tint);
+}
+
+} // namespace
+
 void App::render() {
     // ---- Render ----
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
@@ -353,11 +397,7 @@ void App::render() {
         // The same popout as the load list: a name and date for each map, sorted, scrolled in a window
         const float s = winH / 720.0f;
         PanelGeometry g = panelGeometry(winW, winH);
-        const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-        const RGBA gray{ 0.68f, 0.60f, 0.54f, 1.0f };
-        const RGBA hover{ 0.961f, 0.788f, 0.459f, 1.0f };
-        const RGBA hint{ 0.957f, 0.902f, 0.796f, 1.0f };
-        const RGBA builtIn{ 1.0f, 0.62f, 0.62f, 1.0f };
+        const RGBA white = LIST_WHITE, gray = LIST_GRAY;
         const float cx = g.box.x + g.box.w * 0.5f;
 
         renderer.beginUi(winW, winH);
@@ -369,51 +409,17 @@ void App::render() {
                                                  : lang("UILABEL_CLICK_MAP"),
                                     cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
 
-        // Column headers. The active sort column shows its direction.
-        const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
-        const float textInset = 12.0f * s;
-        const float listH = renderer.listTextHeight("Ag");
-        const float hy = g.headerY + (g.headerH - listH) * 0.5f;
-        auto headerLabel = [&](const std::string& label, bool active) {
-            if (!active) return label;
-            return label + (mapSortAsc ? "  ^" : "  v");
-        };
-        renderer.drawListText(headerLabel(lang("UILABEL_NAME"), mapSortByName), innerX + textInset, hy,
-                              mapSortByName ? white : gray);
-        renderer.drawListText(lang("UILABEL_TYPE"), innerX + COL_TYPE * innerW, hy, gray);
-        renderer.drawListText(headerLabel(lang("UILABEL_CREATED"), !mapSortByName), innerX + COL_TIME * innerW, hy,
-                              !mapSortByName ? white : gray);
-
-        // "..." rows: how many maps are hidden above and below the visible rows
-        const size_t total = maps.size();
-        const size_t shownFirst = std::min(mapOffset, total);
-        const size_t shownLast = std::min(shownFirst + visibleSaveRows(winH), total);
-        if (shownFirst > 0) {
-            const bool hot = g.aboveBand.contains(mouseX, mouseY);
-            renderer.drawListText("...   " + std::to_string(shownFirst) + " more above",
-                                  innerX + textInset, g.aboveBand.y + (g.aboveBand.h - listH) * 0.5f,
-                                  hot ? hover : hint);
-        }
-        if (shownLast < total) {
-            const bool hot = g.belowBand.contains(mouseX, mouseY);
-            renderer.drawListText("...   " + std::to_string(total - shownLast) + " more below",
-                                  innerX + textInset, g.belowBand.y + (g.belowBand.h - listH) * 0.5f,
-                                  hot ? hover : hint);
-        }
+        drawListHeaders(renderer, g, s, lang("UILABEL_CREATED"), mapSortByName, mapSortAsc);
+        drawListMoreRows(renderer, g, s, mapOffset, maps.size(), winH, mouseX, mouseY);
 
         for (const Button& b : layoutMapPanel(winW, winH, maps, mapOffset)) {
             const bool isHover = b.rect.contains(mouseX, mouseY);
             if (b.action == Action::PickMap) {
-                // A map row: background, then its name, type and date in the columns
                 const MapChoice& m = maps[b.param];
-                renderer.drawButton(b.rect, "", true, isHover);
-                const float ry = b.rect.y + (b.rect.h - listH) * 0.5f;
-                renderer.drawListText(m.name, b.rect.x + textInset, ry, isHover ? hover : white);
-                renderer.drawListText(mapTypeLabel(m), b.rect.x + COL_TYPE * b.rect.w, ry,
-                                      (m.source == "data" || m.source == "packed") ? builtIn : white);
-                const std::string when = (m.source == "data" || m.source == "packed") ? std::string(lang("UILABEL_BUILT_IN_WHEN"))
-                                       : m.created > 0 ? timeString(m.created) : std::string(lang("UILABEL_UNKNOWN"));
-                renderer.drawListText(when, b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
+                const bool builtIn = m.source == "data" || m.source == "packed";
+                drawListRow(renderer, b.rect, isHover, s, m.name, mapTypeLabel(m), builtIn ? LIST_MARKED : LIST_WHITE,
+                            builtIn ? std::string(lang("UILABEL_BUILT_IN_WHEN"))
+                            : m.created > 0 ? timeString(m.created) : std::string(lang("UILABEL_UNKNOWN")));
             } else if (b.action == Action::MapScrollUp || b.action == Action::MapScrollDown
                        || b.action == Action::MapSortName || b.action == Action::MapSortTime) {
                 // Drawn above as text: the "..." rows and the headers only need their click areas
@@ -499,10 +505,7 @@ void App::render() {
     if (panelOpen) {
         const float s = winH / 720.0f;
         PanelGeometry g = panelGeometry(winW, winH);
-        const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
-        const RGBA gray{ 0.68f, 0.60f, 0.54f, 1.0f };
-        const RGBA hover{ 0.961f, 0.788f, 0.459f, 1.0f };
-        const RGBA hint{ 0.957f, 0.902f, 0.796f, 1.0f };
+        const RGBA white = LIST_WHITE, gray = LIST_GRAY;
         const float cx = g.box.x + g.box.w * 0.5f;
 
         renderer.beginUi(winW, winH);
@@ -555,56 +558,21 @@ void App::render() {
                                             cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
             }
 
-            // Column headers. The active sort column shows its direction.
-            const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
-            const float textInset = 12.0f * s;
-            const float listH = renderer.listTextHeight("Ag");
-            const float hy = g.headerY + (g.headerH - listH) * 0.5f;
-            auto headerLabel = [&](const std::string& label, bool active) {
-                if (!active) return label;
-                return label + (sortAsc ? "  ^" : "  v");
-            };
-            renderer.drawListText(headerLabel(lang("UILABEL_NAME"), sortKey == SortKey::Name),
-                                  innerX + textInset, hy, sortKey == SortKey::Name ? white : gray);
-            renderer.drawListText(lang("UILABEL_TYPE"), innerX + COL_TYPE * innerW, hy, gray);
-            renderer.drawListText(headerLabel(lang("UILABEL_TIME"), sortKey == SortKey::Time),
-                                  innerX + COL_TIME * innerW, hy, sortKey == SortKey::Time ? white : gray);
+            drawListHeaders(renderer, g, s, lang("UILABEL_TIME"), sortKey == SortKey::Name, sortAsc);
 
             if (saves.empty()) {
                 renderer.drawUiTextCentered(lang("UILABEL_NO_SAVES"), cx, g.listTop + g.nameBox.h * 0.22f, gray);
             }
 
-            // "..." rows: how many saves are hidden above and below the visible rows
-            const size_t total = saves.size();
-            const size_t shownFirst = std::min(listOffset, total);
-            const size_t shownLast = std::min(shownFirst + visibleSaveRows(winH), total);
-            if (shownFirst > 0) {
-                const bool hot = g.aboveBand.contains(mouseX, mouseY);
-                renderer.drawListText("...   " + std::to_string(shownFirst) + " more above",
-                                      innerX + textInset, g.aboveBand.y + (g.aboveBand.h - listH) * 0.5f,
-                                      hot ? hover : hint);
-            }
-            if (shownLast < total) {
-                const bool hot = g.belowBand.contains(mouseX, mouseY);
-                renderer.drawListText("...   " + std::to_string(total - shownLast) + " more below",
-                                      innerX + textInset, g.belowBand.y + (g.belowBand.h - listH) * 0.5f,
-                                      hot ? hover : hint);
-            }
+            drawListMoreRows(renderer, g, s, listOffset, saves.size(), winH, mouseX, mouseY);
 
             for (const Button& b : layoutPanel(winW, winH, panelSaveMode, Ask::None, saves, listOffset,
                                                panelFrom == Screen::Title)) {
                 const bool isHover = b.rect.contains(mouseX, mouseY);
                 if (b.action == Action::LoadSlot) {
-                    // A save row: background, then left-aligned name and the type and time columns
                     const SaveSummary& sv = saves[b.param];
-                    renderer.drawButton(b.rect, "", true, isHover);
-                    const float ry = b.rect.y + (b.rect.h - listH) * 0.5f;
-                    renderer.drawListText(sv.name, b.rect.x + textInset, ry, isHover ? hover : white);
-                    renderer.drawListText(sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
-                                          b.rect.x + COL_TYPE * b.rect.w, ry,
-                                          sv.autosave ? RGBA{ 1.0f, 0.62f, 0.62f, 1.0f } : white);
-                    renderer.drawListText(timeString(sv.timestamp),
-                                          b.rect.x + COL_TIME * b.rect.w, ry, isHover ? hover : white);
+                    drawListRow(renderer, b.rect, isHover, s, sv.name, sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
+                                sv.autosave ? LIST_MARKED : LIST_WHITE, timeString(sv.timestamp));
                 } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown
                            || b.action == Action::SortName || b.action == Action::SortTime) {
                     // Drawn above as text: the "..." rows and the headers only need their click areas
