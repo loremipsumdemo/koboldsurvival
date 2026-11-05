@@ -15,6 +15,9 @@ bool pakOpen(const std::string& pakPath);
 // Finds a file in the pak. The bytes stay valid until the program exits.
 bool pakFind(const std::string& name, const unsigned char*& bytes, size_t& size);
 
+// Whether a file is in the pak
+bool pakHas(const std::string& name);
+
 // Decodes an image from the pak. Returns null if it's missing or can't be decoded.
 // Free the result with SDL_DestroySurface.
 SDL_Surface* pakImage(const std::string& name);

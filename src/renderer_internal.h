@@ -69,8 +69,8 @@ struct Batch {
     }
 };
 
-// A texture from RGBA pixels, clamped at its edges and filtered linearly
-GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba);
+// A texture from RGBA pixels, clamped at its edges and filtered linearly (or by filter)
+GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba, GLint filter = GL_LINEAR);
 
 // A round green dot with a black outline, 16 pixels across, for the units on the maps
 GLuint MakeDotTexture(bool white = false);

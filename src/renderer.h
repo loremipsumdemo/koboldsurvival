@@ -56,18 +56,30 @@ struct StatsPanelLayout;
 struct ItemMenuLayout;
 struct TitleLayout;
 struct PercentPromptLayout;
+namespace render_detail { struct Vertex; struct Batch; }
+
+// Which pixels of a picture can be seen: its alpha, row by row. Empty when there is no picture.
+struct AlphaMask {
+    int w = 0, h = 0;
+    std::vector<unsigned char> alpha;
+};
 
 // Pictures by number, each loaded from data.pak the first time it is asked for: <prefix><n>.png. A number with no
-// picture holds an empty texture (tex 0), so it is looked for only once.
+// picture holds an empty texture (tex 0), so it is looked for only once. With keepMasks, each picture's alpha is kept
+// as it is loaded, so mask() does not decode the file a second time.
 class PictureCache {
 public:
-    explicit PictureCache(const char* prefix) : prefix_(prefix) {}
+    explicit PictureCache(const char* prefix, bool keepMasks = false) : prefix_(prefix), keepMasks_(keepMasks) {}
     const TextTex& get(int n);
+    // The picture's alpha (empty without a picture). Only kept with keepMasks; otherwise always empty.
+    const AlphaMask& mask(int n);
     // Deletes every texture loaded
     void clear();
 private:
     const char* prefix_;
+    bool keepMasks_;
     std::map<int, TextTex> pics_;
+    std::map<int, AlphaMask> masks_;
 };
 
 // Multiplies the texture color, alpha included.
@@ -600,6 +612,9 @@ private:
 
     // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
+    // Flat coloured triangles (three vertices each) through the colour program, placed by mvp
+    void drawColorTris(const render_detail::Vertex* v, size_t count, const Mat4& mvp);
+    void drawColorTris(const render_detail::Batch& b, const Mat4& mvp);
     // A textured UI quad from (x0, y0) top left to (x1, y1) bottom right, with texture coordinates u0 v0 at
     // the top left and u1 v1 at the bottom right
     // A whole texture on the screen, its top left at (x, y), w by h pixels
@@ -625,15 +640,6 @@ private:
 
     // The picture for an item, from data/item/item_<n>.png, or the pink square without one. Never null.
     const TextTex* itemTexture(int item);
-    // Which pixels of an item's picture can be seen, for picking a ground item by its visible part only. Loaded once
-    // per item from its picture (a solid square, as the pink square is, when it has none).
-    struct ItemMask {
-        int w = 0, h = 0;
-        std::vector<unsigned char> alpha;
-    };
-    std::map<int, ItemMask> itemMasks_;
-    const ItemMask& itemMask(int item);
-    static ItemMask loadMask(const std::string& path);
     // Whether the picture of an item is visible at (u, v), each 0 to 1 across and down
     bool itemPixelSolid(int item, float u, float v);
     // An item's picture at exactly ITEM_PICTURE_PX square (ui_types.h), on whole pixels: centered in a cell, or on a point
@@ -796,7 +802,7 @@ private:
     };
     std::map<Entity, UnitFacing> unitFacing_;
     float unitYaw(Entity e, float x, float z, bool idle);
-    PictureCache itemPics_{ "data/item/item_" };      // by item id
+    PictureCache itemPics_{ "data/item/item_", true };   // by item id; keeps the alpha for picking by visible pixels
     PictureCache emotePics_{ "data/emote/emote_" };   // by EmoteId
     const TextTex* emoteTexture(EmoteId emote);   // never null: the pink square stands in for a missing picture
     TextTex pink_;            // one pink texel: the square drawn for a missing picture

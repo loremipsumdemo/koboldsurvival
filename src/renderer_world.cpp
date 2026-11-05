@@ -66,12 +66,7 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
                     RGBA{ 0.0f, 0.0f, 0.0f, 0.5f });
         y = y1 + gap;
     }
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, panels.v.size() * sizeof(Vertex), panels.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)panels.v.size());
+    drawColorTris(panels, pixels);
 
     // Text on top of each panel
     glUseProgram(glyphProgram_);
@@ -116,12 +111,7 @@ void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, i
         ring.quad(o0, o1, i1, i0, col);
     }
 
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, ring.v.size() * sizeof(Vertex), ring.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)ring.v.size());
+    drawColorTris(ring, cam.viewProj((float)winW / (float)winH));
 }
 
 void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha,
@@ -148,12 +138,7 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
         crystal.tri(bottom, b, a, lower);
     }
 
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, cam.viewProj((float)winW / (float)winH).m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, crystal.v.size() * sizeof(Vertex), crystal.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)crystal.v.size());
+    drawColorTris(crystal, cam.viewProj((float)winW / (float)winH));
 }
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
@@ -312,21 +297,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     drawBuildPreview(t);
 
     // 3. Color overlays: selection rings and the drag box
-    auto flush = [&](const Batch& batch, const Mat4& m) {
-        glUseProgram(colorProgram_);
-        glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, m.m);
-        glBindVertexArray(dynVao_);
-        glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-        glBufferData(GL_ARRAY_BUFFER, batch.v.size() * sizeof(Vertex), batch.v.data(), GL_STREAM_DRAW);
-        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)batch.v.size());
-    };
-
     Batch rings;
     for (Entity e : w.view<Unit, Transform, Selected>()) {
         const Transform* tr = w.get<Transform>(e);
         outlineSquare(rings, tr->x, tr->y + 0.03f, tr->z, 0.6f, 0.07f, RGBA{ 0.3f, 1.0f, 0.3f, 1.0f });
     }
-    flush(rings, viewProj_);
+    drawColorTris(rings, viewProj_);
 
     if (sel.dragging) {
         Batch box;
@@ -346,7 +322,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        flush(box, ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f));
+        drawColorTris(box, ortho(0.0f, (float)winW, (float)winH, 0.0f, -1.0f, 1.0f));
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
     }
@@ -422,12 +398,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     }
     if (b.v.empty()) return;
 
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+    drawColorTris(b, viewProj_);
 }
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {

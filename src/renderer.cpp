@@ -16,7 +16,9 @@ using namespace render_detail;
 
 namespace {
 
-constexpr float TWO_PI = 6.28318530f;
+constexpr float PI = 3.14159265f;
+constexpr float HALF_PI = PI * 0.5f;
+constexpr float TWO_PI = PI * 2.0f;
 
 const char* COLOR_VS = R"(
 #version 330 core
@@ -86,7 +88,8 @@ void main() {
 }
 )";
 
-GLuint compileShader(GLenum type, const char* src) {
+// A compiled shader, or 0 with the error in log.txt. name says which program it is for.
+GLuint compileShader(GLenum type, const char* src, const char* name) {
     GLuint s = glCreateShader(type);
     glShaderSource(s, 1, &src, nullptr);
     glCompileShader(s);
@@ -94,22 +97,50 @@ GLuint compileShader(GLenum type, const char* src) {
     glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
     if (!ok) {
         char log[1024];
-        glGetShaderInfoLog(s, 1024, nullptr, log);
-        SDL_Log("Shader error: %s", log);
+        glGetShaderInfoLog(s, sizeof(log), nullptr, log);
+        SDL_Log("The %s program's %s shader did not compile: %s", name,
+                type == GL_VERTEX_SHADER ? "vertex" : "fragment", log);
+        glDeleteShader(s);
+        return 0;
     }
     return s;
 }
 
-GLuint linkProgram(const char* vs, const char* fs) {
-    GLuint v = compileShader(GL_VERTEX_SHADER, vs);
-    GLuint f = compileShader(GL_FRAGMENT_SHADER, fs);
+// A linked program, or 0 with the error in log.txt when a shader does not compile or the program does not link
+GLuint linkProgram(const char* name, const char* vs, const char* fs) {
+    const GLuint v = compileShader(GL_VERTEX_SHADER, vs, name);
+    const GLuint f = compileShader(GL_FRAGMENT_SHADER, fs, name);
+    if (!v || !f) {
+        if (v) glDeleteShader(v);
+        if (f) glDeleteShader(f);
+        return 0;
+    }
     GLuint p = glCreateProgram();
     glAttachShader(p, v);
     glAttachShader(p, f);
     glLinkProgram(p);
     glDeleteShader(v);
     glDeleteShader(f);
+    GLint ok = 0;
+    glGetProgramiv(p, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char log[1024];
+        glGetProgramInfoLog(p, sizeof(log), nullptr, log);
+        SDL_Log("The %s program did not link: %s", name, log);
+        glDeleteProgram(p);
+        return 0;
+    }
     return p;
+}
+
+// The glyph fragment shader's uniforms at their resting values: texture unit 0, no tint, full colour, no faction
+void setGlyphDefaults(GLuint program) {
+    glUseProgram(program);
+    glUniform1i(glGetUniformLocation(program, "uTex"), 0);
+    glUniform4f(glGetUniformLocation(program, "uTint"), 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniform1f(glGetUniformLocation(program, "uSat"), 1.0f);
+    glUniform4f(glGetUniformLocation(program, "uFaction"), 0.0f, 0.0f, 0.0f, 0.0f);
+    glUseProgram(0);
 }
 
 // Position (location 0) and color (location 1), for Vertex
@@ -134,39 +165,70 @@ void setupGlyphLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(0);
 }
 
-// Loads a PNG (or any image SDL_image understands) into a texture
-TextTex loadImage(const char* path, bool repeatHorizontally) {
-    SDL_Surface* s = pakImage(path);
+// A picture in the pak decoded to RGBA (SDL_PIXELFORMAT_ABGR8888), or null when it is not packed (no error logged)
+// or cannot be decoded (logged). Free it with SDL_DestroySurface.
+SDL_Surface* decodeRgba(const char* path) {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(path, bytes, size)) return nullptr;
+    // closeio = true: SDL frees its stream object. The bytes belong to the pak and are not freed.
+    SDL_Surface* s = IMG_Load_IO(SDL_IOFromConstMem(bytes, size), true);
     if (!s) {
         SDL_Log("Could not load %s: %s", path, SDL_GetError());
-        return {};
+        return nullptr;
     }
     SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
     SDL_DestroySurface(s);
-    if (!conv) return {};
-
-    GLuint t = 0;
-    glGenTextures(1, &t);
-    glBindTexture(GL_TEXTURE_2D, t);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeatHorizontally ? GL_REPEAT : GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, conv->w, conv->h, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
-
-    TextTex result{ t, (float)conv->w / (float)conv->h };
-    SDL_DestroySurface(conv);
-    return result;
+    return conv;
 }
 
-// Like loadImage, but a file that is not packed gives an empty texture with no error logged
+// A decoded picture's texture
+TextTex textureOf(const SDL_Surface* rgba) {
+    return TextTex{ MakeRgbaTexture(rgba->w, rgba->h, static_cast<const uint8_t*>(rgba->pixels)),
+                    (float)rgba->w / (float)rgba->h };
+}
+
+// A decoded picture's alpha, row by row
+AlphaMask alphaOf(const SDL_Surface* rgba) {
+    AlphaMask m;
+    m.w = rgba->w;
+    m.h = rgba->h;
+    m.alpha.resize((size_t)m.w * (size_t)m.h);
+    for (int y = 0; y < m.h; ++y) {
+        const unsigned char* row = static_cast<const unsigned char*>(rgba->pixels) + (size_t)y * (size_t)rgba->pitch;
+        for (int x = 0; x < m.w; ++x) m.alpha[(size_t)y * (size_t)m.w + (size_t)x] = row[(size_t)x * 4 + 3];
+    }
+    return m;
+}
+
+// A picture from the pak as a texture; empty when it is not packed or cannot be decoded
 TextTex loadOptionalImage(const char* path) {
-    const unsigned char* bytes = nullptr;
-    size_t size = 0;
-    if (!pakFind(path, bytes, size)) return {};
-    return loadImage(path, false);
+    SDL_Surface* conv = decodeRgba(path);
+    if (!conv) return {};
+    const TextTex t = textureOf(conv);
+    SDL_DestroySurface(conv);
+    return t;
+}
+
+// For a picture drawn well under its own size: mipmaps, so it stays smooth
+void addMipmaps(const TextTex& t) {
+    if (!t.tex) return;
+    glBindTexture(GL_TEXTURE_2D, t.tex);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+}
+
+// Loads a model and keeps it only when it has something to draw: a size on some axis, or with needsHeight a height
+// (units and mobs are scaled by it). Otherwise what was made is dropped, m is left empty, and false is returned.
+bool loadDrawableModel(const char* path, Model& m, bool needsHeight) {
+    const bool read = loadGLBModel(path, m);
+    const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+    const bool drawable = read && m.vao && !m.draws.empty() && (needsHeight ? m.maxY > m.minY : extent > 0.0f);
+    if (!drawable) {
+        destroyModel(m);
+        m = Model{};
+    }
+    return drawable;
 }
 
 const char* SKY_VS = R"(
@@ -236,13 +298,13 @@ bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspec
     return true;
 }
 
-GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba) {
+GLuint MakeRgbaTexture(int w, int h, const uint8_t* rgba, GLint filter) {
     GLuint t = 0;
     glGenTextures(1, &t);
     glBindTexture(GL_TEXTURE_2D, t);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
@@ -282,7 +344,9 @@ RGBA mixColor(RGBA a, RGBA b, float t) {
 RGBA rgb255(int r, int g, int b, float a) { return RGBA{ r / 255.0f, g / 255.0f, b / 255.0f, a }; }
 
 std::string withCommas(long long n) {
-    const std::string digits = std::to_string(n < 0 ? -n : n);
+    // Negated as unsigned, so the most negative number does not overflow
+    const unsigned long long magnitude = n < 0 ? 0ULL - (unsigned long long)n : (unsigned long long)n;
+    const std::string digits = std::to_string(magnitude);
     std::string out;
     for (size_t i = 0; i < digits.size(); ++i) {
         if (i > 0 && (digits.size() - i) % 3 == 0) out += ',';
@@ -340,31 +404,22 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
 
 // The flat-colour and textured-quad programs and their buffers, and the terrain's
 bool Renderer::initGl() {
-    colorProgram_ = linkProgram(COLOR_VS, COLOR_FS);
+    // Everything on screen, the loading screen included, is drawn with these two: without them there is no game
+    colorProgram_ = linkProgram("colour", COLOR_VS, COLOR_FS);
+    glyphProgram_ = linkProgram("glyph", GLYPH_VS, GLYPH_FS);
+    if (!colorProgram_ || !glyphProgram_) return false;
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
-
-    glyphProgram_ = linkProgram(GLYPH_VS, GLYPH_FS);
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
     uTint_ = glGetUniformLocation(glyphProgram_, "uTint");
     uSat_ = glGetUniformLocation(glyphProgram_, "uSat");
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
-    glUseProgram(glyphProgram_);
-    glUniform1i(glGetUniformLocation(glyphProgram_, "uTex"), 0);
-    glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
-    glUniform1f(uSat_, 1.0f);
-    glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
-    glUseProgram(0);
+    setGlyphDefaults(glyphProgram_);
 
     // Props drawn instanced: the same fragment shading as the glyph program, untinted, in full colour
-    modelInstProgram_ = linkProgram(MODEL_INST_VS, GLYPH_FS);
+    modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, GLYPH_FS);
     if (modelInstProgram_) {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
-        glUseProgram(modelInstProgram_);
-        glUniform1i(glGetUniformLocation(modelInstProgram_, "uTex"), 0);
-        glUniform4f(glGetUniformLocation(modelInstProgram_, "uTint"), 1.0f, 1.0f, 1.0f, 1.0f);
-        glUniform1f(glGetUniformLocation(modelInstProgram_, "uSat"), 1.0f);
-        glUniform4f(glGetUniformLocation(modelInstProgram_, "uFaction"), 0.0f, 0.0f, 0.0f, 0.0f);
-        glUseProgram(0);
+        setGlyphDefaults(modelInstProgram_);
         glGenBuffers(1, &instVbo_);
     }
 
@@ -376,10 +431,8 @@ bool Renderer::initGl() {
 
     glGenVertexArrays(1, &glyphVao_);
     glGenBuffers(1, &glyphVbo_);
-    glBindVertexArray(glyphVao_);
     glBindBuffer(GL_ARRAY_BUFFER, glyphVbo_);
     glBufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-    glBindVertexArray(0);
     setupGlyphLayout(glyphVao_, glyphVbo_);
     return true;
 }
@@ -390,9 +443,7 @@ void Renderer::loadLoadingArt() {
     std::vector<std::string> found;
     for (int i = 1; i <= 3; ++i) {
         const std::string path = "data/illustration/loading" + std::to_string(i) + ".png";
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        if (pakFind(path.c_str(), bytes, size)) found.push_back(path);
+        if (pakHas(path)) found.push_back(path);
     }
     if (!found.empty()) {
         // Not SDL_rand: unseeded, it seeds itself from the performance counter, and its first number barely moves
@@ -404,13 +455,8 @@ void Renderer::loadLoadingArt() {
         std::mt19937 rng(seed);
         const std::string& pick = found[std::uniform_int_distribution<size_t>(0, found.size() - 1)(rng)];
         loadingArt_ = loadOptionalImage(pick.c_str());
-        if (loadingArt_.tex) {
-            // Drawn well under its own size, so it gets mipmaps to stay smooth
-            glBindTexture(GL_TEXTURE_2D, loadingArt_.tex);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            SDL_Log("Loading picture: %s", pick.c_str());
-        }
+        addMipmaps(loadingArt_);   // drawn well under its own size
+        if (loadingArt_.tex) SDL_Log("Loading picture: %s", pick.c_str());
     }
 }
 
@@ -418,13 +464,8 @@ void Renderer::loadLoadingArt() {
 void Renderer::loadPictures(LoadStages& stages) {
     const int pictureCount = 1 + UNIT_SPRITE_COUNT;
     stages.stage(0.0f, "LOADING_PICTURES", pictureCount);
-    // The title screen's logo is drawn well under its own size, so it gets mipmaps to stay smooth
     titleLogo_ = loadOptionalImage("data/illustration/title.png");
-    if (titleLogo_.tex) {
-        glBindTexture(GL_TEXTURE_2D, titleLogo_.tex);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    }
+    addMipmaps(titleLogo_);   // drawn well under its own size
     stages.step(0.03f, 1);
     // Each unit model's profile picture, numbered as the models are
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
@@ -439,6 +480,13 @@ void Renderer::loadPictures(LoadStages& stages) {
 // again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
 void Renderer::loadUnitModels(LoadStages& stages) {
     stages.stage(0.05f, "LOADING_UNIT_MODELS", UNIT_SPRITE_COUNT);
+    // The files loaded so far, for a later one with the same bytes to share
+    struct Loaded {
+        const unsigned char* bytes;
+        size_t size;
+        const Model* model;
+    };
+    std::vector<Loaded> loaded;
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/model/unit/unit_%02d.glb", i);
@@ -449,23 +497,19 @@ void Renderer::loadUnitModels(LoadStages& stages) {
             stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
             continue;
         }
-        for (int j = 1; j < i && !unitModelFor_[(size_t)i - 1]; ++j) {
-            char other[64];
-            std::snprintf(other, sizeof(other), "data/model/unit/unit_%02d.glb", j);
-            const unsigned char* otherBytes = nullptr;
-            size_t otherSize = 0;
-            if (unitModelFor_[(size_t)j - 1] && pakFind(other, otherBytes, otherSize) && otherSize == size
-                && std::memcmp(otherBytes, bytes, size) == 0) {
-                unitModelFor_[(size_t)i - 1] = unitModelFor_[(size_t)j - 1];
+        const Model*& slot = unitModelFor_[(size_t)i - 1];
+        for (const Loaded& l : loaded) {
+            if (l.size == size && (l.bytes == bytes || std::memcmp(l.bytes, bytes, size) == 0)) {
+                slot = l.model;
+                break;
             }
         }
-        if (!unitModelFor_[(size_t)i - 1]) {
+        if (!slot) {
             Model& m = unitModels_[(size_t)i - 1];
-            if (loadGLBModel(path, m) && m.vao && !m.draws.empty() && m.maxY > m.minY) {
-                unitModelFor_[(size_t)i - 1] = &m;
+            if (loadDrawableModel(path, m, true)) {
+                slot = &m;
+                loaded.push_back({ bytes, size, &m });
             } else {
-                destroyModel(m);
-                m = Model{};
                 SDL_Log("Unit model %s could not be read or has nothing to draw: units with sprite %d are drawn as pink squares",
                         path, i);
             }
@@ -488,14 +532,10 @@ void Renderer::loadMobArt(LoadStages& stages) {
         ++mobModelsDone;
         char path[64];
         std::snprintf(path, sizeof(path), "data/model/mob/mob_%02d.glb", n);
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
         Model& m = mobModels_[(size_t)k - 1];
-        if (!pakFind(path, bytes, size)) {
+        if (!pakHas(path)) {
             SDL_Log("Mob model %s not in data.pak: the %s is drawn by its picture", path, lang(mobInfo(kind).nameKey).c_str());
-        } else if (!loadGLBModel(path, m) || !m.vao || m.draws.empty() || !(m.maxY > m.minY)) {
-            destroyModel(m);
-            m = Model{};
+        } else if (!loadDrawableModel(path, m, true)) {
             SDL_Log("Mob model %s could not be read or has nothing to draw: the %s is drawn by its picture", path,
                     lang(mobInfo(kind).nameKey).c_str());
         }
@@ -513,7 +553,7 @@ void Renderer::loadMobArt(LoadStages& stages) {
 
 // The sky's program and its full-screen quad
 void Renderer::initSky() {
-    skyProgram_ = linkProgram(SKY_VS, SKY_FS);
+    skyProgram_ = linkProgram("sky", SKY_VS, SKY_FS);
     uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
     uSunDir_   = glGetUniformLocation(skyProgram_, "uSunDir");
     uSunAlpha_ = glGetUniformLocation(skyProgram_, "uSunAlpha");
@@ -539,15 +579,9 @@ void Renderer::initSky() {
 // One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture that is
 // missing
 void Renderer::makeTexels() {
-    auto texel = [](TextTex& t, unsigned char r, unsigned char g, unsigned char b) {
-        const unsigned char px[4] = { r, g, b, 255 };
-        glGenTextures(1, &t.tex);
-        glBindTexture(GL_TEXTURE_2D, t.tex);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
-        t.aspect = 1.0f;
+    auto texel = [](TextTex& t, uint8_t r, uint8_t g, uint8_t b) {
+        const uint8_t px[4] = { r, g, b, 255 };
+        t = TextTex{ MakeRgbaTexture(1, 1, px, GL_NEAREST), 1.0f };
     };
     texel(white_, 255, 255, 255);
     texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
@@ -561,21 +595,11 @@ void Renderer::loadPropModels(LoadStages& stages) {
     for (int k = 0; k < PROP_KIND_COUNT; ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        if (!pakFind(info.file, bytes, size)) {
+        if (!pakHas(info.file)) {
             SDL_Log("Prop model %s not in data.pak: the %s is drawn %s", info.file, lang(info.nameKey).c_str(), standIn);
-        } else {
-            Model& m = propModels_[(size_t)kind];
-            const bool read = loadGLBModel(info.file, m);
-            const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-            if (!read || !m.vao || m.draws.empty() || !(extent > 0.0f)) {
-                // Unreadable, or nothing in it to draw: drop what was made, so the pink square shows instead
-                destroyModel(m);
-                m = Model{};
-                SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
-                        info.file, lang(info.nameKey).c_str(), standIn);
-            }
+        } else if (!loadDrawableModel(info.file, propModels_[(size_t)kind], false)) {
+            SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
+                    info.file, lang(info.nameKey).c_str(), standIn);
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
     }
@@ -593,6 +617,10 @@ void Renderer::shutdown() {
     for (TextTex& g : profilePics_) drop(g);
     for (TextTex& g : mobSprites_) drop(g);
     mobSprites_.clear();
+    for (GLuint* t : { &dotTex_, &dotWhiteTex_ }) {
+        if (*t) glDeleteTextures(1, t);
+        *t = 0;
+    }
     for (Model& m : unitModels_) destroyModel(m);
     for (Model& m : mobModels_) destroyModel(m);
     unitModelFor_.fill(nullptr);
@@ -642,7 +670,8 @@ void Renderer::setSaturation(float sat) {
 void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
     if (r.w <= 0.0f || r.h <= 0.0f) return;
     const float rad = std::clamp(radius, 0.0f, std::min(r.w, r.h) * 0.5f);
-    std::vector<UiVert> v;
+    static std::vector<UiVert> v;   // kept between calls so it is not allocated each time (drawn on one thread)
+    v.clear();
     auto quad = [&](float x0, float y0, float x1, float y1) {
         if (x1 <= x0 || y1 <= y0) return;
         v.insert(v.end(), { { x0, y0, c }, { x1, y0, c }, { x1, y1, c }, { x0, y0, c }, { x1, y1, c }, { x0, y1, c } });
@@ -656,11 +685,11 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
         const int steps = std::clamp((int)(rad * 0.6f), 4, 24);
         const float cx[4] = { r.x + rad, r.x + r.w - rad, r.x + r.w - rad, r.x + rad };
         const float cy[4] = { r.y + rad, r.y + rad, r.y + r.h - rad, r.y + r.h - rad };
-        const float start[4] = { 3.14159265f, 4.71238898f, 0.0f, 1.57079633f };
+        const float start[4] = { PI, PI + HALF_PI, 0.0f, HALF_PI };
         for (int k = 0; k < 4; ++k) {
             for (int i = 0; i < steps; ++i) {
-                const float a0 = start[k] + 1.57079633f * (float)i / (float)steps;
-                const float a1 = start[k] + 1.57079633f * (float)(i + 1) / (float)steps;
+                const float a0 = start[k] + HALF_PI * (float)i / (float)steps;
+                const float a1 = start[k] + HALF_PI * (float)(i + 1) / (float)steps;
                 v.push_back({ cx[k], cy[k], c });
                 v.push_back({ cx[k] + std::cos(a0) * rad, cy[k] + std::sin(a0) * rad, c });
                 v.push_back({ cx[k] + std::cos(a1) * rad, cy[k] + std::sin(a1) * rad, c });
@@ -694,17 +723,25 @@ void Renderer::endUi() {
     glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::drawUiTris(const std::vector<UiVert>& in) {
-    if (in.empty()) return;
-    std::vector<Vertex> v;
-    v.reserve(in.size());
-    for (const UiVert& u : in) v.push_back(Vertex{ { u.x, u.y, 0.0f }, u.c });
+void Renderer::drawColorTris(const Vertex* v, size_t count, const Mat4& mvp) {
+    if (count == 0) return;
     glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, mvp.m);
     glBindVertexArray(dynVao_);
     glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(Vertex), v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)v.size());
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(count * sizeof(Vertex)), v, GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)count);
+}
+
+void Renderer::drawColorTris(const Batch& b, const Mat4& mvp) {
+    drawColorTris(b.v.data(), b.v.size(), mvp);
+}
+
+void Renderer::drawUiTris(const std::vector<UiVert>& in) {
+    static std::vector<Vertex> v;   // kept between calls so it is not allocated each time (drawn on one thread)
+    v.clear();
+    for (const UiVert& u : in) v.push_back(Vertex{ { u.x, u.y, 0.0f }, u.c });
+    drawColorTris(v.data(), v.size(), pixels_);
 }
 
 void Renderer::noteHover(const Rect& r) {
@@ -731,12 +768,7 @@ void Renderer::drawRectGradientH(const Rect& r, RGBA left, RGBA right) {
 void Renderer::drawRect(const Rect& r, RGBA c) {
     Batch b;
     b.quad({ r.x, r.y, 0 }, { r.x + r.w, r.y, 0 }, { r.x + r.w, r.y + r.h, 0 }, { r.x, r.y + r.h, 0 }, c);
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+    drawColorTris(b, pixels_);
 }
 
 // A quad with one color at the top and another at the bottom
@@ -746,12 +778,7 @@ void Renderer::drawRectGradient(const Rect& r, RGBA top, RGBA bottom) {
         { { x0, y0, 0.0f }, top }, { { x1, y0, 0.0f }, top }, { { x1, y1, 0.0f }, bottom },
         { { x0, y0, 0.0f }, top }, { { x1, y1, 0.0f }, bottom }, { { x0, y1, 0.0f }, bottom },
     };
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    drawColorTris(v, 6, pixels_);
 }
 
 void Renderer::pollOverview() {
@@ -793,7 +820,6 @@ void Renderer::drawRing(float cx, float cy, float outer, float inner, float from
     if (to <= from) return;
     constexpr int FULL_SEGMENTS = 48;   // segments in a whole ring: smooth at this size
     const int n = std::max(1, (int)std::ceil(FULL_SEGMENTS * (to - from)));
-    constexpr float TWO_PI = 6.28318531f;
     Batch b;
     for (int i = 0; i < n; ++i) {
         // Angle 0 is straight up, and it grows clockwise on screen (y grows downward)
@@ -803,12 +829,7 @@ void Renderer::drawRing(float cx, float cy, float outer, float inner, float from
         b.quad({ cx + s0 * inner, cy - c0 * inner, 0 }, { cx + s0 * outer, cy - c0 * outer, 0 },
                { cx + s1 * outer, cy - c1 * outer, 0 }, { cx + s1 * inner, cy - c1 * inner, 0 }, color);
     }
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, pixels_.m);
-    glBindVertexArray(dynVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, dynVbo_);
-    glBufferData(GL_ARRAY_BUFFER, b.v.size() * sizeof(Vertex), b.v.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)b.v.size());
+    drawColorTris(b, pixels_);
 }
 
 void Renderer::beginClip(const Rect& r) {
@@ -829,9 +850,24 @@ const TextTex& PictureCache::get(int n) {
     auto it = pics_.find(n);
     if (it == pics_.end()) {
         const std::string path = prefix_ + std::to_string(n) + ".png";
-        it = pics_.emplace(n, loadOptionalImage(path.c_str())).first;
+        TextTex t;
+        AlphaMask m;
+        if (SDL_Surface* conv = decodeRgba(path.c_str())) {
+            t = textureOf(conv);
+            if (keepMasks_) m = alphaOf(conv);
+            SDL_DestroySurface(conv);
+        }
+        if (keepMasks_) masks_.emplace(n, std::move(m));
+        it = pics_.emplace(n, t).first;
     }
     return it->second;
+}
+
+const AlphaMask& PictureCache::mask(int n) {
+    static const AlphaMask none;
+    get(n);
+    auto it = masks_.find(n);
+    return it != masks_.end() ? it->second : none;
 }
 
 void PictureCache::clear() {
@@ -839,6 +875,7 @@ void PictureCache::clear() {
         if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
     }
     pics_.clear();
+    masks_.clear();
 }
 
 const TextTex* Renderer::itemTexture(int item) {
@@ -846,38 +883,9 @@ const TextTex* Renderer::itemTexture(int item) {
     return t.tex ? &t : &pink_;
 }
 
-// The alpha of a picture in the pak, row by row; empty if it is not there
-Renderer::ItemMask Renderer::loadMask(const std::string& path) {
-    ItemMask m;
-    const unsigned char* bytes = nullptr;
-    size_t size = 0;
-    if (!pakFind(path, bytes, size)) return m;
-    SDL_Surface* s = IMG_Load_IO(SDL_IOFromConstMem(bytes, size), true);
-    if (!s) return m;
-    SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
-    SDL_DestroySurface(s);
-    if (!conv) return m;
-    m.w = conv->w;
-    m.h = conv->h;
-    m.alpha.resize((size_t)m.w * (size_t)m.h);
-    for (int y = 0; y < m.h; ++y) {
-        const unsigned char* row = static_cast<const unsigned char*>(conv->pixels) + (size_t)y * (size_t)conv->pitch;
-        for (int x = 0; x < m.w; ++x) m.alpha[(size_t)y * (size_t)m.w + (size_t)x] = row[(size_t)x * 4 + 3];
-    }
-    SDL_DestroySurface(conv);
-    return m;
-}
-
-const Renderer::ItemMask& Renderer::itemMask(int item) {
-    auto it = itemMasks_.find(item);
-    if (it != itemMasks_.end()) return it->second;
-    ItemMask m = loadMask("data/item/item_" + std::to_string(item) + ".png");
-    // No picture: the mask stays empty, and the pink square drawn for it is solid all over
-    return itemMasks_.emplace(item, std::move(m)).first->second;
-}
-
 bool Renderer::itemPixelSolid(int item, float u, float v) {
-    const ItemMask& m = itemMask(item);
+    // Kept as the item's picture was loaded; empty when it has none
+    const AlphaMask& m = itemPics_.mask(item);
     if (m.alpha.empty()) return true;   // no picture at all: the pink square, solid all over
     const int x = std::clamp((int)(u * (float)m.w), 0, m.w - 1);
     const int y = std::clamp((int)(v * (float)m.h), 0, m.h - 1);

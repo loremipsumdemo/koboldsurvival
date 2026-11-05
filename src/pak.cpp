@@ -83,6 +83,10 @@ bool pakFind(const std::string& name, const unsigned char*& bytes, size_t& size)
     return true;
 }
 
+bool pakHas(const std::string& name) {
+    return g_index.find(name) != g_index.end();
+}
+
 SDL_Surface* pakImage(const std::string& name) {
     const unsigned char* bytes = nullptr;
     size_t size = 0;
