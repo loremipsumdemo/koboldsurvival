@@ -200,7 +200,7 @@ void App::onKeyDown() {
             // Escape closes an open dropdown first, then leaves the menu
             if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
             else leaveSettings();
-        } else if (screen == Screen::MapSelect || screen == Screen::ScenarioSelect) {
+        } else if (screen == Screen::ScenarioSelect) {
             performAction(Action::ReturnToTitle, 0);
         }
     }
@@ -216,10 +216,6 @@ void App::onMouseWheel() {
         int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
         int next = (int)listOffset - (int)e.wheel.y;
         listOffset = (size_t)std::clamp(next, 0, maxOffset);
-    } else if (screen == Screen::MapSelect) {
-        int maxOffset = std::max(0, (int)maps.size() - (int)visibleSaveRows(winH));
-        int next = (int)mapOffset - (int)e.wheel.y;
-        mapOffset = (size_t)std::clamp(next, 0, maxOffset);
     } else if (screen == Screen::ScenarioSelect) {
         // The scenario list scrolls a row at a time; the layout keeps it in range
         scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
@@ -402,10 +398,7 @@ void App::onMouseButtonDown() {
     if (screen != Screen::Playing) {
         // Menus: a left click runs the enabled button under the cursor
         if (e.button.button == SDL_BUTTON_LEFT) {
-            const std::vector<Button> menuButtons = screen == Screen::MapSelect
-                ? layoutMapPanel(winW, winH, maps, mapOffset)
-                : layoutButtons(screen, winW, winH, saves);
-            for (const Button& b : menuButtons) {
+            for (const Button& b : layoutButtons(screen, winW, winH, saves)) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                     performAction(b.action, b.param);
                     break;

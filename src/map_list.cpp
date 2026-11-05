@@ -36,7 +36,7 @@ bool mainMapPacked() {
     return pakFind(std::string("data/map/") + MAIN_MAP_STEM + "/world.txt", bytes, size);
 }
 
-// Every map the New Game list can start, not yet sorted: the main map, the premade maps, then worlds and .map files
+// Every map a game can start on, not yet sorted: the main map, the premade maps, then worlds and .map files
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
     if (mainMapPacked()) {

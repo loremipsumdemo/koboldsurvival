@@ -8,7 +8,7 @@ const RGBA LIST_WHITE{ 1.0f, 1.0f, 1.0f, 1.0f };
 const RGBA LIST_GRAY{ 0.68f, 0.60f, 0.54f, 1.0f };
 const RGBA LIST_HOVER{ 0.961f, 0.788f, 0.459f, 1.0f };
 const RGBA LIST_HINT{ 0.957f, 0.902f, 0.796f, 1.0f };
-const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };   // a built-in map's or an autosave's type
+const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };   // an autosave's type
 
 // The column headers of the save and map lists. The active sort column shows its direction.
 void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::string& timeLabel, bool byName, bool ascending) {
@@ -104,44 +104,6 @@ void App::drawSettingsScreen() {
     dimScreen(0.45f);
     const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
     drawSettingsMenu(renderer, layoutSettings(winW, winH, rows, settingsUi), rows, settingsUi, mouseX, mouseY);
-    renderer.endUi();
-}
-
-void App::drawMapSelectScreen() {
-    // The same popout as the load list: a name and date for each map, sorted, scrolled in a window
-    const float s = winH / 720.0f;
-    PanelGeometry g = panelGeometry(winW, winH);
-    const RGBA white = LIST_WHITE, gray = LIST_GRAY;
-    const float cx = g.box.x + g.box.w * 0.5f;
-
-    renderer.beginUi(winW, winH);
-    renderer.drawTitleBackground();
-    dimScreen(0.45f);
-    renderer.drawThemedPanel(g.box);
-    renderer.drawUiTextCentered(uiUpper(lang("UILABEL_NEW_GAME")), cx, g.box.y + g.pad, white);
-    renderer.drawUiTextCentered(maps.empty() ? lang("UILABEL_NO_MAPS")
-                                             : lang("UILABEL_CLICK_MAP"),
-                                cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
-
-    drawListHeaders(renderer, g, s, lang("UILABEL_CREATED"), mapSortByName, mapSortAsc);
-    drawListMoreRows(renderer, g, s, mapOffset, maps.size(), winH, mouseX, mouseY);
-
-    for (const Button& b : layoutMapPanel(winW, winH, maps, mapOffset)) {
-        const bool isHover = b.rect.contains(mouseX, mouseY);
-        if (b.action == Action::PickMap) {
-            const MapChoice& m = maps[b.param];
-            const bool builtIn = m.source == "data" || m.source == "packed";
-            drawListRow(renderer, b.rect, isHover, s, m.name, mapTypeLabel(m), builtIn ? LIST_MARKED : LIST_WHITE,
-                        builtIn ? std::string(lang("UILABEL_BUILT_IN_WHEN"))
-                        : m.created > 0 ? timeString(m.created) : std::string(lang("UILABEL_UNKNOWN")));
-        } else if (b.action == Action::MapScrollUp || b.action == Action::MapScrollDown
-                   || b.action == Action::MapSortName || b.action == Action::MapSortTime) {
-            // Drawn above as text: the "..." rows and the headers only need their click areas
-            continue;
-        } else {
-            drawScreenButtons({ b });
-        }
-    }
     renderer.endUi();
 }
 
@@ -349,7 +311,6 @@ void App::render() {
     case Screen::Title: drawTitleScreen(); break;
     case Screen::Settings: drawSettingsScreen(); break;
     case Screen::Playing: drawPlayingScreen(); break;
-    case Screen::MapSelect: drawMapSelectScreen(); break;
     case Screen::ScenarioSelect: drawScenarioScreen(); break;
     case Screen::PartySetup: drawPartyScreen(); break;
     case Screen::Pause: drawPauseScreen(); break;

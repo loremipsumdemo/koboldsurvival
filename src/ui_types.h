@@ -12,7 +12,7 @@ struct PanelPlace {
 };
 
 // Which screen is showing
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup };
+enum class Screen { Title, Settings, Playing, Pause, ScenarioSelect, PartySetup };
 
 // What a button does when clicked
 enum class Action {
@@ -27,9 +27,6 @@ enum class Action {
     DeleteSave,           // Delete button on a save row, which asks to confirm
     DeleteHold,           // Delete button on the confirm dialog, which is held down to confirm
     DeleteNo,             // Cancel on the confirm dialog
-    PickMap,              // a map in the New Game list; param is its index
-    MapSortName, MapSortTime,   // column headers in the New Game list
-    MapScrollUp, MapScrollDown,  // the "..." rows at the ends of the New Game list
     // The starting party menu, after a map is picked in New Game
     PartyPick,        // a unit in the left column; param is its index
     PartyTabPick,     // a tab on the right; param is the tab

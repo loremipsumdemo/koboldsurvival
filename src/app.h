@@ -141,7 +141,6 @@ struct App {
     void dimScreen(float alpha);
     void drawTitleScreen();
     void drawSettingsScreen();
-    void drawMapSelectScreen();
     void drawScenarioScreen();
     void drawPartyScreen();
     void drawPauseScreen();
@@ -166,7 +165,6 @@ struct App {
     void clearQuestion();                    // the save popout asks nothing, about no save
     void clearCombatText();
     void refreshSaves();
-    void refreshMaps();
     void showNotice(const std::string& text, float seconds = 2.5f);
     void refuse(const std::string& text);
     void closePanel();
@@ -286,11 +284,7 @@ struct App {
     Selection sel;
     Camera cam;
     unsigned levelSeed = 0;
-    std::vector<MapChoice> maps;          // premade and custom maps, for New Game
     MapChoice currentMap;                 // the map the game in progress is played on
-    size_t mapOffset = 0;                 // first map shown in the New Game list
-    bool mapSortByName = false;           // New Game list sorted by name, else by date saved
-    bool mapSortAsc = false;              // ascending order; the list opens newest first
     SkyTuning sky;                        // atmosphere settings
     int unitPanelRow = 0;                 // first visible row of the bottom unit panel
     float unitPanelWheel = 0.0f;          // wheel movement over the squad panel not yet turned into a row of scroll

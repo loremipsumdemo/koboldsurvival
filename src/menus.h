@@ -43,11 +43,6 @@ std::optional<SaveSummary> findSaveByName(const std::vector<SaveSummary>& saves,
 // Sorts the save list. Autosaves always come first, then manual saves. Each group is sorted
 // by the chosen column; ties fall back to the other column.
 void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending);
-// What a map is, as the list's Type column shows it
-std::string mapTypeLabel(const MapChoice& m);
-// Sorts the New Game list. The premade map always comes first. The rest sort by name, or by the date
-// they were saved, newest first unless ascending.
-void sortMaps(std::vector<MapChoice>& maps, bool byName, bool ascending);
 // The map a save was made on. Saves made before the premade maps were cut down to text_map name map_01.
 std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::string& source, std::string stem);
 
@@ -86,9 +81,6 @@ DialogGeometry questionGeometry(int W, int H);
 // Save rows carry their index in the list as param. Their text is drawn in columns by the renderer code.
 std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
                                 const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle);
-// Buttons for the New Game list, in the same popout as the load list: the column headers, one row
-// per visible map, the "..." rows at the ends, and Close.
-std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& maps, size_t listOffset);
 // Buttons for the main menus, in pixels
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves);
 

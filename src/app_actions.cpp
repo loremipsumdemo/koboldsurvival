@@ -11,11 +11,6 @@ void App::clearCombatText() {
     logSeen = 0;
 }
 
-void App::refreshMaps() {
-    maps = listMaps();
-    sortMaps(maps, mapSortByName, mapSortAsc);
-}
-
 void App::showNotice(const std::string& text, float seconds) {
     notice = text;
     noticeSec = seconds;
@@ -137,22 +132,6 @@ void App::performAction(Action action, int param) {
         openParty(*mainMap);
         return;
     }
-    case Action::PickMap:
-        if (param >= 0 && param < (int)maps.size()) openParty(maps[param]);
-        return;
-    case Action::MapSortName:
-    case Action::MapSortTime: {
-        pickSortColumn(mapSortByName, action == Action::MapSortName, mapSortAsc);
-        sortMaps(maps, mapSortByName, mapSortAsc);
-        mapOffset = 0;
-        return;
-    }
-    case Action::MapScrollUp:
-        pageUp(mapOffset, visibleSaveRows(viewH));
-        return;
-    case Action::MapScrollDown:
-        pageDown(mapOffset, maps.size(), visibleSaveRows(viewH));
-        return;
     case Action::Settings:
         backScreen = screen;
         screen = Screen::Settings;

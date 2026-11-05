@@ -34,7 +34,7 @@ struct MapChoice {
 constexpr const char* MAIN_MAP_STEM = "main";
 
 bool mainMapPacked();
-// Every map the New Game list can start, not yet sorted: the main map, the premade maps, then worlds and .map files
+// Every map a game can start on, not yet sorted: the main map, the premade maps, then worlds and .map files
 std::vector<MapChoice> listMaps();
 // Puts a map's ground into the terrain: a premade or custom map whole, or a world folder to be streamed
 bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err);

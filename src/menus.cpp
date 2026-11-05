@@ -63,28 +63,6 @@ void sortSaves(std::vector<SaveSummary>& saves, SortKey key, bool ascending) {
     });
 }
 
-// What a map is, as the list's Type column shows it
-std::string mapTypeLabel(const MapChoice& m) {
-    if (m.source == "data" || m.source == "packed") return lang("UILABEL_BUILT_IN");
-    return m.source == "world" ? lang("UILABEL_WORLD") : lang("UILABEL_MAP_FILE");
-}
-
-// Sorts the New Game list. The premade map always comes first. The rest sort by name, or by the date
-// they were saved, newest first unless ascending.
-void sortMaps(std::vector<MapChoice>& maps, bool byName, bool ascending) {
-    std::stable_sort(maps.begin(), maps.end(), [&](const MapChoice& a, const MapChoice& b) {
-        const bool aPremade = a.source == "data", bPremade = b.source == "data";
-        if (aPremade != bPremade) return aPremade;
-        if (byName) {
-            const std::string la = toLower(a.name), lb = toLower(b.name);
-            if (la != lb) return ascending ? la < lb : lb < la;
-            return a.created > b.created;
-        }
-        if (a.created != b.created) return ascending ? a.created < b.created : a.created > b.created;
-        return a.name < b.name;
-    });
-}
-
 // The map a save was made on. Saves made before the premade maps were cut down to text_map name map_01.
 std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::string& source, std::string stem) {
     if (source == "data" && stem == "map_01") stem = "text_map";
@@ -209,32 +187,6 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     return out;
 }
 
-// Buttons for the New Game list, in the same popout as the load list: the column headers, one row
-// per visible map, the "..." rows at the ends, and Close.
-std::vector<Button> layoutMapPanel(int W, int H, const std::vector<MapChoice>& maps, size_t listOffset) {
-    std::vector<Button> out;
-    PanelGeometry g = panelGeometry(W, H);
-    const float x = g.box.x + g.pad, w = g.box.w - 2.0f * g.pad;
-
-    out.push_back(Button{ lang("UILABEL_NAME"), Rect{ x, g.headerY, COL_TYPE * w, g.headerH }, Action::MapSortName });
-    out.push_back(Button{ lang("UILABEL_CREATED"), Rect{ x + COL_TIME * w, g.headerY, (1.0f - COL_TIME) * w, g.headerH },
-                          Action::MapSortTime });
-
-    const size_t rows = visibleSaveRows(H);
-    const size_t first = std::min(listOffset, maps.size());
-    const size_t last = std::min(first + rows, maps.size());
-    if (first > 0) out.push_back(Button{ "", g.aboveBand, Action::MapScrollUp });
-    float y = g.listTop;
-    for (size_t i = first; i < last; ++i) {
-        out.push_back(Button{ "", Rect{ x, y, w, g.rowH }, Action::PickMap, true, (int)i });
-        y += g.rowPitch;
-    }
-    if (last < maps.size()) out.push_back(Button{ "", g.belowBand, Action::MapScrollDown });
-
-    out.push_back(Button{ lang("UILABEL_RETURN_TO_TITLE"), Rect{ x, g.closeY, w, g.btnH }, Action::ReturnToTitle });
-    return out;
-}
-
 // Buttons for the main menus, in pixels
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves) {
     const float s = H / 720.0f;
@@ -280,7 +232,6 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     }
     case Screen::Playing:
     case Screen::Settings:
-    case Screen::MapSelect:
     case Screen::ScenarioSelect:
     case Screen::PartySetup:
         break;
@@ -324,7 +275,6 @@ Soundtrack soundtrackFor(Screen screen) {
     case Screen::Title:
         return { "title.mp3", "" };
     case Screen::Settings:
-    case Screen::MapSelect:
     case Screen::ScenarioSelect:
     case Screen::PartySetup:
     case Screen::Pause:
