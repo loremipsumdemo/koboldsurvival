@@ -47,14 +47,7 @@ constexpr PanelId ALL_PANELS[PANEL_COUNT] = { PanelId::Squad, PanelId::Unit, Pan
 // What dragging a panel does: the edges it pulls (a corner pulls two), or moving it by its title bar
 constexpr int GRAB_TOP = 1, GRAB_RIGHT = 2, GRAB_BOTTOM = 4, GRAB_LEFT = 8, GRAB_MOVE = 16;
 
-// Where a panel was put, in pixels of a 720-pixel-high window, so it scales with the window like the rest of the
-// interface. dx and dy move its open rectangle from its default corner; w and h are its open size, 0 for the default.
-// barBottom: its title bar runs along the bottom of the panel, open or folded, rather than its top. It follows the
-// panel's place (settlePanel), and is not kept in the settings.
-struct PanelPlace {
-    float dx = 0.0f, dy = 0.0f, w = 0.0f, h = 0.0f;
-    bool barBottom = false;
-};
+// PanelPlace, where a panel was put, is in ui_types.h
 
 constexpr float PANEL_MARGIN = 8.0f;     // between a panel in its default place and the window's edge, at 720p
 constexpr float PANEL_BAR_H = 22.0f;     // every panel's title bar, at 720p

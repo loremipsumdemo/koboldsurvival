@@ -7,15 +7,14 @@
 #include "ecs.h"
 #include "equip.h"
 #include "grid.h"
+#include "model.h"
 #include "rng.h"
 #include "stats.h"
 
 // The starting party: the units a new game begins with, as set up in the party menu. Plain
 // functions over the data, so they can be tested without the game running.
 
-// Unit models are data/model/unit/unit_01.glb to unit_03.glb; a unit whose model is missing is drawn as a pink square.
-// A unit's sprite number picks its model, and a number past the last (from an older save) wraps round to one of them.
-inline constexpr int UNIT_SPRITE_COUNT = 3;
+// UNIT_SPRITE_COUNT, the number of unit models, is in model.h
 
 // The model a body type starts with: Feminine unit_01.glb, Masculine unit_02.glb, Androgynous unit_03.glb. A new party
 // member and every NPC get theirs; in the party menu the model can then be changed on its own.

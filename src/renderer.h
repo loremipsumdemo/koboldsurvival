@@ -9,23 +9,53 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include "camera.h"
-#include "ui_layout.h"
 #include "sky.h"
-#include "combat.h"
-#include "components.h"
 #include "ecs.h"
+#include "factions.h"
+#include "game_log.h"
 #include "mobs.h"
 #include "model.h"
-#include "terrain.h"
 #include "terrain_mesh.h"
 #include "ui_types.h"
-#include "party_ui.h"
 #include "props.h"
 #include "overview.h"
-#include "ui_icons.h"
 #include "text_cache.h"
 
+// Only named here: renderer_internal.h includes their headers for the renderer's own files
 class LoadStages;
+class Terrain;
+struct FloatingNumber;
+struct TradeLabel;
+struct PartyMember;
+struct PartyUi;
+struct PartyPanels;
+struct Stats;
+enum class StatId : int;
+struct BehaviorRule;
+struct SpokenLine;
+struct DialogueOption;
+struct Equipment;
+struct Inventory;
+struct ItemStack;
+struct Storage;
+struct Output;
+struct TradeGhost;
+struct TradeStatus;
+// ui_layout.h
+struct SidebarLayout;
+struct UnitPanelLayout;
+struct WorldMapLayout;
+struct DialogueLayout;
+struct LootLayout;
+struct StorageLayout;
+struct TradeLayout;
+struct OptimizeAllLayout;
+struct QuantityLayout;
+struct DisbandLayout;
+struct StatsPanelLayout;
+struct ItemMenuLayout;
+struct TitleLayout;
+struct PercentPromptLayout;
 
 // Pictures by number, each loaded from data.pak the first time it is asked for: <prefix><n>.png. A number with no
 // picture holds an empty texture (tex 0), so it is looked for only once.
@@ -388,7 +418,7 @@ public:
 
     // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
     // party's pictures, names and totals. Call between beginUi and endUi.
-    void drawPartySetup(const std::vector<Button>& buttons, const Party& p, const PartyUi& ui,
+    void drawPartySetup(const std::vector<Button>& buttons, const std::vector<PartyMember>& p, const PartyUi& ui,
                         const PartyPanels& P, float mx, float my);
     // A unit's picture, fitted inside r and kept in its proportions
     void drawUnitPicture(int sprite, const Rect& r);

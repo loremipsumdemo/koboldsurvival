@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "renderer.h"
 #include "textcase.h"
+#include "ui_icons.h"
 
 namespace {
 

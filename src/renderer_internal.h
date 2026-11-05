@@ -2,6 +2,12 @@
 // Shared by the renderer_*.cpp files, and only by them: constants, vertex types and helpers more than one of them
 // uses. What only one file uses stays in that file.
 #include "renderer.h"
+#include "combat.h"
+#include "components.h"
+#include "party_ui.h"
+#include "terrain.h"
+#include "ui_icons.h"
+#include "ui_layout.h"
 #include "language.h"
 #include "loading.h"
 #include "terrain_mesh.h"

@@ -2,6 +2,10 @@
 #include <vector>
 #include <GL/glew.h>
 
+// Unit models are data/model/unit/unit_01.glb to unit_03.glb; a unit whose model is missing is drawn as a pink square.
+// A unit's sprite number picks its model, and a number past the last (from an older save) wraps round to one of them.
+inline constexpr int UNIT_SPRITE_COUNT = 3;
+
 struct DrawRange {
     GLuint texture = 0;
     GLsizei indexCount = 0;

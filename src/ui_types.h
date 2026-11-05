@@ -1,6 +1,15 @@
 #pragma once
 #include <string>
 
+// Where a panel was put, in pixels of a 720-pixel-high window, so it scales with the window like the rest of the
+// interface. dx and dy move its open rectangle from its default corner; w and h are its open size, 0 for the default.
+// barBottom: its title bar runs along the bottom of the panel, open or folded, rather than its top. It follows the
+// panel's place (settlePanel), and is not kept in the settings.
+struct PanelPlace {
+    float dx = 0.0f, dy = 0.0f, w = 0.0f, h = 0.0f;
+    bool barBottom = false;
+};
+
 // Which screen is showing
 enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup };
 
