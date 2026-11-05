@@ -239,7 +239,3 @@ void breakFree(World& w, Entity u) {
     queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
 }
 
-bool canBeCarried(World& w, Entity target) {
-    if (!w.has<Unit>(target) || !w.has<Transform>(target) || w.has<Carried>(target) || w.has<Carrying>(target)) return false;
-    return w.has<Unconscious>(target) || w.has<Commandable>(target);
-}

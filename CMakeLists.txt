@@ -104,6 +104,8 @@ add_executable(koboldsurvival
     src/prop_use.cpp
     src/automation.cpp
     src/downed.cpp
+    src/carry.cpp
+    src/loot.cpp
     src/terrain.cpp
     src/overview.cpp
     src/terrain_mesh.cpp

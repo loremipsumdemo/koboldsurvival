@@ -71,6 +71,9 @@ inline void clearOrders(World& w, Entity u) {
     w.remove<AttackOrder>(u);
 }
 
+// The walks to a unit to loot it, run by carrySystem (loot.cpp)
+void lootOrderSystem(World& w, CarryEvents& ev);
+
 // Plans a new route for an active squad's center. Only the center paths; members follow slots.
 inline void planActiveSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
     ActiveSquad* sq = w.get<ActiveSquad>(squadE);
