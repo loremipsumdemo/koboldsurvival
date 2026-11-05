@@ -551,7 +551,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     if (workersAt(w, prop) >= 1) return WorkStart::Full;   // one unit at a lock at a time
     const bool inside = occupiedProp(w, unit) == prop;     // picking the cage it is shut in, from the inside
     if (!inside && lockedIn(w, unit)) return WorkStart::Locked;
-    w.remove<ActiveSquadMember>(unit);
+    leaveSquad(w, unit);
     w.remove<SoloMove>(unit);
     cancelPickup(w, unit);
     w.remove<AttackOrder>(unit);

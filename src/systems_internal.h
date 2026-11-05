@@ -58,7 +58,7 @@ inline void cancelPickup(World& w, Entity u) {
 // Ends what a unit was doing, apart from a fight: its place in an active squad, its walk, any pickup, talk and standing
 // orders. The automation uses this, since a behavior's step does not end a fight.
 inline void clearOrdersButFight(World& w, Entity u) {
-    w.remove<ActiveSquadMember>(u);
+    leaveSquad(w, u);
     w.remove<SoloMove>(u);
     cancelPickup(w, u);
     w.remove<TalkOrder>(u);

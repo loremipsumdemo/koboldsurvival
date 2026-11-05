@@ -23,7 +23,6 @@ void knockOut(World& w, Entity u) {
     const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
     const bool keepBed = bp && doomRecoveryPerHour(bp->kind) > 0.0f;
     if (w.has<Carrying>(u)) putDown(w, u);
-    leaveSquad(w, u);
     clearOrders(w, u);
     w.remove<IdleSpot>(u);
     if (keepBed) w.add(u, Occupying{ bed });
@@ -215,7 +214,6 @@ CarryEvents carrySystem(World& w) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
-            leaveSquad(w, target);
             clearOrders(w, target);
             w.remove<IdleSpot>(target);
             if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;

@@ -469,7 +469,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             // Stop just short of the giver, on the near side, so the two don't push each other about
             const float dx = gt->x - ut->x, dz = gt->z - ut->z, d = std::max(1e-3f, std::hypot(dx, dz));
             const float stop = std::min(SHARE_WALK_STOP, d);
-            w.remove<ActiveSquadMember>(u);
+            leaveSquad(w, u);
             w.remove<IdleSpot>(u);
             walkSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
             b->seeking = true;
