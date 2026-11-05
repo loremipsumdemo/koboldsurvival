@@ -160,7 +160,7 @@ void onAttacked(World& w, Entity a, Entity d) {
     }
     // Helpers: the defender's faction and its allies, never an ally of the attacker
     for (Entity u : near) {
-        if (u == a || w.has<Unconscious>(u) || w.has<Carried>(u) || !w.has<Combat>(u)) continue;
+        if (u == a || w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || !w.has<Combat>(u)) continue;
         const int fu = factionOf(w, u);
         if (!factionsAllied(fu, fd) || factionsAllied(fu, fa) || !sees(u)) continue;
         if (isPassive(w, u) || isBlocking(w, u)) continue;
@@ -454,8 +454,8 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
 
     const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
     const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
-    // Out cold, or carried (playing dead or not), a unit does not fight
-    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e); };
+    // Out cold, carried or playing dead, a unit does not fight
+    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e); };
 
     // Every unit that is not yours notices the units it fights in range (its enemies by faction, or by provocation),
     // and chases until the target is gone or out of the leash. A passive one starts no fight, but keeps one it has.

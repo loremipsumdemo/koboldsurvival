@@ -41,7 +41,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             un.conscious = u.conscious;
             world.add(e, un);
             if (u.corpse) world.add(e, Corpse{});
-        } else if (u.playingDead && u.carriedBy < 0) {
+        } else if (u.playingDead && u.carriedBy < 0 && u.mob <= 0) {
             world.add(e, PlayingDead{});   // woke near hostile units, and lies still on the ground
         }
         if ((u.hostile || u.neutral) && u.mob <= 0) world.add(e, Dialogue{});   // a mob has nothing to say
@@ -93,7 +93,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         const Entity carrier = restoredUnits[(size_t)by];
         if (world.has<Carrying>(carrier) || world.has<Unconscious>(carrier) || world.has<Carried>(carrier)) continue;
         world.add(restoredUnits[i], Carried{ carrier });
-        if (d.units[i].playingDead && !d.units[i].unconscious) world.add(restoredUnits[i], PlayingDead{});
+        if (d.units[i].playingDead && !d.units[i].unconscious && d.units[i].mob <= 0) world.add(restoredUnits[i], PlayingDead{});
         world.add(carrier, Carrying{ restoredUnits[i] });
     }
 

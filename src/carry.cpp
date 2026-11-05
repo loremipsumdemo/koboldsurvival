@@ -78,7 +78,7 @@ CarryEvents carrySystem(World& w) {
             w.remove<PlayingDead>(c);
         } else if (w.has<Commandable>(c) && w.has<Commandable>(by)) {
             w.remove<PlayingDead>(c);
-        } else if (w.has<Hostile>(by)) {
+        } else if (w.has<Hostile>(by) && !w.has<Mob>(c)) {   // a mob never plays dead
             if (!w.has<PlayingDead>(c)) {
                 w.add(c, PlayingDead{});
                 queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other, npcOnly(w, c));

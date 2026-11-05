@@ -494,6 +494,11 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     // With nowhere to go, a unit holds the spot where it came to rest. With somewhere to go, the spot is dropped,
     // and a new one is taken where it next stops.
     const bool idle = tx == tr->x && tz == tr->z;
+    // Anything that sets a unit walking ends its playing dead, so it never walks lying down
+    if (!idle && w.has<PlayingDead>(e)) {
+        w.remove<PlayingDead>(e);
+        queueLog(langf("MISC_GETS_UP", { nameOf(w, e) }), LogKind::Other, npcOnly(w, e));
+    }
     if (idle) {
         IdleSpot* spot = w.get<IdleSpot>(e);
         if (!spot) spot = &w.add(e, IdleSpot{ tr->x, tr->z, leadGap });
