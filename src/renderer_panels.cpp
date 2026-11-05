@@ -94,7 +94,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         const int segs = 32;
         const float rIn = radius - width * 0.5f, rOut = radius + width * 0.5f;
         for (int i = 0; i < segs; ++i) {
-            const float a0 = 6.2831853f * i / segs, a1 = 6.2831853f * (i + 1) / segs;
+            const float a0 = TWO_PI * i / segs, a1 = TWO_PI * (i + 1) / segs;
             const float c0 = std::cos(a0), s0 = std::sin(a0), c1 = std::cos(a1), s1 = std::sin(a1);
             tris.insert(tris.end(), { { x + c0 * rIn, y + s0 * rIn, c }, { x + c0 * rOut, y + s0 * rOut, c },
                                       { x + c1 * rOut, y + s1 * rOut, c }, { x + c0 * rIn, y + s0 * rIn, c },

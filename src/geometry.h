@@ -1,6 +1,10 @@
 #pragma once
 #include <cmath>
 
+inline constexpr float PI = 3.14159265f;
+inline constexpr float HALF_PI = PI * 0.5f;
+inline constexpr float TWO_PI = 6.2831853f;
+
 struct Mat4 { float m[16]; };
 
 inline Mat4 mul(const Mat4& a, const Mat4& b) {

@@ -58,7 +58,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         if (names) {
             if (const auto it = propLabelTop_.find(e); it != propLabelTop_.end()) above = std::min(above, it->second - 2.0f * s);
         }
-        const float cy = above - outer - (hopping ? std::sin(t * 3.14159265f) * HOP_HEIGHT * s : 0.0f);
+        const float cy = above - outer - (hopping ? std::sin(t * PI) * HOP_HEIGHT * s : 0.0f);
         // Just finished: the ring shows full for the hop, then the next item's progress
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
@@ -93,7 +93,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     // The hop: up and back down once, at the start of every EMOTE_HOP_EVERY_MS. Every emote hops together.
     const unsigned long long sinceHop = ticks % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
-        ? std::sin(3.14159265f * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
+        ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (Entity u : w.view<Unit, Transform>()) {
         const std::vector<EmoteId> emotes = emotesOf(w, u);
         if (emotes.empty()) continue;
@@ -118,7 +118,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
     const float size = 28.0f * s;
     const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
-        ? std::sin(3.14159265f * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
+        ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     std::vector<Claim> claims;
     bool haveClaims = false;
     for (Entity e : w.view<Prop, Transform>()) {

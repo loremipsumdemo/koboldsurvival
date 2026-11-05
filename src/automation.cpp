@@ -135,7 +135,7 @@ BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& cl
     const Claim* c = ut ? claimAt(claims, ut->x, ut->z, unitFaction(w, u)) : nullptr;
     if (!c) return BehaviorWait::NotInClaim;
     for (int attempt = 0; attempt < 12; ++attempt) {
-        const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * (CLAIM_RADIUS - 2.0f);
+        const float a = rng.unit() * TWO_PI, d = std::sqrt(rng.unit()) * (CLAIM_RADIUS - 2.0f);
         const float x = c->x + std::cos(a) * d, z = c->z + std::sin(a) * d;
         if (!openTile(t, x, z)) continue;
         to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };
@@ -149,7 +149,7 @@ BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& clai
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return BehaviorWait::NowhereToRoam;
     for (int attempt = 0; attempt < 12; ++attempt) {
-        const float a = rng.unit() * 6.2831853f, d = ROAM_STEP_MIN + rng.unit() * (ROAM_STEP_MAX - ROAM_STEP_MIN);
+        const float a = rng.unit() * TWO_PI, d = ROAM_STEP_MIN + rng.unit() * (ROAM_STEP_MAX - ROAM_STEP_MIN);
         const float x = ut->x + std::cos(a) * d, z = ut->z + std::sin(a) * d;
         if (!openTile(t, x, z) || claimAt(claims, x, z)) continue;
         to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };
@@ -217,7 +217,7 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, Entity u, Rng& rng, Vec2& to)
     const SpawnHome* h = w.get<SpawnHome>(u);
     if (!h) return BehaviorWait::NowhereToRoam;
     for (int attempt = 0; attempt < 12; ++attempt) {
-        const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * SPAWN_PATROL_RADIUS;
+        const float a = rng.unit() * TWO_PI, d = std::sqrt(rng.unit()) * SPAWN_PATROL_RADIUS;
         const float x = h->x + std::cos(a) * d, z = h->z + std::sin(a) * d;
         if (!openTile(t, x, z)) continue;
         to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };

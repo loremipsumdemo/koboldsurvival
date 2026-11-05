@@ -292,7 +292,7 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
     const float dx = x - f.x, dz = z - f.z;
     if (dx * dx + dz * dz > 1e-6f) {
         const float want = std::atan2(dx, dz);
-        float turn = std::remainder(want - f.yaw, 6.2831853f);
+        float turn = std::remainder(want - f.yaw, TWO_PI);
         f.yaw += turn * 0.25f;
     }
     f.x = x;
@@ -338,7 +338,7 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     // The model GLYPH_H tall with its feet at the origin; the camera in front of it on +z, far enough back that its
     // height and width both fit
     const float aspect = r.w / r.h;
-    const float fov = 30.0f * 3.14159265f / 180.0f, tanHalf = std::tan(fov * 0.5f);
+    const float fov = 30.0f * PI / 180.0f, tanHalf = std::tan(fov * 0.5f);
     const float k = GLYPH_H / (m->maxY - m->minY);
     const float halfH = GLYPH_H * 0.5f;
     const float halfW = k * std::max(m->maxX - m->minX, m->maxZ - m->minZ) * 0.5f;

@@ -20,11 +20,10 @@ inline constexpr float CAMERA_NEAR_PER_DISTANCE = 0.03f;  // 0.6 at the default 
 inline constexpr float CAMERA_NEAR_CLEARANCE = 0.5f;
 
 struct Camera {
-    static constexpr float PI_F = 3.14159265f;
     // How high the eye can go above the focus: 65 degrees, well short of looking straight down. Below, pitch stops at 95%
     // of straight under, so the view never goes directly under.
-    static constexpr float MAX_PITCH = 65.0f * PI_F / 180.0f;
-    static constexpr float MIN_PITCH = -0.95f * (PI_F * 0.5f);
+    static constexpr float MAX_PITCH = 65.0f * PI / 180.0f;
+    static constexpr float MIN_PITCH = -0.95f * (PI * 0.5f);
     static constexpr float MIN_CLEARANCE = 0.6f;   // how far above the ground the eye must stay
     static constexpr float FOCUS_HEIGHT = 0.5f;    // the focus point sits this far above the ground
 

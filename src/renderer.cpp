@@ -16,9 +16,6 @@ using namespace render_detail;
 
 namespace {
 
-constexpr float PI = 3.14159265f;
-constexpr float HALF_PI = PI * 0.5f;
-constexpr float TWO_PI = PI * 2.0f;
 
 const char* COLOR_VS = R"(
 #version 330 core

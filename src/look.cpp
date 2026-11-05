@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 
 namespace {
 
-constexpr float DEG_TO_RAD = 3.14159265358979f / 180.0f;
+constexpr float DEG_TO_RAD = PI / 180.0f;
 
 Vec3 operator+(Vec3 a, Vec3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
 Vec3 operator-(Vec3 a, Vec3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }

@@ -668,7 +668,7 @@ void App::onMouseMotion() {
     // The held model turns with the mouse's sideways movement only: about its vertical axis, never tipping
     if (screen == Screen::PartySetup && partyUi.previewDrag) {
         if (e.motion.state & SDL_BUTTON_RMASK) {
-            partyUi.previewYaw = std::remainder(partyUi.previewYaw + e.motion.xrel * 0.012f, 6.2831853f);
+            partyUi.previewYaw = std::remainder(partyUi.previewYaw + e.motion.xrel * 0.012f, TWO_PI);
         } else {
             partyUi.previewDrag = false;
         }

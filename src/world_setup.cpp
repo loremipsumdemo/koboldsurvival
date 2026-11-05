@@ -331,7 +331,7 @@ struct LevelBuilder {
         for (int ring = 0; ring <= (int)CAMP_SHIFT; ++ring) {
             const int steps = ring == 0 ? 1 : 8 * ring;
             for (int k = 0; k < steps; ++k) {
-                const float a = 6.2831853f * (float)k / (float)steps;
+                const float a = TWO_PI * (float)k / (float)steps;
                 const float x = cx + std::cos(a) * (float)ring, z = cz + std::sin(a) * (float)ring;
                 if (x < 8.0f || z < 8.0f || x > size - 8.0f || z > size - 8.0f) continue;
                 if (!clearOfCamps(x, z) || !campKitFits(w, t, x, z)) continue;
@@ -358,7 +358,7 @@ struct LevelBuilder {
         const int want = rng.range(CAMP_EXTRA_MIN, CAMP_EXTRA_MAX);
         int placed = 0;
         for (int attempt = 0; attempt < 400 && placed < want; ++attempt) {
-            const float a = rng.unit() * 6.2831853f;
+            const float a = rng.unit() * TWO_PI;
             const float d = CAMP_EXTRA_NEAR + rng.unit() * (CAMP_EXTRA_FAR - CAMP_EXTRA_NEAR);
             const int gx = tileAt(kit.x + std::cos(a) * d), gz = tileAt(kit.z + std::sin(a) * d);
             if (!t.walkable(gx, gz)) continue;
@@ -373,7 +373,7 @@ struct LevelBuilder {
             const PropInfo& info = propInfo(kind);
             Entity prop = w.create();
             w.add(prop, Transform{ x, t.heightAt(x, z), z });
-            w.add(prop, Prop{ kind, campSerial++, rng.unit() * 6.2831853f });
+            w.add(prop, Prop{ kind, campSerial++, rng.unit() * TWO_PI });
             if (info.use != PropUse::Resource) w.add(prop, Owner{ faction });
             if (hasStorage(info)) w.add(prop, info.use == PropUse::Storage ? startingStorage(kind, rng) : Storage{});
             if (info.use == PropUse::PassiveCrafting) {
@@ -413,7 +413,7 @@ struct LevelBuilder {
     // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
     bool freeSpot(float cx, float cz, float radius, float& x, float& z) {
         for (int attempt = 0; attempt < 200; ++attempt) {
-            const float a = rng.unit() * 6.2831853f, d = std::sqrt(rng.unit()) * radius;
+            const float a = rng.unit() * TWO_PI, d = std::sqrt(rng.unit()) * radius;
             const GridPos g{ tileAt(cx + std::cos(a) * d), tileAt(cz + std::sin(a) * d) };
             if (!t.walkable(g.x, g.y) || std::find(enemyTiles.begin(), enemyTiles.end(), g) != enemyTiles.end()) continue;
             enemyTiles.push_back(g);
@@ -456,7 +456,7 @@ struct LevelBuilder {
                                           { 0.7071f, -0.7071f }, { 0.7071f, 0.7071f }, { -0.7071f, 0.7071f }, { -0.7071f, -0.7071f } };
         float dirX = DIRS[ci % 8][0], dirZ = DIRS[ci % 8][1];
         if (ci >= 8) {
-            const float a = 6.2831853f * (float)ci / (float)camps.size();
+            const float a = TWO_PI * (float)ci / (float)camps.size();
             dirX = std::cos(a);
             dirZ = std::sin(a);
         }
@@ -631,11 +631,11 @@ struct LevelBuilder {
         for (const CampKit& kit : kits) {
             if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
         }
-        const float turn = rng.unit() * 6.2831853f;
+        const float turn = rng.unit() * TWO_PI;
         for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
             const MobKind kind = (MobKind)k;
             // Each herd at its own bearing, out between WILD_MOB_NEAR and WILD_MOB_FAR past the camps
-            const float a = turn + 6.2831853f * (float)(k - 1) / (float)MOB_KIND_COUNT;
+            const float a = turn + TWO_PI * (float)(k - 1) / (float)MOB_KIND_COUNT;
             const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
             const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
             const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);

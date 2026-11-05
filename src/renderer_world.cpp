@@ -98,12 +98,11 @@ void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, i
     const float cy = t.heightAt(cx, cz) + 0.03f;
     const float outer = 0.5f, inner = 0.44f;     // about one tile across
     const int segments = 48;
-    const float twoPi = 6.2831853f;
 
     Batch ring;
     RGBA col{ 0.95f, 0.95f, 1.0f, 0.9f * alpha };
     for (int i = 0; i < segments; ++i) {
-        float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
+        float a0 = TWO_PI * i / segments, a1 = TWO_PI * (i + 1) / segments;
         V3 o0{ cx + outer * std::cos(a0), cy, cz + outer * std::sin(a0) };
         V3 o1{ cx + outer * std::cos(a1), cy, cz + outer * std::sin(a1) };
         V3 i0{ cx + inner * std::cos(a0), cy, cz + inner * std::sin(a0) };
@@ -168,7 +167,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
         // Sun, moon, stars and sky colors come from the sky settings and the time of day.
         // The sun rises at 06:00, peaks at noon and sets at 18:00. The moon sits opposite the sun.
-        const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * 3.14159265f;
+        const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * PI;
         const float elev = std::sin(ang);
         float sunDir[3] = { std::cos(ang) * 0.4f, elev, std::cos(ang) * 0.9f };
         const float sunLen = std::sqrt(sunDir[0] * sunDir[0] + sunDir[1] * sunDir[1] + sunDir[2] * sunDir[2]);
@@ -378,9 +377,8 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     auto ring = [&](float cx, float cz, float r, const RGBA& tone) {
         const float ro = r, ri = r - 0.3f;
         const int segments = 96;
-        const float twoPi = 6.2831853f;
         for (int i = 0; i < segments; ++i) {
-            const float a0 = twoPi * i / segments, a1 = twoPi * (i + 1) / segments;
+            const float a0 = TWO_PI * i / segments, a1 = TWO_PI * (i + 1) / segments;
             const float o0x = cx + ro * std::cos(a0), o0z = cz + ro * std::sin(a0);
             const float o1x = cx + ro * std::cos(a1), o1z = cz + ro * std::sin(a1);
             const float i0x = cx + ri * std::cos(a0), i0z = cz + ri * std::sin(a0);
