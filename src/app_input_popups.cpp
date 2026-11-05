@@ -100,8 +100,7 @@ bool App::pressOnWorldMap() {
 }
 
 // A press on the trade's two panels
-void App::pressOnTrade(float x, float y) {
-    const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
+void App::pressOnTrade(const TradeLayout& tl, float x, float y) {
     const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
     const bool leftButton = e.button.button == SDL_BUTTON_LEFT;
     if (leftButton && tl.cancelBtn.contains(x, y) && freeTrade) {
@@ -164,7 +163,7 @@ bool App::pressOnTalk() {
         const bool unitPanelClick = tradeOpen && !onTrade && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
         if (!unitPanelClick) {
             if (tradeOpen) {
-                pressOnTrade(x, y);
+                pressOnTrade(tradeL, x, y);
             } else if (e.button.button == SDL_BUTTON_LEFT) {
                 const DialogueLayout dl = dialogueBox(winW, winH);
                 if (dl.end.contains(x, y)) {

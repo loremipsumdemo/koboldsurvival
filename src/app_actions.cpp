@@ -126,24 +126,19 @@ void App::performAction(Action action, int param) {
         // New Game always starts on the main map, so there is no map to pick
         const std::optional<MapChoice> mainMap = findMap(listMaps(), "packed", MAIN_MAP_STEM);
         if (!mainMap) {
-            showNotice("The main map is missing from data.pak");
+            showNotice(lang("MISC_MAIN_MAP_MISSING"));
             return;
         }
         openParty(*mainMap);
         return;
     }
+    case Action::Language:
+        // The start menu's Language button: the same Settings screen, opened on its Language tab
+        settingsUi.tab = SettingsTab::Language;
+        [[fallthrough]];
     case Action::Settings:
         backScreen = screen;
         screen = Screen::Settings;
-        settingsUi.openRow = -1;
-        settingsUi.dragRow = -1;
-        rescanLanguages();
-        return;
-    case Action::Language:
-        // The start menu's Language button: the same Settings screen, opened on its Language tab
-        backScreen = screen;
-        screen = Screen::Settings;
-        settingsUi.tab = SettingsTab::Language;
         settingsUi.openRow = -1;
         settingsUi.dragRow = -1;
         rescanLanguages();

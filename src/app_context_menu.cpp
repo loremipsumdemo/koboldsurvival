@@ -221,6 +221,17 @@ bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) 
 
 bool App::openContextMenu(float mx, float my) { return openContextMenuOn(menuTargetAt(mx, my), mx, my); }
 
+// A selected unit already in talk range talks now; otherwise they walk up, and the first there talks. A mob never talks.
+void App::talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool shop) {
+    for (Entity u : actors) {
+        if (!world.has<Mob>(u) && flatGap(world, u, target) <= TALK_RANGE) {
+            tryStartTalk(target, u, actors, shop);
+            return;
+        }
+    }
+    issueTalkOrder(world, actors, target, false, shop);
+}
+
 void App::pickMenuAction(MenuAction a) {
     const Entity target = contextMenu.target;
     contextMenu.open = false;
@@ -247,21 +258,9 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (!world.has<Unit>(target) && !world.has<Prop>(target)) return;
     switch (a) {
-    case MenuAction::Talk: {
-        // A selected unit already in talk range talks now; otherwise they walk up, and the first there talks.
-        // A mob never talks.
-        Entity talker = NULL_ENTITY;
-        for (Entity u : actors) {
-            if (world.has<Mob>(u)) continue;
-            if (flatGap(world, u, target) <= TALK_RANGE) {
-                talker = u;
-                break;
-            }
-        }
-        if (talker != NULL_ENTITY) tryStartTalk(target, talker, actors);
-        else issueTalkOrder(world, actors, target);
+    case MenuAction::Talk:
+        talkOrWalkUp(target, actors, false);
         break;
-    }
     case MenuAction::Trade: {
         // The nearest selected unit that is not a mob trades: now if it is close enough, or once it has walked up
         const auto trader = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
@@ -372,20 +371,9 @@ void App::pickMenuAction(MenuAction a) {
         playSfx(Sfx::UiOrder);
         return;
     }
-    case MenuAction::Shop: {
-        // As Talk, then Show me your wares at once
-        Entity talker = NULL_ENTITY;
-        for (Entity u : actors) {
-            if (world.has<Mob>(u)) continue;
-            if (flatGap(world, u, target) <= TALK_RANGE) {
-                talker = u;
-                break;
-            }
-        }
-        if (talker != NULL_ENTITY) tryStartTalk(target, talker, actors, true);
-        else issueTalkOrder(world, actors, target, false, true);
+    case MenuAction::Shop:
+        talkOrWalkUp(target, actors, true);   // as Talk, then Show me your wares at once
         break;
-    }
     case MenuAction::Unlock: {
         // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
         const Lock* lock = world.get<Lock>(target);

@@ -110,7 +110,7 @@ struct App {
     bool pressOnOptimizeAll();
     bool pressOnWorldMap();
     bool pressOnTalk();
-    void pressOnTrade(float x, float y);
+    void pressOnTrade(const TradeLayout& tl, float x, float y);
     bool pressOnContextMenu();
     bool pressOnStoreQuantity();
     bool pressOnLoot();
@@ -151,6 +151,7 @@ struct App {
     void updateWorldMapView();
     void drawWorldOverlays();
     void drawGamePanels();
+    ItemStack draggedStack();
     void drawStoragePanel();
     void updateDisbandPopup();
     void drawWorldMapPopup();
@@ -162,6 +163,7 @@ struct App {
     void partyRandomUnit();
     void partyDropPick(int param);
     bool savePanelAction(Action action, int param);
+    void finishSave(bool ok);
     void clearQuestion();                    // the save popout asks nothing, about no save
     void clearCombatText();
     void refreshSaves();
@@ -253,6 +255,7 @@ struct App {
     ItemMenuLayout contextMenuLayout();
     bool openContextMenuOn(Entity target, float mx, float my, bool squadPanel = false);
     bool openContextMenu(float mx, float my);
+    void talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool shop);
     void pickMenuAction(play::MenuAction a);
     void chooseOption(size_t i);
 

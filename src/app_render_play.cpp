@@ -63,6 +63,16 @@ void App::drawWorldOverlays() {
     }
 }
 
+// What is being dragged from a unit: one gear item, or a stack from its inventory. Empty if that is gone.
+ItemStack App::draggedStack() {
+    if (dragGear >= 0) {
+        const Equipment* worn = world.get<Equipment>(dragUnit);
+        return worn ? ItemStack{ worn->items[dragGear], worn->items[dragGear] != 0 ? 1 : 0 } : ItemStack{};
+    }
+    const Inventory* inv = world.get<Inventory>(dragUnit);
+    return inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS ? inv->slots[dragSlot] : ItemStack{};
+}
+
 void App::drawGamePanels() {
     const std::vector<Entity> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
@@ -86,14 +96,7 @@ void App::drawGamePanels() {
     const Entity shown = sidebarUnitOf(world);
     {
         // The item being dragged, so the gear slots can show where it fits
-        int draggedId = 0;
-        if (itemDrag && dragGear >= 0) {
-            const Equipment* worn = world.get<Equipment>(dragUnit);
-            if (worn) draggedId = worn->items[dragGear];
-        } else if (itemDrag) {
-            const Inventory* inv = world.get<Inventory>(dragUnit);
-            if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS) draggedId = inv->slots[dragSlot].item;
-        }
+        const int draggedId = itemDrag ? draggedStack().item : 0;
         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
         sidebarScroll = sl.scroll;   // kept within range as the list grows and shrinks
         renderer.drawInventorySidebar(sl, world, shown, mouseX, mouseY,
@@ -113,15 +116,8 @@ void App::drawGamePanels() {
     }
     if (itemDrag) {
         // The item under the mouse: a gear item, or a stack from the inventory
-        if (dragGear >= 0) {
-            const Equipment* worn = world.get<Equipment>(dragUnit);
-            if (worn && worn->items[dragGear] != 0) renderer.drawDraggedStack(mouseX, mouseY, worn->items[dragGear], 1);
-        } else {
-            const Inventory* inv = world.get<Inventory>(dragUnit);
-            if (inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS && inv->slots[dragSlot].item != 0) {
-                renderer.drawDraggedStack(mouseX, mouseY, inv->slots[dragSlot].item, inv->slots[dragSlot].count);
-            }
-        }
+        const ItemStack dragged = draggedStack();
+        if (dragged.item != 0) renderer.drawDraggedStack(mouseX, mouseY, dragged.item, dragged.count);
     }
 }
 
@@ -242,26 +238,24 @@ void App::drawTalkOrTrade() {
             dialogueUnit = NULL_ENTITY;
             dialogueConvo.clear();
             tradeOpen = false;
+            quantity.open = false;
         } else {
-            float mhx = 0.0f, mhy = 0.0f;
-            SDL_GetMouseState(&mhx, &mhy);
-            if (dialogueUnit == NULL_ENTITY) quantity.open = false;
             if (tradeOpen) {
                 const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
                 renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(false)), nameOf(world, dialogueUnit), nameOf(world, dialoguePlayer),
                                    npcInv, tradeNpc, tradePlayer, tradeNpcDrag,
-                                   checkTrade(world, dialogueUnit, dialoguePlayer), !freeTrade, mhx, mhy);
+                                   checkTrade(world, dialogueUnit, dialoguePlayer), !freeTrade, mouseX, mouseY);
                 if (npcInv && tradeNpcDrag >= 0 && npcInv->slots[tradeNpcDrag].item != 0) {
-                    renderer.drawDraggedStack(mhx, mhy, npcInv->slots[tradeNpcDrag].item, npcInv->slots[tradeNpcDrag].count);
+                    renderer.drawDraggedStack(mouseX, mouseY, npcInv->slots[tradeNpcDrag].item, npcInv->slots[tradeNpcDrag].count);
                 }
                 if (quantity.open) {
                     renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,
-                                                quantity.available, mhx, mhy);
+                                                quantity.available, mouseX, mouseY);
                 }
             } else {
                 const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
                 renderer.drawDialogue(dialogueBox(winW, winH), dialogueConvo,
-                                      dg ? dg->options : std::vector<DialogueOption>{}, mhx, mhy);
+                                      dg ? dg->options : std::vector<DialogueOption>{}, mouseX, mouseY);
             }
         }
     }

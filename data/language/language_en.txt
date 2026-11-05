@@ -26,6 +26,7 @@ UILABEL_TYPE	Type
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUAL
 UILABEL_NO_SAVES	No saves yet
+MISC_MAIN_MAP_MISSING	The main map is missing from data.pak
 UILABEL_LIST_MORE_ABOVE	...   {0} more above
 UILABEL_LIST_MORE_BELOW	...   {0} more below
 UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.

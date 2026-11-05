@@ -123,6 +123,13 @@ void App::clearQuestion() {
     deleteHolding = false;
 }
 
+// The panel closes, and the notice and sound say how the save went
+void App::finishSave(bool ok) {
+    closePanel();
+    showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
+    playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
+}
+
 // True if the action was one of the save and load panel's
 bool App::savePanelAction(Action action, int param) {
     switch (action) {
@@ -195,10 +202,7 @@ bool App::savePanelAction(Action action, int param) {
             ask = Ask::Overwrite;
             return true;
         }
-        bool ok = writeSave(manualSavePath(nowMs()), name, false);
-        closePanel();
-        showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
-        playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
+        finishSave(writeSave(manualSavePath(nowMs()), name, false));
         return true;
     }
     case Action::OverwriteYes: {
@@ -208,10 +212,7 @@ bool App::savePanelAction(Action action, int param) {
         }
         SaveSummary target = *pendingOverwrite;
         // Keep the save's file and its AUTO or MANUAL type; only the contents change
-        bool ok = writeSave(target.path, target.name, target.autosave);
-        closePanel();
-        showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
-        playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
+        finishSave(writeSave(target.path, target.name, target.autosave));
         return true;
     }
     case Action::OverwriteNo:
