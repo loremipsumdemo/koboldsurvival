@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Fortsæt
 UILABEL_NEW_GAME	Nyt spil
 UILABEL_LOAD_GAME	Indlæs spil
 UILABEL_SETTINGS	Indstillinger
-UILABEL_LANGUAGE_BUTTON	Sprog ({0})
 UILABEL_QUIT	Afslut
 UILABEL_RESUME	Genoptag
 UILABEL_SAVE_GAME	Gem spil
@@ -21,7 +20,6 @@ UILABEL_YES	Ja
 UILABEL_NO	Nej
 UILABEL_NAME	Navn
 UILABEL_TIME	Tid
-UILABEL_CREATED	Oprettet
 UILABEL_TYPE	Type
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUEL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Ingen gemte spil endnu
 UILABEL_UNSAVED_WARNING	Ugemte fremskridt i dette spil går tabt.
 UILABEL_HOLD_DELETE	Hold Slet nede i 3 sekunder for at bekræfte.
 UILABEL_CLICK_SAVE	Klik på et gem for at indlæse det
-UILABEL_CLICK_MAP	Klik på et kort for at starte et nyt spil
-UILABEL_NO_MAPS	Ingen kort fundet. Lav et med worldgen.py.
-UILABEL_BUILT_IN	INDBYGGET
 UILABEL_WORLD	VERDEN
-UILABEL_MAP_FILE	KORTFIL
-UILABEL_BUILT_IN_WHEN	indbygget
 UILABEL_UNKNOWN	ukendt
 UILABEL_ON	Til
 UILABEL_OFF	Fra
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Navne på spillerens enheder
 UILABEL_NPC_NAMES	Navne på andre enheder
 UILABEL_PROP_NAMES	Navne på genstande i verden
 UILABEL_PROP_INFO	Vis info om genstande
-UILABEL_FONT_SIZE	Skriftstørrelse
 UILABEL_RESET_PANELS	Nulstil alle paneler
 UILABEL_RESET	Nulstil
 UILABEL_FONT	Skrifttype
@@ -134,8 +126,6 @@ UILABEL_CARRY	Bærekapacitet
 UILABEL_NEXT_LEVEL_XP_LINE	Erfaring til næste niveau: {0}
 UILABEL_STAT	Værdi
 UILABEL_LEVEL	Niveau
-UILABEL_TOTAL_XP	Samlet erfaring
-UILABEL_TO_NEXT	Til næste
 UILABEL_ATTRIBUTES	Egenskaber
 UILABEL_COMBAT	Kamp
 UILABEL_RESOURCE_GATHERING	Indsamling af ressourcer
@@ -240,7 +230,6 @@ UILABEL_USE	Brug
 UILABEL_MESSAGE	Meddelelse
 UILABEL_GAME	Spil
 UILABEL_FILTER	Filter
-UILABEL_STAT_HEAD_STAT	Værdi
 UILABEL_UNKNOWN_SLOT	Ukendt
 UILABEL_MONTH_NAME	{0} måned
 UILABEL_STRENGTH_STAT	Styrke
@@ -294,14 +283,6 @@ MISC_ORD_9	Niende
 MISC_ORD_10	Tiende
 MISC_ORD_11	Ellevte
 MISC_ORD_12	Tolvte
-MISC_SKY_DAY_ZENITH	Dagens zenit
-MISC_SKY_DAY_HORIZON	Dagens horisont
-MISC_SKY_NIGHT_ZENITH	Nattens zenit
-MISC_SKY_NIGHT_HORIZON	Nattens horisont
-MISC_SKY_DUSK_HORIZON	Skumringens horisont
-MISC_SKY_DUSK_SUN	Solen i skumringen
-MISC_SKY_SUN	Solen
-MISC_SKY_MOON	Månen
 UILABEL_STAT_DESC_STRENGTH	Nærkampsskade, bærekapacitet
 UILABEL_STAT_DESC_DEXTERITY	Angrebshastighed
 UILABEL_STAT_DESC_VITALITY	Maks. helbred
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Niveau: {0}
 UILABEL_TIP_PROGRESS	Fremskridt: {0}%
 UILABEL_TIP_CURRENT_XP	Nuværende erfaring: {0}
 UILABEL_ATTACK_DEFENSE	Angreb {0}      Forsvar {1}
-UILABEL_STATS_CAPTION	Værdier: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Plads {0}: {1}
 UILABEL_SLOT_N_EMPTY	Plads {0}: tom
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Udstyr optimeret for {0} enheder
 MISC_OPTIMIZE_ALL_SOME_ROOM	Udstyr optimeret for {0} enheder; {1} manglede plads i inventaret
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Overlevelse
-UILABEL_EARLY_ACCESS	Tidlig adgang
 MISC_TITLE_KEYS	Vælg  //  Enter Bekræft
 UILABEL_LANGUAGE_LABEL	Sprog:
 PROP_FLAG	Flag
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Flagermus
 FACTION_MOB_FROG	Frøer
 FACTION_MOB_GORLICORN	Gorlicorner
 MISC_MOB_NO_GEAR	Dyr kan ikke bære udstyr
-MISC_MOB_NO_HEALING	Dyr kan ikke bruge helbredende genstande
-MISC_MOB_CANT_WORK	Dyr kan ikke arbejde ved genstande

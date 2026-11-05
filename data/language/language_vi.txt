@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Tiếp tục
 UILABEL_NEW_GAME	Trò chơi mới
 UILABEL_LOAD_GAME	Tải trò chơi
 UILABEL_SETTINGS	Cài đặt
-UILABEL_LANGUAGE_BUTTON	Ngôn ngữ ({0})
 UILABEL_QUIT	Thoát
 UILABEL_RESUME	Tiếp tục chơi
 UILABEL_SAVE_GAME	Lưu trò chơi
@@ -21,7 +20,6 @@ UILABEL_YES	Có
 UILABEL_NO	Không
 UILABEL_NAME	Tên
 UILABEL_TIME	Thời gian
-UILABEL_CREATED	Ngày tạo
 UILABEL_TYPE	Loại
 UILABEL_AUTO	TỰ ĐỘNG
 UILABEL_MANUAL	THỦ CÔNG
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Chưa có bản lưu nào
 UILABEL_UNSAVED_WARNING	Tiến trình chưa lưu trong trò chơi này sẽ bị mất.
 UILABEL_HOLD_DELETE	Giữ Xóa trong 3 giây để xác nhận.
 UILABEL_CLICK_SAVE	Nhấp vào một bản lưu để tải
-UILABEL_CLICK_MAP	Nhấp vào một bản đồ để bắt đầu trò chơi mới
-UILABEL_NO_MAPS	Không tìm thấy bản đồ. Hãy tạo một bản bằng worldgen.py.
-UILABEL_BUILT_IN	CÓ SẴN
 UILABEL_WORLD	THẾ GIỚI
-UILABEL_MAP_FILE	TỆP BẢN ĐỒ
-UILABEL_BUILT_IN_WHEN	có sẵn
 UILABEL_UNKNOWN	không rõ
 UILABEL_ON	Bật
 UILABEL_OFF	Tắt
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Tên đơn vị của người chơi
 UILABEL_NPC_NAMES	Tên đơn vị khác
 UILABEL_PROP_NAMES	Tên vật thể
 UILABEL_PROP_INFO	Hiện thông tin vật thể
-UILABEL_FONT_SIZE	Cỡ chữ
 UILABEL_RESET_PANELS	Đặt lại tất cả bảng giao diện
 UILABEL_RESET	Đặt lại
 UILABEL_FONT	Phông chữ
@@ -134,8 +126,6 @@ UILABEL_CARRY	Sức mang
 UILABEL_NEXT_LEVEL_XP_LINE	Kinh nghiệm đến cấp tiếp theo: {0}
 UILABEL_STAT	Chỉ số
 UILABEL_LEVEL	Cấp
-UILABEL_TOTAL_XP	Tổng kinh nghiệm
-UILABEL_TO_NEXT	Đến cấp tiếp
 UILABEL_ATTRIBUTES	Thuộc tính
 UILABEL_COMBAT	Chiến đấu
 UILABEL_RESOURCE_GATHERING	Thu thập tài nguyên
@@ -240,7 +230,6 @@ UILABEL_USE	Dùng
 UILABEL_MESSAGE	Thông báo
 UILABEL_GAME	Trò chơi
 UILABEL_FILTER	Bộ lọc
-UILABEL_STAT_HEAD_STAT	Chỉ số
 UILABEL_UNKNOWN_SLOT	Không rõ
 UILABEL_MONTH_NAME	Tháng {0}
 UILABEL_STRENGTH_STAT	Sức mạnh
@@ -294,14 +283,6 @@ MISC_ORD_9	Thứ chín
 MISC_ORD_10	Thứ mười
 MISC_ORD_11	Thứ mười một
 MISC_ORD_12	Thứ mười hai
-MISC_SKY_DAY_ZENITH	Đỉnh ngày
-MISC_SKY_DAY_HORIZON	Chân trời ngày
-MISC_SKY_NIGHT_ZENITH	Đỉnh đêm
-MISC_SKY_NIGHT_HORIZON	Chân trời đêm
-MISC_SKY_DUSK_HORIZON	Chân trời hoàng hôn
-MISC_SKY_DUSK_SUN	Mặt trời hoàng hôn
-MISC_SKY_SUN	Mặt trời
-MISC_SKY_MOON	Mặt trăng
 UILABEL_STAT_DESC_STRENGTH	Sát thương cận chiến, sức mang
 UILABEL_STAT_DESC_DEXTERITY	Tốc độ tấn công
 UILABEL_STAT_DESC_VITALITY	Sinh lực tối đa
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Cấp: {0}
 UILABEL_TIP_PROGRESS	Tiến độ: {0}%
 UILABEL_TIP_CURRENT_XP	Kinh nghiệm hiện tại: {0}
 UILABEL_ATTACK_DEFENSE	Tấn công {0}      Phòng thủ {1}
-UILABEL_STATS_CAPTION	Chỉ số: {0}
 UILABEL_MODEL_N	Mẫu {0}
 UILABEL_SLOT_N_ITEM	Ô {0}: {1}
 UILABEL_SLOT_N_EMPTY	Ô {0}: trống
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Đã tối ưu trang bị cho {0} đơn vị
 MISC_OPTIMIZE_ALL_SOME_ROOM	Đã tối ưu trang bị cho {0} đơn vị; {1} đơn vị thiếu chỗ trong túi đồ
 GAME_TITLE_FIRST	Sinh tồn
 GAME_TITLE_SECOND	Kobold
-UILABEL_EARLY_ACCESS	Truy cập sớm
 MISC_TITLE_KEYS	Chọn  //  Enter Xác nhận
 UILABEL_LANGUAGE_LABEL	Ngôn ngữ:
 PROP_FLAG	Cờ
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Bầy dơi
 FACTION_MOB_FROG	Bầy ếch
 FACTION_MOB_GORLICORN	Bầy gorlicorn
 MISC_MOB_NO_GEAR	Sinh vật không thể mặc trang bị
-MISC_MOB_NO_HEALING	Sinh vật không thể dùng vật phẩm hồi máu
-MISC_MOB_CANT_WORK	Sinh vật không thể làm việc ở vật thể

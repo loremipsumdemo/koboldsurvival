@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Продължи
 UILABEL_NEW_GAME	Нова игра
 UILABEL_LOAD_GAME	Зареди игра
 UILABEL_SETTINGS	Настройки
-UILABEL_LANGUAGE_BUTTON	Език ({0})
 UILABEL_QUIT	Изход
 UILABEL_RESUME	Продължи играта
 UILABEL_SAVE_GAME	Запази игра
@@ -21,7 +20,6 @@ UILABEL_YES	Да
 UILABEL_NO	Не
 UILABEL_NAME	Име
 UILABEL_TIME	Време
-UILABEL_CREATED	Създадено
 UILABEL_TYPE	Вид
 UILABEL_AUTO	АВТО
 UILABEL_MANUAL	РЪЧНО
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Все още няма запазвания
 UILABEL_UNSAVED_WARNING	Незапазеният напредък в тази игра ще се загуби.
 UILABEL_HOLD_DELETE	Задръжте Изтрий за 3 секунди, за да потвърдите.
 UILABEL_CLICK_SAVE	Щракнете върху запазване, за да го заредите
-UILABEL_CLICK_MAP	Щракнете върху карта, за да започнете нова игра
-UILABEL_NO_MAPS	Няма намерени карти. Създайте една с worldgen.py.
-UILABEL_BUILT_IN	ВГРАДЕН
 UILABEL_WORLD	СВЯТ
-UILABEL_MAP_FILE	ФАЙЛ С КАРТА
-UILABEL_BUILT_IN_WHEN	вграден
 UILABEL_UNKNOWN	неизвестно
 UILABEL_ON	Вкл.
 UILABEL_OFF	Изкл.
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Имена на вашите единици
 UILABEL_NPC_NAMES	Имена на чуждите единици
 UILABEL_PROP_NAMES	Имена на предметите в света
 UILABEL_PROP_INFO	Показвай информация за обекти
-UILABEL_FONT_SIZE	Размер на шрифта
 UILABEL_RESET_PANELS	Нулиране на всички панели
 UILABEL_RESET	Нулиране
 UILABEL_FONT	Шрифт
@@ -134,8 +126,6 @@ UILABEL_CARRY	Товароносимост
 UILABEL_NEXT_LEVEL_XP_LINE	ОО до следващото ниво: {0}
 UILABEL_STAT	Показател
 UILABEL_LEVEL	Ниво
-UILABEL_TOTAL_XP	Общо ОО
-UILABEL_TO_NEXT	До следващото
 UILABEL_ATTRIBUTES	Атрибути
 UILABEL_COMBAT	Бой
 UILABEL_RESOURCE_GATHERING	Събиране на ресурси
@@ -240,7 +230,6 @@ UILABEL_USE	Използвай
 UILABEL_MESSAGE	Съобщение
 UILABEL_GAME	Игра
 UILABEL_FILTER	Филтър
-UILABEL_STAT_HEAD_STAT	Показател
 UILABEL_UNKNOWN_SLOT	Неизвестно
 UILABEL_MONTH_NAME	{0} месец
 UILABEL_STRENGTH_STAT	Сила
@@ -294,14 +283,6 @@ MISC_ORD_9	Девети
 MISC_ORD_10	Десети
 MISC_ORD_11	Единадесети
 MISC_ORD_12	Дванадесети
-MISC_SKY_DAY_ZENITH	Дневен зенит
-MISC_SKY_DAY_HORIZON	Дневен хоризонт
-MISC_SKY_NIGHT_ZENITH	Нощен зенит
-MISC_SKY_NIGHT_HORIZON	Нощен хоризонт
-MISC_SKY_DUSK_HORIZON	Хоризонт на здрачаване
-MISC_SKY_DUSK_SUN	Слънце на здрачаване
-MISC_SKY_SUN	Слънце
-MISC_SKY_MOON	Луна
 UILABEL_STAT_DESC_STRENGTH	Щета при ближен бой, товароносимост
 UILABEL_STAT_DESC_DEXTERITY	Скорост на атака
 UILABEL_STAT_DESC_VITALITY	Максимално здраве
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Ниво: {0}
 UILABEL_TIP_PROGRESS	Напредък: {0}%
 UILABEL_TIP_CURRENT_XP	Текущ опит: {0}
 UILABEL_ATTACK_DEFENSE	Атака {0}      Защита {1}
-UILABEL_STATS_CAPTION	Показатели: {0}
 UILABEL_MODEL_N	Модел {0}
 UILABEL_SLOT_N_ITEM	Слот {0}: {1}
 UILABEL_SLOT_N_EMPTY	Слот {0}: празен
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Оптимизирана е екипировката на
 MISC_OPTIMIZE_ALL_SOME_ROOM	Оптимизирана е екипировката на {0} единици; {1} нямаха място в инвентара
 GAME_TITLE_FIRST	Коболд
 GAME_TITLE_SECOND	Оцеляване
-UILABEL_EARLY_ACCESS	Ранен достъп
 MISC_TITLE_KEYS	Избор  //  Enter Потвърди
 UILABEL_LANGUAGE_LABEL	Език:
 PROP_FLAG	Знаме
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Прилепи
 FACTION_MOB_FROG	Жаби
 FACTION_MOB_GORLICORN	Горликорни
 MISC_MOB_NO_GEAR	Съществата не могат да носят снаряжение
-MISC_MOB_NO_HEALING	Съществата не могат да използват лечебни предмети
-MISC_MOB_CANT_WORK	Съществата не могат да работят по обекти

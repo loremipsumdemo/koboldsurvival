@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Weiter
 UILABEL_NEW_GAME	Neues Spiel
 UILABEL_LOAD_GAME	Spiel laden
 UILABEL_SETTINGS	Einstellungen
-UILABEL_LANGUAGE_BUTTON	Sprache ({0})
 UILABEL_QUIT	Beenden
 UILABEL_RESUME	Fortsetzen
 UILABEL_SAVE_GAME	Spiel speichern
@@ -21,7 +20,6 @@ UILABEL_YES	Ja
 UILABEL_NO	Nein
 UILABEL_NAME	Name
 UILABEL_TIME	Zeit
-UILABEL_CREATED	Erstellt
 UILABEL_TYPE	Typ
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUELL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Noch keine Speicherstände
 UILABEL_UNSAVED_WARNING	Ungespeicherter Fortschritt in diesem Spiel geht verloren.
 UILABEL_HOLD_DELETE	Halte Löschen 3 Sekunden lang gedrückt, um zu bestätigen.
 UILABEL_CLICK_SAVE	Klicke auf einen Speicherstand, um ihn zu laden
-UILABEL_CLICK_MAP	Klicke auf eine Karte, um ein neues Spiel zu starten
-UILABEL_NO_MAPS	Keine Karten gefunden. Erstelle eine mit worldgen.py.
-UILABEL_BUILT_IN	EINGEBAUT
 UILABEL_WORLD	WELT
-UILABEL_MAP_FILE	KARTENDATEI
-UILABEL_BUILT_IN_WHEN	eingebaut
 UILABEL_UNKNOWN	unbekannt
 UILABEL_ON	An
 UILABEL_OFF	Aus
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Namen eigener Einheiten
 UILABEL_NPC_NAMES	Namen fremder Einheiten
 UILABEL_PROP_NAMES	Namen von Objekten
 UILABEL_PROP_INFO	Objektinfos anzeigen
-UILABEL_FONT_SIZE	Schriftgröße
 UILABEL_RESET_PANELS	Alle UI-Fenster zurücksetzen
 UILABEL_RESET	Zurücksetzen
 UILABEL_FONT	Schrift
@@ -134,8 +126,6 @@ UILABEL_CARRY	Tragkraft
 UILABEL_NEXT_LEVEL_XP_LINE	Nächste Stufe XP: {0}
 UILABEL_STAT	Wert
 UILABEL_LEVEL	Stufe
-UILABEL_TOTAL_XP	Gesamt-XP
-UILABEL_TO_NEXT	Bis zur nächsten
 UILABEL_ATTRIBUTES	Attribute
 UILABEL_COMBAT	Kampf
 UILABEL_RESOURCE_GATHERING	Rohstoffe sammeln
@@ -240,7 +230,6 @@ UILABEL_USE	Benutzen
 UILABEL_MESSAGE	Meldung
 UILABEL_GAME	Spiel
 UILABEL_FILTER	Filter
-UILABEL_STAT_HEAD_STAT	Wert
 UILABEL_UNKNOWN_SLOT	Unbekannt
 UILABEL_MONTH_NAME	{0} Monat
 UILABEL_STRENGTH_STAT	Stärke
@@ -294,14 +283,6 @@ MISC_ORD_9	Neunter
 MISC_ORD_10	Zehnter
 MISC_ORD_11	Elfter
 MISC_ORD_12	Zwölfter
-MISC_SKY_DAY_ZENITH	Tageszenit
-MISC_SKY_DAY_HORIZON	Tageshorizont
-MISC_SKY_NIGHT_ZENITH	Nachtzenit
-MISC_SKY_NIGHT_HORIZON	Nachthorizont
-MISC_SKY_DUSK_HORIZON	Dämmerungshorizont
-MISC_SKY_DUSK_SUN	Dämmerungssonne
-MISC_SKY_SUN	Sonne
-MISC_SKY_MOON	Mond
 UILABEL_STAT_DESC_STRENGTH	Nahkampfschaden, Tragkraft
 UILABEL_STAT_DESC_DEXTERITY	Angriffsgeschwindigkeit
 UILABEL_STAT_DESC_VITALITY	Maximale Gesundheit
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Stufe: {0}
 UILABEL_TIP_PROGRESS	Fortschritt: {0}%
 UILABEL_TIP_CURRENT_XP	Aktuelle XP: {0}
 UILABEL_ATTACK_DEFENSE	Angriff {0}      Verteidigung {1}
-UILABEL_STATS_CAPTION	Werte: {0}
 UILABEL_MODEL_N	Modell {0}
 UILABEL_SLOT_N_ITEM	Platz {0}: {1}
 UILABEL_SLOT_N_EMPTY	Platz {0}: leer
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Ausrüstung von {0} Einheiten optimiert
 MISC_OPTIMIZE_ALL_SOME_ROOM	Ausrüstung von {0} Einheiten optimiert; {1} hatten keinen Platz im Inventar
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Überleben
-UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Auswählen  //  Enter Bestätigen
 UILABEL_LANGUAGE_LABEL	Sprache:
 PROP_FLAG	Flagge
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Fledermäuse
 FACTION_MOB_FROG	Frösche
 FACTION_MOB_GORLICORN	Gorlikorne
 MISC_MOB_NO_GEAR	Tiere können keine Ausrüstung tragen
-MISC_MOB_NO_HEALING	Tiere können keine Heilgegenstände benutzen
-MISC_MOB_CANT_WORK	Tiere können nicht an Objekten arbeiten

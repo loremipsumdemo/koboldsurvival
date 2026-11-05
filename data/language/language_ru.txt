@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Продолжить
 UILABEL_NEW_GAME	Новая игра
 UILABEL_LOAD_GAME	Загрузить игру
 UILABEL_SETTINGS	Настройки
-UILABEL_LANGUAGE_BUTTON	Язык ({0})
 UILABEL_QUIT	Выход
 UILABEL_RESUME	Продолжить
 UILABEL_SAVE_GAME	Сохранить игру
@@ -21,7 +20,6 @@ UILABEL_YES	Да
 UILABEL_NO	Нет
 UILABEL_NAME	Имя
 UILABEL_TIME	Время
-UILABEL_CREATED	Создано
 UILABEL_TYPE	Тип
 UILABEL_AUTO	АВТО
 UILABEL_MANUAL	РУЧНОЕ
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Сохранений пока нет
 UILABEL_UNSAVED_WARNING	Несохранённый прогресс в этой игре будет потерян.
 UILABEL_HOLD_DELETE	Удерживайте «Удалить» 3 секунды для подтверждения.
 UILABEL_CLICK_SAVE	Нажмите на сохранение, чтобы загрузить его
-UILABEL_CLICK_MAP	Нажмите на карту, чтобы начать новую игру
-UILABEL_NO_MAPS	Карты не найдены. Создайте её с помощью worldgen.py.
-UILABEL_BUILT_IN	ВСТРОЕННАЯ
 UILABEL_WORLD	МИР
-UILABEL_MAP_FILE	ФАЙЛ КАРТЫ
-UILABEL_BUILT_IN_WHEN	встроенная
 UILABEL_UNKNOWN	неизвестно
 UILABEL_ON	Вкл.
 UILABEL_OFF	Выкл.
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Имена юнитов игрока
 UILABEL_NPC_NAMES	Имена других юнитов
 UILABEL_PROP_NAMES	Названия объектов
 UILABEL_PROP_INFO	Показывать сведения об объектах
-UILABEL_FONT_SIZE	Размер шрифта
 UILABEL_RESET_PANELS	Сбросить все панели интерфейса
 UILABEL_RESET	Сбросить
 UILABEL_FONT	Шрифт
@@ -134,8 +126,6 @@ UILABEL_CARRY	Грузоподъёмность
 UILABEL_NEXT_LEVEL_XP_LINE	Опыт до следующего уровня: {0}
 UILABEL_STAT	Характеристика
 UILABEL_LEVEL	Уровень
-UILABEL_TOTAL_XP	Всего опыта
-UILABEL_TO_NEXT	До следующего
 UILABEL_ATTRIBUTES	Атрибуты
 UILABEL_COMBAT	Бой
 UILABEL_RESOURCE_GATHERING	Добыча ресурсов
@@ -240,7 +230,6 @@ UILABEL_USE	Использовать
 UILABEL_MESSAGE	Сообщение
 UILABEL_GAME	Игра
 UILABEL_FILTER	Фильтр
-UILABEL_STAT_HEAD_STAT	Характеристика
 UILABEL_UNKNOWN_SLOT	Неизвестно
 UILABEL_MONTH_NAME	Месяц {0}
 UILABEL_STRENGTH_STAT	Сила
@@ -294,14 +283,6 @@ MISC_ORD_9	Девятый
 MISC_ORD_10	Десятый
 MISC_ORD_11	Одиннадцатый
 MISC_ORD_12	Двенадцатый
-MISC_SKY_DAY_ZENITH	Дневной зенит
-MISC_SKY_DAY_HORIZON	Дневной горизонт
-MISC_SKY_NIGHT_ZENITH	Ночной зенит
-MISC_SKY_NIGHT_HORIZON	Ночной горизонт
-MISC_SKY_DUSK_HORIZON	Горизонт сумерек
-MISC_SKY_DUSK_SUN	Солнце в сумерках
-MISC_SKY_SUN	Солнце
-MISC_SKY_MOON	Луна
 UILABEL_STAT_DESC_STRENGTH	Урон в ближнем бою, грузоподъёмность
 UILABEL_STAT_DESC_DEXTERITY	Скорость атаки
 UILABEL_STAT_DESC_VITALITY	Максимальное здоровье
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Уровень: {0}
 UILABEL_TIP_PROGRESS	Прогресс: {0}%
 UILABEL_TIP_CURRENT_XP	Текущий опыт: {0}
 UILABEL_ATTACK_DEFENSE	Атака {0}      Защита {1}
-UILABEL_STATS_CAPTION	Характеристики: {0}
 UILABEL_MODEL_N	Модель {0}
 UILABEL_SLOT_N_ITEM	Ячейка {0}: {1}
 UILABEL_SLOT_N_EMPTY	Ячейка {0}: пусто
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Снаряжение оптимизировано у {0} 
 MISC_OPTIMIZE_ALL_SOME_ROOM	Снаряжение оптимизировано у {0} бойцов; {1} не хватило места в инвентаре
 GAME_TITLE_FIRST	Кобольд
 GAME_TITLE_SECOND	Выживание
-UILABEL_EARLY_ACCESS	Ранний доступ
 MISC_TITLE_KEYS	Выбор  //  Enter Подтвердить
 UILABEL_LANGUAGE_LABEL	Язык:
 PROP_FLAG	Флаг
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Летучие мыши
 FACTION_MOB_FROG	Лягушки
 FACTION_MOB_GORLICORN	Горликорны
 MISC_MOB_NO_GEAR	Животные не могут носить снаряжение
-MISC_MOB_NO_HEALING	Животные не могут использовать лечебные предметы
-MISC_MOB_CANT_WORK	Животные не могут работать на объектах

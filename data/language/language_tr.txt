@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Devam Et
 UILABEL_NEW_GAME	Yeni Oyun
 UILABEL_LOAD_GAME	Oyun Yükle
 UILABEL_SETTINGS	Ayarlar
-UILABEL_LANGUAGE_BUTTON	Dil ({0})
 UILABEL_QUIT	Çıkış
 UILABEL_RESUME	Devam
 UILABEL_SAVE_GAME	Oyunu Kaydet
@@ -21,7 +20,6 @@ UILABEL_YES	Evet
 UILABEL_NO	Hayır
 UILABEL_NAME	Ad
 UILABEL_TIME	Zaman
-UILABEL_CREATED	Oluşturulma
 UILABEL_TYPE	Tür
 UILABEL_AUTO	OTOMATİK
 UILABEL_MANUAL	ELLE
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Henüz kayıt yok
 UILABEL_UNSAVED_WARNING	Bu oyundaki kaydedilmemiş ilerleme kaybolacak.
 UILABEL_HOLD_DELETE	Onaylamak için Sil tuşunu 3 saniye basılı tutun.
 UILABEL_CLICK_SAVE	Yüklemek için bir kayda tıklayın
-UILABEL_CLICK_MAP	Yeni bir oyun başlatmak için bir haritaya tıklayın
-UILABEL_NO_MAPS	Harita bulunamadı. worldgen.py ile bir tane oluşturun.
-UILABEL_BUILT_IN	YERLEŞİK
 UILABEL_WORLD	DÜNYA
-UILABEL_MAP_FILE	HARİTA DOSYASI
-UILABEL_BUILT_IN_WHEN	yerleşik
 UILABEL_UNKNOWN	bilinmiyor
 UILABEL_ON	Açık
 UILABEL_OFF	Kapalı
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Oyuncu birimi adları
 UILABEL_NPC_NAMES	Diğer birimlerin adları
 UILABEL_PROP_NAMES	Nesne adları
 UILABEL_PROP_INFO	Nesne bilgilerini göster
-UILABEL_FONT_SIZE	Yazı boyutu
 UILABEL_RESET_PANELS	Tüm arayüz panellerini sıfırla
 UILABEL_RESET	Sıfırla
 UILABEL_FONT	Yazı tipi
@@ -134,8 +126,6 @@ UILABEL_CARRY	Taşıma kapasitesi
 UILABEL_NEXT_LEVEL_XP_LINE	Sonraki seviyeye TP: {0}
 UILABEL_STAT	İstatistik
 UILABEL_LEVEL	Seviye
-UILABEL_TOTAL_XP	Toplam TP
-UILABEL_TO_NEXT	Sonrakine
 UILABEL_ATTRIBUTES	Nitelikler
 UILABEL_COMBAT	Savaş
 UILABEL_RESOURCE_GATHERING	Kaynak Toplama
@@ -240,7 +230,6 @@ UILABEL_USE	Kullan
 UILABEL_MESSAGE	Mesaj
 UILABEL_GAME	Oyun
 UILABEL_FILTER	Filtre
-UILABEL_STAT_HEAD_STAT	İstatistik
 UILABEL_UNKNOWN_SLOT	Bilinmiyor
 UILABEL_MONTH_NAME	{0}. Ay
 UILABEL_STRENGTH_STAT	Güç
@@ -294,14 +283,6 @@ MISC_ORD_9	Dokuzuncu
 MISC_ORD_10	Onuncu
 MISC_ORD_11	On birinci
 MISC_ORD_12	On ikinci
-MISC_SKY_DAY_ZENITH	Gündüz zirvesi
-MISC_SKY_DAY_HORIZON	Gündüz ufku
-MISC_SKY_NIGHT_ZENITH	Gece zirvesi
-MISC_SKY_NIGHT_HORIZON	Gece ufku
-MISC_SKY_DUSK_HORIZON	Alacakaranlık ufku
-MISC_SKY_DUSK_SUN	Alacakaranlık güneşi
-MISC_SKY_SUN	Güneş
-MISC_SKY_MOON	Ay
 UILABEL_STAT_DESC_STRENGTH	Yakın dövüş hasarı, taşıma kapasitesi
 UILABEL_STAT_DESC_DEXTERITY	Saldırı hızı
 UILABEL_STAT_DESC_VITALITY	Maksimum can
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Seviye: {0}
 UILABEL_TIP_PROGRESS	İlerleme: {0}%
 UILABEL_TIP_CURRENT_XP	Mevcut TP: {0}
 UILABEL_ATTACK_DEFENSE	Saldırı {0}      Savunma {1}
-UILABEL_STATS_CAPTION	İstatistikler: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Yuva {0}: {1}
 UILABEL_SLOT_N_EMPTY	Yuva {0}: boş
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	{0} birimin teçhizatı ayarlandı
 MISC_OPTIMIZE_ALL_SOME_ROOM	{0} birimin teçhizatı ayarlandı; {1} birimin envanterinde yer yoktu
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Hayatta Kalma
-UILABEL_EARLY_ACCESS	Erken Erişim
 MISC_TITLE_KEYS	Seç  //  Enter Onayla
 UILABEL_LANGUAGE_LABEL	Dil:
 PROP_FLAG	Bayrak
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Yarasalar
 FACTION_MOB_FROG	Kurbağalar
 FACTION_MOB_GORLICORN	Gorlikornlar
 MISC_MOB_NO_GEAR	Yaratıklar teçhizat giyemez
-MISC_MOB_NO_HEALING	Yaratıklar iyileştirici eşya kullanamaz
-MISC_MOB_CANT_WORK	Yaratıklar nesnelerde çalışamaz

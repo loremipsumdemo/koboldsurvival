@@ -6,7 +6,6 @@ UILABEL_CONTINUE	متابعة
 UILABEL_NEW_GAME	لعبة جديدة
 UILABEL_LOAD_GAME	تحميل اللعبة
 UILABEL_SETTINGS	الإعدادات
-UILABEL_LANGUAGE_BUTTON	اللغة ({0})
 UILABEL_QUIT	خروج
 UILABEL_RESUME	استئناف
 UILABEL_SAVE_GAME	حفظ اللعبة
@@ -21,7 +20,6 @@ UILABEL_YES	نعم
 UILABEL_NO	لا
 UILABEL_NAME	الاسم
 UILABEL_TIME	الوقت
-UILABEL_CREATED	تاريخ الإنشاء
 UILABEL_TYPE	النوع
 UILABEL_AUTO	تلقائي
 UILABEL_MANUAL	يدوي
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	لا توجد عمليات حفظ بعد
 UILABEL_UNSAVED_WARNING	سيضيع التقدم غير المحفوظ في هذه اللعبة.
 UILABEL_HOLD_DELETE	اضغط مع الاستمرار على حذف لمدة 3 ثوانٍ للتأكيد.
 UILABEL_CLICK_SAVE	انقر على عملية حفظ لتحميلها
-UILABEL_CLICK_MAP	انقر على خريطة لبدء لعبة جديدة
-UILABEL_NO_MAPS	لم يتم العثور على خرائط. أنشئ واحدة باستخدام worldgen.py.
-UILABEL_BUILT_IN	مدمجة
 UILABEL_WORLD	العالم
-UILABEL_MAP_FILE	ملف الخريطة
-UILABEL_BUILT_IN_WHEN	مدمجة
 UILABEL_UNKNOWN	غير معروف
 UILABEL_ON	تشغيل
 UILABEL_OFF	إيقاف
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	أسماء وحدات اللاعب
 UILABEL_NPC_NAMES	أسماء الوحدات غير التابعة للاعب
 UILABEL_PROP_NAMES	أسماء العناصر
 UILABEL_PROP_INFO	إظهار معلومات العناصر
-UILABEL_FONT_SIZE	حجم الخط
 UILABEL_RESET_PANELS	إعادة تعيين جميع اللوحات
 UILABEL_RESET	إعادة التعيين
 UILABEL_FONT	الخط
@@ -134,8 +126,6 @@ UILABEL_CARRY	الحمل
 UILABEL_NEXT_LEVEL_XP_LINE	خبرة المستوى التالي: {0}
 UILABEL_STAT	الإحصائية
 UILABEL_LEVEL	المستوى
-UILABEL_TOTAL_XP	إجمالي الخبرة
-UILABEL_TO_NEXT	حتى التالي
 UILABEL_ATTRIBUTES	السمات
 UILABEL_COMBAT	القتال
 UILABEL_RESOURCE_GATHERING	جمع الموارد
@@ -240,7 +230,6 @@ UILABEL_USE	استخدام
 UILABEL_MESSAGE	رسالة
 UILABEL_GAME	اللعبة
 UILABEL_FILTER	تصفية
-UILABEL_STAT_HEAD_STAT	الإحصائية
 UILABEL_UNKNOWN_SLOT	غير معروف
 UILABEL_MONTH_NAME	الشهر {0}
 UILABEL_STRENGTH_STAT	القوة
@@ -294,14 +283,6 @@ MISC_ORD_9	التاسع
 MISC_ORD_10	العاشر
 MISC_ORD_11	الحادي عشر
 MISC_ORD_12	الثاني عشر
-MISC_SKY_DAY_ZENITH	ذروة النهار
-MISC_SKY_DAY_HORIZON	أفق النهار
-MISC_SKY_NIGHT_ZENITH	ذروة الليل
-MISC_SKY_NIGHT_HORIZON	أفق الليل
-MISC_SKY_DUSK_HORIZON	أفق الغسق
-MISC_SKY_DUSK_SUN	شمس الغسق
-MISC_SKY_SUN	الشمس
-MISC_SKY_MOON	القمر
 UILABEL_STAT_DESC_STRENGTH	ضرر القتال المباشر، سعة الحمل
 UILABEL_STAT_DESC_DEXTERITY	سرعة الهجوم
 UILABEL_STAT_DESC_VITALITY	أقصى صحة
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	المستوى: {0}
 UILABEL_TIP_PROGRESS	التقدم: {0}%
 UILABEL_TIP_CURRENT_XP	الخبرة الحالية: {0}
 UILABEL_ATTACK_DEFENSE	الهجوم {0}      الدفاع {1}
-UILABEL_STATS_CAPTION	الإحصائيات: {0}
 UILABEL_MODEL_N	النموذج {0}
 UILABEL_SLOT_N_ITEM	الخانة {0}: {1}
 UILABEL_SLOT_N_EMPTY	الخانة {0}: فارغة
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	تم تحسين عتاد {0} وحدة
 MISC_OPTIMIZE_ALL_SOME_ROOM	تم تحسين عتاد {0} وحدة؛ {1} بلا مساحة كافية في المخزون
 GAME_TITLE_FIRST	الكوبولد
 GAME_TITLE_SECOND	نجاة
-UILABEL_EARLY_ACCESS	الوصول المبكر
 MISC_TITLE_KEYS	اختيار  //  Enter تأكيد
 UILABEL_LANGUAGE_LABEL	اللغة:
 PROP_FLAG	راية
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	الخفافيش
 FACTION_MOB_FROG	الضفادع
 FACTION_MOB_GORLICORN	الغورليكورنات
 MISC_MOB_NO_GEAR	لا تستطيع المخلوقات ارتداء العتاد
-MISC_MOB_NO_HEALING	لا تستطيع المخلوقات استخدام عناصر العلاج
-MISC_MOB_CANT_WORK	لا تستطيع المخلوقات العمل على العناصر

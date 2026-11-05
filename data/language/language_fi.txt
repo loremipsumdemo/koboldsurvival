@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Jatka
 UILABEL_NEW_GAME	Uusi peli
 UILABEL_LOAD_GAME	Lataa peli
 UILABEL_SETTINGS	Asetukset
-UILABEL_LANGUAGE_BUTTON	Kieli ({0})
 UILABEL_QUIT	Lopeta
 UILABEL_RESUME	Jatka peliä
 UILABEL_SAVE_GAME	Tallenna peli
@@ -21,7 +20,6 @@ UILABEL_YES	Kyllä
 UILABEL_NO	Ei
 UILABEL_NAME	Nimi
 UILABEL_TIME	Aika
-UILABEL_CREATED	Luotu
 UILABEL_TYPE	Tyyppi
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUAALI
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Ei tallennuksia vielä
 UILABEL_UNSAVED_WARNING	Tallentamaton edistyminen tässä pelissä menetetään.
 UILABEL_HOLD_DELETE	Pidä Poista painettuna 3 sekuntia vahvistaaksesi.
 UILABEL_CLICK_SAVE	Napsauta tallennusta ladataksesi sen
-UILABEL_CLICK_MAP	Napsauta karttaa aloittaaksesi uuden pelin
-UILABEL_NO_MAPS	Karttoja ei löytynyt. Luo yksi komennolla worldgen.py.
-UILABEL_BUILT_IN	SISÄÄNRAKENNETTU
 UILABEL_WORLD	MAAILMA
-UILABEL_MAP_FILE	KARTTATIEDOSTO
-UILABEL_BUILT_IN_WHEN	sisäänrakennettu
 UILABEL_UNKNOWN	tuntematon
 UILABEL_ON	Päällä
 UILABEL_OFF	Pois
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Pelaajan yksiköiden nimet
 UILABEL_NPC_NAMES	Muiden yksiköiden nimet
 UILABEL_PROP_NAMES	Kohteiden nimet
 UILABEL_PROP_INFO	Näytä kohteiden tiedot
-UILABEL_FONT_SIZE	Fontin koko
 UILABEL_RESET_PANELS	Palauta kaikki paneelit
 UILABEL_RESET	Palauta
 UILABEL_FONT	Fontti
@@ -134,8 +126,6 @@ UILABEL_CARRY	Kantokyky
 UILABEL_NEXT_LEVEL_XP_LINE	Seuraavalle tasolle: {0} kokemuspistettä
 UILABEL_STAT	Ominaisuus
 UILABEL_LEVEL	Taso
-UILABEL_TOTAL_XP	Kokemuspisteet yhteensä
-UILABEL_TO_NEXT	Seuraavaan
 UILABEL_ATTRIBUTES	Ominaisuudet
 UILABEL_COMBAT	Taistelu
 UILABEL_RESOURCE_GATHERING	Resurssien keruu
@@ -240,7 +230,6 @@ UILABEL_USE	Käytä
 UILABEL_MESSAGE	Viesti
 UILABEL_GAME	Peli
 UILABEL_FILTER	Suodatin
-UILABEL_STAT_HEAD_STAT	Ominaisuus
 UILABEL_UNKNOWN_SLOT	Tuntematon
 UILABEL_MONTH_NAME	{0}. kuukausi
 UILABEL_STRENGTH_STAT	Voima
@@ -294,14 +283,6 @@ MISC_ORD_9	Yhdeksäs
 MISC_ORD_10	Kymmenes
 MISC_ORD_11	Yhdestoista
 MISC_ORD_12	Kahdestoista
-MISC_SKY_DAY_ZENITH	Päivän zenit
-MISC_SKY_DAY_HORIZON	Päivän horisontti
-MISC_SKY_NIGHT_ZENITH	Yön zenit
-MISC_SKY_NIGHT_HORIZON	Yön horisontti
-MISC_SKY_DUSK_HORIZON	Hämärän horisontti
-MISC_SKY_DUSK_SUN	Hämärän aurinko
-MISC_SKY_SUN	Aurinko
-MISC_SKY_MOON	Kuu
 UILABEL_STAT_DESC_STRENGTH	Lähitaisteluvahinko, kantokyky
 UILABEL_STAT_DESC_DEXTERITY	Hyökkäysnopeus
 UILABEL_STAT_DESC_VITALITY	Enimmäisterveys
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Taso: {0}
 UILABEL_TIP_PROGRESS	Edistyminen: {0} %
 UILABEL_TIP_CURRENT_XP	Nykyiset kokemuspisteet: {0}
 UILABEL_ATTACK_DEFENSE	Hyökkäys {0}      Puolustus {1}
-UILABEL_STATS_CAPTION	Ominaisuudet: {0}
 UILABEL_MODEL_N	Malli {0}
 UILABEL_SLOT_N_ITEM	Paikka {0}: {1}
 UILABEL_SLOT_N_EMPTY	Paikka {0}: tyhjä
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Varusteet optimoitu {0} yksiköltä
 MISC_OPTIMIZE_ALL_SOME_ROOM	Varusteet optimoitu {0} yksiköltä; {1} ilman tilaa tavaraluettelossa
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Selviytyminen
-UILABEL_EARLY_ACCESS	Ennakkojulkaisu
 MISC_TITLE_KEYS	Valitse  //  Enter Vahvista
 UILABEL_LANGUAGE_LABEL	Kieli:
 PROP_FLAG	Lippu
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Lepakot
 FACTION_MOB_FROG	Sammakot
 FACTION_MOB_GORLICORN	Gorlisarviset
 MISC_MOB_NO_GEAR	Otukset eivät voi pukea varusteita
-MISC_MOB_NO_HEALING	Otukset eivät voi käyttää parantavia esineitä
-MISC_MOB_CANT_WORK	Otukset eivät voi työskennellä kohteissa

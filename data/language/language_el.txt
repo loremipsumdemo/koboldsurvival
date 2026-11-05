@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Συνέχεια
 UILABEL_NEW_GAME	Νέο παιχνίδι
 UILABEL_LOAD_GAME	Φόρτωση παιχνιδιού
 UILABEL_SETTINGS	Ρυθμίσεις
-UILABEL_LANGUAGE_BUTTON	Γλώσσα ({0})
 UILABEL_QUIT	Έξοδος
 UILABEL_RESUME	Συνέχισε
 UILABEL_SAVE_GAME	Αποθήκευση παιχνιδιού
@@ -21,7 +20,6 @@ UILABEL_YES	Ναι
 UILABEL_NO	Όχι
 UILABEL_NAME	Όνομα
 UILABEL_TIME	Ώρα
-UILABEL_CREATED	Δημιουργήθηκε
 UILABEL_TYPE	Τύπος
 UILABEL_AUTO	ΑΥΤΟΜΑΤΟ
 UILABEL_MANUAL	ΧΕΙΡΟΚΙΝΗΤΟ
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Δεν υπάρχουν αποθηκεύσεις ακόμη
 UILABEL_UNSAVED_WARNING	Η μη αποθηκευμένη πρόοδος σε αυτό το παιχνίδι θα χαθεί.
 UILABEL_HOLD_DELETE	Κράτα πατημένο το Διαγραφή για 3 δευτερόλεπτα για επιβεβαίωση.
 UILABEL_CLICK_SAVE	Κάνε κλικ σε μια αποθήκευση για να τη φορτώσεις
-UILABEL_CLICK_MAP	Κάνε κλικ σε έναν χάρτη για να ξεκινήσεις νέο παιχνίδι
-UILABEL_NO_MAPS	Δεν βρέθηκαν χάρτες. Δημιούργησε έναν με το worldgen.py.
-UILABEL_BUILT_IN	ΕΝΣΩΜΑΤΩΜΕΝΟΣ
 UILABEL_WORLD	ΚΟΣΜΟΣ
-UILABEL_MAP_FILE	ΑΡΧΕΙΟ ΧΑΡΤΗ
-UILABEL_BUILT_IN_WHEN	ενσωματωμένος
 UILABEL_UNKNOWN	άγνωστο
 UILABEL_ON	Ενεργό
 UILABEL_OFF	Ανενεργό
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Ονόματα μονάδων παίκτη
 UILABEL_NPC_NAMES	Ονόματα άλλων μονάδων
 UILABEL_PROP_NAMES	Ονόματα αντικειμένων
 UILABEL_PROP_INFO	Εμφάνιση πληροφοριών αντικειμένων
-UILABEL_FONT_SIZE	Μέγεθος γραμματοσειράς
 UILABEL_RESET_PANELS	Επαναφορά όλων των πάνελ
 UILABEL_RESET	Επαναφορά
 UILABEL_FONT	Γραμματοσειρά
@@ -134,8 +126,6 @@ UILABEL_CARRY	Φορτίο
 UILABEL_NEXT_LEVEL_XP_LINE	Εμπειρία για το επόμενο επίπεδο: {0}
 UILABEL_STAT	Στατιστικό
 UILABEL_LEVEL	Επίπεδο
-UILABEL_TOTAL_XP	Συνολική εμπειρία
-UILABEL_TO_NEXT	Μέχρι το επόμενο
 UILABEL_ATTRIBUTES	Χαρακτηριστικά
 UILABEL_COMBAT	Μάχη
 UILABEL_RESOURCE_GATHERING	Συλλογή πόρων
@@ -240,7 +230,6 @@ UILABEL_USE	Χρήση
 UILABEL_MESSAGE	Μήνυμα
 UILABEL_GAME	Παιχνίδι
 UILABEL_FILTER	Φίλτρο
-UILABEL_STAT_HEAD_STAT	Στατιστικό
 UILABEL_UNKNOWN_SLOT	Άγνωστο
 UILABEL_MONTH_NAME	{0} μήνας
 UILABEL_STRENGTH_STAT	Δύναμη
@@ -294,14 +283,6 @@ MISC_ORD_9	Ένατη
 MISC_ORD_10	Δέκατη
 MISC_ORD_11	Ενδέκατη
 MISC_ORD_12	Δωδέκατη
-MISC_SKY_DAY_ZENITH	Ζενίθ ημέρας
-MISC_SKY_DAY_HORIZON	Ορίζοντας ημέρας
-MISC_SKY_NIGHT_ZENITH	Ζενίθ νύχτας
-MISC_SKY_NIGHT_HORIZON	Ορίζοντας νύχτας
-MISC_SKY_DUSK_HORIZON	Ορίζοντας σούρουπου
-MISC_SKY_DUSK_SUN	Ήλιος σούρουπου
-MISC_SKY_SUN	Ήλιος
-MISC_SKY_MOON	Φεγγάρι
 UILABEL_STAT_DESC_STRENGTH	Ζημιά σε μάχη σώμα με σώμα, χωρητικότητα φορτίου
 UILABEL_STAT_DESC_DEXTERITY	Ταχύτητα επίθεσης
 UILABEL_STAT_DESC_VITALITY	Μέγιστη υγεία
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Επίπεδο: {0}
 UILABEL_TIP_PROGRESS	Πρόοδος: {0}%
 UILABEL_TIP_CURRENT_XP	Τρέχουσα εμπειρία: {0}
 UILABEL_ATTACK_DEFENSE	Επίθεση {0}      Άμυνα {1}
-UILABEL_STATS_CAPTION	Στατιστικά: {0}
 UILABEL_MODEL_N	Μοντέλο {0}
 UILABEL_SLOT_N_ITEM	Θέση {0}: {1}
 UILABEL_SLOT_N_EMPTY	Θέση {0}: κενή
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Βελτιστοποιήθηκε ο εξοπλισμός 
 MISC_OPTIMIZE_ALL_SOME_ROOM	Βελτιστοποιήθηκε ο εξοπλισμός {0} μονάδων· {1} δεν είχαν χώρο στο απόθεμα
 GAME_TITLE_FIRST	Κόμπολντ
 GAME_TITLE_SECOND	Επιβίωση
-UILABEL_EARLY_ACCESS	Πρώιμη πρόσβαση
 MISC_TITLE_KEYS	Επιλογή  //  Enter Επιβεβαίωση
 UILABEL_LANGUAGE_LABEL	Γλώσσα:
 PROP_FLAG	Σημαία
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Νυχτερίδες
 FACTION_MOB_FROG	Βάτραχοι
 FACTION_MOB_GORLICORN	Γκορλικόρνοι
 MISC_MOB_NO_GEAR	Τα πλάσματα δεν μπορούν να φορούν εξοπλισμό
-MISC_MOB_NO_HEALING	Τα πλάσματα δεν μπορούν να χρησιμοποιούν θεραπευτικά αντικείμενα
-MISC_MOB_CANT_WORK	Τα πλάσματα δεν μπορούν να δουλεύουν σε αντικείμενα

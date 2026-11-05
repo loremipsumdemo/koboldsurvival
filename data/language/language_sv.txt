@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Fortsätt
 UILABEL_NEW_GAME	Nytt spel
 UILABEL_LOAD_GAME	Ladda spel
 UILABEL_SETTINGS	Inställningar
-UILABEL_LANGUAGE_BUTTON	Språk ({0})
 UILABEL_QUIT	Avsluta
 UILABEL_RESUME	Återuppta
 UILABEL_SAVE_GAME	Spara spel
@@ -21,7 +20,6 @@ UILABEL_YES	Ja
 UILABEL_NO	Nej
 UILABEL_NAME	Namn
 UILABEL_TIME	Tid
-UILABEL_CREATED	Skapad
 UILABEL_TYPE	Typ
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUELL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Inga sparfiler ännu
 UILABEL_UNSAVED_WARNING	Osparade framsteg i det här spelet går förlorade.
 UILABEL_HOLD_DELETE	Håll in Radera i 3 sekunder för att bekräfta.
 UILABEL_CLICK_SAVE	Klicka på en sparfil för att ladda den
-UILABEL_CLICK_MAP	Klicka på en karta för att starta ett nytt spel
-UILABEL_NO_MAPS	Inga kartor hittades. Skapa en med worldgen.py.
-UILABEL_BUILT_IN	INBYGGD
 UILABEL_WORLD	VÄRLD
-UILABEL_MAP_FILE	KARTFIL
-UILABEL_BUILT_IN_WHEN	inbyggd
 UILABEL_UNKNOWN	okänd
 UILABEL_ON	På
 UILABEL_OFF	Av
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Namn på spelarens enheter
 UILABEL_NPC_NAMES	Namn på andra enheter
 UILABEL_PROP_NAMES	Namn på föremål i världen
 UILABEL_PROP_INFO	Visa info om föremål
-UILABEL_FONT_SIZE	Teckenstorlek
 UILABEL_RESET_PANELS	Återställ alla gränssnittspaneler
 UILABEL_RESET	Återställ
 UILABEL_FONT	Teckensnitt
@@ -134,8 +126,6 @@ UILABEL_CARRY	Bärkapacitet
 UILABEL_NEXT_LEVEL_XP_LINE	Erfarenhet till nästa nivå: {0}
 UILABEL_STAT	Statistik
 UILABEL_LEVEL	Nivå
-UILABEL_TOTAL_XP	Total erfarenhet
-UILABEL_TO_NEXT	Till nästa
 UILABEL_ATTRIBUTES	Attribut
 UILABEL_COMBAT	Strid
 UILABEL_RESOURCE_GATHERING	Resursinsamling
@@ -240,7 +230,6 @@ UILABEL_USE	Använd
 UILABEL_MESSAGE	Meddelande
 UILABEL_GAME	Spel
 UILABEL_FILTER	Filter
-UILABEL_STAT_HEAD_STAT	Statistik
 UILABEL_UNKNOWN_SLOT	Okänd
 UILABEL_MONTH_NAME	Månad {0}
 UILABEL_STRENGTH_STAT	Styrka
@@ -294,14 +283,6 @@ MISC_ORD_9	Nionde
 MISC_ORD_10	Tionde
 MISC_ORD_11	Elfte
 MISC_ORD_12	Tolfte
-MISC_SKY_DAY_ZENITH	Dagens zenit
-MISC_SKY_DAY_HORIZON	Dagens horisont
-MISC_SKY_NIGHT_ZENITH	Nattens zenit
-MISC_SKY_NIGHT_HORIZON	Nattens horisont
-MISC_SKY_DUSK_HORIZON	Skymningens horisont
-MISC_SKY_DUSK_SUN	Solen i skymningen
-MISC_SKY_SUN	Solen
-MISC_SKY_MOON	Månen
 UILABEL_STAT_DESC_STRENGTH	Skada i närstrid, bärkapacitet
 UILABEL_STAT_DESC_DEXTERITY	Attackhastighet
 UILABEL_STAT_DESC_VITALITY	Max hälsa
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Nivå: {0}
 UILABEL_TIP_PROGRESS	Framsteg: {0}%
 UILABEL_TIP_CURRENT_XP	Nuvarande erfarenhet: {0}
 UILABEL_ATTACK_DEFENSE	Attack {0}      Försvar {1}
-UILABEL_STATS_CAPTION	Statistik: {0}
 UILABEL_MODEL_N	Modell {0}
 UILABEL_SLOT_N_ITEM	Plats {0}: {1}
 UILABEL_SLOT_N_EMPTY	Plats {0}: tom
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Utrustning optimerad för {0} enheter
 MISC_OPTIMIZE_ALL_SOME_ROOM	Utrustning optimerad för {0} enheter; {1} saknade plats i inventariet
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Överlevnad
-UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Välj  //  Enter Bekräfta
 UILABEL_LANGUAGE_LABEL	Språk:
 PROP_FLAG	Flagga
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Fladdermöss
 FACTION_MOB_FROG	Grodor
 FACTION_MOB_GORLICORN	Gorlicorner
 MISC_MOB_NO_GEAR	Djur kan inte bära utrustning
-MISC_MOB_NO_HEALING	Djur kan inte använda läkande föremål
-MISC_MOB_CANT_WORK	Djur kan inte arbeta vid föremål

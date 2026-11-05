@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Continuer
 UILABEL_NEW_GAME	Nouvelle partie
 UILABEL_LOAD_GAME	Charger une partie
 UILABEL_SETTINGS	Paramètres
-UILABEL_LANGUAGE_BUTTON	Langue ({0})
 UILABEL_QUIT	Quitter
 UILABEL_RESUME	Reprendre
 UILABEL_SAVE_GAME	Sauvegarder la partie
@@ -21,7 +20,6 @@ UILABEL_YES	Oui
 UILABEL_NO	Non
 UILABEL_NAME	Nom
 UILABEL_TIME	Heure
-UILABEL_CREATED	Créé
 UILABEL_TYPE	Type
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUEL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Aucune sauvegarde pour l'instant
 UILABEL_UNSAVED_WARNING	La progression non sauvegardée de cette partie sera perdue.
 UILABEL_HOLD_DELETE	Maintenez Supprimer pendant 3 secondes pour confirmer.
 UILABEL_CLICK_SAVE	Cliquez sur une sauvegarde pour la charger
-UILABEL_CLICK_MAP	Cliquez sur une carte pour commencer une nouvelle partie
-UILABEL_NO_MAPS	Aucune carte trouvée. Créez-en une avec worldgen.py.
-UILABEL_BUILT_IN	INTÉGRÉ
 UILABEL_WORLD	MONDE
-UILABEL_MAP_FILE	FICHIER DE CARTE
-UILABEL_BUILT_IN_WHEN	intégré
 UILABEL_UNKNOWN	inconnu
 UILABEL_ON	Activé
 UILABEL_OFF	Désactivé
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Noms des unités du joueur
 UILABEL_NPC_NAMES	Noms des autres unités
 UILABEL_PROP_NAMES	Noms des objets
 UILABEL_PROP_INFO	Afficher les infos des objets
-UILABEL_FONT_SIZE	Taille du texte
 UILABEL_RESET_PANELS	Réinitialiser tous les panneaux
 UILABEL_RESET	Réinitialiser
 UILABEL_FONT	Police
@@ -134,8 +126,6 @@ UILABEL_CARRY	Charge
 UILABEL_NEXT_LEVEL_XP_LINE	XP pour le niveau suivant : {0}
 UILABEL_STAT	Statistique
 UILABEL_LEVEL	Niveau
-UILABEL_TOTAL_XP	XP total
-UILABEL_TO_NEXT	Suivant
 UILABEL_ATTRIBUTES	Attributs
 UILABEL_COMBAT	Combat
 UILABEL_RESOURCE_GATHERING	Récolte
@@ -240,7 +230,6 @@ UILABEL_USE	Utiliser
 UILABEL_MESSAGE	Message
 UILABEL_GAME	Jeu
 UILABEL_FILTER	Filtre
-UILABEL_STAT_HEAD_STAT	Statistique
 UILABEL_UNKNOWN_SLOT	Inconnu
 UILABEL_MONTH_NAME	Mois {0}
 UILABEL_STRENGTH_STAT	Force
@@ -294,14 +283,6 @@ MISC_ORD_9	Neuvième
 MISC_ORD_10	Dixième
 MISC_ORD_11	Onzième
 MISC_ORD_12	Douzième
-MISC_SKY_DAY_ZENITH	Zénith de jour
-MISC_SKY_DAY_HORIZON	Horizon de jour
-MISC_SKY_NIGHT_ZENITH	Zénith de nuit
-MISC_SKY_NIGHT_HORIZON	Horizon de nuit
-MISC_SKY_DUSK_HORIZON	Horizon du crépuscule
-MISC_SKY_DUSK_SUN	Soleil du crépuscule
-MISC_SKY_SUN	Soleil
-MISC_SKY_MOON	Lune
 UILABEL_STAT_DESC_STRENGTH	Dégâts au corps à corps, capacité de charge
 UILABEL_STAT_DESC_DEXTERITY	Vitesse d'attaque
 UILABEL_STAT_DESC_VITALITY	Santé maximale
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Niveau : {0}
 UILABEL_TIP_PROGRESS	Progression : {0}%
 UILABEL_TIP_CURRENT_XP	XP actuel : {0}
 UILABEL_ATTACK_DEFENSE	Attaque {0}      Défense {1}
-UILABEL_STATS_CAPTION	Statistiques : {0}
 UILABEL_MODEL_N	Modèle {0}
 UILABEL_SLOT_N_ITEM	Emplacement {0} : {1}
 UILABEL_SLOT_N_EMPTY	Emplacement {0} : vide
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Équipement optimisé pour {0} unités
 MISC_OPTIMIZE_ALL_SOME_ROOM	Équipement optimisé pour {0} unités ; {1} manquaient de place dans l'inventaire
 GAME_TITLE_FIRST	Survie
 GAME_TITLE_SECOND	Kobold
-UILABEL_EARLY_ACCESS	Accès anticipé
 MISC_TITLE_KEYS	Choisir  //  Entrée Valider
 UILABEL_LANGUAGE_LABEL	Langue :
 PROP_FLAG	Drapeau
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Chauves-souris
 FACTION_MOB_FROG	Grenouilles
 FACTION_MOB_GORLICORN	Gorlicornes
 MISC_MOB_NO_GEAR	Les créatures ne peuvent pas porter d'équipement
-MISC_MOB_NO_HEALING	Les créatures ne peuvent pas utiliser d'objets de soin
-MISC_MOB_CANT_WORK	Les créatures ne peuvent pas travailler sur les objets

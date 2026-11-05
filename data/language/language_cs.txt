@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Pokračovat
 UILABEL_NEW_GAME	Nová hra
 UILABEL_LOAD_GAME	Načíst hru
 UILABEL_SETTINGS	Nastavení
-UILABEL_LANGUAGE_BUTTON	Jazyk ({0})
 UILABEL_QUIT	Ukončit
 UILABEL_RESUME	Pokračovat ve hře
 UILABEL_SAVE_GAME	Uložit hru
@@ -21,7 +20,6 @@ UILABEL_YES	Ano
 UILABEL_NO	Ne
 UILABEL_NAME	Jméno
 UILABEL_TIME	Čas
-UILABEL_CREATED	Vytvořeno
 UILABEL_TYPE	Typ
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	RUČNĚ
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Zatím žádné uložené hry
 UILABEL_UNSAVED_WARNING	Neuložený postup v této hře se ztratí.
 UILABEL_HOLD_DELETE	Podržte Smazat na 3 sekundy pro potvrzení.
 UILABEL_CLICK_SAVE	Kliknutím na uloženou hru ji načtete
-UILABEL_CLICK_MAP	Kliknutím na mapu zahájíte novou hru
-UILABEL_NO_MAPS	Nebyla nalezena žádná mapa. Vytvořte ji pomocí worldgen.py.
-UILABEL_BUILT_IN	VESTAVĚNÝ
 UILABEL_WORLD	SVĚT
-UILABEL_MAP_FILE	SOUBOR MAPY
-UILABEL_BUILT_IN_WHEN	vestavěný
 UILABEL_UNKNOWN	neznámý
 UILABEL_ON	Zap.
 UILABEL_OFF	Vyp.
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Jména hráčových jednotek
 UILABEL_NPC_NAMES	Jména ostatních jednotek
 UILABEL_PROP_NAMES	Názvy objektů
 UILABEL_PROP_INFO	Zobrazit informace o objektech
-UILABEL_FONT_SIZE	Velikost písma
 UILABEL_RESET_PANELS	Obnovit všechny panely rozhraní
 UILABEL_RESET	Obnovit
 UILABEL_FONT	Písmo
@@ -134,8 +126,6 @@ UILABEL_CARRY	Nosnost
 UILABEL_NEXT_LEVEL_XP_LINE	Zkušenosti do dalšího levelu: {0}
 UILABEL_STAT	Vlastnost
 UILABEL_LEVEL	Level
-UILABEL_TOTAL_XP	Celkové zkušenosti
-UILABEL_TO_NEXT	Do dalšího
 UILABEL_ATTRIBUTES	Atributy
 UILABEL_COMBAT	Boj
 UILABEL_RESOURCE_GATHERING	Sběr surovin
@@ -240,7 +230,6 @@ UILABEL_USE	Použít
 UILABEL_MESSAGE	Zpráva
 UILABEL_GAME	Hra
 UILABEL_FILTER	Filtr
-UILABEL_STAT_HEAD_STAT	Vlastnost
 UILABEL_UNKNOWN_SLOT	Neznámý
 UILABEL_MONTH_NAME	{0} měsíc
 UILABEL_STRENGTH_STAT	Síla
@@ -294,14 +283,6 @@ MISC_ORD_9	Devátý
 MISC_ORD_10	Desátý
 MISC_ORD_11	Jedenáctý
 MISC_ORD_12	Dvanáctý
-MISC_SKY_DAY_ZENITH	Denní zenit
-MISC_SKY_DAY_HORIZON	Denní horizont
-MISC_SKY_NIGHT_ZENITH	Noční zenit
-MISC_SKY_NIGHT_HORIZON	Noční horizont
-MISC_SKY_DUSK_HORIZON	Horizont za soumraku
-MISC_SKY_DUSK_SUN	Slunce za soumraku
-MISC_SKY_SUN	Slunce
-MISC_SKY_MOON	Měsíc
 UILABEL_STAT_DESC_STRENGTH	Poškození při boji zblízka, nosnost
 UILABEL_STAT_DESC_DEXTERITY	Rychlost útoku
 UILABEL_STAT_DESC_VITALITY	Maximální zdraví
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Level: {0}
 UILABEL_TIP_PROGRESS	Postup: {0} %
 UILABEL_TIP_CURRENT_XP	Aktuální zkušenosti: {0}
 UILABEL_ATTACK_DEFENSE	Útok {0}      Obrana {1}
-UILABEL_STATS_CAPTION	Vlastnosti: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: prázdný
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Výbava optimalizována u {0} jednotek
 MISC_OPTIMIZE_ALL_SOME_ROOM	Výbava optimalizována u {0} jednotek; {1} neměly místo v inventáři
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Přežití
-UILABEL_EARLY_ACCESS	Předběžný přístup
 MISC_TITLE_KEYS	Výběr  //  Enter Potvrdit
 UILABEL_LANGUAGE_LABEL	Jazyk:
 PROP_FLAG	Vlajka
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Netopýři
 FACTION_MOB_FROG	Žáby
 FACTION_MOB_GORLICORN	Gorlirožci
 MISC_MOB_NO_GEAR	Tvorové nemohou nosit vybavení
-MISC_MOB_NO_HEALING	Tvorové nemohou používat léčivé předměty
-MISC_MOB_CANT_WORK	Tvorové nemohou pracovat u objektů

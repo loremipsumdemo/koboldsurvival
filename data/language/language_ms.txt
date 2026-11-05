@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Teruskan
 UILABEL_NEW_GAME	Permainan Baharu
 UILABEL_LOAD_GAME	Muat Permainan
 UILABEL_SETTINGS	Tetapan
-UILABEL_LANGUAGE_BUTTON	Bahasa ({0})
 UILABEL_QUIT	Keluar
 UILABEL_RESUME	Sambung
 UILABEL_SAVE_GAME	Simpan Permainan
@@ -21,7 +20,6 @@ UILABEL_YES	Ya
 UILABEL_NO	Tidak
 UILABEL_NAME	Nama
 UILABEL_TIME	Masa
-UILABEL_CREATED	Dicipta
 UILABEL_TYPE	Jenis
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUAL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Belum ada simpanan
 UILABEL_UNSAVED_WARNING	Kemajuan yang belum disimpan dalam permainan ini akan hilang.
 UILABEL_HOLD_DELETE	Tahan Padam selama 3 saat untuk mengesahkan.
 UILABEL_CLICK_SAVE	Klik simpanan untuk memuatkannya
-UILABEL_CLICK_MAP	Klik peta untuk memulakan permainan baharu
-UILABEL_NO_MAPS	Tiada peta ditemui. Buat satu dengan worldgen.py.
-UILABEL_BUILT_IN	DIBINA DALAM
 UILABEL_WORLD	DUNIA
-UILABEL_MAP_FILE	FAIL PETA
-UILABEL_BUILT_IN_WHEN	dibina dalam
 UILABEL_UNKNOWN	tidak diketahui
 UILABEL_ON	Hidup
 UILABEL_OFF	Mati
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Nama unit pemain
 UILABEL_NPC_NAMES	Nama unit lain
 UILABEL_PROP_NAMES	Nama objek
 UILABEL_PROP_INFO	Papar maklumat objek
-UILABEL_FONT_SIZE	Saiz fon
 UILABEL_RESET_PANELS	Set semula semua panel UI
 UILABEL_RESET	Set semula
 UILABEL_FONT	Fon
@@ -134,8 +126,6 @@ UILABEL_CARRY	Muatan
 UILABEL_NEXT_LEVEL_XP_LINE	XP aras seterusnya: {0}
 UILABEL_STAT	Statistik
 UILABEL_LEVEL	Aras
-UILABEL_TOTAL_XP	Jumlah XP
-UILABEL_TO_NEXT	Ke seterusnya
 UILABEL_ATTRIBUTES	Atribut
 UILABEL_COMBAT	Pertempuran
 UILABEL_RESOURCE_GATHERING	Pengumpulan Sumber
@@ -240,7 +230,6 @@ UILABEL_USE	Guna
 UILABEL_MESSAGE	Mesej
 UILABEL_GAME	Permainan
 UILABEL_FILTER	Penapis
-UILABEL_STAT_HEAD_STAT	Statistik
 UILABEL_UNKNOWN_SLOT	Tidak diketahui
 UILABEL_MONTH_NAME	Bulan {0}
 UILABEL_STRENGTH_STAT	Kekuatan
@@ -294,14 +283,6 @@ MISC_ORD_9	Kesembilan
 MISC_ORD_10	Kesepuluh
 MISC_ORD_11	Kesebelas
 MISC_ORD_12	Kedua belas
-MISC_SKY_DAY_ZENITH	Zenit siang
-MISC_SKY_DAY_HORIZON	Ufuk siang
-MISC_SKY_NIGHT_ZENITH	Zenit malam
-MISC_SKY_NIGHT_HORIZON	Ufuk malam
-MISC_SKY_DUSK_HORIZON	Ufuk senja
-MISC_SKY_DUSK_SUN	Matahari senja
-MISC_SKY_SUN	Matahari
-MISC_SKY_MOON	Bulan
 UILABEL_STAT_DESC_STRENGTH	Kerosakan jarak dekat, kapasiti muatan
 UILABEL_STAT_DESC_DEXTERITY	Kelajuan serangan
 UILABEL_STAT_DESC_VITALITY	Kesihatan maksimum
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Aras: {0}
 UILABEL_TIP_PROGRESS	Kemajuan: {0}%
 UILABEL_TIP_CURRENT_XP	XP semasa: {0}
 UILABEL_ATTACK_DEFENSE	Serangan {0}      Pertahanan {1}
-UILABEL_STATS_CAPTION	Statistik: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: kosong
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Kelengkapan {0} unit dioptimumkan
 MISC_OPTIMIZE_ALL_SOME_ROOM	Kelengkapan {0} unit dioptimumkan; {1} tiada ruang inventori
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Kelangsungan Hidup
-UILABEL_EARLY_ACCESS	Akses Awal
 MISC_TITLE_KEYS	Pilih  //  Enter Sahkan
 UILABEL_LANGUAGE_LABEL	Bahasa:
 PROP_FLAG	Bendera
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Kawanan Kelawar
 FACTION_MOB_FROG	Kawanan Katak
 FACTION_MOB_GORLICORN	Kawanan Gorlikorn
 MISC_MOB_NO_GEAR	Makhluk tidak boleh memakai kelengkapan
-MISC_MOB_NO_HEALING	Makhluk tidak boleh menggunakan barang penyembuh
-MISC_MOB_CANT_WORK	Makhluk tidak boleh bekerja di objek

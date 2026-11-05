@@ -6,7 +6,6 @@ UILABEL_CONTINUE	ดำเนินต่อ
 UILABEL_NEW_GAME	เริ่มเกมใหม่
 UILABEL_LOAD_GAME	โหลดเกม
 UILABEL_SETTINGS	การตั้งค่า
-UILABEL_LANGUAGE_BUTTON	ภาษา ({0})
 UILABEL_QUIT	ออก
 UILABEL_RESUME	กลับสู่เกม
 UILABEL_SAVE_GAME	บันทึกเกม
@@ -21,7 +20,6 @@ UILABEL_YES	ใช่
 UILABEL_NO	ไม่
 UILABEL_NAME	ชื่อ
 UILABEL_TIME	เวลา
-UILABEL_CREATED	สร้างเมื่อ
 UILABEL_TYPE	ประเภท
 UILABEL_AUTO	อัตโนมัติ
 UILABEL_MANUAL	ด้วยตนเอง
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	ยังไม่มีการบันทึก
 UILABEL_UNSAVED_WARNING	ความคืบหน้าที่ยังไม่ได้บันทึกในเกมนี้จะหายไป
 UILABEL_HOLD_DELETE	กดค้างปุ่มลบไว้ 3 วินาทีเพื่อยืนยัน
 UILABEL_CLICK_SAVE	คลิกการบันทึกเพื่อโหลด
-UILABEL_CLICK_MAP	คลิกแผนที่เพื่อเริ่มเกมใหม่
-UILABEL_NO_MAPS	ไม่พบแผนที่ สร้างได้ด้วย worldgen.py
-UILABEL_BUILT_IN	ในตัว
 UILABEL_WORLD	โลก
-UILABEL_MAP_FILE	ไฟล์แผนที่
-UILABEL_BUILT_IN_WHEN	ในตัว
 UILABEL_UNKNOWN	ไม่ทราบ
 UILABEL_ON	เปิด
 UILABEL_OFF	ปิด
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	ชื่อยูนิตของผู้เล่น
 UILABEL_NPC_NAMES	ชื่อยูนิตอื่น
 UILABEL_PROP_NAMES	ชื่อวัตถุ
 UILABEL_PROP_INFO	แสดงข้อมูลวัตถุ
-UILABEL_FONT_SIZE	ขนาดตัวอักษร
 UILABEL_RESET_PANELS	รีเซ็ตแผงอินเทอร์เฟซทั้งหมด
 UILABEL_RESET	รีเซ็ต
 UILABEL_FONT	ฟอนต์
@@ -134,8 +126,6 @@ UILABEL_CARRY	น้ำหนักที่แบกได้
 UILABEL_NEXT_LEVEL_XP_LINE	EXP ถึงเลเวลถัดไป: {0}
 UILABEL_STAT	ค่าสถานะ
 UILABEL_LEVEL	เลเวล
-UILABEL_TOTAL_XP	EXP รวม
-UILABEL_TO_NEXT	ถึงเลเวลถัดไป
 UILABEL_ATTRIBUTES	คุณลักษณะ
 UILABEL_COMBAT	การต่อสู้
 UILABEL_RESOURCE_GATHERING	การเก็บทรัพยากร
@@ -240,7 +230,6 @@ UILABEL_USE	ใช้
 UILABEL_MESSAGE	ข้อความ
 UILABEL_GAME	เกม
 UILABEL_FILTER	ตัวกรอง
-UILABEL_STAT_HEAD_STAT	ค่าสถานะ
 UILABEL_UNKNOWN_SLOT	ไม่ทราบ
 UILABEL_MONTH_NAME	เดือน {0}
 UILABEL_STRENGTH_STAT	พลัง
@@ -294,14 +283,6 @@ MISC_ORD_9	ที่เก้า
 MISC_ORD_10	ที่สิบ
 MISC_ORD_11	ที่สิบเอ็ด
 MISC_ORD_12	ที่สิบสอง
-MISC_SKY_DAY_ZENITH	จุดสูงสุดกลางวัน
-MISC_SKY_DAY_HORIZON	ขอบฟ้ากลางวัน
-MISC_SKY_NIGHT_ZENITH	จุดสูงสุดกลางคืน
-MISC_SKY_NIGHT_HORIZON	ขอบฟ้ากลางคืน
-MISC_SKY_DUSK_HORIZON	ขอบฟ้ายามพลบค่ำ
-MISC_SKY_DUSK_SUN	ดวงอาทิตย์ยามพลบค่ำ
-MISC_SKY_SUN	ดวงอาทิตย์
-MISC_SKY_MOON	ดวงจันทร์
 UILABEL_STAT_DESC_STRENGTH	ความเสียหายระยะประชิด น้ำหนักที่แบกได้
 UILABEL_STAT_DESC_DEXTERITY	ความเร็วในการโจมตี
 UILABEL_STAT_DESC_VITALITY	พลังชีวิตสูงสุด
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	เลเวล: {0}
 UILABEL_TIP_PROGRESS	ความคืบหน้า: {0}%
 UILABEL_TIP_CURRENT_XP	EXP ปัจจุบัน: {0}
 UILABEL_ATTACK_DEFENSE	โจมตี {0}      ป้องกัน {1}
-UILABEL_STATS_CAPTION	ค่าสถานะ: {0}
 UILABEL_MODEL_N	โมเดล {0}
 UILABEL_SLOT_N_ITEM	ช่อง {0}: {1}
 UILABEL_SLOT_N_EMPTY	ช่อง {0}: ว่าง
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	ปรับอุปกรณ์ของ {0} หน่�
 MISC_OPTIMIZE_ALL_SOME_ROOM	ปรับอุปกรณ์ของ {0} หน่วยแล้ว; {1} หน่วยช่องเก็บของไม่พอ
 GAME_TITLE_FIRST	โคโบลด์
 GAME_TITLE_SECOND	เอาชีวิตรอด
-UILABEL_EARLY_ACCESS	เข้าถึงก่อนใคร
 MISC_TITLE_KEYS	เลือก  //  Enter ยืนยัน
 UILABEL_LANGUAGE_LABEL	ภาษา:
 PROP_FLAG	ธง
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	ฝูงค้างคาว
 FACTION_MOB_FROG	ฝูงกบ
 FACTION_MOB_GORLICORN	ฝูงกอร์ลิคอร์น
 MISC_MOB_NO_GEAR	สัตว์สวมอุปกรณ์ไม่ได้
-MISC_MOB_NO_HEALING	สัตว์ใช้ไอเทมรักษาไม่ได้
-MISC_MOB_CANT_WORK	สัตว์ทำงานกับวัตถุไม่ได้

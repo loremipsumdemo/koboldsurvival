@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Folytatás
 UILABEL_NEW_GAME	Új játék
 UILABEL_LOAD_GAME	Játék betöltése
 UILABEL_SETTINGS	Beállítások
-UILABEL_LANGUAGE_BUTTON	Nyelv ({0})
 UILABEL_QUIT	Kilépés
 UILABEL_RESUME	Folytatás
 UILABEL_SAVE_GAME	Játék mentése
@@ -21,7 +20,6 @@ UILABEL_YES	Igen
 UILABEL_NO	Nem
 UILABEL_NAME	Név
 UILABEL_TIME	Idő
-UILABEL_CREATED	Létrehozva
 UILABEL_TYPE	Típus
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	KÉZI
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Még nincs mentés
 UILABEL_UNSAVED_WARNING	A játék nem mentett haladása elvész.
 UILABEL_HOLD_DELETE	A megerősítéshez tartsd nyomva a Törlés gombot 3 másodpercig.
 UILABEL_CLICK_SAVE	Kattints egy mentésre a betöltéséhez
-UILABEL_CLICK_MAP	Kattints egy térképre új játék indításához
-UILABEL_NO_MAPS	Nem található térkép. Készíts egyet a worldgen.py-val.
-UILABEL_BUILT_IN	BEÉPÍTETT
 UILABEL_WORLD	VILÁG
-UILABEL_MAP_FILE	TÉRKÉPFÁJL
-UILABEL_BUILT_IN_WHEN	beépített
 UILABEL_UNKNOWN	ismeretlen
 UILABEL_ON	Be
 UILABEL_OFF	Ki
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Saját egységek neve
 UILABEL_NPC_NAMES	Más egységek neve
 UILABEL_PROP_NAMES	Tárgyak neve
 UILABEL_PROP_INFO	Tárgyinfó megjelenítése
-UILABEL_FONT_SIZE	Betűméret
 UILABEL_RESET_PANELS	Minden panel visszaállítása
 UILABEL_RESET	Visszaállítás
 UILABEL_FONT	Betűtípus
@@ -134,8 +126,6 @@ UILABEL_CARRY	Teherbírás
 UILABEL_NEXT_LEVEL_XP_LINE	Következő szint tapasztalata: {0}
 UILABEL_STAT	Statisztika
 UILABEL_LEVEL	Szint
-UILABEL_TOTAL_XP	Összes tapasztalat
-UILABEL_TO_NEXT	A következőig
 UILABEL_ATTRIBUTES	Tulajdonságok
 UILABEL_COMBAT	Harc
 UILABEL_RESOURCE_GATHERING	Erőforrás-gyűjtés
@@ -240,7 +230,6 @@ UILABEL_USE	Használat
 UILABEL_MESSAGE	Üzenet
 UILABEL_GAME	Játék
 UILABEL_FILTER	Szűrő
-UILABEL_STAT_HEAD_STAT	Statisztika
 UILABEL_UNKNOWN_SLOT	Ismeretlen
 UILABEL_MONTH_NAME	{0} hónap
 UILABEL_STRENGTH_STAT	Erő
@@ -294,14 +283,6 @@ MISC_ORD_9	Kilencedik
 MISC_ORD_10	Tizedik
 MISC_ORD_11	Tizenegyedik
 MISC_ORD_12	Tizenkettedik
-MISC_SKY_DAY_ZENITH	Nappali zenit
-MISC_SKY_DAY_HORIZON	Nappali horizont
-MISC_SKY_NIGHT_ZENITH	Éjszakai zenit
-MISC_SKY_NIGHT_HORIZON	Éjszakai horizont
-MISC_SKY_DUSK_HORIZON	Alkonyati horizont
-MISC_SKY_DUSK_SUN	Alkonyati nap
-MISC_SKY_SUN	Nap
-MISC_SKY_MOON	Hold
 UILABEL_STAT_DESC_STRENGTH	Közelharci sebzés, teherbírás
 UILABEL_STAT_DESC_DEXTERITY	Támadási sebesség
 UILABEL_STAT_DESC_VITALITY	Maximális életerő
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Szint: {0}
 UILABEL_TIP_PROGRESS	Haladás: {0}%
 UILABEL_TIP_CURRENT_XP	Jelenlegi tapasztalat: {0}
 UILABEL_ATTACK_DEFENSE	Támadás {0}      Védelem {1}
-UILABEL_STATS_CAPTION	Statisztikák: {0}
 UILABEL_MODEL_N	{0}. modell
 UILABEL_SLOT_N_ITEM	Hely {0}: {1}
 UILABEL_SLOT_N_EMPTY	Hely {0}: üres
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	{0} egység felszerelése optimalizálva
 MISC_OPTIMIZE_ALL_SOME_ROOM	{0} egység felszerelése optimalizálva; {1} egységnek nem volt helye
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Túlélés
-UILABEL_EARLY_ACCESS	Korai hozzáférés
 MISC_TITLE_KEYS	Kiválasztás  //  Enter Megerősítés
 UILABEL_LANGUAGE_LABEL	Nyelv:
 PROP_FLAG	Zászló
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Denevérek
 FACTION_MOB_FROG	Békák
 FACTION_MOB_GORLICORN	Gorlikornisok
 MISC_MOB_NO_GEAR	A lények nem viselhetnek felszerelést
-MISC_MOB_NO_HEALING	A lények nem használhatnak gyógyító tárgyakat
-MISC_MOB_CANT_WORK	A lények nem dolgozhatnak tárgyaknál

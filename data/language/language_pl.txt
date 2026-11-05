@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Kontynuuj
 UILABEL_NEW_GAME	Nowa gra
 UILABEL_LOAD_GAME	Wczytaj grę
 UILABEL_SETTINGS	Ustawienia
-UILABEL_LANGUAGE_BUTTON	Język ({0})
 UILABEL_QUIT	Wyjdź
 UILABEL_RESUME	Wznów
 UILABEL_SAVE_GAME	Zapisz grę
@@ -21,7 +20,6 @@ UILABEL_YES	Tak
 UILABEL_NO	Nie
 UILABEL_NAME	Nazwa
 UILABEL_TIME	Czas
-UILABEL_CREATED	Utworzono
 UILABEL_TYPE	Typ
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	RĘCZNY
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Brak zapisów
 UILABEL_UNSAVED_WARNING	Niezapisane postępy w tej grze zostaną utracone.
 UILABEL_HOLD_DELETE	Przytrzymaj Usuń przez 3 sekundy, aby potwierdzić.
 UILABEL_CLICK_SAVE	Kliknij zapis, aby go wczytać
-UILABEL_CLICK_MAP	Kliknij mapę, aby rozpocząć nową grę
-UILABEL_NO_MAPS	Nie znaleziono map. Utwórz jedną za pomocą worldgen.py.
-UILABEL_BUILT_IN	WBUDOWANA
 UILABEL_WORLD	ŚWIAT
-UILABEL_MAP_FILE	PLIK MAPY
-UILABEL_BUILT_IN_WHEN	wbudowana
 UILABEL_UNKNOWN	nieznany
 UILABEL_ON	Wł.
 UILABEL_OFF	Wył.
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Nazwy jednostek gracza
 UILABEL_NPC_NAMES	Nazwy innych jednostek
 UILABEL_PROP_NAMES	Nazwy obiektów
 UILABEL_PROP_INFO	Pokaż informacje o obiektach
-UILABEL_FONT_SIZE	Rozmiar czcionki
 UILABEL_RESET_PANELS	Zresetuj wszystkie panele interfejsu
 UILABEL_RESET	Resetuj
 UILABEL_FONT	Czcionka
@@ -134,8 +126,6 @@ UILABEL_CARRY	Udźwig
 UILABEL_NEXT_LEVEL_XP_LINE	Doświadczenie do następnego poziomu: {0}
 UILABEL_STAT	Statystyka
 UILABEL_LEVEL	Poziom
-UILABEL_TOTAL_XP	Łączne doświadczenie
-UILABEL_TO_NEXT	Do następnego
 UILABEL_ATTRIBUTES	Atrybuty
 UILABEL_COMBAT	Walka
 UILABEL_RESOURCE_GATHERING	Zbieractwo
@@ -240,7 +230,6 @@ UILABEL_USE	Użycie
 UILABEL_MESSAGE	Wiadomość
 UILABEL_GAME	Gra
 UILABEL_FILTER	Filtr
-UILABEL_STAT_HEAD_STAT	Statystyka
 UILABEL_UNKNOWN_SLOT	Nieznany
 UILABEL_MONTH_NAME	Miesiąc {0}
 UILABEL_STRENGTH_STAT	Siła
@@ -294,14 +283,6 @@ MISC_ORD_9	Dziewiąty
 MISC_ORD_10	Dziesiąty
 MISC_ORD_11	Jedenasty
 MISC_ORD_12	Dwunasty
-MISC_SKY_DAY_ZENITH	Zenit dnia
-MISC_SKY_DAY_HORIZON	Horyzont dnia
-MISC_SKY_NIGHT_ZENITH	Zenit nocy
-MISC_SKY_NIGHT_HORIZON	Horyzont nocy
-MISC_SKY_DUSK_HORIZON	Horyzont zmierzchu
-MISC_SKY_DUSK_SUN	Słońce o zmierzchu
-MISC_SKY_SUN	Słońce
-MISC_SKY_MOON	Księżyc
 UILABEL_STAT_DESC_STRENGTH	Obrażenia wręcz, udźwig
 UILABEL_STAT_DESC_DEXTERITY	Szybkość ataku
 UILABEL_STAT_DESC_VITALITY	Maks. zdrowie
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Poziom: {0}
 UILABEL_TIP_PROGRESS	Postęp: {0}%
 UILABEL_TIP_CURRENT_XP	Obecne doświadczenie: {0}
 UILABEL_ATTACK_DEFENSE	Atak {0}      Obrona {1}
-UILABEL_STATS_CAPTION	Statystyki: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Miejsce {0}: {1}
 UILABEL_SLOT_N_EMPTY	Miejsce {0}: puste
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Zoptymalizowano ekwipunek {0} jednostek
 MISC_OPTIMIZE_ALL_SOME_ROOM	Zoptymalizowano ekwipunek {0} jednostek; {1} nie miało miejsca w ekwipunku
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Przetrwanie
-UILABEL_EARLY_ACCESS	Wczesny dostęp
 MISC_TITLE_KEYS	Wybór  //  Enter Potwierdź
 UILABEL_LANGUAGE_LABEL	Język:
 PROP_FLAG	Flaga
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Nietoperze
 FACTION_MOB_FROG	Żaby
 FACTION_MOB_GORLICORN	Gorlirożce
 MISC_MOB_NO_GEAR	Stworzenia nie mogą nosić sprzętu
-MISC_MOB_NO_HEALING	Stworzenia nie mogą używać przedmiotów leczniczych
-MISC_MOB_CANT_WORK	Stworzenia nie mogą pracować przy obiektach

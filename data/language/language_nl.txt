@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Doorgaan
 UILABEL_NEW_GAME	Nieuw spel
 UILABEL_LOAD_GAME	Spel laden
 UILABEL_SETTINGS	Instellingen
-UILABEL_LANGUAGE_BUTTON	Taal ({0})
 UILABEL_QUIT	Afsluiten
 UILABEL_RESUME	Hervatten
 UILABEL_SAVE_GAME	Spel opslaan
@@ -21,7 +20,6 @@ UILABEL_YES	Ja
 UILABEL_NO	Nee
 UILABEL_NAME	Naam
 UILABEL_TIME	Tijd
-UILABEL_CREATED	Aangemaakt
 UILABEL_TYPE	Type
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	HANDMATIG
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Nog geen opslagen
 UILABEL_UNSAVED_WARNING	Niet-opgeslagen voortgang in dit spel gaat verloren.
 UILABEL_HOLD_DELETE	Houd Verwijderen 3 seconden ingedrukt om te bevestigen.
 UILABEL_CLICK_SAVE	Klik op een opslag om die te laden
-UILABEL_CLICK_MAP	Klik op een kaart om een nieuw spel te starten
-UILABEL_NO_MAPS	Geen kaarten gevonden. Maak er een met worldgen.py.
-UILABEL_BUILT_IN	INGEBOUWD
 UILABEL_WORLD	WERELD
-UILABEL_MAP_FILE	KAARTBESTAND
-UILABEL_BUILT_IN_WHEN	ingebouwd
 UILABEL_UNKNOWN	onbekend
 UILABEL_ON	Aan
 UILABEL_OFF	Uit
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Namen van eigen eenheden
 UILABEL_NPC_NAMES	Namen van andere eenheden
 UILABEL_PROP_NAMES	Namen van objecten
 UILABEL_PROP_INFO	Objectinfo tonen
-UILABEL_FONT_SIZE	Lettergrootte
 UILABEL_RESET_PANELS	Alle UI-panelen resetten
 UILABEL_RESET	Resetten
 UILABEL_FONT	Lettertype
@@ -134,8 +126,6 @@ UILABEL_CARRY	Draagvermogen
 UILABEL_NEXT_LEVEL_XP_LINE	Volgend niveau XP: {0}
 UILABEL_STAT	Statistiek
 UILABEL_LEVEL	Niveau
-UILABEL_TOTAL_XP	Totaal XP
-UILABEL_TO_NEXT	Tot volgende
 UILABEL_ATTRIBUTES	Eigenschappen
 UILABEL_COMBAT	Gevecht
 UILABEL_RESOURCE_GATHERING	Grondstoffen verzamelen
@@ -240,7 +230,6 @@ UILABEL_USE	Gebruiken
 UILABEL_MESSAGE	Bericht
 UILABEL_GAME	Spel
 UILABEL_FILTER	Filter
-UILABEL_STAT_HEAD_STAT	Statistiek
 UILABEL_UNKNOWN_SLOT	Onbekend
 UILABEL_MONTH_NAME	Maand {0}
 UILABEL_STRENGTH_STAT	Kracht
@@ -294,14 +283,6 @@ MISC_ORD_9	Negende
 MISC_ORD_10	Tiende
 MISC_ORD_11	Elfde
 MISC_ORD_12	Twaalfde
-MISC_SKY_DAY_ZENITH	Dagzenit
-MISC_SKY_DAY_HORIZON	Daghorizon
-MISC_SKY_NIGHT_ZENITH	Nachtzenit
-MISC_SKY_NIGHT_HORIZON	Nachthorizon
-MISC_SKY_DUSK_HORIZON	Schemerhorizon
-MISC_SKY_DUSK_SUN	Schemerzon
-MISC_SKY_SUN	Zon
-MISC_SKY_MOON	Maan
 UILABEL_STAT_DESC_STRENGTH	Schade van nabijgevecht, draagvermogen
 UILABEL_STAT_DESC_DEXTERITY	Aanvalssnelheid
 UILABEL_STAT_DESC_VITALITY	Maximale gezondheid
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Niveau: {0}
 UILABEL_TIP_PROGRESS	Voortgang: {0}%
 UILABEL_TIP_CURRENT_XP	Huidige XP: {0}
 UILABEL_ATTACK_DEFENSE	Aanval {0}      Verdediging {1}
-UILABEL_STATS_CAPTION	Statistieken: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Plek {0}: {1}
 UILABEL_SLOT_N_EMPTY	Plek {0}: leeg
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Uitrusting van {0} eenheden geoptimaliseerd
 MISC_OPTIMIZE_ALL_SOME_ROOM	Uitrusting van {0} eenheden geoptimaliseerd; {1} hadden geen ruimte in de inventaris
 GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Overleven
-UILABEL_EARLY_ACCESS	Early Access
 MISC_TITLE_KEYS	Kiezen  //  Enter Bevestigen
 UILABEL_LANGUAGE_LABEL	Taal:
 PROP_FLAG	Vlag
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Vleermuizen
 FACTION_MOB_FROG	Kikkers
 FACTION_MOB_GORLICORN	Gorlicorns
 MISC_MOB_NO_GEAR	Dieren kunnen geen uitrusting dragen
-MISC_MOB_NO_HEALING	Dieren kunnen geen genezende voorwerpen gebruiken
-MISC_MOB_CANT_WORK	Dieren kunnen niet aan objecten werken

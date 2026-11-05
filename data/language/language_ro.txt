@@ -6,7 +6,6 @@ UILABEL_CONTINUE	Continuă
 UILABEL_NEW_GAME	Joc nou
 UILABEL_LOAD_GAME	Încarcă jocul
 UILABEL_SETTINGS	Setări
-UILABEL_LANGUAGE_BUTTON	Limbă ({0})
 UILABEL_QUIT	Ieșire
 UILABEL_RESUME	Reia
 UILABEL_SAVE_GAME	Salvează jocul
@@ -21,7 +20,6 @@ UILABEL_YES	Da
 UILABEL_NO	Nu
 UILABEL_NAME	Nume
 UILABEL_TIME	Timp
-UILABEL_CREATED	Creat
 UILABEL_TYPE	Tip
 UILABEL_AUTO	AUTO
 UILABEL_MANUAL	MANUAL
@@ -29,12 +27,7 @@ UILABEL_NO_SAVES	Nicio salvare încă
 UILABEL_UNSAVED_WARNING	Progresul nesalvat din acest joc se va pierde.
 UILABEL_HOLD_DELETE	Ține apăsat Șterge timp de 3 secunde pentru a confirma.
 UILABEL_CLICK_SAVE	Fă clic pe o salvare pentru a o încărca
-UILABEL_CLICK_MAP	Fă clic pe o hartă pentru a începe un joc nou
-UILABEL_NO_MAPS	Nu s-au găsit hărți. Creează una cu worldgen.py.
-UILABEL_BUILT_IN	INCLUSĂ
 UILABEL_WORLD	LUME
-UILABEL_MAP_FILE	FIȘIER HARTĂ
-UILABEL_BUILT_IN_WHEN	inclusă
 UILABEL_UNKNOWN	necunoscut
 UILABEL_ON	Pornit
 UILABEL_OFF	Oprit
@@ -66,7 +59,6 @@ UILABEL_UNIT_NAMES	Numele unităților jucătorului
 UILABEL_NPC_NAMES	Numele altor unități
 UILABEL_PROP_NAMES	Numele obiectelor
 UILABEL_PROP_INFO	Afișează informații despre obiecte
-UILABEL_FONT_SIZE	Dimensiune font
 UILABEL_RESET_PANELS	Resetează toate panourile UI
 UILABEL_RESET	Resetează
 UILABEL_FONT	Font
@@ -134,8 +126,6 @@ UILABEL_CARRY	Capacitate de transport
 UILABEL_NEXT_LEVEL_XP_LINE	XP până la nivelul următor: {0}
 UILABEL_STAT	Statistică
 UILABEL_LEVEL	Nivel
-UILABEL_TOTAL_XP	XP total
-UILABEL_TO_NEXT	Până la următorul
 UILABEL_ATTRIBUTES	Atribute
 UILABEL_COMBAT	Luptă
 UILABEL_RESOURCE_GATHERING	Culegere de resurse
@@ -240,7 +230,6 @@ UILABEL_USE	Folosește
 UILABEL_MESSAGE	Mesaj
 UILABEL_GAME	Joc
 UILABEL_FILTER	Filtru
-UILABEL_STAT_HEAD_STAT	Statistică
 UILABEL_UNKNOWN_SLOT	Necunoscut
 UILABEL_MONTH_NAME	Luna {0}
 UILABEL_STRENGTH_STAT	Forță
@@ -294,14 +283,6 @@ MISC_ORD_9	Al nouălea
 MISC_ORD_10	Al zecelea
 MISC_ORD_11	Al unsprezecelea
 MISC_ORD_12	Al doisprezecelea
-MISC_SKY_DAY_ZENITH	Zenit de zi
-MISC_SKY_DAY_HORIZON	Orizont de zi
-MISC_SKY_NIGHT_ZENITH	Zenit de noapte
-MISC_SKY_NIGHT_HORIZON	Orizont de noapte
-MISC_SKY_DUSK_HORIZON	Orizont de amurg
-MISC_SKY_DUSK_SUN	Soare de amurg
-MISC_SKY_SUN	Soare
-MISC_SKY_MOON	Lună
 UILABEL_STAT_DESC_STRENGTH	Daune corp la corp, capacitate de transport
 UILABEL_STAT_DESC_DEXTERITY	Viteza atacului
 UILABEL_STAT_DESC_VITALITY	Sănătate maximă
@@ -400,7 +381,6 @@ UILABEL_TIP_LEVEL	Nivel: {0}
 UILABEL_TIP_PROGRESS	Progres: {0}%
 UILABEL_TIP_CURRENT_XP	XP curent: {0}
 UILABEL_ATTACK_DEFENSE	Atac {0}      Apărare {1}
-UILABEL_STATS_CAPTION	Statistici: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Loc {0}: {1}
 UILABEL_SLOT_N_EMPTY	Loc {0}: gol
@@ -943,7 +923,6 @@ MISC_OPTIMIZE_ALL_DONE	Echipament optimizat pentru {0} unități
 MISC_OPTIMIZE_ALL_SOME_ROOM	Echipament optimizat pentru {0} unități; {1} nu au avut loc în inventar
 GAME_TITLE_FIRST	Supraviețuire
 GAME_TITLE_SECOND	Kobold
-UILABEL_EARLY_ACCESS	Acces timpuriu
 MISC_TITLE_KEYS	Alege  //  Enter Confirmă
 UILABEL_LANGUAGE_LABEL	Limbă:
 PROP_FLAG	Steag
@@ -1027,5 +1006,3 @@ FACTION_MOB_BAT	Lilieci
 FACTION_MOB_FROG	Broaște
 FACTION_MOB_GORLICORN	Gorlicorni
 MISC_MOB_NO_GEAR	Creaturile nu pot purta echipament
-MISC_MOB_NO_HEALING	Creaturile nu pot folosi obiecte de vindecare
-MISC_MOB_CANT_WORK	Creaturile nu pot lucra la obiecte
