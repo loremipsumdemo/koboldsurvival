@@ -654,6 +654,13 @@ private:
     // or below 0 when it is not in one. It counts only while the unit is still on the bed's spot and not carried, so a
     // unit that somehow left the bed with its Occupying still on is drawn standing, never stuck tilted or raised.
     float bedLift(World& w, Entity u) const;
+    // How a unit, an NPC or a mob is laid out this frame, the one answer drawing, the mouse and the labels all use
+    struct UnitPose {
+        bool lying = false;     // out cold, playing dead, carried or in a bed: all lie the same way
+        bool carried = false;
+        float lift = 0.0f;      // how far its feet, or lying its side, are above its Transform
+    };
+    UnitPose unitPose(World& w, Entity e) const;
 
     // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);

@@ -258,31 +258,22 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         // A unit is at most a few tiles tall, lying or carried over another's shoulders: a generous ball holds it
         const float tall = std::max(1.0f, unitHeight(w, e));
         if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;
-        // A unit with a model is drawn by it, turned the way it walks; a mob, or a unit whose model is missing, by its sprite
+        // Everyone lies the same way, whatever laid it down (unitPose): half gray out cold, all gray as a corpse. A unit
+        // with a model is drawn by it, turned the way it walks; one whose model is missing, by its sprite.
+        const UnitPose pose = unitPose(w, e);
+        if (pose.lying) setSaturation(unitSaturation(w, e));
         if (const Model* m = unitModel(w, e)) {
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            const bool lying = w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e) || bedLift(w, e) >= 0.0f;
-            if (lying) setSaturation(unitSaturation(w, e));
             const RGBA tint = unitFactionTint(w, e);
             glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
             drawUnitModel(*m, unitWorldMatrix(w, e, *m, yaw));
             glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
-            if (lying) setSaturation(1.0f);
-            continue;
+        } else if (pose.lying) {
+            drawLyingGlyph(unitGlyph(w, e), tr->x, tr->y + pose.lift, tr->z, unitHeight(w, e), WHITE, pose.carried ? 0.15f : 0.0f);
+        } else {
+            drawGlyph(unitGlyph(w, e), tr->x, tr->y + pose.lift, tr->z, unitHeight(w, e), WHITE);
         }
-        const TextTex& g = unitGlyph(w, e);
-        const RGBA tint = WHITE;   // every unit in its own colours: a hostile one is not tinted
-        const float bed = bedLift(w, e);
-        if (w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e) || bed >= 0.0f) {
-            setSaturation(unitSaturation(w, e));
-            const bool carried = w.has<Carried>(e);
-            const float lift = carried ? CARRIED_LIFT : std::max(0.0f, bed);
-            drawLyingGlyph(g, tr->x, tr->y + lift, tr->z, unitHeight(w, e), tint,
-                           carried ? 0.15f : 0.0f);
-            setSaturation(1.0f);
-            continue;
-        }
-        drawGlyph(g, tr->x, tr->y + unitHover(w, e), tr->z, unitHeight(w, e), tint);
+        if (pose.lying) setSaturation(1.0f);
     }
 
     drawGroundItems(w, t, cam);

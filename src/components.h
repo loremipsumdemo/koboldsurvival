@@ -334,7 +334,7 @@ struct Carried {
 };
 // A unit that is awake but carried by a hostile lies still, playing dead, until it is given an order: then it breaks
 // free (it is put down where its carrier is) and does it. Never at the same time as Unconscious, and never with its
-// own squad carrying it. A unit that wakes from a rested knock-out with hostile units near plays dead on the ground the
+// own squad carrying it. One of yours (canPlayDead) that wakes from a knock-out with hostile units near plays dead on the ground the
 // same way, until it is given an order or they have gone (playDeadSystem). Nobody attacks a unit playing dead.
 struct PlayingDead {};
 // An Unconscious unit whose Dying reached 100: it never recovers. It keeps its Unconscious, with Dying 100, so it can

@@ -8,23 +8,20 @@ namespace {
 constexpr float FACTION_TINT = 0.85f;    // how far a unit model's colors are pulled toward its faction's color
 
 // Where a unit model stands: scaled to GLYPH_H tall, turned by yaw about the vertical axis (0 faces +z), with the centre
-// of its bottom on (x, y, z). Lying, it is first tipped onto its side so its head points along its facing's right, and
-// it rests on y.
+// of its bottom on (x, y, z). Lying, it is first tipped onto its side, the same way for everyone and whatever laid it
+// down, and it rests on y.
 // The unit models face their own +x, so they are turned a quarter turn more to face +z at yaw 0
 constexpr float UNIT_MODEL_FRONT_YAW = -1.5707963f;
 
-Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, bool flip = false,
-                            float height = GLYPH_H) {
+Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, float height) {
     const float k = height / (m.maxY - m.minY);
     yaw += UNIT_MODEL_FRONT_YAW;
     const float cs = std::cos(yaw), sn = std::sin(yaw);
-    // R row by row: the turn by yaw, after the tip onto its side when lying: (x, y, z) -> (y, -x, z), its head along
-    // its +x, or flipped (x, y, z) -> (-y, x, z), its head the other way and its other side up
-    const float f = flip ? -1.0f : 1.0f;
+    // R row by row: the turn by yaw, after the tip onto its side when lying: (x, y, z) -> (-y, x, z)
     const float R[3][3] = {
-        { lying ? 0.0f : cs, lying ? f * cs : 0.0f, sn },
-        { lying ? -f : 0.0f, lying ? 0.0f : 1.0f, 0.0f },
-        { lying ? 0.0f : -sn, lying ? -f * sn : 0.0f, cs }
+        { lying ? 0.0f : cs, lying ? -cs : 0.0f, sn },
+        { lying ? 1.0f : 0.0f, lying ? 0.0f : 1.0f, 0.0f },
+        { lying ? 0.0f : -sn, lying ? sn : 0.0f, cs }
     };
     // The model point put on the world point: the centre of its bottom standing, its middle lying
     const float c[3] = { (m.minX + m.maxX) * 0.5f, lying ? (m.minY + m.maxY) * 0.5f : m.minY, (m.minZ + m.maxZ) * 0.5f };
@@ -56,11 +53,19 @@ float missingPropSide(PropKind) {
 // How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
 // its carrier's shoulders if it is carried
 float Renderer::unitTop(World& w, Entity u) {
-    const float h = unitHeight(w, u);
-    if (w.has<Carried>(u)) return h * unitAspect(w, u) + (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT);
-    if (const float bed = bedLift(w, u); bed >= 0.0f) return h * unitAspect(w, u) + bed;
-    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u)) return h * unitAspect(w, u);
-    return h + unitHover(w, u);
+    const UnitPose pose = unitPose(w, u);
+    return unitHeight(w, u) * (pose.lying ? unitAspect(w, u) : 1.0f) + pose.lift;
+}
+
+Renderer::UnitPose Renderer::unitPose(World& w, Entity e) const {
+    UnitPose p;
+    const float bed = bedLift(w, e);
+    p.carried = w.has<Carried>(e);
+    p.lying = p.carried || bed >= 0.0f || w.has<Unconscious>(e) || w.has<PlayingDead>(e);
+    if (p.carried) p.lift = unitModel(w, e) ? CARRIED_MODEL_LIFT : CARRIED_LIFT;
+    else if (bed >= 0.0f) p.lift = bed;
+    else p.lift = unitHover(w, e);
+    return p;
 }
 
 float Renderer::bedLift(World& w, Entity u) const {
@@ -234,25 +239,20 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-// Where a unit's model is this frame: the one placement drawing and the mouse both use. A unit lies down when it is out
-// cold, playing dead, carried or in a bed. In a bed or bedroll it lies tipped the way a carried unit is, up on the bed. A
-// carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth, and a little
-// toward the camera so it shows in front of its carrier.
+// Where a unit's model is this frame: the one placement drawing and the mouse both use. A carried model lies a little
+// toward the camera, so it shows in front of its carrier.
 Mat4 Renderer::unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const {
     const Transform* tr = w.get<Transform>(e);
-    const float bed = bedLift(w, e);
-    const bool inBed = bed >= 0.0f, carried = w.has<Carried>(e);
-    const bool lying = w.has<Unconscious>(e) || carried || w.has<PlayingDead>(e) || inBed;
-    const float lift = carried ? CARRIED_MODEL_LIFT : inBed ? bed : unitHover(w, e);
+    const UnitPose pose = unitPose(w, e);
     float x = tr->x, z = tr->z;
-    if (carried) {
+    if (pose.carried) {
         const float dx = billX_ - x, dz = billZ_ - z, len = std::sqrt(dx * dx + dz * dz);
         if (len > 1e-4f) {
             x += dx / len * 0.15f;
             z += dz / len * 0.15f;
         }
     }
-    return unitModelMatrix(m, x, tr->y + lift, z, yaw, lying, carried || inBed, unitHeight(w, e));
+    return unitModelMatrix(m, x, tr->y + pose.lift, z, yaw, pose.lying, unitHeight(w, e));
 }
 
 void Renderer::drawUnitModel(const Model& m, const Mat4& placement) {
@@ -357,7 +357,7 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     const float halfW = k * std::max(m->maxX - m->minX, m->maxZ - m->minZ) * 0.5f;
     const float dist = std::max(halfH / tanHalf, halfW / (tanHalf * aspect)) * 1.12f + halfW;
     const Mat4 vp = mul(perspective(fov, aspect, 0.05f, dist * 4.0f), lookAt(0.0f, halfH, dist, 0.0f, halfH, 0.0f, 0.0f, 1.0f, 0.0f));
-    const Mat4 mvp = mul(vp, unitModelMatrix(*m, 0.0f, 0.0f, 0.0f, yaw, false));
+    const Mat4 mvp = mul(vp, unitModelMatrix(*m, 0.0f, 0.0f, 0.0f, yaw, false, GLYPH_H));
 
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
@@ -494,14 +494,12 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         const float aspect = unitAspect(w, u);
         float halfW = heightPx * 0.5f * aspect;
         float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
-        const float bed = bedLift(w, u);
-        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || bed >= 0.0f) {
+        const UnitPose pose = unitPose(w, u);
+        if (pose.lying) {
             // Lying on its side: as wide as it is tall standing, and as high as it is wide; carried ones higher up,
             // and ones in a bed up on it
             float liftX = 0.0f, liftY = 0.0f;
-            const float lift = w.has<Carried>(u) ? (unitModel(w, u) ? CARRIED_MODEL_LIFT : CARRIED_LIFT)
-                                                 : std::max(0.0f, bed);
-            if (!project(tr->x, tr->y + lift, tr->z, liftX, liftY)) continue;
+            if (!project(tr->x, tr->y + pose.lift, tr->z, liftX, liftY)) continue;
             const float lyingH = heightPx * aspect;
             halfW = heightPx * 0.5f;
             midX = liftX;
