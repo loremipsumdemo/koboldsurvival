@@ -330,8 +330,10 @@ public:
     void endClip();
     // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
-    // One item in a cell: its picture, and its count when more than one
-    void drawItemCell(const Rect& r, int item, int count);
+    // One item in a cell: its picture (at alpha, dimmed while it is dragged), and its count when more than one
+    void drawItemCell(const Rect& r, int item, int count, float alpha = 1.0f);
+    // An empty gear slot's name in its cell: centred, wrapped onto up to maxLines lines inset from its sides
+    void drawSlotLabel(const Rect& r, const std::string& text, float inset, size_t maxLines, RGBA tint);
     // The PAUSED bar across the top of the window, and text drawn scaled up about its centre
     void drawPauseBar(bool hint);
     // The pause bar's height, with or without its hint line, so what must not hide under it can start below it
@@ -562,11 +564,14 @@ private:
     // Pieces of the dialogs (renderer_popups.cpp).
     // Text wrapped to box's width in the list font, line by line from its top, stopping at its bottom
     void drawWrappedText(const std::string& text, const Rect& box, RGBA tint);
-    // A grid of item cells on a dark well: each cell lit under the mouse, with stacks[i] in cell i (none past
-    // stackCount, or when stacks is null). The cell `skip` (a stack being dragged out) is left empty. Returns the cell
-    // under the mouse that holds an item, or -1.
+    // Which cells of an item grid light up under the mouse: any (where things are dropped, as in trade and storage),
+    // or only those holding an item (where items are taken, as in looting; those make the hover sound too)
+    enum class CellLight { UnderMouse, WhenFilled };
+    // A grid of item cells on a dark well, with stacks[i] in cell i (none past stackCount, or when stacks is null).
+    // The cell `skip` (a stack being dragged out) is left empty. Returns the cell under the mouse that holds an item,
+    // or -1.
     int drawStackGrid(const Rect& area, const std::vector<Rect>& cells, const ItemStack* stacks, size_t stackCount,
-                      int skip, float mx, float my);
+                      int skip, float mx, float my, CellLight light = CellLight::UnderMouse);
     // The "Interaction Panel" bar of the storage and looting panels, and the name under it
     void drawInteractionHeader(const Rect& bar, const Rect& nameBox, const std::string& name);
     // A small list-font button with a centered label, for the sort, priority and delete buttons

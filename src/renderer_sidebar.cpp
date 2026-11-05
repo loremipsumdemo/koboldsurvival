@@ -266,17 +266,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (item == 0) {
             // An empty slot shows its name, or lang("UILABEL_TWO_HANDED") for a locked off hand, centred, dimmed and
             // wrapped onto two lines if it needs them. The full name is in the hover tooltip.
-            const std::string text = locked ? lang("UILABEL_TWO_HANDED") : gearSlotName((int)gi);
-            std::vector<std::string> lines = wrapListText(text, r.w - 2.0f * inset);
-            if (lines.size() > 2) lines.resize(2);
-            const float lh = listH;
-            float ty = r.y + (r.h - lh * lines.size()) * 0.5f;
-            for (const std::string& ln : lines) {
-                const std::string shown = fitText(ln, r.w - 2.0f * inset, false);
-                drawListText(shown, r.x + (r.w - listTextWidth(shown)) * 0.5f, ty,
-                             locked ? theme::TEXT_DIM : theme::alpha(theme::TEXT_DIM, 0.45f));
-                ty += lh;
-            }
+            drawSlotLabel(r, locked ? lang("UILABEL_TWO_HANDED") : gearSlotName((int)gi), inset, 2,
+                          locked ? theme::TEXT_DIM : theme::alpha(theme::TEXT_DIM, 0.45f));
             continue;
         }
 
@@ -320,11 +311,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         if (st.item == 0 || st.count <= 0) continue;
 
         // An item shows its picture, dimmed while it is being dragged. The count sits in the corner.
-        drawItemPicture(r, st.item, (int)i == dimSlot ? 0.30f : 1.0f);
-        if (st.count > 1) {
-            const std::string n = std::to_string(st.count);
-            drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listH - 1.0f * s, WHITE);
-        }
+        drawItemCell(r, st.item, st.count, (int)i == dimSlot ? 0.30f : 1.0f);
         if (r.contains(mx, my)) hoverSlot = (int)i;
     }
 

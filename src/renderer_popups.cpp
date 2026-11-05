@@ -27,17 +27,18 @@ void Renderer::drawWrappedText(const std::string& text, const Rect& box, RGBA ti
 }
 
 int Renderer::drawStackGrid(const Rect& area, const std::vector<Rect>& cells, const ItemStack* stacks, size_t stackCount,
-                            int skip, float mx, float my) {
+                            int skip, float mx, float my, CellLight light) {
     drawRect(area, theme::WELL);
     int hover = -1;
     for (size_t i = 0; i < cells.size(); ++i) {
         const Rect& r = cells[i];
-        const bool hot = r.contains(mx, my);
+        const ItemStack* st = stacks && i < stackCount ? &stacks[i] : nullptr;
+        const bool filled = st && st->item != 0 && st->count > 0;
+        const bool hot = r.contains(mx, my) && (light == CellLight::UnderMouse || filled);
         drawRect(r, hot ? theme::SLOT_HOT : theme::SLOT);
-        if (!stacks || i >= stackCount) continue;
-        const ItemStack& st = stacks[i];
-        if (st.item == 0 || (int)i == skip) continue;
-        drawItemCell(r, st.item, st.count);
+        if (hot && light == CellLight::WhenFilled) noteHover(r);
+        if (!filled || (int)i == skip) continue;
+        drawItemCell(r, st->item, st->count);
         if (hot) hover = (int)i;
     }
     return hover;
@@ -203,7 +204,6 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
 
 void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv,
                         float mx, float my) {
-    const float th = listTextHeight("Ag");
     drawThemedPanel(L.panel);
     drawInteractionHeader(L.bar, L.name, name);
     int hoverItem = 0, hoverCount = 0;
@@ -217,8 +217,7 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
         drawRect(r, hot ? theme::SLOT_HOT : theme::SLOT);
         if (hot) noteHover(r);
         if (item == 0) {
-            const std::string slot = fitText(gearSlotName((int)i), r.w - 4.0f, false);
-            drawListText(slot, r.x + (r.w - listTextWidth(slot)) * 0.5f, r.y + (r.h - th) * 0.5f, theme::alpha(theme::TEXT_DIM, 0.4f));
+            drawSlotLabel(r, gearSlotName((int)i), 2.0f, 2, theme::alpha(theme::TEXT_DIM, 0.4f));
             continue;
         }
         drawItemCell(r, item, 1);
@@ -226,17 +225,9 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
     }
     // Inventory
     drawListText(lang("UILABEL_INVENTORY"), L.invHeading.x, L.invHeading.y, theme::GOLD);
-    drawRect(L.invGrid, theme::WELL);
-    for (size_t i = 0; i < L.slots.size() && i < (size_t)INVENTORY_SLOTS; ++i) {
-        const Rect& r = L.slots[i];
-        const ItemStack st = inv ? inv->slots[i] : ItemStack{};
-        const bool hot = st.item != 0 && r.contains(mx, my);
-        drawRect(r, hot ? theme::SLOT_HOT : theme::SLOT);
-        if (hot) noteHover(r);
-        if (st.item == 0 || st.count <= 0) continue;
-        drawItemCell(r, st.item, st.count);
-        if (hot) { hoverItem = st.item; hoverCount = st.count; }
-    }
+    const int hotInv = drawStackGrid(L.invGrid, L.slots, inv ? inv->slots.data() : nullptr, (size_t)INVENTORY_SLOTS, -1,
+                                     mx, my, CellLight::WhenFilled);
+    if (hotInv >= 0) { hoverItem = inv->slots[hotInv].item; hoverCount = inv->slots[hotInv].count; }
     drawWrappedText(lang("UILABEL_LOOT_HINT"), L.hint, theme::TEXT_QUIET);
     drawButton(L.takeAllBtn, lang("UILABEL_TAKE_ALL"), true, L.takeAllBtn.contains(mx, my));
     drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));

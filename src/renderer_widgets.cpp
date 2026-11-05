@@ -325,10 +325,10 @@ void Renderer::drawItemPicture(const Rect& cell, int item, float alpha) {
     drawItemPictureAt(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, item, alpha);
 }
 
-void Renderer::drawItemCell(const Rect& r, int item, int count) {
+void Renderer::drawItemCell(const Rect& r, int item, int count, float alpha) {
     if (item == 0) return;
     const float s = uiScale();
-    drawItemPicture(r, item, 1.0f);
+    drawItemPicture(r, item, alpha);
     if (count > 1) {
         const std::string n = std::to_string(count);
         drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight("Ag") - 1.0f * s,
@@ -413,15 +413,23 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
 }
 
+void Renderer::drawSlotLabel(const Rect& r, const std::string& text, float inset, size_t maxLines, RGBA tint) {
+    const float lh = listTextHeight("Ag");
+    std::vector<std::string> lines = wrapListText(text, r.w - 2.0f * inset);
+    if (lines.size() > maxLines) lines.resize(maxLines);
+    float ty = r.y + (r.h - lh * lines.size()) * 0.5f;
+    for (const std::string& ln : lines) {
+        const std::string shown = fitText(ln, r.w - 2.0f * inset, false);
+        drawListText(shown, r.x + (r.w - listTextWidth(shown)) * 0.5f, ty, tint);
+        ty += lh;
+    }
+}
+
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     const float s = uiScale();
     const float sz = ITEM_PICTURE_PX;
     const Rect r{ std::floor(mx - sz * 0.5f + 0.5f), std::floor(my - sz * 0.5f + 0.5f), sz, sz };
-    drawItemPicture(r, item, 0.85f);
-    if (count > 1) {
-        const std::string n = std::to_string(count);
-        drawListText(n, r.x + r.w - listTextWidth(n) - 3.0f * s, r.y + r.h - listTextHeight(n) - 1.0f * s, WHITE);
-    }
+    drawItemCell(r, item, count, 0.85f);
     const std::string name = itemNameOf(item);
     drawListText(name, r.x + r.w + 6.0f * s, my - listTextHeight(name) * 0.5f, WHITE);
 }
