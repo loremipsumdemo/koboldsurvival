@@ -1,9 +1,12 @@
 #pragma once
 // The running game: everything main() used to hold as locals, and what it did each frame, as one object.
 // app.cpp starts it, runs the frame loop and shuts it down. The rest is split by job:
-//   app_actions.cpp  saving and loading, the settings, and the menus' buttons (performAction)
+//   app_actions.cpp  starting a level, notices, and the menus' buttons (performAction)
+//   app_saves.cpp    the save list, the save and load panel, and deleting a save
+//   app_settings.cpp applying and saving settings, and clicks on the Settings screen
 //   app_panels.cpp   the Unit, Squad and Information panels: layout, grabbing, folding, locks, the world map
-//   app_talk.cpp     talking and trading, the how-many prompt, and the right-click menu
+//   app_talk.cpp     talking and trading, and the how-many prompt
+//   app_context_menu.cpp  the right-click menu
 //   app_input.cpp    one SDL event (handleEvent)
 //   app_update.cpp   the game's step each frame, and the hover list and build preview
 //   app_render.cpp   drawing the frame
@@ -109,7 +112,7 @@ struct App {
     void render();                           // the frame (app_render.cpp)
 
     // ---- Methods made from main()'s lambdas ----
-    // app_actions.cpp
+    // app_actions.cpp, app_saves.cpp, app_settings.cpp (and panWithKeys, app_input.cpp)
     void clearQuestion();                    // the save popout asks nothing, about no save
     void clearCombatText();
     void refreshSaves();
@@ -179,7 +182,7 @@ struct App {
     bool overPanels(float x, float y, int W, int H);
     bool holdTarget(int W, int H, float x, float y, float& gx, float& gz);
     bool pointerOverPanels(int W, int H);
-    // app_talk.cpp
+    // app_talk.cpp, app_context_menu.cpp
     void openTrade(bool free);               // the trade popout, on an empty table; free: between your own units
     void sayAs(Entity who, const std::string& text, bool player);
     void endTalk();

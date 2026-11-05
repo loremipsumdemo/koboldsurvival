@@ -75,7 +75,7 @@ On Windows the game runs without a console window, and log output goes to `log.t
 ```
 src/                 Game source (single executable, an ECS-style design)
   main.cpp           Main loop, screens, input
-  systems.cpp        Simulation systems: needs, behaviors, automation
+  systems.cpp        Index of the simulation systems files (movement, automation, wild_ai, ...)
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
   game_log, world_labels   The message log and the text drawn over units
