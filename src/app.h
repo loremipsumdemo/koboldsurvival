@@ -9,7 +9,8 @@
 //   app_context_menu.cpp  the right-click menu
 //   app_input.cpp    one SDL event (handleEvent)
 //   app_update.cpp   the game's step each frame, and the hover list and build preview
-//   app_render.cpp   drawing the frame
+//   app_render.cpp   drawing the frame, the menu screens and the save panel
+//   app_render_play.cpp   drawing the game itself: overlays, panels and popups
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <GL/glew.h>
@@ -108,8 +109,39 @@ struct App {
     void onMouseButtonUp();
     void onMouseMotion();
     void update();                           // timing and the game's step (app_update.cpp)
+    void updateDeleteHold();
+    void updateUnitPanelState();
+    void updateRightHold();
+    void updateTalkOrders();
+    void stepGame();
+    void reportPropArrivals();
+    void showWorkGains(double gameSecs);
+    void playWorkSounds();
+    void autosaveTick();
+    void closeStalePanels();
+    void playQueuedSounds();
     void updateHover();                      // the window title, the hover list and the build preview (app_update.cpp)
     void render();                           // the frame (app_render.cpp)
+    void drawScreenButtons(const std::vector<Button>& buttons);
+    void drawMenuItems(Screen which, const std::vector<Button>& buttons);
+    void dimScreen(float alpha);
+    void drawTitleScreen();
+    void drawSettingsScreen();
+    void drawMapSelectScreen();
+    void drawScenarioScreen();
+    void drawPartyScreen();
+    void drawPauseScreen();
+    void drawSavePanel();
+    void drawFrameOverlays();
+    // app_render_play.cpp
+    void drawPlayingScreen();
+    void updateWorldMapView();
+    void drawWorldOverlays();
+    void drawGamePanels();
+    void drawStoragePanel();
+    void updateDisbandPopup();
+    void drawWorldMapPopup();
+    void drawTalkOrTrade();
 
     // ---- Methods made from main()'s lambdas ----
     // app_actions.cpp, app_saves.cpp, app_settings.cpp (and panWithKeys, app_input.cpp)
