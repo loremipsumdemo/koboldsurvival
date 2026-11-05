@@ -30,6 +30,21 @@ struct TextTex {
     float aspect = 1.0f;
 };
 
+class LoadStages;
+
+// Pictures by number, each loaded from data.pak the first time it is asked for: <prefix><n>.png. A number with no
+// picture holds an empty texture (tex 0), so it is looked for only once.
+class PictureCache {
+public:
+    explicit PictureCache(const char* prefix) : prefix_(prefix) {}
+    const TextTex& get(int n);
+    // Deletes every texture loaded
+    void clear();
+private:
+    const char* prefix_;
+    std::map<int, TextTex> pics_;
+};
+
 // Multiplies the texture color, alpha included.
 struct RGBA {
     float r, g, b, a;
@@ -478,6 +493,16 @@ public:
     void drawHoldButton(const Rect& r, const std::string& label, float fill);
 
 private:
+    // init's steps (renderer.cpp)
+    bool initGl();
+    void loadLoadingArt();
+    void loadPictures(LoadStages& stages);
+    void loadUnitModels(LoadStages& stages);
+    void loadMobArt(LoadStages& stages);
+    void initSky();
+    void makeTexels();
+    void loadPropModels(LoadStages& stages);
+
     // Text line with its texture and size in pixels
     struct HudLine {
         std::string text;
@@ -546,8 +571,8 @@ private:
     void pollOverview();
     OverviewBuilder overview_;
     // The UI icon pictures, by id. An id with no picture has a texture of 0.
-    const TextTex& uiIconTexture(int icon);
-    std::map<int, TextTex> uiIcons_;
+    const TextTex& uiIconTexture(int icon) { return uiIcons_.get(icon); }
+    PictureCache uiIcons_{ "data/icon/icon_" };
     GLuint overviewTex_ = 0;
     float overviewSize_ = 0.0f;       // tiles per side of the level, 0 while there is no picture
     float overviewExtent_ = 1.0f;     // tiles the picture covers per side
@@ -739,9 +764,8 @@ private:
     };
     std::map<Entity, UnitFacing> unitFacing_;
     float unitYaw(Entity e, float x, float z, bool idle);
-    // Item pictures by item id, loaded on first use. An id with no file holds an empty texture.
-    std::map<int, TextTex> itemPics_;
-    std::map<int, TextTex> emotePics_;   // data/emote/emote_<n>.png, loaded the first time each is shown
+    PictureCache itemPics_{ "data/item/item_" };      // by item id
+    PictureCache emotePics_{ "data/emote/emote_" };   // by EmoteId
     const TextTex* emoteTexture(EmoteId emote);   // never null: the pink square stands in for a missing picture
     TextTex pink_;            // one pink texel: the square drawn for a missing picture
     // A plain white texel. Items are drawn as this, tinted pink, until they have art.

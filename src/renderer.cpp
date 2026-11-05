@@ -331,6 +331,26 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     hudFont_ = hudFont;
     ui_.font = uiFont;
 
+    if (!initGl()) return false;
+    loadLoadingArt();
+    // A picture or model that is missing is drawn as the pink square (pink_)
+    loadPictures(stages);
+    loadUnitModels(stages);
+    loadMobArt(stages);
+    stages.stage(0.55f, "LOADING_SKY");
+    initSky();
+    makeTexels();
+    loadPropModels(stages);
+    stages.finish();
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    return colorProgram_ != 0 && glyphProgram_ != 0;
+}
+
+// The flat-colour and textured-quad programs and their buffers, and the terrain's
+bool Renderer::initGl() {
     colorProgram_ = linkProgram(COLOR_VS, COLOR_FS);
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
 
@@ -359,39 +379,41 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glBufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
     glBindVertexArray(0);
     setupGlyphLayout(glyphVao_, glyphVbo_);
+    return true;
+}
 
-    // The start-up loading picture, one of data/illustration/loading1.png to loading3.png at random, loaded before
-    // the first loading frame is drawn. Only the ones in data.pak are picked from; with none, the bar is drawn alone.
-    {
-        std::vector<std::string> found;
-        for (int i = 1; i <= 3; ++i) {
-            const std::string path = "data/illustration/loading" + std::to_string(i) + ".png";
-            const unsigned char* bytes = nullptr;
-            size_t size = 0;
-            if (pakFind(path.c_str(), bytes, size)) found.push_back(path);
-        }
-        if (!found.empty()) {
-            // Not SDL_rand: unseeded, it seeds itself from the performance counter, and its first number barely moves
-            // between launches a few seconds apart, so it picked the same picture nearly every time. The system's
-            // random source, mixed with the clock, gives a fair pick each launch.
-            std::random_device device;
-            std::seed_seq seed{ device(), device(), (unsigned)SDL_GetPerformanceCounter(),
-                                (unsigned)(SDL_GetPerformanceCounter() >> 32) };
-            std::mt19937 rng(seed);
-            const std::string& pick = found[std::uniform_int_distribution<size_t>(0, found.size() - 1)(rng)];
-            loadingArt_ = loadOptionalImage(pick.c_str());
-            if (loadingArt_.tex) {
-                // Drawn well under its own size, so it gets mipmaps to stay smooth
-                glBindTexture(GL_TEXTURE_2D, loadingArt_.tex);
-                glGenerateMipmap(GL_TEXTURE_2D);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                SDL_Log("Loading picture: %s", pick.c_str());
-            }
+// The start-up loading picture, one of data/illustration/loading1.png to loading3.png at random, loaded before
+// the first loading frame is drawn. Only the ones in data.pak are picked from; with none, the bar is drawn alone.
+void Renderer::loadLoadingArt() {
+    std::vector<std::string> found;
+    for (int i = 1; i <= 3; ++i) {
+        const std::string path = "data/illustration/loading" + std::to_string(i) + ".png";
+        const unsigned char* bytes = nullptr;
+        size_t size = 0;
+        if (pakFind(path.c_str(), bytes, size)) found.push_back(path);
+    }
+    if (!found.empty()) {
+        // Not SDL_rand: unseeded, it seeds itself from the performance counter, and its first number barely moves
+        // between launches a few seconds apart, so it picked the same picture nearly every time. The system's
+        // random source, mixed with the clock, gives a fair pick each launch.
+        std::random_device device;
+        std::seed_seq seed{ device(), device(), (unsigned)SDL_GetPerformanceCounter(),
+                            (unsigned)(SDL_GetPerformanceCounter() >> 32) };
+        std::mt19937 rng(seed);
+        const std::string& pick = found[std::uniform_int_distribution<size_t>(0, found.size() - 1)(rng)];
+        loadingArt_ = loadOptionalImage(pick.c_str());
+        if (loadingArt_.tex) {
+            // Drawn well under its own size, so it gets mipmaps to stay smooth
+            glBindTexture(GL_TEXTURE_2D, loadingArt_.tex);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            SDL_Log("Loading picture: %s", pick.c_str());
         }
     }
+}
 
-    // Images and models
-    // A picture that is missing is drawn as the pink square (pink_)
+// The title screen's logo and each unit model's profile picture
+void Renderer::loadPictures(LoadStages& stages) {
     const int pictureCount = 1 + UNIT_SPRITE_COUNT;
     stages.stage(0.0f, "LOADING_PICTURES", pictureCount);
     // The title screen's logo is drawn well under its own size, so it gets mipmaps to stay smooth
@@ -409,9 +431,12 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         profilePics_[(size_t)i - 1] = loadOptionalImage(path);
         stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 1 + i);
     }
+}
+
+// Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
+// again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
+void Renderer::loadUnitModels(LoadStages& stages) {
     stages.stage(0.05f, "LOADING_UNIT_MODELS", UNIT_SPRITE_COUNT);
-    // Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
-    // again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
         char path[64];
         std::snprintf(path, sizeof(path), "data/model/unit/unit_%02d.glb", i);
@@ -445,10 +470,14 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         }
         stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
     }
+}
+
+// Each mob kind's model, when it has one: data/model/mob/mob_<nn>.glb. A missing one leaves it drawn by its picture.
+// Then every mob kind's picture, data/mob/mob_<n>.png.
+void Renderer::loadMobArt(LoadStages& stages) {
     int mobModelCount = 0;
     for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model > 0 ? 1 : 0;
     stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
-    // Each mob kind's model, when it has one: data/model/mob/mob_<nn>.glb. A missing one leaves it drawn by its picture.
     int mobModelsDone = 0;
     for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
         const MobKind kind = (MobKind)k;
@@ -478,8 +507,10 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         mobSprites_.push_back(loadOptionalImage(path));
         stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i);
     }
-    stages.stage(0.55f, "LOADING_SKY");
+}
 
+// The sky's program and its full-screen quad
+void Renderer::initSky() {
     skyProgram_ = linkProgram(SKY_VS, SKY_FS);
     uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
     uSunDir_   = glGetUniformLocation(skyProgram_, "uSunDir");
@@ -501,27 +532,30 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    {
-        // One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture
-        // that is missing
-        auto texel = [](TextTex& t, unsigned char r, unsigned char g, unsigned char b) {
-            const unsigned char px[4] = { r, g, b, 255 };
-            glGenTextures(1, &t.tex);
-            glBindTexture(GL_TEXTURE_2D, t.tex);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
-            t.aspect = 1.0f;
-        };
-        texel(white_, 255, 255, 255);
-        texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
-    }
-    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT);
+}
 
+// One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture that is
+// missing
+void Renderer::makeTexels() {
+    auto texel = [](TextTex& t, unsigned char r, unsigned char g, unsigned char b) {
+        const unsigned char px[4] = { r, g, b, 255 };
+        glGenTextures(1, &t.tex);
+        glBindTexture(GL_TEXTURE_2D, t.tex);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
+        t.aspect = 1.0f;
+    };
+    texel(white_, 255, 255, 255);
+    texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
+}
+
+// Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
+// missing or misnamed shows up at once: that kind is drawn as a pink square, and log.txt names it.
+void Renderer::loadPropModels(LoadStages& stages) {
+    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT);
     const char* standIn = "as a pink square";
-    // Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
-    // missing or misnamed shows up at once: that kind is drawn as a pink square, and log.txt names it.
     for (int k = 0; k < PROP_KIND_COUNT; ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
@@ -543,36 +577,27 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
     }
-    stages.finish();
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    return colorProgram_ != 0 && glyphProgram_ != 0;
 }
 
 void Renderer::shutdown() {
-    TextTex* textures[] = { &white_, &pink_ };
-    for (TextTex* g : textures) {
-        if (g->tex) glDeleteTextures(1, &g->tex);
-        g->tex = 0;
-    }
-    for (TextTex& g : profilePics_) {
+    auto drop = [](TextTex& g) {
         if (g.tex) glDeleteTextures(1, &g.tex);
         g = TextTex{};
-    }
+    };
+    drop(white_);
+    drop(pink_);
+    drop(titleLogo_);
+    drop(loadingArt_);
+    for (TextTex& g : profilePics_) drop(g);
+    for (TextTex& g : mobSprites_) drop(g);
+    mobSprites_.clear();
     for (Model& m : unitModels_) destroyModel(m);
     for (Model& m : mobModels_) destroyModel(m);
     unitModelFor_.fill(nullptr);
     unitFacing_.clear();
-    for (auto& entry : itemPics_) {
-        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
-    }
     itemPics_.clear();
-    for (auto& entry : emotePics_) {
-        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
-    }
     emotePics_.clear();
+    uiIcons_.clear();
     // Both text sets: the one in use, then the parked one
     clearActiveText();
     swapTextSet();
@@ -795,14 +820,25 @@ void Renderer::endClip() {
     glDisable(GL_SCISSOR_TEST);
 }
 
-const TextTex* Renderer::itemTexture(int item) {
-    auto it = itemPics_.find(item);
-    if (it == itemPics_.end()) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/item/item_%d.png", item);
-        it = itemPics_.emplace(item, loadOptionalImage(path)).first;
+const TextTex& PictureCache::get(int n) {
+    auto it = pics_.find(n);
+    if (it == pics_.end()) {
+        const std::string path = prefix_ + std::to_string(n) + ".png";
+        it = pics_.emplace(n, loadOptionalImage(path.c_str())).first;
     }
-    return it->second.tex ? &it->second : &pink_;
+    return it->second;
+}
+
+void PictureCache::clear() {
+    for (auto& entry : pics_) {
+        if (entry.second.tex) glDeleteTextures(1, &entry.second.tex);
+    }
+    pics_.clear();
+}
+
+const TextTex* Renderer::itemTexture(int item) {
+    const TextTex& t = itemPics_.get(item);
+    return t.tex ? &t : &pink_;
 }
 
 // The alpha of a picture in the pak, row by row; empty if it is not there
@@ -845,30 +881,12 @@ bool Renderer::itemPixelSolid(int item, float u, float v) {
 
 // An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, the pink square.
 const TextTex* Renderer::emoteTexture(EmoteId emote) {
-    const int id = idx(emote);
-    auto it = emotePics_.find(id);
-    if (it == emotePics_.end()) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/emote/emote_%d.png", id);
-        it = emotePics_.emplace(id, loadOptionalImage(path)).first;
-    }
-    return it->second.tex ? &it->second : &pink_;
+    const TextTex& t = emotePics_.get(idx(emote));
+    return t.tex ? &t : &pink_;
 }
 
 const Model& Renderer::propModel(PropKind kind) const {
     return propModels_[(size_t)kind];
-}
-
-// The UI icon with this id: its picture from data/icon (icon_<n>.png), loaded once. An id with no picture has an empty
-// texture, and the pink placeholder (with the id) is drawn.
-const TextTex& Renderer::uiIconTexture(int icon) {
-    auto it = uiIcons_.find(icon);
-    if (it == uiIcons_.end()) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/icon/icon_%d.png", icon);
-        it = uiIcons_.emplace(icon, loadOptionalImage(path)).first;
-    }
-    return it->second;
 }
 
 void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
