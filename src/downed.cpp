@@ -51,8 +51,8 @@ void downedSystem(World& w) {
     }
 }
 
-// Conscious is full: the unit wakes with a little health. Near a hostile unit one that is not a mob plays dead, unless it
-// lies in a bed. Carried by anyone but a hostile, it is put down and stands up again.
+// Conscious is full: the unit wakes with a little health. Near a hostile unit one of yours plays dead (canPlayDead),
+// unless it lies in a bed. Carried by anyone but a hostile, it is put down and stands up again.
 static void wakeUp(World& w, Entity u, WakeChanges& out) {
     w.remove<Unconscious>(u);
     if (Needs* n = w.get<Needs>(u)) {
@@ -62,7 +62,13 @@ static void wakeUp(World& w, Entity u, WakeChanges& out) {
     if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
     queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     out.woke.push_back(u);
-    if (!w.has<Mob>(u) && !w.has<Carried>(u) && !inBedOrBedroll(w, u) && hostileNear(w, u)) {
+    // Waking in a bed, a unit with no Leave Bed behavior to get it up later gets up now
+    if (inBedOrBedroll(w, u)) {
+        const Behaviors* b = w.get<Behaviors>(u);
+        const bool leaves = b && std::any_of(b->rules.begin(), b->rules.end(),
+                                             [](const BehaviorRule& r) { return r.on && r.kind == BehaviorKind::LeaveBed; });
+        if (!leaves) w.remove<Occupying>(u);
+    } else if (canPlayDead(w, u) && !w.has<Carried>(u) && hostileNear(w, u)) {
         w.add(u, PlayingDead{});
         queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }

@@ -206,6 +206,9 @@ struct WakeChanges {
     std::vector<Entity> woke, died;
 };
 WakeChanges unconsciousSystem(World& w, double gameSeconds);
+// Whether a unit may lie still playing dead: only your own people, who get up when ordered to. An NPC or a mob has nobody
+// to order it, so it gets up on waking.
+inline bool canPlayDead(World& w, Entity u) { return w.has<Commandable>(u) && !w.has<Mob>(u); }
 // Whether a hostile unit that is up and about stands within RESTED_HOSTILE_RANGE of u
 bool hostileNear(World& w, Entity u);
 // Units playing dead on the ground (woken from a rested knock-out near hostile units) get up once no hostile unit is
