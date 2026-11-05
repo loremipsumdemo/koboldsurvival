@@ -647,7 +647,7 @@ void App::onMouseButtonUp() {
             }
         } else {
             const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
-            clickSelect(world, unitClicked(world, terrain, cam, under, e.button.x, e.button.y, winW, winH), additive);
+            clickSelect(world, unitClicked(world, under), additive);
         }
         sel.dragging = false;
     }

@@ -25,10 +25,8 @@ Entity sidebarUnitOf(World& w);
 // The units the Unit Panel acts on: the talking unit during a trade, the storage panel's unit, otherwise the selected units.
 // An awake mob's inventory is shut (mobs.h), so a mob is never one of them: its items can't be dragged, used or dropped.
 std::vector<Entity> panelUnits(World& w);
-// The unit a click lands on: the one whose picture is under the pointer (yours first), else the nearest within one
-// tile of the clicked ground point. NULL_ENTITY for none.
-Entity unitClicked(World& w, const Terrain& t, const Camera& cam, const std::vector<Entity>& underPointer,
-                   float mx, float my, int W, int H);
+// The unit a click lands on: the one whose model is under the pointer, yours first. NULL_ENTITY for none.
+Entity unitClicked(World& w, const std::vector<Entity>& underPointer);
 // Click selection. One of your squad is selected (added, with Shift or Alt; else in place of the others), and the Unit
 // Panel goes back to your selection. Any other unit (an NPC, a corpse) is shown in the Unit Panel without touching your
 // selection. Empty ground changes nothing: your squad stays selected.

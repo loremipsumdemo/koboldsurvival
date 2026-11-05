@@ -124,25 +124,12 @@ std::vector<Entity> panelUnits(World& w) {
     return out;
 }
 
-// The unit a click lands on: the one whose picture is under the pointer (yours first), else the nearest within one
-// tile of the clicked ground point. NULL_ENTITY for none.
-Entity unitClicked(World& w, const Terrain& t, const Camera& cam, const std::vector<Entity>& underPointer,
-                   float mx, float my, int W, int H) {
+// The unit a click lands on: the one whose model is under the pointer, yours first. NULL_ENTITY for none.
+Entity unitClicked(World& w, const std::vector<Entity>& underPointer) {
     for (Entity u : underPointer) {
         if (w.has<Commandable>(u)) return u;
     }
-    if (!underPointer.empty()) return underPointer[0];
-    auto hit = pickGround(cam, t, mx, my, W, H);
-    if (!hit) return NULL_ENTITY;
-    Entity best = NULL_ENTITY;
-    float bestD2 = 1.0f;
-    for (Entity u : w.view<Unit, Transform>()) {
-        Transform* tr = w.get<Transform>(u);
-        float dx = tr->x - hit->first, dz = tr->z - hit->second;
-        float d2 = dx * dx + dz * dz;
-        if (d2 < bestD2) { bestD2 = d2; best = u; }
-    }
-    return best;
+    return underPointer.empty() ? NULL_ENTITY : underPointer[0];
 }
 
 // Click selection. One of your squad is selected (added, with Shift or Alt; else in place of the others), and the Unit
