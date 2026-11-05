@@ -190,15 +190,22 @@ struct TipRow {
 // LOD_MID_TILES: beyond it they are not loaded onto the screen.
 constexpr float LOD_NEAR_TILES = 96.0f;
 constexpr float LOD_MID_TILES = 224.0f;
-inline bool withinDetail(const Camera& cam, float x, float y, float z) {
+// The camera's eye and focus, worked out once for a loop over many things that ask withinDetail
+struct DetailRange {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
-    cam.eye(ex, ey, ez);
-    const float dx = x - ex, dy = y - ey, dz = z - ez;
-    if (dx * dx + dy * dy + dz * dz > LOD_MID_TILES * LOD_MID_TILES) return false;
-    // And within the view range (the Graphics setting) of the camera's focus, measured across the ground
-    const float fx = x - cam.focusX, fz = z - cam.focusZ;
-    return fx * fx + fz * fz <= cam.viewRange * cam.viewRange;
-}
+    float focusX = 0.0f, focusZ = 0.0f, viewRange = 0.0f;
+    explicit DetailRange(const Camera& cam) : focusX(cam.focusX), focusZ(cam.focusZ), viewRange(cam.viewRange) {
+        cam.eye(ex, ey, ez);
+    }
+    bool within(float x, float y, float z) const {
+        const float dx = x - ex, dy = y - ey, dz = z - ez;
+        if (dx * dx + dy * dy + dz * dz > LOD_MID_TILES * LOD_MID_TILES) return false;
+        // And within the view range (the Graphics setting) of the camera's focus, measured across the ground
+        const float fx = x - focusX, fz = z - focusZ;
+        return fx * fx + fz * fz <= viewRange * viewRange;
+    }
+};
+inline bool withinDetail(const Camera& cam, float x, float y, float z) { return DetailRange(cam).within(x, y, z); }
 
 // The stand-in for a prop whose model is not in data.pak: a pink square, missingPropSide(kind) tiles on a side
 constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
@@ -808,6 +815,18 @@ private:
     // square.
     std::array<Model, PROP_KIND_COUNT> propModels_{};
     const Model& propModel(PropKind kind) const;
+    // Prop models drawn instanced: every prop of a kind in one draw per part of its model. Each kind's VAO reads the
+    // model's own vertices plus one placement matrix per prop from instVbo_. Made on first use.
+    GLuint modelInstProgram_ = 0;
+    GLint uVPInst_ = -1;
+    GLuint instVbo_ = 0;
+    std::array<GLuint, PROP_KIND_COUNT> propInstVao_{};
+    std::array<std::vector<Mat4>, PROP_KIND_COUNT> propInstances_{};   // this frame's placements, by kind
+    GLuint propInstVao(PropKind kind);
+    // A prop's model for drawPropInstances to draw, placed as drawModel would place it
+    void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
+    // Draws the placements gathered in propInstances_, then empties them
+    void drawPropInstances();
     // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
     float propTop(PropKind kind) const;
     // The height a prop stands at: its own spot on the ground, or the top of the foundation it sits on (OnBase), so a

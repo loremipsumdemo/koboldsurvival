@@ -132,13 +132,10 @@ void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, R
     drawQuadVerts(g.tex, v, tint);
 }
 
-void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
-    if (!m.vao) return;
-    // Scale, turn by yaw, then move so the center of the bottom sits on (x, y, z): the same placement picking uses
-    const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
-    if (!p.ok) return;
+// A placement as a model matrix. Column-major: the turn about the vertical axis, scaled by k.
+// x' = cs*x + sn*z, z' = -sn*x + cs*z
+static Mat4 placementMatrix(const ModelPlacement& p) {
     Mat4 model{};
-    // Column-major: the turn about the vertical axis, scaled by k. x' = cs*x + sn*z, z' = -sn*x + cs*z
     model.m[0] = p.k * p.cs;
     model.m[2] = -p.k * p.sn;
     model.m[5] = p.k;
@@ -148,6 +145,78 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     model.m[12] = p.ox;
     model.m[13] = p.oy;
     model.m[14] = p.oz;
+    return model;
+}
+
+void Renderer::queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw) {
+    const Model& m = propModel(kind);
+    if (!m.vao) return;
+    // Without the instanced program, each is drawn on its own as before
+    if (!modelInstProgram_) {
+        drawModel(m, x, y, z, targetSize, yaw);
+        return;
+    }
+    const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
+    if (p.ok) propInstances_[(size_t)kind].push_back(placementMatrix(p));
+}
+
+GLuint Renderer::propInstVao(PropKind kind) {
+    GLuint& vao = propInstVao_[(size_t)kind];
+    if (vao) return vao;
+    const Model& m = propModel(kind);
+    if (!m.vao || !instVbo_) return 0;
+    // The model's own vertices and triangles (as loadGLBModel lays them out), and the placements per instance
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
+    for (int c = 0; c < 4; ++c) {
+        glVertexAttribPointer(2 + c, 4, GL_FLOAT, GL_FALSE, sizeof(Mat4), (void*)(c * 4 * sizeof(float)));
+        glEnableVertexAttribArray(2 + c);
+        glVertexAttribDivisor(2 + c, 1);
+    }
+    glBindVertexArray(0);
+    return vao;
+}
+
+void Renderer::drawPropInstances() {
+    bool any = false;
+    for (const auto& list : propInstances_) any = any || !list.empty();
+    if (!any) return;
+    glUseProgram(modelInstProgram_);
+    glUniformMatrix4fv(uVPInst_, 1, GL_FALSE, viewProj_.m);
+    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+        std::vector<Mat4>& list = propInstances_[(size_t)k];
+        if (list.empty()) continue;
+        const GLuint vao = propInstVao((PropKind)k);
+        if (vao) {
+            glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
+            glBufferData(GL_ARRAY_BUFFER, list.size() * sizeof(Mat4), list.data(), GL_STREAM_DRAW);
+            glBindVertexArray(vao);
+            for (const DrawRange& d : propModel((PropKind)k).draws) {
+                glBindTexture(GL_TEXTURE_2D, d.texture);
+                glDrawElementsInstanced(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT,
+                                        (void*)(size_t)(d.firstIndex * sizeof(GLuint)), (GLsizei)list.size());
+            }
+        }
+        list.clear();   // keeps its room for the next frame
+    }
+    glBindVertexArray(0);
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+}
+
+void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
+    if (!m.vao) return;
+    // Scale, turn by yaw, then move so the center of the bottom sits on (x, y, z): the same placement picking uses
+    const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
+    if (!p.ok) return;
+    const Mat4 model = placementMatrix(p);
 
     Mat4 mvp = mul(viewProj_, model);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
@@ -434,9 +503,10 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         for (int i = 0; i < 3; ++i) d[i] = f[i] - o[i];
     }
     std::vector<std::pair<float, Entity>> hits;
+    const DetailRange detail(cam);
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         const Model& m = propModel(kind);

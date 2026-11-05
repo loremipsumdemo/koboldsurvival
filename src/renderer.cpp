@@ -72,6 +72,20 @@ void main() {
 }
 )";
 
+// A prop model drawn instanced: the glyph program's shading, with each instance's placement read per instance
+const char* MODEL_INST_VS = R"(
+#version 330 core
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec2 aUV;
+layout(location=2) in mat4 aModel;   // locations 2 to 5, one per instance
+uniform mat4 uVP;
+out vec2 vUV;
+void main() {
+    vUV = aUV;
+    gl_Position = uVP * aModel * vec4(aPos, 1.0);
+}
+)";
+
 GLuint compileShader(GLenum type, const char* src) {
     GLuint s = glCreateShader(type);
     glShaderSource(s, 1, &src, nullptr);
@@ -341,6 +355,19 @@ bool Renderer::initGl() {
     glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
     glUseProgram(0);
 
+    // Props drawn instanced: the same fragment shading as the glyph program, untinted, in full colour
+    modelInstProgram_ = linkProgram(MODEL_INST_VS, GLYPH_FS);
+    if (modelInstProgram_) {
+        uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
+        glUseProgram(modelInstProgram_);
+        glUniform1i(glGetUniformLocation(modelInstProgram_, "uTex"), 0);
+        glUniform4f(glGetUniformLocation(modelInstProgram_, "uTint"), 1.0f, 1.0f, 1.0f, 1.0f);
+        glUniform1f(glGetUniformLocation(modelInstProgram_, "uSat"), 1.0f);
+        glUniform4f(glGetUniformLocation(modelInstProgram_, "uFaction"), 0.0f, 0.0f, 0.0f, 0.0f);
+        glUseProgram(0);
+        glGenBuffers(1, &instVbo_);
+    }
+
     if (!initTerrainGl()) return false;
 
     glGenVertexArrays(1, &dynVao_);
@@ -574,6 +601,13 @@ void Renderer::shutdown() {
     emotePics_.clear();
     uiIcons_.clear();
     text_.clear();
+    for (GLuint& vao : propInstVao_) {
+        if (vao) glDeleteVertexArrays(1, &vao);
+        vao = 0;
+    }
+    if (instVbo_) glDeleteBuffers(1, &instVbo_);
+    if (modelInstProgram_) glDeleteProgram(modelInstProgram_);
+    instVbo_ = modelInstProgram_ = 0;
     for (Model& m : propModels_) destroyModel(m);
 
     glDeleteProgram(skyProgram_);

@@ -1,5 +1,6 @@
 // Renderer: the 3D frame (sky, terrain, props, units, selection), the hover list, ground items and the build preview.
 #include "renderer_internal.h"
+#include "frustum.h"
 
 using namespace render_detail;
 
@@ -242,25 +243,37 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
+    // Only what is in range and in the camera's view is drawn. Props with a model are gathered by kind and drawn
+    // instanced, one draw per part of each kind's model.
+    const DetailRange detail(cam);
+    const FrustumPlanes frustum = framePlanes(viewProj_);
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         const float baseY = propBaseY(w, e);
-        if (propModel(kind).vao) {
-            drawModel(propModel(kind), tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
+        const bool modelled = propModel(kind).vao != 0;
+        // Scaled so its largest side is its size (or a square that size), standing on baseY: inside this ball
+        const float side = modelled ? propInfo(kind).size : missingPropSide(kind);
+        if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) continue;
+        if (modelled) {
+            queuePropModel(kind, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
         } else {
             // No model: a pink square as tall as the prop's size, standing on its spot and turned to the camera
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
+    drawPropInstances();
 
     // Standing units upright. An Unconscious unit lies on its side, half gray (a corpse all gray), on the ground or, if
     // it is being carried, over its carrier's shoulders and in front of it.
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z)) continue;
+        // A unit is at most a few tiles tall, lying or carried over another's shoulders: a generous ball holds it
+        const float tall = std::max(1.0f, unitHeight(w, e));
+        if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;
         // A unit with a model is drawn by it, turned the way it walks; a mob, or a unit whose model is missing, by its sprite
         if (const Model* m = unitModel(w, e)) {
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
@@ -439,31 +452,40 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
 
-    // The items on each tile, with their sprite positions, names and squared distance from the camera
-    struct Seen { Entity e; ItemOnScreen os; std::string name; float dist2; };
-    std::map<std::pair<int, int>, std::vector<Seen>> tiles;
+    // The items on the screen, with their tile, sprite positions, names and squared distance from the camera. The name
+    // is looked up only for an item that is seen.
+    struct Seen { std::pair<int, int> tile; Entity e; ItemOnScreen os; std::string name; float dist2; };
+    std::vector<Seen> all;
+    const DetailRange detail(cam);
     for (Entity e : w.view<GroundItem, Transform>()) {
-        const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
-        Seen seen{ e, ItemOnScreen{}, itemNameOf(gi->item), 0.0f };
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
-        seen.dist2 = dx * dx + dy * dy + dz * dz;
-        if (seen.dist2 > LOD_MID_TILES * LOD_MID_TILES || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, seen.os)) continue;
-        tiles[{ (int)std::floor(tr->x), (int)std::floor(tr->z) }].push_back(seen);
+        const float dist2 = dx * dx + dy * dy + dz * dz;
+        if (dist2 > LOD_MID_TILES * LOD_MID_TILES || !detail.within(tr->x, tr->y, tr->z)) continue;
+        ItemOnScreen os{};
+        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
+        all.push_back(Seen{ { (int)std::floor(tr->x), (int)std::floor(tr->z) }, e, os,
+                            itemNameOf(w.get<GroundItem>(e)->item), dist2 });
     }
+    // By tile, and on each tile in entity order, so the names keep the same places from frame to frame
+    std::sort(all.begin(), all.end(), [](const Seen& a, const Seen& b) {
+        return a.tile != b.tile ? a.tile < b.tile : a.e < b.e;
+    });
 
     std::vector<GroundStack> out;
-    for (auto& entry : tiles) {
-        std::vector<Seen>& seen = entry.second;
-        // Entity order, so the names keep the same places from frame to frame
-        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) { return a.e < b.e; });
+    for (size_t first = 0; first < all.size();) {
+        size_t end = first + 1;
+        while (end < all.size() && all[end].tile == all[first].tile) ++end;
+        const Seen* seen = &all[first];
+        const size_t count = end - first;
+        first = end;
 
         // One box above the middle of the tile's items, one line per item, the widest name setting its width
-        const float n = (float)seen.size();
+        const float n = (float)count;
         float cx = 0.0f, top = 0.0f, maxW = 0.0f, nearest = seen[0].dist2;
-        for (const Seen& sn : seen) {
+        for (size_t k = 0; k < count; ++k) {
+            const Seen& sn = seen[k];
             cx += sn.os.cx;
             top += sn.os.top;
             maxW = std::max(maxW, listTextWidth(sn.name));
@@ -478,7 +500,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         st.dist2 = nearest;
         st.box = Rect{ cx - boxW * 0.5f, top - gapY - boxH, boxW, boxH };
         if (st.box.x + st.box.w < 0.0f || st.box.x > winW || st.box.y + st.box.h < 0.0f || st.box.y > winH) continue;
-        for (size_t i = 0; i < seen.size(); ++i) {
+        for (size_t i = 0; i < count; ++i) {
             st.items.push_back(seen[i].e);
             st.names.push_back(seen[i].name);
             st.rows.push_back(Rect{ st.box.x, st.box.y + padY + (float)i * (lineH + lineGap), boxW, lineH });

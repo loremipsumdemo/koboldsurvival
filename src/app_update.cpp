@@ -240,17 +240,20 @@ void App::update() {
         // at a time.
         if (sky.clockRunning) {
             std::map<Entity, float> nextTicks;
+            // The props someone is picking the lock of, sorted, found once for every worked prop below
+            std::vector<Entity> pickedProps;
+            for (Entity u : world.view<Working>()) {
+                const Working* wk = world.get<Working>(u);
+                if (wk->unlocking) pickedProps.push_back(wk->prop);
+            }
+            std::sort(pickedProps.begin(), pickedProps.end());
             for (Entity e : world.view<PropWork, Prop, Transform>()) {
                 const PropWork* pw = world.get<PropWork>(e);
                 if (pw->workers <= 0) continue;
                 const Transform* pt = world.get<Transform>(e);
                 if (std::hypot(pt->x - cam.focusX, pt->z - cam.focusZ) > WORK_SOUND_RANGE) continue;
                 const PropKind kind = world.get<Prop>(e)->kind;
-                bool picking = false;
-                for (Entity u : world.view<Working>()) {
-                    const Working* wk = world.get<Working>(u);
-                    if (wk->prop == e && wk->unlocking) picking = true;
-                }
+                const bool picking = std::binary_search(pickedProps.begin(), pickedProps.end(), e);
                 Sfx sound = Sfx::Count;
                 if (picking) sound = Sfx::WorkLockpick;
                 else if (kind == PropKind::Ore) sound = Sfx::WorkMining;
@@ -379,6 +382,16 @@ void App::updateHover() {
     mouseX = mouseY = 0.0f;
     SDL_GetMouseState(&mouseX, &mouseY);
     renderer.setMouse(mouseX, mouseY);
+    // The props under the mouse, found once for the hover list and the claim circle below
+    std::vector<Entity> propsUnder;
+    bool propsFound = false;
+    auto propsAt = [&](float x, float y) -> const std::vector<Entity>& {
+        if (!propsFound || x != mouseX || y != mouseY) {
+            propsUnder = renderer.propsAtPixel(world, cam, x, y, winW, winH);
+            propsFound = x == mouseX && y == mouseY;
+        }
+        return propsUnder;
+    };
     if (screen == Screen::Playing) {
         std::vector<HudEntry> under;
         for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH))
@@ -395,7 +408,7 @@ void App::updateHover() {
             under.push_back({ itemNameOf(world.get<GroundItem>(e)->item), HUD_ITEM_COLOR });
         }
 
-        for (Entity e : renderer.propsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
+        for (Entity e : propsAt(mouseX, mouseY)) {
             // A prop locked against the player says so: "Chest (Locked)". The player's own, or one in a player
             // claim, does not.
             const std::string name = lang(propInfo(world.get<Prop>(e)->kind).nameKey);
@@ -439,7 +452,7 @@ void App::updateHover() {
         Entity hoverFlag = NULL_ENTITY;
         // Not placing anything: an existing flag under the mouse shows its claim circle
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !overPanels(bmx, bmy, winW, winH)) {
-            for (Entity e : renderer.propsAtPixel(world, cam, bmx, bmy, winW, winH)) {
+            for (Entity e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
                 const Transform* ft = world.get<Transform>(e);
                 if (!fp || !ft || fp->kind != PropKind::Flag) continue;

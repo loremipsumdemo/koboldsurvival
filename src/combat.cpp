@@ -108,6 +108,8 @@ float noticeFailChance(World& w, Entity p) {
 }
 // How close another unit must be to notice this one
 float noticeRangeOf(World& w, Entity p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
+// The most noticeRangeOf can give
+constexpr float MAX_NOTICE_RANGE = AGGRO_RANGE * (SNEAK_NOTICE_RANGE > 1.0f ? SNEAK_NOTICE_RANGE : 1.0f) + 0.01f;
 
 // Inventory slot holding an item with this name, or -1
 int slotNamed(World& w, Entity e, const char* name) {
@@ -702,7 +704,13 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             hc.target = NULL_ENTITY;
         }
         if (isPassive(w, h)) continue;
+        const Transform* th = w.get<Transform>(h);
         for (Entity p : everyone) {
+            // Beyond the widest notice range there is nothing to check (noticeRangeOf is never more than this)
+            const Transform* tp = w.get<Transform>(p);
+            if (!th || !tp) continue;
+            const float gx = tp->x - th->x, gz = tp->z - th->z;
+            if (gx * gx + gz * gz > MAX_NOTICE_RANGE * MAX_NOTICE_RANGE) continue;
             if (p == h || !standing(p) || !unitsHostile(w, h, p)) continue;
             if (distanceBetween(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {

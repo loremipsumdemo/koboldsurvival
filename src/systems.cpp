@@ -1365,6 +1365,19 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     std::vector<float> sizes(units.size(), 1.0f);
     for (size_t i = 0; i < units.size(); ++i) sizes[i] = unitSize(w, units[i]);
 
+    // Positions as they stand before anyone moves, and the units sorted by the one-tile cell they are in, so each
+    // unit looks only at the units in its own and the eight cells around it: only those can overlap its square
+    std::vector<std::pair<float, float>> pos(units.size());
+    std::vector<std::pair<std::int64_t, std::uint32_t>> byCell(units.size());
+    auto cellKey = [](int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); };
+    for (size_t i = 0; i < units.size(); ++i) {
+        const Transform* tr = w.get<Transform>(units[i]);
+        pos[i] = { tr->x, tr->z };
+        byCell[i] = { cellKey((int)std::floor(tr->x / UNIT_BOX), (int)std::floor(tr->z / UNIT_BOX)), (std::uint32_t)i };
+    }
+    std::sort(byCell.begin(), byCell.end());
+    std::vector<std::uint32_t> nearby;
+
     // Pass 1b: each unit's velocity: toward its goal, plus separation from the units too close to it.
     // A unit is pushed only by units at least as big as it is.
     // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
@@ -1373,15 +1386,26 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         if (pinned[i]) continue;
         const Entity e = units[i];
         const Transform* tr = w.get<Transform>(e);
-        const Unit* u = w.get<Unit>(e);
+
+        // The units in the nine cells around this one, in the order of units[] (so the pushes add up as before)
+        nearby.clear();
+        const int cx = (int)std::floor(tr->x / UNIT_BOX), cz = (int)std::floor(tr->z / UNIT_BOX);
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dz = -1; dz <= 1; ++dz) {
+                const std::int64_t key = cellKey(cx + dx, cz + dz);
+                auto it = std::lower_bound(byCell.begin(), byCell.end(), std::make_pair(key, (std::uint32_t)0));
+                for (; it != byCell.end() && it->first == key; ++it) {
+                    if (it->second != i) nearby.push_back(it->second);
+                }
+            }
+        }
+        std::sort(nearby.begin(), nearby.end());
 
         float vx = 0.0f, vz = 0.0f, sideX = 0.0f, sideZ = 0.0f;
         bool shoved = false;
-        for (size_t j = 0; j < units.size(); ++j) {
-            if (j == i) continue;
-            const Transform* o = w.get<Transform>(units[j]);
-            const Unit* ou = w.get<Unit>(units[j]);
-            float sx = tr->x - o->x, sz = tr->z - o->z;
+        for (const std::uint32_t j : nearby) {
+            const std::pair<float, float>& o = pos[j];
+            float sx = tr->x - o.first, sz = tr->z - o.second;
             // Every unit and mob is the same one-tile square, lined up with the tiles: two overlap when they are less
             // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
             const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
@@ -1411,7 +1435,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             if (!going[i] && going[j]) {
                 // Pushed by a unit on its way: step to the side of its path, the side this unit is already on
                 shoved = true;
-                float hx = goal[j].first - o->x, hz = goal[j].second - o->z;
+                float hx = goal[j].first - o.first, hz = goal[j].second - o.second;
                 const float hl = std::sqrt(hx * hx + hz * hz);
                 if (hl > 1e-4f) {
                     hx /= hl;
@@ -1505,6 +1529,25 @@ int workersAt(World& w, Entity prop) {
     int n = 0;
     for (Entity o : w.view<Working>()) n += w.get<Working>(o)->prop == prop ? 1 : 0;
     return n;
+}
+
+// For a search over many props: the prop each unit works (or lies in), sorted, once for the whole search, so each
+// prop's count is a binary search instead of a pass over every worker
+std::vector<Entity> workedProps(World& w) {
+    std::vector<Entity> out;
+    for (Entity o : w.view<Working>()) out.push_back(w.get<Working>(o)->prop);
+    std::sort(out.begin(), out.end());
+    return out;
+}
+std::vector<Entity> occupiedProps(World& w) {
+    std::vector<Entity> out;
+    for (Entity o : w.view<Occupying>()) out.push_back(w.get<Occupying>(o)->prop);
+    std::sort(out.begin(), out.end());
+    return out;
+}
+int countIn(const std::vector<Entity>& sorted, Entity prop) {
+    const auto r = std::equal_range(sorted.begin(), sorted.end(), prop);
+    return (int)(r.second - r.first);
 }
 
 // Uses up one of an item from a row of slots. False if there is none.
@@ -1633,6 +1676,8 @@ void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
 }
 
 void defendSystem(World& w) {
+    std::vector<Entity> fighters;   // the units that can attack, listed once for every defender that looks
+    bool fightersListed = false;
     for (Entity d : w.view<DefendOrder>()) {
         DefendOrder* o = w.get<DefendOrder>(d);
         if (!w.has<Unit>(o->ward) || !w.get<Transform>(o->ward)) {   // the unit defended is gone
@@ -1658,7 +1703,11 @@ void defendSystem(World& w) {
         const Transform* dt = w.get<Transform>(d);
         Entity best = NULL_ENTITY;
         float bestD2 = 0.0f;
-        for (Entity a : w.view<Unit, Transform, Combat>()) {
+        if (!fightersListed) {
+            fighters = w.view<Unit, Transform, Combat>();
+            fightersListed = true;
+        }
+        for (Entity a : fighters) {
             if (!attackingWard(a)) continue;
             const Transform* at = w.get<Transform>(a);
             const float d2 = (at->x - dt->x) * (at->x - dt->x) + (at->z - dt->z) * (at->z - dt->z);
@@ -2197,9 +2246,10 @@ Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int r
     const int faction = unitFaction(w, u);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
+    const std::vector<Entity> worked = workedProps(w);
     for (Entity p : w.view<Prop, Transform>()) {
         if (w.get<Prop>(p)->kind != kind || !inOwnClaim(w, claims, p, faction) || lockShutFor(w, p, u)) continue;
-        if (workersAt(w, p) >= propInfo(kind).workers) continue;
+        if (countIn(worked, p) >= propInfo(kind).workers) continue;
         const Transform* pt = w.get<Transform>(p);
         const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
         if (best == NULL_ENTITY || d2 < bestD2) {
@@ -2318,13 +2368,15 @@ Entity restTarget(World& w, Entity u) {
     for (Entity o : w.view<PropOrder>()) {
         if (o != u) wanted.push_back(w.get<PropOrder>(o)->prop);
     }
+    std::sort(wanted.begin(), wanted.end());
+    const std::vector<Entity> occupied = occupiedProps(w);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
     for (Entity p : w.view<Prop, Transform>()) {
         const PropKind kind = w.get<Prop>(p)->kind;
         if (restedGainPerHour(kind) <= 0.0) continue;
-        if (propOccupant(w, p) != NULL_ENTITY || lockShutFor(w, p, u)) continue;
-        if (std::find(wanted.begin(), wanted.end(), p) != wanted.end()) continue;
+        if (countIn(occupied, p) > 0 || lockShutFor(w, p, u)) continue;
+        if (std::binary_search(wanted.begin(), wanted.end(), p)) continue;
         const Transform* pt = w.get<Transform>(p);
         const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
         if (best == NULL_ENTITY || d2 < bestD2) {
@@ -2799,6 +2851,8 @@ void fleeFrom(World& w, Terrain& t, Entity u, Behaviors& b, Entity from) {
 void wildMobSystem(World& w, Terrain& t, float dt) {
     // Exiles fight like any neutral unit, until their health is low (EXILE_FLEE_PERCENT or less): then they are passive,
     // break off any fight, and run from the nearest unit attacking them. Healed above it, they fight again.
+    std::vector<Entity> fighters, walkers;
+    bool fightersListed = false, walkersListed = false;
     for (Entity u : w.view<Behaviors, Transform, Faction>()) {
         if (w.get<Faction>(u)->id != FACTION_EXILE || w.has<Mob>(u)) continue;
         Behaviors* b = w.get<Behaviors>(u);
@@ -2814,7 +2868,11 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         const Transform* ut = w.get<Transform>(u);
         Entity near = NULL_ENTITY;
         float nearD2 = 0.0f;
-        for (Entity o : w.view<Combat, Transform>()) {
+        if (!fightersListed) {
+            fighters = w.view<Combat, Transform>();   // listed once, for every exile that looks this frame
+            fightersListed = true;
+        }
+        for (Entity o : fighters) {
             if (o == u || w.get<Combat>(o)->target != u || w.has<Unconscious>(o)) continue;
             const Transform* ot = w.get<Transform>(o);
             const float d2 = (ot->x - ut->x) * (ot->x - ut->x) + (ot->z - ut->z) * (ot->z - ut->z);
@@ -2844,7 +2902,11 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         const Transform* ut = w.get<Transform>(u);
         Entity near = NULL_ENTITY;
         float nearD2 = WILD_AVOID_RANGE * WILD_AVOID_RANGE;
-        for (Entity o : w.view<Unit, Transform>()) {
+        if (!walkersListed) {
+            walkers = w.view<Unit, Transform>();   // listed once, for every mob that looks this frame
+            walkersListed = true;
+        }
+        for (Entity o : walkers) {
             if (o == u || w.has<Unconscious>(o) || w.has<Carried>(o)) continue;
             const Faction* of = w.get<Faction>(o);
             if ((of ? of->id : FACTION_PLAYER) == faction) continue;

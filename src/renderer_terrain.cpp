@@ -2,6 +2,7 @@
 // shaders, the same surface tiles and the same look, which the world folder stores. Split from renderer.cpp
 // to keep both files readable.
 #include "renderer.h"
+#include "frustum.h"
 #include "surface_tiles.h"
 #include "look.h"
 
@@ -225,24 +226,6 @@ constexpr float kWaterBiasUnits = 4.0f;
 constexpr float kFarPlane = CAMERA_FAR;
 // Chunk meshes built per frame, so a newly loaded area fills in over a few frames
 constexpr int MAX_BUILDS_PER_FRAME = 8;
-
-// The six frustum planes of a column-major view-projection matrix, as (a, b, c, d) with a*x+b*y+c*z+d >= 0 inside
-struct FrustumPlanes {
-    float p[6][4];
-};
-
-FrustumPlanes framePlanes(const Mat4& m) {
-    // Element (row r, column c) is m[c * 4 + r]
-    auto el = [&](int r, int c) { return m.m[c * 4 + r]; };
-    FrustumPlanes f{};
-    for (int k = 0; k < 3; ++k) {
-        for (int s = 0; s < 2; ++s) {
-            const float sign = s == 0 ? 1.0f : -1.0f;
-            for (int c = 0; c < 4; ++c) f.p[2 * k + s][c] = el(3, c) + sign * el(k, c);
-        }
-    }
-    return f;
-}
 
 // True unless the chunk's box is entirely outside one of the planes
 bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
