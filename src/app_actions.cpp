@@ -11,11 +11,6 @@ void App::clearCombatText() {
     logSeen = 0;
 }
 
-void App::refreshSaves() {
-    saves = listSaves();
-    sortSaves(saves, sortKey, sortAsc);
-}
-
 void App::refreshMaps() {
     maps = listMaps();
     sortMaps(maps, mapSortByName, mapSortAsc);
@@ -29,32 +24,6 @@ void App::showNotice(const std::string& text, float seconds) {
 void App::refuse(const std::string& text) {
     showNotice(text);
     playSfx(Sfx::UiError);
-}
-
-void App::closePanel() {
-    panelOpen = false;
-    clearQuestion();
-    SDL_StopTextInput(window);
-}
-
-void App::openPanel(bool saveMode) {
-    panelOpen = true;
-    panelSaveMode = saveMode;
-    panelFrom = screen;
-    clearQuestion();
-    saveName.clear();
-    listOffset = 0;
-    sortKey = SortKey::Time;
-    sortAsc = false;
-    refreshSaves();
-    if (saveMode) SDL_StartTextInput(window);
-    else SDL_StopTextInput(window);
-}
-
-bool App::wouldLoseProgress() {
-    if (!gameActive) return false;
-    if (!lastSaveTicks) return true;
-    return SDL_GetTicks() - *lastSaveTicks > UNSAVED_WARN_MS;
 }
 
 void App::startMapLevel(const MapChoice& choice) {
@@ -139,131 +108,6 @@ void App::closeDropdown() {
     partyUi.dropScroll = 0;
 }
 
-bool App::writeSave(const std::string& path, const std::string& name, bool autosave) {
-    SaveData d = captureWorld(world, gs, cam, levelSeed, nowMs(), name, currentMap);
-    d.autosave = autosave;
-    bool ok = writeSaveFile(path, d);
-    if (ok) lastSaveTicks = SDL_GetTicks();
-    refreshSaves();
-    return ok;
-}
-
-void App::loadSave(std::string path) {
-    SaveData d;
-    if (!readSaveFile(path, d)) {
-        refuse(lang("MISC_READ_FAILED"));
-        refreshSaves();
-        return;
-    }
-    if (d.mapStem.empty()) {
-        showNotice(lang("MISC_SAVE_OLD"));
-        refreshSaves();
-        return;
-    }
-    std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
-    if (!found) {
-        refuse(langf("MISC_MAP_MISSING", { d.name }));
-        refreshSaves();
-        return;
-    }
-    const MapChoice choice = *found;
-    std::string err;
-    // The title music ends as a saved game starts, before its level loads
-    audio::stopTracks();
-    if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
-        refuse(langf("MISC_MAP_LOAD_FAILED", { choice.name, err }));
-        refreshSaves();
-        return;
-    }
-    currentMap = choice;
-    levelSeed = d.seed;
-    clearCombatText();
-    gs = d.gs;
-    setPlayerReputation(d.reputation);   // older saves have none, so every standing is its default
-    // Older saves have no camera, so they start from the default one, not the last game's view
-    cam = Camera{};
-    cam.mapSize = (float)terrain.size();
-    focusCameraOnFirstUnit(world, cam);
-    applySaveCamera(d.cam, cam);
-    primeStreaming(world, terrain, cam);
-    sel = Selection{};
-    leftDown = middleDown = false;
-    itemDrag = false;
-    followUnit = NULL_ENTITY;
-    autoTimer = 0.0f;
-    gameActive = true;
-    lastSaveTicks.reset();
-    screen = Screen::Playing;
-    closePanel();
-    showNotice(langf("MISC_LOADED", { d.name }));
-    playSfx(Sfx::UiLoaded);
-}
-
-bool App::autosaveNow() {
-    std::string path = nextAutosavePath();
-    std::string name = std::filesystem::path(path).stem().string();   // autosave0, and so on
-    return writeSave(path, name, true);
-}
-
-void App::performDelete() {
-    if (!pendingDelete) {
-        ask = Ask::None;
-        return;
-    }
-    const std::string name = pendingDelete->name;
-    std::error_code ec;
-    std::filesystem::remove(pendingDelete->path, ec);
-    ask = Ask::None;
-    pendingDelete.reset();
-    deleteHolding = false;
-    refreshSaves();
-    showNotice(ec ? langf("MISC_DELETE_FAILED", { name }) : langf("MISC_DELETED", { name }));
-}
-
-void App::panWithKeys(float dt, bool edgeScroll) {
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-    float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
-    if (percentPrompt.open) keys = nullptr;   // the keys go into the Behavior tab's # prompt
-    if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
-    if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
-    if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;
-    if (keys && (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])) forward -= 1.0f;
-
-    if (edgeScroll) {
-        int winW = 0, winH = 0;
-        SDL_GetWindowSizeInPixels(window, &winW, &winH);
-        float mx = 0.0f, my = 0.0f;
-        SDL_GetMouseState(&mx, &my);
-        if (mx < 6.0f) right -= 1.0f;
-        if (mx > winW - 6.0f) right += 1.0f;
-        if (my < 6.0f) forward += 1.0f;
-        if (my > winH - 6.0f) forward -= 1.0f;
-    }
-
-    // Holding shift pans twice as fast
-    const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
-    float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
-    // Any manual move takes the camera off the unit it was following
-    if (right != 0.0f || forward != 0.0f) followUnit = NULL_ENTITY;
-    cam.pan(right * panSpeed, forward * panSpeed);
-}
-
-void App::applyAudio() {
-    audio::setGlobal(settings.globalVolume, settings.globalOn);
-    audio::setBus(audio::Bus::Music, settings.musicVolume, settings.musicOn);
-    audio::setBus(audio::Bus::Ambient, settings.ambientVolume, settings.ambientOn);
-    audio::setBus(audio::Bus::Effects, settings.effectsVolume, settings.effectsOn);
-    audio::setBus(audio::Bus::Interface, settings.interfaceVolume, settings.interfaceOn);
-}
-
-void App::applyVideo() {
-    displayInfo = queryDisplays(settings.monitor);
-    applyDisplay(window, settings, displayInfo);
-    SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
-}
-
-void App::saveSettingsFile() { saveSettings(settings, SETTINGS_PATH); }
-
 GearPrefs App::gearPrefs() {
     GearPrefs p;
     p.attackShare = settings.optimizeAttackShare;
@@ -271,121 +115,6 @@ GearPrefs App::gearPrefs() {
     p.twoHanded = settings.optimizeTwoHanded;
     p.valueTies = settings.optimizeValueTies;
     return p;
-}
-
-void App::applyFontScale() {
-    if (settings.fontScale == appliedFontScale && settings.fontPath == appliedFontPath
-        && settings.language == appliedLanguage) return;
-    UiFonts next = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
-    if (!next.valid()) {
-        closeUiFonts(next);
-        return;
-    }
-    renderer.setFonts(next.hud, next.ui, next.list, next.statsTitle, next.statsRow);
-    closeUiFonts(fonts);
-    fonts = next;
-    appliedMenuPercent = 0;   // the menu fonts follow at the top of the next frame
-    // The name's font follows the language and the font picked, too
-    std::vector<TTF_Font*> nextName;
-    if (TTF_Font* f = openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nextName)) {
-        renderer.setTitleFont(f);
-        closeFonts(nameFontOwned);
-        nameFontOwned = nextName;
-    }
-    appliedFontScale = settings.fontScale;
-    appliedFontPath = settings.fontPath;
-    appliedLanguage = settings.language;
-}
-
-void App::applyLanguage() {
-    std::string err;
-    if (loadLanguage(settings.language, err)) return;
-    showNotice(err + ". Using the default language.");
-    settings.language = LANGUAGE_DEFAULT_ID;
-    loadLanguage(settings.language, err);
-    saveSettingsFile();
-}
-
-void App::settingsCommit(const SettingsChange& c, bool save) {
-    if (!c.any) return;
-    if (c.display) applyVideo();
-    else if (c.vsync) SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
-    if (c.audio) applyAudio();
-    if (c.language) {
-        applyLanguage();
-        // The party's names came from the old language, so the party is rolled again in the new one
-        party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
-    }
-    if (c.fonts || c.language) applyFontScale();
-    if (save) saveSettingsFile();
-}
-
-void App::leaveSettings() {
-    settingsUi.openRow = -1;
-    settingsUi.dragRow = -1;
-    screen = backScreen;
-}
-
-void App::resetPanels() {
-    squadPlace = defaultPanelPlace(PanelId::Squad);
-    logPlace = defaultPanelPlace(PanelId::Info);
-    unitPlace = defaultPanelPlace(PanelId::Unit);
-    for (int i = 0; i < PANEL_COUNT; ++i) {
-        panelLocked[i] = true;
-        settings.panels[(size_t)i] = {};
-    }
-    saveSettingsFile();
-}
-
-void App::settingsClick(float x, float y, int W, int H) {
-    const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
-    const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
-    // Every control that does something clicks. Closing a dropdown, and a click on nothing, do not.
-    // A tab, a switch, a dropdown and Back each have their own sound. Closing a dropdown, a slider drag (it sounds as
-    // it is let go) and a click on nothing are silent.
-    switch (c.kind) {
-    case ClickKind::None: case ClickKind::CloseDropdown: case ClickKind::LevelDrag: break;
-    case ClickKind::Tab: playSfx(Sfx::UiTab); break;
-    case ClickKind::ToggleRow: case ClickKind::LevelToggle: playSfx(Sfx::UiToggle); break;
-    case ClickKind::OpenDropdown: playSfx(Sfx::UiMenuOpen); break;
-    case ClickKind::Back: playSfx(Sfx::UiBack); break;
-    default: playSfx(Sfx::UiClick); break;
-    }
-    switch (c.kind) {
-    case ClickKind::Tab:
-        settingsSelectTab(settingsUi, static_cast<SettingsTab>(c.index));
-        break;
-    case ClickKind::OpenDropdown:
-        settingsOpenDropdown(settingsUi, rows, c.row);
-        break;
-    case ClickKind::CloseDropdown:
-        settingsCloseDropdown(settingsUi);
-        break;
-    case ClickKind::PickOption:
-        settingsCloseDropdown(settingsUi);
-        settingsCommit(pickOption(rows[c.row].id, rows[c.row].options[c.index], settings), true);
-        break;
-    case ClickKind::ToggleRow:
-    case ClickKind::LevelToggle:
-        settingsCommit(setRowOn(rows[c.row].id, !rows[c.row].on, settings), true);
-        break;
-    case ClickKind::LevelDrag:
-        settingsUi.dragRow = c.row;
-        settingsCommit(setRowLevel(rows[c.row].id, c.index, settings), false);
-        break;
-    case ClickKind::Defaults:
-        settingsCloseDropdown(settingsUi);
-        settingsCommit(resetAllSettings(settings), true);
-        break;
-    case ClickKind::Action:
-        if (rows[c.row].id == RowId::ResetPanels) resetPanels();
-        break;
-    case ClickKind::Back:
-        leaveSettings();
-        break;
-    case ClickKind::None:
-        break;
-    }
 }
 
 void App::performAction(Action action, int param) {
@@ -773,10 +502,3 @@ void App::performAction(Action action, int param) {
     }
 }
 
-void App::clearQuestion() {
-    ask = Ask::None;
-    pendingOverwrite.reset();
-    pendingLoad.reset();
-    pendingDelete.reset();
-    deleteHolding = false;
-}

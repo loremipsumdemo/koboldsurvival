@@ -755,3 +755,31 @@ void App::onMouseMotion() {
         }
     }
 }
+
+void App::panWithKeys(float dt, bool edgeScroll) {
+    const bool* keys = SDL_GetKeyboardState(nullptr);
+    float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
+    if (percentPrompt.open) keys = nullptr;   // the keys go into the Behavior tab's # prompt
+    if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
+    if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
+    if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;
+    if (keys && (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN])) forward -= 1.0f;
+
+    if (edgeScroll) {
+        int winW = 0, winH = 0;
+        SDL_GetWindowSizeInPixels(window, &winW, &winH);
+        float mx = 0.0f, my = 0.0f;
+        SDL_GetMouseState(&mx, &my);
+        if (mx < 6.0f) right -= 1.0f;
+        if (mx > winW - 6.0f) right += 1.0f;
+        if (my < 6.0f) forward += 1.0f;
+        if (my > winH - 6.0f) forward -= 1.0f;
+    }
+
+    // Holding shift pans twice as fast
+    const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+    float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
+    // Any manual move takes the camera off the unit it was following
+    if (right != 0.0f || forward != 0.0f) followUnit = NULL_ENTITY;
+    cam.pan(right * panSpeed, forward * panSpeed);
+}
