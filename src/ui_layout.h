@@ -1151,7 +1151,7 @@ struct BehaviorHit {
 
 inline BehaviorHit behaviorHitAt(const SidebarLayout& L, float x, float y) {
     BehaviorHit hit;
-    if (!L.panel.contains(x, y)) return hit;
+    if (!L.body.contains(x, y)) return hit;   // scrolled out of view, under the bar or the tabs
     for (size_t i = 0; i < L.behaviorRows.size(); ++i) {
         const BehaviorRowLayout& R = L.behaviorRows[i];
         if (!R.row.contains(x, y)) continue;
@@ -1205,16 +1205,18 @@ inline bool overGamePanels(const UnitPanelLayout& unitPanel, const SidebarLayout
     return unitPanel.panel.contains(x, y) || (sidebarShown && sidebar.panel.contains(x, y));
 }
 
-// Index of the gear slot under a point (in GearSlot order), or -1 if it is over no gear slot
+// Index of the gear slot under a point (in GearSlot order), or -1 if it is over no gear slot or one scrolled out of view
 inline int gearSlotAt(const SidebarLayout& L, float x, float y) {
+    if (!L.body.contains(x, y)) return -1;
     for (size_t i = 0; i < L.gear.size(); ++i) {
         if (L.gear[i].contains(x, y)) return (int)i;
     }
     return -1;
 }
 
-// Index of the inventory slot under a point, or -1 if it is over no slot
+// Index of the inventory slot under a point, or -1 if it is over no slot or one scrolled out of view
 inline int sidebarSlotAt(const SidebarLayout& L, float x, float y) {
+    if (!L.body.contains(x, y)) return -1;
     for (size_t i = 0; i < L.slots.size(); ++i) {
         if (L.slots[i].contains(x, y)) return (int)i;
     }

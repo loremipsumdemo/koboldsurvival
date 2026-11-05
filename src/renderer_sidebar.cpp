@@ -90,7 +90,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float s = uiScale();
     const float bgAlpha = 0.5f;   // every background in the sidebar; text, item colors and bars stay solid
     // The bar with its [-] or [+] button, and the tabs under it. They stay where they are when the content scrolls.
-    auto frame = [&]() {
+    // They take the real pointer, copied here before it is hidden from the contents below.
+    auto frame = [&, mx, my]() {
         drawTitleBar(L.title, ICON_UNIT_PANEL, lang("UILABEL_UNIT_PANEL"));
         if (L.minus.w > 0.0f) drawCollapseButton(L.minus, false);
         if (L.plus.w > 0.0f) drawCollapseButton(L.plus, true);
@@ -109,13 +110,16 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         }
     };
     drawRect(L.panel, RGBA{ 0.07f, 0.025f, 0.035f, bgAlpha });
+    // The contents scroll under the bar and the tabs, and only the part in the body shows: a pointer outside the body
+    // is over none of them, so nothing hidden lights up or shows its tooltip
+    if (!L.body.contains(mx, my)) mx = my = -1.0e9f;
     if (!L.open) {
         frame();
         return;
     }
     if (L.tab == UnitTab::Build) {
         // The Build tab needs no unit: it lists the props to pick and place. Its rows scroll like the other tabs.
-        beginClip(L.panel);
+        beginClip(L.body);
         drawBuildSection(L, mx, my);
         drawSidebarScrollBar(L);
         endClip();
@@ -134,8 +138,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const Stats stats = w.get<Stats>(unit) ? *w.get<Stats>(unit) : defaultStats();
     const Name* nm = w.get<Name>(unit);
     const Equipment* worn = w.get<Equipment>(unit);
-    // The picked tab's contents scroll, so they are clipped to the panel
-    beginClip(L.panel);
+    // The picked tab's contents scroll, so they are clipped to the body, under the tabs
+    beginClip(L.body);
 
     const float listH = listTextHeight("Ag");
     int hoverGear = -1;

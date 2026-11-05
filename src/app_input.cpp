@@ -905,10 +905,12 @@ bool App::mouseDownOnPanels() {
 
             const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
             const bool onSidebar = sl.panel.contains(mx, my);
+            // The tab's contents scroll under the bar and the tabs: only the part in the body can be clicked
+            const bool inBody = sl.body.contains(mx, my);
             if (onSidebar) {
                 // The Build tab: a row picks its prop to place, and picking the same one again puts it down
                 if (sl.open && sl.tab == UnitTab::Build) {
-                    for (size_t i = 0; i < sl.buildRows.size(); ++i) {
+                    for (size_t i = 0; inBody && i < sl.buildRows.size(); ++i) {
                         if (!sl.buildRows[i].contains(mx, my)) continue;
                         const BuildPick pick = buildRowPick((int)i);
                         if (!pick.any()) break;
@@ -929,7 +931,7 @@ bool App::mouseDownOnPanels() {
                 }
                 // Sort and the behavior rows change your unit, when the sidebar shows one. They
                 // come before the drags, which start on the inventory and gear.
-                if (shownIsYours()) {
+                if (shownIsYours() && inBody) {
                     const Entity shown = sidebarUnitOf(world);
                     if (sl.sortButton.contains(mx, my)) {
                         itemMenu.open = false;
