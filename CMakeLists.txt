@@ -107,6 +107,7 @@ add_executable(koboldsurvival
     src/movement.cpp
     src/prop_use.cpp
     src/automation.cpp
+    src/wild_ai.cpp
     src/downed.cpp
     src/carry.cpp
     src/loot.cpp

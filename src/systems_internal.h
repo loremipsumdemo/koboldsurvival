@@ -73,6 +73,11 @@ inline void clearOrders(World& w, Entity u) {
 // The walks to a unit to loot it, run by carrySystem (loot.cpp)
 void lootOrderSystem(World& w, CarryEvents& ev);
 
+// Shared by the automation and the wild AI (automation.cpp)
+void autoWalk(World& w, Terrain& t, Entity u, Vec2 to);
+void stopAutoStep(World& w, Entity u, Behaviors& b);
+bool openTile(const Terrain& t, float x, float z);
+
 // Plans a new route for an active squad's center. Only the center paths; members follow slots.
 inline void planActiveSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
     ActiveSquad* sq = w.get<ActiveSquad>(squadE);
