@@ -55,6 +55,22 @@ inline void cancelPickup(World& w, Entity u) {
     w.remove<PickupChain>(u);
 }
 
+// Ends what a unit was doing, apart from a fight: its place in an active squad, its walk, any pickup, talk and standing
+// orders. The automation uses this, since a behavior's step does not end a fight.
+inline void clearOrdersButFight(World& w, Entity u) {
+    w.remove<ActiveSquadMember>(u);
+    w.remove<SoloMove>(u);
+    cancelPickup(w, u);
+    w.remove<TalkOrder>(u);
+    endPropTasks(w, u);
+}
+
+// Ends everything a unit was doing, so a new order can begin
+inline void clearOrders(World& w, Entity u) {
+    clearOrdersButFight(w, u);
+    w.remove<AttackOrder>(u);
+}
+
 // Plans a new route for an active squad's center. Only the center paths; members follow slots.
 inline void planActiveSquad(World& w, Terrain& t, Entity squadE, Vec2 target) {
     ActiveSquad* sq = w.get<ActiveSquad>(squadE);
@@ -69,6 +85,12 @@ inline void planSolo(World& w, Terrain& t, Entity e, Vec2 target) {
     Transform* tr = w.get<Transform>(e);
     so->waypoints = t.findPath({ tr->x, tr->z }, target);
     so->next = 0;
+}
+
+// Sets a single unit walking its own route to a ground point
+inline void walkSolo(World& w, Terrain& t, Entity e, Vec2 target) {
+    w.add(e, SoloMove{});
+    planSolo(w, t, e, target);
 }
 
 // Formation spacing grows with the active squad's size, up to the full spacing at 10 units.

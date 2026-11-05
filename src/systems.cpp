@@ -95,18 +95,11 @@ void makeHostile(World& w, Entity unit) {
 bool disbandUnit(World& w, Entity u) {
     if (!w.has<Commandable>(u) || !w.has<Unit>(u)) return false;
     // Whatever it was doing ends. One locked in a cage stays in it; anyone it carried is put down.
-    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
-        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
-        w.remove<ActiveSquadMember>(u);
-    }
+    leaveSquad(w, u);
     const bool caged = lockedIn(w, u);
     const Occupying keep = w.has<Occupying>(u) ? *w.get<Occupying>(u) : Occupying{};
     if (w.has<Carrying>(u)) putDown(w, u);
-    w.remove<SoloMove>(u);
-    cancelPickup(w, u);
-    w.remove<AttackOrder>(u);
-    w.remove<TalkOrder>(u);
-    endPropTasks(w, u);
+    clearOrders(w, u);
     if (caged) w.add(u, keep);
     if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
     w.remove<Commandable>(u);

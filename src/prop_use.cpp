@@ -78,13 +78,8 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
             if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
             continue;
         }
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, Vec2{ pt->x, pt->z });
+        clearOrders(w, u);
+        walkSolo(w, t, u, Vec2{ pt->x, pt->z });
         w.add(u, PropOrder{ prop, action });
     }
 }
@@ -539,12 +534,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
         const CraftState cs = craftStateOf(w, prop);
         if (cs == CraftState::NoInput) return WorkStart::NoInput;
     }
-    w.remove<ActiveSquadMember>(unit);
-    w.remove<SoloMove>(unit);
-    cancelPickup(w, unit);
-    w.remove<AttackOrder>(unit);
-    w.remove<TalkOrder>(unit);
-    endPropTasks(w, unit);
+    clearOrders(w, unit);
     w.add(unit, Working{ prop });
     return WorkStart::Started;
 }

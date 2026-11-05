@@ -113,17 +113,18 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
     return false;
 }
 
+// Sends a unit on a walk step: it walks to the spot, and the step ends when it gets there
+void autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
+    clearOrdersButFight(w, u);
+    w.remove<IdleSpot>(u);
+    walkSolo(w, t, u, to);
+}
+
 // Sends a unit on an automated step: it walks to the prop, and in reach does the action
 void autoGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt) return;
-    w.remove<ActiveSquadMember>(u);
-    cancelPickup(w, u);
-    w.remove<TalkOrder>(u);
-    endPropTasks(w, u);
-    w.remove<IdleSpot>(u);
-    w.add(u, SoloMove{});
-    planSolo(w, t, u, Vec2{ pt->x, pt->z });
+    autoWalk(w, t, u, Vec2{ pt->x, pt->z });
     w.add(u, PropOrder{ prop, action, true });
 }
 
@@ -147,17 +148,6 @@ BehaviorRule* stepRule(Behaviors& b) {
         if (sameBehavior(r, b.step)) return &r;
     }
     return nullptr;
-}
-
-// Sends a unit on a walk step: it walks to the spot, and the step ends when it gets there
-void autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
-    w.remove<ActiveSquadMember>(u);
-    cancelPickup(w, u);
-    w.remove<TalkOrder>(u);
-    endPropTasks(w, u);
-    w.remove<IdleSpot>(u);
-    w.add(u, SoloMove{});
-    planSolo(w, t, u, to);
 }
 
 // Whether a tile is walkable ground a walk may end on
@@ -279,13 +269,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         b.busy = true;
         b.step = r;
         b.stepProp = NULL_ENTITY;
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.remove<IdleSpot>(u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, Vec2{ tt->x, tt->z });
+        autoWalk(w, t, u, Vec2{ tt->x, tt->z });
         w.add(u, CarryOrder{ target });
         return true;
     }
@@ -487,8 +471,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             const float stop = std::min(SHARE_WALK_STOP, d);
             w.remove<ActiveSquadMember>(u);
             w.remove<IdleSpot>(u);
-            w.add(u, SoloMove{});
-            planSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
+            walkSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
             b->seeking = true;
             continue;
         }

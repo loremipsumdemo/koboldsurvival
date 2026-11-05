@@ -15,13 +15,8 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     // A single unit walks its own route, with no formation. A move order replaces any pickup.
     if (units.size() == 1) {
         Entity u = units[0];
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, clickPoint);
+        clearOrders(w, u);
+        walkSolo(w, t, u, clickPoint);
         return;
     }
 
@@ -44,11 +39,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
 
     // Each selected unit joins the new active squad. Overwriting ActiveSquadMember drops any old one.
     for (size_t i = 0; i < units.size(); ++i) {
-        w.remove<SoloMove>(units[i]);
-        cancelPickup(w, units[i]);
-        w.remove<AttackOrder>(units[i]);
-        w.remove<TalkOrder>(units[i]);
-        endPropTasks(w, units[i]);
+        clearOrders(w, units[i]);
         w.add(units[i], ActiveSquadMember{ sq, (int)i });
     }
 
@@ -63,13 +54,8 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;   // only units that carry items
         if (cannotTakeOrder(w, u) || !canHoldItem(w, u, w.get<GroundItem>(item)->item)) continue;
-        cancelPickup(w, u);
-        w.remove<ActiveSquadMember>(u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, target);
+        clearOrders(w, u);
+        walkSolo(w, t, u, target);
         w.add(u, PickupOrder{ item });
     }
 }
@@ -84,12 +70,7 @@ void issuePickupChain(World& w, Terrain& t, const std::vector<Entity>& units, co
     std::vector<Entity> crew;
     for (Entity u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;   // only units that carry items
-        cancelPickup(w, u);
-        w.remove<ActiveSquadMember>(u);
-        w.remove<SoloMove>(u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
+        clearOrders(w, u);
         crew.push_back(u);
     }
     if (crew.empty()) return;
@@ -164,8 +145,7 @@ void pickupChainSystem(World& w, Terrain& t) {
             if (bi == NULL_ENTITY) break;   // every item left is taken by another unit, or out of these units' reach
             const Entity u = idle[bu];
             const Transform* itr = w.get<Transform>(bi);
-            w.add(u, SoloMove{});
-            planSolo(w, t, u, Vec2{ itr->x, itr->z });
+            walkSolo(w, t, u, Vec2{ itr->x, itr->z });
             w.add(u, PickupOrder{ bi });
             w.get<PickupChain>(u)->replans = 0;
             claimed.push_back(bi);
@@ -192,12 +172,8 @@ void pickupChainSystem(World& w, Terrain& t) {
 void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        if (w.has<ActiveSquadMember>(u)) w.remove<ActiveSquadMember>(u);
-        if (w.has<AttackOrder>(u)) w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        cancelPickup(w, u);
-        if (!w.has<SoloMove>(u)) w.add(u, SoloMove{});
+        clearOrders(w, u);
+        w.add(u, SoloMove{});
         SoloMove* so = w.get<SoloMove>(u);
         so->waypoints.assign(1, target);   // one straight waypoint: no path is planned
         so->next = 0;
@@ -210,11 +186,7 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;   // only your own units fight on order
         if (cannotTakeOrder(w, u)) continue;
         // A fight replaces any move, pickup or formation the unit was on
-        w.remove<ActiveSquadMember>(u);
-        w.remove<SoloMove>(u);
-        cancelPickup(w, u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
+        clearOrders(w, u);
         w.add(u, AttackOrder{ target });
         ensureCombat(w, u);
         w.get<Combat>(u)->target = target;
@@ -227,12 +199,7 @@ void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;   // nor does one of yours talk or trade for you (mobs.h)
-        w.remove<ActiveSquadMember>(u);
-        w.remove<SoloMove>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
+        clearOrders(w, u);
         w.add(u, TalkOrder{ npc, trade, shop });
     }
 }
@@ -285,8 +252,7 @@ int pickupSystem(World& w, Terrain& t) {
             PickupChain* ch = w.get<PickupChain>(u);
             if (ch && ch->replans < CHAIN_REPLANS) {
                 ++ch->replans;
-                if (!w.has<SoloMove>(u)) w.add(u, SoloMove{});
-                planSolo(w, t, u, Vec2{ it->x, it->z });
+                walkSolo(w, t, u, Vec2{ it->x, it->z });
                 if (!w.get<SoloMove>(u)->waypoints.empty()) continue;
             }
             if (ch) ch->skipped.push_back(item);
@@ -688,12 +654,7 @@ void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target)
     if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<ActiveSquadMember>(u);
-        w.remove<SoloMove>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
+        clearOrders(w, u);
         w.add(u, FollowOrder{ target });
     }
 }
@@ -702,12 +663,7 @@ void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
     if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
     for (Entity u : units) {
         if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<ActiveSquadMember>(u);
-        w.remove<SoloMove>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
+        clearOrders(w, u);
         w.add(u, DefendOrder{ ward, NULL_ENTITY });
     }
 }

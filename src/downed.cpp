@@ -23,15 +23,8 @@ void knockOut(World& w, Entity u) {
     const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
     const bool keepBed = bp && doomRecoveryPerHour(bp->kind) > 0.0f;
     if (w.has<Carrying>(u)) putDown(w, u);
-    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
-        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
-        w.remove<ActiveSquadMember>(u);
-    }
-    w.remove<SoloMove>(u);
-    cancelPickup(w, u);
-    w.remove<AttackOrder>(u);
-    w.remove<TalkOrder>(u);
-    endPropTasks(w, u);
+    leaveSquad(w, u);
+    clearOrders(w, u);
     w.remove<IdleSpot>(u);
     if (keepBed) w.add(u, Occupying{ bed });
     if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
@@ -176,13 +169,8 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Carrying>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, Vec2{ tt->x, tt->z });
+        clearOrders(w, u);
+        walkSolo(w, t, u, Vec2{ tt->x, tt->z });
         w.add(u, CarryOrder{ target });
         return true;
     }
@@ -192,13 +180,8 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
 void issuePutDownOrder(World& w, Terrain& t, const std::vector<Entity>& units, Vec2 point) {
     for (Entity u : units) {
         if (!w.has<Carrying>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, point);
+        clearOrders(w, u);
+        walkSolo(w, t, u, point);
         w.add(u, PutDownOrder{ point.x, point.z });
     }
 }
@@ -232,15 +215,8 @@ CarryEvents carrySystem(World& w) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
-            if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(target)) {
-                if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
-                w.remove<ActiveSquadMember>(target);
-            }
-            w.remove<SoloMove>(target);
-            cancelPickup(w, target);
-            w.remove<AttackOrder>(target);
-            w.remove<TalkOrder>(target);
-            endPropTasks(w, target);
+            leaveSquad(w, target);
+            clearOrders(w, target);
             w.remove<IdleSpot>(target);
             if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
             w.add(target, Carried{ u });
@@ -334,13 +310,8 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;   // a mob takes nothing (mobs.h)
-        w.remove<ActiveSquadMember>(u);
-        cancelPickup(w, u);
-        w.remove<AttackOrder>(u);
-        w.remove<TalkOrder>(u);
-        endPropTasks(w, u);
-        w.add(u, SoloMove{});
-        planSolo(w, t, u, Vec2{ tt->x, tt->z });
+        clearOrders(w, u);
+        walkSolo(w, t, u, Vec2{ tt->x, tt->z });
         w.add(u, LootOrder{ target });
         return true;
     }

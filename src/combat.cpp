@@ -173,8 +173,7 @@ void onAttacked(World& w, Entity a, Entity d) {
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
             const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
             if (busy || (sq && !sq->arrived) || c.target != NULL_ENTITY) continue;
-            if (ActiveSquad* s = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr; s && s->size > 0) --s->size;
-            w.remove<ActiveSquadMember>(u);
+            leaveSquad(w, u);
             w.add(u, AttackOrder{ a });
             c.target = a;
         } else if (c.target == NULL_ENTITY) {
@@ -416,11 +415,7 @@ Equipment randomHostileGear(Rng& rng) {
 }
 
 void removeUnit(World& w, Entity e) {
-    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
-        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
-            if (sq->size > 0) --sq->size;
-        }
-    }
+    leaveSquad(w, e);
     w.destroy(e);
 }
 

@@ -13,6 +13,14 @@
 #include "hostility.h"
 #include "spatial.h"
 
+// Takes a unit out of its active squad, if it is in one. The squad's size follows, which sets its formation's spacing.
+inline void leaveSquad(World& w, Entity u) {
+    if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
+        if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
+        w.remove<ActiveSquadMember>(u);
+    }
+}
+
 // Combat: the formulas and the fight that runs each frame. What the fight writes goes to the game log (game_log.h)
 // and the damage numbers over units (world_labels.h). The formulas are plain functions over their inputs.
 
