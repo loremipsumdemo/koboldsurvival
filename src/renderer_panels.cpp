@@ -54,7 +54,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 
     // The window: a pink edge, a dark body, and the title bar with its X
     drawRect(Rect{ w.x - 1.5f * s, w.y - 1.5f * s, w.w + 3.0f * s, w.h + 3.0f * s }, theme::alpha(theme::PINK, 0.95f));
-    drawRect(w, RGBA{ 0.075f, 0.03f, 0.04f, 0.97f });
+    drawRect(w, theme::alpha(theme::MENU_FILL, 0.97f));
     drawTitleBar(L.bar, ICON_NONE, lang("UILABEL_WORLD_MAP"));
     drawCloseButton(L.close);
 
@@ -249,7 +249,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             const float gh = c.rect.w * lost;
             if (gh > 0.0f) {
                 drawRectGradient(Rect{ c.rect.x, c.rect.y + c.rect.w - gh, c.rect.w, gh },
-                                 RGBA{ 0.85f, 0.10f, 0.10f, 0.0f }, RGBA{ 0.85f, 0.10f, 0.10f, 0.65f });
+                                 theme::alpha(theme::HURT, 0.0f), theme::alpha(theme::HURT, 0.65f));
             }
         }
 
@@ -257,7 +257,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const float frac = (nd && nd->maxHp > 0) ? std::clamp((float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f) : 0.0f;
         const float barY = c.rect.y + c.rect.w + 3.0f * s, barH = 4.0f * s;
         drawRect(Rect{ c.rect.x, barY, c.rect.w, barH }, RGBA{ 0.24f, 0.11f, 0.13f, bgAlpha });
-        drawRect(Rect{ c.rect.x, barY, c.rect.w * frac, barH }, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
+        drawRect(Rect{ c.rect.x, barY, c.rect.w * frac, barH }, theme::HEALTH_BAR);
 
         // Name under the bar, cut at a word with "..." to fit the cell
         const Name* nm = w.get<Name>(e);
@@ -436,7 +436,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     const RGBA lit = theme::alpha(theme::SLOT_HOT, 0.95f);
     const RGBA dim = theme::alpha(theme::SLOT, 0.90f);
 
-    drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, 0.86f });
+    drawRect(L.panel, theme::alpha(theme::PANEL_FILL, 0.86f));
     drawTitleBar(L.bar, ICON_GAME_LOG, lang("UILABEL_INFORMATION_PANEL"));
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
@@ -460,7 +460,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     // The Time tab: the time of day large, then the date written out, the date as numbers and the days passed, each
     // line centred, the block centred in the space under the tabs
     if (L.tab == 2) {
-        const RGBA gray{ 0.85f, 0.78f, 0.70f, 1.0f };
+        const RGBA gray = theme::LOG_TEXT;
         const float bigH = uiTextHeight("Ag"), smallH = listTextHeight("Ag"), gap = 4.0f * s;
         const float blockH = bigH + 3.0f * (gap + smallH);
         const float bodyH = L.bodyBottom - bodyTop;
@@ -487,7 +487,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
 
     // The filter menu, over the lines. Each kind reads On or Off.
     if (L.filterOpen) {
-        drawRect(L.filterMenu, RGBA{ 0.075f, 0.03f, 0.04f, 0.97f });
+        drawRect(L.filterMenu, theme::alpha(theme::MENU_FILL, 0.97f));
         const float th = listTextHeight("Ag");
         for (const GameLogLayout::FilterRow& fr : L.filterRows) {
             if (fr.heading) {
@@ -502,7 +502,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
             drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, WHITE);
             const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
             drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
-                         on ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : gray);
+                         on ? theme::OK_TEXT : gray);
         }
     }
 }

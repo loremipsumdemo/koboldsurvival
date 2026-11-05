@@ -15,10 +15,7 @@ RGBA tierTint(int tier) {
 }
 
 // The tooltip for an item: its name in its tier's color, then its stats that are not zero.
-// Colors for the parts of a tooltip. The change colors match the green and red of the combat text.
-const RGBA GOOD_CHANGE{ 0.42f, 0.95f, 0.45f, 1.0f };
-
-const RGBA BAD_CHANGE{ 1.0f, 0.38f, 0.36f, 1.0f };
+// Colors for the parts of a tooltip. A change is drawn theme::GOOD or theme::BAD, as the combat text is.
 
 const RGBA TIP_TEXT{ 0.87f, 0.80f, 0.72f, 1.0f };
 
@@ -84,7 +81,7 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
         if (!base || now == before) return;
         const int diff = now - before;
         row.change = "(" + std::string(diff > 0 ? "+" : "") + std::to_string(diff) + ")";
-        row.changeTint = ((diff > 0) == higherIsBetter) ? GOOD_CHANGE : BAD_CHANGE;
+        row.changeTint = ((diff > 0) == higherIsBetter) ? theme::GOOD : theme::BAD;
     };
 
     if (d.attackValue > 0 || (base && base->attack > 0)) {
@@ -104,7 +101,7 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
     if (base && std::fabs(d.weight - base->weight) >= 0.05f) {
         std::snprintf(weight, sizeof(weight), "(%+.1f)", d.weight - base->weight);
         weightRow.change = weight;
-        weightRow.changeTint = d.weight < base->weight ? GOOD_CHANGE : BAD_CHANGE;
+        weightRow.changeTint = d.weight < base->weight ? theme::GOOD : theme::BAD;
     }
     rows.push_back(weightRow);
 
@@ -153,7 +150,7 @@ void Renderer::drawTip() {
     float x = mouseX_ + 14.0f * s, y = mouseY_ + 18.0f * s;
     if (x + w > uiW_) x = std::max(0.0f, uiW_ - w);
     if (y + h > uiH_) y = std::max(0.0f, mouseY_ - h - 4.0f * s);
-    drawRect(Rect{ x, y, w, h }, RGBA{ 0.085f, 0.035f, 0.045f, 0.96f });
+    drawRect(Rect{ x, y, w, h }, theme::alpha(theme::PANEL_FILL, 0.96f));
     float ty = y + pad;
     for (const std::string& ln : lines) {
         drawListText(ln, x + pad, ty, WHITE);

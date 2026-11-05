@@ -487,12 +487,11 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
                               const PartyPanels& P, float mx, float my) {
     const float s = uiScale();
     const RGBA faint{ 0.50f, 0.43f, 0.40f, 1.0f };
-    const RGBA warn{ 1.0f, 0.72f, 0.55f, 1.0f };
-    const RGBA panel{ 0.085f, 0.035f, 0.045f, 0.92f };
+    const RGBA panel = theme::alpha(theme::PANEL_FILL, 0.92f);
     const RGBA plate = theme::alpha(theme::SLOT, 0.95f);
     const RGBA plateHot = theme::alpha(theme::SLOT_HOT, 0.95f);
     const RGBA plateOn = theme::alpha(theme::GOLD_DEEP, 0.95f);    // the purple used for the selected unit
-    const RGBA plateOff{ 0.11f, 0.05f, 0.06f, 0.70f };
+    const RGBA plateOff = theme::alpha(theme::BOX_FILL, 0.70f);
     const float menuLineH = listTextHeight("Ag");
     float lineH = menuLineH;   // changes to the game's size for the Stats tab's rows
     const PartyMember& picked = pickedMember(p, ui);
@@ -544,7 +543,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             const bool named = !cleanName(u.name).empty();
             const std::string shown = named ? cleanName(u.name) : std::string(lang("UILABEL_NO_NAME"));
             drawListText(fitText(shown, tw, false), tx, b.rect.y + (b.rect.h - lineH) * 0.5f,
-                         !named ? warn : chosen ? theme::GOLD : WHITE);
+                         !named ? theme::WARN_TEXT : chosen ? theme::GOLD : WHITE);
             break;
         }
 
@@ -681,12 +680,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
 
         case Action::PartyMessage:
-            centerd(b.rect, b.label, partyNamesValid(p) ? theme::TEXT_QUIET : warn);
+            centerd(b.rect, b.label, partyNamesValid(p) ? theme::TEXT_QUIET : theme::WARN_TEXT);
             break;
 
         case Action::PartyDropBack:
             drawRect(Rect{ b.rect.x - 1.0f, b.rect.y - 1.0f, b.rect.w + 2.0f, b.rect.h + 2.0f }, RGBA{ 0.72f, 0.52f, 0.40f, 0.9f });
-            drawRect(b.rect, RGBA{ 0.075f, 0.03f, 0.04f, 0.98f });
+            drawRect(b.rect, theme::alpha(theme::MENU_FILL, 0.98f));
             break;
 
         case Action::PartyDropScroll:
@@ -716,7 +715,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     // Middle: the picked unit, large, with its name and totals under it. With no units, only the message.
     if (p.empty()) {
         drawUiTextCentered(fitText(lang("UILABEL_NEEDS_UNITS"), P.center.w - 24.0f * s, true), P.center.x + P.center.w * 0.5f,
-                           P.center.y + P.center.h * 0.5f, warn);
+                           P.center.y + P.center.h * 0.5f, theme::WARN_TEXT);
         return;
     }
     const float cw = P.center.w;
@@ -726,7 +725,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const bool named = !cleanName(picked.name).empty();
     const std::string name = named ? cleanName(picked.name) : std::string(lang("UILABEL_NO_NAME"));
     drawUiTextCentered(fitText(name, cw - 24.0f * s, true), P.center.x + cw * 0.5f,
-                       P.center.y + P.center.h - 100.0f * s, named ? WHITE : warn);
+                       P.center.y + P.center.h - 100.0f * s, named ? WHITE : theme::WARN_TEXT);
     int attack = 0, defense = 0;
     gearTotals(wornBy(picked), attack, defense);
     const std::string totals = langf("UILABEL_ATTACK_DEFENSE_CARRY", { std::to_string(attack), std::to_string(defense), std::to_string((int)carryLimit(picked.stats)) });

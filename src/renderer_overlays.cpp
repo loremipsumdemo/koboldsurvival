@@ -27,7 +27,6 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float outer = 11.0f * s, inner = 4.3f * s;          // the hole is about two fifths of the ring
     const RGBA back{ 0.31f, 0.24f, 0.17f, 1.0f };             // dark brown
-    const RGBA fill{ 0.91f, 0.65f, 0.24f, 1.0f };             // orange-yellow
     constexpr float HOP_SECONDS = 0.22f, HOP_HEIGHT = 9.0f;
     const float now = (float)SDL_GetTicks() / 1000.0f;
 
@@ -62,7 +61,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         // Just finished: the ring shows full for the hop, then the next item's progress
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
-        drawRing(sx, cy, outer, inner, 0.0f, frac, fill);
+        drawRing(sx, cy, outer, inner, 0.0f, frac, theme::AMBER);
     }
     propHops_.swap(seen);   // props no longer worked, or gone, are forgotten
 }

@@ -59,7 +59,7 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
     const RGBA rowBg = theme::alpha(theme::SLOT, 0.92f);
     const Rect& b = L.box;
     drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, theme::PINK);
-    drawRect(b, RGBA{ 0.075f, 0.03f, 0.04f, 0.96f });
+    drawRect(b, theme::alpha(theme::MENU_FILL, 0.96f));
 
     // The lines: the last ones said, the NPC's portrait on the left and the player's on the right
     const float lineH = listTextHeight("Ag");
@@ -95,7 +95,7 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
                          const std::vector<TradeGhost>& yours, int dragFrom, const TradeStatus& status, bool showValue,
                          float mx, float my) {
     const float s = uiScale();
-    const RGBA panel{ 0.085f, 0.035f, 0.045f, 0.95f };
+    const RGBA panel = theme::alpha(theme::PANEL_FILL, 0.95f);
     const float th = listTextHeight("Ag");
     const float pad = 10.0f * s, line = 20.0f * s;
 
@@ -155,7 +155,7 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
                  valueBarColor((i + 0.5f) / slices));
     }
     drawListText(fitText(status.text, L.statusLine.w, false), L.statusLine.x, L.statusLine.y,
-                 status.ok ? RGBA{ 0.6f, 1.0f, 0.6f, 1.0f } : RGBA{ 1.0f, 0.72f, 0.55f, 1.0f });
+                 status.ok ? theme::OK_TEXT : theme::WARN_TEXT);
 
     drawButton(L.cancelBtn, lang("UILABEL_CANCEL"), true, L.cancelBtn.contains(mx, my));
     drawButton(L.tradeBtn, lang("UILABEL_TRADE"), status.ok, status.ok && L.tradeBtn.contains(mx, my));
@@ -176,7 +176,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
 void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                            const Storage* storage, const Output* output, const std::string& status, int dragFrom,
                            float mx, float my, const std::string& toggleLabel) {
-    const RGBA amber{ 0.91f, 0.65f, 0.24f, 1.0f };
     const float th = listTextHeight("Ag");
 
     drawThemedPanel(L.panel);
@@ -194,7 +193,7 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
         const int hotOut = drawStackGrid(L.outGrid, L.outSlots, out, (size_t)STORAGE_SLOTS, dragFrom - STORAGE_SLOTS, mx, my);
         if (hotOut >= 0) hoverStack = out[hotOut];
         const std::string line = fitTextTip(status, L.status.w, L.status);
-        drawListText(line, L.status.x, L.status.y + (L.status.h - th) * 0.5f, amber);
+        drawListText(line, L.status.x, L.status.y + (L.status.h - th) * 0.5f, theme::AMBER);
     }
     drawWrappedText(hint, L.hint, theme::TEXT_QUIET);
     if (L.lockToggle && !toggleLabel.empty()) drawButton(L.lockBtn, toggleLabel, true, L.lockBtn.contains(mx, my));
@@ -270,7 +269,7 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
         if (hot) noteHover(r);
         drawRect(b, hot ? RGBA{ 0.42f, 0.28f, 0.13f, 1.0f } : RGBA{ 0.48f, 0.24f, 0.27f, 1.0f });
         drawRect(Rect{ b.x + 2.0f * s, b.y + 2.0f * s, b.w - 4.0f * s, b.h - 4.0f * s },
-                 toggles[(size_t)i] ? theme::GOLD : RGBA{ 0.11f, 0.05f, 0.06f, 1.0f });
+                 toggles[(size_t)i] ? theme::GOLD : theme::BOX_FILL);
         const std::string label = lang(keys[i]);
         const float lx = b.x + box + 8.0f * s;
         const std::string shown = fitTextTip(label, r.x + r.w - lx, r);

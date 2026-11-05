@@ -57,7 +57,7 @@ int Renderer::drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx,
             const float barY = y + rowH - 3.0f * s, barH = 3.0f * s;
             const float barW = barEnd - nameX;
             drawRect(Rect{ nameX, barY, barW, barH }, RGBA{ 0.24f, 0.11f, 0.13f, 1.0f });
-            drawRect(Rect{ nameX, barY, barW * levelProgress(stats, (StatId)i), barH }, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+            drawRect(Rect{ nameX, barY, barW * levelProgress(stats, (StatId)i), barH }, theme::LEVEL_BAR);
             if (mx >= area.x && mx < area.x + area.w && my >= y && my < y + rowH) hovered = i;
             y += rowH;
         }
@@ -153,7 +153,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const float gh = L.portrait.h * lost;
         if (gh > 0.0f) {
             drawRectGradient(Rect{ L.portrait.x, L.portrait.y + L.portrait.h - gh, L.portrait.w, gh },
-                             RGBA{ 0.85f, 0.10f, 0.10f, 0.0f }, RGBA{ 0.85f, 0.10f, 0.10f, 0.65f });
+                             theme::alpha(theme::HURT, 0.0f), theme::alpha(theme::HURT, 0.65f));
         }
     }
 
@@ -191,7 +191,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         return barY + barH + 9.0f * s;
     };
     y = statRow(y, lang("UILABEL_HEALTH"), std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
-                needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, RGBA{ 0.80f, 0.26f, 0.26f, 1.0f });
+                needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, theme::HEALTH_BAR);
     // Doom, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full. One
     // knocked out well rested has no Doom: it just lies out until it wakes.
     if (const Unconscious* un = w.get<Unconscious>(unit); un && !un->rested) {
@@ -216,7 +216,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     const float limit = carryLimit(stats);
     char carry[48];
     std::snprintf(carry, sizeof(carry), "%.1f / %.0f", carried, limit);
-    statRow(y, lang("UILABEL_CARRY"), carry, limit > 0.0f ? carried / limit : 0.0f, RGBA{ 0.45f, 0.65f, 0.88f, 1.0f });
+    statRow(y, lang("UILABEL_CARRY"), carry, limit > 0.0f ? carried / limit : 0.0f, theme::LEVEL_BAR);
     }
     }
 
@@ -517,7 +517,7 @@ void Renderer::drawPercentPrompt(const PercentPromptLayout& P, const std::string
     // The rest of the window dims behind it, as it takes every click until it is answered
     drawScrim();
     drawRect(Rect{ P.box.x - 1.0f, P.box.y - 1.0f, P.box.w + 2.0f, P.box.h + 2.0f }, theme::alpha(theme::ASH, 0.6f));
-    drawRect(P.box, RGBA{ 0.11f, 0.05f, 0.06f, 0.97f });
+    drawRect(P.box, theme::alpha(theme::BOX_FILL, 0.97f));
     drawRect(Rect{ P.box.x, P.box.y, P.box.w, 2.0f * s }, theme::GOLD);
     const std::string t = fitText(title, P.box.w - 20.0f * s, false);
     drawListText(t, P.box.x + (P.box.w - listTextWidth(t)) * 0.5f, P.titleY, WHITE);

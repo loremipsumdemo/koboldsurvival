@@ -312,11 +312,11 @@ void cutCornerShape(std::vector<UiVert>& v, const Rect& r, float cut, RGBA top, 
 
 RGBA logTint(Tint t) {
     switch (t) {
-    case Tint::Green: return RGBA{ 0.42f, 0.95f, 0.45f, 1.0f };
-    case Tint::Red:   return RGBA{ 1.0f, 0.38f, 0.36f, 1.0f };
+    case Tint::Green: return theme::GOOD;
+    case Tint::Red:   return theme::BAD;
     case Tint::Gray:  break;
     }
-    return RGBA{ 0.85f, 0.78f, 0.70f, 1.0f };
+    return theme::LOG_TEXT;
 }
 
 } // namespace render_detail

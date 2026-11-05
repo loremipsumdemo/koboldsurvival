@@ -73,6 +73,19 @@ inline constexpr RGBA SLOT_HOT{ 0.26f, 0.16f, 0.07f, 1.0f };       // the same u
 inline constexpr RGBA TAB_OFF{ 0.16f, 0.07f, 0.085f, 1.0f };       // a tab or toggle that is not picked
 inline constexpr RGBA SCROLL_TRACK{ 0.20f, 0.09f, 0.11f, 0.9f };   // a scroll bar's track; its thumb is PINK at 0.9
 inline constexpr RGBA SCRIM{ 0.0f, 0.0f, 0.0f, 0.45f };            // dims the game behind a modal dialog
+inline constexpr RGBA PANEL_FILL{ 0.085f, 0.035f, 0.045f, 1.0f };  // a panel's or tooltip's fill (drawn a little see-through)
+inline constexpr RGBA MENU_FILL{ 0.075f, 0.03f, 0.04f, 1.0f };     // a drop-down menu's or the world map's fill
+inline constexpr RGBA BOX_FILL{ 0.11f, 0.05f, 0.06f, 1.0f };       // a prompt's box, an unticked toggle
+// Meanings
+inline constexpr RGBA GOOD{ 0.42f, 0.95f, 0.45f, 1.0f };           // better, healed, a gain: the combat text's green
+inline constexpr RGBA BAD{ 1.0f, 0.38f, 0.36f, 1.0f };             // worse, hurt, a loss: the combat text's red
+inline constexpr RGBA LOG_TEXT{ 0.85f, 0.78f, 0.70f, 1.0f };       // a log line or damage number that is neither
+inline constexpr RGBA OK_TEXT{ 0.6f, 1.0f, 0.6f, 1.0f };           // a status that is met or on
+inline constexpr RGBA WARN_TEXT{ 1.0f, 0.72f, 0.55f, 1.0f };       // a status that is not met yet
+inline constexpr RGBA AMBER{ 0.91f, 0.65f, 0.24f, 1.0f };          // work in progress: work rings, a forge's fuel line
+inline constexpr RGBA HEALTH_BAR{ 0.80f, 0.26f, 0.26f, 1.0f };
+inline constexpr RGBA LEVEL_BAR{ 0.45f, 0.65f, 0.88f, 1.0f };      // a stat's progress to its next level, and carry
+inline constexpr RGBA HURT{ 0.85f, 0.10f, 0.10f, 1.0f };           // a portrait going red from the bottom as it loses health
 inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
 } // namespace theme
 
