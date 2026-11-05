@@ -80,6 +80,9 @@ add_executable(koboldsurvival
     src/fonts.cpp
     src/inventory.cpp
     src/combat.cpp
+    src/encumbrance.cpp
+    src/experience.cpp
+    src/hostility.cpp
     src/game_log.cpp
     src/world_labels.cpp
     src/factions.cpp

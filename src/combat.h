@@ -8,6 +8,9 @@
 #include "sounds.h"
 #include "game_log.h"
 #include "world_labels.h"
+#include "encumbrance.h"
+#include "experience.h"
+#include "hostility.h"
 
 // Combat: the formulas and the fight that runs each frame. What the fight writes goes to the game log (game_log.h)
 // and the damage numbers over units (world_labels.h). The formulas are plain functions over their inputs.
@@ -28,7 +31,6 @@ constexpr float STEALTH_RANGE = 2.0f;        // tiles from a hostile within whic
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
 constexpr float LEASH_RANGE = 12.0f;        // a hostile gives up a chase past this distance
 constexpr float WITNESS_RANGE = 9.0f;       // units this close to an attack see it, and may join in
-constexpr float SNEAK_SPEED = 0.5f;         // a sneaking unit walks at this share of its speed, and never runs
 constexpr float SNEAK_NOTICE_RANGE = 0.6f;  // and can only be noticed from this share of the usual range
 constexpr float SNEAK_FAIL_BASE = 0.20f;    // its share of notices that fail: this, plus twice the usual for Stealth
 constexpr float SNEAK_FAIL_CAP = 0.80f;
@@ -36,10 +38,6 @@ constexpr float BLOCK_MODE_FACTOR = 2.0f;   // a unit in Block mode blocks this 
 constexpr float BLOCK_MODE_CAP = 0.75f;
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
 constexpr float CHASE_STOP_SHARE = 0.8f;    // a hostile stops walking once it is this share of reach away
-constexpr float ENCUMBRANCE_XP_FROM = 0.5f; // Strength XP starts once encumbrance reaches this
-constexpr float ENDURANCE_XP_PER_TILE = 0.1f;
-constexpr float RUN_SPEED_BONUS = 0.5f;     // running is this much faster than walking, before Athletics
-constexpr float RUN_ATHLETICS_PER_LEVEL = 0.01f; // and each Athletics level above 1 adds this much more to run speed
 
 // What a unit fights with, worked out from its stats, worn gear and buffs. Never stored: it is
 // recalculated whenever it is needed, so it always matches the current stats and gear.
@@ -96,38 +94,6 @@ struct SwingResult {
 SwingResult resolveSwing(const CombatNumbers& attacker, const CombatNumbers& defender, bool defenderDown,
                          float landRoll, float blockRoll, float spreadRoll);
 
-// ---- Encumbrance and movement ----
-
-// Weight of everything worn
-float wornWeight(const Equipment& worn);
-
-// Weight carried: the inventory plus everything worn
-float carriedWeightOf(World& w, Entity e);
-
-// 0..1: carried weight against the carry limit that Strength gives. At or above the limit it is 1.
-float encumbranceFor(float carried, const Stats& s);
-float encumbranceOf(World& w, Entity e);
-
-// Tiles per second a unit can walk now. Its base speed, Athletics, and the encumbrance all count; a
-// unit with no stamina left walks at half speed; a downed unit walks at zero. Every unit uses the same
-// formula, so a red unit's base speed and stats count the same way. Running is faster again:
-// RUN_SPEED_BONUS, plus RUN_ATHLETICS_PER_LEVEL for each Athletics level above 1. Only a player unit can
-// run, since the run and walk choice is the player's.
-float walkSpeedOf(World& w, Entity e, bool running = false);
-
-// Strength XP for walking: nothing below ENCUMBRANCE_XP_FROM, then rising to 0.5 XP a second at a
-// full load. Only counts while the unit is moving, which the caller checks.
-float strengthXpWhileWalking(float encumbrance, float seconds);
-
-// ---- Experience ----
-
-// Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
-// XpBuffer until it adds up to a point. Only player units gain XP.
-// why names the action the XP came from, for the log; nullptr writes no message. kind is the Game tab filter its
-// message falls under: Xp sorts it by the stat (Athletics and Endurance have their own), or a kind given here.
-void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why = std::string(), LogKind kind = LogKind::Xp);
-Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit
-
 // ---- Units and the fight ----
 
 // A unit's name, for the log
@@ -139,23 +105,9 @@ bool isDowned(World& w, Entity e);
 // Adds the Combat component to a unit that doesn't have one
 void ensureCombat(World& w, Entity e);
 
-// ---- Factions in the fight ----
-// A unit's faction id (factions.h); the Player Faction for one with none
-int factionOf(World& w, Entity e);
-// Whether two units fight each other: their factions are hostile, or one was provoked by the other's faction. Units of
-// the same faction never fight.
-bool unitsHostile(World& w, Entity a, Entity b);
-// Whether a unit that is not yours fights your units: the Hostile marker it carries (and Neutral when not)
-bool hostileToPlayer(World& w, Entity e);
 // Empties every unit's list of the hostiles it has spotted, once each in-game hour: the list stays short, and a hostile
 // seen again in a later hour gives Perception XP again
 void forgetSpotted(World& w);
-// Makes a unit treat a faction as hostile until it has seen none of its units for PROVOKED_SECONDS (Provoked)
-void provoke(World& w, Entity unit, int faction);
-// Each frame: counts down each provocation while the unit sees none of that faction's units (and starts it over while
-// it sees one), and keeps every other unit's Hostile or Neutral marker in step with its faction's reputation with yours
-// and with Provoked. A unit that turns hostile, or calms down again, says so in the log.
-void factionSystem(World& w, float dt);
 // A unit's fighting modes from its Behavior tab (Behaviors): never false for a unit without one
 bool isPassive(World& w, Entity e);
 bool isBlocking(World& w, Entity e);

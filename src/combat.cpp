@@ -18,7 +18,6 @@ constexpr float STAMINA_REGEN = 4.0f;   // stamina regained per second while sta
 constexpr float STAMINA_PER_ENDURANCE = 2.0f;
 constexpr float STAMINA_BASE = 40.0f;
 
-constexpr float ATHLETICS_PER_LEVEL = 0.005f;   // walk speed gained per Athletics level, as a share
 constexpr float DEXTERITY_SWING_PER_LEVEL = 0.02f;
 constexpr float BLOCK_CHANCE_BASE = 0.05f;
 constexpr float BLOCK_CHANCE_PER_LEVEL = 0.005f;
@@ -287,11 +286,6 @@ void drinkForFight(World& w, Entity p, Combat& pc, GameLog& log) {
 
 } // namespace
 
-Stats statsOf(World& w, Entity e) {
-    const Stats* s = w.get<Stats>(e);
-    return s ? *s : defaultStats();
-}
-
 // ---- Formulas ----
 
 int maxHealthFor(const Stats& s) {
@@ -352,90 +346,6 @@ SwingResult resolveSwing(const CombatNumbers& a, const CombatNumbers& d, bool de
     return r;
 }
 
-// ---- Encumbrance and movement ----
-
-float wornWeight(const Equipment& worn) {
-    float total = 0.0f;
-    for (int item : worn.items) {
-        if (const ItemDef* d = findItem(item)) total += d->weight;
-    }
-    return total;
-}
-
-float carriedWeightOf(World& w, Entity e) {
-    float total = 0.0f;
-    if (const Inventory* inv = w.get<Inventory>(e)) total += carriedWeight(*inv);
-    if (const Equipment* worn = w.get<Equipment>(e)) total += wornWeight(*worn);
-    return total;
-}
-
-float encumbranceFor(float carried, const Stats& s) {
-    const float limit = carryLimit(s);
-    if (limit <= 0.0f) return 1.0f;
-    return std::clamp(carried / limit, 0.0f, 1.0f);
-}
-
-float encumbranceOf(World& w, Entity e) {
-    return encumbranceFor(carriedWeightOf(w, e), statsOf(w, e));
-}
-
-float walkSpeedOf(World& w, Entity e, bool running) {
-    const Unit* u = w.get<Unit>(e);
-    if (!u || isDowned(w, e)) return 0.0f;
-    // Running is the player's pace for its squads, so a red unit never runs
-    if (!w.has<Commandable>(e)) running = false;
-
-    const Stats s = statsOf(w, e);
-    const Combat* c = w.get<Combat>(e);
-    const float stamina = c ? c->stamina : 1.0f;
-    const float load = encumbranceOf(w, e);
-    float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1)) * (1.0f - load);
-    if (isSneaking(w, e)) {
-        running = false;          // a sneaking unit never runs
-        speed *= SNEAK_SPEED;
-    }
-    if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1);
-    if (stamina <= 0.0f) speed *= 0.5f;
-    // A boss walking home after giving up a chase (and taking no damage) hurries
-    if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
-        if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {
-            speed *= BOSS_RETURN_SPEED_FACTOR;
-        }
-    }
-    return std::max(0.0f, speed);
-}
-
-float strengthXpWhileWalking(float encumbrance, float seconds) {
-    if (encumbrance < ENCUMBRANCE_XP_FROM || seconds <= 0.0f) return 0.0f;
-    const float share = (encumbrance - ENCUMBRANCE_XP_FROM) / (1.0f - ENCUMBRANCE_XP_FROM);
-    return 0.5f * share * seconds;
-}
-
-// ---- Experience ----
-
-void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why, LogKind kind) {
-    if (amount <= 0.0f || idx(stat) < 0 || idx(stat) >= STAT_COUNT) return;
-    Stats* st = w.get<Stats>(e);
-    if (!st) return;
-    if (w.has<Mob>(e) && !mobHasStat(stat)) return;   // a mob has only its attributes and combat skills
-
-    XpBuffer& buf = w.has<XpBuffer>(e) ? *w.get<XpBuffer>(e) : w.add(e, XpBuffer{});
-    const float total = buf.frac[idx(stat)] + amount;
-    const float whole = std::floor(total);
-    buf.frac[idx(stat)] = total - whole;
-    if (whole < 1.0f) return;
-    const int before = levelOf(*st, stat);
-    addXp(*st, stat, (int)whole);
-    if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);   // only yours are heard
-    if (!why.empty()) {
-        const LogKind shown = kind != LogKind::Xp           ? kind
-                            : stat == StatId::Athletics ? LogKind::XpAthletics
-                            : stat == StatId::Endurance ? LogKind::XpEndurance
-                                                     : LogKind::Xp;
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown, npcOnly(w, e));
-    }
-}
-
 // ---- Units and the fight ----
 
 std::string nameOf(World& w, Entity e) {
@@ -464,109 +374,11 @@ const RangedProfile* rangedProfileOf(int item) {
     return nullptr;
 }
 
-int factionOf(World& w, Entity e) {
-    if (const Faction* f = w.get<Faction>(e)) return f->id;
-    // A unit with no faction goes by its side: yours, a hostile (Red) or a neutral (Green)
-    if (w.has<Commandable>(e)) return FACTION_PLAYER;
-    return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
-}
-
-namespace {
-bool provokedBy(World& w, Entity e, int faction) {
-    const Provoked* p = w.get<Provoked>(e);
-    if (!p) return false;
-    for (const Provoked::Entry& en : p->against) {
-        if (en.faction == faction && en.secondsLeft > 0.0f) return true;
-    }
-    return false;
-}
-} // namespace
-
-bool unitsHostile(World& w, Entity a, Entity b) {
-    if (a == b) return false;
-    const int fa = factionOf(w, a), fb = factionOf(w, b);
-    if (fa == fb) return false;
-    return factionsHostile(fa, fb) || provokedBy(w, a, fb) || provokedBy(w, b, fa);
-}
-
-bool hostileToPlayer(World& w, Entity e) {
-    if (w.has<Commandable>(e)) return false;
-    const int f = factionOf(w, e);
-    return f != FACTION_PLAYER && (factionsHostile(f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
-}
-
 void forgetSpotted(World& w) {
     for (Entity u : w.view<Combat>()) {
         std::vector<Entity>& s = w.get<Combat>(u)->spotted;
         s.clear();
         s.shrink_to_fit();
-    }
-}
-
-void provoke(World& w, Entity unit, int faction) {
-    if (!w.has<Unit>(unit) || factionOf(w, unit) == faction) return;
-    Provoked& p = w.has<Provoked>(unit) ? *w.get<Provoked>(unit) : w.add(unit, Provoked{});
-    for (Provoked::Entry& en : p.against) {
-        if (en.faction == faction) {
-            en.secondsLeft = PROVOKED_SECONDS;
-            return;
-        }
-    }
-    p.against.push_back(Provoked::Entry{ faction, PROVOKED_SECONDS });
-}
-
-void factionSystem(World& w, float dt) {
-    const std::vector<Entity> units = w.view<Unit, Transform>();
-    for (Entity u : w.view<Provoked>()) {
-        Provoked* p = w.get<Provoked>(u);
-        const Transform* tu = w.get<Transform>(u);
-        // Out cold, it sees nothing; awake, any standing unit of the faction within sight keeps the grudge fresh
-        const bool awake = tu && !w.has<Unconscious>(u);
-        for (Provoked::Entry& en : p->against) {
-            bool seen = false;
-            for (Entity o : units) {
-                if (!awake || o == u || factionOf(w, o) != en.faction || w.has<Unconscious>(o)) continue;
-                const Transform* to = w.get<Transform>(o);
-                const float dx = to->x - tu->x, dz = to->z - tu->z;
-                if (dx * dx + dz * dz <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {
-                    seen = true;
-                    break;
-                }
-            }
-            en.secondsLeft = seen ? PROVOKED_SECONDS : en.secondsLeft - dt;
-        }
-        p->against.erase(std::remove_if(p->against.begin(), p->against.end(),
-                                        [](const Provoked::Entry& en) { return en.secondsLeft <= 0.0f; }),
-                         p->against.end());
-        if (p->against.empty()) w.remove<Provoked>(u);
-    }
-    for (Entity u : w.view<Unit>()) {
-        if (w.has<Commandable>(u)) {
-            w.remove<Hostile>(u);
-            w.remove<Neutral>(u);
-            continue;
-        }
-        const bool hostile = hostileToPlayer(w, u);
-        if (hostile && !w.has<Hostile>(u)) {
-            const bool wasNeutral = w.has<Neutral>(u);
-            w.remove<Neutral>(u);
-            w.add(u, Hostile{});
-            if (wasNeutral && !w.has<Unconscious>(u)) {
-                queueSound(Sfx::TurnHostile);
-                queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen);
-            }
-        } else if (!hostile && !w.has<Neutral>(u)) {
-            const bool wasHostile = w.has<Hostile>(u);
-            w.remove<Hostile>(u);
-            w.add(u, Neutral{});
-            // It lost sight of your units long enough to calm down: it drops its fight with them
-            if (wasHostile && !w.has<Unconscious>(u)) {
-                queueLog(langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
-                if (Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY && w.has<Commandable>(c->target)) {
-                    c->target = NULL_ENTITY;
-                }
-            }
-        }
     }
 }
 
