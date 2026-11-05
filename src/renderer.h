@@ -395,7 +395,7 @@ public:
     // The Disband popout for a unit of yours: its portrait, name and a few lines about it, what disbanding it does, and
     // Disband (filled by held, 0 to 1, while it is held down) and Cancel
     void drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my);
-    // A notice, drawn centerd at the top of the window
+    // A notice, drawn centered at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
     // The right-click menu of an inventory item, opened at (x, y), and its drawing
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);

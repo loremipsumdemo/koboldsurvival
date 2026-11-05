@@ -1,5 +1,5 @@
 #pragma once
-// The running game: everything main() used to hold as locals, and what it did each frame, as one object.
+// The running game: everything it holds, and what it does each frame, as one object.
 // app.cpp starts it, runs the frame loop and shuts it down. The rest is split by job:
 //   app_actions.cpp  starting a level, notices, and the menus' buttons (performAction)
 //   app_party_actions.cpp  what the party menu's buttons do
@@ -158,7 +158,6 @@ struct App {
     void drawWorldMapPopup();
     void drawTalkOrTrade();
 
-    // ---- Methods made from main()'s lambdas ----
     // app_actions.cpp, app_saves.cpp, app_settings.cpp (and panWithKeys, app_input.cpp)
     bool partyAction(Action action, int param);
     void partyRandomUnit();

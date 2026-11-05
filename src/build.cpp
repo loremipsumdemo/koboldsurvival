@@ -167,7 +167,7 @@ const char* buildRefusalKey(BuildCheck c) {
     return "";
 }
 
-// The parts a built prop starts with, as a placed one of its kind would have them (systems.cpp, a level's props).
+// The parts a built prop starts with, as a placed one of its kind would have them (world_setup.cpp, a level's props).
 // A built storage has nothing in it; a passive crafting prop (the Vault) starts cold, with an empty output.
 static void addBuiltPropParts(World& w, Entity e, PropKind kind) {
     const PropInfo& info = propInfo(kind);

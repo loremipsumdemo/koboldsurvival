@@ -414,7 +414,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
         }
     } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
         if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
-            // Slots are centerd on the active squad's center, so the group's middle sits on
+            // Slots are centered on the active squad's center, so the group's middle sits on
             // the click point: columns across the heading, rows behind it.
             int cols = std::min(SQUAD_COLUMNS, sq->size);
             int rows = (sq->size + cols - 1) / cols;

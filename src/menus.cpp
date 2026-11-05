@@ -90,7 +90,7 @@ PanelGeometry panelGeometry(int W, int H) {
     const float pad = 16.0f * s, hdrH = 30.0f * s, band = 24.0f * s;
     const float rowH = 28.0f * s, pitch = rowH + rowGap;
     const float pw = 1100.0f * s, btnW = 180.0f * s;
-    // The panel is centerd vertically, and never closer than 8px to the top
+    // The panel is centered vertically, and never closer than 8px to the top
     const float panelH = 56.0f * s + btnH + gap + hdrH + band
                        + (float)visibleSaveRows(H) * pitch + band + btnH + pad;
     const float px = (W - pw) * 0.5f, py = std::max(8.0f * s, (H - panelH) * 0.5f);

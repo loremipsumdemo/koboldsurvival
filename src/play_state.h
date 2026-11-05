@@ -1,5 +1,5 @@
 #pragma once
-// The play screen's UI state that main() and the helpers in trade.cpp, storage.cpp, selection.cpp, level.cpp and save_world.cpp
+// The play screen's UI state that App and the helpers in trade.cpp, storage.cpp, selection.cpp, level.cpp and save_world.cpp
 // share: the talk box and trade, the storage and loot panels, the right-click menu, the build pick and the pause.
 // Kept in the play namespace so the short names can't meet another file's.
 #include <string>

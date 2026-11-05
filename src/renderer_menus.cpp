@@ -502,12 +502,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         if (on) return plateOn;
         return hot ? plateHot : plate;
     };
-    // Text centerd in a box, shortened to fit
-    auto centerd = [&](const Rect& r, const std::string& text, RGBA tint) {
+    // Text centered in a box, shortened to fit
+    auto centered = [&](const Rect& r, const std::string& text, RGBA tint) {
         const std::string t = fitText(text, r.w - 8.0f * s, false);
         drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - lineH) * 0.5f, tint);
     };
-    // Text at the left of a box, vertically centerd, after an inset
+    // Text at the left of a box, vertically centered, after an inset
     auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
         const std::string t = fitTextTip(text, r.w - inset - 6.0f * s, r);
         drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
@@ -590,14 +590,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyRandomUnit:
             drawRect(b.rect, plateFor(hot, false, true));
-            centerd(b.rect, b.label, WHITE);
+            centered(b.rect, b.label, WHITE);
             break;
 
         case Action::PartyAddUnit:
         case Action::PartyRemoveUnit:
         case Action::PartyAddMob:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
+            centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyGearSlot: {
@@ -628,7 +628,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyStep:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
+            centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyHeading:
@@ -676,11 +676,11 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyCount:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
+            centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyMessage:
-            centerd(b.rect, b.label, partyNamesValid(p) ? theme::TEXT_QUIET : theme::WARN_TEXT);
+            centered(b.rect, b.label, partyNamesValid(p) ? theme::TEXT_QUIET : theme::WARN_TEXT);
             break;
 
         case Action::PartyDropBack:
@@ -690,7 +690,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyDropScroll:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? (hot ? theme::GOLD : WHITE) : faint);
+            centered(b.rect, b.label, b.enabled ? (hot ? theme::GOLD : WHITE) : faint);
             break;
 
         case Action::PartyDropPick:
@@ -702,7 +702,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyConfirm:
         case Action::Back:
             drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centerd(b.rect, b.label, b.enabled ? WHITE : faint);
+            centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         default:

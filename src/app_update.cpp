@@ -404,7 +404,7 @@ void App::update() {
 }
 
 void App::updateHover() {
-    // ---- HUD: shown in the window title, since there's no text rendering there ----
+    // ---- The window title shows the game's name and the date ----
     std::string title = gameTitle() + "   " + formatDate(gs.clockSeconds);
     if (title != lastTitle) {
         SDL_SetWindowTitle(window, title.c_str());
