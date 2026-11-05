@@ -4,9 +4,7 @@
 
 using namespace play;
 
-// In play, a press on a modal popup, the world map, the talk or trade, the right-click menu, the loot or
-// storage panel, or a panel's title bar, lock, tabs, scroll bar or edge. True if the press was used.
-bool App::mouseDownOnPopups() {
+bool App::pressOnDisband() {
     // The Disband popout is modal: only it answers while it is open. Pressing Disband starts the hold;
     // letting go (or moving off it) before DISBAND_HOLD_MS starts it over.
     if (screen == Screen::Playing && disbandTarget != NULL_ENTITY) {
@@ -23,6 +21,10 @@ bool App::mouseDownOnPopups() {
         }
         return true;
     }
+    return false;
+}
+
+bool App::pressOnOptimizeAll() {
     // The Optimize All dialog is modal: only it answers while it is open
     if (screen == Screen::Playing && optimizeAllOpen) {
         if (e.button.button == SDL_BUTTON_LEFT) {
@@ -64,6 +66,10 @@ bool App::mouseDownOnPopups() {
         }
         return true;
     }
+    return false;
+}
+
+bool App::pressOnWorldMap() {
     // The world map window is over everything, and a click inside it is its own: the X closes it, and a right
     // click on the map is a move order to that point. Outside the window, clicks go on as if it were shut.
     // The talk box and the trade are drawn over the map, so a click on them is theirs
@@ -90,7 +96,10 @@ bool App::mouseDownOnPopups() {
         }
         return true;
     }
+    return false;
+}
 
+bool App::pressOnTalk() {
     // The talk owns the mouse while it is open. During a trade the Unit Panel still works, so a click there
     // passes on to the panel; everything else is the talk's or the trade's.
     if (dialogueUnit != NULL_ENTITY && screen == Screen::Playing) {
@@ -169,6 +178,10 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+bool App::pressOnContextMenu() {
     // The right-click menu: a left click on an option picks it. A click anywhere else closes the menu, and
     // that click still does what it would have done (a right-click elsewhere opens a new menu or moves).
     if (screen == Screen::Playing && contextMenu.open) {
@@ -182,11 +195,19 @@ bool App::mouseDownOnPopups() {
         }
         contextMenu.open = false;
     }
+    return false;
+}
+
+bool App::pressOnStoreQuantity() {
     // Choosing how many of a stack to store: the prompt is modal, and only its buttons answer
     if (screen == Screen::Playing && quantity.open && quantity.toStorage) {
         if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
         return true;
     }
+    return false;
+}
+
+bool App::pressOnLoot() {
     // The looting panel takes every click on it: a click on an item takes it (as much as fits), Take All takes
     // everything that fits, Close closes it
     if (screen == Screen::Playing && lootUnit != NULL_ENTITY) {
@@ -215,6 +236,10 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+bool App::pressOnStorage() {
     // The storage panel takes every click on it. Left button on an item starts dragging it out; right button
     // moves its whole stack into the unit's inventory, if all of it fits.
     if (screen == Screen::Playing && storageProp != NULL_ENTITY) {
@@ -248,6 +273,10 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+bool App::pressOnPanelBars() {
     // The locks and the [-] and [+] buttons on the title bars. Folding keeps the panel's size for when it opens.
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
         const float tx = e.button.x, ty = e.button.y;
@@ -279,6 +308,10 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+bool App::pressOnFactionTabs() {
     // The Faction Panel's tabs, and in its Reputation tab a faction's row: that faction's reputations show
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
         const UnitPanelLayout fp = squadPanelLayout(winW, winH);
@@ -301,6 +334,10 @@ bool App::mouseDownOnPopups() {
         if (picked) return true;
         if (factionTab == FACTION_TAB_REPUTATION && fp.repHeading.contains(tx, ty)) return true;
     }
+    return false;
+}
+
+bool App::pressOnSquadScroll() {
     // The Squad Panel's scroll bar: an arrow moves the list a row, the thumb can be dragged, and a press on
     // the track moves a row toward it
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
@@ -322,6 +359,10 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+bool App::pressToGrabPanel() {
     // An edge, a corner or the title bar of an unlocked panel grabs it, to resize or move it
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
         const auto g = grabAt(winW, winH, e.button.x, e.button.y);
@@ -338,5 +379,23 @@ bool App::mouseDownOnPopups() {
             return true;
         }
     }
+    return false;
+}
+
+// In play, a press on a modal popup, the world map, the talk or trade, the right-click menu, the loot or
+// storage panel, or a panel's title bar, lock, tabs, scroll bar or edge. True if the press was used.
+bool App::mouseDownOnPopups() {
+    if (pressOnDisband()) return true;
+    if (pressOnOptimizeAll()) return true;
+    if (pressOnWorldMap()) return true;
+    if (pressOnTalk()) return true;
+    if (pressOnContextMenu()) return true;
+    if (pressOnStoreQuantity()) return true;
+    if (pressOnLoot()) return true;
+    if (pressOnStorage()) return true;
+    if (pressOnPanelBars()) return true;
+    if (pressOnFactionTabs()) return true;
+    if (pressOnSquadScroll()) return true;
+    if (pressToGrabPanel()) return true;
     return false;
 }

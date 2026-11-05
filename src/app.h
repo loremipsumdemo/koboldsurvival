@@ -105,6 +105,18 @@ struct App {
     void onMouseWheel();
     void onMouseButtonDown();
     bool mouseDownOnPopups();
+    bool pressOnDisband();
+    bool pressOnOptimizeAll();
+    bool pressOnWorldMap();
+    bool pressOnTalk();
+    bool pressOnContextMenu();
+    bool pressOnStoreQuantity();
+    bool pressOnLoot();
+    bool pressOnStorage();
+    bool pressOnPanelBars();
+    bool pressOnFactionTabs();
+    bool pressOnSquadScroll();
+    bool pressToGrabPanel();
     bool mouseDownOnPanels();
     void onMouseButtonUp();
     void onMouseMotion();
