@@ -64,7 +64,7 @@ enum class Sfx : int {
     TalkOpen,        // a talk began
     CarryUp,         // a unit picked up an Unconscious unit to carry it
     PutDown,         // a carried unit put down on the ground
-    Dies,            // an Unconscious unit's Doom reached 100: it is dead
+    Dies,            // an Unconscious unit's Dying reached 100: it is dead
     Recovers,        // an Unconscious unit woke up in a bed or bedroll
     Count
 };
@@ -145,7 +145,7 @@ inline const SfxInfo& sfxInfo(Sfx s) {
         { "sfx_52.mp3", true,  "Interface: a talk began" },
         { "sfx_53.mp3", false, "Units: an Unconscious unit picked up to be carried" },
         { "sfx_54.mp3", false, "Units: a carried unit put down on the ground" },
-        { "sfx_55.mp3", false, "Units: an Unconscious unit died (its Doom reached 100)" },
+        { "sfx_55.mp3", false, "Units: an Unconscious unit died (its Dying reached 100)" },
         { "sfx_56.mp3", false, "Units: an Unconscious unit woke up in a bed or bedroll" },
     };
     const int i = (int)s;

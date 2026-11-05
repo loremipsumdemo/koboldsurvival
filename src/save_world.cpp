@@ -37,9 +37,8 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             world.add(e, Commandable{});   // one of yours; a corpse is nobody's
         }
         if (u.unconscious) {
-            Unconscious un{ u.corpse ? 100.0f : u.doom, u.koFaction };
-            un.rested = u.downRested && !u.corpse;
-            un.wake = u.wake;
+            Unconscious un{ u.corpse ? 100.0f : u.dying, u.koFaction };
+            un.conscious = u.conscious;
             world.add(e, un);
             if (u.corpse) world.add(e, Corpse{});
         } else if (u.playingDead && u.carriedBy < 0) {
@@ -247,10 +246,9 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         SaveUnit su;
         if (const Unconscious* un = w.get<Unconscious>(u)) {
             su.unconscious = true;
-            su.doom = un->doom;
+            su.dying = un->dying;
+            su.conscious = un->conscious;
             su.corpse = w.has<Corpse>(u);
-            su.downRested = un->rested;
-            su.wake = un->wake;
         }
         su.playingDead = w.has<PlayingDead>(u);
         if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = indexOf(cd->by);

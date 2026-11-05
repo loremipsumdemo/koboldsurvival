@@ -210,7 +210,7 @@ struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
     // Rested: falls while awake and rises lying in a bed or bedroll (needs.h). Well rested, a unit knocked out gets no
-    // Doom and wakes by itself. Comfort: rises sitting or lying in an occupiable prop that has no lock, falls otherwise.
+    // Dying and wakes by itself. Comfort: rises sitting or lying in an occupiable prop that has no lock, falls otherwise.
     // A mob has neither, and no hunger either: it can't feed itself.
     int rested = 100, maxRested = 100;
     int comfort = 100, maxComfort = 100;
@@ -312,19 +312,18 @@ struct DefendOrder {
     Entity engaged = NULL_ENTITY;
 };
 
-// A unit at 0 health is Unconscious: it lies still, takes no orders, does nothing, and nothing fights it. It stays
-// that way until it recovers in a bed or a bedroll, or dies. Its Doom starts at 0 each time it is knocked out and rises
-// every in-game hour (doomPerHour in systems.h); in a bed or bedroll it falls instead. Doom 0 in a bed: it wakes with
-// a little health. Doom 100: it becomes a Corpse for good. Doom is always between 0 and 100.
+// A unit at 0 health is Unconscious: it lies still, takes no orders, does nothing, and nothing fights it. A unit that is
+// awake is at 100 Conscious; knocked out it falls to 0, and wakes back at 100 with a little health. Each tick
+// (CONSCIOUS_TICKS_PER_HOUR) gains Conscious, up to double at full Comfort, and costs 1 Rested. With no Rested left, each
+// tick costs 1 Dying instead, unless it lies in a bed or bedroll, which stops Dying. Dying 100 makes it a Corpse for
+// good; waking ends Dying, so the next knock-out starts at 0.
 struct Unconscious {
-    float doom = 0.0f;
+    float dying = 0.0f;
     // The faction whose unit knocked it out, or -1 (hunger, or nobody). A unit of another faction knocked out by your
     // units has cost you reputation with its faction, and costs more if it dies before it wakes.
     int koFaction = -1;
-    // Knocked out well rested (RESTED_SAFE_PERCENT, needs.h): no Doom, and it wakes by itself once wake (in-game hours)
-    // runs out, playing dead if hostile units are near
-    bool rested = false;
-    float wake = 0.0f;
+    float conscious = 0.0f;
+    double tickPart = 0.0;   // the part of a tick saved toward the next one
 };
 // A unit being carried, by the unit `by` (which has Carrying). It lies over its carrier, moves with it and pushes
 // nothing. Unconscious units and corpses can be carried by anyone; a unit that is awake only by its own squad, and it
@@ -338,7 +337,7 @@ struct Carried {
 // own squad carrying it. A unit that wakes from a rested knock-out with hostile units near plays dead on the ground the
 // same way, until it is given an order or they have gone (playDeadSystem). Nobody attacks a unit playing dead.
 struct PlayingDead {};
-// An Unconscious unit whose Doom reached 100: it never recovers. It keeps its Unconscious, with Doom 100, so it can
+// An Unconscious unit whose Dying reached 100: it never recovers. It keeps its Unconscious, with Dying 100, so it can
 // still be carried and looted, and it is no longer anyone's to command.
 struct Corpse {};
 // A unit carrying another (one at a time). It can put it down on the ground or into a bed or bedroll.

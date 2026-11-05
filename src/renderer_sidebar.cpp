@@ -194,11 +194,11 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     };
     y = statRow(y, lang("UILABEL_HEALTH"), std::to_string(needs.hp) + " / " + std::to_string(needs.maxHp),
                 needs.maxHp > 0 ? (float)needs.hp / (float)needs.maxHp : 0.0f, theme::HEALTH_BAR);
-    // Doom, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full. One
-    // knocked out well rested has no Doom: it just lies out until it wakes.
-    if (const Unconscious* un = w.get<Unconscious>(unit); un && !un->rested) {
-        const int doom = (int)std::floor(std::clamp(un->doom, 0.0f, 100.0f));
-        y = statRow(y, lang("UILABEL_DOOM"), std::to_string(doom) + " / 100", un->doom / 100.0f,
+    // Dying, under the health, while the unit is Unconscious (or dead, at 100): it dies when the bar is full
+    const Unconscious* un = w.get<Unconscious>(unit);
+    if (un) {
+        const int dying = (int)std::floor(std::clamp(un->dying, 0.0f, 100.0f));
+        y = statRow(y, lang("UILABEL_DYING"), std::to_string(dying) + " / 100", un->dying / 100.0f,
                     RGBA{ 0.56f, 0.20f, 0.78f, 1.0f });
     }
     // A mob has no hunger, Comfort or carry: it can't feed itself and carries nothing. It does have Rested.
@@ -212,6 +212,12 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
     if (!mob) {
     y = statRow(y, lang("UILABEL_COMFORT"), std::to_string(needs.comfort) + " / " + std::to_string(needs.maxComfort),
                 needs.maxComfort > 0 ? (float)needs.comfort / (float)needs.maxComfort : 0.0f, RGBA{ 0.35f, 0.78f, 0.62f, 1.0f });
+    }
+    // Conscious: 100 while awake (components.h, Unconscious)
+    const int conscious = un ? std::min(99, (int)un->conscious) : 100;
+    y = statRow(y, lang("UILABEL_CONSCIOUS"), std::to_string(conscious) + " / 100", (float)conscious / 100.0f,
+                RGBA{ 0.95f, 0.85f, 0.45f, 1.0f });
+    if (!mob) {
 
     // Carried weight against what Strength lets the unit carry
     const float carried = carriedWeightOf(w, unit);

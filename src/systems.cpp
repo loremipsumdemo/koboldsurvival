@@ -4,7 +4,7 @@
 //   prop_use.cpp     using props: prop orders, work, crafting, storage and passive crafting
 //   automation.cpp   behavior rules: hauling, harvesting, resting, patrols and roaming
 //   wild_ai.cpp      patrol spawns, wild mobs grazing and fleeing, and Exiles running when hurt
-//   downed.cpp       unconscious units, doom and corpses
+//   downed.cpp       unconscious units, dying and corpses
 //   carry.cpp        carrying a unit and putting it down
 //   loot.cpp         looting, and what a unit may hold
 //   needs.cpp        hunger, rest and comfort over time

@@ -697,7 +697,8 @@ UILABEL_TASK_CARRIED	Μεταφέρεται
 UILABEL_TASK_PLAYING_DEAD	Κάνει τον νεκρό
 MISC_BREAKS_FREE	Ο {0} ελευθερώνεται
 MISC_PLAYS_DEAD	Ο {0} κάνει τον νεκρό
-UILABEL_DOOM	Χαμός
+UILABEL_DYING	Επιθανάτιος
+UILABEL_CONSCIOUS	Αισθήσεις
 UILABEL_TASK_UNCONSCIOUS	Αναίσθητος
 UILABEL_TASK_DEAD	Νεκρός
 UILABEL_TASK_CARRYING	Μεταφέρει

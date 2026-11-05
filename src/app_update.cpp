@@ -273,14 +273,14 @@ void App::stepGame() {
     needsSystem(world, hoursPassed, gameSecs);
     if (hoursPassed > 0) forgetSpotted(world);   // each in-game hour, spotting a unit gives Perception XP again
     downedSystem(world);   // starving to 0 knocks a unit out too
-    // Doom: up while Unconscious, down in a bed or bedroll; 0 there wakes the unit, 100 makes it a corpse
-    const DoomChanges doom = doomSystem(world, gameSecs);
+    // Unconscious units gain Conscious, paid for in Rested and then Dying: 100 Conscious wakes, 100 Dying is a corpse
+    const WakeChanges wakes = unconsciousSystem(world, gameSecs);
     playDeadSystem(world);
-    for (Entity u : doom.woke) {
+    for (Entity u : wakes.woke) {
         tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
         queueSoundFrom(world, Sfx::Recovers, u);
     }
-    for (Entity u : doom.died) queueSoundFrom(world, Sfx::Dies, u);
+    for (Entity u : wakes.died) queueSoundFrom(world, Sfx::Dies, u);
     showWorkGains(gameSecs);
     // Passive crafting props (the forge) burn their fuel and fill their output by themselves
     passiveCraftSystem(world, gameSecs);

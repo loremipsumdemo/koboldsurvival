@@ -15,7 +15,7 @@ enum class EmoteId : int {
     LockedIn = 8,     // in an occupiable prop that is locked (the Prisoner Cage), so it can't get out
     Herbalism = 9,     // gathering mushrooms
     Unconscious = 10,  // at 0 health, out cold (components.h, Unconscious)
-    Dead = 11,         // a corpse: its Doom reached 100
+    Dead = 11,         // a corpse: its Dying reached 100
     PlayingDead = 12, // awake, carried by a hostile, lying still until given an order
     CuePutDown = 13, // over a carried unit under the pointer whose carrier you have selected: right-click to put down
     CueTalk = 14,     // over an NPC under the pointer that can be talked to

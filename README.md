@@ -6,7 +6,7 @@ terrain world. They gather resources, build, eat, rest, fight and trade among ri
 ## Features
 
 - **Units with stats and needs.** Each unit has stats such as Strength, Dexterity, Vitality and Melee, and needs:
-  health, hunger, Rested and Comfort. A unit at 0 health is knocked out, and one whose Doom reaches 100 dies.
+  health, hunger, Rested and Comfort. A unit at 0 health is knocked out until its Conscious is back at 100, paid for in Rested and then Dying; Dying 100 kills it.
 - **Behaviors.** Each unit works through a priority list of behaviors (Eat, Heal, Share, Rest, Rescue, plus
   automated ones like Auto-Harvest and Auto-Haul). You can reorder, switch off or add behaviors per unit.
 - **Gathering and crafting.** Mine ore, cut trees, gather mushrooms, cook meat at campfires, and store items in

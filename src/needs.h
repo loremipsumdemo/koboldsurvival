@@ -21,19 +21,15 @@ inline double comfortGainPerHour(PropKind propKind) {
     return propKind == PropKind::Bed ? 20.0 : 10.0;
 }
 
-// A unit knocked out with at least this share of Rested (and some hunger left) gets no Doom: it lies out for
-// RESTED_WAKE_HOURS in-game hours and wakes by itself. Waking with a hostile unit within RESTED_HOSTILE_RANGE tiles,
-// it plays dead until given an order or until they have gone.
-constexpr int RESTED_SAFE_PERCENT = 50;
-constexpr float RESTED_WAKE_HOURS = 1.0f;
+// Ticks an Unconscious unit gets each in-game hour: each gains Conscious and costs a point of Rested or Dying
+constexpr double CONSCIOUS_TICKS_PER_HOUR = 100.0;
+// A unit that wakes with a hostile unit within this many tiles plays dead until given an order or until they have gone
 constexpr float RESTED_HOSTILE_RANGE = 12.0f;
 
 // The most Rested a unit can have: 100, plus its Vitality level (1 to 99)
 inline int maxRestedFor(const Stats& s) {
     return 100 + std::max(1, std::min(MAX_LEVEL, levelOf(s, StatId::Vitality)));
 }
-// Rested lost each time a unit comes round from being knocked out (not when Doom falls to 0 in a bed or bedroll)
-constexpr int RESTED_WAKE_COST = 40;
 // Leave Bed: a unit lying in a bed or bedroll at full health and fully rested gets up after this many real seconds
 constexpr float LEAVE_BED_SECONDS = 30.0f;
 // Rescue: how far a unit looks for one of its faction lying out cold, in tiles

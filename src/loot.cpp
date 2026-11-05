@@ -83,14 +83,14 @@ bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::
     }
     queueUnitLabel(looter, itemGainLabelFor(count, item));
     queueSound(Sfx::Take);
-    // Anything taken out of an Unconscious mob kills it: it goes to 0 health and its Doom completes at once
+    // Anything taken out of an Unconscious mob kills it: it goes to 0 health and its Dying completes at once
     if (w.has<Mob>(target) && !w.has<Corpse>(target)) {
         if (Needs* n = w.get<Needs>(target)) {
             n->hp = 0;
             n->changed |= NEEDS_HP_CHANGED;
         }
         queueLog(langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other, npcOnly(w, target));
-        finishDoom(w, target);
+        finishDying(w, target);
         queueSoundFrom(w, Sfx::Dies, target);
     }
     return true;

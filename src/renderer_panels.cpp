@@ -39,8 +39,8 @@ float Renderer::profileCardHeight(int H) {
     const float s = uiScaleFor(H);
     const float line = listTextHeight("Ag");
     const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
-    // Health, Doom (while Unconscious), Hunger, Rested, Comfort and Carry
-    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 6.0f * statRow + 4.0f * s;
+    // Health, Dying (while Unconscious), Hunger, Rested, Comfort, Conscious and Carry
+    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 7.0f * statRow + 4.0f * s;
 }
 
 // The world map window. Every shape on the map is drawn in window pixels with drawUiTris.

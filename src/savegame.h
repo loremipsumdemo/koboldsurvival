@@ -49,13 +49,12 @@ struct SaveUnit {
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
     int occupying = -1;        // the serial of the bed, chair or cage it is on, or -1
-    // Unconscious (components.h): its Doom and whether it is a corpse. Older saves have none, so their units are awake.
+    // Unconscious (components.h): its Dying, its Conscious and whether it is a corpse. Older saves have none, so their units are awake.
     bool unconscious = false;
-    float doom = 0.0f;
+    float dying = 0.0f;
+    float conscious = 0.0f;
     bool corpse = false;
     int koFaction = -1;        // the faction that knocked it out, or -1 (Unconscious::koFaction)
-    bool downRested = false;   // knocked out well rested: no Doom, and wakes when wake (in-game hours) runs out
-    float wake = 0.0f;
     // Carried: the index of the unit carrying it, or -1, and whether it is playing dead
     int carriedBy = -1;
     bool playingDead = false;

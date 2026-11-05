@@ -20,8 +20,8 @@ void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>
 Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z);
 // A mob's stats for its kind: its attributes and combat skills, each a level or two either way of the kind's
 Stats mobStats(MobKind kind, Rng& rng);
-// Ends an Unconscious unit's Doom at once: it is a corpse, as when its Doom reaches 100 (doomSystem)
-void finishDoom(World& w, Entity u);
+// Ends an Unconscious unit's Dying at once: it is a corpse, as when its Dying reaches 100 (unconsciousSystem)
+void finishDying(World& w, Entity u);
 // Whether a unit may take this item into its inventory: any unit may, but a mob only its own meat and bones (mobs.h)
 bool canHoldItem(World& w, Entity unit, int item);
 // Whether a unit's inventory is shut to everyone: a mob's, while it is awake (mobs.h)
@@ -189,28 +189,23 @@ void breakFree(World& w, Entity u);
 // is it carrying anyone
 bool canBeCarried(World& w, Entity target);
 
-// ---- Unconscious, Doom and Corpses (components.h) ----
+// ---- Unconscious, Dying and Corpses (components.h) ----
 // How far a unit carrying, or picking up, another must be from it, in tiles
 constexpr float CARRY_REACH = 1.2f;
-// Doom gained each in-game hour while Unconscious and not in a bed: 20, plus 30 less 1% of it for each Vitality level
-float doomPerHour(const Stats& s);
-// Doom lost each in-game hour lying Unconscious in a bed (20) or a bedroll (10); 0 for anything else
-float doomRecoveryPerHour(PropKind propKind);
-// Health a unit wakes with when its Doom falls to 0 in a bed or bedroll
+// Health a unit wakes with when Conscious is back at 100
 constexpr int RECOVERY_HEALTH = 10;
-// Knocks a unit out: it gets Unconscious with Doom 0, every order and task it had ends, it drops whatever unit it
+// Knocks a unit out: it gets Unconscious with Dying 0, every order and task it had ends, it drops whatever unit it
 // carried, and it drops out of the active squad (group move) it was in. A unit already on a bed or bedroll stays on
 // it. Does nothing to one already out.
 void knockOut(World& w, Entity u);
 // After anything that hurts: each unit at 0 health that is not yet Unconscious is knocked out
 void downedSystem(World& w);
-// Doom for the in-game seconds that passed: up while out on the ground or carried, down in a bed or bedroll. Doom 0 in
-// a bed or bedroll wakes the unit with RECOVERY_HEALTH; Doom 100 makes it a Corpse, no longer yours to command.
-// Returns the units that woke and the units that died this call.
-struct DoomChanges {
+// Conscious and Dying for the in-game seconds that passed (components.h, Unconscious). Returns the units that woke and
+// the units that died this call.
+struct WakeChanges {
     std::vector<Entity> woke, died;
 };
-DoomChanges doomSystem(World& w, double gameSeconds);
+WakeChanges unconsciousSystem(World& w, double gameSeconds);
 // Whether a hostile unit that is up and about stands within RESTED_HOSTILE_RANGE of u
 bool hostileNear(World& w, Entity u);
 // Units playing dead on the ground (woken from a rested knock-out near hostile units) get up once no hostile unit is

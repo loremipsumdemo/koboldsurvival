@@ -48,7 +48,7 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                       gameHours);
         }
 
-        // An Unconscious unit does not heal: only Doom falling to 0 in a bed, or a rested one's wait running out, wakes it
+        // An Unconscious unit does not heal: it gets a little health when it wakes
         if (w.has<Unconscious>(e)) continue;
         const Combat* c = w.get<Combat>(e);
         regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds, mob);

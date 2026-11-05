@@ -1,27 +1,22 @@
-// Unconscious units, doom and corpses, and playing dead.
+// Unconscious units, Conscious and Dying, corpses, and playing dead.
 #include "systems_internal.h"
 
 using namespace systems_detail;
 
-// ---- Unconscious, Doom and Corpses ----
+// ---- Unconscious, Dying and Corpses ----
 
-float doomPerHour(const Stats& s) {
-    const int vit = std::clamp(levelOf(s, StatId::Vitality), 1, MAX_LEVEL);
-    return 20.0f + 30.0f * (1.0f - (float)vit / 100.0f);
-}
-
-float doomRecoveryPerHour(PropKind propKind) {
-    if (propKind == PropKind::Bed) return 20.0f;
-    if (propKind == PropKind::Bedroll) return 10.0f;
-    return 0.0f;
+// Whether a unit lies in a bed or a bedroll, where Dying stops
+static bool inBedOrBedroll(World& w, Entity u) {
+    const Entity bed = occupiedProp(w, u);
+    const Prop* p = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
+    return p && (p->kind == PropKind::Bed || p->kind == PropKind::Bedroll);
 }
 
 void knockOut(World& w, Entity u) {
     if (!w.has<Unit>(u) || w.has<Unconscious>(u)) return;
     // Whatever it was doing ends. It keeps its bed if it is lying on one, and drops anyone it carried.
     const Entity bed = occupiedProp(w, u);
-    const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
-    const bool keepBed = bp && doomRecoveryPerHour(bp->kind) > 0.0f;
+    const bool keepBed = inBedOrBedroll(w, u);
     if (w.has<Carrying>(u)) putDown(w, u);
     clearOrders(w, u);
     w.remove<IdleSpot>(u);
@@ -38,12 +33,6 @@ void knockOut(World& w, Entity u) {
     if (Combat* c = w.get<Combat>(u)) {
         un.koFaction = c->downedByFaction;
         c->downedByFaction = -1;
-    }
-    // Well rested, and not starving: no Doom, and it wakes by itself after a while (a mob has no Rested)
-    if (const Needs* n = w.get<Needs>(u); n && !w.has<Mob>(u) && n->hunger > 0
-        && percentOf(n->rested, n->maxRested) >= RESTED_SAFE_PERCENT) {
-        un.rested = true;
-        un.wake = RESTED_WAKE_HOURS;
     }
     w.add(u, un);
     queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
@@ -62,58 +51,51 @@ void downedSystem(World& w) {
     }
 }
 
-DoomChanges doomSystem(World& w, double gameSeconds) {
-    DoomChanges out;
-    const float hours = (float)(gameSeconds / 3600.0);
-    if (hours <= 0.0f) return out;
+// Conscious is full: the unit wakes with a little health. Near a hostile unit one that is not a mob plays dead, unless it
+// lies in a bed. Carried by anyone but a hostile, it is put down and stands up again.
+static void wakeUp(World& w, Entity u, WakeChanges& out) {
+    w.remove<Unconscious>(u);
+    if (Needs* n = w.get<Needs>(u)) {
+        n->hp = std::max(n->hp, std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH));
+        n->changed |= NEEDS_HP_CHANGED;
+    }
+    if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
+    queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    out.woke.push_back(u);
+    if (!w.has<Mob>(u) && !w.has<Carried>(u) && !inBedOrBedroll(w, u) && hostileNear(w, u)) {
+        w.add(u, PlayingDead{});
+        queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    }
+}
+
+WakeChanges unconsciousSystem(World& w, double gameSeconds) {
+    WakeChanges out;
+    const double hours = gameSeconds / 3600.0;
+    if (hours <= 0.0) return out;
     for (Entity u : w.view<Unconscious>()) {
         if (w.has<Corpse>(u)) continue;
         Unconscious* un = w.get<Unconscious>(u);
-        if (un->rested) {
-            // Knocked out well rested: no Doom. It wakes when its wait runs out, and lies still playing dead if a
-            // hostile unit is near (a carried one: carrySystem decides, by who carries it).
-            un->doom = 0.0f;
-            un->wake -= hours;
-            if (un->wake <= 0.0f) {
-                w.remove<Unconscious>(u);
-                if (Needs* n = w.get<Needs>(u)) {
-                    n->hp = std::max(n->hp, std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH));
-                    n->changed |= NEEDS_HP_CHANGED;
-                    // Coming round from a knock-out is tiring
-                    n->rested = std::max(0, n->rested - RESTED_WAKE_COST);
-                }
-                // Carried by anyone but a hostile, it is put down and stands up again
-                if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
-                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
-                out.woke.push_back(u);
-                if (!w.has<Carried>(u) && hostileNear(w, u)) {
-                    w.add(u, PlayingDead{});
-                    queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
-                }
+        Needs* n = w.get<Needs>(u);
+        // Comfort adds to each tick's gain, up to double at full Comfort. A mob has no Comfort.
+        const float gain = 1.0f + (n && !w.has<Mob>(u) && n->maxComfort > 0 ? (float)n->comfort / (float)n->maxComfort : 0.0f);
+        const bool bed = inBedOrBedroll(w, u);
+        un->tickPart += CONSCIOUS_TICKS_PER_HOUR * hours;
+        const int ticks = (int)un->tickPart;
+        un->tickPart -= ticks;
+        for (int i = 0; i < ticks; ++i) {
+            // Each tick is paid for out of Rested. With none left it goes on Dying, unless the unit lies in a bed.
+            if (n && n->rested > 0) {
+                --n->rested;
+            } else if (!bed && ++un->dying >= 100.0f) {
+                finishDying(w, u);
+                out.died.push_back(u);
+                break;
             }
-            continue;
-        }
-        const Entity bed = occupiedProp(w, u);
-        const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
-        const float rest = bp ? doomRecoveryPerHour(bp->kind) : 0.0f;
-        if (rest > 0.0f) {
-            // In a bed or bedroll Doom falls, and at 0 the unit wakes with a little health, still lying there
-            un->doom = std::clamp(un->doom - rest * hours, 0.0f, 100.0f);
-            if (un->doom <= 0.0f) {
-                w.remove<Unconscious>(u);
-                if (Needs* n = w.get<Needs>(u)) {
-                    n->hp = std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH);
-                    n->changed |= NEEDS_HP_CHANGED;
-                }
-                queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
-                out.woke.push_back(u);
+            un->conscious += gain;
+            if (un->conscious >= 100.0f) {
+                wakeUp(w, u, out);
+                break;
             }
-            continue;
-        }
-        un->doom = std::clamp(un->doom + doomPerHour(statsOf(w, u)) * hours, 0.0f, 100.0f);
-        if (un->doom >= 100.0f) {
-            finishDoom(w, u);
-            out.died.push_back(u);
         }
     }
     return out;
@@ -142,11 +124,11 @@ void playDeadSystem(World& w) {
     }
 }
 
-void finishDoom(World& w, Entity u) {
+void finishDying(World& w, Entity u) {
     Unconscious* un = w.get<Unconscious>(u);
     if (!un || w.has<Corpse>(u)) return;
     // Dead for good: a corpse, no longer anyone's to command, still there to carry and to loot
-    un->doom = 100.0f;
+    un->dying = 100.0f;
     w.add(u, Corpse{});
     w.remove<Commandable>(u);
     w.remove<Selected>(u);

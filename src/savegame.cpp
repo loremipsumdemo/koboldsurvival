@@ -57,9 +57,9 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.hasHome) out << "home " << i << " " << u.homeX << " " << u.homeZ << " " << (u.homeReturning ? 1 : 0) << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
         if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
-        if (u.unconscious) out << "down " << i << " " << u.doom << " " << (u.corpse ? 1 : 0) << "\n";
+        if (u.unconscious) out << "down " << i << " " << u.dying << " " << (u.corpse ? 1 : 0) << "\n";
         if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
-        if (u.unconscious && u.downRested) out << "downrest " << i << " " << u.wake << "\n";
+        if (u.unconscious) out << "conscious " << i << " " << u.conscious << "\n";
         if (u.playingDead && u.carriedBy < 0) out << "still " << i << "\n";
         if (u.passive || u.block || u.sneak) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
@@ -179,15 +179,20 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                     n.comfort = std::clamp(comfort, 0, maxComfort);
                 }
             }
+            else if (line.rfind("conscious ", 0) == 0) {
+                std::istringstream ss(line.substr(10));
+                size_t i = 0;
+                float conscious = 0.0f;
+                ss >> i >> conscious;
+                if (!ss.fail() && i < d.units.size()) d.units[i].conscious = std::clamp(conscious, 0.0f, 100.0f);
+            }
+            // Older saves counted down in-game hours (at most 1) to waking instead
             else if (line.rfind("downrest ", 0) == 0) {
                 std::istringstream ss(line.substr(9));
                 size_t i = 0;
                 float wake = 0.0f;
                 ss >> i >> wake;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].downRested = true;
-                    d.units[i].wake = std::max(0.0f, wake);
-                }
+                if (!ss.fail() && i < d.units.size()) d.units[i].conscious = std::clamp((1.0f - wake) * 100.0f, 0.0f, 100.0f);
             }
             else if (line.rfind("still ", 0) == 0) {
                 std::istringstream ss(line.substr(6));
@@ -214,12 +219,12 @@ bool readSaveFile(const std::string& path, SaveData& d) {
             else if (line.rfind("down ", 0) == 0) {
                 std::istringstream ss(line.substr(5));
                 size_t i = 0;
-                float doom = 0.0f;
+                float dying = 0.0f;
                 int corpse = 0, carrier = -1;
-                ss >> i >> doom >> corpse;
+                ss >> i >> dying >> corpse;
                 if (!ss.fail() && i < d.units.size()) {
                     d.units[i].unconscious = true;
-                    d.units[i].doom = std::clamp(doom, 0.0f, 100.0f);
+                    d.units[i].dying = std::clamp(dying, 0.0f, 100.0f);
                     d.units[i].corpse = corpse != 0;
                     // A save from the first version of this line also named the carrier here
                     if (ss >> carrier) d.units[i].carriedBy = carrier;
