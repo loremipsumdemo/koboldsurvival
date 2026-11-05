@@ -1,6 +1,7 @@
 // Placing a model in the world, and finding where a ray meets it. Kept apart from model.cpp, which loads models into
 // OpenGL, so this needs no GL and the tests can check it.
 #include "model.h"
+#include "geometry.h"
 #include <algorithm>
 #include <cmath>
 
@@ -25,13 +26,10 @@ ModelPlacement placeModel(const Model& m, float x, float y, float z, float targe
     return p;
 }
 
-float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]) {
-    if (!p.ok || m.triangles.size() < 3) return -1.0f;
-    // Into the model's own space: p = R^-1((o - t) / k) + pivot, and d' = R^-1(d) / k, so the distance along the
-    // ray stays the same
-    const float lx = (o[0] - p.tx) / p.k, ly = (o[1] - p.ty) / p.k, lz = (o[2] - p.tz) / p.k;
-    const float ro[3] = { p.cs * lx - p.sn * lz + p.px, ly + p.py, p.sn * lx + p.cs * lz + p.pz };
-    const float rd[3] = { (p.cs * d[0] - p.sn * d[2]) / p.k, d[1] / p.k, (p.sn * d[0] + p.cs * d[2]) / p.k };
+namespace {
+
+// The nearest place a ray in the model's own space meets its triangles, along rd; below 0 when it misses
+float rayHitModelSpace(const Model& m, const float ro[3], const float rd[3]) {
     // A miss of the model's box needs no triangle tests
     {
         float t0 = -1e30f, t1 = 1e30f;
@@ -74,4 +72,27 @@ float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], con
         if (t >= 0.0f && (best < 0.0f || t < best)) best = t;
     }
     return best;
+}
+
+} // namespace
+
+float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]) {
+    if (!p.ok || m.triangles.size() < 3) return -1.0f;
+    // Into the model's own space: p = R^-1((o - t) / k) + pivot, and d' = R^-1(d) / k, so the distance along the
+    // ray stays the same
+    const float lx = (o[0] - p.tx) / p.k, ly = (o[1] - p.ty) / p.k, lz = (o[2] - p.tz) / p.k;
+    const float ro[3] = { p.cs * lx - p.sn * lz + p.px, ly + p.py, p.sn * lx + p.cs * lz + p.pz };
+    const float rd[3] = { (p.cs * d[0] - p.sn * d[2]) / p.k, d[1] / p.k, (p.sn * d[0] + p.cs * d[2]) / p.k };
+    return rayHitModelSpace(m, ro, rd);
+}
+
+float rayHitModelMatrix(const Model& m, const float matrix[16], const float o[3], const float d[3]) {
+    float inv[16];
+    if (m.triangles.size() < 3 || !invert4x4(matrix, inv)) return -1.0f;
+    float ro[3], rd[3];
+    for (int r = 0; r < 3; ++r) {
+        ro[r] = inv[r] * o[0] + inv[4 + r] * o[1] + inv[8 + r] * o[2] + inv[12 + r];
+        rd[r] = inv[r] * d[0] + inv[4 + r] * d[1] + inv[8 + r] * d[2];
+    }
+    return rayHitModelSpace(m, ro, rd);
 }

@@ -778,8 +778,8 @@ private:
     float unitAspect(World& w, Entity e) const;
     // A unit model standing on (x, y, z) GLYPH_H tall, facing yaw (0 faces +z); lying on its side when lying, on top
     // of y, moved `toward` the camera
-    void drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried = false,
-                       float height = 1.2f);
+    Mat4 unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const;
+    void drawUnitModel(const Model& m, const Mat4& placement);
     // The color a unit's model is tinted toward: its faction's, or none (alpha 0) for your own units and mobs
     RGBA unitFactionTint(World& w, Entity e) const;
     // Which way each unit's model faces: turned toward the way it last walked. One idle for UNIT_SETTLE_MS is settled:

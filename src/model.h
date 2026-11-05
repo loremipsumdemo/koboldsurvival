@@ -46,3 +46,5 @@ ModelPlacement placeModel(const Model& m, float x, float y, float z, float targe
 // The nearest place a ray (origin o, direction d, in the world) meets a placed model's triangles, as the distance
 // along d in units of d's length; below 0 when it misses
 float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]);
+// The same for a model placed by a whole matrix (column-major), as a unit lying on its side is
+float rayHitModelMatrix(const Model& m, const float matrix[16], const float o[3], const float d[3]);

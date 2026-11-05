@@ -234,17 +234,30 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-void Renderer::drawUnitModel(const Model& m, float x, float y, float z, float yaw, bool lying, float toward, bool carried,
-                             float height) {
-    if (!m.vao || !(m.maxY > m.minY)) return;
-    // Moved a little toward the camera, so a carried unit shows in front of its carrier
-    float dx = billX_ - x, dz = billZ_ - z;
-    const float len = std::sqrt(dx * dx + dz * dz);
-    if (len > 1e-4f) {
-        x += dx / len * toward;
-        z += dz / len * toward;
+// Where a unit's model is this frame: the one placement drawing and the mouse both use. A unit lies down when it is out
+// cold, playing dead, carried or in a bed. In a bed or bedroll it lies tipped the way a carried unit is, up on the bed. A
+// carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth, and a little
+// toward the camera so it shows in front of its carrier.
+Mat4 Renderer::unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const {
+    const Transform* tr = w.get<Transform>(e);
+    const float bed = bedLift(w, e);
+    const bool inBed = bed >= 0.0f, carried = w.has<Carried>(e);
+    const bool lying = w.has<Unconscious>(e) || carried || w.has<PlayingDead>(e) || inBed;
+    const float lift = carried ? CARRIED_MODEL_LIFT : inBed ? bed : unitHover(w, e);
+    float x = tr->x, z = tr->z;
+    if (carried) {
+        const float dx = billX_ - x, dz = billZ_ - z, len = std::sqrt(dx * dx + dz * dz);
+        if (len > 1e-4f) {
+            x += dx / len * 0.15f;
+            z += dz / len * 0.15f;
+        }
     }
-    const Mat4 mvp = mul(viewProj_, unitModelMatrix(m, x, y, z, yaw, lying, carried, height));
+    return unitModelMatrix(m, x, tr->y + lift, z, yaw, lying, carried || inBed, unitHeight(w, e));
+}
+
+void Renderer::drawUnitModel(const Model& m, const Mat4& placement) {
+    if (!m.vao || !(m.maxY > m.minY)) return;
+    const Mat4 mvp = mul(viewProj_, placement);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
     glBindVertexArray(m.vao);
     for (const DrawRange& d : m.draws) {
@@ -426,11 +439,34 @@ float Renderer::unitAspect(World& w, Entity e) const {
     return unitGlyph(w, e).aspect;
 }
 
-// Projects each unit's billboard to the screen and keeps those under the pixel.
-// The test uses the same size and aspect that drawGlyph uses.
+// The ray through a pixel, from the near plane toward the far one
+static bool pixelRay(const Mat4& vp, float mx, float my, int winW, int winH, float o[3], float d[3]) {
+    float inv[16];
+    if (!invert4x4(vp.m, inv)) return false;
+    const float ndcX = 2.0f * mx / (float)winW - 1.0f, ndcY = 1.0f - 2.0f * my / (float)winH;
+    auto unproject = [&](float ndcZ, float out3[3]) {
+        const float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
+        float r[4];
+        for (int i = 0; i < 4; ++i) r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1] + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
+        out3[0] = r[0] / r[3];
+        out3[1] = r[1] / r[3];
+        out3[2] = r[2] / r[3];
+    };
+    float f[3];
+    unproject(-1.0f, o);
+    unproject(1.0f, f);
+    for (int i = 0; i < 3; ++i) d[i] = f[i] - o[i];
+    return true;
+}
+
+// The units under a pixel, nearest first. A unit with a model is hit only on the model's own triangles, placed exactly
+// as it is drawn (unitWorldMatrix), so the mouse finds what is seen. This is for the mouse only: movement and attacks
+// treat every unit as one tile (UNIT_BOX). A unit whose model did not load is found by its sprite.
 std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
-    std::vector<Entity> out;
     Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    float o[3] = {}, d[3] = {};
+    if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
+    std::vector<std::pair<float, Entity>> hits;
 
     auto project = [&](float x, float y, float z, float& sx, float& sy) {
         return worldToScreen(vp, x, y, z, winW, winH, sx, sy);
@@ -439,6 +475,14 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     for (Entity u : w.view<Unit, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (const Model* m = unitModel(w, u)) {
+            // The way it faces now, without moving its turn on: that is drawing's to do
+            const auto facing = unitFacing_.find(u);
+            const float yaw = facing != unitFacing_.end() ? facing->second.yaw : std::atan2(billX_ - tr->x, billZ_ - tr->z);
+            const float t = rayHitModelMatrix(*m, unitWorldMatrix(w, u, *m, yaw).m, o, d);
+            if (t >= 0.0f) hits.push_back({ t, u });
+            continue;
+        }
         float bottomX, bottomY, topX, topY, midX, midY;
         const float hover = unitHover(w, u);   // a flying mob is found where it is drawn, up off the ground
         if (!project(tr->x, tr->y + hover, tr->z, bottomX, bottomY)) continue;
@@ -465,9 +509,14 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
             top = liftY - lyingH;
         }
         if (mx >= midX - halfW && mx <= midX + halfW && my >= top && my <= bottom) {
-            out.push_back(u);
+            const float dx = tr->x - o[0], dy = tr->y - o[1], dz = tr->z - o[2];
+            const float len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+            hits.push_back({ len2 > 0.0f ? (dx * d[0] + dy * d[1] + dz * d[2]) / len2 : 0.0f, u });
         }
     }
+    std::sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    std::vector<Entity> out;
+    for (const auto& h : hits) out.push_back(h.second);
     return out;
 }
 
@@ -476,25 +525,8 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
 // prop whose model did not load is found by its pink stand-in, a square facing the camera.
 std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    // The ray through the pixel, from the near plane toward the far one
     float o[3] = {}, d[3] = {};
-    {
-        float inv[16];
-        if (!invert4x4(vp.m, inv)) return {};
-        const float ndcX = 2.0f * mx / (float)winW - 1.0f, ndcY = 1.0f - 2.0f * my / (float)winH;
-        auto unproject = [&](float ndcZ, float out3[3]) {
-            const float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
-            float r[4];
-            for (int i = 0; i < 4; ++i) r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1] + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
-            out3[0] = r[0] / r[3];
-            out3[1] = r[1] / r[3];
-            out3[2] = r[2] / r[3];
-        };
-        float f[3];
-        unproject(-1.0f, o);
-        unproject(1.0f, f);
-        for (int i = 0; i < 3; ++i) d[i] = f[i] - o[i];
-    }
+    if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
     std::vector<std::pair<float, Entity>> hits;
     const DetailRange detail(cam);
     for (Entity e : w.view<Prop, Transform>()) {

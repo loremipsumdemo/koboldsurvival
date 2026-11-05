@@ -261,18 +261,11 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         // A unit with a model is drawn by it, turned the way it walks; a mob, or a unit whose model is missing, by its sprite
         if (const Model* m = unitModel(w, e)) {
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            // In a bed or bedroll it lies tipped the way a carried unit is, up on the bed
-            const float bed = bedLift(w, e);
-            const bool inBed = bed >= 0.0f;
-            const bool lying = w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e) || inBed;
-            const bool carried = w.has<Carried>(e);
+            const bool lying = w.has<Unconscious>(e) || w.has<Carried>(e) || w.has<PlayingDead>(e) || bedLift(w, e) >= 0.0f;
             if (lying) setSaturation(unitSaturation(w, e));
             const RGBA tint = unitFactionTint(w, e);
             glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
-            // A carried model lies over its carrier's shoulders, higher than a sprite does since the model has depth
-            const float lift = carried ? CARRIED_MODEL_LIFT : inBed ? bed : unitHover(w, e);
-            drawUnitModel(*m, tr->x, tr->y + lift, tr->z, yaw, lying, carried ? 0.15f : 0.0f, carried || inBed,
-                          unitHeight(w, e));
+            drawUnitModel(*m, unitWorldMatrix(w, e, *m, yaw));
             glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
             if (lying) setSaturation(1.0f);
             continue;
