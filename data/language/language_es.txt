@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Intercambio completado.
 MISC_PICKUP_SELECT	Selecciona unidades para recoger el objeto
 MISC_TRADE_ONLY_TALKING	Solo puedes comerciar con la unidad con la que hablas.
 MISC_DROPS	{0} suelta {1} {2}
-MISC_AN_ITEM	un objeto
 MISC_UNIT	Unidad
 MISC_TWO_HANDED_IN_MAIN	Un arma a dos manos está en la mano principal
 MISC_YOU	Tú
 MISC_UNKNOWN_ITEM	Objeto desconocido
-MISC_ITEM_FALLBACK	Objeto
-MISC_THAT_ITEM	Ese
 MISC_REASON_FEES	pagar tasas de comercio
 MISC_REASON_WALKING	caminar
 MISC_REASON_CARRYING	cargar peso

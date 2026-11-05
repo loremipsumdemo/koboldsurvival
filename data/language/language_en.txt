@@ -252,13 +252,10 @@ MISC_TRADE_COMPLETE	Trade complete.
 MISC_PICKUP_SELECT	Select units to pick the item up
 MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
 MISC_DROPS	{0} drops {1} {2}
-MISC_AN_ITEM	an item
 MISC_UNIT	Unit
 MISC_TWO_HANDED_IN_MAIN	A two-handed weapon is in the main hand
 MISC_YOU	You
 MISC_UNKNOWN_ITEM	Unknown item
-MISC_ITEM_FALLBACK	Item
-MISC_THAT_ITEM	That
 MISC_REASON_FEES	paying trade fees
 MISC_REASON_WALKING	walking
 MISC_REASON_CARRYING	carrying a load

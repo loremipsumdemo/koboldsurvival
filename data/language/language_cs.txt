@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Obchod dokončen.
 MISC_PICKUP_SELECT	Vyberte jednotky, které předmět sebrou
 MISC_TRADE_ONLY_TALKING	Obchodovat můžete jen s jednotkou, se kterou mluvíte.
 MISC_DROPS	{0} upustí {1} {2}
-MISC_AN_ITEM	předmět
 MISC_UNIT	Jednotka
 MISC_TWO_HANDED_IN_MAIN	V hlavní ruce je obouruční zbraň
 MISC_YOU	Vy
 MISC_UNKNOWN_ITEM	Neznámý předmět
-MISC_ITEM_FALLBACK	Předmět
-MISC_THAT_ITEM	Ten
 MISC_REASON_FEES	zaplacení poplatků za obchod
 MISC_REASON_WALKING	chůze
 MISC_REASON_CARRYING	nošení břemene

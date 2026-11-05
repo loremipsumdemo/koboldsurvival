@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Търговията е завършена.
 MISC_PICKUP_SELECT	Изберете единици, които да вземат предмета
 MISC_TRADE_ONLY_TALKING	Можете да търгувате само с единицата, с която разговаряте.
 MISC_DROPS	{0} пуска {1} {2}
-MISC_AN_ITEM	предмет
 MISC_UNIT	Единица
 MISC_TWO_HANDED_IN_MAIN	Двуръчно оръжие е в основната ръка
 MISC_YOU	Вие
 MISC_UNKNOWN_ITEM	Неизвестен предмет
-MISC_ITEM_FALLBACK	Предмет
-MISC_THAT_ITEM	Този
 MISC_REASON_FEES	плащане на такси за търговия
 MISC_REASON_WALKING	ходене
 MISC_REASON_CARRYING	носене на товар

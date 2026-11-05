@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Handelen er fullført.
 MISC_PICKUP_SELECT	Velg enheter som skal plukke opp gjenstanden
 MISC_TRADE_ONLY_TALKING	Du kan bare handle med enheten du snakker med.
 MISC_DROPS	{0} slipper {1} {2}
-MISC_AN_ITEM	en gjenstand
 MISC_UNIT	Enhet
 MISC_TWO_HANDED_IN_MAIN	Et tohåndsvåpen er i hovedhånden
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Ukjent gjenstand
-MISC_ITEM_FALLBACK	Gjenstand
-MISC_THAT_ITEM	Den
 MISC_REASON_FEES	betaler handelsavgifter
 MISC_REASON_WALKING	å gå
 MISC_REASON_CARRYING	å bære en last

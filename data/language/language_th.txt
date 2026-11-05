@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	การค้าเสร็จสมบูรณ์
 MISC_PICKUP_SELECT	เลือกยูนิตที่จะเก็บไอเทมนี้
 MISC_TRADE_ONLY_TALKING	คุณค้าขายได้เฉพาะกับยูนิตที่กำลังคุยด้วยเท่านั้น
 MISC_DROPS	{0} ทิ้ง {1} {2}
-MISC_AN_ITEM	ไอเทมหนึ่งชิ้น
 MISC_UNIT	ยูนิต
 MISC_TWO_HANDED_IN_MAIN	อาวุธสองมืออยู่ในมือหลัก
 MISC_YOU	คุณ
 MISC_UNKNOWN_ITEM	ไอเทมที่ไม่ทราบ
-MISC_ITEM_FALLBACK	ไอเทม
-MISC_THAT_ITEM	นั้น
 MISC_REASON_FEES	จ่ายค่าธรรมเนียมการค้า
 MISC_REASON_WALKING	การเดิน
 MISC_REASON_CARRYING	แบกของหนัก

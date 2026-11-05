@@ -1,9 +1,8 @@
 UI icons: data/icon/icon_<n>.png (no leading zeros), 32 x 32 pixels, by the ids in src/ui_icons.h.
-icon_0.png stands in for any icon whose own picture is missing; without it, a pink square with the id is drawn.
+An icon whose picture is missing is drawn as a pink square with its id. Id 0 (ICON_NONE) means no icon, and nothing is drawn.
 A new icon takes the next free number.
 
 Icon	File	Used for	Where it shows
-0	icon_0.png	Stand-in for any icon whose own picture is missing	Wherever that icon shows. Id 0 itself (ICON_NONE) means no icon, and nothing is drawn
 1	icon_1.png	Equipment heading	Unit sidebar, Equipment section heading (drawInventorySidebar)
 2	icon_2.png	Inventory heading	Unit sidebar, Inventory section heading (drawInventorySidebar)
 3	icon_3.png	Behavior heading	Unit sidebar, Behavior section heading (drawBehaviorSection)

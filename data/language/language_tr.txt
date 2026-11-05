@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Ticaret tamamlandı.
 MISC_PICKUP_SELECT	Eşyayı almak için birimler seçin
 MISC_TRADE_ONLY_TALKING	Yalnızca konuştuğunuz birimle ticaret yapabilirsiniz.
 MISC_DROPS	{0} {1} {2} bırakır
-MISC_AN_ITEM	bir eşya
 MISC_UNIT	Birim
 MISC_TWO_HANDED_IN_MAIN	Ana elde iki elli bir silah var
 MISC_YOU	Sen
 MISC_UNKNOWN_ITEM	Bilinmeyen eşya
-MISC_ITEM_FALLBACK	Eşya
-MISC_THAT_ITEM	Bu
 MISC_REASON_FEES	ticaret ücretlerini ödemek
 MISC_REASON_WALKING	yürümek
 MISC_REASON_CARRYING	yük taşımak

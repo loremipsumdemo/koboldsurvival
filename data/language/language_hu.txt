@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	A kereskedés befejeződött.
 MISC_PICKUP_SELECT	Válassz egységeket, amelyek felveszik a tárgyat
 MISC_TRADE_ONLY_TALKING	Csak azzal az egységgel kereskedhetsz, akivel éppen beszélsz.
 MISC_DROPS	{0} eldobja: {1} {2}
-MISC_AN_ITEM	egy tárgyat
 MISC_UNIT	Egység
 MISC_TWO_HANDED_IN_MAIN	Kétkezes fegyver van a fő kézben
 MISC_YOU	Te
 MISC_UNKNOWN_ITEM	Ismeretlen tárgy
-MISC_ITEM_FALLBACK	Tárgy
-MISC_THAT_ITEM	Az
 MISC_REASON_FEES	kereskedelmi díjak fizetése
 MISC_REASON_WALKING	gyaloglás
 MISC_REASON_CARRYING	teher cipelése

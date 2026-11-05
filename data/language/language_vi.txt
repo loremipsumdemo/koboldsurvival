@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Giao dịch hoàn tất.
 MISC_PICKUP_SELECT	Chọn đơn vị để nhặt vật phẩm
 MISC_TRADE_ONLY_TALKING	Bạn chỉ có thể giao dịch với đơn vị bạn đang nói chuyện.
 MISC_DROPS	{0} vứt {1} {2}
-MISC_AN_ITEM	một vật phẩm
 MISC_UNIT	Đơn vị
 MISC_TWO_HANDED_IN_MAIN	Vũ khí hai tay đang ở tay chính
 MISC_YOU	Bạn
 MISC_UNKNOWN_ITEM	Vật phẩm không rõ
-MISC_ITEM_FALLBACK	Vật phẩm
-MISC_THAT_ITEM	Vật đó
 MISC_REASON_FEES	trả phí giao dịch
 MISC_REASON_WALKING	đi bộ
 MISC_REASON_CARRYING	mang vác đồ nặng

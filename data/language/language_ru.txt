@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Сделка завершена.
 MISC_PICKUP_SELECT	Выберите юнитов, которые подберут предмет
 MISC_TRADE_ONLY_TALKING	Торговать можно только с юнитом, с которым вы говорите.
 MISC_DROPS	{0} выбрасывает {1} {2}
-MISC_AN_ITEM	предмет
 MISC_UNIT	Юнит
 MISC_TWO_HANDED_IN_MAIN	Двуручное оружие в основной руке
 MISC_YOU	Вы
 MISC_UNKNOWN_ITEM	Неизвестный предмет
-MISC_ITEM_FALLBACK	Предмет
-MISC_THAT_ITEM	Этот
 MISC_REASON_FEES	уплата торговых сборов
 MISC_REASON_WALKING	ходьба
 MISC_REASON_CARRYING	переноска груза

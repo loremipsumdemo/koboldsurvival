@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Schimb finalizat.
 MISC_PICKUP_SELECT	Selectează unitățile care vor ridica obiectul
 MISC_TRADE_ONLY_TALKING	Poți face schimb doar cu unitatea cu care vorbești.
 MISC_DROPS	{0} aruncă {1} {2}
-MISC_AN_ITEM	un obiect
 MISC_UNIT	Unitate
 MISC_TWO_HANDED_IN_MAIN	O armă cu două mâini este în mâna principală
 MISC_YOU	Tu
 MISC_UNKNOWN_ITEM	Obiect necunoscut
-MISC_ITEM_FALLBACK	Obiect
-MISC_THAT_ITEM	Acela
 MISC_REASON_FEES	plata taxelor de comerț
 MISC_REASON_WALKING	mers
 MISC_REASON_CARRYING	purtarea unei încărcături

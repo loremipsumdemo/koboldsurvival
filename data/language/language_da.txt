@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Handlen er gennemført.
 MISC_PICKUP_SELECT	Vælg enheder, der skal samle genstanden op
 MISC_TRADE_ONLY_TALKING	Du kan kun handle med den enhed, du taler med.
 MISC_DROPS	{0} taber {1} {2}
-MISC_AN_ITEM	en genstand
 MISC_UNIT	Enhed
 MISC_TWO_HANDED_IN_MAIN	Et tohåndsvåben er i hovedhånden
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Ukendt genstand
-MISC_ITEM_FALLBACK	Genstand
-MISC_THAT_ITEM	Den
 MISC_REASON_FEES	betaling af handelsgebyrer
 MISC_REASON_WALKING	gang
 MISC_REASON_CARRYING	at bære en last

@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Kauppa valmis.
 MISC_PICKUP_SELECT	Valitse yksiköt, jotka nostavat esineen
 MISC_TRADE_ONLY_TALKING	Voit käydä kauppaa vain sen yksikön kanssa, jonka kanssa puhut.
 MISC_DROPS	{0} pudottaa {1} {2}
-MISC_AN_ITEM	esineen
 MISC_UNIT	Yksikkö
 MISC_TWO_HANDED_IN_MAIN	Kaksikätinen ase on päätyökädessä
 MISC_YOU	Sinä
 MISC_UNKNOWN_ITEM	Tuntematon esine
-MISC_ITEM_FALLBACK	Esine
-MISC_THAT_ITEM	Tuo
 MISC_REASON_FEES	kauppamaksujen maksaminen
 MISC_REASON_WALKING	kävely
 MISC_REASON_CARRYING	kuorman kantaminen

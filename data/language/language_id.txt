@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Perdagangan selesai.
 MISC_PICKUP_SELECT	Pilih unit yang akan mengambil barang itu
 MISC_TRADE_ONLY_TALKING	Anda hanya dapat berdagang dengan unit yang sedang Anda ajak bicara.
 MISC_DROPS	{0} menjatuhkan {1} {2}
-MISC_AN_ITEM	sebuah barang
 MISC_UNIT	Unit
 MISC_TWO_HANDED_IN_MAIN	Senjata dua tangan ada di tangan utama
 MISC_YOU	Anda
 MISC_UNKNOWN_ITEM	Barang tidak diketahui
-MISC_ITEM_FALLBACK	Barang
-MISC_THAT_ITEM	Itu
 MISC_REASON_FEES	membayar biaya perdagangan
 MISC_REASON_WALKING	berjalan
 MISC_REASON_CARRYING	membawa beban

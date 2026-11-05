@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Échange terminé.
 MISC_PICKUP_SELECT	Sélectionnez des unités pour ramasser l'objet
 MISC_TRADE_ONLY_TALKING	Vous ne pouvez échanger qu'avec l'unité à qui vous parlez.
 MISC_DROPS	{0} lâche {1} {2}
-MISC_AN_ITEM	un objet
 MISC_UNIT	Unité
 MISC_TWO_HANDED_IN_MAIN	Une arme bimain est en main principale
 MISC_YOU	Vous
 MISC_UNKNOWN_ITEM	Objet inconnu
-MISC_ITEM_FALLBACK	Objet
-MISC_THAT_ITEM	Cet objet
 MISC_REASON_FEES	payer les frais d'échange
 MISC_REASON_WALKING	marcher
 MISC_REASON_CARRYING	porter une charge

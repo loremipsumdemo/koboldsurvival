@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	거래가 완료되었습니다.
 MISC_PICKUP_SELECT	아이템을 주울 유닛을 선택하세요
 MISC_TRADE_ONLY_TALKING	지금 대화 중인 유닛과만 거래할 수 있습니다.
 MISC_DROPS	{0}이(가) {1} {2}을(를) 떨어뜨립니다
-MISC_AN_ITEM	아이템 하나
 MISC_UNIT	유닛
 MISC_TWO_HANDED_IN_MAIN	양손 무기가 주무기 손에 있습니다
 MISC_YOU	당신
 MISC_UNKNOWN_ITEM	알 수 없는 아이템
-MISC_ITEM_FALLBACK	아이템
-MISC_THAT_ITEM	그
 MISC_REASON_FEES	거래 수수료 지불
 MISC_REASON_WALKING	걷기
 MISC_REASON_CARRYING	짐 나르기

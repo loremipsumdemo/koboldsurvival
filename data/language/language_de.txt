@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Handel abgeschlossen.
 MISC_PICKUP_SELECT	Wähle Einheiten, die den Gegenstand aufheben sollen
 MISC_TRADE_ONLY_TALKING	Du kannst nur mit der Einheit handeln, mit der du gerade sprichst.
 MISC_DROPS	{0} lässt {1} {2} fallen
-MISC_AN_ITEM	ein Gegenstand
 MISC_UNIT	Einheit
 MISC_TWO_HANDED_IN_MAIN	Eine zweihändige Waffe ist in der Haupthand
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Unbekannter Gegenstand
-MISC_ITEM_FALLBACK	Gegenstand
-MISC_THAT_ITEM	Dieser
 MISC_REASON_FEES	Handelsgebühren zahlen
 MISC_REASON_WALKING	Gehen
 MISC_REASON_CARRYING	Tragen einer Last

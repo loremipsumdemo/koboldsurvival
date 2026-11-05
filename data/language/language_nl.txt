@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Handel voltooid.
 MISC_PICKUP_SELECT	Selecteer eenheden om het voorwerp op te pakken
 MISC_TRADE_ONLY_TALKING	Je kunt alleen handelen met de eenheid met wie je praat.
 MISC_DROPS	{0} laat {1} {2} vallen
-MISC_AN_ITEM	een voorwerp
 MISC_UNIT	Eenheid
 MISC_TWO_HANDED_IN_MAIN	Een tweehandig wapen zit in de hoofdhand
 MISC_YOU	Jij
 MISC_UNKNOWN_ITEM	Onbekend voorwerp
-MISC_ITEM_FALLBACK	Voorwerp
-MISC_THAT_ITEM	Dat
 MISC_REASON_FEES	handelskosten betalen
 MISC_REASON_WALKING	lopen
 MISC_REASON_CARRYING	een last dragen

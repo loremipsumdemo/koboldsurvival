@@ -1,11 +1,10 @@
 Mob pictures: data/mob/mob_<n>.png (no leading zeros), one per kind of mob, numbered from 1 in the order of
-src/mobs.h. mob_0.png stands in for any picture that is missing; without it, the mob is drawn as a pink square. Each kind
+src/mobs.h. A mob whose picture is missing is drawn as a pink square. Each kind
 carries its own raw meat and bones (the bones are items 134 to 150, in the same order), and belongs to its own faction
 (data/factioninfo.txt) unless a camp's faction has it. The pictures from mob_19.png on are not used yet: a new kind of
 mob takes the next free number. A kind with a model (data/model/mob, listed in data/modelinfo.txt) is drawn by it.
 
 Mob	File	Kind	Raw meat (item id)	Faction
-0	mob_0.png	(stand-in)	Used for any mob whose own picture is missing	-
 1	mob_1.png	Bear	Raw Bear Meat (89)	10 (attacks on sight)
 2	mob_2.png	Cow	Raw Cow Meat (93)	11
 3	mob_3.png	Chicken	Raw Chicken Meat (95)	12

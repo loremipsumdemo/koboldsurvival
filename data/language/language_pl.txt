@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Handel zakończony.
 MISC_PICKUP_SELECT	Wybierz jednostki, które podniosą przedmiot
 MISC_TRADE_ONLY_TALKING	Możesz handlować tylko z jednostką, z którą rozmawiasz.
 MISC_DROPS	{0} upuszcza {1} {2}
-MISC_AN_ITEM	przedmiot
 MISC_UNIT	Jednostka
 MISC_TWO_HANDED_IN_MAIN	Broń dwuręczna jest w ręku głównym
 MISC_YOU	Ty
 MISC_UNKNOWN_ITEM	Nieznany przedmiot
-MISC_ITEM_FALLBACK	Przedmiot
-MISC_THAT_ITEM	Ten
 MISC_REASON_FEES	płacenie opłat handlowych
 MISC_REASON_WALKING	chodzenie
 MISC_REASON_CARRYING	noszenie ciężaru

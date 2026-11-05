@@ -1,9 +1,8 @@
 Emotes: data/emote/emote_<n>.png (no leading zeros), small pictures over a unit's head that show what it is doing
-(src/emotes.h). emote_0.png stands in for any emote whose own picture is missing; without it, a pink square is drawn.
+(src/emotes.h). An emote whose picture is missing is drawn as a pink square.
 A new emote takes the next free number.
 
 Emote	File	Shown when
-0	emote_0.png	Stand-in for any emote whose own picture is missing
 1	emote_1.png	Mining: working Ore
 2	emote_2.png	Woodcutting: working a Tree
 3	emote_3.png	Cooking: working a Campfire

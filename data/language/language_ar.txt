@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	اكتمل التبادل.
 MISC_PICKUP_SELECT	حدد الوحدات لالتقاط الغرض
 MISC_TRADE_ONLY_TALKING	لا يمكنك التبادل إلا مع الوحدة التي تتحدث معها.
 MISC_DROPS	{0} يُسقط {1} {2}
-MISC_AN_ITEM	غرضًا
 MISC_UNIT	وحدة
 MISC_TWO_HANDED_IN_MAIN	سلاح بيدين موجود في اليد الرئيسية
 MISC_YOU	أنت
 MISC_UNKNOWN_ITEM	غرض غير معروف
-MISC_ITEM_FALLBACK	غرض
-MISC_THAT_ITEM	ذلك
 MISC_REASON_FEES	دفع رسوم التبادل
 MISC_REASON_WALKING	المشي
 MISC_REASON_CARRYING	حمل حمولة

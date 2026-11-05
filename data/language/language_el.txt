@@ -263,13 +263,10 @@ MISC_TRADE_COMPLETE	Η συναλλαγή ολοκληρώθηκε.
 MISC_PICKUP_SELECT	Επίλεξε μονάδες για να σηκώσουν το αντικείμενο
 MISC_TRADE_ONLY_TALKING	Μπορείς να κάνεις συναλλαγή μόνο με τη μονάδα με την οποία μιλάς.
 MISC_DROPS	Ο/Η {0} αφήνει {1} {2}
-MISC_AN_ITEM	ένα αντικείμενο
 MISC_UNIT	Μονάδα
 MISC_TWO_HANDED_IN_MAIN	Ένα δίχειρο όπλο είναι στο κύριο χέρι
 MISC_YOU	Εσύ
 MISC_UNKNOWN_ITEM	Άγνωστο αντικείμενο
-MISC_ITEM_FALLBACK	Αντικείμενο
-MISC_THAT_ITEM	Αυτό
 MISC_REASON_FEES	πληρωμή τελών συναλλαγής
 MISC_REASON_WALKING	περπάτημα
 MISC_REASON_CARRYING	μεταφορά φορτίου
