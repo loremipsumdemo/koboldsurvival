@@ -83,6 +83,12 @@ void App::dimScreen(float alpha) {
     renderer.drawRect(Rect{ 0.0f, 0.0f, (float)winW, (float)winH }, RGBA{ 0.0f, 0.0f, 0.0f, alpha });
 }
 
+// The title picture, dimmed: what the menus other than the title are drawn over
+void App::drawMenuBackdrop() {
+    renderer.drawTitleBackground();
+    dimScreen(0.45f);
+}
+
 void App::drawTitleScreen() {
     renderer.beginUi(winW, winH);
     renderer.drawTitleBackground();
@@ -100,8 +106,7 @@ void App::drawTitleScreen() {
 
 void App::drawSettingsScreen() {
     renderer.beginUi(winW, winH);
-    renderer.drawTitleBackground();
-    dimScreen(0.45f);
+    drawMenuBackdrop();
     const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
     drawSettingsMenu(renderer, layoutSettings(winW, winH, rows, settingsUi), rows, settingsUi, mouseX, mouseY);
     renderer.endUi();
@@ -116,8 +121,7 @@ void App::drawScenarioScreen() {
     const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f };
     const RGBA accent{ 1.0f, 0.78f, 0.30f, 1.0f };
     renderer.beginUi(winW, winH);
-    renderer.drawTitleBackground();
-    dimScreen(0.45f);
+    drawMenuBackdrop();
     renderer.drawThemedPanel(sl.box);
     renderer.drawListText(lang("UILABEL_SCENARIO"), sl.heading.x, sl.heading.y, gray);
     const std::string name = lang(scenarioNameKey(scenarioPick));
@@ -154,8 +158,7 @@ void App::drawScenarioScreen() {
 void App::drawPartyScreen() {
     const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
     renderer.beginUi(winW, winH);
-    renderer.drawTitleBackground();
-    dimScreen(0.45f);
+    drawMenuBackdrop();
     renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop), party, partyUi,
                             partyPanels(winW, winH), mouseX, mouseY);
     renderer.endUi();

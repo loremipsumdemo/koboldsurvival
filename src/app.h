@@ -139,6 +139,7 @@ struct App {
     void drawScreenButtons(const std::vector<Button>& buttons);
     void drawMenuItems(Screen which, const std::vector<Button>& buttons);
     void dimScreen(float alpha);
+    void drawMenuBackdrop();
     void drawTitleScreen();
     void drawSettingsScreen();
     void drawScenarioScreen();

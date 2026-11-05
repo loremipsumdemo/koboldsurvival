@@ -107,7 +107,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         b->passive = low;
         if (!low) continue;
         if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
-        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) || n->hp <= 0) continue;
+        if (outOfAction(w, u) || n->hp <= 0) continue;
         b->sense -= dt;
         if (b->sense > 0.0f) continue;
         b->sense = 0.25f;

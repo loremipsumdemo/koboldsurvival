@@ -413,7 +413,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
         // Out cold, carried, shut in or downed: nothing to do
         const Needs* n = w.get<Needs>(u);
-        if (w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u) || (n && n->hp <= 0)) {
+        if (outOfAction(w, u) || (n && n->hp <= 0)) {
             b->busy = false;
             b->seeking = false;
             b->recovered = 0.0f;

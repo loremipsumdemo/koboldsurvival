@@ -1,5 +1,6 @@
 #include "textcase.h"
 #include "world_format.h"
+#include "byte_io.h"
 
 #include <algorithm>
 #include <cctype>
@@ -34,12 +35,6 @@ const char SURFACE_MAGIC[4] = { 'K', 'S', 'R', 'F' };
 constexpr uint32_t SURFACE_VERSION = 1;
 constexpr size_t SURFACE_HEADER = 12;   // magic, format version, tile size
 
-void putU32(uint8_t* p, uint32_t v) {
-    for (int i = 0; i < 4; ++i) p[i] = (uint8_t)((v >> (8 * i)) & 0xFF);
-}
-uint32_t getU32(const uint8_t* p) {
-    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-}
 void putF32(uint8_t* p, float f) {
     uint32_t bits;
     std::memcpy(&bits, &f, 4);
