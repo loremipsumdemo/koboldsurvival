@@ -1,4 +1,9 @@
 #include "app_support.h"
+#include <chrono>
+#include <cmath>
+#include "audio.h"
+#include "fonts.h"
+#include "renderer.h"
 #include <cstdlib>
 #include <ctime>
 #include <exception>
@@ -100,4 +105,68 @@ void onTerminate() {
     }
     fatalError(nullptr, "The game stopped on an error: " + what);
     std::abort();
+}
+
+// Draws one loading frame and keeps the window responsive while things load
+void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label,
+                  const std::string& category, bool backdrop) {
+    SDL_PumpEvents();
+    int winW, winH;
+    SDL_GetWindowSizeInPixels(window, &winW, &winH);
+    renderer.drawLoadingScreen(progress, winW, winH, label, category, backdrop);
+    SDL_GL_SwapWindow(window);
+}
+
+// Current time in milliseconds since 1970
+long long nowMs() {
+    return (long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+// Plays a sound effect now, on the slider it follows (sounds.h lists them all, with their files)
+// A sound effect is not played again within this long of its last start: a click that lands on several things at once,
+// or an order given to many units, plays it once
+// volume and pan are for a world sound, heard from the camera (sounds.h); one too far off to hear is not played at all.
+constexpr Uint64 SFX_REPEAT_GAP_MS = 50;
+void playSfx(Sfx s, float volume, float pan) {
+    static Uint64 lastStart[(int)Sfx::Count] = {};
+    static bool started[(int)Sfx::Count] = {};
+    if (volume <= 0.0f) return;
+    const int i = (int)s;
+    if (i >= 0 && i < (int)Sfx::Count) {
+        const Uint64 now = SDL_GetTicks();
+        if (started[i] && now - lastStart[i] < SFX_REPEAT_GAP_MS) return;
+        started[i] = true;
+        lastStart[i] = now;
+    }
+    const SfxInfo& info = sfxInfo(s);
+    audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects, volume, pan);
+}
+
+// The menus' text (the title, New Game, the scenarios, the party menu, Settings and the Esc menu) is this much larger
+// than the game's. The stat rows of the party menu's Stats tab stay at the game's size. The menus are laid out for a
+// 720 pixel high window and grow with it, so in a smaller window the text grows less, to keep fitting its boxes:
+// the full 1.5 times from 1080 pixels high, and the game's own size at 720.
+constexpr float MENU_FONT_SCALE = 1.5f;
+int menuFontPercent(int uiScale, int windowH) {
+    const float grow = std::clamp(windowH / 720.0f, 1.0f, MENU_FONT_SCALE);
+    return (int)std::lround(uiScale * grow);
+}
+
+UiFonts openUiFonts(int pct, const std::string& fontPath, const std::string& languageId) {
+    // 100% is the default size: 20 points at 100%
+    const float size = 20.0f * pct / 100.0f;
+    UiFonts f;
+    // The HUD, the UI, the lists and the title are bold. The Stats popout is regular.
+    f.hud = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.ui = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.list = openFontChain(size, true, fontPath, languageId, f.owned);
+    f.statsTitle = openFontChain(size, false, fontPath, languageId, f.owned);
+    f.statsRow = openFontChain(size, false, fontPath, languageId, f.owned);
+    return f;
+}
+
+void closeUiFonts(UiFonts& f) {
+    closeFonts(f.owned);
+    f.hud = f.ui = f.list = f.statsTitle = f.statsRow = nullptr;
 }
