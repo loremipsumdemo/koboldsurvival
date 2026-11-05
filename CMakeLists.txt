@@ -48,6 +48,13 @@ add_dependencies(write_build_stamp build_stamp)
 
 add_executable(koboldsurvival
     src/main.cpp
+    src/play_state.cpp
+    src/storage.cpp
+    src/trade.cpp
+    src/selection.cpp
+    src/level.cpp
+    src/menus.cpp
+    src/app_support.cpp
     src/renderer.cpp
     src/renderer_terrain.cpp
     src/items.cpp
