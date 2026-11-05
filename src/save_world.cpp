@@ -1,35 +1,9 @@
 // Turning a running level into a save and back.
 #include "level.h"
-#include <SDL3/SDL.h>
-#include <filesystem>
-#include <algorithm>
-#include <array>
-#include <cctype>
-#include <cmath>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include "language.h"
-#include "components.h"
-#include "ecs.h"
-#include "items.h"
-#include "inventory.h"
-#include "equip.h"
-#include "combat.h"
-#include "stats.h"
-#include "props.h"
 #include "systems.h"
-#include "textcase.h"
-#include "ui_layout.h"
 #include "play_state.h"
-#include "loading.h"
-#include "map_file.h"
-#include "pak.h"
 #include "renderer.h"
-#include "factions.h"
 #include "need_behaviors.h"
-#include "mobs.h"
-#include "world_format.h"
 
 using namespace play;
 
