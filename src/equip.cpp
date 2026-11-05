@@ -184,6 +184,16 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     return true;
 }
 
+void dropAtUnit(World& w, Entity unit, int item, int count) {
+    const Transform* tr = w.get<Transform>(unit);
+    if (!tr) return;
+    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(count), itemNameOf(item) }), LogKind::Drop,
+             npcOnly(w, unit));
+    queueUnitLabel(unit, itemLossLabelFor(count, item), true);
+    queueSound(Sfx::Drop);
+    spawnGroundItem(w, *tr, item, count);
+}
+
 bool dropEquipped(World& w, Entity unit, int gearSlot) {
     Equipment* worn = w.get<Equipment>(unit);
     const Transform* tr = w.get<Transform>(unit);
@@ -191,15 +201,8 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
 
     const int item = worn->items[gearSlot];
     if (item == 0) return false;
-    // Copy what's needed before creating an entity, which can move the stored components
-    const Transform at = *tr;
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), "1", itemNameOf(item) }), LogKind::Drop, npcOnly(w, unit));
-    queueUnitLabel(unit, itemLossLabelFor(1, item), true);
-    queueSound(Sfx::Drop);
     worn->items[gearSlot] = 0;
-    Entity e = w.create();
-    w.add(e, Transform{ at.x, at.y, at.z });
-    w.add(e, GroundItem{ item, 1 });
+    dropAtUnit(w, unit, item, 1);
     return true;
 }
 
@@ -207,18 +210,7 @@ int giveOrDrop(World& w, Entity unit, int item, int count) {
     if (item <= 0 || count <= 0) return 0;
     Inventory* inv = w.get<Inventory>(unit);
     const int left = inv ? addToInventory(*inv, item, count) : count;
-    if (left > 0) {
-        // No room for the rest: it falls where the unit stands
-        if (const Transform* tr = w.get<Transform>(unit)) {
-            const Transform at = *tr;   // creating an entity can move the stored components
-            queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(left), itemNameOf(item) }), LogKind::Drop, npcOnly(w, unit));
-            queueUnitLabel(unit, itemLossLabel(left, itemNameOf(item)), true);
-            queueSound(Sfx::Drop);
-            const Entity e = w.create();
-            w.add(e, Transform{ at.x, at.y, at.z });
-            w.add(e, GroundItem{ item, left });
-        }
-    }
+    if (left > 0) dropAtUnit(w, unit, item, left);   // no room for the rest
     return count - left;
 }
 

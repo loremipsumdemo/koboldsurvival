@@ -677,9 +677,7 @@ void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem) {
                 float h = 0.0f;
                 if (!t.tileGround(x, z, walk, h) || !walk) continue;
 
-                Entity e = w.create();
-                w.add(e, Transform{ x + 0.5f, h, z + 0.5f });
-                w.add(e, GroundItem{ def.id, 1 });
+                spawnGroundItem(w, Transform{ x + 0.5f, h, z + 0.5f }, def.id, 1);
                 break;
             }
         }

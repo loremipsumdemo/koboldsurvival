@@ -1,4 +1,5 @@
 #include "claims.h"
+#include "spatial.h"
 #include <algorithm>
 #include <cmath>
 #include "build.h"
@@ -178,9 +179,7 @@ void breakBuilding(World& w, Entity e) {
     }
     for (Entity g : gone) w.destroy(g);
     for (const Drop& d : drops) {
-        const Entity item = w.create();
-        w.add(item, Transform{ d.at.x, d.at.y, d.at.z });
-        w.add(item, GroundItem{ d.item, d.count });
+        spawnGroundItem(w, Transform{ d.at.x, d.at.y, d.at.z }, d.item, d.count);
     }
     for (const Transform& at : spots) {
         const Entity debris = w.create();

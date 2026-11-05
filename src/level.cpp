@@ -273,9 +273,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
     if (d.hasItems) {
         for (const SaveGround& g : d.ground) {
             if (g.item <= 0 || g.count <= 0) continue;
-            Entity e = world.create();
-            world.add(e, Transform{ g.x, g.y, g.z });
-            world.add(e, GroundItem{ g.item, g.count });
+            spawnGroundItem(world, Transform{ g.x, g.y, g.z }, g.item, g.count);
         }
     }
     // Auto-Haul props are found by where they stand (a camp's props are placed again from the seed, on the same spots).

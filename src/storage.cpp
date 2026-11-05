@@ -83,9 +83,7 @@ bool dropFromStorage(World& w, int slot) {
     const ItemStack stack = *from;
     queueLog(langf("MISC_DROPS", { nameOf(w, storageUnit), std::to_string(stack.count),
                                    itemNameOf(stack.item) }), LogKind::Drop, npcOnly(w, storageUnit));
-    const Entity e = w.create();
-    w.add(e, Transform{ ut->x, ut->y, ut->z });
-    w.add(e, GroundItem{ stack.item, stack.count });
+    spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, stack.item, stack.count);
     *from = ItemStack{};
     queueSound(Sfx::Drop);
     propStorageChanged(w, storageProp);   // a campfire that lost its input stops its work

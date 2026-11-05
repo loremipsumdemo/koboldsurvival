@@ -18,13 +18,7 @@ bool dropStack(World& w, Entity unit, int slot) {
     ItemStack& s = inv->slots[slot];
     if (s.item == 0 || s.count <= 0) return false;
 
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(s.count), itemNameOf(s.item) }),
-             LogKind::Drop, npcOnly(w, unit));
-    queueUnitLabel(unit, itemLossLabelFor(s.count, s.item), true);   // "-Iron Ore" over its head
-    queueSound(Sfx::Drop);
-    Entity e = w.create();
-    w.add(e, Transform{ tr->x, tr->y, tr->z });
-    w.add(e, GroundItem{ s.item, s.count });
+    dropAtUnit(w, unit, s.item, s.count);
     s = ItemStack{};
     return true;
 }

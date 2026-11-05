@@ -474,9 +474,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             } else {
                 // No room: the item falls at the unit's feet, and the unit stops working
                 if (const Transform* ut = w.get<Transform>(got)) {
-                    const Entity drop = w.create();
-                    w.add(drop, Transform{ ut->x, ut->y, ut->z });
-                    w.add(drop, GroundItem{ gives, 1 });
+                    spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, gives, 1);
                 }
                 queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop, npcOnly(w, got));
                 queueUnitLabel(got, itemLossLabel(1, itemName), true);   // it fell at the unit's feet
