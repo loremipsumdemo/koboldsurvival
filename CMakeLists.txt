@@ -51,8 +51,11 @@ add_executable(koboldsurvival
     src/app.cpp
     src/app_actions.cpp
     src/app_panels.cpp
+    src/app_panel_grab.cpp
     src/app_talk.cpp
     src/app_input.cpp
+    src/app_input_popups.cpp
+    src/app_input_panels.cpp
     src/app_update.cpp
     src/app_render.cpp
     src/play_state.cpp
