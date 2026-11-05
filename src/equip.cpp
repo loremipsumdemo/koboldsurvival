@@ -438,3 +438,16 @@ OptimizeAllResult optimizeAllGear(World& w, const std::vector<Entity>& units, co
 GearAction removeAllGear(World& w, Entity unit, std::string& why) {
     return wearGear(w, unit, Equipment{}, why);
 }
+
+bool dropStack(World& w, Entity unit, int slot) {
+    Inventory* inv = w.get<Inventory>(unit);
+    const Transform* tr = w.get<Transform>(unit);
+    if (!inv || !tr || slot < 0 || slot >= INVENTORY_SLOTS) return false;
+
+    ItemStack& s = inv->slots[slot];
+    if (s.item == 0 || s.count <= 0) return false;
+
+    dropAtUnit(w, unit, s.item, s.count);
+    s = ItemStack{};
+    return true;
+}

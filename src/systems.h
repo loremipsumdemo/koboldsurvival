@@ -75,8 +75,6 @@ void makeHostile(World& w, Entity unit);
 // Drops every talk order, once a talk has started or the NPC is gone
 void clearTalkOrders(World& w);
 
-// Moves the whole stack in one inventory slot onto the ground, under its unit. False if the slot is empty.
-bool dropStack(World& w, Entity unit, int slot);
 
 // Systems, run once per frame in this order. combatSystem (combat.h) runs before all of them, so a unit
 // that dies this frame is gone before the others move. running is the squad's walk or run mode: when set,

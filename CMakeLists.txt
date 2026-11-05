@@ -99,6 +99,8 @@ add_executable(koboldsurvival
     src/need_behaviors.cpp
     src/sounds.cpp
     src/systems.cpp
+    src/needs.cpp
+    src/unit_status.cpp
     src/world_setup.cpp
     src/movement.cpp
     src/prop_use.cpp

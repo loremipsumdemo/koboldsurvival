@@ -1,6 +1,5 @@
 #pragma once
-// Shared by the systems files (systems.cpp, world_setup.cpp, movement.cpp, prop_use.cpp, automation.cpp and
-// downed.cpp), and only by them: the helpers more than one of them uses. What only one file uses stays in that file.
+// Shared by the systems files (listed at the top of systems.cpp), and only by them: the helpers more than one of them uses. What only one file uses stays in that file.
 #include "systems.h"
 #include "need_behaviors.h"
 #include "claims.h"

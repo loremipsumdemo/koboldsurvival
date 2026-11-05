@@ -48,6 +48,8 @@ bool dropEquipped(World& w, Entity unit, int gearSlot);
 // Puts count of an item into a unit's inventory. Whatever does not fit falls to the ground at the unit's feet, with a
 // line in the log and a red "-item" label over it. Returns how many went into the inventory.
 int giveOrDrop(World& w, Entity unit, int item, int count);
+// Moves the whole stack in one inventory slot onto the ground, under its unit. False if the slot is empty.
+bool dropStack(World& w, Entity unit, int slot);
 // Items fall where a unit stands, with the log line, the "-Iron Ore" label and the sound
 void dropAtUnit(World& w, Entity unit, int item, int count);
 
