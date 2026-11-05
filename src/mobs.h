@@ -158,13 +158,6 @@ inline float mobSpriteScale(MobKind kind) {
     }
 }
 
-// How big a kind is against a person (1): its model's height against a person's 1.2 tiles, or its picture's scale.
-// A smaller unit can't push a bigger one, and a bigger one reaches further in melee (meleeReachFor).
-inline float mobSize(MobKind kind) {
-    const MobInfo& info = mobInfo(kind);
-    return info.model > 0 ? info.modelHeight / 1.2f : mobSpriteScale(kind);
-}
-
 // How far above the ground a kind is drawn while it is up and about, as a share of its height: the Bat flies. Lying
 // (Unconscious, playing dead, a corpse), carried, or occupying a prop, it is on the ground like any other.
 inline float mobHoverFraction(MobKind kind) {

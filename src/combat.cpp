@@ -62,7 +62,6 @@ CombatNumbers numbersOf(World& w, Entity e) {
     CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
     // A kind of mob with its own health (the Gorlicorn) has that, not the usual from Vitality
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) n.maxHp = mobInfo(m->kind).hp;
-    if (!n.ranged) n.reach = meleeReachOf(w, e);   // a big unit reaches further
     if (const Behaviors* b = behaviorsOf(w, e); b && b->block) {
         n.blockChance = std::min(BLOCK_MODE_CAP, std::max(n.blockChance, BLOCK_CHANCE_BASE) * BLOCK_MODE_FACTOR);
     }
@@ -388,16 +387,7 @@ bool isSneaking(World& w, Entity e) {
 
 float reachOf(World& w, Entity e) {
     if (const RangedProfile* rp = rangedOf(w, e); rp && ammoSlotFor(w, e, *rp) >= 0) return rp->range;
-    return meleeReachOf(w, e);
-}
-
-float unitSize(World& w, Entity e) {
-    const Mob* m = w.get<Mob>(e);
-    return m ? mobSize(m->kind) : 1.0f;
-}
-
-float meleeReachOf(World& w, Entity e) {
-    return ATTACK_REACH * std::sqrt(std::max(1.0f, unitSize(w, e)));
+    return ATTACK_REACH;
 }
 
 Equipment randomHostileGear(Rng& rng) {

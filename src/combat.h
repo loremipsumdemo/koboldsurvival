@@ -123,10 +123,6 @@ bool isBlocking(World& w, Entity e);
 bool isSneaking(World& w, Entity e);
 // The tiles from which a unit can hit now: its ranged weapon's range while it has ammo for it, else its melee reach
 float reachOf(World& w, Entity e);
-// How big a unit is against a person (1): a mob kind's size (mobSize), else 1
-float unitSize(World& w, Entity e);
-// Melee reach: ATTACK_REACH, longer for a unit bigger than a person (by the square root of its size), never shorter
-float meleeReachOf(World& w, Entity e);
 
 // Random gear for a hostile: each slot about half the time, with something that fits it
 Equipment randomHostileGear(Rng& rng);

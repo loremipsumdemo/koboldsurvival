@@ -23,7 +23,7 @@
 namespace systems_detail {
 
 inline constexpr float UNIT_CLEARANCE = 0.2f;   // extra gap kept between units in a formation
-inline constexpr float UNIT_BOX = 1.0f;         // the side of the square every unit and mob takes up: one tile
+inline constexpr float UNIT_BOX = 1.0f;         // the side of the box every unit and mob takes up, whatever its model: one tile
 inline constexpr float PICKUP_REACH = 2.0f;     // a unit this close to a ground item (in tiles) can take it
 inline constexpr int CHAIN_REPLANS = 3;         // new routes a unit on a pickup chain tries to an item it stopped short of
 

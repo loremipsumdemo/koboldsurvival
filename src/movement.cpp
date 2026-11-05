@@ -370,7 +370,6 @@ struct SteerFrame {
     // at its prop, the prop (else NULL_ENTITY). Units that share one hold still among themselves: see steerVelocity.
     std::vector<Entity> calmLead;
     std::vector<Entity> attacked;   // the units something is attacking this frame, sorted
-    std::vector<float> sizes;       // how big each unit is: a smaller one can't push a bigger one
     // Positions as they stand before anyone moves, and the units sorted by the one-tile cell they are in, so each
     // unit looks only at the units in its own and the eight cells around it: only those can overlap its square
     std::vector<Vec2f> pos;
@@ -532,8 +531,7 @@ void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector
 }
 
     // A unit's velocity: toward its goal, plus separation from the units too close to it.
-    // A unit is pushed only by units at least as big as it is.
-    // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
+        // An idle unit that a unit going somewhere is pushing gives way: it stops pulling back to its spot, and steps
     // aside, off the other unit's way. Once nothing pushes it, it walks back to its spot.
 void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
     const Entity e = s.units[i];
@@ -549,7 +547,6 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
         // than a tile apart on both axes, and are pushed apart along the axis they overlap least on
         const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
         if (overX <= 0.0f || overZ <= 0.0f) continue;
-        if (s.sizes[j] < s.sizes[i] - 1e-3f) continue;   // a smaller unit can't move this one
         // Two settled units following the same unit leave each other be: no pushing back and forth between them
         if (s.calmLead[i] != NULL_ENTITY && s.calmLead[i] == s.calmLead[j]) continue;
         if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;   // right on top: pick a side
@@ -659,9 +656,6 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     std::sort(s.attacked.begin(), s.attacked.end());
 
     for (size_t i = 0; i < units.size(); ++i) steerGoal(w, t, s, i, running);
-
-    s.sizes.assign(units.size(), 1.0f);
-    for (size_t i = 0; i < units.size(); ++i) s.sizes[i] = unitSize(w, units[i]);
 
     s.pos.resize(units.size());
     s.byCell.resize(units.size());
