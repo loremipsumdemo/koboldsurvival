@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(koboldgame)
+project(koboldsurvival)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -54,7 +54,7 @@ endif()
 add_custom_target(write_build_stamp COMMAND build_stamp "${BUILD_STAMP_CPP}" BYPRODUCTS "${BUILD_STAMP_CPP}" VERBATIM)
 add_dependencies(write_build_stamp build_stamp)
 
-add_executable(koboldgame
+add_executable(koboldsurvival
     src/main.cpp
     src/renderer.cpp
     src/renderer_terrain.cpp
@@ -96,14 +96,14 @@ add_executable(koboldgame
 add_executable(pack_data tools/pack_data.cpp)
 set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tools")
 
-target_include_directories(koboldgame PRIVATE
+target_include_directories(koboldsurvival PRIVATE
     src
     src/worldmaker          # the look and surface code the world files use
     ${GLEW_INCLUDE_DIRS}
     ${tinygltf_SOURCE_DIR}   # tiny_gltf.h and stb_image.h live in the tinygltf repo root
 )
 
-target_link_libraries(koboldgame PRIVATE
+target_link_libraries(koboldsurvival PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     SDL3_image::SDL3_image
@@ -114,13 +114,13 @@ target_link_libraries(koboldgame PRIVATE
 
 # A Windows GUI program, so no console window opens with the game. SDL_main.h (included in main.cpp) supplies
 # the WinMain entry point this needs. Log lines go to log.txt beside the exe. Other systems ignore this.
-set_target_properties(koboldgame PROPERTIES WIN32_EXECUTABLE TRUE)
+set_target_properties(koboldsurvival PROPERTIES WIN32_EXECUTABLE TRUE)
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
 # The game reads only this file, so the loose data/ folder is not copied.
-add_dependencies(koboldgame pack_data write_build_stamp)
-add_custom_command(TARGET koboldgame POST_BUILD
-    COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldgame>/data.pak"
+add_dependencies(koboldsurvival pack_data write_build_stamp)
+add_custom_command(TARGET koboldsurvival POST_BUILD
+    COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldsurvival>/data.pak"
     COMMENT "Packing data/ into data.pak"
 )
 
@@ -128,9 +128,9 @@ add_custom_command(TARGET koboldgame POST_BUILD
 # and SFX, so they can be edited without rebuilding the pak. They are in the pak too,
 # so the game still runs if this folder is missing. Files here override the pak's copy of the same language.
 # The BGM and SFX folders (music and sound effects) are copied the same way. The audio module reads them loose.
-add_custom_command(TARGET koboldgame POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/language" "$<TARGET_FILE_DIR:koboldgame>/LANGUAGE"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldgame>/BGM"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldgame>/SFX"
+add_custom_command(TARGET koboldsurvival POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/language" "$<TARGET_FILE_DIR:koboldsurvival>/LANGUAGE"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldsurvival>/BGM"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldsurvival>/SFX"
     COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"
 )

@@ -60,7 +60,7 @@ cmake -S . -B out/build -G Ninja
 cmake --build out/build
 ```
 
-Or open the folder in Visual Studio and build the `koboldgame` target.
+Or open the folder in Visual Studio and build the `koboldsurvival` target.
 
 The build also:
 
