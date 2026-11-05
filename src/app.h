@@ -96,6 +96,14 @@ struct App {
     void shutdown();
     void beginFrame();                       // the music, the window size and the menu fonts, at the top of each frame
     void handleEvent();                      // the event in e (app_input.cpp)
+    void onTextInput();
+    void onKeyDown();
+    void onMouseWheel();
+    void onMouseButtonDown();
+    bool mouseDownOnPopups();
+    bool mouseDownOnPanels();
+    void onMouseButtonUp();
+    void onMouseMotion();
     void update();                           // timing and the game's step (app_update.cpp)
     void updateHover();                      // the window title, the hover list and the build preview (app_update.cpp)
     void render();                           // the frame (app_render.cpp)
