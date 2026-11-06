@@ -1,9 +1,4 @@
 # Kind | Name | Tag | Materials | Skill | WorkTime
-small_foundation | Small Foundation | foundation | stone:5 | Stoneworking | 50
-large_foundation | Large Foundation | foundation | stone:15 | Stoneworking | 100
-long_foundation | Long Foundation | foundation | stone:20 | Stoneworking | 120
-circle_foundation | Circle Foundation | foundation | stone:25 | Stoneworking | 150
-flag | Claim Flag | claim | wood:10,stone:5 | Carpentry | 60
-vault | Vault | storage,upkeep | wood:30,stone:40 | Carpentry | 200
+altar | Altar | claim | wood:10,stone:5 | Carpentry | 60
 debris_small | Small Debris | debris | wood:2 | Carpentry | 20
 debris_large | Large Debris | debris | wood:5,stone:5 | Carpentry | 40

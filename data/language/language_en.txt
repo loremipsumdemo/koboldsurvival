@@ -211,9 +211,6 @@ UILABEL_MISS	Miss
 UILABEL_DAMAGE	Damage
 UILABEL_EXPERIENCE_MESSAGES	Experience Messages
 UILABEL_EXPERIENCE	Experience
-UILABEL_XP_ATHLETICS	Athletics Experience
-UILABEL_XP_ENDURANCE	Endurance Experience
-UILABEL_XP_CARRYING	Strength Experience (Carrying)
 UILABEL_ITEM_MESSAGES	Item Messages
 UILABEL_PICKUP	Pickup
 UILABEL_DROP	Drop
@@ -249,16 +246,11 @@ MISC_TWO_HANDED_IN_MAIN	A two-handed weapon is in the main hand
 MISC_YOU	You
 MISC_UNKNOWN_ITEM	Unknown item
 MISC_REASON_FEES	paying trade fees
-MISC_REASON_WALKING	walking
-MISC_REASON_CARRYING	carrying a load
-MISC_REASON_CLIMBING	climbing
 MISC_REASON_SWINGING	swinging
 MISC_REASON_DODGING	dodging
 MISC_REASON_DEALING	dealing damage
 MISC_REASON_TAKING	taking damage
 MISC_REASON_BLOCKING	blocking
-MISC_REASON_SPOTTING	spotting an enemy
-MISC_REASON_UNNOTICED	staying unnoticed
 MISC_REASON_GEAR	changing gear
 NPC_GREETING	Hello world.
 NPC_OPTION_WARES	Show me your wares.
@@ -278,14 +270,10 @@ MISC_ORD_12	Twelfth
 UILABEL_STAT_DESC_STRENGTH	Melee damage, weight carry capacity
 UILABEL_STAT_DESC_DEXTERITY	Attack speed
 UILABEL_STAT_DESC_VITALITY	Max health
-UILABEL_STAT_DESC_ENDURANCE	Max stamina
 UILABEL_STAT_DESC_AGILITY	Dodge chance
 UILABEL_STAT_DESC_INTELLIGENCE	Mana pool
 UILABEL_STAT_DESC_WISDOM	Learnable spell number capacity
 UILABEL_STAT_DESC_CHARISMA	NPC trade prices, unique dialogue options
-UILABEL_STAT_DESC_PERCEPTION	Detection range
-UILABEL_STAT_DESC_ATHLETICS	Running speed
-UILABEL_STAT_DESC_STEALTH	Better at avoiding sneak detection
 UILABEL_STAT_DESC_MELEE	Melee accuracy
 UILABEL_STAT_DESC_PROJECTILES	Ranged accuracy
 UILABEL_STAT_DESC_ARCANE	Spell power
@@ -305,14 +293,10 @@ UILABEL_STAT_DESC_THIEVERY	Stealing success
 UILABEL_STAT_DESC_MEDICAL	Healing effectiveness
 UILABEL_DEXTERITY_STAT	Dexterity
 UILABEL_VITALITY_STAT	Vitality
-UILABEL_ENDURANCE_STAT	Endurance
 UILABEL_AGILITY_STAT	Agility
 UILABEL_INTELLIGENCE_STAT	Intelligence
 UILABEL_WISDOM_STAT	Wisdom
 UILABEL_CHARISMA_STAT	Charisma
-UILABEL_PERCEPTION_STAT	Perception
-UILABEL_ATHLETICS_STAT	Athletics
-UILABEL_STEALTH_STAT	Stealth
 UILABEL_MELEE_STAT	Melee
 UILABEL_PROJECTILES_STAT	Projectiles
 UILABEL_ARCANE_STAT	Arcane
@@ -381,7 +365,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Defense {1}    Carry {2}
 MISC_IS_DOWN	{0} is down
 MISC_PICKS_UP	{0} picks up {1} {2}
 MISC_CANNOT_READ	Could not read {0}
-UILABEL_TIP_DURABILITY	Durability {0} / {1}
 UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
@@ -403,8 +386,6 @@ ITEM_7_NAME	Health Potion
 ITEM_7_DESC	Restores 50 HP when consumed.
 ITEM_8_NAME	Mana Potion
 ITEM_8_DESC	Restores 50 MP when consumed.
-ITEM_9_NAME	Stamina Draught
-ITEM_9_DESC	Restores 40 stamina and briefly boosts regeneration.
 ITEM_10_NAME	Elixir of Might
 ITEM_10_DESC	Grants +10 attack for 60 seconds.
 ITEM_11_NAME	Bread
@@ -641,7 +622,7 @@ UILABEL_MODE_SNEAK	Sneak
 UILABEL_MODE_RANGED	Ranged
 UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
 UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
-UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice. The higher the Stealth, the better.
+UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice.
 UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
 UILABEL_SQUAD_TAB	Squad
 UILABEL_REPUTATION	Reputation
@@ -922,23 +903,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Survival
 MISC_TITLE_KEYS	Select  //  Enter Confirm
 UILABEL_LANGUAGE_LABEL	Language:
-PROP_FLAG	Flag
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar of {0}
 PROP_DEBRIS	Debris
-PROP_FOUNDATION_SMALL	Small Foundation
-PROP_FOUNDATION_LARGE	Large Foundation
-PROP_FOUNDATION_LONG	Long Foundation
-PROP_FOUNDATION_CIRCLE	Circle Foundation
-PROP_VAULT	Vault
 UILABEL_BUILD	Build
 UILABEL_BUILD_SELECTED	Selected: {0}
 UILABEL_BUILD_NONE	Selected: None
 UILABEL_BUILD_SELECT	Select
 UILABEL_BUILD_PICKED	Picked
-UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Hold R and move the mouse left or right to turn it. Right-click or Escape cancels.
+UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Right-click or Escape cancels.
 UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
 MISC_BUILD_BLOCKED	No room to build here
 MISC_BUILD_UNWALKABLE	The ground here can't be built on
-MISC_BUILD_NO_FOUNDATION	A vault goes wholly on a foundation
 MISC_NO_UPKEEP	No upkeep: no logs
 MISC_UPKEEP_LEFT	Upkeep: {0} min left
 PROP_SHOP	Shop
@@ -948,24 +924,18 @@ PROP_STOVE	Stove
 UILABEL_BUILD_DESTROY	Destroy
 UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
 UILABEL_LOCK	Lock
-MISC_BUILD_NO_CLAIM	A foundation or vault goes inside your own claim
-MISC_BUILD_SEALED	That ground is sealed by another faction's vault
-MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another flag's claim
-MISC_BUILD_VAULT_TAKEN	That claim already has a vault
-MISC_BUILD_VAULT_CAP	Your faction already has as many vaults as it can hold
+MISC_BUILD_SEALED	That ground is claimed by another faction
+MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
+MISC_BUILD_ALTAR_TAKEN	Your faction already has an Altar
 MISC_DESTROY_NOTHING	Nothing to destroy there
 MISC_FLAG_FACTION	Owner: {0}
 MISC_FLAG_HEALTH	Health: {0} of {1}
-MISC_FLAG_VAULT_YES	Vault: standing, the claim is held
-MISC_FLAG_VAULT_NO	Vault: none, the flag is wearing down
-MISC_PROP_CONDITION	Condition: {0}%
 MISC_PROP_DECAYING	Decaying
 MISC_PROP_HOLDING	Not decaying
 MISC_PROP_LOCK_OPEN	Unlocked
 MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
 MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
 MISC_PROP_UPKEEP	Upkeep: {0} hours left
-MISC_PROP_VAULT_UNCLAIMED	Outside any claim: gives no upkeep
 MOB_BEAR	Bear
 MOB_COW	Cow
 MOB_CHICKEN	Chicken
@@ -1016,7 +986,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol Spawn
 UILABEL_BEHAVIOR_ROAM	Roam
 UILABEL_BEHAVIOR_PATROL_TIP	Patrol: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first appeared. Chased too far from there, it gives up, heals fully and walks back, taking no damage until it is home.
-UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the flags' claims.
+UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the claims.
 UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
 UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims
 UILABEL_TEMPERAMENT_AVOIDANT	Avoidant

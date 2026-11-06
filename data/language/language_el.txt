@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Περιπολία στο σημείο εμφάν�
 UILABEL_BEHAVIOR_ROAM	Περιπλάνηση
 UILABEL_BEHAVIOR_PATROL_TIP	Περιπολία: περπατά μέσα στην περιοχή όπου στέκεται, αν ανήκει στη φατρία του, σταματώντας πού και πού.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Περιπολία στο σημείο εμφάνισης: περπατά κοντά στο σημείο όπου εμφανίστηκε. Αν το κυνηγήσουν πολύ μακριά, τα παρατά, θεραπεύεται πλήρως και γυρίζει πίσω χωρίς να δέχεται ζημιά μέχρι να φτάσει.
-UILABEL_BEHAVIOR_ROAM_TIP	Περιπλάνηση: περιπλανιέται στην ανοιχτή γη, όπου μπορεί να περπατήσει έξω από τις περιοχές των σημαιών.
+UILABEL_BEHAVIOR_ROAM_TIP	Περιπλάνηση: περιπλανιέται στην ανοιχτή γη, όπου μπορεί να περπατήσει έξω από τις διεκδικήσεις.
 UILABEL_WAIT_NOT_IN_CLAIM	δεν είναι σε περιοχή της φατρίας του
 UILABEL_WAIT_NOWHERE_TO_ROAM	δεν υπάρχει ανοιχτό έδαφος κοντά έξω από τις περιοχές
 UILABEL_TEMPERAMENT_AVOIDANT	Φοβισμένο
@@ -219,9 +219,6 @@ UILABEL_MISS	Αστοχία
 UILABEL_DAMAGE	Ζημιά
 UILABEL_EXPERIENCE_MESSAGES	Μηνύματα εμπειρίας
 UILABEL_EXPERIENCE	Εμπειρία
-UILABEL_XP_ATHLETICS	Εμπειρία αθλητισμού
-UILABEL_XP_ENDURANCE	Εμπειρία αντοχής
-UILABEL_XP_CARRYING	Εμπειρία δύναμης (κουβάλημα)
 UILABEL_ITEM_MESSAGES	Μηνύματα αντικειμένων
 UILABEL_PICKUP	Συλλογή
 UILABEL_DROP	Απόθεση
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Ένα δίχειρο όπλο είναι στο κύρ�
 MISC_YOU	Εσύ
 MISC_UNKNOWN_ITEM	Άγνωστο αντικείμενο
 MISC_REASON_FEES	πληρωμή τελών συναλλαγής
-MISC_REASON_WALKING	περπάτημα
-MISC_REASON_CARRYING	μεταφορά φορτίου
-MISC_REASON_CLIMBING	αναρρίχηση
 MISC_REASON_SWINGING	κραδασμός όπλου
 MISC_REASON_DODGING	αποφυγή
 MISC_REASON_DEALING	πρόκληση ζημιάς
 MISC_REASON_TAKING	δέχεσαι ζημιά
 MISC_REASON_BLOCKING	μπλοκάρισμα
-MISC_REASON_SPOTTING	εντοπισμός εχθρού
-MISC_REASON_UNNOTICED	παραμονή απαρατήρητος
 MISC_REASON_GEAR	αλλαγή εξοπλισμού
 NPC_GREETING	Γεια σου, κόσμε.
 NPC_OPTION_WARES	Δείξε μου τα εμπορεύματά σου.
@@ -286,14 +278,10 @@ MISC_ORD_12	Δωδέκατη
 UILABEL_STAT_DESC_STRENGTH	Ζημιά σε μάχη σώμα με σώμα, χωρητικότητα φορτίου
 UILABEL_STAT_DESC_DEXTERITY	Ταχύτητα επίθεσης
 UILABEL_STAT_DESC_VITALITY	Μέγιστη υγεία
-UILABEL_STAT_DESC_ENDURANCE	Μέγιστη αντοχή
 UILABEL_STAT_DESC_AGILITY	Πιθανότητα αποφυγής
 UILABEL_STAT_DESC_INTELLIGENCE	Δεξαμενή μάνας
 UILABEL_STAT_DESC_WISDOM	Αριθμός μαγειών που μπορούν να μαθευτούν
 UILABEL_STAT_DESC_CHARISMA	Τιμές συναλλαγής με ΜΧ, ειδικές επιλογές διαλόγου
-UILABEL_STAT_DESC_PERCEPTION	Απόσταση εντοπισμού
-UILABEL_STAT_DESC_ATHLETICS	Ταχύτητα τρεξίματος
-UILABEL_STAT_DESC_STEALTH	Καλύτερη στο να αποφεύγεις την ανίχνευση όταν κρύβεσαι
 UILABEL_STAT_DESC_MELEE	Ακρίβεια σώμα με σώμα
 UILABEL_STAT_DESC_PROJECTILES	Ακρίβεια εξ αποστάσεως
 UILABEL_STAT_DESC_ARCANE	Ισχύς μαγείας
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Επιτυχία κλοπής
 UILABEL_STAT_DESC_MEDICAL	Αποτελεσματικότητα θεραπείας
 UILABEL_DEXTERITY_STAT	Ευκινησία
 UILABEL_VITALITY_STAT	Ζωτικότητα
-UILABEL_ENDURANCE_STAT	Αντοχή
 UILABEL_AGILITY_STAT	Ευελιξία
 UILABEL_INTELLIGENCE_STAT	Νοημοσύνη
 UILABEL_WISDOM_STAT	Σοφία
 UILABEL_CHARISMA_STAT	Χαρισματικότητα
-UILABEL_PERCEPTION_STAT	Αντίληψη
-UILABEL_ATHLETICS_STAT	Αθλητισμός
-UILABEL_STEALTH_STAT	Κρυφότητα
 UILABEL_MELEE_STAT	Σώμα με σώμα
 UILABEL_PROJECTILES_STAT	Εξ αποστάσεως
 UILABEL_ARCANE_STAT	Μαγεία
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Επίθεση {0}    Άμυνα {1}    Φορτί�
 MISC_IS_DOWN	Ο/Η {0} έπεσε
 MISC_PICKS_UP	Ο/Η {0} σηκώνει {1} {2}
 MISC_CANNOT_READ	Δεν ήταν δυνατή η ανάγνωση του {0}
-UILABEL_TIP_DURABILITY	Αντοχή {0} / {1}
 UILABEL_DATE_LINE	ΗΜΕΡΑ {0} · {1} · ΕΤΟΣ {2}
 UILABEL_MONITOR_N	Οθόνη {0}
 MISC_GAINS_XP	Ο/Η {0} κερδίζει {1} {2} εμπειρία για {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Φίλτρο υγείας
 ITEM_7_DESC	Αποκαθιστά 50 υγεία όταν πιωθεί.
 ITEM_8_NAME	Φίλτρο μάνας
 ITEM_8_DESC	Αποκαθιστά 50 μάνα όταν πιωθεί.
-ITEM_9_NAME	Φίλτρο αντοχής
-ITEM_9_DESC	Αποκαθιστά 40 αντοχή και ενισχύει για λίγο την αναγέννηση.
 ITEM_10_NAME	Ελιξίριο δύναμης
 ITEM_10_DESC	Δίνει +10 επίθεση για 60 δευτερόλεπτα.
 ITEM_11_NAME	Ψωμί
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Αθόρυβα
 UILABEL_MODE_RANGED	Από απόσταση
 UILABEL_MODE_PASSIVE_TIP	Παθητικός: δεν ξεκινά ποτέ μάχη ούτε μπαίνει σε μία για να βοηθήσει. Εκτελεί όμως εντολές, και επιθέσεις.
 UILABEL_MODE_BLOCK_TIP	Απόκρουση: δεν επιτίθεται ποτέ και αποκρούει χτυπήματα διπλάσιες φορές, ακόμη και με άδεια χέρια.
-UILABEL_MODE_SNEAK_TIP	Αθόρυβα: περπατά με μισή ταχύτητα και γίνεται πολύ δύσκολα αντιληπτός. Όσο υψηλότερη η Μυστικότητα, τόσο καλύτερα.
+UILABEL_MODE_SNEAK_TIP	Αθόρυβα: περπατά με μισή ταχύτητα και γίνεται πολύ δύσκολα αντιληπτός.
 UILABEL_MODE_RANGED_TIP	Από απόσταση: ενεργοποιείται μόνο του όσο υπάρχει τόξο ή βαλλίστρα στο κύριο χέρι. Κάθε βολή ξοδεύει ένα βέλος ή βλήμα.
 UILABEL_SQUAD_TAB	Ομάδα
 UILABEL_REPUTATION	Φήμη
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Κόμπολντ
 GAME_TITLE_SECOND	Επιβίωση
 MISC_TITLE_KEYS	Επιλογή  //  Enter Επιβεβαίωση
 UILABEL_LANGUAGE_LABEL	Γλώσσα:
-PROP_FLAG	Σημαία
+PROP_ALTAR	Βωμός
+MISC_ALTAR_OF	Βωμός: {0}
 PROP_DEBRIS	Συντρίμμια
-PROP_FOUNDATION_SMALL	Μικρά θεμέλια
-PROP_FOUNDATION_LARGE	Μεγάλα θεμέλια
-PROP_FOUNDATION_LONG	Μακριά θεμέλια
-PROP_FOUNDATION_CIRCLE	Κυκλικά θεμέλια
-PROP_VAULT	Θησαυροφυλάκιο
 UILABEL_BUILD	Χτίσιμο
 UILABEL_BUILD_SELECTED	Επιλογή: {0}
 UILABEL_BUILD_NONE	Επιλογή: καμία
 UILABEL_BUILD_SELECT	Επίλεξε
 UILABEL_BUILD_PICKED	Επιλέχθηκε
-UILABEL_BUILD_PLACE_HINT	Αριστερό κλικ στο έδαφος για τοποθέτηση. Κράτα το R και κίνησε το ποντίκι αριστερά ή δεξιά για περιστροφή. Δεξί κλικ ή Escape για ακύρωση.
+UILABEL_BUILD_PLACE_HINT	Αριστερό κλικ στο έδαφος για τοποθέτηση. Δεξί κλικ ή Escape για ακύρωση.
 UILABEL_UPKEEP_HINT	Καίει ένα {0} την ώρα για συντήρηση. Βάλε τα εδώ μέσα.
 MISC_BUILD_BLOCKED	Δεν υπάρχει χώρος για χτίσιμο εδώ
 MISC_BUILD_UNWALKABLE	Σε αυτό το έδαφος δεν χτίζεται τίποτα
-MISC_BUILD_NO_FOUNDATION	Ένα θησαυροφυλάκιο πρέπει να βρίσκεται ολόκληρο πάνω σε θεμέλια
 MISC_NO_UPKEEP	Χωρίς συντήρηση: δεν υπάρχουν κορμοί
 MISC_UPKEEP_LEFT	Συντήρηση: απομένουν {0} λεπτά
 PROP_SHOP	Κατάστημα
@@ -954,24 +930,18 @@ PROP_STOVE	Κουζίνα
 UILABEL_BUILD_DESTROY	Κατεδάφιση
 UILABEL_BUILD_DESTROY_HINT	Αριστερό κλικ σε οποιοδήποτε αντικείμενο για να το γκρεμίσεις: ό,τι περιέχει πέφτει στο έδαφος και στη θέση του μένουν συντρίμμια. Αριστερό κλικ στα συντρίμμια για να τα καθαρίσεις. Δεξί κλικ ή Escape για ακύρωση.
 UILABEL_LOCK	Κλείδωμα
-MISC_BUILD_NO_CLAIM	Θεμέλια ή θησαυροφυλάκιο μπαίνουν μόνο μέσα στη δική σου περιοχή
-MISC_BUILD_SEALED	Αυτό το έδαφος είναι σφραγισμένο από θησαυροφυλάκιο άλλης φατρίας
-MISC_BUILD_CLAIM_OVERLAP	Αυτή η περιοχή θα επικαλυπτόταν με την περιοχή άλλης σημαίας
-MISC_BUILD_VAULT_TAKEN	Αυτή η περιοχή έχει ήδη θησαυροφυλάκιο
-MISC_BUILD_VAULT_CAP	Η φατρία σου έχει ήδη όσα θησαυροφυλάκια μπορεί να έχει
+MISC_BUILD_SEALED	Αυτή η γη ανήκει σε άλλη φατρία
+MISC_BUILD_CLAIM_OVERLAP	Αυτή η διεκδίκηση θα επικαλυπτόταν με άλλη
+MISC_BUILD_ALTAR_TAKEN	Η φατρία σου έχει ήδη βωμό
 MISC_DESTROY_NOTHING	Δεν υπάρχει τίποτα για κατεδάφιση εκεί
 MISC_FLAG_FACTION	Ιδιοκτήτης: {0}
 MISC_FLAG_HEALTH	Αντοχή: {0} από {1}
-MISC_FLAG_VAULT_YES	Θησαυροφυλάκιο: όρθιο, η περιοχή κρατιέται
-MISC_FLAG_VAULT_NO	Θησαυροφυλάκιο: κανένα, η σημαία φθείρεται
-MISC_PROP_CONDITION	Κατάσταση: {0}%
 MISC_PROP_DECAYING	Φθείρεται
 MISC_PROP_HOLDING	Δεν φθείρεται
 MISC_PROP_LOCK_OPEN	Ξεκλείδωτο
 MISC_PROP_LOCK_YOURS	Κλειδωμένο για ξένους (ανοιχτό για σένα)
 MISC_PROP_LOCK_SHUT	Κλειδωμένο (Ανοίγματα κλειδαριών {0})
 MISC_PROP_UPKEEP	Συντήρηση: απομένουν {0} ώρες
-MISC_PROP_VAULT_UNCLAIMED	Εκτός κάθε περιοχής: δεν δίνει συντήρηση
 MOB_BEAR	Αρκούδα
 MOB_COW	Αγελάδα
 MOB_CHICKEN	Κότα

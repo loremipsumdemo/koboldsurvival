@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrouille am Ursprung
 UILABEL_BEHAVIOR_ROAM	Umherstreifen
 UILABEL_BEHAVIOR_PATROL_TIP	Patrouille: läuft im Gebiet umher, in dem die Einheit steht, wenn es ihrer Fraktion gehört, und hält ab und zu an.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrouille am Ursprung: läuft nahe dem Ort umher, an dem sie erschienen ist. Zu weit verfolgt, gibt sie auf, heilt sich voll und kehrt zurück, ohne Schaden zu nehmen, bis sie dort ist.
-UILABEL_BEHAVIOR_ROAM_TIP	Umherstreifen: wandert durch das offene Land, überall dort, wo sie außerhalb der Flaggengebiete gehen kann.
+UILABEL_BEHAVIOR_ROAM_TIP	Umherstreifen: streift durchs offene Land, überall wo es außerhalb der Ansprüche gehen kann.
 UILABEL_WAIT_NOT_IN_CLAIM	nicht in einem Gebiet ihrer Fraktion
 UILABEL_WAIT_NOWHERE_TO_ROAM	kein offener Boden in der Nähe außerhalb der Gebiete
 UILABEL_TEMPERAMENT_AVOIDANT	Scheu
@@ -219,9 +219,6 @@ UILABEL_MISS	Verfehlt
 UILABEL_DAMAGE	Schaden
 UILABEL_EXPERIENCE_MESSAGES	Erfahrungsmeldungen
 UILABEL_EXPERIENCE	Erfahrung
-UILABEL_XP_ATHLETICS	Athletik-Erfahrung
-UILABEL_XP_ENDURANCE	Ausdauer-Erfahrung
-UILABEL_XP_CARRYING	Stärke-Erfahrung (Tragen)
 UILABEL_ITEM_MESSAGES	Gegenstandsmeldungen
 UILABEL_PICKUP	Aufheben
 UILABEL_DROP	Ablegen
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Eine zweihändige Waffe ist in der Haupthand
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Unbekannter Gegenstand
 MISC_REASON_FEES	Handelsgebühren zahlen
-MISC_REASON_WALKING	Gehen
-MISC_REASON_CARRYING	Tragen einer Last
-MISC_REASON_CLIMBING	Klettern
 MISC_REASON_SWINGING	Schwingen
 MISC_REASON_DODGING	Ausweichen
 MISC_REASON_DEALING	Schaden verursachen
 MISC_REASON_TAKING	Schaden nehmen
 MISC_REASON_BLOCKING	Blocken
-MISC_REASON_SPOTTING	Einen Feind entdecken
-MISC_REASON_UNNOTICED	Unbemerkt bleiben
 MISC_REASON_GEAR	Ausrüstung wechseln
 NPC_GREETING	Hallo Welt.
 NPC_OPTION_WARES	Zeig mir deine Waren.
@@ -286,14 +278,10 @@ MISC_ORD_12	Zwölfter
 UILABEL_STAT_DESC_STRENGTH	Nahkampfschaden, Tragkraft
 UILABEL_STAT_DESC_DEXTERITY	Angriffsgeschwindigkeit
 UILABEL_STAT_DESC_VITALITY	Maximale Gesundheit
-UILABEL_STAT_DESC_ENDURANCE	Maximale Ausdauer
 UILABEL_STAT_DESC_AGILITY	Ausweichchance
 UILABEL_STAT_DESC_INTELLIGENCE	Manavorrat
 UILABEL_STAT_DESC_WISDOM	Anzahl lernbarer Zauber
 UILABEL_STAT_DESC_CHARISMA	Handelspreise von NPCs, besondere Dialogoptionen
-UILABEL_STAT_DESC_PERCEPTION	Erkennungsreichweite
-UILABEL_STAT_DESC_ATHLETICS	Laufgeschwindigkeit
-UILABEL_STAT_DESC_STEALTH	Besser darin, Entdeckung beim Schleichen zu vermeiden
 UILABEL_STAT_DESC_MELEE	Nahkampfgenauigkeit
 UILABEL_STAT_DESC_PROJECTILES	Fernkampfgenauigkeit
 UILABEL_STAT_DESC_ARCANE	Zauberkraft
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Erfolg beim Stehlen
 UILABEL_STAT_DESC_MEDICAL	Wirksamkeit von Heilung
 UILABEL_DEXTERITY_STAT	Geschicklichkeit
 UILABEL_VITALITY_STAT	Vitalität
-UILABEL_ENDURANCE_STAT	Ausdauer
 UILABEL_AGILITY_STAT	Beweglichkeit
 UILABEL_INTELLIGENCE_STAT	Intelligenz
 UILABEL_WISDOM_STAT	Weisheit
 UILABEL_CHARISMA_STAT	Charisma
-UILABEL_PERCEPTION_STAT	Wahrnehmung
-UILABEL_ATHLETICS_STAT	Athletik
-UILABEL_STEALTH_STAT	Heimlichkeit
 UILABEL_MELEE_STAT	Nahkampf
 UILABEL_PROJECTILES_STAT	Fernkampf
 UILABEL_ARCANE_STAT	Arkanes
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Angriff {0}    Verteidigung {1}    Tragkraft {2}
 MISC_IS_DOWN	{0} ist kampfunfähig
 MISC_PICKS_UP	{0} hebt {1} {2} auf
 MISC_CANNOT_READ	{0} konnte nicht gelesen werden
-UILABEL_TIP_DURABILITY	Haltbarkeit {0} / {1}
 UILABEL_DATE_LINE	TAG {0} · {1} · JAHR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} erhält {1} {2} XP für {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Heiltrank
 ITEM_7_DESC	Stellt beim Trinken 50 LP wieder her.
 ITEM_8_NAME	Manatrank
 ITEM_8_DESC	Stellt beim Trinken 50 MP wieder her.
-ITEM_9_NAME	Ausdauertrunk
-ITEM_9_DESC	Stellt 40 Ausdauer wieder her und beschleunigt die Regeneration kurz.
 ITEM_10_NAME	Elixier der Macht
 ITEM_10_DESC	Gewährt für 60 Sekunden +10 Angriff.
 ITEM_11_NAME	Brot
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Schleichen
 UILABEL_MODE_RANGED	Fernkampf
 UILABEL_MODE_PASSIVE_TIP	Passiv: beginnt nie einen Kampf und greift nicht ein, um anderen zu helfen. Befolgt aber Befehle, auch Angriffe.
 UILABEL_MODE_BLOCK_TIP	Blocken: greift nie an und blockt doppelt so oft, auch mit leeren Händen.
-UILABEL_MODE_SNEAK_TIP	Schleichen: geht mit halber Geschwindigkeit und wird viel schwerer bemerkt. Je höher Heimlichkeit, desto besser.
+UILABEL_MODE_SNEAK_TIP	Schleichen: geht mit halber Geschwindigkeit und wird viel schwerer bemerkt.
 UILABEL_MODE_RANGED_TIP	Fernkampf: schaltet sich von selbst ein, solange ein Bogen oder eine Armbrust in der Haupthand ist. Jeder Schuss verbraucht einen Pfeil oder Bolzen.
 UILABEL_SQUAD_TAB	Trupp
 UILABEL_REPUTATION	Ruf
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Überleben
 MISC_TITLE_KEYS	Auswählen  //  Enter Bestätigen
 UILABEL_LANGUAGE_LABEL	Sprache:
-PROP_FLAG	Flagge
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar: {0}
 PROP_DEBRIS	Schutt
-PROP_FOUNDATION_SMALL	Kleines Fundament
-PROP_FOUNDATION_LARGE	Großes Fundament
-PROP_FOUNDATION_LONG	Langes Fundament
-PROP_FOUNDATION_CIRCLE	Rundes Fundament
-PROP_VAULT	Tresorraum
 UILABEL_BUILD	Bauen
 UILABEL_BUILD_SELECTED	Ausgewählt: {0}
 UILABEL_BUILD_NONE	Ausgewählt: Nichts
 UILABEL_BUILD_SELECT	Wählen
 UILABEL_BUILD_PICKED	Gewählt
-UILABEL_BUILD_PLACE_HINT	Linksklick auf den Boden zum Platzieren. R halten und die Maus nach links oder rechts bewegen zum Drehen. Rechtsklick oder Escape bricht ab.
+UILABEL_BUILD_PLACE_HINT	Linksklick auf den Boden zum Platzieren. Rechtsklick oder Escape bricht ab.
 UILABEL_UPKEEP_HINT	Verbraucht stündlich ein(e) {0} als Unterhalt. Leg sie hier hinein.
 MISC_BUILD_BLOCKED	Kein Platz zum Bauen hier
 MISC_BUILD_UNWALKABLE	Auf diesem Boden kann nicht gebaut werden
-MISC_BUILD_NO_FOUNDATION	Ein Tresorraum muss ganz auf einem Fundament stehen
 MISC_NO_UPKEEP	Kein Unterhalt: keine Stämme
 MISC_UPKEEP_LEFT	Unterhalt: noch {0} Min.
 PROP_SHOP	Laden
@@ -954,24 +930,18 @@ PROP_STOVE	Herd
 UILABEL_BUILD_DESTROY	Abreißen
 UILABEL_BUILD_DESTROY_HINT	Linksklick auf ein Objekt reißt es ab: sein Inhalt fällt zu Boden und Schutt bleibt zurück. Linksklick auf Schutt räumt ihn weg. Rechtsklick oder Escape bricht ab.
 UILABEL_LOCK	Abschließen
-MISC_BUILD_NO_CLAIM	Ein Fundament oder Tresorraum muss in deinem eigenen Gebiet stehen
-MISC_BUILD_SEALED	Dieser Boden ist durch den Tresorraum einer anderen Fraktion versiegelt
-MISC_BUILD_CLAIM_OVERLAP	Dieses Gebiet würde sich mit dem Gebiet einer anderen Flagge überschneiden
-MISC_BUILD_VAULT_TAKEN	Dieses Gebiet hat schon einen Tresorraum
-MISC_BUILD_VAULT_CAP	Deine Fraktion hat schon so viele Tresorräume, wie sie haben kann
+MISC_BUILD_SEALED	Dieses Land gehört einer anderen Fraktion
+MISC_BUILD_CLAIM_OVERLAP	Dieser Anspruch würde sich mit einem anderen überschneiden
+MISC_BUILD_ALTAR_TAKEN	Deine Fraktion hat bereits einen Altar
 MISC_DESTROY_NOTHING	Dort gibt es nichts abzureißen
 MISC_FLAG_FACTION	Besitzer: {0}
 MISC_FLAG_HEALTH	Gesundheit: {0} von {1}
-MISC_FLAG_VAULT_YES	Tresorraum: steht, das Gebiet wird gehalten
-MISC_FLAG_VAULT_NO	Tresorraum: keiner, die Flagge nutzt sich ab
-MISC_PROP_CONDITION	Zustand: {0} %
 MISC_PROP_DECAYING	Verfällt
 MISC_PROP_HOLDING	Verfällt nicht
 MISC_PROP_LOCK_OPEN	Offen
 MISC_PROP_LOCK_YOURS	Für Fremde verschlossen (für dich offen)
 MISC_PROP_LOCK_SHUT	Verschlossen (Schlösserknacken {0})
 MISC_PROP_UPKEEP	Unterhalt: noch {0} Stunden
-MISC_PROP_VAULT_UNCLAIMED	Außerhalb jedes Gebiets: gibt keinen Unterhalt
 MOB_BEAR	Bär
 MOB_COW	Kuh
 MOB_CHICKEN	Huhn

@@ -66,7 +66,7 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
         if (w.has<PlayingDead>(u)) breakFree(w, u);
-        if (w.has<Unconscious>(u) || w.has<Carried>(u)) continue;
+        if (outCold(w, u) || w.has<Carried>(u)) continue;
         if (lockedIn(w, u)) {
             // Locked in: the only order it takes is to unlock the prop it is in, which it does from where it is
             if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
@@ -154,6 +154,24 @@ std::vector<PropArrival> propOrderSystem(World& w) {
             if (lockShutFor(w, prop, u)) {
                 // A locked prop can't be opened or used
                 a.locked = true;
+                out.push_back(a);
+                continue;
+            }
+            if (action == PropAction::Place && w.get<Prop>(prop)->kind == PropKind::Campfire) {
+                // A corpse carried into a campfire is gone, and what it had falls to the ground there
+                const Carrying* cr = w.get<Carrying>(u);
+                if (cr && w.has<Corpse>(cr->unit)) {
+                    const Entity corpse = cr->unit;
+                    const Transform at = *pt;
+                    queueLog(langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, corpse), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, corpse));
+                    queueSoundFrom(w, Sfx::Drop, prop);
+                    const std::vector<ItemStack> belongings = unitBelongings(w, corpse);
+                    w.remove<Carrying>(u);
+                    w.destroy(corpse);
+                    dropStacks(w, at, belongings);
+                    a.placed = true;
+                    a.started = true;
+                }
                 out.push_back(a);
                 continue;
             }
@@ -514,7 +532,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
         propStorageChanged(w, prop);
         if (w.has<Commandable>(unit)) {
             queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameOf(movedItem),
-                                                    lang(propInfo(p->kind).nameKey) }), LogKind::Pickup, npcOnly(w, unit));
+                                                    propDisplayName(w, prop) }), LogKind::Pickup, npcOnly(w, unit));
         }
     }
     return moved;
@@ -586,7 +604,7 @@ void propStorageChanged(World& w, Entity prop) {
 bool propAcceptsItem(PropKind kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
-    if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;   // a Vault: its upkeep only
+    if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;   // an Altar: its upkeep only
     if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
     const ItemDef* def = findItem(item);
     switch (info.accepts) {
@@ -637,7 +655,7 @@ static int nextPassiveInput(const Storage* st, PropKind kind) {
 }
 
 // What a passive crafting prop's next finished item is: its item, or at a campfire the burning meat cooked (or, with
-// nothing burning, the next meat in its input cooked). 0 for a Vault, and for a campfire with nothing to cook.
+// nothing burning, the next meat in its input cooked). 0 for an Altar, and for a campfire with nothing to cook.
 static int nextPassiveOutput(const Storage* st, const Fuel& fuel, PropKind kind) {
     const PropInfo& info = propInfo(kind);
     if (info.input != INPUT_COOKABLE) return info.item;
@@ -678,7 +696,7 @@ void passiveCraftSystem(World& w, double gameSeconds) {
         // A long jump of the clock can finish several items, so this goes round until the time is used up or it stops
         for (int guard = 0; guard < 100000; ++guard) {
             // A finished item goes into the output, if it has room. If not, it waits there, finished.
-            // A prop with no output item (a Vault's upkeep) finishes nothing: its hour of fuel is all it does.
+            // A prop with no output item (an Altar's upkeep) finishes nothing: its hour of fuel is all it does.
             if (pw.progress >= 1.0 - 1e-9) {
                 // A campfire makes the meat that burned cooked; a forge its item
                 const int made = cooks ? (fuel.item > 0 ? recipeOutput(kind, fuel.item) : 0) : info.item;

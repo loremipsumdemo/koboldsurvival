@@ -11,8 +11,6 @@ bool freeTrade = false;
 float talkCooldown = 0.0f;
 bool paused = false;
 BuildPick buildPick;
-float buildYaw = 0.0f;
-float buildPrevX = -1.0f;
 std::vector<TradeGhost> tradeNpc;
 std::vector<TradeGhost> tradePlayer;
 int tradeNpcDrag = -1;

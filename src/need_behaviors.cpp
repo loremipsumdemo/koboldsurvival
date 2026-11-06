@@ -26,7 +26,7 @@ bool hasOn(const Behaviors& b, BehaviorKind kind) {
 // Whether a unit can act at all: not out cold, carried or at 0 health
 bool canAct(World& w, Entity e) {
     const Needs* n = w.get<Needs>(e);
-    return n && n->hp > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e);
+    return n && n->hp > 0 && !outCold(w, e) && !w.has<Carried>(e);
 }
 
 // The share of a stat a unit has, as a whole percent

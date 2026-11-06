@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulare la origine
 UILABEL_BEHAVIOR_ROAM	Hoinăreală
 UILABEL_BEHAVIOR_PATROL_TIP	Patrulare: se plimbă prin teritoriul în care se află, dacă e al facțiunii sale, oprindu-se din când în când.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulare la origine: se plimbă lângă locul unde a apărut. Urmărită prea departe, renunță, se vindecă complet și se întoarce, fără să primească daune până ajunge.
-UILABEL_BEHAVIOR_ROAM_TIP	Hoinăreală: rătăcește prin ținuturile deschise, oriunde poate merge în afara teritoriilor steagurilor.
+UILABEL_BEHAVIOR_ROAM_TIP	Hoinăreală: rătăcește pe terenul deschis, oriunde poate merge în afara teritoriilor.
 UILABEL_WAIT_NOT_IN_CLAIM	nu e pe un teritoriu al facțiunii sale
 UILABEL_WAIT_NOWHERE_TO_ROAM	niciun teren deschis în apropiere în afara teritoriilor
 UILABEL_TEMPERAMENT_AVOIDANT	Sfios
@@ -219,9 +219,6 @@ UILABEL_MISS	Ratat
 UILABEL_DAMAGE	Daune
 UILABEL_EXPERIENCE_MESSAGES	Mesaje de experiență
 UILABEL_EXPERIENCE	Experiență
-UILABEL_XP_ATHLETICS	Experiență la Atletism
-UILABEL_XP_ENDURANCE	Experiență la Rezistență
-UILABEL_XP_CARRYING	Experiență la Forță (cărat)
 UILABEL_ITEM_MESSAGES	Mesaje despre obiecte
 UILABEL_PICKUP	Ridicare
 UILABEL_DROP	Aruncare
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	O armă cu două mâini este în mâna principală
 MISC_YOU	Tu
 MISC_UNKNOWN_ITEM	Obiect necunoscut
 MISC_REASON_FEES	plata taxelor de comerț
-MISC_REASON_WALKING	mers
-MISC_REASON_CARRYING	purtarea unei încărcături
-MISC_REASON_CLIMBING	cățărare
 MISC_REASON_SWINGING	lovituri
 MISC_REASON_DODGING	eschivare
 MISC_REASON_DEALING	cauzarea de daune
 MISC_REASON_TAKING	primirea de daune
 MISC_REASON_BLOCKING	blocare
-MISC_REASON_SPOTTING	zărirea unui inamic
-MISC_REASON_UNNOTICED	rămânerea nedetectat
 MISC_REASON_GEAR	schimbarea echipamentului
 NPC_GREETING	Salut, lume.
 NPC_OPTION_WARES	Arată-mi marfa ta.
@@ -286,14 +278,10 @@ MISC_ORD_12	Al doisprezecelea
 UILABEL_STAT_DESC_STRENGTH	Daune corp la corp, capacitate de transport
 UILABEL_STAT_DESC_DEXTERITY	Viteza atacului
 UILABEL_STAT_DESC_VITALITY	Sănătate maximă
-UILABEL_STAT_DESC_ENDURANCE	Energie maximă
 UILABEL_STAT_DESC_AGILITY	Șansa de a evita lovitura
 UILABEL_STAT_DESC_INTELLIGENCE	Rezerva de mană
 UILABEL_STAT_DESC_WISDOM	Numărul de vrăji care pot fi învățate
 UILABEL_STAT_DESC_CHARISMA	Prețurile comercianților, opțiuni de dialog unice
-UILABEL_STAT_DESC_PERCEPTION	Raza de detectare
-UILABEL_STAT_DESC_ATHLETICS	Viteza de alergare
-UILABEL_STAT_DESC_STEALTH	Mai bun la evitarea detectării în timpul furișării
 UILABEL_STAT_DESC_MELEE	Precizia în luptă corp la corp
 UILABEL_STAT_DESC_PROJECTILES	Precizia la distanță
 UILABEL_STAT_DESC_ARCANE	Puterea vrăjilor
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Succesul furtului
 UILABEL_STAT_DESC_MEDICAL	Eficiența vindecării
 UILABEL_DEXTERITY_STAT	Dexteritate
 UILABEL_VITALITY_STAT	Vitalitate
-UILABEL_ENDURANCE_STAT	Anduranță
 UILABEL_AGILITY_STAT	Agilitate
 UILABEL_INTELLIGENCE_STAT	Inteligență
 UILABEL_WISDOM_STAT	Înțelepciune
 UILABEL_CHARISMA_STAT	Charismă
-UILABEL_PERCEPTION_STAT	Percepție
-UILABEL_ATHLETICS_STAT	Atletism
-UILABEL_STEALTH_STAT	Furiș
 UILABEL_MELEE_STAT	Corp la corp
 UILABEL_PROJECTILES_STAT	Proiectile
 UILABEL_ARCANE_STAT	Arcane
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Atac {0}    Apărare {1}    Capacitate {2}
 MISC_IS_DOWN	{0} a căzut
 MISC_PICKS_UP	{0} ridică {1} {2}
 MISC_CANNOT_READ	Nu s-a putut citi {0}
-UILABEL_TIP_DURABILITY	Durabilitate {0} / {1}
 UILABEL_DATE_LINE	ZIUA {0} · {1} · ANUL {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} câștigă {1} {2} XP pentru {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Poțiune de sănătate
 ITEM_7_DESC	Restabilește 50 de sănătate când este consumată.
 ITEM_8_NAME	Poțiune de mană
 ITEM_8_DESC	Restabilește 50 de mană când este consumată.
-ITEM_9_NAME	Băutură de energie
-ITEM_9_DESC	Restabilește 40 de anduranță și accelerează scurt regenerarea.
 ITEM_10_NAME	Elixir al puterii
 ITEM_10_DESC	Oferă +10 atac timp de 60 de secunde.
 ITEM_11_NAME	Pâine
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Furișare
 UILABEL_MODE_RANGED	La distanță
 UILABEL_MODE_PASSIVE_TIP	Pasiv: nu începe niciodată o luptă și nu intră în una ca să ajute. Execută totuși ordinele, inclusiv atacuri.
 UILABEL_MODE_BLOCK_TIP	Blocare: nu atacă niciodată și blochează loviturile de două ori mai des, chiar cu mâinile goale.
-UILABEL_MODE_SNEAK_TIP	Furișare: merge cu jumătate de viteză și e mult mai greu de observat. Cu cât Furișarea e mai mare, cu atât mai bine.
+UILABEL_MODE_SNEAK_TIP	Furișare: merge cu jumătate de viteză și e mult mai greu de observat.
 UILABEL_MODE_RANGED_TIP	La distanță: pornește singur cât timp în mâna principală e un arc sau o arbaletă. Fiecare tragere folosește o săgeată sau un bolț.
 UILABEL_SQUAD_TAB	Echipă
 UILABEL_REPUTATION	Reputație
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Supraviețuire
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Alege  //  Enter Confirmă
 UILABEL_LANGUAGE_LABEL	Limbă:
-PROP_FLAG	Steag
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altarul: {0}
 PROP_DEBRIS	Moloz
-PROP_FOUNDATION_SMALL	Fundație mică
-PROP_FOUNDATION_LARGE	Fundație mare
-PROP_FOUNDATION_LONG	Fundație lungă
-PROP_FOUNDATION_CIRCLE	Fundație rotundă
-PROP_VAULT	Seif
 UILABEL_BUILD	Construiește
 UILABEL_BUILD_SELECTED	Selectat: {0}
 UILABEL_BUILD_NONE	Selectat: nimic
 UILABEL_BUILD_SELECT	Alege
 UILABEL_BUILD_PICKED	Ales
-UILABEL_BUILD_PLACE_HINT	Clic stânga pe sol pentru a plasa. Ține apăsat R și mișcă mouse-ul la stânga sau la dreapta pentru a roti. Clic dreapta sau Escape anulează.
+UILABEL_BUILD_PLACE_HINT	Clic stânga pe sol pentru a plasa. Clic dreapta sau Escape anulează.
 UILABEL_UPKEEP_HINT	Consumă un {0} pe oră pentru întreținere. Pune-le aici.
 MISC_BUILD_BLOCKED	Nu e loc de construit aici
 MISC_BUILD_UNWALKABLE	Pe acest teren nu se poate construi
-MISC_BUILD_NO_FOUNDATION	Un seif trebuie să stea în întregime pe o fundație
 MISC_NO_UPKEEP	Fără întreținere: nu sunt bușteni
 MISC_UPKEEP_LEFT	Întreținere: {0} min rămase
 PROP_SHOP	Magazin
@@ -954,24 +930,18 @@ PROP_STOVE	Sobă
 UILABEL_BUILD_DESTROY	Dărâmă
 UILABEL_BUILD_DESTROY_HINT	Clic stânga pe orice obiect ca să-l dărâmi: ce conține cade pe jos și în locul lui rămâne moloz. Clic stânga pe moloz ca să-l cureți. Clic dreapta sau Escape anulează.
 UILABEL_LOCK	Încuie
-MISC_BUILD_NO_CLAIM	O fundație sau un seif trebuie să fie pe propriul tău teritoriu
-MISC_BUILD_SEALED	Acest teren e sigilat de seiful altei facțiuni
-MISC_BUILD_CLAIM_OVERLAP	Acest teritoriu s-ar suprapune cu al altui steag
-MISC_BUILD_VAULT_TAKEN	Acest teritoriu are deja un seif
-MISC_BUILD_VAULT_CAP	Facțiunea ta are deja câte seifuri poate avea
+MISC_BUILD_SEALED	Acel teren aparține altei facțiuni
+MISC_BUILD_CLAIM_OVERLAP	Acest teritoriu s-ar suprapune peste altul
+MISC_BUILD_ALTAR_TAKEN	Facțiunea ta are deja un altar
 MISC_DESTROY_NOTHING	Nu e nimic de dărâmat acolo
 MISC_FLAG_FACTION	Proprietar: {0}
 MISC_FLAG_HEALTH	Viață: {0} din {1}
-MISC_FLAG_VAULT_YES	Seif: în picioare, teritoriul e păstrat
-MISC_FLAG_VAULT_NO	Seif: niciunul, steagul se uzează
-MISC_PROP_CONDITION	Stare: {0}%
 MISC_PROP_DECAYING	Se degradează
 MISC_PROP_HOLDING	Nu se degradează
 MISC_PROP_LOCK_OPEN	Descuiat
 MISC_PROP_LOCK_YOURS	Încuiat pentru străini (deschis pentru tine)
 MISC_PROP_LOCK_SHUT	Încuiat (Deschiderea lacătelor {0})
 MISC_PROP_UPKEEP	Întreținere: {0} ore rămase
-MISC_PROP_VAULT_UNCLAIMED	În afara oricărui teritoriu: nu oferă întreținere
 MOB_BEAR	Urs
 MOB_COW	Vacă
 MOB_CHICKEN	Pui

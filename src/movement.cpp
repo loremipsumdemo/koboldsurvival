@@ -565,7 +565,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     }
     s.goal[i] = { tx, tz };
     s.going[i] = idle ? 0 : 1;
-    // A downed unit has speed 0. A player unit's speed depends on its load, Athletics, stamina and pace.
+    // A downed unit has speed 0. A player unit's speed depends on its load and pace.
     s.speeds[i] = walkSpeedOf(w, e, running);
 }
 
@@ -657,13 +657,11 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
     s.vel[i] = { vx, vz };
 }
 
-// Applies a unit's movement and slide along walls. Walking gives XP, and records the distance walked and
-// the load for the combat step, which runs first next frame.
+// Applies a unit's movement and slide along walls.
 void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, bool running) {
     Transform* tr = w.get<Transform>(e);
     const bool player = w.has<Commandable>(e);
-    const float load = encumbranceOf(w, e);
-    const float x0 = tr->x, z0 = tr->z, y0 = tr->y;
+    const float x0 = tr->x, z0 = tr->z;
 
     float nx = tr->x + velocity.first * dt;
     float nz = tr->z + velocity.second * dt;
@@ -673,14 +671,7 @@ void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, boo
     tr->y = t.heightAt(tr->x, tr->z);
 
     const float moved = std::hypot(tr->x - x0, tr->z - z0);
-    if (Combat* c = w.get<Combat>(e)) {
-        c->moved = moved;
-        c->encumbrance = load;
-    }
     if (moved > 0.0f) {
-        grantXp(w, e, StatId::Endurance, ENDURANCE_XP_PER_TILE * moved, lang("MISC_REASON_WALKING"));
-        grantXp(w, e, StatId::Strength, strengthXpWhileWalking(load, dt), lang("MISC_REASON_CARRYING"), LogKind::XpCarrying);
-        if (tr->y > y0) grantXp(w, e, StatId::Athletics, tr->y - y0, lang("MISC_REASON_CLIMBING"));
         // Moving at run pace marks the unit for a double hunger tick at the next hour. A nudge from a neighbor,
         // a hundredth of a tile or less in a frame, is not walking.
         if (player && running && moved >= 0.01f) {
@@ -698,7 +689,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // and is not pushed, nor does it push anyone: it lies where it fell, or goes with the unit carrying it.
     s.units = w.view<Unit, Transform>();
     std::vector<Entity>& units = s.units;
-    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return w.has<Unconscious>(e) || w.has<Carried>(e); }),
+    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return outCold(w, e) || w.has<Carried>(e); }),
                 units.end());
     s.vel.assign(units.size(), { 0.0f, 0.0f });
     s.speeds.assign(units.size(), 0.0f);

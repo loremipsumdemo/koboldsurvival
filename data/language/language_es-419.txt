@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulla de origen
 UILABEL_BEHAVIOR_ROAM	Deambular
 UILABEL_BEHAVIOR_PATROL_TIP	Patrulla: camina por el territorio en el que está, si es de su facción, parándose de vez en cuando.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulla de origen: camina cerca de donde apareció. Si la persiguen demasiado lejos, se rinde, se cura del todo y vuelve, sin recibir daño hasta llegar.
-UILABEL_BEHAVIOR_ROAM_TIP	Deambular: vaga por las tierras abiertas, por donde pueda caminar fuera de los territorios de las banderas.
+UILABEL_BEHAVIOR_ROAM_TIP	Deambular: deambula por las tierras abiertas, donde pueda caminar fuera de los territorios.
 UILABEL_WAIT_NOT_IN_CLAIM	no está dentro de un territorio de su facción
 UILABEL_WAIT_NOWHERE_TO_ROAM	no hay terreno abierto cerca fuera de los territorios
 UILABEL_TEMPERAMENT_AVOIDANT	Esquivo
@@ -219,9 +219,6 @@ UILABEL_MISS	Fallo
 UILABEL_DAMAGE	Daño
 UILABEL_EXPERIENCE_MESSAGES	Mensajes de experiencia
 UILABEL_EXPERIENCE	Experiencia
-UILABEL_XP_ATHLETICS	Experiencia de Atletismo
-UILABEL_XP_ENDURANCE	Experiencia de Resistencia
-UILABEL_XP_CARRYING	Experiencia de Fuerza (carga)
 UILABEL_ITEM_MESSAGES	Mensajes de objetos
 UILABEL_PICKUP	Recoger
 UILABEL_DROP	Soltar
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Hay un arma a dos manos en la mano principal
 MISC_YOU	Tú
 MISC_UNKNOWN_ITEM	Objeto desconocido
 MISC_REASON_FEES	pagar las tarifas de intercambio
-MISC_REASON_WALKING	caminar
-MISC_REASON_CARRYING	cargar un peso
-MISC_REASON_CLIMBING	escalar
 MISC_REASON_SWINGING	blandir
 MISC_REASON_DODGING	esquivar
 MISC_REASON_DEALING	causar daño
 MISC_REASON_TAKING	recibir daño
 MISC_REASON_BLOCKING	bloquear
-MISC_REASON_SPOTTING	detectar a un enemigo
-MISC_REASON_UNNOTICED	pasar desapercibido
 MISC_REASON_GEAR	cambiar de equipo
 NPC_GREETING	Hola, mundo.
 NPC_OPTION_WARES	Muéstrame tus mercancías.
@@ -286,14 +278,10 @@ MISC_ORD_12	Duodécimo
 UILABEL_STAT_DESC_STRENGTH	Daño cuerpo a cuerpo, capacidad de carga
 UILABEL_STAT_DESC_DEXTERITY	Velocidad de ataque
 UILABEL_STAT_DESC_VITALITY	Salud máxima
-UILABEL_STAT_DESC_ENDURANCE	Resistencia máxima
 UILABEL_STAT_DESC_AGILITY	Probabilidad de esquivar
 UILABEL_STAT_DESC_INTELLIGENCE	Reserva de maná
 UILABEL_STAT_DESC_WISDOM	Cantidad de hechizos que se pueden aprender
 UILABEL_STAT_DESC_CHARISMA	Precios de intercambio con PNJ, opciones de diálogo únicas
-UILABEL_STAT_DESC_PERCEPTION	Alcance de detección
-UILABEL_STAT_DESC_ATHLETICS	Velocidad de carrera
-UILABEL_STAT_DESC_STEALTH	Mejor para evitar ser detectado al sigilar
 UILABEL_STAT_DESC_MELEE	Precisión cuerpo a cuerpo
 UILABEL_STAT_DESC_PROJECTILES	Precisión a distancia
 UILABEL_STAT_DESC_ARCANE	Poder de hechizos
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Éxito al robar
 UILABEL_STAT_DESC_MEDICAL	Efectividad de la curación
 UILABEL_DEXTERITY_STAT	Destreza
 UILABEL_VITALITY_STAT	Vitalidad
-UILABEL_ENDURANCE_STAT	Resistencia
 UILABEL_AGILITY_STAT	Agilidad
 UILABEL_INTELLIGENCE_STAT	Inteligencia
 UILABEL_WISDOM_STAT	Sabiduría
 UILABEL_CHARISMA_STAT	Carisma
-UILABEL_PERCEPTION_STAT	Percepción
-UILABEL_ATHLETICS_STAT	Atletismo
-UILABEL_STEALTH_STAT	Sigilo
 UILABEL_MELEE_STAT	Cuerpo a cuerpo
 UILABEL_PROJECTILES_STAT	Proyectiles
 UILABEL_ARCANE_STAT	Arcano
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defensa {1}    Carga {2}
 MISC_IS_DOWN	{0} está caído
 MISC_PICKS_UP	{0} recoge {1} {2}
 MISC_CANNOT_READ	No se pudo leer {0}
-UILABEL_TIP_DURABILITY	Durabilidad {0} / {1}
 UILABEL_DATE_LINE	DÍA {0} · {1} · AÑO {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gana {1} {2} XP por {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Poción de salud
 ITEM_7_DESC	Restaura 50 de salud al consumirla.
 ITEM_8_NAME	Poción de maná
 ITEM_8_DESC	Restaura 50 de maná al consumirla.
-ITEM_9_NAME	Brebaje de resistencia
-ITEM_9_DESC	Restaura 40 de resistencia y acelera brevemente la regeneración.
 ITEM_10_NAME	Elixir de poder
 ITEM_10_DESC	Otorga +10 de ataque durante 60 segundos.
 ITEM_11_NAME	Pan
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Sigilo
 UILABEL_MODE_RANGED	A distancia
 UILABEL_MODE_PASSIVE_TIP	Pasivo: nunca empieza una pelea ni se une a una para ayudar. Sigue cumpliendo órdenes, ataques incluidos.
 UILABEL_MODE_BLOCK_TIP	Bloquear: nunca ataca y bloquea el doble de golpes, incluso con las manos vacías.
-UILABEL_MODE_SNEAK_TIP	Sigilo: camina a la mitad de velocidad y es mucho más difícil de detectar. Mientras más Sigilo, mejor.
+UILABEL_MODE_SNEAK_TIP	Sigilo: camina a la mitad de velocidad y es mucho más difícil de detectar.
 UILABEL_MODE_RANGED_TIP	A distancia: se activa solo mientras haya un arco o una ballesta en la mano principal. Cada disparo gasta una flecha o un virote.
 UILABEL_SQUAD_TAB	Escuadrón
 UILABEL_REPUTATION	Reputación
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Supervivencia
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Elegir  //  Enter Confirmar
 UILABEL_LANGUAGE_LABEL	Idioma:
-PROP_FLAG	Bandera
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar de {0}
 PROP_DEBRIS	Escombros
-PROP_FOUNDATION_SMALL	Cimiento pequeño
-PROP_FOUNDATION_LARGE	Cimiento grande
-PROP_FOUNDATION_LONG	Cimiento largo
-PROP_FOUNDATION_CIRCLE	Cimiento circular
-PROP_VAULT	Bóveda
 UILABEL_BUILD	Construir
 UILABEL_BUILD_SELECTED	Seleccionado: {0}
 UILABEL_BUILD_NONE	Seleccionado: nada
 UILABEL_BUILD_SELECT	Elegir
 UILABEL_BUILD_PICKED	Elegido
-UILABEL_BUILD_PLACE_HINT	Clic izquierdo en el suelo para colocar. Mantén R y mueve el mouse a izquierda o derecha para girar. Clic derecho o Esc cancela.
+UILABEL_BUILD_PLACE_HINT	Haz clic izquierdo en el suelo para colocar. Clic derecho o Escape cancela.
 UILABEL_UPKEEP_HINT	Gasta un(a) {0} por hora como mantenimiento. Ponlos aquí.
 MISC_BUILD_BLOCKED	No hay espacio para construir aquí
 MISC_BUILD_UNWALKABLE	No se puede construir sobre este suelo
-MISC_BUILD_NO_FOUNDATION	Una bóveda debe ir completa sobre un cimiento
 MISC_NO_UPKEEP	Sin mantenimiento: no hay troncos
 MISC_UPKEEP_LEFT	Mantenimiento: quedan {0} min
 PROP_SHOP	Tienda
@@ -954,24 +930,18 @@ PROP_STOVE	Estufa
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clic izquierdo en cualquier objeto para derribarlo: lo que contiene cae al suelo y quedan escombros en su lugar. Clic izquierdo en los escombros para retirarlos. Clic derecho o Esc cancela.
 UILABEL_LOCK	Cerrar con llave
-MISC_BUILD_NO_CLAIM	Un cimiento o una bóveda debe ir dentro de tu propio territorio
-MISC_BUILD_SEALED	Ese suelo está sellado por la bóveda de otra facción
-MISC_BUILD_CLAIM_OVERLAP	Ese territorio se solaparía con el de otra bandera
-MISC_BUILD_VAULT_TAKEN	Ese territorio ya tiene una bóveda
-MISC_BUILD_VAULT_CAP	Tu facción ya tiene todas las bóvedas que puede tener
+MISC_BUILD_SEALED	Ese terreno pertenece a otra facción
+MISC_BUILD_CLAIM_OVERLAP	Ese territorio se superpondría con otro
+MISC_BUILD_ALTAR_TAKEN	Tu facción ya tiene un altar
 MISC_DESTROY_NOTHING	No hay nada que destruir ahí
 MISC_FLAG_FACTION	Dueño: {0}
 MISC_FLAG_HEALTH	Salud: {0} de {1}
-MISC_FLAG_VAULT_YES	Bóveda: en pie, el territorio se mantiene
-MISC_FLAG_VAULT_NO	Bóveda: ninguna, la bandera se desgasta
-MISC_PROP_CONDITION	Estado: {0} %
 MISC_PROP_DECAYING	Deteriorándose
 MISC_PROP_HOLDING	Sin deterioro
 MISC_PROP_LOCK_OPEN	Abierto
 MISC_PROP_LOCK_YOURS	Cerrado a extraños (abierto para ti)
 MISC_PROP_LOCK_SHUT	Cerrado (Ganzúa {0})
 MISC_PROP_UPKEEP	Mantenimiento: quedan {0} horas
-MISC_PROP_VAULT_UNCLAIMED	Fuera de todo territorio: no da mantenimiento
 MOB_BEAR	Oso
 MOB_COW	Vaca
 MOB_CHICKEN	Pollo

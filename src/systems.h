@@ -20,7 +20,8 @@ void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>
 Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z);
 // A mob's stats for its kind: its attributes and combat skills, each a level or two either way of the kind's
 Stats mobStats(MobKind kind, Rng& rng);
-// Ends an Unconscious unit's Dying at once: it is a corpse, as when its Dying reaches 100 (unconsciousSystem)
+// Ends an Unconscious unit's Dying at once: it is a corpse, as when its Dying reaches 100 (unconsciousSystem). What it
+// has no more use for goes: its Unconscious and its stats.
 void finishDying(World& w, Entity u);
 // Whether a unit may take this item into its inventory: any unit may, but a mob only its own meat and bones (mobs.h)
 bool canHoldItem(World& w, Entity unit, int item);
@@ -203,8 +204,14 @@ void downedSystem(World& w);
 // In-game hours before a corpse turns into a Bones prop
 constexpr double CORPSE_BONES_HOURS = 24.0;
 // Ages the corpses by the in-game seconds that passed. One that has lain CORPSE_BONES_HOURS becomes a Bones prop where
-// it lies, and what it still held or wore falls to the ground. One being carried waits until it is put down.
+// it lies, holding what it still held or wore. One being carried waits until it is put down.
 void corpseDecaySystem(World& w, double gameSeconds);
+// In-game hours before a Bones prop goes by itself, dropping what it holds
+constexpr double BONES_DECAY_HOURS = 24.0;
+void bonesDecaySystem(World& w, double gameSeconds);
+// In-game hours before food and bones left on the ground are gone (spoilsOnGround in items.h)
+constexpr double GROUND_FOOD_HOURS = 24.0;
+void groundFoodSystem(World& w, double gameSeconds);
 // Conscious and Dying for the in-game seconds that passed (components.h, Unconscious). Returns the units that woke and
 // the units that died this call.
 struct WakeChanges {

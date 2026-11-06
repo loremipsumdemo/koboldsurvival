@@ -166,7 +166,7 @@ void App::startFreeTrade(Entity other, Entity unit) {
 bool App::noteLockedIn(const std::vector<Entity>& units) {
     // Unconscious ones can't do anything at all; say so when they are all there is
     bool anyAwake = false;
-    for (Entity u : units) anyAwake = anyAwake || !world.has<Unconscious>(u);
+    for (Entity u : units) anyAwake = anyAwake || !outCold(world, u);
     if (!units.empty() && !anyAwake) {
         refuse(langf("MISC_IS_UNCONSCIOUS", { nameOf(world, units[0]) }));
         return true;

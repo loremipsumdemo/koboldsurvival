@@ -7,14 +7,13 @@
 
 namespace {
 
-// The camp kit's pieces, offsets in tiles from the camp centre (which is snapped to a tile middle). The flag stands on
-// the centre. The foundation, with its vault, sits two tiles east; the campfire two tiles west; four bedrolls around
+// The camp kit's pieces, offsets in tiles from the camp centre (which is snapped to a tile middle). The Altar stands on
+// the centre; the campfire two tiles west; four bedrolls around
 // the campfire; the barrel two tiles south; two trees just past the bedrolls, for the camp's wood, and three mushrooms
 // by them, for its food. Every piece is on its own tile, so none shares ground with another.
 struct KitSpot { PropKind kind; float dx, dz; };
 const KitSpot CAMP_KIT[] = {
-    { PropKind::Flag, 0.0f, 0.0f },
-    { PropKind::FoundationSmall, 2.0f, 0.0f },
+    { PropKind::Altar, 0.0f, 0.0f },
     { PropKind::Campfire, -2.0f, 0.0f },
     { PropKind::Bedroll, -2.0f, -1.0f },
     { PropKind::Bedroll, -2.0f, 1.0f },
@@ -77,23 +76,16 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             claimOwnership(w, e);   // it stands in the camp's own claim, so the trees are the camp's too
         }
         stamp(e);
-        if (k.kind == PropKind::Flag) kit.flag = e;
+        if (k.kind == PropKind::Altar) {
+            kit.altar = e;
+            const PropInfo& altar = propInfo(PropKind::Altar);
+            const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / altar.fuelHours);
+            w.get<Storage>(e)->slots[0] = ItemStack{ altar.input, logs };
+        }
         if (k.kind == PropKind::Tree) kit.trees.push_back(e);
-        if (k.kind == PropKind::FoundationSmall) kit.foundation = e;
     }
     kit.faction = faction;
     kit.yaw = yaw;
     kit.placed = true;
     return kit;
-}
-
-void placeCampVault(World& w, Terrain& t, CampKit& kit, int* serial) {
-    if (!kit.placed || !w.has<Prop>(kit.foundation)) return;
-    const Transform at = *w.get<Transform>(kit.foundation);
-    const Entity vault = placeBuiltProp(w, t, PropKind::Vault, at.x, at.z, kit.yaw, kit.faction);
-    if (vault == NULL_ENTITY) return;
-    if (serial) w.get<Prop>(vault)->serial = (*serial)++;
-    const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / propInfo(PropKind::Vault).fuelHours);   // three days of logs
-    w.get<Storage>(vault)->slots[0] = ItemStack{ propInfo(PropKind::Vault).input, logs };
-    kit.vault = vault;
 }

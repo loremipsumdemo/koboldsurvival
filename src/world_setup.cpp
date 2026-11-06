@@ -218,7 +218,6 @@ Stats mobStats(MobKind kind, Rng& rng) {
     s.xp[StatId::Strength] = xpForLevel(level(m.strength));
     s.xp[StatId::Dexterity] = xpForLevel(level(m.dexterity));
     s.xp[StatId::Vitality] = xpForLevel(level(m.vitality));
-    s.xp[StatId::Endurance] = xpForLevel(level(m.endurance));
     s.xp[StatId::Agility] = xpForLevel(level(m.agility));
     s.xp[StatId::Melee] = xpForLevel(level(m.melee));
     s.xp[StatId::Block] = xpForLevel(level(m.block));
@@ -388,10 +387,10 @@ struct LevelBuilder {
         }
     }
 
-    // One unit of each camp keeps its vault fed: Auto-Haul to the vault above Auto-Harvest of Trees, so it cuts wood at
-    // the camp's trees and stores each load in the vault. It is given once the vaults are down, below.
+    // One unit of each camp keeps its Altar fed: Auto-Haul to the Altar above Auto-Harvest of Trees, so it cuts wood at
+    // the camp's trees and stores each load in the Altar. It is given once every prop stands, below.
     void giveWoodcutting(Entity u, const CampKit& kit) {
-        if (u == NULL_ENTITY || !kit.placed || kit.vault == NULL_ENTITY || kit.trees.empty()) return;
+        if (u == NULL_ENTITY || !kit.placed || kit.altar == NULL_ENTITY || kit.trees.empty()) return;
         // A camp's woodcutter starts with an empty pack, so the logs it carries don't weigh it down
         if (!w.has<Commandable>(u)) {
             if (Inventory* inv = w.get<Inventory>(u)) *inv = Inventory{};
@@ -400,8 +399,8 @@ struct LevelBuilder {
         if (!b) return;
         BehaviorRule haul;
         haul.kind = BehaviorKind::AutoHaul;
-        haul.prop = kit.vault;
-        haul.propKind = idx(PropKind::Vault);
+        haul.prop = kit.altar;
+        haul.propKind = idx(PropKind::Altar);
         BehaviorRule harvest;
         harvest.kind = BehaviorKind::AutoHarvest;
         harvest.propKind = idx(PropKind::Tree);
@@ -409,7 +408,7 @@ struct LevelBuilder {
         addBehavior(b->rules, harvest);
     }
 
-    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its flag, the player's included.
+    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its Altar, the player's included.
     // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
     bool freeSpot(float cx, float cz, float radius, float& x, float& z) {
         for (int attempt = 0; attempt < 200; ++attempt) {
@@ -533,17 +532,11 @@ struct LevelBuilder {
         }
     }
 
-    void placeVaults() {
-        // The vaults go down last, once every other prop stands, each on its camp's foundation. Then each sealed claim's
-        // props become its faction's, and each camp's woodcutter is given its vault to haul to.
-        for (CampKit& kit : kits) placeCampVault(w, t, kit, &campSerial);
+    void settleCamps() {
+        // Once every prop stands, each claim's props become its faction's, and each camp's woodcutter is given its Altar
+        // to haul to.
         settleClaimOwnership(w);
-        for (auto& [unit, kit] : woodcutters) {
-            for (const CampKit& k : kits) {
-                if (k.flag == kit.flag) kit.vault = k.vault;
-            }
-            giveWoodcutting(unit, kit);
-        }
+        for (auto& [unit, kit] : woodcutters) giveWoodcutting(unit, kit);
     }
 
     void finishUnits() {
@@ -696,19 +689,19 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
     }
 
-    // Camps (claims.h): every faction's, the player's included, gets the kit: a flag, a vault on a small foundation with
+    // Camps (claims.h): every faction's, the player's included, gets the kit: an Altar with
     // three days of logs, a campfire with four bedrolls, a barrel and two trees, all owned by the faction. The player's
     // is in the middle, just south of the squad; the others are at the compass points around it (north, east, south,
     // west, then the corners between, should there be more), CAMP_DISTANCE away, so no two claims overlap. A camp whose
     // spot the kit doesn't fit on moves to the nearest one it does, within CAMP_SHIFT. The kits go down before the level's
-    // props, so those don't take their ground; their vaults go down after all of them (below).
+    // props, so those don't take their ground; they are settled after all of them (below).
     const Vec2 middle = b.placePlayerCamp(playerCamp);
     for (size_t ci = 0; ci < camps.size(); ++ci) b.placeFactionCamp(camps, ci, middle);
     b.placeLevelProps();
-    b.placeVaults();
+    b.settleCamps();
     b.finishUnits();
 
-    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its flag, the player's included.
+    // Mobs (mobs.h). Each camp's faction has CAMP_MOBS of random kinds standing about its Altar, the player's included.
     // Out past every camp, WILD_MOBS of each kind roam in a herd, in their own faction, each herd at its own bearing.
     b.placeCampMobs();
     b.placeWildMobs();

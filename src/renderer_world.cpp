@@ -316,7 +316,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
 // The placement preview: the footprint of the picked prop, as a grid of quarter-tile squares on the ground, lined in
 // red, and filled green where it can be placed or red where it can't. Only squares whose centre lies in the shape are
-// drawn, so the grid follows the shape, turned as the prop will be.
+// drawn, so the grid follows the shape.
 void Renderer::drawBuildPreview(const Terrain& t) {
     if (!buildPreview_.on && buildPreview_.ringR <= 0.0f) return;
     const float lift = 0.04f;      // off the ground, so the grid does not flicker into it
@@ -326,7 +326,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 
     if (buildPreview_.on) {
         const Footprint& f = propInfo(buildPreview_.kind).foot;
-        const float x0 = buildPreview_.x, z0 = buildPreview_.z, yaw = buildPreview_.yaw;
+        const float x0 = buildPreview_.x, z0 = buildPreview_.z;
         const float reach = footprintReach(f);
         const float cell = 0.25f;      // grid squares are a quarter of a tile
         const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
@@ -344,7 +344,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         for (float gx = startX; gx < endX; gx += cell) {
             for (float gz = startZ; gz < endZ; gz += cell) {
                 const float cx = gx + cell * 0.5f, cz = gz + cell * 0.5f;
-                if (!insideFootprint(f, cx - x0, cz - z0, yaw)) continue;
+                if (!insideFootprint(f, cx - x0, cz - z0, 0.0f)) continue;
                 const V3 a{ gx, hgt(gx, gz), gz }, bb{ gx + cell, hgt(gx + cell, gz), gz };
                 const V3 c{ gx + cell, hgt(gx + cell, gz + cell), gz + cell }, d{ gx, hgt(gx, gz + cell), gz + cell };
                 b.quad(a, bb, c, d, fill);
@@ -356,8 +356,8 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         }
     }
 
-    // The claim circle: a band a third of a tile wide, on the ground around the flag's spot. While it shows, every
-    // other flag's circle is drawn too, in white.
+    // The claim circle: a band a third of a tile wide, on the ground around the Altar's spot. While it shows, every
+    // other Altar's circle is drawn too, in white.
     auto ring = [&](float cx, float cz, float r, const RGBA& tone) {
         const float ro = r, ri = r - 0.3f;
         const int segments = 96;

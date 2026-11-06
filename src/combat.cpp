@@ -6,6 +6,7 @@
 #include "inventory.h"
 #include "items.h"
 #include "mobs.h"
+#include "systems.h"
 #include "terrain.h"
 #include "useitem.h"
 
@@ -13,11 +14,6 @@ namespace {
 
 // Healing and food are not fixed here any more: each unit's behavior rules decide when it uses them (need_behaviors.h).
 const char* const ELIXIR = "Elixir of Might";
-
-constexpr float STAMINA_DRAIN = 2.0f;   // stamina lost per second walking at a full load (scaled by the load)
-constexpr float STAMINA_REGEN = 4.0f;   // stamina regained per second while standing still
-constexpr float STAMINA_PER_ENDURANCE = 2.0f;
-constexpr float STAMINA_BASE = 40.0f;
 
 constexpr float DEXTERITY_SWING_PER_LEVEL = 0.02f;
 constexpr float BLOCK_CHANCE_BASE = 0.05f;
@@ -28,11 +24,6 @@ constexpr float ACCURACY_PER_LEVEL = 0.01f;
 constexpr float ACCURACY_CAP = 0.95f;
 constexpr float DODGE_PER_LEVEL = 0.01f;
 constexpr float DODGE_CAP = 0.40f;
-constexpr float NOTICE_FAIL_PER_LEVEL = 0.01f;   // Stealth: share of hostile notices that fail
-constexpr float NOTICE_FAIL_CAP = 0.40f;
-constexpr float PERCEPTION_RANGE_PER_LEVEL = 0.005f;
-constexpr float PERCEPTION_XP_PER_SPOT = 2.0f;
-constexpr float STEALTH_XP_PER_SECOND = 1.0f;
 constexpr float DEXTERITY_XP_PER_SWING = 1.0f;
 constexpr float MELEE_XP_PER_DAMAGE = 1.0f;
 constexpr float STRENGTH_XP_PER_DAMAGE = 0.5f;
@@ -88,15 +79,11 @@ const RangedProfile* rangedOf(World& w, Entity e) {
 
 // An Unconscious unit (or a corpse) is out of the fight: nobody swings at it
 bool targetable(World& w, Entity e) {
-    return w.has<Unit>(e) && w.has<Transform>(e) && !w.has<Unconscious>(e) && !w.has<PlayingDead>(e);
+    return w.has<Unit>(e) && w.has<Transform>(e) && !outCold(w, e) && !w.has<PlayingDead>(e);
 }
 
-// Share of notices that fail against this unit. Sneaking, more fail, and Stealth counts twice.
-float noticeFailChance(World& w, Entity p) {
-    const float stealth = NOTICE_FAIL_PER_LEVEL * (levelOf(statsOf(w, p), StatId::Stealth) - 1);
-    if (isSneaking(w, p)) return std::min(SNEAK_FAIL_CAP, SNEAK_FAIL_BASE + 2.0f * stealth);
-    return std::min(NOTICE_FAIL_CAP, stealth);
-}
+// Share of notices that fail against this unit: only a sneaking one makes any fail
+float noticeFailChance(World& w, Entity p) { return isSneaking(w, p) ? SNEAK_NOTICE_FAIL : 0.0f; }
 // How close another unit must be to notice this one
 float noticeRangeOf(World& w, Entity p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
 // The most noticeRangeOf can give
@@ -155,12 +142,12 @@ void onAttacked(World& w, Entity a, Entity d) {
     };
     if (!atWar && fd != FACTION_PLAYER) {
         for (Entity u : near) {
-            if (factionOf(w, u) == fd && (u == d || sees(u)) && !w.has<Unconscious>(u)) provoke(w, u, fa);
+            if (factionOf(w, u) == fd && (u == d || sees(u)) && !outCold(w, u)) provoke(w, u, fa);
         }
     }
     // Helpers: the defender's faction and its allies, never an ally of the attacker
     for (Entity u : near) {
-        if (u == a || w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || !w.has<Combat>(u)) continue;
+        if (u == a || outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || !w.has<Combat>(u)) continue;
         const int fu = factionOf(w, u);
         if (!factionsAllied(fu, fd) || factionsAllied(fu, fa) || !sees(u)) continue;
         if (isPassive(w, u) || isBlocking(w, u)) continue;
@@ -264,6 +251,18 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
         log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage, npcOnly(w, a, d));
         // Whose hit it was, for the reputation when it is knocked out
         if (Combat* cd = w.get<Combat>(d)) cd->downedByFaction = factionOf(w, a);
+        // A mob that brings down a mob destroys its meat, which kills it. Its bones stay in the corpse.
+        if (w.has<Mob>(a) && w.has<Mob>(d)) {
+            knockOut(w, d);
+            if (Inventory* inv = w.get<Inventory>(d)) {
+                const int meat = mobInfo(w.get<Mob>(d)->kind).meat;
+                for (ItemStack& st : inv->slots) {
+                    if (st.item == meat) st = ItemStack{};
+                }
+            }
+            finishDying(w, d);
+            queueSoundFrom(w, Sfx::Dies, d);
+        }
     }
 }
 
@@ -320,7 +319,6 @@ CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAtta
     n.swingTime = (1.0f + weight / 5.0f) / dexFactor;
     if (const RangedProfile* rp = rangedProfileOf(worn.items[GearSlot::MainHand])) n.swingTime *= rp->shotTimeMul;
 
-    n.maxStamina = STAMINA_BASE + STAMINA_PER_ENDURANCE * levelOf(s, StatId::Endurance);
     return n;
 }
 
@@ -365,14 +363,6 @@ const RangedProfile* rangedProfileOf(int item) {
     if (hasTag(*d, "bow_long")) return &longBow;
     if (hasTag(*d, "crossbow")) return &crossbow;
     return nullptr;
-}
-
-void forgetSpotted(World& w) {
-    for (Entity u : w.view<Combat>()) {
-        std::vector<Entity>& s = w.get<Combat>(u)->spotted;
-        s.clear();
-        s.shrink_to_fit();
-    }
 }
 
 bool isPassive(World& w, Entity e) {
@@ -428,10 +418,11 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
                                 [](const FloatingNumber& f) { return f.age >= FLOAT_LIFE; }),
                  floats.end());
 
-    // Timers, stamina, buffs and max health for every unit
+    // Timers, buffs and max health for every unit
     const std::vector<Entity> everyone = w.view<Unit, Transform>();
     for (Entity e : everyone) ensureCombat(w, e);
     for (Entity e : everyone) {
+        if (w.has<Corpse>(e)) continue;   // nothing about a corpse changes
         Combat& c = *w.get<Combat>(e);
         const CombatNumbers n = numbersOf(w, e);
 
@@ -442,11 +433,6 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
             // Only a real change counts, since this runs every frame
             if (nd->hp != hpBefore || nd->maxHp != maxBefore) nd->changed |= NEEDS_HP_CHANGED;
         }
-
-        if (c.stamina < 0.0f) c.stamina = n.maxStamina;   // first frame: start full
-        if (c.moved > 0.0f) c.stamina -= STAMINA_DRAIN * c.encumbrance * dt;
-        else c.stamina += STAMINA_REGEN * dt;
-        c.stamina = std::clamp(c.stamina, 0.0f, n.maxStamina);
 
         if (c.buffLeft > 0.0f) {
             c.buffLeft -= dt;
@@ -462,7 +448,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
     const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
     const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
     // Out cold, carried or playing dead, a unit does not fight
-    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !w.has<Unconscious>(e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e); };
+    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !outCold(w, e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e); };
 
     // Every unit that is not yours notices the units it fights in range (its enemies by faction, or by provocation),
     // and chases until the target is gone or out of the leash. A passive one starts no fight, but keeps one it has.
@@ -491,35 +477,6 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
                 break;
             }
         }
-    }
-
-    // A hostile is aware of your squad while it is fighting one of your units; one that is not (it has no target, or
-    // fights another faction) has not noticed you
-    auto awareOfYou = [&](Entity h) {
-        const Combat* c = w.get<Combat>(h);
-        return c && c->target != NULL_ENTITY && w.has<Commandable>(c->target);
-    };
-    // Spotting and stealth XP, for your units only, against the units hostile to you (the Hostile marker, which follows
-    // the reputations and provocations): Perception for each one first seen this in-game hour, and Stealth for standing close to one
-    // that has not noticed you
-    for (Entity p : everyone) {
-        if (!standing(p) || !w.has<Combat>(p)) continue;
-        Combat& pc = *w.get<Combat>(p);
-        const Stats st = statsOf(w, p);
-        const float spotRange = AGGRO_RANGE * (1.0f + PERCEPTION_RANGE_PER_LEVEL * (levelOf(st, StatId::Perception) - 1));
-        if (!w.has<Commandable>(p)) continue;   // only your units gain XP
-        const std::vector<Entity>& foes = hostiles;
-        bool unnoticedInRange = false;
-        for (Entity h : foes) {
-            if (!standing(h)) continue;
-            const float d = flatGap(w, p, h);
-            if (d <= spotRange && std::find(pc.spotted.begin(), pc.spotted.end(), h) == pc.spotted.end()) {
-                pc.spotted.push_back(h);
-                grantXp(w, p, StatId::Perception, PERCEPTION_XP_PER_SPOT, lang("MISC_REASON_SPOTTING"));
-            }
-            if (d <= STEALTH_RANGE && !awareOfYou(h)) unnoticedInRange = true;
-        }
-        if (unnoticedInRange) grantXp(w, p, StatId::Stealth, STEALTH_XP_PER_SECOND * dt, lang("MISC_REASON_UNNOTICED"));
     }
 
     // Targets. A player unit with an attack order keeps its ordered red unit until it is gone, and picks no

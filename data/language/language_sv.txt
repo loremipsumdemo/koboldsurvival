@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrull vid ursprung
 UILABEL_BEHAVIOR_ROAM	Ströva
 UILABEL_BEHAVIOR_PATROL_TIP	Patrull: går omkring inom området den står i, om det tillhör dess fraktion, och stannar då och då.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrull vid ursprung: går omkring nära platsen där den dök upp. Jagad för långt därifrån ger den upp, läker helt och går tillbaka utan att ta skada tills den är hemma.
-UILABEL_BEHAVIOR_ROAM_TIP	Ströva: vandrar i det öppna landet, överallt där den kan gå utanför flaggornas områden.
+UILABEL_BEHAVIOR_ROAM_TIP	Ströva: strövar i det öppna landskapet, där den kan gå utanför anspråken.
 UILABEL_WAIT_NOT_IN_CLAIM	inte inom ett område som tillhör dess fraktion
 UILABEL_WAIT_NOWHERE_TO_ROAM	ingen öppen mark i närheten utanför områdena
 UILABEL_TEMPERAMENT_AVOIDANT	Skygg
@@ -219,9 +219,6 @@ UILABEL_MISS	Miss
 UILABEL_DAMAGE	Skada
 UILABEL_EXPERIENCE_MESSAGES	Erfarenhetsmeddelanden
 UILABEL_EXPERIENCE	Erfarenhet
-UILABEL_XP_ATHLETICS	Atletikerfarenhet
-UILABEL_XP_ENDURANCE	Uthållighetserfarenhet
-UILABEL_XP_CARRYING	Styrkeerfarenhet (bärande)
 UILABEL_ITEM_MESSAGES	Föremålsmeddelanden
 UILABEL_PICKUP	Plocka upp
 UILABEL_DROP	Släpp
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Ett tvåhandsvapen finns i huvudhanden
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Okänt föremål
 MISC_REASON_FEES	betala handelsavgifter
-MISC_REASON_WALKING	gå
-MISC_REASON_CARRYING	bära en last
-MISC_REASON_CLIMBING	klättra
 MISC_REASON_SWINGING	svingar
 MISC_REASON_DODGING	undvika
 MISC_REASON_DEALING	orsaka skada
 MISC_REASON_TAKING	ta skada
 MISC_REASON_BLOCKING	blockera
-MISC_REASON_SPOTTING	upptäcka en fiende
-MISC_REASON_UNNOTICED	förbli oupptäckt
 MISC_REASON_GEAR	byta utrustning
 NPC_GREETING	Hej världen.
 NPC_OPTION_WARES	Visa mig dina varor.
@@ -286,14 +278,10 @@ MISC_ORD_12	Tolfte
 UILABEL_STAT_DESC_STRENGTH	Skada i närstrid, bärkapacitet
 UILABEL_STAT_DESC_DEXTERITY	Attackhastighet
 UILABEL_STAT_DESC_VITALITY	Max hälsa
-UILABEL_STAT_DESC_ENDURANCE	Max uthållighet
 UILABEL_STAT_DESC_AGILITY	Chans att undvika
 UILABEL_STAT_DESC_INTELLIGENCE	Manapool
 UILABEL_STAT_DESC_WISDOM	Antal lärbara besvärjelser
 UILABEL_STAT_DESC_CHARISMA	Handelspriser för NPC, unika dialogval
-UILABEL_STAT_DESC_PERCEPTION	Upptäcktsräckvidd
-UILABEL_STAT_DESC_ATHLETICS	Löpfart
-UILABEL_STAT_DESC_STEALTH	Bättre på att undgå upptäckt vid smygande
 UILABEL_STAT_DESC_MELEE	Träffsäkerhet i närstrid
 UILABEL_STAT_DESC_PROJECTILES	Träffsäkerhet på avstånd
 UILABEL_STAT_DESC_ARCANE	Besvärjelsekraft
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Lyckad stöld
 UILABEL_STAT_DESC_MEDICAL	Effektivitet i läkning
 UILABEL_DEXTERITY_STAT	Smidighet
 UILABEL_VITALITY_STAT	Vitalitet
-UILABEL_ENDURANCE_STAT	Uthållighet
 UILABEL_AGILITY_STAT	Kvickhet
 UILABEL_INTELLIGENCE_STAT	Intelligens
 UILABEL_WISDOM_STAT	Visdom
 UILABEL_CHARISMA_STAT	Karisma
-UILABEL_PERCEPTION_STAT	Perception
-UILABEL_ATHLETICS_STAT	Atletik
-UILABEL_STEALTH_STAT	Smygning
 UILABEL_MELEE_STAT	Närstrid
 UILABEL_PROJECTILES_STAT	Projektiler
 UILABEL_ARCANE_STAT	Magi
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Försvar {1}    Bärkapacitet {2}
 MISC_IS_DOWN	{0} är nedslagen
 MISC_PICKS_UP	{0} plockar upp {1} {2}
 MISC_CANNOT_READ	Kunde inte läsa {0}
-UILABEL_TIP_DURABILITY	Hållbarhet {0} / {1}
 UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
 UILABEL_MONITOR_N	Bildskärm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfarenhet för {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Hälsodryck
 ITEM_7_DESC	Återställer 50 hälsa när den konsumeras.
 ITEM_8_NAME	Manadryck
 ITEM_8_DESC	Återställer 50 mana när den konsumeras.
-ITEM_9_NAME	Uthållighetsdryck
-ITEM_9_DESC	Återställer 40 uthållighet och ökar återhämtningen en kort stund.
 ITEM_10_NAME	Kraftelixir
 ITEM_10_DESC	Ger +10 attack i 60 sekunder.
 ITEM_11_NAME	Bröd
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Smyg
 UILABEL_MODE_RANGED	Avstånd
 UILABEL_MODE_PASSIVE_TIP	Passiv: startar aldrig en strid och går inte in för att hjälpa. Följer ändå order, även anfall.
 UILABEL_MODE_BLOCK_TIP	Blockera: anfaller aldrig och blockerar dubbelt så ofta, även med tomma händer.
-UILABEL_MODE_SNEAK_TIP	Smyg: går i halv fart och är mycket svårare att upptäcka. Ju högre Smygande, desto bättre.
+UILABEL_MODE_SNEAK_TIP	Smyg: går i halv fart och är mycket svårare att upptäcka.
 UILABEL_MODE_RANGED_TIP	Avstånd: slås på av sig själv så länge en båge eller ett armborst finns i huvudhanden. Varje skott kostar en pil eller bult.
 UILABEL_SQUAD_TAB	Trupp
 UILABEL_REPUTATION	Rykte
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Överlevnad
 MISC_TITLE_KEYS	Välj  //  Enter Bekräfta
 UILABEL_LANGUAGE_LABEL	Språk:
-PROP_FLAG	Flagga
+PROP_ALTAR	Altare
+MISC_ALTAR_OF	Altare: {0}
 PROP_DEBRIS	Bråte
-PROP_FOUNDATION_SMALL	Liten grund
-PROP_FOUNDATION_LARGE	Stor grund
-PROP_FOUNDATION_LONG	Lång grund
-PROP_FOUNDATION_CIRCLE	Rund grund
-PROP_VAULT	Valv
 UILABEL_BUILD	Bygg
 UILABEL_BUILD_SELECTED	Vald: {0}
 UILABEL_BUILD_NONE	Vald: ingen
 UILABEL_BUILD_SELECT	Välj
 UILABEL_BUILD_PICKED	Vald
-UILABEL_BUILD_PLACE_HINT	Vänsterklicka på marken för att placera. Håll R och flytta musen åt vänster eller höger för att vrida. Högerklick eller Escape avbryter.
+UILABEL_BUILD_PLACE_HINT	Vänsterklicka på marken för att placera. Högerklick eller Escape avbryter.
 UILABEL_UPKEEP_HINT	Förbrukar en {0} i timmen som underhåll. Lägg dem här.
 MISC_BUILD_BLOCKED	Ingen plats att bygga här
 MISC_BUILD_UNWALKABLE	Det går inte att bygga på den här marken
-MISC_BUILD_NO_FOUNDATION	Ett valv måste stå helt på en grund
 MISC_NO_UPKEEP	Inget underhåll: inga stockar
 MISC_UPKEEP_LEFT	Underhåll: {0} min kvar
 PROP_SHOP	Butik
@@ -954,24 +930,18 @@ PROP_STOVE	Spis
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Vänsterklicka på ett föremål för att riva det: det som finns i det faller till marken och bråte blir kvar. Vänsterklicka på bråte för att röja bort det. Högerklick eller Escape avbryter.
 UILABEL_LOCK	Lås
-MISC_BUILD_NO_CLAIM	En grund eller ett valv måste stå inom ditt eget område
-MISC_BUILD_SEALED	Den marken är förseglad av en annan fraktions valv
-MISC_BUILD_CLAIM_OVERLAP	Det området skulle överlappa en annan flaggas område
-MISC_BUILD_VAULT_TAKEN	Det området har redan ett valv
-MISC_BUILD_VAULT_CAP	Din fraktion har redan så många valv som den kan ha
+MISC_BUILD_SEALED	Den marken tillhör en annan fraktion
+MISC_BUILD_CLAIM_OVERLAP	Det anspråket skulle överlappa ett annat
+MISC_BUILD_ALTAR_TAKEN	Din fraktion har redan ett altare
 MISC_DESTROY_NOTHING	Inget att riva där
 MISC_FLAG_FACTION	Ägare: {0}
 MISC_FLAG_HEALTH	Hälsa: {0} av {1}
-MISC_FLAG_VAULT_YES	Valv: står, området hålls
-MISC_FLAG_VAULT_NO	Valv: inget, flaggan nöts ner
-MISC_PROP_CONDITION	Skick: {0} %
 MISC_PROP_DECAYING	Förfaller
 MISC_PROP_HOLDING	Förfaller inte
 MISC_PROP_LOCK_OPEN	Olåst
 MISC_PROP_LOCK_YOURS	Låst för utomstående (öppet för dig)
 MISC_PROP_LOCK_SHUT	Låst (Låsöppning {0})
 MISC_PROP_UPKEEP	Underhåll: {0} timmar kvar
-MISC_PROP_VAULT_UNCLAIMED	Utanför alla områden: ger inget underhåll
 MOB_BEAR	Björn
 MOB_COW	Ko
 MOB_CHICKEN	Kyckling

@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Rondaan Tempat Muncul
 UILABEL_BEHAVIOR_ROAM	Merayau
 UILABEL_BEHAVIOR_PATROL_TIP	Rondaan: berjalan di dalam kawasan tempat ia berdiri, jika kawasan itu milik puaknya, sambil berhenti sekali-sekala.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Rondaan Tempat Muncul: berjalan berhampiran tempat ia mula-mula muncul. Jika dikejar terlalu jauh, ia mengalah, pulih sepenuhnya dan berjalan pulang tanpa menerima kerosakan sehingga tiba.
-UILABEL_BEHAVIOR_ROAM_TIP	Merayau: merayau di tanah lapang, di mana-mana ia boleh berjalan di luar kawasan bendera.
+UILABEL_BEHAVIOR_ROAM_TIP	Merayau: merayau di tanah terbuka, ke mana sahaja boleh berjalan di luar tuntutan.
 UILABEL_WAIT_NOT_IN_CLAIM	tidak berada dalam kawasan puaknya
 UILABEL_WAIT_NOWHERE_TO_ROAM	tiada tanah lapang berdekatan di luar kawasan
 UILABEL_TEMPERAMENT_AVOIDANT	Pengelak
@@ -219,9 +219,6 @@ UILABEL_MISS	Tersasar
 UILABEL_DAMAGE	Kerosakan
 UILABEL_EXPERIENCE_MESSAGES	Mesej Pengalaman
 UILABEL_EXPERIENCE	Pengalaman
-UILABEL_XP_ATHLETICS	Pengalaman Atletik
-UILABEL_XP_ENDURANCE	Pengalaman Ketahanan
-UILABEL_XP_CARRYING	Pengalaman Kekuatan (Membawa)
 UILABEL_ITEM_MESSAGES	Mesej Barang
 UILABEL_PICKUP	Ambil
 UILABEL_DROP	Jatuhkan
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Senjata dua tangan berada di tangan utama
 MISC_YOU	Anda
 MISC_UNKNOWN_ITEM	Barang tidak diketahui
 MISC_REASON_FEES	membayar yuran perdagangan
-MISC_REASON_WALKING	berjalan
-MISC_REASON_CARRYING	membawa muatan
-MISC_REASON_CLIMBING	memanjat
 MISC_REASON_SWINGING	mengayun
 MISC_REASON_DODGING	mengelak
 MISC_REASON_DEALING	memberi kerosakan
 MISC_REASON_TAKING	menerima kerosakan
 MISC_REASON_BLOCKING	menyekat
-MISC_REASON_SPOTTING	mengesan musuh
-MISC_REASON_UNNOTICED	kekal tidak disedari
 MISC_REASON_GEAR	menukar peralatan
 NPC_GREETING	Helo dunia.
 NPC_OPTION_WARES	Tunjukkan barangan anda kepada saya.
@@ -286,14 +278,10 @@ MISC_ORD_12	Kedua belas
 UILABEL_STAT_DESC_STRENGTH	Kerosakan jarak dekat, kapasiti muatan
 UILABEL_STAT_DESC_DEXTERITY	Kelajuan serangan
 UILABEL_STAT_DESC_VITALITY	Kesihatan maksimum
-UILABEL_STAT_DESC_ENDURANCE	Stamina maksimum
 UILABEL_STAT_DESC_AGILITY	Peluang mengelak
 UILABEL_STAT_DESC_INTELLIGENCE	Kolam mana
 UILABEL_STAT_DESC_WISDOM	Bilangan mantera yang boleh dipelajari
 UILABEL_STAT_DESC_CHARISMA	Harga dagangan NPC, pilihan dialog unik
-UILABEL_STAT_DESC_PERCEPTION	Julat pengesanan
-UILABEL_STAT_DESC_ATHLETICS	Kelajuan larian
-UILABEL_STAT_DESC_STEALTH	Lebih baik mengelak dikesan semasa mengendap
 UILABEL_STAT_DESC_MELEE	Ketepatan jarak dekat
 UILABEL_STAT_DESC_PROJECTILES	Ketepatan jarak jauh
 UILABEL_STAT_DESC_ARCANE	Kuasa mantera
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Kejayaan mencuri
 UILABEL_STAT_DESC_MEDICAL	Keberkesanan perubatan
 UILABEL_DEXTERITY_STAT	Kemahiran
 UILABEL_VITALITY_STAT	Daya hidup
-UILABEL_ENDURANCE_STAT	Ketahanan
 UILABEL_AGILITY_STAT	Kelincahan
 UILABEL_INTELLIGENCE_STAT	Kecerdasan
 UILABEL_WISDOM_STAT	Kebijaksanaan
 UILABEL_CHARISMA_STAT	Karisma
-UILABEL_PERCEPTION_STAT	Persepsi
-UILABEL_ATHLETICS_STAT	Atletik
-UILABEL_STEALTH_STAT	Penyelindapan
 UILABEL_MELEE_STAT	Jarak dekat
 UILABEL_PROJECTILES_STAT	Peluru
 UILABEL_ARCANE_STAT	Ilmu sihir
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Serangan {0}    Pertahanan {1}    Muatan {2}
 MISC_IS_DOWN	{0} telah rebah
 MISC_PICKS_UP	{0} mengambil {1} {2}
 MISC_CANNOT_READ	{0} tidak dapat dibaca
-UILABEL_TIP_DURABILITY	Ketahanan {0} / {1}
 UILABEL_DATE_LINE	HARI {0} · {1} · TAHUN {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} mendapat {1} {2} XP untuk {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Ubat Kesihatan
 ITEM_7_DESC	Memulihkan 50 kesihatan apabila diminum.
 ITEM_8_NAME	Ubat Mana
 ITEM_8_DESC	Memulihkan 50 mana apabila diminum.
-ITEM_9_NAME	Minuman Stamina
-ITEM_9_DESC	Memulihkan 40 stamina dan meningkatkan penjanaan semula seketika.
 ITEM_10_NAME	Eliksir Kekuatan
 ITEM_10_DESC	Memberi +10 serangan selama 60 saat.
 ITEM_11_NAME	Roti
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Menyelinap
 UILABEL_MODE_RANGED	Jarak jauh
 UILABEL_MODE_PASSIVE_TIP	Pasif: tidak pernah memulakan pergaduhan atau masuk untuk membantu. Masih mengikut arahan, termasuk menyerang.
 UILABEL_MODE_BLOCK_TIP	Tangkis: tidak pernah menyerang, dan menangkis dua kali lebih kerap, walaupun bertangan kosong.
-UILABEL_MODE_SNEAK_TIP	Menyelinap: berjalan separuh laju dan jauh lebih sukar dikesan. Lebih tinggi Siluman, lebih baik.
+UILABEL_MODE_SNEAK_TIP	Menyelinap: berjalan separuh laju dan jauh lebih sukar dikesan.
 UILABEL_MODE_RANGED_TIP	Jarak jauh: hidup sendiri selagi ada busur atau busur silang di tangan utama. Setiap tembakan guna satu anak panah atau bolt.
 UILABEL_SQUAD_TAB	Skuad
 UILABEL_REPUTATION	Reputasi
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Kelangsungan Hidup
 MISC_TITLE_KEYS	Pilih  //  Enter Sahkan
 UILABEL_LANGUAGE_LABEL	Bahasa:
-PROP_FLAG	Bendera
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar {0}
 PROP_DEBRIS	Serpihan
-PROP_FOUNDATION_SMALL	Asas Kecil
-PROP_FOUNDATION_LARGE	Asas Besar
-PROP_FOUNDATION_LONG	Asas Panjang
-PROP_FOUNDATION_CIRCLE	Asas Bulat
-PROP_VAULT	Bilik Kebal
 UILABEL_BUILD	Bina
 UILABEL_BUILD_SELECTED	Dipilih: {0}
 UILABEL_BUILD_NONE	Dipilih: Tiada
 UILABEL_BUILD_SELECT	Pilih
 UILABEL_BUILD_PICKED	Dipilih
-UILABEL_BUILD_PLACE_HINT	Klik kiri pada tanah untuk meletak. Tahan R dan gerakkan tetikus ke kiri atau kanan untuk memusing. Klik kanan atau Escape untuk batal.
+UILABEL_BUILD_PLACE_HINT	Klik kiri tanah untuk meletakkan. Klik kanan atau Escape untuk membatalkan.
 UILABEL_UPKEEP_HINT	Membakar satu {0} sejam sebagai penyelenggaraan. Letakkan di sini.
 MISC_BUILD_BLOCKED	Tiada ruang untuk membina di sini
 MISC_BUILD_UNWALKABLE	Tanah ini tidak boleh dibina
-MISC_BUILD_NO_FOUNDATION	Bilik kebal mesti berada sepenuhnya di atas asas
 MISC_NO_UPKEEP	Tiada penyelenggaraan: tiada balak
 MISC_UPKEEP_LEFT	Penyelenggaraan: tinggal {0} min
 PROP_SHOP	Kedai
@@ -954,24 +930,18 @@ PROP_STOVE	Dapur
 UILABEL_BUILD_DESTROY	Musnahkan
 UILABEL_BUILD_DESTROY_HINT	Klik kiri mana-mana objek untuk merobohkannya: isinya jatuh ke tanah dan serpihan tertinggal di tempatnya. Klik kiri serpihan untuk membersihkannya. Klik kanan atau Escape untuk batal.
 UILABEL_LOCK	Kunci
-MISC_BUILD_NO_CLAIM	Asas atau bilik kebal mesti berada dalam kawasan anda sendiri
-MISC_BUILD_SEALED	Tanah itu dimeterai oleh bilik kebal puak lain
-MISC_BUILD_CLAIM_OVERLAP	Kawasan itu akan bertindih dengan kawasan bendera lain
-MISC_BUILD_VAULT_TAKEN	Kawasan itu sudah ada bilik kebal
-MISC_BUILD_VAULT_CAP	Puak anda sudah ada seberapa banyak bilik kebal yang dibenarkan
+MISC_BUILD_SEALED	Tanah itu dituntut oleh puak lain
+MISC_BUILD_CLAIM_OVERLAP	Tuntutan itu akan bertindih dengan tuntutan lain
+MISC_BUILD_ALTAR_TAKEN	Puak anda sudah mempunyai Altar
 MISC_DESTROY_NOTHING	Tiada apa-apa untuk dimusnahkan di situ
 MISC_FLAG_FACTION	Pemilik: {0}
 MISC_FLAG_HEALTH	Ketahanan: {0} daripada {1}
-MISC_FLAG_VAULT_YES	Bilik kebal: berdiri, kawasan dipertahankan
-MISC_FLAG_VAULT_NO	Bilik kebal: tiada, bendera semakin haus
-MISC_PROP_CONDITION	Keadaan: {0}%
 MISC_PROP_DECAYING	Semakin rosak
 MISC_PROP_HOLDING	Tidak rosak
 MISC_PROP_LOCK_OPEN	Tidak berkunci
 MISC_PROP_LOCK_YOURS	Berkunci untuk orang luar (terbuka untuk anda)
 MISC_PROP_LOCK_SHUT	Berkunci (Membuka kunci {0})
 MISC_PROP_UPKEEP	Penyelenggaraan: tinggal {0} jam
-MISC_PROP_VAULT_UNCLAIMED	Di luar mana-mana kawasan: tidak memberi penyelenggaraan
 MOB_BEAR	Beruang
 MOB_COW	Lembu
 MOB_CHICKEN	Ayam

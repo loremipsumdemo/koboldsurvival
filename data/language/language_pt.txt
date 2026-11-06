@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulha de origem
 UILABEL_BEHAVIOR_ROAM	Vagar
 UILABEL_BEHAVIOR_PATROL_TIP	Patrulha: anda pelo território onde está, se for da tua fação, parando de vez em quando.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulha de origem: anda perto de onde apareceu. Se for perseguida longe demais, desiste, cura-se totalmente e volta, sem sofrer dano até chegar.
-UILABEL_BEHAVIOR_ROAM_TIP	Vagar: deambula pelas terras abertas, onde puder andar fora dos territórios das bandeiras.
+UILABEL_BEHAVIOR_ROAM_TIP	Vagar: vagueia pelas terras abertas, onde puder andar fora dos territórios.
 UILABEL_WAIT_NOT_IN_CLAIM	não está num território da tua fação
 UILABEL_WAIT_NOWHERE_TO_ROAM	nenhum terreno aberto por perto fora dos territórios
 UILABEL_TEMPERAMENT_AVOIDANT	Arredio
@@ -219,9 +219,6 @@ UILABEL_MISS	Falha
 UILABEL_DAMAGE	Dano
 UILABEL_EXPERIENCE_MESSAGES	Mensagens de experiência
 UILABEL_EXPERIENCE	Experiência
-UILABEL_XP_ATHLETICS	Experiência de Atletismo
-UILABEL_XP_ENDURANCE	Experiência de Resistência
-UILABEL_XP_CARRYING	Experiência de Força (carregar)
 UILABEL_ITEM_MESSAGES	Mensagens de itens
 UILABEL_PICKUP	Apanhar
 UILABEL_DROP	Largar
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Uma arma de duas mãos está na mão principal
 MISC_YOU	Você
 MISC_UNKNOWN_ITEM	Item desconhecido
 MISC_REASON_FEES	pagar taxas de comércio
-MISC_REASON_WALKING	andar
-MISC_REASON_CARRYING	transportar uma carga
-MISC_REASON_CLIMBING	escalar
 MISC_REASON_SWINGING	balançar
 MISC_REASON_DODGING	esquivar
 MISC_REASON_DEALING	causar dano
 MISC_REASON_TAKING	sofrer dano
 MISC_REASON_BLOCKING	bloquear
-MISC_REASON_SPOTTING	avistar um inimigo
-MISC_REASON_UNNOTICED	passar despercebido
 MISC_REASON_GEAR	mudar de equipamento
 NPC_GREETING	Olá, mundo.
 NPC_OPTION_WARES	Mostre-me os seus artigos.
@@ -286,14 +278,10 @@ MISC_ORD_12	Décimo segundo
 UILABEL_STAT_DESC_STRENGTH	Dano corpo a corpo, capacidade de carga
 UILABEL_STAT_DESC_DEXTERITY	Velocidade de ataque
 UILABEL_STAT_DESC_VITALITY	Saúde máxima
-UILABEL_STAT_DESC_ENDURANCE	Resistência máxima
 UILABEL_STAT_DESC_AGILITY	Probabilidade de esquiva
 UILABEL_STAT_DESC_INTELLIGENCE	Reserva de mana
 UILABEL_STAT_DESC_WISDOM	Número de feitiços que se podem aprender
 UILABEL_STAT_DESC_CHARISMA	Preços de comércio com NPC, opções de diálogo únicas
-UILABEL_STAT_DESC_PERCEPTION	Alcance de deteção
-UILABEL_STAT_DESC_ATHLETICS	Velocidade de corrida
-UILABEL_STAT_DESC_STEALTH	Melhor a evitar ser detetado ao esgueirar-se
 UILABEL_STAT_DESC_MELEE	Precisão corpo a corpo
 UILABEL_STAT_DESC_PROJECTILES	Precisão à distância
 UILABEL_STAT_DESC_ARCANE	Poder de feitiçaria
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Sucesso ao roubar
 UILABEL_STAT_DESC_MEDICAL	Eficácia da cura
 UILABEL_DEXTERITY_STAT	Destreza
 UILABEL_VITALITY_STAT	Vitalidade
-UILABEL_ENDURANCE_STAT	Resistência
 UILABEL_AGILITY_STAT	Agilidade
 UILABEL_INTELLIGENCE_STAT	Inteligência
 UILABEL_WISDOM_STAT	Sabedoria
 UILABEL_CHARISMA_STAT	Carisma
-UILABEL_PERCEPTION_STAT	Perceção
-UILABEL_ATHLETICS_STAT	Atletismo
-UILABEL_STEALTH_STAT	Furtividade
 UILABEL_MELEE_STAT	Corpo a corpo
 UILABEL_PROJECTILES_STAT	Projéteis
 UILABEL_ARCANE_STAT	Arcano
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defesa {1}    Carga {2}
 MISC_IS_DOWN	{0} está derrubado
 MISC_PICKS_UP	{0} apanha {1} {2}
 MISC_CANNOT_READ	Não foi possível ler {0}
-UILABEL_TIP_DURABILITY	Durabilidade {0} / {1}
 UILABEL_DATE_LINE	DIA {0} · {1} · ANO {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ganha {1} {2} de XP por {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Poção de saúde
 ITEM_7_DESC	Restaura 50 de saúde quando consumida.
 ITEM_8_NAME	Poção de mana
 ITEM_8_DESC	Restaura 50 de mana quando consumida.
-ITEM_9_NAME	Bebida de resistência
-ITEM_9_DESC	Restaura 40 de resistência e aumenta brevemente a regeneração.
 ITEM_10_NAME	Elixir de força
 ITEM_10_DESC	Concede +10 de ataque durante 60 segundos.
 ITEM_11_NAME	Pão
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Furtivo
 UILABEL_MODE_RANGED	À distância
 UILABEL_MODE_PASSIVE_TIP	Passivo: nunca começa uma luta nem entra numa para ajudar. Continua a cumprir ordens, ataques incluídos.
 UILABEL_MODE_BLOCK_TIP	Bloquear: nunca ataca e bloqueia o dobro das vezes, mesmo de mãos vazias.
-UILABEL_MODE_SNEAK_TIP	Furtivo: anda a metade da velocidade e é muito mais difícil de notar. Quanto mais Furtividade, melhor.
+UILABEL_MODE_SNEAK_TIP	Furtivo: anda a metade da velocidade e é muito mais difícil de notar.
 UILABEL_MODE_RANGED_TIP	À distância: liga-se sozinho enquanto houver um arco ou uma besta na mão principal. Cada tiro gasta uma flecha ou um virote.
 UILABEL_SQUAD_TAB	Grupo
 UILABEL_REPUTATION	Reputação
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Sobrevivência
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Escolher  //  Enter Confirmar
 UILABEL_LANGUAGE_LABEL	Idioma:
-PROP_FLAG	Bandeira
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar de {0}
 PROP_DEBRIS	Entulho
-PROP_FOUNDATION_SMALL	Fundação pequena
-PROP_FOUNDATION_LARGE	Fundação grande
-PROP_FOUNDATION_LONG	Fundação longa
-PROP_FOUNDATION_CIRCLE	Fundação circular
-PROP_VAULT	Cofre-forte
 UILABEL_BUILD	Construir
 UILABEL_BUILD_SELECTED	Selecionado: {0}
 UILABEL_BUILD_NONE	Selecionado: nenhum
 UILABEL_BUILD_SELECT	Escolher
 UILABEL_BUILD_PICKED	Escolhido
-UILABEL_BUILD_PLACE_HINT	Clique esquerdo no chão para posicionar. Segure R e mova o rato para a esquerda ou direita para girar. Clique direito ou Esc cancela.
+UILABEL_BUILD_PLACE_HINT	Clica com o botão esquerdo no chão para colocar. Botão direito ou Escape cancela.
 UILABEL_UPKEEP_HINT	Consome um(a) {0} por hora como manutenção. Coloca-os aqui.
 MISC_BUILD_BLOCKED	Sem espaço para construir aqui
 MISC_BUILD_UNWALKABLE	Não se pode construir neste terreno
-MISC_BUILD_NO_FOUNDATION	Um cofre-forte precisa ficar todo sobre uma fundação
 MISC_NO_UPKEEP	Sem manutenção: nenhum tronco
 MISC_UPKEEP_LEFT	Manutenção: faltam {0} min
 PROP_SHOP	Loja
@@ -954,24 +930,18 @@ PROP_STOVE	Fogão
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clique esquerdo em qualquer objeto para derrubá-lo: o que ele guarda cai no chão e fica entulho no lugar. Clique esquerdo no entulho para limpá-lo. Clique direito ou Esc cancela.
 UILABEL_LOCK	Trancar
-MISC_BUILD_NO_CLAIM	Uma fundação ou cofre-forte precisa ficar dentro do teu próprio território
-MISC_BUILD_SEALED	Esse terreno está selado pelo cofre-forte de outra fação
-MISC_BUILD_CLAIM_OVERLAP	Esse território sobrepor-se-ia ao de outra bandeira
-MISC_BUILD_VAULT_TAKEN	Esse território já tem um cofre-forte
-MISC_BUILD_VAULT_CAP	A tua fação já tem todos os cofres-fortes que pode ter
+MISC_BUILD_SEALED	Esse terreno pertence a outra fação
+MISC_BUILD_CLAIM_OVERLAP	Esse território sobrepor-se-ia a outro
+MISC_BUILD_ALTAR_TAKEN	A tua fação já tem um altar
 MISC_DESTROY_NOTHING	Nada para destruir aí
 MISC_FLAG_FACTION	Dono: {0}
 MISC_FLAG_HEALTH	Vida: {0} de {1}
-MISC_FLAG_VAULT_YES	Cofre-forte: de pé, o território está garantido
-MISC_FLAG_VAULT_NO	Cofre-forte: nenhum, a bandeira está a desgastar-se
-MISC_PROP_CONDITION	Condição: {0}%
 MISC_PROP_DECAYING	A deteriorar-se
 MISC_PROP_HOLDING	Sem deterioração
 MISC_PROP_LOCK_OPEN	Destrancado
 MISC_PROP_LOCK_YOURS	Trancado para estranhos (aberto para ti)
 MISC_PROP_LOCK_SHUT	Trancado (Arrombamento {0})
 MISC_PROP_UPKEEP	Manutenção: faltam {0} horas
-MISC_PROP_VAULT_UNCLAIMED	Fora de qualquer território: não dá manutenção
 MOB_BEAR	Urso
 MOB_COW	Vaca
 MOB_CHICKEN	Galinha

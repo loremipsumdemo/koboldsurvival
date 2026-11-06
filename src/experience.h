@@ -8,7 +8,6 @@
 
 // Gives a unit fractional XP in one stat. Whole points go to the stat, and the rest waits in the unit's
 // XpBuffer until it adds up to a point. Only player units gain XP.
-// why names the action the XP came from, for the log; nullptr writes no message. kind is the Game tab filter its
-// message falls under: Xp sorts it by the stat (Athletics and Endurance have their own), or a kind given here.
-void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why = std::string(), LogKind kind = LogKind::Xp);
+// why names the action the XP came from, for the log; empty writes no message.
+void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why = std::string());
 Stats statsOf(World& w, Entity e);   // base stats plus the gear and buffs on the unit

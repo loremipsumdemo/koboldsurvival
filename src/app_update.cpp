@@ -299,7 +299,7 @@ void App::stepGame() {
     steeringSystem(world, terrain, dt, runMode);
     pickupSystem(world, terrain);   // a pickup plays its own sound
     reportPropArrivals();
-    // Units with automated behaviors (a camp's woodcutter) take their next step: to a tree, or to the vault with
+    // Units with automated behaviors (a camp's woodcutter) take their next step: to a tree, or to the Altar with
     // a load
     wildMobSystem(world, terrain, dt);   // wild mobs keep to their temperament: the Avoidant ones run off
     automationSystem(world, terrain, dt, rng);
@@ -323,7 +323,6 @@ void App::stepGame() {
         hoursPassed = advanceClock(gs.clockSeconds, dt);
     }
     needsSystem(world, hoursPassed, gameSecs);
-    if (hoursPassed > 0) forgetSpotted(world);   // each in-game hour, spotting a unit gives Perception XP again
     downedSystem(world);   // starving to 0 knocks a unit out too
     // Unconscious units gain Conscious, paid for in Rested and then Dying: 100 Conscious wakes, 100 Dying is a corpse
     const WakeChanges wakes = unconsciousSystem(world, gameSecs);
@@ -334,10 +333,12 @@ void App::stepGame() {
     }
     for (Entity u : wakes.died) queueSoundFrom(world, Sfx::Dies, u);
     corpseDecaySystem(world, gameSecs);   // a corpse that has lain long enough turns to bones
+    bonesDecaySystem(world, gameSecs);    // and bones go in their turn, dropping what they hold
+    groundFoodSystem(world, gameSecs);    // food and bones left on the ground are gone after a day
     showWorkGains(gameSecs);
     // Passive crafting props (the forge) burn their fuel and fill their output by themselves
     passiveCraftSystem(world, gameSecs);
-    // Flags and foundations wear when their vault is dry; what is worn through breaks into debris
+    // An Altar with no upkeep wears down; one worn through breaks into debris, and its claim is gone
     claimDecaySystem(world, gameSecs);
     if (sky.clockRunning) playWorkSounds();
     autosaveTick();
@@ -360,7 +361,7 @@ void App::closeStalePanels() {
     // The looting panel closes once its looter is out of reach, is knocked out, or either is gone, or the unit it
     // shows wakes up
     if (lootUnit != NULL_ENTITY) {
-        if (!world.has<Unconscious>(lootUnit) || !world.has<Unit>(lootBy) || world.has<Unconscious>(lootBy) ||
+        if (!outCold(world, lootUnit) || !world.has<Unit>(lootBy) || outCold(world, lootBy) ||
             flatGap(world, lootBy, lootUnit) > LOOT_RANGE) {
             closeLoot();
         }
@@ -499,63 +500,59 @@ void App::updateHover() {
         for (Entity e : propsAt(mouseX, mouseY)) {
             // A prop locked against the player says so: "Chest (Locked)". The player's own, or one in a player
             // claim, does not.
-            const std::string name = lang(propInfo(world.get<Prop>(e)->kind).nameKey);
+            const std::string name = propDisplayName(world, e);
             under.push_back({ lockShutFor(world, e, NULL_ENTITY) ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
-            // A flag also shows its faction, health and vault
-            for (const std::string& line : flagInfoLines(world, e)) under.push_back({ line, HUD_PROP_COLOR });
+            // An Altar also shows its health and upkeep
+            for (const std::string& line : altarInfoLines(world, e)) under.push_back({ line, HUD_PROP_COLOR });
         }
 
         for (size_t i = 0; i < under.size() && i < HOVER_NAME_LIMIT; ++i) hud.push_back(under[i]);
         if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
     }
 
-    // ---- Build placement: while a prop is picked, its footprint follows the mouse over the ground. Holding R,
-    // the mouse's left and right movement turns it. The preview shows exactly what a click would do. ----
+    // ---- Build placement: while a prop is picked, its footprint follows the mouse over the ground. The preview
+    // shows exactly what a click would do. ----
     {
         // A kind that needs a claim is put down once no selected unit of yours stands in one
         const bool inClaim = selectionInClaim(world);
         if (buildPick.any() && !buildAnywhere(buildPick) && !inClaim) buildPick = {};
         renderer.setBuildInClaim(inClaim);
-        const bool* keys = SDL_GetKeyboardState(nullptr);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
         const bool placing = buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
                              && dialogueUnit == NULL_ENTITY && !optimizeAllOpen && disbandTarget == NULL_ENTITY;
-        if (placing && keys[SDL_SCANCODE_R] && buildPrevX >= 0.0f) buildYaw += (bmx - buildPrevX) * BUILD_TURN_PER_PIXEL;
-        buildPrevX = bmx;
         BuildPreview bp;
         if (placing && !overPanels(bmx, bmy, winW, winH)) {
             if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
                 bp.on = true;
                 bp.kind = buildPick.kind;
-                bp.yaw = buildYaw;
                 snapBuildSpot(buildPick.kind, hit->first, hit->second, bp.x, bp.z);
-                bp.valid = checkBuildSpot(world, terrain, buildPick.kind, bp.x, bp.z, buildYaw) == BuildCheck::Ok;
+                bp.valid = checkBuildSpot(world, terrain, buildPick.kind, bp.x, bp.z) == BuildCheck::Ok;
             }
         }
-        if (bp.on && buildPick.places(PropKind::Flag)) {
+        if (bp.on && buildPick.places(PropKind::Altar)) {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
-        Entity hoverFlag = NULL_ENTITY;
-        // Not placing anything: an existing flag under the mouse shows its claim circle
+        Entity hoverAltar = NULL_ENTITY;
+        // Not placing anything: an existing Altar under the mouse shows its claim circle
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !overPanels(bmx, bmy, winW, winH)) {
             for (Entity e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
                 const Transform* ft = world.get<Transform>(e);
-                if (!fp || !ft || fp->kind != PropKind::Flag) continue;
+                if (!fp || !ft || fp->kind != PropKind::Altar) continue;
                 bp.ringR = CLAIM_RADIUS;
                 bp.ringTone = 3;
                 bp.x = ft->x;
                 bp.z = ft->z;
-                hoverFlag = e;
+                hoverAltar = e;
                 break;
             }
         }
-        // When one claim circle shows, every flag's circle shows with it
+        // When one claim circle shows, every Altar's circle shows with it
         if (bp.ringR > 0.0f) {
             for (Entity e : world.view<Prop, Transform>()) {
-                if (e == hoverFlag || world.get<Prop>(e)->kind != PropKind::Flag) continue;
+                if (e == hoverAltar || world.get<Prop>(e)->kind != PropKind::Altar) continue;
                 const Transform* ft = world.get<Transform>(e);
                 bp.otherRings.push_back({ ft->x, ft->z });
             }

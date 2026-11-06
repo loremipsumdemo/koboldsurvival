@@ -275,7 +275,7 @@ GLuint MakeDotTexture(bool white) {
 
 float unitSaturation(World& w, Entity u) {
     if (w.has<Corpse>(u)) return 0.0f;
-    if (w.has<Unconscious>(u)) return 0.5f;
+    if (outCold(w, u)) return 0.5f;
     return 1.0f;
 }
 

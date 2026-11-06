@@ -6,51 +6,18 @@
 #include "factions.h"
 #include "language.h"
 
-namespace {
-
-bool isFoundationKind(PropKind kind) {
-    return kind == PropKind::FoundationSmall || kind == PropKind::FoundationLarge || kind == PropKind::FoundationLong ||
-           kind == PropKind::FoundationCircle;
-}
-
-// Lowers a building's wear by hours / decayHours, if it has any
-void wear(World& w, Entity e, double amount) {
-    if (Wear* wr = w.get<Wear>(e)) wr->value -= amount;
-}
-
-}  // namespace
-
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
     for (Entity e : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(e)->kind != PropKind::Flag) continue;
+        if (w.get<Prop>(e)->kind != PropKind::Altar) continue;
         Claim c;
-        c.flag = e;
+        c.altar = e;
         c.x = w.get<Transform>(e)->x;
         c.z = w.get<Transform>(e)->z;
         c.owner = w.get<Owner>(e)->faction;
         out.push_back(c);
     }
-    std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) { return a.flag < b.flag; });
-    // The vault standing in each circle, if any. Vaults are taken in placement order (the lower entity id first), so
-    // where two stand in one circle, the one placed first holds it.
-    std::vector<Entity> vaults;
-    for (Entity v : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(v)->kind == PropKind::Vault) vaults.push_back(v);
-    }
-    std::sort(vaults.begin(), vaults.end());
-    for (Entity v : vaults) {
-        const float vx = w.get<Transform>(v)->x, vz = w.get<Transform>(v)->z;
-        for (Claim& c : out) {
-            if (c.vault != NULL_ENTITY) continue;
-            const float dx = vx - c.x, dz = vz - c.z;
-            if (dx * dx + dz * dz <= CLAIM_RADIUS * CLAIM_RADIUS) {
-                c.vault = v;
-                c.sealer = w.get<Owner>(v)->faction;
-                break;
-            }
-        }
-    }
+    std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) { return a.altar < b.altar; });
     return out;
 }
 
@@ -63,40 +30,48 @@ const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int own
     return nullptr;
 }
 
-int sealingFactionAt(const std::vector<Claim>& claims, float x, float z) {
-    const Claim* c = claimAt(claims, x, z);
-    if (!c || c->vault == NULL_ENTITY) return -1;
-    return c->sealer;
-}
-
 bool claimsOverlap(float ax, float az, float bx, float bz) {
     const float dx = ax - bx, dz = az - bz;
     const float reach = 2.0f * CLAIM_RADIUS;
     return dx * dx + dz * dz < reach * reach;
 }
 
-bool vaultFueled(World& w, Entity vault) {
-    const Prop* p = w.get<Prop>(vault);
-    if (!p) return false;
-    if (const Fuel* f = w.get<Fuel>(vault); f && f->hours > 1e-9) return true;
+bool altarHasUpkeep(World& w, Entity altar) {
+    const Prop* p = w.get<Prop>(altar);
+    const Storage* st = w.get<Storage>(altar);
+    if (!p || !st) return false;
     const int input = propInfo(p->kind).input;
-    if (const Storage* st = w.get<Storage>(vault)) {
-        for (const ItemStack& s : st->slots) {
-            if (s.item == input && s.count > 0) return true;
-        }
+    for (const ItemStack& s : st->slots) {
+        if (s.item == input && s.count > 0) return true;
     }
     return false;
 }
 
+bool altarFueled(World& w, Entity altar) {
+    if (const Fuel* f = w.get<Fuel>(altar); f && f->hours > 1e-9) return true;
+    return altarHasUpkeep(w, altar);
+}
+
+std::string propDisplayName(World& w, Entity prop) {
+    const Prop* p = w.get<Prop>(prop);
+    if (!p) return std::string();
+    if (p->kind == PropKind::Altar) {
+        if (const Owner* own = w.get<Owner>(prop)) return langf("MISC_ALTAR_OF", { factionName(own->faction) });
+    }
+    return lang(propInfo(p->kind).nameKey);
+}
+
 bool lockShutFor(World& w, Entity prop, Entity unit) {
-    const Lock* lock = w.get<Lock>(prop);
-    if (!lock || !lock->locked) return false;
     const Faction* f = unit != NULL_ENTITY ? w.get<Faction>(unit) : nullptr;
-    const int who = f ? f->id : FACTION_PLAYER;
-    return lockShutForFaction(w, prop, who);
+    return lockShutForFaction(w, prop, f ? f->id : FACTION_PLAYER);
 }
 
 bool lockShutForFaction(World& w, Entity prop, int faction) {
+    // An Altar has no lock to pick: it is its own faction's, and no one else's
+    if (const Prop* p = w.get<Prop>(prop); p && p->kind == PropKind::Altar) {
+        const Owner* own = w.get<Owner>(prop);
+        return !own || own->faction != faction;
+    }
     const Lock* lock = w.get<Lock>(prop);
     if (!lock || !lock->locked) return false;
     if (lock->faction >= 0 && lock->faction == faction) return false;
@@ -110,10 +85,10 @@ bool lockShutForFaction(World& w, Entity prop, int faction) {
 void claimOwnership(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     const Transform* t = w.get<Transform>(prop);
-    if (!p || !t || p->kind == PropKind::Flag || p->kind == PropKind::Vault) return;
+    if (!p || !t || p->kind == PropKind::Altar) return;
     const Claim* c = claimAt(claimsOf(w), t->x, t->z);
     if (!c) return;
-    const int faction = c->sealer >= 0 ? c->sealer : c->owner;
+    const int faction = c->owner;
     if (Owner* own = w.get<Owner>(prop)) own->faction = faction;
     else w.add(prop, Owner{ faction });
     if (Lock* lock = w.get<Lock>(prop)) lock->faction = faction;
@@ -146,6 +121,19 @@ void releaseProp(World& w, Entity prop) {
     }
 }
 
+// An Altar's claim is gone: what its faction owned in the circle now belongs to nobody. A lock stays as it is, with no
+// faction behind it.
+void abandonClaim(World& w, float x, float z, int faction) {
+    for (Entity e : w.view<Prop, Transform, Owner>()) {
+        if (w.get<Owner>(e)->faction != faction) continue;
+        const Transform* t = w.get<Transform>(e);
+        const float dx = t->x - x, dz = t->z - z;
+        if (dx * dx + dz * dz > CLAIM_RADIUS * CLAIM_RADIUS) continue;
+        w.remove<Owner>(e);
+        if (Lock* lock = w.get<Lock>(e); lock && lock->faction == faction) lock->faction = -1;
+    }
+}
+
 }  // namespace
 
 // A level's prop going for good is remembered, or a save would bring it back from the seed
@@ -159,56 +147,35 @@ static void rememberGone(World& w, Entity prop) {
 
 void breakBuilding(World& w, Entity e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
-    if (w.get<Prop>(e)->kind == PropKind::Debris) {
+    const PropKind kind = w.get<Prop>(e)->kind;
+    const Transform at = *w.get<Transform>(e);
+    if (kind == PropKind::Debris) {
         releaseProp(w, e);
         rememberGone(w, e);
         w.destroy(e);
         return;
     }
-    // Bones leave no Debris: only the Bones item, where they lay
-    if (destroyedByHand(w.get<Prop>(e)->kind)) {
-        const Transform at = *w.get<Transform>(e);
+    const std::vector<ItemStack> held = propHoldings(w, e);
+    // Bones leave no Debris: only what they held and the Bones item, where they lay
+    if (destroyedByHand(kind)) {
         releaseProp(w, e);
         rememberGone(w, e);
         w.destroy(e);
+        dropStacks(w, at, held);
         spawnGroundItem(w, at, BONES_ITEM, BONES_ITEM_COUNT);
         return;
     }
-    std::vector<Entity> gone{ e };
-    if (isFoundationKind(w.get<Prop>(e)->kind)) {
-        for (Entity c : w.view<Prop, OnBase>()) {
-            if (w.get<OnBase>(c)->foundation == e) gone.push_back(c);
-        }
-    }
-    for (Entity g : gone) releaseProp(w, g);
-    // Copy what is needed before creating entities, which can move the stored components
-    struct Drop { Transform at; int item; int count; };
-    std::vector<Drop> drops;
-    std::vector<Transform> spots;
-    for (Entity g : gone) {
-        const Transform at = *w.get<Transform>(g);
-        spots.push_back(at);
-        auto collect = [&](const ItemStack* slots) {
-            for (int i = 0; i < STORAGE_SLOTS; ++i) {
-                if (slots[i].item > 0 && slots[i].count > 0) drops.push_back(Drop{ at, slots[i].item, slots[i].count });
-            }
-        };
-        if (const Storage* st = w.get<Storage>(g)) collect(st->slots.data());
-        if (const Output* out = w.get<Output>(g)) collect(out->slots.data());
-    }
-    for (Entity g : gone) {
-        rememberGone(w, g);
-        w.destroy(g);
-    }
-    for (const Drop& d : drops) {
-        spawnGroundItem(w, Transform{ d.at.x, d.at.y, d.at.z }, d.item, d.count);
-    }
-    for (const Transform& at : spots) {
-        const Entity debris = w.create();
-        w.add(debris, Transform{ at.x, at.y, at.z });
-        w.add(debris, Prop{ PropKind::Debris, -1, 0.0f });
-        claimOwnership(w, debris);
-    }
+    releaseProp(w, e);
+    const Owner* own = w.get<Owner>(e);
+    const int altarOwner = kind == PropKind::Altar && own ? own->faction : -1;
+    rememberGone(w, e);
+    w.destroy(e);
+    if (altarOwner >= 0) abandonClaim(w, at.x, at.z, altarOwner);
+    dropStacks(w, at, held);
+    const Entity debris = w.create();
+    w.add(debris, Transform{ at.x, at.y, at.z });
+    w.add(debris, Prop{ PropKind::Debris, -1, 0.0f });
+    claimOwnership(w, debris);
 }
 
 bool destroyBuilding(World& w, Entity e) {
@@ -217,88 +184,28 @@ bool destroyBuilding(World& w, Entity e) {
     return true;
 }
 
-// Where two vaults stand in one flag's claim, the one placed first (the lower entity id) keeps the claim. The newer one
-// becomes debris, and its items fall on the ground. A vault must sit inside a flag's circle to count.
-void resolveDuplicateVaults(World& w) {
-    // claimsOf gives each claim the vault placed first among those in its circle. Every other vault in a circle is
-    // a duplicate: the ones that are not the holder of any claim.
-    std::vector<Entity> holders;
-    for (const Claim& c : claimsOf(w)) {
-        if (c.vault != NULL_ENTITY) holders.push_back(c.vault);
-    }
+void resolveDuplicateAltars(World& w) {
+    std::vector<int> seen;
     std::vector<Entity> extra;
-    for (Entity v : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(v)->kind != PropKind::Vault) continue;
-        if (std::find(holders.begin(), holders.end(), v) != holders.end()) continue;
-        const float vx = w.get<Transform>(v)->x, vz = w.get<Transform>(v)->z;
-        for (const Claim& c : claimsOf(w)) {
-            const float dx = vx - c.x, dz = vz - c.z;
-            if (dx * dx + dz * dz <= CLAIM_RADIUS * CLAIM_RADIUS) {
-                extra.push_back(v);
-                break;
-            }
-        }
+    for (const Claim& c : claimsOf(w)) {
+        if (std::find(seen.begin(), seen.end(), c.owner) != seen.end()) extra.push_back(c.altar);
+        else seen.push_back(c.owner);
     }
-    for (Entity v : extra) breakBuilding(w, v);
+    for (Entity e : extra) breakBuilding(w, e);
 }
 
 void claimDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    resolveDuplicateVaults(w);
-    // A vault's faction takes its claim: the flag and the claim become that faction's
+    // An Altar with upkeep recovers, and one with none wears through in ALTAR_DECAY_HOURS
     for (const Claim& c : claimsOf(w)) {
-        if (c.vault != NULL_ENTITY && w.has<Owner>(c.flag)) w.get<Owner>(c.flag)->faction = w.get<Owner>(c.vault)->faction;
-    }
-    const std::vector<Claim> claims = claimsOf(w);
-
-    // Flags. A flag's health falls while its claim has no fuelled vault, and while an older flag's circle overlaps it
-    // (the claims are oldest first, so only the older ones before it are checked). It recovers one point an hour while
-    // its own vault stands in the claim and is fuelled.
-    for (size_t i = 0; i < claims.size(); ++i) {
-        const Claim& c = claims[i];
-        Health* hp = w.get<Health>(c.flag);
+        Health* hp = w.get<Health>(c.altar);
         if (!hp) continue;
-        const bool held = c.vault != NULL_ENTITY && w.get<Owner>(c.vault)->faction == c.owner && vaultFueled(w, c.vault);
-        bool overlapped = false;
-        for (size_t j = 0; j < i && !overlapped; ++j) {
-            overlapped = claimsOverlap(c.x, c.z, claims[j].x, claims[j].z);
-        }
-        if (held && !overlapped) {
-            hp->value = std::min(hp->max, hp->value + FLAG_RECOVER_PER_HOUR * hours);
-        } else {
-            hp->value -= 10.0 * hours / FLAG_DECAY_HOURS * FLAG_HEALTH;   // a flag with no vault wears through in FLAG_DECAY_HOURS
-        }
-    }
-
-    // Foundations: a foundation wears while it lies outside every claim of its faction, or in one whose vault is dry
-    for (Entity e : w.view<Prop, Transform, Owner, Wear>()) {
-        if (!isFoundationKind(w.get<Prop>(e)->kind)) continue;
-        const int owner = w.get<Owner>(e)->faction;
-        const Claim* c = claimAt(claims, w.get<Transform>(e)->x, w.get<Transform>(e)->z, owner);
-        const bool held = c && c->vault != NULL_ENTITY && w.get<Owner>(c->vault)->faction == owner && vaultFueled(w, c->vault);
-        if (!held) wear(w, e, hours / FOUNDATION_DECAY_HOURS);
-    }
-
-    // What is worn through breaks. A foundation takes the props on it with it, so each one is checked as it is reached.
-    std::vector<Entity> broken;
-    for (Entity e : w.view<Wear>()) {
-        if (w.get<Wear>(e)->value <= 0.0) broken.push_back(e);
+        if (altarFueled(w, c.altar)) hp->value = std::min(hp->max, hp->value + ALTAR_RECOVER_PER_HOUR * hours);
+        else hp->value -= hours / ALTAR_DECAY_HOURS * ALTAR_HEALTH;
     }
     for (Entity e : w.view<Health>()) {
-        if (w.get<Health>(e)->value <= 0.0) broken.push_back(e);
-    }
-    for (Entity e : broken) {
-        if (w.has<Prop>(e)) breakBuilding(w, e);
-    }
-    // Props whose foundation has gone (or was never there) break too
-    std::vector<Entity> orphans;
-    for (Entity e : w.view<Prop, OnBase>()) {
-        const Entity base = w.get<OnBase>(e)->foundation;
-        if (!w.has<Prop>(base)) orphans.push_back(e);
-    }
-    for (Entity e : orphans) {
-        if (w.has<Prop>(e)) breakBuilding(w, e);
+        if (w.get<Health>(e)->value <= 0.0 && w.has<Prop>(e)) breakBuilding(w, e);
     }
 }
 
@@ -306,39 +213,7 @@ void settleClaimOwnership(World& w) {
     for (Entity e : w.view<Prop, Transform>()) claimOwnership(w, e);
 }
 
-bool vaultHasUpkeep(World& w, Entity vault) {
-    const Prop* p = w.get<Prop>(vault);
-    const Storage* st = w.get<Storage>(vault);
-    if (!p || !st) return false;
-    const int input = propInfo(p->kind).input;
-    for (const ItemStack& s : st->slots) {
-        if (s.item == input && s.count > 0) return true;
-    }
-    return false;
-}
-
-bool propDecaying(World& w, Entity e, const std::vector<Claim>& claims) {
+bool propDecaying(World& w, Entity e) {
     const Prop* p = w.get<Prop>(e);
-    const Transform* tr = w.get<Transform>(e);
-    if (!p || !tr) return false;
-    const Owner* own = w.get<Owner>(e);
-    // By the same rules as claimDecaySystem
-    bool decaying = false;
-    if (p->kind == PropKind::Flag) {
-        size_t idx = claims.size();
-        for (size_t i = 0; i < claims.size(); ++i) {
-            if (claims[i].flag == e) idx = i;
-        }
-        if (idx < claims.size()) {
-            const Claim& c = claims[idx];
-            const bool held = c.vault != NULL_ENTITY && w.get<Owner>(c.vault)->faction == c.owner && vaultFueled(w, c.vault);
-            bool overlapped = false;
-            for (size_t j = 0; j < idx && !overlapped; ++j) overlapped = claimsOverlap(c.x, c.z, claims[j].x, claims[j].z);
-            decaying = !held || overlapped;
-        }
-    } else if (w.has<Wear>(e) && own && isFoundationKind(p->kind)) {
-        const Claim* c = claimAt(claims, tr->x, tr->z, own->faction);
-        decaying = !(c && c->vault != NULL_ENTITY && w.get<Owner>(c->vault)->faction == own->faction && vaultFueled(w, c->vault));
-    }
-    return decaying;
+    return p && p->kind == PropKind::Altar && w.has<Health>(e) && !altarFueled(w, e);
 }

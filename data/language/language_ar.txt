@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	دورية عند نقطة الظهور
 UILABEL_BEHAVIOR_ROAM	التجوال
 UILABEL_BEHAVIOR_PATROL_TIP	دورية: يتجول داخل المنطقة التي يقف فيها، إن كانت لفصيله، ويتوقف بين حين وآخر.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	دورية عند نقطة الظهور: يتجول قرب المكان الذي ظهر فيه أولاً. إن طوردَ بعيداً جداً، يستسلم ويُشفى تماماً ويعود ماشياً دون أن يتلقى ضرراً حتى يصل.
-UILABEL_BEHAVIOR_ROAM_TIP	التجوال: يتجول في الأراضي المفتوحة، في أي مكان يمكنه السير فيه خارج مناطق الرايات.
+UILABEL_BEHAVIOR_ROAM_TIP	التجوال: يتجول في الأرض المفتوحة حيثما يمكنه المشي خارج المناطق المطالب بها.
 UILABEL_WAIT_NOT_IN_CLAIM	ليس داخل منطقة لفصيله
 UILABEL_WAIT_NOWHERE_TO_ROAM	لا أرض مفتوحة قريبة خارج المناطق
 UILABEL_TEMPERAMENT_AVOIDANT	متجنِّب
@@ -219,9 +219,6 @@ UILABEL_MISS	إخفاق
 UILABEL_DAMAGE	الضرر
 UILABEL_EXPERIENCE_MESSAGES	رسائل الخبرة
 UILABEL_EXPERIENCE	الخبرة
-UILABEL_XP_ATHLETICS	خبرة اللياقة
-UILABEL_XP_ENDURANCE	خبرة التحمّل
-UILABEL_XP_CARRYING	خبرة القوة (الحمل)
 UILABEL_ITEM_MESSAGES	رسائل الأغراض
 UILABEL_PICKUP	التقاط
 UILABEL_DROP	إسقاط
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	سلاح بيدين موجود في اليد الرئي�
 MISC_YOU	أنت
 MISC_UNKNOWN_ITEM	غرض غير معروف
 MISC_REASON_FEES	دفع رسوم التبادل
-MISC_REASON_WALKING	المشي
-MISC_REASON_CARRYING	حمل حمولة
-MISC_REASON_CLIMBING	التسلق
 MISC_REASON_SWINGING	التأرجح بالسلاح
 MISC_REASON_DODGING	المراوغة
 MISC_REASON_DEALING	إلحاق الضرر
 MISC_REASON_TAKING	تلقي الضرر
 MISC_REASON_BLOCKING	الصد
-MISC_REASON_SPOTTING	رصد عدو
-MISC_REASON_UNNOTICED	البقاء دون أن يُلاحظ
 MISC_REASON_GEAR	تغيير المعدات
 NPC_GREETING	مرحبًا أيها العالم.
 NPC_OPTION_WARES	أرني بضائعك.
@@ -286,14 +278,10 @@ MISC_ORD_12	الثاني عشر
 UILABEL_STAT_DESC_STRENGTH	ضرر القتال المباشر، سعة الحمل
 UILABEL_STAT_DESC_DEXTERITY	سرعة الهجوم
 UILABEL_STAT_DESC_VITALITY	أقصى صحة
-UILABEL_STAT_DESC_ENDURANCE	أقصى تحمّل
 UILABEL_STAT_DESC_AGILITY	فرصة المراوغة
 UILABEL_STAT_DESC_INTELLIGENCE	مخزون المانا
 UILABEL_STAT_DESC_WISDOM	عدد التعاويذ القابلة للتعلم
 UILABEL_STAT_DESC_CHARISMA	أسعار التبادل مع الشخصيات غير اللاعبة، وخيارات حوار فريدة
-UILABEL_STAT_DESC_PERCEPTION	مدى الكشف
-UILABEL_STAT_DESC_ATHLETICS	سرعة الركض
-UILABEL_STAT_DESC_STEALTH	أفضل في تجنب الكشف أثناء التسلل
 UILABEL_STAT_DESC_MELEE	دقة القتال المباشر
 UILABEL_STAT_DESC_PROJECTILES	دقة القتال عن بعد
 UILABEL_STAT_DESC_ARCANE	قوة التعاويذ
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	نجاح السرقة
 UILABEL_STAT_DESC_MEDICAL	فعالية العلاج
 UILABEL_DEXTERITY_STAT	الرشاقة
 UILABEL_VITALITY_STAT	الحيوية
-UILABEL_ENDURANCE_STAT	التحمّل
 UILABEL_AGILITY_STAT	الخفة
 UILABEL_INTELLIGENCE_STAT	الذكاء
 UILABEL_WISDOM_STAT	الحكمة
 UILABEL_CHARISMA_STAT	الكاريزما
-UILABEL_PERCEPTION_STAT	الإدراك
-UILABEL_ATHLETICS_STAT	الرياضة البدنية
-UILABEL_STEALTH_STAT	التخفي
 UILABEL_MELEE_STAT	القتال المباشر
 UILABEL_PROJECTILES_STAT	القتال عن بعد
 UILABEL_ARCANE_STAT	السحر
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	الهجوم {0}    الدفاع {1}    الحمل 
 MISC_IS_DOWN	{0} سقط
 MISC_PICKS_UP	{0} يلتقط {1} {2}
 MISC_CANNOT_READ	تعذّر قراءة {0}
-UILABEL_TIP_DURABILITY	المتانة {0} / {1}
 UILABEL_DATE_LINE	اليوم {0} · {1} · السنة {2}
 UILABEL_MONITOR_N	الشاشة {0}
 MISC_GAINS_XP	{0} يكتسب {1} {2} خبرة مقابل {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	جرعة الشفاء
 ITEM_7_DESC	تستعيد 50 نقطة صحة عند استهلاكها.
 ITEM_8_NAME	جرعة المانا
 ITEM_8_DESC	تستعيد 50 نقطة مانا عند استهلاكها.
-ITEM_9_NAME	جرعة التحمّل
-ITEM_9_DESC	تستعيد 40 نقطة تحمّل وتعزز التجدد لفترة وجيزة.
 ITEM_10_NAME	إكسير القوة
 ITEM_10_DESC	يمنح +10 هجوم لمدة 60 ثانية.
 ITEM_11_NAME	خبز
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	تسلّل
 UILABEL_MODE_RANGED	بعيد المدى
 UILABEL_MODE_PASSIVE_TIP	مسالم: لا يبدأ قتالًا أبدًا ولا ينضم إلى قتال لمساعدة غيره. يظل ينفذ الأوامر، ومنها الهجوم.
 UILABEL_MODE_BLOCK_TIP	صدّ: لا يهاجم أبدًا، ويصدّ الضربات ضعف المرات، حتى بيدين فارغتين.
-UILABEL_MODE_SNEAK_TIP	تسلّل: يمشي بنصف السرعة ويصعب ملاحظته كثيرًا. كلما ارتفع التخفي كان أفضل.
+UILABEL_MODE_SNEAK_TIP	تسلّل: يمشي بنصف السرعة ويصعب ملاحظته كثيرًا.
 UILABEL_MODE_RANGED_TIP	بعيد المدى: يعمل تلقائيًا ما دام قوس أو قوس نشاب في اليد الرئيسية. كل رمية تستهلك سهمًا أو مسمارًا.
 UILABEL_SQUAD_TAB	الفريق
 UILABEL_REPUTATION	السمعة
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	الكوبولد
 GAME_TITLE_SECOND	نجاة
 MISC_TITLE_KEYS	اختيار  //  Enter تأكيد
 UILABEL_LANGUAGE_LABEL	اللغة:
-PROP_FLAG	راية
+PROP_ALTAR	مذبح
+MISC_ALTAR_OF	مذبح {0}
 PROP_DEBRIS	أنقاض
-PROP_FOUNDATION_SMALL	أساس صغير
-PROP_FOUNDATION_LARGE	أساس كبير
-PROP_FOUNDATION_LONG	أساس طويل
-PROP_FOUNDATION_CIRCLE	أساس دائري
-PROP_VAULT	خزنة
 UILABEL_BUILD	بناء
 UILABEL_BUILD_SELECTED	المحدد: {0}
 UILABEL_BUILD_NONE	المحدد: لا شيء
 UILABEL_BUILD_SELECT	اختر
 UILABEL_BUILD_PICKED	تم الاختيار
-UILABEL_BUILD_PLACE_HINT	انقر بالزر الأيسر على الأرض للوضع. اضغط R مع تحريك الفأرة يميناً أو يساراً للتدوير. النقر بالزر الأيمن أو Escape يلغي.
+UILABEL_BUILD_PLACE_HINT	انقر بالزر الأيسر على الأرض للوضع. النقر بالزر الأيمن أو Escape للإلغاء.
 UILABEL_UPKEEP_HINT	يحرق {0} واحداً كل ساعة للصيانة. ضعها هنا.
 MISC_BUILD_BLOCKED	لا مكان للبناء هنا
 MISC_BUILD_UNWALKABLE	لا يمكن البناء على هذه الأرض
-MISC_BUILD_NO_FOUNDATION	يجب أن تقوم الخزنة كلها على أساس
 MISC_NO_UPKEEP	لا صيانة: لا جذوع
 MISC_UPKEEP_LEFT	الصيانة: بقي {0} دقيقة
 PROP_SHOP	متجر
@@ -954,24 +930,18 @@ PROP_STOVE	موقد
 UILABEL_BUILD_DESTROY	هدم
 UILABEL_BUILD_DESTROY_HINT	انقر بالزر الأيسر على أي عنصر لهدمه: يسقط ما فيه على الأرض وتبقى الأنقاض مكانه. انقر بالزر الأيسر على الأنقاض لإزالتها. النقر بالزر الأيمن أو Escape يلغي.
 UILABEL_LOCK	قفل
-MISC_BUILD_NO_CLAIM	يجب أن يكون الأساس أو الخزنة داخل منطقتك
-MISC_BUILD_SEALED	هذه الأرض مختومة بخزنة فصيل آخر
-MISC_BUILD_CLAIM_OVERLAP	ستتداخل هذه المنطقة مع منطقة راية أخرى
-MISC_BUILD_VAULT_TAKEN	لهذه المنطقة خزنة بالفعل
-MISC_BUILD_VAULT_CAP	لدى فصيلك بالفعل أقصى عدد من الخزائن
+MISC_BUILD_SEALED	هذه الأرض يطالب بها فصيل آخر
+MISC_BUILD_CLAIM_OVERLAP	ستتداخل هذه المطالبة مع مطالبة أخرى
+MISC_BUILD_ALTAR_TAKEN	لدى فصيلك مذبح بالفعل
 MISC_DESTROY_NOTHING	لا شيء لهدمه هناك
 MISC_FLAG_FACTION	المالك: {0}
 MISC_FLAG_HEALTH	المتانة: {0} من {1}
-MISC_FLAG_VAULT_YES	الخزنة: قائمة، والمنطقة محفوظة
-MISC_FLAG_VAULT_NO	الخزنة: لا توجد، والراية تتآكل
-MISC_PROP_CONDITION	الحالة: {0}%
 MISC_PROP_DECAYING	يتآكل
 MISC_PROP_HOLDING	لا يتآكل
 MISC_PROP_LOCK_OPEN	غير مقفل
 MISC_PROP_LOCK_YOURS	مقفل أمام الغرباء (مفتوح لك)
 MISC_PROP_LOCK_SHUT	مقفل (فتح الأقفال {0})
 MISC_PROP_UPKEEP	الصيانة: بقي {0} ساعات
-MISC_PROP_VAULT_UNCLAIMED	خارج أي منطقة: لا تمنح صيانة
 MOB_BEAR	دب
 MOB_COW	بقرة
 MOB_CHICKEN	دجاجة

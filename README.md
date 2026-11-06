@@ -11,9 +11,13 @@ lose state: the world keeps running, whatever happens to your party.
 - **Being knocked out.** A unit at 0 health is Unconscious until its Conscious is back at 100, paid for in Rested and
   then Dying. Dying 100 makes it a corpse. Unconscious units and corpses can be carried and looted. One of your units
   that wakes near hostile units plays dead.
-- **Corpses and bones.** After 24 in-game hours a corpse turns into a Bones prop, and what it still held or wore falls
-  to the ground. Right-click any Bones prop and choose Destroy: a selected unit walks over, and the prop leaves 3 Bones
-  items on the ground.
+- **Mobs.** Mobs have no hunger, Rested or Comfort. A knocked-out mob wakes by itself unless something is taken from it.
+  A mob that brings down another mob destroys its meat and kills it, leaving its bones in the corpse.
+- **Corpses and bones.** After 24 in-game hours a corpse turns into a Bones prop, which holds what the corpse still held
+  or wore. Nothing can reach those items until the prop goes: by itself after another 24 in-game hours, or when a unit
+  is sent with the right-click menu's Destroy. Either way its items and 3 Bones fall to the ground. Food and bones left
+  on the ground are gone after 24 in-game hours. A corpse carried into a campfire is destroyed at once, and what it had
+  falls to the ground.
 - **Behaviors.** Each unit works through a priority list: Eat, Heal, Share, Rest, Leave Bed, Rescue, Auto-Harvest,
   Auto-Haul, Patrol, Patrol Spawn and Roam. You can reorder, switch off, add or remove them per unit. Units can also be
   set to Passive, Block or Sneak.
@@ -21,8 +25,10 @@ lose state: the world keeps running, whatever happens to your party.
   their fuel, and units work stoves, water pumps and training dummies. Items are kept in barrels, chests and
   specialised storage.
 - **Building and claims.** The Build tab places props at once and at no cost, and its Destroy tool takes them down
-  (Bones leave their item, Debris is cleared away, and anything else leaves Debris). Claim Flags mark territory, and a
-  Vault on a foundation burns Wood Logs to hold the claim. Unheld flags and foundations decay and break.
+  (Bones leave their item, Debris is cleared away, and anything else leaves Debris). A faction has one Altar, named
+  for it ("Altar of Red Faction"), which claims the ground around it. Only its own faction can open it, and there is
+  no lock to pick. It burns Wood Logs as upkeep. With none left it decays, and when it breaks the claim is gone and the
+  props in the circle belong to nobody.
 - **Factions and reputation.** Rival camps start at set reputations with you. At -25 or below they attack on sight, and
   at 50 or more they are allies. Talk to NPCs, trade with them, lock units in Prisoner Cages, pick locks, or disband
   your units into the Exiles.
@@ -52,7 +58,6 @@ lose state: the world keeps running, whatever happens to your party.
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |
 | Alt (held) | Show the names of items on the ground |
-| R (held while placing) | Rotate a building with the mouse |
 | Space | Pause or resume |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |

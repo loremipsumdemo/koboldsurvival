@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrouille d'origine
 UILABEL_BEHAVIOR_ROAM	Errance
 UILABEL_BEHAVIOR_PATROL_TIP	Patrouille : se promène dans le territoire où elle se trouve, s'il appartient à sa faction, en s'arrêtant de temps en temps.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrouille d'origine : se promène près de son lieu d'apparition. Poursuivie trop loin, elle abandonne, se soigne entièrement et revient, sans subir de dégâts avant d'être rentrée.
-UILABEL_BEHAVIOR_ROAM_TIP	Errance : parcourt les terres libres, partout où elle peut marcher hors des territoires des drapeaux.
+UILABEL_BEHAVIOR_ROAM_TIP	Errance : erre sur les terres ouvertes, partout où il peut marcher hors des territoires.
 UILABEL_WAIT_NOT_IN_CLAIM	pas dans un territoire de sa faction
 UILABEL_WAIT_NOWHERE_TO_ROAM	aucun terrain libre à proximité hors des territoires
 UILABEL_TEMPERAMENT_AVOIDANT	Craintif
@@ -219,9 +219,6 @@ UILABEL_MISS	Raté
 UILABEL_DAMAGE	Dégâts
 UILABEL_EXPERIENCE_MESSAGES	Messages d'expérience
 UILABEL_EXPERIENCE	Expérience
-UILABEL_XP_ATHLETICS	Expérience d'Athlétisme
-UILABEL_XP_ENDURANCE	Expérience d'Endurance
-UILABEL_XP_CARRYING	Expérience de Force (transport)
 UILABEL_ITEM_MESSAGES	Messages d'objets
 UILABEL_PICKUP	Ramassage
 UILABEL_DROP	Lâcher
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Une arme bimain est en main principale
 MISC_YOU	Vous
 MISC_UNKNOWN_ITEM	Objet inconnu
 MISC_REASON_FEES	payer les frais d'échange
-MISC_REASON_WALKING	marcher
-MISC_REASON_CARRYING	porter une charge
-MISC_REASON_CLIMBING	escalader
 MISC_REASON_SWINGING	frapper
 MISC_REASON_DODGING	esquiver
 MISC_REASON_DEALING	infliger des dégâts
 MISC_REASON_TAKING	subir des dégâts
 MISC_REASON_BLOCKING	bloquer
-MISC_REASON_SPOTTING	repérer un ennemi
-MISC_REASON_UNNOTICED	rester inaperçu
 MISC_REASON_GEAR	changer d'équipement
 NPC_GREETING	Bonjour le monde.
 NPC_OPTION_WARES	Montrez-moi vos marchandises.
@@ -286,14 +278,10 @@ MISC_ORD_12	Douzième
 UILABEL_STAT_DESC_STRENGTH	Dégâts au corps à corps, capacité de charge
 UILABEL_STAT_DESC_DEXTERITY	Vitesse d'attaque
 UILABEL_STAT_DESC_VITALITY	Santé maximale
-UILABEL_STAT_DESC_ENDURANCE	Endurance maximale
 UILABEL_STAT_DESC_AGILITY	Chance d'esquive
 UILABEL_STAT_DESC_INTELLIGENCE	Réserve de mana
 UILABEL_STAT_DESC_WISDOM	Capacité de sorts apprenables
 UILABEL_STAT_DESC_CHARISMA	Prix des échanges avec les PNJ, options de dialogue uniques
-UILABEL_STAT_DESC_PERCEPTION	Portée de détection
-UILABEL_STAT_DESC_ATHLETICS	Vitesse de course
-UILABEL_STAT_DESC_STEALTH	Meilleur pour éviter d'être repéré en se faufilant
 UILABEL_STAT_DESC_MELEE	Précision au corps à corps
 UILABEL_STAT_DESC_PROJECTILES	Précision à distance
 UILABEL_STAT_DESC_ARCANE	Puissance des sorts
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Réussite des vols
 UILABEL_STAT_DESC_MEDICAL	Efficacité des soins
 UILABEL_DEXTERITY_STAT	Dextérité
 UILABEL_VITALITY_STAT	Vitalité
-UILABEL_ENDURANCE_STAT	Endurance
 UILABEL_AGILITY_STAT	Agilité
 UILABEL_INTELLIGENCE_STAT	Intelligence
 UILABEL_WISDOM_STAT	Sagesse
 UILABEL_CHARISMA_STAT	Charisme
-UILABEL_PERCEPTION_STAT	Perception
-UILABEL_ATHLETICS_STAT	Athlétisme
-UILABEL_STEALTH_STAT	Discrétion
 UILABEL_MELEE_STAT	Corps à corps
 UILABEL_PROJECTILES_STAT	Projectiles
 UILABEL_ARCANE_STAT	Arcanes
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Attaque {0}    Défense {1}    Charge {2}
 MISC_IS_DOWN	{0} est à terre
 MISC_PICKS_UP	{0} ramasse {1} {2}
 MISC_CANNOT_READ	Impossible de lire {0}
-UILABEL_TIP_DURABILITY	Durabilité {0} / {1}
 UILABEL_DATE_LINE	JOUR {0} · {1} · ANNÉE {2}
 UILABEL_MONITOR_N	Écran {0}
 MISC_GAINS_XP	{0} gagne {1} XP en {2} pour {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Potion de soin
 ITEM_7_DESC	Restaure 50 PV à la consommation.
 ITEM_8_NAME	Potion de mana
 ITEM_8_DESC	Restaure 50 PM à la consommation.
-ITEM_9_NAME	Breuvage d'endurance
-ITEM_9_DESC	Restaure 40 d'endurance et accélère brièvement la régénération.
 ITEM_10_NAME	Élixir de puissance
 ITEM_10_DESC	Accorde +10 d'attaque pendant 60 secondes.
 ITEM_11_NAME	Pain
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Discrétion
 UILABEL_MODE_RANGED	À distance
 UILABEL_MODE_PASSIVE_TIP	Passif : ne lance jamais un combat et n'y entre pas pour aider. Obéit toujours aux ordres, attaques comprises.
 UILABEL_MODE_BLOCK_TIP	Parer : n'attaque jamais et pare deux fois plus souvent, même à mains nues.
-UILABEL_MODE_SNEAK_TIP	Discrétion : marche à mi-vitesse et se fait bien moins remarquer. Plus la Discrétion est haute, mieux c'est.
+UILABEL_MODE_SNEAK_TIP	Discrétion : marche à mi-vitesse et se fait bien moins remarquer.
 UILABEL_MODE_RANGED_TIP	À distance : s'active tout seul tant qu'un arc ou une arbalète est en main principale. Chaque tir consomme une flèche ou un carreau.
 UILABEL_SQUAD_TAB	Escouade
 UILABEL_REPUTATION	Réputation
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Survie
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Choisir  //  Entrée Valider
 UILABEL_LANGUAGE_LABEL	Langue :
-PROP_FLAG	Drapeau
+PROP_ALTAR	Autel
+MISC_ALTAR_OF	Autel : {0}
 PROP_DEBRIS	Débris
-PROP_FOUNDATION_SMALL	Petite fondation
-PROP_FOUNDATION_LARGE	Grande fondation
-PROP_FOUNDATION_LONG	Fondation longue
-PROP_FOUNDATION_CIRCLE	Fondation circulaire
-PROP_VAULT	Chambre forte
 UILABEL_BUILD	Construire
 UILABEL_BUILD_SELECTED	Sélection : {0}
 UILABEL_BUILD_NONE	Sélection : aucune
 UILABEL_BUILD_SELECT	Choisir
 UILABEL_BUILD_PICKED	Choisi
-UILABEL_BUILD_PLACE_HINT	Clic gauche sur le sol pour placer. Maintenez R et bougez la souris à gauche ou à droite pour pivoter. Clic droit ou Échap pour annuler.
+UILABEL_BUILD_PLACE_HINT	Clic gauche sur le sol pour placer. Clic droit ou Échap pour annuler.
 UILABEL_UPKEEP_HINT	Consomme un(e) {0} par heure pour son entretien. Placez-les ici.
 MISC_BUILD_BLOCKED	Pas de place pour construire ici
 MISC_BUILD_UNWALKABLE	On ne peut pas construire sur ce sol
-MISC_BUILD_NO_FOUNDATION	Une chambre forte doit reposer entièrement sur une fondation
 MISC_NO_UPKEEP	Pas d'entretien : aucune bûche
 MISC_UPKEEP_LEFT	Entretien : {0} min restantes
 PROP_SHOP	Boutique
@@ -954,24 +930,18 @@ PROP_STOVE	Fourneau
 UILABEL_BUILD_DESTROY	Détruire
 UILABEL_BUILD_DESTROY_HINT	Clic gauche sur un objet pour l'abattre : son contenu tombe au sol et des débris restent à sa place. Clic gauche sur des débris pour les déblayer. Clic droit ou Échap pour annuler.
 UILABEL_LOCK	Verrouiller
-MISC_BUILD_NO_CLAIM	Une fondation ou une chambre forte doit se trouver dans votre propre territoire
-MISC_BUILD_SEALED	Ce sol est scellé par la chambre forte d'une autre faction
-MISC_BUILD_CLAIM_OVERLAP	Ce territoire chevaucherait celui d'un autre drapeau
-MISC_BUILD_VAULT_TAKEN	Ce territoire a déjà une chambre forte
-MISC_BUILD_VAULT_CAP	Votre faction a déjà autant de chambres fortes qu'elle peut en avoir
+MISC_BUILD_SEALED	Ce terrain appartient à une autre faction
+MISC_BUILD_CLAIM_OVERLAP	Ce territoire chevaucherait un autre territoire
+MISC_BUILD_ALTAR_TAKEN	Votre faction a déjà un autel
 MISC_DESTROY_NOTHING	Rien à détruire ici
 MISC_FLAG_FACTION	Propriétaire : {0}
 MISC_FLAG_HEALTH	Santé : {0} sur {1}
-MISC_FLAG_VAULT_YES	Chambre forte : debout, le territoire est tenu
-MISC_FLAG_VAULT_NO	Chambre forte : aucune, le drapeau s'use
-MISC_PROP_CONDITION	État : {0} %
 MISC_PROP_DECAYING	Se dégrade
 MISC_PROP_HOLDING	Ne se dégrade pas
 MISC_PROP_LOCK_OPEN	Déverrouillé
 MISC_PROP_LOCK_YOURS	Verrouillé pour les étrangers (ouvert pour vous)
 MISC_PROP_LOCK_SHUT	Verrouillé (Crochetage {0})
 MISC_PROP_UPKEEP	Entretien : {0} heures restantes
-MISC_PROP_VAULT_UNCLAIMED	Hors de tout territoire : n'assure aucun entretien
 MOB_BEAR	Ours
 MOB_COW	Vache
 MOB_CHICKEN	Poulet

@@ -67,8 +67,6 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
         }
     }
     else if (key == "max_stack_size") return needInt(item.maxStackSize);
-    else if (key == "max_durability") return needInt(item.maxDurability);
-    else if (key == "current_durability") return needInt(item.currentDurability);
     else if (key == "weight") return needFloat(item.weight);
     else if (key == "buy_value") return needInt(item.buyValue);
     else if (key == "sell_value") return needInt(item.sellValue);
@@ -195,6 +193,11 @@ const std::vector<ItemDef>& itemDatabase() {
         }
     }
     return databaseStorage();
+}
+
+bool spoilsOnGround(int item) {
+    const ItemDef* d = findItem(item);
+    return d && (hasTag(*d, "raw_food") || hasTag(*d, "bones") || d->onUse.find("hunger") != std::string::npos);
 }
 
 const ItemDef* findItem(int id) {

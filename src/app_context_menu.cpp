@@ -47,7 +47,7 @@ Entity App::menuTargetAt(float mx, float my) {
 std::vector<Entity> App::menuActors(Entity target) {
     std::vector<Entity> units;
     for (Entity u : selectedUnits(world)) {
-        if (world.has<Unconscious>(u)) continue;   // out cold: it does nothing
+        if (outCold(world, u)) continue;   // out cold: it does nothing
         if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;   // carried: it does nothing
         // A mob works no props: of a prop, it can only lie or sit on one (a bed to rest in)
         if (world.has<Mob>(u) && world.has<Prop>(target) && propInfo(world.get<Prop>(target)->kind).use != PropUse::Occupy) continue;
@@ -61,7 +61,7 @@ std::vector<Entity> App::menuActors(Entity target) {
 
 bool App::talkable(Entity u) {
     return world.has<Unit>(u) && world.has<Dialogue>(u) && !world.has<Mob>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
-           !world.has<Unconscious>(u) && !world.has<Carried>(u);
+           !outCold(world, u) && !world.has<Carried>(u);
 }
 
 bool App::sells(Entity u) {
@@ -81,11 +81,20 @@ Entity App::putDownCarrier(Entity target) {
     return NULL_ENTITY;
 }
 
+// The nearest selected unit that could act on this prop and carries a corpse, or NULL_ENTITY
+Entity App::corpseCarrier(Entity prop) {
+    for (Entity u : menuActors(prop)) {
+        const Carrying* cr = world.get<Carrying>(u);
+        if (cr && world.has<Corpse>(cr->unit)) return u;
+    }
+    return NULL_ENTITY;
+}
+
 std::vector<MenuAction> App::menuActionsFor(Entity target) {
     std::vector<MenuAction> out;
     // A selected unit carrying someone, or the unit it carries: Put down comes first
     if (world.has<Unit>(target) && putDownCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::PutDown);
-    if (world.has<Unconscious>(target)) {
+    if (outCold(world, target)) {
         // Out cold or dead: carried off (unless someone has it already) and looted
         if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
         out.push_back(MenuAction::Inventory);
@@ -109,6 +118,13 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         }
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
+        // An Altar has no lock to pick: to anyone not of its faction it offers nothing
+        if (p->kind == PropKind::Altar) {
+            const std::vector<Entity> sel = selectedUnits(world);
+            bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
+            for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
+            if (shut) return out;
+        }
         // A prop locked to all the selected units offers only Unlock, until it is open. One of their own
         // faction's, or inside their faction's claim, is open to them.
         if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) {
@@ -123,6 +139,8 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
         if (use == PropUse::Occupy) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+        // A corpse can be carried into a campfire
+        if (p->kind == PropKind::Campfire && corpseCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::Place);
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
         // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
         if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);   // not the Debris, which gives nothing
@@ -290,7 +308,7 @@ void App::pickMenuAction(MenuAction a) {
         issueAttackOrder(world, actors, target);
         break;
     case MenuAction::Inventory:
-        if (world.has<Unconscious>(target)) {
+        if (outCold(world, target)) {
             // Looting: the nearest unit that can goes (never a mob, which takes nothing), and the panel opens
             // when it gets there (or now, if it is)
             std::vector<Entity> looters;
@@ -317,12 +335,14 @@ void App::pickMenuAction(MenuAction a) {
         if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
         break;
     case MenuAction::Place: {
-        // The nearest selected unit that carries someone places them on the prop
-        Entity carrier = NULL_ENTITY;
-        for (Entity u : actors) {
-            if (world.has<Carrying>(u)) {
-                carrier = u;
-                break;
+        // The nearest selected unit that carries someone places them on the prop. Only a corpse goes in a campfire.
+        Entity carrier = world.get<Prop>(target)->kind == PropKind::Campfire ? corpseCarrier(target) : NULL_ENTITY;
+        if (world.get<Prop>(target)->kind != PropKind::Campfire) {
+            for (Entity u : actors) {
+                if (world.has<Carrying>(u)) {
+                    carrier = u;
+                    break;
+                }
             }
         }
         if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Place);

@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	ลาดตระเวนที่จุดเ�
 UILABEL_BEHAVIOR_ROAM	เร่ร่อน
 UILABEL_BEHAVIOR_PATROL_TIP	ลาดตระเวน: เดินไปมาในเขตที่ยืนอยู่ ถ้าเขตนั้นเป็นของฝ่ายตน และหยุดพักเป็นระยะ
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	ลาดตระเวนที่จุดเกิด: เดินไปมาใกล้ที่ที่ปรากฏตัวครั้งแรก ถ้าถูกไล่ไปไกลเกินไปจะยอมแพ้ ฟื้นพลังชีวิตเต็มแล้วเดินกลับ โดยไม่ได้รับความเสียหายจนกว่าจะถึง
-UILABEL_BEHAVIOR_ROAM_TIP	เร่ร่อน: ท่องไปในพื้นที่เปิด ทุกที่ที่เดินได้นอกเขตของธง
+UILABEL_BEHAVIOR_ROAM_TIP	เร่ร่อน: เดินเตร็ดเตร่ไปทั่วพื้นที่โล่ง ทุกที่ที่เดินได้นอกเขตยึดครอง
 UILABEL_WAIT_NOT_IN_CLAIM	ไม่ได้อยู่ในเขตของฝ่ายตน
 UILABEL_WAIT_NOWHERE_TO_ROAM	ไม่มีพื้นที่เปิดใกล้ๆ นอกเขต
 UILABEL_TEMPERAMENT_AVOIDANT	หลีกเลี่ยง
@@ -219,9 +219,6 @@ UILABEL_MISS	พลาด
 UILABEL_DAMAGE	ความเสียหาย
 UILABEL_EXPERIENCE_MESSAGES	ข้อความ EXP
 UILABEL_EXPERIENCE	ประสบการณ์
-UILABEL_XP_ATHLETICS	ค่าประสบการณ์กรีฑา
-UILABEL_XP_ENDURANCE	ค่าประสบการณ์ความอดทน
-UILABEL_XP_CARRYING	ค่าประสบการณ์พละกำลัง (การแบก)
 UILABEL_ITEM_MESSAGES	ข้อความไอเทม
 UILABEL_PICKUP	เก็บขึ้น
 UILABEL_DROP	ทิ้ง
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	อาวุธสองมืออยู่ในม�
 MISC_YOU	คุณ
 MISC_UNKNOWN_ITEM	ไอเทมที่ไม่ทราบ
 MISC_REASON_FEES	จ่ายค่าธรรมเนียมการค้า
-MISC_REASON_WALKING	การเดิน
-MISC_REASON_CARRYING	แบกของหนัก
-MISC_REASON_CLIMBING	การปีน
 MISC_REASON_SWINGING	การฟาดอาวุธ
 MISC_REASON_DODGING	การหลบ
 MISC_REASON_DEALING	การสร้างความเสียหาย
 MISC_REASON_TAKING	การรับความเสียหาย
 MISC_REASON_BLOCKING	การป้องกัน
-MISC_REASON_SPOTTING	การพบศัตรู
-MISC_REASON_UNNOTICED	การไม่ถูกสังเกตเห็น
 MISC_REASON_GEAR	การเปลี่ยนอุปกรณ์
 NPC_GREETING	สวัสดีชาวโลก
 NPC_OPTION_WARES	ขอดูสินค้าของคุณหน่อย
@@ -286,14 +278,10 @@ MISC_ORD_12	ที่สิบสอง
 UILABEL_STAT_DESC_STRENGTH	ความเสียหายระยะประชิด น้ำหนักที่แบกได้
 UILABEL_STAT_DESC_DEXTERITY	ความเร็วในการโจมตี
 UILABEL_STAT_DESC_VITALITY	พลังชีวิตสูงสุด
-UILABEL_STAT_DESC_ENDURANCE	สตามินาสูงสุด
 UILABEL_STAT_DESC_AGILITY	โอกาสหลบหลีก
 UILABEL_STAT_DESC_INTELLIGENCE	พลังมานา
 UILABEL_STAT_DESC_WISDOM	จำนวนคาถาที่เรียนรู้ได้
 UILABEL_STAT_DESC_CHARISMA	ราคาการค้ากับ NPC และตัวเลือกบทสนทนาพิเศษ
-UILABEL_STAT_DESC_PERCEPTION	ระยะตรวจจับ
-UILABEL_STAT_DESC_ATHLETICS	ความเร็วในการวิ่ง
-UILABEL_STAT_DESC_STEALTH	หลบการถูกตรวจพบขณะย่องได้ดีขึ้น
 UILABEL_STAT_DESC_MELEE	ความแม่นยำระยะประชิด
 UILABEL_STAT_DESC_PROJECTILES	ความแม่นยำระยะไกล
 UILABEL_STAT_DESC_ARCANE	พลังเวท
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	โอกาสสำเร็จของการ�
 UILABEL_STAT_DESC_MEDICAL	ประสิทธิภาพการรักษา
 UILABEL_DEXTERITY_STAT	ความคล่องแคล่ว
 UILABEL_VITALITY_STAT	ความแข็งแรง
-UILABEL_ENDURANCE_STAT	ความอดทน
 UILABEL_AGILITY_STAT	ความว่องไว
 UILABEL_INTELLIGENCE_STAT	สติปัญญา
 UILABEL_WISDOM_STAT	ปัญญา
 UILABEL_CHARISMA_STAT	เสน่ห์
-UILABEL_PERCEPTION_STAT	การรับรู้
-UILABEL_ATHLETICS_STAT	กีฬา
-UILABEL_STEALTH_STAT	การย่อง
 UILABEL_MELEE_STAT	ระยะประชิด
 UILABEL_PROJECTILES_STAT	อาวุธขว้าง
 UILABEL_ARCANE_STAT	เวท
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	โจมตี {0}    ป้องกัน {1}   
 MISC_IS_DOWN	{0} ล้มลงแล้ว
 MISC_PICKS_UP	{0} เก็บ {1} {2}
 MISC_CANNOT_READ	ไม่สามารถอ่าน {0} ได้
-UILABEL_TIP_DURABILITY	ความทนทาน {0} / {1}
 UILABEL_DATE_LINE	วันที่ {0} · {1} · ปีที่ {2}
 UILABEL_MONITOR_N	จอภาพ {0}
 MISC_GAINS_XP	{0} ได้รับ {1} {2} EXP จาก {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	ยาฟื้นพลัง
 ITEM_7_DESC	ฟื้นพลังชีวิต 50 เมื่อดื่ม
 ITEM_8_NAME	ยามานา
 ITEM_8_DESC	ฟื้นมานา 50 เมื่อดื่ม
-ITEM_9_NAME	ยาบำรุงสตามินา
-ITEM_9_DESC	ฟื้นสตามินา 40 และเพิ่มการฟื้นตัวชั่วครู่
 ITEM_10_NAME	อีลิกเซอร์แห่งพลัง
 ITEM_10_DESC	เพิ่มการโจมตี +10 เป็นเวลา 60 วินาที
 ITEM_11_NAME	ขนมปัง
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	ย่อง
 UILABEL_MODE_RANGED	ระยะไกล
 UILABEL_MODE_PASSIVE_TIP	ไม่สู้: ไม่เริ่มการต่อสู้และไม่เข้าไปช่วยคนอื่น แต่ยังทำตามคำสั่ง รวมถึงการโจมตี
 UILABEL_MODE_BLOCK_TIP	ป้องกัน: ไม่โจมตีเลย และป้องกันการโจมตีได้บ่อยขึ้นสองเท่า แม้มือเปล่า
-UILABEL_MODE_SNEAK_TIP	ย่อง: เดินด้วยความเร็วครึ่งหนึ่งและถูกสังเกตเห็นยากขึ้นมาก ยิ่งค่าลอบเร้นสูงยิ่งดี
+UILABEL_MODE_SNEAK_TIP	ย่อง: เดินด้วยความเร็วครึ่งหนึ่งและถูกสังเกตเห็นยากขึ้นมาก
 UILABEL_MODE_RANGED_TIP	ระยะไกล: เปิดเองเมื่อถือธนูหรือหน้าไม้ในมือหลัก ยิงแต่ละครั้งใช้ลูกธนูหรือลูกดอกหนึ่งดอก
 UILABEL_SQUAD_TAB	กลุ่ม
 UILABEL_REPUTATION	ชื่อเสียง
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	โคโบลด์
 GAME_TITLE_SECOND	เอาชีวิตรอด
 MISC_TITLE_KEYS	เลือก  //  Enter ยืนยัน
 UILABEL_LANGUAGE_LABEL	ภาษา:
-PROP_FLAG	ธง
+PROP_ALTAR	แท่นบูชา
+MISC_ALTAR_OF	แท่นบูชาของ{0}
 PROP_DEBRIS	เศษซาก
-PROP_FOUNDATION_SMALL	ฐานรากเล็ก
-PROP_FOUNDATION_LARGE	ฐานรากใหญ่
-PROP_FOUNDATION_LONG	ฐานรากยาว
-PROP_FOUNDATION_CIRCLE	ฐานรากวงกลม
-PROP_VAULT	ห้องนิรภัย
 UILABEL_BUILD	สร้าง
 UILABEL_BUILD_SELECTED	เลือก: {0}
 UILABEL_BUILD_NONE	เลือก: ไม่มี
 UILABEL_BUILD_SELECT	เลือก
 UILABEL_BUILD_PICKED	เลือกแล้ว
-UILABEL_BUILD_PLACE_HINT	คลิกซ้ายบนพื้นเพื่อวาง กด R ค้างแล้วเลื่อนเมาส์ซ้ายหรือขวาเพื่อหมุน คลิกขวาหรือ Escape เพื่อยกเลิก
+UILABEL_BUILD_PLACE_HINT	คลิกซ้ายที่พื้นเพื่อวาง คลิกขวาหรือ Escape เพื่อยกเลิก
 UILABEL_UPKEEP_HINT	เผา {0} หนึ่งชิ้นต่อชั่วโมงเป็นค่าบำรุงรักษา ใส่ไว้ในนี้
 MISC_BUILD_BLOCKED	ไม่มีที่ว่างให้สร้างตรงนี้
 MISC_BUILD_UNWALKABLE	สร้างบนพื้นนี้ไม่ได้
-MISC_BUILD_NO_FOUNDATION	ห้องนิรภัยต้องตั้งอยู่บนฐานรากทั้งหมด
 MISC_NO_UPKEEP	ไม่มีการบำรุงรักษา: ไม่มีท่อนไม้
 MISC_UPKEEP_LEFT	บำรุงรักษา: เหลือ {0} นาที
 PROP_SHOP	ร้านค้า
@@ -954,24 +930,18 @@ PROP_STOVE	เตา
 UILABEL_BUILD_DESTROY	รื้อถอน
 UILABEL_BUILD_DESTROY_HINT	คลิกซ้ายที่วัตถุใดก็ได้เพื่อรื้อ: ของข้างในจะหล่นลงพื้นและเหลือเศษซากไว้แทน คลิกซ้ายที่เศษซากเพื่อเก็บกวาด คลิกขวาหรือ Escape เพื่อยกเลิก
 UILABEL_LOCK	ล็อก
-MISC_BUILD_NO_CLAIM	ฐานรากหรือห้องนิรภัยต้องอยู่ในเขตของคุณเอง
-MISC_BUILD_SEALED	พื้นที่นั้นถูกผนึกด้วยห้องนิรภัยของฝ่ายอื่น
-MISC_BUILD_CLAIM_OVERLAP	เขตนั้นจะทับซ้อนกับเขตของธงอื่น
-MISC_BUILD_VAULT_TAKEN	เขตนั้นมีห้องนิรภัยอยู่แล้ว
-MISC_BUILD_VAULT_CAP	ฝ่ายของคุณมีห้องนิรภัยครบจำนวนสูงสุดแล้ว
+MISC_BUILD_SEALED	พื้นที่นั้นเป็นของฝ่ายอื่น
+MISC_BUILD_CLAIM_OVERLAP	เขตนั้นจะทับซ้อนกับเขตอื่น
+MISC_BUILD_ALTAR_TAKEN	ฝ่ายของคุณมีแท่นบูชาอยู่แล้ว
 MISC_DESTROY_NOTHING	ไม่มีอะไรให้รื้อตรงนั้น
 MISC_FLAG_FACTION	เจ้าของ: {0}
 MISC_FLAG_HEALTH	ความทนทาน: {0}/{1}
-MISC_FLAG_VAULT_YES	ห้องนิรภัย: ยังตั้งอยู่ เขตยังถูกยึดครอง
-MISC_FLAG_VAULT_NO	ห้องนิรภัย: ไม่มี ธงกำลังสึกกร่อน
-MISC_PROP_CONDITION	สภาพ: {0}%
 MISC_PROP_DECAYING	กำลังผุพัง
 MISC_PROP_HOLDING	ไม่ผุพัง
 MISC_PROP_LOCK_OPEN	ไม่ได้ล็อก
 MISC_PROP_LOCK_YOURS	ล็อกสำหรับคนนอก (เปิดให้คุณ)
 MISC_PROP_LOCK_SHUT	ล็อกอยู่ (การงัดกุญแจ {0})
 MISC_PROP_UPKEEP	บำรุงรักษา: เหลือ {0} ชั่วโมง
-MISC_PROP_VAULT_UNCLAIMED	อยู่นอกเขตใดๆ: ไม่ให้การบำรุงรักษา
 MOB_BEAR	หมี
 MOB_COW	วัว
 MOB_CHICKEN	ไก่

@@ -16,6 +16,7 @@
 #include "combat.h"
 #include "stats.h"
 #include "props.h"
+#include "claims.h"
 #include "systems.h"
 #include "textcase.h"
 #include "ui_layout.h"
@@ -25,8 +26,7 @@ using namespace play;
 
 // The name of a prop in the language in use
 std::string propNameOf(World& w, Entity prop) {
-    const Prop* p = w.get<Prop>(prop);
-    return p ? lang(propInfo(p->kind).nameKey) : std::string();
+    return propDisplayName(w, prop);
 }
 
 // The storage panel's layout: one grid for a barrel or a stove, an input and an output grid for a forge or a campfire

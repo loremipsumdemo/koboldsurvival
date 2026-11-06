@@ -5,7 +5,7 @@ using namespace systems_detail;
 
 void patrolSpawnSystem(World& w, Terrain& t, float dt) {
     for (Entity u : w.view<SpawnHome, Transform, Behaviors>()) {
-        if (w.has<Unconscious>(u) || w.has<Carried>(u)) continue;
+        if (outCold(w, u) || w.has<Carried>(u)) continue;
         SpawnHome* h = w.get<SpawnHome>(u);
         Behaviors* b = w.get<Behaviors>(u);
         BehaviorRule* rule = nullptr;
@@ -38,7 +38,6 @@ void patrolSpawnSystem(World& w, Terrain& t, float dt) {
         // On the way home: no fight, no damage taken (combat.cpp), and everything back to full
         if (Combat* c = w.get<Combat>(u)) {
             c->target = NULL_ENTITY;
-            c->stamina = -1.0f;   // refilled to its most by the combat step
         }
         w.remove<AttackOrder>(u);
         b->passive = true;
@@ -121,7 +120,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
             fightersListed = true;
         }
         for (Entity o : fighters) {
-            if (o == u || w.get<Combat>(o)->target != u || w.has<Unconscious>(o)) continue;
+            if (o == u || w.get<Combat>(o)->target != u || outCold(w, o)) continue;
             const Transform* ot = w.get<Transform>(o);
             const float d2 = (ot->x - ut->x) * (ot->x - ut->x) + (ot->z - ut->z) * (ot->z - ut->z);
             if (near == NULL_ENTITY || d2 < nearD2) {
@@ -142,7 +141,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         b->passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive || (home && home->returning);
         if (tm != MobTemperament::Avoidant) continue;
         const Needs* n = w.get<Needs>(u);
-        if (w.has<Unconscious>(u) || w.has<Carried>(u) || (n && n->hp <= 0)) continue;
+        if (outCold(w, u) || w.has<Carried>(u) || (n && n->hp <= 0)) continue;
         b->sense -= dt;
         if (b->sense > 0.0f) continue;
         b->sense = 0.5f;
@@ -155,7 +154,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
             walkersListed = true;
         }
         for (Entity o : walkers) {
-            if (o == u || w.has<Unconscious>(o) || w.has<Carried>(o)) continue;
+            if (o == u || outCold(w, o) || w.has<Carried>(o)) continue;
             const Faction* of = w.get<Faction>(o);
             if ((of ? of->id : FACTION_PLAYER) == faction) continue;
             if (const Mob* om = w.get<Mob>(o); om && mobKindsFriendly(w.get<Mob>(u)->kind, om->kind)) continue;

@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Pattuglia d'origine
 UILABEL_BEHAVIOR_ROAM	Vagabondaggio
 UILABEL_BEHAVIOR_PATROL_TIP	Pattuglia: gira per il territorio in cui si trova, se è della sua fazione, fermandosi ogni tanto.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Pattuglia d'origine: gira vicino al punto in cui è apparsa. Se inseguita troppo lontano, rinuncia, si cura del tutto e torna indietro, senza subire danni finché non è arrivata.
-UILABEL_BEHAVIOR_ROAM_TIP	Vagabondaggio: vaga per le terre aperte, ovunque possa camminare fuori dai territori delle bandiere.
+UILABEL_BEHAVIOR_ROAM_TIP	Vagabondaggio: vaga per le terre aperte, ovunque possa camminare fuori dai territori.
 UILABEL_WAIT_NOT_IN_CLAIM	non è in un territorio della sua fazione
 UILABEL_WAIT_NOWHERE_TO_ROAM	nessun terreno aperto vicino fuori dai territori
 UILABEL_TEMPERAMENT_AVOIDANT	Schivo
@@ -219,9 +219,6 @@ UILABEL_MISS	Mancato
 UILABEL_DAMAGE	Danno
 UILABEL_EXPERIENCE_MESSAGES	Messaggi di esperienza
 UILABEL_EXPERIENCE	Esperienza
-UILABEL_XP_ATHLETICS	Esperienza di Atletica
-UILABEL_XP_ENDURANCE	Esperienza di Resistenza
-UILABEL_XP_CARRYING	Esperienza di Forza (trasporto)
 UILABEL_ITEM_MESSAGES	Messaggi degli oggetti
 UILABEL_PICKUP	Raccogli
 UILABEL_DROP	Lascia
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Un'arma a due mani è nella mano principale
 MISC_YOU	Tu
 MISC_UNKNOWN_ITEM	Oggetto sconosciuto
 MISC_REASON_FEES	pagare le commissioni di scambio
-MISC_REASON_WALKING	camminare
-MISC_REASON_CARRYING	trasportare un carico
-MISC_REASON_CLIMBING	arrampicarsi
 MISC_REASON_SWINGING	colpire
 MISC_REASON_DODGING	schivare
 MISC_REASON_DEALING	infliggere danno
 MISC_REASON_TAKING	subire danno
 MISC_REASON_BLOCKING	parare
-MISC_REASON_SPOTTING	avvistare un nemico
-MISC_REASON_UNNOTICED	restare inosservati
 MISC_REASON_GEAR	cambiare equipaggiamento
 NPC_GREETING	Salve, mondo.
 NPC_OPTION_WARES	Mostrami la tua merce.
@@ -286,14 +278,10 @@ MISC_ORD_12	Dodicesimo
 UILABEL_STAT_DESC_STRENGTH	Danno in mischia, capacità di trasporto
 UILABEL_STAT_DESC_DEXTERITY	Velocità di attacco
 UILABEL_STAT_DESC_VITALITY	Salute massima
-UILABEL_STAT_DESC_ENDURANCE	Resistenza massima
 UILABEL_STAT_DESC_AGILITY	Probabilità di schivata
 UILABEL_STAT_DESC_INTELLIGENCE	Riserva di mana
 UILABEL_STAT_DESC_WISDOM	Numero di incantesimi apprendibili
 UILABEL_STAT_DESC_CHARISMA	Prezzi di scambio con i PNG, opzioni di dialogo uniche
-UILABEL_STAT_DESC_PERCEPTION	Raggio di rilevamento
-UILABEL_STAT_DESC_ATHLETICS	Velocità di corsa
-UILABEL_STAT_DESC_STEALTH	Migliore nell'evitare di essere scoperti furtivamente
 UILABEL_STAT_DESC_MELEE	Precisione in mischia
 UILABEL_STAT_DESC_PROJECTILES	Precisione a distanza
 UILABEL_STAT_DESC_ARCANE	Potenza degli incantesimi
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Successo nei furti
 UILABEL_STAT_DESC_MEDICAL	Efficacia delle cure
 UILABEL_DEXTERITY_STAT	Destrezza
 UILABEL_VITALITY_STAT	Vitalità
-UILABEL_ENDURANCE_STAT	Resistenza
 UILABEL_AGILITY_STAT	Agilità
 UILABEL_INTELLIGENCE_STAT	Intelligenza
 UILABEL_WISDOM_STAT	Saggezza
 UILABEL_CHARISMA_STAT	Carisma
-UILABEL_PERCEPTION_STAT	Percezione
-UILABEL_ATHLETICS_STAT	Atletica
-UILABEL_STEALTH_STAT	Furtività
 UILABEL_MELEE_STAT	Mischia
 UILABEL_PROJECTILES_STAT	Distanza
 UILABEL_ARCANE_STAT	Arcano
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Attacco {0}    Difesa {1}    Trasporto {2}
 MISC_IS_DOWN	{0} è a terra
 MISC_PICKS_UP	{0} raccoglie {1} {2}
 MISC_CANNOT_READ	Impossibile leggere {0}
-UILABEL_TIP_DURABILITY	Durabilità {0} / {1}
 UILABEL_DATE_LINE	GIORNO {0} · {1} · ANNO {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ottiene {1} {2} XP per {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Pozione di salute
 ITEM_7_DESC	Ripristina 50 PV se consumata.
 ITEM_8_NAME	Pozione di mana
 ITEM_8_DESC	Ripristina 50 PM se consumata.
-ITEM_9_NAME	Pozione di resistenza
-ITEM_9_DESC	Ripristina 40 resistenza e accelera brevemente la rigenerazione.
 ITEM_10_NAME	Elisir del vigore
 ITEM_10_DESC	Concede +10 attacco per 60 secondi.
 ITEM_11_NAME	Pane
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Furtività
 UILABEL_MODE_RANGED	A distanza
 UILABEL_MODE_PASSIVE_TIP	Passivo: non inizia mai uno scontro né si unisce per aiutare. Esegue comunque gli ordini, attacchi compresi.
 UILABEL_MODE_BLOCK_TIP	Parare: non attacca mai e para i colpi il doppio delle volte, anche a mani vuote.
-UILABEL_MODE_SNEAK_TIP	Furtività: cammina a metà velocità ed è molto più difficile da notare. Più alta la Furtività, meglio è.
+UILABEL_MODE_SNEAK_TIP	Furtività: cammina a metà velocità ed è molto più difficile da notare.
 UILABEL_MODE_RANGED_TIP	A distanza: si attiva da solo finché c'è un arco o una balestra nella mano principale. Ogni tiro consuma una freccia o un dardo.
 UILABEL_SQUAD_TAB	Squadra
 UILABEL_REPUTATION	Reputazione
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Sopravvivenza
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Scegli  //  Invio Conferma
 UILABEL_LANGUAGE_LABEL	Lingua:
-PROP_FLAG	Bandiera
+PROP_ALTAR	Altare
+MISC_ALTAR_OF	Altare: {0}
 PROP_DEBRIS	Macerie
-PROP_FOUNDATION_SMALL	Fondamenta piccole
-PROP_FOUNDATION_LARGE	Fondamenta grandi
-PROP_FOUNDATION_LONG	Fondamenta lunghe
-PROP_FOUNDATION_CIRCLE	Fondamenta circolari
-PROP_VAULT	Caveau
 UILABEL_BUILD	Costruisci
 UILABEL_BUILD_SELECTED	Selezionato: {0}
 UILABEL_BUILD_NONE	Selezionato: nessuno
 UILABEL_BUILD_SELECT	Scegli
 UILABEL_BUILD_PICKED	Scelto
-UILABEL_BUILD_PLACE_HINT	Clic sinistro sul terreno per piazzare. Tieni premuto R e muovi il mouse a sinistra o a destra per ruotare. Clic destro o Esc annulla.
+UILABEL_BUILD_PLACE_HINT	Clic sinistro sul terreno per posizionare. Clic destro o Esc per annullare.
 UILABEL_UPKEEP_HINT	Consuma un {0} all'ora come manutenzione. Mettili qui dentro.
 MISC_BUILD_BLOCKED	Non c'è spazio per costruire qui
 MISC_BUILD_UNWALKABLE	Non si può costruire su questo terreno
-MISC_BUILD_NO_FOUNDATION	Un caveau va interamente su delle fondamenta
 MISC_NO_UPKEEP	Nessuna manutenzione: niente tronchi
 MISC_UPKEEP_LEFT	Manutenzione: {0} min rimasti
 PROP_SHOP	Negozio
@@ -954,24 +930,18 @@ PROP_STOVE	Stufa
 UILABEL_BUILD_DESTROY	Distruggi
 UILABEL_BUILD_DESTROY_HINT	Clic sinistro su un oggetto per abbatterlo: ciò che contiene cade a terra e al suo posto restano macerie. Clic sinistro sulle macerie per sgomberarle. Clic destro o Esc annulla.
 UILABEL_LOCK	Chiudi a chiave
-MISC_BUILD_NO_CLAIM	Fondamenta o caveau vanno nel tuo territorio
-MISC_BUILD_SEALED	Quel terreno è sigillato dal caveau di un'altra fazione
-MISC_BUILD_CLAIM_OVERLAP	Quel territorio si sovrapporrebbe a quello di un'altra bandiera
-MISC_BUILD_VAULT_TAKEN	Quel territorio ha già un caveau
-MISC_BUILD_VAULT_CAP	La tua fazione ha già tutti i caveau che può avere
+MISC_BUILD_SEALED	Quel terreno è rivendicato da un'altra fazione
+MISC_BUILD_CLAIM_OVERLAP	Questo territorio si sovrapporrebbe a un altro
+MISC_BUILD_ALTAR_TAKEN	La tua fazione ha già un altare
 MISC_DESTROY_NOTHING	Lì non c'è niente da distruggere
 MISC_FLAG_FACTION	Proprietario: {0}
 MISC_FLAG_HEALTH	Salute: {0} su {1}
-MISC_FLAG_VAULT_YES	Caveau: in piedi, il territorio è mantenuto
-MISC_FLAG_VAULT_NO	Caveau: nessuno, la bandiera si sta logorando
-MISC_PROP_CONDITION	Condizione: {0}%
 MISC_PROP_DECAYING	In degrado
 MISC_PROP_HOLDING	Non in degrado
 MISC_PROP_LOCK_OPEN	Aperto
 MISC_PROP_LOCK_YOURS	Chiuso agli estranei (aperto per te)
 MISC_PROP_LOCK_SHUT	Chiuso (Scasso {0})
 MISC_PROP_UPKEEP	Manutenzione: {0} ore rimaste
-MISC_PROP_VAULT_UNCLAIMED	Fuori da ogni territorio: non dà manutenzione
 MOB_BEAR	Orso
 MOB_COW	Mucca
 MOB_CHICKEN	Pollo

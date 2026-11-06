@@ -19,7 +19,7 @@ enum class EmoteId : int {
     PlayingDead = 12, // awake, carried by a hostile, lying still until given an order
     CuePutDown = 13, // over a carried unit under the pointer whose carrier you have selected: right-click to put down
     CueTalk = 14,     // over an NPC under the pointer that can be talked to
-    NoUpkeep = 15,    // over a vault with no upkeep items (logs) in it
+    NoUpkeep = 15,    // over an Altar with no upkeep items (logs) in it
     Decaying = 16,     // over a flag that is wearing down
 };
 

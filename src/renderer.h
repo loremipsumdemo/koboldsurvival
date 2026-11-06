@@ -240,18 +240,18 @@ struct WorldMapMarks {
 
 // The placement preview of a prop picked on the Build tab: its footprint drawn on the ground as a red grid, green where
 // it can be placed (valid) and red where it can't. Drawn over drawFrame while a prop is picked and the mouse is on the
-// ground. kind is the PropKind; (x, z) its centre; yaw its facing.
+// ground. kind is the PropKind; (x, z) its centre.
 struct BuildPreview {
     bool on = false;
     PropKind kind = PropKind::Wagon;
-    float x = 0.0f, z = 0.0f, yaw = 0.0f;
+    float x = 0.0f, z = 0.0f;
     bool valid = false;
-    // A claim circle drawn around (x, z) with this radius, when ringR is above 0. ringTone: 1 green (a flag that can be
-    // placed), 2 red (one that can't), 3 white (an existing flag under the mouse). It shows without a footprint too.
+    // A claim circle drawn around (x, z) with this radius, when ringR is above 0. ringTone: 1 green (an Altar that can be
+    // placed), 2 red (one that can't), 3 white (an existing Altar under the mouse). It shows without a footprint too.
     float ringR = 0.0f;
     int ringTone = 0;
-    // Every other flag in the world, by its spot: while any claim circle shows, all of these show theirs too (white),
-    // so the claims around can be seen at once. The flag the main circle belongs to is left out.
+    // Every other Altar in the world, by its spot: while any claim circle shows, all of these show theirs too (white),
+    // so the claims around can be seen at once. The Altar the main circle belongs to is left out.
     std::vector<std::pair<float, float>> otherRings;
 };
 
@@ -371,7 +371,7 @@ public:
     // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
     // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
-    // Emotes over props: No upkeep over a vault with no logs in it, Decaying over a flag wearing down. Above the prop's
+    // Emotes over props: No upkeep over an Altar with no logs left in it, Decaying over one wearing down. Above the prop's
     // name when prop names are shown.
     void drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames);
     // A hint over the unit under the pointer of what a right-click does to it (EmoteId::CuePutDown, EmoteId::CueTalk)
@@ -835,8 +835,7 @@ private:
     void drawPropInstances();
     // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
     float propTop(PropKind kind) const;
-    // The height a prop stands at: its own spot on the ground, or the top of the foundation it sits on (OnBase), so a
-    // vault on a foundation is drawn on top of it rather than sunk into it
+    // The height a prop stands at: its own spot on the ground
     float propBaseY(World& w, Entity e) const;
     // The top of each prop's block of name lines, as drawPropNames last drew it, so the progress ring sits above it
     std::map<Entity, float> propLabelTop_;

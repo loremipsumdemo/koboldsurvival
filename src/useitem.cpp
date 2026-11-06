@@ -147,7 +147,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     const ItemDef* def = findItem(s.item);
     if (!def || def->typeId != "consumable" || def->onUse.empty()) return UseResult::NotUsable;
     // An Unconscious unit can't eat or drink, and nothing heals it until it wakes (systems.h, unconsciousSystem)
-    if (w.has<Unconscious>(target) || w.has<Unconscious>(consumer)) return UseResult::NotUsable;
+    if (outCold(w, target) || outCold(w, consumer)) return UseResult::NotUsable;
 
     std::vector<UseEffect> effects;
     std::string err;

@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Патруль біля місця появи
 UILABEL_BEHAVIOR_ROAM	Блукання
 UILABEL_BEHAVIOR_PATROL_TIP	Патруль: ходить територією, на якій стоїть, якщо вона належить його фракції, час від часу зупиняючись.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Патруль біля місця появи: ходить поблизу місця, де з'явився. Якщо погоня заведе його задалеко, здається, повністю зцілюється й повертається, не отримуючи шкоди, доки не дійде.
-UILABEL_BEHAVIOR_ROAM_TIP	Блукання: блукає відкритими землями, усюди, де може пройти поза територіями прапорів.
+UILABEL_BEHAVIOR_ROAM_TIP	Блукання: блукає відкритою місцевістю, де може пройти поза територіями.
 UILABEL_WAIT_NOT_IN_CLAIM	не на території своєї фракції
 UILABEL_WAIT_NOWHERE_TO_ROAM	поблизу немає відкритої землі поза територіями
 UILABEL_TEMPERAMENT_AVOIDANT	Полохливий
@@ -219,9 +219,6 @@ UILABEL_MISS	Промах
 UILABEL_DAMAGE	Шкода
 UILABEL_EXPERIENCE_MESSAGES	Повідомлення про досвід
 UILABEL_EXPERIENCE	Досвід
-UILABEL_XP_ATHLETICS	Досвід атлетики
-UILABEL_XP_ENDURANCE	Досвід витривалості
-UILABEL_XP_CARRYING	Досвід сили (перенесення)
 UILABEL_ITEM_MESSAGES	Повідомлення про предмети
 UILABEL_PICKUP	Підняти
 UILABEL_DROP	Викинути
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Дворучна зброя в основній руці
 MISC_YOU	Ви
 MISC_UNKNOWN_ITEM	Невідомий предмет
 MISC_REASON_FEES	сплата торгових зборів
-MISC_REASON_WALKING	ходьба
-MISC_REASON_CARRYING	перенесення вантажу
-MISC_REASON_CLIMBING	лазіння
 MISC_REASON_SWINGING	замахи
 MISC_REASON_DODGING	ухилення
 MISC_REASON_DEALING	завдавання шкоди
 MISC_REASON_TAKING	отримання шкоди
 MISC_REASON_BLOCKING	блокування
-MISC_REASON_SPOTTING	помічання ворога
-MISC_REASON_UNNOTICED	залишатися непоміченим
 MISC_REASON_GEAR	зміна спорядження
 NPC_GREETING	Привіт, світе.
 NPC_OPTION_WARES	Покажи свої товари.
@@ -286,14 +278,10 @@ MISC_ORD_12	Дванадцятий
 UILABEL_STAT_DESC_STRENGTH	Шкода в ближньому бою, вантажопідйомність
 UILABEL_STAT_DESC_DEXTERITY	Швидкість атаки
 UILABEL_STAT_DESC_VITALITY	Максимальне здоров'я
-UILABEL_STAT_DESC_ENDURANCE	Максимальна витривалість
 UILABEL_STAT_DESC_AGILITY	Шанс ухилення
 UILABEL_STAT_DESC_INTELLIGENCE	Запас мани
 UILABEL_STAT_DESC_WISDOM	Кількість заклинань, яких можна навчитися
 UILABEL_STAT_DESC_CHARISMA	Ціни у торговців, унікальні варіанти діалогу
-UILABEL_STAT_DESC_PERCEPTION	Дальність виявлення
-UILABEL_STAT_DESC_ATHLETICS	Швидкість бігу
-UILABEL_STAT_DESC_STEALTH	Краще уникає виявлення під час крадіжки
 UILABEL_STAT_DESC_MELEE	Точність у ближньому бою
 UILABEL_STAT_DESC_PROJECTILES	Точність на далекій відстані
 UILABEL_STAT_DESC_ARCANE	Сила заклинань
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Успіх крадіжки
 UILABEL_STAT_DESC_MEDICAL	Ефективність лікування
 UILABEL_DEXTERITY_STAT	Спритність
 UILABEL_VITALITY_STAT	Життєвість
-UILABEL_ENDURANCE_STAT	Витривалість
 UILABEL_AGILITY_STAT	Проворність
 UILABEL_INTELLIGENCE_STAT	Інтелект
 UILABEL_WISDOM_STAT	Мудрість
 UILABEL_CHARISMA_STAT	Харизма
-UILABEL_PERCEPTION_STAT	Сприйняття
-UILABEL_ATHLETICS_STAT	Атлетика
-UILABEL_STEALTH_STAT	Скритність
 UILABEL_MELEE_STAT	Ближній бій
 UILABEL_PROJECTILES_STAT	Метання
 UILABEL_ARCANE_STAT	Магія
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Атака {0}    Захист {1}    Вантаж 
 MISC_IS_DOWN	{0} повалений
 MISC_PICKS_UP	{0} підбирає {1} {2}
 MISC_CANNOT_READ	Не вдалося прочитати {0}
-UILABEL_TIP_DURABILITY	Міцність {0} / {1}
 UILABEL_DATE_LINE	ДЕНЬ {0} · {1} · РІК {2}
 UILABEL_MONITOR_N	Монітор {0}
 MISC_GAINS_XP	{0} отримує {1} {2} досвіду за {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Зілля здоров'я
 ITEM_7_DESC	Після вживання відновлює 50 здоров'я.
 ITEM_8_NAME	Зілля мани
 ITEM_8_DESC	Після вживання відновлює 50 мани.
-ITEM_9_NAME	Настоянка витривалості
-ITEM_9_DESC	Відновлює 40 витривалості та ненадовго прискорює регенерацію.
 ITEM_10_NAME	Еліксир міці
 ITEM_10_DESC	Дає +10 до атаки на 60 секунд.
 ITEM_11_NAME	Хліб
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Крадькома
 UILABEL_MODE_RANGED	Дальній бій
 UILABEL_MODE_PASSIVE_TIP	Пасивний: ніколи не починає бій і не втручається, щоб допомогти. Накази, зокрема атаку, виконує.
 UILABEL_MODE_BLOCK_TIP	Блок: ніколи не атакує й блокує удари вдвічі частіше, навіть порожніми руками.
-UILABEL_MODE_SNEAK_TIP	Крадькома: іде вдвічі повільніше, і його набагато важче помітити. Що вища Скритність, то краще.
+UILABEL_MODE_SNEAK_TIP	Крадькома: іде вдвічі повільніше, і його набагато важче помітити.
 UILABEL_MODE_RANGED_TIP	Дальній бій: вмикається сам, поки в основній руці лук або арбалет. Кожен постріл витрачає одну стрілу чи болт.
 UILABEL_SQUAD_TAB	Загін
 UILABEL_REPUTATION	Репутація
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Кобольд
 GAME_TITLE_SECOND	Виживання
 MISC_TITLE_KEYS	Вибір  //  Enter Підтвердити
 UILABEL_LANGUAGE_LABEL	Мова:
-PROP_FLAG	Прапор
+PROP_ALTAR	Вівтар
+MISC_ALTAR_OF	Вівтар: {0}
 PROP_DEBRIS	Уламки
-PROP_FOUNDATION_SMALL	Малий фундамент
-PROP_FOUNDATION_LARGE	Великий фундамент
-PROP_FOUNDATION_LONG	Довгий фундамент
-PROP_FOUNDATION_CIRCLE	Круглий фундамент
-PROP_VAULT	Сховище
 UILABEL_BUILD	Будувати
 UILABEL_BUILD_SELECTED	Вибрано: {0}
 UILABEL_BUILD_NONE	Вибрано: нічого
 UILABEL_BUILD_SELECT	Вибрати
 UILABEL_BUILD_PICKED	Вибрано
-UILABEL_BUILD_PLACE_HINT	Клацніть лівою кнопкою по землі, щоб поставити. Утримуйте R і ведіть мишу ліворуч чи праворуч, щоб повернути. Права кнопка або Escape — скасування.
+UILABEL_BUILD_PLACE_HINT	Клацніть лівою кнопкою по землі, щоб поставити. Права кнопка або Escape скасовує.
 UILABEL_UPKEEP_HINT	Витрачає по одному предмету «{0}» на годину на утримання. Покладіть їх сюди.
 MISC_BUILD_BLOCKED	Тут немає місця для будівництва
 MISC_BUILD_UNWALKABLE	На цій землі будувати не можна
-MISC_BUILD_NO_FOUNDATION	Сховище має повністю стояти на фундаменті
 MISC_NO_UPKEEP	Немає утримання: немає колод
 MISC_UPKEEP_LEFT	Утримання: лишилося {0} хв
 PROP_SHOP	Крамниця
@@ -954,24 +930,18 @@ PROP_STOVE	Піч
 UILABEL_BUILD_DESTROY	Знести
 UILABEL_BUILD_DESTROY_HINT	Клацніть лівою кнопкою по будь-якому об'єкту, щоб знести його: вміст впаде на землю, а на його місці лишаться уламки. Клацніть лівою кнопкою по уламках, щоб прибрати їх. Права кнопка або Escape — скасування.
 UILABEL_LOCK	Замкнути
-MISC_BUILD_NO_CLAIM	Фундамент або сховище мають стояти на вашій власній території
-MISC_BUILD_SEALED	Цю землю запечатано сховищем іншої фракції
-MISC_BUILD_CLAIM_OVERLAP	Ця територія перетнулася б із територією іншого прапора
-MISC_BUILD_VAULT_TAKEN	На цій території вже є сховище
-MISC_BUILD_VAULT_CAP	Ваша фракція вже має стільки сховищ, скільки може
+MISC_BUILD_SEALED	Ця земля належить іншій фракції
+MISC_BUILD_CLAIM_OVERLAP	Ця територія перетнеться з іншою
+MISC_BUILD_ALTAR_TAKEN	Ваша фракція вже має вівтар
 MISC_DESTROY_NOTHING	Там нічого зносити
 MISC_FLAG_FACTION	Власник: {0}
 MISC_FLAG_HEALTH	Міцність: {0} з {1}
-MISC_FLAG_VAULT_YES	Сховище: стоїть, територію утримано
-MISC_FLAG_VAULT_NO	Сховище: немає, прапор зношується
-MISC_PROP_CONDITION	Стан: {0}%
 MISC_PROP_DECAYING	Руйнується
 MISC_PROP_HOLDING	Не руйнується
 MISC_PROP_LOCK_OPEN	Не замкнено
 MISC_PROP_LOCK_YOURS	Замкнено для чужих (відкрито для вас)
 MISC_PROP_LOCK_SHUT	Замкнено (Відмикання замків {0})
 MISC_PROP_UPKEEP	Утримання: лишилося {0} год
-MISC_PROP_VAULT_UNCLAIMED	Поза будь-якою територією: не дає утримання
 MOB_BEAR	Ведмідь
 MOB_COW	Корова
 MOB_CHICKEN	Курка

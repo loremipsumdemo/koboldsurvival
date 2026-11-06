@@ -33,9 +33,9 @@
 // (the right-click menu); one whose lock is open to the selected units (their own) can likewise be Unlocked with no
 // lockpicking. A prop with no lock owner takes the faction of whoever locks it.
 // Camps keep their mobs in locked Prisoner Cages, and such a mob's name ends in " [!]" (mobs.h).
-// Built props: the kinds from PropKind::Flag on are not placed by a new level. The player builds them from the Build tab:
-// a Flag, a Debris, four Foundations and a Vault. A Vault is a passive crafting prop that burns Wood Logs as upkeep
-// (the Forge's fuel code, with no output), and it can only stand on a foundation, within its shape.
+// Built props: the kinds from PropKind::Altar on are not placed by a new level. The player builds them from the Build
+// tab. An Altar is a passive crafting prop that burns Wood Logs as upkeep (the Forge's fuel code, with no output) and
+// holds its faction's claim (claims.h).
 
 enum class PropKind : int {
     Wagon,
@@ -69,22 +69,17 @@ enum class PropKind : int {
     WaterTank,
     WaterPump,
     Forge,
-    Flag,                 // built: marks a claim (towns); placed by the player only
+    Altar,                // built: holds its faction's claim, and burns its upkeep
     Debris,               // built: what is left of a decayed or destroyed building
-    FoundationSmall,     // built: a one-tile square ground base
-    FoundationLarge,     // built: a two-tile square base
-    FoundationLong,      // built: a three-by-one base
-    FoundationCircle,    // built: a round base, two tiles across
-    Vault,                // built: keeps upkeep (Wood Logs) and sits on a foundation
-    Shop,                 // built: a storage prop, usually on a foundation
-    Farm,                 // built: a storage prop, usually on a foundation
-    Turbine,              // built: decor, usually on a foundation
+    Shop,                 // built: a storage prop
+    Farm,                 // built: a storage prop
+    Turbine,              // built: decor
     Stove,                // built: a crafting prop that cooks raw meat, worked by a unit, fast
     Count
 };
 constexpr int PROP_KIND_COUNT = idx(PropKind::Count);
 // The Build tab's rows: row 0 is Destroy, a tool that takes any prop down (Debris is cleared away). Then the Bedroll,
-// the Campfire, the Flag, the Vault, the four foundations, and every other kind in order.
+// the Campfire, the Altar, and every other kind in order.
 // What the Build tab has picked: nothing, the Destroy tool, or a kind of prop to place
 struct BuildPick {
     enum class Tool { None, Destroy, Place };
@@ -100,7 +95,7 @@ struct BuildPick {
     bool operator!=(const BuildPick& o) const { return !(*this == o); }
 };
 // The kinds a new level places (PROP_COPIES of each, props.h below). The kinds after them are built by the player.
-constexpr int PROP_PLACED_KIND_COUNT = idx(PropKind::Flag);
+constexpr int PROP_PLACED_KIND_COUNT = idx(PropKind::Altar);
 
 // What a prop can be used for, by right-clicking it with units selected. None is a decor prop.
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
@@ -125,7 +120,7 @@ inline const char* itemFilterKey(ItemFilter f) {
 
 // What a unit sent to a prop does there, as picked from the right-click menu: Inventory opens a storage or crafting
 // prop's items; Use works a resource prop or starts crafting; Occupy takes an occupiable prop (a bed, a chair, a cage)
-// itself; Place puts the unit it carries on an occupiable prop; Unlock picks a locked prop's lock; Store (an
+// itself; Place puts the unit it carries on an occupiable prop, or a corpse it carries into a campfire; Unlock picks a locked prop's lock; Store (an
 // Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
 enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy };
 
@@ -153,16 +148,15 @@ enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Dest
 // altItem, altOneIn: for a resource prop, an item it gives instead of its item one time in altOneIn (the Mushroom's
 //                    Poison Mushroom, 1 in 10). None if left out.
 constexpr int INPUT_COOKABLE = -1;
-constexpr double VAULT_LOG_HOURS = 4.0;   // in-game hours of upkeep one Wood Log gives a Vault: six logs a day
+constexpr double ALTAR_LOG_HOURS = 4.0;   // in-game hours of upkeep one Wood Log gives an Altar: six logs a day
 
 // The ground a prop's shape covers, in tiles from its centre, before its facing turns it (yaw). A rectangle is 2*halfW
 // across along the prop's own x axis and 2*halfD along its z axis. A circle (radius above 0) replaces the rectangle.
-// A foundation is marked foundation. Most props stand on one tile, which is the default.
+// Most props stand on one tile, which is the default.
 struct Footprint {
     float halfW = 0.5f;
     float halfD = 0.5f;
     float radius = 0.0f;
-    bool foundation = false;
 };
 
 // The farthest a footprint reaches from its centre, for a quick check that two shapes are near each other
@@ -194,10 +188,8 @@ struct PropInfo {
     double fuelHours = 1.0;
     int altItem = 0;
     int altOneIn = 0;
-    Footprint foot{};            // the ground it covers: one tile, unless it is a foundation or larger
-    bool onFoundation = false;   // built on a foundation only (the Vault): its shape must lie inside one
+    Footprint foot{};            // the ground it covers: one tile, unless it is larger
     bool built = false;          // a kind the player builds from the Build tab: owned by a faction (claims.h)
-    bool canSitOnFoundation = false;   // a built kind that may stand on a foundation, wholly or partly (vault: must)
 };
 
 inline const PropInfo& propInfo(PropKind kind) {
@@ -236,33 +228,23 @@ inline const PropInfo& propInfo(PropKind kind) {
         { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, StatId::Strength, 91, 0, 1, 0 },    // Water
         { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, StatId::Smelting, 92, 1, 0, 0,
           ItemFilter::Any, 1.0 },                                                                            // Iron Ore -> Iron Ingot
-        // Built props (see the top of this file). The foundations' models are drawn so their longest side is their size.
-        { "data/model/model_32.glb", "PROP_FLAG",              1.2f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, false },
+        // Built props (see the top of this file).
+        // The Altar: passive crafting with no output. Wood Logs are its upkeep, each burning ALTAR_LOG_HOURS in-game
+        // hours (the Forge's fuel code), so its input is the Wood Log and it makes nothing (item 0). One camp
+        // woodcutter stores ten or more logs a day, so it keeps an Altar burning six a day fed with some to spare.
+        { "data/model/model_32.glb", "PROP_ALTAR",             1.2f, PropUse::PassiveCrafting, StatId::None, 0, 88, 0, 0,
+          ItemFilter::Any, ALTAR_LOG_HOURS, 0, 0, Footprint{}, true },
         // Debris: worked like ore, but it gives no item. DEBRIS_CLEAR_HOURS of one unit's work clears it away.
         { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::Resource, StatId::Strength, 0, 0, 3, 0 },
-        { "data/model/model_34.glb", "PROP_FOUNDATION_SMALL",  1.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, true }, false, true, false },
-        { "data/model/model_35.glb", "PROP_FOUNDATION_LARGE",  2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 0.0f, true }, false, true, false },
-        { "data/model/model_36.glb", "PROP_FOUNDATION_LONG",   3.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.5f, 0.5f, 0.0f, true }, false, true, false },   // long along its own x axis
-        { "data/model/model_37.glb", "PROP_FOUNDATION_CIRCLE", 2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{ 1.0f, 1.0f, 1.0f, true }, false, true, false },   // radius 1 tile
-        // The Vault: passive crafting with no output. Wood Logs are its upkeep, each burning VAULT_LOG_HOURS in-game
-        // hours (the Forge's fuel code), so the Vault's input is the Wood Log and it makes nothing (item 0). One camp
-        // woodcutter stores ten or more logs a day, so it keeps a vault burning six a day fed with some to spare.
-        { "data/model/model_38.glb", "PROP_VAULT",             1.0f, PropUse::PassiveCrafting, StatId::None, 0, 88, 0, 0,
-          ItemFilter::Any, VAULT_LOG_HOURS, 0, 0, Footprint{ 0.5f, 0.5f, 0.0f, false }, true, true, true },
         { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
         { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
         { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
         // The Stove: a crafting prop a unit works, cooking raw meat like the Campfire but CRAFT_SPEED_STOVE times faster
         { "data/model/model_42.glb", "PROP_STOVE",             1.2f, PropUse::Crafting, StatId::Cooking, 0, INPUT_COOKABLE, 1, 0,
-          ItemFilter::Any, 1.0, 0, 0, Footprint{}, false, true, true },
+          ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
     };
     const int k = idx(kind);
     return info[(k >= 0 && k < PROP_KIND_COUNT) ? k : 0];
@@ -284,8 +266,9 @@ inline EmoteId propEmote(PropKind kind) {
 // In-game hours of one unit's work that clear a Debris away, whatever its skill. Two units take half as long.
 constexpr double DEBRIS_CLEAR_HOURS = 1.0;
 constexpr float DEBRIS_CLEAR_XP = 20.0f;   // Strength XP for each unit that helped clear one
-// Bones: scenery, and what a corpse turns into (corpseDecaySystem in systems.h). A unit sent to one with the right-click
-// menu's Destroy takes it away, whoever's claim it lies in, and BONES_ITEM_COUNT of the Bones item fall where it lay.
+// Bones: scenery, and what a corpse turns into (corpseDecaySystem in systems.h), holding its items out of reach
+// (BonesPile). It goes by itself after a day (bonesDecaySystem), or when a unit sent with the right-click menu's Destroy
+// takes it away, whoever's claim it lies in. Either way what it held and BONES_ITEM_COUNT of the Bones item fall there.
 constexpr int BONES_ITEM = 154;
 constexpr int BONES_ITEM_COUNT = 3;
 inline bool destroyedByHand(PropKind kind) { return kind == PropKind::Bones; }
@@ -312,16 +295,16 @@ constexpr int PROP_COPIES = 3;         // how many of each kind a new level plac
 // Names how a level lays its props out, so a save can tell whether its prop serials still name the same props. It
 // changes whenever the number of kinds or copies does, and its last digit whenever the placement itself changes (2: the
 // factions' camps come first; 3: every faction and the player get a camp at the compass points, with trees, extra props
-// and serials from CAMP_SERIAL_BASE; 4: the camps' vaults are placed last, so they take the last camp serials). Props
+// and serials from CAMP_SERIAL_BASE; 4: the camps' vaults are placed last, so they take the last camp serials; 5: a
+// camp's Altar is part of its kit, and it has no foundation or vault). Props
 // are placed a round of every placed kind at a time, so serial s is kind s % PROP_PLACED_KIND_COUNT.
-constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 4;   // built kinds are not placed
+constexpr int PROP_LAYOUT = PROP_PLACED_KIND_COUNT * 1000 + PROP_COPIES * 10 + 5;   // built kinds are not placed
 // The order of the Build tab's rows after Destroy: the Bedroll and Campfire (which can be built anywhere), then the
 // claim pieces, then every other kind in PropKind order
 inline int buildRowCount() { return PROP_KIND_COUNT + 1; }
 // What row picks: Destroy for row 0, a kind for the rest, nothing past the last row
 inline BuildPick buildRowPick(int row) {
-    static const int first[] = { idx(PropKind::Bedroll), idx(PropKind::Campfire), idx(PropKind::Flag), idx(PropKind::Vault), idx(PropKind::FoundationSmall), idx(PropKind::FoundationLarge), idx(PropKind::FoundationLong),
-                                 idx(PropKind::FoundationCircle) };
+    static const int first[] = { idx(PropKind::Bedroll), idx(PropKind::Campfire), idx(PropKind::Altar) };
     static const std::vector<int> order = [] {
         std::vector<int> o(std::begin(first), std::end(first));
         for (int k = 0; k < PROP_KIND_COUNT; ++k) {

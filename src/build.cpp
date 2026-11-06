@@ -59,10 +59,10 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
     z = snapCoord(gz, h);
 }
 
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw) {
-    const PropInfo& info = propInfo(kind);
-    const Footprint& f = info.foot;
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z) {
+    const Footprint& f = propInfo(kind).foot;
     const int builder = FACTION_PLAYER;
+    const float yaw = 0.0f;   // what the player places faces one way
 
     // Every point of its shape must be ground a unit can stand on
     const bool ground = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
@@ -72,75 +72,28 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 
     const std::vector<Claim> claims = claimsOf(w);
 
-    // Sealed ground belongs to the faction whose vault seals it: nobody else builds there
-    const int sealer = sealingFactionAt(claims, x, z);
-    if (sealer >= 0 && sealer != builder) return BuildCheck::EnemySealed;
+    // A claim's ground belongs to its faction: nobody else builds there
+    if (const Claim* held = claimAt(claims, x, z); held && held->owner != builder) return BuildCheck::EnemySealed;
 
-    if (kind == PropKind::Flag) {
+    if (kind == PropKind::Altar) {
         for (const Claim& c : claims) {
+            if (c.owner == builder) return BuildCheck::AltarTaken;
             if (claimsOverlap(x, z, c.x, c.z)) return BuildCheck::ClaimOverlap;
         }
     }
 
-    if (kind == PropKind::FoundationSmall || kind == PropKind::FoundationLarge || kind == PropKind::FoundationLong ||
-        kind == PropKind::FoundationCircle) {
-        // A foundation lies wholly inside one of the builder's claim circles
-        bool inClaim = false;
-        for (const Claim& c : claims) {
-            if (c.owner != builder) continue;
-            const float r = CLAIM_RADIUS;
-            if (allFootSamples(f, x, z, yaw, [&](float px, float pz) {
-                    const float dx = px - c.x, dz = pz - c.z;
-                    return dx * dx + dz * dz <= r * r;
-                })) {
-                inClaim = true;
-                break;
-            }
-        }
-        if (!inClaim) return BuildCheck::NoClaim;
-    }
-
-    // A vault lies wholly on a foundation, checked against that foundation's real shape
-    if (info.onFoundation) {
-        bool onOne = false;
-        for (Entity e : w.view<Prop, Transform>()) {
-            const Prop* p = w.get<Prop>(e);
-            const PropInfo& oi = propInfo(p->kind);
-            if (!oi.foot.foundation) continue;
-            const Transform* tr = w.get<Transform>(e);
-            if (allFootSamples(f, x, z, yaw, [&](float px, float pz) {
-                    return insideFootprint(oi.foot, px - tr->x, pz - tr->z, p->yaw);
-                })) {
-                onOne = true;
-                break;
-            }
-        }
-        if (!onOne) return BuildCheck::NoFoundation;
-
-        // The vault goes in the builder's claim, which must have no vault yet, within the faction's cap
-        const Claim* c = claimAt(claims, x, z, builder);
-        if (!c) return BuildCheck::NoClaim;
-        if (c->vault != NULL_ENTITY) return BuildCheck::VaultTaken;
-        int standing = 0;
-        for (const Claim& other : claims) {
-            if (other.vault != NULL_ENTITY && w.get<Owner>(other.vault)->faction == builder) ++standing;
-        }
-        if (standing >= VAULT_CAP) return BuildCheck::VaultCap;
-    }
-
-    // Nothing else may share its ground. A foundation can be shared only by a built prop that sits on one.
+    // Nothing else may share its ground
     for (Entity e : w.view<Prop, Transform>()) {
         const Prop* p = w.get<Prop>(e);
-        const PropInfo& oi = propInfo(p->kind);
-        if (oi.foot.foundation && info.canSitOnFoundation) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (footprintsOverlap(f, x, z, yaw, oi.foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
+        if (footprintsOverlap(f, x, z, yaw, propInfo(p->kind).foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
     }
     return BuildCheck::Ok;
 }
 
 bool buildAnywhere(const BuildPick& pick) {
-    return pick.tool == BuildPick::Tool::Destroy || pick.places(PropKind::Bedroll) || pick.places(PropKind::Campfire);
+    return pick.tool == BuildPick::Tool::Destroy || pick.places(PropKind::Bedroll) || pick.places(PropKind::Campfire) ||
+           pick.places(PropKind::Altar);   // the first step of a claim, so it can't need one
 }
 
 bool selectionInClaim(World& w) {
@@ -156,19 +109,16 @@ const char* buildRefusalKey(BuildCheck c) {
     switch (c) {
     case BuildCheck::Blocked: return "MISC_BUILD_BLOCKED";
     case BuildCheck::Unwalkable: return "MISC_BUILD_UNWALKABLE";
-    case BuildCheck::NoFoundation: return "MISC_BUILD_NO_FOUNDATION";
-    case BuildCheck::NoClaim: return "MISC_BUILD_NO_CLAIM";
     case BuildCheck::EnemySealed: return "MISC_BUILD_SEALED";
     case BuildCheck::ClaimOverlap: return "MISC_BUILD_CLAIM_OVERLAP";
-    case BuildCheck::VaultTaken: return "MISC_BUILD_VAULT_TAKEN";
-    case BuildCheck::VaultCap: return "MISC_BUILD_VAULT_CAP";
+    case BuildCheck::AltarTaken: return "MISC_BUILD_ALTAR_TAKEN";
     case BuildCheck::Ok: break;
     }
     return "";
 }
 
 // The parts a built prop starts with, as a placed one of its kind would have them (world_setup.cpp, a level's props).
-// A built storage has nothing in it; a passive crafting prop (the Vault) starts cold, with an empty output.
+// A built storage has nothing in it; a passive crafting prop (the Altar) starts cold, with an empty output.
 static void addBuiltPropParts(World& w, Entity e, PropKind kind) {
     const PropInfo& info = propInfo(kind);
     if (hasStorage(info)) w.add(e, Storage{});
@@ -181,16 +131,12 @@ static void addBuiltPropParts(World& w, Entity e, PropKind kind) {
 }
 
 Entity restoreBuiltProp(World& w, PropKind kind, float x, float y, float z, float yaw, int owner) {
-    const PropInfo& info = propInfo(kind);
     const Entity e = w.create();
     w.add(e, Transform{ x, y, z });
     w.add(e, Prop{ kind, -1, yaw });
     addBuiltPropParts(w, e, kind);
     if (owner >= 0) w.add(e, Owner{ owner });
-    if (info.built) {
-        if (kind == PropKind::Flag) w.add(e, Health{});
-        if (info.foot.foundation) w.add(e, Wear{});
-    }
+    if (kind == PropKind::Altar) w.add(e, Health{});
     return e;
 }
 
@@ -206,25 +152,11 @@ Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float 
     }
 
     w.add(e, Owner{ owner });
-    if (kind == PropKind::Flag) w.add(e, Health{});
-    if (info.foot.foundation) w.add(e, Wear{});
-
-    // A prop that sits on a foundation is held by it: the foundation containing its centre
-    if (info.canSitOnFoundation) {
-        for (Entity f : w.view<Prop, Transform>()) {
-            const Prop* fp = w.get<Prop>(f);
-            if (!propInfo(fp->kind).foot.foundation) continue;
-            const Transform* ft = w.get<Transform>(f);
-            if (insideFootprint(propInfo(fp->kind).foot, x - ft->x, z - ft->z, fp->yaw)) {
-                w.add(e, OnBase{ f });
-                break;
-            }
-        }
-    }
+    if (kind == PropKind::Altar) w.add(e, Health{});
 
     // Inside a claim of its faction, a prop with contents is locked to that faction. Inside any claim, the claim's
-    // faction owns it (claimOwnership).
-    if (hasStorage(info) && claimAt(claimsOf(w), x, z, owner)) {
+    // faction owns it (claimOwnership). An Altar has no lock: it opens to its faction alone (lockShutFor).
+    if (hasStorage(info) && kind != PropKind::Altar && claimAt(claimsOf(w), x, z, owner)) {
         w.add(e, Lock{ true, BUILT_LOCK_LEVEL, owner });
     }
     claimOwnership(w, e);

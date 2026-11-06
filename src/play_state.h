@@ -23,13 +23,8 @@ constexpr float MOVE_MARK_SECONDS = 3.0f;  // how long the green X stays on the 
 constexpr float TALK_COOLDOWN = 1.0f;      // seconds after a talk ends before another one can start
 extern float talkCooldown;                 // seconds of that cooldown left
 extern bool paused;                        // paused with Space, until Space is pressed again
-// The Build tab: the prop picked to place (a PropKind, or -1 for none), its facing while placed, and the mouse's x last
-// frame, which turns it while R is held
+// The Build tab: the prop picked to place (a PropKind, or -1 for none)
 extern BuildPick buildPick;
-extern float buildYaw;
-extern float buildPrevX;
-// Radians a pixel of mouse movement turns a prop being placed
-constexpr float BUILD_TURN_PER_PIXEL = 0.01f;
 extern std::vector<TradeGhost> tradeNpc;   // items shown on the NPC's side of the trade
 extern std::vector<TradeGhost> tradePlayer;   // items shown on your side of the trade
 extern int tradeNpcDrag;                   // the NPC's inventory slot being dragged into the trade, or -1

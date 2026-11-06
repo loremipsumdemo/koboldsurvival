@@ -204,6 +204,7 @@ struct App {
     SidebarLayout sidebarFor(int W, int H, float scroll);
     bool shownIsYours();
     void sortInventory(Entity unit);
+    Entity corpseCarrier(Entity prop);
     void behaviorClick(Entity unit, const BehaviorHit& hit);
     void answerPercentPrompt(bool keep);
     bool behaviorExtraClick(Entity unit, const SidebarLayout& sl, float x, float y);

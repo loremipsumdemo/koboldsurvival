@@ -34,16 +34,11 @@ Model	File	Prop	Kind
 29	model_29.glb	Water Tank	Storage prop: items tagged water only
 30	model_30.glb	Water Pump	Crafting prop, no inventory or input: Water (Strength)
 31	model_31.glb	Forge	Passive Crafting prop: Iron Ore as fuel (1 hour each) into Iron Ingot
-32	model_32.glb	Flag	Built prop: marks a claim (towns). Decor until claims are added
+32	model_32.glb	Altar	Built prop: holds its faction's claim. Burns Wood Logs as upkeep, and opens only to its faction
 33	model_33.glb	Debris	Built prop: what is left of a decayed or destroyed building
-34	model_34.glb	Small Foundation	Built prop: one-tile square base. Foundation tag
-35	model_35.glb	Large Foundation	Built prop: two-tile square base. Foundation tag
-36	model_36.glb	Long Foundation	Built prop: three-by-one base, long along its own x axis. Foundation tag
-37	model_37.glb	Circle Foundation	Built prop: round base, radius one tile. Foundation tag
-38	model_38.glb	Vault	Built prop: burns a Wood Log an hour as upkeep. Sits on a foundation only
-39	model_39.glb	Shop	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
-40	model_40.glb	Farm	Built prop: a storage prop, usually on a foundation. Owned, locked inside a claim
-41	model_41.glb	Turbine	Built prop: decor, usually on a foundation. Owned; breaks if its foundation goes
+39	model_39.glb	Shop	Built prop: a storage prop. Owned, locked inside a claim
+40	model_40.glb	Farm	Built prop: a storage prop. Owned, locked inside a claim
+41	model_41.glb	Turbine	Built prop: decor. Owned
 42	model_42.glb	Stove	Built crafting prop: any raw meat into its cooked meat (Cooking), 10x the Campfire's speed
 
 Unit models: data/model/unit/unit_<nn>.glb (two digits), one per unit Model number (the party menu's Model dropdown). A

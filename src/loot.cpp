@@ -5,7 +5,7 @@ using namespace systems_detail;
 
 bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target) {
     const Transform* tt = w.get<Transform>(target);
-    if (!w.has<Unconscious>(target) || !tt) return false;
+    if (!outCold(w, target) || !tt) return false;
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;   // a mob takes nothing (mobs.h)
@@ -21,7 +21,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
 void systems_detail::lootOrderSystem(World& w, CarryEvents& ev) {
     for (Entity u : w.view<LootOrder, Transform>()) {
         const Entity target = w.get<LootOrder>(u)->target;
-        if (!w.has<Unconscious>(target) || w.has<Unconscious>(u)) {
+        if (!outCold(w, target) || outCold(w, u)) {
             w.remove<LootOrder>(u);
             w.remove<SoloMove>(u);
             continue;
@@ -46,12 +46,12 @@ bool canHoldItem(World& w, Entity unit, int item) {
 }
 
 bool inventoryLocked(World& w, Entity unit) {
-    return w.has<Mob>(unit) && !w.has<Unconscious>(unit);
+    return w.has<Mob>(unit) && !outCold(w, unit);
 }
 
 bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::string& why) {
     Inventory* into = w.get<Inventory>(looter);
-    if (!into || !w.has<Unconscious>(target)) return false;
+    if (!into || !outCold(w, target)) return false;
     if (w.has<Mob>(looter)) {   // a mob takes nothing but what it was born with
         why = lang("MISC_MOB_CANT_HOLD");
         return false;

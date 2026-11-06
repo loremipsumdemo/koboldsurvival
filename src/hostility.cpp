@@ -55,11 +55,11 @@ void factionSystem(World& w, float dt) {
         Provoked* p = w.get<Provoked>(u);
         const Transform* tu = w.get<Transform>(u);
         // Out cold, it sees nothing; awake, any standing unit of the faction within sight keeps the grudge fresh
-        const bool awake = tu && !w.has<Unconscious>(u);
+        const bool awake = tu && !outCold(w, u);
         for (Provoked::Entry& en : p->against) {
             bool seen = false;
             for (Entity o : units) {
-                if (!awake || o == u || factionOf(w, o) != en.faction || w.has<Unconscious>(o)) continue;
+                if (!awake || o == u || factionOf(w, o) != en.faction || outCold(w, o)) continue;
                 const Transform* to = w.get<Transform>(o);
                 const float dx = to->x - tu->x, dz = to->z - tu->z;
                 if (dx * dx + dz * dz <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {
@@ -85,7 +85,7 @@ void factionSystem(World& w, float dt) {
             const bool wasNeutral = w.has<Neutral>(u);
             w.remove<Neutral>(u);
             w.add(u, Hostile{});
-            if (wasNeutral && !w.has<Unconscious>(u)) {
+            if (wasNeutral && !outCold(w, u)) {
                 queueSound(Sfx::TurnHostile);
                 queueLog(langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen);
             }
@@ -94,7 +94,7 @@ void factionSystem(World& w, float dt) {
             w.remove<Hostile>(u);
             w.add(u, Neutral{});
             // It lost sight of your units long enough to calm down: it drops its fight with them
-            if (wasHostile && !w.has<Unconscious>(u)) {
+            if (wasHostile && !outCold(w, u)) {
                 queueLog(langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
                 if (Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY && w.has<Commandable>(c->target)) {
                     c->target = NULL_ENTITY;

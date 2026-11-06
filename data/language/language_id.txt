@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patroli Titik Muncul
 UILABEL_BEHAVIOR_ROAM	Berkelana
 UILABEL_BEHAVIOR_PATROL_TIP	Patroli: berjalan berkeliling di wilayah tempatnya berdiri, jika wilayah itu milik faksinya, sesekali berhenti.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patroli Titik Muncul: berjalan di sekitar tempat ia pertama muncul. Jika dikejar terlalu jauh, ia menyerah, sembuh sepenuhnya, dan kembali tanpa menerima kerusakan sampai tiba.
-UILABEL_BEHAVIOR_ROAM_TIP	Berkelana: menjelajahi tanah terbuka, di mana pun ia bisa berjalan di luar wilayah bendera.
+UILABEL_BEHAVIOR_ROAM_TIP	Berkelana: berkeliaran di tanah terbuka, ke mana pun bisa berjalan di luar klaim.
 UILABEL_WAIT_NOT_IN_CLAIM	tidak berada di wilayah faksinya
 UILABEL_WAIT_NOWHERE_TO_ROAM	tidak ada tanah terbuka di dekatnya di luar wilayah
 UILABEL_TEMPERAMENT_AVOIDANT	Penghindar
@@ -219,9 +219,6 @@ UILABEL_MISS	Meleset
 UILABEL_DAMAGE	Kerusakan
 UILABEL_EXPERIENCE_MESSAGES	Pesan Pengalaman
 UILABEL_EXPERIENCE	Pengalaman
-UILABEL_XP_ATHLETICS	Pengalaman Atletik
-UILABEL_XP_ENDURANCE	Pengalaman Ketahanan
-UILABEL_XP_CARRYING	Pengalaman Kekuatan (Membawa)
 UILABEL_ITEM_MESSAGES	Pesan Barang
 UILABEL_PICKUP	Ambil
 UILABEL_DROP	Jatuhkan
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Senjata dua tangan ada di tangan utama
 MISC_YOU	Anda
 MISC_UNKNOWN_ITEM	Barang tidak diketahui
 MISC_REASON_FEES	membayar biaya perdagangan
-MISC_REASON_WALKING	berjalan
-MISC_REASON_CARRYING	membawa beban
-MISC_REASON_CLIMBING	memanjat
 MISC_REASON_SWINGING	mengayunkan senjata
 MISC_REASON_DODGING	menghindar
 MISC_REASON_DEALING	memberikan kerusakan
 MISC_REASON_TAKING	menerima kerusakan
 MISC_REASON_BLOCKING	menangkis
-MISC_REASON_SPOTTING	melihat musuh
-MISC_REASON_UNNOTICED	tetap tidak terlihat
 MISC_REASON_GEAR	mengganti perlengkapan
 NPC_GREETING	Halo, dunia.
 NPC_OPTION_WARES	Perlihatkan barang daganganmu.
@@ -286,14 +278,10 @@ MISC_ORD_12	Kedua belas
 UILABEL_STAT_DESC_STRENGTH	Kerusakan jarak dekat, kapasitas angkut
 UILABEL_STAT_DESC_DEXTERITY	Kecepatan serangan
 UILABEL_STAT_DESC_VITALITY	Kesehatan maksimum
-UILABEL_STAT_DESC_ENDURANCE	Stamina maksimum
 UILABEL_STAT_DESC_AGILITY	Peluang menghindar
 UILABEL_STAT_DESC_INTELLIGENCE	Kolam mana
 UILABEL_STAT_DESC_WISDOM	Jumlah mantra yang dapat dipelajari
 UILABEL_STAT_DESC_CHARISMA	Harga dagang NPC, pilihan dialog unik
-UILABEL_STAT_DESC_PERCEPTION	Jangkauan deteksi
-UILABEL_STAT_DESC_ATHLETICS	Kecepatan lari
-UILABEL_STAT_DESC_STEALTH	Lebih baik menghindari deteksi saat mengendap
 UILABEL_STAT_DESC_MELEE	Akurasi jarak dekat
 UILABEL_STAT_DESC_PROJECTILES	Akurasi jarak jauh
 UILABEL_STAT_DESC_ARCANE	Kekuatan mantra
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Keberhasilan mencuri
 UILABEL_STAT_DESC_MEDICAL	Efektivitas penyembuhan
 UILABEL_DEXTERITY_STAT	Ketangkasan
 UILABEL_VITALITY_STAT	Vitalitas
-UILABEL_ENDURANCE_STAT	Daya tahan
 UILABEL_AGILITY_STAT	Kelincahan
 UILABEL_INTELLIGENCE_STAT	Kecerdasan
 UILABEL_WISDOM_STAT	Kebijaksanaan
 UILABEL_CHARISMA_STAT	Karisma
-UILABEL_PERCEPTION_STAT	Persepsi
-UILABEL_ATHLETICS_STAT	Atletik
-UILABEL_STEALTH_STAT	Penyelinapan
 UILABEL_MELEE_STAT	Jarak dekat
 UILABEL_PROJECTILES_STAT	Proyektil
 UILABEL_ARCANE_STAT	Arkana
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Serangan {0}    Pertahanan {1}    Daya angkut {2}
 MISC_IS_DOWN	{0} tumbang
 MISC_PICKS_UP	{0} mengambil {1} {2}
 MISC_CANNOT_READ	Tidak dapat membaca {0}
-UILABEL_TIP_DURABILITY	Daya tahan {0} / {1}
 UILABEL_DATE_LINE	HARI {0} · {1} · TAHUN {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} mendapat {1} {2} XP dari {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Ramuan Kesehatan
 ITEM_7_DESC	Memulihkan 50 kesehatan saat diminum.
 ITEM_8_NAME	Ramuan Mana
 ITEM_8_DESC	Memulihkan 50 mana saat diminum.
-ITEM_9_NAME	Minuman Stamina
-ITEM_9_DESC	Memulihkan 40 stamina dan sebentar mempercepat regenerasi.
 ITEM_10_NAME	Eliksir Kekuatan
 ITEM_10_DESC	Memberi +10 serangan selama 60 detik.
 ITEM_11_NAME	Roti
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Mengendap
 UILABEL_MODE_RANGED	Jarak jauh
 UILABEL_MODE_PASSIVE_TIP	Pasif: tidak pernah memulai pertarungan atau ikut membantu yang lain. Tetap menjalankan perintah, termasuk menyerang.
 UILABEL_MODE_BLOCK_TIP	Tangkis: tidak pernah menyerang, dan menangkis dua kali lebih sering, bahkan dengan tangan kosong.
-UILABEL_MODE_SNEAK_TIP	Mengendap: berjalan setengah kecepatan dan jauh lebih sulit terlihat. Makin tinggi Mengendap, makin baik.
+UILABEL_MODE_SNEAK_TIP	Mengendap: berjalan setengah kecepatan dan jauh lebih sulit terlihat.
 UILABEL_MODE_RANGED_TIP	Jarak jauh: menyala sendiri selama ada busur atau busur silang di tangan utama. Tiap tembakan memakai satu anak panah atau baut.
 UILABEL_SQUAD_TAB	Pasukan
 UILABEL_REPUTATION	Reputasi
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Bertahan Hidup
 MISC_TITLE_KEYS	Pilih  //  Enter Konfirmasi
 UILABEL_LANGUAGE_LABEL	Bahasa:
-PROP_FLAG	Bendera
+PROP_ALTAR	Altar
+MISC_ALTAR_OF	Altar {0}
 PROP_DEBRIS	Puing
-PROP_FOUNDATION_SMALL	Fondasi Kecil
-PROP_FOUNDATION_LARGE	Fondasi Besar
-PROP_FOUNDATION_LONG	Fondasi Panjang
-PROP_FOUNDATION_CIRCLE	Fondasi Bundar
-PROP_VAULT	Brankas
 UILABEL_BUILD	Bangun
 UILABEL_BUILD_SELECTED	Terpilih: {0}
 UILABEL_BUILD_NONE	Terpilih: Tidak ada
 UILABEL_BUILD_SELECT	Pilih
 UILABEL_BUILD_PICKED	Dipilih
-UILABEL_BUILD_PLACE_HINT	Klik kiri tanah untuk menaruh. Tahan R dan gerakkan mouse ke kiri atau kanan untuk memutar. Klik kanan atau Escape untuk batal.
+UILABEL_BUILD_PLACE_HINT	Klik kiri tanah untuk menempatkan. Klik kanan atau Escape untuk membatalkan.
 UILABEL_UPKEEP_HINT	Membakar satu {0} per jam sebagai perawatan. Taruh di sini.
 MISC_BUILD_BLOCKED	Tidak ada ruang untuk membangun di sini
 MISC_BUILD_UNWALKABLE	Tanah ini tidak bisa dibangun
-MISC_BUILD_NO_FOUNDATION	Brankas harus seluruhnya berada di atas fondasi
 MISC_NO_UPKEEP	Tidak ada perawatan: tidak ada kayu gelondong
 MISC_UPKEEP_LEFT	Perawatan: sisa {0} menit
 PROP_SHOP	Toko
@@ -954,24 +930,18 @@ PROP_STOVE	Kompor
 UILABEL_BUILD_DESTROY	Hancurkan
 UILABEL_BUILD_DESTROY_HINT	Klik kiri objek apa pun untuk merobohkannya: isinya jatuh ke tanah dan puing tertinggal di tempatnya. Klik kiri puing untuk membersihkannya. Klik kanan atau Escape untuk batal.
 UILABEL_LOCK	Kunci
-MISC_BUILD_NO_CLAIM	Fondasi atau brankas harus berada di wilayahmu sendiri
-MISC_BUILD_SEALED	Tanah itu disegel oleh brankas faksi lain
-MISC_BUILD_CLAIM_OVERLAP	Wilayah itu akan bertumpang tindih dengan wilayah bendera lain
-MISC_BUILD_VAULT_TAKEN	Wilayah itu sudah punya brankas
-MISC_BUILD_VAULT_CAP	Faksimu sudah punya brankas sebanyak yang bisa dimilikinya
+MISC_BUILD_SEALED	Tanah itu diklaim oleh faksi lain
+MISC_BUILD_CLAIM_OVERLAP	Klaim itu akan tumpang tindih dengan klaim lain
+MISC_BUILD_ALTAR_TAKEN	Faksimu sudah memiliki Altar
 MISC_DESTROY_NOTHING	Tidak ada yang bisa dihancurkan di sana
 MISC_FLAG_FACTION	Pemilik: {0}
 MISC_FLAG_HEALTH	Ketahanan: {0} dari {1}
-MISC_FLAG_VAULT_YES	Brankas: berdiri, wilayah dipertahankan
-MISC_FLAG_VAULT_NO	Brankas: tidak ada, bendera makin usang
-MISC_PROP_CONDITION	Kondisi: {0}%
 MISC_PROP_DECAYING	Rusak perlahan
 MISC_PROP_HOLDING	Tidak rusak
 MISC_PROP_LOCK_OPEN	Tidak terkunci
 MISC_PROP_LOCK_YOURS	Terkunci untuk orang luar (terbuka untukmu)
 MISC_PROP_LOCK_SHUT	Terkunci (Membuka kunci {0})
 MISC_PROP_UPKEEP	Perawatan: sisa {0} jam
-MISC_PROP_VAULT_UNCLAIMED	Di luar wilayah mana pun: tidak memberi perawatan
 MOB_BEAR	Beruang
 MOB_COW	Sapi
 MOB_CHICKEN	Ayam

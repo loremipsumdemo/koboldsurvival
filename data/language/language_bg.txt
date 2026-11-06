@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Патрул край мястото на появ
 UILABEL_BEHAVIOR_ROAM	Скитане
 UILABEL_BEHAVIOR_PATROL_TIP	Патрул: обикаля територията, на която стои, ако е на фракцията му, като спира от време на време.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Патрул край мястото на поява: обикаля близо до мястото, където се е появило. Ако го гонят твърде далеч, се отказва, излекува се напълно и се връща, без да поема щети, докато не стигне.
-UILABEL_BEHAVIOR_ROAM_TIP	Скитане: скита из откритите земи, навсякъде, където може да върви извън териториите на знамената.
+UILABEL_BEHAVIOR_ROAM_TIP	Скитане: скита из откритата земя, навсякъде където може да върви извън заявените земи.
 UILABEL_WAIT_NOT_IN_CLAIM	не е на територия на фракцията си
 UILABEL_WAIT_NOWHERE_TO_ROAM	наблизо няма открита земя извън териториите
 UILABEL_TEMPERAMENT_AVOIDANT	Плах
@@ -219,9 +219,6 @@ UILABEL_MISS	Промах
 UILABEL_DAMAGE	Щета
 UILABEL_EXPERIENCE_MESSAGES	Съобщения за опит
 UILABEL_EXPERIENCE	Опит
-UILABEL_XP_ATHLETICS	Опит в атлетика
-UILABEL_XP_ENDURANCE	Опит в издръжливост
-UILABEL_XP_CARRYING	Опит в сила (носене)
 UILABEL_ITEM_MESSAGES	Съобщения за предмети
 UILABEL_PICKUP	Вземи
 UILABEL_DROP	Пусни
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Двуръчно оръжие е в основната �
 MISC_YOU	Вие
 MISC_UNKNOWN_ITEM	Неизвестен предмет
 MISC_REASON_FEES	плащане на такси за търговия
-MISC_REASON_WALKING	ходене
-MISC_REASON_CARRYING	носене на товар
-MISC_REASON_CLIMBING	катерене
 MISC_REASON_SWINGING	размахване
 MISC_REASON_DODGING	избягване
 MISC_REASON_DEALING	нанасяне на щета
 MISC_REASON_TAKING	получаване на щета
 MISC_REASON_BLOCKING	блокиране
-MISC_REASON_SPOTTING	забелязване на враг
-MISC_REASON_UNNOTICED	останал незабелязан
 MISC_REASON_GEAR	смяна на екипировката
 NPC_GREETING	Здравей, свят.
 NPC_OPTION_WARES	Покажи ми стоката си.
@@ -286,14 +278,10 @@ MISC_ORD_12	Дванадесети
 UILABEL_STAT_DESC_STRENGTH	Щета при ближен бой, товароносимост
 UILABEL_STAT_DESC_DEXTERITY	Скорост на атака
 UILABEL_STAT_DESC_VITALITY	Максимално здраве
-UILABEL_STAT_DESC_ENDURANCE	Максимална издръжливост
 UILABEL_STAT_DESC_AGILITY	Шанс за избягване
 UILABEL_STAT_DESC_INTELLIGENCE	Запас от мана
 UILABEL_STAT_DESC_WISDOM	Брой заклинания, които могат да се научат
 UILABEL_STAT_DESC_CHARISMA	Цени при търговия с НПЦ, уникални диалогови опции
-UILABEL_STAT_DESC_PERCEPTION	Обхват на засичане
-UILABEL_STAT_DESC_ATHLETICS	Скорост на тичане
-UILABEL_STAT_DESC_STEALTH	По-добър в избягването на засичане при прокрадване
 UILABEL_STAT_DESC_MELEE	Точност при ближен бой
 UILABEL_STAT_DESC_PROJECTILES	Точност при далечен бой
 UILABEL_STAT_DESC_ARCANE	Сила на заклинанията
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Успех при кражба
 UILABEL_STAT_DESC_MEDICAL	Ефективност на лечението
 UILABEL_DEXTERITY_STAT	Ловкост
 UILABEL_VITALITY_STAT	Жизненост
-UILABEL_ENDURANCE_STAT	Издръжливост
 UILABEL_AGILITY_STAT	Пъргавина
 UILABEL_INTELLIGENCE_STAT	Интелект
 UILABEL_WISDOM_STAT	Мъдрост
 UILABEL_CHARISMA_STAT	Харизма
-UILABEL_PERCEPTION_STAT	Възприятие
-UILABEL_ATHLETICS_STAT	Атлетика
-UILABEL_STEALTH_STAT	Прикриване
 UILABEL_MELEE_STAT	Ближен бой
 UILABEL_PROJECTILES_STAT	Далечен бой
 UILABEL_ARCANE_STAT	Магия
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Атака {0}    Защита {1}    Товар {2
 MISC_IS_DOWN	{0} е повален
 MISC_PICKS_UP	{0} взима {1} {2}
 MISC_CANNOT_READ	{0} не можа да се прочете
-UILABEL_TIP_DURABILITY	Издръжливост {0} / {1}
 UILABEL_DATE_LINE	ДЕН {0} · {1} · ГОДИНА {2}
 UILABEL_MONITOR_N	Монитор {0}
 MISC_GAINS_XP	{0} получава {1} {2} ОО за {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Еликсир за здраве
 ITEM_7_DESC	Възстановява 50 здраве при консумация.
 ITEM_8_NAME	Еликсир за мана
 ITEM_8_DESC	Възстановява 50 мана при консумация.
-ITEM_9_NAME	Укрепителна отвара
-ITEM_9_DESC	Възстановява 40 издръжливост и за кратко ускорява регенерацията.
 ITEM_10_NAME	Еликсир на мощта
 ITEM_10_DESC	Дава +10 атака за 60 секунди.
 ITEM_11_NAME	Хляб
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Промъкване
 UILABEL_MODE_RANGED	Далечен бой
 UILABEL_MODE_PASSIVE_TIP	Пасивен: никога не започва бой и не се включва, за да помогне. Пак изпълнява заповеди, включително атаки.
 UILABEL_MODE_BLOCK_TIP	Блок: никога не атакува и блокира удари два пъти по-често, дори с празни ръце.
-UILABEL_MODE_SNEAK_TIP	Промъкване: върви с половин скорост и много по-трудно се забелязва. Колкото по-висока е Скритостта, толкова по-добре.
+UILABEL_MODE_SNEAK_TIP	Промъкване: върви с половин скорост и много по-трудно се забелязва.
 UILABEL_MODE_RANGED_TIP	Далечен бой: включва се сам, докато в основната ръка има лък или арбалет. Всеки изстрел изразходва една стрела или болт.
 UILABEL_SQUAD_TAB	Отряд
 UILABEL_REPUTATION	Репутация
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Коболд
 GAME_TITLE_SECOND	Оцеляване
 MISC_TITLE_KEYS	Избор  //  Enter Потвърди
 UILABEL_LANGUAGE_LABEL	Език:
-PROP_FLAG	Знаме
+PROP_ALTAR	Олтар
+MISC_ALTAR_OF	Олтар на {0}
 PROP_DEBRIS	Отломки
-PROP_FOUNDATION_SMALL	Малка основа
-PROP_FOUNDATION_LARGE	Голяма основа
-PROP_FOUNDATION_LONG	Дълга основа
-PROP_FOUNDATION_CIRCLE	Кръгла основа
-PROP_VAULT	Трезор
 UILABEL_BUILD	Строй
 UILABEL_BUILD_SELECTED	Избрано: {0}
 UILABEL_BUILD_NONE	Избрано: нищо
 UILABEL_BUILD_SELECT	Избери
 UILABEL_BUILD_PICKED	Избрано
-UILABEL_BUILD_PLACE_HINT	Ляв клик върху земята, за да поставиш. Задръж R и движи мишката наляво или надясно, за да завъртиш. Десен клик или Escape отказва.
+UILABEL_BUILD_PLACE_HINT	Щракнете с левия бутон върху земята, за да поставите. Десен бутон или Escape отменя.
 UILABEL_UPKEEP_HINT	Изразходва по един „{0}“ на час за поддръжка. Сложи ги тук.
 MISC_BUILD_BLOCKED	Няма място за строеж тук
 MISC_BUILD_UNWALKABLE	Върху тази земя не може да се строи
-MISC_BUILD_NO_FOUNDATION	Трезорът трябва да стои изцяло върху основа
 MISC_NO_UPKEEP	Няма поддръжка: няма трупи
 MISC_UPKEEP_LEFT	Поддръжка: остават {0} мин
 PROP_SHOP	Магазин
@@ -954,24 +930,18 @@ PROP_STOVE	Печка
 UILABEL_BUILD_DESTROY	Събори
 UILABEL_BUILD_DESTROY_HINT	Ляв клик върху който и да е обект, за да го събориш: съдържанието му пада на земята, а на мястото му остават отломки. Ляв клик върху отломките, за да ги разчистиш. Десен клик или Escape отказва.
 UILABEL_LOCK	Заключи
-MISC_BUILD_NO_CLAIM	Основа или трезор трябва да са на твоята собствена територия
-MISC_BUILD_SEALED	Тази земя е запечатана от трезора на друга фракция
-MISC_BUILD_CLAIM_OVERLAP	Тази територия би се застъпила с територията на друго знаме
-MISC_BUILD_VAULT_TAKEN	Тази територия вече има трезор
-MISC_BUILD_VAULT_CAP	Фракцията ти вече има толкова трезори, колкото може да има
+MISC_BUILD_SEALED	Тази земя е заявена от друга фракция
+MISC_BUILD_CLAIM_OVERLAP	Тази заявка ще се припокрие с друга
+MISC_BUILD_ALTAR_TAKEN	Вашата фракция вече има олтар
 MISC_DESTROY_NOTHING	Там няма какво да се събори
 MISC_FLAG_FACTION	Собственик: {0}
 MISC_FLAG_HEALTH	Здравина: {0} от {1}
-MISC_FLAG_VAULT_YES	Трезор: стои, територията се удържа
-MISC_FLAG_VAULT_NO	Трезор: няма, знамето се износва
-MISC_PROP_CONDITION	Състояние: {0}%
 MISC_PROP_DECAYING	Руши се
 MISC_PROP_HOLDING	Не се руши
 MISC_PROP_LOCK_OPEN	Отключено
 MISC_PROP_LOCK_YOURS	Заключено за чужди (отворено за теб)
 MISC_PROP_LOCK_SHUT	Заключено (Отваряне на ключалки {0})
 MISC_PROP_UPKEEP	Поддръжка: остават {0} часа
-MISC_PROP_VAULT_UNCLAIMED	Извън всяка територия: не дава поддръжка
 MOB_BEAR	Мечка
 MOB_COW	Крава
 MOB_CHICKEN	Пиле

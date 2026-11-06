@@ -4,7 +4,7 @@
 using namespace systems_detail;
 
 bool unitIdle(World& w, Entity u) {
-    if (w.has<Corpse>(u) || w.has<Unconscious>(u) || w.has<PlayingDead>(u) || w.has<Carried>(u)) return false;
+    if (w.has<Corpse>(u) || outCold(w, u) || w.has<PlayingDead>(u) || w.has<Carried>(u)) return false;
     if (const Behaviors* b = w.get<Behaviors>(u); b && (b->busy || b->seeking)) return false;
     if (w.has<Working>(u) || w.has<PropOrder>(u) || w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<CarryOrder>(u) ||
         w.has<LootOrder>(u) || w.has<DefendOrder>(u) || w.has<FollowOrder>(u) ||
@@ -21,7 +21,7 @@ bool unitIdle(World& w, Entity u) {
 
 std::string taskNameOf(World& w, Entity u) {
     if (w.has<Corpse>(u)) return lang("UILABEL_TASK_DEAD");
-    if (w.has<Unconscious>(u)) return lang("UILABEL_TASK_UNCONSCIOUS");
+    if (outCold(w, u)) return lang("UILABEL_TASK_UNCONSCIOUS");
     if (w.has<PlayingDead>(u)) return lang("UILABEL_TASK_PLAYING_DEAD");
     if (w.has<Carried>(u)) return lang("UILABEL_TASK_CARRIED");
     // A step of its own behaviors: the behavior's name, such as Auto-Harvest: Tree, while it is on its way or at it
@@ -60,7 +60,7 @@ std::string taskNameOf(World& w, Entity u) {
 std::vector<EmoteId> emotesOf(World& w, Entity u) {
     // Out cold or dead, that is all it shows
     if (w.has<Corpse>(u)) return { EmoteId::Dead };
-    if (w.has<Unconscious>(u)) return { EmoteId::Unconscious };
+    if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
     std::vector<EmoteId> out;
     auto propEmoteOf = [&](Entity prop) {
@@ -77,13 +77,13 @@ std::vector<EmoteId> emotesOf(World& w, Entity u) {
         const float limit = carryLimit(statsOf(w, u));
         if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EmoteId::Encumbered);
     }
-    if (const Needs* n = w.get<Needs>(u); n && n->hunger < 1) out.push_back(EmoteId::Hungry);
+    if (const Needs* n = w.get<Needs>(u); n && n->maxHunger > 0 && n->hunger < 1) out.push_back(EmoteId::Hungry);
     return out;
 }
 
 bool cannotAct(World& w, Entity u) {
     // Out cold, shut in a cage, or carried (one playing dead can still break free with an order: cannotTakeOrder)
-    return w.has<Unconscious>(u) || lockedIn(w, u) || (w.has<Carried>(u) && !w.has<PlayingDead>(u));
+    return outCold(w, u) || lockedIn(w, u) || (w.has<Carried>(u) && !w.has<PlayingDead>(u));
 }
 
 bool cannotTakeOrder(World& w, Entity u) {

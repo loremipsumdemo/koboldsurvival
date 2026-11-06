@@ -10,13 +10,10 @@
 constexpr size_t LOG_LIMIT = 500;   // messages each kind keeps, and the talk log keeps: the newest are kept
 
 // What a game message is about, so the Game tab can hide each kind. Other messages are never hidden.
-// XpAthletics and XpEndurance are experience in those two stats, which comes from walking and running so often that
-// it has its own filter toggles, off at first. XpCarrying is the Strength gained for carrying a load while walking,
-// which comes as often, and is off at first too.
 // Npc is no message's kind: it is the filter toggle "Show NPC Info", for the lines about NPCs only (LogLine::npc),
 // off at first.
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, XpAthletics, XpEndurance, XpCarrying, Npc };
-constexpr int LOG_KIND_COUNT = 13;
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc };
+constexpr int LOG_KIND_COUNT = 10;
 
 // Green when a player unit damages a hostile, red when a hostile damages a player unit, gray otherwise
 enum class Tint { Gray, Green, Red };
@@ -32,15 +29,11 @@ struct LogLine {
 // Whether a message about these units is about NPCs only: none of them is one of yours
 bool npcOnly(World& w, Entity a, Entity b = NULL_ENTITY);
 
-// Which kinds the Game tab shows. All are on at first, except Athletics and Endurance experience and the Strength
-// experience for carrying a load.
+// Which kinds the Game tab shows. All are on at first, except Show NPC Info.
 struct LogFilter {
     bool on[LOG_KIND_COUNT];
     LogFilter() {
         for (bool& b : on) b = true;
-        on[(int)LogKind::XpAthletics] = false;
-        on[(int)LogKind::XpEndurance] = false;
-        on[(int)LogKind::XpCarrying] = false;
         on[(int)LogKind::Npc] = false;
     }
 };

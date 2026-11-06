@@ -27,8 +27,8 @@
 // Patrols Spawn: it walks about near where it was placed, chases outsiders, and past SPAWN_LEASH_RANGE from that spot
 // gives up, heals fully and walks home, taking no damage until it gets there (patrolSpawnSystem in systems.h). Being a
 // boss, it goes home at BOSS_RETURN_SPEED_FACTOR its speed, and is put there if it takes too long.
-// Every mob has Rested (it follows Vitality, as a person's does), which never falls by itself and rises by
-// MOB_RESTED_GAIN_PER_HOUR each in-game hour.
+// A mob has no hunger, Rested or Comfort. Knocked out, it wakes by itself at no cost. Taking anything out of it kills it,
+// and so does another mob bringing it down: that mob destroys its meat, and its bones stay in the corpse.
 // Wild mobs: those in their kind's own faction. A mob faction has no reputation. Instead its kind's temperament
 // (mobTemperament) says how its mobs take to any unit outside their faction:
 //   Avoidant: keeps away. It runs from any outsider within WILD_AVOID_RANGE, and never fights, even when hit.
@@ -63,7 +63,7 @@ struct MobInfo {
     const char* nameKey;
     int meat;          // its raw meat's item id
     int meatCount;
-    int strength, dexterity, vitality, endurance, agility;
+    int strength, dexterity, vitality, agility;
     int melee, block;
     int wild = WILD_MOBS;
     int boneCount = 0;   // bones it carries; 0 for the usual, about half its meat (mobBoneCount)
@@ -83,29 +83,27 @@ constexpr float SPAWN_HOME_REACH = 1.0f;      // within this of its spawn it is 
 // seconds it is put there at once
 constexpr float BOSS_RETURN_SPEED_FACTOR = 10.0f;
 constexpr float BOSS_RETURN_TELEPORT_SECONDS = 10.0f;
-// Rested a mob gains each in-game hour, wherever it is, while below its most (more in a bed or bedroll)
-constexpr double MOB_RESTED_GAIN_PER_HOUR = 10.0;
 
 inline const MobInfo& mobInfo(MobKind kind) {
     static const MobInfo info[MOB_KIND_COUNT] = {
-        { "MOB_BEAR",    89,  4, 22, 8,  22, 18, 8,  14, 8 },
-        { "MOB_COW",     93,  4, 16, 5,  18, 14, 5,  3,  4 },
-        { "MOB_CHICKEN", 95,  1, 3,  10, 4,  6,  14, 1,  1 },
-        { "MOB_BOAR",    97,  3, 16, 8,  16, 14, 10, 10, 6 },
-        { "MOB_WOLF",    99,  2, 13, 14, 12, 16, 16, 12, 4 },
-        { "MOB_DEER",    101, 3, 10, 10, 11, 16, 18, 3,  2 },
-        { "MOB_RABBIT",  103, 1, 3,  12, 4,  10, 20, 1,  1 },
-        { "MOB_FISH",    105, 1, 3,  12, 4,  8,  14, 1,  1 },
-        { "MOB_CRAB",    107, 1, 6,  6,  6,  8,  6,  4,  12 },
-        { "MOB_LIZARD",  109, 1, 5,  14, 5,  8,  16, 4,  2 },
-        { "MOB_SNAKE",   111, 1, 6,  18, 6,  8,  18, 10, 1 },
-        { "MOB_PIG",     113, 3, 12, 5,  14, 12, 6,  4,  4 },
-        { "MOB_SHEEP",   115, 3, 8,  6,  12, 12, 8,  2,  3 },
-        { "MOB_DUCK",    117, 1, 3,  10, 4,  8,  14, 1,  1 },
-        { "MOB_TURTLE",  119, 2, 6,  4,  14, 10, 3,  3,  16 },
-        { "MOB_BAT",     121, 1, 3,  16, 3,  10, 20, 4,  1 },
-        { "MOB_FROG",    123, 1, 2,  12, 3,  8,  16, 1,  1 },
-        { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
+        { "MOB_BEAR",    89,  4, 22, 8,  22, 8,  14, 8 },
+        { "MOB_COW",     93,  4, 16, 5,  18, 5,  3,  4 },
+        { "MOB_CHICKEN", 95,  1, 3,  10, 4,  14, 1,  1 },
+        { "MOB_BOAR",    97,  3, 16, 8,  16, 10, 10, 6 },
+        { "MOB_WOLF",    99,  2, 13, 14, 12, 16, 12, 4 },
+        { "MOB_DEER",    101, 3, 10, 10, 11, 18, 3,  2 },
+        { "MOB_RABBIT",  103, 1, 3,  12, 4, 20, 1,  1 },
+        { "MOB_FISH",    105, 1, 3,  12, 4,  14, 1,  1 },
+        { "MOB_CRAB",    107, 1, 6,  6,  6,  6,  4,  12 },
+        { "MOB_LIZARD",  109, 1, 5,  14, 5,  16, 4,  2 },
+        { "MOB_SNAKE",   111, 1, 6,  18, 6,  18, 10, 1 },
+        { "MOB_PIG",     113, 3, 12, 5,  14, 6,  4,  4 },
+        { "MOB_SHEEP",   115, 3, 8,  6,  12, 8,  2,  3 },
+        { "MOB_DUCK",    117, 1, 3,  10, 4,  14, 1,  1 },
+        { "MOB_TURTLE",  119, 2, 6,  4,  14, 3,  3,  16 },
+        { "MOB_BAT",     121, 1, 3,  16, 3, 20, 4,  1 },
+        { "MOB_FROG",    123, 1, 2,  12, 3,  16, 1,  1 },
+        { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
           1, 100, true, GORLICORN_HP, 1, 9.6f, true, MobCategory::Boss },
     };
     const int i = idx(kind) - 1;

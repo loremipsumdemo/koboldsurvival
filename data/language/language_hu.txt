@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Járőr a kezdőhelyen
 UILABEL_BEHAVIOR_ROAM	Kóborlás
 UILABEL_BEHAVIOR_PATROL_TIP	Járőr: körbejár azon a területen, ahol áll, ha az a frakciójáé, és időnként megáll.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Járőr a kezdőhelyen: ott jár körbe, ahol megjelent. Ha túl messzire üldözik, feladja, teljesen meggyógyul és visszasétál, és amíg haza nem ér, nem sebződik.
-UILABEL_BEHAVIOR_ROAM_TIP	Kóborlás: a nyílt vidéken kóborol, bárhol, ahol a zászlók területein kívül járni tud.
+UILABEL_BEHAVIOR_ROAM_TIP	Kóborlás: a nyílt földön kóborol, ahol a területeken kívül járni tud.
 UILABEL_WAIT_NOT_IN_CLAIM	nincs a frakciója területén
 UILABEL_WAIT_NOWHERE_TO_ROAM	a közelben nincs nyílt talaj a területeken kívül
 UILABEL_TEMPERAMENT_AVOIDANT	Kerülő
@@ -219,9 +219,6 @@ UILABEL_MISS	Mellé
 UILABEL_DAMAGE	Sebzés
 UILABEL_EXPERIENCE_MESSAGES	Tapasztalati üzenetek
 UILABEL_EXPERIENCE	Tapasztalat
-UILABEL_XP_ATHLETICS	Atlétika tapasztalat
-UILABEL_XP_ENDURANCE	Állóképesség tapasztalat
-UILABEL_XP_CARRYING	Erő tapasztalat (cipelés)
 UILABEL_ITEM_MESSAGES	Tárgyüzenetek
 UILABEL_PICKUP	Felvétel
 UILABEL_DROP	Eldobás
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Kétkezes fegyver van a fő kézben
 MISC_YOU	Te
 MISC_UNKNOWN_ITEM	Ismeretlen tárgy
 MISC_REASON_FEES	kereskedelmi díjak fizetése
-MISC_REASON_WALKING	gyaloglás
-MISC_REASON_CARRYING	teher cipelése
-MISC_REASON_CLIMBING	mászás
 MISC_REASON_SWINGING	lendítés
 MISC_REASON_DODGING	kitérés
 MISC_REASON_DEALING	sebzés okozása
 MISC_REASON_TAKING	sebzés elszenvedése
 MISC_REASON_BLOCKING	védekezés
-MISC_REASON_SPOTTING	ellenség észlelése
-MISC_REASON_UNNOTICED	feltűnés nélkül maradás
 MISC_REASON_GEAR	felszerelés cseréje
 NPC_GREETING	Helló, világ.
 NPC_OPTION_WARES	Mutasd meg az árudat.
@@ -286,14 +278,10 @@ MISC_ORD_12	Tizenkettedik
 UILABEL_STAT_DESC_STRENGTH	Közelharci sebzés, teherbírás
 UILABEL_STAT_DESC_DEXTERITY	Támadási sebesség
 UILABEL_STAT_DESC_VITALITY	Maximális életerő
-UILABEL_STAT_DESC_ENDURANCE	Maximális állóképesség
 UILABEL_STAT_DESC_AGILITY	Kitérési esély
 UILABEL_STAT_DESC_INTELLIGENCE	Mana-készlet
 UILABEL_STAT_DESC_WISDOM	Megtanulható varázslatok száma
 UILABEL_STAT_DESC_CHARISMA	NJK-kereskedelmi árak, egyedi párbeszédlehetőségek
-UILABEL_STAT_DESC_PERCEPTION	Felfedési távolság
-UILABEL_STAT_DESC_ATHLETICS	Futási sebesség
-UILABEL_STAT_DESC_STEALTH	Jobb a lopakodás közbeni felfedezés elkerülésében
 UILABEL_STAT_DESC_MELEE	Közelharci pontosság
 UILABEL_STAT_DESC_PROJECTILES	Távolsági pontosság
 UILABEL_STAT_DESC_ARCANE	Varázserő
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Lopás sikere
 UILABEL_STAT_DESC_MEDICAL	Gyógyítás hatékonysága
 UILABEL_DEXTERITY_STAT	Ügyesség
 UILABEL_VITALITY_STAT	Életerő-szint
-UILABEL_ENDURANCE_STAT	Állóképesség
 UILABEL_AGILITY_STAT	Ügyesség-szint
 UILABEL_INTELLIGENCE_STAT	Intelligencia
 UILABEL_WISDOM_STAT	Bölcsesség
 UILABEL_CHARISMA_STAT	Karizma
-UILABEL_PERCEPTION_STAT	Észlelés
-UILABEL_ATHLETICS_STAT	Atlétika
-UILABEL_STEALTH_STAT	Lopakodás
 UILABEL_MELEE_STAT	Közelharc
 UILABEL_PROJECTILES_STAT	Távolsági harc
 UILABEL_ARCANE_STAT	Varázslás
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Támadás {0}    Védelem {1}    Teherbírás {2}
 MISC_IS_DOWN	{0} elesett
 MISC_PICKS_UP	{0} felveszi: {1} {2}
 MISC_CANNOT_READ	A(z) {0} nem olvasható be
-UILABEL_TIP_DURABILITY	Tartósság {0} / {1}
 UILABEL_DATE_LINE	{0}. NAP · {1} · {2}. ÉV
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} {1} {2} tapasztalatot szerez ezért: {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Gyógyital
 ITEM_7_DESC	Elfogyasztva 50 életerőt állít helyre.
 ITEM_8_NAME	Manaital
 ITEM_8_DESC	Elfogyasztva 50 manát állít helyre.
-ITEM_9_NAME	Állóképességi főzet
-ITEM_9_DESC	40 állóképességet állít helyre, és rövid időre gyorsítja a regenerációt.
 ITEM_10_NAME	Erőelixír
 ITEM_10_DESC	60 másodpercig +10 támadást ad.
 ITEM_11_NAME	Kenyér
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Lopakodás
 UILABEL_MODE_RANGED	Távolsági
 UILABEL_MODE_PASSIVE_TIP	Passzív: soha nem kezd harcot, és nem száll be, hogy segítsen. A parancsokat, a támadást is, végrehajtja.
 UILABEL_MODE_BLOCK_TIP	Hárítás: soha nem támad, és kétszer olyan gyakran hárít, üres kézzel is.
-UILABEL_MODE_SNEAK_TIP	Lopakodás: fele sebességgel jár, és sokkal nehezebb észrevenni. Minél magasabb a Lopakodás, annál jobb.
+UILABEL_MODE_SNEAK_TIP	Lopakodás: fele sebességgel jár, és sokkal nehezebb észrevenni.
 UILABEL_MODE_RANGED_TIP	Távolsági: magától bekapcsol, amíg íj vagy számszeríj van a fő kézben. Minden lövés egy nyílvesszőt vagy vasvesszőt fogyaszt.
 UILABEL_SQUAD_TAB	Csapat
 UILABEL_REPUTATION	Hírnév
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Túlélés
 MISC_TITLE_KEYS	Kiválasztás  //  Enter Megerősítés
 UILABEL_LANGUAGE_LABEL	Nyelv:
-PROP_FLAG	Zászló
+PROP_ALTAR	Oltár
+MISC_ALTAR_OF	Oltár: {0}
 PROP_DEBRIS	Törmelék
-PROP_FOUNDATION_SMALL	Kis alap
-PROP_FOUNDATION_LARGE	Nagy alap
-PROP_FOUNDATION_LONG	Hosszú alap
-PROP_FOUNDATION_CIRCLE	Kerek alap
-PROP_VAULT	Páncélterem
 UILABEL_BUILD	Építés
 UILABEL_BUILD_SELECTED	Kiválasztva: {0}
 UILABEL_BUILD_NONE	Kiválasztva: semmi
 UILABEL_BUILD_SELECT	Kiválaszt
 UILABEL_BUILD_PICKED	Kiválasztva
-UILABEL_BUILD_PLACE_HINT	Bal kattintás a talajra a lehelyezéshez. Tartsd lenyomva az R-t, és mozgasd az egeret balra vagy jobbra a forgatáshoz. Jobb kattintás vagy Escape: mégse.
+UILABEL_BUILD_PLACE_HINT	Bal kattintás a talajra a lehelyezéshez. Jobb kattintás vagy Escape a megszakításhoz.
 UILABEL_UPKEEP_HINT	Óránként egy {0} tárgyat fogyaszt fenntartásként. Tedd ide őket.
 MISC_BUILD_BLOCKED	Itt nincs hely építeni
 MISC_BUILD_UNWALKABLE	Erre a talajra nem lehet építeni
-MISC_BUILD_NO_FOUNDATION	A páncélteremnek teljesen alapon kell állnia
 MISC_NO_UPKEEP	Nincs fenntartás: nincs rönk
 MISC_UPKEEP_LEFT	Fenntartás: {0} perc van hátra
 PROP_SHOP	Bolt
@@ -954,24 +930,18 @@ PROP_STOVE	Tűzhely
 UILABEL_BUILD_DESTROY	Lebontás
 UILABEL_BUILD_DESTROY_HINT	Bal kattintás bármely tárgyra a lebontásához: a tartalma a földre hullik, és törmelék marad a helyén. Bal kattintás a törmelékre az eltakarításához. Jobb kattintás vagy Escape: mégse.
 UILABEL_LOCK	Bezárás
-MISC_BUILD_NO_CLAIM	Alap vagy páncélterem csak a saját területeden állhat
-MISC_BUILD_SEALED	Ezt a talajt egy másik frakció páncélterme lepecsételte
-MISC_BUILD_CLAIM_OVERLAP	Ez a terület átfedné egy másik zászló területét
-MISC_BUILD_VAULT_TAKEN	Ezen a területen már van páncélterem
-MISC_BUILD_VAULT_CAP	A frakciódnak már annyi páncélterme van, amennyi lehet
+MISC_BUILD_SEALED	Ez a föld egy másik frakcióé
+MISC_BUILD_CLAIM_OVERLAP	Ez a terület átfedné egy másikat
+MISC_BUILD_ALTAR_TAKEN	A frakciódnak már van oltára
 MISC_DESTROY_NOTHING	Ott nincs mit lebontani
 MISC_FLAG_FACTION	Tulajdonos: {0}
 MISC_FLAG_HEALTH	Életerő: {0} / {1}
-MISC_FLAG_VAULT_YES	Páncélterem: áll, a terület megmarad
-MISC_FLAG_VAULT_NO	Páncélterem: nincs, a zászló kopik
-MISC_PROP_CONDITION	Állapot: {0}%
 MISC_PROP_DECAYING	Pusztul
 MISC_PROP_HOLDING	Nem pusztul
 MISC_PROP_LOCK_OPEN	Nyitva
 MISC_PROP_LOCK_YOURS	Idegenek elől zárva (neked nyitva)
 MISC_PROP_LOCK_SHUT	Zárva (Zárnyitás {0})
 MISC_PROP_UPKEEP	Fenntartás: {0} óra van hátra
-MISC_PROP_VAULT_UNCLAIMED	Minden területen kívül: nem ad fenntartást
 MOB_BEAR	Medve
 MOB_COW	Tehén
 MOB_CHICKEN	Csirke

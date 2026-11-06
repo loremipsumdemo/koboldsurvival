@@ -38,13 +38,11 @@ constexpr float BLOCK_DAMAGE = 0.25f;       // damage kept on a blocked hit
 // (steerUnits) can reach a foe that stands corner to corner with them
 constexpr float ATTACK_REACH = 1.6f;
 constexpr float TALK_RANGE = 1.0f;           // tiles between a unit and an NPC that allow a talk
-constexpr float STEALTH_RANGE = 2.0f;        // tiles from a hostile within which an unnoticed unit earns stealth XP
 constexpr float AGGRO_RANGE = 6.0f;         // a hostile can notice a player unit this close
 constexpr float LEASH_RANGE = 12.0f;        // a hostile gives up a chase past this distance
 constexpr float WITNESS_RANGE = 9.0f;       // units this close to an attack see it, and may join in
 constexpr float SNEAK_NOTICE_RANGE = 0.6f;  // and can only be noticed from this share of the usual range
-constexpr float SNEAK_FAIL_BASE = 0.20f;    // its share of notices that fail: this, plus twice the usual for Stealth
-constexpr float SNEAK_FAIL_CAP = 0.80f;
+constexpr float SNEAK_NOTICE_FAIL = 0.20f;  // and this share of the notices that would catch it fail
 constexpr float BLOCK_MODE_FACTOR = 2.0f;   // a unit in Block mode blocks this many times as often
 constexpr float BLOCK_MODE_CAP = 0.75f;
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
@@ -61,7 +59,6 @@ struct CombatNumbers {
     float dodge = 0.0f;        // chance to dodge a swing that would land
     float blockChance = 0.0f;  // chance to block a hit that lands; 0 with nothing to block with
     float swingTime = 1.0f;    // seconds between swings (or shots)
-    float maxStamina = 0.0f;
     bool ranged = false;       // a ranged weapon is in the main hand: it shoots, with Projectiles in place of Melee
     float reach = ATTACK_REACH;   // tiles from which it can hit: ATTACK_REACH, or its ranged weapon's range
 };
@@ -116,9 +113,6 @@ bool isDowned(World& w, Entity e);
 // Adds the Combat component to a unit that doesn't have one
 void ensureCombat(World& w, Entity e);
 
-// Empties every unit's list of the hostiles it has spotted, once each in-game hour: the list stays short, and a hostile
-// seen again in a later hour gives Perception XP again
-void forgetSpotted(World& w);
 // A unit's fighting modes from its Behavior tab (Behaviors): never false for a unit without one
 bool isPassive(World& w, Entity e);
 bool isBlocking(World& w, Entity e);
@@ -129,7 +123,7 @@ float reachOf(World& w, Entity e);
 // Random gear for a hostile: each slot about half the time, with something that fits it
 Equipment randomHostileGear(Rng& rng);
 
-// Runs once each frame, before movement. Updates timers, stamina and health; notices and spotting;
+// Runs once each frame, before movement. Updates timers and health; notices and spotting;
 // target choice; potions and elixirs; and every swing that is ready and in reach. Units that die are
 // removed here. Damage numbers are added to floats, and what happened is written to log.
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats);

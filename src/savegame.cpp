@@ -71,9 +71,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
         }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
-        if (u.stamina >= 0.0f || u.buffLeft > 0.0f) {
-            out << "combat " << i << " " << u.stamina << " " << u.buffLeft << " " << u.buffAttack << "\n";
-        }
+        if (u.buffLeft > 0.0f) out << "buff " << i << " " << u.buffLeft << " " << u.buffAttack << "\n";
         for (const Provoked::Entry& p : u.provoked) out << "provoked " << i << " " << p.faction << " " << p.secondsLeft << "\n";
         if (u.followUnit >= 0) out << "follow " << i << " " << u.followUnit << "\n";
         if (u.defendUnit >= 0) out << "defend " << i << " " << u.defendUnit << "\n";
@@ -92,7 +90,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     if (d.hasItems) {
         out << "items=1\n";
         for (const SaveGround& g : d.ground) {
-            out << "ground " << g.x << " " << g.y << " " << g.z << " " << g.item << " " << g.count << "\n";
+            out << "ground " << g.x << " " << g.y << " " << g.z << " " << g.item << " " << g.count << " " << g.hours << "\n";
         }
     }
     for (const SaveStorage& st : d.storage) {
@@ -104,14 +102,14 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     }
     for (int serial : d.goneProps) out << "gone " << serial << "\n";
     out << std::setprecision(15);
-    for (const SaveWear& v : d.wear) out << "wear " << v.prop << " " << v.value << "\n";
     for (const SaveHealth& v : d.health) out << "health " << v.prop << " " << v.value << " " << v.max << "\n";
     out << std::setprecision(9);
-    for (const SaveOnBase& b : d.onBase) out << "onbase " << b.prop << " " << b.foundation << "\n";
     for (const auto& [faction, value] : d.reputation) out << "rep " << faction << " " << value << "\n";
     for (const SaveStorage& st : d.output) {
         out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
+    for (const SaveBonesAge& b : d.bonesAge) out << "bonesage " << b.prop << " " << b.hours << "\n";
+    for (const SaveBonesItem& b : d.bonesItems) out << "bonesitem " << b.prop << " " << b.item << " " << b.count << "\n";
     for (const SaveFuel& f : d.fuel) {
         out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9)
             << " " << f.item << "\n";
@@ -211,31 +209,40 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 ss >> serial;
                 if (!ss.fail() && serial >= 0) d.goneProps.push_back(serial);
             }
-            else if (line.rfind("wear ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                SaveWear v;
-                ss >> v.prop >> v.value;
-                if (!ss.fail()) d.wear.push_back(v);
-            }
             else if (line.rfind("health ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
                 SaveHealth v;
                 ss >> v.prop >> v.value >> v.max;
                 if (!ss.fail()) d.health.push_back(v);
             }
-            else if (line.rfind("onbase ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                SaveOnBase b;
-                ss >> b.prop >> b.foundation;
-                if (!ss.fail()) d.onBase.push_back(b);
+            else if (line.rfind("bonesage ", 0) == 0) {
+                std::istringstream ss(line.substr(9));
+                SaveBonesAge b;
+                ss >> b.prop >> b.hours;
+                if (!ss.fail()) d.bonesAge.push_back(b);
+            }
+            else if (line.rfind("bonesitem ", 0) == 0) {
+                std::istringstream ss(line.substr(10));
+                SaveBonesItem b;
+                ss >> b.prop >> b.item >> b.count;
+                if (!ss.fail()) d.bonesItems.push_back(b);
+            }
+            else if (line.rfind("buff ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                float left = 0.0f, attack = 0.0f;
+                ss >> i >> left >> attack;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].buffLeft = std::max(0.0f, left);
+                    d.units[i].buffAttack = attack;
+                }
             }
             else if (line.rfind("combat ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
                 size_t i = 0;
-                float stamina = -1.0f, left = 0.0f, attack = 0.0f;
+                float stamina = 0.0f, left = 0.0f, attack = 0.0f;   // older saves also gave its stamina, left unused
                 ss >> i >> stamina >> left >> attack;
                 if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].stamina = stamina;
                     d.units[i].buffLeft = std::max(0.0f, left);
                     d.units[i].buffAttack = attack;
                 }
@@ -287,7 +294,10 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 std::istringstream ss(line.substr(7));
                 SaveGround g;
                 ss >> g.x >> g.y >> g.z >> g.item >> g.count;
-                if (!ss.fail()) d.ground.push_back(g);
+                if (!ss.fail()) {
+                    if (!(ss >> g.hours)) g.hours = 0.0;   // older saves end before this
+                    d.ground.push_back(g);
+                }
             }
             else if (line.rfind("needs ", 0) == 0) {
                 std::istringstream ss(line.substr(6));
@@ -306,6 +316,13 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 int rested = 100, maxRested = 100, comfort = 100, maxComfort = 100;
                 ss >> i >> rested >> maxRested >> comfort >> maxComfort;
                 if (!ss.fail() && i < d.units.size() && maxRested > 0 && maxComfort > 0) {
+                    if (d.version < 4) {   // the same share of what is now the most of each
+                        const int newRested = std::max(1, maxRested - 50);
+                        rested = rested * newRested / maxRested;
+                        maxRested = newRested;
+                        comfort = comfort * 50 / maxComfort;
+                        maxComfort = 50;
+                    }
                     Needs& n = d.units[i].needs;
                     n.maxRested = maxRested;
                     n.rested = std::clamp(rested, 0, maxRested);
@@ -325,7 +342,10 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 size_t i = 0;
                 double hours = 0.0;
                 ss >> i >> hours;
-                if (!ss.fail() && i < d.units.size()) d.units[i].corpseHours = std::max(0.0, hours);
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].corpse = true;
+                    d.units[i].corpseHours = std::max(0.0, hours);
+                }
             }
             // Older saves counted down in-game hours (at most 1) to waking instead
             else if (line.rfind("downrest ", 0) == 0) {
@@ -491,8 +511,12 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 Stats st = defaultStats();
                 ss >> i;
                 const bool hasUnit = !ss.fail();
-                for (int& xp : st.xp) {
-                    if (!(ss >> xp)) break;
+                // Version 4 took four stats out: these were their places
+                size_t to = 0;
+                int xp = 0;
+                for (int place = 0; to < st.xp.size() && ss >> xp; ++place) {
+                    if (d.version < 4 && (place == 3 || place == 8 || place == 9 || place == 10)) continue;
+                    st.xp[to++] = xp;
                 }
                 if (hasUnit && i < d.units.size()) {
                     d.units[i].hasStats = true;
@@ -527,6 +551,13 @@ bool readSaveFile(const std::string& path, SaveData& d) {
         }
     } catch (...) {
         return false;   // a bad number in the file
+    }
+    // Version 3 took kinds 33 to 37 (the foundations and the Vault) out of PropKind, and the ones after them moved down
+    if (d.version < 3) {
+        for (SaveBuilt& b : d.built) {
+            if (b.kind >= 33 && b.kind <= 37) b.kind = -1;
+            else if (b.kind > 37) b.kind -= 5;
+        }
     }
     return true;
 }

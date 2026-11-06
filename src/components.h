@@ -221,11 +221,11 @@ constexpr unsigned NEEDS_HUNGER_CHANGED = 2u;
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
-    // Rested: falls while awake and rises lying in a bed or bedroll (needs.h). Well rested, a unit knocked out gets no
-    // Dying and wakes by itself. Comfort: rises sitting or lying in an occupiable prop that has no lock, falls otherwise.
-    // A mob has neither, and no hunger either: it can't feed itself.
-    int rested = 100, maxRested = 100;
-    int comfort = 100, maxComfort = 100;
+    // Rested: falls while awake and rises lying in a bed or bedroll (needs.h). A unit knocked out pays for waking in Rested,
+    // and then in Dying. Comfort: rises sitting or lying in an occupiable prop that has no lock, falls otherwise.
+    // A mob has neither, and no hunger either (needsSystem keeps all three at 0).
+    int rested = 50, maxRested = 50;
+    int comfort = 50, maxComfort = 50;
     double restedPart = 0.0, comfortPart = 0.0;   // the part of a point each has moved toward its next whole point
     bool hurried = false;        // moved at run pace this in-game hour, so the next hunger tick costs double
     double healSeconds = 0.0;    // in-game seconds saved toward the next point of health
@@ -243,7 +243,7 @@ struct Needs {
 //   passive: it never starts a fight on its own: it does not attack on sight or join in to defend others, though it
 //            still does what it is ordered to, an attack included
 //   block:   it never swings, and blocks hits more often (BLOCK_MODE_FACTOR), even with nothing in its hands
-//   sneak:   it walks at SNEAK_SPEED and is harder to notice, more so the higher its Stealth
+//   sneak:   it walks at SNEAK_SPEED and is harder to notice
 // Whether it fights at range is not a choice: it does whenever a ranged weapon is in its main hand (isRangedWeapon).
 struct Behaviors {
     std::vector<BehaviorRule> rules = defaultBehaviors();
@@ -262,16 +262,12 @@ struct Behaviors {
     bool sneak = false;
 };
 
-// Fighting state for a unit. Nothing here is saved: a loaded unit starts fresh, with its stamina full.
+// Fighting state for a unit. Only the elixir is saved.
 struct Combat {
     float swingLeft = 0.0f;           // seconds until the unit may swing again
     Entity target = NULL_ENTITY;      // the unit it is fighting: a hostile for a player unit, and the reverse
     float buffAttack = 0.0f;          // attack added by an elixir
     float buffLeft = 0.0f;            // seconds the elixir has left
-    float stamina = -1.0f;            // below zero until the first combat frame sets it to the maximum
-    float encumbrance = 0.0f;         // 0..1, from the last frame's movement
-    float moved = 0.0f;               // tiles walked in the last frame
-    std::vector<Entity> spotted;      // hostiles this unit has spotted this in-game hour, for Perception XP (forgetSpotted)
     int downedByFaction = -1;         // the faction of the unit whose hit just took it to 0 health, until it is knocked out
 };
 
@@ -284,6 +280,7 @@ struct XpBuffer {
 struct GroundItem {
     int item = 0;
     int count = 1;
+    double hours = 0.0;   // in-game hours it has lain there, up to GROUND_FOOD_HOURS (groundFoodSystem)
 };
 
 // A unit's order to pick up a ground item. The unit walks to it and takes what fits.
@@ -349,12 +346,20 @@ struct Carried {
 // own squad carrying it. One of yours (canPlayDead) that wakes from a knock-out with hostile units near plays dead on the ground the
 // same way, until it is given an order or they have gone (playDeadSystem). Nobody attacks a unit playing dead.
 struct PlayingDead {};
-// An Unconscious unit whose Dying reached 100: it never recovers. It keeps its Unconscious, with Dying 100, so it can
-// still be carried and looted, and it is no longer anyone's to command. After CORPSE_BONES_HOURS in-game hours it turns
-// into a Bones prop (corpseDecaySystem in systems.h).
+// What is left of a unit whose Dying reached 100: it never recovers, and it has no Dying, Conscious or stats any more. It
+// can still be carried and looted, and it is no longer anyone's to command. After CORPSE_BONES_HOURS in-game hours it
+// turns into a Bones prop (corpseDecaySystem in systems.h). Carried into a campfire, it is gone at once.
+// What a Bones prop holds, and how long it has lain. Nothing can reach the items until the prop goes (breakBuilding): it
+// goes when destroyed, or by itself after BONES_DECAY_HOURS (bonesDecaySystem).
+struct BonesPile {
+    double hours = 0.0;
+    std::vector<ItemStack> items;
+};
 struct Corpse {
     double hours = 0.0;   // in-game hours since it died
 };
+// Whether a unit is out of action for good or for now: Unconscious, or a corpse
+inline bool outCold(World& w, Entity e) { return w.has<Unconscious>(e) || w.has<Corpse>(e); }
 // A unit carrying another (one at a time). It can put it down on the ground or into a bed or bedroll.
 struct Carrying {
     Entity unit = NULL_ENTITY;
@@ -401,8 +406,8 @@ struct Owner {
     int faction = 0;
 };
 
-// A flag's health: it starts at FLAG_HEALTH and is never hit, but it falls while its claim has no vault and recovers
-// one point an hour while the vault stands in its claim (claims.h). At 0 the flag breaks.
+// An Altar's health: it starts at ALTAR_HEALTH and is never hit, but it falls while the Altar has no upkeep and recovers
+// one point an hour while it has (claims.h). At 0 the Altar breaks, and its claim is gone.
 struct Health {
     double value = 10.0;
     double max = 10.0;
@@ -412,18 +417,6 @@ struct Health {
 // again from its seed. One entity holds it, made the first time a level's prop goes (claims.cpp).
 struct GoneProps {
     std::vector<int> serials;
-};
-
-// How much of a built foundation or flag is left, 1 when new, falling while it is not held up (claims.h). At 0 it breaks
-// into debris. A flag decays on its own when its claim's vault is dry or missing; a foundation when it lies outside any
-// claim of its faction, or in one whose vault is dry or missing.
-struct Wear {
-    double value = 1.0;
-};
-
-// The foundation a built prop stands on. The prop breaks when that foundation is gone (claims.h).
-struct OnBase {
-    Entity foundation = NULL_ENTITY;
 };
 
 // The items a storage prop (a barrel) or a crafting prop (a campfire, which takes only its input item) holds, one stack

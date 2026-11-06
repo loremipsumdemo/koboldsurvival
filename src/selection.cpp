@@ -214,7 +214,7 @@ Entity firstSquadUnit(World& w) {
     Entity best = NULL_ENTITY;
     int bestRank = 4;
     for (Entity u : squad) {
-        const int rank = (w.has<Mob>(u) ? 1 : 0) + (w.has<Unconscious>(u) ? 2 : 0);
+        const int rank = (w.has<Mob>(u) ? 1 : 0) + (outCold(w, u) ? 2 : 0);
         if (rank < bestRank) {
             best = u;
             bestRank = rank;

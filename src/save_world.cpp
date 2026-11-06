@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include "need_behaviors.h"
 #include "build.h"
+#include "items.h"
 #include <map>
 #include <utility>
 
@@ -39,11 +40,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         } else if (!u.corpse) {
             world.add(e, Commandable{});   // one of yours; a corpse is nobody's
         }
-        if (u.unconscious) {
-            Unconscious un{ u.corpse ? 100.0f : u.dying, u.koFaction };
+        if (u.corpse) {
+            world.add(e, Corpse{ u.corpseHours });
+        } else if (u.unconscious) {
+            Unconscious un{ u.dying, u.koFaction };
             un.conscious = u.conscious;
             world.add(e, un);
-            if (u.corpse) world.add(e, Corpse{ u.corpseHours });
         } else if (u.playingDead && u.carriedBy < 0 && u.mob <= 0 && !u.hostile && !u.neutral) {
             world.add(e, PlayingDead{});   // woke near hostile units, and lies still on the ground
         }
@@ -53,7 +55,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         // Every unit carries items and has behaviors, whichever side it is on
         Inventory inv;
         for (const SaveStack& s : u.stacks) {
-            if (s.slot >= 0 && s.slot < INVENTORY_SLOTS && s.stack.item > 0 && s.stack.count > 0) {
+            if (s.slot >= 0 && s.slot < INVENTORY_SLOTS && findItem(s.stack.item) && s.stack.count > 0) {
                 inv.slots[s.slot] = s.stack;
             }
         }
@@ -75,14 +77,13 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         behaviors.block = u.block;
         behaviors.sneak = u.sneak;
         world.add(e, behaviors);
-        world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());
+        if (!u.corpse) world.add(e, u.hasStats ? Stats{ u.stats } : defaultStats());   // a corpse has none
         world.add(e, Name{ u.name });
         world.add(e, UnitSprite{ u.sprite });
         if (u.mob <= 0) world.add(e, Body{ u.hasBody ? (BodyType)u.body : bodyForSavedName(u.name) });
         // Older saves have no faction: it comes from the side the unit is on. A faction no longer listed (the old Gray
         // Faction) maps to the one that replaced it.
         if (Combat* c = world.get<Combat>(e)) {
-            c->stamina = u.stamina;
             c->buffLeft = u.buffLeft;
             c->buffAttack = u.buffLeft > 0.0f ? u.buffAttack : 0.0f;
         }
@@ -100,7 +101,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         const int by = d.units[i].carriedBy;
         if (by < 0 || by >= (int)restoredUnits.size() || by == (int)i) continue;
         const Entity carrier = restoredUnits[(size_t)by];
-        if (world.has<Carrying>(carrier) || world.has<Unconscious>(carrier) || world.has<Carried>(carrier)) continue;
+        if (world.has<Carrying>(carrier) || outCold(world, carrier) || world.has<Carried>(carrier)) continue;
         world.add(restoredUnits[i], Carried{ carrier });
         if (d.units[i].playingDead && !d.units[i].unconscious && canPlayDead(world, restoredUnits[i])) world.add(restoredUnits[i], PlayingDead{});
         world.add(carrier, Carrying{ restoredUnits[i] });
@@ -108,8 +109,9 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
 
     if (d.hasItems) {
         for (const SaveGround& g : d.ground) {
-            if (g.item <= 0 || g.count <= 0) continue;
-            spawnGroundItem(world, Transform{ g.x, g.y, g.z }, g.item, g.count);
+            if (!findItem(g.item) || g.count <= 0) continue;
+            const Entity lying = spawnGroundItem(world, Transform{ g.x, g.y, g.z }, g.item, g.count);
+            world.get<GroundItem>(lying)->hours = g.hours;
         }
     }
     // The props' states below name each prop by its save number. A level prop's number is its serial, and a save made when
@@ -217,7 +219,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
     for (const SaveStorage& s : d.storage) {
         const Entity e = propNamed(s.prop);
         Storage* st = e != NULL_ENTITY ? world.get<Storage>(e) : nullptr;
-        if (!st || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
+        if (!st || s.slot < 0 || s.slot >= STORAGE_SLOTS || !findItem(s.item) || s.count <= 0) continue;
         st->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
     }
     // A forge's output, and its fuel and progress
@@ -236,11 +238,18 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         }
         if (PropWork* pw = world.get<PropWork>(e)) pw->progress = std::clamp(f.progress, 0.0, 1.0);
     }
-    // How worn the flags and foundations are, and what stands on what
-    for (const SaveWear& v : d.wear) {
-        const Entity e = propNamed(v.prop);
-        if (Wear* wr = e != NULL_ENTITY ? world.get<Wear>(e) : nullptr) wr->value = v.value;
+    // What the Bones props hold, and how long they have lain
+    for (const SaveBonesAge& b : d.bonesAge) {
+        const Entity e = propNamed(b.prop);
+        if (e == NULL_ENTITY || !destroyedByHand(world.get<Prop>(e)->kind)) continue;
+        world.add(e, BonesPile{}).hours = b.hours;
     }
+    for (const SaveBonesItem& b : d.bonesItems) {
+        const Entity e = propNamed(b.prop);
+        BonesPile* pile = e != NULL_ENTITY ? world.get<BonesPile>(e) : nullptr;
+        if (pile && findItem(b.item) && b.count > 0) pile->items.push_back(ItemStack{ b.item, b.count });
+    }
+    // How worn the Altars are
     for (const SaveHealth& v : d.health) {
         const Entity e = propNamed(v.prop);
         if (Health* h = e != NULL_ENTITY ? world.get<Health>(e) : nullptr) {
@@ -248,10 +257,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             h->max = v.max;
         }
     }
-    for (const SaveOnBase& b : d.onBase) {
-        const Entity e = propNamed(b.prop), base = propNamed(b.foundation);
-        if (e != NULL_ENTITY && base != NULL_ENTITY) world.add(e, OnBase{ base });
-    }
+    resolveDuplicateAltars(world);
     // Units on beds, chairs and in cages, put back on them. Two saved on one prop: the first keeps it.
     for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
         if (d.units[i].occupying == -1) continue;
@@ -304,7 +310,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.cam.pitch = cam.pitch;
     d.cam.distance = cam.distance;
 
-    // Built props and debris, oldest first, since the older of two flags holds a claim. Their place here is their number.
+    // Built props and debris, oldest first, since the older of two Altars holds a claim. Their place here is their number.
     std::vector<Entity> builtProps;
     for (Entity e : w.view<Prop, Transform>()) {
         if (w.get<Prop>(e)->serial < 0) builtProps.push_back(e);
@@ -340,8 +346,10 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.unconscious = true;
             su.dying = un->dying;
             su.conscious = un->conscious;
-            su.corpse = w.has<Corpse>(u);
-            if (const Corpse* cp = w.get<Corpse>(u)) su.corpseHours = cp->hours;
+        }
+        if (const Corpse* cp = w.get<Corpse>(u)) {
+            su.corpse = true;
+            su.corpseHours = cp->hours;
         }
         su.playingDead = w.has<PlayingDead>(u);
         if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = indexOf(cd->by);
@@ -375,7 +383,6 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         }
         if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = saveIdOf(oc->prop);
         if (const Combat* c = w.get<Combat>(u)) {
-            su.stamina = c->stamina;
             su.buffLeft = c->buffLeft;
             su.buffAttack = c->buffAttack;
         }
@@ -450,19 +457,21 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     for (Entity e : w.view<GroundItem, Transform>()) {
         const GroundItem* g = w.get<GroundItem>(e);
         const Transform* t = w.get<Transform>(e);
-        d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count });
+        d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count, g->hours });
     }
     for (Entity e : w.view<Prop, Transform, Lock>()) {
         const Lock* l = w.get<Lock>(e);
         d.locks.push_back(SaveLock{ saveIdOf(e), l->locked, l->level, l->faction });
     }
-    for (Entity e : w.view<Prop, Transform, Wear>()) d.wear.push_back(SaveWear{ saveIdOf(e), w.get<Wear>(e)->value });
+    for (Entity e : w.view<Prop, Transform, BonesPile>()) {
+        const int id = saveIdOf(e);
+        const BonesPile* pile = w.get<BonesPile>(e);
+        d.bonesAge.push_back(SaveBonesAge{ id, pile->hours });
+        for (const ItemStack& st : pile->items) d.bonesItems.push_back(SaveBonesItem{ id, st.item, st.count });
+    }
     for (Entity e : w.view<Prop, Transform, Health>()) {
         const Health* h = w.get<Health>(e);
         d.health.push_back(SaveHealth{ saveIdOf(e), h->value, h->max });
-    }
-    for (Entity e : w.view<Prop, Transform, OnBase>()) {
-        if (w.has<Prop>(w.get<OnBase>(e)->foundation)) d.onBase.push_back(SaveOnBase{ saveIdOf(e), saveIdOf(w.get<OnBase>(e)->foundation) });
     }
     for (Entity e : w.view<Prop, Transform, Storage>()) {
         const int serial = saveIdOf(e);

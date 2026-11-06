@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Tuần tra nơi xuất hiện
 UILABEL_BEHAVIOR_ROAM	Lang thang
 UILABEL_BEHAVIOR_PATROL_TIP	Tuần tra: đi quanh lãnh thổ nơi nó đứng, nếu lãnh thổ đó thuộc phe nó, thỉnh thoảng dừng lại.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Tuần tra nơi xuất hiện: đi quanh gần nơi nó xuất hiện lần đầu. Bị đuổi quá xa, nó bỏ cuộc, hồi đầy máu và đi về, không chịu sát thương cho tới khi về tới nơi.
-UILABEL_BEHAVIOR_ROAM_TIP	Lang thang: đi khắp vùng đất trống, bất cứ đâu nó có thể đi bên ngoài lãnh thổ của các cờ.
+UILABEL_BEHAVIOR_ROAM_TIP	Lang thang: lang thang trên vùng đất trống, bất cứ đâu có thể đi bên ngoài các lãnh địa.
 UILABEL_WAIT_NOT_IN_CLAIM	không ở trong lãnh thổ của phe mình
 UILABEL_WAIT_NOWHERE_TO_ROAM	không có đất trống gần đó ngoài các lãnh thổ
 UILABEL_TEMPERAMENT_AVOIDANT	Né tránh
@@ -219,9 +219,6 @@ UILABEL_MISS	Trượt
 UILABEL_DAMAGE	Sát thương
 UILABEL_EXPERIENCE_MESSAGES	Thông báo kinh nghiệm
 UILABEL_EXPERIENCE	Kinh nghiệm
-UILABEL_XP_ATHLETICS	Kinh nghiệm Thể lực
-UILABEL_XP_ENDURANCE	Kinh nghiệm Sức bền
-UILABEL_XP_CARRYING	Kinh nghiệm Sức mạnh (Mang vác)
 UILABEL_ITEM_MESSAGES	Thông báo vật phẩm
 UILABEL_PICKUP	Nhặt
 UILABEL_DROP	Vứt
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Vũ khí hai tay đang ở tay chính
 MISC_YOU	Bạn
 MISC_UNKNOWN_ITEM	Vật phẩm không rõ
 MISC_REASON_FEES	trả phí giao dịch
-MISC_REASON_WALKING	đi bộ
-MISC_REASON_CARRYING	mang vác đồ nặng
-MISC_REASON_CLIMBING	leo trèo
 MISC_REASON_SWINGING	vung vũ khí
 MISC_REASON_DODGING	né tránh
 MISC_REASON_DEALING	gây sát thương
 MISC_REASON_TAKING	nhận sát thương
 MISC_REASON_BLOCKING	chặn đòn
-MISC_REASON_SPOTTING	phát hiện kẻ địch
-MISC_REASON_UNNOTICED	giữ mình không bị phát hiện
 MISC_REASON_GEAR	thay đổi trang bị
 NPC_GREETING	Chào thế giới.
 NPC_OPTION_WARES	Cho tôi xem hàng của bạn.
@@ -286,14 +278,10 @@ MISC_ORD_12	Thứ mười hai
 UILABEL_STAT_DESC_STRENGTH	Sát thương cận chiến, sức mang
 UILABEL_STAT_DESC_DEXTERITY	Tốc độ tấn công
 UILABEL_STAT_DESC_VITALITY	Sinh lực tối đa
-UILABEL_STAT_DESC_ENDURANCE	Thể lực tối đa
 UILABEL_STAT_DESC_AGILITY	Tỷ lệ né tránh
 UILABEL_STAT_DESC_INTELLIGENCE	Lượng mana
 UILABEL_STAT_DESC_WISDOM	Số phép thuật có thể học
 UILABEL_STAT_DESC_CHARISMA	Giá giao dịch với NPC, lựa chọn hội thoại đặc biệt
-UILABEL_STAT_DESC_PERCEPTION	Tầm phát hiện
-UILABEL_STAT_DESC_ATHLETICS	Tốc độ chạy
-UILABEL_STAT_DESC_STEALTH	Giỏi hơn trong việc tránh bị phát hiện khi lén lút
 UILABEL_STAT_DESC_MELEE	Độ chính xác cận chiến
 UILABEL_STAT_DESC_PROJECTILES	Độ chính xác tầm xa
 UILABEL_STAT_DESC_ARCANE	Sức mạnh phép thuật
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Tỷ lệ thành công khi trộm cắp
 UILABEL_STAT_DESC_MEDICAL	Hiệu quả chữa trị
 UILABEL_DEXTERITY_STAT	Khéo léo
 UILABEL_VITALITY_STAT	Sinh lực
-UILABEL_ENDURANCE_STAT	Sức bền
 UILABEL_AGILITY_STAT	Nhanh nhẹn
 UILABEL_INTELLIGENCE_STAT	Trí tuệ
 UILABEL_WISDOM_STAT	Minh triết
 UILABEL_CHARISMA_STAT	Thu hút
-UILABEL_PERCEPTION_STAT	Nhận thức
-UILABEL_ATHLETICS_STAT	Thể thao
-UILABEL_STEALTH_STAT	Lén lút
 UILABEL_MELEE_STAT	Cận chiến
 UILABEL_PROJECTILES_STAT	Ném bắn
 UILABEL_ARCANE_STAT	Huyền thuật
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Tấn công {0}    Phòng thủ {1}    Sức mang {
 MISC_IS_DOWN	{0} đã gục
 MISC_PICKS_UP	{0} nhặt {1} {2}
 MISC_CANNOT_READ	Không thể đọc {0}
-UILABEL_TIP_DURABILITY	Độ bền {0} / {1}
 UILABEL_DATE_LINE	NGÀY {0} · {1} · NĂM {2}
 UILABEL_MONITOR_N	Màn hình {0}
 MISC_GAINS_XP	{0} nhận {1} {2} kinh nghiệm nhờ {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Bình hồi máu
 ITEM_7_DESC	Hồi 50 sinh lực khi dùng.
 ITEM_8_NAME	Bình hồi mana
 ITEM_8_DESC	Hồi 50 mana khi dùng.
-ITEM_9_NAME	Nước tăng thể lực
-ITEM_9_DESC	Hồi 40 thể lực và tăng tốc hồi phục trong thời gian ngắn.
 ITEM_10_NAME	Thuốc tăng sức mạnh
 ITEM_10_DESC	Tăng +10 tấn công trong 60 giây.
 ITEM_11_NAME	Bánh mì
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Lén lút
 UILABEL_MODE_RANGED	Tầm xa
 UILABEL_MODE_PASSIVE_TIP	Hòa hoãn: không bao giờ gây chiến hay xen vào giúp người khác. Vẫn làm theo lệnh, kể cả tấn công.
 UILABEL_MODE_BLOCK_TIP	Đỡ đòn: không bao giờ tấn công và đỡ đòn thường gấp đôi, kể cả tay không.
-UILABEL_MODE_SNEAK_TIP	Lén lút: đi với nửa tốc độ và khó bị phát hiện hơn nhiều. Chỉ số Ẩn nấp càng cao càng tốt.
+UILABEL_MODE_SNEAK_TIP	Lén lút: đi với nửa tốc độ và khó bị phát hiện hơn nhiều.
 UILABEL_MODE_RANGED_TIP	Tầm xa: tự bật khi tay chính cầm cung hoặc nỏ. Mỗi phát bắn dùng một mũi tên hoặc một mũi nỏ.
 UILABEL_SQUAD_TAB	Đội
 UILABEL_REPUTATION	Danh tiếng
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Sinh tồn
 GAME_TITLE_SECOND	Kobold
 MISC_TITLE_KEYS	Chọn  //  Enter Xác nhận
 UILABEL_LANGUAGE_LABEL	Ngôn ngữ:
-PROP_FLAG	Cờ
+PROP_ALTAR	Bàn thờ
+MISC_ALTAR_OF	Bàn thờ của {0}
 PROP_DEBRIS	Đống đổ nát
-PROP_FOUNDATION_SMALL	Nền nhỏ
-PROP_FOUNDATION_LARGE	Nền lớn
-PROP_FOUNDATION_LONG	Nền dài
-PROP_FOUNDATION_CIRCLE	Nền tròn
-PROP_VAULT	Kho kiên cố
 UILABEL_BUILD	Xây dựng
 UILABEL_BUILD_SELECTED	Đã chọn: {0}
 UILABEL_BUILD_NONE	Đã chọn: Không có
 UILABEL_BUILD_SELECT	Chọn
 UILABEL_BUILD_PICKED	Đã chọn
-UILABEL_BUILD_PLACE_HINT	Nhấp trái lên mặt đất để đặt. Giữ R và di chuột sang trái hoặc phải để xoay. Nhấp phải hoặc Escape để hủy.
+UILABEL_BUILD_PLACE_HINT	Nhấp chuột trái xuống đất để đặt. Nhấp chuột phải hoặc Escape để hủy.
 UILABEL_UPKEEP_HINT	Đốt một {0} mỗi giờ để bảo trì. Hãy bỏ chúng vào đây.
 MISC_BUILD_BLOCKED	Không có chỗ để xây ở đây
 MISC_BUILD_UNWALKABLE	Không thể xây trên mặt đất này
-MISC_BUILD_NO_FOUNDATION	Kho kiên cố phải nằm hoàn toàn trên nền
 MISC_NO_UPKEEP	Không có bảo trì: không có khúc gỗ
 MISC_UPKEEP_LEFT	Bảo trì: còn {0} phút
 PROP_SHOP	Cửa hàng
@@ -954,24 +930,18 @@ PROP_STOVE	Bếp
 UILABEL_BUILD_DESTROY	Phá hủy
 UILABEL_BUILD_DESTROY_HINT	Nhấp trái vào vật thể bất kỳ để phá nó: đồ bên trong rơi xuống đất và để lại đống đổ nát. Nhấp trái vào đống đổ nát để dọn đi. Nhấp phải hoặc Escape để hủy.
 UILABEL_LOCK	Khóa
-MISC_BUILD_NO_CLAIM	Nền hoặc kho kiên cố phải nằm trong lãnh thổ của bạn
-MISC_BUILD_SEALED	Mặt đất đó bị phong ấn bởi kho kiên cố của phe khác
-MISC_BUILD_CLAIM_OVERLAP	Lãnh thổ đó sẽ chồng lên lãnh thổ của một cờ khác
-MISC_BUILD_VAULT_TAKEN	Lãnh thổ đó đã có kho kiên cố
-MISC_BUILD_VAULT_CAP	Phe bạn đã có đủ số kho kiên cố tối đa
+MISC_BUILD_SEALED	Vùng đất đó thuộc về phe khác
+MISC_BUILD_CLAIM_OVERLAP	Lãnh địa đó sẽ chồng lên lãnh địa khác
+MISC_BUILD_ALTAR_TAKEN	Phe của bạn đã có bàn thờ
 MISC_DESTROY_NOTHING	Không có gì để phá ở đó
 MISC_FLAG_FACTION	Chủ sở hữu: {0}
 MISC_FLAG_HEALTH	Độ bền: {0}/{1}
-MISC_FLAG_VAULT_YES	Kho kiên cố: còn đứng, lãnh thổ được giữ
-MISC_FLAG_VAULT_NO	Kho kiên cố: không có, cờ đang mòn dần
-MISC_PROP_CONDITION	Tình trạng: {0}%
 MISC_PROP_DECAYING	Đang xuống cấp
 MISC_PROP_HOLDING	Không xuống cấp
 MISC_PROP_LOCK_OPEN	Không khóa
 MISC_PROP_LOCK_YOURS	Khóa với người ngoài (mở với bạn)
 MISC_PROP_LOCK_SHUT	Đã khóa (Mở khóa {0})
 MISC_PROP_UPKEEP	Bảo trì: còn {0} giờ
-MISC_PROP_VAULT_UNCLAIMED	Ngoài mọi lãnh thổ: không cung cấp bảo trì
 MOB_BEAR	Gấu
 MOB_COW	Bò
 MOB_CHICKEN	Gà

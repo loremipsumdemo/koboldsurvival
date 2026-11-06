@@ -119,22 +119,14 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
     const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
-    std::vector<Claim> claims;
-    bool haveClaims = false;
     for (Entity e : w.view<Prop, Transform>()) {
         const PropKind kind = w.get<Prop>(e)->kind;
-        if (kind != PropKind::Vault && kind != PropKind::Flag) continue;
+        if (kind != PropKind::Altar) continue;
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         EmoteId emote = EmoteId::None;
-        if (kind == PropKind::Vault && !vaultHasUpkeep(w, e)) emote = EmoteId::NoUpkeep;
-        if (kind == PropKind::Flag) {
-            if (!haveClaims) {
-                claims = claimsOf(w);
-                haveClaims = true;
-            }
-            if (propDecaying(w, e, claims)) emote = EmoteId::Decaying;
-        }
+        if (!altarHasUpkeep(w, e)) emote = EmoteId::NoUpkeep;
+        if (propDecaying(w, e)) emote = EmoteId::Decaying;
         if (emote == EmoteId::None) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
@@ -209,8 +201,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
 }
 
 void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo) {
-    // Stacked as the Alt item names are, without their box: the props that share a spot (a foundation and what stands
-    // on it, or props on one tile) share one block of lines over them, each prop's name in purple with its info lines
+    // Stacked as the Alt item names are, without their box: the props on one tile share one block of lines over them, each prop's name in purple with its info lines
     // (Show Prop Info) under it in a paler purple, the lines left-aligned, the last prop nearest the props. Blocks are
     // drawn farthest first, so a nearer one is drawn over the ones behind it.
     const float s = uiScaleFor(winH);
@@ -224,8 +215,8 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     cam.eye(ex, ey, ez);
     propLabelTop_.clear();
 
-    struct Seen { Entity e; float sx, sy, dist2; bool base; };
-    // The group a prop joins: the foundation it stands on (or is), otherwise its tile
+    struct Seen { Entity e; float sx, sy, dist2; };
+    // The group a prop joins: its tile
     std::map<std::pair<int, long long>, std::vector<Seen>> groups;
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
@@ -236,11 +227,8 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
-        const bool base = propInfo(kind).foot.foundation;
         std::pair<int, long long> key{ 1, ((long long)std::floor(tr->x) << 32) ^ (long long)(unsigned)(int)std::floor(tr->z) };
-        if (base) key = { 0, (long long)e };
-        else if (const OnBase* ob = w.get<OnBase>(e); ob && w.has<Prop>(ob->foundation)) key = { 0, (long long)ob->foundation };
-        groups[key].push_back(Seen{ e, sx, sy, dx * dx + dy * dy + dz * dz, base });
+        groups[key].push_back(Seen{ e, sx, sy, dx * dx + dy * dy + dz * dz });
     }
 
     struct Block {
@@ -250,11 +238,8 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     std::vector<Block> blocks;
     for (auto& entry : groups) {
         std::vector<Seen>& seen = entry.second;
-        // Entity order, so the names keep their places from frame to frame; the foundation last, nearest the props
-        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) {
-            if (a.base != b.base) return !a.base;
-            return a.e < b.e;
-        });
+        // Entity order, so the names keep their places from frame to frame
+        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) { return a.e < b.e; });
         Block b;
         float cx = 0.0f, top = 0.0f, maxW = 0.0f;
         b.dist2 = seen[0].dist2;
@@ -263,7 +248,7 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
             cx += sn.sx;
             top = i == 0 ? sn.sy : std::min(top, sn.sy);
             b.dist2 = std::min(b.dist2, sn.dist2);
-            b.lines.push_back({ "[" + lang(propInfo(w.get<Prop>(sn.e)->kind).nameKey) + "]", purple });
+            b.lines.push_back({ "[" + propDisplayName(w, sn.e) + "]", purple });
             if (showInfo) {
                 for (const std::string& line : propInfoLines(w, sn.e)) b.lines.push_back({ line, pale });
             }

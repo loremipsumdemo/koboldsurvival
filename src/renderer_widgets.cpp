@@ -25,7 +25,7 @@ const RGBA TIP_WARNING{ 1.0f, 0.72f, 0.35f, 1.0f };
 
 // The numbers a tooltip compares, summed over the items an item would replace
 struct GearSum {
-    int attack = 0, defense = 0, durability = 0;
+    int attack = 0, defense = 0;
     float weight = 0.0f;
 };
 
@@ -37,7 +37,6 @@ GearSum sumGear(const std::vector<int>& items) {
         s.attack += d->attackValue;
         s.defense += d->defenseValue;
         s.weight += d->weight;
-        if (d->maxDurability > 0) s.durability += d->currentDurability;
     }
     return s;
 }
@@ -105,12 +104,6 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
     }
     rows.push_back(weightRow);
 
-    if (d.maxDurability > 0) {
-        TipRow row{ langf("UILABEL_TIP_DURABILITY", { std::to_string(d.currentDurability), std::to_string(d.maxDurability) }),
-                    TIP_TEXT };
-        intChange(row, d.currentDurability, base ? base->durability : 0, true);
-        rows.push_back(row);
-    }
     if (d.maxStackSize > 1) rows.push_back(TipRow{ langf("UILABEL_TIP_STACKS", { std::to_string(d.maxStackSize) }), TIP_TEXT });
     if (d.buyValue > 0) rows.push_back(TipRow{ langf("UILABEL_TIP_BUY", { std::to_string(d.buyValue) }), TIP_TEXT });
     if (d.sellValue > 0) rows.push_back(TipRow{ langf("UILABEL_TIP_SELL", { std::to_string(d.sellValue) }), TIP_TEXT });

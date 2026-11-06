@@ -79,7 +79,7 @@ bool openTile(const Terrain& t, float x, float z);
 
 // Out cold, carried, playing dead or shut in a cage: a unit that behaves on its own does nothing in any of these
 inline bool outOfAction(World& w, Entity u) {
-    return w.has<Unconscious>(u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u);
+    return outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u);
 }
 
 // Plans a new route for an active squad's center. Only the center paths; members follow slots.

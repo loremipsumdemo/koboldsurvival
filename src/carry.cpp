@@ -68,13 +68,13 @@ CarryEvents carrySystem(World& w) {
     for (Entity c : w.view<Carried>()) {
         const Entity by = w.get<Carried>(c)->by;
         const Carrying* cr = w.get<Carrying>(by);
-        if (!cr || cr->unit != c || w.has<Unconscious>(by) || !w.has<Transform>(by)) {
+        if (!cr || cr->unit != c || outCold(w, by) || !w.has<Transform>(by)) {
             w.remove<Carried>(c);
             w.remove<PlayingDead>(c);
             if (cr && cr->unit == c) w.remove<Carrying>(by);
             continue;
         }
-        if (w.has<Unconscious>(c)) {
+        if (outCold(w, c)) {
             w.remove<PlayingDead>(c);
         } else if (w.has<Commandable>(c) && w.has<Commandable>(by)) {
             w.remove<PlayingDead>(c);
@@ -101,5 +101,5 @@ CarryEvents carrySystem(World& w) {
 
 bool canBeCarried(World& w, Entity target) {
     if (!w.has<Unit>(target) || !w.has<Transform>(target) || w.has<Carried>(target) || w.has<Carrying>(target)) return false;
-    return w.has<Unconscious>(target) || w.has<Commandable>(target);
+    return outCold(w, target) || w.has<Commandable>(target);
 }

@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Hlídka u místa zrození
 UILABEL_BEHAVIOR_ROAM	Toulání
 UILABEL_BEHAVIOR_PATROL_TIP	Hlídka: prochází se po území, na kterém stojí, pokud patří její frakci, a občas se zastaví.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Hlídka u místa zrození: prochází se poblíž místa, kde se objevila. Pronásledována příliš daleko to vzdá, plně se vyléčí a vrátí se, přičemž do návratu neutrpí žádné zranění.
-UILABEL_BEHAVIOR_ROAM_TIP	Toulání: toulá se volnou krajinou, všude, kam může dojít mimo území vlajek.
+UILABEL_BEHAVIOR_ROAM_TIP	Toulání: toulá se volnou krajinou, kudy může jít mimo zabraná území.
 UILABEL_WAIT_NOT_IN_CLAIM	není na území své frakce
 UILABEL_WAIT_NOWHERE_TO_ROAM	poblíž není volná země mimo území
 UILABEL_TEMPERAMENT_AVOIDANT	Plachý
@@ -219,9 +219,6 @@ UILABEL_MISS	Minul
 UILABEL_DAMAGE	Poškození
 UILABEL_EXPERIENCE_MESSAGES	Zprávy o zkušenostech
 UILABEL_EXPERIENCE	Zkušenosti
-UILABEL_XP_ATHLETICS	Zkušenosti z atletiky
-UILABEL_XP_ENDURANCE	Zkušenosti z výdrže
-UILABEL_XP_CARRYING	Zkušenosti síly (nošení)
 UILABEL_ITEM_MESSAGES	Zprávy o předmětech
 UILABEL_PICKUP	Sebrat
 UILABEL_DROP	Odložit
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	V hlavní ruce je obouruční zbraň
 MISC_YOU	Vy
 MISC_UNKNOWN_ITEM	Neznámý předmět
 MISC_REASON_FEES	zaplacení poplatků za obchod
-MISC_REASON_WALKING	chůze
-MISC_REASON_CARRYING	nošení břemene
-MISC_REASON_CLIMBING	lezení
 MISC_REASON_SWINGING	mávání zbraní
 MISC_REASON_DODGING	uhýbání
 MISC_REASON_DEALING	způsobení poškození
 MISC_REASON_TAKING	přijetí poškození
 MISC_REASON_BLOCKING	blokování
-MISC_REASON_SPOTTING	spatření nepřítele
-MISC_REASON_UNNOTICED	zůstání nepozorován
 MISC_REASON_GEAR	změna výbavy
 NPC_GREETING	Ahoj, světe.
 NPC_OPTION_WARES	Ukaž mi své zboží.
@@ -286,14 +278,10 @@ MISC_ORD_12	Dvanáctý
 UILABEL_STAT_DESC_STRENGTH	Poškození při boji zblízka, nosnost
 UILABEL_STAT_DESC_DEXTERITY	Rychlost útoku
 UILABEL_STAT_DESC_VITALITY	Maximální zdraví
-UILABEL_STAT_DESC_ENDURANCE	Maximální vytrvalost
 UILABEL_STAT_DESC_AGILITY	Šance na uhnutí
 UILABEL_STAT_DESC_INTELLIGENCE	Zásoba many
 UILABEL_STAT_DESC_WISDOM	Počet kouzel, které lze naučit
 UILABEL_STAT_DESC_CHARISMA	Ceny při obchodu s NPC, zvláštní možnosti dialogu
-UILABEL_STAT_DESC_PERCEPTION	Dosah zjištění
-UILABEL_STAT_DESC_ATHLETICS	Rychlost běhu
-UILABEL_STAT_DESC_STEALTH	Lepší v tom, jak se vyhnout odhalení při plížení
 UILABEL_STAT_DESC_MELEE	Přesnost při boji zblízka
 UILABEL_STAT_DESC_PROJECTILES	Přesnost při boji na dálku
 UILABEL_STAT_DESC_ARCANE	Síla kouzel
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Úspěšnost krádeže
 UILABEL_STAT_DESC_MEDICAL	Účinnost léčení
 UILABEL_DEXTERITY_STAT	Obratnost
 UILABEL_VITALITY_STAT	Vitalita
-UILABEL_ENDURANCE_STAT	Vytrvalost
 UILABEL_AGILITY_STAT	Hbitost
 UILABEL_INTELLIGENCE_STAT	Inteligence
 UILABEL_WISDOM_STAT	Moudrost
 UILABEL_CHARISMA_STAT	Charisma
-UILABEL_PERCEPTION_STAT	Vnímání
-UILABEL_ATHLETICS_STAT	Atletika
-UILABEL_STEALTH_STAT	Plíživost
 UILABEL_MELEE_STAT	Boj zblízka
 UILABEL_PROJECTILES_STAT	Boj na dálku
 UILABEL_ARCANE_STAT	Magie
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Útok {0}    Obrana {1}    Nosnost {2}
 MISC_IS_DOWN	{0} je na zemi
 MISC_PICKS_UP	{0} sebere {1} {2}
 MISC_CANNOT_READ	Nelze přečíst {0}
-UILABEL_TIP_DURABILITY	Odolnost {0} / {1}
 UILABEL_DATE_LINE	DEN {0} · {1} · ROK {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} získá {1} {2} zkušeností za {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Lektvar zdraví
 ITEM_7_DESC	Po vypití obnoví 50 zdraví.
 ITEM_8_NAME	Lektvar many
 ITEM_8_DESC	Po vypití obnoví 50 many.
-ITEM_9_NAME	Lektvar vytrvalosti
-ITEM_9_DESC	Obnoví 40 vytrvalosti a na chvíli zrychlí regeneraci.
 ITEM_10_NAME	Elixír síly
 ITEM_10_DESC	Na 60 sekund dává +10 k útoku.
 ITEM_11_NAME	Chléb
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Plížení
 UILABEL_MODE_RANGED	Na dálku
 UILABEL_MODE_PASSIVE_TIP	Pasivní: nikdy nezačne boj ani se nepřidá, aby pomohl ostatním. Rozkazy, včetně útoků, plní dál.
 UILABEL_MODE_BLOCK_TIP	Krytí: nikdy neútočí a kryje rány dvakrát častěji, i s prázdnýma rukama.
-UILABEL_MODE_SNEAK_TIP	Plížení: chodí polovinou rychlosti a je mnohem hůř vidět. Čím vyšší Plížení, tím lépe.
+UILABEL_MODE_SNEAK_TIP	Plížení: chodí polovinou rychlosti a je mnohem hůř vidět.
 UILABEL_MODE_RANGED_TIP	Na dálku: zapne se samo, dokud je v hlavní ruce luk nebo kuše. Každý výstřel spotřebuje jeden šíp nebo šipku.
 UILABEL_SQUAD_TAB	Oddíl
 UILABEL_REPUTATION	Reputace
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Přežití
 MISC_TITLE_KEYS	Výběr  //  Enter Potvrdit
 UILABEL_LANGUAGE_LABEL	Jazyk:
-PROP_FLAG	Vlajka
+PROP_ALTAR	Oltář
+MISC_ALTAR_OF	Oltář: {0}
 PROP_DEBRIS	Sutiny
-PROP_FOUNDATION_SMALL	Malý základ
-PROP_FOUNDATION_LARGE	Velký základ
-PROP_FOUNDATION_LONG	Dlouhý základ
-PROP_FOUNDATION_CIRCLE	Kruhový základ
-PROP_VAULT	Trezor
 UILABEL_BUILD	Stavět
 UILABEL_BUILD_SELECTED	Vybráno: {0}
 UILABEL_BUILD_NONE	Vybráno: nic
 UILABEL_BUILD_SELECT	Vybrat
 UILABEL_BUILD_PICKED	Vybráno
-UILABEL_BUILD_PLACE_HINT	Levým kliknutím na zem umístíš. Drž R a pohybuj myší doleva či doprava pro otočení. Pravé kliknutí nebo Escape zruší.
+UILABEL_BUILD_PLACE_HINT	Levým kliknutím na zem umístíte. Pravé tlačítko nebo Escape zruší.
 UILABEL_UPKEEP_HINT	Spotřebuje za hodinu jeden předmět {0} na údržbu. Vlož je sem.
 MISC_BUILD_BLOCKED	Tady není místo ke stavbě
 MISC_BUILD_UNWALKABLE	Na této zemi nelze stavět
-MISC_BUILD_NO_FOUNDATION	Trezor musí celý stát na základu
 MISC_NO_UPKEEP	Bez údržby: žádná polena
 MISC_UPKEEP_LEFT	Údržba: zbývá {0} min
 PROP_SHOP	Obchod
@@ -954,24 +930,18 @@ PROP_STOVE	Kamna
 UILABEL_BUILD_DESTROY	Zbořit
 UILABEL_BUILD_DESTROY_HINT	Levým kliknutím na objekt ho zboříš: jeho obsah spadne na zem a na jeho místě zůstanou sutiny. Levým kliknutím na sutiny je odklidíš. Pravé kliknutí nebo Escape zruší.
 UILABEL_LOCK	Zamknout
-MISC_BUILD_NO_CLAIM	Základ nebo trezor musí stát na tvém vlastním území
-MISC_BUILD_SEALED	Tato země je zapečetěna trezorem jiné frakce
-MISC_BUILD_CLAIM_OVERLAP	Toto území by se překrývalo s územím jiné vlajky
-MISC_BUILD_VAULT_TAKEN	Toto území už trezor má
-MISC_BUILD_VAULT_CAP	Tvá frakce už má tolik trezorů, kolik může mít
+MISC_BUILD_SEALED	Tato půda patří jiné frakci
+MISC_BUILD_CLAIM_OVERLAP	Toto území by se překrývalo s jiným
+MISC_BUILD_ALTAR_TAKEN	Vaše frakce už oltář má
 MISC_DESTROY_NOTHING	Tady není co zbořit
 MISC_FLAG_FACTION	Vlastník: {0}
 MISC_FLAG_HEALTH	Zdraví: {0} z {1}
-MISC_FLAG_VAULT_YES	Trezor: stojí, území je drženo
-MISC_FLAG_VAULT_NO	Trezor: žádný, vlajka chátrá
-MISC_PROP_CONDITION	Stav: {0} %
 MISC_PROP_DECAYING	Chátrá
 MISC_PROP_HOLDING	Nechátrá
 MISC_PROP_LOCK_OPEN	Odemčeno
 MISC_PROP_LOCK_YOURS	Zamčeno pro cizí (otevřeno pro tebe)
 MISC_PROP_LOCK_SHUT	Zamčeno (Odemykání zámků {0})
 MISC_PROP_UPKEEP	Údržba: zbývá {0} h
-MISC_PROP_VAULT_UNCLAIMED	Mimo jakékoli území: neposkytuje údržbu
 MOB_BEAR	Medvěd
 MOB_COW	Kráva
 MOB_CHICKEN	Kuře

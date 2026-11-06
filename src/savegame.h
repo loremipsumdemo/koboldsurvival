@@ -13,8 +13,10 @@
 //
 // Each file says which version of this format wrote it. Raise SAVE_VERSION when the meaning of a line changes, and keep
 // reading the older meaning. Numbers in a save stand for enum values and stat places (MobKind, BehaviorKind, PropKind,
-// StatId and so on), so those lists only ever grow at their end.
-inline constexpr int SAVE_VERSION = 2;   // files from before this line existed count as version 1
+// StatId and so on), so those lists only ever grow at their end. Version 3 took the foundations and the Vault out of
+// PropKind, and readSaveFile moves an older save's built kinds to the new numbers. Version 4 took Endurance, Perception,
+// Athletics and Stealth out of StatId and lowered Rested and Comfort by half, and it reads older saves to match.
+inline constexpr int SAVE_VERSION = 4;   // files from before this line existed count as version 1
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
 
 // The folder saves are kept in, in the player's own files (user_files.h)
@@ -59,7 +61,7 @@ struct SaveUnit {
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
     int occupying = -1;        // the save's number for the bed, chair or cage it is on, or -1
-    // Unconscious (components.h): its Dying, its Conscious and whether it is a corpse. Older saves have none, so their units are awake.
+    // Unconscious (components.h): its Dying and its Conscious, or else whether it is a corpse. Older saves have none, so their units are awake.
     bool unconscious = false;
     float dying = 0.0f;
     float conscious = 0.0f;
@@ -92,8 +94,7 @@ struct SaveUnit {
     bool routineOn = true;
     int routineItem = 0;
     float storeX = 0.0f, storeZ = 0.0f, gatherX = 0.0f, gatherZ = 0.0f;
-    // Stamina (below 0: not known yet, it starts full) and any elixir still working
-    float stamina = -1.0f;
+    // Any elixir still working
     float buffLeft = 0.0f, buffAttack = 0.0f;
     std::vector<Provoked::Entry> provoked;   // the factions it is provoked by, and for how long yet
     // The order you gave it, if any. Units are named by their place in the save. A walk and a formation walk are both
@@ -111,6 +112,7 @@ struct SaveGround {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     int item = 0;
     int count = 1;
+    double hours = 0.0;   // how long it has lain there. Older saves have none: 0
 };
 
 // One stack in a storage prop (a barrel). The prop is named by its serial (components.h), which is the same each time
@@ -138,24 +140,25 @@ struct SaveBuilt {
     int owner = -1;            // its Owner's faction, or -1
 };
 
-// How much of a flag or foundation is left, named by its save number (Wear and Health in components.h)
-struct SaveWear {
-    int prop = 0;
-    double value = 1.0;
-};
+// How much of an Altar is left, named by its save number (Health in components.h)
 struct SaveHealth {
     int prop = 0;
     double value = 0.0, max = 0.0;
-};
-// The foundation a prop stands on (OnBase), both named by their save numbers
-struct SaveOnBase {
-    int prop = 0;
-    int foundation = 0;
 };
 
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
 // A passive crafting prop's (a forge's) fuel hours left and progress toward its next item, by serial. Older saves have
 // none, so their forges start cold.
+// A Bones prop's age, and an item it holds, named by its save number
+struct SaveBonesAge {
+    int prop = 0;
+    double hours = 0.0;
+};
+struct SaveBonesItem {
+    int prop = 0;
+    int item = 0;
+    int count = 0;
+};
 struct SaveFuel {
     int prop = 0;
     double hours = 0.0;
@@ -191,11 +194,11 @@ struct SaveData {
     std::vector<SaveLock> locks;
     std::vector<SaveStorage> output;    // what the forges' outputs hold
     std::vector<SaveFuel> fuel;
+    std::vector<SaveBonesAge> bonesAge;
+    std::vector<SaveBonesItem> bonesItems;
     std::vector<SaveBuilt> built;     // older saves have none: what was built in them was never saved
     std::vector<int> goneProps;       // the serials of the level's props that have been broken or cleared away
-    std::vector<SaveWear> wear;
     std::vector<SaveHealth> health;
-    std::vector<SaveOnBase> onBase;
     // The Player Faction's reputation with each faction. Older saves have none: every one starts at its default.
     std::map<int, int> reputation;
     // Whether the level has your camp (setupWorld). It is rebuilt from the seed, so this must match. Older saves all have one.

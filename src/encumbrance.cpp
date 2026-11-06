@@ -6,10 +6,6 @@
 #include "mobs.h"
 #include <algorithm>
 
-namespace {
-constexpr float ATHLETICS_PER_LEVEL = 0.005f;   // walk speed gained per Athletics level, as a share
-}
-
 float wornWeight(const Equipment& worn) {
     float total = 0.0f;
     for (int item : worn.items) {
@@ -41,17 +37,13 @@ float walkSpeedOf(World& w, Entity e, bool running) {
     // Running is the player's pace for its squads, so a red unit never runs
     if (!w.has<Commandable>(e)) running = false;
 
-    const Stats s = statsOf(w, e);
-    const Combat* c = w.get<Combat>(e);
-    const float stamina = c ? c->stamina : 1.0f;
     const float load = encumbranceOf(w, e);
-    float speed = u->speed * (1.0f + ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1)) * (1.0f - load);
+    float speed = u->speed * (1.0f - load);
     if (isSneaking(w, e)) {
         running = false;          // a sneaking unit never runs
         speed *= SNEAK_SPEED;
     }
-    if (running) speed *= 1.0f + RUN_SPEED_BONUS + RUN_ATHLETICS_PER_LEVEL * (levelOf(s, StatId::Athletics) - 1);
-    if (stamina <= 0.0f) speed *= 0.5f;
+    if (running) speed *= 1.0f + RUN_SPEED_BONUS;
     // A boss walking home after giving up a chase (and taking no damage) hurries
     if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
         if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {
@@ -59,10 +51,4 @@ float walkSpeedOf(World& w, Entity e, bool running) {
         }
     }
     return std::max(0.0f, speed);
-}
-
-float strengthXpWhileWalking(float encumbrance, float seconds) {
-    if (encumbrance < ENCUMBRANCE_XP_FROM || seconds <= 0.0f) return 0.0f;
-    const float share = (encumbrance - ENCUMBRANCE_XP_FROM) / (1.0f - ENCUMBRANCE_XP_FROM);
-    return 0.5f * share * seconds;
 }

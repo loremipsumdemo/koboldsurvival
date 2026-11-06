@@ -335,12 +335,11 @@ void stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
     if (!ut || !pt || !pp) return;
     const Footprint& pf = propInfo(pp->kind).foot;
     const int cx = (int)std::floor(pt->x), cz = (int)std::floor(pt->z);
-    // Whether a point lies on a prop other than the one being left. A foundation is a floor, and blocks nothing.
+    // Whether a point lies on a prop other than the one being left
     auto onOtherProp = [&](float x, float z) {
         for (Entity o : w.view<Prop, Transform>()) {
             if (o == prop) continue;
             const PropInfo& oi = propInfo(w.get<Prop>(o)->kind);
-            if (oi.foot.foundation) continue;
             const Transform* ot = w.get<Transform>(o);
             const float dx = x - ot->x, dz = z - ot->z;
             const float reach = footprintReach(oi.foot) + PROP_BLOCK_RADIUS;

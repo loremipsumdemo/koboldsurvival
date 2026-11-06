@@ -26,9 +26,9 @@ constexpr double CONSCIOUS_TICKS_PER_HOUR = 100.0;
 // A unit that wakes with a hostile unit within this many tiles plays dead until given an order or until they have gone
 constexpr float RESTED_HOSTILE_RANGE = 12.0f;
 
-// The most Rested a unit can have: 100, plus its Vitality level (1 to 99)
+// The most Rested a unit can have: 50, plus its Vitality level (1 to 99)
 inline int maxRestedFor(const Stats& s) {
-    return 100 + std::max(1, std::min(MAX_LEVEL, levelOf(s, StatId::Vitality)));
+    return 50 + std::max(1, std::min(MAX_LEVEL, levelOf(s, StatId::Vitality)));
 }
 // Leave Bed: a unit lying in a bed or bedroll at full health and fully rested gets up after this many real seconds
 constexpr float LEAVE_BED_SECONDS = 30.0f;

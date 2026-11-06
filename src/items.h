@@ -18,8 +18,6 @@ struct ItemDef {
     // "either_hand" or "two_hand". Empty for items that are not gear.
     std::string equipSlot;
     std::string description;
-    int maxDurability = 0;
-    int currentDurability = 0;
     float weight = 0.0f;
     int buyValue = 0;
     int sellValue = 0;
@@ -33,6 +31,8 @@ struct ItemDef {
     int cooksInto = 0;               // the item a campfire cooks this one into (cooks_into), or 0 if it can't be cooked
 };
 
+// Whether an item left on the ground goes after a while: raw meat, bones, and anything eaten for hunger
+bool spoilsOnGround(int item);
 inline bool hasTag(const ItemDef& d, const std::string& tag) {
     for (const std::string& t : d.tags) {
         if (t == tag) return true;

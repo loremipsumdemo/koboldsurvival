@@ -14,7 +14,7 @@ static bool inBedOrBedroll(World& w, Entity u) {
 }
 
 void knockOut(World& w, Entity u) {
-    if (!w.has<Unit>(u) || w.has<Unconscious>(u)) return;
+    if (!w.has<Unit>(u) || outCold(w, u)) return;
     // Whatever it was doing ends. It keeps its bed if it is lying on one, and drops anyone it carried.
     const Entity bed = occupiedProp(w, u);
     const bool keepBed = inBedOrBedroll(w, u);
@@ -48,7 +48,7 @@ void knockOut(World& w, Entity u) {
 
 void downedSystem(World& w) {
     for (Entity u : w.view<Unit, Needs>()) {
-        if (w.get<Needs>(u)->hp <= 0 && !w.has<Unconscious>(u)) knockOut(w, u);
+        if (w.get<Needs>(u)->hp <= 0 && !outCold(w, u)) knockOut(w, u);
     }
 }
 
@@ -80,7 +80,6 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return out;
     for (Entity u : w.view<Unconscious>()) {
-        if (w.has<Corpse>(u)) continue;
         Unconscious* un = w.get<Unconscious>(u);
         Needs* n = w.get<Needs>(u);
         // Comfort adds to each tick's gain, up to double at full Comfort. A mob has no Comfort.
@@ -91,7 +90,9 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
         un->tickPart -= ticks;
         for (int i = 0; i < ticks; ++i) {
             // Each tick is paid for out of Rested. With none left it goes on Dying, unless the unit lies in a bed.
-            if (n && n->rested > 0) {
+            if (w.has<Mob>(u)) {
+                // A mob has no Rested to pay with, and waking costs it nothing
+            } else if (n && n->rested > 0) {
                 --n->rested;
             } else if (!bed && ++un->dying >= 100.0f) {
                 finishDying(w, u);
@@ -116,22 +117,35 @@ void corpseDecaySystem(World& w, double gameSeconds) {
         corpse->hours += hours;
         if (corpse->hours < CORPSE_BONES_HOURS || w.has<Carried>(u)) continue;
         const Transform at = *w.get<Transform>(u);
-        std::vector<ItemStack> drops;
-        if (const Inventory* inv = w.get<Inventory>(u)) {
-            for (const ItemStack& s : inv->slots) {
-                if (s.item > 0 && s.count > 0) drops.push_back(s);
-            }
-        }
-        if (const Equipment* worn = w.get<Equipment>(u)) {
-            for (int g = 0; g < GEAR_SLOTS; ++g) {
-                if (worn->items[g] > 0) drops.push_back(ItemStack{ worn->items[g], 1 });
-            }
-        }
+        std::vector<ItemStack> belongings = unitBelongings(w, u);
         w.destroy(u);
-        for (const ItemStack& s : drops) spawnGroundItem(w, at, s.item, s.count);
         // Each pile lies its own way, from the entity's id so that no random number is used
         const float yaw = TWO_PI * (float)(u % 16u) / 16.0f;
-        restoreBuiltProp(w, PropKind::Bones, at.x, at.y, at.z, yaw, -1);
+        const Entity bones = restoreBuiltProp(w, PropKind::Bones, at.x, at.y, at.z, yaw, -1);
+        w.add(bones, BonesPile{ 0.0, std::move(belongings) });
+    }
+}
+
+void bonesDecaySystem(World& w, double gameSeconds) {
+    const double hours = gameSeconds / 3600.0;
+    if (hours <= 0.0) return;
+    for (Entity e : w.view<Prop, Transform>()) {
+        if (!destroyedByHand(w.get<Prop>(e)->kind)) continue;
+        BonesPile* pile = w.get<BonesPile>(e);
+        if (!pile) pile = &w.add(e, BonesPile{});   // one the level placed, or one built
+        pile->hours += hours;
+        if (pile->hours >= BONES_DECAY_HOURS) breakBuilding(w, e);
+    }
+}
+
+void groundFoodSystem(World& w, double gameSeconds) {
+    const double hours = gameSeconds / 3600.0;
+    if (hours <= 0.0) return;
+    for (Entity e : w.view<GroundItem>()) {
+        GroundItem* g = w.get<GroundItem>(e);
+        if (g->hours >= GROUND_FOOD_HOURS) continue;   // an item that keeps: it was looked at when its time came
+        g->hours += hours;
+        if (g->hours >= GROUND_FOOD_HOURS && spoilsOnGround(g->item)) w.destroy(e);
     }
 }
 
@@ -140,7 +154,7 @@ bool hostileNear(World& w, Entity u) {
     if (!ut) return false;
     const int mine = factionOf(w, u);
     for (Entity o : w.view<Unit, Transform>()) {
-        if (o == u || w.has<Unconscious>(o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
+        if (o == u || outCold(w, o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
         if (!factionsHostile(mine, factionOf(w, o))) continue;
         const Transform* ot = w.get<Transform>(o);
         const float dx = ot->x - ut->x, dz = ot->z - ut->z;
@@ -151,7 +165,7 @@ bool hostileNear(World& w, Entity u) {
 
 void playDeadSystem(World& w) {
     for (Entity u : w.view<PlayingDead>()) {
-        if (w.has<Carried>(u) || w.has<Unconscious>(u)) continue;   // carried: carrySystem looks after it
+        if (w.has<Carried>(u) || outCold(w, u)) continue;   // carried: carrySystem looks after it
         if (hostileNear(w, u)) continue;
         w.remove<PlayingDead>(u);
         queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
@@ -159,10 +173,13 @@ void playDeadSystem(World& w) {
 }
 
 void finishDying(World& w, Entity u) {
-    Unconscious* un = w.get<Unconscious>(u);
-    if (!un || w.has<Corpse>(u)) return;
+    const Unconscious* un = w.get<Unconscious>(u);
+    if (!un) return;
+    const int koFaction = un->koFaction;
     // Dead for good: a corpse, no longer anyone's to command, still there to carry and to loot
-    un->dying = 100.0f;
+    w.remove<Unconscious>(u);
+    w.remove<Stats>(u);
+    w.remove<XpBuffer>(u);
     w.add(u, Corpse{});
     w.remove<Commandable>(u);
     w.remove<Selected>(u);
@@ -171,7 +188,7 @@ void finishDying(World& w, Entity u) {
     // Knocked out by your units, and dead before it woke: more reputation lost with its faction (a mob of a mob
     // faction is game, and costs none)
     const int victim = factionOf(w, u);
-    if (un->koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
+    if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
         queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),
                  LogKind::Other);

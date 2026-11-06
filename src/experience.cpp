@@ -10,7 +10,7 @@ Stats statsOf(World& w, Entity e) {
     return s ? *s : defaultStats();
 }
 
-void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why, LogKind kind) {
+void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why) {
     if (amount <= 0.0f || idx(stat) < 0 || idx(stat) >= STAT_COUNT) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;
@@ -25,10 +25,6 @@ void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& w
     addXp(*st, stat, (int)whole);
     if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);   // only yours are heard
     if (!why.empty()) {
-        const LogKind shown = kind != LogKind::Xp           ? kind
-                            : stat == StatId::Athletics ? LogKind::XpAthletics
-                            : stat == StatId::Endurance ? LogKind::XpEndurance
-                                                     : LogKind::Xp;
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), shown, npcOnly(w, e));
+        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), why }), LogKind::Xp, npcOnly(w, e));
     }
 }

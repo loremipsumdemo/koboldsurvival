@@ -78,7 +78,7 @@ bool App::mouseDownOnPanels() {
                         if (!sl.buildRows[i].contains(mx, my)) continue;
                         const BuildPick pick = buildRowPick((int)i);
                         if (!pick.any()) break;
-                        // Grayed out: only Destroy, the Bedroll and the Campfire, unless a selected
+                        // Grayed out: all but Destroy, the Bedroll, the Campfire and the Altar, unless a selected
                         // unit of yours stands in one of your claims
                         if (!buildAnywhere(pick) && !selectionInClaim(world)) break;
                         if (buildPick == pick) {
@@ -223,9 +223,9 @@ bool App::mouseDownOnPanels() {
             } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(buildPick.kind, hit->first, hit->second, bx, bz);
-                const BuildCheck why = checkBuildSpot(world, terrain, buildPick.kind, bx, bz, buildYaw);
+                const BuildCheck why = checkBuildSpot(world, terrain, buildPick.kind, bx, bz);
                 if (why == BuildCheck::Ok) {
-                    placeBuiltProp(world, terrain, buildPick.kind, bx, bz, buildYaw);
+                    placeBuiltProp(world, terrain, buildPick.kind, bx, bz, 0.0f);
                     playSfx(Sfx::UiClick);
                 } else {
                     refuse(lang(buildRefusalKey(why)));

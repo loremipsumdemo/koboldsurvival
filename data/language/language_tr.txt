@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Doğduğu yerde devriye
 UILABEL_BEHAVIOR_ROAM	Dolaş
 UILABEL_BEHAVIOR_PATROL_TIP	Devriye: durduğu bölge kendi hizbininse o bölgede dolaşır, arada bir durur.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Doğduğu yerde devriye: ilk belirdiği yerin yakınında dolaşır. Oradan çok uzağa kovalanırsa vazgeçer, tamamen iyileşir ve geri yürür; eve varana dek hasar almaz.
-UILABEL_BEHAVIOR_ROAM_TIP	Dolaş: açık arazide, bayrakların bölgeleri dışında yürüyebildiği her yerde gezinir.
+UILABEL_BEHAVIOR_ROAM_TIP	Dolaş: bölgelerin dışında yürüyebildiği her yerde açık arazide dolaşır.
 UILABEL_WAIT_NOT_IN_CLAIM	kendi hizbinin bir bölgesinde değil
 UILABEL_WAIT_NOWHERE_TO_ROAM	yakında bölgeler dışında açık arazi yok
 UILABEL_TEMPERAMENT_AVOIDANT	Ürkek
@@ -219,9 +219,6 @@ UILABEL_MISS	Iska
 UILABEL_DAMAGE	Hasar
 UILABEL_EXPERIENCE_MESSAGES	Tecrübe Mesajları
 UILABEL_EXPERIENCE	Tecrübe
-UILABEL_XP_ATHLETICS	Atletizm Deneyimi
-UILABEL_XP_ENDURANCE	Dayanıklılık Deneyimi
-UILABEL_XP_CARRYING	Güç Deneyimi (Taşıma)
 UILABEL_ITEM_MESSAGES	Eşya Mesajları
 UILABEL_PICKUP	Alma
 UILABEL_DROP	Bırakma
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Ana elde iki elli bir silah var
 MISC_YOU	Sen
 MISC_UNKNOWN_ITEM	Bilinmeyen eşya
 MISC_REASON_FEES	ticaret ücretlerini ödemek
-MISC_REASON_WALKING	yürümek
-MISC_REASON_CARRYING	yük taşımak
-MISC_REASON_CLIMBING	tırmanmak
 MISC_REASON_SWINGING	sallamak
 MISC_REASON_DODGING	kaçınmak
 MISC_REASON_DEALING	hasar vermek
 MISC_REASON_TAKING	hasar almak
 MISC_REASON_BLOCKING	bloklamak
-MISC_REASON_SPOTTING	bir düşman fark etmek
-MISC_REASON_UNNOTICED	fark edilmeden kalmak
 MISC_REASON_GEAR	donanım değiştirmek
 NPC_GREETING	Merhaba dünya.
 NPC_OPTION_WARES	Ürünlerini göster bana.
@@ -286,14 +278,10 @@ MISC_ORD_12	On ikinci
 UILABEL_STAT_DESC_STRENGTH	Yakın dövüş hasarı, taşıma kapasitesi
 UILABEL_STAT_DESC_DEXTERITY	Saldırı hızı
 UILABEL_STAT_DESC_VITALITY	Maksimum can
-UILABEL_STAT_DESC_ENDURANCE	Maksimum dayanıklılık
 UILABEL_STAT_DESC_AGILITY	Kaçınma şansı
 UILABEL_STAT_DESC_INTELLIGENCE	Mana havuzu
 UILABEL_STAT_DESC_WISDOM	Öğrenilebilecek büyü sayısı
 UILABEL_STAT_DESC_CHARISMA	NPC ticaret fiyatları, özel diyalog seçenekleri
-UILABEL_STAT_DESC_PERCEPTION	Algılama menzili
-UILABEL_STAT_DESC_ATHLETICS	Koşma hızı
-UILABEL_STAT_DESC_STEALTH	Sinsi hareket ederken fark edilmekten kaçınmada daha iyi
 UILABEL_STAT_DESC_MELEE	Yakın dövüş isabeti
 UILABEL_STAT_DESC_PROJECTILES	Uzak mesafe isabeti
 UILABEL_STAT_DESC_ARCANE	Büyü gücü
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Çalma başarısı
 UILABEL_STAT_DESC_MEDICAL	İyileştirme etkinliği
 UILABEL_DEXTERITY_STAT	Beceri
 UILABEL_VITALITY_STAT	Canlılık
-UILABEL_ENDURANCE_STAT	Dayanıklılık
 UILABEL_AGILITY_STAT	Çeviklik
 UILABEL_INTELLIGENCE_STAT	Zeka
 UILABEL_WISDOM_STAT	Bilgelik
 UILABEL_CHARISMA_STAT	Karizma
-UILABEL_PERCEPTION_STAT	Algı
-UILABEL_ATHLETICS_STAT	Atletizm
-UILABEL_STEALTH_STAT	Gizlilik
 UILABEL_MELEE_STAT	Yakın dövüş
 UILABEL_PROJECTILES_STAT	Fırlatma
 UILABEL_ARCANE_STAT	Gizemli güç
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Saldırı {0}    Savunma {1}    Taşıma {2}
 MISC_IS_DOWN	{0} yere düştü
 MISC_PICKS_UP	{0} {1} {2} alır
 MISC_CANNOT_READ	{0} okunamadı
-UILABEL_TIP_DURABILITY	Dayanıklılık {0} / {1}
 UILABEL_DATE_LINE	{0}. GÜN · {1} · {2}. YIL
 UILABEL_MONITOR_N	Monitör {0}
 MISC_GAINS_XP	{0}, {3} için {1} {2} TP kazanır
@@ -411,8 +394,6 @@ ITEM_7_NAME	Can İksiri
 ITEM_7_DESC	İçildiğinde 50 can yeniler.
 ITEM_8_NAME	Mana İksiri
 ITEM_8_DESC	İçildiğinde 50 mana yeniler.
-ITEM_9_NAME	Dayanıklılık İksiri
-ITEM_9_DESC	40 dayanıklılık yeniler ve kısa süreliğine yenilenmeyi hızlandırır.
 ITEM_10_NAME	Güç İksiri
 ITEM_10_DESC	60 saniyeliğine +10 saldırı verir.
 ITEM_11_NAME	Ekmek
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Gizlen
 UILABEL_MODE_RANGED	Menzilli
 UILABEL_MODE_PASSIVE_TIP	Pasif: asla kavga başlatmaz, yardım için de katılmaz. Saldırı dahil emirlere yine uyar.
 UILABEL_MODE_BLOCK_TIP	Blok: asla saldırmaz ve boş elle bile iki kat sık bloklar.
-UILABEL_MODE_SNEAK_TIP	Gizlen: yarı hızda yürür ve çok daha zor fark edilir. Gizlilik ne kadar yüksekse o kadar iyi.
+UILABEL_MODE_SNEAK_TIP	Gizlen: yarı hızda yürür ve çok daha zor fark edilir.
 UILABEL_MODE_RANGED_TIP	Menzilli: ana elde yay ya da arbalet varken kendiliğinden açılır. Her atış bir ok ya da cıvata harcar.
 UILABEL_SQUAD_TAB	Müfreze
 UILABEL_REPUTATION	İtibar
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Hayatta Kalma
 MISC_TITLE_KEYS	Seç  //  Enter Onayla
 UILABEL_LANGUAGE_LABEL	Dil:
-PROP_FLAG	Bayrak
+PROP_ALTAR	Sunak
+MISC_ALTAR_OF	{0} Sunağı
 PROP_DEBRIS	Enkaz
-PROP_FOUNDATION_SMALL	Küçük Temel
-PROP_FOUNDATION_LARGE	Büyük Temel
-PROP_FOUNDATION_LONG	Uzun Temel
-PROP_FOUNDATION_CIRCLE	Yuvarlak Temel
-PROP_VAULT	Kasa Odası
 UILABEL_BUILD	İnşa
 UILABEL_BUILD_SELECTED	Seçili: {0}
 UILABEL_BUILD_NONE	Seçili: Yok
 UILABEL_BUILD_SELECT	Seç
 UILABEL_BUILD_PICKED	Seçildi
-UILABEL_BUILD_PLACE_HINT	Yerleştirmek için zemine sol tıkla. Döndürmek için R'yi basılı tutup fareyi sola ya da sağa kaydır. Sağ tık ya da Escape iptal eder.
+UILABEL_BUILD_PLACE_HINT	Yerleştirmek için zemine sol tıkla. Sağ tık veya Escape iptal eder.
 UILABEL_UPKEEP_HINT	Bakım için saatte bir {0} yakar. Onları buraya koy.
 MISC_BUILD_BLOCKED	Burada inşa için yer yok
 MISC_BUILD_UNWALKABLE	Bu zemine inşa edilemez
-MISC_BUILD_NO_FOUNDATION	Kasa odası tamamen bir temelin üstünde olmalı
 MISC_NO_UPKEEP	Bakım yok: kütük yok
 MISC_UPKEEP_LEFT	Bakım: {0} dk kaldı
 PROP_SHOP	Dükkân
@@ -954,24 +930,18 @@ PROP_STOVE	Ocak
 UILABEL_BUILD_DESTROY	Yık
 UILABEL_BUILD_DESTROY_HINT	Yıkmak için herhangi bir nesneye sol tıkla: içindekiler yere düşer ve yerinde enkaz kalır. Temizlemek için enkaza sol tıkla. Sağ tık ya da Escape iptal eder.
 UILABEL_LOCK	Kilitle
-MISC_BUILD_NO_CLAIM	Temel ya da kasa odası kendi bölgende olmalı
-MISC_BUILD_SEALED	Bu zemin başka bir hizbin kasa odasıyla mühürlü
-MISC_BUILD_CLAIM_OVERLAP	Bu bölge başka bir bayrağın bölgesiyle çakışır
-MISC_BUILD_VAULT_TAKEN	Bu bölgede zaten bir kasa odası var
-MISC_BUILD_VAULT_CAP	Hizbin sahip olabileceği kadar kasa odasına zaten sahip
+MISC_BUILD_SEALED	O toprak başka bir gruba ait
+MISC_BUILD_CLAIM_OVERLAP	Bu bölge başka bir bölgeyle çakışır
+MISC_BUILD_ALTAR_TAKEN	Grubunun zaten bir sunağı var
 MISC_DESTROY_NOTHING	Orada yıkılacak bir şey yok
 MISC_FLAG_FACTION	Sahibi: {0}
 MISC_FLAG_HEALTH	Dayanıklılık: {0} / {1}
-MISC_FLAG_VAULT_YES	Kasa odası: ayakta, bölge elde tutuluyor
-MISC_FLAG_VAULT_NO	Kasa odası: yok, bayrak yıpranıyor
-MISC_PROP_CONDITION	Durum: %{0}
 MISC_PROP_DECAYING	Çürüyor
 MISC_PROP_HOLDING	Çürümüyor
 MISC_PROP_LOCK_OPEN	Kilitsiz
 MISC_PROP_LOCK_YOURS	Yabancılara kilitli (sana açık)
 MISC_PROP_LOCK_SHUT	Kilitli (Kilit açma {0})
 MISC_PROP_UPKEEP	Bakım: {0} saat kaldı
-MISC_PROP_VAULT_UNCLAIMED	Hiçbir bölgede değil: bakım sağlamaz
 MOB_BEAR	Ayı
 MOB_COW	İnek
 MOB_CHICKEN	Tavuk

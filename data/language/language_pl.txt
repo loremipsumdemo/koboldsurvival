@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol przy miejscu pojawienia
 UILABEL_BEHAVIOR_ROAM	Wędrówka
 UILABEL_BEHAVIOR_PATROL_TIP	Patrol: chodzi po terenie, na którym stoi, jeśli należy on do jego frakcji, co jakiś czas się zatrzymując.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol przy miejscu pojawienia: chodzi w pobliżu miejsca, w którym się pojawił. Ścigany zbyt daleko rezygnuje, w pełni się leczy i wraca, nie otrzymując obrażeń, dopóki nie dotrze na miejsce.
-UILABEL_BEHAVIOR_ROAM_TIP	Wędrówka: wędruje po otwartych terenach, wszędzie, gdzie może chodzić poza terenami flag.
+UILABEL_BEHAVIOR_ROAM_TIP	Wędrówka: wędruje po otwartym terenie, wszędzie gdzie może iść poza terytoriami.
 UILABEL_WAIT_NOT_IN_CLAIM	nie na terenie swojej frakcji
 UILABEL_WAIT_NOWHERE_TO_ROAM	brak otwartego terenu w pobliżu poza terenami flag
 UILABEL_TEMPERAMENT_AVOIDANT	Płochliwy
@@ -219,9 +219,6 @@ UILABEL_MISS	Pudło
 UILABEL_DAMAGE	Obrażenia
 UILABEL_EXPERIENCE_MESSAGES	Komunikaty doświadczenia
 UILABEL_EXPERIENCE	Doświadczenie
-UILABEL_XP_ATHLETICS	Doświadczenie atletyki
-UILABEL_XP_ENDURANCE	Doświadczenie wytrzymałości
-UILABEL_XP_CARRYING	Doświadczenie siły (noszenie)
 UILABEL_ITEM_MESSAGES	Komunikaty przedmiotów
 UILABEL_PICKUP	Podniesienie
 UILABEL_DROP	Upuszczenie
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Broń dwuręczna jest w ręku głównym
 MISC_YOU	Ty
 MISC_UNKNOWN_ITEM	Nieznany przedmiot
 MISC_REASON_FEES	płacenie opłat handlowych
-MISC_REASON_WALKING	chodzenie
-MISC_REASON_CARRYING	noszenie ciężaru
-MISC_REASON_CLIMBING	wspinaczka
 MISC_REASON_SWINGING	zamachy
 MISC_REASON_DODGING	uniki
 MISC_REASON_DEALING	zadawanie obrażeń
 MISC_REASON_TAKING	otrzymywanie obrażeń
 MISC_REASON_BLOCKING	blokowanie
-MISC_REASON_SPOTTING	dostrzeganie wroga
-MISC_REASON_UNNOTICED	pozostawanie niezauważonym
 MISC_REASON_GEAR	zmianę wyposażenia
 NPC_GREETING	Witaj, świecie.
 NPC_OPTION_WARES	Pokaż mi swoje towary.
@@ -286,14 +278,10 @@ MISC_ORD_12	Dwunasty
 UILABEL_STAT_DESC_STRENGTH	Obrażenia wręcz, udźwig
 UILABEL_STAT_DESC_DEXTERITY	Szybkość ataku
 UILABEL_STAT_DESC_VITALITY	Maks. zdrowie
-UILABEL_STAT_DESC_ENDURANCE	Maks. wytrzymałość
 UILABEL_STAT_DESC_AGILITY	Szansa na unik
 UILABEL_STAT_DESC_INTELLIGENCE	Pula many
 UILABEL_STAT_DESC_WISDOM	Liczba czarów do nauczenia
 UILABEL_STAT_DESC_CHARISMA	Ceny u handlarzy PNJ, unikalne opcje dialogowe
-UILABEL_STAT_DESC_PERCEPTION	Zasięg wykrywania
-UILABEL_STAT_DESC_ATHLETICS	Prędkość biegu
-UILABEL_STAT_DESC_STEALTH	Lepsze unikanie wykrycia podczas skradania się
 UILABEL_STAT_DESC_MELEE	Celność w walce wręcz
 UILABEL_STAT_DESC_PROJECTILES	Celność dystansowa
 UILABEL_STAT_DESC_ARCANE	Moc zaklęć
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Skuteczność kradzieży
 UILABEL_STAT_DESC_MEDICAL	Skuteczność leczenia
 UILABEL_DEXTERITY_STAT	Zręczność
 UILABEL_VITALITY_STAT	Witalność
-UILABEL_ENDURANCE_STAT	Wytrzymałość
 UILABEL_AGILITY_STAT	Zwinność
 UILABEL_INTELLIGENCE_STAT	Inteligencja
 UILABEL_WISDOM_STAT	Mądrość
 UILABEL_CHARISMA_STAT	Charyzma
-UILABEL_PERCEPTION_STAT	Spostrzegawczość
-UILABEL_ATHLETICS_STAT	Atletyka
-UILABEL_STEALTH_STAT	Skradanie
 UILABEL_MELEE_STAT	Walka wręcz
 UILABEL_PROJECTILES_STAT	Broń miotana
 UILABEL_ARCANE_STAT	Magia
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Atak {0}    Obrona {1}    Udźwig {2}
 MISC_IS_DOWN	{0} jest powalony
 MISC_PICKS_UP	{0} podnosi {1} {2}
 MISC_CANNOT_READ	Nie udało się odczytać {0}
-UILABEL_TIP_DURABILITY	Wytrzymałość {0} / {1}
 UILABEL_DATE_LINE	DZIEŃ {0} · {1} · ROK {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} zdobywa {1} {2} doświadczenia za {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Mikstura zdrowia
 ITEM_7_DESC	Po wypiciu przywraca 50 punktów zdrowia.
 ITEM_8_NAME	Mikstura many
 ITEM_8_DESC	Po wypiciu przywraca 50 punktów many.
-ITEM_9_NAME	Napój wytrzymałości
-ITEM_9_DESC	Przywraca 40 punktów wytrzymałości i na krótko przyspiesza regenerację.
 ITEM_10_NAME	Eliksir siły
 ITEM_10_DESC	Daje +10 do ataku na 60 sekund.
 ITEM_11_NAME	Chleb
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Skradanie
 UILABEL_MODE_RANGED	Dystans
 UILABEL_MODE_PASSIVE_TIP	Bierny: nigdy nie zaczyna walki ani nie włącza się, by pomóc. Nadal wykonuje rozkazy, także ataki.
 UILABEL_MODE_BLOCK_TIP	Blok: nigdy nie atakuje i blokuje ciosy dwa razy częściej, nawet gołymi rękami.
-UILABEL_MODE_SNEAK_TIP	Skradanie: idzie z połową prędkości i znacznie trudniej go zauważyć. Im wyższe Skradanie, tym lepiej.
+UILABEL_MODE_SNEAK_TIP	Skradanie: idzie z połową prędkości i znacznie trudniej go zauważyć.
 UILABEL_MODE_RANGED_TIP	Dystans: włącza się sam, gdy w głównej ręce jest łuk lub kusza. Każdy strzał zużywa jedną strzałę lub bełt.
 UILABEL_SQUAD_TAB	Oddział
 UILABEL_REPUTATION	Reputacja
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Przetrwanie
 MISC_TITLE_KEYS	Wybór  //  Enter Potwierdź
 UILABEL_LANGUAGE_LABEL	Język:
-PROP_FLAG	Flaga
+PROP_ALTAR	Ołtarz
+MISC_ALTAR_OF	Ołtarz: {0}
 PROP_DEBRIS	Gruz
-PROP_FOUNDATION_SMALL	Mały fundament
-PROP_FOUNDATION_LARGE	Duży fundament
-PROP_FOUNDATION_LONG	Długi fundament
-PROP_FOUNDATION_CIRCLE	Okrągły fundament
-PROP_VAULT	Skarbiec
 UILABEL_BUILD	Buduj
 UILABEL_BUILD_SELECTED	Wybrano: {0}
 UILABEL_BUILD_NONE	Wybrano: nic
 UILABEL_BUILD_SELECT	Wybierz
 UILABEL_BUILD_PICKED	Wybrane
-UILABEL_BUILD_PLACE_HINT	Kliknij lewym przyciskiem na ziemi, aby postawić. Przytrzymaj R i ruszaj myszą w lewo lub prawo, aby obrócić. Prawy przycisk lub Escape anuluje.
+UILABEL_BUILD_PLACE_HINT	Kliknij lewym przyciskiem na ziemi, aby umieścić. Prawy przycisk lub Escape anuluje.
 UILABEL_UPKEEP_HINT	Zużywa jeden przedmiot {0} na godzinę na utrzymanie. Włóż je tutaj.
 MISC_BUILD_BLOCKED	Brak miejsca na budowę
 MISC_BUILD_UNWALKABLE	Na tym terenie nie można budować
-MISC_BUILD_NO_FOUNDATION	Skarbiec musi stać w całości na fundamencie
 MISC_NO_UPKEEP	Brak utrzymania: brak kłód
 MISC_UPKEEP_LEFT	Utrzymanie: zostało {0} min
 PROP_SHOP	Sklep
@@ -954,24 +930,18 @@ PROP_STOVE	Piec
 UILABEL_BUILD_DESTROY	Zburz
 UILABEL_BUILD_DESTROY_HINT	Kliknij lewym przyciskiem dowolny obiekt, aby go zburzyć: jego zawartość spada na ziemię, a w jego miejscu zostaje gruz. Kliknij lewym przyciskiem gruz, aby go uprzątnąć. Prawy przycisk lub Escape anuluje.
 UILABEL_LOCK	Zamknij
-MISC_BUILD_NO_CLAIM	Fundament lub skarbiec musi stać na twoim własnym terenie
-MISC_BUILD_SEALED	Ten teren jest zapieczętowany skarbcem innej frakcji
-MISC_BUILD_CLAIM_OVERLAP	Ten teren nachodziłby na teren innej flagi
-MISC_BUILD_VAULT_TAKEN	Ten teren ma już skarbiec
-MISC_BUILD_VAULT_CAP	Twoja frakcja ma już tyle skarbców, ile może mieć
+MISC_BUILD_SEALED	Ten teren należy do innej frakcji
+MISC_BUILD_CLAIM_OVERLAP	To terytorium nakładałoby się na inne
+MISC_BUILD_ALTAR_TAKEN	Twoja frakcja ma już ołtarz
 MISC_DESTROY_NOTHING	Nie ma tu nic do zburzenia
 MISC_FLAG_FACTION	Właściciel: {0}
 MISC_FLAG_HEALTH	Wytrzymałość: {0} z {1}
-MISC_FLAG_VAULT_YES	Skarbiec: stoi, teren jest utrzymany
-MISC_FLAG_VAULT_NO	Skarbiec: brak, flaga się niszczy
-MISC_PROP_CONDITION	Stan: {0}%
 MISC_PROP_DECAYING	Niszczeje
 MISC_PROP_HOLDING	Nie niszczeje
 MISC_PROP_LOCK_OPEN	Otwarte
 MISC_PROP_LOCK_YOURS	Zamknięte dla obcych (otwarte dla ciebie)
 MISC_PROP_LOCK_SHUT	Zamknięte (Otwieranie zamków {0})
 MISC_PROP_UPKEEP	Utrzymanie: zostało {0} godz.
-MISC_PROP_VAULT_UNCLAIMED	Poza wszelkim terenem: nie zapewnia utrzymania
 MOB_BEAR	Niedźwiedź
 MOB_COW	Krowa
 MOB_CHICKEN	Kurczak

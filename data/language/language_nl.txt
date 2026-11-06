@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrouille bij oorsprong
 UILABEL_BEHAVIOR_ROAM	Rondzwerven
 UILABEL_BEHAVIOR_PATROL_TIP	Patrouille: loopt rond in het gebied waar de eenheid staat, als dat van haar factie is, en stopt af en toe.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrouille bij oorsprong: loopt rond bij de plek waar ze verscheen. Te ver achtervolgd geeft ze het op, geneest volledig en loopt terug, zonder schade op te lopen tot ze thuis is.
-UILABEL_BEHAVIOR_ROAM_TIP	Rondzwerven: zwerft door het open land, overal waar ze buiten de vlaggebieden kan lopen.
+UILABEL_BEHAVIOR_ROAM_TIP	Rondzwerven: zwerft over open land, overal waar het buiten de claims kan lopen.
 UILABEL_WAIT_NOT_IN_CLAIM	niet in een gebied van de eigen factie
 UILABEL_WAIT_NOWHERE_TO_ROAM	geen open grond in de buurt buiten de gebieden
 UILABEL_TEMPERAMENT_AVOIDANT	Schuw
@@ -219,9 +219,6 @@ UILABEL_MISS	Mis
 UILABEL_DAMAGE	Schade
 UILABEL_EXPERIENCE_MESSAGES	Ervaringsberichten
 UILABEL_EXPERIENCE	Ervaring
-UILABEL_XP_ATHLETICS	Atletiek-ervaring
-UILABEL_XP_ENDURANCE	Uithoudingservaring
-UILABEL_XP_CARRYING	Kracht-ervaring (dragen)
 UILABEL_ITEM_MESSAGES	Voorwerpberichten
 UILABEL_PICKUP	Oppakken
 UILABEL_DROP	Laten vallen
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Een tweehandig wapen zit in de hoofdhand
 MISC_YOU	Jij
 MISC_UNKNOWN_ITEM	Onbekend voorwerp
 MISC_REASON_FEES	handelskosten betalen
-MISC_REASON_WALKING	lopen
-MISC_REASON_CARRYING	een last dragen
-MISC_REASON_CLIMBING	klimmen
 MISC_REASON_SWINGING	zwaaien
 MISC_REASON_DODGING	ontwijken
 MISC_REASON_DEALING	schade toebrengen
 MISC_REASON_TAKING	schade oplopen
 MISC_REASON_BLOCKING	blokkeren
-MISC_REASON_SPOTTING	een vijand opmerken
-MISC_REASON_UNNOTICED	onopgemerkt blijven
 MISC_REASON_GEAR	uitrusting wisselen
 NPC_GREETING	Hallo wereld.
 NPC_OPTION_WARES	Laat me je waren zien.
@@ -286,14 +278,10 @@ MISC_ORD_12	Twaalfde
 UILABEL_STAT_DESC_STRENGTH	Schade van nabijgevecht, draagvermogen
 UILABEL_STAT_DESC_DEXTERITY	Aanvalssnelheid
 UILABEL_STAT_DESC_VITALITY	Maximale gezondheid
-UILABEL_STAT_DESC_ENDURANCE	Maximale uithouding
 UILABEL_STAT_DESC_AGILITY	Ontwijkkans
 UILABEL_STAT_DESC_INTELLIGENCE	Manapool
 UILABEL_STAT_DESC_WISDOM	Aantal leerbare spreuken
 UILABEL_STAT_DESC_CHARISMA	Handelsprijzen van NPC's, unieke gespreksopties
-UILABEL_STAT_DESC_PERCEPTION	Detectiebereik
-UILABEL_STAT_DESC_ATHLETICS	Loopsnelheid
-UILABEL_STAT_DESC_STEALTH	Beter in het vermijden van ontdekking bij sluipen
 UILABEL_STAT_DESC_MELEE	Nauwkeurigheid van nabijgevecht
 UILABEL_STAT_DESC_PROJECTILES	Nauwkeurigheid op afstand
 UILABEL_STAT_DESC_ARCANE	Spreukkracht
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Kans om te stelen
 UILABEL_STAT_DESC_MEDICAL	Effectiviteit van genezing
 UILABEL_DEXTERITY_STAT	Behendigheid
 UILABEL_VITALITY_STAT	Vitaliteit
-UILABEL_ENDURANCE_STAT	Uithoudingsvermogen
 UILABEL_AGILITY_STAT	Lenigheid
 UILABEL_INTELLIGENCE_STAT	Intelligentie
 UILABEL_WISDOM_STAT	Wijsheid
 UILABEL_CHARISMA_STAT	Charisma
-UILABEL_PERCEPTION_STAT	Waarneming
-UILABEL_ATHLETICS_STAT	Atletiek
-UILABEL_STEALTH_STAT	Sluipen
 UILABEL_MELEE_STAT	Nabij gevecht
 UILABEL_PROJECTILES_STAT	Projectielen
 UILABEL_ARCANE_STAT	Arcane
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Aanval {0}    Verdediging {1}    Draagvermogen {2}
 MISC_IS_DOWN	{0} is neergegaan
 MISC_PICKS_UP	{0} pakt {1} {2} op
 MISC_CANNOT_READ	Kon {0} niet lezen
-UILABEL_TIP_DURABILITY	Duurzaamheid {0} / {1}
 UILABEL_DATE_LINE	DAG {0} · {1} · JAAR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} krijgt {1} {2} XP voor {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Gezondheidsdrankje
 ITEM_7_DESC	Herstelt 50 gezondheid bij gebruik.
 ITEM_8_NAME	Manadrankje
 ITEM_8_DESC	Herstelt 50 mana bij gebruik.
-ITEM_9_NAME	Uithoudingsdrank
-ITEM_9_DESC	Herstelt 40 uithouding en versnelt kort het herstel.
 ITEM_10_NAME	Elixer van kracht
 ITEM_10_DESC	Geeft 60 seconden +10 aanval.
 ITEM_11_NAME	Brood
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Sluipen
 UILABEL_MODE_RANGED	Afstand
 UILABEL_MODE_PASSIVE_TIP	Passief: begint nooit een gevecht en mengt zich er niet in om te helpen. Volgt wel bevelen, aanvallen ook.
 UILABEL_MODE_BLOCK_TIP	Blokkeren: valt nooit aan en blokkeert twee keer zo vaak, zelfs met lege handen.
-UILABEL_MODE_SNEAK_TIP	Sluipen: loopt op halve snelheid en valt veel minder op. Hoe hoger Sluipen, hoe beter.
+UILABEL_MODE_SNEAK_TIP	Sluipen: loopt op halve snelheid en valt veel minder op.
 UILABEL_MODE_RANGED_TIP	Afstand: gaat vanzelf aan zolang er een boog of kruisboog in de hoofdhand zit. Elk schot kost één pijl of bout.
 UILABEL_SQUAD_TAB	Groep
 UILABEL_REPUTATION	Reputatie
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Overleven
 MISC_TITLE_KEYS	Kiezen  //  Enter Bevestigen
 UILABEL_LANGUAGE_LABEL	Taal:
-PROP_FLAG	Vlag
+PROP_ALTAR	Altaar
+MISC_ALTAR_OF	Altaar: {0}
 PROP_DEBRIS	Puin
-PROP_FOUNDATION_SMALL	Kleine fundering
-PROP_FOUNDATION_LARGE	Grote fundering
-PROP_FOUNDATION_LONG	Lange fundering
-PROP_FOUNDATION_CIRCLE	Ronde fundering
-PROP_VAULT	Kluis
 UILABEL_BUILD	Bouwen
 UILABEL_BUILD_SELECTED	Gekozen: {0}
 UILABEL_BUILD_NONE	Gekozen: niets
 UILABEL_BUILD_SELECT	Kiezen
 UILABEL_BUILD_PICKED	Gekozen
-UILABEL_BUILD_PLACE_HINT	Linksklik op de grond om te plaatsen. Houd R ingedrukt en beweeg de muis naar links of rechts om te draaien. Rechtsklik of Escape annuleert.
+UILABEL_BUILD_PLACE_HINT	Klik links op de grond om te plaatsen. Rechtsklik of Escape annuleert.
 UILABEL_UPKEEP_HINT	Verbruikt één {0} per uur als onderhoud. Leg ze hierin.
 MISC_BUILD_BLOCKED	Geen ruimte om hier te bouwen
 MISC_BUILD_UNWALKABLE	Op deze grond kan niet gebouwd worden
-MISC_BUILD_NO_FOUNDATION	Een kluis moet helemaal op een fundering staan
 MISC_NO_UPKEEP	Geen onderhoud: geen blokken
 MISC_UPKEEP_LEFT	Onderhoud: nog {0} min
 PROP_SHOP	Winkel
@@ -954,24 +930,18 @@ PROP_STOVE	Fornuis
 UILABEL_BUILD_DESTROY	Slopen
 UILABEL_BUILD_DESTROY_HINT	Linksklik op een object om het te slopen: wat erin zit valt op de grond en er blijft puin achter. Linksklik op puin om het op te ruimen. Rechtsklik of Escape annuleert.
 UILABEL_LOCK	Op slot
-MISC_BUILD_NO_CLAIM	Een fundering of kluis hoort in je eigen gebied
-MISC_BUILD_SEALED	Die grond is verzegeld door de kluis van een andere factie
-MISC_BUILD_CLAIM_OVERLAP	Dat gebied zou het gebied van een andere vlag overlappen
-MISC_BUILD_VAULT_TAKEN	Dat gebied heeft al een kluis
-MISC_BUILD_VAULT_CAP	Je factie heeft al zoveel kluizen als ze kan hebben
+MISC_BUILD_SEALED	Dat land is opgeëist door een andere factie
+MISC_BUILD_CLAIM_OVERLAP	Die claim zou een andere claim overlappen
+MISC_BUILD_ALTAR_TAKEN	Je factie heeft al een altaar
 MISC_DESTROY_NOTHING	Daar valt niets te slopen
 MISC_FLAG_FACTION	Eigenaar: {0}
 MISC_FLAG_HEALTH	Gezondheid: {0} van {1}
-MISC_FLAG_VAULT_YES	Kluis: staat, het gebied wordt behouden
-MISC_FLAG_VAULT_NO	Kluis: geen, de vlag slijt
-MISC_PROP_CONDITION	Staat: {0}%
 MISC_PROP_DECAYING	Vervalt
 MISC_PROP_HOLDING	Vervalt niet
 MISC_PROP_LOCK_OPEN	Open
 MISC_PROP_LOCK_YOURS	Op slot voor buitenstaanders (open voor jou)
 MISC_PROP_LOCK_SHUT	Op slot (Slotbreken {0})
 MISC_PROP_UPKEEP	Onderhoud: nog {0} uur
-MISC_PROP_VAULT_UNCLAIMED	Buiten elk gebied: geeft geen onderhoud
 MOB_BEAR	Beer
 MOB_COW	Koe
 MOB_CHICKEN	Kip

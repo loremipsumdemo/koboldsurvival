@@ -153,7 +153,7 @@ UILABEL_BEHAVIOR_PATROL_SPAWN	Patrulje ved opphav
 UILABEL_BEHAVIOR_ROAM	Streif
 UILABEL_BEHAVIOR_PATROL_TIP	Patrulje: går rundt i området den står i, hvis det tilhører fraksjonen dens, og stopper av og til.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrulje ved opphav: går rundt nær stedet der den dukket opp. Jaget for langt derfra gir den opp, helbreder seg helt og går tilbake uten å ta skade før den er hjemme.
-UILABEL_BEHAVIOR_ROAM_TIP	Streif: vandrer i det åpne landet, overalt den kan gå utenfor flaggenes områder.
+UILABEL_BEHAVIOR_ROAM_TIP	Streif: streifer rundt i det åpne landet, der den kan gå utenfor kravene.
 UILABEL_WAIT_NOT_IN_CLAIM	ikke i et område som tilhører fraksjonen dens
 UILABEL_WAIT_NOWHERE_TO_ROAM	ingen åpen mark i nærheten utenfor områdene
 UILABEL_TEMPERAMENT_AVOIDANT	Sky
@@ -219,9 +219,6 @@ UILABEL_MISS	Bom
 UILABEL_DAMAGE	Skade
 UILABEL_EXPERIENCE_MESSAGES	Erfaringsmeldinger
 UILABEL_EXPERIENCE	Erfaring
-UILABEL_XP_ATHLETICS	Atletikk-erfaring
-UILABEL_XP_ENDURANCE	Utholdenhetserfaring
-UILABEL_XP_CARRYING	Styrke-erfaring (bæring)
 UILABEL_ITEM_MESSAGES	Gjenstandsmeldinger
 UILABEL_PICKUP	Plukk opp
 UILABEL_DROP	Slipp
@@ -257,16 +254,11 @@ MISC_TWO_HANDED_IN_MAIN	Et tohåndsvåpen er i hovedhånden
 MISC_YOU	Du
 MISC_UNKNOWN_ITEM	Ukjent gjenstand
 MISC_REASON_FEES	betaler handelsavgifter
-MISC_REASON_WALKING	å gå
-MISC_REASON_CARRYING	å bære en last
-MISC_REASON_CLIMBING	å klatre
 MISC_REASON_SWINGING	å svinge
 MISC_REASON_DODGING	å unnvike
 MISC_REASON_DEALING	å gjøre skade
 MISC_REASON_TAKING	å ta skade
 MISC_REASON_BLOCKING	å blokkere
-MISC_REASON_SPOTTING	å oppdage en fiende
-MISC_REASON_UNNOTICED	å forbli uoppdaget
 MISC_REASON_GEAR	å bytte utstyr
 NPC_GREETING	Hei, verden.
 NPC_OPTION_WARES	Vis meg varene dine.
@@ -286,14 +278,10 @@ MISC_ORD_12	Tolvte
 UILABEL_STAT_DESC_STRENGTH	Skade i nærkamp, bærekapasitet
 UILABEL_STAT_DESC_DEXTERITY	Angrepshastighet
 UILABEL_STAT_DESC_VITALITY	Maks helse
-UILABEL_STAT_DESC_ENDURANCE	Maks utholdenhet
 UILABEL_STAT_DESC_AGILITY	Sjanse for å unnvike
 UILABEL_STAT_DESC_INTELLIGENCE	Mana-beholdning
 UILABEL_STAT_DESC_WISDOM	Antall lærbare trylleformularer
 UILABEL_STAT_DESC_CHARISMA	Priser hos handelsfolk, unike samtalealternativer
-UILABEL_STAT_DESC_PERCEPTION	Oppdagelsesrekkevidde
-UILABEL_STAT_DESC_ATHLETICS	Løpefart
-UILABEL_STAT_DESC_STEALTH	Bedre til å unngå å bli oppdaget når du sniker deg
 UILABEL_STAT_DESC_MELEE	Treffsikkerhet i nærkamp
 UILABEL_STAT_DESC_PROJECTILES	Treffsikkerhet på avstand
 UILABEL_STAT_DESC_ARCANE	Tryllekraft
@@ -313,14 +301,10 @@ UILABEL_STAT_DESC_THIEVERY	Suksess ved tyveri
 UILABEL_STAT_DESC_MEDICAL	Effektivitet av helbredelse
 UILABEL_DEXTERITY_STAT	Smidighet
 UILABEL_VITALITY_STAT	Vitalitet
-UILABEL_ENDURANCE_STAT	Utholdenhet
 UILABEL_AGILITY_STAT	Behendighet
 UILABEL_INTELLIGENCE_STAT	Intelligens
 UILABEL_WISDOM_STAT	Visdom
 UILABEL_CHARISMA_STAT	Karisma
-UILABEL_PERCEPTION_STAT	Persepsjon
-UILABEL_ATHLETICS_STAT	Atletikk
-UILABEL_STEALTH_STAT	Snikeri
 UILABEL_MELEE_STAT	Nærkamp
 UILABEL_PROJECTILES_STAT	Prosjektiler
 UILABEL_ARCANE_STAT	Magi
@@ -389,7 +373,6 @@ UILABEL_ATTACK_DEFENSE_CARRY	Angrep {0}    Forsvar {1}    Bærekapasitet {2}
 MISC_IS_DOWN	{0} er nede
 MISC_PICKS_UP	{0} plukker opp {1} {2}
 MISC_CANNOT_READ	Kunne ikke lese {0}
-UILABEL_TIP_DURABILITY	Holdbarhet {0} / {1}
 UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
 UILABEL_MONITOR_N	Skjerm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
@@ -411,8 +394,6 @@ ITEM_7_NAME	Helbredelseseliksir
 ITEM_7_DESC	Gjenoppretter 50 helse når den drikkes.
 ITEM_8_NAME	Manaeliksir
 ITEM_8_DESC	Gjenoppretter 50 mana når den drikkes.
-ITEM_9_NAME	Utholdenhetsdrikk
-ITEM_9_DESC	Gjenoppretter 40 utholdenhet og øker regenerasjonen kort.
 ITEM_10_NAME	Kraftelixir
 ITEM_10_DESC	Gir +10 angrep i 60 sekunder.
 ITEM_11_NAME	Brød
@@ -649,7 +630,7 @@ UILABEL_MODE_SNEAK	Snik
 UILABEL_MODE_RANGED	Avstand
 UILABEL_MODE_PASSIVE_TIP	Passiv: starter aldri en kamp og blander seg ikke inn for å hjelpe. Følger likevel ordre, også angrep.
 UILABEL_MODE_BLOCK_TIP	Blokker: angriper aldri og blokkerer slag dobbelt så ofte, selv med tomme hender.
-UILABEL_MODE_SNEAK_TIP	Snik: går i halv fart og er mye vanskeligere å oppdage. Jo høyere Sniking, jo bedre.
+UILABEL_MODE_SNEAK_TIP	Snik: går i halv fart og er mye vanskeligere å oppdage.
 UILABEL_MODE_RANGED_TIP	Avstand: slår seg på selv så lenge det er en bue eller armbrøst i hovedhånden. Hvert skudd bruker én pil eller bolt.
 UILABEL_SQUAD_TAB	Tropp
 UILABEL_REPUTATION	Omdømme
@@ -928,23 +909,18 @@ GAME_TITLE_FIRST	Kobold
 GAME_TITLE_SECOND	Overlevelse
 MISC_TITLE_KEYS	Velg  //  Enter Bekreft
 UILABEL_LANGUAGE_LABEL	Språk:
-PROP_FLAG	Flagg
+PROP_ALTAR	Alter
+MISC_ALTAR_OF	Alter for {0}
 PROP_DEBRIS	Rusk
-PROP_FOUNDATION_SMALL	Lite fundament
-PROP_FOUNDATION_LARGE	Stort fundament
-PROP_FOUNDATION_LONG	Langt fundament
-PROP_FOUNDATION_CIRCLE	Rundt fundament
-PROP_VAULT	Hvelv
 UILABEL_BUILD	Bygg
 UILABEL_BUILD_SELECTED	Valgt: {0}
 UILABEL_BUILD_NONE	Valgt: ingen
 UILABEL_BUILD_SELECT	Velg
 UILABEL_BUILD_PICKED	Valgt
-UILABEL_BUILD_PLACE_HINT	Venstreklikk på bakken for å plassere. Hold R og beveg musen til venstre eller høyre for å snu. Høyreklikk eller Escape avbryter.
+UILABEL_BUILD_PLACE_HINT	Venstreklikk på bakken for å plassere. Høyreklikk eller Escape avbryter.
 UILABEL_UPKEEP_HINT	Bruker én {0} i timen til vedlikehold. Legg dem her.
 MISC_BUILD_BLOCKED	Ikke plass til å bygge her
 MISC_BUILD_UNWALKABLE	Det kan ikke bygges på denne bakken
-MISC_BUILD_NO_FOUNDATION	Et hvelv må stå helt på et fundament
 MISC_NO_UPKEEP	Ikke vedlikehold: ingen stokker
 MISC_UPKEEP_LEFT	Vedlikehold: {0} min igjen
 PROP_SHOP	Butikk
@@ -954,24 +930,18 @@ PROP_STOVE	Komfyr
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Venstreklikk på en gjenstand for å rive den: det den holder faller på bakken, og det blir liggende rusk igjen. Venstreklikk på rusk for å rydde det bort. Høyreklikk eller Escape avbryter.
 UILABEL_LOCK	Lås
-MISC_BUILD_NO_CLAIM	Et fundament eller hvelv må stå i ditt eget område
-MISC_BUILD_SEALED	Den bakken er forseglet av en annen fraksjons hvelv
-MISC_BUILD_CLAIM_OVERLAP	Det området ville overlappe et annet flaggs område
-MISC_BUILD_VAULT_TAKEN	Det området har allerede et hvelv
-MISC_BUILD_VAULT_CAP	Fraksjonen din har allerede så mange hvelv som den kan ha
+MISC_BUILD_SEALED	Det landet tilhører en annen fraksjon
+MISC_BUILD_CLAIM_OVERLAP	Det kravet ville overlappe et annet krav
+MISC_BUILD_ALTAR_TAKEN	Fraksjonen din har allerede et alter
 MISC_DESTROY_NOTHING	Ingenting å rive der
 MISC_FLAG_FACTION	Eier: {0}
 MISC_FLAG_HEALTH	Helse: {0} av {1}
-MISC_FLAG_VAULT_YES	Hvelv: står, området holdes
-MISC_FLAG_VAULT_NO	Hvelv: ingen, flagget slites ned
-MISC_PROP_CONDITION	Tilstand: {0} %
 MISC_PROP_DECAYING	Forfaller
 MISC_PROP_HOLDING	Forfaller ikke
 MISC_PROP_LOCK_OPEN	Ulåst
 MISC_PROP_LOCK_YOURS	Låst for utenforstående (åpen for deg)
 MISC_PROP_LOCK_SHUT	Låst (Låsing {0})
 MISC_PROP_UPKEEP	Vedlikehold: {0} timer igjen
-MISC_PROP_VAULT_UNCLAIMED	Utenfor alle områder: gir ikke vedlikehold
 MOB_BEAR	Bjørn
 MOB_COW	Ku
 MOB_CHICKEN	Kylling

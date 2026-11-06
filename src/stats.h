@@ -5,7 +5,7 @@
 #include <string>
 #include "language.h"
 
-// Unit stats: 11 attributes, 4 combat, 5 resource gathering, 5 crafting and 3 utility skills. Each
+// Unit stats: 7 attributes, 4 combat, 5 resource gathering, 5 crafting and 3 utility skills. Each
 // has a level from 1 to 99. The level comes from the total XP in that stat, which uses the
 // RuneScape formula, so level 92 is about half the XP of level 99.
 
@@ -14,14 +14,10 @@ enum class StatId : int {
     Strength = 0,
     Dexterity,
     Vitality,
-    Endurance,
     Agility,
     Intelligence,
     Wisdom,
     Charisma,
-    Perception,
-    Athletics,
-    Stealth,
     Melee,
     Projectiles,
     Arcane,
@@ -49,6 +45,7 @@ struct StatInfo {
     const char* key;        // the language key for its name, e.g. UILABEL_STRENGTH_STAT
     StatGroup group;
     const char* effect;     // what the stat will do once the feature it belongs to exists
+    int icon;               // its picture, data/icon/icon_<n>.png
 };
 
 constexpr int MAX_LEVEL = 99;

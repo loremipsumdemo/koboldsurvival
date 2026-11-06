@@ -201,23 +201,24 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         y = statRow(y, lang("UILABEL_DYING"), std::to_string(dying) + " / 100", un->dying / 100.0f,
                     RGBA{ 0.56f, 0.20f, 0.78f, 1.0f });
     }
-    // A mob has no hunger, Comfort or carry: it can't feed itself and carries nothing. It does have Rested.
-    const bool mob = w.has<Mob>(unit);
-    if (!mob) {
+    // A mob has no hunger, Rested, Comfort or carry, and a corpse has none of those or Conscious
+    const bool corpse = w.has<Corpse>(unit);
+    const bool noNeeds = w.has<Mob>(unit) || corpse;
+    if (!noNeeds) {
         y = statRow(y, lang("UILABEL_HUNGER"), std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
                     needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });
-    }
-    y = statRow(y, lang("UILABEL_RESTED"), std::to_string(needs.rested) + " / " + std::to_string(needs.maxRested),
-                needs.maxRested > 0 ? (float)needs.rested / (float)needs.maxRested : 0.0f, RGBA{ 0.38f, 0.55f, 0.95f, 1.0f });
-    if (!mob) {
+        y = statRow(y, lang("UILABEL_RESTED"), std::to_string(needs.rested) + " / " + std::to_string(needs.maxRested),
+                    needs.maxRested > 0 ? (float)needs.rested / (float)needs.maxRested : 0.0f, RGBA{ 0.38f, 0.55f, 0.95f, 1.0f });
     y = statRow(y, lang("UILABEL_COMFORT"), std::to_string(needs.comfort) + " / " + std::to_string(needs.maxComfort),
                 needs.maxComfort > 0 ? (float)needs.comfort / (float)needs.maxComfort : 0.0f, RGBA{ 0.35f, 0.78f, 0.62f, 1.0f });
     }
     // Conscious: 100 while awake (components.h, Unconscious)
-    const int conscious = un ? std::min(99, (int)un->conscious) : 100;
-    y = statRow(y, lang("UILABEL_CONSCIOUS"), std::to_string(conscious) + " / 100", (float)conscious / 100.0f,
-                RGBA{ 0.95f, 0.85f, 0.45f, 1.0f });
-    if (!mob) {
+    if (!corpse) {
+        const int conscious = un ? std::min(99, (int)un->conscious) : 100;
+        y = statRow(y, lang("UILABEL_CONSCIOUS"), std::to_string(conscious) + " / 100", (float)conscious / 100.0f,
+                    RGBA{ 0.95f, 0.85f, 0.45f, 1.0f });
+    }
+    if (!noNeeds) {
 
     // Carried weight against what Strength lets the unit carry
     const float carried = carriedWeightOf(w, unit);

@@ -61,7 +61,7 @@ Renderer::UnitPose Renderer::unitPose(World& w, Entity e) const {
     UnitPose p;
     const float bed = bedLift(w, e);
     p.carried = w.has<Carried>(e);
-    p.lying = p.carried || bed >= 0.0f || w.has<Unconscious>(e) || w.has<PlayingDead>(e);
+    p.lying = p.carried || bed >= 0.0f || outCold(w, e) || w.has<PlayingDead>(e);
     if (p.carried) p.lift = unitModel(w, e) ? CARRIED_MODEL_LIFT : CARRIED_LIFT;
     else if (bed >= 0.0f) p.lift = bed;
     else p.lift = unitHover(w, e);
@@ -83,7 +83,7 @@ float Renderer::bedLift(World& w, Entity u) const {
 float Renderer::unitHover(World& w, Entity u) const {
     const Mob* mb = w.get<Mob>(u);
     if (!mb) return 0.0f;
-    if (w.has<Unconscious>(u) || w.has<PlayingDead>(u) || w.has<Corpse>(u) || w.has<Carried>(u) || w.has<Occupying>(u)) {
+    if (outCold(w, u) || w.has<PlayingDead>(u) || w.has<Corpse>(u) || w.has<Carried>(u) || w.has<Occupying>(u)) {
         return 0.0f;
     }
     return mobHoverFraction(mb->kind) * unitHeight(w, u);
@@ -570,17 +570,7 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
 
 float Renderer::propBaseY(World& w, Entity e) const {
     const Transform* tr = w.get<Transform>(e);
-    float y = tr ? tr->y : 0.0f;
-    if (const OnBase* ob = w.get<OnBase>(e)) {
-        const Transform* ft = w.get<Transform>(ob->foundation);
-        const Prop* fp = w.get<Prop>(ob->foundation);
-        if (ft && fp && idx(fp->kind) >= 0 && idx(fp->kind) < PROP_KIND_COUNT) {
-            // The foundation's top, held to a slab's height in case its model is missing (the pink stand-in is tall)
-            const float top = std::clamp(propTop(fp->kind), 0.0f, 0.6f);
-            y = std::max(y, ft->y + top);
-        }
-    }
-    return y;
+    return tr ? tr->y : 0.0f;
 }
 
 float Renderer::propTop(PropKind kind) const {
