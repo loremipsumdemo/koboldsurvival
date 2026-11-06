@@ -21,7 +21,6 @@ void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool pl
     world = World{};
     resetPlayState();
     rng.gen.seed(seed);
-    resetPlayerReputation();
     setupWorld(world, terrain, rng, playerCamp);
     stages.stage(0.85f, "LOADING_GROUND_ITEMS");
     spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);

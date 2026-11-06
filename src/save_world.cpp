@@ -1,3 +1,4 @@
+#include "game_tables.h"
 #include "level.h"
 #include "systems_internal.h"
 #include "build.h"
@@ -273,8 +274,7 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
 
 void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world = World{};
-    resetPlayerReputation();
-    setPlayerReputation(d.reputation);
+    setPlayerReputation(world, d.reputation);
     const std::vector<Entity> props = restoreProps(world, d);
     for (const SaveGround& g : d.ground) {
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
@@ -298,7 +298,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.mapSource = map.source;
     d.mapStem = map.stem;
     d.gs = gs;
-    d.reputation = playerReputation();
+    d.reputation = playerReputation(w);
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };
     std::ostringstream state;
     state << rng.gen;

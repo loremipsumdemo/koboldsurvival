@@ -109,7 +109,7 @@ bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
     if (g == taker || !canAct(w, g)) return false;
     const Behaviors* gb = w.get<Behaviors>(g);
     if (!gb || !hasOn(*gb, BehaviorKind::Share)) return false;
-    if (!factionsAllied(factionOf(w, taker), factionOf(w, g))) return false;
+    if (!factionsAllied(w, factionOf(w, taker), factionOf(w, g))) return false;
     const Needs* gn = w.get<Needs>(g);
     return gn && valueOf(*gn, food) > takerValue && bestSlot(w, g, food) >= 0;
 }

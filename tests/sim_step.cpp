@@ -39,7 +39,6 @@ Run play(Terrain& terrain, unsigned seed) {
     rng.gen.seed(seed);
     GameState gs;
     const double startClock = gs.clockSeconds;
-    resetPlayerReputation();
     setupWorld(world, terrain, rng, true);
     for (int i = 0; i < STEPS; ++i) {
         simStep(world, terrain, rng, gs, STEP, false);

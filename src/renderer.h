@@ -177,7 +177,7 @@ public:
     void drawTitleBar(const Rect& bar, int icon, const std::string& title);
     void drawCollapseButton(const Rect& r, bool collapsed);
     void drawCloseButton(const Rect& r);
-    void drawReputationList(const UnitPanelLayout& L, int repView);
+    void drawReputationList(World& w, const UnitPanelLayout& L, int repView);
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);

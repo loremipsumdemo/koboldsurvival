@@ -10,7 +10,7 @@ Entity makeUnit(World& w, const Transform& at, int faction) {
         w.add(e, Commandable{});
     } else {
         w.add(e, Unit{ HOSTILE_WALK_SPEED });
-        if (factionsHostile(faction, FACTION_PLAYER)) w.add(e, Hostile{});
+        if (factionsHostile(w, faction, FACTION_PLAYER)) w.add(e, Hostile{});
         else w.add(e, Neutral{});
     }
     w.add(e, Faction{ faction });
@@ -81,7 +81,7 @@ bool disbandUnit(World& w, Entity u) {
     }
     if (Faction* fa = w.get<Faction>(u)) fa->id = faction;
     else w.add(u, Faction{ faction });
-    if (factionsHostile(faction, FACTION_PLAYER)) w.add(u, Hostile{});
+    if (factionsHostile(w, faction, FACTION_PLAYER)) w.add(u, Hostile{});
     else w.add(u, Neutral{});
     queueLog(w, langf(w.has<Mob>(u) ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { nameOf(w, u) }), LogKind::Other);
     return true;

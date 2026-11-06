@@ -25,13 +25,13 @@ bool unitsHostile(World& w, Entity a, Entity b) {
     if (a == b) return false;
     const int fa = factionOf(w, a), fb = factionOf(w, b);
     if (fa == fb) return false;
-    return factionsHostile(fa, fb) || provokedBy(w, a, fb) || provokedBy(w, b, fa);
+    return factionsHostile(w, fa, fb) || provokedBy(w, a, fb) || provokedBy(w, b, fa);
 }
 
 bool hostileToPlayer(World& w, Entity e) {
     if (w.has<Commandable>(e)) return false;
     const int f = factionOf(w, e);
-    return f != FACTION_PLAYER && (factionsHostile(f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
+    return f != FACTION_PLAYER && (factionsHostile(w, f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
 }
 
 void provoke(World& w, Entity unit, int faction) {

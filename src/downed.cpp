@@ -33,7 +33,7 @@ void knockOut(World& w, Entity u) {
     queueSoundFrom(w, Sfx::Downed, u);
     const int victim = factionOf(w, u);
     if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
-        const int now = changePlayerReputation(victim, -REP_KO_PENALTY);
+        const int now = changePlayerReputation(w, victim, -REP_KO_PENALTY);
         queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_KO_PENALTY), std::to_string(now) }),
                  LogKind::Other);
     }
@@ -141,7 +141,7 @@ bool hostileNear(World& w, Entity u) {
     const int mine = factionOf(w, u);
     for (Entity o : w.view<Unit, Transform>()) {
         if (o == u || outCold(w, o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
-        if (!factionsHostile(mine, factionOf(w, o))) continue;
+        if (!factionsHostile(w, mine, factionOf(w, o))) continue;
         const Transform* ot = w.get<Transform>(o);
         const float dx = ot->x - ut->x, dz = ot->z - ut->z;
         if (dx * dx + dz * dz <= RESTED_HOSTILE_RANGE * RESTED_HOSTILE_RANGE) return true;
@@ -172,7 +172,7 @@ void finishDying(World& w, Entity u) {
     queueLog(w, langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     const int victim = factionOf(w, u);
     if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
-        const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
+        const int now = changePlayerReputation(w, victim, -REP_DEATH_PENALTY);
         queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),
                  LogKind::Other);
     }

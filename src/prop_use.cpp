@@ -538,7 +538,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     w.remove<TalkOrder>(unit);
     if (const Faction* f = w.get<Faction>(unit); (!f || f->id == FACTION_PLAYER) && lock->faction >= 0 &&
                                                  lock->faction != FACTION_PLAYER) {
-        const int now = changePlayerReputation(lock->faction, -REP_LOCKPICK_PENALTY);
+        const int now = changePlayerReputation(w, lock->faction, -REP_LOCKPICK_PENALTY);
         queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(lock->faction), std::to_string(REP_LOCKPICK_PENALTY),
                                                   std::to_string(now) }), LogKind::Other);
     }

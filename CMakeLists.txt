@@ -52,7 +52,8 @@ endif()
 add_custom_target(write_build_stamp COMMAND build_stamp "${BUILD_STAMP_CPP}" BYPRODUCTS "${BUILD_STAMP_CPP}" VERBATIM)
 add_dependencies(write_build_stamp build_stamp)
 
-# The simulation: no window, no graphics. The game and the save test share it.
+# The simulation: no window, no graphics. The game and the tests share it. SDL3 is its only library, for file paths and
+# the log. The tests link only this, so a call into OpenGL, fonts or image loading from here fails their build.
 set(SIM_SOURCES
     src/simulation.cpp
     src/game_log.cpp
@@ -104,8 +105,8 @@ set(SIM_SOURCES
 )
 
 add_library(kobold_sim STATIC ${SIM_SOURCES})
-target_include_directories(kobold_sim PUBLIC src ${GLEW_INCLUDE_DIRS})
-target_link_libraries(kobold_sim PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_image::SDL3_image)
+target_include_directories(kobold_sim PUBLIC src)
+target_link_libraries(kobold_sim PUBLIC SDL3::SDL3)
 
 add_executable(koboldsurvival
     src/play_state.cpp

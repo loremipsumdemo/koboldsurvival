@@ -92,7 +92,6 @@ int main(int, char**) {
     World world;
     Rng rng;
     rng.gen.seed(12345);
-    resetPlayerReputation();
     setupWorld(world, terrain, rng, true);
     spawnGroundItems(world, terrain, rng, 2);
 
@@ -189,7 +188,7 @@ int main(int, char**) {
     world.get<GroundItem>(lying)->hours = 5.0;
 
     const size_t propsBefore = world.view<Prop, Transform>().size();
-    const std::map<int, int> repBefore = playerReputation();
+    const std::map<int, int> repBefore = playerReputation(world);
     const std::string first = "roundtrip_a.sav", second = "roundtrip_b.sav", cut = "roundtrip_cut.sav";
     const Camera cam;
     const GameState gs;
@@ -239,7 +238,7 @@ int main(int, char**) {
     const Behaviors* rescuerAfter = restored.get<Behaviors>(again[2]);
     check(rescuerAfter && rescuerAfter->busy && rescuerAfter->step.kind == BehaviorKind::Rescue, "a rescuer is still on its Rescue step");
     propOrderSystem(restored, terrain);
-    check(playerReputation() == repBefore, "a reload costs no reputation");
+    check(playerReputation(restored) == repBefore, "a reload costs no reputation");
 
     // Prisoner cages and Evacuate
     {

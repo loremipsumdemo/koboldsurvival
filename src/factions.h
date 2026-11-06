@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+class World;
+
 constexpr int FACTION_PLAYER = 0;
 constexpr int FACTION_EXILE = 6;
 
@@ -32,13 +34,12 @@ std::string factionName(int id);
 FactionColor factionColor(int id);
 
 int defaultReputation(int a, int b);
-int reputation(int a, int b);
-bool factionsHostile(int a, int b);
-bool factionsAllied(int a, int b);
+int reputation(World& w, int a, int b);
+bool factionsHostile(World& w, int a, int b);
+bool factionsAllied(World& w, int a, int b);
 
-std::map<int, int> playerReputation();
+std::map<int, int> playerReputation(World& w);
 const std::vector<FactionDef>& reputationFactions();
 int reputationFactionCount();
-void resetPlayerReputation();
-void setPlayerReputation(const std::map<int, int>& standings);
-int changePlayerReputation(int faction, int delta);
+void setPlayerReputation(World& w, const std::map<int, int>& standings);
+int changePlayerReputation(World& w, int faction, int delta);

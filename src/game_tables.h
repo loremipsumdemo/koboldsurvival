@@ -3,6 +3,8 @@
 #include <vector>
 #include "props.h"
 
+inline constexpr int UNIT_SPRITE_COUNT = 3;
+
 // The tables in data/: itemdb.txt, factions.txt, and those that say which file each thing uses: sfx.txt, bgm.txt,
 // emotes.txt, icons.txt, models.txt, mobs.txt, fonts.txt and languages.txt. mobInfo (mobs.h) and sfxInfo (sounds.h)
 // read from them too.

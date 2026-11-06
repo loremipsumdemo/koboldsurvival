@@ -1,4 +1,5 @@
 #include "factions.h"
+#include "ecs.h"
 #include "mobs.h"
 #include <algorithm>
 #include <cstdio>
@@ -117,17 +118,18 @@ Table& table() {
     return t;
 }
 
-std::map<int, int>& standings() {
-    static std::map<int, int> s;
-    return s;
-}
+// How the Player Faction stands with the others, where it has changed from the start. Part of the world.
+struct PlayerStandings {
+    std::map<int, int> byFaction;
+};
+
+std::map<int, int>& standings(World& w) { return w.resource<PlayerStandings>().byFaction; }
 }
 
 bool loadFactions(const std::string& text, std::string& err) {
     Table t;
     if (!parseTable(text, t, err)) return false;
     table() = std::move(t);
-    resetPlayerReputation();
     return true;
 }
 
@@ -158,7 +160,7 @@ int defaultReputation(int a, int b) {
     return it == r.end() ? 0 : it->second;
 }
 
-int reputation(int a, int b) {
+int reputation(World& w, int a, int b) {
     if (a == b) return REP_MAX;
     if (a == FACTION_EXILE || b == FACTION_EXILE) return 0;
     if (isMobFaction(a) || isMobFaction(b)) {
@@ -169,19 +171,20 @@ int reputation(int a, int b) {
     }
     if (a == FACTION_PLAYER || b == FACTION_PLAYER) {
         const int other = a == FACTION_PLAYER ? b : a;
-        const auto it = standings().find(other);
-        if (it != standings().end()) return it->second;
+        const std::map<int, int>& known = standings(w);
+        const auto it = known.find(other);
+        if (it != known.end()) return it->second;
     }
     return defaultReputation(a, b);
 }
 
-bool factionsHostile(int a, int b) { return a != b && reputation(a, b) <= REP_HOSTILE; }
-bool factionsAllied(int a, int b) { return a == b || reputation(a, b) >= REP_ALLIED; }
+bool factionsHostile(World& w, int a, int b) { return a != b && reputation(w, a, b) <= REP_HOSTILE; }
+bool factionsAllied(World& w, int a, int b) { return a == b || reputation(w, a, b) >= REP_ALLIED; }
 
-std::map<int, int> playerReputation() {
+std::map<int, int> playerReputation(World& w) {
     std::map<int, int> out;
     for (const FactionDef& f : table().list) {
-        if (f.id != FACTION_PLAYER && f.id != FACTION_EXILE && !isMobFaction(f.id)) out[f.id] = reputation(FACTION_PLAYER, f.id);
+        if (f.id != FACTION_PLAYER && f.id != FACTION_EXILE && !isMobFaction(f.id)) out[f.id] = reputation(w, FACTION_PLAYER, f.id);
     }
     return out;
 }
@@ -203,19 +206,17 @@ int reputationFactionCount() {
     return n;
 }
 
-void resetPlayerReputation() { standings().clear(); }
-
-void setPlayerReputation(const std::map<int, int>& s) {
-    standings().clear();
+void setPlayerReputation(World& w, const std::map<int, int>& s) {
+    standings(w).clear();
     for (const auto& [id, v] : s) {
-        if (id != FACTION_PLAYER && id != FACTION_EXILE && !isMobFaction(id) && findFaction(id)) standings()[id] = std::clamp(v, REP_MIN, REP_MAX);
+        if (id != FACTION_PLAYER && id != FACTION_EXILE && !isMobFaction(id) && findFaction(id)) standings(w)[id] = std::clamp(v, REP_MIN, REP_MAX);
     }
 }
 
-int changePlayerReputation(int faction, int delta) {
+int changePlayerReputation(World& w, int faction, int delta) {
     if (faction == FACTION_PLAYER || !findFaction(faction)) return REP_MAX;
-    if (isMobFaction(faction) || faction == FACTION_EXILE) return reputation(FACTION_PLAYER, faction);
-    const int next = std::clamp(reputation(FACTION_PLAYER, faction) + delta, REP_MIN, REP_MAX);
-    standings()[faction] = next;
+    if (isMobFaction(faction) || faction == FACTION_EXILE) return reputation(w, FACTION_PLAYER, faction);
+    const int next = std::clamp(reputation(w, FACTION_PLAYER, faction) + delta, REP_MIN, REP_MAX);
+    standings(w)[faction] = next;
     return next;
 }

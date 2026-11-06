@@ -184,7 +184,7 @@ bool App::mouseDownOnPanels() {
                 const int owner = targetOwner ? targetOwner->faction : FACTION_PLAYER;
                 if (target != NULL_ENTITY && session.storageProp == target) closeStorage();
                 if (target != NULL_ENTITY && destroyBuilding(world, target)) {
-                    if (owner != FACTION_PLAYER) changePlayerReputation(owner, -REP_DESTROY_PENALTY);
+                    if (owner != FACTION_PLAYER) changePlayerReputation(world, owner, -REP_DESTROY_PENALTY);
                     playSfx(Sfx::Drop);
                 } else {
                     refuse(lang("MISC_DESTROY_NOTHING"));

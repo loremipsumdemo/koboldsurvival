@@ -111,7 +111,7 @@ Entity pickInReach(World& w, const Terrain& t, Entity p, const std::vector<Entit
 void onAttacked(World& w, Entity a, Entity d) {
     const int fa = factionOf(w, a), fd = factionOf(w, d);
     if (fa == fd) return;
-    const bool atWar = factionsHostile(fa, fd) || unitsHostile(w, a, d);
+    const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);
     const Transform* td = w.get<Transform>(d);
     if (!td) return;
     if (w.has<PickupChain>(d)) {
@@ -133,7 +133,7 @@ void onAttacked(World& w, Entity a, Entity d) {
     for (Entity u : near) {
         if (u == a || outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || inPrisonerCage(w, u) || !w.has<Combat>(u)) continue;
         const int fu = factionOf(w, u);
-        if (!factionsAllied(fu, fd) || factionsAllied(fu, fa) || !sees(u)) continue;
+        if (!factionsAllied(w, fu, fd) || factionsAllied(w, fu, fa) || !sees(u)) continue;
         if (isPassive(w, u) || isBlocking(w, u)) continue;
         Combat& c = *w.get<Combat>(u);
         if (w.has<Commandable>(u)) {
@@ -147,7 +147,7 @@ void onAttacked(World& w, Entity a, Entity d) {
             w.add(u, AttackOrder{ a });
             c.target = a;
         } else if (c.target == NULL_ENTITY) {
-            if (!factionsHostile(fu, fa)) provoke(w, u, fa);
+            if (!factionsHostile(w, fu, fa)) provoke(w, u, fa);
             c.target = a;
         }
     }

@@ -1,3 +1,4 @@
+#include "game_tables.h"
 #include "systems_internal.h"
 #include "build.h"
 #include "camp_kit.h"

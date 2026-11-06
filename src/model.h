@@ -2,8 +2,6 @@
 #include <vector>
 #include <GL/glew.h>
 
-inline constexpr int UNIT_SPRITE_COUNT = 3;
-
 struct DrawRange {
     GLuint texture = 0;
     GLsizei indexCount = 0;

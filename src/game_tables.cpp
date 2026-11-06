@@ -8,7 +8,6 @@
 #include "factions.h"
 #include "items.h"
 #include "mobs.h"
-#include "model.h"
 #include "pak.h"
 #include "sounds.h"
 

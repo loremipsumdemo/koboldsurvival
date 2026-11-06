@@ -1,3 +1,4 @@
+#include <SDL3/SDL.h>
 #include "pak.h"
 #include <cstdint>
 #include <algorithm>
@@ -76,16 +77,6 @@ bool pakFind(const std::string& name, const unsigned char*& bytes, size_t& size)
 
 bool pakHas(const std::string& name) {
     return g_index.find(name) != g_index.end();
-}
-
-TTF_Font* pakFont(const std::string& name, float size) {
-    const unsigned char* bytes = nullptr;
-    size_t byteCount = 0;
-    if (!pakFind(name, bytes, byteCount)) {
-        SDL_Log("Not in data.pak: %s", name.c_str());
-        return nullptr;
-    }
-    return TTF_OpenFontIO(SDL_IOFromConstMem(bytes, byteCount), true, size);
 }
 
 std::vector<std::string> pakNames(const std::string& prefix, const std::string& suffix) {

@@ -7,6 +7,16 @@
 #include <cctype>
 #include <filesystem>
 
+static TTF_Font* pakFont(const std::string& name, float size) {
+    const unsigned char* bytes = nullptr;
+    size_t byteCount = 0;
+    if (!pakFind(name, bytes, byteCount)) {
+        SDL_Log("Not in data.pak: %s", name.c_str());
+        return nullptr;
+    }
+    return TTF_OpenFontIO(SDL_IOFromConstMem(bytes, byteCount), true, size);
+}
+
 namespace fs = std::filesystem;
 
 namespace {

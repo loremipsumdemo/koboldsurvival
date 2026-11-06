@@ -188,7 +188,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         tab(L.tabReputation, lang("UILABEL_REPUTATION"), L.tab == FACTION_TAB_REPUTATION);
     }
     if (L.tab == FACTION_TAB_REPUTATION) {
-        drawReputationList(L, repView);
+        drawReputationList(w, L, repView);
         return;
     }
 
@@ -256,7 +256,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 }
 
-void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
+void Renderer::drawReputationList(World& w, const UnitPanelLayout& L, int repView) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
     auto swatch = [&](float x, float cy, float d, int faction) {
@@ -284,7 +284,7 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
         drawRect(r, self ? theme::alpha(theme::GOLD_DEEP, 0.55f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 0.95f : 0.6f });
         const float d = 10.0f * s;
         swatch(r.x + 6.0f * s, r.y + r.h * 0.5f, d, other);
-        const int value = reputation(repView, other);
+        const int value = reputation(w, repView, other);
         const std::string valueText = self ? std::string("(...)") : std::to_string(value);
         const RGBA valueTint = self ? theme::TEXT_DIM
                              : value <= REP_HOSTILE ? RGBA{ 1.0f, 0.42f, 0.42f, 1.0f }

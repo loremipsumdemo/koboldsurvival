@@ -1,3 +1,4 @@
+#include "game_tables.h"
 #include "party_ui.h"
 #include "language.h"
 #include <algorithm>
