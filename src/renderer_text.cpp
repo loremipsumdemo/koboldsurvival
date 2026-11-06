@@ -1,15 +1,10 @@
-// Renderer: fonts and text. Each font keeps a cache of its text textures; fitting, shrinking and wrapping text to a box.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-// Automatic text fit. Text is drawn no smaller than this share of its size, and anything still too long is then
-// shortened with "...".
 const float kMinTextFit = 0.6f;
-
-} // namespace
+}
 
 void Renderer::setTitleFont(TTF_Font* font) {
     for (auto& entry : titleWords_) {
@@ -26,7 +21,6 @@ const TextTex& Renderer::titleWord(const std::string& text) {
     if (titleFont_ && !text.empty()) {
         t = makeGlyphTexture(titleFont_, text.c_str(), SDL_Color{ 255, 255, 255, 255 });
         if (t.tex) {
-            // Mipmaps, so the large picture shrinks smoothly to whatever size the name is drawn at
             glBindTexture(GL_TEXTURE_2D, t.tex);
             glGenerateMipmap(GL_TEXTURE_2D);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -51,12 +45,10 @@ void Renderer::drawUiTextCentered(const std::string& s, float cx, float y, RGBA 
     drawUiText(s, cx - uiTextWidth(s) * 0.5f, y, tint);
 }
 
-// The text as it will be drawn in a box boxW wide: shortened only if it cannot fit even at the smallest size
 std::string Renderer::fitShrinkText(const std::string& s, float boxW) {
     return fitText(s, boxW / kMinTextFit, true);
 }
 
-// The factor a line of ui text is drawn at to fit a box: 1 when it fits, otherwise smaller, never below kMinTextFit
 float Renderer::fitShrinkScale(const std::string& shown, float boxW, float boxH) {
     const TextLine& hl = uiLine(shown);
     if (hl.w <= 0.0f || hl.h <= 0.0f) return 1.0f;
@@ -66,7 +58,6 @@ float Renderer::fitShrinkScale(const std::string& shown, float boxW, float boxH)
     return std::max(k, kMinTextFit);
 }
 
-// Draws ui text with its top-left corner at (x, y), at k times its size
 void Renderer::drawUiTextScaled(const std::string& s, float x, float y, float k, RGBA tint) {
     const TextLine& hl = uiLine(s);
     if (!hl.tex.tex) return;
@@ -74,7 +65,6 @@ void Renderer::drawUiTextScaled(const std::string& s, float x, float y, float k,
     drawTexture(hl.tex.tex, x, y, w, h, tint);
 }
 
-// Draws ui text centred in a box, shrunk to fit it when automatic text fit is on
 void Renderer::drawUiTextInBox(const std::string& s, const Rect& box, RGBA tint) {
     const std::string shown = fitShrinkText(s, box.w);
     if (shown != s) noteTip(s, box);
@@ -83,18 +73,15 @@ void Renderer::drawUiTextInBox(const std::string& s, const Rect& box, RGBA tint)
     drawUiTextScaled(shown, box.x + (box.w - w) * 0.5f, box.y + (box.h - h) * 0.5f, k, tint);
 }
 
-// Sets the tooltip to the full text if the mouse is over the area the text was drawn in
 void Renderer::noteTip(const std::string& full, const Rect& area) {
     if (area.contains(mouseX_, mouseY_)) tip_ = full;
 }
 
 void Renderer::setListFont(TTF_Font* font) {
-    // Textures made with the old font would be stale, so drop them
     text_.list.clear();
     text_.list.font = font;
 }
 
-// Swaps every text font at once, for the Font size setting. Textures made with the old fonts are dropped.
 void Renderer::setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list) {
     text_.setGameFonts(hud, ui, list);
 }
@@ -131,8 +118,6 @@ void Renderer::drawListText(const std::string& s, float x, float y, RGBA tint) {
     drawFontText(text_.list, s, x, y, tint);
 }
 
-// Shortens text to fit maxW. Whole words are kept where possible, so a name is cut at a word and
-// "..." is added. Text with no room for one word is cut by character.
 std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
     auto width = [&](const std::string& t) { return ui ? uiTextWidth(t) : listTextWidth(t); };
     if (width(text) <= maxW) return text;
@@ -165,8 +150,6 @@ std::string Renderer::fitTextTip(const std::string& text, float maxW, const Rect
     return shown;
 }
 
-// Every digit takes the width of the widest digit, so numbers that change don't shift sideways.
-// Other characters keep their own width.
 float Renderer::digitCellWidth() {
     float cell = 0.0f;
     for (char ch = '0'; ch <= '9'; ++ch) cell = std::max(cell, uiTextWidth(std::string(1, ch)));
@@ -200,7 +183,6 @@ void Renderer::drawClockText(const std::string& s, float x, float y, RGBA tint) 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
     std::vector<std::string> out;
     if (!text_.list.font) return out;
-    // Measured without making a texture for every trial line
     const auto width = [this](const std::string& s) {
         int tw = 0, th = 0;
         if (!s.empty()) TTF_GetStringSize(text_.list.font, s.c_str(), s.size(), &tw, &th);
@@ -220,8 +202,6 @@ std::vector<std::string> Renderer::wrapListText(const std::string& text, float m
                 out.push_back(cur);
                 cur = word;
             } else {
-                // A word wider than the line (or text with no spaces, as in Japanese, Chinese and Thai) breaks
-                // between its characters
                 std::string piece = cur.empty() ? std::string() : cur + " ";
                 for (size_t i = 0; i < word.size();) {
                     const unsigned char c = (unsigned char)word[i];

@@ -1,10 +1,8 @@
-// Drawing the game itself: the world's overlays, the panels and popups over it.
 #include "app.h"
 
 using namespace play;
 
 void App::updateWorldMapView() {
-    // The world map's view starts out showing the whole level, and starts over each time it opens
     if (!mapOpen) {
         mapSpan = 0.0f;
     } else {
@@ -15,7 +13,6 @@ void App::updateWorldMapView() {
             mapCx = size * 0.5f;
             mapCz = size * 0.5f;
         }
-        // From one chunk across to the whole level
         clampMapView(box, size, mapCx, mapCz, mapSpan);
     }
 }
@@ -25,12 +22,9 @@ void App::drawWorldOverlays() {
     if (settings.showUnitNames || settings.showNpcNames) {
         renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     }
-    // What each unit is doing: mining, woodcutting, cooking, sleeping, encumbered
     renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     renderer.drawPropEmotes(world, cam, winW, winH, settings.showPropNames);
-    // What a right-click would do to the unit under the pointer: put down a unit your selected unit carries, or
-    // talk to an NPC
-    if (!overPanels(mouseX, mouseY, winW, winH) && !contextMenu.open && !itemMenu.open && dialogueUnit == NULL_ENTITY) {
+    if (!overPanels(mouseX, mouseY, winW, winH) && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NULL_ENTITY) {
         for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
             const Carried* cd = world.get<Carried>(u);
             const bool names = world.has<Commandable>(u) ? settings.showUnitNames : settings.showNpcNames;
@@ -44,9 +38,7 @@ void App::drawWorldOverlays() {
             }
         }
     }
-    // Damage numbers rise over the units they hit
     renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
-    // Labels the systems queued this frame: items gained, and what used items did
     for (const TradeLabel& l : takeQueuedLabels()) tradeLabels.push_back(l);
     for (TradeLabel& l : tradeLabels) l.age += dt;
     tradeLabels.erase(std::remove_if(tradeLabels.begin(), tradeLabels.end(),
@@ -56,14 +48,12 @@ void App::drawWorldOverlays() {
     renderer.drawPropProgress(world, cam, winW, winH, settings.showPropNames);
     if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
         renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
-    } else if (!overPanels(mouseX, mouseY, winW, winH) && !contextMenu.open && !itemMenu.open) {
-        // The item under the pointer (its visible part) shows its name over it; a click picks it up
+    } else if (!overPanels(mouseX, mouseY, winW, winH) && !session.contextMenu.open && !itemMenu.open) {
         const Entity hovered = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH, false);
         if (hovered != NULL_ENTITY) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
     }
 }
 
-// What is being dragged from a unit: one gear item, or a stack from its inventory. Empty if that is gone.
 ItemStack App::draggedStack() {
     if (dragGear >= 0) {
         const Equipment* worn = world.get<Equipment>(dragUnit);
@@ -79,7 +69,6 @@ void App::drawGamePanels() {
     unitPanelRow = L.scrollRow;
     renderer.drawUnitPanel(world, L, own, runMode, repView);
     drawPanelLock(PanelId::Squad);
-    // The Information Panel, top left. Its offset is written back, so it stays in range.
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
     InfoTime timeInfo;
@@ -90,20 +79,16 @@ void App::drawGamePanels() {
         timeInfo.days = langf("UILABEL_DAYS_PASSED", { std::to_string(dayIndexOf(gs.clockSeconds)) });
     }
     renderer.drawGameLog(cl, infoLines(gameLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
-    if (!cl.filterOpen) drawPanelLock(PanelId::Info);   // the open filter menu covers it
-    // The sidebar shows the lone selected unit, yours or a red one. A red one's gear and inventory
-    // are only shown: the mouse handling never starts a drag or a menu on them.
+    if (!cl.filterOpen) drawPanelLock(PanelId::Info);
     const Entity shown = sidebarUnitOf(world);
     {
-        // The item being dragged, so the gear slots can show where it fits
         const int draggedId = itemDrag ? draggedStack().item : 0;
         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
-        sidebarScroll = sl.scroll;   // kept within range as the list grows and shrinks
+        sidebarScroll = sl.scroll;
         renderer.drawInventorySidebar(sl, world, shown, mouseX, mouseY,
                                       itemDrag && dragGear < 0 ? dragSlot : -1,
                                       itemDrag && dragGear >= 0 ? dragGear : -1,
                                       draggedId, shownIsYours());
-        // What the behavior under the mouse does, when nothing else is open over it
         if (shown != NULL_ENTITY && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
     }
     drawPanelLock(PanelId::Unit);
@@ -115,22 +100,21 @@ void App::drawGamePanels() {
         }
     }
     if (itemDrag) {
-        // The item under the mouse: a gear item, or a stack from the inventory
         const ItemStack dragged = draggedStack();
         if (dragged.item != 0) renderer.drawDraggedStack(mouseX, mouseY, dragged.item, dragged.count);
     }
 }
 
 void App::drawStoragePanel() {
-    if (storageProp != NULL_ENTITY) {
-        const Storage* st = world.get<Storage>(storageProp);
-        const Prop* sp = world.get<Prop>(storageProp);
+    if (session.storageProp != NULL_ENTITY) {
+        const Storage* st = world.get<Storage>(session.storageProp);
+        const Prop* sp = world.get<Prop>(session.storageProp);
         const PropInfo& sinfo = propInfo(sp ? sp->kind : PropKind::Wagon);
         std::string hint, status;
         if (sinfo.use == PropUse::Crafting) {
-            hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, storageProp) });
+            hint = langf("UILABEL_CRAFT_HINT", { propNameOf(world, session.storageProp) });
         } else if (sinfo.use == PropUse::PassiveCrafting) {
-            if (sinfo.input == INPUT_COOKABLE) {   // the campfire: any raw meat, cooked
+            if (sinfo.input == INPUT_COOKABLE) {
                 hint = langf("UILABEL_PASSIVE_HINT", { lang("MISC_FOOD_TO_COOK"),
                                                        std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                        lang("MISC_COOKED_FOOD") });
@@ -138,8 +122,8 @@ void App::drawStoragePanel() {
             else hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
                                                    std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                    itemNameOf(sinfo.item) });
-            const Fuel* fuel = world.get<Fuel>(storageProp);
-            switch (passiveStateOf(world, storageProp)) {
+            const Fuel* fuel = world.get<Fuel>(session.storageProp);
+            switch (passiveStateOf(world, session.storageProp)) {
             case PassiveState::OutputFull: status = lang("MISC_OUTPUT_FULL"); break;
             case PassiveState::NoFuel: status = lang(sinfo.item == 0 ? "MISC_NO_UPKEEP" : "MISC_NO_FUEL"); break;
             case PassiveState::Burning: {
@@ -153,61 +137,55 @@ void App::drawStoragePanel() {
         } else {
             hint = lang("UILABEL_STORAGE_HINT");
         }
-        const Lock* ownLock = ownedLockOf(world, storageProp) ? world.get<Lock>(storageProp) : nullptr;
-        renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, storageProp), hint, st,
-                             world.get<Output>(storageProp), status, storageDrag, mouseX, mouseY,
+        const Lock* ownLock = ownedLockOf(world, session.storageProp) ? world.get<Lock>(session.storageProp) : nullptr;
+        renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, session.storageProp), hint, st,
+                             world.get<Output>(session.storageProp), status, session.storageDrag, mouseX, mouseY,
                              ownLock ? lang(ownLock->locked ? "UILABEL_UNLOCK" : "UILABEL_LOCK") : std::string());
-        if (const ItemStack* dragged = storageSlot(world, storageDrag); dragged && dragged->item != 0) {
+        if (const ItemStack* dragged = storageSlot(world, session.storageDrag); dragged && dragged->item != 0) {
             renderer.drawDraggedStack(mouseX, mouseY, dragged->item, dragged->count);
         }
-        if (quantity.open && quantity.toStorage) {
-            renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,
-                                        quantity.available, mouseX, mouseY);
+        if (session.quantity.open && session.quantity.toStorage) {
+            renderer.drawQuantityPrompt(layoutQuantity(winW, winH), session.quantity.name, session.quantity.chosen,
+                                        session.quantity.available, mouseX, mouseY);
         }
     }
 }
 
-void App::updateDisbandPopup() {
-    // The Disband popout: the hold fills Disband's bar while the button is held and the pointer stays on it;
-    // full, the unit is disbanded. A unit no longer yours (it died, or was disbanded) shuts it.
-    if (disbandTarget != NULL_ENTITY && !world.has<Commandable>(disbandTarget)) {
-        disbandTarget = NULL_ENTITY;
-        disbandHeldAt = 0;
+float App::disbandHeldShare() {
+    if (session.disbandHeldAt == 0) return 0.0f;
+    return (float)(SDL_GetTicks() - session.disbandHeldAt) / (float)DISBAND_HOLD_MS;
+}
+
+void App::updateDisbandHold() {
+    if (session.disbandTarget != NULL_ENTITY && !world.has<Commandable>(session.disbandTarget)) {
+        session.disbandTarget = NULL_ENTITY;
+        session.disbandHeldAt = 0;
     }
-    if (disbandTarget != NULL_ENTITY) {
-        const DisbandLayout dl = layoutDisband(winW, winH);
-        float held = 0.0f;
-        if (disbandHeldAt != 0) {
-            if (!dl.disband.contains(mouseX, mouseY)) disbandHeldAt = 0;   // moved off it: starts over
-            else held = (float)(SDL_GetTicks() - disbandHeldAt) / (float)DISBAND_HOLD_MS;
-        }
-        if (held >= 1.0f) {
-            const Entity u = disbandTarget;
-            disbandTarget = NULL_ENTITY;
-            disbandHeldAt = 0;
-            // Panels that were the unit's shut with it
-            if (storageUnit == u) closeStorage();
-            if (lootBy == u) closeLoot();
-            if (dialoguePlayer == u) {
-                endTalk();
-                dialoguePlayer = NULL_ENTITY;
-            }
-            if (contextMenu.open && contextMenu.target == u) contextMenu.open = false;
-            const bool mob = world.has<Mob>(u);
-            const std::string who = nameOf(world, u);
-            if (disbandUnit(world, u)) {
-                showNotice(langf(mob ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { who }));
-                playSfx(Sfx::UiOrder);
-            }
-        } else {
-            renderer.drawDisband(world, dl, disbandTarget, held, mouseX, mouseY);
-        }
+    if (session.disbandTarget == NULL_ENTITY || session.disbandHeldAt == 0) return;
+    if (!layoutDisband(winW, winH).disband.contains(mouseX, mouseY)) {
+        session.disbandHeldAt = 0;
+        return;
+    }
+    if (disbandHeldShare() < 1.0f) return;
+    const Entity u = session.disbandTarget;
+    session.disbandTarget = NULL_ENTITY;
+    session.disbandHeldAt = 0;
+    if (session.storageUnit == u) closeStorage();
+    if (session.lootBy == u) closeLoot();
+    if (session.dialoguePlayer == u) {
+        endTalk();
+        session.dialoguePlayer = NULL_ENTITY;
+    }
+    if (session.contextMenu.open && session.contextMenu.target == u) session.contextMenu.open = false;
+    const bool mob = world.has<Mob>(u);
+    const std::string who = nameOf(world, u);
+    if (disbandUnit(world, u)) {
+        showNotice(langf(mob ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { who }));
+        playSfx(Sfx::UiOrder);
     }
 }
 
 void App::drawWorldMapPopup() {
-    // The world map's marks: every prop of any kind as a purple square, every player unit as a green dot and
-    // the other units as red or gray dots
     std::vector<MapDot> mapDots;
     for (Entity e : world.view<Prop, Transform>()) {
         const Transform* t = world.get<Transform>(e);
@@ -227,34 +205,33 @@ void App::drawWorldMapPopup() {
     marks.camYaw = cam.yaw;
     marks.moveX = moveMarkX;
     marks.moveZ = moveMarkZ;
-    marks.moveAlpha = std::clamp(moveMarkTime, 0.0f, 1.0f);   // the last second fades it out
+    marks.moveAlpha = std::clamp(moveMarkTime, 0.0f, 1.0f);
     renderer.drawWorldMap(worldMapFor(winW, winH), mapDots, mapCx, mapCz, mapSpan, marks);
 }
 
 void App::drawTalkOrTrade() {
-    // The talk box, over everything. It ends if the unit it is with is gone.
-    if (dialogueUnit != NULL_ENTITY) {
-        if (!world.has<Unit>(dialogueUnit)) {
-            dialogueUnit = NULL_ENTITY;
-            dialogueConvo.clear();
-            tradeOpen = false;
-            quantity.open = false;
+    if (session.dialogueUnit != NULL_ENTITY) {
+        if (!world.has<Unit>(session.dialogueUnit)) {
+            session.dialogueUnit = NULL_ENTITY;
+            session.dialogueConvo.clear();
+            session.tradeOpen = false;
+            session.quantity.open = false;
         } else {
-            if (tradeOpen) {
-                const Inventory* npcInv = world.get<Inventory>(dialogueUnit);
-                renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(false)), nameOf(world, dialogueUnit), nameOf(world, dialoguePlayer),
-                                   npcInv, tradeNpc, tradePlayer, tradeNpcDrag,
-                                   checkTrade(world, dialogueUnit, dialoguePlayer), !freeTrade, mouseX, mouseY);
-                if (npcInv && tradeNpcDrag >= 0 && npcInv->slots[tradeNpcDrag].item != 0) {
-                    renderer.drawDraggedStack(mouseX, mouseY, npcInv->slots[tradeNpcDrag].item, npcInv->slots[tradeNpcDrag].count);
+            if (session.tradeOpen) {
+                const Inventory* npcInv = world.get<Inventory>(session.dialogueUnit);
+                renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(false)), nameOf(world, session.dialogueUnit), nameOf(world, session.dialoguePlayer),
+                                   npcInv, session.tradeNpc, session.tradePlayer, session.tradeNpcDrag,
+                                   checkTrade(world, session.dialogueUnit, session.dialoguePlayer), !session.freeTrade, mouseX, mouseY);
+                if (npcInv && session.tradeNpcDrag >= 0 && npcInv->slots[session.tradeNpcDrag].item != 0) {
+                    renderer.drawDraggedStack(mouseX, mouseY, npcInv->slots[session.tradeNpcDrag].item, npcInv->slots[session.tradeNpcDrag].count);
                 }
-                if (quantity.open) {
-                    renderer.drawQuantityPrompt(layoutQuantity(winW, winH), quantity.name, quantity.chosen,
-                                                quantity.available, mouseX, mouseY);
+                if (session.quantity.open) {
+                    renderer.drawQuantityPrompt(layoutQuantity(winW, winH), session.quantity.name, session.quantity.chosen,
+                                                session.quantity.available, mouseX, mouseY);
                 }
             } else {
-                const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
-                renderer.drawDialogue(dialogueBox(winW, winH), dialogueConvo,
+                const Dialogue* dg = world.get<Dialogue>(session.dialogueUnit);
+                renderer.drawDialogue(dialogueBox(winW, winH), session.dialogueConvo,
                                       dg ? dg->options : std::vector<DialogueOption>{}, mouseX, mouseY);
             }
         }
@@ -266,30 +243,27 @@ void App::drawPlayingScreen() {
     renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
     renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
     renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
-    // In-game panels, drawn over the world: item names while Alt is held, the unit list along the
-    // bottom, the inventory of a lone selected unit, and the stack being dragged under the mouse
     renderer.beginUi(winW, winH);
     drawWorldOverlays();
     drawGamePanels();
-    // The looting panel over an Unconscious unit or a corpse
-    if (lootUnit != NULL_ENTITY) {
-        const std::string who = world.has<Corpse>(lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, lootUnit) })
-                                                           : nameOf(world, lootUnit);
-        renderer.drawLoot(layoutLoot(winW, winH), who, world.get<Equipment>(lootUnit), world.get<Inventory>(lootUnit),
+    if (session.lootUnit != NULL_ENTITY) {
+        const std::string who = world.has<Corpse>(session.lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, session.lootUnit) })
+                                                           : nameOf(world, session.lootUnit);
+        renderer.drawLoot(layoutLoot(winW, winH), who, world.get<Equipment>(session.lootUnit), world.get<Inventory>(session.lootUnit),
                           mouseX, mouseY);
     }
     drawStoragePanel();
-    if (contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
-    updateDisbandPopup();
+    if (session.contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
+    if (session.disbandTarget != NULL_ENTITY) {
+        renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
+    }
     if (optimizeAllOpen) {
         renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
                                  { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
                                  mouseX, mouseY);
     }
-    // The world map popout is over everything, the panels included
     if (mapOpen) drawWorldMapPopup();
     drawTalkOrTrade();
-    // The PAUSED bar, over everything in the game and its popouts, while the game stands still
-    if (paused || dialogueUnit != NULL_ENTITY) renderer.drawPauseBar(paused && dialogueUnit == NULL_ENTITY);
+    if (session.paused || session.dialogueUnit != NULL_ENTITY) renderer.drawPauseBar(session.paused && session.dialogueUnit == NULL_ENTITY);
     renderer.endUi();
 }

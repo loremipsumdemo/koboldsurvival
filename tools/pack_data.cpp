@@ -1,8 +1,3 @@
-// Packs a folder into one pak file, so the game ships a single data.pak instead of loose files.
-// Usage: pack_data <folder> <output.pak>
-// Each file is stored under the folder's name, such as "data/unit/unit_1.png" for data/unit/unit_1.png.
-// The layout must match src/pak.cpp.
-
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
@@ -15,25 +10,22 @@
 namespace fs = std::filesystem;
 
 namespace {
-
 const char MAGIC[8] = { 'R', 'T', 'S', 'P', 'A', 'K', '0', '1' };
 
 struct PackedFile {
-    std::string name;     // path inside the pak, forward slashes
-    fs::path source;      // where it is on disk
+    std::string name;
+    fs::path source;
     uint64_t size = 0;
-    uint64_t offset = 0;  // filled in once the header size is known
+    uint64_t offset = 0;
 };
 
-// Writes an integer little-endian, matching the reader
 template <typename T>
 void writeInt(std::ostream& out, T value) {
     for (size_t i = 0; i < sizeof(T); ++i) {
         out.put(static_cast<char>((static_cast<uint64_t>(value) >> (8 * i)) & 0xFF));
     }
 }
-
-} // namespace
+}
 
 int main(int argc, char** argv) {
     if (argc != 3) {
@@ -46,7 +38,7 @@ int main(int argc, char** argv) {
         std::cerr << "pack_data: not a folder: " << root.string() << "\n";
         return 1;
     }
-    const std::string prefix = root.filename().string();   // "data"
+    const std::string prefix = root.filename().string();
 
     std::vector<PackedFile> files;
     for (const auto& entry : fs::recursive_directory_iterator(root)) {
@@ -60,7 +52,6 @@ int main(int argc, char** argv) {
     std::sort(files.begin(), files.end(),
               [](const PackedFile& a, const PackedFile& b) { return a.name < b.name; });
 
-    // The header comes first, so the byte offsets of the file contents depend on its size
     uint64_t offset = sizeof(MAGIC) + 4;
     for (const PackedFile& f : files) offset += 4 + f.name.size() + 8 + 8;
     for (PackedFile& f : files) {

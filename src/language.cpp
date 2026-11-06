@@ -1,3 +1,4 @@
+#include <SDL3/SDL.h>
 #include "language.h"
 #include <algorithm>
 #include <cstdio>
@@ -12,7 +13,6 @@
 #include "pak.h"
 
 namespace {
-
 using Table = std::unordered_map<std::string, std::string>;
 
 Table& englishTable() {
@@ -25,8 +25,6 @@ Table& activeTable() {
     return t;
 }
 
-// A key is not empty, not too long, and has no spaces or control characters. Anything else is allowed, so a key
-// can be written in any script; the code only ever finds keys by exact match.
 bool validKey(const std::string& key) {
     if (key.empty() || key.size() > 100) return false;
     for (unsigned char c : key) {
@@ -35,7 +33,6 @@ bool validKey(const std::string& key) {
     return true;
 }
 
-// The byte length of the UTF-8 sequence that starts with this byte, or 0 if it can't start one
 int utf8Length(unsigned char lead) {
     if (lead < 0x80) return 1;
     if (lead >= 0xC2 && lead <= 0xDF) return 2;
@@ -44,14 +41,12 @@ int utf8Length(unsigned char lead) {
     return 0;
 }
 
-// Makes a text safe to show: control characters (tabs, newlines and the rest) and broken UTF-8 are removed, the
-// ends are trimmed, and it is capped at maxBytes. Anything else, in any script, is kept.
 std::string cleanText(const std::string& raw, size_t maxBytes) {
     const size_t MAX_BYTES = maxBytes;
     std::string out;
     for (size_t i = 0; i < raw.size(); ) {
         const unsigned char c = (unsigned char)raw[i];
-        if (c < 0x20 || c == 0x7F) {          // control characters: a tab becomes a space, the rest go
+        if (c < 0x20 || c == 0x7F) {
             if (c == '\t') out += ' ';
             ++i;
             continue;
@@ -68,7 +63,7 @@ std::string cleanText(const std::string& raw, size_t maxBytes) {
             const unsigned char cont = (unsigned char)raw[i + k];
             valid = (cont & 0xC0) == 0x80;
         }
-        if (!valid) {                          // a broken sequence: drop this byte and carry on
+        if (!valid) {
             ++i;
             continue;
         }
@@ -82,11 +77,10 @@ std::string cleanText(const std::string& raw, size_t maxBytes) {
     return out.substr(first, last - first + 1);
 }
 
-// Fills a table from the text of a language file. Returns false if no line in it was usable.
 bool parseText(const std::string& text0, Table& into) {
     into.clear();
     std::string text = text0;
-    if (text.compare(0, 3, "\xEF\xBB\xBF") == 0) text.erase(0, 3);   // a byte order mark, from some editors
+    if (text.compare(0, 3, "\xEF\xBB\xBF") == 0) text.erase(0, 3);
 
     size_t start = 0;
     while (start < text.size()) {
@@ -103,18 +97,14 @@ bool parseText(const std::string& text0, Table& into) {
         const size_t kFirst = key.find_first_not_of(' ');
         key = kFirst == std::string::npos ? std::string() : key.substr(kFirst, key.find_last_not_of(' ') - kFirst + 1);
         if (!validKey(key)) continue;
-        // A text is capped at 1024 bytes (a long tip in a 3-byte script runs past 500); a name list (NAME_*) holds
-        // dozens of names, so it has more room
         const bool nameList = key.compare(0, 5, "NAME_") == 0;
         const std::string value = cleanText(line.substr(tab + 1), nameList ? 8192 : 1024);
-        if (value.empty()) continue;           // an empty text falls back to English
+        if (value.empty()) continue;
         into[key] = value;
     }
     return !into.empty();
 }
 
-// Reads a language's file: from the LANGUAGE folder if inFolder, else from the pak. False if it is missing or has
-// no usable line.
 bool readLanguageFile(const std::string& id, bool inFolder, Table& into) {
     if (inFolder) {
         std::ifstream in(std::filesystem::path(LANGUAGE_FOLDER) / (id + ".txt"), std::ios::binary);
@@ -134,8 +124,6 @@ bool readLanguageFile(const std::string& id, bool inFolder, Table& into) {
     return parseText(std::string((const char*)bytes, size), into);
 }
 
-// A language's texts: the pak's file, with the LANGUAGE folder's file laid over it key by key. So a key the folder
-// file leaves out still has its text from the pak. False if neither file has a usable line.
 bool readLanguageMerged(const std::string& id, Table& into) {
     Table packed, folder;
     const bool inPak = readLanguageFile(id, false, packed);
@@ -147,20 +135,17 @@ bool readLanguageMerged(const std::string& id, Table& into) {
     return true;
 }
 
-// The English texts: the base every other language falls back to
 bool loadEnglish() {
     if (readLanguageMerged(LANGUAGE_DEFAULT_ID, englishTable())) return true;
     englishTable().clear();
     return false;
 }
 
-// The name a table gives its language, or the id when it has no LANGUAGE_NAME line
 std::string nameIn(const Table& t, const std::string& id) {
     const auto it = t.find("LANGUAGE_NAME");
     return it != t.end() ? it->second : id;
 }
 
-// "[fr] - Français": the language code from the id (language_fr gives fr), then the name
 std::string labelFor(const std::string& id, const std::string& name) {
     const std::string prefix = "language_";
     const std::string code = id.compare(0, prefix.size(), prefix) == 0 ? id.substr(prefix.size()) : id;
@@ -179,18 +164,11 @@ std::vector<LanguageChoice>& choiceList() {
 
 bool scanned = false;
 
-// Ids from before the web codes. Their files can still sit in an old LANGUAGE folder, so they are never listed.
-// Settings maps these names to the new ids.
-bool isLegacyId(const std::string& id) {
-    return id == "language_english" || id == "language_spanish" || id == "language_french";
-}
-
 void scanLanguages() {
     std::vector<LanguageChoice> found;
     std::set<std::string> seen;
     const std::string prefix = "language_";
 
-    // Every candidate id: files in the LANGUAGE folder, then files in the pak
     std::vector<std::string> ids;
     std::error_code ec;
     std::filesystem::directory_iterator it(LANGUAGE_FOLDER, ec), end;
@@ -200,19 +178,18 @@ void scanLanguages() {
     }
     const std::string pakFolder = "data/language/";
     for (const std::string& name : pakNames(pakFolder + prefix, ".txt")) {
-        ids.push_back(name.substr(pakFolder.size(), name.size() - pakFolder.size() - 4));   // the folder and ".txt" removed
+        ids.push_back(name.substr(pakFolder.size(), name.size() - pakFolder.size() - 4));
     }
 
     Table t;
     for (const std::string& id : ids) {
-        if (!validLanguageId(id) || id.compare(0, prefix.size(), prefix) != 0 || isLegacyId(id) || seen.count(id)) continue;
+        if (!validLanguageId(id) || id.compare(0, prefix.size(), prefix) != 0 || seen.count(id)) continue;
         if (!readLanguageMerged(id, t)) continue;
         seen.insert(id);
         const std::string name = nameIn(t, id);
         found.push_back(LanguageChoice{ id, name, labelFor(id, name) });
     }
 
-    // Sorted by id, with the default language first
     std::sort(found.begin(), found.end(), [](const LanguageChoice& a, const LanguageChoice& b) {
         return a.id < b.id;
     });
@@ -224,8 +201,7 @@ void scanLanguages() {
     choiceList() = found;
     scanned = true;
 }
-
-} // namespace
+}
 
 bool validLanguageId(const std::string& id) {
     if (id.empty() || id.size() > 64) return false;
@@ -251,19 +227,17 @@ std::string languageDisplayName() {
 
 bool loadLanguage(const std::string& id, std::string& err) {
     err.clear();
-    if (!loadEnglish()) std::fprintf(stderr, "language: no usable %s.txt in the LANGUAGE folder or data.pak\n", LANGUAGE_DEFAULT_ID);
+    if (!loadEnglish()) SDL_Log("No usable %s.txt in the LANGUAGE folder or data.pak", LANGUAGE_DEFAULT_ID);
 
     bool ok = true;
     if (id == LANGUAGE_DEFAULT_ID) {
         activeTable() = englishTable();
     } else if (validLanguageId(id) && readLanguageMerged(id, activeTable())) {
-        // loaded from the LANGUAGE folder, or else from the pak
     } else {
-        activeTable().clear();   // English is used through the fallback
+        activeTable().clear();
         err = "language file " + id + ".txt was not found";
         ok = false;
     }
-    // The label names the language that is actually in use
     const std::string usedId = ok ? id : std::string(LANGUAGE_DEFAULT_ID);
     const Table& t = ok && id != LANGUAGE_DEFAULT_ID ? activeTable() : englishTable();
     activeLabel() = labelFor(usedId, nameIn(t, usedId));
@@ -279,7 +253,6 @@ std::string lang(const std::string& key) {
     return key;
 }
 
-// The strings in a list written like ["James","Michael"]. Anything that is not such a list gives no names.
 static std::vector<std::string> parseNameArray(const std::string& text) {
     std::vector<std::string> out;
     size_t i = text.find('[');
@@ -287,16 +260,16 @@ static std::vector<std::string> parseNameArray(const std::string& text) {
     ++i;
     while (i < text.size() && text[i] != ']') {
         if (text[i] != '"') {
-            ++i;   // commas and spaces between the strings
+            ++i;
             continue;
         }
         std::string s;
         ++i;
         while (i < text.size() && text[i] != '"') {
-            if (text[i] == '\\' && i + 1 < text.size()) ++i;   // \" and \\ stand for the character after the backslash
+            if (text[i] == '\\' && i + 1 < text.size()) ++i;
             s += text[i++];
         }
-        if (i >= text.size()) return {};   // a string that is never closed: the list is not usable
+        if (i >= text.size()) return {};
         ++i;
         if (!s.empty()) out.push_back(s);
     }

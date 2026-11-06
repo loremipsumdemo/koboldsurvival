@@ -3,74 +3,68 @@
 #include <vector>
 
 class World;
-using Entity = std::uint32_t;   // as ecs.h
+using Entity = std::uint32_t;
 
-// Every sound effect the game plays, the file it plays from the SFX folder, and which volume slider it follows:
-// Interface sounds (menus, buttons, notices) or Sound effects (the world). data/sfxinfo.txt lists the same table for
-// whoever makes the sounds; tests check the two agree. A missing file is simply silent.
-// Files 01 to 99 are free to use: to give a sound its own file, change its number here and in sfxinfo.txt.
 enum class Sfx : int {
-    UiClick,         // a button or control clicked
-    Hit,             // an attack lands
-    Miss,            // an attack misses or is dodged
-    ItemMove,        // an item moved inside an inventory, or the inventory sorted
-    UiHover,         // the pointer moves onto a button, a menu item or a tab
-    UiBack,          // Cancel, Close, Back, or a menu closed
-    UiError,         // something refused: locked, taken, no room, out of reach, skill too low, the wrong item
-    UiTab,           // a tab changed
-    UiToggle,        // a switch or tick box flipped
-    UiSlider,        // a slider let go
-    UiMenuOpen,      // a right-click menu, an item menu or a dialog opens
-    UiSaved,         // the game saved (or autosaved)
-    UiLoaded,        // a save loaded
-    UiPause,         // the game paused
-    UiResume,        // the game resumed
-    UiSelect,        // units selected
-    UiOrder,         // units sent somewhere
-    Equip,           // gear put on
-    Unequip,         // gear taken off
-    Drop,            // an item dropped on the ground
-    Pickup,          // an item picked up off the ground
-    Eat,             // food eaten
-    Drink,           // a potion or elixir drunk
-    Poison,          // something eaten that hurt
-    WorkMining,      // a unit working ore, now and then while it works
-    WorkWoodcutting, // a unit working a tree
-    WorkHerbalism,   // a unit gathering at a mushroom
-    WorkCooking,     // a unit cooking at a campfire
-    WorkPump,        // a unit working the water pump
-    WorkTraining,    // a unit hitting the training dummy
-    WorkLockpick,    // a unit picking a lock
-    ForgeBurning,    // a forge burning its fuel, now and then
-    DoneOre,         // a piece of Iron Ore mined
-    DoneTree,        // a Wood Log cut
-    DoneMushroom,    // a mushroom gathered
-    DoneCooking,     // something cooked
-    DoneWater,       // Water pumped
-    DoneTraining,    // a training session finished
-    DoneForge,       // the forge made an Iron Ingot
-    Unlocked,        // a lock picked open
-    LockpickFailed,  // a lockpick attempt that failed
-    TradeDone,       // a trade made
-    TradeFailed,     // a trade that fell through
-    Store,           // items put into a storage or crafting prop
-    Take,            // items taken out of a storage or crafting prop
-    TurnHostile,     // a unit turned hostile
-    LockedIn,        // a cage locked behind a unit
-    Occupy,          // a unit sat or lay down on a prop
-    GearChanged,     // Optimize, Remove All or Optimize All changed gear
-    Downed,          // a unit dropped to no health
-    LevelUp,         // a unit's skill or stat went up a level
-    TalkOpen,        // a talk began
-    CarryUp,         // a unit picked up an Unconscious unit to carry it
-    PutDown,         // a carried unit put down on the ground
-    Dies,            // an Unconscious unit's Dying reached 100: it is dead
-    Recovers,        // an Unconscious unit woke up in a bed or bedroll
+    UiClick,
+    Hit,
+    Miss,
+    ItemMove,
+    UiHover,
+    UiBack,
+    UiError,
+    UiTab,
+    UiToggle,
+    UiSlider,
+    UiMenuOpen,
+    UiSaved,
+    UiLoaded,
+    UiPause,
+    UiResume,
+    UiSelect,
+    UiOrder,
+    Equip,
+    Unequip,
+    Drop,
+    Pickup,
+    Eat,
+    Drink,
+    Poison,
+    WorkMining,
+    WorkWoodcutting,
+    WorkHerbalism,
+    WorkCooking,
+    WorkPump,
+    WorkTraining,
+    WorkLockpick,
+    ForgeBurning,
+    DoneOre,
+    DoneTree,
+    DoneMushroom,
+    DoneCooking,
+    DoneWater,
+    DoneTraining,
+    DoneForge,
+    Unlocked,
+    LockpickFailed,
+    TradeDone,
+    TradeFailed,
+    Store,
+    Take,
+    TurnHostile,
+    LockedIn,
+    Occupy,
+    GearChanged,
+    Downed,
+    LevelUp,
+    TalkOpen,
+    CarryUp,
+    PutDown,
+    Dies,
+    Recovers,
     Count
 };
 
-// The gathering and crafting sounds: working ore, trees, mushrooms and the water pump, cooking at a campfire and the
-// forge, and the sound of each piece made. The Crafting and gathering setting switches them all off together.
 inline bool isCraftGatherSfx(Sfx s) {
     switch (s) {
     case Sfx::WorkMining: case Sfx::WorkWoodcutting: case Sfx::WorkHerbalism: case Sfx::WorkCooking:
@@ -85,8 +79,8 @@ inline bool isCraftGatherSfx(Sfx s) {
 
 struct SfxInfo {
     const char* file;
-    bool ui;            // follows the Interface sounds slider, else Sound effects
-    const char* what;   // for sfxinfo.txt
+    bool ui;
+    const char* what;
 };
 
 inline const SfxInfo& sfxInfo(Sfx s) {
@@ -152,11 +146,6 @@ inline const SfxInfo& sfxInfo(Sfx s) {
     return table[(i >= 0 && i < (int)Sfx::Count) ? i : 0];
 }
 
-// For systems that have no audio of their own: sounds asked for this frame, played by the game after its systems run.
-// A sound queued with a place (queueSoundAt, or queueSoundFrom for a unit or prop) is a world sound: the
-// game plays it quieter the farther it is from the camera, and to the side of the screen it is on (soundGain and
-// soundPan below). One queued without a place, such as a sound for something you did in a panel, is heard in full.
-// The same sound asked for several times in a frame plays once, as loud as its nearest one.
 struct QueuedSound {
     Sfx sfx = Sfx::UiClick;
     bool placed = false;
@@ -164,17 +153,11 @@ struct QueuedSound {
 };
 void queueSound(Sfx s);
 void queueSoundAt(Sfx s, float x, float y, float z);
-// A world sound from where a unit or prop stands; heard in full when it has no place
 void queueSoundFrom(World& w, Sfx s, Entity e);
 std::vector<QueuedSound> takeQueuedSounds();
 
-// World sounds, by their distance from the camera's eye: full volume within SOUND_FULL_DISTANCE, falling away to
-// silence at SOUND_SILENT_DISTANCE. The fall is squared, so a sound some way off is quiet well before it is gone.
-// At the default zoom (the eye 20 tiles from what it looks at) the units in the middle of the view are heard at
-// about four fifths.
 constexpr float SOUND_FULL_DISTANCE = 15.0f;
 constexpr float SOUND_SILENT_DISTANCE = 70.0f;
-// How far a sound at the very edge of the screen is panned toward that side: 0 is centred, 1 wholly to one side
 constexpr float SOUND_PAN_EDGE = 0.6f;
 inline float soundGain(float distance) {
     if (distance <= SOUND_FULL_DISTANCE) return 1.0f;
@@ -182,7 +165,6 @@ inline float soundGain(float distance) {
     const float f = (SOUND_SILENT_DISTANCE - distance) / (SOUND_SILENT_DISTANCE - SOUND_FULL_DISTANCE);
     return f * f;
 }
-// The pan for a sound at clip-space x (-1 the left edge of the screen, 1 the right), kept within the edge's pan
 inline float soundPan(float clipX) {
     const float x = clipX < -1.0f ? -1.0f : clipX > 1.0f ? 1.0f : clipX;
     return x * SOUND_PAN_EDGE;

@@ -6,13 +6,12 @@
 #include "language.h"
 
 namespace {
-
 const char* const DEFAULT_TEXT =
     "# Factions. Tab-separated lines; blank lines and lines starting with # are skipped.\n"
     "#\n"
     "# faction <id> <name key> <color> <units>\n"
     "#   id: a whole number that never changes or gets reused, since saves keep it. 0 is the Player Faction (your\n"
-    "#       units) and must be listed. 1 was the old Gray Faction: saves that have it load into Green (3).\n"
+    "#       units) and must be listed.\n"
     "#   name key: the language key of its name (FACTION_... in data/language). A key the language files lack is\n"
     "#       shown as written.\n"
     "#   color: #rrggbb, for its dot in the Reputation tab\n"
@@ -41,7 +40,7 @@ const char* const DEFAULT_TEXT =
 
 struct Table {
     std::vector<FactionDef> list;
-    std::map<std::pair<int, int>, int> relations;   // keyed by (lower id, higher id)
+    std::map<std::pair<int, int>, int> relations;
 };
 
 std::pair<int, int> keyOf(int a, int b) { return a < b ? std::make_pair(a, b) : std::make_pair(b, a); }
@@ -118,13 +117,11 @@ Table& table() {
     return t;
 }
 
-// The Player Faction's standings that differ from the defaults are kept here; the rest read the table
 std::map<int, int>& standings() {
     static std::map<int, int> s;
     return s;
 }
-
-} // namespace
+}
 
 bool loadFactions(const std::string& text, std::string& err) {
     Table t;
@@ -141,15 +138,6 @@ const FactionDef* findFaction(int id) {
         if (f.id == id) return &f;
     }
     return nullptr;
-}
-
-int knownFactionId(int id) {
-    if (id == FACTION_RETIRED_GRAY && !findFaction(id) && findFaction(FACTION_GREEN)) return FACTION_GREEN;
-    if (findFaction(id)) return id;
-    for (const FactionDef& f : table().list) {
-        if (f.id != FACTION_PLAYER) return f.id;
-    }
-    return FACTION_PLAYER;
 }
 
 std::string factionName(int id) {
@@ -172,8 +160,7 @@ int defaultReputation(int a, int b) {
 
 int reputation(int a, int b) {
     if (a == b) return REP_MAX;
-    if (a == FACTION_EXILE || b == FACTION_EXILE) return 0;   // the Exiles are neutral to everyone, always
-    // A mob faction has no reputation: an Aggressive kind is at war with everyone else, any other at peace (mobs.h)
+    if (a == FACTION_EXILE || b == FACTION_EXILE) return 0;
     if (isMobFaction(a) || isMobFaction(b)) {
         if (isMobFaction(a) && isMobFaction(b) && mobKindsFriendly(mobKindOfFaction(a), mobKindOfFaction(b))) return false;
         const bool aggressive = (isMobFaction(a) && mobTemperament(mobKindOfFaction(a)) == MobTemperament::Aggressive) ||
@@ -219,7 +206,7 @@ void setPlayerReputation(const std::map<int, int>& s) {
 
 int changePlayerReputation(int faction, int delta) {
     if (faction == FACTION_PLAYER || !findFaction(faction)) return REP_MAX;
-    if (isMobFaction(faction) || faction == FACTION_EXILE) return reputation(FACTION_PLAYER, faction);   // no reputation to change
+    if (isMobFaction(faction) || faction == FACTION_EXILE) return reputation(FACTION_PLAYER, faction);
     const int next = std::clamp(reputation(FACTION_PLAYER, faction) + delta, REP_MIN, REP_MAX);
     standings()[faction] = next;
     return next;

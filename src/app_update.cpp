@@ -3,30 +3,23 @@
 
 using namespace play;
 
-// The save is deleted once the button has been held for DELETE_HOLD_MS
 void App::updateDeleteHold() {
     if (deleteHolding) {
         float hx = 0.0f, hy = 0.0f;
         const bool leftHeld = (SDL_GetMouseState(&hx, &hy) & SDL_BUTTON_LMASK) != 0;
         if (!leftHeld || !deleteHoldRect.contains(hx, hy)) {
-            deleteHolding = false;          // let go early, or moved off the button: start over
+            deleteHolding = false;
         } else if (SDL_GetTicks() - deleteHoldStart >= DELETE_HOLD_MS) {
             performDelete();
         }
     }
 }
 
-// The stats popout and the item menu belong to one lone selected unit. They close when that changes.
 void App::updateUnitPanelState() {
     const Entity shown = sidebarUnitOf(world);
     const bool lone = shown != NULL_ENTITY;
-    // The Unit Panel stays as the player left it, open or folded, whatever is selected. Its contents start at the
-    // top for each new unit.
     if (lone && shown != lastLone) sidebarScroll = 0.0f;
     lastLone = shown;
-    // A folded panel opens toward the middle of the window from wherever its bar is, also after the window
-    // changes size (not while it is being dragged). An open panel's bar changes side only when it is moved or
-    // resized (endGrab), so it never jumps just after opening.
     for (PanelId which : ALL_PANELS) {
         if (which != grabWhich && panelFolded(which)) placeOf(which) = settlePanel(which, placeOf(which), winW, winH, true);
     }
@@ -37,7 +30,6 @@ void App::updateUnitPanelState() {
                           && inv->slots[itemMenu.slot].item != 0;
         if (!same || !hasItem) itemMenu.open = false;
     }
-    // The sidebar starts at the top for a unit it was not scrolled for. The editor closes when its rule is gone.
     if (shown != sidebarScrollUnit) {
         sidebarScrollUnit = shown;
         sidebarScroll = 0.0f;
@@ -46,7 +38,6 @@ void App::updateUnitPanelState() {
 
 void App::updateRightHold() {
     if (rightHold && screen == Screen::Playing) {
-        // The hold's point follows the mouse, and the units walk straight at it: no route is planned until release
         float hx = holdX, hz = holdZ, mhx = 0.0f, mhy = 0.0f;
         SDL_GetMouseState(&mhx, &mhy);
         if (holdTarget(winW, winH, mhx, mhy, hx, hz)) {
@@ -60,11 +51,10 @@ void App::updateRightHold() {
         markMove(holdX, holdZ);
     } else {
         rightHold = false;
-        actionAlpha = std::max(0.0f, actionAlpha - dt);   // fades out over about a second
+        actionAlpha = std::max(0.0f, actionAlpha - dt);
     }
 }
 
-// A talk order ends the first time one of its units is in talk range of its NPC
 void App::updateTalkOrders() {
     Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
     bool tradeTalk = false, shopTalk = false;
@@ -87,15 +77,13 @@ void App::updateTalkOrders() {
 }
 
 void App::reportPropArrivals() {
-    // Units that reached the prop they were sent to. Inventory opens the panel. Use says if the bed was taken, the
-    // prop had all its workers, or a campfire had nothing to cook or no room.
     for (const PropArrival& a : propOrderSystem(world)) {
-        if (a.automatic) continue;   // an automated behavior's step: nothing to tell you, and no panel to open
+        if (a.automatic) continue;
         const Prop* p = world.get<Prop>(a.prop);
         if (!p) continue;
         const PropInfo& info = propInfo(p->kind);
         if (a.locked || a.craft == WorkStart::Locked) {
-            refuse(lang("MISC_PROP_LOCKED"));   // locked: it can't be opened or used until it is unlocked
+            refuse(lang("MISC_PROP_LOCKED"));
             continue;
         }
         if (a.action == PropAction::Unlock) {
@@ -112,10 +100,10 @@ void App::reportPropArrivals() {
             continue;
         }
         if (a.action == PropAction::Inventory) {
-            if (!(storageProp == a.prop && storageUnit == a.unit)) {
+            if (!(session.storageProp == a.prop && session.storageUnit == a.unit)) {
                 closeStorage();
-                storageProp = a.prop;
-                storageUnit = a.unit;
+                session.storageProp = a.prop;
+                session.storageUnit = a.unit;
                 itemMenu.open = false;
             }
             continue;
@@ -139,21 +127,11 @@ void App::reportPropArrivals() {
 }
 
 void App::showWorkGains(double gameSecs) {
-    // Resource and crafting props: the units working them make items by the in-game time that passed
-    // Each item a worker receives shows over it, as "+Iron Ore", like a trade's label
     for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
         switch (g.kind) {
         case WorkGain::Kind::Item:
             tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
-            // Each prop has its own sound for an item finished
-            switch (g.propKind) {
-            case PropKind::Ore: queueSoundFrom(world, Sfx::DoneOre, g.unit); break;
-            case PropKind::Tree: queueSoundFrom(world, Sfx::DoneTree, g.unit); break;
-            case PropKind::Mushroom: queueSoundFrom(world, Sfx::DoneMushroom, g.unit); break;
-            case PropKind::Stove: queueSoundFrom(world, Sfx::DoneCooking, g.unit); break;
-            case PropKind::WaterPump: queueSoundFrom(world, Sfx::DoneWater, g.unit); break;
-            default: queueSoundFrom(world, Sfx::ItemMove, g.unit); break;
-            }
+            queueSoundFrom(world, propDoneSound((PropKind)g.propKind), g.unit);
             break;
         case WorkGain::Kind::Unlocked:
             tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
@@ -171,11 +149,8 @@ void App::showWorkGains(double gameSecs) {
     }
 }
 
-// While a prop is worked, its working sound now and then: the pick on the ore, the axe on the tree, the lockpick in
-// the lock. Only props near the camera are heard, and each kind of sound plays at most once at a time.
 void App::playWorkSounds() {
     std::map<Entity, float> nextTicks;
-    // The props someone is picking the lock of, sorted, found once for every worked prop below
     std::vector<Entity> pickedProps;
     for (Entity u : world.view<Working>()) {
         const Working* wk = world.get<Working>(u);
@@ -189,15 +164,7 @@ void App::playWorkSounds() {
         if (std::hypot(pt->x - cam.focusX, pt->z - cam.focusZ) > WORK_SOUND_RANGE) continue;
         const PropKind kind = world.get<Prop>(e)->kind;
         const bool picking = std::binary_search(pickedProps.begin(), pickedProps.end(), e);
-        Sfx sound = Sfx::Count;
-        if (picking) sound = Sfx::WorkLockpick;
-        else if (kind == PropKind::Ore) sound = Sfx::WorkMining;
-        else if (kind == PropKind::Tree) sound = Sfx::WorkWoodcutting;
-        else if (kind == PropKind::Mushroom) sound = Sfx::WorkHerbalism;
-        else if (kind == PropKind::Campfire || kind == PropKind::Stove) sound = Sfx::WorkCooking;
-        else if (kind == PropKind::WaterPump) sound = Sfx::WorkPump;
-        else if (kind == PropKind::TrainingDummy) sound = Sfx::WorkTraining;
-        else if (kind == PropKind::Forge) sound = Sfx::ForgeBurning;
+        const Sfx sound = picking ? Sfx::WorkLockpick : propWorkSound(kind);
         if (sound == Sfx::Count) continue;
         const float every = sound == Sfx::ForgeBurning ? FORGE_SOUND_SECONDS : WORK_SOUND_SECONDS;
         float t = workSoundTimers.count(e) ? workSoundTimers[e] : every * 0.5f;
@@ -211,7 +178,6 @@ void App::playWorkSounds() {
     workSoundTimers.swap(nextTicks);
 }
 
-// Autosave every N minutes of play
 void App::autosaveTick() {
     autoTimer += dt;
     if (settings.autosaveMinutes > 0 && autoTimer >= settings.autosaveMinutes * 60.0f) {
@@ -225,27 +191,23 @@ void App::autosaveTick() {
     }
 }
 
-// The camera, each frame while a game is on screen, paused or not. Only a talk holds it still.
 void App::updateCamera() {
-    if (screen != Screen::Playing || dialogueUnit != NULL_ENTITY) return;
+    if (screen != Screen::Playing || session.dialogueUnit != NULL_ENTITY) return;
     panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
     cam.updateClearance(terrain);
-    // Open worlds: read in the ground near the camera and the units, a few chunks each frame
     if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
 }
 
-// As many steps of the game as the time that passed calls for, each of the same length, so the game plays the same at
-// any frame rate. If the machine can't keep up, the game slows down rather than taking ever more steps.
 void App::stepSimulation() {
-    if (screen != Screen::Playing || dialogueUnit != NULL_ENTITY || paused) return;
+    if (screen != Screen::Playing || session.dialogueUnit != NULL_ENTITY || session.paused) return;
     const float frameDt = dt;
     simLeft += frameDt;
     dt = SIM_STEP_SECONDS;
     int steps = 0;
     while (simLeft >= SIM_STEP_SECONDS && steps < SIM_MOST_STEPS_PER_FRAME) {
         updateTalkOrders();
-        if (dialogueUnit != NULL_ENTITY) break;   // the game stands still while a talk is open
+        if (session.dialogueUnit != NULL_ENTITY) break;
         simBefore.clear();
         for (Entity u : world.view<Unit, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
         stepGame();
@@ -279,43 +241,33 @@ void App::putUnitsBack() {
     simTrue.clear();
 }
 
-// One step of the game itself, while it is playing and not stopped
 void App::stepGame() {
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
-    factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
-    defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
+    factionSystem(world, dt);
+    defendSystem(world);
     combatSystem(world, terrain, rng, dt, gameLog, floatingNumbers);
-    patrolSpawnSystem(world, terrain, dt);   // a mob gone too far from its spawn gives up and walks home
+    patrolSpawnSystem(world, terrain, dt);
     // Behaviors after the fight, so a unit hit this frame can drink in the same frame
     behaviorSystem(world, gameLog, dt);
-    // Anyone left at 0 health falls Unconscious
     downedSystem(world);
-    // A log scrolled up keeps its place as lines arrive. One at its newest line follows them.
     const size_t logCount = gameLog.lines.size();
     if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
     logSeen = logCount;
     squadSystem(world, dt, runMode);
     steeringSystem(world, terrain, dt, runMode);
-    pickupSystem(world, terrain);   // a pickup plays its own sound
+    pickupSystem(world, terrain);
     reportPropArrivals();
-    // Units with automated behaviors (a camp's woodcutter) take their next step: to a tree, or to the Altar with
-    // a load
-    wildMobSystem(world, terrain, dt);   // wild mobs keep to their temperament: the Avoidant ones run off
+    wildMobSystem(world, terrain, dt);
     automationSystem(world, terrain, dt, rng);
-    // Picking up, putting down and carrying Unconscious units; looters that got there open the panel
     const CarryEvents carried = carrySystem(world);
     for (const auto& [looter, looted] : carried.loot) {
         closeStorage();
-        lootUnit = looted;
-        lootBy = looter;
+        session.lootUnit = looted;
+        session.lootBy = looter;
         playSfx(Sfx::UiMenuOpen);
     }
     cleanupActiveSquads(world);
-    // Open worlds: read in the ground near the camera and the units, a few chunks each frame
-    if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
-    // The in-game clock runs while it is not stopped. Hunger ticks once for each in-game hour it passes,
-    // and health comes back by the in-game seconds that passed.
     int hoursPassed = 0;
     double gameSecs = 0.0;
     if (sky.clockRunning) {
@@ -323,8 +275,7 @@ void App::stepGame() {
         hoursPassed = advanceClock(gs.clockSeconds, dt);
     }
     needsSystem(world, hoursPassed, gameSecs);
-    downedSystem(world);   // starving to 0 knocks a unit out too
-    // Unconscious units gain Conscious, paid for in Rested and then Dying: 100 Conscious wakes, 100 Dying is a corpse
+    downedSystem(world);
     const WakeChanges wakes = unconsciousSystem(world, gameSecs);
     playDeadSystem(world);
     for (Entity u : wakes.woke) {
@@ -332,60 +283,46 @@ void App::stepGame() {
         queueSoundFrom(world, Sfx::Recovers, u);
     }
     for (Entity u : wakes.died) queueSoundFrom(world, Sfx::Dies, u);
-    corpseDecaySystem(world, gameSecs);   // a corpse that has lain long enough turns to bones
-    bonesDecaySystem(world, gameSecs);    // and bones go in their turn, dropping what they hold
-    groundFoodSystem(world, gameSecs);    // food and bones left on the ground are gone after a day
+    corpseDecaySystem(world, gameSecs);
+    bonesDecaySystem(world, gameSecs);
+    groundFoodSystem(world, gameSecs);
     showWorkGains(gameSecs);
-    // Passive crafting props (the forge) burn their fuel and fill their output by themselves
     passiveCraftSystem(world, gameSecs);
-    // An Altar with no upkeep wears down; one worn through breaks into debris, and its claim is gone
     claimDecaySystem(world, gameSecs);
     if (sky.clockRunning) playWorkSounds();
     autosaveTick();
 }
 
-// Panels and selections that no longer have what they were opened for
 void App::closeStalePanels() {
-    // The storage panel closes once its unit is out of reach of the prop, is downed, or either is gone, or when the
-    // selection becomes one unit other than the panel's. A how-many prompt for it closes with it.
-    if (storageProp != NULL_ENTITY) {
-        const Needs* sn = world.get<Needs>(storageUnit);
+    if (session.storageProp != NULL_ENTITY) {
+        const Needs* sn = world.get<Needs>(session.storageUnit);
         const std::vector<Entity> picked = selectedUnits(world);
-        if (!world.has<Storage>(storageProp) || !world.has<Unit>(storageUnit) ||
-            (sn && sn->hp <= 0) || flatGap(world, storageUnit, storageProp) > STORAGE_CLOSE_RANGE ||
-            (picked.size() == 1 && picked[0] != storageUnit)) {
+        if (!world.has<Storage>(session.storageProp) || !world.has<Unit>(session.storageUnit) ||
+            (sn && sn->hp <= 0) || flatGap(world, session.storageUnit, session.storageProp) > STORAGE_CLOSE_RANGE ||
+            (picked.size() == 1 && picked[0] != session.storageUnit)) {
             closeStorage();
         }
     }
-    if (quantity.open && quantity.toStorage && storageProp == NULL_ENTITY) quantity.open = false;
-    // The looting panel closes once its looter is out of reach, is knocked out, or either is gone, or the unit it
-    // shows wakes up
-    if (lootUnit != NULL_ENTITY) {
-        if (!outCold(world, lootUnit) || !world.has<Unit>(lootBy) || outCold(world, lootBy) ||
-            flatGap(world, lootBy, lootUnit) > LOOT_RANGE) {
+    if (session.quantity.open && session.quantity.toStorage && session.storageProp == NULL_ENTITY) session.quantity.open = false;
+    if (session.lootUnit != NULL_ENTITY) {
+        if (!outCold(world, session.lootUnit) || !world.has<Unit>(session.lootBy) || outCold(world, session.lootBy) ||
+            flatGap(world, session.lootBy, session.lootUnit) > LOOT_RANGE) {
             closeLoot();
         }
     }
-    // A unit of your squad is always selected while there is one: when none is (a new game, the selected unit
-    // died), the first of the squad is (firstSquadUnit), the one the camera starts on. With none left, nobody is.
     if (screen == Screen::Playing && selectedUnits(world).empty()) {
         const Entity first = firstSquadUnit(world);
         if (first != NULL_ENTITY) world.add(first, Selected{});
     }
-    if (inspectUnit != NULL_ENTITY && !world.has<Unit>(inspectUnit)) inspectUnit = NULL_ENTITY;
-    // A unit that is not in your squad shows only its Profile
+    if (session.inspectUnit != NULL_ENTITY && !world.has<Unit>(session.inspectUnit)) session.inspectUnit = NULL_ENTITY;
     if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UnitTab::Profile;
-    // The right-click menu closes if its target is gone or a talk or trade opens
-    if (contextMenu.open && ((!world.has<Unit>(contextMenu.target) && !world.has<Prop>(contextMenu.target)) ||
-                             dialogueUnit != NULL_ENTITY)) {
-        contextMenu.open = false;
+    if (session.contextMenu.open && ((!world.has<Unit>(session.contextMenu.target) && !world.has<Prop>(session.contextMenu.target)) ||
+                             session.dialogueUnit != NULL_ENTITY)) {
+        session.contextMenu.open = false;
     }
 }
 
-// Sounds the systems asked for this frame. The plain item sound gives way to any more particular one.
 void App::playQueuedSounds() {
-    // A world sound is as loud as its nearest copy this frame, and is panned to its side of the screen. A
-    // frame of fighting plays one swing sound: a hit if any landed, else a miss.
     const std::vector<QueuedSound> queued = takeQueuedSounds();
     std::array<float, (size_t)Sfx::Count> volume{}, pan{};
     volume.fill(-1.0f);
@@ -399,7 +336,7 @@ void App::playQueuedSounds() {
             v = soundGain(std::sqrt((q.x - ex) * (q.x - ex) + (q.y - ey) * (q.y - ey) + (q.z - ez) * (q.z - ez)));
             const float cx = vp.m[0] * q.x + vp.m[4] * q.y + vp.m[8] * q.z + vp.m[12];
             const float cw = vp.m[3] * q.x + vp.m[7] * q.y + vp.m[11] * q.z + vp.m[15];
-            p = cw > 1e-4f ? soundPan(cx / cw) : 0.0f;   // behind the eye: centred
+            p = cw > 1e-4f ? soundPan(cx / cw) : 0.0f;
         }
         const size_t i = (size_t)q.sfx;
         if (i < volume.size() && v > volume[i]) {
@@ -416,7 +353,6 @@ void App::playQueuedSounds() {
     for (size_t i = 0; i < volume.size(); ++i) {
         if (volume[i] >= 0.0f) playSfx((Sfx)i, volume[i], pan[i]);
     }
-    // Units selected: a sound when the selection changes to some units
     size_t selKey = 0, selCount = 0;
     for (Entity u : world.view<Selected>()) {
         selKey = selKey * 31u + (size_t)u + 1u;
@@ -424,13 +360,11 @@ void App::playQueuedSounds() {
     }
     if (screen == Screen::Playing && selKey != lastSelectionKey && selCount > 0) playSfx(Sfx::UiSelect);
     lastSelectionKey = selKey;
-    // (A unit falling Unconscious plays its own sound, from knockOut)
 }
 
 void App::update() {
     updateDeleteHold();
 
-    // ---- Timing ----
     const Uint64 now = SDL_GetTicksNS();
     dt = (float)((double)(now - lastTicks) / 1e9);
     lastTicks = now;
@@ -441,37 +375,31 @@ void App::update() {
     updateRightHold();
     moveMarkTime = std::max(0.0f, moveMarkTime - dt);
 
-    // Game messages written outside a fight (XP, pickups, drops) join the log every frame
     flushQueuedLog(gameLog);
     cam.mapSize = (float)terrain.size();
     cam.viewRange = (float)settings.viewRange;
 
-    // ---- Game update: only while playing ----
-    // The game stands still while a talk is open, and only End Dialogue starts it again
-    talkCooldown = std::max(0.0f, talkCooldown - dt);
+    session.talkCooldown = std::max(0.0f, session.talkCooldown - dt);
     stepSimulation();
+    if (screen == Screen::Playing) updateDisbandHold();
     placeUnitsBetweenSteps();
-    updateCamera();   // after the units are placed, so a camera following one moves as smoothly as it does
+    updateCamera();
 
     closeStalePanels();
     playQueuedSounds();
 }
 
 void App::updateHover() {
-    // ---- The window title shows the game's name and the date ----
     std::string title = gameTitle() + "   " + formatDate(gs.clockSeconds);
     if (title != lastTitle) {
         SDL_SetWindowTitle(window, title.c_str());
         lastTitle = title;
     }
 
-    // ---- Hover list: what is under the mouse, in the top-left corner. Units first (white), then items on the
-    // ground (orange-yellow), then props (gray), up to the limit in all, then "..." ----
     hud.clear();
     mouseX = mouseY = 0.0f;
     SDL_GetMouseState(&mouseX, &mouseY);
     renderer.setMouse(mouseX, mouseY);
-    // The props under the mouse, found once for the hover list and the claim circle below
     std::vector<Entity> propsUnder;
     bool propsFound = false;
     auto propsAt = [&](float x, float y) -> const std::vector<Entity>& {
@@ -487,7 +415,6 @@ void App::updateHover() {
             under.push_back({ world.get<Name>(u)->text, HUD_UNIT_COLOR });
 
         std::vector<Entity> items = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
-        // While Alt shows the name boxes, the name line under the mouse counts too
         if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
             const Entity labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
             if (labelled != NULL_ENTITY && std::find(items.begin(), items.end(), labelled) == items.end())
@@ -498,11 +425,8 @@ void App::updateHover() {
         }
 
         for (Entity e : propsAt(mouseX, mouseY)) {
-            // A prop locked against the player says so: "Chest (Locked)". The player's own, or one in a player
-            // claim, does not.
             const std::string name = propDisplayName(world, e);
             under.push_back({ lockShutFor(world, e, NULL_ENTITY) ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
-            // An Altar also shows its health and upkeep
             for (const std::string& line : altarInfoLines(world, e)) under.push_back({ line, HUD_PROP_COLOR });
         }
 
@@ -510,32 +434,28 @@ void App::updateHover() {
         if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
     }
 
-    // ---- Build placement: while a prop is picked, its footprint follows the mouse over the ground. The preview
-    // shows exactly what a click would do. ----
     {
-        // A kind that needs a claim is put down once no selected unit of yours stands in one
         const bool inClaim = selectionInClaim(world);
-        if (buildPick.any() && !buildAnywhere(buildPick) && !inClaim) buildPick = {};
+        if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim) session.buildPick = {};
         renderer.setBuildInClaim(inClaim);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
-        const bool placing = buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
-                             && dialogueUnit == NULL_ENTITY && !optimizeAllOpen && disbandTarget == NULL_ENTITY;
+        const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
+                             && session.dialogueUnit == NULL_ENTITY && !optimizeAllOpen && session.disbandTarget == NULL_ENTITY;
         BuildPreview bp;
         if (placing && !overPanels(bmx, bmy, winW, winH)) {
             if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
                 bp.on = true;
-                bp.kind = buildPick.kind;
-                snapBuildSpot(buildPick.kind, hit->first, hit->second, bp.x, bp.z);
-                bp.valid = checkBuildSpot(world, terrain, buildPick.kind, bp.x, bp.z) == BuildCheck::Ok;
+                bp.kind = session.buildPick.kind;
+                snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
+                bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z) == BuildCheck::Ok;
             }
         }
-        if (bp.on && buildPick.places(PropKind::Altar)) {
+        if (bp.on && session.buildPick.places(PropKind::Altar)) {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
         Entity hoverAltar = NULL_ENTITY;
-        // Not placing anything: an existing Altar under the mouse shows its claim circle
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !overPanels(bmx, bmy, winW, winH)) {
             for (Entity e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
@@ -549,7 +469,6 @@ void App::updateHover() {
                 break;
             }
         }
-        // When one claim circle shows, every Altar's circle shows with it
         if (bp.ringR > 0.0f) {
             for (Entity e : world.view<Prop, Transform>()) {
                 if (e == hoverAltar || world.get<Prop>(e)->kind != PropKind::Altar) continue;
@@ -558,6 +477,6 @@ void App::updateHover() {
             }
         }
         renderer.setBuildPreview(bp);
-        renderer.setBuildSelected(buildPick);
+        renderer.setBuildSelected(session.buildPick);
     }
 }

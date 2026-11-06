@@ -4,6 +4,7 @@
 #include <cmath>
 #include "build.h"
 #include "factions.h"
+#include "hostility.h"
 #include "language.h"
 
 std::vector<Claim> claimsOf(World& w) {
@@ -62,12 +63,21 @@ std::string propDisplayName(World& w, Entity prop) {
 }
 
 bool lockShutFor(World& w, Entity prop, Entity unit) {
-    const Faction* f = unit != NULL_ENTITY ? w.get<Faction>(unit) : nullptr;
-    return lockShutForFaction(w, prop, f ? f->id : FACTION_PLAYER);
+    return lockShutForFaction(w, prop, factionOf(w, unit));
+}
+
+bool lockShutFor(World& w, const std::vector<Claim>& claims, Entity prop, Entity unit) {
+    return lockShutForFaction(w, claims, prop, factionOf(w, unit));
 }
 
 bool lockShutForFaction(World& w, Entity prop, int faction) {
-    // An Altar has no lock to pick: it is its own faction's, and no one else's
+    const Lock* lock = w.get<Lock>(prop);
+    const Prop* p = w.get<Prop>(prop);
+    if ((p && p->kind == PropKind::Altar) || (lock && lock->locked)) return lockShutForFaction(w, claimsOf(w), prop, faction);
+    return false;
+}
+
+bool lockShutForFaction(World& w, const std::vector<Claim>& claims, Entity prop, int faction) {
     if (const Prop* p = w.get<Prop>(prop); p && p->kind == PropKind::Altar) {
         const Owner* own = w.get<Owner>(prop);
         return !own || own->faction != faction;
@@ -75,11 +85,8 @@ bool lockShutForFaction(World& w, Entity prop, int faction) {
     const Lock* lock = w.get<Lock>(prop);
     if (!lock || !lock->locked) return false;
     if (lock->faction >= 0 && lock->faction == faction) return false;
-    // A locked prop inside a claim of this faction is open to it, whoever's lock it is
-    if (const Transform* t = w.get<Transform>(prop)) {
-        if (claimAt(claimsOf(w), t->x, t->z, faction)) return false;
-    }
-    return true;
+    const Transform* t = w.get<Transform>(prop);
+    return !(t && claimAt(claims, t->x, t->z, faction));
 }
 
 void claimOwnership(World& w, Entity prop) {
@@ -96,9 +103,6 @@ void claimOwnership(World& w, Entity prop) {
 }
 
 namespace {
-
-// Everything that points at a prop about to go lets go of it: units lying, sitting or shut in it get off, units
-// working it or walking to it stop, and Auto-Hauls to it are dropped
 void releaseProp(World& w, Entity prop) {
     for (Entity u : w.view<Occupying>()) {
         if (w.get<Occupying>(u)->prop == prop) w.remove<Occupying>(u);
@@ -121,8 +125,6 @@ void releaseProp(World& w, Entity prop) {
     }
 }
 
-// An Altar's claim is gone: what its faction owned in the circle now belongs to nobody. A lock stays as it is, with no
-// faction behind it.
 void abandonClaim(World& w, float x, float z, int faction) {
     for (Entity e : w.view<Prop, Transform, Owner>()) {
         if (w.get<Owner>(e)->faction != faction) continue;
@@ -133,16 +135,6 @@ void abandonClaim(World& w, float x, float z, int faction) {
         if (Lock* lock = w.get<Lock>(e); lock && lock->faction == faction) lock->faction = -1;
     }
 }
-
-}  // namespace
-
-// A level's prop going for good is remembered, or a save would bring it back from the seed
-static void rememberGone(World& w, Entity prop) {
-    const Prop* p = w.get<Prop>(prop);
-    if (!p || p->serial < 0) return;
-    const std::vector<Entity> holder = w.view<GoneProps>();
-    GoneProps& gone = holder.empty() ? w.add(w.create(), GoneProps{}) : *w.get<GoneProps>(holder.front());
-    gone.serials.push_back(p->serial);
 }
 
 void breakBuilding(World& w, Entity e) {
@@ -151,15 +143,12 @@ void breakBuilding(World& w, Entity e) {
     const Transform at = *w.get<Transform>(e);
     if (kind == PropKind::Debris) {
         releaseProp(w, e);
-        rememberGone(w, e);
         w.destroy(e);
         return;
     }
     const std::vector<ItemStack> held = propHoldings(w, e);
-    // Bones leave no Debris: only what they held and the Bones item, where they lay
     if (destroyedByHand(kind)) {
         releaseProp(w, e);
-        rememberGone(w, e);
         w.destroy(e);
         dropStacks(w, at, held);
         spawnGroundItem(w, at, BONES_ITEM, BONES_ITEM_COUNT);
@@ -168,14 +157,10 @@ void breakBuilding(World& w, Entity e) {
     releaseProp(w, e);
     const Owner* own = w.get<Owner>(e);
     const int altarOwner = kind == PropKind::Altar && own ? own->faction : -1;
-    rememberGone(w, e);
     w.destroy(e);
     if (altarOwner >= 0) abandonClaim(w, at.x, at.z, altarOwner);
     dropStacks(w, at, held);
-    const Entity debris = w.create();
-    w.add(debris, Transform{ at.x, at.y, at.z });
-    w.add(debris, Prop{ PropKind::Debris, -1, 0.0f });
-    claimOwnership(w, debris);
+    claimOwnership(w, makeProp(w, PropKind::Debris, at));
 }
 
 bool destroyBuilding(World& w, Entity e) {
@@ -184,20 +169,9 @@ bool destroyBuilding(World& w, Entity e) {
     return true;
 }
 
-void resolveDuplicateAltars(World& w) {
-    std::vector<int> seen;
-    std::vector<Entity> extra;
-    for (const Claim& c : claimsOf(w)) {
-        if (std::find(seen.begin(), seen.end(), c.owner) != seen.end()) extra.push_back(c.altar);
-        else seen.push_back(c.owner);
-    }
-    for (Entity e : extra) breakBuilding(w, e);
-}
-
 void claimDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    // An Altar with upkeep recovers, and one with none wears through in ALTAR_DECAY_HOURS
     for (const Claim& c : claimsOf(w)) {
         Health* hp = w.get<Health>(c.altar);
         if (!hp) continue;

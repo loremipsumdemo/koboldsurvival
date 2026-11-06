@@ -5,26 +5,21 @@
 #include <string>
 #include "language.h"
 
-// The in-game calendar. One full day and night takes 30 real minutes, so an in-game hour takes
-// 75 real seconds. The clock is kept as in-game seconds since the start of the game, which is
-// 06:00 on Day 1 of First Month in Year 500. The time, the date and the hour are all worked out
-// from that one number.
-
 constexpr double SECONDS_PER_HOUR = 60.0 * 60.0;
 constexpr double SECONDS_PER_DAY = 24.0 * SECONDS_PER_HOUR;
 constexpr double DAY_REAL_SECONDS = 30.0 * 60.0;                                    // real seconds for one full day
-constexpr double GAME_SECONDS_PER_REAL_SECOND = SECONDS_PER_DAY / DAY_REAL_SECONDS;  // 48 in-game seconds each real second
+constexpr double GAME_SECONDS_PER_REAL_SECOND = SECONDS_PER_DAY / DAY_REAL_SECONDS;
 
 constexpr int DAYS_PER_MONTH = 30;
 constexpr int MONTHS_PER_YEAR = 12;
 constexpr int START_YEAR = 500;
-constexpr double START_CLOCK_SECONDS = 6.0 * SECONDS_PER_HOUR;                     // 06:00 on the first day
+constexpr double START_CLOCK_SECONDS = 6.0 * SECONDS_PER_HOUR;
 static_assert(MONTHS_PER_YEAR <= 12, "month names are spelled out up to twelve");
 
 struct CalendarDate {
     int year = START_YEAR;
-    int month = 1;    // 1..MONTHS_PER_YEAR
-    int day = 1;      // 1..DAYS_PER_MONTH
+    int month = 1;
+    int day = 1;
 };
 
 struct ClockTime {
@@ -33,7 +28,6 @@ struct ClockTime {
     int second = 0;
 };
 
-// Whole days since the start of the game
 inline long long dayIndexOf(double seconds) {
     return (long long)std::floor(seconds / SECONDS_PER_DAY);
 }
@@ -47,7 +41,6 @@ inline CalendarDate dateOf(double seconds) {
     return c;
 }
 
-// Time of day as whole in-game seconds, so 23:59:47 comes out of 86387
 inline ClockTime clockOf(double seconds) {
     double inDay = seconds - (double)dayIndexOf(seconds) * SECONDS_PER_DAY;
     long long t = (long long)std::floor(inDay);
@@ -60,23 +53,19 @@ inline ClockTime clockOf(double seconds) {
     return c;
 }
 
-// Time of day in in-game minutes, 0..1440, for the sun and sky
 inline float timeOfDayMinutes(double seconds) {
     return (float)((seconds - (double)dayIndexOf(seconds) * SECONDS_PER_DAY) / 60.0);
 }
 
-// "First" .. "Twelfth"
 inline std::string ordinalWord(int n) {
     if (n < 1 || n > 12) return std::to_string(n);
     return lang("MISC_ORD_" + std::to_string(n));
 }
 
-// "Third Month". Months are never named Jan, February and so on.
 inline std::string monthName(int month) {
     return langf("UILABEL_MONTH_NAME", { ordinalWord(month) });
 }
 
-// "DAY 12 · THIRD MONTH · YEAR 500"
 inline std::string formatDate(double seconds) {
     const CalendarDate d = dateOf(seconds);
     std::string s = langf("UILABEL_DATE_LINE", { std::to_string(d.day), monthName(d.month), std::to_string(d.year) });
@@ -86,7 +75,6 @@ inline std::string formatDate(double seconds) {
     return s;
 }
 
-// "23:59": the hour and minute
 inline std::string formatTime(double seconds) {
     const ClockTime c = clockOf(seconds);
     char buf[16];
@@ -94,7 +82,6 @@ inline std::string formatTime(double seconds) {
     return buf;
 }
 
-// "500-01-01": the year, then the month and the day, each month and day as two digits
 inline std::string formatYmd(double seconds) {
     const CalendarDate d = dateOf(seconds);
     char buf[24];
@@ -102,9 +89,6 @@ inline std::string formatYmd(double seconds) {
     return buf;
 }
 
-// Moves the clock on by `realSeconds` of real time and returns how many in-game hours it passed
-// over, counted by the clock's own hour boundaries (so 10:59 to 11:00 is one hour, whatever the
-// frame rate). Hunger ticks once for each.
 inline int advanceClock(double& seconds, double realSeconds) {
     if (realSeconds <= 0.0) return 0;
     const long long before = (long long)std::floor(seconds / SECONDS_PER_HOUR);

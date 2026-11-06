@@ -7,39 +7,34 @@
 #include <utility>
 
 namespace {
-
-// The panel is laid out in units u, where u is the panel's height over PANEL_H. Every size below is in u, so the
-// menu keeps its proportions at any window size.
-constexpr float PANEL_W = 900.0f;      // widest the panel is, at a 720-pixel-high window
-constexpr float PANEL_H = 640.0f;      // tallest the panel is, at a 720-pixel-high window
-constexpr float PAD = 28.0f;           // inset of the contents from the panel's left and right edges
-constexpr float TITLE_H = 64.0f;       // room above the tabs for the heading
+constexpr float PANEL_W = 900.0f;
+constexpr float PANEL_H = 640.0f;
+constexpr float PAD = 28.0f;
+constexpr float TITLE_H = 64.0f;
 constexpr float TAB_H = 40.0f;
 constexpr float TAB_GAP = 8.0f;
-constexpr float CONTENT_GAP = 18.0f;   // between the tabs and the first row
-constexpr float ROW_STEP = 44.0f;      // from one row to the next
-constexpr float ROW_H = 40.0f;         // a row's height
-constexpr float ROW_VPAD = 3.0f;       // a control's inset from the top and bottom of its row
-constexpr float COL_SPLIT = 0.44f;     // the controls column starts this far across the row
-constexpr float COL_RIGHT = 14.0f;     // and stops this far from the row's right edge
-constexpr float TOGGLE_W = 180.0f;     // an on/off button's width
-constexpr float LEVEL_BTN_W = 96.0f;   // a level row's on/off button
-constexpr float LEVEL_TEXT_W = 60.0f;  // a level row's percentage
-constexpr float LEVEL_GAP = 8.0f;      // between a level row's parts
-constexpr float TRACK_H = 8.0f;        // a slider's track
+constexpr float CONTENT_GAP = 18.0f;
+constexpr float ROW_STEP = 44.0f;
+constexpr float ROW_H = 40.0f;
+constexpr float ROW_VPAD = 3.0f;
+constexpr float COL_SPLIT = 0.44f;
+constexpr float COL_RIGHT = 14.0f;
+constexpr float TOGGLE_W = 180.0f;
+constexpr float LEVEL_BTN_W = 96.0f;
+constexpr float LEVEL_TEXT_W = 60.0f;
+constexpr float LEVEL_GAP = 8.0f;
+constexpr float TRACK_H = 8.0f;
 constexpr float FOOT_H = 44.0f;
-constexpr float FOOT_BOTTOM = 16.0f;   // the footer's distance from the panel's bottom edge
+constexpr float FOOT_BOTTOM = 16.0f;
 constexpr float DEFAULTS_W = 220.0f;
 constexpr float BACK_W = 200.0f;
-constexpr float DROP_EDGE = 8.0f;      // a dropdown list keeps this far from the window's edge
-constexpr int DROP_MIN_ROWS = 4;       // a list opens downward when this many of its rows fit there
+constexpr float DROP_EDGE = 8.0f;
+constexpr int DROP_MIN_ROWS = 4;
 
-// A resolution option, labeled "W x H" with an optional note
 DropOption sizeOption(int w, int h, const std::string& note = std::string()) {
     return DropOption{ std::to_string(w) + " x " + std::to_string(h) + note, 0, w, h, true };
 }
 
-// The index of the option with this value, or 0 when none has it
 int indexOfValue(const std::vector<DropOption>& opts, int value) {
     for (size_t i = 0; i < opts.size(); ++i) {
         if (opts[i].value == value) return (int)i;
@@ -47,7 +42,6 @@ int indexOfValue(const std::vector<DropOption>& opts, int value) {
     return 0;
 }
 
-// The index of the option whose size is nearest to (w, h). An exact match is nearest of all.
 int indexOfSize(const std::vector<DropOption>& opts, int w, int h) {
     int best = 0;
     long long bestD = -1;
@@ -62,7 +56,6 @@ int indexOfSize(const std::vector<DropOption>& opts, int w, int h) {
     return best;
 }
 
-// A dropdown row. The current index is clamped, and an empty list shows one greyed "None available" entry.
 RowSpec makeDropdown(RowId id, const std::string& label, std::vector<DropOption> options, int current, bool enabled) {
     RowSpec r;
     r.id = id;
@@ -90,7 +83,6 @@ RowSpec makeToggle(RowId id, const std::string& label, bool on) {
     return r;
 }
 
-// A button row: its control is a button with the text, and the row does what its id says
 RowSpec makeAction(RowId id, const std::string& label, const std::string& text) {
     RowSpec r;
     r.id = id;
@@ -100,8 +92,6 @@ RowSpec makeAction(RowId id, const std::string& label, const std::string& text) 
     return r;
 }
 
-// A slider from 100% to 200%, in steps of 5: the level 0 to 100 is the percentage above 100
-// A scale slider: the percentage runs from UI_SCALE_MIN to UI_SCALE_MAX, and the track shows where it sits.
 RowSpec makeScale(RowId id, const std::string& label, int percent) {
     RowSpec r;
     r.id = id;
@@ -113,7 +103,6 @@ RowSpec makeScale(RowId id, const std::string& label, int percent) {
     return r;
 }
 
-// The view range slider: VIEW_RANGE_MIN to VIEW_RANGE_MAX tiles, shown as a count of tiles
 RowSpec makeRange(RowId id, const std::string& label, int tiles) {
     RowSpec r;
     r.id = id;
@@ -161,8 +150,6 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     }
     rows.push_back(makeDropdown(RowId::Monitor, lang("UILABEL_MONITOR"), monitors, d.chosen, true));
 
-    // Windowed offers every standard size that fits the monitor, full screen every mode it has, and borderless
-    // always covers the desktop, so its one size is shown but cannot be changed.
     std::vector<DropOption> sizes;
     bool sizeEnabled = true;
     if (s.displayMode == DISPLAY_WINDOWED) {
@@ -176,7 +163,6 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     rows.push_back(makeDropdown(RowId::Resolution, lang("UILABEL_RESOLUTION"), sizes,
                                 indexOfSize(sizes, s.width, s.height), sizeEnabled));
 
-    // Refresh rates only apply to full screen, at the size chosen. Default leaves it to the monitor.
     std::vector<DropOption> rates{ DropOption{ lang("UILABEL_DEFAULT"), 0, 0, 0, true } };
     if (s.displayMode == DISPLAY_FULLSCREEN) {
         for (int hz : refreshRates(d.modes, s.width, s.height)) {
@@ -215,7 +201,6 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     rows.push_back(makeToggle(RowId::NpcNames, lang("UILABEL_NPC_NAMES"), s.showNpcNames));
     rows.push_back(makeToggle(RowId::PropNames, lang("UILABEL_PROP_NAMES"), s.showPropNames));
     {
-        // Under Prop names, and only usable while they show
         RowSpec info = makeToggle(RowId::PropInfo, lang("UILABEL_PROP_INFO"), s.showPropInfo);
         info.sub = true;
         info.enabled = s.showPropNames;
@@ -226,10 +211,8 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     return rows;
 }
 
-// The Language tab: the language, then the font. The start menu's Language button opens this same tab.
 std::vector<RowSpec> languageRows(const GameSettings& s) {
     std::vector<RowSpec> rows;
-    // Each option's value is its place in the list of languages, which pickOption maps back to the id
     std::vector<DropOption> langs;
     int currentLanguage = 0;
     const std::vector<LanguageChoice>& choices = languageChoices();
@@ -238,7 +221,6 @@ std::vector<RowSpec> languageRows(const GameSettings& s) {
         if (choices[i].id == s.language) currentLanguage = (int)i;
     }
     rows.push_back(makeDropdown(RowId::Language, lang("UILABEL_LANGUAGE_TAB"), langs, currentLanguage, true));
-    // The font: Automatic (the built-in fonts, the default), or any font installed on this computer
     std::vector<DropOption> fonts{ DropOption{ lang("UILABEL_FONT_AUTOMATIC"), 0, 0, 0, true } };
     int currentFont = 0;
     const std::vector<std::string>& installed = installedFontPaths();
@@ -269,8 +251,7 @@ std::vector<RowSpec> audioRows(const GameSettings& s) {
     rows.push_back(makeToggle(RowId::CraftGatherSounds, lang("UILABEL_CRAFT_GATHER_SOUNDS"), s.craftGatherSounds));
     return rows;
 }
-
-} // namespace
+}
 
 std::vector<RowSpec> settingsRows(SettingsTab tab, const GameSettings& s, const DisplayInfo& d) {
     switch (tab) {
@@ -291,7 +272,6 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
     const float px = (W - pw) * 0.5f, py = (H - ph) * 0.5f;
     L.panel = Rect{ px, py, pw, ph };
 
-    // Sizes come from the panel's own height, the same way drawing measures them
     const float u = ph / PANEL_H;
     const float pad = PAD * u;
     const float tabY = py + TITLE_H * u, tabH = TAB_H * u, tabGap = TAB_GAP * u;
@@ -340,7 +320,6 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
         }
     }
 
-    // An open dropdown lists its options under its box, or above it when there is more room there
     if (st.openRow >= 0 && st.openRow < (int)rows.size() && rows[st.openRow].kind == RowKind::Dropdown
         && rows[st.openRow].enabled && !rows[st.openRow].options.empty()) {
         const RowSpec& row = rows[st.openRow];
@@ -429,7 +408,7 @@ void settingsOpenDropdown(SettingsMenuState& st, const std::vector<RowSpec>& row
     const RowSpec& r = rows[row];
     if (r.kind != RowKind::Dropdown || !r.enabled || r.options.empty()) return;
     st.openRow = row;
-    st.dropFirst = r.current;     // the layout clamps this, so the current option is in view
+    st.dropFirst = r.current;
     st.dragRow = -1;
 }
 
@@ -457,7 +436,6 @@ SettingsChange pickOption(RowId id, const DropOption& option, GameSettings& s) {
         c.display = true;
         break;
     case RowId::Resolution:
-        // A new size resets the refresh rate, since the rates a size has differ
         s.width = option.w;
         s.height = option.h;
         s.refreshHz = 0;
@@ -550,7 +528,6 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
 SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
     SettingsChange c;
     if (id == RowId::FontScale) {
-        // Steps of 5 percent from 50 to 200: the level 0 to 100 spans that range and snaps to the nearest step
         const int span = UI_SCALE_MAX - UI_SCALE_MIN;
         const int offset = std::clamp(level, 0, 100) * span / 100;
         const int pct = UI_SCALE_MIN + UI_SCALE_STEP * ((offset + UI_SCALE_STEP / 2) / UI_SCALE_STEP);
@@ -562,7 +539,6 @@ SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
         return c;
     }
     if (id == RowId::ViewRange) {
-        // The level 0 to 100 spans VIEW_RANGE_MIN to VIEW_RANGE_MAX tiles, snapped to the nearest step
         const int span = VIEW_RANGE_MAX - VIEW_RANGE_MIN;
         const int offset = std::clamp(level, 0, 100) * span / 100;
         const int tiles = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((offset + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);

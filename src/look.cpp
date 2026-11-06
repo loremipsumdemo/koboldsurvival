@@ -13,7 +13,6 @@
 namespace fs = std::filesystem;
 
 namespace {
-
 constexpr float DEG_TO_RAD = PI / 180.0f;
 
 Vec3 operator+(Vec3 a, Vec3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
@@ -23,15 +22,13 @@ Vec3 operator*(Vec3 a, float s) { return {a.x * s, a.y * s, a.z * s}; }
 Vec3 rgb(const float* c) { return {c[0], c[1], c[2]}; }
 Vec3 mix(Vec3 a, Vec3 b, float t) { return a + (b - a) * t; }
 
-// Opacity of a color, clamped to 0..1
 float opacity(const Look& l, LookColor c) { return std::clamp(l.colorOpacity[(int)c], 0.0f, 1.0f); }
 
-// One value a look file holds. Colors have count 3, color_opacity one per LookColor, everything else 1.
 struct LookField {
     const char* name;
-    std::size_t offset;   // position of the first float inside Look
+    std::size_t offset;
     int count;
-    float lo, hi;         // a value read from a file is clamped to this range
+    float lo, hi;
 };
 
 #define LOOK_FIELD(member) offsetof(Look, member)
@@ -85,7 +82,6 @@ const float* fieldValue(const Look& look, const LookField& f) {
     return reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(&look) + f.offset);
 }
 
-// Finds "key": and returns the position just after the colon, or npos
 std::size_t findValue(const std::string& text, const std::string& key) {
     const std::string needle = "\"" + key + "\"";
     std::size_t p = text.find(needle);
@@ -96,7 +92,6 @@ std::size_t findValue(const std::string& text, const std::string& key) {
     return p + 1;
 }
 
-// Reads a number, or [a, b, c] for a list, into vals. Returns the count read, or 0.
 int readValue(const std::string& text, std::size_t p, float* vals, int want) {
     while (p < text.size() && std::isspace((unsigned char)text[p])) ++p;
     if (p >= text.size()) return 0;
@@ -121,21 +116,17 @@ int readValue(const std::string& text, std::size_t p, float* vals, int want) {
     vals[0] = v;
     return 1;
 }
-
-} // namespace
+}
 
 SkyLight skyLightFor(const Look& l, Vec3 sunDir) {
     SkyLight s;
     s.sunDir = sunDir;
 
-    // Smooth blend between night and day around the horizon
     const float t = std::clamp((sunDir.y + 0.10f) / 0.30f, 0.0f, 1.0f);
     s.daylight = t * t * (3.0f - 2.0f * t);
 
     s.top = mix(rgb(l.nightTop), rgb(l.skyTop), s.daylight);
     s.horizon = mix(rgb(l.nightHorizon), rgb(l.skyHorizon), s.daylight);
-    // Sunrise and sunset: the sun turns orange, and the horizon warms, while the sun is low. Full strength when it
-    // touches the horizon, gone a little above it.
     const float warm = std::exp(-std::pow(s.sunDir.y / 0.25f, 2.0f)) * std::clamp(l.sunsetGlow, 0.0f, 1.0f);
     const Vec3 sunTint = mix(rgb(l.sunRgb) * opacity(l, LookColor::Sun),
                              rgb(l.sunGlowRgb) * opacity(l, LookColor::SunGlow), warm * 0.8f);
@@ -191,7 +182,6 @@ bool saveLookFile(const Look& look, const std::string& path, std::string& err) {
     std::error_code ec;
     if (target.has_parent_path()) fs::create_directories(target.parent_path(), ec);
 
-    // Written to a temporary file first, so a failed write leaves the old file whole
     const fs::path tmp = fs::u8path(path + ".tmp");
     {
         std::ofstream f(tmp, std::ios::trunc);
@@ -220,13 +210,10 @@ bool loadLookText(const std::string& text, Look& look, std::string& err) {
         return false;
     }
 
-    // Read into a copy so a bad file changes nothing
     Look loaded = look;
     for (const LookField& fld : lookFields()) {
         std::size_t p = findValue(text, fld.name);
-        // Older world files spell it colour_opacity
-        if (p == std::string::npos && std::string(fld.name) == "color_opacity") p = findValue(text, "colour_opacity");
-        if (p == std::string::npos) continue;   // a missing key keeps its current value
+        if (p == std::string::npos) continue;
 
         std::vector<float> vals((std::size_t)fld.count, 0.0f);
         if (readValue(text, p, vals.data(), fld.count) != fld.count) {

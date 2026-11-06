@@ -1,30 +1,17 @@
 #pragma once
 #include "components.h"
 
-// Rules for what a unit carries. Pure functions, so they can be tested without the game running.
-
-// Most of an item that one slot holds. Unknown items hold 1.
 int stackLimit(int item);
 
-// Puts up to `count` of an item into the inventory: first onto matching stacks with room, then
-// into empty slots. Returns how many could not fit, so 0 means all of them went in.
 int addToInventory(Inventory& inv, int item, int count);
-// The same, for any row of slots, such as a storage prop's
 int addToSlots(ItemStack* slots, int slotCount, int item, int count);
-// Whether all `count` of an item would fit in a row of slots, without changing them
 bool slotsCanTake(const ItemStack* slots, int slotCount, int item, int count);
-// How many more of an item a row of slots has room for
 int slotsRoomFor(const ItemStack* slots, int slotCount, int item);
 
-// Total weight of everything carried
 float carriedWeight(const Inventory& inv);
 
-// Number of slots holding something
 int occupiedSlots(const Inventory& inv);
 
-// How many of an item an inventory holds, over all its stacks
 int carriedCount(const Inventory& inv, int item);
 
-// Reorders the stacks by item type (items, consumables, weapons, armor, accessories), then by name. Empty slots
-// go last. Stacks are not merged or split, so every item is still there.
 void sortInventoryByType(Inventory& inv);

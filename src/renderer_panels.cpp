@@ -1,13 +1,10 @@
-// Renderer: the Faction Panel (squad and reputation), the Information Panel (game log) and the world map.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-// The rows of the Game tab's filter menu, in order. A heading names a group of kinds and is not clickable.
 struct FilterEntry {
-    const char* label;     // a language key, looked up when the menu is drawn
+    const char* label;
     LogKind kind;
     bool heading;
 };
@@ -29,18 +26,15 @@ const FilterEntry kFilterEntries[] = {
 };
 
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
-
-} // namespace
+}
 
 float Renderer::profileCardHeight(int H) {
     const float s = uiScaleFor(H);
     const float line = listTextHeight("Ag");
-    const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;   // label line, gap, bar, gap: as statRow draws it
-    // Health, Dying (while Unconscious), Hunger, Rested, Comfort, Conscious and Carry
+    const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;
     return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 7.0f * statRow + 4.0f * s;
 }
 
-// The world map window. Every shape on the map is drawn in window pixels with drawUiTris.
 void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                             const WorldMapMarks& marks) {
     pollOverview();
@@ -49,16 +43,14 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
     const Rect& w = L.window;
     const Rect& r = L.map;
 
-    // The window: a pink edge, a dark body, and the title bar with its X
     drawRect(Rect{ w.x - 1.5f * s, w.y - 1.5f * s, w.w + 3.0f * s, w.h + 3.0f * s }, theme::alpha(theme::PINK, 0.95f));
     drawRect(w, theme::alpha(theme::MENU_FILL, 0.97f));
     drawTitleBar(L.bar, ICON_NONE, lang("UILABEL_WORLD_MAP"));
     drawCloseButton(L.close);
 
-    drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });   // sea, where the view is past the edge of the level
+    drawRect(r, RGBA{ 0.10f, 0.20f, 0.30f, 1.0f });
     if (span <= 0.0f || r.w <= 0.0f || r.h <= 0.0f) return;
 
-    // The view in tiles. Its left edge is the largest x and its top edge the largest z.
     const float across = mapSpanAcross(r, span);
     const float xHi = cx + across * 0.5f, xLo = cx - across * 0.5f;
     const float zHi = cz + span * 0.5f, zLo = cz - span * 0.5f;
@@ -69,13 +61,11 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         const float size = overviewSize_, ext = overviewExtent_;
         auto u = [&](float x) { return (size - x) / ext; };
         auto v = [&](float z) { return (size - z) / ext; };
-        // The part of the view inside the level
         const float ax = std::min(xHi, size), bx = std::max(xLo, 0.0f);
         const float az = std::min(zHi, size), bz = std::max(zLo, 0.0f);
         if (ax > bx && az > bz) drawUiQuad(overviewTex_, sx(ax), sy(az), sx(bx), sy(bz), u(ax), v(az), u(bx), v(bz), WHITE);
     }
 
-    // A thick line from one point to another, its ends pushed out by half its width so corners meet
     std::vector<UiVert> tris;
     auto line = [&](float x0, float y0, float x1, float y1, float width, RGBA c) {
         const float dx = x1 - x0, dy = y1 - y0, len = std::sqrt(dx * dx + dy * dy);
@@ -86,7 +76,6 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         tris.insert(tris.end(), { { x0 + nx, y0 + ny, c }, { x1 + nx, y1 + ny, c }, { x1 - nx, y1 - ny, c },
                                   { x0 + nx, y0 + ny, c }, { x1 - nx, y1 - ny, c }, { x0 - nx, y0 - ny, c } });
     };
-    // A ring of the given radius and width
     auto ring = [&](float x, float y, float radius, float width, RGBA c) {
         const int segs = 32;
         const float rIn = radius - width * 0.5f, rOut = radius + width * 0.5f;
@@ -105,7 +94,6 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
     };
     auto inMap = [&](float px, float py) { return r.contains(px, py); };
 
-    // Every prop, of any kind: a purple square with a black edge, under the units
     const RGBA purple{ 0.62f, 0.25f, 0.88f, 1.0f };
     const float propSide = std::max(4.0f, 6.0f * s);
     for (const MapDot& dot : dots) {
@@ -118,7 +106,6 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
     drawUiTris(tris);
     tris.clear();
 
-    // The units: a green dot for the player's, the white dot tinted red or gray, with its black ring, for the rest
     const float d = std::max(6.0f, 9.0f * s);
     for (const MapDot& dot : dots) {
         if (dot.kind == MapDotKind::Prop) continue;
@@ -134,8 +121,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         drawUiQuad(dotWhiteTex_, px - h, py - h, px + h, py + h, 0.0f, 0.0f, 1.0f, 1.0f, tint);
     }
 
-    const float edge = std::max(1.0f, 1.0f * s);   // the black edge around each line
-    // The green X where the last move order went, fading out
+    const float edge = std::max(1.0f, 1.0f * s);
     if (marks.moveAlpha > 0.0f) {
         const float px = sx(marks.moveX), py = sy(marks.moveZ);
         if (inMap(px, py)) {
@@ -149,22 +135,19 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         }
     }
 
-    // The camera's pivot: a hollow ring round the point the camera turns about, and a hollow triangle over it pointing
-    // the way the camera looks. On the map the larger x is to the left and the larger z to the top, so the camera's
-    // ground direction (-sin yaw, -cos yaw) points along (sin yaw, cos yaw) in window pixels.
     {
         const float px = sx(marks.camX), py = sy(marks.camZ);
         if (inMap(px, py)) {
             const float rad = 7.0f * s, lw = std::max(1.5f, 1.5f * s);
-            const float fx = std::sin(marks.camYaw), fy = std::cos(marks.camYaw);   // ahead
-            const float qx = -fy, qy = fx;                                            // to one side
+            const float fx = std::sin(marks.camYaw), fy = std::cos(marks.camYaw);
+            const float qx = -fy, qy = fx;
             auto at = [&](float ahead, float side, float& ox, float& oy) {
                 ox = px + fx * ahead * rad + qx * side * rad;
                 oy = py + fy * ahead * rad + qy * side * rad;
             };
             float ax, ay, bx, by, cx2, cy2;
-            at(2.1f, 0.0f, ax, ay);      // the tip
-            at(-0.45f, 1.8f, bx, by);    // the base corners
+            at(2.1f, 0.0f, ax, ay);
+            at(-0.45f, 1.8f, bx, by);
             at(-0.45f, -1.8f, cx2, cy2);
             const RGBA yellow{ 1.0f, 0.86f, 0.18f, 1.0f };
             for (int pass = 0; pass < 2; ++pass) {
@@ -189,7 +172,6 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
-    // The tabs: the one shown is lit
     {
         const float th = listTextHeight("Ag");
         auto tab = [&](const Rect& r, const std::string& label, bool on) {
@@ -210,16 +192,13 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         return;
     }
 
-    // Walk and run: the lit one is the pace the squad is moving at
     auto mode = [&](const Rect& r, const std::string& text, bool on) {
         if (r.contains(mouseX_, mouseY_)) noteHover(r);
         drawRect(r, on ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, bgAlpha });
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);
     };
-    // One toggle for the pace, lit while the squad runs, and the View Map button beside it
     mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
-    // Optimize All, beside it: opens a dialog to confirm
     {
         const std::string label = lang("UILABEL_OPTIMIZE_ALL");
         const std::string shown = fitTextTip(label, L.optimizeAllButton.w - 6.0f * s, L.optimizeAllButton);
@@ -231,16 +210,13 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const bool selected = w.has<Selected>(e);
         const Rect frame{ c.rect.x - 2.0f, c.rect.y - 2.0f, c.rect.w + 4.0f, c.rect.h + 4.0f };
         if (c.rect.contains(mouseX_, mouseY_)) noteHover(c.rect);
-        // A selected unit's frame is solid purple, so it stands out from the see-through frames
         drawRect(frame, selected ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.42f, 0.20f, 0.24f, bgAlpha });
         drawRect(Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, RGBA{ 0.16f, 0.07f, 0.085f, bgAlpha });
 
-        // Portrait fitted inside the square, keeping its shape
         const TextTex& g = unitPortrait(w, e);
         drawPortrait(g, Rect{ c.rect.x, c.rect.y, c.rect.w, c.rect.w }, unitSaturation(w, e));
 
         const Needs* nd = w.get<Needs>(e);
-        // Low health: a red gradient rises from the bottom of the portrait by the share of health lost, as in the sidebar
         if (nd && nd->maxHp > 0 && nd->hp < nd->maxHp) {
             const float lost = std::clamp(1.0f - (float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f);
             const float gh = c.rect.w * lost;
@@ -250,21 +226,17 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             }
         }
 
-        // Health bar under the portrait
         const float frac = (nd && nd->maxHp > 0) ? std::clamp((float)nd->hp / (float)nd->maxHp, 0.0f, 1.0f) : 0.0f;
         const float barY = c.rect.y + c.rect.w + 3.0f * s, barH = 4.0f * s;
         drawRect(Rect{ c.rect.x, barY, c.rect.w, barH }, RGBA{ 0.24f, 0.11f, 0.13f, bgAlpha });
         drawRect(Rect{ c.rect.x, barY, c.rect.w * frac, barH }, theme::HEALTH_BAR);
 
-        // Name under the bar, cut at a word with "..." to fit the cell
         const Name* nm = w.get<Name>(e);
         const std::string full = nm ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
         const std::string label = fitTextTip(full, c.rect.w, c.rect);
         drawListText(label, c.rect.x, c.rect.y + c.rect.w + 8.0f * s, WHITE);
     }
 
-    // The scroll bar: the track and its thumb, with an arrow button at each end that moves the list a row. The arrows
-    // dim at the end of the list.
     if (L.track.h > 0.0f || L.scrollUp.h > 0.0f) {
         drawRect(L.track, RGBA{ 0.24f, 0.10f, 0.12f, bgAlpha });
         if (L.scrollable()) drawRect(L.thumb, L.thumb.contains(mouseX_, mouseY_) ? RGBA{ 0.96f, 0.88f, 0.76f, 1.0f }
@@ -284,9 +256,6 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 }
 
-// The Reputation tab: the faction shown, with its colour, then each faction's reputation with it. The faction shown is
-// always at 100 with itself, so its own row reads (...). Each value is red where the two fight on sight, green where
-// they are allies, and gray between; its tooltip says which. A row is pressed to show that faction's reputations.
 void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
@@ -295,7 +264,6 @@ void Renderer::drawReputationList(const UnitPanelLayout& L, int repView) {
         drawRect(Rect{ x - 1.0f, cy - d * 0.5f - 1.0f, d + 2.0f, d + 2.0f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.9f });
         drawRect(Rect{ x, cy - d * 0.5f, d, d }, RGBA{ c.r, c.g, c.b, 1.0f });
     };
-    // The heading: the faction shown
     {
         const Rect& h = L.repHeading;
         drawRect(h, RGBA{ 0.0f, 0.0f, 0.0f, 0.25f });
@@ -339,7 +307,6 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     const float pad = 8.0f * s, scrollW = 10.0f * s, gap = 4.0f * s;
     const float barH = PANEL_BAR_H * s, tabH = 20.0f * s;
     const float lineH = listTextHeight("Ag") + 2.0f * s;
-    // Its open size and place: the top left corner by default. As many lines as its height has room for, under the tabs.
     const Rect open = panelRect(PanelId::Info, place, winW, winH);
     const float bodyH = open.h;
     const int linesVisible = std::max(1, (int)std::floor((bodyH - barH - tabH - 2.0f * pad) / lineH));
@@ -352,14 +319,13 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     L.tab = std::clamp(tab, 0, 2);
     L.filterOpen = filterOpen && L.tab == 1 && !collapsed;
 
-    // Its bar runs along its top or its bottom; folded, it is the bar alone. y and h are the body's: the panel less its bar.
     const float w = open.w;
     L.panel = panelShownRect(open, collapsed, place.barBottom, barH);
     L.bar = panelBarRect(open, place.barBottom, barH);
     const Rect bodyR = panelBodyRect(open, place.barBottom, barH);
     L.bodyTop = bodyR.y;
     L.bodyBottom = bodyR.y + bodyR.h;
-    const float x = open.x, y = bodyR.y - barH;   // laid out as if the bar were above the body
+    const float x = open.x, y = bodyR.y - barH;
     const float h = bodyR.h + barH;
     L.toggle = BarToggle(L.bar, s);
     L.lock = BarLock(L.bar, s);
@@ -367,7 +333,6 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     L.textX = x + pad;
     L.textW = w - 2.0f * pad - scrollW - gap;
 
-    // Which lines are visible: the window ends L.offset lines above the newest
     const int end = lineCount - L.offset;
     L.shown = std::min(linesVisible, std::max(0, end));
     L.first = end - L.shown;
@@ -376,19 +341,15 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     const float trackY = y + barH + tabH + pad, trackH = h - barH - tabH - 2.0f * pad;
     L.track = Rect{ trackX, trackY, scrollW * 0.5f, trackH };
     if (L.scrollable()) {
-        // At offset 0 the thumb sits at the bottom, and at the top of its range it sits at the top
         const float frac = L.maxOffset() > 0 ? (float)L.offset / (float)L.maxOffset() : 0.0f;
         L.thumb = scrollThumb(L.track, (float)linesVisible / (float)lineCount, 16.0f * s, 1.0f - frac);
     }
 
-    // The tabs under the bar. The Filter button sits at the right of the row.
     const float tabY = y + barH;
-    // Each tab is as wide as its name needs
     auto tabW = [&](const char* key) { return std::max(48.0f * s, listTextWidth(lang(key)) + 16.0f * s); };
     L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, tabW("UILABEL_MESSAGE"), tabH - 2.0f * s };
     L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_GAME"), tabH - 2.0f * s };
     L.tabTime = Rect{ L.tabGame.x + L.tabGame.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_TIME"), tabH - 2.0f * s };
-    // The Filter button: at the right of the row, but never over the Time tab
     {
         const float tabsEnd = L.tabTime.x + L.tabTime.w + 4.0f * s;
         const float fw = listTextWidth(lang("UILABEL_FILTER")) + 14.0f * s;
@@ -396,10 +357,8 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
         L.filterBtn = Rect{ fx, tabY + 2.0f * s, std::max(0.0f, std::min(fw, x + w - 2.0f * s - fx)), tabH - 2.0f * s };
     }
 
-    // The filter menu opens downward from the Filter button, or upward where the window has no room below it
     if (L.filterOpen) {
         const float rowH = listTextHeight("Ag") + 6.0f * s;
-        // As wide as its longest row needs: the indented name, a gap, then On or Off
         float longest = 0.0f;
         for (const FilterEntry& fe : kFilterEntries) {
             longest = std::max(longest, listTextWidth(lang(fe.label)) + (fe.heading ? 6.0f : 16.0f) * s);
@@ -436,7 +395,6 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     drawCollapseButton(L.toggle, L.collapsed);
     if (L.collapsed) return;
 
-    // The two tabs: the one shown is lit
     auto tab = [&](const Rect& r, const std::string& label, bool selected) {
         if (r.contains(mx, my)) noteHover(r);
         drawRect(r, selected ? lit : dim);
@@ -448,14 +406,11 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     tab(L.tabTime, lang("UILABEL_TIME"), L.tab == 2);
     if (L.tab == 1) drawButton(L.filterBtn, lang("UILABEL_FILTER"), true, L.filterBtn.contains(mx, my) || L.filterOpen);
 
-    // The rows are centred in the space under the tabs
     const float tabH = 20.0f * s;
     const float bodyTop = L.bodyTop + tabH;
 
-    // The Time tab: the time of day large, then the date written out, the date as numbers and the days passed, each
-    // line centred, the block centred in the space under the tabs
     if (L.tab == 2) {
-        const RGBA gray = theme::LOG_TEXT;
+        const RGBA logGray = theme::LOG_TEXT;
         const float bigH = uiTextHeight("Ag"), smallH = listTextHeight("Ag"), gap = 4.0f * s;
         const float blockH = bigH + 3.0f * (gap + smallH);
         const float bodyH = L.bodyBottom - bodyTop;
@@ -465,7 +420,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         y += bigH + gap;
         for (const std::string* line : { &time.date, &time.ymd, &time.days }) {
             const std::string t = fitText(*line, maxW, false);
-            drawListText(t, midX - listTextWidth(t) * 0.5f, y, line == &time.date ? WHITE : gray);
+            drawListText(t, midX - listTextWidth(t) * 0.5f, y, line == &time.date ? WHITE : logGray);
             y += smallH + gap;
         }
         return;
@@ -474,13 +429,11 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     const int count = (int)rows.size();
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
         const LogLine& ln = *rows[(size_t)(L.first + k)];
-        // Bottom-aligned: the newest line is the last row
         const int row = L.linesVisible - L.shown + k;
         drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
     }
     if (L.scrollable()) drawScrollBar(L.track, L.thumb);
 
-    // The filter menu, over the lines. Each kind reads On or Off.
     if (L.filterOpen) {
         drawRect(L.filterMenu, theme::alpha(theme::MENU_FILL, 0.97f));
         const float th = listTextHeight("Ag");

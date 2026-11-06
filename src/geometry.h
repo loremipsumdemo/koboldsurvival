@@ -66,7 +66,6 @@ inline Mat4 ortho(float l, float r, float b, float t, float n, float f) {
     return m;
 }
 
-// Returns false when the matrix is singular
 inline bool invert4x4(const float* m, float* out) {
     float inv[16];
     inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
@@ -93,13 +92,10 @@ inline bool invert4x4(const float* m, float* out) {
     return true;
 }
 
-// A point on the ground, in world x and z
 struct Vec2 {
     float x = 0.0f, z = 0.0f;
 };
 
-// World point to pixel coordinates, through a view-projection matrix, for a window W by H. False if it is behind the
-// camera.
 inline bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int H, float& sx, float& sy) {
     float c[4];
     for (int i = 0; i < 4; ++i) {
@@ -111,7 +107,6 @@ inline bool worldToScreen(const Mat4& vp, float x, float y, float z, int W, int 
     return true;
 }
 
-// A point or direction in 3D, or an RGB color in x, y and z
 struct Vec3 {
     float x = 0.0f, y = 0.0f, z = 0.0f;
 };

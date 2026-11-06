@@ -46,7 +46,61 @@ endif()
 add_custom_target(write_build_stamp COMMAND build_stamp "${BUILD_STAMP_CPP}" BYPRODUCTS "${BUILD_STAMP_CPP}" VERBATIM)
 add_dependencies(write_build_stamp build_stamp)
 
+# The simulation: no window, no graphics. The game and the save test share it.
+set(SIM_SOURCES
+    src/play_state.cpp
+    src/game_log.cpp
+    src/world_labels.cpp
+    src/items.cpp
+    src/language.cpp
+    src/fontlist.cpp
+    src/inventory.cpp
+    src/combat.cpp
+    src/encumbrance.cpp
+    src/experience.cpp
+    src/hostility.cpp
+    src/factions.cpp
+    src/equip.cpp
+    src/stats.cpp
+    src/party.cpp
+    src/useitem.cpp
+    src/need_behaviors.cpp
+    src/sounds.cpp
+    src/systems.cpp
+    src/needs.cpp
+    src/unit_status.cpp
+    src/world_setup.cpp
+    src/unit_spawn.cpp
+    src/orders.cpp
+    src/steering.cpp
+    src/prop_use.cpp
+    src/automation.cpp
+    src/wild_ai.cpp
+    src/downed.cpp
+    src/carry.cpp
+    src/loot.cpp
+    src/terrain.cpp
+    src/terrain_mesh.cpp
+    src/pathfind.cpp
+    src/world_format.cpp
+    src/look.cpp
+    src/surface_tiles.cpp
+    src/map_file.cpp
+    src/pak.cpp
+    src/build.cpp
+    src/claims.cpp
+    src/camp_kit.cpp
+    src/prop_info.cpp
+    src/save_world.cpp
+    src/savegame.cpp
+    src/user_files.cpp
+)
+
 add_executable(koboldsurvival
+    ${SIM_SOURCES}
+    src/storage.cpp
+    src/trade.cpp
+    src/selection.cpp
     src/main.cpp
     src/app.cpp
     src/app_actions.cpp
@@ -63,18 +117,14 @@ add_executable(koboldsurvival
     src/app_update.cpp
     src/app_render.cpp
     src/app_render_play.cpp
-    src/play_state.cpp
-    src/storage.cpp
-    src/trade.cpp
-    src/selection.cpp
     src/level.cpp
     src/map_list.cpp
-    src/save_world.cpp
-    src/savegame.cpp
     src/menus.cpp
     src/app_support.cpp
-    src/user_files.cpp
     src/renderer.cpp
+    src/renderer_assets.cpp
+    src/ui_layout_panels.cpp
+    src/ui_layout_popups.cpp
     src/renderer_text.cpp
     src/renderer_widgets.cpp
     src/renderer_units.cpp
@@ -87,53 +137,13 @@ add_executable(koboldsurvival
     src/text_cache.cpp
     src/gl_util.cpp
     src/renderer_terrain.cpp
-    src/items.cpp
-    src/language.cpp
-    src/fontlist.cpp
     src/fonts.cpp
-    src/inventory.cpp
-    src/combat.cpp
-    src/encumbrance.cpp
-    src/experience.cpp
-    src/hostility.cpp
-    src/game_log.cpp
-    src/world_labels.cpp
-    src/factions.cpp
-    src/equip.cpp
-    src/stats.cpp
-    src/party.cpp
     src/party_ui.cpp
-    src/useitem.cpp
-    src/need_behaviors.cpp
-    src/sounds.cpp
-    src/systems.cpp
-    src/needs.cpp
-    src/unit_status.cpp
-    src/world_setup.cpp
-    src/movement.cpp
-    src/prop_use.cpp
-    src/automation.cpp
-    src/wild_ai.cpp
-    src/downed.cpp
-    src/carry.cpp
-    src/loot.cpp
-    src/terrain.cpp
     src/overview.cpp
-    src/terrain_mesh.cpp
-    src/pathfind.cpp
-    src/world_format.cpp
-    src/look.cpp
-    src/surface_tiles.cpp
-    src/map_file.cpp
     src/model.cpp
     src/model_pick.cpp
-    src/pak.cpp
     src/audio.cpp
     src/display.cpp
-    src/build.cpp
-    src/claims.cpp
-    src/camp_kit.cpp
-    src/prop_info.cpp
     src/settings_menu.cpp
     src/settings_draw.cpp
     src/app.rc         # embeds the exe icon (src/app.ico) on Windows
@@ -160,7 +170,7 @@ target_link_libraries(koboldsurvival PRIVATE
 )
 
 # A Windows GUI program, so no console window opens with the game. SDL_main.h (included in main.cpp) supplies
-# the WinMain entry point this needs. Log lines go to log.txt beside the exe. Other systems ignore this.
+# the WinMain entry point this needs. Other systems ignore this.
 set_target_properties(koboldsurvival PROPERTIES WIN32_EXECUTABLE TRUE)
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
@@ -181,3 +191,18 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldsurvival>/SFX"
     COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"
 )
+
+# Saves a level, loads it and compares. Run it with ctest, or directly from the build folder.
+enable_testing()
+add_executable(save_roundtrip tests/save_roundtrip.cpp ${SIM_SOURCES})
+target_include_directories(save_roundtrip PRIVATE src)
+target_link_libraries(save_roundtrip PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+add_dependencies(save_roundtrip koboldsurvival)
+add_test(NAME save_roundtrip COMMAND save_roundtrip WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+foreach(target koboldsurvival save_roundtrip)
+    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_options(${target} PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>)
+endforeach()

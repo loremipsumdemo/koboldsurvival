@@ -1,29 +1,21 @@
-// Renderer: units and props in the world: their sprites and models, which way a unit faces, and picking them by pixel.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
+constexpr float FACTION_TINT = 0.85f;
 
-constexpr float FACTION_TINT = 0.85f;    // how far a unit model's colors are pulled toward its faction's color
-
-// Where a unit model stands: scaled to GLYPH_H tall, turned by yaw about the vertical axis (0 faces +z), with the centre
-// of its bottom on (x, y, z). Lying, it is first tipped onto its side, the same way for everyone and whatever laid it
-// down, and it rests on y.
-// The unit models face their own +x, so they are turned a quarter turn more to face +z at yaw 0
 constexpr float UNIT_MODEL_FRONT_YAW = -1.5707963f;
 
 Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, float height) {
     const float k = height / (m.maxY - m.minY);
     yaw += UNIT_MODEL_FRONT_YAW;
     const float cs = std::cos(yaw), sn = std::sin(yaw);
-    // R row by row: the turn by yaw, after the tip onto its side when lying: (x, y, z) -> (-y, x, z)
     const float R[3][3] = {
         { lying ? 0.0f : cs, lying ? -cs : 0.0f, sn },
         { lying ? 1.0f : 0.0f, lying ? 0.0f : 1.0f, 0.0f },
         { lying ? 0.0f : -sn, lying ? sn : 0.0f, cs }
     };
-    // The model point put on the world point: the centre of its bottom standing, its middle lying
     const float c[3] = { (m.minX + m.maxX) * 0.5f, lying ? (m.minY + m.maxY) * 0.5f : m.minY, (m.minZ + m.maxZ) * 0.5f };
     const float t[3] = { x, lying ? y + k * (m.maxX - m.minX) * 0.5f : y, z };
     Mat4 out{};
@@ -35,23 +27,15 @@ Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool 
     return out;
 }
 
-// A unit turns toward the way it walks, easing round rather than snapping. One seen for the first time faces the camera.
-// One idle for UNIT_SETTLE_MS settles and keeps its facing: being pushed about by units near it no longer turns it, until
-// it stops being idle or is moved more than UNIT_SETTLE_SLIP tiles from where it settled.
 constexpr unsigned long long UNIT_SETTLE_MS = 3000;
 
 constexpr float UNIT_SETTLE_SLIP = 0.25f;
+}
 
-} // namespace
-
-// A prop kind with no model is drawn as a pink square this many tiles on a side: the height of a unit's sprite, so it
-// stands like a unit would, whatever the kind
 float missingPropSide(PropKind) {
     return GLYPH_H;
 }
 
-// How high the top of a unit's sprite is above its feet: its height standing, or lying (Unconscious) its width, over
-// its carrier's shoulders if it is carried
 float Renderer::unitTop(World& w, Entity u) {
     const UnitPose pose = unitPose(w, u);
     return unitHeight(w, u) * (pose.lying ? unitAspect(w, u) : 1.0f) + pose.lift;
@@ -76,7 +60,7 @@ float Renderer::bedLift(World& w, Entity u) const {
     const Transform* ut = w.get<Transform>(u);
     if (!p || !pt || !ut || (p->kind != PropKind::Bed && p->kind != PropKind::Bedroll)) return -1.0f;
     const float dx = ut->x - pt->x, dz = ut->z - pt->z;
-    if (dx * dx + dz * dz > 0.25f * 0.25f) return -1.0f;   // not on the bed's spot: drawn as usual
+    if (dx * dx + dz * dz > 0.25f * 0.25f) return -1.0f;
     return std::max(0.0f, propBaseY(w, oc->prop) - ut->y + propTop(p->kind) * 0.5f);
 }
 
@@ -91,24 +75,21 @@ float Renderer::unitHover(World& w, Entity u) const {
 
 void Renderer::drawLyingGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint, float toward) {
     if (!g.tex) return;
-    // The sprite turned 90 degrees, lying on its side across the camera's view: its height runs along the right
-    // vector and its width up from the ground. Its head is to the right.
     float dx = billX_ - x, dz = billZ_ - z;
     float len = std::sqrt(dx * dx + dz * dz);
     if (len < 1e-4f) { dx = 0.0f; dz = 1.0f; len = 1.0f; }
     dx /= len;
     dz /= len;
     const float rx = dz, rz = -dx;
-    const float hw = h * 0.5f;                 // half its length, lying
-    const float up = h * g.aspect;             // how high it is, lying: its width
-    // Moved a little toward the camera, so a carried unit shows in front of its carrier
+    const float hw = h * 0.5f;
+    const float up = h * g.aspect;
     const float cx = x + dx * toward, cz = z + dz * toward;
     const float y0 = y, y1 = y + up;
     float v[4 * 5] = {
-        cx - rx * hw, y0, cz - rz * hw, 1.0f, 1.0f,   // bottom-left: the sprite's bottom right
-        cx + rx * hw, y0, cz + rz * hw, 1.0f, 0.0f,   // bottom-right: its top right
-        cx + rx * hw, y1, cz + rz * hw, 0.0f, 0.0f,   // top-right: its top left
-        cx - rx * hw, y1, cz - rz * hw, 0.0f, 1.0f    // top-left: its bottom left
+        cx - rx * hw, y0, cz - rz * hw, 1.0f, 1.0f,
+        cx + rx * hw, y0, cz + rz * hw, 1.0f, 0.0f,
+        cx + rx * hw, y1, cz + rz * hw, 0.0f, 0.0f,
+        cx - rx * hw, y1, cz - rz * hw, 0.0f, 1.0f
     };
     drawQuadVerts(g.tex, v, tint);
 }
@@ -116,7 +97,6 @@ void Renderer::drawLyingGlyph(const TextTex& g, float x, float y, float z, float
 void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint) {
     if (!g.tex) return;
 
-    // Right vector perpendicular to the direction from the sprite to the billboard point
     float dx = billX_ - x, dz = billZ_ - z;
     float len = std::sqrt(dx * dx + dz * dz);
     if (len < 1e-4f) { dx = 0.0f; dz = 1.0f; len = 1.0f; }
@@ -126,19 +106,17 @@ void Renderer::drawGlyph(const TextTex& g, float x, float y, float z, float h, R
 
     float hw = h * g.aspect * 0.5f;
     float hh = h * 0.5f;
-    float cy = y + hh;   // the bottom of the sprite sits on the ground
+    float cy = y + hh;
 
     float v[4 * 5] = {
-        x - rx * hw, cy - hh, z - rz * hw, 0.0f, 1.0f,   // bottom-left
-        x + rx * hw, cy - hh, z + rz * hw, 1.0f, 1.0f,   // bottom-right
-        x + rx * hw, cy + hh, z + rz * hw, 1.0f, 0.0f,   // top-right
-        x - rx * hw, cy + hh, z - rz * hw, 0.0f, 0.0f    // top-left
+        x - rx * hw, cy - hh, z - rz * hw, 0.0f, 1.0f,
+        x + rx * hw, cy - hh, z + rz * hw, 1.0f, 1.0f,
+        x + rx * hw, cy + hh, z + rz * hw, 1.0f, 0.0f,
+        x - rx * hw, cy + hh, z - rz * hw, 0.0f, 0.0f
     };
     drawQuadVerts(g.tex, v, tint);
 }
 
-// A placement as a model matrix. Column-major: the turn about the vertical axis, scaled by k.
-// x' = cs*x + sn*z, z' = -sn*x + cs*z
 static Mat4 placementMatrix(const ModelPlacement& p) {
     Mat4 model{};
     model.m[0] = p.k * p.cs;
@@ -156,7 +134,6 @@ static Mat4 placementMatrix(const ModelPlacement& p) {
 void Renderer::queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw) {
     const Model& m = propModel(kind);
     if (!m.vao) return;
-    // Without the instanced program, each is drawn on its own as before
     if (!modelInstProgram_) {
         drawModel(m, x, y, z, targetSize, yaw);
         return;
@@ -170,7 +147,6 @@ GLuint Renderer::propInstVao(PropKind kind) {
     if (vao) return vao;
     const Model& m = propModel(kind);
     if (!m.vao || !instVbo_) return 0;
-    // The model's own vertices and triangles (as loadGLBModel lays them out), and the placements per instance
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
@@ -209,7 +185,7 @@ void Renderer::drawPropInstances() {
                                         (void*)(size_t)(d.firstIndex * sizeof(GLuint)), (GLsizei)list.size());
             }
         }
-        list.clear();   // keeps its room for the next frame
+        list.clear();
     }
     glBindVertexArray(0);
     glUseProgram(glyphProgram_);
@@ -218,7 +194,6 @@ void Renderer::drawPropInstances() {
 
 void Renderer::drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
     if (!m.vao) return;
-    // Scale, turn by yaw, then move so the center of the bottom sits on (x, y, z): the same placement picking uses
     const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
     if (!p.ok) return;
     const Mat4 model = placementMatrix(p);
@@ -235,12 +210,9 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     }
     glBindVertexArray(0);
 
-    // Restore the shared matrix for the sprites that follow
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-// Where a unit's model is this frame: the one placement drawing and the mouse both use. A carried model lies a little
-// toward the camera, so it shows in front of its carrier.
 Mat4 Renderer::unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const {
     const Transform* tr = w.get<Transform>(e);
     const UnitPose pose = unitPose(w, e);
@@ -293,9 +265,9 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
         if (sx * sx + sz * sz <= UNIT_SETTLE_SLIP * UNIT_SETTLE_SLIP) {
             f.x = x;
             f.z = z;
-            return f.yaw;   // settled: nudges don't turn it
+            return f.yaw;
         }
-        f.settled = false;   // pushed well off its spot: it turns again, and settles anew once idle long enough
+        f.settled = false;
         f.idleSince = now;
     }
     if (idle && now - f.idleSince >= UNIT_SETTLE_MS) {
@@ -307,7 +279,6 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
     if (dx * dx + dz * dz > 1e-6f) {
         const float want = std::atan2(dx, dz);
         float turn = std::remainder(want - f.yaw, TWO_PI);
-        // A quarter of the way each sixtieth of a second, at any frame rate
         const float seconds = std::min(0.25f, (float)(now - f.turnedAt) / 1000.0f);
         f.yaw += turn * (1.0f - std::pow(0.75f, seconds * 60.0f));
     }
@@ -317,8 +288,6 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
     return f.yaw;
 }
 
-// A unit's model seen in a box of the UI, with its own depth: it stands in the middle, the whole of it in view, and
-// turns about its vertical axis only
 void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
     drawModelPreview(unitModelNumber(sprite), r, yaw);
 }
@@ -341,7 +310,7 @@ const TextTex& Renderer::mobPicture(MobKind kind) const {
 
 void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     if (!m || r.w < 1.0f || r.h < 1.0f) {
-        drawFitted(pink_, r, WHITE);   // the stand-in for a missing model
+        drawFitted(pink_, r, WHITE);
         return;
     }
     const int vx = (int)std::lround(r.x), vy = (int)std::lround((float)uiH_ - r.y - r.h);
@@ -352,8 +321,6 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    // The model GLYPH_H tall with its feet at the origin; the camera in front of it on +z, far enough back that its
-    // height and width both fit
     const float aspect = r.w / r.h;
     const float fov = 30.0f * PI / 180.0f, tanHalf = std::tan(fov * 0.5f);
     const float k = GLYPH_H / (m->maxY - m->minY);
@@ -373,29 +340,22 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     }
     glBindVertexArray(0);
 
-    // Back to the flat UI over the whole window
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_SCISSOR_TEST);
     glViewport(0, 0, uiW_, uiH_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
 }
 
-// The sprite for a unit, or the stand-in if its image is missing
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
-    // A mob's picture is its kind's (mob_<kind>.png), with the pink square for a missing one. A kind drawn by a model has
-    // the pink square for its portrait, as a person has.
     if (const Mob* m = w.get<Mob>(e)) {
         const int i = idx(m->kind) - 1;
-        // A kind meant to be drawn by a model has no picture of its own: the pink square, standing in the world as a
-        // billboard when the model is missing, and its portrait always
         if (mobInfo(m->kind).model > 0) return pink_;
         if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
         return pink_;
     }
-    return pink_;   // a person is drawn by a model; the pink square stands in for a missing one
+    return pink_;
 }
 
-// The profile picture of model n (profile_<nn>.png), or the pink square when it is missing
 const TextTex& Renderer::unitPicture(int n) const {
     const int idx = ((n - 1) % UNIT_SPRITE_COUNT + UNIT_SPRITE_COUNT) % UNIT_SPRITE_COUNT;
     return profilePics_[(size_t)idx].tex ? profilePics_[(size_t)idx] : pink_;
@@ -443,7 +403,6 @@ float Renderer::unitAspect(World& w, Entity e) const {
     return unitGlyph(w, e).aspect;
 }
 
-// The ray through a pixel, from the near plane toward the far one
 static bool pixelRay(const Mat4& vp, float mx, float my, int winW, int winH, float o[3], float d[3]) {
     float inv[16];
     if (!invert4x4(vp.m, inv)) return false;
@@ -463,9 +422,6 @@ static bool pixelRay(const Mat4& vp, float mx, float my, int winW, int winH, flo
     return true;
 }
 
-// The units under a pixel, nearest first. A unit with a model is hit only on the model's own triangles, placed exactly
-// as it is drawn (unitWorldMatrix), so the mouse finds what is seen. This is for the mouse only: movement and attacks
-// treat every unit as one tile (UNIT_BOX). A unit whose model did not load is found by its sprite.
 std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float o[3] = {}, d[3] = {};
@@ -480,7 +436,6 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         if (const Model* m = unitModel(w, u)) {
-            // The way it faces now, without moving its turn on: that is drawing's to do
             const auto facing = unitFacing_.find(u);
             const float yaw = facing != unitFacing_.end() ? facing->second.yaw : std::atan2(billX_ - tr->x, billZ_ - tr->z);
             const float t = rayHitModelMatrix(*m, unitWorldMatrix(w, u, *m, yaw).m, o, d);
@@ -488,7 +443,7 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
             continue;
         }
         float bottomX, bottomY, topX, topY, midX, midY;
-        const float hover = unitHover(w, u);   // a flying mob is found where it is drawn, up off the ground
+        const float hover = unitHover(w, u);
         if (!project(tr->x, tr->y + hover, tr->z, bottomX, bottomY)) continue;
         const float tall = unitHeight(w, u);
         if (!project(tr->x, tr->y + hover + tall, tr->z, topX, topY)) continue;
@@ -500,8 +455,6 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         float top = std::min(bottomY, topY), bottom = std::max(bottomY, topY);
         const UnitPose pose = unitPose(w, u);
         if (pose.lying) {
-            // Lying on its side: as wide as it is tall standing, and as high as it is wide; carried ones higher up,
-            // and ones in a bed up on it
             float liftX = 0.0f, liftY = 0.0f;
             if (!project(tr->x, tr->y + pose.lift, tr->z, liftX, liftY)) continue;
             const float lyingH = heightPx * aspect;
@@ -522,9 +475,6 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     return out;
 }
 
-// The props under a pixel, nearest first. A prop with a model is hit only on the model's own triangles, placed exactly
-// as drawModel places them (placeModel), so the mouse finds a prop by its shape and never where it is not drawn. A
-// prop whose model did not load is found by its pink stand-in, a square facing the camera.
 std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float o[3] = {}, d[3] = {};
@@ -544,7 +494,6 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
             if (t >= 0.0f) hits.push_back({ t, e });
             continue;
         }
-        // The pink stand-in: the box that holds the square from any side, on the screen
         const float hx = 0.5f * missingPropSide(kind), hz = hx, h = missingPropSide(kind);
         float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
         bool seen = true;
@@ -574,7 +523,7 @@ float Renderer::propBaseY(World& w, Entity e) const {
 }
 
 float Renderer::propTop(PropKind kind) const {
-    float top = missingPropSide(kind);   // the pink stand-in's height, if the kind has no model
+    float top = missingPropSide(kind);
     if (idx(kind) >= 0 && idx(kind) < PROP_KIND_COUNT) {
         const Model& m = propModel(kind);
         const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });

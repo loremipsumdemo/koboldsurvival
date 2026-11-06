@@ -8,68 +8,53 @@
 #include <system_error>
 #include <string>
 
-// Game-wide options. These belong to the player, not to any save game, so they are kept in their own file
-// and loaded at startup. Whatever the file says, every value is brought into a range the menus can show.
-
-// Display modes
 inline constexpr int DISPLAY_WINDOWED = 0;
 inline constexpr int DISPLAY_BORDERLESS = 1;
 inline constexpr int DISPLAY_FULLSCREEN = 2;
 inline constexpr int DISPLAY_MODE_COUNT = 3;
-inline constexpr const char* DISPLAY_MODE_NAMES[] = { "UILABEL_WINDOWED", "UILABEL_BORDERLESS", "UILABEL_FULL_SCREEN" };   // language keys
+inline constexpr const char* DISPLAY_MODE_NAMES[] = { "UILABEL_WINDOWED", "UILABEL_BORDERLESS", "UILABEL_FULL_SCREEN" };
 
-// Frame rate limits in frames per second. 0 is no limit.
 inline constexpr int FPS_CHOICES[] = { 0, 30, 60, 90, 120, 144, 165, 240 };
 inline constexpr int FPS_CHOICE_COUNT = 8;
 
-// Autosave intervals in minutes. 0 is off.
 inline constexpr int AUTOSAVE_CHOICES[] = { 0, 1, 2, 5, 10, 15, 30 };
 inline constexpr int AUTOSAVE_COUNT = 7;
 
-// The UI scale range in percent, and the steps the slider moves in
 inline constexpr int UI_SCALE_MIN = 50;
 inline constexpr int UI_SCALE_MAX = 200;
 inline constexpr int UI_SCALE_STEP = 5;
 
-// How far from the camera's focus units, mobs, props and items on the ground (and their names) are drawn, in tiles
-// across the ground, and the steps the slider moves in
 inline constexpr int VIEW_RANGE_MIN = 16;
 inline constexpr int VIEW_RANGE_MAX = 224;
 inline constexpr int VIEW_RANGE_STEP = 8;
 
 struct GameSettings {
-    // Graphics
     int displayMode = DISPLAY_BORDERLESS;
-    int monitor = 0;                // index into the monitors, in the order the system lists them
-    int width = 1280;               // window size when windowed, and the resolution when fullscreen
+    int monitor = 0;
+    int width = 1280;
     int height = 720;
-    int refreshHz = 0;              // fullscreen refresh rate, 0 for the monitor's default
+    int refreshHz = 0;
     bool vsync = true;
-    int fpsLimit = 60;              // frames per second, 0 for no limit
-    int viewRange = 96;             // tiles from the camera's focus that entities are drawn within (VIEW_RANGE_MIN to MAX)
-    bool showFps = false;           // the frame rate in the bottom-left corner
+    int fpsLimit = 60;
+    int viewRange = 96;
+    bool showFps = false;
 
-    // Interface
-    int autosaveMinutes = 5;        // 0 for off
-    bool showUnitNames = true;      // each of your units' names over its head, in brackets
-    bool showNpcNames = true;       // the same for every other unit: neutral and hostile
-    bool showPropNames = true;      // each prop's name over it, in purple
-    bool showPropInfo = false;      // with prop names on: owner, health, decay and lock under each name
-    int fontScale = 100;            // UI scale as a percentage of the base sizes, 50 to 200 in steps of 5
-    std::string fontPath;           // the UI font file, or empty for Automatic (the built-in fonts)
-    std::string language = LANGUAGE_DEFAULT_ID;   // the language's id, e.g. "language_fr"
+    int autosaveMinutes = 5;
+    bool showUnitNames = true;
+    bool showNpcNames = true;
+    bool showPropNames = true;
+    bool showPropInfo = false;
+    int fontScale = 100;
+    std::string fontPath;
+    std::string language = LANGUAGE_DEFAULT_ID;
 
-    // Controls
     bool edgeScroll = false;
 
-    // How Optimize and Optimize All choose gear (GearPrefs in equip.h), as last set in the Optimize All dialog
     int optimizeAttackShare = 50;
     bool optimizeAccessories = true;
     bool optimizeTwoHanded = true;
     bool optimizeValueTies = true;
 
-    // Audio: each bus has a level from 0 to 100, and can be switched off without losing the level. The global level
-    // scales all three: a bus is heard at its level times the global level.
     int globalVolume = 50;
     bool globalOn = true;
     int musicVolume = 50;
@@ -78,16 +63,13 @@ struct GameSettings {
     bool ambientOn = true;
     int effectsVolume = 50;
     bool effectsOn = true;
-    int interfaceVolume = 50;   // the menus' and buttons' sounds
+    int interfaceVolume = 50;
     bool interfaceOn = true;
-    bool craftGatherSounds = false;   // the gathering and crafting sound effects (isCraftGatherSfx in sounds.h)
+    bool craftGatherSounds = false;
 
-    // The in-game panels' places, as last locked: the Squad Panel, the Unit Panel and the Information Panel, each as
-    // dx, dy, w, h (a PanelPlace in ui_layout.h, in pixels of a 720-pixel-high window). All zero is the default place.
     std::array<std::array<float, 4>, 3> panels{};
 };
 
-// The keys the panels' places are kept under, in PanelId order
 inline const char* panelSettingKey(int i) {
     static const char* keys[3] = { "panelSquad", "panelUnit", "panelInfo" };
     return keys[i];
@@ -101,8 +83,6 @@ inline bool isChoice(int v, const int* choices, int count) {
     return std::find(choices, choices + count, v) != choices + count;
 }
 
-// Reads key=value lines. A missing file or a bad value falls back to the defaults. Files from before the
-// window size was stored have a resolution preset index instead, which is converted here.
 inline GameSettings loadSettings(const std::string& path) {
     GameSettings s;
     std::ifstream in(std::filesystem::u8path(path));
@@ -132,14 +112,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "propInfo")        s.showPropInfo = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "fontPath")        s.fontPath = val;
-        else if (key == "language") {
-            // Older settings files stored 0 for English and 1 for Spanish, and the first language files had longer names
-            if (val == "0" || val == "language_english") s.language = LANGUAGE_DEFAULT_ID;
-            else if (val == "1") s.language = "language_es";
-            else if (val == "language_spanish") s.language = "language_es";
-            else if (val == "language_french") s.language = "language_fr";
-            else s.language = val;
-        }
+        else if (key == "language")        s.language = val;
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
         else if (key == "optimizeAttackShare") s.optimizeAttackShare = parseInt(val, s.optimizeAttackShare);
         else if (key == panelSettingKey(0) || key == panelSettingKey(1) || key == panelSettingKey(2)) {
@@ -147,7 +120,6 @@ inline GameSettings loadSettings(const std::string& path) {
             float v[4] = {};
             if (std::sscanf(val.c_str(), "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]) == 4) {
                 for (int k = 0; k < 4; ++k) s.panels[(size_t)i][(size_t)k] = std::clamp(v[k], -20000.0f, 20000.0f);
-                // A size is never negative
                 s.panels[(size_t)i][2] = std::max(0.0f, s.panels[(size_t)i][2]);
                 s.panels[(size_t)i][3] = std::max(0.0f, s.panels[(size_t)i][3]);
             }
@@ -155,7 +127,6 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "optimizeAccessories") s.optimizeAccessories = (val == "1");
         else if (key == "optimizeTwoHanded")   s.optimizeTwoHanded = (val == "1");
         else if (key == "optimizeValueTies")   s.optimizeValueTies = (val == "1");
-        // Earlier builds called it the master, then the total volume
         else if (key == "globalVolume" || key == "masterVolume" || key == "totalVolume") s.globalVolume = parseInt(val, s.globalVolume);
         else if (key == "globalOn" || key == "masterOn" || key == "totalOn") s.globalOn = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
@@ -169,7 +140,6 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "craftGatherSounds") s.craftGatherSounds = (val == "1");
     }
 
-    // Old files: the preset index used the four sizes that were offered before
     if (!sawWidth && legacyPreset >= 0 && legacyPreset < 4) {
         static const int legacyW[] = { 1280, 1600, 1920, 2560 };
         static const int legacyH[] = { 720, 900, 1080, 1440 };
@@ -198,7 +168,6 @@ inline GameSettings loadSettings(const std::string& path) {
     return s;
 }
 
-// Writes beside the file and renames, so a failed write leaves the old settings as they were
 inline bool saveSettings(const GameSettings& s, const std::string& path) {
     const std::filesystem::path tmp = std::filesystem::u8path(path + ".tmp");
     std::ofstream out(tmp);
@@ -242,7 +211,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
         std::snprintf(buf, sizeof(buf), "%.1f,%.1f,%.1f,%.1f", p[0], p[1], p[2], p[3]);
         out << panelSettingKey(i) << "=" << buf << "\n";
     }
-    out.close();                       // flushes, so a failed write shows up in the state
+    out.close();
     std::error_code ec;
     if (out.fail()) {
         std::filesystem::remove(tmp, ec);

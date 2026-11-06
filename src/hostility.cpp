@@ -1,4 +1,3 @@
-// Which units fight which: factions, provocations and the Hostile and Neutral markers (hostility.h)
 #include "hostility.h"
 #include "combat.h"
 #include "factions.h"
@@ -7,10 +6,8 @@
 #include <algorithm>
 
 int factionOf(World& w, Entity e) {
-    if (const Faction* f = w.get<Faction>(e)) return f->id;
-    // A unit with no faction goes by its side: yours, a hostile (Red) or a neutral (Green)
-    if (w.has<Commandable>(e)) return FACTION_PLAYER;
-    return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
+    const Faction* f = w.get<Faction>(e);
+    return f ? f->id : FACTION_PLAYER;
 }
 
 namespace {
@@ -22,7 +19,7 @@ bool provokedBy(World& w, Entity e, int faction) {
     }
     return false;
 }
-} // namespace
+}
 
 bool unitsHostile(World& w, Entity a, Entity b) {
     if (a == b) return false;
@@ -54,7 +51,6 @@ void factionSystem(World& w, float dt) {
     for (Entity u : w.view<Provoked>()) {
         Provoked* p = w.get<Provoked>(u);
         const Transform* tu = w.get<Transform>(u);
-        // Out cold, it sees nothing; awake, any standing unit of the faction within sight keeps the grudge fresh
         const bool awake = tu && !outCold(w, u);
         for (Provoked::Entry& en : p->against) {
             bool seen = false;
@@ -93,7 +89,6 @@ void factionSystem(World& w, float dt) {
             const bool wasHostile = w.has<Hostile>(u);
             w.remove<Hostile>(u);
             w.add(u, Neutral{});
-            // It lost sight of your units long enough to calm down: it drops its fight with them
             if (wasHostile && !outCold(w, u)) {
                 queueLog(langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
                 if (Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY && w.has<Commandable>(c->target)) {

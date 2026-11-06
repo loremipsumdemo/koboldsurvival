@@ -1,33 +1,25 @@
-// Renderer: what floats over the world: name tags, emotes, ground item labels, damage numbers and work rings.
 #include "renderer_internal.h"
 #include "prop_info.h"
 
 using namespace render_detail;
 
 namespace {
-
-// Name box over an item on the ground: dark red-brown, as in Kenshi
 const RGBA LABEL_FILL{ 0.36f, 0.12f, 0.08f, 0.5f };
 
 const RGBA LABEL_EDGE{ 0.62f, 0.30f, 0.20f, 0.5f };
 
 const RGBA LABEL_TEXT{ 1.0f, 0.93f, 0.86f, 1.0f };
 
-// The name under the mouse: a darker cell with gold text
 const RGBA LABEL_HOT_FILL{ 0.12f, 0.04f, 0.02f, 0.85f };
 
 const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
+}
 
-} // namespace
-
-// The ring sits over the top of the prop's model, in window pixels, and fills as the next item nears. When an item is
-// finished, the ring hops: up and back down once, quickly. It stays up for the hop even if the work stopped with that
-// item, so the last one shows too.
 void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names) {
     const float s = uiScale();
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    const float outer = 11.0f * s, inner = 4.3f * s;          // the hole is about two fifths of the ring
-    const RGBA back{ 0.31f, 0.24f, 0.17f, 1.0f };             // dark brown
+    const float outer = 11.0f * s, inner = 4.3f * s;
+    const RGBA back{ 0.31f, 0.24f, 0.17f, 1.0f };
     constexpr float HOP_SECONDS = 0.22f, HOP_HEIGHT = 9.0f;
     const float now = (float)SDL_GetTicks() / 1000.0f;
 
@@ -36,7 +28,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         const PropWork* pw = w.get<PropWork>(e);
         PropHop hop;
         if (auto it = propHops_.find(e); it != propHops_.end() && it->second.made <= pw->made) hop = it->second;
-        else hop.made = pw->made;   // first seen (or a new world): no hop for items made before
+        else hop.made = pw->made;
         if (pw->made != hop.made) {
             hop.made = pw->made;
             hop.start = now;
@@ -52,19 +44,16 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
-        // Above the prop's name tag when names are shown
-        // Above the prop's block of name lines when names are shown (the block's top, from drawPropNames this frame)
         float above = sy - (names ? listTextHeight("Ag") + 2.0f * s : 0.0f);
         if (names) {
             if (const auto it = propLabelTop_.find(e); it != propLabelTop_.end()) above = std::min(above, it->second - 2.0f * s);
         }
         const float cy = above - outer - (hopping ? std::sin(t * PI) * HOP_HEIGHT * s : 0.0f);
-        // Just finished: the ring shows full for the hop, then the next item's progress
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
         drawRing(sx, cy, outer, inner, 0.0f, frac, theme::AMBER);
     }
-    propHops_.swap(seen);   // props no longer worked, or gone, are forgotten
+    propHops_.swap(seen);
 }
 
 void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item) {
@@ -90,7 +79,6 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const float size = 28.0f * s;
     const unsigned long long ticks = (unsigned long long)SDL_GetTicks();
     const unsigned long long turn = ticks / EMOTE_CYCLE_MS;
-    // The hop: up and back down once, at the start of every EMOTE_HOP_EVERY_MS. Every emote hops together.
     const unsigned long long sinceHop = ticks % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
@@ -99,7 +87,6 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         if (emotes.empty()) continue;
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        // Above the head, where the name tag is, and above the tag when names are shown
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
@@ -147,7 +134,6 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float sx = 0.0f, sy = 0.0f;
     if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) return;
-    // Above its name, and above its own emote if it shows one, so both can be seen
     float bottom = sy - 2.0f * s;
     if (namesShown && w.has<Name>(u)) bottom -= listTextHeight("Ag") + 2.0f * s;
     if (!emotesOf(w, u).empty()) bottom -= size + 4.0f * s;
@@ -157,9 +143,6 @@ void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Ent
 
 void Renderer::drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my) {
     const float s = uiScaleFor(winH);
-    // Items on one tile share a box, with one line each, top line first and the last one nearest the item.
-    // Boxes are drawn farthest first, so a nearer box covers the ones behind it. The one line on top under
-    // (mx, my) gets a darker cell and gold text, so it is clear which item a click picks.
     const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
     size_t hotStack = 0, hotRow = 0;
     const bool hasHot = topLabelRow(stacks, mx, my, hotStack, hotRow);
@@ -186,7 +169,6 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const Name* nm = w.get<Name>(u);
         if (!(w.has<Commandable>(u) ? players : others)) continue;
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        // The tag sits just above the top of the unit's picture
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
 
@@ -194,16 +176,12 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const float tw = listTextWidth(tag), th = listTextHeight(tag);
         if (sx < -tw || sx > winW + tw || sy < -th || sy > winH + th) continue;
         const float x = sx - tw * 0.5f, y = sy - th;
-        // The drop shadow is the same text in black, a little down and to the right
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
         drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : WHITE);
     }
 }
 
 void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo) {
-    // Stacked as the Alt item names are, without their box: the props on one tile share one block of lines over them, each prop's name in purple with its info lines
-    // (Show Prop Info) under it in a paler purple, the lines left-aligned, the last prop nearest the props. Blocks are
-    // drawn farthest first, so a nearer one is drawn over the ones behind it.
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const RGBA purple{ 0.80f, 0.56f, 1.0f, 1.0f };
@@ -216,14 +194,12 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     propLabelTop_.clear();
 
     struct Seen { Entity e; float sx, sy, dist2; };
-    // The group a prop joins: its tile
     std::map<std::pair<int, long long>, std::vector<Seen>> groups;
     for (Entity e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
-        // Just above the top of the prop, as a unit's tag is above its picture
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
@@ -238,7 +214,6 @@ void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bo
     std::vector<Block> blocks;
     for (auto& entry : groups) {
         std::vector<Seen>& seen = entry.second;
-        // Entity order, so the names keep their places from frame to frame
         std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) { return a.e < b.e; });
         Block b;
         float cx = 0.0f, top = 0.0f, maxW = 0.0f;
@@ -278,12 +253,9 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     for (const FloatingNumber& f : floats) {
         if (!withinDetail(cam, f.x, f.y, f.z)) continue;
-        // Anchored just above the unit's head, like its name
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
 
-        // Arc: up and to the right, then down, fading out over the last 40% of its life. The rise peaks
-        // about two fifths of the way through (about 38 pixels up at 720 lines), then falls 60 pixels below its start.
         const float t = std::clamp(f.age / FLOAT_LIFE, 0.0f, 1.0f);
         const float rise = (200.0f * t - 260.0f * t * t) * s;
         const float drift = 40.0f * t * s;
@@ -299,11 +271,9 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     }
 }
 
-// Trade values over their units: a second's life, fading out over its last 30%, above the name tag
 void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    // A unit with several labels at once (an item's Health and Hunger) shows them stacked, the newest on top
     std::map<Entity, int> stacked;
     for (const TradeLabel& l : labels) {
         const Transform* tr = w.get<Transform>(l.unit);

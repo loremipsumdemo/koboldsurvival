@@ -1,4 +1,3 @@
-// Moving, resizing, folding and locking the panels that can be moved
 #include "app.h"
 
 using namespace play;
@@ -24,7 +23,7 @@ Rect App::panelBarOf(PanelId which, int W, int H) {
 }
 
 std::pair<std::optional<PanelId>, int> App::grabAt(int W, int H, float x, float y) {
-    const float out = 5.0f, in = 4.0f;   // how far outside and inside an edge still grabs it
+    const float out = 5.0f, in = 4.0f;
     for (PanelId which : { PanelId::Info, PanelId::Unit, PanelId::Squad }) {
         if (panelLocked[idx(which)]) continue;
         const Rect r = shownPanel(which, W, H);
@@ -73,7 +72,6 @@ void App::applyGrab(int W, int H, float x, float y) {
     mh = std::min(mh, (float)H);
     float left = grabX, top = grabY, right = grabX + grabW, bottom = grabY + grabH;
     if (grabKind == GRAB_MOVE) {
-        // The whole panel moves; only the bar it shows is kept on the screen (below)
         left = grabX + dx;
         top = grabY + dy;
         right = left + grabW;
@@ -86,7 +84,7 @@ void App::applyGrab(int W, int H, float x, float y) {
     }
     PanelPlace& p = placeOf(*grabWhich);
     p = placeForRect(*grabWhich, Rect{ left, top, right - left, bottom - top }, W, H, p.barBottom);
-    p = placeForRect(*grabWhich, panelRect(*grabWhich, p, W, H), W, H, p.barBottom);   // its bar on the screen
+    p = placeForRect(*grabWhich, panelRect(*grabWhich, p, W, H), W, H, p.barBottom);
 }
 
 void App::endGrab(int W, int H) {
@@ -97,7 +95,7 @@ void App::endGrab(int W, int H) {
 
 void App::setFolded(PanelId which, bool fold, int W, int H) {
     PanelPlace& p = placeOf(which);
-    p = settlePanel(which, p, W, H, !fold);   // the bar on its side before it changes
+    p = settlePanel(which, p, W, H, !fold);
     if (which == PanelId::Squad) squadCollapsed = fold;
     else if (which == PanelId::Unit) unitOpen = !fold;
     else combatCollapsed = fold;

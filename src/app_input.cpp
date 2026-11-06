@@ -3,7 +3,6 @@
 using namespace play;
 
 void App::handleEvent() {
-    // F12 takes a screenshot from any screen, whatever menu or text box has the keys
     if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_F12 && !e.key.repeat) {
         screenshotPending = true;
         return;
@@ -16,7 +15,6 @@ void App::handleEvent() {
         onTextInput();
         break;
     case SDL_EVENT_TEXT_EDITING:
-        // An input method is composing text (for example Chinese or Japanese): it shows in the name box
         if (screen == Screen::PartySetup && partyUi.editingName) partyUi.composition = e.edit.text;
         break;
     case SDL_EVENT_KEY_DOWN:
@@ -37,22 +35,18 @@ void App::handleEvent() {
     }
 }
 
-// The typed text: into the # prompt, a party member's name, or the save name
 void App::onTextInput() {
-    // The # prompt takes digits only, as many as the top of the behavior's range has
     if (percentPrompt.open) {
         const size_t most = std::to_string(percentRange(percentPrompt.kind).hi).size();
         for (const char* c = e.text.text; *c; ++c) {
             if (*c < '0' || *c > '9') continue;
-            if (percentPrompt.text == "0") percentPrompt.text.clear();   // no leading zero
+            if (percentPrompt.text == "0") percentPrompt.text.clear();
             if (percentPrompt.text.size() < most) percentPrompt.text += *c;
         }
         percentPrompt.error.clear();
         return;
     }
     if (screen == Screen::PartySetup) {
-        // Typed text goes into the name being edited, up to the limit in characters. Any text an input
-        // method was composing is now committed, so it leaves the name box.
         partyUi.composition.clear();
         if (partyUi.editingName) appendUtf8Limited(pickedMember(party, partyUi).name, e.text.text, PARTY_NAME_CHARS);
         return;
@@ -62,13 +56,8 @@ void App::onTextInput() {
     }
 }
 
-// A key pressed
 void App::onKeyDown() {
-    // Escape acts once per press: the repeats sent while it is held down are ignored, so holding it does
-    // not back out of several menus at once
     if (e.key.key == SDLK_ESCAPE && e.key.repeat) return;
-    // The # prompt takes every key: Enter sets the percent, Escape cancels, Backspace takes off a digit.
-    // The game's keys (Space, M, the camera's) wait until it is answered.
     if (percentPrompt.open) {
         if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) {
             answerPercentPrompt(true);
@@ -81,7 +70,6 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::PartySetup) {
-        // Escape backs out one step at a time: the dropdown, then the name box, then the map list
         if (e.key.key == SDLK_ESCAPE) {
             if (partyUi.dropKind != DropKind::None) {
                 closeDropdown();
@@ -102,7 +90,6 @@ void App::onKeyDown() {
     }
     if (panelOpen) {
         if (e.key.key == SDLK_ESCAPE) {
-            // Escape backs out of a question first, then closes the popout
             if (ask != Ask::None) {
                 clearQuestion();
             } else {
@@ -117,8 +104,6 @@ void App::onKeyDown() {
         }
         return;
     }
-    // The title and pause menus: up and down (or W and S) light the next item, Enter (or Space on the title)
-    // picks it. Items that can't be used are passed over.
     if (screen == Screen::Title || screen == Screen::Pause) {
         const std::vector<Button> items = layoutButtons(screen, winW, winH, saves);
         const SDL_Keycode k = e.key.key;
@@ -130,7 +115,7 @@ void App::onKeyDown() {
                 i = ((i < 0 ? (down ? -1 : 0) : i) + (down ? 1 : -1) + n) % n;
                 if (items[(size_t)i].enabled) break;
             }
-            if (items[(size_t)i].enabled && i != menuSel) menuSel = i;   // the hover sound plays as it lights
+            if (items[(size_t)i].enabled && i != menuSel) menuSel = i;
             return;
         }
         const bool pick = k == SDLK_RETURN || k == SDLK_KP_ENTER || (k == SDLK_SPACE && screen == Screen::Title);
@@ -139,32 +124,27 @@ void App::onKeyDown() {
             return;
         }
     }
-    // While a prop is picked to build, Escape puts the pick down, and does nothing else
-    if (screen == Screen::Playing && buildPick.any() && e.key.key == SDLK_ESCAPE) {
-        buildPick = {};
+    if (screen == Screen::Playing && session.buildPick.any() && e.key.key == SDLK_ESCAPE) {
+        session.buildPick = {};
         playSfx(Sfx::UiBack);
         return;
     }
     if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
-        mapOpen = !mapOpen;   // M opens and closes the world map
+        mapOpen = !mapOpen;
         return;
     }
-    // Space pauses and resumes the game, but not while a talk or a trade is open
-    if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat && dialogueUnit == NULL_ENTITY) {
-        paused = !paused;
-        playSfx(paused ? Sfx::UiPause : Sfx::UiResume);
+    if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat && session.dialogueUnit == NULL_ENTITY) {
+        session.paused = !session.paused;
+        playSfx(session.paused ? Sfx::UiPause : Sfx::UiResume);
     }
     if (e.key.key == SDLK_ESCAPE) {
-        // In a talk, Escape backs out a step at a time, as the buttons do: a "how many" prompt is closed,
-        // the trade is Cancelled (back to the talk, or ended if it was a trade between your own units),
-        // and the talk itself is ended as with End Dialogue
-        if (screen == Screen::Playing && dialogueUnit != NULL_ENTITY) {
-            if (quantity.open && tradeOpen && !quantity.toStorage) {
-                quantity.open = false;
-            } else if (tradeOpen && freeTrade) {
+        if (screen == Screen::Playing && session.dialogueUnit != NULL_ENTITY) {
+            if (session.quantity.open && session.tradeOpen && !session.quantity.toStorage) {
+                session.quantity.open = false;
+            } else if (session.tradeOpen && session.freeTrade) {
                 endTalk();
-            } else if (tradeOpen) {
-                tradeOpen = false;
+            } else if (session.tradeOpen) {
+                session.tradeOpen = false;
                 clearTradeTable();
             } else {
                 endTalk();
@@ -172,18 +152,17 @@ void App::onKeyDown() {
             playSfx(Sfx::UiBack);
             return;
         }
-        if (screen == Screen::Playing && disbandTarget != NULL_ENTITY) {
-            disbandTarget = NULL_ENTITY;   // Escape is Cancel on the Disband popout
-            disbandHeldAt = 0;
+        if (screen == Screen::Playing && session.disbandTarget != NULL_ENTITY) {
+            session.disbandTarget = NULL_ENTITY;
+            session.disbandHeldAt = 0;
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && optimizeAllOpen) {
-            optimizeAllOpen = false;   // Escape is Cancel on the Optimize All dialog
+            optimizeAllOpen = false;
             optimizeSliderDrag = false;
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && mapOpen) {
-            mapOpen = false;  // Escape closes the world map first
+            mapOpen = false;
         } else if (screen == Screen::Playing && itemMenu.open) {
-            // Escape closes the open menu or popout first, and only then pauses the game
             itemMenu.open = false;
         } else if (screen == Screen::Playing) {
             leftDown = middleDown = false;
@@ -197,7 +176,6 @@ void App::onKeyDown() {
             screen = Screen::Playing;
             playSfx(Sfx::UiResume);
         } else if (screen == Screen::Settings) {
-            // Escape closes an open dropdown first, then leaves the menu
             if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
             else leaveSettings();
         } else if (screen == Screen::ScenarioSelect) {
@@ -206,48 +184,39 @@ void App::onKeyDown() {
     }
 }
 
-// The wheel: the lists, the game log, the world map's zoom, the squad panel, the sidebar or the camera
 void App::onMouseWheel() {
-    // The world map popout takes the wheel over everything under it
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
     if (panelOpen) {
-        // Scroll the save list, keeping the offset within range
         int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
         int next = (int)listOffset - (int)e.wheel.y;
         listOffset = (size_t)std::clamp(next, 0, maxOffset);
     } else if (screen == Screen::ScenarioSelect) {
-        // The scenario list scrolls a row at a time; the layout keeps it in range
         scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
                                         scenarioScroll - (int)e.wheel.y).first;
     } else if (screen == Screen::PartySetup) {
-        // Scrolls an open dropdown. The rest of the menu does not scroll.
         if (partyUi.dropKind != DropKind::None) {
             const int count = (int)dropdownEntries(party, partyUi).size();
             partyUi.dropScroll = clampDropScroll(partyUi.dropScroll - (int)e.wheel.y, count);
         } else if (partyPanels(winW, winH).left.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
-            // The unit list scrolls, a unit at a time
             const int maxScroll = partyListMaxScroll((int)party.size(), winH);
             partyUi.listScroll = std::clamp(std::min(partyUi.listScroll, maxScroll) - (int)e.wheel.y, 0, maxScroll);
         }
     } else if (screen == Screen::Settings) {
-        // Scrolls an open dropdown. Nothing else on the menu scrolls.
         if (settingsUi.openRow >= 0) {
             const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
             settingsScrollDropdown(settingsUi, layoutSettings(winW, winH, rows, settingsUi), (int)e.wheel.y);
         }
     } else if (screen == Screen::Playing && !wheelOverMap && gameLogHovered(winW, winH)) {
-        // Scrolls the game log, three lines a notch. Wheel up goes back in time.
         const int step = e.wheel.y > 0.0f ? 3 : e.wheel.y < 0.0f ? -3 : 0;
         logOffset = std::clamp(logOffset + step, 0, gameLogPanel(winW, winH).maxOffset());
     } else if (wheelOverMap) {
-        // Zooms the world map about the point under the mouse: wheel up zooms in, down zooms out
         const Rect box = worldMapFor(winW, winH).map;
         const float px = std::clamp(e.wheel.mouse_x, box.x, box.x + box.w);
         const float py = std::clamp(e.wheel.mouse_y, box.y, box.y + box.h);
         const float oldK = mapTilesPerPixel(box, mapSpan);
         const float offX = box.x + box.w * 0.5f - px, offY = box.y + box.h * 0.5f - py;
-        const float gx = mapCx + offX * oldK;   // the ground under the mouse
+        const float gx = mapCx + offX * oldK;
         const float gz = mapCz + offY * oldK;
         mapSpan = e.wheel.y > 0.0f ? mapSpan * 0.8f : mapSpan * 1.25f;
         float cx = mapCx, cz = mapCz;
@@ -257,13 +226,10 @@ void App::onMouseWheel() {
         mapCz = gz - offY * k;
         clampMapView(box, (float)terrain.size(), mapCx, mapCz, mapSpan);
     } else if (screen == Screen::Playing && unitPanelHovered(winW, winH) && factionTab == FACTION_TAB_REPUTATION) {
-        // The Reputation tab's list scrolls a faction a notch
         const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
         repScroll = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace,
                                     factionTab, (int)reputationFactions().size(), repScroll + step).repFirst;
     } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
-        // Scrolls the unit list very slowly: a row for every SQUAD_WHEEL_NOTCHES_PER_ROW notches of the
-        // wheel. Turning the wheel the other way starts the count again.
         if (unitPanelWheel * e.wheel.y < 0.0f) unitPanelWheel = 0.0f;
         unitPanelWheel += e.wheel.y;
         const int rows = (int)(unitPanelWheel / SQUAD_WHEEL_NOTCHES_PER_ROW);
@@ -274,19 +240,15 @@ void App::onMouseWheel() {
         }
     } else if (screen == Screen::Playing && !onTalkOrTrade(winW, winH, e.wheel.mouse_x, e.wheel.mouse_y)
                && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
-        // Scrolls the sidebar, 40 pixels a notch. Wheel up goes back toward the top.
         const float notch = 40.0f * (winH / 720.0f);
         sidebarScroll = sidebarFor(winW, winH, sidebarScroll - e.wheel.y * notch).scroll;
     } else if (screen == Screen::Playing && !pointerOverPanels(winW, winH)) {
-        // Over the panels the wheel does nothing, so the camera doesn't zoom behind them
         cam.distance *= (e.wheel.y > 0.0f) ? 0.9f : 1.1f;
         cam.clampState();
     }
 }
 
-// A mouse button pressed: the menu screens here, then play's popups, its panels, and the world
 void App::onMouseButtonDown() {
-    // The # prompt takes every click: Set and Cancel answer it, a click outside it cancels it
     if (percentPrompt.open) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const PercentPromptLayout pl = layoutPercentPrompt(winW, winH);
@@ -295,20 +257,17 @@ void App::onMouseButtonDown() {
         }
         return;
     }
-    // While a prop is picked to build, a right click puts the pick down and does nothing else
-    if (buildPick.any() && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
-        buildPick = {};
+    if (session.buildPick.any() && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
+        session.buildPick = {};
         playSfx(Sfx::UiBack);
         return;
     }
     if (panelOpen) {
-        // The popout takes all clicks while it's open
         if (e.button.button == SDL_BUTTON_LEFT) {
             for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
                                                panelFrom == Screen::Title)) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                     if (b.action == Action::DeleteHold) {
-                        // Held, not clicked: the timer deletes once it has been held long enough
                         deleteHolding = true;
                         deleteHoldStart = SDL_GetTicks();
                         deleteHoldRect = b.rect;
@@ -323,7 +282,6 @@ void App::onMouseButtonDown() {
     }
 
     if (screen == Screen::ScenarioSelect) {
-        // A row picks its scenario; Continue rolls the party for it; Back returns to the title
         if (e.button.button == SDL_BUTTON_LEFT) {
             const float mx = e.button.x, my = e.button.y;
             const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
@@ -345,8 +303,6 @@ void App::onMouseButtonDown() {
     }
 
     if (screen == Screen::PartySetup) {
-        // The unit list's scroll bar: the thumb is taken where it was clicked; a click on the track moves
-        // the thumb's middle there, and it can be dragged on from that point
         const PartyListBar bar = partyListBar(winW, winH, (int)party.size(), partyUi.listScroll);
         const Rect barGrab{ bar.track.x - 4.0f, bar.track.y, bar.track.w + 8.0f, bar.track.h };
         if (e.button.button == SDL_BUTTON_LEFT && partyUi.dropKind == DropKind::None && bar.track.h > 0.0f
@@ -356,7 +312,6 @@ void App::onMouseButtonDown() {
             partyUi.listDrag = true;
             return;
         }
-        // The right button held on the picked unit's model turns it about its vertical axis
         if (e.button.button == SDL_BUTTON_RIGHT && partyUi.dropKind == DropKind::None && !party.empty()
             && partyPreviewRect(winW, winH).contains(e.button.x, e.button.y)) {
             partyUi.previewDrag = true;
@@ -366,7 +321,6 @@ void App::onMouseButtonDown() {
             const float mx = e.button.x, my = e.button.y;
             const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
             const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop);
-            // The last enabled button under the pointer is the one on top, so it gets the click
             const Button* hit = nullptr;
             for (auto it = buttons.rbegin(); it != buttons.rend(); ++it) {
                 if (it->enabled && it->rect.contains(mx, my)) {
@@ -378,7 +332,6 @@ void App::onMouseButtonDown() {
                                             || hit->action == Action::PartyDropScroll
                                             || hit->action == Action::PartyDropBack);
             if (partyUi.dropKind != DropKind::None && !onDropdown) {
-                // A click outside an open dropdown only closes it
                 closeDropdown();
             } else if (hit) {
                 if (partyUi.editingName && hit->action != Action::PartyNameField) stopNameEdit();
@@ -396,7 +349,6 @@ void App::onMouseButtonDown() {
     }
 
     if (screen != Screen::Playing) {
-        // Menus: a left click runs the enabled button under the cursor
         if (e.button.button == SDL_BUTTON_LEFT) {
             for (const Button& b : layoutButtons(screen, winW, winH, saves)) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
@@ -417,8 +369,6 @@ if (mouseDownOnPanels()) return;
         pressY = e.button.y;
         sel.dragging = false;
     } else if (e.button.button == SDL_BUTTON_MIDDLE) {
-        // Pressing alone changes nothing. Dragging orbits around the current focus.
-        // Pressed over the panels, it orbits nothing.
         if (!overPanels(e.button.x, e.button.y, winW, winH)) {
             middleDown = true;
             lastX = e.button.x;
@@ -427,10 +377,8 @@ if (mouseDownOnPanels()) return;
     } else if (e.button.button == SDL_BUTTON_RIGHT) {
         float mgx = 0.0f, mgz = 0.0f;
         if (screen == Screen::Playing && mapGroundAt(winW, winH, e.button.x, e.button.y, mgx, mgz)) {
-            // The minimap: the selected units walk to the point clicked on it
             beginRightHold(mgx, mgz);
         } else if (overPanels(e.button.x, e.button.y, winW, winH)) {
-            // Right-click on a unit in the Squad Panel: its menu, as on the unit in the world
             {
                 const std::vector<Entity> own = ownUnitList();
                 const UnitPanelLayout squadL = squadPanelLayout(winW, winH);
@@ -443,10 +391,6 @@ if (mouseDownOnPanels()) return;
                 }
                 if (onCell) return;
             }
-            // Right-click on an inventory item: gear goes straight to its slot, and anything
-            // else opens the menu with Use and Drop. Right-click on a worn gear item takes it off
-            // into the inventory. Elsewhere on the panels, nothing happens. A red unit's sidebar
-            // has no unit of yours in it, so neither of those applies there.
             itemMenu.open = false;
             const std::vector<Entity> picked = panelUnits(world);
             const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
@@ -458,12 +402,10 @@ if (mouseDownOnPanels()) return;
                 std::string why;
                 if (unequipToInventory(world, picked[0], gear, why)) queueSound(Sfx::ItemMove);
                 else if (!why.empty()) refuse(why);
-            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && tradeOpen) {
-                // During a trade a right-click puts the item in the trade, whatever it is
+            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.tradeOpen) {
                 requestTrade(false, picked[0], slot);
-            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && storageProp != NULL_ENTITY &&
-                       picked[0] == storageUnit) {
-                // With a storage panel open, a right-click puts the item in the storage. A stack asks how many.
+            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.storageProp != NULL_ENTITY &&
+                       picked[0] == session.storageUnit) {
                 requestStore(slot);
             } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
                 const int item = inv->slots[slot].item;
@@ -483,8 +425,6 @@ if (mouseDownOnPanels()) return;
                 }
             }
         } else {
-            // A unit or a usable prop under the pointer opens the right-click menu: Talk, Trade, Follow,
-            // Defend, Attack, Inventory or Use, as fits it. Anywhere else the selected units walk there.
             if (openContextMenu(e.button.x, e.button.y)) {
                 rightHold = false;
             } else {
@@ -495,10 +435,9 @@ if (mouseDownOnPanels()) return;
     }
 }
 
-// A mouse button let go: ends drags and holds, drops a dragged item, and finishes a box selection
 void App::onMouseButtonUp() {
-    if (disbandHeldAt != 0 && e.button.button == SDL_BUTTON_LEFT) {
-        disbandHeldAt = 0;   // let go before it filled: the hold starts over
+    if (session.disbandHeldAt != 0 && e.button.button == SDL_BUTTON_LEFT) {
+        session.disbandHeldAt = 0;
         return;
     }
     if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
@@ -519,11 +458,10 @@ void App::onMouseButtonUp() {
     }
     if (optimizeSliderDrag && e.button.button == SDL_BUTTON_LEFT) {
         optimizeSliderDrag = false;
-        saveSettingsFile();   // its last place is kept
+        saveSettingsFile();
         playSfx(Sfx::UiSlider);
         return;
     }
-    // Letting go of the right button plans the route to where it was held
     if (rightHold && e.button.button == SDL_BUTTON_RIGHT) {
         rightHold = false;
         moveSelectedTo(holdX, holdZ);
@@ -534,20 +472,16 @@ void App::onMouseButtonUp() {
         setGrabCursor(grabAt(winW, winH, e.button.x, e.button.y).second);
         return;
     }
-    // A slider let go of: save its final level
     if (e.button.button == SDL_BUTTON_LEFT && settingsUi.dragRow >= 0) {
         settingsUi.dragRow = -1;
         saveSettingsFile();
     }
-    // An item dragged out of the storage: let go over the panel it stays; over the Unit Panel it goes into the
-    // unit's inventory if it all fits; anywhere else it drops where the unit stands, not at the prop
-    if (e.button.button == SDL_BUTTON_LEFT && storageDrag >= 0) {
-        const int from = storageDrag;
-        storageDrag = -1;
-        if (storageProp != NULL_ENTITY) {
+    if (e.button.button == SDL_BUTTON_LEFT && session.storageDrag >= 0) {
+        const int from = session.storageDrag;
+        session.storageDrag = -1;
+        if (session.storageProp != NULL_ENTITY) {
             const float x = e.button.x, y = e.button.y;
             if (storageLayout(world, winW, winH).panel.contains(x, y)) {
-                // back where it was
             } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                 std::string why;
                 if (takeFromStorage(world, from, why)) queueSound(Sfx::ItemMove);
@@ -558,30 +492,26 @@ void App::onMouseButtonUp() {
         }
         return;
     }
-    // An inventory stack let go over the storage panel goes into the storage, if all of it fits
-    if (e.button.button == SDL_BUTTON_LEFT && itemDrag && storageProp != NULL_ENTITY &&
+    if (e.button.button == SDL_BUTTON_LEFT && itemDrag && session.storageProp != NULL_ENTITY &&
         storageLayout(world, winW, winH).panel.contains(e.button.x, e.button.y)) {
-        if (dragGear < 0 && dragUnit == storageUnit) requestStore(dragSlot);
+        if (dragGear < 0 && dragUnit == session.storageUnit) requestStore(dragSlot);
         itemDrag = false;
         dragUnit = NULL_ENTITY;
         dragSlot = -1;
         dragGear = -1;
         return;
     }
-    // The trade: an NPC item let go over its side becomes a ghost there. A unit's item let go over your side
-    // does too, if it is the unit being traded with. Either way the drag ends with nothing moved.
-    if (e.button.button == SDL_BUTTON_LEFT && tradeOpen && dialogueUnit != NULL_ENTITY) {
+    if (e.button.button == SDL_BUTTON_LEFT && session.tradeOpen && session.dialogueUnit != NULL_ENTITY) {
         const float x = e.button.x, y = e.button.y;
         const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
-        if (tradeNpcDrag >= 0) {
-            if (tl.theirBox.contains(x, y)) requestTrade(true, dialogueUnit, tradeNpcDrag);
-            tradeNpcDrag = -1;
+        if (session.tradeNpcDrag >= 0) {
+            if (tl.theirBox.contains(x, y)) requestTrade(true, session.dialogueUnit, session.tradeNpcDrag);
+            session.tradeNpcDrag = -1;
         }
-        // The trade's panels are over the Unit Panel: a drop on them is theirs, wherever the Unit Panel is
         const bool onTrade = tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
         if (itemDrag && (onTrade || !sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y))) {
             if (tl.yourBox.contains(x, y) && dragGear < 0) {
-                if (dragUnit == dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
+                if (dragUnit == session.dialoguePlayer) requestTrade(false, dragUnit, dragSlot);
                 else refuse(lang("MISC_TRADE_ONLY_TALKING"));
             }
             itemDrag = false;
@@ -600,8 +530,6 @@ void App::onMouseButtonUp() {
             const bool onGrid = sidebarSlotAt(sl, rx, ry) >= 0;
             std::string why;
             if (dragGear < 0) {
-                // An inventory stack: onto a gear slot it equips, out of the sidebar it drops
-                // under the unit. Released on the rest of the sidebar, nothing happens.
                 if (gear >= 0) {
                     if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) queueSound(Sfx::ItemMove);
                     else if (!why.empty()) refuse(why);
@@ -609,8 +537,6 @@ void App::onMouseButtonUp() {
                     if (dropStack(world, dragUnit, dragSlot)) queueSound(Sfx::ItemMove);
                 }
             } else {
-                // A gear item: onto another gear slot it moves, onto the inventory it comes off,
-                // out of the sidebar it drops. Released on the rest of the sidebar, nothing happens.
                 if (gear >= 0 && gear != dragGear) {
                     if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) refuse(why);
                 } else if (onGrid) {
@@ -627,12 +553,9 @@ void App::onMouseButtonUp() {
     }
     if (e.button.button == SDL_BUTTON_LEFT && leftDown) {
         leftDown = false;
-        // Shift adds to the selection. Alt never clears it, so Alt-click on empty ground does nothing.
         const SDL_Keymod mods = SDL_GetModState();
         const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
         if (sel.dragging) {
-            // A box with none of your units in it but items on the ground sends the selected units to
-            // pick them all up, as one chain shared between them
             if (!boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive)) {
                 const std::vector<Entity> items =
                     groundItemsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
@@ -654,9 +577,7 @@ void App::onMouseButtonUp() {
     if (e.button.button == SDL_BUTTON_MIDDLE) middleDown = false;
 }
 
-// The mouse moved: drags, sliders, the grab cursor, box selection and the camera's orbit
 void App::onMouseMotion() {
-    // The party menu's unit list follows its scroll bar thumb while it is held
     if (screen == Screen::PartySetup && partyUi.listDrag) {
         if (e.motion.state & SDL_BUTTON_LMASK) {
             partyUi.listScroll = partyListScrollAt(winW, winH, (int)party.size(), e.motion.y - partyUi.listGrab);
@@ -665,7 +586,6 @@ void App::onMouseMotion() {
         }
         return;
     }
-    // The held model turns with the mouse's sideways movement only: about its vertical axis, never tipping
     if (screen == Screen::PartySetup && partyUi.previewDrag) {
         if (e.motion.state & SDL_BUTTON_RMASK) {
             partyUi.previewYaw = std::remainder(partyUi.previewYaw + e.motion.xrel * 0.012f, TWO_PI);
@@ -674,7 +594,6 @@ void App::onMouseMotion() {
         }
         return;
     }
-    // The Optimize All slider follows the mouse while its button is held
     if (screen == Screen::Playing && optimizeAllOpen && optimizeSliderDrag) {
         if (e.motion.state & SDL_BUTTON_LMASK) {
             settings.optimizeAttackShare = levelAtX(layoutOptimizeAll(winW, winH).track, e.motion.x);
@@ -684,12 +603,11 @@ void App::onMouseMotion() {
         }
         return;
     }
-    // The world map window follows the mouse while its title bar is held, kept inside the screen
     if (mapDragging) {
         if ((e.motion.state & SDL_BUTTON_LMASK) && mapOpen && screen == Screen::Playing) {
             mapDragX = e.motion.x - mapGrabX;
             mapDragY = e.motion.y - mapGrabY;
-            const WorldMapLayout wm = worldMapFor(winW, winH);   // clamped
+            const WorldMapLayout wm = worldMapFor(winW, winH);
             mapDragX = wm.window.x - std::floor((winW - wm.window.w) * 0.5f);
             mapDragY = wm.window.y - std::floor((winH - wm.window.h) * 0.5f);
         } else {
@@ -701,7 +619,6 @@ void App::onMouseMotion() {
         applyGrab(winW, winH, e.motion.x, e.motion.y);
         return;
     }
-    // The Squad Panel follows its scroll bar thumb while it is held
     if (squadThumbDrag) {
         if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
             const UnitPanelLayout sq = squadPanelLayout(winW, winH);
@@ -715,7 +632,6 @@ void App::onMouseMotion() {
         const bool onMap = mapOpen && worldMapFor(winW, winH).window.contains(e.motion.x, e.motion.y);
         setGrabCursor(onMap ? 0 : grabAt(winW, winH, e.motion.x, e.motion.y).second);
     }
-    // A slider follows the mouse while its button is held
     if (screen == Screen::Settings && settingsUi.dragRow >= 0) {
         if (e.motion.state & SDL_BUTTON_LMASK) {
             const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
@@ -725,7 +641,6 @@ void App::onMouseMotion() {
                 settingsCommit(setRowLevel(rows[settingsUi.dragRow].id, level, settings), false);
             }
         } else {
-            // The button came up outside the window, so no button-up arrived: save here
             settingsUi.dragRow = -1;
             saveSettingsFile();
         }
@@ -751,8 +666,8 @@ void App::onMouseMotion() {
 
 void App::panWithKeys(float dt, bool edgeScroll) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
-    if (percentPrompt.open || panelOpen) keys = nullptr;   // the keys go into the Behavior tab's # prompt, or a save's name
+    float right = 0.0f, forward = 0.0f;
+    if (percentPrompt.open || panelOpen) keys = nullptr;
     if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
     if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
     if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;
@@ -769,10 +684,8 @@ void App::panWithKeys(float dt, bool edgeScroll) {
         if (my > winH - 6.0f) forward -= 1.0f;
     }
 
-    // Holding shift pans twice as fast
     const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
     float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
-    // Any manual move takes the camera off the unit it was following
     if (right != 0.0f || forward != 0.0f) followUnit = NULL_ENTITY;
     cam.pan(right * panSpeed, forward * panSpeed);
 }

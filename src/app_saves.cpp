@@ -1,4 +1,3 @@
-// Saving and loading: the save list, the save and load panel, and deleting a save.
 #include "app.h"
 
 using namespace play;
@@ -35,11 +34,15 @@ bool App::wouldLoseProgress() {
 }
 
 bool App::writeSave(const std::string& path, const std::string& name, bool autosave) {
-    SaveData d = captureWorld(world, gs, cam, levelSeed, nowMs(), name, currentMap);
+    SaveData d = captureWorld(world, gs, cam, rng, nowMs(), name, currentMap);
     d.autosave = autosave;
-    bool ok = writeSaveFile(path, d);
-    if (ok) lastSaveTicks = SDL_GetTicks();
-    refreshSaves();
+    const bool ok = writeSaveFile(path, d);
+    if (ok) {
+        lastSaveTicks = SDL_GetTicks();
+        saves.erase(std::remove_if(saves.begin(), saves.end(), [&](const SaveSummary& s) { return s.path == path; }), saves.end());
+        saves.push_back(SaveSummary{ path, name, d.timestamp, autosave });
+        sortSaves(saves, sortKey, sortAsc);
+    }
     return ok;
 }
 
@@ -50,58 +53,32 @@ void App::loadSave(std::string path) {
         refreshSaves();
         return;
     }
-    if (d.version > SAVE_VERSION) {
-        refuse(lang("MISC_SAVE_NEWER"));
-        refreshSaves();
-        return;
-    }
-    if (d.mapStem.empty()) {
-        showNotice(lang("MISC_SAVE_OLD"));
-        refreshSaves();
-        return;
-    }
-    std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
+    const std::optional<MapChoice> found = findMap(listMaps(), d.mapSource, d.mapStem);
     if (!found) {
         refuse(langf("MISC_MAP_MISSING", { d.name }));
-        refreshSaves();
         return;
     }
-    const MapChoice choice = *found;
     std::string err;
-    // The title music ends as a saved game starts, before its level loads
-    audio::stopTracks();
-    if (!restoreLevel(world, terrain, renderer, rng, d, choice, err)) {
-        refuse(langf("MISC_MAP_LOAD_FAILED", { choice.name, err }));
-        refreshSaves();
+    if (!loadLevelGround(*found, terrain, renderer, err)) {
+        refuse(langf("MISC_MAP_LOAD_FAILED", { found->name, err }));
         return;
     }
-    currentMap = choice;
-    levelSeed = d.seed;
-    clearCombatText();
+    audio::stopTracks();
+    resetPlayState();
+    restoreWorld(world, terrain, rng, d);
+    currentMap = *found;
     gs = d.gs;
-    setPlayerReputation(d.reputation);   // older saves have none, so every standing is its default
-    // Older saves have no camera, so they start from the default one, not the last game's view
-    cam = Camera{};
-    cam.mapSize = (float)terrain.size();
-    focusCameraOnFirstUnit(world, cam);
+    enterLevel();
     applySaveCamera(d.cam, cam);
     primeStreaming(world, terrain, cam);
-    sel = Selection{};
-    leftDown = middleDown = false;
-    itemDrag = false;
-    followUnit = NULL_ENTITY;
-    autoTimer = 0.0f;
-    gameActive = true;
-    lastSaveTicks.reset();
-    screen = Screen::Playing;
-    closePanel();
+    lastSaveTicks = SDL_GetTicks();
     showNotice(langf("MISC_LOADED", { d.name }));
     playSfx(Sfx::UiLoaded);
 }
 
 bool App::autosaveNow() {
     std::string path = nextAutosavePath();
-    std::string name = std::filesystem::u8path(path).stem().u8string();   // autosave0, and so on
+    std::string name = std::filesystem::u8path(path).stem().u8string();
     return writeSave(path, name, true);
 }
 
@@ -128,14 +105,12 @@ void App::clearQuestion() {
     deleteHolding = false;
 }
 
-// The panel closes, and the notice and sound say how the save went
 void App::finishSave(bool ok) {
     closePanel();
     showNotice(ok ? lang("MISC_GAME_SAVED") : lang("MISC_SAVE_FAILED"));
     playSfx(ok ? Sfx::UiSaved : Sfx::UiError);
 }
 
-// True if the action was one of the save and load panel's
 bool App::savePanelAction(Action action, int param) {
     switch (action) {
     case Action::LoadGame:
@@ -148,10 +123,8 @@ bool App::savePanelAction(Action action, int param) {
     case Action::LoadSlot:
         if (param < 0 || param >= (int)saves.size()) return true;
         if (panelSaveMode) {
-            // Save mode: a click copies that save's name into the name field
             saveName = saves[param].name;
         } else if (wouldLoseProgress()) {
-            // Load mode, and the current game would be lost: ask first
             pendingLoad = saves[param];
             ask = Ask::LoadUnsaved;
         } else {
@@ -177,7 +150,6 @@ bool App::savePanelAction(Action action, int param) {
         ask = Ask::Delete;
         return true;
     case Action::DeleteHold:
-        // Handled by the hold timer, not by clicks
         return true;
     case Action::DeleteNo:
         ask = Ask::None;
@@ -185,7 +157,6 @@ bool App::savePanelAction(Action action, int param) {
         deleteHolding = false;
         return true;
     case Action::ScrollUp:
-        // Jump up one page of saves
         pageUp(listOffset, visibleSaveRows(viewH));
         return true;
     case Action::ScrollDown:
@@ -199,7 +170,6 @@ bool App::savePanelAction(Action action, int param) {
         return true;
     }
     case Action::ConfirmName: {
-        // Save button. A name that matches an existing save asks before overwriting it.
         std::string name = trimmedName(saveName);
         if (name.empty()) return true;
         if (std::optional<SaveSummary> existing = findSaveByName(saves, name)) {
@@ -216,7 +186,6 @@ bool App::savePanelAction(Action action, int param) {
             return true;
         }
         SaveSummary target = *pendingOverwrite;
-        // Keep the save's file and its AUTO or MANUAL type; only the contents change
         finishSave(writeSave(target.path, target.name, target.autosave));
         return true;
     }
@@ -225,7 +194,6 @@ bool App::savePanelAction(Action action, int param) {
         pendingOverwrite.reset();
         return true;
     case Action::CancelName:
-        // Close button
         closePanel();
         return true;
     default:

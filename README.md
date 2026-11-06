@@ -41,7 +41,8 @@ lose state: the world keeps running, whatever happens to your party.
 - **World and time.** A chunked terrain world with sea and sky, a world map, and a day/night calendar (one in-game day
   is 30 real minutes). New Game always starts on the main world.
 - **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with manual saves
-  and three rotating autosave slots. Settings are kept in the folder above them.
+  and three rotating autosave slots. A save holds the whole level except its terrain. Saves of another format version
+  are not listed. Settings are kept in the folder above them.
 - **Localization.** 31 languages with Noto fonts for Latin, Cyrillic, Greek, Arabic, Thai, Japanese, Korean and
   Chinese scripts.
 - **Audio.** Music, ambient tracks, sound effects and interface sounds, each with its own volume slider, under a global
@@ -89,25 +90,26 @@ The build also:
 - copies `data/language`, `BGM` and `SFX` next to the executable as loose `LANGUAGE`, `BGM` and `SFX` folders,
 - stamps the build time (`BUILD.YYYY.MM.DD.HH.MM.SS`) into the title screen through `tools/build_stamp`.
 
-On Windows the game runs without a console window, and log output goes to `log.txt` beside the executable.
-
 ## Project layout
 
 ```
 src/                 Game source (single executable, an ECS-style design)
   main.cpp, app*.cpp  Start-up, the frame loop, input, the screens and the game's step
-  systems.cpp        Index of the simulation systems files (movement, automation, wild_ai, downed, ...)
+  orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
+  world_setup, unit_spawn   Placing a new level, and making units
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
   save_world, savegame     Turning a running level into a save, and the save files
   game_log, world_labels   The message log and the text drawn over units
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
   world_format, map_file   The world folder format and the single-file .map format
+tests/
+  save_roundtrip.cpp Saves a level, loads it and compares (run with ctest; opens no window)
 tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen
 data/                Game content, packed into data.pak
-  itemdb.txt         Item database
+  itemdb.txt         The items
   factioninfo.txt    Factions and starting reputations
   motd.txt           The title screen's notice board
   language/          One KEY<TAB>text file per language (English is the reference)

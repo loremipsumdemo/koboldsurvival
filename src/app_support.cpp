@@ -17,14 +17,11 @@
 #include <vector>
 #include "user_files.h"
 
-// The folder beside the game where F12 screenshots are saved
 std::string screenshotsDir() {
     const char* base = SDL_GetBasePath();
     return std::string(base ? base : "") + "screenshots";
 }
 
-// Reads back the frame that is about to be shown and saves it as a PNG in the screenshots folder.
-// Returns the file's name, or an empty string if it could not be saved.
 std::string saveScreenshot(SDL_Window* window) {
     int w = 0, h = 0;
     SDL_GetWindowSizeInPixels(window, &w, &h);
@@ -36,7 +33,6 @@ std::string saveScreenshot(SDL_Window* window) {
     std::vector<unsigned char> pixels((size_t)w * h * 4);
     glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
-    // OpenGL counts rows from the bottom, the picture from the top. The window's alpha is not part of the picture.
     const size_t rowBytes = (size_t)w * 4;
     std::vector<unsigned char> flipped(pixels.size());
     for (int y = 0; y < h; ++y) {
@@ -49,7 +45,6 @@ std::string saveScreenshot(SDL_Window* window) {
     std::filesystem::create_directories(dir, ec);
     if (ec) return "";
 
-    // Named by the time it was taken. A number is added if that name is already used.
     const std::time_t now = std::time(nullptr);
     const std::tm* tm = std::localtime(&now);
     char stamp[32] = "screenshot";
@@ -66,44 +61,12 @@ std::string saveScreenshot(SDL_Window* window) {
     return ok ? name : "";
 }
 
-// Every SDL_Log line also goes to log.txt beside the game, flushed at once, so a game that closes on its
-// own leaves the reason behind. The lines still go to the console or debugger output as before.
-std::FILE* gLogFile = nullptr;
-SDL_LogOutputFunction gDefaultLog = nullptr;
-void* gDefaultLogData = nullptr;
-
-void SDLCALL logToFile(void*, int category, SDL_LogPriority priority, const char* message) {
-    if (gLogFile) {
-        std::fprintf(gLogFile, "%s\n", message);
-        std::fflush(gLogFile);
-    }
-    if (gDefaultLog) gDefaultLog(gDefaultLogData, category, priority, message);
-}
-
-// log.txt goes next to the exe (the working folder: setGameFolder), or to the player's own folder if the game's can't be
-// written to
-void startLogFile() {
-    gLogFile = std::fopen("log.txt", "w");
-    if (!gLogFile) {
-        const std::filesystem::path path = std::filesystem::u8path(userFilesDir() + "log.txt");
-#ifdef _WIN32
-        gLogFile = _wfopen(path.c_str(), L"w");
-#else
-        gLogFile = std::fopen(path.c_str(), "w");
-#endif
-    }
-    SDL_GetLogOutputFunction(&gDefaultLog, &gDefaultLogData);
-    SDL_SetLogOutputFunction(logToFile, nullptr);
-}
-
-// Logs why the game has to close and shows it in a message box. Returns the exit code.
 int fatalError(SDL_Window* window, const std::string& message) {
     SDL_Log("FATAL: %s", message.c_str());
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Kobold Survival", message.c_str(), window);
     return 1;
 }
 
-// An exception nothing caught would end the game without a word: say what it was first
 void onTerminate() {
     std::string what = "an unknown error";
     if (std::exception_ptr ex = std::current_exception()) {
@@ -115,7 +78,6 @@ void onTerminate() {
     std::abort();
 }
 
-// Draws one loading frame and keeps the window responsive while things load
 void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label,
                   const std::string& category, bool backdrop) {
     SDL_PumpEvents();
@@ -125,16 +87,11 @@ void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const 
     SDL_GL_SwapWindow(window);
 }
 
-// Current time in milliseconds since 1970
 long long nowMs() {
     return (long long)std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-// Plays a sound effect now, on the slider it follows (sounds.h lists them all, with their files)
-// A sound effect is not played again within this long of its last start: a click that lands on several things at once,
-// or an order given to many units, plays it once
-// volume and pan are for a world sound, heard from the camera (sounds.h); one too far off to hear is not played at all.
 constexpr Uint64 SFX_REPEAT_GAP_MS = 50;
 void playSfx(Sfx s, float volume, float pan) {
     static Uint64 lastStart[(int)Sfx::Count] = {};
@@ -151,10 +108,6 @@ void playSfx(Sfx s, float volume, float pan) {
     audio::playEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects, volume, pan);
 }
 
-// The menus' text (the title, New Game, the scenarios, the party menu, Settings and the Esc menu) is this much larger
-// than the game's. The stat rows of the party menu's Stats tab stay at the game's size. The menus are laid out for a
-// 720 pixel high window and grow with it, so in a smaller window the text grows less, to keep fitting its boxes:
-// the full 1.5 times from 1080 pixels high, and the game's own size at 720.
 constexpr float MENU_FONT_SCALE = 1.5f;
 int menuFontPercent(int uiScale, int windowH) {
     const float grow = std::clamp(windowH / 720.0f, 1.0f, MENU_FONT_SCALE);
@@ -162,10 +115,8 @@ int menuFontPercent(int uiScale, int windowH) {
 }
 
 UiFonts openUiFonts(int pct, const std::string& fontPath, const std::string& languageId) {
-    // 100% is the default size: 20 points at 100%
     const float size = 20.0f * pct / 100.0f;
     UiFonts f;
-    // The HUD, the UI, the lists and the title are bold
     f.hud = openFontChain(size, true, fontPath, languageId, f.owned);
     f.ui = openFontChain(size, true, fontPath, languageId, f.owned);
     f.list = openFontChain(size, true, fontPath, languageId, f.owned);

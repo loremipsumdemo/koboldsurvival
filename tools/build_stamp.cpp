@@ -1,10 +1,3 @@
-// Writes the build stamp shown on the title screen, as a small C++ source file.
-// Usage: build_stamp <output.cpp>
-//
-// The stamp is BUILD.YYYY.MM.DD.HH.MM.SS in local time and 24-hour time (BUILD.2026.10.31.18.34.05), read when this
-// program runs. CMake runs it at the start of
-// every build, so each build gets its own stamp. The output defines BUILD_STAMP, declared in src/build_info.h.
-
 #include <chrono>
 #include <cstdio>
 #include <ctime>

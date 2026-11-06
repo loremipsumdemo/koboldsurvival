@@ -21,7 +21,6 @@
 #include "overview.h"
 #include "text_cache.h"
 
-// Only named here: renderer_internal.h includes their headers for the renderer's own files
 class LoadStages;
 class Terrain;
 struct FloatingNumber;
@@ -41,7 +40,6 @@ struct Storage;
 struct Output;
 struct TradeGhost;
 struct TradeStatus;
-// ui_layout.h
 struct SidebarLayout;
 struct UnitPanelLayout;
 struct WorldMapLayout;
@@ -57,459 +55,133 @@ struct TitleLayout;
 struct PercentPromptLayout;
 namespace render_detail { struct Vertex; struct Batch; }
 
-// Which pixels of a picture can be seen: its alpha, row by row. Empty when there is no picture.
-struct AlphaMask {
-    int w = 0, h = 0;
-    std::vector<unsigned char> alpha;
-};
-
-// Pictures by number, each loaded from data.pak the first time it is asked for: <prefix><n>.png. A number with no
-// picture holds an empty texture (tex 0), so it is looked for only once. With keepMasks, each picture's alpha is kept
-// as it is loaded, so mask() does not decode the file a second time.
-class PictureCache {
-public:
-    explicit PictureCache(const char* prefix, bool keepMasks = false) : prefix_(prefix), keepMasks_(keepMasks) {}
-    const TextTex& get(int n);
-    // The picture's alpha (empty without a picture). Only kept with keepMasks; otherwise always empty.
-    const AlphaMask& mask(int n);
-    // Deletes every texture loaded
-    void clear();
-private:
-    const char* prefix_;
-    bool keepMasks_;
-    std::map<int, TextTex> pics_;
-    std::map<int, AlphaMask> masks_;
-};
-
-// Multiplies the texture color, alpha included.
-struct RGBA {
-    float r, g, b, a;
-};
-
-// The look of the menus and panels, after the logo: deep maroon-black, coral pink and warm parchment gold, with cream
-// and dusty taupe text. PINK is the coral accent and GOLD the highlight (headings, lit buttons).
-namespace theme {
-inline constexpr RGBA PINK{ 0.910f, 0.376f, 0.431f, 1.0f };        // #e8606e, coral
-inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };   // #963242, title bars
-inline constexpr RGBA PINK_DARK{ 0.298f, 0.086f, 0.125f, 1.0f };   // #4c1620
-inline constexpr RGBA PINK_INK{ 0.098f, 0.027f, 0.039f, 1.0f };    // #19070a
-inline constexpr RGBA GOLD{ 0.961f, 0.788f, 0.459f, 1.0f };        // #f5c975, headings and highlights
-inline constexpr RGBA GOLD_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };   // #5a3c1c, the lit button's fill
-inline constexpr RGBA GOLD_DARK{ 0.157f, 0.098f, 0.039f, 1.0f };   // #28190a
-inline constexpr RGBA BONE{ 0.957f, 0.902f, 0.796f, 1.0f };        // #f4e6cb, cream text
-inline constexpr RGBA ASH{ 0.643f, 0.553f, 0.510f, 1.0f };         // #a48d82, quiet text
-inline constexpr RGBA NOTICE_TEXT{ 0.871f, 0.776f, 0.690f, 1.0f }; // #dec6b0
-inline constexpr RGBA NIGHT{ 0.082f, 0.039f, 0.047f, 1.0f };       // #150a0c, panels
-// The in-game panels' text, cells and bars
-inline constexpr RGBA TEXT_DIM{ 0.80f, 0.72f, 0.64f, 1.0f };       // secondary text: labels, values, unlit tabs
-inline constexpr RGBA TEXT_QUIET{ 0.74f, 0.66f, 0.59f, 1.0f };     // hints and notes
-inline constexpr RGBA WELL{ 0.055f, 0.02f, 0.03f, 1.0f };          // the dark ground behind a grid of item cells
-inline constexpr RGBA SLOT{ 0.14f, 0.06f, 0.075f, 1.0f };          // an item cell, or a row
-inline constexpr RGBA SLOT_HOT{ 0.26f, 0.16f, 0.07f, 1.0f };       // the same under the mouse
-inline constexpr RGBA TAB_OFF{ 0.16f, 0.07f, 0.085f, 1.0f };       // a tab or toggle that is not picked
-inline constexpr RGBA SCROLL_TRACK{ 0.20f, 0.09f, 0.11f, 0.9f };   // a scroll bar's track; its thumb is PINK at 0.9
-inline constexpr RGBA SCRIM{ 0.0f, 0.0f, 0.0f, 0.45f };            // dims the game behind a modal dialog
-inline constexpr RGBA PANEL_FILL{ 0.085f, 0.035f, 0.045f, 1.0f };  // a panel's or tooltip's fill (drawn a little see-through)
-inline constexpr RGBA MENU_FILL{ 0.075f, 0.03f, 0.04f, 1.0f };     // a drop-down menu's or the world map's fill
-inline constexpr RGBA BOX_FILL{ 0.11f, 0.05f, 0.06f, 1.0f };       // a prompt's box, an unticked toggle
-// Meanings
-inline constexpr RGBA GOOD{ 0.42f, 0.95f, 0.45f, 1.0f };           // better, healed, a gain: the combat text's green
-inline constexpr RGBA BAD{ 1.0f, 0.38f, 0.36f, 1.0f };             // worse, hurt, a loss: the combat text's red
-inline constexpr RGBA LOG_TEXT{ 0.85f, 0.78f, 0.70f, 1.0f };       // a log line or damage number that is neither
-inline constexpr RGBA OK_TEXT{ 0.6f, 1.0f, 0.6f, 1.0f };           // a status that is met or on
-inline constexpr RGBA WARN_TEXT{ 1.0f, 0.72f, 0.55f, 1.0f };       // a status that is not met yet
-inline constexpr RGBA AMBER{ 0.91f, 0.65f, 0.24f, 1.0f };          // work in progress: work rings, a forge's fuel line
-inline constexpr RGBA HEALTH_BAR{ 0.80f, 0.26f, 0.26f, 1.0f };
-inline constexpr RGBA LEVEL_BAR{ 0.45f, 0.65f, 0.88f, 1.0f };      // a stat's progress to its next level, and carry
-inline constexpr RGBA HURT{ 0.85f, 0.10f, 0.10f, 1.0f };           // a portrait going red from the bottom as it loses health
-inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
-} // namespace theme
-
-// A corner of a flat shape drawn with drawUiTris, in window pixels, with its own colour
-struct UiVert {
-    float x, y;
-    RGBA c;
-};
-
-// One line of the hover list in the top-left corner: what is under the mouse, in the colour for its sort
-struct HudEntry {
-    std::string text;
-    RGBA color;
-};
-inline constexpr RGBA HUD_UNIT_COLOR{ 1.0f, 1.0f, 1.0f, 1.0f };    // unit names: white
-inline constexpr RGBA HUD_ITEM_COLOR{ 1.0f, 0.72f, 0.2f, 1.0f };   // items on the ground: orange-yellow
-inline constexpr RGBA HUD_PROP_COLOR{ 0.68f, 0.68f, 0.68f, 1.0f }; // props: gray
-
-// The Information Panel's Time tab: the time of day, the date written out and as numbers, and the days since the start
-struct InfoTime {
-    std::string clock;     // "14:05"
-    std::string date;      // "DAY 12 · THIRD MONTH · YEAR 500"
-    std::string ymd;       // "500-03-12"
-    std::string days;      // "Days passed: 71"
-};
-
-// The Information Panel, in the top left corner by default. The newest line is at the bottom, and offset counts
-// the lines scrolled up from it. Lines are drawn bottom-aligned, so the first line sits in the last row.
-struct GameLogLayout {
-    Rect panel;
-    Rect bar;     // the "Information Panel" bar across the top
-    Rect track;   // scroll bar track
-    Rect thumb;   // scroll bar thumb
-    float textX = 0.0f, textW = 0.0f;
-    float lineH = 0.0f;
-    int linesVisible = 0;
-    int lineCount = 0;
-    int offset = 0;                          // lines scrolled up from the newest, within range
-    int first = 0;                           // index of the oldest visible line
-    int shown = 0;                           // how many lines are visible
-
-    bool collapsed = false;                  // only the bar shows
-    Rect toggle;  // the [-] or [+] button in the bar
-    Rect lock;    // the lock beside it
-    float bodyTop = 0.0f, bodyBottom = 0.0f;   // the panel less its bar, which runs along its top or its bottom
-    // The three tabs under the bar: Message (0), Game (1) and Time (2). On the Game tab, the Filter button and its menu.
-    int tab = 0;
-    Rect tabMessage;
-    Rect tabGame;
-    Rect tabTime;
-    Rect filterBtn;
-    bool filterOpen = false;
-    Rect filterMenu;
-    struct FilterRow {
-        Rect r;
-        LogKind kind;
-        bool heading;
-        std::string label;
-    };
-    std::vector<FilterRow> filterRows;       // the menu's rows, when it is open
-
-    bool scrollable() const { return lineCount > linesVisible; }
-    int maxOffset() const { return lineCount > linesVisible ? lineCount - linesVisible : 0; }
-};
-
-// One line of an item tooltip: its text, and optionally a change against the item it is compared with,
-// such as "(+3)" in green when better or red when worse
-struct TipRow {
-    std::string text;
-    RGBA tint{ 1.0f, 1.0f, 1.0f, 1.0f };
-    std::string change;
-    RGBA changeTint{ 1.0f, 1.0f, 1.0f, 1.0f };
-};
-
-// Terrain is drawn at full detail within LOD_NEAR_TILES of the eye, at half detail out to LOD_MID_TILES, and at a
-// quarter beyond. Units, items, their names and labels, and damage numbers are only drawn, and only picked, within
-// LOD_MID_TILES: beyond it they are not loaded onto the screen.
-constexpr float LOD_NEAR_TILES = 96.0f;
-constexpr float LOD_MID_TILES = 224.0f;
-// The camera's eye and focus, worked out once for a loop over many things that ask withinDetail
-struct DetailRange {
-    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
-    float focusX = 0.0f, focusZ = 0.0f, viewRange = 0.0f;
-    explicit DetailRange(const Camera& cam) : focusX(cam.focusX), focusZ(cam.focusZ), viewRange(cam.viewRange) {
-        cam.eye(ex, ey, ez);
-    }
-    bool within(float x, float y, float z) const {
-        const float dx = x - ex, dy = y - ey, dz = z - ez;
-        if (dx * dx + dy * dy + dz * dz > LOD_MID_TILES * LOD_MID_TILES) return false;
-        // And within the view range (the Graphics setting) of the camera's focus, measured across the ground
-        const float fx = x - focusX, fz = z - focusZ;
-        return fx * fx + fz * fz <= viewRange * viewRange;
-    }
-};
-inline bool withinDetail(const Camera& cam, float x, float y, float z) { return DetailRange(cam).within(x, y, z); }
-
-// The stand-in for a prop whose model is not in data.pak: a pink square, missingPropSide(kind) tiles on a side
-constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
-float missingPropSide(PropKind kind);
-
-// A mark on the world map: a unit's place and whose it is, or a prop (any kind) as a purple square
-enum class MapDotKind { Player, Hostile, Neutral, Prop };
-struct MapDot {
-    Vec2 at{ 0.0f, 0.0f };
-    MapDotKind kind = MapDotKind::Player;
-};
-
-// What the world map shows besides the dots: the camera's pivot and the way it faces, and the green X where the last
-// move order went (faded out by its alpha)
-struct WorldMapMarks {
-    float camX = 0.0f, camZ = 0.0f;
-    float camYaw = 0.0f;          // the camera's yaw: it looks along -sin(yaw), -cos(yaw) on the ground
-    float moveX = 0.0f, moveZ = 0.0f;
-    float moveAlpha = 0.0f;       // 0 hides the X
-};
-
-// The placement preview of a prop picked on the Build tab: its footprint drawn on the ground as a red grid, green where
-// it can be placed (valid) and red where it can't. Drawn over drawFrame while a prop is picked and the mouse is on the
-// ground. kind is the PropKind; (x, z) its centre.
-struct BuildPreview {
-    bool on = false;
-    PropKind kind = PropKind::Wagon;
-    float x = 0.0f, z = 0.0f;
-    bool valid = false;
-    // A claim circle drawn around (x, z) with this radius, when ringR is above 0. ringTone: 1 green (an Altar that can be
-    // placed), 2 red (one that can't), 3 white (an existing Altar under the mouse). It shows without a footprint too.
-    float ringR = 0.0f;
-    int ringTone = 0;
-    // Every other Altar in the world, by its spot: while any claim circle shows, all of these show theirs too (white),
-    // so the claims around can be seen at once. The Altar the main circle belongs to is left out.
-    std::vector<std::pair<float, float>> otherRings;
-};
+#include "renderer_types.h"
 
 class Renderer {
 public:
-    // Creates the GL programs, then loads every image and model. progress (0..1) is
-    // called between steps so the loading screen can be drawn while this runs.
-    // font: large font for the symbol fallbacks. hudFont: small font for the hover label.
-    // uiFont: font for menu buttons and headings.
     bool init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
               const std::function<void(float, const std::string&)>& progress = {});
     void shutdown();
 
-    // In-game time of day in minutes, 0..1440. Sets the sun position and sky colors.
     void setDayMinutes(float m) { dayMinutes_ = m; }
-    // Sun, moon, star and sky color settings
     void setSky(const SkyTuning& s) { sky_ = s; }
 
-    // Sets up the terrain's chunks for a map, replacing any earlier one. Each chunk's mesh is built
-    // when it is first drawn, at the detail its distance from the camera needs.
     void uploadTerrain(const Terrain& t);
 
-    // Loading screen: black, with a progress bar (progress 0..1) along the bottom 4%
-    // category: what kind of asset is loading now, named under the bar. backdrop: the title screen's moving backdrop
-    // behind it; without it (the first load, before the game has started) the screen is plain dark.
     void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string(),
                            const std::string& category = std::string(), bool backdrop = true);
 
-    // Units whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
-    // Props whose model covers the pixel (mx, my), in entity order. The test uses the model's box on screen.
     std::vector<Entity> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
-    // Items on the ground whose sprite covers the pixel (mx, my), in entity order
     std::vector<Entity> groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
                                            int winW, int winH);
 
-    // hud: the hover list drawn in the top-left corner, one coloured line each (empty for none)
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                    const std::vector<HudEntry>& hud, int winW, int winH);
 
-    // Tile-sized ring on the ground under the camera's pivot point, drawn over drawFrame.
-    // alpha 0..1 fades it. Shown while the middle mouse button orbits the camera.
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
 
-    // The Build tab's state, set each frame before drawing: the prop picked (-1 for none), and its placement preview
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
-    // Whether a selected unit of yours is in one of your claims: when not, only the kinds buildAnywhere allows are lit
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
-    // The footprint preview on the ground (called by drawFrame)
     void drawBuildPreview(const Terrain& t);
-    // The Build tab's body: the heading (what is picked), then one row a kind, with its select button and name
     void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
-    // Crystal marking where a right-click order was given, standing on the ground at (x, z).
-    // alpha 0..1 fades it.
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
 
-    // In-game panels, drawn between beginUi and endUi. The bottom panel shows the walk and run toggle
-    // (running says which is on), then each unit with its portrait, a health bar and its name, and a purple
-    // frame around the selected ones. A portrait goes red from the bottom as its unit loses health.
-    // The Faction Panel: its tabs, then the Squad tab's units or the Reputation tab's list for the faction repView
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
                        int repView = FACTION_PLAYER);
-    // The world map window: its title bar with the X that closes it, the level's ground `span` tiles from top to
-    // bottom centred on cx, cz (sea past the edge), the props as purple squares, the units as dots, the camera's pivot
-    // as a ring with a triangle pointing the way it faces, and a green X where the last move order went
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
-    // The talk box: a unit's name and what it says, with a Close button
-    // The talk box: the last lines said with their portraits, the options, and End Dialogue
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
                       const std::vector<DialogueOption>& options, float mx, float my);
-    // The text split into lines no wider than maxW, at spaces
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
-    // Right sidebar for one unit: its profile card, its gear, its 32 inventory slots and its behavior rules. (mx, my)
-    // is the mouse, for hover. dimSlot is an inventory slot, and dimGear a gear slot, whose item is being
-    // dragged out, or -1 for none. dragItem is the item id being dragged (0 for none): gear slots then
-    // show green or red for whether it may go there. editable says whether the sort and the behavior edits work; for
-    // a red unit they are drawn dimmed.
-    // The Stats tab's rows; returns the stat under the mouse, or -1
-    // A mob's (mob) lists only its attributes and combat skills
     int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob = false);
     void drawStatTip(const Stats& stats, StatId stat, float mx, float my);
     void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
-    // The full text of the behavior row under the mouse, beside it. Call after drawInventorySidebar.
     void drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my);
-    // Clips drawing to r until endClip, in window pixels with the top left at the top left. The sidebar's
-    // content scrolls under its panel, so it is clipped to the panel.
     void beginClip(const Rect& r);
     void endClip();
-    // The stack being dragged, drawn under the mouse
     void drawDraggedStack(float mx, float my, int item, int count);
-    // One item in a cell: its picture (at alpha, dimmed while it is dragged), and its count when more than one
     void drawItemCell(const Rect& r, int item, int count, float alpha = 1.0f);
-    // An empty gear slot's name in its cell: centred, wrapped onto up to maxLines lines inset from its sides
     void drawSlotLabel(const Rect& r, const std::string& text, float inset, size_t maxLines, RGBA tint);
-    // The PAUSED bar across the top of the window, and text drawn scaled up about its centre
     void drawPauseBar(bool hint);
-    // The pause bar's height, with or without its hint line, so what must not hide under it can start below it
     float pauseBarHeight(bool hint);
-    // Trade value lines over their units
     void drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH);
     void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
-    // The trade popout: the NPC's inventory, and both sides of the trade as ghosts. dragFrom is the NPC slot being
-    // dragged, shown as not there, or -1.
-    // The storage panel for a storage or crafting prop: its name, its items (the one being dragged, dragFrom, left
-    // out), a hint and Close. A hovered item shows its tooltip.
-    // The storage panel. output is a passive crafting prop's output, or null; its cells are panel slots STORAGE_SLOTS
-    // and up, as is dragFrom when it is one of them. status is the forge's fuel line, empty for other props.
-    // The looting panel over an Unconscious unit or a corpse: its gear and its inventory, each item taken with a click
     void drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv, float mx, float my);
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                      const Storage* storage, const Output* output, const std::string& status, int dragFrom,
                      float mx, float my, const std::string& toggleLabel = std::string());
-    // The emotes over each unit's head (emotesOf in systems.h), above its name when names are shown. A unit with
-    // several shows one at a time, changing every EMOTE_CYCLE_MS.
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
-    // Emotes over props: No upkeep over an Altar with no logs left in it, Decaying over one wearing down. Above the prop's
-    // name when prop names are shown.
     void drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames);
-    // A hint over the unit under the pointer of what a right-click does to it (EmoteId::CuePutDown, EmoteId::CueTalk)
     void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown);
-    // A progress ring over each resource or crafting prop being worked: a dark brown ring that fills with orange-yellow,
-    // clockwise from the top, as its next item nears. Each time an item is finished the ring hops up and back down once.
-    // The work rings over worked props; with names set they sit above the props' name tags
     void drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names = false);
-    // yourName: your trading unit's name, over your side. showValue: whether to draw the value bar, which a trade
-    // with an NPC has and a free trade between your own units does not.
     void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, bool showValue, float mx, float my);
-    // The quantity prompt over the trade: a count with -100 -10 - + +10 +100, Single, Max, Confirm and Cancel
-    // The Optimize All dialog: what it will do for unitCount units, the Attack and Defense slider at attackShare
-    // (0 to 100), the three toggles (accessories, two-handed weapons, value on ties), and Confirm and Cancel
     void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
                          float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
-    // The Disband popout for a unit of yours: its portrait, name and a few lines about it, what disbanding it does, and
-    // Disband (filled by held, 0 to 1, while it is held down) and Cancel
     void drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my);
-    // A notice, drawn centered at the top of the window
     void drawNotice(const std::string& text, int winW, int winH);
-    // The right-click menu of an inventory item, opened at (x, y), and its drawing
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
-    // Items lying on the ground, drawn as billboards over loaded ground (called by drawFrame). Each shows
-    // its picture from data/item (item_<n>.png), or the pink square when it has none.
-    // While Alt is held, drawGroundLabels draws a name box over each one in view (between beginUi
-    // and endUi), and groundItemAtPixel finds the item under the mouse, label or sprite. The name
-    // line on top under (mx, my) is drawn highlighted.
     void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my);
-    // labels: also the name lines of the Alt boxes (only while they are shown); the sprite's visible part always counts
     Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
                              bool labels = true);
-    // An item's name in a box over its sprite on the ground ("3x Iron Ore" for a stack), for the item under the pointer
     void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item);
 
-    // Each unit's name over its head, in brackets with a drop shadow. Hostile units are shown in red.
-    // Name tags over the units: yours when players is set, every other unit's when others is set
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
-    // Each prop's name over it, in brackets and purple, like a unit's tag
-    // showInfo: each name gets its prop's info lines under it (owner, health, decay, lock; see propInfoLines)
     void drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo = false);
 
-    // Damage numbers over the units they hit, rising and fading from the combat system's list. They draw
-    // between beginUi and endUi, after the names.
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
-    // The game log (the Information Panel). offset is how far it is scrolled up, and rightLimit is the x its
-    // panel must stay left of, so it clears the unit panel. The result has offset clamped to its range.
     GameLogLayout gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
-    // The Information Panel: rows are the lines of the tab shown, oldest first. The Time tab shows `time` instead.
     void drawGameLog(const GameLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
                        float mx, float my, const InfoTime& time = InfoTime{});
 
-    // The starting party menu. The buttons come from layoutPartySetup, and this draws them with the
-    // party's pictures, names and totals. Call between beginUi and endUi.
     void drawPartySetup(const std::vector<Button>& buttons, const std::vector<PartyMember>& p, const PartyUi& ui,
                         const PartyPanels& P, float mx, float my);
-    // A unit's picture, fitted inside r and kept in its proportions
     void drawUnitPicture(int sprite, const Rect& r);
-    // A unit's model filling r, standing and turned by yaw about its vertical axis, seen from the front; its picture
-    // when it has no model. Call between beginUi and endUi.
     void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
-    // A mob kind seen the same way: its model, or its picture where it has none
     void drawMobPreview(MobKind kind, const Rect& r, float yaw);
-    // A model, turned by yaw, standing in a box of the UI with its own depth
     void drawModelPreview(const Model* m, const Rect& r, float yaw);
-    // A mob kind's picture (mob_<kind>.png), or the pink square for a missing one or a kind with a model
     const TextTex& mobPicture(MobKind kind) const;
 
-    // Menu drawing. Call beginUi before the first menu draw and endUi after the last.
     void beginUi(int winW, int winH);
     void endUi();
-    // Clears, then draws the menus' moving backdrop: a deep maroon night, a jagged band of parchment gold and one of coral
-    // drifting up each side, a veil, a vignette and scan lines. Behind the title screen and every menu.
     void drawTitleBackground();
-    // The title screen's header: the game's name, large, in the top left, and the pink notice board under it with
-    // the lines of data/motd.txt. A line starting "# " is a heading, "- " a bullet point, and an empty line a gap.
-    // Lines that don't fit the board are left off.
-    // The title screen's top left: the "Early Access" line, the game's name (first word green, a pink bar, the second
-    // word bone-white, in capitals), the pink rule, and the notice board with the lines of data/motd.txt
     void drawTitleHeader(const TitleLayout& L, const std::string& first, const std::string& second,
                          const std::vector<std::string>& news);
-    // A title or pause menu item: capitals, ash-gray on a dark band with a gray edge on the left; selected, bone-white
-    // on a green band with a green edge, moved a little left. sub is a second, smaller line (the language in use).
-    // appear runs 0 to 1 as the item slides in when the screen opens.
     void drawMenuItem(const Rect& r, const std::string& label, const std::string& sub, bool selected, bool enabled,
                       float appear);
-    // The line along the bottom of the title screen: left text on the left; the arrow keys, then right text, on the right
     void drawTitleFooter(const Rect& footer, const std::string& left, const std::string& right);
-    // A menu panel: a pink frame with its bottom right corner cut off, over a near-black maroon fill
     void drawThemedPanel(const Rect& r);
-    // Flat triangles in window pixels, three corners each, each corner its own colour (blended between)
     void drawUiTris(const std::vector<UiVert>& v);
-    // A rectangle shaded from left to right
     void drawRectGradientH(const Rect& r, RGBA left, RGBA right);
-    // Hover sounds. Buttons, menu items and tabs note the one under the pointer as they are drawn. The game calls
-    // hoverFrameStart before drawing a frame and hoverFrameEnd after: true when the pointer (or the arrow keys) has
-    // just come onto a different one.
     void noteHover(const Rect& r);
-    // The font the game's name is drawn in on the title screen: a very large one, so the name is drawn shrunk, never
-    // stretched, and stays sharp. The renderer does not own it. Setting it drops the name's old pictures.
     void setTitleFont(TTF_Font* font);
     void hoverFrameStart() { hoverAny_ = false; }
     bool hoverFrameEnd();
     void drawRect(const Rect& r, RGBA c);
-    // A rectangle with round corners, in window pixels
     void drawRoundedRect(const Rect& r, float radius, RGBA c);
-    // A UI icon in r: its picture from data/icon (icon_<n>.png), or the pink placeholder with its id
     void drawUiIcon(int icon, const Rect& r);
-    // An icon of height h at (x, y), with its text beside it in the list font
     void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);
-    // An icon and text, centred together in r. uiFont picks the menu font, else the list font.
     void drawIconLabel(const Rect& r, int icon, const std::string& text, RGBA tint, bool uiFont);
-    // A bar across the top of a panel: the icon and the title in it
     void drawTitleBar(const Rect& bar, int icon, const std::string& title);
-    // The [-] when the panel is open, the [+] when it is folded
     void drawCollapseButton(const Rect& r, bool collapsed);
-    // The X that closes a window, at the right end of its title bar
     void drawCloseButton(const Rect& r);
-    // The Faction Panel's Reputation tab (drawUnitPanel)
     void drawReputationList(const UnitPanelLayout& L, int repView);
-    // The lock beside a panel's [-] or [+]: closed while locked, open and green while the panel can be moved and resized
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
-    // A scroll bar: its track, and the thumb on it, lit while hot (held or under the mouse)
     void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);
-    // Dims the whole window behind a modal dialog
     void drawScrim();
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
     void drawUiTextCentered(const std::string& s, float cx, float y, RGBA tint);
-    // Text that does not fit its box is drawn smaller, down to a floor, then shortened. The full text shows in a
-    // tooltip while the mouse is over the box: noteTip sets it, and endUi draws it.
     void setMouse(float x, float y) { mouseX_ = x; mouseY_ = y; }
     void noteTip(const std::string& full, const Rect& area);
     void drawUiTextInBox(const std::string& s, const Rect& box, RGBA tint);
@@ -518,33 +190,22 @@ public:
     float fitShrinkScale(const std::string& shown, float boxW, float boxH);
     float uiTextWidth(const std::string& s);
     float uiTextHeight(const std::string& s);
-    // The height the Unit Panel's profile card needs for its text at the current fonts, in a window H pixels high:
-    // the name, the faction, the body type, then health, hunger and carry with their bars
     float profileCardHeight(int H);
 
-    // Smaller text for dense lists, such as the save list. The font is owned by the caller.
     void setListFont(TTF_Font* font);
     void setFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
-    // The menus' text: the same five fonts at a larger size (MENU_FONT_SCALE), for the title, New Game, the scenarios,
-    // the party menu, Settings and the Esc menu. setMenuText picks which set every text call uses until it is called
-    // again; each set keeps its own text pictures, so switching is cheap. The fonts are owned by the caller.
     void setMenuFonts(TTF_Font* hud, TTF_Font* ui, TTF_Font* list);
     void setMenuText(bool on) { text_.setMenuText(on); }
     bool menuText() const { return text_.menuText(); }
-    // Text drawn from the very large title font and shrunk to height h, centered on (cx, cy), so large text stays sharp.
-    // Without that font, the UI font enlarged.
     void drawBigText(const std::string& text, float cx, float cy, float h, RGBA tint);
 
     void drawListText(const std::string& s, float x, float y, RGBA tint);
     float listTextHeight(const std::string& s);
     float listTextWidth(const std::string& s);
-    // A small button with list-font text, for the rows of the save list
     void drawListButton(const Rect& r, const std::string& label, bool hovered);
-    // A button whose background fills from left to right (fill 0..1), for the hold-to-delete button
     void drawHoldButton(const Rect& r, const std::string& label, float fill);
 
 private:
-    // init's steps (renderer.cpp)
     bool initGl();
     void loadLoadingArt();
     void loadPictures(LoadStages& stages);
@@ -554,129 +215,77 @@ private:
     void makeTexels();
     void loadPropModels(LoadStages& stages);
 
-    // Text cut to fit maxW at a word boundary, with "..." added. ui picks the menu font, else the list font.
     std::string fitText(const std::string& text, float maxW, bool ui);
-    // fitText in the list font, and when the text had to be cut, its full text as the tooltip over tipArea
     std::string fitTextTip(const std::string& text, float maxW, const Rect& tipArea);
-    // The behavior list: its heading, the modes, column headings and one row per behavior
-    // task: what the unit is doing (taskNameOf in systems.h), shown in the header as "Task: ..."
-    // modes: Passive, Block, Sneak and Ranged, lit while on. Ranged is set by the weapon, so it is never pressed.
     void drawBehaviorSection(const SidebarLayout& L, const std::vector<BehaviorRule>& rules, const std::string& task,
                              float mx, float my, bool editable, const std::array<bool, 4>& modes = {});
 public:
-    // The Behavior tab's # prompt (layoutPercentPrompt): title says what is asked, typed is the digits so far, range
-    // the percents it takes, and error why the last try was refused (empty when none)
     void drawPercentPrompt(const PercentPromptLayout& P, const std::string& title, const std::string& typed,
                            const std::string& range, const std::string& error, float mx, float my);
 
 private:
-    // The sidebar's scroll bar, drawn when its tab is taller than the panel
     void drawSidebarScrollBar(const SidebarLayout& L);
-    // Pieces of the dialogs (renderer_popups.cpp).
-    // Text wrapped to box's width in the list font, line by line from its top, stopping at its bottom
     void drawWrappedText(const std::string& text, const Rect& box, RGBA tint);
-    // Which cells of an item grid light up under the mouse: any (where things are dropped, as in trade and storage),
-    // or only those holding an item (where items are taken, as in looting; those make the hover sound too)
     enum class CellLight { UnderMouse, WhenFilled };
-    // A grid of item cells on a dark well, with stacks[i] in cell i (none past stackCount, or when stacks is null).
-    // The cell `skip` (a stack being dragged out) is left empty. Returns the cell under the mouse that holds an item,
-    // or -1.
     int drawStackGrid(const Rect& area, const std::vector<Rect>& cells, const ItemStack* stacks, size_t stackCount,
                       int skip, float mx, float my, CellLight light = CellLight::UnderMouse);
-    // The "Interaction Panel" bar of the storage and looting panels, and the name under it
     void drawInteractionHeader(const Rect& bar, const Rect& nameBox, const std::string& name);
-    // A small list-font button with a centered label, for the sort, priority and delete buttons
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
-    // A quad that changes color from top to bottom
     void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
-    // Clock text: every digit takes the width of the widest digit, so the numbers don't shift
     float digitCellWidth();
     float clockTextWidth(const std::string& s);
     void drawClockText(const std::string& s, float x, float y, RGBA tint);
-    // The name and stats of an item, beside the mouse. count is shown as a stack. When compareTo is given
-    // and the item is gear, its stats show how they change from the gear it would replace in compareTo,
-    // and a card beside it shows the gear it is compared with.
     void drawItemTooltip(int item, int count, float mx, float my, const Equipment* compareTo = nullptr);
-    // A tooltip box with its rows, measured and drawn with its top-left corner at (x, y)
     float tipWidth(const std::vector<TipRow>& rows);
     float tipHeight(size_t rowCount);
     void drawTip(const std::vector<TipRow>& rows, float x, float y, float width);
 
-    // Draws a textured quad: 4 vertices of (x, y, z, u, v), in the order BL, BR, TR, TL
     void drawQuadVerts(GLuint tex, const float* v, RGBA tint);
-    // Flat coloured triangles (three vertices each) through the colour program, placed by mvp
     void drawColorTris(const render_detail::Vertex* v, size_t count, const Mat4& mvp);
     void drawColorTris(const render_detail::Batch& b, const Mat4& mvp);
-    // A textured UI quad from (x0, y0) top left to (x1, y1) bottom right, with texture coordinates u0 v0 at
-    // the top left and u1 v1 at the bottom right
-    // A whole texture on the screen, its top left at (x, y), w by h pixels
     void drawTexture(GLuint tex, float x, float y, float w, float h, RGBA tint);
-    // A unit's portrait fitted inside a square, keeping its shape, at the given saturation (unitSaturation)
     void drawPortrait(const TextTex& g, const Rect& square, float saturation);
     void drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
                     RGBA tint);
-    // A green dot with a black outline, d pixels across, centred on (cx, cy)
     void drawDot(float cx, float cy, float d);
-    // Takes the overview picture if its build has finished, and uploads it
     void pollOverview();
     OverviewBuilder overview_;
-    // The UI icon pictures, by id. An id with no picture has a texture of 0.
     const TextTex& uiIconTexture(int icon) { return uiIcons_.get(icon); }
     PictureCache uiIcons_{ "data/icon/icon_" };
     GLuint overviewTex_ = 0;
-    float overviewSize_ = 0.0f;       // tiles per side of the level, 0 while there is no picture
-    float overviewExtent_ = 1.0f;     // tiles the picture covers per side
+    float overviewSize_ = 0.0f;
+    float overviewExtent_ = 1.0f;
     GLuint dotTex_ = 0;
-    GLuint dotWhiteTex_ = 0;   // a white dot, tinted for the red and neutral units
+    GLuint dotWhiteTex_ = 0;
     float hudTop_ = 12.0f;
 
-    // The picture for an item, from data/item/item_<n>.png, or the pink square without one. Never null.
     const TextTex* itemTexture(int item);
-    // Whether the picture of an item is visible at (u, v), each 0 to 1 across and down
     bool itemPixelSolid(int item, float u, float v);
-    // An item's picture at exactly ITEM_PICTURE_PX square (ui_types.h), on whole pixels: centered in a cell, or on a point
     void drawItemPicture(const Rect& cell, int item, float alpha);
     void drawItemPictureAt(float cx, float cy, int item, float alpha);
-    // A picture fitted inside r, keeping its proportions, multiplied by tint
     void drawFitted(const TextTex& g, const Rect& r, RGBA tint);
 
-    // Symbol-style billboard that stands on (x, y, z) and turns to face a point 200 units behind the camera
     void drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint);
-    // A sprite lying on its side (an Unconscious unit), h long, moved `toward` the camera
     void drawLyingGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint, float toward);
-    // How colorful the glyph program draws: 1 as the picture is, 0 fully gray. Set back to 1 after use.
     void setSaturation(float sat);
     float unitTop(World& w, Entity u);
-    // How far above its feet a unit's sprite or model is drawn: a flying mob's hover (mobHoverFraction, mobs.h) while it
-    // is up and about, else 0
     float unitHover(World& w, Entity u) const;
-    // A unit lying in a bed or bedroll: how far above its feet it is drawn (half the bed's height, from the bed's base),
-    // or below 0 when it is not in one. It counts only while the unit is still on the bed's spot and not carried, so a
-    // unit that somehow left the bed with its Occupying still on is drawn standing, never stuck tilted or raised.
     float bedLift(World& w, Entity u) const;
-    // How a unit, an NPC or a mob is laid out this frame, the one answer drawing, the mouse and the labels all use
     struct UnitPose {
-        bool lying = false;     // out cold, playing dead, carried or in a bed: all lie the same way
+        bool lying = false;
         bool carried = false;
-        float lift = 0.0f;      // how far its feet, or lying its side, are above its Transform
+        float lift = 0.0f;
     };
     UnitPose unitPose(World& w, Entity e) const;
 
-    // 3D model standing on (x, y, z), scaled so its largest side is targetSize
     void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
 
-    // Text lines in the top-left corner, each on a dark panel, each in its own colour
     void drawHud(const std::vector<HudEntry>& lines, int winW, int winH);
 
-    // The sprite for a unit, or the fallback symbol if its image is missing
     const TextTex& unitGlyph(World& w, Entity e) const;
 
-    // Ground items on loaded chunks, as pink sprites
     void drawGroundItems(World& w, const Terrain& t, const Camera& cam);
 
-    // One name box over the items on one tile. Each item has a row, top row first, and the row is
-    // the part of the box that picks that item. dist2 is the squared distance from the camera to the
-    // nearest item on the tile.
     struct GroundStack {
         Rect box;
         std::vector<Entity> items;
@@ -684,47 +293,38 @@ private:
         std::vector<Rect> rows;
         float dist2 = 0.0f;
     };
-    // The name boxes for the items on loaded, visible ground, farthest first, so a nearer box is drawn
-    // over the ones behind it. Drawing and clicking both use this.
     std::vector<GroundStack> groundStacks(World& w, const Terrain& t, const Camera& cam, int winW, int winH);
-    // The name line on top under (mx, my), as an index into stacks and its row. A box hides the boxes
-    // behind it, so a line under a nearer box is not found. Returns false when there is none.
     static bool topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row);
 
-    // A menu or list string's picture (text_cache.h), made on first use
     const TextLine& uiLine(const std::string& s) { return text_.ui.line(s); }
     const TextLine& listLine(const std::string& s) { return text_.list.line(s); }
-    // Text in one of the fonts, its top left at (x, y)
     void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
     GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uFaction_ = -1;
 
-    GLuint dynVao_ = 0, dynVbo_ = 0;          // color overlays
-    BuildPick buildSelected_;                 // what the Build tab has picked
-    bool buildInClaim_ = false;               // a selected unit of yours stands in one of your claims
-    BuildPreview buildPreview_;               // its placement preview this frame
-    GLuint glyphVao_ = 0, glyphVbo_ = 0;      // one textured quad at a time
-    // One chunk of the terrain on the GPU. Its buffers are reused when its detail changes.
-    // One slot per chunk of the level, indexed by chunk id. Buffers exist only while the chunk is loaded.
+    GLuint dynVao_ = 0, dynVbo_ = 0;
+    BuildPick buildSelected_;
+    bool buildInClaim_ = false;
+    BuildPreview buildPreview_;
+    GLuint glyphVao_ = 0, glyphVbo_ = 0;
     struct TerrainChunk {
         GLuint vao = 0, vbo = 0, ebo = 0;
         GLsizei indexCount = 0;
-        int step = 0;              // detail step the buffers hold, 0 until first built
-        int nbStep[4] = { 0, 0, 0, 0 };   // west, east, north, south neighbors' steps the buffers were built with
-        uint32_t version = 0;      // version of the chunk the buffers and bounds were made from
+        int step = 0;
+        int nbStep[4] = { 0, 0, 0, 0 };
+        uint32_t version = 0;
         ChunkBounds bounds{};
     };
     std::vector<TerrainChunk> chunks_;
     int terrainSize_ = 0;
     int chunksPerSide_ = 0;
-    ChunkMesh chunkScratch_;       // reused while building chunks
+    ChunkMesh chunkScratch_;
     void releaseTerrain();
     void releaseChunk(TerrainChunk& c);
     void buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
-    // Terrain, sea and seabed shaders and textures (renderer_terrain.cpp)
     struct TerrainShader {
         GLuint prog = 0;
         GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
@@ -742,123 +342,88 @@ private:
     TerrainShader groundShader_;
     SeaShader seaShader_;
     FloorShader floorShader_;
-    GLuint groundTex_ = 0, seaTex_ = 0;      // the surface tiles of the world being drawn
-    uint32_t surfaceVersion_ = 0;            // which world's surface those tiles came from
-    GLuint emptyVao_ = 0;                    // for shaders that build their quads from gl_VertexID
-    float skySun_[3] = { 0.0f, 1.0f, 0.0f }; // the sun the sky draws, which lights the terrain
+    GLuint groundTex_ = 0, seaTex_ = 0;
+    uint32_t surfaceVersion_ = 0;
+    GLuint emptyVao_ = 0;
+    float skySun_[3] = { 0.0f, 1.0f, 0.0f };
     bool initTerrainGl();
     void releaseTerrainGl();
     void uploadSurfaceTiles(const Terrain& t);
 
     TTF_Font* titleFont_ = nullptr;
-    std::map<std::string, TextTex> titleWords_;   // the name's words, drawn once in titleFont_, with mipmaps
-    // A word of the name as a picture: its texture, and width over height
+    std::map<std::string, TextTex> titleWords_;
     const TextTex& titleWord(const std::string& text);
-    TextTex titleLogo_;           // data/illustration/title.png: the game's logo, drawn in place of the name's words
-    TextTex loadingArt_;          // data/illustration/loading<1-3>.png, one picked at random: the start-up loading picture
-    bool hoverAny_ = false;       // something was noted under the pointer this frame
+    TextTex titleLogo_;
+    TextTex loadingArt_;
+    bool hoverAny_ = false;
     Rect hoverNow_, hoverLast_;
-    bool hoverHad_ = false;       // something was under the pointer last frame
-    float titleMouse_ = 0.0f;     // the mouse's place across the window, -1 to 1, eased, for the backdrop's sway
-    unsigned long long titleMouseAt_ = 0;   // when it was last eased, in milliseconds
-    std::vector<TextTex> mobSprites_;   // data/mob/mob_<kind>.png, kind 1 first
-    // data/profile/profile_<nn>.png: the portrait of a unit drawn by model nn, so a unit's picture always goes with its
-    // model. A missing one is the pink square.
+    bool hoverHad_ = false;
+    float titleMouse_ = 0.0f;
+    unsigned long long titleMouseAt_ = 0;
+    std::vector<TextTex> mobSprites_;
     std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
-    // A unit's portrait for the squad panel and its Profile tab: its model's profile picture, or its mob kind's picture
     const TextTex& unitPortrait(World& w, Entity e) const;
-    // A unit's flat picture, for the portraits: the pink square for every unit until units have 2D art again
     const TextTex& unitPicture(int n) const;
-    // One model per unit sprite number, data/model/unit/unit_<nn>.glb. Files with the same bytes share one copy:
-    // unitModelFor_[n - 1] points at the model sprite n draws, or is null when its file is missing or unreadable.
     std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};
     std::array<const Model*, UNIT_SPRITE_COUNT> unitModelFor_{};
-    // One model per kind of mob that has one (MobInfo::model): data/model/mob/mob_<nn>.glb. Empty for the rest.
     std::array<Model, MOB_KIND_COUNT> mobModels_{};
-    // How tall a unit stands as drawn: its mob kind's model height, or GLYPH_H
     float unitHeight(World& w, Entity e) const;
-    // The model for sprite number n (wrapped into range), or null
     const Model* unitModelNumber(int n) const;
-    // A unit's model, or null for a mob (drawn by its sprite) or a unit whose model is missing
     const Model* unitModel(World& w, Entity e) const;
-    // A unit's width over its height as drawn standing: its model's, or its sprite's
     float unitAspect(World& w, Entity e) const;
-    // A unit model standing on (x, y, z) GLYPH_H tall, facing yaw (0 faces +z); lying on its side when lying, on top
-    // of y, moved `toward` the camera
     Mat4 unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const;
     void drawUnitModel(const Model& m, const Mat4& placement);
-    // The color a unit's model is tinted toward: its faction's, or none (alpha 0) for your own units and mobs
     RGBA unitFactionTint(World& w, Entity e) const;
-    // Which way each unit's model faces: turned toward the way it last walked. One idle for UNIT_SETTLE_MS is settled:
-    // it keeps its facing, however units close by nudge it, until it stops being idle or moves more than
-    // UNIT_SETTLE_SLIP tiles from where it settled.
     struct UnitFacing {
-        float x = 0.0f, z = 0.0f;              // where it was last frame
+        float x = 0.0f, z = 0.0f;
         float yaw = 0.0f;
-        unsigned long long idleSince = 0;      // when it went idle, in milliseconds; 0 while it is not idle
+        unsigned long long idleSince = 0;
         bool settled = false;
-        float settleX = 0.0f, settleZ = 0.0f;  // where it settled
-        unsigned long long turnedAt = 0;       // when it last eased round, in milliseconds
+        float settleX = 0.0f, settleZ = 0.0f;
+        unsigned long long turnedAt = 0;
     };
     std::map<Entity, UnitFacing> unitFacing_;
     float unitYaw(Entity e, float x, float z, bool idle);
-    PictureCache itemPics_{ "data/item/item_", true };   // by item id; keeps the alpha for picking by visible pixels
-    PictureCache emotePics_{ "data/emote/emote_" };   // by EmoteId
-    const TextTex* emoteTexture(EmoteId emote);   // never null: the pink square stands in for a missing picture
-    TextTex pink_;            // one pink texel: the square drawn for a missing picture
-    // A plain white texel. Items are drawn as this, tinted pink, until they have art.
+    PictureCache itemPics_{ "data/item/item_", true };
+    PictureCache emotePics_{ "data/emote/emote_" };
+    const TextTex* emoteTexture(EmoteId emote);
+    TextTex pink_;
     TextTex white_;
-    // Each worked prop's count of finished items as last drawn, and when its ring last hopped (seconds), so the ring
-    // can hop once for each item finished
     struct PropHop {
         unsigned made = 0;
         float start = -1.0f;
     };
     std::map<Entity, PropHop> propHops_;
-    // A flat ring, or a part of one, in window pixels: the part from `from` to `to` (0 to 1, clockwise from the top)
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
-    // One model per prop kind (props.h). A kind whose model failed to load has an empty model, and is drawn as a pink
-    // square.
     std::array<Model, PROP_KIND_COUNT> propModels_{};
     const Model& propModel(PropKind kind) const;
-    // Prop models drawn instanced: every prop of a kind in one draw per part of its model. Each kind's VAO reads the
-    // model's own vertices plus one placement matrix per prop from instVbo_. Made on first use.
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;
     GLuint instVbo_ = 0;
     std::array<GLuint, PROP_KIND_COUNT> propInstVao_{};
-    std::array<std::vector<Mat4>, PROP_KIND_COUNT> propInstances_{};   // this frame's placements, by kind
+    std::array<std::vector<Mat4>, PROP_KIND_COUNT> propInstances_{};
     GLuint propInstVao(PropKind kind);
-    // A prop's model for drawPropInstances to draw, placed as drawModel would place it
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
-    // Draws the placements gathered in propInstances_, then empties them
     void drawPropInstances();
-    // How tall a prop of this kind stands, in world units: its model's height as drawn, or the pink stand-in's
     float propTop(PropKind kind) const;
-    // The height a prop stands at: its own spot on the ground
     float propBaseY(World& w, Entity e) const;
-    // The top of each prop's block of name lines, as drawPropNames last drew it, so the progress ring sits above it
     std::map<Entity, float> propLabelTop_;
 
-    TTF_Font* font_ = nullptr;   // the large font for the symbol fallbacks
-    // Every other font, with the pictures of the text drawn in it, for the game's set and the menus'
+    TTF_Font* font_ = nullptr;
     TextCache text_;
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
-    // How much the UI is scaled: the window's height over the 720 pixels it is laid out for
     float uiScale() const { return uiH_ / 720.0f; }
-    float mouseX_ = 0.0f, mouseY_ = 0.0f;   // the mouse, for tooltips and for hover sounds in panels drawn without it
-    std::string tip_;                        // the full text to show as a tooltip, or empty
+    float mouseX_ = 0.0f, mouseY_ = 0.0f;
+    std::string tip_;
     void drawTip();
 
     Mat4 viewProj_{};
 
-    // Sky: a gradient and sun drawn as a full-screen quad, colored by the time of day
     GLuint skyProgram_ = 0, skyVao_ = 0, skyVbo_ = 0;
     GLint uSkyInvVP_ = -1, uSunDir_ = -1, uSunAlpha_ = -1, uZenith_ = -1, uHorizon_ = -1, uSunCol_ = -1;
     GLint uMoonDir_ = -1, uMoonAlpha_ = -1, uMoonCol_ = -1, uStarAlpha_ = -1;
     float dayMinutes_ = 360.0f;
     SkyTuning sky_;
-    // The point sprites turn to face: 200 units behind the camera
     float billX_ = 0.0f, billZ_ = 0.0f;
 };

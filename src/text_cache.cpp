@@ -28,7 +28,6 @@ const TextLine& TextFont::line(const std::string& s) {
     int tw = 0, th = 0;
     if (!font) return lines[s] = hl;
     if (s.find_first_not_of(' ') == std::string::npos) {
-        // SDL_ttf fails on text with no width, so blank text gets no texture but keeps its line height
         TTF_GetStringSize(font, "Ag", 2, &tw, &th);
         hl.h = (float)th;
         return lines[s] = hl;
@@ -63,7 +62,6 @@ const std::vector<TextLine>& TextCache::hudLines(const std::vector<std::string>&
         hl.w = (float)tw;
         hl.h = (float)th;
     }
-    // Drop lines that are no longer shown
     while (hudLines_.size() > texts.size()) {
         if (hudLines_.back().tex.tex) glDeleteTextures(1, &hudLines_.back().tex.tex);
         hudLines_.pop_back();
@@ -107,14 +105,12 @@ void TextCache::setMenuFonts(TTF_Font* hudFont, TTF_Font* uiFont, TTF_Font* list
 
 void TextCache::setMenuText(bool on) {
     if (on == menuText_) return;
-    // Without menu fonts there is nothing to swap to
     if (on && !parked_.ui.font) return;
     swapSets();
     menuText_ = on;
 }
 
 void TextCache::clear() {
-    // Both sets: the one in use, then the parked one
     clearActive();
     swapSets();
     clearActive();

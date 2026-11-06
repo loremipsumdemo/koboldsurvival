@@ -7,9 +7,8 @@
 #include "ui_icons.h"
 
 namespace {
-
 const RGBA kText = theme::BONE;
-const RGBA kSlider = theme::GOLD;   // a slider's filled part, while its sound is on
+const RGBA kSlider = theme::GOLD;
 const RGBA kSecondary{ 0.643f, 0.553f, 0.510f, 1.0f };
 const RGBA kDisabledText{ 0.52f, 0.46f, 0.43f, 1.0f };
 const RGBA kPanel{ 0.085f, 0.035f, 0.045f, 0.96f };
@@ -27,7 +26,6 @@ bool over(const Rect& r, float x, float y) {
     return r.contains(x, y);
 }
 
-// A small triangle, pointing down or up, drawn as three stacked strips so it needs no font glyph
 void drawChevron(Renderer& r, float cx, float cy, float u, bool down, RGBA tint) {
     for (int k = 0; k < 3; ++k) {
         const float w = (10.0f - 4.0f * k) * u;
@@ -36,18 +34,15 @@ void drawChevron(Renderer& r, float cx, float cy, float u, bool down, RGBA tint)
         r.drawRect(Rect{ cx - w * 0.5f, y, w, 2.0f * u }, tint);
     }
 }
-
-} // namespace
+}
 
 void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<RowSpec>& rows,
                       const SettingsMenuState& st, float mx, float my) {
     const float u = L.panel.h / 640.0f;
 
-    // The pink-framed panel, with its title in capitals
     r.drawThemedPanel(Rect{ L.panel.x - 2.0f * u, L.panel.y - 2.0f * u, L.panel.w + 4.0f * u, L.panel.h + 4.0f * u });
     r.drawUiTextCentered(uiUpper(lang("UILABEL_SETTINGS")), L.panel.x + L.panel.w * 0.5f, L.panel.y + 18.0f * u, kText);
 
-    // Tabs: the one showing is filled in dark green
     for (size_t i = 0; i < L.tabs.size(); ++i) {
         const Rect& t = L.tabs[i];
         const std::string name = settingsTabName(static_cast<SettingsTab>(i));
@@ -56,7 +51,6 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         else if (over(t, mx, my)) fill = kTabHover;
         if (over(t, mx, my)) r.noteHover(t);
         r.drawRect(t, fill);
-        // The open tab has a green edge along its foot
         if (static_cast<int>(i) == static_cast<int>(st.tab)) r.drawRect(Rect{ t.x, t.y + t.h - 2.0f * u, t.w, 2.0f * u }, theme::GOLD);
         r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }
@@ -67,7 +61,6 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         const int idx = static_cast<int>(i);
 
         if (row.kind == RowKind::Text) {
-            // Reference line: the key on the left, what it does on the right
             r.drawUiText(row.label, R.band.x + 14.0f * u,
                          R.band.y + (R.band.h - r.uiTextHeight(row.label)) * 0.5f, kText);
             r.drawUiText(row.text, R.text.x,
@@ -95,7 +88,6 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             break;
         case RowKind::Level:
         case RowKind::Scale: {
-            // Track filled to the level, with a thumb at the level; the percentage sits to its right
             const Rect& tr = R.track;
             const float fillW = tr.w * row.current / 100.0f;
             r.drawRect(tr, kTrack);
@@ -117,7 +109,6 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
     r.drawButton(L.defaults, lang("UILABEL_RESTORE_DEFAULTS"), true, over(L.defaults, mx, my));
     r.drawButton(L.back, lang("UILABEL_BACK"), true, over(L.back, mx, my));
 
-    // The open dropdown is drawn last, over the rows and the footer
     if (L.drop.open && L.drop.row >= 0 && L.drop.row < static_cast<int>(rows.size())) {
         const RowSpec& row = rows[L.drop.row];
         const Rect& box = L.drop.box;
@@ -134,7 +125,6 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
                          opt.enabled ? kText : kDisabledText);
         }
 
-        // Marks at the ends of a list that scrolls, so it is clear there is more above or below
         const Rect& first = L.drop.items.front();
         const Rect& last = L.drop.items.back();
         const float markX = box.x + box.w - 18.0f * u;

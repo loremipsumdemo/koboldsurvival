@@ -10,20 +10,12 @@
 #include "grid.h"
 
 namespace {
-
 const char MAGIC[4] = { 'K', 'M', 'A', 'P' };
-constexpr uint32_t VERSION = 2;
 constexpr size_t HEADER_SIZE = 12;
 constexpr uint32_t MAX_SIZE = 8192;
 
-void appendU32(std::vector<unsigned char>& out, uint32_t v) {
-    out.resize(out.size() + 4);
-    putU32(out.data() + out.size() - 4, v);
-}
-
 size_t cornerCount(size_t size) { return (size + 1) * (size + 1); }
-
-} // namespace
+}
 
 MapData flatMap(int size) {
     MapData m;
@@ -53,7 +45,6 @@ bool parseMap(const unsigned char* bytes, size_t total, MapData& out) {
         uint32_t bits = getU32(p);
         float h;
         std::memcpy(&h, &bits, sizeof(h));
-        // A broken value becomes flat ground rather than a spike or a NaN in the mesh
         m.heights[i] = std::isfinite(h) ? std::clamp(h, -MAX_HEIGHT, MAX_HEIGHT) : 0.0f;
     }
     if (version == 2) {
@@ -65,25 +56,6 @@ bool parseMap(const unsigned char* bytes, size_t total, MapData& out) {
     return true;
 }
 
-std::vector<unsigned char> encodeMap(const MapData& m) {
-    const size_t size = (size_t)m.size;
-    const size_t verts = cornerCount(size), tiles = size * size;
-    std::vector<unsigned char> out;
-    out.reserve(HEADER_SIZE + verts * 4 + tiles * 2);
-    out.insert(out.end(), MAGIC, MAGIC + 4);
-    appendU32(out, VERSION);
-    appendU32(out, (uint32_t)size);
-    for (size_t i = 0; i < verts; ++i) {
-        float h = i < m.heights.size() ? m.heights[i] : 0.0f;
-        uint32_t bits;
-        std::memcpy(&bits, &h, sizeof(bits));
-        appendU32(out, bits);
-    }
-    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.walkable.size() ? m.walkable[i] : 1);
-    for (size_t i = 0; i < tiles; ++i) out.push_back(i < m.biome.size() ? m.biome[i] : (uint8_t)Biome::None);
-    return out;
-}
-
 bool readMapFile(const std::string& path, MapData& out) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return false;
@@ -91,20 +63,3 @@ bool readMapFile(const std::string& path, MapData& out) {
     return parseMap(bytes.data(), bytes.size(), out);
 }
 
-bool writeMapFile(const std::string& path, const MapData& m) {
-    std::error_code ec;
-    std::filesystem::path p(path);
-    if (p.has_parent_path()) std::filesystem::create_directories(p.parent_path(), ec);
-
-    // Write beside the target and rename, so a failed write never leaves a half-written map
-    std::filesystem::path tmp = path + ".tmp";
-    std::vector<unsigned char> bytes = encodeMap(m);
-    {
-        std::ofstream out(tmp, std::ios::binary);
-        if (!out) return false;
-        out.write(reinterpret_cast<const char*>(bytes.data()), (std::streamsize)bytes.size());
-        if (!out) return false;
-    }
-    std::filesystem::rename(tmp, p, ec);
-    return !ec;
-}

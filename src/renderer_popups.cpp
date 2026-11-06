@@ -1,11 +1,8 @@
-// Renderer: dialogs over the game: talk, trade, storage, loot, Optimize All, Disband, the prompts, stats and item menus.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-// The value bar's colour at t from 0 to 1: red at the start, yellow halfway, green at the end
 RGBA valueBarColor(float t) {
     const RGBA red{ 0.85f, 0.20f, 0.20f, 1.0f }, yellow{ 0.95f, 0.85f, 0.20f, 1.0f }, green{ 0.25f, 0.85f, 0.30f, 1.0f };
     const RGBA a = t < 0.5f ? red : yellow;
@@ -13,8 +10,7 @@ RGBA valueBarColor(float t) {
     const float u = t < 0.5f ? t * 2.0f : (t - 0.5f) * 2.0f;
     return RGBA{ a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u, 1.0f };
 }
-
-} // namespace
+}
 
 void Renderer::drawWrappedText(const std::string& text, const Rect& box, RGBA tint) {
     const float th = listTextHeight("Ag");
@@ -62,7 +58,6 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
     drawRect(Rect{ b.x - 1.5f * s, b.y - 1.5f * s, b.w + 3.0f * s, b.h + 3.0f * s }, theme::PINK);
     drawRect(b, theme::alpha(theme::MENU_FILL, 0.96f));
 
-    // The lines: the last ones said, the NPC's portrait on the left and the player's on the right
     const float lineH = listTextHeight("Ag");
     const size_t shownFrom = convo.size() > L.lines.size() ? convo.size() - L.lines.size() : 0;
     for (size_t i = 0; i < L.lines.size() && shownFrom + i < convo.size(); ++i) {
@@ -83,7 +78,6 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
         }
     }
 
-    // The options the player can say, then End Dialogue, which is always last
     for (size_t i = 0; i < L.options.size() && i < options.size(); ++i) {
         const Rect& r = L.options[i];
         drawButton(r, fitText(options[i].prompt, r.w - 16.0f * s, false), true, r.contains(mx, my));
@@ -100,7 +94,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     const float th = listTextHeight("Ag");
     const float pad = 10.0f * s, line = 20.0f * s;
 
-    // The Interaction Panel: the NPC's name, and its inventory
     drawRect(L.interaction, panel);
     drawRect(L.interBar, theme::PINK_DEEP);
     drawListText(lang("UILABEL_INTERACTION_PANEL"), L.interBar.x + 6.0f * s, L.interBar.y + (L.interBar.h - th) * 0.5f, WHITE);
@@ -110,7 +103,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     const int hoverNpc = drawStackGrid(L.npcGrid, L.npcSlots, npcInv ? npcInv->slots.data() : nullptr,
                                        (size_t)INVENTORY_SLOTS, dragFrom, mx, my);
 
-    // The Trade Panel: a box for each side, its items in cells, the total under it
     drawRect(L.tradePanel, panel);
     drawRect(L.tradeBar, theme::PINK_DEEP);
     drawListText(lang("UILABEL_TRADE_PANEL"), L.tradeBar.x + 6.0f * s, L.tradeBar.y + (L.tradeBar.h - th) * 0.5f, WHITE);
@@ -121,7 +113,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
             drawRect(cells[i], theme::SLOT);
             if (i < ghosts.size()) drawItemCell(cells[i], ghosts[i].stack.item, ghosts[i].stack.count);
         }
-        // The hint shows while the side is empty, centred in its box
         if (ghosts.empty()) {
             const std::vector<std::string> lines = wrapListText(hint, box.w - 2.0f * pad);
             float ty = box.y + (box.h - (float)lines.size() * th) * 0.5f;
@@ -133,7 +124,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
         }
         drawListText(fitText(langf("UILABEL_TOTAL_VALUE", { std::to_string(tradeValueOf(ghosts)) }), total.w, false), total.x, total.y, WHITE);
     };
-    // Whose side is whose: each unit's name over its box
     auto nameOver = [&](const Rect& r, const std::string& name) {
         const std::string shown = fitTextTip(name, r.w, r);
         drawListText(shown, r.x, r.y + (r.h - th) * 0.5f, theme::GOLD);
@@ -143,8 +133,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     side(L.theirBox, L.theirCells, theirs, lang("UILABEL_TRADE_DROP_THEIRS"), L.theirTotal);
     side(L.yourBox, L.yourCells, yours, lang("UILABEL_TRADE_DROP_YOURS"), L.yourTotal);
 
-    // The value bar: red while the offer is far from the price, yellow, then green once it is met. A free trade between
-    // your own units has no price, so no bar.
     if (showValue) drawRect(L.valueBar, theme::WELL);
     const float fillW = L.valueBar.w * std::clamp(status.progress, 0.0f, 1.0f);
     const int slices = showValue ? 24 : 0;
@@ -165,7 +153,6 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
         const ItemStack& st = npcInv->slots[hoverNpc];
         drawItemTooltip(st.item, st.count, mx, my);
     }
-    // Item ghosts show their item's tooltip on hover, as items do elsewhere
     for (size_t i = 0; i < L.theirCells.size() && i < theirs.size(); ++i) {
         if (theirs[i].stack.item != 0 && L.theirCells[i].contains(mx, my)) drawItemTooltip(theirs[i].stack.item, theirs[i].stack.count, mx, my);
     }
@@ -183,7 +170,6 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     drawInteractionHeader(L.bar, L.name, propName);
     drawListText(fitText(lang(L.output ? "UILABEL_INPUT" : "UILABEL_INVENTORY"), L.heading.w, false), L.heading.x,
                  L.heading.y, theme::GOLD);
-    // The input grid holds panel slots 0 and up, the output grid STORAGE_SLOTS and up
     ItemStack hoverStack{};
     const ItemStack* in = storage ? storage->slots.data() : nullptr;
     const int hotIn = drawStackGrid(L.grid, L.slots, in, (size_t)STORAGE_SLOTS, dragFrom, mx, my);
@@ -207,7 +193,6 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
     drawThemedPanel(L.panel);
     drawInteractionHeader(L.bar, L.name, name);
     int hoverItem = 0, hoverCount = 0;
-    // Gear: each slot shows its item, or its name dimmed when empty
     drawListText(lang("UILABEL_EQUIPMENT"), L.gearHeading.x, L.gearHeading.y, theme::GOLD);
     drawRect(L.gearGrid, theme::WELL);
     for (size_t i = 0; i < L.gear.size() && i < (size_t)GEAR_SLOTS; ++i) {
@@ -223,7 +208,6 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
         drawItemCell(r, item, 1);
         if (hot) { hoverItem = item; hoverCount = 1; }
     }
-    // Inventory
     drawListText(lang("UILABEL_INVENTORY"), L.invHeading.x, L.invHeading.y, theme::GOLD);
     const int hotInv = drawStackGrid(L.invGrid, L.slots, inv ? inv->slots.data() : nullptr, (size_t)INVENTORY_SLOTS, -1,
                                      mx, my, CellLight::WhenFilled);
@@ -238,11 +222,10 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
                                float mx, float my) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
-    drawScrim();   // dims the game behind it
+    drawScrim();
     drawThemedPanel(L.box);
     drawListText(fitText(lang("UILABEL_OPTIMIZE_ALL"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
     drawWrappedText(langf("MISC_OPTIMIZE_ALL_ASK", { std::to_string(unitCount) }), L.text, theme::TEXT_DIM);
-    // The slider: all defense at the left, all attack at the right
     const int share = std::clamp(attackShare, 0, 100);
     const std::string sl = langf("UILABEL_OPTIMIZE_BALANCE", { std::to_string(share), std::to_string(100 - share) });
     drawListText(fitText(sl, L.sliderLabel.w, false), L.sliderLabel.x, L.sliderLabel.y + (L.sliderLabel.h - th) * 0.5f, WHITE);
@@ -250,7 +233,6 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
     drawRect(Rect{ L.track.x, L.track.y, L.track.w * share / 100.0f, L.track.h }, theme::GOLD);
     const float kx = L.track.x + L.track.w * share / 100.0f, kw = 8.0f * s, kh = L.track.h + 8.0f * s;
     drawRect(Rect{ kx - kw * 0.5f, L.track.y + (L.track.h - kh) * 0.5f, kw, kh }, WHITE);
-    // The toggles: a box, filled when on, and its label
     const char* keys[3] = { "UILABEL_OPTIMIZE_ACCESSORIES", "UILABEL_OPTIMIZE_TWO_HANDED", "UILABEL_OPTIMIZE_VALUE_TIES" };
     for (int i = 0; i < 3; ++i) {
         const Rect& r = L.toggles[(size_t)i];
@@ -273,16 +255,14 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
 void Renderer::drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
-    drawScrim();   // dims the game behind it
+    drawScrim();
     drawThemedPanel(L.box);
     drawListText(fitText(lang("UILABEL_DISBAND"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
 
-    // The portrait, as on the Profile tab
     drawRect(L.portrait, theme::TAB_OFF);
     const TextTex& g = unitPortrait(w, unit);
     drawPortrait(g, Rect{ L.portrait.x, L.portrait.y, L.portrait.w, L.portrait.w }, unitSaturation(w, unit));
 
-    // Beside it: the name, then its kind or body, its health, and its hunger (a person) or temperament (a mob)
     const Name* nm = w.get<Name>(unit);
     const std::string name = nm && !nm->text.empty() ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
     const float rowH = L.info.h / (float)(1 + DISBAND_INFO_LINES);
@@ -301,14 +281,12 @@ void Renderer::drawDisband(World& w, const DisbandLayout& L, Entity unit, float 
         drawListText(fitText(lines[i], L.info.w, false), L.info.x, ry + (rowH - th) * 0.5f, theme::TEXT_DIM);
     }
 
-    // What it does, and how to confirm
     const std::string what = mb ? langf("MISC_DISBAND_ASK_MOB", { name }) : langf("MISC_DISBAND_ASK", { name });
     drawWrappedText(what, L.text, theme::TEXT_DIM);
     const std::string hint = langf("UILABEL_DISBAND_HOLD", { std::to_string(DISBAND_HOLD_MS / 1000) });
     drawListText(fitText(hint, L.hint.w, false), L.hint.x + (L.hint.w - std::min(L.hint.w, listTextWidth(hint))) * 0.5f,
                  L.hint.y + (L.hint.h - th) * 0.5f, WHITE);
 
-    // Disband fills from the left with red while it is held
     drawButton(L.disband, lang("UILABEL_DISBAND"), true, L.disband.contains(mx, my));
     const float f = std::clamp(held, 0.0f, 1.0f);
     if (f > 0.0f) {

@@ -1,11 +1,8 @@
-// Renderer: the small pieces panels are built from: buttons, icons, title bars, item cells and item tooltips.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-// The color of an item's name by tier: gray at tier 1, rising to gold at tier 6. Tier 0 stays white.
 RGBA tierTint(int tier) {
     if (tier <= 0) return WHITE;
     const float t = std::clamp((tier - 1) / 5.0f, 0.0f, 1.0f);
@@ -14,16 +11,12 @@ RGBA tierTint(int tier) {
                  gray.b + (gold.b - gray.b) * t, 1.0f };
 }
 
-// The tooltip for an item: its name in its tier's color, then its stats that are not zero.
-// Colors for the parts of a tooltip. A change is drawn theme::GOOD or theme::BAD, as the combat text is.
-
 const RGBA TIP_TEXT{ 0.87f, 0.80f, 0.72f, 1.0f };
 
 const RGBA TIP_HEADING = theme::GOLD;
 
 const RGBA TIP_WARNING{ 1.0f, 0.72f, 0.35f, 1.0f };
 
-// The numbers a tooltip compares, summed over the items an item would replace
 struct GearSum {
     int attack = 0, defense = 0;
     float weight = 0.0f;
@@ -41,20 +34,14 @@ GearSum sumGear(const std::vector<int>& items) {
     return s;
 }
 
-// The rows of an item's tooltip. With a baseline (the gear it would replace), each number that changes
-// shows the change in brackets: green when better, red when worse. A lighter weight is better.
-// Wraps a line of tooltip text to the tooltip's text width
 using TipWrap = std::function<std::vector<std::string>(const std::string&)>;
 
-// "main_hand" reads lang("UILABEL_SLOT_MAIN_HAND"); "armor" reads "Armor"
 std::string tipWords(std::string s) {
     for (char& c : s) if (c == '_') c = ' ';
     if (!s.empty()) s[0] = (char)std::toupper((unsigned char)s[0]);
     return s;
 }
 
-// The language's word for an item's type, material or slot: the key prefix and the id in capitals (armor reads
-// UILABEL_TYPE_ARMOR). A word with no key yet shows the fallback.
 std::string itemWord(const std::string& prefix, const std::string& id, const std::string& fallback) {
     std::string key = prefix + id;
     for (char& c : key) c = (char)std::toupper((unsigned char)c);
@@ -111,8 +98,6 @@ std::vector<TipRow> itemRows(const ItemDef& d, int count, const GearSum* base, c
     return rows;
 }
 
-// A card beside a comparison: the gear slot, the item in it, and its stats. replaced marks the item the
-// hovered item would take the place of. held is 0 for an empty slot.
 std::vector<TipRow> gearCardRows(int slot, bool replaced, int held, const TipWrap& wrap) {
     std::vector<TipRow> rows;
     rows.push_back(TipRow{ gearSlotName(slot), TIP_HEADING });
@@ -125,10 +110,8 @@ std::vector<TipRow> gearCardRows(int slot, bool replaced, int held, const TipWra
     for (const TipRow& row : itemRows(*d, 1, nullptr, wrap)) rows.push_back(row);
     return rows;
 }
+}
 
-} // namespace
-
-// Draws the tooltip set this frame, beside the mouse and kept on screen, with its text wrapped
 void Renderer::drawTip() {
     if (tip_.empty()) return;
     const float s = uiScale();
@@ -153,7 +136,6 @@ void Renderer::drawTip() {
 }
 
 void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fill) {
-    // Held down, it fills with hot pink from the left
     const float s = uiScale();
     drawRectGradientH(r, theme::alpha(theme::PINK_INK, 0.85f), theme::alpha(theme::PINK_DARK, 0.95f));
     if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, theme::alpha(theme::PINK, 0.9f));
@@ -162,7 +144,6 @@ void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fil
 }
 
 void Renderer::drawListButton(const Rect& r, const std::string& label, bool hovered) {
-    // A pink button, for a row's own action (Delete)
     const float s = uiScale();
     if (hovered) noteHover(r);
     drawRectGradientH(r, hovered ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.9f),
@@ -174,7 +155,6 @@ void Renderer::drawListButton(const Rect& r, const std::string& label, bool hove
 }
 
 void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
-    // A dark band with an edge down its left side; under the pointer the band turns green and the edge lights up
     const float s = uiScale();
     const bool lit = enabled && hovered;
     if (lit) noteHover(r);
@@ -187,7 +167,6 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
     }
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
     const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
-    // A small inset keeps the text off the button's edge
     drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, fg);
 }
 
@@ -228,7 +207,6 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
     const float s = uiScale();
     const float gap = 8.0f * s;
 
-    // Gear is compared with the gear it would replace, and each gear slot of its kind gets a card
     const bool compare = compareTo && !d->equipSlot.empty();
     std::vector<int> displaced;
     std::vector<int> replacedItems;
@@ -250,7 +228,6 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
         }
     }
 
-    // The tooltip sits beside the mouse, moved to its left near the right edge
     const float mainW = tipWidth(main), mainH = tipHeight(main.size());
     float bx = mx + 14.0f * s;
     if (bx + mainW > uiW_) bx = mx - mainW - 14.0f * s;
@@ -269,7 +246,6 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
     if (by + tallest > uiH_) by = uiH_ - tallest;
     by = std::max(0.0f, by);
 
-    // The cards go on the side of the tooltip that has room: to its right if they fit, else to its left
     const bool right = bx + mainW + gap + cardsW <= uiW_;
     float cx = std::max(0.0f, right ? bx + mainW + gap : bx - gap - cardsW);
 
@@ -287,7 +263,6 @@ void Renderer::drawPortrait(const TextTex& g, const Rect& square, float saturati
     setSaturation(1.0f);
 }
 
-// The X at the right end of a window's title bar, framed like the [-] and [+] buttons
 void Renderer::drawCloseButton(const Rect& r) {
     const float s = uiScale();
     const bool hot = r.contains(mouseX_, mouseY_);
@@ -307,7 +282,6 @@ void Renderer::drawCloseButton(const Rect& r) {
     line(x0, y1, x1, y0);
 }
 
-// The item's picture at exactly ITEM_PICTURE_PX square, its top left on a whole pixel, centered on (cx, cy)
 void Renderer::drawItemPictureAt(float cx, float cy, int item, float alpha) {
     const float x = std::floor(cx - ITEM_PICTURE_PX * 0.5f + 0.5f), y = std::floor(cy - ITEM_PICTURE_PX * 0.5f + 0.5f);
     const float w = ITEM_PICTURE_PX, h = ITEM_PICTURE_PX;
@@ -329,8 +303,6 @@ void Renderer::drawItemCell(const Rect& r, int item, int count, float alpha) {
     }
 }
 
-// A black bar across the top at 30% opacity, with PAUSED in large white letters, centred. With a hint, a line under
-// it says how to resume.
 float Renderer::pauseBarHeight(bool hint) {
     const float s = uiScale();
     const float pad = 10.0f * s;
@@ -371,26 +343,22 @@ void Renderer::drawScrim() {
     drawRect(Rect{ 0.0f, 0.0f, (float)uiW_, (float)uiH_ }, theme::SCRIM);
 }
 
-// The lock at the left of a panel's [-] or [+]: closed while the panel's size and place are fixed, open (and green)
-// while it can be moved and resized
 void Renderer::drawLockButton(const Rect& r, bool locked) {
     const float s = uiScale();
     if (r.contains(mouseX_, mouseY_)) noteHover(r);
     drawRect(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GOLD);
     drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
              locked ? theme::alpha(theme::PINK_INK, 0.95f) : theme::alpha(theme::SLOT_HOT, 0.95f));
-    // The body: a small block in the lower half
     const float bw = r.w * 0.52f, bh = r.h * 0.34f;
     const float bx = r.x + (r.w - bw) * 0.5f, by = r.y + r.h * 0.50f;
     drawRect(Rect{ bx, by, bw, bh }, WHITE);
-    // The shackle: a hoop over the body, its right leg lifted out when open
     const float lw = std::max(1.0f, 1.3f * s);
     const float sx0 = bx + bw * 0.18f, sx1 = bx + bw * 0.82f;
     const float top = r.y + r.h * 0.18f + (locked ? 0.0f : -r.h * 0.06f);
     const float legBottom = locked ? by : by - r.h * 0.12f;
-    drawRect(Rect{ sx0, top, sx1 - sx0, lw }, WHITE);                 // across the top
-    drawRect(Rect{ sx0, top, lw, by - top }, WHITE);                  // left leg, down into the body
-    drawRect(Rect{ sx1 - lw, top, lw, legBottom - top }, WHITE);      // right leg
+    drawRect(Rect{ sx0, top, sx1 - sx0, lw }, WHITE);
+    drawRect(Rect{ sx0, top, lw, by - top }, WHITE);
+    drawRect(Rect{ sx1 - lw, top, lw, legBottom - top }, WHITE);
 }
 
 void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
@@ -433,7 +401,6 @@ void Renderer::drawUiIcon(int icon, const Rect& r) {
         drawFitted(t, r, WHITE);
         return;
     }
-    // The placeholder until the picture is packed: a pink square with its id in it
     drawRect(r, theme::PINK);
     const std::string num = std::to_string(icon);
     const float tw = listTextWidth(num), th = listTextHeight("Ag");
@@ -452,7 +419,6 @@ void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, R
     const float gap = 6.0f * s;
     const float sz = std::max(0.0f, r.h - 8.0f * s);
     if (uiFont) {
-        // The text gets the room beside the icon, and is shrunk to it when automatic text fit is on
         const float avail = std::max(0.0f, r.w - sz - gap - 8.0f * s);
         const std::string shown = fitShrinkText(text, avail);
         if (shown != text) noteTip(text, r);
@@ -471,7 +437,6 @@ void Renderer::drawIconLabel(const Rect& r, int icon, const std::string& text, R
 
 void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title) {
     const float s = uiScale();
-    // A panel's bar: deep pink fading to near black, with a hot pink line along its foot
     drawRectGradientH(bar, theme::alpha(theme::PINK_DEEP, 0.95f), theme::alpha(theme::PINK_INK, 0.92f));
     drawRect(Rect{ bar.x, bar.y + bar.h - std::max(1.0f, 1.0f * s), bar.w, std::max(1.0f, 1.0f * s) }, theme::alpha(theme::PINK, 0.85f));
     if (icon == ICON_NONE) {
@@ -497,7 +462,6 @@ void Renderer::drawNotice(const std::string& text, int winW, int winH) {
     const float w = uiTextWidth(text) + 2.0f * pad;
     const float h = uiTextHeight("Ag") + pad;
     const Rect box{ (winW - w) * 0.5f, top, w, h };
-    // A dark band with a green edge on its left, like a lit menu item
     drawRectGradientH(box, rgb255(52, 30, 16, 0.85f), theme::alpha(theme::NIGHT, 0.85f));
     drawRect(Rect{ box.x, box.y, 3.0f * s, box.h }, theme::GOLD);
     drawUiText(text, box.x + pad, top + pad * 0.5f, theme::BONE);

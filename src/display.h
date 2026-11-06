@@ -10,29 +10,23 @@
 #include <SDL3/SDL.h>
 #include "settings.h"
 
-// Monitors, the modes they offer, and how the window is shown. The functions here do arithmetic on the lists
-// they are given, so they can be tested without a monitor. queryDisplays and applyDisplay talk to SDL and are
-// in display.cpp.
-
 struct Resolution { int w = 0, h = 0; };
 
-// A fullscreen mode: its size and refresh rate, rounded. hz is 0 when the system gives none.
 struct VideoMode { int w = 0, h = 0, hz = 0; };
 
 struct MonitorInfo {
     SDL_DisplayID id = 0;
     std::string name;
-    int x = 0, y = 0, w = 0, h = 0;      // where the monitor sits on the desktop, and its size
+    int x = 0, y = 0, w = 0, h = 0;
 };
 
 struct DisplayInfo {
-    std::vector<MonitorInfo> monitors;   // at least one, in the order the system lists them
-    int chosen = 0;                      // the monitor the settings use, after clamping
-    std::vector<VideoMode> modes;        // exclusive fullscreen modes of the chosen monitor, unique
-    int desktopW = 1280, desktopH = 720; // desktop size of the chosen monitor
+    std::vector<MonitorInfo> monitors;
+    int chosen = 0;
+    std::vector<VideoMode> modes;
+    int desktopW = 1280, desktopH = 720;
 };
 
-// Standard window sizes that fit inside a desktop of the given size, smallest first
 inline std::vector<Resolution> windowedSizes(int maxW, int maxH) {
     static const Resolution kSizes[] = {
         { 800, 600 }, { 1024, 768 }, { 1152, 864 }, { 1280, 720 }, { 1280, 800 }, { 1280, 1024 },
@@ -47,7 +41,6 @@ inline std::vector<Resolution> windowedSizes(int maxW, int maxH) {
     return out;
 }
 
-// The distinct sizes of the fullscreen modes, largest first
 inline std::vector<Resolution> fullscreenSizes(const std::vector<VideoMode>& modes) {
     std::vector<Resolution> out;
     for (const VideoMode& m : modes) {
@@ -62,7 +55,6 @@ inline std::vector<Resolution> fullscreenSizes(const std::vector<VideoMode>& mod
     return out;
 }
 
-// The distinct refresh rates the modes give at w x h, fastest first. The "default" choice (0) is not in it.
 inline std::vector<int> refreshRates(const std::vector<VideoMode>& modes, int w, int h) {
     std::vector<int> out;
     for (const VideoMode& m : modes) {
@@ -73,7 +65,6 @@ inline std::vector<int> refreshRates(const std::vector<VideoMode>& modes, int w,
     return out;
 }
 
-// The entry of a non-empty list nearest to (w, h)
 inline Resolution nearestSize(const std::vector<Resolution>& list, int w, int h) {
     Resolution best = list.front();
     long long bestD = -1;
@@ -88,7 +79,6 @@ inline Resolution nearestSize(const std::vector<Resolution>& list, int w, int h)
     return best;
 }
 
-// The refresh rate in a non-empty list nearest to hz
 inline int nearestRate(const std::vector<int>& rates, int hz) {
     int best = rates.front();
     for (int r : rates) {
@@ -97,8 +87,6 @@ inline int nearestRate(const std::vector<int>& rates, int hz) {
     return best;
 }
 
-// Makes the settings values the monitor can show. A size or rate the monitor lacks is replaced by the
-// nearest one it has, so the menus always show what really applies. Borderless uses the desktop size.
 inline void normalizeVideo(GameSettings& s, const DisplayInfo& d) {
     s.monitor = d.chosen;
     const int dw = d.desktopW > 0 ? d.desktopW : 1280;
@@ -117,7 +105,6 @@ inline void normalizeVideo(GameSettings& s, const DisplayInfo& d) {
         }
         s.refreshHz = 0;
     } else if (!d.modes.empty()) {
-        // Full screen: the size from the monitor's list, then a rate that size really has, or the default
         const Resolution r = nearestSize(fullscreenSizes(d.modes), s.width, s.height);
         s.width = r.w;
         s.height = r.h;
@@ -127,15 +114,10 @@ inline void normalizeVideo(GameSettings& s, const DisplayInfo& d) {
     }
 }
 
-// Reads the monitors, and the fullscreen modes of the one the setting chooses, from the system
 DisplayInfo queryDisplays(int monitorSetting);
 
-// Makes the window show what the settings say. The settings are normalized first, so they are left
-// holding what was actually applied.
 void applyDisplay(SDL_Window* window, GameSettings& s, const DisplayInfo& d);
 
-// Holds the frame until its budget of 1/fps seconds has passed, counted from frameStart. Sleeps for most of
-// the wait and spins the last millisecond, since sleeps overshoot. fps of 0 or less does nothing.
 inline void limitFrameRate(std::chrono::steady_clock::time_point frameStart, int fps) {
     using clock = std::chrono::steady_clock;
     if (fps <= 0) return;

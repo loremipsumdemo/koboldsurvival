@@ -1,4 +1,3 @@
-// The lines of text the hover list and Show Prop Info show for a prop (prop_info.h)
 #include "prop_info.h"
 #include <algorithm>
 #include <cmath>
@@ -7,8 +6,6 @@
 #include "language.h"
 
 namespace {
-
-// An Altar's upkeep: what is left of the log burning now, and the hours of each log waiting
 std::string upkeepLine(World& w, Entity e) {
     const Prop* p = w.get<Prop>(e);
     double hours = 0.0;
@@ -26,8 +23,7 @@ std::string healthLine(const Health& hp) {
     const int shown = (int)std::ceil(hp.value - 1e-9);
     return langf("MISC_FLAG_HEALTH", { std::to_string(std::max(0, shown)), std::to_string((int)hp.max) });
 }
-
-}  // namespace
+}
 
 std::vector<std::string> propInfoLines(World& w, Entity e) {
     std::vector<std::string> out;
@@ -55,4 +51,29 @@ std::vector<std::string> altarInfoLines(World& w, Entity e) {
     if (const Health* hp = w.get<Health>(e)) out.push_back(healthLine(*hp));
     out.push_back(upkeepLine(w, e));
     return out;
+}
+
+Sfx propWorkSound(PropKind kind) {
+    switch (kind) {
+    case PropKind::Ore: return Sfx::WorkMining;
+    case PropKind::Tree: return Sfx::WorkWoodcutting;
+    case PropKind::Mushroom: return Sfx::WorkHerbalism;
+    case PropKind::Campfire:
+    case PropKind::Stove: return Sfx::WorkCooking;
+    case PropKind::WaterPump: return Sfx::WorkPump;
+    case PropKind::TrainingDummy: return Sfx::WorkTraining;
+    case PropKind::Forge: return Sfx::ForgeBurning;
+    default: return Sfx::Count;
+    }
+}
+
+Sfx propDoneSound(PropKind kind) {
+    switch (kind) {
+    case PropKind::Ore: return Sfx::DoneOre;
+    case PropKind::Tree: return Sfx::DoneTree;
+    case PropKind::Mushroom: return Sfx::DoneMushroom;
+    case PropKind::Stove: return Sfx::DoneCooking;
+    case PropKind::WaterPump: return Sfx::DoneWater;
+    default: return Sfx::ItemMove;
+    }
 }

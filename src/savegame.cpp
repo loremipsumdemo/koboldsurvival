@@ -1,17 +1,21 @@
-// Writing and reading save files, and finding them in the saves folder (savegame.h)
 #include "savegame.h"
+#include <SDL3/SDL.h>
 #include <algorithm>
-#include "language.h"
-#include <cstdio>
-#include <ctime>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>
 #include <sstream>
-#include <cstdlib>
 #include <system_error>
+#include <type_traits>
+#include <unordered_map>
 #include "user_files.h"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -20,103 +24,357 @@ std::string saveDir() {
 }
 
 namespace {
+constexpr int RENAME_TRIES = 10;
+constexpr Uint32 RENAME_RETRY_MS = 50;
 
-void writeSaveLines(std::ostream& out, const SaveData& d) {
-    out << std::setprecision(9);
-    out << "version=" << SAVE_VERSION << "\n";
-    out << "name=" << d.name << "\n";
-    out << "timestamp=" << d.timestamp << "\n";
-    out << "seed=" << d.seed << "\n";
-    out << "playerCamp=" << (d.playerCamp ? 1 : 0) << "\n";
-    out << "map " << d.mapSource << " " << d.mapStem << "\n";
-    out << "clockSeconds=" << std::setprecision(15) << d.gs.clockSeconds << std::setprecision(9) << "\n";
-    out << "autosave=" << (d.autosave ? 1 : 0) << "\n";
-    out << "camera " << d.cam.fx << " " << d.cam.fy << " " << d.cam.fz << " "
-        << d.cam.yaw << " " << d.cam.pitch << " " << d.cam.distance << "\n";
-    for (const SaveUnit& u : d.units) {
-        out << "unit " << u.x << " " << u.y << " " << u.z << " "
-            << (u.hostile ? 1 : u.neutral ? 2 : 0) << " " << u.sprite << " " << u.name << "\n";
+class Writer {
+public:
+    explicit Writer(std::ostream& out) : out_(out) {}
+
+    template <typename... T>
+    void line(const char* key, const T&... values) {
+        out_ << key;
+        (put(values), ...);
+        out_ << '\n';
     }
-    // Lines that refer to a unit by its position in the unit list above
-    for (size_t i = 0; i < d.units.size(); ++i) {
-        const SaveUnit& u = d.units[i];
-        if (u.hasNeeds) {
-            out << "needs " << i << " " << u.needs.hp << " " << u.needs.maxHp << " "
-                << u.needs.hunger << " " << u.needs.maxHunger << "\n";
-            out << "rest " << i << " " << u.needs.rested << " " << u.needs.maxRested << " "
-                << u.needs.comfort << " " << u.needs.maxComfort << "\n";
-        }
-        for (const SaveStack& s : u.stacks) {
-            out << "slot " << i << " " << s.slot << " " << s.stack.item << " " << s.stack.count << "\n";
-        }
-        for (const SaveGear& g : u.gear) {
-            out << "gear " << i << " " << g.slot << " " << g.item << "\n";
-        }
-        if (u.hasStats) {
-            out << "stats " << i;
-            for (int xp : u.stats.xp) out << " " << xp;
-            out << "\n";
-        }
-        if (u.hasBody) out << "body " << i << " " << u.body << "\n";
-        if (u.mob > 0) out << "mob " << i << " " << u.mob << "\n";
-        if (u.hasHome) out << "home " << i << " " << u.homeX << " " << u.homeZ << " " << (u.homeReturning ? 1 : 0) << "\n";
-        if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
-        if (u.occupying != -1) out << "occupy " << i << " " << u.occupying << "\n";
-        if (u.unconscious) out << "down " << i << " " << u.dying << " " << (u.corpse ? 1 : 0) << "\n";
-        if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
-        if (u.unconscious) out << "conscious " << i << " " << u.conscious << "\n";
-        if (u.corpse) out << "corpseage " << i << " " << u.corpseHours << "\n";
-        if (u.playingDead && u.carriedBy < 0) out << "still " << i << "\n";
-        if (u.passive || u.block || u.sneak) {
-            out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
-        }
-        if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
-        if (u.buffLeft > 0.0f) out << "buff " << i << " " << u.buffLeft << " " << u.buffAttack << "\n";
-        for (const Provoked::Entry& p : u.provoked) out << "provoked " << i << " " << p.faction << " " << p.secondsLeft << "\n";
-        if (u.followUnit >= 0) out << "follow " << i << " " << u.followUnit << "\n";
-        if (u.defendUnit >= 0) out << "defend " << i << " " << u.defendUnit << "\n";
-        if (u.attackUnit >= 0) out << "attack " << i << " " << u.attackUnit << "\n";
-        if (u.hasMove) out << "move " << i << " " << u.moveX << " " << u.moveZ << "\n";
-        if (u.propOrder != -1) out << "propgo " << i << " " << u.propOrder << " " << u.propAction << "\n";
-        if (u.hasBehaviors) {
-            out << "behaviors " << i << " " << (u.behaviorsWhole ? 1 : 0) << "\n";
-            for (const SaveBehavior& b : u.behaviors) {
-                out << "task " << i << " " << (b.rule.on ? 1 : 0) << " " << (int)b.rule.kind << " " << b.rule.propKind
-                    << " " << b.x << " " << b.z << " " << b.rule.percent << "\n";
-            }
+
+private:
+    template <typename T>
+    void put(const T& v) {
+        out_ << ' ';
+        if constexpr (std::is_floating_point_v<T>) {
+            // A value the reader could not parse back (not finite, or too small to represent) is written as 0
+            const T safe = std::isfinite(v) && std::fabs(v) >= (T)1e-30 ? v : (T)0;
+            out_ << std::setprecision(std::is_same_v<T, float> ? 9 : 17) << safe;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            out_ << (v ? 1 : 0);
+        } else {
+            out_ << v;
         }
     }
-    if (d.propLayout != 0) out << "propLayout=" << d.propLayout << "\n";
-    if (d.hasItems) {
-        out << "items=1\n";
-        for (const SaveGround& g : d.ground) {
-            out << "ground " << g.x << " " << g.y << " " << g.z << " " << g.item << " " << g.count << " " << g.hours << "\n";
-        }
+
+    std::ostream& out_;
+};
+
+void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
+    w.line("unit", u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob, u.name);
+    const Needs& n = u.needs;
+    w.line("needs", i, n.hp, n.maxHp, n.hunger, n.maxHunger, n.rested, n.maxRested, n.comfort, n.maxComfort,
+           n.restedPart, n.comfortPart, n.hurried, n.healSeconds);
+    for (const SaveSlot& s : u.stacks) w.line("slot", i, s.slot, s.stack.item, s.stack.count);
+    for (const SaveGear& g : u.gear) w.line("gear", i, g.slot, g.item);
+    if (u.stats) {
+        std::ostringstream xp;
+        for (size_t k = 0; k < u.stats->xp.size(); ++k) xp << (k ? " " : "") << u.stats->xp[k];
+        w.line("stats", i, xp.str());
     }
-    for (const SaveStorage& st : d.storage) {
-        out << "storage " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
+    if (u.xpParts) {
+        std::ostringstream parts;
+        parts << std::setprecision(9);
+        for (size_t k = 0; k < u.xpParts->frac.size(); ++k) parts << (k ? " " : "") << u.xpParts->frac[k];
+        w.line("xpparts", i, parts.str());
     }
-    for (const SaveLock& l : d.locks) out << "lock " << l.prop << " " << (l.locked ? 1 : 0) << " " << l.level << " " << l.faction << "\n";
-    for (const SaveBuilt& b : d.built) {
-        out << "built " << b.kind << " " << b.x << " " << b.y << " " << b.z << " " << b.yaw << " " << b.owner << "\n";
+    if (u.body) w.line("body", i, *u.body);
+    if (u.home) w.line("home", i, u.home->x, u.home->z, u.home->returning);
+    if (u.occupying >= 0) w.line("occupy", i, u.occupying);
+    if (u.down) w.line("down", i, u.down->dying, u.down->koFaction, u.down->conscious, u.down->tickPart);
+    if (u.corpseHours) w.line("corpse", i, *u.corpseHours);
+    if (u.carriedBy >= 0) w.line("carried", i, u.carriedBy);
+    if (u.playingDead) w.line("still", i);
+    if (u.passive || u.block || u.sneak) w.line("modes", i, u.passive, u.block, u.sneak);
+    if (u.buffLeft > 0.0f) w.line("buff", i, u.buffLeft, u.buffAttack);
+    for (const Provoked::Entry& p : u.provoked) w.line("provoked", i, p.faction, p.secondsLeft);
+    if (u.followUnit >= 0) w.line("follow", i, u.followUnit);
+    if (u.defendUnit >= 0) w.line("defend", i, u.defendUnit);
+    if (u.attackUnit >= 0) w.line("attack", i, u.attackUnit);
+    if (u.move) w.line("move", i, u.move->x, u.move->z);
+    if (u.propOrder >= 0) w.line("propgo", i, u.propOrder, u.propAction);
+    for (const SaveRule& r : u.rules) {
+        w.line("task", i, r.rule.on, (int)r.rule.kind, r.rule.propKind, r.prop, r.rule.percent);
     }
-    for (int serial : d.goneProps) out << "gone " << serial << "\n";
-    out << std::setprecision(15);
-    for (const SaveHealth& v : d.health) out << "health " << v.prop << " " << v.value << " " << v.max << "\n";
-    out << std::setprecision(9);
-    for (const auto& [faction, value] : d.reputation) out << "rep " << faction << " " << value << "\n";
-    for (const SaveStorage& st : d.output) {
-        out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
-    }
-    for (const SaveBonesAge& b : d.bonesAge) out << "bonesage " << b.prop << " " << b.hours << "\n";
-    for (const SaveBonesItem& b : d.bonesItems) out << "bonesitem " << b.prop << " " << b.item << " " << b.count << "\n";
-    for (const SaveFuel& f : d.fuel) {
-        out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9)
-            << " " << f.item << "\n";
-    }
+    if (u.stepKind >= 0) w.line("step", i, u.stepKind);
 }
 
-} // namespace
+void writeProp(Writer& w, size_t i, const SaveProp& p) {
+    w.line("prop", p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner);
+    if (p.lock) w.line("lock", i, p.lock->locked, p.lock->level, p.lock->faction);
+    for (const SaveSlot& s : p.storage) w.line("storage", i, s.slot, s.stack.item, s.stack.count);
+    for (const SaveSlot& s : p.output) w.line("output", i, s.slot, s.stack.item, s.stack.count);
+    if (p.fuel) w.line("fuel", i, p.fuel->hours, p.fuel->item);
+    if (p.workProgress) w.line("work", i, *p.workProgress, p.workTurn);
+    if (p.bonesHours) w.line("bones", i, *p.bonesHours);
+    for (const ItemStack& s : p.bonesItems) w.line("bonesitem", i, s.item, s.count);
+    if (p.health) w.line("health", i, p.health->value, p.health->max);
+}
+
+void writeSaveLines(std::ostream& out, const SaveData& d) {
+    Writer w(out);
+    w.line("version", SAVE_VERSION);
+    w.line("name", d.name);
+    w.line("timestamp", d.timestamp);
+    w.line("autosave", d.autosave);
+    w.line("map", d.mapSource, d.mapStem);
+    w.line("clock", d.gs.clockSeconds);
+    w.line("camera", d.cam.fx, d.cam.fy, d.cam.fz, d.cam.yaw, d.cam.pitch, d.cam.distance);
+    w.line("rng", d.rngState);
+    for (const auto& [faction, value] : d.reputation) w.line("rep", faction, value);
+    for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
+    for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
+    for (size_t i = 0; i < d.units.size(); ++i) writeUnit(w, i, d.units[i]);
+    w.line("end", d.props.size(), d.units.size());
+}
+
+// On Windows, a rename can commit before the file's contents reach the disk
+void flushToDisk(const fs::path& file) {
+#ifdef _WIN32
+    const HANDLE h = CreateFileW(file.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) return;
+    FlushFileBuffers(h);
+    CloseHandle(h);
+#else
+    (void)file;
+#endif
+}
+
+struct Line {
+    std::istringstream ss;
+    SaveData& d;
+    bool ended = false;
+
+    template <typename... T>
+    bool read(T&... v) {
+        ((ss >> v), ...);
+        return !ss.fail();
+    }
+    bool rest(std::string& text) {
+        std::getline(ss >> std::ws, text);
+        return true;
+    }
+    SaveUnit* unit() {
+        size_t i = 0;
+        return read(i) && i < d.units.size() ? &d.units[i] : nullptr;
+    }
+    SaveProp* prop() {
+        size_t i = 0;
+        return read(i) && i < d.props.size() ? &d.props[i] : nullptr;
+    }
+    template <typename A>
+    bool readArray(A& values) {
+        for (auto& v : values) ss >> v;
+        return !ss.fail();
+    }
+    bool slotInto(std::vector<SaveSlot>& slots) {
+        SaveSlot s;
+        if (!read(s.slot, s.stack.item, s.stack.count)) return false;
+        slots.push_back(s);
+        return true;
+    }
+};
+
+using Handler = bool (*)(Line&);
+
+const std::unordered_map<std::string, Handler>& handlers() {
+    static const std::unordered_map<std::string, Handler> table = {
+        { "version", [](Line& l) { int v = 0; return l.read(v) && v == SAVE_VERSION; } },
+        { "name", [](Line& l) { return l.rest(l.d.name); } },
+        { "timestamp", [](Line& l) { return l.read(l.d.timestamp); } },
+        { "autosave", [](Line& l) { return l.read(l.d.autosave); } },
+        { "map", [](Line& l) { return l.read(l.d.mapSource) && l.rest(l.d.mapStem); } },
+        { "clock", [](Line& l) { return l.read(l.d.gs.clockSeconds); } },
+        { "camera", [](Line& l) { SaveCamera& c = l.d.cam; return l.read(c.fx, c.fy, c.fz, c.yaw, c.pitch, c.distance); } },
+        { "rng", [](Line& l) { return l.rest(l.d.rngState); } },
+        { "rep", [](Line& l) {
+            int faction = 0, value = 0;
+            if (!l.read(faction, value)) return false;
+            l.d.reputation[faction] = std::clamp(value, REP_MIN, REP_MAX);
+            return true;
+        } },
+        { "prop", [](Line& l) {
+            SaveProp p;
+            if (!l.read(p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || p.kind < 0 || p.kind >= PROP_KIND_COUNT) return false;
+            l.d.props.push_back(std::move(p));
+            return true;
+        } },
+        { "lock", [](Line& l) {
+            SaveProp* p = l.prop();
+            Lock lock;
+            if (!p || !l.read(lock.locked, lock.level, lock.faction)) return false;
+            p->lock = lock;
+            return true;
+        } },
+        { "storage", [](Line& l) { SaveProp* p = l.prop(); return p && l.slotInto(p->storage); } },
+        { "output", [](Line& l) { SaveProp* p = l.prop(); return p && l.slotInto(p->output); } },
+        { "fuel", [](Line& l) {
+            SaveProp* p = l.prop();
+            Fuel f;
+            if (!p || !l.read(f.hours, f.item)) return false;
+            p->fuel = f;
+            return true;
+        } },
+        { "work", [](Line& l) {
+            SaveProp* p = l.prop();
+            double progress = 0.0;
+            if (!p || !l.read(progress, p->workTurn)) return false;
+            p->workProgress = progress;
+            return true;
+        } },
+        { "bones", [](Line& l) {
+            SaveProp* p = l.prop();
+            double hours = 0.0;
+            if (!p || !l.read(hours)) return false;
+            p->bonesHours = hours;
+            return true;
+        } },
+        { "bonesitem", [](Line& l) {
+            SaveProp* p = l.prop();
+            ItemStack s;
+            if (!p || !l.read(s.item, s.count)) return false;
+            p->bonesItems.push_back(s);
+            return true;
+        } },
+        { "health", [](Line& l) {
+            SaveProp* p = l.prop();
+            Health h;
+            if (!p || !l.read(h.value, h.max)) return false;
+            p->health = h;
+            return true;
+        } },
+        { "ground", [](Line& l) {
+            SaveGround g;
+            if (!l.read(g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours)) return false;
+            l.d.ground.push_back(g);
+            return true;
+        } },
+        { "unit", [](Line& l) {
+            SaveUnit u;
+            if (!l.read(u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob) || u.mob < 0 || u.mob > MOB_KIND_COUNT) return false;
+            l.rest(u.name);
+            l.d.units.push_back(std::move(u));
+            return true;
+        } },
+        { "needs", [](Line& l) {
+            SaveUnit* u = l.unit();
+            if (!u) return false;
+            Needs& n = u->needs;
+            return l.read(n.hp, n.maxHp, n.hunger, n.maxHunger, n.rested, n.maxRested, n.comfort, n.maxComfort,
+                          n.restedPart, n.comfortPart, n.hurried, n.healSeconds);
+        } },
+        { "slot", [](Line& l) { SaveUnit* u = l.unit(); return u && l.slotInto(u->stacks); } },
+        { "gear", [](Line& l) {
+            SaveUnit* u = l.unit();
+            SaveGear g;
+            if (!u || !l.read(g.slot, g.item) || g.slot < 0 || g.slot >= GEAR_SLOTS) return false;
+            u->gear.push_back(g);
+            return true;
+        } },
+        { "stats", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Stats s;
+            if (!u || !l.readArray(s.xp)) return false;
+            u->stats = s;
+            return true;
+        } },
+        { "xpparts", [](Line& l) {
+            SaveUnit* u = l.unit();
+            XpBuffer parts;
+            if (!u || !l.readArray(parts.frac)) return false;
+            u->xpParts = parts;
+            return true;
+        } },
+        { "body", [](Line& l) {
+            SaveUnit* u = l.unit();
+            int body = 0;
+            if (!u || !l.read(body)) return false;
+            u->body = body;
+            return true;
+        } },
+        { "home", [](Line& l) {
+            SaveUnit* u = l.unit();
+            SpawnHome h;
+            if (!u || !l.read(h.x, h.z, h.returning)) return false;
+            u->home = h;
+            return true;
+        } },
+        { "occupy", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->occupying); } },
+        { "down", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Unconscious un;
+            if (!u || !l.read(un.dying, un.koFaction, un.conscious, un.tickPart)) return false;
+            u->down = un;
+            return true;
+        } },
+        { "corpse", [](Line& l) {
+            SaveUnit* u = l.unit();
+            double hours = 0.0;
+            if (!u || !l.read(hours)) return false;
+            u->corpseHours = hours;
+            return true;
+        } },
+        { "carried", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->carriedBy); } },
+        { "still", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->playingDead = true; return u != nullptr; } },
+        { "modes", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->passive, u->block, u->sneak); } },
+        { "buff", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->buffLeft, u->buffAttack); } },
+        { "provoked", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Provoked::Entry p;
+            if (!u || !l.read(p.faction, p.secondsLeft)) return false;
+            u->provoked.push_back(p);
+            return true;
+        } },
+        { "follow", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->followUnit); } },
+        { "defend", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->defendUnit); } },
+        { "attack", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->attackUnit); } },
+        { "move", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Vec2 to{ 0.0f, 0.0f };
+            if (!u || !l.read(to.x, to.z)) return false;
+            u->move = to;
+            return true;
+        } },
+        { "propgo", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->propOrder, u->propAction); } },
+        { "task", [](Line& l) {
+            SaveUnit* u = l.unit();
+            int on = 0, kind = 0, propKind = -1, percent = 0;
+            SaveRule r;
+            if (!u || !l.read(on, kind, propKind, r.prop, percent)) return false;
+            r.rule = behaviorFromFields(on, kind, propKind, percent);
+            u->rules.push_back(r);
+            return true;
+        } },
+        { "step", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->stepKind); } },
+        { "end", [](Line& l) {
+            size_t props = 0, units = 0;
+            l.ended = l.read(props, units) && props == l.d.props.size() && units == l.d.units.size();
+            return l.ended;
+        } },
+    };
+    return table;
+}
+
+// The header ends at the map line, so listing saves stays quick
+bool readSaveHeader(const std::string& path, SaveSummary& s) {
+    std::ifstream in(fs::u8path(path));
+    if (!in) return false;
+    s.path = path;
+    SaveData d;
+    Line l{ {}, d };
+    std::string text, key;
+    bool versionOk = false;
+    while (std::getline(in, text)) {
+        if (!text.empty() && text.back() == '\r') text.pop_back();
+        l.ss = std::istringstream(text);
+        l.ss >> key;
+        if (key == "map") break;
+        const auto it = handlers().find(key);
+        if (it == handlers().end() || !it->second(l)) return false;
+        versionOk = versionOk || key == "version";
+    }
+    s.name = d.name;
+    s.timestamp = d.timestamp;
+    s.autosave = d.autosave;
+    return versionOk;
+}
+}
 
 bool writeSaveFile(const std::string& path, const SaveData& d) {
     std::error_code ec;
@@ -128,13 +386,18 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
         std::ofstream out(tmp);
         if (out) {
             writeSaveLines(out, d);
-            out.close();   // flushes, so a disk that fills up at the very end shows up in the state
+            out.close();
             written = !out.fail();
         }
     }
     if (written) {
-        fs::rename(tmp, target, ec);
-        if (!ec) return true;
+        flushToDisk(tmp);
+        // Antivirus and cloud sync can hold the target open for a moment
+        for (int attempt = 0; attempt < RENAME_TRIES; ++attempt) {
+            fs::rename(tmp, target, ec);
+            if (!ec) return true;
+            SDL_Delay(RENAME_RETRY_MS);
+        }
     }
     fs::remove(tmp, ec);
     return false;
@@ -143,448 +406,23 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
 bool readSaveFile(const std::string& path, SaveData& d) {
     std::ifstream in(fs::u8path(path));
     if (!in) return false;
-
-    try {
-        std::string line;
-        while (std::getline(in, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-
-            if (line.rfind("name=", 0) == 0)                   d.name = line.substr(5);
-            else if (line.rfind("version=", 0) == 0)          d.version = std::stoi(line.substr(8));
-            else if (line.rfind("timestamp=", 0) == 0)        d.timestamp = std::stoll(line.substr(10));
-            else if (line.rfind("seed=", 0) == 0)             d.seed = (unsigned)std::stoul(line.substr(5));
-            else if (line.rfind("playerCamp=", 0) == 0)       d.playerCamp = line.substr(11) != "0";
-            else if (line.rfind("map ", 0) == 0) {
-                std::istringstream ss(line.substr(4));
-                ss >> d.mapSource;
-                std::getline(ss >> std::ws, d.mapStem);
-            }
-            else if (line.rfind("clockSeconds=", 0) == 0)    d.gs.clockSeconds = std::stod(line.substr(13));
-            // Saves from before the calendar stored minutes into the day, starting at Day 1
-            else if (line.rfind("dayMinutes=", 0) == 0)       d.gs.clockSeconds = std::stod(line.substr(11)) * 60.0;
-            else if (line.rfind("autosave=", 0) == 0)        d.autosave = (line.substr(9) == "1");
-            else if (line.rfind("camera ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                ss >> d.cam.fx >> d.cam.fy >> d.cam.fz >> d.cam.yaw >> d.cam.pitch >> d.cam.distance;
-                d.cam.present = !ss.fail();
-            }
-            else if (line.rfind("unit ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                SaveUnit u;
-                int hostile = 0;
-                ss >> u.x >> u.y >> u.z >> hostile >> u.sprite;
-                std::getline(ss >> std::ws, u.name);
-                u.hostile = hostile == 1;
-                u.neutral = hostile == 2;
-                if (u.name.empty()) u.name = lang("UILABEL_UNNAMED_UNIT");
-                d.units.push_back(u);
-            }
-            else if (line.rfind("items=", 0) == 0)           d.hasItems = (line.substr(6) == "1");
-            else if (line.rfind("propLayout=", 0) == 0)      d.propLayout = std::atoi(line.c_str() + 11);
-            else if (line.rfind("lock ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                SaveLock l;
-                int locked = 1;
-                ss >> l.prop >> locked;
-                l.locked = locked != 0;
-                if (!ss.fail()) {
-                    if (!(ss >> l.level >> l.faction)) {   // older saves end before these
-                        l.level = 0;
-                        l.faction = -1;
-                    }
-                    d.locks.push_back(l);
-                }
-            }
-            else if (line.rfind("built ", 0) == 0) {
-                std::istringstream ss(line.substr(6));
-                SaveBuilt b;
-                ss >> b.kind >> b.x >> b.y >> b.z >> b.yaw >> b.owner;
-                // Always kept, even if bad, so the places of the ones after it still give their save numbers
-                if (ss.fail()) b.kind = -1;
-                d.built.push_back(b);
-            }
-            else if (line.rfind("gone ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                int serial = -1;
-                ss >> serial;
-                if (!ss.fail() && serial >= 0) d.goneProps.push_back(serial);
-            }
-            else if (line.rfind("health ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                SaveHealth v;
-                ss >> v.prop >> v.value >> v.max;
-                if (!ss.fail()) d.health.push_back(v);
-            }
-            else if (line.rfind("bonesage ", 0) == 0) {
-                std::istringstream ss(line.substr(9));
-                SaveBonesAge b;
-                ss >> b.prop >> b.hours;
-                if (!ss.fail()) d.bonesAge.push_back(b);
-            }
-            else if (line.rfind("bonesitem ", 0) == 0) {
-                std::istringstream ss(line.substr(10));
-                SaveBonesItem b;
-                ss >> b.prop >> b.item >> b.count;
-                if (!ss.fail()) d.bonesItems.push_back(b);
-            }
-            else if (line.rfind("buff ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                float left = 0.0f, attack = 0.0f;
-                ss >> i >> left >> attack;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].buffLeft = std::max(0.0f, left);
-                    d.units[i].buffAttack = attack;
-                }
-            }
-            else if (line.rfind("combat ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                size_t i = 0;
-                float stamina = 0.0f, left = 0.0f, attack = 0.0f;   // older saves also gave its stamina, left unused
-                ss >> i >> stamina >> left >> attack;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].buffLeft = std::max(0.0f, left);
-                    d.units[i].buffAttack = attack;
-                }
-            }
-            else if (line.rfind("provoked ", 0) == 0) {
-                std::istringstream ss(line.substr(9));
-                size_t i = 0;
-                Provoked::Entry p;
-                ss >> i >> p.faction >> p.secondsLeft;
-                if (!ss.fail() && i < d.units.size()) d.units[i].provoked.push_back(p);
-            }
-            else if (line.rfind("follow ", 0) == 0 || line.rfind("defend ", 0) == 0 || line.rfind("attack ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                size_t i = 0;
-                int other = -1;
-                ss >> i >> other;
-                if (!ss.fail() && i < d.units.size()) {
-                    (line[0] == 'f' ? d.units[i].followUnit : line[0] == 'd' ? d.units[i].defendUnit : d.units[i].attackUnit) = other;
-                }
-            }
-            else if (line.rfind("move ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                float x = 0.0f, z = 0.0f;
-                ss >> i >> x >> z;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasMove = true;
-                    d.units[i].moveX = x;
-                    d.units[i].moveZ = z;
-                }
-            }
-            else if (line.rfind("propgo ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                size_t i = 0;
-                int prop = -1, action = 0;
-                ss >> i >> prop >> action;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].propOrder = prop;
-                    d.units[i].propAction = action;
-                }
-            }
-            else if (line.rfind("storage ", 0) == 0) {
-                std::istringstream ss(line.substr(8));
-                SaveStorage st;
-                ss >> st.prop >> st.slot >> st.item >> st.count;
-                if (!ss.fail()) d.storage.push_back(st);
-            }
-            else if (line.rfind("ground ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                SaveGround g;
-                ss >> g.x >> g.y >> g.z >> g.item >> g.count;
-                if (!ss.fail()) {
-                    if (!(ss >> g.hours)) g.hours = 0.0;   // older saves end before this
-                    d.ground.push_back(g);
-                }
-            }
-            else if (line.rfind("needs ", 0) == 0) {
-                std::istringstream ss(line.substr(6));
-                size_t i = 0;
-                Needs n;
-                ss >> i >> n.hp >> n.maxHp >> n.hunger >> n.maxHunger;   // older saves add a progress value, ignored
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasNeeds = true;
-                    d.units[i].needs = n;
-                }
-            }
-            else if (line.rfind("rest ", 0) == 0) {
-                // Older saves have no line: their units are fully rested and comfortable
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                int rested = 100, maxRested = 100, comfort = 100, maxComfort = 100;
-                ss >> i >> rested >> maxRested >> comfort >> maxComfort;
-                if (!ss.fail() && i < d.units.size() && maxRested > 0 && maxComfort > 0) {
-                    if (d.version < 4) {   // the same share of what is now the most of each
-                        const int newRested = std::max(1, maxRested - 50);
-                        rested = rested * newRested / maxRested;
-                        maxRested = newRested;
-                        comfort = comfort * 50 / maxComfort;
-                        maxComfort = 50;
-                    }
-                    Needs& n = d.units[i].needs;
-                    n.maxRested = maxRested;
-                    n.rested = std::clamp(rested, 0, maxRested);
-                    n.maxComfort = maxComfort;
-                    n.comfort = std::clamp(comfort, 0, maxComfort);
-                }
-            }
-            else if (line.rfind("conscious ", 0) == 0) {
-                std::istringstream ss(line.substr(10));
-                size_t i = 0;
-                float conscious = 0.0f;
-                ss >> i >> conscious;
-                if (!ss.fail() && i < d.units.size()) d.units[i].conscious = std::clamp(conscious, 0.0f, 100.0f);
-            }
-            else if (line.rfind("corpseage ", 0) == 0) {
-                std::istringstream ss(line.substr(10));
-                size_t i = 0;
-                double hours = 0.0;
-                ss >> i >> hours;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].corpse = true;
-                    d.units[i].corpseHours = std::max(0.0, hours);
-                }
-            }
-            // Older saves counted down in-game hours (at most 1) to waking instead
-            else if (line.rfind("downrest ", 0) == 0) {
-                std::istringstream ss(line.substr(9));
-                size_t i = 0;
-                float wake = 0.0f;
-                ss >> i >> wake;
-                if (!ss.fail() && i < d.units.size()) d.units[i].conscious = std::clamp((1.0f - wake) * 100.0f, 0.0f, 100.0f);
-            }
-            else if (line.rfind("still ", 0) == 0) {
-                std::istringstream ss(line.substr(6));
-                size_t i = 0;
-                ss >> i;
-                if (!ss.fail() && i < d.units.size()) d.units[i].playingDead = true;
-            }
-            else if (line.rfind("slot ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                SaveStack s;
-                ss >> i >> s.slot >> s.stack.item >> s.stack.count;
-                if (!ss.fail() && i < d.units.size()) d.units[i].stacks.push_back(s);
-            }
-            else if (line.rfind("gear ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                SaveGear g;
-                ss >> i >> g.slot >> g.item;
-                if (!ss.fail() && i < d.units.size() && g.slot >= 0 && g.slot < GEAR_SLOTS && g.item > 0) {
-                    d.units[i].gear.push_back(g);
-                }
-            }
-            else if (line.rfind("down ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                float dying = 0.0f;
-                int corpse = 0, carrier = -1;
-                ss >> i >> dying >> corpse;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].unconscious = true;
-                    d.units[i].dying = std::clamp(dying, 0.0f, 100.0f);
-                    d.units[i].corpse = corpse != 0;
-                    // A save from the first version of this line also named the carrier here
-                    if (ss >> carrier) d.units[i].carriedBy = carrier;
-                }
-            }
-            else if (line.rfind("carried ", 0) == 0) {
-                std::istringstream ss(line.substr(8));
-                size_t i = 0;
-                int by = -1, dead = 0;
-                ss >> i >> by >> dead;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].carriedBy = by;
-                    d.units[i].playingDead = dead != 0;
-                }
-            }
-            else if (line.rfind("occupy ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                size_t i = 0;
-                int serial = -1;
-                ss >> i >> serial;
-                if (!ss.fail() && i < d.units.size()) d.units[i].occupying = serial;
-            }
-            else if (line.rfind("output ", 0) == 0) {
-                std::istringstream ss(line.substr(7));
-                SaveStorage st;
-                ss >> st.prop >> st.slot >> st.item >> st.count;
-                if (!ss.fail()) d.output.push_back(st);
-            }
-            else if (line.rfind("fuel ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                SaveFuel f;
-                ss >> f.prop >> f.hours >> f.progress;
-                if (!ss.fail()) {
-                    if (!(ss >> f.item)) f.item = 0;   // older saves end before the item
-                    d.fuel.push_back(f);
-                }
-            }
-            else if (line.rfind("faction ", 0) == 0) {
-                std::istringstream ss(line.substr(8));
-                size_t i = 0;
-                int f = 0;
-                ss >> i >> f;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasFaction = true;
-                    d.units[i].faction = std::max(0, f);   // an id no longer listed is mapped when the unit loads
-                }
-            }
-            else if (line.rfind("koby ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                int f = -1;
-                ss >> i >> f;
-                if (!ss.fail() && i < d.units.size()) d.units[i].koFaction = f;
-            }
-            else if (line.rfind("routine ", 0) == 0) {
-                std::istringstream ss(line.substr(8));
-                size_t i = 0;
-                int on = 1, item = 0;
-                float sx = 0.0f, sz = 0.0f, gx = 0.0f, gz = 0.0f;
-                ss >> i >> on >> item >> sx >> sz >> gx >> gz;
-                if (!ss.fail() && i < d.units.size() && item > 0) {
-                    SaveUnit& u = d.units[i];
-                    u.hasRoutine = true;
-                    u.routineOn = on != 0;
-                    u.routineItem = item;
-                    u.storeX = sx;
-                    u.storeZ = sz;
-                    u.gatherX = gx;
-                    u.gatherZ = gz;
-                }
-            }
-            else if (line.rfind("modes ", 0) == 0) {
-                std::istringstream ss(line.substr(6));
-                size_t i = 0;
-                int pa = 0, bl = 0, sn = 0;
-                ss >> i >> pa >> bl >> sn;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].passive = pa != 0;
-                    d.units[i].block = bl != 0;
-                    d.units[i].sneak = sn != 0;
-                }
-            }
-            else if (line.rfind("rep ", 0) == 0) {
-                std::istringstream ss(line.substr(4));
-                int f = 0, v = 0;
-                ss >> f >> v;
-                if (!ss.fail() && f > 0) d.reputation[f] = std::clamp(v, -100, 100);
-            }
-            else if (line.rfind("mob ", 0) == 0) {
-                std::istringstream ss(line.substr(4));
-                size_t i = 0;
-                int kind = 0;
-                ss >> i >> kind;
-                if (!ss.fail() && i < d.units.size() && kind >= 1 && kind <= MOB_KIND_COUNT) d.units[i].mob = kind;
-            }
-            else if (line.rfind("home ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                float x = 0.0f, z = 0.0f;
-                int back = 0;
-                ss >> i >> x >> z >> back;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasHome = true;
-                    d.units[i].homeX = x;
-                    d.units[i].homeZ = z;
-                    d.units[i].homeReturning = back != 0;
-                }
-            }
-            else if (line.rfind("body ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                int b = 0;
-                ss >> i >> b;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasBody = true;
-                    d.units[i].body = std::clamp(b, 0, 2);
-                }
-            }
-            else if (line.rfind("stats ", 0) == 0) {
-                std::istringstream ss(line.substr(6));
-                size_t i = 0;
-                // A save from before a stat was added ends early: the stats it has are kept, and the new ones start fresh
-                Stats st = defaultStats();
-                ss >> i;
-                const bool hasUnit = !ss.fail();
-                // Version 4 took four stats out: these were their places
-                size_t to = 0;
-                int xp = 0;
-                for (int place = 0; to < st.xp.size() && ss >> xp; ++place) {
-                    if (d.version < 4 && (place == 3 || place == 8 || place == 9 || place == 10)) continue;
-                    st.xp[to++] = xp;
-                }
-                if (hasUnit && i < d.units.size()) {
-                    d.units[i].hasStats = true;
-                    d.units[i].stats = st;
-                }
-            }
-            else if (line.rfind("behaviors ", 0) == 0) {
-                std::istringstream ss(line.substr(10));
-                size_t i = 0;
-                ss >> i;
-                if (!ss.fail() && i < d.units.size()) {
-                    d.units[i].hasBehaviors = true;
-                    int whole = 0;   // older saves have no flag
-                    if (ss >> whole) d.units[i].behaviorsWhole = whole != 0;
-                }
-            }
-            // An older save's "behavior" lines were the rules that came before: they are left out, and the unit gets
-            // the default behaviors
-            else if (line.rfind("task ", 0) == 0) {
-                std::istringstream ss(line.substr(5));
-                size_t i = 0;
-                int on = 0, kind = 0, propKind = -1;
-                SaveBehavior b;
-                ss >> i >> on >> kind >> propKind >> b.x >> b.z;
-                if (!ss.fail() && i < d.units.size() && d.units[i].behaviors.size() < (size_t)BEHAVIOR_LIMIT) {
-                    int percent = BEHAVIOR_NEED_PERCENT;   // a save from before the percent could be set has none
-                    if (!(ss >> percent)) percent = BEHAVIOR_NEED_PERCENT;
-                    b.rule = behaviorFromFields(on, kind, propKind, percent);
-                    d.units[i].behaviors.push_back(b);
-                }
-            }
-        }
-    } catch (...) {
-        return false;   // a bad number in the file
-    }
-    // Version 3 took kinds 33 to 37 (the foundations and the Vault) out of PropKind, and the ones after them moved down
-    if (d.version < 3) {
-        for (SaveBuilt& b : d.built) {
-            if (b.kind >= 33 && b.kind <= 37) b.kind = -1;
-            else if (b.kind > 37) b.kind -= 5;
+    Line l{ {}, d };
+    std::string text, key;
+    int number = 0;
+    while (std::getline(in, text)) {
+        ++number;
+        if (!text.empty() && text.back() == '\r') text.pop_back();
+        l.ss = std::istringstream(text);
+        l.ss >> key;
+        const auto it = handlers().find(key);
+        if (it == handlers().end() || !it->second(l)) {
+            SDL_Log("%s: bad line %d: %s", path.c_str(), number, text.c_str());
+            return false;
         }
     }
-    return true;
+    if (!l.ended) SDL_Log("%s: the file ends early", path.c_str());
+    return l.ended;
 }
-
-namespace {
-
-// Reads the lines at the top of a save, which end where the units begin
-bool readSaveHeader(const std::string& path, SaveSummary& s) {
-    std::ifstream in(fs::u8path(path));
-    if (!in) return false;
-    s.path = path;
-    try {
-        std::string line;
-        while (std::getline(in, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line.rfind("unit ", 0) == 0) break;
-            if (line.rfind("name=", 0) == 0) s.name = line.substr(5);
-            else if (line.rfind("timestamp=", 0) == 0) s.timestamp = std::stoll(line.substr(10));
-            else if (line.rfind("autosave=", 0) == 0) s.autosave = line.substr(9) == "1";
-        }
-    } catch (...) {
-        return false;   // a bad number in the file
-    }
-    return true;
-}
-
-} // namespace
 
 std::vector<SaveSummary> listSaves() {
     std::vector<SaveSummary> out;
@@ -610,7 +448,7 @@ std::string nextAutosavePath() {
         std::error_code ec;
         if (!fs::exists(fs::u8path(p), ec)) return p;
         SaveSummary s;
-        long long ts = readSaveHeader(p, s) ? s.timestamp : 0;
+        const long long ts = readSaveHeader(p, s) ? s.timestamp : 0;
         if (ts < oldest) { oldest = ts; best = p; }
     }
     return best;

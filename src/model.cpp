@@ -9,14 +9,12 @@
 #include <limits>
 #include <string>
 
-// tinygltf needs its image decoder compiled exactly once, so it's enabled here.
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
 namespace {
-
 struct Accessor {
     const unsigned char* data = nullptr;
     size_t count = 0;
@@ -41,7 +39,6 @@ bool getAccessor(const tinygltf::Model& g, int index, Accessor& out) {
     return true;
 }
 
-// Reads one index of any unsigned integer type
 GLuint readIndex(const Accessor& a, size_t i) {
     const unsigned char* p = a.data + i * a.stride;
     switch (a.compType) {
@@ -58,8 +55,7 @@ GLuint readIndex(const Accessor& a, size_t i) {
     }
     }
 }
-
-} // namespace
+}
 
 bool loadGLBModel(const char* path, Model& m) {
     tinygltf::Model gltf;
@@ -77,7 +73,6 @@ bool loadGLBModel(const char* path, Model& m) {
         return false;
     }
 
-    // Embedded images -> GL textures
     std::vector<GLuint> imageTex(gltf.images.size(), 0);
     for (size_t i = 0; i < gltf.images.size(); ++i) {
         const tinygltf::Image& img = gltf.images[i];
@@ -87,7 +82,6 @@ bool loadGLBModel(const char* path, Model& m) {
         m.textures.push_back(imageTex[i]);
     }
 
-    // 1x1 texture for primitives with a plain color instead of a texture
     auto solid = [&](unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
         unsigned char px[4] = { r, g, b, a };
         GLuint t = makeTexture2D(1, 1, GL_RGBA, GL_RGBA, px, GL_LINEAR, GL_REPEAT);
@@ -96,7 +90,7 @@ bool loadGLBModel(const char* path, Model& m) {
     };
     auto toByte = [](double v) { return (unsigned char)(std::max(0.0, std::min(1.0, v)) * 255.0); };
 
-    std::vector<float> verts;     // 5 floats per vertex
+    std::vector<float> verts;
     std::vector<GLuint> indices;
     const float inf = std::numeric_limits<float>::infinity();
     float minX = inf, minY = inf, minZ = inf, maxX = -inf, maxY = -inf, maxZ = -inf;
@@ -140,7 +134,6 @@ bool loadGLBModel(const char* path, Model& m) {
             }
             GLsizei count = (GLsizei)indices.size() - firstIndex;
 
-            // The base color texture if there is one, otherwise the material's color
             GLuint tex = 0;
             if (prim.material >= 0 && prim.material < (int)gltf.materials.size()) {
                 const tinygltf::Material& mat = gltf.materials[prim.material];
@@ -170,7 +163,6 @@ bool loadGLBModel(const char* path, Model& m) {
 
     m.minX = minX; m.minY = minY; m.minZ = minZ;
     m.maxX = maxX; m.maxY = maxY; m.maxZ = maxZ;
-    // Positions and triangles kept for picking
     m.positions.reserve(verts.size() / 5 * 3);
     for (size_t i = 0; i + 4 < verts.size(); i += 5) m.positions.insert(m.positions.end(), { verts[i], verts[i + 1], verts[i + 2] });
     m.triangles = indices;

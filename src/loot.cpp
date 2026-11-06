@@ -1,4 +1,3 @@
-// Looting an Unconscious unit or a corpse, and what a unit may hold.
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -8,7 +7,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     if (!outCold(w, target) || !tt) return false;
     for (Entity u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
-        if (w.has<Mob>(u)) continue;   // a mob takes nothing (mobs.h)
+        if (w.has<Mob>(u)) continue;
         clearOrders(w, u);
         walkSolo(w, t, u, Vec2{ tt->x, tt->z });
         w.add(u, LootOrder{ target });
@@ -17,7 +16,6 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
     return false;
 }
 
-// Walking to loot: in reach, the game opens the panel
 void systems_detail::lootOrderSystem(World& w, CarryEvents& ev) {
     for (Entity u : w.view<LootOrder, Transform>()) {
         const Entity target = w.get<LootOrder>(u)->target;
@@ -52,7 +50,7 @@ bool inventoryLocked(World& w, Entity unit) {
 bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::string& why) {
     Inventory* into = w.get<Inventory>(looter);
     if (!into || !outCold(w, target)) return false;
-    if (w.has<Mob>(looter)) {   // a mob takes nothing but what it was born with
+    if (w.has<Mob>(looter)) {
         why = lang("MISC_MOB_CANT_HOLD");
         return false;
     }
@@ -83,7 +81,6 @@ bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::
     }
     queueUnitLabel(looter, itemGainLabelFor(count, item));
     queueSound(Sfx::Take);
-    // Anything taken out of an Unconscious mob kills it: it goes to 0 health and its Dying completes at once
     if (w.has<Mob>(target) && !w.has<Corpse>(target)) {
         if (Needs* n = w.get<Needs>(target)) {
             n->hp = 0;

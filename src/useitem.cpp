@@ -1,3 +1,4 @@
+#include <SDL3/SDL.h>
 #include "useitem.h"
 #include <algorithm>
 #include <cctype>
@@ -10,8 +11,6 @@
 #include "language.h"
 
 namespace {
-
-// Reads one statement such as "health +50", "hunger -10" or "attack +10 for 60s"
 bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     const std::string s = trim(raw);
 
@@ -41,7 +40,6 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     e.amount = std::stoi(s.substr(digitsAt, i - digitsAt));
     if (negative) e.amount = -e.amount;
 
-    // Optional duration, "for 60s". Only attack takes one, and attack must have one.
     while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;
     if (i == s.size()) {
         if (e.stat == UseEffect::Stat::Attack) {
@@ -64,8 +62,7 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     e.seconds = (float)seconds;
     return true;
 }
-
-} // namespace
+}
 
 bool parseUseScript(const std::string& script, std::vector<UseEffect>& out, std::string& err) {
     out.clear();
@@ -73,7 +70,7 @@ bool parseUseScript(const std::string& script, std::vector<UseEffect>& out, std:
 
     std::string piece;
     auto finish = [&]() -> bool {
-        if (trim(piece).empty()) {   // an empty statement, such as one after a trailing ';', is fine
+        if (trim(piece).empty()) {
             piece.clear();
             return true;
         }
@@ -146,25 +143,21 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
 
     const ItemDef* def = findItem(s.item);
     if (!def || def->typeId != "consumable" || def->onUse.empty()) return UseResult::NotUsable;
-    // An Unconscious unit can't eat or drink, and nothing heals it until it wakes (systems.h, unconsciousSystem)
     if (outCold(w, target) || outCold(w, consumer)) return UseResult::NotUsable;
 
     std::vector<UseEffect> effects;
     std::string err;
     if (!parseUseScript(def->onUse, effects, err)) {
-        std::fprintf(stderr, "items: bad use script on %s: %s\n", def->name.c_str(), err.c_str());
+        SDL_Log("Bad use script on %s: %s", def->name.c_str(), err.c_str());
         return UseResult::NotUsable;
     }
     if (effects.empty()) return UseResult::NotUsable;
-    // A mob can't use healing items, on itself or another, nor have one used on it (mobs.h)
     if (w.has<Mob>(target) || w.has<Mob>(consumer)) {
         for (const UseEffect& e : effects) {
             if (e.stat == UseEffect::Stat::Health && e.amount > 0) return UseResult::NotUsable;
         }
     }
 
-    // The effects land on the target. The healing scales with the consumer's Medical skill, and the Medical XP
-    // from it goes to the consumer.
     UseTarget t;
     t.needs = w.get<Needs>(target);
     t.combat = w.get<Combat>(target);
@@ -173,16 +166,12 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     }
     const int hpBefore = t.needs ? t.needs->hp : 0, hungerBefore = t.needs ? t.needs->hunger : 0;
     const int restored = applyUse(effects, t);
-    // Over the target's head, one label for each stat the item touched, in the order its script names them, with what
-    // it actually changed: "Health +15", "Hunger +30", "Attack +10"
     std::vector<UseEffect::Stat> shown;
     int attack = 0;
     for (const UseEffect& e : effects) {
         if (e.stat == UseEffect::Stat::Attack) attack += e.amount;
         if (std::find(shown.begin(), shown.end(), e.stat) == shown.end()) shown.push_back(e.stat);
     }
-    // A loss ("Health -10") is red. One that changed nothing still shows its sign: "Hunger -0" for a unit already
-    // starving, in red, as a poison is still a poison.
     auto nominal = [&](UseEffect::Stat st) {
         int sum = 0;
         for (const UseEffect& e : effects) sum += e.stat == st ? e.amount : 0;
@@ -198,9 +187,7 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
         else if (st == UseEffect::Stat::Hunger && t.needs) show(st, "UILABEL_HUNGER", t.needs->hunger - hungerBefore);
         else if (st == UseEffect::Stat::Attack && t.combat) show(st, "UILABEL_ATTACK", attack);
     }
-    // And under them, over the one who used it, the item it used up
     queueUnitLabel(consumer, itemLossLabelFor(1, s.item), true);
-    // Its sound: hurt by it, or food eaten, or anything else drunk
     {
         bool hurt = false, food = false;
         for (const UseEffect& e : effects) {

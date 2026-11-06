@@ -3,19 +3,11 @@
 #include <vector>
 #include "behavior.h"
 #include "components.h"
+#include "hostility.h"
 #include "items.h"
 #include "useitem.h"
 
 namespace {
-
-// A unit's faction (factions.h); the Player Faction for one with none
-int factionIdOf(World& w, Entity e) {
-    if (const Faction* f = w.get<Faction>(e)) return f->id;
-    if (w.has<Commandable>(e)) return FACTION_PLAYER;
-    return w.has<Hostile>(e) ? FACTION_RED : FACTION_GREEN;
-}
-
-// Whether a unit has a behavior of this kind switched on
 bool hasOn(const Behaviors& b, BehaviorKind kind) {
     for (const BehaviorRule& r : b.rules) {
         if (r.kind == kind && r.on) return true;
@@ -23,16 +15,13 @@ bool hasOn(const Behaviors& b, BehaviorKind kind) {
     return false;
 }
 
-// Whether a unit can act at all: not out cold, carried or at 0 health
 bool canAct(World& w, Entity e) {
     const Needs* n = w.get<Needs>(e);
     return n && n->hp > 0 && !outCold(w, e) && !w.has<Carried>(e);
 }
 
-// The share of a stat a unit has, as a whole percent
 int valueOf(const Needs& n, bool food) { return food ? percentOf(n.hunger, n.maxHunger) : percentOf(n.hp, n.maxHp); }
 
-// The slot of a unit's item that restores the most of the stat, or -1 when it carries none
 int bestSlot(World& w, Entity unit, bool food) {
     const Inventory* inv = w.get<Inventory>(unit);
     if (!inv) return -1;
@@ -53,8 +42,6 @@ int bestSlot(World& w, Entity unit, bool food) {
     return best;
 }
 
-// Uses the item in the giver's slot on the taker, and logs it. The giver is the taker itself, or a unit sharing with
-// it. False if the item could not be used, so nothing happened.
 bool consume(World& w, Entity giver, Entity taker, int slot, bool food, GameLog& log) {
     const Inventory* inv = w.get<Inventory>(giver);
     const ItemDef* def = inv ? findItem(inv->slots[slot].item) : nullptr;
@@ -75,8 +62,6 @@ bool consume(World& w, Entity giver, Entity taker, int slot, bool food, GameLog&
     return true;
 }
 
-// Share: the unit within range that can give the taker an item for the stat, or NULL_ENTITY. The one that needs it
-// least gives.
 Entity sharerFor(World& w, Entity taker, bool food, int takerValue, float range) {
     const Transform* tt = w.get<Transform>(taker);
     if (!tt) return NULL_ENTITY;
@@ -95,9 +80,6 @@ Entity sharerFor(World& w, Entity taker, bool food, int takerValue, float range)
     return best;
 }
 
-// Eat or Heal for one unit: below its percent, it uses its own best item, or with Share on takes one from a unit
-// sharing with it, or walks to one a little farther off. True when it is in need and nothing could be used, so the
-// behavior waits before trying again; r.why says why.
 bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r, GameLog& log) {
     const bool food = r.kind == BehaviorKind::Eat;
     const int v = valueOf(*w.get<Needs>(actor), food);
@@ -121,14 +103,13 @@ bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r, GameLog& 
     r.why = BehaviorWait::NoItem;
     return true;
 }
-
-} // namespace
+}
 
 bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
     if (g == taker || !canAct(w, g)) return false;
     const Behaviors* gb = w.get<Behaviors>(g);
     if (!gb || !hasOn(*gb, BehaviorKind::Share)) return false;
-    if (!factionsAllied(factionIdOf(w, taker), factionIdOf(w, g))) return false;
+    if (!factionsAllied(factionOf(w, taker), factionOf(w, g))) return false;
     const Needs* gn = w.get<Needs>(g);
     return gn && valueOf(*gn, food) > takerValue && bestSlot(w, g, food) >= 0;
 }
@@ -138,27 +119,24 @@ size_t behaviorSystem(World& w, GameLog& log, float dt) {
     for (Entity actor : w.view<Behaviors, Needs>()) {
         Behaviors* b = w.get<Behaviors>(actor);
         Needs* n = w.get<Needs>(actor);
-        // Every behavior is checked when the list was edited, otherwise only those whose stat changed or whose wait
-        // after a failed try has run out
         const bool all = b->pending;
         const unsigned changed = n->changed;
         b->pending = false;
         n->changed = 0;
         for (BehaviorRule& r : b->rules) {
-            if (isAutoStep(r.kind)) continue;   // the automation counts down its own (Rest too)
+            if (isAutoStep(r.kind)) continue;
             const bool waited = r.cooldown > 0.0f && (r.cooldown -= dt) <= 0.0f;
             if (!r.on || !hasPercent(r.kind)) {
                 r.why = BehaviorWait::None;
                 continue;
             }
-            if (!canAct(w, actor)) continue;   // out cold, carried or downed: it does nothing
+            if (!canAct(w, actor)) continue;
             const bool food = r.kind == BehaviorKind::Eat;
             const bool statChanged = (changed & (food ? NEEDS_HUNGER_CHANGED : NEEDS_HP_CHANGED)) != 0;
             if (r.cooldown > 0.0f || (!all && !statChanged && !waited)) continue;
             ++checked;
             if (needFailed(w, actor, *b, r, log)) r.cooldown = BEHAVIOR_RETRY_SECONDS;
         }
-        // The walk to a sharer is dropped once no need is waiting on it
         bool seeking = false;
         for (const BehaviorRule& r : b->rules) seeking = seeking || (r.on && r.why == BehaviorWait::WalkingToShare);
         if (!seeking) b->seek = NULL_ENTITY;

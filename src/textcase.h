@@ -2,13 +2,11 @@
 #include <cctype>
 #include <string>
 
-// The text in lower case (ASCII letters only; other bytes are kept as they are)
 inline std::string toLower(std::string s) {
     for (char& c : s) c = (char)std::tolower((unsigned char)c);
     return s;
 }
 
-// The text with the whitespace at both ends removed
 inline std::string trim(const std::string& s) {
     size_t a = 0, b = s.size();
     while (a < b && std::isspace((unsigned char)s[a])) ++a;
@@ -16,10 +14,6 @@ inline std::string trim(const std::string& s) {
     return s.substr(a, b - a);
 }
 
-// Upper case for UTF-8 text, for the title screen's and menus' capital-letter labels. It covers the letters of the
-// game's languages that have case: Latin (with Latin-1, Latin Extended-A, Romanian and Vietnamese letters), Greek and
-// Cyrillic. Everything else (CJK, Thai, Arabic, digits, punctuation) is left as it is, and so is a byte sequence that is
-// not valid UTF-8.
 inline std::string uiUpper(const std::string& in) {
     std::string out;
     out.reserve(in.size());
@@ -44,25 +38,25 @@ inline std::string uiUpper(const std::string& in) {
         }
         unsigned up = cp;
         if (cp >= 'a' && cp <= 'z') up = cp - 32;
-        else if (cp >= 0xE0 && cp <= 0xFE && cp != 0xF7) up = cp - 0x20;                        // Latin-1
+        else if (cp >= 0xE0 && cp <= 0xFE && cp != 0xF7) up = cp - 0x20;
         else if (cp == 0xFF) up = 0x178;
-        else if (cp >= 0x100 && cp <= 0x137 && (cp & 1)) up = cp - 1;                           // Latin Extended-A
+        else if (cp >= 0x100 && cp <= 0x137 && (cp & 1)) up = cp - 1;
         else if (cp >= 0x139 && cp <= 0x148 && !(cp & 1)) up = cp - 1;
         else if (cp >= 0x14A && cp <= 0x177 && (cp & 1)) up = cp - 1;
         else if ((cp == 0x17A || cp == 0x17C || cp == 0x17E)) up = cp - 1;
         else if (cp == 0x131) up = 'I';
-        else if (cp == 0x1A1 || cp == 0x1B0) up = cp - 1;                                        // Vietnamese ơ ư
-        else if (cp >= 0x218 && cp <= 0x21B && (cp & 1)) up = cp - 1;                           // Romanian ș ț
-        else if (cp >= 0x3B1 && cp <= 0x3C9 && cp != 0x3C2) up = cp - 0x20;                    // Greek
+        else if (cp == 0x1A1 || cp == 0x1B0) up = cp - 1;
+        else if (cp >= 0x218 && cp <= 0x21B && (cp & 1)) up = cp - 1;
+        else if (cp >= 0x3B1 && cp <= 0x3C9 && cp != 0x3C2) up = cp - 0x20;
         else if (cp == 0x3C2) up = 0x3A3;
         else if (cp == 0x3AC) up = 0x386;
         else if (cp >= 0x3AD && cp <= 0x3AF) up = cp - 0x25;
         else if (cp == 0x3CC) up = 0x38C;
         else if (cp == 0x3CD || cp == 0x3CE) up = cp - 0x3F;
-        else if (cp >= 0x430 && cp <= 0x44F) up = cp - 0x20;                                    // Cyrillic
+        else if (cp >= 0x430 && cp <= 0x44F) up = cp - 0x20;
         else if (cp >= 0x450 && cp <= 0x45F) up = cp - 0x50;
         else if (cp == 0x491) up = 0x490;
-        else if (cp >= 0x1EA0 && cp <= 0x1EFF && (cp & 1)) up = cp - 1;                         // Vietnamese
+        else if (cp >= 0x1EA0 && cp <= 0x1EFF && (cp & 1)) up = cp - 1;
         if (up == cp) {
             out.append(in, i, len);
         } else if (up < 0x80) {

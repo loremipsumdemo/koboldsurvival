@@ -1,40 +1,32 @@
-// How hunger, rest and comfort change with the in-game time.
 #include "systems_internal.h"
 
 using namespace systems_detail;
 
 void needsSystem(World& w, int hours, double gameSeconds) {
     for (Entity e : w.view<Needs>()) {
-        if (w.has<Corpse>(e)) continue;   // a corpse needs nothing
+        if (w.has<Corpse>(e)) continue;
         Needs* n = w.get<Needs>(e);
         const bool mob = w.has<Mob>(e);
         const double gameHours = gameSeconds / 3600.0;
         if (mob) {
-            // A mob has no hunger, Rested or Comfort
             n->hunger = n->maxHunger = 0;
             n->rested = n->maxRested = 0;
             n->comfort = n->maxComfort = 0;
             n->hurried = false;
         } else {
-            // The most Rested follows Vitality. A unit that was fully rested stays fully rested as it grows.
             if (const int maxR = maxRestedFor(statsOf(w, e)); maxR != n->maxRested) {
                 const bool full = n->rested >= n->maxRested;
                 n->maxRested = maxR;
                 n->rested = full ? maxR : std::min(n->rested, maxR);
             }
-            // A unit that moved at run pace in the hour that just ended pays double for its next tick. The mark is
-            // used up here, so later hours cost the usual amount.
             int ticks = hours;
             if (hours > 0 && n->hurried) {
                 ticks += 1;
                 n->hurried = false;
             }
             tickNeeds(*n, ticks);
-            // An Exile never goes hungry
             if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_EXILE) n->hunger = n->maxHunger;
 
-            // Rested rises lying in a bed or bedroll and falls while awake anywhere else; Comfort rises in a seat or
-            // bed without a lock and falls anywhere else
             const Entity seat = occupiedProp(w, e);
             const Prop* sp = seat != NULL_ENTITY ? w.get<Prop>(seat) : nullptr;
             const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
@@ -45,7 +37,6 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                       gameHours);
         }
 
-        // An Unconscious unit does not heal: it gets a little health when it wakes
         if (outCold(w, e)) continue;
         const Combat* c = w.get<Combat>(e);
         regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds, mob);

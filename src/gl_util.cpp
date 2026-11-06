@@ -2,8 +2,6 @@
 #include <SDL3/SDL.h>
 
 namespace {
-
-// A compiled shader, or 0 with the error in log.txt. name says which program it is for.
 GLuint compileShader(GLenum type, const char* src, const char* name) {
     GLuint s = glCreateShader(type);
     glShaderSource(s, 1, &src, nullptr);
@@ -20,8 +18,7 @@ GLuint compileShader(GLenum type, const char* src, const char* name) {
     }
     return s;
 }
-
-} // namespace
+}
 
 GLuint linkProgram(const char* name, const char* vs, const char* fs) {
     const GLuint v = compileShader(GL_VERTEX_SHADER, vs, name);

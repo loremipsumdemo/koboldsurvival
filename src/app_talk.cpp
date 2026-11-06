@@ -10,24 +10,24 @@ void App::sayAs(Entity who, const std::string& text, bool player) {
     ln.speaker = known ? nameOf(world, who) : std::string(player ? lang("MISC_YOU") : lang("UILABEL_UNNAMED_UNIT"));
     const UnitSprite* us = known ? world.get<UnitSprite>(who) : nullptr;
     ln.sprite = us ? us->id : 1;
-    dialogueConvo.push_back(ln);
+    session.dialogueConvo.push_back(ln);
     gameLog.say(ln.speaker + ": " + text);
 }
 
 void App::endTalk() {
-    talkCooldown = TALK_COOLDOWN;
-    tradeOpen = false;
-    freeTrade = false;
+    session.talkCooldown = TALK_COOLDOWN;
+    session.tradeOpen = false;
+    session.freeTrade = false;
     clearTradeTable();
-    quantity.open = false;
-    dialogueUnit = NULL_ENTITY;
-    dialogueConvo.clear();
+    session.quantity.open = false;
+    session.dialogueUnit = NULL_ENTITY;
+    session.dialogueConvo.clear();
 }
 
 void App::requestTrade(bool npcSide, Entity owner, int slot) {
     const Inventory* inv = world.get<Inventory>(owner);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS || inv->slots[slot].item == 0) return;
-    std::vector<TradeGhost>& side = npcSide ? tradeNpc : tradePlayer;
+    std::vector<TradeGhost>& side = npcSide ? session.tradeNpc : session.tradePlayer;
     const int item = inv->slots[slot].item;
     if (inv->slots[slot].count <= 1) {
         if (tradeAddItems(side, *inv, slot, 1) == 0) refuse(lang("MISC_TRADE_ALREADY"));
@@ -38,47 +38,47 @@ void App::requestTrade(bool npcSide, Entity owner, int slot) {
         refuse(lang("MISC_TRADE_NO_MORE"));
         return;
     }
-    quantity = QuantityPrompt{ true, npcSide, owner, slot, item, itemNameOf(item), 1, avail };
+    session.quantity = QuantityPrompt{ true, npcSide, owner, slot, item, itemNameOf(item), 1, avail };
 }
 
 void App::confirmQuantity() {
-    if (quantity.toStorage) {
+    if (session.quantity.toStorage) {
         std::string why;
-        if (storageProp != NULL_ENTITY && quantity.owner == storageUnit &&
-            storeCountInStorage(world, quantity.slot, quantity.chosen, why)) {
+        if (session.storageProp != NULL_ENTITY && session.quantity.owner == session.storageUnit &&
+            storeCountInStorage(world, session.quantity.slot, session.quantity.chosen, why)) {
             queueSound(Sfx::ItemMove);
         } else if (!why.empty()) {
             refuse(why);
         }
-        quantity.open = false;
+        session.quantity.open = false;
         return;
     }
-    const Inventory* inv = world.get<Inventory>(quantity.owner);
-    std::vector<TradeGhost>& side = quantity.npcSide ? tradeNpc : tradePlayer;
-    const int added = inv ? tradeAddItems(side, *inv, quantity.slot, quantity.chosen) : 0;
+    const Inventory* inv = world.get<Inventory>(session.quantity.owner);
+    std::vector<TradeGhost>& side = session.quantity.npcSide ? session.tradeNpc : session.tradePlayer;
+    const int added = inv ? tradeAddItems(side, *inv, session.quantity.slot, session.quantity.chosen) : 0;
     if (added == 0) refuse(lang("MISC_TRADE_FULL"));
-    quantity.open = false;
+    session.quantity.open = false;
 }
 
 void App::quantityClick(float qx, float qy) {
     const QuantityLayout ql = layoutQuantity(winW, winH);
-    const int cap = std::max(1, quantity.available);
-    auto nudge = [&](int by) { quantity.chosen = std::clamp(quantity.chosen + by, 1, cap); };
+    const int cap = std::max(1, session.quantity.available);
+    auto nudge = [&](int by) { session.quantity.chosen = std::clamp(session.quantity.chosen + by, 1, cap); };
     if (ql.minus100.contains(qx, qy)) nudge(-100);
     else if (ql.minus10.contains(qx, qy)) nudge(-10);
     else if (ql.minus1.contains(qx, qy)) nudge(-1);
     else if (ql.plus1.contains(qx, qy)) nudge(1);
     else if (ql.plus10.contains(qx, qy)) nudge(10);
     else if (ql.plus100.contains(qx, qy)) nudge(100);
-    else if (ql.single.contains(qx, qy)) quantity.chosen = 1;
-    else if (ql.max.contains(qx, qy)) quantity.chosen = cap;
+    else if (ql.single.contains(qx, qy)) session.quantity.chosen = 1;
+    else if (ql.max.contains(qx, qy)) session.quantity.chosen = cap;
     else if (ql.confirm.contains(qx, qy)) confirmQuantity();
-    else if (ql.cancel.contains(qx, qy)) quantity.open = false;
+    else if (ql.cancel.contains(qx, qy)) session.quantity.open = false;
 }
 
 void App::requestStore(int slot) {
-    const Inventory* inv = world.get<Inventory>(storageUnit);
-    const Storage* st = world.get<Storage>(storageProp);
+    const Inventory* inv = world.get<Inventory>(session.storageUnit);
+    const Storage* st = world.get<Storage>(session.storageProp);
     if (!inv || !st || slot < 0 || slot >= INVENTORY_SLOTS || inv->slots[slot].item == 0) return;
     const int item = inv->slots[slot].item;
     std::string why;
@@ -96,7 +96,7 @@ void App::requestStore(int slot) {
         refuse(lang("MISC_STORAGE_FULL"));
         return;
     }
-    quantity = QuantityPrompt{ true, false, storageUnit, slot, item,
+    session.quantity = QuantityPrompt{ true, false, session.storageUnit, slot, item,
                                itemNameOf(item), 1, cap, true };
 }
 
@@ -110,8 +110,7 @@ void App::showTraderInventory() {
 }
 
 void App::startTalk(Entity npc, Entity talker, bool shop) {
-    if (world.has<Mob>(npc) || world.has<Mob>(talker)) return;   // mobs have no dialogue (mobs.h)
-    // Only the talker starts the dialogue. The other selected units still walk to the NPC's spot.
+    if (world.has<Mob>(npc) || world.has<Mob>(talker)) return;
     std::vector<Entity> others;
     for (Entity u : selectedUnits(world)) {
         if (u != talker) others.push_back(u);
@@ -120,13 +119,12 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
     if (const Transform* nt = world.get<Transform>(npc); nt && !others.empty()) {
         issueMoveOrder(world, terrain, others, Vec2{ nt->x, nt->z });
     }
-    dialogueUnit = npc;
-    dialogueConvo.clear();
-    dialoguePlayer = talker;
+    session.dialogueUnit = npc;
+    session.dialogueConvo.clear();
+    session.dialoguePlayer = talker;
     playSfx(Sfx::TalkOpen);
     const Dialogue* dg = world.get<Dialogue>(npc);
     sayAs(npc, dg ? dg->text : std::string(lang("NPC_GREETING")), false);
-    // Shop: the trade option is picked at once, as if "Show me your wares" were clicked
     if (shop && dg) {
         for (const DialogueOption& o : dg->options) {
             if (!o.opensTrade) continue;
@@ -139,7 +137,7 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
 }
 
 void App::tryStartTalk(Entity npc, Entity talker, std::vector<Entity> units, bool shop) {
-    if (talkCooldown <= 0.0f) {
+    if (session.talkCooldown <= 0.0f) {
         startTalk(npc, talker, shop);
         return;
     }
@@ -151,20 +149,19 @@ void App::tryStartTalk(Entity npc, Entity talker, std::vector<Entity> units, boo
 }
 
 void App::startFreeTrade(Entity other, Entity unit) {
-    if (world.has<Mob>(other) || world.has<Mob>(unit)) return;   // mobs don't trade (mobs.h)
+    if (world.has<Mob>(other) || world.has<Mob>(unit)) return;
     clearTalkOrders(world);
     closeStorage();
-    contextMenu.open = false;
+    session.contextMenu.open = false;
     itemMenu.open = false;
-    quantity.open = false;
-    dialogueUnit = other;
-    dialoguePlayer = unit;
-    dialogueConvo.clear();
+    session.quantity.open = false;
+    session.dialogueUnit = other;
+    session.dialoguePlayer = unit;
+    session.dialogueConvo.clear();
     openTrade(true);
 }
 
 bool App::noteLockedIn(const std::vector<Entity>& units) {
-    // Unconscious ones can't do anything at all; say so when they are all there is
     bool anyAwake = false;
     for (Entity u : units) anyAwake = anyAwake || !outCold(world, u);
     if (!units.empty() && !anyAwake) {
@@ -180,20 +177,20 @@ bool App::noteLockedIn(const std::vector<Entity>& units) {
 }
 
 void App::chooseOption(size_t i) {
-    const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
+    const Dialogue* dg = world.get<Dialogue>(session.dialogueUnit);
     if (!dg || i >= dg->options.size()) return;
     const std::string prompt = dg->options[i].prompt, reply = dg->options[i].reply;
     const bool trade = dg->options[i].opensTrade;
-    sayAs(dialoguePlayer, prompt, true);
-    sayAs(dialogueUnit, reply, false);
+    sayAs(session.dialoguePlayer, prompt, true);
+    sayAs(session.dialogueUnit, reply, false);
     if (trade) {
         openTrade(false);
     }
 }
 
 void App::openTrade(bool free) {
-    tradeOpen = true;
+    session.tradeOpen = true;
     showTraderInventory();
-    freeTrade = free;
+    session.freeTrade = free;
     clearTradeTable();
 }

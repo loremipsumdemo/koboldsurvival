@@ -7,8 +7,6 @@
 #include <memory>
 
 namespace {
-
-// Copies one chunk out of a whole map. Tiles and corners past the map's edge are left empty.
 ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
     ChunkData c = emptyChunk(cx, cz);
     const int size = m.size, vs = size + 1;
@@ -34,7 +32,6 @@ ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
     return c;
 }
 
-// The default look and surface tiles, for a map that has none of its own
 const WorldSurface& DefaultSurface() {
     static const WorldSurface s = [] {
         WorldSurface d;
@@ -44,8 +41,7 @@ const WorldSurface& DefaultSurface() {
     }();
     return s;
 }
-
-} // namespace
+}
 
 Terrain::Terrain(int size) {
     load(flatMap(size));
@@ -69,7 +65,6 @@ void Terrain::load(const MapData& m) {
         }
     }
     findAreas();
-    // A premade map is stored in whole units, with the default look and tiles and no vegetation
     heightScale_ = 1.0f;
     floorY_ = m.heights.empty() ? -2.0f : *std::min_element(m.heights.begin(), m.heights.end()) - 2.0f;
     surface_ = DefaultSurface();
@@ -83,8 +78,6 @@ bool Terrain::openWorld(const std::string& folder, std::string& err) {
     if (!readWorldSurface(folder, surface, err)) return false;
     surface_ = std::move(surface);
     surfaceVersion_ = nextVersion_++;
-    // Chunks are read in world units (see readChunk), so the height scale is already applied and the
-    // sea floor, which world.txt gives in stored units, is converted here.
     heightScale_ = 1.0f;
     floorY_ = info.floorY / info.heightScale;
     size_ = info.size;
@@ -94,7 +87,6 @@ bool Terrain::openWorld(const std::string& folder, std::string& err) {
     streamed_ = true;
     folder_ = folder;
     info_ = info;
-    // A chunk missing from the file is empty sea: low and blocked, which is what the tables start as
     groundHeights_.assign((size_t)(size_ + 1) * (size_ + 1), 0.0f);
     groundWalk_.assign((size_t)size_ * size_, 0);
     ChunkData c;
@@ -175,12 +167,10 @@ const ChunkData* Terrain::tileChunk(int x, int y) const {
 int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) {
     if (!streamed_ || focuses.empty()) return 0;
 
-    // Each focus as a chunk coordinate
     std::vector<std::pair<int, int>> focusChunks;
     for (Vec2 f : focuses) {
         focusChunks.push_back({ (int)std::floor(f.x / CHUNK_TILES), (int)std::floor(f.z / CHUNK_TILES) });
     }
-    // Distance in chunks from (cx, cz) to the nearest focus, measured as a square
     auto distance = [&](int cx, int cz) {
         int best = INT_MAX;
         for (const auto& f : focusChunks) {
@@ -191,7 +181,6 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
 
     int changed = 0;
 
-    // Unload chunks that have fallen well outside the area
     for (int cz = 0; cz < cps_; ++cz) {
         for (int cx = 0; cx < cps_; ++cx) {
             auto& slot = chunks_[(size_t)cz * cps_ + cx];
@@ -202,7 +191,6 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
         }
     }
 
-    // Chunks to load: every unloaded chunk within radius of a focus, nearest first
     struct Want { int cx, cz, d; };
     std::vector<Want> want;
     for (const auto& f : focusChunks) {
@@ -221,9 +209,8 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
     for (const Want& w : want) {
         if (maxLoads > 0 && loaded >= maxLoads) break;
         auto& slot = chunks_[(size_t)w.cz * cps_ + w.cx];
-        if (slot) continue;   // the same chunk can be wanted by two focuses
+        if (slot) continue;
         auto c = std::make_unique<ChunkData>();
-        // A chunk missing from the file is empty sea
         if (!readChunk(folder_, info_, w.cx, w.cz, *c)) *c = emptyChunk(w.cx, w.cz);
         c->version = nextVersion_++;
         slot = std::move(c);
@@ -240,15 +227,15 @@ float Terrain::heightAt(float x, float z) const {
     const float fx = x - x0, fz = z - z0;
     const size_t rowH = (size_t)size_ + 1;
     const float* h = groundHeights_.data() + (size_t)z0 * rowH + x0;
-    const float ha = h[0];          // corner a: (0,0)
-    const float hb = h[1];          // corner b: (1,0)
-    const float hc = h[rowH];       // corner c: (0,1)
-    const float hd = h[rowH + 1];   // corner d: (1,1)
+    const float ha = h[0];
+    const float hb = h[1];
+    const float hc = h[rowH];
+    const float hd = h[rowH + 1];
 
     // The mesh splits each tile along the a-d diagonal into two planar triangles.
     // Sampling with the same split keeps units exactly on the drawn surface.
-    if (fz >= fx) return ha + fx * (hd - hc) + fz * (hc - ha);   // triangle a, c, d
-    return ha + fx * (hb - ha) + fz * (hd - hb);                 // triangle a, d, b
+    if (fz >= fx) return ha + fx * (hd - hc) + fz * (hc - ha);
+    return ha + fx * (hb - ha) + fz * (hd - hb);
 }
 
 bool Terrain::walkable(int x, int y) const {
@@ -259,7 +246,6 @@ bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     if (!inBounds(x, y)) return false;
     walkable = groundWalk_[(size_t)y * size_ + x] != 0;
 
-    // Average of the tile's four corners: the height at its center
     const size_t rowH = (size_t)size_ + 1;
     const float* h = groundHeights_.data() + (size_t)y * rowH + x;
     height = (h[0] + h[1] + h[rowH] + h[rowH + 1]) * 0.25f;
@@ -273,13 +259,11 @@ Biome Terrain::biome(int x, int y) const {
 }
 
 bool Terrain::isFree(float x, float z) const {
-    // The point must be on walkable ground, and no blocked tile may be within the clearance
     const int tx = (int)std::floor(x), tz = (int)std::floor(z);
     for (int dz = -1; dz <= 1; ++dz) {
         for (int dx = -1; dx <= 1; ++dx) {
             const int nx = tx + dx, nz = tz + dz;
             if (walkable(nx, nz)) continue;
-            // Distance from the point to the blocked tile's square
             const float cx = std::clamp(x, (float)nx, (float)nx + 1.0f);
             const float cz = std::clamp(z, (float)nz, (float)nz + 1.0f);
             const float ex = x - cx, ez = z - cz;
@@ -292,8 +276,6 @@ bool Terrain::isFree(float x, float z) const {
 Vec2 Terrain::snap(Vec2 p) const {
     if (isFree(p.x, p.z)) return p;
 
-    // Search outward in square rings, a quarter tile apart, up to 8 tiles. The nearest free point
-    // wins. Once a ring has a free point, rings up to sqrt(2) times as far out can still hold a nearer one.
     constexpr float STEP = 0.25f;
     constexpr int RINGS = 32;
     bool found = false;

@@ -6,16 +6,12 @@
 #include "map_file.h"
 
 namespace {
-
-// The picture is at most this many pixels a side, so a large world's picture stays small in memory
 constexpr int MAX_PICTURE_SIDE = 2048;
 
 struct Colour {
     float r, g, b;
 };
 
-// The colour of a tile's ground. Sea is blue, deepening with the depth below sea level. A tile with
-// no type above sea level is a plain olive green. Biome colours match the world map.
 Colour TileColour(Biome biome, float height) {
     switch (biome) {
     case Biome::Grass:        return {0.47f, 0.38f, 0.27f};
@@ -36,15 +32,13 @@ Colour TileColour(Biome biome, float height) {
     default: break;
     }
     if (biome == Biome::None && height > 0.0f) return {0.42f, 0.44f, 0.34f};
-    // Sea: shallow water at the shore, deep water further out
     const float depth = std::clamp(-height / 2.5f, 0.0f, 1.0f);
     const Colour shallow{0.24f, 0.48f, 0.62f}, deep{0.05f, 0.16f, 0.30f};
     return {shallow.r + (deep.r - shallow.r) * depth,
             shallow.g + (deep.g - shallow.g) * depth,
             shallow.b + (deep.b - shallow.b) * depth};
 }
-
-}  // namespace
+}
 
 void BuildOverview(int size, const ChunkSource& source, OverviewPicture& out, const std::atomic<bool>& cancel) {
     out = OverviewPicture{};

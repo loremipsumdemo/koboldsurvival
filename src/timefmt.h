@@ -3,8 +3,6 @@
 #include <ctime>
 #include <string>
 
-// ISO 8601 style, 24-hour local time, with milliseconds: "2026-10-17_08:24:05.123".
-// ms is milliseconds since 1970. Shared by the saves and the game world list.
 inline std::string timeString(long long ms) {
     std::time_t t = (std::time_t)(ms / 1000);
     std::tm tmv{};

@@ -54,7 +54,6 @@ public:
         Ref* r = ref(e);
         if (!r) return;
         const std::uint32_t at = r->slot - 1, d = r->dense;
-        // Off the packed list: its last entity takes the gap (only the id moves, never a component)
         const Entity last = dense_.back();
         dense_[d] = last;
         dense_.pop_back();
@@ -65,7 +64,6 @@ public:
         pages_[p]->ref[e & PAGE_MASK] = Ref{};
         if (--pages_[p]->used == 0) pages_[p].reset();
     }
-    // The entities that have this component, packed
     const std::vector<Entity>& entities() const { return dense_; }
     size_t size() const { return dense_.size(); }
 
@@ -74,8 +72,8 @@ private:
     static constexpr size_t PAGE_SIZE = size_t(1) << PAGE_BITS;
     static constexpr size_t PAGE_MASK = PAGE_SIZE - 1;
     struct Ref {
-        std::uint32_t slot = 0;    // 1 + the component's slot in pool_, or 0 when the entity has none
-        std::uint32_t dense = 0;   // the entity's index in dense_
+        std::uint32_t slot = 0;
+        std::uint32_t dense = 0;
     };
     struct Page {
         Ref ref[PAGE_SIZE] = {};
@@ -97,19 +95,17 @@ private:
 
 namespace ecs_detail {
 inline size_t nextTypeId = 0;
-// A small number for each component type, fixed for the run, so finding a type's store is an array read
 template <typename T>
 size_t typeId() {
     static const size_t id = nextTypeId++;
     return id;
 }
-} // namespace ecs_detail
+}
 
 class World {
 public:
     Entity create() { return next_++; }
 
-    // Removes the entity from every component storage
     void destroy(Entity e) {
         for (auto& storage : storages_) {
             if (storage) storage->remove(e);
@@ -125,11 +121,9 @@ public:
     template <typename T>
     bool has(Entity e) { return storage<T>().has(e); }
 
-    // Removes one component type from an entity, leaving the others
     template <typename T>
     void remove(Entity e) { storage<T>().remove(e); }
 
-    // How many entities have the component
     template <typename T>
     size_t count() { return storage<T>().size(); }
 

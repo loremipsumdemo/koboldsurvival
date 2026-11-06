@@ -1,28 +1,22 @@
-// Renderer: the 3D frame (sky, terrain, props, units, selection), the hover list, ground items and the build preview.
 #include "renderer_internal.h"
 #include "frustum.h"
 
 using namespace render_detail;
 
 namespace {
-
-// Whether the chunk under (x, z) is loaded. Items on unloaded ground are not drawn.
 bool groundLoaded(const Terrain& t, float x, float z) {
     const int cx = (int)std::floor(x / CHUNK_TILES), cz = (int)std::floor(z / CHUNK_TILES);
     return t.chunkAt(cx, cz) != nullptr;
 }
 
-// Thin square outline on the ground
 void outlineSquare(Batch& b, float cx, float y, float cz, float r, float t, RGBA c) {
     b.quad({ cx - r, y, cz - r }, { cx + r, y, cz - r }, { cx + r, y, cz - r + t }, { cx - r, y, cz - r + t }, c);
     b.quad({ cx - r, y, cz + r - t }, { cx + r, y, cz + r - t }, { cx + r, y, cz + r }, { cx - r, y, cz + r }, c);
     b.quad({ cx - r, y, cz - r }, { cx - r + t, y, cz - r }, { cx - r + t, y, cz + r }, { cx - r, y, cz + r }, c);
     b.quad({ cx + r - t, y, cz - r }, { cx + r, y, cz - r }, { cx + r, y, cz + r }, { cx + r - t, y, cz + r }, c);
 }
+}
 
-} // namespace
-
-// The ground items whose sprite covers the pixel, the same test groundItemAtPixel uses for sprites
 std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
                                                  int winW, int winH) {
     std::vector<Entity> out;
@@ -44,7 +38,6 @@ std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, con
 void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     if (!text_.hud) return;
 
-    // Only the lines whose text changed are made again. The text is white, and tinted to its colour when drawn.
     std::vector<std::string> texts;
     texts.reserve(lines.size());
     for (const HudEntry& e : lines) texts.push_back(e.text);
@@ -56,7 +49,6 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
 
     glDisable(GL_DEPTH_TEST);
 
-    // Dark panels behind the text
     Batch panels;
     float y = hudTop_;
     for (const TextLine& hl : hudLines) {
@@ -68,10 +60,9 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     }
     drawColorTris(panels, pixels);
 
-    // Text on top of each panel
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels.m);
-    y = hudTop_;   // the same top as the panels
+    y = hudTop_;
     for (size_t i = 0; i < hudLines.size(); ++i) {
         const TextLine& hl = hudLines[i];
         float x0 = margin + pad, x1 = x0 + hl.w;
@@ -93,10 +84,9 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
 void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH) {
     if (alpha <= 0.0f) return;
 
-    // Sits on the ground at the exact point the camera orbits around
     const float cx = cam.focusX, cz = cam.focusZ;
     const float cy = t.heightAt(cx, cz) + 0.03f;
-    const float outer = 0.5f, inner = 0.44f;     // about one tile across
+    const float outer = 0.5f, inner = 0.44f;
     const int segments = 48;
 
     Batch ring;
@@ -117,8 +107,6 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
                                  int winW, int winH) {
     if (alpha <= 0.0f) return;
 
-    // An eight-faced crystal: a point at the top and bottom, with a ring of four corners between.
-    // It floats a little above the ground, so it reads as a marker rather than part of the terrain.
     const float gy = t.heightAt(x, z);
     const float cy = gy + 0.55f, halfH = 0.45f, r = 0.22f;
     const V3 top{ x, cy + halfH, z };
@@ -129,7 +117,6 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
     for (int i = 0; i < 4; ++i) {
         const V3& a = corner[i];
         const V3& b = corner[(i + 1) % 4];
-        // Alternate brightness between faces so the facets read as separate planes
         const float shade = (i % 2 == 0) ? 1.0f : 0.8f;
         RGBA upper{ 0.6f * shade, 0.95f * shade, 1.0f, 0.95f * alpha };
         RGBA lower{ 0.3f * shade, 0.65f * shade, 0.95f, 0.95f * alpha };
@@ -149,15 +136,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     viewProj_ = cam.viewProj((float)winW / (float)winH);
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
-    // Sprites turn to face a point 200 units behind the camera, along its view axis
     constexpr float BILLBOARD_DISTANCE = 200.0f;
     const float cp = std::cos(cam.pitch);
     billX_ = ex + BILLBOARD_DISTANCE * std::sin(cam.yaw) * cp;
     billZ_ = ez + BILLBOARD_DISTANCE * std::cos(cam.yaw) * cp;
 
-    // 0. Sky: a gradient with a sun, sampled by view direction so it stays fixed while the camera moves
     {
-        // View matrix with the eye at the origin, so the sky only follows rotation
         Mat4 proj = cam.projection((float)winW / (float)winH);
         Mat4 viewRot = lookAt(0.0f, 0.0f, 0.0f,
                               cam.focusX - ex, cam.focusY - ey, cam.focusZ - ez,
@@ -165,8 +149,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float invSky[16];
         invert4x4(mul(proj, viewRot).m, invSky);
 
-        // Sun, moon, stars and sky colors come from the sky settings and the time of day.
-        // The sun rises at 06:00, peaks at noon and sets at 18:00. The moon sits opposite the sun.
         const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * PI;
         const float elev = std::sin(ang);
         float sunDir[3] = { std::cos(ang) * 0.4f, elev, std::cos(ang) * 0.9f };
@@ -218,17 +200,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glEnable(GL_DEPTH_TEST);
     }
 
-    // 1. Terrain
     glUseProgram(colorProgram_);
     glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
     drawTerrain(t, cam);
 
-    // 2. Sprites and models, each standing on the terrain at its entity's height
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
-    // Only what is in range and in the camera's view is drawn. Props with a model are gathered by kind and drawn
-    // instanced, one draw per part of each kind's model.
     const DetailRange detail(cam);
     const FrustumPlanes frustum = framePlanes(viewProj_);
     for (Entity e : w.view<Prop, Transform>()) {
@@ -238,28 +216,21 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
         const float baseY = propBaseY(w, e);
         const bool modelled = propModel(kind).vao != 0;
-        // Scaled so its largest side is its size (or a square that size), standing on baseY: inside this ball
         const float side = modelled ? propInfo(kind).size : missingPropSide(kind);
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) continue;
         if (modelled) {
             queuePropModel(kind, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
         } else {
-            // No model: a pink square as tall as the prop's size, standing on its spot and turned to the camera
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
     drawPropInstances();
 
-    // Standing units upright. An Unconscious unit lies on its side, half gray (a corpse all gray), on the ground or, if
-    // it is being carried, over its carrier's shoulders and in front of it.
     for (Entity e : w.view<Unit, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
-        // A unit is at most a few tiles tall, lying or carried over another's shoulders: a generous ball holds it
         const float tall = std::max(1.0f, unitHeight(w, e));
         if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;
-        // Everyone lies the same way, whatever laid it down (unitPose): half gray out cold, all gray as a corpse. A unit
-        // with a model is drawn by it, turned the way it walks; one whose model is missing, by its sprite.
         const UnitPose pose = unitPose(w, e);
         if (pose.lying) setSaturation(unitSaturation(w, e));
         if (const Model* m = unitModel(w, e)) {
@@ -279,7 +250,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     drawGroundItems(w, t, cam);
     drawBuildPreview(t);
 
-    // 3. Color overlays: selection rings and the drag box
     Batch rings;
     for (Entity e : w.view<Unit, Transform, Selected>()) {
         const Transform* tr = w.get<Transform>(e);
@@ -314,13 +284,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     glBindVertexArray(0);
 }
 
-// The placement preview: the footprint of the picked prop, as a grid of quarter-tile squares on the ground, lined in
-// red, and filled green where it can be placed or red where it can't. Only squares whose centre lies in the shape are
-// drawn, so the grid follows the shape.
 void Renderer::drawBuildPreview(const Terrain& t) {
     if (!buildPreview_.on && buildPreview_.ringR <= 0.0f) return;
-    const float lift = 0.04f;      // off the ground, so the grid does not flicker into it
-    const float lineW = 0.03f;     // a grid line, in tiles
+    const float lift = 0.04f;
+    const float lineW = 0.03f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift; };
     Batch b;
 
@@ -328,7 +295,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         const Footprint& f = propInfo(buildPreview_.kind).foot;
         const float x0 = buildPreview_.x, z0 = buildPreview_.z;
         const float reach = footprintReach(f);
-        const float cell = 0.25f;      // grid squares are a quarter of a tile
+        const float cell = 0.25f;
         const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
         const RGBA line{ 1.0f, 0.15f, 0.15f, 0.9f };
         auto strip = [&](float ax, float az, float bx, float bz) {
@@ -356,8 +323,6 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         }
     }
 
-    // The claim circle: a band a third of a tile wide, on the ground around the Altar's spot. While it shows, every
-    // other Altar's circle is drawn too, in white.
     auto ring = [&](float cx, float cz, float r, const RGBA& tone) {
         const float ro = r, ri = r - 0.3f;
         const int segments = 96;
@@ -384,14 +349,13 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 }
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
-    // Each item stands on its ground point, turned to the camera, half as tall as a unit
     for (Entity e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         const GroundItem* gi = w.get<GroundItem>(e);
         const TextTex* pic = itemTexture(gi->item);
         TextTex square = *pic;
-        square.aspect = 1.0f;   // item pictures are square, whatever size the file is
+        square.aspect = 1.0f;
         drawGlyph(square, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
     }
 }
@@ -405,8 +369,6 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
 
-    // The items on the screen, with their tile, sprite positions, names and squared distance from the camera. The name
-    // is looked up only for an item that is seen.
     struct Seen { std::pair<int, int> tile; Entity e; ItemOnScreen os; std::string name; float dist2; };
     std::vector<Seen> all;
     const DetailRange detail(cam);
@@ -421,7 +383,6 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         all.push_back(Seen{ { (int)std::floor(tr->x), (int)std::floor(tr->z) }, e, os,
                             itemNameOf(w.get<GroundItem>(e)->item), dist2 });
     }
-    // By tile, and on each tile in entity order, so the names keep the same places from frame to frame
     std::sort(all.begin(), all.end(), [](const Seen& a, const Seen& b) {
         return a.tile != b.tile ? a.tile < b.tile : a.e < b.e;
     });
@@ -434,7 +395,6 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         const size_t count = end - first;
         first = end;
 
-        // One box above the middle of the tile's items, one line per item, the widest name setting its width
         const float n = (float)count;
         float cx = 0.0f, top = 0.0f, maxW = 0.0f, nearest = seen[0].dist2;
         for (size_t k = 0; k < count; ++k) {
@@ -460,15 +420,12 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         }
         out.push_back(std::move(st));
     }
-    // Farthest first, so the nearest box is drawn last, on top
     std::stable_sort(out.begin(), out.end(),
                      [](const GroundStack& a, const GroundStack& b) { return a.dist2 > b.dist2; });
     return out;
 }
 
 bool Renderer::topLabelRow(const std::vector<GroundStack>& stacks, float mx, float my, size_t& stack, size_t& row) {
-    // The last stack is drawn on top, so search from the end. A box that covers the point without a
-    // name line under it hides the boxes behind it.
     for (size_t k = stacks.size(); k-- > 0;) {
         const GroundStack& st = stacks[k];
         for (size_t j = 0; j < st.rows.size(); ++j) {
@@ -485,14 +442,12 @@ bool Renderer::topLabelRow(const std::vector<GroundStack>& stacks, float mx, flo
 
 Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
                                    bool labels) {
-    // A name line in a label box picks its item. The box on top wins, so the nearer item is picked.
     if (labels) {
         const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
         size_t k = 0, j = 0;
         if (topLabelRow(stacks, mx, my, k, j)) return stacks[k].items[j];
     }
 
-    // Otherwise the sprite under the mouse
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
@@ -505,10 +460,8 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
         if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
         const bool onSprite = mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom;
         if (!onSprite || os.bottom - os.top < 1.0f) continue;
-        // Only the visible part of its picture counts, not the clear pixels around it
         if (!itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) continue;
 
-        // The item nearest the mouse wins when several overlap
         const float cy = (os.top + os.bottom) * 0.5f;
         const float d2 = (mx - os.cx) * (mx - os.cx) + (my - cy) * (my - cy);
         if (best == NULL_ENTITY || d2 < bestD2) {

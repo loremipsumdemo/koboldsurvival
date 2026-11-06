@@ -1,11 +1,8 @@
-// The right-click menu: what it targets, what it offers, and carrying out what was picked.
 #include "app.h"
 
 using namespace play;
 
 Entity App::menuTargetAt(float mx, float my) {
-    // What the pointer is on is in front of the ground it is over: a unit or prop farther from the eye than
-    // that ground (behind a hill, past a ridge) is hidden by it, so it is passed over
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
     float groundD2 = 1e30f;
@@ -21,7 +18,6 @@ Entity App::menuTargetAt(float mx, float my) {
     };
     std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
     under.erase(std::remove_if(under.begin(), under.end(), hidden), under.end());
-    // A unit locked in a cage stands for the cage: the menu offers to unlock it
     for (Entity u : under) {
         if (lockedIn(world, u)) return occupiedProp(world, u);
     }
@@ -47,9 +43,8 @@ Entity App::menuTargetAt(float mx, float my) {
 std::vector<Entity> App::menuActors(Entity target) {
     std::vector<Entity> units;
     for (Entity u : selectedUnits(world)) {
-        if (outCold(world, u)) continue;   // out cold: it does nothing
-        if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;   // carried: it does nothing
-        // A mob works no props: of a prop, it can only lie or sit on one (a bed to rest in)
+        if (outCold(world, u)) continue;
+        if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;
         if (world.has<Mob>(u) && world.has<Prop>(target) && propInfo(world.get<Prop>(target)->kind).use != PropUse::Occupy) continue;
         if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
     }
@@ -81,7 +76,6 @@ Entity App::putDownCarrier(Entity target) {
     return NULL_ENTITY;
 }
 
-// The nearest selected unit that could act on this prop and carries a corpse, or NULL_ENTITY
 Entity App::corpseCarrier(Entity prop) {
     for (Entity u : menuActors(prop)) {
         const Carrying* cr = world.get<Carrying>(u);
@@ -92,25 +86,21 @@ Entity App::corpseCarrier(Entity prop) {
 
 std::vector<MenuAction> App::menuActionsFor(Entity target) {
     std::vector<MenuAction> out;
-    // A selected unit carrying someone, or the unit it carries: Put down comes first
     if (world.has<Unit>(target) && putDownCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::PutDown);
     if (outCold(world, target)) {
-        // Out cold or dead: carried off (unless someone has it already) and looted
         if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
         out.push_back(MenuAction::Inventory);
         return out;
     }
     if (world.has<Unit>(target)) {
         if (world.has<Commandable>(target)) {
-            // One of your squad: trade, follow, defend, and pick it up (unless it carries or is carried). A
-            // mob is not traded with: its inventory is shut while it is awake.
             if (!world.has<Mob>(target)) out.push_back(MenuAction::Trade);
             out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
             if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
         } else if (world.has<Hostile>(target)) {
-            out.push_back(MenuAction::Attack);   // a hostile unit is only fought, never followed
+            out.push_back(MenuAction::Attack);
         } else if (world.has<Mob>(target) && world.has<Faction>(target) && isMobFaction(world.get<Faction>(target)->id)) {
-            out.push_back(MenuAction::AttackUnprovoked);   // a wild mob is only hunted, never followed or defended
+            out.push_back(MenuAction::AttackUnprovoked);
         } else {
             if (talkable(target)) out.push_back(MenuAction::Talk);
             if (sells(target)) out.push_back(MenuAction::Shop);
@@ -118,35 +108,26 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         }
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
-        // An Altar has no lock to pick: to anyone not of its faction it offers nothing
         if (p->kind == PropKind::Altar) {
             const std::vector<Entity> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
             for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return out;
         }
-        // A prop locked to all the selected units offers only Unlock, until it is open. One of their own
-        // faction's, or inside their faction's claim, is open to them.
         if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) {
             const std::vector<Entity> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
             for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return std::vector<MenuAction>{ MenuAction::Unlock };
         }
-        // An occupiable prop (a bed, a chair, a cage): Occupy it, or, while a selected unit carries someone,
-        // Place them on it in its stead, so a carrier is never sent to occupy one
         bool carrying = false;
         for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
         if (use == PropUse::Occupy) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
-        // A corpse can be carried into a campfire
         if (p->kind == PropKind::Campfire && corpseCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::Place);
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
-        // The automated behaviors: Auto-Harvest of a resource prop's kind, Auto-Haul to a prop that keeps items
-        if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);   // not the Debris, which gives nothing
+        if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
         if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
-        // A lockable prop: Lock it when it is open (it stays open until then), or, when the lock is the
-        // selected units' own, Unlock it with the key
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
         if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
     }
@@ -155,7 +136,7 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
 
 std::vector<std::string> App::contextLabels() {
     std::vector<std::string> labels;
-    for (MenuAction a : contextMenu.actions) {
+    for (MenuAction a : session.contextMenu.actions) {
         switch (a) {
         case MenuAction::Talk: labels.push_back(lang("UILABEL_TALK")); break;
         case MenuAction::Shop: labels.push_back(lang("UILABEL_SHOP")); break;
@@ -163,11 +144,10 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::Follow: labels.push_back(lang("UILABEL_FOLLOW")); break;
         case MenuAction::Defend: labels.push_back(lang("UILABEL_DEFEND")); break;
         case MenuAction::Attack: labels.push_back(lang("UILABEL_ATTACK")); break;
-        case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK")); break;   // it turns them hostile
+        case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK")); break;
         case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
         case MenuAction::Use: {
-            // Debris is cleared, not used
-            const Prop* tp = world.get<Prop>(contextMenu.target);
+            const Prop* tp = world.get<Prop>(session.contextMenu.target);
             labels.push_back(lang(tp && tp->kind == PropKind::Debris ? "UILABEL_CLEAR" : "UILABEL_USE"));
             break;
         }
@@ -187,7 +167,7 @@ std::vector<std::string> App::contextLabels() {
 }
 
 ItemMenuLayout App::contextMenuLayout() {
-    return renderer.itemMenuLayout(contextMenu.x, contextMenu.y, (int)contextMenu.actions.size(), winW, winH);
+    return renderer.itemMenuLayout(session.contextMenu.x, session.contextMenu.y, (int)session.contextMenu.actions.size(), winW, winH);
 }
 
 bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) {
@@ -197,30 +177,25 @@ bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) 
     if (disband) actions.push_back(MenuAction::Disband);
     if (actions.empty()) return false;
     if (menuActors(target).empty()) {
-        // Put down and Disband need no other unit
         if (disband) {
             std::vector<MenuAction> own;
             if (actions[0] == MenuAction::PutDown) own.push_back(MenuAction::PutDown);
             own.push_back(MenuAction::Disband);
-            contextMenu = ContextMenu{ true, mx, my, target, own };
+            session.contextMenu = ContextMenu{ true, mx, my, target, own };
             playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
             return true;
         }
-        // Only Put down needs no other unit: the carrier does it
         if (actions[0] == MenuAction::PutDown) {
-            contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::PutDown } };
+            session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::PutDown } };
             playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
             return true;
         }
-        // Your lone selected unit clicked on itself: a move order, as on the ground under it
         if (world.has<Selected>(target) && world.has<Commandable>(target)) return false;
         if (!noteLockedIn(selectedUnits(world))) refuse(lang("MISC_SELECT_UNIT_FIRST"));
         return true;
     }
-    // A hostile unit, or a wild mob, offers only Attack, so the right click is the attack order itself, with no
-    // menu. A wild mob that was not hostile turns on the attackers, as any unit attacked unprovoked does.
     if (actions.size() == 1 && (actions[0] == MenuAction::Attack || actions[0] == MenuAction::AttackUnprovoked)) {
         if (actions[0] == MenuAction::AttackUnprovoked) makeHostile(world, target);
         issueAttackOrder(world, menuActors(target), target);
@@ -229,12 +204,12 @@ bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) 
             actionZ = tt->z;
             actionAlpha = 1.0f;
         }
-        contextMenu.open = false;
+        session.contextMenu.open = false;
         itemMenu.open = false;
         playSfx(Sfx::UiOrder);
         return true;
     }
-    contextMenu = ContextMenu{ true, mx, my, target, actions };
+    session.contextMenu = ContextMenu{ true, mx, my, target, actions };
     playSfx(Sfx::UiMenuOpen);
     itemMenu.open = false;
     return true;
@@ -242,7 +217,6 @@ bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) 
 
 bool App::openContextMenu(float mx, float my) { return openContextMenuOn(menuTargetAt(mx, my), mx, my); }
 
-// A selected unit already in talk range talks now; otherwise they walk up, and the first there talks. A mob never talks.
 void App::talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool shop) {
     for (Entity u : actors) {
         if (!world.has<Mob>(u) && flatGap(world, u, target) <= TALK_RANGE) {
@@ -254,20 +228,18 @@ void App::talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool sh
 }
 
 void App::pickMenuAction(MenuAction a) {
-    const Entity target = contextMenu.target;
-    contextMenu.open = false;
+    const Entity target = session.contextMenu.target;
+    session.contextMenu.open = false;
     if (a == MenuAction::Disband) {
-        // The popout asks first: Disband has to be held down to confirm
         if (world.has<Commandable>(target)) {
-            disbandTarget = target;
-            disbandHeldAt = 0;
+            session.disbandTarget = target;
+            session.disbandHeldAt = 0;
             itemMenu.open = false;
             playSfx(Sfx::UiMenuOpen);
         }
         return;
     }
     if (a == MenuAction::PutDown) {
-        // Put down at once, where the carrier stands
         const Entity carrier = putDownCarrier(target);
         if (carrier != NULL_ENTITY) putDown(world, carrier);
         return;
@@ -283,7 +255,6 @@ void App::pickMenuAction(MenuAction a) {
         talkOrWalkUp(target, actors, false);
         break;
     case MenuAction::Trade: {
-        // The nearest selected unit that is not a mob trades: now if it is close enough, or once it has walked up
         const auto trader = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
         if (trader == actors.end()) {
             refuse(lang("MISC_MOB_INVENTORY_LOCKED"));
@@ -300,7 +271,6 @@ void App::pickMenuAction(MenuAction a) {
         issueDefendOrder(world, actors, target);
         break;
     case MenuAction::AttackUnprovoked:
-        // The unit attacked fights back at once; others of its faction that see the attack join in
         makeHostile(world, target);
         issueAttackOrder(world, actors, target);
         break;
@@ -309,8 +279,6 @@ void App::pickMenuAction(MenuAction a) {
         break;
     case MenuAction::Inventory:
         if (outCold(world, target)) {
-            // Looting: the nearest unit that can goes (never a mob, which takes nothing), and the panel opens
-            // when it gets there (or now, if it is)
             std::vector<Entity> looters;
             for (Entity u : actors) {
                 if (!world.has<Mob>(u)) looters.push_back(u);
@@ -321,8 +289,8 @@ void App::pickMenuAction(MenuAction a) {
             }
             if (flatGap(world, looters[0], target) <= CARRY_REACH && !cannotAct(world, looters[0])) {
                 closeStorage();
-                lootUnit = target;
-                lootBy = looters[0];
+                session.lootUnit = target;
+                session.lootBy = looters[0];
                 playSfx(Sfx::UiMenuOpen);
             } else if (!issueLootOrder(world, terrain, looters, target)) {
                 refuse(lang("MISC_SELECT_UNIT_FIRST"));
@@ -335,7 +303,6 @@ void App::pickMenuAction(MenuAction a) {
         if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
         break;
     case MenuAction::Place: {
-        // The nearest selected unit that carries someone places them on the prop. Only a corpse goes in a campfire.
         Entity carrier = world.get<Prop>(target)->kind == PropKind::Campfire ? corpseCarrier(target) : NULL_ENTITY;
         if (world.get<Prop>(target)->kind != PropKind::Campfire) {
             for (Entity u : actors) {
@@ -349,7 +316,6 @@ void App::pickMenuAction(MenuAction a) {
         break;
     }
     case MenuAction::Occupy: {
-        // The nearest selected unit that carries nobody occupies it
         Entity occupier = NULL_ENTITY;
         for (Entity u : actors) {
             if (!world.has<Carrying>(u)) {
@@ -362,12 +328,9 @@ void App::pickMenuAction(MenuAction a) {
     }
     case MenuAction::PutDown:
     case MenuAction::Disband:
-        break;   // done above
+        break;
     case MenuAction::AutoHarvest:
     case MenuAction::AutoHaul: {
-        // Every selected unit gets the behavior, at the bottom of its list (or switched on, if it has it), and
-        // looks for its first step at once. Both work only on props in your faction's claim, so a prop outside
-        // one is refused.
         const PropKind kind = world.get<Prop>(target)->kind;
         const Transform* pt = world.get<Transform>(target);
         if (!pt || !claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
@@ -398,13 +361,11 @@ void App::pickMenuAction(MenuAction a) {
         issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Destroy);
         break;
     case MenuAction::Shop:
-        talkOrWalkUp(target, actors, true);   // as Talk, then Show me your wares at once
+        talkOrWalkUp(target, actors, true);
         break;
     case MenuAction::Unlock: {
-        // The selected unit best at Lockpicking goes (the nearest, if several are as good), if it is good enough
         const Lock* lock = world.get<Lock>(target);
         if (!lock || !lock->locked) return;
-        // A lock that is the selected units' own: the nearest that is not a mob opens it with the key
         Entity keyholder = NULL_ENTITY;
         for (Entity u : actors) {
             if (!world.has<Mob>(u) && !lockShutFor(world, target, u)) {
@@ -418,7 +379,7 @@ void App::pickMenuAction(MenuAction a) {
         }
         Entity best = NULL_ENTITY;
         int bestLevel = 0;
-        for (Entity u : actors) {   // nearest first
+        for (Entity u : actors) {
             const int lv = levelOf(statsOf(world, u), StatId::Lockpicking);
             if (lv > bestLevel) {
                 best = u;
@@ -433,7 +394,6 @@ void App::pickMenuAction(MenuAction a) {
         break;
     }
     case MenuAction::Lock: {
-        // The nearest selected unit that is not a mob goes and locks it
         const auto locker = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
         if (locker == actors.end()) {
             refuse(lang("MISC_SELECT_UNIT_FIRST"));
@@ -448,8 +408,6 @@ void App::pickMenuAction(MenuAction a) {
             issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Use);
             break;
         }
-        // A resource prop takes the nearest selected units, as many as it has room for. Units already on it
-        // keep their places; the rest share what is left.
         std::vector<Entity> units = actors;
         int others = 0;
         for (Entity u : world.view<Working>()) {

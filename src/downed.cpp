@@ -1,12 +1,8 @@
-// Unconscious units, Conscious and Dying, corpses, and playing dead.
 #include "systems_internal.h"
 #include "build.h"
 
 using namespace systems_detail;
 
-// ---- Unconscious, Dying and Corpses ----
-
-// Whether a unit lies in a bed or a bedroll, where Dying stops
 static bool inBedOrBedroll(World& w, Entity u) {
     const Entity bed = occupiedProp(w, u);
     const Prop* p = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
@@ -15,7 +11,6 @@ static bool inBedOrBedroll(World& w, Entity u) {
 
 void knockOut(World& w, Entity u) {
     if (!w.has<Unit>(u) || outCold(w, u)) return;
-    // Whatever it was doing ends. It keeps its bed if it is lying on one, and drops anyone it carried.
     const Entity bed = occupiedProp(w, u);
     const bool keepBed = inBedOrBedroll(w, u);
     if (w.has<Carrying>(u)) putDown(w, u);
@@ -28,8 +23,6 @@ void knockOut(World& w, Entity u) {
         n->hp = 0;
     }
     w.remove<PlayingDead>(u);
-    // Who knocked it out: a hit from a unit of some faction, or nothing (hunger). Your units knocking out a unit of
-    // another faction cost reputation with it.
     Unconscious un;
     if (Combat* c = w.get<Combat>(u)) {
         un.koFaction = c->downedByFaction;
@@ -52,8 +45,6 @@ void downedSystem(World& w) {
     }
 }
 
-// Conscious is full: the unit wakes with a little health. Near a hostile unit one of yours plays dead (canPlayDead),
-// unless it lies in a bed. Carried by anyone but a hostile, it is put down and stands up again.
 static void wakeUp(World& w, Entity u, WakeChanges& out) {
     w.remove<Unconscious>(u);
     if (Needs* n = w.get<Needs>(u)) {
@@ -63,7 +54,6 @@ static void wakeUp(World& w, Entity u, WakeChanges& out) {
     if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
     queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     out.woke.push_back(u);
-    // Waking in a bed, a unit with no Leave Bed behavior to get it up later gets up now
     if (inBedOrBedroll(w, u)) {
         const Behaviors* b = w.get<Behaviors>(u);
         const bool leaves = b && std::any_of(b->rules.begin(), b->rules.end(),
@@ -82,16 +72,13 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
     for (Entity u : w.view<Unconscious>()) {
         Unconscious* un = w.get<Unconscious>(u);
         Needs* n = w.get<Needs>(u);
-        // Comfort adds to each tick's gain, up to double at full Comfort. A mob has no Comfort.
         const float gain = 1.0f + (n && !w.has<Mob>(u) && n->maxComfort > 0 ? (float)n->comfort / (float)n->maxComfort : 0.0f);
         const bool bed = inBedOrBedroll(w, u);
         un->tickPart += CONSCIOUS_TICKS_PER_HOUR * hours;
         const int ticks = (int)un->tickPart;
         un->tickPart -= ticks;
         for (int i = 0; i < ticks; ++i) {
-            // Each tick is paid for out of Rested. With none left it goes on Dying, unless the unit lies in a bed.
             if (w.has<Mob>(u)) {
-                // A mob has no Rested to pay with, and waking costs it nothing
             } else if (n && n->rested > 0) {
                 --n->rested;
             } else if (!bed && ++un->dying >= 100.0f) {
@@ -119,9 +106,8 @@ void corpseDecaySystem(World& w, double gameSeconds) {
         const Transform at = *w.get<Transform>(u);
         std::vector<ItemStack> belongings = unitBelongings(w, u);
         w.destroy(u);
-        // Each pile lies its own way, from the entity's id so that no random number is used
         const float yaw = TWO_PI * (float)(u % 16u) / 16.0f;
-        const Entity bones = restoreBuiltProp(w, PropKind::Bones, at.x, at.y, at.z, yaw, -1);
+        const Entity bones = makeProp(w, PropKind::Bones, at, yaw);
         w.add(bones, BonesPile{ 0.0, std::move(belongings) });
     }
 }
@@ -132,7 +118,7 @@ void bonesDecaySystem(World& w, double gameSeconds) {
     for (Entity e : w.view<Prop, Transform>()) {
         if (!destroyedByHand(w.get<Prop>(e)->kind)) continue;
         BonesPile* pile = w.get<BonesPile>(e);
-        if (!pile) pile = &w.add(e, BonesPile{});   // one the level placed, or one built
+        if (!pile) pile = &w.add(e, BonesPile{});
         pile->hours += hours;
         if (pile->hours >= BONES_DECAY_HOURS) breakBuilding(w, e);
     }
@@ -143,7 +129,7 @@ void groundFoodSystem(World& w, double gameSeconds) {
     if (hours <= 0.0) return;
     for (Entity e : w.view<GroundItem>()) {
         GroundItem* g = w.get<GroundItem>(e);
-        if (g->hours >= GROUND_FOOD_HOURS) continue;   // an item that keeps: it was looked at when its time came
+        if (g->hours >= GROUND_FOOD_HOURS) continue;
         g->hours += hours;
         if (g->hours >= GROUND_FOOD_HOURS && spoilsOnGround(g->item)) w.destroy(e);
     }
@@ -165,7 +151,7 @@ bool hostileNear(World& w, Entity u) {
 
 void playDeadSystem(World& w) {
     for (Entity u : w.view<PlayingDead>()) {
-        if (w.has<Carried>(u) || outCold(w, u)) continue;   // carried: carrySystem looks after it
+        if (w.has<Carried>(u) || outCold(w, u)) continue;
         if (hostileNear(w, u)) continue;
         w.remove<PlayingDead>(u);
         queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
@@ -176,7 +162,6 @@ void finishDying(World& w, Entity u) {
     const Unconscious* un = w.get<Unconscious>(u);
     if (!un) return;
     const int koFaction = un->koFaction;
-    // Dead for good: a corpse, no longer anyone's to command, still there to carry and to loot
     w.remove<Unconscious>(u);
     w.remove<Stats>(u);
     w.remove<XpBuffer>(u);
@@ -185,8 +170,6 @@ void finishDying(World& w, Entity u) {
     w.remove<Selected>(u);
     w.remove<Occupying>(u);
     queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
-    // Knocked out by your units, and dead before it woke: more reputation lost with its faction (a mob of a mob
-    // faction is game, and costs none)
     const int victim = factionOf(w, u);
     if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);

@@ -24,7 +24,6 @@ DisplayInfo queryDisplays(int monitorSetting) {
     }
     SDL_free(ids);
 
-    // No monitor reported: fall back to the primary one and a 720p desktop
     if (d.monitors.empty()) {
         MonitorInfo m;
         m.id = SDL_GetPrimaryDisplay();
@@ -61,7 +60,6 @@ DisplayInfo queryDisplays(int monitorSetting) {
     }
     SDL_free(modes);
 
-    // Largest first, then fastest refresh, so the lists the menus build come out in that order
     std::sort(d.modes.begin(), d.modes.end(), [](const VideoMode& a, const VideoMode& b) {
         const long long pa = (long long)a.w * a.h, pb = (long long)b.w * b.h;
         if (pa != pb) return pa > pb;
@@ -76,7 +74,6 @@ void applyDisplay(SDL_Window* window, GameSettings& s, const DisplayInfo& d) {
     const MonitorInfo* m = d.monitors.empty() ? nullptr : &d.monitors[d.chosen];
 
     if (s.displayMode == DISPLAY_FULLSCREEN) {
-        // The window has to be on the monitor before it can go full screen there
         if (m) SDL_SetWindowPosition(window, m->x, m->y);
         SDL_DisplayMode closest{};
         if (m && SDL_GetClosestFullscreenDisplayMode(m->id, s.width, s.height, (float)s.refreshHz, true, &closest)) {
@@ -93,7 +90,6 @@ void applyDisplay(SDL_Window* window, GameSettings& s, const DisplayInfo& d) {
         SDL_SetWindowBordered(window, true);
         SDL_SetWindowSize(window, s.width, s.height);
         if (m) {
-            // Centered on the chosen monitor
             SDL_SetWindowPosition(window, m->x + (m->w - s.width) / 2, m->y + (m->h - s.height) / 2);
         }
     }

@@ -1,21 +1,35 @@
-// Turning a unit hostile and disbanding one. The rest of the systems are split by job:
-//   world_setup.cpp  the start of a level: the spawn, the starting units, camps, mobs, loot and ground items
-//   movement.cpp     move, pickup, attack, talk, follow and defend orders; squads, steering and defending
-//   prop_use.cpp     using props: prop orders, work, crafting, storage and passive crafting
-//   automation.cpp   behavior rules: hauling, harvesting, resting, patrols and roaming
-//   wild_ai.cpp      patrol spawns, wild mobs grazing and fleeing, and Exiles running when hurt
-//   downed.cpp       unconscious units, dying and corpses
-//   carry.cpp        carrying a unit and putting it down
-//   loot.cpp         looting, and what a unit may hold
-//   needs.cpp        hunger, rest and comfort over time
-//   unit_status.cpp  what a unit is doing, and whether it can act
-// Helpers more than one of them uses are in systems_internal.h.
 #include "systems_internal.h"
 
 using namespace systems_detail;
 
+Entity makeUnit(World& w, const Transform& at, int faction) {
+    const Entity e = w.create();
+    w.add(e, at);
+    if (faction == FACTION_PLAYER) {
+        w.add(e, Unit{});
+        w.add(e, Commandable{});
+    } else {
+        w.add(e, Unit{ HOSTILE_WALK_SPEED });
+        if (factionsHostile(faction, FACTION_PLAYER)) w.add(e, Hostile{});
+        else w.add(e, Neutral{});
+    }
+    w.add(e, Faction{ faction });
+    w.add(e, Inventory{});
+    w.add(e, Equipment{});
+    w.add(e, Needs{});
+    w.add(e, Behaviors{});
+    w.add(e, Combat{});
+    w.add(e, Name{});
+    w.add(e, UnitSprite{});
+    return e;
+}
+
+Dialogue defaultDialogue() {
+    return Dialogue{ lang("NPC_GREETING"), { { lang("NPC_OPTION_WARES"), lang("NPC_GREETING"), true },
+                                             { lang("NPC_OPTION_QUEST"), lang("NPC_GREETING") } } };
+}
+
 void makeHostile(World& w, Entity unit) {
-    // It is provoked by your faction (factionSystem keeps it hostile while that lasts), and turns at once
     if (!w.has<Unit>(unit) || w.has<Commandable>(unit)) return;
     provoke(w, unit, FACTION_PLAYER);
     if (w.has<Hostile>(unit)) return;
@@ -27,7 +41,6 @@ void makeHostile(World& w, Entity unit) {
 
 bool disbandUnit(World& w, Entity u) {
     if (!w.has<Commandable>(u) || !w.has<Unit>(u)) return false;
-    // Whatever it was doing ends. One locked in a cage stays in it; anyone it carried is put down.
     leaveSquad(w, u);
     const bool caged = lockedIn(w, u);
     const Occupying keep = w.has<Occupying>(u) ? *w.get<Occupying>(u) : Occupying{};
@@ -37,7 +50,7 @@ bool disbandUnit(World& w, Entity u) {
     if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
     w.remove<Commandable>(u);
     w.remove<Selected>(u);
-    w.get<Unit>(u)->speed = HOSTILE_WALK_SPEED;   // it walks at the pace of every unit that is not yours
+    w.get<Unit>(u)->speed = HOSTILE_WALK_SPEED;
 
     const Transform* tr = w.get<Transform>(u);
     Behaviors& b = w.has<Behaviors>(u) ? *w.get<Behaviors>(u) : w.add(u, Behaviors{});
@@ -51,7 +64,6 @@ bool disbandUnit(World& w, Entity u) {
     b.sneak = false;
     int faction = FACTION_EXILE;
     if (const Mob* mb = w.get<Mob>(u)) {
-        // Back to the wild, in its kind's own faction, as a wild mob of that kind is made (spawnMob)
         const MobInfo& m = mobInfo(mb->kind);
         faction = mobFaction(mb->kind);
         b.rules = mobBehaviors();
@@ -62,11 +74,9 @@ bool disbandUnit(World& w, Entity u) {
         const MobTemperament tm = mobTemperament(mb->kind);
         b.passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
     } else {
-        // An Exile: feeds and heals itself and roams, and has something to say like any other NPC. It fights as any
-        // neutral unit does, but runs once its health is low (wildMobSystem).
         b.rules = exileBehaviors();
         b.passive = false;
-        if (!w.has<Dialogue>(u)) w.add(u, Dialogue{});
+        if (!w.has<Dialogue>(u)) w.add(u, defaultDialogue());
         if (Needs* n = w.get<Needs>(u)) n->hunger = n->maxHunger;
     }
     if (Faction* fa = w.get<Faction>(u)) fa->id = faction;

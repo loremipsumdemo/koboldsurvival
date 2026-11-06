@@ -4,7 +4,6 @@
 #include "components.h"
 #include "ecs.h"
 
-// Puts an item stack on the ground. at is a copy, since creating an entity can move the stored components.
 inline Entity spawnGroundItem(World& w, Transform at, int item, int count) {
     const Entity e = w.create();
     w.add(e, at);
@@ -12,12 +11,10 @@ inline Entity spawnGroundItem(World& w, Transform at, int item, int count) {
     return e;
 }
 
-// Puts stacks on the ground, each as its own pile, at one spot
 inline void dropStacks(World& w, Transform at, const std::vector<ItemStack>& stacks) {
     for (const ItemStack& st : stacks) spawnGroundItem(w, at, st.item, st.count);
 }
 
-// The stacks in a row of slots, added to out
 template <typename Slots>
 inline void appendStacks(std::vector<ItemStack>& out, const Slots& slots) {
     for (const ItemStack& st : slots) {
@@ -25,7 +22,6 @@ inline void appendStacks(std::vector<ItemStack>& out, const Slots& slots) {
     }
 }
 
-// Everything a unit carries and wears
 inline std::vector<ItemStack> unitBelongings(World& w, Entity u) {
     std::vector<ItemStack> out;
     if (const Inventory* inv = w.get<Inventory>(u)) appendStacks(out, inv->slots);
@@ -37,7 +33,6 @@ inline std::vector<ItemStack> unitBelongings(World& w, Entity u) {
     return out;
 }
 
-// Everything a prop holds: its storage, its output and a Bones prop's pile
 inline std::vector<ItemStack> propHoldings(World& w, Entity prop) {
     std::vector<ItemStack> out;
     if (const Storage* st = w.get<Storage>(prop)) appendStacks(out, st->slots);
@@ -46,7 +41,6 @@ inline std::vector<ItemStack> propHoldings(World& w, Entity prop) {
     return out;
 }
 
-// The flat distance in tiles between two entities, or a large number if either has no place
 inline float flatGap(World& w, Entity a, Entity b) {
     const Transform* ta = w.get<Transform>(a);
     const Transform* tb = w.get<Transform>(b);

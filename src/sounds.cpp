@@ -1,5 +1,3 @@
-// The sound queue: the sounds the systems ask for during a frame, which the game takes and plays after they run
-// (sounds.h)
 #include "sounds.h"
 #include "components.h"
 #include "ecs.h"

@@ -8,8 +8,6 @@
 #include "stats.h"
 
 namespace {
-
-// The unit the menu is editing, kept to the party's range
 int pickedIndex(const Party& p, const PartyUi& ui) {
     return std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
 }
@@ -24,16 +22,15 @@ std::string groupTitle(StatGroup g) {
     }
     return "";
 }
-
-} // namespace
+}
 
 const PartyMember& pickedMember(const Party& p, const PartyUi& ui) {
-    static const PartyMember none{};   // with no units there is no picked unit; nothing is drawn from this
+    static const PartyMember none{};
     return p.empty() ? none : p[pickedIndex(p, ui)];
 }
 
 PartyMember& pickedMember(Party& p, const PartyUi& ui) {
-    static PartyMember none;   // thrown away: the party menu shows no unit controls when the party is empty
+    static PartyMember none;
     if (p.empty()) {
         none = PartyMember{};
         return none;
@@ -77,7 +74,6 @@ int clampDropScroll(int scroll, int count) {
 int partyListVisible(int H) {
     const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(0, H);
-    // Each card is 96 px with a 10 px gap, and PARTY_HINT_H at the bottom of the column is kept for the hints
     const float area = P.left.h - 12.0f * s - PARTY_HINT_H * s;
     return std::max(1, (int)std::floor((area + 10.0f * s) / (96.0f * s + 10.0f * s)));
 }
@@ -140,33 +136,29 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const PartyPanels P = partyPanels(W, H);
     const PartyMember& m = pickedMember(p, ui);
     std::vector<Button> out;
-    std::vector<Button> dropGroup;   // added last, so an open dropdown draws over everything
+    std::vector<Button> dropGroup;
     Rect sprAnchor, gearAnchor, invAnchor;
     Rect bodyAnchor;
     Rect mobAnchor, addMobAnchor;
-    const bool mob = !p.empty() && m.mob != MobKind::None;   // the picked member is a mob: no model, body, gear or items to set
+    const bool mob = !p.empty() && m.mob != MobKind::None;
 
-    // Left column: as many units as fit, scrolled with the wheel, then a hint on how to use the menu
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
     const int count = (int)p.size();
     const int visible = partyListVisible(H);
     const int first = std::clamp(ui.listScroll, 0, partyListMaxScroll(count, H));
     const float listTop = P.left.y + 12.0f * s;
-    // With more units than fit, the cards make room for the scroll bar at the column's right edge
     const float cardW = P.left.w - 20.0f * s - (partyListMaxScroll(count, H) > 0 ? 14.0f * s : 0.0f);
     for (int i = first; i < count && i < first + visible; ++i) {
         const float cy = listTop + (i - first) * (cardH + cardGap);
         out.push_back(Button{ "", Rect{ P.left.x + 10.0f * s, cy, cardW, cardH },
                               Action::PartyPick, true, i });
     }
-    // The hints, one block wrapped to the column's width: how to pick a unit, and in Custom how Shift steps a stat
     const float hintH = PARTY_HINT_H - 8.0f;
     std::string hints = lang("UILABEL_CLICK_UNIT_EDIT");
     if (ui.editable) hints += "\n" + lang("UILABEL_SHIFT_CLICK");
     out.push_back(Button{ hints, Rect{ P.left.x + 10.0f * s, P.left.y + P.left.h - (hintH + 4.0f) * s, P.left.w - 20.0f * s, hintH * s },
                           Action::PartyNote, false, 0 });
 
-    // Right column: the tabs, then the picked tab's contents. Only with a unit to pick.
     if (!p.empty()) {
     const float inX = P.right.x + 14.0f * s, inW = P.right.w - 28.0f * s;
     const float tabH = 34.0f * s, tabGap = 6.0f * s;
@@ -177,7 +169,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         out.push_back(Button{ tabNames[t], Rect{ inX + t * (tabW + tabGap), tabY, tabW, tabH },
                               Action::PartyTabPick, true, t });
     }
-    // Contents start here. A field's caption sits 22 px above its box, so there is room for it.
     const float top = tabY + tabH + 22.0f * s;
     const int sel = pickedIndex(p, ui);
 
@@ -187,7 +178,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         out.push_back(Button{ m.name, nameBox, Action::PartyNameField, true, sel });
 
         if (mob) {
-            // A mob's kind in place of the model and body type: changed only in Custom and Beastmaster
             const Rect kindBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
             mobAnchor = kindBox;
             out.push_back(Button{ lang(mobInfo(m.mob).nameKey) + (ui.mobKindEditable ? "   v" : ""), kindBox,
@@ -212,7 +202,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     case PartyTab::Stats: {
         const float colGap = 16.0f * s, colW = (inW - colGap) / 2.0f;
         const float rowH = 20.0f * s, pitch = 22.0f * s, groupGap = 6.0f * s, btn = 26.0f * s;
-        // Each column stacks its groups. Each row: the name and level, then minus and plus.
         auto column = [&](float x, const std::vector<StatGroup>& groups) {
             float ry = top;
             for (StatGroup g : groups) {
@@ -220,7 +209,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                 ry += pitch;
                 for (int i = 0; i < STAT_COUNT; ++i) {
                     if (statInfo((StatId)i).group != g) continue;
-                    // Outside Custom the levels are only shown, with no - and +
                     const float labelW = ui.editable ? colW - 2.0f * (btn + 4.0f * s) : colW;
                     out.push_back(Button{ statName((StatId)i), Rect{ x, ry, labelW, rowH }, Action::PartyStatLabel, false, i });
                     if (ui.editable) {
@@ -236,9 +224,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             return ry;
         };
         column(inX, { StatGroup::Attributes, StatGroup::Combat });
-        // A mob has only the attributes and the combat skills (mobs.h)
         if (!mob) column(inX + colW + colGap, { StatGroup::Gathering, StatGroup::Crafting, StatGroup::Utility });
-        // Two lines of room, for the longer note outside Custom
         out.push_back(Button{ lang(ui.editable ? "UILABEL_LEVELS_HINT" : "UILABEL_CUSTOM_ONLY"),
                               Rect{ inX, P.right.y + P.right.h - 82.0f * s, inW, 64.0f * s }, Action::PartyNote, false, 0 });
         break;
@@ -249,7 +235,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             out.push_back(Button{ lang("UILABEL_MOB_NO_GEAR"), Rect{ inX, top, inW, 64.0f * s }, Action::PartyNote, false, 0 });
             break;
         }
-        // Each tile holds the item's 64 x 64 picture in an item cell, with the slot's and the item's names beside it
         const float gap = 8.0f * s, tileW = (inW - gap) / 2.0f, tileH = std::max(54.0f * s, ITEM_CELL_PX + 8.0f * s);
         const float pitch = tileH + gap;
         for (int g = 0; g < GEAR_SLOTS; ++g) {
@@ -303,7 +288,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             out.push_back(Button{ "+", Rect{ inX + btnW + labelW + 16.0f * s, countY, btnW, 32.0f * s }, Action::PartyCount,
                                   hasItem && st.count < stackLimit(st.item), 1 });
         } else if (hasItem) {
-            // Outside Custom: the count is only shown, and a slot click only picks the slot to read about
             out.push_back(Button{ langf("UILABEL_COUNT", { std::to_string(st.count) }),
                                   Rect{ inX, countY, inW, 32.0f * s }, Action::PartyNote, false, 0 });
         }
@@ -314,18 +298,15 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
     }
 
-    // Bottom bar: Randomize all, Back, Confirm, and the line that says what Confirm needs
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
     out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
     out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
-    // Add and remove units, in the Custom scenario only: the party has up to PARTY_MAX_UNITS, and any unit can be removed
     if (ui.resizable) {
         const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
         out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
                               (int)p.size() < PARTY_MAX_UNITS, 0 });
         out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
                               !p.empty(), 0 });
-        // Add mob: a regular mob, of a kind picked from its list
         addMobAnchor = Rect{ unitsX + 2.0f * (unitW + bGap), bY, unitW, bH };
         out.push_back(Button{ lang("UILABEL_ADD_MOB"), addMobAnchor, Action::PartyAddMob, (int)p.size() < PARTY_MAX_UNITS, 0 });
     }
@@ -334,15 +315,14 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
 
-    // The open dropdown: a background, optional scroll rows, and the visible entries
     if (ui.dropKind != DropKind::None) {
         const Rect anchor = ui.dropKind == DropKind::Sprite ? sprAnchor
                           : ui.dropKind == DropKind::Body ? bodyAnchor
                           : ui.dropKind == DropKind::MobKind ? (ui.dropSlot < 0 ? addMobAnchor : mobAnchor)
                           : ui.dropKind == DropKind::Gear ? gearAnchor : invAnchor;
         const int total = (int)drop.size();
-        const int first = clampDropScroll(ui.dropScroll, total);
-        const int shown = std::min(DROP_VISIBLE_ROWS, total - first);
+        const int firstRow = clampDropScroll(ui.dropScroll, total);
+        const int shown = std::min(DROP_VISIBLE_ROWS, total - firstRow);
         const bool scrollable = total > DROP_VISIBLE_ROWS;
         const float rowH = 26.0f * s, scrollH = 22.0f * s, pad = 4.0f * s;
         const float listW = std::min(std::max(anchor.w, 240.0f * s), W - 32.0f * s);
@@ -357,7 +337,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         dropGroup.push_back(Button{ "", Rect{ listX, listY, listW, listH }, Action::PartyDropBack, true, 0 });
         float ry = listY + pad;
         if (scrollable) {
-            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_UP"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll, first > 0, -1 });
+            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_UP"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll, firstRow > 0, -1 });
             ry += scrollH;
         }
         int current = 0;
@@ -366,7 +346,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
         if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : idx(m.mob);
-        for (int i = first; i < first + shown; ++i) {
+        for (int i = firstRow; i < firstRow + shown; ++i) {
             const bool isCurrent = drop[i].value == current;
             dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, listW, rowH },
                                         Action::PartyDropPick, true, i });
@@ -374,7 +354,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         }
         if (scrollable) {
             dropGroup.push_back(Button{ lang("UILABEL_SCROLL_DOWN"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll,
-                                        first + shown < total, 1 });
+                                        firstRow + shown < total, 1 });
         }
     }
     out.insert(out.end(), dropGroup.begin(), dropGroup.end());

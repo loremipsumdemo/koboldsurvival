@@ -1,3 +1,4 @@
+#include <SDL3/SDL.h>
 #include "items.h"
 #include "textcase.h"
 #include "language.h"
@@ -10,7 +11,6 @@
 #include "pak.h"
 
 namespace {
-
 bool parseIntText(const std::string& v, int& out) {
     if (v.empty()) return false;
     char* end = nullptr;
@@ -29,7 +29,6 @@ bool parseFloatText(const std::string& v, float& out) {
     return true;
 }
 
-// Sets one field of an item from its key. False, with err set, if the key is unknown or the value is bad.
 bool setField(ItemDef& item, const std::string& key, const std::string& val, std::string& err) {
     const std::string where = " on item " + std::to_string(item.id);
     auto needInt = [&](int& field) {
@@ -50,7 +49,6 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
     else if (key == "equip_slot") item.equipSlot = val;
     else if (key == "on_use") item.onUse = val;
     else if (key == "tags") {
-        // Comma-separated words, such as raw_food or water. Spaces around them are dropped, and case is ignored.
         item.tags.clear();
         size_t at = 0;
         while (at <= val.size()) {
@@ -82,7 +80,6 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
     return true;
 }
 
-// Checks a finished item and builds its display name. False, with err set, if it is not valid.
 bool finishItem(ItemDef& item, std::string& err) {
     const std::string where = " on item " + std::to_string(item.id);
     if (item.typeId != "item" && item.typeId != "consumable" && item.typeId != "weapon" &&
@@ -102,19 +99,17 @@ bool finishItem(ItemDef& item, std::string& err) {
     }
     if (item.maxStackSize < 1) { err = "max_stack_size must be at least 1" + where; return false; }
 
-    // The display name: material, base name, then tier
     item.name = item.material.empty() ? item.baseName : item.material + " " + item.baseName;
     if (item.tier > 0) item.name += " +" + std::to_string(item.tier);
     return true;
 }
-
-} // namespace
+}
 
 bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string& err) {
     out.clear();
     err.clear();
     std::unordered_set<int> ids;
-    bool open = false;          // a block is being read
+    bool open = false;
     ItemDef current;
     int line = 0;
 
@@ -161,38 +156,23 @@ bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string
     return true;
 }
 
-namespace {
-
-std::vector<ItemDef>& databaseStorage() {
-    static std::vector<ItemDef> db;
-    return db;
-}
-
-bool& databaseLoaded() {
-    static bool loaded = false;
-    return loaded;
-}
-
-} // namespace
-
 const std::vector<ItemDef>& itemDatabase() {
-    // Loaded from the pak the first time it is needed
-    if (!databaseLoaded()) {
-        databaseLoaded() = true;
+    static const std::vector<ItemDef> items = [] {
+        std::vector<ItemDef> out;
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         if (!pakFind("data/itemdb.txt", bytes, size)) {
-            std::fprintf(stderr, "items: data/itemdb.txt is not in the pak\n");
-        } else {
-            std::string err;
-            const std::string text((const char*)bytes, size);
-            if (!parseItemDb(text, databaseStorage(), err)) {
-                std::fprintf(stderr, "items: %s\n", err.c_str());
-                databaseStorage().clear();
-            }
+            SDL_Log("data/itemdb.txt is not in the pak");
+            return out;
         }
-    }
-    return databaseStorage();
+        std::string err;
+        if (!parseItemDb(std::string((const char*)bytes, size), out, err)) {
+            SDL_Log("data/itemdb.txt: %s", err.c_str());
+            out.clear();
+        }
+        return out;
+    }();
+    return items;
 }
 
 bool spoilsOnGround(int item) {
@@ -209,13 +189,11 @@ const ItemDef* findItem(int id) {
 }
 
 namespace {
-
 std::string upperAscii(std::string s) {
     for (char& c : s) if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
     return s;
 }
-
-} // namespace
+}
 
 std::string itemDisplayName(const ItemDef& d) {
     const std::string key = "ITEM_" + std::to_string(d.id) + "_NAME";
@@ -226,7 +204,7 @@ std::string itemDisplayName(const ItemDef& d) {
         const std::string matKey = "MISC_MATERIAL_" + upperAscii(d.material);
         std::string material = lang(matKey);
         if (material == matKey) material = d.material;
-        out = langf("MISC_ITEM_NAME_FORMAT", { material, base });   // word order follows the language
+        out = langf("MISC_ITEM_NAME_FORMAT", { material, base });
     }
     if (d.tier > 0) out += " +" + std::to_string(d.tier);
     return out;

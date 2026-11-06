@@ -2,7 +2,7 @@
 #include "components.h"
 
 namespace {
-std::vector<LogLine> gQueued;   // game messages waiting for the next frame's log
+std::vector<LogLine> gQueued;
 }
 
 void queueLog(const std::string& text, LogKind kind, bool npc) {
@@ -30,16 +30,15 @@ void discardQueuedLog() {
 
 std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilter& f) {
     std::vector<const LogLine*> out;
-    if (tab == 2) return out;   // the Time tab has no lines
+    if (tab == 2) return out;
     if (tab == 0) {
         for (const LogLine& ln : log.spoken) out.push_back(&ln);
         return out;
     }
     for (const LogLine& ln : log.lines) {
-        if (ln.npc && !f.on[(int)LogKind::Npc]) continue;   // about NPCs only, and Show NPC Info is off
+        if (ln.npc && !f.on[(int)LogKind::Npc]) continue;
         if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) out.push_back(&ln);
     }
-    // The Game tab shows only the newest LOG_LIMIT of what passes the filter
     if (out.size() > LOG_LIMIT) out.erase(out.begin(), out.begin() + (out.size() - LOG_LIMIT));
     return out;
 }
@@ -52,8 +51,6 @@ Tint tintFor(World& w, Entity attacker, Entity target) {
 
 void GameLog::add(const std::string& text, Tint tint, LogKind kind, bool npc) {
     lines.push_back(LogLine{ text, tint, kind, npc });
-    // Each kind keeps its own newest LOG_LIMIT, so a flood of one kind never pushes out the others. The lines about
-    // NPCs only are a kind of their own here, so their flood never pushes out the lines about your units.
     const LogKind bucket = npc ? LogKind::Npc : kind;
     if (++kindCount[(int)bucket] > LOG_LIMIT) {
         for (auto it = lines.begin(); it != lines.end(); ++it) {

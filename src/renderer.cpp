@@ -1,22 +1,8 @@
-// The renderer's core: start-up and shutdown, the GL programs, flat shapes and textured quads, clipping, and the
-// pictures loaded on demand (items, emotes, icons). The rest of Renderer is split by job:
-//   renderer_text.cpp      fonts, text and its caches, fitting and wrapping
-//   renderer_widgets.cpp   buttons, icons, title bars, item cells and item tooltips
-//   renderer_units.cpp     units and props in the world: sprites, models, facing, picking
-//   renderer_world.cpp     the 3D frame, the hover list, ground items and the build preview
-//   renderer_overlays.cpp  what floats over the world: names, emotes, labels, damage numbers, work rings
-//   renderer_menus.cpp     the loading screen, the title screen and the party menu
-//   renderer_panels.cpp    the Faction Panel, the Information Panel and the world map
-//   renderer_sidebar.cpp   the Unit Panel's tabs: stats, inventory, build and behaviors
-//   renderer_popups.cpp    dialogs: talk, trade, storage, loot, prompts and menus
-//   renderer_terrain.cpp   terrain, sea and seabed
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-
 const char* COLOR_VS = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
@@ -71,7 +57,6 @@ void main() {
 }
 )";
 
-// A prop model drawn instanced: the glyph program's shading, with each instance's placement read per instance
 const char* MODEL_INST_VS = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
@@ -85,7 +70,6 @@ void main() {
 }
 )";
 
-// The glyph fragment shader's uniforms at their resting values: texture unit 0, no tint, full colour, no faction
 void setGlyphDefaults(GLuint program) {
     glUseProgram(program);
     glUniform1i(glGetUniformLocation(program, "uTex"), 0);
@@ -95,7 +79,6 @@ void setGlyphDefaults(GLuint program) {
     glUseProgram(0);
 }
 
-// Position (location 0) and color (location 1), for Vertex
 void setupColorLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -106,7 +89,6 @@ void setupColorLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(0);
 }
 
-// Position (location 0) and UV (location 1), 5 floats per vertex
 void setupGlyphLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -117,13 +99,10 @@ void setupGlyphLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(0);
 }
 
-// A picture in the pak decoded to RGBA (SDL_PIXELFORMAT_ABGR8888), or null when it is not packed (no error logged)
-// or cannot be decoded (logged). Free it with SDL_DestroySurface.
 SDL_Surface* decodeRgba(const char* path) {
     const unsigned char* bytes = nullptr;
     size_t size = 0;
     if (!pakFind(path, bytes, size)) return nullptr;
-    // closeio = true: SDL frees its stream object. The bytes belong to the pak and are not freed.
     SDL_Surface* s = IMG_Load_IO(SDL_IOFromConstMem(bytes, size), true);
     if (!s) {
         SDL_Log("Could not load %s: %s", path, SDL_GetError());
@@ -134,13 +113,11 @@ SDL_Surface* decodeRgba(const char* path) {
     return conv;
 }
 
-// A decoded picture's texture
 TextTex textureOf(const SDL_Surface* rgba) {
     return TextTex{ MakeRgbaTexture(rgba->w, rgba->h, static_cast<const uint8_t*>(rgba->pixels)),
                     (float)rgba->w / (float)rgba->h };
 }
 
-// A decoded picture's alpha, row by row
 AlphaMask alphaOf(const SDL_Surface* rgba) {
     AlphaMask m;
     m.w = rgba->w;
@@ -151,36 +128,6 @@ AlphaMask alphaOf(const SDL_Surface* rgba) {
         for (int x = 0; x < m.w; ++x) m.alpha[(size_t)y * (size_t)m.w + (size_t)x] = row[(size_t)x * 4 + 3];
     }
     return m;
-}
-
-// A picture from the pak as a texture; empty when it is not packed or cannot be decoded
-TextTex loadOptionalImage(const char* path) {
-    SDL_Surface* conv = decodeRgba(path);
-    if (!conv) return {};
-    const TextTex t = textureOf(conv);
-    SDL_DestroySurface(conv);
-    return t;
-}
-
-// For a picture drawn well under its own size: mipmaps, so it stays smooth
-void addMipmaps(const TextTex& t) {
-    if (!t.tex) return;
-    glBindTexture(GL_TEXTURE_2D, t.tex);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-}
-
-// Loads a model and keeps it only when it has something to draw: a size on some axis, or with needsHeight a height
-// (units and mobs are scaled by it). Otherwise what was made is dropped, m is left empty, and false is returned.
-bool loadDrawableModel(const char* path, Model& m, bool needsHeight) {
-    const bool read = loadGLBModel(path, m);
-    const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
-    const bool drawable = read && m.vao && !m.draws.empty() && (needsHeight ? m.maxY > m.minY : extent > 0.0f);
-    if (!drawable) {
-        destroyModel(m);
-        m = Model{};
-    }
-    return drawable;
 }
 
 const char* SKY_VS = R"(
@@ -233,10 +180,34 @@ void main() {
     FragColor = vec4(col, 1.0);
 }
 )";
-
-} // namespace
+}
 
 namespace render_detail {
+TextTex loadOptionalImage(const char* path) {
+    SDL_Surface* conv = decodeRgba(path);
+    if (!conv) return {};
+    const TextTex t = textureOf(conv);
+    SDL_DestroySurface(conv);
+    return t;
+}
+
+void addMipmaps(const TextTex& t) {
+    if (!t.tex) return;
+    glBindTexture(GL_TEXTURE_2D, t.tex);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+}
+
+bool loadDrawableModel(const char* path, Model& m, bool needsHeight) {
+    const bool read = loadGLBModel(path, m);
+    const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+    const bool drawable = read && m.vao && !m.draws.empty() && (needsHeight ? m.maxY > m.minY : extent > 0.0f);
+    if (!drawable) {
+        destroyModel(m);
+        m = Model{};
+    }
+    return drawable;
+}
 
 bool itemOnScreen(const Mat4& vp, int W, int H, const Transform& tr, float aspect, ItemOnScreen& out) {
     float bx, by, tx, ty, mx, my;
@@ -261,7 +232,7 @@ GLuint MakeDotTexture(bool white) {
         for (int x = 0; x < N; ++x) {
             const float dx = x + 0.5f - N * 0.5f, dy = y + 0.5f - N * 0.5f;
             const float d = std::sqrt(dx * dx + dy * dy);
-            const bool green = d < 5.0f;             // inside is green, the ring out to the edge is black
+            const bool green = d < 5.0f;
             const float alpha = std::clamp(7.6f - d, 0.0f, 1.0f);
             uint8_t* p = &px[static_cast<size_t>(y * N + x) * 4];
             p[0] = green ? (white ? 255 : 64) : 0;
@@ -287,7 +258,6 @@ RGBA mixColor(RGBA a, RGBA b, float t) {
 RGBA rgb255(int r, int g, int b, float a) { return RGBA{ r / 255.0f, g / 255.0f, b / 255.0f, a }; }
 
 std::string withCommas(long long n) {
-    // Negated as unsigned, so the most negative number does not overflow
     const unsigned long long magnitude = n < 0 ? 0ULL - (unsigned long long)n : (unsigned long long)n;
     const std::string digits = std::to_string(magnitude);
     std::string out;
@@ -314,22 +284,17 @@ RGBA logTint(Tint t) {
     }
     return theme::LOG_TEXT;
 }
-
-} // namespace render_detail
+}
 
 bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
                     const std::function<void(float, const std::string&)>& progress) {
-    // How far along it is, and the kind of asset loading now with how many of it are done, named under the loading
-    // bar; log.txt gets how long each kind took. Nothing is shown until the fonts and shaders the loading screen draws
-    // with are ready.
-    LoadStages stages("Start-up", progress);
+    LoadStages stages(progress);
     font_ = font;
     text_.hud = hudFont;
     text_.ui.font = uiFont;
 
     if (!initGl()) return false;
     loadLoadingArt();
-    // A picture or model that is missing is drawn as the pink square (pink_)
     loadPictures(stages);
     loadUnitModels(stages);
     loadMobArt(stages);
@@ -337,7 +302,6 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     initSky();
     makeTexels();
     loadPropModels(stages);
-    stages.finish();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -345,9 +309,7 @@ bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
     return colorProgram_ != 0 && glyphProgram_ != 0;
 }
 
-// The flat-colour and textured-quad programs and their buffers, and the terrain's
 bool Renderer::initGl() {
-    // Everything on screen, the loading screen included, is drawn with these two: without them there is no game
     colorProgram_ = linkProgram("colour", COLOR_VS, COLOR_FS);
     glyphProgram_ = linkProgram("glyph", GLYPH_VS, GLYPH_FS);
     if (!colorProgram_ || !glyphProgram_) return false;
@@ -358,7 +320,6 @@ bool Renderer::initGl() {
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     setGlyphDefaults(glyphProgram_);
 
-    // Props drawn instanced: the same fragment shading as the glyph program, untinted, in full colour
     modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, GLYPH_FS);
     if (modelInstProgram_) {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
@@ -380,8 +341,6 @@ bool Renderer::initGl() {
     return true;
 }
 
-// The start-up loading picture, one of data/illustration/loading1.png to loading3.png at random, loaded before
-// the first loading frame is drawn. Only the ones in data.pak are picked from; with none, the bar is drawn alone.
 void Renderer::loadLoadingArt() {
     std::vector<std::string> found;
     for (int i = 1; i <= 3; ++i) {
@@ -389,162 +348,13 @@ void Renderer::loadLoadingArt() {
         if (pakHas(path)) found.push_back(path);
     }
     if (!found.empty()) {
-        // Not SDL_rand: unseeded, it seeds itself from the performance counter, and its first number barely moves
-        // between launches a few seconds apart, so it picked the same picture nearly every time. The system's
-        // random source, mixed with the clock, gives a fair pick each launch.
         std::random_device device;
         std::seed_seq seed{ device(), device(), (unsigned)SDL_GetPerformanceCounter(),
                             (unsigned)(SDL_GetPerformanceCounter() >> 32) };
         std::mt19937 rng(seed);
         const std::string& pick = found[std::uniform_int_distribution<size_t>(0, found.size() - 1)(rng)];
         loadingArt_ = loadOptionalImage(pick.c_str());
-        addMipmaps(loadingArt_);   // drawn well under its own size
-        if (loadingArt_.tex) SDL_Log("Loading picture: %s", pick.c_str());
-    }
-}
-
-// The title screen's logo and each unit model's profile picture
-void Renderer::loadPictures(LoadStages& stages) {
-    const int pictureCount = 1 + UNIT_SPRITE_COUNT;
-    stages.stage(0.0f, "LOADING_PICTURES", pictureCount);
-    titleLogo_ = loadOptionalImage("data/illustration/title.png");
-    addMipmaps(titleLogo_);   // drawn well under its own size
-    stages.step(0.03f, 1);
-    // Each unit model's profile picture, numbered as the models are
-    for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/profile/profile_%02d.png", i);
-        profilePics_[(size_t)i - 1] = loadOptionalImage(path);
-        stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 1 + i);
-    }
-}
-
-// Each unit model: data/model/unit/unit_<nn>.glb. A file with the same bytes as an earlier one is not loaded
-// again: its sprite number shares the earlier model. A missing or unreadable one leaves its units pink squares.
-void Renderer::loadUnitModels(LoadStages& stages) {
-    stages.stage(0.05f, "LOADING_UNIT_MODELS", UNIT_SPRITE_COUNT);
-    // The files loaded so far, for a later one with the same bytes to share
-    struct Loaded {
-        const unsigned char* bytes;
-        size_t size;
-        const Model* model;
-    };
-    std::vector<Loaded> loaded;
-    for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/model/unit/unit_%02d.glb", i);
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        if (!pakFind(path, bytes, size)) {
-            SDL_Log("Unit model %s not in data.pak: units with sprite %d are drawn as pink squares", path, i);
-            stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
-            continue;
-        }
-        const Model*& slot = unitModelFor_[(size_t)i - 1];
-        for (const Loaded& l : loaded) {
-            if (l.size == size && (l.bytes == bytes || std::memcmp(l.bytes, bytes, size) == 0)) {
-                slot = l.model;
-                break;
-            }
-        }
-        if (!slot) {
-            Model& m = unitModels_[(size_t)i - 1];
-            if (loadDrawableModel(path, m, true)) {
-                slot = &m;
-                loaded.push_back({ bytes, size, &m });
-            } else {
-                SDL_Log("Unit model %s could not be read or has nothing to draw: units with sprite %d are drawn as pink squares",
-                        path, i);
-            }
-        }
-        stages.step(0.05f + 0.35f * (float)i / (float)UNIT_SPRITE_COUNT, i);
-    }
-}
-
-// Each mob kind's model, when it has one: data/model/mob/mob_<nn>.glb. A missing one leaves it drawn by its picture.
-// Then every mob kind's picture, data/mob/mob_<n>.png.
-void Renderer::loadMobArt(LoadStages& stages) {
-    int mobModelCount = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model > 0 ? 1 : 0;
-    stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
-    int mobModelsDone = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
-        const MobKind kind = (MobKind)k;
-        const int n = mobInfo(kind).model;
-        if (n <= 0) continue;
-        ++mobModelsDone;
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/model/mob/mob_%02d.glb", n);
-        Model& m = mobModels_[(size_t)k - 1];
-        if (!pakHas(path)) {
-            SDL_Log("Mob model %s not in data.pak: the %s is drawn by its picture", path, lang(mobInfo(kind).nameKey).c_str());
-        } else if (!loadDrawableModel(path, m, true)) {
-            SDL_Log("Mob model %s could not be read or has nothing to draw: the %s is drawn by its picture", path,
-                    lang(mobInfo(kind).nameKey).c_str());
-        }
-        stages.step(0.4f + 0.1f * (float)mobModelsDone / (float)std::max(1, mobModelCount), mobModelsDone);
-    }
-    stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT);
-    mobSprites_.reserve(MOB_KIND_COUNT);
-    for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/mob/mob_%d.png", i);
-        mobSprites_.push_back(loadOptionalImage(path));
-        stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i);
-    }
-}
-
-// The sky's program and its full-screen quad
-void Renderer::initSky() {
-    skyProgram_ = linkProgram("sky", SKY_VS, SKY_FS);
-    uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
-    uSunDir_   = glGetUniformLocation(skyProgram_, "uSunDir");
-    uSunAlpha_ = glGetUniformLocation(skyProgram_, "uSunAlpha");
-    uZenith_   = glGetUniformLocation(skyProgram_, "uZenith");
-    uHorizon_  = glGetUniformLocation(skyProgram_, "uHorizon");
-    uSunCol_   = glGetUniformLocation(skyProgram_, "uSunCol");
-    uMoonDir_   = glGetUniformLocation(skyProgram_, "uMoonDir");
-    uMoonAlpha_ = glGetUniformLocation(skyProgram_, "uMoonAlpha");
-    uMoonCol_   = glGetUniformLocation(skyProgram_, "uMoonCol");
-    uStarAlpha_ = glGetUniformLocation(skyProgram_, "uStarAlpha");
-
-    const float skyQuad[8] = { -1.0f, -1.0f,  1.0f, -1.0f,  1.0f, 1.0f,  -1.0f, 1.0f };
-    glGenVertexArrays(1, &skyVao_);
-    glGenBuffers(1, &skyVbo_);
-    glBindVertexArray(skyVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, skyVbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyQuad), skyQuad, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-}
-
-// One-texel textures: plain white, for colored rectangles and glyphs, and the pink square drawn for a picture that is
-// missing
-void Renderer::makeTexels() {
-    auto texel = [](TextTex& t, uint8_t r, uint8_t g, uint8_t b) {
-        const uint8_t px[4] = { r, g, b, 255 };
-        t = TextTex{ MakeRgbaTexture(1, 1, px, GL_NEAREST), 1.0f };
-    };
-    texel(white_, 255, 255, 255);
-    texel(pink_, 255, 89, 191);   // MISSING_PROP_PINK
-}
-
-// Each prop kind's model: exactly data/model/model_<n>.glb (props.h). No other name is tried, so a file that is
-// missing or misnamed shows up at once: that kind is drawn as a pink square, and log.txt names it.
-void Renderer::loadPropModels(LoadStages& stages) {
-    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT);
-    const char* standIn = "as a pink square";
-    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
-        const PropKind kind = (PropKind)k;
-        const PropInfo& info = propInfo(kind);
-        if (!pakHas(info.file)) {
-            SDL_Log("Prop model %s not in data.pak: the %s is drawn %s", info.file, lang(info.nameKey).c_str(), standIn);
-        } else if (!loadDrawableModel(info.file, propModels_[(size_t)kind], false)) {
-            SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
-                    info.file, lang(info.nameKey).c_str(), standIn);
-        }
-        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
+        addMipmaps(loadingArt_);
     }
 }
 
@@ -609,21 +419,18 @@ void Renderer::setSaturation(float sat) {
     glUniform1f(uSat_, sat);
 }
 
-// A rectangle with round corners of radius `radius` (at most half its shorter side), in window pixels
 void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
     if (r.w <= 0.0f || r.h <= 0.0f) return;
     const float rad = std::clamp(radius, 0.0f, std::min(r.w, r.h) * 0.5f);
-    static std::vector<UiVert> v;   // kept between calls so it is not allocated each time (drawn on one thread)
+    static std::vector<UiVert> v;
     v.clear();
     auto quad = [&](float x0, float y0, float x1, float y1) {
         if (x1 <= x0 || y1 <= y0) return;
         v.insert(v.end(), { { x0, y0, c }, { x1, y0, c }, { x1, y1, c }, { x0, y0, c }, { x1, y1, c }, { x0, y1, c } });
     };
-    // The middle band the full height, and the two side bands between the corners
     quad(r.x + rad, r.y, r.x + r.w - rad, r.y + r.h);
     quad(r.x, r.y + rad, r.x + rad, r.y + r.h - rad);
     quad(r.x + r.w - rad, r.y + rad, r.x + r.w, r.y + r.h - rad);
-    // Each corner a fan of thin wedges
     if (rad > 0.0f) {
         const int steps = std::clamp((int)(rad * 0.6f), 4, 24);
         const float cx[4] = { r.x + rad, r.x + r.w - rad, r.x + r.w - rad, r.x + rad };
@@ -643,15 +450,13 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
 }
 
 void Renderer::beginUi(int winW, int winH) {
-    // Game log lines are new strings in every fight, so the list cache would grow for the whole session.
-    // It is cleared here, once a frame, when no text reference is held: anything drawn again is rebuilt.
     constexpr size_t LIST_CACHE_LIMIT = 512;
     if (text_.list.lines.size() > LIST_CACHE_LIMIT) text_.list.clear();
     uiW_ = winW;
     uiH_ = winH;
     glViewport(0, 0, winW, winH);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);   // a clip left on by an earlier pass would cut off the menus
+    glDisable(GL_SCISSOR_TEST);
     // The UI backgrounds are translucent, so blending must be on. The sea pass in drawTerrain leaves it off.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -662,7 +467,7 @@ void Renderer::endUi() {
     drawTip();
     glBindVertexArray(0);
     glDisable(GL_SCISSOR_TEST);
-    glDisable(GL_BLEND);   // the world pass draws with blending off
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -681,14 +486,14 @@ void Renderer::drawColorTris(const Batch& b, const Mat4& mvp) {
 }
 
 void Renderer::drawUiTris(const std::vector<UiVert>& in) {
-    static std::vector<Vertex> v;   // kept between calls so it is not allocated each time (drawn on one thread)
+    static std::vector<Vertex> v;
     v.clear();
     for (const UiVert& u : in) v.push_back(Vertex{ { u.x, u.y, 0.0f }, u.c });
     drawColorTris(v.data(), v.size(), pixels_);
 }
 
 void Renderer::noteHover(const Rect& r) {
-    if (hoverAny_) return;   // the first one drawn under the pointer counts
+    if (hoverAny_) return;
     hoverAny_ = true;
     hoverNow_ = r;
 }
@@ -714,7 +519,6 @@ void Renderer::drawRect(const Rect& r, RGBA c) {
     drawColorTris(b, pixels_);
 }
 
-// A quad with one color at the top and another at the bottom
 void Renderer::drawRectGradient(const Rect& r, RGBA top, RGBA bottom) {
     const float x0 = r.x, x1 = r.x + r.w, y0 = r.y, y1 = r.y + r.h;
     const Vertex v[6] = {
@@ -739,7 +543,6 @@ void Renderer::drawTexture(GLuint tex, float x, float y, float w, float h, RGBA 
 
 void Renderer::drawUiQuad(GLuint tex, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1,
                           RGBA tint) {
-    // Vertices BL, BR, TR, TL: the top edge (y0) takes the top texture coordinate v0
     const float v[4 * 5] = {
         x0, y1, 0.0f, u0, v1,
         x1, y1, 0.0f, u1, v1,
@@ -761,11 +564,10 @@ void Renderer::drawRing(float cx, float cy, float outer, float inner, float from
     from = std::clamp(from, 0.0f, 1.0f);
     to = std::clamp(to, 0.0f, 1.0f);
     if (to <= from) return;
-    constexpr int FULL_SEGMENTS = 48;   // segments in a whole ring: smooth at this size
+    constexpr int FULL_SEGMENTS = 48;
     const int n = std::max(1, (int)std::ceil(FULL_SEGMENTS * (to - from)));
     Batch b;
     for (int i = 0; i < n; ++i) {
-        // Angle 0 is straight up, and it grows clockwise on screen (y grows downward)
         const float a0 = TWO_PI * (from + (to - from) * (float)i / n);
         const float a1 = TWO_PI * (from + (to - from) * (float)(i + 1) / n);
         const float s0 = std::sin(a0), c0 = std::cos(a0), s1 = std::sin(a1), c1 = std::cos(a1);
@@ -776,7 +578,6 @@ void Renderer::drawRing(float cx, float cy, float outer, float inner, float from
 }
 
 void Renderer::beginClip(const Rect& r) {
-    // OpenGL counts rows from the bottom of the window, the layout from the top
     const int x0 = std::max(0, (int)std::floor(r.x));
     const int x1 = std::min(uiW_, (int)std::ceil(r.x + r.w));
     const int top = std::max(0, (int)std::floor(r.y));
@@ -827,15 +628,13 @@ const TextTex* Renderer::itemTexture(int item) {
 }
 
 bool Renderer::itemPixelSolid(int item, float u, float v) {
-    // Kept as the item's picture was loaded; empty when it has none
     const AlphaMask& m = itemPics_.mask(item);
-    if (m.alpha.empty()) return true;   // no picture at all: the pink square, solid all over
+    if (m.alpha.empty()) return true;
     const int x = std::clamp((int)(u * (float)m.w), 0, m.w - 1);
     const int y = std::clamp((int)(v * (float)m.h), 0, m.h - 1);
-    return m.alpha[(size_t)y * (size_t)m.w + (size_t)x] >= 26;   // as the glyph shader: under 0.1 is not drawn
+    return m.alpha[(size_t)y * (size_t)m.w + (size_t)x] >= 26;
 }
 
-// An emote's picture from data/emote (emote_<n>.png), loaded once. Without one, the pink square.
 const TextTex* Renderer::emoteTexture(EmoteId emote) {
     const TextTex& t = emotePics_.get(idx(emote));
     return t.tex ? &t : &pink_;
@@ -848,7 +647,6 @@ const Model& Renderer::propModel(PropKind kind) const {
 void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
     if (!g.tex) return;
 
-    // Fit the picture inside r without changing its shape
     const float aspect = g.aspect > 0.0f ? g.aspect : 1.0f;
     float w = r.h * aspect, h = r.h;
     if (w > r.w) {
@@ -857,4 +655,28 @@ void Renderer::drawFitted(const TextTex& g, const Rect& r, RGBA tint) {
     }
     const float x = r.x + (r.w - w) * 0.5f, y = r.y + (r.h - h) * 0.5f;
     drawTexture(g.tex, x, y, w, h, tint);
+}
+
+void Renderer::initSky() {
+    skyProgram_ = linkProgram("sky", SKY_VS, SKY_FS);
+    uSkyInvVP_ = glGetUniformLocation(skyProgram_, "uInvVP");
+    uSunDir_   = glGetUniformLocation(skyProgram_, "uSunDir");
+    uSunAlpha_ = glGetUniformLocation(skyProgram_, "uSunAlpha");
+    uZenith_   = glGetUniformLocation(skyProgram_, "uZenith");
+    uHorizon_  = glGetUniformLocation(skyProgram_, "uHorizon");
+    uSunCol_   = glGetUniformLocation(skyProgram_, "uSunCol");
+    uMoonDir_   = glGetUniformLocation(skyProgram_, "uMoonDir");
+    uMoonAlpha_ = glGetUniformLocation(skyProgram_, "uMoonAlpha");
+    uMoonCol_   = glGetUniformLocation(skyProgram_, "uMoonCol");
+    uStarAlpha_ = glGetUniformLocation(skyProgram_, "uStarAlpha");
+
+    const float skyQuad[8] = { -1.0f, -1.0f,  1.0f, -1.0f,  1.0f, 1.0f,  -1.0f, 1.0f };
+    glGenVertexArrays(1, &skyVao_);
+    glGenBuffers(1, &skyVbo_);
+    glBindVertexArray(skyVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, skyVbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyQuad), skyQuad, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
 }

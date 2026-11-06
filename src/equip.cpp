@@ -7,12 +7,9 @@
 #include "inventory.h"
 #include "items.h"
 
-// Dexterity XP for each gear change that goes through: equipping, moving or taking off a piece
 constexpr float GEAR_CHANGE_XP = 2.0f;
 
 namespace {
-
-// The gear slots an item fits, from its equip_slot
 std::vector<int> fittingSlots(const ItemDef& d) {
     const std::string& s = d.equipSlot;
     if (s == "head") return { idx(GearSlot::Head) };
@@ -30,8 +27,7 @@ bool isTwoHanded(int item) {
     const ItemDef* d = findItem(item);
     return d && d->equipSlot == "two_hand";
 }
-
-} // namespace
+}
 
 std::string gearSlotName(int slot) {
     static const char* const keys[GEAR_SLOTS] = {
@@ -92,7 +88,6 @@ std::vector<int> comparisonSlots(int item) {
 std::vector<int> displacedSlots(const Equipment& worn, int item) {
     const ItemDef* d = findItem(item);
     if (!d || d->equipSlot.empty()) return {};
-    // A two-handed weapon needs both hands empty first
     if (d->equipSlot == "two_hand") return { idx(GearSlot::MainHand), idx(GearSlot::OffHand) };
     const int slot = gearSlotFor(worn, item);
     if (slot < 0) return {};
@@ -112,7 +107,7 @@ void gearTotals(const Equipment& worn, int& attack, int& defense) {
 
 bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::string& why) {
     why.clear();
-    if (w.has<Mob>(unit)) {   // a mob has no gear slots (mobs.h)
+    if (w.has<Mob>(unit)) {
         why = lang("MISC_MOB_NO_GEAR");
         return false;
     }
@@ -125,7 +120,6 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     if (item == 0 || inv->slots[invSlot].count <= 0) return false;
     if (!canEquip(*worn, item, gearSlot, why)) return false;
 
-    // Work on a copy, so a full inventory leaves everything as it was
     const int displaced = worn->items[gearSlot];
     Inventory next = *inv;
     ItemStack& taken = next.slots[invSlot];
@@ -210,26 +204,23 @@ int giveOrDrop(World& w, Entity unit, int item, int count) {
     if (item <= 0 || count <= 0) return 0;
     Inventory* inv = w.get<Inventory>(unit);
     const int left = inv ? addToInventory(*inv, item, count) : count;
-    if (left > 0) dropAtUnit(w, unit, item, left);   // no room for the rest
+    if (left > 0) dropAtUnit(w, unit, item, left);
     return count - left;
 }
 
 namespace {
-
-// How good an item is in a gear slot: its attack and defense together, then what it is worth. Higher is better.
 struct GearScore {
     int stat = 0;
     int value = 0;
     int buy = 0;
 };
-// The preferences bestGear is working with, for scoreOf
 GearPrefs gPrefs;
 GearScore scoreOf(int item) {
     GearScore g;
     if (const ItemDef* d = findItem(item)) {
         const int share = std::clamp(gPrefs.attackShare, 0, 100);
         g.stat = d->attackValue * share + d->defenseValue * (100 - share);
-        if (gPrefs.valueTies) {   // otherwise a tie stays a tie, and what is worn keeps its place
+        if (gPrefs.valueTies) {
             g.value = d->sellValue;
             g.buy = d->buyValue;
         }
@@ -242,7 +233,6 @@ GearScore operator+(GearScore a, const GearScore& b) {
     a.buy += b.buy;
     return a;
 }
-// -1 if a is worse than b, 1 if better, 0 if they are as good
 int compareScore(const GearScore& a, const GearScore& b) {
     if (a.stat != b.stat) return a.stat < b.stat ? -1 : 1;
     if (a.value != b.value) return a.value < b.value ? -1 : 1;
@@ -250,7 +240,6 @@ int compareScore(const GearScore& a, const GearScore& b) {
     return 0;
 }
 
-// The gear on hand: how many of each gear item the unit wears and carries
 using GearCounts = std::map<int, int>;
 
 GearCounts gearOnHand(const Equipment& worn, const Inventory& inv) {
@@ -273,7 +262,6 @@ bool slotIs(int item, const char* equipSlot) {
     return d && d->equipSlot == equipSlot;
 }
 
-// The best item on hand whose equip_slot is one of these, or 0. A tie goes to the item already in prefer.
 int bestOf(const GearCounts& c, std::initializer_list<const char*> kinds, int prefer) {
     int best = 0;
     for (const auto& [item, n] : c) {
@@ -290,8 +278,7 @@ int bestOf(const GearCounts& c, std::initializer_list<const char*> kinds, int pr
     }
     return best;
 }
-
-} // namespace
+}
 
 Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs& prefs) {
     gPrefs = prefs;
@@ -300,7 +287,6 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
     auto take = [&](int item) {
         if (item != 0) --c[item];
     };
-    // The body slots, one item kind each
     const std::pair<int, const char*> body[] = {
         { idx(GearSlot::Head), "head" }, { idx(GearSlot::Torso), "torso" }, { idx(GearSlot::Legs), "legs" }, { idx(GearSlot::Feet), "feet" },
     };
@@ -308,8 +294,6 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
         out.items[slot] = bestOf(c, { kind }, worn.items[slot]);
         take(out.items[slot]);
     }
-    // Two accessories, the two best. Each stays in the slot it was already in, if it was. With accessories off, they
-    // stay as they are.
     if (prefs.accessories) {
         const int acc1 = bestOf(c, { "accessory" }, worn.items[GearSlot::Accessory1]);
         take(acc1);
@@ -325,8 +309,6 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
         out.items[GearSlot::Accessory2] = worn.items[GearSlot::Accessory2];
     }
 
-    // The hands. Every main hand and off hand pair on hand is weighed, an empty hand included, and the best pair is
-    // set against the best two-handed weapon. On a tie, the choice that keeps more of the current hands wins.
     std::vector<int> mains{ 0 }, offs{ 0 }, twos;
     for (const auto& [item, n] : c) {
         if (n <= 0) continue;
@@ -353,7 +335,7 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
     };
     for (int m : mains) {
         for (int o : offs) {
-            if (m != 0 && m == o && c[m] < 2) continue;   // one item can't be in both hands
+            if (m != 0 && m == o && c[m] < 2) continue;
             consider(m, o);
         }
     }
@@ -364,19 +346,14 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
 }
 
 namespace {
-
-// Changes a unit's gear to target, moving what comes off into the inventory and what goes on out of it. All of it is
-// tried on a copy of the inventory first: if what comes off doesn't fit, nothing changes.
 GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string& why) {
     why.clear();
-    if (w.has<Mob>(unit)) return GearAction::NoChange;   // a mob has no gear to wear or take off
+    if (w.has<Mob>(unit)) return GearAction::NoChange;
     Inventory* inv = w.get<Inventory>(unit);
     Equipment* worn = w.get<Equipment>(unit);
     if (!inv || !worn) return GearAction::NoChange;
     if (worn->items == target.items) return GearAction::NoChange;
 
-    // What comes off and what goes on, item by item (a piece that only moves between hands or accessory slots does
-    // neither)
     std::map<int, int> was, will;
     for (int item : worn->items) if (item != 0) ++was[item];
     for (int item : target.items) if (item != 0) ++will[item];
@@ -386,7 +363,6 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
 
     Inventory next = *inv;
     for (int item : on) {
-        // Out of the inventory: the last stack of it, so the first ones stay where they are
         bool found = false;
         for (int s = INVENTORY_SLOTS - 1; s >= 0 && !found; --s) {
             ItemStack& st = next.slots[(size_t)s];
@@ -394,7 +370,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
             if (--st.count <= 0) st = ItemStack{};
             found = true;
         }
-        if (!found) return GearAction::NoChange;   // not on hand after all: change nothing
+        if (!found) return GearAction::NoChange;
     }
     for (int item : off) {
         if (addToInventory(next, item, 1) > 0) {
@@ -403,7 +379,6 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
         }
     }
 
-    // It all fits: make the change. The inventory is set from the copy, and the gear from the target.
     int changed = 0;
     for (int g = 0; g < GEAR_SLOTS; ++g) changed += worn->items[(size_t)g] != target.items[(size_t)g] ? 1 : 0;
     *inv = next;
@@ -412,8 +387,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
     grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP * (float)changed, lang("MISC_REASON_GEAR"));
     return GearAction::Done;
 }
-
-} // namespace
+}
 
 GearAction optimizeGear(World& w, Entity unit, std::string& why, const GearPrefs& prefs) {
     const Inventory* inv = w.get<Inventory>(unit);

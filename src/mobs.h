@@ -3,70 +3,27 @@
 #include "enum_index.h"
 #include "stats.h"
 
-// Mobs: animals and other creatures. A mob is a unit (it walks, fights, falls Unconscious and can be carried, looted
-// and rested in a bed or bedroll), with a Mob component naming its kind, and these differences:
-//   - It has no gear slots and can't wear gear (its Equipment stays empty). It can't use healing items.
-//   - It can't talk or trade, either way: it has no Dialogue, is never offered Talk, Shop or Trade, and never talks or
-//     trades for your squad.
-//   - Its inventory is not shown, even when it is one of yours, until it is a corpse.
-//   - It has only the attributes and the combat skills (StatGroup::Attributes and Combat); the gathering, crafting and
-//     utility skills stay at 1 and earn no XP, and it works no props.
-//   - It carries its own raw meat (MobInfo::meat) and bones (mobBones), and can hold nothing else (mobCanHold): it picks
-//     nothing up, takes nothing from anyone and is given nothing. While it is awake its inventory can't be opened,
-//     traded from or dropped from. Once it is Unconscious it can be looted, and taking anything out of it kills it:
-//     it goes to 0 health and its Dying completes at once, so it is a corpse.
-//   - Its picture is data/mob/mob_<kind>.png (a missing one is the pink square, data/mobinfo.txt lists them). A
-//     kind with a model (MobInfo::model) is drawn in the world by data/model/mob/mob_<nn>.glb instead, and its
-//     portrait is the pink square, as a person's is.
-//   - It belongs to its kind's own faction (MOB_FACTION_BASE + kind - 1, data/factioninfo.txt), unless it was placed in
-//     another one: each camp of a faction with units has CAMP_MOBS of random kinds in that faction, each locked in a
-//     Prisoner Cage of its own, with " [!]" after its name to show it is a faction's, not wild. Yours are the
-//     party's own (PartyMember::mob, party.h), as its scenario rolled them or the party menu chose them. Beyond the camps, MobInfo::wild of every kind (WILD_MOBS for most) roam in herds, in their own
-//     factions. A kind placed only once (the Gorlicorn) is never one of a camp's.
-// The Gorlicorn: one in the world, Aggressive, every stat at its most and GORLICORN_HP health. It does not Roam but
-// Patrols Spawn: it walks about near where it was placed, chases outsiders, and past SPAWN_LEASH_RANGE from that spot
-// gives up, heals fully and walks home, taking no damage until it gets there (patrolSpawnSystem in systems.h). Being a
-// boss, it goes home at BOSS_RETURN_SPEED_FACTOR its speed, and is put there if it takes too long.
-// A mob has no hunger, Rested or Comfort. Knocked out, it wakes by itself at no cost. Taking anything out of it kills it,
-// and so does another mob bringing it down: that mob destroys its meat, and its bones stay in the corpse.
-// Wild mobs: those in their kind's own faction. A mob faction has no reputation. Instead its kind's temperament
-// (mobTemperament) says how its mobs take to any unit outside their faction:
-//   Avoidant: keeps away. It runs from any outsider within WILD_AVOID_RANGE, and never fights, even when hit.
-//   Passive: lets them be, and never fights, even when hit.
-//   Neutral: lets them be, but fights back when attacked, and its herd joins in.
-//   Aggressive: attacks them on sight.
-// Wild mobs also Roam: they wander the open map, anywhere walkable outside the flags' claims (behavior.h).
-// Knocking out or killing a mob of a mob faction costs no reputation: hunting is not a slight to anyone.
-// Kinds are numbered from 1 in the order below, one for each raw meat in data/itemdb.txt.
-
 enum class MobKind : int {
     None = 0,
     Bear, Cow, Chicken, Boar, Wolf, Deer, Rabbit, Fish, Crab, Lizard,
     Snake, Pig, Sheep, Duck, Turtle, Bat, Frog, Gorlicorn,
     End
 };
-constexpr int MOB_KIND_COUNT = idx(MobKind::End) - 1;   // kinds 1 to MOB_KIND_COUNT
-constexpr int MOB_FACTION_BASE = 10;               // kind k's own faction is MOB_FACTION_BASE + k - 1
-constexpr int CAMP_MOBS = 3;                       // mobs of random kinds each camp's faction starts with
-constexpr int WILD_MOBS = 10;                      // mobs of each kind placed out in the world, in their own faction
+constexpr int MOB_KIND_COUNT = idx(MobKind::End) - 1;
+constexpr int MOB_FACTION_BASE = 10;
+constexpr int CAMP_MOBS = 3;
+constexpr int WILD_MOBS = 10;
 
-// A kind's category: Regular for most, Boss for one of a kind (the Gorlicorn). Only Regular kinds stand in camps or
-// can join a party from the scenarios and the party menu.
 enum class MobCategory { Regular, Boss };
 
-// What a kind of mob is: its name, the raw meat it carries and how much, its attributes and its Melee and Block, all
-// as levels. Only these are set; the other attributes start at the unit's usual 10, the rest at 1.
-// The rest have defaults: how many roam the world (wild), whether every stat it has is at MAX_LEVEL (maxStats), its
-// health if not the usual from Vitality (hp, 0 for the usual), its model (data/model/mob/mob_<nn>.glb, 0 for none: it
-// is drawn by its picture) and how tall that model stands in tiles, and whether it Patrols Spawn instead of Roaming.
 struct MobInfo {
     const char* nameKey;
-    int meat;          // its raw meat's item id
+    int meat;
     int meatCount;
     int strength, dexterity, vitality, agility;
     int melee, block;
     int wild = WILD_MOBS;
-    int boneCount = 0;   // bones it carries; 0 for the usual, about half its meat (mobBoneCount)
+    int boneCount = 0;
     bool maxStats = false;
     int hp = 0;
     int model = 0;
@@ -76,11 +33,9 @@ struct MobInfo {
 };
 
 constexpr int GORLICORN_HP = 2000;
-constexpr float SPAWN_PATROL_RADIUS = 8.0f;   // Patrol Spawn: its walks end within this many tiles of its spawn
-constexpr float SPAWN_LEASH_RANGE = 25.0f;    // past this far from its spawn it gives up a chase and goes home
-constexpr float SPAWN_HOME_REACH = 1.0f;      // within this of its spawn it is home again
-// A boss walking home (taking no damage) moves this many times its usual speed, and if it is not home within this many
-// seconds it is put there at once
+constexpr float SPAWN_PATROL_RADIUS = 8.0f;
+constexpr float SPAWN_LEASH_RANGE = 25.0f;
+constexpr float SPAWN_HOME_REACH = 1.0f;
 constexpr float BOSS_RETURN_SPEED_FACTOR = 10.0f;
 constexpr float BOSS_RETURN_TELEPORT_SECONDS = 10.0f;
 
@@ -110,15 +65,12 @@ inline const MobInfo& mobInfo(MobKind kind) {
     return info[(i >= 0 && i < MOB_KIND_COUNT) ? i : 0];
 }
 
-// A kind's bones: items MOB_BONES_FIRST on, one for each kind in the same order, and how many it carries, about half
-// its meat
 constexpr int MOB_BONES_FIRST = 134;
 inline int mobBones(MobKind kind) { return MOB_BONES_FIRST + idx(kind) - 1; }
 inline int mobBoneCount(MobKind kind) {
     if (mobInfo(kind).boneCount > 0) return mobInfo(kind).boneCount;
     return std::max(1, (mobInfo(kind).meatCount + 1) / 2);
 }
-// Whether a mob of this kind may hold an item: its own meat or bones only
 inline bool mobCanHold(MobKind kind, int item) { return item == mobInfo(kind).meat || item == mobBones(kind); }
 
 enum class MobTemperament { Avoidant, Passive, Neutral, Aggressive };
@@ -127,10 +79,9 @@ inline MobTemperament mobTemperament(MobKind kind) {
     case MobKind::Bear: case MobKind::Wolf: case MobKind::Snake: case MobKind::Bat: case MobKind::Gorlicorn: return MobTemperament::Aggressive;
     case MobKind::Boar: case MobKind::Crab: case MobKind::Turtle: return MobTemperament::Neutral;
     case MobKind::Cow: case MobKind::Fish: case MobKind::Pig: case MobKind::Sheep: return MobTemperament::Passive;
-    default: return MobTemperament::Avoidant;   // chicken, deer, rabbit, lizard, duck, frog
+    default: return MobTemperament::Avoidant;
     }
 }
-// The language key for a temperament's name
 inline const char* temperamentKey(MobTemperament t) {
     switch (t) {
     case MobTemperament::Avoidant: return "UILABEL_TEMPERAMENT_AVOIDANT";
@@ -140,12 +91,10 @@ inline const char* temperamentKey(MobTemperament t) {
     }
     return "";
 }
-constexpr float WILD_AVOID_RANGE = 6.0f;    // an Avoidant wild mob runs from an outsider this close
-constexpr float WILD_FLEE_DISTANCE = 12.0f; // and runs this far from it
-constexpr int EXILE_FLEE_PERCENT = 25;      // an Exile at this share of its health or less stops fighting and runs
+constexpr float WILD_AVOID_RANGE = 6.0f;
+constexpr float WILD_FLEE_DISTANCE = 12.0f;
+constexpr int EXILE_FLEE_PERCENT = 25;
 
-// How tall a kind drawn by its picture stands, against a person's height: the Bear twice as tall, the small creatures
-// half as tall, the rest as tall as a person
 inline float mobSpriteScale(MobKind kind) {
     switch (kind) {
     case MobKind::Bear: return 2.0f;
@@ -156,33 +105,23 @@ inline float mobSpriteScale(MobKind kind) {
     }
 }
 
-// How far above the ground a kind is drawn while it is up and about, as a share of its height: the Bat flies. Lying
-// (Unconscious, playing dead, a corpse), carried, or occupying a prop, it is on the ground like any other.
 inline float mobHoverFraction(MobKind kind) {
     return kind == MobKind::Bat ? 0.8f : 0.0f;
 }
 
-// Kinds that leave each other be, whatever their temperaments: the Gorlicorn and the Rabbits that keep it company. They
-// do not fight each other, and an Avoidant one does not run from the other.
 inline bool mobKindsFriendly(MobKind a, MobKind b) {
     return (a == MobKind::Gorlicorn && b == MobKind::Rabbit) || (a == MobKind::Rabbit && b == MobKind::Gorlicorn);
 }
-constexpr int GORLICORN_RABBITS = 3;   // Rabbits placed by the Gorlicorn, keeping near it
+constexpr int GORLICORN_RABBITS = 3;
 
-// Whether a kind is a regular mob, not a boss
 inline bool isRegularMob(MobKind kind) {
     return idx(kind) >= 1 && idx(kind) <= MOB_KIND_COUNT && mobInfo(kind).category == MobCategory::Regular;
 }
-// Whether a camp may be given a mob of this kind: a regular one
 inline bool campMobKind(MobKind kind) { return isRegularMob(kind); }
 
-// The faction a kind of mob belongs to when it is not placed in another one
 inline int mobFaction(MobKind kind) { return MOB_FACTION_BASE + idx(kind) - 1; }
-// Whether a faction is a mob kind's own
 inline bool isMobFaction(int faction) { return faction >= MOB_FACTION_BASE && faction < MOB_FACTION_BASE + MOB_KIND_COUNT; }
-// The kind whose own faction this is (a mob faction only)
 inline MobKind mobKindOfFaction(int faction) { return (MobKind)(faction - MOB_FACTION_BASE + 1); }
-// Whether a mob has this stat: the attributes and the combat skills
 inline bool mobHasStat(StatId stat) {
     const StatGroup g = statInfo(stat).group;
     return g == StatGroup::Attributes || g == StatGroup::Combat;

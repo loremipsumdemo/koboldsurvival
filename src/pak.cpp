@@ -7,13 +7,6 @@
 #include <vector>
 
 namespace {
-
-// File layout, which tools/pack_data.cpp writes:
-//   8 bytes   magic "RTSPAK01"
-//   4 bytes   number of files
-//   per file: 4 bytes name length, the name, 8 bytes offset, 8 bytes size
-//   then the file bytes themselves
-// Offsets count from the start of the pak. Numbers are little-endian.
 const char MAGIC[8] = { 'R', 'T', 'S', 'P', 'A', 'K', '0', '1' };
 
 struct Entry {
@@ -21,10 +14,9 @@ struct Entry {
     uint64_t size = 0;
 };
 
-std::vector<unsigned char> g_bytes;                  // the whole pak, kept for the program's life
-std::unordered_map<std::string, Entry> g_index;      // file name -> where its bytes are
+std::vector<unsigned char> g_bytes;
+std::unordered_map<std::string, Entry> g_index;
 
-// Reads a little-endian integer at pos and moves pos past it. Returns false past the end.
 template <typename T>
 bool readInt(const std::vector<unsigned char>& b, size_t& pos, T& out) {
     if (pos + sizeof(T) > b.size()) return false;
@@ -36,8 +28,7 @@ bool readInt(const std::vector<unsigned char>& b, size_t& pos, T& out) {
     pos += sizeof(T);
     return true;
 }
-
-} // namespace
+}
 
 bool pakOpen(const std::string& pakPath) {
     g_index.clear();

@@ -4,9 +4,8 @@
 #include <cmath>
 
 namespace {
-
 constexpr int   TILE = SURFACE_TILE_SIZE;
-constexpr float SLOPE_SCALE = 24.0f;    // how strongly height differences tilt the normal
+constexpr float SLOPE_SCALE = 24.0f;
 
 uint32_t hashCell(uint32_t x, uint32_t y, uint32_t seed) {
     uint32_t h = x * 0x27d4eb2du + y * 0x165667b1u + seed * 0x9e3779b9u;
@@ -18,14 +17,11 @@ uint32_t hashCell(uint32_t x, uint32_t y, uint32_t seed) {
     return h;
 }
 
-// Random value in [0, 1) for one lattice cell.
 float lattice(int x, int y, uint32_t seed) {
     const uint32_t h = hashCell(static_cast<uint32_t>(x), static_cast<uint32_t>(y), seed);
     return static_cast<float>(h & 0xFFFFFFu) / 16777216.0f;
 }
 
-// Value noise at (u, v) in [0, 1). The lattice wraps every `period` cells, so the
-// noise is exactly periodic over the tile and the tile repeats without a seam.
 float periodicNoise(float u, float v, int period, uint32_t seed) {
     const float fx = u * static_cast<float>(period);
     const float fy = v * static_cast<float>(period);
@@ -54,14 +50,11 @@ unsigned char encode(float v) {
     const long q = std::lround((v * 0.5f + 0.5f) * 255.0f);
     return static_cast<unsigned char>(std::clamp(q, 0L, 255L));
 }
-
-}  // namespace
+}
 
 std::vector<uint8_t> surfaceTilePixels(const SurfaceTileSpec& spec) {
     const std::size_t count = static_cast<std::size_t>(TILE) * TILE;
 
-    // Three octaves: big shapes, medium shapes, small shapes. Ridged octaves are
-    // folded so their peaks are sharp, which reads as grain rather than bumps.
     const bool ridged = spec.ridged;
     auto octave = [ridged](float u, float v, int period, uint32_t s) {
         const float n = periodicNoise(u, v, period, s);
@@ -87,7 +80,6 @@ std::vector<uint8_t> surfaceTilePixels(const SurfaceTileSpec& spec) {
     }
     const float range = std::max(hi - lo, 1e-5f);
 
-    // Height in [0, 1] with wrap-around, so the normals match across tile edges.
     auto at = [&](int x, int y) {
         const int xx = (x + TILE) % TILE;
         const int yy = (y + TILE) % TILE;

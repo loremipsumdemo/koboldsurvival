@@ -1,5 +1,3 @@
-// Placing a model in the world, and finding where a ray meets it. Kept apart from model.cpp, which loads models into
-// OpenGL, so this needs no GL and the tests can check it.
 #include "model.h"
 #include "geometry.h"
 #include <algorithm>
@@ -18,7 +16,6 @@ ModelPlacement placeModel(const Model& m, float x, float y, float z, float targe
     p.tx = x;
     p.ty = y;
     p.tz = z;
-    // world = k * R(p - pivot) + t, so the translation is t - k * R(pivot); R turns (x, z) by (cs, sn)
     p.ox = x - p.k * (p.cs * p.px + p.sn * p.pz);
     p.oy = y - p.k * p.py;
     p.oz = z - p.k * (-p.sn * p.px + p.cs * p.pz);
@@ -27,10 +24,7 @@ ModelPlacement placeModel(const Model& m, float x, float y, float z, float targe
 }
 
 namespace {
-
-// The nearest place a ray in the model's own space meets its triangles, along rd; below 0 when it misses
 float rayHitModelSpace(const Model& m, const float ro[3], const float rd[3]) {
-    // A miss of the model's box needs no triangle tests
     {
         float t0 = -1e30f, t1 = 1e30f;
         const float lo[3] = { m.minX, m.minY, m.minZ }, hi[3] = { m.maxX, m.maxY, m.maxZ };
@@ -47,7 +41,6 @@ float rayHitModelSpace(const Model& m, const float ro[3], const float rd[3]) {
         }
         if (t1 < 0.0f) return -1.0f;
     }
-    // Every triangle, both faces (Moller-Trumbore)
     float best = -1.0f;
     const size_t vcount = m.positions.size() / 3;
     for (size_t i = 0; i + 2 < m.triangles.size(); i += 3) {
@@ -73,13 +66,10 @@ float rayHitModelSpace(const Model& m, const float ro[3], const float rd[3]) {
     }
     return best;
 }
-
-} // namespace
+}
 
 float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]) {
     if (!p.ok || m.triangles.size() < 3) return -1.0f;
-    // Into the model's own space: p = R^-1((o - t) / k) + pivot, and d' = R^-1(d) / k, so the distance along the
-    // ray stays the same
     const float lx = (o[0] - p.tx) / p.k, ly = (o[1] - p.ty) / p.k, lz = (o[2] - p.tz) / p.k;
     const float ro[3] = { p.cs * lx - p.sn * lz + p.px, ly + p.py, p.sn * lx + p.cs * lz + p.pz };
     const float rd[3] = { (p.cs * d[0] - p.sn * d[2]) / p.k, d[1] / p.k, (p.sn * d[0] + p.cs * d[2]) / p.k };

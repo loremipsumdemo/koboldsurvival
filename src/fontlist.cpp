@@ -7,7 +7,6 @@
 namespace fs = std::filesystem;
 
 namespace {
-
 void addFontsIn(const fs::path& dir, std::vector<std::string>& out) {
     std::error_code ec;
     if (dir.empty() || !fs::is_directory(dir, ec)) return;
@@ -48,8 +47,7 @@ std::vector<std::string> scan() {
     });
     return found;
 }
-
-} // namespace
+}
 
 const std::vector<std::string>& installedFontPaths() {
     static const std::vector<std::string> fonts = scan();

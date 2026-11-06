@@ -9,20 +9,17 @@
 namespace fs = std::filesystem;
 
 namespace {
-
-// The built-in fonts, in their default order
 const char* const BUILT_IN_FONTS[] = {
-    "data/font/NotoSans-Regular.ttf",        // Latin, Cyrillic, Greek, Vietnamese
-    "data/font/NotoSansArabic-Regular.ttf",  // Arabic
-    "data/font/NotoSansJP-Regular.ttf",      // Japanese
-    "data/font/NotoSansKR-Regular.ttf",      // Korean
-    "data/font/NotoSansSC-Regular.ttf",      // Chinese, Simplified
-    "data/font/NotoSansTC-Regular.ttf",      // Chinese, Traditional
-    "data/font/NotoSansThai-Regular.ttf",    // Thai
+    "data/font/NotoSans-Regular.ttf",
+    "data/font/NotoSansArabic-Regular.ttf",
+    "data/font/NotoSansJP-Regular.ttf",
+    "data/font/NotoSansKR-Regular.ttf",
+    "data/font/NotoSansSC-Regular.ttf",
+    "data/font/NotoSansTC-Regular.ttf",
+    "data/font/NotoSansThai-Regular.ttf",
 };
 constexpr int BUILT_IN_COUNT = 7;
 
-// The index of the built-in font that suits a language best, or -1 to keep the default order
 int suitedIndex(const std::string& languageId) {
     if (languageId == "language_ar") return 1;
     if (languageId == "language_ja") return 2;
@@ -33,14 +30,12 @@ int suitedIndex(const std::string& languageId) {
     return -1;
 }
 
-// The file name of a path, in lower case
 std::string lowerFileName(const std::string& path) {
     std::string name = fs::path(path).filename().string();
     name = toLower(name);
     return name;
 }
-
-} // namespace
+}
 
 std::vector<std::string> builtInFontOrder(const std::string& languageId) {
     std::vector<std::string> order;

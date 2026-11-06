@@ -2,7 +2,7 @@
 #
 # faction <id> <name key> <color> <units>
 #   id: a whole number that never changes or gets reused, since saves keep it. 0 is the Player Faction (your
-#       units) and must be listed. 1 was the old Gray Faction: saves that have it load into Green (3).
+#       units) and must be listed.
 #   name key: the language key of its name (FACTION_... in data/language). A key the language files lack is
 #       shown as written.
 #   color: #rrggbb, for its dot in the Reputation tab

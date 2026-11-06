@@ -3,14 +3,12 @@
 using namespace play;
 
 namespace {
-
 const RGBA LIST_WHITE{ 1.0f, 1.0f, 1.0f, 1.0f };
 const RGBA LIST_GRAY{ 0.68f, 0.60f, 0.54f, 1.0f };
 const RGBA LIST_HOVER{ 0.961f, 0.788f, 0.459f, 1.0f };
 const RGBA LIST_HINT{ 0.957f, 0.902f, 0.796f, 1.0f };
-const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };   // an autosave's type
+const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };
 
-// The column headers of the save and map lists. The active sort column shows its direction.
 void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::string& timeLabel, bool byName, bool ascending) {
     const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
     const float y = g.headerY + (g.headerH - r.listTextHeight("Ag")) * 0.5f;
@@ -20,7 +18,6 @@ void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::st
     r.drawListText(label(timeLabel, !byName), innerX + COL_TIME * innerW, y, !byName ? LIST_WHITE : LIST_GRAY);
 }
 
-// The "..." rows: how many rows of the list are hidden above and below the visible ones
 void drawListMoreRows(Renderer& r, const PanelGeometry& g, float s, size_t offset, size_t total, int winH, float mx, float my) {
     const float x = g.box.x + g.pad + 12.0f * s, listH = r.listTextHeight("Ag");
     const size_t first = std::min(offset, total);
@@ -33,7 +30,6 @@ void drawListMoreRows(Renderer& r, const PanelGeometry& g, float s, size_t offse
     if (last < total) row(g.belowBand, "UILABEL_LIST_MORE_BELOW", total - last);
 }
 
-// One row of the save or map list: its background, then its name, type and time in the columns
 void drawListRow(Renderer& r, const Rect& rect, bool hot, float s, const std::string& name, const std::string& type,
                  RGBA typeTint, const std::string& time) {
     r.drawButton(rect, "", true, hot);
@@ -43,8 +39,7 @@ void drawListRow(Renderer& r, const Rect& rect, bool hot, float s, const std::st
     r.drawListText(type, rect.x + COL_TYPE * rect.w, y, typeTint);
     r.drawListText(time, rect.x + COL_TIME * rect.w, y, tint);
 }
-
-} // namespace
+}
 
 void App::drawScreenButtons(const std::vector<Button>& buttons) {
     for (const Button& b : buttons) {
@@ -52,8 +47,6 @@ void App::drawScreenButtons(const std::vector<Button>& buttons) {
     }
 }
 
-    // The title and pause menus' items. A new screen lights its first usable item, and its items slide in one after
-    // another. Moving the mouse onto an item lights it.
 void App::drawMenuItems(Screen which, const std::vector<Button>& buttons) {
     const unsigned long long now = SDL_GetTicks();
     if (menuScreen != which) {
@@ -83,7 +76,6 @@ void App::dimScreen(float alpha) {
     renderer.drawRect(Rect{ 0.0f, 0.0f, (float)winW, (float)winH }, RGBA{ 0.0f, 0.0f, 0.0f, alpha });
 }
 
-// The title picture, dimmed: what the menus other than the title are drawn over
 void App::drawMenuBackdrop() {
     renderer.drawTitleBackground();
     dimScreen(0.45f);
@@ -93,8 +85,6 @@ void App::drawTitleScreen() {
     renderer.beginUi(winW, winH);
     renderer.drawTitleBackground();
     {
-        // The game's name and the notice board, top left; the menu down the right; along the bottom, the build
-        // stamp and the keys
         const TitleLayout tl = layoutTitle(winW, winH);
         renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"),
                                  messageOfTheDay());
@@ -113,7 +103,6 @@ void App::drawSettingsScreen() {
 }
 
 void App::drawScenarioScreen() {
-    // The picked scenario's name and description at the top, the list of scenarios at the bottom
     const float s = uiScaleFor(winH);
     const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
     scenarioScroll = sl.first;
@@ -139,7 +128,6 @@ void App::drawScenarioScreen() {
         const Rect& r = sl.rows[i];
         renderer.drawButton(r, lang(scenarioNameKey(id)), true, r.contains(mouseX, mouseY));
         if (id == scenarioPick) {
-            // The picked one: a bar down its left edge and a frame
             renderer.drawRect(Rect{ r.x, r.y, 5.0f * s, r.h }, accent);
             renderer.drawRect(Rect{ r.x, r.y, r.w, 2.0f * s }, accent);
             renderer.drawRect(Rect{ r.x, r.y + r.h - 2.0f * s, r.w, 2.0f * s }, accent);
@@ -165,7 +153,6 @@ void App::drawPartyScreen() {
 }
 
 void App::drawPauseScreen() {
-    // The world and its PAUSED bar as in the game, then the menu over them in the menu fonts
     renderer.setMenuText(false);
     renderer.drawFrame(world, terrain, cam, sel, {}, winW, winH);
     renderer.beginUi(winW, winH);
@@ -176,7 +163,6 @@ void App::drawPauseScreen() {
     renderer.endUi();
 }
 
-// The save and load popout, drawn over whichever screen is showing
 void App::drawSavePanel() {
     const float s = uiScaleFor(winH);
     PanelGeometry g = panelGeometry(winW, winH);
@@ -202,7 +188,6 @@ void App::drawSavePanel() {
             renderer.drawUiTextCentered(lang("UILABEL_UNSAVED_WARNING"),
                                         d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
         } else {
-            // Delete: the name is shown so it's clear which save goes
             const std::string who = pendingDelete ? pendingDelete->name : std::string();
             renderer.drawUiTextCentered(langf("MISC_DELETE_Q", { who }),
                                         d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
@@ -222,8 +207,6 @@ void App::drawSavePanel() {
         }
     } else {
         if (panelSaveMode) {
-            // Name field with a blinking cursor, shown even while the name is empty
-            // so it's clear the field has focus as soon as the popout opens
             renderer.drawRect(g.nameBox, RGBA{ 0.14f, 0.06f, 0.075f, 1.0f });
             float textY = g.nameBox.y + g.nameBox.h * 0.22f;
             bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
@@ -250,7 +233,6 @@ void App::drawSavePanel() {
                             sv.autosave ? LIST_MARKED : LIST_WHITE, timeString(sv.timestamp));
             } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown
                        || b.action == Action::SortName || b.action == Action::SortTime) {
-                // Drawn above as text: the "..." rows and the headers only need their click areas
                 continue;
             } else if (b.action == Action::DeleteSave) {
                 renderer.drawListButton(b.rect, lang("UILABEL_DELETE"), isHover);
@@ -262,13 +244,11 @@ void App::drawSavePanel() {
     renderer.endUi();
 }
 
-// What goes over every screen: the # prompt, notices, the frame rate, and taking a screenshot
 void App::drawFrameOverlays() {
     renderer.beginUi(winW, winH);
-    // The Behavior tab's # prompt, over the whole game
     if (percentPrompt.open) {
         if (screen != Screen::Playing || !world.has<Behaviors>(percentPrompt.unit)) {
-            answerPercentPrompt(false);   // the game it was asked in is gone
+            answerPercentPrompt(false);
         } else {
             const char* title = percentPrompt.kind == BehaviorKind::Eat    ? "UILABEL_BEHAVIOR_PROMPT_EAT"
                                 : percentPrompt.kind == BehaviorKind::Heal ? "UILABEL_BEHAVIOR_PROMPT_HEAL"
@@ -279,8 +259,7 @@ void App::drawFrameOverlays() {
                                        percentPrompt.error, mouseX, mouseY);
         }
     }
-    if (noticeSec > 0.0f) renderer.drawNotice(notice, winW, winH);   // at the top middle of the window
-    // The frame rate in the bottom-left corner, white on a black box, over everything else
+    if (noticeSec > 0.0f) renderer.drawNotice(notice, winW, winH);
     ++fpsFrames;
     if (const Uint64 at = SDL_GetTicks(); at - fpsSince >= 500) {
         fpsText = std::to_string((int)std::lround(fpsFrames * 1000.0 / (double)(at - fpsSince))) + " FPS";
@@ -295,7 +274,6 @@ void App::drawFrameOverlays() {
     }
     renderer.endUi();
 
-    // The frame is complete but not yet shown, so it is the one saved
     if (screenshotPending) {
         screenshotPending = false;
         const std::string saved = saveScreenshot(window);
@@ -304,10 +282,9 @@ void App::drawFrameOverlays() {
 }
 
 void App::render() {
-    // ---- Render ----
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
     renderer.setSky(sky);
-    if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;   // the next menu opens fresh
+    if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;
     renderer.setMenuText(screen != Screen::Playing);
     renderer.hoverFrameStart();
     switch (screen) {

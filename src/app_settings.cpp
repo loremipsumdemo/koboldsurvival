@@ -1,4 +1,3 @@
-// Applying and saving settings, and clicks on the Settings screen.
 #include "user_files.h"
 #include "app.h"
 
@@ -31,8 +30,7 @@ void App::applyFontScale() {
     renderer.setFonts(next.hud, next.ui, next.list);
     closeUiFonts(fonts);
     fonts = next;
-    appliedMenuPercent = 0;   // the menu fonts follow at the top of the next frame
-    // The name's font follows the language and the font picked, too
+    appliedMenuPercent = 0;
     std::vector<TTF_Font*> nextName;
     if (TTF_Font* f = openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nextName)) {
         renderer.setTitleFont(f);
@@ -60,7 +58,6 @@ void App::settingsCommit(const SettingsChange& c, bool save) {
     if (c.audio) applyAudio();
     if (c.language) {
         applyLanguage();
-        // The party's names came from the old language, so the party is rolled again in the new one
         party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
     }
     if (c.fonts || c.language) applyFontScale();
@@ -87,9 +84,6 @@ void App::resetPanels() {
 void App::settingsClick(float x, float y, int W, int H) {
     const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
     const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
-    // Every control that does something clicks. Closing a dropdown, and a click on nothing, do not.
-    // A tab, a switch, a dropdown and Back each have their own sound. Closing a dropdown, a slider drag (it sounds as
-    // it is let go) and a click on nothing are silent.
     switch (c.kind) {
     case ClickKind::None: case ClickKind::CloseDropdown: case ClickKind::LevelDrag: break;
     case ClickKind::Tab: playSfx(Sfx::UiTab); break;

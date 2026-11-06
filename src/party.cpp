@@ -10,21 +10,17 @@
 #include "equip.h"
 
 namespace {
-
-// The ids sorted by item name, so the lists read in order
 std::vector<int> sortedByName(std::vector<int> ids) {
     std::stable_sort(ids.begin(), ids.end(), [](int a, int b) { return itemNameOf(a) < itemNameOf(b); });
     return ids;
 }
-
-} // namespace
+}
 
 std::string cleanName(const std::string& s) {
     const size_t a = s.find_first_not_of(' ');
     if (a == std::string::npos) return "";
     const size_t b = s.find_last_not_of(' ');
     std::string out = s.substr(a, b - a + 1);
-    // Keep at most PARTY_NAME_CHARS characters: a character is a whole UTF-8 sequence, so none is split
     size_t chars = 0;
     for (size_t i = 0; i < out.size(); ) {
         if (chars == PARTY_NAME_CHARS) { out.resize(i); break; }
@@ -79,21 +75,19 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     m.sprite = modelForBody(m.body);
     m.stats = randomStartingStats(rng);
 
-    // Gear: each slot is filled about half the time, with an item that fits it
     for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
         if (rng.range(0, 1) == 0) continue;
         const std::vector<int> choices = gearChoices(m, slot);
         if (!choices.empty()) m.gear[slot] = choices[rng.range(0, (int)choices.size() - 1)];
     }
 
-    // A few stacks of items to carry, each with a random count of up to five
     const std::vector<int> items = allItemChoices();
     const int stacks = rng.range(2, 5);
     for (int i = 0; i < stacks && !items.empty(); ++i) {
         const int item = items[rng.range(0, (int)items.size() - 1)];
         m.items[i] = ItemStack{ item, rng.range(1, std::min(stackLimit(item), 5)) };
     }
-    keepUnderEncumbrance(m.items, m.gear, m.stats);   // never more than it can carry
+    keepUnderEncumbrance(m.items, m.gear, m.stats);
     return m;
 }
 
@@ -111,7 +105,6 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
         worn.items = gear;
         return carriedWeight(inv) + wornWeight(worn);
     };
-    // The last stacks go first, a few at a time, so most of what was rolled stays
     for (int i = INVENTORY_SLOTS - 1; i >= 0 && total() >= cap; --i) {
         ItemStack& st = items[(size_t)i];
         const float each = weightOf(st.item);
@@ -121,7 +114,6 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
         st.count -= drop;
         if (st.count <= 0) st = ItemStack{};
     }
-    // Then the heaviest gear, while it is still too much
     while (total() >= cap) {
         int heaviest = -1;
         for (int g = 0; g < GEAR_SLOTS; ++g) {
@@ -162,29 +154,24 @@ const char* scenarioDescKey(ScenarioId id) {
 }
 
 namespace {
-
-constexpr int GOLD_COIN = 4;   // item ids in data/itemdb.txt
+constexpr int GOLD_COIN = 4;
 constexpr int IRON_ORE = 1;
-constexpr int BEASTMASTER_MOBS = 20;                       // regular mobs a Beastmaster starts with
-constexpr const char* PACK_WOLF_NAME = "Buddy";            // Pack of Two's wolf, until it is renamed
-constexpr int CAMP_PARTY_PEOPLE = 20;                      // Full Random Camp's fewest people
-constexpr int CAMP_PARTY_MOBS_MIN = 3, CAMP_PARTY_MOBS_MAX = 7;   // and its camp mobs
+constexpr int BEASTMASTER_MOBS = 20;
+constexpr const char* PACK_WOLF_NAME = "Buddy";
+constexpr int CAMP_PARTY_PEOPLE = 20;
+constexpr int CAMP_PARTY_MOBS_MIN = 3, CAMP_PARTY_MOBS_MAX = 7;
 
-// A regular mob kind picked at random
 MobKind randomRegularMob(Rng& rng) {
     const std::vector<MobKind> kinds = regularMobKinds();
     return kinds[(size_t)rng.range(0, (int)kinds.size() - 1)];
 }
 
-// Every stat at a random level from lo to hi
 Stats statsBetween(Rng& rng, int lo, int hi) {
     Stats s;
     for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(s, (StatId)i, rng.range(lo, hi));
     return s;
 }
 
-// Every gear slot filled where an item fits it and the unit can still carry it, keeping `reserve` weight free for
-// what it will carry. The main hand takes a one-handed item, so the off hand can be filled too.
 void fullGear(PartyMember& m, Rng& rng, float reserve) {
     const float cap = ENCUMBERED_SHARE * carryLimit(m.stats) - reserve;
     for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
@@ -201,8 +188,7 @@ void fullGear(PartyMember& m, Rng& rng, float reserve) {
         if (!choices.empty()) m.gear[(size_t)slot] = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
     }
 }
-
-} // namespace
+}
 
 PartyMember mobMember(MobKind kind, Rng& rng) {
     PartyMember m;
@@ -226,7 +212,6 @@ int partyPeople(const Party& p) {
 
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     int size = 1;
-    // Full Random Camp's mobs are counted first, so its people fill the rest of the room
     const int campMobs = id == ScenarioId::FullRandom ? rng.range(CAMP_PARTY_MOBS_MIN, CAMP_PARTY_MOBS_MAX) : 0;
     switch (id) {
     case ScenarioId::Vagabond: size = 1; break;
@@ -244,10 +229,8 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     case ScenarioId::Custom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT; break;
     case ScenarioId::Count: break;
     }
-    // The names, body types and pictures are rolled as for any party; the scenario then sets the rest
     Party p = randomParty(rng, size);
     if (id == ScenarioId::Custom) {
-        // Kept as rolled: random starting stats, some gear and items
         for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
         return p;
     }
@@ -259,7 +242,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         case ScenarioId::Vagabond:
         case ScenarioId::PackOfTwo:
         case ScenarioId::Beastmaster:
-            m.stats = statsBetween(rng, 1, 5);   // a Vagabond, with or without its beasts
+            m.stats = statsBetween(rng, 1, 5);
             break;
         case ScenarioId::FullRandom: {
             m.stats = statsBetween(rng, 1, MAX_LEVEL);
@@ -291,7 +274,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
             m.stats = statsBetween(rng, 5, 20);
             setStatLevel(m.stats, StatId::Mining, 50);
             const ItemDef* ore = findItem(IRON_ORE);
-            fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);   // room is kept for the ore
+            fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);
             m.items[0] = ItemStack{ IRON_ORE, 3 };
             break;
         }
@@ -301,10 +284,9 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         }
         keepUnderEncumbrance(m.items, m.gear, m.stats);
     }
-    // The scenario's mobs come after its people
     if (id == ScenarioId::PackOfTwo) {
         p.push_back(mobMember(MobKind::Wolf, rng));
-        p.back().name = PACK_WOLF_NAME;   // the wanderer's wolf has a name of its own
+        p.back().name = PACK_WOLF_NAME;
     }
     if (id == ScenarioId::Beastmaster) {
         for (int i = 0; i < BEASTMASTER_MOBS; ++i) p.push_back(mobMember(randomRegularMob(rng), rng));
@@ -324,7 +306,7 @@ Party randomParty(Rng& rng, int count) {
 }
 
 void applyParty(World& w, const Party& p) {
-    std::vector<Entity> players, mobs;   // your people, and your mobs
+    std::vector<Entity> players, mobs;
     for (Entity u : w.view<Unit, Commandable>()) {
         (w.has<Mob>(u) ? mobs : players).push_back(u);
     }
@@ -332,7 +314,6 @@ void applyParty(World& w, const Party& p) {
     std::sort(mobs.begin(), mobs.end());
     std::vector<const PartyMember*> people, beasts;
     for (const PartyMember& m : p) (m.mob != MobKind::None ? beasts : people).push_back(&m);
-    // A mob keeps its kind's meat and bones (spawnMob); it takes the member's name and stats, and its health from them
     for (size_t i = 0; i < mobs.size() && i < beasts.size(); ++i) {
         const PartyMember& m = *beasts[i];
         const std::string name = cleanName(m.name);
@@ -351,7 +332,7 @@ void applyParty(World& w, const Party& p) {
         w.add(u, UnitSprite{ m.sprite });
         w.add(u, Body{ m.body });
         w.add(u, m.stats);
-        Needs needs;   // a new unit starts at full health for its Vitality, and full unless its scenario says otherwise
+        Needs needs;
         needs.maxHp = needs.hp = maxHealthFor(m.stats);
         if (m.hunger >= 0) needs.hunger = std::clamp(m.hunger, 0, needs.maxHunger);
         w.add(u, needs);

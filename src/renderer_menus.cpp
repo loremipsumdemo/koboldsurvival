@@ -1,12 +1,8 @@
-// Renderer: the loading screen, the title screen's backdrop, header, menu items and footer, and the party menu.
 #include "renderer_internal.h"
 
 using namespace render_detail;
 
 namespace {
-
-// Smooth 2D noise, as the title backdrop's edges use: Perlin's gradient noise over a shuffled table, seeded so each
-// edge has its own shape. Returns about -0.6 to 0.6.
 struct EdgeNoise {
     unsigned char p[512];
     explicit EdgeNoise(unsigned seed) {
@@ -34,7 +30,6 @@ struct EdgeNoise {
     }
 };
 
-// A colour from stops at 0..1 (stops in order)
 RGBA stopColor(const std::vector<std::pair<float, RGBA>>& stops, float t) {
     if (t <= stops.front().first) return stops.front().second;
     for (size_t i = 1; i < stops.size(); ++i) {
@@ -46,22 +41,17 @@ RGBA stopColor(const std::vector<std::pair<float, RGBA>>& stops, float t) {
     return stops.back().second;
 }
 
-// One side of one band: where its edge sits, how much it wanders, and how fast
 struct BandEdge {
     int layer;
-    int side;   // -1 the left side, 1 the right
+    int side;
     float base, a1, a2, f1, f2, m1, m2;
     EdgeNoise noise;
 };
+}
 
-} // namespace
-
-// Loading screen: the title screen's moving backdrop, with a rounded progress bar across the middle, the stage that is
-// running above it and how far along it is below
 void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::string& label, const std::string& category,
                                  bool backdrop) {
     if (!backdrop) {
-        // Plain dark behind the bar
         glViewport(0, 0, winW, winH);
         glClearColor(0.055f, 0.02f, 0.03f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -72,21 +62,17 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     float s = H / 720.0f;
     const float p = std::clamp(progress, 0.0f, 1.0f);
 
-    // At start-up, the loading picture: 800 x 600 in the middle of the window (shrunk to fit a smaller one) inside an
-    // 8 pixel black border, filled without stretching (a wider picture loses a little off its sides). The bar runs
-    // across the bottom of the picture, with what is loading and the share done under the border.
     const bool art = !backdrop && loadingArt_.tex;
     Rect pic;
     if (art) {
         constexpr float PIC_W = 800.0f, PIC_H = 600.0f, PIC_BORDER = 8.0f;
-        const float textRoom = 2.0f * uiTextHeight("Ag") + 40.0f;   // the lines under the picture
+        const float textRoom = 2.0f * uiTextHeight("Ag") + 40.0f;
         const float fit = std::min({ 1.0f, (W - 2.0f * PIC_BORDER - 32.0f) / PIC_W,
                                      (H - 2.0f * PIC_BORDER - 32.0f - 2.0f * textRoom) / PIC_H });
         const float pw = PIC_W * std::max(0.1f, fit), ph = PIC_H * std::max(0.1f, fit);
         pic = Rect{ std::floor((W - pw) * 0.5f), std::floor((H - ph) * 0.5f), pw, ph };
         drawRect(Rect{ pic.x - PIC_BORDER, pic.y - PIC_BORDER, pic.w + 2.0f * PIC_BORDER, pic.h + 2.0f * PIC_BORDER },
                  RGBA{ 0.0f, 0.0f, 0.0f, 1.0f });
-        // The part of the picture that fills the frame at its own shape
         float u0 = 0.0f, u1 = 1.0f, v0 = 0.0f, v1 = 1.0f;
         const float frameAspect = pic.w / pic.h;
         if (loadingArt_.aspect > frameAspect) {
@@ -99,14 +85,13 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
             v1 = 1.0f - v0;
         }
         drawUiQuad(loadingArt_.tex, pic.x, pic.y, pic.x + pic.w, pic.y + pic.h, u0, v0, u1, v1, WHITE);
-        s = pic.h / 600.0f;   // the bar keeps its size against the picture
+        s = pic.h / 600.0f;
     }
 
     const float barW = art ? pic.w - 32.0f * s : std::min(W * 0.6f, 760.0f * s), barH = 26.0f * s;
     const Rect outer = art ? Rect{ pic.x + 16.0f * s, pic.y + pic.h - 16.0f * s - barH, barW, barH }
                            : Rect{ (W - barW) * 0.5f, (H - barH) * 0.5f, barW, barH };
     const float border = std::max(2.0f, 2.0f * s), gap = std::max(2.0f, 3.0f * s);
-    // A soft glow, the pink border, the dark inside, then the green fill
     drawRoundedRect(Rect{ outer.x - 6.0f * s, outer.y - 6.0f * s, outer.w + 12.0f * s, outer.h + 12.0f * s },
                     (outer.h + 12.0f * s) * 0.5f, theme::alpha(theme::PINK, 0.12f));
     drawRoundedRect(outer, outer.h * 0.5f, theme::PINK);
@@ -116,13 +101,10 @@ void Renderer::drawLoadingScreen(float progress, int winW, int winH, const std::
     if (p > 0.0f) {
         const Rect fill{ track.x, track.y, std::max(track.h, track.w * p), track.h };
         drawRoundedRect(fill, fill.h * 0.5f, theme::GOLD);
-        // A lighter line along its top, so the fill reads as lit
         drawRoundedRect(Rect{ fill.x + fill.h * 0.3f, fill.y + fill.h * 0.18f, std::max(0.0f, fill.w - fill.h * 0.6f), fill.h * 0.22f },
                         fill.h * 0.11f, RGBA{ 1.0f, 1.0f, 1.0f, 0.28f });
     }
 
-    // The stage above the bar (above the picture's border, with the picture), and the share done below it (below the
-    // border), then what is loading now
     const float above = art ? pic.y - 8.0f : outer.y;
     const float below = art ? pic.y + pic.h + 8.0f : outer.y + outer.h;
     if (!label.empty()) {
@@ -143,9 +125,8 @@ void Renderer::drawTitleBackground() {
     const float W = (float)uiW_, H = (float)uiH_;
     if (W <= 0.0f || H <= 0.0f) return;
     const float s = uiScaleFor(H);
-    const float t = (float)(SDL_GetTicks() % 100000000ULL);   // milliseconds
+    const float t = (float)(SDL_GetTicks() % 100000000ULL);
 
-    // The mouse sways the bands a little, eased toward where it is
     {
         float mx = 0.0f, my = 0.0f;
         SDL_GetMouseState(&mx, &my);
@@ -156,7 +137,6 @@ void Renderer::drawTitleBackground() {
         titleMouseAt_ = now;
     }
 
-    // A grid of corners, each coloured by fn, as triangles
     auto mesh = [&](int cols, int rows, auto fn) {
         std::vector<UiVert> v;
         v.reserve((size_t)cols * rows * 6);
@@ -171,7 +151,6 @@ void Renderer::drawTitleBackground() {
         drawUiTris(v);
     };
 
-    // The night: a deep coral glow high in the middle, fading to black at the edges
     const std::vector<std::pair<float, RGBA>> sky{ { 0.0f, rgb255(40, 16, 22, 1.0f) }, { 0.58f, rgb255(16, 7, 9, 1.0f) },
                                                    { 1.0f, rgb255(6, 3, 3, 1.0f) } };
     const RGBA purple = rgb255(232, 96, 110, 1.0f);
@@ -185,7 +164,6 @@ void Renderer::drawTitleBackground() {
         return c;
     });
 
-    // The bands: gold further in, coral over it nearer each side. Their edges wander, and drift up the screen.
     static BandEdge edges[4] = {
         { 0, -1, 0.335f, 0.082f, 0.020f, 0.0019f, 0.0079f, 0.000130f, 0.00037f, EdgeNoise(10771) },
         { 0, 1, 0.355f, 0.074f, 0.024f, 0.0023f, 0.0068f, 0.000094f, 0.00051f, EdgeNoise(55219) },
@@ -214,9 +192,9 @@ void Renderer::drawTitleBackground() {
         const float push = titleMouse_ * L.mouse * s;
         for (const BandEdge& e : edges) {
             if (e.layer != li) continue;
-            std::vector<std::pair<float, float>> pts;   // x, y
+            std::vector<std::pair<float, float>> pts;
             for (float y = -step * 2.0f; y <= H + step * 2.0f; y += step) {
-                const float yy = y / s * 1.25f + scroll;   // in the units the shapes were drawn for (a 900-high screen)
+                const float yy = y / s * 1.25f + scroll;
                 const float n1 = e.noise(yy * e.f1, t * e.m1);
                 const float n2 = e.noise(yy * e.f2 + 400.0f, t * e.m2 + 90.0f);
                 const float v = e.base * W + n1 * e.a1 * S + n2 * e.a2 * S;
@@ -231,7 +209,6 @@ void Renderer::drawTitleBackground() {
                 fill.insert(fill.end(), { { xa, ya, ca }, { xb, yb, cb }, { off, yb, cb }, { xa, ya, ca }, { off, yb, cb }, { off, ya, ca } });
             }
             drawUiTris(fill);
-            // The edge line and its glow: a soft strip either side of it, then the line
             std::vector<UiVert> line;
             auto strip = [&](float width, RGBA mid, bool soft) {
                 const float hw = width * 0.5f * s;
@@ -252,7 +229,6 @@ void Renderer::drawTitleBackground() {
         }
     }
 
-    // The veil (darker at the top and much darker at the bottom) and the vignette, as one layer of black
     const std::vector<std::pair<float, RGBA>> veil{ { 0.0f, RGBA{ 0, 0, 0, 0.6f } }, { 0.38f, RGBA{ 0, 0, 0, 0.12f } },
                                                     { 1.0f, RGBA{ 0, 0, 0, 0.85f } } };
     mesh(32, 18, [&](float x, float y) {
@@ -262,7 +238,6 @@ void Renderer::drawTitleBackground() {
         return RGBA{ 0.012f, 0.012f, 0.024f, 1.0f - (1.0f - a1) * (1.0f - a2) };
     });
 
-    // Scan lines: a faint dark line every third pixel
     std::vector<UiVert> lines;
     lines.reserve((size_t)(H / 3.0f + 2.0f) * 6);
     const RGBA scan{ 0.0f, 0.0f, 0.0f, 0.17f };
@@ -275,11 +250,9 @@ void Renderer::drawTitleBackground() {
 void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWord, const std::string& secondWord,
                                const std::vector<std::string>& news) {
     const float s = uiScale();
-    const float sway = -titleMouse_ * 5.0f * s;   // the words lean against the backdrop's sway
+    const float sway = -titleMouse_ * 5.0f * s;
     const unsigned long long now = SDL_GetTicks();
 
-    // The logo, as large as the name's line allows at its own shape, against the left margin. Now and then, for a
-    // moment, it jolts sideways, as the words would glitch.
     if (titleLogo_.tex) {
         float h = L.name.h, w = titleLogo_.aspect * h;
         if (w > L.name.w) {
@@ -295,20 +268,17 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         drawTexture(titleLogo_.tex, x, y, w, h, WHITE);
     }
 
-    // Without the logo, the name in words: the first word green, a pink bar, the second word bone-white, in capitals,
-    // as large as the line allows. The words are pictures drawn once in the very large title font and shrunk to size,
-    // so they stay sharp; without that font they fall back to the UI font, enlarged.
     if (!titleLogo_.tex) {
         const std::string a = uiUpper(firstWord), b = uiUpper(secondWord);
         const TextTex& ta = titleWord(a);
         const TextTex& tb = titleWord(b);
         const bool big = ta.tex && tb.tex;
-        float lineH = L.name.h * 1.3f;                       // the height of a line of the name, as drawn
+        float lineH = L.name.h * 1.3f;
         const float baseH = std::max(1.0f, uiTextHeight("Ag"));
         auto wordW = [&](const TextTex& t, const std::string& text, float h) {
             return big ? t.aspect * h : uiTextWidth(text) * h / baseH;
         };
-        float em = lineH / 1.36f;                            // the font's size, near enough
+        float em = lineH / 1.36f;
         const float total = wordW(ta, a, lineH) + wordW(tb, b, lineH) + em * (0.09f + 0.44f);
         if (total > L.name.w) {
             lineH *= L.name.w / total;
@@ -316,7 +286,6 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         }
         const float wa = wordW(ta, a, lineH);
         const float barW = std::max(2.0f, em * 0.09f), barH = em * 0.72f, barGap = em * 0.22f;
-        // Now and then, for a moment, the name glitches: a jolt sideways and a pink and green ghost either side
         const float phase = (float)(now % 11000ULL) / 11000.0f;
         float jolt = 0.0f, pinkOff = 0.0f, greenOff = 0.0f;
         if (phase >= 0.974f && phase < 0.978f) { jolt = -3.0f; pinkOff = 3.0f; greenOff = -3.0f; }
@@ -327,7 +296,6 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         const float top = cy - lineH * 0.5f;
         const float barX = x0 + wa + barGap;
         const float xb = barX + barW + barGap;
-        // One word at its left edge and the line's top
         auto word = [&](const TextTex& t, const std::string& text, float left, float dx, float dy, RGBA tint) {
             if (big) {
                 const float w = t.aspect * lineH, x = left + dx, y = top + dy;
@@ -340,7 +308,6 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
             word(ta, a, x0, dx, dy, ca);
             word(tb, b, xb, dx, dy, cb);
         };
-        // A dark drop below, then the glitch ghosts, a green glow round the first word, and the words
         words(0.0f, 6.0f * s, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.55f });
         if (pinkOff != 0.0f) words(pinkOff * s, 0.0f, theme::alpha(theme::PINK, 0.8f), theme::alpha(theme::PINK, 0.8f));
         if (greenOff != 0.0f) words(greenOff * s, 0.0f, theme::alpha(theme::GOLD, 0.8f), theme::alpha(theme::GOLD, 0.8f));
@@ -349,28 +316,24 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
             word(ta, a, x0, gx, gy, theme::alpha(theme::GOLD, 0.14f));
         }
         words(0.0f, 0.0f, theme::GOLD, theme::BONE);
-        // The bar: hot pink, with a glow, standing on the words' baseline
         const float barY = cy + barH * 0.5f - barH * 0.98f + em * 0.06f;
         drawRect(Rect{ barX - 4.0f * s, barY - 4.0f * s, barW + 8.0f * s, barH + 8.0f * s }, theme::alpha(theme::PINK, 0.22f));
         drawRect(Rect{ barX, barY, barW, barH }, theme::PINK);
     }
 
-    // The rule: pink, fading out to the right
     drawRectGradientH(Rect{ L.rule.x + sway, L.rule.y, L.rule.w, L.rule.h }, theme::PINK, theme::alpha(theme::PINK, 0.0f));
 
-    // The notice board: a pink frame, cut at the bottom right, over a dark pink inside with faint lines across it
     const Rect board{ L.news.x + sway, L.news.y, L.news.w, L.news.h };
     {
         const float frame = 3.0f * s, cut = 22.0f * s;
         std::vector<UiVert> v;
         cutCornerShape(v, Rect{ board.x + 2.0f * s, board.y + 14.0f * s, board.w, board.h }, cut, RGBA{ 0, 0, 0, 0.55f },
-                       RGBA{ 0, 0, 0, 0.55f });   // its shadow
+                       RGBA{ 0, 0, 0, 0.55f });
         cutCornerShape(v, board, cut, theme::PINK, theme::PINK_DEEP);
         const Rect in{ board.x + frame, board.y + frame, board.w - 2.0f * frame, board.h - 2.0f * frame };
         cutCornerShape(v, in, cut - frame, theme::PINK_DARK, theme::PINK_INK);
         const RGBA faint{ 1.0f, 1.0f, 1.0f, 0.035f };
         for (float y = in.y; y < in.y + in.h; y += 4.0f * s) {
-            // The lines stop at the cut corner
             const float into = y - (in.y + in.h - (cut - frame));
             const float w = into > 0.0f ? in.w - into : in.w;
             if (w <= 0.0f) break;
@@ -392,7 +355,6 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
         const bool bullet = raw.rfind("- ", 0) == 0;
         const std::string text = heading || bullet ? raw.substr(2) : raw;
         if (heading) {
-            // A heading: pink capitals, with a pink line under them
             if (y + th > bottom) break;
             drawListText(uiUpper(text), textX, y, theme::PINK);
             y += th + 5.0f * s;
@@ -400,8 +362,6 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
             y += 9.0f * s;
             continue;
         }
-        // A point: a small green arrowhead, then the text, wrapped under itself. A point that doesn't fit whole is left
-        // off, with the rest after it.
         const float indent = bullet ? th * 1.2f : 0.0f;
         const std::vector<std::string> wrapped = wrapListText(text, L.newsText.w - indent);
         if (y + th * (float)wrapped.size() > bottom) return;
@@ -427,9 +387,8 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
     const float fade = appear;
     if (selected && enabled) noteHover(r0);
     Rect r = r0;
-    r.x += (selected && enabled ? -14.0f * s : 0.0f) + (1.0f - appear) * 34.0f * s;   // lit items step out; new ones slide in
+    r.x += (selected && enabled ? -14.0f * s : 0.0f) + (1.0f - appear) * 34.0f * s;
     auto A = [&](RGBA c) { return theme::alpha(c, c.a * fade); };
-    // The band: dark, clearing to nothing on the left; lit, it turns green
     const float split = r.x + r.w * (selected ? 0.40f : 0.45f);
     const RGBA left = selected ? rgb255(245, 201, 117, 0.0f) : rgb255(22, 10, 12, 0.0f);
     const RGBA mid = selected ? rgb255(52, 30, 16, 0.75f) : rgb255(22, 10, 12, 0.72f);
@@ -437,16 +396,13 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
     drawRectGradientH(Rect{ r.x, r.y, split - r.x, r.h }, A(left), A(mid));
     drawRectGradientH(Rect{ split, r.y, r.x + r.w - split, r.h }, A(mid), A(right));
     if (selected) {
-        // A green glow along its right end, and a soft green halo
         const float gw = r.w * 0.46f;
         drawRectGradientH(Rect{ r.x + r.w - gw, r.y, gw, r.h }, A(rgb255(245, 201, 117, 0.0f)), A(rgb255(245, 201, 117, 0.16f)));
         drawRect(Rect{ r.x - 4.0f * s, r.y - 3.0f * s, r.w + 8.0f * s, r.h + 6.0f * s }, A(rgb255(245, 201, 117, 0.05f)));
     }
-    // The edge on the left
     const RGBA edge = selected ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, A(edge));
     if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GOLD));
-    // The words, in capitals
     const RGBA ink = !enabled ? theme::alpha(theme::ASH, 0.4f) : selected ? theme::BONE : theme::ASH;
     const std::string up = uiUpper(label);
     const float lh = uiTextHeight(up);
@@ -472,7 +428,6 @@ void Renderer::drawTitleFooter(const Rect& f, const std::string& left, const std
     const float th = listTextHeight("Ag");
     const float y = f.y + (f.h - th) * 0.5f;
     drawListText(uiUpper(left), f.x, y, ink);
-    // The arrow keys as two small arrowheads, up and down, then the words
     const std::string words = uiUpper(right);
     const float ww = listTextWidth(words);
     const float h = 4.0f * s, w = 4.5f * s, gap = 4.0f * s;
@@ -490,24 +445,21 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const RGBA panel = theme::alpha(theme::PANEL_FILL, 0.92f);
     const RGBA plate = theme::alpha(theme::SLOT, 0.95f);
     const RGBA plateHot = theme::alpha(theme::SLOT_HOT, 0.95f);
-    const RGBA plateOn = theme::alpha(theme::GOLD_DEEP, 0.95f);    // the purple used for the selected unit
+    const RGBA plateOn = theme::alpha(theme::GOLD_DEEP, 0.95f);
     const RGBA plateOff = theme::alpha(theme::BOX_FILL, 0.70f);
     const float menuLineH = listTextHeight("Ag");
-    float lineH = menuLineH;   // changes to the game's size for the Stats tab's rows
+    float lineH = menuLineH;
     const PartyMember& picked = pickedMember(p, ui);
 
-    // Background for a plate: purple when chosen, lighter when hovered, dim when disabled
     auto plateFor = [&](bool hot, bool on, bool enabled) -> RGBA {
         if (!enabled) return plateOff;
         if (on) return plateOn;
         return hot ? plateHot : plate;
     };
-    // Text centered in a box, shortened to fit
     auto centered = [&](const Rect& r, const std::string& text, RGBA tint) {
         const std::string t = fitText(text, r.w - 8.0f * s, false);
         drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - lineH) * 0.5f, tint);
     };
-    // Text at the left of a box, vertically centered, after an inset
     auto leftText = [&](const Rect& r, const std::string& text, RGBA tint, float inset) {
         const std::string t = fitTextTip(text, r.w - inset - 6.0f * s, r);
         drawListText(t, r.x + inset, r.y + (r.h - lineH) * 0.5f, tint);
@@ -517,13 +469,11 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     drawRect(P.center, panel);
     drawRect(P.right, panel);
     drawRect(P.bottom, theme::alpha(theme::WELL, 0.95f));
-    // The unit list's scroll bar, when it has more units than fit
     const PartyListBar bar = partyListBar((int)uiW_, (int)uiH_, (int)p.size(), ui.listScroll);
     if (bar.track.h > 0.0f) drawScrollBar(bar.track, bar.thumb, ui.listDrag || bar.thumb.contains(mx, my));
 
     const bool menuSet = text_.menuText();
     for (const Button& b : buttons) {
-        // The Stats tab's rows (headings, stats and their - and +) are drawn in the game's fonts: there are many of them
         const bool statRow = b.action == Action::PartyStatLabel || b.action == Action::PartyStep
                           || b.action == Action::PartyHeading;
         setMenuText(menuSet && !statRow);
@@ -567,7 +517,6 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartySpriteBox:
             {
-                // The heading is the model label with no number: the word for Model alone
                 std::string heading = langf("UILABEL_MODEL_N", { "" });
                 while (!heading.empty() && heading.back() == ' ') heading.pop_back();
                 drawListText(heading, b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
@@ -603,7 +552,6 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyGearSlot: {
             const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
             drawRect(b.rect, plateFor(hot, open, true));
-            // The item cell on the left, with the item's 64 x 64 picture; the names to its right
             const Rect cell{ b.rect.x + 4.0f, b.rect.y + std::floor((b.rect.h - ITEM_CELL_PX) * 0.5f), ITEM_CELL_PX, ITEM_CELL_PX };
             drawRect(cell, RGBA{ 0.0f, 0.0f, 0.0f, 0.30f });
             const int item = b.param >= 0 && b.param < GEAR_SLOTS ? picked.gear[(size_t)b.param] : 0;
@@ -636,8 +584,6 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
 
         case Action::PartyNote: {
-            // A note with room for more than one line is wrapped, a line per paragraph and more as needed; a one-line
-            // note is shortened to fit
             std::vector<std::string> lines;
             if (b.rect.h >= 2.0f * lineH) {
                 size_t from = 0;
@@ -712,14 +658,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     setMenuText(menuSet);
     lineH = menuLineH;
 
-    // Middle: the picked unit, large, with its name and totals under it. With no units, only the message.
     if (p.empty()) {
         drawUiTextCentered(fitText(lang("UILABEL_NEEDS_UNITS"), P.center.w - 24.0f * s, true), P.center.x + P.center.w * 0.5f,
                            P.center.y + P.center.h * 0.5f, theme::WARN_TEXT);
         return;
     }
     const float cw = P.center.w;
-    // The picked unit's model, turned by dragging in it with the right button
     if (picked.mob != MobKind::None) drawMobPreview(picked.mob, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     else drawUnitModelPreview(picked.sprite, partyPreviewRect(uiW_, uiH_), ui.previewYaw);
     const bool named = !cleanName(picked.name).empty();

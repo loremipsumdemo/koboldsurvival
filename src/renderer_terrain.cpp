@@ -1,6 +1,3 @@
-// Terrain, sea and seabed. The ground and the sea are shaded as the world tool shades them: the same
-// shaders, the same surface tiles and the same look, which the world folder stores. Split from renderer.cpp
-// to keep both files readable.
 #include "renderer.h"
 #include "frustum.h"
 #include "surface_tiles.h"
@@ -15,13 +12,6 @@
 #include <vector>
 
 namespace {
-
-// ---------------------------------------------------------------------------
-// Shaders (GLSL 3.30 core), ported from the world tool. The names match the world tool's, so the two
-// can be compared line by line. Heights are in world units, so the ground's depth scale is 1 for a
-// level read from a world folder.
-// ---------------------------------------------------------------------------
-
 const char* const kGroundVS = R"GLSL(
 #version 330 core
 layout(location = 0) in vec3 aPos;
@@ -93,8 +83,6 @@ void main() {
 }
 )GLSL";
 
-// Sea and seabed share this vertex shader. It builds their quads from gl_VertexID, so they
-// need no vertex buffer, only an empty VAO.
 const char* const kSeaVS = R"GLSL(
 #version 330 core
 uniform mat4 uViewProj;
@@ -174,8 +162,6 @@ void main() {
 }
 )GLSL";
 
-// Seabed beyond the map: a flat plane at the floor. Seen through the water it is just the
-// underwater tint, so one flat color is enough.
 const char* const kFloorFS = R"GLSL(
 #version 330 core
 in vec3 vWorld;
@@ -194,24 +180,12 @@ void main() {
 }
 )GLSL";
 
-// ---------------------------------------------------------------------------
-// Constants and helpers
-// ---------------------------------------------------------------------------
-
-// The sea sits this far below sea level, in the world's units, so terrain exactly at sea level
-// stays just above it.
 constexpr float kWaterDrop = 0.05f;
-// Pushes the sea back in the depth buffer, so where land and sea meet, the land wins. The slope term
-// stays zero: on the sea's huge grazing quad it grew until the sea sank behind the seabed and the far
-// fog, leaving a dark band at the horizon. The units term alone is enough for the shore.
 constexpr float kWaterBiasSlope = 0.0f;
 constexpr float kWaterBiasUnits = 4.0f;
-// The far plane of the game's camera (camera.h)
 constexpr float kFarPlane = CAMERA_FAR;
-// Chunk meshes built per frame, so a newly loaded area fills in over a few frames
 constexpr int MAX_BUILDS_PER_FRAME = 8;
 
-// True unless the chunk's box is entirely outside one of the planes
 bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     for (const auto& p : f.p) {
         const float px = p[0] >= 0.0f ? b.x1 : b.x0;
@@ -222,7 +196,6 @@ bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     return true;
 }
 
-// One surface tile as a repeating, mipmapped texture
 GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels) {
     const GLuint tex = makeTexture2D(SURFACE_TILE_SIZE, SURFACE_TILE_SIZE, GL_RGBA8, GL_RGBA, pixels.data(), GL_LINEAR,
                                      GL_REPEAT);
@@ -232,17 +205,11 @@ GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels) {
     return tex;
 }
 
-// Seconds since the game started, for the water's motion
 float SecondsSinceStart() {
     static const auto start = std::chrono::steady_clock::now();
     return std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
 }
-
-} // namespace
-
-// ---------------------------------------------------------------------------
-// Setup and teardown
-// ---------------------------------------------------------------------------
+}
 
 bool Renderer::initTerrainGl() {
     groundShader_.prog = linkProgram("terrain", kGroundVS, kGroundFS);
@@ -324,10 +291,6 @@ void Renderer::uploadSurfaceTiles(const Terrain& t) {
     surfaceVersion_ = t.surfaceVersion();
 }
 
-// ---------------------------------------------------------------------------
-// Chunks
-// ---------------------------------------------------------------------------
-
 void Renderer::releaseChunk(TerrainChunk& c) {
     if (c.ebo) glDeleteBuffers(1, &c.ebo);
     if (c.vbo) glDeleteBuffers(1, &c.vbo);
@@ -344,8 +307,6 @@ void Renderer::releaseTerrain() {
 
 void Renderer::uploadTerrain(const Terrain& t) {
     releaseTerrain();
-    // The picture of the whole level for the minimap and the world map. A streamed world is read in the
-    // background, chunk by chunk; a whole map in memory is read right away.
     if (overviewTex_) {
         glDeleteTextures(1, &overviewTex_);
         overviewTex_ = 0;
@@ -367,11 +328,9 @@ void Renderer::uploadTerrain(const Terrain& t) {
     }
     terrainSize_ = t.size();
     chunksPerSide_ = t.chunksPerSide();
-    // Slots start empty. Each chunk gets its buffers the first time it is built.
     chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);
 }
 
-// Builds a chunk's mesh at a detail step and uploads it into the chunk's own buffers
 void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep) {
     TerrainChunk& slot = chunks_[(size_t)id];
     if (!slot.vao) {
@@ -404,26 +363,19 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
     glBindVertexArray(0);
 }
 
-// ---------------------------------------------------------------------------
-// Drawing
-// ---------------------------------------------------------------------------
-
-// Draws the seabed, the loaded chunks in view at the detail their distance needs, then the sea.
 void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
-    // The light and look the ground and sea are shaded with: the world's look, lit by the sun the sky shows
     const SkyLight sky = skyLightFor(t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
     const float hs = t.heightScale();
-    const float seaY = 0.0f;                        // sea level, in world units
-    const float waterY = seaY - kWaterDrop * hs;    // the sea's surface, just under sea level
+    const float seaY = 0.0f;
+    const float waterY = seaY - kWaterDrop * hs;
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
 
     glEnable(GL_DEPTH_TEST);
 
-    // Seabed beyond the map, seen through the water
     glUseProgram(floorShader_.prog);
     glUniformMatrix4fv(floorShader_.viewProj, 1, GL_FALSE, viewProj_.m);
     glUniform3f(floorShader_.eye, ex, ey, ez);
@@ -434,15 +386,11 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform3f(floorShader_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
     glUniform3f(floorShader_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform1f(floorShader_.fog, sky.fog);
-    // The seabed writes no depth. It lies under the sea, and the sea's polygon offset, which grows on
-    // a grazing quad this large, would push the sea back behind it at mid distances, so the seabed
-    // showed through as a dark band at the horizon. Terrain is always above the seabed and draws after it.
     glDepthMask(GL_FALSE);
     glBindVertexArray(emptyVao_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glDepthMask(GL_TRUE);
 
-    // Ground chunks
     glUseProgram(groundShader_.prog);
     glUniformMatrix4fv(groundShader_.viewProj, 1, GL_FALSE, viewProj_.m);
     glUniform3f(groundShader_.eye, ex, ey, ez);
@@ -466,7 +414,6 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         TerrainChunk& slot = chunks_[(size_t)id];
         const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
         if (!c) {
-            // Not loaded: free its buffers. They are made again if the chunk comes back.
             if (slot.vao) releaseChunk(slot);
             continue;
         }
@@ -484,8 +431,6 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
         const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
 
-        // The detail each neighbor is drawn at, as its buffers hold it now (0 when none or not built). A chunk
-        // stitches its edges to a coarser neighbor, so it is rebuilt when a neighbor's detail changes.
         const int cx = id % chunksPerSide_, cz = id / chunksPerSide_;
         int nb[4] = { 0, 0, 0, 0 };
         if (cx > 0) nb[0] = chunks_[(size_t)(id - 1)].step;
@@ -498,13 +443,12 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
             buildChunk(t, *c, id, step, nb);
             ++builds;
         }
-        if (slot.step == 0) continue;   // not built yet, drawn once it is
+        if (slot.step == 0) continue;
         glBindVertexArray(slot.vao);
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
 
-    // The sea: a translucent plane over everything, so the seabed shows through it
     const float fadeEnd = kFarPlane * 0.9f;
     const float fadeStart = fadeEnd * 0.6f;
     glUseProgram(seaShader_.prog);
@@ -528,7 +472,6 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glBindTexture(GL_TEXTURE_2D, seaTex_);
     glUniform1i(seaShader_.tile, 0);
 
-    // The sea is see-through, so it blends over the seabed and does not write depth.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);

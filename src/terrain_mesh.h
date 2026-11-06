@@ -4,22 +4,17 @@
 #include "chunk.h"
 #include "terrain.h"
 
-// The terrain is drawn in square chunks. Each chunk can be built at several levels of detail:
-// step 1 uses every corner, step 2 every second one, step 4 every fourth one. This file has no
-// OpenGL in it, so the meshes can be checked without a window.
-
 struct TerrainVertex {
-    float x, y, z;      // position
-    float nx, ny, nz;   // normal, in the world's units, so slopes shade and turn to rock the same way in every world
-    float r, g, b;      // ground color, with vegetation, before lighting
+    float x, y, z;
+    float nx, ny, nz;
+    float r, g, b;
 };
 
 struct ChunkMesh {
     std::vector<TerrainVertex> verts;
-    std::vector<uint32_t> idx;          // triangles
+    std::vector<uint32_t> idx;
 };
 
-// Where a chunk is, in tiles and world units. minY and maxY include the skirts.
 struct ChunkBounds {
     float x0, z0, x1, z1;
     float minY, maxY;
@@ -27,10 +22,5 @@ struct ChunkBounds {
 
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c);
 
-// Builds a chunk at a detail step. Vertical skirts hang from every edge: short ones where the edge borders
-// another chunk, and walls down to the seabed on the map's border.
-// neighbourSteps: the detail steps the west, east, north and south neighbors are drawn at (0 where there is
-// none or it is not built). Where a neighbor is coarser, this chunk's edge corners are moved onto its edge so
-// the two meet without cracks. nullptr means no neighbor constraints.
 void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out,
                     const int* neighbourSteps = nullptr);

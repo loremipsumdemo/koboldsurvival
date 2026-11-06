@@ -3,34 +3,27 @@
 #include <cmath>
 
 namespace {
-
-// How far a skirt hangs below its edge, plus a little for each step of detail
 constexpr float SKIRT_BASE = 8.0f;
 
-// Vegetation pulls the ground toward this canopy color, by up to kCanopyShare at full density.
-// These are the world maker's values, so the vegetation reads the same as in a generated world.
 constexpr float kCanopyR = 0.20f, kCanopyG = 0.34f, kCanopyB = 0.13f;
 constexpr float kCanopyShare = 0.45f;
 
 struct Rgb { float r, g, b; };
 
-// Color for a tile with no ground type: sandy below sea level, green, then gray on the high ground
 Rgb bandColor(float h) {
     if (h < -1.33f) return { 0.86f, 0.76f, 0.46f };
     if (h < 1.33f) return { 0.27f, 0.55f, 0.24f };
     return { 0.27f, 0.27f, 0.29f };
 }
 
-// Color of a ground type, as the world maker draws it.
-// Water and shelf are not stored in worlds; an unknown type gets the default, seabed sand.
 Rgb biomeColor(Biome b) {
     switch (b) {
-        case Biome::Sand:        return { 0.69f, 0.64f, 0.47f };   // seabed sand
-        case Biome::Grass:       return { 0.47f, 0.38f, 0.27f };   // loam, under grass
-        case Biome::Forest:      return { 0.38f, 0.33f, 0.23f };   // forest floor
-        case Biome::Desert:      return { 0.84f, 0.75f, 0.53f };   // desert sand
-        case Biome::Rock:        return { 0.43f, 0.42f, 0.40f };   // bedrock
-        case Biome::Snow:        return { 0.89f, 0.93f, 0.96f };   // ice
+        case Biome::Sand:        return { 0.69f, 0.64f, 0.47f };
+        case Biome::Grass:       return { 0.47f, 0.38f, 0.27f };
+        case Biome::Forest:      return { 0.38f, 0.33f, 0.23f };
+        case Biome::Desert:      return { 0.84f, 0.75f, 0.53f };
+        case Biome::Rock:        return { 0.43f, 0.42f, 0.40f };
+        case Biome::Snow:        return { 0.89f, 0.93f, 0.96f };
         case Biome::Beach:       return { 0.87f, 0.81f, 0.63f };
         case Biome::Silt:        return { 0.36f, 0.34f, 0.31f };
         case Biome::FrozenClay: return { 0.59f, 0.61f, 0.62f };
@@ -44,7 +37,6 @@ Rgb biomeColor(Biome b) {
     }
 }
 
-// Tiles of the chunk that lie inside the level, across and down
 int tilesAcross(const Terrain& t, const ChunkData& c) {
     return std::clamp(t.size() - c.cx * CHUNK_TILES, 0, CHUNK_TILES);
 }
@@ -52,9 +44,6 @@ int tilesDown(const Terrain& t, const ChunkData& c) {
     return std::clamp(t.size() - c.cz * CHUNK_TILES, 0, CHUNK_TILES);
 }
 
-// Height of a corner at a position in the level. A corner just outside this chunk is read from
-// the neighboring chunk when that is loaded, so shading matches across the border. Otherwise the
-// nearest corner of this chunk is used.
 float cornerHeight(const Terrain& t, const ChunkData& c, int gx, int gz) {
     int i = gx - c.cx * CHUNK_TILES, j = gz - c.cz * CHUNK_TILES;
     if (i >= 0 && i <= CHUNK_TILES && j >= 0 && j <= CHUNK_TILES) {
@@ -72,8 +61,7 @@ float cornerHeight(const Terrain& t, const ChunkData& c, int gx, int gz) {
     j = std::clamp(j, 0, CHUNK_TILES);
     return c.heights[(size_t)j * CHUNK_CORNERS + i];
 }
-
-} // namespace
+}
 
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c) {
     const int a = tilesAcross(t, c), b = tilesDown(t, c);
@@ -87,17 +75,12 @@ ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c) {
             hi = std::max(hi, h);
         }
     }
-    // The skirts reach down to the lowest step's depth at most, or to the seabed on the map's border
     const float margin = SKIRT_BASE + 2.0f * 4.0f;
     const float x0 = (float)(c.cx * CHUNK_TILES), z0 = (float)(c.cz * CHUNK_TILES);
     const float low = std::min(lo - margin, t.floorY());
     return { x0, z0, x0 + a, z0 + b, low, hi + 1.0f };
 }
 
-// A corner on this chunk's edge, at position v along it, when the neighbor across that edge is drawn
-// coarser (every S corners, and at the far end). The coarse edge runs straight between its samples, so
-// the corner is moved onto that line. Otherwise the two edges would not meet and would leave cracks.
-// alongZ: the edge runs along z at x = fixed; otherwise along x at z = fixed. len: the edge's length.
 float onCoarseEdge(const ChunkData& c, bool alongZ, int fixed, int v, int S, int len, float h) {
     if (v % S == 0 || v >= len) return h;
     const int v0 = (v / S) * S;
@@ -118,7 +101,6 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
     const int x0 = c.cx * CHUNK_TILES, z0 = c.cz * CHUNK_TILES;
     const float hs = t.heightScale();
 
-    // Sample positions along each axis, in chunk corners: every step tiles, plus the far edge
     auto axis = [&](int len) {
         std::vector<int> s;
         for (int v = 0; v < len; v += step) s.push_back(v);
@@ -134,8 +116,6 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const int x = xs[(size_t)i], z = zs[(size_t)j];
             const int gx = x0 + x, gz = z0 + z;
 
-            // Slope across two steps either way, over four steps of ground, as the world maker takes it. Heights
-            // are in world units, so no scale is needed.
             const float dhdx = (cornerHeight(t, c, gx + 2 * step, gz) - cornerHeight(t, c, gx - 2 * step, gz))
                              / (4.0f * step) / hs;
             const float dhdz = (cornerHeight(t, c, gx, gz + 2 * step) - cornerHeight(t, c, gx, gz - 2 * step))
@@ -144,7 +124,6 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
             const float nxv = -dhdx / nl, nyv = 1.0f / nl, nzv = -dhdz / nl;
 
             float hh = c.heights[(size_t)z * CHUNK_CORNERS + x];
-            // Edge corners next to a coarser neighbor move onto that neighbor's edge
             if (nb) {
                 if (x == 0 && nb[0] > step) hh = onCoarseEdge(c, true, 0, z, nb[0], b, hh);
                 if (x == a && nb[1] > step) hh = onCoarseEdge(c, true, a, z, nb[1], b, hh);
@@ -163,7 +142,6 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
         }
     }
 
-    // Two triangles per cell, split along a-d to match Terrain::heightAt
     for (int j = 0; j < nz - 1; ++j) {
         for (int i = 0; i < nx - 1; ++i) {
             const uint32_t p = (uint32_t)(j * nx + i), q = p + 1;
@@ -172,8 +150,6 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
         }
     }
 
-    // Skirts on every edge. An edge that borders another chunk hangs a short way; an edge on the map's
-    // border hangs down to the seabed, so the map has a wall at its edge.
     const float drop = SKIRT_BASE + 2.0f * (float)step;
     const float floorY = t.floorY();
     auto skirt = [&](const std::vector<uint32_t>& edge, bool border) {
@@ -192,16 +168,16 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
     const bool northBorder = z0 == 0, southBorder = z0 + b >= t.size();
     const bool westBorder = x0 == 0, eastBorder = x0 + a >= t.size();
     std::vector<uint32_t> edge;
-    edge.clear();                                  // north
+    edge.clear();
     for (int i = 0; i < nx; ++i) edge.push_back((uint32_t)i);
     skirt(edge, northBorder);
-    edge.clear();                                  // south
+    edge.clear();
     for (int i = 0; i < nx; ++i) edge.push_back((uint32_t)((nz - 1) * nx + i));
     skirt(edge, southBorder);
-    edge.clear();                                  // west
+    edge.clear();
     for (int j = 0; j < nz; ++j) edge.push_back((uint32_t)(j * nx));
     skirt(edge, westBorder);
-    edge.clear();                                  // east
+    edge.clear();
     for (int j = 0; j < nz; ++j) edge.push_back((uint32_t)(j * nx + nx - 1));
     skirt(edge, eastBorder);
 }

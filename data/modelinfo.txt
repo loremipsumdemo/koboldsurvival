@@ -1,6 +1,5 @@
 Prop models: data/model/model_<n>.glb (no leading zeros), one per kind of prop, numbered from 1 in the order of
-src/props.h. A prop whose model is missing or unreadable is drawn as a pink square, and log.txt names the missing
-file. A new kind of prop takes the next free number.
+src/props.h. A prop whose model is missing or unreadable is drawn as a pink square. A new kind of prop takes the next free number.
 
 Model	File	Prop	Kind
 1	model_1.glb	Wagon	Decor prop

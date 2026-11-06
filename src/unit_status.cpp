@@ -1,4 +1,3 @@
-// What a unit is doing (its task name and emotes), and whether it can act.
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -24,7 +23,6 @@ std::string taskNameOf(World& w, Entity u) {
     if (outCold(w, u)) return lang("UILABEL_TASK_UNCONSCIOUS");
     if (w.has<PlayingDead>(u)) return lang("UILABEL_TASK_PLAYING_DEAD");
     if (w.has<Carried>(u)) return lang("UILABEL_TASK_CARRIED");
-    // A step of its own behaviors: the behavior's name, such as Auto-Harvest: Tree, while it is on its way or at it
     if (const Behaviors* b = w.get<Behaviors>(u)) {
         if (b->seeking) return langf("UILABEL_TASK_SHARE_WALK", { nameOf(w, b->seek) });
         const PropOrder* po = w.get<PropOrder>(u);
@@ -58,7 +56,6 @@ std::string taskNameOf(World& w, Entity u) {
 }
 
 std::vector<EmoteId> emotesOf(World& w, Entity u) {
-    // Out cold or dead, that is all it shows
     if (w.has<Corpse>(u)) return { EmoteId::Dead };
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
@@ -82,7 +79,6 @@ std::vector<EmoteId> emotesOf(World& w, Entity u) {
 }
 
 bool cannotAct(World& w, Entity u) {
-    // Out cold, shut in a cage, or carried (one playing dead can still break free with an order: cannotTakeOrder)
     return outCold(w, u) || lockedIn(w, u) || (w.has<Carried>(u) && !w.has<PlayingDead>(u));
 }
 

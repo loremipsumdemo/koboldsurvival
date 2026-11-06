@@ -1,4 +1,3 @@
-// The maps a game can start on.
 #include "level.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -12,22 +11,9 @@
 #include "textcase.h"
 #include "world_format.h"
 
-
-// Game worlds are kept in this folder, beside the game.
 std::string mapsDir() {
     const char* base = SDL_GetBasePath();
     return std::string(base ? base : "") + "maps";
-}
-
-// A folder left as custom_maps by an earlier version moves to maps the first time the game starts
-void moveOldMapsFolder() {
-    const char* base = SDL_GetBasePath();
-    const std::filesystem::path oldDir = std::string(base ? base : "") + "custom_maps";
-    const std::filesystem::path newDir = mapsDir();
-    std::error_code ec;
-    if (!std::filesystem::is_directory(oldDir, ec) || std::filesystem::exists(newDir, ec)) return;
-    std::filesystem::rename(oldDir, newDir, ec);
-    if (ec) SDL_Log("Could not move custom_maps to maps: %s", ec.message().c_str());
 }
 
 bool mainMapPacked() {
@@ -36,7 +22,6 @@ bool mainMapPacked() {
     return pakFind(std::string("data/map/") + MAIN_MAP_STEM + "/world.txt", bytes, size);
 }
 
-// Every map a game can start on, not yet sorted: the main map, the premade maps, then worlds and .map files
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
     if (mainMapPacked()) {

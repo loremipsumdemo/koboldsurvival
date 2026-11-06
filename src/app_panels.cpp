@@ -40,7 +40,6 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
             stores.push_back({ d, p });
         }
     }
-    // Ones the unit holds count too, so a list can always show them, wherever their props are now
     for (const BehaviorRule& r : b->rules) {
         if (r.kind == BehaviorKind::AutoHarvest && r.propKind >= 0 && r.propKind < PROP_KIND_COUNT) harvestable[(size_t)r.propKind] = true;
     }
@@ -52,7 +51,7 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
         offer(r, behaviorName(r));
     }
     std::sort(stores.begin(), stores.end());
-    constexpr size_t STORES_SHOWN = 8;   // the nearest ones, so the list stays short in a big camp
+    constexpr size_t STORES_SHOWN = 8;
     for (size_t i = 0; i < stores.size() && i < STORES_SHOWN; ++i) {
         BehaviorRule r;
         r.kind = BehaviorKind::AutoHaul;
@@ -66,7 +65,6 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
 SidebarLayout App::sidebarFor(int W, int H, float scroll) {
     const Entity shown = sidebarUnitOf(world);
     const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
-    // The Behavior tab's list is for one unit: another one shown shuts it
     if (shown != behaviorUiUnit) {
         behaviorUiUnit = shown;
         behaviorAddOpen = false;
@@ -82,10 +80,8 @@ SidebarLayout App::sidebarFor(int W, int H, float scroll) {
     }
     SidebarLayout L = layoutInventorySidebar(W, H, b ? (int)b->rules.size() : 0, scroll, unitOpen, unitTab, unitPlace,
                                              renderer.profileCardHeight(H), bui);
-    if (!editable || unitTab != UnitTab::Behavior) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };   // nothing to add to
+    if (!editable || unitTab != UnitTab::Behavior) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
     L.behaviorOptionInfo = std::move(options);
-    // A mob has no gear slots, nor gear buttons, so nothing there can be clicked or dragged. Its inventory is
-    // Not available until it is a corpse: no slots, and no sort button.
     if (shown != NULL_ENTITY && world.has<Mob>(shown)) {
         L.gear.clear();
         L.optimizeButton = L.removeAllButton = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -118,17 +114,16 @@ void App::behaviorClick(Entity unit, const BehaviorHit& hit) {
     case BehaviorPart::Toggle:
         r.on = !r.on;
         r.cooldown = 0.0f;
-        if (r.on) b->wait = 0.0f;   // an automated behavior switched on looks for its step at once
+        if (r.on) b->wait = 0.0f;
         break;
     case BehaviorPart::Number:
-        // Eat, Heal and Rest: the prompt asks for the percent, once
         if (!hasPercent(r.kind)) return;
         percentPrompt = PercentPrompt{};
         percentPrompt.open = true;
         percentPrompt.unit = unit;
         percentPrompt.row = (int)row;
         percentPrompt.kind = r.kind;
-        percentPrompt.text = std::to_string(r.percent);   // what it is now, to change or type over
+        percentPrompt.text = std::to_string(r.percent);
         SDL_StartTextInput(window);
         playSfx(Sfx::UiClick);
         return;
@@ -142,7 +137,7 @@ void App::behaviorClick(Entity unit, const BehaviorHit& hit) {
     case BehaviorPart::None:
         return;
     }
-    b->pending = true;   // Eat and Heal are checked again, so the change takes effect at once
+    b->pending = true;
     playSfx(Sfx::UiClick);
 }
 
@@ -151,7 +146,6 @@ void App::answerPercentPrompt(bool keep) {
     if (keep) {
         Behaviors* b = world.get<Behaviors>(percentPrompt.unit);
         const int row = percentPrompt.row;
-        // The list may have changed under it (the unit fell, was traded away): then there is nothing to set
         if (!b || row < 0 || row >= (int)b->rules.size() || b->rules[(size_t)row].kind != percentPrompt.kind) {
             keep = false;
         } else {
@@ -165,7 +159,7 @@ void App::answerPercentPrompt(bool keep) {
             BehaviorRule& r = b->rules[(size_t)row];
             if (setPercent(r, value)) {
                 r.cooldown = 0.0f;
-                b->pending = true;   // checked again at once
+                b->pending = true;
             }
         }
     }
@@ -190,12 +184,11 @@ bool App::behaviorExtraClick(Entity unit, const SidebarLayout& sl, float x, floa
             refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
             return true;
         }
-        // Patrol Spawn walks about where it was given, for a unit that was not placed by a spawn
         if (o.rule.kind == BehaviorKind::PatrolSpawn && !world.has<SpawnHome>(unit)) {
             if (const Transform* t = world.get<Transform>(unit)) world.add(unit, SpawnHome{ t->x, t->z, false });
         }
         b->pending = true;
-        b->wait = 0.0f;   // an automated behavior looks for its step at once
+        b->wait = 0.0f;
         showNotice(langf(o.have ? "MISC_BEHAVIOR_SWITCHED_ON" : "MISC_BEHAVIOR_ADDED", { behaviorName(o.rule) }));
         playSfx(Sfx::UiClick);
         return true;
@@ -242,14 +235,14 @@ GameLogLayout App::gameLogPanel(int W, int H) {
 }
 
 DialogueLayout App::dialogueBox(int W, int H) {
-    const Dialogue* dg = world.get<Dialogue>(dialogueUnit);
-    const int lines = (int)std::min<size_t>(2, dialogueConvo.size());
+    const Dialogue* dg = world.get<Dialogue>(session.dialogueUnit);
+    const int lines = (int)std::min<size_t>(2, session.dialogueConvo.size());
     return layoutDialogue(W, H, lines, dg ? (int)dg->options.size() : 0);
 }
 
 bool App::onTalkOrTrade(int W, int H, float x, float y) {
-    if (dialogueUnit == NULL_ENTITY) return false;
-    if (tradeOpen) {
+    if (session.dialogueUnit == NULL_ENTITY) return false;
+    if (session.tradeOpen) {
         const TradeLayout tl = layoutTrade(W, H, renderer.pauseBarHeight(false));
         return tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
     }
@@ -285,7 +278,7 @@ bool App::infoPanelClick(int W, int H, float tx, float ty) {
             return true;
         }
         if (cl.filterMenu.contains(tx, ty)) return true;
-        logFilterOpen = false;   // a click elsewhere closes the menu, and still does its own job
+        logFilterOpen = false;
     }
     return false;
 }
@@ -314,7 +307,7 @@ void App::markMove(float x, float z) {
 void App::beginRightHold(float x, float z) {
     const std::vector<Entity> units = selectedUnits(world);
     if (units.empty()) return;
-    noteLockedIn(units);   // a unit locked in a cage stays put
+    noteLockedIn(units);
     rightHold = true;
     holdX = x;
     holdZ = z;
@@ -341,7 +334,7 @@ bool App::overPanels(float x, float y, int W, int H) {
     return overGamePanels(squadPanelLayout(W, H),
                           sidebarFor(W, H, sidebarScroll), true, x, y)
         || gameLogPanel(W, H).panel.contains(x, y)
-        || (lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
+        || (session.lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
         || (mapOpen && worldMapFor(W, H).window.contains(x, y))
         || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
 }

@@ -1,4 +1,3 @@
-// Weight carried and worn, how encumbered that makes a unit, and how fast it walks (encumbrance.h)
 #include "encumbrance.h"
 #include "combat.h"
 #include "inventory.h"
@@ -34,17 +33,15 @@ float encumbranceOf(World& w, Entity e) {
 float walkSpeedOf(World& w, Entity e, bool running) {
     const Unit* u = w.get<Unit>(e);
     if (!u || isDowned(w, e)) return 0.0f;
-    // Running is the player's pace for its squads, so a red unit never runs
     if (!w.has<Commandable>(e)) running = false;
 
     const float load = encumbranceOf(w, e);
     float speed = u->speed * (1.0f - load);
     if (isSneaking(w, e)) {
-        running = false;          // a sneaking unit never runs
+        running = false;
         speed *= SNEAK_SPEED;
     }
     if (running) speed *= 1.0f + RUN_SPEED_BONUS;
-    // A boss walking home after giving up a chase (and taking no damage) hurries
     if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
         if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {
             speed *= BOSS_RETURN_SPEED_FACTOR;

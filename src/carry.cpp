@@ -1,4 +1,3 @@
-// Carrying an Unconscious unit: the orders to pick one up and put it down, and the walks to do them.
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -34,7 +33,6 @@ void putDown(World& w, Entity carrier) {
 CarryEvents carrySystem(World& w) {
     CarryEvents ev;
     std::vector<Entity>& picked = ev.picked;
-    // Walking to pick someone up: in reach, it is lifted, unless someone else got there first
     for (Entity u : w.view<CarryOrder, Transform>()) {
         const Entity target = w.get<CarryOrder>(u)->target;
         if (!canBeCarried(w, target) || w.has<Carrying>(u) || cannotAct(w, u)) {
@@ -45,7 +43,6 @@ CarryEvents carrySystem(World& w) {
         if (flatGap(w, u, target) <= CARRY_REACH) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
-            // Whatever it was doing ends: it is lifted, out of a bed if it lay in one
             clearOrders(w, target);
             w.remove<IdleSpot>(target);
             if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
@@ -56,15 +53,12 @@ CarryEvents carrySystem(World& w) {
             picked.push_back(u);
             continue;
         }
-        // Stopped short with no route left: it can't be reached, so give up
         const SoloMove* so = w.get<SoloMove>(u);
         if (!so || so->next >= so->waypoints.size()) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
         }
     }
-    // Every carried unit goes where its carrier is. A carrier that is gone, knocked out or no longer holding it drops it.
-    // Awake: with its own squad it rides along; with a hostile it plays dead; with anyone else it gets free at once.
     for (Entity c : w.view<Carried>()) {
         const Entity by = w.get<Carried>(c)->by;
         const Carrying* cr = w.get<Carrying>(by);
@@ -93,7 +87,7 @@ CarryEvents carrySystem(World& w) {
         const Entity c = w.get<Carrying>(u)->unit;
         const Carried* cd = w.get<Carried>(c);
         if (!cd || cd->by != u) w.remove<Carrying>(u);
-        else if (w.has<Occupying>(u)) putDown(w, u);   // a unit never carries anyone while it occupies a prop
+        else if (w.has<Occupying>(u)) putDown(w, u);
     }
     lootOrderSystem(w, ev);
     return ev;

@@ -5,7 +5,6 @@
 #include <cmath>
 
 namespace {
-
 const std::array<StatInfo, STAT_COUNT>& infoTable() {
     static const std::array<StatInfo, STAT_COUNT> table = {{
         { "UILABEL_STRENGTH_STAT",     StatGroup::Attributes, "UILABEL_STAT_DESC_STRENGTH", 6 },
@@ -36,12 +35,10 @@ const std::array<StatInfo, STAT_COUNT>& infoTable() {
     return table;
 }
 
-// table[L] is the XP to reach level L, for L = 1..99. Built once from the formula:
-//   XP(L) = floor( 1/4 * sum for l = 1 .. L-1 of floor( l + 300 * 2^(l/7) ) )
 const std::array<int, MAX_LEVEL + 1>& xpTable() {
     static const std::array<int, MAX_LEVEL + 1> table = [] {
         std::array<int, MAX_LEVEL + 1> out{};
-        long long sum = 0;   // raw values of every level below the one being filled
+        long long sum = 0;
         for (int level = 1; level <= MAX_LEVEL; ++level) {
             out[level] = (int)(sum / 4);
             sum += (long long)std::floor(level + 300.0 * std::pow(2.0, level / 7.0));
@@ -50,8 +47,7 @@ const std::array<int, MAX_LEVEL + 1>& xpTable() {
     }();
     return table;
 }
-
-} // namespace
+}
 
 const StatInfo& statInfo(StatId stat) {
     return infoTable()[std::clamp(idx(stat), 0, STAT_COUNT - 1)];

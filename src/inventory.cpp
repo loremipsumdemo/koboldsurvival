@@ -14,7 +14,6 @@ int addToSlots(ItemStack* slots, int slotCount, int item, int count) {
     const int limit = stackLimit(item);
     int left = count;
 
-    // Top up stacks of the same item first
     for (int i = 0; i < slotCount && left > 0; ++i) {
         ItemStack& s = slots[i];
         if (s.item == item && s.count < limit) {
@@ -23,7 +22,6 @@ int addToSlots(ItemStack* slots, int slotCount, int item, int count) {
             left -= put;
         }
     }
-    // Then start new stacks in empty slots
     for (int i = 0; i < slotCount && left > 0; ++i) {
         ItemStack& s = slots[i];
         if (s.item == 0) {
@@ -82,8 +80,6 @@ int occupiedSlots(const Inventory& inv) {
 }
 
 namespace {
-
-// Where an item type sorts. Unknown types go after the ones the database lists.
 int typeRank(const std::string& typeId) {
     static const char* const order[] = { "item", "consumable", "weapon", "armor", "accessory" };
     for (int i = 0; i < (int)(sizeof(order) / sizeof(order[0])); ++i) {
@@ -91,8 +87,7 @@ int typeRank(const std::string& typeId) {
     }
     return (int)(sizeof(order) / sizeof(order[0]));
 }
-
-} // namespace
+}
 
 void sortInventoryByType(Inventory& inv) {
     auto key = [](const ItemStack& s) {
@@ -102,7 +97,7 @@ void sortInventoryByType(Inventory& inv) {
     std::stable_sort(inv.slots.begin(), inv.slots.end(), [&](const ItemStack& a, const ItemStack& b) {
         const bool aEmpty = a.item == 0 || a.count <= 0;
         const bool bEmpty = b.item == 0 || b.count <= 0;
-        if (aEmpty != bEmpty) return bEmpty;   // stacks before empty slots
+        if (aEmpty != bEmpty) return bEmpty;
         if (aEmpty) return false;
         return key(a) < key(b);
     });
