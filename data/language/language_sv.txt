@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minut
 UILABEL_MINUTES	{0} minuter
 UILABEL_UNIT_NAMES	Namn på spelarens enheter
 UILABEL_NPC_NAMES	Namn på andra enheter
-UILABEL_PROP_NAMES	Namn på föremål i världen
-UILABEL_PROP_INFO	Visa info om föremål
 UILABEL_RESET_PANELS	Återställ alla gränssnittspaneler
 UILABEL_RESET	Återställ
 UILABEL_FONT	Teckensnitt

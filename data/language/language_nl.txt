@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minuut
 UILABEL_MINUTES	{0} minuten
 UILABEL_UNIT_NAMES	Namen van eigen eenheden
 UILABEL_NPC_NAMES	Namen van andere eenheden
-UILABEL_PROP_NAMES	Namen van objecten
-UILABEL_PROP_INFO	Objectinfo tonen
 UILABEL_RESET_PANELS	Alle UI-panelen resetten
 UILABEL_RESET	Resetten
 UILABEL_FONT	Lettertype

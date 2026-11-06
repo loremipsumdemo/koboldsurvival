@@ -42,8 +42,6 @@ struct GameSettings {
     int autosaveMinutes = 5;
     bool showUnitNames = true;
     bool showNpcNames = true;
-    bool showPropNames = true;
-    bool showPropInfo = false;
     int fontScale = 100;
     std::string fontPath;
     std::string language = LANGUAGE_DEFAULT_ID;
@@ -106,8 +104,6 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "npcNames")        s.showNpcNames = (val == "1");
-        else if (key == "propNames")       s.showPropNames = (val == "1");
-        else if (key == "propInfo")        s.showPropInfo = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "fontPath")        s.fontPath = val;
         else if (key == "language")        s.language = val;
@@ -176,8 +172,6 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "npcNames=" << (s.showNpcNames ? 1 : 0) << "\n";
-    out << "propNames=" << (s.showPropNames ? 1 : 0) << "\n";
-    out << "propInfo=" << (s.showPropInfo ? 1 : 0) << "\n";
     out << "fontScale=" << s.fontScale << "\n";
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";

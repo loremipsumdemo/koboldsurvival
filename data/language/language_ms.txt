@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minit
 UILABEL_MINUTES	{0} minit
 UILABEL_UNIT_NAMES	Nama unit pemain
 UILABEL_NPC_NAMES	Nama unit lain
-UILABEL_PROP_NAMES	Nama objek
-UILABEL_PROP_INFO	Papar maklumat objek
 UILABEL_RESET_PANELS	Set semula semua panel UI
 UILABEL_RESET	Set semula
 UILABEL_FONT	Fon

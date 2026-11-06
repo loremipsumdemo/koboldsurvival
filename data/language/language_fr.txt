@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minute
 UILABEL_MINUTES	{0} minutes
 UILABEL_UNIT_NAMES	Noms des unités du joueur
 UILABEL_NPC_NAMES	Noms des autres unités
-UILABEL_PROP_NAMES	Noms des objets
-UILABEL_PROP_INFO	Afficher les infos des objets
 UILABEL_RESET_PANELS	Réinitialiser tous les panneaux
 UILABEL_RESET	Réinitialiser
 UILABEL_FONT	Police

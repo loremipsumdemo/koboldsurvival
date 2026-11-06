@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 phút
 UILABEL_MINUTES	{0} phút
 UILABEL_UNIT_NAMES	Tên đơn vị của người chơi
 UILABEL_NPC_NAMES	Tên đơn vị khác
-UILABEL_PROP_NAMES	Tên vật thể
-UILABEL_PROP_INFO	Hiện thông tin vật thể
 UILABEL_RESET_PANELS	Đặt lại tất cả bảng giao diện
 UILABEL_RESET	Đặt lại
 UILABEL_FONT	Phông chữ

@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 perc
 UILABEL_MINUTES	{0} perc
 UILABEL_UNIT_NAMES	Saját egységek neve
 UILABEL_NPC_NAMES	Más egységek neve
-UILABEL_PROP_NAMES	Tárgyak neve
-UILABEL_PROP_INFO	Tárgyinfó megjelenítése
 UILABEL_RESET_PANELS	Minden panel visszaállítása
 UILABEL_RESET	Visszaállítás
 UILABEL_FONT	Betűtípus

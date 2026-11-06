@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 минута
 UILABEL_MINUTES	{0} минути
 UILABEL_UNIT_NAMES	Имена на вашите единици
 UILABEL_NPC_NAMES	Имена на чуждите единици
-UILABEL_PROP_NAMES	Имена на предметите в света
-UILABEL_PROP_INFO	Показвай информация за обекти
 UILABEL_RESET_PANELS	Нулиране на всички панели
 UILABEL_RESET	Нулиране
 UILABEL_FONT	Шрифт

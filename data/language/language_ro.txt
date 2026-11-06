@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minut
 UILABEL_MINUTES	{0} minute
 UILABEL_UNIT_NAMES	Numele unităților jucătorului
 UILABEL_NPC_NAMES	Numele altor unități
-UILABEL_PROP_NAMES	Numele obiectelor
-UILABEL_PROP_INFO	Afișează informații despre obiecte
 UILABEL_RESET_PANELS	Resetează toate panourile UI
 UILABEL_RESET	Resetează
 UILABEL_FONT	Font

@@ -408,5 +408,8 @@ struct App : AppSession {
     std::vector<HudEntry> hud;
     float mouseX = 0.0f, mouseY = 0.0f;
     std::vector<Entity> unitsUnderMouse, itemsUnderMouse;
+    static constexpr unsigned long long PROP_TOOLTIP_DELAY_MS = 1000;
+    Entity hoverProp = NULL_ENTITY;   // the nearest prop under the mouse, while nothing covers it
+    unsigned long long hoverPropSince = 0;
     std::optional<bool> mouseOnPanels;
 };

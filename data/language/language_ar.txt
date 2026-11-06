@@ -55,8 +55,6 @@ UILABEL_MINUTE	دقيقة واحدة
 UILABEL_MINUTES	{0} دقائق
 UILABEL_UNIT_NAMES	أسماء وحدات اللاعب
 UILABEL_NPC_NAMES	أسماء الوحدات غير التابعة للاعب
-UILABEL_PROP_NAMES	أسماء العناصر
-UILABEL_PROP_INFO	إظهار معلومات العناصر
 UILABEL_RESET_PANELS	إعادة تعيين جميع اللوحات
 UILABEL_RESET	إعادة التعيين
 UILABEL_FONT	الخط

@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minuta
 UILABEL_MINUTES	{0} minut
 UILABEL_UNIT_NAMES	Nazwy jednostek gracza
 UILABEL_NPC_NAMES	Nazwy innych jednostek
-UILABEL_PROP_NAMES	Nazwy obiektów
-UILABEL_PROP_INFO	Pokaż informacje o obiektach
 UILABEL_RESET_PANELS	Zresetuj wszystkie panele interfejsu
 UILABEL_RESET	Resetuj
 UILABEL_FONT	Czcionka

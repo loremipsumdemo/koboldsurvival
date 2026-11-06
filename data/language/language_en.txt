@@ -60,8 +60,6 @@ UILABEL_MINUTE	1 minute
 UILABEL_MINUTES	{0} minutes
 UILABEL_UNIT_NAMES	Player unit names
 UILABEL_NPC_NAMES	Non-player unit names
-UILABEL_PROP_NAMES	Prop names
-UILABEL_PROP_INFO	Show prop info
 UILABEL_RESET_PANELS	Reset All UI Panels
 UILABEL_RESET	Reset
 UILABEL_FONT	Font
@@ -952,6 +950,23 @@ MISC_PROP_LOCK_OPEN	Unlocked
 MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
 MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
 MISC_PROP_UPKEEP	Upkeep: {0} hours left
+MISC_PROP_USE_BED	Can be slept in
+MISC_PROP_USE_SEAT	Can be sat on
+MISC_PROP_USE_CAGE	Can hold a prisoner
+MISC_PROP_OCCUPIED	Occupied by {0}
+MISC_PROP_USE_RESOURCE	Resource: can be gathered
+MISC_PROP_USE_CRAFTING	Crafting: needs a worker
+MISC_PROP_USE_PASSIVE	Crafting: works on its own
+MISC_PROP_USES	Uses: {0}
+MISC_PROP_USES_RAW_MEAT	Uses: any raw meat
+MISC_PROP_MAKES	Makes: {0}
+MISC_PROP_MAKES_COOKED_MEAT	Makes: cooked meat
+MISC_PROP_SKILL	Skill: {0}
+MISC_PROP_WORKERS	Up to {0} workers
+MISC_PROP_FUEL	Fuel: {0} hours left
+MISC_PROP_INVENTORY	Inventory: {0} slots
+MISC_PROP_HOLDS_ONLY	Holds only {0}
+MISC_PROP_LOCKABLE	Lockable
 MOB_BEAR	Bear
 MOB_COW	Cow
 MOB_CHICKEN	Chicken

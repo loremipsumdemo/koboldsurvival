@@ -201,6 +201,18 @@ void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float 
     }
 }
 
+void Renderer::drawPropTooltip(const std::vector<std::string>& lines, float mx, float my) {
+    if (lines.empty()) return;
+    std::vector<TipRow> rows;
+    for (size_t i = 0; i < lines.size(); ++i) rows.push_back(TipRow{ lines[i], i == 0 ? TIP_HEADING : TIP_TEXT });
+    const float s = uiScale();
+    const float w = tipWidth(rows), h = tipHeight(rows.size());
+    float x = mx + 14.0f * s, y = my + 18.0f * s;
+    if (x + w > uiW_) x = std::max(0.0f, uiW_ - w);
+    if (y + h > uiH_) y = std::max(0.0f, my - h - 4.0f * s);
+    drawTip(rows, x, y, w);
+}
+
 void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Equipment* compareTo) {
     const ItemDef* d = findItem(item);
     if (!d) return;

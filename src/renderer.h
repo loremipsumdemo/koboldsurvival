@@ -117,9 +117,9 @@ public:
                      const Storage* storage, const Output* output, const std::string& status, int dragFrom,
                      float mx, float my, const std::string& toggleLabel = std::string());
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
-    void drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames);
+    void drawPropEmotes(World& w, const Camera& cam, int winW, int winH);
     void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown);
-    void drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names = false);
+    void drawPropProgress(World& w, const Camera& cam, int winW, int winH);
     void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, bool showValue, float mx, float my);
@@ -138,7 +138,7 @@ public:
     void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item);
 
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
-    void drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo = false);
+    void drawPropTooltip(const std::vector<std::string>& lines, float mx, float my);
 
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
     GameLogLayout gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,
@@ -409,7 +409,6 @@ private:
     void drawPropInstances();
     float propTop(PropKind kind) const;
     float propBaseY(World& w, Entity e) const;
-    std::map<Entity, float> propLabelTop_;
 
     TextCache text_;
     Mat4 pixels_{};

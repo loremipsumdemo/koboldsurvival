@@ -448,6 +448,17 @@ void App::updateHover() {
         if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
     }
 
+    Entity nearestProp = NULL_ENTITY;
+    if (screen == Screen::Playing && !panelOpen && !mapOpen && !session.contextMenu.open && !itemMenu.open
+        && session.dialogueUnit == NULL_ENTITY && !mouseOverPanels()) {
+        const std::vector<Entity>& props = propsAt(mouseX, mouseY);
+        if (!props.empty()) nearestProp = props.front();
+    }
+    if (nearestProp != hoverProp) {
+        hoverProp = nearestProp;
+        hoverPropSince = SDL_GetTicks();
+    }
+
     {
         const bool inClaim = selectionInClaim(world);
         if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim) session.buildPick = {};

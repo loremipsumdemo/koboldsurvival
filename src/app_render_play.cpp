@@ -1,4 +1,5 @@
 #include "app.h"
+#include "prop_info.h"
 #include "profile.h"
 
 using namespace play;
@@ -19,12 +20,11 @@ void App::updateWorldMapView() {
 }
 
 void App::drawWorldOverlays() {
-    if (settings.showPropNames) renderer.drawPropNames(world, cam, winW, winH, settings.showPropInfo);
     if (settings.showUnitNames || settings.showNpcNames) {
         renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     }
     renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
-    renderer.drawPropEmotes(world, cam, winW, winH, settings.showPropNames);
+    renderer.drawPropEmotes(world, cam, winW, winH);
     if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NULL_ENTITY) {
         for (Entity u : unitsUnderMouse) {
             const Carried* cd = world.get<Carried>(u);
@@ -46,7 +46,7 @@ void App::drawWorldOverlays() {
                                      [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),
                       tradeLabels.end());
     renderer.drawTradeLabels(tradeLabels, world, cam, winW, winH);
-    renderer.drawPropProgress(world, cam, winW, winH, settings.showPropNames);
+    renderer.drawPropProgress(world, cam, winW, winH);
     if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
         renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
     } else if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open) {
@@ -244,6 +244,9 @@ void App::drawPlayingScreen() {
     renderer.beginUi(winW, winH);
     PROFILED("draw: overlays", drawWorldOverlays());
     PROFILED("draw: panels", drawGamePanels());
+    if (hoverProp != NULL_ENTITY && SDL_GetTicks() - hoverPropSince >= PROP_TOOLTIP_DELAY_MS) {
+        renderer.drawPropTooltip(propInfoLines(world, hoverProp), mouseX, mouseY);
+    }
     if (session.lootUnit != NULL_ENTITY) {
         const std::string who = world.has<Corpse>(session.lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, session.lootUnit) })
                                                            : nameOf(world, session.lootUnit);

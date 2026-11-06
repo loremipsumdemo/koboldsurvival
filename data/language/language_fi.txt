@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minuutti
 UILABEL_MINUTES	{0} minuuttia
 UILABEL_UNIT_NAMES	Pelaajan yksiköiden nimet
 UILABEL_NPC_NAMES	Muiden yksiköiden nimet
-UILABEL_PROP_NAMES	Kohteiden nimet
-UILABEL_PROP_INFO	Näytä kohteiden tiedot
 UILABEL_RESET_PANELS	Palauta kaikki paneelit
 UILABEL_RESET	Palauta
 UILABEL_FONT	Fontti

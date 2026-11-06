@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 dakika
 UILABEL_MINUTES	{0} dakika
 UILABEL_UNIT_NAMES	Oyuncu birimi adları
 UILABEL_NPC_NAMES	Diğer birimlerin adları
-UILABEL_PROP_NAMES	Nesne adları
-UILABEL_PROP_INFO	Nesne bilgilerini göster
 UILABEL_RESET_PANELS	Tüm arayüz panellerini sıfırla
 UILABEL_RESET	Sıfırla
 UILABEL_FONT	Yazı tipi

@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 λεπτό
 UILABEL_MINUTES	{0} λεπτά
 UILABEL_UNIT_NAMES	Ονόματα μονάδων παίκτη
 UILABEL_NPC_NAMES	Ονόματα άλλων μονάδων
-UILABEL_PROP_NAMES	Ονόματα αντικειμένων
-UILABEL_PROP_INFO	Εμφάνιση πληροφοριών αντικειμένων
 UILABEL_RESET_PANELS	Επαναφορά όλων των πάνελ
 UILABEL_RESET	Επαναφορά
 UILABEL_FONT	Γραμματοσειρά

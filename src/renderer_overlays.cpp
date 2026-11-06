@@ -15,7 +15,7 @@ const RGBA LABEL_HOT_FILL{ 0.12f, 0.04f, 0.02f, 0.85f };
 const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
 }
 
-void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH, bool names) {
+void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH) {
     const float s = uiScale();
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float outer = 11.0f * s, inner = 4.3f * s;
@@ -44,11 +44,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH,
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + top + 0.25f, tr->z, winW, winH, sx, sy)) continue;
-        float above = sy - (names ? listTextHeight("Ag") + 2.0f * s : 0.0f);
-        if (names) {
-            if (const auto it = propLabelTop_.find(e); it != propLabelTop_.end()) above = std::min(above, it->second - 2.0f * s);
-        }
-        const float cy = above - outer - (hopping ? std::sin(t * PI) * HOP_HEIGHT * s : 0.0f);
+        const float cy = sy - outer - (hopping ? std::sin(t * PI) * HOP_HEIGHT * s : 0.0f);
         const float frac = hopping ? 1.0f : (float)std::clamp(pw->progress, 0.0, 1.0);
         drawRing(sx, cy, outer, inner, 0.0f, 1.0f, back);
         drawRing(sx, cy, outer, inner, 0.0f, frac, theme::AMBER);
@@ -99,7 +95,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     }
 }
 
-void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, bool propNames) {
+void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const float size = 28.0f * s;
@@ -117,8 +113,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH, b
         if (emote == EmoteId::None) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
-        float bottom = sy - 2.0f * s;
-        if (propNames) bottom -= listTextHeight("Ag") + 2.0f * s;
+        const float bottom = sy - 2.0f * s;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         if (const TextTex* pic = emoteTexture(emote)) {
             drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, WHITE);
@@ -178,73 +173,6 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const float x = sx - tw * 0.5f, y = sy - th;
         drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
         drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : WHITE);
-    }
-}
-
-void Renderer::drawPropNames(World& w, const Camera& cam, int winW, int winH, bool showInfo) {
-    const float s = uiScaleFor(winH);
-    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    const RGBA purple{ 0.80f, 0.56f, 1.0f, 1.0f };
-    const RGBA pale{ 0.88f, 0.82f, 0.96f, 1.0f };
-    const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
-    const float lineGap = 2.0f * s;
-    const float lineH = listTextHeight("Ag");
-    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
-    cam.eye(ex, ey, ez);
-    propLabelTop_.clear();
-
-    struct Seen { Entity e; float sx, sy, dist2; };
-    std::map<std::pair<int, long long>, std::vector<Seen>> groups;
-    for (Entity e : w.view<Prop, Transform>()) {
-        const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        const PropKind kind = w.get<Prop>(e)->kind;
-        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
-        float sx = 0.0f, sy = 0.0f;
-        if (!worldToScreen(vp, tr->x, propBaseY(w, e) + propTop(kind) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
-        const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
-        std::pair<int, long long> key{ 1, ((long long)std::floor(tr->x) << 32) ^ (long long)(unsigned)(int)std::floor(tr->z) };
-        groups[key].push_back(Seen{ e, sx, sy, dx * dx + dy * dy + dz * dz });
-    }
-
-    struct Block {
-        float x = 0.0f, y = 0.0f, dist2 = 0.0f;
-        std::vector<std::pair<std::string, RGBA>> lines;
-    };
-    std::vector<Block> blocks;
-    for (auto& entry : groups) {
-        std::vector<Seen>& seen = entry.second;
-        std::sort(seen.begin(), seen.end(), [](const Seen& a, const Seen& b) { return a.e < b.e; });
-        Block b;
-        float cx = 0.0f, top = 0.0f, maxW = 0.0f;
-        b.dist2 = seen[0].dist2;
-        for (size_t i = 0; i < seen.size(); ++i) {
-            const Seen& sn = seen[i];
-            cx += sn.sx;
-            top = i == 0 ? sn.sy : std::min(top, sn.sy);
-            b.dist2 = std::min(b.dist2, sn.dist2);
-            b.lines.push_back({ "[" + propDisplayName(w, sn.e) + "]", purple });
-            if (showInfo) {
-                for (const std::string& line : propInfoLines(w, sn.e)) b.lines.push_back({ line, pale });
-            }
-        }
-        for (const auto& line : b.lines) maxW = std::max(maxW, listTextWidth(line.first));
-        cx /= (float)seen.size();
-        const float n = (float)b.lines.size();
-        const float blockH = n * lineH + (n - 1.0f) * lineGap;
-        b.x = cx - maxW * 0.5f;
-        b.y = top - blockH;
-        if (b.x + maxW < 0.0f || b.x > winW || b.y + blockH < 0.0f || b.y > winH) continue;
-        for (const Seen& sn : seen) propLabelTop_[sn.e] = b.y;
-        blocks.push_back(std::move(b));
-    }
-    std::stable_sort(blocks.begin(), blocks.end(), [](const Block& a, const Block& b) { return a.dist2 > b.dist2; });
-    for (const Block& b : blocks) {
-        for (size_t i = 0; i < b.lines.size(); ++i) {
-            const float y = b.y + (float)i * (lineH + lineGap);
-            drawListText(b.lines[i].first, b.x + 1.5f * s, y + 1.5f * s, shadow);
-            drawListText(b.lines[i].first, b.x, y, b.lines[i].second);
-        }
     }
 }
 

@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minuta
 UILABEL_MINUTES	{0} minut
 UILABEL_UNIT_NAMES	Jména hráčových jednotek
 UILABEL_NPC_NAMES	Jména ostatních jednotek
-UILABEL_PROP_NAMES	Názvy objektů
-UILABEL_PROP_INFO	Zobrazit informace o objektech
 UILABEL_RESET_PANELS	Obnovit všechny panely rozhraní
 UILABEL_RESET	Obnovit
 UILABEL_FONT	Písmo

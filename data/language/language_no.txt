@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 minutt
 UILABEL_MINUTES	{0} minutter
 UILABEL_UNIT_NAMES	Navn på spillerens enheter
 UILABEL_NPC_NAMES	Navn på andre enheter
-UILABEL_PROP_NAMES	Navn på gjenstander i verden
-UILABEL_PROP_INFO	Vis info om gjenstander
 UILABEL_RESET_PANELS	Tilbakestill alle grensesnittpaneler
 UILABEL_RESET	Tilbakestill
 UILABEL_FONT	Skrift

@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 นาที
 UILABEL_MINUTES	{0} นาที
 UILABEL_UNIT_NAMES	ชื่อยูนิตของผู้เล่น
 UILABEL_NPC_NAMES	ชื่อยูนิตอื่น
-UILABEL_PROP_NAMES	ชื่อวัตถุ
-UILABEL_PROP_INFO	แสดงข้อมูลวัตถุ
 UILABEL_RESET_PANELS	รีเซ็ตแผงอินเทอร์เฟซทั้งหมด
 UILABEL_RESET	รีเซ็ต
 UILABEL_FONT	ฟอนต์

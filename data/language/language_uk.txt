@@ -55,8 +55,6 @@ UILABEL_MINUTE	1 хвилина
 UILABEL_MINUTES	{0} хв
 UILABEL_UNIT_NAMES	Імена юнітів гравця
 UILABEL_NPC_NAMES	Імена інших юнітів
-UILABEL_PROP_NAMES	Назви об'єктів
-UILABEL_PROP_INFO	Показувати відомості про об'єкти
 UILABEL_RESET_PANELS	Скинути всі панелі інтерфейсу
 UILABEL_RESET	Скинути
 UILABEL_FONT	Шрифт
