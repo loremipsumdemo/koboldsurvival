@@ -72,12 +72,13 @@ Requirements:
 
 - CMake 3.16 or newer and a C++17 compiler (the project is set up for MSVC and Ninja on Windows through
   `CMakeSettings.json`, with x64-Debug and x64-Release configurations)
-- SDL3, SDL3_ttf, SDL3_image, OpenGL and GLEW, findable by CMake (for example through vcpkg)
+- SDL3, SDL3_ttf, SDL3_image, OpenGL and GLEW, findable by CMake. `vcpkg.json` pins their versions: configure with vcpkg's
+  toolchain file and it installs them
 
 tinygltf and miniaudio are downloaded automatically by CMake's FetchContent.
 
 ```bash
-cmake -S . -B out/build -G Ninja
+cmake -S . -B out/build -G Ninja -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake
 ```
 
 ```bash

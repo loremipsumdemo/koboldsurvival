@@ -194,13 +194,15 @@ if(KOBOLD_PROFILE)
     target_compile_definitions(koboldsurvival PRIVATE KOBOLD_PROFILE)
 endif()
 
-# Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
-# The game reads only this file, so the loose data/ folder is not copied.
-add_dependencies(koboldsurvival pack_data write_build_stamp)
-add_custom_command(TARGET koboldsurvival POST_BUILD
-    COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:koboldsurvival>/data.pak"
+# Rebuilds data.pak from data/ (fonts, sprites, models) next to the executables. The game reads only this file, so the
+# loose data/ folder is not copied. A target of its own, so the tests can have the pak without building the game.
+add_custom_target(game_data ALL
+    COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "${CMAKE_BINARY_DIR}/data.pak"
     COMMENT "Packing data/ into data.pak"
+    VERBATIM
 )
+add_dependencies(game_data pack_data)
+add_dependencies(koboldsurvival game_data write_build_stamp)
 
 # The language files (data/language) are also copied next to the exe as a loose LANGUAGE folder, beside data.pak, BGM
 # and SFX, so they can be edited without rebuilding the pak. They are in the pak too,
@@ -218,7 +220,7 @@ enable_testing()
 add_executable(save_roundtrip tests/save_roundtrip.cpp ${SIM_SOURCES})
 target_include_directories(save_roundtrip PRIVATE src)
 target_link_libraries(save_roundtrip PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
-add_dependencies(save_roundtrip koboldsurvival)
+add_dependencies(save_roundtrip game_data)
 add_test(NAME save_roundtrip COMMAND save_roundtrip WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 foreach(target koboldsurvival save_roundtrip)
