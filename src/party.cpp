@@ -154,8 +154,6 @@ const char* scenarioDescKey(ScenarioId id) {
 }
 
 namespace {
-constexpr int GOLD_COIN = 4;
-constexpr int IRON_ORE = 1;
 constexpr int BEASTMASTER_MOBS = 20;
 constexpr const char* PACK_WOLF_NAME = "Buddy";
 constexpr int CAMP_PARTY_PEOPLE = 20;
@@ -200,7 +198,7 @@ PartyMember mobMember(MobKind kind, Rng& rng) {
 
 std::vector<MobKind> regularMobKinds() {
     std::vector<MobKind> out;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+    for (int k = 1; k <= mobKindCount(); ++k) {
         if (isRegularMob((MobKind)k)) out.push_back((MobKind)k);
     }
     return out;
@@ -260,7 +258,7 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         }
         case ScenarioId::TravelingCaravan:
             m.stats = statsBetween(rng, 5, 5);
-            m.items[0] = ItemStack{ GOLD_COIN, 10 };
+            m.items[0] = ItemStack{ itemTagged(ITEM_TAG_GOLD_COIN), 10 };
             break;
         case ScenarioId::ShabbyCrew:
             m.stats = statsBetween(rng, 1, 10);
@@ -273,9 +271,9 @@ Party scenarioParty(ScenarioId id, Rng& rng, int count) {
         case ScenarioId::DungeonDiggers: {
             m.stats = statsBetween(rng, 5, 20);
             setStatLevel(m.stats, StatId::Mining, 50);
-            const ItemDef* ore = findItem(IRON_ORE);
+            const ItemDef* ore = findItem(itemTagged(ITEM_TAG_IRON_ORE));
             fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);
-            m.items[0] = ItemStack{ IRON_ORE, 3 };
+            m.items[0] = ItemStack{ itemTagged(ITEM_TAG_IRON_ORE), 3 };
             break;
         }
         case ScenarioId::Custom:

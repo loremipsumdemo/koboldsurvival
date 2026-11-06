@@ -19,20 +19,24 @@ std::vector<std::string> gameDataProblems() {
         if (!d.onUse.empty() && !parseUseScript(d.onUse, effects, err)) out.push_back(who + " has a bad on_use: " + err);
     }
 
-    for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
+    for (int i = 1; i <= mobKindCount(); ++i) {
         const MobKind kind = (MobKind)i;
         const MobInfo& m = mobInfo(kind);
-        needItem(m.meat, "mob " + m.nameKey + "'s meat");
-        needItem(m.bones, "mob " + m.nameKey + "'s bones");
-        if (!findFaction(mobFaction(kind))) out.push_back("mob " + m.nameKey + " has no faction " + std::to_string(mobFaction(kind)) + " in data/factions.txt");
+        needItem(m.meat, "mob " + m.key + "'s meat");
+        needItem(m.bones, "mob " + m.key + "'s bones");
+        if (!findFaction(mobFaction(kind))) out.push_back("mob " + m.key + " has no faction " + std::to_string(mobFaction(kind)) + " in data/factions.txt");
     }
 
-    for (int i = 0; i < PROP_KIND_COUNT; ++i) {
+    for (int i = 0; i < propKindCount(); ++i) {
         const PropInfo& p = propInfo((PropKind)i);
-        needItem(p.item, std::string("prop ") + p.nameKey + "'s item");
-        needItem(p.input, std::string("prop ") + p.nameKey + "'s input");
-        needItem(p.altItem, std::string("prop ") + p.nameKey + "'s other item");
+        needItem(p.item, "prop " + p.key + "'s item");
+        needItem(p.input, "prop " + p.key + "'s input");
+        needItem(p.altItem, "prop " + p.key + "'s other item");
     }
-    needItem(BONES_ITEM, "BONES_ITEM");
+    for (const char* tag : { ITEM_TAG_COMMON_BONES, ITEM_TAG_GOLD_COIN, ITEM_TAG_IRON_ORE }) {
+        int tagged = 0;
+        for (const ItemDef& d : itemDatabase()) tagged += hasTag(d, tag) ? 1 : 0;
+        if (tagged != 1) out.push_back(std::string("the tag ") + tag + " must be on one item in data/itemdb.txt, not " + std::to_string(tagged));
+    }
     return out;
 }

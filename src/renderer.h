@@ -368,7 +368,7 @@ private:
     const TextTex& unitPicture(int n) const;
     std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};
     std::array<const Model*, UNIT_SPRITE_COUNT> unitModelFor_{};
-    std::array<Model, MOB_KIND_COUNT> mobModels_{};
+    std::vector<Model> mobModels_;
     float unitHeight(World& w, Entity e) const;
     const Model* unitModelNumber(int n) const;
     const Model* unitModel(World& w, Entity e) const;
@@ -397,13 +397,13 @@ private:
     };
     std::map<Entity, PropHop> propHops_;
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
-    std::array<Model, PROP_KIND_COUNT> propModels_{};
+    std::vector<Model> propModels_;
     const Model& propModel(PropKind kind) const;
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;
     GLuint instVbo_ = 0;
-    std::array<GLuint, PROP_KIND_COUNT> propInstVao_{};
-    std::array<std::vector<Mat4>, PROP_KIND_COUNT> propInstances_{};
+    std::vector<GLuint> propInstVao_;
+    std::vector<std::vector<Mat4>> propInstances_;
     GLuint propInstVao(PropKind kind);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
     void drawPropInstances();

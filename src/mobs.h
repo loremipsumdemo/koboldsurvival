@@ -4,15 +4,16 @@
 #include "enum_index.h"
 #include "stats.h"
 
-// Saved as numbers: after reordering, raise SAVE_VERSION
+// A kind of mob. data/mobs.txt says what every kind is, and can add kinds with no name here: they number on from these.
 enum class MobKind : int {
     None = 0,
     Bear, Cow, Chicken, Boar, Wolf, Deer, Rabbit, Fish, Crab, Lizard,
     Snake, Pig, Sheep, Duck, Turtle, Bat, Frog, Gorlicorn, Griffin, Manticore,
     End
 };
-constexpr int MOB_KIND_COUNT = idx(MobKind::End) - 1;
-constexpr int MOB_FACTION_BASE = 10;
+constexpr int MOB_NAMED_KIND_COUNT = idx(MobKind::End) - 1;
+// How many kinds data/mobs.txt has. They are numbered from 1.
+int mobKindCount();
 constexpr int CAMP_MOBS = 3;
 
 enum class MobCategory { Regular, Boss };
@@ -37,6 +38,10 @@ struct MobInfo {
     MobTemperament temperament = MobTemperament::Avoidant;
     float spriteScale = 1.0f;
     float hover = 0.0f;
+    std::string key;
+    int faction = 0;
+    MobKind escort = MobKind::None;
+    int escortCount = 0;
 };
 
 constexpr float BOSS_DAMAGE_FACTOR = 2.0f;
@@ -69,19 +74,17 @@ constexpr int EXILE_FLEE_PERCENT = 25;
 inline float mobSpriteScale(MobKind kind) { return mobInfo(kind).spriteScale; }
 inline float mobHoverFraction(MobKind kind) { return mobInfo(kind).hover; }
 
-inline bool mobKindsFriendly(MobKind a, MobKind b) {
-    return (a == MobKind::Gorlicorn && b == MobKind::Rabbit) || (a == MobKind::Rabbit && b == MobKind::Gorlicorn);
-}
-constexpr int GORLICORN_RABBITS = 3;
+inline bool mobKindsFriendly(MobKind a, MobKind b) { return mobInfo(a).escort == b || mobInfo(b).escort == a; }
 
 inline bool isRegularMob(MobKind kind) {
-    return idx(kind) >= 1 && idx(kind) <= MOB_KIND_COUNT && mobInfo(kind).category == MobCategory::Regular;
+    return idx(kind) >= 1 && idx(kind) <= mobKindCount() && mobInfo(kind).category == MobCategory::Regular;
 }
 inline bool campMobKind(MobKind kind) { return isRegularMob(kind); }
 
-inline int mobFaction(MobKind kind) { return MOB_FACTION_BASE + idx(kind) - 1; }
-inline bool isMobFaction(int faction) { return faction >= MOB_FACTION_BASE && faction < MOB_FACTION_BASE + MOB_KIND_COUNT; }
-inline MobKind mobKindOfFaction(int faction) { return (MobKind)(faction - MOB_FACTION_BASE + 1); }
+inline int mobFaction(MobKind kind) { return mobInfo(kind).faction; }
+// None if no mob kind has this faction
+MobKind mobKindOfFaction(int faction);
+inline bool isMobFaction(int faction) { return mobKindOfFaction(faction) != MobKind::None; }
 inline bool mobHasStat(StatId stat) {
     const StatGroup g = statInfo(stat).group;
     return g == StatGroup::Attributes || g == StatGroup::Combat;

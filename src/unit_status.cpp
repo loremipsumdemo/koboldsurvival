@@ -32,7 +32,7 @@ std::string taskNameOf(World& w, Entity u) {
     }
     Entity prop = NULL_ENTITY;
     if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(StatId::Lockpicking);
-    if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && w.get<Prop>(g->prop)->kind == PropKind::Debris) {
+    if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && propInfo(w.get<Prop>(g->prop)->kind).debris) {
         return lang("UILABEL_TASK_CLEARING");
     }
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
@@ -62,7 +62,7 @@ std::vector<EmoteId> emotesOf(World& w, Entity u) {
     std::vector<EmoteId> out;
     auto propEmoteOf = [&](Entity prop) {
         const Prop* p = w.get<Prop>(prop);
-        return p ? propEmote(p->kind) : EmoteId::None;
+        return p ? propInfo(p->kind).emote : EmoteId::None;
     };
     if (const Working* wk = w.get<Working>(u)) {
         if (wk->unlocking) out.push_back(EmoteId::Lockpicking);

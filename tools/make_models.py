@@ -1,4 +1,4 @@
-"""Makes simple low-poly prop models: the data/model/model_<n>.glb files that data/models.txt names for each prop.
+"""Makes simple low-poly prop models: the data/model/model_<n>.glb files that data/props.txt names for each prop.
 
 Run it with:  python tools/make_models.py     (needs Python 3 and Pillow: pip install pillow)
 Then build the game, which packs data/ into data.pak. The game only reads the finished .glb files and never runs this script.
@@ -564,15 +564,20 @@ def write_glb(path, parts):
 
 
 def main():
-    """Writes the file data/models.txt names for each prop. A prop missing from either one stops the script."""
+    """Writes the file data/props.txt names for each prop. A prop missing from either one stops the script."""
     files = {}
-    with open(os.path.join(DATA, 'models.txt'), encoding='utf-8') as f:
+    model_column = None
+    with open(os.path.join(DATA, 'props.txt'), encoding='utf-8') as f:
         for line in f:
-            fields = line.split('\t')
-            if not line.startswith('#') and len(fields) > 1 and not fields[0].startswith('Unit'):
-                files[fields[0]] = fields[1]
+            fields = line.rstrip('\r\n').split('\t')
+            if line.startswith('#') or len(fields) < 2:
+                continue
+            if model_column is None:
+                model_column = fields.index('model')
+            else:
+                files[fields[0]] = fields[model_column]
     if set(files) != set(BUILDERS):
-        raise SystemExit('BUILDERS and data/models.txt differ: ' + ', '.join(sorted(set(files) ^ set(BUILDERS))))
+        raise SystemExit('BUILDERS and data/props.txt differ: ' + ', '.join(sorted(set(files) ^ set(BUILDERS))))
     for key, file in files.items():
         parts = BUILDERS[key]()
         tris = write_glb(os.path.join(DATA, 'model', file), parts)

@@ -53,7 +53,7 @@ bool harvestLoaded(World& w, const std::vector<Claim>& claims, Entity u, const B
 
 Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int ruleKind) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut || ruleKind < 0 || ruleKind >= PROP_KIND_COUNT) return NULL_ENTITY;
+    if (!ut || ruleKind < 0 || ruleKind >= propKindCount()) return NULL_ENTITY;
     const PropKind kind = (PropKind)ruleKind;
     if (!yieldsItems(kind)) return NULL_ENTITY;
     const int faction = factionOf(w, u);

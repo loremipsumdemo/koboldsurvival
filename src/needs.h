@@ -6,17 +6,8 @@
 
 constexpr double RESTED_LOSS_PER_HOUR = 4.0;
 constexpr double COMFORT_LOSS_PER_HOUR = 2.0;
-inline double restedGainPerHour(PropKind propKind) {
-    if (propKind == PropKind::Bed) return 25.0;
-    if (propKind == PropKind::Bedroll) return 15.0;
-    return 0.0;
-}
-inline double comfortGainPerHour(PropKind propKind) {
-    if (idx(propKind) < 0 || idx(propKind) >= PROP_KIND_COUNT) return 0.0;
-    const PropInfo& info = propInfo(propKind);
-    if (info.use != PropUse::Occupy || info.lockLevel > 0) return 0.0;
-    return propKind == PropKind::Bed ? 20.0 : 10.0;
-}
+inline double restedGainPerHour(PropKind propKind) { return propInfo(propKind).restedPerHour; }
+inline double comfortGainPerHour(PropKind propKind) { return propInfo(propKind).comfortPerHour; }
 
 constexpr double CONSCIOUS_TICKS_PER_HOUR = 100.0;
 constexpr float RESTED_HOSTILE_RANGE = 12.0f;

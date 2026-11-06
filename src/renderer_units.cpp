@@ -58,7 +58,7 @@ float Renderer::bedLift(World& w, Entity u) const {
     const Prop* p = w.get<Prop>(oc->prop);
     const Transform* pt = w.get<Transform>(oc->prop);
     const Transform* ut = w.get<Transform>(u);
-    if (!p || !pt || !ut || (p->kind != PropKind::Bed && p->kind != PropKind::Bedroll)) return -1.0f;
+    if (!p || !pt || !ut || !isBed(p->kind)) return -1.0f;
     const float dx = ut->x - pt->x, dz = ut->z - pt->z;
     if (dx * dx + dz * dz > 0.25f * 0.25f) return -1.0f;
     return std::max(0.0f, propBaseY(w, oc->prop) - ut->y + propTop(p->kind) * 0.5f);
@@ -171,7 +171,7 @@ void Renderer::drawPropInstances() {
     if (!any) return;
     glUseProgram(modelInstProgram_);
     glUniformMatrix4fv(uVPInst_, 1, GL_FALSE, viewProj_.m);
-    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+    for (int k = 0; k < propKindCount(); ++k) {
         std::vector<Mat4>& list = propInstances_[(size_t)k];
         if (list.empty()) continue;
         const GLuint vao = propInstVao((PropKind)k);
@@ -295,7 +295,7 @@ void Renderer::drawUnitModelPreview(int sprite, const Rect& r, float yaw) {
 
 void Renderer::drawMobPreview(MobKind kind, const Rect& r, float yaw) {
     const int i = idx(kind) - 1;
-    if (i >= 0 && i < MOB_KIND_COUNT && mobModels_[(size_t)i].vao) {
+    if (i >= 0 && i < mobKindCount() && mobModels_[(size_t)i].vao) {
         drawModelPreview(&mobModels_[(size_t)i], r, yaw);
         return;
     }
@@ -304,7 +304,7 @@ void Renderer::drawMobPreview(MobKind kind, const Rect& r, float yaw) {
 
 const TextTex& Renderer::mobPicture(MobKind kind) const {
     const int i = idx(kind) - 1;
-    if (i >= 0 && i < MOB_KIND_COUNT && !mobInfo(kind).model.empty()) return pink_;
+    if (i >= 0 && i < mobKindCount() && !mobInfo(kind).model.empty()) return pink_;
     if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
     return pink_;
 }
@@ -390,7 +390,7 @@ float Renderer::unitHeight(World& w, Entity e) const {
 const Model* Renderer::unitModel(World& w, Entity e) const {
     if (const Mob* mb = w.get<Mob>(e)) {
         const int i = idx(mb->kind) - 1;
-        if (i >= 0 && i < MOB_KIND_COUNT && mobModels_[(size_t)i].vao) return &mobModels_[(size_t)i];
+        if (i >= 0 && i < mobKindCount() && mobModels_[(size_t)i].vao) return &mobModels_[(size_t)i];
         return nullptr;
     }
     const UnitSprite* us = w.get<UnitSprite>(e);
@@ -491,7 +491,7 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
-        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
+        if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
         const Model& m = propModel(kind);
         const float baseY = propBaseY(w, e);
         if (m.vao) {
@@ -530,7 +530,7 @@ float Renderer::propBaseY(World& w, Entity e) const {
 
 float Renderer::propTop(PropKind kind) const {
     float top = missingPropSide(kind);
-    if (idx(kind) >= 0 && idx(kind) < PROP_KIND_COUNT) {
+    if (idx(kind) >= 0 && idx(kind) < propKindCount()) {
         const Model& m = propModel(kind);
         const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
         if (m.vao && extent > 0.0f) top = (m.maxY - m.minY) * propInfo(kind).size / extent;

@@ -6,7 +6,7 @@ using namespace systems_detail;
 static bool inBedOrBedroll(World& w, Entity u) {
     const Entity bed = occupiedProp(w, u);
     const Prop* p = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
-    return p && (p->kind == PropKind::Bed || p->kind == PropKind::Bedroll);
+    return p && isBed(p->kind);
 }
 
 void knockOut(World& w, Entity u) {

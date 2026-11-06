@@ -104,7 +104,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (Entity e : w.view<Prop, Transform>()) {
         const PropKind kind = w.get<Prop>(e)->kind;
-        if (kind != PropKind::Altar) continue;
+        if (!propInfo(kind).claimsLand) continue;
         const Transform* tr = w.get<Transform>(e);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         EmoteId emote = EmoteId::None;

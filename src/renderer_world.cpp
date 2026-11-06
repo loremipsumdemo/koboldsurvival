@@ -221,7 +221,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
-        if (idx(kind) < 0 || idx(kind) >= PROP_KIND_COUNT) continue;
+        if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
         const float baseY = propBaseY(w, e);
         const bool modelled = propModel(kind).vao != 0;
         const float side = modelled ? propInfo(kind).size : missingPropSide(kind);

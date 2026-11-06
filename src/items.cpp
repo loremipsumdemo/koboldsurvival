@@ -179,6 +179,13 @@ bool spoilsOnGround(int item) {
     return d && (hasTag(*d, "raw_food") || hasTag(*d, "bones") || d->onUse.find("hunger") != std::string::npos);
 }
 
+int itemTagged(const char* tag) {
+    for (const ItemDef& d : itemTable) {
+        if (hasTag(d, tag)) return d.id;
+    }
+    return 0;
+}
+
 const ItemDef* findItem(int id) {
     return id > 0 && (size_t)id < itemIndex.size() ? itemIndex[(size_t)id] : nullptr;
 }

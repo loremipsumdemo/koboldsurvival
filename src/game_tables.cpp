@@ -21,8 +21,11 @@ struct Row {
 const std::string NO_FILE;
 
 std::array<SfxInfo, (size_t)Sfx::Count> sfxTable;
-std::array<MobInfo, MOB_KIND_COUNT> mobTable;
-std::array<std::string, PROP_KIND_COUNT> propModels;
+std::vector<MobInfo> mobTable;
+std::vector<MobKind> mobOfFaction;
+std::vector<PropInfo> propTable;
+std::vector<PropKind> propsListed;
+std::vector<PropKind> propsScattered;
 std::array<std::string, UNIT_SPRITE_COUNT> unitModels;
 std::map<int, std::string> emoteFiles, iconFiles;
 std::map<std::string, std::pair<std::string, std::string>> soundtracks;
@@ -43,7 +46,7 @@ const char* const MOB_KEYS[] = {
     "Bear", "Cow", "Chicken", "Boar", "Wolf", "Deer", "Rabbit", "Fish", "Crab", "Lizard",
     "Snake", "Pig", "Sheep", "Duck", "Turtle", "Bat", "Frog", "Gorlicorn", "Griffin", "Manticore",
 };
-static_assert(std::size(MOB_KEYS) == MOB_KIND_COUNT);
+static_assert(std::size(MOB_KEYS) == MOB_NAMED_KIND_COUNT);
 
 const char* const PROP_KEYS[] = {
     "Wagon", "Campfire", "Bedroll", "Bed", "Barrel", "Ore", "Tree", "Boulder", "Mushroom", "Bones", "Wall", "Stall",
@@ -51,7 +54,7 @@ const char* const PROP_KEYS[] = {
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
     "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Shop", "Farm", "Turbine", "Stove",
 };
-static_assert(std::size(PROP_KEYS) == PROP_KIND_COUNT);
+static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
 const char* const UNIT_KEYS[] = { "Unit1", "Unit2", "Unit3" };
 static_assert(std::size(UNIT_KEYS) == UNIT_SPRITE_COUNT);
@@ -87,14 +90,8 @@ std::string at(const char* file, const Row& r, const std::string& what) {
     return std::string(file) + " line " + std::to_string(r.line) + ": " + what;
 }
 
-bool readTable(const char* file, size_t columns, std::vector<Row>& rows, std::string& err) {
-    const unsigned char* bytes = nullptr;
-    size_t size = 0;
-    if (!pakFind(file, bytes, size)) {
-        err = std::string(file) + " is not in data.pak";
-        return false;
-    }
-    std::istringstream in(std::string((const char*)bytes, size));
+bool parseRows(const char* file, const std::string& text, size_t columns, std::vector<Row>& rows, std::string& err) {
+    std::istringstream in(text);
     std::string line;
     int lineNo = 0;
     while (std::getline(in, line)) {
@@ -114,6 +111,16 @@ bool readTable(const char* file, size_t columns, std::vector<Row>& rows, std::st
         rows.push_back(std::move(r));
     }
     return true;
+}
+
+bool readTable(const char* file, size_t columns, std::vector<Row>& rows, std::string& err) {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(file, bytes, size)) {
+        err = std::string(file) + " is not in data.pak";
+        return false;
+    }
+    return parseRows(file, std::string((const char*)bytes, size), columns, rows, err);
 }
 
 // Calls apply with each key's place in keys. A key not in the list, a key listed twice and a key left out are all errors.
@@ -196,11 +203,8 @@ bool loadModels(std::string& err) {
     const char* file = "data/models.txt";
     std::vector<Row> rows;
     if (!readTable(file, 1, rows, err)) return false;
-    std::vector<std::string> keys = keyList(PROP_KEYS);
-    for (const char* k : UNIT_KEYS) keys.push_back(k);
-    return applyKeys(file, rows, keys, [](size_t i, const Row& r, std::string&) {
-        if (i < PROP_KIND_COUNT) propModels[i] = r.cols[0];
-        else unitModels[i - PROP_KIND_COUNT] = r.cols[0];
+    return applyKeys(file, rows, keyList(UNIT_KEYS), [](size_t i, const Row& r, std::string&) {
+        unitModels[i] = r.cols[0];
         return true;
     }, err);
 }
@@ -243,14 +247,45 @@ bool readCategory(const std::string& s, MobCategory& out) {
     return true;
 }
 
+// Gives every key its number: the named ones their place in names plus first, any others the numbers after them in the
+// order of the rows. A key listed twice and a named key left out are errors.
+template <size_t N>
+bool numberKeys(const char* file, const std::vector<Row>& rows, const char* const (&names)[N], int first,
+                std::map<std::string, int>& out, std::string& err) {
+    out.clear();
+    for (size_t i = 0; i < N; ++i) out[names[i]] = first + (int)i;
+    int next = first + (int)N;
+    std::map<std::string, bool> seen;
+    for (const Row& r : rows) {
+        if (seen[r.key]) {
+            err = at(file, r, "key " + r.key + " is listed twice");
+            return false;
+        }
+        seen[r.key] = true;
+        if (!out.count(r.key)) out[r.key] = next++;
+    }
+    for (const char* name : names) {
+        if (!seen[name]) {
+            err = std::string(file) + ": key " + name + " is missing";
+            return false;
+        }
+    }
+    return true;
+}
+
 bool loadMobs(std::string& err) {
     const char* file = "data/mobs.txt";
-    constexpr size_t COLUMNS = 22;
+    constexpr size_t COLUMNS = 25;
     std::vector<Row> rows;
     if (!readTable(file, COLUMNS, rows, err)) return false;
-    return applyKeys(file, rows, keyList(MOB_KEYS), [](size_t i, const Row& r, std::string& why) {
+    std::map<std::string, int> numbers;
+    if (!numberKeys(file, rows, MOB_KEYS, 1, numbers, err)) return false;
+    std::vector<MobInfo> table(rows.size());
+    std::vector<MobKind> ofFaction;
+    for (const Row& r : rows) {
         const std::vector<std::string>& c = r.cols;
         MobInfo m;
+        m.key = r.key;
         m.nameKey = c[0];
         m.picture = c[15];
         m.model = c[16] == "none" ? std::string() : c[16];
@@ -260,14 +295,180 @@ bool loadMobs(std::string& err) {
                         readInt(c[10], m.bones) && readInt(c[11], m.boneCount) && readYesNo(c[12], m.maxStats) &&
                         readInt(c[13], m.hp) && readFloat(c[14], m.modelHeight) && readYesNo(c[17], m.patrolSpawn) &&
                         readCategory(c[18], m.category) && readTemperament(c[19], m.temperament) &&
-                        readFloat(c[20], m.spriteScale) && readFloat(c[21], m.hover);
+                        readFloat(c[20], m.spriteScale) && readFloat(c[21], m.hover) && readInt(c[22], m.faction) &&
+                        readInt(c[24], m.escortCount);
         if (!ok) {
-            why = "a value for " + r.key + " is not valid";
+            err = at(file, r, "a value for " + r.key + " is not valid");
             return false;
         }
-        mobTable[i] = m;
-        return true;
-    }, err);
+        if (c[23] != "none") {
+            const auto escort = numbers.find(c[23]);
+            if (escort == numbers.end()) {
+                err = at(file, r, "no mob has the key " + c[23]);
+                return false;
+            }
+            m.escort = (MobKind)escort->second;
+        }
+        const int number = numbers[r.key];
+        if ((size_t)m.faction >= ofFaction.size()) ofFaction.resize((size_t)m.faction + 1, MobKind::None);
+        if (ofFaction[(size_t)m.faction] != MobKind::None) {
+            err = at(file, r, "another mob has the faction " + c[22]);
+            return false;
+        }
+        ofFaction[(size_t)m.faction] = (MobKind)number;
+        table[(size_t)number - 1] = m;
+    }
+    mobTable = std::move(table);
+    mobOfFaction = std::move(ofFaction);
+    return true;
+}
+
+// A table whose first row names its columns
+struct NamedColumns {
+    std::map<std::string, size_t> at;
+    const std::string& operator()(const Row& r, const char* name) const { return name == KEY ? r.key : r.cols[at.find(name)->second]; }
+    static constexpr const char* KEY = "key";
+};
+
+bool readDouble(const std::string& s, double& out) {
+    float f = 0.0f;
+    if (!readFloat(s, f)) return false;
+    out = std::strtod(s.c_str(), nullptr);
+    return true;
+}
+
+template <size_t N>
+int placeIn(const char* const (&names)[N], const std::string& s) {
+    for (size_t i = 0; i < N; ++i) {
+        if (s == names[i]) return (int)i;
+    }
+    return -1;
+}
+
+const char* const STAT_KEYS[] = {
+    "Strength", "Dexterity", "Vitality", "Agility", "Intelligence", "Wisdom", "Charisma", "Melee", "Projectiles", "Arcane",
+    "Block", "Mining", "Herbalism", "Woodcutting", "Skinning", "Farming", "Cooking", "Smelting", "Forging", "Carpentry",
+    "Stoneworking", "Lockpicking", "Thievery", "Medical",
+};
+static_assert(std::size(STAT_KEYS) == STAT_COUNT);
+
+const char* const PROP_USE_KEYS[] = { "none", "storage", "occupy", "resource", "crafting", "passive" };
+const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water" };
+
+bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
+    if (text == "none") return true;
+    std::istringstream in(text);
+    std::string flag;
+    while (std::getline(in, flag, ',')) {
+        if (flag == "built") p.built = true;
+        else if (flag == "build_anywhere") p.buildAnywhere = true;
+        else if (flag == "scatter") p.scatter = true;
+        else if (flag == "claims_land") p.claimsLand = true;
+        else if (flag == "burns_corpses") p.burnsCorpses = true;
+        else if (flag == "destroyed_by_hand") p.byHand = true;
+        else if (flag == "debris") p.debris = true;
+        else if (flag == "seat") p.seat = true;
+        else if (flag == "cage") p.cage = true;
+        else {
+            why = "unknown flag " + flag;
+            return false;
+        }
+    }
+    return true;
+}
+
+// What one row says, or why it can't be read
+bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::string& why) {
+    p.key = r.key;
+    p.nameKey = cell(r, "name_key");
+    p.model = cell(r, "model");
+    const std::string& input = cell(r, "input");
+    if (input == "cookable") p.input = INPUT_COOKABLE;
+    else if (!readInt(input, p.input)) { why = "input must be a number or cookable"; return false; }
+    if (!readFloat(cell(r, "size"), p.size) || !readInt(cell(r, "item"), p.item) || !readInt(cell(r, "workers"), p.workers) ||
+        !readInt(cell(r, "lock_level"), p.lockLevel) || !readDouble(cell(r, "fuel_hours"), p.fuelHours) ||
+        !readInt(cell(r, "alt_item"), p.altItem) || !readInt(cell(r, "alt_one_in"), p.altOneIn) ||
+        !readDouble(cell(r, "speed"), p.speed) || !readDouble(cell(r, "rested"), p.restedPerHour) ||
+        !readDouble(cell(r, "comfort"), p.comfortPerHour)) {
+        why = "a number for " + r.key + " is not valid";
+        return false;
+    }
+    const int use = placeIn(PROP_USE_KEYS, cell(r, "use"));
+    if (use < 0) { why = "unknown use " + cell(r, "use"); return false; }
+    p.use = (PropUse)use;
+    const int accepts = placeIn(ITEM_FILTER_KEYS, cell(r, "accepts"));
+    if (accepts < 0) { why = "unknown accepts " + cell(r, "accepts"); return false; }
+    p.accepts = (ItemFilter)accepts;
+    if (cell(r, "stat") != "none") {
+        const int stat = placeIn(STAT_KEYS, cell(r, "stat"));
+        if (stat < 0) { why = "unknown stat " + cell(r, "stat"); return false; }
+        p.stat = (StatId)stat;
+    }
+    if (cell(r, "work_sound") != "none") {
+        const int sound = placeIn(SFX_KEYS, cell(r, "work_sound"));
+        if (sound < 0) { why = "unknown sound " + cell(r, "work_sound"); return false; }
+        p.workSound = (Sfx)sound;
+    }
+    const int done = placeIn(SFX_KEYS, cell(r, "done_sound"));
+    if (done < 0) { why = "unknown sound " + cell(r, "done_sound"); return false; }
+    p.doneSound = (Sfx)done;
+    if (cell(r, "emote") != "none") {
+        bool found = false;
+        for (const Numbered& e : EMOTE_KEYS) {
+            if (cell(r, "emote") == e.key) {
+                p.emote = (EmoteId)e.id;
+                found = true;
+            }
+        }
+        if (!found) { why = "unknown emote " + cell(r, "emote"); return false; }
+    }
+    return readPropFlags(cell(r, "flags"), p, why);
+}
+
+bool parseProps(const std::string& text, std::string& err) {
+    const char* file = "data/props.txt";
+    static const char* const NEEDED[] = { "name_key", "model", "size", "use", "stat", "item", "input", "workers", "lock_level",
+        "accepts", "fuel_hours", "alt_item", "alt_one_in", "speed", "rested", "comfort", "work_sound", "done_sound", "emote", "flags" };
+    std::vector<Row> rows;
+    if (!parseRows(file, text, 0, rows, err)) return false;
+    if (rows.empty() || rows[0].key != NamedColumns::KEY) {
+        err = std::string(file) + ": the first row must name the columns, starting with key";
+        return false;
+    }
+    NamedColumns cell;
+    for (size_t i = 0; i < rows[0].cols.size(); ++i) cell.at[rows[0].cols[i]] = i;
+    for (const char* name : NEEDED) {
+        if (!cell.at.count(name)) {
+            err = std::string(file) + ": no column named " + name;
+            return false;
+        }
+    }
+    const size_t columns = rows[0].cols.size();
+    rows.erase(rows.begin());
+    std::map<std::string, int> numbers;
+    if (!numberKeys(file, rows, PROP_KEYS, 0, numbers, err)) return false;
+    std::vector<PropInfo> table(rows.size());
+    std::vector<PropKind> listed;
+    for (const Row& r : rows) {
+        if (r.cols.size() < columns) {
+            err = at(file, r, "needs " + std::to_string(columns) + " columns after the key");
+            return false;
+        }
+        const int number = numbers[r.key];
+        std::string why;
+        if (!readPropRow(cell, r, table[(size_t)number], why)) {
+            err = at(file, r, why);
+            return false;
+        }
+        listed.push_back((PropKind)number);
+    }
+    propTable = std::move(table);
+    propsListed = std::move(listed);
+    propsScattered.clear();
+    for (size_t i = 0; i < propTable.size(); ++i) {
+        if (propTable[i].scatter) propsScattered.push_back((PropKind)i);
+    }
+    return true;
 }
 
 bool loadFonts(std::string& err) {
@@ -312,6 +513,18 @@ const std::string& fileIn(const std::map<int, std::string>& files, int id) {
 }
 }
 
+bool loadPropTableText(const std::string& text, std::string& err) { return parseProps(text, err); }
+
+static bool loadPropsFile(std::string& err) {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind("data/props.txt", bytes, size)) {
+        err = "data/props.txt is not in data.pak";
+        return false;
+    }
+    return parseProps(std::string((const char*)bytes, size), err);
+}
+
 static bool loadWholeFile(const char* file, bool (*load)(const std::string&, std::string&), std::string& err) {
     const unsigned char* bytes = nullptr;
     size_t size = 0;
@@ -329,7 +542,7 @@ static bool loadWholeFile(const char* file, bool (*load)(const std::string&, std
 
 bool loadGameTables(std::string& err) {
     return loadWholeFile("data/itemdb.txt", loadItemDbText, err) && loadWholeFile("data/factions.txt", loadFactions, err) && loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
-           loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadMobs(err) && loadFonts(err);
+           loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadPropsFile(err) && loadMobs(err) && loadFonts(err);
 }
 
 const SfxInfo& sfxInfo(Sfx s) {
@@ -338,9 +551,28 @@ const SfxInfo& sfxInfo(Sfx s) {
 }
 
 const MobInfo& mobInfo(MobKind kind) {
+    static const MobInfo none;
     const int i = idx(kind) - 1;
-    return mobTable[(i >= 0 && i < MOB_KIND_COUNT) ? (size_t)i : 0];
+    if (mobTable.empty()) return none;
+    return mobTable[(i >= 0 && i < (int)mobTable.size()) ? (size_t)i : 0];
 }
+
+int mobKindCount() { return (int)mobTable.size(); }
+
+MobKind mobKindOfFaction(int faction) {
+    return faction >= 0 && (size_t)faction < mobOfFaction.size() ? mobOfFaction[(size_t)faction] : MobKind::None;
+}
+
+const PropInfo& propInfo(PropKind kind) {
+    static const PropInfo none;
+    const int k = idx(kind);
+    if (propTable.empty()) return none;
+    return propTable[(k >= 0 && k < (int)propTable.size()) ? (size_t)k : 0];
+}
+
+int propKindCount() { return (int)propTable.size(); }
+const std::vector<PropKind>& propKindsListed() { return propsListed; }
+const std::vector<PropKind>& scatteredPropKinds() { return propsScattered; }
 
 Soundtrack soundtrackNamed(const std::string& screenKey) {
     Soundtrack out;
@@ -358,10 +590,7 @@ Soundtrack soundtrackNamed(const std::string& screenKey) {
 const std::string& emoteFile(int emote) { return fileIn(emoteFiles, emote); }
 const std::string& iconFile(int icon) { return fileIn(iconFiles, icon); }
 
-const std::string& propModelFile(PropKind kind) {
-    const int k = idx(kind);
-    return propModels[(k >= 0 && k < PROP_KIND_COUNT) ? (size_t)k : 0];
-}
+const std::string& propModelFile(PropKind kind) { return propInfo(kind).model; }
 
 const std::string& unitModelFile(int model) {
     return unitModels[(model >= 1 && model <= UNIT_SPRITE_COUNT) ? (size_t)model - 1 : 0];

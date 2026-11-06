@@ -253,7 +253,8 @@ struct LevelBuilder {
 
     void placeLevelProps() {
         std::vector<GridPos> propTiles;
-        const int propTotal = PROP_PLACED_KIND_COUNT * PROP_COPIES;
+        const std::vector<PropKind>& scattered = scatteredPropKinds();
+        const int propTotal = (int)scattered.size() * PROP_COPIES;
         for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
             GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
                        rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
@@ -265,7 +266,7 @@ struct LevelBuilder {
                 if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
             }
             if (kitHere) continue;
-            const PropKind kind = (PropKind)(propTiles.size() % PROP_PLACED_KIND_COUNT);
+            const PropKind kind = scattered[propTiles.size() % scattered.size()];
             propTiles.push_back(g);
             const float x = g.x + 0.5f, z = g.y + 0.5f;
             const Entity prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z });
@@ -327,8 +328,8 @@ struct LevelBuilder {
             if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
             for (int i = 0; i < CAMP_MOBS; ++i) {
                 float x = 0.0f, z = 0.0f;
-                MobKind kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
-                while (!campMobKind(kind)) kind = (MobKind)rng.range(1, MOB_KIND_COUNT);
+                MobKind kind = (MobKind)rng.range(1, mobKindCount());
+                while (!campMobKind(kind)) kind = (MobKind)rng.range(1, mobKindCount());
                 bool found = false;
                 for (int tries = 0; tries < 20 && !found; ++tries) {
                     if (!freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) break;
@@ -355,9 +356,9 @@ struct LevelBuilder {
             if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
         }
         const float turn = rng.unit() * TWO_PI;
-        for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+        for (int k = 1; k <= mobKindCount(); ++k) {
             const MobKind kind = (MobKind)k;
-            const float a = turn + TWO_PI * (float)(k - 1) / (float)MOB_KIND_COUNT;
+            const float a = turn + TWO_PI * (float)(k - 1) / (float)mobKindCount();
             const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
             const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
             const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
@@ -365,12 +366,13 @@ struct LevelBuilder {
                 float x = 0.0f, z = 0.0f;
                 if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
                     const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
-                    if (kind != MobKind::Gorlicorn) continue;
+                    const MobKind escort = mobInfo(kind).escort;
+                    if (escort == MobKind::None) continue;
                     const SpawnHome home = *w.get<SpawnHome>(m);
-                    for (int r = 0; r < GORLICORN_RABBITS; ++r) {
+                    for (int r = 0; r < mobInfo(kind).escortCount; ++r) {
                         float rx = 0.0f, rz = 0.0f;
                         if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
-                        const Entity rabbit = spawnMob(w, t, rng, MobKind::Rabbit, mobFaction(MobKind::Rabbit), rx, rz);
+                        const Entity rabbit = spawnMob(w, t, rng, escort, mobFaction(escort), rx, rz);
                         Behaviors* rb = w.get<Behaviors>(rabbit);
                         for (BehaviorRule& rule : rb->rules) {
                             if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;

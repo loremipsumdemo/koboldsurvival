@@ -96,8 +96,9 @@ The build also:
 ## Project layout
 
 ```
-src/                 Game source (single executable, an ECS-style design)
-  main.cpp, app*.cpp  Start-up, the frame loop, input, the screens and the game's step
+src/                 Game source (an ECS-style design). The simulation is a library, kobold_sim, with no graphics
+  main.cpp, app*.cpp  Start-up, the frame loop, input and the screens
+  simulation         One step of the game, with no window, and the events it reports to the screens
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
@@ -107,7 +108,10 @@ src/                 Game source (single executable, an ECS-style design)
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
   world_format, map_file   The world folder format, and the blank map a Terrain starts as
 tests/
-  save_roundtrip.cpp Saves a level, loads it and compares (run with ctest; opens no window)
+  save_roundtrip.cpp Saves a level, loads it and compares
+  data_check.cpp     Checks the data tables agree, and lists text not yet translated
+  sim_step.cpp       Plays with no window, and checks the same seed gives the same game
+                     (all run with ctest; none opens a window)
 tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen
@@ -118,7 +122,8 @@ data/                Game content, packed into data.pak
   factions.txt       Factions and starting reputations
   mobs.txt           Every mob's stats, temperament, meat, bones, picture and model
   sfx.txt, bgm.txt   Which sound or track plays for what
-  emotes.txt, icons.txt, models.txt   Which file each emote, icon, prop and unit uses
+  props.txt          Every prop: what it does, its model and its rules
+  emotes.txt, icons.txt, models.txt   Which file each emote, icon and unit uses
   fonts.txt, languages.txt   The built-in fonts, and each language's first choice
   motd.txt           The title screen's notice board
   language/          One KEY<TAB>text file per language (English is the reference)
@@ -133,14 +138,15 @@ SFX/                 Sound effects (.mp3)
 ## Modding the data
 
 Most content is plain text in `data/`, and the game reads those tables at start-up, so changing a file name or a mob's
-stats in them changes the game after a rebuild packs them. Each table explains its columns at the top. Keys are fixed by the
-code (`src/game_tables.cpp`): a new sound, emote or mob kind also needs code. If a table has a mistake, the game stops at
-start-up and names the file and line. A missing picture or model is drawn as a pink square.
+stats in them changes the game after a rebuild packs them. Each table explains its columns at the top. If a table has a
+mistake, or two tables disagree, the game stops at start-up and says what is wrong. A missing picture or model is drawn as
+a pink square.
+
+A new prop or mob needs no code: add a row to `data/props.txt` or `data/mobs.txt`, its language keys and its art. A new mob
+also needs a line in `data/factions.txt`. A new sound or emote still needs code, since its key is in `src/game_tables.cpp`.
 
 The icons, item sprites and emotes are drawn by the scripts in `tools/`. Each explains how to add a new picture at the top of
 the file.
-
-Buildable props and their rules are in `src/props.h` and `src/build.cpp`.
 
 Language files copied to the `LANGUAGE` folder next to the game override the packed copy key by key, so text can be
 edited without rebuilding.

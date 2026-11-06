@@ -127,7 +127,7 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         if (const Lock* lock = world.get<Lock>(occupiedProp(world, target))) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
-        if (p->kind == PropKind::Altar) {
+        if (propInfo(p->kind).claimsLand) {
             const std::vector<Entity> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
             for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
@@ -143,7 +143,7 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
         if (use == PropUse::Occupy && propOccupant(world, target) == NULL_ENTITY) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
-        if (p->kind == PropKind::Campfire && corpseCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::Place);
+        if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::Place);
         if (canEvacuate(world, target, propOccupant(world, target))) out.push_back(MenuAction::Evacuate);
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
         if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
@@ -168,7 +168,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
         case MenuAction::Use: {
             const Prop* tp = world.get<Prop>(session.contextMenu.target);
-            labels.push_back(lang(tp && tp->kind == PropKind::Debris ? "UILABEL_CLEAR" : "UILABEL_USE"));
+            labels.push_back(lang(tp && propInfo(tp->kind).debris ? "UILABEL_CLEAR" : "UILABEL_USE"));
             break;
         }
         case MenuAction::Occupy: labels.push_back(lang("UILABEL_OCCUPY")); break;
@@ -328,8 +328,8 @@ void App::pickMenuAction(MenuAction a) {
         if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
         break;
     case MenuAction::Place: {
-        Entity carrier = world.get<Prop>(target)->kind == PropKind::Campfire ? corpseCarrier(target) : NULL_ENTITY;
-        if (world.get<Prop>(target)->kind != PropKind::Campfire) {
+        Entity carrier = propInfo(world.get<Prop>(target)->kind).burnsCorpses ? corpseCarrier(target) : NULL_ENTITY;
+        if (!propInfo(world.get<Prop>(target)->kind).burnsCorpses) {
             for (Entity u : actors) {
                 if (world.has<Carrying>(u)) {
                     carrier = u;

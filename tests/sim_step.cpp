@@ -66,7 +66,7 @@ std::string saved(const SaveData& d, const char* path) {
 }
 }
 
-int main(int, char**) {
+int main(int argc, char** argv) {
     const char* base = SDL_GetBasePath();
     if (!pakOpen(std::string(base ? base : "") + "data.pak")) {
         std::printf("FAIL: data.pak not found\n");
@@ -89,6 +89,8 @@ int main(int, char**) {
     const Run b = play(terrain, 4242);
     const std::string textA = saved(a.end, "sim_step_a.sav"), textB = saved(b.end, "sim_step_b.sav");
     check(!textA.empty(), "the end of the run can be saved");
+    // With a path, also keeps the end of the run there, to compare a change against the game before it
+    if (argc > 1) writeSaveFile(argv[1], a.end);
     check(textA == textB, "the same seed gives the same game");
     if (textA != textB) {
         size_t at = 0;

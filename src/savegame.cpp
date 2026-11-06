@@ -57,7 +57,7 @@ private:
 };
 
 // A list that changed size means the numbers in a save name other things
-constexpr int SAVED_LIST_SIZES[] = { PROP_KIND_COUNT, MOB_KIND_COUNT, STAT_COUNT, idx(BehaviorKind::Count), GEAR_SLOTS, INVENTORY_SLOTS, STORAGE_SLOTS };
+const std::vector<int> savedListSizes() { return { propKindCount(), mobKindCount(), STAT_COUNT, idx(BehaviorKind::Count), GEAR_SLOTS, INVENTORY_SLOTS, STORAGE_SLOTS }; }
 
 void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     w.line("unit", u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob, u.name);
@@ -114,8 +114,8 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
 void writeSaveLines(std::ostream& out, const SaveData& d) {
     Writer w(out);
     w.line("version", SAVE_VERSION);
-    w.line("sizes", SAVED_LIST_SIZES[0], SAVED_LIST_SIZES[1], SAVED_LIST_SIZES[2], SAVED_LIST_SIZES[3], SAVED_LIST_SIZES[4],
-           SAVED_LIST_SIZES[5], SAVED_LIST_SIZES[6]);
+    const std::vector<int> sizes = savedListSizes();
+    w.line("sizes", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5], sizes[6]);
     w.line("name", d.name);
     w.line("timestamp", d.timestamp);
     w.line("autosave", d.autosave);
@@ -183,7 +183,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
     static const std::unordered_map<std::string, Handler> table = {
         { "version", [](Line& l) { int v = 0; return l.read(v) && v == SAVE_VERSION; } },
         { "sizes", [](Line& l) {
-            for (int want : SAVED_LIST_SIZES) {
+            for (int want : savedListSizes()) {
                 int got = 0;
                 if (!l.read(got) || got != want) return false;
             }
@@ -204,7 +204,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "prop", [](Line& l) {
             SaveProp p;
-            if (!l.read(p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || p.kind < 0 || p.kind >= PROP_KIND_COUNT) return false;
+            if (!l.read(p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || p.kind < 0 || p.kind >= propKindCount()) return false;
             l.d.props.push_back(std::move(p));
             return true;
         } },
@@ -260,7 +260,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "unit", [](Line& l) {
             SaveUnit u;
-            if (!l.read(u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob) || u.mob < 0 || u.mob > MOB_KIND_COUNT) return false;
+            if (!l.read(u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob) || u.mob < 0 || u.mob > mobKindCount()) return false;
             l.rest(u.name);
             l.d.units.push_back(std::move(u));
             return true;

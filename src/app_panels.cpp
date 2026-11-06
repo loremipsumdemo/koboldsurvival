@@ -27,23 +27,23 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
         offer(r, behaviorName(r));
     }
     const std::vector<Claim>& claims = claimsOf(world);
-    std::array<bool, PROP_KIND_COUNT> harvestable{};
+    std::vector<char> harvestable((size_t)propKindCount(), 0);
     std::vector<std::pair<float, Entity>> stores;
     const Transform* ut = world.get<Transform>(u);
     for (Entity p : world.view<Prop, Transform>()) {
         const Transform* pt = world.get<Transform>(p);
         if (!claimAt(claims, pt->x, pt->z, FACTION_PLAYER)) continue;
         const PropKind kind = world.get<Prop>(p)->kind;
-        if (idx(kind) >= 0 && idx(kind) < PROP_KIND_COUNT && yieldsItems(kind)) harvestable[(size_t)idx(kind)] = true;
+        if (idx(kind) >= 0 && idx(kind) < propKindCount() && yieldsItems(kind)) harvestable[(size_t)idx(kind)] = true;
         if (world.has<Storage>(p)) {
             const float d = ut ? std::hypot(pt->x - ut->x, pt->z - ut->z) : 0.0f;
             stores.push_back({ d, p });
         }
     }
     for (const BehaviorRule& r : b->rules) {
-        if (r.kind == BehaviorKind::AutoHarvest && r.propKind >= 0 && r.propKind < PROP_KIND_COUNT) harvestable[(size_t)r.propKind] = true;
+        if (r.kind == BehaviorKind::AutoHarvest && r.propKind >= 0 && r.propKind < propKindCount()) harvestable[(size_t)r.propKind] = true;
     }
-    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+    for (int k = 0; k < propKindCount(); ++k) {
         if (!harvestable[(size_t)k]) continue;
         BehaviorRule r;
         r.kind = BehaviorKind::AutoHarvest;

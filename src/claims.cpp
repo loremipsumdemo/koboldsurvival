@@ -1,3 +1,4 @@
+#include "items.h"
 #include "claims.h"
 #include "spatial.h"
 #include <algorithm>
@@ -10,7 +11,7 @@
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
     for (Entity e : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(e)->kind != PropKind::Altar) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).claimsLand) continue;
         Claim c;
         c.altar = e;
         c.x = w.get<Transform>(e)->x;
@@ -56,7 +57,7 @@ bool altarFueled(World& w, Entity altar) {
 std::string propDisplayName(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p) return std::string();
-    if (p->kind == PropKind::Altar) {
+    if (propInfo(p->kind).claimsLand) {
         if (const Owner* own = w.get<Owner>(prop)) return langf("MISC_ALTAR_OF", { factionName(own->faction) });
     }
     return lang(propInfo(p->kind).nameKey);
@@ -73,12 +74,12 @@ bool lockShutFor(World& w, const std::vector<Claim>& claims, Entity prop, Entity
 bool lockShutForFaction(World& w, Entity prop, int faction) {
     const Lock* lock = w.get<Lock>(prop);
     const Prop* p = w.get<Prop>(prop);
-    if ((p && p->kind == PropKind::Altar) || (lock && lock->locked)) return lockShutForFaction(w, claimsOf(w), prop, faction);
+    if ((p && propInfo(p->kind).claimsLand) || (lock && lock->locked)) return lockShutForFaction(w, claimsOf(w), prop, faction);
     return false;
 }
 
 bool lockShutForFaction(World& w, const std::vector<Claim>& claims, Entity prop, int faction) {
-    if (const Prop* p = w.get<Prop>(prop); p && p->kind == PropKind::Altar) {
+    if (const Prop* p = w.get<Prop>(prop); p && propInfo(p->kind).claimsLand) {
         const Owner* own = w.get<Owner>(prop);
         return !own || own->faction != faction;
     }
@@ -92,7 +93,7 @@ bool lockShutForFaction(World& w, const std::vector<Claim>& claims, Entity prop,
 void claimOwnership(World& w, Entity prop) {
     const Prop* p = w.get<Prop>(prop);
     const Transform* t = w.get<Transform>(prop);
-    if (!p || !t || p->kind == PropKind::Altar) return;
+    if (!p || !t || propInfo(p->kind).claimsLand) return;
     const Claim* c = claimAt(claimsOf(w), t->x, t->z);
     if (!c) return;
     const int faction = c->owner;
@@ -141,7 +142,7 @@ void breakBuilding(World& w, Entity e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
     const PropKind kind = w.get<Prop>(e)->kind;
     const Transform at = *w.get<Transform>(e);
-    if (kind == PropKind::Debris) {
+    if (propInfo(kind).debris) {
         releaseProp(w, e);
         w.destroy(e);
         return;
@@ -151,12 +152,12 @@ void breakBuilding(World& w, Entity e) {
         releaseProp(w, e);
         w.destroy(e);
         dropStacks(w, at, held);
-        spawnGroundItem(w, at, BONES_ITEM, BONES_ITEM_COUNT);
+        spawnGroundItem(w, at, itemTagged(ITEM_TAG_COMMON_BONES), BONES_ITEM_COUNT);
         return;
     }
     releaseProp(w, e);
     const Owner* own = w.get<Owner>(e);
-    const int altarOwner = kind == PropKind::Altar && own ? own->faction : -1;
+    const int altarOwner = propInfo(kind).claimsLand && own ? own->faction : -1;
     w.destroy(e);
     if (altarOwner >= 0) abandonClaim(w, at.x, at.z, altarOwner);
     dropStacks(w, at, held);
@@ -189,5 +190,5 @@ void settleClaimOwnership(World& w) {
 
 bool propDecaying(World& w, Entity e) {
     const Prop* p = w.get<Prop>(e);
-    return p && p->kind == PropKind::Altar && w.has<Health>(e) && !altarFueled(w, e);
+    return p && propInfo(p->kind).claimsLand && w.has<Health>(e) && !altarFueled(w, e);
 }

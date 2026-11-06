@@ -62,14 +62,31 @@ int main(int, char**) {
     check(loadItemDbText("[1]\ntype = consumable\nname = Thing\non_use = luck +1\n", err) && !gameDataProblems().empty(), "a bad use script is caught");
     check(loadItemDbText(real, err) && gameDataProblems().empty(), "the real table loads again");
 
+    // A new prop needs only a row
+    const std::string realProps = pakText("data/props.txt");
+    const int propsBefore = propKindCount();
+    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\n";
+    check(loadPropTableText(extra, err), "a new prop loads " + err);
+    const PropKind added = (PropKind)propsBefore;
+    check(propKindCount() == propsBefore + 1 && propInfo(added).key == "Birdbath" && isSeat(added) && isBed(added), "a new prop is what its row says");
+    check(propInfo(PropKind::Stove).key == "Stove" && propInfo(PropKind::Bedroll).key == "Bedroll", "the named props keep their numbers");
+    check(!loadPropTableText(realProps + "Birdbath2\tX\n", err), "a short row is refused");
+    check(propKindCount() == propsBefore + 1, "a refused table changes nothing");
+    check(loadPropTableText(realProps, err) && propKindCount() == propsBefore, "the real props load again");
+    check(buildRowPick(1).kind == PropKind::Bedroll && buildRowPick(3).kind == PropKind::Altar, "the Build tab follows the table");
+    int factionsOk = 0;
+    for (int i = 1; i <= mobKindCount(); ++i) factionsOk += mobKindOfFaction(mobFaction((MobKind)i)) == (MobKind)i ? 1 : 0;
+    check(factionsOk == mobKindCount(), "each mob's faction leads back to it");
+    check(mobKindsFriendly(MobKind::Gorlicorn, MobKind::Rabbit) && !mobKindsFriendly(MobKind::Wolf, MobKind::Rabbit), "an escort does not fight the kind it comes with");
+
     // Language files
     const std::set<std::string> english = languageKeys("data/language/language_en.txt");
     check(!english.empty(), "English has text");
-    for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
+    for (int i = 1; i <= mobKindCount(); ++i) {
         const std::string& key = mobInfo((MobKind)i).nameKey;
         if (!english.count(key)) check(false, "English has no " + key);
     }
-    for (int i = 0; i < PROP_KIND_COUNT; ++i) {
+    for (int i = 0; i < propKindCount(); ++i) {
         const std::string key = propInfo((PropKind)i).nameKey;
         if (!english.count(key)) check(false, "English has no " + key);
     }

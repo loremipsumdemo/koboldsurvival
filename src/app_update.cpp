@@ -137,7 +137,7 @@ void App::showWorkGains(const std::vector<WorkGain>& gains) {
         switch (g.kind) {
         case WorkGain::Kind::Item:
             tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
-            queueSoundFrom(world, propDoneSound((PropKind)g.propKind), g.unit);
+            queueSoundFrom(world, propInfo((PropKind)g.propKind).doneSound, g.unit);
             break;
         case WorkGain::Kind::Unlocked:
             tradeLabels.push_back(TradeLabel{ g.unit, lang("MISC_UNLOCKED"), 0.0f });
@@ -170,7 +170,7 @@ void App::playWorkSounds() {
         if (std::hypot(pt->x - cam.focusX, pt->z - cam.focusZ) > WORK_SOUND_RANGE) continue;
         const PropKind kind = world.get<Prop>(e)->kind;
         const bool picking = std::binary_search(pickedProps.begin(), pickedProps.end(), e);
-        const Sfx sound = picking ? Sfx::WorkLockpick : propWorkSound(kind);
+        const Sfx sound = picking ? Sfx::WorkLockpick : propInfo(kind).workSound;
         if (sound == Sfx::Count) continue;
         const float every = sound == Sfx::ForgeBurning ? FORGE_SOUND_SECONDS : WORK_SOUND_SECONDS;
         float t = workSoundTimers.count(e) ? workSoundTimers[e] : every * 0.5f;
@@ -465,7 +465,7 @@ void App::updateHover() {
                 bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z) == BuildCheck::Ok;
             }
         }
-        if (bp.on && session.buildPick.places(PropKind::Altar)) {
+        if (bp.on && propInfo(session.buildPick.kind).claimsLand) {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
@@ -474,7 +474,7 @@ void App::updateHover() {
             for (Entity e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
                 const Transform* ft = world.get<Transform>(e);
-                if (!fp || !ft || fp->kind != PropKind::Altar) continue;
+                if (!fp || !ft || !propInfo(fp->kind).claimsLand) continue;
                 bp.ringR = CLAIM_RADIUS;
                 bp.ringTone = 3;
                 bp.x = ft->x;
@@ -485,7 +485,7 @@ void App::updateHover() {
         }
         if (bp.ringR > 0.0f) {
             for (Entity e : world.view<Prop, Transform>()) {
-                if (e == hoverAltar || world.get<Prop>(e)->kind != PropKind::Altar) continue;
+                if (e == hoverAltar || !propInfo(world.get<Prop>(e)->kind).claimsLand) continue;
                 const Transform* ft = world.get<Transform>(e);
                 bp.otherRings.push_back({ ft->x, ft->z });
             }

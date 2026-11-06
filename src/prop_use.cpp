@@ -155,7 +155,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 out.push_back(a);
                 continue;
             }
-            if (action == PropAction::Place && w.get<Prop>(prop)->kind == PropKind::Campfire) {
+            if (action == PropAction::Place && propInfo(w.get<Prop>(prop)->kind).burnsCorpses) {
                 const Carrying* cr = w.get<Carrying>(u);
                 if (cr && w.has<Corpse>(cr->unit)) {
                     const Entity corpse = cr->unit;
@@ -348,7 +348,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             }
             continue;
         }
-        if (propKind == PropKind::Debris) {
+        if (propInfo(propKind).debris) {
             PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
             pw.workers = (int)workers.size();
             pw.progress += gameSeconds / 3600.0 * (double)workers.size() / DEBRIS_CLEAR_HOURS;
@@ -376,7 +376,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         pw.workers = (int)workers.size();
 
         double perHour = 0.0;
-        for (Entity u : workers) perHour += resourceSpeedFor(w.get<Prop>(prop)->kind) / workHoursFor(levelOf(statsOf(w, u), info.stat));
+        for (Entity u : workers) perHour += propInfo(w.get<Prop>(prop)->kind).speed / workHoursFor(levelOf(statsOf(w, u), info.stat));
         pw.progress += gameSeconds / 3600.0 * perHour;
 
         while (pw.progress >= 1.0 && !workers.empty()) {

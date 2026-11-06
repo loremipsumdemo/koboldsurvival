@@ -10,6 +10,8 @@ inline constexpr int UNIT_SPRITE_COUNT = 3;
 // read from them too.
 // Every key the game needs must be there, once. Fails with the file and line of the first thing wrong.
 bool loadGameTables(std::string& err);
+// Replaces the props with this text in the format of data/props.txt. On a mistake they are left as they were
+bool loadPropTableText(const std::string& text, std::string& err);
 
 // nullptr: leave what is playing. Empty: silence.
 struct Soundtrack {

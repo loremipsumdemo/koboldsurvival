@@ -30,7 +30,7 @@ relation	4	3	75
 relation	4	5	-40
 relation	3	5	0
 
-# Mob factions (src/mobs.h): one for each kind of mob, MOB_FACTION_BASE (10) + its kind - 1. They have no camps (units 0);
+# Mob factions: one for each kind of mob, named by its faction column in data/mobs.txt. They have no camps (units 0);
 # their mobs are placed out in the world. They have no reputation and take no relation lines: each kind's temperament
 # (Avoidant, Passive, Neutral or Aggressive, in src/mobs.h) says how it takes to everyone else.
 faction	10	FACTION_MOB_BEAR	#8b5a2b	0

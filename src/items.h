@@ -41,6 +41,13 @@ const std::vector<ItemDef>& itemDatabase();
 
 const ItemDef* findItem(int id);
 
+// The items the game asks for by name. Each is the tag of exactly one item in data/itemdb.txt.
+inline constexpr const char* ITEM_TAG_COMMON_BONES = "common_bones";
+inline constexpr const char* ITEM_TAG_GOLD_COIN = "gold_coin";
+inline constexpr const char* ITEM_TAG_IRON_ORE = "iron_ore";
+// The first item with this tag, or 0
+int itemTagged(const char* tag);
+
 std::string itemDisplayName(const ItemDef& d);
 std::string itemNameOf(int item);
 std::string itemDisplayDescription(const ItemDef& d);

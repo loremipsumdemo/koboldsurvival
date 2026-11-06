@@ -145,7 +145,7 @@ int main(int, char**) {
     check(mobInfo(MobKind::Griffin).hp == 10000 && mobInfo(MobKind::Manticore).hp == 5000, "the Griffin and Manticore have their health");
     int bossRabbits = 0;
     for (Entity e : world.view<Mob, SpawnHome>()) bossRabbits += world.get<Mob>(e)->kind == MobKind::Rabbit ? 1 : 0;
-    check(bossRabbits == GORLICORN_RABBITS, "only the Gorlicorn brings rabbits");
+    check(bossRabbits == mobInfo(MobKind::Gorlicorn).escortCount, "only the Gorlicorn brings rabbits");
 
     // States a fresh level never has
     std::vector<Entity> npcs;
@@ -179,12 +179,12 @@ int main(int, char**) {
     world.add(picker, Working{ lockedProp, true });
 
     const Entity bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
-    world.add(bones, BonesPile{ 2.0, { ItemStack{ BONES_ITEM, 3 } } });
+    world.add(bones, BonesPile{ 2.0, { ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), 3 } } });
     const Entity forge = firstProp(world, PropKind::Forge);
     check(forge != NULL_ENTITY, "the level has a forge");
     *world.get<Fuel>(forge) = Fuel{ 1.5, propInfo(PropKind::Forge).input };
     world.get<PropWork>(forge)->progress = 0.25;
-    const Entity lying = spawnGroundItem(world, *world.get<Transform>(people[0]), BONES_ITEM, 2);
+    const Entity lying = spawnGroundItem(world, *world.get<Transform>(people[0]), itemTagged(ITEM_TAG_COMMON_BONES), 2);
     world.get<GroundItem>(lying)->hours = 5.0;
 
     const size_t propsBefore = world.view<Prop, Transform>().size();

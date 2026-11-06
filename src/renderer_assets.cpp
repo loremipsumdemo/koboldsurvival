@@ -56,11 +56,12 @@ void Renderer::loadUnitModels(LoadStages& stages) {
 }
 
 void Renderer::loadMobArt(LoadStages& stages) {
+    mobModels_.resize((size_t)mobKindCount());
     int mobModelCount = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model.empty() ? 0 : 1;
+    for (int k = 1; k <= mobKindCount(); ++k) mobModelCount += mobInfo((MobKind)k).model.empty() ? 0 : 1;
     stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
     int mobModelsDone = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
+    for (int k = 1; k <= mobKindCount(); ++k) {
         const MobKind kind = (MobKind)k;
         if (mobInfo(kind).model.empty()) continue;
         ++mobModelsDone;
@@ -75,12 +76,12 @@ void Renderer::loadMobArt(LoadStages& stages) {
         }
         stages.step(0.4f + 0.1f * (float)mobModelsDone / (float)std::max(1, mobModelCount), mobModelsDone);
     }
-    stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT);
-    mobSprites_.reserve(MOB_KIND_COUNT);
-    for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
+    stages.stage(0.5f, "LOADING_MOB_PICTURES", mobKindCount());
+    mobSprites_.reserve(mobKindCount());
+    for (int i = 1; i <= mobKindCount(); ++i) {
         const std::string path = "data/mob/" + mobInfo((MobKind)i).picture;
         mobSprites_.push_back(loadOptionalImage(path.c_str()));
-        stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i);
+        stages.step(0.5f + 0.05f * (float)i / (float)mobKindCount(), i);
     }
 }
 
@@ -94,9 +95,12 @@ void Renderer::makeTexels() {
 }
 
 void Renderer::loadPropModels(LoadStages& stages) {
-    stages.stage(0.57f, "LOADING_PROP_MODELS", PROP_KIND_COUNT);
+    propModels_.resize((size_t)propKindCount());
+    propInstVao_.resize((size_t)propKindCount(), 0);
+    propInstances_.resize((size_t)propKindCount());
+    stages.stage(0.57f, "LOADING_PROP_MODELS", propKindCount());
     const char* standIn = "as a pink square";
-    for (int k = 0; k < PROP_KIND_COUNT; ++k) {
+    for (int k = 0; k < propKindCount(); ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
         const std::string file = "data/model/" + propModelFile(kind);
@@ -106,6 +110,6 @@ void Renderer::loadPropModels(LoadStages& stages) {
             SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
                     file.c_str(), lang(info.nameKey).c_str(), standIn);
         }
-        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
+        stages.step(0.58f + 0.4f * (float)(k + 1) / (float)propKindCount(), k + 1);
     }
 }

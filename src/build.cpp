@@ -65,7 +65,7 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 
     if (const Claim* held = claimAt(claims, x, z); held && held->owner != builder) return BuildCheck::EnemySealed;
 
-    if (kind == PropKind::Altar) {
+    if (propInfo(kind).claimsLand) {
         for (const Claim& c : claims) {
             if (c.owner == builder) return BuildCheck::AltarTaken;
             if (claimsOverlap(x, z, c.x, c.z)) return BuildCheck::ClaimOverlap;
@@ -81,8 +81,7 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 }
 
 bool buildAnywhere(const BuildPick& pick) {
-    return pick.tool == BuildPick::Tool::Destroy || pick.places(PropKind::Bedroll) || pick.places(PropKind::Campfire) ||
-           pick.places(PropKind::Altar);
+    return pick.tool == BuildPick::Tool::Destroy || (pick.placing() && propInfo(pick.kind).buildAnywhere);
 }
 
 bool selectionInClaim(World& w) {
@@ -118,7 +117,7 @@ Entity makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
         w.add(e, PropWork{});
     }
     if (info.lockLevel > 0) w.add(e, Lock{ true, info.lockLevel });
-    if (kind == PropKind::Altar) w.add(e, Health{});
+    if (propInfo(kind).claimsLand) w.add(e, Health{});
     return e;
 }
 
@@ -132,7 +131,7 @@ Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float 
 
     w.add(e, Owner{ owner });
 
-    if (hasStorage(info) && kind != PropKind::Altar && claimAt(claimsOf(w), x, z, owner)) {
+    if (hasStorage(info) && !info.claimsLand && claimAt(claimsOf(w), x, z, owner)) {
         w.add(e, Lock{ true, BUILT_LOCK_LEVEL, owner });
     }
     claimOwnership(w, e);

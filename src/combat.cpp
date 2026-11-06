@@ -317,7 +317,7 @@ bool isDowned(World& w, Entity e) {
 bool inPrisonerCage(World& w, Entity e) {
     const Occupying* oc = w.get<Occupying>(e);
     const Prop* p = oc ? w.get<Prop>(oc->prop) : nullptr;
-    return p && p->kind == PropKind::PrisonerCage;
+    return p && propInfo(p->kind).cage;
 }
 
 void ensureCombat(World& w, Entity e) {

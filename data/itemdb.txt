@@ -21,6 +21,8 @@
 #                       every armor item (shields included).
 #                       Ranged weapons: bow_short (Short Bow), bow_long (Long Bow) and crossbow; they shoot items
 #                       tagged arrow (the bows) or bolt (the crossbow), one for each shot.
+#                       The game asks for three items by tag, and each must be on one item: iron_ore, gold_coin and
+#                       common_bones (what a destroyed Bones prop leaves).
 #   cooks_into        : optional, the id of the item a campfire cooks this one into, e.g. Raw Bear Meat into Cooked
 #                       Bear Meat. A campfire takes any item that has one.
 # Sprites: data/item/item_<id>.png, 64 x 64. To make the sprite for a new item, add its drawing to tools/make_items.py and
@@ -41,7 +43,7 @@ on_use =
 material = 
 tier = 0
 equip_slot = 
-tags = ore
+tags = ore, iron_ore
 
 [2]
 type = item
@@ -90,6 +92,7 @@ on_use =
 material = 
 tier = 0
 equip_slot = 
+tags = gold_coin
 
 [5]
 type = item
@@ -2536,7 +2539,7 @@ on_use =
 material =
 tier = 0
 equip_slot =
-tags = bones
+tags = bones, common_bones
 
 [155]
 type = item
