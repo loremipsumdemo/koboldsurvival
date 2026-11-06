@@ -231,6 +231,7 @@ void Renderer::drawUnitModel(const Model& m, const Mat4& placement) {
     if (!m.vao || !(m.maxY > m.minY)) return;
     const Mat4 mvp = mul(viewProj_, placement);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
+    glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);   // the UI's last quad of the frame before leaves its tint set
     glBindVertexArray(m.vao);
     for (const DrawRange& d : m.draws) {
         glBindTexture(GL_TEXTURE_2D, d.texture);
