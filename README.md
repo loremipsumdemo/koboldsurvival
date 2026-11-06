@@ -111,6 +111,7 @@ tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen
   make_icons.py, make_items.py, make_emotes.py   Draw the icons, item sprites and emotes (Python and Pillow; not part of the build)
+  make_models.py     Makes simple low-poly prop models (Python and Pillow; not part of the build)
 data/                Game content, packed into data.pak
   itemdb.txt         The items
   factions.txt       Factions and starting reputations
