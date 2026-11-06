@@ -401,7 +401,7 @@ if (mouseDownOnPanels()) return;
             const Equipment* wornHere = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
             if (wornHere && gear >= 0 && wornHere->items[gear] != 0) {
                 std::string why;
-                if (unequipToInventory(world, picked[0], gear, why)) queueSound(Sfx::ItemMove);
+                if (unequipToInventory(world, picked[0], gear, why)) queueSound(world, Sfx::ItemMove);
                 else if (!why.empty()) refuse(why);
             } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.tradeOpen) {
                 requestTrade(false, picked[0], slot);
@@ -418,7 +418,7 @@ if (mouseDownOnPanels()) return;
                     if (target < 0 || !equipFromInventory(world, picked[0], slot, target, why)) {
                         refuse(why.empty() ? langf("MISC_CANT_BE_WORN", { itemDisplayName(*def) }) : why);
                     } else {
-                        queueSound(Sfx::ItemMove);
+                        queueSound(world, Sfx::ItemMove);
                     }
                 } else {
                     itemMenu = ItemMenu{ true, picked[0], slot, e.button.x, e.button.y };
@@ -485,10 +485,10 @@ void App::onMouseButtonUp() {
             if (storageLayout(world, winW, winH).panel.contains(x, y)) {
             } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                 std::string why;
-                if (takeFromStorage(world, from, why)) queueSound(Sfx::ItemMove);
+                if (takeFromStorage(world, from, why)) queueSound(world, Sfx::ItemMove);
                 else if (!why.empty()) refuse(why);
             } else if (dropFromStorage(world, from)) {
-                queueSound(Sfx::ItemMove);
+                queueSound(world, Sfx::ItemMove);
             }
         }
         return;
@@ -532,16 +532,16 @@ void App::onMouseButtonUp() {
             std::string why;
             if (dragGear < 0) {
                 if (gear >= 0) {
-                    if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) queueSound(Sfx::ItemMove);
+                    if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) queueSound(world, Sfx::ItemMove);
                     else if (!why.empty()) refuse(why);
                 } else if (!overSidebar) {
-                    if (dropStack(world, dragUnit, dragSlot)) queueSound(Sfx::ItemMove);
+                    if (dropStack(world, dragUnit, dragSlot)) queueSound(world, Sfx::ItemMove);
                 }
             } else {
                 if (gear >= 0 && gear != dragGear) {
                     if (!moveEquipped(world, dragUnit, dragGear, gear, why) && !why.empty()) refuse(why);
                 } else if (onGrid) {
-                    if (unequipToInventory(world, dragUnit, dragGear, why)) queueSound(Sfx::ItemMove);
+                    if (unequipToInventory(world, dragUnit, dragGear, why)) queueSound(world, Sfx::ItemMove);
                     else if (!why.empty()) refuse(why);
                 } else if (!overSidebar) {
                     dropEquipped(world, dragUnit, dragGear);

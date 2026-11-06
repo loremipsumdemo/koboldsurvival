@@ -130,7 +130,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     }
     *inv = next;
     worn->items[gearSlot] = item;
-    queueSound(Sfx::Equip);
+    queueSound(w, Sfx::Equip);
     grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
@@ -153,7 +153,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
-    queueSound(Sfx::Equip);
+    queueSound(w, Sfx::Equip);
     grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
@@ -173,7 +173,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     }
     *inv = next;
     worn->items[gearSlot] = 0;
-    queueSound(Sfx::Unequip);
+    queueSound(w, Sfx::Unequip);
     grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
@@ -181,10 +181,10 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
 void dropAtUnit(World& w, Entity unit, int item, int count) {
     const Transform* tr = w.get<Transform>(unit);
     if (!tr) return;
-    queueLog(langf("MISC_DROPS", { nameOf(w, unit), std::to_string(count), itemNameOf(item) }), LogKind::Drop,
+    queueLog(w, langf("MISC_DROPS", { nameOf(w, unit), std::to_string(count), itemNameOf(item) }), LogKind::Drop,
              npcOnly(w, unit));
-    queueUnitLabel(unit, itemLossLabelFor(count, item), true);
-    queueSound(Sfx::Drop);
+    queueUnitLabel(w, unit, itemLossLabelFor(count, item), true);
+    queueSound(w, Sfx::Drop);
     spawnGroundItem(w, *tr, item, count);
 }
 
@@ -383,7 +383,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
     for (int g = 0; g < GEAR_SLOTS; ++g) changed += worn->items[(size_t)g] != target.items[(size_t)g] ? 1 : 0;
     *inv = next;
     worn->items = target.items;
-    queueSound(Sfx::GearChanged);
+    queueSound(w, Sfx::GearChanged);
     grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP * (float)changed, "MISC_REASON_GEAR");
     return GearAction::Done;
 }

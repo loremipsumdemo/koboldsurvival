@@ -95,5 +95,5 @@ float reachOf(World& w, Entity e);
 
 Equipment randomHostileGear(Rng& rng);
 
-void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats);
+void combatSystem(World& w, const Terrain& t, Rng& rng, float dt);
 bool canSee(World& w, const Terrain& t, Entity a, Entity b);

@@ -58,10 +58,6 @@ struct PlaySession {
 };
 extern PlaySession session;
 
-inline bool inConversation(Entity e) {
-    return session.dialogueUnit != NULL_ENTITY && (e == session.dialogueUnit || e == session.dialoguePlayer);
-}
-
 void resetPlayState();
 void closeStorage();
 void closeLoot();

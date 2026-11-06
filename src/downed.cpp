@@ -29,12 +29,12 @@ void knockOut(World& w, Entity u) {
         c->downedByFaction = -1;
     }
     w.add(u, un);
-    queueLog(langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    queueLog(w, langf("MISC_FALLS_UNCONSCIOUS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     queueSoundFrom(w, Sfx::Downed, u);
     const int victim = factionOf(w, u);
     if (un.koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(victim, -REP_KO_PENALTY);
-        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_KO_PENALTY), std::to_string(now) }),
+        queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_KO_PENALTY), std::to_string(now) }),
                  LogKind::Other);
     }
 }
@@ -52,7 +52,7 @@ static void wakeUp(World& w, Entity u, WakeChanges& out) {
         n->changed |= NEEDS_HP_CHANGED;
     }
     if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
-    queueLog(langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    queueLog(w, langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     out.woke.push_back(u);
     if (inBedOrBedroll(w, u)) {
         const Behaviors* b = w.get<Behaviors>(u);
@@ -61,7 +61,7 @@ static void wakeUp(World& w, Entity u, WakeChanges& out) {
         if (!leaves) w.remove<Occupying>(u);
     } else if (canPlayDead(w, u) && !w.has<Carried>(u) && hostileNear(w, u)) {
         w.add(u, PlayingDead{});
-        queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+        queueLog(w, langf("MISC_PLAYS_DEAD", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }
 }
 
@@ -154,7 +154,7 @@ void playDeadSystem(World& w) {
         if (w.has<Carried>(u) || outCold(w, u)) continue;
         if (hostileNear(w, u)) continue;
         w.remove<PlayingDead>(u);
-        queueLog(langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+        queueLog(w, langf("MISC_GETS_UP", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }
 }
 
@@ -169,11 +169,11 @@ void finishDying(World& w, Entity u) {
     w.remove<Commandable>(u);
     w.remove<Selected>(u);
     w.remove<Occupying>(u);
-    queueLog(langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    queueLog(w, langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     const int victim = factionOf(w, u);
     if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(victim, -REP_DEATH_PENALTY);
-        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),
+        queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),
                  LogKind::Other);
     }
 }

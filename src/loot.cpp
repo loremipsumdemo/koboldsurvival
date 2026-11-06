@@ -79,14 +79,14 @@ bool lootTake(World& w, Entity looter, Entity target, bool gear, int slot, std::
         if (left > 0) st.count = left;
         else st = ItemStack{};
     }
-    queueUnitLabel(looter, itemGainLabelFor(count, item));
-    queueSound(Sfx::Take);
+    queueUnitLabel(w, looter, itemGainLabelFor(count, item));
+    queueSound(w, Sfx::Take);
     if (w.has<Mob>(target) && !w.has<Corpse>(target)) {
         if (Needs* n = w.get<Needs>(target)) {
             n->hp = 0;
             n->changed |= NEEDS_HP_CHANGED;
         }
-        queueLog(langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other, npcOnly(w, target));
+        queueLog(w, langf("MISC_MEAT_TAKEN_DIES", { nameOf(w, target) }), LogKind::Other, npcOnly(w, target));
         finishDying(w, target);
         queueSoundFrom(w, Sfx::Dies, target);
     }

@@ -18,7 +18,6 @@
 #include "language.h"
 #include "level.h"
 #include "pak.h"
-#include "play_state.h"
 #include "sounds.h"
 #include "systems.h"
 #include "terrain.h"
@@ -93,7 +92,6 @@ int main(int, char**) {
     World world;
     Rng rng;
     rng.gen.seed(12345);
-    play::resetPlayState();
     resetPlayerReputation();
     setupWorld(world, terrain, rng, true);
     spawnGroundItems(world, terrain, rng, 2);

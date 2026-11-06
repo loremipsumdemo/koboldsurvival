@@ -22,8 +22,8 @@ void grantXp(World& w, Entity e, StatId stat, float amount, const char* whyKey) 
     if (whole < 1.0f) return;
     const int before = levelOf(*st, stat);
     addXp(*st, stat, (int)whole);
-    if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(Sfx::LevelUp);
+    if (levelOf(*st, stat) > before && w.has<Commandable>(e)) queueSound(w, Sfx::LevelUp);
     if (whyKey) {
-        queueLog(langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), lang(whyKey) }), LogKind::Xp, npcOnly(w, e));
+        queueLog(w, langf("MISC_GAINS_XP", { nameOf(w, e), std::to_string((int)whole), statName(stat), lang(whyKey) }), LogKind::Xp, npcOnly(w, e));
     }
 }

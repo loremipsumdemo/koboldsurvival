@@ -40,7 +40,6 @@ void App::drawWorldOverlays() {
         }
     }
     renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
-    for (const TradeLabel& l : takeQueuedLabels()) tradeLabels.push_back(l);
     for (TradeLabel& l : tradeLabels) l.age += dt;
     tradeLabels.erase(std::remove_if(tradeLabels.begin(), tradeLabels.end(),
                                      [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),

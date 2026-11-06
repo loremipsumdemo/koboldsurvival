@@ -1,5 +1,4 @@
 #include "systems_internal.h"
-#include "play_state.h"
 
 using namespace systems_detail;
 
@@ -142,7 +141,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     float leadGap = -1.0f;
     bool chasing = false;
     const Combat* fighting = w.get<Combat>(e);
-    if (w.has<Occupying>(e) || (play::inConversation(e) && !underAttack(e) && !(fighting && fighting->target != NULL_ENTITY))) {
+    if (w.has<Occupying>(e) || (w.has<InConversation>(e) && !underAttack(e) && !(fighting && fighting->target != NULL_ENTITY))) {
         s.speeds[i] = 0.0f;
         s.pinned[i] = 1;
         s.goal[i] = { tr->x, tr->z };
@@ -248,7 +247,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     const bool idle = tx == tr->x && tz == tr->z;
     if (!idle && w.has<PlayingDead>(e)) {
         w.remove<PlayingDead>(e);
-        queueLog(langf("MISC_GETS_UP", { nameOf(w, e) }), LogKind::Other, npcOnly(w, e));
+        queueLog(w, langf("MISC_GETS_UP", { nameOf(w, e) }), LogKind::Other, npcOnly(w, e));
     }
     if (idle) {
         IdleSpot* spot = w.get<IdleSpot>(e);

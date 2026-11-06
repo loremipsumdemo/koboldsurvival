@@ -4,11 +4,9 @@ using namespace play;
 
 void App::enterLevel() {
     static_cast<AppSession&>(*this) = AppSession{};
-    discardQueuedLabels();
-    discardQueuedLog();
-    takeQueuedSounds();
+    takeEvents(world);
     closePanel();
-    claimDecayDue = 0.0;
+    gs.claimDecayDue = 0.0;
     cam = Camera{};
     cam.mapSize = (float)terrain.size();
     focusCameraOnFirstUnit(world, cam);

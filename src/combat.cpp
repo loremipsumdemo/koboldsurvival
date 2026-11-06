@@ -153,7 +153,7 @@ void onAttacked(World& w, Entity a, Entity d) {
     }
 }
 
-void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<FloatingNumber>& floats) {
+void strike(World& w, Rng& rng, Entity a, Entity d) {
     CombatNumbers an = numbersOf(w, a);
     const CombatNumbers dn = numbersOf(w, d);
     const bool downed = hpOf(w, d) <= 0;
@@ -183,25 +183,21 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     const Tint tint = tintFor(w, a, d);
 
     if (r.outcome == Outcome::Miss) {
-        ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(langf(shot ? "MISC_LOG_SHOOTS_MISS" : "MISC_LOG_MISSES", { attacker, defender }), tint, LogKind::Miss, npcOnly(w, a, d));
+        queueLog(w, langf(shot ? "MISC_LOG_SHOOTS_MISS" : "MISC_LOG_MISSES", { attacker, defender }), LogKind::Miss, npcOnly(w, a, d), tint);
         return;
     }
     if (r.outcome == Outcome::Dodge) {
-        ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(langf("MISC_LOG_DODGES", { defender, attacker }), tint, LogKind::Miss, npcOnly(w, a, d));
+        queueLog(w, langf("MISC_LOG_DODGES", { defender, attacker }), LogKind::Miss, npcOnly(w, a, d), tint);
         grantXp(w, d, StatId::Agility, AGILITY_XP_PER_DODGE, "MISC_REASON_DODGING");
         return;
     }
-
-    ++log.hits;
     queueSoundFrom(w, Sfx::Hit, d);
     if (downed) return;
 
     if (const SpawnHome* home = w.get<SpawnHome>(d); home && home->returning) {
-        log.add(langf("MISC_LOG_SHRUGS", { defender, attacker }), tint, LogKind::Hit, npcOnly(w, a, d));
+        queueLog(w, langf("MISC_LOG_SHRUGS", { defender, attacker }), LogKind::Hit, npcOnly(w, a, d), tint);
         return;
     }
     Needs* nd = w.get<Needs>(d);
@@ -214,10 +210,10 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
 
     const char* const hitKey = shot ? (r.blocked ? "MISC_LOG_SHOOTS_BLOCKED" : "MISC_LOG_SHOOTS")
                                     : (r.blocked ? "MISC_LOG_HITS_BLOCKED" : "MISC_LOG_HITS");
-    log.add(langf(hitKey, { attacker, defender }), tint, LogKind::Hit, npcOnly(w, a, d));
-    if (r.damage > 0) log.add(langf("MISC_LOG_DAMAGE", { defender, std::to_string(r.damage) }), tint, LogKind::Damage, npcOnly(w, a, d));
+    queueLog(w, langf(hitKey, { attacker, defender }), LogKind::Hit, npcOnly(w, a, d), tint);
+    if (r.damage > 0) queueLog(w, langf("MISC_LOG_DAMAGE", { defender, std::to_string(r.damage) }), LogKind::Damage, npcOnly(w, a, d), tint);
     if (const Transform* td = w.get<Transform>(d)) {
-        floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
+        queueFloatingNumber(w, FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
 
     grantXp(w, a, shot ? StatId::Projectiles : StatId::Melee, MELEE_XP_PER_DAMAGE * lost, "MISC_REASON_DEALING");
@@ -226,7 +222,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     if (r.blocked) grantXp(w, d, StatId::Block, BLOCK_XP_PER_BLOCK, "MISC_REASON_BLOCKING");
 
     if (nd && nd->hp == 0) {
-        log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage, npcOnly(w, a, d));
+        queueLog(w, langf("MISC_IS_DOWN", { defender }), LogKind::Damage, npcOnly(w, a, d), tint);
         if (Combat* cd = w.get<Combat>(d)) cd->downedByFaction = factionOf(w, a);
         if (w.has<Mob>(a) && w.has<Mob>(d)) {
             knockOut(w, d);
@@ -242,12 +238,12 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     }
 }
 
-void drinkForFight(World& w, Entity p, Combat& pc, GameLog& log) {
+void drinkForFight(World& w, Entity p, Combat& pc) {
     if (pc.buffLeft > 0.0f) return;
     const int slot = slotNamed(w, p, ELIXIR);
     const ItemDef* elixir = slot >= 0 ? findItem(w.get<Inventory>(p)->slots[slot].item) : nullptr;
     if (elixir && useStackInSlot(w, p, slot) == UseResult::Used) {
-        log.add(langf("MISC_DRINKS", { nameOf(w, p), itemDisplayName(*elixir) }), Tint::Gray, LogKind::Other, npcOnly(w, p));
+        queueLog(w, langf("MISC_DRINKS", { nameOf(w, p), itemDisplayName(*elixir) }), LogKind::Other, npcOnly(w, p), Tint::Gray);
     }
 }
 }
@@ -385,12 +381,7 @@ static std::string elixirName() {
     return ELIXIR;
 }
 
-void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats) {
-    for (FloatingNumber& f : floats) f.age += dt;
-    floats.erase(std::remove_if(floats.begin(), floats.end(),
-                                [](const FloatingNumber& f) { return f.age >= FLOAT_LIFE; }),
-                 floats.end());
-
+void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
     const std::vector<Entity> everyone = w.view<Unit, Transform>();
     for (Entity e : everyone) ensureCombat(w, e);
     for (Entity e : everyone) {
@@ -410,7 +401,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
             if (c.buffLeft <= 0.0f) {
                 c.buffLeft = 0.0f;
                 c.buffAttack = 0.0f;
-                log.add(langf("MISC_LOG_ELIXIR_ENDS", { nameOf(w, e), elixirName() }), Tint::Gray, LogKind::Other, npcOnly(w, e));
+                queueLog(w, langf("MISC_LOG_ELIXIR_ENDS", { nameOf(w, e), elixirName() }), LogKind::Other, npcOnly(w, e), Tint::Gray);
             }
         }
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);
@@ -445,8 +436,8 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
             if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p)) && canSee(w, t, h, p)) {
                 hc.target = p;
-                if (w.has<Commandable>(p)) log.add(langf("MISC_LOG_NOTICES", { nameOf(w, h), nameOf(w, p) }), Tint::Gray, LogKind::Seen);
-                drinkForFight(w, h, hc, log);
+                if (w.has<Commandable>(p)) queueLog(w, langf("MISC_LOG_NOTICES", { nameOf(w, h), nameOf(w, p) }), LogKind::Seen, false, Tint::Gray);
+                drinkForFight(w, h, hc);
                 break;
             }
         }
@@ -459,7 +450,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
             if (targetable(w, ao->target)) {
                 if (pc.target != ao->target) {
                     pc.target = ao->target;
-                    drinkForFight(w, p, pc, log);
+                    drinkForFight(w, p, pc);
                 }
                 continue;
             }
@@ -475,7 +466,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
             continue;
         }
         pc.target = pickInReach(w, t, p, hostiles);
-        if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc, log);
+        if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc);
     }
 
     for (Entity e : everyone) {
@@ -485,6 +476,6 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
         if (isBlocking(w, e)) continue;
         const Entity foe = c.target;
         if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe)) continue;
-        strike(w, rng, e, foe, log, floats);
+        strike(w, rng, e, foe);
     }
 }

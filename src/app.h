@@ -59,6 +59,7 @@
 #include "storage.h"
 #include "trade.h"
 #include "selection.h"
+#include "simulation.h"
 #include "level.h"
 #include "menus.h"
 #include "app_support.h"
@@ -127,6 +128,7 @@ struct AppSession {
     std::vector<TradeLabel> tradeLabels;
     int logOffset = 0;
     size_t logSeen = 0;
+    std::vector<QueuedSound> soundsToPlay;
     float autoTimer = 0.0f;
     float pivotAlpha = 0.0f;
     float actionAlpha = 0.0f;
@@ -173,8 +175,9 @@ struct App : AppSession {
     void updateCamera();
     void placeUnitsBetweenSteps();
     void putUnitsBack();
-    void reportPropArrivals();
-    void showWorkGains(double gameSecs);
+    void reportPropArrivals(const std::vector<PropArrival>& arrivals);
+    void showWorkGains(const std::vector<WorkGain>& gains);
+    void showEvents();
     void playWorkSounds();
     void autosaveTick();
     void closeStalePanels();
@@ -388,8 +391,6 @@ struct App : AppSession {
     int infoTab = 1;
     LogFilter logFilter;
     bool logFilterOpen = false;
-
-    double claimDecayDue = 0.0;
 
     std::string notice;
     float noticeSec = 0.0f;

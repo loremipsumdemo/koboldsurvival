@@ -54,7 +54,7 @@ add_dependencies(write_build_stamp build_stamp)
 
 # The simulation: no window, no graphics. The game and the save test share it.
 set(SIM_SOURCES
-    src/play_state.cpp
+    src/simulation.cpp
     src/game_log.cpp
     src/world_labels.cpp
     src/items.cpp
@@ -71,7 +71,6 @@ set(SIM_SOURCES
     src/party.cpp
     src/useitem.cpp
     src/need_behaviors.cpp
-    src/sounds.cpp
     src/systems.cpp
     src/needs.cpp
     src/unit_status.cpp
@@ -109,6 +108,7 @@ target_include_directories(kobold_sim PUBLIC src ${GLEW_INCLUDE_DIRS})
 target_link_libraries(kobold_sim PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_image::SDL3_image)
 
 add_executable(koboldsurvival
+    src/play_state.cpp
     src/storage.cpp
     src/trade.cpp
     src/selection.cpp
@@ -221,15 +221,16 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
 )
 
 # Headless tests, run with ctest. save_roundtrip saves a level, loads it and compares. data_check checks the game's data.
+# sim_step plays with no window and checks the same seed gives the same game.
 enable_testing()
-foreach(test save_roundtrip data_check)
+foreach(test save_roundtrip data_check sim_step)
     add_executable(${test} tests/${test}.cpp)
     target_link_libraries(${test} PRIVATE kobold_sim)
     add_dependencies(${test} game_data)
     add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endforeach()
 
-foreach(target koboldsurvival kobold_sim save_roundtrip data_check)
+foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>

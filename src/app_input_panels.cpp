@@ -94,7 +94,7 @@ bool App::mouseDownOnPanels() {
                         std::string why;
                         const GearAction done = optimize ? optimizeGear(world, shown, why, gearPrefs()) : removeAllGear(world, shown, why);
                         if (done == GearAction::Done) {
-                            queueSound(Sfx::ItemMove);
+                            queueSound(world, Sfx::ItemMove);
                         } else if (done == GearAction::NoRoom) {
                             refuse(why);
                         } else {

@@ -24,6 +24,8 @@ void App::endTalk() {
     session.freeTrade = false;
     clearTradeTable();
     session.quantity.open = false;
+    world.remove<InConversation>(session.dialogueUnit);
+    world.remove<InConversation>(session.dialoguePlayer);
     session.dialogueUnit = NULL_ENTITY;
     session.dialogueConvo.clear();
     if (session.autoPaused) session.paused = false;
@@ -83,7 +85,7 @@ void App::confirmQuantity() {
         std::string why;
         if (session.storageProp != NULL_ENTITY && session.quantity.owner == session.storageUnit &&
             storeCountInStorage(world, session.quantity.slot, session.quantity.chosen, why)) {
-            queueSound(Sfx::ItemMove);
+            queueSound(world, Sfx::ItemMove);
         } else if (!why.empty()) {
             refuse(why);
         }
@@ -120,7 +122,7 @@ void App::requestStore(int slot) {
     const int item = inv->slots[slot].item;
     std::string why;
     if (inv->slots[slot].count <= 1) {
-        if (storeCountInStorage(world, slot, 1, why)) queueSound(Sfx::ItemMove);
+        if (storeCountInStorage(world, slot, 1, why)) queueSound(world, Sfx::ItemMove);
         else if (!why.empty()) refuse(why);
         return;
     }
@@ -134,7 +136,7 @@ void App::requestStore(int slot) {
         return;
     }
     if (!shiftHeld()) {
-        if (storeCountInStorage(world, slot, std::min(inv->slots[slot].count, cap), why)) queueSound(Sfx::ItemMove);
+        if (storeCountInStorage(world, slot, std::min(inv->slots[slot].count, cap), why)) queueSound(world, Sfx::ItemMove);
         else if (!why.empty()) refuse(why);
         return;
     }
@@ -164,6 +166,8 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
     session.dialogueUnit = npc;
     session.dialogueConvo.clear();
     session.dialoguePlayer = talker;
+    world.add(npc, InConversation{});
+    world.add(talker, InConversation{});
     pauseForConversation();
     playSfx(Sfx::TalkOpen);
     const Dialogue* dg = world.get<Dialogue>(npc);
@@ -200,6 +204,8 @@ void App::startFreeTrade(Entity other, Entity unit) {
     session.quantity.open = false;
     session.dialogueUnit = other;
     session.dialoguePlayer = unit;
+    world.add(other, InConversation{});
+    world.add(unit, InConversation{});
     session.dialogueConvo.clear();
     pauseForConversation();
     openTrade(true);

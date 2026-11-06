@@ -237,7 +237,7 @@ bool App::pressOnStorage() {
                         session.storageDrag = (int)i;
                     } else if (e.button.button == SDL_BUTTON_RIGHT) {
                         std::string why;
-                        if (takeFromStorage(world, (int)i, why)) queueSound(Sfx::ItemMove);
+                        if (takeFromStorage(world, (int)i, why)) queueSound(world, Sfx::ItemMove);
                         else if (!why.empty()) refuse(why);
                     }
                     break;

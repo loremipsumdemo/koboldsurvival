@@ -91,10 +91,9 @@ struct QueuedSound {
     bool placed = false;
     float x = 0.0f, y = 0.0f, z = 0.0f;
 };
-void queueSound(Sfx s);
-void queueSoundAt(Sfx s, float x, float y, float z);
+void queueSound(World& w, Sfx s);
+void queueSoundAt(World& w, Sfx s, float x, float y, float z);
 void queueSoundFrom(World& w, Sfx s, Entity e);
-std::vector<QueuedSound> takeQueuedSounds();
 
 constexpr float SOUND_FULL_DISTANCE = 15.0f;
 constexpr float SOUND_SILENT_DISTANCE = 70.0f;

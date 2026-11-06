@@ -216,8 +216,8 @@ int pickupSystem(World& w, Terrain& t) {
             const std::string itemName = itemNameOf(gi->item);
             const int left = addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
             if (left < count) {
-                queueLog(langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup, npcOnly(w, u));
-                queueUnitLabel(u, itemGainLabel(count - left, itemName));
+                queueLog(w, langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), itemName }), LogKind::Pickup, npcOnly(w, u));
+                queueUnitLabel(w, u, itemGainLabel(count - left, itemName));
                 queueSoundFrom(w, Sfx::Pickup, u);
             }
             if (left == 0) w.destroy(item);

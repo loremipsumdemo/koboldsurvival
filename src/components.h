@@ -29,6 +29,9 @@ struct Unit {
 
 struct Selected {};
 
+// Stands still and talks, unless it is attacked
+struct InConversation {};
+
 struct Commandable {};
 
 struct Hostile {};

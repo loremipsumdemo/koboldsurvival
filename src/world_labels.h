@@ -21,9 +21,8 @@ struct TradeLabel {
     bool red = false;
 };
 
-void queueUnitLabel(Entity unit, const std::string& text, bool red = false);
-std::vector<TradeLabel> takeQueuedLabels();
-void discardQueuedLabels();
+void queueUnitLabel(World& w, Entity unit, const std::string& text, bool red = false);
+void queueFloatingNumber(World& w, const FloatingNumber& number);
 std::string itemGainLabel(int count, const std::string& itemName);
 std::string itemLossLabel(int count, const std::string& itemName);
 std::string itemGainLabelFor(int count, int item);

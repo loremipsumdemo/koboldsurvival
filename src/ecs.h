@@ -107,6 +107,7 @@ public:
     Entity create() { return next_++; }
 
     void destroy(Entity e) {
+        if (e == NULL_ENTITY) return;
         for (auto& storage : storages_) {
             if (storage) storage->remove(e);
         }
@@ -126,6 +127,15 @@ public:
 
     template <typename T>
     size_t count() { return storage<T>().size(); }
+
+    // The one T that belongs to this world as a whole, made the first time it is asked for. It goes with the world, and
+    // no view finds it: it is kept under NULL_ENTITY, which no view is ever given.
+    template <typename T>
+    T& resource() {
+        ComponentStorage<T>& s = storage<T>();
+        if (T* existing = s.get(NULL_ENTITY)) return *existing;
+        return s.add(NULL_ENTITY, T{});
+    }
 
     // Every entity that has all of the listed component types. A copy, so the loop over it may add and remove
     // components freely. It walks the smallest of the listed stores.

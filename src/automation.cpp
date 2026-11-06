@@ -367,7 +367,7 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
         if (!lock || lock->locked) continue;
         w.remove<Occupying>(u);
         stepOffProp(w, t, u, prop);
-        queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+        queueLog(w, langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }
 }
 

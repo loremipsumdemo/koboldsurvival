@@ -97,5 +97,5 @@ void breakFree(World& w, Entity u) {
     if (Transform* t = w.get<Transform>(u)) {
         if (const Transform* ct = w.get<Transform>(carrier)) *t = *ct;
     }
-    queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    queueLog(w, langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
 }

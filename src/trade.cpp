@@ -159,12 +159,12 @@ void completeTrade(World& w, Entity npc, Entity player) {
         return out;
     };
     for (const auto& [item, count] : totals(session.tradeNpc)) {
-        queueUnitLabel(player, itemGainLabelFor(count, item));
-        queueUnitLabel(npc, itemLossLabelFor(count, item), true);
+        queueUnitLabel(w, player, itemGainLabelFor(count, item));
+        queueUnitLabel(w, npc, itemLossLabelFor(count, item), true);
     }
     for (const auto& [item, count] : totals(session.tradePlayer)) {
-        queueUnitLabel(npc, itemGainLabelFor(count, item));
-        queueUnitLabel(player, itemLossLabelFor(count, item), true);
+        queueUnitLabel(w, npc, itemGainLabelFor(count, item));
+        queueUnitLabel(w, player, itemLossLabelFor(count, item), true);
     }
     if (fee > 0) grantXp(w, player, StatId::Charisma, fee, "MISC_REASON_FEES");
     session.tradeOpen = false;

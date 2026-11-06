@@ -25,7 +25,7 @@ void putDown(World& w, Entity carrier) {
     w.remove<PlayingDead>(carried);
     if (Transform* ct = w.get<Transform>(carried)) {
         if (const Transform* t = w.get<Transform>(carrier)) *ct = *t;
-        queueLog(langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other, npcOnly(w, carrier, carried));
+        queueLog(w, langf("MISC_PUTS_DOWN", { nameOf(w, carrier), nameOf(w, carried) }), LogKind::Other, npcOnly(w, carrier, carried));
         queueSoundFrom(w, Sfx::PutDown, carrier);
     }
 }
@@ -48,7 +48,7 @@ CarryEvents carrySystem(World& w) {
             if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
             w.add(target, Carried{ u });
             w.add(u, Carrying{ target });
-            queueLog(langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other, npcOnly(w, u, target));
+            queueLog(w, langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other, npcOnly(w, u, target));
             queueSoundFrom(w, Sfx::CarryUp, u);
             picked.push_back(u);
             continue;
@@ -75,7 +75,7 @@ CarryEvents carrySystem(World& w) {
         } else if (w.has<Hostile>(by) && canPlayDead(w, c)) {
             if (!w.has<PlayingDead>(c)) {
                 w.add(c, PlayingDead{});
-                queueLog(langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other, npcOnly(w, c));
+                queueLog(w, langf("MISC_PLAYS_DEAD", { nameOf(w, c) }), LogKind::Other, npcOnly(w, c));
             }
         } else {
             breakFree(w, c);

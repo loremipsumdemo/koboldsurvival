@@ -21,7 +21,7 @@ void patrolSpawnSystem(World& w, Terrain& t, float dt) {
         if (!h->returning && away > SPAWN_LEASH_RANGE) {
             h->returning = true;
             h->returnSeconds = 0.0f;
-            queueLog(langf("MISC_GOES_HOME", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+            queueLog(w, langf("MISC_GOES_HOME", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         }
         if (!h->returning) continue;
         h->returnSeconds += dt;

@@ -1,12 +1,10 @@
 #include "play_state.h"
-#include "game_log.h"
 
 namespace play {
 PlaySession session;
 
 void resetPlayState() {
     session = PlaySession{};
-    discardQueuedLog();
 }
 
 void closeStorage() {

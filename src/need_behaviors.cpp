@@ -42,7 +42,7 @@ int bestSlot(World& w, Entity unit, bool food) {
     return best;
 }
 
-bool consume(World& w, Entity giver, Entity taker, int slot, bool food, GameLog& log) {
+bool consume(World& w, Entity giver, Entity taker, int slot, bool food) {
     const Inventory* inv = w.get<Inventory>(giver);
     const ItemDef* def = inv ? findItem(inv->slots[slot].item) : nullptr;
     if (!def) return false;
@@ -58,7 +58,7 @@ bool consume(World& w, Entity giver, Entity taker, int slot, bool food, GameLog&
     if (giver != taker) line += " shared by " + nameOf(w, giver);
     line += food ? ": hunger " : ": HP ";
     line += std::to_string(was) + " -> " + std::to_string(now) + " of " + std::to_string(max);
-    log.add(line, Tint::Gray, LogKind::Other, npcOnly(w, giver, taker));
+    queueLog(w, line, LogKind::Other, npcOnly(w, giver, taker));
     return true;
 }
 
@@ -80,16 +80,16 @@ Entity sharerFor(World& w, Entity taker, bool food, int takerValue, float range)
     return best;
 }
 
-bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r, GameLog& log) {
+bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r) {
     const bool food = r.kind == BehaviorKind::Eat;
     const int v = valueOf(*w.get<Needs>(actor), food);
     r.why = BehaviorWait::None;
     if (v >= r.percent) return false;
     const int own = bestSlot(w, actor, food);
-    if (own >= 0 && consume(w, actor, actor, own, food, log)) return false;
+    if (own >= 0 && consume(w, actor, actor, own, food)) return false;
     if (hasOn(b, BehaviorKind::Share)) {
         const Entity giver = sharerFor(w, actor, food, v, SHARE_RANGE);
-        if (giver != NULL_ENTITY && consume(w, giver, actor, bestSlot(w, giver, food), food, log)) {
+        if (giver != NULL_ENTITY && consume(w, giver, actor, bestSlot(w, giver, food), food)) {
             b.seek = NULL_ENTITY;
             return false;
         }
@@ -114,7 +114,7 @@ bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
     return gn && valueOf(*gn, food) > takerValue && bestSlot(w, g, food) >= 0;
 }
 
-size_t behaviorSystem(World& w, GameLog& log, float dt) {
+size_t behaviorSystem(World& w, float dt) {
     size_t checked = 0;
     for (Entity actor : w.view<Behaviors, Needs>()) {
         Behaviors* b = w.get<Behaviors>(actor);
@@ -135,7 +135,7 @@ size_t behaviorSystem(World& w, GameLog& log, float dt) {
             const bool statChanged = (changed & (food ? NEEDS_HUNGER_CHANGED : NEEDS_HP_CHANGED)) != 0;
             if (r.cooldown > 0.0f || (!all && !statChanged && !waited)) continue;
             ++checked;
-            if (needFailed(w, actor, *b, r, log)) r.cooldown = BEHAVIOR_RETRY_SECONDS;
+            if (needFailed(w, actor, *b, r)) r.cooldown = BEHAVIOR_RETRY_SECONDS;
         }
         bool seeking = false;
         for (const BehaviorRule& r : b->rules) seeking = seeking || (r.on && r.why == BehaviorWait::WalkingToShare);

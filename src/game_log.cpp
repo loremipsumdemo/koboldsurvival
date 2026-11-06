@@ -1,14 +1,6 @@
 #include "game_log.h"
 #include "components.h"
 
-namespace {
-std::vector<LogLine> gQueued;
-}
-
-void queueLog(const std::string& text, LogKind kind, bool npc) {
-    gQueued.push_back(LogLine{ text, Tint::Gray, kind, npc });
-}
-
 bool npcOnly(World& w, Entity a, Entity b) {
     const bool yours = (a != NULL_ENTITY && w.has<Commandable>(a)) || (b != NULL_ENTITY && w.has<Commandable>(b));
     return !yours;
@@ -17,15 +9,6 @@ bool npcOnly(World& w, Entity a, Entity b) {
 void GameLog::say(const std::string& text) {
     spoken.push_back(LogLine{ text, Tint::Gray, LogKind::Other });
     if (spoken.size() > LOG_LIMIT) spoken.erase(spoken.begin());
-}
-
-void flushQueuedLog(GameLog& log) {
-    for (const LogLine& ln : gQueued) log.add(ln.text, ln.tint, ln.kind, ln.npc);
-    gQueued.clear();
-}
-
-void discardQueuedLog() {
-    gQueued.clear();
 }
 
 std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilter& f) {

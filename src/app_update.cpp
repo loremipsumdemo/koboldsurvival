@@ -78,8 +78,8 @@ void App::updateTalkOrders() {
     else if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {}, shopTalk);
 }
 
-void App::reportPropArrivals() {
-    for (const PropArrival& a : PROFILED("propOrderSystem", propOrderSystem(world, terrain))) {
+void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
+    for (const PropArrival& a : arrivals) {
         if (a.automatic) continue;
         const Prop* p = world.get<Prop>(a.prop);
         if (!p) continue;
@@ -132,8 +132,8 @@ void App::reportPropArrivals() {
     }
 }
 
-void App::showWorkGains(double gameSecs) {
-    for (const WorkGain& g : PROFILED("workSystem", workSystem(world, gameSecs, rng))) {
+void App::showWorkGains(const std::vector<WorkGain>& gains) {
+    for (const WorkGain& g : gains) {
         switch (g.kind) {
         case WorkGain::Kind::Item:
             tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
@@ -248,56 +248,43 @@ void App::putUnitsBack() {
     simTrue.clear();
 }
 
-void App::stepGame() {
-    // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
-    // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
-    PROFILED("factionSystem", factionSystem(world, dt));
-    PROFILED("defendSystem", defendSystem(world));
-    PROFILED("combatSystem", combatSystem(world, terrain, rng, dt, gameLog, floatingNumbers));
-    PROFILED("patrolSpawnSystem", patrolSpawnSystem(world, terrain, dt));
-    // Behaviors after the fight, so a unit hit this frame can drink in the same frame
-    PROFILED("behaviorSystem", behaviorSystem(world, gameLog, dt));
-    downedSystem(world);
-    const size_t logCount = gameLog.lines.size();
-    if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
-    logSeen = logCount;
-    PROFILED("squadSystem", squadSystem(world, dt, runMode));
-    PROFILED("steeringSystem", steeringSystem(world, terrain, dt, runMode));
-    PROFILED("pickupSystem", pickupSystem(world, terrain));
-    reportPropArrivals();
-    PROFILED("wildMobSystem", wildMobSystem(world, terrain, dt));
-    PROFILED("automationSystem", automationSystem(world, terrain, dt, rng));
-    const CarryEvents carried = PROFILED("carrySystem", carrySystem(world));
-    PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(world, terrain));
-    occupyBanSystem(world, dt);
-    for (const auto& [looter, looted] : carried.loot) {
+// Puts on screen what the world says happened. A simulation step adds to it, and so do the player's clicks between steps.
+void App::showEvents() {
+    SimEvents ev = takeEvents(world);
+    reportPropArrivals(ev.arrivals);
+    for (const auto& [looter, looted] : ev.lootOpened) {
         closeStorage();
         session.lootUnit = looted;
         session.lootBy = looter;
         playSfx(Sfx::UiMenuOpen);
     }
-    cleanupActiveSquads(world);
-    const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
-    const int hoursPassed = advanceClock(gs.clockSeconds, dt);
-    PROFILED("needsSystem", needsSystem(world, hoursPassed, gameSecs));
-    downedSystem(world);
-    const WakeChanges wakes = PROFILED("unconsciousSystem", unconsciousSystem(world, gameSecs));
-    PROFILED("playDeadSystem", playDeadSystem(world));
-    for (Entity u : wakes.woke) {
+    for (Entity u : ev.wakes.woke) {
         tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
         queueSoundFrom(world, Sfx::Recovers, u);
     }
-    for (Entity u : wakes.died) queueSoundFrom(world, Sfx::Dies, u);
-    corpseDecaySystem(world, gameSecs);
-    bonesDecaySystem(world, gameSecs);
-    groundFoodSystem(world, gameSecs);
-    showWorkGains(gameSecs);
-    PROFILED("passiveCraftSystem", passiveCraftSystem(world, gameSecs));
-    claimDecayDue += gameSecs;
-    if (claimDecayDue >= GAME_SECONDS_PER_REAL_SECOND) {
-        PROFILED("claimDecaySystem", claimDecaySystem(world, claimDecayDue));
-        claimDecayDue = 0.0;
-    }
+    for (Entity u : ev.wakes.died) queueSoundFrom(world, Sfx::Dies, u);
+    showWorkGains(ev.gains);
+
+    for (const LogLine& ln : ev.log) gameLog.add(ln.text, ln.tint, ln.kind, ln.npc);
+    const size_t logCount = gameLog.lines.size();
+    if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
+    logSeen = logCount;
+    floatingNumbers.insert(floatingNumbers.end(), ev.floats.begin(), ev.floats.end());
+    tradeLabels.insert(tradeLabels.end(), ev.labels.begin(), ev.labels.end());
+    soundsToPlay.insert(soundsToPlay.end(), ev.sounds.begin(), ev.sounds.end());
+
+    // What was queued just above
+    const SimEvents more = takeEvents(world);
+    soundsToPlay.insert(soundsToPlay.end(), more.sounds.begin(), more.sounds.end());
+}
+
+void App::stepGame() {
+    simStep(world, terrain, rng, gs, dt, runMode);
+    for (FloatingNumber& f : floatingNumbers) f.age += dt;
+    floatingNumbers.erase(std::remove_if(floatingNumbers.begin(), floatingNumbers.end(),
+                                         [](const FloatingNumber& f) { return f.age >= FLOAT_LIFE; }),
+                          floatingNumbers.end());
+    showEvents();
     PROFILED("playWorkSounds", playWorkSounds());
     PROFILED("autosaveTick", autosaveTick());
 }
@@ -332,7 +319,9 @@ void App::closeStalePanels() {
 }
 
 void App::playQueuedSounds() {
-    const std::vector<QueuedSound> queued = takeQueuedSounds();
+    showEvents();
+    std::vector<QueuedSound> queued;
+    queued.swap(soundsToPlay);
     std::array<float, (size_t)Sfx::Count> volume{}, pan{};
     volume.fill(-1.0f);
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
@@ -384,7 +373,7 @@ void App::update() {
     updateRightHold();
     moveMarkTime = std::max(0.0f, moveMarkTime - dt);
 
-    flushQueuedLog(gameLog);
+    showEvents();
     cam.mapSize = (float)terrain.size();
     cam.viewRange = (float)settings.viewRange;
 

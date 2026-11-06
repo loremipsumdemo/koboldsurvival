@@ -58,9 +58,9 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     }
     *from = ItemStack{};
     giveOrDrop(w, session.storageUnit, stack.item, stack.count);
-    queueSound(Sfx::Take);
+    queueSound(w, Sfx::Take);
     propStorageChanged(w, session.storageProp);
-    queueUnitLabel(session.storageUnit, itemGainLabel(stack.count, itemNameOf(stack.item)));
+    queueUnitLabel(w, session.storageUnit, itemGainLabel(stack.count, itemNameOf(stack.item)));
     return true;
 }
 
@@ -110,7 +110,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
     }
     addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
     propStorageChanged(w, session.storageProp);
-    queueUnitLabel(session.storageUnit, itemLossLabelFor(count, item), true);
-    queueSound(Sfx::Store);
+    queueUnitLabel(w, session.storageUnit, itemLossLabelFor(count, item), true);
+    queueSound(w, Sfx::Store);
     return true;
 }

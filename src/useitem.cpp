@@ -181,14 +181,14 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     auto show = [&](UseEffect::Stat st, const char* labelKey, int change) {
         const bool down = change < 0 || (change == 0 && nominal(st) < 0);
         const std::string num = (down ? "-" : "+") + std::to_string(change < 0 ? -change : change);
-        queueUnitLabel(target, langf("MISC_EFFECT_LABEL", { lang(labelKey), num }), down);
+        queueUnitLabel(w, target, langf("MISC_EFFECT_LABEL", { lang(labelKey), num }), down);
     };
     for (UseEffect::Stat st : shown) {
         if (st == UseEffect::Stat::Health && t.needs) show(st, "UILABEL_HEALTH", t.needs->hp - hpBefore);
         else if (st == UseEffect::Stat::Hunger && t.needs) show(st, "UILABEL_HUNGER", t.needs->hunger - hungerBefore);
         else if (st == UseEffect::Stat::Attack && t.combat) show(st, "UILABEL_ATTACK", attack);
     }
-    queueUnitLabel(consumer, itemLossLabelFor(1, s.item), true);
+    queueUnitLabel(w, consumer, itemLossLabelFor(1, s.item), true);
     {
         bool hurt = false, food = false;
         for (const UseEffect& e : effects) {

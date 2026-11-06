@@ -31,17 +31,13 @@ struct LogFilter {
 
 struct GameLog {
     std::vector<LogLine> lines;
-    size_t hits = 0;
-    size_t misses = 0;
     std::vector<LogLine> spoken;
     size_t kindCount[LOG_KIND_COUNT] = {};
     void say(const std::string& text);
     void add(const std::string& text, Tint tint = Tint::Gray, LogKind kind = LogKind::Other, bool npc = false);
 };
 
-void queueLog(const std::string& text, LogKind kind, bool npc = false);
-void flushQueuedLog(GameLog& log);
-void discardQueuedLog();
+void queueLog(World& w, const std::string& text, LogKind kind, bool npc = false, Tint tint = Tint::Gray);
 
 std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilter& f);
 size_t infoLineCount(const GameLog& log, int tab, const LogFilter& f);

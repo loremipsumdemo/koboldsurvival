@@ -6,7 +6,7 @@ namespace {
 void stopWorkersAt(World& w, Entity prop) {
     for (Entity u : w.view<Working>()) {
         if (w.get<Working>(u)->prop != prop) continue;
-        queueLog(langf("MISC_CRAFT_STOPS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+        queueLog(w, langf("MISC_CRAFT_STOPS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         w.remove<Working>(u);
     }
     if (PropWork* pw = w.get<PropWork>(prop)) {
@@ -113,7 +113,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     w.add(inside, OccupyBan{ EVACUATE_OCCUPY_BAN_SECONDS });
                     a.started = true;
                     queueSoundFrom(w, Sfx::PutDown, prop);
-                    queueLog(langf("MISC_EVACUATES", { nameOf(w, u), nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, inside));
+                    queueLog(w, langf("MISC_EVACUATES", { nameOf(w, u), nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, inside));
                 }
                 out.push_back(a);
                 continue;
@@ -127,10 +127,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     }
                     a.started = true;
                     queueSoundFrom(w, Sfx::LockedIn, prop);
-                    queueLog(langf("MISC_LOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
+                    queueLog(w, langf("MISC_LOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
                     const Entity inside = propOccupant(w, prop);
                     if (inside != NULL_ENTITY && lockedIn(w, inside)) {
-                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, inside));
+                        queueLog(w, langf("MISC_LOCKED_IN", { nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, inside));
                     }
                 }
                 out.push_back(a);
@@ -140,7 +140,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 w.get<Lock>(prop)->locked = false;
                 a.started = true;
                 queueSoundFrom(w, Sfx::Unlocked, prop);
-                queueLog(langf("MISC_UNLOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
+                queueLog(w, langf("MISC_UNLOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
                 out.push_back(a);
                 continue;
             }
@@ -160,7 +160,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 if (cr && w.has<Corpse>(cr->unit)) {
                     const Entity corpse = cr->unit;
                     const Transform at = *pt;
-                    queueLog(langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, corpse), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, corpse));
+                    queueLog(w, langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, corpse), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, corpse));
                     queueSoundFrom(w, Sfx::Drop, prop);
                     const std::vector<ItemStack> belongings = unitBelongings(w, corpse);
                     w.remove<Carrying>(u);
@@ -203,10 +203,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                         a.placed = true;
                         a.started = true;
                         queueSoundFrom(w, w.has<Lock>(prop) ? Sfx::LockedIn : Sfx::Occupy, prop);
-                        queueLog(langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, carried));
+                        queueLog(w, langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, carried));
                         if (Lock* lk = w.get<Lock>(prop)) {
                             lk->locked = true;
-                            queueLog(langf("MISC_LOCKED_IN", { nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, carried));
+                            queueLog(w, langf("MISC_LOCKED_IN", { nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, carried));
                         }
                     }
                     break;
@@ -233,7 +233,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     queueSoundFrom(w, w.has<Lock>(prop) && newOccupant ? Sfx::LockedIn : Sfx::Occupy, prop);
                     if (Lock* lk = newOccupant ? w.get<Lock>(prop) : nullptr) {
                         lk->locked = true;
-                        queueLog(langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
+                        queueLog(w, langf("MISC_LOCKED_IN", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
                     }
                 }
                 break;
@@ -334,7 +334,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 if ((double)rng.unit() < lockpickChance(level)) {
                     lock->locked = false;
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
-                    queueLog(langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other, npcOnly(w, picker));
+                    queueLog(w, langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other, npcOnly(w, picker));
                     grantXp(w, picker, StatId::Lockpicking, LOCKPICK_XP_SUCCESS, "MISC_REASON_LOCKPICKING");
                 } else {
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::LockpickFailed });
@@ -357,7 +357,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     w.remove<Working>(u);
                     grantXp(w, u, StatId::Strength, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? "MISC_REASON_CLEARING" : nullptr);
                 }
-                if (w.has<Commandable>(workers[0])) queueLog(langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
+                if (w.has<Commandable>(workers[0])) queueLog(w, langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
                 queueSoundFrom(w, Sfx::Drop, prop);
                 breakBuilding(w, prop);
             }
@@ -408,7 +408,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 if (got == NULL_ENTITY) {
                     for (Entity u : workers) {
-                        queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other, npcOnly(w, u));
+                        queueLog(w, langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other, npcOnly(w, u));
                         w.remove<Working>(u);
                     }
                     workers.clear();
@@ -428,7 +428,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 if (outItem > 0) {
                     giveOrDrop(w, got, outItem, 1);
                     addGain(WorkGain{ got, outItem });
-                    queueLog(langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup, npcOnly(w, got));
+                    queueLog(w, langf("MISC_CRAFTS", { nameOf(w, got), outName }), LogKind::Pickup, npcOnly(w, got));
                     grantXp(w, got, info.stat, WORK_XP_PER_ITEM, "MISC_REASON_CRAFTING");
                 } else {
                     addGain(WorkGain{ got, idx(info.stat), WorkGain::Kind::Trained, WORK_XP_PER_ITEM });
@@ -453,15 +453,15 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 const bool yours = w.has<Commandable>(got);
                 if (yours) {
                     addGain(WorkGain{ got, gives });
-                    queueLog(langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup, npcOnly(w, got));
+                    queueLog(w, langf("MISC_GATHERS", { nameOf(w, got), itemName }), LogKind::Pickup, npcOnly(w, got));
                 }
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, yours ? "MISC_REASON_GATHERING" : nullptr);
             } else {
                 if (const Transform* ut = w.get<Transform>(got)) {
                     spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, gives, 1);
                 }
-                queueLog(langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop, npcOnly(w, got));
-                queueUnitLabel(got, itemLossLabel(1, itemName), true);
+                queueLog(w, langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop, npcOnly(w, got));
+                queueUnitLabel(w, got, itemLossLabel(1, itemName), true);
                 queueSoundFrom(w, Sfx::Drop, got);
                 w.remove<Working>(got);
                 workers.erase(workers.begin() + (long)pick);
@@ -493,7 +493,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
     if (moved > 0) {
         propStorageChanged(w, prop);
         if (w.has<Commandable>(unit)) {
-            queueLog(langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameOf(movedItem),
+            queueLog(w, langf("MISC_AUTO_HAUL_STORES", { nameOf(w, unit), std::to_string(moved), itemNameOf(movedItem),
                                                     propDisplayName(w, prop) }), LogKind::Pickup, npcOnly(w, unit));
         }
     }
@@ -539,7 +539,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     if (const Faction* f = w.get<Faction>(unit); (!f || f->id == FACTION_PLAYER) && lock->faction >= 0 &&
                                                  lock->faction != FACTION_PLAYER) {
         const int now = changePlayerReputation(lock->faction, -REP_LOCKPICK_PENALTY);
-        queueLog(langf("MISC_REPUTATION_DROPS", { factionName(lock->faction), std::to_string(REP_LOCKPICK_PENALTY),
+        queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(lock->faction), std::to_string(REP_LOCKPICK_PENALTY),
                                                   std::to_string(now) }), LogKind::Other);
     }
     if (inside) {
