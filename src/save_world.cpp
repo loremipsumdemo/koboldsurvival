@@ -76,8 +76,9 @@ void captureOrders(World& w, Entity u, SaveUnit& su, const IdMap& propIds, const
         su.propOrder = idOf(propIds, po->prop);
         su.propAction = idx(po->action);
     } else if (wk && !automated) {
-        su.propOrder = idOf(propIds, wk->prop);
-        su.propAction = idx(wk->unlocking ? PropAction::Unlock : PropAction::Use);
+        // Not as an order: starting work again would charge a lockpick's reputation penalty again
+        su.workProp = idOf(propIds, wk->prop);
+        su.workUnlocking = wk->unlocking;
     } else if (sq && !sq->arrived && !sq->waypoints.empty()) {
         su.move = sq->waypoints.back();
     } else if (so && so->next < so->waypoints.size() && !automated && !po && !hasPlayerOrder(w, u) &&
@@ -233,6 +234,7 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<Entity>& un
                 world.add(e, Occupying{ p });
             }
         }
+        if (u.workProp >= 0 && u.workProp < (int)props.size()) world.add(e, Working{ props[(size_t)u.workProp], u.workUnlocking });
         if (u.stepKind >= 0) {
             Behaviors& b = *world.get<Behaviors>(e);
             for (const BehaviorRule& r : b.rules) {

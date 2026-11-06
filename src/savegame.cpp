@@ -56,6 +56,9 @@ private:
     std::ostream& out_;
 };
 
+// A list that changed size means the numbers in a save name other things
+constexpr int SAVED_LIST_SIZES[] = { PROP_KIND_COUNT, MOB_KIND_COUNT, STAT_COUNT, idx(BehaviorKind::Count), GEAR_SLOTS, INVENTORY_SLOTS, STORAGE_SLOTS };
+
 void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     w.line("unit", u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob, u.name);
     const Needs& n = u.needs;
@@ -89,6 +92,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.attackUnit >= 0) w.line("attack", i, u.attackUnit);
     if (u.move) w.line("move", i, u.move->x, u.move->z);
     if (u.propOrder >= 0) w.line("propgo", i, u.propOrder, u.propAction);
+    if (u.workProp >= 0) w.line("working", i, u.workProp, u.workUnlocking);
     for (const SaveRule& r : u.rules) {
         w.line("task", i, r.rule.on, (int)r.rule.kind, r.rule.propKind, r.prop, r.rule.percent);
     }
@@ -110,6 +114,8 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
 void writeSaveLines(std::ostream& out, const SaveData& d) {
     Writer w(out);
     w.line("version", SAVE_VERSION);
+    w.line("sizes", SAVED_LIST_SIZES[0], SAVED_LIST_SIZES[1], SAVED_LIST_SIZES[2], SAVED_LIST_SIZES[3], SAVED_LIST_SIZES[4],
+           SAVED_LIST_SIZES[5], SAVED_LIST_SIZES[6]);
     w.line("name", d.name);
     w.line("timestamp", d.timestamp);
     w.line("autosave", d.autosave);
@@ -176,6 +182,13 @@ using Handler = bool (*)(Line&);
 const std::unordered_map<std::string, Handler>& handlers() {
     static const std::unordered_map<std::string, Handler> table = {
         { "version", [](Line& l) { int v = 0; return l.read(v) && v == SAVE_VERSION; } },
+        { "sizes", [](Line& l) {
+            for (int want : SAVED_LIST_SIZES) {
+                int got = 0;
+                if (!l.read(got) || got != want) return false;
+            }
+            return true;
+        } },
         { "name", [](Line& l) { return l.rest(l.d.name); } },
         { "timestamp", [](Line& l) { return l.read(l.d.timestamp); } },
         { "autosave", [](Line& l) { return l.read(l.d.autosave); } },
@@ -332,6 +345,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
             return true;
         } },
         { "propgo", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->propOrder, u->propAction); } },
+        { "working", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->workProp, u->workUnlocking); } },
         { "task", [](Line& l) {
             SaveUnit* u = l.unit();
             int on = 0, kind = 0, propKind = -1, percent = 0;

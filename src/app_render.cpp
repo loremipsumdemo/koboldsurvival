@@ -187,6 +187,10 @@ void App::drawSavePanel() {
                                         d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
             renderer.drawUiTextCentered(lang("UILABEL_UNSAVED_WARNING"),
                                         d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
+        } else if (ask == Ask::LeaveUnsaved) {
+            renderer.drawUiTextCentered(lang("MISC_LEAVE_Q"), d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
+            renderer.drawUiTextCentered(lang("UILABEL_UNSAVED_WARNING"),
+                                        d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
         } else {
             const std::string who = pendingDelete ? pendingDelete->name : std::string();
             renderer.drawUiTextCentered(langf("MISC_DELETE_Q", { who }),

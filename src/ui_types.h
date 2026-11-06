@@ -16,6 +16,7 @@ enum class Action {
     CancelName,
     OverwriteYes, OverwriteNo,
     LoadYes, LoadNo,
+    LeaveYes, LeaveNo,
     SortName, SortTime,
     ScrollUp, ScrollDown,
     DeleteSave,

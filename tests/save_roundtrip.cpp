@@ -9,7 +9,11 @@
 #include "build.h"
 #include "camera.h"
 #include "claims.h"
+#include "combat.h"
 #include "factions.h"
+#include "hostility.h"
+#include "items.h"
+#include "mobs.h"
 #include "language.h"
 #include "level.h"
 #include "pak.h"
@@ -86,7 +90,6 @@ int main(int, char**) {
     const Entity emptied = firstStocked(world);
     check(emptied != NULL_ENTITY, "the level has a stocked container");
     if (emptied) *world.get<Storage>(emptied) = Storage{};
-    const size_t propsBefore = world.view<Prop, Transform>().size();
     const Entity altar = firstProp(world, PropKind::Altar);
     check(altar != NULL_ENTITY, "the level has an Altar");
     const int altarOwner = altar ? world.get<Owner>(altar)->faction : -1;
@@ -113,6 +116,70 @@ int main(int, char**) {
     world.add(people[1], XpBuffer{});
     world.get<XpBuffer>(people[1])->frac[0] = 0.25f;
 
+    // The bosses
+    for (MobKind kind : { MobKind::Gorlicorn, MobKind::Griffin, MobKind::Manticore }) {
+        int found = 0;
+        for (Entity e : world.view<Mob, Unit>()) {
+            if (world.get<Mob>(e)->kind != kind) continue;
+            ++found;
+            check(world.get<Needs>(e)->maxHp == mobInfo(kind).hp, "a boss has its own health");
+            check(world.get<Faction>(e)->id == mobFaction(kind) && findFaction(mobFaction(kind)), "a boss has its own listed faction");
+            check(world.has<SpawnHome>(e), "a boss patrols its spawn");
+            const float plain = deriveCombat(*world.get<Stats>(e), *world.get<Equipment>(e), 0.0f).attack;
+            check(numbersOf(world, e).attack == plain * BOSS_DAMAGE_FACTOR, "a boss hits twice as hard");
+        }
+        check(found == 1, "each boss is placed once");
+        const ItemDef* bones = findItem(mobBones(kind));
+        const ItemDef* meat = findItem(mobInfo(kind).meat);
+        check(bones && hasTag(*bones, "bones") && meat && hasTag(*meat, "raw_food") && findItem(meat->cooksInto), "a boss has bones and cookable meat");
+    }
+    check(mobInfo(MobKind::Griffin).hp == 10000 && mobInfo(MobKind::Manticore).hp == 5000, "the Griffin and Manticore have their health");
+    int bossRabbits = 0;
+    for (Entity e : world.view<Mob, SpawnHome>()) bossRabbits += world.get<Mob>(e)->kind == MobKind::Rabbit ? 1 : 0;
+    check(bossRabbits == GORLICORN_RABBITS, "only the Gorlicorn brings rabbits");
+
+    // States a fresh level never has
+    std::vector<Entity> npcs;
+    for (Entity e : world.view<Unit, Dialogue>()) npcs.push_back(e);
+    std::sort(npcs.begin(), npcs.end());
+    check(npcs.size() >= 3 && people.size() >= 3, "the level has NPCs and three of your units");
+    const Entity patient = npcs[0], dead = npcs[1], angry = npcs[2], rescuer = people[2];
+    knockOut(world, patient);
+    world.get<Unconscious>(patient)->dying = 12.5f;
+    world.add(patient, Carried{ rescuer });
+    world.add(rescuer, Carrying{ patient });
+    Behaviors* rescuing = world.get<Behaviors>(rescuer);
+    for (const BehaviorRule& r : rescuing->rules) {
+        if (r.kind != BehaviorKind::Rescue) continue;
+        rescuing->busy = true;
+        rescuing->step = r;
+    }
+    knockOut(world, dead);
+    finishDying(world, dead);
+    world.get<Corpse>(dead)->hours = 3.5;
+    provoke(world, angry, FACTION_PLAYER);
+
+    Entity lockedProp = NULL_ENTITY;
+    for (Entity e : world.view<Prop, Lock, Transform>()) {
+        const Lock* l = world.get<Lock>(e);
+        if (l->locked && l->faction > 0) lockedProp = e;
+    }
+    check(lockedProp != NULL_ENTITY, "a faction has a locked prop");
+    const Entity picker = makeUnit(world, *world.get<Transform>(lockedProp), FACTION_PLAYER);
+    world.add(picker, defaultStats());
+    world.add(picker, Working{ lockedProp, true });
+
+    const Entity bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
+    world.add(bones, BonesPile{ 2.0, { ItemStack{ BONES_ITEM, 3 } } });
+    const Entity forge = firstProp(world, PropKind::Forge);
+    check(forge != NULL_ENTITY, "the level has a forge");
+    *world.get<Fuel>(forge) = Fuel{ 1.5, propInfo(PropKind::Forge).input };
+    world.get<PropWork>(forge)->progress = 0.25;
+    const Entity lying = spawnGroundItem(world, *world.get<Transform>(people[0]), BONES_ITEM, 2);
+    world.get<GroundItem>(lying)->hours = 5.0;
+
+    const size_t propsBefore = world.view<Prop, Transform>().size();
+    const std::map<int, int> repBefore = playerReputation();
     const std::string first = "roundtrip_a.sav", second = "roundtrip_b.sav", cut = "roundtrip_cut.sav";
     const Camera cam;
     const GameState gs;
@@ -144,6 +211,26 @@ int main(int, char**) {
     check(restored.has<XpBuffer>(again[1]) && restored.get<XpBuffer>(again[1])->frac[0] == 0.25f, "partial XP comes back");
     check(rng.gen == after.gen, "the random numbers carry on where they left off");
 
+    int carried = 0, corpses = 0, unconscious = 0, provokedUnits = 0, picking = 0, bonesPiles = 0, burning = 0;
+    for (Entity e : restored.view<Carried>()) carried += restored.has<Carrying>(restored.get<Carried>(e)->by) ? 1 : 0;
+    for (Entity e : restored.view<Corpse>()) corpses += restored.get<Corpse>(e)->hours == 3.5 ? 1 : 0;
+    for (Entity e : restored.view<Unconscious>()) unconscious += restored.get<Unconscious>(e)->dying == 12.5f ? 1 : 0;
+    for (Entity e : restored.view<Provoked>()) provokedUnits += restored.get<Provoked>(e)->against.empty() ? 0 : 1;
+    for (Entity e : restored.view<Working>()) picking += restored.get<Working>(e)->unlocking ? 1 : 0;
+    for (Entity e : restored.view<BonesPile>()) bonesPiles += restored.get<BonesPile>(e)->items.size() == 1 ? 1 : 0;
+    for (Entity e : restored.view<Fuel, PropWork>()) burning += restored.get<Fuel>(e)->hours == 1.5 && restored.get<PropWork>(e)->progress == 0.25 ? 1 : 0;
+    check(carried == 1, "a carried unit is still carried");
+    check(corpses == 1, "a corpse keeps its age");
+    check(unconscious == 1, "a knocked-out unit keeps its Dying");
+    check(provokedUnits >= 1, "a provoked unit stays provoked");
+    check(picking == 1, "a unit picking a lock is still picking it");
+    check(bonesPiles == 1, "bones keep what they hold");
+    check(burning == 1, "a forge keeps its fuel and progress");
+    const Behaviors* rescuerAfter = restored.get<Behaviors>(again[2]);
+    check(rescuerAfter && rescuerAfter->busy && rescuerAfter->step.kind == BehaviorKind::Rescue, "a rescuer is still on its Rescue step");
+    propOrderSystem(restored);
+    check(playerReputation() == repBefore, "a reload costs no reputation");
+
     // Damage is refused
     std::string text = slurp(first);
     {
@@ -158,6 +245,14 @@ int main(int, char**) {
     }
     SaveData unknown;
     check(!readSaveFile(cut, unknown), "an unknown line is refused");
+    {
+        std::ofstream out(cut);
+        std::string changed = text;
+        changed.insert(changed.find("\nsizes ") + 7, "9");
+        out << changed;
+    }
+    SaveData sized;
+    check(!readSaveFile(cut, sized), "a save from a game with other list sizes is refused");
 
     std::remove(first.c_str());
     std::remove(second.c_str());

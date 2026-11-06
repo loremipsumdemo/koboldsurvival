@@ -8,6 +8,7 @@
 #include "language.h"
 #include "props.h"
 
+// Saved as numbers: after reordering, raise SAVE_VERSION
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, Count };
 
 enum class BehaviorWait : int {

@@ -7,6 +7,7 @@
 #include "enum_index.h"
 #include "stats.h"
 
+// Saved as numbers: after reordering, raise SAVE_VERSION
 enum class PropKind : int {
     Wagon,
     Campfire,

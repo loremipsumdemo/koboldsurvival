@@ -136,6 +136,7 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
         }
         Action yes = Action::OverwriteYes, no = Action::OverwriteNo;
         if (ask == Ask::LoadUnsaved) { yes = Action::LoadYes; no = Action::LoadNo; }
+        if (ask == Ask::LeaveUnsaved) { yes = Action::LeaveYes; no = Action::LeaveNo; }
         out.push_back(Button{ lang("UILABEL_YES"), d.yes, yes });
         out.push_back(Button{ lang("UILABEL_NO"), d.no, no });
         return out;

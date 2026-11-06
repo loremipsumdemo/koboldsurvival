@@ -8,7 +8,7 @@
 
 // Plain text, one record per line. Terrain comes from the named map; everything else is in the file.
 // Raise SAVE_VERSION whenever a line changes: files of another version are not listed or read.
-inline constexpr int SAVE_VERSION = 5;
+inline constexpr int SAVE_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
 std::string saveDir();
@@ -54,6 +54,8 @@ struct SaveUnit {
     int followUnit = -1, defendUnit = -1, attackUnit = -1;
     std::optional<Vec2> move;
     int propOrder = -1;
+    int workProp = -1;
+    bool workUnlocking = false;
     int propAction = 0;
 };
 

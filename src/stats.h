@@ -5,6 +5,7 @@
 #include <string>
 #include "language.h"
 
+// Saved by place: after reordering, raise SAVE_VERSION
 enum class StatId : int {
     None = -1,
     Strength = 0,

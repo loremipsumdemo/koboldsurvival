@@ -28,6 +28,7 @@ MISC_MAIN_MAP_MISSING	The main map is missing from data.pak
 UILABEL_LIST_MORE_ABOVE	...   {0} more above
 UILABEL_LIST_MORE_BELOW	...   {0} more below
 UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
+MISC_LEAVE_Q	Leave without saving?
 UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
 UILABEL_CLICK_SAVE	Click a save to load it
 UILABEL_WORLD	WORLD
@@ -885,6 +886,18 @@ ITEM_153_NAME	Cooked Gorlicorn Meat
 ITEM_153_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
 ITEM_154_NAME	Bones
 ITEM_154_DESC	Old bones, picked clean. Good for crafting.
+ITEM_155_NAME	Griffin Bones
+ITEM_155_DESC	Bones from a griffin. Good for crafting.
+ITEM_156_NAME	Raw Griffin Meat
+ITEM_156_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_157_NAME	Cooked Griffin Meat
+ITEM_157_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
+ITEM_158_NAME	Manticore Bones
+ITEM_158_DESC	Bones from a manticore. Good for crafting.
+ITEM_159_NAME	Raw Manticore Meat
+ITEM_159_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_160_NAME	Cooked Manticore Meat
+ITEM_160_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
 UILABEL_OPTIMIZE	Optimize
 UILABEL_REMOVE_ALL	Remove All
 MISC_GEAR_NO_ROOM	Not enough inventory space
@@ -954,6 +967,8 @@ MOB_TURTLE	Turtle
 MOB_BAT	Bat
 MOB_FROG	Frog
 MOB_GORLICORN	Gorlicorn
+MOB_GRIFFIN	Griffin
+MOB_MANTICORE	Manticore
 FACTION_MOB_BEAR	Bears
 FACTION_MOB_COW	Cows
 FACTION_MOB_CHICKEN	Chickens
@@ -972,6 +987,8 @@ FACTION_MOB_TURTLE	Turtles
 FACTION_MOB_BAT	Bats
 FACTION_MOB_FROG	Frogs
 FACTION_MOB_GORLICORN	Gorlicorns
+FACTION_MOB_GRIFFIN	Griffins
+FACTION_MOB_MANTICORE	Manticores
 MISC_MOB_NO_GEAR	Mobs can't wear gear
 UILABEL_MOB_NO_GEAR	No gear slots: mobs can't wear gear
 MISC_MEAT_TAKEN_DIES	{0} dies

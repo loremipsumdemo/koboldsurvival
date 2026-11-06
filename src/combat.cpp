@@ -46,14 +46,19 @@ float buffOf(World& w, Entity e) {
 
 const Behaviors* behaviorsOf(World& w, Entity e) { return w.get<Behaviors>(e); }
 
+} // namespace
+
 CombatNumbers numbersOf(World& w, Entity e) {
     CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) n.maxHp = mobInfo(m->kind).hp;
+    if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) n.attack *= BOSS_DAMAGE_FACTOR;
     if (const Behaviors* b = behaviorsOf(w, e); b && b->block) {
         n.blockChance = std::min(BLOCK_MODE_CAP, std::max(n.blockChance, BLOCK_CHANCE_BASE) * BLOCK_MODE_FACTOR);
     }
     return n;
 }
+
+namespace {
 
 int ammoSlotFor(World& w, Entity e, const RangedProfile& rp) {
     const Inventory* inv = w.get<Inventory>(e);

@@ -98,12 +98,16 @@ GearPrefs App::gearPrefs() {
 
 void App::performAction(Action action, int param) {
     const bool back = action == Action::Back || action == Action::ReturnToTitle || action == Action::CancelName ||
-                      action == Action::OverwriteNo || action == Action::LoadNo || action == Action::DeleteNo;
+                      action == Action::OverwriteNo || action == Action::LoadNo || action == Action::LeaveNo || action == Action::DeleteNo;
     playSfx(back ? Sfx::UiBack : action == Action::Resume ? Sfx::UiResume : Sfx::UiClick);
     if (partyAction(action, param) || savePanelAction(action, param)) return;
     switch (action) {
     case Action::Continue:
-        if (!saves.empty()) loadSave(saves.front().path);
+        if (!saves.empty()) {
+            const auto newest = std::max_element(saves.begin(), saves.end(),
+                                                 [](const SaveSummary& a, const SaveSummary& b) { return a.timestamp < b.timestamp; });
+            loadSave(newest->path);
+        }
         return;
     case Action::NewGame: {
         const std::optional<MapChoice> mainMap = findMap(listMaps(), "packed", MAIN_MAP_STEM);
@@ -133,9 +137,7 @@ void App::performAction(Action action, int param) {
         screen = Screen::Playing;
         return;
     case Action::ReturnToTitle:
-        screen = Screen::Title;
-        gameActive = false;
-        refreshSaves();
+        requestLeave(LeaveTo::Title);
         return;
     case Action::Quit:
         running = false;

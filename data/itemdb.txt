@@ -2535,3 +2535,105 @@ material =
 tier = 0
 equip_slot =
 tags = bones
+
+[155]
+type = item
+max_stack_size = 20
+name = Griffin Bones
+description = Bones from a griffin. Good for crafting.
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material =
+tier = 0
+equip_slot =
+tags = bones
+
+[156]
+type = item
+max_stack_size = 20
+name = Raw Griffin Meat
+description = Uncooked meat. Cook it at a campfire.
+weight = 1.5
+buy_value = 6
+sell_value = 2
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material =
+tier = 0
+equip_slot =
+tags = raw_food
+cooks_into = 157
+
+[157]
+type = consumable
+max_stack_size = 20
+name = Cooked Griffin Meat
+description = Rich meat cooked over a fire. Restores a great deal of health and hunger.
+weight = 1.2
+buy_value = 14
+sell_value = 5
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +450; health +300
+material =
+tier = 0
+equip_slot =
+
+[158]
+type = item
+max_stack_size = 20
+name = Manticore Bones
+description = Bones from a manticore. Good for crafting.
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material =
+tier = 0
+equip_slot =
+tags = bones
+
+[159]
+type = item
+max_stack_size = 20
+name = Raw Manticore Meat
+description = Uncooked meat. Cook it at a campfire.
+weight = 1.5
+buy_value = 6
+sell_value = 2
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material =
+tier = 0
+equip_slot =
+tags = raw_food
+cooks_into = 160
+
+[160]
+type = consumable
+max_stack_size = 20
+name = Cooked Manticore Meat
+description = Rich meat cooked over a fire. Restores a great deal of health and hunger.
+weight = 1.2
+buy_value = 14
+sell_value = 5
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = hunger +450; health +300
+material =
+tier = 0
+equip_slot =

@@ -49,8 +49,10 @@ Model	File	Used for
 2	unit/unit_02.glb	Model 02 (Masculine by default)
 3	unit/unit_03.glb	Model 03 (Androgynous by default)
 
-Mob models: data/model/mob/mob_<nn>.glb (two digits), for the kinds of mob that have one (MobInfo::model in src/mobs.h).
+Mob models: data/model/mob/<name>.glb, for the kinds of mob that have one (MobInfo::model in src/mobs.h).
 A kind with no model, or whose model is missing, is drawn by its picture (data/mobinfo.txt).
 
-Model	File	Mob
-1	mob/mob_01.glb	Gorlicorn (mob kind 18), 2.4 tiles tall
+File	Mob
+mob/gorlicorn.glb	Gorlicorn (mob kind 18)
+mob/griffin.glb	Griffin (mob kind 19)
+mob/manticore.glb	Manticore (mob kind 20)

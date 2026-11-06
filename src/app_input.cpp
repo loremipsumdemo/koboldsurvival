@@ -9,7 +9,7 @@ void App::handleEvent() {
     }
     switch (e.type) {
     case SDL_EVENT_QUIT:
-        running = false;
+        requestLeave(LeaveTo::Desktop);
         break;
     case SDL_EVENT_TEXT_INPUT:
         onTextInput();

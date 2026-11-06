@@ -57,16 +57,15 @@ void Renderer::loadUnitModels(LoadStages& stages) {
 
 void Renderer::loadMobArt(LoadStages& stages) {
     int mobModelCount = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model > 0 ? 1 : 0;
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model ? 1 : 0;
     stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
     int mobModelsDone = 0;
     for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
         const MobKind kind = (MobKind)k;
-        const int n = mobInfo(kind).model;
-        if (n <= 0) continue;
+        if (!mobInfo(kind).model) continue;
         ++mobModelsDone;
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/model/mob/mob_%02d.glb", n);
+        const std::string file = std::string("data/model/mob/") + mobInfo(kind).model + ".glb";
+        const char* path = file.c_str();
         Model& m = mobModels_[(size_t)k - 1];
         if (!pakHas(path)) {
             SDL_Log("Mob model %s not in data.pak: the %s is drawn by its picture", path, lang(mobInfo(kind).nameKey).c_str());

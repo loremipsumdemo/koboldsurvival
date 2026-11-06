@@ -34,7 +34,7 @@ lose state: the world keeps running, whatever happens to your party.
   your units into the Exiles.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.
-- **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn boss, each with its own faction,
+- **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn, Griffin and Manticore bosses, each with its own faction,
   meat and bones. Camps keep some in cages, and some scenarios start with them in your party.
 - **Scenarios.** Start as a Vagabond, a Pack of Two, a Beastmaster, a Full Random Camp, a Traveling Caravan, a Shabby
   Crew, a Starving Nobody or the Dungeon Diggers, or build a Custom Scenario, then adjust the party before play.

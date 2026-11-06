@@ -3,10 +3,11 @@
 #include "enum_index.h"
 #include "stats.h"
 
+// Saved as numbers: after reordering, raise SAVE_VERSION
 enum class MobKind : int {
     None = 0,
     Bear, Cow, Chicken, Boar, Wolf, Deer, Rabbit, Fish, Crab, Lizard,
-    Snake, Pig, Sheep, Duck, Turtle, Bat, Frog, Gorlicorn,
+    Snake, Pig, Sheep, Duck, Turtle, Bat, Frog, Gorlicorn, Griffin, Manticore,
     End
 };
 constexpr int MOB_KIND_COUNT = idx(MobKind::End) - 1;
@@ -26,13 +27,17 @@ struct MobInfo {
     int boneCount = 0;
     bool maxStats = false;
     int hp = 0;
-    int model = 0;
+    const char* model = nullptr;   // data/model/mob/<model>.glb
     float modelHeight = 1.2f;
     bool patrolSpawn = false;
     MobCategory category = MobCategory::Regular;
+    int bones = 0;   // 0: MOB_BONES_FIRST + kind - 1
 };
 
 constexpr int GORLICORN_HP = 2000;
+constexpr int GRIFFIN_HP = 10000;
+constexpr int MANTICORE_HP = 5000;
+constexpr float BOSS_DAMAGE_FACTOR = 2.0f;
 constexpr float SPAWN_PATROL_RADIUS = 8.0f;
 constexpr float SPAWN_LEASH_RANGE = 25.0f;
 constexpr float SPAWN_HOME_REACH = 1.0f;
@@ -59,14 +64,18 @@ inline const MobInfo& mobInfo(MobKind kind) {
         { "MOB_BAT",     121, 1, 3,  16, 3, 20, 4,  1 },
         { "MOB_FROG",    123, 1, 2,  12, 3,  16, 1,  1 },
         { "MOB_GORLICORN", 152, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
-          1, 100, true, GORLICORN_HP, 1, 9.6f, true, MobCategory::Boss },
+          1, 100, true, GORLICORN_HP, "gorlicorn", 9.6f, true, MobCategory::Boss },
+        { "MOB_GRIFFIN", 156, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
+          1, 100, true, GRIFFIN_HP, "griffin", 9.6f, true, MobCategory::Boss, 155 },
+        { "MOB_MANTICORE", 159, 100, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL, MAX_LEVEL,
+          1, 100, true, MANTICORE_HP, "manticore", 9.6f, true, MobCategory::Boss, 158 },
     };
     const int i = idx(kind) - 1;
     return info[(i >= 0 && i < MOB_KIND_COUNT) ? i : 0];
 }
 
 constexpr int MOB_BONES_FIRST = 134;
-inline int mobBones(MobKind kind) { return MOB_BONES_FIRST + idx(kind) - 1; }
+inline int mobBones(MobKind kind) { return mobInfo(kind).bones > 0 ? mobInfo(kind).bones : MOB_BONES_FIRST + idx(kind) - 1; }
 inline int mobBoneCount(MobKind kind) {
     if (mobInfo(kind).boneCount > 0) return mobInfo(kind).boneCount;
     return std::max(1, (mobInfo(kind).meatCount + 1) / 2);
@@ -76,7 +85,8 @@ inline bool mobCanHold(MobKind kind, int item) { return item == mobInfo(kind).me
 enum class MobTemperament { Avoidant, Passive, Neutral, Aggressive };
 inline MobTemperament mobTemperament(MobKind kind) {
     switch (kind) {
-    case MobKind::Bear: case MobKind::Wolf: case MobKind::Snake: case MobKind::Bat: case MobKind::Gorlicorn: return MobTemperament::Aggressive;
+    case MobKind::Bear: case MobKind::Wolf: case MobKind::Snake: case MobKind::Bat: case MobKind::Gorlicorn:
+    case MobKind::Griffin: case MobKind::Manticore: return MobTemperament::Aggressive;
     case MobKind::Boar: case MobKind::Crab: case MobKind::Turtle: return MobTemperament::Neutral;
     case MobKind::Cow: case MobKind::Fish: case MobKind::Pig: case MobKind::Sheep: return MobTemperament::Passive;
     default: return MobTemperament::Avoidant;

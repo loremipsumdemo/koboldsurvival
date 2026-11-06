@@ -217,6 +217,9 @@ struct App : AppSession {
     void closePanel();
     void openPanel(bool saveMode);
     bool wouldLoseProgress();
+    enum class LeaveTo { Title, Desktop };
+    void requestLeave(LeaveTo to);
+    void leave(LeaveTo to);
     void startMapLevel(const MapChoice& choice);
     void openParty(const MapChoice& choice);
     void openPartyMenu();
@@ -360,6 +363,7 @@ struct App : AppSession {
     bool panelOpen = false;
     bool panelSaveMode = false;
     Screen panelFrom = Screen::Title;
+    LeaveTo leaveTo = LeaveTo::Title;
     Ask ask = Ask::None;
     std::optional<SaveSummary> pendingOverwrite;
     std::optional<SaveSummary> pendingLoad;

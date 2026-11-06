@@ -22,4 +22,6 @@ Mob	File	Kind	Raw meat (item id)	Faction
 15	mob_15.png	Turtle	Raw Turtle Meat (119)	24
 16	mob_16.png	Bat	Raw Bat Meat (121)	25 (attacks on sight)
 17	mob_17.png	Frog	Raw Frog Meat (123)	26
-18	mob_18.png	Gorlicorn	Raw Gorlicorn Meat (152)	27 (attacks on sight). Drawn by data/model/mob/mob_01.glb, not its picture
+18	mob_18.png	Gorlicorn	Raw Gorlicorn Meat (152)	27 (attacks on sight). Boss. Drawn by data/model/mob/gorlicorn.glb, not its picture
+19	mob_19.png	Griffin	Raw Griffin Meat (156)	28 (attacks on sight). Boss. Drawn by data/model/mob/griffin.glb, not its picture
+20	mob_20.png	Manticore	Raw Manticore Meat (159)	29 (attacks on sight). Boss. Drawn by data/model/mob/manticore.glb, not its picture

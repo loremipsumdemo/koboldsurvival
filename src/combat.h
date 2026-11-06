@@ -65,6 +65,7 @@ const RangedProfile* rangedProfileOf(int item);
 inline bool isRangedWeapon(int item) { return rangedProfileOf(item) != nullptr; }
 
 CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAttack);
+CombatNumbers numbersOf(World& w, Entity e);
 
 int maxHealthFor(const Stats& s);
 

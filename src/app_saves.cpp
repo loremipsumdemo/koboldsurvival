@@ -33,6 +33,29 @@ bool App::wouldLoseProgress() {
     return SDL_GetTicks() - *lastSaveTicks > UNSAVED_WARN_MS;
 }
 
+// No leaves the save panel open, so the game can be saved before trying again
+void App::requestLeave(LeaveTo to) {
+    if (!wouldLoseProgress() || (panelOpen && ask == Ask::LeaveUnsaved)) {
+        leave(to);
+        return;
+    }
+    if (screen != Screen::Pause) screen = Screen::Pause;
+    openPanel(true);
+    leaveTo = to;
+    ask = Ask::LeaveUnsaved;
+}
+
+void App::leave(LeaveTo to) {
+    if (to == LeaveTo::Desktop) {
+        running = false;
+        return;
+    }
+    closePanel();
+    screen = Screen::Title;
+    gameActive = false;
+    refreshSaves();
+}
+
 bool App::writeSave(const std::string& path, const std::string& name, bool autosave) {
     SaveData d = captureWorld(world, gs, cam, rng, nowMs(), name, currentMap);
     d.autosave = autosave;
@@ -140,6 +163,12 @@ bool App::savePanelAction(Action action, int param) {
         loadSave(target.path);
         return true;
     }
+    case Action::LeaveYes:
+        leave(leaveTo);
+        return true;
+    case Action::LeaveNo:
+        ask = Ask::None;
+        return true;
     case Action::LoadNo:
         ask = Ask::None;
         pendingLoad.reset();

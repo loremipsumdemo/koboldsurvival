@@ -26,7 +26,7 @@ inline void pickSortColumn(Key& column, Key picked, bool& ascending) {
 
 enum class SortKey { Name, Time };
 
-enum class Ask { None, Overwrite, LoadUnsaved, Delete };
+enum class Ask { None, Overwrite, LoadUnsaved, Delete, LeaveUnsaved };
 
 std::string trimmedName(const std::string& s);
 void popUtf8Char(std::string& s);
