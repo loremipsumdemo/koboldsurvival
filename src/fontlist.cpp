@@ -14,9 +14,9 @@ void addFontsIn(const fs::path& dir, std::vector<std::string>& out) {
          !ec && it != end; it.increment(ec)) {
         std::error_code fileEc;
         if (!it->is_regular_file(fileEc)) continue;
-        std::string ext = it->path().extension().string();
+        std::string ext = it->path().extension().u8string();
         ext = toLower(ext);
-        if (ext == ".ttf" || ext == ".otf") out.push_back(it->path().string());
+        if (ext == ".ttf" || ext == ".otf") out.push_back(it->path().u8string());
         if (out.size() >= 2000) return;
     }
 }
@@ -24,8 +24,8 @@ void addFontsIn(const fs::path& dir, std::vector<std::string>& out) {
 std::vector<std::string> scan() {
     std::vector<fs::path> dirs;
 #if defined(_WIN32)
-    if (const char* win = std::getenv("WINDIR")) dirs.push_back(fs::path(win) / "Fonts");
-    if (const char* local = std::getenv("LOCALAPPDATA")) dirs.push_back(fs::path(local) / "Microsoft" / "Windows" / "Fonts");
+    if (const wchar_t* win = _wgetenv(L"WINDIR")) dirs.push_back(fs::path(win) / "Fonts");
+    if (const wchar_t* local = _wgetenv(L"LOCALAPPDATA")) dirs.push_back(fs::path(local) / "Microsoft" / "Windows" / "Fonts");
 #elif defined(__APPLE__)
     dirs.push_back("/System/Library/Fonts");
     dirs.push_back("/Library/Fonts");
@@ -55,5 +55,5 @@ const std::vector<std::string>& installedFontPaths() {
 }
 
 std::string fontDisplayName(const std::string& path) {
-    return fs::path(path).stem().string();
+    return fs::u8path(path).stem().u8string();
 }

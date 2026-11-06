@@ -54,6 +54,7 @@ bool parseStatement(const std::string& raw, UseEffect& e, std::string& err) {
     const size_t secondsAt = i;
     while (i < s.size() && std::isdigit((unsigned char)s[i])) ++i;
     if (i == secondsAt) { err = "expected a number of seconds in \"" + s + "\""; return false; }
+    if (i - secondsAt > 6) { err = "the duration is too large in \"" + s + "\""; return false; }
     const int seconds = std::stoi(s.substr(secondsAt, i - secondsAt));
     if (i < s.size() && (s[i] == 's' || s[i] == 'S')) ++i;
     while (i < s.size() && std::isspace((unsigned char)s[i])) ++i;

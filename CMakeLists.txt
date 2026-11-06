@@ -4,6 +4,12 @@ project(koboldsurvival)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# x64-Release builds as RelWithDebInfo, where MSVC defaults to /Ob1 and inlines only functions marked inline.
+# Use full inlining, so it runs like a true Release build and still has debug info.
+foreach(lang C CXX)
+    string(REPLACE "/Ob1" "/Ob2" CMAKE_${lang}_FLAGS_RELWITHDEBINFO "${CMAKE_${lang}_FLAGS_RELWITHDEBINFO}")
+endforeach()
+
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
@@ -179,6 +185,7 @@ include(CheckIPOSupported)
 check_ipo_supported(RESULT KOBOLD_IPO_SUPPORTED OUTPUT KOBOLD_IPO_MESSAGE)
 if(KOBOLD_IPO_SUPPORTED)
     set_property(TARGET koboldsurvival PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set_property(TARGET koboldsurvival PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
 endif()
 
 # Per-system timers, written to log.txt every 10 seconds (src/profile.h). Off, they cost nothing.

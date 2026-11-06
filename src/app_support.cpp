@@ -41,7 +41,7 @@ std::string saveScreenshot(SDL_Window* window) {
     for (size_t i = 3; i < flipped.size(); i += 4) flipped[i] = 255;
 
     std::error_code ec;
-    const std::filesystem::path dir = screenshotsDir();
+    const std::filesystem::path dir = std::filesystem::u8path(screenshotsDir());
     std::filesystem::create_directories(dir, ec);
     if (ec) return "";
 
@@ -56,7 +56,7 @@ std::string saveScreenshot(SDL_Window* window) {
 
     SDL_Surface* surface = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ABGR8888, flipped.data(), (int)rowBytes);
     if (!surface) return "";
-    const bool ok = IMG_SavePNG(surface, (dir / name).string().c_str());
+    const bool ok = IMG_SavePNG(surface, (dir / name).u8string().c_str());
     SDL_DestroySurface(surface);
     return ok ? name : "";
 }

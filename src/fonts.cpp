@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 namespace {
 std::string lowerFileName(const std::string& path) {
-    std::string name = fs::path(path).filename().string();
+    std::string name = fs::u8path(path).filename().u8string();
     name = toLower(name);
     return name;
 }

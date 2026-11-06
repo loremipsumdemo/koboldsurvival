@@ -1,4 +1,5 @@
 #pragma once
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include "language.h"
 #include <array>
@@ -204,6 +205,13 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
         std::filesystem::remove(tmp, ec);
         return false;
     }
-    std::filesystem::rename(tmp, std::filesystem::u8path(path), ec);
-    return !ec;
+    // Antivirus and cloud sync can hold the target open for a moment
+    const std::filesystem::path target = std::filesystem::u8path(path);
+    for (int attempt = 0; attempt < 10; ++attempt) {
+        std::filesystem::rename(tmp, target, ec);
+        if (!ec) return true;
+        SDL_Delay(50);
+    }
+    std::filesystem::remove(tmp, ec);
+    return false;
 }
