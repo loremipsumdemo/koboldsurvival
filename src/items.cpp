@@ -1,4 +1,3 @@
-#include <SDL3/SDL.h>
 #include "items.h"
 #include "textcase.h"
 #include "language.h"
@@ -156,24 +155,24 @@ bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string
     return true;
 }
 
-const std::vector<ItemDef>& itemDatabase() {
-    static const std::vector<ItemDef> items = [] {
-        std::vector<ItemDef> out;
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        if (!pakFind("data/itemdb.txt", bytes, size)) {
-            SDL_Log("data/itemdb.txt is not in the pak");
-            return out;
-        }
-        std::string err;
-        if (!parseItemDb(std::string((const char*)bytes, size), out, err)) {
-            SDL_Log("data/itemdb.txt: %s", err.c_str());
-            out.clear();
-        }
-        return out;
-    }();
-    return items;
+namespace {
+std::vector<ItemDef> itemTable;
+std::vector<const ItemDef*> itemIndex;
 }
+
+bool loadItemDbText(const std::string& text, std::string& err) {
+    std::vector<ItemDef> parsed;
+    if (!parseItemDb(text, parsed, err)) return false;
+    itemTable = std::move(parsed);
+    itemIndex.clear();
+    for (const ItemDef& d : itemTable) {
+        if ((size_t)d.id >= itemIndex.size()) itemIndex.resize((size_t)d.id + 1, nullptr);
+        itemIndex[(size_t)d.id] = &d;
+    }
+    return true;
+}
+
+const std::vector<ItemDef>& itemDatabase() { return itemTable; }
 
 bool spoilsOnGround(int item) {
     const ItemDef* d = findItem(item);
@@ -181,17 +180,7 @@ bool spoilsOnGround(int item) {
 }
 
 const ItemDef* findItem(int id) {
-    if (id <= 0) return nullptr;
-    static const std::vector<const ItemDef*> index = [] {
-        std::vector<const ItemDef*> out;
-        for (const ItemDef& d : itemDatabase()) {
-            if (d.id <= 0) continue;
-            if ((size_t)d.id >= out.size()) out.resize((size_t)d.id + 1, nullptr);
-            out[(size_t)d.id] = &d;
-        }
-        return out;
-    }();
-    return (size_t)id < index.size() ? index[(size_t)id] : nullptr;
+    return id > 0 && (size_t)id < itemIndex.size() ? itemIndex[(size_t)id] : nullptr;
 }
 
 namespace {

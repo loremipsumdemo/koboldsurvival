@@ -1,5 +1,6 @@
 #include "app.h"
 #include "game_tables.h"
+#include "game_data_check.h"
 #include "user_files.h"
 #include "profile.h"
 
@@ -10,15 +11,10 @@ int App::init() {
     if (!TTF_Init()) return fatalError(nullptr, std::string("TTF_Init failed: ") + SDL_GetError());
     if (!pakOpen("data.pak")) return fatalError(nullptr, "Could not open data.pak. It must sit next to the game executable.");
     {
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
         std::string err;
         if (!loadGameTables(err)) return fatalError(nullptr, "The game's data has a mistake: " + err);
-        if (!pakFind("data/factions.txt", bytes, size)) {
-            SDL_Log("data/factions.txt is missing; using the built-in factions");
-        } else if (!loadFactions(std::string((const char*)bytes, size), err)) {
-            SDL_Log("data/factions.txt: %s; using the built-in factions", err.c_str());
-        }
+        const std::vector<std::string> problems = gameDataProblems();
+        if (!problems.empty()) return fatalError(nullptr, "The game's data has a mistake: " + problems.front());
     }
     settings = loadSettings(settingsFilePath());
     fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);

@@ -72,8 +72,6 @@ int main(int, char**) {
         return 1;
     }
     {
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
         std::string err;
         if (!loadGameTables(err)) {
             std::printf("FAIL: %s\n", err.c_str());
@@ -88,7 +86,6 @@ int main(int, char**) {
               std::string(soundtrackNamed("Title").ambient).empty(), "bgm.txt gives each screen its tracks");
         check(fontFilesFor("language_ja").front() == "NotoSansJP-Regular.ttf" && fontFilesFor("language_xx").front() == "NotoSans-Regular.ttf" &&
               fontFilesFor("language_ja").size() == 7, "languages.txt puts a language's font first");
-        if (pakFind("data/factions.txt", bytes, size)) loadFactions(std::string((const char*)bytes, size), err);
         loadLanguage(LANGUAGE_DEFAULT_ID, err);
     }
 

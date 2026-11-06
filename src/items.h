@@ -34,6 +34,9 @@ inline bool hasTag(const ItemDef& d, const std::string& tag) {
 
 bool parseItemDb(const std::string& text, std::vector<ItemDef>& out, std::string& err);
 
+// Replaces the items. On a mistake the items are left as they were
+bool loadItemDbText(const std::string& text, std::string& err);
+
 const std::vector<ItemDef>& itemDatabase();
 
 const ItemDef* findItem(int id);

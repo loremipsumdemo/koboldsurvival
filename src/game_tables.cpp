@@ -5,6 +5,8 @@
 #include <functional>
 #include <map>
 #include <sstream>
+#include "factions.h"
+#include "items.h"
 #include "mobs.h"
 #include "model.h"
 #include "pak.h"
@@ -311,8 +313,23 @@ const std::string& fileIn(const std::map<int, std::string>& files, int id) {
 }
 }
 
+static bool loadWholeFile(const char* file, bool (*load)(const std::string&, std::string&), std::string& err) {
+    const unsigned char* bytes = nullptr;
+    size_t size = 0;
+    if (!pakFind(file, bytes, size)) {
+        err = std::string(file) + " is not in data.pak";
+        return false;
+    }
+    std::string why;
+    if (!load(std::string((const char*)bytes, size), why)) {
+        err = std::string(file) + ": " + why;
+        return false;
+    }
+    return true;
+}
+
 bool loadGameTables(std::string& err) {
-    return loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
+    return loadWholeFile("data/itemdb.txt", loadItemDbText, err) && loadWholeFile("data/factions.txt", loadFactions, err) && loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
            loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadMobs(err) && loadFonts(err);
 }
 

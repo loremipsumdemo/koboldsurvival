@@ -93,6 +93,7 @@ set(SIM_SOURCES
     src/surface_tiles.cpp
     src/map_file.cpp
     src/game_tables.cpp
+    src/game_data_check.cpp
     src/pak.cpp
     src/build.cpp
     src/claims.cpp
@@ -103,8 +104,11 @@ set(SIM_SOURCES
     src/user_files.cpp
 )
 
+add_library(kobold_sim STATIC ${SIM_SOURCES})
+target_include_directories(kobold_sim PUBLIC src ${GLEW_INCLUDE_DIRS})
+target_link_libraries(kobold_sim PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_image::SDL3_image)
+
 add_executable(koboldsurvival
-    ${SIM_SOURCES}
     src/storage.cpp
     src/trade.cpp
     src/selection.cpp
@@ -168,6 +172,7 @@ target_include_directories(koboldsurvival PRIVATE
 )
 
 target_link_libraries(koboldsurvival PRIVATE
+    kobold_sim
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     SDL3_image::SDL3_image
@@ -184,14 +189,14 @@ set_target_properties(koboldsurvival PROPERTIES WIN32_EXECUTABLE TRUE)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT KOBOLD_IPO_SUPPORTED OUTPUT KOBOLD_IPO_MESSAGE)
 if(KOBOLD_IPO_SUPPORTED)
-    set_property(TARGET koboldsurvival PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
-    set_property(TARGET koboldsurvival PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+    set_property(TARGET koboldsurvival kobold_sim PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set_property(TARGET koboldsurvival kobold_sim PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
 endif()
 
 # Per-system timers, written to log.txt every 10 seconds (src/profile.h). Off, they cost nothing.
 option(KOBOLD_PROFILE "Time the game's systems and write the results to log.txt" OFF)
 if(KOBOLD_PROFILE)
-    target_compile_definitions(koboldsurvival PRIVATE KOBOLD_PROFILE)
+    target_compile_definitions(kobold_sim PUBLIC KOBOLD_PROFILE)
 endif()
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executables. The game reads only this file, so the
@@ -215,15 +220,16 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
     COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"
 )
 
-# Saves a level, loads it and compares. Run it with ctest, or directly from the build folder.
+# Headless tests, run with ctest. save_roundtrip saves a level, loads it and compares. data_check checks the game's data.
 enable_testing()
-add_executable(save_roundtrip tests/save_roundtrip.cpp ${SIM_SOURCES})
-target_include_directories(save_roundtrip PRIVATE src)
-target_link_libraries(save_roundtrip PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
-add_dependencies(save_roundtrip game_data)
-add_test(NAME save_roundtrip COMMAND save_roundtrip WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+foreach(test save_roundtrip data_check)
+    add_executable(${test} tests/${test}.cpp)
+    target_link_libraries(${test} PRIVATE kobold_sim)
+    add_dependencies(${test} game_data)
+    add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+endforeach()
 
-foreach(target koboldsurvival save_roundtrip)
+foreach(target koboldsurvival kobold_sim save_roundtrip data_check)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>
