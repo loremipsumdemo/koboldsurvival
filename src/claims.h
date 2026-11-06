@@ -53,7 +53,7 @@ bool lockShutFor(World& w, Entity prop, Entity unit);
 bool lockShutForFaction(World& w, Entity prop, int faction);
 // Takes a prop down: whoever lies or sits on it gets off (a cage's prisoner goes free), whoever works it or is
 // walking to it stops, an Auto-Haul to it is dropped, its items fall where it stood, and it becomes Debris. A foundation
-// takes the props on it too. Debris itself is just removed.
+// takes the props on it too. Debris itself is just removed, and Bones leave only the Bones item.
 void breakBuilding(World& w, Entity e);
 // The Destroy tool: takes any prop down (breakBuilding). False only if e is not a prop.
 bool destroyBuilding(World& w, Entity e);

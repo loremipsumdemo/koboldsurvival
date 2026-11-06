@@ -908,6 +908,8 @@ ITEM_152_NAME	生のゴーリコーン肉
 ITEM_152_DESC	焼いていない肉。焚き火で焼こう。
 ITEM_153_NAME	焼いたゴーリコーン肉
 ITEM_153_DESC	火で焼いた濃厚な肉。体力と空腹を大きく回復する。
+ITEM_154_NAME	骨
+ITEM_154_DESC	きれいになった古い骨。製作に使える。
 UILABEL_OPTIMIZE	最適化
 UILABEL_REMOVE_ALL	すべて外す
 MISC_GEAR_NO_ROOM	所持品の空きが足りません

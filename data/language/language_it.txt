@@ -908,6 +908,8 @@ ITEM_152_NAME	Carne di gorlicorno cruda
 ITEM_152_DESC	Carne non cotta. Cuocila su un falò.
 ITEM_153_NAME	Carne di gorlicorno cotta
 ITEM_153_DESC	Carne ricca cotta sul fuoco. Ripristina molta salute e fame.
+ITEM_154_NAME	Ossa
+ITEM_154_DESC	Vecchie ossa spolpate. Utili per creare oggetti.
 UILABEL_OPTIMIZE	Ottimizza
 UILABEL_REMOVE_ALL	Togli tutto
 MISC_GEAR_NO_ROOM	Spazio insufficiente nell'inventario

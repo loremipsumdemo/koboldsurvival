@@ -1,43 +1,58 @@
 # Kobold Survival
 
-A 3D colony survival game written in C++17 with SDL3 and OpenGL. You lead a small party of units across a large
-terrain world. They gather resources, build, eat, rest, fight and trade among rival factions and wild animals.
+A 3D survival sandbox simulation written in C++17 with SDL3 and OpenGL. You lead a party of units across a terrain
+world where they gather, build, eat, rest, fight and trade among rival factions and wild animals. There is no win or
+lose state: the world keeps running, whatever happens to your party.
 
 ## Features
 
-- **Units with stats and needs.** Each unit has stats such as Strength, Dexterity, Vitality and Melee, and needs:
-  health, hunger, Rested and Comfort. A unit at 0 health is knocked out until its Conscious is back at 100, paid for in Rested and then Dying; Dying 100 kills it.
-- **Behaviors.** Each unit works through a priority list of behaviors (Eat, Heal, Share, Rest, Rescue, plus
-  automated ones like Auto-Harvest and Auto-Haul). You can reorder, switch off or add behaviors per unit.
-- **Gathering and crafting.** Mine ore, cut trees, gather mushrooms, cook meat at campfires, and store items in
-  barrels, chests and specialised storage.
-- **Building and claims.** Lay foundations, plant Claim Flags to mark territory, and keep Vaults stocked so the
-  claims do not decay.
-- **Factions and reputation.** Rival camps start at set reputations with you. Below -25 they attack on sight, and
-  at 50 or more they are allies. Talk to NPCs, trade with them, take prisoners, or disband units into the Exiles.
-- **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, durability and gear tiers.
-- **Wildlife.** Animals such as bears, wolves, deer and fish, each with its own faction, meat and bones. Some can
-  be caged or brought into your party.
-- **Scenarios.** Start as a lone Vagabond, a Pack of Two, a Beastmaster, a Full Random Camp, a Traveling Caravan,
-  a Shabby Crew or a Starving Nobody, then adjust the party before play.
-- **World and time.** A chunked, region-streamed terrain world with sea and sky, a world map, and a day/night
-  calendar (one in-game day is 30 real minutes).
-- **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with three
-  rotating autosave slots. Settings are kept beside them.
+- **Units with stats and needs.** Each unit has attributes and skills such as Strength, Dexterity, Vitality, Melee,
+  Mining and Cooking, which rise with use, and needs: health, hunger, Rested and Comfort.
+- **Being knocked out.** A unit at 0 health is Unconscious until its Conscious is back at 100, paid for in Rested and
+  then Dying. Dying 100 makes it a corpse. Unconscious units and corpses can be carried and looted. One of your units
+  that wakes near hostile units plays dead.
+- **Corpses and bones.** After 24 in-game hours a corpse turns into a Bones prop, and what it still held or wore falls
+  to the ground. Right-click any Bones prop and choose Destroy: a selected unit walks over, and the prop leaves 3 Bones
+  items on the ground.
+- **Behaviors.** Each unit works through a priority list: Eat, Heal, Share, Rest, Leave Bed, Rescue, Auto-Harvest,
+  Auto-Haul, Patrol, Patrol Spawn and Roam. You can reorder, switch off, add or remove them per unit. Units can also be
+  set to Passive, Block or Sneak.
+- **Gathering and crafting.** Mine ore, cut trees and gather mushrooms. Campfires and forges work by themselves from
+  their fuel, and units work stoves, water pumps and training dummies. Items are kept in barrels, chests and
+  specialised storage.
+- **Building and claims.** The Build tab places props at once and at no cost, and its Destroy tool takes them down
+  (Bones leave their item, Debris is cleared away, and anything else leaves Debris). Claim Flags mark territory, and a
+  Vault on a foundation burns Wood Logs to hold the claim. Unheld flags and foundations decay and break.
+- **Factions and reputation.** Rival camps start at set reputations with you. At -25 or below they attack on sight, and
+  at 50 or more they are allies. Talk to NPCs, trade with them, lock units in Prisoner Cages, pick locks, or disband
+  your units into the Exiles.
+- **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
+  elixirs.
+- **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn boss, each with its own faction,
+  meat and bones. Camps keep some in cages, and some scenarios start with them in your party.
+- **Scenarios.** Start as a Vagabond, a Pack of Two, a Beastmaster, a Full Random Camp, a Traveling Caravan, a Shabby
+  Crew, a Starving Nobody or the Dungeon Diggers, or build a Custom Scenario, then adjust the party before play.
+- **World and time.** A chunked terrain world with sea and sky, a world map, and a day/night calendar (one in-game day
+  is 30 real minutes). New Game always starts on the main world.
+- **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with manual saves
+  and three rotating autosave slots. Settings are kept in the folder above them.
 - **Localization.** 31 languages with Noto fonts for Latin, Cyrillic, Greek, Arabic, Thai, Japanese, Korean and
   Chinese scripts.
-- **Audio.** Music, ambient tracks and sound effects, each with its own volume slider.
+- **Audio.** Music, ambient tracks, sound effects and interface sounds, each with its own volume slider, under a global
+  one.
 
 ## Controls
 
 | Input | Action |
 | --- | --- |
-| Left click / drag | Select units |
-| Right click | Orders and context menus (move, use a prop, talk, put down) |
-| WASD / arrow keys | Move the camera |
+| Left click / drag | Select units. Shift adds to the selection. A box around only ground items picks them up |
+| Right click | Orders and context menus (move, use a prop, talk, destroy bones, put down) |
+| Right mouse held | Selected units walk straight at the pointer |
+| WASD / arrow keys | Move the camera. Shift moves it faster |
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |
-| R (held while placing) | Rotate a building |
+| Alt (held) | Show the names of items on the ground |
+| R (held while placing) | Rotate a building with the mouse |
 | Space | Pause or resume |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
@@ -76,23 +91,24 @@ On Windows the game runs without a console window, and log output goes to `log.t
 ```
 src/                 Game source (single executable, an ECS-style design)
   main.cpp, app*.cpp  Start-up, the frame loop, input, the screens and the game's step
-  systems.cpp        Index of the simulation systems files (movement, automation, wild_ai, ...)
+  systems.cpp        Index of the simulation systems files (movement, automation, wild_ai, downed, ...)
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
+  save_world, savegame     Turning a running level into a save, and the save files
   game_log, world_labels   The message log and the text drawn over units
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
-  world_format, map_file   The world folder format, and the older single-file .map format
+  world_format, map_file   The world folder format and the single-file .map format
 tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen
 data/                Game content, packed into data.pak
   itemdb.txt         Item database
-  buildinfo.txt      Buildable structures
   factioninfo.txt    Factions and starting reputations
+  motd.txt           The title screen's notice board
   language/          One KEY<TAB>text file per language (English is the reference)
   map/main/          The main world (world.txt, look.json, surface, region files)
   model/             glTF (.glb) models for props, units and mobs
-  item/ icon/ emote/ mob/ profile/   PNG pictures
+  item/ icon/ emote/ mob/ profile/ illustration/   PNG pictures
   font/              Noto fonts
 BGM/                 Music and ambient tracks (.mp3)
 SFX/                 Sound effects (.mp3)
@@ -100,9 +116,11 @@ SFX/                 Sound effects (.mp3)
 
 ## Modding the data
 
-Most content is plain text or numbered files in `data/`. Each `*info.txt` file in `data/` explains its folder: what
-each numbered picture, model, sound or track is for, and how to add a new one (it takes the next free number).
-A missing picture or model falls back to its `_0` stand-in.
+Most content is plain text or numbered files in `data/`. The `*info.txt` files explain what each numbered picture,
+model, sound or track is for, and how to add a new one (it takes the next free number). A missing picture or model is
+drawn as a pink square.
+
+`buildinfo.txt` is not read by the game: buildable props and their rules are in `src/props.h` and `src/build.cpp`.
 
 Language files copied to the `LANGUAGE` folder next to the game override the packed copy key by key, so text can be
 edited without rebuilding.

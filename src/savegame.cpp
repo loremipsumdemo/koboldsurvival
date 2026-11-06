@@ -65,6 +65,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
         if (u.unconscious) out << "down " << i << " " << u.dying << " " << (u.corpse ? 1 : 0) << "\n";
         if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
         if (u.unconscious) out << "conscious " << i << " " << u.conscious << "\n";
+        if (u.corpse) out << "corpseage " << i << " " << u.corpseHours << "\n";
         if (u.playingDead && u.carriedBy < 0) out << "still " << i << "\n";
         if (u.passive || u.block || u.sneak) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
@@ -318,6 +319,13 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 float conscious = 0.0f;
                 ss >> i >> conscious;
                 if (!ss.fail() && i < d.units.size()) d.units[i].conscious = std::clamp(conscious, 0.0f, 100.0f);
+            }
+            else if (line.rfind("corpseage ", 0) == 0) {
+                std::istringstream ss(line.substr(10));
+                size_t i = 0;
+                double hours = 0.0;
+                ss >> i >> hours;
+                if (!ss.fail() && i < d.units.size()) d.units[i].corpseHours = std::max(0.0, hours);
             }
             // Older saves counted down in-game hours (at most 1) to waking instead
             else if (line.rfind("downrest ", 0) == 0) {

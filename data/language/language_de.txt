@@ -908,6 +908,8 @@ ITEM_152_NAME	Rohes Gorlikornfleisch
 ITEM_152_DESC	Ungegartes Fleisch. Brate es am Lagerfeuer.
 ITEM_153_NAME	Gebratenes Gorlikornfleisch
 ITEM_153_DESC	Kräftiges, über dem Feuer gebratenes Fleisch. Stellt viel Gesundheit her und stillt viel Hunger.
+ITEM_154_NAME	Knochen
+ITEM_154_DESC	Alte, abgenagte Knochen. Gut zum Herstellen.
 UILABEL_OPTIMIZE	Optimieren
 UILABEL_REMOVE_ALL	Alles ablegen
 MISC_GEAR_NO_ROOM	Nicht genug Platz im Inventar

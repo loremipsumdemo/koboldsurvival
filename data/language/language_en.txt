@@ -902,6 +902,8 @@ ITEM_152_NAME	Raw Gorlicorn Meat
 ITEM_152_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_153_NAME	Cooked Gorlicorn Meat
 ITEM_153_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
+ITEM_154_NAME	Bones
+ITEM_154_DESC	Old bones, picked clean. Good for crafting.
 UILABEL_OPTIMIZE	Optimize
 UILABEL_REMOVE_ALL	Remove All
 MISC_GEAR_NO_ROOM	Not enough inventory space

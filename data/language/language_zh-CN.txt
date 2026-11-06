@@ -908,6 +908,8 @@ ITEM_152_NAME	生戈利角兽肉
 ITEM_152_DESC	未煮熟的肉。在篝火上烤熟它。
 ITEM_153_NAME	烤戈利角兽肉
 ITEM_153_DESC	在火上烤熟的浓郁肉块。恢复大量生命和饥饿。
+ITEM_154_NAME	骸骨
+ITEM_154_DESC	早已剔净的旧骨头。可用于制作。
 UILABEL_OPTIMIZE	最佳装备
 UILABEL_REMOVE_ALL	全部卸下
 MISC_GEAR_NO_ROOM	背包空间不足

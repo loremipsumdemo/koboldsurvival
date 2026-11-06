@@ -908,6 +908,8 @@ ITEM_152_NAME	Syrové gorlirožcové maso
 ITEM_152_DESC	Nevařené maso. Upečte ho u táboráku.
 ITEM_153_NAME	Pečené gorlirožcové maso
 ITEM_153_DESC	Vydatné maso pečené na ohni. Obnoví hodně zdraví a hodně zažene hlad.
+ITEM_154_NAME	Kosti
+ITEM_154_DESC	Staré, čistě ohlodané kosti. Hodí se k výrobě.
 UILABEL_OPTIMIZE	Optimalizovat
 UILABEL_REMOVE_ALL	Sundat vše
 MISC_GEAR_NO_ROOM	V inventáři není dost místa

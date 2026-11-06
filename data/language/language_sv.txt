@@ -908,6 +908,8 @@ ITEM_152_NAME	Rått gorlicornkött
 ITEM_152_DESC	Otillagat kött. Stek det vid en lägereld.
 ITEM_153_NAME	Stekt gorlicornkött
 ITEM_153_DESC	Mäktigt kött stekt över eld. Återställer mycket hälsa och mättar väl.
+ITEM_154_NAME	Ben
+ITEM_154_DESC	Gamla, renskrapade ben. Bra till hantverk.
 UILABEL_OPTIMIZE	Optimera
 UILABEL_REMOVE_ALL	Ta av allt
 MISC_GEAR_NO_ROOM	Inte tillräckligt med plats i inventariet

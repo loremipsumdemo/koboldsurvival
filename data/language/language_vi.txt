@@ -908,6 +908,8 @@ ITEM_152_NAME	Thịt gorlicorn sống
 ITEM_152_DESC	Thịt chưa nấu. Hãy nướng ở lửa trại.
 ITEM_153_NAME	Thịt gorlicorn nướng
 ITEM_153_DESC	Thịt béo ngậy nướng trên lửa. Hồi nhiều máu và cơn đói.
+ITEM_154_NAME	Xương
+ITEM_154_DESC	Xương cũ đã sạch. Dùng tốt để chế tạo.
 UILABEL_OPTIMIZE	Tối ưu
 UILABEL_REMOVE_ALL	Tháo hết
 MISC_GEAR_NO_ROOM	Không đủ chỗ trong túi đồ

@@ -908,6 +908,8 @@ ITEM_152_NAME	Carne de gorlicornio cruda
 ITEM_152_DESC	Carne sin cocinar. Cocínala en una fogata.
 ITEM_153_NAME	Carne de gorlicornio cocida
 ITEM_153_DESC	Carne sabrosa cocida al fuego. Restaura mucha salud y hambre.
+ITEM_154_NAME	Huesos
+ITEM_154_DESC	Huesos viejos y limpios. Sirven para fabricar.
 UILABEL_OPTIMIZE	Optimizar
 UILABEL_REMOVE_ALL	Quitar todo
 MISC_GEAR_NO_ROOM	No hay suficiente espacio en el inventario

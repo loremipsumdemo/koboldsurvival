@@ -908,6 +908,8 @@ ITEM_152_NAME	Daging Gorlikorn Mentah
 ITEM_152_DESC	Daging yang belum dimasak. Masak di api unggun.
 ITEM_153_NAME	Daging Gorlikorn Matang
 ITEM_153_DESC	Daging gurih yang dimasak di atas api. Memulihkan banyak kesehatan dan rasa lapar.
+ITEM_154_NAME	Tulang
+ITEM_154_DESC	Tulang tua yang sudah bersih. Berguna untuk membuat barang.
 UILABEL_OPTIMIZE	Optimalkan
 UILABEL_REMOVE_ALL	Lepas semua
 MISC_GEAR_NO_ROOM	Ruang inventaris tidak cukup

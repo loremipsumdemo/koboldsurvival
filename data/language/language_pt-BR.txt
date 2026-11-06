@@ -908,6 +908,8 @@ ITEM_152_NAME	Carne de gorlicórnio crua
 ITEM_152_DESC	Carne não cozida. Asse-a numa fogueira.
 ITEM_153_NAME	Carne de gorlicórnio assada
 ITEM_153_DESC	Carne farta assada no fogo. Restaura muita vida e fome.
+ITEM_154_NAME	Ossos
+ITEM_154_DESC	Ossos velhos e limpos. Bons para fabricar itens.
 UILABEL_OPTIMIZE	Otimizar
 UILABEL_REMOVE_ALL	Remover tudo
 MISC_GEAR_NO_ROOM	Espaço insuficiente no inventário

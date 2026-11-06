@@ -908,6 +908,8 @@ ITEM_152_NAME	Viande de gorlicorne crue
 ITEM_152_DESC	Viande non cuite. Faites-la cuire sur un feu de camp.
 ITEM_153_NAME	Viande de gorlicorne cuite
 ITEM_153_DESC	Viande riche cuite sur le feu. Rend beaucoup de santé et calme bien la faim.
+ITEM_154_NAME	Ossements
+ITEM_154_DESC	De vieux os bien nettoyés. Utiles pour l'artisanat.
 UILABEL_OPTIMIZE	Optimiser
 UILABEL_REMOVE_ALL	Tout retirer
 MISC_GEAR_NO_ROOM	Pas assez de place dans l'inventaire

@@ -99,6 +99,14 @@ std::vector<PropArrival> propOrderSystem(World& w) {
                 if (!lockShutFor(w, prop, u)) storeCarried(w, u, prop, 0);
                 continue;
             }
+            if (action == PropAction::Destroy) {
+                // The right-click menu's Destroy: the prop goes at once, with no work to do
+                if (destroyedByHand(w.get<Prop>(prop)->kind)) {
+                    queueSoundFrom(w, Sfx::Drop, prop);
+                    destroyBuilding(w, prop);
+                }
+                continue;
+            }
             PropArrival a;
             a.unit = u;
             a.prop = prop;

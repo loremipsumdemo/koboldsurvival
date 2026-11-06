@@ -32,7 +32,8 @@ Entity App::menuTargetAt(float mx, float my) {
     Entity prop = NULL_ENTITY;
     float best = 0.0f;
     for (Entity p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
-        if (propInfo(world.get<Prop>(p)->kind).use == PropUse::None || hidden(p)) continue;
+        const PropKind kind = world.get<Prop>(p)->kind;
+        if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind)) || hidden(p)) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
         if (prop == NULL_ENTITY || d2 < best) {
@@ -129,6 +130,7 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         // A lockable prop: Lock it when it is open (it stays open until then), or, when the lock is the
         // selected units' own, Unlock it with the key
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
+        if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
     }
     return out;
 }
@@ -160,6 +162,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
         case MenuAction::AutoHaul: labels.push_back(lang("UILABEL_AUTO_HAUL")); break;
         case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
+        case MenuAction::Destroy: labels.push_back(lang("UILABEL_BUILD_DESTROY")); break;
         }
     }
     return labels;
@@ -371,6 +374,9 @@ void App::pickMenuAction(MenuAction a) {
         playSfx(Sfx::UiOrder);
         return;
     }
+    case MenuAction::Destroy:
+        issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Destroy);
+        break;
     case MenuAction::Shop:
         talkOrWalkUp(target, actors, true);   // as Talk, then Show me your wares at once
         break;

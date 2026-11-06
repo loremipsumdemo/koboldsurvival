@@ -908,6 +908,8 @@ ITEM_152_NAME	Raaka gorlisarvisenliha
 ITEM_152_DESC	Kypsentämätöntä lihaa. Kypsennä se nuotiolla.
 ITEM_153_NAME	Kypsä gorlisarvisenliha
 ITEM_153_DESC	Täyteläistä tulella kypsennettyä lihaa. Palauttaa paljon terveyttä ja vie paljon nälkää.
+ITEM_154_NAME	Luut
+ITEM_154_DESC	Vanhoja, puhtaaksi kalvettuja luita. Hyviä valmistukseen.
 UILABEL_OPTIMIZE	Optimoi
 UILABEL_REMOVE_ALL	Riisu kaikki
 MISC_GEAR_NO_ROOM	Tavaraluettelossa ei ole tarpeeksi tilaa

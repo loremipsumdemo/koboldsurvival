@@ -127,7 +127,7 @@ inline const char* itemFilterKey(ItemFilter f) {
 // prop's items; Use works a resource prop or starts crafting; Occupy takes an occupiable prop (a bed, a chair, a cage)
 // itself; Place puts the unit it carries on an occupiable prop; Unlock picks a locked prop's lock; Store (an
 // Auto-Haul's step, never on the menu) puts what the unit carries that the prop takes into it
-enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock };
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy };
 
 // What a kind of prop looks like, is called and does.
 // file: its model, in the pak: data/model/model_<n>.glb, numbered from 1 in PropKind order (data/modelinfo.txt lists
@@ -284,6 +284,12 @@ inline EmoteId propEmote(PropKind kind) {
 // In-game hours of one unit's work that clear a Debris away, whatever its skill. Two units take half as long.
 constexpr double DEBRIS_CLEAR_HOURS = 1.0;
 constexpr float DEBRIS_CLEAR_XP = 20.0f;   // Strength XP for each unit that helped clear one
+// Bones: scenery, and what a corpse turns into (corpseDecaySystem in systems.h). A unit sent to one with the right-click
+// menu's Destroy takes it away, whoever's claim it lies in, and BONES_ITEM_COUNT of the Bones item fall where it lay.
+constexpr int BONES_ITEM = 154;
+constexpr int BONES_ITEM_COUNT = 3;
+inline bool destroyedByHand(PropKind kind) { return kind == PropKind::Bones; }
+
 // Whether a resource prop gives items when worked: everything but the Debris, which is only cleared
 inline bool yieldsItems(PropKind kind) { return propInfo(kind).use == PropUse::Resource && propInfo(kind).item > 0; }
 

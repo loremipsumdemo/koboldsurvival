@@ -200,6 +200,11 @@ constexpr int RECOVERY_HEALTH = 10;
 void knockOut(World& w, Entity u);
 // After anything that hurts: each unit at 0 health that is not yet Unconscious is knocked out
 void downedSystem(World& w);
+// In-game hours before a corpse turns into a Bones prop
+constexpr double CORPSE_BONES_HOURS = 24.0;
+// Ages the corpses by the in-game seconds that passed. One that has lain CORPSE_BONES_HOURS becomes a Bones prop where
+// it lies, and what it still held or wore falls to the ground. One being carried waits until it is put down.
+void corpseDecaySystem(World& w, double gameSeconds);
 // Conscious and Dying for the in-game seconds that passed (components.h, Unconscious). Returns the units that woke and
 // the units that died this call.
 struct WakeChanges {

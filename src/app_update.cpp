@@ -333,6 +333,7 @@ void App::stepGame() {
         queueSoundFrom(world, Sfx::Recovers, u);
     }
     for (Entity u : wakes.died) queueSoundFrom(world, Sfx::Dies, u);
+    corpseDecaySystem(world, gameSecs);   // a corpse that has lain long enough turns to bones
     showWorkGains(gameSecs);
     // Passive crafting props (the forge) burn their fuel and fill their output by themselves
     passiveCraftSystem(world, gameSecs);

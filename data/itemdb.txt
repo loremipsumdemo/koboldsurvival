@@ -2842,3 +2842,22 @@ on_use = hunger +450; health +300
 material =
 tier = 0
 equip_slot =
+
+[154]
+type = item
+max_stack_size = 20
+name = Bones
+description = Old bones, picked clean. Good for crafting.
+max_durability = 0
+current_durability = 0
+weight = 0.4
+buy_value = 3
+sell_value = 1
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use =
+material =
+tier = 0
+equip_slot =
+tags = bones

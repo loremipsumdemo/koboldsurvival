@@ -908,6 +908,8 @@ ITEM_152_NAME	Surowe mięso gorlirożca
 ITEM_152_DESC	Niegotowane mięso. Upiecz je przy ognisku.
 ITEM_153_NAME	Pieczone mięso gorlirożca
 ITEM_153_DESC	Treściwe mięso upieczone nad ogniem. Przywraca dużo zdrowia i mocno zaspokaja głód.
+ITEM_154_NAME	Kości
+ITEM_154_DESC	Stare, czysto ogryzione kości. Przydatne do wytwarzania.
 UILABEL_OPTIMIZE	Optymalizuj
 UILABEL_REMOVE_ALL	Zdejmij wszystko
 MISC_GEAR_NO_ROOM	Za mało miejsca w ekwipunku

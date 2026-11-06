@@ -908,6 +908,8 @@ ITEM_152_NAME	Çiğ Gorlikorn Eti
 ITEM_152_DESC	Pişmemiş et. Kamp ateşinde pişir.
 ITEM_153_NAME	Pişmiş Gorlikorn Eti
 ITEM_153_DESC	Ateşte pişmiş doyurucu et. Çok sağlık verir ve açlığı epey giderir.
+ITEM_154_NAME	Kemikler
+ITEM_154_DESC	Eski, temizlenmiş kemikler. Üretim için işe yarar.
 UILABEL_OPTIMIZE	En iyisini kuşan
 UILABEL_REMOVE_ALL	Hepsini çıkar
 MISC_GEAR_NO_ROOM	Envanterde yeterli yer yok

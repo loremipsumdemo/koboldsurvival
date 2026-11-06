@@ -1,5 +1,6 @@
 // Unconscious units, Conscious and Dying, corpses, and playing dead.
 #include "systems_internal.h"
+#include "build.h"
 
 using namespace systems_detail;
 
@@ -105,6 +106,33 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
         }
     }
     return out;
+}
+
+void corpseDecaySystem(World& w, double gameSeconds) {
+    const double hours = gameSeconds / 3600.0;
+    if (hours <= 0.0) return;
+    for (Entity u : w.view<Corpse, Transform>()) {
+        Corpse* corpse = w.get<Corpse>(u);
+        corpse->hours += hours;
+        if (corpse->hours < CORPSE_BONES_HOURS || w.has<Carried>(u)) continue;
+        const Transform at = *w.get<Transform>(u);
+        std::vector<ItemStack> drops;
+        if (const Inventory* inv = w.get<Inventory>(u)) {
+            for (const ItemStack& s : inv->slots) {
+                if (s.item > 0 && s.count > 0) drops.push_back(s);
+            }
+        }
+        if (const Equipment* worn = w.get<Equipment>(u)) {
+            for (int g = 0; g < GEAR_SLOTS; ++g) {
+                if (worn->items[g] > 0) drops.push_back(ItemStack{ worn->items[g], 1 });
+            }
+        }
+        w.destroy(u);
+        for (const ItemStack& s : drops) spawnGroundItem(w, at, s.item, s.count);
+        // Each pile lies its own way, from the entity's id so that no random number is used
+        const float yaw = TWO_PI * (float)(u % 16u) / 16.0f;
+        restoreBuiltProp(w, PropKind::Bones, at.x, at.y, at.z, yaw, -1);
+    }
 }
 
 bool hostileNear(World& w, Entity u) {

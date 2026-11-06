@@ -64,6 +64,7 @@ struct SaveUnit {
     float dying = 0.0f;
     float conscious = 0.0f;
     bool corpse = false;
+    double corpseHours = 0.0;  // in-game hours since it died (Corpse::hours). Older saves have none, so it starts again.
     int koFaction = -1;        // the faction that knocked it out, or -1 (Unconscious::koFaction)
     // Carried: the index of the unit carrying it, or -1, and whether it is playing dead
     int carriedBy = -1;

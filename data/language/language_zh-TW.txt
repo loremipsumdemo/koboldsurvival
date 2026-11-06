@@ -908,6 +908,8 @@ ITEM_152_NAME	生戈利角獸肉
 ITEM_152_DESC	未煮熟的肉。在營火上烤熟它。
 ITEM_153_NAME	烤戈利角獸肉
 ITEM_153_DESC	在火上烤熟的濃郁肉塊。恢復大量生命和飢餓。
+ITEM_154_NAME	骸骨
+ITEM_154_DESC	早已剔淨的舊骨頭。可用於製作。
 UILABEL_OPTIMIZE	最佳裝備
 UILABEL_REMOVE_ALL	全部卸下
 MISC_GEAR_NO_ROOM	背包空間不足

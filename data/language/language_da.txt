@@ -908,6 +908,8 @@ ITEM_152_NAME	Råt gorlicornkød
 ITEM_152_DESC	Utilberedt kød. Steg det ved et lejrbål.
 ITEM_153_NAME	Stegt gorlicornkød
 ITEM_153_DESC	Kraftigt kød stegt over ild. Genopretter meget helbred og mætter godt.
+ITEM_154_NAME	Knogler
+ITEM_154_DESC	Gamle, afgnavede knogler. Gode til håndværk.
 UILABEL_OPTIMIZE	Optimer
 UILABEL_REMOVE_ALL	Tag alt af
 MISC_GEAR_NO_ROOM	Ikke nok plads i inventaret

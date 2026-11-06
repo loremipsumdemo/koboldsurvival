@@ -12,7 +12,7 @@ Model	File	Prop	Kind
 7	model_7.glb	Tree	Resource prop: Wood Log (Woodcutting)
 8	model_8.glb	Boulder	Decor prop
 9	model_9.glb	Mushroom	Resource prop: Mushroom, 1 in 10 Poison Mushroom (Herbalism)
-10	model_10.glb	Bones	Decor prop
+10	model_10.glb	Bones	Decor prop, and what a corpse turns into. Right-click Destroy takes it away and drops the Bones item
 11	model_11.glb	Wall	Decor prop
 12	model_12.glb	Stall	Decor prop
 13	model_13.glb	Locked Chest	Storage prop, Lockable (Lockpicking 5)

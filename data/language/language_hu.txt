@@ -908,6 +908,8 @@ ITEM_152_NAME	Nyers gorlikornishús
 ITEM_152_DESC	Nyers hús. Süsd meg egy tábortűznél.
 ITEM_153_NAME	Sült gorlikornishús
 ITEM_153_DESC	Laktató, tűzön sült hús. Sok életerőt ad és nagyon csillapítja az éhséget.
+ITEM_154_NAME	Csontok
+ITEM_154_DESC	Régi, tisztára rágott csontok. Jók kézművességhez.
 UILABEL_OPTIMIZE	Optimalizálás
 UILABEL_REMOVE_ALL	Mindet levesz
 MISC_GEAR_NO_ROOM	Nincs elég hely a tárgylistában

@@ -49,7 +49,7 @@ void clearTradeTable();
 // The right-click menu on a unit or a prop: the options for that target, done by your selected units. It opens at
 // the pointer, and a click on an option picks it; a click anywhere else closes it.
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
-                        Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband };
+                        Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;

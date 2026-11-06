@@ -165,6 +165,15 @@ void breakBuilding(World& w, Entity e) {
         w.destroy(e);
         return;
     }
+    // Bones leave no Debris: only the Bones item, where they lay
+    if (destroyedByHand(w.get<Prop>(e)->kind)) {
+        const Transform at = *w.get<Transform>(e);
+        releaseProp(w, e);
+        rememberGone(w, e);
+        w.destroy(e);
+        spawnGroundItem(w, at, BONES_ITEM, BONES_ITEM_COUNT);
+        return;
+    }
     std::vector<Entity> gone{ e };
     if (isFoundationKind(w.get<Prop>(e)->kind)) {
         for (Entity c : w.view<Prop, OnBase>()) {

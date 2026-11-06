@@ -908,6 +908,8 @@ ITEM_152_NAME	Carne de gorlicorn crudă
 ITEM_152_DESC	Carne negătită. Gătește-o la un foc de tabără.
 ITEM_153_NAME	Carne de gorlicorn friptă
 ITEM_153_DESC	Carne consistentă friptă la foc. Reface multă viață și potolește bine foamea.
+ITEM_154_NAME	Oase
+ITEM_154_DESC	Oase vechi, curățate. Bune pentru meșteșuguri.
 UILABEL_OPTIMIZE	Optimizează
 UILABEL_REMOVE_ALL	Scoate tot
 MISC_GEAR_NO_ROOM	Nu e destul loc în inventar

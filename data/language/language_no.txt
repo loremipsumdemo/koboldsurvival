@@ -908,6 +908,8 @@ ITEM_152_NAME	Rått gorlicornkjøtt
 ITEM_152_DESC	Ukokt kjøtt. Stek det ved et leirbål.
 ITEM_153_NAME	Stekt gorlicornkjøtt
 ITEM_153_DESC	Kraftig kjøtt stekt over bål. Gir mye helse og metter godt.
+ITEM_154_NAME	Knokler
+ITEM_154_DESC	Gamle, avgnagde bein. Gode til håndverk.
 UILABEL_OPTIMIZE	Optimaliser
 UILABEL_REMOVE_ALL	Ta av alt
 MISC_GEAR_NO_ROOM	Ikke nok plass i inventaret

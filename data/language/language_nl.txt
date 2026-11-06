@@ -908,6 +908,8 @@ ITEM_152_NAME	Rauw gorlicornvlees
 ITEM_152_DESC	Ongekookt vlees. Bak het bij een kampvuur.
 ITEM_153_NAME	Gebakken gorlicornvlees
 ITEM_153_DESC	Rijk vlees, boven het vuur gebakken. Herstelt veel gezondheid en honger.
+ITEM_154_NAME	Botten
+ITEM_154_DESC	Oude, schoongeknaagde botten. Goed om mee te maken.
 UILABEL_OPTIMIZE	Optimaliseren
 UILABEL_REMOVE_ALL	Alles afdoen
 MISC_GEAR_NO_ROOM	Niet genoeg ruimte in de inventaris

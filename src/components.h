@@ -350,8 +350,11 @@ struct Carried {
 // same way, until it is given an order or they have gone (playDeadSystem). Nobody attacks a unit playing dead.
 struct PlayingDead {};
 // An Unconscious unit whose Dying reached 100: it never recovers. It keeps its Unconscious, with Dying 100, so it can
-// still be carried and looted, and it is no longer anyone's to command.
-struct Corpse {};
+// still be carried and looted, and it is no longer anyone's to command. After CORPSE_BONES_HOURS in-game hours it turns
+// into a Bones prop (corpseDecaySystem in systems.h).
+struct Corpse {
+    double hours = 0.0;   // in-game hours since it died
+};
 // A unit carrying another (one at a time). It can put it down on the ground or into a bed or bedroll.
 struct Carrying {
     Entity unit = NULL_ENTITY;

@@ -43,7 +43,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             Unconscious un{ u.corpse ? 100.0f : u.dying, u.koFaction };
             un.conscious = u.conscious;
             world.add(e, un);
-            if (u.corpse) world.add(e, Corpse{});
+            if (u.corpse) world.add(e, Corpse{ u.corpseHours });
         } else if (u.playingDead && u.carriedBy < 0 && u.mob <= 0 && !u.hostile && !u.neutral) {
             world.add(e, PlayingDead{});   // woke near hostile units, and lies still on the ground
         }
@@ -273,7 +273,7 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         if (u.hasMove) walkers[{ u.moveX, u.moveZ }].push_back(e);
         if (const Entity prop = propNamed(u.propOrder); prop != NULL_ENTITY) {
             const PropAction action = (PropAction)u.propAction;
-            if (action == PropAction::Use || action == PropAction::Occupy || action == PropAction::Unlock) {
+            if (action == PropAction::Use || action == PropAction::Occupy || action == PropAction::Unlock || action == PropAction::Destroy) {
                 issuePropOrder(world, terrain, { e }, prop, action);
             }
         }
@@ -341,6 +341,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.dying = un->dying;
             su.conscious = un->conscious;
             su.corpse = w.has<Corpse>(u);
+            if (const Corpse* cp = w.get<Corpse>(u)) su.corpseHours = cp->hours;
         }
         su.playingDead = w.has<PlayingDead>(u);
         if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = indexOf(cd->by);

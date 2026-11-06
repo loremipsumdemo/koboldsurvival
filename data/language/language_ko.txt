@@ -908,6 +908,8 @@ ITEM_152_NAME	날 고를리콘 고기
 ITEM_152_DESC	익히지 않은 고기. 모닥불에서 구우세요.
 ITEM_153_NAME	구운 고를리콘 고기
 ITEM_153_DESC	불에 구운 진한 고기. 체력과 허기를 크게 회복한다.
+ITEM_154_NAME	뼈
+ITEM_154_DESC	깨끗하게 남은 오래된 뼈. 제작에 쓰기 좋다.
 UILABEL_OPTIMIZE	최적화
 UILABEL_REMOVE_ALL	모두 해제
 MISC_GEAR_NO_ROOM	인벤토리 공간이 부족합니다

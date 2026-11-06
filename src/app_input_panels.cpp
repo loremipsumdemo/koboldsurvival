@@ -210,7 +210,8 @@ bool App::mouseDownOnPanels() {
                         best = d2;
                     }
                 }
-                const Owner* own = target != NULL_ENTITY ? world.get<Owner>(target) : nullptr;
+                // Bones are anyone's to clear, so they cost no standing
+                const Owner* own = target != NULL_ENTITY && !destroyedByHand(world.get<Prop>(target)->kind) ? world.get<Owner>(target) : nullptr;
                 const int owner = own ? own->faction : FACTION_PLAYER;
                 if (target != NULL_ENTITY && storageProp == target) closeStorage();
                 if (target != NULL_ENTITY && destroyBuilding(world, target)) {
