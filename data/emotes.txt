@@ -1,5 +1,6 @@
 # Emotes: small pictures over a unit's head. Tab-separated: key, file in data/emote, when it shows.
 # Every key must be listed once. The last column is only a note. A missing picture is drawn as a pink square.
+# To make a new emote, add its drawing to tools/make_emotes.py and run that script. It explains how at the top of the file.
 
 Mining	emote_1.png	Mining: working Ore
 Woodcutting	emote_2.png	Woodcutting: working a Tree

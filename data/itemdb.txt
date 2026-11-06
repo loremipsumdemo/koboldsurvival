@@ -23,6 +23,8 @@
 #                       tagged arrow (the bows) or bolt (the crossbow), one for each shot.
 #   cooks_into        : optional, the id of the item a campfire cooks this one into, e.g. Raw Bear Meat into Cooked
 #                       Bear Meat. A campfire takes any item that has one.
+# Sprites: data/item/item_<id>.png, 64 x 64. To make the sprite for a new item, add its drawing to tools/make_items.py and
+# run that script. It explains how at the top of the file.
 
 [1]
 type = item

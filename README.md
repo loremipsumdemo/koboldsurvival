@@ -110,6 +110,7 @@ tests/
 tools/
   pack_data.cpp      Packs data/ into data.pak
   build_stamp.cpp    Writes the build stamp shown on the title screen
+  make_icons.py, make_items.py, make_emotes.py   Draw the icons, item sprites and emotes (Python and Pillow; not part of the build)
 data/                Game content, packed into data.pak
   itemdb.txt         The items
   factions.txt       Factions and starting reputations
@@ -133,6 +134,9 @@ Most content is plain text in `data/`, and the game reads those tables at start-
 stats in them changes the game after a rebuild packs them. Each table explains its columns at the top. Keys are fixed by the
 code (`src/game_tables.cpp`): a new sound, emote or mob kind also needs code. If a table has a mistake, the game stops at
 start-up and names the file and line. A missing picture or model is drawn as a pink square.
+
+The icons, item sprites and emotes are drawn by the scripts in `tools/`. Each explains how to add a new picture at the top of
+the file.
 
 Buildable props and their rules are in `src/props.h` and `src/build.cpp`.
 

@@ -1,5 +1,6 @@
 # UI icons, 32 x 32 pixels. Tab-separated: key, file in data/icon, what it is for, where it shows.
 # Every key must be listed once. The last two columns are only notes. A missing picture is drawn as a pink square.
+# To make a new icon, add its drawing to tools/make_icons.py and run that script. It explains how at the top of the file.
 
 Equipment	icon_1.png	Equipment heading	Unit sidebar, Equipment section heading (drawInventorySidebar)
 Inventory	icon_2.png	Inventory heading	Unit sidebar, Inventory section heading (drawInventorySidebar)
