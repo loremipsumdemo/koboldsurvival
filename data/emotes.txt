@@ -3,7 +3,7 @@
 
 Mining	emote_1.png	Mining: working Ore
 Woodcutting	emote_2.png	Woodcutting: working a Tree
-Cooking	emote_3.png	Cooking: working a Campfire
+Cooking	emote_3.png	Cooking: working a Stove
 Encumbered	emote_4.png	Encumbered: carrying 90% or more of the carry limit
 Sleeping	emote_5.png	Sleeping: lying on a Bed or Bedroll
 Hungry	emote_6.png	Hungry: hunger below 1
