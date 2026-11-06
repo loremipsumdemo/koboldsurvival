@@ -95,6 +95,8 @@ CONTROL_KEYS_8	Esc
 CONTROL_DOES_8	Open the menu, or go back
 CONTROL_KEYS_9	F12
 CONTROL_DOES_9	Take a screenshot
+CONTROL_KEYS_10	Hold Shift while moving a stack
+CONTROL_DOES_10	Choose how many to move
 UILABEL_PAUSED	PAUSED
 UILABEL_PACE_RUN	Pace: Run
 UILABEL_PACE_WALK	Pace: Walk

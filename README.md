@@ -56,6 +56,7 @@ lose state: the world keeps running, whatever happens to your party.
 | Left click / drag | Select units. Shift adds to the selection. A box around only ground items picks them up |
 | Right click | Orders and context menus (move, use a prop, talk, destroy bones, put down) |
 | Right mouse held | Selected units walk straight at the pointer |
+| Shift with moving a stack | Choose how many to trade or store. Without Shift, the whole stack moves |
 | WASD / arrow keys | Move the camera. Shift moves it faster |
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |

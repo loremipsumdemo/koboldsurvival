@@ -2,6 +2,10 @@
 
 using namespace play;
 
+namespace {
+bool shiftHeld() { return (SDL_GetModState() & SDL_KMOD_SHIFT) != 0; }
+}
+
 void App::sayAs(Entity who, const std::string& text, bool player) {
     SpokenLine ln;
     ln.text = text;
@@ -62,6 +66,15 @@ void App::requestTrade(bool npcSide, Entity owner, int slot) {
         refuse(lang("MISC_TRADE_NO_MORE"));
         return;
     }
+    if (!shiftHeld()) {
+        int onTable = 0;
+        for (const TradeGhost& g : side) {
+            if (g.slot == slot) onTable += g.stack.count;
+        }
+        const int stack = inv->slots[slot].count;
+        if (tradeAddItems(side, *inv, slot, onTable < stack ? stack - onTable : stack) == 0) refuse(lang("MISC_TRADE_FULL"));
+        return;
+    }
     session.quantity = QuantityPrompt{ true, npcSide, owner, slot, item, itemNameOf(item), 1, avail };
 }
 
@@ -118,6 +131,11 @@ void App::requestStore(int slot) {
     const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
     if (cap <= 0) {
         refuse(lang("MISC_STORAGE_FULL"));
+        return;
+    }
+    if (!shiftHeld()) {
+        if (storeCountInStorage(world, slot, std::min(inv->slots[slot].count, cap), why)) queueSound(Sfx::ItemMove);
+        else if (!why.empty()) refuse(why);
         return;
     }
     session.quantity = QuantityPrompt{ true, false, session.storageUnit, slot, item,
