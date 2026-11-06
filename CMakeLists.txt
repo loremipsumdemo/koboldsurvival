@@ -73,6 +73,7 @@ add_executable(koboldsurvival
     src/savegame.cpp
     src/menus.cpp
     src/app_support.cpp
+    src/user_files.cpp
     src/renderer.cpp
     src/renderer_text.cpp
     src/renderer_widgets.cpp

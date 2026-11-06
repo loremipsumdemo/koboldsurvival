@@ -356,7 +356,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 if (w.has<Commandable>(workers[0])) queueLog(langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
                 queueSoundFrom(w, Sfx::Drop, prop);
-                w.destroy(prop);
+                breakBuilding(w, prop);   // debris is simply removed, and any workers let go
             }
             continue;
         }

@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Lilieci
 FACTION_MOB_FROG	Broaște
 FACTION_MOB_GORLICORN	Gorlicorni
 MISC_MOB_NO_GEAR	Creaturile nu pot purta echipament
+MISC_LOG_MISSES	{0} ratează {1}
+MISC_LOG_SHOOTS_MISS	{0} trage în {1} și ratează
+MISC_LOG_DODGES	{0} evită lovitura lui {1}
+MISC_LOG_SHRUGS	{0} nici nu simte lovitura lui {1}
+MISC_LOG_HITS	{0} lovește {1}
+MISC_LOG_SHOOTS	{0} împușcă {1}
+MISC_LOG_HITS_BLOCKED	{0} lovește {1} (blocat)
+MISC_LOG_SHOOTS_BLOCKED	{0} împușcă {1} (blocat)
+MISC_LOG_DAMAGE	{0} primește {1} daune
+MISC_LOG_ELIXIR_ENDS	Efectul {1} asupra lui {0} se termină
+MISC_LOG_NOTICES	{0} observă {1}
+MISC_SAVE_NEWER	Această salvare provine dintr-o versiune mai nouă a jocului.
+MISC_AUTOSAVE_FAILED	Salvarea automată a eșuat.

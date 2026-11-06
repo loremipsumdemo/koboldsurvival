@@ -17,14 +17,15 @@ constexpr float AGENT_CLEARANCE = 0.3f;
 //   - a whole map in memory (a premade map, or an older saved map), with every chunk loaded, or
 //   - an open world folder, where chunks are read in as they are needed around the camera and
 //     the units, and dropped again when they are far away (stream()).
-// Outside the loaded chunks the ground counts as sea level and as blocked for movement.
+// Loaded chunks are for drawing. Heights and walkability are also held for the whole level from the moment it opens,
+// so units, paths and sight work the same everywhere, whatever is loaded.
 class Terrain {
 public:
     explicit Terrain(int size = DEFAULT_MAP_SIZE);
 
     // Replaces the level with a whole map in memory. Every chunk is loaded.
     void load(const MapData& m);
-    // Opens a world folder. Nothing is read until stream() is called.
+    // Opens a world folder. Its heights and walkability are read in whole; its chunks wait for stream().
     bool openWorld(const std::string& folder, std::string& err);
 
     // Tiles per side of the whole level, and chunks per side
@@ -47,11 +48,9 @@ public:
     float heightAt(float x, float z) const;
 
     bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < size_ && y < size_; }
-    // A tile is walkable when its chunk is loaded and the tile is not blocked
+    // A tile is walkable when it is inside the level and not blocked
     bool walkable(int x, int y) const;
-    // Walkability and center height of a tile, loaded or not. For a streamed world an unloaded chunk
-    // is read from the folder for this call only, so nothing extra stays in memory. False if the tile
-    // is outside the level or its chunk can't be read.
+    // Walkability and center height of a tile. False if the tile is outside the level.
     bool tileGround(int x, int y, bool& walkable, float& height) const;
     // The look and surface tiles the level is drawn with. A whole map in memory uses the default.
     const WorldSurface& surface() const { return surface_; }
@@ -72,14 +71,29 @@ public:
     // Smooth path from start to goal, not including start. If the goal can't be reached, the path
     // goes to the nearest reachable point. Empty if the unit is already there or can't move.
     std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const;
+    // True if a unit can walk the straight line from a to b without touching a blocked tile
+    bool lineClear(Vec2 a, Vec2 b) const;
+    // True if the ground does not rise between two units standing at these points, seen from eye height. Water and other
+    // low ground that can't be walked on does not block sight.
+    bool sightClear(float ax, float ay, float az, float bx, float by, float bz) const;
 
 private:
     // The chunk holding tile (x, y), or nullptr
     const ChunkData* tileChunk(int x, int y) const;
+    // Copies a chunk's heights and walkability into the whole-level tables
+    void keepGround(const ChunkData& c);
+    // Numbers each connected walkable area of the level, once its tables are full
+    void findAreas();
+    // The connected walkable area a tile is in, or 0 for a blocked tile or one outside the level
+    int areaOf(int x, int y) const;
 
     int size_ = 0;
     int cps_ = 0;
     std::vector<std::unique_ptr<ChunkData>> chunks_;   // chunk id = cz * cps_ + cx
+    // The whole level, loaded or not. Heights: (size_ + 1) squared, row by row. The others: size_ squared.
+    std::vector<float> groundHeights_;
+    std::vector<uint8_t> groundWalk_;
+    std::vector<int> groundArea_;
     bool streamed_ = false;
     std::string folder_;
     WorldInfo info_;

@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Lepakot
 FACTION_MOB_FROG	Sammakot
 FACTION_MOB_GORLICORN	Gorlisarviset
 MISC_MOB_NO_GEAR	Otukset eivät voi pukea varusteita
+MISC_LOG_MISSES	{0} ei osu kohteeseen {1}
+MISC_LOG_SHOOTS_MISS	{0} ampuu kohti kohdetta {1} ja ohi menee
+MISC_LOG_DODGES	{0} väistää kohteen {1} iskun
+MISC_LOG_SHRUGS	{0} ei välitä kohteen {1} iskusta
+MISC_LOG_HITS	{0} osuu kohteeseen {1}
+MISC_LOG_SHOOTS	{0} ampuu kohdetta {1}
+MISC_LOG_HITS_BLOCKED	{0} osuu kohteeseen {1} (torjuttu)
+MISC_LOG_SHOOTS_BLOCKED	{0} ampuu kohdetta {1} (torjuttu)
+MISC_LOG_DAMAGE	{0} ottaa {1} vahinkoa
+MISC_LOG_ELIXIR_ENDS	Aineen {1} vaikutus hahmoon {0} päättyy
+MISC_LOG_NOTICES	{0} huomaa kohteen {1}
+MISC_SAVE_NEWER	Tämä tallennus on tehty pelin uudemmalla versiolla.
+MISC_AUTOSAVE_FAILED	Automaattinen tallennus epäonnistui.

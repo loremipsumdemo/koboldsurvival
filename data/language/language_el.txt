@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Νυχτερίδες
 FACTION_MOB_FROG	Βάτραχοι
 FACTION_MOB_GORLICORN	Γκορλικόρνοι
 MISC_MOB_NO_GEAR	Τα πλάσματα δεν μπορούν να φορούν εξοπλισμό
+MISC_LOG_MISSES	{0} αστοχεί στον/στην {1}
+MISC_LOG_SHOOTS_MISS	{0} ρίχνει στον/στην {1} και αστοχεί
+MISC_LOG_DODGES	{0} αποφεύγει το χτύπημα του/της {1}
+MISC_LOG_SHRUGS	{0} αγνοεί το χτύπημα του/της {1}
+MISC_LOG_HITS	{0} χτυπά {1}
+MISC_LOG_SHOOTS	{0} πυροβολεί {1}
+MISC_LOG_HITS_BLOCKED	{0} χτυπά {1} (μπλοκαρίστηκε)
+MISC_LOG_SHOOTS_BLOCKED	{0} πυροβολεί {1} (μπλοκαρίστηκε)
+MISC_LOG_DAMAGE	{0} δέχεται {1} ζημιά
+MISC_LOG_ELIXIR_ENDS	Η επίδραση του {1} στον/στην {0} τελειώνει
+MISC_LOG_NOTICES	{0} αντιλαμβάνεται {1}
+MISC_SAVE_NEWER	Αυτή η αποθήκευση έγινε από νεότερη έκδοση του παιχνιδιού.
+MISC_AUTOSAVE_FAILED	Η αυτόματη αποθήκευση απέτυχε.

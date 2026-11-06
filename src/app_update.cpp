@@ -219,21 +219,73 @@ void App::autosaveTick() {
         if (autosaveNow()) {
             showNotice(lang("MISC_AUTOSAVED"));
             playSfx(Sfx::UiSaved);
+        } else {
+            refuse(lang("MISC_AUTOSAVE_FAILED"));
         }
     }
 }
 
-// One frame of the game itself, while it is playing and not stopped
-void App::stepGame() {
+// The camera, each frame while a game is on screen, paused or not. Only a talk holds it still.
+void App::updateCamera() {
+    if (screen != Screen::Playing || dialogueUnit != NULL_ENTITY) return;
     panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
     cam.updateClearance(terrain);
+    // Open worlds: read in the ground near the camera and the units, a few chunks each frame
+    if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
+}
 
+// As many steps of the game as the time that passed calls for, each of the same length, so the game plays the same at
+// any frame rate. If the machine can't keep up, the game slows down rather than taking ever more steps.
+void App::stepSimulation() {
+    if (screen != Screen::Playing || dialogueUnit != NULL_ENTITY || paused) return;
+    const float frameDt = dt;
+    simLeft += frameDt;
+    dt = SIM_STEP_SECONDS;
+    int steps = 0;
+    while (simLeft >= SIM_STEP_SECONDS && steps < SIM_MOST_STEPS_PER_FRAME) {
+        updateTalkOrders();
+        if (dialogueUnit != NULL_ENTITY) break;   // the game stands still while a talk is open
+        simBefore.clear();
+        for (Entity u : world.view<Unit, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
+        stepGame();
+        simLeft -= SIM_STEP_SECONDS;
+        ++steps;
+    }
+    if (steps == SIM_MOST_STEPS_PER_FRAME) simLeft = std::min(simLeft, SIM_STEP_SECONDS);
+    dt = frameDt;
+}
+
+// For the frame's drawing, each unit stands between where the last two steps put it, by how far the clock has gone into
+// the next step. Without this, motion would stutter whenever the screen does not run at the step rate. Everything from
+// here to the end of the frame only reads the places, and putUnitsBack ends it, so the game itself never sees them.
+void App::placeUnitsBetweenSteps() {
+    const float along = std::clamp(simLeft / SIM_STEP_SECONDS, 0.0f, 1.0f);
+    simTrue.clear();
+    for (const auto& [u, before] : simBefore) {
+        Transform* t = world.get<Transform>(u);
+        if (!t || (t->x == before.x && t->y == before.y && t->z == before.z)) continue;
+        simTrue.push_back({ u, *t });
+        t->x = before.x + (t->x - before.x) * along;
+        t->y = before.y + (t->y - before.y) * along;
+        t->z = before.z + (t->z - before.z) * along;
+    }
+}
+
+void App::putUnitsBack() {
+    for (const auto& [u, place] : simTrue) {
+        if (Transform* t = world.get<Transform>(u)) *t = place;
+    }
+    simTrue.clear();
+}
+
+// One step of the game itself, while it is playing and not stopped
+void App::stepGame() {
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
     factionSystem(world, dt);   // who is hostile to your units, from the reputations and provocations
     defendSystem(world);   // defenders pick the units attacking what they defend, before the fight
-    combatSystem(world, rng, dt, gameLog, floatingNumbers);
+    combatSystem(world, terrain, rng, dt, gameLog, floatingNumbers);
     patrolSpawnSystem(world, terrain, dt);   // a mob gone too far from its spawn gives up and walks home
     // Behaviors after the fight, so a unit hit this frame can drink in the same frame
     behaviorSystem(world, gameLog, dt);
@@ -377,8 +429,8 @@ void App::update() {
     updateDeleteHold();
 
     // ---- Timing ----
-    const Uint64 now = SDL_GetTicks();
-    dt = (now - lastTicks) / 1000.0f;
+    const Uint64 now = SDL_GetTicksNS();
+    dt = (float)((double)(now - lastTicks) / 1e9);
     lastTicks = now;
     if (dt > 0.25f) dt = 0.25f;
     if (noticeSec > 0.0f) noticeSec -= dt;
@@ -395,9 +447,9 @@ void App::update() {
     // ---- Game update: only while playing ----
     // The game stands still while a talk is open, and only End Dialogue starts it again
     talkCooldown = std::max(0.0f, talkCooldown - dt);
-    if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) updateTalkOrders();
-    // Checked again, since a talk order may just have opened a talk
-    if (screen == Screen::Playing && dialogueUnit == NULL_ENTITY && !paused) stepGame();
+    stepSimulation();
+    placeUnitsBetweenSteps();
+    updateCamera();   // after the units are placed, so a camera following one moves as smoothly as it does
 
     closeStalePanels();
     playQueuedSounds();

@@ -29,6 +29,8 @@ void stopTracks();
 // on the next of a few copies in turn, so the same effect can overlap itself a few times. A copy still playing is
 // restarted. volume (0 to 1) scales this one play, and pan (-1 left to 1 right) places it, for a world sound heard
 // from the camera (sounds.h).
+// Decodes an effect now, so its first play does not hold up the game
+void preloadEffect(const std::string& file, Bus bus);
 void playEffect(const std::string& file, Bus bus = Bus::Effects, float volume = 1.0f, float pan = 0.0f);
 
 } // namespace audio

@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Murciélagos
 FACTION_MOB_FROG	Ranas
 FACTION_MOB_GORLICORN	Gorlicornios
 MISC_MOB_NO_GEAR	Las criaturas no pueden llevar equipo
+MISC_LOG_MISSES	{0} falla contra {1}
+MISC_LOG_SHOOTS_MISS	{0} dispara a {1} y falla
+MISC_LOG_DODGES	{0} esquiva el golpe de {1}
+MISC_LOG_SHRUGS	{0} resiste el golpe de {1}
+MISC_LOG_HITS	{0} golpea a {1}
+MISC_LOG_SHOOTS	{0} le dispara a {1}
+MISC_LOG_HITS_BLOCKED	{0} golpea a {1} (bloqueado)
+MISC_LOG_SHOOTS_BLOCKED	{0} le dispara a {1} (bloqueado)
+MISC_LOG_DAMAGE	{0} recibe {1} de daño
+MISC_LOG_ELIXIR_ENDS	El efecto de {1} en {0} se termina
+MISC_LOG_NOTICES	{0} detecta a {1}
+MISC_SAVE_NEWER	Esta partida se guardó con una versión más nueva del juego.
+MISC_AUTOSAVE_FAILED	Falló el guardado automático.

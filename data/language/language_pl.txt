@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Nietoperze
 FACTION_MOB_FROG	Żaby
 FACTION_MOB_GORLICORN	Gorlirożce
 MISC_MOB_NO_GEAR	Stworzenia nie mogą nosić sprzętu
+MISC_LOG_MISSES	{0} nie trafia: {1}
+MISC_LOG_SHOOTS_MISS	{0} strzela do celu {1} i pudłuje
+MISC_LOG_DODGES	{0} unika ciosu: {1}
+MISC_LOG_SHRUGS	{0} nie przejmuje się ciosem: {1}
+MISC_LOG_HITS	{0} trafia: {1}
+MISC_LOG_SHOOTS	{0} strzela w cel {1}
+MISC_LOG_HITS_BLOCKED	{0} trafia: {1} (zablokowano)
+MISC_LOG_SHOOTS_BLOCKED	{0} strzela w cel {1} (zablokowano)
+MISC_LOG_DAMAGE	{0} otrzymuje {1} obrażeń
+MISC_LOG_ELIXIR_ENDS	Działanie {1} na {0} mija
+MISC_LOG_NOTICES	{0} zauważa: {1}
+MISC_SAVE_NEWER	Ten zapis pochodzi z nowszej wersji gry.
+MISC_AUTOSAVE_FAILED	Autozapis nie powiódł się.

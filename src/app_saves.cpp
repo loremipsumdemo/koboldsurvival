@@ -50,6 +50,11 @@ void App::loadSave(std::string path) {
         refreshSaves();
         return;
     }
+    if (d.version > SAVE_VERSION) {
+        refuse(lang("MISC_SAVE_NEWER"));
+        refreshSaves();
+        return;
+    }
     if (d.mapStem.empty()) {
         showNotice(lang("MISC_SAVE_OLD"));
         refreshSaves();
@@ -96,7 +101,7 @@ void App::loadSave(std::string path) {
 
 bool App::autosaveNow() {
     std::string path = nextAutosavePath();
-    std::string name = std::filesystem::path(path).stem().string();   // autosave0, and so on
+    std::string name = std::filesystem::u8path(path).stem().u8string();   // autosave0, and so on
     return writeSave(path, name, true);
 }
 
@@ -107,7 +112,7 @@ void App::performDelete() {
     }
     const std::string name = pendingDelete->name;
     std::error_code ec;
-    std::filesystem::remove(pendingDelete->path, ec);
+    std::filesystem::remove(std::filesystem::u8path(pendingDelete->path), ec);
     ask = Ask::None;
     pendingDelete.reset();
     deleteHolding = false;

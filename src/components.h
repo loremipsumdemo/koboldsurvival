@@ -84,6 +84,7 @@ struct SpawnHome {
     float x = 0.0f, z = 0.0f;
     bool returning = false;
     float returnSeconds = 0.0f;   // how long it has been walking back (not saved: a loaded game starts it again)
+    float replanIn = 0.0f;        // seconds until it may look for a route home again
 };
 
 // The body type a unit is given, which decides which set of names its name comes from. A new unit is masculine 45% of
@@ -145,6 +146,17 @@ struct ActiveSquad {
     bool arrived = false;
     float speed = 2.8f;               // slower than units, so members can keep up
     int size = 0;                     // number of units, which sets the formation's spacing
+};
+
+// The way a unit is taking to something that moves (a unit it chases or follows, its place in a formation) when the
+// straight line there is blocked. Made and kept up by steeringSystem.
+struct ChaseRoute {
+    std::vector<Vec2> waypoints;
+    size_t next = 0;
+    Vec2 goal{ 0.0f, 0.0f };   // where it was going when the route was found
+    float checkIn = 0.0f;      // seconds until it looks at the straight line again
+    float planIn = 0.0f;       // seconds until it may search for a route again
+    bool blocked = false;      // the straight line was blocked when last looked at
 };
 
 // A single unit's own route. Used instead of an active squad when one unit is ordered.
@@ -361,7 +373,7 @@ struct AttackOrder {
 // A prop: a 3D model on the map, such as a wagon or a campfire. It does not block movement.
 // kind is a PropKind; props.h gives each kind its model, name, size and use. serial is its place in the order the
 // level placed the props, which is the same each time the level is built from its seed, so a save can name it. A built
-// prop has serial -1: it is not placed by a seed, so a save does not name it (yet).
+// prop has serial -1: it is not placed by a seed, so a save writes it out whole.
 struct Prop {
     PropKind kind = PropKind::Wagon;
     int serial = 0;
@@ -391,6 +403,12 @@ struct Owner {
 struct Health {
     double value = 10.0;
     double max = 10.0;
+};
+
+// The serials of the level's props that have been taken away, so that a save can leave them out when the level is built
+// again from its seed. One entity holds it, made the first time a level's prop goes (claims.cpp).
+struct GoneProps {
+    std::vector<int> serials;
 };
 
 // How much of a built foundation or flag is left, 1 when new, falling while it is not held up (claims.h). At 0 it breaks

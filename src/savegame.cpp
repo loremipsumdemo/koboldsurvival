@@ -11,14 +11,19 @@
 #include <sstream>
 #include <cstdlib>
 #include <system_error>
+#include "user_files.h"
 
-bool writeSaveFile(const std::string& path, const SaveData& d) {
-    std::error_code ec;
-    std::filesystem::create_directories(SAVE_DIR, ec);
+namespace fs = std::filesystem;
 
-    std::ofstream out(path);
-    if (!out) return false;
+std::string saveDir() {
+    return userFilesDir() + "saves";
+}
+
+namespace {
+
+void writeSaveLines(std::ostream& out, const SaveData& d) {
     out << std::setprecision(9);
+    out << "version=" << SAVE_VERSION << "\n";
     out << "name=" << d.name << "\n";
     out << "timestamp=" << d.timestamp << "\n";
     out << "seed=" << d.seed << "\n";
@@ -56,7 +61,7 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
         if (u.mob > 0) out << "mob " << i << " " << u.mob << "\n";
         if (u.hasHome) out << "home " << i << " " << u.homeX << " " << u.homeZ << " " << (u.homeReturning ? 1 : 0) << "\n";
         if (u.hasFaction) out << "faction " << i << " " << u.faction << "\n";
-        if (u.occupying >= 0) out << "occupy " << i << " " << u.occupying << "\n";
+        if (u.occupying != -1) out << "occupy " << i << " " << u.occupying << "\n";
         if (u.unconscious) out << "down " << i << " " << u.dying << " " << (u.corpse ? 1 : 0) << "\n";
         if (u.unconscious && u.koFaction >= 0) out << "koby " << i << " " << u.koFaction << "\n";
         if (u.unconscious) out << "conscious " << i << " " << u.conscious << "\n";
@@ -65,6 +70,15 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
             out << "modes " << i << " " << (u.passive ? 1 : 0) << " " << (u.block ? 1 : 0) << " " << (u.sneak ? 1 : 0) << "\n";
         }
         if (u.carriedBy >= 0) out << "carried " << i << " " << u.carriedBy << " " << (u.playingDead ? 1 : 0) << "\n";
+        if (u.stamina >= 0.0f || u.buffLeft > 0.0f) {
+            out << "combat " << i << " " << u.stamina << " " << u.buffLeft << " " << u.buffAttack << "\n";
+        }
+        for (const Provoked::Entry& p : u.provoked) out << "provoked " << i << " " << p.faction << " " << p.secondsLeft << "\n";
+        if (u.followUnit >= 0) out << "follow " << i << " " << u.followUnit << "\n";
+        if (u.defendUnit >= 0) out << "defend " << i << " " << u.defendUnit << "\n";
+        if (u.attackUnit >= 0) out << "attack " << i << " " << u.attackUnit << "\n";
+        if (u.hasMove) out << "move " << i << " " << u.moveX << " " << u.moveZ << "\n";
+        if (u.propOrder != -1) out << "propgo " << i << " " << u.propOrder << " " << u.propAction << "\n";
         if (u.hasBehaviors) {
             out << "behaviors " << i << " " << (u.behaviorsWhole ? 1 : 0) << "\n";
             for (const SaveBehavior& b : u.behaviors) {
@@ -83,7 +97,16 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
     for (const SaveStorage& st : d.storage) {
         out << "storage " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
     }
-    for (const SaveLock& l : d.locks) out << "lock " << l.prop << " " << (l.locked ? 1 : 0) << "\n";
+    for (const SaveLock& l : d.locks) out << "lock " << l.prop << " " << (l.locked ? 1 : 0) << " " << l.level << " " << l.faction << "\n";
+    for (const SaveBuilt& b : d.built) {
+        out << "built " << b.kind << " " << b.x << " " << b.y << " " << b.z << " " << b.yaw << " " << b.owner << "\n";
+    }
+    for (int serial : d.goneProps) out << "gone " << serial << "\n";
+    out << std::setprecision(15);
+    for (const SaveWear& v : d.wear) out << "wear " << v.prop << " " << v.value << "\n";
+    for (const SaveHealth& v : d.health) out << "health " << v.prop << " " << v.value << " " << v.max << "\n";
+    out << std::setprecision(9);
+    for (const SaveOnBase& b : d.onBase) out << "onbase " << b.prop << " " << b.foundation << "\n";
     for (const auto& [faction, value] : d.reputation) out << "rep " << faction << " " << value << "\n";
     for (const SaveStorage& st : d.output) {
         out << "output " << st.prop << " " << st.slot << " " << st.item << " " << st.count << "\n";
@@ -92,11 +115,34 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
         out << "fuel " << f.prop << " " << std::setprecision(15) << f.hours << " " << f.progress << std::setprecision(9)
             << " " << f.item << "\n";
     }
-    return (bool)out;
+}
+
+} // namespace
+
+bool writeSaveFile(const std::string& path, const SaveData& d) {
+    std::error_code ec;
+    fs::create_directories(fs::u8path(saveDir()), ec);
+
+    const fs::path target = fs::u8path(path), tmp = fs::u8path(path + ".tmp");
+    bool written = false;
+    {
+        std::ofstream out(tmp);
+        if (out) {
+            writeSaveLines(out, d);
+            out.close();   // flushes, so a disk that fills up at the very end shows up in the state
+            written = !out.fail();
+        }
+    }
+    if (written) {
+        fs::rename(tmp, target, ec);
+        if (!ec) return true;
+    }
+    fs::remove(tmp, ec);
+    return false;
 }
 
 bool readSaveFile(const std::string& path, SaveData& d) {
-    std::ifstream in(path);
+    std::ifstream in(fs::u8path(path));
     if (!in) return false;
 
     try {
@@ -105,6 +151,7 @@ bool readSaveFile(const std::string& path, SaveData& d) {
             if (!line.empty() && line.back() == '\r') line.pop_back();
 
             if (line.rfind("name=", 0) == 0)                   d.name = line.substr(5);
+            else if (line.rfind("version=", 0) == 0)          d.version = std::stoi(line.substr(8));
             else if (line.rfind("timestamp=", 0) == 0)        d.timestamp = std::stoll(line.substr(10));
             else if (line.rfind("seed=", 0) == 0)             d.seed = (unsigned)std::stoul(line.substr(5));
             else if (line.rfind("playerCamp=", 0) == 0)       d.playerCamp = line.substr(11) != "0";
@@ -141,7 +188,93 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 int locked = 1;
                 ss >> l.prop >> locked;
                 l.locked = locked != 0;
-                if (!ss.fail()) d.locks.push_back(l);
+                if (!ss.fail()) {
+                    if (!(ss >> l.level >> l.faction)) {   // older saves end before these
+                        l.level = 0;
+                        l.faction = -1;
+                    }
+                    d.locks.push_back(l);
+                }
+            }
+            else if (line.rfind("built ", 0) == 0) {
+                std::istringstream ss(line.substr(6));
+                SaveBuilt b;
+                ss >> b.kind >> b.x >> b.y >> b.z >> b.yaw >> b.owner;
+                // Always kept, even if bad, so the places of the ones after it still give their save numbers
+                if (ss.fail()) b.kind = -1;
+                d.built.push_back(b);
+            }
+            else if (line.rfind("gone ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                int serial = -1;
+                ss >> serial;
+                if (!ss.fail() && serial >= 0) d.goneProps.push_back(serial);
+            }
+            else if (line.rfind("wear ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                SaveWear v;
+                ss >> v.prop >> v.value;
+                if (!ss.fail()) d.wear.push_back(v);
+            }
+            else if (line.rfind("health ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                SaveHealth v;
+                ss >> v.prop >> v.value >> v.max;
+                if (!ss.fail()) d.health.push_back(v);
+            }
+            else if (line.rfind("onbase ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                SaveOnBase b;
+                ss >> b.prop >> b.foundation;
+                if (!ss.fail()) d.onBase.push_back(b);
+            }
+            else if (line.rfind("combat ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                size_t i = 0;
+                float stamina = -1.0f, left = 0.0f, attack = 0.0f;
+                ss >> i >> stamina >> left >> attack;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].stamina = stamina;
+                    d.units[i].buffLeft = std::max(0.0f, left);
+                    d.units[i].buffAttack = attack;
+                }
+            }
+            else if (line.rfind("provoked ", 0) == 0) {
+                std::istringstream ss(line.substr(9));
+                size_t i = 0;
+                Provoked::Entry p;
+                ss >> i >> p.faction >> p.secondsLeft;
+                if (!ss.fail() && i < d.units.size()) d.units[i].provoked.push_back(p);
+            }
+            else if (line.rfind("follow ", 0) == 0 || line.rfind("defend ", 0) == 0 || line.rfind("attack ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                size_t i = 0;
+                int other = -1;
+                ss >> i >> other;
+                if (!ss.fail() && i < d.units.size()) {
+                    (line[0] == 'f' ? d.units[i].followUnit : line[0] == 'd' ? d.units[i].defendUnit : d.units[i].attackUnit) = other;
+                }
+            }
+            else if (line.rfind("move ", 0) == 0) {
+                std::istringstream ss(line.substr(5));
+                size_t i = 0;
+                float x = 0.0f, z = 0.0f;
+                ss >> i >> x >> z;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].hasMove = true;
+                    d.units[i].moveX = x;
+                    d.units[i].moveZ = z;
+                }
+            }
+            else if (line.rfind("propgo ", 0) == 0) {
+                std::istringstream ss(line.substr(7));
+                size_t i = 0;
+                int prop = -1, action = 0;
+                ss >> i >> prop >> action;
+                if (!ss.fail() && i < d.units.size()) {
+                    d.units[i].propOrder = prop;
+                    d.units[i].propAction = action;
+                }
             }
             else if (line.rfind("storage ", 0) == 0) {
                 std::istringstream ss(line.substr(8));
@@ -245,7 +378,7 @@ bool readSaveFile(const std::string& path, SaveData& d) {
                 size_t i = 0;
                 int serial = -1;
                 ss >> i >> serial;
-                if (!ss.fail() && i < d.units.size() && serial >= 0) d.units[i].occupying = serial;
+                if (!ss.fail() && i < d.units.size()) d.units[i].occupying = serial;
             }
             else if (line.rfind("output ", 0) == 0) {
                 std::istringstream ss(line.substr(7));
@@ -346,10 +479,14 @@ bool readSaveFile(const std::string& path, SaveData& d) {
             else if (line.rfind("stats ", 0) == 0) {
                 std::istringstream ss(line.substr(6));
                 size_t i = 0;
-                Stats st;
+                // A save from before a stat was added ends early: the stats it has are kept, and the new ones start fresh
+                Stats st = defaultStats();
                 ss >> i;
-                for (int& xp : st.xp) ss >> xp;
-                if (!ss.fail() && i < d.units.size()) {
+                const bool hasUnit = !ss.fail();
+                for (int& xp : st.xp) {
+                    if (!(ss >> xp)) break;
+                }
+                if (hasUnit && i < d.units.size()) {
                     d.units[i].hasStats = true;
                     d.units[i].stats = st;
                 }
@@ -386,16 +523,40 @@ bool readSaveFile(const std::string& path, SaveData& d) {
     return true;
 }
 
+namespace {
+
+// Reads the lines at the top of a save, which end where the units begin
+bool readSaveHeader(const std::string& path, SaveSummary& s) {
+    std::ifstream in(fs::u8path(path));
+    if (!in) return false;
+    s.path = path;
+    try {
+        std::string line;
+        while (std::getline(in, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.rfind("unit ", 0) == 0) break;
+            if (line.rfind("name=", 0) == 0) s.name = line.substr(5);
+            else if (line.rfind("timestamp=", 0) == 0) s.timestamp = std::stoll(line.substr(10));
+            else if (line.rfind("autosave=", 0) == 0) s.autosave = line.substr(9) == "1";
+        }
+    } catch (...) {
+        return false;   // a bad number in the file
+    }
+    return true;
+}
+
+} // namespace
+
 std::vector<SaveSummary> listSaves() {
     std::vector<SaveSummary> out;
     std::error_code ec;
-    if (!std::filesystem::is_directory(SAVE_DIR, ec)) return out;
+    const fs::path dir = fs::u8path(saveDir());
+    if (!fs::is_directory(dir, ec)) return out;
 
-    for (const auto& entry : std::filesystem::directory_iterator(SAVE_DIR, ec)) {
+    for (const auto& entry : fs::directory_iterator(dir, ec)) {
         if (entry.path().extension() != ".sav") continue;
-        SaveData d;
-        if (!readSaveFile(entry.path().string(), d)) continue;
-        out.push_back(SaveSummary{ entry.path().string(), d.name, d.timestamp, d.autosave });
+        SaveSummary s;
+        if (readSaveHeader(entry.path().u8string(), s)) out.push_back(s);
     }
     std::sort(out.begin(), out.end(),
               [](const SaveSummary& a, const SaveSummary& b) { return a.timestamp > b.timestamp; });
@@ -403,18 +564,19 @@ std::vector<SaveSummary> listSaves() {
 }
 
 std::string nextAutosavePath() {
-    std::string best = std::string(SAVE_DIR) + "/autosave0.sav";
+    std::string best = saveDir() + "/autosave0.sav";
     long long oldest = std::numeric_limits<long long>::max();
     for (int i = 0; i < AUTOSAVE_SLOTS; ++i) {
-        std::string p = std::string(SAVE_DIR) + "/autosave" + std::to_string(i) + ".sav";
-        if (!std::filesystem::exists(p)) return p;
-        SaveData d;
-        long long ts = readSaveFile(p, d) ? d.timestamp : 0;
+        std::string p = saveDir() + "/autosave" + std::to_string(i) + ".sav";
+        std::error_code ec;
+        if (!fs::exists(fs::u8path(p), ec)) return p;
+        SaveSummary s;
+        long long ts = readSaveHeader(p, s) ? s.timestamp : 0;
         if (ts < oldest) { oldest = ts; best = p; }
     }
     return best;
 }
 
 std::string manualSavePath(long long ts) {
-    return std::string(SAVE_DIR) + "/manual_" + std::to_string(ts) + ".sav";
+    return saveDir() + "/manual_" + std::to_string(ts) + ".sav";
 }

@@ -798,6 +798,7 @@ private:
         unsigned long long idleSince = 0;      // when it went idle, in milliseconds; 0 while it is not idle
         bool settled = false;
         float settleX = 0.0f, settleZ = 0.0f;  // where it settled
+        unsigned long long turnedAt = 0;       // when it last eased round, in milliseconds
     };
     std::map<Entity, UnitFacing> unitFacing_;
     float unitYaw(Entity e, float x, float z, bool idle);

@@ -4,11 +4,14 @@
 #include "play_state.h"
 #include "renderer.h"
 #include "need_behaviors.h"
+#include "build.h"
+#include <map>
+#include <utility>
 
 using namespace play;
 
-// Rebuilds a level from a save. The ground comes from the map, and the props from the seed.
-// The units are then swapped for the saved ones.
+// Rebuilds a level from a save. The ground comes from the map, and the level's own props from the seed. The units are
+// then swapped for the saved ones, the built props are put back, and the level's props that are gone are taken away.
 bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, const SaveData& d,
                   const MapChoice& map, std::string& err) {
     // A save from before items existed has none, so its items are placed from the seed as on a new level.
@@ -78,6 +81,12 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
         if (u.mob <= 0) world.add(e, Body{ u.hasBody ? (BodyType)u.body : bodyForSavedName(u.name) });
         // Older saves have no faction: it comes from the side the unit is on. A faction no longer listed (the old Gray
         // Faction) maps to the one that replaced it.
+        if (Combat* c = world.get<Combat>(e)) {
+            c->stamina = u.stamina;
+            c->buffLeft = u.buffLeft;
+            c->buffAttack = u.buffLeft > 0.0f ? u.buffAttack : 0.0f;
+        }
+        if (!u.provoked.empty()) world.add(e, Provoked{ u.provoked });
         const int savedFaction = u.hasFaction ? u.faction : u.hostile ? FACTION_RED : u.neutral ? FACTION_RETIRED_GRAY : FACTION_PLAYER;
         world.add(e, Faction{ savedFaction == FACTION_PLAYER ? FACTION_PLAYER : knownFactionId(savedFaction) });
         if (world.get<Faction>(e)->id == FACTION_EXILE && u.mob <= 0) {
@@ -103,6 +112,36 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             spawnGroundItem(world, Transform{ g.x, g.y, g.z }, g.item, g.count);
         }
     }
+    // The props' states below name each prop by its save number. A level prop's number is its serial, and a save made when
+    // the level laid its props out another way (other kinds, or another number of each) would put them on the wrong props,
+    // so those are left out. Built props are named by their place in the save, so they are always right.
+    const bool layoutSame = d.propLayout == PROP_LAYOUT;
+    if (!layoutSame) SDL_Log("Save has prop layout %d, the game has %d: the level's prop contents, locks and seats start fresh", d.propLayout, PROP_LAYOUT);
+    std::map<int, Entity> propsById;
+    if (layoutSame) {
+        for (Entity e : world.view<Prop>()) {
+            if (world.get<Prop>(e)->serial >= 0) propsById[world.get<Prop>(e)->serial] = e;
+        }
+        // Taken away first, so what is left is what the save knew
+        for (int serial : d.goneProps) {
+            const auto it = propsById.find(serial);
+            if (it == propsById.end()) continue;
+            world.destroy(it->second);
+            propsById.erase(it);
+        }
+        // Remembered again, for the next save
+        if (!d.goneProps.empty()) world.add(world.create(), GoneProps{ d.goneProps });
+    }
+    for (size_t i = 0; i < d.built.size(); ++i) {
+        const SaveBuilt& b = d.built[i];
+        if (b.kind < 0 || b.kind >= PROP_KIND_COUNT) continue;
+        propsById[builtPropSaveId(i)] = restoreBuiltProp(world, (PropKind)b.kind, b.x, b.y, b.z, b.yaw, b.owner);
+    }
+    const auto propNamed = [&](int id) {
+        const auto it = propsById.find(id);
+        return it == propsById.end() ? NULL_ENTITY : it->second;
+    };
+
     // Auto-Haul props are found by where they stand (a camp's props are placed again from the seed, on the same spots).
     // One whose prop is not there any more is dropped. An older save's routine becomes Auto-Haul to its store prop
     // and Auto-Harvest of its gather prop's kind.
@@ -159,56 +198,87 @@ bool restoreLevel(World& world, Terrain& terrain, Renderer& renderer, Rng& rng, 
             }
         }
     }
-    // The props' states below name each prop by its serial. A save made when the level laid its props out another way
-    // (other kinds, or another number of each) would put them on the wrong props, so they are left out.
-    if (d.propLayout != PROP_LAYOUT) {
-        SDL_Log("Save has prop layout %d, the game has %d: prop contents, locks and seats start fresh", d.propLayout, PROP_LAYOUT);
-        return true;
-    }
-    // Which locks were open. The props were placed again from the seed, locked, so each is found by its serial.
-    for (Entity e : world.view<Prop, Lock>()) {
-        for (const SaveLock& l : d.locks) {
-            if (l.prop == world.get<Prop>(e)->serial) world.get<Lock>(e)->locked = l.locked;
+    // Which locks were open, and whose they are
+    for (const SaveLock& l : d.locks) {
+        const Entity e = propNamed(l.prop);
+        if (e == NULL_ENTITY) continue;
+        Lock* lock = world.get<Lock>(e);
+        if (!lock) {
+            if (l.level <= 0) continue;
+            lock = &world.add(e, Lock{});   // a built prop that was given a lock by the claim it stands in
+        }
+        lock->locked = l.locked;
+        if (l.level > 0) {
+            lock->level = l.level;
+            lock->faction = l.faction;
         }
     }
-    // What the barrels held. The props were placed again from the seed, so each is found by its serial.
-    for (Entity e : world.view<Prop, Storage>()) {
-        const int serial = world.get<Prop>(e)->serial;
-        Storage* st = world.get<Storage>(e);
-        for (const SaveStorage& s : d.storage) {
-            if (s.prop != serial || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
-            st->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
-        }
+    // What the barrels held
+    for (const SaveStorage& s : d.storage) {
+        const Entity e = propNamed(s.prop);
+        Storage* st = e != NULL_ENTITY ? world.get<Storage>(e) : nullptr;
+        if (!st || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
+        st->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
     }
     // A forge's output, and its fuel and progress
-    for (Entity e : world.view<Prop, Output>()) {
-        const int serial = world.get<Prop>(e)->serial;
-        Output* out = world.get<Output>(e);
-        for (const SaveStorage& s : d.output) {
-            if (s.prop != serial || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
-            out->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
+    for (const SaveStorage& s : d.output) {
+        const Entity e = propNamed(s.prop);
+        Output* out = e != NULL_ENTITY ? world.get<Output>(e) : nullptr;
+        if (!out || s.slot < 0 || s.slot >= STORAGE_SLOTS || s.item <= 0 || s.count <= 0) continue;
+        out->slots[(size_t)s.slot] = ItemStack{ s.item, s.count };
+    }
+    for (const SaveFuel& f : d.fuel) {
+        const Entity e = propNamed(f.prop);
+        if (e == NULL_ENTITY) continue;
+        if (Fuel* fuel = world.get<Fuel>(e)) {
+            fuel->hours = std::max(0.0, f.hours);
+            fuel->item = std::max(0, f.item);
         }
-        for (const SaveFuel& f : d.fuel) {
-            if (f.prop != serial) continue;
-            if (Fuel* fuel = world.get<Fuel>(e)) {
-                fuel->hours = std::max(0.0, f.hours);
-                fuel->item = std::max(0, f.item);
-            }
-            if (PropWork* pw = world.get<PropWork>(e)) pw->progress = std::clamp(f.progress, 0.0, 1.0);
+        if (PropWork* pw = world.get<PropWork>(e)) pw->progress = std::clamp(f.progress, 0.0, 1.0);
+    }
+    // How worn the flags and foundations are, and what stands on what
+    for (const SaveWear& v : d.wear) {
+        const Entity e = propNamed(v.prop);
+        if (Wear* wr = e != NULL_ENTITY ? world.get<Wear>(e) : nullptr) wr->value = v.value;
+    }
+    for (const SaveHealth& v : d.health) {
+        const Entity e = propNamed(v.prop);
+        if (Health* h = e != NULL_ENTITY ? world.get<Health>(e) : nullptr) {
+            h->value = v.value;
+            h->max = v.max;
         }
+    }
+    for (const SaveOnBase& b : d.onBase) {
+        const Entity e = propNamed(b.prop), base = propNamed(b.foundation);
+        if (e != NULL_ENTITY && base != NULL_ENTITY) world.add(e, OnBase{ base });
     }
     // Units on beds, chairs and in cages, put back on them. Two saved on one prop: the first keeps it.
     for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
-        if (d.units[i].occupying < 0) continue;
-        for (Entity p : world.view<Prop, Transform>()) {
-            if (world.get<Prop>(p)->serial != d.units[i].occupying) continue;
-            if (propInfo(world.get<Prop>(p)->kind).use != PropUse::Occupy || propOccupant(world, p) != NULL_ENTITY) break;
-            const Transform* pt = world.get<Transform>(p);
-            *world.get<Transform>(restoredUnits[i]) = *pt;
-            world.add(restoredUnits[i], Occupying{ p });
-            break;
+        if (d.units[i].occupying == -1) continue;
+        const Entity p = propNamed(d.units[i].occupying);
+        if (p == NULL_ENTITY || propInfo(world.get<Prop>(p)->kind).use != PropUse::Occupy || propOccupant(world, p) != NULL_ENTITY) continue;
+        *world.get<Transform>(restoredUnits[i]) = *world.get<Transform>(p);
+        world.add(restoredUnits[i], Occupying{ p });
+    }
+    // The orders you had given, given again. The ones walking to one point set off together, as a formation.
+    const auto unitNamed = [&](int i) { return i >= 0 && i < (int)restoredUnits.size() ? restoredUnits[(size_t)i] : NULL_ENTITY; };
+    std::map<std::pair<float, float>, std::vector<Entity>> walkers;
+    for (size_t i = 0; i < d.units.size() && i < restoredUnits.size(); ++i) {
+        const SaveUnit& u = d.units[i];
+        const Entity e = restoredUnits[i];
+        if (!world.has<Commandable>(e)) continue;
+        if (const Entity lead = unitNamed(u.followUnit); lead != NULL_ENTITY) issueFollowOrder(world, { e }, lead);
+        if (const Entity ward = unitNamed(u.defendUnit); ward != NULL_ENTITY) issueDefendOrder(world, { e }, ward);
+        if (const Entity foe = unitNamed(u.attackUnit); foe != NULL_ENTITY) issueAttackOrder(world, { e }, foe);
+        if (u.hasMove) walkers[{ u.moveX, u.moveZ }].push_back(e);
+        if (const Entity prop = propNamed(u.propOrder); prop != NULL_ENTITY) {
+            const PropAction action = (PropAction)u.propAction;
+            if (action == PropAction::Use || action == PropAction::Occupy || action == PropAction::Unlock) {
+                issuePropOrder(world, terrain, { e }, prop, action);
+            }
         }
     }
+    for (const auto& [point, group] : walkers) issueMoveOrder(world, terrain, group, Vec2{ point.first, point.second });
     return true;
 }
 
@@ -233,6 +303,28 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
     d.cam.yaw = cam.yaw;
     d.cam.pitch = cam.pitch;
     d.cam.distance = cam.distance;
+
+    // Built props and debris, oldest first, since the older of two flags holds a claim. Their place here is their number.
+    std::vector<Entity> builtProps;
+    for (Entity e : w.view<Prop, Transform>()) {
+        if (w.get<Prop>(e)->serial < 0) builtProps.push_back(e);
+    }
+    std::sort(builtProps.begin(), builtProps.end());
+    std::map<Entity, int> builtNumber;
+    for (size_t i = 0; i < builtProps.size(); ++i) {
+        const Entity e = builtProps[i];
+        const Prop* p = w.get<Prop>(e);
+        const Transform* t = w.get<Transform>(e);
+        const Owner* own = w.get<Owner>(e);
+        d.built.push_back(SaveBuilt{ idx(p->kind), t->x, t->y, t->z, p->yaw, own ? own->faction : -1 });
+        builtNumber[e] = builtPropSaveId(i);
+    }
+    const auto saveIdOf = [&](Entity prop) {
+        const Prop* p = w.get<Prop>(prop);
+        if (!p) return -1;
+        return p->serial >= 0 ? p->serial : builtNumber.at(prop);
+    };
+    for (Entity e : w.view<GoneProps>()) d.goneProps = w.get<GoneProps>(e)->serials;
 
     const std::vector<Entity> saved = w.view<Unit, Transform>();
     auto indexOf = [&](Entity e) {
@@ -280,8 +372,41 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
             su.homeZ = h->z;
             su.homeReturning = h->returning;
         }
-        if (const Occupying* oc = w.get<Occupying>(u)) {
-            if (const Prop* p = w.get<Prop>(oc->prop)) su.occupying = p->serial;
+        if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = saveIdOf(oc->prop);
+        if (const Combat* c = w.get<Combat>(u)) {
+            su.stamina = c->stamina;
+            su.buffLeft = c->buffLeft;
+            su.buffAttack = c->buffAttack;
+        }
+        if (const Provoked* pv = w.get<Provoked>(u)) su.provoked = pv->against;
+        // The orders you gave it. An automated behavior's own steps start again by themselves.
+        if (w.has<Commandable>(u)) {
+            const Behaviors* own = w.get<Behaviors>(u);
+            const bool automated = own && own->busy;
+            if (const FollowOrder* fo = w.get<FollowOrder>(u)) su.followUnit = indexOf(fo->target);
+            if (const DefendOrder* de = w.get<DefendOrder>(u)) su.defendUnit = indexOf(de->ward);
+            else if (const AttackOrder* ao = w.get<AttackOrder>(u)) su.attackUnit = indexOf(ao->target);
+            const PropOrder* po = w.get<PropOrder>(u);
+            const Working* wk = w.get<Working>(u);
+            const SoloMove* so = w.get<SoloMove>(u);
+            const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u);
+            const ActiveSquad* sq = sm ? w.get<ActiveSquad>(sm->squad) : nullptr;
+            if (po && !po->automatic) {
+                su.propOrder = saveIdOf(po->prop);
+                su.propAction = idx(po->action);
+            } else if (wk && !automated) {
+                su.propOrder = saveIdOf(wk->prop);
+                su.propAction = idx(wk->unlocking ? PropAction::Unlock : PropAction::Use);
+            } else if (sq && !sq->arrived && !sq->waypoints.empty()) {
+                su.hasMove = true;
+                su.moveX = sq->waypoints.back().x;
+                su.moveZ = sq->waypoints.back().z;
+            } else if (so && so->next < so->waypoints.size() && !automated && !po && !w.has<PickupOrder>(u) &&
+                       !w.has<CarryOrder>(u) && !w.has<LootOrder>(u)) {
+                su.hasMove = true;
+                su.moveX = so->waypoints.back().x;
+                su.moveZ = so->waypoints.back().z;
+            }
         }
         if (const Needs* nd = w.get<Needs>(u)) {
             su.hasNeeds = true;
@@ -326,17 +451,28 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, unsigned
         const Transform* t = w.get<Transform>(e);
         d.ground.push_back(SaveGround{ t->x, t->y, t->z, g->item, g->count });
     }
-    for (Entity e : w.view<Prop, Lock>()) d.locks.push_back(SaveLock{ w.get<Prop>(e)->serial, w.get<Lock>(e)->locked });
-    for (Entity e : w.view<Prop, Storage>()) {
-        const int serial = w.get<Prop>(e)->serial;
+    for (Entity e : w.view<Prop, Transform, Lock>()) {
+        const Lock* l = w.get<Lock>(e);
+        d.locks.push_back(SaveLock{ saveIdOf(e), l->locked, l->level, l->faction });
+    }
+    for (Entity e : w.view<Prop, Transform, Wear>()) d.wear.push_back(SaveWear{ saveIdOf(e), w.get<Wear>(e)->value });
+    for (Entity e : w.view<Prop, Transform, Health>()) {
+        const Health* h = w.get<Health>(e);
+        d.health.push_back(SaveHealth{ saveIdOf(e), h->value, h->max });
+    }
+    for (Entity e : w.view<Prop, Transform, OnBase>()) {
+        if (w.has<Prop>(w.get<OnBase>(e)->foundation)) d.onBase.push_back(SaveOnBase{ saveIdOf(e), saveIdOf(w.get<OnBase>(e)->foundation) });
+    }
+    for (Entity e : w.view<Prop, Transform, Storage>()) {
+        const int serial = saveIdOf(e);
         const Storage* st = w.get<Storage>(e);
         for (int i = 0; i < STORAGE_SLOTS; ++i) {
             const ItemStack& s = st->slots[(size_t)i];
             if (s.item > 0 && s.count > 0) d.storage.push_back(SaveStorage{ serial, i, s.item, s.count });
         }
     }
-    for (Entity e : w.view<Prop, Output>()) {
-        const int serial = w.get<Prop>(e)->serial;
+    for (Entity e : w.view<Prop, Transform, Output>()) {
+        const int serial = saveIdOf(e);
         const Output* out = w.get<Output>(e);
         for (int i = 0; i < STORAGE_SLOTS; ++i) {
             const ItemStack& s = out->slots[(size_t)i];

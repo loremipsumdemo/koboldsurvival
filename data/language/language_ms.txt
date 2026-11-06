@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Kawanan Kelawar
 FACTION_MOB_FROG	Kawanan Katak
 FACTION_MOB_GORLICORN	Kawanan Gorlikorn
 MISC_MOB_NO_GEAR	Makhluk tidak boleh memakai kelengkapan
+MISC_LOG_MISSES	{0} tersasar daripada {1}
+MISC_LOG_SHOOTS_MISS	{0} menembak {1} dan tersasar
+MISC_LOG_DODGES	{0} mengelak serangan {1}
+MISC_LOG_SHRUGS	{0} tidak terkesan dengan serangan {1}
+MISC_LOG_HITS	{0} memukul {1}
+MISC_LOG_SHOOTS	{0} menembak {1}
+MISC_LOG_HITS_BLOCKED	{0} memukul {1} (ditahan)
+MISC_LOG_SHOOTS_BLOCKED	{0} menembak {1} (ditahan)
+MISC_LOG_DAMAGE	{0} menerima {1} kerosakan
+MISC_LOG_ELIXIR_ENDS	Kesan {1} pada {0} tamat
+MISC_LOG_NOTICES	{0} perasan {1}
+MISC_SAVE_NEWER	Simpanan ini dibuat oleh versi permainan yang lebih baharu.
+MISC_AUTOSAVE_FAILED	Simpan automatik gagal.

@@ -3,7 +3,9 @@
 #include "language.h"
 #include <array>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
+#include <system_error>
 #include <string>
 
 // Game-wide options. These belong to the player, not to any save game, so they are kept in their own file
@@ -103,7 +105,7 @@ inline bool isChoice(int v, const int* choices, int count) {
 // window size was stored have a resolution preset index instead, which is converted here.
 inline GameSettings loadSettings(const std::string& path) {
     GameSettings s;
-    std::ifstream in(path);
+    std::ifstream in(std::filesystem::u8path(path));
     std::string line;
     int legacyPreset = -1;
     bool sawWidth = false;
@@ -196,8 +198,10 @@ inline GameSettings loadSettings(const std::string& path) {
     return s;
 }
 
+// Writes beside the file and renames, so a failed write leaves the old settings as they were
 inline bool saveSettings(const GameSettings& s, const std::string& path) {
-    std::ofstream out(path);
+    const std::filesystem::path tmp = std::filesystem::u8path(path + ".tmp");
+    std::ofstream out(tmp);
     if (!out) return false;
     out << "displayMode=" << s.displayMode << "\n";
     out << "monitor=" << s.monitor << "\n";
@@ -239,5 +243,11 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
         out << panelSettingKey(i) << "=" << buf << "\n";
     }
     out.close();                       // flushes, so a failed write shows up in the state
-    return !out.fail();
+    std::error_code ec;
+    if (out.fail()) {
+        std::filesystem::remove(tmp, ec);
+        return false;
+    }
+    std::filesystem::rename(tmp, std::filesystem::u8path(path), ec);
+    return !ec;
 }

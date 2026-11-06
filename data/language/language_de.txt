@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Fledermäuse
 FACTION_MOB_FROG	Frösche
 FACTION_MOB_GORLICORN	Gorlikorne
 MISC_MOB_NO_GEAR	Tiere können keine Ausrüstung tragen
+MISC_LOG_MISSES	{0} verfehlt {1}
+MISC_LOG_SHOOTS_MISS	{0} schießt auf {1} und verfehlt
+MISC_LOG_DODGES	{0} weicht dem Schlag von {1} aus
+MISC_LOG_SHRUGS	{0} steckt den Treffer von {1} weg
+MISC_LOG_HITS	{0} trifft {1}
+MISC_LOG_SHOOTS	{0} beschießt {1}
+MISC_LOG_HITS_BLOCKED	{0} trifft {1} (geblockt)
+MISC_LOG_SHOOTS_BLOCKED	{0} beschießt {1} (geblockt)
+MISC_LOG_DAMAGE	{0} erleidet {1} Schaden
+MISC_LOG_ELIXIR_ENDS	Die Wirkung von {1} auf {0} lässt nach
+MISC_LOG_NOTICES	{0} bemerkt {1}
+MISC_SAVE_NEWER	Dieser Spielstand stammt aus einer neueren Version des Spiels.
+MISC_AUTOSAVE_FAILED	Automatisches Speichern fehlgeschlagen.

@@ -752,7 +752,7 @@ void App::onMouseMotion() {
 void App::panWithKeys(float dt, bool edgeScroll) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     float right = 0.0f, forward = 0.0f;   // edge scrolling adds to these below
-    if (percentPrompt.open) keys = nullptr;   // the keys go into the Behavior tab's # prompt
+    if (percentPrompt.open || panelOpen) keys = nullptr;   // the keys go into the Behavior tab's # prompt, or a save's name
     if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
     if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
     if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;

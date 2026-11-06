@@ -181,8 +181,8 @@ void stopTracks() {
     }
 }
 
-void playEffect(const std::string& file, Bus bus, float volume, float pan) {
-    if (!engineReady || file.empty() || volume <= 0.0f) return;
+// An effect, decoded and with its copies made if this is the first time it is asked for
+static Effect& effectFor(const std::string& file, Bus bus) {
     if (bus != Bus::Interface) bus = Bus::Effects;   // only these two play one-shot sounds
 
     // Each file has its own copies on each bus it is played on
@@ -194,8 +194,16 @@ void playEffect(const std::string& file, Bus bus, float volume, float pan) {
         found = effects.emplace(key, Effect{}).first;
         if (decodeEffect(file, found->second.frames)) openCopies(found->second, bus);
     }
+    return found->second;
+}
 
-    Effect& fx = found->second;
+void preloadEffect(const std::string& file, Bus bus) {
+    if (engineReady && !file.empty()) effectFor(file, bus);
+}
+
+void playEffect(const std::string& file, Bus bus, float volume, float pan) {
+    if (!engineReady || file.empty() || volume <= 0.0f) return;
+    Effect& fx = effectFor(file, bus);
     if (fx.copies.empty()) return;            // silent
     EffectCopy& copy = *fx.copies[fx.next];
     fx.next = (fx.next + 1) % fx.copies.size();

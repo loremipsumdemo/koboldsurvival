@@ -10,6 +10,8 @@
 #include "world_labels.h"
 #include "encumbrance.h"
 #include "experience.h"
+
+class Terrain;
 #include "hostility.h"
 #include "spatial.h"
 
@@ -130,4 +132,6 @@ Equipment randomHostileGear(Rng& rng);
 // Runs once each frame, before movement. Updates timers, stamina and health; notices and spotting;
 // target choice; potions and elixirs; and every swing that is ready and in reach. Units that die are
 // removed here. Damage numbers are added to floats, and what happened is written to log.
-void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats);
+void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats);
+// Whether the ground leaves one unit in sight of another. Nothing hits or notices what it can't see.
+bool canSee(World& w, const Terrain& t, Entity a, Entity b);

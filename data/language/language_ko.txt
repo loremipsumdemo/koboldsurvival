@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	박쥐 떼
 FACTION_MOB_FROG	개구리 무리
 FACTION_MOB_GORLICORN	고를리콘 무리
 MISC_MOB_NO_GEAR	동물은 장비를 착용할 수 없습니다
+MISC_LOG_MISSES	{0}의 공격이 {1}에게 빗나감
+MISC_LOG_SHOOTS_MISS	{0}이(가) {1}을(를) 쐈지만 빗나감
+MISC_LOG_DODGES	{0}이(가) {1}의 공격을 피함
+MISC_LOG_SHRUGS	{0}이(가) {1}의 공격을 버텨 냄
+MISC_LOG_HITS	{0}이(가) {1}을(를) 공격함
+MISC_LOG_SHOOTS	{0}이(가) {1}을(를) 쏨
+MISC_LOG_HITS_BLOCKED	{0}이(가) {1}을(를) 공격함 (막힘)
+MISC_LOG_SHOOTS_BLOCKED	{0}이(가) {1}을(를) 쏨 (막힘)
+MISC_LOG_DAMAGE	{0}이(가) {1}의 피해를 입음
+MISC_LOG_ELIXIR_ENDS	{0}의 {1} 효과가 끝남
+MISC_LOG_NOTICES	{0}이(가) {1}을(를) 발견함
+MISC_SAVE_NEWER	이 저장 파일은 더 새로운 버전의 게임에서 만들어졌습니다.
+MISC_AUTOSAVE_FAILED	자동 저장에 실패했습니다.

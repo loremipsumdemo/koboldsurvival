@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Denevérek
 FACTION_MOB_FROG	Békák
 FACTION_MOB_GORLICORN	Gorlikornisok
 MISC_MOB_NO_GEAR	A lények nem viselhetnek felszerelést
+MISC_LOG_MISSES	{0} nem találja el: {1}
+MISC_LOG_SHOOTS_MISS	{0} rálő erre: {1}, de nem talál
+MISC_LOG_DODGES	{0} kitér {1} csapása elől
+MISC_LOG_SHRUGS	{0} fel sem veszi {1} találatát
+MISC_LOG_HITS	{0} eltalálja: {1}
+MISC_LOG_SHOOTS	{0} meglövi: {1}
+MISC_LOG_HITS_BLOCKED	{0} eltalálja: {1} (kivédve)
+MISC_LOG_SHOOTS_BLOCKED	{0} meglövi: {1} (kivédve)
+MISC_LOG_DAMAGE	{0} {1} sebzést szenved
+MISC_LOG_ELIXIR_ENDS	{1} hatása {0} esetén elmúlik
+MISC_LOG_NOTICES	{0} észreveszi: {1}
+MISC_SAVE_NEWER	Ez a mentés a játék újabb verziójával készült.
+MISC_AUTOSAVE_FAILED	Az automatikus mentés nem sikerült.

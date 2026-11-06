@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Bầy dơi
 FACTION_MOB_FROG	Bầy ếch
 FACTION_MOB_GORLICORN	Bầy gorlicorn
 MISC_MOB_NO_GEAR	Sinh vật không thể mặc trang bị
+MISC_LOG_MISSES	{0} đánh trượt {1}
+MISC_LOG_SHOOTS_MISS	{0} bắn {1} nhưng trượt
+MISC_LOG_DODGES	{0} né đòn của {1}
+MISC_LOG_SHRUGS	{0} không hề hấn trước đòn của {1}
+MISC_LOG_HITS	{0} đánh trúng {1}
+MISC_LOG_SHOOTS	{0} bắn trúng {1}
+MISC_LOG_HITS_BLOCKED	{0} đánh trúng {1} (bị đỡ)
+MISC_LOG_SHOOTS_BLOCKED	{0} bắn trúng {1} (bị đỡ)
+MISC_LOG_DAMAGE	{0} nhận {1} sát thương
+MISC_LOG_ELIXIR_ENDS	Hiệu lực của {1} trên {0} đã hết
+MISC_LOG_NOTICES	{0} phát hiện {1}
+MISC_SAVE_NEWER	Bản lưu này được tạo bởi phiên bản mới hơn của trò chơi.
+MISC_AUTOSAVE_FAILED	Tự động lưu thất bại.

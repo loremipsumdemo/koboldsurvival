@@ -1,4 +1,5 @@
 // Applying and saving settings, and clicks on the Settings screen.
+#include "user_files.h"
 #include "app.h"
 
 using namespace play;
@@ -17,7 +18,7 @@ void App::applyVideo() {
     SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
 }
 
-void App::saveSettingsFile() { saveSettings(settings, SETTINGS_PATH); }
+void App::saveSettingsFile() { saveSettings(settings, settingsFilePath()); }
 
 void App::applyFontScale() {
     if (settings.fontScale == appliedFontScale && settings.fontPath == appliedFontPath

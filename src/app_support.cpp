@@ -13,7 +13,9 @@
 #include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <vector>
+#include "user_files.h"
 
 // The folder beside the game where F12 screenshots are saved
 std::string screenshotsDir() {
@@ -78,12 +80,18 @@ void SDLCALL logToFile(void*, int category, SDL_LogPriority priority, const char
     if (gDefaultLog) gDefaultLog(gDefaultLogData, category, priority, message);
 }
 
-// log.txt goes next to the exe, whatever folder the game was started from
+// log.txt goes next to the exe (the working folder: setGameFolder), or to the player's own folder if the game's can't be
+// written to
 void startLogFile() {
-    const char* base = SDL_GetBasePath();   // owned by SDL; works before SDL_Init
-    const std::string path = std::string(base ? base : "") + "log.txt";
-    gLogFile = std::fopen(path.c_str(), "w");
-    if (!gLogFile) gLogFile = std::fopen("log.txt", "w");
+    gLogFile = std::fopen("log.txt", "w");
+    if (!gLogFile) {
+        const std::filesystem::path path = std::filesystem::u8path(userFilesDir() + "log.txt");
+#ifdef _WIN32
+        gLogFile = _wfopen(path.c_str(), L"w");
+#else
+        gLogFile = std::fopen(path.c_str(), "w");
+#endif
+    }
     SDL_GetLogOutputFunction(&gDefaultLog, &gDefaultLogData);
     SDL_SetLogOutputFunction(logToFile, nullptr);
 }

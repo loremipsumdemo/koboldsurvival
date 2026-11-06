@@ -7,6 +7,8 @@ void App::clearCombatText() {
     floatingNumbers.clear();
     tradeLabels.clear();
     discardQueuedLabels();
+    simBefore.clear();   // entity ids restart with a new world
+    simLeft = 0.0f;
     logOffset = 0;
     logSeen = 0;
 }

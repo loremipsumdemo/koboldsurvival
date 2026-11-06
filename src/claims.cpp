@@ -148,10 +148,20 @@ void releaseProp(World& w, Entity prop) {
 
 }  // namespace
 
+// A level's prop going for good is remembered, or a save would bring it back from the seed
+static void rememberGone(World& w, Entity prop) {
+    const Prop* p = w.get<Prop>(prop);
+    if (!p || p->serial < 0) return;
+    const std::vector<Entity> holder = w.view<GoneProps>();
+    GoneProps& gone = holder.empty() ? w.add(w.create(), GoneProps{}) : *w.get<GoneProps>(holder.front());
+    gone.serials.push_back(p->serial);
+}
+
 void breakBuilding(World& w, Entity e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
     if (w.get<Prop>(e)->kind == PropKind::Debris) {
         releaseProp(w, e);
+        rememberGone(w, e);
         w.destroy(e);
         return;
     }
@@ -177,7 +187,10 @@ void breakBuilding(World& w, Entity e) {
         if (const Storage* st = w.get<Storage>(g)) collect(st->slots.data());
         if (const Output* out = w.get<Output>(g)) collect(out->slots.data());
     }
-    for (Entity g : gone) w.destroy(g);
+    for (Entity g : gone) {
+        rememberGone(w, g);
+        w.destroy(g);
+    }
     for (const Drop& d : drops) {
         spawnGroundItem(w, Transform{ d.at.x, d.at.y, d.at.z }, d.item, d.count);
     }

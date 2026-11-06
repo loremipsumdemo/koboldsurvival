@@ -22,7 +22,8 @@ terrain world. They gather resources, build, eat, rest, fight and trade among ri
   a Shabby Crew or a Starving Nobody, then adjust the party before play.
 - **World and time.** A chunked, region-streamed terrain world with sea and sky, a world map, and a day/night
   calendar (one in-game day is 30 real minutes).
-- **Saves.** Plain-text saves in `saves/`, with three rotating autosave slots.
+- **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with three
+  rotating autosave slots. Settings are kept beside them.
 - **Localization.** 31 languages with Noto fonts for Latin, Cyrillic, Greek, Arabic, Thai, Japanese, Korean and
   Chinese scripts.
 - **Audio.** Music, ambient tracks and sound effects, each with its own volume slider.

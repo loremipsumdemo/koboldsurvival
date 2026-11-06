@@ -57,7 +57,9 @@ void patrolSpawnSystem(World& w, Terrain& t, float dt) {
         }
         const SoloMove* so = w.get<SoloMove>(u);
         const bool walking = so && so->next < so->waypoints.size();
-        if (!walking || !b->busy || b->step.kind != BehaviorKind::PatrolSpawn) {
+        h->replanIn -= dt;
+        if ((!walking || !b->busy || b->step.kind != BehaviorKind::PatrolSpawn) && h->replanIn <= 0.0f) {
+            h->replanIn = 1.0f;
             b->busy = true;
             b->step = *rule;
             b->stepProp = NULL_ENTITY;

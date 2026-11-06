@@ -42,3 +42,6 @@ const char* buildRefusalKey(BuildCheck c);
 // owner is the faction whose unit placed it (the Player Faction for yours, a camp's own for its starting kit). A vault
 // placed in a claim that already has one is not placed: the caller checks it (checkBuildSpot) first.
 Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner = FACTION_PLAYER);
+// Puts a saved built prop back as it was: with the parts of its kind, and its owner (-1 for none). What it holds, its
+// lock, wear and foundation are the save's to set afterward. Nothing is worked out again from the claims around it.
+Entity restoreBuiltProp(World& w, PropKind kind, float x, float y, float z, float yaw, int owner);

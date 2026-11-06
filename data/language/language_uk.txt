@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Кажани
 FACTION_MOB_FROG	Жаби
 FACTION_MOB_GORLICORN	Горлікорни
 MISC_MOB_NO_GEAR	Тварини не можуть носити спорядження
+MISC_LOG_MISSES	{0} промахується по цілі {1}
+MISC_LOG_SHOOTS_MISS	{0} стріляє по цілі {1} і промахується
+MISC_LOG_DODGES	{0} ухиляється від удару: {1}
+MISC_LOG_SHRUGS	{0} не зважає на удар: {1}
+MISC_LOG_HITS	{0} влучає в ціль {1}
+MISC_LOG_SHOOTS	{0} підстрелює ціль {1}
+MISC_LOG_HITS_BLOCKED	{0} влучає в ціль {1} (блок)
+MISC_LOG_SHOOTS_BLOCKED	{0} підстрелює ціль {1} (блок)
+MISC_LOG_DAMAGE	{0} отримує шкоду: {1}
+MISC_LOG_ELIXIR_ENDS	Дія {1} на {0} закінчується
+MISC_LOG_NOTICES	{0} помічає ціль {1}
+MISC_SAVE_NEWER	Це збереження створено новішою версією гри.
+MISC_AUTOSAVE_FAILED	Не вдалося виконати автозбереження.

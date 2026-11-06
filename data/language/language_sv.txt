@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Fladdermöss
 FACTION_MOB_FROG	Grodor
 FACTION_MOB_GORLICORN	Gorlicorner
 MISC_MOB_NO_GEAR	Djur kan inte bära utrustning
+MISC_LOG_MISSES	{0} missar {1}
+MISC_LOG_SHOOTS_MISS	{0} skjuter mot {1} och missar
+MISC_LOG_DODGES	{0} undviker slaget från {1}
+MISC_LOG_SHRUGS	{0} skakar av sig slaget från {1}
+MISC_LOG_HITS	{0} träffar {1}
+MISC_LOG_SHOOTS	{0} skjuter {1}
+MISC_LOG_HITS_BLOCKED	{0} träffar {1} (blockerat)
+MISC_LOG_SHOOTS_BLOCKED	{0} skjuter {1} (blockerat)
+MISC_LOG_DAMAGE	{0} tar {1} i skada
+MISC_LOG_ELIXIR_ENDS	Effekten av {1} på {0} upphör
+MISC_LOG_NOTICES	{0} upptäcker {1}
+MISC_SAVE_NEWER	Den här sparfilen gjordes med en nyare version av spelet.
+MISC_AUTOSAVE_FAILED	Automatisk sparning misslyckades.

@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Yarasalar
 FACTION_MOB_FROG	Kurbağalar
 FACTION_MOB_GORLICORN	Gorlikornlar
 MISC_MOB_NO_GEAR	Yaratıklar teçhizat giyemez
+MISC_LOG_MISSES	{0}, {1} hedefini ıskaladı
+MISC_LOG_SHOOTS_MISS	{0}, {1} hedefine ateş etti ve ıskaladı
+MISC_LOG_DODGES	{0}, {1} saldırısından kaçtı
+MISC_LOG_SHRUGS	{0}, {1} darbesine aldırmadı
+MISC_LOG_HITS	{0}, {1} hedefini vurdu
+MISC_LOG_SHOOTS	{0}, {1} hedefini vurdu (atış)
+MISC_LOG_HITS_BLOCKED	{0}, {1} hedefini vurdu (engellendi)
+MISC_LOG_SHOOTS_BLOCKED	{0}, {1} hedefini vurdu (atış, engellendi)
+MISC_LOG_DAMAGE	{0}, {1} hasar aldı
+MISC_LOG_ELIXIR_ENDS	{0} üzerindeki {1} etkisi bitti
+MISC_LOG_NOTICES	{0}, {1} hedefini fark etti
+MISC_SAVE_NEWER	Bu kayıt oyunun daha yeni bir sürümüyle yapılmış.
+MISC_AUTOSAVE_FAILED	Otomatik kayıt başarısız oldu.

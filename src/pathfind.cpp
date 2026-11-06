@@ -2,8 +2,6 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
-#include <queue>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "terrain.h"
@@ -17,6 +15,15 @@ constexpr float SQRT2 = 1.41421356f;
 // A search gives up after this many tiles and takes the closest one. Most searches on the test worlds
 // take a few thousand tiles; the longest detour needed about 220,000.
 constexpr int MAX_SEARCH_TILES = 400000;
+// A goal in another walkable area can't be reached however long the search, so it only looks this far for the place
+// nearest it. The search heads for the goal first, so this is enough to reach the near shore.
+constexpr int UNREACHABLE_SEARCH_TILES = 20000;
+// The distance estimate is nudged up a little, so a search on open ground runs straight at the goal rather than
+// opening every tile of equal cost. A path can come out a tenth of a percent longer than the shortest; smoothing
+// straightens it anyway.
+constexpr float HEURISTIC_WEIGHT = 1.001f;
+constexpr float SIGHT_EYE_HEIGHT = 1.0f;   // how far above its feet a unit sees from
+constexpr float SIGHT_SAMPLE = 0.5f;       // spacing of the ground checks along a line of sight
 constexpr float LINE_SAMPLE = 0.125f;      // spacing of the clearance checks along a straight line
 
 struct Step { int dx, dz; float cost; };
@@ -24,11 +31,6 @@ constexpr Step STEPS[8] = {
     { 1, 0, 1.0f }, { -1, 0, 1.0f }, { 0, 1, 1.0f }, { 0, -1, 1.0f },
     { 1, 1, SQRT2 }, { 1, -1, SQRT2 }, { -1, 1, SQRT2 }, { -1, -1, SQRT2 },
 };
-
-using TileKey = uint64_t;
-TileKey keyOf(int x, int z) { return ((uint64_t)(uint32_t)x << 32) | (uint32_t)z; }
-int xOf(TileKey k) { return (int)(uint32_t)(k >> 32); }
-int zOf(TileKey k) { return (int)(uint32_t)(k & 0xFFFFFFFFu); }
 
 // Shortest distance on the grid when diagonal steps are allowed
 float octile(int ax, int az, int bx, int bz) {
@@ -47,32 +49,57 @@ bool clearLine(const Terrain& t, Vec2 a, Vec2 b) {
     return t.isFree(b.x, b.z);
 }
 
+// What a search knows of each tile. These stay between searches, each tile marked with the search that last touched it,
+// so a search costs only the tiles it opens and nothing is allocated once they have grown. Paths are only searched for on
+// the main thread.
+struct Node {
+    float g = 0.0f;
+    int parent = -1;
+    uint32_t search = 0;
+    bool closed = false;
+};
+std::vector<Node> gNodes;
+uint32_t gSearch = 0;
+using Entry = std::pair<float, int>;   // f score, tile
+std::vector<Entry> gOpen;              // a heap, smallest f first
+
 // Tile path from one tile to another, as tile coordinates, start first. If the goal can't be
 // reached, the path ends at the reached tile nearest the goal.
-std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int gx, int gz) {
-    struct Node { float g; TileKey parent; bool closed; };
-    std::unordered_map<TileKey, Node> nodes;
-    using Entry = std::pair<float, TileKey>;   // f score, tile
-    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
+std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int gx, int gz, int maxTiles) {
+    const int size = t.size();
+    if (gNodes.size() != (size_t)size * size) {
+        gNodes.assign((size_t)size * size, Node{});
+        gSearch = 0;
+    }
+    ++gSearch;
+    gOpen.clear();
+    const std::greater<Entry> later;
+    auto push = [&](float f, int k) {
+        gOpen.push_back({ f, k });
+        std::push_heap(gOpen.begin(), gOpen.end(), later);
+    };
 
-    const TileKey startKey = keyOf(sx, sz), goalKey = keyOf(gx, gz);
-    nodes[startKey] = Node{ 0.0f, startKey, false };
-    open.push({ octile(sx, sz, gx, gz), startKey });
-    TileKey closest = startKey;
+    const int startKey = sz * size + sx;
+    // The goal may be off the level, when it could not be snapped anywhere: then no tile matches it
+    const int goalKey = t.inBounds(gx, gz) ? gz * size + gx : -1;
+    gNodes[(size_t)startKey] = Node{ 0.0f, startKey, gSearch, false };
+    push(HEURISTIC_WEIGHT * octile(sx, sz, gx, gz), startKey);
+    int closest = startKey;
     float closestH = octile(sx, sz, gx, gz);
     bool reached = false;
 
     int expanded = 0;
-    while (!open.empty() && expanded < MAX_SEARCH_TILES) {
-        const TileKey k = open.top().second;
-        open.pop();
-        Node& n = nodes[k];
+    while (!gOpen.empty() && expanded < maxTiles) {
+        const int k = gOpen.front().second;
+        std::pop_heap(gOpen.begin(), gOpen.end(), later);
+        gOpen.pop_back();
+        Node& n = gNodes[(size_t)k];
         if (n.closed) continue;
         n.closed = true;
         ++expanded;
         if (k == goalKey) { reached = true; break; }
 
-        const int x = xOf(k), z = zOf(k);
+        const int x = k % size, z = k / size;
         const float h = octile(x, z, gx, gz);
         if (h < closestH) { closestH = h; closest = k; }
 
@@ -82,24 +109,23 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
             // No cutting corners: a diagonal step needs both tiles beside it to be walkable
             if (s.dx != 0 && s.dz != 0 && (!t.walkable(x + s.dx, z) || !t.walkable(x, z + s.dz))) continue;
 
-            const TileKey nk = keyOf(nx, nz);
+            const int nk = nz * size + nx;
             const float g = n.g + s.cost;
-            auto it = nodes.find(nk);
-            if (it == nodes.end()) {
-                nodes.emplace(nk, Node{ g, k, false });
-                open.push({ g + octile(nx, nz, gx, gz), nk });
-            } else if (!it->second.closed && g < it->second.g) {
-                it->second.g = g;
-                it->second.parent = k;
-                open.push({ g + octile(nx, nz, gx, gz), nk });
+            Node& o = gNodes[(size_t)nk];
+            if (o.search != gSearch) {
+                o = Node{ g, k, gSearch, false };
+                push(g + HEURISTIC_WEIGHT * octile(nx, nz, gx, gz), nk);
+            } else if (!o.closed && g < o.g) {
+                o.g = g;
+                o.parent = k;
+                push(g + HEURISTIC_WEIGHT * octile(nx, nz, gx, gz), nk);
             }
         }
     }
 
-    const TileKey end = reached ? goalKey : closest;
     std::vector<std::pair<int, int>> path;
-    for (TileKey k = end;; k = nodes[k].parent) {
-        path.push_back({ xOf(k), zOf(k) });
+    for (int k = reached ? goalKey : closest;; k = gNodes[(size_t)k].parent) {
+        path.push_back({ k % size, k / size });
         if (k == startKey) break;
     }
     std::reverse(path.begin(), path.end());
@@ -107,13 +133,29 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
 }
 
 // Drops the points a straight line can skip: from each point, go as far along the path as the
-// line stays clear. The first and last points are kept.
+// line stays clear. The first and last points are kept. How far is found by doubling the stride until a line is blocked
+// and then halving back, since testing every point in turn costs far more than the search on a long path.
 std::vector<Vec2> smooth(const Terrain& t, const std::vector<Vec2>& pts) {
     std::vector<Vec2> out;
     size_t anchor = 0;
     while (anchor + 1 < pts.size()) {
-        size_t far = anchor + 1;
-        for (size_t j = anchor + 2; j < pts.size() && clearLine(t, pts[anchor], pts[j]); ++j) far = j;
+        const size_t last = pts.size() - 1;
+        size_t far = anchor + 1;      // the path itself gets this far
+        size_t blocked = last + 1;    // the nearest point known to be out of a straight line, if any
+        for (size_t stride = 1; far < last;) {
+            const size_t next = std::min(far + stride, last);
+            if (!clearLine(t, pts[anchor], pts[next])) {
+                blocked = next;
+                break;
+            }
+            far = next;
+            stride *= 2;
+        }
+        while (blocked <= last && blocked - far > 1) {
+            const size_t mid = far + (blocked - far) / 2;
+            if (clearLine(t, pts[anchor], pts[mid])) far = mid;
+            else blocked = mid;
+        }
         out.push_back(pts[far]);
         anchor = far;
     }
@@ -129,7 +171,9 @@ std::vector<Vec2> Terrain::findPath(Vec2 start, Vec2 goal) const {
 
     const int sx = (int)std::floor(start.x), sz = (int)std::floor(start.z);
     const int gx = (int)std::floor(goal.x), gz = (int)std::floor(goal.z);
-    std::vector<std::pair<int, int>> tiles = tilePath(*this, sx, sz, gx, gz);
+    if (!walkable(sx, sz)) return {};
+    const int maxTiles = areaOf(sx, sz) == areaOf(gx, gz) ? MAX_SEARCH_TILES : UNREACHABLE_SEARCH_TILES;
+    std::vector<std::pair<int, int>> tiles = tilePath(*this, sx, sz, gx, gz, maxTiles);
     const bool reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
 
     // The unit starts where it stands, so the start tile's center is not a waypoint
@@ -144,4 +188,19 @@ std::vector<Vec2> Terrain::findPath(Vec2 start, Vec2 goal) const {
     std::vector<Vec2> out = smooth(*this, pts);
     if (out.size() == 1 && std::hypot(out[0].x - start.x, out[0].z - start.z) < 0.05f) return {};
     return out;
+}
+
+bool Terrain::lineClear(Vec2 a, Vec2 b) const {
+    return clearLine(*this, a, b);
+}
+
+bool Terrain::sightClear(float ax, float ay, float az, float bx, float by, float bz) const {
+    const float dx = bx - ax, dz = bz - az;
+    const int n = (int)std::ceil(std::sqrt(dx * dx + dz * dz) / SIGHT_SAMPLE);
+    for (int i = 1; i < n; ++i) {
+        const float s = (float)i / (float)n;
+        const float eye = ay + (by - ay) * s + SIGHT_EYE_HEIGHT;
+        if (heightAt(ax + dx * s, az + dz * s) > eye) return false;
+    }
+    return true;
 }

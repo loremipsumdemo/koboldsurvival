@@ -180,6 +180,20 @@ static void addBuiltPropParts(World& w, Entity e, PropKind kind) {
     if (info.lockLevel > 0) w.add(e, Lock{ true, info.lockLevel });
 }
 
+Entity restoreBuiltProp(World& w, PropKind kind, float x, float y, float z, float yaw, int owner) {
+    const PropInfo& info = propInfo(kind);
+    const Entity e = w.create();
+    w.add(e, Transform{ x, y, z });
+    w.add(e, Prop{ kind, -1, yaw });
+    addBuiltPropParts(w, e, kind);
+    if (owner >= 0) w.add(e, Owner{ owner });
+    if (info.built) {
+        if (kind == PropKind::Flag) w.add(e, Health{});
+        if (info.foot.foundation) w.add(e, Wear{});
+    }
+    return e;
+}
+
 Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
     const PropInfo& info = propInfo(kind);
     const Entity e = w.create();

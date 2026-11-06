@@ -277,6 +277,7 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
         f.z = z;
         f.yaw = std::atan2(billX_ - x, billZ_ - z);
         f.idleSince = idle ? now : 0;
+        f.turnedAt = now;
         unitFacing_[e] = f;
         return f.yaw;
     }
@@ -306,8 +307,11 @@ float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
     if (dx * dx + dz * dz > 1e-6f) {
         const float want = std::atan2(dx, dz);
         float turn = std::remainder(want - f.yaw, TWO_PI);
-        f.yaw += turn * 0.25f;
+        // A quarter of the way each sixtieth of a second, at any frame rate
+        const float seconds = std::min(0.25f, (float)(now - f.turnedAt) / 1000.0f);
+        f.yaw += turn * (1.0f - std::pow(0.75f, seconds * 60.0f));
     }
+    f.turnedAt = now;
     f.x = x;
     f.z = z;
     return f.yaw;

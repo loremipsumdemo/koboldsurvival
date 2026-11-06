@@ -352,6 +352,12 @@ bool closeEnoughToLead(World& w, const std::vector<Entity>& units, Entity e, Ent
 namespace {
 
 constexpr float unitWidth = 2.0f * 0.5f + UNIT_CLEARANCE;   // one unit's room: its tile, and the gap
+constexpr float CHASE_CHECK_SECONDS = 0.4f;    // how often a chaser looks at whether the straight line is clear
+constexpr float CHASE_PLAN_SECONDS = 1.0f;     // the least time between one chaser's route searches
+constexpr float CHASE_REPLAN_DRIFT = 2.0f;     // a route is searched for again once its goal has moved this far
+constexpr float CHASE_WAYPOINT_REACH = 0.3f;   // a chaser moves on to its next waypoint this close to the last
+constexpr int CHASE_PLANS_PER_STEP = 4;        // the most chasers that search for a route in one step of the game
+constexpr float SLOT_ROUTE_DISTANCE = 1.5f;    // a formation slot closer than this is simply walked to
 
 using Vec2f = std::pair<float, float>;
 
@@ -370,12 +376,46 @@ struct SteerFrame {
     // at its prop, the prop (else NULL_ENTITY). Units that share one hold still among themselves: see steerVelocity.
     std::vector<Entity> calmLead;
     std::vector<Entity> attacked;   // the units something is attacking this frame, sorted
+    float dt = 0.0f;
+    int plansLeft = CHASE_PLANS_PER_STEP;   // route searches left this step
     // Positions as they stand before anyone moves, and the units sorted by the one-tile cell they are in, so each
     // unit looks only at the units in its own and the eight cells around it: only those can overlap its square
     std::vector<Vec2f> pos;
     std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
     bool underAttack(Entity e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
+
+// Where a unit going to a point should head right now: straight at it while the way is clear, otherwise along a route
+// around whatever is in the way. Lines and routes are looked at only now and then, since the point is usually moving.
+Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, Entity e, const Transform* tr, Vec2 goal) {
+    ChaseRoute* r = w.get<ChaseRoute>(e);
+    if (!r) r = &w.add(e, ChaseRoute{});
+    const Vec2 from{ tr->x, tr->z };
+    r->checkIn -= s.dt;
+    r->planIn -= s.dt;
+    if (r->checkIn <= 0.0f) {
+        r->checkIn = CHASE_CHECK_SECONDS;
+        r->blocked = !t.lineClear(from, goal);
+        if (!r->blocked) r->waypoints.clear();
+    }
+    if (!r->blocked) return goal;
+
+    const bool finished = r->next >= r->waypoints.size();
+    const bool drifted = std::hypot(goal.x - r->goal.x, goal.z - r->goal.z) > CHASE_REPLAN_DRIFT;
+    if ((finished || drifted) && r->planIn <= 0.0f && s.plansLeft > 0) {
+        --s.plansLeft;
+        r->planIn = CHASE_PLAN_SECONDS;
+        r->waypoints = t.findPath(from, goal);
+        r->next = 0;
+        r->goal = goal;
+    }
+    while (r->next < r->waypoints.size()) {
+        const Vec2 wp = r->waypoints[r->next];
+        if (std::hypot(wp.x - from.x, wp.z - from.z) > CHASE_WAYPOINT_REACH) return wp;
+        ++r->next;
+    }
+    return goal;
+}
 
 // A unit's goal: where its orders take it, or the spot it is idling at. Positions are read here but not changed, so the
 // order of units doesn't matter.
@@ -387,6 +427,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
 
     float tx = tr->x, tz = tr->z;   // default: stay put
     float leadGap = -1.0f;          // how far a following or defending unit is from the unit it follows
+    bool chasing = false;           // tx, tz is a place to get to by going around what is in the way (chaseStep)
     // A unit on a bed or bedroll lies still on it: it does not move, and nothing pushes it off
     if (w.has<Occupying>(e)) {
         s.speeds[i] = 0.0f;
@@ -401,6 +442,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             if (gx * gx + gz * gz > PROP_REACH * PROP_REACH) {
                 tx = pt->x;
                 tz = pt->z;
+                chasing = true;
             } else if (!underAttack(e)) {
                 s.calmLead[i] = g->prop;   // settled at its work, among the others working the same prop
             }
@@ -410,6 +452,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
         if (const Transform* nt = w.get<Transform>(talk->npc)) {
             tx = nt->x;
             tz = nt->z;
+            chasing = true;
         }
     } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
         if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
@@ -430,6 +473,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             Vec2 st = t.snap({ tx, tz });
             tx = st.x;
             tz = st.z;
+            chasing = std::hypot(tx - tr->x, tz - tr->z) > SLOT_ROUTE_DISTANCE;
         }
     } else if (SoloMove* so = w.get<SoloMove>(e)) {
         // Move past any waypoints the unit has already reached
@@ -447,12 +491,13 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             tz = so->waypoints[so->next].z;
         }
     } else if (const AttackOrder* ao = w.get<AttackOrder>(e)) {
-        // An ordered fight: walk at the red unit, and stop once it is close enough to swing
+        // An ordered fight: walk at the red unit, and stop once it is close enough to swing and in sight
         if (const Transform* tt = w.get<Transform>(ao->target)) {
             const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-            if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
+            if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE || !canSee(w, t, e, ao->target)) {
                 tx = tt->x;
                 tz = tt->z;
+                chasing = true;
             }
         }
     } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
@@ -471,6 +516,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             } else if (!closeEnoughToLead(w, units, e, lead)) {
                 tx = lt->x;
                 tz = lt->z;
+                chasing = true;
             } else if (calm) {
                 s.calmLead[i] = lead;
             }
@@ -478,16 +524,26 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             w.remove<FollowOrder>(e);   // the unit it followed is gone
         }
     } else if (!w.has<Commandable>(e)) {
-        // A unit that is not yours walks at its target while it has one, and stops once it is close enough to hit
+        // A unit that is not yours walks at its target while it has one, and stops once it is close enough to hit and
+        // has it in sight
         if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
             if (const Transform* tt = w.get<Transform>(c->target)) {
                 const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-                if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE) {
+                if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE || !canSee(w, t, e, c->target)) {
                     tx = tt->x;
                     tz = tt->z;
+                    chasing = true;
                 }
             }
         }
+    }
+
+    if (chasing) {
+        const Vec2 step = chaseStep(w, t, s, e, tr, Vec2{ tx, tz });
+        tx = step.x;
+        tz = step.z;
+    } else {
+        w.remove<ChaseRoute>(e);
     }
 
     // With nowhere to go, a unit holds the spot where it came to rest. With somewhere to go, the spot is dropped,
@@ -637,6 +693,7 @@ void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, boo
 
 void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     SteerFrame s;
+    s.dt = dt;
     // Every unit that moves: player units by their orders, hostiles by their chase. An Unconscious unit does not move
     // and is not pushed, nor does it push anyone: it lies where it fell, or goes with the unit carrying it.
     s.units = w.view<Unit, Transform>();

@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	コウモリの群れ
 FACTION_MOB_FROG	カエルの群れ
 FACTION_MOB_GORLICORN	ゴーリコーンの群れ
 MISC_MOB_NO_GEAR	動物は装備を身につけられない
+MISC_LOG_MISSES	{0} の攻撃は {1} に外れた
+MISC_LOG_SHOOTS_MISS	{0} は {1} を撃ったが外れた
+MISC_LOG_DODGES	{0} は {1} の攻撃をかわした
+MISC_LOG_SHRUGS	{0} は {1} の攻撃をものともしない
+MISC_LOG_HITS	{0} が {1} に命中させた
+MISC_LOG_SHOOTS	{0} が {1} を撃った
+MISC_LOG_HITS_BLOCKED	{0} が {1} に命中させた(防御された)
+MISC_LOG_SHOOTS_BLOCKED	{0} が {1} を撃った(防御された)
+MISC_LOG_DAMAGE	{0} は {1} のダメージを受けた
+MISC_LOG_ELIXIR_ENDS	{0} の {1} の効果が切れた
+MISC_LOG_NOTICES	{0} が {1} に気づいた
+MISC_SAVE_NEWER	このセーブはより新しいバージョンのゲームで作成されました。
+MISC_AUTOSAVE_FAILED	オートセーブに失敗しました。

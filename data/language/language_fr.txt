@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Chauves-souris
 FACTION_MOB_FROG	Grenouilles
 FACTION_MOB_GORLICORN	Gorlicornes
 MISC_MOB_NO_GEAR	Les créatures ne peuvent pas porter d'équipement
+MISC_LOG_MISSES	{0} rate {1}
+MISC_LOG_SHOOTS_MISS	{0} tire sur {1} et rate
+MISC_LOG_DODGES	{0} esquive le coup de {1}
+MISC_LOG_SHRUGS	{0} encaisse le coup de {1} sans broncher
+MISC_LOG_HITS	{0} frappe {1}
+MISC_LOG_SHOOTS	{0} tire sur {1}
+MISC_LOG_HITS_BLOCKED	{0} frappe {1} (bloqué)
+MISC_LOG_SHOOTS_BLOCKED	{0} tire sur {1} (bloqué)
+MISC_LOG_DAMAGE	{0} subit {1} dégâts
+MISC_LOG_ELIXIR_ENDS	L'effet de {1} sur {0} se dissipe
+MISC_LOG_NOTICES	{0} repère {1}
+MISC_SAVE_NEWER	Cette sauvegarde provient d'une version plus récente du jeu.
+MISC_AUTOSAVE_FAILED	La sauvegarde automatique a échoué.

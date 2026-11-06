@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Vleermuizen
 FACTION_MOB_FROG	Kikkers
 FACTION_MOB_GORLICORN	Gorlicorns
 MISC_MOB_NO_GEAR	Dieren kunnen geen uitrusting dragen
+MISC_LOG_MISSES	{0} mist {1}
+MISC_LOG_SHOOTS_MISS	{0} schiet op {1} en mist
+MISC_LOG_DODGES	{0} ontwijkt de slag van {1}
+MISC_LOG_SHRUGS	{0} schudt de klap van {1} van zich af
+MISC_LOG_HITS	{0} raakt {1}
+MISC_LOG_SHOOTS	{0} beschiet {1}
+MISC_LOG_HITS_BLOCKED	{0} raakt {1} (geblokkeerd)
+MISC_LOG_SHOOTS_BLOCKED	{0} beschiet {1} (geblokkeerd)
+MISC_LOG_DAMAGE	{0} krijgt {1} schade
+MISC_LOG_ELIXIR_ENDS	Het effect van {1} op {0} is uitgewerkt
+MISC_LOG_NOTICES	{0} merkt {1} op
+MISC_SAVE_NEWER	Dit opslagbestand is gemaakt met een nieuwere versie van de game.
+MISC_AUTOSAVE_FAILED	Automatisch opslaan is mislukt.

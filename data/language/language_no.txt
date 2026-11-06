@@ -1007,3 +1007,16 @@ FACTION_MOB_BAT	Flaggermus
 FACTION_MOB_FROG	Frosker
 FACTION_MOB_GORLICORN	Gorlicorner
 MISC_MOB_NO_GEAR	Dyr kan ikke bære utstyr
+MISC_LOG_MISSES	{0} bommer på {1}
+MISC_LOG_SHOOTS_MISS	{0} skyter mot {1} og bommer
+MISC_LOG_DODGES	{0} unngår slaget fra {1}
+MISC_LOG_SHRUGS	{0} rister av seg slaget fra {1}
+MISC_LOG_HITS	{0} treffer {1}
+MISC_LOG_SHOOTS	{0} skyter {1}
+MISC_LOG_HITS_BLOCKED	{0} treffer {1} (blokkert)
+MISC_LOG_SHOOTS_BLOCKED	{0} skyter {1} (blokkert)
+MISC_LOG_DAMAGE	{0} tar {1} i skade
+MISC_LOG_ELIXIR_ENDS	Virkningen av {1} på {0} går over
+MISC_LOG_NOTICES	{0} oppdager {1}
+MISC_SAVE_NEWER	Dette lagrede spillet er laget med en nyere versjon av spillet.
+MISC_AUTOSAVE_FAILED	Automatisk lagring mislyktes.

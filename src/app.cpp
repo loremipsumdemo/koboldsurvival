@@ -1,4 +1,5 @@
 #include "app.h"
+#include "user_files.h"
 
 using namespace play;
 
@@ -21,7 +22,7 @@ int App::init() {
         }
     }
     // Settings come first: the saved text size decides the fonts
-    settings = loadSettings(SETTINGS_PATH);
+    settings = loadSettings(settingsFilePath());
     fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
     appliedFontScale = settings.fontScale;
     appliedFontPath = settings.fontPath;
@@ -33,7 +34,7 @@ int App::init() {
             SDL_Log("Language: %s. Using the default language.", langErr.c_str());
             settings.language = LANGUAGE_DEFAULT_ID;
             loadLanguage(settings.language, langErr);
-            saveSettings(settings, SETTINGS_PATH);
+            saveSettings(settings, settingsFilePath());
         }
     }
     // The large title font, for the selected language, with the same fallbacks. It keeps the language it started with.
@@ -117,12 +118,16 @@ int App::init() {
     saves = listSaves();
     sortSaves(saves, sortKey, sortAsc);
 
-    lastTicks = SDL_GetTicks();
-    fpsSince = lastTicks;
+    lastTicks = SDL_GetTicksNS();
+    fpsSince = SDL_GetTicks();
 
     // Without an audio output the game runs silent, so this result is not checked
     audio::init();
     applyAudio();
+    for (int i = 0; i < (int)Sfx::Count; ++i) {
+        const SfxInfo& info = sfxInfo((Sfx)i);
+        audio::preloadEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects);
+    }
 
     SDL_Log("Start-up done, showing the title screen");
     return 0;
@@ -168,6 +173,7 @@ void App::run() {
         update();
         updateHover();
         render();
+        putUnitsBack();
 
         if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);   // the pointer came onto another button
         SDL_GL_SwapWindow(window);

@@ -81,7 +81,6 @@ constexpr size_t HOVER_NAME_LIMIT = 10;      // the hover list shows up to this 
 constexpr Uint64 DELETE_HOLD_MS = 3000;      // holding Delete this long deletes the save
 constexpr size_t NAME_LIMIT = 32;            // longest save name, in bytes
 constexpr Uint64 UNSAVED_WARN_MS = 30000;    // loading over a game not saved this recently asks first
-constexpr const char* SETTINGS_PATH = "settings.cfg";
 
 // The size the title screen's name is drawn in before it is shrunk to fit: large enough that it is never enlarged,
 // even on a 4K screen
@@ -128,6 +127,10 @@ struct App {
     void updateRightHold();
     void updateTalkOrders();
     void stepGame();
+    void stepSimulation();
+    void updateCamera();
+    void placeUnitsBetweenSteps();
+    void putUnitsBack();
     void reportPropArrivals();
     void showWorkGains(double gameSecs);
     void playWorkSounds();
@@ -443,7 +446,13 @@ struct App {
     std::string notice;
     float noticeSec = 0.0f;
 
-    Uint64 lastTicks = 0;
+    Uint64 lastTicks = 0;                  // in nanoseconds
+    // The game moves in steps of one length (stepSimulation)
+    static constexpr float SIM_STEP_SECONDS = 1.0f / 60.0f;
+    static constexpr int SIM_MOST_STEPS_PER_FRAME = 5;
+    float simLeft = 0.0f;                  // time passed that has not been stepped yet
+    std::vector<std::pair<Entity, Transform>> simBefore;   // where the units were before the last step
+    std::vector<std::pair<Entity, Transform>> simTrue;     // their real places, while they stand between steps for drawing
     // The frame rate shown in the corner (Show FPS): frames counted over half a second at a time
     Uint64 fpsSince = 0;
     int fpsFrames = 0;

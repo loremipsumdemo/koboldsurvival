@@ -6,6 +6,7 @@
 #include "inventory.h"
 #include "items.h"
 #include "mobs.h"
+#include "terrain.h"
 #include "useitem.h"
 
 namespace {
@@ -112,16 +113,16 @@ int slotNamed(World& w, Entity e, const char* name) {
     return -1;
 }
 
-// The hostile a player unit fights next: the one in reach with the least health. A downed one has 0,
+// The hostile a player unit fights next: the one in reach and in sight with the least health. A downed one has 0,
 // so it is finished off before any other.
-Entity pickInReach(World& w, Entity p, const std::vector<Entity>& hostiles) {
+Entity pickInReach(World& w, const Terrain& t, Entity p, const std::vector<Entity>& hostiles) {
     Entity best = NULL_ENTITY;
     int bestHp = 0;
     const float reach = reachOf(w, p);
     for (Entity h : hostiles) {
         if (!targetable(w, h) || flatGap(w, p, h) > reach) continue;
         const int hp = hpOf(w, h);
-        if (best == NULL_ENTITY || hp < bestHp) {
+        if ((best == NULL_ENTITY || hp < bestHp) && canSee(w, t, p, h)) {
             best = h;
             bestHp = hp;
         }
@@ -217,13 +218,13 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     if (r.outcome == Outcome::Miss) {
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(attacker + (shot ? " shoots at " : " misses ") + defender + (shot ? " and misses" : ""), tint, LogKind::Miss, npcOnly(w, a, d));
+        log.add(langf(shot ? "MISC_LOG_SHOOTS_MISS" : "MISC_LOG_MISSES", { attacker, defender }), tint, LogKind::Miss, npcOnly(w, a, d));
         return;
     }
     if (r.outcome == Outcome::Dodge) {
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
-        log.add(defender + " dodges " + attacker + "'s swing", tint, LogKind::Miss, npcOnly(w, a, d));
+        log.add(langf("MISC_LOG_DODGES", { defender, attacker }), tint, LogKind::Miss, npcOnly(w, a, d));
         grantXp(w, d, StatId::Agility, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
         return;
     }
@@ -235,7 +236,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
 
     // A mob walking home after giving up a chase (Patrol Spawn) takes no damage until it is there
     if (const SpawnHome* home = w.get<SpawnHome>(d); home && home->returning) {
-        log.add(defender + " shrugs off " + attacker + "'s hit", tint, LogKind::Hit, npcOnly(w, a, d));
+        log.add(langf("MISC_LOG_SHRUGS", { defender, attacker }), tint, LogKind::Hit, npcOnly(w, a, d));
         return;
     }
     Needs* nd = w.get<Needs>(d);
@@ -246,8 +247,10 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     }
     const int lost = nd ? before - nd->hp : r.damage;
 
-    log.add(attacker + (shot ? " shoots " : " hits ") + defender + (r.blocked ? " (blocked)" : ""), tint, LogKind::Hit, npcOnly(w, a, d));
-    if (r.damage > 0) log.add(defender + " takes " + std::to_string(r.damage) + " damage", tint, LogKind::Damage, npcOnly(w, a, d));
+    const char* const hitKey = shot ? (r.blocked ? "MISC_LOG_SHOOTS_BLOCKED" : "MISC_LOG_SHOOTS")
+                                    : (r.blocked ? "MISC_LOG_HITS_BLOCKED" : "MISC_LOG_HITS");
+    log.add(langf(hitKey, { attacker, defender }), tint, LogKind::Hit, npcOnly(w, a, d));
+    if (r.damage > 0) log.add(langf("MISC_LOG_DAMAGE", { defender, std::to_string(r.damage) }), tint, LogKind::Damage, npcOnly(w, a, d));
     if (const Transform* td = w.get<Transform>(d)) {
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
@@ -404,7 +407,21 @@ Equipment randomHostileGear(Rng& rng) {
     return worn;
 }
 
-void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats) {
+bool canSee(World& w, const Terrain& t, Entity a, Entity b) {
+    const Transform* ta = w.get<Transform>(a);
+    const Transform* tb = w.get<Transform>(b);
+    return ta && tb && t.sightClear(ta->x, ta->y, ta->z, tb->x, tb->y, tb->z);
+}
+
+// The elixir's name in the language in use
+static std::string elixirName() {
+    for (const ItemDef& d : itemDatabase()) {
+        if (d.name == ELIXIR) return itemDisplayName(d);
+    }
+    return ELIXIR;
+}
+
+void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, std::vector<FloatingNumber>& floats) {
     // Damage numbers rise and fade, then go
     for (FloatingNumber& f : floats) f.age += dt;
     floats.erase(std::remove_if(floats.begin(), floats.end(),
@@ -436,7 +453,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             if (c.buffLeft <= 0.0f) {
                 c.buffLeft = 0.0f;
                 c.buffAttack = 0.0f;
-                log.add(nameOf(w, e) + "'s Elixir of Might wears off", Tint::Gray, LogKind::Other, npcOnly(w, e));
+                log.add(langf("MISC_LOG_ELIXIR_ENDS", { nameOf(w, e), elixirName() }), Tint::Gray, LogKind::Other, npcOnly(w, e));
             }
         }
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);
@@ -467,9 +484,9 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             if (gx * gx + gz * gz > MAX_NOTICE_RANGE * MAX_NOTICE_RANGE) continue;
             if (p == h || !standing(p) || !unitsHostile(w, h, p)) continue;
             if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
-            if (rng.unit() < dt * (1.0f - noticeFailChance(w, p))) {
+            if (rng.unit() < dt * (1.0f - noticeFailChance(w, p)) && canSee(w, t, h, p)) {
                 hc.target = p;
-                if (w.has<Commandable>(p)) log.add(nameOf(w, h) + " notices " + nameOf(w, p), Tint::Gray, LogKind::Seen);
+                if (w.has<Commandable>(p)) log.add(langf("MISC_LOG_NOTICES", { nameOf(w, h), nameOf(w, p) }), Tint::Gray, LogKind::Seen);
                 drinkForFight(w, h, hc, log);
                 break;
             }
@@ -522,7 +539,8 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             w.remove<AttackOrder>(p);   // the red unit is gone, so the order is done
             pc.target = NULL_ENTITY;
         }
-        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p)) {
+        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p) &&
+            canSee(w, t, p, pc.target)) {
             continue;
         }
         // A passive unit, or one only blocking, picks no fight of its own
@@ -530,7 +548,7 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
             pc.target = NULL_ENTITY;
             continue;
         }
-        pc.target = pickInReach(w, p, hostiles);
+        pc.target = pickInReach(w, t, p, hostiles);
         if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc, log);
     }
 
@@ -541,8 +559,8 @@ void combatSystem(World& w, Rng& rng, float dt, GameLog& log, std::vector<Floati
         Combat& c = *w.get<Combat>(e);
         if (c.target == NULL_ENTITY || c.swingLeft > 0.0f) continue;
         if (isBlocking(w, e)) continue;   // Block mode: it only blocks, and never swings
-        const Entity t = c.target;
-        if (!targetable(w, t) || flatGap(w, e, t) > reachOf(w, e)) continue;
-        strike(w, rng, e, t, log, floats);
+        const Entity foe = c.target;
+        if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe)) continue;
+        strike(w, rng, e, foe, log, floats);
     }
 }

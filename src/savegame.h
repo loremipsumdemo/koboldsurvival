@@ -7,12 +7,22 @@
 #include "game_state.h"
 #include "timefmt.h"
 
-// Save files are plain text. The terrain comes from the map the save was made on, and the props
-// and red units from the seed. A save stores what changes: the clock, the units, what they carry,
-// their behavior rules, the items on the ground and the camera.
-
-inline constexpr const char* SAVE_DIR = "saves";
+// Save files are plain text. The terrain comes from the map the save was made on, and a level's own props from the seed.
+// A save stores what changes: the clock, the units, what they carry and are doing, their behavior rules, the items on the
+// ground, the props built since the level began, those taken away, and the camera.
+//
+// Each file says which version of this format wrote it. Raise SAVE_VERSION when the meaning of a line changes, and keep
+// reading the older meaning. Numbers in a save stand for enum values and stat places (MobKind, BehaviorKind, PropKind,
+// StatId and so on), so those lists only ever grow at their end.
+inline constexpr int SAVE_VERSION = 2;   // files from before this line existed count as version 1
 inline constexpr int AUTOSAVE_SLOTS = 3;   // autosave0, autosave1, autosave2 rotate
+
+// The folder saves are kept in, in the player's own files (user_files.h)
+std::string saveDir();
+
+// The number a save calls a prop by. A level's prop: its serial. A built prop: the place it has among the save's "built"
+// lines, as a number below -1, since -1 means no prop.
+inline int builtPropSaveId(size_t builtIndex) { return -2 - (int)builtIndex; }
 
 // One of a unit's behaviors. An Auto-Haul's prop is named by where it stands (x, z), since a camp's props are placed
 // again from the seed on the same spots, and a built prop has no serial.
@@ -48,7 +58,7 @@ struct SaveUnit {
     int body = 0;
     bool hasFaction = false;   // older saves have none: the faction comes from the unit's side
     int faction = 0;
-    int occupying = -1;        // the serial of the bed, chair or cage it is on, or -1
+    int occupying = -1;        // the save's number for the bed, chair or cage it is on, or -1
     // Unconscious (components.h): its Dying, its Conscious and whether it is a corpse. Older saves have none, so their units are awake.
     bool unconscious = false;
     float dying = 0.0f;
@@ -81,6 +91,18 @@ struct SaveUnit {
     bool routineOn = true;
     int routineItem = 0;
     float storeX = 0.0f, storeZ = 0.0f, gatherX = 0.0f, gatherZ = 0.0f;
+    // Stamina (below 0: not known yet, it starts full) and any elixir still working
+    float stamina = -1.0f;
+    float buffLeft = 0.0f, buffAttack = 0.0f;
+    std::vector<Provoked::Entry> provoked;   // the factions it is provoked by, and for how long yet
+    // The order you gave it, if any. Units are named by their place in the save. A walk and a formation walk are both
+    // moveX, moveZ: units with the same point set off together again, as a formation. Orders that are only ever a moment
+    // long (pick up, loot, carry, talk) are not kept: the unit is simply idle when the game loads.
+    int followUnit = -1, defendUnit = -1, attackUnit = -1;
+    bool hasMove = false;
+    float moveX = 0.0f, moveZ = 0.0f;
+    int propOrder = -1;        // the save's number for the prop it was sent to or was working, or -1
+    int propAction = 0;        // a PropAction
 };
 
 // An item lying on the ground when the game was saved
@@ -99,10 +121,35 @@ struct SaveStorage {
     int count = 0;
 };
 
-// Whether a lockable prop, named by its serial, is locked. Older saves have none, so their locks start locked.
+// Whether a lockable prop, named by its save number, is locked. Older saves have none, so their locks start locked, and
+// have no level or faction for it (level 0), so it keeps those the level gave it.
 struct SaveLock {
     int prop = 0;
     bool locked = true;
+    int level = 0;
+    int faction = -1;
+};
+
+// A prop that was not placed by the level: built, or the debris of one. Its place in the list gives it its save number.
+struct SaveBuilt {
+    int kind = 0;              // a PropKind
+    float x = 0.0f, y = 0.0f, z = 0.0f, yaw = 0.0f;
+    int owner = -1;            // its Owner's faction, or -1
+};
+
+// How much of a flag or foundation is left, named by its save number (Wear and Health in components.h)
+struct SaveWear {
+    int prop = 0;
+    double value = 1.0;
+};
+struct SaveHealth {
+    int prop = 0;
+    double value = 0.0, max = 0.0;
+};
+// The foundation a prop stands on (OnBase), both named by their save numbers
+struct SaveOnBase {
+    int prop = 0;
+    int foundation = 0;
 };
 
 // Where the camera was looking when saved. Older saves have no camera line, so present stays false.
@@ -122,6 +169,7 @@ struct SaveCamera {
 };
 
 struct SaveData {
+    int version = 1;                  // the format that wrote it (SAVE_VERSION)
     std::string name;
     bool autosave = false;            // true for autosave0..2, false for manual saves
     long long timestamp = 0;          // milliseconds since 1970, used for ordering
@@ -142,6 +190,11 @@ struct SaveData {
     std::vector<SaveLock> locks;
     std::vector<SaveStorage> output;    // what the forges' outputs hold
     std::vector<SaveFuel> fuel;
+    std::vector<SaveBuilt> built;     // older saves have none: what was built in them was never saved
+    std::vector<int> goneProps;       // the serials of the level's props that have been broken or cleared away
+    std::vector<SaveWear> wear;
+    std::vector<SaveHealth> health;
+    std::vector<SaveOnBase> onBase;
     // The Player Faction's reputation with each faction. Older saves have none: every one starts at its default.
     std::map<int, int> reputation;
     // Whether the level has your camp (setupWorld). It is rebuilt from the seed, so this must match. Older saves all have one.
@@ -155,9 +208,10 @@ struct SaveSummary {
     bool autosave = false;
 };
 
+// Writes beside the target and renames, so a failed write leaves any earlier save at that path as it was
 bool writeSaveFile(const std::string& path, const SaveData& d);
 bool readSaveFile(const std::string& path, SaveData& d);
-// Every save in the folder, newest first
+// Every save in the folder, newest first. Only the top of each file is read, so this stays quick however large they are.
 std::vector<SaveSummary> listSaves();
 // The next autosave slot: an empty one first, otherwise the oldest
 std::string nextAutosavePath();
