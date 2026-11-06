@@ -449,8 +449,9 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
 }
 
 void Renderer::beginUi(int winW, int winH) {
-    constexpr size_t LIST_CACHE_LIMIT = 512;
-    if (text_.list.lines.size() > LIST_CACHE_LIMIT) text_.list.clear();
+    constexpr size_t TEXT_CACHE_LIMIT = 512;
+    if (text_.ui.lines.size() > TEXT_CACHE_LIMIT) text_.ui.clear();
+    if (text_.list.lines.size() > TEXT_CACHE_LIMIT) text_.list.clear();
     uiW_ = winW;
     uiH_ = winH;
     glViewport(0, 0, winW, winH);

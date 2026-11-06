@@ -133,6 +133,15 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Destroyed units leave their facing behind, so sweep once enough of them have piled up
+    constexpr size_t FACING_SLACK = 64;
+    if (unitFacing_.size() > w.count<Unit>() + FACING_SLACK) {
+        for (auto it = unitFacing_.begin(); it != unitFacing_.end();) {
+            if (w.has<Unit>(it->first)) ++it;
+            else it = unitFacing_.erase(it);
+        }
+    }
+
     viewProj_ = cam.viewProj((float)winW / (float)winH);
     float ex, ey, ez;
     cam.eye(ex, ey, ez);

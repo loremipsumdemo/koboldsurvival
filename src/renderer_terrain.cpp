@@ -307,6 +307,7 @@ void Renderer::releaseTerrain() {
 
 void Renderer::uploadTerrain(const Terrain& t) {
     releaseTerrain();
+    unitFacing_.clear();
     if (overviewTex_) {
         glDeleteTextures(1, &overviewTex_);
         overviewTex_ = 0;
