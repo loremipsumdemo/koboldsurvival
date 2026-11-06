@@ -447,20 +447,18 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
         if (topLabelRow(stacks, mx, my, k, j)) return stacks[k].items[j];
     }
 
+    return nearestGroundItem(groundItemsAtPixel(w, t, cam, mx, my, winW, winH), w, cam, mx, my, winW, winH);
+}
+
+Entity Renderer::nearestGroundItem(const std::vector<Entity>& items, World& w, const Camera& cam, float mx, float my,
+                                   int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     Entity best = NULL_ENTITY;
     float bestD2 = 0.0f;
-    for (Entity e : w.view<GroundItem, Transform>()) {
-        const GroundItem* gi = w.get<GroundItem>(e);
+    for (Entity e : items) {
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-
         ItemOnScreen os;
-        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
-        const bool onSprite = mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom;
-        if (!onSprite || os.bottom - os.top < 1.0f) continue;
-        if (!itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) continue;
-
+        if (!tr || !itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
         const float cy = (os.top + os.bottom) * 0.5f;
         const float d2 = (mx - os.cx) * (mx - os.cx) + (my - cy) * (my - cy);
         if (best == NULL_ENTITY || d2 < bestD2) {

@@ -716,6 +716,8 @@ MISC_UNLOCKED	Kinyitva!
 MISC_LOCKPICK_FAILED	A zárfeltörés nem sikerült
 MISC_UNLOCKS	{0} kinyitja: {1}
 MISC_LOCKS	{0} bezárja: {1}
+MISC_EVACUATES	{0} kilöki {1} egységet innen: {2}
+MISC_CANT_OCCUPY_YET	{0} most nem foglalhat el semmit
 MISC_REASON_LOCKPICKING	zárfeltörés
 MISC_LOCKED_NAME	{0} (zárva)
 PROP_CHAIR	Szék
@@ -926,6 +928,7 @@ PROP_STOVE	Tűzhely
 UILABEL_BUILD_DESTROY	Lebontás
 UILABEL_BUILD_DESTROY_HINT	Bal kattintás bármely tárgyra a lebontásához: a tartalma a földre hullik, és törmelék marad a helyén. Bal kattintás a törmelékre az eltakarításához. Jobb kattintás vagy Escape: mégse.
 UILABEL_LOCK	Bezárás
+UILABEL_EVACUATE	Kiürítés
 MISC_BUILD_SEALED	Ez a föld egy másik frakcióé
 MISC_BUILD_CLAIM_OVERLAP	Ez a terület átfedné egy másikat
 MISC_BUILD_ALTAR_TAKEN	A frakciódnak már van oltára

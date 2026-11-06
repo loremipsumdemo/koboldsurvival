@@ -716,6 +716,8 @@ MISC_UNLOCKED	Kilit açıldı!
 MISC_LOCKPICK_FAILED	Maymuncuk başarısız
 MISC_UNLOCKS	{0}, {1} kilidini açıyor
 MISC_LOCKS	{0}, {1} kilidini kapatıyor
+MISC_EVACUATES	{0}, {1} birimini {2} dışına itiyor
+MISC_CANT_OCCUPY_YET	{0} şu an hiçbir şeye yerleşemez
 MISC_REASON_LOCKPICKING	kilit açmak
 MISC_LOCKED_NAME	{0} (kilitli)
 PROP_CHAIR	Sandalye
@@ -926,6 +928,7 @@ PROP_STOVE	Ocak
 UILABEL_BUILD_DESTROY	Yık
 UILABEL_BUILD_DESTROY_HINT	Yıkmak için herhangi bir nesneye sol tıkla: içindekiler yere düşer ve yerinde enkaz kalır. Temizlemek için enkaza sol tıkla. Sağ tık ya da Escape iptal eder.
 UILABEL_LOCK	Kilitle
+UILABEL_EVACUATE	Boşalt
 MISC_BUILD_SEALED	O toprak başka bir gruba ait
 MISC_BUILD_CLAIM_OVERLAP	Bu bölge başka bir bölgeyle çakışır
 MISC_BUILD_ALTAR_TAKEN	Grubunun zaten bir sunağı var

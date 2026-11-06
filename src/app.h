@@ -277,6 +277,7 @@ struct App : AppSession {
     void beginRightHold(float x, float z);
     void moveSelectedTo(float x, float z);
     bool overPanels(float x, float y, int W, int H);
+    bool mouseOverPanels();
     bool holdTarget(int W, int H, float x, float y, float& gx, float& gz);
     bool pointerOverPanels(int W, int H);
     void openTrade(bool free);
@@ -388,6 +389,8 @@ struct App : AppSession {
     LogFilter logFilter;
     bool logFilterOpen = false;
 
+    double claimDecayDue = 0.0;
+
     std::string notice;
     float noticeSec = 0.0f;
 
@@ -404,4 +407,6 @@ struct App : AppSession {
     float dt = 0.0f;
     std::vector<HudEntry> hud;
     float mouseX = 0.0f, mouseY = 0.0f;
+    std::vector<Entity> unitsUnderMouse, itemsUnderMouse;
+    std::optional<bool> mouseOnPanels;
 };

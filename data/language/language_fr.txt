@@ -716,6 +716,8 @@ MISC_UNLOCKED	Déverrouillé !
 MISC_LOCKPICK_FAILED	Crochetage raté
 MISC_UNLOCKS	{0} déverrouille : {1}
 MISC_LOCKS	{0} verrouille : {1}
+MISC_EVACUATES	{0} pousse {1} hors de {2}
+MISC_CANT_OCCUPY_YET	{0} ne peut rien occuper pour le moment
 MISC_REASON_LOCKPICKING	crocheter des serrures
 MISC_LOCKED_NAME	{0} (verrouillé)
 PROP_CHAIR	Chaise
@@ -926,6 +928,7 @@ PROP_STOVE	Fourneau
 UILABEL_BUILD_DESTROY	Détruire
 UILABEL_BUILD_DESTROY_HINT	Clic gauche sur un objet pour l'abattre : son contenu tombe au sol et des débris restent à sa place. Clic gauche sur des débris pour les déblayer. Clic droit ou Échap pour annuler.
 UILABEL_LOCK	Verrouiller
+UILABEL_EVACUATE	Évacuer
 MISC_BUILD_SEALED	Ce terrain appartient à une autre faction
 MISC_BUILD_CLAIM_OVERLAP	Ce territoire chevaucherait un autre territoire
 MISC_BUILD_ALTAR_TAKEN	Votre faction a déjà un autel

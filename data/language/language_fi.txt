@@ -716,6 +716,8 @@ MISC_UNLOCKED	Avattu!
 MISC_LOCKPICK_FAILED	Tiirikointi epäonnistui
 MISC_UNLOCKS	{0} avaa: {1}
 MISC_LOCKS	{0} lukitsee: {1}
+MISC_EVACUATES	{0} työntää kohteen {1} ulos: {2}
+MISC_CANT_OCCUPY_YET	{0} ei voi juuri nyt asettua mihinkään
 MISC_REASON_LOCKPICKING	tiirikointi
 MISC_LOCKED_NAME	{0} (lukittu)
 PROP_CHAIR	Tuoli
@@ -926,6 +928,7 @@ PROP_STOVE	Liesi
 UILABEL_BUILD_DESTROY	Pura
 UILABEL_BUILD_DESTROY_HINT	Napsauta mitä tahansa kohdetta vasemmalla purkaaksesi sen: sen sisältö putoaa maahan ja tilalle jää roinaa. Napsauta roinaa vasemmalla raivataksesi sen. Oikea napsautus tai Escape peruu.
 UILABEL_LOCK	Lukitse
+UILABEL_EVACUATE	Tyhjennä
 MISC_BUILD_SEALED	Tuo maa kuuluu toiselle ryhmittymälle
 MISC_BUILD_CLAIM_OVERLAP	Tämä alue menisi toisen alueen päälle
 MISC_BUILD_ALTAR_TAKEN	Ryhmittymälläsi on jo alttari

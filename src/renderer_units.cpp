@@ -427,6 +427,7 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
     float o[3] = {}, d[3] = {};
     if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
     std::vector<std::pair<float, Entity>> hits;
+    const float rayLen2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
 
     auto project = [&](float x, float y, float z, float& sx, float& sy) {
         return worldToScreen(vp, x, y, z, winW, winH, sx, sy);
@@ -436,6 +437,10 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         if (const Model* m = unitModel(w, u)) {
+            const float tall = std::max(1.0f, unitHeight(w, u)), reach = 1.5f * tall + 1.0f;
+            const float cx = tr->x - o[0], cy = tr->y + 0.5f * tall - o[1], cz = tr->z - o[2];
+            const float along = cx * d[0] + cy * d[1] + cz * d[2];
+            if (rayLen2 > 0.0f && cx * cx + cy * cy + cz * cz - along * along / rayLen2 > reach * reach) continue;
             const auto facing = unitFacing_.find(u);
             const float yaw = facing != unitFacing_.end() ? facing->second.yaw : std::atan2(billX_ - tr->x, billZ_ - tr->z);
             const float t = rayHitModelMatrix(*m, unitWorldMatrix(w, u, *m, yaw).m, o, d);

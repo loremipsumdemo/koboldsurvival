@@ -40,7 +40,7 @@ CarryEvents carrySystem(World& w) {
             w.remove<SoloMove>(u);
             continue;
         }
-        if (flatGap(w, u, target) <= CARRY_REACH) {
+        if (flatGap(w, u, target) <= (w.has<Occupying>(target) ? PROP_REACH : CARRY_REACH)) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
             clearOrders(w, target);

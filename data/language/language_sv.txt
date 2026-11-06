@@ -716,6 +716,8 @@ MISC_UNLOCKED	Upplåst!
 MISC_LOCKPICK_FAILED	Dyrkningen misslyckades
 MISC_UNLOCKS	{0} låser upp {1}
 MISC_LOCKS	{0} låser {1}
+MISC_EVACUATES	{0} knuffar ut {1} ur {2}
+MISC_CANT_OCCUPY_YET	{0} kan inte inta något just nu
 MISC_REASON_LOCKPICKING	dyrka lås
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -926,6 +928,7 @@ PROP_STOVE	Spis
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Vänsterklicka på ett föremål för att riva det: det som finns i det faller till marken och bråte blir kvar. Vänsterklicka på bråte för att röja bort det. Högerklick eller Escape avbryter.
 UILABEL_LOCK	Lås
+UILABEL_EVACUATE	Utrym
 MISC_BUILD_SEALED	Den marken tillhör en annan fraktion
 MISC_BUILD_CLAIM_OVERLAP	Det anspråket skulle överlappa ett annat
 MISC_BUILD_ALTAR_TAKEN	Din fraktion har redan ett altare

@@ -195,6 +195,14 @@ const std::vector<FactionDef>& reputationFactions() {
     return out;
 }
 
+int reputationFactionCount() {
+    int n = 0;
+    for (const FactionDef& f : table().list) {
+        if (!isMobFaction(f.id) && f.id != FACTION_EXILE) ++n;
+    }
+    return n;
+}
+
 void resetPlayerReputation() { standings().clear(); }
 
 void setPlayerReputation(const std::map<int, int>& s) {

@@ -55,7 +55,7 @@ void factionSystem(World& w, float dt) {
         for (Provoked::Entry& en : p->against) {
             bool seen = false;
             for (Entity o : units) {
-                if (!awake || o == u || factionOf(w, o) != en.faction || outCold(w, o)) continue;
+                if (!awake || o == u || factionOf(w, o) != en.faction || outCold(w, o) || inPrisonerCage(w, o)) continue;
                 const Transform* to = w.get<Transform>(o);
                 const float dx = to->x - tu->x, dz = to->z - tu->z;
                 if (dx * dx + dz * dz <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {

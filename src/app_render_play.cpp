@@ -1,4 +1,5 @@
 #include "app.h"
+#include "profile.h"
 
 using namespace play;
 
@@ -24,8 +25,8 @@ void App::drawWorldOverlays() {
     }
     renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     renderer.drawPropEmotes(world, cam, winW, winH, settings.showPropNames);
-    if (!overPanels(mouseX, mouseY, winW, winH) && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NULL_ENTITY) {
-        for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH)) {
+    if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NULL_ENTITY) {
+        for (Entity u : unitsUnderMouse) {
             const Carried* cd = world.get<Carried>(u);
             const bool names = world.has<Commandable>(u) ? settings.showUnitNames : settings.showNpcNames;
             if (cd && world.has<Selected>(cd->by)) {
@@ -48,8 +49,8 @@ void App::drawWorldOverlays() {
     renderer.drawPropProgress(world, cam, winW, winH, settings.showPropNames);
     if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
         renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
-    } else if (!overPanels(mouseX, mouseY, winW, winH) && !session.contextMenu.open && !itemMenu.open) {
-        const Entity hovered = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH, false);
+    } else if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open) {
+        const Entity hovered = renderer.nearestGroundItem(itemsUnderMouse, world, cam, mouseX, mouseY, winW, winH);
         if (hovered != NULL_ENTITY) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
     }
 }
@@ -237,12 +238,12 @@ void App::drawTalkOrTrade() {
 
 void App::drawPlayingScreen() {
     updateWorldMapView();
-    renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH);
+    PROFILED("draw: world", renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH));
     renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
     renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
     renderer.beginUi(winW, winH);
-    drawWorldOverlays();
-    drawGamePanels();
+    PROFILED("draw: overlays", drawWorldOverlays());
+    PROFILED("draw: panels", drawGamePanels());
     if (session.lootUnit != NULL_ENTITY) {
         const std::string who = world.has<Corpse>(session.lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, session.lootUnit) })
                                                            : nameOf(world, session.lootUnit);

@@ -18,7 +18,7 @@ lose state: the world keeps running, whatever happens to your party.
   is sent with the right-click menu's Destroy. Either way its items and 3 Bones fall to the ground. Food and bones left
   on the ground are gone after 24 in-game hours. A corpse carried into a campfire is destroyed at once, and what it had
   falls to the ground.
-- **Behaviors.** Each unit works through a priority list: Eat, Heal, Share, Rest, Leave Bed, Rescue, Auto-Harvest,
+- **Behaviors.** Each unit works through a priority list: Eat, Heal, Share, Rescue, Rest, Leave Bed, Auto-Harvest,
   Auto-Haul, Patrol, Patrol Spawn and Roam. You can reorder, switch off, add or remove them per unit. Units can also be
   set to Passive, Block or Sneak.
 - **Gathering and crafting.** Mine ore, cut trees and gather mushrooms. Campfires and forges work by themselves from
@@ -31,7 +31,7 @@ lose state: the world keeps running, whatever happens to your party.
   props in the circle belong to nobody.
 - **Factions and reputation.** Rival camps start at set reputations with you. At -25 or below they attack on sight, and
   at 50 or more they are allies. The game keeps running while you talk or trade, unless you turn on Automatic Conversation
-  Pause in Settings or press Space. Talk to NPCs, trade with them, lock units in Prisoner Cages, pick locks, or disband
+  Pause in Settings or press Space. Talk to NPCs, trade with them, lock units in Prisoner Cages (a caged unit is out of any fight), push a unit off a prop with Evacuate, pick locks, or disband
   your units into the Exiles.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.

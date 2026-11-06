@@ -83,8 +83,6 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (Entity u : w.view<Unit, Transform>()) {
-        const std::vector<EmoteId> emotes = emotesOf(w, u);
-        if (emotes.empty()) continue;
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
@@ -93,6 +91,8 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         const bool named = w.has<Name>(u) && (w.has<Commandable>(u) ? playerNames : otherNames);
         if (named) bottom -= listTextHeight("Ag") + 2.0f * s;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
+        const std::vector<EmoteId> emotes = emotesOf(w, u);
+        if (emotes.empty()) continue;
         const TextTex* pic = emoteTexture(emotes[(size_t)(turn % emotes.size())]);
         if (!pic) continue;
         drawFitted(*pic, Rect{ sx - size * 0.5f, bottom - size - hop, size, size }, WHITE);

@@ -716,6 +716,8 @@ MISC_UNLOCKED	Đã mở khóa!
 MISC_LOCKPICK_FAILED	Cạy khóa thất bại
 MISC_UNLOCKS	{0} mở khóa {1}
 MISC_LOCKS	{0} khóa {1}
+MISC_EVACUATES	{0} đẩy {1} ra khỏi {2}
+MISC_CANT_OCCUPY_YET	{0} tạm thời không thể chiếm chỗ nào
 MISC_REASON_LOCKPICKING	cạy khóa
 MISC_LOCKED_NAME	{0} (đã khóa)
 PROP_CHAIR	Ghế
@@ -926,6 +928,7 @@ PROP_STOVE	Bếp
 UILABEL_BUILD_DESTROY	Phá hủy
 UILABEL_BUILD_DESTROY_HINT	Nhấp trái vào vật thể bất kỳ để phá nó: đồ bên trong rơi xuống đất và để lại đống đổ nát. Nhấp trái vào đống đổ nát để dọn đi. Nhấp phải hoặc Escape để hủy.
 UILABEL_LOCK	Khóa
+UILABEL_EVACUATE	Sơ tán
 MISC_BUILD_SEALED	Vùng đất đó thuộc về phe khác
 MISC_BUILD_CLAIM_OVERLAP	Lãnh địa đó sẽ chồng lên lãnh địa khác
 MISC_BUILD_ALTAR_TAKEN	Phe của bạn đã có bàn thờ

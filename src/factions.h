@@ -38,6 +38,7 @@ bool factionsAllied(int a, int b);
 
 std::map<int, int> playerReputation();
 const std::vector<FactionDef>& reputationFactions();
+int reputationFactionCount();
 void resetPlayerReputation();
 void setPlayerReputation(const std::map<int, int>& standings);
 int changePlayerReputation(int faction, int delta);

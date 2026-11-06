@@ -182,10 +182,16 @@ bool spoilsOnGround(int item) {
 
 const ItemDef* findItem(int id) {
     if (id <= 0) return nullptr;
-    for (const ItemDef& d : itemDatabase()) {
-        if (d.id == id) return &d;
-    }
-    return nullptr;
+    static const std::vector<const ItemDef*> index = [] {
+        std::vector<const ItemDef*> out;
+        for (const ItemDef& d : itemDatabase()) {
+            if (d.id <= 0) continue;
+            if ((size_t)d.id >= out.size()) out.resize((size_t)d.id + 1, nullptr);
+            out[(size_t)d.id] = &d;
+        }
+        return out;
+    }();
+    return (size_t)id < index.size() ? index[(size_t)id] : nullptr;
 }
 
 namespace {

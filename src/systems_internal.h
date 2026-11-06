@@ -89,6 +89,7 @@ Entity nearestProp(World& w, const Transform& from, Pred pred) {
 }
 
 void autoWalk(World& w, Terrain& t, Entity u, Vec2 to);
+void stepOffProp(World& w, Terrain& t, Entity u, Entity prop);
 void stopAutoStep(World& w, Entity u, Behaviors& b);
 bool openTile(const Terrain& t, float x, float z);
 

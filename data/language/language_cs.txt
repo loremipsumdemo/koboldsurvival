@@ -716,6 +716,8 @@ MISC_UNLOCKED	Odemčeno!
 MISC_LOCKPICK_FAILED	Páčení selhalo
 MISC_UNLOCKS	{0} odemyká: {1}
 MISC_LOCKS	{0} zamyká: {1}
+MISC_EVACUATES	{0} vystrčí {1} z: {2}
+MISC_CANT_OCCUPY_YET	{0} teď nemůže nic obsadit
 MISC_REASON_LOCKPICKING	páčení zámků
 MISC_LOCKED_NAME	{0} (zamčeno)
 PROP_CHAIR	Židle
@@ -926,6 +928,7 @@ PROP_STOVE	Kamna
 UILABEL_BUILD_DESTROY	Zbořit
 UILABEL_BUILD_DESTROY_HINT	Levým kliknutím na objekt ho zboříš: jeho obsah spadne na zem a na jeho místě zůstanou sutiny. Levým kliknutím na sutiny je odklidíš. Pravé kliknutí nebo Escape zruší.
 UILABEL_LOCK	Zamknout
+UILABEL_EVACUATE	Vyklidit
 MISC_BUILD_SEALED	Tato půda patří jiné frakci
 MISC_BUILD_CLAIM_OVERLAP	Toto území by se překrývalo s jiným
 MISC_BUILD_ALTAR_TAKEN	Vaše frakce už oltář má

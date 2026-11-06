@@ -716,6 +716,8 @@ MISC_UNLOCKED	Відчинено!
 MISC_LOCKPICK_FAILED	Зламати не вдалося
 MISC_UNLOCKS	{0} відмикає: {1}
 MISC_LOCKS	{0} замикає: {1}
+MISC_EVACUATES	{0} виштовхує {1} з: {2}
+MISC_CANT_OCCUPY_YET	{0} поки що не може нічого зайняти
 MISC_REASON_LOCKPICKING	зламування замків
 MISC_LOCKED_NAME	{0} (замкнено)
 PROP_CHAIR	Стілець
@@ -926,6 +928,7 @@ PROP_STOVE	Піч
 UILABEL_BUILD_DESTROY	Знести
 UILABEL_BUILD_DESTROY_HINT	Клацніть лівою кнопкою по будь-якому об'єкту, щоб знести його: вміст впаде на землю, а на його місці лишаться уламки. Клацніть лівою кнопкою по уламках, щоб прибрати їх. Права кнопка або Escape — скасування.
 UILABEL_LOCK	Замкнути
+UILABEL_EVACUATE	Звільнити
 MISC_BUILD_SEALED	Ця земля належить іншій фракції
 MISC_BUILD_CLAIM_OVERLAP	Ця територія перетнеться з іншою
 MISC_BUILD_ALTAR_TAKEN	Ваша фракція вже має вівтар

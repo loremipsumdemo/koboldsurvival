@@ -243,8 +243,43 @@ int main(int, char**) {
     check(burning == 1, "a forge keeps its fuel and progress");
     const Behaviors* rescuerAfter = restored.get<Behaviors>(again[2]);
     check(rescuerAfter && rescuerAfter->busy && rescuerAfter->step.kind == BehaviorKind::Rescue, "a rescuer is still on its Rescue step");
-    propOrderSystem(restored);
+    propOrderSystem(restored, terrain);
     check(playerReputation() == repBefore, "a reload costs no reputation");
+
+    // Prisoner cages and Evacuate
+    {
+        World caged;
+        Rng cageRng;
+        cageRng.gen.seed(777);
+        setupWorld(caged, terrain, cageRng, true);
+        std::vector<Entity> own = caged.view<Unit, Commandable, Transform>();
+        std::sort(own.begin(), own.end());
+        check(own.size() >= 2, "the level has two of your units");
+        if (own.size() >= 2) {
+            const Entity inside = own[0], pusher = own[1];
+            const Transform spot = *caged.get<Transform>(pusher);
+            const Entity cage = makeProp(caged, PropKind::PrisonerCage, spot);
+            if (Lock* lock = caged.get<Lock>(cage)) lock->locked = false;
+            caged.add(inside, Occupying{ cage });
+            check(inPrisonerCage(caged, inside), "a unit in a cage is caged");
+            issueAttackOrder(caged, { pusher }, inside);
+            check(!caged.has<AttackOrder>(pusher), "a caged unit can't be ordered attacked");
+            check(propOccupant(caged, cage) == inside, "the cage knows who is in it");
+            caged.add(pusher, PropOrder{ cage, PropAction::Evacuate });
+            propOrderSystem(caged, terrain);
+            check(!caged.has<Occupying>(inside) && !inPrisonerCage(caged, inside), "Evacuate pushes the occupant out");
+            check(caged.has<OccupyBan>(inside), "the one pushed out can't occupy for a while");
+            occupyBanSystem(caged, EVACUATE_OCCUPY_BAN_SECONDS + 1.0f);
+            check(!caged.has<OccupyBan>(inside), "the ban runs out");
+            for (Entity npc : caged.view<Unit, Transform>()) {
+                if (caged.has<Commandable>(npc) || outCold(caged, npc) || caged.has<Occupying>(npc)) continue;
+                caged.add(npc, Occupying{ cage });
+                leaveOpenLocksSystem(caged, terrain);
+                check(!caged.has<Occupying>(npc), "a unit that is not yours leaves an open cage");
+                break;
+            }
+        }
+    }
 
     // Damage is refused
     std::string text = slurp(first);

@@ -174,6 +174,19 @@ target_link_libraries(koboldsurvival PRIVATE
 # the WinMain entry point this needs. Other systems ignore this.
 set_target_properties(koboldsurvival PROPERTIES WIN32_EXECUTABLE TRUE)
 
+# Release builds optimize across source files, so small functions used everywhere can be inlined
+include(CheckIPOSupported)
+check_ipo_supported(RESULT KOBOLD_IPO_SUPPORTED OUTPUT KOBOLD_IPO_MESSAGE)
+if(KOBOLD_IPO_SUPPORTED)
+    set_property(TARGET koboldsurvival PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
+
+# Per-system timers, written to log.txt every 10 seconds (src/profile.h). Off, they cost nothing.
+option(KOBOLD_PROFILE "Time the game's systems and write the results to log.txt" OFF)
+if(KOBOLD_PROFILE)
+    target_compile_definitions(koboldsurvival PRIVATE KOBOLD_PROFILE)
+endif()
+
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executable.
 # The game reads only this file, so the loose data/ folder is not copied.
 add_dependencies(koboldsurvival pack_data write_build_stamp)

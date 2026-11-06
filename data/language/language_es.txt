@@ -716,6 +716,8 @@ MISC_UNLOCKED	¡Abierto!
 MISC_LOCKPICK_FAILED	Ha fallado la ganzúa
 MISC_UNLOCKS	{0} abre {1}
 MISC_LOCKS	{0} cierra con llave {1}
+MISC_EVACUATES	{0} saca a {1} de {2}
+MISC_CANT_OCCUPY_YET	{0} no puede ocupar nada por el momento
 MISC_REASON_LOCKPICKING	forzar cerraduras
 MISC_LOCKED_NAME	{0} (cerrado)
 PROP_CHAIR	Silla
@@ -926,6 +928,7 @@ PROP_STOVE	Fogón
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clic izquierdo en cualquier objeto para derribarlo: lo que contiene cae al suelo y quedan escombros en su lugar. Clic izquierdo en los escombros para retirarlos. Clic derecho o Escape cancela.
 UILABEL_LOCK	Cerrar con llave
+UILABEL_EVACUATE	Desalojar
 MISC_BUILD_SEALED	Ese terreno pertenece a otra facción
 MISC_BUILD_CLAIM_OVERLAP	Ese territorio se solaparía con otro
 MISC_BUILD_ALTAR_TAKEN	Tu facción ya tiene un altar

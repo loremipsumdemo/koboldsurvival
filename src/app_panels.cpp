@@ -231,7 +231,7 @@ void App::useSlot(Entity unit, int slot) {
 
 GameLogLayout App::gameLogPanel(int W, int H) {
     return renderer.gameLogLayout(W, H, infoTab, logFilterOpen, logOffset,
-                                    (int)infoLines(gameLog, infoTab, logFilter).size(), combatCollapsed, logPlace);
+                                    (int)infoLineCount(gameLog, infoTab, logFilter), combatCollapsed, logPlace);
 }
 
 DialogueLayout App::dialogueBox(int W, int H) {
@@ -339,6 +339,11 @@ bool App::overPanels(float x, float y, int W, int H) {
         || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
 }
 
+bool App::mouseOverPanels() {
+    if (!mouseOnPanels) mouseOnPanels = overPanels(mouseX, mouseY, winW, winH);
+    return *mouseOnPanels;
+}
+
 bool App::holdTarget(int W, int H, float x, float y, float& gx, float& gz) {
     if (mapGroundAt(W, H, x, y, gx, gz)) return true;
     if (overPanels(x, y, W, H)) return false;
@@ -356,6 +361,6 @@ bool App::pointerOverPanels(int W, int H) {
 }
 
 UnitPanelLayout App::squadPanelLayout(int W, int H) {
-    return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
-                           (int)reputationFactions().size(), repScroll);
+    return layoutUnitPanel(W, H, (int)world.view<Unit, Transform, Commandable>().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
+                           reputationFactionCount(), repScroll);
 }

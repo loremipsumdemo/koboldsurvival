@@ -716,6 +716,8 @@ MISC_UNLOCKED	Låst opp!
 MISC_LOCKPICK_FAILED	Dirking mislyktes
 MISC_UNLOCKS	{0} låser opp {1}
 MISC_LOCKS	{0} låser {1}
+MISC_EVACUATES	{0} dytter {1} ut av {2}
+MISC_CANT_OCCUPY_YET	{0} kan ikke innta noe akkurat nå
 MISC_REASON_LOCKPICKING	dirke låser
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -926,6 +928,7 @@ PROP_STOVE	Komfyr
 UILABEL_BUILD_DESTROY	Riv
 UILABEL_BUILD_DESTROY_HINT	Venstreklikk på en gjenstand for å rive den: det den holder faller på bakken, og det blir liggende rusk igjen. Venstreklikk på rusk for å rydde det bort. Høyreklikk eller Escape avbryter.
 UILABEL_LOCK	Lås
+UILABEL_EVACUATE	Evakuer
 MISC_BUILD_SEALED	Det landet tilhører en annen fraksjon
 MISC_BUILD_CLAIM_OVERLAP	Det kravet ville overlappe et annet krav
 MISC_BUILD_ALTAR_TAKEN	Fraksjonen din har allerede et alter

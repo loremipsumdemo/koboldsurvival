@@ -35,6 +35,7 @@ constexpr float ROAM_STEP_MIN = 6.0f, ROAM_STEP_MAX = 18.0f;
 constexpr int BEHAVIOR_LIMIT = 16;
 constexpr int BEHAVIOR_NEED_PERCENT = 50;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;
+constexpr float NO_BED_RETRY_SECONDS = 10.0f;
 
 struct BehaviorRule {
     bool on = true;
@@ -96,7 +97,7 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
     rest.kind = BehaviorKind::Rest;
     leave.kind = BehaviorKind::LeaveBed;
     rescue.kind = BehaviorKind::Rescue;
-    return { eat, heal, share, rest, leave, rescue };
+    return { eat, heal, share, rescue, rest, leave };
 }
 
 inline bool isAutomated(BehaviorKind k) {

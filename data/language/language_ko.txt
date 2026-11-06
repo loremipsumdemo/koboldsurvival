@@ -716,6 +716,8 @@ MISC_UNLOCKED	잠금 해제!
 MISC_LOCKPICK_FAILED	자물쇠 따기 실패
 MISC_UNLOCKS	{0}이(가) {1}의 잠금을 풀었습니다
 MISC_LOCKS	{0}이(가) {1}을(를) 잠갔습니다
+MISC_EVACUATES	{0}이(가) {1}을(를) {2}에서 밀어냈다
+MISC_CANT_OCCUPY_YET	{0}은(는) 잠시 아무것도 점유할 수 없다
 MISC_REASON_LOCKPICKING	자물쇠 따기
 MISC_LOCKED_NAME	{0} (잠김)
 PROP_CHAIR	의자
@@ -926,6 +928,7 @@ PROP_STOVE	화덕
 UILABEL_BUILD_DESTROY	철거
 UILABEL_BUILD_DESTROY_HINT	사물을 좌클릭하면 철거합니다: 안에 든 것은 땅에 떨어지고 그 자리에 잔해가 남습니다. 잔해를 좌클릭하면 치웁니다. 우클릭이나 Esc로 취소합니다.
 UILABEL_LOCK	잠그기
+UILABEL_EVACUATE	대피시키기
 MISC_BUILD_SEALED	그 땅은 다른 세력의 영토입니다
 MISC_BUILD_CLAIM_OVERLAP	그 영토는 다른 영토와 겹칩니다
 MISC_BUILD_ALTAR_TAKEN	당신의 세력에는 이미 제단이 있습니다

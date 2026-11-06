@@ -131,7 +131,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     *inv = next;
     worn->items[gearSlot] = item;
     queueSound(Sfx::Equip);
-    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
 
@@ -154,7 +154,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
     worn->items[fromSlot] = 0;
     worn->items[toSlot] = item;
     queueSound(Sfx::Equip);
-    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
 
@@ -174,7 +174,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     *inv = next;
     worn->items[gearSlot] = 0;
     queueSound(Sfx::Unequip);
-    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP, "MISC_REASON_GEAR");
     return true;
 }
 
@@ -384,7 +384,7 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
     *inv = next;
     worn->items = target.items;
     queueSound(Sfx::GearChanged);
-    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP * (float)changed, lang("MISC_REASON_GEAR"));
+    grantXp(w, unit, StatId::Dexterity, GEAR_CHANGE_XP * (float)changed, "MISC_REASON_GEAR");
     return GearAction::Done;
 }
 }

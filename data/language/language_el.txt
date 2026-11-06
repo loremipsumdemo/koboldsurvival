@@ -716,6 +716,8 @@ MISC_UNLOCKED	Ξεκλειδώθηκε!
 MISC_LOCKPICK_FAILED	Η παραβίαση απέτυχε
 MISC_UNLOCKS	{0} ξεκλειδώνει: {1}
 MISC_LOCKS	{0} κλειδώνει: {1}
+MISC_EVACUATES	{0} σπρώχνει {1} έξω από {2}
+MISC_CANT_OCCUPY_YET	{0} δεν μπορεί να καταλάβει τίποτα προς το παρόν
 MISC_REASON_LOCKPICKING	παραβίαση κλειδαριών
 MISC_LOCKED_NAME	{0} (κλειδωμένο)
 PROP_CHAIR	Καρέκλα
@@ -926,6 +928,7 @@ PROP_STOVE	Κουζίνα
 UILABEL_BUILD_DESTROY	Κατεδάφιση
 UILABEL_BUILD_DESTROY_HINT	Αριστερό κλικ σε οποιοδήποτε αντικείμενο για να το γκρεμίσεις: ό,τι περιέχει πέφτει στο έδαφος και στη θέση του μένουν συντρίμμια. Αριστερό κλικ στα συντρίμμια για να τα καθαρίσεις. Δεξί κλικ ή Escape για ακύρωση.
 UILABEL_LOCK	Κλείδωμα
+UILABEL_EVACUATE	Εκκένωση
 MISC_BUILD_SEALED	Αυτή η γη ανήκει σε άλλη φατρία
 MISC_BUILD_CLAIM_OVERLAP	Αυτή η διεκδίκηση θα επικαλυπτόταν με άλλη
 MISC_BUILD_ALTAR_TAKEN	Η φατρία σου έχει ήδη βωμό

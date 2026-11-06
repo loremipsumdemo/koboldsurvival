@@ -75,6 +75,8 @@ public:
     std::vector<Entity> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
     std::vector<Entity> groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
                                            int winW, int winH);
+    Entity nearestGroundItem(const std::vector<Entity>& items, World& w, const Camera& cam, float mx, float my,
+                             int winW, int winH);
 
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                    const std::vector<HudEntry>& hud, int winW, int winH);

@@ -168,7 +168,7 @@ void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
 }
 
 void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target) {
-    if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
+    if (!w.has<Unit>(target) || !w.get<Transform>(target) || inPrisonerCage(w, target)) return;
     for (Entity u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;

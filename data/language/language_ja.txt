@@ -716,6 +716,8 @@ MISC_UNLOCKED	解錠した！
 MISC_LOCKPICK_FAILED	解錠に失敗
 MISC_UNLOCKS	{0} が {1} を解錠した
 MISC_LOCKS	{0} が {1} を施錠した
+MISC_EVACUATES	{0} が {1} を {2} から押し出した
+MISC_CANT_OCCUPY_YET	{0} はしばらく何も占有できない
 MISC_REASON_LOCKPICKING	解錠
 MISC_LOCKED_NAME	{0}（施錠）
 PROP_CHAIR	椅子
@@ -926,6 +928,7 @@ PROP_STOVE	かまど
 UILABEL_BUILD_DESTROY	解体
 UILABEL_BUILD_DESTROY_HINT	オブジェクトを左クリックで解体: 中身は地面に落ち、跡にがれきが残る。がれきを左クリックで撤去。右クリックかEscでキャンセル。
 UILABEL_LOCK	施錠
+UILABEL_EVACUATE	退去させる
 MISC_BUILD_SEALED	その土地は別の勢力の領地です
 MISC_BUILD_CLAIM_OVERLAP	その領地は別の領地と重なります
 MISC_BUILD_ALTAR_TAKEN	あなたの勢力にはすでに祭壇があります

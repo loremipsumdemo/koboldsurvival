@@ -1,6 +1,7 @@
 #include "app.h"
 #include "game_tables.h"
 #include "user_files.h"
+#include "profile.h"
 
 using namespace play;
 
@@ -140,13 +141,14 @@ void App::run() {
 
         while (SDL_PollEvent(&e)) handleEvent();
 
-        update();
-        updateHover();
-        render();
+        PROFILED("frame: update", update());
+        PROFILED("frame: updateHover", updateHover());
+        PROFILED("frame: render", render());
         putUnitsBack();
 
         if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);
-        SDL_GL_SwapWindow(window);
+        PROFILED("frame: swap", SDL_GL_SwapWindow(window));
+        PROFILE_FRAME_END();
         limitFrameRate(frameStart, settings.fpsLimit);
     }
 }

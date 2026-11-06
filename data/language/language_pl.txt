@@ -716,6 +716,8 @@ MISC_UNLOCKED	Otwarte!
 MISC_LOCKPICK_FAILED	Nie udało się otworzyć zamka
 MISC_UNLOCKS	{0} otwiera: {1}
 MISC_LOCKS	{0} zamyka: {1}
+MISC_EVACUATES	{0} wypycha {1} z: {2}
+MISC_CANT_OCCUPY_YET	{0} nie może teraz niczego zająć
 MISC_REASON_LOCKPICKING	otwieranie zamków
 MISC_LOCKED_NAME	{0} (zamknięte)
 PROP_CHAIR	Krzesło
@@ -926,6 +928,7 @@ PROP_STOVE	Piec
 UILABEL_BUILD_DESTROY	Zburz
 UILABEL_BUILD_DESTROY_HINT	Kliknij lewym przyciskiem dowolny obiekt, aby go zburzyć: jego zawartość spada na ziemię, a w jego miejscu zostaje gruz. Kliknij lewym przyciskiem gruz, aby go uprzątnąć. Prawy przycisk lub Escape anuluje.
 UILABEL_LOCK	Zamknij
+UILABEL_EVACUATE	Opróżnij
 MISC_BUILD_SEALED	Ten teren należy do innej frakcji
 MISC_BUILD_CLAIM_OVERLAP	To terytorium nakładałoby się na inne
 MISC_BUILD_ALTAR_TAKEN	Twoja frakcja ma już ołtarz

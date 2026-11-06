@@ -76,7 +76,7 @@ const RangedProfile* rangedOf(World& w, Entity e) {
 }
 
 bool targetable(World& w, Entity e) {
-    return w.has<Unit>(e) && w.has<Transform>(e) && !outCold(w, e) && !w.has<PlayingDead>(e);
+    return w.has<Unit>(e) && w.has<Transform>(e) && !outCold(w, e) && !w.has<PlayingDead>(e) && !inPrisonerCage(w, e);
 }
 
 float noticeFailChance(World& w, Entity p) { return isSneaking(w, p) ? SNEAK_NOTICE_FAIL : 0.0f; }
@@ -127,11 +127,11 @@ void onAttacked(World& w, Entity a, Entity d) {
     };
     if (!atWar && fd != FACTION_PLAYER) {
         for (Entity u : near) {
-            if (factionOf(w, u) == fd && (u == d || sees(u)) && !outCold(w, u)) provoke(w, u, fa);
+            if (factionOf(w, u) == fd && (u == d || sees(u)) && !outCold(w, u) && !inPrisonerCage(w, u)) provoke(w, u, fa);
         }
     }
     for (Entity u : near) {
-        if (u == a || outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || !w.has<Combat>(u)) continue;
+        if (u == a || outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || inPrisonerCage(w, u) || !w.has<Combat>(u)) continue;
         const int fu = factionOf(w, u);
         if (!factionsAllied(fu, fd) || factionsAllied(fu, fa) || !sees(u)) continue;
         if (isPassive(w, u) || isBlocking(w, u)) continue;
@@ -176,7 +176,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
     onAttacked(w, a, d);
 
     if (Combat* ca = w.get<Combat>(a)) ca->swingLeft = an.swingTime;
-    grantXp(w, a, StatId::Dexterity, DEXTERITY_XP_PER_SWING, lang("MISC_REASON_SWINGING"));
+    grantXp(w, a, StatId::Dexterity, DEXTERITY_XP_PER_SWING, "MISC_REASON_SWINGING");
 
     const std::string attacker = nameOf(w, a);
     const std::string defender = nameOf(w, d);
@@ -192,7 +192,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
         ++log.misses;
         queueSoundFrom(w, Sfx::Miss, d);
         log.add(langf("MISC_LOG_DODGES", { defender, attacker }), tint, LogKind::Miss, npcOnly(w, a, d));
-        grantXp(w, d, StatId::Agility, AGILITY_XP_PER_DODGE, lang("MISC_REASON_DODGING"));
+        grantXp(w, d, StatId::Agility, AGILITY_XP_PER_DODGE, "MISC_REASON_DODGING");
         return;
     }
 
@@ -220,10 +220,10 @@ void strike(World& w, Rng& rng, Entity a, Entity d, GameLog& log, std::vector<Fl
         floats.push_back(FloatingNumber{ td->x, td->y, td->z, r.damage, tint, 0.0f });
     }
 
-    grantXp(w, a, shot ? StatId::Projectiles : StatId::Melee, MELEE_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
-    grantXp(w, a, StatId::Strength, STRENGTH_XP_PER_DAMAGE * lost, lang("MISC_REASON_DEALING"));
-    grantXp(w, d, StatId::Vitality, VITALITY_XP_PER_HP_LOST * lost, lang("MISC_REASON_TAKING"));
-    if (r.blocked) grantXp(w, d, StatId::Block, BLOCK_XP_PER_BLOCK, lang("MISC_REASON_BLOCKING"));
+    grantXp(w, a, shot ? StatId::Projectiles : StatId::Melee, MELEE_XP_PER_DAMAGE * lost, "MISC_REASON_DEALING");
+    grantXp(w, a, StatId::Strength, STRENGTH_XP_PER_DAMAGE * lost, "MISC_REASON_DEALING");
+    grantXp(w, d, StatId::Vitality, VITALITY_XP_PER_HP_LOST * lost, "MISC_REASON_TAKING");
+    if (r.blocked) grantXp(w, d, StatId::Block, BLOCK_XP_PER_BLOCK, "MISC_REASON_BLOCKING");
 
     if (nd && nd->hp == 0) {
         log.add(langf("MISC_IS_DOWN", { defender }), tint, LogKind::Damage, npcOnly(w, a, d));
@@ -316,6 +316,12 @@ std::string nameOf(World& w, Entity e) {
 bool isDowned(World& w, Entity e) {
     const Needs* n = w.get<Needs>(e);
     return n && n->hp <= 0;
+}
+
+bool inPrisonerCage(World& w, Entity e) {
+    const Occupying* oc = w.get<Occupying>(e);
+    const Prop* p = oc ? w.get<Prop>(oc->prop) : nullptr;
+    return p && p->kind == PropKind::PrisonerCage;
 }
 
 void ensureCombat(World& w, Entity e) {
@@ -412,7 +418,14 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt, GameLog& log, 
 
     const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
     const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
-    auto standing = [&](Entity e) { return hpOf(w, e) > 0 && !outCold(w, e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e); };
+    auto standing = [&](Entity e) {
+        return hpOf(w, e) > 0 && !outCold(w, e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e) && !inPrisonerCage(w, e);
+    };
+    for (Entity e : everyone) {
+        if (!inPrisonerCage(w, e)) continue;
+        if (Combat* c = w.get<Combat>(e)) c->target = NULL_ENTITY;
+        w.remove<AttackOrder>(e);
+    }
 
     for (Entity h : everyone) {
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;

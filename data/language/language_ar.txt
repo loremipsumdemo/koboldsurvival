@@ -716,6 +716,8 @@ MISC_UNLOCKED	فُتح القفل!
 MISC_LOCKPICK_FAILED	فشل فتح القفل
 MISC_UNLOCKS	{0} يفتح قفل {1}
 MISC_LOCKS	{0} يقفل {1}
+MISC_EVACUATES	{0} يدفع {1} خارج {2}
+MISC_CANT_OCCUPY_YET	لا يستطيع {0} شغل أي شيء الآن
 MISC_REASON_LOCKPICKING	فتح الأقفال
 MISC_LOCKED_NAME	{0} (مقفل)
 PROP_CHAIR	كرسي
@@ -926,6 +928,7 @@ PROP_STOVE	موقد
 UILABEL_BUILD_DESTROY	هدم
 UILABEL_BUILD_DESTROY_HINT	انقر بالزر الأيسر على أي عنصر لهدمه: يسقط ما فيه على الأرض وتبقى الأنقاض مكانه. انقر بالزر الأيسر على الأنقاض لإزالتها. النقر بالزر الأيمن أو Escape يلغي.
 UILABEL_LOCK	قفل
+UILABEL_EVACUATE	إخلاء
 MISC_BUILD_SEALED	هذه الأرض يطالب بها فصيل آخر
 MISC_BUILD_CLAIM_OVERLAP	ستتداخل هذه المطالبة مع مطالبة أخرى
 MISC_BUILD_ALTAR_TAKEN	لدى فصيلك مذبح بالفعل

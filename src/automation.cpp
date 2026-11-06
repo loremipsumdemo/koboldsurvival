@@ -128,10 +128,29 @@ Entity restTarget(World& w, const std::vector<Claim>& claims, Entity u) {
     }
     std::sort(wanted.begin(), wanted.end());
     const std::vector<Entity> occupied = occupiedProps(w);
-    return nearestProp(w, *ut, [&](Entity p) {
-        return restedGainPerHour(w.get<Prop>(p)->kind) > 0.0 && countIn(occupied, p) == 0 && !lockShutFor(w, claims, p, u) &&
-               !std::binary_search(wanted.begin(), wanted.end(), p);
-    });
+    const Occupying* lyingIn = w.get<Occupying>(u);
+    const int faction = factionOf(w, u);
+    Entity best = NULL_ENTITY;
+    float bestD2 = 0.0f;
+    bool bestOwned = false;
+    for (Entity p : w.view<Prop, Transform>()) {
+        const PropKind kind = w.get<Prop>(p)->kind;
+        if (restedGainPerHour(kind) <= 0.0) continue;
+        const bool ownBed = lyingIn && lyingIn->prop == p;
+        if ((countIn(occupied, p) > 0 && !ownBed) || lockShutFor(w, claims, p, u)) continue;
+        if (std::binary_search(wanted.begin(), wanted.end(), p)) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (d2 > REST_SEARCH_RANGE * REST_SEARCH_RANGE) continue;
+        const Owner* own = w.get<Owner>(p);
+        const bool owned = own && own->faction == faction;
+        if (best == NULL_ENTITY || (owned && !bestOwned) || (owned == bestOwned && d2 < bestD2)) {
+            best = p;
+            bestD2 = d2;
+            bestOwned = owned;
+        }
+    }
+    return best;
 }
 
 Entity rescueTarget(World& w, Entity u) {
@@ -194,6 +213,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         const Needs* n = w.get<Needs>(u);
         r.why = BehaviorWait::None;
         if (!n || w.has<Mob>(u) || percentOf(n->rested, n->maxRested) >= r.percent) return false;
+        if (w.has<OccupyBan>(u)) return false;
         const Entity bed = restTarget(w, claims, u);
         if (bed == NULL_ENTITY) {
             r.why = BehaviorWait::NoBed;
@@ -239,6 +259,22 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
 }
 }
 
+namespace {
+bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) return false;
+    if (startStep(w, t, claims, u, b, r, rng)) return true;
+    r.cooldown = r.why == BehaviorWait::NoBed ? NO_BED_RETRY_SECONDS : BEHAVIOR_RETRY_SECONDS;
+    return false;
+}
+
+BehaviorRule* rescueRule(Behaviors& b) {
+    for (BehaviorRule& r : b.rules) {
+        if (r.kind == BehaviorKind::Rescue) return &r;
+    }
+    return nullptr;
+}
+}
+
 void systems_detail::autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
     clearOrdersButFight(w, u);
     w.remove<IdleSpot>(u);
@@ -262,7 +298,7 @@ bool systems_detail::openTile(const Terrain& t, float x, float z) {
     return x >= 0.0f && z >= 0.0f && x < t.size() && z < t.size() && t.walkable((int)std::floor(x), (int)std::floor(z));
 }
 
-void stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
+void systems_detail::stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
     Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
     const Prop* pp = w.get<Prop>(prop);
@@ -320,6 +356,18 @@ void stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
         ut->x = fx;
         ut->y = fy;
         ut->z = fz;
+    }
+}
+
+void leaveOpenLocksSystem(World& w, Terrain& t) {
+    for (Entity u : w.view<Occupying>()) {
+        if (w.has<Commandable>(u) || outCold(w, u) || w.has<Carried>(u)) continue;
+        const Entity prop = w.get<Occupying>(u)->prop;
+        const Lock* lock = w.get<Lock>(prop);
+        if (!lock || lock->locked) continue;
+        w.remove<Occupying>(u);
+        stepOffProp(w, t, u, prop);
+        queueLog(langf("MISC_BREAKS_FREE", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     }
 }
 
@@ -418,6 +466,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 continue;
             }
             if (w.has<CarryOrder>(u)) continue;
+            bool noBed = false;
             if (w.has<Carrying>(u)) {
                 if (rpo && rpo->automatic) continue;
                 const Entity bed = restTarget(w, claims, u);
@@ -426,16 +475,34 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                     autoGo(w, t, u, bed, PropAction::Place);
                     continue;
                 }
+                noBed = bed == NULL_ENTITY;
                 putDown(w, u);
             }
             b->busy = false;
             w.remove<SoloMove>(u);
-            if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+            if (BehaviorRule* r = stepRule(*b)) {
+                r->cooldown = noBed ? NO_BED_RETRY_SECONDS : BEHAVIOR_RETRY_SECONDS;
+                if (noBed) r->why = BehaviorWait::NoBed;
+            }
             continue;
+        }
+        // A unit out cold that it can rescue comes before lying down
+        if (going && b->busy && b->step.kind == BehaviorKind::Rest) {
+            BehaviorRule* rescue = rescueRule(*b);
+            if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) continue;
         }
         if (b->busy && b->step.kind == BehaviorKind::Rest) {
             const Occupying* oc = w.get<Occupying>(u);
             if (oc && oc->prop == b->stepProp) {
+                const Entity bed = oc->prop;
+                BehaviorRule* rescue = rescueRule(*b);
+                if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) {
+                    stepOffProp(w, t, u, bed);
+                    const CarryOrder* fetch = w.get<CarryOrder>(u);
+                    const Transform* to = fetch ? w.get<Transform>(fetch->target) : nullptr;
+                    if (to) planSolo(w, t, u, Vec2{ to->x, to->z });
+                    continue;
+                }
                 if (n && n->rested < n->maxRested) continue;
                 w.remove<Occupying>(u);
                 b->busy = false;
@@ -475,10 +542,13 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
 
+        // Rescue always comes before Rest, wherever the list has them
         for (BehaviorRule& r : b->rules) {
-            if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) continue;
-            if (startStep(w, t, claims, u, *b, r, rng)) break;
-            r.cooldown = BEHAVIOR_RETRY_SECONDS;
+            if (r.kind == BehaviorKind::Rest) {
+                BehaviorRule* rescue = rescueRule(*b);
+                if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) break;
+            }
+            if (tryStep(w, t, claims, u, *b, r, rng)) break;
         }
     }
 }

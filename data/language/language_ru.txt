@@ -716,6 +716,8 @@ MISC_UNLOCKED	Открыто!
 MISC_LOCKPICK_FAILED	Взлом не удался
 MISC_UNLOCKS	{0} вскрывает: {1}
 MISC_LOCKS	{0} запирает: {1}
+MISC_EVACUATES	{0} выталкивает {1} из: {2}
+MISC_CANT_OCCUPY_YET	{0} пока не может ничего занять
 MISC_REASON_LOCKPICKING	взлом замков
 MISC_LOCKED_NAME	{0} (заперто)
 PROP_CHAIR	Стул
@@ -926,6 +928,7 @@ PROP_STOVE	Печь
 UILABEL_BUILD_DESTROY	Снести
 UILABEL_BUILD_DESTROY_HINT	Щёлкните левой кнопкой по любому объекту, чтобы снести его: содержимое упадёт на землю, а на его месте останутся обломки. Щёлкните левой кнопкой по обломкам, чтобы убрать их. Правая кнопка или Escape — отмена.
 UILABEL_LOCK	Запереть
+UILABEL_EVACUATE	Освободить
 MISC_BUILD_SEALED	Эта земля принадлежит другой фракции
 MISC_BUILD_CLAIM_OVERLAP	Эта территория пересечётся с другой
 MISC_BUILD_ALTAR_TAKEN	У вашей фракции уже есть алтарь

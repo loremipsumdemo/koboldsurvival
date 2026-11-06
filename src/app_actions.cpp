@@ -8,6 +8,7 @@ void App::enterLevel() {
     discardQueuedLog();
     takeQueuedSounds();
     closePanel();
+    claimDecayDue = 0.0;
     cam = Camera{};
     cam.mapSize = (float)terrain.size();
     focusCameraOnFirstUnit(world, cam);

@@ -716,6 +716,8 @@ MISC_UNLOCKED	Destrancado!
 MISC_LOCKPICK_FAILED	Falha ao arrombar
 MISC_UNLOCKS	{0} destranca {1}
 MISC_LOCKS	{0} tranca {1}
+MISC_EVACUATES	{0} empurra {1} para fora de {2}
+MISC_CANT_OCCUPY_YET	{0} não pode ocupar nada por enquanto
 MISC_REASON_LOCKPICKING	arrombar fechaduras
 MISC_LOCKED_NAME	{0} (trancado)
 PROP_CHAIR	Cadeira
@@ -926,6 +928,7 @@ PROP_STOVE	Fogão
 UILABEL_BUILD_DESTROY	Destruir
 UILABEL_BUILD_DESTROY_HINT	Clique esquerdo em qualquer objeto para derrubá-lo: o que ele guarda cai no chão e fica entulho no lugar. Clique esquerdo no entulho para limpá-lo. Clique direito ou Esc cancela.
 UILABEL_LOCK	Trancar
+UILABEL_EVACUATE	Desocupar
 MISC_BUILD_SEALED	Esse terreno pertence a outra facção
 MISC_BUILD_CLAIM_OVERLAP	Esse território se sobreporia a outro
 MISC_BUILD_ALTAR_TAKEN	Sua facção já tem um altar

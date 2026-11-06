@@ -59,10 +59,11 @@ struct PropArrival {
     bool locked = false;
     bool placed = false;
     bool corpse = false;
+    bool occupyBanned = false;
     WorkStart craft = WorkStart::Started;
     bool automatic = false;
 };
-std::vector<PropArrival> propOrderSystem(World& w);
+std::vector<PropArrival> propOrderSystem(World& w, Terrain& t);
 int storeCarried(World& w, Entity unit, Entity prop, int item);
 
 constexpr int AUTO_LOAD = 10;
@@ -111,6 +112,8 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds);
 inline bool canPlayDead(World& w, Entity u) { return w.has<Commandable>(u) && !w.has<Mob>(u); }
 bool hostileNear(World& w, Entity u);
 void playDeadSystem(World& w);
+void leaveOpenLocksSystem(World& w, Terrain& t);
+void occupyBanSystem(World& w, float dt);
 void patrolSpawnSystem(World& w, Terrain& t, float dt);
 bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target);
 void putDown(World& w, Entity carrier);

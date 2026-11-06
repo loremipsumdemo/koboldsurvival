@@ -716,6 +716,8 @@ MISC_UNLOCKED	Opengebroken!
 MISC_LOCKPICK_FAILED	Slot openbreken mislukt
 MISC_UNLOCKS	{0} breekt {1} open
 MISC_LOCKS	{0} doet {1} op slot
+MISC_EVACUATES	{0} duwt {1} uit {2}
+MISC_CANT_OCCUPY_YET	{0} kan even niets bezetten
 MISC_REASON_LOCKPICKING	sloten openbreken
 MISC_LOCKED_NAME	{0} (op slot)
 PROP_CHAIR	Stoel
@@ -926,6 +928,7 @@ PROP_STOVE	Fornuis
 UILABEL_BUILD_DESTROY	Slopen
 UILABEL_BUILD_DESTROY_HINT	Linksklik op een object om het te slopen: wat erin zit valt op de grond en er blijft puin achter. Linksklik op puin om het op te ruimen. Rechtsklik of Escape annuleert.
 UILABEL_LOCK	Op slot
+UILABEL_EVACUATE	Ontruimen
 MISC_BUILD_SEALED	Dat land is opgeëist door een andere factie
 MISC_BUILD_CLAIM_OVERLAP	Die claim zou een andere claim overlappen
 MISC_BUILD_ALTAR_TAKEN	Je factie heeft al een altaar

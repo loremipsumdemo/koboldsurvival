@@ -1,4 +1,5 @@
 #include "app.h"
+#include "profile.h"
 
 using namespace play;
 

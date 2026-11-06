@@ -43,6 +43,17 @@ std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilt
     return out;
 }
 
+size_t infoLineCount(const GameLog& log, int tab, const LogFilter& f) {
+    if (tab == 2) return 0;
+    if (tab == 0) return log.spoken.size();
+    size_t n = 0;
+    for (const LogLine& ln : log.lines) {
+        if (ln.npc && !f.on[(int)LogKind::Npc]) continue;
+        if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) ++n;
+    }
+    return std::min(n, LOG_LIMIT);
+}
+
 Tint tintFor(World& w, Entity attacker, Entity target) {
     if (w.has<Commandable>(attacker) && w.has<Hostile>(target)) return Tint::Green;
     if (w.has<Hostile>(attacker) && w.has<Commandable>(target)) return Tint::Red;

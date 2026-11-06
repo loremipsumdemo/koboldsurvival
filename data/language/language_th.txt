@@ -716,6 +716,8 @@ MISC_UNLOCKED	ปลดล็อกแล้ว!
 MISC_LOCKPICK_FAILED	สะเดาะกุญแจไม่สำเร็จ
 MISC_UNLOCKS	{0} ปลดล็อก {1}
 MISC_LOCKS	{0} ล็อก {1}
+MISC_EVACUATES	{0} ผลัก {1} ออกจาก {2}
+MISC_CANT_OCCUPY_YET	{0} ยังเข้าใช้สิ่งใดไม่ได้ในตอนนี้
 MISC_REASON_LOCKPICKING	การสะเดาะกุญแจ
 MISC_LOCKED_NAME	{0} (ล็อกอยู่)
 PROP_CHAIR	เก้าอี้
@@ -926,6 +928,7 @@ PROP_STOVE	เตา
 UILABEL_BUILD_DESTROY	รื้อถอน
 UILABEL_BUILD_DESTROY_HINT	คลิกซ้ายที่วัตถุใดก็ได้เพื่อรื้อ: ของข้างในจะหล่นลงพื้นและเหลือเศษซากไว้แทน คลิกซ้ายที่เศษซากเพื่อเก็บกวาด คลิกขวาหรือ Escape เพื่อยกเลิก
 UILABEL_LOCK	ล็อก
+UILABEL_EVACUATE	ไล่ออก
 MISC_BUILD_SEALED	พื้นที่นั้นเป็นของฝ่ายอื่น
 MISC_BUILD_CLAIM_OVERLAP	เขตนั้นจะทับซ้อนกับเขตอื่น
 MISC_BUILD_ALTAR_TAKEN	ฝ่ายของคุณมีแท่นบูชาอยู่แล้ว

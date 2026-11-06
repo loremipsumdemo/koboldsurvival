@@ -84,6 +84,8 @@ std::string nameOf(World& w, Entity e);
 
 bool isDowned(World& w, Entity e);
 
+bool inPrisonerCage(World& w, Entity e);
+
 void ensureCombat(World& w, Entity e);
 
 bool isPassive(World& w, Entity e);

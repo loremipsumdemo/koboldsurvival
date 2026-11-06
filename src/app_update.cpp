@@ -1,5 +1,6 @@
 #include "app.h"
 #include "prop_info.h"
+#include "profile.h"
 
 using namespace play;
 
@@ -78,7 +79,7 @@ void App::updateTalkOrders() {
 }
 
 void App::reportPropArrivals() {
-    for (const PropArrival& a : propOrderSystem(world)) {
+    for (const PropArrival& a : PROFILED("propOrderSystem", propOrderSystem(world, terrain))) {
         if (a.automatic) continue;
         const Prop* p = world.get<Prop>(a.prop);
         if (!p) continue;
@@ -96,8 +97,12 @@ void App::reportPropArrivals() {
             }
             continue;
         }
-        if (a.action == PropAction::Lock) {
+        if (a.action == PropAction::Lock || a.action == PropAction::Evacuate) {
             if (a.started) playSfx(Sfx::UiToggle);
+            continue;
+        }
+        if (a.occupyBanned) {
+            refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, a.unit) }));
             continue;
         }
         if (a.action == PropAction::Inventory) {
@@ -128,7 +133,7 @@ void App::reportPropArrivals() {
 }
 
 void App::showWorkGains(double gameSecs) {
-    for (const WorkGain& g : workSystem(world, gameSecs, rng)) {
+    for (const WorkGain& g : PROFILED("workSystem", workSystem(world, gameSecs, rng))) {
         switch (g.kind) {
         case WorkGain::Kind::Item:
             tradeLabels.push_back(TradeLabel{ g.unit, itemGainLabel(1, itemNameOf(g.item)), 0.0f });
@@ -197,7 +202,7 @@ void App::updateCamera() {
     if (session.dialogueUnit == NULL_ENTITY) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
     cam.updateClearance(terrain);
-    if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
+    if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
 }
 
 void App::stepSimulation() {
@@ -211,7 +216,7 @@ void App::stepSimulation() {
         if (session.paused) break;
         simBefore.clear();
         for (Entity u : world.view<Unit, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
-        stepGame();
+        PROFILED("step: total", stepGame());
         endBrokenConversation();
         simLeft -= SIM_STEP_SECONDS;
         ++steps;
@@ -246,23 +251,25 @@ void App::putUnitsBack() {
 void App::stepGame() {
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
-    factionSystem(world, dt);
-    defendSystem(world);
-    combatSystem(world, terrain, rng, dt, gameLog, floatingNumbers);
-    patrolSpawnSystem(world, terrain, dt);
+    PROFILED("factionSystem", factionSystem(world, dt));
+    PROFILED("defendSystem", defendSystem(world));
+    PROFILED("combatSystem", combatSystem(world, terrain, rng, dt, gameLog, floatingNumbers));
+    PROFILED("patrolSpawnSystem", patrolSpawnSystem(world, terrain, dt));
     // Behaviors after the fight, so a unit hit this frame can drink in the same frame
-    behaviorSystem(world, gameLog, dt);
+    PROFILED("behaviorSystem", behaviorSystem(world, gameLog, dt));
     downedSystem(world);
     const size_t logCount = gameLog.lines.size();
     if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
     logSeen = logCount;
-    squadSystem(world, dt, runMode);
-    steeringSystem(world, terrain, dt, runMode);
-    pickupSystem(world, terrain);
+    PROFILED("squadSystem", squadSystem(world, dt, runMode));
+    PROFILED("steeringSystem", steeringSystem(world, terrain, dt, runMode));
+    PROFILED("pickupSystem", pickupSystem(world, terrain));
     reportPropArrivals();
-    wildMobSystem(world, terrain, dt);
-    automationSystem(world, terrain, dt, rng);
-    const CarryEvents carried = carrySystem(world);
+    PROFILED("wildMobSystem", wildMobSystem(world, terrain, dt));
+    PROFILED("automationSystem", automationSystem(world, terrain, dt, rng));
+    const CarryEvents carried = PROFILED("carrySystem", carrySystem(world));
+    PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(world, terrain));
+    occupyBanSystem(world, dt);
     for (const auto& [looter, looted] : carried.loot) {
         closeStorage();
         session.lootUnit = looted;
@@ -272,10 +279,10 @@ void App::stepGame() {
     cleanupActiveSquads(world);
     const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
-    needsSystem(world, hoursPassed, gameSecs);
+    PROFILED("needsSystem", needsSystem(world, hoursPassed, gameSecs));
     downedSystem(world);
-    const WakeChanges wakes = unconsciousSystem(world, gameSecs);
-    playDeadSystem(world);
+    const WakeChanges wakes = PROFILED("unconsciousSystem", unconsciousSystem(world, gameSecs));
+    PROFILED("playDeadSystem", playDeadSystem(world));
     for (Entity u : wakes.woke) {
         tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
         queueSoundFrom(world, Sfx::Recovers, u);
@@ -285,10 +292,14 @@ void App::stepGame() {
     bonesDecaySystem(world, gameSecs);
     groundFoodSystem(world, gameSecs);
     showWorkGains(gameSecs);
-    passiveCraftSystem(world, gameSecs);
-    claimDecaySystem(world, gameSecs);
-    playWorkSounds();
-    autosaveTick();
+    PROFILED("passiveCraftSystem", passiveCraftSystem(world, gameSecs));
+    claimDecayDue += gameSecs;
+    if (claimDecayDue >= GAME_SECONDS_PER_REAL_SECOND) {
+        PROFILED("claimDecaySystem", claimDecaySystem(world, claimDecayDue));
+        claimDecayDue = 0.0;
+    }
+    PROFILED("playWorkSounds", playWorkSounds());
+    PROFILED("autosaveTick", autosaveTick());
 }
 
 void App::closeStalePanels() {
@@ -383,8 +394,8 @@ void App::update() {
     placeUnitsBetweenSteps();
     updateCamera();
 
-    closeStalePanels();
-    playQueuedSounds();
+    PROFILED("closeStalePanels", closeStalePanels());
+    PROFILED("playQueuedSounds", playQueuedSounds());
 }
 
 void App::updateHover() {
@@ -398,6 +409,9 @@ void App::updateHover() {
     mouseX = mouseY = 0.0f;
     SDL_GetMouseState(&mouseX, &mouseY);
     renderer.setMouse(mouseX, mouseY);
+    mouseOnPanels.reset();
+    unitsUnderMouse.clear();
+    itemsUnderMouse.clear();
     std::vector<Entity> propsUnder;
     bool propsFound = false;
     auto propsAt = [&](float x, float y) -> const std::vector<Entity>& {
@@ -409,10 +423,12 @@ void App::updateHover() {
     };
     if (screen == Screen::Playing) {
         std::vector<HudEntry> under;
-        for (Entity u : renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH))
+        unitsUnderMouse = renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH);
+        for (Entity u : unitsUnderMouse)
             under.push_back({ world.get<Name>(u)->text, HUD_UNIT_COLOR });
 
-        std::vector<Entity> items = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+        itemsUnderMouse = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+        std::vector<Entity> items = itemsUnderMouse;
         if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
             const Entity labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
             if (labelled != NULL_ENTITY && std::find(items.begin(), items.end(), labelled) == items.end())
@@ -441,7 +457,7 @@ void App::updateHover() {
         const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
                              && session.dialogueUnit == NULL_ENTITY && !optimizeAllOpen && session.disbandTarget == NULL_ENTITY;
         BuildPreview bp;
-        if (placing && !overPanels(bmx, bmy, winW, winH)) {
+        if (placing && !mouseOverPanels()) {
             if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
@@ -454,7 +470,7 @@ void App::updateHover() {
             bp.ringTone = bp.valid ? 1 : 2;
         }
         Entity hoverAltar = NULL_ENTITY;
-        if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !overPanels(bmx, bmy, winW, winH)) {
+        if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
             for (Entity e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
                 const Transform* ft = world.get<Transform>(e);

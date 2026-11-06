@@ -716,6 +716,8 @@ MISC_UNLOCKED	Descuiat!
 MISC_LOCKPICK_FAILED	Descuierea a eșuat
 MISC_UNLOCKS	{0} descuie: {1}
 MISC_LOCKS	{0} încuie: {1}
+MISC_EVACUATES	{0} îl împinge pe {1} afară din {2}
+MISC_CANT_OCCUPY_YET	{0} nu poate ocupa nimic momentan
 MISC_REASON_LOCKPICKING	descuierea lacătelor
 MISC_LOCKED_NAME	{0} (încuiat)
 PROP_CHAIR	Scaun
@@ -926,6 +928,7 @@ PROP_STOVE	Sobă
 UILABEL_BUILD_DESTROY	Dărâmă
 UILABEL_BUILD_DESTROY_HINT	Clic stânga pe orice obiect ca să-l dărâmi: ce conține cade pe jos și în locul lui rămâne moloz. Clic stânga pe moloz ca să-l cureți. Clic dreapta sau Escape anulează.
 UILABEL_LOCK	Încuie
+UILABEL_EVACUATE	Evacuează
 MISC_BUILD_SEALED	Acel teren aparține altei facțiuni
 MISC_BUILD_CLAIM_OVERLAP	Acest teritoriu s-ar suprapune peste altul
 MISC_BUILD_ALTAR_TAKEN	Facțiunea ta are deja un altar

@@ -80,7 +80,7 @@ inline const char* itemFilterKey(ItemFilter f) {
     }
 }
 
-enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy };
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy, Evacuate };
 
 constexpr int INPUT_COOKABLE = -1;
 constexpr double ALTAR_LOG_HOURS = 4.0;
@@ -220,6 +220,7 @@ inline BuildPick buildRowPick(int row) {
 constexpr float PROP_RANGE = 40.0f;
 
 constexpr float PROP_REACH = 2.0f;
+constexpr float EVACUATE_OCCUPY_BAN_SECONDS = 10.0f;
 constexpr float STORAGE_CLOSE_RANGE = 2.5f;
 constexpr float PROP_BLOCK_RADIUS = 0.45f;
 

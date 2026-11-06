@@ -44,3 +44,4 @@ void flushQueuedLog(GameLog& log);
 void discardQueuedLog();
 
 std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilter& f);
+size_t infoLineCount(const GameLog& log, int tab, const LogFilter& f);

@@ -166,7 +166,7 @@ void completeTrade(World& w, Entity npc, Entity player) {
         queueUnitLabel(npc, itemGainLabelFor(count, item));
         queueUnitLabel(player, itemLossLabelFor(count, item), true);
     }
-    if (fee > 0) grantXp(w, player, StatId::Charisma, fee, lang("MISC_REASON_FEES"));
+    if (fee > 0) grantXp(w, player, StatId::Charisma, fee, "MISC_REASON_FEES");
     session.tradeOpen = false;
     clearTradeTable();
 }

@@ -716,6 +716,8 @@ MISC_UNLOCKED	Terbuka!
 MISC_LOCKPICK_FAILED	Gagal membobol kunci
 MISC_UNLOCKS	{0} membuka kunci {1}
 MISC_LOCKS	{0} mengunci {1}
+MISC_EVACUATES	{0} mendorong {1} keluar dari {2}
+MISC_CANT_OCCUPY_YET	{0} belum bisa menempati apa pun
 MISC_REASON_LOCKPICKING	membobol kunci
 MISC_LOCKED_NAME	{0} (terkunci)
 PROP_CHAIR	Kursi
@@ -926,6 +928,7 @@ PROP_STOVE	Kompor
 UILABEL_BUILD_DESTROY	Hancurkan
 UILABEL_BUILD_DESTROY_HINT	Klik kiri objek apa pun untuk merobohkannya: isinya jatuh ke tanah dan puing tertinggal di tempatnya. Klik kiri puing untuk membersihkannya. Klik kanan atau Escape untuk batal.
 UILABEL_LOCK	Kunci
+UILABEL_EVACUATE	Kosongkan
 MISC_BUILD_SEALED	Tanah itu diklaim oleh faksi lain
 MISC_BUILD_CLAIM_OVERLAP	Klaim itu akan tumpang tindih dengan klaim lain
 MISC_BUILD_ALTAR_TAKEN	Faksimu sudah memiliki Altar

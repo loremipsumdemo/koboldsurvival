@@ -716,6 +716,8 @@ MISC_UNLOCKED	Aufgeschlossen!
 MISC_LOCKPICK_FAILED	Schlossknacken misslungen
 MISC_UNLOCKS	{0} schließt {1} auf
 MISC_LOCKS	{0} schließt {1} ab
+MISC_EVACUATES	{0} drängt {1} aus {2}
+MISC_CANT_OCCUPY_YET	{0} kann gerade nichts belegen
 MISC_REASON_LOCKPICKING	Schlösserknacken
 MISC_LOCKED_NAME	{0} (verschlossen)
 PROP_CHAIR	Stuhl
@@ -926,6 +928,7 @@ PROP_STOVE	Herd
 UILABEL_BUILD_DESTROY	Abreißen
 UILABEL_BUILD_DESTROY_HINT	Linksklick auf ein Objekt reißt es ab: sein Inhalt fällt zu Boden und Schutt bleibt zurück. Linksklick auf Schutt räumt ihn weg. Rechtsklick oder Escape bricht ab.
 UILABEL_LOCK	Abschließen
+UILABEL_EVACUATE	Räumen
 MISC_BUILD_SEALED	Dieses Land gehört einer anderen Fraktion
 MISC_BUILD_CLAIM_OVERLAP	Dieser Anspruch würde sich mit einem anderen überschneiden
 MISC_BUILD_ALTAR_TAKEN	Deine Fraktion hat bereits einen Altar

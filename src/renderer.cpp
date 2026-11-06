@@ -513,9 +513,12 @@ void Renderer::drawRectGradientH(const Rect& r, RGBA left, RGBA right) {
 }
 
 void Renderer::drawRect(const Rect& r, RGBA c) {
-    Batch b;
-    b.quad({ r.x, r.y, 0 }, { r.x + r.w, r.y, 0 }, { r.x + r.w, r.y + r.h, 0 }, { r.x, r.y + r.h, 0 }, c);
-    drawColorTris(b, pixels_);
+    const float x0 = r.x, x1 = r.x + r.w, y0 = r.y, y1 = r.y + r.h;
+    const Vertex v[6] = {
+        { { x0, y0, 0.0f }, c }, { { x1, y0, 0.0f }, c }, { { x1, y1, 0.0f }, c },
+        { { x0, y0, 0.0f }, c }, { { x1, y1, 0.0f }, c }, { { x0, y1, 0.0f }, c },
+    };
+    drawColorTris(v, 6, pixels_);
 }
 
 void Renderer::drawRectGradient(const Rect& r, RGBA top, RGBA bottom) {

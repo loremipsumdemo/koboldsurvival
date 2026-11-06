@@ -317,6 +317,9 @@ struct PropOrder {
 struct Occupying {
     Entity prop = NULL_ENTITY;
 };
+struct OccupyBan {
+    float secondsLeft = 0.0f;
+};
 
 struct Working {
     Entity prop = NULL_ENTITY;

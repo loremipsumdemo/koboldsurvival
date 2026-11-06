@@ -716,6 +716,8 @@ MISC_UNLOCKED	Dibuka!
 MISC_LOCKPICK_FAILED	Gagal mengopek kunci
 MISC_UNLOCKS	{0} membuka kunci {1}
 MISC_LOCKS	{0} mengunci {1}
+MISC_EVACUATES	{0} menolak {1} keluar dari {2}
+MISC_CANT_OCCUPY_YET	{0} belum boleh menduduki apa-apa
 MISC_REASON_LOCKPICKING	mengopek kunci
 MISC_LOCKED_NAME	{0} (berkunci)
 PROP_CHAIR	Kerusi
@@ -926,6 +928,7 @@ PROP_STOVE	Dapur
 UILABEL_BUILD_DESTROY	Musnahkan
 UILABEL_BUILD_DESTROY_HINT	Klik kiri mana-mana objek untuk merobohkannya: isinya jatuh ke tanah dan serpihan tertinggal di tempatnya. Klik kiri serpihan untuk membersihkannya. Klik kanan atau Escape untuk batal.
 UILABEL_LOCK	Kunci
+UILABEL_EVACUATE	Kosongkan
 MISC_BUILD_SEALED	Tanah itu dituntut oleh puak lain
 MISC_BUILD_CLAIM_OVERLAP	Tuntutan itu akan bertindih dengan tuntutan lain
 MISC_BUILD_ALTAR_TAKEN	Puak anda sudah mempunyai Altar

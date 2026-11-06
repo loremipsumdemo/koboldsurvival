@@ -716,6 +716,8 @@ MISC_UNLOCKED	Låst op!
 MISC_LOCKPICK_FAILED	Dirkning mislykkedes
 MISC_UNLOCKS	{0} låser {1} op
 MISC_LOCKS	{0} låser {1}
+MISC_EVACUATES	{0} skubber {1} ud af {2}
+MISC_CANT_OCCUPY_YET	{0} kan ikke indtage noget lige nu
 MISC_REASON_LOCKPICKING	dirke låse
 MISC_LOCKED_NAME	{0} (låst)
 PROP_CHAIR	Stol
@@ -926,6 +928,7 @@ PROP_STOVE	Komfur
 UILABEL_BUILD_DESTROY	Riv ned
 UILABEL_BUILD_DESTROY_HINT	Venstreklik på en genstand for at rive den ned: det, den rummer, falder på jorden, og der ligger murbrokker tilbage. Venstreklik på murbrokker for at rydde dem væk. Højreklik eller Escape annullerer.
 UILABEL_LOCK	Lås
+UILABEL_EVACUATE	Evakuer
 MISC_BUILD_SEALED	Det land er gjort krav på af en anden fraktion
 MISC_BUILD_CLAIM_OVERLAP	Det krav ville overlappe et andet krav
 MISC_BUILD_ALTAR_TAKEN	Din fraktion har allerede et alter

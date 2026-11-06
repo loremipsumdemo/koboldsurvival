@@ -26,6 +26,7 @@ inline int maxRestedFor(const Stats& s) {
 }
 constexpr float LEAVE_BED_SECONDS = 30.0f;
 constexpr float RESCUE_RANGE = 40.0f;
+constexpr float REST_SEARCH_RANGE = 50.0f;
 
 constexpr double MOB_REGEN_FACTOR = 4.0;
 

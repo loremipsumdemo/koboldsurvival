@@ -4,5 +4,5 @@
 #include "game_log.h"
 #include "stats.h"
 
-void grantXp(World& w, Entity e, StatId stat, float amount, const std::string& why = std::string());
+void grantXp(World& w, Entity e, StatId stat, float amount, const char* whyKey = nullptr);
 Stats statsOf(World& w, Entity e);

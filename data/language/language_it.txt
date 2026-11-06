@@ -716,6 +716,8 @@ MISC_UNLOCKED	Aperto!
 MISC_LOCKPICK_FAILED	Scasso fallito
 MISC_UNLOCKS	{0} apre {1}
 MISC_LOCKS	{0} chiude a chiave {1}
+MISC_EVACUATES	{0} spinge {1} fuori da {2}
+MISC_CANT_OCCUPY_YET	{0} non può occupare nulla per il momento
 MISC_REASON_LOCKPICKING	scassinare serrature
 MISC_LOCKED_NAME	{0} (chiuso)
 PROP_CHAIR	Sedia
@@ -926,6 +928,7 @@ PROP_STOVE	Stufa
 UILABEL_BUILD_DESTROY	Distruggi
 UILABEL_BUILD_DESTROY_HINT	Clic sinistro su un oggetto per abbatterlo: ciò che contiene cade a terra e al suo posto restano macerie. Clic sinistro sulle macerie per sgomberarle. Clic destro o Esc annulla.
 UILABEL_LOCK	Chiudi a chiave
+UILABEL_EVACUATE	Evacua
 MISC_BUILD_SEALED	Quel terreno è rivendicato da un'altra fazione
 MISC_BUILD_CLAIM_OVERLAP	Questo territorio si sovrapporrebbe a un altro
 MISC_BUILD_ALTAR_TAKEN	La tua fazione ha già un altare
