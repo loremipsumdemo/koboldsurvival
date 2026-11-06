@@ -1,0 +1,18 @@
+# Emotes: small pictures over a unit's head. Tab-separated: key, file in data/emote, when it shows.
+# Every key must be listed once. The last column is only a note. A missing picture is drawn as a pink square.
+
+Mining	emote_1.png	Mining: working Ore
+Woodcutting	emote_2.png	Woodcutting: working a Tree
+Cooking	emote_3.png	Cooking: working a Campfire
+Encumbered	emote_4.png	Encumbered: carrying 90% or more of the carry limit
+Sleeping	emote_5.png	Sleeping: lying on a Bed or Bedroll
+Hungry	emote_6.png	Hungry: hunger below 1
+Lockpicking	emote_7.png	Lockpicking: picking a lock
+LockedIn	emote_8.png	Locked in: in a locked occupiable prop (the Prisoner Cage)
+Herbalism	emote_9.png	Herbalism: gathering at a Mushroom
+Unconscious	emote_10.png	Unconscious: at 0 health, out cold until it recovers in a bed or bedroll
+PlayingDead	emote_12.png	Playing dead: awake but carried by a hostile, lying still until given an order
+CuePutDown	emote_13.png	Hover cue: over a carried unit whose carrier you have selected, right-click to Put down
+CueTalk	emote_14.png	Hover cue: over an NPC you can talk to
+NoUpkeep	emote_15.png	No upkeep: over an Altar with no upkeep items (logs) in it
+Decaying	emote_16.png	Decaying: over an Altar that is wearing down

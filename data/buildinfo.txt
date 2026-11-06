@@ -1,4 +1,0 @@
-# Kind | Name | Tag | Materials | Skill | WorkTime
-altar | Altar | claim | wood:10,stone:5 | Carpentry | 60
-debris_small | Small Debris | debris | wood:2 | Carpentry | 20
-debris_large | Large Debris | debris | wood:5,stone:5 | Carpentry | 40

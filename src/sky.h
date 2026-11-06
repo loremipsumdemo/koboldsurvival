@@ -16,14 +16,7 @@ enum class ColorTarget : int {
 };
 constexpr int COLOR_TARGET_COUNT = idx(ColorTarget::Count);
 
-struct SkyTuning {
-    bool clockRunning = true;
-    bool stars = true;
-    bool moon = true;
-    float sunBrightness = 1.0f;
-    float starBrightness = 1.0f;
-    int colorTarget = 0;
-
+struct SkyColors {
     std::array<std::array<float, 3>, COLOR_TARGET_COUNT> colors = {{
         {{ 0.22f, 0.45f, 0.85f }},
         {{ 0.70f, 0.84f, 1.00f }},

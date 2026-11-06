@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Δεν υπάρχουν αποθηκεύσεις ακόμη
 UILABEL_UNSAVED_WARNING	Η μη αποθηκευμένη πρόοδος σε αυτό το παιχνίδι θα χαθεί.
 UILABEL_HOLD_DELETE	Κράτα πατημένο το Διαγραφή για 3 δευτερόλεπτα για επιβεβαίωση.
 UILABEL_CLICK_SAVE	Κάνε κλικ σε μια αποθήκευση για να τη φορτώσεις
-UILABEL_WORLD	ΚΟΣΜΟΣ
-UILABEL_UNKNOWN	άγνωστο
 UILABEL_ON	Ενεργό
 UILABEL_OFF	Ανενεργό
 UILABEL_EMPTY	Κενό
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Δύναμη
 MISC_GAME_SAVED	Το παιχνίδι αποθηκεύτηκε
 MISC_SAVE_FAILED	Δεν ήταν δυνατή η αποθήκευση του παιχνιδιού
 MISC_READ_FAILED	Δεν ήταν δυνατή η ανάγνωση αυτής της αποθήκευσης
-MISC_SAVE_OLD	Αυτή η αποθήκευση είναι από πριν τους χάρτες και δεν μπορεί να φορτωθεί
 MISC_AUTOSAVED	Αυτόματη αποθήκευση
 MISC_SCREENSHOT_FAILED	Δεν ήταν δυνατή η αποθήκευση του στιγμιότυπου
 MISC_SCREENSHOT_SAVED	Αποθηκεύτηκε το {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Πλήθος {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Επίθεση {0}    Άμυνα {1}    Φορτίο {2}
 MISC_IS_DOWN	Ο/Η {0} έπεσε
 MISC_PICKS_UP	Ο/Η {0} σηκώνει {1} {2}
-MISC_CANNOT_READ	Δεν ήταν δυνατή η ανάγνωση του {0}
 UILABEL_DATE_LINE	ΗΜΕΡΑ {0} · {1} · ΕΤΟΣ {2}
 UILABEL_MONITOR_N	Οθόνη {0}
 MISC_GAINS_XP	Ο/Η {0} κερδίζει {1} {2} εμπειρία για {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} πυροβολεί {1} (μπλοκαρίστηκε)
 MISC_LOG_DAMAGE	{0} δέχεται {1} ζημιά
 MISC_LOG_ELIXIR_ENDS	Η επίδραση του {1} στον/στην {0} τελειώνει
 MISC_LOG_NOTICES	{0} αντιλαμβάνεται {1}
-MISC_SAVE_NEWER	Αυτή η αποθήκευση έγινε από νεότερη έκδοση του παιχνιδιού.
 MISC_AUTOSAVE_FAILED	Η αυτόματη αποθήκευση απέτυχε.

@@ -202,7 +202,7 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
         drawRect(r, hot ? theme::SLOT_HOT : theme::SLOT);
         if (hot) noteHover(r);
         if (item == 0) {
-            drawSlotLabel(r, gearSlotName((int)i), 2.0f, 2, theme::alpha(theme::TEXT_DIM, 0.4f));
+            drawUiIcon(gearSlotIcon((int)i), Rect{ r.x + 2.0f, r.y + 2.0f, r.w - 4.0f, r.h - 4.0f }, theme::EMPTY_SLOT);
             continue;
         }
         drawItemCell(r, item, 1);

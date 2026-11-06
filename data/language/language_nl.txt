@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Nog geen opslagen
 UILABEL_UNSAVED_WARNING	Niet-opgeslagen voortgang in dit spel gaat verloren.
 UILABEL_HOLD_DELETE	Houd Verwijderen 3 seconden ingedrukt om te bevestigen.
 UILABEL_CLICK_SAVE	Klik op een opslag om die te laden
-UILABEL_WORLD	WERELD
-UILABEL_UNKNOWN	onbekend
 UILABEL_ON	Aan
 UILABEL_OFF	Uit
 UILABEL_EMPTY	Leeg
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Kracht
 MISC_GAME_SAVED	Spel opgeslagen
 MISC_SAVE_FAILED	Kon het spel niet opslaan
 MISC_READ_FAILED	Kon die opslag niet lezen
-MISC_SAVE_OLD	Die opslag komt van vóór de kaarten en kan niet worden geladen
 MISC_AUTOSAVED	Automatisch opgeslagen
 MISC_SCREENSHOT_FAILED	Kon de screenshot niet opslaan
 MISC_SCREENSHOT_SAVED	{0} opgeslagen
@@ -372,7 +369,6 @@ UILABEL_COUNT	Aantal {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Aanval {0}    Verdediging {1}    Draagvermogen {2}
 MISC_IS_DOWN	{0} is neergegaan
 MISC_PICKS_UP	{0} pakt {1} {2} op
-MISC_CANNOT_READ	Kon {0} niet lezen
 UILABEL_DATE_LINE	DAG {0} · {1} · JAAR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} krijgt {1} {2} XP voor {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} beschiet {1} (geblokkeerd)
 MISC_LOG_DAMAGE	{0} krijgt {1} schade
 MISC_LOG_ELIXIR_ENDS	Het effect van {1} op {0} is uitgewerkt
 MISC_LOG_NOTICES	{0} merkt {1} op
-MISC_SAVE_NEWER	Dit opslagbestand is gemaakt met een nieuwere versie van de game.
 MISC_AUTOSAVE_FAILED	Automatisch opslaan is mislukt.

@@ -1,0 +1,60 @@
+# Sound effects. Tab-separated: key, file in the SFX folder, volume slider (interface or effects), when it plays.
+# Every key must be listed once. The last column is only a note. A missing file is silent.
+# Working sounds play every 1.6 seconds while a unit works a prop near the camera (the Forge's every 3 seconds).
+
+UiClick	sfx_01.mp3	interface	Interface: a button or control clicked
+Hit	sfx_02.mp3	effects	Combat: an attack lands
+Miss	sfx_03.mp3	effects	Combat: an attack misses or is dodged
+ItemMove	sfx_04.mp3	effects	Items: an item moved inside an inventory, or the inventory sorted
+UiHover	sfx_05.mp3	interface	Interface: the pointer moves onto a button, menu item or tab
+UiBack	sfx_06.mp3	interface	Interface: Cancel, Close, Back, or a menu closed
+UiError	sfx_07.mp3	interface	Interface: refused (locked, already in use, no room, unreachable, skill too low, wrong item)
+UiTab	sfx_08.mp3	interface	Interface: a tab changed
+UiToggle	sfx_09.mp3	interface	Interface: a switch or tick box flipped
+UiSlider	sfx_10.mp3	interface	Interface: a slider let go
+UiMenuOpen	sfx_11.mp3	interface	Interface: a right-click menu, item menu or dialog opens
+UiSaved	sfx_12.mp3	interface	Interface: the game saved or autosaved
+UiLoaded	sfx_13.mp3	interface	Interface: a save loaded
+UiPause	sfx_14.mp3	interface	Interface: the game paused
+UiResume	sfx_15.mp3	interface	Interface: the game resumed
+UiSelect	sfx_16.mp3	interface	Interface: units selected
+UiOrder	sfx_17.mp3	interface	Interface: units sent somewhere (a move order)
+Equip	sfx_18.mp3	effects	Items: gear put on
+Unequip	sfx_19.mp3	effects	Items: gear taken off
+Drop	sfx_20.mp3	effects	Items: an item dropped on the ground
+Pickup	sfx_21.mp3	effects	Items: an item picked up off the ground
+Eat	sfx_22.mp3	effects	Items: food eaten
+Drink	sfx_23.mp3	effects	Items: a potion or elixir drunk
+Poison	sfx_24.mp3	effects	Items: something eaten that hurt (a Poison Mushroom)
+WorkMining	sfx_25.mp3	effects	Work: mining Ore (plays now and then while a unit works it)
+WorkWoodcutting	sfx_26.mp3	effects	Work: chopping a Tree
+WorkHerbalism	sfx_27.mp3	effects	Work: gathering at a Mushroom
+WorkCooking	sfx_28.mp3	effects	Work: cooking at a Campfire
+WorkPump	sfx_29.mp3	effects	Work: working the Water Pump
+WorkTraining	sfx_30.mp3	effects	Work: hitting the Training Dummy
+WorkLockpick	sfx_31.mp3	effects	Work: picking a lock
+ForgeBurning	sfx_32.mp3	effects	Work: a Forge burning its fuel (now and then)
+DoneOre	sfx_33.mp3	effects	Done: a piece of Iron Ore mined
+DoneTree	sfx_34.mp3	effects	Done: a Wood Log cut
+DoneMushroom	sfx_35.mp3	effects	Done: a Mushroom gathered
+DoneCooking	sfx_36.mp3	effects	Done: something cooked
+DoneWater	sfx_37.mp3	effects	Done: Water pumped
+DoneTraining	sfx_38.mp3	effects	Done: a training session finished
+DoneForge	sfx_39.mp3	effects	Done: the Forge made an Iron Ingot
+Unlocked	sfx_40.mp3	effects	Locks: a lock picked open
+LockpickFailed	sfx_41.mp3	effects	Locks: a lockpick attempt failed
+TradeDone	sfx_42.mp3	effects	Trade: a trade made
+TradeFailed	sfx_43.mp3	effects	Trade: a trade fell through
+Store	sfx_44.mp3	effects	Storage: items put into a storage or crafting prop
+Take	sfx_45.mp3	effects	Storage: items taken out of a storage or crafting prop
+TurnHostile	sfx_46.mp3	effects	Units: a unit turned hostile
+LockedIn	sfx_47.mp3	effects	Units: a cage locked behind a unit
+Occupy	sfx_48.mp3	effects	Units: a unit sat or lay down on a prop
+GearChanged	sfx_49.mp3	effects	Items: Optimize, Remove All or Optimize All changed gear
+Downed	sfx_50.mp3	effects	Units: a unit dropped to no health and fell Unconscious
+LevelUp	sfx_51.mp3	effects	Units: a skill or stat went up a level
+TalkOpen	sfx_52.mp3	interface	Interface: a talk began
+CarryUp	sfx_53.mp3	effects	Units: an Unconscious unit picked up to be carried
+PutDown	sfx_54.mp3	effects	Units: a carried unit put down on the ground
+Dies	sfx_55.mp3	effects	Units: an Unconscious unit died (its Dying reached 100)
+Recovers	sfx_56.mp3	effects	Units: an Unconscious unit woke up in a bed or bedroll

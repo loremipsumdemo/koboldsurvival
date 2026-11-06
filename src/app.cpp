@@ -1,4 +1,5 @@
 #include "app.h"
+#include "game_tables.h"
 #include "user_files.h"
 
 using namespace play;
@@ -11,10 +12,11 @@ int App::init() {
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         std::string err;
-        if (!pakFind("data/factioninfo.txt", bytes, size)) {
-            SDL_Log("data/factioninfo.txt is missing; using the built-in factions");
+        if (!loadGameTables(err)) return fatalError(nullptr, "The game's data has a mistake: " + err);
+        if (!pakFind("data/factions.txt", bytes, size)) {
+            SDL_Log("data/factions.txt is missing; using the built-in factions");
         } else if (!loadFactions(std::string((const char*)bytes, size), err)) {
-            SDL_Log("data/factioninfo.txt: %s; using the built-in factions", err.c_str());
+            SDL_Log("data/factions.txt: %s; using the built-in factions", err.c_str());
         }
     }
     settings = loadSettings(settingsFilePath());
@@ -31,8 +33,7 @@ int App::init() {
             saveSettings(settings, settingsFilePath());
         }
     }
-    font = openFontChain(64.0f, true, settings.fontPath, settings.language, titleFontOwned);
-    if (!font || !fonts.valid()) return fatalError(nullptr, std::string("Could not open a font from data.pak: ") + SDL_GetError());
+    if (!fonts.valid()) return fatalError(nullptr, std::string("Could not open a font from data.pak: ") + SDL_GetError());
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -71,7 +72,7 @@ int App::init() {
     applyDisplay(window, settings, displayInfo);
     SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
 
-    if (!renderer.init(font, fonts.hud, fonts.ui,
+    if (!renderer.init(fonts.hud, fonts.ui,
                        [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what, false); }))
         return fatalError(window, "Loading the game's textures, models or shaders failed.");
     renderer.setListFont(fonts.list);
@@ -157,7 +158,6 @@ void App::shutdown() {
     closeFonts(nameFontOwned);
     closeUiFonts(fonts);
     closeUiFonts(menuFonts);
-    closeFonts(titleFontOwned);
     TTF_Quit();
     SDL_GL_DestroyContext(ctx);
     SDL_DestroyWindow(window);

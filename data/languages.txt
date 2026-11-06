@@ -1,0 +1,37 @@
+# Each language's first-choice font. Tab-separated: code, font key from fonts.txt, its name (only a note).
+# The menus find a language by its file, data/language/language_<code>.txt, and name it by the file's LANGUAGE_NAME line.
+# A language not listed here starts with the first font in fonts.txt.
+# Each line of a language file is KEY<TAB>text. English is the reference: a key missing from another language shows its
+# English. A file of the same name in the LANGUAGE folder next to the game overrides the packed one key by key.
+
+ar	Arabic	العربية
+bg	Latin	български език
+cs	Latin	čeština
+da	Latin	Dansk
+de	Latin	Deutsch
+el	Latin	Ελληνικά
+en	Latin	English
+es-419	Latin	Español-Latinoamérica
+es	Latin	Español-España
+fi	Latin	Suomi
+fr	Latin	Français
+hu	Latin	Magyar
+id	Latin	Bahasa Indonesia
+it	Latin	Italiano
+ja	Japanese	日本語
+ko	Korean	한국어
+ms	Latin	Bahasa Melayu
+nl	Latin	Nederlands
+no	Latin	Norsk
+pl	Latin	Polski
+pt-BR	Latin	Português-Brasil
+pt	Latin	Português (Portugal)
+ro	Latin	Română
+ru	Latin	Русский
+sv	Latin	Svenska
+th	Thai	ไทย
+tr	Latin	Türkçe
+uk	Latin	Українська
+vi	Latin	Tiếng Việt
+zh-CN	ChineseSimplified	简体中文
+zh-TW	ChineseTraditional	繁體中文

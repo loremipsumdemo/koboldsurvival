@@ -9,6 +9,7 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include "camera.h"
+#include "game_tables.h"
 #include "sky.h"
 #include "ecs.h"
 #include "factions.h"
@@ -59,12 +60,11 @@ namespace render_detail { struct Vertex; struct Batch; }
 
 class Renderer {
 public:
-    bool init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
+    bool init(TTF_Font* hudFont, TTF_Font* uiFont,
               const std::function<void(float, const std::string&)>& progress = {});
     void shutdown();
 
     void setDayMinutes(float m) { dayMinutes_ = m; }
-    void setSky(const SkyTuning& s) { sky_ = s; }
 
     void uploadTerrain(const Terrain& t);
 
@@ -169,7 +169,7 @@ public:
     bool hoverFrameEnd();
     void drawRect(const Rect& r, RGBA c);
     void drawRoundedRect(const Rect& r, float radius, RGBA c);
-    void drawUiIcon(int icon, const Rect& r);
+    void drawUiIcon(int icon, const Rect& r, RGBA tint = RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);
     void drawIconLabel(const Rect& r, int icon, const std::string& text, RGBA tint, bool uiFont);
     void drawTitleBar(const Rect& bar, int icon, const std::string& title);
@@ -251,7 +251,7 @@ private:
     void pollOverview();
     OverviewBuilder overview_;
     const TextTex& uiIconTexture(int icon) { return uiIcons_.get(icon); }
-    PictureCache uiIcons_{ "data/icon/icon_" };
+    PictureCache uiIcons_{ "data/icon/", false, iconFile };
     GLuint overviewTex_ = 0;
     float overviewSize_ = 0.0f;
     float overviewExtent_ = 1.0f;
@@ -385,7 +385,7 @@ private:
     std::map<Entity, UnitFacing> unitFacing_;
     float unitYaw(Entity e, float x, float z, bool idle);
     PictureCache itemPics_{ "data/item/item_", true };
-    PictureCache emotePics_{ "data/emote/emote_" };
+    PictureCache emotePics_{ "data/emote/", false, emoteFile };
     const TextTex* emoteTexture(EmoteId emote);
     TextTex pink_;
     TextTex white_;
@@ -409,7 +409,6 @@ private:
     float propBaseY(World& w, Entity e) const;
     std::map<Entity, float> propLabelTop_;
 
-    TTF_Font* font_ = nullptr;
     TextCache text_;
     Mat4 pixels_{};
     int uiW_ = 0, uiH_ = 0;
@@ -424,6 +423,6 @@ private:
     GLint uSkyInvVP_ = -1, uSunDir_ = -1, uSunAlpha_ = -1, uZenith_ = -1, uHorizon_ = -1, uSunCol_ = -1;
     GLint uMoonDir_ = -1, uMoonAlpha_ = -1, uMoonCol_ = -1, uStarAlpha_ = -1;
     float dayMinutes_ = 360.0f;
-    SkyTuning sky_;
+    SkyColors sky_;
     float billX_ = 0.0f, billZ_ = 0.0f;
 };

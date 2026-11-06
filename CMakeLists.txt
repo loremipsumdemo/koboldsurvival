@@ -24,7 +24,7 @@ FetchContent_Declare(tinygltf
     GIT_TAG v2.9.3)
 FetchContent_MakeAvailable(tinygltf)
 
-# miniaudio: background music. It decodes MP3 itself and plays through the system's audio API, so it needs
+# miniaudio: music and sound effects. It decodes MP3 itself and plays through the system's audio API, so it needs
 # no other libraries. The pinned release keeps builds reproducible.
 set(MINIAUDIO_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(miniaudio
@@ -86,6 +86,7 @@ set(SIM_SOURCES
     src/look.cpp
     src/surface_tiles.cpp
     src/map_file.cpp
+    src/game_tables.cpp
     src/pak.cpp
     src/build.cpp
     src/claims.cpp

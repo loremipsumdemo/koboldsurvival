@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Aucune sauvegarde pour l'instant
 UILABEL_UNSAVED_WARNING	La progression non sauvegardée de cette partie sera perdue.
 UILABEL_HOLD_DELETE	Maintenez Supprimer pendant 3 secondes pour confirmer.
 UILABEL_CLICK_SAVE	Cliquez sur une sauvegarde pour la charger
-UILABEL_WORLD	MONDE
-UILABEL_UNKNOWN	inconnu
 UILABEL_ON	Activé
 UILABEL_OFF	Désactivé
 UILABEL_EMPTY	Vide
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Force
 MISC_GAME_SAVED	Partie sauvegardée
 MISC_SAVE_FAILED	Impossible de sauvegarder la partie
 MISC_READ_FAILED	Impossible de lire cette sauvegarde
-MISC_SAVE_OLD	Cette sauvegarde est antérieure aux cartes et ne peut pas être chargée
 MISC_AUTOSAVED	Sauvegarde automatique
 MISC_SCREENSHOT_FAILED	Impossible d'enregistrer la capture
 MISC_SCREENSHOT_SAVED	Enregistré : {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Quantité {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Attaque {0}    Défense {1}    Charge {2}
 MISC_IS_DOWN	{0} est à terre
 MISC_PICKS_UP	{0} ramasse {1} {2}
-MISC_CANNOT_READ	Impossible de lire {0}
 UILABEL_DATE_LINE	JOUR {0} · {1} · ANNÉE {2}
 UILABEL_MONITOR_N	Écran {0}
 MISC_GAINS_XP	{0} gagne {1} XP en {2} pour {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} tire sur {1} (bloqué)
 MISC_LOG_DAMAGE	{0} subit {1} dégâts
 MISC_LOG_ELIXIR_ENDS	L'effet de {1} sur {0} se dissipe
 MISC_LOG_NOTICES	{0} repère {1}
-MISC_SAVE_NEWER	Cette sauvegarde provient d'une version plus récente du jeu.
 MISC_AUTOSAVE_FAILED	La sauvegarde automatique a échoué.

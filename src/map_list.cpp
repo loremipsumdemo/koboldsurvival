@@ -1,20 +1,8 @@
 #include "level.h"
-#include <SDL3/SDL.h>
-#include <algorithm>
-#include <cctype>
-#include <filesystem>
 #include <string>
 #include <vector>
-#include "language.h"
-#include "map_file.h"
 #include "pak.h"
-#include "textcase.h"
 #include "world_format.h"
-
-std::string mapsDir() {
-    const char* base = SDL_GetBasePath();
-    return std::string(base ? base : "") + "maps";
-}
 
 bool mainMapPacked() {
     const unsigned char* bytes = nullptr;
@@ -25,28 +13,8 @@ bool mainMapPacked() {
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
     if (mainMapPacked()) {
-        out.push_back(MapChoice{ "packed", MAIN_MAP_STEM, MAIN_MAP_STEM, 0,
+        out.push_back(MapChoice{ "packed", MAIN_MAP_STEM, MAIN_MAP_STEM,
                                  std::string(PAK_WORLD_PREFIX) + "data/map/" + MAIN_MAP_STEM });
-    }
-    const std::string prefix = "data/map/", suffix = ".map";
-    for (const std::string& pak : pakNames(prefix, suffix)) {
-        const std::string stem = pak.substr(prefix.size(), pak.size() - prefix.size() - suffix.size());
-        out.push_back(MapChoice{ "data", stem, stem, 0, "" });
-    }
-
-    const std::string dir = mapsDir();
-    for (const WorldEntry& e : listWorlds(dir)) {
-        const std::string stem = std::filesystem::path(e.folder).filename().string();
-        out.push_back(MapChoice{ "world", stem, e.name, e.created, e.folder });
-    }
-
-    std::error_code ec;
-    if (std::filesystem::is_directory(dir, ec)) {
-        for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
-            if (entry.path().extension() != ".map") continue;
-            const std::string stem = entry.path().stem().string();
-            out.push_back(MapChoice{ "custom", stem, stem, 0, entry.path().string() });
-        }
     }
     return out;
 }

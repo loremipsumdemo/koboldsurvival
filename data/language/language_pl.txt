@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Brak zapisów
 UILABEL_UNSAVED_WARNING	Niezapisane postępy w tej grze zostaną utracone.
 UILABEL_HOLD_DELETE	Przytrzymaj Usuń przez 3 sekundy, aby potwierdzić.
 UILABEL_CLICK_SAVE	Kliknij zapis, aby go wczytać
-UILABEL_WORLD	ŚWIAT
-UILABEL_UNKNOWN	nieznany
 UILABEL_ON	Wł.
 UILABEL_OFF	Wył.
 UILABEL_EMPTY	Pusty
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Siła
 MISC_GAME_SAVED	Gra zapisana
 MISC_SAVE_FAILED	Nie udało się zapisać gry
 MISC_READ_FAILED	Nie udało się odczytać tego zapisu
-MISC_SAVE_OLD	Ten zapis pochodzi sprzed map i nie może zostać wczytany
 MISC_AUTOSAVED	Zapisano automatycznie
 MISC_SCREENSHOT_FAILED	Nie udało się zapisać zrzutu ekranu
 MISC_SCREENSHOT_SAVED	Zapisano {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Liczba {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Atak {0}    Obrona {1}    Udźwig {2}
 MISC_IS_DOWN	{0} jest powalony
 MISC_PICKS_UP	{0} podnosi {1} {2}
-MISC_CANNOT_READ	Nie udało się odczytać {0}
 UILABEL_DATE_LINE	DZIEŃ {0} · {1} · ROK {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} zdobywa {1} {2} doświadczenia za {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} strzela w cel {1} (zablokowano)
 MISC_LOG_DAMAGE	{0} otrzymuje {1} obrażeń
 MISC_LOG_ELIXIR_ENDS	Działanie {1} na {0} mija
 MISC_LOG_NOTICES	{0} zauważa: {1}
-MISC_SAVE_NEWER	Ten zapis pochodzi z nowszej wersji gry.
 MISC_AUTOSAVE_FAILED	Autozapis nie powiódł się.

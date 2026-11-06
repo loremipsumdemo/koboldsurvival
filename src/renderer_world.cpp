@@ -169,8 +169,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const float day = smooth(-0.1f, 0.2f, elev);
         const float dusk = 1.0f - smooth(0.0f, 0.4f, std::fabs(elev));
         const float sunAlpha = smooth(-0.05f, 0.05f, elev);
-        const float moonAlpha = sky_.moon ? (1.0f - sunAlpha) : 0.0f;
-        const float starAlpha = sky_.stars ? (1.0f - day) * sky_.starBrightness : 0.0f;
+        const float moonAlpha = 1.0f - sunAlpha;
+        const float starAlpha = 1.0f - day;
 
         const auto& C = sky_.colors;
         float zen[3], hor[3], horDusk[3], sunC[3];
@@ -178,7 +178,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         lerp3(C[idx(ColorTarget::NightHorizon)].data(), C[idx(ColorTarget::DayHorizon)].data(), day, hor);
         lerp3(hor, C[idx(ColorTarget::DuskHorizon)].data(), dusk * 0.8f, horDusk);
         lerp3(C[idx(ColorTarget::DuskSun)].data(), C[idx(ColorTarget::Sun)].data(), day, sunC);
-        for (float& c : sunC) c *= sky_.sunBrightness;
 
         glUseProgram(skyProgram_);
         glUniformMatrix4fv(uSkyInvVP_, 1, GL_FALSE, invSky);

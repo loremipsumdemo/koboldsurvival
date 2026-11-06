@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "game_tables.h"
 #include "level.h"
 #include "savegame.h"
 #include "ui_types.h"
@@ -64,10 +65,6 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
                                 const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle);
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves);
 
-struct Soundtrack {
-    const char* music = nullptr;
-    const char* ambient = nullptr;
-};
 Soundtrack soundtrackFor(Screen screen);
 
 std::string gameTitle();

@@ -11,6 +11,7 @@
 #include "claims.h"
 #include "combat.h"
 #include "factions.h"
+#include "game_tables.h"
 #include "hostility.h"
 #include "items.h"
 #include "mobs.h"
@@ -18,6 +19,7 @@
 #include "level.h"
 #include "pak.h"
 #include "play_state.h"
+#include "sounds.h"
 #include "systems.h"
 #include "terrain.h"
 
@@ -73,7 +75,20 @@ int main(int, char**) {
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         std::string err;
-        if (pakFind("data/factioninfo.txt", bytes, size)) loadFactions(std::string((const char*)bytes, size), err);
+        if (!loadGameTables(err)) {
+            std::printf("FAIL: %s\n", err.c_str());
+            return 1;
+        }
+        check(sfxInfo(Sfx::Recovers).file == "sfx_56.mp3" && sfxInfo(Sfx::UiClick).ui && !sfxInfo(Sfx::Hit).ui, "sfx.txt reaches the sounds");
+        check(propModelFile(PropKind::Stove) == "model_42.glb" && unitModelFile(3) == "unit/unit_03.glb", "models.txt reaches the props and units");
+        check(emoteFile(16) == "emote_16.png" && iconFile(51) == "icon_51.png", "emotes.txt and icons.txt give each id its picture");
+        check(mobInfo(MobKind::Bat).hover > 0.0f && mobBones(MobKind::Frog) == 150 && mobTemperament(MobKind::Cow) == MobTemperament::Passive,
+              "mobs.txt reaches the mobs");
+        check(std::string(soundtrackNamed("Playing").music) == "bgm_01.mp3" && !soundtrackNamed("Pause").music &&
+              std::string(soundtrackNamed("Title").ambient).empty(), "bgm.txt gives each screen its tracks");
+        check(fontFilesFor("language_ja").front() == "NotoSansJP-Regular.ttf" && fontFilesFor("language_xx").front() == "NotoSans-Regular.ttf" &&
+              fontFilesFor("language_ja").size() == 7, "languages.txt puts a language's font first");
+        if (pakFind("data/factions.txt", bytes, size)) loadFactions(std::string((const char*)bytes, size), err);
         loadLanguage(LANGUAGE_DEFAULT_ID, err);
     }
 
@@ -86,7 +101,7 @@ int main(int, char**) {
     setupWorld(world, terrain, rng, true);
     spawnGroundItems(world, terrain, rng, 2);
 
-    // Things a reload used to undo
+    // Things a reload must not undo
     const Entity emptied = firstStocked(world);
     check(emptied != NULL_ENTITY, "the level has a stocked container");
     if (emptied) *world.get<Storage>(emptied) = Storage{};
@@ -183,7 +198,7 @@ int main(int, char**) {
     const std::string first = "roundtrip_a.sav", second = "roundtrip_b.sav", cut = "roundtrip_cut.sav";
     const Camera cam;
     const GameState gs;
-    const MapChoice map{ "data", "test", "test", 0, "" };
+    const MapChoice map{ "packed", "test", "test", "" };
     check(writeSaveFile(first, captureWorld(world, gs, cam, rng, 1000, "test", map)), "the save is written");
 
     SaveData loaded;

@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Még nincs mentés
 UILABEL_UNSAVED_WARNING	A játék nem mentett haladása elvész.
 UILABEL_HOLD_DELETE	A megerősítéshez tartsd nyomva a Törlés gombot 3 másodpercig.
 UILABEL_CLICK_SAVE	Kattints egy mentésre a betöltéséhez
-UILABEL_WORLD	VILÁG
-UILABEL_UNKNOWN	ismeretlen
 UILABEL_ON	Be
 UILABEL_OFF	Ki
 UILABEL_EMPTY	Üres
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Erő
 MISC_GAME_SAVED	A játék mentve
 MISC_SAVE_FAILED	A játékot nem sikerült menteni
 MISC_READ_FAILED	Ezt a mentést nem sikerült beolvasni
-MISC_SAVE_OLD	Ez a mentés a térképek előttről származik, és nem tölthető be
 MISC_AUTOSAVED	Automatikusan mentve
 MISC_SCREENSHOT_FAILED	A képernyőképet nem sikerült menteni
 MISC_SCREENSHOT_SAVED	Mentve: {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Darabszám {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Támadás {0}    Védelem {1}    Teherbírás {2}
 MISC_IS_DOWN	{0} elesett
 MISC_PICKS_UP	{0} felveszi: {1} {2}
-MISC_CANNOT_READ	A(z) {0} nem olvasható be
 UILABEL_DATE_LINE	{0}. NAP · {1} · {2}. ÉV
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} {1} {2} tapasztalatot szerez ezért: {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} meglövi: {1} (kivédve)
 MISC_LOG_DAMAGE	{0} {1} sebzést szenved
 MISC_LOG_ELIXIR_ENDS	{1} hatása {0} esetén elmúlik
 MISC_LOG_NOTICES	{0} észreveszi: {1}
-MISC_SAVE_NEWER	Ez a mentés a játék újabb verziójával készült.
 MISC_AUTOSAVE_FAILED	Az automatikus mentés nem sikerült.

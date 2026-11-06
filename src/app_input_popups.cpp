@@ -138,7 +138,7 @@ bool App::pressOnTalk() {
             return true;
         }
         const float x = e.button.x, y = e.button.y;
-        const TradeLayout tradeL = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
+        const TradeLayout tradeL = layoutTrade(winW, winH, renderer.pauseBarHeight(true));
         const bool onTrade = session.tradeOpen && (tradeL.interaction.contains(x, y) || tradeL.tradePanel.contains(x, y));
         const bool unitPanelClick = session.tradeOpen && !onTrade && sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y);
         if (!unitPanelClick) {
@@ -147,9 +147,7 @@ bool App::pressOnTalk() {
             } else if (e.button.button == SDL_BUTTON_LEFT) {
                 const DialogueLayout dl = dialogueBox(winW, winH);
                 if (dl.end.contains(x, y)) {
-                    session.talkCooldown = TALK_COOLDOWN;
-                    session.dialogueUnit = NULL_ENTITY;
-                    session.dialogueConvo.clear();
+                    endTalk();
                 } else {
                     for (size_t i = 0; i < dl.options.size(); ++i) {
                         if (dl.options[i].contains(x, y)) {

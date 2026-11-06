@@ -56,6 +56,7 @@ void App::updateRightHold() {
 }
 
 void App::updateTalkOrders() {
+    if (session.dialogueUnit != NULL_ENTITY) return;
     Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
     bool tradeTalk = false, shopTalk = false;
     for (Entity u : world.view<TalkOrder>()) {
@@ -192,25 +193,26 @@ void App::autosaveTick() {
 }
 
 void App::updateCamera() {
-    if (screen != Screen::Playing || session.dialogueUnit != NULL_ENTITY) return;
-    panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
+    if (screen != Screen::Playing) return;
+    if (session.dialogueUnit == NULL_ENTITY) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
     cam.updateClearance(terrain);
     if (terrain.streamed()) terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME);
 }
 
 void App::stepSimulation() {
-    if (screen != Screen::Playing || session.dialogueUnit != NULL_ENTITY || session.paused) return;
+    if (screen != Screen::Playing || session.paused) return;
     const float frameDt = dt;
     simLeft += frameDt;
     dt = SIM_STEP_SECONDS;
     int steps = 0;
     while (simLeft >= SIM_STEP_SECONDS && steps < SIM_MOST_STEPS_PER_FRAME) {
         updateTalkOrders();
-        if (session.dialogueUnit != NULL_ENTITY) break;
+        if (session.paused) break;
         simBefore.clear();
         for (Entity u : world.view<Unit, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
         stepGame();
+        endBrokenConversation();
         simLeft -= SIM_STEP_SECONDS;
         ++steps;
     }
@@ -268,12 +270,8 @@ void App::stepGame() {
         playSfx(Sfx::UiMenuOpen);
     }
     cleanupActiveSquads(world);
-    int hoursPassed = 0;
-    double gameSecs = 0.0;
-    if (sky.clockRunning) {
-        gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
-        hoursPassed = advanceClock(gs.clockSeconds, dt);
-    }
+    const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
+    const int hoursPassed = advanceClock(gs.clockSeconds, dt);
     needsSystem(world, hoursPassed, gameSecs);
     downedSystem(world);
     const WakeChanges wakes = unconsciousSystem(world, gameSecs);
@@ -289,7 +287,7 @@ void App::stepGame() {
     showWorkGains(gameSecs);
     passiveCraftSystem(world, gameSecs);
     claimDecaySystem(world, gameSecs);
-    if (sky.clockRunning) playWorkSounds();
+    playWorkSounds();
     autosaveTick();
 }
 

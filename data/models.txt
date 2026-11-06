@@ -1,0 +1,44 @@
+# Prop and unit models. Tab-separated: key, file under data/model, what it is.
+# Every key must be listed once. The last column is only a note. A missing model is drawn as a pink square.
+# Mobs name their own models in mobs.txt. Unit1 to Unit3 are the party menu's Model numbers.
+
+Wagon	model_1.glb	Decor prop
+Campfire	model_2.glb	Passive Crafting prop: any raw meat as fuel (1 hour each) into its cooked meat
+Bedroll	model_3.glb	Occupiable prop
+Bed	model_4.glb	Occupiable prop
+Barrel	model_5.glb	Storage prop (takes anything)
+Ore	model_6.glb	Resource prop: Iron Ore (Mining)
+Tree	model_7.glb	Resource prop: Wood Log (Woodcutting)
+Boulder	model_8.glb	Decor prop
+Mushroom	model_9.glb	Resource prop: Mushroom, 1 in 10 Poison Mushroom (Herbalism)
+Bones	model_10.glb	Decor prop, and what a corpse turns into. Right-click Destroy takes it away and drops the Bones item
+Wall	model_11.glb	Decor prop
+Stall	model_12.glb	Decor prop
+LockedChest	model_13.glb	Storage prop, Lockable (Lockpicking 5)
+PrisonerCage	model_14.glb	Occupiable prop, Lockable (Lockpicking 15): locks when a unit gets in
+Chair	model_15.glb	Occupiable prop
+Bench	model_16.glb	Occupiable prop
+Stool	model_17.glb	Occupiable prop
+Table	model_18.glb	Decor prop
+EndTable	model_19.glb	Decor prop
+RoundTable	model_20.glb	Decor prop
+MetalTable	model_21.glb	Decor prop
+StandingTorch	model_22.glb	Decor prop
+SupportBeam	model_23.glb	Decor prop
+TrainingDummy	model_24.glb	Crafting prop, no inventory or input: Melee XP only
+RawFoodStorage	model_25.glb	Storage prop: items tagged raw_food that can't be eaten as they are
+FoodStorage	model_26.glb	Storage prop: consumables only
+WeaponRack	model_27.glb	Storage prop: weapons only
+ArmorStand	model_28.glb	Storage prop: armor only (shields included)
+WaterTank	model_29.glb	Storage prop: items tagged water only
+WaterPump	model_30.glb	Crafting prop, no inventory or input: Water (Strength)
+Forge	model_31.glb	Passive Crafting prop: Iron Ore as fuel (1 hour each) into Iron Ingot
+Altar	model_32.glb	Built prop: holds its faction's claim. Burns Wood Logs as upkeep, and opens only to its faction
+Debris	model_33.glb	Built prop: what is left of a decayed or destroyed building
+Shop	model_39.glb	Built prop: a storage prop. Owned, locked inside a claim
+Farm	model_40.glb	Built prop: a storage prop. Owned, locked inside a claim
+Turbine	model_41.glb	Built prop: decor. Owned
+Stove	model_42.glb	Built crafting prop: any raw meat into its cooked meat (Cooking), 10x the Campfire's speed
+Unit1	unit/unit_01.glb	Model 01 (Feminine by default)
+Unit2	unit/unit_02.glb	Model 02 (Masculine by default)
+Unit3	unit/unit_03.glb	Model 03 (Androgynous by default)

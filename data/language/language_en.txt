@@ -31,8 +31,6 @@ UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
 MISC_LEAVE_Q	Leave without saving?
 UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
 UILABEL_CLICK_SAVE	Click a save to load it
-UILABEL_WORLD	WORLD
-UILABEL_UNKNOWN	unknown
 UILABEL_ON	On
 UILABEL_OFF	Off
 UILABEL_EMPTY	Empty
@@ -54,6 +52,7 @@ UILABEL_FRAME_LIMIT	Frame rate limit
 UILABEL_VIEW_RANGE	View range
 UILABEL_TILES_N	{0} tiles
 UILABEL_SHOW_FPS	Show FPS
+UILABEL_CONVERSATION_PAUSE	Automatic Conversation Pause
 UILABEL_UNLIMITED	Unlimited
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autosave
@@ -226,7 +225,6 @@ UILABEL_STRENGTH_STAT	Strength
 MISC_GAME_SAVED	Game saved
 MISC_SAVE_FAILED	Could not save the game
 MISC_READ_FAILED	Could not read that save
-MISC_SAVE_OLD	That save is from before maps and can't be loaded
 MISC_AUTOSAVED	Autosaved
 MISC_SCREENSHOT_FAILED	Could not save the screenshot
 MISC_SCREENSHOT_SAVED	Saved {0}
@@ -239,6 +237,7 @@ MISC_TRADE_NO_ROOM_YOURS	Your unit has no room for their items
 MISC_TRADE_NO_ROOM_THEIRS	They have no room for your items
 MISC_TRADE_FAILED	Trade failed
 MISC_TRADE_COMPLETE	Trade complete.
+MISC_TALK_INTERRUPTED	The conversation was interrupted.
 MISC_PICKUP_SELECT	Select units to pick the item up
 MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
 MISC_DROPS	{0} drops {1} {2}
@@ -365,7 +364,6 @@ UILABEL_COUNT	Count {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Defense {1}    Carry {2}
 MISC_IS_DOWN	{0} is down
 MISC_PICKS_UP	{0} picks up {1} {2}
-MISC_CANNOT_READ	Could not read {0}
 UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
@@ -1022,5 +1020,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} shoots {1} (blocked)
 MISC_LOG_DAMAGE	{0} takes {1} damage
 MISC_LOG_ELIXIR_ENDS	{0}'s {1} wears off
 MISC_LOG_NOTICES	{0} notices {1}
-MISC_SAVE_NEWER	This save was made by a newer version of the game.
 MISC_AUTOSAVE_FAILED	Autosave failed.

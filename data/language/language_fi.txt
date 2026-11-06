@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Ei tallennuksia vielä
 UILABEL_UNSAVED_WARNING	Tallentamaton edistyminen tässä pelissä menetetään.
 UILABEL_HOLD_DELETE	Pidä Poista painettuna 3 sekuntia vahvistaaksesi.
 UILABEL_CLICK_SAVE	Napsauta tallennusta ladataksesi sen
-UILABEL_WORLD	MAAILMA
-UILABEL_UNKNOWN	tuntematon
 UILABEL_ON	Päällä
 UILABEL_OFF	Pois
 UILABEL_EMPTY	Tyhjä
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Voima
 MISC_GAME_SAVED	Peli tallennettu
 MISC_SAVE_FAILED	Peliä ei voitu tallentaa
 MISC_READ_FAILED	Tallennusta ei voitu lukea
-MISC_SAVE_OLD	Tämä tallennus on ennen karttoja, eikä sitä voi ladata
 MISC_AUTOSAVED	Tallennettu automaattisesti
 MISC_SCREENSHOT_FAILED	Kuvakaappausta ei voitu tallentaa
 MISC_SCREENSHOT_SAVED	Tallennettu {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Määrä {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Hyökkäys {0}    Puolustus {1}    Kantokyky {2}
 MISC_IS_DOWN	{0} on kaatunut
 MISC_PICKS_UP	{0} nostaa {1} {2}
-MISC_CANNOT_READ	{0} ei voitu lukea
 UILABEL_DATE_LINE	PÄIVÄ {0} · {1} · VUOSI {2}
 UILABEL_MONITOR_N	Näyttö {0}
 MISC_GAINS_XP	{0} saa {1} {2} kokemuspistettä: {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} ampuu kohdetta {1} (torjuttu)
 MISC_LOG_DAMAGE	{0} ottaa {1} vahinkoa
 MISC_LOG_ELIXIR_ENDS	Aineen {1} vaikutus hahmoon {0} päättyy
 MISC_LOG_NOTICES	{0} huomaa kohteen {1}
-MISC_SAVE_NEWER	Tämä tallennus on tehty pelin uudemmalla versiolla.
 MISC_AUTOSAVE_FAILED	Automaattinen tallennus epäonnistui.

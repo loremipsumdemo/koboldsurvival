@@ -62,7 +62,7 @@ struct BuildPick {
     bool operator==(const BuildPick& o) const { return tool == o.tool && (tool != Tool::Place || kind == o.kind); }
     bool operator!=(const BuildPick& o) const { return !(*this == o); }
 };
-// The kinds a new level places (PROP_COPIES of each, props.h below). The kinds after them are built by the player.
+// The kinds a new level scatters (PROP_COPIES of each). The kinds after them come only from building, camps or debris.
 constexpr int PROP_PLACED_KIND_COUNT = idx(PropKind::Altar);
 
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
@@ -104,7 +104,6 @@ inline bool insideFootprint(const Footprint& f, float dx, float dz, float yaw) {
 }
 
 struct PropInfo {
-    const char* file;
     const char* nameKey;
     float size;
     PropUse use;
@@ -123,50 +122,50 @@ struct PropInfo {
 
 inline const PropInfo& propInfo(PropKind kind) {
     static const PropInfo info[PROP_KIND_COUNT] = {
-        { "data/model/model_1.glb",  "PROP_WAGON",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_2.glb",  "PROP_CAMPFIRE",       0.8f, PropUse::PassiveCrafting, StatId::Cooking, 0, INPUT_COOKABLE, 0, 0,
+        { "PROP_WAGON",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_CAMPFIRE",       0.8f, PropUse::PassiveCrafting, StatId::Cooking, 0, INPUT_COOKABLE, 0, 0,
           ItemFilter::Any, 1.0 },
-        { "data/model/model_3.glb",  "PROP_BEDROLL",        1.0f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_4.glb",  "PROP_BED",            1.4f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_5.glb",  "PROP_BARREL",         0.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_6.glb",  "PROP_ORE",            1.0f, PropUse::Resource, StatId::Mining, 1, 0, 3, 0 },
-        { "data/model/model_7.glb",  "PROP_TREE",           3.0f, PropUse::Resource, StatId::Woodcutting, 88, 0, 3, 0 },
-        { "data/model/model_8.glb",  "PROP_BOULDER",        1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_9.glb",  "PROP_MUSHROOM",       0.6f, PropUse::Resource, StatId::Herbalism, 125, 0, 3, 0,
+        { "PROP_BEDROLL",        1.0f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "PROP_BED",            1.4f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "PROP_BARREL",         0.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0 },
+        { "PROP_ORE",            1.0f, PropUse::Resource, StatId::Mining, 1, 0, 3, 0 },
+        { "PROP_TREE",           3.0f, PropUse::Resource, StatId::Woodcutting, 88, 0, 3, 0 },
+        { "PROP_BOULDER",        1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_MUSHROOM",       0.6f, PropUse::Resource, StatId::Herbalism, 125, 0, 3, 0,
           ItemFilter::Any, 1.0, 126, 10 },
-        { "data/model/model_10.glb", "PROP_BONES",          1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_11.glb", "PROP_WALL",           2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_12.glb", "PROP_STALL",          2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_13.glb", "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  StatId::None, 0, 0, 0, 5 },
-        { "data/model/model_14.glb", "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   StatId::None, 0, 0, 0, 15 },
-        { "data/model/model_15.glb", "PROP_CHAIR",          0.9f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_16.glb", "PROP_BENCH",          1.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_17.glb", "PROP_STOOL",          0.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_18.glb", "PROP_TABLE",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_19.glb", "PROP_END_TABLE",      0.7f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_20.glb", "PROP_ROUND_TABLE",    1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_21.glb", "PROP_METAL_TABLE",    1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_22.glb", "PROP_STANDING_TORCH", 1.6f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_23.glb", "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
-        { "data/model/model_24.glb", "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, StatId::Melee, 0, 0, 1, 0 },
-        { "data/model/model_25.glb", "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0, ItemFilter::RawFood },
-        { "data/model/model_26.glb", "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Food },
-        { "data/model/model_27.glb", "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Weapon },
-        { "data/model/model_28.glb", "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Armor },
-        { "data/model/model_29.glb", "PROP_WATER_TANK",     1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Water },
-        { "data/model/model_30.glb", "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, StatId::Strength, 91, 0, 1, 0 },
-        { "data/model/model_31.glb", "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, StatId::Smelting, 92, 1, 0, 0,
+        { "PROP_BONES",          1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_WALL",           2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_STALL",          2.0f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_LOCKED_CHEST",   0.9f, PropUse::Storage,  StatId::None, 0, 0, 0, 5 },
+        { "PROP_PRISONER_CAGE",  1.8f, PropUse::Occupy,   StatId::None, 0, 0, 0, 15 },
+        { "PROP_CHAIR",          0.9f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "PROP_BENCH",          1.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "PROP_STOOL",          0.5f, PropUse::Occupy,   StatId::None, 0, 0, 0, 0 },
+        { "PROP_TABLE",          1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_END_TABLE",      0.7f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_ROUND_TABLE",    1.2f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_METAL_TABLE",    1.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_STANDING_TORCH", 1.6f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_SUPPORT_BEAM",   2.5f, PropUse::None,     StatId::None, 0, 0, 0, 0 },
+        { "PROP_TRAINING_DUMMY", 1.6f, PropUse::Crafting, StatId::Melee, 0, 0, 1, 0 },
+        { "PROP_RAW_FOOD_STORAGE", 1.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0, ItemFilter::RawFood },
+        { "PROP_FOOD_STORAGE",   1.0f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Food },
+        { "PROP_WEAPON_RACK",    1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Weapon },
+        { "PROP_ARMOR_STAND",    1.7f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Armor },
+        { "PROP_WATER_TANK",     1.4f, PropUse::Storage,  StatId::None, 0, 0, 0, 0, ItemFilter::Water },
+        { "PROP_WATER_PUMP",     1.4f, PropUse::Crafting, StatId::Strength, 91, 0, 1, 0 },
+        { "PROP_FORGE",          1.6f, PropUse::PassiveCrafting, StatId::Smelting, 92, 1, 0, 0,
           ItemFilter::Any, 1.0 },
-        { "data/model/model_32.glb", "PROP_ALTAR",             1.2f, PropUse::PassiveCrafting, StatId::None, 0, 88, 0, 0,
+        { "PROP_ALTAR",             1.2f, PropUse::PassiveCrafting, StatId::None, 0, 88, 0, 0,
           ItemFilter::Any, ALTAR_LOG_HOURS, 0, 0, Footprint{}, true },
-        { "data/model/model_33.glb", "PROP_DEBRIS",            1.0f, PropUse::Resource, StatId::Strength, 0, 0, 3, 0 },
-        { "data/model/model_39.glb", "PROP_SHOP",              1.6f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
+        { "PROP_DEBRIS",            1.0f, PropUse::Resource, StatId::Strength, 0, 0, 3, 0 },
+        { "PROP_SHOP",              1.6f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
-        { "data/model/model_40.glb", "PROP_FARM",              2.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
+        { "PROP_FARM",              2.0f, PropUse::Storage, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
-        { "data/model/model_41.glb", "PROP_TURBINE",           2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
+        { "PROP_TURBINE",           2.0f, PropUse::None, StatId::None, 0, 0, 0, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
-        { "data/model/model_42.glb", "PROP_STOVE",             1.2f, PropUse::Crafting, StatId::Cooking, 0, INPUT_COOKABLE, 1, 0,
+        { "PROP_STOVE",             1.2f, PropUse::Crafting, StatId::Cooking, 0, INPUT_COOKABLE, 1, 0,
           ItemFilter::Any, 1.0, 0, 0, Footprint{}, true },
     };
     const int k = idx(kind);

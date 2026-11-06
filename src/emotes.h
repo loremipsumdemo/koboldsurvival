@@ -12,7 +12,6 @@ enum class EmoteId : int {
     LockedIn = 8,
     Herbalism = 9,
     Unconscious = 10,
-    Dead = 11,
     PlayingDead = 12,
     CuePutDown = 13,
     CueTalk = 14,

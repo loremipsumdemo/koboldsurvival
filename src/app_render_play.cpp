@@ -212,14 +212,11 @@ void App::drawWorldMapPopup() {
 void App::drawTalkOrTrade() {
     if (session.dialogueUnit != NULL_ENTITY) {
         if (!world.has<Unit>(session.dialogueUnit)) {
-            session.dialogueUnit = NULL_ENTITY;
-            session.dialogueConvo.clear();
-            session.tradeOpen = false;
-            session.quantity.open = false;
+            endTalk();
         } else {
             if (session.tradeOpen) {
                 const Inventory* npcInv = world.get<Inventory>(session.dialogueUnit);
-                renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(false)), nameOf(world, session.dialogueUnit), nameOf(world, session.dialoguePlayer),
+                renderer.drawTrade(layoutTrade(winW, winH, renderer.pauseBarHeight(true)), nameOf(world, session.dialogueUnit), nameOf(world, session.dialoguePlayer),
                                    npcInv, session.tradeNpc, session.tradePlayer, session.tradeNpcDrag,
                                    checkTrade(world, session.dialogueUnit, session.dialoguePlayer), !session.freeTrade, mouseX, mouseY);
                 if (npcInv && session.tradeNpcDrag >= 0 && npcInv->slots[session.tradeNpcDrag].item != 0) {
@@ -264,6 +261,6 @@ void App::drawPlayingScreen() {
     }
     if (mapOpen) drawWorldMapPopup();
     drawTalkOrTrade();
-    if (session.paused || session.dialogueUnit != NULL_ENTITY) renderer.drawPauseBar(session.paused && session.dialogueUnit == NULL_ENTITY);
+    if (session.paused) renderer.drawPauseBar(true);
     renderer.endUi();
 }

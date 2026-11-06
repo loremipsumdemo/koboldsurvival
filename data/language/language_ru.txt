@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Сохранений пока нет
 UILABEL_UNSAVED_WARNING	Несохранённый прогресс в этой игре будет потерян.
 UILABEL_HOLD_DELETE	Удерживайте «Удалить» 3 секунды для подтверждения.
 UILABEL_CLICK_SAVE	Нажмите на сохранение, чтобы загрузить его
-UILABEL_WORLD	МИР
-UILABEL_UNKNOWN	неизвестно
 UILABEL_ON	Вкл.
 UILABEL_OFF	Выкл.
 UILABEL_EMPTY	Пусто
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Сила
 MISC_GAME_SAVED	Игра сохранена
 MISC_SAVE_FAILED	Не удалось сохранить игру
 MISC_READ_FAILED	Не удалось прочитать это сохранение
-MISC_SAVE_OLD	Это сохранение создано до появления карт и не может быть загружено
 MISC_AUTOSAVED	Автосохранение выполнено
 MISC_SCREENSHOT_FAILED	Не удалось сохранить снимок экрана
 MISC_SCREENSHOT_SAVED	Сохранено: {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Количество {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Атака {0}    Защита {1}    Грузоподъёмность {2}
 MISC_IS_DOWN	{0} повержен
 MISC_PICKS_UP	{0} подбирает {1} {2}
-MISC_CANNOT_READ	Не удалось прочитать {0}
 UILABEL_DATE_LINE	ДЕНЬ {0} · {1} · ГОД {2}
 UILABEL_MONITOR_N	Монитор {0}
 MISC_GAINS_XP	{0} получает {1} {2} опыта за {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} подстреливает цель {1} (блок)
 MISC_LOG_DAMAGE	{0} получает урон: {1}
 MISC_LOG_ELIXIR_ENDS	Действие {1} на {0} заканчивается
 MISC_LOG_NOTICES	{0} замечает цель {1}
-MISC_SAVE_NEWER	Это сохранение создано в более новой версии игры.
 MISC_AUTOSAVE_FAILED	Не удалось выполнить автосохранение.

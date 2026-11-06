@@ -1,7 +1,5 @@
 #pragma once
-#include <cstddef>
 #include <cstdint>
-#include <string>
 #include <vector>
 #include "biome.h"
 
@@ -13,7 +11,3 @@ struct MapData {
 };
 
 MapData flatMap(int size);
-
-bool parseMap(const unsigned char* bytes, size_t total, MapData& out);
-
-bool readMapFile(const std::string& path, MapData& out);

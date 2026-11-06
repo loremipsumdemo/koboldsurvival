@@ -18,8 +18,8 @@ public:
 
 // One component type's store.
 // - The components sit in a deque, which never moves an element when others are added or removed, so a pointer
-//   from get() stays good until that component itself is removed (as it was with the hash map this replaces). A
-//   removed component's slot is reused by the next one added.
+//   from get() stays good until that component itself is removed. A removed component's slot is reused by the next
+//   one added.
 // - A paged table, indexed by entity id, says which slot an entity's component is in; finding one is two array reads.
 // - A packed list of the entities that have one is what views walk.
 template <typename T>

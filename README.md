@@ -30,7 +30,8 @@ lose state: the world keeps running, whatever happens to your party.
   no lock to pick. It burns Wood Logs as upkeep. With none left it decays, and when it breaks the claim is gone and the
   props in the circle belong to nobody.
 - **Factions and reputation.** Rival camps start at set reputations with you. At -25 or below they attack on sight, and
-  at 50 or more they are allies. Talk to NPCs, trade with them, lock units in Prisoner Cages, pick locks, or disband
+  at 50 or more they are allies. The game keeps running while you talk or trade, unless you turn on Automatic Conversation
+  Pause in Settings or press Space. Talk to NPCs, trade with them, lock units in Prisoner Cages, pick locks, or disband
   your units into the Exiles.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.
@@ -59,7 +60,7 @@ lose state: the world keeps running, whatever happens to your party.
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |
 | Alt (held) | Show the names of items on the ground |
-| Space | Pause or resume |
+| Space | Pause or resume, also during a conversation |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
 | F12 | Take a screenshot |
@@ -102,7 +103,7 @@ src/                 Game source (single executable, an ECS-style design)
   save_world, savegame     Turning a running level into a save, and the save files
   game_log, world_labels   The message log and the text drawn over units
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
-  world_format, map_file   The world folder format and the single-file .map format
+  world_format, map_file   The world folder format, and the blank map a Terrain starts as
 tests/
   save_roundtrip.cpp Saves a level, loads it and compares (run with ctest; opens no window)
 tools/
@@ -110,7 +111,11 @@ tools/
   build_stamp.cpp    Writes the build stamp shown on the title screen
 data/                Game content, packed into data.pak
   itemdb.txt         The items
-  factioninfo.txt    Factions and starting reputations
+  factions.txt       Factions and starting reputations
+  mobs.txt           Every mob's stats, temperament, meat, bones, picture and model
+  sfx.txt, bgm.txt   Which sound or track plays for what
+  emotes.txt, icons.txt, models.txt   Which file each emote, icon, prop and unit uses
+  fonts.txt, languages.txt   The built-in fonts, and each language's first choice
   motd.txt           The title screen's notice board
   language/          One KEY<TAB>text file per language (English is the reference)
   map/main/          The main world (world.txt, look.json, surface, region files)
@@ -123,11 +128,12 @@ SFX/                 Sound effects (.mp3)
 
 ## Modding the data
 
-Most content is plain text or numbered files in `data/`. The `*info.txt` files explain what each numbered picture,
-model, sound or track is for, and how to add a new one (it takes the next free number). A missing picture or model is
-drawn as a pink square.
+Most content is plain text in `data/`, and the game reads those tables at start-up, so changing a file name or a mob's
+stats in them changes the game after a rebuild packs them. Each table explains its columns at the top. Keys are fixed by the
+code (`src/game_tables.cpp`): a new sound, emote or mob kind also needs code. If a table has a mistake, the game stops at
+start-up and names the file and line. A missing picture or model is drawn as a pink square.
 
-`buildinfo.txt` is not read by the game: buildable props and their rules are in `src/props.h` and `src/build.cpp`.
+Buildable props and their rules are in `src/props.h` and `src/build.cpp`.
 
 Language files copied to the `LANGUAGE` folder next to the game override the packed copy key by key, so text can be
 edited without rebuilding.

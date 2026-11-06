@@ -237,8 +237,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         const int item = worn ? worn->items[gi] : 0;
         const bool locked = (int)gi == idx(GearSlot::OffHand) && offLocked;
         if (item == 0) {
-            drawSlotLabel(r, locked ? lang("UILABEL_TWO_HANDED") : gearSlotName((int)gi), inset, 2,
-                          locked ? theme::TEXT_DIM : theme::alpha(theme::TEXT_DIM, 0.45f));
+            if (locked) drawSlotLabel(r, lang("UILABEL_TWO_HANDED"), inset, 2, theme::TEXT_DIM);
+            else drawUiIcon(gearSlotIcon((int)gi), Rect{ r.x + inset, r.y + inset, r.w - 2.0f * inset, r.h - 2.0f * inset }, theme::EMPTY_SLOT);
             continue;
         }
 

@@ -199,6 +199,7 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     rows.push_back(makeDropdown(RowId::Autosave, lang("UILABEL_AUTOSAVE"), saves, indexOfValue(saves, s.autosaveMinutes), true));
     rows.push_back(makeToggle(RowId::UnitNames, lang("UILABEL_UNIT_NAMES"), s.showUnitNames));
     rows.push_back(makeToggle(RowId::NpcNames, lang("UILABEL_NPC_NAMES"), s.showNpcNames));
+    rows.push_back(makeToggle(RowId::ConversationPause, lang("UILABEL_CONVERSATION_PAUSE"), s.conversationPause));
     rows.push_back(makeToggle(RowId::PropNames, lang("UILABEL_PROP_NAMES"), s.showPropNames));
     {
         RowSpec info = makeToggle(RowId::PropInfo, lang("UILABEL_PROP_INFO"), s.showPropInfo);
@@ -491,6 +492,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::EdgeScroll:
         s.edgeScroll = on;
+        break;
+    case RowId::ConversationPause:
+        s.conversationPause = on;
         break;
     case RowId::ShowFps:
         s.showFps = on;

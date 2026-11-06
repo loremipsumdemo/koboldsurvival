@@ -49,6 +49,7 @@ struct GameSettings {
     std::string language = LANGUAGE_DEFAULT_ID;
 
     bool edgeScroll = false;
+    bool conversationPause = false;
 
     int optimizeAttackShare = 50;
     bool optimizeAccessories = true;
@@ -87,8 +88,6 @@ inline GameSettings loadSettings(const std::string& path) {
     GameSettings s;
     std::ifstream in(std::filesystem::u8path(path));
     std::string line;
-    int legacyPreset = -1;
-    bool sawWidth = false;
     while (std::getline(in, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         const size_t eq = line.find('=');
@@ -97,9 +96,8 @@ inline GameSettings loadSettings(const std::string& path) {
         const std::string val = line.substr(eq + 1);
         if (key == "displayMode")          s.displayMode = parseInt(val, s.displayMode);
         else if (key == "monitor")         s.monitor = parseInt(val, s.monitor);
-        else if (key == "width")         { s.width = parseInt(val, s.width); sawWidth = true; }
+        else if (key == "width")           s.width = parseInt(val, s.width);
         else if (key == "height")          s.height = parseInt(val, s.height);
-        else if (key == "resolution")      legacyPreset = parseInt(val, -1);
         else if (key == "refreshHz")       s.refreshHz = parseInt(val, s.refreshHz);
         else if (key == "vsync")           s.vsync = (val == "1");
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
@@ -114,6 +112,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "fontPath")        s.fontPath = val;
         else if (key == "language")        s.language = val;
         else if (key == "edgeScroll")      s.edgeScroll = (val == "1");
+        else if (key == "conversationPause") s.conversationPause = (val == "1");
         else if (key == "optimizeAttackShare") s.optimizeAttackShare = parseInt(val, s.optimizeAttackShare);
         else if (key == panelSettingKey(0) || key == panelSettingKey(1) || key == panelSettingKey(2)) {
             const int i = key == panelSettingKey(0) ? 0 : key == panelSettingKey(1) ? 1 : 2;
@@ -127,8 +126,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "optimizeAccessories") s.optimizeAccessories = (val == "1");
         else if (key == "optimizeTwoHanded")   s.optimizeTwoHanded = (val == "1");
         else if (key == "optimizeValueTies")   s.optimizeValueTies = (val == "1");
-        else if (key == "globalVolume" || key == "masterVolume" || key == "totalVolume") s.globalVolume = parseInt(val, s.globalVolume);
-        else if (key == "globalOn" || key == "masterOn" || key == "totalOn") s.globalOn = (val == "1");
+        else if (key == "globalVolume")    s.globalVolume = parseInt(val, s.globalVolume);
+        else if (key == "globalOn")        s.globalOn = (val == "1");
         else if (key == "musicVolume")     s.musicVolume = parseInt(val, s.musicVolume);
         else if (key == "musicOn")         s.musicOn = (val == "1");
         else if (key == "ambientVolume")   s.ambientVolume = parseInt(val, s.ambientVolume);
@@ -138,13 +137,6 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "interfaceVolume") s.interfaceVolume = parseInt(val, s.interfaceVolume);
         else if (key == "interfaceOn")     s.interfaceOn = (val == "1");
         else if (key == "craftGatherSounds") s.craftGatherSounds = (val == "1");
-    }
-
-    if (!sawWidth && legacyPreset >= 0 && legacyPreset < 4) {
-        static const int legacyW[] = { 1280, 1600, 1920, 2560 };
-        static const int legacyH[] = { 720, 900, 1080, 1440 };
-        s.width = legacyW[legacyPreset];
-        s.height = legacyH[legacyPreset];
     }
 
     s.displayMode = std::clamp(s.displayMode, 0, DISPLAY_MODE_COUNT - 1);
@@ -190,6 +182,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";
     out << "edgeScroll=" << (s.edgeScroll ? 1 : 0) << "\n";
+    out << "conversationPause=" << (s.conversationPause ? 1 : 0) << "\n";
     out << "optimizeAttackShare=" << s.optimizeAttackShare << "\n";
     out << "optimizeAccessories=" << (s.optimizeAccessories ? 1 : 0) << "\n";
     out << "optimizeTwoHanded=" << (s.optimizeTwoHanded ? 1 : 0) << "\n";

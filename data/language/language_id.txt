@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Belum ada simpanan
 UILABEL_UNSAVED_WARNING	Kemajuan yang belum disimpan dalam permainan ini akan hilang.
 UILABEL_HOLD_DELETE	Tahan Hapus selama 3 detik untuk mengonfirmasi.
 UILABEL_CLICK_SAVE	Klik simpanan untuk memuatnya
-UILABEL_WORLD	DUNIA
-UILABEL_UNKNOWN	tidak diketahui
 UILABEL_ON	Nyala
 UILABEL_OFF	Mati
 UILABEL_EMPTY	Kosong
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Kekuatan
 MISC_GAME_SAVED	Permainan disimpan
 MISC_SAVE_FAILED	Permainan tidak dapat disimpan
 MISC_READ_FAILED	Simpanan itu tidak dapat dibaca
-MISC_SAVE_OLD	Simpanan itu berasal dari sebelum adanya peta dan tidak dapat dimuat
 MISC_AUTOSAVED	Disimpan otomatis
 MISC_SCREENSHOT_FAILED	Tangkapan layar tidak dapat disimpan
 MISC_SCREENSHOT_SAVED	Disimpan {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Jumlah {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Serangan {0}    Pertahanan {1}    Daya angkut {2}
 MISC_IS_DOWN	{0} tumbang
 MISC_PICKS_UP	{0} mengambil {1} {2}
-MISC_CANNOT_READ	Tidak dapat membaca {0}
 UILABEL_DATE_LINE	HARI {0} · {1} · TAHUN {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} mendapat {1} {2} XP dari {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} menembak {1} (ditangkis)
 MISC_LOG_DAMAGE	{0} menerima {1} kerusakan
 MISC_LOG_ELIXIR_ENDS	Efek {1} pada {0} habis
 MISC_LOG_NOTICES	{0} melihat {1}
-MISC_SAVE_NEWER	Simpanan ini dibuat oleh versi game yang lebih baru.
 MISC_AUTOSAVE_FAILED	Simpan otomatis gagal.

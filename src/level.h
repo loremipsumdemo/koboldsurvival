@@ -12,15 +12,11 @@
 
 class Renderer;
 
-std::string mapsDir();
 struct MapChoice {
     std::string source;
     std::string stem;
     std::string name;
-    long long created = 0;
     std::string path;
-
-    std::string pakName() const { return "data/map/" + stem + ".map"; }
 };
 
 constexpr const char* MAIN_MAP_STEM = "main";

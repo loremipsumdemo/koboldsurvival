@@ -18,7 +18,6 @@
 
 namespace {
 constexpr uint32_t FORMAT_VERSION = 2;
-const char REGION_MAGIC[4] = { 'K', 'R', 'E', 'G' };
 constexpr size_t REGION_HEADER = 16;
 constexpr size_t CORNERS = (size_t)CHUNK_CORNERS * CHUNK_CORNERS;
 constexpr size_t TILES = (size_t)CHUNK_TILES * CHUNK_TILES;
@@ -109,10 +108,6 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) 
             unsigned v = 0;
             ls >> v;
             formatOk = v == FORMAT_VERSION;
-        } else if (key == "name") {
-            std::getline(ls >> std::ws, info.name);
-        } else if (key == "created") {
-            ls >> info.created;
         } else if (key == "size") {
             ls >> info.size;
         } else if (key == "chunk") {
@@ -131,25 +126,6 @@ bool readWorldInfo(const std::string& folder, WorldInfo& out, std::string& err) 
     if (!(info.heightScale > 0.0f)) { err = "world.txt has no valid height scale"; return false; }
     out = info;
     return true;
-}
-
-std::vector<WorldEntry> listWorlds(const std::string& mapsFolder) {
-    std::vector<WorldEntry> out;
-    std::error_code ec;
-    if (!std::filesystem::is_directory(mapsFolder, ec)) return out;
-
-    for (const auto& entry : std::filesystem::directory_iterator(mapsFolder, ec)) {
-        if (!entry.is_directory(ec)) continue;
-        WorldInfo info;
-        std::string err;
-        if (!readWorldInfo(entry.path().string(), info, err)) continue;
-        WorldEntry w;
-        w.folder = entry.path().string();
-        w.name = info.name.empty() ? entry.path().filename().string() : info.name;
-        w.created = info.created;
-        out.push_back(w);
-    }
-    return out;
 }
 
 bool readChunk(const std::string& folder, const WorldInfo& info, int cx, int cz, ChunkData& out) {

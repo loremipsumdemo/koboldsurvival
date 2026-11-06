@@ -1,8 +1,0 @@
-Music and ambient tracks: loose .mp3 files in the BGM folder next to the game (copied there by the build), not in
-data.pak. The music and ambient sliders each loop one track; which plays is set per screen in soundtrackFor
-(src/main.cpp). A missing file is silent. The menus opened from the title keep the title's track playing.
-
-File	Slider	Plays
-title.mp3	Music	Title screen, and on through New Game, Load Game, Settings and the party menu
-bgm_01.mp3	Music	In game
-amb_01.mp3	Ambient	In game (the title screen has no ambient track)

@@ -25,8 +25,8 @@ void Renderer::loadUnitModels(LoadStages& stages) {
     };
     std::vector<Loaded> loaded;
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/model/unit/unit_%02d.glb", i);
+        const std::string file = "data/model/" + unitModelFile(i);
+        const char* path = file.c_str();
         const unsigned char* bytes = nullptr;
         size_t size = 0;
         if (!pakFind(path, bytes, size)) {
@@ -57,14 +57,14 @@ void Renderer::loadUnitModels(LoadStages& stages) {
 
 void Renderer::loadMobArt(LoadStages& stages) {
     int mobModelCount = 0;
-    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model ? 1 : 0;
+    for (int k = 1; k <= MOB_KIND_COUNT; ++k) mobModelCount += mobInfo((MobKind)k).model.empty() ? 0 : 1;
     stages.stage(0.4f, "LOADING_MOB_MODELS", mobModelCount);
     int mobModelsDone = 0;
     for (int k = 1; k <= MOB_KIND_COUNT; ++k) {
         const MobKind kind = (MobKind)k;
-        if (!mobInfo(kind).model) continue;
+        if (mobInfo(kind).model.empty()) continue;
         ++mobModelsDone;
-        const std::string file = std::string("data/model/mob/") + mobInfo(kind).model + ".glb";
+        const std::string file = "data/model/" + mobInfo(kind).model;
         const char* path = file.c_str();
         Model& m = mobModels_[(size_t)k - 1];
         if (!pakHas(path)) {
@@ -78,9 +78,8 @@ void Renderer::loadMobArt(LoadStages& stages) {
     stages.stage(0.5f, "LOADING_MOB_PICTURES", MOB_KIND_COUNT);
     mobSprites_.reserve(MOB_KIND_COUNT);
     for (int i = 1; i <= MOB_KIND_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/mob/mob_%d.png", i);
-        mobSprites_.push_back(loadOptionalImage(path));
+        const std::string path = "data/mob/" + mobInfo((MobKind)i).picture;
+        mobSprites_.push_back(loadOptionalImage(path.c_str()));
         stages.step(0.5f + 0.05f * (float)i / (float)MOB_KIND_COUNT, i);
     }
 }
@@ -100,11 +99,12 @@ void Renderer::loadPropModels(LoadStages& stages) {
     for (int k = 0; k < PROP_KIND_COUNT; ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);
-        if (!pakHas(info.file)) {
-            SDL_Log("Prop model %s not in data.pak: the %s is drawn %s", info.file, lang(info.nameKey).c_str(), standIn);
-        } else if (!loadDrawableModel(info.file, propModels_[(size_t)kind], false)) {
+        const std::string file = "data/model/" + propModelFile(kind);
+        if (!pakHas(file)) {
+            SDL_Log("Prop model %s not in data.pak: the %s is drawn %s", file.c_str(), lang(info.nameKey).c_str(), standIn);
+        } else if (!loadDrawableModel(file.c_str(), propModels_[(size_t)kind], false)) {
             SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
-                    info.file, lang(info.nameKey).c_str(), standIn);
+                    file.c_str(), lang(info.nameKey).c_str(), standIn);
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)PROP_KIND_COUNT, k + 1);
     }

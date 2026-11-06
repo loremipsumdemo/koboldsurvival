@@ -56,7 +56,7 @@ std::string taskNameOf(World& w, Entity u) {
 }
 
 std::vector<EmoteId> emotesOf(World& w, Entity u) {
-    if (w.has<Corpse>(u)) return { EmoteId::Dead };
+    if (w.has<Corpse>(u)) return {};
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
     std::vector<EmoteId> out;

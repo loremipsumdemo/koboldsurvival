@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Ainda não há gravações
 UILABEL_UNSAVED_WARNING	O progresso não guardado neste jogo será perdido.
 UILABEL_HOLD_DELETE	Mantenha Eliminar premido durante 3 segundos para confirmar.
 UILABEL_CLICK_SAVE	Clique numa gravação para a carregar
-UILABEL_WORLD	MUNDO
-UILABEL_UNKNOWN	desconhecido
 UILABEL_ON	Ligado
 UILABEL_OFF	Desligado
 UILABEL_EMPTY	Vazio
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Força
 MISC_GAME_SAVED	Jogo guardado
 MISC_SAVE_FAILED	Não foi possível guardar o jogo
 MISC_READ_FAILED	Não foi possível ler essa gravação
-MISC_SAVE_OLD	Essa gravação é anterior aos mapas e não pode ser carregada
 MISC_AUTOSAVED	Guardado automaticamente
 MISC_SCREENSHOT_FAILED	Não foi possível guardar a captura de ecrã
 MISC_SCREENSHOT_SAVED	{0} guardado
@@ -372,7 +369,6 @@ UILABEL_COUNT	Quantidade {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defesa {1}    Carga {2}
 MISC_IS_DOWN	{0} está derrubado
 MISC_PICKS_UP	{0} apanha {1} {2}
-MISC_CANNOT_READ	Não foi possível ler {0}
 UILABEL_DATE_LINE	DIA {0} · {1} · ANO {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ganha {1} {2} de XP por {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} dispara sobre {1} (bloqueado)
 MISC_LOG_DAMAGE	{0} sofre {1} de dano
 MISC_LOG_ELIXIR_ENDS	O efeito de {1} em {0} termina
 MISC_LOG_NOTICES	{0} repara em {1}
-MISC_SAVE_NEWER	Este jogo guardado foi criado numa versão mais recente do jogo.
 MISC_AUTOSAVE_FAILED	Falha ao guardar automaticamente.

@@ -1,0 +1,11 @@
+# Built-in fonts, in data/font. Tab-separated: key, file, scripts it covers. Automatic, the default font setting, draws each
+# character in the first of these that has it, starting with the language's own (languages.txt). A font picked in Settings
+# is tried first, and a basic system font, if one is installed, last. The title's name is drawn from the same fonts.
+
+Latin	NotoSans-Regular.ttf	Latin, Cyrillic, Greek, Vietnamese
+Arabic	NotoSansArabic-Regular.ttf	Arabic
+Japanese	NotoSansJP-Regular.ttf	Japanese
+Korean	NotoSansKR-Regular.ttf	Korean
+ChineseSimplified	NotoSansSC-Regular.ttf	Chinese, Simplified
+ChineseTraditional	NotoSansTC-Regular.ttf	Chinese, Traditional
+Thai	NotoSansThai-Regular.ttf	Thai

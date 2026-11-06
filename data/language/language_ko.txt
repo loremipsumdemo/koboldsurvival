@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	아직 저장된 데이터가 없습니다
 UILABEL_UNSAVED_WARNING	이 게임의 저장되지 않은 진행 상황은 사라집니다.
 UILABEL_HOLD_DELETE	삭제를 3초 동안 누르고 있으면 확인됩니다.
 UILABEL_CLICK_SAVE	저장 데이터를 클릭하면 불러옵니다
-UILABEL_WORLD	월드
-UILABEL_UNKNOWN	알 수 없음
 UILABEL_ON	켜기
 UILABEL_OFF	끄기
 UILABEL_EMPTY	비어 있음
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	힘
 MISC_GAME_SAVED	게임을 저장했습니다
 MISC_SAVE_FAILED	게임을 저장할 수 없습니다
 MISC_READ_FAILED	해당 저장 데이터를 읽을 수 없습니다
-MISC_SAVE_OLD	이 저장 데이터는 맵 기능 이전의 것이라 불러올 수 없습니다
 MISC_AUTOSAVED	자동 저장되었습니다
 MISC_SCREENSHOT_FAILED	스크린샷을 저장할 수 없습니다
 MISC_SCREENSHOT_SAVED	{0} 저장됨
@@ -372,7 +369,6 @@ UILABEL_COUNT	수량 {0}
 UILABEL_ATTACK_DEFENSE_CARRY	공격 {0}    방어 {1}    운반 {2}
 MISC_IS_DOWN	{0}이(가) 쓰러졌습니다
 MISC_PICKS_UP	{0}이(가) {1} {2}을(를) 줍니다
-MISC_CANNOT_READ	{0}을(를) 읽을 수 없습니다
 UILABEL_DATE_LINE	{0}일차 · {1} · {2}년
 UILABEL_MONITOR_N	모니터 {0}
 MISC_GAINS_XP	{0}이(가) {3}(으)로 {1} {2} 경험치를 얻습니다
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0}이(가) {1}을(를) 쏨 (막힘)
 MISC_LOG_DAMAGE	{0}이(가) {1}의 피해를 입음
 MISC_LOG_ELIXIR_ENDS	{0}의 {1} 효과가 끝남
 MISC_LOG_NOTICES	{0}이(가) {1}을(를) 발견함
-MISC_SAVE_NEWER	이 저장 파일은 더 새로운 버전의 게임에서 만들어졌습니다.
 MISC_AUTOSAVE_FAILED	자동 저장에 실패했습니다.

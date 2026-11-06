@@ -287,7 +287,6 @@ void App::drawFrameOverlays() {
 
 void App::render() {
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
-    renderer.setSky(sky);
     if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;
     renderer.setMenuText(screen != Screen::Playing);
     renderer.hoverFrameStart();

@@ -2,35 +2,14 @@
 #include "systems.h"
 #include "play_state.h"
 #include "loading.h"
-#include "pak.h"
 #include "renderer.h"
 
 using namespace play;
 
-static bool loadTerrain(const MapChoice& c, Terrain& terrain, std::string& err) {
-    if (c.source == "world" || c.source == "packed") return terrain.openWorld(c.path, err);
-
-    MapData data;
-    bool ok = false;
-    if (c.source == "data") {
-        const unsigned char* bytes = nullptr;
-        size_t size = 0;
-        ok = pakFind(c.pakName(), bytes, size) && parseMap(bytes, size, data);
-    } else {
-        ok = readMapFile(c.path, data);
-    }
-    if (!ok) {
-        err = langf("MISC_CANNOT_READ", { c.name });
-        return false;
-    }
-    terrain.load(data);
-    return true;
-}
-
 bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress) {
     LoadStages stages(progress);
     stages.stage(0.0f, "LOADING_MAP");
-    if (!loadTerrain(c, terrain, err)) return false;
+    if (!terrain.openWorld(c.path, err)) return false;
     stages.stage(0.35f, "LOADING_MAP_GROUND");
     renderer.uploadTerrain(terrain);
     return true;

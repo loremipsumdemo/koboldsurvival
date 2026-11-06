@@ -395,10 +395,10 @@ void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     drawListText(name, r.x + r.w + 6.0f * s, my - listTextHeight(name) * 0.5f, WHITE);
 }
 
-void Renderer::drawUiIcon(int icon, const Rect& r) {
+void Renderer::drawUiIcon(int icon, const Rect& r, RGBA tint) {
     const TextTex& t = uiIconTexture(icon);
     if (t.tex) {
-        drawFitted(t, r, WHITE);
+        drawFitted(t, r, tint);
         return;
     }
     drawRect(r, theme::PINK);

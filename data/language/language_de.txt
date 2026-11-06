@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Noch keine Speicherstände
 UILABEL_UNSAVED_WARNING	Ungespeicherter Fortschritt in diesem Spiel geht verloren.
 UILABEL_HOLD_DELETE	Halte Löschen 3 Sekunden lang gedrückt, um zu bestätigen.
 UILABEL_CLICK_SAVE	Klicke auf einen Speicherstand, um ihn zu laden
-UILABEL_WORLD	WELT
-UILABEL_UNKNOWN	unbekannt
 UILABEL_ON	An
 UILABEL_OFF	Aus
 UILABEL_EMPTY	Leer
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Stärke
 MISC_GAME_SAVED	Spiel gespeichert
 MISC_SAVE_FAILED	Spiel konnte nicht gespeichert werden
 MISC_READ_FAILED	Dieser Speicherstand konnte nicht gelesen werden
-MISC_SAVE_OLD	Dieser Speicherstand stammt von vor den Karten und kann nicht geladen werden
 MISC_AUTOSAVED	Automatisch gespeichert
 MISC_SCREENSHOT_FAILED	Screenshot konnte nicht gespeichert werden
 MISC_SCREENSHOT_SAVED	{0} gespeichert
@@ -372,7 +369,6 @@ UILABEL_COUNT	Anzahl {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Angriff {0}    Verteidigung {1}    Tragkraft {2}
 MISC_IS_DOWN	{0} ist kampfunfähig
 MISC_PICKS_UP	{0} hebt {1} {2} auf
-MISC_CANNOT_READ	{0} konnte nicht gelesen werden
 UILABEL_DATE_LINE	TAG {0} · {1} · JAHR {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} erhält {1} {2} XP für {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} beschießt {1} (geblockt)
 MISC_LOG_DAMAGE	{0} erleidet {1} Schaden
 MISC_LOG_ELIXIR_ENDS	Die Wirkung von {1} auf {0} lässt nach
 MISC_LOG_NOTICES	{0} bemerkt {1}
-MISC_SAVE_NEWER	Dieser Spielstand stammt aus einer neueren Version des Spiels.
 MISC_AUTOSAVE_FAILED	Automatisches Speichern fehlgeschlagen.

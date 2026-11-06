@@ -133,8 +133,9 @@ void App::onKeyDown() {
         mapOpen = !mapOpen;
         return;
     }
-    if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat && session.dialogueUnit == NULL_ENTITY) {
+    if (screen == Screen::Playing && e.key.key == SDLK_SPACE && !e.key.repeat) {
         session.paused = !session.paused;
+        session.autoPaused = false;
         playSfx(session.paused ? Sfx::UiPause : Sfx::UiResume);
     }
     if (e.key.key == SDLK_ESCAPE) {
@@ -503,7 +504,7 @@ void App::onMouseButtonUp() {
     }
     if (e.button.button == SDL_BUTTON_LEFT && session.tradeOpen && session.dialogueUnit != NULL_ENTITY) {
         const float x = e.button.x, y = e.button.y;
-        const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(false));
+        const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(true));
         if (session.tradeNpcDrag >= 0) {
             if (tl.theirBox.contains(x, y)) requestTrade(true, session.dialogueUnit, session.tradeNpcDrag);
             session.tradeNpcDrag = -1;

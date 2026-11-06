@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Chưa có bản lưu nào
 UILABEL_UNSAVED_WARNING	Tiến trình chưa lưu trong trò chơi này sẽ bị mất.
 UILABEL_HOLD_DELETE	Giữ Xóa trong 3 giây để xác nhận.
 UILABEL_CLICK_SAVE	Nhấp vào một bản lưu để tải
-UILABEL_WORLD	THẾ GIỚI
-UILABEL_UNKNOWN	không rõ
 UILABEL_ON	Bật
 UILABEL_OFF	Tắt
 UILABEL_EMPTY	Trống
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Sức mạnh
 MISC_GAME_SAVED	Đã lưu trò chơi
 MISC_SAVE_FAILED	Không thể lưu trò chơi
 MISC_READ_FAILED	Không thể đọc bản lưu đó
-MISC_SAVE_OLD	Bản lưu này được tạo trước khi có bản đồ nên không thể tải
 MISC_AUTOSAVED	Đã tự động lưu
 MISC_SCREENSHOT_FAILED	Không thể lưu ảnh màn hình
 MISC_SCREENSHOT_SAVED	Đã lưu {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Số lượng {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Tấn công {0}    Phòng thủ {1}    Sức mang {2}
 MISC_IS_DOWN	{0} đã gục
 MISC_PICKS_UP	{0} nhặt {1} {2}
-MISC_CANNOT_READ	Không thể đọc {0}
 UILABEL_DATE_LINE	NGÀY {0} · {1} · NĂM {2}
 UILABEL_MONITOR_N	Màn hình {0}
 MISC_GAINS_XP	{0} nhận {1} {2} kinh nghiệm nhờ {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} bắn trúng {1} (bị đỡ)
 MISC_LOG_DAMAGE	{0} nhận {1} sát thương
 MISC_LOG_ELIXIR_ENDS	Hiệu lực của {1} trên {0} đã hết
 MISC_LOG_NOTICES	{0} phát hiện {1}
-MISC_SAVE_NEWER	Bản lưu này được tạo bởi phiên bản mới hơn của trò chơi.
 MISC_AUTOSAVE_FAILED	Tự động lưu thất bại.

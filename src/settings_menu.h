@@ -26,7 +26,7 @@ enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit, ViewRange, ShowFps,
     Autosave, UnitNames, NpcNames, PropNames, PropInfo, FontScale, ResetPanels,
     Language, Font,
-    EdgeScroll, Reference,
+    EdgeScroll, Reference, ConversationPause,
     GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds
 };
 

@@ -248,15 +248,12 @@ const std::vector<std::string>& messageOfTheDay() {
 
 Soundtrack soundtrackFor(Screen screen) {
     switch (screen) {
-    case Screen::Title:
-        return { "title.mp3", "" };
-    case Screen::Settings:
-    case Screen::ScenarioSelect:
-    case Screen::PartySetup:
-    case Screen::Pause:
-        return {};
-    case Screen::Playing:
-        return { "bgm_01.mp3", "amb_01.mp3" };
+    case Screen::Title: return soundtrackNamed("Title");
+    case Screen::Settings: return soundtrackNamed("Settings");
+    case Screen::ScenarioSelect: return soundtrackNamed("ScenarioSelect");
+    case Screen::PartySetup: return soundtrackNamed("PartySetup");
+    case Screen::Pause: return soundtrackNamed("Pause");
+    case Screen::Playing: return soundtrackNamed("Playing");
     }
     return {};
 }

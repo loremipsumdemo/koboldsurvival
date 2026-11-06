@@ -22,6 +22,30 @@ void App::endTalk() {
     session.quantity.open = false;
     session.dialogueUnit = NULL_ENTITY;
     session.dialogueConvo.clear();
+    if (session.autoPaused) session.paused = false;
+    session.autoPaused = false;
+}
+
+// A pause the player made stays when the conversation ends. Only this one is lifted by endTalk.
+void App::pauseForConversation() {
+    if (!settings.conversationPause || session.paused) return;
+    session.paused = true;
+    session.autoPaused = true;
+}
+
+// While the game runs behind a conversation, either side can die, be knocked out, be carried off or come under attack.
+void App::endBrokenConversation() {
+    if (session.dialogueUnit == NULL_ENTITY) return;
+    const Entity npc = session.dialogueUnit, you = session.dialoguePlayer;
+    auto cannotTalk = [&](Entity u) {
+        if (!world.has<Unit>(u) || world.has<Corpse>(u) || outCold(world, u) || world.has<Carried>(u)) return true;
+        const Combat* c = world.get<Combat>(u);
+        return c && c->target != NULL_ENTITY;
+    };
+    if (cannotTalk(npc) || cannotTalk(you) || world.has<Hostile>(npc)) {
+        endTalk();
+        showNotice(lang("MISC_TALK_INTERRUPTED"));
+    }
 }
 
 void App::requestTrade(bool npcSide, Entity owner, int slot) {
@@ -122,6 +146,7 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
     session.dialogueUnit = npc;
     session.dialogueConvo.clear();
     session.dialoguePlayer = talker;
+    pauseForConversation();
     playSfx(Sfx::TalkOpen);
     const Dialogue* dg = world.get<Dialogue>(npc);
     sayAs(npc, dg ? dg->text : std::string(lang("NPC_GREETING")), false);
@@ -158,6 +183,7 @@ void App::startFreeTrade(Entity other, Entity unit) {
     session.dialogueUnit = other;
     session.dialoguePlayer = unit;
     session.dialogueConvo.clear();
+    pauseForConversation();
     openTrade(true);
 }
 

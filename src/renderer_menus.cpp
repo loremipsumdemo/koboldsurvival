@@ -556,6 +556,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawRect(cell, RGBA{ 0.0f, 0.0f, 0.0f, 0.30f });
             const int item = b.param >= 0 && b.param < GEAR_SLOTS ? picked.gear[(size_t)b.param] : 0;
             if (item != 0) drawItemPictureAt(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, item, 1.0f);
+            else drawUiIcon(gearSlotIcon(b.param), Rect{ cell.x + 2.0f, cell.y + 2.0f, cell.w - 4.0f, cell.h - 4.0f }, theme::EMPTY_SLOT);
             const float inset = ITEM_CELL_PX + 4.0f + 8.0f * s;
             leftText(Rect{ b.rect.x, b.rect.y + 6.0f * s, b.rect.w, lineH }, gearSlotName(b.param), theme::TEXT_QUIET, inset);
             leftText(Rect{ b.rect.x, b.rect.y + b.rect.h - lineH - 6.0f * s, b.rect.w, lineH }, b.label,

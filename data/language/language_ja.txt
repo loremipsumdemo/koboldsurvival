@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	セーブデータはまだありません
 UILABEL_UNSAVED_WARNING	このゲームの未保存の進行状況は失われます。
 UILABEL_HOLD_DELETE	削除を3秒間長押しすると確定します。
 UILABEL_CLICK_SAVE	セーブデータをクリックするとロードします
-UILABEL_WORLD	ワールド
-UILABEL_UNKNOWN	不明
 UILABEL_ON	オン
 UILABEL_OFF	オフ
 UILABEL_EMPTY	空
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	筋力
 MISC_GAME_SAVED	ゲームをセーブしました
 MISC_SAVE_FAILED	ゲームをセーブできませんでした
 MISC_READ_FAILED	そのセーブデータを読み込めませんでした
-MISC_SAVE_OLD	このセーブデータはマップ導入前のもので、ロードできません
 MISC_AUTOSAVED	オートセーブしました
 MISC_SCREENSHOT_FAILED	スクリーンショットを保存できませんでした
 MISC_SCREENSHOT_SAVED	{0} を保存しました
@@ -372,7 +369,6 @@ UILABEL_COUNT	数 {0}
 UILABEL_ATTACK_DEFENSE_CARRY	攻撃 {0}    防御 {1}    携行 {2}
 MISC_IS_DOWN	{0} が倒れた
 MISC_PICKS_UP	{0} が {1} {2} を拾う
-MISC_CANNOT_READ	{0} を読み込めませんでした
 UILABEL_DATE_LINE	{0}日目 · {1} · {2}年
 UILABEL_MONITOR_N	モニター {0}
 MISC_GAINS_XP	{0} は {3} で {1} {2} の経験値を得る
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} が {1} を撃った(防御された)
 MISC_LOG_DAMAGE	{0} は {1} のダメージを受けた
 MISC_LOG_ELIXIR_ENDS	{0} の {1} の効果が切れた
 MISC_LOG_NOTICES	{0} が {1} に気づいた
-MISC_SAVE_NEWER	このセーブはより新しいバージョンのゲームで作成されました。
 MISC_AUTOSAVE_FAILED	オートセーブに失敗しました。

@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Ingen lagringer ennå
 UILABEL_UNSAVED_WARNING	Ulagret fremgang i dette spillet går tapt.
 UILABEL_HOLD_DELETE	Hold Slett inne i 3 sekunder for å bekrefte.
 UILABEL_CLICK_SAVE	Klikk på en lagring for å laste den
-UILABEL_WORLD	VERDEN
-UILABEL_UNKNOWN	ukjent
 UILABEL_ON	På
 UILABEL_OFF	Av
 UILABEL_EMPTY	Tom
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Styrke
 MISC_GAME_SAVED	Spillet er lagret
 MISC_SAVE_FAILED	Kunne ikke lagre spillet
 MISC_READ_FAILED	Kunne ikke lese den lagringen
-MISC_SAVE_OLD	Den lagringen er fra før kartene og kan ikke lastes
 MISC_AUTOSAVED	Automatisk lagret
 MISC_SCREENSHOT_FAILED	Kunne ikke lagre skjermbildet
 MISC_SCREENSHOT_SAVED	Lagret {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Antall {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Angrep {0}    Forsvar {1}    Bærekapasitet {2}
 MISC_IS_DOWN	{0} er nede
 MISC_PICKS_UP	{0} plukker opp {1} {2}
-MISC_CANNOT_READ	Kunne ikke lese {0}
 UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
 UILABEL_MONITOR_N	Skjerm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} skyter {1} (blokkert)
 MISC_LOG_DAMAGE	{0} tar {1} i skade
 MISC_LOG_ELIXIR_ENDS	Virkningen av {1} på {0} går over
 MISC_LOG_NOTICES	{0} oppdager {1}
-MISC_SAVE_NEWER	Dette lagrede spillet er laget med en nyere versjon av spillet.
 MISC_AUTOSAVE_FAILED	Automatisk lagring mislyktes.

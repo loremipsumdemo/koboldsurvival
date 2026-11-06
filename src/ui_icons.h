@@ -11,8 +11,10 @@ constexpr int ICON_PARTY_TAB_FIRST = 34;
 constexpr int ICON_SETTINGS_TAB_FIRST = 38;
 constexpr int ICON_UNIT_PANEL = 42;
 constexpr int ICON_SETTINGS_LANGUAGE = 43;
+constexpr int ICON_GEAR_SLOT_FIRST = 44;
 
 inline int statIcon(StatId stat) { return statInfo(stat).icon; }
+inline int gearSlotIcon(int slot) { return ICON_GEAR_SLOT_FIRST + slot; }
 inline int partyTabIcon(int tab) { return ICON_PARTY_TAB_FIRST + tab; }
 inline int settingsTabIcon(int tab) {
     if (tab == 2) return ICON_SETTINGS_LANGUAGE;

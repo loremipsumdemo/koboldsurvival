@@ -11,7 +11,6 @@ const RGBA kText = theme::BONE;
 const RGBA kSlider = theme::GOLD;
 const RGBA kSecondary{ 0.643f, 0.553f, 0.510f, 1.0f };
 const RGBA kDisabledText{ 0.52f, 0.46f, 0.43f, 1.0f };
-const RGBA kPanel{ 0.085f, 0.035f, 0.045f, 0.96f };
 const RGBA kEdge{ 0.588f, 0.196f, 0.259f, 1.0f };
 const RGBA kTabIdle{ 0.16f, 0.07f, 0.085f, 1.0f };
 const RGBA kTabHover{ 0.26f, 0.16f, 0.07f, 1.0f };

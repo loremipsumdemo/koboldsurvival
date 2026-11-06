@@ -61,13 +61,16 @@ struct AlphaMask {
 
 class PictureCache {
 public:
-    explicit PictureCache(const char* prefix, bool keepMasks = false) : prefix_(prefix), keepMasks_(keepMasks) {}
+    using FileOf = const std::string& (*)(int);
+    explicit PictureCache(const char* prefix, bool keepMasks = false, FileOf fileOf = nullptr)
+        : prefix_(prefix), keepMasks_(keepMasks), fileOf_(fileOf) {}
     const TextTex& get(int n);
     const AlphaMask& mask(int n);
     void clear();
 private:
     const char* prefix_;
     bool keepMasks_;
+    FileOf fileOf_;
     std::map<int, TextTex> pics_;
     std::map<int, AlphaMask> masks_;
 };
@@ -82,8 +85,8 @@ inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };
 inline constexpr RGBA PINK_DARK{ 0.298f, 0.086f, 0.125f, 1.0f };
 inline constexpr RGBA PINK_INK{ 0.098f, 0.027f, 0.039f, 1.0f };
 inline constexpr RGBA GOLD{ 0.961f, 0.788f, 0.459f, 1.0f };
+inline constexpr RGBA EMPTY_SLOT{ 1.0f, 1.0f, 1.0f, 0.35f };
 inline constexpr RGBA GOLD_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };
-inline constexpr RGBA GOLD_DARK{ 0.157f, 0.098f, 0.039f, 1.0f };
 inline constexpr RGBA BONE{ 0.957f, 0.902f, 0.796f, 1.0f };
 inline constexpr RGBA ASH{ 0.643f, 0.553f, 0.510f, 1.0f };
 inline constexpr RGBA NOTICE_TEXT{ 0.871f, 0.776f, 0.690f, 1.0f };

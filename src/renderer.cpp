@@ -286,10 +286,9 @@ RGBA logTint(Tint t) {
 }
 }
 
-bool Renderer::init(TTF_Font* font, TTF_Font* hudFont, TTF_Font* uiFont,
+bool Renderer::init(TTF_Font* hudFont, TTF_Font* uiFont,
                     const std::function<void(float, const std::string&)>& progress) {
     LoadStages stages(progress);
-    font_ = font;
     text_.hud = hudFont;
     text_.ui.font = uiFont;
 
@@ -593,7 +592,7 @@ void Renderer::endClip() {
 const TextTex& PictureCache::get(int n) {
     auto it = pics_.find(n);
     if (it == pics_.end()) {
-        const std::string path = prefix_ + std::to_string(n) + ".png";
+        const std::string path = prefix_ + (fileOf_ ? fileOf_(n) : std::to_string(n) + ".png");
         TextTex t;
         AlphaMask m;
         if (SDL_Surface* conv = decodeRgba(path.c_str())) {

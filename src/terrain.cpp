@@ -159,11 +159,6 @@ const ChunkData* Terrain::chunkAt(int cx, int cz) const {
     return chunks_[(size_t)cz * cps_ + cx].get();
 }
 
-const ChunkData* Terrain::tileChunk(int x, int y) const {
-    if (!inBounds(x, y)) return nullptr;
-    return chunkAt(x / CHUNK_TILES, y / CHUNK_TILES);
-}
-
 int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) {
     if (!streamed_ || focuses.empty()) return 0;
 
@@ -250,12 +245,6 @@ bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     const float* h = groundHeights_.data() + (size_t)y * rowH + x;
     height = (h[0] + h[1] + h[rowH] + h[rowH + 1]) * 0.25f;
     return true;
-}
-
-Biome Terrain::biome(int x, int y) const {
-    const ChunkData* c = tileChunk(x, y);
-    if (!c) return Biome::None;
-    return (Biome)c->biome[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES];
 }
 
 bool Terrain::isFree(float x, float z) const {

@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Zatím žádné uložené hry
 UILABEL_UNSAVED_WARNING	Neuložený postup v této hře se ztratí.
 UILABEL_HOLD_DELETE	Podržte Smazat na 3 sekundy pro potvrzení.
 UILABEL_CLICK_SAVE	Kliknutím na uloženou hru ji načtete
-UILABEL_WORLD	SVĚT
-UILABEL_UNKNOWN	neznámý
 UILABEL_ON	Zap.
 UILABEL_OFF	Vyp.
 UILABEL_EMPTY	Prázdné
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Síla
 MISC_GAME_SAVED	Hra uložena
 MISC_SAVE_FAILED	Hru se nepodařilo uložit
 MISC_READ_FAILED	Tuto uloženou hru se nepodařilo přečíst
-MISC_SAVE_OLD	Tato uložená hra je starší než mapy a nelze ji načíst
 MISC_AUTOSAVED	Automaticky uloženo
 MISC_SCREENSHOT_FAILED	Snímek obrazovky se nepodařilo uložit
 MISC_SCREENSHOT_SAVED	Uloženo: {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Počet {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Útok {0}    Obrana {1}    Nosnost {2}
 MISC_IS_DOWN	{0} je na zemi
 MISC_PICKS_UP	{0} sebere {1} {2}
-MISC_CANNOT_READ	Nelze přečíst {0}
 UILABEL_DATE_LINE	DEN {0} · {1} · ROK {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} získá {1} {2} zkušeností za {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} střelí {1} (blokováno)
 MISC_LOG_DAMAGE	{0} utrpí poškození {1}
 MISC_LOG_ELIXIR_ENDS	Účinek {1} na {0} vyprchal
 MISC_LOG_NOTICES	{0} si všímá {1}
-MISC_SAVE_NEWER	Tuto pozici vytvořila novější verze hry.
 MISC_AUTOSAVE_FAILED	Automatické uložení selhalo.

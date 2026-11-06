@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Nenhum salvamento ainda
 UILABEL_UNSAVED_WARNING	O progresso não salvo deste jogo será perdido.
 UILABEL_HOLD_DELETE	Segure Excluir por 3 segundos para confirmar.
 UILABEL_CLICK_SAVE	Clique em um salvamento para carregá-lo
-UILABEL_WORLD	MUNDO
-UILABEL_UNKNOWN	desconhecido
 UILABEL_ON	Ligado
 UILABEL_OFF	Desligado
 UILABEL_EMPTY	Vazio
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Força
 MISC_GAME_SAVED	Jogo salvo
 MISC_SAVE_FAILED	Não foi possível salvar o jogo
 MISC_READ_FAILED	Não foi possível ler esse salvamento
-MISC_SAVE_OLD	Esse salvamento é de antes dos mapas e não pode ser carregado
 MISC_AUTOSAVED	Salvamento automático feito
 MISC_SCREENSHOT_FAILED	Não foi possível salvar a captura de tela
 MISC_SCREENSHOT_SAVED	{0} salva
@@ -372,7 +369,6 @@ UILABEL_COUNT	Quantidade {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Ataque {0}    Defesa {1}    Carga {2}
 MISC_IS_DOWN	{0} caiu
 MISC_PICKS_UP	{0} pega {1} {2}
-MISC_CANNOT_READ	Não foi possível ler {0}
 UILABEL_DATE_LINE	DIA {0} · {1} · ANO {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} ganha {1} {2} XP por {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} atira em {1} (bloqueado)
 MISC_LOG_DAMAGE	{0} sofre {1} de dano
 MISC_LOG_ELIXIR_ENDS	O efeito de {1} em {0} acaba
 MISC_LOG_NOTICES	{0} percebe {1}
-MISC_SAVE_NEWER	Este jogo salvo foi feito em uma versão mais recente do jogo.
 MISC_AUTOSAVE_FAILED	Falha no salvamento automático.

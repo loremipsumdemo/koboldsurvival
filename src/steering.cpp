@@ -1,4 +1,5 @@
 #include "systems_internal.h"
+#include "play_state.h"
 
 using namespace systems_detail;
 
@@ -140,7 +141,8 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     float tx = tr->x, tz = tr->z;
     float leadGap = -1.0f;
     bool chasing = false;
-    if (w.has<Occupying>(e)) {
+    const Combat* fighting = w.get<Combat>(e);
+    if (w.has<Occupying>(e) || (play::inConversation(e) && !underAttack(e) && !(fighting && fighting->target != NULL_ENTITY))) {
         s.speeds[i] = 0.0f;
         s.pinned[i] = 1;
         s.goal[i] = { tr->x, tr->z };

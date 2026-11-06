@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Nicio salvare încă
 UILABEL_UNSAVED_WARNING	Progresul nesalvat din acest joc se va pierde.
 UILABEL_HOLD_DELETE	Ține apăsat Șterge timp de 3 secunde pentru a confirma.
 UILABEL_CLICK_SAVE	Fă clic pe o salvare pentru a o încărca
-UILABEL_WORLD	LUME
-UILABEL_UNKNOWN	necunoscut
 UILABEL_ON	Pornit
 UILABEL_OFF	Oprit
 UILABEL_EMPTY	Gol
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Forță
 MISC_GAME_SAVED	Joc salvat
 MISC_SAVE_FAILED	Nu s-a putut salva jocul
 MISC_READ_FAILED	Nu s-a putut citi acea salvare
-MISC_SAVE_OLD	Această salvare e din perioada dinaintea hărților și nu poate fi încărcată
 MISC_AUTOSAVED	Salvat automat
 MISC_SCREENSHOT_FAILED	Nu s-a putut salva captura de ecran
 MISC_SCREENSHOT_SAVED	{0} salvat
@@ -372,7 +369,6 @@ UILABEL_COUNT	Număr {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Atac {0}    Apărare {1}    Capacitate {2}
 MISC_IS_DOWN	{0} a căzut
 MISC_PICKS_UP	{0} ridică {1} {2}
-MISC_CANNOT_READ	Nu s-a putut citi {0}
 UILABEL_DATE_LINE	ZIUA {0} · {1} · ANUL {2}
 UILABEL_MONITOR_N	Monitor {0}
 MISC_GAINS_XP	{0} câștigă {1} {2} XP pentru {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} împușcă {1} (blocat)
 MISC_LOG_DAMAGE	{0} primește {1} daune
 MISC_LOG_ELIXIR_ENDS	Efectul {1} asupra lui {0} se termină
 MISC_LOG_NOTICES	{0} observă {1}
-MISC_SAVE_NEWER	Această salvare provine dintr-o versiune mai nouă a jocului.
 MISC_AUTOSAVE_FAILED	Salvarea automată a eșuat.

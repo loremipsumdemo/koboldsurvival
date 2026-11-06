@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Все още няма запазвания
 UILABEL_UNSAVED_WARNING	Незапазеният напредък в тази игра ще се загуби.
 UILABEL_HOLD_DELETE	Задръжте Изтрий за 3 секунди, за да потвърдите.
 UILABEL_CLICK_SAVE	Щракнете върху запазване, за да го заредите
-UILABEL_WORLD	СВЯТ
-UILABEL_UNKNOWN	неизвестно
 UILABEL_ON	Вкл.
 UILABEL_OFF	Изкл.
 UILABEL_EMPTY	Празно
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Сила
 MISC_GAME_SAVED	Играта е запазена
 MISC_SAVE_FAILED	Играта не можа да се запази
 MISC_READ_FAILED	Това запазване не можа да се прочете
-MISC_SAVE_OLD	Това запазване е от преди картите и не може да се зареди
 MISC_AUTOSAVED	Автоматично запазено
 MISC_SCREENSHOT_FAILED	Снимката на екрана не можа да се запази
 MISC_SCREENSHOT_SAVED	Запазено: {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Брой {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Атака {0}    Защита {1}    Товар {2}
 MISC_IS_DOWN	{0} е повален
 MISC_PICKS_UP	{0} взима {1} {2}
-MISC_CANNOT_READ	{0} не можа да се прочете
 UILABEL_DATE_LINE	ДЕН {0} · {1} · ГОДИНА {2}
 UILABEL_MONITOR_N	Монитор {0}
 MISC_GAINS_XP	{0} получава {1} {2} ОО за {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} простреля {1} (блокирано)
 MISC_LOG_DAMAGE	{0} получава {1} щети
 MISC_LOG_ELIXIR_ENDS	Действието на {1} върху {0} отминава
 MISC_LOG_NOTICES	{0} забелязва {1}
-MISC_SAVE_NEWER	Този запис е направен с по-нова версия на играта.
 MISC_AUTOSAVE_FAILED	Автоматичното записване е неуспешно.

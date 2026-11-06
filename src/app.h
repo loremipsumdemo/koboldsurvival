@@ -26,7 +26,6 @@
 #include "build_info.h"
 #include "camera.h"
 #include "ui_layout.h"
-#include "sky.h"
 #include "components.h"
 #include "ecs.h"
 #include "renderer.h"
@@ -283,6 +282,8 @@ struct App : AppSession {
     void openTrade(bool free);
     void sayAs(Entity who, const std::string& text, bool player);
     void endTalk();
+    void pauseForConversation();
+    void endBrokenConversation();
     void requestTrade(bool npcSide, Entity owner, int slot);
     void confirmQuantity();
     void quantityClick(float qx, float qy);
@@ -313,8 +314,6 @@ struct App : AppSession {
     int appliedFontScale = 0;
     std::string appliedFontPath;
     std::string appliedLanguage;
-    std::vector<TTF_Font*> titleFontOwned;
-    TTF_Font* font = nullptr;
     // One window, made once. Destroying an OpenGL window and making another left the new one black on Windows.
     SDL_Window* window = nullptr;
     SDL_GLContext ctx = nullptr;
@@ -329,7 +328,6 @@ struct App : AppSession {
     GameState gs;
     Camera cam;
     MapChoice currentMap;
-    SkyTuning sky;
     bool combatCollapsed = false, squadCollapsed = false;
     int factionTab = FACTION_TAB_SQUAD;
     bool unitOpen = true;

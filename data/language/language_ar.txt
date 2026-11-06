@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	لا توجد عمليات حفظ بعد
 UILABEL_UNSAVED_WARNING	سيضيع التقدم غير المحفوظ في هذه اللعبة.
 UILABEL_HOLD_DELETE	اضغط مع الاستمرار على حذف لمدة 3 ثوانٍ للتأكيد.
 UILABEL_CLICK_SAVE	انقر على عملية حفظ لتحميلها
-UILABEL_WORLD	العالم
-UILABEL_UNKNOWN	غير معروف
 UILABEL_ON	تشغيل
 UILABEL_OFF	إيقاف
 UILABEL_EMPTY	فارغ
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	القوة
 MISC_GAME_SAVED	تم حفظ اللعبة
 MISC_SAVE_FAILED	تعذّر حفظ اللعبة
 MISC_READ_FAILED	تعذّر قراءة عملية الحفظ هذه
-MISC_SAVE_OLD	عملية الحفظ هذه قديمة ولا يمكن تحميلها لأنها قبل الخرائط
 MISC_AUTOSAVED	تم الحفظ التلقائي
 MISC_SCREENSHOT_FAILED	تعذّر حفظ لقطة الشاشة
 MISC_SCREENSHOT_SAVED	تم حفظ {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	العدد {0}
 UILABEL_ATTACK_DEFENSE_CARRY	الهجوم {0}    الدفاع {1}    الحمل {2}
 MISC_IS_DOWN	{0} سقط
 MISC_PICKS_UP	{0} يلتقط {1} {2}
-MISC_CANNOT_READ	تعذّر قراءة {0}
 UILABEL_DATE_LINE	اليوم {0} · {1} · السنة {2}
 UILABEL_MONITOR_N	الشاشة {0}
 MISC_GAINS_XP	{0} يكتسب {1} {2} خبرة مقابل {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} يصيب {1} برمية (تم الصد)
 MISC_LOG_DAMAGE	{0} يتلقى {1} ضررًا
 MISC_LOG_ELIXIR_ENDS	ينتهي مفعول {1} على {0}
 MISC_LOG_NOTICES	{0} يلاحظ {1}
-MISC_SAVE_NEWER	تم إنشاء هذا الحفظ بإصدار أحدث من اللعبة.
 MISC_AUTOSAVE_FAILED	فشل الحفظ التلقائي.

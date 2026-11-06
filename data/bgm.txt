@@ -1,0 +1,9 @@
+# Music and ambient tracks per screen. Tab-separated: screen, music file, ambient file, note. Files are in the BGM folder.
+# keep: whatever is playing carries on. none: silence. Every screen must be listed once. A missing file is silent.
+
+Title	title.mp3	none	Title screen
+Settings	keep	keep	Settings
+ScenarioSelect	keep	keep	New Game: choosing a scenario
+PartySetup	keep	keep	New Game: the party menu
+Pause	keep	keep	The game menu
+Playing	bgm_01.mp3	amb_01.mp3	In game

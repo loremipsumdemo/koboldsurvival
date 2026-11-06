@@ -12,17 +12,14 @@
 constexpr float AGENT_CLEARANCE = 0.3f;
 
 // Terrain holds the ground of the level being played: heights, walkability and ground types,
-// in chunks of CHUNK_TILES tiles. A level is one of two kinds:
-//   - a whole map in memory (a .map file), with every chunk loaded, or
-//   - an open world folder, where chunks are read in as they are needed around the camera and
-//     the units, and dropped again when they are far away (stream()).
+// in chunks of CHUNK_TILES tiles. It starts as a blank flat map. openWorld opens a world folder, whose chunks are read in
+// as they are needed around the camera and the units, and dropped again when they are far away (stream()).
 // Loaded chunks are for drawing. Heights and walkability are also held for the whole level from the moment it opens,
 // so units, paths and sight work the same everywhere, whatever is loaded.
 class Terrain {
 public:
     explicit Terrain(int size = DEFAULT_MAP_SIZE);
 
-    void load(const MapData& m);
     bool openWorld(const std::string& folder, std::string& err);
 
     int size() const { return size_; }
@@ -43,7 +40,6 @@ public:
     uint32_t surfaceVersion() const { return surfaceVersion_; }
     float heightScale() const { return heightScale_; }
     float floorY() const { return floorY_; }
-    Biome biome(int x, int y) const;
 
     bool isFree(float x, float z) const;
     Vec2 snap(Vec2 p) const;
@@ -53,7 +49,7 @@ public:
     bool sightClear(float ax, float ay, float az, float bx, float by, float bz) const;
 
 private:
-    const ChunkData* tileChunk(int x, int y) const;
+    void load(const MapData& m);
     void keepGround(const ChunkData& c);
     void findAreas();
     int areaOf(int x, int y) const;

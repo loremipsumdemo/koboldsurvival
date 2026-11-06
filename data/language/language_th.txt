@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	ยังไม่มีการบันทึก
 UILABEL_UNSAVED_WARNING	ความคืบหน้าที่ยังไม่ได้บันทึกในเกมนี้จะหายไป
 UILABEL_HOLD_DELETE	กดค้างปุ่มลบไว้ 3 วินาทีเพื่อยืนยัน
 UILABEL_CLICK_SAVE	คลิกการบันทึกเพื่อโหลด
-UILABEL_WORLD	โลก
-UILABEL_UNKNOWN	ไม่ทราบ
 UILABEL_ON	เปิด
 UILABEL_OFF	ปิด
 UILABEL_EMPTY	ว่าง
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	พลัง
 MISC_GAME_SAVED	บันทึกเกมแล้ว
 MISC_SAVE_FAILED	ไม่สามารถบันทึกเกมได้
 MISC_READ_FAILED	ไม่สามารถอ่านการบันทึกนั้นได้
-MISC_SAVE_OLD	การบันทึกนี้เก่ากว่าระบบแผนที่และโหลดไม่ได้
 MISC_AUTOSAVED	บันทึกอัตโนมัติแล้ว
 MISC_SCREENSHOT_FAILED	ไม่สามารถบันทึกภาพหน้าจอได้
 MISC_SCREENSHOT_SAVED	บันทึก {0} แล้ว
@@ -372,7 +369,6 @@ UILABEL_COUNT	จำนวน {0}
 UILABEL_ATTACK_DEFENSE_CARRY	โจมตี {0}    ป้องกัน {1}    น้ำหนัก {2}
 MISC_IS_DOWN	{0} ล้มลงแล้ว
 MISC_PICKS_UP	{0} เก็บ {1} {2}
-MISC_CANNOT_READ	ไม่สามารถอ่าน {0} ได้
 UILABEL_DATE_LINE	วันที่ {0} · {1} · ปีที่ {2}
 UILABEL_MONITOR_N	จอภาพ {0}
 MISC_GAINS_XP	{0} ได้รับ {1} {2} EXP จาก {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} ยิงโดน {1} (ถูกป้องกั�
 MISC_LOG_DAMAGE	{0} ได้รับความเสียหาย {1}
 MISC_LOG_ELIXIR_ENDS	ผลของ {1} ที่มีต่อ {0} หมดลง
 MISC_LOG_NOTICES	{0} สังเกตเห็น {1}
-MISC_SAVE_NEWER	เซฟนี้สร้างจากเกมเวอร์ชันที่ใหม่กว่า
 MISC_AUTOSAVE_FAILED	บันทึกอัตโนมัติไม่สำเร็จ

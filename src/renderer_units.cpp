@@ -303,7 +303,7 @@ void Renderer::drawMobPreview(MobKind kind, const Rect& r, float yaw) {
 
 const TextTex& Renderer::mobPicture(MobKind kind) const {
     const int i = idx(kind) - 1;
-    if (i >= 0 && i < MOB_KIND_COUNT && mobInfo(kind).model != nullptr) return pink_;
+    if (i >= 0 && i < MOB_KIND_COUNT && !mobInfo(kind).model.empty()) return pink_;
     if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
     return pink_;
 }
@@ -349,7 +349,7 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
 const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
     if (const Mob* m = w.get<Mob>(e)) {
         const int i = idx(m->kind) - 1;
-        if (mobInfo(m->kind).model != nullptr) return pink_;
+        if (!mobInfo(m->kind).model.empty()) return pink_;
         if (i >= 0 && i < (int)mobSprites_.size() && mobSprites_[(size_t)i].tex) return mobSprites_[(size_t)i];
         return pink_;
     }

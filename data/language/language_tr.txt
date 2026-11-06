@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Henüz kayıt yok
 UILABEL_UNSAVED_WARNING	Bu oyundaki kaydedilmemiş ilerleme kaybolacak.
 UILABEL_HOLD_DELETE	Onaylamak için Sil tuşunu 3 saniye basılı tutun.
 UILABEL_CLICK_SAVE	Yüklemek için bir kayda tıklayın
-UILABEL_WORLD	DÜNYA
-UILABEL_UNKNOWN	bilinmiyor
 UILABEL_ON	Açık
 UILABEL_OFF	Kapalı
 UILABEL_EMPTY	Boş
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Güç
 MISC_GAME_SAVED	Oyun kaydedildi
 MISC_SAVE_FAILED	Oyun kaydedilemedi
 MISC_READ_FAILED	Bu kayıt okunamadı
-MISC_SAVE_OLD	Bu kayıt haritalardan önceki bir sürüme ait ve yüklenemez
 MISC_AUTOSAVED	Otomatik olarak kaydedildi
 MISC_SCREENSHOT_FAILED	Ekran görüntüsü kaydedilemedi
 MISC_SCREENSHOT_SAVED	{0} kaydedildi
@@ -372,7 +369,6 @@ UILABEL_COUNT	Adet {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Saldırı {0}    Savunma {1}    Taşıma {2}
 MISC_IS_DOWN	{0} yere düştü
 MISC_PICKS_UP	{0} {1} {2} alır
-MISC_CANNOT_READ	{0} okunamadı
 UILABEL_DATE_LINE	{0}. GÜN · {1} · {2}. YIL
 UILABEL_MONITOR_N	Monitör {0}
 MISC_GAINS_XP	{0}, {3} için {1} {2} TP kazanır
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0}, {1} hedefini vurdu (atış, engellendi)
 MISC_LOG_DAMAGE	{0}, {1} hasar aldı
 MISC_LOG_ELIXIR_ENDS	{0} üzerindeki {1} etkisi bitti
 MISC_LOG_NOTICES	{0}, {1} hedefini fark etti
-MISC_SAVE_NEWER	Bu kayıt oyunun daha yeni bir sürümüyle yapılmış.
 MISC_AUTOSAVE_FAILED	Otomatik kayıt başarısız oldu.

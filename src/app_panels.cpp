@@ -243,7 +243,7 @@ DialogueLayout App::dialogueBox(int W, int H) {
 bool App::onTalkOrTrade(int W, int H, float x, float y) {
     if (session.dialogueUnit == NULL_ENTITY) return false;
     if (session.tradeOpen) {
-        const TradeLayout tl = layoutTrade(W, H, renderer.pauseBarHeight(false));
+        const TradeLayout tl = layoutTrade(W, H, renderer.pauseBarHeight(true));
         return tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
     }
     return dialogueBox(W, H).box.contains(x, y);

@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Inga sparfiler ännu
 UILABEL_UNSAVED_WARNING	Osparade framsteg i det här spelet går förlorade.
 UILABEL_HOLD_DELETE	Håll in Radera i 3 sekunder för att bekräfta.
 UILABEL_CLICK_SAVE	Klicka på en sparfil för att ladda den
-UILABEL_WORLD	VÄRLD
-UILABEL_UNKNOWN	okänd
 UILABEL_ON	På
 UILABEL_OFF	Av
 UILABEL_EMPTY	Tom
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Styrka
 MISC_GAME_SAVED	Spelet sparades
 MISC_SAVE_FAILED	Kunde inte spara spelet
 MISC_READ_FAILED	Kunde inte läsa den sparfilen
-MISC_SAVE_OLD	Den sparfilen är från före kartorna och kan inte laddas
 MISC_AUTOSAVED	Sparades automatiskt
 MISC_SCREENSHOT_FAILED	Kunde inte spara skärmbilden
 MISC_SCREENSHOT_SAVED	Sparade {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Antal {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Försvar {1}    Bärkapacitet {2}
 MISC_IS_DOWN	{0} är nedslagen
 MISC_PICKS_UP	{0} plockar upp {1} {2}
-MISC_CANNOT_READ	Kunde inte läsa {0}
 UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
 UILABEL_MONITOR_N	Bildskärm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfarenhet för {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} skjuter {1} (blockerat)
 MISC_LOG_DAMAGE	{0} tar {1} i skada
 MISC_LOG_ELIXIR_ENDS	Effekten av {1} på {0} upphör
 MISC_LOG_NOTICES	{0} upptäcker {1}
-MISC_SAVE_NEWER	Den här sparfilen gjordes med en nyare version av spelet.
 MISC_AUTOSAVE_FAILED	Automatisk sparning misslyckades.

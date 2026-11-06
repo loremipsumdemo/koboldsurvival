@@ -3,7 +3,6 @@
 #include <vector>
 #include <SDL3_ttf/SDL_ttf.h>
 
-std::vector<std::string> builtInFontOrder(const std::string& languageId);
 
 std::string systemFontPath();
 

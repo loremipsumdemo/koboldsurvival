@@ -27,8 +27,6 @@ UILABEL_NO_SAVES	Ingen gemte spil endnu
 UILABEL_UNSAVED_WARNING	Ugemte fremskridt i dette spil går tabt.
 UILABEL_HOLD_DELETE	Hold Slet nede i 3 sekunder for at bekræfte.
 UILABEL_CLICK_SAVE	Klik på et gem for at indlæse det
-UILABEL_WORLD	VERDEN
-UILABEL_UNKNOWN	ukendt
 UILABEL_ON	Til
 UILABEL_OFF	Fra
 UILABEL_EMPTY	Tom
@@ -233,7 +231,6 @@ UILABEL_STRENGTH_STAT	Styrke
 MISC_GAME_SAVED	Spil gemt
 MISC_SAVE_FAILED	Spillet kunne ikke gemmes
 MISC_READ_FAILED	Det gemte spil kunne ikke læses
-MISC_SAVE_OLD	Det gemte spil er fra før kortene og kan ikke indlæses
 MISC_AUTOSAVED	Gemt automatisk
 MISC_SCREENSHOT_FAILED	Skærmbilledet kunne ikke gemmes
 MISC_SCREENSHOT_SAVED	Gemt {0}
@@ -372,7 +369,6 @@ UILABEL_COUNT	Antal {0}
 UILABEL_ATTACK_DEFENSE_CARRY	Angreb {0}    Forsvar {1}    Bærekapacitet {2}
 MISC_IS_DOWN	{0} er faldet
 MISC_PICKS_UP	{0} samler {1} {2} op
-MISC_CANNOT_READ	{0} kunne ikke læses
 UILABEL_DATE_LINE	DAG {0} · {1} · ÅR {2}
 UILABEL_MONITOR_N	Skærm {0}
 MISC_GAINS_XP	{0} får {1} {2} erfaring for {3}
@@ -990,5 +986,4 @@ MISC_LOG_SHOOTS_BLOCKED	{0} skyder {1} (blokeret)
 MISC_LOG_DAMAGE	{0} tager {1} i skade
 MISC_LOG_ELIXIR_ENDS	Virkningen af {1} på {0} ophører
 MISC_LOG_NOTICES	{0} får øje på {1}
-MISC_SAVE_NEWER	Dette spil er gemt med en nyere version af spillet.
 MISC_AUTOSAVE_FAILED	Automatisk gemning mislykkedes.
