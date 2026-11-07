@@ -1,5 +1,6 @@
 # Sound effects. Tab-separated: key, file in the SFX folder, volume slider (interface or effects), when it plays.
 # Every key must be listed once. The last column is only a note. A missing file is silent.
+# The files are made by tools/make_sfx.py, which writes each sound to the file named here.
 # Working sounds play every 1.6 seconds while a unit works a prop near the camera (the Forge's every 3 seconds).
 
 UiClick	sfx_01.mp3	interface	Interface: a button or control clicked

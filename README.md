@@ -112,6 +112,7 @@ tools/
   build_stamp.cpp    Writes the build stamp shown on the title screen
   make_icons.py, make_items.py, make_emotes.py   Draw the icons, item sprites and emotes (Python and Pillow; not part of the build)
   make_models.py     Makes simple low-poly prop models (Python and Pillow; not part of the build)
+  make_sfx.py        Synthesizes the sound effects in SFX/ (Python, NumPy and ffmpeg; not part of the build)
 data/                Game content, packed into data.pak
   itemdb.txt         The items
   factions.txt       Factions and starting reputations
@@ -126,7 +127,7 @@ data/                Game content, packed into data.pak
   item/ icon/ emote/ mob/ profile/ illustration/   PNG pictures
   font/              Noto fonts
 BGM/                 Music and ambient tracks (.mp3)
-SFX/                 Sound effects (.mp3)
+SFX/                 Sound effects (.mp3), made by tools/make_sfx.py
 ```
 
 ## Modding the data
@@ -136,8 +137,8 @@ stats in them changes the game after a rebuild packs them. Each table explains i
 code (`src/game_tables.cpp`): a new sound, emote or mob kind also needs code. If a table has a mistake, the game stops at
 start-up and names the file and line. A missing picture or model is drawn as a pink square.
 
-The icons, item sprites and emotes are drawn by the scripts in `tools/`. Each explains how to add a new picture at the top of
-the file.
+The icons, item sprites, emotes and sound effects are made by the scripts in `tools/`. Each explains how to add a new one at
+the top of the file.
 
 Buildable props and their rules are in `src/props.h` and `src/build.cpp`.
 
