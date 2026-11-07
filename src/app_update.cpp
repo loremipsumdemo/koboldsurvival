@@ -1,4 +1,5 @@
 #include "app.h"
+#include "camera_limit.h"
 #include "prop_info.h"
 #include "profile.h"
 
@@ -201,6 +202,7 @@ void App::updateCamera() {
     if (screen != Screen::Playing) return;
     if (session.dialogueUnit == NULL_ENTITY && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
+    if (!editing) keepCameraNearUnits(world, cam);
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
 }

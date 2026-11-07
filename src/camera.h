@@ -24,7 +24,7 @@ struct Camera {
     float lift = 0.0f;
     float mapSize = 1024.0f;
     float eyeClearance = 1000.0f;
-    float viewRange = 96.0f;
+    float viewRange = 256.0f;
 
     void eye(float& ex, float& ey, float& ez) const {
         ex = focusX + distance * std::sin(yaw) * std::cos(pitch);

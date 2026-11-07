@@ -1,16 +1,20 @@
 // Checks the world generator and the map and level files, with no window. Runs beside data.pak.
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <string>
 #include "build.h"
+#include "camera.h"
+#include "camera_limit.h"
 #include "game_tables.h"
 #include "items.h"
 #include "language.h"
 #include "level_file.h"
+#include "overview.h"
 #include "pak.h"
 #include "simulation.h"
 #include "terrain.h"
@@ -122,6 +126,33 @@ int main(int argc, char** argv) {
     check(edgeIsSea, "the edge of the map is sea");
     check(gen.preview(64).size() == 64u * 64u * 4u, "the preview is a picture of the map");
 
+    // The world map's picture comes straight from the recipe, the right way round
+    {
+        const std::shared_ptr<const ChunkSource> source = generatedChunkSource(settings);
+        OverviewPicture pic;
+        std::atomic<bool> stop{ false };
+        const Uint64 started = SDL_GetTicks();
+        BuildOverview(settings.size, nullptr,
+                      [&](int px, std::vector<uint8_t>& rgba, const std::atomic<bool>& cancel) { return source->picture(px, rgba, cancel); },
+                      pic, stop);
+        std::printf("note: the world map picture of an 8192-wide map took %d ms\n", (int)(SDL_GetTicks() - started));
+        check(pic.px > 0 && pic.rgba.size() == (size_t)pic.px * pic.px * 4, "a generated map makes a world map picture");
+        bool rightWayRound = pic.px > 0;
+        for (int z = 0; z < settings.size && rightWayRound; z += 97) {
+            for (int x = 0; x < settings.size; x += 97) {
+                const int sx = x / pic.step * pic.step, sz = z / pic.step * pic.step;
+                const int h = gen.heightAt(sx, sz);
+                                const uint8_t* p = &pic.rgba[((size_t)((settings.size - 1 - sz) / pic.step) * pic.px + (settings.size - 1 - sx) / pic.step) * 4];
+                const bool seaColoured = p[2] > p[0] && p[0] < 100;   // snow is bluish too, but much lighter
+                if ((h < 0) != seaColoured) rightWayRound = false;
+            }
+        }
+        check(rightWayRound, "the world map picture shows land and sea where they are");
+        std::atomic<bool> stopped{ true };
+        std::vector<uint8_t> none;
+        check(!source->picture(64, none, stopped), "a world map picture can be cancelled");
+    }
+
     // The map file
     const std::string mapText = mapFileText(settings);
     std::printf("note: an 8192-wide map file is %d bytes\n", (int)mapText.size());
@@ -209,6 +240,27 @@ int main(int argc, char** argv) {
         nearSpawn = nearSpawn && std::fabs(tr->x - 1000.5f) < 30.0f && std::fabs(tr->z - 1000.5f) < 30.0f;
     }
     check(nearSpawn, "your units start at the level's spawn point");
+
+    // In regular play the camera stays near your units
+    {
+        const Entity unit = *again.view<Unit, Commandable>().begin();
+        const Transform* at = again.get<Transform>(unit);
+        Camera near;
+        near.mapSize = 2048.0f;
+        near.focusX = at->x + 600.0f;
+        near.focusZ = at->z;
+        again.add(unit, Selected{});
+        keepCameraNearUnits(again, near);
+        check(std::hypot(near.focusX - at->x, near.focusZ - at->z) <= CAMERA_UNIT_RANGE + 0.01f, "the camera is pulled back to the selected unit");
+        near.focusX = at->x + 50.0f;
+        keepCameraNearUnits(again, near);
+        check(near.focusX == at->x + 50.0f, "the camera moves freely near the selected unit");
+        again.remove<Selected>(unit);
+        near.focusX = at->x + 600.0f;
+        near.focusZ = at->z;
+        keepCameraNearUnits(again, near);
+        check(near.focusX < at->x + 600.0f, "with nothing selected, the camera stays near your units");
+    }
 
     // Files on disk
     const std::string folder = "world_gen_check_files";

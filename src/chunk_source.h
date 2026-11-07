@@ -1,6 +1,9 @@
 #pragma once
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 #include "chunk.h"
 #include "world_format.h"
 
@@ -18,6 +21,12 @@ public:
     // The same chunk every time, whatever was asked for before. False if there is none. Called from other threads too, so
     // it must not change anything.
     virtual bool fill(int cx, int cz, ChunkData& out) const = 0;
+    // A picture of the whole map, px wide and high, row 0 at z 0 and column 0 at x 0, for a source that can make one without
+    // going through every chunk. False if it can't, or if cancel was set. Called from other threads too.
+    virtual bool picture(int px, std::vector<uint8_t>& rgba, const std::atomic<bool>& cancel) const {
+        (void)px; (void)rgba; (void)cancel;
+        return false;
+    }
 };
 
 // Flat ground with no water, all of it walkable

@@ -26,7 +26,7 @@ inline constexpr int UI_SCALE_MAX = 200;
 inline constexpr int UI_SCALE_STEP = 5;
 
 inline constexpr int VIEW_RANGE_MIN = 16;
-inline constexpr int VIEW_RANGE_MAX = 224;
+inline constexpr int VIEW_RANGE_MAX = 256;
 inline constexpr int VIEW_RANGE_STEP = 8;
 
 struct GameSettings {
@@ -37,7 +37,7 @@ struct GameSettings {
     int refreshHz = 0;
     bool vsync = true;
     int fpsLimit = 60;
-    int viewRange = 96;
+    int viewRange = 256;
     bool showFps = false;
 
     int autosaveMinutes = 5;

@@ -93,6 +93,8 @@ set(SIM_SOURCES
     src/surface_tiles.cpp
     src/chunk_source.cpp
     src/world_gen.cpp
+    src/overview.cpp
+    src/camera_limit.cpp
     src/level_file.cpp
     src/game_tables.cpp
     src/game_data_check.cpp
@@ -155,7 +157,6 @@ add_executable(koboldsurvival
     src/renderer_terrain.cpp
     src/fonts.cpp
     src/party_ui.cpp
-    src/overview.cpp
     src/model.cpp
     src/model_pick.cpp
     src/audio.cpp

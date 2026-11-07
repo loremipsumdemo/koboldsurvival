@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <thread>
 #include "surface_tiles.h"
 
 namespace fs = std::filesystem;
@@ -124,6 +125,10 @@ public:
         generator_.fill(cx, cz, out);
         return true;
     }
+    bool picture(int px, std::vector<uint8_t>& rgba, const std::atomic<bool>& cancel) const override {
+        rgba = generator_.preview(px, &cancel);
+        return !rgba.empty();
+    }
 
 private:
     WorldGenerator generator_;
@@ -187,23 +192,42 @@ void WorldGenerator::fill(int cx, int cz, ChunkData& out) const {
     }
 }
 
-std::vector<uint8_t> WorldGenerator::preview(int px) const {
+std::vector<uint8_t> WorldGenerator::preview(int px, const std::atomic<bool>* cancel) const {
+    std::atomic<bool> never{ false };
+    const std::atomic<bool>& stop = cancel ? *cancel : never;
+    // Runs body(row) for every row, sharing the rows out between threads
+    const auto eachRow = [&](const auto& body) {
+        std::atomic<int> next{ 0 };
+        const auto work = [&]() {
+            for (int j = next++; j < px && !stop.load(); j = next++) body(j);
+        };
+        const int helpers = std::clamp((int)std::thread::hardware_concurrency() - 2, 0, 15);
+        std::vector<std::thread> threads;
+        for (int i = 0; i < helpers; ++i) threads.emplace_back(work);
+        work();
+        for (std::thread& t : threads) t.join();
+    };
+    const auto tile = [&](int i) { return (int)((int64_t)i * s_.size / px); };
+
+    std::vector<int> heights((size_t)px * px);
+    eachRow([&](int j) {
+        const int z = tile(j);
+        for (int i = 0; i < px; ++i) heights[(size_t)j * px + i] = heightAt(tile(i), z);
+    });
     std::vector<uint8_t> out((size_t)px * px * 4);
-    std::vector<int> row((size_t)px + 1, 0);
-    for (int j = 0; j < px; ++j) {
-        const int z = (int)((int64_t)j * s_.size / px);
-        int left = heightAt(0, z);
+    eachRow([&](int j) {
+        const int z = tile(j);
         for (int i = 0; i < px; ++i) {
-            const int x = (int)((int64_t)i * s_.size / px);
-            const int h = heightAt(x, z);
+            const int h = heights[(size_t)j * px + i];
+            const int left = i > 0 ? heights[(size_t)j * px + i - 1] : h;
+            const int above = j > 0 ? heights[(size_t)(j - 1) * px + i] : h;
             uint8_t veg = 0;
-            const Biome b = biomeOf(s_, x, z, h, 0, veg);
-            const int shade = h > 0 ? std::clamp(((h - left) + (h - row[(size_t)i])) * 40 * px / s_.size / 256, -60, 60) : 0;
+            const Biome b = biomeOf(s_, tile(i), z, h, 0, veg);
+            const int shade = h > 0 ? std::clamp((int)(((int64_t)(h - left) + (h - above)) * 40 * px / s_.size / 256), -60, 60) : 0;
             previewColor(b, h, veg, shade, &out[((size_t)j * px + i) * 4]);
-            row[(size_t)i] = h;
-            left = h;
         }
-    }
+    });
+    if (stop.load()) out.clear();
     return out;
 }
 

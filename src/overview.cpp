@@ -40,7 +40,7 @@ Colour TileColour(Biome biome, float height) {
 }
 }
 
-void BuildOverview(int size, const OverviewChunks& source, OverviewPicture& out, const std::atomic<bool>& cancel) {
+void BuildOverview(int size, const OverviewChunks& source, const OverviewSampler& sampler, OverviewPicture& out, const std::atomic<bool>& cancel) {
     out = OverviewPicture{};
     if (size <= 0) return;
     const int step = std::max(1, (size + MAX_PICTURE_SIDE - 1) / MAX_PICTURE_SIDE);
@@ -49,6 +49,19 @@ void BuildOverview(int size, const OverviewChunks& source, OverviewPicture& out,
     out.step = step;
     out.px = px;
     out.rgba.assign(static_cast<size_t>(px) * px * 4, 0);
+
+    // The picture runs the other way from the map: its first row and column are the far edges
+    std::vector<uint8_t> sampled;
+    if (sampler && sampler(px, sampled, cancel) && sampled.size() == out.rgba.size()) {
+        for (int row = 0; row < px; ++row) {
+            for (int col = 0; col < px; ++col) {
+                const uint8_t* from = &sampled[(static_cast<size_t>(px - 1 - row) * px + (px - 1 - col)) * 4];
+                std::copy(from, from + 4, &out.rgba[(static_cast<size_t>(row) * px + col) * 4]);
+            }
+        }
+        return;
+    }
+    if (cancel.load()) return;
 
     const int cps = (size + CHUNK_TILES - 1) / CHUNK_TILES;
     ChunkData c;
@@ -88,17 +101,17 @@ void OverviewBuilder::stop() {
     done_ = false;
 }
 
-void OverviewBuilder::start(int size, OverviewChunks source, bool background) {
+void OverviewBuilder::start(int size, OverviewChunks source, OverviewSampler sampler, bool background) {
     stop();
     pic_ = OverviewPicture{};
     pending_ = true;
     if (background) {
-        thread_ = std::thread([this, size, source]() {
-            BuildOverview(size, source, pic_, cancel_);
+        thread_ = std::thread([this, size, source, sampler]() {
+            BuildOverview(size, source, sampler, pic_, cancel_);
             done_ = true;
         });
     } else {
-        BuildOverview(size, source, pic_, cancel_);
+        BuildOverview(size, source, sampler, pic_, cancel_);
         done_ = true;
     }
 }

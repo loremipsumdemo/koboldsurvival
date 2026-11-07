@@ -314,7 +314,9 @@ void Renderer::uploadTerrain(const Terrain& t) {
     }
     overviewSize_ = 0.0f;
     const std::shared_ptr<const ChunkSource> source = t.source();
-    overview_.start(t.size(), [source](int cx, int cz, ChunkData& c) { return source->fill(cx, cz, c); }, t.streamed());
+    overview_.start(t.size(), [source](int cx, int cz, ChunkData& c) { return source->fill(cx, cz, c); },
+                    [source](int px, std::vector<uint8_t>& rgba, const std::atomic<bool>& cancel) { return source->picture(px, rgba, cancel); },
+                    t.streamed());
     terrainSize_ = t.size();
     chunksPerSide_ = t.chunksPerSide();
     chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);

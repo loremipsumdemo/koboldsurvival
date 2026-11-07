@@ -35,7 +35,8 @@ public:
     int heightAt(int x, int z) const;
     void fill(int cx, int cz, ChunkData& out) const;
     // A picture of the whole map, px pixels across, as RGBA
-    std::vector<uint8_t> preview(int px) const;
+    // Empty if cancel was set before it finished. Uses most of the cores.
+    std::vector<uint8_t> preview(int px, const std::atomic<bool>* cancel = nullptr) const;
 
 private:
     WorldGenSettings s_;
