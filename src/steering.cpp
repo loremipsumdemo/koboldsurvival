@@ -81,6 +81,10 @@ constexpr float CHASE_REPLAN_DRIFT = 2.0f;
 constexpr float CHASE_WAYPOINT_REACH = 0.3f;
 constexpr int CHASE_PLANS_PER_STEP = 4;
 constexpr float SLOT_ROUTE_DISTANCE = 1.5f;
+constexpr float CONTACT_MARGIN = 0.02f;
+constexpr float SEPARATE_RATE = 6.0f;          // tiles per second, for each tile of overlap
+constexpr float MOST_SEPARATE_SPEED = 2.0f;
+constexpr float STEP_ASIDE_SPEED = 1.5f;
 
 using Vec2f = std::pair<float, float>;
 
@@ -97,6 +101,8 @@ struct SteerFrame {
     float dt = 0.0f;
     int plansLeft = CHASE_PLANS_PER_STEP;
     std::vector<Vec2f> pos;
+    std::vector<float> radius;
+    std::vector<Vec2f> contacts;
     std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
     bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
@@ -129,6 +135,43 @@ Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, ObjectId e, const Tran
         ++r->next;
     }
     return goal;
+}
+
+// Where a fighter walks: a ranged one, or a melee one still far away, heads for its target until in reach. A melee one
+// heads for its slot and stops once in reach; one with no slot waits outside.
+void attackGoal(World& w, const Terrain& t, ObjectId e, const Transform* tr, ObjectId foe, float& tx, float& tz, bool& chasing) {
+    const Transform* tt = w.get<Transform>(foe);
+    if (!tt) return;
+    const float gx = tt->x - tr->x, gz = tt->z - tr->z;
+    const float gap = std::sqrt(gx * gx + gz * gz);
+    const float reach = reachOf(w, e);
+    const bool seen = canSee(w, t, e, foe);
+    AttackSlot* place = reach <= ATTACK_REACH ? w.get<AttackSlot>(e) : nullptr;
+    if (!place || place->target != foe) {
+        if (gap > reach * CHASE_STOP_SHARE || !seen) {
+            tx = tt->x;
+            tz = tt->z;
+            chasing = true;
+        }
+        return;
+    }
+    Vec2 spot{ tr->x, tr->z };
+    if (place->slot >= 0) {
+        if (place->closing && gap <= reach * CHASE_STOP_SHARE && seen) place->closing = false;
+        else if (!place->closing && (gap > reach * CHASE_RESUME_SHARE || !seen)) place->closing = true;
+        if (place->closing) spot = attackSlotSpot(*tt, place->slot);
+    } else {
+        if (gap > ATTACK_WAIT_FAR || gap < ATTACK_WAIT_NEAR) place->closing = true;
+        else if (std::fabs(gap - ATTACK_WAIT_RADIUS) < 0.3f) place->closing = false;
+        if (place->closing && gap > 1e-4f) {
+            spot = Vec2{ tt->x - gx / gap * ATTACK_WAIT_RADIUS, tt->z - gz / gap * ATTACK_WAIT_RADIUS };
+        }
+    }
+    if (!place->closing) return;
+    const Vec2 st = t.snap(spot);
+    tx = st.x;
+    tz = st.z;
+    chasing = true;
 }
 
 void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
@@ -196,14 +239,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             tz = so->waypoints[so->next].z;
         }
     } else if (const AttackOrder* ao = w.get<AttackOrder>(e)) {
-        if (const Transform* tt = w.get<Transform>(ao->target)) {
-            const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-            if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE || !canSee(w, t, e, ao->target)) {
-                tx = tt->x;
-                tz = tt->z;
-                chasing = true;
-            }
-        }
+        attackGoal(w, t, e, tr, ao->target, tx, tz, chasing);
     } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
         const ObjectId lead = leadOf(w, e);
         if (const Transform* lt = w.get<Transform>(lead)) {
@@ -224,16 +260,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             w.remove<FollowOrder>(e);
         }
     } else if (!w.has<Commandable>(e)) {
-        if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) {
-            if (const Transform* tt = w.get<Transform>(c->target)) {
-                const float gx = tt->x - tr->x, gz = tt->z - tr->z;
-                if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE || !canSee(w, t, e, c->target)) {
-                    tx = tt->x;
-                    tz = tt->z;
-                    chasing = true;
-                }
-            }
-        }
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) attackGoal(w, t, e, tr, c->target, tx, tz, chasing);
     }
 
     if (chasing) {
@@ -265,7 +292,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
 
 void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector<std::uint32_t>& nearby) {
     nearby.clear();
-    const int cx = (int)std::floor(tr->x / UNIT_BOX), cz = (int)std::floor(tr->z / UNIT_BOX);
+    const int cx = (int)std::floor(tr->x / CROWD_CELL), cz = (int)std::floor(tr->z / CROWD_CELL);
     for (int dx = -1; dx <= 1; ++dx) {
         for (int dz = -1; dz <= 1; ++dz) {
             const std::int64_t key = cellKey(cx + dx, cz + dz);
@@ -278,66 +305,104 @@ void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector
     std::sort(nearby.begin(), nearby.end());
 }
 
+// Units are circles. A unit doesn't walk into one it touches, it slides around it, so walking never presses units into
+// each other. Those that do overlap ease apart, no faster than a set speed.
 void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
     const ObjectId e = s.units[i];
     const Transform* tr = w.get<Transform>(e);
     unitsNearby(s, tr, i, nearby);
 
-    float vx = 0.0f, vz = 0.0f, sideX = 0.0f, sideZ = 0.0f;
-    bool shoved = false;
+    const Combat* combat = w.get<Combat>(e);
+    const bool fighting = combat && combat->target != NO_OBJECT;
+    float pushX = 0.0f, pushZ = 0.0f, sideX = 0.0f, sideZ = 0.0f;
+    bool shoved = false, goalInside = false;
+    s.contacts.clear();
     for (const std::uint32_t j : nearby) {
-        const std::pair<float, float>& o = s.pos[j];
-        float sx = tr->x - o.first, sz = tr->z - o.second;
-        const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
-        if (overX <= 0.0f || overZ <= 0.0f) continue;
         if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
-        if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;
-        const bool alongX = overX < overZ;
-        const float push = (alongX ? overX : overZ) * 8.0f;
-        if (alongX) vx += (sx >= 0.0f ? 1.0f : -1.0f) * push;
-        else vz += (sz >= 0.0f ? 1.0f : -1.0f) * push;
-        if (s.going[i] && s.pinned[j]) {
-            float hx = s.goal[i].first - tr->x, hz = s.goal[i].second - tr->z;
-            const float hl = std::sqrt(hx * hx + hz * hz);
-            if (hl > 1e-4f) {
-                hx /= hl;
-                hz /= hl;
-                float side = -hz * sx + hx * sz;
-                if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;
-                const float sgn = side > 0.0f ? 1.0f : -1.0f;
-                vx += -hz * sgn * push * 1.5f;
-                vz += hx * sgn * push * 1.5f;
-            }
+        const std::pair<float, float>& o = s.pos[j];
+        float nx = tr->x - o.first, nz = tr->z - o.second;
+        const float touching = s.radius[i] + s.radius[j];
+        const float d2 = nx * nx + nz * nz;
+        if (d2 >= (touching + CONTACT_MARGIN) * (touching + CONTACT_MARGIN)) continue;
+        float d = std::sqrt(d2);
+        if (d < 1e-4f) {
+            // Exactly on top of each other: part them by a direction of their own
+            const float a = (float)e * 2.3999632f;
+            nx = std::cos(a);
+            nz = std::sin(a);
+            d = 0.0f;
+        } else {
+            nx /= d;
+            nz /= d;
         }
-        if (!s.going[i] && s.going[j]) {
-            shoved = true;
+        s.contacts.push_back({ nx, nz });
+        const float overlap = touching - d;
+        if (overlap > 0.0f) {
+            pushX += nx * overlap * SEPARATE_RATE;
+            pushZ += nz * overlap * SEPARATE_RATE;
+        }
+        const float gox = s.goal[i].first - o.first, goz = s.goal[i].second - o.second;
+        if (gox * gox + goz * goz <= s.radius[j] * s.radius[j]) goalInside = true;
+        // Standing around, with someone walking at it: it steps aside, unless it is in a fight
+        if (!s.going[i] && s.going[j] && !fighting) {
             float hx = s.goal[j].first - o.first, hz = s.goal[j].second - o.second;
             const float hl = std::sqrt(hx * hx + hz * hz);
-            if (hl > 1e-4f) {
+            if (hl > 1e-4f && hx * nx + hz * nz > 0.0f) {
                 hx /= hl;
                 hz /= hl;
-                float side = hx * sz - hz * sx;
+                float side = hx * nz - hz * nx;
                 if (std::fabs(side) < 1e-3f) side = (e & 1u) ? 1.0f : -1.0f;
                 const float sign = side > 0.0f ? 1.0f : -1.0f;
-                sideX += -hz * sign * push;
-                sideZ += hx * sign * push;
+                sideX += -hz * sign;
+                sideZ += hx * sign;
+                shoved = true;
             }
         }
     }
+
+    float vx = 0.0f, vz = 0.0f, wanted = 0.0f, headX = 0.0f, headZ = 0.0f;
     if (shoved) {
-        vx += sideX;
-        vz += sideZ;
+        const float sl = std::hypot(sideX, sideZ);
+        if (sl > 1e-4f) {
+            vx = sideX / sl * STEP_ASIDE_SPEED;
+            vz = sideZ / sl * STEP_ASIDE_SPEED;
+        }
     } else {
         const float dx = s.goal[i].first - tr->x, dz = s.goal[i].second - tr->z;
         const float dist = std::sqrt(dx * dx + dz * dz);
         const float deadZone = s.calmLead[i] != NO_OBJECT ? unitWidth : 0.05f;
         if (dist > deadZone && s.speeds[i] > 0.0f) {
-            const float sp = std::min(s.speeds[i], dist * 2.5f);
-            vx += dx / dist * sp;
-            vz += dz / dist * sp;
+            wanted = std::min(s.speeds[i], dist * 2.5f);
+            headX = dx / dist;
+            headZ = dz / dist;
+            vx = headX * wanted;
+            vz = headZ * wanted;
         }
     }
-    s.vel[i] = { vx, vz };
+    const auto slide = [&]() {
+        for (int pass = 0; pass < 2; ++pass) {
+            for (const Vec2f& n : s.contacts) {
+                const float into = vx * n.first + vz * n.second;
+                if (into < 0.0f) {
+                    vx -= n.first * into;
+                    vz -= n.second * into;
+                }
+            }
+        }
+    };
+    slide();
+    // Stopped dead by those in the way: go round, always by the same hand, so two meeting head on pass each other
+    if (wanted > 0.0f && !goalInside && s.going[i] && !s.contacts.empty() && std::hypot(vx, vz) < wanted * 0.25f) {
+        vx = -headZ * wanted * 0.5f;
+        vz = headX * wanted * 0.5f;
+        slide();
+    }
+    const float pushed = std::hypot(pushX, pushZ);
+    if (pushed > MOST_SEPARATE_SPEED) {
+        pushX *= MOST_SEPARATE_SPEED / pushed;
+        pushZ *= MOST_SEPARATE_SPEED / pushed;
+    }
+    s.vel[i] = { vx + pushX, vz + pushZ };
 }
 
 void applySteering(World& w, Terrain& t, ObjectId e, Vec2f velocity, float dt, bool running) {
@@ -382,11 +447,13 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     for (size_t i = 0; i < units.size(); ++i) steerGoal(w, t, s, i, running);
 
     s.pos.resize(units.size());
+    s.radius.resize(units.size());
     s.byCell.resize(units.size());
     for (size_t i = 0; i < units.size(); ++i) {
         const Transform* tr = w.get<Transform>(units[i]);
         s.pos[i] = { tr->x, tr->z };
-        s.byCell[i] = { cellKey((int)std::floor(tr->x / UNIT_BOX), (int)std::floor(tr->z / UNIT_BOX)), (std::uint32_t)i };
+        s.radius[i] = w.get<Entity>(units[i])->radius;
+        s.byCell[i] = { cellKey((int)std::floor(tr->x / CROWD_CELL), (int)std::floor(tr->z / CROWD_CELL)), (std::uint32_t)i };
     }
     std::sort(s.byCell.begin(), s.byCell.end());
 

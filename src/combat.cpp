@@ -2,6 +2,7 @@
 #include "language.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include "equip.h"
 #include "inventory.h"
 #include "items.h"
@@ -204,7 +205,10 @@ void strike(World& w, Rng& rng, ObjectId a, ObjectId d) {
     const int before = nd ? nd->hp : 0;
     if (nd) {
         nd->hp = std::max(0, before - r.damage);
-        if (nd->hp != before) nd->changed |= NEEDS_HP_CHANGED;
+        if (nd->hp != before) {
+            nd->changed |= NEEDS_HP_CHANGED;
+            if (Combat* cd = w.get<Combat>(d)) cd->slowedLeft = DAMAGE_SLOW_SECONDS;
+        }
     }
     const int lost = nd ? before - nd->hp : r.damage;
 
@@ -235,6 +239,98 @@ void strike(World& w, Rng& rng, ObjectId a, ObjectId d) {
             finishDying(w, d);
             queueSoundFrom(w, Sfx::Dies, d);
         }
+    }
+}
+
+bool usesAttackSlot(World& w, ObjectId e) { return reachOf(w, e) <= ATTACK_REACH; }
+
+// Gives melee fighters their places around their targets. Whoever has a place keeps it; the nearest get the free ones.
+void assignAttackSlots(World& w, const Terrain& t, const std::vector<ObjectId>& everyone, const std::function<bool(ObjectId)>& standing, float dt) {
+    struct Claim { ObjectId foe; float d2; ObjectId e; };
+    std::vector<Claim> claims;
+    for (ObjectId e : everyone) {
+        const Combat* c = w.get<Combat>(e);
+        if (c && c->target != NO_OBJECT && standing(e) && targetable(w, c->target) && usesAttackSlot(w, e)) {
+            const float gap = flatGap(w, e, c->target);
+            if (gap <= ATTACK_SLOT_CLAIM_RANGE) {
+                claims.push_back(Claim{ c->target, gap * gap, e });
+                continue;
+            }
+        }
+        w.remove<AttackSlot>(e);
+    }
+    std::sort(claims.begin(), claims.end(), [](const Claim& a, const Claim& b) {
+        return a.foe != b.foe ? a.foe < b.foe : a.d2 != b.d2 ? a.d2 < b.d2 : a.e < b.e;
+    });
+    std::vector<std::pair<ObjectId, int>> slotsTaken;   // by foe, in order
+    std::vector<ObjectId> waiting;
+    for (size_t from = 0; from < claims.size();) {
+        const ObjectId foe = claims[from].foe;
+        size_t to = from;
+        while (to < claims.size() && claims[to].foe == foe) ++to;
+        bool taken[ATTACK_SLOTS] = {};
+        int count = 0;
+        for (size_t i = from; i < to; ++i) {
+            AttackSlot* held = w.get<AttackSlot>(claims[i].e);
+            if (held && held->target == foe && held->slot >= 0) {
+                taken[held->slot] = true;
+                ++count;
+            }
+        }
+        const Transform* ft = w.get<Transform>(foe);
+        for (size_t i = from; i < to; ++i) {
+            const ObjectId e = claims[i].e;
+            AttackSlot* held = w.get<AttackSlot>(e);
+            if (!held) held = &w.add(e, AttackSlot{ foe });
+            if (held->target != foe) *held = AttackSlot{ foe };
+            if (held->slot >= 0) continue;
+            const Transform* tr = w.get<Transform>(e);
+            int best = -1;
+            float bestD2 = 0.0f;
+            for (int s = 0; s < ATTACK_SLOTS; ++s) {
+                if (taken[s]) continue;
+                const Vec2 at = attackSlotSpot(*ft, s);
+                if (!t.isFree(at.x, at.z)) continue;
+                const float d2 = (at.x - tr->x) * (at.x - tr->x) + (at.z - tr->z) * (at.z - tr->z);
+                if (best < 0 || d2 < bestD2) {
+                    best = s;
+                    bestD2 = d2;
+                }
+            }
+            if (best >= 0) {
+                taken[best] = true;
+                ++count;
+                held->slot = best;
+                held->closing = true;
+            } else {
+                waiting.push_back(e);
+            }
+        }
+        slotsTaken.push_back({ foe, count });
+        from = to;
+    }
+
+    // Someone waiting turns to a foe that has room, unless it was told who to attack
+    for (ObjectId e : waiting) {
+        if (w.has<AttackOrder>(e)) continue;
+        AttackSlot* held = w.get<AttackSlot>(e);
+        held->lookIn -= dt;
+        if (held->lookIn > 0.0f) continue;
+        held->lookIn = ATTACK_WAIT_LOOK_SECONDS;
+        const float range = w.has<Commandable>(e) ? ATTACK_REACH : AGGRO_RANGE;
+        ObjectId best = NO_OBJECT;
+        float bestGap = 0.0f;
+        for (ObjectId o : everyone) {
+            if (o == e || o == held->target || !standing(o) || !targetable(w, o)) continue;
+            const float gap = flatGap(w, e, o);
+            if (gap > range || !unitsHostile(w, e, o) || (best != NO_OBJECT && gap >= bestGap)) continue;
+            const auto it = std::lower_bound(slotsTaken.begin(), slotsTaken.end(), std::make_pair(o, 0));
+            if (it != slotsTaken.end() && it->first == o && it->second >= ATTACK_SLOTS) continue;
+            if (!canSee(w, t, e, o)) continue;
+            best = o;
+            bestGap = gap;
+        }
+        if (best != NO_OBJECT) w.get<Combat>(e)->target = best;
     }
 }
 
@@ -368,6 +464,11 @@ Equipment randomHostileGear(Rng& rng) {
     return worn;
 }
 
+Vec2 attackSlotSpot(const Transform& target, int slot) {
+    constexpr float TURN = 6.2831853f / (float)ATTACK_SLOTS;
+    return Vec2{ target.x + std::cos(TURN * (float)slot) * ATTACK_SLOT_RADIUS, target.z + std::sin(TURN * (float)slot) * ATTACK_SLOT_RADIUS };
+}
+
 bool canSee(World& w, const Terrain& t, ObjectId a, ObjectId b) {
     const Transform* ta = w.get<Transform>(a);
     const Transform* tb = w.get<Transform>(b);
@@ -405,6 +506,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
             }
         }
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);
+        c.slowedLeft = std::max(0.0f, c.slowedLeft - dt);
     }
 
     const std::vector<ObjectId> players = w.view<Entity, Transform, Commandable>();
@@ -469,6 +571,8 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         if (pc.target != NO_OBJECT) drinkForFight(w, p, pc);
     }
 
+    assignAttackSlots(w, t, everyone, standing, dt);
+
     for (ObjectId e : everyone) {
         if (!w.has<Combat>(e) || !w.has<Transform>(e) || !standing(e)) continue;
         Combat& c = *w.get<Combat>(e);
@@ -476,6 +580,10 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         if (isBlocking(w, e)) continue;
         const ObjectId foe = c.target;
         if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe)) continue;
+        if (usesAttackSlot(w, e)) {
+            const AttackSlot* held = w.get<AttackSlot>(e);
+            if (!held || held->target != foe || held->slot < 0) continue;
+        }
         strike(w, rng, e, foe);
     }
 }

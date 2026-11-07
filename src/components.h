@@ -223,7 +223,16 @@ struct Combat {
     ObjectId target = NO_OBJECT;
     float buffAttack = 0.0f;
     float buffLeft = 0.0f;
+    float slowedLeft = 0.0f;   // seconds of slower movement left after taking damage
     int downedByFaction = -1;
+};
+
+// A melee fighter's place around its target, while it is near enough to want one
+struct AttackSlot {
+    ObjectId target = NO_OBJECT;
+    int slot = -1;         // 0 to ATTACK_SLOTS - 1, or -1: every slot is taken, so it waits its turn
+    bool closing = true;   // walking to its place, rather than standing in it
+    float lookIn = 0.0f;   // waiting: seconds until it looks for a foe with a free slot
 };
 
 struct XpBuffer {

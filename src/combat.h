@@ -30,7 +30,7 @@ constexpr float STRENGTH_ATTACK = 0.2f;
 constexpr float MITIGATION_K = 50.0f;
 constexpr float BLOCK_DAMAGE = 0.25f;
 constexpr float ATTACK_REACH = 1.6f;
-constexpr float TALK_RANGE = 1.0f;
+constexpr float TALK_RANGE = 1.3f;   // a little more than two units touching
 constexpr float AGGRO_RANGE = 6.0f;
 constexpr float LEASH_RANGE = 12.0f;
 constexpr float WITNESS_RANGE = 9.0f;
@@ -40,6 +40,20 @@ constexpr float BLOCK_MODE_FACTOR = 2.0f;
 constexpr float BLOCK_MODE_CAP = 0.75f;
 constexpr float HOSTILE_WALK_SPEED = 2.2f;  // tiles per second
 constexpr float CHASE_STOP_SHARE = 0.8f;
+constexpr float CHASE_RESUME_SHARE = 0.95f;   // melee: stops at the share above, and only sets off again past this one
+
+// At most this many melee fighters can attack one target. The rest wait in a loose ring outside, and look for another foe.
+constexpr int ATTACK_SLOTS = 5;
+constexpr float ATTACK_SLOT_RADIUS = 1.2f;
+constexpr float ATTACK_SLOT_CLAIM_RANGE = 6.0f;   // from further off, a fighter just heads for the target
+constexpr float ATTACK_WAIT_RADIUS = 2.6f;
+constexpr float ATTACK_WAIT_NEAR = 1.9f;
+constexpr float ATTACK_WAIT_FAR = 3.2f;
+constexpr float ATTACK_WAIT_LOOK_SECONDS = 0.5f;
+
+// Taking damage slows movement for a moment. More hits restart the moment, but don't slow it further.
+constexpr float DAMAGE_SLOW_SECONDS = 0.6f;
+constexpr float DAMAGE_SLOW_FACTOR = 0.5f;
 
 struct CombatNumbers {
     int maxHp = 0;
@@ -97,3 +111,4 @@ Equipment randomHostileGear(Rng& rng);
 
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt);
 bool canSee(World& w, const Terrain& t, ObjectId a, ObjectId b);
+Vec2 attackSlotSpot(const Transform& target, int slot);

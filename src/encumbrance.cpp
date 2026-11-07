@@ -42,6 +42,7 @@ float walkSpeedOf(World& w, ObjectId e, bool running) {
         speed *= SNEAK_SPEED;
     }
     if (running) speed *= 1.0f + RUN_SPEED_BONUS;
+    if (const Combat* c = w.get<Combat>(e); c && c->slowedLeft > 0.0f) speed *= DAMAGE_SLOW_FACTOR;
     if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
         if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {
             speed *= BOSS_RETURN_SPEED_FACTOR;

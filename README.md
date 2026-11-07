@@ -162,6 +162,8 @@ The editor places entities, props and items. The words mean the same in the game
 
 A player unit placed in a level is the first member of the party from New Game. Party members beyond those placed start at the spawn point, and placed player units beyond the party's size are left out.
 
+Entities collide as circles. A melee fighter claims one of the `ATTACK_SLOTS` (5) places around its target; the others wait in a ring outside and can't hit it until a place opens. Taking damage slows movement for a moment (`DAMAGE_SLOW_SECONDS`, `DAMAGE_SLOW_FACTOR` in combat.h); more hits restart the moment but don't slow it further.
+
 A map has a style, chosen before it is generated (`MapStyle` in world_gen.h: Overworld, Walled Valley, Archipelago, Cavern, Galaxy Sea, Void Islands, Caldera), and a theme: sky, sun, moon, day and night, light, fog, water and ground color (`map_theme.h`). The Theme tab is on the World Generation screen and in the level editor, where it shows at once and Save writes it to the map. A map file lists only what differs from its theme preset. To add a theme setting, add a `MapTheme` member and a row in `map_theme.cpp`.
 
 ## Modding the data

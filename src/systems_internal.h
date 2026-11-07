@@ -21,7 +21,7 @@
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;
-inline constexpr float UNIT_BOX = 1.0f;
+inline constexpr float CROWD_CELL = 1.1f;   // no smaller than two units' radii and the margin of a touch
 inline constexpr float PICKUP_REACH = 2.0f;
 inline constexpr int CHAIN_REPLANS = 3;
 
