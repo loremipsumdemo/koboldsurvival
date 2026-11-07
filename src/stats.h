@@ -5,7 +5,7 @@
 #include <string>
 #include "language.h"
 
-// Saved by place: after reordering, raise SAVE_VERSION
+// Saves name a stat by its statKey, so a stat can be added or moved
 enum class StatId : int {
     None = -1,
     Strength = 0,
@@ -48,6 +48,10 @@ struct StatInfo {
 constexpr int MAX_LEVEL = 99;
 
 const StatInfo& statInfo(StatId stat);
+// Its name in data tables and saves. Keep it once there are saves.
+const char* statKey(StatId stat);
+// StatId::None if no stat has this key
+StatId statNamed(const std::string& key);
 
 std::string statName(StatId stat);
 

@@ -101,6 +101,7 @@ set(SIM_SOURCES
     src/prop_info.cpp
     src/save_world.cpp
     src/savegame.cpp
+    src/save_migrate.cpp
     src/user_files.cpp
 )
 
@@ -230,6 +231,8 @@ foreach(test save_roundtrip data_check sim_step)
     add_dependencies(${test} game_data)
     add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endforeach()
+
+target_compile_definitions(save_roundtrip PRIVATE KOBOLD_TEST_SAVES="${CMAKE_SOURCE_DIR}/tests/saves")
 
 foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)

@@ -10,6 +10,7 @@
 #include <system_error>
 #include <type_traits>
 #include <unordered_map>
+#include "game_tables.h"
 #include "user_files.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -56,11 +57,8 @@ private:
     std::ostream& out_;
 };
 
-// A list that changed size means the numbers in a save name other things
-const std::vector<int> savedListSizes() { return { propKindCount(), mobKindCount(), STAT_COUNT, idx(BehaviorKind::Count), GEAR_SLOTS, INVENTORY_SLOTS, STORAGE_SLOTS }; }
-
 void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
-    w.line("unit", u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob, u.name);
+    w.line("unit", u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob > 0 ? mobInfo((MobKind)u.mob).key : std::string("-"), u.name);
     const Needs& n = u.needs;
     w.line("needs", i, n.hp, n.maxHp, n.hunger, n.maxHunger, n.rested, n.maxRested, n.comfort, n.maxComfort,
            n.restedPart, n.comfortPart, n.hurried, n.healSeconds);
@@ -68,13 +66,13 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     for (const SaveGear& g : u.gear) w.line("gear", i, g.slot, g.item);
     if (u.stats) {
         std::ostringstream xp;
-        for (size_t k = 0; k < u.stats->xp.size(); ++k) xp << (k ? " " : "") << u.stats->xp[k];
+        for (size_t k = 0; k < u.stats->xp.size(); ++k) xp << (k ? " " : "") << statKey((StatId)k) << ' ' << u.stats->xp[k];
         w.line("stats", i, xp.str());
     }
     if (u.xpParts) {
         std::ostringstream parts;
         parts << std::setprecision(9);
-        for (size_t k = 0; k < u.xpParts->frac.size(); ++k) parts << (k ? " " : "") << u.xpParts->frac[k];
+        for (size_t k = 0; k < u.xpParts->frac.size(); ++k) parts << (k ? " " : "") << statKey((StatId)k) << ' ' << u.xpParts->frac[k];
         w.line("xpparts", i, parts.str());
     }
     if (u.body) w.line("body", i, *u.body);
@@ -94,13 +92,14 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.propOrder >= 0) w.line("propgo", i, u.propOrder, u.propAction);
     if (u.workProp >= 0) w.line("working", i, u.workProp, u.workUnlocking);
     for (const SaveRule& r : u.rules) {
-        w.line("task", i, r.rule.on, (int)r.rule.kind, r.rule.propKind, r.prop, r.rule.percent);
+        const bool namesProp = r.rule.propKind >= 0 && r.rule.propKind < propKindCount();
+        w.line("task", i, r.rule.on, behaviorKey(r.rule.kind), namesProp ? propInfo((PropKind)r.rule.propKind).key : std::string("-"), r.prop, r.rule.percent);
     }
-    if (u.stepKind >= 0) w.line("step", i, u.stepKind);
+    if (u.stepKind >= 0) w.line("step", i, behaviorKey((BehaviorKind)u.stepKind));
 }
 
 void writeProp(Writer& w, size_t i, const SaveProp& p) {
-    w.line("prop", p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner);
+    w.line("prop", propInfo((PropKind)p.kind).key, p.at.x, p.at.y, p.at.z, p.yaw, p.owner);
     if (p.lock) w.line("lock", i, p.lock->locked, p.lock->level, p.lock->faction);
     for (const SaveSlot& s : p.storage) w.line("storage", i, s.slot, s.stack.item, s.stack.count);
     for (const SaveSlot& s : p.output) w.line("output", i, s.slot, s.stack.item, s.stack.count);
@@ -114,8 +113,6 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
 void writeSaveLines(std::ostream& out, const SaveData& d) {
     Writer w(out);
     w.line("version", SAVE_VERSION);
-    const std::vector<int> sizes = savedListSizes();
-    w.line("sizes", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5], sizes[6]);
     w.line("name", d.name);
     w.line("timestamp", d.timestamp);
     w.line("autosave", d.autosave);
@@ -164,10 +161,17 @@ struct Line {
         size_t i = 0;
         return read(i) && i < d.props.size() ? &d.props[i] : nullptr;
     }
+    // Stat key and value pairs. A stat the file does not have stays as it was, and a stat this game does not have is skipped.
     template <typename A>
-    bool readArray(A& values) {
-        for (auto& v : values) ss >> v;
-        return !ss.fail();
+    bool readStats(A& values) {
+        std::string key;
+        while (ss >> key) {
+            typename A::value_type value{};
+            if (!(ss >> value)) return false;
+            const StatId stat = statNamed(key);
+            if (stat != StatId::None) values[(size_t)idx(stat)] = value;
+        }
+        return true;
     }
     bool slotInto(std::vector<SaveSlot>& slots) {
         SaveSlot s;
@@ -182,13 +186,6 @@ using Handler = bool (*)(Line&);
 const std::unordered_map<std::string, Handler>& handlers() {
     static const std::unordered_map<std::string, Handler> table = {
         { "version", [](Line& l) { int v = 0; return l.read(v) && v == SAVE_VERSION; } },
-        { "sizes", [](Line& l) {
-            for (int want : savedListSizes()) {
-                int got = 0;
-                if (!l.read(got) || got != want) return false;
-            }
-            return true;
-        } },
         { "name", [](Line& l) { return l.rest(l.d.name); } },
         { "timestamp", [](Line& l) { return l.read(l.d.timestamp); } },
         { "autosave", [](Line& l) { return l.read(l.d.autosave); } },
@@ -204,7 +201,10 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "prop", [](Line& l) {
             SaveProp p;
-            if (!l.read(p.kind, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || p.kind < 0 || p.kind >= propKindCount()) return false;
+            std::string key;
+            PropKind kind = PropKind::Wagon;
+            if (!l.read(key, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || !propKindNamed(key, kind)) return false;
+            p.kind = idx(kind);
             l.d.props.push_back(std::move(p));
             return true;
         } },
@@ -260,7 +260,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "unit", [](Line& l) {
             SaveUnit u;
-            if (!l.read(u.at.x, u.at.y, u.at.z, u.sprite, u.faction, u.mob) || u.mob < 0 || u.mob > mobKindCount()) return false;
+            std::string key;
+            if (!l.read(u.at.x, u.at.y, u.at.z, u.sprite, u.faction, key)) return false;
+            if (key != "-") {
+                MobKind kind = MobKind::None;
+                if (!mobKindNamed(key, kind)) return false;
+                u.mob = idx(kind);
+            }
             l.rest(u.name);
             l.d.units.push_back(std::move(u));
             return true;
@@ -283,14 +289,14 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "stats", [](Line& l) {
             SaveUnit* u = l.unit();
             Stats s;
-            if (!u || !l.readArray(s.xp)) return false;
+            if (!u || !l.readStats(s.xp)) return false;
             u->stats = s;
             return true;
         } },
         { "xpparts", [](Line& l) {
             SaveUnit* u = l.unit();
             XpBuffer parts;
-            if (!u || !l.readArray(parts.frac)) return false;
+            if (!u || !l.readStats(parts.frac)) return false;
             u->xpParts = parts;
             return true;
         } },
@@ -348,14 +354,28 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "working", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->workProp, u->workUnlocking); } },
         { "task", [](Line& l) {
             SaveUnit* u = l.unit();
-            int on = 0, kind = 0, propKind = -1, percent = 0;
+            int on = 0, percent = 0, propKind = -1;
+            std::string kindKey, propKey;
             SaveRule r;
-            if (!u || !l.read(on, kind, propKind, r.prop, percent)) return false;
+            if (!u || !l.read(on, kindKey, propKey, r.prop, percent)) return false;
+            const int kind = behaviorNamed(kindKey);
+            if (kind < 0) return false;
+            if (propKey != "-") {
+                PropKind named = PropKind::Wagon;
+                if (!propKindNamed(propKey, named)) return false;
+                propKind = idx(named);
+            }
             r.rule = behaviorFromFields(on, kind, propKind, percent);
             u->rules.push_back(r);
             return true;
         } },
-        { "step", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->stepKind); } },
+        { "step", [](Line& l) {
+            SaveUnit* u = l.unit();
+            std::string key;
+            if (!u || !l.read(key)) return false;
+            u->stepKind = behaviorNamed(key);
+            return u->stepKind >= 0;
+        } },
         { "end", [](Line& l) {
             size_t props = 0, units = 0;
             l.ended = l.read(props, units) && props == l.d.props.size() && units == l.d.units.size();
@@ -379,9 +399,15 @@ bool readSaveHeader(const std::string& path, SaveSummary& s) {
         l.ss = std::istringstream(text);
         l.ss >> key;
         if (key == "map") break;
+        if (key == "version") {
+            int version = 0;
+            if (!l.read(version) || version < SAVE_OLDEST_VERSION || version > SAVE_VERSION) return false;
+            versionOk = true;
+            continue;
+        }
+        if (key == "sizes") continue;   // only in version 6
         const auto it = handlers().find(key);
         if (it == handlers().end() || !it->second(l)) return false;
-        versionOk = versionOk || key == "version";
     }
     s.name = d.name;
     s.timestamp = d.timestamp;
@@ -420,12 +446,21 @@ bool writeSaveFile(const std::string& path, const SaveData& d) {
 bool readSaveFile(const std::string& path, SaveData& d) {
     std::ifstream in(fs::u8path(path));
     if (!in) return false;
-    Line l{ {}, d };
+    std::vector<std::string> lines;
     std::string text, key;
-    int number = 0;
     while (std::getline(in, text)) {
-        ++number;
         if (!text.empty() && text.back() == '\r') text.pop_back();
+        lines.push_back(text);
+    }
+    if (!upgradeSaveLines(lines)) {
+        SDL_Log("%s: of a version this game can't read, or damaged", path.c_str());
+        return false;
+    }
+    Line l{ {}, d };
+    int number = 0;
+    for (const std::string& line : lines) {
+        ++number;
+        text = line;
         l.ss = std::istringstream(text);
         l.ss >> key;
         const auto it = handlers().find(key);

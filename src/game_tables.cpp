@@ -8,6 +8,7 @@
 #include "factions.h"
 #include "items.h"
 #include "mobs.h"
+#include "stats.h"
 #include "pak.h"
 #include "sounds.h"
 
@@ -345,13 +346,6 @@ int placeIn(const char* const (&names)[N], const std::string& s) {
     return -1;
 }
 
-const char* const STAT_KEYS[] = {
-    "Strength", "Dexterity", "Vitality", "Agility", "Intelligence", "Wisdom", "Charisma", "Melee", "Projectiles", "Arcane",
-    "Block", "Mining", "Herbalism", "Woodcutting", "Skinning", "Farming", "Cooking", "Smelting", "Forging", "Carpentry",
-    "Stoneworking", "Lockpicking", "Thievery", "Medical",
-};
-static_assert(std::size(STAT_KEYS) == STAT_COUNT);
-
 const char* const PROP_USE_KEYS[] = { "none", "storage", "occupy", "resource", "crafting", "passive" };
 const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water" };
 
@@ -400,9 +394,8 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
     if (accepts < 0) { why = "unknown accepts " + cell(r, "accepts"); return false; }
     p.accepts = (ItemFilter)accepts;
     if (cell(r, "stat") != "none") {
-        const int stat = placeIn(STAT_KEYS, cell(r, "stat"));
-        if (stat < 0) { why = "unknown stat " + cell(r, "stat"); return false; }
-        p.stat = (StatId)stat;
+        p.stat = statNamed(cell(r, "stat"));
+        if (p.stat == StatId::None) { why = "unknown stat " + cell(r, "stat"); return false; }
     }
     if (cell(r, "work_sound") != "none") {
         const int sound = placeIn(SFX_KEYS, cell(r, "work_sound"));
@@ -571,6 +564,27 @@ const PropInfo& propInfo(PropKind kind) {
 }
 
 int propKindCount() { return (int)propTable.size(); }
+
+bool propKindNamed(const std::string& key, PropKind& out) {
+    for (size_t i = 0; i < propTable.size(); ++i) {
+        if (propTable[i].key == key) {
+            out = (PropKind)i;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mobKindNamed(const std::string& key, MobKind& out) {
+    for (size_t i = 0; i < mobTable.size(); ++i) {
+        if (mobTable[i].key == key) {
+            out = (MobKind)(i + 1);
+            return true;
+        }
+    }
+    return false;
+}
+
 const std::vector<PropKind>& propKindsListed() { return propsListed; }
 const std::vector<PropKind>& scatteredPropKinds() { return propsScattered; }
 

@@ -1,6 +1,6 @@
-# Prop and unit models. Tab-separated: key, file under data/model, what it is.
+# Unit models. Tab-separated: key, file under data/model, what it is.
 # Every key must be listed once. The last column is only a note. A missing model is drawn as a pink square.
-# Mobs name their own models in mobs.txt. Unit1 to Unit3 are the party menu's Model numbers.
+# Props name their models in props.txt, and mobs in mobs.txt. Unit1 to Unit3 are the party menu's Model numbers.
 
 Unit1	unit/unit_01.glb	Model 01 (Feminine by default)
 Unit2	unit/unit_02.glb	Model 02 (Masculine by default)

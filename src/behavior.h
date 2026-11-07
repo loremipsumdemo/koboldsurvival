@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <array>
+#include <iterator>
 #include <string>
 #include <utility>
 #include <vector>
@@ -8,8 +9,18 @@
 #include "language.h"
 #include "props.h"
 
-// Saved as numbers: after reordering, raise SAVE_VERSION
+// Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, Count };
+inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn" };
+static_assert(std::size(BEHAVIOR_KEYS) == (size_t)BehaviorKind::Count);
+inline const char* behaviorKey(BehaviorKind k) { return BEHAVIOR_KEYS[std::clamp((int)k, 0, (int)BehaviorKind::Count - 1)]; }
+// -1 if no behavior has this key
+inline int behaviorNamed(const std::string& key) {
+    for (int i = 0; i < (int)BehaviorKind::Count; ++i) {
+        if (key == BEHAVIOR_KEYS[i]) return i;
+    }
+    return -1;
+}
 
 enum class BehaviorWait : int {
     None = 0,

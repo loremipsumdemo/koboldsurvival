@@ -49,6 +49,24 @@ const std::array<int, MAX_LEVEL + 1>& xpTable() {
 }
 }
 
+namespace {
+const char* const STAT_KEYS[] = {
+    "Strength", "Dexterity", "Vitality", "Agility", "Intelligence", "Wisdom", "Charisma", "Melee", "Projectiles", "Arcane",
+    "Block", "Mining", "Herbalism", "Woodcutting", "Skinning", "Farming", "Cooking", "Smelting", "Forging", "Carpentry",
+    "Stoneworking", "Lockpicking", "Thievery", "Medical",
+};
+static_assert(sizeof(STAT_KEYS) / sizeof(STAT_KEYS[0]) == STAT_COUNT);
+}
+
+const char* statKey(StatId stat) { return STAT_KEYS[std::clamp(idx(stat), 0, STAT_COUNT - 1)]; }
+
+StatId statNamed(const std::string& key) {
+    for (int i = 0; i < STAT_COUNT; ++i) {
+        if (key == STAT_KEYS[i]) return (StatId)i;
+    }
+    return StatId::None;
+}
+
 const StatInfo& statInfo(StatId stat) {
     return infoTable()[std::clamp(idx(stat), 0, STAT_COUNT - 1)];
 }

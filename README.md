@@ -42,8 +42,9 @@ lose state: the world keeps running, whatever happens to your party.
 - **World and time.** A chunked terrain world with sea and sky, a world map, and a day/night calendar (one in-game day
   is 30 real minutes). New Game always starts on the main world.
 - **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with manual saves
-  and three rotating autosave slots. A save holds the whole level except its terrain. Saves of another format version
-  are not listed. Settings are kept in the folder above them.
+  and three rotating autosave slots. A save holds the whole level except its terrain. Saves from an older version of the
+  format are upgraded when read, and new props, mobs, stats and behaviors don't affect existing saves. Settings are kept in
+  the folder above them.
 - **Localization.** 31 languages with Noto fonts for Latin, Cyrillic, Greek, Arabic, Thai, Japanese, Korean and
   Chinese scripts.
 - **Audio.** Music, ambient tracks, sound effects and interface sounds, each with its own volume slider, under a global
@@ -103,7 +104,7 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   world_setup, unit_spawn   Placing a new level, and making units
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
-  save_world, savegame     Turning a running level into a save, and the save files
+  save_world, savegame, save_migrate     Turning a running level into a save, the save files, and upgrading old ones
   game_log, world_labels   The message log and the text drawn over units
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
   world_format, map_file   The world folder format, and the blank map a Terrain starts as
@@ -111,6 +112,7 @@ tests/
   save_roundtrip.cpp Saves a level, loads it and compares
   data_check.cpp     Checks the data tables agree, and lists text not yet translated
   sim_step.cpp       Plays with no window, and checks the same seed gives the same game
+  saves/             A save of each older format version, which must still load
                      (all run with ctest; none opens a window)
 tools/
   pack_data.cpp      Packs data/ into data.pak

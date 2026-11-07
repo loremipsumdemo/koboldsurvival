@@ -289,14 +289,44 @@ int main(int, char**) {
     }
     SaveData unknown;
     check(!readSaveFile(cut, unknown), "an unknown line is refused");
-    {
-        std::ofstream out(cut);
+    const auto readEdited = [&](const std::string& find, const std::string& put) {
         std::string changed = text;
-        changed.insert(changed.find("\nsizes ") + 7, "9");
-        out << changed;
+        const size_t at = changed.find(find);
+        check(at != std::string::npos, "the save has the line to change");
+        changed.replace(at, find.size(), put);
+        {
+            std::ofstream out(cut);
+            out << changed;
+        }
+        SaveData edited;
+        return readSaveFile(cut, edited);
+    };
+    check(!readEdited("version " + std::to_string(SAVE_VERSION), "version " + std::to_string(SAVE_VERSION + 1)), "a save from a newer game is refused");
+    check(!readEdited("version " + std::to_string(SAVE_VERSION), "version " + std::to_string(SAVE_OLDEST_VERSION - 1)), "a save too old to upgrade is refused");
+    check(!readEdited("\nprop Altar ", "\nprop NoSuchProp "), "a save naming a prop this game lacks is refused");
+    check(readEdited(" Strength ", " NoSuchStat "), "a stat this game lacks is skipped");
+
+    // A file of the version before: every version kept in tests/saves must still load, and be the same game
+    {
+        const std::string oldFile = std::string(KOBOLD_TEST_SAVES) + "/v6.sav";
+        SaveData old;
+        check(readSaveFile(oldFile, old), "a version 6 save is read");
+        check(old.props.size() > 100 && old.units.size() > 50, "a version 6 save has its props and units");
+        size_t namedRight = 0;
+        for (const SaveProp& p : old.props) namedRight += p.kind == idx(PropKind::Altar) ? 1 : 0;
+        check(namedRight > 0, "a version 6 prop number becomes the same prop");
+        World oldWorld;
+        Rng oldRng;
+        restoreWorld(oldWorld, terrain, oldRng, old);
+        check(!oldWorld.view<Unit, Commandable>().empty(), "a version 6 save restores your units");
+        const std::string upgraded = "roundtrip_old.sav";
+        check(writeSaveFile(upgraded, old), "a version 6 save is saved as the current version");
+        const std::string once = slurp(upgraded);
+        check(once.find("version " + std::to_string(SAVE_VERSION)) == 0 && once.find("\nsizes ") == std::string::npos, "the saved file is of the current version");
+        SaveData again2;
+        check(readSaveFile(upgraded, again2) && writeSaveFile(upgraded, again2) && slurp(upgraded) == once, "it reads back the same");
+        std::remove(upgraded.c_str());
     }
-    SaveData sized;
-    check(!readSaveFile(cut, sized), "a save from a game with other list sizes is refused");
 
     std::remove(first.c_str());
     std::remove(second.c_str());

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "mobs.h"
 #include "props.h"
 
 inline constexpr int UNIT_SPRITE_COUNT = 3;
@@ -19,6 +20,10 @@ struct Soundtrack {
     const char* ambient = nullptr;
 };
 Soundtrack soundtrackNamed(const std::string& screenKey);
+
+// The kind with this key in data/props.txt or data/mobs.txt. False if there is none.
+bool propKindNamed(const std::string& key, PropKind& out);
+bool mobKindNamed(const std::string& key, MobKind& out);
 
 const std::string& emoteFile(int emote);
 const std::string& iconFile(int icon);

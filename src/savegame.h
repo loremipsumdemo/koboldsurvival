@@ -7,8 +7,11 @@
 #include "game_state.h"
 
 // Plain text, one record per line. Terrain comes from the named map; everything else is in the file.
-// Raise SAVE_VERSION whenever a line changes: files of another version are not listed or read.
-inline constexpr int SAVE_VERSION = 6;
+// Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
+// raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
+// version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
+inline constexpr int SAVE_VERSION = 7;
+inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
 std::string saveDir();
@@ -108,6 +111,8 @@ struct SaveSummary {
 bool writeSaveFile(const std::string& path, const SaveData& d);
 // False if the file is damaged, truncated or of another version
 bool readSaveFile(const std::string& path, SaveData& d);
+// Turns the lines of a file of any version this game can read into the current version's. False if it can't.
+bool upgradeSaveLines(std::vector<std::string>& lines);
 std::vector<SaveSummary> listSaves();
 std::string nextAutosavePath();
 std::string manualSavePath(long long ts);
