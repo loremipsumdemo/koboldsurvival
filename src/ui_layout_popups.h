@@ -109,7 +109,7 @@ struct OptimizeAllLayout {
 };
 OptimizeAllLayout layoutOptimizeAll(int W, int H);
 
-constexpr unsigned long long DISBAND_HOLD_MS = 5000;
+constexpr unsigned long long DISBAND_HOLD_MS = 3000;
 struct DisbandLayout {
     Rect box;
     Rect title;
