@@ -389,9 +389,13 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     }
     if (items.empty()) return;
 
+    const GLboolean wasBlending = glIsEnabled(GL_BLEND);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
     drawColorTris(shadows, viewProj_);
     glDepthMask(GL_TRUE);
+    if (!wasBlending) glDisable(GL_BLEND);
     glUseProgram(glyphProgram_);
 
     for (Entity e : items) {
