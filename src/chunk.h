@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "map_file.h"
+#include "biome.h"
 
 constexpr int CHUNK_TILES = 64;
 constexpr int CHUNK_CORNERS = CHUNK_TILES + 1;

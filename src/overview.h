@@ -16,9 +16,9 @@ struct OverviewPicture {
     float extent() const { return static_cast<float>(px) * static_cast<float>(step); }
 };
 
-using ChunkSource = std::function<bool(int cx, int cz, ChunkData& out)>;
+using OverviewChunks = std::function<bool(int cx, int cz, ChunkData& out)>;
 
-void BuildOverview(int size, const ChunkSource& source, OverviewPicture& out, const std::atomic<bool>& cancel);
+void BuildOverview(int size, const OverviewChunks& source, OverviewPicture& out, const std::atomic<bool>& cancel);
 
 class OverviewBuilder {
 public:
@@ -27,7 +27,7 @@ public:
     OverviewBuilder(const OverviewBuilder&) = delete;
     OverviewBuilder& operator=(const OverviewBuilder&) = delete;
 
-    void start(int size, ChunkSource source, bool background);
+    void start(int size, OverviewChunks source, bool background);
     void stop();
     bool take(OverviewPicture& out);
 

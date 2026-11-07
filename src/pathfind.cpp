@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <utility>
 #include <vector>
 #include "terrain.h"
@@ -48,15 +49,37 @@ struct Node {
     uint32_t search = 0;
     bool closed = false;
 };
-std::vector<Node> gNodes;
+// In chunk-sized pages, made as a search reaches them, so a search on a huge map costs only the ground it covers.
+constexpr int NODE_PAGE_TILES = 64;
+constexpr size_t MOST_NODE_PAGES = 256;
+struct NodePage {
+    Node nodes[NODE_PAGE_TILES * NODE_PAGE_TILES];
+};
+std::vector<std::unique_ptr<NodePage>> gPages;
+size_t gPagesHeld = 0;
+int gPagesSize = 0;
 uint32_t gSearch = 0;
+
+Node& nodeAt(int x, int z) {
+    const int pagesAcross = (gPagesSize + NODE_PAGE_TILES - 1) / NODE_PAGE_TILES;
+    std::unique_ptr<NodePage>& page = gPages[(size_t)(z / NODE_PAGE_TILES) * pagesAcross + x / NODE_PAGE_TILES];
+    if (!page) {
+        page = std::make_unique<NodePage>();
+        ++gPagesHeld;
+    }
+    return page->nodes[(z % NODE_PAGE_TILES) * NODE_PAGE_TILES + x % NODE_PAGE_TILES];
+}
 using Entry = std::pair<float, int>;
 std::vector<Entry> gOpen;
 
 std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int gx, int gz, int maxTiles) {
     const int size = t.size();
-    if (gNodes.size() != (size_t)size * size) {
-        gNodes.assign((size_t)size * size, Node{});
+    if (gPagesSize != size || gPagesHeld > MOST_NODE_PAGES) {
+        const size_t pagesAcross = (size_t)(size + NODE_PAGE_TILES - 1) / NODE_PAGE_TILES;
+        gPages.clear();
+        gPages.resize(pagesAcross * pagesAcross);
+        gPagesHeld = 0;
+        gPagesSize = size;
         gSearch = 0;
     }
     ++gSearch;
@@ -69,7 +92,7 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
 
     const int startKey = sz * size + sx;
     const int goalKey = t.inBounds(gx, gz) ? gz * size + gx : -1;
-    gNodes[(size_t)startKey] = Node{ 0.0f, startKey, gSearch, false };
+    nodeAt(sx, sz) = Node{ 0.0f, startKey, gSearch, false };
     push(HEURISTIC_WEIGHT * octile(sx, sz, gx, gz), startKey);
     int closest = startKey;
     float closestH = octile(sx, sz, gx, gz);
@@ -80,13 +103,13 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
         const int k = gOpen.front().second;
         std::pop_heap(gOpen.begin(), gOpen.end(), later);
         gOpen.pop_back();
-        Node& n = gNodes[(size_t)k];
+        const int x = k % size, z = k / size;
+        Node& n = nodeAt(x, z);
         if (n.closed) continue;
         n.closed = true;
         ++expanded;
         if (k == goalKey) { reached = true; break; }
 
-        const int x = k % size, z = k / size;
         const float h = octile(x, z, gx, gz);
         if (h < closestH) { closestH = h; closest = k; }
 
@@ -97,7 +120,7 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
 
             const int nk = nz * size + nx;
             const float g = n.g + s.cost;
-            Node& o = gNodes[(size_t)nk];
+            Node& o = nodeAt(nx, nz);
             if (o.search != gSearch) {
                 o = Node{ g, k, gSearch, false };
                 push(g + HEURISTIC_WEIGHT * octile(nx, nz, gx, gz), nk);
@@ -110,7 +133,7 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
     }
 
     std::vector<std::pair<int, int>> path;
-    for (int k = reached ? goalKey : closest;; k = gNodes[(size_t)k].parent) {
+    for (int k = reached ? goalKey : closest;; k = nodeAt(k % size, k / size).parent) {
         path.push_back({ k % size, k / size });
         if (k == startKey) break;
     }

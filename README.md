@@ -107,11 +107,12 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   save_world, savegame, save_migrate     Turning a running level into a save, the save files, and upgrading old ones
   game_log, world_labels   The message log and the text drawn over units
   look, surface_tiles      A world's look (sky, sun, rock and water colors) and its surface textures
-  world_format, map_file   The world folder format, and the blank map a Terrain starts as
+  chunk_source, world_format   Where a Terrain gets its chunks, and the world folder format
 tests/
   save_roundtrip.cpp Saves a level, loads it and compares
   data_check.cpp     Checks the data tables agree, and lists text not yet translated
   sim_step.cpp       Plays with no window, and checks the same seed gives the same game
+  terrain_check.cpp  Checks the ground on the main map and on a huge made-up map
   saves/             A save of each older format version, which must still load
                      (all run with ctest; none opens a window)
 tools/

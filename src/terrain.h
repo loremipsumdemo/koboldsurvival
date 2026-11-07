@@ -4,28 +4,34 @@
 #include <string>
 #include <vector>
 #include "chunk.h"
+#include "chunk_source.h"
 #include "geometry.h"
 #include "grid.h"
-#include "map_file.h"
 #include "world_format.h"
 
 constexpr float AGENT_CLEARANCE = 0.3f;
 
-// Terrain holds the ground of the level being played: heights, walkability and ground types,
-// in chunks of CHUNK_TILES tiles. It starts as a blank flat map. openWorld opens a world folder, whose chunks are read in
-// as they are needed around the camera and the units, and dropped again when they are far away (stream()).
-// Loaded chunks are for drawing. Heights and walkability are also held for the whole level from the moment it opens,
-// so units, paths and sight work the same everywhere, whatever is loaded.
+// How many chunks of ground Terrain keeps in memory for the simulation. Asking for another drops the one unused longest,
+// and it comes back from the source when next needed, so the map can be far larger than this.
+constexpr size_t MAX_GROUND_CHUNKS = 1024;
+
+// Terrain holds the ground of the level being played: heights, walkability and ground types, in chunks of CHUNK_TILES
+// tiles, which it asks its ChunkSource for. It starts as a blank flat map.
+// Two sets of chunks are held. For drawing, the ones around the camera and the units (stream()). For the simulation, the
+// ground of whichever chunks were last asked about, so units, paths and sight work the same everywhere, whatever is drawn.
 class Terrain {
 public:
     explicit Terrain(int size = DEFAULT_MAP_SIZE);
+    explicit Terrain(std::shared_ptr<const ChunkSource> source);
 
+    // On failure, the terrain is left as it was
     bool openWorld(const std::string& folder, std::string& err);
+    void open(std::shared_ptr<const ChunkSource> source);
 
     int size() const { return size_; }
-    const std::string& folder() const { return folder_; }
-    const WorldInfo& worldInfo() const { return info_; }
+    const std::shared_ptr<const ChunkSource>& source() const { return source_; }
     int chunksPerSide() const { return cps_; }
+    size_t groundChunksHeld() const { return groundHeld_.size(); }
     const ChunkData* chunkAt(int cx, int cz) const;
 
     int stream(const std::vector<Vec2>& focuses, int radius, int maxLoads);
@@ -49,20 +55,25 @@ public:
     bool sightClear(float ax, float ay, float az, float bx, float by, float bz) const;
 
 private:
-    void load(const MapData& m);
-    void keepGround(const ChunkData& c);
+    struct GroundChunk {
+        std::vector<float> heights;
+        std::vector<uint8_t> walk;
+        uint64_t lastUsed = 0;
+    };
+    const GroundChunk& groundOf(int cx, int cz) const;
     void findAreas();
     int areaOf(int x, int y) const;
 
     int size_ = 0;
     int cps_ = 0;
     std::vector<std::unique_ptr<ChunkData>> chunks_;
-    std::vector<float> groundHeights_;
-    std::vector<uint8_t> groundWalk_;
+    std::vector<int> drawn_;
+    mutable std::vector<std::unique_ptr<GroundChunk>> ground_;
+    mutable std::vector<int> groundHeld_;
+    mutable uint64_t groundClock_ = 0;
     std::vector<int> groundArea_;
     bool streamed_ = false;
-    std::string folder_;
-    WorldInfo info_;
+    std::shared_ptr<const ChunkSource> source_;
     uint32_t nextVersion_ = 1;
     WorldSurface surface_;
     uint32_t surfaceVersion_ = 0;

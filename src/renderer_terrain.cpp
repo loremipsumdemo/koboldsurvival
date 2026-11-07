@@ -313,20 +313,8 @@ void Renderer::uploadTerrain(const Terrain& t) {
         overviewTex_ = 0;
     }
     overviewSize_ = 0.0f;
-    if (t.streamed()) {
-        const std::string folder = t.folder();
-        const WorldInfo info = t.worldInfo();
-        overview_.start(t.size(), [folder, info](int cx, int cz, ChunkData& c) {
-            return readChunk(folder, info, cx, cz, c);
-        }, true);
-    } else {
-        overview_.start(t.size(), [&t](int cx, int cz, ChunkData& c) {
-            const ChunkData* p = t.chunkAt(cx, cz);
-            if (!p) return false;
-            c = *p;
-            return true;
-        }, false);
-    }
+    const std::shared_ptr<const ChunkSource> source = t.source();
+    overview_.start(t.size(), [source](int cx, int cz, ChunkData& c) { return source->fill(cx, cz, c); }, t.streamed());
     terrainSize_ = t.size();
     chunksPerSide_ = t.chunksPerSide();
     chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);

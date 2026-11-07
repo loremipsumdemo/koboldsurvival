@@ -1,5 +1,4 @@
 #include "terrain.h"
-#include "surface_tiles.h"
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -7,126 +6,86 @@
 #include <memory>
 
 namespace {
-ChunkData chunkFromMap(const MapData& m, int cx, int cz) {
-    ChunkData c = emptyChunk(cx, cz);
-    const int size = m.size, vs = size + 1;
-    for (int j = 0; j < CHUNK_CORNERS; ++j) {
-        const int gz = std::min(cz * CHUNK_TILES + j, size);
-        for (int i = 0; i < CHUNK_CORNERS; ++i) {
-            const int gx = std::min(cx * CHUNK_TILES + i, size);
-            const size_t k = (size_t)gz * vs + gx;
-            c.heights[(size_t)j * CHUNK_CORNERS + i] = k < m.heights.size() ? m.heights[k] : 0.0f;
-        }
-    }
-    for (int j = 0; j < CHUNK_TILES; ++j) {
-        const int tz = cz * CHUNK_TILES + j;
-        for (int i = 0; i < CHUNK_TILES; ++i) {
-            const int tx = cx * CHUNK_TILES + i;
-            if (tx >= size || tz >= size) continue;
-            const size_t k = (size_t)tz * size + tx;
-            const size_t t = (size_t)j * CHUNK_TILES + i;
-            c.walk[t] = k < m.walkable.size() ? (m.walkable[k] ? 1 : 0) : 1;
-            c.biome[t] = k < m.biome.size() ? m.biome[k] : (uint8_t)Biome::None;
-        }
-    }
-    return c;
-}
-
-const WorldSurface& DefaultSurface() {
-    static const WorldSurface s = [] {
-        WorldSurface d;
-        d.ground = surfaceTilePixels(GROUND_TILE_SPEC);
-        d.water = surfaceTilePixels(WATER_TILE_SPEC);
-        return d;
-    }();
-    return s;
-}
+// Knowing which tiles connect means visiting them all, so maps above this size don't track it. It only sets how long a
+// path search keeps trying before it gives up.
+constexpr int MOST_SIZE_WITH_AREAS = 2048;
 }
 
 Terrain::Terrain(int size) {
-    load(flatMap(size));
+    open(flatChunkSource(size));
 }
 
-void Terrain::load(const MapData& m) {
-    size_ = m.size;
+Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
+    open(std::move(source));
+}
+
+void Terrain::open(std::shared_ptr<const ChunkSource> source) {
+    source_ = std::move(source);
+    size_ = source_->size();
     cps_ = ::chunksPerSide(size_);
-    streamed_ = false;
-    folder_.clear();
+    streamed_ = source_->streamed();
+    surface_ = source_->surface();
+    surfaceVersion_ = nextVersion_++;
+    heightScale_ = 1.0f;
+    floorY_ = source_->floorY();
     chunks_.clear();
     chunks_.resize((size_t)cps_ * cps_);
-    groundHeights_.assign((size_t)(size_ + 1) * (size_ + 1), 0.0f);
-    groundWalk_.assign((size_t)size_ * size_, 0);
-    for (int cz = 0; cz < cps_; ++cz) {
-        for (int cx = 0; cx < cps_; ++cx) {
-            auto c = std::make_unique<ChunkData>(chunkFromMap(m, cx, cz));
-            c->version = nextVersion_++;
-            keepGround(*c);
-            chunks_[(size_t)cz * cps_ + cx] = std::move(c);
+    drawn_.clear();
+    ground_.clear();
+    ground_.resize((size_t)cps_ * cps_);
+    groundHeld_.clear();
+    if (!streamed_) {
+        for (int cz = 0; cz < cps_; ++cz) {
+            for (int cx = 0; cx < cps_; ++cx) {
+                auto c = std::make_unique<ChunkData>();
+                if (!source_->fill(cx, cz, *c)) *c = emptyChunk(cx, cz);
+                c->version = nextVersion_++;
+                chunks_[(size_t)cz * cps_ + cx] = std::move(c);
+                drawn_.push_back(cz * cps_ + cx);
+            }
         }
     }
     findAreas();
-    heightScale_ = 1.0f;
-    floorY_ = m.heights.empty() ? -2.0f : *std::min_element(m.heights.begin(), m.heights.end()) - 2.0f;
-    surface_ = DefaultSurface();
-    surfaceVersion_ = nextVersion_++;
 }
 
 bool Terrain::openWorld(const std::string& folder, std::string& err) {
-    WorldInfo info;
-    if (!readWorldInfo(folder, info, err)) return false;
-    WorldSurface surface;
-    if (!readWorldSurface(folder, surface, err)) return false;
-    surface_ = std::move(surface);
-    surfaceVersion_ = nextVersion_++;
-    heightScale_ = 1.0f;
-    floorY_ = info.floorY / info.heightScale;
-    size_ = info.size;
-    cps_ = ::chunksPerSide(size_);
-    chunks_.clear();
-    chunks_.resize((size_t)cps_ * cps_);
-    streamed_ = true;
-    folder_ = folder;
-    info_ = info;
-    groundHeights_.assign((size_t)(size_ + 1) * (size_ + 1), 0.0f);
-    groundWalk_.assign((size_t)size_ * size_, 0);
-    ChunkData c;
-    for (int cz = 0; cz < cps_; ++cz) {
-        for (int cx = 0; cx < cps_; ++cx) {
-            if (readChunk(folder_, info_, cx, cz, c)) keepGround(c);
-        }
-    }
-    findAreas();
+    std::shared_ptr<const ChunkSource> source = worldFolderSource(folder, err);
+    if (!source) return false;
+    open(std::move(source));
     return true;
 }
 
-void Terrain::keepGround(const ChunkData& c) {
-    const size_t rowH = (size_t)size_ + 1;
-    for (int j = 0; j < CHUNK_CORNERS; ++j) {
-        const int gz = c.cz * CHUNK_TILES + j;
-        if (gz > size_) break;
-        for (int i = 0; i < CHUNK_CORNERS; ++i) {
-            const int gx = c.cx * CHUNK_TILES + i;
-            if (gx > size_) break;
-            groundHeights_[(size_t)gz * rowH + gx] = c.heights[(size_t)j * CHUNK_CORNERS + i];
+const Terrain::GroundChunk& Terrain::groundOf(int cx, int cz) const {
+    std::unique_ptr<GroundChunk>& slot = ground_[(size_t)cz * cps_ + cx];
+    if (!slot) {
+        if (groundHeld_.size() >= MAX_GROUND_CHUNKS) {
+            size_t oldest = 0;
+            for (size_t i = 1; i < groundHeld_.size(); ++i) {
+                if (ground_[(size_t)groundHeld_[i]]->lastUsed < ground_[(size_t)groundHeld_[oldest]]->lastUsed) oldest = i;
+            }
+            ground_[(size_t)groundHeld_[oldest]].reset();
+            groundHeld_[oldest] = groundHeld_.back();
+            groundHeld_.pop_back();
         }
+        ChunkData c;
+        if (!source_->fill(cx, cz, c)) c = emptyChunk(cx, cz);
+        slot = std::make_unique<GroundChunk>();
+        slot->heights = std::move(c.heights);
+        slot->walk = std::move(c.walk);
+        groundHeld_.push_back(cz * cps_ + cx);
     }
-    for (int j = 0; j < CHUNK_TILES; ++j) {
-        const int tz = c.cz * CHUNK_TILES + j;
-        if (tz >= size_) break;
-        for (int i = 0; i < CHUNK_TILES; ++i) {
-            const int tx = c.cx * CHUNK_TILES + i;
-            if (tx >= size_) break;
-            groundWalk_[(size_t)tz * size_ + tx] = c.walk[(size_t)j * CHUNK_TILES + i];
-        }
-    }
+    slot->lastUsed = ++groundClock_;
+    return *slot;
 }
 
 void Terrain::findAreas() {
+    groundArea_.clear();
+    if (size_ > MOST_SIZE_WITH_AREAS) return;
     groundArea_.assign((size_t)size_ * size_, 0);
     std::vector<int> open;
     int next = 0;
-    for (size_t first = 0; first < groundWalk_.size(); ++first) {
-        if (!groundWalk_[first] || groundArea_[first]) continue;
+    for (size_t first = 0; first < groundArea_.size(); ++first) {
+        if (groundArea_[first] || !walkable((int)(first % size_), (int)(first / size_))) continue;
         ++next;
         groundArea_[first] = next;
         open.push_back((int)first);
@@ -137,7 +96,7 @@ void Terrain::findAreas() {
             auto visit = [&](int nx, int nz) {
                 if (!inBounds(nx, nz)) return;
                 const size_t k = (size_t)nz * size_ + nx;
-                if (groundWalk_[k] && !groundArea_[k]) {
+                if (!groundArea_[k] && walkable(nx, nz)) {
                     groundArea_[k] = next;
                     open.push_back((int)k);
                 }
@@ -151,7 +110,8 @@ void Terrain::findAreas() {
 }
 
 int Terrain::areaOf(int x, int y) const {
-    return inBounds(x, y) ? groundArea_[(size_t)y * size_ + x] : 0;
+    if (!inBounds(x, y)) return 0;
+    return groundArea_.empty() ? 1 : groundArea_[(size_t)y * size_ + x];
 }
 
 const ChunkData* Terrain::chunkAt(int cx, int cz) const {
@@ -176,13 +136,15 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
 
     int changed = 0;
 
-    for (int cz = 0; cz < cps_; ++cz) {
-        for (int cx = 0; cx < cps_; ++cx) {
-            auto& slot = chunks_[(size_t)cz * cps_ + cx];
-            if (slot && distance(cx, cz) > radius + 1) {
-                slot.reset();
-                ++changed;
-            }
+    for (size_t i = 0; i < drawn_.size();) {
+        const int id = drawn_[i];
+        if (distance(id % cps_, id / cps_) > radius + 1) {
+            chunks_[(size_t)id].reset();
+            drawn_[i] = drawn_.back();
+            drawn_.pop_back();
+            ++changed;
+        } else {
+            ++i;
         }
     }
 
@@ -206,9 +168,10 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
         auto& slot = chunks_[(size_t)w.cz * cps_ + w.cx];
         if (slot) continue;
         auto c = std::make_unique<ChunkData>();
-        if (!readChunk(folder_, info_, w.cx, w.cz, *c)) *c = emptyChunk(w.cx, w.cz);
+        if (!source_->fill(w.cx, w.cz, *c)) *c = emptyChunk(w.cx, w.cz);
         c->version = nextVersion_++;
         slot = std::move(c);
+        drawn_.push_back(w.cz * cps_ + w.cx);
         ++loaded;
     }
     return changed + loaded;
@@ -220,12 +183,12 @@ float Terrain::heightAt(float x, float z) const {
     z = std::clamp(z, 0.0f, (float)size_ - 0.001f);
     const int x0 = (int)x, z0 = (int)z;
     const float fx = x - x0, fz = z - z0;
-    const size_t rowH = (size_t)size_ + 1;
-    const float* h = groundHeights_.data() + (size_t)z0 * rowH + x0;
+    const GroundChunk& c = groundOf(x0 / CHUNK_TILES, z0 / CHUNK_TILES);
+    const float* h = c.heights.data() + (size_t)(z0 % CHUNK_TILES) * CHUNK_CORNERS + x0 % CHUNK_TILES;
     const float ha = h[0];
     const float hb = h[1];
-    const float hc = h[rowH];
-    const float hd = h[rowH + 1];
+    const float hc = h[CHUNK_CORNERS];
+    const float hd = h[CHUNK_CORNERS + 1];
 
     // The mesh splits each tile along the a-d diagonal into two planar triangles.
     // Sampling with the same split keeps units exactly on the drawn surface.
@@ -234,16 +197,17 @@ float Terrain::heightAt(float x, float z) const {
 }
 
 bool Terrain::walkable(int x, int y) const {
-    return inBounds(x, y) && groundWalk_[(size_t)y * size_ + x] != 0;
+    if (!inBounds(x, y)) return false;
+    return groundOf(x / CHUNK_TILES, y / CHUNK_TILES).walk[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES] != 0;
 }
 
 bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     if (!inBounds(x, y)) return false;
-    walkable = groundWalk_[(size_t)y * size_ + x] != 0;
-
-    const size_t rowH = (size_t)size_ + 1;
-    const float* h = groundHeights_.data() + (size_t)y * rowH + x;
-    height = (h[0] + h[1] + h[rowH] + h[rowH + 1]) * 0.25f;
+    const GroundChunk& c = groundOf(x / CHUNK_TILES, y / CHUNK_TILES);
+    const int tx = x % CHUNK_TILES, tz = y % CHUNK_TILES;
+    walkable = c.walk[(size_t)tz * CHUNK_TILES + tx] != 0;
+    const float* h = c.heights.data() + (size_t)tz * CHUNK_CORNERS + tx;
+    height = (h[0] + h[1] + h[CHUNK_CORNERS] + h[CHUNK_CORNERS + 1]) * 0.25f;
     return true;
 }
 

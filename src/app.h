@@ -31,7 +31,6 @@
 #include "renderer.h"
 #include "game_state.h"
 #include "rng.h"
-#include "map_file.h"
 #include "audio.h"
 #include "pak.h"
 #include "fonts.h"

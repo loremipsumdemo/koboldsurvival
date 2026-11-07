@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "map_file.h"
+#include "biome.h"
 
 namespace {
 constexpr int MAX_PICTURE_SIDE = 2048;
@@ -40,7 +40,7 @@ Colour TileColour(Biome biome, float height) {
 }
 }
 
-void BuildOverview(int size, const ChunkSource& source, OverviewPicture& out, const std::atomic<bool>& cancel) {
+void BuildOverview(int size, const OverviewChunks& source, OverviewPicture& out, const std::atomic<bool>& cancel) {
     out = OverviewPicture{};
     if (size <= 0) return;
     const int step = std::max(1, (size + MAX_PICTURE_SIDE - 1) / MAX_PICTURE_SIDE);
@@ -88,7 +88,7 @@ void OverviewBuilder::stop() {
     done_ = false;
 }
 
-void OverviewBuilder::start(int size, ChunkSource source, bool background) {
+void OverviewBuilder::start(int size, OverviewChunks source, bool background) {
     stop();
     pic_ = OverviewPicture{};
     pending_ = true;

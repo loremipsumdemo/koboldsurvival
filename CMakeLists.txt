@@ -91,7 +91,7 @@ set(SIM_SOURCES
     src/world_format.cpp
     src/look.cpp
     src/surface_tiles.cpp
-    src/map_file.cpp
+    src/chunk_source.cpp
     src/game_tables.cpp
     src/game_data_check.cpp
     src/pak.cpp
@@ -224,8 +224,9 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
 
 # Headless tests, run with ctest. save_roundtrip saves a level, loads it and compares. data_check checks the game's data.
 # sim_step plays with no window and checks the same seed gives the same game.
+# terrain_check checks the ground the game walks on.
 enable_testing()
-foreach(test save_roundtrip data_check sim_step)
+foreach(test save_roundtrip data_check sim_step terrain_check)
     add_executable(${test} tests/${test}.cpp)
     target_link_libraries(${test} PRIVATE kobold_sim)
     add_dependencies(${test} game_data)
@@ -234,7 +235,7 @@ endforeach()
 
 target_compile_definitions(save_roundtrip PRIVATE KOBOLD_TEST_SAVES="${CMAKE_SOURCE_DIR}/tests/saves")
 
-foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step)
+foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>
