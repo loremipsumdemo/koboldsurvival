@@ -303,7 +303,7 @@ private:
     void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
-    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uFaction_ = -1;
+    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uShine_ = -1, uFaction_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;
     BuildPick buildSelected_;

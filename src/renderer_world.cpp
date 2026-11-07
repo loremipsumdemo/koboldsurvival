@@ -21,12 +21,15 @@ std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, con
                                                  int winW, int winH) {
     std::vector<Entity> out;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const unsigned long long ticks = SDL_GetTicks();
     for (Entity e : w.view<GroundItem, Transform>()) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         ItemOnScreen os;
-        if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
+        // Where it is drawn right now, so a click on the picture finds it
+        const Transform drawn{ tr->x, tr->y + itemBobLift(e, ticks), tr->z };
+        if (!itemOnScreen(vp, winW, winH, drawn, 1.0f, os)) continue;
         if (!(mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom)) continue;
         if (os.bottom - os.top < 1.0f) continue;
         if (itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) out.push_back(e);
@@ -357,15 +360,50 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 }
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
+    const unsigned long long ticks = SDL_GetTicks();
+    std::vector<Entity> items;
+    Batch shadows;
     for (Entity e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        items.push_back(e);
+
+        // Dark in the middle and fading out at the edge, and a little smaller while the item is high
+        constexpr int SEGMENTS = 16;
+        constexpr float SHADOW_LIFT = 0.03f;
+        const float radius = ITEM_SHADOW_RADIUS * (1.0f - 0.15f * itemBobShare(e, ticks));
+        const RGBA middle{ 0.0f, 0.0f, 0.0f, ITEM_SHADOW_ALPHA }, edge{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const V3 center{ tr->x, t.heightAt(tr->x, tr->z) + SHADOW_LIFT, tr->z };
+        V3 last{};
+        for (int i = 0; i <= SEGMENTS; ++i) {
+            const float a = TWO_PI * (float)i / (float)SEGMENTS;
+            const float x = tr->x + radius * std::cos(a), z = tr->z + radius * std::sin(a);
+            const V3 rim{ x, t.heightAt(x, z) + SHADOW_LIFT, z };
+            if (i > 0) {
+                shadows.v.push_back({ center, middle });
+                shadows.v.push_back({ last, edge });
+                shadows.v.push_back({ rim, edge });
+            }
+            last = rim;
+        }
+    }
+    if (items.empty()) return;
+
+    glDepthMask(GL_FALSE);
+    drawColorTris(shadows, viewProj_);
+    glDepthMask(GL_TRUE);
+    glUseProgram(glyphProgram_);
+
+    for (Entity e : items) {
+        const Transform* tr = w.get<Transform>(e);
         const GroundItem* gi = w.get<GroundItem>(e);
         const TextTex* pic = itemTexture(gi->item);
         TextTex square = *pic;
         square.aspect = 1.0f;
-        drawGlyph(square, tr->x, tr->y, tr->z, ITEM_GLYPH_H, WHITE);
+        glUniform1f(uShine_, itemShineShare(e, ticks));
+        drawGlyph(square, tr->x, tr->y + itemBobLift(e, ticks), tr->z, ITEM_GLYPH_H, WHITE);
     }
+    glUniform1f(uShine_, 0.0f);
 }
 
 std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrain& t, const Camera& cam,

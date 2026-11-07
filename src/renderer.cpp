@@ -42,6 +42,7 @@ in vec2 vUV;
 uniform sampler2D uTex;
 uniform vec4 uTint;
 uniform float uSat;   // 1 keeps the colors, 0 is fully gray
+uniform float uShine;   // how far a white shine has crossed, up to 1. 0 is no shine
 uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
 out vec4 FragColor;
 void main() {
@@ -53,6 +54,10 @@ void main() {
     c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), uFaction.a);
     l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
     c.rgb = mix(vec3(l), c.rgb, uSat);
+    if (uShine > 0.0) {
+        float across = abs((vUV.x + vUV.y) * 0.5 - (uShine * 1.6 - 0.3));
+        c.rgb = mix(c.rgb, vec3(1.0), (1.0 - smoothstep(0.02, 0.16, across)) * 0.9);
+    }
     FragColor = c * uTint;
 }
 )";
@@ -316,6 +321,7 @@ bool Renderer::initGl() {
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
     uTint_ = glGetUniformLocation(glyphProgram_, "uTint");
     uSat_ = glGetUniformLocation(glyphProgram_, "uSat");
+    uShine_ = glGetUniformLocation(glyphProgram_, "uShine");
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     setGlyphDefaults(glyphProgram_);
 
