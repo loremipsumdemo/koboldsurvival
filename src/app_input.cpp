@@ -169,7 +169,7 @@ void App::onKeyDown() {
         playSfx(session.paused ? Sfx::UiPause : Sfx::UiResume);
     }
     if (e.key.key == SDLK_ESCAPE) {
-        if (screen == Screen::Playing && session.dialogueUnit != NULL_ENTITY) {
+        if (screen == Screen::Playing && session.dialogueUnit != NO_OBJECT) {
             if (session.quantity.open && session.tradeOpen && !session.quantity.toStorage) {
                 session.quantity.open = false;
             } else if (session.tradeOpen && session.freeTrade) {
@@ -183,8 +183,8 @@ void App::onKeyDown() {
             playSfx(Sfx::UiBack);
             return;
         }
-        if (screen == Screen::Playing && session.disbandTarget != NULL_ENTITY) {
-            session.disbandTarget = NULL_ENTITY;
+        if (screen == Screen::Playing && session.disbandTarget != NO_OBJECT) {
+            session.disbandTarget = NO_OBJECT;
             session.disbandHeldAt = 0;
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && optimizeAllOpen) {
@@ -426,7 +426,7 @@ if (mouseDownOnPanels()) return;
             beginRightHold(mgx, mgz);
         } else if (overPanels(e.button.x, e.button.y, winW, winH)) {
             {
-                const std::vector<Entity> own = ownUnitList();
+                const std::vector<ObjectId> own = ownUnitList();
                 const UnitPanelLayout squadL = squadPanelLayout(winW, winH);
                 bool onCell = false;
                 for (const UnitCell& c : squadL.cells) {
@@ -438,7 +438,7 @@ if (mouseDownOnPanels()) return;
                 if (onCell) return;
             }
             itemMenu.open = false;
-            const std::vector<Entity> picked = panelUnits(world);
+            const std::vector<ObjectId> picked = panelUnits(world);
             const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
             const int slot = sidebarUp() ? sidebarSlotAt(sl, e.button.x, e.button.y) : -1;
             const int gear = sidebarUp() ? gearSlotAt(sl, e.button.x, e.button.y) : -1;
@@ -450,7 +450,7 @@ if (mouseDownOnPanels()) return;
                 else if (!why.empty()) refuse(why);
             } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.tradeOpen) {
                 requestTrade(false, picked[0], slot);
-            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.storageProp != NULL_ENTITY &&
+            } else if (inv && slot >= 0 && inv->slots[slot].item != 0 && session.storageProp != NO_OBJECT &&
                        picked[0] == session.storageUnit) {
                 requestStore(slot);
             } else if (inv && slot >= 0 && inv->slots[slot].item != 0) {
@@ -530,7 +530,7 @@ void App::onMouseButtonUp() {
     if (e.button.button == SDL_BUTTON_LEFT && session.storageDrag >= 0) {
         const int from = session.storageDrag;
         session.storageDrag = -1;
-        if (session.storageProp != NULL_ENTITY) {
+        if (session.storageProp != NO_OBJECT) {
             const float x = e.button.x, y = e.button.y;
             if (storageLayout(world, winW, winH).panel.contains(x, y)) {
             } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
@@ -543,16 +543,16 @@ void App::onMouseButtonUp() {
         }
         return;
     }
-    if (e.button.button == SDL_BUTTON_LEFT && itemDrag && session.storageProp != NULL_ENTITY &&
+    if (e.button.button == SDL_BUTTON_LEFT && itemDrag && session.storageProp != NO_OBJECT &&
         storageLayout(world, winW, winH).panel.contains(e.button.x, e.button.y)) {
         if (dragGear < 0 && dragUnit == session.storageUnit) requestStore(dragSlot);
         itemDrag = false;
-        dragUnit = NULL_ENTITY;
+        dragUnit = NO_OBJECT;
         dragSlot = -1;
         dragGear = -1;
         return;
     }
-    if (e.button.button == SDL_BUTTON_LEFT && session.tradeOpen && session.dialogueUnit != NULL_ENTITY) {
+    if (e.button.button == SDL_BUTTON_LEFT && session.tradeOpen && session.dialogueUnit != NO_OBJECT) {
         const float x = e.button.x, y = e.button.y;
         const TradeLayout tl = layoutTrade(winW, winH, renderer.pauseBarHeight(true));
         if (session.tradeNpcDrag >= 0) {
@@ -566,14 +566,14 @@ void App::onMouseButtonUp() {
                 else refuse(lang("MISC_TRADE_ONLY_TALKING"));
             }
             itemDrag = false;
-            dragUnit = NULL_ENTITY;
+            dragUnit = NO_OBJECT;
             dragSlot = -1;
             dragGear = -1;
         }
     }
     if (e.button.button == SDL_BUTTON_LEFT && itemDrag) {
         itemDrag = false;
-        if (world.has<Unit>(dragUnit)) {
+        if (world.has<Entity>(dragUnit)) {
             const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
             const float rx = e.button.x, ry = e.button.y;
             const bool overSidebar = sl.panel.contains(rx, ry);
@@ -598,7 +598,7 @@ void App::onMouseButtonUp() {
                 }
             }
         }
-        dragUnit = NULL_ENTITY;
+        dragUnit = NO_OBJECT;
         dragSlot = -1;
         dragGear = -1;
     }
@@ -608,10 +608,10 @@ void App::onMouseButtonUp() {
         const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
         if (sel.dragging) {
             if (!boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive)) {
-                const std::vector<Entity> items =
+                const std::vector<ObjectId> items =
                     groundItemsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
                 if (!items.empty()) {
-                    const std::vector<Entity> picked = selectedUnits(world);
+                    const std::vector<ObjectId> picked = selectedUnits(world);
                     if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
                     else {
                         noteLockedIn(picked);
@@ -620,7 +620,7 @@ void App::onMouseButtonUp() {
                 }
             }
         } else {
-            const std::vector<Entity> under = renderer.unitsAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
+            const std::vector<ObjectId> under = renderer.entitiesAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
             clickSelect(world, unitClicked(world, under), additive);
         }
         sel.dragging = false;
@@ -745,6 +745,6 @@ void App::panWithKeys(float dt, bool edgeScroll) {
 
     const bool fast = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
     float panSpeed = cam.distance * 0.9f * dt * (fast ? 2.0f : 1.0f);
-    if (right != 0.0f || forward != 0.0f) followUnit = NULL_ENTITY;
+    if (right != 0.0f || forward != 0.0f) followUnit = NO_OBJECT;
     cam.pan(right * panSpeed, forward * panSpeed);
 }

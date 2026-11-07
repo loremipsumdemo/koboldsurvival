@@ -163,7 +163,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
     drawUiTris(tris);
 }
 
-void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
+void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
                              int repView) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
@@ -206,7 +206,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 
     for (const UnitCell& c : L.cells) {
-        const Entity e = units[c.index];
+        const ObjectId e = units[c.index];
         const bool selected = w.has<Selected>(e);
         const Rect frame{ c.rect.x - 2.0f, c.rect.y - 2.0f, c.rect.w + 4.0f, c.rect.h + 4.0f };
         if (c.rect.contains(mouseX_, mouseY_)) noteHover(c.rect);

@@ -8,8 +8,8 @@ struct CampKit {
     int faction = 0;
     float x = 0.0f, z = 0.0f;
     float yaw = 0.0f;
-    Entity altar = NULL_ENTITY;
-    std::vector<Entity> trees;
+    ObjectId altar = NO_OBJECT;
+    std::vector<ObjectId> trees;
 };
 CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, float yaw);
 bool campKitFits(World& w, const Terrain& t, float cx, float cz);

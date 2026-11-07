@@ -5,7 +5,7 @@ using namespace play;
 bool App::mouseDownOnPanels() {
     if (e.button.button == SDL_BUTTON_LEFT && screen == Screen::Playing) {
         const float mx = e.button.x, my = e.button.y;
-        const std::vector<Entity> own = ownUnitList();
+        const std::vector<ObjectId> own = ownUnitList();
         const UnitPanelLayout pl = squadPanelLayout(winW, winH);
 
         if (itemMenu.open) {
@@ -16,7 +16,7 @@ bool App::mouseDownOnPanels() {
                 const ItemMenuLayout ml = renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH);
                 const int hit = itemMenuButtonAt(ml, mx, my);
                 const bool onMenu = ml.box.contains(mx, my);
-                const Entity unit = itemMenu.unit;
+                const ObjectId unit = itemMenu.unit;
                 const int slot = itemMenu.slot;
                 itemMenu.open = false;
                 if (hit >= 0 && labels[hit] == lang("UILABEL_USE")) {
@@ -82,7 +82,7 @@ bool App::mouseDownOnPanels() {
                     return true;
                 }
                 if (shownIsYours() && inBody) {
-                    const Entity shown = sidebarUnitOf(world);
+                    const ObjectId shown = sidebarUnitOf(world);
                     if (sl.sortButton.contains(mx, my)) {
                         itemMenu.open = false;
                         if (!inventoryLocked(world, shown)) sortInventory(shown);
@@ -113,7 +113,7 @@ bool App::mouseDownOnPanels() {
                                 bool& flag = mode == 0 ? b->passive : mode == 1 ? b->block : b->sneak;
                                 flag = !flag;
                                 if (flag && mode < 2 && !world.has<AttackOrder>(shown)) {
-                                    if (Combat* c = world.get<Combat>(shown)) c->target = NULL_ENTITY;
+                                    if (Combat* c = world.get<Combat>(shown)) c->target = NO_OBJECT;
                                 }
                                 playSfx(Sfx::UiClick);
                             }
@@ -128,7 +128,7 @@ bool App::mouseDownOnPanels() {
                     if (sl.tab == UnitTab::Behavior && behaviorExtraClick(shown, sl, mx, my)) return true;
                 }
 
-                const std::vector<Entity> picked = panelUnits(world);
+                const std::vector<ObjectId> picked = panelUnits(world);
                 const Inventory* inv = picked.size() == 1 ? world.get<Inventory>(picked[0]) : nullptr;
                 const Equipment* worn = picked.size() == 1 ? world.get<Equipment>(picked[0]) : nullptr;
                 const int slot = sidebarSlotAt(sl, mx, my);
@@ -147,11 +147,11 @@ bool App::mouseDownOnPanels() {
             }
             for (const UnitCell& c : pl.cells) {
                 if (!c.rect.contains(mx, my)) continue;
-                const Entity u = own[c.index];
+                const ObjectId u = own[c.index];
                 const SDL_Keymod mods = SDL_GetModState();
                 const bool shift = (mods & SDL_KMOD_SHIFT) != 0;
                 const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
-                session.inspectUnit = NULL_ENTITY;
+                session.inspectUnit = NO_OBJECT;
                 if (shift && world.has<Selected>(u)) {
                     if (selectedUnits(world).size() > 1) world.remove<Selected>(u);
                 } else {
@@ -167,23 +167,23 @@ bool App::mouseDownOnPanels() {
             return true;
         }
 
-        if (session.buildPick.any() && session.dialogueUnit == NULL_ENTITY && !mapOpen) {
+        if (session.buildPick.any() && session.dialogueUnit == NO_OBJECT && !mapOpen) {
             if (!session.buildPick.placing()) {
-                Entity target = NULL_ENTITY;
+                ObjectId target = NO_OBJECT;
                 float ex = 0.0f, ey = 0.0f, ez = 0.0f, best = 0.0f;
                 cam.eye(ex, ey, ez);
-                for (Entity e : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
+                for (ObjectId e : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
                     const Transform* pt = world.get<Transform>(e);
                     const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
-                    if (target == NULL_ENTITY || d2 < best) {
+                    if (target == NO_OBJECT || d2 < best) {
                         target = e;
                         best = d2;
                     }
                 }
-                const Owner* targetOwner = target != NULL_ENTITY && !destroyedByHand(world.get<Prop>(target)->kind) ? world.get<Owner>(target) : nullptr;
+                const Owner* targetOwner = target != NO_OBJECT && !destroyedByHand(world.get<Prop>(target)->kind) ? world.get<Owner>(target) : nullptr;
                 const int owner = targetOwner ? targetOwner->faction : FACTION_PLAYER;
-                if (target != NULL_ENTITY && session.storageProp == target) closeStorage();
-                if (target != NULL_ENTITY && destroyBuilding(world, target)) {
+                if (target != NO_OBJECT && session.storageProp == target) closeStorage();
+                if (target != NO_OBJECT && destroyBuilding(world, target)) {
                     if (owner != FACTION_PLAYER) changePlayerReputation(world, owner, -REP_DESTROY_PENALTY);
                     playSfx(Sfx::Drop);
                 } else {
@@ -205,9 +205,9 @@ bool App::mouseDownOnPanels() {
 
         {
             const bool alt = (SDL_GetModState() & SDL_KMOD_ALT) != 0;
-            const Entity item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH, alt);
-            if (item != NULL_ENTITY) {
-                const std::vector<Entity> picked = selectedUnits(world);
+            const ObjectId item = renderer.groundItemAtPixel(world, terrain, cam, mx, my, winW, winH, alt);
+            if (item != NO_OBJECT) {
+                const std::vector<ObjectId> picked = selectedUnits(world);
                 if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
                 else {
                     noteLockedIn(picked);

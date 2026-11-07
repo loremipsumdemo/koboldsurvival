@@ -24,5 +24,5 @@ bool selectionInClaim(World& w);
 const char* buildRefusalKey(BuildCheck c);
 
 // A prop with the parts its kind starts with
-Entity makeProp(World& w, PropKind kind, const Transform& at, float yaw = 0.0f);
-Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner = FACTION_PLAYER);
+ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw = 0.0f);
+ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner = FACTION_PLAYER);

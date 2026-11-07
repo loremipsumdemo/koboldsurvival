@@ -212,8 +212,8 @@ int squadRowAtThumb(const UnitPanelLayout& L, float thumbTop) {
     return (int)std::lround(scrollFracAt(L.track, L.thumb, thumbTop) * L.maxScroll());
 }
 
-bool unitTabEnabled(World& w, Entity unit, UnitTab tab) {
-    return tab == UnitTab::Profile || tab == UnitTab::Build || unit == NULL_ENTITY || w.has<Commandable>(unit);
+bool unitTabEnabled(World& w, ObjectId unit, UnitTab tab) {
+    return tab == UnitTab::Profile || tab == UnitTab::Build || unit == NO_OBJECT || w.has<Commandable>(unit);
 }
 
 SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, bool open, UnitTab tab,

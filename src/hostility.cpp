@@ -5,13 +5,13 @@
 #include "mobs.h"
 #include <algorithm>
 
-int factionOf(World& w, Entity e) {
+int factionOf(World& w, ObjectId e) {
     const Faction* f = w.get<Faction>(e);
     return f ? f->id : FACTION_PLAYER;
 }
 
 namespace {
-bool provokedBy(World& w, Entity e, int faction) {
+bool provokedBy(World& w, ObjectId e, int faction) {
     const Provoked* p = w.get<Provoked>(e);
     if (!p) return false;
     for (const Provoked::Entry& en : p->against) {
@@ -21,21 +21,21 @@ bool provokedBy(World& w, Entity e, int faction) {
 }
 }
 
-bool unitsHostile(World& w, Entity a, Entity b) {
+bool unitsHostile(World& w, ObjectId a, ObjectId b) {
     if (a == b) return false;
     const int fa = factionOf(w, a), fb = factionOf(w, b);
     if (fa == fb) return false;
     return factionsHostile(w, fa, fb) || provokedBy(w, a, fb) || provokedBy(w, b, fa);
 }
 
-bool hostileToPlayer(World& w, Entity e) {
+bool hostileToPlayer(World& w, ObjectId e) {
     if (w.has<Commandable>(e)) return false;
     const int f = factionOf(w, e);
     return f != FACTION_PLAYER && (factionsHostile(w, f, FACTION_PLAYER) || provokedBy(w, e, FACTION_PLAYER));
 }
 
-void provoke(World& w, Entity unit, int faction) {
-    if (!w.has<Unit>(unit) || factionOf(w, unit) == faction) return;
+void provoke(World& w, ObjectId unit, int faction) {
+    if (!w.has<Entity>(unit) || factionOf(w, unit) == faction) return;
     Provoked& p = w.has<Provoked>(unit) ? *w.get<Provoked>(unit) : w.add(unit, Provoked{});
     for (Provoked::Entry& en : p.against) {
         if (en.faction == faction) {
@@ -47,14 +47,14 @@ void provoke(World& w, Entity unit, int faction) {
 }
 
 void factionSystem(World& w, float dt) {
-    const std::vector<Entity> units = w.view<Unit, Transform>();
-    for (Entity u : w.view<Provoked>()) {
+    const std::vector<ObjectId> units = w.view<Entity, Transform>();
+    for (ObjectId u : w.view<Provoked>()) {
         Provoked* p = w.get<Provoked>(u);
         const Transform* tu = w.get<Transform>(u);
         const bool awake = tu && !outCold(w, u);
         for (Provoked::Entry& en : p->against) {
             bool seen = false;
-            for (Entity o : units) {
+            for (ObjectId o : units) {
                 if (!awake || o == u || factionOf(w, o) != en.faction || outCold(w, o) || inPrisonerCage(w, o)) continue;
                 const Transform* to = w.get<Transform>(o);
                 const float dx = to->x - tu->x, dz = to->z - tu->z;
@@ -70,7 +70,7 @@ void factionSystem(World& w, float dt) {
                          p->against.end());
         if (p->against.empty()) w.remove<Provoked>(u);
     }
-    for (Entity u : w.view<Unit>()) {
+    for (ObjectId u : w.view<Entity>()) {
         if (w.has<Commandable>(u)) {
             w.remove<Hostile>(u);
             w.remove<Neutral>(u);
@@ -91,8 +91,8 @@ void factionSystem(World& w, float dt) {
             w.add(u, Neutral{});
             if (wasHostile && !outCold(w, u)) {
                 queueLog(w, langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
-                if (Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY && w.has<Commandable>(c->target)) {
-                    c->target = NULL_ENTITY;
+                if (Combat* c = w.get<Combat>(u); c && c->target != NO_OBJECT && w.has<Commandable>(c->target)) {
+                    c->target = NO_OBJECT;
                 }
             }
         }

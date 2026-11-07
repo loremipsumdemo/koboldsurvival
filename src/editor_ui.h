@@ -65,15 +65,15 @@ struct WorldGenLayout {
 };
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
-enum class EditorTab { Props, Mobs, Items, Theme };
-enum class EditorTool { None, Prop, Mob, Item, Spawn, Erase };
+enum class EditorTab { Entities, Props, Items, Theme };
+enum class EditorTool { None, Unit, Mob, Prop, Item, Spawn, Erase };
 inline constexpr int EDITOR_NAME_CHARS = 32;
 
 struct LevelEditorUi {
     bool useOwnUi = true;
-    EditorTab tab = EditorTab::Props;
+    EditorTab tab = EditorTab::Entities;
     EditorTool tool = EditorTool::None;
-    int picked = 0;
+    int picked = 0;      // by the tool: a unit's faction, a MobKind, a PropKind or an item id
     int listScroll = 0;
     float yaw = 0.0f;
     std::string name;

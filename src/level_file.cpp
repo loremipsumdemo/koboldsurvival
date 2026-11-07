@@ -26,6 +26,9 @@ std::string levelToText(const LevelData& d) {
     }
     for (const LevelObject& o : d.objects) {
         switch (o.type) {
+        case LevelObject::Type::Unit:
+            std::snprintf(line, sizeof line, "unit %d %d %.2f %.2f\n", o.id, o.kind, o.x, o.z);
+            break;
         case LevelObject::Type::Prop:
             std::snprintf(line, sizeof line, "prop %d %s %.2f %.2f %.3f %d\n", o.id, propInfo((PropKind)o.kind).key.c_str(), o.x, o.z, o.yaw, o.owner);
             break;
@@ -69,6 +72,11 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             ok = (ls >> o.id >> kind >> o.x >> o.z >> o.yaw >> o.owner) && propKindNamed(kind, named);
             o.type = LevelObject::Type::Prop;
             o.kind = idx(named);
+            d.objects.push_back(o);
+        } else if (key == "unit") {
+            LevelObject o;
+            ok = (ls >> o.id >> o.kind >> o.x >> o.z) && findFaction(o.kind) != nullptr && !isMobFaction(o.kind);
+            o.type = LevelObject::Type::Unit;
             d.objects.push_back(o);
         } else if (key == "mob") {
             LevelObject o;
@@ -128,10 +136,13 @@ std::vector<std::string> listLevelFiles(const std::string& map) {
     return out;
 }
 
-Entity placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObject& o) {
-    Entity e = NULL_ENTITY;
+ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObject& o) {
+    ObjectId e = NO_OBJECT;
     const Transform at{ o.x, t.heightAt(o.x, o.z), o.z };
     switch (o.type) {
+    case LevelObject::Type::Unit:
+        e = spawnUnit(w, t, rng, o.kind, o.x, o.z);
+        break;
     case LevelObject::Type::Prop: {
         const PropKind kind = (PropKind)o.kind;
         if (propInfo(kind).built && o.owner >= 0) {
@@ -149,7 +160,7 @@ Entity placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObject&
         e = spawnGroundItem(w, at, o.kind, o.count);
         break;
     }
-    if (e != NULL_ENTITY) w.add(e, LevelId{ o.id });
+    if (e != NO_OBJECT) w.add(e, LevelId{ o.id });
     return e;
 }
 
@@ -170,13 +181,13 @@ LevelData captureLevel(World& w, const std::string& map) {
     d.hasSpawn = info.spawnSet;
     d.spawnX = info.spawnX;
     d.spawnZ = info.spawnZ;
-    const auto idOf = [&](Entity e) {
+    const auto idOf = [&](ObjectId e) {
         if (const LevelId* id = w.get<LevelId>(e)) return id->id;
         return w.add(e, LevelId{ info.nextId++ }).id;
     };
-    std::vector<Entity> props = w.view<Prop, Transform>();
+    std::vector<ObjectId> props = w.view<Prop, Transform>();
     std::sort(props.begin(), props.end());
-    for (Entity e : props) {
+    for (ObjectId e : props) {
         LevelObject o;
         o.type = LevelObject::Type::Prop;
         o.id = idOf(e);
@@ -187,9 +198,21 @@ LevelData captureLevel(World& w, const std::string& map) {
         if (const Owner* own = w.get<Owner>(e)) o.owner = own->faction;
         d.objects.push_back(o);
     }
-    std::vector<Entity> mobs = w.view<Mob, Transform>();
+    std::vector<ObjectId> units = w.view<Entity, Transform>();
+    std::sort(units.begin(), units.end());
+    for (ObjectId e : units) {
+        if (!isUnit(w, e)) continue;
+        LevelObject o;
+        o.type = LevelObject::Type::Unit;
+        o.id = idOf(e);
+        o.kind = w.get<Faction>(e)->id;
+        o.x = w.get<Transform>(e)->x;
+        o.z = w.get<Transform>(e)->z;
+        d.objects.push_back(o);
+    }
+    std::vector<ObjectId> mobs = w.view<Mob, Transform>();
     std::sort(mobs.begin(), mobs.end());
-    for (Entity e : mobs) {
+    for (ObjectId e : mobs) {
         LevelObject o;
         o.type = LevelObject::Type::Mob;
         o.id = idOf(e);
@@ -198,9 +221,9 @@ LevelData captureLevel(World& w, const std::string& map) {
         o.z = w.get<Transform>(e)->z;
         d.objects.push_back(o);
     }
-    std::vector<Entity> items = w.view<GroundItem, Transform>();
+    std::vector<ObjectId> items = w.view<GroundItem, Transform>();
     std::sort(items.begin(), items.end());
-    for (Entity e : items) {
+    for (ObjectId e : items) {
         LevelObject o;
         o.type = LevelObject::Type::Item;
         o.id = idOf(e);

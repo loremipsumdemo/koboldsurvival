@@ -82,7 +82,7 @@ bool tradeStillThere(const Inventory* inv, const std::vector<TradeGhost>& side) 
     return true;
 }
 
-bool tradeItemsPresent(World& w, Entity npc, Entity player) {
+bool tradeItemsPresent(World& w, ObjectId npc, ObjectId player) {
     return tradeStillThere(w.get<Inventory>(npc), session.tradeNpc) && tradeStillThere(w.get<Inventory>(player), session.tradePlayer);
 }
 
@@ -106,10 +106,10 @@ bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::v
     return true;
 }
 
-TradeStatus checkTrade(World& w, Entity npc, Entity player) {
+TradeStatus checkTrade(World& w, ObjectId npc, ObjectId player) {
     TradeStatus st;
-    const Inventory* ni = npc != NULL_ENTITY ? w.get<Inventory>(npc) : nullptr;
-    const Inventory* pi = player != NULL_ENTITY ? w.get<Inventory>(player) : nullptr;
+    const Inventory* ni = npc != NO_OBJECT ? w.get<Inventory>(npc) : nullptr;
+    const Inventory* pi = player != NO_OBJECT ? w.get<Inventory>(player) : nullptr;
     if (!ni || !pi) {
         st.text = lang("MISC_NO_UNIT_TO_TRADE");
         return st;
@@ -140,7 +140,7 @@ TradeStatus checkTrade(World& w, Entity npc, Entity player) {
     return st;
 }
 
-void completeTrade(World& w, Entity npc, Entity player) {
+void completeTrade(World& w, ObjectId npc, ObjectId player) {
     Inventory* ni = w.get<Inventory>(npc);
     Inventory* pi = w.get<Inventory>(player);
     const int npcValue = tradeValueOf(session.tradeNpc);

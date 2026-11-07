@@ -35,7 +35,7 @@ void queueSoundAt(World& w, Sfx s, float x, float y, float z) {
     events(w).sounds.push_back(QueuedSound{ s, true, x, y, z });
 }
 
-void queueSoundFrom(World& w, Sfx s, Entity e) {
+void queueSoundFrom(World& w, Sfx s, ObjectId e) {
     if (const Transform* t = w.get<Transform>(e)) queueSoundAt(w, s, t->x, t->y + 0.5f, t->z);
     else queueSound(w, s);
 }
@@ -44,8 +44,8 @@ void queueLog(World& w, const std::string& text, LogKind kind, bool npc, Tint ti
     events(w).log.push_back(LogLine{ text, tint, kind, npc });
 }
 
-void queueUnitLabel(World& w, Entity unit, const std::string& text, bool red) {
-    if (unit == NULL_ENTITY || text.empty()) return;
+void queueUnitLabel(World& w, ObjectId unit, const std::string& text, bool red) {
+    if (unit == NO_OBJECT || text.empty()) return;
     events(w).labels.push_back(TradeLabel{ unit, text, 0.0f, red });
 }
 

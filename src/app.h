@@ -87,16 +87,16 @@ struct AppSession {
     int repView = FACTION_PLAYER;
     int repScroll = 0;
     bool behaviorAddOpen = false;
-    Entity behaviorUiUnit = NULL_ENTITY;
+    ObjectId behaviorUiUnit = NO_OBJECT;
     struct PercentPrompt {
         bool open = false;
-        Entity unit = NULL_ENTITY;
+        ObjectId unit = NO_OBJECT;
         int row = -1;
         BehaviorKind kind = BehaviorKind::Eat;
         std::string text;
         std::string error;
     } percentPrompt;
-    Entity lastLone = NULL_ENTITY;
+    ObjectId lastLone = NO_OBJECT;
     float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;
     float moveMarkX = 0.0f, moveMarkZ = 0.0f, moveMarkTime = 0.0f;
     float mapDragX = 0.0f, mapDragY = 0.0f;
@@ -108,23 +108,23 @@ struct AppSession {
     bool optimizeSliderDrag = false;
     float holdX = 0.0f, holdZ = 0.0f;
     bool itemDrag = false;
-    Entity dragUnit = NULL_ENTITY;
+    ObjectId dragUnit = NO_OBJECT;
     int dragSlot = -1;
     int dragGear = -1;
     struct ItemMenu {
         bool open = false;
-        Entity unit = NULL_ENTITY;
+        ObjectId unit = NO_OBJECT;
         int slot = -1;
         float x = 0.0f, y = 0.0f;
     };
     ItemMenu itemMenu;
     float sidebarScroll = 0.0f;
-    Entity sidebarScrollUnit = NULL_ENTITY;
-    std::map<Entity, float> workSoundTimers;
+    ObjectId sidebarScrollUnit = NO_OBJECT;
+    std::map<ObjectId, float> workSoundTimers;
     size_t lastSelectionKey = 0;
     std::optional<Uint64> lastSaveTicks;
     bool leftDown = false, middleDown = false;
-    Entity followUnit = NULL_ENTITY;
+    ObjectId followUnit = NO_OBJECT;
     GameLog gameLog;
     std::vector<FloatingNumber> floatingNumbers;
     std::vector<TradeLabel> tradeLabels;
@@ -136,8 +136,8 @@ struct AppSession {
     float actionAlpha = 0.0f;
     float actionX = 0.0f, actionZ = 0.0f;
     float simLeft = 0.0f;
-    std::vector<std::pair<Entity, Transform>> simBefore;
-    std::vector<std::pair<Entity, Transform>> simTrue;
+    std::vector<std::pair<ObjectId, Transform>> simBefore;
+    std::vector<std::pair<ObjectId, Transform>> simTrue;
 };
 
 struct App : AppSession {
@@ -212,6 +212,7 @@ struct App : AppSession {
     static constexpr int WORLD_GEN_PREVIEW_PX = 320;
     struct EditorEntry {
         std::string label;
+        EditorTool tool = EditorTool::None;   // None: a heading, which can't be picked
         int value = 0;
     };
     void openWorldGen();
@@ -291,19 +292,19 @@ struct App : AppSession {
     void settingsClick(float x, float y, int W, int H);
     void performAction(Action action, int param);
     UnitPanelLayout squadPanelLayout(int W, int H);
-    std::vector<Entity> ownUnitList();
+    std::vector<ObjectId> ownUnitList();
     bool sidebarUp();
-    std::vector<BehaviorOption> behaviorOptionsFor(Entity u);
+    std::vector<BehaviorOption> behaviorOptionsFor(ObjectId u);
     SidebarLayout sidebarFor(int W, int H, float scroll);
     bool shownIsYours();
-    void sortInventory(Entity unit);
-    Entity corpseCarrier(Entity prop);
-    void behaviorClick(Entity unit, const BehaviorHit& hit);
+    void sortInventory(ObjectId unit);
+    ObjectId corpseCarrier(ObjectId prop);
+    void behaviorClick(ObjectId unit, const BehaviorHit& hit);
     void answerPercentPrompt(bool keep);
-    bool behaviorExtraClick(Entity unit, const SidebarLayout& sl, float x, float y);
+    bool behaviorExtraClick(ObjectId unit, const SidebarLayout& sl, float x, float y);
     bool unitPanelHovered(int W, int H);
     std::vector<std::string> menuLabels();
-    void useSlot(Entity unit, int slot);
+    void useSlot(ObjectId unit, int slot);
     GameLogLayout gameLogPanel(int W, int H);
     DialogueLayout dialogueBox(int W, int H);
     bool onTalkOrTrade(int W, int H, float x, float y);
@@ -331,30 +332,30 @@ struct App : AppSession {
     bool holdTarget(int W, int H, float x, float y, float& gx, float& gz);
     bool pointerOverPanels(int W, int H);
     void openTrade(bool free);
-    void sayAs(Entity who, const std::string& text, bool player);
+    void sayAs(ObjectId who, const std::string& text, bool player);
     void endTalk();
     void pauseForConversation();
     void endBrokenConversation();
-    void requestTrade(bool npcSide, Entity owner, int slot);
+    void requestTrade(bool npcSide, ObjectId owner, int slot);
     void confirmQuantity();
     void quantityClick(float qx, float qy);
     void requestStore(int slot);
     void showTraderInventory();
-    void startTalk(Entity npc, Entity talker, bool shop);
-    void tryStartTalk(Entity npc, Entity talker, std::vector<Entity> units, bool shop = false);
-    void startFreeTrade(Entity other, Entity unit);
-    bool noteLockedIn(const std::vector<Entity>& units);
-    Entity menuTargetAt(float mx, float my);
-    std::vector<Entity> menuActors(Entity target);
-    bool talkable(Entity u);
-    bool sells(Entity u);
-    Entity putDownCarrier(Entity target);
-    std::vector<play::MenuAction> menuActionsFor(Entity target);
+    void startTalk(ObjectId npc, ObjectId talker, bool shop);
+    void tryStartTalk(ObjectId npc, ObjectId talker, std::vector<ObjectId> units, bool shop = false);
+    void startFreeTrade(ObjectId other, ObjectId unit);
+    bool noteLockedIn(const std::vector<ObjectId>& units);
+    ObjectId menuTargetAt(float mx, float my);
+    std::vector<ObjectId> menuActors(ObjectId target);
+    bool talkable(ObjectId u);
+    bool sells(ObjectId u);
+    ObjectId putDownCarrier(ObjectId target);
+    std::vector<play::MenuAction> menuActionsFor(ObjectId target);
     std::vector<std::string> contextLabels();
     ItemMenuLayout contextMenuLayout();
-    bool openContextMenuOn(Entity target, float mx, float my, bool squadPanel = false);
+    bool openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel = false);
     bool openContextMenu(float mx, float my);
-    void talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool shop);
+    void talkOrWalkUp(ObjectId target, const std::vector<ObjectId>& actors, bool shop);
     void pickMenuAction(play::MenuAction a);
     void chooseOption(size_t i);
 
@@ -455,9 +456,9 @@ struct App : AppSession {
     float dt = 0.0f;
     std::vector<HudEntry> hud;
     float mouseX = 0.0f, mouseY = 0.0f;
-    std::vector<Entity> unitsUnderMouse, itemsUnderMouse;
+    std::vector<ObjectId> unitsUnderMouse, itemsUnderMouse;
     static constexpr unsigned long long PROP_TOOLTIP_DELAY_MS = 1000;
-    Entity hoverProp = NULL_ENTITY;   // the nearest prop under the mouse, while nothing covers it
+    ObjectId hoverProp = NO_OBJECT;   // the nearest prop under the mouse, while nothing covers it
     unsigned long long hoverPropSince = 0;
     std::optional<bool> mouseOnPanels;
 };

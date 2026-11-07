@@ -113,7 +113,7 @@ void checkHugeMap() {
         simStep(world, terrain, levelRng, gs, 1.0f / 60.0f, false);
         takeEvents(world);
     }
-    check(!world.view<Unit, Transform>().empty(), "a huge map can be played");
+    check(!world.view<Entity, Transform>().empty(), "a huge map can be played");
     check(terrain.groundChunksHeld() <= MAX_GROUND_CHUNKS, "play keeps the ground in memory within its limit");
 }
 }
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
         simStep(world, terrain, rng, gs, STEP, false);
         takeEvents(world);
     }
-    check(!world.view<Unit, Transform>().empty(), "units are still there after thirty seconds on the main map");
+    check(!world.view<Entity, Transform>().empty(), "units are still there after thirty seconds on the main map");
 
     const SaveData end = captureWorld(world, gs, Camera{}, rng, 1000, "test", MapChoice{ "packed", "main", "main", "" });
     const char* played = "terrain_check_play.sav";

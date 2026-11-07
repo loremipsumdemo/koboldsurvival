@@ -18,8 +18,8 @@ void App::updateDeleteHold() {
 }
 
 void App::updateUnitPanelState() {
-    const Entity shown = sidebarUnitOf(world);
-    const bool lone = shown != NULL_ENTITY;
+    const ObjectId shown = sidebarUnitOf(world);
+    const bool lone = shown != NO_OBJECT;
     if (lone && shown != lastLone) sidebarScroll = 0.0f;
     lastLone = shown;
     for (PanelId which : ALL_PANELS) {
@@ -58,12 +58,12 @@ void App::updateRightHold() {
 }
 
 void App::updateTalkOrders() {
-    if (session.dialogueUnit != NULL_ENTITY) return;
-    Entity talkNpc = NULL_ENTITY, talker = NULL_ENTITY;
+    if (session.dialogueUnit != NO_OBJECT) return;
+    ObjectId talkNpc = NO_OBJECT, talker = NO_OBJECT;
     bool tradeTalk = false, shopTalk = false;
-    for (Entity u : world.view<TalkOrder>()) {
-        const Entity npcOf = world.get<TalkOrder>(u)->npc;
-        if (!world.has<Unit>(npcOf)) {
+    for (ObjectId u : world.view<TalkOrder>()) {
+        const ObjectId npcOf = world.get<TalkOrder>(u)->npc;
+        if (!world.has<Entity>(npcOf)) {
             clearTalkOrders(world);
             break;
         }
@@ -75,8 +75,8 @@ void App::updateTalkOrders() {
             break;
         }
     }
-    if (talker != NULL_ENTITY && tradeTalk) startFreeTrade(talkNpc, talker);
-    else if (talker != NULL_ENTITY) tryStartTalk(talkNpc, talker, {}, shopTalk);
+    if (talker != NO_OBJECT && tradeTalk) startFreeTrade(talkNpc, talker);
+    else if (talker != NO_OBJECT) tryStartTalk(talkNpc, talker, {}, shopTalk);
 }
 
 void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
@@ -157,14 +157,14 @@ void App::showWorkGains(const std::vector<WorkGain>& gains) {
 }
 
 void App::playWorkSounds() {
-    std::map<Entity, float> nextTicks;
-    std::vector<Entity> pickedProps;
-    for (Entity u : world.view<Working>()) {
+    std::map<ObjectId, float> nextTicks;
+    std::vector<ObjectId> pickedProps;
+    for (ObjectId u : world.view<Working>()) {
         const Working* wk = world.get<Working>(u);
         if (wk->unlocking) pickedProps.push_back(wk->prop);
     }
     std::sort(pickedProps.begin(), pickedProps.end());
-    for (Entity e : world.view<PropWork, Prop, Transform>()) {
+    for (ObjectId e : world.view<PropWork, Prop, Transform>()) {
         const PropWork* pw = world.get<PropWork>(e);
         if (pw->workers <= 0) continue;
         const Transform* pt = world.get<Transform>(e);
@@ -200,8 +200,8 @@ void App::autosaveTick() {
 
 void App::updateCamera() {
     if (screen != Screen::Playing) return;
-    if (session.dialogueUnit == NULL_ENTITY && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
-    if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
+    if (session.dialogueUnit == NO_OBJECT && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
+    if (followUnit != NO_OBJECT && !followUnitCamera(world, cam, followUnit)) followUnit = NO_OBJECT;
     if (!editing) keepCameraNearUnits(world, cam);
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
@@ -217,7 +217,7 @@ void App::stepSimulation() {
         updateTalkOrders();
         if (session.paused) break;
         simBefore.clear();
-        for (Entity u : world.view<Unit, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
+        for (ObjectId u : world.view<Entity, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
         PROFILED("step: total", stepGame());
         endBrokenConversation();
         simLeft -= SIM_STEP_SECONDS;
@@ -260,11 +260,11 @@ void App::showEvents() {
         session.lootBy = looter;
         playSfx(Sfx::UiMenuOpen);
     }
-    for (Entity u : ev.wakes.woke) {
+    for (ObjectId u : ev.wakes.woke) {
         tradeLabels.push_back(TradeLabel{ u, langf("MISC_EFFECT_LABEL", { lang("UILABEL_HEALTH"), "+" + std::to_string(RECOVERY_HEALTH) }), 0.0f });
         queueSoundFrom(world, Sfx::Recovers, u);
     }
-    for (Entity u : ev.wakes.died) queueSoundFrom(world, Sfx::Dies, u);
+    for (ObjectId u : ev.wakes.died) queueSoundFrom(world, Sfx::Dies, u);
     showWorkGains(ev.gains);
 
     for (const LogLine& ln : ev.log) gameLog.add(ln.text, ln.tint, ln.kind, ln.npc);
@@ -292,30 +292,30 @@ void App::stepGame() {
 }
 
 void App::closeStalePanels() {
-    if (session.storageProp != NULL_ENTITY) {
+    if (session.storageProp != NO_OBJECT) {
         const Needs* sn = world.get<Needs>(session.storageUnit);
-        const std::vector<Entity> picked = selectedUnits(world);
-        if (!world.has<Storage>(session.storageProp) || !world.has<Unit>(session.storageUnit) ||
+        const std::vector<ObjectId> picked = selectedUnits(world);
+        if (!world.has<Storage>(session.storageProp) || !world.has<Entity>(session.storageUnit) ||
             (sn && sn->hp <= 0) || flatGap(world, session.storageUnit, session.storageProp) > STORAGE_CLOSE_RANGE ||
             (picked.size() == 1 && picked[0] != session.storageUnit)) {
             closeStorage();
         }
     }
-    if (session.quantity.open && session.quantity.toStorage && session.storageProp == NULL_ENTITY) session.quantity.open = false;
-    if (session.lootUnit != NULL_ENTITY) {
-        if (!outCold(world, session.lootUnit) || !world.has<Unit>(session.lootBy) || outCold(world, session.lootBy) ||
+    if (session.quantity.open && session.quantity.toStorage && session.storageProp == NO_OBJECT) session.quantity.open = false;
+    if (session.lootUnit != NO_OBJECT) {
+        if (!outCold(world, session.lootUnit) || !world.has<Entity>(session.lootBy) || outCold(world, session.lootBy) ||
             flatGap(world, session.lootBy, session.lootUnit) > LOOT_RANGE) {
             closeLoot();
         }
     }
     if (screen == Screen::Playing && selectedUnits(world).empty()) {
-        const Entity first = firstSquadUnit(world);
-        if (first != NULL_ENTITY) world.add(first, Selected{});
+        const ObjectId first = firstSquadUnit(world);
+        if (first != NO_OBJECT) world.add(first, Selected{});
     }
-    if (session.inspectUnit != NULL_ENTITY && !world.has<Unit>(session.inspectUnit)) session.inspectUnit = NULL_ENTITY;
+    if (session.inspectUnit != NO_OBJECT && !world.has<Entity>(session.inspectUnit)) session.inspectUnit = NO_OBJECT;
     if (!unitTabEnabled(world, sidebarUnitOf(world), unitTab)) unitTab = UnitTab::Profile;
-    if (session.contextMenu.open && ((!world.has<Unit>(session.contextMenu.target) && !world.has<Prop>(session.contextMenu.target)) ||
-                             session.dialogueUnit != NULL_ENTITY)) {
+    if (session.contextMenu.open && ((!world.has<Entity>(session.contextMenu.target) && !world.has<Prop>(session.contextMenu.target)) ||
+                             session.dialogueUnit != NO_OBJECT)) {
         session.contextMenu.open = false;
     }
 }
@@ -354,7 +354,7 @@ void App::playQueuedSounds() {
         if (volume[i] >= 0.0f) playSfx((Sfx)i, volume[i], pan[i]);
     }
     size_t selKey = 0, selCount = 0;
-    for (Entity u : world.view<Selected>()) {
+    for (ObjectId u : world.view<Selected>()) {
         selKey = selKey * 31u + (size_t)u + 1u;
         ++selCount;
     }
@@ -403,9 +403,9 @@ void App::updateHover() {
     mouseOnPanels.reset();
     unitsUnderMouse.clear();
     itemsUnderMouse.clear();
-    std::vector<Entity> propsUnder;
+    std::vector<ObjectId> propsUnder;
     bool propsFound = false;
-    auto propsAt = [&](float x, float y) -> const std::vector<Entity>& {
+    auto propsAt = [&](float x, float y) -> const std::vector<ObjectId>& {
         if (!propsFound || x != mouseX || y != mouseY) {
             propsUnder = renderer.propsAtPixel(world, cam, x, y, winW, winH);
             propsFound = x == mouseX && y == mouseY;
@@ -414,24 +414,24 @@ void App::updateHover() {
     };
     if (screen == Screen::Playing) {
         std::vector<HudEntry> under;
-        unitsUnderMouse = renderer.unitsAtPixel(world, cam, mouseX, mouseY, winW, winH);
-        for (Entity u : unitsUnderMouse)
+        unitsUnderMouse = renderer.entitiesAtPixel(world, cam, mouseX, mouseY, winW, winH);
+        for (ObjectId u : unitsUnderMouse)
             under.push_back({ world.get<Name>(u)->text, HUD_UNIT_COLOR });
 
         itemsUnderMouse = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
-        std::vector<Entity> items = itemsUnderMouse;
+        std::vector<ObjectId> items = itemsUnderMouse;
         if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
-            const Entity labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
-            if (labelled != NULL_ENTITY && std::find(items.begin(), items.end(), labelled) == items.end())
+            const ObjectId labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+            if (labelled != NO_OBJECT && std::find(items.begin(), items.end(), labelled) == items.end())
                 items.insert(items.begin(), labelled);
         }
-        for (Entity e : items) {
+        for (ObjectId e : items) {
             under.push_back({ itemNameOf(world.get<GroundItem>(e)->item), HUD_ITEM_COLOR });
         }
 
-        for (Entity e : propsAt(mouseX, mouseY)) {
+        for (ObjectId e : propsAt(mouseX, mouseY)) {
             const std::string name = propDisplayName(world, e);
-            under.push_back({ lockShutFor(world, e, NULL_ENTITY) ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
+            under.push_back({ lockShutFor(world, e, NO_OBJECT) ? langf("MISC_LOCKED_NAME", { name }) : name, HUD_PROP_COLOR });
             for (const std::string& line : altarInfoLines(world, e)) under.push_back({ line, HUD_PROP_COLOR });
         }
 
@@ -439,10 +439,10 @@ void App::updateHover() {
         if (under.size() > HOVER_NAME_LIMIT) hud.push_back({ "...", HUD_UNIT_COLOR });
     }
 
-    Entity nearestProp = NULL_ENTITY;
+    ObjectId nearestProp = NO_OBJECT;
     if (screen == Screen::Playing && !panelOpen && !mapOpen && !session.contextMenu.open && !itemMenu.open
-        && session.dialogueUnit == NULL_ENTITY && !mouseOverPanels()) {
-        const std::vector<Entity>& props = propsAt(mouseX, mouseY);
+        && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {
+        const std::vector<ObjectId>& props = propsAt(mouseX, mouseY);
         if (!props.empty()) nearestProp = props.front();
     }
     if (nearestProp != hoverProp) {
@@ -457,7 +457,7 @@ void App::updateHover() {
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
         const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
-                             && session.dialogueUnit == NULL_ENTITY && !optimizeAllOpen && session.disbandTarget == NULL_ENTITY;
+                             && session.dialogueUnit == NO_OBJECT && !optimizeAllOpen && session.disbandTarget == NO_OBJECT;
         BuildPreview bp;
         if (placing && !mouseOverPanels()) {
             if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH)) {
@@ -471,9 +471,9 @@ void App::updateHover() {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
-        Entity hoverAltar = NULL_ENTITY;
+        ObjectId hoverAltar = NO_OBJECT;
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
-            for (Entity e : propsAt(bmx, bmy)) {
+            for (ObjectId e : propsAt(bmx, bmy)) {
                 const Prop* fp = world.get<Prop>(e);
                 const Transform* ft = world.get<Transform>(e);
                 if (!fp || !ft || !propInfo(fp->kind).claimsLand) continue;
@@ -486,7 +486,7 @@ void App::updateHover() {
             }
         }
         if (bp.ringR > 0.0f) {
-            for (Entity e : world.view<Prop, Transform>()) {
+            for (ObjectId e : world.view<Prop, Transform>()) {
                 if (e == hoverAltar || !propInfo(world.get<Prop>(e)->kind).claimsLand) continue;
                 const Transform* ft = world.get<Transform>(e);
                 bp.otherRings.push_back({ ft->x, ft->z });

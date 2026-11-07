@@ -153,6 +153,15 @@ level. The editor writes beside the game: copy a finished map and level into `MA
 this folder over the one beside the game.
 
 
+The editor places entities, props and items. The words mean the same in the game and the code:
+
+- An **object** is anything in a `World`, named by an `ObjectId`. What it is comes from its components.
+- An **entity** is a living thing, with health, that moves: it has the `Entity` component. Props and ground items are objects, but not entities.
+- A **unit** is an entity that is a person: a player unit (`Commandable`) or an NPC of another faction.
+- A **mob** is an entity that also has `Mob`. A **boss mob** is one whose category in `data/mobs.txt` is `boss`.
+
+A player unit placed in a level is the first member of the party from New Game. Party members beyond those placed start at the spawn point, and placed player units beyond the party's size are left out.
+
 A map has a style, chosen before it is generated (`MapStyle` in world_gen.h: Overworld, Walled Valley, Archipelago, Cavern, Galaxy Sea, Void Islands, Caldera), and a theme: sky, sun, moon, day and night, light, fog, water and ground color (`map_theme.h`). The Theme tab is on the World Generation screen and in the level editor, where it shows at once and Save writes it to the map. A map file lists only what differs from its theme preset. To add a theme setting, add a `MapTheme` member and a row in `map_theme.cpp`.
 
 ## Modding the data

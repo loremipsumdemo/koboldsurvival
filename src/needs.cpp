@@ -3,7 +3,7 @@
 using namespace systems_detail;
 
 void needsSystem(World& w, int hours, double gameSeconds) {
-    for (Entity e : w.view<Needs>()) {
+    for (ObjectId e : w.view<Needs>()) {
         if (w.has<Corpse>(e)) continue;
         Needs* n = w.get<Needs>(e);
         const bool mob = w.has<Mob>(e);
@@ -27,8 +27,8 @@ void needsSystem(World& w, int hours, double gameSeconds) {
             tickNeeds(*n, ticks);
             if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_EXILE) n->hunger = n->maxHunger;
 
-            const Entity seat = occupiedProp(w, e);
-            const Prop* sp = seat != NULL_ENTITY ? w.get<Prop>(seat) : nullptr;
+            const ObjectId seat = occupiedProp(w, e);
+            const Prop* sp = seat != NO_OBJECT ? w.get<Prop>(seat) : nullptr;
             const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
             const double comfortGain = sp ? comfortGainPerHour(sp->kind) : 0.0;
             const double restRate = restGain > 0.0 ? restGain : outCold(w, e) ? 0.0 : -RESTED_LOSS_PER_HOUR;
@@ -39,6 +39,6 @@ void needsSystem(World& w, int hours, double gameSeconds) {
 
         if (outCold(w, e)) continue;
         const Combat* c = w.get<Combat>(e);
-        regenHealth(*n, c && c->target != NULL_ENTITY, gameSeconds, mob);
+        regenHealth(*n, c && c->target != NO_OBJECT, gameSeconds, mob);
     }
 }

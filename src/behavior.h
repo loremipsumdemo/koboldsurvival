@@ -52,7 +52,7 @@ struct BehaviorRule {
     bool on = true;
     BehaviorKind kind = BehaviorKind::Eat;
     int propKind = -1;
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     int percent = BEHAVIOR_NEED_PERCENT;
     float cooldown = 0.0f;
     BehaviorWait why = BehaviorWait::None;

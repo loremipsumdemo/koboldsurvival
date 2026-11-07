@@ -19,7 +19,7 @@ struct SimEvents {
     std::vector<FloatingNumber> floats;
     std::vector<PropArrival> arrivals;
     std::vector<WorkGain> gains;
-    std::vector<std::pair<Entity, Entity>> lootOpened;   // looter, looted
+    std::vector<std::pair<ObjectId, ObjectId>> lootOpened;   // looter, looted
     WakeChanges wakes;
 };
 

@@ -304,8 +304,8 @@ Party randomParty(Rng& rng, int count) {
 }
 
 void applyParty(World& w, const Party& p) {
-    std::vector<Entity> players, mobs;
-    for (Entity u : w.view<Unit, Commandable>()) {
+    std::vector<ObjectId> players, mobs;
+    for (ObjectId u : w.view<Entity, Commandable>()) {
         (w.has<Mob>(u) ? mobs : players).push_back(u);
     }
     std::sort(players.begin(), players.end());
@@ -323,7 +323,7 @@ void applyParty(World& w, const Party& p) {
         }
     }
     for (size_t i = 0; i < players.size() && i < people.size(); ++i) {
-        const Entity u = players[i];
+        const ObjectId u = players[i];
         const PartyMember& m = *people[i];
         const std::string name = cleanName(m.name);
         w.add(u, Name{ name.empty() ? std::string(lang("UILABEL_UNNAMED_UNIT")) : name });

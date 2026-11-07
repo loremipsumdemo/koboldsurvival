@@ -29,26 +29,26 @@ constexpr float VITALITY_XP_PER_HP_LOST = 1.0f;
 constexpr float BLOCK_XP_PER_BLOCK = 2.0f;
 constexpr float AGILITY_XP_PER_DODGE = 2.0f;
 
-Equipment wornOf(World& w, Entity e) {
+Equipment wornOf(World& w, ObjectId e) {
     const Equipment* q = w.get<Equipment>(e);
     return q ? *q : Equipment{};
 }
 
-int hpOf(World& w, Entity e) {
+int hpOf(World& w, ObjectId e) {
     const Needs* n = w.get<Needs>(e);
     return n ? n->hp : 1;
 }
 
-float buffOf(World& w, Entity e) {
+float buffOf(World& w, ObjectId e) {
     const Combat* c = w.get<Combat>(e);
     return c ? c->buffAttack : 0.0f;
 }
 
-const Behaviors* behaviorsOf(World& w, Entity e) { return w.get<Behaviors>(e); }
+const Behaviors* behaviorsOf(World& w, ObjectId e) { return w.get<Behaviors>(e); }
 
 } // namespace
 
-CombatNumbers numbersOf(World& w, Entity e) {
+CombatNumbers numbersOf(World& w, ObjectId e) {
     CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) n.maxHp = mobInfo(m->kind).hp;
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) n.attack *= BOSS_DAMAGE_FACTOR;
@@ -60,7 +60,7 @@ CombatNumbers numbersOf(World& w, Entity e) {
 
 namespace {
 
-int ammoSlotFor(World& w, Entity e, const RangedProfile& rp) {
+int ammoSlotFor(World& w, ObjectId e, const RangedProfile& rp) {
     const Inventory* inv = w.get<Inventory>(e);
     if (!inv) return -1;
     for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -70,20 +70,20 @@ int ammoSlotFor(World& w, Entity e, const RangedProfile& rp) {
     return -1;
 }
 
-const RangedProfile* rangedOf(World& w, Entity e) {
+const RangedProfile* rangedOf(World& w, ObjectId e) {
     const Equipment* q = w.get<Equipment>(e);
     return q ? rangedProfileOf(q->items[GearSlot::MainHand]) : nullptr;
 }
 
-bool targetable(World& w, Entity e) {
-    return w.has<Unit>(e) && w.has<Transform>(e) && !outCold(w, e) && !w.has<PlayingDead>(e) && !inPrisonerCage(w, e);
+bool targetable(World& w, ObjectId e) {
+    return w.has<Entity>(e) && w.has<Transform>(e) && !outCold(w, e) && !w.has<PlayingDead>(e) && !inPrisonerCage(w, e);
 }
 
-float noticeFailChance(World& w, Entity p) { return isSneaking(w, p) ? SNEAK_NOTICE_FAIL : 0.0f; }
-float noticeRangeOf(World& w, Entity p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
+float noticeFailChance(World& w, ObjectId p) { return isSneaking(w, p) ? SNEAK_NOTICE_FAIL : 0.0f; }
+float noticeRangeOf(World& w, ObjectId p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
 constexpr float MAX_NOTICE_RANGE = AGGRO_RANGE * (SNEAK_NOTICE_RANGE > 1.0f ? SNEAK_NOTICE_RANGE : 1.0f) + 0.01f;
 
-int slotNamed(World& w, Entity e, const char* name) {
+int slotNamed(World& w, ObjectId e, const char* name) {
     const Inventory* inv = w.get<Inventory>(e);
     if (!inv) return -1;
     for (int i = 0; i < INVENTORY_SLOTS; ++i) {
@@ -93,14 +93,14 @@ int slotNamed(World& w, Entity e, const char* name) {
     return -1;
 }
 
-Entity pickInReach(World& w, const Terrain& t, Entity p, const std::vector<Entity>& hostiles) {
-    Entity best = NULL_ENTITY;
+ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<ObjectId>& hostiles) {
+    ObjectId best = NO_OBJECT;
     int bestHp = 0;
     const float reach = reachOf(w, p);
-    for (Entity h : hostiles) {
+    for (ObjectId h : hostiles) {
         if (!targetable(w, h) || flatGap(w, p, h) > reach) continue;
         const int hp = hpOf(w, h);
-        if ((best == NULL_ENTITY || hp < bestHp) && canSee(w, t, p, h)) {
+        if ((best == NO_OBJECT || hp < bestHp) && canSee(w, t, p, h)) {
             best = h;
             bestHp = hp;
         }
@@ -108,7 +108,7 @@ Entity pickInReach(World& w, const Terrain& t, Entity p, const std::vector<Entit
     return best;
 }
 
-void onAttacked(World& w, Entity a, Entity d) {
+void onAttacked(World& w, ObjectId a, ObjectId d) {
     const int fa = factionOf(w, a), fd = factionOf(w, d);
     if (fa == fd) return;
     const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);
@@ -119,18 +119,18 @@ void onAttacked(World& w, Entity a, Entity d) {
         w.remove<PickupOrder>(d);
         w.remove<SoloMove>(d);
     }
-    const std::vector<Entity> near = w.view<Unit, Transform, Faction>();
-    auto sees = [&](Entity u) {
+    const std::vector<ObjectId> near = w.view<Entity, Transform, Faction>();
+    auto sees = [&](ObjectId u) {
         const Transform* tu = w.get<Transform>(u);
         const float dx = tu->x - td->x, dz = tu->z - td->z;
         return dx * dx + dz * dz <= WITNESS_RANGE * WITNESS_RANGE;
     };
     if (!atWar && fd != FACTION_PLAYER) {
-        for (Entity u : near) {
+        for (ObjectId u : near) {
             if (factionOf(w, u) == fd && (u == d || sees(u)) && !outCold(w, u) && !inPrisonerCage(w, u)) provoke(w, u, fa);
         }
     }
-    for (Entity u : near) {
+    for (ObjectId u : near) {
         if (u == a || outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || inPrisonerCage(w, u) || !w.has<Combat>(u)) continue;
         const int fu = factionOf(w, u);
         if (!factionsAllied(w, fu, fd) || factionsAllied(w, fu, fa) || !sees(u)) continue;
@@ -142,18 +142,18 @@ void onAttacked(World& w, Entity a, Entity d) {
                               w.has<PropOrder>(u) || w.has<Working>(u) ||
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
             const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
-            if (busy || (sq && !sq->arrived) || c.target != NULL_ENTITY) continue;
+            if (busy || (sq && !sq->arrived) || c.target != NO_OBJECT) continue;
             leaveSquad(w, u);
             w.add(u, AttackOrder{ a });
             c.target = a;
-        } else if (c.target == NULL_ENTITY) {
+        } else if (c.target == NO_OBJECT) {
             if (!factionsHostile(w, fu, fa)) provoke(w, u, fa);
             c.target = a;
         }
     }
 }
 
-void strike(World& w, Rng& rng, Entity a, Entity d) {
+void strike(World& w, Rng& rng, ObjectId a, ObjectId d) {
     CombatNumbers an = numbersOf(w, a);
     const CombatNumbers dn = numbersOf(w, d);
     const bool downed = hpOf(w, d) <= 0;
@@ -238,7 +238,7 @@ void strike(World& w, Rng& rng, Entity a, Entity d) {
     }
 }
 
-void drinkForFight(World& w, Entity p, Combat& pc) {
+void drinkForFight(World& w, ObjectId p, Combat& pc) {
     if (pc.buffLeft > 0.0f) return;
     const int slot = slotNamed(w, p, ELIXIR);
     const ItemDef* elixir = slot >= 0 ? findItem(w.get<Inventory>(p)->slots[slot].item) : nullptr;
@@ -304,23 +304,23 @@ SwingResult resolveSwing(const CombatNumbers& a, const CombatNumbers& d, bool de
     return r;
 }
 
-std::string nameOf(World& w, Entity e) {
+std::string nameOf(World& w, ObjectId e) {
     const Name* n = w.get<Name>(e);
     return (n && !n->text.empty()) ? n->text : std::string(lang("MISC_UNIT"));
 }
 
-bool isDowned(World& w, Entity e) {
+bool isDowned(World& w, ObjectId e) {
     const Needs* n = w.get<Needs>(e);
     return n && n->hp <= 0;
 }
 
-bool inPrisonerCage(World& w, Entity e) {
+bool inPrisonerCage(World& w, ObjectId e) {
     const Occupying* oc = w.get<Occupying>(e);
     const Prop* p = oc ? w.get<Prop>(oc->prop) : nullptr;
     return p && propInfo(p->kind).cage;
 }
 
-void ensureCombat(World& w, Entity e) {
+void ensureCombat(World& w, ObjectId e) {
     if (!w.has<Combat>(e)) w.add(e, Combat{});
 }
 
@@ -336,20 +336,20 @@ const RangedProfile* rangedProfileOf(int item) {
     return nullptr;
 }
 
-bool isPassive(World& w, Entity e) {
+bool isPassive(World& w, ObjectId e) {
     const Behaviors* b = w.get<Behaviors>(e);
     return b && b->passive;
 }
-bool isBlocking(World& w, Entity e) {
+bool isBlocking(World& w, ObjectId e) {
     const Behaviors* b = w.get<Behaviors>(e);
     return b && b->block;
 }
-bool isSneaking(World& w, Entity e) {
+bool isSneaking(World& w, ObjectId e) {
     const Behaviors* b = w.get<Behaviors>(e);
     return b && b->sneak;
 }
 
-float reachOf(World& w, Entity e) {
+float reachOf(World& w, ObjectId e) {
     if (const RangedProfile* rp = rangedOf(w, e); rp && ammoSlotFor(w, e, *rp) >= 0) return rp->range;
     return ATTACK_REACH;
 }
@@ -368,7 +368,7 @@ Equipment randomHostileGear(Rng& rng) {
     return worn;
 }
 
-bool canSee(World& w, const Terrain& t, Entity a, Entity b) {
+bool canSee(World& w, const Terrain& t, ObjectId a, ObjectId b) {
     const Transform* ta = w.get<Transform>(a);
     const Transform* tb = w.get<Transform>(b);
     return ta && tb && t.sightClear(ta->x, ta->y, ta->z, tb->x, tb->y, tb->z);
@@ -382,9 +382,9 @@ static std::string elixirName() {
 }
 
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
-    const std::vector<Entity> everyone = w.view<Unit, Transform>();
-    for (Entity e : everyone) ensureCombat(w, e);
-    for (Entity e : everyone) {
+    const std::vector<ObjectId> everyone = w.view<Entity, Transform>();
+    for (ObjectId e : everyone) ensureCombat(w, e);
+    for (ObjectId e : everyone) {
         if (w.has<Corpse>(e)) continue;
         Combat& c = *w.get<Combat>(e);
         const CombatNumbers n = numbersOf(w, e);
@@ -407,27 +407,27 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         c.swingLeft = std::max(0.0f, c.swingLeft - dt);
     }
 
-    const std::vector<Entity> players = w.view<Unit, Transform, Commandable>();
-    const std::vector<Entity> hostiles = w.view<Unit, Transform, Hostile>();
-    auto standing = [&](Entity e) {
+    const std::vector<ObjectId> players = w.view<Entity, Transform, Commandable>();
+    const std::vector<ObjectId> hostiles = w.view<Entity, Transform, Hostile>();
+    auto standing = [&](ObjectId e) {
         return hpOf(w, e) > 0 && !outCold(w, e) && !w.has<Carried>(e) && !w.has<PlayingDead>(e) && !inPrisonerCage(w, e);
     };
-    for (Entity e : everyone) {
+    for (ObjectId e : everyone) {
         if (!inPrisonerCage(w, e)) continue;
-        if (Combat* c = w.get<Combat>(e)) c->target = NULL_ENTITY;
+        if (Combat* c = w.get<Combat>(e)) c->target = NO_OBJECT;
         w.remove<AttackOrder>(e);
     }
 
-    for (Entity h : everyone) {
+    for (ObjectId h : everyone) {
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
-        if (hc.target != NULL_ENTITY) {
+        if (hc.target != NO_OBJECT) {
             if (targetable(w, hc.target) && flatGap(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target)) continue;
-            hc.target = NULL_ENTITY;
+            hc.target = NO_OBJECT;
         }
         if (isPassive(w, h)) continue;
         const Transform* th = w.get<Transform>(h);
-        for (Entity p : everyone) {
+        for (ObjectId p : everyone) {
             const Transform* tp = w.get<Transform>(p);
             if (!th || !tp) continue;
             const float gx = tp->x - th->x, gz = tp->z - th->z;
@@ -443,7 +443,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         }
     }
 
-    for (Entity p : players) {
+    for (ObjectId p : players) {
         if (!standing(p)) continue;
         Combat& pc = *w.get<Combat>(p);
         if (const AttackOrder* ao = w.get<AttackOrder>(p)) {
@@ -455,26 +455,26 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
                 continue;
             }
             w.remove<AttackOrder>(p);
-            pc.target = NULL_ENTITY;
+            pc.target = NO_OBJECT;
         }
-        if (pc.target != NULL_ENTITY && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p) &&
+        if (pc.target != NO_OBJECT && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p) &&
             canSee(w, t, p, pc.target)) {
             continue;
         }
         if (isPassive(w, p) || isBlocking(w, p)) {
-            pc.target = NULL_ENTITY;
+            pc.target = NO_OBJECT;
             continue;
         }
         pc.target = pickInReach(w, t, p, hostiles);
-        if (pc.target != NULL_ENTITY) drinkForFight(w, p, pc);
+        if (pc.target != NO_OBJECT) drinkForFight(w, p, pc);
     }
 
-    for (Entity e : everyone) {
+    for (ObjectId e : everyone) {
         if (!w.has<Combat>(e) || !w.has<Transform>(e) || !standing(e)) continue;
         Combat& c = *w.get<Combat>(e);
-        if (c.target == NULL_ENTITY || c.swingLeft > 0.0f) continue;
+        if (c.target == NO_OBJECT || c.swingLeft > 0.0f) continue;
         if (isBlocking(w, e)) continue;
-        const Entity foe = c.target;
+        const ObjectId foe = c.target;
         if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe)) continue;
         strike(w, rng, e, foe);
     }

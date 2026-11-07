@@ -3,24 +3,24 @@
 using namespace systems_detail;
 
 namespace {
-int carriedCount(World& w, Entity u, int item) {
+int carriedCount(World& w, ObjectId u, int item) {
     const Inventory* inv = w.get<Inventory>(u);
     return inv ? carriedCount(*inv, item) : 0;
 }
 
-bool inOwnClaim(World& w, const std::vector<Claim>& claims, Entity prop, int faction) {
+bool inOwnClaim(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction) {
     const Transform* t = w.get<Transform>(prop);
     return t && claimAt(claims, t->x, t->z, faction) != nullptr;
 }
 
-bool fullFor(World& w, Entity u, int item) {
+bool fullFor(World& w, ObjectId u, int item) {
     const Inventory* inv = w.get<Inventory>(u);
     if (!inv || slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, item) <= 0) return true;
     const ItemDef* def = findItem(item);
     return encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u)) >= ENCUMBERED_SHARE;
 }
 
-BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
+BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, ObjectId u, const BehaviorRule& r, int item = 0) {
     const Prop* p = w.get<Prop>(r.prop);
     const Storage* st = w.get<Storage>(r.prop);
     const Inventory* inv = w.get<Inventory>(u);
@@ -35,36 +35,36 @@ BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, Entity u, cons
     }
     return carries ? BehaviorWait::PropFull : BehaviorWait::NothingToHaul;
 }
-bool haulable(World& w, const std::vector<Claim>& claims, Entity u, const BehaviorRule& r, int item = 0) {
+bool haulable(World& w, const std::vector<Claim>& claims, ObjectId u, const BehaviorRule& r, int item = 0) {
     return haulWait(w, claims, u, r, item) == BehaviorWait::None;
 }
 
-bool canHaulItem(World& w, const std::vector<Claim>& claims, Entity u, const Behaviors& b, int item) {
+bool canHaulItem(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
     for (const BehaviorRule& r : b.rules) {
         if (r.on && r.kind == BehaviorKind::AutoHaul && haulable(w, claims, u, r, item)) return true;
     }
     return false;
 }
 
-bool harvestLoaded(World& w, const std::vector<Claim>& claims, Entity u, const Behaviors& b, int item) {
+bool harvestLoaded(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
     if (fullFor(w, u, item)) return true;
     return carriedCount(w, u, item) >= AUTO_LOAD && canHaulItem(w, claims, u, b, item);
 }
 
-Entity harvestTarget(World& w, const std::vector<Claim>& claims, Entity u, int ruleKind) {
+ObjectId harvestTarget(World& w, const std::vector<Claim>& claims, ObjectId u, int ruleKind) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut || ruleKind < 0 || ruleKind >= propKindCount()) return NULL_ENTITY;
+    if (!ut || ruleKind < 0 || ruleKind >= propKindCount()) return NO_OBJECT;
     const PropKind kind = (PropKind)ruleKind;
-    if (!yieldsItems(kind)) return NULL_ENTITY;
+    if (!yieldsItems(kind)) return NO_OBJECT;
     const int faction = factionOf(w, u);
-    const std::vector<Entity> worked = workedProps(w);
-    return nearestProp(w, *ut, [&](Entity p) {
+    const std::vector<ObjectId> worked = workedProps(w);
+    return nearestProp(w, *ut, [&](ObjectId p) {
         return w.get<Prop>(p)->kind == kind && inOwnClaim(w, claims, p, faction) && !lockShutFor(w, claims, p, u) &&
                countIn(worked, p) < propInfo(kind).workers;
     });
 }
 
-bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
+bool onOtherOrder(World& w, ObjectId u, const Behaviors& b) {
     if (const PropOrder* po = w.get<PropOrder>(u); po && !po->automatic) return true;
     if (const Working* wk = w.get<Working>(u); wk && (wk->unlocking || !b.busy || wk->prop != b.stepProp)) return true;
     if (w.has<Occupying>(u) || w.has<CarryOrder>(u) || w.has<Carrying>(u) || hasPlayerOrder(w, u)) return true;
@@ -78,7 +78,7 @@ bool onOtherOrder(World& w, Entity u, const Behaviors& b) {
     return false;
 }
 
-void autoGo(World& w, Terrain& t, Entity u, Entity prop, PropAction action) {
+void autoGo(World& w, Terrain& t, ObjectId u, ObjectId prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt) return;
     autoWalk(w, t, u, Vec2{ pt->x, pt->z });
@@ -92,7 +92,7 @@ BehaviorRule* stepRule(Behaviors& b) {
     return nullptr;
 }
 
-BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, Entity u, Rng& rng, Vec2& to) {
+BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, Vec2& to) {
     const Transform* ut = w.get<Transform>(u);
     const Claim* c = ut ? claimAt(claims, ut->x, ut->z, factionOf(w, u)) : nullptr;
     if (!c) return BehaviorWait::NotInClaim;
@@ -106,7 +106,7 @@ BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& cl
     return BehaviorWait::NotInClaim;
 }
 
-BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, Entity u, Rng& rng, Vec2& to) {
+BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, Vec2& to) {
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return BehaviorWait::NowhereToRoam;
     for (int attempt = 0; attempt < 12; ++attempt) {
@@ -119,21 +119,21 @@ BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& clai
     return BehaviorWait::NowhereToRoam;
 }
 
-Entity restTarget(World& w, const std::vector<Claim>& claims, Entity u) {
+ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut) return NULL_ENTITY;
-    std::vector<Entity> wanted;
-    for (Entity o : w.view<PropOrder>()) {
+    if (!ut) return NO_OBJECT;
+    std::vector<ObjectId> wanted;
+    for (ObjectId o : w.view<PropOrder>()) {
         if (o != u) wanted.push_back(w.get<PropOrder>(o)->prop);
     }
     std::sort(wanted.begin(), wanted.end());
-    const std::vector<Entity> occupied = occupiedProps(w);
+    const std::vector<ObjectId> occupied = occupiedProps(w);
     const Occupying* lyingIn = w.get<Occupying>(u);
     const int faction = factionOf(w, u);
-    Entity best = NULL_ENTITY;
+    ObjectId best = NO_OBJECT;
     float bestD2 = 0.0f;
     bool bestOwned = false;
-    for (Entity p : w.view<Prop, Transform>()) {
+    for (ObjectId p : w.view<Prop, Transform>()) {
         const PropKind kind = w.get<Prop>(p)->kind;
         if (restedGainPerHour(kind) <= 0.0) continue;
         const bool ownBed = lyingIn && lyingIn->prop == p;
@@ -144,7 +144,7 @@ Entity restTarget(World& w, const std::vector<Claim>& claims, Entity u) {
         if (d2 > REST_SEARCH_RANGE * REST_SEARCH_RANGE) continue;
         const Owner* own = w.get<Owner>(p);
         const bool owned = own && own->faction == faction;
-        if (best == NULL_ENTITY || (owned && !bestOwned) || (owned == bestOwned && d2 < bestD2)) {
+        if (best == NO_OBJECT || (owned && !bestOwned) || (owned == bestOwned && d2 < bestD2)) {
             best = p;
             bestD2 = d2;
             bestOwned = owned;
@@ -153,20 +153,20 @@ Entity restTarget(World& w, const std::vector<Claim>& claims, Entity u) {
     return best;
 }
 
-Entity rescueTarget(World& w, Entity u) {
+ObjectId rescueTarget(World& w, ObjectId u) {
     const Transform* ut = w.get<Transform>(u);
-    if (!ut) return NULL_ENTITY;
+    if (!ut) return NO_OBJECT;
     const int mine = factionOf(w, u);
-    std::vector<Entity> fetched;
-    for (Entity o : w.view<CarryOrder>()) {
+    std::vector<ObjectId> fetched;
+    for (ObjectId o : w.view<CarryOrder>()) {
         if (o != u) fetched.push_back(w.get<CarryOrder>(o)->target);
     }
-    Entity best = NULL_ENTITY;
+    ObjectId best = NO_OBJECT;
     float bestD2 = RESCUE_RANGE * RESCUE_RANGE;
-    for (Entity v : w.view<Unconscious, Transform>()) {
+    for (ObjectId v : w.view<Unconscious, Transform>()) {
         if (v == u || w.has<Corpse>(v) || w.has<Carried>(v) || w.has<Mob>(v) || factionOf(w, v) != mine) continue;
-        const Entity bed = occupiedProp(w, v);
-        if (bed != NULL_ENTITY && w.has<Prop>(bed) && restedGainPerHour(w.get<Prop>(bed)->kind) > 0.0) continue;
+        const ObjectId bed = occupiedProp(w, v);
+        if (bed != NO_OBJECT && w.has<Prop>(bed) && restedGainPerHour(w.get<Prop>(bed)->kind) > 0.0) continue;
         if (std::find(fetched.begin(), fetched.end(), v) != fetched.end()) continue;
         const Transform* vt = w.get<Transform>(v);
         const float d2 = distSq(*vt, *ut);
@@ -178,7 +178,7 @@ Entity rescueTarget(World& w, Entity u) {
     return best;
 }
 
-BehaviorWait spawnSpot(World& w, const Terrain& t, Entity u, Rng& rng, Vec2& to) {
+BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& to) {
     const SpawnHome* h = w.get<SpawnHome>(u);
     if (!h) return BehaviorWait::NowhereToRoam;
     for (int attempt = 0; attempt < 12; ++attempt) {
@@ -191,20 +191,20 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, Entity u, Rng& rng, Vec2& to)
     return BehaviorWait::NowhereToRoam;
 }
 
-bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (r.kind == BehaviorKind::Rescue) {
         r.why = BehaviorWait::None;
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
-        const Entity target = rescueTarget(w, u);
-        if (target == NULL_ENTITY) return false;
-        if (restTarget(w, claims, u) == NULL_ENTITY) {
+        const ObjectId target = rescueTarget(w, u);
+        if (target == NO_OBJECT) return false;
+        if (restTarget(w, claims, u) == NO_OBJECT) {
             r.why = BehaviorWait::NoBed;
             return false;
         }
         const Transform* tt = w.get<Transform>(target);
         b.busy = true;
         b.step = r;
-        b.stepProp = NULL_ENTITY;
+        b.stepProp = NO_OBJECT;
         autoWalk(w, t, u, Vec2{ tt->x, tt->z });
         w.add(u, CarryOrder{ target });
         return true;
@@ -214,8 +214,8 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         r.why = BehaviorWait::None;
         if (!n || w.has<Mob>(u) || percentOf(n->rested, n->maxRested) >= r.percent) return false;
         if (w.has<OccupyBan>(u)) return false;
-        const Entity bed = restTarget(w, claims, u);
-        if (bed == NULL_ENTITY) {
+        const ObjectId bed = restTarget(w, claims, u);
+        if (bed == NO_OBJECT) {
             r.why = BehaviorWait::NoBed;
             return false;
         }
@@ -232,11 +232,11 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         if (r.why != BehaviorWait::None) return false;
         b.busy = true;
         b.step = r;
-        b.stepProp = NULL_ENTITY;
+        b.stepProp = NO_OBJECT;
         autoWalk(w, t, u, to);
         return true;
     }
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     PropAction action = PropAction::Use;
     if (r.kind == BehaviorKind::AutoHaul) {
         r.why = haulWait(w, claims, u, r);
@@ -247,7 +247,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
         const int item = propInfo((PropKind)r.propKind).item;
         if (fullFor(w, u, item)) r.why = BehaviorWait::CarryFull;
         else if (harvestLoaded(w, claims, u, b, item)) r.why = BehaviorWait::LoadWaiting;
-        else if ((prop = harvestTarget(w, claims, u, r.propKind)) == NULL_ENTITY) r.why = BehaviorWait::NoProp;
+        else if ((prop = harvestTarget(w, claims, u, r.propKind)) == NO_OBJECT) r.why = BehaviorWait::NoProp;
         if (r.why != BehaviorWait::None) return false;
     }
     r.why = BehaviorWait::None;
@@ -260,7 +260,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u,
 }
 
 namespace {
-bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, Entity u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) return false;
     if (startStep(w, t, claims, u, b, r, rng)) return true;
     r.cooldown = r.why == BehaviorWait::NoBed ? NO_BED_RETRY_SECONDS : BEHAVIOR_RETRY_SECONDS;
@@ -275,13 +275,13 @@ BehaviorRule* rescueRule(Behaviors& b) {
 }
 }
 
-void systems_detail::autoWalk(World& w, Terrain& t, Entity u, Vec2 to) {
+void systems_detail::autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to) {
     clearOrdersButFight(w, u);
     w.remove<IdleSpot>(u);
     walkSolo(w, t, u, to);
 }
 
-void systems_detail::stopAutoStep(World& w, Entity u, Behaviors& b) {
+void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
     if (const PropOrder* po = w.get<PropOrder>(u); po && po->automatic) {
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
@@ -298,7 +298,7 @@ bool systems_detail::openTile(const Terrain& t, float x, float z) {
     return x >= 0.0f && z >= 0.0f && x < t.size() && z < t.size() && t.walkable((int)std::floor(x), (int)std::floor(z));
 }
 
-void systems_detail::stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
+void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop) {
     Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
     const Prop* pp = w.get<Prop>(prop);
@@ -306,7 +306,7 @@ void systems_detail::stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
     const Footprint& pf = propInfo(pp->kind).foot;
     const int cx = (int)std::floor(pt->x), cz = (int)std::floor(pt->z);
     auto onOtherProp = [&](float x, float z) {
-        for (Entity o : w.view<Prop, Transform>()) {
+        for (ObjectId o : w.view<Prop, Transform>()) {
             if (o == prop) continue;
             const PropInfo& oi = propInfo(w.get<Prop>(o)->kind);
             const Transform* ot = w.get<Transform>(o);
@@ -360,9 +360,9 @@ void systems_detail::stepOffProp(World& w, Terrain& t, Entity u, Entity prop) {
 }
 
 void leaveOpenLocksSystem(World& w, Terrain& t) {
-    for (Entity u : w.view<Occupying>()) {
+    for (ObjectId u : w.view<Occupying>()) {
         if (w.has<Commandable>(u) || outCold(w, u) || w.has<Carried>(u)) continue;
-        const Entity prop = w.get<Occupying>(u)->prop;
+        const ObjectId prop = w.get<Occupying>(u)->prop;
         const Lock* lock = w.get<Lock>(prop);
         if (!lock || lock->locked) continue;
         w.remove<Occupying>(u);
@@ -373,7 +373,7 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
 
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     const std::vector<Claim> claims = claimsOf(w);
-    for (Entity u : w.view<Behaviors, Transform>()) {
+    for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
         bool any = false;
         for (BehaviorRule& r : b->rules) {
@@ -386,7 +386,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             const BehaviorRule* current = stepRule(*b);
             if (!current || !current->on) stopAutoStep(w, u, *b);
         }
-        if (!any && b->seek == NULL_ENTITY && !b->seeking) continue;
+        if (!any && b->seek == NO_OBJECT && !b->seeking) continue;
         const bool yours = w.has<Commandable>(u);
         const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
         const Needs* n = w.get<Needs>(u);
@@ -397,8 +397,8 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             continue;
         }
         {
-            const Entity bed = occupiedProp(w, u);
-            const Prop* bp = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
+            const ObjectId bed = occupiedProp(w, u);
+            const Prop* bp = bed != NO_OBJECT ? w.get<Prop>(bed) : nullptr;
             bool leaveOn = false;
             for (const BehaviorRule& r : b->rules) leaveOn = leaveOn || (r.on && r.kind == BehaviorKind::LeaveBed);
             if (leaveOn && bp && restedGainPerHour(bp->kind) > 0.0 && n && n->hp >= n->maxHp && n->rested >= n->maxRested) {
@@ -414,7 +414,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
         const Combat* c = w.get<Combat>(u);
-        if ((c && c->target != NULL_ENTITY) || w.has<AttackOrder>(u)) {
+        if ((c && c->target != NO_OBJECT) || w.has<AttackOrder>(u)) {
             if (b->busy) stopAutoStep(w, u, *b);
             if (b->seeking) w.remove<SoloMove>(u);
             b->seeking = false;
@@ -424,7 +424,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         if (b->seeking) {
             const SoloMove* so = w.get<SoloMove>(u);
             const bool walking = so && so->next < so->waypoints.size();
-            if (b->seek == NULL_ENTITY || !walking || flatGap(w, u, b->seek) <= SHARE_RANGE) {
+            if (b->seek == NO_OBJECT || !walking || flatGap(w, u, b->seek) <= SHARE_RANGE) {
                 if (walking) w.remove<SoloMove>(u);
                 b->seeking = false;
             } else if (onOtherOrder(w, u, *b)) {
@@ -433,7 +433,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
             continue;
         }
-        if (b->seek != NULL_ENTITY && w.has<Transform>(b->seek) && flatGap(w, u, b->seek) > SHARE_RANGE &&
+        if (b->seek != NO_OBJECT && w.has<Transform>(b->seek) && flatGap(w, u, b->seek) > SHARE_RANGE &&
             !onOtherOrder(w, u, *b) && (b->busy || b->wait <= 0.0f)) {
             if (b->busy) stopAutoStep(w, u, *b);
             const Transform* gt = w.get<Transform>(b->seek);
@@ -469,13 +469,13 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             bool noBed = false;
             if (w.has<Carrying>(u)) {
                 if (rpo && rpo->automatic) continue;
-                const Entity bed = restTarget(w, claims, u);
-                if (bed != NULL_ENTITY && bed != b->stepProp) {
+                const ObjectId bed = restTarget(w, claims, u);
+                if (bed != NO_OBJECT && bed != b->stepProp) {
                     b->stepProp = bed;
                     autoGo(w, t, u, bed, PropAction::Place);
                     continue;
                 }
-                noBed = bed == NULL_ENTITY;
+                noBed = bed == NO_OBJECT;
                 putDown(w, u);
             }
             b->busy = false;
@@ -494,7 +494,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         if (b->busy && b->step.kind == BehaviorKind::Rest) {
             const Occupying* oc = w.get<Occupying>(u);
             if (oc && oc->prop == b->stepProp) {
-                const Entity bed = oc->prop;
+                const ObjectId bed = oc->prop;
                 BehaviorRule* rescue = rescueRule(*b);
                 if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) {
                     stepOffProp(w, t, u, bed);

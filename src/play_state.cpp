@@ -8,14 +8,14 @@ void resetPlayState() {
 }
 
 void closeStorage() {
-    session.storageProp = NULL_ENTITY;
-    session.storageUnit = NULL_ENTITY;
+    session.storageProp = NO_OBJECT;
+    session.storageUnit = NO_OBJECT;
     session.storageDrag = -1;
 }
 
 void closeLoot() {
-    session.lootUnit = NULL_ENTITY;
-    session.lootBy = NULL_ENTITY;
+    session.lootUnit = NO_OBJECT;
+    session.lootBy = NO_OBJECT;
 }
 
 void clearTradeTable() {

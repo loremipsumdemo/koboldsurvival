@@ -18,17 +18,17 @@ std::vector<int> displacedSlots(const Equipment& worn, int item);
 
 void gearTotals(const Equipment& worn, int& attack, int& defense);
 
-bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::string& why);
+bool equipFromInventory(World& w, ObjectId unit, int invSlot, int gearSlot, std::string& why);
 
-bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& why);
+bool moveEquipped(World& w, ObjectId unit, int fromSlot, int toSlot, std::string& why);
 
-bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why);
+bool unequipToInventory(World& w, ObjectId unit, int gearSlot, std::string& why);
 
-bool dropEquipped(World& w, Entity unit, int gearSlot);
+bool dropEquipped(World& w, ObjectId unit, int gearSlot);
 
-int giveOrDrop(World& w, Entity unit, int item, int count);
-bool dropStack(World& w, Entity unit, int slot);
-void dropAtUnit(World& w, Entity unit, int item, int count);
+int giveOrDrop(World& w, ObjectId unit, int item, int count);
+bool dropStack(World& w, ObjectId unit, int slot);
+void dropAtUnit(World& w, ObjectId unit, int item, int count);
 
 struct GearPrefs {
     int attackShare = 50;
@@ -40,11 +40,11 @@ struct GearPrefs {
 Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs& prefs = GearPrefs{});
 
 enum class GearAction { Done, NoChange, NoRoom };
-GearAction optimizeGear(World& w, Entity unit, std::string& why, const GearPrefs& prefs = GearPrefs{});
+GearAction optimizeGear(World& w, ObjectId unit, std::string& why, const GearPrefs& prefs = GearPrefs{});
 struct OptimizeAllResult {
     int changed = 0;
     int noRoom = 0;
     int same = 0;
 };
-OptimizeAllResult optimizeAllGear(World& w, const std::vector<Entity>& units, const GearPrefs& prefs);
-GearAction removeAllGear(World& w, Entity unit, std::string& why);
+OptimizeAllResult optimizeAllGear(World& w, const std::vector<ObjectId>& units, const GearPrefs& prefs);
+GearAction removeAllGear(World& w, ObjectId unit, std::string& why);

@@ -72,7 +72,7 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
         }
     }
 
-    for (Entity e : w.view<Prop, Transform>()) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
         const Prop* p = w.get<Prop>(e);
         const Transform* tr = w.get<Transform>(e);
         if (footprintsOverlap(f, x, z, yaw, propInfo(p->kind).foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
@@ -86,7 +86,7 @@ bool buildAnywhere(const BuildPick& pick) {
 
 bool selectionInClaim(World& w) {
     const std::vector<Claim> claims = claimsOf(w);
-    for (Entity u : w.view<Unit, Selected, Commandable, Transform>()) {
+    for (ObjectId u : w.view<Entity, Selected, Commandable, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
         if (claimAt(claims, tr->x, tr->z, FACTION_PLAYER)) return true;
     }
@@ -105,9 +105,9 @@ const char* buildRefusalKey(BuildCheck c) {
     return "";
 }
 
-Entity makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
+ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
     const PropInfo& info = propInfo(kind);
-    const Entity e = w.create();
+    const ObjectId e = w.create();
     w.add(e, at);
     w.add(e, Prop{ kind, yaw });
     if (hasStorage(info)) w.add(e, Storage{});
@@ -121,9 +121,9 @@ Entity makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
     return e;
 }
 
-Entity placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
+ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
     const PropInfo& info = propInfo(kind);
-    const Entity e = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, yaw);
+    const ObjectId e = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, yaw);
     if (!info.built) {
         claimOwnership(w, e);
         return e;

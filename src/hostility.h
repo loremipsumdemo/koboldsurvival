@@ -1,8 +1,8 @@
 #pragma once
 #include "ecs.h"
 
-int factionOf(World& w, Entity e);
-bool unitsHostile(World& w, Entity a, Entity b);
-bool hostileToPlayer(World& w, Entity e);
-void provoke(World& w, Entity unit, int faction);
+int factionOf(World& w, ObjectId e);
+bool unitsHostile(World& w, ObjectId a, ObjectId b);
+bool hostileToPlayer(World& w, ObjectId e);
+void provoke(World& w, ObjectId unit, int faction);
 void factionSystem(World& w, float dt);

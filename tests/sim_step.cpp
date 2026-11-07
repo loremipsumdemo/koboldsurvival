@@ -46,7 +46,7 @@ Run play(Terrain& terrain, unsigned seed) {
         run.seen.log.insert(run.seen.log.end(), ev.log.begin(), ev.log.end());
         run.seen.sounds.insert(run.seen.sounds.end(), ev.sounds.begin(), ev.sounds.end());
     }
-    run.units = (int)world.view<Unit, Transform>().size();
+    run.units = (int)world.view<Entity, Transform>().size();
     run.clock = gs.clockSeconds - startClock;
     run.end = captureWorld(world, gs, Camera{}, rng, 1000, "test", MapChoice{ "packed", "test", "test", "" });
     return run;

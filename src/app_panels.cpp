@@ -2,15 +2,15 @@
 
 using namespace play;
 
-std::vector<Entity> App::ownUnitList() {
-    std::vector<Entity> units = world.view<Unit, Transform, Commandable>();
+std::vector<ObjectId> App::ownUnitList() {
+    std::vector<ObjectId> units = world.view<Entity, Transform, Commandable>();
     std::sort(units.begin(), units.end());
     return units;
 }
 
-bool App::sidebarUp() { return sidebarUnitOf(world) != NULL_ENTITY; }
+bool App::sidebarUp() { return sidebarUnitOf(world) != NO_OBJECT; }
 
-std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
+std::vector<BehaviorOption> App::behaviorOptionsFor(ObjectId u) {
     std::vector<BehaviorOption> out;
     const Behaviors* b = world.get<Behaviors>(u);
     if (!b) return out;
@@ -28,9 +28,9 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
     }
     const std::vector<Claim>& claims = claimsOf(world);
     std::vector<char> harvestable((size_t)propKindCount(), 0);
-    std::vector<std::pair<float, Entity>> stores;
+    std::vector<std::pair<float, ObjectId>> stores;
     const Transform* ut = world.get<Transform>(u);
-    for (Entity p : world.view<Prop, Transform>()) {
+    for (ObjectId p : world.view<Prop, Transform>()) {
         const Transform* pt = world.get<Transform>(p);
         if (!claimAt(claims, pt->x, pt->z, FACTION_PLAYER)) continue;
         const PropKind kind = world.get<Prop>(p)->kind;
@@ -63,13 +63,13 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(Entity u) {
 }
 
 SidebarLayout App::sidebarFor(int W, int H, float scroll) {
-    const Entity shown = sidebarUnitOf(world);
-    const Behaviors* b = shown != NULL_ENTITY ? world.get<Behaviors>(shown) : nullptr;
+    const ObjectId shown = sidebarUnitOf(world);
+    const Behaviors* b = shown != NO_OBJECT ? world.get<Behaviors>(shown) : nullptr;
     if (shown != behaviorUiUnit) {
         behaviorUiUnit = shown;
         behaviorAddOpen = false;
     }
-    const bool editable = shown != NULL_ENTITY && world.has<Commandable>(shown);
+    const bool editable = shown != NO_OBJECT && world.has<Commandable>(shown);
     BehaviorUi bui;
     std::vector<BehaviorOption> options;
     if (b && editable && unitTab == UnitTab::Behavior) {
@@ -82,7 +82,7 @@ SidebarLayout App::sidebarFor(int W, int H, float scroll) {
                                              renderer.profileCardHeight(H), bui);
     if (!editable || unitTab != UnitTab::Behavior) L.behaviorAdd = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
     L.behaviorOptionInfo = std::move(options);
-    if (shown != NULL_ENTITY && world.has<Mob>(shown)) {
+    if (shown != NO_OBJECT && world.has<Mob>(shown)) {
         L.gear.clear();
         L.optimizeButton = L.removeAllButton = Rect{ 0.0f, 0.0f, 0.0f, 0.0f };
         if (!world.has<Corpse>(shown)) {
@@ -94,18 +94,18 @@ SidebarLayout App::sidebarFor(int W, int H, float scroll) {
 }
 
 bool App::shownIsYours() {
-    const Entity shown = sidebarUnitOf(world);
-    return shown != NULL_ENTITY && world.has<Commandable>(shown);
+    const ObjectId shown = sidebarUnitOf(world);
+    return shown != NO_OBJECT && world.has<Commandable>(shown);
 }
 
-void App::sortInventory(Entity unit) {
+void App::sortInventory(ObjectId unit) {
     Inventory* inv = world.get<Inventory>(unit);
     if (!inv) return;
     sortInventoryByType(*inv);
     playSfx(Sfx::UiClick);
 }
 
-void App::behaviorClick(Entity unit, const BehaviorHit& hit) {
+void App::behaviorClick(ObjectId unit, const BehaviorHit& hit) {
     Behaviors* b = world.get<Behaviors>(unit);
     if (!b || hit.row < 0 || hit.row >= (int)b->rules.size()) return;
     const size_t row = (size_t)hit.row;
@@ -168,7 +168,7 @@ void App::answerPercentPrompt(bool keep) {
     playSfx(keep ? Sfx::UiClick : Sfx::UiBack);
 }
 
-bool App::behaviorExtraClick(Entity unit, const SidebarLayout& sl, float x, float y) {
+bool App::behaviorExtraClick(ObjectId unit, const SidebarLayout& sl, float x, float y) {
     const BehaviorExtraHit hit = behaviorExtraHitAt(sl, x, y);
     if (hit.add) {
         behaviorAddOpen = !behaviorAddOpen;
@@ -213,7 +213,7 @@ std::vector<std::string> App::menuLabels() {
     return labels;
 }
 
-void App::useSlot(Entity unit, int slot) {
+void App::useSlot(ObjectId unit, int slot) {
     const Inventory* inv = world.get<Inventory>(unit);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return;
     const std::string itemName = itemNameOf(inv->slots[slot].item);
@@ -241,7 +241,7 @@ DialogueLayout App::dialogueBox(int W, int H) {
 }
 
 bool App::onTalkOrTrade(int W, int H, float x, float y) {
-    if (session.dialogueUnit == NULL_ENTITY) return false;
+    if (session.dialogueUnit == NO_OBJECT) return false;
     if (session.tradeOpen) {
         const TradeLayout tl = layoutTrade(W, H, renderer.pauseBarHeight(true));
         return tl.interaction.contains(x, y) || tl.tradePanel.contains(x, y);
@@ -305,7 +305,7 @@ void App::markMove(float x, float z) {
 }
 
 void App::beginRightHold(float x, float z) {
-    const std::vector<Entity> units = selectedUnits(world);
+    const std::vector<ObjectId> units = selectedUnits(world);
     if (units.empty()) return;
     noteLockedIn(units);
     rightHold = true;
@@ -320,7 +320,7 @@ void App::beginRightHold(float x, float z) {
 }
 
 void App::moveSelectedTo(float x, float z) {
-    const std::vector<Entity> units = selectedUnits(world);
+    const std::vector<ObjectId> units = selectedUnits(world);
     if (units.empty()) return;
     issueMoveOrder(world, terrain, units, Vec2{ x, z });
     actionX = x;
@@ -338,7 +338,7 @@ bool App::overPanels(float x, float y, int W, int H) {
     return overGamePanels(squadPanelLayout(W, H),
                           sidebarFor(W, H, sidebarScroll), true, x, y)
         || gameLogPanel(W, H).panel.contains(x, y)
-        || (session.lootUnit != NULL_ENTITY && layoutLoot(W, H).panel.contains(x, y))
+        || (session.lootUnit != NO_OBJECT && layoutLoot(W, H).panel.contains(x, y))
         || (mapOpen && worldMapFor(W, H).window.contains(x, y))
         || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
 }
@@ -365,6 +365,6 @@ bool App::pointerOverPanels(int W, int H) {
 }
 
 UnitPanelLayout App::squadPanelLayout(int W, int H) {
-    return layoutUnitPanel(W, H, (int)world.view<Unit, Transform, Commandable>().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
+    return layoutUnitPanel(W, H, (int)world.view<Entity, Transform, Commandable>().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
                            reputationFactionCount(), repScroll);
 }

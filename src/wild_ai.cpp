@@ -3,7 +3,7 @@
 using namespace systems_detail;
 
 void patrolSpawnSystem(World& w, Terrain& t, float dt) {
-    for (Entity u : w.view<SpawnHome, Transform, Behaviors>()) {
+    for (ObjectId u : w.view<SpawnHome, Transform, Behaviors>()) {
         if (outCold(w, u) || w.has<Carried>(u)) continue;
         SpawnHome* h = w.get<SpawnHome>(u);
         Behaviors* b = w.get<Behaviors>(u);
@@ -33,7 +33,7 @@ void patrolSpawnSystem(World& w, Terrain& t, float dt) {
             away = 0.0f;
         }
         if (Combat* c = w.get<Combat>(u)) {
-            c->target = NULL_ENTITY;
+            c->target = NO_OBJECT;
         }
         w.remove<AttackOrder>(u);
         b->passive = true;
@@ -56,13 +56,13 @@ void patrolSpawnSystem(World& w, Terrain& t, float dt) {
             h->replanIn = 1.0f;
             b->busy = true;
             b->step = *rule;
-            b->stepProp = NULL_ENTITY;
+            b->stepProp = NO_OBJECT;
             autoWalk(w, t, u, Vec2{ h->x, h->z });
         }
     }
 }
 
-void fleeFrom(World& w, Terrain& t, Entity u, Behaviors& b, Entity from) {
+void fleeFrom(World& w, Terrain& t, ObjectId u, Behaviors& b, ObjectId from) {
     const SoloMove* so = w.get<SoloMove>(u);
     if (b.busy && b.step.kind == BehaviorKind::Roam && so && so->next < so->waypoints.size()) return;
     const Transform* ut = w.get<Transform>(u);
@@ -82,48 +82,48 @@ void fleeFrom(World& w, Terrain& t, Entity u, Behaviors& b, Entity from) {
         }
         b.busy = true;
         b.step = roam;
-        b.stepProp = NULL_ENTITY;
+        b.stepProp = NO_OBJECT;
         autoWalk(w, t, u, Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f });
         return;
     }
 }
 
 void wildMobSystem(World& w, Terrain& t, float dt) {
-    std::vector<Entity> fighters, walkers;
+    std::vector<ObjectId> fighters, walkers;
     bool fightersListed = false, walkersListed = false;
-    for (Entity u : w.view<Behaviors, Transform, Faction>()) {
+    for (ObjectId u : w.view<Behaviors, Transform, Faction>()) {
         if (w.get<Faction>(u)->id != FACTION_EXILE || w.has<Mob>(u)) continue;
         Behaviors* b = w.get<Behaviors>(u);
         const Needs* n = w.get<Needs>(u);
         const bool low = n && n->maxHp > 0 && n->hp * 100 <= n->maxHp * EXILE_FLEE_PERCENT;
         b->passive = low;
         if (!low) continue;
-        if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
+        if (Combat* c = w.get<Combat>(u)) c->target = NO_OBJECT;
         if (outOfAction(w, u) || n->hp <= 0) continue;
         b->sense -= dt;
         if (b->sense > 0.0f) continue;
         b->sense = 0.25f;
         const Transform* ut = w.get<Transform>(u);
-        Entity near = NULL_ENTITY;
+        ObjectId near = NO_OBJECT;
         float nearD2 = 0.0f;
         if (!fightersListed) {
             fighters = w.view<Combat, Transform>();
             fightersListed = true;
         }
-        for (Entity o : fighters) {
+        for (ObjectId o : fighters) {
             if (o == u || w.get<Combat>(o)->target != u || outCold(w, o)) continue;
             const Transform* ot = w.get<Transform>(o);
             const float d2 = distSq(*ot, *ut);
-            if (near == NULL_ENTITY || d2 < nearD2) {
+            if (near == NO_OBJECT || d2 < nearD2) {
                 near = o;
                 nearD2 = d2;
             }
         }
-        if (near == NULL_ENTITY) continue;
+        if (near == NO_OBJECT) continue;
         if (w.has<Occupying>(u)) w.remove<Occupying>(u);
         fleeFrom(w, t, u, *b, near);
     }
-    for (Entity u : w.view<Mob, Behaviors, Transform, Faction>()) {
+    for (ObjectId u : w.view<Mob, Behaviors, Transform, Faction>()) {
         const int faction = w.get<Faction>(u)->id;
         if (!isMobFaction(faction)) continue;
         Behaviors* b = w.get<Behaviors>(u);
@@ -137,13 +137,13 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         if (b->sense > 0.0f) continue;
         b->sense = 0.5f;
         const Transform* ut = w.get<Transform>(u);
-        Entity near = NULL_ENTITY;
+        ObjectId near = NO_OBJECT;
         float nearD2 = WILD_AVOID_RANGE * WILD_AVOID_RANGE;
         if (!walkersListed) {
-            walkers = w.view<Unit, Transform>();
+            walkers = w.view<Entity, Transform>();
             walkersListed = true;
         }
-        for (Entity o : walkers) {
+        for (ObjectId o : walkers) {
             if (o == u || outCold(w, o) || w.has<Carried>(o)) continue;
             const Faction* of = w.get<Faction>(o);
             if ((of ? of->id : FACTION_PLAYER) == faction) continue;
@@ -155,7 +155,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
                 nearD2 = d2;
             }
         }
-        if (near == NULL_ENTITY) continue;
+        if (near == NO_OBJECT) continue;
         fleeFrom(w, t, u, *b, near);
     }
 }

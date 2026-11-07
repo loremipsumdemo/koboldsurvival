@@ -42,7 +42,7 @@ void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, con
 
 std::vector<Vec2> streamFocuses(World& w, const Camera& cam) {
     std::vector<Vec2> out{ Vec2{ cam.focusX, cam.focusZ } };
-    for (Entity u : w.view<Unit, Transform, Commandable>()) {
+    for (ObjectId u : w.view<Entity, Transform, Commandable>()) {
         const Transform* t = w.get<Transform>(u);
         out.push_back(Vec2{ t->x, t->z });
     }

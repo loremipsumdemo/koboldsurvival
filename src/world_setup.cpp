@@ -6,8 +6,6 @@
 using namespace systems_detail;
 
 namespace {
-constexpr int NPC_AMMO_MIN = 10;
-constexpr int NPC_AMMO_MAX = 30;
 constexpr int SPAWN_SQUARE = 16;
 constexpr int SPAWN_SEARCH_STEP = 32;
 constexpr float ENEMY_RANGE = 128.0f;
@@ -75,7 +73,7 @@ struct LevelBuilder {
     const int size;
     std::vector<GridPos> enemyTiles;
     std::vector<Vec2> flagSpots;
-    std::vector<std::pair<Entity, CampKit>> woodcutters;
+    std::vector<std::pair<ObjectId, CampKit>> woodcutters;
     std::vector<CampKit> kits;
 
     int tileAt(float v) const { return std::clamp((int)std::floor(v), 0, size - 1); }
@@ -88,10 +86,10 @@ struct LevelBuilder {
         return std::none_of(enemyTiles.begin(), enemyTiles.end(), [&](GridPos k) { return k == g; });
     }
 
-    Entity placeUnit(GridPos g, int faction) {
+    ObjectId placeUnit(GridPos g, int faction) {
         enemyTiles.push_back(g);
         const float x = g.x + 0.5f, z = g.y + 0.5f;
-        const Entity e = makeUnit(w, Transform{ x, t.heightAt(x, z), z }, faction);
+        const ObjectId e = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
         w.add(e, randomNpcLoot(rng));
         w.add(e, defaultDialogue());
         w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
@@ -140,14 +138,14 @@ struct LevelBuilder {
             if (!t.walkable(gx, gz)) continue;
             const float x = gx + 0.5f, z = gz + 0.5f;
             bool taken = false;
-            for (Entity e : w.view<Prop, Transform>()) {
+            for (ObjectId e : w.view<Prop, Transform>()) {
                 const Transform* pt = w.get<Transform>(e);
                 if (std::fabs(pt->x - x) < 0.5f && std::fabs(pt->z - z) < 0.5f) { taken = true; break; }
             }
             if (taken) continue;
             const PropKind kind = EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)];
             const PropInfo& info = propInfo(kind);
-            const Entity prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, rng.unit() * TWO_PI);
+            const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, rng.unit() * TWO_PI);
             if (info.use != PropUse::Resource) w.add(prop, Owner{ faction });
             if (info.use == PropUse::Storage) w.add(prop, startingStorage(kind, rng));
             if (info.lockLevel > 0) w.add(prop, Lock{ true, info.lockLevel, faction });
@@ -157,8 +155,8 @@ struct LevelBuilder {
         }
     }
 
-    void giveWoodcutting(Entity u, const CampKit& kit) {
-        if (u == NULL_ENTITY || !kit.placed || kit.altar == NULL_ENTITY || kit.trees.empty()) return;
+    void giveWoodcutting(ObjectId u, const CampKit& kit) {
+        if (u == NO_OBJECT || !kit.placed || kit.altar == NO_OBJECT || kit.trees.empty()) return;
         if (!w.has<Commandable>(u)) {
             if (Inventory* inv = w.get<Inventory>(u)) *inv = Inventory{};
         }
@@ -189,7 +187,7 @@ struct LevelBuilder {
     }
 
     bool clearOfProps(float x, float z) {
-        for (Entity e : w.view<Prop, Transform>()) {
+        for (ObjectId e : w.view<Prop, Transform>()) {
             const Transform* pt = w.get<Transform>(e);
             if ((pt->x - x) * (pt->x - x) + (pt->z - z) * (pt->z - z) < CAMP_CAGE_GAP * CAMP_CAGE_GAP) return false;
         }
@@ -201,9 +199,9 @@ struct LevelBuilder {
         addCampExtras(FACTION_PLAYER, playerKit);
         if (playerKit.placed) kits.push_back(playerKit);
         if (playerKit.placed) {
-            Entity first = NULL_ENTITY;
-            for (Entity u : w.view<Unit, Commandable>()) {
-                if (first == NULL_ENTITY || u < first) first = u;
+            ObjectId first = NO_OBJECT;
+            for (ObjectId u : w.view<Entity, Commandable>()) {
+                if (first == NO_OBJECT || u < first) first = u;
             }
             woodcutters.push_back({ first, playerKit });
         }
@@ -227,15 +225,15 @@ struct LevelBuilder {
         }
         addCampExtras(f.id, kit);
         const float cx = kit.placed ? kit.x : middle.x + dirX * dist, cz = kit.placed ? kit.z : middle.z + dirZ * dist;
-        Entity firstUnit = NULL_ENTITY;
+        ObjectId firstUnit = NO_OBJECT;
         const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)f.units);
         int placed = 0;
         for (int attempt = 0; attempt < 4000 && placed < f.units; ++attempt) {
             GridPos g{ rng.range(tileAt(cx - radius), tileAt(cx + radius)), rng.range(tileAt(cz - radius), tileAt(cz + radius)) };
             const float dx = g.x + 0.5f - cx, dz = g.y + 0.5f - cz;
             if (dx * dx + dz * dz > radius * radius || !tileFree(g)) continue;
-            const Entity e = placeUnit(g, f.id);
-            if (firstUnit == NULL_ENTITY) firstUnit = e;
+            const ObjectId e = placeUnit(g, f.id);
+            if (firstUnit == NO_OBJECT) firstUnit = e;
             ++placed;
         }
         for (int attempt = 0; attempt < 20000 && placed < f.units; ++attempt) {
@@ -243,8 +241,8 @@ struct LevelBuilder {
                        rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
             const float dx = g.x + 0.5f - spawn.x, dz = g.y + 0.5f - spawn.z;
             if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
-            const Entity e = placeUnit(g, f.id);
-            if (firstUnit == NULL_ENTITY) firstUnit = e;
+            const ObjectId e = placeUnit(g, f.id);
+            if (firstUnit == NO_OBJECT) firstUnit = e;
             ++placed;
         }
         kits.push_back(kit);
@@ -261,7 +259,7 @@ struct LevelBuilder {
             if (!t.walkable(g.x, g.y)) continue;
             if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
             bool kitHere = false;
-            for (Entity e : w.view<Prop, Transform>()) {
+            for (ObjectId e : w.view<Prop, Transform>()) {
                 const Transform* kt = w.get<Transform>(e);
                 if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
             }
@@ -269,7 +267,7 @@ struct LevelBuilder {
             const PropKind kind = scattered[propTiles.size() % scattered.size()];
             propTiles.push_back(g);
             const float x = g.x + 0.5f, z = g.y + 0.5f;
-            const Entity prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z });
+            const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z });
             if (propInfo(kind).use == PropUse::Storage) w.add(prop, startingStorage(kind, rng));
             claimOwnership(w, prop);
         }
@@ -282,44 +280,8 @@ struct LevelBuilder {
 
     void finishUnits() {
         std::vector<std::string> takenNames;
-        for (Entity u : w.view<Unit>()) {
-            if (w.has<Mob>(u)) continue;
-            if (!w.has<Stats>(u)) w.add(u, randomStartingStats(rng));
-            if (Needs* nd = w.get<Needs>(u)) {
-                nd->maxHp = maxHealthFor(*w.get<Stats>(u));
-                nd->hp = nd->maxHp;
-            }
-            if (w.has<Hostile>(u) || w.has<Neutral>(u)) {
-                w.add(u, randomHostileGear(rng));
-                const Equipment* worn = w.get<Equipment>(u);
-                if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GearSlot::MainHand]) : nullptr) {
-                    std::vector<int> ammo;
-                    for (const ItemDef& d : itemDatabase()) {
-                        if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
-                    }
-                    Inventory* inv = w.get<Inventory>(u);
-                    if (inv && !ammo.empty()) {
-                        addToInventory(*inv, ammo[(size_t)rng.range(0, (int)ammo.size() - 1)], rng.range(NPC_AMMO_MIN, NPC_AMMO_MAX));
-                    }
-                }
-            }
-            if (Inventory* inv = w.get<Inventory>(u)) {
-                Equipment* worn = w.get<Equipment>(u);
-                GearItems gear = worn ? worn->items : GearItems{};
-                keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
-                if (worn) worn->items = gear;
-            }
-            if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
-            const BodyType body = w.get<Body>(u)->type;
-            if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
-            Name* nm = w.get<Name>(u);
-            if (!nm) continue;
-            if (w.has<Commandable>(u)) {
-                nm->text = randomUnitName(rng, body, takenNames);
-                takenNames.push_back(nm->text);
-            } else {
-                nm->text = randomUnitName(rng, body, {});
-            }
+        for (ObjectId u : w.view<Entity>()) {
+            if (!w.has<Mob>(u)) finishUnit(w, rng, u, takenNames);
         }
     }
 
@@ -336,9 +298,9 @@ struct LevelBuilder {
                     found = clearOfProps(x, z);
                 }
                 if (!found) continue;
-                const Entity mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
+                const ObjectId mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
                 const PropInfo& cageInfo = propInfo(PropKind::PrisonerCage);
-                const Entity cage = makeProp(w, PropKind::PrisonerCage, Transform{ x, t.heightAt(x, z), z });
+                const ObjectId cage = makeProp(w, PropKind::PrisonerCage, Transform{ x, t.heightAt(x, z), z });
                 w.add(cage, Owner{ kit.faction });
                 w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
                 claimOwnership(w, cage);
@@ -365,14 +327,14 @@ struct LevelBuilder {
             for (int i = 0; i < mobInfo(kind).wild; ++i) {
                 float x = 0.0f, z = 0.0f;
                 if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
-                    const Entity m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
+                    const ObjectId m = spawnMob(w, t, rng, kind, mobFaction(kind), x, z);
                     const MobKind escort = mobInfo(kind).escort;
                     if (escort == MobKind::None) continue;
                     const SpawnHome home = *w.get<SpawnHome>(m);
                     for (int r = 0; r < mobInfo(kind).escortCount; ++r) {
                         float rx = 0.0f, rz = 0.0f;
                         if (!freeSpot(home.x, home.z, 4.0f, rx, rz)) continue;
-                        const Entity rabbit = spawnMob(w, t, rng, escort, mobFaction(escort), rx, rz);
+                        const ObjectId rabbit = spawnMob(w, t, rng, escort, mobFaction(escort), rx, rz);
                         Behaviors* rb = w.get<Behaviors>(rabbit);
                         for (BehaviorRule& rule : rb->rules) {
                             if (rule.kind == BehaviorKind::Roam) rule.kind = BehaviorKind::PatrolSpawn;
@@ -385,7 +347,7 @@ struct LevelBuilder {
     }
 
     void giveFactionPatrols() {
-        for (Entity u : w.view<Unit, Behaviors, Faction>()) {
+        for (ObjectId u : w.view<Entity, Behaviors, Faction>()) {
             const int f = w.get<Faction>(u)->id;
             if (f == FACTION_PLAYER || isMobFaction(f)) continue;
             BehaviorRule patrol;

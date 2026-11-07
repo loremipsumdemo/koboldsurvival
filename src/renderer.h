@@ -74,11 +74,11 @@ public:
     void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string(),
                            const std::string& category = std::string(), bool backdrop = true);
 
-    std::vector<Entity> unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
-    std::vector<Entity> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
-    std::vector<Entity> groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
+    std::vector<ObjectId> entitiesAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
+    std::vector<ObjectId> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
+    std::vector<ObjectId> groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
                                            int winW, int winH);
-    Entity nearestGroundItem(const std::vector<Entity>& items, World& w, const Camera& cam, float mx, float my,
+    ObjectId nearestGroundItem(const std::vector<ObjectId>& items, World& w, const Camera& cam, float mx, float my,
                              int winW, int winH);
 
     void drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
@@ -94,7 +94,7 @@ public:
 
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
 
-    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<Entity>& units, bool running,
+    void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
                        int repView = FACTION_PLAYER);
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
@@ -103,9 +103,9 @@ public:
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
     int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob = false);
     void drawStatTip(const Stats& stats, StatId stat, float mx, float my);
-    void drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
+    void drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId unit, float mx, float my,
                               int dimSlot, int dimGear, int dragItem, bool editable);
-    void drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my);
+    void drawBehaviorTip(const SidebarLayout& L, World& w, ObjectId unit, float mx, float my);
     void beginClip(const Rect& r);
     void endClip();
     void drawDraggedStack(float mx, float my, int item, int count);
@@ -121,7 +121,7 @@ public:
                      float mx, float my, const std::string& toggleLabel = std::string());
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
     void drawPropEmotes(World& w, const Camera& cam, int winW, int winH);
-    void drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown);
+    void drawHoverCue(World& w, const Camera& cam, int winW, int winH, ObjectId u, EmoteId emote, bool namesShown);
     void drawPropProgress(World& w, const Camera& cam, int winW, int winH);
     void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
@@ -130,15 +130,15 @@ public:
                          float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
                             float mx, float my);
-    void drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my);
+    void drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held, float mx, float my);
     void drawNotice(const std::string& text, int winW, int winH);
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
     void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my);
-    Entity groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
+    ObjectId groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
                              bool labels = true);
-    void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item);
+    void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, ObjectId item);
 
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
     void drawPropTooltip(const std::vector<std::string>& lines, float mx, float my);
@@ -277,27 +277,27 @@ private:
     void drawGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint);
     void drawLyingGlyph(const TextTex& g, float x, float y, float z, float h, RGBA tint, float toward);
     void setSaturation(float sat);
-    float unitTop(World& w, Entity u);
-    float unitHover(World& w, Entity u) const;
-    float bedLift(World& w, Entity u) const;
+    float unitTop(World& w, ObjectId u);
+    float unitHover(World& w, ObjectId u) const;
+    float bedLift(World& w, ObjectId u) const;
     struct UnitPose {
         bool lying = false;
         bool carried = false;
         float lift = 0.0f;
     };
-    UnitPose unitPose(World& w, Entity e) const;
+    UnitPose unitPose(World& w, ObjectId e) const;
 
     void drawModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
 
     void drawHud(const std::vector<HudEntry>& lines, int winW, int winH);
 
-    const TextTex& unitGlyph(World& w, Entity e) const;
+    const TextTex& unitGlyph(World& w, ObjectId e) const;
 
     void drawGroundItems(World& w, const Terrain& t, const Camera& cam);
 
     struct GroundStack {
         Rect box;
-        std::vector<Entity> items;
+        std::vector<ObjectId> items;
         std::vector<std::string> names;
         std::vector<Rect> rows;
         float dist2 = 0.0f;
@@ -374,18 +374,18 @@ private:
     unsigned long long titleMouseAt_ = 0;
     std::vector<TextTex> mobSprites_;
     std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
-    const TextTex& unitPortrait(World& w, Entity e) const;
+    const TextTex& unitPortrait(World& w, ObjectId e) const;
     const TextTex& unitPicture(int n) const;
     std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};
     std::array<const Model*, UNIT_SPRITE_COUNT> unitModelFor_{};
     std::vector<Model> mobModels_;
-    float unitHeight(World& w, Entity e) const;
+    float unitHeight(World& w, ObjectId e) const;
     const Model* unitModelNumber(int n) const;
-    const Model* unitModel(World& w, Entity e) const;
-    float unitAspect(World& w, Entity e) const;
-    Mat4 unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const;
+    const Model* unitModel(World& w, ObjectId e) const;
+    float unitAspect(World& w, ObjectId e) const;
+    Mat4 unitWorldMatrix(World& w, ObjectId e, const Model& m, float yaw) const;
     void drawUnitModel(const Model& m, const Mat4& placement);
-    RGBA unitFactionTint(World& w, Entity e) const;
+    RGBA unitFactionTint(World& w, ObjectId e) const;
     struct UnitFacing {
         float x = 0.0f, z = 0.0f;
         float yaw = 0.0f;
@@ -394,8 +394,8 @@ private:
         float settleX = 0.0f, settleZ = 0.0f;
         unsigned long long turnedAt = 0;
     };
-    std::map<Entity, UnitFacing> unitFacing_;
-    float unitYaw(Entity e, float x, float z, bool idle);
+    std::map<ObjectId, UnitFacing> unitFacing_;
+    float unitYaw(ObjectId e, float x, float z, bool idle);
     PictureCache itemPics_{ "data/item/item_", true };
     PictureCache emotePics_{ "data/emote/", false, emoteFile };
     const TextTex* emoteTexture(EmoteId emote);
@@ -405,7 +405,7 @@ private:
         unsigned made = 0;
         float start = -1.0f;
     };
-    std::map<Entity, PropHop> propHops_;
+    std::map<ObjectId, PropHop> propHops_;
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
     std::vector<Model> propModels_;
     const Model& propModel(PropKind kind) const;
@@ -418,7 +418,7 @@ private:
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
     void drawPropInstances();
     float propTop(PropKind kind) const;
-    float propBaseY(World& w, Entity e) const;
+    float propBaseY(World& w, ObjectId e) const;
 
     TextCache text_;
     Mat4 pixels_{};

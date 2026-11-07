@@ -1,8 +1,8 @@
 #include "game_log.h"
 #include "components.h"
 
-bool npcOnly(World& w, Entity a, Entity b) {
-    const bool yours = (a != NULL_ENTITY && w.has<Commandable>(a)) || (b != NULL_ENTITY && w.has<Commandable>(b));
+bool npcOnly(World& w, ObjectId a, ObjectId b) {
+    const bool yours = (a != NO_OBJECT && w.has<Commandable>(a)) || (b != NO_OBJECT && w.has<Commandable>(b));
     return !yours;
 }
 
@@ -37,7 +37,7 @@ size_t infoLineCount(const GameLog& log, int tab, const LogFilter& f) {
     return std::min(n, LOG_LIMIT);
 }
 
-Tint tintFor(World& w, Entity attacker, Entity target) {
+Tint tintFor(World& w, ObjectId attacker, ObjectId target) {
     if (w.has<Commandable>(attacker) && w.has<Hostile>(target)) return Tint::Green;
     if (w.has<Hostile>(attacker) && w.has<Commandable>(target)) return Tint::Red;
     return Tint::Gray;

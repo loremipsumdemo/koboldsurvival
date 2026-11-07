@@ -22,7 +22,11 @@ inline float distSq(const Transform& a, const Transform& b) {
     return dx * dx + dz * dz;
 }
 
-struct Unit {
+// An entity is a living thing: it has health and it moves. There are two kinds:
+//  - a unit, a person: a player unit (Commandable) or an NPC
+//  - a mob, an animal or beast (it also has Mob), of which a boss mob is one whose MobCategory is Boss
+// Props and ground items are objects too, but they are not entities.
+struct Entity {
     float speed = 3.0f;      // tiles per second
     float radius = 0.5f;
 };
@@ -79,6 +83,8 @@ struct Mob {
     MobKind kind = MobKind::Bear;
 };
 
+inline bool isUnit(World& w, ObjectId e) { return w.has<Entity>(e) && !w.has<Mob>(e); }
+
 struct SpawnHome {
     float x = 0.0f, z = 0.0f;
     bool returning = false;
@@ -116,7 +122,7 @@ struct IdleSpot {
 };
 
 struct ActiveSquadMember {
-    Entity squad = NULL_ENTITY;
+    ObjectId squad = NO_OBJECT;
     int slot = 0;
 };
 
@@ -202,9 +208,9 @@ struct Behaviors {
     float recovered = 0.0f;
     bool busy = false;
     BehaviorRule step;
-    Entity stepProp = NULL_ENTITY;
+    ObjectId stepProp = NO_OBJECT;
     float wait = 0.0f;          // real seconds before the automation takes its next step
-    Entity seek = NULL_ENTITY;
+    ObjectId seek = NO_OBJECT;
     bool seeking = false;
     float sense = 0.0f;
     bool passive = false;
@@ -214,7 +220,7 @@ struct Behaviors {
 
 struct Combat {
     float swingLeft = 0.0f;
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
     float buffAttack = 0.0f;
     float buffLeft = 0.0f;
     int downedByFaction = -1;
@@ -231,31 +237,31 @@ struct GroundItem {
 };
 
 struct PickupOrder {
-    Entity item = NULL_ENTITY;
+    ObjectId item = NO_OBJECT;
 };
 
 struct PickupJob {
-    std::vector<Entity> items;
+    std::vector<ObjectId> items;
 };
 struct PickupChain {
-    Entity job = NULL_ENTITY;
-    std::vector<Entity> skipped;
+    ObjectId job = NO_OBJECT;
+    std::vector<ObjectId> skipped;
     int replans = 0;
 };
 
 struct TalkOrder {
-    Entity npc = NULL_ENTITY;
+    ObjectId npc = NO_OBJECT;
     bool trade = false;
     bool shop = false;
 };
 
 struct FollowOrder {
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
 };
 
 struct DefendOrder {
-    Entity ward = NULL_ENTITY;
-    Entity engaged = NULL_ENTITY;
+    ObjectId ward = NO_OBJECT;
+    ObjectId engaged = NO_OBJECT;
 };
 
 struct Unconscious {
@@ -265,7 +271,7 @@ struct Unconscious {
     double tickPart = 0.0;
 };
 struct Carried {
-    Entity by = NULL_ENTITY;
+    ObjectId by = NO_OBJECT;
 };
 struct PlayingDead {};
 struct BonesPile {
@@ -275,18 +281,18 @@ struct BonesPile {
 struct Corpse {
     double hours = 0.0;
 };
-inline bool outCold(World& w, Entity e) { return w.has<Unconscious>(e) || w.has<Corpse>(e); }
+inline bool outCold(World& w, ObjectId e) { return w.has<Unconscious>(e) || w.has<Corpse>(e); }
 struct Carrying {
-    Entity unit = NULL_ENTITY;
+    ObjectId unit = NO_OBJECT;
 };
 struct CarryOrder {
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
 };
 struct LootOrder {
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
 };
 struct AttackOrder {
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
 };
 
 struct Prop {
@@ -323,20 +329,20 @@ struct Fuel {
 };
 
 struct PropOrder {
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     PropAction action = PropAction::Use;
     bool automatic = false;
 };
 
 struct Occupying {
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
 };
 struct OccupyBan {
     float secondsLeft = 0.0f;
 };
 
 struct Working {
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     bool unlocking = false;
 };
 

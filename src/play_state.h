@@ -14,14 +14,14 @@ enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovo
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
-    Entity target = NULL_ENTITY;
+    ObjectId target = NO_OBJECT;
     std::vector<MenuAction> actions;
 };
 
 struct QuantityPrompt {
     bool open = false;
     bool npcSide = false;
-    Entity owner = NULL_ENTITY;
+    ObjectId owner = NO_OBJECT;
     int slot = -1;
     int item = 0;
     std::string name;
@@ -30,11 +30,11 @@ struct QuantityPrompt {
     bool toStorage = false;
 };
 
-// UI state that lasts as long as one game and names entities of its world. Entity ids restart with each world, so all
+// UI state that lasts as long as one game and names entities of its world. ObjectId ids restart with each world, so all
 // of it is replaced whenever a level starts (resetPlayState).
 struct PlaySession {
-    Entity dialogueUnit = NULL_ENTITY;
-    Entity dialoguePlayer = NULL_ENTITY;
+    ObjectId dialogueUnit = NO_OBJECT;
+    ObjectId dialoguePlayer = NO_OBJECT;
     std::vector<SpokenLine> dialogueConvo;
     bool tradeOpen = false;
     bool freeTrade = false;
@@ -45,15 +45,15 @@ struct PlaySession {
     std::vector<TradeGhost> tradeNpc;
     std::vector<TradeGhost> tradePlayer;
     int tradeNpcDrag = -1;
-    Entity storageProp = NULL_ENTITY;
-    Entity storageUnit = NULL_ENTITY;
+    ObjectId storageProp = NO_OBJECT;
+    ObjectId storageUnit = NO_OBJECT;
     int storageDrag = -1;
     ContextMenu contextMenu;
-    Entity disbandTarget = NULL_ENTITY;
+    ObjectId disbandTarget = NO_OBJECT;
     unsigned long long disbandHeldAt = 0;
-    Entity lootUnit = NULL_ENTITY;
-    Entity lootBy = NULL_ENTITY;
-    Entity inspectUnit = NULL_ENTITY;
+    ObjectId lootUnit = NO_OBJECT;
+    ObjectId lootBy = NO_OBJECT;
+    ObjectId inspectUnit = NO_OBJECT;
     QuantityPrompt quantity;
 };
 extern PlaySession session;

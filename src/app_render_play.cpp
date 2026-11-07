@@ -25,8 +25,8 @@ void App::drawWorldOverlays() {
     }
     renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     renderer.drawPropEmotes(world, cam, winW, winH);
-    if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NULL_ENTITY) {
-        for (Entity u : unitsUnderMouse) {
+    if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NO_OBJECT) {
+        for (ObjectId u : unitsUnderMouse) {
             const Carried* cd = world.get<Carried>(u);
             const bool names = world.has<Commandable>(u) ? settings.showUnitNames : settings.showNpcNames;
             if (cd && world.has<Selected>(cd->by)) {
@@ -49,8 +49,8 @@ void App::drawWorldOverlays() {
     if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
         renderer.drawGroundLabels(world, terrain, cam, winW, winH, mouseX, mouseY);
     } else if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open) {
-        const Entity hovered = renderer.nearestGroundItem(itemsUnderMouse, world, cam, mouseX, mouseY, winW, winH);
-        if (hovered != NULL_ENTITY) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
+        const ObjectId hovered = renderer.nearestGroundItem(itemsUnderMouse, world, cam, mouseX, mouseY, winW, winH);
+        if (hovered != NO_OBJECT) renderer.drawGroundItemName(world, cam, winW, winH, hovered);
     }
 }
 
@@ -64,7 +64,7 @@ ItemStack App::draggedStack() {
 }
 
 void App::drawGamePanels() {
-    const std::vector<Entity> own = ownUnitList();
+    const std::vector<ObjectId> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
     renderer.drawUnitPanel(world, L, own, runMode, repView);
@@ -80,7 +80,7 @@ void App::drawGamePanels() {
     }
     renderer.drawGameLog(cl, infoLines(gameLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
     if (!cl.filterOpen) drawPanelLock(PanelId::Info);
-    const Entity shown = sidebarUnitOf(world);
+    const ObjectId shown = sidebarUnitOf(world);
     {
         const int draggedId = itemDrag ? draggedStack().item : 0;
         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
@@ -89,7 +89,7 @@ void App::drawGamePanels() {
                                       itemDrag && dragGear < 0 ? dragSlot : -1,
                                       itemDrag && dragGear >= 0 ? dragGear : -1,
                                       draggedId, shownIsYours());
-        if (shown != NULL_ENTITY && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
+        if (shown != NO_OBJECT && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
     }
     drawPanelLock(PanelId::Unit);
     if (itemMenu.open) {
@@ -106,7 +106,7 @@ void App::drawGamePanels() {
 }
 
 void App::drawStoragePanel() {
-    if (session.storageProp != NULL_ENTITY) {
+    if (session.storageProp != NO_OBJECT) {
         const Storage* st = world.get<Storage>(session.storageProp);
         const Prop* sp = world.get<Prop>(session.storageProp);
         const PropInfo& sinfo = propInfo(sp ? sp->kind : PropKind::Wagon);
@@ -157,24 +157,24 @@ float App::disbandHeldShare() {
 }
 
 void App::updateDisbandHold() {
-    if (session.disbandTarget != NULL_ENTITY && !world.has<Commandable>(session.disbandTarget)) {
-        session.disbandTarget = NULL_ENTITY;
+    if (session.disbandTarget != NO_OBJECT && !world.has<Commandable>(session.disbandTarget)) {
+        session.disbandTarget = NO_OBJECT;
         session.disbandHeldAt = 0;
     }
-    if (session.disbandTarget == NULL_ENTITY || session.disbandHeldAt == 0) return;
+    if (session.disbandTarget == NO_OBJECT || session.disbandHeldAt == 0) return;
     if (!layoutDisband(winW, winH).disband.contains(mouseX, mouseY)) {
         session.disbandHeldAt = 0;
         return;
     }
     if (disbandHeldShare() < 1.0f) return;
-    const Entity u = session.disbandTarget;
-    session.disbandTarget = NULL_ENTITY;
+    const ObjectId u = session.disbandTarget;
+    session.disbandTarget = NO_OBJECT;
     session.disbandHeldAt = 0;
     if (session.storageUnit == u) closeStorage();
     if (session.lootBy == u) closeLoot();
     if (session.dialoguePlayer == u) {
         endTalk();
-        session.dialoguePlayer = NULL_ENTITY;
+        session.dialoguePlayer = NO_OBJECT;
     }
     if (session.contextMenu.open && session.contextMenu.target == u) session.contextMenu.open = false;
     const bool mob = world.has<Mob>(u);
@@ -187,11 +187,11 @@ void App::updateDisbandHold() {
 
 void App::drawWorldMapPopup() {
     std::vector<MapDot> mapDots;
-    for (Entity e : world.view<Prop, Transform>()) {
+    for (ObjectId e : world.view<Prop, Transform>()) {
         const Transform* t = world.get<Transform>(e);
         mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Prop });
     }
-    for (Entity e : world.view<Unit, Transform>()) {
+    for (ObjectId e : world.view<Entity, Transform>()) {
         const Transform* t = world.get<Transform>(e);
         MapDotKind kind = MapDotKind::Player;
         if (world.has<Hostile>(e)) kind = MapDotKind::Hostile;
@@ -210,8 +210,8 @@ void App::drawWorldMapPopup() {
 }
 
 void App::drawTalkOrTrade() {
-    if (session.dialogueUnit != NULL_ENTITY) {
-        if (!world.has<Unit>(session.dialogueUnit)) {
+    if (session.dialogueUnit != NO_OBJECT) {
+        if (!world.has<Entity>(session.dialogueUnit)) {
             endTalk();
         } else {
             if (session.tradeOpen) {
@@ -243,10 +243,10 @@ void App::drawPlayingScreen() {
     renderer.beginUi(winW, winH);
     PROFILED("draw: overlays", drawWorldOverlays());
     if (!(editing && editor.useOwnUi)) PROFILED("draw: panels", drawGamePanels());
-    if (hoverProp != NULL_ENTITY && SDL_GetTicks() - hoverPropSince >= PROP_TOOLTIP_DELAY_MS) {
+    if (hoverProp != NO_OBJECT && SDL_GetTicks() - hoverPropSince >= PROP_TOOLTIP_DELAY_MS) {
         renderer.drawPropTooltip(propInfoLines(world, hoverProp), mouseX, mouseY);
     }
-    if (session.lootUnit != NULL_ENTITY) {
+    if (session.lootUnit != NO_OBJECT) {
         const std::string who = world.has<Corpse>(session.lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, session.lootUnit) })
                                                            : nameOf(world, session.lootUnit);
         renderer.drawLoot(layoutLoot(winW, winH), who, world.get<Equipment>(session.lootUnit), world.get<Inventory>(session.lootUnit),
@@ -254,7 +254,7 @@ void App::drawPlayingScreen() {
     }
     drawStoragePanel();
     if (session.contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
-    if (session.disbandTarget != NULL_ENTITY) {
+    if (session.disbandTarget != NO_OBJECT) {
         renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
     }
     if (optimizeAllOpen) {

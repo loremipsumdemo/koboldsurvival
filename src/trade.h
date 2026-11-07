@@ -9,8 +9,8 @@ int tradeAvailable(const Inventory& inv, const std::vector<TradeGhost>& side, in
 int tradeAddItems(std::vector<TradeGhost>& side, const Inventory& inv, int clickedSlot, int want);
 void takeFromSlot(Inventory& inv, int slot, int count);
 bool tradeStillThere(const Inventory* inv, const std::vector<TradeGhost>& side);
-bool tradeItemsPresent(World& w, Entity npc, Entity player);
+bool tradeItemsPresent(World& w, ObjectId npc, ObjectId player);
 bool takeTradeGhostAt(std::vector<TradeGhost>& side, const std::vector<Rect>& cells, float x, float y);
 bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::vector<TradeGhost>& receives);
-TradeStatus checkTrade(World& w, Entity npc, Entity player);
-void completeTrade(World& w, Entity npc, Entity player);
+TradeStatus checkTrade(World& w, ObjectId npc, ObjectId player);
+void completeTrade(World& w, ObjectId npc, ObjectId player);

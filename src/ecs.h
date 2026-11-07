@@ -7,25 +7,27 @@
 #include <utility>
 #include <vector>
 
-using Entity = std::uint32_t;
-constexpr Entity NULL_ENTITY = 0;
+// Everything in a World is an object, named by an ObjectId: entities, props, ground items, squads, and so on. What an object
+// is comes from its components. An entity is only the living kind: see Entity in components.h.
+using ObjectId = std::uint32_t;
+constexpr ObjectId NO_OBJECT = 0;
 
 class IComponentStorage {
 public:
     virtual ~IComponentStorage() = default;
-    virtual void remove(Entity e) = 0;
+    virtual void remove(ObjectId e) = 0;
 };
 
 // One component type's store.
 // - The components sit in a deque, which never moves an element when others are added or removed, so a pointer
 //   from get() stays good until that component itself is removed. A removed component's slot is reused by the next
 //   one added.
-// - A paged table, indexed by entity id, says which slot an entity's component is in; finding one is two array reads.
-// - A packed list of the entities that have one is what views walk.
+// - A paged table, indexed by object id, says which slot an object's component is in; finding one is two array reads.
+// - A packed list of the objects that have one is what views walk.
 template <typename T>
 class ComponentStorage : public IComponentStorage {
 public:
-    T& add(Entity e, T value) {
+    T& add(ObjectId e, T value) {
         if (T* existing = get(e)) return *existing = std::move(value);
         std::uint32_t at;
         if (!free_.empty()) {
@@ -45,16 +47,16 @@ public:
         dense_.push_back(e);
         return *pool_[at];
     }
-    T* get(Entity e) {
+    T* get(ObjectId e) {
         const Ref* r = ref(e);
         return r ? &*pool_[r->slot - 1] : nullptr;
     }
-    bool has(Entity e) const { return ref(e) != nullptr; }
-    void remove(Entity e) override {
+    bool has(ObjectId e) const { return ref(e) != nullptr; }
+    void remove(ObjectId e) override {
         Ref* r = ref(e);
         if (!r) return;
         const std::uint32_t at = r->slot - 1, d = r->dense;
-        const Entity last = dense_.back();
+        const ObjectId last = dense_.back();
         dense_[d] = last;
         dense_.pop_back();
         if (last != e) ref(last)->dense = d;
@@ -64,7 +66,7 @@ public:
         pages_[p]->ref[e & PAGE_MASK] = Ref{};
         if (--pages_[p]->used == 0) pages_[p].reset();
     }
-    const std::vector<Entity>& entities() const { return dense_; }
+    const std::vector<ObjectId>& objects() const { return dense_; }
     size_t size() const { return dense_.size(); }
 
 private:
@@ -79,18 +81,18 @@ private:
         Ref ref[PAGE_SIZE] = {};
         size_t used = 0;
     };
-    Ref* ref(Entity e) {
+    Ref* ref(ObjectId e) {
         const size_t p = e >> PAGE_BITS;
         if (p >= pages_.size() || !pages_[p]) return nullptr;
         Ref& r = pages_[p]->ref[e & PAGE_MASK];
         return r.slot ? &r : nullptr;
     }
-    const Ref* ref(Entity e) const { return const_cast<ComponentStorage*>(this)->ref(e); }
+    const Ref* ref(ObjectId e) const { return const_cast<ComponentStorage*>(this)->ref(e); }
 
     std::deque<std::optional<T>> pool_;
     std::vector<std::uint32_t> free_;
     std::vector<std::unique_ptr<Page>> pages_;
-    std::vector<Entity> dense_;
+    std::vector<ObjectId> dense_;
 };
 
 namespace ecs_detail {
@@ -104,51 +106,51 @@ size_t typeId() {
 
 class World {
 public:
-    Entity create() { return next_++; }
+    ObjectId create() { return next_++; }
 
-    void destroy(Entity e) {
-        if (e == NULL_ENTITY) return;
+    void destroy(ObjectId e) {
+        if (e == NO_OBJECT) return;
         for (auto& storage : storages_) {
             if (storage) storage->remove(e);
         }
     }
 
     template <typename T>
-    T& add(Entity e, T value) { return storage<T>().add(e, std::move(value)); }
+    T& add(ObjectId e, T value) { return storage<T>().add(e, std::move(value)); }
 
     template <typename T>
-    T* get(Entity e) { return storage<T>().get(e); }
+    T* get(ObjectId e) { return storage<T>().get(e); }
 
     template <typename T>
-    bool has(Entity e) { return storage<T>().has(e); }
+    bool has(ObjectId e) { return storage<T>().has(e); }
 
     template <typename T>
-    void remove(Entity e) { storage<T>().remove(e); }
+    void remove(ObjectId e) { storage<T>().remove(e); }
 
     template <typename T>
     size_t count() { return storage<T>().size(); }
 
     // The one T that belongs to this world as a whole, made the first time it is asked for. It goes with the world, and
-    // no view finds it: it is kept under NULL_ENTITY, which no view is ever given.
+    // no view finds it: it is kept under NO_OBJECT, which no view is ever given.
     template <typename T>
     T& resource() {
         ComponentStorage<T>& s = storage<T>();
-        if (T* existing = s.get(NULL_ENTITY)) return *existing;
-        return s.add(NULL_ENTITY, T{});
+        if (T* existing = s.get(NO_OBJECT)) return *existing;
+        return s.add(NO_OBJECT, T{});
     }
 
-    // Every entity that has all of the listed component types. A copy, so the loop over it may add and remove
+    // Every object that has all of the listed component types. A copy, so the loop over it may add and remove
     // components freely. It walks the smallest of the listed stores.
     template <typename First, typename... Rest>
-    std::vector<Entity> view() {
+    std::vector<ObjectId> view() {
         if constexpr (sizeof...(Rest) == 0) {
-            return storage<First>().entities();
+            return storage<First>().objects();
         } else {
-            const std::vector<Entity>* base = &storage<First>().entities();
-            ((base = storage<Rest>().size() < base->size() ? &storage<Rest>().entities() : base), ...);
-            std::vector<Entity> out;
+            const std::vector<ObjectId>* base = &storage<First>().objects();
+            ((base = storage<Rest>().size() < base->size() ? &storage<Rest>().objects() : base), ...);
+            std::vector<ObjectId> out;
             out.reserve(base->size());
-            for (Entity e : *base) {
+            for (ObjectId e : *base) {
                 if (has<First>(e) && (has<Rest>(e) && ...)) out.push_back(e);
             }
             return out;
@@ -164,6 +166,6 @@ private:
         return static_cast<ComponentStorage<T>&>(*storages_[id]);
     }
 
-    Entity next_ = 1;
+    ObjectId next_ = 1;
     std::vector<std::unique_ptr<IComponentStorage>> storages_;
 };

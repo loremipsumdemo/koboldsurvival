@@ -8,9 +8,9 @@ constexpr float RUN_SPEED_BONUS = 0.5f;
 
 float wornWeight(const Equipment& worn);
 
-float carriedWeightOf(World& w, Entity e);
+float carriedWeightOf(World& w, ObjectId e);
 
 float encumbranceFor(float carried, const Stats& s);
-float encumbranceOf(World& w, Entity e);
+float encumbranceOf(World& w, ObjectId e);
 
-float walkSpeedOf(World& w, Entity e, bool running = false);
+float walkSpeedOf(World& w, ObjectId e, bool running = false);

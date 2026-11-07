@@ -73,7 +73,7 @@ void Renderer::drawStatTip(const Stats& stats, StatId stat, float mx, float my) 
     drawTip(rows, std::max(0.0f, x), std::max(0.0f, y), width);
 }
 
-void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity unit, float mx, float my,
+void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId unit, float mx, float my,
                                     int dimSlot, int dimGear, int dragItem, bool editable) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
@@ -108,7 +108,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, Entity uni
         frame();
         return;
     }
-    if (unit == NULL_ENTITY) {
+    if (unit == NO_OBJECT) {
         frame();
         drawUiTextCentered(lang("UILABEL_NO_UNIT_SELECTED"), L.panel.x + L.panel.w * 0.5f,
                            L.body.y + (L.body.h - uiTextHeight("Ag")) * 0.5f, theme::TEXT_DIM);
@@ -469,7 +469,7 @@ void Renderer::drawPercentPrompt(const PercentPromptLayout& P, const std::string
     drawSmallButton(P.cancel, lang("UILABEL_CANCEL"), true, P.cancel.contains(mx, my));
 }
 
-void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, float mx, float my) {
+void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, ObjectId unit, float mx, float my) {
     const BehaviorHit hit = behaviorHitAt(L, mx, my);
     const Behaviors* b = w.get<Behaviors>(unit);
     if (hit.row < 0 || !b || hit.row >= (int)b->rules.size()) return;
@@ -477,7 +477,7 @@ void Renderer::drawBehaviorTip(const SidebarLayout& L, World& w, Entity unit, fl
     const BehaviorRule& r = b->rules[(size_t)hit.row];
     std::vector<TipRow> rows(1);
     rows[0].text = describeBehavior(r);
-    const std::string why = r.on ? waitReason(r, b->seek != NULL_ENTITY ? nameOf(w, b->seek) : std::string()) : std::string();
+    const std::string why = r.on ? waitReason(r, b->seek != NO_OBJECT ? nameOf(w, b->seek) : std::string()) : std::string();
     if (!why.empty()) {
         rows.push_back(TipRow{});
         rows.back().text = langf("UILABEL_BEHAVIOR_WAIT_TIP", { why });

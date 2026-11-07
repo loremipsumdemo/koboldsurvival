@@ -3,12 +3,12 @@
 using namespace systems_detail;
 
 void squadSystem(World& w, float dt, bool running) {
-    for (Entity e : w.view<ActiveSquad>()) {
+    for (ObjectId e : w.view<ActiveSquad>()) {
         ActiveSquad* sq = w.get<ActiveSquad>(e);
         if (sq->arrived) continue;
 
         float slowest = -1.0f;
-        for (Entity m : w.view<ActiveSquadMember, Unit>()) {
+        for (ObjectId m : w.view<ActiveSquadMember, Entity>()) {
             if (w.get<ActiveSquadMember>(m)->squad != e) continue;
             const float s = walkSpeedOf(w, m, running);
             if (s > 0.0f && (slowest < 0.0f || s < slowest)) slowest = s;
@@ -38,28 +38,28 @@ void squadSystem(World& w, float dt, bool running) {
 }
 
 namespace {
-Entity leadOf(World& w, Entity e) {
+ObjectId leadOf(World& w, ObjectId e) {
     if (const FollowOrder* f = w.get<FollowOrder>(e)) return f->target;
     if (const DefendOrder* d = w.get<DefendOrder>(e); d && !w.has<AttackOrder>(e)) return d->ward;
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
-bool closeEnoughToLead(World& w, const std::vector<Entity>& units, Entity e, Entity lead) {
+bool closeEnoughToLead(World& w, const std::vector<ObjectId>& units, ObjectId e, ObjectId lead) {
     const Transform* tr = w.get<Transform>(e);
     const Transform* lt = w.get<Transform>(lead);
     if (!tr || !lt) return true;
     const float gx = lt->x - tr->x, gz = lt->z - tr->z;
     const float myGap = std::sqrt(gx * gx + gz * gz);
     if (myGap <= FOLLOW_DISTANCE) return true;
-    const Unit* mu = w.get<Unit>(e);
+    const Entity* mu = w.get<Entity>(e);
     int crowd = 0;
-    for (Entity o : units) crowd += leadOf(w, o) == lead ? 1 : 0;
+    for (ObjectId o : units) crowd += leadOf(w, o) == lead ? 1 : 0;
     const float spacing = 2.0f * mu->radius + UNIT_CLEARANCE;
     if (myGap > FOLLOW_DISTANCE + 0.75f * spacing * std::sqrt((float)crowd)) return false;
-    for (Entity o : units) {
+    for (ObjectId o : units) {
         if (o == e || o == lead || leadOf(w, o) != lead) continue;
         const Transform* ot = w.get<Transform>(o);
-        const Unit* ou = w.get<Unit>(o);
+        const Entity* ou = w.get<Entity>(o);
         const float ox = ot->x - tr->x, oz = ot->z - tr->z;
         const float touching = mu->radius + ou->radius + UNIT_CLEARANCE + 0.3f;
         const float gap = std::sqrt(ox * ox + oz * oz);
@@ -87,21 +87,21 @@ using Vec2f = std::pair<float, float>;
 std::int64_t cellKey(int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); }
 
 struct SteerFrame {
-    std::vector<Entity> units;
+    std::vector<ObjectId> units;
     std::vector<Vec2f> vel;
     std::vector<float> speeds;
     std::vector<Vec2f> goal;
     std::vector<char> going, pinned;
-    std::vector<Entity> calmLead;
-    std::vector<Entity> attacked;
+    std::vector<ObjectId> calmLead;
+    std::vector<ObjectId> attacked;
     float dt = 0.0f;
     int plansLeft = CHASE_PLANS_PER_STEP;
     std::vector<Vec2f> pos;
     std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
-    bool underAttack(Entity e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
+    bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
 
-Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, Entity e, const Transform* tr, Vec2 goal) {
+Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, ObjectId e, const Transform* tr, Vec2 goal) {
     ChaseRoute* r = w.get<ChaseRoute>(e);
     if (!r) r = &w.add(e, ChaseRoute{});
     const Vec2 from{ tr->x, tr->z };
@@ -132,16 +132,16 @@ Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, Entity e, const Transf
 }
 
 void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
-    const std::vector<Entity>& units = s.units;
-    auto underAttack = [&](Entity e) { return s.underAttack(e); };
-    Entity e = units[i];
+    const std::vector<ObjectId>& units = s.units;
+    auto underAttack = [&](ObjectId e) { return s.underAttack(e); };
+    ObjectId e = units[i];
     Transform* tr = w.get<Transform>(e);
 
     float tx = tr->x, tz = tr->z;
     float leadGap = -1.0f;
     bool chasing = false;
     const Combat* fighting = w.get<Combat>(e);
-    if (w.has<Occupying>(e) || (w.has<InConversation>(e) && !underAttack(e) && !(fighting && fighting->target != NULL_ENTITY))) {
+    if (w.has<Occupying>(e) || (w.has<InConversation>(e) && !underAttack(e) && !(fighting && fighting->target != NO_OBJECT))) {
         s.speeds[i] = 0.0f;
         s.pinned[i] = 1;
         s.goal[i] = { tr->x, tr->z };
@@ -205,7 +205,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             }
         }
     } else if (w.has<FollowOrder>(e) || w.has<DefendOrder>(e)) {
-        const Entity lead = leadOf(w, e);
+        const ObjectId lead = leadOf(w, e);
         if (const Transform* lt = w.get<Transform>(lead)) {
             leadGap = std::hypot(lt->x - tr->x, lt->z - tr->z);
             const IdleSpot* rest = w.get<IdleSpot>(e);
@@ -224,7 +224,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             w.remove<FollowOrder>(e);
         }
     } else if (!w.has<Commandable>(e)) {
-        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) {
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) {
             if (const Transform* tt = w.get<Transform>(c->target)) {
                 const float gx = tt->x - tr->x, gz = tt->z - tr->z;
                 if (std::sqrt(gx * gx + gz * gz) > reachOf(w, e) * CHASE_STOP_SHARE || !canSee(w, t, e, c->target)) {
@@ -279,7 +279,7 @@ void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector
 }
 
 void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
-    const Entity e = s.units[i];
+    const ObjectId e = s.units[i];
     const Transform* tr = w.get<Transform>(e);
     unitsNearby(s, tr, i, nearby);
 
@@ -290,7 +290,7 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
         float sx = tr->x - o.first, sz = tr->z - o.second;
         const float overX = UNIT_BOX - std::fabs(sx), overZ = UNIT_BOX - std::fabs(sz);
         if (overX <= 0.0f || overZ <= 0.0f) continue;
-        if (s.calmLead[i] != NULL_ENTITY && s.calmLead[i] == s.calmLead[j]) continue;
+        if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
         if (std::fabs(sx) < 1e-4f && std::fabs(sz) < 1e-4f) sx = (e & 1u) ? 1e-3f : -1e-3f;
         const bool alongX = overX < overZ;
         const float push = (alongX ? overX : overZ) * 8.0f;
@@ -330,7 +330,7 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
     } else {
         const float dx = s.goal[i].first - tr->x, dz = s.goal[i].second - tr->z;
         const float dist = std::sqrt(dx * dx + dz * dz);
-        const float deadZone = s.calmLead[i] != NULL_ENTITY ? unitWidth : 0.05f;
+        const float deadZone = s.calmLead[i] != NO_OBJECT ? unitWidth : 0.05f;
         if (dist > deadZone && s.speeds[i] > 0.0f) {
             const float sp = std::min(s.speeds[i], dist * 2.5f);
             vx += dx / dist * sp;
@@ -340,7 +340,7 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
     s.vel[i] = { vx, vz };
 }
 
-void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, bool running) {
+void applySteering(World& w, Terrain& t, ObjectId e, Vec2f velocity, float dt, bool running) {
     Transform* tr = w.get<Transform>(e);
     const bool player = w.has<Commandable>(e);
     const float x0 = tr->x, z0 = tr->z;
@@ -363,19 +363,19 @@ void applySteering(World& w, Terrain& t, Entity e, Vec2f velocity, float dt, boo
 void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     SteerFrame s;
     s.dt = dt;
-    s.units = w.view<Unit, Transform>();
-    std::vector<Entity>& units = s.units;
-    units.erase(std::remove_if(units.begin(), units.end(), [&](Entity e) { return outCold(w, e) || w.has<Carried>(e); }),
+    s.units = w.view<Entity, Transform>();
+    std::vector<ObjectId>& units = s.units;
+    units.erase(std::remove_if(units.begin(), units.end(), [&](ObjectId e) { return outCold(w, e) || w.has<Carried>(e); }),
                 units.end());
     s.vel.assign(units.size(), { 0.0f, 0.0f });
     s.speeds.assign(units.size(), 0.0f);
     s.goal.assign(units.size(), { 0.0f, 0.0f });
     s.going.assign(units.size(), 0);
     s.pinned.assign(units.size(), 0);
-    s.calmLead.assign(units.size(), NULL_ENTITY);
+    s.calmLead.assign(units.size(), NO_OBJECT);
 
-    for (Entity e : units) {
-        if (const Combat* c = w.get<Combat>(e); c && c->target != NULL_ENTITY) s.attacked.push_back(c->target);
+    for (ObjectId e : units) {
+        if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) s.attacked.push_back(c->target);
     }
     std::sort(s.attacked.begin(), s.attacked.end());
 
@@ -398,10 +398,10 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
 }
 
 void cleanupActiveSquads(World& w) {
-    std::vector<Entity> used;
-    for (Entity e : w.view<ActiveSquadMember>()) used.push_back(w.get<ActiveSquadMember>(e)->squad);
+    std::vector<ObjectId> used;
+    for (ObjectId e : w.view<ActiveSquadMember>()) used.push_back(w.get<ActiveSquadMember>(e)->squad);
 
-    for (Entity sq : w.view<ActiveSquad>()) {
+    for (ObjectId sq : w.view<ActiveSquad>()) {
         if (std::find(used.begin(), used.end(), sq) == used.end()) w.destroy(sq);
     }
 }

@@ -53,18 +53,18 @@ void App::startMapLevel(const MapChoice& choice) {
     ensurePlayerMobs(world, terrain, rng, mobKinds, people);
     applyParty(world, party);
     if (scenarioPick == ScenarioId::PackOfTwo) {
-        const Entity lead = firstSquadUnit(world);
-        std::vector<Entity> beasts;
-        for (Entity u : world.view<Unit, Commandable, Mob>()) beasts.push_back(u);
-        if (lead != NULL_ENTITY && !world.has<Mob>(lead)) issueFollowOrder(world, beasts, lead);
+        const ObjectId lead = firstSquadUnit(world);
+        std::vector<ObjectId> beasts;
+        for (ObjectId u : world.view<Entity, Commandable, Mob>()) beasts.push_back(u);
+        if (lead != NO_OBJECT && !world.has<Mob>(lead)) issueFollowOrder(world, beasts, lead);
     }
     currentMap = choice;
     gs = GameState{};
     enterLevel();
     primeStreaming(world, terrain, cam);
     clearSelection(world);
-    const Entity firstUnit = firstSquadUnit(world);
-    if (firstUnit != NULL_ENTITY) world.add(firstUnit, Selected{});
+    const ObjectId firstUnit = firstSquadUnit(world);
+    if (firstUnit != NO_OBJECT) world.add(firstUnit, Selected{});
     followUnit = firstUnit;
 }
 

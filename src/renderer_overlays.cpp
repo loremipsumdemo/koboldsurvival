@@ -23,8 +23,8 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     constexpr float HOP_SECONDS = 0.22f, HOP_HEIGHT = 9.0f;
     const float now = (float)SDL_GetTicks() / 1000.0f;
 
-    std::map<Entity, PropHop> seen;
-    for (Entity e : w.view<PropWork, Prop, Transform>()) {
+    std::map<ObjectId, PropHop> seen;
+    for (ObjectId e : w.view<PropWork, Prop, Transform>()) {
         const PropWork* pw = w.get<PropWork>(e);
         PropHop hop;
         if (auto it = propHops_.find(e); it != propHops_.end() && it->second.made <= pw->made) hop = it->second;
@@ -52,7 +52,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     propHops_.swap(seen);
 }
 
-void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int winH, Entity item) {
+void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int winH, ObjectId item) {
     const GroundItem* gi = w.get<GroundItem>(item);
     const Transform* tr = w.get<Transform>(item);
     if (!gi || !tr) return;
@@ -78,7 +78,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const unsigned long long sinceHop = ticks % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
-    for (Entity u : w.view<Unit, Transform>()) {
+    for (ObjectId u : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
@@ -102,7 +102,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
     const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
-    for (Entity e : w.view<Prop, Transform>()) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
         const PropKind kind = w.get<Prop>(e)->kind;
         if (!propInfo(kind).claimsLand) continue;
         const Transform* tr = w.get<Transform>(e);
@@ -121,7 +121,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
     }
 }
 
-void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, Entity u, EmoteId emote, bool namesShown) {
+void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, ObjectId u, EmoteId emote, bool namesShown) {
     const Transform* tr = w.get<Transform>(u);
     if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
     const float s = uiScaleFor(winH);
@@ -159,7 +159,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
     const RGBA hostile{ 1.0f, 0.55f, 0.50f, 1.0f };
     const RGBA neutral{ 0.6f, 0.6f, 0.6f, 1.0f };
     const RGBA shadow{ 0.0f, 0.0f, 0.0f, 0.85f };
-    for (Entity u : w.view<Unit, Transform, Name>()) {
+    for (ObjectId u : w.view<Entity, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
         const Name* nm = w.get<Name>(u);
         if (!(w.has<Commandable>(u) ? players : others)) continue;
@@ -202,7 +202,7 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
 void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    std::map<Entity, int> stacked;
+    std::map<ObjectId, int> stacked;
     for (const TradeLabel& l : labels) {
         const Transform* tr = w.get<Transform>(l.unit);
         if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;

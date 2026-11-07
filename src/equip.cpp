@@ -105,7 +105,7 @@ void gearTotals(const Equipment& worn, int& attack, int& defense) {
     }
 }
 
-bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::string& why) {
+bool equipFromInventory(World& w, ObjectId unit, int invSlot, int gearSlot, std::string& why) {
     why.clear();
     if (w.has<Mob>(unit)) {
         why = lang("MISC_MOB_NO_GEAR");
@@ -135,7 +135,7 @@ bool equipFromInventory(World& w, Entity unit, int invSlot, int gearSlot, std::s
     return true;
 }
 
-bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& why) {
+bool moveEquipped(World& w, ObjectId unit, int fromSlot, int toSlot, std::string& why) {
     why.clear();
     Equipment* worn = w.get<Equipment>(unit);
     if (!worn || fromSlot == toSlot) return false;
@@ -158,7 +158,7 @@ bool moveEquipped(World& w, Entity unit, int fromSlot, int toSlot, std::string& 
     return true;
 }
 
-bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
+bool unequipToInventory(World& w, ObjectId unit, int gearSlot, std::string& why) {
     why.clear();
     Inventory* inv = w.get<Inventory>(unit);
     Equipment* worn = w.get<Equipment>(unit);
@@ -178,7 +178,7 @@ bool unequipToInventory(World& w, Entity unit, int gearSlot, std::string& why) {
     return true;
 }
 
-void dropAtUnit(World& w, Entity unit, int item, int count) {
+void dropAtUnit(World& w, ObjectId unit, int item, int count) {
     const Transform* tr = w.get<Transform>(unit);
     if (!tr) return;
     queueLog(w, langf("MISC_DROPS", { nameOf(w, unit), std::to_string(count), itemNameOf(item) }), LogKind::Drop,
@@ -188,7 +188,7 @@ void dropAtUnit(World& w, Entity unit, int item, int count) {
     spawnGroundItem(w, *tr, item, count);
 }
 
-bool dropEquipped(World& w, Entity unit, int gearSlot) {
+bool dropEquipped(World& w, ObjectId unit, int gearSlot) {
     Equipment* worn = w.get<Equipment>(unit);
     const Transform* tr = w.get<Transform>(unit);
     if (!worn || !tr || gearSlot < 0 || gearSlot >= GEAR_SLOTS) return false;
@@ -200,7 +200,7 @@ bool dropEquipped(World& w, Entity unit, int gearSlot) {
     return true;
 }
 
-int giveOrDrop(World& w, Entity unit, int item, int count) {
+int giveOrDrop(World& w, ObjectId unit, int item, int count) {
     if (item <= 0 || count <= 0) return 0;
     Inventory* inv = w.get<Inventory>(unit);
     const int left = inv ? addToInventory(*inv, item, count) : count;
@@ -346,7 +346,7 @@ Equipment bestGear(const Equipment& worn, const Inventory& inv, const GearPrefs&
 }
 
 namespace {
-GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string& why) {
+GearAction wearGear(World& w, ObjectId unit, const Equipment& target, std::string& why) {
     why.clear();
     if (w.has<Mob>(unit)) return GearAction::NoChange;
     Inventory* inv = w.get<Inventory>(unit);
@@ -389,16 +389,16 @@ GearAction wearGear(World& w, Entity unit, const Equipment& target, std::string&
 }
 }
 
-GearAction optimizeGear(World& w, Entity unit, std::string& why, const GearPrefs& prefs) {
+GearAction optimizeGear(World& w, ObjectId unit, std::string& why, const GearPrefs& prefs) {
     const Inventory* inv = w.get<Inventory>(unit);
     const Equipment* worn = w.get<Equipment>(unit);
     if (!inv || !worn) return GearAction::NoChange;
     return wearGear(w, unit, bestGear(*worn, *inv, prefs), why);
 }
 
-OptimizeAllResult optimizeAllGear(World& w, const std::vector<Entity>& units, const GearPrefs& prefs) {
+OptimizeAllResult optimizeAllGear(World& w, const std::vector<ObjectId>& units, const GearPrefs& prefs) {
     OptimizeAllResult r;
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         std::string why;
         switch (optimizeGear(w, u, why, prefs)) {
         case GearAction::Done: ++r.changed; break;
@@ -409,11 +409,11 @@ OptimizeAllResult optimizeAllGear(World& w, const std::vector<Entity>& units, co
     return r;
 }
 
-GearAction removeAllGear(World& w, Entity unit, std::string& why) {
+GearAction removeAllGear(World& w, ObjectId unit, std::string& why) {
     return wearGear(w, unit, Equipment{}, why);
 }
 
-bool dropStack(World& w, Entity unit, int slot) {
+bool dropStack(World& w, ObjectId unit, int slot) {
     Inventory* inv = w.get<Inventory>(unit);
     const Transform* tr = w.get<Transform>(unit);
     if (!inv || !tr || slot < 0 || slot >= INVENTORY_SLOTS) return false;

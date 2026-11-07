@@ -2,15 +2,15 @@
 
 using namespace play;
 
-static bool canEvacuate(World& world, Entity prop, Entity occupant) {
-    if (prop == NULL_ENTITY || occupant == NULL_ENTITY) return false;
-    for (Entity u : selectedUnits(world)) {
+static bool canEvacuate(World& world, ObjectId prop, ObjectId occupant) {
+    if (prop == NO_OBJECT || occupant == NO_OBJECT) return false;
+    for (ObjectId u : selectedUnits(world)) {
         if (u != occupant && !world.has<Mob>(u) && !cannotAct(world, u) && !lockShutFor(world, prop, u)) return true;
     }
     return false;
 }
 
-Entity App::menuTargetAt(float mx, float my) {
+ObjectId App::menuTargetAt(float mx, float my) {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
     float groundD2 = 1e30f;
@@ -18,28 +18,28 @@ Entity App::menuTargetAt(float mx, float my) {
         const float gy = std::max(terrain.heightAt(g->first, g->second), 0.0f);
         groundD2 = (g->first - ex) * (g->first - ex) + (gy - ey) * (gy - ey) + (g->second - ez) * (g->second - ez);
     }
-    auto hidden = [&](Entity e) {
+    auto hidden = [&](ObjectId e) {
         const Transform* tr = world.get<Transform>(e);
         if (!tr) return false;
         const float d = std::sqrt((tr->x - ex) * (tr->x - ex) + (tr->y - ey) * (tr->y - ey) + (tr->z - ez) * (tr->z - ez));
         return d > std::sqrt(groundD2) + HIDDEN_BEHIND_GROUND;
     };
-    std::vector<Entity> under = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
+    std::vector<ObjectId> under = renderer.entitiesAtPixel(world, cam, mx, my, winW, winH);
     under.erase(std::remove_if(under.begin(), under.end(), hidden), under.end());
-    for (Entity u : under) {
+    for (ObjectId u : under) {
         if (!world.has<Selected>(u)) return u;
     }
     if (!under.empty()) {
         return lockedIn(world, under[0]) ? occupiedProp(world, under[0]) : under[0];
     }
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     float best = 0.0f;
-    for (Entity p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
+    for (ObjectId p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
         const PropKind kind = world.get<Prop>(p)->kind;
         if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind)) || hidden(p)) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
-        if (prop == NULL_ENTITY || d2 < best) {
+        if (prop == NO_OBJECT || d2 < best) {
             prop = p;
             best = d2;
         }
@@ -47,26 +47,26 @@ Entity App::menuTargetAt(float mx, float my) {
     return prop;
 }
 
-std::vector<Entity> App::menuActors(Entity target) {
-    std::vector<Entity> units;
-    for (Entity u : selectedUnits(world)) {
+std::vector<ObjectId> App::menuActors(ObjectId target) {
+    std::vector<ObjectId> units;
+    for (ObjectId u : selectedUnits(world)) {
         if (outCold(world, u)) continue;
         if (world.has<Carried>(u) && !world.has<PlayingDead>(u)) continue;
         if (world.has<Mob>(u) && world.has<Prop>(target) && propInfo(world.get<Prop>(target)->kind).use != PropUse::Occupy) continue;
         if (u != target && (!lockedIn(world, u) || occupiedProp(world, u) == target)) units.push_back(u);
     }
-    std::sort(units.begin(), units.end(), [&](Entity a, Entity b) {
+    std::sort(units.begin(), units.end(), [&](ObjectId a, ObjectId b) {
         return flatGap(world, a, target) < flatGap(world, b, target);
     });
     return units;
 }
 
-bool App::talkable(Entity u) {
-    return world.has<Unit>(u) && world.has<Dialogue>(u) && !world.has<Mob>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
+bool App::talkable(ObjectId u) {
+    return world.has<Entity>(u) && world.has<Dialogue>(u) && !world.has<Mob>(u) && !world.has<Commandable>(u) && !world.has<Hostile>(u) &&
            !outCold(world, u) && !world.has<Carried>(u);
 }
 
-bool App::sells(Entity u) {
+bool App::sells(ObjectId u) {
     const Dialogue* dg = world.get<Dialogue>(u);
     if (!dg || !talkable(u)) return false;
     for (const DialogueOption& o : dg->options) {
@@ -75,26 +75,26 @@ bool App::sells(Entity u) {
     return false;
 }
 
-Entity App::putDownCarrier(Entity target) {
+ObjectId App::putDownCarrier(ObjectId target) {
     if (world.has<Carrying>(target) && world.has<Selected>(target) && !cannotAct(world, target)) return target;
     if (const Carried* c = world.get<Carried>(target)) {
         if (world.has<Selected>(c->by) && !cannotAct(world, c->by)) return c->by;
     }
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
-Entity App::corpseCarrier(Entity prop) {
-    for (Entity u : menuActors(prop)) {
+ObjectId App::corpseCarrier(ObjectId prop) {
+    for (ObjectId u : menuActors(prop)) {
         const Carrying* cr = world.get<Carrying>(u);
         if (cr && world.has<Corpse>(cr->unit)) return u;
     }
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
-std::vector<MenuAction> App::menuActionsFor(Entity target) {
+std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
     std::vector<MenuAction> out;
-    if (world.has<Unit>(target) && putDownCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::PutDown);
-    if (world.has<Unit>(target) && lockedIn(world, target)) {
+    if (world.has<Entity>(target) && putDownCarrier(target) != NO_OBJECT) out.push_back(MenuAction::PutDown);
+    if (world.has<Entity>(target) && lockedIn(world, target)) {
         if (talkable(target)) out.push_back(MenuAction::Talk);
         if (sells(target)) out.push_back(MenuAction::Shop);
         if (canEvacuate(world, occupiedProp(world, target), target)) out.push_back(MenuAction::Evacuate);
@@ -107,7 +107,7 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
         if (canEvacuate(world, occupiedProp(world, target), target)) out.push_back(MenuAction::Evacuate);
         return out;
     }
-    if (world.has<Unit>(target)) {
+    if (world.has<Entity>(target)) {
         const bool caged = inPrisonerCage(world, target);
         if (world.has<Commandable>(target)) {
             if (!world.has<Mob>(target)) out.push_back(MenuAction::Trade);
@@ -128,22 +128,22 @@ std::vector<MenuAction> App::menuActionsFor(Entity target) {
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
         if (propInfo(p->kind).claimsLand) {
-            const std::vector<Entity> sel = selectedUnits(world);
-            bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
-            for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
+            const std::vector<ObjectId> sel = selectedUnits(world);
+            bool shut = sel.empty() ? lockShutFor(world, target, NO_OBJECT) : true;
+            for (ObjectId u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return out;
         }
         if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) {
-            const std::vector<Entity> sel = selectedUnits(world);
-            bool shut = sel.empty() ? lockShutFor(world, target, NULL_ENTITY) : true;
-            for (Entity u : sel) shut = shut && lockShutFor(world, target, u);
+            const std::vector<ObjectId> sel = selectedUnits(world);
+            bool shut = sel.empty() ? lockShutFor(world, target, NO_OBJECT) : true;
+            for (ObjectId u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return std::vector<MenuAction>{ MenuAction::Unlock };
         }
         bool carrying = false;
-        for (Entity u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
+        for (ObjectId u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
-        if (use == PropUse::Occupy && propOccupant(world, target) == NULL_ENTITY) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
-        if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NULL_ENTITY) out.push_back(MenuAction::Place);
+        if (use == PropUse::Occupy && propOccupant(world, target) == NO_OBJECT) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+        if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NO_OBJECT) out.push_back(MenuAction::Place);
         if (canEvacuate(world, target, propOccupant(world, target))) out.push_back(MenuAction::Evacuate);
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
         if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
@@ -191,8 +191,8 @@ ItemMenuLayout App::contextMenuLayout() {
     return renderer.itemMenuLayout(session.contextMenu.x, session.contextMenu.y, (int)session.contextMenu.actions.size(), winW, winH);
 }
 
-bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) {
-    if (target == NULL_ENTITY) return false;
+bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel) {
+    if (target == NO_OBJECT) return false;
     std::vector<MenuAction> actions = menuActionsFor(target);
     const bool disband = squadPanel && world.has<Commandable>(target);
     if (disband) actions.push_back(MenuAction::Disband);
@@ -238,8 +238,8 @@ bool App::openContextMenuOn(Entity target, float mx, float my, bool squadPanel) 
 
 bool App::openContextMenu(float mx, float my) { return openContextMenuOn(menuTargetAt(mx, my), mx, my); }
 
-void App::talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool shop) {
-    for (Entity u : actors) {
+void App::talkOrWalkUp(ObjectId target, const std::vector<ObjectId>& actors, bool shop) {
+    for (ObjectId u : actors) {
         if (!world.has<Mob>(u) && flatGap(world, u, target) <= TALK_RANGE) {
             tryStartTalk(target, u, actors, shop);
             return;
@@ -249,11 +249,11 @@ void App::talkOrWalkUp(Entity target, const std::vector<Entity>& actors, bool sh
 }
 
 void App::pickMenuAction(MenuAction a) {
-    Entity target = session.contextMenu.target;
+    ObjectId target = session.contextMenu.target;
     session.contextMenu.open = false;
-    if ((a == MenuAction::Unlock || a == MenuAction::Lock || a == MenuAction::Evacuate) && world.has<Unit>(target)) {
+    if ((a == MenuAction::Unlock || a == MenuAction::Lock || a == MenuAction::Evacuate) && world.has<Entity>(target)) {
         target = occupiedProp(world, target);
-        if (target == NULL_ENTITY) return;
+        if (target == NO_OBJECT) return;
     }
     if (a == MenuAction::Disband) {
         if (world.has<Commandable>(target)) {
@@ -265,22 +265,22 @@ void App::pickMenuAction(MenuAction a) {
         return;
     }
     if (a == MenuAction::PutDown) {
-        const Entity carrier = putDownCarrier(target);
-        if (carrier != NULL_ENTITY) putDown(world, carrier);
+        const ObjectId carrier = putDownCarrier(target);
+        if (carrier != NO_OBJECT) putDown(world, carrier);
         return;
     }
-    const std::vector<Entity> actors = menuActors(target);
+    const std::vector<ObjectId> actors = menuActors(target);
     if (actors.empty()) {
         refuse(lang("MISC_SELECT_UNIT_FIRST"));
         return;
     }
-    if (!world.has<Unit>(target) && !world.has<Prop>(target)) return;
+    if (!world.has<Entity>(target) && !world.has<Prop>(target)) return;
     switch (a) {
     case MenuAction::Talk:
         talkOrWalkUp(target, actors, false);
         break;
     case MenuAction::Trade: {
-        const auto trader = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
+        const auto trader = std::find_if(actors.begin(), actors.end(), [&](ObjectId u) { return !world.has<Mob>(u); });
         if (trader == actors.end()) {
             refuse(lang("MISC_MOB_INVENTORY_LOCKED"));
             break;
@@ -304,8 +304,8 @@ void App::pickMenuAction(MenuAction a) {
         break;
     case MenuAction::Inventory:
         if (outCold(world, target)) {
-            std::vector<Entity> looters;
-            for (Entity u : actors) {
+            std::vector<ObjectId> looters;
+            for (ObjectId u : actors) {
                 if (!world.has<Mob>(u)) looters.push_back(u);
             }
             if (looters.empty()) {
@@ -328,21 +328,21 @@ void App::pickMenuAction(MenuAction a) {
         if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
         break;
     case MenuAction::Place: {
-        Entity carrier = propInfo(world.get<Prop>(target)->kind).burnsCorpses ? corpseCarrier(target) : NULL_ENTITY;
+        ObjectId carrier = propInfo(world.get<Prop>(target)->kind).burnsCorpses ? corpseCarrier(target) : NO_OBJECT;
         if (!propInfo(world.get<Prop>(target)->kind).burnsCorpses) {
-            for (Entity u : actors) {
+            for (ObjectId u : actors) {
                 if (world.has<Carrying>(u)) {
                     carrier = u;
                     break;
                 }
             }
         }
-        if (carrier != NULL_ENTITY) issuePropOrder(world, terrain, { carrier }, target, PropAction::Place);
+        if (carrier != NO_OBJECT) issuePropOrder(world, terrain, { carrier }, target, PropAction::Place);
         break;
     }
     case MenuAction::Occupy: {
-        Entity occupier = NULL_ENTITY, banned = NULL_ENTITY;
-        for (Entity u : actors) {
+        ObjectId occupier = NO_OBJECT, banned = NO_OBJECT;
+        for (ObjectId u : actors) {
             if (world.has<Carrying>(u)) continue;
             if (world.has<OccupyBan>(u)) {
                 banned = u;
@@ -351,8 +351,8 @@ void App::pickMenuAction(MenuAction a) {
             occupier = u;
             break;
         }
-        if (occupier != NULL_ENTITY) issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
-        else if (banned != NULL_ENTITY) refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, banned) }));
+        if (occupier != NO_OBJECT) issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
+        else if (banned != NO_OBJECT) refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, banned) }));
         break;
     }
     case MenuAction::PutDown:
@@ -371,7 +371,7 @@ void App::pickMenuAction(MenuAction a) {
         add.propKind = idx(kind);
         if (a == MenuAction::AutoHaul) add.prop = target;
         int given = 0;
-        for (Entity u : actors) {
+        for (ObjectId u : actors) {
             Behaviors* b = world.get<Behaviors>(u);
             if (!b || !addBehavior(b->rules, add)) continue;
             b->wait = 0.0f;
@@ -395,27 +395,27 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::Unlock: {
         const Lock* lock = world.get<Lock>(target);
         if (!lock || !lock->locked) return;
-        Entity keyholder = NULL_ENTITY;
-        for (Entity u : actors) {
+        ObjectId keyholder = NO_OBJECT;
+        for (ObjectId u : actors) {
             if (!world.has<Mob>(u) && !lockShutFor(world, target, u)) {
                 keyholder = u;
                 break;
             }
         }
-        if (keyholder != NULL_ENTITY) {
+        if (keyholder != NO_OBJECT) {
             issuePropOrder(world, terrain, { keyholder }, target, PropAction::Unlock);
             break;
         }
-        Entity best = NULL_ENTITY;
+        ObjectId best = NO_OBJECT;
         int bestLevel = 0;
-        for (Entity u : actors) {
+        for (ObjectId u : actors) {
             const int lv = levelOf(statsOf(world, u), StatId::Lockpicking);
             if (lv > bestLevel) {
                 best = u;
                 bestLevel = lv;
             }
         }
-        if (best == NULL_ENTITY || bestLevel < lock->level) {
+        if (best == NO_OBJECT || bestLevel < lock->level) {
             refuse(langf("MISC_LOCKPICK_NEEDS", { std::to_string(lock->level) }));
             return;
         }
@@ -423,8 +423,8 @@ void App::pickMenuAction(MenuAction a) {
         break;
     }
     case MenuAction::Evacuate: {
-        const Entity inside = propOccupant(world, target);
-        const auto pusher = std::find_if(actors.begin(), actors.end(), [&](Entity u) {
+        const ObjectId inside = propOccupant(world, target);
+        const auto pusher = std::find_if(actors.begin(), actors.end(), [&](ObjectId u) {
             return u != inside && !world.has<Mob>(u) && !lockShutFor(world, target, u);
         });
         if (pusher == actors.end()) {
@@ -435,7 +435,7 @@ void App::pickMenuAction(MenuAction a) {
         break;
     }
     case MenuAction::Lock: {
-        const auto locker = std::find_if(actors.begin(), actors.end(), [&](Entity u) { return !world.has<Mob>(u); });
+        const auto locker = std::find_if(actors.begin(), actors.end(), [&](ObjectId u) { return !world.has<Mob>(u); });
         if (locker == actors.end()) {
             refuse(lang("MISC_SELECT_UNIT_FIRST"));
             return;
@@ -449,12 +449,12 @@ void App::pickMenuAction(MenuAction a) {
             issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Use);
             break;
         }
-        std::vector<Entity> units = actors;
+        std::vector<ObjectId> units = actors;
         int others = 0;
-        for (Entity u : world.view<Working>()) {
+        for (ObjectId u : world.view<Working>()) {
             if (world.get<Working>(u)->prop == target && std::find(units.begin(), units.end(), u) == units.end()) ++others;
         }
-        for (Entity u : world.view<PropOrder>()) {
+        for (ObjectId u : world.view<PropOrder>()) {
             if (world.get<PropOrder>(u)->prop == target && std::find(units.begin(), units.end(), u) == units.end()) ++others;
         }
         const int room = std::max(0, info.workers - others);

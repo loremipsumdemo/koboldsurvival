@@ -4,12 +4,12 @@
 #include "mobs.h"
 #include <cmath>
 
-Stats statsOf(World& w, Entity e) {
+Stats statsOf(World& w, ObjectId e) {
     const Stats* s = w.get<Stats>(e);
     return s ? *s : defaultStats();
 }
 
-void grantXp(World& w, Entity e, StatId stat, float amount, const char* whyKey) {
+void grantXp(World& w, ObjectId e, StatId stat, float amount, const char* whyKey) {
     if (amount <= 0.0f || idx(stat) < 0 || idx(stat) >= STAT_COUNT) return;
     Stats* st = w.get<Stats>(e);
     if (!st) return;

@@ -2,14 +2,14 @@
 
 using namespace systems_detail;
 
-Entity makeUnit(World& w, const Transform& at, int faction) {
-    const Entity e = w.create();
+ObjectId makeEntity(World& w, const Transform& at, int faction) {
+    const ObjectId e = w.create();
     w.add(e, at);
     if (faction == FACTION_PLAYER) {
-        w.add(e, Unit{});
+        w.add(e, Entity{});
         w.add(e, Commandable{});
     } else {
-        w.add(e, Unit{ HOSTILE_WALK_SPEED });
+        w.add(e, Entity{ HOSTILE_WALK_SPEED });
         if (factionsHostile(w, faction, FACTION_PLAYER)) w.add(e, Hostile{});
         else w.add(e, Neutral{});
     }
@@ -29,8 +29,8 @@ Dialogue defaultDialogue() {
                                              { lang("NPC_OPTION_QUEST"), lang("NPC_GREETING") } } };
 }
 
-void makeHostile(World& w, Entity unit) {
-    if (!w.has<Unit>(unit) || w.has<Commandable>(unit)) return;
+void makeHostile(World& w, ObjectId unit) {
+    if (!w.has<Entity>(unit) || w.has<Commandable>(unit)) return;
     provoke(w, unit, FACTION_PLAYER);
     if (w.has<Hostile>(unit)) return;
     w.remove<Neutral>(unit);
@@ -39,25 +39,25 @@ void makeHostile(World& w, Entity unit) {
     queueLog(w, langf("MISC_TURNS_HOSTILE", { nameOf(w, unit) }), LogKind::Seen);
 }
 
-bool disbandUnit(World& w, Entity u) {
-    if (!w.has<Commandable>(u) || !w.has<Unit>(u)) return false;
+bool disbandUnit(World& w, ObjectId u) {
+    if (!w.has<Commandable>(u) || !w.has<Entity>(u)) return false;
     leaveSquad(w, u);
     const bool caged = lockedIn(w, u);
     const Occupying keep = w.has<Occupying>(u) ? *w.get<Occupying>(u) : Occupying{};
     if (w.has<Carrying>(u)) putDown(w, u);
     clearOrders(w, u);
     if (caged) w.add(u, keep);
-    if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
+    if (Combat* c = w.get<Combat>(u)) c->target = NO_OBJECT;
     w.remove<Commandable>(u);
     w.remove<Selected>(u);
-    w.get<Unit>(u)->speed = HOSTILE_WALK_SPEED;
+    w.get<Entity>(u)->speed = HOSTILE_WALK_SPEED;
 
     const Transform* tr = w.get<Transform>(u);
     Behaviors& b = w.has<Behaviors>(u) ? *w.get<Behaviors>(u) : w.add(u, Behaviors{});
     b.busy = false;
     b.seeking = false;
-    b.seek = NULL_ENTITY;
-    b.stepProp = NULL_ENTITY;
+    b.seek = NO_OBJECT;
+    b.stepProp = NO_OBJECT;
     b.wait = 0.0f;
     b.pending = true;
     b.block = false;

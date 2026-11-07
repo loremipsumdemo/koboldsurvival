@@ -38,15 +38,15 @@ std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::strin
 void systems_detail::spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i) {
     const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f,
                             spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
-    const Entity u = makeUnit(w, Transform{ p.x, t.heightAt(p.x, p.z), p.z }, FACTION_PLAYER);
+    const ObjectId u = makeEntity(w, Transform{ p.x, t.heightAt(p.x, p.z), p.z }, FACTION_PLAYER);
     const BodyType body = randomBodyType(rng);
     w.add(u, UnitSprite{ modelForBody(body) });
     w.add(u, Body{ body });
 }
 
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
-    std::vector<Entity> players;
-    for (Entity u : w.view<Unit, Commandable>()) {
+    std::vector<ObjectId> players;
+    for (ObjectId u : w.view<Entity, Commandable>()) {
         if (!w.has<Mob>(u)) players.push_back(u);
     }
     std::sort(players.begin(), players.end());
@@ -59,7 +59,7 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
 }
 
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot) {
-    for (Entity u : w.view<Mob, Commandable>()) w.destroy(u);
+    for (ObjectId u : w.view<Mob, Commandable>()) w.destroy(u);
     if (kinds.empty()) return;
     const LevelInfo& level = w.resource<LevelInfo>();
     const Vec2 spawn = level.spawnSet ? Vec2{ level.spawnX, level.spawnZ } : findSpawn(t);
@@ -70,6 +70,8 @@ void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>
     }
 }
 
+constexpr int NPC_AMMO_MIN = 10;
+constexpr int NPC_AMMO_MAX = 30;
 constexpr int NPC_LOOT_MIN = 2;
 constexpr int NPC_LOOT_MAX = 5;
 constexpr int STORAGE_STACKS_MIN = 2;
@@ -111,6 +113,64 @@ Storage startingStorage(PropKind kind, Rng& rng) {
     return st;
 }
 
+void systems_detail::finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std::string>& takenNames) {
+    if (!w.has<Stats>(u)) w.add(u, randomStartingStats(rng));
+    if (Needs* nd = w.get<Needs>(u)) {
+        nd->maxHp = maxHealthFor(*w.get<Stats>(u));
+        nd->hp = nd->maxHp;
+    }
+    if (w.has<Hostile>(u) || w.has<Neutral>(u)) {
+        w.add(u, randomHostileGear(rng));
+        const Equipment* worn = w.get<Equipment>(u);
+        if (const RangedProfile* rp = worn ? rangedProfileOf(worn->items[GearSlot::MainHand]) : nullptr) {
+            std::vector<int> ammo;
+            for (const ItemDef& d : itemDatabase()) {
+                if (hasTag(d, rp->ammoTag)) ammo.push_back(d.id);
+            }
+            Inventory* inv = w.get<Inventory>(u);
+            if (inv && !ammo.empty()) {
+                addToInventory(*inv, ammo[(size_t)rng.range(0, (int)ammo.size() - 1)], rng.range(NPC_AMMO_MIN, NPC_AMMO_MAX));
+            }
+        }
+    }
+    if (Inventory* inv = w.get<Inventory>(u)) {
+        Equipment* worn = w.get<Equipment>(u);
+        GearItems gear = worn ? worn->items : GearItems{};
+        keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
+        if (worn) worn->items = gear;
+    }
+    if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
+    const BodyType body = w.get<Body>(u)->type;
+    if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
+    Name* nm = w.get<Name>(u);
+    if (!nm) return;
+    if (w.has<Commandable>(u)) {
+        nm->text = randomUnitName(rng, body, takenNames);
+        takenNames.push_back(nm->text);
+    } else {
+        nm->text = randomUnitName(rng, body, {});
+    }
+}
+
+ObjectId spawnUnit(World& w, const Terrain& t, Rng& rng, int faction, float x, float z) {
+    const ObjectId u = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
+    if (faction != FACTION_PLAYER) {
+        w.add(u, randomNpcLoot(rng));
+        w.add(u, defaultDialogue());
+        Behaviors* b = w.get<Behaviors>(u);
+        if (faction == FACTION_EXILE) {
+            b->rules = exileBehaviors();
+        } else {
+            BehaviorRule patrol;
+            patrol.kind = BehaviorKind::Patrol;
+            addBehavior(b->rules, patrol);
+        }
+    }
+    std::vector<std::string> noNamesTaken;
+    finishUnit(w, rng, u, noNamesTaken);
+    return u;
+}
+
 Stats mobStats(MobKind kind, Rng& rng) {
     const MobInfo& m = mobInfo(kind);
     Stats s;
@@ -132,9 +192,9 @@ Stats mobStats(MobKind kind, Rng& rng) {
     return s;
 }
 
-Entity spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z) {
+ObjectId spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z) {
     const MobInfo& m = mobInfo(kind);
-    const Entity e = makeUnit(w, Transform{ x, t.heightAt(x, z), z }, faction);
+    const ObjectId e = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
     w.add(e, Mob{ kind });
     Inventory inv;
     addToInventory(inv, m.meat, m.meatCount);

@@ -15,13 +15,13 @@ struct FloatingNumber {
 
 constexpr float TRADE_LABEL_LIFE = 2.0f;
 struct TradeLabel {
-    Entity unit = NULL_ENTITY;
+    ObjectId unit = NO_OBJECT;
     std::string text;
     float age = 0.0f;
     bool red = false;
 };
 
-void queueUnitLabel(World& w, Entity unit, const std::string& text, bool red = false);
+void queueUnitLabel(World& w, ObjectId unit, const std::string& text, bool red = false);
 void queueFloatingNumber(World& w, const FloatingNumber& number);
 std::string itemGainLabel(int count, const std::string& itemName);
 std::string itemLossLabel(int count, const std::string& itemName);

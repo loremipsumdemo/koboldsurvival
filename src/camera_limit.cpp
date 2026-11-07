@@ -4,14 +4,14 @@
 #include "components.h"
 
 void keepCameraNearUnits(World& w, Camera& cam) {
-    std::vector<Entity> units;
-    for (Entity u : w.view<Unit, Selected, Commandable>()) units.push_back(u);
+    std::vector<ObjectId> units;
+    for (ObjectId u : w.view<Entity, Selected, Commandable>()) units.push_back(u);
     if (units.empty()) {
-        for (Entity u : w.view<Unit, Commandable>()) units.push_back(u);
+        for (ObjectId u : w.view<Entity, Commandable>()) units.push_back(u);
     }
     const Transform* nearest = nullptr;
     float best = 0.0f;
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         const Transform* t = w.get<Transform>(u);
         if (!t) continue;
         const float away = std::hypot(cam.focusX - t->x, cam.focusZ - t->z);

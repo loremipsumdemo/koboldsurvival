@@ -5,8 +5,8 @@
 #include "props.h"
 #include "ui_layout.h"
 
-std::string propNameOf(World& w, Entity prop);
-bool ownedLockOf(World& w, Entity prop);
+std::string propNameOf(World& w, ObjectId prop);
+bool ownedLockOf(World& w, ObjectId prop);
 StorageLayout storageLayout(World& w, int W, int H);
 ItemStack* storageSlot(World& w, int slot);
 bool takeFromStorage(World& w, int slot, std::string& why);

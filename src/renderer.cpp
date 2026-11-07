@@ -354,7 +354,7 @@ GLuint MakeDotTexture(bool white) {
     return MakeRgbaTexture(N, N, px.data());
 }
 
-float unitSaturation(World& w, Entity u) {
+float unitSaturation(World& w, ObjectId u) {
     if (w.has<Corpse>(u)) return 0.0f;
     if (outCold(w, u)) return 0.5f;
     return 1.0f;

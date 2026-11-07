@@ -24,11 +24,11 @@ const KitSpot CAMP_KIT[] = {
 
 bool campKitFits(World& w, const Terrain& t, float cx, float cz) {
     const float ox = std::floor(cx) + 0.5f, oz = std::floor(cz) + 0.5f;
-    const std::vector<Entity> props = w.view<Prop, Transform>();
+    const std::vector<ObjectId> props = w.view<Prop, Transform>();
     for (const KitSpot& k : CAMP_KIT) {
         const float x = ox + k.dx, z = oz + k.dz;
         if (!t.walkable((int)std::floor(x), (int)std::floor(z))) return false;
-        for (Entity e : props) {
+        for (ObjectId e : props) {
             const Transform* tr = w.get<Transform>(e);
             if (std::fabs(tr->x - x) < 0.5f && std::fabs(tr->z - z) < 0.5f) return false;
         }
@@ -44,7 +44,7 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
     kit.z = oz;
     for (const KitSpot& k : CAMP_KIT) {
         const float x = ox + k.dx, z = oz + k.dz;
-        Entity e = NULL_ENTITY;
+        ObjectId e = NO_OBJECT;
         if (propInfo(k.kind).built) {
             e = placeBuiltProp(w, t, k.kind, x, z, yaw, faction);
         } else {

@@ -3,8 +3,8 @@
 using namespace systems_detail;
 
 namespace {
-void stopWorkersAt(World& w, Entity prop) {
-    for (Entity u : w.view<Working>()) {
+void stopWorkersAt(World& w, ObjectId prop) {
+    for (ObjectId u : w.view<Working>()) {
         if (w.get<Working>(u)->prop != prop) continue;
         queueLog(w, langf("MISC_CRAFT_STOPS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         w.remove<Working>(u);
@@ -16,7 +16,7 @@ void stopWorkersAt(World& w, Entity prop) {
 }
 }
 
-CraftState craftStateOf(World& w, Entity prop) {
+CraftState craftStateOf(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     const Storage* st = w.get<Storage>(prop);
     if (!p || propInfo(p->kind).use != PropUse::Crafting) return CraftState::NoInput;
@@ -29,13 +29,13 @@ CraftState craftStateOf(World& w, Entity prop) {
     return CraftState::NoInput;
 }
 
-bool propInTheWay(World& w, Entity unit, Entity prop) {
+bool propInTheWay(World& w, ObjectId unit, ObjectId prop) {
     const Transform* a = w.get<Transform>(unit);
     const Transform* b = w.get<Transform>(prop);
     if (!a || !b) return false;
     const float abx = b->x - a->x, abz = b->z - a->z;
     const float len2 = abx * abx + abz * abz;
-    for (Entity p : w.view<Prop, Transform>()) {
+    for (ObjectId p : w.view<Prop, Transform>()) {
         if (p == prop) continue;
         const Transform* c = w.get<Transform>(p);
         float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
@@ -46,17 +46,17 @@ bool propInTheWay(World& w, Entity unit, Entity prop) {
     return false;
 }
 
-Entity propOccupant(World& w, Entity prop) {
-    for (Entity u : w.view<Occupying>()) {
+ObjectId propOccupant(World& w, ObjectId prop) {
+    for (ObjectId u : w.view<Occupying>()) {
         if (w.get<Occupying>(u)->prop == prop) return u;
     }
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
-void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity prop, PropAction action) {
+void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt || !w.has<Prop>(prop)) return;
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
         if (w.has<PlayingDead>(u)) breakFree(w, u);
         if (outCold(w, u) || w.has<Carried>(u)) continue;
@@ -72,8 +72,8 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<Entity>& units, Enti
 
 std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
     std::vector<PropArrival> out;
-    for (Entity u : w.view<PropOrder, Transform>()) {
-        const Entity prop = w.get<PropOrder>(u)->prop;
+    for (ObjectId u : w.view<PropOrder, Transform>()) {
+        const ObjectId prop = w.get<PropOrder>(u)->prop;
         const Transform* pt = w.get<Transform>(prop);
         if (!pt || !w.has<Prop>(prop)) {
             w.remove<PropOrder>(u);
@@ -104,10 +104,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
             const PropInfo& info = propInfo(w.get<Prop>(prop)->kind);
             const Lock* lock = w.get<Lock>(prop);
             if (action == PropAction::Evacuate) {
-                const Entity inside = propOccupant(w, prop);
+                const ObjectId inside = propOccupant(w, prop);
                 if (lockShutFor(w, prop, u)) {
                     a.locked = true;
-                } else if (inside != NULL_ENTITY && inside != u) {
+                } else if (inside != NO_OBJECT && inside != u) {
                     endPropTasks(w, inside);
                     stepOffProp(w, t, inside, prop);
                     w.add(inside, OccupyBan{ EVACUATE_OCCUPY_BAN_SECONDS });
@@ -128,8 +128,8 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     a.started = true;
                     queueSoundFrom(w, Sfx::LockedIn, prop);
                     queueLog(w, langf("MISC_LOCKS", { nameOf(w, u), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u));
-                    const Entity inside = propOccupant(w, prop);
-                    if (inside != NULL_ENTITY && lockedIn(w, inside)) {
+                    const ObjectId inside = propOccupant(w, prop);
+                    if (inside != NO_OBJECT && lockedIn(w, inside)) {
                         queueLog(w, langf("MISC_LOCKED_IN", { nameOf(w, inside), lang(info.nameKey) }), LogKind::Other, npcOnly(w, inside));
                     }
                 }
@@ -158,7 +158,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
             if (action == PropAction::Place && propInfo(w.get<Prop>(prop)->kind).burnsCorpses) {
                 const Carrying* cr = w.get<Carrying>(u);
                 if (cr && w.has<Corpse>(cr->unit)) {
-                    const Entity corpse = cr->unit;
+                    const ObjectId corpse = cr->unit;
                     const Transform at = *pt;
                     queueLog(w, langf("MISC_PLACES_IN", { nameOf(w, u), nameOf(w, corpse), lang(info.nameKey) }), LogKind::Other, npcOnly(w, u, corpse));
                     queueSoundFrom(w, Sfx::Drop, prop);
@@ -183,13 +183,13 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 if (action == PropAction::Place) {
                     const Carrying* cr = w.get<Carrying>(u);
                     if (!cr) break;
-                    const Entity carried = cr->unit;
-                    const Entity occupant = propOccupant(w, prop);
+                    const ObjectId carried = cr->unit;
+                    const ObjectId occupant = propOccupant(w, prop);
                     if (w.has<Corpse>(carried)) {
                         a.corpse = true;
                     } else if (propInTheWay(w, u, prop)) {
                         a.unreachable = true;
-                    } else if (occupant != NULL_ENTITY) {
+                    } else if (occupant != NO_OBJECT) {
                         a.taken = true;
                     } else if (Transform* ct = w.get<Transform>(carried)) {
                         w.remove<Carrying>(u);
@@ -215,10 +215,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     a.occupyBanned = true;
                     break;
                 }
-                const Entity occupant = propOccupant(w, prop);
+                const ObjectId occupant = propOccupant(w, prop);
                 if (propInTheWay(w, u, prop)) {
                     a.unreachable = true;
-                } else if (occupant != NULL_ENTITY && occupant != u) {
+                } else if (occupant != NO_OBJECT && occupant != u) {
                     a.taken = true;
                 } else {
                     const bool newOccupant = occupant != u;
@@ -266,11 +266,11 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
         }
     }
 
-    std::vector<Entity> lying = w.view<Occupying, Transform>();
+    std::vector<ObjectId> lying = w.view<Occupying, Transform>();
     std::sort(lying.begin(), lying.end());
-    std::vector<Entity> bedsTaken;
-    for (Entity u : lying) {
-        const Entity bed = w.get<Occupying>(u)->prop;
+    std::vector<ObjectId> bedsTaken;
+    for (ObjectId u : lying) {
+        const ObjectId bed = w.get<Occupying>(u)->prop;
         const Transform* pt = w.get<Transform>(bed);
         const Prop* bp = w.get<Prop>(bed);
         if (!pt || !bp || propInfo(bp->kind).use != PropUse::Occupy || w.has<Carried>(u) ||
@@ -289,10 +289,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
 
 std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     std::vector<WorkGain> gains;
-    std::map<Entity, std::vector<Entity>> workersOf;
-    for (Entity u : w.view<Working, Transform>()) {
+    std::map<ObjectId, std::vector<ObjectId>> workersOf;
+    for (ObjectId u : w.view<Working, Transform>()) {
         const Working* wk = w.get<Working>(u);
-        const Entity prop = wk->prop;
+        const ObjectId prop = wk->prop;
         const bool shut = lockShutFor(w, prop, u);
         const bool valid = wk->unlocking ? shut : (isWorkProp(useOf(w, prop)) && !shut);
         if (!valid) {
@@ -306,7 +306,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         if (flatGap(w, u, prop) > PROP_REACH + 0.5f) continue;
         workersOf[prop].push_back(u);
     }
-    for (Entity e : w.view<PropWork>()) w.get<PropWork>(e)->workers = 0;
+    for (ObjectId e : w.view<PropWork>()) w.get<PropWork>(e)->workers = 0;
 
     for (auto& [prop, workers] : workersOf) {
         std::sort(workers.begin(), workers.end());
@@ -320,7 +320,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             PropWork& pw = w.has<PropWork>(prop) ? *w.get<PropWork>(prop) : w.add(prop, PropWork{});
             pw.workers = (int)workers.size();
             double perHour = 0.0;
-            for (Entity u : workers) {
+            for (ObjectId u : workers) {
                 perHour += 1.0 / (LOCKPICK_SHARE * workHoursFor(levelOf(statsOf(w, u), StatId::Lockpicking)));
             }
             pw.progress += gameSeconds / 3600.0 * perHour;
@@ -328,7 +328,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             while (pw.progress >= 1.0 && lock->locked) {
                 pw.progress -= 1.0;
                 ++pw.made;
-                const Entity picker = workers[pw.turn % workers.size()];
+                const ObjectId picker = workers[pw.turn % workers.size()];
                 ++pw.turn;
                 const int level = levelOf(statsOf(w, picker), StatId::Lockpicking);
                 if ((double)rng.unit() < lockpickChance(level)) {
@@ -342,7 +342,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
             }
             if (!lock->locked) {
-                for (Entity u : workers) w.remove<Working>(u);
+                for (ObjectId u : workers) w.remove<Working>(u);
                 pw.progress = 0.0;
                 pw.workers = 0;
             }
@@ -353,7 +353,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             pw.workers = (int)workers.size();
             pw.progress += gameSeconds / 3600.0 * (double)workers.size() / DEBRIS_CLEAR_HOURS;
             if (pw.progress >= 1.0) {
-                for (Entity u : workers) {
+                for (ObjectId u : workers) {
                     w.remove<Working>(u);
                     grantXp(w, u, StatId::Strength, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? "MISC_REASON_CLEARING" : nullptr);
                 }
@@ -376,7 +376,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         pw.workers = (int)workers.size();
 
         double perHour = 0.0;
-        for (Entity u : workers) perHour += propInfo(w.get<Prop>(prop)->kind).speed / workHoursFor(levelOf(statsOf(w, u), info.stat));
+        for (ObjectId u : workers) perHour += propInfo(w.get<Prop>(prop)->kind).speed / workHoursFor(levelOf(statsOf(w, u), info.stat));
         pw.progress += gameSeconds / 3600.0 * perHour;
 
         while (pw.progress >= 1.0 && !workers.empty()) {
@@ -400,14 +400,14 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     stopAll();
                     break;
                 }
-                Entity got = outItem <= 0 ? workers[pw.turn % workers.size()] : NULL_ENTITY;
-                for (size_t k = 0; k < workers.size() && got == NULL_ENTITY; ++k) {
-                    const Entity cand = workers[(pw.turn + k) % workers.size()];
+                ObjectId got = outItem <= 0 ? workers[pw.turn % workers.size()] : NO_OBJECT;
+                for (size_t k = 0; k < workers.size() && got == NO_OBJECT; ++k) {
+                    const ObjectId cand = workers[(pw.turn + k) % workers.size()];
                     const Inventory* inv = w.get<Inventory>(cand);
                     if (inv && slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, outItem, 1)) got = cand;
                 }
-                if (got == NULL_ENTITY) {
-                    for (Entity u : workers) {
+                if (got == NO_OBJECT) {
+                    for (ObjectId u : workers) {
                         queueLog(w, langf("MISC_GATHER_NO_ROOM", { nameOf(w, u), outName }), LogKind::Other, npcOnly(w, u));
                         w.remove<Working>(u);
                     }
@@ -444,7 +444,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             ++pw.made;
             const size_t pick = pw.turn % workers.size();
             ++pw.turn;
-            const Entity got = workers[pick];
+            const ObjectId got = workers[pick];
             int gives = info.item;
             if (info.altItem > 0 && info.altOneIn > 0 && rng.range(1, info.altOneIn) == 1) gives = info.altItem;
             const std::string itemName = itemNameOf(gives);
@@ -473,7 +473,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
     return gains;
 }
 
-int storeCarried(World& w, Entity unit, Entity prop, int item) {
+int storeCarried(World& w, ObjectId unit, ObjectId prop, int item) {
     Inventory* inv = w.get<Inventory>(unit);
     Storage* st = w.get<Storage>(prop);
     const Prop* p = w.get<Prop>(prop);
@@ -500,7 +500,7 @@ int storeCarried(World& w, Entity unit, Entity prop, int item) {
     return moved;
 }
 
-WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
+WorkStart tryStartWork(World& w, ObjectId unit, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p || !isWorkProp(propInfo(p->kind).use) || !w.get<Transform>(unit)) return WorkStart::TooFar;
     if (w.has<Mob>(unit)) return WorkStart::TooFar;
@@ -519,7 +519,7 @@ WorkStart tryStartWork(World& w, Entity unit, Entity prop) {
     return WorkStart::Started;
 }
 
-WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
+WorkStart tryStartUnlock(World& w, ObjectId unit, ObjectId prop) {
     const Lock* lock = w.get<Lock>(prop);
     if (!lock || !w.has<Prop>(prop) || !w.get<Transform>(unit)) return WorkStart::NotLocked;
     if (w.has<Mob>(unit)) return WorkStart::SkillTooLow;
@@ -554,7 +554,7 @@ WorkStart tryStartUnlock(World& w, Entity unit, Entity prop) {
     return WorkStart::Started;
 }
 
-void propStorageChanged(World& w, Entity prop) {
+void propStorageChanged(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p || propInfo(p->kind).use != PropUse::Crafting) return;
     if (craftStateOf(w, prop) != CraftState::Ready) stopWorkersAt(w, prop);
@@ -588,19 +588,19 @@ int recipeOutput(PropKind kind, int input) {
 }
 
 void occupyBanSystem(World& w, float dt) {
-    for (Entity u : w.view<OccupyBan>()) {
+    for (ObjectId u : w.view<OccupyBan>()) {
         OccupyBan* ban = w.get<OccupyBan>(u);
         ban->secondsLeft -= dt;
         if (ban->secondsLeft <= 0.0f) w.remove<OccupyBan>(u);
     }
 }
 
-Entity occupiedProp(World& w, Entity u) {
+ObjectId occupiedProp(World& w, ObjectId u) {
     const Occupying* oc = w.get<Occupying>(u);
-    return oc ? oc->prop : NULL_ENTITY;
+    return oc ? oc->prop : NO_OBJECT;
 }
 
-bool lockedIn(World& w, Entity u) {
+bool lockedIn(World& w, ObjectId u) {
     const Occupying* oc = w.get<Occupying>(u);
     if (!oc) return false;
     if (lockShutFor(w, oc->prop, u)) return true;
@@ -628,7 +628,7 @@ static int nextPassiveOutput(const Storage* st, const Fuel& fuel, PropKind kind)
     return next > 0 ? recipeOutput(kind, next) : 0;
 }
 
-PassiveState passiveStateOf(World& w, Entity prop) {
+PassiveState passiveStateOf(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     const Output* out = w.get<Output>(prop);
     const Fuel* fuel = w.get<Fuel>(prop);
@@ -642,7 +642,7 @@ PassiveState passiveStateOf(World& w, Entity prop) {
 }
 
 void passiveCraftSystem(World& w, double gameSeconds) {
-    for (Entity e : w.view<Prop, Output, Fuel>()) {
+    for (ObjectId e : w.view<Prop, Output, Fuel>()) {
         const PropKind kind = w.get<Prop>(e)->kind;
         const PropInfo& info = propInfo(kind);
         if (info.use != PropUse::PassiveCrafting) continue;

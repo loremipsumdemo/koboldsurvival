@@ -135,7 +135,7 @@ int restoreAmount(const ItemDef& def, UseEffect::Stat stat) {
     return total;
 }
 
-UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
+UseResult useStackOn(World& w, ObjectId consumer, ObjectId target, int slot) {
     Inventory* inv = w.get<Inventory>(consumer);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS) return UseResult::Empty;
 
@@ -202,6 +202,6 @@ UseResult useStackOn(World& w, Entity consumer, Entity target, int slot) {
     return UseResult::Used;
 }
 
-UseResult useStackInSlot(World& w, Entity unit, int slot) {
+UseResult useStackInSlot(World& w, ObjectId unit, int slot) {
     return useStackOn(w, unit, unit, slot);
 }

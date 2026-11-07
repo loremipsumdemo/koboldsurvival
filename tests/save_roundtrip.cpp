@@ -38,22 +38,22 @@ std::string slurp(const std::string& path) {
     return all.str();
 }
 
-Entity firstProp(World& w, PropKind kind) {
-    std::vector<Entity> props = w.view<Prop, Transform>();
+ObjectId firstProp(World& w, PropKind kind) {
+    std::vector<ObjectId> props = w.view<Prop, Transform>();
     std::sort(props.begin(), props.end());
-    for (Entity e : props) {
+    for (ObjectId e : props) {
         if (w.get<Prop>(e)->kind == kind) return e;
     }
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
-Entity firstStocked(World& w) {
-    for (Entity e : w.view<Prop, Storage, Transform>()) {
+ObjectId firstStocked(World& w) {
+    for (ObjectId e : w.view<Prop, Storage, Transform>()) {
         for (const ItemStack& s : w.get<Storage>(e)->slots) {
             if (s.count > 0) return e;
         }
     }
-    return NULL_ENTITY;
+    return NO_OBJECT;
 }
 
 int stacksIn(const Storage& st) {
@@ -96,21 +96,21 @@ int main(int, char**) {
     spawnGroundItems(world, terrain, rng, 2);
 
     // Things a reload must not undo
-    const Entity emptied = firstStocked(world);
-    check(emptied != NULL_ENTITY, "the level has a stocked container");
+    const ObjectId emptied = firstStocked(world);
+    check(emptied != NO_OBJECT, "the level has a stocked container");
     if (emptied) *world.get<Storage>(emptied) = Storage{};
-    const Entity altar = firstProp(world, PropKind::Altar);
-    check(altar != NULL_ENTITY, "the level has an Altar");
+    const ObjectId altar = firstProp(world, PropKind::Altar);
+    check(altar != NO_OBJECT, "the level has an Altar");
     const int altarOwner = altar ? world.get<Owner>(altar)->faction : -1;
     if (altar) breakBuilding(world, altar);
     size_t ownedByLoser = 0;
-    for (Entity e : world.view<Prop, Owner>()) ownedByLoser += world.get<Owner>(e)->faction == altarOwner ? 1 : 0;
+    for (ObjectId e : world.view<Prop, Owner>()) ownedByLoser += world.get<Owner>(e)->faction == altarOwner ? 1 : 0;
 
     // A resting unit and a unit with a standing order
-    std::vector<Entity> people = world.view<Unit, Commandable>();
+    std::vector<ObjectId> people = world.view<Entity, Commandable>();
     std::sort(people.begin(), people.end());
-    Entity bed = firstProp(world, PropKind::Bedroll);
-    check(people.size() >= 2 && bed != NULL_ENTITY, "the level has two units and a bedroll");
+    ObjectId bed = firstProp(world, PropKind::Bedroll);
+    check(people.size() >= 2 && bed != NO_OBJECT, "the level has two units and a bedroll");
     Behaviors* resting = world.get<Behaviors>(people[0]);
     for (const BehaviorRule& r : resting->rules) {
         if (r.kind != BehaviorKind::Rest) continue;
@@ -128,7 +128,7 @@ int main(int, char**) {
     // The bosses
     for (MobKind kind : { MobKind::Gorlicorn, MobKind::Griffin, MobKind::Manticore }) {
         int found = 0;
-        for (Entity e : world.view<Mob, Unit>()) {
+        for (ObjectId e : world.view<Mob, Entity>()) {
             if (world.get<Mob>(e)->kind != kind) continue;
             ++found;
             check(world.get<Needs>(e)->maxHp == mobInfo(kind).hp, "a boss has its own health");
@@ -144,15 +144,15 @@ int main(int, char**) {
     }
     check(mobInfo(MobKind::Griffin).hp == 10000 && mobInfo(MobKind::Manticore).hp == 5000, "the Griffin and Manticore have their health");
     int bossRabbits = 0;
-    for (Entity e : world.view<Mob, SpawnHome>()) bossRabbits += world.get<Mob>(e)->kind == MobKind::Rabbit ? 1 : 0;
+    for (ObjectId e : world.view<Mob, SpawnHome>()) bossRabbits += world.get<Mob>(e)->kind == MobKind::Rabbit ? 1 : 0;
     check(bossRabbits == mobInfo(MobKind::Gorlicorn).escortCount, "only the Gorlicorn brings rabbits");
 
     // States a fresh level never has
-    std::vector<Entity> npcs;
-    for (Entity e : world.view<Unit, Dialogue>()) npcs.push_back(e);
+    std::vector<ObjectId> npcs;
+    for (ObjectId e : world.view<Entity, Dialogue>()) npcs.push_back(e);
     std::sort(npcs.begin(), npcs.end());
     check(npcs.size() >= 3 && people.size() >= 3, "the level has NPCs and three of your units");
-    const Entity patient = npcs[0], dead = npcs[1], angry = npcs[2], rescuer = people[2];
+    const ObjectId patient = npcs[0], dead = npcs[1], angry = npcs[2], rescuer = people[2];
     knockOut(world, patient);
     world.get<Unconscious>(patient)->dying = 12.5f;
     world.add(patient, Carried{ rescuer });
@@ -168,23 +168,23 @@ int main(int, char**) {
     world.get<Corpse>(dead)->hours = 3.5;
     provoke(world, angry, FACTION_PLAYER);
 
-    Entity lockedProp = NULL_ENTITY;
-    for (Entity e : world.view<Prop, Lock, Transform>()) {
+    ObjectId lockedProp = NO_OBJECT;
+    for (ObjectId e : world.view<Prop, Lock, Transform>()) {
         const Lock* l = world.get<Lock>(e);
         if (l->locked && l->faction > 0) lockedProp = e;
     }
-    check(lockedProp != NULL_ENTITY, "a faction has a locked prop");
-    const Entity picker = makeUnit(world, *world.get<Transform>(lockedProp), FACTION_PLAYER);
+    check(lockedProp != NO_OBJECT, "a faction has a locked prop");
+    const ObjectId picker = makeEntity(world, *world.get<Transform>(lockedProp), FACTION_PLAYER);
     world.add(picker, defaultStats());
     world.add(picker, Working{ lockedProp, true });
 
-    const Entity bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
+    const ObjectId bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
     world.add(bones, BonesPile{ 2.0, { ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), 3 } } });
-    const Entity forge = firstProp(world, PropKind::Forge);
-    check(forge != NULL_ENTITY, "the level has a forge");
+    const ObjectId forge = firstProp(world, PropKind::Forge);
+    check(forge != NO_OBJECT, "the level has a forge");
     *world.get<Fuel>(forge) = Fuel{ 1.5, propInfo(PropKind::Forge).input };
     world.get<PropWork>(forge)->progress = 0.25;
-    const Entity lying = spawnGroundItem(world, *world.get<Transform>(people[0]), itemTagged(ITEM_TAG_COMMON_BONES), 2);
+    const ObjectId lying = spawnGroundItem(world, *world.get<Transform>(people[0]), itemTagged(ITEM_TAG_COMMON_BONES), 2);
     world.get<GroundItem>(lying)->hours = 5.0;
 
     const size_t propsBefore = world.view<Prop, Transform>().size();
@@ -205,13 +205,13 @@ int main(int, char**) {
 
     check(restored.view<Prop, Transform>().size() == propsBefore, "broken props stay broken (only Debris takes their place)");
     size_t emptyContainers = 0;
-    for (Entity e : restored.view<Prop, Storage>()) emptyContainers += stacksIn(*restored.get<Storage>(e)) == 0 ? 1 : 0;
+    for (ObjectId e : restored.view<Prop, Storage>()) emptyContainers += stacksIn(*restored.get<Storage>(e)) == 0 ? 1 : 0;
     check(emptyContainers > 0, "an emptied container stays empty");
     size_t ownedAfter = 0;
-    for (Entity e : restored.view<Prop, Owner>()) ownedAfter += restored.get<Owner>(e)->faction == altarOwner ? 1 : 0;
+    for (ObjectId e : restored.view<Prop, Owner>()) ownedAfter += restored.get<Owner>(e)->faction == altarOwner ? 1 : 0;
     check(ownedAfter == ownedByLoser, "props abandoned with their Altar stay ownerless");
 
-    std::vector<Entity> again = restored.view<Unit, Commandable>();
+    std::vector<ObjectId> again = restored.view<Entity, Commandable>();
     std::sort(again.begin(), again.end());
     const Behaviors* b = restored.get<Behaviors>(again[0]);
     check(b && b->busy && b->step.kind == BehaviorKind::Rest && restored.has<Occupying>(again[0]), "a resting unit is still on its Rest step");
@@ -221,13 +221,13 @@ int main(int, char**) {
     check(rng.gen == after.gen, "the random numbers carry on where they left off");
 
     int carried = 0, corpses = 0, unconscious = 0, provokedUnits = 0, picking = 0, bonesPiles = 0, burning = 0;
-    for (Entity e : restored.view<Carried>()) carried += restored.has<Carrying>(restored.get<Carried>(e)->by) ? 1 : 0;
-    for (Entity e : restored.view<Corpse>()) corpses += restored.get<Corpse>(e)->hours == 3.5 ? 1 : 0;
-    for (Entity e : restored.view<Unconscious>()) unconscious += restored.get<Unconscious>(e)->dying == 12.5f ? 1 : 0;
-    for (Entity e : restored.view<Provoked>()) provokedUnits += restored.get<Provoked>(e)->against.empty() ? 0 : 1;
-    for (Entity e : restored.view<Working>()) picking += restored.get<Working>(e)->unlocking ? 1 : 0;
-    for (Entity e : restored.view<BonesPile>()) bonesPiles += restored.get<BonesPile>(e)->items.size() == 1 ? 1 : 0;
-    for (Entity e : restored.view<Fuel, PropWork>()) burning += restored.get<Fuel>(e)->hours == 1.5 && restored.get<PropWork>(e)->progress == 0.25 ? 1 : 0;
+    for (ObjectId e : restored.view<Carried>()) carried += restored.has<Carrying>(restored.get<Carried>(e)->by) ? 1 : 0;
+    for (ObjectId e : restored.view<Corpse>()) corpses += restored.get<Corpse>(e)->hours == 3.5 ? 1 : 0;
+    for (ObjectId e : restored.view<Unconscious>()) unconscious += restored.get<Unconscious>(e)->dying == 12.5f ? 1 : 0;
+    for (ObjectId e : restored.view<Provoked>()) provokedUnits += restored.get<Provoked>(e)->against.empty() ? 0 : 1;
+    for (ObjectId e : restored.view<Working>()) picking += restored.get<Working>(e)->unlocking ? 1 : 0;
+    for (ObjectId e : restored.view<BonesPile>()) bonesPiles += restored.get<BonesPile>(e)->items.size() == 1 ? 1 : 0;
+    for (ObjectId e : restored.view<Fuel, PropWork>()) burning += restored.get<Fuel>(e)->hours == 1.5 && restored.get<PropWork>(e)->progress == 0.25 ? 1 : 0;
     check(carried == 1, "a carried unit is still carried");
     check(corpses == 1, "a corpse keeps its age");
     check(unconscious == 1, "a knocked-out unit keeps its Dying");
@@ -246,13 +246,13 @@ int main(int, char**) {
         Rng cageRng;
         cageRng.gen.seed(777);
         setupWorld(caged, terrain, cageRng, true);
-        std::vector<Entity> own = caged.view<Unit, Commandable, Transform>();
+        std::vector<ObjectId> own = caged.view<Entity, Commandable, Transform>();
         std::sort(own.begin(), own.end());
         check(own.size() >= 2, "the level has two of your units");
         if (own.size() >= 2) {
-            const Entity inside = own[0], pusher = own[1];
+            const ObjectId inside = own[0], pusher = own[1];
             const Transform spot = *caged.get<Transform>(pusher);
-            const Entity cage = makeProp(caged, PropKind::PrisonerCage, spot);
+            const ObjectId cage = makeProp(caged, PropKind::PrisonerCage, spot);
             if (Lock* lock = caged.get<Lock>(cage)) lock->locked = false;
             caged.add(inside, Occupying{ cage });
             check(inPrisonerCage(caged, inside), "a unit in a cage is caged");
@@ -265,7 +265,7 @@ int main(int, char**) {
             check(caged.has<OccupyBan>(inside), "the one pushed out can't occupy for a while");
             occupyBanSystem(caged, EVACUATE_OCCUPY_BAN_SECONDS + 1.0f);
             check(!caged.has<OccupyBan>(inside), "the ban runs out");
-            for (Entity npc : caged.view<Unit, Transform>()) {
+            for (ObjectId npc : caged.view<Entity, Transform>()) {
                 if (caged.has<Commandable>(npc) || outCold(caged, npc) || caged.has<Occupying>(npc)) continue;
                 caged.add(npc, Occupying{ cage });
                 leaveOpenLocksSystem(caged, terrain);
@@ -318,7 +318,7 @@ int main(int, char**) {
         World oldWorld;
         Rng oldRng;
         restoreWorld(oldWorld, terrain, oldRng, old);
-        check(!oldWorld.view<Unit, Commandable>().empty(), "a version 6 save restores your units");
+        check(!oldWorld.view<Entity, Commandable>().empty(), "a version 6 save restores your units");
         const std::string upgraded = "roundtrip_old.sav";
         check(writeSaveFile(upgraded, old), "a version 6 save is saved as the current version");
         const std::string once = slurp(upgraded);

@@ -137,7 +137,7 @@ struct BehaviorUi {
 
 enum class UnitTab : int { Inventory = 0, Profile, Stats, Behavior, Build, Count };
 constexpr int UNIT_TAB_COUNT = idx(UnitTab::Count);
-bool unitTabEnabled(World& w, Entity unit, UnitTab tab);
+bool unitTabEnabled(World& w, ObjectId unit, UnitTab tab);
 constexpr int STAT_GROUP_COUNT = 5;
 
 struct SidebarLayout {

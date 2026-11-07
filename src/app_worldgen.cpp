@@ -532,7 +532,7 @@ void App::editorUndo() {
     std::string err;
     if (levelFromText(editor.undo.back(), d, err)) applyLevel(world, terrain, rng, d);
     editor.undo.pop_back();
-    hoverProp = NULL_ENTITY;
+    hoverProp = NO_OBJECT;
     playSfx(Sfx::UiBack);
 }
 
@@ -550,14 +550,27 @@ void App::setEditorTool(EditorTool tool, int picked) {
 std::vector<App::EditorEntry> App::editorEntries() {
     std::vector<EditorEntry> out;
     switch (editor.tab) {
-    case EditorTab::Props:
-        for (PropKind k : propKindsListed()) out.push_back(EditorEntry{ lang(propInfo(k).nameKey), idx(k) });
+    case EditorTab::Entities:
+        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_UNITS") });
+        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_PLAYER_UNIT"), EditorTool::Unit, FACTION_PLAYER });
+        for (const FactionDef& f : factions()) {
+            if (f.id == FACTION_PLAYER || isMobFaction(f.id)) continue;
+            out.push_back(EditorEntry{ langf("UILABEL_EDITOR_NPC_UNIT", { factionName(f.id) }), EditorTool::Unit, f.id });
+        }
+        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_MOBS") });
+        for (int i = 1; i <= mobKindCount(); ++i) {
+            if (isRegularMob((MobKind)i)) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), EditorTool::Mob, i });
+        }
+        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_BOSS_MOBS") });
+        for (int i = 1; i <= mobKindCount(); ++i) {
+            if (isBossMob((MobKind)i)) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), EditorTool::Mob, i });
+        }
         break;
-    case EditorTab::Mobs:
-        for (int i = 1; i <= mobKindCount(); ++i) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), i });
+    case EditorTab::Props:
+        for (PropKind k : propKindsListed()) out.push_back(EditorEntry{ lang(propInfo(k).nameKey), EditorTool::Prop, idx(k) });
         break;
     case EditorTab::Items:
-        for (const ItemDef& d : itemDatabase()) out.push_back(EditorEntry{ itemDisplayName(d), d.id });
+        for (const ItemDef& d : itemDatabase()) out.push_back(EditorEntry{ itemDisplayName(d), EditorTool::Item, d.id });
         break;
     case EditorTab::Theme:
         break;
@@ -583,17 +596,20 @@ void App::drawEditorPanel() {
     button(L.load, lang("UILABEL_EDITOR_RELOAD"), false);
     button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.tool == EditorTool::Spawn);
     button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.tool == EditorTool::Erase);
-    button(L.tabs[0], lang("UILABEL_EDITOR_PROPS"), editor.tab == EditorTab::Props);
-    button(L.tabs[1], lang("UILABEL_EDITOR_MOBS"), editor.tab == EditorTab::Mobs);
+    button(L.tabs[0], lang("UILABEL_EDITOR_ENTITIES"), editor.tab == EditorTab::Entities);
+    button(L.tabs[1], lang("UILABEL_EDITOR_PROPS"), editor.tab == EditorTab::Props);
     button(L.tabs[2], lang("UILABEL_EDITOR_ITEMS"), editor.tab == EditorTab::Items);
     button(L.tabs[3], lang("UILABEL_GEN_TAB_THEME"), editor.tab == EditorTab::Theme);
     if (editor.tab == EditorTab::Theme) drawThemePanel(L.themeArea);
     const std::vector<EditorEntry> entries = editorEntries();
-    const EditorTool tabTool = editor.tab == EditorTab::Props ? EditorTool::Prop : editor.tab == EditorTab::Mobs ? EditorTool::Mob : EditorTool::Item;
     editor.listScroll = std::clamp(editor.listScroll, 0, std::max(0, (int)entries.size() - (int)L.rows.size()));
     for (size_t i = 0; i < L.rows.size() && (size_t)editor.listScroll + i < entries.size(); ++i) {
         const EditorEntry& entry = entries[(size_t)editor.listScroll + i];
-        const bool on = editor.tool == tabTool && editor.picked == entry.value;
+        if (entry.tool == EditorTool::None) {
+            renderer.drawListText(renderer.fitListText(entry.label, L.rows[i].w), L.rows[i].x, L.rows[i].y + (L.rows[i].h - textH) * 0.5f, gold);
+            continue;
+        }
+        const bool on = editor.tool == entry.tool && editor.picked == entry.value;
         const bool hot = L.rows[i].contains(mouseX, mouseY);
         if (on || hot) renderer.drawRect(L.rows[i], on ? RGBA{ 0.45f, 0.30f, 0.14f, 1.0f } : RGBA{ 0.28f, 0.18f, 0.12f, 1.0f });
         renderer.drawListText(renderer.fitListText(entry.label, L.rows[i].w - 12.0f * s), L.rows[i].x + 6.0f * s, L.rows[i].y + (L.rows[i].h - textH) * 0.5f, on ? gold : white);
@@ -605,7 +621,7 @@ void App::drawEditorPanel() {
         renderer.drawListText(renderer.fitListText(t, L.status.w), L.status.x, y, tint);
         y += textH + 2.0f * s;
     };
-    line(langf("UILABEL_EDITOR_COUNTS", { std::to_string(world.count<Prop>()), std::to_string(world.count<Mob>()), std::to_string(world.count<GroundItem>()) }), gray);
+    line(langf("UILABEL_EDITOR_COUNTS", { std::to_string(world.count<Entity>()), std::to_string(world.count<Prop>()), std::to_string(world.count<GroundItem>()) }), gray);
     line(langf("UILABEL_EDITOR_FILE", { std::to_string(text.size()) }) + (dirty ? " *" : ""), dirty ? gold : gray);
     line(lang("UILABEL_EDITOR_HELP1"), gray);
     line(lang("UILABEL_EDITOR_HELP2"), gray);
@@ -660,8 +676,9 @@ bool App::editorMouseDown() {
             const std::vector<EditorEntry> entries = editorEntries();
             for (size_t i = 0; i < L.rows.size() && (size_t)editor.listScroll + i < entries.size(); ++i) {
                 if (!L.rows[i].contains(x, y)) continue;
-                const EditorTool tool = editor.tab == EditorTab::Props ? EditorTool::Prop : editor.tab == EditorTab::Mobs ? EditorTool::Mob : EditorTool::Item;
-                setEditorTool(tool, entries[(size_t)editor.listScroll + i].value);
+                const EditorEntry& entry = entries[(size_t)editor.listScroll + i];
+                if (entry.tool == EditorTool::None) return true;
+                setEditorTool(entry.tool, entry.value);
                 playSfx(Sfx::UiSelect);
                 return true;
             }
@@ -706,6 +723,8 @@ void App::editorPlaceAt(float mx, float my) {
         snapBuildSpot((PropKind)editor.picked, hit->first, hit->second, x, z);
         o.type = LevelObject::Type::Prop;
         if (propInfo((PropKind)editor.picked).built) o.owner = FACTION_PLAYER;
+    } else if (editor.tool == EditorTool::Unit) {
+        o.type = LevelObject::Type::Unit;
     } else if (editor.tool == EditorTool::Mob) {
         o.type = LevelObject::Type::Mob;
     } else {
@@ -722,17 +741,17 @@ void App::editorPlaceAt(float mx, float my) {
 }
 
 void App::editorEraseAt(float mx, float my) {
-    Entity target = NULL_ENTITY;
-    const std::vector<Entity> units = renderer.unitsAtPixel(world, cam, mx, my, winW, winH);
-    const std::vector<Entity> items = renderer.groundItemsAtPixel(world, terrain, cam, mx, my, winW, winH);
-    const std::vector<Entity> props = renderer.propsAtPixel(world, cam, mx, my, winW, winH);
+    ObjectId target = NO_OBJECT;
+    const std::vector<ObjectId> units = renderer.entitiesAtPixel(world, cam, mx, my, winW, winH);
+    const std::vector<ObjectId> items = renderer.groundItemsAtPixel(world, terrain, cam, mx, my, winW, winH);
+    const std::vector<ObjectId> props = renderer.propsAtPixel(world, cam, mx, my, winW, winH);
     if (!units.empty()) target = units.front();
     else if (!items.empty()) target = items.front();
     else if (!props.empty()) target = props.front();
-    if (target == NULL_ENTITY) return;
+    if (target == NO_OBJECT) return;
     editorRemember();
     world.destroy(target);
-    hoverProp = NULL_ENTITY;
+    hoverProp = NO_OBJECT;
     playSfx(Sfx::Take);
     editorEdited();
 }
@@ -778,7 +797,7 @@ void App::editorLoad() {
     editorRemember();
     applyLevel(world, terrain, rng, d);
     editor.savedText = levelToText(captureLevel(world, currentMap.stem));
-    hoverProp = NULL_ENTITY;
+    hoverProp = NO_OBJECT;
     playSfx(Sfx::UiLoaded);
 }
 

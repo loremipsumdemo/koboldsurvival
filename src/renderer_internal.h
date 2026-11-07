@@ -47,19 +47,19 @@ inline constexpr double ITEM_SHINE_SECONDS = 0.6;
 inline constexpr float ITEM_SHADOW_RADIUS = 0.2f;
 inline constexpr float ITEM_SHADOW_ALPHA = 0.45f;
 
-inline double itemLoopPlace(Entity e, unsigned long long ticks, double loopSeconds) {
+inline double itemLoopPlace(ObjectId e, unsigned long long ticks, double loopSeconds) {
     const double at = (double)ticks / 1000.0 / loopSeconds + (double)e * 0.61803398875;
     return at - std::floor(at);
 }
 // From 0 at the bottom of the float to 1 at the top
-inline float itemBobShare(Entity e, unsigned long long ticks) {
+inline float itemBobShare(ObjectId e, unsigned long long ticks) {
     return 0.5f + 0.5f * (float)std::sin(6.283185307179586 * itemLoopPlace(e, ticks, ITEM_BOB_SECONDS));
 }
-inline float itemBobLift(Entity e, unsigned long long ticks) {
+inline float itemBobLift(ObjectId e, unsigned long long ticks) {
     return ITEM_BOB_LOW + (ITEM_BOB_HIGH - ITEM_BOB_LOW) * itemBobShare(e, ticks);
 }
 // How far the shine has crossed the item, from just above 0 to 1, or 0 between shines
-inline float itemShineShare(Entity e, unsigned long long ticks) {
+inline float itemShineShare(ObjectId e, unsigned long long ticks) {
     const double seconds = itemLoopPlace(e, ticks, ITEM_SHINE_EVERY_SECONDS) * ITEM_SHINE_EVERY_SECONDS;
     return seconds < ITEM_SHINE_SECONDS ? (float)(seconds / ITEM_SHINE_SECONDS) : 0.0f;
 }
@@ -97,7 +97,7 @@ bool loadDrawableModel(const char* path, Model& m, bool needsHeight);
 
 GLuint MakeDotTexture(bool white = false);
 
-float unitSaturation(World& w, Entity u);
+float unitSaturation(World& w, ObjectId u);
 
 RGBA mixColor(RGBA a, RGBA b, float t);
 RGBA rgb255(int r, int g, int b, float a);

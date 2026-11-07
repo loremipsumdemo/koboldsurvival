@@ -83,51 +83,51 @@ std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terra
 }
 
 void clearSelection(World& w) {
-    for (Entity e : w.view<Selected>()) w.remove<Selected>(e);
+    for (ObjectId e : w.view<Selected>()) w.remove<Selected>(e);
 }
 
-std::vector<Entity> selectedUnits(World& w) {
-    std::vector<Entity> out;
-    for (Entity u : w.view<Unit, Selected, Commandable>()) out.push_back(u);
+std::vector<ObjectId> selectedUnits(World& w) {
+    std::vector<ObjectId> out;
+    for (ObjectId u : w.view<Entity, Selected, Commandable>()) out.push_back(u);
     return out;
 }
-Entity sidebarUnitOf(World& w) {
-    if (session.tradeOpen && session.dialoguePlayer != NULL_ENTITY && w.has<Unit>(session.dialoguePlayer)) return session.dialoguePlayer;
-    if (session.storageProp != NULL_ENTITY && w.has<Unit>(session.storageUnit)) return session.storageUnit;
-    if (session.lootUnit != NULL_ENTITY && w.has<Unit>(session.lootBy)) return session.lootBy;
-    if (session.inspectUnit != NULL_ENTITY && w.has<Unit>(session.inspectUnit)) return session.inspectUnit;
-    const std::vector<Entity> mine = selectedUnits(w);
-    return mine.size() == 1 ? mine[0] : NULL_ENTITY;
+ObjectId sidebarUnitOf(World& w) {
+    if (session.tradeOpen && session.dialoguePlayer != NO_OBJECT && w.has<Entity>(session.dialoguePlayer)) return session.dialoguePlayer;
+    if (session.storageProp != NO_OBJECT && w.has<Entity>(session.storageUnit)) return session.storageUnit;
+    if (session.lootUnit != NO_OBJECT && w.has<Entity>(session.lootBy)) return session.lootBy;
+    if (session.inspectUnit != NO_OBJECT && w.has<Entity>(session.inspectUnit)) return session.inspectUnit;
+    const std::vector<ObjectId> mine = selectedUnits(w);
+    return mine.size() == 1 ? mine[0] : NO_OBJECT;
 }
 
-std::vector<Entity> panelUnits(World& w) {
-    if (session.tradeOpen && session.dialoguePlayer != NULL_ENTITY && w.has<Unit>(session.dialoguePlayer)) return { session.dialoguePlayer };
-    if (session.storageProp != NULL_ENTITY && w.has<Unit>(session.storageUnit)) return { session.storageUnit };
-    if (session.lootUnit != NULL_ENTITY && w.has<Unit>(session.lootBy)) return { session.lootBy };
-    std::vector<Entity> out;
-    for (Entity u : selectedUnits(w)) {
+std::vector<ObjectId> panelUnits(World& w) {
+    if (session.tradeOpen && session.dialoguePlayer != NO_OBJECT && w.has<Entity>(session.dialoguePlayer)) return { session.dialoguePlayer };
+    if (session.storageProp != NO_OBJECT && w.has<Entity>(session.storageUnit)) return { session.storageUnit };
+    if (session.lootUnit != NO_OBJECT && w.has<Entity>(session.lootBy)) return { session.lootBy };
+    std::vector<ObjectId> out;
+    for (ObjectId u : selectedUnits(w)) {
         if (!inventoryLocked(w, u)) out.push_back(u);
     }
     return out;
 }
 
-Entity unitClicked(World& w, const std::vector<Entity>& underPointer) {
-    for (Entity u : underPointer) {
+ObjectId unitClicked(World& w, const std::vector<ObjectId>& underPointer) {
+    for (ObjectId u : underPointer) {
         if (w.has<Commandable>(u)) return u;
     }
-    return underPointer.empty() ? NULL_ENTITY : underPointer[0];
+    return underPointer.empty() ? NO_OBJECT : underPointer[0];
 }
 
-void clickSelect(World& w, Entity hit, bool additive) {
-    if (hit == NULL_ENTITY) {
-        session.inspectUnit = NULL_ENTITY;
+void clickSelect(World& w, ObjectId hit, bool additive) {
+    if (hit == NO_OBJECT) {
+        session.inspectUnit = NO_OBJECT;
         return;
     }
     if (!w.has<Commandable>(hit)) {
         session.inspectUnit = hit;
         return;
     }
-    session.inspectUnit = NULL_ENTITY;
+    session.inspectUnit = NO_OBJECT;
     if (!additive) clearSelection(w);
     if (!w.has<Selected>(hit)) w.add(hit, Selected{});
 }
@@ -138,8 +138,8 @@ bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
     float minY = std::min(y0, y1), maxY = std::max(y0, y1);
     Mat4 vp = cam.viewProj((float)W / (float)H);
 
-    std::vector<Entity> inBox;
-    for (Entity u : w.view<Unit, Transform, Commandable>()) {
+    std::vector<ObjectId> inBox;
+    for (ObjectId u : w.view<Entity, Transform, Commandable>()) {
         Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx, sy;
@@ -149,20 +149,20 @@ bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
         }
     }
     if (inBox.empty()) return false;
-    session.inspectUnit = NULL_ENTITY;
+    session.inspectUnit = NO_OBJECT;
     if (!additive) clearSelection(w);
-    for (Entity u : inBox) {
+    for (ObjectId u : inBox) {
         if (!w.has<Selected>(u)) w.add(u, Selected{});
     }
     return true;
 }
 
-std::vector<Entity> groundItemsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H) {
+std::vector<ObjectId> groundItemsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H) {
     const float minX = std::min(x0, x1), maxX = std::max(x0, x1);
     const float minY = std::min(y0, y1), maxY = std::max(y0, y1);
     const Mat4 vp = cam.viewProj((float)W / (float)H);
-    std::vector<Entity> out;
-    for (Entity it : w.view<GroundItem, Transform>()) {
+    std::vector<ObjectId> out;
+    for (ObjectId it : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(it);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx, sy;
@@ -183,12 +183,12 @@ bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my
     gz = hit->second;
     return true;
 }
-Entity firstSquadUnit(World& w) {
-    std::vector<Entity> squad = w.view<Unit, Commandable>();
+ObjectId firstSquadUnit(World& w) {
+    std::vector<ObjectId> squad = w.view<Entity, Commandable>();
     std::sort(squad.begin(), squad.end());
-    Entity best = NULL_ENTITY;
+    ObjectId best = NO_OBJECT;
     int bestRank = 4;
-    for (Entity u : squad) {
+    for (ObjectId u : squad) {
         const int rank = (w.has<Mob>(u) ? 1 : 0) + (outCold(w, u) ? 2 : 0);
         if (rank < bestRank) {
             best = u;
@@ -199,8 +199,8 @@ Entity firstSquadUnit(World& w) {
 }
 
 void focusCameraOnFirstUnit(World& w, Camera& cam) {
-    const Entity first = firstSquadUnit(w);
-    if (first == NULL_ENTITY || !w.get<Transform>(first)) return;
+    const ObjectId first = firstSquadUnit(w);
+    if (first == NO_OBJECT || !w.get<Transform>(first)) return;
 
     const Transform* t = w.get<Transform>(first);
     cam.focusX = std::floor(t->x) + 0.5f;
@@ -209,7 +209,7 @@ void focusCameraOnFirstUnit(World& w, Camera& cam) {
     cam.clampState();
 }
 
-void focusCameraOnUnit(World& w, Camera& cam, Entity u) {
+void focusCameraOnUnit(World& w, Camera& cam, ObjectId u) {
     const Transform* t = w.get<Transform>(u);
     if (!t) return;
     cam.focusX = t->x;
@@ -218,9 +218,9 @@ void focusCameraOnUnit(World& w, Camera& cam, Entity u) {
     cam.clampState();
 }
 
-bool followUnitCamera(World& w, Camera& cam, Entity u) {
+bool followUnitCamera(World& w, Camera& cam, ObjectId u) {
     const Transform* t = w.get<Transform>(u);
-    if (!t || !w.has<Unit>(u)) return false;
+    if (!t || !w.has<Entity>(u)) return false;
     cam.focusX = t->x;
     cam.focusZ = t->z;
     cam.clampState();

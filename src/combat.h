@@ -15,7 +15,7 @@ class Terrain;
 #include "hostility.h"
 #include "spatial.h"
 
-inline void leaveSquad(World& w, Entity u) {
+inline void leaveSquad(World& w, ObjectId u) {
     if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
         if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && sq->size > 0) --sq->size;
         w.remove<ActiveSquadMember>(u);
@@ -65,7 +65,7 @@ const RangedProfile* rangedProfileOf(int item);
 inline bool isRangedWeapon(int item) { return rangedProfileOf(item) != nullptr; }
 
 CombatNumbers deriveCombat(const Stats& s, const Equipment& worn, float buffAttack);
-CombatNumbers numbersOf(World& w, Entity e);
+CombatNumbers numbersOf(World& w, ObjectId e);
 
 int maxHealthFor(const Stats& s);
 
@@ -80,20 +80,20 @@ struct SwingResult {
 SwingResult resolveSwing(const CombatNumbers& attacker, const CombatNumbers& defender, bool defenderDown,
                          float landRoll, float blockRoll, float spreadRoll);
 
-std::string nameOf(World& w, Entity e);
+std::string nameOf(World& w, ObjectId e);
 
-bool isDowned(World& w, Entity e);
+bool isDowned(World& w, ObjectId e);
 
-bool inPrisonerCage(World& w, Entity e);
+bool inPrisonerCage(World& w, ObjectId e);
 
-void ensureCombat(World& w, Entity e);
+void ensureCombat(World& w, ObjectId e);
 
-bool isPassive(World& w, Entity e);
-bool isBlocking(World& w, Entity e);
-bool isSneaking(World& w, Entity e);
-float reachOf(World& w, Entity e);
+bool isPassive(World& w, ObjectId e);
+bool isBlocking(World& w, ObjectId e);
+bool isSneaking(World& w, ObjectId e);
+float reachOf(World& w, ObjectId e);
 
 Equipment randomHostileGear(Rng& rng);
 
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt);
-bool canSee(World& w, const Terrain& t, Entity a, Entity b);
+bool canSee(World& w, const Terrain& t, ObjectId a, ObjectId b);

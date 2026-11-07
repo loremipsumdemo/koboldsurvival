@@ -6,11 +6,11 @@ namespace {
 bool shiftHeld() { return (SDL_GetModState() & SDL_KMOD_SHIFT) != 0; }
 }
 
-void App::sayAs(Entity who, const std::string& text, bool player) {
+void App::sayAs(ObjectId who, const std::string& text, bool player) {
     SpokenLine ln;
     ln.text = text;
     ln.player = player;
-    const bool known = who != NULL_ENTITY && world.has<Unit>(who);
+    const bool known = who != NO_OBJECT && world.has<Entity>(who);
     ln.speaker = known ? nameOf(world, who) : std::string(player ? lang("MISC_YOU") : lang("UILABEL_UNNAMED_UNIT"));
     const UnitSprite* us = known ? world.get<UnitSprite>(who) : nullptr;
     ln.sprite = us ? us->id : 1;
@@ -26,7 +26,7 @@ void App::endTalk() {
     session.quantity.open = false;
     world.remove<InConversation>(session.dialogueUnit);
     world.remove<InConversation>(session.dialoguePlayer);
-    session.dialogueUnit = NULL_ENTITY;
+    session.dialogueUnit = NO_OBJECT;
     session.dialogueConvo.clear();
     if (session.autoPaused) session.paused = false;
     session.autoPaused = false;
@@ -41,12 +41,12 @@ void App::pauseForConversation() {
 
 // While the game runs behind a conversation, either side can die, be knocked out, be carried off or come under attack.
 void App::endBrokenConversation() {
-    if (session.dialogueUnit == NULL_ENTITY) return;
-    const Entity npc = session.dialogueUnit, you = session.dialoguePlayer;
-    auto cannotTalk = [&](Entity u) {
-        if (!world.has<Unit>(u) || world.has<Corpse>(u) || outCold(world, u) || world.has<Carried>(u)) return true;
+    if (session.dialogueUnit == NO_OBJECT) return;
+    const ObjectId npc = session.dialogueUnit, you = session.dialoguePlayer;
+    auto cannotTalk = [&](ObjectId u) {
+        if (!world.has<Entity>(u) || world.has<Corpse>(u) || outCold(world, u) || world.has<Carried>(u)) return true;
         const Combat* c = world.get<Combat>(u);
-        return c && c->target != NULL_ENTITY;
+        return c && c->target != NO_OBJECT;
     };
     if (cannotTalk(npc) || cannotTalk(you) || world.has<Hostile>(npc)) {
         endTalk();
@@ -54,7 +54,7 @@ void App::endBrokenConversation() {
     }
 }
 
-void App::requestTrade(bool npcSide, Entity owner, int slot) {
+void App::requestTrade(bool npcSide, ObjectId owner, int slot) {
     const Inventory* inv = world.get<Inventory>(owner);
     if (!inv || slot < 0 || slot >= INVENTORY_SLOTS || inv->slots[slot].item == 0) return;
     std::vector<TradeGhost>& side = npcSide ? session.tradeNpc : session.tradePlayer;
@@ -83,7 +83,7 @@ void App::requestTrade(bool npcSide, Entity owner, int slot) {
 void App::confirmQuantity() {
     if (session.quantity.toStorage) {
         std::string why;
-        if (session.storageProp != NULL_ENTITY && session.quantity.owner == session.storageUnit &&
+        if (session.storageProp != NO_OBJECT && session.quantity.owner == session.storageUnit &&
             storeCountInStorage(world, session.quantity.slot, session.quantity.chosen, why)) {
             queueSound(world, Sfx::ItemMove);
         } else if (!why.empty()) {
@@ -153,10 +153,10 @@ void App::showTraderInventory() {
     sidebarScroll = 0.0f;
 }
 
-void App::startTalk(Entity npc, Entity talker, bool shop) {
+void App::startTalk(ObjectId npc, ObjectId talker, bool shop) {
     if (world.has<Mob>(npc) || world.has<Mob>(talker)) return;
-    std::vector<Entity> others;
-    for (Entity u : selectedUnits(world)) {
+    std::vector<ObjectId> others;
+    for (ObjectId u : selectedUnits(world)) {
         if (u != talker) others.push_back(u);
     }
     clearTalkOrders(world);
@@ -183,19 +183,19 @@ void App::startTalk(Entity npc, Entity talker, bool shop) {
     }
 }
 
-void App::tryStartTalk(Entity npc, Entity talker, std::vector<Entity> units, bool shop) {
+void App::tryStartTalk(ObjectId npc, ObjectId talker, std::vector<ObjectId> units, bool shop) {
     if (session.talkCooldown <= 0.0f) {
         startTalk(npc, talker, shop);
         return;
     }
-    for (Entity u : world.view<TalkOrder>()) units.push_back(u);
+    for (ObjectId u : world.view<TalkOrder>()) units.push_back(u);
     std::sort(units.begin(), units.end());
     units.erase(std::unique(units.begin(), units.end()), units.end());
     const Transform* nt = world.get<Transform>(npc);
     if (nt && !units.empty()) issueMoveOrder(world, terrain, units, Vec2{ nt->x, nt->z });
 }
 
-void App::startFreeTrade(Entity other, Entity unit) {
+void App::startFreeTrade(ObjectId other, ObjectId unit) {
     if (world.has<Mob>(other) || world.has<Mob>(unit)) return;
     clearTalkOrders(world);
     closeStorage();
@@ -211,14 +211,14 @@ void App::startFreeTrade(Entity other, Entity unit) {
     openTrade(true);
 }
 
-bool App::noteLockedIn(const std::vector<Entity>& units) {
+bool App::noteLockedIn(const std::vector<ObjectId>& units) {
     bool anyAwake = false;
-    for (Entity u : units) anyAwake = anyAwake || !outCold(world, u);
+    for (ObjectId u : units) anyAwake = anyAwake || !outCold(world, u);
     if (!units.empty() && !anyAwake) {
         refuse(langf("MISC_IS_UNCONSCIOUS", { nameOf(world, units[0]) }));
         return true;
     }
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         if (!lockedIn(world, u)) continue;
         refuse(langf("MISC_LOCKED_IN", { nameOf(world, u), propNameOf(world, occupiedProp(world, u)) }));
         return true;

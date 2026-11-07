@@ -10,7 +10,7 @@
 
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
-    for (Entity e : w.view<Prop, Transform, Owner>()) {
+    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
         if (!propInfo(w.get<Prop>(e)->kind).claimsLand) continue;
         Claim c;
         c.altar = e;
@@ -38,7 +38,7 @@ bool claimsOverlap(float ax, float az, float bx, float bz) {
     return dx * dx + dz * dz < reach * reach;
 }
 
-bool altarHasUpkeep(World& w, Entity altar) {
+bool altarHasUpkeep(World& w, ObjectId altar) {
     const Prop* p = w.get<Prop>(altar);
     const Storage* st = w.get<Storage>(altar);
     if (!p || !st) return false;
@@ -49,12 +49,12 @@ bool altarHasUpkeep(World& w, Entity altar) {
     return false;
 }
 
-bool altarFueled(World& w, Entity altar) {
+bool altarFueled(World& w, ObjectId altar) {
     if (const Fuel* f = w.get<Fuel>(altar); f && f->hours > 1e-9) return true;
     return altarHasUpkeep(w, altar);
 }
 
-std::string propDisplayName(World& w, Entity prop) {
+std::string propDisplayName(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p) return std::string();
     if (propInfo(p->kind).claimsLand) {
@@ -63,22 +63,22 @@ std::string propDisplayName(World& w, Entity prop) {
     return lang(propInfo(p->kind).nameKey);
 }
 
-bool lockShutFor(World& w, Entity prop, Entity unit) {
+bool lockShutFor(World& w, ObjectId prop, ObjectId unit) {
     return lockShutForFaction(w, prop, factionOf(w, unit));
 }
 
-bool lockShutFor(World& w, const std::vector<Claim>& claims, Entity prop, Entity unit) {
+bool lockShutFor(World& w, const std::vector<Claim>& claims, ObjectId prop, ObjectId unit) {
     return lockShutForFaction(w, claims, prop, factionOf(w, unit));
 }
 
-bool lockShutForFaction(World& w, Entity prop, int faction) {
+bool lockShutForFaction(World& w, ObjectId prop, int faction) {
     const Lock* lock = w.get<Lock>(prop);
     const Prop* p = w.get<Prop>(prop);
     if ((p && propInfo(p->kind).claimsLand) || (lock && lock->locked)) return lockShutForFaction(w, claimsOf(w), prop, faction);
     return false;
 }
 
-bool lockShutForFaction(World& w, const std::vector<Claim>& claims, Entity prop, int faction) {
+bool lockShutForFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction) {
     if (const Prop* p = w.get<Prop>(prop); p && propInfo(p->kind).claimsLand) {
         const Owner* own = w.get<Owner>(prop);
         return !own || own->faction != faction;
@@ -90,7 +90,7 @@ bool lockShutForFaction(World& w, const std::vector<Claim>& claims, Entity prop,
     return !(t && claimAt(claims, t->x, t->z, faction));
 }
 
-void claimOwnership(World& w, Entity prop) {
+void claimOwnership(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     const Transform* t = w.get<Transform>(prop);
     if (!p || !t || propInfo(p->kind).claimsLand) return;
@@ -104,19 +104,19 @@ void claimOwnership(World& w, Entity prop) {
 }
 
 namespace {
-void releaseProp(World& w, Entity prop) {
-    for (Entity u : w.view<Occupying>()) {
+void releaseProp(World& w, ObjectId prop) {
+    for (ObjectId u : w.view<Occupying>()) {
         if (w.get<Occupying>(u)->prop == prop) w.remove<Occupying>(u);
     }
-    for (Entity u : w.view<Working>()) {
+    for (ObjectId u : w.view<Working>()) {
         if (w.get<Working>(u)->prop == prop) w.remove<Working>(u);
     }
-    for (Entity u : w.view<PropOrder>()) {
+    for (ObjectId u : w.view<PropOrder>()) {
         if (w.get<PropOrder>(u)->prop != prop) continue;
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
     }
-    for (Entity u : w.view<Behaviors>()) {
+    for (ObjectId u : w.view<Behaviors>()) {
         Behaviors* b = w.get<Behaviors>(u);
         if (b->busy && b->stepProp == prop) b->busy = false;
         b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) {
@@ -127,7 +127,7 @@ void releaseProp(World& w, Entity prop) {
 }
 
 void abandonClaim(World& w, float x, float z, int faction) {
-    for (Entity e : w.view<Prop, Transform, Owner>()) {
+    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
         if (w.get<Owner>(e)->faction != faction) continue;
         const Transform* t = w.get<Transform>(e);
         const float dx = t->x - x, dz = t->z - z;
@@ -138,7 +138,7 @@ void abandonClaim(World& w, float x, float z, int faction) {
 }
 }
 
-void breakBuilding(World& w, Entity e) {
+void breakBuilding(World& w, ObjectId e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
     const PropKind kind = w.get<Prop>(e)->kind;
     const Transform at = *w.get<Transform>(e);
@@ -164,7 +164,7 @@ void breakBuilding(World& w, Entity e) {
     claimOwnership(w, makeProp(w, PropKind::Debris, at));
 }
 
-bool destroyBuilding(World& w, Entity e) {
+bool destroyBuilding(World& w, ObjectId e) {
     if (!w.has<Prop>(e)) return false;
     breakBuilding(w, e);
     return true;
@@ -179,16 +179,16 @@ void claimDecaySystem(World& w, double gameSeconds) {
         if (altarFueled(w, c.altar)) hp->value = std::min(hp->max, hp->value + ALTAR_RECOVER_PER_HOUR * hours);
         else hp->value -= hours / ALTAR_DECAY_HOURS * ALTAR_HEALTH;
     }
-    for (Entity e : w.view<Health>()) {
+    for (ObjectId e : w.view<Health>()) {
         if (w.get<Health>(e)->value <= 0.0 && w.has<Prop>(e)) breakBuilding(w, e);
     }
 }
 
 void settleClaimOwnership(World& w) {
-    for (Entity e : w.view<Prop, Transform>()) claimOwnership(w, e);
+    for (ObjectId e : w.view<Prop, Transform>()) claimOwnership(w, e);
 }
 
-bool propDecaying(World& w, Entity e) {
+bool propDecaying(World& w, ObjectId e) {
     const Prop* p = w.get<Prop>(e);
     return p && propInfo(p->kind).claimsLand && w.has<Health>(e) && !altarFueled(w, e);
 }

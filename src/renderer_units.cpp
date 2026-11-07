@@ -36,12 +36,12 @@ float missingPropSide(PropKind) {
     return GLYPH_H;
 }
 
-float Renderer::unitTop(World& w, Entity u) {
+float Renderer::unitTop(World& w, ObjectId u) {
     const UnitPose pose = unitPose(w, u);
     return unitHeight(w, u) * (pose.lying ? unitAspect(w, u) : 1.0f) + pose.lift;
 }
 
-Renderer::UnitPose Renderer::unitPose(World& w, Entity e) const {
+Renderer::UnitPose Renderer::unitPose(World& w, ObjectId e) const {
     UnitPose p;
     const float bed = bedLift(w, e);
     p.carried = w.has<Carried>(e);
@@ -52,7 +52,7 @@ Renderer::UnitPose Renderer::unitPose(World& w, Entity e) const {
     return p;
 }
 
-float Renderer::bedLift(World& w, Entity u) const {
+float Renderer::bedLift(World& w, ObjectId u) const {
     const Occupying* oc = w.get<Occupying>(u);
     if (!oc || w.has<Carried>(u)) return -1.0f;
     const Prop* p = w.get<Prop>(oc->prop);
@@ -64,7 +64,7 @@ float Renderer::bedLift(World& w, Entity u) const {
     return std::max(0.0f, propBaseY(w, oc->prop) - ut->y + propTop(p->kind) * 0.5f);
 }
 
-float Renderer::unitHover(World& w, Entity u) const {
+float Renderer::unitHover(World& w, ObjectId u) const {
     const Mob* mb = w.get<Mob>(u);
     if (!mb) return 0.0f;
     if (outCold(w, u) || w.has<PlayingDead>(u) || w.has<Corpse>(u) || w.has<Carried>(u) || w.has<Occupying>(u)) {
@@ -214,7 +214,7 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-Mat4 Renderer::unitWorldMatrix(World& w, Entity e, const Model& m, float yaw) const {
+Mat4 Renderer::unitWorldMatrix(World& w, ObjectId e, const Model& m, float yaw) const {
     const Transform* tr = w.get<Transform>(e);
     const UnitPose pose = unitPose(w, e);
     float x = tr->x, z = tr->z;
@@ -242,7 +242,7 @@ void Renderer::drawUnitModel(const Model& m, const Mat4& placement) {
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 }
 
-float Renderer::unitYaw(Entity e, float x, float z, bool idle) {
+float Renderer::unitYaw(ObjectId e, float x, float z, bool idle) {
     const unsigned long long now = std::max<unsigned long long>(1, SDL_GetTicks());
     auto it = unitFacing_.find(e);
     if (it == unitFacing_.end()) {
@@ -348,7 +348,7 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
 }
 
-const TextTex& Renderer::unitGlyph(World& w, Entity e) const {
+const TextTex& Renderer::unitGlyph(World& w, ObjectId e) const {
     if (const Mob* m = w.get<Mob>(e)) {
         const int i = idx(m->kind) - 1;
         if (!mobInfo(m->kind).model.empty()) return pink_;
@@ -363,7 +363,7 @@ const TextTex& Renderer::unitPicture(int n) const {
     return profilePics_[(size_t)idx].tex ? profilePics_[(size_t)idx] : pink_;
 }
 
-const TextTex& Renderer::unitPortrait(World& w, Entity e) const {
+const TextTex& Renderer::unitPortrait(World& w, ObjectId e) const {
     if (w.has<Mob>(e)) return unitGlyph(w, e);
     const UnitSprite* us = w.get<UnitSprite>(e);
     return unitPicture(us ? us->id : 1);
@@ -374,21 +374,21 @@ const Model* Renderer::unitModelNumber(int n) const {
     return unitModelFor_[(size_t)idx];
 }
 
-RGBA Renderer::unitFactionTint(World& w, Entity e) const {
+RGBA Renderer::unitFactionTint(World& w, ObjectId e) const {
     const Faction* f = w.get<Faction>(e);
     if (!f || f->id == FACTION_PLAYER || w.has<Mob>(e)) return RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
     const FactionColor c = factionColor(f->id);
     return RGBA{ c.r, c.g, c.b, FACTION_TINT };
 }
 
-float Renderer::unitHeight(World& w, Entity e) const {
+float Renderer::unitHeight(World& w, ObjectId e) const {
     if (const Mob* mb = w.get<Mob>(e)) {
         return unitModel(w, e) ? mobInfo(mb->kind).modelHeight : GLYPH_H * mobSpriteScale(mb->kind);
     }
     return GLYPH_H;
 }
 
-const Model* Renderer::unitModel(World& w, Entity e) const {
+const Model* Renderer::unitModel(World& w, ObjectId e) const {
     if (const Mob* mb = w.get<Mob>(e)) {
         const int i = idx(mb->kind) - 1;
         if (i >= 0 && i < mobKindCount() && mobModels_[(size_t)i].vao) return &mobModels_[(size_t)i];
@@ -398,7 +398,7 @@ const Model* Renderer::unitModel(World& w, Entity e) const {
     return unitModelNumber(us ? us->id : 1);
 }
 
-float Renderer::unitAspect(World& w, Entity e) const {
+float Renderer::unitAspect(World& w, ObjectId e) const {
     if (const Model* m = unitModel(w, e)) {
         return std::max(m->maxX - m->minX, m->maxZ - m->minZ) / (m->maxY - m->minY);
     }
@@ -424,18 +424,18 @@ static bool pixelRay(const Mat4& vp, float mx, float my, int winW, int winH, flo
     return true;
 }
 
-std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
+std::vector<ObjectId> Renderer::entitiesAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float o[3] = {}, d[3] = {};
     if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
-    std::vector<std::pair<float, Entity>> hits;
+    std::vector<std::pair<float, ObjectId>> hits;
     const float rayLen2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
 
     auto project = [&](float x, float y, float z, float& sx, float& sy) {
         return worldToScreen(vp, x, y, z, winW, winH, sx, sy);
     };
 
-    for (Entity u : w.view<Unit, Transform, Name>()) {
+    for (ObjectId u : w.view<Entity, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         if (const Model* m = unitModel(w, u)) {
@@ -477,18 +477,18 @@ std::vector<Entity> Renderer::unitsAtPixel(World& w, const Camera& cam, float mx
         }
     }
     std::sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-    std::vector<Entity> out;
+    std::vector<ObjectId> out;
     for (const auto& h : hits) out.push_back(h.second);
     return out;
 }
 
-std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
+std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float o[3] = {}, d[3] = {};
     if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
-    std::vector<std::pair<float, Entity>> hits;
+    std::vector<std::pair<float, ObjectId>> hits;
     const DetailRange detail(cam);
-    for (Entity e : w.view<Prop, Transform>()) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
@@ -519,12 +519,12 @@ std::vector<Entity> Renderer::propsAtPixel(World& w, const Camera& cam, float mx
         }
     }
     std::sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-    std::vector<Entity> out;
+    std::vector<ObjectId> out;
     for (const auto& h : hits) out.push_back(h.second);
     return out;
 }
 
-float Renderer::propBaseY(World& w, Entity e) const {
+float Renderer::propBaseY(World& w, ObjectId e) const {
     const Transform* tr = w.get<Transform>(e);
     return tr ? tr->y : 0.0f;
 }

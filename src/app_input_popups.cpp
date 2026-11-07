@@ -3,14 +3,14 @@
 using namespace play;
 
 bool App::pressOnDisband() {
-    if (screen == Screen::Playing && session.disbandTarget != NULL_ENTITY) {
+    if (screen == Screen::Playing && session.disbandTarget != NO_OBJECT) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const DisbandLayout dl = layoutDisband(winW, winH);
             if (dl.disband.contains(e.button.x, e.button.y)) {
                 session.disbandHeldAt = std::max<unsigned long long>(1, SDL_GetTicks());
                 playSfx(Sfx::UiClick);
             } else if (dl.cancel.contains(e.button.x, e.button.y)) {
-                session.disbandTarget = NULL_ENTITY;
+                session.disbandTarget = NO_OBJECT;
                 session.disbandHeldAt = 0;
                 playSfx(Sfx::UiBack);
             }
@@ -45,7 +45,7 @@ bool App::pressOnOptimizeAll() {
                 optimizeAllOpen = false;
                 playSfx(Sfx::UiBack);
             } else if (ol.confirm.contains(x, y)) {
-                const std::vector<Entity> squad = ownUnitList();
+                const std::vector<ObjectId> squad = ownUnitList();
                 const OptimizeAllResult r = optimizeAllGear(world, squad, gearPrefs());
                 optimizeAllOpen = false;
                 if (r.changed == 0 && r.noRoom == 0) {
@@ -132,7 +132,7 @@ void App::pressOnTrade(const TradeLayout& tl, float x, float y) {
 }
 
 bool App::pressOnTalk() {
-    if (session.dialogueUnit != NULL_ENTITY && screen == Screen::Playing) {
+    if (session.dialogueUnit != NO_OBJECT && screen == Screen::Playing) {
         if (session.quantity.open && session.tradeOpen && !session.quantity.toStorage) {
             if (e.button.button == SDL_BUTTON_LEFT) quantityClick(e.button.x, e.button.y);
             return true;
@@ -187,7 +187,7 @@ bool App::pressOnStoreQuantity() {
 }
 
 bool App::pressOnLoot() {
-    if (screen == Screen::Playing && session.lootUnit != NULL_ENTITY) {
+    if (screen == Screen::Playing && session.lootUnit != NO_OBJECT) {
         const LootLayout ll = layoutLoot(winW, winH);
         const float x = e.button.x, y = e.button.y;
         if (ll.panel.contains(x, y)) {
@@ -217,7 +217,7 @@ bool App::pressOnLoot() {
 }
 
 bool App::pressOnStorage() {
-    if (screen == Screen::Playing && session.storageProp != NULL_ENTITY) {
+    if (screen == Screen::Playing && session.storageProp != NO_OBJECT) {
         const StorageLayout stl = storageLayout(world, winW, winH);
         const float x = e.button.x, y = e.button.y;
         if (stl.panel.contains(x, y)) {

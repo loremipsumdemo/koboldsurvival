@@ -79,6 +79,9 @@ inline bool mobKindsFriendly(MobKind a, MobKind b) { return mobInfo(a).escort ==
 inline bool isRegularMob(MobKind kind) {
     return idx(kind) >= 1 && idx(kind) <= mobKindCount() && mobInfo(kind).category == MobCategory::Regular;
 }
+inline bool isBossMob(MobKind kind) {
+    return idx(kind) >= 1 && idx(kind) <= mobKindCount() && mobInfo(kind).category == MobCategory::Boss;
+}
 inline bool campMobKind(MobKind kind) { return isRegularMob(kind); }
 
 inline int mobFaction(MobKind kind) { return mobInfo(kind).faction; }

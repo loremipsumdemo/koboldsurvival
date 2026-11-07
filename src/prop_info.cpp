@@ -9,7 +9,7 @@
 #include "systems.h"
 
 namespace {
-std::string upkeepLine(World& w, Entity e) {
+std::string upkeepLine(World& w, ObjectId e) {
     const Prop* p = w.get<Prop>(e);
     double hours = 0.0;
     if (const Fuel* f = w.get<Fuel>(e)) hours += f->hours;
@@ -28,7 +28,7 @@ std::string healthLine(const Health& hp) {
 }
 }
 
-std::vector<std::string> propInfoLines(World& w, Entity e) {
+std::vector<std::string> propInfoLines(World& w, ObjectId e) {
     std::vector<std::string> out;
     const Prop* p = w.get<Prop>(e);
     const Transform* tr = w.get<Transform>(e);
@@ -39,8 +39,8 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
     if (info.use == PropUse::Occupy) {
         const bool bed = isBed(p->kind);
         out.push_back(lang(bed ? "MISC_PROP_USE_BED" : isSeat(p->kind) ? "MISC_PROP_USE_SEAT" : "MISC_PROP_USE_CAGE"));
-        const Entity occupant = propOccupant(w, e);
-        if (occupant != NULL_ENTITY) {
+        const ObjectId occupant = propOccupant(w, e);
+        if (occupant != NO_OBJECT) {
             if (const Name* name = w.get<Name>(occupant)) out.push_back(langf("MISC_PROP_OCCUPIED", { name->text }));
         }
     }
@@ -70,14 +70,14 @@ std::vector<std::string> propInfoLines(World& w, Entity e) {
     if (const Lock* lock = w.get<Lock>(e)) {
         out.push_back(lang("MISC_PROP_LOCKABLE"));
         if (!lock->locked) out.push_back(lang("MISC_PROP_LOCK_OPEN"));
-        else if (!lockShutFor(w, e, NULL_ENTITY)) out.push_back(lang("MISC_PROP_LOCK_YOURS"));
+        else if (!lockShutFor(w, e, NO_OBJECT)) out.push_back(lang("MISC_PROP_LOCK_YOURS"));
         else out.push_back(langf("MISC_PROP_LOCK_SHUT", { std::to_string(lock->level) }));
     }
     if (info.claimsLand) out.push_back(upkeepLine(w, e));
     return out;
 }
 
-std::vector<std::string> altarInfoLines(World& w, Entity e) {
+std::vector<std::string> altarInfoLines(World& w, ObjectId e) {
     std::vector<std::string> out;
     const Prop* p = w.get<Prop>(e);
     if (!p || !propInfo(p->kind).claimsLand) return out;

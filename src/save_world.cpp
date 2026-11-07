@@ -9,9 +9,9 @@
 using namespace systems_detail;
 
 namespace {
-using IdMap = std::unordered_map<Entity, int>;
+using IdMap = std::unordered_map<ObjectId, int>;
 
-int idOf(const IdMap& ids, Entity e) {
+int idOf(const IdMap& ids, ObjectId e) {
     const auto it = ids.find(e);
     return it == ids.end() ? -1 : it->second;
 }
@@ -35,9 +35,9 @@ void restoreSlots(const std::vector<SaveSlot>& saved, std::array<ItemStack, N>& 
 
 // Oldest first, since the older of two Altars holds a claim
 void captureProps(World& w, SaveData& d, IdMap& ids) {
-    std::vector<Entity> props = w.view<Prop, Transform>();
+    std::vector<ObjectId> props = w.view<Prop, Transform>();
     std::sort(props.begin(), props.end());
-    for (Entity e : props) {
+    for (ObjectId e : props) {
         ids[e] = (int)d.props.size();
         const Prop* p = w.get<Prop>(e);
         SaveProp s;
@@ -62,7 +62,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
     }
 }
 
-void captureOrders(World& w, Entity u, SaveUnit& su, const IdMap& propIds, const IdMap& unitIds) {
+void captureOrders(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const IdMap& unitIds) {
     const Behaviors* own = w.get<Behaviors>(u);
     const bool automated = own && own->busy;
     if (const FollowOrder* fo = w.get<FollowOrder>(u)) su.followUnit = idOf(unitIds, fo->target);
@@ -88,7 +88,7 @@ void captureOrders(World& w, Entity u, SaveUnit& su, const IdMap& propIds, const
     }
 }
 
-void captureBehaviors(World& w, Entity u, SaveUnit& su, const IdMap& propIds) {
+void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) {
     const Behaviors* b = w.get<Behaviors>(u);
     if (!b) return;
     su.passive = b->passive;
@@ -109,7 +109,7 @@ void captureBehaviors(World& w, Entity u, SaveUnit& su, const IdMap& propIds) {
     if (resting || rescuing) su.stepKind = idx(b->step.kind);
 }
 
-void captureUnit(World& w, Entity u, SaveUnit& su, const IdMap& propIds, const IdMap& unitIds) {
+void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const IdMap& unitIds) {
     su.at = *w.get<Transform>(u);
     su.faction = factionOf(w, u);
     if (const UnitSprite* us = w.get<UnitSprite>(u)) su.sprite = us->id;
@@ -140,11 +140,11 @@ void captureUnit(World& w, Entity u, SaveUnit& su, const IdMap& propIds, const I
     if (w.has<Commandable>(u)) captureOrders(w, u, su, propIds, unitIds);
 }
 
-std::vector<Entity> restoreProps(World& world, const SaveData& d) {
-    std::vector<Entity> props;
+std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
+    std::vector<ObjectId> props;
     props.reserve(d.props.size());
     for (const SaveProp& s : d.props) {
-        const Entity e = makeProp(world, (PropKind)s.kind, s.at, s.yaw);
+        const ObjectId e = makeProp(world, (PropKind)s.kind, s.at, s.yaw);
         props.push_back(e);
         if (s.owner >= 0) world.add(e, Owner{ s.owner });
         if (s.lock) world.add(e, *s.lock);
@@ -169,8 +169,8 @@ std::vector<Entity> restoreProps(World& world, const SaveData& d) {
     return props;
 }
 
-Entity restoreUnit(World& world, const SaveUnit& u, const std::vector<Entity>& props) {
-    const Entity e = makeUnit(world, u.at, u.faction);
+ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId>& props) {
+    const ObjectId e = makeEntity(world, u.at, u.faction);
     if (u.mob > 0) world.add(e, Mob{ (MobKind)u.mob });
     else if (!world.has<Commandable>(e) && !u.corpseHours) world.add(e, defaultDialogue());
     if (u.corpseHours) {
@@ -216,12 +216,12 @@ Entity restoreUnit(World& world, const SaveUnit& u, const std::vector<Entity>& p
     return e;
 }
 
-void restoreLinks(World& world, const SaveData& d, const std::vector<Entity>& units, const std::vector<Entity>& props) {
+void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& units, const std::vector<ObjectId>& props) {
     for (size_t i = 0; i < d.units.size(); ++i) {
         const SaveUnit& u = d.units[i];
-        const Entity e = units[i];
+        const ObjectId e = units[i];
         if (u.carriedBy >= 0 && u.carriedBy < (int)units.size() && u.carriedBy != (int)i) {
-            const Entity carrier = units[(size_t)u.carriedBy];
+            const ObjectId carrier = units[(size_t)u.carriedBy];
             if (!world.has<Carrying>(carrier) && !world.has<Carried>(carrier) && !outCold(world, carrier)) {
                 world.add(e, Carried{ carrier });
                 world.add(carrier, Carrying{ e });
@@ -229,8 +229,8 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<Entity>& un
         }
         if (u.playingDead && canPlayDead(world, e) && !outCold(world, e)) world.add(e, PlayingDead{});
         if (u.occupying >= 0 && u.occupying < (int)props.size()) {
-            const Entity p = props[(size_t)u.occupying];
-            if (propInfo(world.get<Prop>(p)->kind).use == PropUse::Occupy && propOccupant(world, p) == NULL_ENTITY) {
+            const ObjectId p = props[(size_t)u.occupying];
+            if (propInfo(world.get<Prop>(p)->kind).use == PropUse::Occupy && propOccupant(world, p) == NO_OBJECT) {
                 *world.get<Transform>(e) = *world.get<Transform>(p);
                 world.add(e, Occupying{ p });
             }
@@ -249,17 +249,17 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<Entity>& un
     }
 }
 
-void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std::vector<Entity>& units, const std::vector<Entity>& props) {
-    const auto unitAt = [&](int i) { return i >= 0 && i < (int)units.size() ? units[(size_t)i] : NULL_ENTITY; };
+void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std::vector<ObjectId>& units, const std::vector<ObjectId>& props) {
+    const auto unitAt = [&](int i) { return i >= 0 && i < (int)units.size() ? units[(size_t)i] : NO_OBJECT; };
     // Units walking to one point set off together, as a formation
-    std::map<std::pair<float, float>, std::vector<Entity>> walkers;
+    std::map<std::pair<float, float>, std::vector<ObjectId>> walkers;
     for (size_t i = 0; i < d.units.size(); ++i) {
         const SaveUnit& u = d.units[i];
-        const Entity e = units[i];
+        const ObjectId e = units[i];
         if (!world.has<Commandable>(e)) continue;
-        if (const Entity lead = unitAt(u.followUnit); lead != NULL_ENTITY) issueFollowOrder(world, { e }, lead);
-        if (const Entity ward = unitAt(u.defendUnit); ward != NULL_ENTITY) issueDefendOrder(world, { e }, ward);
-        if (const Entity foe = unitAt(u.attackUnit); foe != NULL_ENTITY) issueAttackOrder(world, { e }, foe);
+        if (const ObjectId lead = unitAt(u.followUnit); lead != NO_OBJECT) issueFollowOrder(world, { e }, lead);
+        if (const ObjectId ward = unitAt(u.defendUnit); ward != NO_OBJECT) issueDefendOrder(world, { e }, ward);
+        if (const ObjectId foe = unitAt(u.attackUnit); foe != NO_OBJECT) issueAttackOrder(world, { e }, foe);
         if (u.move) walkers[{ u.move->x, u.move->z }].push_back(e);
         if (u.propOrder >= 0 && u.propOrder < (int)props.size()) {
             const PropAction action = (PropAction)u.propAction;
@@ -275,13 +275,13 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
 void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world = World{};
     setPlayerReputation(world, d.reputation);
-    const std::vector<Entity> props = restoreProps(world, d);
+    const std::vector<ObjectId> props = restoreProps(world, d);
     for (const SaveGround& g : d.ground) {
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
-        const Entity lying = spawnGroundItem(world, g.at, g.item.item, g.item.count);
+        const ObjectId lying = spawnGroundItem(world, g.at, g.item.item, g.item.count);
         world.get<GroundItem>(lying)->hours = g.item.hours;
     }
-    std::vector<Entity> units;
+    std::vector<ObjectId> units;
     units.reserve(d.units.size());
     for (const SaveUnit& u : d.units) units.push_back(restoreUnit(world, u, props));
     restoreLinks(world, d, units, props);
@@ -306,9 +306,9 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
 
     IdMap propIds;
     captureProps(w, d, propIds);
-    for (Entity e : w.view<GroundItem, Transform>()) d.ground.push_back(SaveGround{ *w.get<Transform>(e), *w.get<GroundItem>(e) });
+    for (ObjectId e : w.view<GroundItem, Transform>()) d.ground.push_back(SaveGround{ *w.get<Transform>(e), *w.get<GroundItem>(e) });
 
-    std::vector<Entity> units = w.view<Unit, Transform>();
+    std::vector<ObjectId> units = w.view<Entity, Transform>();
     std::sort(units.begin(), units.end());
     IdMap unitIds;
     for (size_t i = 0; i < units.size(); ++i) unitIds[units[i]] = (int)i;

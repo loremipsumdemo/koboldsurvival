@@ -252,7 +252,7 @@ void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int at
     drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
 }
 
-void Renderer::drawDisband(World& w, const DisbandLayout& L, Entity unit, float held, float mx, float my) {
+void Renderer::drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held, float mx, float my) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
     drawScrim();

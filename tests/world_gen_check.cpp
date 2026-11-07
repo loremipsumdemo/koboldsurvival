@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
         simStep(random, terrain, rng, gs, 1.0f / 60.0f, false);
         takeEvents(random);
     }
-    check(!random.view<Unit, Commandable>().empty(), "a generated map can be played");
+    check(!random.view<Entity, Commandable>().empty(), "a generated map can be played");
 
     // A level: placed, saved, read and placed again the same
     World edited;
@@ -274,8 +274,71 @@ int main(int argc, char** argv) {
     applyLevel(edited, terrain, editRng, made);
     check(edited.view<Prop>().size() == 1 && edited.view<Mob>().size() == 1 && edited.view<GroundItem>().size() == 1, "a level places what it lists");
 
+    // Entities: a level can place units of any faction beside its mobs, and they are whole units
+    {
+        LevelData people;
+        people.map = "testmap";
+        LevelObject player;
+        player.type = LevelObject::Type::Unit;
+        player.id = 1;
+        player.kind = FACTION_PLAYER;
+        player.x = 1010.5f;
+        player.z = 1010.5f;
+        people.objects.push_back(player);
+        LevelObject npc = player;
+        npc.id = 2;
+        npc.kind = factions()[1].id;
+        npc.x = 1012.5f;
+        people.objects.push_back(npc);
+        LevelObject boss = player;
+        boss.type = LevelObject::Type::Mob;
+        boss.id = 3;
+        boss.kind = 0;
+        for (int i = 1; i <= mobKindCount() && boss.kind == 0; ++i) {
+            if (isBossMob((MobKind)i)) boss.kind = i;
+        }
+        check(boss.kind != 0, "the game has a boss mob");
+        boss.x = 1014.5f;
+        people.objects.push_back(boss);
+        LevelObject chair = player;
+        chair.type = LevelObject::Type::Prop;
+        chair.id = 4;
+        chair.kind = idx(PropKind::Chair);
+        chair.x = 1016.5f;
+        people.objects.push_back(chair);
+        LevelObject coin = player;
+        coin.type = LevelObject::Type::Item;
+        coin.id = 5;
+        coin.kind = itemTagged(ITEM_TAG_GOLD_COIN);
+        coin.x = 1018.5f;
+        people.objects.push_back(coin);
+        people.nextId = 6;
+
+        World peopled;
+        Rng peopleRng;
+        peopleRng.gen.seed(1);
+        applyLevel(peopled, terrain, peopleRng, people);
+        check(peopled.view<Entity>().size() == 3 && peopled.view<Mob>().size() == 1, "units and mobs are the entities, and props and items are not");
+        check(peopled.view<Entity, Commandable>().size() == 1, "a placed player unit is yours");
+        for (ObjectId u : peopled.view<Entity>()) {
+            const Needs* needs = peopled.get<Needs>(u);
+            check(needs && needs->hp > 0 && peopled.has<Stats>(u) && !peopled.get<Name>(u)->text.empty(), "a placed entity is whole");
+        }
+        const std::string peopleText = levelToText(captureLevel(peopled, "testmap"));
+        LevelData peopleBack;
+        check(levelFromText(peopleText, peopleBack, err) && levelToText(peopleBack) == peopleText, "a level's units read back the same");
+        World peopledAgain;
+        applyLevel(peopledAgain, terrain, peopleRng, peopleBack);
+        check(levelToText(captureLevel(peopledAgain, "testmap")) == peopleText, "a level's units place again the same");
+        const ObjectId placed = *peopledAgain.view<Entity, Commandable>().begin();
+        ensurePlayerUnits(peopledAgain, terrain, peopleRng, 2);
+        check(peopledAgain.view<Entity, Commandable>().size() == 2 && peopledAgain.has<Entity>(placed), "the party takes a placed player unit first");
+        check(!levelFromText("format 1\nmap x\nunit 1 " + std::to_string(mobFaction(MobKind::Wolf)) + " 1 1\n", peopleBack, err), "a unit can't be of a mob's faction");
+        check(!levelFromText("format 1\nmap x\nunit 1 9999 1 1\n", peopleBack, err), "a unit can't be of a faction this game lacks");
+    }
+
     // Something placed the way regular play does is part of the level too
-    const Entity later = makeProp(edited, PropKind::Barrel, Transform{ 1007.5f, terrain.heightAt(1007.5f, 1007.5f), 1007.5f });
+    const ObjectId later = makeProp(edited, PropKind::Barrel, Transform{ 1007.5f, terrain.heightAt(1007.5f, 1007.5f), 1007.5f });
     const LevelData captured = captureLevel(edited, "testmap");
     check(captured.objects.size() == 4 && edited.get<LevelId>(later)->id == 4 && captured.nextId == 5, "a level reads back what the world holds, with new ids");
     const std::string text = levelToText(captured);
@@ -292,8 +355,8 @@ int main(int argc, char** argv) {
 
     // The player starts at the level's spawn point
     ensurePlayerUnits(again, terrain, againRng, 2);
-    bool nearSpawn = !again.view<Unit, Commandable>().empty();
-    for (Entity u : again.view<Unit, Commandable>()) {
+    bool nearSpawn = !again.view<Entity, Commandable>().empty();
+    for (ObjectId u : again.view<Entity, Commandable>()) {
         const Transform* tr = again.get<Transform>(u);
         nearSpawn = nearSpawn && std::fabs(tr->x - 1000.5f) < 30.0f && std::fabs(tr->z - 1000.5f) < 30.0f;
     }
@@ -301,7 +364,7 @@ int main(int argc, char** argv) {
 
     // In regular play the camera stays near your units
     {
-        const Entity unit = *again.view<Unit, Commandable>().begin();
+        const ObjectId unit = *again.view<Entity, Commandable>().begin();
         const Transform* at = again.get<Transform>(unit);
         Camera near;
         near.mapSize = 2048.0f;

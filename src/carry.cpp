@@ -2,10 +2,10 @@
 
 using namespace systems_detail;
 
-bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity target) {
+bool issueCarryOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId target) {
     const Transform* tt = w.get<Transform>(target);
     if (!tt || !canBeCarried(w, target)) return false;
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Carrying>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
@@ -16,10 +16,10 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<Entity>& units, Ent
     return false;
 }
 
-void putDown(World& w, Entity carrier) {
+void putDown(World& w, ObjectId carrier) {
     const Carrying* cr = w.get<Carrying>(carrier);
     if (!cr) return;
-    const Entity carried = cr->unit;
+    const ObjectId carried = cr->unit;
     w.remove<Carrying>(carrier);
     w.remove<Carried>(carried);
     w.remove<PlayingDead>(carried);
@@ -32,9 +32,9 @@ void putDown(World& w, Entity carrier) {
 
 CarryEvents carrySystem(World& w) {
     CarryEvents ev;
-    std::vector<Entity>& picked = ev.picked;
-    for (Entity u : w.view<CarryOrder, Transform>()) {
-        const Entity target = w.get<CarryOrder>(u)->target;
+    std::vector<ObjectId>& picked = ev.picked;
+    for (ObjectId u : w.view<CarryOrder, Transform>()) {
+        const ObjectId target = w.get<CarryOrder>(u)->target;
         if (!canBeCarried(w, target) || w.has<Carrying>(u) || cannotAct(w, u)) {
             w.remove<CarryOrder>(u);
             w.remove<SoloMove>(u);
@@ -45,7 +45,7 @@ CarryEvents carrySystem(World& w) {
             w.remove<SoloMove>(u);
             clearOrders(w, target);
             w.remove<IdleSpot>(target);
-            if (Combat* c = w.get<Combat>(target)) c->target = NULL_ENTITY;
+            if (Combat* c = w.get<Combat>(target)) c->target = NO_OBJECT;
             w.add(target, Carried{ u });
             w.add(u, Carrying{ target });
             queueLog(w, langf("MISC_PICKS_UP_UNIT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other, npcOnly(w, u, target));
@@ -59,8 +59,8 @@ CarryEvents carrySystem(World& w) {
             w.remove<SoloMove>(u);
         }
     }
-    for (Entity c : w.view<Carried>()) {
-        const Entity by = w.get<Carried>(c)->by;
+    for (ObjectId c : w.view<Carried>()) {
+        const ObjectId by = w.get<Carried>(c)->by;
         const Carrying* cr = w.get<Carrying>(by);
         if (!cr || cr->unit != c || outCold(w, by) || !w.has<Transform>(by)) {
             w.remove<Carried>(c);
@@ -83,8 +83,8 @@ CarryEvents carrySystem(World& w) {
         }
         if (Transform* ct = w.get<Transform>(c)) *ct = *w.get<Transform>(by);
     }
-    for (Entity u : w.view<Carrying>()) {
-        const Entity c = w.get<Carrying>(u)->unit;
+    for (ObjectId u : w.view<Carrying>()) {
+        const ObjectId c = w.get<Carrying>(u)->unit;
         const Carried* cd = w.get<Carried>(c);
         if (!cd || cd->by != u) w.remove<Carrying>(u);
         else if (w.has<Occupying>(u)) putDown(w, u);
@@ -93,7 +93,7 @@ CarryEvents carrySystem(World& w) {
     return ev;
 }
 
-bool canBeCarried(World& w, Entity target) {
-    if (!w.has<Unit>(target) || !w.has<Transform>(target) || w.has<Carried>(target) || w.has<Carrying>(target)) return false;
+bool canBeCarried(World& w, ObjectId target) {
+    if (!w.has<Entity>(target) || !w.has<Transform>(target) || w.has<Carried>(target) || w.has<Carrying>(target)) return false;
     return outCold(w, target) || w.has<Commandable>(target);
 }

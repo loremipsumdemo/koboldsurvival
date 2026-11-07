@@ -10,7 +10,7 @@ enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc
 constexpr int LOG_KIND_COUNT = 10;
 
 enum class Tint { Gray, Green, Red };
-Tint tintFor(World& w, Entity attacker, Entity target);
+Tint tintFor(World& w, ObjectId attacker, ObjectId target);
 
 struct LogLine {
     std::string text;
@@ -19,7 +19,7 @@ struct LogLine {
     bool npc = false;
 };
 
-bool npcOnly(World& w, Entity a, Entity b = NULL_ENTITY);
+bool npcOnly(World& w, ObjectId a, ObjectId b = NO_OBJECT);
 
 struct LogFilter {
     bool on[LOG_KIND_COUNT];

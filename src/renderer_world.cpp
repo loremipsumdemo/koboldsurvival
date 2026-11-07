@@ -17,12 +17,12 @@ void outlineSquare(Batch& b, float cx, float y, float cz, float r, float t, RGBA
 }
 }
 
-std::vector<Entity> Renderer::groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
+std::vector<ObjectId> Renderer::groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
                                                  int winW, int winH) {
-    std::vector<Entity> out;
+    std::vector<ObjectId> out;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const unsigned long long ticks = SDL_GetTicks();
-    for (Entity e : w.view<GroundItem, Transform>()) {
+    for (ObjectId e : w.view<GroundItem, Transform>()) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
@@ -199,9 +199,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     // Destroyed units leave their facing behind, so sweep once enough of them have piled up
     constexpr size_t FACING_SLACK = 64;
-    if (unitFacing_.size() > w.count<Unit>() + FACING_SLACK) {
+    if (unitFacing_.size() > w.count<Entity>() + FACING_SLACK) {
         for (auto it = unitFacing_.begin(); it != unitFacing_.end();) {
-            if (w.has<Unit>(it->first)) ++it;
+            if (w.has<Entity>(it->first)) ++it;
             else it = unitFacing_.erase(it);
         }
     }
@@ -303,7 +303,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     const DetailRange detail(cam);
     const FrustumPlanes frustum = framePlanes(viewProj_);
-    for (Entity e : w.view<Prop, Transform>()) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
@@ -320,7 +320,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
     drawPropInstances();
 
-    for (Entity e : w.view<Unit, Transform>()) {
+    for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const float tall = std::max(1.0f, unitHeight(w, e));
@@ -345,7 +345,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     drawBuildPreview(t);
 
     Batch rings;
-    for (Entity e : w.view<Unit, Transform, Selected>()) {
+    for (ObjectId e : w.view<Entity, Transform, Selected>()) {
         const Transform* tr = w.get<Transform>(e);
         outlineSquare(rings, tr->x, tr->y + 0.03f, tr->z, 0.6f, 0.07f, RGBA{ 0.3f, 1.0f, 0.3f, 1.0f });
     }
@@ -444,9 +444,9 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     const unsigned long long ticks = SDL_GetTicks();
-    std::vector<Entity> items;
+    std::vector<ObjectId> items;
     Batch shadows;
-    for (Entity e : w.view<GroundItem, Transform>()) {
+    for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         items.push_back(e);
@@ -482,7 +482,7 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     if (!wasBlending) glDisable(GL_BLEND);
     glUseProgram(glyphProgram_);
 
-    for (Entity e : items) {
+    for (ObjectId e : items) {
         const Transform* tr = w.get<Transform>(e);
         const GroundItem* gi = w.get<GroundItem>(e);
         const TextTex* pic = itemTexture(gi->item);
@@ -503,10 +503,10 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
 
-    struct Seen { std::pair<int, int> tile; Entity e; ItemOnScreen os; std::string name; float dist2; };
+    struct Seen { std::pair<int, int> tile; ObjectId e; ItemOnScreen os; std::string name; float dist2; };
     std::vector<Seen> all;
     const DetailRange detail(cam);
-    for (Entity e : w.view<GroundItem, Transform>()) {
+    for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!groundLoaded(t, tr->x, tr->z)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
@@ -574,7 +574,7 @@ bool Renderer::topLabelRow(const std::vector<GroundStack>& stacks, float mx, flo
     return false;
 }
 
-Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
+ObjectId Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my, int winW, int winH,
                                    bool labels) {
     if (labels) {
         const std::vector<GroundStack> stacks = groundStacks(w, t, cam, winW, winH);
@@ -585,18 +585,18 @@ Entity Renderer::groundItemAtPixel(World& w, const Terrain& t, const Camera& cam
     return nearestGroundItem(groundItemsAtPixel(w, t, cam, mx, my, winW, winH), w, cam, mx, my, winW, winH);
 }
 
-Entity Renderer::nearestGroundItem(const std::vector<Entity>& items, World& w, const Camera& cam, float mx, float my,
+ObjectId Renderer::nearestGroundItem(const std::vector<ObjectId>& items, World& w, const Camera& cam, float mx, float my,
                                    int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
-    Entity best = NULL_ENTITY;
+    ObjectId best = NO_OBJECT;
     float bestD2 = 0.0f;
-    for (Entity e : items) {
+    for (ObjectId e : items) {
         const Transform* tr = w.get<Transform>(e);
         ItemOnScreen os;
         if (!tr || !itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
         const float cy = (os.top + os.bottom) * 0.5f;
         const float d2 = (mx - os.cx) * (mx - os.cx) + (my - cy) * (my - cy);
-        if (best == NULL_ENTITY || d2 < bestD2) {
+        if (best == NO_OBJECT || d2 < bestD2) {
             best = e;
             bestD2 = d2;
         }

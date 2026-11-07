@@ -15,14 +15,14 @@ bool hasOn(const Behaviors& b, BehaviorKind kind) {
     return false;
 }
 
-bool canAct(World& w, Entity e) {
+bool canAct(World& w, ObjectId e) {
     const Needs* n = w.get<Needs>(e);
     return n && n->hp > 0 && !outCold(w, e) && !w.has<Carried>(e);
 }
 
 int valueOf(const Needs& n, bool food) { return food ? percentOf(n.hunger, n.maxHunger) : percentOf(n.hp, n.maxHp); }
 
-int bestSlot(World& w, Entity unit, bool food) {
+int bestSlot(World& w, ObjectId unit, bool food) {
     const Inventory* inv = w.get<Inventory>(unit);
     if (!inv) return -1;
     const UseEffect::Stat stat = food ? UseEffect::Stat::Hunger : UseEffect::Stat::Health;
@@ -42,7 +42,7 @@ int bestSlot(World& w, Entity unit, bool food) {
     return best;
 }
 
-bool consume(World& w, Entity giver, Entity taker, int slot, bool food) {
+bool consume(World& w, ObjectId giver, ObjectId taker, int slot, bool food) {
     const Inventory* inv = w.get<Inventory>(giver);
     const ItemDef* def = inv ? findItem(inv->slots[slot].item) : nullptr;
     if (!def) return false;
@@ -62,25 +62,25 @@ bool consume(World& w, Entity giver, Entity taker, int slot, bool food) {
     return true;
 }
 
-Entity sharerFor(World& w, Entity taker, bool food, int takerValue, float range) {
+ObjectId sharerFor(World& w, ObjectId taker, bool food, int takerValue, float range) {
     const Transform* tt = w.get<Transform>(taker);
-    if (!tt) return NULL_ENTITY;
-    Entity best = NULL_ENTITY;
+    if (!tt) return NO_OBJECT;
+    ObjectId best = NO_OBJECT;
     int bestValue = takerValue;
-    for (Entity g : w.view<Behaviors, Needs, Transform>()) {
+    for (ObjectId g : w.view<Behaviors, Needs, Transform>()) {
         if (!canShareWith(w, g, taker, food, takerValue)) continue;
         const Transform* gt = w.get<Transform>(g);
         const float dx = gt->x - tt->x, dz = gt->z - tt->z;
         if (dx * dx + dz * dz > range * range) continue;
         const int v = valueOf(*w.get<Needs>(g), food);
-        if (best != NULL_ENTITY && v <= bestValue) continue;
+        if (best != NO_OBJECT && v <= bestValue) continue;
         best = g;
         bestValue = v;
     }
     return best;
 }
 
-bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r) {
+bool needFailed(World& w, ObjectId actor, Behaviors& b, BehaviorRule& r) {
     const bool food = r.kind == BehaviorKind::Eat;
     const int v = valueOf(*w.get<Needs>(actor), food);
     r.why = BehaviorWait::None;
@@ -88,13 +88,13 @@ bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r) {
     const int own = bestSlot(w, actor, food);
     if (own >= 0 && consume(w, actor, actor, own, food)) return false;
     if (hasOn(b, BehaviorKind::Share)) {
-        const Entity giver = sharerFor(w, actor, food, v, SHARE_RANGE);
-        if (giver != NULL_ENTITY && consume(w, giver, actor, bestSlot(w, giver, food), food)) {
-            b.seek = NULL_ENTITY;
+        const ObjectId giver = sharerFor(w, actor, food, v, SHARE_RANGE);
+        if (giver != NO_OBJECT && consume(w, giver, actor, bestSlot(w, giver, food), food)) {
+            b.seek = NO_OBJECT;
             return false;
         }
-        const Entity farther = sharerFor(w, actor, food, v, SHARE_SEEK_RANGE);
-        if (farther != NULL_ENTITY) {
+        const ObjectId farther = sharerFor(w, actor, food, v, SHARE_SEEK_RANGE);
+        if (farther != NO_OBJECT) {
             b.seek = farther;
             r.why = BehaviorWait::WalkingToShare;
             return true;
@@ -105,7 +105,7 @@ bool needFailed(World& w, Entity actor, Behaviors& b, BehaviorRule& r) {
 }
 }
 
-bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
+bool canShareWith(World& w, ObjectId g, ObjectId taker, bool food, int takerValue) {
     if (g == taker || !canAct(w, g)) return false;
     const Behaviors* gb = w.get<Behaviors>(g);
     if (!gb || !hasOn(*gb, BehaviorKind::Share)) return false;
@@ -116,7 +116,7 @@ bool canShareWith(World& w, Entity g, Entity taker, bool food, int takerValue) {
 
 size_t behaviorSystem(World& w, float dt) {
     size_t checked = 0;
-    for (Entity actor : w.view<Behaviors, Needs>()) {
+    for (ObjectId actor : w.view<Behaviors, Needs>()) {
         Behaviors* b = w.get<Behaviors>(actor);
         Needs* n = w.get<Needs>(actor);
         const bool all = b->pending;
@@ -139,7 +139,7 @@ size_t behaviorSystem(World& w, float dt) {
         }
         bool seeking = false;
         for (const BehaviorRule& r : b->rules) seeking = seeking || (r.on && r.why == BehaviorWait::WalkingToShare);
-        if (!seeking) b->seek = NULL_ENTITY;
+        if (!seeking) b->seek = NO_OBJECT;
     }
     return checked;
 }

@@ -4,8 +4,8 @@
 #include "components.h"
 #include "ecs.h"
 
-inline Entity spawnGroundItem(World& w, Transform at, int item, int count) {
-    const Entity e = w.create();
+inline ObjectId spawnGroundItem(World& w, Transform at, int item, int count) {
+    const ObjectId e = w.create();
     w.add(e, at);
     w.add(e, GroundItem{ item, count });
     return e;
@@ -22,7 +22,7 @@ inline void appendStacks(std::vector<ItemStack>& out, const Slots& slots) {
     }
 }
 
-inline std::vector<ItemStack> unitBelongings(World& w, Entity u) {
+inline std::vector<ItemStack> unitBelongings(World& w, ObjectId u) {
     std::vector<ItemStack> out;
     if (const Inventory* inv = w.get<Inventory>(u)) appendStacks(out, inv->slots);
     if (const Equipment* worn = w.get<Equipment>(u)) {
@@ -33,7 +33,7 @@ inline std::vector<ItemStack> unitBelongings(World& w, Entity u) {
     return out;
 }
 
-inline std::vector<ItemStack> propHoldings(World& w, Entity prop) {
+inline std::vector<ItemStack> propHoldings(World& w, ObjectId prop) {
     std::vector<ItemStack> out;
     if (const Storage* st = w.get<Storage>(prop)) appendStacks(out, st->slots);
     if (const Output* put = w.get<Output>(prop)) appendStacks(out, put->slots);
@@ -41,7 +41,7 @@ inline std::vector<ItemStack> propHoldings(World& w, Entity prop) {
     return out;
 }
 
-inline float flatGap(World& w, Entity a, Entity b) {
+inline float flatGap(World& w, ObjectId a, ObjectId b) {
     const Transform* ta = w.get<Transform>(a);
     const Transform* tb = w.get<Transform>(b);
     if (!ta || !tb) return 1e9f;

@@ -2,22 +2,22 @@
 
 using namespace systems_detail;
 
-void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2 clickPoint) {
-    std::vector<Entity> units;
-    for (Entity u : given) {
+void issueMoveOrder(World& w, Terrain& t, const std::vector<ObjectId>& given, Vec2 clickPoint) {
+    std::vector<ObjectId> units;
+    for (ObjectId u : given) {
         if (!cannotTakeOrder(w, u)) units.push_back(u);
     }
     if (units.empty()) return;
 
     if (units.size() == 1) {
-        Entity u = units[0];
+        ObjectId u = units[0];
         clearOrders(w, u);
         walkSolo(w, t, u, clickPoint);
         return;
     }
 
     float cx = 0.0f, cz = 0.0f;
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         Transform* tr = w.get<Transform>(u);
         cx += tr->x;
         cz += tr->z;
@@ -29,7 +29,7 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     s.cx = cx;
     s.cz = cz;
     s.size = (int)units.size();
-    Entity sq = w.create();
+    ObjectId sq = w.create();
     w.add(sq, s);
 
     for (size_t i = 0; i < units.size(); ++i) {
@@ -40,12 +40,12 @@ void issueMoveOrder(World& w, Terrain& t, const std::vector<Entity>& given, Vec2
     planActiveSquad(w, t, sq, clickPoint);
 }
 
-void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, Entity item) {
+void issuePickupOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId item) {
     const Transform* it = w.get<Transform>(item);
     if (!it || !w.has<GroundItem>(item)) return;
     const Vec2 target{ it->x, it->z };
 
-    for (Entity u : units) {
+    for (ObjectId u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;
         if (cannotTakeOrder(w, u) || !canHoldItem(w, u, w.get<GroundItem>(item)->item)) continue;
         clearOrders(w, u);
@@ -54,60 +54,60 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<Entity>& units, En
     }
 }
 
-void issuePickupChain(World& w, Terrain& t, const std::vector<Entity>& units, const std::vector<Entity>& items) {
+void issuePickupChain(World& w, Terrain& t, const std::vector<ObjectId>& units, const std::vector<ObjectId>& items) {
     PickupJob job;
-    for (Entity it : items) {
+    for (ObjectId it : items) {
         if (w.has<GroundItem>(it) && w.get<Transform>(it)) job.items.push_back(it);
     }
     if (job.items.empty()) return;
 
-    std::vector<Entity> crew;
-    for (Entity u : units) {
+    std::vector<ObjectId> crew;
+    for (ObjectId u : units) {
         if (!w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
         crew.push_back(u);
     }
     if (crew.empty()) return;
 
-    const Entity jobE = w.create();
+    const ObjectId jobE = w.create();
     w.add(jobE, std::move(job));
-    for (Entity u : crew) w.add(u, PickupChain{ jobE, {}, 0 });
+    for (ObjectId u : crew) w.add(u, PickupChain{ jobE, {}, 0 });
     pickupChainSystem(w, t);
 }
 
 void pickupChainSystem(World& w, Terrain& t) {
-    std::map<Entity, std::vector<Entity>> crews;
-    for (Entity u : w.view<PickupChain>()) {
-        const Entity jobE = w.get<PickupChain>(u)->job;
+    std::map<ObjectId, std::vector<ObjectId>> crews;
+    for (ObjectId u : w.view<PickupChain>()) {
+        const ObjectId jobE = w.get<PickupChain>(u)->job;
         if (!w.has<PickupJob>(jobE) || !w.get<Transform>(u) || !w.has<Inventory>(u)) {
             cancelPickup(w, u);
             continue;
         }
         crews[jobE].push_back(u);
     }
-    for (Entity jobE : w.view<PickupJob>()) {
+    for (ObjectId jobE : w.view<PickupJob>()) {
         PickupJob* job = w.get<PickupJob>(jobE);
         job->items.erase(std::remove_if(job->items.begin(), job->items.end(),
-                                        [&](Entity it) { return !w.has<GroundItem>(it) || !w.get<Transform>(it); }),
+                                        [&](ObjectId it) { return !w.has<GroundItem>(it) || !w.get<Transform>(it); }),
                          job->items.end());
         auto found = crews.find(jobE);
         if (found == crews.end() || job->items.empty()) {
             if (found != crews.end()) {
-                for (Entity u : found->second) cancelPickup(w, u);
+                for (ObjectId u : found->second) cancelPickup(w, u);
             }
             w.destroy(jobE);
             continue;
         }
-        std::vector<Entity>& crew = found->second;
+        std::vector<ObjectId>& crew = found->second;
 
-        std::vector<Entity> claimed;
-        std::vector<Entity> idle;
-        for (Entity u : crew) {
+        std::vector<ObjectId> claimed;
+        std::vector<ObjectId> idle;
+        for (ObjectId u : crew) {
             if (const PickupOrder* po = w.get<PickupOrder>(u)) claimed.push_back(po->item);
             else idle.push_back(u);
         }
 
-        auto freeFor = [&](Entity u, Entity it) {
+        auto freeFor = [&](ObjectId u, ObjectId it) {
             if (std::find(claimed.begin(), claimed.end(), it) != claimed.end()) return false;
             const PickupChain* ch = w.get<PickupChain>(u);
             if (std::find(ch->skipped.begin(), ch->skipped.end(), it) != ch->skipped.end()) return false;
@@ -116,10 +116,10 @@ void pickupChainSystem(World& w, Terrain& t) {
         while (!idle.empty()) {
             float bestD2 = -1.0f;
             size_t bu = 0;
-            Entity bi = NULL_ENTITY;
+            ObjectId bi = NO_OBJECT;
             for (size_t i = 0; i < idle.size(); ++i) {
                 const Transform* ut = w.get<Transform>(idle[i]);
-                for (Entity it : job->items) {
+                for (ObjectId it : job->items) {
                     if (!freeFor(idle[i], it)) continue;
                     const Transform* itr = w.get<Transform>(it);
                     const float dx = itr->x - ut->x, dz = itr->z - ut->z;
@@ -131,8 +131,8 @@ void pickupChainSystem(World& w, Terrain& t) {
                     }
                 }
             }
-            if (bi == NULL_ENTITY) break;
-            const Entity u = idle[bu];
+            if (bi == NO_OBJECT) break;
+            const ObjectId u = idle[bu];
             const Transform* itr = w.get<Transform>(bi);
             walkSolo(w, t, u, Vec2{ itr->x, itr->z });
             w.add(u, PickupOrder{ bi });
@@ -141,10 +141,10 @@ void pickupChainSystem(World& w, Terrain& t) {
             idle.erase(idle.begin() + bu);
         }
 
-        for (Entity u : idle) {
+        for (ObjectId u : idle) {
             const PickupChain* ch = w.get<PickupChain>(u);
             bool any = false;
-            for (Entity it : job->items) {
+            for (ObjectId it : job->items) {
                 if (std::find(ch->skipped.begin(), ch->skipped.end(), it) == ch->skipped.end() &&
                     canHoldItem(w, u, w.get<GroundItem>(it)->item)) {
                     any = true;
@@ -156,8 +156,8 @@ void pickupChainSystem(World& w, Terrain& t) {
     }
 }
 
-void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
-    for (Entity u : units) {
+void steerUnits(World& w, const std::vector<ObjectId>& units, Vec2 target) {
+    for (ObjectId u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
         w.add(u, SoloMove{});
@@ -167,9 +167,9 @@ void steerUnits(World& w, const std::vector<Entity>& units, Vec2 target) {
     }
 }
 
-void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target) {
-    if (!w.has<Unit>(target) || !w.get<Transform>(target) || inPrisonerCage(w, target)) return;
-    for (Entity u : units) {
+void issueAttackOrder(World& w, const std::vector<ObjectId>& units, ObjectId target) {
+    if (!w.has<Entity>(target) || !w.get<Transform>(target) || inPrisonerCage(w, target)) return;
+    for (ObjectId u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
@@ -179,9 +179,9 @@ void issueAttackOrder(World& w, const std::vector<Entity>& units, Entity target)
     }
 }
 
-void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool trade, bool shop) {
-    if (!w.has<Unit>(npc) || !w.get<Transform>(npc) || w.has<Mob>(npc)) return;
-    for (Entity u : units) {
+void issueTalkOrder(World& w, const std::vector<ObjectId>& units, ObjectId npc, bool trade, bool shop) {
+    if (!w.has<Entity>(npc) || !w.get<Transform>(npc) || w.has<Mob>(npc)) return;
+    for (ObjectId u : units) {
         if (!w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;
         clearOrders(w, u);
@@ -190,13 +190,13 @@ void issueTalkOrder(World& w, const std::vector<Entity>& units, Entity npc, bool
 }
 
 void clearTalkOrders(World& w) {
-    for (Entity u : w.view<TalkOrder>()) w.remove<TalkOrder>(u);
+    for (ObjectId u : w.view<TalkOrder>()) w.remove<TalkOrder>(u);
 }
 
 int pickupSystem(World& w, Terrain& t) {
     int taken = 0;
-    for (Entity u : w.view<PickupOrder, Transform, Inventory>()) {
-        const Entity item = w.get<PickupOrder>(u)->item;
+    for (ObjectId u : w.view<PickupOrder, Transform, Inventory>()) {
+        const ObjectId item = w.get<PickupOrder>(u)->item;
         const Transform* ut = w.get<Transform>(u);
         const Transform* it = w.get<Transform>(item);
         GroundItem* gi = w.get<GroundItem>(item);
@@ -243,63 +243,63 @@ int pickupSystem(World& w, Terrain& t) {
     return taken;
 }
 
-void issueFollowOrder(World& w, const std::vector<Entity>& units, Entity target) {
-    if (!w.has<Unit>(target) || !w.get<Transform>(target)) return;
-    for (Entity u : units) {
+void issueFollowOrder(World& w, const std::vector<ObjectId>& units, ObjectId target) {
+    if (!w.has<Entity>(target) || !w.get<Transform>(target)) return;
+    for (ObjectId u : units) {
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
         w.add(u, FollowOrder{ target });
     }
 }
 
-void issueDefendOrder(World& w, const std::vector<Entity>& units, Entity ward) {
-    if (!w.has<Unit>(ward) || !w.get<Transform>(ward)) return;
-    for (Entity u : units) {
+void issueDefendOrder(World& w, const std::vector<ObjectId>& units, ObjectId ward) {
+    if (!w.has<Entity>(ward) || !w.get<Transform>(ward)) return;
+    for (ObjectId u : units) {
         if (u == ward || !w.has<Commandable>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
-        w.add(u, DefendOrder{ ward, NULL_ENTITY });
+        w.add(u, DefendOrder{ ward, NO_OBJECT });
     }
 }
 
 void defendSystem(World& w) {
-    std::vector<Entity> fighters;
+    std::vector<ObjectId> fighters;
     bool fightersListed = false;
-    for (Entity d : w.view<DefendOrder>()) {
+    for (ObjectId d : w.view<DefendOrder>()) {
         DefendOrder* o = w.get<DefendOrder>(d);
-        if (!w.has<Unit>(o->ward) || !w.get<Transform>(o->ward)) {
+        if (!w.has<Entity>(o->ward) || !w.get<Transform>(o->ward)) {
             w.remove<AttackOrder>(d);
             w.remove<DefendOrder>(d);
             continue;
         }
-        auto attackingWard = [&](Entity a) {
+        auto attackingWard = [&](ObjectId a) {
             const Combat* c = w.get<Combat>(a);
             const Needs* n = w.get<Needs>(a);
-            return a != d && !w.has<Commandable>(a) && w.has<Unit>(a) && w.get<Transform>(a) && c &&
+            return a != d && !w.has<Commandable>(a) && w.has<Entity>(a) && w.get<Transform>(a) && c &&
                    c->target == o->ward && (!n || n->hp > 0);
         };
-        if (o->engaged != NULL_ENTITY && attackingWard(o->engaged) && w.has<AttackOrder>(d)) continue;
-        if (o->engaged != NULL_ENTITY) {
+        if (o->engaged != NO_OBJECT && attackingWard(o->engaged) && w.has<AttackOrder>(d)) continue;
+        if (o->engaged != NO_OBJECT) {
             w.remove<AttackOrder>(d);
-            if (Combat* c = w.get<Combat>(d)) c->target = NULL_ENTITY;
-            o->engaged = NULL_ENTITY;
+            if (Combat* c = w.get<Combat>(d)) c->target = NO_OBJECT;
+            o->engaged = NO_OBJECT;
         }
         const Transform* dt = w.get<Transform>(d);
-        Entity best = NULL_ENTITY;
+        ObjectId best = NO_OBJECT;
         float bestD2 = 0.0f;
         if (!fightersListed) {
-            fighters = w.view<Unit, Transform, Combat>();
+            fighters = w.view<Entity, Transform, Combat>();
             fightersListed = true;
         }
-        for (Entity a : fighters) {
+        for (ObjectId a : fighters) {
             if (!attackingWard(a)) continue;
             const Transform* at = w.get<Transform>(a);
             const float d2 = distSq(*at, *dt);
-            if (best == NULL_ENTITY || d2 < bestD2) {
+            if (best == NO_OBJECT || d2 < bestD2) {
                 best = a;
                 bestD2 = d2;
             }
         }
-        if (best != NULL_ENTITY) {
+        if (best != NO_OBJECT) {
             o->engaged = best;
             w.add(d, AttackOrder{ best });
         }

@@ -2,7 +2,7 @@
 
 using namespace systems_detail;
 
-bool unitIdle(World& w, Entity u) {
+bool unitIdle(World& w, ObjectId u) {
     if (w.has<Corpse>(u) || outCold(w, u) || w.has<PlayingDead>(u) || w.has<Carried>(u)) return false;
     if (const Behaviors* b = w.get<Behaviors>(u); b && (b->busy || b->seeking)) return false;
     if (w.has<Working>(u) || w.has<PropOrder>(u) || w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<CarryOrder>(u) ||
@@ -10,7 +10,7 @@ bool unitIdle(World& w, Entity u) {
         w.has<AttackOrder>(u) || w.has<TalkOrder>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u)) {
         return false;
     }
-    if (const Combat* c = w.get<Combat>(u); c && c->target != NULL_ENTITY) return false;
+    if (const Combat* c = w.get<Combat>(u); c && c->target != NO_OBJECT) return false;
     if (const SoloMove* so = w.get<SoloMove>(u); so && so->next < so->waypoints.size()) return false;
     if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
         if (const ActiveSquad* sq = w.get<ActiveSquad>(sm->squad); sq && !sq->arrived) return false;
@@ -18,7 +18,7 @@ bool unitIdle(World& w, Entity u) {
     return true;
 }
 
-std::string taskNameOf(World& w, Entity u) {
+std::string taskNameOf(World& w, ObjectId u) {
     if (w.has<Corpse>(u)) return lang("UILABEL_TASK_DEAD");
     if (outCold(w, u)) return lang("UILABEL_TASK_UNCONSCIOUS");
     if (w.has<PlayingDead>(u)) return lang("UILABEL_TASK_PLAYING_DEAD");
@@ -30,14 +30,14 @@ std::string taskNameOf(World& w, Entity u) {
         if (b->busy && po && po->automatic) return langf("UILABEL_TASK_AUTO_GOING", { behaviorName(b->step) });
         if (b->busy && wk && !wk->unlocking && wk->prop == b->stepProp) return behaviorName(b->step);
     }
-    Entity prop = NULL_ENTITY;
+    ObjectId prop = NO_OBJECT;
     if (const Working* g = w.get<Working>(u); g && g->unlocking) return statName(StatId::Lockpicking);
     if (const Working* g = w.get<Working>(u); g && w.has<Prop>(g->prop) && propInfo(w.get<Prop>(g->prop)->kind).debris) {
         return lang("UILABEL_TASK_CLEARING");
     }
     if (const Working* g = w.get<Working>(u)) prop = g->prop;
     else if (const PropOrder* po = w.get<PropOrder>(u); po && useOf(w, po->prop) == PropUse::Resource) prop = po->prop;
-    if (const Prop* p = prop != NULL_ENTITY ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
+    if (const Prop* p = prop != NO_OBJECT ? w.get<Prop>(prop) : nullptr) return statName(propInfo(p->kind).stat);
     if (const Occupying* oc = w.get<Occupying>(u)) {
         if (lockedIn(w, u)) return lang("UILABEL_TASK_LOCKED_IN");
         const Prop* p = w.get<Prop>(oc->prop);
@@ -55,12 +55,12 @@ std::string taskNameOf(World& w, Entity u) {
     return lang("UILABEL_TASK_IDLE");
 }
 
-std::vector<EmoteId> emotesOf(World& w, Entity u) {
+std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
     if (w.has<Corpse>(u)) return {};
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
     std::vector<EmoteId> out;
-    auto propEmoteOf = [&](Entity prop) {
+    auto propEmoteOf = [&](ObjectId prop) {
         const Prop* p = w.get<Prop>(prop);
         return p ? propInfo(p->kind).emote : EmoteId::None;
     };
@@ -78,20 +78,20 @@ std::vector<EmoteId> emotesOf(World& w, Entity u) {
     return out;
 }
 
-bool cannotAct(World& w, Entity u) {
+bool cannotAct(World& w, ObjectId u) {
     return outCold(w, u) || lockedIn(w, u) || (w.has<Carried>(u) && !w.has<PlayingDead>(u));
 }
 
-bool cannotTakeOrder(World& w, Entity u) {
+bool cannotTakeOrder(World& w, ObjectId u) {
     if (w.has<PlayingDead>(u)) breakFree(w, u);
     return cannotAct(w, u);
 }
 
-void breakFree(World& w, Entity u) {
+void breakFree(World& w, ObjectId u) {
     w.remove<PlayingDead>(u);
     const Carried* c = w.get<Carried>(u);
     if (!c) return;
-    const Entity carrier = c->by;
+    const ObjectId carrier = c->by;
     w.remove<Carried>(u);
     if (const Carrying* cr = w.get<Carrying>(carrier); cr && cr->unit == u) w.remove<Carrying>(carrier);
     if (Transform* t = w.get<Transform>(u)) {

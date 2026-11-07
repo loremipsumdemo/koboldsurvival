@@ -3,21 +3,21 @@
 
 using namespace systems_detail;
 
-static bool inBedOrBedroll(World& w, Entity u) {
-    const Entity bed = occupiedProp(w, u);
-    const Prop* p = bed != NULL_ENTITY ? w.get<Prop>(bed) : nullptr;
+static bool inBedOrBedroll(World& w, ObjectId u) {
+    const ObjectId bed = occupiedProp(w, u);
+    const Prop* p = bed != NO_OBJECT ? w.get<Prop>(bed) : nullptr;
     return p && isBed(p->kind);
 }
 
-void knockOut(World& w, Entity u) {
-    if (!w.has<Unit>(u) || outCold(w, u)) return;
-    const Entity bed = occupiedProp(w, u);
+void knockOut(World& w, ObjectId u) {
+    if (!w.has<Entity>(u) || outCold(w, u)) return;
+    const ObjectId bed = occupiedProp(w, u);
     const bool keepBed = inBedOrBedroll(w, u);
     if (w.has<Carrying>(u)) putDown(w, u);
     clearOrders(w, u);
     w.remove<IdleSpot>(u);
     if (keepBed) w.add(u, Occupying{ bed });
-    if (Combat* c = w.get<Combat>(u)) c->target = NULL_ENTITY;
+    if (Combat* c = w.get<Combat>(u)) c->target = NO_OBJECT;
     if (Needs* n = w.get<Needs>(u)) {
         if (n->hp != 0) n->changed |= NEEDS_HP_CHANGED;
         n->hp = 0;
@@ -40,12 +40,12 @@ void knockOut(World& w, Entity u) {
 }
 
 void downedSystem(World& w) {
-    for (Entity u : w.view<Unit, Needs>()) {
+    for (ObjectId u : w.view<Entity, Needs>()) {
         if (w.get<Needs>(u)->hp <= 0 && !outCold(w, u)) knockOut(w, u);
     }
 }
 
-static void wakeUp(World& w, Entity u, WakeChanges& out) {
+static void wakeUp(World& w, ObjectId u, WakeChanges& out) {
     w.remove<Unconscious>(u);
     if (Needs* n = w.get<Needs>(u)) {
         n->hp = std::max(n->hp, std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH));
@@ -69,7 +69,7 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
     WakeChanges out;
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return out;
-    for (Entity u : w.view<Unconscious>()) {
+    for (ObjectId u : w.view<Unconscious>()) {
         Unconscious* un = w.get<Unconscious>(u);
         Needs* n = w.get<Needs>(u);
         const float gain = 1.0f + (n && !w.has<Mob>(u) && n->maxComfort > 0 ? (float)n->comfort / (float)n->maxComfort : 0.0f);
@@ -99,7 +99,7 @@ WakeChanges unconsciousSystem(World& w, double gameSeconds) {
 void corpseDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    for (Entity u : w.view<Corpse, Transform>()) {
+    for (ObjectId u : w.view<Corpse, Transform>()) {
         Corpse* corpse = w.get<Corpse>(u);
         corpse->hours += hours;
         if (corpse->hours < CORPSE_BONES_HOURS || w.has<Carried>(u)) continue;
@@ -107,7 +107,7 @@ void corpseDecaySystem(World& w, double gameSeconds) {
         std::vector<ItemStack> belongings = unitBelongings(w, u);
         w.destroy(u);
         const float yaw = TWO_PI * (float)(u % 16u) / 16.0f;
-        const Entity bones = makeProp(w, PropKind::Bones, at, yaw);
+        const ObjectId bones = makeProp(w, PropKind::Bones, at, yaw);
         w.add(bones, BonesPile{ 0.0, std::move(belongings) });
     }
 }
@@ -115,7 +115,7 @@ void corpseDecaySystem(World& w, double gameSeconds) {
 void bonesDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    for (Entity e : w.view<Prop, Transform>()) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
         if (!destroyedByHand(w.get<Prop>(e)->kind)) continue;
         BonesPile* pile = w.get<BonesPile>(e);
         if (!pile) pile = &w.add(e, BonesPile{});
@@ -127,7 +127,7 @@ void bonesDecaySystem(World& w, double gameSeconds) {
 void groundFoodSystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    for (Entity e : w.view<GroundItem>()) {
+    for (ObjectId e : w.view<GroundItem>()) {
         GroundItem* g = w.get<GroundItem>(e);
         if (g->hours >= GROUND_FOOD_HOURS) continue;
         g->hours += hours;
@@ -135,11 +135,11 @@ void groundFoodSystem(World& w, double gameSeconds) {
     }
 }
 
-bool hostileNear(World& w, Entity u) {
+bool hostileNear(World& w, ObjectId u) {
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     const int mine = factionOf(w, u);
-    for (Entity o : w.view<Unit, Transform>()) {
+    for (ObjectId o : w.view<Entity, Transform>()) {
         if (o == u || outCold(w, o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
         if (!factionsHostile(w, mine, factionOf(w, o))) continue;
         const Transform* ot = w.get<Transform>(o);
@@ -150,7 +150,7 @@ bool hostileNear(World& w, Entity u) {
 }
 
 void playDeadSystem(World& w) {
-    for (Entity u : w.view<PlayingDead>()) {
+    for (ObjectId u : w.view<PlayingDead>()) {
         if (w.has<Carried>(u) || outCold(w, u)) continue;
         if (hostileNear(w, u)) continue;
         w.remove<PlayingDead>(u);
@@ -158,7 +158,7 @@ void playDeadSystem(World& w) {
     }
 }
 
-void finishDying(World& w, Entity u) {
+void finishDying(World& w, ObjectId u) {
     const Unconscious* un = w.get<Unconscious>(u);
     if (!un) return;
     const int koFaction = un->koFaction;

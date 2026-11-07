@@ -24,11 +24,11 @@
 
 using namespace play;
 
-std::string propNameOf(World& w, Entity prop) {
+std::string propNameOf(World& w, ObjectId prop) {
     return propDisplayName(w, prop);
 }
 
-bool ownedLockOf(World& w, Entity prop) {
+bool ownedLockOf(World& w, ObjectId prop) {
     const Lock* l = w.get<Lock>(prop);
     return l && w.has<Owner>(prop) && l->faction == FACTION_PLAYER;
 }

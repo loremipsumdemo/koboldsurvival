@@ -13,7 +13,7 @@ float wornWeight(const Equipment& worn) {
     return total;
 }
 
-float carriedWeightOf(World& w, Entity e) {
+float carriedWeightOf(World& w, ObjectId e) {
     float total = 0.0f;
     if (const Inventory* inv = w.get<Inventory>(e)) total += carriedWeight(*inv);
     if (const Equipment* worn = w.get<Equipment>(e)) total += wornWeight(*worn);
@@ -26,12 +26,12 @@ float encumbranceFor(float carried, const Stats& s) {
     return std::clamp(carried / limit, 0.0f, 1.0f);
 }
 
-float encumbranceOf(World& w, Entity e) {
+float encumbranceOf(World& w, ObjectId e) {
     return encumbranceFor(carriedWeightOf(w, e), statsOf(w, e));
 }
 
-float walkSpeedOf(World& w, Entity e, bool running) {
-    const Unit* u = w.get<Unit>(e);
+float walkSpeedOf(World& w, ObjectId e, bool running) {
+    const Entity* u = w.get<Entity>(e);
     if (!u || isDowned(w, e)) return 0.0f;
     if (!w.has<Commandable>(e)) running = false;
 
