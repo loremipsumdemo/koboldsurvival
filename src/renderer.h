@@ -163,6 +163,9 @@ public:
                       float appear);
     void drawTitleFooter(const Rect& footer, const std::string& left, const std::string& right);
     void drawThemedPanel(const Rect& r);
+    void setWorldPreview(int px, const std::vector<uint8_t>& rgba);
+    void drawWorldPreview(const Rect& r);
+    std::string fitListText(const std::string& text, float maxW) { return fitText(text, maxW, false); }
     void drawUiTris(const std::vector<UiVert>& v);
     void drawRectGradientH(const Rect& r, RGBA left, RGBA right);
     void noteHover(const Rect& r);
@@ -255,6 +258,7 @@ private:
     const TextTex& uiIconTexture(int icon) { return uiIcons_.get(icon); }
     PictureCache uiIcons_{ "data/icon/", false, iconFile };
     GLuint overviewTex_ = 0;
+    GLuint worldPreviewTex_ = 0;
     float overviewSize_ = 0.0f;
     float overviewExtent_ = 1.0f;
     GLuint dotTex_ = 0;

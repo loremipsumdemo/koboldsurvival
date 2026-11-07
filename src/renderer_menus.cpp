@@ -525,6 +525,12 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             leftText(b.rect, b.label, WHITE, 10.0f * s);
             break;
 
+        case Action::PartyMapBox:
+        case Action::PartyLevelBox:
+            drawRect(b.rect, plateFor(hot, ui.dropKind == (b.action == Action::PartyMapBox ? DropKind::Map : DropKind::Level), true));
+            leftText(b.rect, b.label, WHITE, 10.0f * s);
+            break;
+
         case Action::PartyBodyBox:
             drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Body, true));

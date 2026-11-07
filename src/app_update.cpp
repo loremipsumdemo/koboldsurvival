@@ -199,14 +199,14 @@ void App::autosaveTick() {
 
 void App::updateCamera() {
     if (screen != Screen::Playing) return;
-    if (session.dialogueUnit == NULL_ENTITY) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
+    if (session.dialogueUnit == NULL_ENTITY && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NULL_ENTITY && !followUnitCamera(world, cam, followUnit)) followUnit = NULL_ENTITY;
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
 }
 
 void App::stepSimulation() {
-    if (screen != Screen::Playing || session.paused) return;
+    if (screen != Screen::Playing || session.paused || editing) return;
     const float frameDt = dt;
     simLeft += frameDt;
     dt = SIM_STEP_SECONDS;
@@ -450,7 +450,7 @@ void App::updateHover() {
 
     {
         const bool inClaim = selectionInClaim(world);
-        if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim) session.buildPick = {};
+        if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing) session.buildPick = {};
         renderer.setBuildInClaim(inClaim);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);

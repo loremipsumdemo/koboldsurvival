@@ -62,6 +62,9 @@
 #include "level.h"
 #include "menus.h"
 #include "app_support.h"
+#include "editor_ui.h"
+#include "level_file.h"
+#include "world_gen.h"
 #include "timefmt.h"
 
 constexpr size_t HOVER_NAME_LIMIT = 10;
@@ -204,6 +207,44 @@ struct App : AppSession {
     float disbandHeldShare();
     void drawWorldMapPopup();
     void drawTalkOrTrade();
+
+    // World Generation and the level editor (app_worldgen.cpp). Developer only: F2 on the title screen.
+    static constexpr int WORLD_GEN_PREVIEW_PX = 320;
+    struct EditorEntry {
+        std::string label;
+        int value = 0;
+    };
+    void openWorldGen();
+    void stopWorldGenName();
+    void worldGenChanged();
+    void drawWorldGenScreen();
+    void worldGenClick(float x, float y);
+    void worldGenBarAt(int row, float x);
+    bool generateWorld();
+    void openLevelEditor(const std::string& mapName);
+    void editorFocusCamera();
+    void editorEdited();
+    void editorRemember();
+    void editorUndo();
+    void stopEditorName();
+    void setEditorTool(EditorTool tool, int picked);
+    std::vector<EditorEntry> editorEntries();
+    void drawEditorPanel();
+    bool editorMouseDown();
+    void editorPlaceAt(float mx, float my);
+    void editorEraseAt(float mx, float my);
+    void editorSave();
+    void editorLoad();
+    void editorExit();
+    bool editorKeyDown();
+    void refreshPartyWorldChoices();
+
+    bool developer = false;
+    WorldGenUi worldGenUi;
+    bool editing = false;
+    LevelEditorUi editor;
+    std::vector<MapChoice> partyMaps;
+    std::string pendingLevel;
 
     bool partyAction(Action action, int param);
     void partyRandomUnit();

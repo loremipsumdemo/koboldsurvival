@@ -11,6 +11,7 @@ void App::enterLevel() {
     cam.mapSize = (float)terrain.size();
     focusCameraOnFirstUnit(world, cam);
     gameActive = true;
+    editing = false;
     screen = Screen::Playing;
 }
 
@@ -32,7 +33,16 @@ void App::startMapLevel(const MapChoice& choice) {
         return;
     }
     audio::stopTracks();
-    buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
+    if (!pendingLevel.empty()) {
+        LevelData level;
+        if (!readLevelFile(levelFilePath(pendingLevel), level, err)) {
+            refuse(langf("MISC_LOAD_FAILED", { pendingLevel, err }));
+            return;
+        }
+        buildLevelFrom(world, terrain, rng, (unsigned)std::time(nullptr), level);
+    } else {
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
+    }
     // The party from the menu replaces the units that the seed made: its people, then its mobs after them
     std::vector<MobKind> mobKinds;
     for (const PartyMember& m : party) {
@@ -73,6 +83,30 @@ void App::openPartyMenu() {
     partyUi.mobKindEditable = scenarioMobKindEditable(scenarioPick);
     backScreen = Screen::ScenarioSelect;
     screen = Screen::PartySetup;
+    pendingLevel.clear();
+    if (developer) {
+        partyMaps = listMaps();
+        partyUi.chooseWorld = true;
+        partyUi.mapEntries.clear();
+        for (size_t i = 0; i < partyMaps.size(); ++i) {
+            partyUi.mapEntries.push_back(DropEntry{ partyMaps[i].name, (int)i });
+            if (partyMaps[i].source == pendingMap.source && partyMaps[i].stem == pendingMap.stem) partyUi.mapPick = (int)i;
+        }
+        refreshPartyWorldChoices();
+    }
+}
+
+void App::refreshPartyWorldChoices() {
+    partyUi.levelEntries.clear();
+    partyUi.levelNames.clear();
+    partyUi.levelEntries.push_back(DropEntry{ lang("UILABEL_LEVEL_RANDOM"), 0 });
+    partyUi.levelNames.push_back("");
+    for (const std::string& name : listLevelFiles(pendingMap.stem)) {
+        partyUi.levelEntries.push_back(DropEntry{ name, (int)partyUi.levelNames.size() });
+        partyUi.levelNames.push_back(name);
+    }
+    partyUi.levelPick = 0;
+    pendingLevel.clear();
 }
 
 void App::stopNameEdit() {
@@ -117,6 +151,9 @@ void App::performAction(Action action, int param) {
         openParty(*mainMap);
         return;
     }
+    case Action::WorldGeneration:
+        openWorldGen();
+        return;
     case Action::Language:
         settingsUi.tab = SettingsTab::Language;
         [[fallthrough]];

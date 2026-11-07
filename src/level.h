@@ -10,6 +10,8 @@
 #include "savegame.h"
 #include "terrain.h"
 
+struct LevelData;
+
 class Renderer;
 
 struct MapChoice {
@@ -20,6 +22,8 @@ struct MapChoice {
 };
 
 constexpr const char* MAIN_MAP_STEM = "main";
+// A map made by World Generation, from a file in the MAP folder
+constexpr const char* MAP_SOURCE_FILE = "file";
 
 bool mainMapPacked();
 std::vector<MapChoice> listMaps();
@@ -28,6 +32,8 @@ using LoadProgress = std::function<void(float, const std::string&)>;
 // Reads a map into the terrain. On failure the terrain and the running game are left as they were.
 bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress = {});
 void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool playerCamp, const LoadProgress& progress = {});
+// The same, with what a level file says in place of the random set-up
+void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, const LevelData& level);
 
 constexpr int ITEM_COPIES_PER_LEVEL = 10;
 constexpr int STREAM_RADIUS = 4;

@@ -46,6 +46,15 @@ void App::onTextInput() {
         percentPrompt.error.clear();
         return;
     }
+    if (screen == Screen::WorldGen && worldGenUi.editingName) {
+        appendUtf8Limited(worldGenUi.name, e.text.text, WORLD_GEN_NAME_CHARS);
+        worldGenChanged();
+        return;
+    }
+    if (screen == Screen::Playing && editing && editor.editingName) {
+        appendUtf8Limited(editor.name, e.text.text, EDITOR_NAME_CHARS);
+        return;
+    }
     if (screen == Screen::PartySetup) {
         partyUi.composition.clear();
         if (partyUi.editingName) appendUtf8Limited(pickedMember(party, partyUi).name, e.text.text, PARTY_NAME_CHARS);
@@ -69,6 +78,27 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Title && e.key.key == SDLK_F2 && !e.key.repeat) {
+        developer = !developer;
+        menuScreen = Screen::Playing;
+        playSfx(Sfx::UiToggle);
+        return;
+    }
+    if (screen == Screen::WorldGen) {
+        if (worldGenUi.editingName) {
+            if (e.key.key == SDLK_BACKSPACE) {
+                popUtf8Char(worldGenUi.name);
+                worldGenChanged();
+            } else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER || e.key.key == SDLK_ESCAPE) {
+                stopWorldGenName();
+            }
+        } else if (e.key.key == SDLK_ESCAPE) {
+            playSfx(Sfx::UiBack);
+            screen = Screen::Title;
+        }
+        return;
+    }
+    if (screen == Screen::Playing && editing && editorKeyDown()) return;
     if (screen == Screen::PartySetup) {
         if (e.key.key == SDLK_ESCAPE) {
             if (partyUi.dropKind != DropKind::None) {
@@ -105,7 +135,7 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Title || screen == Screen::Pause) {
-        const std::vector<Button> items = layoutButtons(screen, winW, winH, saves);
+        const std::vector<Button> items = layoutButtons(screen, winW, winH, saves, developer);
         const SDL_Keycode k = e.key.key;
         const bool up = k == SDLK_UP || k == SDLK_W, down = k == SDLK_DOWN || k == SDLK_S;
         if ((up || down) && !items.empty()) {
@@ -192,6 +222,10 @@ void App::onMouseWheel() {
         int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
         int next = (int)listOffset - (int)e.wheel.y;
         listOffset = (size_t)std::clamp(next, 0, maxOffset);
+    } else if (screen == Screen::WorldGen) {
+        worldGenUi.mapScroll = std::max(0, worldGenUi.mapScroll - (int)e.wheel.y);
+    } else if (screen == Screen::Playing && editing && editor.useOwnUi && layoutEditor(winW, winH, true).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+        editor.listScroll = std::max(0, editor.listScroll - (int)e.wheel.y);
     } else if (screen == Screen::ScenarioSelect) {
         scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
                                         scenarioScroll - (int)e.wheel.y).first;
@@ -282,6 +316,12 @@ void App::onMouseButtonDown() {
         return;
     }
 
+    if (screen == Screen::WorldGen) {
+        if (e.button.button == SDL_BUTTON_LEFT) worldGenClick(e.button.x, e.button.y);
+        return;
+    }
+    if (screen == Screen::Playing && editing && editorMouseDown()) return;
+
     if (screen == Screen::ScenarioSelect) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const float mx = e.button.x, my = e.button.y;
@@ -351,7 +391,7 @@ void App::onMouseButtonDown() {
 
     if (screen != Screen::Playing) {
         if (e.button.button == SDL_BUTTON_LEFT) {
-            for (const Button& b : layoutButtons(screen, winW, winH, saves)) {
+            for (const Button& b : layoutButtons(screen, winW, winH, saves, developer)) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                     performAction(b.action, b.param);
                     break;
@@ -437,6 +477,10 @@ if (mouseDownOnPanels()) return;
 }
 
 void App::onMouseButtonUp() {
+    if (screen == Screen::WorldGen) {
+        worldGenUi.dragRow = -1;
+        return;
+    }
     if (session.disbandHeldAt != 0 && e.button.button == SDL_BUTTON_LEFT) {
         session.disbandHeldAt = 0;
         return;
@@ -579,6 +623,10 @@ void App::onMouseButtonUp() {
 }
 
 void App::onMouseMotion() {
+    if (screen == Screen::WorldGen) {
+        if (worldGenUi.dragRow >= 0) worldGenBarAt(worldGenUi.dragRow, e.motion.x);
+        return;
+    }
     if (screen == Screen::PartySetup && partyUi.listDrag) {
         if (e.motion.state & SDL_BUTTON_LMASK) {
             partyUi.listScroll = partyListScrollAt(winW, winH, (int)party.size(), e.motion.y - partyUi.listGrab);

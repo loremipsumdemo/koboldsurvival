@@ -330,6 +330,10 @@ void App::moveSelectedTo(float x, float z) {
 }
 
 bool App::overPanels(float x, float y, int W, int H) {
+    if (editing && editor.useOwnUi) {
+        const EditorLayout editorLayout = layoutEditor(W, H, true);
+        return editorLayout.panel.contains(x, y) || editorLayout.uiToggle.contains(x, y) || (mapOpen && worldMapFor(W, H).window.contains(x, y));
+    }
     const std::vector<std::string> labels = menuLabels();
     return overGamePanels(squadPanelLayout(W, H),
                           sidebarFor(W, H, sidebarScroll), true, x, y)

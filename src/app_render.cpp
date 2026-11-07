@@ -89,7 +89,7 @@ void App::drawTitleScreen() {
         const TitleLayout tl = layoutTitle(winW, winH);
         renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"),
                                  messageOfTheDay());
-        drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves));
+        drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves, developer));
         renderer.drawTitleFooter(tl.footer, BUILD_STAMP, lang("MISC_TITLE_KEYS"));
     }
     renderer.endUi();
@@ -297,6 +297,7 @@ void App::render() {
     case Screen::Playing: drawPlayingScreen(); break;
     case Screen::ScenarioSelect: drawScenarioScreen(); break;
     case Screen::PartySetup: drawPartyScreen(); break;
+    case Screen::WorldGen: drawWorldGenScreen(); break;
     case Screen::Pause: drawPauseScreen(); break;
     }
     if (panelOpen) drawSavePanel();

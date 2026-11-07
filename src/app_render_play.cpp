@@ -242,7 +242,7 @@ void App::drawPlayingScreen() {
     renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
     renderer.beginUi(winW, winH);
     PROFILED("draw: overlays", drawWorldOverlays());
-    PROFILED("draw: panels", drawGamePanels());
+    if (!(editing && editor.useOwnUi)) PROFILED("draw: panels", drawGamePanels());
     if (hoverProp != NULL_ENTITY && SDL_GetTicks() - hoverPropSince >= PROP_TOOLTIP_DELAY_MS) {
         renderer.drawPropTooltip(propInfoLines(world, hoverProp), mouseX, mouseY);
     }
@@ -264,6 +264,13 @@ void App::drawPlayingScreen() {
     }
     if (mapOpen) drawWorldMapPopup();
     drawTalkOrTrade();
-    if (session.paused) renderer.drawPauseBar(true);
+    if (session.paused && !editing) renderer.drawPauseBar(true);
+    if (editing) {
+        drawEditorPanel();
+        const LevelInfo& level = world.resource<LevelInfo>();
+        actionX = level.spawnX;
+        actionZ = level.spawnZ;
+        actionAlpha = level.spawnSet ? 1.0f : 0.0f;
+    }
     renderer.endUi();
 }

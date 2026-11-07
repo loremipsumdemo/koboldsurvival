@@ -29,6 +29,17 @@ struct Unit {
 
 struct Selected {};
 
+// What a level knows about this object: its id in the level's file
+struct LevelId {
+    int id = 0;
+};
+// In the World's resources: where a level starts your units, and the id its next new object gets
+struct LevelInfo {
+    bool spawnSet = false;
+    float spawnX = 0.0f, spawnZ = 0.0f;
+    int nextId = 1;
+};
+
 // Stands still and talks, unless it is attacked
 struct InConversation {};
 

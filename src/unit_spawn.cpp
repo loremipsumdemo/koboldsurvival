@@ -53,14 +53,16 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
     for (size_t i = (size_t)std::max(0, count); i < players.size(); ++i) w.destroy(players[i]);
     const int have = std::min((int)players.size(), std::max(0, count));
     if (have >= count) return;
-    const Vec2 spawn = findSpawn(t);
+    const LevelInfo& level = w.resource<LevelInfo>();
+    const Vec2 spawn = level.spawnSet ? Vec2{ level.spawnX, level.spawnZ } : findSpawn(t);
     for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 }
 
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot) {
     for (Entity u : w.view<Mob, Commandable>()) w.destroy(u);
     if (kinds.empty()) return;
-    const Vec2 spawn = findSpawn(t);
+    const LevelInfo& level = w.resource<LevelInfo>();
+    const Vec2 spawn = level.spawnSet ? Vec2{ level.spawnX, level.spawnZ } : findSpawn(t);
     for (size_t j = 0; j < kinds.size(); ++j) {
         const int i = firstSlot + (int)j;
         const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f, spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });

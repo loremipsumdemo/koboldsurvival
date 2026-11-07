@@ -63,7 +63,7 @@ DialogGeometry questionGeometry(int W, int H);
 
 std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
                                 const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle);
-std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves);
+std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves, bool developer = false);
 
 Soundtrack soundtrackFor(Screen screen);
 

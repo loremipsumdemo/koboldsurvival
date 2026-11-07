@@ -537,6 +537,15 @@ void Renderer::drawRectGradient(const Rect& r, RGBA top, RGBA bottom) {
     drawColorTris(v, 6, pixels_);
 }
 
+void Renderer::setWorldPreview(int px, const std::vector<uint8_t>& rgba) {
+    if (worldPreviewTex_) glDeleteTextures(1, &worldPreviewTex_);
+    worldPreviewTex_ = MakeRgbaTexture(px, px, rgba.data());
+}
+
+void Renderer::drawWorldPreview(const Rect& r) {
+    if (worldPreviewTex_) drawUiQuad(worldPreviewTex_, r.x, r.y, r.x + r.w, r.y + r.h, 0.0f, 0.0f, 1.0f, 1.0f, WHITE);
+}
+
 void Renderer::pollOverview() {
     OverviewPicture pic;
     if (!overview_.take(pic)) return;

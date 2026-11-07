@@ -63,6 +63,10 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     case DropKind::MobKind:
         for (MobKind k : regularMobKinds()) out.push_back(DropEntry{ lang(mobInfo(k).nameKey), idx(k) });
         break;
+    case DropKind::Map:
+        return ui.mapEntries;
+    case DropKind::Level:
+        return ui.levelEntries;
     }
     return out;
 }
@@ -140,7 +144,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     std::vector<Button> dropGroup;
     Rect sprAnchor, gearAnchor, invAnchor;
     Rect bodyAnchor;
-    Rect mobAnchor, addMobAnchor;
+    Rect mobAnchor, addMobAnchor, mapAnchor, levelAnchor;
     const bool mob = !p.empty() && m.mob != MobKind::None;
 
     const float cardH = 96.0f * s, cardGap = 10.0f * s;
@@ -316,8 +320,20 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
 
+    if (ui.chooseWorld) {
+        const float boxW = 230.0f * s, boxH = 30.0f * s, boxY = 10.0f * s;
+        mapAnchor = Rect{ 16.0f * s, boxY, boxW, boxH };
+        levelAnchor = Rect{ 16.0f * s + boxW + 8.0f * s, boxY, boxW, boxH };
+        const std::string mapName = ui.mapPick < (int)ui.mapEntries.size() ? ui.mapEntries[(size_t)ui.mapPick].label : std::string();
+        const std::string levelName = ui.levelPick < (int)ui.levelEntries.size() ? ui.levelEntries[(size_t)ui.levelPick].label : std::string();
+        out.push_back(Button{ langf("UILABEL_PARTY_MAP", { mapName }) + "   v", mapAnchor, Action::PartyMapBox, true, 0 });
+        out.push_back(Button{ langf("UILABEL_PARTY_LEVEL", { levelName }) + "   v", levelAnchor, Action::PartyLevelBox, true, 0 });
+    }
+
     if (ui.dropKind != DropKind::None) {
-        const Rect anchor = ui.dropKind == DropKind::Sprite ? sprAnchor
+        const Rect anchor = ui.dropKind == DropKind::Map ? mapAnchor
+                          : ui.dropKind == DropKind::Level ? levelAnchor
+                          : ui.dropKind == DropKind::Sprite ? sprAnchor
                           : ui.dropKind == DropKind::Body ? bodyAnchor
                           : ui.dropKind == DropKind::MobKind ? (ui.dropSlot < 0 ? addMobAnchor : mobAnchor)
                           : ui.dropKind == DropKind::Gear ? gearAnchor : invAnchor;
@@ -347,6 +363,8 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
         if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : idx(m.mob);
+        if (ui.dropKind == DropKind::Map) current = ui.mapPick;
+        if (ui.dropKind == DropKind::Level) current = ui.levelPick;
         for (int i = firstRow; i < firstRow + shown; ++i) {
             const bool isCurrent = drop[i].value == current;
             dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, listW, rowH },

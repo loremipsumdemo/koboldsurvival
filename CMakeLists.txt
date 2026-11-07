@@ -92,6 +92,8 @@ set(SIM_SOURCES
     src/look.cpp
     src/surface_tiles.cpp
     src/chunk_source.cpp
+    src/world_gen.cpp
+    src/level_file.cpp
     src/game_tables.cpp
     src/game_data_check.cpp
     src/pak.cpp
@@ -123,6 +125,7 @@ add_executable(koboldsurvival
     src/app_panels.cpp
     src/app_panel_grab.cpp
     src/app_talk.cpp
+    src/app_worldgen.cpp
     src/app_context_menu.cpp
     src/app_input.cpp
     src/app_input_popups.cpp
@@ -219,14 +222,15 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/language" "$<TARGET_FILE_DIR:koboldsurvival>/LANGUAGE"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldsurvival>/BGM"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldsurvival>/SFX"
-    COMMENT "Copying LANGUAGE, BGM and SFX folders next to the executable"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/MAP" "$<TARGET_FILE_DIR:koboldsurvival>/MAP"
+    COMMENT "Copying LANGUAGE, BGM, SFX and MAP folders next to the executable"
 )
 
 # Headless tests, run with ctest. save_roundtrip saves a level, loads it and compares. data_check checks the game's data.
 # sim_step plays with no window and checks the same seed gives the same game.
-# terrain_check checks the ground the game walks on.
+# terrain_check checks the ground the game walks on. world_gen_check checks the generator and the map and level files.
 enable_testing()
-foreach(test save_roundtrip data_check sim_step terrain_check)
+foreach(test save_roundtrip data_check sim_step terrain_check world_gen_check)
     add_executable(${test} tests/${test}.cpp)
     target_link_libraries(${test} PRIVATE kobold_sim)
     add_dependencies(${test} game_data)
@@ -235,7 +239,7 @@ endforeach()
 
 target_compile_definitions(save_roundtrip PRIVATE KOBOLD_TEST_SAVES="${CMAKE_SOURCE_DIR}/tests/saves")
 
-foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check)
+foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check world_gen_check)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>

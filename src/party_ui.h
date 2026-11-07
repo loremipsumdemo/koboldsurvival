@@ -7,7 +7,12 @@
 enum class PartyTab : int { Identity = 0, Stats, Gear, Items };
 inline constexpr int PARTY_TAB_COUNT = 4;
 
-enum class DropKind { None, Sprite, Body, Gear, Item, MobKind };
+enum class DropKind { None, Sprite, Body, Gear, Item, MobKind, Map, Level };
+
+struct DropEntry {
+    std::string label;
+    int value = 0;
+};
 
 struct PartyUi {
     int selected = 0;
@@ -26,11 +31,11 @@ struct PartyUi {
     bool mobKindEditable = false;
     float previewYaw = 0.0f;
     bool previewDrag = false;
-};
-
-struct DropEntry {
-    std::string label;
-    int value = 0;
+    // Developer only: which map and level the game starts on
+    bool chooseWorld = false;
+    std::vector<DropEntry> mapEntries, levelEntries;
+    std::vector<std::string> levelNames;
+    int mapPick = 0, levelPick = 0;
 };
 
 inline constexpr int DROP_VISIBLE_ROWS = 10;

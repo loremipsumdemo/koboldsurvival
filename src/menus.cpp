@@ -170,7 +170,7 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     return out;
 }
 
-std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves) {
+std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves, bool developer) {
     const float s = uiScaleFor(H);
     const float bh = 56.0f * s, gap = 14.0f * s;
     const float bw = 380.0f * s;
@@ -186,7 +186,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
         const TitleLayout tl = layoutTitle(W, H);
         const float iw = titleClamp(240.0f * s, W * 0.25f, 380.0f * s);
         const float ih = 44.0f * s, langH = 60.0f * s, ig = titleClamp(5.0f * s, H * 0.008f, 10.0f * s);
-        const float total = 5.0f * ih + langH + 5.0f * ig;
+        const float total = (developer ? 6.0f : 5.0f) * (ih + ig) + langH;
         const float x = W - tl.side - iw;
         float y = (H - total) * 0.5f;
         auto item = [&](const std::string& label, Action action, float h, bool enabled = true) {
@@ -196,6 +196,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
         item(lang("UILABEL_CONTINUE"), Action::Continue, ih, hasSave);
         item(lang("UILABEL_NEW_GAME"), Action::NewGame, ih);
         item(lang("UILABEL_LOAD_GAME"), Action::LoadGame, ih, hasSave);
+        if (developer) item(lang("UILABEL_WORLD_GENERATION"), Action::WorldGeneration, ih);
         item(lang("UILABEL_SETTINGS"), Action::Settings, ih);
         item(lang("UILABEL_LANGUAGE_LABEL"), Action::Language, langH);
         item(lang("UILABEL_QUIT"), Action::Quit, ih);
@@ -214,6 +215,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     case Screen::Settings:
     case Screen::ScenarioSelect:
     case Screen::PartySetup:
+    case Screen::WorldGen:
         break;
     }
     return out;
@@ -254,6 +256,7 @@ Soundtrack soundtrackFor(Screen screen) {
     case Screen::PartySetup: return soundtrackNamed("PartySetup");
     case Screen::Pause: return soundtrackNamed("Pause");
     case Screen::Playing: return soundtrackNamed("Playing");
+    case Screen::WorldGen: return soundtrackNamed("Settings");
     }
     return {};
 }

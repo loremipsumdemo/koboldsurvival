@@ -34,6 +34,19 @@ void App::partyDropPick(int param) {
     PartyMember& m = pickedMember(party, partyUi);
     const int value = entries[param].value;
     switch (partyUi.dropKind) {
+    case DropKind::Map:
+        if (value >= 0 && value < (int)partyMaps.size()) {
+            partyUi.mapPick = value;
+            pendingMap = partyMaps[(size_t)value];
+            refreshPartyWorldChoices();
+        }
+        break;
+    case DropKind::Level:
+        if (value >= 0 && value < (int)partyUi.levelNames.size()) {
+            partyUi.levelPick = value;
+            pendingLevel = partyUi.levelNames[(size_t)value];
+        }
+        break;
     case DropKind::Sprite:
         m.sprite = value;
         break;
@@ -92,6 +105,16 @@ bool App::partyAction(Action action, int param) {
         closeDropdown();
         if (!partyUi.editingName) SDL_StartTextInput(window);
         partyUi.editingName = true;
+        return true;
+    case Action::PartyMapBox:
+        stopNameEdit();
+        partyUi.dropKind = DropKind::Map;
+        partyUi.dropScroll = 0;
+        return true;
+    case Action::PartyLevelBox:
+        stopNameEdit();
+        partyUi.dropKind = DropKind::Level;
+        partyUi.dropScroll = 0;
         return true;
     case Action::PartyBodyBox:
         stopNameEdit();

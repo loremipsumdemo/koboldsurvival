@@ -91,7 +91,7 @@ Or open the folder in Visual Studio and build the `koboldsurvival` target.
 The build also:
 
 - builds `tools/pack_data` and packs `data/` into `data.pak` next to the executable (the game reads only the pak),
-- copies `data/language`, `BGM` and `SFX` next to the executable as loose `LANGUAGE`, `BGM` and `SFX` folders,
+- copies `data/language`, `BGM`, `SFX` and `MAP` next to the executable as loose folders,
 - stamps the build time (`BUILD.YYYY.MM.DD.HH.MM.SS`) into the title screen through `tools/build_stamp`.
 
 ## Project layout
@@ -99,6 +99,8 @@ The build also:
 ```
 src/                 Game source (an ECS-style design). The simulation is a library, kobold_sim, with no graphics
   main.cpp, app*.cpp  Start-up, the frame loop, input and the screens
+  world_gen, level_file    The world generator and map files, and level files
+  app_worldgen, editor_ui  The World Generation screen and level editor
   simulation         One step of the game, with no window, and the events it reports to the screens
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
@@ -137,7 +139,17 @@ data/                Game content, packed into data.pak
   font/              Noto fonts
 BGM/                 Music and ambient tracks (.mp3)
 SFX/                 Sound effects (.mp3), made by tools/make_sfx.py
+MAP/                 Maps made by World Generation (.map), with their levels in MAP/LEVEL (.level)
 ```
+
+## World Generation and the level editor
+
+Press F2 on the title screen to show the hidden World Generation option, above Settings. It opens the map settings and a
+preview. Generate writes a tiny recipe to `MAP/<name>.map` beside the game, and the game works out the ground from it as it
+goes. Continue opens the level editor, which is regular gameplay with no units and time stopped. Tab switches between its own
+interface and the game's. It saves to `MAP/LEVEL/<name>.level`. With F2 on, the party screen of New Game can pick a map and
+level. The editor writes beside the game: copy a finished map and level into `MAP/` here to keep them, since the build copies
+this folder over the one beside the game.
 
 ## Modding the data
 
