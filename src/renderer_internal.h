@@ -39,7 +39,8 @@ inline constexpr float CARRIED_MODEL_LIFT = 0.95f;
 inline constexpr float ITEM_GLYPH_H = GLYPH_H * 0.5f;
 
 // How an item on the ground shows it is an item: it floats up and down over a round shadow, and a white shine crosses it
-// every few seconds. Each item is at its own point in these loops. This is only how it is drawn: its place does not change.
+// every few seconds. Each item is at its own point in these loops, except that items sharing a tile float as one pile.
+// This is only how it is drawn: its place does not change.
 inline constexpr float ITEM_BOB_LOW = 0.05f, ITEM_BOB_HIGH = 0.17f;
 inline constexpr double ITEM_BOB_SECONDS = 2.4;
 inline constexpr double ITEM_SHINE_EVERY_SECONDS = 4.0;

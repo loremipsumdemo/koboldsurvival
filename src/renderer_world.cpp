@@ -1,5 +1,6 @@
 #include "renderer_internal.h"
 #include "frustum.h"
+#include <unordered_map>
 
 using namespace render_detail;
 
@@ -15,6 +16,59 @@ void outlineSquare(Batch& b, float cx, float y, float cz, float r, float t, RGBA
     b.quad({ cx - r, y, cz - r }, { cx - r + t, y, cz - r }, { cx - r + t, y, cz + r }, { cx - r, y, cz + r }, c);
     b.quad({ cx + r - t, y, cz - r }, { cx + r, y, cz - r }, { cx + r, y, cz + r }, { cx + r - t, y, cz + r }, c);
 }
+
+// Items on one tile make a pile. The pile floats as one, on the loop of its oldest item, and its items keep a fixed
+// order front to back, each one a little further from the camera than the one before, so they never trade places.
+// The most valuable item is in front, then the higher item number, then the older item.
+constexpr float PILE_STEP = 0.02f;
+
+struct PileSpot {
+    ObjectId bob = NO_OBJECT;   // whose float loop the pile follows
+    int depth = 0;              // 0 is the front
+};
+
+std::unordered_map<ObjectId, PileSpot> pileSpots(World& w, const std::vector<ObjectId>& items) {
+    struct Entry { std::pair<int, int> tile; int value; int item; ObjectId e; };
+    std::vector<Entry> all;
+    all.reserve(items.size());
+    for (ObjectId e : items) {
+        const Transform* tr = w.get<Transform>(e);
+        const GroundItem* gi = w.get<GroundItem>(e);
+        if (!tr || !gi) continue;
+        const ItemDef* d = findItem(gi->item);
+        all.push_back(Entry{ { (int)std::floor(tr->x), (int)std::floor(tr->z) }, d ? d->buyValue : 0, gi->item, e });
+    }
+    std::sort(all.begin(), all.end(), [](const Entry& a, const Entry& b) {
+        if (a.tile != b.tile) return a.tile < b.tile;
+        if (a.value != b.value) return a.value > b.value;
+        if (a.item != b.item) return a.item > b.item;
+        return a.e < b.e;
+    });
+    std::unordered_map<ObjectId, PileSpot> out;
+    out.reserve(all.size());
+    for (size_t first = 0; first < all.size();) {
+        size_t end = first + 1;
+        ObjectId oldest = all[first].e;
+        while (end < all.size() && all[end].tile == all[first].tile) oldest = std::min(oldest, all[end++].e);
+        for (size_t i = first; i < end; ++i) out[all[i].e] = PileSpot{ oldest, (int)(i - first) };
+        first = end;
+    }
+    return out;
+}
+
+// Where an item in a pile is drawn right now: floating with its pile, and pushed back from the camera by its depth
+Transform pileDrawn(const Transform& tr, const PileSpot& spot, unsigned long long ticks, float ex, float ey, float ez) {
+    Transform at{ tr.x, tr.y + itemBobLift(spot.bob, ticks), tr.z };
+    const float dx = ex - at.x, dy = ey - at.y, dz = ez - at.z;
+    const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (len > 1e-4f && spot.depth > 0) {
+        const float back = PILE_STEP * (float)spot.depth / len;
+        at.x -= dx * back;
+        at.y -= dy * back;
+        at.z -= dz * back;
+    }
+    return at;
+}
 }
 
 std::vector<ObjectId> Renderer::groundItemsAtPixel(World& w, const Terrain& t, const Camera& cam, float mx, float my,
@@ -22,19 +76,30 @@ std::vector<ObjectId> Renderer::groundItemsAtPixel(World& w, const Terrain& t, c
     std::vector<ObjectId> out;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     const unsigned long long ticks = SDL_GetTicks();
+    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+    cam.eye(ex, ey, ez);
+    std::vector<ObjectId> shown;
     for (ObjectId e : w.view<GroundItem, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z)) shown.push_back(e);
+    }
+    const std::unordered_map<ObjectId, PileSpot> spots = pileSpots(w, shown);
+    for (ObjectId e : shown) {
         const GroundItem* gi = w.get<GroundItem>(e);
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         ItemOnScreen os;
         // Where it is drawn right now, so a click on the picture finds it
-        const Transform drawn{ tr->x, tr->y + itemBobLift(e, ticks), tr->z };
+        const Transform drawn = pileDrawn(*tr, spots.at(e), ticks, ex, ey, ez);
         if (!itemOnScreen(vp, winW, winH, drawn, 1.0f, os)) continue;
         if (!(mx >= os.cx - os.halfW && mx <= os.cx + os.halfW && my >= os.top && my <= os.bottom)) continue;
         if (os.bottom - os.top < 1.0f) continue;
         if (itemPixelSolid(gi->item, (mx - (os.cx - os.halfW)) / (2.0f * os.halfW), (my - os.top) / (os.bottom - os.top))) out.push_back(e);
     }
-    std::sort(out.begin(), out.end());
+    // The front of each pile first, so whatever takes the first hit takes the item that shows
+    std::sort(out.begin(), out.end(), [&](ObjectId a, ObjectId b) {
+        const int da = spots.at(a).depth, db = spots.at(b).depth;
+        return da != db ? da < db : a < b;
+    });
     return out;
 }
 
@@ -464,16 +529,23 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     const unsigned long long ticks = SDL_GetTicks();
     std::vector<ObjectId> items;
-    Batch shadows;
     for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
-        items.push_back(e);
+        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z)) items.push_back(e);
+    }
+    if (items.empty()) return;
+    const std::unordered_map<ObjectId, PileSpot> spots = pileSpots(w, items);
+    float ex = 0.0f, ey = 0.0f, ez = 0.0f;
+    cam.eye(ex, ey, ez);
+
+    Batch shadows;
+    for (ObjectId e : items) {
+        const Transform* tr = w.get<Transform>(e);
 
         // Dark in the middle and fading out at the edge, and a little smaller while the item is high
         constexpr int SEGMENTS = 16;
         constexpr float SHADOW_LIFT = 0.03f;
-        const float radius = ITEM_SHADOW_RADIUS * (1.0f - 0.15f * itemBobShare(e, ticks));
+        const float radius = ITEM_SHADOW_RADIUS * (1.0f - 0.15f * itemBobShare(spots.at(e).bob, ticks));
         const float shadowAlpha = hasTheme_ ? std::min(1.0f, ITEM_SHADOW_ALPHA * (float)theme_.shadows / 50.0f) : ITEM_SHADOW_ALPHA;
         const RGBA middle{ 0.0f, 0.0f, 0.0f, shadowAlpha }, edge{ 0.0f, 0.0f, 0.0f, 0.0f };
         const V3 center{ tr->x, t.heightAt(tr->x, tr->z) + SHADOW_LIFT, tr->z };
@@ -490,7 +562,6 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
             last = rim;
         }
     }
-    if (items.empty()) return;
 
     const GLboolean wasBlending = glIsEnabled(GL_BLEND);
     glEnable(GL_BLEND);
@@ -507,8 +578,9 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
         const TextTex* pic = itemTexture(gi->item);
         TextTex square = *pic;
         square.aspect = 1.0f;
+        const Transform at = pileDrawn(*tr, spots.at(e), ticks, ex, ey, ez);
         glUniform1f(uShine_, itemShineShare(e, ticks));
-        drawGlyph(square, tr->x, tr->y + itemBobLift(e, ticks), tr->z, ITEM_GLYPH_H, WHITE);
+        drawGlyph(square, at.x, at.y, at.z, ITEM_GLYPH_H, WHITE);
     }
     glUniform1f(uShine_, 0.0f);
 }
