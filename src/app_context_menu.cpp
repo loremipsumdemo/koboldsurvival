@@ -10,6 +10,13 @@ static bool canEvacuate(World& world, ObjectId prop, ObjectId occupant) {
     return false;
 }
 
+static bool ownAltar(World& world, ObjectId prop) {
+    for (const Claim& c : claimsOf(world)) {
+        if (c.altar == prop) return c.owner == FACTION_PLAYER;
+    }
+    return false;
+}
+
 ObjectId App::menuTargetAt(float mx, float my) {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
@@ -36,7 +43,7 @@ ObjectId App::menuTargetAt(float mx, float my) {
     float best = 0.0f;
     for (ObjectId p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
         const PropKind kind = world.get<Prop>(p)->kind;
-        if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind)) || hidden(p)) continue;
+        if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p)) || hidden(p)) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
         if (prop == NO_OBJECT || d2 < best) {
@@ -127,6 +134,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         if (const Lock* lock = world.get<Lock>(occupiedProp(world, target))) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
+        // Your Altar manages your units, whether or not any are selected
+        if (ownAltar(world, target)) out.push_back(MenuAction::ManageUnits);
         if (propInfo(p->kind).claimsLand) {
             const std::vector<ObjectId> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NO_OBJECT) : true;
@@ -182,6 +191,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AutoHaul: labels.push_back(lang("UILABEL_AUTO_HAUL")); break;
         case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
         case MenuAction::Destroy: labels.push_back(lang("UILABEL_BUILD_DESTROY")); break;
+        case MenuAction::ManageUnits: labels.push_back(lang("UILABEL_MANAGE_UNITS")); break;
         }
     }
     return labels;
@@ -197,6 +207,12 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     const bool disband = squadPanel && world.has<Commandable>(target);
     if (disband) actions.push_back(MenuAction::Disband);
     if (actions.empty()) return false;
+    if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
+        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits } };
+        playSfx(Sfx::UiMenuOpen);
+        itemMenu.open = false;
+        return true;
+    }
     if (menuActors(target).empty()) {
         if (disband) {
             std::vector<MenuAction> own;
@@ -262,6 +278,10 @@ void App::pickMenuAction(MenuAction a) {
             itemMenu.open = false;
             playSfx(Sfx::UiMenuOpen);
         }
+        return;
+    }
+    if (a == MenuAction::ManageUnits) {
+        openAltar();
         return;
     }
     if (a == MenuAction::PutDown) {
@@ -357,6 +377,7 @@ void App::pickMenuAction(MenuAction a) {
     }
     case MenuAction::PutDown:
     case MenuAction::Disband:
+    case MenuAction::ManageUnits:
         break;
     case MenuAction::AutoHarvest:
     case MenuAction::AutoHaul: {

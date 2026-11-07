@@ -132,15 +132,13 @@ void clickSelect(World& w, ObjectId hit, bool additive) {
     if (!w.has<Selected>(hit)) w.add(hit, Selected{});
 }
 
-bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
-               int W, int H, bool additive) {
-    float minX = std::min(x0, x1), maxX = std::max(x0, x1);
-    float minY = std::min(y0, y1), maxY = std::max(y0, y1);
-    Mat4 vp = cam.viewProj((float)W / (float)H);
-
+std::vector<ObjectId> unitsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H) {
+    const float minX = std::min(x0, x1), maxX = std::max(x0, x1);
+    const float minY = std::min(y0, y1), maxY = std::max(y0, y1);
+    const Mat4 vp = cam.viewProj((float)W / (float)H);
     std::vector<ObjectId> inBox;
     for (ObjectId u : w.view<Entity, Transform, Commandable>()) {
-        Transform* tr = w.get<Transform>(u);
+        const Transform* tr = w.get<Transform>(u);
         if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx, sy;
         if (worldToScreen(vp, tr->x, tr->y + 0.5f, tr->z, W, H, sx, sy)
@@ -148,6 +146,12 @@ bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float 
             inBox.push_back(u);
         }
     }
+    return inBox;
+}
+
+bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1,
+               int W, int H, bool additive) {
+    const std::vector<ObjectId> inBox = unitsInBox(w, cam, x0, y0, x1, y1, W, H);
     if (inBox.empty()) return false;
     session.inspectUnit = NO_OBJECT;
     if (!additive) clearSelection(w);

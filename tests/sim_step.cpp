@@ -254,6 +254,34 @@ int main(int argc, char** argv) {
         check(reformed == 12, "shape " + std::to_string(shape) + ": everyone settles after changing shape");
     }
 
+    // Looking ahead: two units walking head on pass each other without touching, and one walking through a bystander
+    // goes round it while the bystander steps aside
+    for (int bystander = 0; bystander < 2; ++bystander) {
+        World pass;
+        Rng passRng;
+        passRng.gen.seed(5);
+        GameState passState;
+        const Vec2 at = systems_detail::findSpawn(terrain);
+        const Vec2 left = terrain.snap({ at.x - 4.0f, at.z }), right = terrain.snap({ at.x + 4.0f, at.z });
+        const ObjectId a = spawnUnit(pass, terrain, passRng, FACTION_PLAYER, left.x, left.z);
+        const ObjectId b = spawnUnit(pass, terrain, passRng, FACTION_PLAYER, bystander ? at.x : right.x, bystander ? at.z : right.z);
+        for (ObjectId u : { a, b }) pass.get<Behaviors>(u)->rules.clear();
+        issueMoveOrder(pass, terrain, { a }, right);
+        if (!bystander) issueMoveOrder(pass, terrain, { b }, left);
+        float closest = 1e9f;
+        for (int step = 0; step < 60 * 8; ++step) {
+            simStep(pass, terrain, passRng, passState, STEP, false);
+            takeEvents(pass);
+            closest = std::min(closest, flatGap(pass, a, b));
+        }
+        const Transform* ta = pass.get<Transform>(a);
+        const bool arrived = std::hypot(ta->x - right.x, ta->z - right.z) <= 0.5f;
+        const std::string what = bystander ? "a walker and a bystander" : "two walkers head on";
+        std::printf("note: %s: closest %.2f\n", what.c_str(), closest);
+        check(closest > 1.05f, what + " never touch");
+        check(arrived, what + ": the walker still gets where it was going");
+    }
+
     std::printf("%d failure(s)\n", failures);
     return failures ? 1 : 0;
 }

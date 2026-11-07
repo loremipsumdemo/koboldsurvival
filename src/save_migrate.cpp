@@ -95,12 +95,17 @@ bool upgrade6to7(Lines& lines) {
     return true;
 }
 
+// Version 8 added the squad, citizen, squadname and squadat lines. A version 7 file has none of them, so it needs no
+// change: its units are put in squads once it loads.
+bool upgrade7to8(Lines&) { return true; }
+
 struct Step {
     int from;
     bool (*upgrade)(Lines&);
 };
 constexpr Step STEPS[] = {
     { 6, upgrade6to7 },
+    { 7, upgrade7to8 },
 };
 }
 

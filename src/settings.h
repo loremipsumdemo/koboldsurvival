@@ -22,6 +22,13 @@ inline constexpr int FPS_CHOICE_COUNT = 8;
 inline constexpr int AUTOSAVE_CHOICES[] = { 0, 1, 2, 5, 10, 15, 30 };
 inline constexpr int AUTOSAVE_COUNT = 7;
 
+// The most citizens your faction can have: past the soft cap you are warned, and nothing moves a unit into the citizens
+// past the hard cap
+inline constexpr int CITIZEN_SOFT_CHOICES[] = { 50, 100, 200, 300, 400, 500, 750, 1000 };
+inline constexpr int CITIZEN_SOFT_COUNT = 8;
+inline constexpr int CITIZEN_HARD_CHOICES[] = { 64, 128, 256, 384, 512, 768, 1024 };
+inline constexpr int CITIZEN_HARD_COUNT = 7;
+
 inline constexpr int UI_SCALE_MIN = 50;
 inline constexpr int UI_SCALE_MAX = 200;
 inline constexpr int UI_SCALE_STEP = 5;
@@ -44,6 +51,8 @@ struct GameSettings {
     bool showFps = false;
 
     int autosaveMinutes = 5;
+    int citizenSoftCap = 500;
+    int citizenHardCap = 512;
     bool showUnitNames = true;
     bool showNpcNames = true;
     int fontScale = 100;
@@ -78,6 +87,9 @@ inline const char* panelSettingKey(int i) {
     return keys[i];
 }
 
+// The soft cap never above the hard cap
+inline int citizenSoftLimit(const GameSettings& s) { return std::min(s.citizenSoftCap, s.citizenHardCap); }
+
 inline int parseInt(const std::string& v, int fallback) {
     try { return std::stoi(v); } catch (...) { return fallback; }
 }
@@ -108,6 +120,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
+        else if (key == "citizenSoftCap")  s.citizenSoftCap = parseInt(val, s.citizenSoftCap);
+        else if (key == "citizenHardCap")  s.citizenHardCap = parseInt(val, s.citizenHardCap);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "npcNames")        s.showNpcNames = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
@@ -151,6 +165,8 @@ inline GameSettings loadSettings(const std::string& path) {
     s.viewRange = std::clamp(s.viewRange, VIEW_RANGE_MIN, VIEW_RANGE_MAX);
     s.viewRange = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((s.viewRange - VIEW_RANGE_MIN + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
+    if (!isChoice(s.citizenSoftCap, CITIZEN_SOFT_CHOICES, CITIZEN_SOFT_COUNT)) s.citizenSoftCap = GameSettings{}.citizenSoftCap;
+    if (!isChoice(s.citizenHardCap, CITIZEN_HARD_CHOICES, CITIZEN_HARD_COUNT)) s.citizenHardCap = GameSettings{}.citizenHardCap;
     s.globalVolume = std::clamp(s.globalVolume, 0, 100);
     s.optimizeAttackShare = std::clamp(s.optimizeAttackShare, 0, 100);
     s.musicVolume = std::clamp(s.musicVolume, 0, 100);

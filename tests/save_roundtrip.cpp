@@ -19,6 +19,7 @@
 #include "level.h"
 #include "pak.h"
 #include "sounds.h"
+#include "squads.h"
 #include "systems.h"
 #include "terrain.h"
 
@@ -178,6 +179,18 @@ int main(int, char**) {
     world.add(picker, defaultStats());
     world.add(picker, Working{ lockedProp, true });
 
+    // Squads: one renamed and shown, a unit moved into it, and a citizen
+    const ObjectId resident = makeEntity(world, *world.get<Transform>(people[0]), FACTION_PLAYER);
+    world.add(resident, defaultStats());
+    world.get<Name>(resident)->text = "Resident";
+    settleSquads(world);
+    makeCitizen(world, resident);
+    check(world.has<Citizen>(resident) && !world.has<Commandable>(resident) && world.has<SpawnHome>(resident),
+          "a citizen is no longer yours to command, and has a home");
+    check(moveToSquad(world, people[1], 4), "a unit moves into another squad");
+    world.resource<SquadBook>().names[4] = "Night Watch";
+    world.resource<SquadBook>().current = 4;
+
     const ObjectId bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
     world.add(bones, BonesPile{ 2.0, { ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), 3 } } });
     const ObjectId forge = firstProp(world, PropKind::Forge);
@@ -239,6 +252,35 @@ int main(int, char**) {
     check(rescuerAfter && rescuerAfter->busy && rescuerAfter->step.kind == BehaviorKind::Rescue, "a rescuer is still on its Rescue step");
     propOrderSystem(restored, terrain);
     check(playerReputation(restored) == repBefore, "a reload costs no reputation");
+    check(restored.resource<SquadBook>().names[4] == "Night Watch" && restored.resource<SquadBook>().current == 4,
+          "squad names and the shown squad come back");
+    check(squadOf(restored, again[1]) == 4 && squadOf(restored, again[0]) == 0, "units come back in their squads");
+    check(citizenUnits(restored).size() == 1 && restored.get<Name>(citizenUnits(restored)[0])->text == "Resident" &&
+          restored.has<SpawnHome>(citizenUnits(restored)[0]), "a citizen comes back as a citizen, with its home");
+
+    // Sixteen to a squad: the extra units go to squads with room, and once all nine are full, to the citizens
+    {
+        World crowd;
+        std::vector<ObjectId> units;
+        for (int i = 0; i < MILITARY_MAX + 5; ++i) {
+            const ObjectId u = makeEntity(crowd, Transform{ 1.0f, 0.0f, 1.0f }, FACTION_PLAYER);
+            crowd.add(u, SquadMember{ 0 });
+            units.push_back(u);
+        }
+        const int toCitizens = settleSquads(crowd);
+        const std::array<int, SQUAD_COUNT> sizes = squadSizes(crowd);
+        bool allFull = true;
+        for (int n : sizes) allFull = allFull && n == SQUAD_SIZE;
+        check(allFull, "a squad over sixteen is split until every squad holds sixteen");
+        check(toCitizens == 5 && citizenUnits(crowd).size() == 5, "units past nine full squads become citizens");
+        check(squadOf(crowd, units[0]) == 0 && squadOf(crowd, units[SQUAD_SIZE]) == 1, "the first sixteen keep their squad");
+        check(!moveToSquad(crowd, units[0], 3), "a full squad takes no one");
+        check(!makeMilitary(crowd, citizenUnits(crowd)[0], 0), "a citizen can't join a full military");
+        makeCitizen(crowd, units[SQUAD_SIZE * 3]);
+        check(makeMilitary(crowd, citizenUnits(crowd)[0], 0) && squadSizes(crowd)[3] == SQUAD_SIZE,
+              "a citizen joins the squad with room");
+        check(settleSquads(crowd) == 0, "settled squads stay as they are");
+    }
 
     // Prisoner cages and Evacuate
     {

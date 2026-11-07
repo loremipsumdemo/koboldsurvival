@@ -164,7 +164,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 }
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                             int repView) {
+                             int repView, const std::string* renameText) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, bgAlpha });
@@ -185,10 +185,11 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
                          on ? WHITE : theme::TEXT_DIM);
         };
         tab(L.tabSquad, lang("UILABEL_SQUAD_TAB"), L.tab == FACTION_TAB_SQUAD);
-        tab(L.tabReputation, lang("UILABEL_REPUTATION"), L.tab == FACTION_TAB_REPUTATION);
+        tab(L.tabFaction, lang("UILABEL_FACTION_TAB"), L.tab == FACTION_TAB_FACTION);
     }
-    if (L.tab == FACTION_TAB_REPUTATION) {
-        drawReputationList(w, L, repView);
+    if (L.tab == FACTION_TAB_FACTION) {
+        drawSquadGrid(w, L, renameText);
+        if (L.repHeading.w > 0.0f) drawReputationList(w, L, repView);
         return;
     }
 
@@ -198,7 +199,17 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const float tw = listTextWidth(text), th = listTextHeight(text);
         drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);
     };
+    {
+        const int current = w.resource<SquadBook>().current;
+        const std::string& custom = w.resource<SquadBook>().names[(size_t)current];
+        std::string head = langf("UILABEL_SQUAD_HEADING", { std::to_string(current + 1) });
+        if (!custom.empty()) head += "  " + custom;
+        const Rect& h = L.squadHeading;
+        const std::string shown = fitTextTip(head, h.w, h);
+        drawListText(shown, h.x, h.y + (h.h - listTextHeight(shown)) * 0.5f, theme::GOLD);
+    }
     mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
+    mode(L.selectButton, fitTextTip(lang("UILABEL_SELECT_MENU"), L.selectButton.w - 6.0f * s, L.selectButton), false);
     {
         const std::string label = lang("UILABEL_OPTIMIZE_ALL");
         const std::string shown = fitTextTip(label, L.optimizeAllButton.w - 6.0f * s, L.optimizeAllButton);
@@ -253,6 +264,48 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         };
         arrow(L.scrollUp, true, L.scrollRow > 0);
         arrow(L.scrollDown, false, L.scrollRow < L.maxScroll());
+    }
+}
+
+void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::string* renameText) {
+    const float s = uiScale();
+    const float th = listTextHeight("Ag");
+    const SquadBook& book = w.resource<SquadBook>();
+    const std::array<int, SQUAD_COUNT> sizes = squadSizes(w);
+    for (int k = 0; k < SQUAD_COUNT; ++k) {
+        const Rect& r = L.squadCells[(size_t)k];
+        if (r.w <= 0.0f) continue;
+        const bool current = k == book.current;
+        const bool hot = r.contains(mouseX_, mouseY_);
+        if (hot) noteHover(r);
+        drawRect(r, current ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.75f });
+        if (current) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GOLD);
+        const float inset = 4.0f * s;
+        const std::string number = std::to_string(k + 1);
+        drawListText(number, r.x + inset, r.y + 2.0f * s, theme::GOLD);
+        const float nameX = r.x + inset + listTextWidth(number) + 4.0f * s;
+        std::string name;
+        if (current && renameText) name = *renameText + ((SDL_GetTicks() / 500) % 2 ? "|" : " ");
+        else name = book.names[(size_t)k];
+        if (!name.empty()) {
+            const std::string fitted = fitText(name, r.x + r.w - inset - nameX, false);
+            drawListText(fitted, nameX, r.y + 2.0f * s, WHITE);
+            if (!renameText && fitted != name) noteTip(name, r);
+        }
+        const std::string count = std::to_string(sizes[(size_t)k]) + "/" + std::to_string(SQUAD_SIZE);
+        const RGBA countTint = sizes[(size_t)k] >= SQUAD_SIZE ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f }
+                             : sizes[(size_t)k] == 0 ? theme::TEXT_DIM : WHITE;
+        drawListText(count, r.x + r.w - inset - listTextWidth(count), r.y + r.h - th - 3.0f * s, countTint);
+    }
+    if (L.renameButton.w > 0.0f) {
+        const Rect& b = L.renameButton;
+        const bool hot = b.contains(mouseX_, mouseY_);
+        if (hot) noteHover(b);
+        drawRect(b, renameText ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
+        const std::string label = renameText ? lang("UILABEL_SQUAD_RENAME_DONE")
+                                             : langf("UILABEL_SQUAD_RENAME", { std::to_string(book.current + 1) });
+        const std::string shown = fitText(label, b.w - 6.0f * s, false);
+        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
     }
 }
 

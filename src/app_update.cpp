@@ -378,6 +378,8 @@ void App::update() {
     lastTicks = now;
     if (dt > 0.25f) dt = 0.25f;
     if (noticeSec > 0.0f) noticeSec -= dt;
+    // Even while paused, new and loaded units go straight into squads
+    if (screen == Screen::Playing && gameActive) settleSquads(world);
     if (screen == Screen::Playing) updateUnitPanelState();
     pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
     updateRightHold();

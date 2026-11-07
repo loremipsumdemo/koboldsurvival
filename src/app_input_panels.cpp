@@ -50,6 +50,13 @@ bool App::mouseDownOnPanels() {
 
         if (overPanels(mx, my, winW, winH)) {
             if (pl.paceButton.contains(mx, my)) { runMode = !runMode; playSfx(Sfx::UiToggle); return true; }
+            if (pl.selectButton.contains(mx, my)) {
+                session.contextMenu.open = false;
+                itemMenu.open = false;
+                selectMenuOpen = true;
+                playSfx(Sfx::UiMenuOpen);
+                return true;
+            }
             if (pl.optimizeAllButton.contains(mx, my)) {
                 session.contextMenu.open = false;
                 itemMenu.open = false;

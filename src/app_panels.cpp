@@ -2,12 +2,6 @@
 
 using namespace play;
 
-std::vector<ObjectId> App::ownUnitList() {
-    std::vector<ObjectId> units = world.view<Entity, Transform, Commandable>();
-    std::sort(units.begin(), units.end());
-    return units;
-}
-
 bool App::sidebarUp() { return sidebarUnitOf(world) != NO_OBJECT; }
 
 std::vector<BehaviorOption> App::behaviorOptionsFor(ObjectId u) {
@@ -417,6 +411,6 @@ bool App::pointerOverPanels(int W, int H) {
 }
 
 UnitPanelLayout App::squadPanelLayout(int W, int H) {
-    return layoutUnitPanel(W, H, (int)world.view<Entity, Transform, Commandable>().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
+    return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
                            reputationFactionCount(), repScroll);
 }

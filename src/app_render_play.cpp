@@ -20,6 +20,9 @@ void App::updateWorldMapView() {
 }
 
 void App::drawWorldOverlays() {
+    if (sel.dragging) {
+        renderer.drawSelectArrows(world, cam, unitsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH), winW, winH);
+    }
     if (settings.showUnitNames || settings.showNpcNames) {
         renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     }
@@ -67,7 +70,7 @@ void App::drawGamePanels() {
     const std::vector<ObjectId> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
-    renderer.drawUnitPanel(world, L, own, runMode, repView);
+    renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr);
     drawPanelLock(PanelId::Squad);
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
@@ -194,7 +197,8 @@ void App::drawWorldMapPopup() {
     for (ObjectId e : world.view<Entity, Transform>()) {
         const Transform* t = world.get<Transform>(e);
         MapDotKind kind = MapDotKind::Player;
-        if (world.has<Hostile>(e)) kind = MapDotKind::Hostile;
+        if (world.has<Citizen>(e)) kind = MapDotKind::Player;
+        else if (world.has<Hostile>(e)) kind = MapDotKind::Hostile;
         else if (world.has<Neutral>(e)) kind = MapDotKind::Neutral;
         else if (!world.has<Commandable>(e)) continue;
         mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, kind });
@@ -260,15 +264,23 @@ void App::drawPlayingScreen() {
     }
     drawStoragePanel();
     if (session.contextMenu.open) renderer.drawItemMenu(contextMenuLayout(), contextLabels(), mouseX, mouseY);
+    if (selectMenuOpen) {
+        std::vector<std::string> labels;
+        for (const char* key : { "UILABEL_SELECT_ALL", "UILABEL_SELECT_CLOSEST", "UILABEL_SELECT_IDLE", "UILABEL_SELECT_BUSY" }) {
+            labels.push_back(lang(key));
+        }
+        renderer.drawItemMenu(selectMenuLayout(), labels, mouseX, mouseY);
+    }
     if (session.disbandTarget != NO_OBJECT) {
         renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
     }
     if (optimizeAllOpen) {
-        renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
+        renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)militaryUnits(world).size(), settings.optimizeAttackShare,
                                  { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
                                  mouseX, mouseY);
     }
     if (mapOpen) drawWorldMapPopup();
+    drawAltar();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
     drawFormationKeys();

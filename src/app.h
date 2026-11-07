@@ -37,6 +37,8 @@
 #include "savegame.h"
 #include "settings.h"
 #include "settings_menu.h"
+#include "altar_ui.h"
+#include "squads.h"
 #include "display.h"
 #include "inventory.h"
 #include "party.h"
@@ -164,6 +166,9 @@ struct App : AppSession {
     bool pressOnStorage();
     bool pressOnPanelBars();
     bool pressOnFactionTabs();
+    bool pressOnSelectMenu();
+    bool pressOnFactionGrid();
+    bool pressOnAltar();
     bool pressOnSquadScroll();
     bool pressToGrabPanel();
     bool mouseDownOnPanels();
@@ -293,7 +298,19 @@ struct App : AppSession {
     void settingsClick(float x, float y, int W, int H);
     void performAction(Action action, int param);
     UnitPanelLayout squadPanelLayout(int W, int H);
-    std::vector<ObjectId> ownUnitList();
+    std::vector<ObjectId> ownUnitList();   // the units of the squad the Squad tab shows
+    void pickSquad(int squad, bool additive);
+    void pickClosestUnit();
+    void runSelectMenu(int choice);
+    ItemMenuLayout selectMenuLayout();
+    void startSquadRename();
+    void stopSquadRename(bool keep);
+    bool squadKeyDown();
+    void noteSquadOfSelection();
+    void openAltar();
+    std::array<std::vector<ObjectId>, 2> altarColumns();
+    void applyAltarMoves();
+    void drawAltar();
     bool sidebarUp();
     std::vector<BehaviorOption> behaviorOptionsFor(ObjectId u);
     SidebarLayout sidebarFor(int W, int H, float scroll);
@@ -387,6 +404,12 @@ struct App : AppSession {
     MapChoice currentMap;
     bool combatCollapsed = false, squadCollapsed = false;
     int factionTab = FACTION_TAB_SQUAD;
+    bool selectMenuOpen = false;
+    bool squadRenaming = false;
+    std::string squadRenameText;
+    int lastSquadTap = -1;
+    unsigned long long lastSquadTapAt = 0;
+    AltarUi altar;
     bool unitOpen = true;
     UnitTab unitTab = UnitTab::Inventory;
     PanelPlace squadPlace, unitPlace, logPlace;

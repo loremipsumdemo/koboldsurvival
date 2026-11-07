@@ -138,6 +138,8 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     }
     if (const Provoked* pv = w.get<Provoked>(u)) su.provoked = pv->against;
     if (w.has<Commandable>(u)) captureOrders(w, u, su, propIds, unitIds);
+    su.squad = squadOf(w, u);
+    su.citizen = w.has<Citizen>(u);
 }
 
 std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
@@ -213,6 +215,13 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
         if (hostileToPlayer(world, e)) world.add(e, Hostile{});
         else world.add(e, Neutral{});
     }
+    // Saved as citizens, they keep their home and behaviors from the file
+    if (u.citizen && world.has<Commandable>(e)) {
+        world.remove<Commandable>(e);
+        world.add(e, Citizen{});
+    } else if (u.squad >= 0 && u.squad < SQUAD_COUNT && world.has<Commandable>(e)) {
+        world.add(e, SquadMember{ u.squad });
+    }
     return e;
 }
 
@@ -275,6 +284,9 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
 void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world = World{};
     setPlayerReputation(world, d.reputation);
+    SquadBook& book = world.resource<SquadBook>();
+    book.names = d.squadNames;
+    book.current = std::clamp(d.currentSquad, 0, SQUAD_COUNT - 1);
     const std::vector<ObjectId> props = restoreProps(world, d);
     for (const SaveGround& g : d.ground) {
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
@@ -286,6 +298,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     for (const SaveUnit& u : d.units) units.push_back(restoreUnit(world, u, props));
     restoreLinks(world, d, units, props);
     restoreOrders(world, terrain, d, units, props);
+    settleSquads(world);
     std::istringstream state(d.rngState);
     state >> rng.gen;
 }
@@ -299,6 +312,8 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.mapStem = map.stem;
     d.gs = gs;
     d.reputation = playerReputation(w);
+    d.squadNames = w.resource<SquadBook>().names;
+    d.currentSquad = w.resource<SquadBook>().current;
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };
     std::ostringstream state;
     state << rng.gen;

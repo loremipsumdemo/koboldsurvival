@@ -156,30 +156,44 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
     if (collapsed) return L;
 
     const Rect body = panelBodyRect(open, place.barBottom, m.barH);
-    L.tab = tab == FACTION_TAB_REPUTATION ? FACTION_TAB_REPUTATION : FACTION_TAB_SQUAD;
+    L.tab = tab == FACTION_TAB_FACTION ? FACTION_TAB_FACTION : FACTION_TAB_SQUAD;
     {
         const float tw = (open.w - 2.0f * m.pad - m.gap) * 0.5f;
         L.tabSquad = Rect{ open.x + m.pad, body.y + 2.0f * s, tw, m.tabH - 4.0f * s };
-        L.tabReputation = Rect{ L.tabSquad.x + tw + m.gap, body.y + 2.0f * s, tw, m.tabH - 4.0f * s };
+        L.tabFaction = Rect{ L.tabSquad.x + tw + m.gap, body.y + 2.0f * s, tw, m.tabH - 4.0f * s };
     }
     const float bodyY = body.y + m.tabH;
-    if (L.tab == FACTION_TAB_REPUTATION) {
+    if (L.tab == FACTION_TAB_FACTION) {
+        // The squads first, as a numpad: squad 1 at the bottom left and 9 at the top right
+        const float gridGap = 4.0f * s, cellH = 36.0f * s;
+        const float cellW = (open.w - 2.0f * m.pad - 2.0f * gridGap) / 3.0f;
+        const float gridTop = bodyY + m.pad * 0.5f;
+        for (int k = 0; k < SQUAD_COUNT; ++k) {
+            const int row = 2 - k / 3, col = k % 3;
+            L.squadCells[(size_t)k] = Rect{ open.x + m.pad + col * (cellW + gridGap), gridTop + row * (cellH + gridGap), cellW, cellH };
+        }
+        L.renameButton = Rect{ open.x + m.pad, gridTop + 3.0f * cellH + 2.0f * gridGap + m.gap, open.w - 2.0f * m.pad, m.toggleH };
+
         const float rowH = 24.0f * s, rowGap = 2.0f * s;
-        L.repHeading = Rect{ open.x + m.pad, bodyY + m.pad * 0.5f, open.w - 2.0f * m.pad, rowH };
+        L.repHeading = Rect{ open.x + m.pad, L.renameButton.y + L.renameButton.h + m.gap, open.w - 2.0f * m.pad, rowH };
         const float listTop = L.repHeading.y + rowH + rowGap;
         const float room = body.y + body.h - m.pad * 0.5f - listTop;
-        L.repVisible = std::max(1, (int)std::floor((room + rowGap) / (rowH + rowGap) + 0.001f));
+        L.repVisible = std::max(0, (int)std::floor((room + rowGap) / (rowH + rowGap) + 0.001f));
         L.repFirst = std::clamp(repScroll, 0, std::max(0, factionCount - L.repVisible));
         for (int i = L.repFirst; i < factionCount && i < L.repFirst + L.repVisible; ++i) {
             L.repRows.push_back(Rect{ open.x + m.pad, listTop + (i - L.repFirst) * (rowH + rowGap), open.w - 2.0f * m.pad, rowH });
         }
+        if (listTop > body.y + body.h) L.repHeading = Rect{};
         return L;
     }
     const float rowW = open.w - 2.0f * m.pad;
-    const float halfW = (rowW - m.gap) * 0.5f;
-    L.paceButton = Rect{ open.x + m.pad, bodyY + m.pad, halfW, m.toggleH };
-    L.optimizeAllButton = Rect{ L.paceButton.x + halfW + m.gap, bodyY + m.pad, halfW, m.toggleH };
-    const float top = bodyY + m.pad + m.toggleH + m.gap;
+    L.squadHeading = Rect{ open.x + m.pad, bodyY + m.pad, rowW, m.headH };
+    const float buttonsY = bodyY + m.pad + m.headH + m.gap;
+    const float thirdW = (rowW - 2.0f * m.gap) / 3.0f;
+    L.paceButton = Rect{ open.x + m.pad, buttonsY, thirdW, m.toggleH };
+    L.selectButton = Rect{ L.paceButton.x + thirdW + m.gap, buttonsY, thirdW, m.toggleH };
+    L.optimizeAllButton = Rect{ L.selectButton.x + thirdW + m.gap, buttonsY, thirdW, m.toggleH };
+    const float top = buttonsY + m.toggleH + m.gap;
 
     for (int r = 0; r < rowsVisible; ++r) {
         for (int c = 0; c < cols; ++c) {

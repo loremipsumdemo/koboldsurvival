@@ -1,0 +1,91 @@
+#include "altar_ui.h"
+#include <algorithm>
+#include <cmath>
+#include "components.h"
+
+AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll) {
+    const float s = uiScaleFor((float)H);
+    const float margin = 16.0f * s, pad = 14.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 150.0f * s;
+    const float rowH = 40.0f * s, rowGap = 3.0f * s;
+    AltarLayout L;
+    const float boxW = std::min((float)W - 2.0f * margin, 820.0f * s);
+    const float boxH = std::min((float)H - 2.0f * margin, 600.0f * s);
+    L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
+    const float x = L.box.x + pad, w = boxW - 2.0f * pad;
+    float y = L.box.y + pad;
+    L.title = Rect{ x, y, w - line, line };
+    L.close = Rect{ x + w - line, y, line, line };
+    y += line + 2.0f * s;
+    L.totals = Rect{ x, y, w, line };
+    y += line + gap;
+    const float colW = (w - gap) * 0.5f;
+    const float listBottom = L.box.y + boxH - pad - btnH - gap;
+    for (int c = 0; c < 2; ++c) {
+        const float cx = x + c * (colW + gap);
+        L.heads[(size_t)c] = Rect{ cx, y, colW, line };
+        L.lists[(size_t)c] = Rect{ cx, y + line + 2.0f * s, colW, std::max(0.0f, listBottom - (y + line + 2.0f * s)) };
+        const Rect& list = L.lists[(size_t)c];
+        const int visible = std::max(0, (int)std::floor((list.h + rowGap) / (rowH + rowGap) + 0.001f));
+        L.visible[(size_t)c] = visible;
+        L.first[(size_t)c] = std::clamp(scroll[(size_t)c], 0, std::max(0, counts[(size_t)c] - visible));
+        for (int i = L.first[(size_t)c]; i < counts[(size_t)c] && i < L.first[(size_t)c] + visible; ++i) {
+            AltarRow r;
+            r.index = i;
+            r.row = Rect{ list.x, list.y + (i - L.first[(size_t)c]) * (rowH + rowGap), list.w, rowH };
+            r.portrait = Rect{ r.row.x + 3.0f * s, r.row.y + 3.0f * s, rowH - 6.0f * s, rowH - 6.0f * s };
+            const float mw = 34.0f * s;
+            r.move = Rect{ r.row.x + r.row.w - mw - 4.0f * s, r.row.y + 6.0f * s, mw, rowH - 12.0f * s };
+            L.rows[(size_t)c].push_back(r);
+        }
+    }
+    const float by = L.box.y + boxH - pad - btnH;
+    L.apply = Rect{ L.box.x + boxW * 0.5f - gap * 0.5f - btnW, by, btnW, btnH };
+    L.cancel = Rect{ L.box.x + boxW * 0.5f + gap * 0.5f, by, btnW, btnH };
+    return L;
+}
+
+int altarMaxScroll(const AltarLayout& L, int column, int count) {
+    return std::max(0, count - L.visible[(size_t)column]);
+}
+
+UnitCardLayout layoutUnitCard(const Rect& beside, int W, int H, int statLines) {
+    const float s = uiScaleFor((float)H);
+    const float pad = 10.0f * s, gap = 8.0f * s, margin = 8.0f * s;
+    const float cell = 34.0f * s, cellGap = 3.0f * s, headLine = 18.0f * s;
+    UnitCardLayout L;
+    L.line = 16.0f * s;
+    L.statColumns = 3;
+    const float pic = 56.0f * s;
+    const float boxW = std::min((float)W - 2.0f * margin, 470.0f * s);
+    const int statRows = (statLines + L.statColumns - 1) / L.statColumns;
+    const float itemRows = (float)(INVENTORY_SLOTS / INVENTORY_COLUMNS);
+    const float boxH = pad + pic + gap + statRows * L.line + gap + headLine + cell + gap + headLine +
+                       itemRows * cell + (itemRows - 1.0f) * cellGap + pad;
+
+    // To the right of the row if it fits, or else to its left, and moved up or down to stay in the window
+    float x = beside.x + beside.w + gap;
+    if (x + boxW > W - margin) x = beside.x - gap - boxW;
+    x = std::clamp(x, margin, std::max(margin, (float)W - margin - boxW));
+    float y = beside.y + beside.h * 0.5f - boxH * 0.5f;
+    y = std::clamp(y, margin, std::max(margin, (float)H - margin - boxH));
+    L.box = Rect{ std::floor(x), std::floor(y), boxW, std::min(boxH, (float)H - 2.0f * margin) };
+
+    const float ix = L.box.x + pad, iw = boxW - 2.0f * pad;
+    float cy = L.box.y + pad;
+    L.portrait = Rect{ ix, cy, pic, pic };
+    L.head = Rect{ ix + pic + gap, cy, iw - pic - gap, pic };
+    cy += pic + gap;
+    L.stats = Rect{ ix, cy, iw, statRows * L.line };
+    cy += statRows * L.line + gap;
+    L.gearHead = Rect{ ix, cy, iw, headLine };
+    cy += headLine;
+    for (int g = 0; g < GEAR_SLOTS; ++g) L.gear.push_back(Rect{ ix + g * (cell + cellGap), cy, cell, cell });
+    cy += cell + gap;
+    L.items = Rect{ ix, cy, iw, headLine };
+    cy += headLine;
+    for (int i = 0; i < INVENTORY_SLOTS; ++i) {
+        const int c = i % INVENTORY_COLUMNS, r = i / INVENTORY_COLUMNS;
+        L.slots.push_back(Rect{ ix + c * (cell + cellGap), cy + r * (cell + cellGap), cell, cell });
+    }
+    return L;
+}

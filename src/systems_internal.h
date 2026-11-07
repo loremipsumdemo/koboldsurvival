@@ -18,6 +18,7 @@
 #include "props.h"
 #include "emotes.h"
 #include "spatial.h"
+#include "squads.h"
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;

@@ -167,6 +167,8 @@ void finishDying(World& w, ObjectId u) {
     w.remove<XpBuffer>(u);
     w.add(u, Corpse{});
     w.remove<Commandable>(u);
+    w.remove<SquadMember>(u);
+    w.remove<Citizen>(u);
     w.remove<Selected>(u);
     w.remove<Occupying>(u);
     queueLog(w, langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));

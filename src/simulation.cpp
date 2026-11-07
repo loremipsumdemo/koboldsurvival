@@ -1,3 +1,4 @@
+#include "squads.h"
 #include "simulation.h"
 #include "calendar.h"
 #include "claims.h"
@@ -74,6 +75,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(w, t));
     occupyBanSystem(w, dt);
     cleanupActiveSquads(w);
+    settleSquads(w);
     const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
     PROFILED("needsSystem", needsSystem(w, hoursPassed, gameSecs));

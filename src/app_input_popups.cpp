@@ -45,7 +45,7 @@ bool App::pressOnOptimizeAll() {
                 optimizeAllOpen = false;
                 playSfx(Sfx::UiBack);
             } else if (ol.confirm.contains(x, y)) {
-                const std::vector<ObjectId> squad = ownUnitList();
+                const std::vector<ObjectId> squad = militaryUnits(world);
                 const OptimizeAllResult r = optimizeAllGear(world, squad, gearPrefs());
                 optimizeAllOpen = false;
                 if (r.changed == 0 && r.noRoom == 0) {
@@ -287,8 +287,8 @@ bool App::pressOnFactionTabs() {
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT) {
         const UnitPanelLayout fp = squadPanelLayout(winW, winH);
         const float tx = e.button.x, ty = e.button.y;
-        if (fp.tabSquad.contains(tx, ty) || fp.tabReputation.contains(tx, ty)) {
-            const int next = fp.tabSquad.contains(tx, ty) ? FACTION_TAB_SQUAD : FACTION_TAB_REPUTATION;
+        if (fp.tabSquad.contains(tx, ty) || fp.tabFaction.contains(tx, ty)) {
+            const int next = fp.tabSquad.contains(tx, ty) ? FACTION_TAB_SQUAD : FACTION_TAB_FACTION;
             if (next != factionTab) playSfx(Sfx::UiClick);
             factionTab = next;
             return true;
@@ -303,7 +303,7 @@ bool App::pressOnFactionTabs() {
             break;
         }
         if (picked) return true;
-        if (factionTab == FACTION_TAB_REPUTATION && fp.repHeading.contains(tx, ty)) return true;
+        if (factionTab == FACTION_TAB_FACTION && fp.repHeading.contains(tx, ty)) return true;
     }
     return false;
 }
@@ -351,16 +351,19 @@ bool App::pressToGrabPanel() {
 }
 
 bool App::mouseDownOnPopups() {
+    if (pressOnAltar()) return true;
     if (pressOnDisband()) return true;
     if (pressOnOptimizeAll()) return true;
     if (pressOnWorldMap()) return true;
     if (pressOnTalk()) return true;
     if (pressOnContextMenu()) return true;
+    if (pressOnSelectMenu()) return true;
     if (pressOnStoreQuantity()) return true;
     if (pressOnLoot()) return true;
     if (pressOnStorage()) return true;
     if (pressOnPanelBars()) return true;
     if (pressOnFactionTabs()) return true;
+    if (pressOnFactionGrid()) return true;
     if (pressOnSquadScroll()) return true;
     if (pressToGrabPanel()) return true;
     return false;

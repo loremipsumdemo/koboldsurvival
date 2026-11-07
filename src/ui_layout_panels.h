@@ -8,6 +8,7 @@
 #include "components.h"
 #include "items.h"
 #include "props.h"
+#include "squads.h"
 #include "ui_types.h"
 
 constexpr int UNITS_PER_ROW = 5;
@@ -30,11 +31,11 @@ constexpr float PANEL_MARGIN = 8.0f;
 constexpr float PANEL_BAR_H = 22.0f;
 
 struct SquadMetrics {
-    float cell, gap, pad, label, scrollW, toggleH, barH, tabH;
+    float cell, gap, pad, label, scrollW, toggleH, barH, tabH, headH;
     explicit SquadMetrics(float s)
         : cell(44.0f * s), gap(5.0f * s), pad(10.0f * s), label(34.0f * s), scrollW(14.0f * s), toggleH(22.0f * s),
-          barH(PANEL_BAR_H * s), tabH(24.0f * s) {}
-    float chromeH() const { return barH + tabH + pad + toggleH + gap + pad; }
+          barH(PANEL_BAR_H * s), tabH(24.0f * s), headH(20.0f * s) {}
+    float chromeH() const { return barH + tabH + pad + headH + gap + toggleH + gap + pad; }
     float rowsH(int rows) const { return rows * (cell + label) + (rows - 1) * gap; }
 };
 
@@ -86,11 +87,15 @@ struct UnitPanelLayout {
     Rect lock;
     Rect panel;
     Rect title;
+    Rect squadHeading;   // "Squad: 1" at the top of the Squad tab
     Rect paceButton;
+    Rect selectButton;
     Rect optimizeAllButton;
     int tab = 0;
     Rect tabSquad;
-    Rect tabReputation;
+    Rect tabFaction;
+    std::array<Rect, SQUAD_COUNT> squadCells{};   // the Faction tab's squads, laid out like a numpad: 7 8 9 on top
+    Rect renameButton;
     Rect repHeading;
     std::vector<Rect> repRows;
     int repFirst = 0;
@@ -111,7 +116,7 @@ struct UnitPanelLayout {
 
 constexpr float SQUAD_WHEEL_NOTCHES_PER_ROW = 4.0f;
 constexpr int FACTION_TAB_SQUAD = 0;
-constexpr int FACTION_TAB_REPUTATION = 1;
+constexpr int FACTION_TAB_FACTION = 1;
 
 UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
                                        const PanelPlace& place = PanelPlace{}, int tab = FACTION_TAB_SQUAD,

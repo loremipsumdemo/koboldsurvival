@@ -53,6 +53,9 @@ struct OptimizeAllLayout;
 struct QuantityLayout;
 struct DisbandLayout;
 struct ItemMenuLayout;
+struct AltarLayout;
+struct AltarTotals;
+struct UnitCardLayout;
 struct TitleLayout;
 struct PercentPromptLayout;
 namespace render_detail { struct Vertex; struct Batch; }
@@ -101,8 +104,9 @@ public:
 
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
 
+    // renameText: the squad name being typed, or null when no squad is being renamed
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                       int repView = FACTION_PLAYER);
+                       int repView, const std::string* renameText = nullptr);
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
@@ -133,6 +137,12 @@ public:
     void drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName, const Inventory* npcInv,
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, bool showValue, float mx, float my);
+    // The altar's roster. cols: each column's units, ghosts (units moving into it) included
+    void drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
+                         const std::map<ObjectId, int>& moves, const AltarTotals& totals, ObjectId pinned, float mx, float my);
+    void drawUnitCard(World& w, ObjectId u, const UnitCardLayout& C);
+    // Arrows over the units a box would select, while it is dragged
+    void drawSelectArrows(World& w, const Camera& cam, const std::vector<ObjectId>& units, int winW, int winH);
     void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
                          float mx, float my);
     void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
@@ -191,6 +201,7 @@ public:
     void drawCollapseButton(const Rect& r, bool collapsed);
     void drawCloseButton(const Rect& r);
     void drawReputationList(World& w, const UnitPanelLayout& L, int repView);
+    void drawSquadGrid(World& w, const UnitPanelLayout& L, const std::string* renameText);
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);

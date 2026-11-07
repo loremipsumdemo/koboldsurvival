@@ -24,7 +24,7 @@ inline std::string settingsTabName(SettingsTab tab) {
 
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit, ViewRange, ShowFps,
-    Autosave, UnitNames, NpcNames, FontScale, ResetPanels,
+    Autosave, CitizenSoftCap, CitizenHardCap, UnitNames, NpcNames, FontScale, ResetPanels,
     Language, Font,
     EdgeScroll, Reference, ConversationPause,
     GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds
@@ -66,6 +66,9 @@ inline constexpr ControlNote CONTROL_NOTES[] = {
     { "CONTROL_KEYS_8", "CONTROL_DOES_8" },
     { "CONTROL_KEYS_9", "CONTROL_DOES_9" },
     { "CONTROL_KEYS_10", "CONTROL_DOES_10" },
+    { "CONTROL_KEYS_11", "CONTROL_DOES_11" },
+    { "CONTROL_KEYS_12", "CONTROL_DOES_12" },
+    { "CONTROL_KEYS_13", "CONTROL_DOES_13" },
 };
 inline constexpr int CONTROL_NOTE_COUNT = (int)(sizeof(CONTROL_NOTES) / sizeof(CONTROL_NOTES[0]));
 

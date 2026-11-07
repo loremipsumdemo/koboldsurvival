@@ -18,6 +18,8 @@ ObjectId sidebarUnitOf(World& w);
 std::vector<ObjectId> panelUnits(World& w);
 ObjectId unitClicked(World& w, const std::vector<ObjectId>& underPointer);
 void clickSelect(World& w, ObjectId hit, bool additive);
+// Your units a dragged box covers
+std::vector<ObjectId> unitsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H);
 bool boxSelect(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H, bool additive);
 std::vector<ObjectId> groundItemsInBox(World& w, const Camera& cam, float x0, float y0, float x1, float y1, int W, int H);
 bool rightClickOrder(World& w, Terrain& t, const Camera& cam, float mx, float my, int W, int H, float& gx, float& gz);

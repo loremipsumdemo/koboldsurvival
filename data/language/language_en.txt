@@ -625,6 +625,7 @@ UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice.
 UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
 UILABEL_SQUAD_TAB	Squad
 UILABEL_REPUTATION	Reputation
+UILABEL_FACTION_TAB	Faction
 UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
 UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)
 UILABEL_REP_NEUTRAL	Neutral: they leave each other alone
@@ -1164,3 +1165,46 @@ MISC_LEVEL_OTHER_MAP	That level is for the map {0}.
 UILABEL_LEVEL_RANDOM	Random set-up
 UILABEL_PARTY_MAP	Map: {0}
 UILABEL_PARTY_LEVEL	Level: {0}
+CONTROL_KEYS_11	Numpad 1 to 9
+CONTROL_DOES_11	Select that squad (Shift adds it; press twice to look at it)
+CONTROL_KEYS_12	Ctrl + Numpad 1 to 9
+CONTROL_DOES_12	Move the selected units into that squad
+CONTROL_KEYS_13	Numpad 0
+CONTROL_DOES_13	Select your unit nearest the camera's centre
+UILABEL_SQUAD_HEADING	Squad: {0}
+UILABEL_SQUAD_DEFAULT_NAME	Squad {0}
+UILABEL_SQUAD_RENAME	Rename Squad {0}
+UILABEL_SQUAD_RENAME_DONE	Done
+UILABEL_SELECT_MENU	Select
+UILABEL_SELECT_ALL	Select All
+UILABEL_SELECT_CLOSEST	Select Closest
+UILABEL_SELECT_IDLE	Select Idle
+UILABEL_SELECT_BUSY	Select Non-Idle
+MISC_SQUAD_ASSIGNED	{0} unit(s) moved into Squad {1}
+MISC_SQUAD_FULL_SOME	Squad {0} is full: {1} moved in, {2} did not fit
+MISC_SQUADS_FULL_CITIZEN	{0} becomes a citizen: every squad is full
+UILABEL_CITIZEN_SOFT_CAP	Citizens: soft cap
+UILABEL_CITIZEN_HARD_CAP	Citizens: hard cap
+UILABEL_ALTAR_ROSTER	Manage Units
+UILABEL_MANAGE_UNITS	Manage Units
+UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4})
+UILABEL_ALTAR_OVER_SOFT_CAP	You have more citizens than the soft cap in Settings
+UILABEL_ALTAR_MILITARY	Military
+UILABEL_ALTAR_CITIZENS	Citizens
+UILABEL_ALTAR_CITIZEN	Citizen
+UILABEL_ALTAR_MILITARY_TIP	Units you command, in nine squads of up to 16
+UILABEL_ALTAR_CITIZENS_TIP	Units the game commands. They stay near your altar
+UILABEL_ALTAR_LEVELS	Combat {0}  Other {1}
+UILABEL_ALTAR_SQUAD_TAG	Squad {0}
+UILABEL_ALTAR_TO_CITIZENS	Moving in
+UILABEL_ALTAR_TO_MILITARY	Moving in
+UILABEL_ALTAR_TO_CITIZENS_TIP	Move to the citizens
+UILABEL_ALTAR_TO_MILITARY_TIP	Move to the military
+UILABEL_ALTAR_UNDO_TIP	Undo this move
+UILABEL_ALTAR_EMPTY	No one
+UILABEL_ALTAR_APPLY	Apply ({0})
+UILABEL_ALTAR_NO_STATS	No stats
+MISC_CITIZENS_HARD_CAP	You can't have more than {0} citizens
+MISC_MILITARY_FULL	Your military is full: {0} units in nine squads
+MISC_ALTAR_APPLIED	{0} joined the military, {1} became citizens.
+MISC_CITIZENS_OVER_SOFT_CAP	Your citizens are over the soft cap of {0}.

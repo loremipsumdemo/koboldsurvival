@@ -197,6 +197,11 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
         saves.push_back(DropOption{ label, m, 0, 0, true });
     }
     rows.push_back(makeDropdown(RowId::Autosave, lang("UILABEL_AUTOSAVE"), saves, indexOfValue(saves, s.autosaveMinutes), true));
+    std::vector<DropOption> soft, hard;
+    for (int v : CITIZEN_SOFT_CHOICES) soft.push_back(DropOption{ std::to_string(v), v, 0, 0, true });
+    for (int v : CITIZEN_HARD_CHOICES) hard.push_back(DropOption{ std::to_string(v), v, 0, 0, true });
+    rows.push_back(makeDropdown(RowId::CitizenSoftCap, lang("UILABEL_CITIZEN_SOFT_CAP"), soft, indexOfValue(soft, s.citizenSoftCap), true));
+    rows.push_back(makeDropdown(RowId::CitizenHardCap, lang("UILABEL_CITIZEN_HARD_CAP"), hard, indexOfValue(hard, s.citizenHardCap), true));
     rows.push_back(makeToggle(RowId::UnitNames, lang("UILABEL_UNIT_NAMES"), s.showUnitNames));
     rows.push_back(makeToggle(RowId::NpcNames, lang("UILABEL_NPC_NAMES"), s.showNpcNames));
     rows.push_back(makeToggle(RowId::ConversationPause, lang("UILABEL_CONVERSATION_PAUSE"), s.conversationPause));
@@ -444,6 +449,12 @@ SettingsChange pickOption(RowId id, const DropOption& option, GameSettings& s) {
         break;
     case RowId::Autosave:
         s.autosaveMinutes = option.value;
+        break;
+    case RowId::CitizenSoftCap:
+        s.citizenSoftCap = option.value;
+        break;
+    case RowId::CitizenHardCap:
+        s.citizenHardCap = option.value;
         break;
     case RowId::Language: {
         const std::vector<LanguageChoice>& choices = languageChoices();

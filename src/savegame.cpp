@@ -96,6 +96,8 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
         w.line("task", i, r.rule.on, behaviorKey(r.rule.kind), namesProp ? propInfo((PropKind)r.rule.propKind).key : std::string("-"), r.prop, r.rule.percent);
     }
     if (u.stepKind >= 0) w.line("step", i, behaviorKey((BehaviorKind)u.stepKind));
+    if (u.squad >= 0) w.line("squad", i, u.squad);
+    if (u.citizen) w.line("citizen", i);
 }
 
 void writeProp(Writer& w, size_t i, const SaveProp& p) {
@@ -121,6 +123,10 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     w.line("camera", d.cam.fx, d.cam.fy, d.cam.fz, d.cam.yaw, d.cam.pitch, d.cam.distance);
     w.line("rng", d.rngState);
     for (const auto& [faction, value] : d.reputation) w.line("rep", faction, value);
+    for (size_t k = 0; k < d.squadNames.size(); ++k) {
+        if (!d.squadNames[k].empty()) w.line("squadname", k, d.squadNames[k]);
+    }
+    w.line("squadat", d.currentSquad);
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
     for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
     for (size_t i = 0; i < d.units.size(); ++i) writeUnit(w, i, d.units[i]);
@@ -279,6 +285,14 @@ const std::unordered_map<std::string, Handler>& handlers() {
                           n.restedPart, n.comfortPart, n.hurried, n.healSeconds);
         } },
         { "slot", [](Line& l) { SaveUnit* u = l.unit(); return u && l.slotInto(u->stacks); } },
+        { "squad", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->squad); } },
+        { "citizen", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->citizen = true; return u != nullptr; } },
+        { "squadname", [](Line& l) {
+            size_t k = 0;
+            if (!l.read(k) || k >= l.d.squadNames.size()) return false;
+            return l.rest(l.d.squadNames[k]);
+        } },
+        { "squadat", [](Line& l) { return l.read(l.d.currentSquad); } },
         { "gear", [](Line& l) {
             SaveUnit* u = l.unit();
             SaveGear g;

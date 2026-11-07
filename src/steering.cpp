@@ -103,6 +103,15 @@ constexpr float CONTACT_MARGIN = 0.02f;
 constexpr float SEPARATE_RATE = 6.0f;          // tiles per second, for each tile of overlap
 constexpr float MOST_SEPARATE_SPEED = 2.0f;
 constexpr float STEP_ASIDE_SPEED = 1.5f;
+// Looking ahead: a walker veers round anyone it would meet within AVOID_SECONDS, before they touch, and one standing in
+// its way steps aside early. Those a unit's task is about (its target, the one it follows or talks to) are not avoided.
+constexpr float AVOID_SECONDS = 1.2f;
+constexpr float AVOID_MARGIN = 0.25f;          // tiles kept between passing units
+constexpr float AVOID_WEIGHT = 1.8f;           // how hard a walker turns, against its heading
+constexpr float AVOID_NEAR_GOAL = 0.6f;        // nearer its goal than this, it stops veering, so it can arrive
+constexpr float AVOID_FULL_AT = 2.0f;          // and it veers fully from this far
+constexpr float AVOID_SLOW = 0.55f;            // slowest share of its speed, when a meeting is about to happen
+constexpr int AVOID_CELLS = 2;                 // how many crowd cells out it looks
 
 using Vec2f = std::pair<float, float>;
 
@@ -329,11 +338,11 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     s.speeds[i] = walkSpeedOf(w, e, running);
 }
 
-void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector<std::uint32_t>& nearby) {
+void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector<std::uint32_t>& nearby, int cells = 1) {
     nearby.clear();
     const int cx = (int)std::floor(tr->x / CROWD_CELL), cz = (int)std::floor(tr->z / CROWD_CELL);
-    for (int dx = -1; dx <= 1; ++dx) {
-        for (int dz = -1; dz <= 1; ++dz) {
+    for (int dx = -cells; dx <= cells; ++dx) {
+        for (int dz = -cells; dz <= cells; ++dz) {
             const std::int64_t key = cellKey(cx + dx, cz + dz);
             auto it = std::lower_bound(s.byCell.begin(), s.byCell.end(), std::make_pair(key, (std::uint32_t)0));
             for (; it != s.byCell.end() && it->first == key; ++it) {
@@ -342,6 +351,52 @@ void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector
         }
     }
     std::sort(nearby.begin(), nearby.end());
+}
+
+// Whether other is what e's task is about: it walks up to it, so it doesn't steer round it
+bool taskOf(World& w, ObjectId e, ObjectId other) {
+    if (const Combat* c = w.get<Combat>(e); c && c->target == other) return true;
+    if (const AttackOrder* o = w.get<AttackOrder>(e); o && o->target == other) return true;
+    if (const FollowOrder* o = w.get<FollowOrder>(e); o && o->target == other) return true;
+    if (const DefendOrder* o = w.get<DefendOrder>(e); o && (o->ward == other || o->engaged == other)) return true;
+    if (const TalkOrder* o = w.get<TalkOrder>(e); o && o->npc == other) return true;
+    if (const CarryOrder* o = w.get<CarryOrder>(e); o && o->target == other) return true;
+    if (const LootOrder* o = w.get<LootOrder>(e); o && o->target == other) return true;
+    return false;
+}
+
+// Where a unit's walk ends: the last waypoint of its route, or else the goal it heads for now
+Vec2f walkEnd(World& w, const SteerFrame& s, size_t j) {
+    if (const SoloMove* so = w.get<SoloMove>(s.units[j]); so && so->next < so->waypoints.size()) {
+        return { so->waypoints.back().x, so->waypoints.back().z };
+    }
+    return s.goal[j];
+}
+
+// How a unit means to move this step, from its goal and speed
+Vec2f plannedVelocity(const SteerFrame& s, size_t j) {
+    if (!s.going[j] || s.pinned[j]) return { 0.0f, 0.0f };
+    const float dx = s.goal[j].first - s.pos[j].first, dz = s.goal[j].second - s.pos[j].second;
+    const float d = std::sqrt(dx * dx + dz * dz);
+    if (d < 1e-3f) return { 0.0f, 0.0f };
+    const float speed = std::min(s.speeds[j], d * 2.5f);
+    return { dx / d * speed, dz / d * speed };
+}
+
+// When two units, moving as they mean to, come nearest within the look-ahead: how soon, and where the other is then
+// as seen from this one. False if they never come near enough to matter.
+bool meeting(const SteerFrame& s, size_t i, size_t j, Vec2f vi, Vec2f vj, float& when, float& cx, float& cz, float& reach) {
+    const float px = s.pos[j].first - s.pos[i].first, pz = s.pos[j].second - s.pos[i].second;
+    const float rvx = vi.first - vj.first, rvz = vi.second - vj.second;
+    const float rv2 = rvx * rvx + rvz * rvz;
+    const float closing = px * rvx + pz * rvz;
+    // Only when they are drawing together, and not just drifting a little
+    if (rv2 < 1e-4f || closing <= 0.0f || closing < 0.2f * std::sqrt(px * px + pz * pz)) return false;
+    when = std::clamp(closing / rv2, 0.0f, AVOID_SECONDS);
+    cx = px - rvx * when;
+    cz = pz - rvz * when;
+    reach = s.radius[i] + s.radius[j] + AVOID_MARGIN;
+    return cx * cx + cz * cz < reach * reach;
 }
 
 // Moves a slot that someone outside the squad is standing on to the nearest place that is free
@@ -418,7 +473,8 @@ void workOutSlot(World& w, const Terrain& t, SteerFrame& s, size_t i, int outsid
 
 // Units are circles. A unit doesn't walk into one it touches, it slides around it, so walking never presses units into
 // each other. Those that do overlap ease apart, no faster than a set speed.
-void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
+void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby,
+                   std::vector<std::uint32_t>& around) {
     const ObjectId e = s.units[i];
     const Transform* tr = w.get<Transform>(e);
     unitsNearby(s, tr, i, nearby);
@@ -482,6 +538,38 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
 
     workOutSlot(w, t, s, i, outsiderOnGoal);
 
+    // Standing around, with a walker coming its way: it steps out of the walker's path before they touch, and doesn't
+    // step back to its spot until the walker has gone by
+    bool waitForPassing = false;
+    if (!shoved && !s.going[i] && !fighting && s.calmLead[i] == NO_OBJECT) {
+        unitsNearby(s, tr, i, around, AVOID_CELLS);
+        for (const std::uint32_t j : around) {
+            if (!s.going[j] || taskOf(w, s.units[j], e)) continue;
+            const Vec2f vj = plannedVelocity(s, j);
+            const float sp = std::hypot(vj.first, vj.second);
+            if (sp < 0.2f) continue;
+            const float tox = s.pos[i].first - s.pos[j].first, toz = s.pos[i].second - s.pos[j].second;
+            const float passing = s.radius[i] + s.radius[j] + 2.0f * AVOID_MARGIN;
+            if (tox * tox + toz * toz < passing * passing) waitForPassing = true;
+            // Only if it stands between the walker and where the walker is going
+            const float ahead = (tox * vj.first + toz * vj.second) / sp;
+            const Vec2f end = walkEnd(w, s, j);
+            const float goalGap = std::hypot(end.first - s.pos[j].first, end.second - s.pos[j].second);
+            if (ahead <= 0.0f || ahead > goalGap + s.radius[i]) continue;
+            float when = 0.0f, cx = 0.0f, cz = 0.0f, reach = 0.0f;
+            if (!meeting(s, i, j, { 0.0f, 0.0f }, vj, when, cx, cz, reach)) continue;
+            const float hx = vj.first / sp, hz = vj.second / sp;
+            // Which side of the walker's path it stands on. Square in the path, the walker keeps to its left, so this one
+            // steps to the walker's right.
+            const float side = tox * -hz + toz * hx;
+            const float sign = std::fabs(side) < 0.1f * reach ? -1.0f : (side > 0.0f ? 1.0f : -1.0f);
+            const float urgency = 1.0f - when / AVOID_SECONDS;
+            sideX += -hz * sign * urgency;
+            sideZ += hx * sign * urgency;
+            shoved = true;
+        }
+    }
+
     float vx = 0.0f, vz = 0.0f, wanted = 0.0f, headX = 0.0f, headZ = 0.0f;
     if (shoved) {
         const float sl = std::hypot(sideX, sideZ);
@@ -493,12 +581,72 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
         const float dx = s.goal[i].first - tr->x, dz = s.goal[i].second - tr->z;
         const float dist = std::sqrt(dx * dx + dz * dz);
         const float deadZone = s.calmLead[i] != NO_OBJECT ? unitWidth : 0.05f;
-        if (dist > deadZone && s.speeds[i] > 0.0f) {
+        if (dist > deadZone && s.speeds[i] > 0.0f && !waitForPassing) {
             wanted = std::min(s.speeds[i], dist * 2.5f);
             headX = dx / dist;
             headZ = dz / dist;
             vx = headX * wanted;
             vz = headZ * wanted;
+        }
+        // Looking ahead: veer round anyone it would bump into soon, slowing a little when the meeting is close
+        // Not while shuffling into a formation's final slots, which has rules of its own
+        const ActiveSquad* arriving = myPlace ? w.get<ActiveSquad>(myPlace->squad) : nullptr;
+        const bool shuffling = arriving && arriving->arrived;
+        const Vec2f end = walkEnd(w, s, i);
+        const float endGap = std::hypot(end.first - tr->x, end.second - tr->z);
+        if (wanted > 0.0f && s.going[i] && !shuffling && endGap > AVOID_NEAR_GOAL) {
+            unitsNearby(s, tr, i, around, AVOID_CELLS);
+            float ax = 0.0f, az = 0.0f, slow = 1.0f;
+            const float leftX = -headZ, leftZ = headX;
+            for (const std::uint32_t j : around) {
+                if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
+                if (taskOf(w, e, s.units[j])) continue;
+                // Squadmates keep their formation's spacing; the formation rules sort them out
+                if (myPlace) {
+                    const ActiveSquadMember* theirs = w.get<ActiveSquadMember>(s.units[j]);
+                    if (theirs && theirs->squad == myPlace->squad) continue;
+                }
+                const float px = s.pos[j].first - tr->x, pz = s.pos[j].second - tr->z;
+                if (px * headX + pz * headZ <= 0.0f) continue;   // behind it
+                // Standing on or against its goal: that is for the slot rules (which move a blocked slot), not for veering
+                const float blocks = s.radius[i] + s.radius[j] + AVOID_MARGIN;
+                const float gox = s.goal[i].first - s.pos[j].first, goz = s.goal[i].second - s.pos[j].second;
+                const float eox = end.first - s.pos[j].first, eoz = end.second - s.pos[j].second;
+                if (gox * gox + goz * goz <= blocks * blocks && eox * eox + eoz * eoz <= blocks * blocks) continue;
+                float when = 0.0f, cx = 0.0f, cz = 0.0f, reach = 0.0f;
+                if (!meeting(s, i, j, { vx, vz }, plannedVelocity(s, j), when, cx, cz, reach)) continue;
+                const float miss = std::sqrt(cx * cx + cz * cz);
+                const float side = cx * leftX + cz * leftZ;   // where the other will be: to its left (+) or right (-)
+                // Head on, it keeps to its left, as the other does to its own, so they pass each other
+                const float sign = std::fabs(side) < 0.1f * reach ? 1.0f : (side > 0.0f ? -1.0f : 1.0f);
+                const float urgency = (1.0f - when / AVOID_SECONDS) * (reach - miss) / reach;
+                ax += leftX * sign * urgency;
+                az += leftZ * sign * urgency;
+                slow = std::min(slow, AVOID_SLOW + (1.0f - AVOID_SLOW) * when / AVOID_SECONDS);
+            }
+            if (ax != 0.0f || az != 0.0f) {
+                const float share = std::clamp((endGap - AVOID_NEAR_GOAL) / (AVOID_FULL_AT - AVOID_NEAR_GOAL), 0.0f, 1.0f);
+                float nx = headX + ax * AVOID_WEIGHT * share, nz = headZ + az * AVOID_WEIGHT * share;
+                const float nl = std::hypot(nx, nz);
+                if (nl > 1e-4f) {
+                    nx /= nl;
+                    nz /= nl;
+                    // Never turned back on itself: at most square to its heading
+                    const float fwd = nx * headX + nz * headZ;
+                    if (fwd < 0.0f) {
+                        nx -= headX * fwd;
+                        nz -= headZ * fwd;
+                        const float l2 = std::hypot(nx, nz);
+                        if (l2 > 1e-4f) {
+                            nx /= l2;
+                            nz /= l2;
+                        }
+                    }
+                    const float speed = wanted * (1.0f - (1.0f - slow) * share);
+                    vx = nx * speed;
+                    vz = nz * speed;
+                }
+            }
         }
     }
     const auto slide = [&]() {
@@ -579,9 +727,9 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
     std::sort(s.byCell.begin(), s.byCell.end());
 
-    std::vector<std::uint32_t> nearby;
+    std::vector<std::uint32_t> nearby, around;
     for (size_t i = 0; i < units.size(); ++i) {
-        if (!s.pinned[i]) steerVelocity(w, t, s, i, nearby);
+        if (!s.pinned[i]) steerVelocity(w, t, s, i, nearby, around);
     }
     for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, units[i], s.vel[i], dt, running);
 }

@@ -36,6 +36,10 @@ void App::handleEvent() {
 }
 
 void App::onTextInput() {
+    if (screen == Screen::Playing && squadRenaming) {
+        appendUtf8Limited(squadRenameText, e.text.text, SQUAD_NAME_CHARS);
+        return;
+    }
     if (percentPrompt.open) {
         const size_t most = std::to_string(percentRange(percentPrompt.kind).hi).size();
         for (const char* c = e.text.text; *c; ++c) {
@@ -75,6 +79,19 @@ void App::onKeyDown() {
         } else if (e.key.key == SDLK_BACKSPACE && !percentPrompt.text.empty()) {
             percentPrompt.text.pop_back();
             percentPrompt.error.clear();
+        }
+        return;
+    }
+    if (screen == Screen::Playing && squadRenaming) {
+        if (e.key.key == SDLK_BACKSPACE) popUtf8Char(squadRenameText);
+        else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) stopSquadRename(true);
+        else if (e.key.key == SDLK_ESCAPE) stopSquadRename(false);
+        return;
+    }
+    if (screen == Screen::Playing && altar.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            altar = AltarUi{};
+            playSfx(Sfx::UiBack);
         }
         return;
     }
@@ -154,6 +171,7 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Playing && !e.key.repeat && (e.key.mod & SDL_KMOD_ALT) != 0 && session.dialogueUnit == NO_OBJECT && formationKeyDown()) return;
+    if (squadKeyDown()) return;
     if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
         mapOpen = !mapOpen;
         return;
@@ -181,6 +199,9 @@ void App::onKeyDown() {
         if (screen == Screen::Playing && session.disbandTarget != NO_OBJECT) {
             session.disbandTarget = NO_OBJECT;
             session.disbandHeldAt = 0;
+            playSfx(Sfx::UiBack);
+        } else if (screen == Screen::Playing && selectMenuOpen) {
+            selectMenuOpen = false;
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && optimizeAllOpen) {
             optimizeAllOpen = false;
@@ -214,6 +235,16 @@ void App::onKeyDown() {
 void App::onMouseWheel() {
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
+    if (screen == Screen::Playing && altar.open) {
+        const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
+        const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
+        for (int c = 0; c < 2; ++c) {
+            if (!L.lists[(size_t)c].contains(e.wheel.mouse_x, e.wheel.mouse_y)) continue;
+            const int step = e.wheel.y > 0.0f ? -3 : e.wheel.y < 0.0f ? 3 : 0;
+            altar.scroll[(size_t)c] = std::clamp(L.first[(size_t)c] + step, 0, altarMaxScroll(L, c, (int)cols[(size_t)c].size()));
+        }
+        return;
+    }
     if (panelOpen) {
         int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
         int next = (int)listOffset - (int)e.wheel.y;
@@ -261,7 +292,7 @@ void App::onMouseWheel() {
         mapCx = gx - offX * k;
         mapCz = gz - offY * k;
         clampMapView(box, (float)terrain.size(), mapCx, mapCz, mapSpan);
-    } else if (screen == Screen::Playing && unitPanelHovered(winW, winH) && factionTab == FACTION_TAB_REPUTATION) {
+    } else if (screen == Screen::Playing && unitPanelHovered(winW, winH) && factionTab == FACTION_TAB_FACTION) {
         const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
         repScroll = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace,
                                     factionTab, (int)reputationFactions().size(), repScroll + step).repFirst;
@@ -612,21 +643,25 @@ void App::onMouseButtonUp() {
         const SDL_Keymod mods = SDL_GetModState();
         const bool additive = (mods & (SDL_KMOD_SHIFT | SDL_KMOD_ALT)) != 0;
         if (sel.dragging) {
-            if (!boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive)) {
-                const std::vector<ObjectId> items =
-                    groundItemsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
-                if (!items.empty()) {
-                    const std::vector<ObjectId> picked = selectedUnits(world);
-                    if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
-                    else {
-                        noteLockedIn(picked);
-                        issuePickupChain(world, terrain, picked, items);
-                    }
+            const std::vector<ObjectId> units = unitsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
+            const std::vector<ObjectId> items = groundItemsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH);
+            // Only units you already have selected in the box, with items: the box is for the items, and they stay selected
+            const bool onlyChosen = std::all_of(units.begin(), units.end(), [&](ObjectId u) { return world.has<Selected>(u); });
+            if (!items.empty() && onlyChosen) {
+                const std::vector<ObjectId> picked = selectedUnits(world);
+                if (picked.empty()) refuse(lang("MISC_PICKUP_SELECT"));
+                else {
+                    noteLockedIn(picked);
+                    issuePickupChain(world, terrain, picked, items);
                 }
+            } else if (boxSelect(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH, additive)) {
+                if (!additive) noteSquadOfSelection();
             }
         } else {
             const std::vector<ObjectId> under = renderer.entitiesAtPixel(world, cam, e.button.x, e.button.y, winW, winH);
-            clickSelect(world, unitClicked(world, under), additive);
+            const ObjectId hit = unitClicked(world, under);
+            clickSelect(world, hit, additive);
+            if (!additive && hit != NO_OBJECT) noteSquadOfSelection();
         }
         sel.dragging = false;
     }

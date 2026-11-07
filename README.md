@@ -33,6 +33,11 @@ lose state: the world keeps running, whatever happens to your party.
   at 50 or more they are allies. The game keeps running while you talk or trade, unless you turn on Automatic Conversation
   Pause in Settings or press Space. Talk to NPCs, trade with them, lock units in Prisoner Cages (a caged unit is out of any fight), push a unit off a prop with Evacuate, pick locks, or disband
   your units into the Exiles.
+- **Squads and citizens.** Your units are your military, in nine numbered squads of up to 16, or citizens, whom the
+  game commands and who stay near your Altar. A squad that would go over 16 sends the extra units to squads with room,
+  and once all nine are full, to the citizens. Right-click your Altar and choose Manage Units to move units between the two. The Faction tab of the
+  Faction Panel shows the squads as a numpad, where you can pick and rename them. Settings has a soft and a hard cap on
+  citizens.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.
 - **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn, Griffin and Manticore bosses, each with its own faction,
@@ -54,7 +59,11 @@ lose state: the world keeps running, whatever happens to your party.
 
 | Input | Action |
 | --- | --- |
-| Left click / drag | Select units. Shift adds to the selection. A box around only ground items picks them up |
+| Left click / drag | Select units. Shift adds to the selection. A box around ground items, and no units you haven't selected, picks the items up |
+| Right click on your Altar | Manage Units: move units between the military and the citizens, with or without units selected |
+| Numpad 1 to 9 | Select that squad. Shift adds it to the selection, and pressing it twice brings the camera to it |
+| Ctrl + Numpad 1 to 9 | Move the selected units into that squad |
+| Numpad 0 | Select your unit nearest the camera's centre |
 | Right click | Orders and context menus (move, use a prop, talk, destroy bones, put down) |
 | Right mouse held | Selected units walk straight at the pointer |
 | Shift with moving a stack | Choose how many to trade or store. Without Shift, the whole stack moves |
@@ -108,6 +117,7 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   simulation         One step of the game, with no window, and the events it reports to the screens
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
+  squads, altar_ui     Squads of 16 and citizens, and the Altar's roster
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
   save_world, savegame, save_migrate     Turning a running level into a save, the save files, and upgrading old ones
