@@ -1,6 +1,7 @@
 #include "app.h"
 #include "claims.h"
 #include "squads.h"
+#include "ghosts.h"
 
 using namespace play;
 
@@ -13,6 +14,7 @@ int columnOf(World& w, ObjectId u) {
 void App::openAltar() {
     altar = AltarUi{};
     altar.open = true;
+    ghostsUi = GhostsUi{};
     selectMenuOpen = false;
     session.contextMenu.open = false;
     itemMenu.open = false;
@@ -41,10 +43,33 @@ std::array<std::vector<ObjectId>, 2> App::altarColumns() {
 
 bool App::pressOnAltar() {
     if (screen != Screen::Playing || !altar.open) return false;
-    if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
     const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
     const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
+    if (altar.menuUnit != NO_OBJECT) {
+        const ItemMenuLayout menu = renderer.itemMenuLayout(altar.menuX, altar.menuY, 1, winW, winH);
+        const ObjectId u = altar.menuUnit;
+        altar.menuUnit = NO_OBJECT;
+        if (e.button.button == SDL_BUTTON_LEFT && itemMenuButtonAt(menu, x, y) == 0) {
+            startRename(u);
+            return true;
+        }
+        if (menu.box.contains(x, y)) return true;
+    }
+    if (e.button.button == SDL_BUTTON_RIGHT) {
+        for (int c = 0; c < 2; ++c) {
+            for (const AltarRow& r : L.rows[(size_t)c]) {
+                if (!r.portrait.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
+                altar.menuUnit = cols[(size_t)c][(size_t)r.index];
+                altar.menuX = x;
+                altar.menuY = y;
+                playSfx(Sfx::UiMenuOpen);
+                return true;
+            }
+        }
+        return true;
+    }
+    if (e.button.button != SDL_BUTTON_LEFT) return true;
     if (L.close.contains(x, y) || L.cancel.contains(x, y)) {
         altar = AltarUi{};
         playSfx(Sfx::UiBack);
@@ -143,5 +168,93 @@ void App::drawAltar() {
         shown = altar.pinned;   // scrolled out of sight: beside the roster
         beside = L.box;
     }
-    if (shown != NO_OBJECT) renderer.drawUnitCard(world, shown, layoutUnitCard(beside, winW, winH, STAT_GROUP_COUNT + STAT_COUNT));
+    if (shown != NO_OBJECT && altar.menuUnit == NO_OBJECT) {
+        renderer.drawUnitCard(world, shown, layoutUnitCard(beside, winW, winH, STAT_GROUP_COUNT + STAT_COUNT));
+    }
+    if (altar.menuUnit != NO_OBJECT) {
+        renderer.drawItemMenu(renderer.itemMenuLayout(altar.menuX, altar.menuY, 1, winW, winH), { lang("UILABEL_RENAME") }, mouseX, mouseY);
+    }
+}
+
+void App::openGhosts(ObjectId altarProp) {
+    ghostsUi = GhostsUi{};
+    ghostsUi.open = true;
+    ghostsUi.altar = altarProp;
+    altar = AltarUi{};
+    selectMenuOpen = false;
+    session.contextMenu.open = false;
+    itemMenu.open = false;
+    playSfx(Sfx::UiMenuOpen);
+}
+
+// The Altar's bones, one row per kind
+std::vector<ItemStack> App::ghostBones() {
+    std::vector<ItemStack> out;
+    if (const Storage* st = world.get<Storage>(ghostsUi.altar)) {
+        for (const ItemStack& s : st->slots) {
+            if (s.count <= 0 || !isBones(s.item)) continue;
+            auto same = std::find_if(out.begin(), out.end(), [&](const ItemStack& o) { return o.item == s.item; });
+            if (same != out.end()) same->count += s.count;
+            else out.push_back(s);
+        }
+    }
+    return out;
+}
+
+// The Ghosts waiting longest first, then those already appeased
+std::vector<size_t> App::ghostOrder() {
+    const std::vector<Ghost>& ghosts = world.resource<Graveyard>().ghosts;
+    std::vector<size_t> order(ghosts.size());
+    for (size_t i = 0; i < order.size(); ++i) order[i] = i;
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+        if (ghosts[a].appeased != ghosts[b].appeased) return !ghosts[a].appeased;
+        return !ghosts[a].appeased && ghosts[a].hours > ghosts[b].hours;
+    });
+    return order;
+}
+
+bool App::pressOnGhosts() {
+    if (screen != Screen::Playing || !ghostsUi.open) return false;
+    if (!world.has<Prop>(ghostsUi.altar)) {
+        ghostsUi = GhostsUi{};
+        return false;
+    }
+    if (e.button.button != SDL_BUTTON_LEFT) return true;
+    const float x = e.button.x, y = e.button.y;
+    const std::vector<ItemStack> bones = ghostBones();
+    const std::vector<size_t> order = ghostOrder();
+    const AltarLayout L = layoutAltar(winW, winH, { (int)bones.size(), (int)order.size() }, ghostsUi.scroll);
+    if (L.close.contains(x, y) || L.cancel.contains(x, y)) {
+        ghostsUi = GhostsUi{};
+        playSfx(Sfx::UiBack);
+        return true;
+    }
+    if (L.apply.contains(x, y)) {
+        int done = 0;
+        for (size_t i : order) done += appeaseGhost(world, ghostsUi.altar, i) ? 1 : 0;
+        if (done > 0) playSfx(Sfx::UiClick);
+        else refuse(lang(bonesIn(world, ghostsUi.altar) > 0 ? "MISC_GHOSTS_ALL_APPEASED" : "MISC_GHOSTS_NO_BONES"));
+        return true;
+    }
+    for (const AltarRow& r : L.rows[1]) {
+        if (r.index >= (int)order.size() || !ghostButton(r, winH).contains(x, y)) continue;
+        if (world.resource<Graveyard>().ghosts[order[(size_t)r.index]].appeased) return true;
+        if (appeaseGhost(world, ghostsUi.altar, order[(size_t)r.index])) playSfx(Sfx::UiClick);
+        else refuse(lang("MISC_GHOSTS_NO_BONES"));
+        return true;
+    }
+    return true;
+}
+
+void App::drawGhosts() {
+    if (!ghostsUi.open) return;
+    if (!world.has<Prop>(ghostsUi.altar)) {
+        ghostsUi = GhostsUi{};
+        return;
+    }
+    const std::vector<ItemStack> bones = ghostBones();
+    const std::vector<size_t> order = ghostOrder();
+    const AltarLayout L = layoutAltar(winW, winH, { (int)bones.size(), (int)order.size() }, ghostsUi.scroll);
+    ghostsUi.scroll = L.first;
+    renderer.drawGhostsWindow(world, L, bones, order, bonesIn(world, ghostsUi.altar), mouseX, mouseY);
 }

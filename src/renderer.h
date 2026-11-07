@@ -141,6 +141,9 @@ public:
     void drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
                          const std::map<ObjectId, int>& moves, const AltarTotals& totals, ObjectId pinned, float mx, float my);
     void drawUnitCard(World& w, ObjectId u, const UnitCardLayout& C);
+    // Appease Ghosts. ghosts: the Graveyard's ghosts in the order shown
+    void drawGhostsWindow(World& w, const AltarLayout& L, const std::vector<ItemStack>& bones, const std::vector<size_t>& ghosts,
+                          int bonesTotal, float mx, float my);
     // Arrows over the units a box would select, while it is dragged
     void drawSelectArrows(World& w, const Camera& cam, const std::vector<ObjectId>& units, int winW, int winH);
     void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,

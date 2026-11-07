@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénář
 SCENARIO_VAGABOND_NAME	Tulák
 SCENARIO_VAGABOND_DESC	Osamělý poutník, který nemá nic: žádné předměty, žádnou výbavu a každou statistiku od 1 do 5.
-SCENARIO_PACK_NAME	Smečka dvou
-SCENARIO_PACK_DESC	Osamělý poutník a věrný vlk. Poutník nemá předměty ani výbavu a každou vlastnost od 1 do 5.
-SCENARIO_BEASTMASTER_NAME	Pán šelem
-SCENARIO_BEASTMASTER_DESC	Osamělý poutník v čele 20 tvorů náhodných druhů. Poutník nemá předměty ani výbavu a každou vlastnost od 1 do 5.
-SCENARIO_RANDOM_NAME	Zcela náhodný tábor
-SCENARIO_RANDOM_DESC	Vlastní tábor a družina 20 nebo více jednotek, každá se všemi vlastnostmi od 1 do 99 a s náhodnými předměty a výbavou, které unese, a k tomu 3 až 7 tvorů.
-SCENARIO_CARAVAN_NAME	Putovní karavana
-SCENARIO_CARAVAN_DESC	Deset poutníků společně na cestě. Všechny vlastnosti začínají na 5 a každý nese 10 zlatých mincí.
-SCENARIO_SHABBY_NAME	Ošuntělá parta
-SCENARIO_SHABBY_DESC	Tři koboldi, kterým se nedaří, každý s jedním náhodným předmětem a všemi vlastnostmi od 1 do 10.
-SCENARIO_NOBODY_NAME	Hladový nikdo
-SCENARIO_NOBODY_DESC	Jedna jednotka bez ničeho: bez předmětů, bez výstroje, všechny vlastnosti na 1 a prázdný žaludek.
-SCENARIO_DIGGERS_NAME	Kopáči podzemí
-SCENARIO_DIGGERS_DESC	Sedm horníků v plné výstroji. Vlastnosti mají od 5 do 20, ale Těžba je u každého na 50 a každý nese 3 železné rudy.
 SCENARIO_CUSTOM_NAME	Vlastní scénář
 SCENARIO_CUSTOM_DESC	Sestav si vlastní družinu. Začíná se třemi jednotkami a můžeš přidávat či odebírat jednotky i běžné tvory, až do 32.
 PROP_LOCKED_CHEST	Zamčená truhla

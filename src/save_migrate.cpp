@@ -98,6 +98,8 @@ bool upgrade6to7(Lines& lines) {
 // Version 8 added the squad, citizen, squadname and squadat lines. A version 7 file has none of them, so it needs no
 // change: its units are put in squads once it loads.
 bool upgrade7to8(Lines&) { return true; }
+// Version 9 added the ghost lines, for the Graveyard. A version 8 file has none: nobody has died yet, as far as it knows.
+bool upgrade8to9(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -106,6 +108,7 @@ struct Step {
 constexpr Step STEPS[] = {
     { 6, upgrade6to7 },
     { 7, upgrade7to8 },
+    { 8, upgrade8to9 },
 };
 }
 

@@ -21,6 +21,7 @@ import json
 import math
 import os
 import struct
+import sys
 from PIL import Image
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -425,6 +426,22 @@ def stove():
         cyl(0.2, 0.74, -0.14, 0.12, 0.4, 0.12, IRON), cone(0.2, 1.14, -0.14, 0.2, 0.06, 0.2, IRON)]
 
 
+def airship():
+    """A wooden boat hung under a canvas balloon. The game floats it above the ground; y = 0 here is the bottom of its keel."""
+    parts = [box(0, 0, 0, 2.0, 0.18, 0.55, DARK_WOOD), box(0, 0.18, 0, 2.5, 0.42, 1.0, WOOD), box(0, 0.6, 0, 2.5, 0.05, 1.0, PALE_WOOD),
+             pyramid(1.45, 0.18, 0, 0.5, 0.42, 1.0, WOOD, 0, 0), box(-1.3, 0.6, 0, 0.3, 0.35, 1.0, DARK_WOOD)]
+    for z in (-0.5, 0.5):
+        parts.append(box(0, 0.65, z, 2.5, 0.14, 0.05, DARK_WOOD))
+    parts.append(ball(0, 1.45, 0, 3.6, 1.35, 1.7, CANVAS))
+    parts.append(box(0, 1.42, 0, 3.0, 0.06, 1.3, BURLAP))
+    for x in (-0.9, 0.9):
+        for z in (-0.45, 0.45):
+            parts.append(rod((x, 0.65, z), (x * 1.05, 1.5, z * 1.35), 0.03, BURLAP))
+    parts += [rod((-1.45, 0.45, 0), (-1.75, 0.45, 0), 0.06, IRON, 'cylinder'),
+              box(-1.8, 0.2, 0, 0.04, 0.5, 0.12, DARK_WOOD), box(-1.8, 0.4, 0, 0.04, 0.12, 0.55, DARK_WOOD)]
+    return parts
+
+
 BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
     'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Wall': wall, 'Stall': stall, 'LockedChest': locked_chest,
@@ -432,7 +449,7 @@ BUILDERS = {
     'RoundTable': round_table, 'MetalTable': metal_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
-    'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove,
+    'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'Airship': airship,
 }
 
 
@@ -564,7 +581,8 @@ def write_glb(path, parts):
 
 
 def main():
-    """Writes the file data/props.txt names for each prop. A prop missing from either one stops the script."""
+    """Writes the file data/props.txt names for each prop. A prop missing from either one stops the script.
+    With prop keys after the script's name (python tools/make_models.py Airship), only those are written."""
     files = {}
     model_column = None
     with open(os.path.join(DATA, 'props.txt'), encoding='utf-8') as f:
@@ -578,7 +596,10 @@ def main():
                 files[fields[0]] = fields[model_column]
     if set(files) != set(BUILDERS):
         raise SystemExit('BUILDERS and data/props.txt differ: ' + ', '.join(sorted(set(files) ^ set(BUILDERS))))
+    only = set(sys.argv[1:])
     for key, file in files.items():
+        if only and key not in only:
+            continue
         parts = BUILDERS[key]()
         tris = write_glb(os.path.join(DATA, 'model', file), parts)
         print(f'{key:16s} {file:14s} {len(parts):3d} parts  {tris:4d} triangles')

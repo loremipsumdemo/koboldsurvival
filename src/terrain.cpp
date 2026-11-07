@@ -109,6 +109,16 @@ void Terrain::findAreas() {
     }
 }
 
+std::vector<int> Terrain::areaSizes() const {
+    std::vector<int> sizes;
+    for (int a : groundArea_) {
+        if (a <= 0) continue;
+        if ((size_t)a >= sizes.size()) sizes.resize((size_t)a + 1, 0);
+        ++sizes[(size_t)a];
+    }
+    return sizes;
+}
+
 int Terrain::areaOf(int x, int y) const {
     if (!inBounds(x, y)) return 0;
     return groundArea_.empty() ? 1 : groundArea_[(size_t)y * size_ + x];

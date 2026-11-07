@@ -10,8 +10,11 @@
 #include "props.h"
 
 // Saves name a behavior by its key, so one can be added or moved
-enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, Count };
-inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn" };
+enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones, Count };
+inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
+                                                 "AutoHaulBones" };
+// Hauling to one prop: AutoHaul carries what it takes (to an Altar, only its fuel), AutoHaulBones carries bones to an Altar
+inline bool isHaul(BehaviorKind k) { return k == BehaviorKind::AutoHaul || k == BehaviorKind::AutoHaulBones; }
 static_assert(std::size(BEHAVIOR_KEYS) == (size_t)BehaviorKind::Count);
 inline const char* behaviorKey(BehaviorKind k) { return BEHAVIOR_KEYS[std::clamp((int)k, 0, (int)BehaviorKind::Count - 1)]; }
 // -1 if no behavior has this key
@@ -112,7 +115,7 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 }
 
 inline bool isAutomated(BehaviorKind k) {
-    return k == BehaviorKind::AutoHarvest || k == BehaviorKind::AutoHaul || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
+    return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn;
 }
 inline bool isAutoStep(BehaviorKind k) { return isAutomated(k) || k == BehaviorKind::Rest || k == BehaviorKind::Rescue; }
@@ -123,7 +126,7 @@ inline bool isWalkBehavior(BehaviorKind k) {
 inline bool sameBehavior(const BehaviorRule& a, const BehaviorRule& b) {
     if (a.kind != b.kind) return false;
     if (a.kind == BehaviorKind::AutoHarvest) return a.propKind == b.propKind;
-    if (a.kind == BehaviorKind::AutoHaul) return a.prop == b.prop;
+    if (isHaul(a.kind)) return a.prop == b.prop;
     return true;
 }
 
@@ -139,7 +142,9 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL", { std::to_string(r.percent) });
     case BehaviorKind::Share: return lang("UILABEL_BEHAVIOR_SHARE");
     case BehaviorKind::AutoHarvest: return langf("UILABEL_BEHAVIOR_AUTO_HARVEST", { propName });
-    case BehaviorKind::AutoHaul: return langf("UILABEL_BEHAVIOR_AUTO_HAUL", { propName });
+    case BehaviorKind::AutoHaul:
+        return langf(r.propKind == (int)PropKind::Altar ? "UILABEL_BEHAVIOR_AUTO_HAUL_LOGS" : "UILABEL_BEHAVIOR_AUTO_HAUL", { propName });
+    case BehaviorKind::AutoHaulBones: return langf("UILABEL_BEHAVIOR_AUTO_HAUL_BONES", { propName });
     case BehaviorKind::Patrol: return lang("UILABEL_BEHAVIOR_PATROL");
     case BehaviorKind::Roam: return lang("UILABEL_BEHAVIOR_ROAM");
     case BehaviorKind::Rest: return langf("UILABEL_BEHAVIOR_REST", { std::to_string(r.percent) });
@@ -158,7 +163,9 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::Heal: return langf("UILABEL_BEHAVIOR_HEAL_TIP", { std::to_string(r.percent) });
     case BehaviorKind::Share: return lang("UILABEL_BEHAVIOR_SHARE_TIP");
     case BehaviorKind::AutoHarvest: return langf("UILABEL_BEHAVIOR_AUTO_HARVEST_TIP", { propName });
-    case BehaviorKind::AutoHaul: return langf("UILABEL_BEHAVIOR_AUTO_HAUL_TIP", { propName });
+    case BehaviorKind::AutoHaul:
+        return langf(r.propKind == (int)PropKind::Altar ? "UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP" : "UILABEL_BEHAVIOR_AUTO_HAUL_TIP", { propName });
+    case BehaviorKind::AutoHaulBones: return langf("UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP", { propName });
     case BehaviorKind::Patrol: return lang("UILABEL_BEHAVIOR_PATROL_TIP");
     case BehaviorKind::Roam: return lang("UILABEL_BEHAVIOR_ROAM_TIP");
     case BehaviorKind::Rest: return langf("UILABEL_BEHAVIOR_REST_TIP", { std::to_string(r.percent) });

@@ -213,6 +213,7 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
     }
     case Screen::Playing:
     case Screen::Settings:
+    case Screen::MapSelect:
     case Screen::ScenarioSelect:
     case Screen::PartySetup:
     case Screen::WorldGen:
@@ -252,6 +253,7 @@ Soundtrack soundtrackFor(Screen screen) {
     switch (screen) {
     case Screen::Title: return soundtrackNamed("Title");
     case Screen::Settings: return soundtrackNamed("Settings");
+    case Screen::MapSelect:
     case Screen::ScenarioSelect: return soundtrackNamed("ScenarioSelect");
     case Screen::PartySetup: return soundtrackNamed("PartySetup");
     case Screen::Pause: return soundtrackNamed("Pause");

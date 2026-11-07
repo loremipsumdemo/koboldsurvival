@@ -11,7 +11,7 @@ constexpr float TALK_COOLDOWN = 1.0f;
 
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
-                        ManageUnits };
+                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, Disembark };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;

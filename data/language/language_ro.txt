@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenariu
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	Un rătăcitor singuratic fără nimic al său: fără obiecte, fără echipament și fiecare statistică între 1 și 5.
-SCENARIO_PACK_NAME	Haită de doi
-SCENARIO_PACK_DESC	Un rătăcitor singuratic și un lup credincios. Rătăcitorul nu are obiecte sau echipament, iar fiecare statistică e între 1 și 5.
-SCENARIO_BEASTMASTER_NAME	Stăpânul fiarelor
-SCENARIO_BEASTMASTER_DESC	Un rătăcitor singuratic în fruntea a 20 de creaturi de specii aleatorii. Rătăcitorul nu are obiecte sau echipament, iar fiecare statistică e între 1 și 5.
-SCENARIO_RANDOM_NAME	Tabără complet aleatorie
-SCENARIO_RANDOM_DESC	Propria ta tabără, cu un grup de 20 sau mai multe unități, fiecare cu toate statisticile între 1 și 99 și obiecte și echipament aleatorii pe care le poate căra, plus 3 până la 7 creaturi.
-SCENARIO_CARAVAN_NAME	Caravana călătoare
-SCENARIO_CARAVAN_DESC	Zece călători împreună pe drum. Toate atributele încep de la 5 și fiecare are 10 monede de aur.
-SCENARIO_SHABBY_NAME	Echipa zdrențăroasă
-SCENARIO_SHABBY_DESC	Trei kobolzi ghinioniști, fiecare cu un obiect aleatoriu și toate atributele între 1 și 10.
-SCENARIO_NOBODY_NAME	Un nimeni flămând
-SCENARIO_NOBODY_DESC	O singură unitate fără nimic: fără obiecte, fără echipament, toate atributele la 1 și stomacul gol.
-SCENARIO_DIGGERS_NAME	Săpătorii de temnițe
-SCENARIO_DIGGERS_DESC	Șapte mineri cu echipament complet. Atributele lor sunt între 5 și 20, dar fiecare are Minerit 50 și cară 3 minereuri de fier.
 SCENARIO_CUSTOM_NAME	Scenariu personalizat
 SCENARIO_CUSTOM_DESC	Formează-ți propriul grup. Începe cu trei unități și poți adăuga sau elimina unități și creaturi obișnuite, până la 32.
 PROP_LOCKED_CHEST	Cufăr încuiat

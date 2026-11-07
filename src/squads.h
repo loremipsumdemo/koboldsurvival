@@ -19,7 +19,7 @@ struct SquadMember {
     int squad = 0;
 };
 
-// One of your units that the game commands
+// A unit the game commands that stays near its faction's Altar: one of your citizens, or an NPC faction's
 struct Citizen {};
 
 // In the World's resources: the squads' names (empty is the default name) and which squad the Squad tab shows

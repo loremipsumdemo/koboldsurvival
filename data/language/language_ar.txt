@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	السيناريو
 SCENARIO_VAGABOND_NAME	المتشرد
 SCENARIO_VAGABOND_DESC	رحّالة وحيد لا يملك شيئًا: بلا أغراض ولا عتاد، وكل إحصائية بين 1 و5.
-SCENARIO_PACK_NAME	ثنائي القطيع
-SCENARIO_PACK_DESC	متجول وحيد وذئب وفيّ. لا يملك المتجول أغراضاً ولا عتاداً، وكل إحصاءاته بين 1 و5.
-SCENARIO_BEASTMASTER_NAME	سيد الوحوش
-SCENARIO_BEASTMASTER_DESC	متجول وحيد يقود 20 مخلوقاً من أنواع عشوائية. لا يملك المتجول أغراضاً ولا عتاداً، وكل إحصاءاته بين 1 و5.
-SCENARIO_RANDOM_NAME	مخيم عشوائي بالكامل
-SCENARIO_RANDOM_DESC	مخيمك الخاص، مع فريق من 20 وحدة أو أكثر، لكل منها كل الإحصاءات بين 1 و99 وأغراض وعتاد عشوائية يمكنها حملها، و3 إلى 7 مخلوقات.
-SCENARIO_CARAVAN_NAME	القافلة المتنقلة
-SCENARIO_CARAVAN_DESC	عشرة مسافرين على الطريق معًا. تبدأ كل الإحصاءات عند 5، ويحمل كل منهم 10 قطع ذهبية.
-SCENARIO_SHABBY_NAME	الطاقم الرث
-SCENARIO_SHABBY_DESC	ثلاثة كوبولدات تعساء الحظ، مع كل منهم عنصر عشوائي واحد وكل الإحصاءات بين 1 و10.
-SCENARIO_NOBODY_NAME	الجائع النكرة
-SCENARIO_NOBODY_DESC	وحدة واحدة لا تملك شيئًا: لا عناصر ولا عتاد، وكل الإحصاءات عند 1، ومعدة فارغة.
-SCENARIO_DIGGERS_NAME	حفارو الزنزانات
-SCENARIO_DIGGERS_DESC	سبعة عمال مناجم بعتاد كامل. إحصاءاتهم بين 5 و20، لكن التعدين لكل منهم 50 ويحمل 3 من خام الحديد.
 SCENARIO_CUSTOM_NAME	سيناريو مخصص
 SCENARIO_CUSTOM_DESC	كوّن فريقك بنفسك. يبدأ بثلاث وحدات، ويمكنك إضافة الوحدات والمخلوقات العادية أو إزالتها، حتى 32.
 PROP_LOCKED_CHEST	صندوق مقفل

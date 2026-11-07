@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Kịch bản
 SCENARIO_VAGABOND_NAME	Kẻ lang thang
 SCENARIO_VAGABOND_DESC	Một kẻ lữ hành đơn độc không có gì trong tay: không vật phẩm, không trang bị, và mọi chỉ số từ 1 đến 5.
-SCENARIO_PACK_NAME	Bầy đôi
-SCENARIO_PACK_DESC	Một kẻ lang thang cô độc và một con sói trung thành. Kẻ lang thang không có vật phẩm hay trang bị, mọi chỉ số từ 1 đến 5.
-SCENARIO_BEASTMASTER_NAME	Chúa tể muông thú
-SCENARIO_BEASTMASTER_DESC	Một kẻ lang thang cô độc dẫn đầu 20 sinh vật thuộc loài ngẫu nhiên. Kẻ lang thang không có vật phẩm hay trang bị, mọi chỉ số từ 1 đến 5.
-SCENARIO_RANDOM_NAME	Trại ngẫu nhiên hoàn toàn
-SCENARIO_RANDOM_DESC	Trại của riêng bạn, cùng một nhóm từ 20 đơn vị trở lên, mỗi đơn vị có mọi chỉ số trong khoảng 1 đến 99 và vật phẩm, trang bị ngẫu nhiên mang vác được, cùng 3 đến 7 sinh vật.
-SCENARIO_CARAVAN_NAME	Đoàn lữ hành
-SCENARIO_CARAVAN_DESC	Mười lữ khách cùng nhau trên đường. Mọi chỉ số bắt đầu ở 5, và mỗi người mang 10 đồng vàng.
-SCENARIO_SHABBY_NAME	Băng lôi thôi
-SCENARIO_SHABBY_DESC	Ba kobold kém may mắn, mỗi con có một vật phẩm ngẫu nhiên và mọi chỉ số từ 1 đến 10.
-SCENARIO_NOBODY_NAME	Kẻ vô danh đói khát
-SCENARIO_NOBODY_DESC	Một đơn vị chẳng có gì: không vật phẩm, không trang bị, mọi chỉ số là 1 và bụng rỗng.
-SCENARIO_DIGGERS_NAME	Thợ đào ngục tối
-SCENARIO_DIGGERS_DESC	Bảy thợ mỏ trang bị đầy đủ. Chỉ số của họ từ 5 đến 20, nhưng ai cũng có Khai khoáng 50 và mang 3 quặng sắt.
 SCENARIO_CUSTOM_NAME	Kịch bản tùy chỉnh
 SCENARIO_CUSTOM_DESC	Tự lập nhóm của bạn. Nhóm bắt đầu với ba đơn vị, và bạn có thể thêm hoặc bớt đơn vị và sinh vật thường, tối đa 32.
 PROP_LOCKED_CHEST	Rương bị khóa

@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <map>
+#include <string>
 #include <vector>
 #include "ecs.h"
 #include "ui_types.h"
@@ -14,7 +15,28 @@ struct AltarUi {
     std::map<ObjectId, int> moves;   // a unit and the column it is moving to
     std::array<int, 2> scroll{};
     ObjectId pinned = NO_OBJECT;     // a unit whose card stays open after a click on its row
+    ObjectId menuUnit = NO_OBJECT;   // the unit whose right-click menu is open, over the roster
+    float menuX = 0.0f, menuY = 0.0f;
 };
+
+// Appease Ghosts: the Altar's bones on the left and the Graveyard on the right, laid out as the roster is
+struct GhostsUi {
+    bool open = false;
+    ObjectId altar = NO_OBJECT;
+    std::array<int, 2> scroll{};
+};
+
+// Renaming one of your units, from the Squad Panel or the roster
+struct RenamePrompt {
+    bool open = false;
+    ObjectId unit = NO_OBJECT;
+    std::string text;
+};
+
+struct RenameLayout {
+    Rect box, title, field, ok, cancel;
+};
+RenameLayout layoutRename(int W, int H);
 
 // How many units each side will have once the moves are applied, and the citizen caps from Settings
 struct AltarTotals {
@@ -34,6 +56,8 @@ struct AltarLayout {
     std::array<int, 2> first{}, visible{};
     Rect apply, cancel;
 };
+// A Graveyard row's Appease button
+Rect ghostButton(const AltarRow& r, int H);
 AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll);
 int altarMaxScroll(const AltarLayout& L, int column, int count);
 

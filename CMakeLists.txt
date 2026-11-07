@@ -76,6 +76,8 @@ set(SIM_SOURCES
     src/needs.cpp
     src/unit_status.cpp
     src/squads.cpp
+    src/ghosts.cpp
+    src/airship.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp
     src/orders.cpp
@@ -136,6 +138,7 @@ add_executable(koboldsurvival
     src/app_input_popups.cpp
     src/app_squads.cpp
     src/app_altar.cpp
+    src/app_map_pick.cpp
     src/altar_ui.cpp
     src/app_input_panels.cpp
     src/app_update.cpp

@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	En ensam vandrare utan något eget: inga föremål, ingen utrustning och varje egenskap mellan 1 och 5.
-SCENARIO_PACK_NAME	Flock om två
-SCENARIO_PACK_DESC	En ensam vandrare och en trogen varg. Vandraren har inga föremål eller någon utrustning, och varje värde från 1 till 5.
-SCENARIO_BEASTMASTER_NAME	Bestmästare
-SCENARIO_BEASTMASTER_DESC	En ensam vandrare i spetsen för 20 djur av slumpade arter. Vandraren har inga föremål eller någon utrustning, och varje värde från 1 till 5.
-SCENARIO_RANDOM_NAME	Helt slumpat läger
-SCENARIO_RANDOM_DESC	Ditt eget läger, med en grupp på 20 eller fler enheter, var och en med alla värden någonstans mellan 1 och 99 och slumpade föremål och utrustning de kan bära, och 3 till 7 djur.
-SCENARIO_CARAVAN_NAME	Resande karavan
-SCENARIO_CARAVAN_DESC	Tio resenärer på vägen tillsammans. Alla egenskaper börjar på 5, och var och en bär 10 guldmynt.
-SCENARIO_SHABBY_NAME	Sjaskigt gäng
-SCENARIO_SHABBY_DESC	Tre otursförföljda kobolder med ett slumpat föremål var och alla egenskaper mellan 1 och 10.
-SCENARIO_NOBODY_NAME	Svältande ingen
-SCENARIO_NOBODY_DESC	En enhet utan någonting: inga föremål, ingen utrustning, alla egenskaper på 1 och en tom mage.
-SCENARIO_DIGGERS_NAME	Fängelsehålegrävare
-SCENARIO_DIGGERS_DESC	Sju gruvarbetare i full utrustning. Deras egenskaper ligger mellan 5 och 20, men var och en har Gruvdrift 50 och bär 3 järnmalm.
 SCENARIO_CUSTOM_NAME	Anpassat scenario
 SCENARIO_CUSTOM_DESC	Bygg din egen grupp. Den börjar med tre enheter, och du kan lägga till eller ta bort enheter och vanliga djur, upp till 32.
 PROP_LOCKED_CHEST	Låst kista

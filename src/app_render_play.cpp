@@ -197,7 +197,7 @@ void App::drawWorldMapPopup() {
     for (ObjectId e : world.view<Entity, Transform>()) {
         const Transform* t = world.get<Transform>(e);
         MapDotKind kind = MapDotKind::Player;
-        if (world.has<Citizen>(e)) kind = MapDotKind::Player;
+        if (world.has<Citizen>(e) && factionOf(world, e) == FACTION_PLAYER) kind = MapDotKind::Player;
         else if (world.has<Hostile>(e)) kind = MapDotKind::Hostile;
         else if (world.has<Neutral>(e)) kind = MapDotKind::Neutral;
         else if (!world.has<Commandable>(e)) continue;
@@ -275,12 +275,14 @@ void App::drawPlayingScreen() {
         renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
     }
     if (optimizeAllOpen) {
-        renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)militaryUnits(world).size(), settings.optimizeAttackShare,
+        renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
                                  { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
                                  mouseX, mouseY);
     }
     if (mapOpen) drawWorldMapPopup();
     drawAltar();
+    drawGhosts();
+    drawRename();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
     drawFormationKeys();

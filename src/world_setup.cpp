@@ -2,6 +2,7 @@
 #include "systems_internal.h"
 #include "build.h"
 #include "camp_kit.h"
+#include "squads.h"
 
 using namespace systems_detail;
 
@@ -378,6 +379,94 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
     b.placeCampMobs();
     b.placeWildMobs();
     b.giveFactionPatrols();
+}
+
+namespace {
+constexpr float FACTION_CITIZEN_SHARE = 0.4f;
+constexpr int FACTION_ALTAR_SEARCH = 24;   // how far from its units' middle an Altar is looked for, in tiles
+
+// A spot for a new Altar near (cx, cz): open ground, clear of props, and its claim clear of every other claim
+bool altarSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z) {
+    const std::vector<Claim> claims = claimsOf(w);
+    const std::vector<ObjectId> props = w.view<Prop, Transform>();
+    for (int ring = 0; ring <= FACTION_ALTAR_SEARCH; ++ring) {
+        for (int dz = -ring; dz <= ring; ++dz) {
+            for (int dx = -ring; dx <= ring; ++dx) {
+                if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
+                const int gx = (int)std::floor(cx) + dx, gz = (int)std::floor(cz) + dz;
+                if (!t.walkable(gx, gz)) continue;
+                const float px = gx + 0.5f, pz = gz + 0.5f;
+                bool clear = true;
+                for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, c.x, c.z);
+                for (size_t i = 0; i < props.size() && clear; ++i) {
+                    const Transform* tr = w.get<Transform>(props[i]);
+                    clear = std::fabs(tr->x - px) >= 1.0f || std::fabs(tr->z - pz) >= 1.0f;
+                }
+                if (!clear) continue;
+                x = px;
+                z = pz;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+}
+
+void settleFactionHomes(World& w, Terrain& t) {
+    for (const FactionDef& f : factions()) {
+        if (f.id == FACTION_PLAYER || f.id == FACTION_EXILE || isMobFaction(f.id)) continue;
+        std::vector<ObjectId> units;
+        float sx = 0.0f, sz = 0.0f;
+        for (ObjectId u : w.view<Entity, Faction, Transform>()) {
+            if (w.get<Faction>(u)->id != f.id || w.has<Mob>(u) || w.has<Corpse>(u)) continue;
+            units.push_back(u);
+            sx += w.get<Transform>(u)->x;
+            sz += w.get<Transform>(u)->z;
+        }
+        if (units.empty()) continue;
+        std::sort(units.begin(), units.end());
+
+        ObjectId altar = NO_OBJECT;
+        for (const Claim& c : claimsOf(w)) {
+            if (c.owner == f.id) altar = c.altar;
+        }
+        if (altar == NO_OBJECT) {
+            float x = 0.0f, z = 0.0f;
+            if (altarSpot(w, t, sx / (float)units.size(), sz / (float)units.size(), x, z)) {
+                altar = placeBuiltProp(w, t, PropKind::Altar, x, z, 0.0f, f.id);
+                const PropInfo& info = propInfo(PropKind::Altar);
+                if (Storage* st = w.get<Storage>(altar)) {
+                    st->slots[0] = ItemStack{ info.input, (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / info.fuelHours) };
+                }
+                settleClaimOwnership(w);
+            }
+        }
+        const Transform* home = altar != NO_OBJECT ? w.get<Transform>(altar) : nullptr;
+
+        // The first share are citizens, at home by the Altar; the rest are military, on patrol
+        const int citizens = home && units.size() >= 2 ? std::max(1, (int)std::lround(FACTION_CITIZEN_SHARE * (float)units.size())) : 0;
+        BehaviorRule patrol, stay;
+        patrol.kind = BehaviorKind::Patrol;
+        stay.kind = BehaviorKind::PatrolSpawn;
+        for (size_t i = 0; i < units.size(); ++i) {
+            const ObjectId u = units[i];
+            Behaviors* b = w.get<Behaviors>(u);
+            if (!b) continue;
+            if ((int)i < citizens) {
+                w.add(u, Citizen{});
+                w.remove<SquadMember>(u);
+                w.add(u, SpawnHome{ home->x, home->z, false });
+                b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) { return sameBehavior(r, patrol); }),
+                               b->rules.end());
+                addBehavior(b->rules, stay);
+            } else {
+                w.remove<Citizen>(u);
+                w.add(u, SquadMember{ 0 });
+                addBehavior(b->rules, patrol);
+            }
+        }
+    }
 }
 
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem) {

@@ -20,6 +20,14 @@ bool fullFor(World& w, ObjectId u, int item) {
     return encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u)) >= ENCUMBERED_SHARE;
 }
 
+// What a haul rule carries to its prop: bones for Auto-Haul Bones; for Auto-Haul, what the prop takes, but only fuel to an Altar
+bool haulCarries(const BehaviorRule& r, PropKind kind, int item) {
+    if (!propAcceptsItem(kind, item)) return false;
+    if (r.kind == BehaviorKind::AutoHaulBones) return isBones(item);
+    if (propInfo(kind).claimsLand) return item == propInfo(kind).input;
+    return true;
+}
+
 BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, ObjectId u, const BehaviorRule& r, int item = 0) {
     const Prop* p = w.get<Prop>(r.prop);
     const Storage* st = w.get<Storage>(r.prop);
@@ -29,7 +37,7 @@ BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, ObjectId u, co
     if (lockShutFor(w, claims, r.prop, u)) return BehaviorWait::Locked;
     bool carries = false;
     for (const ItemStack& s : inv->slots) {
-        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !propAcceptsItem(p->kind, s.item)) continue;
+        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !haulCarries(r, p->kind, s.item)) continue;
         carries = true;
         if (slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return BehaviorWait::None;
     }
@@ -41,7 +49,7 @@ bool haulable(World& w, const std::vector<Claim>& claims, ObjectId u, const Beha
 
 bool canHaulItem(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
     for (const BehaviorRule& r : b.rules) {
-        if (r.on && r.kind == BehaviorKind::AutoHaul && haulable(w, claims, u, r, item)) return true;
+        if (r.on && isHaul(r.kind) && haulable(w, claims, u, r, item)) return true;
     }
     return false;
 }
@@ -238,7 +246,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
     }
     ObjectId prop = NO_OBJECT;
     PropAction action = PropAction::Use;
-    if (r.kind == BehaviorKind::AutoHaul) {
+    if (isHaul(r.kind)) {
         r.why = haulWait(w, claims, u, r);
         if (r.why != BehaviorWait::None) return false;
         prop = r.prop;
@@ -309,6 +317,7 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
         for (ObjectId o : w.view<Prop, Transform>()) {
             if (o == prop) continue;
             const PropInfo& oi = propInfo(w.get<Prop>(o)->kind);
+            if (oi.airship) continue;
             const Transform* ot = w.get<Transform>(o);
             const float dx = x - ot->x, dz = z - ot->z;
             const float reach = footprintReach(oi.foot) + PROP_BLOCK_RADIUS;

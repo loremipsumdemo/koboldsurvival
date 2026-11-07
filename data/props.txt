@@ -31,6 +31,8 @@
 #                debris          what is left of a destroyed prop: working it clears it
 #                seat            an occupant sits
 #                cage            an occupant is locked in
+#                airship         floats above the ground, and flies its occupants (as many as workers) over any ground; they
+#                                can only get off over open ground, and die if it is destroyed with them aboard
 
 key	name_key	model	size	use	stat	item	input	workers	lock_level	accepts	fuel_hours	alt_item	alt_one_in	speed	rested	comfort	work_sound	done_sound	emote	flags
 Bedroll	PROP_BEDROLL	model_3.glb	1.0	occupy	none	0	0	0	0	any	1	0	0	1	15	10	none	ItemMove	Sleeping	build_anywhere,scatter
@@ -70,3 +72,4 @@ Shop	PROP_SHOP	model_39.glb	1.6	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMo
 Farm	PROP_FARM	model_40.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built
 Turbine	PROP_TURBINE	model_41.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built
 Stove	PROP_STOVE	model_42.glb	1.2	crafting	Cooking	0	cookable	1	0	any	1	0	0	10	0	0	WorkCooking	DoneCooking	Cooking	built
+Airship	PROP_AIRSHIP	model_43.glb	4.0	occupy	none	0	0	4	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,airship

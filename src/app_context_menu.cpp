@@ -3,7 +3,7 @@
 using namespace play;
 
 static bool canEvacuate(World& world, ObjectId prop, ObjectId occupant) {
-    if (prop == NO_OBJECT || occupant == NO_OBJECT) return false;
+    if (prop == NO_OBJECT || occupant == NO_OBJECT || isAirship(world, prop)) return false;
     for (ObjectId u : selectedUnits(world)) {
         if (u != occupant && !world.has<Mob>(u) && !cannotAct(world, u) && !lockShutFor(world, prop, u)) return true;
     }
@@ -135,7 +135,10 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
         // Your Altar manages your units, whether or not any are selected
-        if (ownAltar(world, target)) out.push_back(MenuAction::ManageUnits);
+        if (ownAltar(world, target)) {
+            out.push_back(MenuAction::ManageUnits);
+            out.push_back(MenuAction::AppeaseGhosts);
+        }
         if (propInfo(p->kind).claimsLand) {
             const std::vector<ObjectId> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NO_OBJECT) : true;
@@ -151,12 +154,20 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         bool carrying = false;
         for (ObjectId u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
-        if (use == PropUse::Occupy && propOccupant(world, target) == NO_OBJECT) out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+        if (use == PropUse::Occupy && occupantCount(world, target) < occupyCapacity(world, target)) {
+            out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+        }
+        if (isAirship(world, target)) {
+            bool aboard = false;
+            for (ObjectId u : selectedUnits(world)) aboard = aboard || airshipOf(world, u) == target;
+            if (aboard) out.push_back(MenuAction::Disembark);
+        }
         if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NO_OBJECT) out.push_back(MenuAction::Place);
         if (canEvacuate(world, target, propOccupant(world, target))) out.push_back(MenuAction::Evacuate);
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
         if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
         if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
+        if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
         if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
     }
@@ -188,10 +199,18 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
         case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
         case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
-        case MenuAction::AutoHaul: labels.push_back(lang("UILABEL_AUTO_HAUL")); break;
+        case MenuAction::AutoHaul: {
+            const Prop* tp = world.get<Prop>(session.contextMenu.target);
+            labels.push_back(lang(tp && propInfo(tp->kind).claimsLand ? "UILABEL_AUTO_HAUL_LOGS" : "UILABEL_AUTO_HAUL"));
+            break;
+        }
+        case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
+        case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
+        case MenuAction::Disembark: labels.push_back(lang("UILABEL_DISEMBARK")); break;
         case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
         case MenuAction::Destroy: labels.push_back(lang("UILABEL_BUILD_DESTROY")); break;
         case MenuAction::ManageUnits: labels.push_back(lang("UILABEL_MANAGE_UNITS")); break;
+        case MenuAction::Rename: labels.push_back(lang("UILABEL_RENAME")); break;
         }
     }
     return labels;
@@ -205,10 +224,11 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     if (target == NO_OBJECT) return false;
     std::vector<MenuAction> actions = menuActionsFor(target);
     const bool disband = squadPanel && world.has<Commandable>(target);
+    if (squadPanel && (world.has<Commandable>(target) || world.has<Citizen>(target))) actions.push_back(MenuAction::Rename);
     if (disband) actions.push_back(MenuAction::Disband);
     if (actions.empty()) return false;
     if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
-        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits } };
+        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::AppeaseGhosts } };
         playSfx(Sfx::UiMenuOpen);
         itemMenu.open = false;
         return true;
@@ -217,6 +237,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         if (disband) {
             std::vector<MenuAction> own;
             if (actions[0] == MenuAction::PutDown) own.push_back(MenuAction::PutDown);
+            own.push_back(MenuAction::Rename);
             own.push_back(MenuAction::Disband);
             session.contextMenu = ContextMenu{ true, mx, my, target, own };
             playSfx(Sfx::UiMenuOpen);
@@ -282,6 +303,25 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::ManageUnits) {
         openAltar();
+        return;
+    }
+    if (a == MenuAction::Rename) {
+        startRename(target);
+        return;
+    }
+    if (a == MenuAction::AppeaseGhosts) {
+        openGhosts(target);
+        return;
+    }
+    if (a == MenuAction::Disembark) {
+        int off = 0, stuck = 0;
+        for (ObjectId u : selectedUnits(world)) {
+            if (airshipOf(world, u) != target) continue;
+            if (disembark(world, terrain, u)) ++off;
+            else ++stuck;
+        }
+        if (stuck > 0) refuse(lang("MISC_CANT_DISEMBARK"));
+        else if (off > 0) playSfx(Sfx::UiClick);
         return;
     }
     if (a == MenuAction::PutDown) {
@@ -371,15 +411,30 @@ void App::pickMenuAction(MenuAction a) {
             occupier = u;
             break;
         }
-        if (occupier != NO_OBJECT) issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
+        if (occupier != NO_OBJECT && isAirship(world, target)) {
+            // An Airship takes as many as it has room for
+            std::vector<ObjectId> boarding;
+            const int room = occupyCapacity(world, target) - occupantCount(world, target);
+            for (ObjectId u : actors) {
+                if ((int)boarding.size() >= room) break;
+                if (!world.has<Carrying>(u) && !world.has<OccupyBan>(u) && airshipOf(world, u) != target) boarding.push_back(u);
+            }
+            issuePropOrder(world, terrain, boarding, target, PropAction::Occupy);
+        } else if (occupier != NO_OBJECT) {
+            issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
+        }
         else if (banned != NO_OBJECT) refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, banned) }));
         break;
     }
     case MenuAction::PutDown:
     case MenuAction::Disband:
     case MenuAction::ManageUnits:
+    case MenuAction::Rename:
+    case MenuAction::AppeaseGhosts:
+    case MenuAction::Disembark:
         break;
     case MenuAction::AutoHarvest:
+    case MenuAction::AutoHaulBones:
     case MenuAction::AutoHaul: {
         const PropKind kind = world.get<Prop>(target)->kind;
         const Transform* pt = world.get<Transform>(target);
@@ -388,9 +443,10 @@ void App::pickMenuAction(MenuAction a) {
             return;
         }
         BehaviorRule add;
-        add.kind = a == MenuAction::AutoHarvest ? BehaviorKind::AutoHarvest : BehaviorKind::AutoHaul;
+        add.kind = a == MenuAction::AutoHarvest ? BehaviorKind::AutoHarvest
+                 : a == MenuAction::AutoHaulBones ? BehaviorKind::AutoHaulBones : BehaviorKind::AutoHaul;
         add.propKind = idx(kind);
-        if (a == MenuAction::AutoHaul) add.prop = target;
+        if (a != MenuAction::AutoHarvest) add.prop = target;
         int given = 0;
         for (ObjectId u : actors) {
             Behaviors* b = world.get<Behaviors>(u);
@@ -402,7 +458,7 @@ void App::pickMenuAction(MenuAction a) {
             refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
             return;
         }
-        showNotice(langf(a == MenuAction::AutoHarvest ? "MISC_AUTO_HARVEST_SET" : "MISC_AUTO_HAUL_SET",
+        showNotice(langf(a == MenuAction::AutoHarvest ? "MISC_AUTO_HARVEST_SET" : a == MenuAction::AutoHaulBones ? "MISC_AUTO_HAUL_BONES_SET" : "MISC_AUTO_HAUL_SET",
                          { std::to_string(given), lang(propInfo(kind).nameKey) }));
         playSfx(Sfx::UiOrder);
         return;

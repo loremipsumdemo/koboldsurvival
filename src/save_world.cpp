@@ -97,7 +97,7 @@ void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) 
     for (const BehaviorRule& r : b->rules) {
         SaveRule sr;
         sr.rule = r;
-        if (r.kind == BehaviorKind::AutoHaul) {
+        if (isHaul(r.kind)) {
             sr.prop = idOf(propIds, r.prop);
             if (sr.prop < 0) continue;
         }
@@ -138,7 +138,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     }
     if (const Provoked* pv = w.get<Provoked>(u)) su.provoked = pv->against;
     if (w.has<Commandable>(u)) captureOrders(w, u, su, propIds, unitIds);
-    su.squad = squadOf(w, u);
+    if (const SquadMember* sm = w.get<SquadMember>(u)) su.squad = sm->squad;
     su.citizen = w.has<Citizen>(u);
 }
 
@@ -196,7 +196,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     b.rules.clear();
     for (const SaveRule& r : u.rules) {
         BehaviorRule rule = r.rule;
-        if (rule.kind == BehaviorKind::AutoHaul) {
+        if (isHaul(rule.kind)) {
             if (r.prop < 0 || r.prop >= (int)props.size()) continue;
             rule.prop = props[(size_t)r.prop];
         }
@@ -216,10 +216,10 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
         else world.add(e, Neutral{});
     }
     // Saved as citizens, they keep their home and behaviors from the file
-    if (u.citizen && world.has<Commandable>(e)) {
+    if (u.citizen) {
         world.remove<Commandable>(e);
         world.add(e, Citizen{});
-    } else if (u.squad >= 0 && u.squad < SQUAD_COUNT && world.has<Commandable>(e)) {
+    } else if (u.squad >= 0 && u.squad < SQUAD_COUNT) {
         world.add(e, SquadMember{ u.squad });
     }
     return e;
@@ -239,7 +239,7 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& 
         if (u.playingDead && canPlayDead(world, e) && !outCold(world, e)) world.add(e, PlayingDead{});
         if (u.occupying >= 0 && u.occupying < (int)props.size()) {
             const ObjectId p = props[(size_t)u.occupying];
-            if (propInfo(world.get<Prop>(p)->kind).use == PropUse::Occupy && propOccupant(world, p) == NO_OBJECT) {
+            if (propInfo(world.get<Prop>(p)->kind).use == PropUse::Occupy && occupantCount(world, p) < occupyCapacity(world, p)) {
                 *world.get<Transform>(e) = *world.get<Transform>(p);
                 world.add(e, Occupying{ p });
             }
@@ -287,6 +287,8 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     SquadBook& book = world.resource<SquadBook>();
     book.names = d.squadNames;
     book.current = std::clamp(d.currentSquad, 0, SQUAD_COUNT - 1);
+    world.resource<Graveyard>().ghosts = d.ghosts;
+    ghostSystem(world, 0.0);
     const std::vector<ObjectId> props = restoreProps(world, d);
     for (const SaveGround& g : d.ground) {
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
@@ -314,6 +316,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.reputation = playerReputation(w);
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
+    d.ghosts = w.resource<Graveyard>().ghosts;
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };
     std::ostringstream state;
     state << rng.gen;

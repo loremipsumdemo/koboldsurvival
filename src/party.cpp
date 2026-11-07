@@ -126,66 +126,11 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
 }
 
 const char* scenarioNameKey(ScenarioId id) {
-    switch (id) {
-    case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_NAME";
-    case ScenarioId::PackOfTwo: return "SCENARIO_PACK_NAME";
-    case ScenarioId::Beastmaster: return "SCENARIO_BEASTMASTER_NAME";
-    case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_NAME";
-    case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_NAME";
-    case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_NAME";
-    case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_NAME";
-    case ScenarioId::Custom: return "SCENARIO_CUSTOM_NAME";
-    default: return "SCENARIO_RANDOM_NAME";
-    }
+    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_NAME" : "SCENARIO_VAGABOND_NAME";
 }
 
 const char* scenarioDescKey(ScenarioId id) {
-    switch (id) {
-    case ScenarioId::Vagabond: return "SCENARIO_VAGABOND_DESC";
-    case ScenarioId::PackOfTwo: return "SCENARIO_PACK_DESC";
-    case ScenarioId::Beastmaster: return "SCENARIO_BEASTMASTER_DESC";
-    case ScenarioId::TravelingCaravan: return "SCENARIO_CARAVAN_DESC";
-    case ScenarioId::ShabbyCrew: return "SCENARIO_SHABBY_DESC";
-    case ScenarioId::StarvingNobody: return "SCENARIO_NOBODY_DESC";
-    case ScenarioId::DungeonDiggers: return "SCENARIO_DIGGERS_DESC";
-    case ScenarioId::Custom: return "SCENARIO_CUSTOM_DESC";
-    default: return "SCENARIO_RANDOM_DESC";
-    }
-}
-
-namespace {
-constexpr int BEASTMASTER_MOBS = 20;
-constexpr const char* PACK_WOLF_NAME = "Buddy";
-constexpr int CAMP_PARTY_PEOPLE = 20;
-constexpr int CAMP_PARTY_MOBS_MIN = 3, CAMP_PARTY_MOBS_MAX = 7;
-
-MobKind randomRegularMob(Rng& rng) {
-    const std::vector<MobKind> kinds = regularMobKinds();
-    return kinds[(size_t)rng.range(0, (int)kinds.size() - 1)];
-}
-
-Stats statsBetween(Rng& rng, int lo, int hi) {
-    Stats s;
-    for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(s, (StatId)i, rng.range(lo, hi));
-    return s;
-}
-
-void fullGear(PartyMember& m, Rng& rng, float reserve) {
-    const float cap = ENCUMBERED_SHARE * carryLimit(m.stats) - reserve;
-    for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
-        Equipment worn = wornBy(m);
-        const float used = wornWeight(worn);
-        std::vector<int> choices;
-        for (int item : gearChoices(m, slot)) {
-            const ItemDef* d = findItem(item);
-            if (!d) continue;
-            if (slot == idx(GearSlot::MainHand) && d->equipSlot == "two_hand") continue;
-            if (used + d->weight >= cap) continue;
-            choices.push_back(item);
-        }
-        if (!choices.empty()) m.gear[(size_t)slot] = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
-    }
-}
+    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_DESC" : "SCENARIO_VAGABOND_DESC";
 }
 
 PartyMember mobMember(MobKind kind, Rng& rng) {
@@ -209,87 +154,18 @@ int partyPeople(const Party& p) {
 }
 
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
-    int size = 1;
-    const int campMobs = id == ScenarioId::FullRandom ? rng.range(CAMP_PARTY_MOBS_MIN, CAMP_PARTY_MOBS_MAX) : 0;
-    switch (id) {
-    case ScenarioId::Vagabond: size = 1; break;
-    case ScenarioId::PackOfTwo: size = 1; break;
-    case ScenarioId::Beastmaster: size = 1; break;
-    case ScenarioId::FullRandom: {
-        const int most = PARTY_MAX_UNITS - campMobs;
-        size = count >= CAMP_PARTY_PEOPLE ? std::min(count, most) : rng.range(CAMP_PARTY_PEOPLE, most);
-        break;
-    }
-    case ScenarioId::TravelingCaravan: size = 10; break;
-    case ScenarioId::ShabbyCrew: size = 3; break;
-    case ScenarioId::StarvingNobody: size = 1; break;
-    case ScenarioId::DungeonDiggers: size = 7; break;
-    case ScenarioId::Custom: size = count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT; break;
-    case ScenarioId::Count: break;
-    }
-    Party p = randomParty(rng, size);
     if (id == ScenarioId::Custom) {
+        Party p = randomParty(rng, count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT);
         for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
         return p;
     }
-    const std::vector<int> items = allItemChoices();
+    // Vagabond: one unit with nothing, every stat at level 1
+    Party p = randomParty(rng, 1);
     for (PartyMember& m : p) {
         m.gear = {};
         m.items = {};
-        switch (id) {
-        case ScenarioId::Vagabond:
-        case ScenarioId::PackOfTwo:
-        case ScenarioId::Beastmaster:
-            m.stats = statsBetween(rng, 1, 5);
-            break;
-        case ScenarioId::FullRandom: {
-            m.stats = statsBetween(rng, 1, MAX_LEVEL);
-            for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
-                if (rng.range(0, 1) == 0) continue;
-                const std::vector<int> choices = gearChoices(m, slot);
-                if (!choices.empty()) m.gear[(size_t)slot] = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
-            }
-            const int stacks = rng.range(2, 5);
-            for (int i = 0; i < stacks && !items.empty(); ++i) {
-                const int item = items[(size_t)rng.range(0, (int)items.size() - 1)];
-                m.items[(size_t)i] = ItemStack{ item, rng.range(1, std::min(stackLimit(item), 5)) };
-            }
-            break;
-        }
-        case ScenarioId::TravelingCaravan:
-            m.stats = statsBetween(rng, 5, 5);
-            m.items[0] = ItemStack{ itemTagged(ITEM_TAG_GOLD_COIN), 10 };
-            break;
-        case ScenarioId::ShabbyCrew:
-            m.stats = statsBetween(rng, 1, 10);
-            if (!items.empty()) m.items[0] = ItemStack{ items[(size_t)rng.range(0, (int)items.size() - 1)], 1 };
-            break;
-        case ScenarioId::StarvingNobody:
-            m.stats = statsBetween(rng, 1, 1);
-            m.hunger = 0;
-            break;
-        case ScenarioId::DungeonDiggers: {
-            m.stats = statsBetween(rng, 5, 20);
-            setStatLevel(m.stats, StatId::Mining, 50);
-            const ItemDef* ore = findItem(itemTagged(ITEM_TAG_IRON_ORE));
-            fullGear(m, rng, ore ? 3.0f * ore->weight : 0.0f);
-            m.items[0] = ItemStack{ itemTagged(ITEM_TAG_IRON_ORE), 3 };
-            break;
-        }
-        case ScenarioId::Custom:
-        case ScenarioId::Count:
-            break;
-        }
-        keepUnderEncumbrance(m.items, m.gear, m.stats);
+        for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(m.stats, (StatId)i, 1);
     }
-    if (id == ScenarioId::PackOfTwo) {
-        p.push_back(mobMember(MobKind::Wolf, rng));
-        p.back().name = PACK_WOLF_NAME;
-    }
-    if (id == ScenarioId::Beastmaster) {
-        for (int i = 0; i < BEASTMASTER_MOBS; ++i) p.push_back(mobMember(randomRegularMob(rng), rng));
-    }
-    for (int i = 0; i < campMobs; ++i) p.push_back(mobMember(randomRegularMob(rng), rng));
     return p;
 }
 

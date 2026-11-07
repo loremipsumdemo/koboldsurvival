@@ -48,6 +48,11 @@ public:
     float floorY() const { return floorY_; }
 
     bool isFree(float x, float z) const;
+    // The piece of open ground a tile is in, numbered from 1; 0 for closed ground. On a map too big to work them out, all
+    // open ground is piece 1.
+    int areaAt(int x, int y) const { return walkable(x, y) ? areaOf(x, y) : 0; }
+    // How many tiles each piece has, by its number. Empty on a map too big to work them out.
+    std::vector<int> areaSizes() const;
     Vec2 snap(Vec2 p) const;
 
     std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const;

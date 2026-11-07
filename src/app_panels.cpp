@@ -51,7 +51,12 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(ObjectId u) {
         r.kind = BehaviorKind::AutoHaul;
         r.prop = stores[i].second;
         r.propKind = idx(world.get<Prop>(r.prop)->kind);
-        offer(r, behaviorName(r) + "  (" + std::to_string((int)std::lround(stores[i].first)) + "m)");
+        const std::string away = "  (" + std::to_string((int)std::lround(stores[i].first)) + "m)";
+        offer(r, behaviorName(r) + away);
+        if (propInfo(world.get<Prop>(r.prop)->kind).claimsLand) {
+            r.kind = BehaviorKind::AutoHaulBones;
+            offer(r, behaviorName(r) + away);
+        }
     }
     return out;
 }
@@ -338,7 +343,7 @@ void App::drawFormationKeys() {
 
 void App::finishFormationDrag() {
     formationDrag = false;
-    const std::vector<ObjectId> units = selectedUnits(world);
+    const std::vector<ObjectId> units = flyAirshipsTo(selectedUnits(world), dragToX, dragToZ);
     if (units.empty()) return;
     Vec2 point{};
     const FormationSpec spec = formationFromDrag(world, units, Vec2{ dragFromX, dragFromZ }, Vec2{ dragToX, dragToZ }, formationChoice(), point);
@@ -351,8 +356,17 @@ void App::finishFormationDrag() {
 }
 
 void App::beginRightHold(float x, float z) {
-    const std::vector<ObjectId> units = selectedUnits(world);
-    if (units.empty()) return;
+    const std::vector<ObjectId> picked = selectedUnits(world);
+    if (picked.empty()) return;
+    const std::vector<ObjectId> units = flyAirshipsTo(picked, x, z);
+    if (units.empty()) {
+        actionX = x;
+        actionZ = z;
+        actionAlpha = 1.0f;
+        markMove(x, z);
+        playSfx(Sfx::UiOrder);
+        return;
+    }
     noteLockedIn(units);
     rightHold = true;
     holdX = x;
@@ -365,10 +379,22 @@ void App::beginRightHold(float x, float z) {
     playSfx(Sfx::UiOrder);
 }
 
+// Selected units aboard an Airship fly it to the point; the rest are left to walk
+std::vector<ObjectId> App::flyAirshipsTo(const std::vector<ObjectId>& units, float x, float z) {
+    std::vector<ObjectId> walkers;
+    for (ObjectId u : units) {
+        const ObjectId ship = airshipOf(world, u);
+        if (ship != NO_OBJECT) flyAirship(world, ship, Vec2{ x, z });
+        else walkers.push_back(u);
+    }
+    return walkers;
+}
+
 void App::moveSelectedTo(float x, float z) {
-    const std::vector<ObjectId> units = selectedUnits(world);
-    if (units.empty()) return;
-    issueMoveOrder(world, terrain, units, Vec2{ x, z });
+    const std::vector<ObjectId> picked = selectedUnits(world);
+    if (picked.empty()) return;
+    const std::vector<ObjectId> units = flyAirshipsTo(picked, x, z);
+    if (!units.empty()) issueMoveOrder(world, terrain, units, Vec2{ x, z });
     actionX = x;
     actionZ = z;
     actionAlpha = 1.0f;

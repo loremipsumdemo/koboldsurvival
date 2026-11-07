@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Forgatókönyv
 SCENARIO_VAGABOND_NAME	Csavargó
 SCENARIO_VAGABOND_DESC	Magányos vándor, akinek semmije sincs: se tárgy, se felszerelés, és minden érték 1 és 5 között.
-SCENARIO_PACK_NAME	Kettes falka
-SCENARIO_PACK_DESC	Egy magányos vándor és egy hűséges farkas. A vándornak nincs tárgya vagy felszerelése, és minden értéke 1 és 5 között van.
-SCENARIO_BEASTMASTER_NAME	Vadak ura
-SCENARIO_BEASTMASTER_DESC	Egy magányos vándor 20 véletlen fajtájú lény élén. A vándornak nincs tárgya vagy felszerelése, és minden értéke 1 és 5 között van.
-SCENARIO_RANDOM_NAME	Teljesen véletlen tábor
-SCENARIO_RANDOM_DESC	Saját tábor egy legalább 20 egységből álló csapattal, mindegyiknek minden értéke 1 és 99 között, véletlen tárgyakkal és felszereléssel, amit elbír, és 3–7 lénnyel.
-SCENARIO_CARAVAN_NAME	Vándorló karaván
-SCENARIO_CARAVAN_DESC	Tíz utazó együtt az úton. Minden tulajdonság 5-ről indul, és mindenkinél 10 aranyérme van.
-SCENARIO_SHABBY_NAME	Ütött-kopott banda
-SCENARIO_SHABBY_DESC	Három balszerencsés kobold, mindegyiknél egy véletlen tárggyal és 1–10 közötti tulajdonságokkal.
-SCENARIO_NOBODY_NAME	Éhező senki
-SCENARIO_NOBODY_DESC	Egyetlen egység, semmi nélkül: se tárgy, se felszerelés, minden tulajdonság 1, és üres gyomor.
-SCENARIO_DIGGERS_NAME	Tömlöcásók
-SCENARIO_DIGGERS_DESC	Hét bányász teljes felszerelésben. Tulajdonságaik 5 és 20 közöttiek, de mindegyiknek 50 a Bányászata, és 3 vasércet visz.
 SCENARIO_CUSTOM_NAME	Egyéni forgatókönyv
 SCENARIO_CUSTOM_DESC	Állítsd össze a saját csapatodat. Három egységgel indul, és egységeket és közönséges lényeket adhatsz hozzá vagy vehetsz el, legfeljebb 32-ig.
 PROP_LOCKED_CHEST	Lezárt láda

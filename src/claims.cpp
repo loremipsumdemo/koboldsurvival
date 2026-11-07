@@ -1,3 +1,4 @@
+#include "airship.h"
 #include "items.h"
 #include "claims.h"
 #include "spatial.h"
@@ -120,7 +121,7 @@ void releaseProp(World& w, ObjectId prop) {
         Behaviors* b = w.get<Behaviors>(u);
         if (b->busy && b->stepProp == prop) b->busy = false;
         b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) {
-                           return r.kind == BehaviorKind::AutoHaul && r.prop == prop;
+                           return isHaul(r.kind) && r.prop == prop;
                        }),
                        b->rules.end());
     }
@@ -148,6 +149,7 @@ void breakBuilding(World& w, ObjectId e) {
         return;
     }
     const std::vector<ItemStack> held = propHoldings(w, e);
+    airshipLost(w, e);
     if (destroyedByHand(kind)) {
         releaseProp(w, e);
         w.destroy(e);

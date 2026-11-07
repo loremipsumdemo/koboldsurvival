@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Senario
 SCENARIO_VAGABOND_NAME	Pengembara
 SCENARIO_VAGABOND_DESC	Seorang pengembara yang tidak memiliki apa-apa: tiada barang, tiada kelengkapan, dan setiap statistik antara 1 hingga 5.
-SCENARIO_PACK_NAME	Kawanan Berdua
-SCENARIO_PACK_DESC	Seorang pengembara dan seekor serigala yang setia. Pengembara itu tiada barang atau kelengkapan, dan setiap statistik antara 1 dan 5.
-SCENARIO_BEASTMASTER_NAME	Tuan Binatang
-SCENARIO_BEASTMASTER_DESC	Seorang pengembara yang mengetuai 20 makhluk jenis rawak. Pengembara itu tiada barang atau kelengkapan, dan setiap statistik antara 1 dan 5.
-SCENARIO_RANDOM_NAME	Kem Rawak Penuh
-SCENARIO_RANDOM_DESC	Kem anda sendiri, dengan kumpulan 20 unit atau lebih, setiap satu dengan setiap statistik antara 1 dan 99 serta barang dan kelengkapan rawak yang mampu dibawa, dan 3 hingga 7 makhluk.
-SCENARIO_CARAVAN_NAME	Karavan pengembara
-SCENARIO_CARAVAN_DESC	Sepuluh pengembara di jalan bersama. Semua statistik bermula pada 5, dan setiap seorang membawa 10 syiling emas.
-SCENARIO_SHABBY_NAME	Kru lusuh
-SCENARIO_SHABBY_DESC	Tiga kobold yang malang, setiap seekor dengan satu item rawak dan semua statistik antara 1 dan 10.
-SCENARIO_NOBODY_NAME	Si lapar tiada nama
-SCENARIO_NOBODY_DESC	Satu unit tanpa apa-apa: tiada item, tiada kelengkapan, semua statistik 1, dan perut kosong.
-SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
-SCENARIO_DIGGERS_DESC	Tujuh pelombong berkelengkapan penuh. Statistik mereka antara 5 dan 20, tetapi setiap seorang mempunyai Perlombongan 50 dan membawa 3 bijih besi.
 SCENARIO_CUSTOM_NAME	Senario Tersuai
 SCENARIO_CUSTOM_DESC	Bina kumpulan anda sendiri. Ia bermula dengan tiga unit, dan anda boleh menambah atau membuang unit dan makhluk biasa, hingga 32.
 PROP_LOCKED_CHEST	Peti berkunci

@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	En ensom vandrer uten noe å kalle sitt eget: ingen gjenstander, intet utstyr og hver egenskap fra 1 til 5.
-SCENARIO_PACK_NAME	Flokk på to
-SCENARIO_PACK_DESC	En ensom vandrer og en trofast ulv. Vandreren har ingen gjenstander eller utstyr, og hver verdi fra 1 til 5.
-SCENARIO_BEASTMASTER_NAME	Dyremester
-SCENARIO_BEASTMASTER_DESC	En ensom vandrer i spissen for 20 dyr av tilfeldige arter. Vandreren har ingen gjenstander eller utstyr, og hver verdi fra 1 til 5.
-SCENARIO_RANDOM_NAME	Helt tilfeldig leir
-SCENARIO_RANDOM_DESC	Din egen leir, med en gruppe på 20 eller flere enheter, hver med alle verdier et sted fra 1 til 99 og tilfeldige gjenstander og utstyr de kan bære, og 3 til 7 dyr.
-SCENARIO_CARAVAN_NAME	Reisende karavane
-SCENARIO_CARAVAN_DESC	Ti reisende på veien sammen. Alle egenskaper starter på 5, og hver bærer 10 gullmynter.
-SCENARIO_SHABBY_NAME	Lurvete gjeng
-SCENARIO_SHABBY_DESC	Tre uheldige kobolder med én tilfeldig gjenstand hver og alle egenskaper fra 1 til 10.
-SCENARIO_NOBODY_NAME	Sulten ingen
-SCENARIO_NOBODY_DESC	Én enhet uten noe som helst: ingen gjenstander, intet utstyr, alle egenskaper på 1 og tom mage.
-SCENARIO_DIGGERS_NAME	Fangehullsgravere
-SCENARIO_DIGGERS_DESC	Sju gruvearbeidere i fullt utstyr. Egenskapene ligger fra 5 til 20, men hver har Gruvedrift 50 og bærer 3 jernmalm.
 SCENARIO_CUSTOM_NAME	Egendefinert scenario
 SCENARIO_CUSTOM_DESC	Sett sammen din egen gruppe. Den starter med tre enheter, og du kan legge til eller fjerne enheter og vanlige dyr, opptil 32.
 PROP_LOCKED_CHEST	Låst kiste

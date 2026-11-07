@@ -38,7 +38,9 @@
 #include "settings.h"
 #include "settings_menu.h"
 #include "altar_ui.h"
+#include "map_pick.h"
 #include "squads.h"
+#include "airship.h"
 #include "display.h"
 #include "inventory.h"
 #include "party.h"
@@ -251,13 +253,11 @@ struct App : AppSession {
     void editorLoad();
     void editorExit();
     bool editorKeyDown();
-    void refreshPartyWorldChoices();
 
     WorldGenUi worldGenUi;
     ThemeUi themeUi;
     bool editing = false;
     LevelEditorUi editor;
-    std::vector<MapChoice> partyMaps;
     std::string pendingLevel;
 
     bool partyAction(Action action, int param);
@@ -300,6 +300,7 @@ struct App : AppSession {
     UnitPanelLayout squadPanelLayout(int W, int H);
     std::vector<ObjectId> ownUnitList();   // the units of the squad the Squad tab shows
     void pickSquad(int squad, bool additive);
+    void optimizeSquadGear();
     void pickClosestUnit();
     void runSelectMenu(int choice);
     ItemMenuLayout selectMenuLayout();
@@ -308,6 +309,24 @@ struct App : AppSession {
     bool squadKeyDown();
     void noteSquadOfSelection();
     void openAltar();
+    std::vector<ObjectId> flyAirshipsTo(const std::vector<ObjectId>& units, float x, float z);
+    void startRename(ObjectId u);
+    void openGhosts(ObjectId altarProp);
+    bool pressOnGhosts();
+    void drawGhosts();
+    std::vector<ItemStack> ghostBones();
+    std::vector<size_t> ghostOrder();
+    void finishRename(bool keep);
+    bool pressOnRename();
+    void drawRename();
+    void openMapPick();
+    void pickMap(int i);
+    void pickLevel(int i);
+    void updateMapPick();
+    bool mapPickMouseDown();
+    void mapPickWheel(float x, float y, float notches);
+    void drawMapPickScreen();
+    MapPickLayout mapPickLayout();
     std::array<std::vector<ObjectId>, 2> altarColumns();
     void applyAltarMoves();
     void drawAltar();
@@ -410,6 +429,10 @@ struct App : AppSession {
     int lastSquadTap = -1;
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
+    RenamePrompt rename;
+    GhostsUi ghostsUi;
+    MapPickUi mapPick;
+    std::unique_ptr<OverviewBuilder> mapPreview;
     bool unitOpen = true;
     UnitTab unitTab = UnitTab::Inventory;
     PanelPlace squadPlace, unitPlace, logPlace;

@@ -49,6 +49,7 @@ enum class PropKind : int {
     Farm,
     Turbine,
     Stove,
+    Airship,
     NamedCount
 };
 constexpr int PROP_NAMED_KIND_COUNT = idx(PropKind::NamedCount);
@@ -135,6 +136,7 @@ struct PropInfo {
     bool debris = false;
     bool seat = false;
     bool cage = false;
+    bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
 };
 
 // From data/props.txt. Any number outside the table gets its first row.

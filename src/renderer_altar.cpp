@@ -1,6 +1,7 @@
 #include "renderer_internal.h"
 #include "altar_ui.h"
 #include "squads.h"
+#include "ghosts.h"
 
 using namespace render_detail;
 
@@ -87,6 +88,7 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             drawRect(r.portrait, theme::TAB_OFF);
             drawPortrait(unitPortrait(w, u), r.portrait, unitSaturation(w, u) * fade);
             if (ghost) drawRect(r.portrait, RGBA{ 0.0f, 0.0f, 0.0f, 0.4f });
+            noteTip(lang("UILABEL_ALTAR_RENAME_TIP"), r.portrait);
 
             int combat = 0, other = 0;
             levelTotals(w, u, combat, other);
@@ -140,6 +142,93 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
 
     const bool anyMoves = !moves.empty();
     drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(moves.size()) }), anyMoves, anyMoves && L.apply.contains(mx, my));
+    drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
+}
+
+void Renderer::drawGhostsWindow(World& w, const AltarLayout& L, const std::vector<ItemStack>& bones, const std::vector<size_t>& ghosts,
+                                int bonesTotal, float mx, float my) {
+    const float s = uiScale();
+    const float th = listTextHeight("Ag");
+    const Graveyard& yard = w.resource<Graveyard>();
+    drawScrim();
+    drawThemedPanel(L.box);
+    drawListText(fitText(lang("UILABEL_APPEASE_GHOSTS"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
+    if (L.close.contains(mx, my)) noteHover(L.close);
+    drawCloseButton(L.close);
+
+    int waiting = 0;
+    for (const Ghost& g : yard.ghosts) waiting += g.appeased ? 0 : 1;
+    {
+        std::string text = langf("UILABEL_GHOSTS_TOTALS", { std::to_string(bonesTotal), std::to_string(waiting) });
+        if (yard.haunted) text += "   " + lang("UILABEL_GHOSTS_HAUNTED");
+        const std::string shown = fitTextTip(text, L.totals.w, L.totals);
+        drawListText(shown, L.totals.x, L.totals.y + (L.totals.h - th) * 0.5f, yard.haunted ? RGBA{ 1.0f, 0.45f, 0.4f, 1.0f } : theme::TEXT_DIM);
+        noteTip(lang("UILABEL_GHOSTS_HOW"), L.totals);
+    }
+
+    const char* heads[2] = { "UILABEL_GHOSTS_BONES", "UILABEL_GHOSTS_GRAVEYARD" };
+    for (int c = 0; c < 2; ++c) {
+        const Rect& h = L.heads[(size_t)c];
+        drawRect(h, theme::alpha(theme::GOLD_DEEP, 0.85f));
+        drawListText(fitText(lang(heads[c]), h.w - 12.0f * s, false), h.x + 6.0f * s, h.y + (h.h - th) * 0.5f, theme::GOLD);
+        drawRect(L.lists[(size_t)c], RGBA{ 0.0f, 0.0f, 0.0f, 0.22f });
+    }
+
+    for (const AltarRow& r : L.rows[0]) {
+        if (r.index >= (int)bones.size()) continue;
+        const ItemStack& st = bones[(size_t)r.index];
+        drawRect(r.row, RGBA{ 0.16f, 0.07f, 0.085f, 0.85f });
+        drawRect(r.portrait, theme::TAB_OFF);
+        drawTexture(itemTexture(st.item)->tex, r.portrait.x + 1.0f, r.portrait.y + 1.0f, r.portrait.w - 2.0f, r.portrait.h - 2.0f, WHITE);
+        const float textX = r.portrait.x + r.portrait.w + 8.0f * s;
+        const std::string count = "x" + std::to_string(st.count);
+        drawListText(count, r.row.x + r.row.w - 8.0f * s - listTextWidth(count), r.row.y + (r.row.h - th) * 0.5f, WHITE);
+        drawListText(fitText(itemNameOf(st.item), r.row.x + r.row.w - 16.0f * s - listTextWidth(count) - textX, false), textX,
+                     r.row.y + (r.row.h - th) * 0.5f, WHITE);
+    }
+    if (bones.empty()) {
+        const Rect& list = L.lists[0];
+        float y = list.y + 12.0f * s;
+        for (const std::string& line : wrapListText(lang("UILABEL_GHOSTS_NO_BONES"), list.w - 16.0f * s)) {
+            drawListText(line, list.x + 8.0f * s, y, theme::TEXT_DIM);
+            y += th;
+        }
+    }
+
+    for (const AltarRow& r : L.rows[1]) {
+        if (r.index >= (int)ghosts.size()) continue;
+        const Ghost& g = yard.ghosts[ghosts[(size_t)r.index]];
+        const bool haunting = !g.appeased && g.hours >= GHOST_GRACE_HOURS;
+        drawRect(r.row, haunting ? RGBA{ 0.30f, 0.06f, 0.08f, 0.9f } : RGBA{ 0.16f, 0.07f, 0.085f, 0.85f });
+        drawRect(r.portrait, theme::TAB_OFF);
+        drawPortrait(unitPicture(g.sprite), r.portrait, g.appeased ? 1.0f : 0.0f);
+        if (!g.appeased) drawRect(r.portrait, RGBA{ 0.55f, 0.75f, 1.0f, 0.25f });
+        const Rect btn = ghostButton(r, uiH_);
+        const float textX = r.portrait.x + r.portrait.w + 8.0f * s, textW = btn.x - 6.0f * s - textX;
+        const float top = r.row.y + r.row.h * 0.5f - th - 1.0f * s;
+        drawListText(fitText(g.name, textW, false), textX, top, WHITE);
+        std::string status;
+        RGBA tint = theme::TEXT_DIM;
+        if (g.appeased) {
+            status = lang("UILABEL_GHOST_APPEASED");
+            tint = RGBA{ 0.5f, 0.95f, 0.5f, 1.0f };
+        } else if (haunting) {
+            status = lang("UILABEL_GHOST_HAUNTING");
+            tint = RGBA{ 1.0f, 0.45f, 0.4f, 1.0f };
+        } else {
+            status = langf("UILABEL_GHOST_HOURS_LEFT", { std::to_string((int)std::ceil(GHOST_GRACE_HOURS - g.hours)) });
+            tint = RGBA{ 1.0f, 0.78f, 0.35f, 1.0f };
+        }
+        drawListText(fitText(status, textW, false), textX, top + th + 2.0f * s, tint);
+        if (!g.appeased) drawButton(btn, lang("UILABEL_APPEASE"), bonesTotal > 0, bonesTotal > 0 && btn.contains(mx, my));
+    }
+    if (ghosts.empty()) {
+        const Rect& list = L.lists[1];
+        const std::string none = lang("UILABEL_GHOSTS_NONE");
+        drawListText(none, list.x + (list.w - listTextWidth(none)) * 0.5f, list.y + 12.0f * s, theme::TEXT_DIM);
+    }
+    const bool can = bonesTotal > 0 && waiting > 0;
+    drawButton(L.apply, langf("UILABEL_APPEASE_ALL", { std::to_string(std::min(bonesTotal, waiting)) }), can, can && L.apply.contains(mx, my));
     drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
 }
 

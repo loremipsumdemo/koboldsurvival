@@ -19,6 +19,8 @@
 #include "emotes.h"
 #include "spatial.h"
 #include "squads.h"
+#include "ghosts.h"
+#include "airship.h"
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;
@@ -32,7 +34,7 @@ inline void endPropTasks(World& w, ObjectId u) {
     w.remove<LootOrder>(u);
     w.remove<CarryOrder>(u);
     w.remove<PropOrder>(u);
-    w.remove<Occupying>(u);
+    if (!stuckAboard(w, u)) w.remove<Occupying>(u);   // aboard an Airship over closed ground, nobody gets off
     w.remove<Working>(u);
     w.remove<FollowOrder>(u);
     w.remove<DefendOrder>(u);

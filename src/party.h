@@ -76,23 +76,15 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
                           const Stats& stats);
 
 enum class ScenarioId : int {
-    Vagabond = 0,
-    PackOfTwo,
-    Beastmaster,
-    FullRandom,
-    TravelingCaravan,
-    ShabbyCrew,
-    StarvingNobody,
-    DungeonDiggers,
-    Custom,
+    Vagabond = 0,   // one unit, every stat at level 1, nothing carried
+    Custom,         // Custom Squad: build your own
     Count
 };
 const char* scenarioNameKey(ScenarioId id);
 const char* scenarioDescKey(ScenarioId id);
 inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
 inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom; }
-inline bool scenarioMobKindEditable(ScenarioId id) { return id == ScenarioId::Custom || id == ScenarioId::Beastmaster; }
-inline bool scenarioHasCamp(ScenarioId id) { return id == ScenarioId::FullRandom; }
+inline bool scenarioMobKindEditable(ScenarioId id) { return id == ScenarioId::Custom; }
 Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
 
 void addRandomMember(Party& p, Rng& rng);

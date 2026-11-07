@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	开局设定
 SCENARIO_VAGABOND_NAME	流浪者
 SCENARIO_VAGABOND_DESC	一名身无分文的孤独旅人：没有物品，没有装备，所有属性在1到5之间。
-SCENARIO_PACK_NAME	双兽同行
-SCENARIO_PACK_DESC	一名孤独的流浪者和一匹忠诚的狼。流浪者没有物品和装备，每项属性在1到5之间。
-SCENARIO_BEASTMASTER_NAME	驯兽师
-SCENARIO_BEASTMASTER_DESC	一名孤独的流浪者，率领20只随机种类的动物。流浪者没有物品和装备，每项属性在1到5之间。
-SCENARIO_RANDOM_NAME	完全随机营地
-SCENARIO_RANDOM_DESC	你自己的营地，外加20名以上的单位，每名单位的所有属性都在1到99之间，并带有能背得动的随机物品和装备，另有3到7只动物。
-SCENARIO_CARAVAN_NAME	旅行商队
-SCENARIO_CARAVAN_DESC	十名旅人结伴上路。所有属性从 5 开始，每人携带 10 枚金币。
-SCENARIO_SHABBY_NAME	落魄团伙
-SCENARIO_SHABBY_DESC	三名走投无路的狗头人，每人有一件随机物品，所有属性在 1 到 10 之间。
-SCENARIO_NOBODY_NAME	饥饿的无名小卒
-SCENARIO_NOBODY_DESC	一名一无所有的单位：没有物品，没有装备，所有属性为 1，而且饥肠辘辘。
-SCENARIO_DIGGERS_NAME	地牢挖掘者
-SCENARIO_DIGGERS_DESC	七名全副武装的矿工。属性在 5 到 20 之间，但每人的采矿都是 50，并各带 3 块铁矿石。
 SCENARIO_CUSTOM_NAME	自定义剧本
 SCENARIO_CUSTOM_DESC	组建你自己的队伍。开始时有三名单位，你可以添加或移除单位和普通动物，最多32个。
 PROP_LOCKED_CHEST	上锁的箱子

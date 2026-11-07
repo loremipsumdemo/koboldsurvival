@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scénario
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	Un voyageur solitaire qui ne possède rien : aucun objet, aucun équipement, et chaque statistique entre 1 et 5.
-SCENARIO_PACK_NAME	Meute de deux
-SCENARIO_PACK_DESC	Un vagabond solitaire et un loup fidèle. Le vagabond n’a ni objets ni équipement, et chaque statistique entre 1 et 5.
-SCENARIO_BEASTMASTER_NAME	Maître des bêtes
-SCENARIO_BEASTMASTER_DESC	Un vagabond solitaire à la tête de 20 créatures d’espèces aléatoires. Le vagabond n’a ni objets ni équipement, et chaque statistique entre 1 et 5.
-SCENARIO_RANDOM_NAME	Camp entièrement aléatoire
-SCENARIO_RANDOM_DESC	Ton propre camp, avec un groupe de 20 unités ou plus, chacune avec toutes ses statistiques entre 1 et 99 et des objets et un équipement aléatoires qu’elle peut porter, et de 3 à 7 créatures.
-SCENARIO_CARAVAN_NAME	Caravane itinérante
-SCENARIO_CARAVAN_DESC	Dix voyageurs sur la route ensemble. Toutes les statistiques commencent à 5, et chacun porte 10 pièces d'or.
-SCENARIO_SHABBY_NAME	Équipe miteuse
-SCENARIO_SHABBY_DESC	Trois kobolds malchanceux avec un objet aléatoire chacun et toutes les statistiques entre 1 et 10.
-SCENARIO_NOBODY_NAME	Moins-que-rien affamé
-SCENARIO_NOBODY_DESC	Une seule unité sans rien du tout : aucun objet, aucun équipement, toutes les statistiques à 1 et le ventre vide.
-SCENARIO_DIGGERS_NAME	Creuseurs de donjon
-SCENARIO_DIGGERS_DESC	Sept mineurs en équipement complet. Leurs statistiques vont de 5 à 20, mais chacun a Minage à 50 et porte 3 minerais de fer.
 SCENARIO_CUSTOM_NAME	Scénario personnalisé
 SCENARIO_CUSTOM_DESC	Compose ton propre groupe. Il commence avec trois unités, et tu peux ajouter ou retirer des unités et des créatures ordinaires, jusqu’à 32.
 PROP_LOCKED_CHEST	Coffre verrouillé

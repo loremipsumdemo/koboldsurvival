@@ -60,9 +60,13 @@ bool App::mouseDownOnPanels() {
             if (pl.optimizeAllButton.contains(mx, my)) {
                 session.contextMenu.open = false;
                 itemMenu.open = false;
-                optimizeAllOpen = true;
-                optimizeSliderDrag = false;
-                playSfx(Sfx::UiMenuOpen);
+                if ((SDL_GetModState() & SDL_KMOD_SHIFT) != 0) {
+                    optimizeAllOpen = true;
+                    optimizeSliderDrag = false;
+                    playSfx(Sfx::UiMenuOpen);
+                } else {
+                    optimizeSquadGear();
+                }
                 return true;
             }
 

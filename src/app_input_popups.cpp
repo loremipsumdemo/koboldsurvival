@@ -45,17 +45,8 @@ bool App::pressOnOptimizeAll() {
                 optimizeAllOpen = false;
                 playSfx(Sfx::UiBack);
             } else if (ol.confirm.contains(x, y)) {
-                const std::vector<ObjectId> squad = militaryUnits(world);
-                const OptimizeAllResult r = optimizeAllGear(world, squad, gearPrefs());
                 optimizeAllOpen = false;
-                if (r.changed == 0 && r.noRoom == 0) {
-                    showNotice(lang("MISC_OPTIMIZE_ALL_SAME"));
-                } else if (r.noRoom == 0) {
-                    showNotice(langf("MISC_OPTIMIZE_ALL_DONE", { std::to_string(r.changed) }));
-                } else {
-                    showNotice(langf("MISC_OPTIMIZE_ALL_SOME_ROOM", { std::to_string(r.changed), std::to_string(r.noRoom) }));
-                }
-                if (r.changed == 0) playSfx(r.noRoom > 0 ? Sfx::UiError : Sfx::UiClick);
+                optimizeSquadGear();
             }
         }
         return true;
@@ -351,7 +342,9 @@ bool App::pressToGrabPanel() {
 }
 
 bool App::mouseDownOnPopups() {
+    if (pressOnRename()) return true;
     if (pressOnAltar()) return true;
+    if (pressOnGhosts()) return true;
     if (pressOnDisband()) return true;
     if (pressOnOptimizeAll()) return true;
     if (pressOnWorldMap()) return true;

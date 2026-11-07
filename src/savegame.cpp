@@ -127,6 +127,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
         if (!d.squadNames[k].empty()) w.line("squadname", k, d.squadNames[k]);
     }
     w.line("squadat", d.currentSquad);
+    for (const Ghost& g : d.ghosts) w.line("ghost", g.appeased, g.hours, g.sprite, g.name);
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
     for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
     for (size_t i = 0; i < d.units.size(); ++i) writeUnit(w, i, d.units[i]);
@@ -293,6 +294,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             return l.rest(l.d.squadNames[k]);
         } },
         { "squadat", [](Line& l) { return l.read(l.d.currentSquad); } },
+        { "ghost", [](Line& l) {
+            Ghost g;
+            if (!l.read(g.appeased, g.hours, g.sprite)) return false;
+            l.rest(g.name);
+            l.d.ghosts.push_back(std::move(g));
+            return true;
+        } },
         { "gear", [](Line& l) {
             SaveUnit* u = l.unit();
             SaveGear g;

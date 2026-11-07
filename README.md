@@ -37,13 +37,21 @@ lose state: the world keeps running, whatever happens to your party.
   game commands and who stay near your Altar. A squad that would go over 16 sends the extra units to squads with room,
   and once all nine are full, to the citizens. Right-click your Altar and choose Manage Units to move units between the two. The Faction tab of the
   Faction Panel shows the squads as a numpad, where you can pick and rename them. Settings has a soft and a hard cap on
-  citizens.
+  citizens. Rename any unit of yours by right-clicking it in the Squad Panel, or its portrait in Manage Units. Every
+  faction of people starts with an Altar, some citizens who keep near it, and some military who patrol its claim.
+- **Ghosts.** A unit of yours that dies joins the Graveyard as a Ghost. Each Ghost wants one bones (any kind) sacrificed
+  at your Altar: right-click it and choose Appease Ghosts. A Ghost left unappeased for 24 game hours haunts your whole
+  faction, and Haunted units hit and walk slower. The Altar keeps bones ahead of time, brought by hand or by Auto-Haul
+  Bones (apart from Auto-Haul Logs, which keeps it burning).
+- **Airships.** An Airship floats above the ground and carries up to four units. A move order for those aboard flies it
+  in a straight line over anything, water and void included. Nobody can get off (Disembark) except over open ground, and
+  if it is destroyed with units aboard they die. A map with land that can't be walked to starts you with one.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.
 - **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn, Griffin and Manticore bosses, each with its own faction,
-  meat and bones. Camps keep some in cages, and some scenarios start with them in your party.
-- **Scenarios.** Start as a Vagabond, a Pack of Two, a Beastmaster, a Full Random Camp, a Traveling Caravan, a Shabby
-  Crew, a Starving Nobody or the Dungeon Diggers, or build a Custom Scenario, then adjust the party before play.
+  meat and bones. Camps keep some in cages, and a Custom Squad can bring regular mobs.
+- **Starting out.** Pick a map and level first, with a preview, then start as a Vagabond (one unit with nothing, every
+  stat at level 1) or build a Custom Squad.
 - **World and time.** A chunked terrain world with sea and sky, a world map, and a day/night calendar (one in-game day
   is 30 real minutes). New Game always starts on the main world.
 - **Saves.** Plain-text saves in the player's own folder (`%APPDATA%\KoboldSurvival\saves` on Windows), with manual saves
@@ -60,7 +68,8 @@ lose state: the world keeps running, whatever happens to your party.
 | Input | Action |
 | --- | --- |
 | Left click / drag | Select units. Shift adds to the selection. A box around ground items, and no units you haven't selected, picks the items up |
-| Right click on your Altar | Manage Units: move units between the military and the citizens, with or without units selected |
+| Right click on your Altar | Manage Units (move units between the military and the citizens) or Appease Ghosts, with or without units selected |
+| Optimize All / Shift + click | Optimize the gear of the squad shown, or first choose how |
 | Numpad 1 to 9 | Select that squad. Shift adds it to the selection, and pressing it twice brings the camera to it |
 | Ctrl + Numpad 1 to 9 | Move the selected units into that squad |
 | Numpad 0 | Select your unit nearest the camera's centre |
@@ -118,6 +127,8 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
   squads, altar_ui     Squads of 16 and citizens, and the Altar's roster
+  ghosts, airship      The Graveyard and Haunted, and Airships
+  app_map_pick         New Game's map and level page
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
   save_world, savegame, save_migrate     Turning a running level into a save, the save files, and upgrading old ones

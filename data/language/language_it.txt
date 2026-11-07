@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabondo
 SCENARIO_VAGABOND_DESC	Un viandante solitario senza nulla di suo: nessun oggetto, nessun equipaggiamento e ogni statistica tra 1 e 5.
-SCENARIO_PACK_NAME	Branco di due
-SCENARIO_PACK_DESC	Un vagabondo solitario e un lupo fedele. Il vagabondo non ha oggetti né equipaggiamento, e ogni statistica tra 1 e 5.
-SCENARIO_BEASTMASTER_NAME	Signore delle bestie
-SCENARIO_BEASTMASTER_DESC	Un vagabondo solitario alla guida di 20 creature di specie casuali. Il vagabondo non ha oggetti né equipaggiamento, e ogni statistica tra 1 e 5.
-SCENARIO_RANDOM_NAME	Accampamento casuale
-SCENARIO_RANDOM_DESC	Il tuo accampamento, con un gruppo di 20 o più unità, ognuna con tutte le statistiche tra 1 e 99 e oggetti ed equipaggiamento casuali che può portare, e da 3 a 7 creature.
-SCENARIO_CARAVAN_NAME	Carovana errante
-SCENARIO_CARAVAN_DESC	Dieci viaggiatori insieme sulla strada. Tutte le statistiche partono da 5 e ognuno porta 10 monete d'oro.
-SCENARIO_SHABBY_NAME	Ciurma malconcia
-SCENARIO_SHABBY_DESC	Tre coboldi sfortunati con un oggetto casuale ciascuno e tutte le statistiche tra 1 e 10.
-SCENARIO_NOBODY_NAME	Nessuno affamato
-SCENARIO_NOBODY_DESC	Un'unità senza niente: nessun oggetto, nessun equipaggiamento, tutte le statistiche a 1 e lo stomaco vuoto.
-SCENARIO_DIGGERS_NAME	Scavatori di segrete
-SCENARIO_DIGGERS_DESC	Sette minatori in equipaggiamento completo. Le loro statistiche vanno da 5 a 20, ma ognuno ha Estrazione a 50 e porta 3 minerali di ferro.
 SCENARIO_CUSTOM_NAME	Scenario personalizzato
 SCENARIO_CUSTOM_DESC	Crea il tuo gruppo. Parte con tre unità e puoi aggiungere o togliere unità e creature comuni, fino a 32.
 PROP_LOCKED_CHEST	Forziere chiuso a chiave

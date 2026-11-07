@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	開局設定
 SCENARIO_VAGABOND_NAME	流浪者
 SCENARIO_VAGABOND_DESC	一名身無分文的孤獨旅人：沒有物品，沒有裝備，所有屬性在1到5之間。
-SCENARIO_PACK_NAME	雙獸同行
-SCENARIO_PACK_DESC	一名孤獨的流浪者和一匹忠誠的狼。流浪者沒有物品和裝備，每項屬性在1到5之間。
-SCENARIO_BEASTMASTER_NAME	馴獸師
-SCENARIO_BEASTMASTER_DESC	一名孤獨的流浪者，率領20隻隨機種類的動物。流浪者沒有物品和裝備，每項屬性在1到5之間。
-SCENARIO_RANDOM_NAME	完全隨機營地
-SCENARIO_RANDOM_DESC	你自己的營地，外加20名以上的單位，每名單位的所有屬性都在1到99之間，並帶有背得動的隨機物品和裝備，另有3到7隻動物。
-SCENARIO_CARAVAN_NAME	旅行商隊
-SCENARIO_CARAVAN_DESC	十名旅人結伴上路。所有屬性從 5 開始，每人攜帶 10 枚金幣。
-SCENARIO_SHABBY_NAME	落魄團夥
-SCENARIO_SHABBY_DESC	三名走投無路的狗頭人，每人有一件隨機物品，所有屬性在 1 到 10 之間。
-SCENARIO_NOBODY_NAME	飢餓的無名小卒
-SCENARIO_NOBODY_DESC	一名一無所有的單位：沒有物品，沒有裝備，所有屬性為 1，而且飢腸轆轆。
-SCENARIO_DIGGERS_NAME	地城挖掘者
-SCENARIO_DIGGERS_DESC	七名全副武裝的礦工。屬性在 5 到 20 之間，但每人的採礦都是 50，並各帶 3 塊鐵礦石。
 SCENARIO_CUSTOM_NAME	自訂劇本
 SCENARIO_CUSTOM_DESC	組建你自己的隊伍。開始時有三名單位，你可以新增或移除單位和普通動物，最多32個。
 PROP_LOCKED_CHEST	上鎖的箱子

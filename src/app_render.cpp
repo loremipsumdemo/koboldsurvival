@@ -295,6 +295,7 @@ void App::render() {
     case Screen::Title: drawTitleScreen(); break;
     case Screen::Settings: drawSettingsScreen(); break;
     case Screen::Playing: drawPlayingScreen(); break;
+    case Screen::MapSelect: drawMapPickScreen(); break;
     case Screen::ScenarioSelect: drawScenarioScreen(); break;
     case Screen::PartySetup: drawPartyScreen(); break;
     case Screen::WorldGen: drawWorldGenScreen(); break;

@@ -36,6 +36,10 @@ void App::handleEvent() {
 }
 
 void App::onTextInput() {
+    if (screen == Screen::Playing && rename.open) {
+        appendUtf8Limited(rename.text, e.text.text, PARTY_NAME_CHARS);
+        return;
+    }
     if (screen == Screen::Playing && squadRenaming) {
         appendUtf8Limited(squadRenameText, e.text.text, SQUAD_NAME_CHARS);
         return;
@@ -82,6 +86,12 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && rename.open) {
+        if (e.key.key == SDLK_BACKSPACE) popUtf8Char(rename.text);
+        else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) finishRename(true);
+        else if (e.key.key == SDLK_ESCAPE) finishRename(false);
+        return;
+    }
     if (screen == Screen::Playing && squadRenaming) {
         if (e.key.key == SDLK_BACKSPACE) popUtf8Char(squadRenameText);
         else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) stopSquadRename(true);
@@ -91,6 +101,13 @@ void App::onKeyDown() {
     if (screen == Screen::Playing && altar.open) {
         if (e.key.key == SDLK_ESCAPE) {
             altar = AltarUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
+    if (screen == Screen::Playing && ghostsUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            ghostsUi = GhostsUi{};
             playSfx(Sfx::UiBack);
         }
         return;
@@ -227,6 +244,10 @@ void App::onKeyDown() {
             if (settingsUi.openRow >= 0) settingsCloseDropdown(settingsUi);
             else leaveSettings();
         } else if (screen == Screen::ScenarioSelect) {
+            playSfx(Sfx::UiBack);
+            screen = Screen::MapSelect;
+        } else if (screen == Screen::MapSelect) {
+            if (mapPreview) mapPreview->stop();
             performAction(Action::ReturnToTitle, 0);
         }
     }
@@ -235,6 +256,15 @@ void App::onKeyDown() {
 void App::onMouseWheel() {
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
+    if (screen == Screen::Playing && ghostsUi.open) {
+        const AltarLayout L = layoutAltar(winW, winH, { (int)ghostBones().size(), (int)ghostOrder().size() }, ghostsUi.scroll);
+        for (int c = 0; c < 2; ++c) {
+            if (!L.lists[(size_t)c].contains(e.wheel.mouse_x, e.wheel.mouse_y)) continue;
+            const int step = e.wheel.y > 0.0f ? -3 : e.wheel.y < 0.0f ? 3 : 0;
+            ghostsUi.scroll[(size_t)c] = std::max(0, L.first[(size_t)c] + step);
+        }
+        return;
+    }
     if (screen == Screen::Playing && altar.open) {
         const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
         const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
@@ -249,6 +279,8 @@ void App::onMouseWheel() {
         int maxOffset = std::max(0, (int)saves.size() - (int)visibleSaveRows(winH));
         int next = (int)listOffset - (int)e.wheel.y;
         listOffset = (size_t)std::clamp(next, 0, maxOffset);
+    } else if (screen == Screen::MapSelect) {
+        mapPickWheel(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
     } else if (screen == Screen::WorldGen) {
         if (worldGenUi.themeTab && layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
             themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
@@ -352,6 +384,7 @@ void App::onMouseButtonDown() {
         if (e.button.button == SDL_BUTTON_LEFT) worldGenClick(e.button.x, e.button.y);
         return;
     }
+    if (mapPickMouseDown()) return;
     if (screen == Screen::Playing && editing && editorMouseDown()) return;
 
     if (screen == Screen::ScenarioSelect) {
@@ -369,7 +402,8 @@ void App::onMouseButtonDown() {
                 playSfx(Sfx::UiClick);
                 openPartyMenu();
             } else if (sl.back.contains(mx, my)) {
-                performAction(Action::ReturnToTitle, 0);
+                playSfx(Sfx::UiBack);
+                screen = Screen::MapSelect;
             }
         }
         return;

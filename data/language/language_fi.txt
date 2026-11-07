@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenaario
 SCENARIO_VAGABOND_NAME	Kulkuri
 SCENARIO_VAGABOND_DESC	Yksinäinen vaeltaja, jolla ei ole mitään: ei esineitä, ei varusteita ja jokainen ominaisuus 1–5.
-SCENARIO_PACK_NAME	Kahden lauma
-SCENARIO_PACK_DESC	Yksinäinen kulkija ja uskollinen susi. Kulkijalla ei ole esineitä eikä varusteita, ja jokainen ominaisuus on väliltä 1–5.
-SCENARIO_BEASTMASTER_NAME	Petojen herra
-SCENARIO_BEASTMASTER_DESC	Yksinäinen kulkija 20 satunnaisen lajin otuksen johdossa. Kulkijalla ei ole esineitä eikä varusteita, ja jokainen ominaisuus on väliltä 1–5.
-SCENARIO_RANDOM_NAME	Täysin satunnainen leiri
-SCENARIO_RANDOM_DESC	Oma leiri ja vähintään 20 yksikön ryhmä, jokaisella kaikki ominaisuudet väliltä 1–99 ja satunnaisia esineitä ja varusteita, joita se jaksaa kantaa, sekä 3–7 otusta.
-SCENARIO_CARAVAN_NAME	Matkaava karavaani
-SCENARIO_CARAVAN_DESC	Kymmenen matkalaista yhdessä tiellä. Kaikki ominaisuudet alkavat viidestä, ja jokaisella on 10 kultakolikkoa.
-SCENARIO_SHABBY_NAME	Nuhjuinen porukka
-SCENARIO_SHABBY_DESC	Kolme huono-onnista koboldia, kullakin yksi satunnainen esine ja kaikki ominaisuudet väliltä 1–10.
-SCENARIO_NOBODY_NAME	Nälkäinen ei-kukaan
-SCENARIO_NOBODY_DESC	Yksi yksikkö ilman mitään: ei esineitä, ei varusteita, kaikki ominaisuudet 1 ja tyhjä vatsa.
-SCENARIO_DIGGERS_NAME	Luolastonkaivajat
-SCENARIO_DIGGERS_DESC	Seitsemän kaivostyöläistä täysissä varusteissa. Ominaisuudet ovat 5–20, mutta jokaisella on Louhinta 50 ja 3 rautamalmia mukana.
 SCENARIO_CUSTOM_NAME	Oma skenaario
 SCENARIO_CUSTOM_DESC	Kokoa oma ryhmäsi. Se alkaa kolmella yksiköllä, ja voit lisätä tai poistaa yksiköitä ja tavallisia otuksia, enintään 32.
 PROP_LOCKED_CHEST	Lukittu arkku

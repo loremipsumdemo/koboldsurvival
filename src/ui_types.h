@@ -7,7 +7,7 @@ struct PanelPlace {
     bool barBottom = false;
 };
 
-enum class Screen { Title, Settings, Playing, Pause, ScenarioSelect, PartySetup, WorldGen };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen };
 
 enum class Action {
     Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration,
@@ -44,9 +44,7 @@ enum class Action {
     PartyDropBack,
     PartyRandomAll,
     PartyConfirm,
-    PartyMessage,
-    PartyMapBox,
-    PartyLevelBox
+    PartyMessage
 };
 
 struct Selection {

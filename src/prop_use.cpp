@@ -36,7 +36,7 @@ bool propInTheWay(World& w, ObjectId unit, ObjectId prop) {
     const float abx = b->x - a->x, abz = b->z - a->z;
     const float len2 = abx * abx + abz * abz;
     for (ObjectId p : w.view<Prop, Transform>()) {
-        if (p == prop) continue;
+        if (p == prop || propInfo(w.get<Prop>(p)->kind).airship) continue;   // an Airship floats over the way
         const Transform* c = w.get<Transform>(p);
         float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
         t = std::clamp(t, 0.0f, 1.0f);
@@ -189,7 +189,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                         a.corpse = true;
                     } else if (propInTheWay(w, u, prop)) {
                         a.unreachable = true;
-                    } else if (occupant != NO_OBJECT) {
+                    } else if (occupant != NO_OBJECT && occupantCount(w, prop) >= occupyCapacity(w, prop)) {
                         a.taken = true;
                     } else if (Transform* ct = w.get<Transform>(carried)) {
                         w.remove<Carrying>(u);
@@ -218,7 +218,8 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 const ObjectId occupant = propOccupant(w, prop);
                 if (propInTheWay(w, u, prop)) {
                     a.unreachable = true;
-                } else if (occupant != NO_OBJECT && occupant != u) {
+                } else if (occupant != NO_OBJECT && occupant != u && w.get<Occupying>(u) == nullptr &&
+                           occupantCount(w, prop) >= occupyCapacity(w, prop)) {
                     a.taken = true;
                 } else {
                     const bool newOccupant = occupant != u;
@@ -563,6 +564,7 @@ void propStorageChanged(World& w, ObjectId prop) {
 bool propAcceptsItem(PropKind kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
+    if (info.claimsLand && isBones(item)) return true;   // kept for the Ghosts
     if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;
     if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
     const ItemDef* def = findItem(item);

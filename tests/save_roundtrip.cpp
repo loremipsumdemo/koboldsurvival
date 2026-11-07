@@ -20,6 +20,11 @@
 #include "pak.h"
 #include "sounds.h"
 #include "squads.h"
+#include "ghosts.h"
+#include "airship.h"
+#include "systems_internal.h"
+#include "chunk_source.h"
+#include "surface_tiles.h"
 #include "systems.h"
 #include "terrain.h"
 
@@ -56,6 +61,34 @@ ObjectId firstStocked(World& w) {
     }
     return NO_OBJECT;
 }
+
+// Open ground, but for a strip of closed ground from x 100 to 120 that cuts the map in two
+class MoatSource : public ChunkSource {
+public:
+    explicit MoatSource(int size) : size_(size) {
+        surface_.ground = surfaceTilePixels(GROUND_TILE_SPEC);
+        surface_.water = surfaceTilePixels(WATER_TILE_SPEC);
+    }
+    int size() const override { return size_; }
+    float floorY() const override { return -2.0f; }
+    const WorldSurface& surface() const override { return surface_; }
+    bool streamed() const override { return false; }
+    bool fill(int cx, int cz, ChunkData& out) const override {
+        out = emptyChunk(cx, cz);
+        for (int j = 0; j < CHUNK_TILES; ++j) {
+            for (int i = 0; i < CHUNK_TILES; ++i) {
+                const int x = cx * CHUNK_TILES + i, z = cz * CHUNK_TILES + j;
+                const bool open = x < size_ && z < size_ && (x < 100 || x >= 120);
+                out.walk[(size_t)j * CHUNK_TILES + i] = open ? 1 : 0;
+            }
+        }
+        return true;
+    }
+
+private:
+    int size_;
+    WorldSurface surface_;
+};
 
 int stacksIn(const Storage& st) {
     int n = 0;
@@ -190,6 +223,9 @@ int main(int, char**) {
     check(moveToSquad(world, people[1], 4), "a unit moves into another squad");
     world.resource<SquadBook>().names[4] = "Night Watch";
     world.resource<SquadBook>().current = 4;
+    world.resource<Graveyard>().ghosts.push_back(Ghost{ "Old Bones", 2, 30.0, false });
+    world.resource<Graveyard>().ghosts.push_back(Ghost{ "Laid To Rest", 1, 3.0, true });
+    ghostSystem(world, 0.0);
 
     const ObjectId bones = makeProp(world, PropKind::Bones, *world.get<Transform>(people[0]));
     world.add(bones, BonesPile{ 2.0, { ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), 3 } } });
@@ -280,6 +316,104 @@ int main(int, char**) {
         check(makeMilitary(crowd, citizenUnits(crowd)[0], 0) && squadSizes(crowd)[3] == SQUAD_SIZE,
               "a citizen joins the squad with room");
         check(settleSquads(crowd) == 0, "settled squads stay as they are");
+    }
+
+    {
+        const std::vector<Ghost>& g = restored.resource<Graveyard>().ghosts;
+        check(g.size() == 2 && g[0].name == "Old Bones" && g[0].sprite == 2 && g[0].hours == 30.0 && !g[0].appeased && g[1].appeased,
+              "the Graveyard comes back");
+        check(restored.resource<Graveyard>().haunted, "a Ghost unappeased for over a day still haunts after a reload");
+    }
+
+    // Faction homes: each faction of people gets an Altar, and its units become citizens and military
+    {
+        World homes;
+        Rng homeRng;
+        homeRng.gen.seed(99);
+        setupWorld(homes, terrain, homeRng, false);
+        settleFactionHomes(homes, terrain);
+        int factionsWithUnits = 0, housed = 0, split = 0;
+        for (const FactionDef& f : factions()) {
+            if (f.id == FACTION_PLAYER || f.id == FACTION_EXILE || isMobFaction(f.id)) continue;
+            int units = 0, citizens = 0, military = 0;
+            for (ObjectId u : homes.view<Entity, Faction>()) {
+                if (homes.get<Faction>(u)->id != f.id || homes.has<Mob>(u)) continue;
+                ++units;
+                citizens += homes.has<Citizen>(u) ? 1 : 0;
+                military += homes.has<SquadMember>(u) ? 1 : 0;
+            }
+            if (units == 0) continue;
+            ++factionsWithUnits;
+            for (const Claim& c : claimsOf(homes)) housed += c.owner == f.id ? 1 : 0;
+            split += citizens > 0 && military > 0 && citizens + military == units ? 1 : 0;
+        }
+        check(factionsWithUnits > 0 && housed == factionsWithUnits, "every faction of people has an Altar");
+        check(split == factionsWithUnits, "every faction's units are some citizens and some military");
+        check(citizenUnits(homes).empty(), "another faction's citizens are not yours");
+    }
+
+    // Ghosts: your dead rise, haunt after a day unappeased, and are appeased with bones at your Altar
+    {
+        World yard;
+        Rng yardRng;
+        setupWorld(yard, terrain, yardRng, false);
+        std::vector<ObjectId> own = yard.view<Entity, Commandable>();
+        std::sort(own.begin(), own.end());
+        check(own.size() >= 2, "the level has two of your units");
+        const ObjectId fallen = own[0], living = own[1];
+        yard.get<Name>(fallen)->text = "Pip";
+        const ObjectId npc = yard.view<Entity, Dialogue>().front();
+        knockOut(yard, npc);
+        finishDying(yard, npc);
+        check(yard.resource<Graveyard>().ghosts.empty(), "another faction's dead are not your Ghosts");
+        knockOut(yard, fallen);
+        finishDying(yard, fallen);
+        const std::vector<Ghost>& ghosts = yard.resource<Graveyard>().ghosts;
+        check(ghosts.size() == 1 && ghosts[0].name == "Pip" && !ghosts[0].appeased, "a unit of yours that dies becomes a Ghost");
+        const float before = numbersOf(yard, living).attack;
+        ghostSystem(yard, 23.0 * 3600.0);
+        check(!yard.resource<Graveyard>().haunted, "a Ghost waits a day before it haunts");
+        ghostSystem(yard, 2.0 * 3600.0);
+        check(yard.resource<Graveyard>().haunted && hauntedUnit(yard, living), "a Ghost unappeased for a day haunts your faction");
+        check(numbersOf(yard, living).attack < before, "a Haunted unit hits softer");
+        const ObjectId altarProp = placeBuiltProp(yard, terrain, PropKind::Altar, 200.5f, 200.5f, 0.0f, FACTION_PLAYER);
+        check(!appeaseGhost(yard, altarProp, 0), "a Ghost can't be appeased without bones");
+        const int someBones = itemTagged(ITEM_TAG_COMMON_BONES);
+        check(propAcceptsItem(PropKind::Altar, someBones) && !propAcceptsItem(PropKind::Altar, itemTagged(ITEM_TAG_GOLD_COIN)),
+              "an Altar keeps bones, and not just anything");
+        yard.get<Storage>(altarProp)->slots[5] = ItemStack{ someBones, 2 };
+        check(bonesIn(yard, altarProp) == 2 && appeaseGhost(yard, altarProp, 0), "bones in the Altar appease a Ghost");
+        check(bonesIn(yard, altarProp) == 1 && !yard.resource<Graveyard>().haunted && !hauntedUnit(yard, living),
+              "appeasing takes one bones and lifts the haunting");
+    }
+
+    // Airships: fly over closed ground, nobody gets off there, and those aboard die if it is destroyed
+    {
+        Terrain moat(std::make_shared<MoatSource>(256));
+        check(unreachableLand(moat, 50.5f, 50.5f, AIRSHIP_LAND_TILES) && !unreachableLand(terrain, 50.5f, 50.5f, AIRSHIP_LAND_TILES),
+              "land that can't be walked to is found, and only then");
+        World sky;
+        Rng skyRng;
+        const ObjectId pilot = spawnUnit(sky, moat, skyRng, FACTION_PLAYER, 80.5f, 50.5f);
+        const ObjectId ship = placeStartingAirship(sky, moat, 80.5f, 50.5f);
+        check(ship != NO_OBJECT && isAirship(sky, ship) && occupyCapacity(sky, ship) == 4, "an Airship is placed, with room for four");
+        sky.add(pilot, Occupying{ ship });
+        flyAirship(sky, ship, Vec2{ 110.5f, 50.5f });
+        for (int i = 0; i < 60 * 20; ++i) airshipSystem(sky, moat, 1.0f / 60.0f);
+        const Transform* st = sky.get<Transform>(ship);
+        const Transform* pt = sky.get<Transform>(pilot);
+        check(std::fabs(st->x - 110.5f) < 0.2f && !moat.walkable(110, 50), "an Airship flies out over closed ground");
+        check(std::hypot(pt->x - st->x, pt->z - st->z) < 1.0f && pt->y > st->y, "those aboard ride on its deck");
+        check(stuckAboard(sky, pilot) && !disembark(sky, moat, pilot) && airshipOf(sky, pilot) == ship, "nobody gets off over closed ground");
+        systems_detail::clearOrders(sky, pilot);
+        check(airshipOf(sky, pilot) == ship, "no order takes a unit off it there");
+        flyAirship(sky, ship, Vec2{ 140.5f, 50.5f });
+        for (int i = 0; i < 60 * 20; ++i) airshipSystem(sky, moat, 1.0f / 60.0f);
+        check(!stuckAboard(sky, pilot) && disembark(sky, moat, pilot) && airshipOf(sky, pilot) == NO_OBJECT,
+              "over open ground on the far side, they get off");
+        sky.add(pilot, Occupying{ ship });
+        destroyBuilding(sky, ship);
+        check(sky.has<Corpse>(pilot), "those aboard die when it is destroyed");
     }
 
     // Prisoner cages and Evacuate

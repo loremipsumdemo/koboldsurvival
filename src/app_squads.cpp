@@ -14,6 +14,19 @@ std::vector<ObjectId> App::ownUnitList() {
     return squadUnits(world, world.resource<SquadBook>().current);
 }
 
+// Optimize All: the gear of the squad the Squad tab shows, with the settings the Shift + click window last saved
+void App::optimizeSquadGear() {
+    const OptimizeAllResult r = optimizeAllGear(world, ownUnitList(), gearPrefs());
+    if (r.changed == 0 && r.noRoom == 0) {
+        showNotice(lang("MISC_OPTIMIZE_ALL_SAME"));
+    } else if (r.noRoom == 0) {
+        showNotice(langf("MISC_OPTIMIZE_ALL_DONE", { std::to_string(r.changed) }));
+    } else {
+        showNotice(langf("MISC_OPTIMIZE_ALL_SOME_ROOM", { std::to_string(r.changed), std::to_string(r.noRoom) }));
+    }
+    playSfx(r.changed == 0 && r.noRoom > 0 ? Sfx::UiError : Sfx::UiClick);
+}
+
 void App::pickSquad(int squad, bool additive) {
     if (squad < 0 || squad >= SQUAD_COUNT) return;
     const unsigned long long now = SDL_GetTicks();
@@ -151,6 +164,54 @@ void App::noteSquadOfSelection() {
         world.resource<SquadBook>().current = squad;
         unitPanelRow = 0;
     }
+}
+
+void App::startRename(ObjectId u) {
+    if (!world.has<Entity>(u) || (!world.has<Commandable>(u) && !world.has<Citizen>(u))) return;
+    stopSquadRename(true);
+    rename = RenamePrompt{ true, u, nameOf(world, u) };
+    SDL_StartTextInput(window);
+    playSfx(Sfx::UiMenuOpen);
+}
+
+void App::finishRename(bool keep) {
+    if (!rename.open) return;
+    const std::string name = cleanName(rename.text);
+    if (keep && name.empty()) {
+        refuse(lang("MISC_RENAME_EMPTY"));
+        return;
+    }
+    if (keep && world.has<Entity>(rename.unit)) {
+        if (Name* n = world.get<Name>(rename.unit)) n->text = name;
+        else world.add(rename.unit, Name{ name });
+    }
+    rename = RenamePrompt{};
+    SDL_StopTextInput(window);
+    playSfx(keep ? Sfx::UiClick : Sfx::UiBack);
+}
+
+bool App::pressOnRename() {
+    if (screen != Screen::Playing || !rename.open) return false;
+    if (e.button.button != SDL_BUTTON_LEFT) return true;
+    const RenameLayout L = layoutRename(winW, winH);
+    if (L.ok.contains(e.button.x, e.button.y)) finishRename(true);
+    else if (L.cancel.contains(e.button.x, e.button.y) || !L.box.contains(e.button.x, e.button.y)) finishRename(false);
+    return true;
+}
+
+void App::drawRename() {
+    if (!rename.open) return;
+    const RenameLayout L = layoutRename(winW, winH);
+    const float th = renderer.listTextHeight("Ag");
+    renderer.drawScrim();
+    renderer.drawThemedPanel(L.box);
+    renderer.drawListText(langf("UILABEL_RENAME_UNIT", { nameOf(world, rename.unit) }), L.title.x, L.title.y + (L.title.h - th) * 0.5f,
+                          RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    renderer.drawRect(L.field, RGBA{ 0.10f, 0.04f, 0.05f, 1.0f });
+    const std::string shown = rename.text + ((SDL_GetTicks() / 500) % 2 ? "|" : "");
+    renderer.drawListText(shown, L.field.x + 8.0f, L.field.y + (L.field.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    renderer.drawButton(L.ok, lang("UILABEL_CONFIRM"), !cleanName(rename.text).empty(), L.ok.contains(mouseX, mouseY));
+    renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
 }
 
 bool App::pressOnFactionGrid() {

@@ -172,6 +172,7 @@ void finishDying(World& w, ObjectId u) {
     w.remove<Selected>(u);
     w.remove<Occupying>(u);
     queueLog(w, langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+    recordGhost(w, u);
     const int victim = factionOf(w, u);
     if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(w, victim, -REP_DEATH_PENALTY);

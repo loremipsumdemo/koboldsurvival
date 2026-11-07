@@ -26,6 +26,9 @@ BodyType randomBodyType(Rng& rng);
 std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::string>& taken);
 
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem);
+// At the start of a game: every faction of people (not of mobs) with units gets an Altar if it has none and there is room,
+// and its units become some citizens, who stay near the Altar, and some military, who patrol its claim
+void settleFactionHomes(World& w, Terrain& t);
 
 void issueMoveOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 clickPoint);
 void issueFormationOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 point, const FormationSpec& spec);

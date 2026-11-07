@@ -42,8 +42,9 @@ void App::startMapLevel(const MapChoice& choice) {
         }
         buildLevelFrom(world, terrain, rng, (unsigned)std::time(nullptr), level);
     } else {
-        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), false, progress);
     }
+    settleFactionHomes(world, terrain);
     // The party from the menu replaces the units that the seed made: its people, then its mobs after them
     std::vector<MobKind> mobKinds;
     for (const PartyMember& m : party) {
@@ -53,11 +54,9 @@ void App::startMapLevel(const MapChoice& choice) {
     ensurePlayerUnits(world, terrain, rng, people);
     ensurePlayerMobs(world, terrain, rng, mobKinds, people);
     applyParty(world, party);
-    if (scenarioPick == ScenarioId::PackOfTwo) {
-        const ObjectId lead = firstSquadUnit(world);
-        std::vector<ObjectId> beasts;
-        for (ObjectId u : world.view<Entity, Commandable, Mob>()) beasts.push_back(u);
-        if (lead != NO_OBJECT && !world.has<Mob>(lead)) issueFollowOrder(world, beasts, lead);
+    if (const ObjectId first = firstSquadUnit(world); first != NO_OBJECT) {
+        const Transform* ft = world.get<Transform>(first);
+        if (ft && unreachableLand(terrain, ft->x, ft->z, AIRSHIP_LAND_TILES)) placeStartingAirship(world, terrain, ft->x, ft->z);
     }
     currentMap = choice;
     gs = GameState{};
@@ -84,27 +83,6 @@ void App::openPartyMenu() {
     partyUi.mobKindEditable = scenarioMobKindEditable(scenarioPick);
     backScreen = Screen::ScenarioSelect;
     screen = Screen::PartySetup;
-    pendingLevel.clear();
-    partyMaps = listMaps();
-    partyUi.mapEntries.clear();
-    for (size_t i = 0; i < partyMaps.size(); ++i) {
-        partyUi.mapEntries.push_back(DropEntry{ partyMaps[i].name, (int)i });
-        if (partyMaps[i].source == pendingMap.source && partyMaps[i].stem == pendingMap.stem) partyUi.mapPick = (int)i;
-    }
-    refreshPartyWorldChoices();
-}
-
-void App::refreshPartyWorldChoices() {
-    partyUi.levelEntries.clear();
-    partyUi.levelNames.clear();
-    partyUi.levelEntries.push_back(DropEntry{ lang("UILABEL_LEVEL_RANDOM"), 0 });
-    partyUi.levelNames.push_back("");
-    for (const std::string& name : listLevelFiles(pendingMap.stem)) {
-        partyUi.levelEntries.push_back(DropEntry{ name, (int)partyUi.levelNames.size() });
-        partyUi.levelNames.push_back(name);
-    }
-    partyUi.levelPick = 0;
-    pendingLevel.clear();
 }
 
 void App::stopNameEdit() {
@@ -146,7 +124,7 @@ void App::performAction(Action action, int param) {
             showNotice(lang("MISC_MAIN_MAP_MISSING"));
             return;
         }
-        openParty(*mainMap);
+        openMapPick();
         return;
     }
     case Action::WorldGeneration:

@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Skenario
 SCENARIO_VAGABOND_NAME	Gelandangan
 SCENARIO_VAGABOND_DESC	Pengembara tunggal yang tidak punya apa-apa: tanpa barang, tanpa perlengkapan, dan setiap stat antara 1 dan 5.
-SCENARIO_PACK_NAME	Kawanan Berdua
-SCENARIO_PACK_DESC	Seorang pengembara dan seekor serigala setia. Pengembara itu tak punya barang atau perlengkapan, dan setiap statistiknya antara 1 dan 5.
-SCENARIO_BEASTMASTER_NAME	Penguasa Binatang
-SCENARIO_BEASTMASTER_DESC	Seorang pengembara yang memimpin 20 makhluk dari jenis acak. Pengembara itu tak punya barang atau perlengkapan, dan setiap statistiknya antara 1 dan 5.
-SCENARIO_RANDOM_NAME	Perkemahan Acak Penuh
-SCENARIO_RANDOM_DESC	Perkemahanmu sendiri, dengan regu berisi 20 unit atau lebih, masing-masing dengan setiap statistik antara 1 dan 99 serta barang dan perlengkapan acak yang bisa dibawanya, dan 3 sampai 7 makhluk.
-SCENARIO_CARAVAN_NAME	Karavan pengembara
-SCENARIO_CARAVAN_DESC	Sepuluh pengelana berjalan bersama. Semua statistik dimulai dari 5, dan masing-masing membawa 10 koin emas.
-SCENARIO_SHABBY_NAME	Kru lusuh
-SCENARIO_SHABBY_DESC	Tiga kobold yang sial, masing-masing dengan satu barang acak dan semua statistik antara 1 dan 10.
-SCENARIO_NOBODY_NAME	Orang lapar tanpa nama
-SCENARIO_NOBODY_DESC	Satu unit tanpa apa pun: tanpa barang, tanpa perlengkapan, semua statistik 1, dan perut kosong.
-SCENARIO_DIGGERS_NAME	Penggali penjara bawah tanah
-SCENARIO_DIGGERS_DESC	Tujuh penambang berperlengkapan penuh. Statistik mereka 5 sampai 20, tetapi masing-masing punya Penambangan 50 dan membawa 3 bijih besi.
 SCENARIO_CUSTOM_NAME	Skenario Kustom
 SCENARIO_CUSTOM_DESC	Bentuk regumu sendiri. Dimulai dengan tiga unit, dan kamu bisa menambah atau membuang unit dan makhluk biasa, hingga 32.
 PROP_LOCKED_CHEST	Peti terkunci

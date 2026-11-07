@@ -1,4 +1,6 @@
 #include "squads.h"
+#include "ghosts.h"
+#include "airship.h"
 #include "simulation.h"
 #include "calendar.h"
 #include "claims.h"
@@ -66,6 +68,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     downedSystem(w);
     PROFILED("squadSystem", squadSystem(w, dt, running));
     PROFILED("steeringSystem", steeringSystem(w, t, dt, running));
+    airshipSystem(w, t, dt);
     PROFILED("pickupSystem", pickupSystem(w, t));
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
     PROFILED("wildMobSystem", wildMobSystem(w, t, dt));
@@ -79,6 +82,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
     PROFILED("needsSystem", needsSystem(w, hoursPassed, gameSecs));
+    ghostSystem(w, gameSecs);
     downedSystem(w);
     WakeChanges wakes = PROFILED("unconsciousSystem", unconsciousSystem(w, gameSecs));
     append(events(w).wakes.woke, std::move(wakes.woke));

@@ -390,6 +390,7 @@ void App::update() {
     cam.viewRange = (float)settings.viewRange;
 
     session.talkCooldown = std::max(0.0f, session.talkCooldown - dt);
+    if (screen == Screen::MapSelect) updateMapPick();
     stepSimulation();
     if (screen == Screen::Playing) updateDisbandHold();
     placeUnitsBetweenSteps();
@@ -422,6 +423,9 @@ void App::updateHover() {
         }
         return propsUnder;
     };
+    if (screen == Screen::Playing && world.resource<Graveyard>().haunted) {
+        hud.push_back({ langf("UILABEL_HUD_HAUNTED", { std::to_string(unappeasedGhosts(world)) }), RGBA{ 1.0f, 0.45f, 0.4f, 1.0f } });
+    }
     if (screen == Screen::Playing) {
         std::vector<HudEntry> under;
         unitsUnderMouse = renderer.entitiesAtPixel(world, cam, mouseX, mouseY, winW, winH);

@@ -214,6 +214,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const std::string label = lang("UILABEL_OPTIMIZE_ALL");
         const std::string shown = fitTextTip(label, L.optimizeAllButton.w - 6.0f * s, L.optimizeAllButton);
         mode(L.optimizeAllButton, shown, false);
+        noteTip(lang("UILABEL_OPTIMIZE_ALL_TIP"), L.optimizeAllButton);
     }
 
     for (const UnitCell& c : L.cells) {

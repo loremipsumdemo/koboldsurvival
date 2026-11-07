@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	시나리오
 SCENARIO_VAGABOND_NAME	방랑자
 SCENARIO_VAGABOND_DESC	가진 것 하나 없는 외로운 방랑자. 아이템도 장비도 없고, 모든 능력치는 1에서 5 사이입니다.
-SCENARIO_PACK_NAME	둘의 무리
-SCENARIO_PACK_DESC	외로운 방랑자와 충직한 늑대. 방랑자는 아이템도 장비도 없고, 모든 능력치가 1~5입니다.
-SCENARIO_BEASTMASTER_NAME	야수의 주인
-SCENARIO_BEASTMASTER_DESC	무작위 종류의 동물 20마리를 이끄는 외로운 방랑자. 방랑자는 아이템도 장비도 없고, 모든 능력치가 1~5입니다.
-SCENARIO_RANDOM_NAME	완전 무작위 야영지
-SCENARIO_RANDOM_DESC	자신의 야영지와 20명 이상의 유닛으로 이루어진 파티. 각 유닛은 모든 능력치가 1~99 사이이며 들 수 있는 무작위 아이템과 장비를 가지고, 3~7마리의 동물도 함께합니다.
-SCENARIO_CARAVAN_NAME	떠도는 상단
-SCENARIO_CARAVAN_DESC	함께 길을 떠난 여행자 10명. 모든 능력치가 5에서 시작하고, 각자 금화 10닢을 지닌다.
-SCENARIO_SHABBY_NAME	초라한 무리
-SCENARIO_SHABBY_DESC	운 없는 코볼트 3명. 각자 무작위 아이템 하나를 지니며 모든 능력치가 1~10이다.
-SCENARIO_NOBODY_NAME	굶주린 무명인
-SCENARIO_NOBODY_DESC	아무것도 없는 유닛 1명. 아이템도 장비도 없고, 모든 능력치가 1이며 배가 텅 비었다.
-SCENARIO_DIGGERS_NAME	던전 굴착꾼
-SCENARIO_DIGGERS_DESC	완전 무장한 광부 7명. 능력치는 5~20이지만 모두 채광이 50이며 철광석을 3개씩 지닌다.
 SCENARIO_CUSTOM_NAME	사용자 지정 시나리오
 SCENARIO_CUSTOM_DESC	나만의 파티를 만드세요. 유닛 셋으로 시작하며, 유닛과 일반 동물을 최대 32까지 추가하거나 뺄 수 있습니다.
 PROP_LOCKED_CHEST	잠긴 상자

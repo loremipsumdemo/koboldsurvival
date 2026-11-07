@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Cenário
 SCENARIO_VAGABOND_NAME	Vagabundo
 SCENARIO_VAGABOND_DESC	Um andarilho solitário sem nada de seu: sem objetos, sem equipamento e todas as estatísticas entre 1 e 5.
-SCENARIO_PACK_NAME	Matilha de dois
-SCENARIO_PACK_DESC	Um vagabundo solitário e um lobo leal. O vagabundo não tem itens nem equipamento, e cada atributo entre 1 e 5.
-SCENARIO_BEASTMASTER_NAME	Senhor das feras
-SCENARIO_BEASTMASTER_DESC	Um vagabundo solitário à frente de 20 criaturas de espécies aleatórias. O vagabundo não tem itens nem equipamento, e cada atributo entre 1 e 5.
-SCENARIO_RANDOM_NAME	Acampamento totalmente aleatório
-SCENARIO_RANDOM_DESC	O teu próprio acampamento, com um grupo de 20 ou mais unidades, cada uma com todos os atributos entre 1 e 99 e itens e equipamento aleatórios que consegue carregar, e 3 a 7 criaturas.
-SCENARIO_CARAVAN_NAME	Caravana itinerante
-SCENARIO_CARAVAN_DESC	Dez viajantes juntos na estrada. Todos os atributos começam em 5, e cada um leva 10 moedas de ouro.
-SCENARIO_SHABBY_NAME	Bando andrajoso
-SCENARIO_SHABBY_DESC	Três kobolds sem sorte, cada um com um item aleatório e todos os atributos entre 1 e 10.
-SCENARIO_NOBODY_NAME	Zé-ninguém esfomeado
-SCENARIO_NOBODY_DESC	Uma unidade sem nada: sem itens, sem equipamento, todos os atributos a 1 e o estômago vazio.
-SCENARIO_DIGGERS_NAME	Escavadores de masmorra
-SCENARIO_DIGGERS_DESC	Sete mineiros com equipamento completo. Os atributos vão de 5 a 20, mas cada um tem Mineração a 50 e leva 3 minérios de ferro.
 SCENARIO_CUSTOM_NAME	Cenário personalizado
 SCENARIO_CUSTOM_DESC	Cria o teu próprio grupo. Começa com três unidades, e podes adicionar ou remover unidades e criaturas comuns, até 32.
 PROP_LOCKED_CHEST	Baú trancado

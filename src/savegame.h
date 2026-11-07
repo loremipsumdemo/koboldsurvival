@@ -7,12 +7,13 @@
 #include "components.h"
 #include "game_state.h"
 #include "squads.h"
+#include "ghosts.h"
 
 // Plain text, one record per line. Terrain comes from the named map; everything else is in the file.
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 8;
+inline constexpr int SAVE_VERSION = 9;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -102,6 +103,7 @@ struct SaveData {
     std::map<int, int> reputation;
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
+    std::vector<Ghost> ghosts;
     std::vector<SaveProp> props;
     std::vector<SaveGround> ground;
     std::vector<SaveUnit> units;

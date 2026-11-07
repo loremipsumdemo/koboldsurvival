@@ -34,7 +34,10 @@ std::vector<ObjectId> militaryUnits(World& w) {
 }
 
 std::vector<ObjectId> citizenUnits(World& w) {
-    std::vector<ObjectId> out = w.view<Entity, Citizen>();
+    std::vector<ObjectId> out;
+    for (ObjectId u : w.view<Entity, Citizen>()) {
+        if (factionOf(w, u) == FACTION_PLAYER) out.push_back(u);
+    }
     std::sort(out.begin(), out.end());
     return out;
 }

@@ -633,23 +633,9 @@ MISC_PROP_UNREACHABLE	Unreachable
 MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabond
-SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat from 1 to 5.
-SCENARIO_PACK_NAME	Pack of Two
-SCENARIO_PACK_DESC	A lone wanderer and a loyal wolf. The wanderer has no items or gear, and every stat from 1 to 5.
-SCENARIO_BEASTMASTER_NAME	Beastmaster
-SCENARIO_BEASTMASTER_DESC	A lone wanderer at the head of 20 mobs of random kinds. The wanderer has no items or gear, and every stat from 1 to 5.
-SCENARIO_RANDOM_NAME	Full Random Camp
-SCENARIO_RANDOM_DESC	Your own camp, with a party of 20 or more units, each with every stat somewhere from 1 to 99 and random items and gear they can carry, and 3 to 7 mobs.
-SCENARIO_CARAVAN_NAME	Traveling Caravan
-SCENARIO_CARAVAN_DESC	Ten travelers on the road together. Every stat starts at 5, and each carries 10 Gold Coins.
-SCENARIO_SHABBY_NAME	Shabby Crew
-SCENARIO_SHABBY_DESC	Three down-on-their-luck kobolds with one random item each and every stat from 1 to 10.
-SCENARIO_NOBODY_NAME	Starving Nobody
-SCENARIO_NOBODY_DESC	One unit with nothing at all: no items, no gear, every stat at 1, and an empty stomach.
-SCENARIO_DIGGERS_NAME	Dungeon Diggers
-SCENARIO_DIGGERS_DESC	Seven miners in full gear. Their stats run from 5 to 20, but each has Mining at 50 and carries 3 Iron Ore.
-SCENARIO_CUSTOM_NAME	Custom Scenario
-SCENARIO_CUSTOM_DESC	Build your own party. It starts with three units, and you can add or remove units and regular mobs, up to 32.
+SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat at level 1.
+SCENARIO_CUSTOM_NAME	Custom Squad
+SCENARIO_CUSTOM_DESC	Build your own squad. It starts with three units, and you can add or remove units and regular mobs, up to 32.
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 UILABEL_UNLOCK	Unlock
@@ -905,7 +891,7 @@ MISC_GEAR_NO_ROOM	Not enough inventory space
 MISC_GEAR_ALREADY_BEST	Already wearing the best gear
 MISC_GEAR_NONE_WORN	No gear to remove
 UILABEL_OPTIMIZE_ALL	Optimize All
-MISC_OPTIMIZE_ALL_ASK	Optimize the gear of all {0} units in your squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is.
+MISC_OPTIMIZE_ALL_ASK	Optimize the gear of the {0} units in this squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is. These settings are kept for the next click of Optimize All.
 UILABEL_OPTIMIZE_BALANCE	Attack {0}% / Defense {1}%
 UILABEL_OPTIMIZE_ACCESSORIES	Change accessories
 UILABEL_OPTIMIZE_TWO_HANDED	Allow two-handed weapons
@@ -1208,3 +1194,47 @@ MISC_CITIZENS_HARD_CAP	You can't have more than {0} citizens
 MISC_MILITARY_FULL	Your military is full: {0} units in nine squads
 MISC_ALTAR_APPLIED	{0} joined the military, {1} became citizens.
 MISC_CITIZENS_OVER_SOFT_CAP	Your citizens are over the soft cap of {0}.
+UILABEL_MAP_PICK_TITLE	Choose where to start
+UILABEL_MAP_PICK_MAPS	Map
+UILABEL_MAP_PICK_LEVELS	Level
+UILABEL_MAP_PICK_LOADING	Drawing the map...
+UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when the game starts.
+UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
+UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
+UILABEL_NEXT	Next
+UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Shift + click to change how.
+UILABEL_RENAME	Rename
+UILABEL_RENAME_UNIT	Rename {0}
+MISC_RENAME_EMPTY	A name can't be empty
+UILABEL_ALTAR_RENAME_TIP	Right-click a portrait to rename
+UILABEL_AUTO_HAUL_LOGS	Auto-Haul Logs
+UILABEL_AUTO_HAUL_BONES	Auto-Haul Bones
+UILABEL_BEHAVIOR_AUTO_HAUL_LOGS	Auto-Haul Logs: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL_BONES	Auto-Haul Bones: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP	Auto-Haul Logs: takes the fuel the {0} burns from the inventory, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP	Auto-Haul Bones: takes any bones in the inventory to the {0}, for the Ghosts, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+MISC_AUTO_HAUL_BONES_SET	{0} unit(s) will Auto-Haul bones to the {1}
+UILABEL_APPEASE_GHOSTS	Appease Ghosts
+UILABEL_APPEASE	Appease
+UILABEL_APPEASE_ALL	Appease All ({0})
+UILABEL_GHOSTS_TOTALS	Bones in this Altar: {0}    Unappeased Ghosts: {1}
+UILABEL_GHOSTS_HAUNTED	Your faction is Haunted!
+UILABEL_GHOSTS_HOW	Each Ghost wants one bones of any kind. Left unappeased for 24 hours, a Ghost haunts your whole faction: Haunted units hit and walk slower. Store bones here with the Altar's Inventory or Auto-Haul Bones.
+UILABEL_GHOSTS_BONES	Bones
+UILABEL_GHOSTS_GRAVEYARD	Graveyard
+UILABEL_GHOSTS_NO_BONES	No bones here yet. Store some with the Altar's Inventory, or give units Auto-Haul Bones.
+UILABEL_GHOSTS_NONE	No one has died
+UILABEL_GHOST_APPEASED	Appeased
+UILABEL_GHOST_HAUNTING	Haunting your faction
+UILABEL_GHOST_HOURS_LEFT	Unappeased: haunts in {0}h
+UILABEL_HUD_HAUNTED	Haunted: {0} Ghost(s) to appease at your Altar
+MISC_GHOST_RISES	The Ghost of {0} rises. Appease it at your Altar with bones within {1} hours
+MISC_GHOST_APPEASED	The Ghost of {0} is appeased
+MISC_HAUNTED	An unappeased Ghost haunts your faction: your units hit and walk slower
+MISC_NO_LONGER_HAUNTED	The Ghosts are at peace: your faction is no longer Haunted
+MISC_GHOSTS_NO_BONES	This Altar has no bones
+MISC_GHOSTS_ALL_APPEASED	Every Ghost is already appeased
+PROP_AIRSHIP	Airship
+UILABEL_DISEMBARK	Disembark
+MISC_CANT_DISEMBARK	Nobody can get off the Airship here: fly it over open ground first
+MISC_AIRSHIP_FALLS	{0} falls with the Airship

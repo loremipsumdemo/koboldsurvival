@@ -44,6 +44,28 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const st
     return L;
 }
 
+Rect ghostButton(const AltarRow& r, int H) {
+    const float s = uiScaleFor((float)H);
+    const float w = 96.0f * s;
+    return Rect{ r.row.x + r.row.w - w - 4.0f * s, r.move.y, w, r.move.h };
+}
+
+RenameLayout layoutRename(int W, int H) {
+    const float s = uiScaleFor((float)H);
+    const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 140.0f * s;
+    const float boxW = std::min((float)W - 32.0f * s, 420.0f * s), boxH = pad + line + gap + 34.0f * s + gap + btnH + pad;
+    RenameLayout L;
+    L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
+    float y = L.box.y + pad;
+    L.title = Rect{ L.box.x + pad, y, boxW - 2.0f * pad, line };
+    y += line + gap;
+    L.field = Rect{ L.box.x + pad, y, boxW - 2.0f * pad, 34.0f * s };
+    y += 34.0f * s + gap;
+    L.ok = Rect{ L.box.x + boxW * 0.5f - gap * 0.5f - btnW, y, btnW, btnH };
+    L.cancel = Rect{ L.box.x + boxW * 0.5f + gap * 0.5f, y, btnW, btnH };
+    return L;
+}
+
 int altarMaxScroll(const AltarLayout& L, int column, int count) {
     return std::max(0, count - L.visible[(size_t)column]);
 }

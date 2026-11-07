@@ -1,3 +1,4 @@
+#include "ghosts.h"
 #include "combat.h"
 #include "language.h"
 #include <algorithm>
@@ -53,6 +54,7 @@ CombatNumbers numbersOf(World& w, ObjectId e) {
     CombatNumbers n = deriveCombat(statsOf(w, e), wornOf(w, e), buffOf(w, e));
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) n.maxHp = mobInfo(m->kind).hp;
     if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) n.attack *= BOSS_DAMAGE_FACTOR;
+    if (hauntedUnit(w, e)) n.attack *= HAUNTED_ATTACK;
     if (const Behaviors* b = behaviorsOf(w, e); b && b->block) {
         n.blockChance = std::min(BLOCK_MODE_CAP, std::max(n.blockChance, BLOCK_CHANCE_BASE) * BLOCK_MODE_FACTOR);
     }

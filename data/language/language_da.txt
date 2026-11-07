@@ -636,20 +636,6 @@ MISC_ITEM_GAINED	+{0}
 UILABEL_SCENARIO	Scenarie
 SCENARIO_VAGABOND_NAME	Vagabond
 SCENARIO_VAGABOND_DESC	En ensom vandrer uden noget at kalde sit eget: ingen genstande, intet udstyr og hver evne fra 1 til 5.
-SCENARIO_PACK_NAME	Flok på to
-SCENARIO_PACK_DESC	En ensom vandrer og en trofast ulv. Vandreren har ingen genstande eller udstyr, og hver evne fra 1 til 5.
-SCENARIO_BEASTMASTER_NAME	Dyretæmmer
-SCENARIO_BEASTMASTER_DESC	En ensom vandrer i spidsen for 20 dyr af tilfældige arter. Vandreren har ingen genstande eller udstyr, og hver evne fra 1 til 5.
-SCENARIO_RANDOM_NAME	Fuldt tilfældig lejr
-SCENARIO_RANDOM_DESC	Din egen lejr med en gruppe på 20 eller flere enheder, hver med alle evner fra 1 til 99 og tilfældige genstande og udstyr, de kan bære, og 3 til 7 dyr.
-SCENARIO_CARAVAN_NAME	Rejsende karavane
-SCENARIO_CARAVAN_DESC	Ti rejsende på vejen sammen. Alle evner starter på 5, og hver bærer 10 guldmønter.
-SCENARIO_SHABBY_NAME	Lurvet bande
-SCENARIO_SHABBY_DESC	Tre uheldige kobolder med hver én tilfældig genstand og alle evner fra 1 til 10.
-SCENARIO_NOBODY_NAME	Sulten ingen
-SCENARIO_NOBODY_DESC	Én enhed uden noget som helst: ingen genstande, intet udstyr, alle evner på 1 og en tom mave.
-SCENARIO_DIGGERS_NAME	Fangekældergravere
-SCENARIO_DIGGERS_DESC	Syv minearbejdere i fuld udrustning. Deres evner ligger fra 5 til 20, men hver har Minedrift 50 og bærer 3 jernmalm.
 SCENARIO_CUSTOM_NAME	Brugerdefineret scenarie
 SCENARIO_CUSTOM_DESC	Byg din egen gruppe. Den starter med tre enheder, og du kan tilføje eller fjerne enheder og almindelige dyr, op til 32.
 PROP_LOCKED_CHEST	Låst kiste
