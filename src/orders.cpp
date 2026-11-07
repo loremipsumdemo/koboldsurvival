@@ -2,42 +2,156 @@
 
 using namespace systems_detail;
 
-void issueMoveOrder(World& w, Terrain& t, const std::vector<ObjectId>& given, Vec2 clickPoint) {
+namespace {
+Vec2 middleOf(World& w, const std::vector<ObjectId>& units) {
+    float cx = 0.0f, cz = 0.0f;
+    for (ObjectId u : units) {
+        const Transform* tr = w.get<Transform>(u);
+        cx += tr->x;
+        cz += tr->z;
+    }
+    return Vec2{ cx / (float)units.size(), cz / (float)units.size() };
+}
+
+// Sets up the squad and hands out the slots. With no walk, it forms up where it is.
+void formSquad(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 point, bool walk, const FormationSpec& spec) {
+    const Vec2 from = middleOf(w, units);
+    ActiveSquad s;
+    s.cx = from.x;
+    s.cz = from.z;
+    s.size = (int)units.size();
+    s.spacing = formationSpacing(spec.choice);
+    s.offsets = formationOffsets(spec.choice.shape, s.size, s.spacing, spec.width);
+    const ObjectId sq = w.create();
+    w.add(sq, std::move(s));
+    for (ObjectId u : units) clearOrders(w, u);
+
+    ActiveSquad* squad = w.get<ActiveSquad>(sq);
+    if (walk) {
+        planActiveSquad(w, t, sq, point);
+    } else {
+        squad->arrived = true;
+    }
+    Vec2 dest = from;
+    float endX = spec.headX, endZ = spec.headZ;
+    if (!squad->waypoints.empty()) {
+        dest = squad->waypoints.back();
+        const Vec2 before = squad->waypoints.size() > 1 ? squad->waypoints[squad->waypoints.size() - 2] : from;
+        const float len = std::hypot(dest.x - before.x, dest.z - before.z);
+        if (!spec.facing && len > 1e-4f) {
+            endX = (dest.x - before.x) / len;
+            endZ = (dest.z - before.z) / len;
+        }
+        const Vec2 first = squad->waypoints.front();
+        const float firstLen = std::hypot(first.x - from.x, first.z - from.z);
+        if (firstLen > 1e-4f) {
+            squad->headX = (first.x - from.x) / firstLen;
+            squad->headZ = (first.z - from.z) / firstLen;
+        }
+    } else {
+        squad->headX = endX;
+        squad->headZ = endZ;
+    }
+    squad->finalSpots = fitFormation(t, dest, endX, endZ, squad->offsets, squad->spacing);
+
+    std::vector<Vec2> places;
+    places.reserve(units.size());
+    for (ObjectId u : units) {
+        const Transform* tr = w.get<Transform>(u);
+        places.push_back(Vec2{ tr->x, tr->z });
+    }
+    const std::vector<int> slots = assignFormationSlots(places, squad->finalSpots, dest.x - from.x, dest.z - from.z);
+    for (size_t i = 0; i < units.size(); ++i) {
+        ActiveSquadMember member;
+        member.squad = sq;
+        member.slot = slots[i];
+        w.add(units[i], member);
+    }
+}
+
+std::vector<ObjectId> ableToMove(World& w, const std::vector<ObjectId>& given) {
     std::vector<ObjectId> units;
     for (ObjectId u : given) {
         if (!cannotTakeOrder(w, u)) units.push_back(u);
     }
+    return units;
+}
+}
+
+void issueFormationOrder(World& w, Terrain& t, const std::vector<ObjectId>& given, Vec2 point, const FormationSpec& spec) {
+    const std::vector<ObjectId> units = ableToMove(w, given);
     if (units.empty()) return;
 
     if (units.size() == 1) {
         ObjectId u = units[0];
         clearOrders(w, u);
-        walkSolo(w, t, u, clickPoint);
+        walkSolo(w, t, u, point);
         return;
     }
+    formSquad(w, t, units, point, true, spec);
+}
 
-    float cx = 0.0f, cz = 0.0f;
+void issueMoveOrder(World& w, Terrain& t, const std::vector<ObjectId>& given, Vec2 clickPoint) {
+    FormationSpec spec;
+    spec.choice = w.resource<FormationChoice>();
+    issueFormationOrder(w, t, given, clickPoint, spec);
+}
+
+void reformUnits(World& w, Terrain& t, const std::vector<ObjectId>& given, const FormationChoice& choice) {
+    const std::vector<ObjectId> units = ableToMove(w, given);
+    if (units.size() < 2) return;
+    FormationSpec spec;
+    spec.choice = choice;
+    spec.facing = true;
     for (ObjectId u : units) {
-        Transform* tr = w.get<Transform>(u);
-        cx += tr->x;
-        cz += tr->z;
+        const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u);
+        const ActiveSquad* sq = sm ? w.get<ActiveSquad>(sm->squad) : nullptr;
+        if (!sq) continue;
+        if (!sq->arrived && !sq->waypoints.empty()) {
+            const Vec2 going = sq->waypoints.back();
+            spec.facing = false;
+            formSquad(w, t, units, going, true, spec);
+            return;
+        }
+        spec.headX = sq->headX;
+        spec.headZ = sq->headZ;
+        break;
     }
-    cx /= units.size();
-    cz /= units.size();
+    formSquad(w, t, units, Vec2{}, false, spec);
+}
 
-    ActiveSquad s;
-    s.cx = cx;
-    s.cz = cz;
-    s.size = (int)units.size();
-    ObjectId sq = w.create();
-    w.add(sq, s);
-
-    for (size_t i = 0; i < units.size(); ++i) {
-        clearOrders(w, units[i]);
-        w.add(units[i], ActiveSquadMember{ sq, (int)i });
+FormationSpec formationFromDrag(World& w, const std::vector<ObjectId>& units, Vec2 a, Vec2 b, const FormationChoice& choice, Vec2& point) {
+    FormationSpec spec;
+    spec.choice = choice;
+    point = a;
+    const float dx = b.x - a.x, dz = b.z - a.z, len = std::hypot(dx, dz);
+    if (len < FORMATION_DRAG_LEAST || units.empty()) return spec;
+    point = Vec2{ (a.x + b.x) * 0.5f, (a.z + b.z) * 0.5f };
+    spec.width = len;
+    spec.facing = true;
+    spec.headX = dz / len;
+    spec.headZ = -dx / len;
+    const Vec2 from = middleOf(w, units);
+    if ((point.x - from.x) * spec.headX + (point.z - from.z) * spec.headZ < 0.0f) {
+        spec.headX = -spec.headX;
+        spec.headZ = -spec.headZ;
     }
+    return spec;
+}
 
-    planActiveSquad(w, t, sq, clickPoint);
+std::vector<Vec2> previewFormation(World& w, const Terrain& t, const std::vector<ObjectId>& units, Vec2 point, const FormationSpec& spec) {
+    if (units.empty()) return {};
+    const float spacing = formationSpacing(spec.choice);
+    float headX = spec.headX, headZ = spec.headZ;
+    if (!spec.facing) {
+        const Vec2 from = middleOf(w, units);
+        const float len = std::hypot(point.x - from.x, point.z - from.z);
+        if (len > 1e-4f) {
+            headX = (point.x - from.x) / len;
+            headZ = (point.z - from.z) / len;
+        }
+    }
+    return fitFormation(t, point, headX, headZ, formationOffsets(spec.choice.shape, (int)units.size(), spacing, spec.width), spacing);
 }
 
 void issuePickupOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId item) {

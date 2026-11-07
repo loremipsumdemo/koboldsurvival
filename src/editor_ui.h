@@ -5,7 +5,7 @@
 #include "ui_types.h"
 #include "world_gen.h"
 
-// The World Generation screen, and the level editor that follows it. Both only open with the developer option on (F2).
+// The World Generation screen, and the level editor that follows it
 inline constexpr int WORLD_GEN_NAME_CHARS = 32;
 
 struct WorldGenRow {

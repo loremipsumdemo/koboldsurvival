@@ -336,6 +336,51 @@ void Renderer::drawPauseBar(bool hint) {
     if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, theme::ASH);
 }
 
+void Renderer::drawFormationHelp(const std::string& title, const std::vector<FormationHelpEntry>& entries, float top) {
+    const float s = uiScale();
+    const float pad = 10.0f * s, gap = 6.0f * s, iconW = 66.0f * s, iconH = 40.0f * s, mostStep = 11.0f * s, dot = 5.0f * s;
+    const RGBA gold{ 1.0f, 0.78f, 0.30f, 1.0f };
+    const float titleH = uiTextHeight(title), lineH = uiTextHeight("Ag");
+    std::vector<float> widths;
+    float total = pad * 2.0f;
+    for (const FormationHelpEntry& entry : entries) {
+        widths.push_back(std::max({ iconW, uiTextWidth(entry.key), uiTextWidth(entry.label) }) + 14.0f * s);
+        total += widths.back() + gap;
+    }
+    total -= gap;
+    const float h = pad + titleH + gap + iconH + gap + lineH * 2.0f + 4.0f * s + pad;
+    const Rect panel{ (uiW_ - total) * 0.5f, top, total, h };
+    drawThemedPanel(panel);
+    drawUiTextCentered(title, uiW_ * 0.5f, top + pad, theme::ASH);
+    float x = panel.x + pad;
+    const float y = top + pad + titleH + gap;
+    for (size_t i = 0; i < entries.size(); ++i) {
+        const FormationHelpEntry& entry = entries[i];
+        const Rect cell{ x, y - 3.0f * s, widths[i], h - (y - top) - pad + 6.0f * s };
+        if (entry.current) drawRect(cell, RGBA{ 0.45f, 0.30f, 0.14f, 0.9f });
+        if (!entry.dots.empty()) {
+            float lowX = entry.dots[0].x, highX = lowX, lowZ = entry.dots[0].z, highZ = lowZ;
+            for (const Vec2& d : entry.dots) {
+                lowX = std::min(lowX, d.x);
+                highX = std::max(highX, d.x);
+                lowZ = std::min(lowZ, d.z);
+                highZ = std::max(highZ, d.z);
+            }
+            float step = mostStep;
+            if (highX > lowX) step = std::min(step, (iconW - dot) / (highX - lowX));
+            if (highZ > lowZ) step = std::min(step, (iconH - dot) / (highZ - lowZ));
+            const float cx = x + widths[i] * 0.5f, cy = y + iconH * 0.5f;
+            for (const Vec2& d : entry.dots) {
+                drawRect(Rect{ cx + (d.x - (lowX + highX) * 0.5f) * step - dot * 0.5f, cy + (d.z - (lowZ + highZ) * 0.5f) * step - dot * 0.5f, dot, dot },
+                         entry.current ? gold : theme::BONE);
+            }
+        }
+        drawUiTextCentered(entry.key, x + widths[i] * 0.5f, y + iconH + gap, gold);
+        drawUiTextCentered(entry.label, x + widths[i] * 0.5f, y + iconH + gap + lineH + 2.0f * s, entry.current ? gold : theme::BONE);
+        x += widths[i] + gap;
+    }
+}
+
 void Renderer::drawThemedPanel(const Rect& r) {
     const float s = uiScale();
     const float frame = std::max(1.0f, 2.0f * s), cut = 18.0f * s;

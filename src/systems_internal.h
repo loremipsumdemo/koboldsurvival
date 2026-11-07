@@ -118,11 +118,6 @@ inline void walkSolo(World& w, Terrain& t, ObjectId e, Vec2 target) {
     planSolo(w, t, e, target);
 }
 
-inline float slotSpacing(int size) {
-    float scale = std::min(1.0f, std::sqrt(size / 10.0f));
-    return std::max(MIN_SLOT_SPACING, SLOT_SPACING * scale);
-}
-
 inline PropUse useOf(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     return p ? propInfo(p->kind).use : PropUse::None;

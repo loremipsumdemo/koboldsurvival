@@ -1,4 +1,5 @@
 #pragma once
+#include "formation.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include "language.h"
@@ -38,6 +39,8 @@ struct GameSettings {
     bool vsync = true;
     int fpsLimit = 60;
     int viewRange = 256;
+    int formationShape = (int)FormationShape::Rectangle;
+    bool formationLoose = false;
     bool showFps = false;
 
     int autosaveMinutes = 5;
@@ -101,6 +104,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "vsync")           s.vsync = (val == "1");
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
         else if (key == "viewRange")       s.viewRange = parseInt(val, s.viewRange);
+        else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
+        else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
@@ -142,6 +147,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.height = std::clamp(s.height, 480, 8640);
     s.refreshHz = std::clamp(s.refreshHz, 0, 1000);
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
+    s.formationShape = std::clamp(s.formationShape, 0, (int)FormationShape::Count - 1);
     s.viewRange = std::clamp(s.viewRange, VIEW_RANGE_MIN, VIEW_RANGE_MAX);
     s.viewRange = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((s.viewRange - VIEW_RANGE_MIN + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
@@ -169,6 +175,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "vsync=" << (s.vsync ? 1 : 0) << "\n";
     out << "fpsLimit=" << s.fpsLimit << "\n";
     out << "viewRange=" << s.viewRange << "\n";
+    out << "formationShape=" << s.formationShape << "\n";
+    out << "formationLoose=" << (s.formationLoose ? 1 : 0) << "\n";
     out << "showFps=" << (s.showFps ? 1 : 0) << "\n";
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";

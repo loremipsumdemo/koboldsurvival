@@ -89,7 +89,7 @@ void App::drawTitleScreen() {
         const TitleLayout tl = layoutTitle(winW, winH);
         renderer.drawTitleHeader(tl, lang("GAME_TITLE_FIRST"), lang("GAME_TITLE_SECOND"),
                                  messageOfTheDay());
-        drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves, developer));
+        drawMenuItems(Screen::Title, layoutButtons(Screen::Title, winW, winH, saves));
         renderer.drawTitleFooter(tl.footer, BUILD_STAMP, lang("MISC_TITLE_KEYS"));
     }
     renderer.endUi();

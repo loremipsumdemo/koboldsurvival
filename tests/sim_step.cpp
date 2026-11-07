@@ -176,6 +176,84 @@ int main(int argc, char** argv) {
         check(slowSeen && slowCorrect, "taking damage halves speed, however many hits land");
     }
 
+    // Formation shapes: every unit gets a place, and nobody's place is too close to another's
+    for (int shape = 0; shape < (int)FormationShape::Count; ++shape) {
+        for (int count : { 2, 5, 12, 30 }) {
+            const std::vector<Vec2> places = formationOffsets((FormationShape)shape, count, FORMATION_TIGHT_SPACING);
+            float nearest = 1e9f;
+            for (size_t i = 0; i < places.size(); ++i) {
+                for (size_t j = i + 1; j < places.size(); ++j) nearest = std::min(nearest, std::hypot(places[i].x - places[j].x, places[i].z - places[j].z));
+            }
+            check((int)places.size() == count && nearest >= 1.0f, "formation " + std::to_string(shape) + " of " + std::to_string(count) + " has room for everyone");
+        }
+    }
+    check(formationOffsets(FormationShape::Line, 5, FORMATION_TIGHT_SPACING, 20.0f).back().x > 9.0f, "a drag widens a line");
+
+    // Slots go to the nearest units: a line walking onto its own slots doesn't cross over
+    {
+        const std::vector<Vec2> from{ { 0.0f, 0.0f }, { 2.0f, 0.0f }, { 4.0f, 0.0f } };
+        const std::vector<Vec2> to{ { 4.0f, 9.0f }, { 2.0f, 9.0f }, { 0.0f, 9.0f } };
+        const std::vector<int> slots = assignFormationSlots(from, to, 0.0f, 1.0f);
+        check(slots[0] == 2 && slots[1] == 1 && slots[2] == 0, "units take the slots nearest them");
+    }
+
+    // Every shape, walked to and formed up where an outsider stands in the way, all get settled and nobody overlaps
+    for (int shape = 0; shape < (int)FormationShape::Count; ++shape) {
+        World squad;
+        Rng squadRng;
+        squadRng.gen.seed(21);
+        GameState squadState;
+        const Vec2 at = systems_detail::findSpawn(terrain);
+        std::vector<ObjectId> units;
+        for (int i = 0; i < 12; ++i) {
+            const ObjectId u = spawnUnit(squad, terrain, squadRng, FACTION_PLAYER, at.x - 5.0f + (float)(i % 4) * 1.5f, at.z - 5.0f + (float)(i / 4) * 1.5f);
+            squad.get<Behaviors>(u)->rules.clear();
+            units.push_back(u);
+        }
+        const Vec2 dest{ at.x + 3.0f, at.z + 3.0f };
+        const ObjectId outsider = spawnUnit(squad, terrain, squadRng, FACTION_EXILE, dest.x, dest.z);
+        squad.get<Behaviors>(outsider)->rules.clear();
+        squad.add(outsider, InConversation{});
+        FormationSpec spec;
+        spec.choice.shape = (FormationShape)shape;
+        issueFormationOrder(squad, terrain, units, dest, spec);
+        for (int step = 0; step < 60 * 30; ++step) {
+            simStep(squad, terrain, squadRng, squadState, STEP, false);
+            takeEvents(squad);
+        }
+        int settled = 0, near = 0;
+        float deepest = 0.0f, far = 0.0f;
+        for (size_t i = 0; i < units.size(); ++i) {
+            const ActiveSquadMember* sm = squad.get<ActiveSquadMember>(units[i]);
+            const ActiveSquad* sq = sm ? squad.get<ActiveSquad>(sm->squad) : nullptr;
+            if (!sq) continue;
+            settled += sm->settled ? 1 : 0;
+            const Transform* tr = squad.get<Transform>(units[i]);
+            const Vec2 spot = sq->finalSpots[(size_t)sm->slot];
+            const float gap = std::hypot(tr->x - spot.x, tr->z - spot.z);
+            far = std::max(far, gap);
+            near += gap <= 0.5f ? 1 : 0;
+            for (size_t j = i + 1; j < units.size(); ++j) deepest = std::max(deepest, 1.0f - flatGap(squad, units[i], units[j]));
+        }
+        std::printf("note: shape %d: settled %d, within half a tile of their slots %d, furthest %.2f, deepest overlap %.3f\n", shape, settled, near, far, deepest);
+        check(settled == 12, "shape " + std::to_string(shape) + ": everyone stops trying");
+        check(near == 12, "shape " + std::to_string(shape) + ": everyone reaches a slot despite an outsider in the way");
+        check(deepest < 0.1f, "shape " + std::to_string(shape) + ": nobody overlaps");
+
+        // Then in place: they change shape where they stand
+        reformUnits(squad, terrain, units, FormationChoice{ (FormationShape)((shape + 1) % (int)FormationShape::Count), true });
+        for (int step = 0; step < 60 * 20; ++step) {
+            simStep(squad, terrain, squadRng, squadState, STEP, false);
+            takeEvents(squad);
+        }
+        int reformed = 0;
+        for (ObjectId u : units) {
+            const ActiveSquadMember* sm = squad.get<ActiveSquadMember>(u);
+            reformed += sm && sm->settled ? 1 : 0;
+        }
+        check(reformed == 12, "shape " + std::to_string(shape) + ": everyone settles after changing shape");
+    }
+
     std::printf("%d failure(s)\n", failures);
     return failures ? 1 : 0;
 }

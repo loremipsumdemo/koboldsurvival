@@ -28,6 +28,13 @@ std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::strin
 void spawnGroundItems(World& w, Terrain& t, Rng& rng, int perItem);
 
 void issueMoveOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 clickPoint);
+void issueFormationOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 point, const FormationSpec& spec);
+// Units take up the shape where they are, or if they are on the way somewhere, on their way there
+void reformUnits(World& w, Terrain& t, const std::vector<ObjectId>& units, const FormationChoice& choice);
+// What dragging from a to b asks for: stand across the drag, looking away from where the units are now
+FormationSpec formationFromDrag(World& w, const std::vector<ObjectId>& units, Vec2 a, Vec2 b, const FormationChoice& choice, Vec2& point);
+// Where an order would put them, to show while dragging
+std::vector<Vec2> previewFormation(World& w, const Terrain& t, const std::vector<ObjectId>& units, Vec2 point, const FormationSpec& spec);
 void steerUnits(World& w, const std::vector<ObjectId>& units, Vec2 target);
 
 void issuePickupOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId item);

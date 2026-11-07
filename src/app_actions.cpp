@@ -5,6 +5,7 @@ using namespace play;
 void App::enterLevel() {
     static_cast<AppSession&>(*this) = AppSession{};
     takeEvents(world);
+    world.resource<FormationChoice>() = formationChoice();
     closePanel();
     gs.claimDecayDue = 0.0;
     cam = Camera{};
@@ -84,16 +85,13 @@ void App::openPartyMenu() {
     backScreen = Screen::ScenarioSelect;
     screen = Screen::PartySetup;
     pendingLevel.clear();
-    if (developer) {
-        partyMaps = listMaps();
-        partyUi.chooseWorld = true;
-        partyUi.mapEntries.clear();
-        for (size_t i = 0; i < partyMaps.size(); ++i) {
-            partyUi.mapEntries.push_back(DropEntry{ partyMaps[i].name, (int)i });
-            if (partyMaps[i].source == pendingMap.source && partyMaps[i].stem == pendingMap.stem) partyUi.mapPick = (int)i;
-        }
-        refreshPartyWorldChoices();
+    partyMaps = listMaps();
+    partyUi.mapEntries.clear();
+    for (size_t i = 0; i < partyMaps.size(); ++i) {
+        partyUi.mapEntries.push_back(DropEntry{ partyMaps[i].name, (int)i });
+        if (partyMaps[i].source == pendingMap.source && partyMaps[i].stem == pendingMap.stem) partyUi.mapPick = (int)i;
     }
+    refreshPartyWorldChoices();
 }
 
 void App::refreshPartyWorldChoices() {

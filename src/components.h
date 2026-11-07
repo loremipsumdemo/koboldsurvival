@@ -1,5 +1,6 @@
 #pragma once
 #include "factions.h"
+#include "formation.h"
 #include <array>
 #include <string>
 #include <vector>
@@ -124,6 +125,13 @@ struct IdleSpot {
 struct ActiveSquadMember {
     ObjectId squad = NO_OBJECT;
     int slot = 0;
+    // Once the squad has arrived: settled means it has stopped trying for its slot, and is standing around like anyone else
+    bool settled = false;
+    float bestGap = 1e9f;     // the closest it has been to its slot
+    float stuck = 0.0f;       // seconds since it last got closer
+    float retryIn = 0.0f;     // gave up: seconds until it tries again
+    int retries = 0;
+    float swapIn = 0.0f;
 };
 
 struct ActiveSquad {
@@ -134,6 +142,9 @@ struct ActiveSquad {
     bool arrived = false;
     float speed = 2.8f;
     int size = 0;
+    float spacing = FORMATION_TIGHT_SPACING;
+    std::vector<Vec2> offsets;      // each slot on the way, turning with the squad
+    std::vector<Vec2> finalSpots;   // each slot once it has arrived
 };
 
 struct ChaseRoute {

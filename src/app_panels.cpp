@@ -304,6 +304,58 @@ void App::markMove(float x, float z) {
     moveMarkTime = MOVE_MARK_SECONDS;
 }
 
+FormationChoice App::formationChoice() const {
+    return FormationChoice{ (FormationShape)settings.formationShape, settings.formationLoose };
+}
+
+// Alt and a number: picks the shape, or tight or loose, for the selected units and every order after
+bool App::formationKeyDown() {
+    const SDL_Keycode k = e.key.key;
+    if (k >= SDLK_1 && k <= SDLK_4) settings.formationShape = (int)(k - SDLK_1);
+    else if (k == SDLK_5) settings.formationLoose = !settings.formationLoose;
+    else return false;
+    saveSettingsFile();
+    const FormationChoice choice = formationChoice();
+    world.resource<FormationChoice>() = choice;
+    reformUnits(world, terrain, selectedUnits(world), choice);
+    showNotice(langf("MISC_FORMATION", { lang(formationLabelKey(choice.shape)), lang(choice.loose ? "UILABEL_FORMATION_LOOSE" : "UILABEL_FORMATION_TIGHT") }));
+    playSfx(Sfx::UiOrder);
+    return true;
+}
+
+// While Alt is held with several units selected: what Alt can do
+void App::drawFormationKeys() {
+    if (editing || panelOpen || screen != Screen::Playing || (SDL_GetModState() & SDL_KMOD_ALT) == 0) return;
+    if (selectedUnits(world).size() < 2) return;
+    static constexpr int PICTURE_DOTS[(int)FormationShape::Count] = { 8, 10, 12, 10 };
+    const FormationChoice choice = formationChoice();
+    std::vector<Renderer::FormationHelpEntry> entries;
+    for (int i = 0; i < (int)FormationShape::Count; ++i) {
+        const FormationShape shape = (FormationShape)i;
+        entries.push_back({ std::to_string(i + 1), lang(formationLabelKey(shape)), formationOffsets(shape, PICTURE_DOTS[i], 1.0f), shape == choice.shape });
+    }
+    // The picture is what the key changes it to
+    entries.push_back({ "5", lang(choice.loose ? "UILABEL_FORMATION_MAKE_TIGHT" : "UILABEL_FORMATION_MAKE_LOOSE"),
+                        formationOffsets(FormationShape::Line, 4, choice.loose ? 1.0f : 2.0f), false });
+    entries.push_back({ lang("UILABEL_FORMATION_DRAG_KEY"), lang("UILABEL_FORMATION_DRAG"), {}, false });
+    const float top = session.paused ? renderer.pauseBarHeight(true) + 6.0f : 8.0f;
+    renderer.drawFormationHelp(lang("UILABEL_FORMATION_TITLE"), entries, top);
+}
+
+void App::finishFormationDrag() {
+    formationDrag = false;
+    const std::vector<ObjectId> units = selectedUnits(world);
+    if (units.empty()) return;
+    Vec2 point{};
+    const FormationSpec spec = formationFromDrag(world, units, Vec2{ dragFromX, dragFromZ }, Vec2{ dragToX, dragToZ }, formationChoice(), point);
+    issueFormationOrder(world, terrain, units, point, spec);
+    actionX = point.x;
+    actionZ = point.z;
+    actionAlpha = 1.0f;
+    markMove(point.x, point.z);
+    playSfx(Sfx::UiOrder);
+}
+
 void App::beginRightHold(float x, float z) {
     const std::vector<ObjectId> units = selectedUnits(world);
     if (units.empty()) return;

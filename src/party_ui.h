@@ -32,7 +32,6 @@ struct PartyUi {
     float previewYaw = 0.0f;
     bool previewDrag = false;
     // Developer only: which map and level the game starts on
-    bool chooseWorld = false;
     std::vector<DropEntry> mapEntries, levelEntries;
     std::vector<std::string> levelNames;
     int mapPick = 0, levelPick = 0;

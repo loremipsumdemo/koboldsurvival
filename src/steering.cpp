@@ -2,6 +2,19 @@
 
 using namespace systems_detail;
 
+namespace {
+constexpr float SQUAD_TURN_RATE = 2.5f;        // radians per second
+constexpr float SLOT_REACHED = 0.1f;
+constexpr float SLOT_PROGRESS = 0.02f;         // how much closer counts as getting closer
+constexpr float SLOT_SWAP_AFTER = 0.3f;        // seconds without getting closer before it tries swapping slots or moving one
+constexpr float SLOT_BESIDE_AFTER = 0.7f;      // before it settles against a squadmate who has settled
+constexpr float SLOT_GIVE_UP_AFTER = 1.0f;     // before it settles wherever it is
+constexpr float SLOT_RETRY_SECONDS = 4.0f;
+constexpr int SLOT_MOST_RETRIES = 3;
+constexpr float SLOT_SWAP_SECONDS = 1.0f;
+constexpr float SLOT_CLOSE_ENOUGH = 0.5f;      // settled this near its slot, it doesn't try again
+}
+
 void squadSystem(World& w, float dt, bool running) {
     for (ObjectId e : w.view<ActiveSquad>()) {
         ActiveSquad* sq = w.get<ActiveSquad>(e);
@@ -22,8 +35,13 @@ void squadSystem(World& w, float dt, bool running) {
         float step = pace * dt;
 
         if (d > 1e-4f) {
-            sq->headX = dx / d;
-            sq->headZ = dz / d;
+            // The squad turns gradually, so its far end doesn't swing round at every corner
+            constexpr float FULL_TURN = 6.2831853f;
+            const float now = std::atan2(sq->headZ, sq->headX);
+            const float most = SQUAD_TURN_RATE * dt;
+            const float turn = std::clamp(std::remainder(std::atan2(dz, dx) - now, FULL_TURN), -most, most);
+            sq->headX = std::cos(now + turn);
+            sq->headZ = std::sin(now + turn);
         }
 
         if (d <= step) {
@@ -103,6 +121,7 @@ struct SteerFrame {
     std::vector<Vec2f> pos;
     std::vector<float> radius;
     std::vector<Vec2f> contacts;
+    std::vector<std::uint32_t> contactWho;
     std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
     bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
@@ -135,6 +154,12 @@ Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, ObjectId e, const Tran
         ++r->next;
     }
     return goal;
+}
+
+void giveUpOnSlot(ActiveSquadMember& sm) {
+    sm.settled = true;
+    sm.retryIn = SLOT_RETRY_SECONDS;
+    ++sm.retries;
 }
 
 // Where a fighter walks: a ranged one, or a melee one still far away, heads for its target until in reach. A melee one
@@ -209,21 +234,35 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
         }
     } else if (ActiveSquadMember* sm = w.get<ActiveSquadMember>(e)) {
         if (ActiveSquad* sq = w.get<ActiveSquad>(sm->squad)) {
-            int cols = std::min(SQUAD_COLUMNS, sq->size);
-            int rows = (sq->size + cols - 1) / cols;
-            float colOff = sm->slot % cols - (cols - 1) * 0.5f;
-            float rowOff = sm->slot / cols - (rows - 1) * 0.5f;
-            float spacing = slotSpacing(sq->size);
-
-            float rightX = -sq->headZ, rightZ = sq->headX;
-            float backX = -sq->headX, backZ = -sq->headZ;
-            tx = sq->cx + (rightX * colOff + backX * rowOff) * spacing;
-            tz = sq->cz + (rightZ * colOff + backZ * rowOff) * spacing;
-
-            Vec2 st = t.snap({ tx, tz });
-            tx = st.x;
-            tz = st.z;
-            chasing = std::hypot(tx - tr->x, tz - tr->z) > SLOT_ROUTE_DISTANCE;
+            if (sq->arrived) {
+                const Vec2 spot = sq->finalSpots[(size_t)sm->slot];
+                const float gap = std::hypot(spot.x - tr->x, spot.z - tr->z);
+                if (sm->settled) {
+                    sm->retryIn -= s.dt;
+                    if (gap > SLOT_CLOSE_ENOUGH && sm->retries < SLOT_MOST_RETRIES && sm->retryIn <= 0.0f) {
+                        sm->settled = false;
+                        sm->stuck = 0.0f;
+                        sm->bestGap = gap;
+                    }
+                } else if (gap <= SLOT_REACHED) {
+                    sm->settled = true;
+                } else if (gap < sm->bestGap - SLOT_PROGRESS) {
+                    sm->bestGap = gap;
+                    sm->stuck = 0.0f;
+                } else if ((sm->stuck += s.dt) >= SLOT_GIVE_UP_AFTER) {
+                    giveUpOnSlot(*sm);
+                }
+                if (!sm->settled) {
+                    tx = spot.x;
+                    tz = spot.z;
+                    chasing = gap > SLOT_ROUTE_DISTANCE;
+                }
+            } else {
+                const Vec2 st = t.snap(formationSpot(Vec2{ sq->cx, sq->cz }, sq->headX, sq->headZ, sq->offsets[(size_t)sm->slot]));
+                tx = st.x;
+                tz = st.z;
+                chasing = std::hypot(tx - tr->x, tz - tr->z) > SLOT_ROUTE_DISTANCE;
+            }
         }
     } else if (SoloMove* so = w.get<SoloMove>(e)) {
         while (so->next < so->waypoints.size()) {
@@ -305,9 +344,81 @@ void unitsNearby(const SteerFrame& s, const Transform* tr, size_t i, std::vector
     std::sort(nearby.begin(), nearby.end());
 }
 
+// Moves a slot that someone outside the squad is standing on to the nearest place that is free
+void moveSlotOffBlocker(const Terrain& t, const SteerFrame& s, ActiveSquad& sq, int slot) {
+    constexpr float FULL_TURN = 6.2831853f;
+    const Vec2 was = sq.finalSpots[(size_t)slot];
+    const float apart = sq.spacing * 0.95f;
+    for (int ring = 1; ring <= 6; ++ring) {
+        const int around = 8 * ring;
+        for (int k = 0; k < around; ++k) {
+            const float a = FULL_TURN * (float)k / (float)around;
+            const Vec2 at{ was.x + std::cos(a) * sq.spacing * (float)ring, was.z + std::sin(a) * sq.spacing * (float)ring };
+            if (!t.isFree(at.x, at.z)) continue;
+            bool clear = true;
+            for (size_t o = 0; o < sq.finalSpots.size() && clear; ++o) {
+                clear = (int)o == slot || std::hypot(sq.finalSpots[o].x - at.x, sq.finalSpots[o].z - at.z) >= apart;
+            }
+            for (size_t o = 0; o < s.pos.size() && clear; ++o) {
+                clear = std::hypot(s.pos[o].first - at.x, s.pos[o].second - at.z) >= s.radius[o] + 0.5f;
+            }
+            if (!clear) continue;
+            sq.finalSpots[(size_t)slot] = at;
+            return;
+        }
+    }
+}
+
+// A squad member that can't get to its slot, with those it is touching known: it trades slots with a squadmate if that shortens
+// their walks, moves a slot that an outsider is on, or settles beside a squadmate who has settled.
+void workOutSlot(World& w, const Terrain& t, SteerFrame& s, size_t i, int outsiderOnGoal) {
+    const ObjectId e = s.units[i];
+    ActiveSquadMember* sm = w.get<ActiveSquadMember>(e);
+    ActiveSquad* sq = sm ? w.get<ActiveSquad>(sm->squad) : nullptr;
+    if (!sq || !sq->arrived || sm->settled) return;
+    sm->swapIn -= s.dt;
+    if (sm->stuck < SLOT_SWAP_AFTER) return;
+    const Transform* tr = w.get<Transform>(e);
+    const float hx = s.goal[i].first - tr->x, hz = s.goal[i].second - tr->z;
+    if (outsiderOnGoal >= 0 && sm->swapIn <= 0.0f) {
+        moveSlotOffBlocker(t, s, *sq, sm->slot);
+        sm->swapIn = SLOT_SWAP_SECONDS;
+        sm->stuck = 0.0f;
+        sm->bestGap = 1e9f;
+        return;
+    }
+    const Vec2 mine = sq->finalSpots[(size_t)sm->slot];
+    const float myGap = std::hypot(mine.x - tr->x, mine.z - tr->z);
+    for (size_t c = 0; c < s.contacts.size(); ++c) {
+        if (hx * s.contacts[c].first + hz * s.contacts[c].second >= 0.0f) continue;   // not in the way
+        const std::uint32_t j = s.contactWho[c];
+        ActiveSquadMember* other = w.get<ActiveSquadMember>(s.units[j]);
+        if (!other || other->squad != sm->squad) continue;
+        const Vec2 theirs = sq->finalSpots[(size_t)other->slot];
+        const Vec2f& at = s.pos[j];
+        const float now = std::hypot(mine.x - tr->x, mine.z - tr->z) + std::hypot(theirs.x - at.first, theirs.z - at.second);
+        const float then = std::hypot(theirs.x - tr->x, theirs.z - tr->z) + std::hypot(mine.x - at.first, mine.z - at.second);
+        if (sm->swapIn <= 0.0f && then + 0.05f < now) {
+            std::swap(sm->slot, other->slot);
+            for (ActiveSquadMember* m : { sm, other }) {
+                m->settled = false;
+                m->stuck = 0.0f;
+                m->bestGap = 1e9f;
+                m->retries = 0;
+                m->swapIn = SLOT_SWAP_SECONDS;
+            }
+            return;
+        }
+        if (other->settled && sm->stuck >= SLOT_BESIDE_AFTER && myGap <= 2.5f * sq->spacing) {
+            giveUpOnSlot(*sm);
+            return;
+        }
+    }
+}
+
 // Units are circles. A unit doesn't walk into one it touches, it slides around it, so walking never presses units into
 // each other. Those that do overlap ease apart, no faster than a set speed.
-void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
+void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby) {
     const ObjectId e = s.units[i];
     const Transform* tr = w.get<Transform>(e);
     unitsNearby(s, tr, i, nearby);
@@ -317,6 +428,9 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
     float pushX = 0.0f, pushZ = 0.0f, sideX = 0.0f, sideZ = 0.0f;
     bool shoved = false, goalInside = false;
     s.contacts.clear();
+    s.contactWho.clear();
+    const ActiveSquadMember* myPlace = w.get<ActiveSquadMember>(e);
+    int outsiderOnGoal = -1;
     for (const std::uint32_t j : nearby) {
         if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
         const std::pair<float, float>& o = s.pos[j];
@@ -336,6 +450,7 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
             nz /= d;
         }
         s.contacts.push_back({ nx, nz });
+        s.contactWho.push_back(j);
         const float overlap = touching - d;
         if (overlap > 0.0f) {
             pushX += nx * overlap * SEPARATE_RATE;
@@ -343,6 +458,11 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
         }
         const float gox = s.goal[i].first - o.first, goz = s.goal[i].second - o.second;
         if (gox * gox + goz * goz <= s.radius[j] * s.radius[j]) goalInside = true;
+        // Near enough that this unit can't stand on its slot with that one where it is
+        if (myPlace && gox * gox + goz * goz < touching * touching) {
+            const ActiveSquadMember* theirPlace = w.get<ActiveSquadMember>(s.units[j]);
+            if (!theirPlace || theirPlace->squad != myPlace->squad) outsiderOnGoal = (int)j;
+        }
         // Standing around, with someone walking at it: it steps aside, unless it is in a fight
         if (!s.going[i] && s.going[j] && !fighting) {
             float hx = s.goal[j].first - o.first, hz = s.goal[j].second - o.second;
@@ -359,6 +479,8 @@ void steerVelocity(World& w, SteerFrame& s, size_t i, std::vector<std::uint32_t>
             }
         }
     }
+
+    workOutSlot(w, t, s, i, outsiderOnGoal);
 
     float vx = 0.0f, vz = 0.0f, wanted = 0.0f, headX = 0.0f, headZ = 0.0f;
     if (shoved) {
@@ -459,7 +581,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
 
     std::vector<std::uint32_t> nearby;
     for (size_t i = 0; i < units.size(); ++i) {
-        if (!s.pinned[i]) steerVelocity(w, s, i, nearby);
+        if (!s.pinned[i]) steerVelocity(w, t, s, i, nearby);
     }
     for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, units[i], s.vel[i], dt, running);
 }

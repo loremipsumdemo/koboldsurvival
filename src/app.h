@@ -104,6 +104,8 @@ struct AppSession {
     float mapGrabX = 0.0f, mapGrabY = 0.0f;
     bool mapOpen = false;
     bool rightHold = false;
+    bool formationDrag = false;   // Alt and the right mouse button: placing the selected units
+    float dragFromX = 0.0f, dragFromZ = 0.0f, dragToX = 0.0f, dragToZ = 0.0f;
     bool optimizeAllOpen = false;
     bool optimizeSliderDrag = false;
     float holdX = 0.0f, holdZ = 0.0f;
@@ -208,7 +210,7 @@ struct App : AppSession {
     void drawWorldMapPopup();
     void drawTalkOrTrade();
 
-    // World Generation and the level editor (app_worldgen.cpp). Developer only: F2 on the title screen.
+    // World Generation and the level editor (app_worldgen.cpp)
     static constexpr int WORLD_GEN_PREVIEW_PX = 320;
     struct EditorEntry {
         std::string label;
@@ -246,7 +248,6 @@ struct App : AppSession {
     bool editorKeyDown();
     void refreshPartyWorldChoices();
 
-    bool developer = false;
     WorldGenUi worldGenUi;
     ThemeUi themeUi;
     bool editing = false;
@@ -325,6 +326,10 @@ struct App : AppSession {
     WorldMapLayout worldMapFor(int W, int H);
     bool mapGroundAt(int W, int H, float x, float y, float& gx, float& gz);
     void markMove(float x, float z);
+    FormationChoice formationChoice() const;
+    bool formationKeyDown();
+    void drawFormationKeys();
+    void finishFormationDrag();
     void beginRightHold(float x, float z);
     void moveSelectedTo(float x, float z);
     bool overPanels(float x, float y, int W, int H);

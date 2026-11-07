@@ -78,12 +78,6 @@ void App::onKeyDown() {
         }
         return;
     }
-    if (screen == Screen::Title && e.key.key == SDLK_F2 && !e.key.repeat) {
-        developer = !developer;
-        menuScreen = Screen::Playing;
-        playSfx(Sfx::UiToggle);
-        return;
-    }
     if (screen == Screen::WorldGen) {
         if (worldGenUi.editingName) {
             if (e.key.key == SDLK_BACKSPACE) {
@@ -135,7 +129,7 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Title || screen == Screen::Pause) {
-        const std::vector<Button> items = layoutButtons(screen, winW, winH, saves, developer);
+        const std::vector<Button> items = layoutButtons(screen, winW, winH, saves);
         const SDL_Keycode k = e.key.key;
         const bool up = k == SDLK_UP || k == SDLK_W, down = k == SDLK_DOWN || k == SDLK_S;
         if ((up || down) && !items.empty()) {
@@ -159,6 +153,7 @@ void App::onKeyDown() {
         playSfx(Sfx::UiBack);
         return;
     }
+    if (screen == Screen::Playing && !e.key.repeat && (e.key.mod & SDL_KMOD_ALT) != 0 && session.dialogueUnit == NO_OBJECT && formationKeyDown()) return;
     if (screen == Screen::Playing && !e.key.repeat && e.key.key == SDLK_M) {
         mapOpen = !mapOpen;
         return;
@@ -197,6 +192,7 @@ void App::onKeyDown() {
             itemMenu.open = false;
         } else if (screen == Screen::Playing) {
             leftDown = middleDown = false;
+            formationDrag = false;
             sel.dragging = false;
             itemDrag = false;
             itemMenu.open = false;
@@ -396,7 +392,7 @@ void App::onMouseButtonDown() {
 
     if (screen != Screen::Playing) {
         if (e.button.button == SDL_BUTTON_LEFT) {
-            for (const Button& b : layoutButtons(screen, winW, winH, saves, developer)) {
+            for (const Button& b : layoutButtons(screen, winW, winH, saves)) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                     performAction(b.action, b.param);
                     break;
@@ -470,6 +466,11 @@ if (mouseDownOnPanels()) return;
                     playSfx(Sfx::UiMenuOpen);
                 }
             }
+        } else if (const auto dragFrom = (SDL_GetModState() & SDL_KMOD_ALT) != 0 && selectedUnits(world).size() >= 2
+                                              ? pickGround(cam, terrain, e.button.x, e.button.y, winW, winH) : std::nullopt) {
+            formationDrag = true;
+            dragFromX = dragToX = dragFrom->first;
+            dragFromZ = dragToZ = dragFrom->second;
         } else {
             if (openContextMenu(e.button.x, e.button.y)) {
                 rightHold = false;
@@ -511,6 +512,10 @@ void App::onMouseButtonUp() {
         optimizeSliderDrag = false;
         saveSettingsFile();
         playSfx(Sfx::UiSlider);
+        return;
+    }
+    if (formationDrag && e.button.button == SDL_BUTTON_RIGHT) {
+        finishFormationDrag();
         return;
     }
     if (rightHold && e.button.button == SDL_BUTTON_RIGHT) {

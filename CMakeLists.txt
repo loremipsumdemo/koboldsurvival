@@ -78,6 +78,7 @@ set(SIM_SOURCES
     src/world_setup.cpp
     src/unit_spawn.cpp
     src/orders.cpp
+    src/formation.cpp
     src/steering.cpp
     src/prop_use.cpp
     src/automation.cpp

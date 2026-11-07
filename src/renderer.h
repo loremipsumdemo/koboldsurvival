@@ -85,6 +85,13 @@ public:
                    const std::vector<HudEntry>& hud, int winW, int winH);
 
     void drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH);
+    struct FormationHelpEntry {
+        std::string key, label;
+        std::vector<Vec2> dots;   // a little picture of what it does, with -z at the top
+        bool current = false;
+    };
+    void drawFormationHelp(const std::string& title, const std::vector<FormationHelpEntry>& entries, float top);
+    void drawFormationPreview(const Camera& cam, const Terrain& t, const std::vector<Vec2>& spots, int winW, int winH);
 
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     void setBuildInClaim(bool in) { buildInClaim_ = in; }

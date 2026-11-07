@@ -239,6 +239,12 @@ void App::drawPlayingScreen() {
     updateWorldMapView();
     PROFILED("draw: world", renderer.drawFrame(world, terrain, cam, sel, hud, winW, winH));
     renderer.drawPivotRing(cam, terrain, pivotAlpha, winW, winH);
+    if (formationDrag) {
+        const std::vector<ObjectId> units = selectedUnits(world);
+        Vec2 point{};
+        const FormationSpec spec = formationFromDrag(world, units, Vec2{ dragFromX, dragFromZ }, Vec2{ dragToX, dragToZ }, formationChoice(), point);
+        renderer.drawFormationPreview(cam, terrain, previewFormation(world, terrain, units, point, spec), winW, winH);
+    }
     renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
     renderer.beginUi(winW, winH);
     PROFILED("draw: overlays", drawWorldOverlays());
@@ -265,6 +271,7 @@ void App::drawPlayingScreen() {
     if (mapOpen) drawWorldMapPopup();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
+    drawFormationKeys();
     if (editing) {
         drawEditorPanel();
         const LevelInfo& level = world.resource<LevelInfo>();

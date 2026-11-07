@@ -320,15 +320,13 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
 
-    if (ui.chooseWorld) {
-        const float boxW = 230.0f * s, boxH = 30.0f * s, boxY = 10.0f * s;
-        mapAnchor = Rect{ 16.0f * s, boxY, boxW, boxH };
-        levelAnchor = Rect{ 16.0f * s + boxW + 8.0f * s, boxY, boxW, boxH };
-        const std::string mapName = ui.mapPick < (int)ui.mapEntries.size() ? ui.mapEntries[(size_t)ui.mapPick].label : std::string();
-        const std::string levelName = ui.levelPick < (int)ui.levelEntries.size() ? ui.levelEntries[(size_t)ui.levelPick].label : std::string();
-        out.push_back(Button{ langf("UILABEL_PARTY_MAP", { mapName }) + "   v", mapAnchor, Action::PartyMapBox, true, 0 });
-        out.push_back(Button{ langf("UILABEL_PARTY_LEVEL", { levelName }) + "   v", levelAnchor, Action::PartyLevelBox, true, 0 });
-    }
+    const float boxW = 230.0f * s, boxH = 30.0f * s, boxY = 10.0f * s;
+    mapAnchor = Rect{ 16.0f * s, boxY, boxW, boxH };
+    levelAnchor = Rect{ 16.0f * s + boxW + 8.0f * s, boxY, boxW, boxH };
+    const std::string mapName = ui.mapPick < (int)ui.mapEntries.size() ? ui.mapEntries[(size_t)ui.mapPick].label : std::string();
+    const std::string levelName = ui.levelPick < (int)ui.levelEntries.size() ? ui.levelEntries[(size_t)ui.levelPick].label : std::string();
+    out.push_back(Button{ langf("UILABEL_PARTY_MAP", { mapName }) + "   v", mapAnchor, Action::PartyMapBox, true, 0 });
+    out.push_back(Button{ langf("UILABEL_PARTY_LEVEL", { levelName }) + "   v", levelAnchor, Action::PartyLevelBox, true, 0 });
 
     if (ui.dropKind != DropKind::None) {
         const Rect anchor = ui.dropKind == DropKind::Map ? mapAnchor

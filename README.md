@@ -61,7 +61,10 @@ lose state: the world keeps running, whatever happens to your party.
 | WASD / arrow keys | Move the camera. Shift moves it faster |
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |
-| Alt (held) | Show the names of items on the ground |
+| Alt (held) | Show the names of items on the ground. With several units selected, also show the formation keys |
+| Alt + 1 / 2 / 3 / 4 | Selected units form a line, circle, rectangle or wedge, and later orders use that shape |
+| Alt + 5 | Switch between tight and loose formations |
+| Alt + right mouse drag | Place the selected units across the drag, looking away from where they are now |
 | Space | Pause or resume, also during a conversation |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
@@ -145,11 +148,9 @@ MAP/                 Maps made by World Generation (.map), with their levels in 
 
 ## World Generation and the level editor
 
-Press F2 on the title screen to show the hidden World Generation option, above Settings. It opens the map settings and a
-preview. Generate writes a tiny recipe to `MAP/<name>.map` beside the game, and the game works out the ground from it as it
+World Generation, on the title screen above Settings, opens the map settings and a preview. Generate writes a tiny recipe to `MAP/<name>.map` beside the game, and the game works out the ground from it as it
 goes. Continue opens the level editor, which is regular gameplay with no units and time stopped. Tab switches between its own
-interface and the game's. It saves to `MAP/LEVEL/<name>.level`. With F2 on, the party screen of New Game can pick a map and
-level. The editor writes beside the game: copy a finished map and level into `MAP/` here to keep them, since the build copies
+interface and the game's. It saves to `MAP/LEVEL/<name>.level`. The party screen of New Game can pick a map and level. The editor writes beside the game: copy a finished map and level into `MAP/` here to keep them, since the build copies
 this folder over the one beside the game.
 
 
@@ -163,6 +164,8 @@ The editor places entities, props and items. The words mean the same in the game
 A player unit placed in a level is the first member of the party from New Game. Party members beyond those placed start at the spawn point, and placed player units beyond the party's size are left out.
 
 Entities collide as circles. A melee fighter claims one of the `ATTACK_SLOTS` (5) places around its target; the others wait in a ring outside and can't hit it until a place opens. Taking damage slows movement for a moment (`DAMAGE_SLOW_SECONDS`, `DAMAGE_SLOW_FACTOR` in combat.h); more hits restart the moment but don't slow it further.
+
+A squad of two or more walks at its slowest member's speed, in the chosen formation (`formation.h`). Slots go to the nearest units so paths don't cross, and a blocked slot moves to the nearest open place. After arriving, a unit that is blocked trades slots with a squadmate if that shortens both walks, or settles after a moment and tries again later, so nobody pushes forever. Settled units step aside for others.
 
 A map has a style, chosen before it is generated (`MapStyle` in world_gen.h: Overworld, Walled Valley, Archipelago, Cavern, Galaxy Sea, Void Islands, Caldera), and a theme: sky, sun, moon, day and night, light, fog, water and ground color (`map_theme.h`). The Theme tab is on the World Generation screen and in the level editor, where it shows at once and Save writes it to the map. A map file lists only what differs from its theme preset. To add a theme setting, add a `MapTheme` member and a row in `map_theme.cpp`.
 

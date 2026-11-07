@@ -39,6 +39,14 @@ void App::updateUnitPanelState() {
 }
 
 void App::updateRightHold() {
+    if (formationDrag && screen == Screen::Playing) {
+        float mx = 0.0f, my = 0.0f;
+        SDL_GetMouseState(&mx, &my);
+        if (const auto at = pickGround(cam, terrain, mx, my, winW, winH)) {
+            dragToX = at->first;
+            dragToZ = at->second;
+        }
+    }
     if (rightHold && screen == Screen::Playing) {
         float hx = holdX, hz = holdZ, mhx = 0.0f, mhy = 0.0f;
         SDL_GetMouseState(&mhx, &mhy);

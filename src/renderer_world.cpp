@@ -167,6 +167,25 @@ void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, i
     drawColorTris(ring, cam.viewProj((float)winW / (float)winH));
 }
 
+void Renderer::drawFormationPreview(const Camera& cam, const Terrain& t, const std::vector<Vec2>& spots, int winW, int winH) {
+    const float outer = 0.45f, inner = 0.34f;
+    constexpr int SEGMENTS = 24;
+    Batch rings;
+    const RGBA col{ 0.45f, 0.90f, 1.0f, 0.9f };
+    for (const Vec2& at : spots) {
+        const float y = t.heightAt(at.x, at.z) + 0.05f;
+        for (int i = 0; i < SEGMENTS; ++i) {
+            const float a0 = TWO_PI * i / SEGMENTS, a1 = TWO_PI * (i + 1) / SEGMENTS;
+            const V3 o0{ at.x + outer * std::cos(a0), y, at.z + outer * std::sin(a0) };
+            const V3 o1{ at.x + outer * std::cos(a1), y, at.z + outer * std::sin(a1) };
+            const V3 i0{ at.x + inner * std::cos(a0), y, at.z + inner * std::sin(a0) };
+            const V3 i1{ at.x + inner * std::cos(a1), y, at.z + inner * std::sin(a1) };
+            rings.quad(o0, o1, i1, i0, col);
+        }
+    }
+    drawColorTris(rings, cam.viewProj((float)winW / (float)winH));
+}
+
 void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha,
                                  int winW, int winH) {
     if (alpha <= 0.0f) return;
