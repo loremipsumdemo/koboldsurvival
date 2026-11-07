@@ -14,6 +14,9 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     WorldGenLayout L;
     L.panel = Rect{ m, m, 430.0f * s, H - 2.0f * m };
     const float x = L.panel.x + 14.0f * s, w = L.panel.w - 28.0f * s, labelW = 130.0f * s;
+    const float tabW = 84.0f * s;
+    L.tabTheme = Rect{ x + w - tabW, L.panel.y + 10.0f * s, tabW, rowH };
+    L.tabWorld = Rect{ L.tabTheme.x - tabW - gap, L.tabTheme.y, tabW, rowH };
     float y = L.panel.y + 50.0f * s;
     L.nameBox = Rect{ x + labelW, y, w - labelW, rowH };
     y += rowH + gap;
@@ -23,7 +26,13 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     L.sizeDown = Rect{ x + labelW, y, rowH, rowH };
     L.sizeBox = Rect{ x + labelW + rowH, y, w - labelW - 2.0f * rowH, rowH };
     L.sizeUp = Rect{ x + w - rowH, y, rowH, rowH };
-    y += rowH + gap * 2.0f;
+    y += rowH + gap;
+    L.styleDown = Rect{ x + labelW, y, rowH, rowH };
+    L.styleBox = Rect{ x + labelW + rowH, y, w - labelW - 2.0f * rowH, rowH };
+    L.styleUp = Rect{ x + w - rowH, y, rowH, rowH };
+    y += rowH + gap * 0.5f;
+    L.styleAbout = Rect{ x, y, w, 22.0f * s };
+    y += 22.0f * s + gap;
     for (int i = 0; i < WORLD_GEN_ROW_COUNT; ++i) {
         L.stepDown.push_back(Rect{ x + labelW, y, rowH, rowH });
         L.bars.push_back(Rect{ x + labelW + rowH, y, w - labelW - 2.0f * rowH, rowH });
@@ -32,6 +41,7 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     }
     const float btnH = 44.0f * s;
     L.back = Rect{ x, L.panel.y + L.panel.h - btnH - 14.0f * s, w, btnH };
+    L.themeArea = Rect{ x, L.panel.y + 50.0f * s, w, L.back.y - gap - (L.panel.y + 50.0f * s) };
 
     const float rightW = 250.0f * s;
     const float areaX = L.panel.x + L.panel.w + m, areaW = W - areaX - m - rightW - m;
@@ -73,12 +83,174 @@ EditorLayout layoutEditor(int W, int H, bool ownUi) {
     const float third = (w - 2.0f * gap) / 3.0f;
     for (int i = 0; i < 3; ++i) L.tabs[i] = Rect{ x + i * (third + gap), y, third, btnH };
     y += btnH + gap;
+    L.tabs[3] = Rect{ x, y, w, btnH };
+    y += btnH + gap;
     const float bottom = L.panel.y + L.panel.h - 10.0f * s;
     L.exit = Rect{ x, bottom - btnH, w, btnH };
     L.status = Rect{ x, bottom - btnH - gap - 96.0f * s, w, 96.0f * s };
+    L.themeArea = Rect{ x, y, w, L.status.y - gap - y };
     const int shown = std::max(1, (int)((L.status.y - gap - y) / (rowH + 2.0f * s)));
     for (int i = 0; i < shown; ++i) L.rows.push_back(Rect{ x, y + i * (rowH + 2.0f * s), w, rowH });
     return L;
+}
+
+ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float s) {
+    const float rowH = 25.0f * s, gap = 3.0f * s, labelW = area.w * 0.52f;
+    ThemeLayout L;
+    L.presetDown = Rect{ area.x + labelW, area.y, rowH, rowH };
+    L.presetBox = Rect{ area.x + labelW + rowH, area.y, area.w - labelW - 2.0f * rowH, rowH };
+    L.presetUp = Rect{ area.x + area.w - rowH, area.y, rowH, rowH };
+    struct Entry { int row, channel; };
+    std::vector<Entry> entries;
+    for (int i = 0; i < themeRowCount(); ++i) {
+        entries.push_back({ i, -1 });
+        if (i == ui.openColor) {
+            for (int c = 0; c < 3; ++c) entries.push_back({ i, c });
+        }
+    }
+    const float top = area.y + rowH + gap * 2.0f;
+    L.total = (int)entries.size();
+    L.shown = std::max(1, (int)((area.y + area.h - top) / (rowH + gap)));
+    L.first = std::clamp(ui.scroll, 0, std::max(0, L.total - L.shown));
+    for (int i = L.first; i < L.total && i < L.first + L.shown; ++i) {
+        ThemeLine line;
+        line.row = entries[(size_t)i].row;
+        line.channel = entries[(size_t)i].channel;
+        line.box = Rect{ area.x, top + (i - L.first) * (rowH + gap), area.w, rowH };
+        line.control = Rect{ area.x + labelW, line.box.y, area.w - labelW, rowH };
+        L.lines.push_back(line);
+    }
+    return L;
+}
+
+// ---- The Theme tab
+
+MapTheme& App::themeBeingEdited() {
+    return editing ? editor.map.theme : worldGenUi.settings.theme;
+}
+
+int& App::themePresetBeingEdited() {
+    return editing ? editor.map.themePreset : worldGenUi.settings.themePreset;
+}
+
+void App::themeEdited() {
+    if (editing) {
+        renderer.setMapTheme(editor.map.theme);
+        editor.exitWarned = false;
+    } else {
+        worldGenChanged();
+    }
+}
+
+void App::drawThemePanel(const Rect& area) {
+    const float s = uiScaleFor(winH);
+    const ThemeLayout L = layoutThemePanel(area, themeUi, s);
+    themeUi.scroll = L.first;
+    const MapTheme& theme = themeBeingEdited();
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
+    const RGBA well{ 0.14f, 0.09f, 0.08f, 1.0f }, fill{ 0.55f, 0.36f, 0.16f, 1.0f };
+    const float textH = renderer.listTextHeight("Ag");
+    const auto middle = [&](const Rect& r) { return r.y + (r.h - textH) * 0.5f; };
+    renderer.drawListText(lang("UILABEL_THEME_PRESET"), area.x, middle(L.presetBox), gray);
+    renderer.drawButton(L.presetDown, "<", true, L.presetDown.contains(mouseX, mouseY));
+    renderer.drawRect(L.presetBox, well);
+    const std::string presetName = lang(themePresets()[themePresetBeingEdited()].labelKey);
+    renderer.drawListText(renderer.fitListText(presetName, L.presetBox.w - 8.0f * s), L.presetBox.x + 4.0f * s, middle(L.presetBox), white);
+    renderer.drawButton(L.presetUp, ">", true, L.presetUp.contains(mouseX, mouseY));
+
+    for (const ThemeLine& line : L.lines) {
+        const ThemeRow& row = themeRows()[line.row];
+        const Rect& c = line.control;
+        const auto bar = [&](int value, int low, int high) {
+            renderer.drawRect(c, well);
+            renderer.drawRect(Rect{ c.x, c.y, c.w * (float)(value - low) / (float)std::max(1, high - low), c.h }, fill);
+            renderer.drawListText(std::to_string(value), c.x + 6.0f * s, middle(c), white);
+        };
+        if (line.channel >= 0) {
+            static const char* const CHANNELS[3] = { "UILABEL_THEME_RED", "UILABEL_THEME_GREEN", "UILABEL_THEME_BLUE" };
+            renderer.drawListText(lang(CHANNELS[line.channel]), line.box.x + 18.0f * s, middle(line.box), gray);
+            bar((int)((theme.*row.color >> (16 - line.channel * 8)) & 255u), 0, 255);
+            continue;
+        }
+        if (row.kind == ThemeRowKind::Heading) {
+            renderer.drawListText(lang(row.labelKey), line.box.x, middle(line.box), gold);
+            continue;
+        }
+        renderer.drawListText(renderer.fitListText(lang(row.labelKey), c.x - line.box.x - 6.0f * s), line.box.x + 6.0f * s, middle(line.box), gray);
+        switch (row.kind) {
+        case ThemeRowKind::Number:
+            bar(theme.*row.number, row.low, row.high);
+            break;
+        case ThemeRowKind::Toggle:
+            renderer.drawButton(c, lang(theme.*row.number ? "UILABEL_THEME_ON" : "UILABEL_THEME_OFF"), true, c.contains(mouseX, mouseY));
+            break;
+        case ThemeRowKind::Choice:
+            renderer.drawButton(c, lang(skyKindLabelKey(theme.*row.number)), true, c.contains(mouseX, mouseY));
+            break;
+        case ThemeRowKind::Color: {
+            float rgb[3];
+            themeRgb(theme.*row.color, rgb);
+            renderer.drawRect(c, themeUi.openColor == line.row ? gold : well);
+            renderer.drawRect(Rect{ c.x + 2.0f * s, c.y + 2.0f * s, c.w - 4.0f * s, c.h - 4.0f * s }, RGBA{ rgb[0], rgb[1], rgb[2], 1.0f });
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
+void App::themeDragAt(float x) {
+    const float s = uiScaleFor(winH);
+    const Rect area = editing ? layoutEditor(winW, winH, true).themeArea : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
+    const float labelW = area.w * 0.52f, controlX = area.x + labelW, controlW = area.w - labelW;
+    (void)s;
+    const float share = std::clamp((x - controlX) / controlW, 0.0f, 1.0f);
+    const ThemeRow& row = themeRows()[themeUi.dragRow];
+    MapTheme& theme = themeBeingEdited();
+    if (themeUi.dragChannel >= 0) {
+        const int shift = 16 - themeUi.dragChannel * 8;
+        const ThemeColor value = (ThemeColor)std::lround(share * 255.0f);
+        const ThemeColor next = (theme.*row.color & ~(255u << shift)) | (value << shift);
+        if (next == theme.*row.color) return;
+        theme.*row.color = next;
+    } else {
+        const int next = row.low + (int)std::lround(share * (float)(row.high - row.low));
+        if (next == theme.*row.number) return;
+        theme.*row.number = next;
+    }
+    themeEdited();
+}
+
+bool App::themeClick(const Rect& area, float x, float y) {
+    const ThemeLayout L = layoutThemePanel(area, themeUi, uiScaleFor(winH));
+    if (L.presetDown.contains(x, y) || L.presetUp.contains(x, y)) {
+        int& preset = themePresetBeingEdited();
+        preset = (preset + (L.presetUp.contains(x, y) ? 1 : themePresetCount() - 1)) % themePresetCount();
+        themeBeingEdited() = themePresets()[preset].theme;
+        themeEdited();
+        playSfx(Sfx::UiClick);
+        return true;
+    }
+    for (const ThemeLine& line : L.lines) {
+        if (!line.box.contains(x, y)) continue;
+        const ThemeRow& row = themeRows()[line.row];
+        MapTheme& theme = themeBeingEdited();
+        if (line.channel < 0 && row.kind == ThemeRowKind::Color) {
+            themeUi.openColor = themeUi.openColor == line.row ? -1 : line.row;
+            playSfx(Sfx::UiClick);
+        } else if (line.channel < 0 && (row.kind == ThemeRowKind::Toggle || row.kind == ThemeRowKind::Choice)) {
+            theme.*row.number = theme.*row.number >= row.high ? row.low : theme.*row.number + 1;
+            themeEdited();
+            playSfx(Sfx::UiToggle);
+        } else if (line.channel >= 0 || row.kind == ThemeRowKind::Number) {
+            themeUi.dragRow = line.row;
+            themeUi.dragChannel = line.channel;
+            themeDragAt(x);
+        }
+        return true;
+    }
+    return false;
 }
 
 // ---- World Generation screen
@@ -124,6 +296,10 @@ void App::drawWorldGenScreen() {
         renderer.drawRect(r, active ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
         renderer.drawListText(text, r.x + 8.0f * s, r.y + (r.h - textH) * 0.5f, white);
     };
+    renderer.drawButton(L.tabWorld, (!ui.themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_WORLD"), true, L.tabWorld.contains(mouseX, mouseY));
+    renderer.drawButton(L.tabTheme, (ui.themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_THEME"), true, L.tabTheme.contains(mouseX, mouseY));
+    if (ui.themeTab) drawThemePanel(L.themeArea);
+    if (!ui.themeTab) {
     label(lang("UILABEL_NAME"), L.nameBox);
     field(L.nameBox, ui.name + (ui.editingName ? "|" : ""), ui.editingName);
     label(lang("UILABEL_GEN_SEED"), L.seedBox);
@@ -133,6 +309,12 @@ void App::drawWorldGenScreen() {
     renderer.drawButton(L.sizeDown, "-", true, L.sizeDown.contains(mouseX, mouseY));
     field(L.sizeBox, std::to_string(ui.settings.size) + " x " + std::to_string(ui.settings.size), false);
     renderer.drawButton(L.sizeUp, "+", true, L.sizeUp.contains(mouseX, mouseY));
+    const MapStyleInfo& style = mapStyleInfo(ui.settings.style);
+    label(lang("UILABEL_GEN_STYLE"), L.styleBox);
+    renderer.drawButton(L.styleDown, "<", true, L.styleDown.contains(mouseX, mouseY));
+    field(L.styleBox, renderer.fitListText(lang(style.labelKey), L.styleBox.w - 16.0f * s), false);
+    renderer.drawButton(L.styleUp, ">", true, L.styleUp.contains(mouseX, mouseY));
+    renderer.drawListText(renderer.fitListText(lang(style.aboutKey), L.styleAbout.w), L.styleAbout.x, L.styleAbout.y, gray);
     for (int i = 0; i < WORLD_GEN_ROW_COUNT; ++i) {
         const int value = ui.settings.*WORLD_GEN_ROWS[i].value;
         label(lang(WORLD_GEN_ROWS[i].labelKey), L.bars[(size_t)i]);
@@ -142,6 +324,7 @@ void App::drawWorldGenScreen() {
         renderer.drawRect(Rect{ bar.x, bar.y, bar.w * (float)value / 100.0f, bar.h }, RGBA{ 0.55f, 0.36f, 0.16f, 1.0f });
         renderer.drawListText(std::to_string(value), bar.x + 8.0f * s, bar.y + (bar.h - textH) * 0.5f, white);
         renderer.drawButton(L.stepUp[(size_t)i], "+", true, L.stepUp[(size_t)i].contains(mouseX, mouseY));
+    }
     }
     renderer.drawButton(L.back, lang("UILABEL_RETURN_TO_TITLE"), true, L.back.contains(mouseX, mouseY));
 
@@ -173,7 +356,17 @@ void App::worldGenBarAt(int row, float x) {
 void App::worldGenClick(float x, float y) {
     WorldGenUi& ui = worldGenUi;
     const WorldGenLayout L = layoutWorldGen(winW, winH, (int)ui.maps.size(), ui.mapScroll);
-    if (L.nameBox.contains(x, y)) {
+    if (L.tabWorld.contains(x, y) || L.tabTheme.contains(x, y)) {
+        ui.themeTab = L.tabTheme.contains(x, y);
+        stopWorldGenName();
+        playSfx(Sfx::UiTab);
+        return;
+    }
+    if (ui.themeTab && L.themeArea.contains(x, y)) {
+        themeClick(L.themeArea, x, y);
+        return;
+    }
+    if (!ui.themeTab && L.nameBox.contains(x, y)) {
         if (!ui.editingName) SDL_StartTextInput(window);
         ui.editingName = true;
         playSfx(Sfx::UiClick);
@@ -190,7 +383,21 @@ void App::worldGenClick(float x, float y) {
         worldGenChanged();
         playSfx(Sfx::UiClick);
     };
-    if (L.seedRandom.contains(x, y)) {
+    const auto stepStyle = [&](int by) {
+        const int count = (int)MapStyle::Count;
+        ui.settings.style = (ui.settings.style + by + count) % count;
+        ui.settings.themePreset = mapStyleInfo(ui.settings.style).themePreset;
+        ui.settings.theme = themePresets()[ui.settings.themePreset].theme;
+        worldGenChanged();
+        playSfx(Sfx::UiClick);
+    };
+    if (!ui.themeTab && L.styleDown.contains(x, y)) {
+        stepStyle(-1);
+    } else if (!ui.themeTab && L.styleUp.contains(x, y)) {
+        stepStyle(1);
+    } else if (ui.themeTab && !L.back.contains(x, y) && !L.generate.contains(x, y) && !L.proceed.contains(x, y) && L.panel.contains(x, y)) {
+        return;
+    } else if (L.seedRandom.contains(x, y)) {
         ui.settings.seed = partyRng.gen();
         worldGenChanged();
         playSfx(Sfx::UiClick);
@@ -207,7 +414,7 @@ void App::worldGenClick(float x, float y) {
         playSfx(Sfx::UiClick);
         openLevelEditor(ui.generatedName);
     } else {
-        for (int i = 0; i < WORLD_GEN_ROW_COUNT; ++i) {
+        for (int i = 0; i < WORLD_GEN_ROW_COUNT && !ui.themeTab; ++i) {
             int& value = ui.settings.*WORLD_GEN_ROWS[i].value;
             if (L.stepDown[(size_t)i].contains(x, y) || L.stepUp[(size_t)i].contains(x, y)) {
                 value = std::clamp(value + (L.stepUp[(size_t)i].contains(x, y) ? 1 : -1), 0, 100);
@@ -287,6 +494,8 @@ void App::openLevelEditor(const std::string& mapName) {
     editing = true;
     editor = LevelEditorUi{};
     editor.name = mapName;
+    if (readMapFile(map->path, editor.map, err)) editor.savedMapText = mapFileText(editor.map);
+    themeUi = ThemeUi{};
     world.resource<LevelInfo>();
     const std::string path = levelFilePath(editor.name);
     LevelData loaded;
@@ -350,6 +559,8 @@ std::vector<App::EditorEntry> App::editorEntries() {
     case EditorTab::Items:
         for (const ItemDef& d : itemDatabase()) out.push_back(EditorEntry{ itemDisplayName(d), d.id });
         break;
+    case EditorTab::Theme:
+        break;
     }
     return out;
 }
@@ -375,6 +586,8 @@ void App::drawEditorPanel() {
     button(L.tabs[0], lang("UILABEL_EDITOR_PROPS"), editor.tab == EditorTab::Props);
     button(L.tabs[1], lang("UILABEL_EDITOR_MOBS"), editor.tab == EditorTab::Mobs);
     button(L.tabs[2], lang("UILABEL_EDITOR_ITEMS"), editor.tab == EditorTab::Items);
+    button(L.tabs[3], lang("UILABEL_GEN_TAB_THEME"), editor.tab == EditorTab::Theme);
+    if (editor.tab == EditorTab::Theme) drawThemePanel(L.themeArea);
     const std::vector<EditorEntry> entries = editorEntries();
     const EditorTool tabTool = editor.tab == EditorTab::Props ? EditorTool::Prop : editor.tab == EditorTab::Mobs ? EditorTool::Mob : EditorTool::Item;
     editor.listScroll = std::clamp(editor.listScroll, 0, std::max(0, (int)entries.size() - (int)L.rows.size()));
@@ -386,7 +599,7 @@ void App::drawEditorPanel() {
         renderer.drawListText(renderer.fitListText(entry.label, L.rows[i].w - 12.0f * s), L.rows[i].x + 6.0f * s, L.rows[i].y + (L.rows[i].h - textH) * 0.5f, on ? gold : white);
     }
     const std::string text = levelToText(captureLevel(world, currentMap.stem));
-    const bool dirty = text != editor.savedText;
+    const bool dirty = text != editor.savedText || mapFileText(editor.map) != editor.savedMapText;
     float y = L.status.y;
     const auto line = [&](const std::string& t, RGBA tint) {
         renderer.drawListText(renderer.fitListText(t, L.status.w), L.status.x, y, tint);
@@ -432,7 +645,11 @@ bool App::editorMouseDown() {
             setEditorTool(editor.tool == EditorTool::Erase ? EditorTool::None : EditorTool::Erase, 0);
             playSfx(Sfx::UiClick);
         } else {
-            for (int i = 0; i < 3; ++i) {
+            if (editor.tab == EditorTab::Theme && L.themeArea.contains(x, y)) {
+                themeClick(L.themeArea, x, y);
+                return true;
+            }
+            for (int i = 0; i < 4; ++i) {
                 if (!L.tabs[i].contains(x, y)) continue;
                 editor.tab = (EditorTab)i;
                 editor.listScroll = 0;
@@ -535,6 +752,14 @@ void App::editorSave() {
     }
     editor.savedText = levelToText(d);
     editor.exitWarned = false;
+    // The theme belongs to the map, so a level and its map are saved together
+    if (mapFileText(editor.map) != editor.savedMapText) {
+        if (!writeMapFile(mapFilePath(currentMap.stem), editor.map, err)) {
+            refuse(err);
+            return;
+        }
+        editor.savedMapText = mapFileText(editor.map);
+    }
     showNotice(langf("MISC_LEVEL_SAVED", { name }));
     playSfx(Sfx::UiSaved);
 }
@@ -558,7 +783,7 @@ void App::editorLoad() {
 }
 
 void App::editorExit() {
-    const bool dirty = levelToText(captureLevel(world, currentMap.stem)) != editor.savedText;
+    const bool dirty = levelToText(captureLevel(world, currentMap.stem)) != editor.savedText || mapFileText(editor.map) != editor.savedMapText;
     if (dirty && !editor.exitWarned) {
         editor.exitWarned = true;
         playSfx(Sfx::UiError);

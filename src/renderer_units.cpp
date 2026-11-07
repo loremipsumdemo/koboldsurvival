@@ -170,6 +170,7 @@ void Renderer::drawPropInstances() {
     for (const auto& list : propInstances_) any = any || !list.empty();
     if (!any) return;
     glUseProgram(modelInstProgram_);
+    glUniform4f(uTintInst_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
     glUniformMatrix4fv(uVPInst_, 1, GL_FALSE, viewProj_.m);
     for (int k = 0; k < propKindCount(); ++k) {
         std::vector<Mat4>& list = propInstances_[(size_t)k];
@@ -200,7 +201,7 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
 
     Mat4 mvp = mul(viewProj_, model);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
-    glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniform4f(uTint_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
 
     glBindVertexArray(m.vao);
     for (const DrawRange& d : m.draws) {
@@ -231,7 +232,7 @@ void Renderer::drawUnitModel(const Model& m, const Mat4& placement) {
     if (!m.vao || !(m.maxY > m.minY)) return;
     const Mat4 mvp = mul(viewProj_, placement);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, mvp.m);
-    glUniform4f(uTint_, 1.0f, 1.0f, 1.0f, 1.0f);   // the UI's last quad of the frame before leaves its tint set
+    glUniform4f(uTint_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);   // the UI's last quad of the frame before leaves its tint set
     glBindVertexArray(m.vao);
     for (const DrawRange& d : m.draws) {
         glBindTexture(GL_TEXTURE_2D, d.texture);

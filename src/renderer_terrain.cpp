@@ -47,6 +47,9 @@ uniform vec3 uAmbient;
 uniform vec3 uUnderwater;
 uniform vec3 uFogColor;
 uniform float uFog;
+uniform float uVoidCut;
+uniform vec3 uGroundTint;
+uniform float uTintAmount;
 in vec3 vNrm;
 in vec3 vCol;
 in float vDist;
@@ -54,6 +57,12 @@ in vec2 vXZ;
 in vec3 vPos;
 out vec4 fragColor;
 void main() {
+    // Over a void, ground far below sea level isn't there, and the edge it stops at is jagged like a broken-off underside
+    if (vPos.y < uVoidCut) {
+        vec2 cell = floor(vXZ / 3.0);
+        float h = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+        if (vPos.y < uVoidCut - 12.0 * h) discard;
+    }
     // Ground detail from the tile: its normal tilts the lighting, and its height
     // darkens the color a little. The tile repeats every 8 world units.
     vec4 t = texture(uTile, vXZ / 8.0);
@@ -67,6 +76,8 @@ void main() {
     float steep = 1.0 - clamp(normalize(vNrm).y, 0.0, 1.0);
     float rock = smoothstep(uRockSlope, uRockSlope + 0.15, steep);
     vec3 base = mix(vCol, uRockRgb, rock);
+    float grey = dot(vCol, vec3(0.333));
+    base = mix(base, mix(grey * uGroundTint * 2.0, uRockRgb, rock), uTintAmount);
     // Steep faces take more of the sky's light, so they read as rock rather than black.
     vec3 lit = base * mix(1.0, 0.85 + 0.3 * t.a, grain) * (uAmbient * (1.0 + 0.8 * steep) + uSunLight * diff);
 
@@ -116,9 +127,13 @@ uniform float uPattern;
 uniform float uSpeed;
 uniform float uFadeStart;
 uniform float uFadeEnd;
+uniform float uGlitter;
+uniform float uGlow;
+uniform float uMapSize;
 uniform sampler2D uTile;
 out vec4 fragColor;
 void main() {
+    if (uMapSize > 0.0 && (vWorld.x < 0.0 || vWorld.z < 0.0 || vWorld.x > uMapSize || vWorld.z > uMapSize)) discard;
     // Two drifting copies of the tile, at different scales and directions, so the
     // surface shows no obvious repeat. Nothing here reflects the sky: the light only
     // changes the shading and the bright caustic bands.
@@ -150,7 +165,25 @@ void main() {
     float glint = pow(max(dot(n, halfV), 0.0), 180.0) * max(sun.y, 0.0);
     lit += uSunLight * glint * 2.0 * uPattern;
 
+    // Glow: the water gives its own light. Glitter: small points that flash at their own times, none of it reflecting anything.
+    lit = mix(lit, base, uGlow);
+    alpha = mix(alpha, 1.0, uGlow * 0.5);
     float dist = distance(vWorld, uEye);
+    if (uGlitter > 0.0) {
+        float near = 1.0 - smoothstep(60.0, 420.0, dist);
+        for (int i = 0; i < 2; ++i) {
+            float size = i == 0 ? 0.55 : 1.3;
+            vec2 at = (p + (i == 0 ? vec2(tm * 0.3, tm * 0.2) : vec2(-tm * 0.2, tm * 0.25))) / size;
+            vec2 cell = floor(at);
+            float h = fract(sin(dot(cell, vec2(41.31, 289.17))) * 43758.5453);
+            float round_ = smoothstep(0.5, 0.05, length(at - cell - 0.5));
+            float flash = pow(0.5 + 0.5 * sin(uTime * (1.5 + 3.0 * h) + h * 300.0), 10.0);
+            float sparkle = step(1.0 - 0.22 * uGlitter, h) * round_ * flash * mix(0.35, 1.0, near);
+            lit += mix(uColor, vec3(1.0), 0.6) * sparkle * 2.2;
+            alpha = max(alpha, sparkle);
+        }
+    }
+
     float d = dist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
 
@@ -171,8 +204,10 @@ uniform vec3 uSunLight;
 uniform vec3 uUnderwater;
 uniform vec3 uFogColor;
 uniform float uFog;
+uniform float uMapSize;
 out vec4 fragColor;
 void main() {
+    if (uMapSize > 0.0 && (vWorld.x < 0.0 || vWorld.z < 0.0 || vWorld.x > uMapSize || vWorld.z > uMapSize)) discard;
     vec3 lit = uUnderwater * (uAmbient + uSunLight * 0.5);
     float d = distance(vWorld, uEye) * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
@@ -228,6 +263,9 @@ bool Renderer::initTerrainGl() {
     groundShader_.fogColor = glGetUniformLocation(g, "uFogColor");
     groundShader_.fog = glGetUniformLocation(g, "uFog");
     groundShader_.tile = glGetUniformLocation(g, "uTile");
+    groundShader_.voidCut = glGetUniformLocation(g, "uVoidCut");
+    groundShader_.groundTint = glGetUniformLocation(g, "uGroundTint");
+    groundShader_.tintAmount = glGetUniformLocation(g, "uTintAmount");
 
     seaShader_.prog = linkProgram("sea", kSeaVS, kSeaFS);
     if (!seaShader_.prog) return false;
@@ -249,6 +287,9 @@ bool Renderer::initTerrainGl() {
     seaShader_.fadeStart = glGetUniformLocation(s, "uFadeStart");
     seaShader_.fadeEnd = glGetUniformLocation(s, "uFadeEnd");
     seaShader_.tile = glGetUniformLocation(s, "uTile");
+    seaShader_.glitter = glGetUniformLocation(s, "uGlitter");
+    seaShader_.glow = glGetUniformLocation(s, "uGlow");
+    seaShader_.mapSize = glGetUniformLocation(s, "uMapSize");
 
     floorShader_.prog = linkProgram("seabed", kSeaVS, kFloorFS);
     if (!floorShader_.prog) return false;
@@ -262,6 +303,7 @@ bool Renderer::initTerrainGl() {
     floorShader_.underwater = glGetUniformLocation(f, "uUnderwater");
     floorShader_.fogColor = glGetUniformLocation(f, "uFogColor");
     floorShader_.fog = glGetUniformLocation(f, "uFog");
+    floorShader_.mapSize = glGetUniformLocation(f, "uMapSize");
 
     glGenVertexArrays(1, &emptyVao_);
     return true;
@@ -305,6 +347,14 @@ void Renderer::releaseTerrain() {
     chunksPerSide_ = 0;
 }
 
+void Renderer::setMapTheme(const MapTheme& theme) {
+    hasTheme_ = true;
+    theme_ = theme;
+    themeLook_ = themeLook(theme);
+    themeSky_ = themeSkyColors(theme);
+    skyBakeWanted_ = true;
+}
+
 void Renderer::uploadTerrain(const Terrain& t) {
     releaseTerrain();
     unitFacing_.clear();
@@ -314,6 +364,9 @@ void Renderer::uploadTerrain(const Terrain& t) {
     }
     overviewSize_ = 0.0f;
     const std::shared_ptr<const ChunkSource> source = t.source();
+    hasTheme_ = source->theme() != nullptr;
+    seaBounded_ = source->walledIn();
+    if (hasTheme_) setMapTheme(*source->theme());
     overview_.start(t.size(), [source](int cx, int cz, ChunkData& c) { return source->fill(cx, cz, c); },
                     [source](int px, std::vector<uint8_t>& rgba, const std::atomic<bool>& cancel) { return source->picture(px, rgba, cancel); },
                     t.streamed());
@@ -358,7 +411,17 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
-    const SkyLight sky = skyLightFor(t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    const SkyLight sky = skyLightFor(hasTheme_ ? themeLook_ : t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    const bool hasWater = !hasTheme_ || theme_.waterShown;
+    const float seaEnd = hasTheme_ && seaBounded_ ? (float)t.size() : 0.0f;
+    // The light that reaches props and units
+    for (int i = 0; i < 3; ++i) worldTint_[i] = 1.0f;
+    if (hasTheme_ && theme_.modelLight > 0) {
+        const float amount = (float)theme_.modelLight / 100.0f;
+        const float up = std::max(sky.sunDir.y, 0.0f);
+        const float reach[3] = { sky.ambientLight.x * 1.4f + sky.sunLight.x * up, sky.ambientLight.y * 1.4f + sky.sunLight.y * up, sky.ambientLight.z * 1.4f + sky.sunLight.z * up };
+        for (int i = 0; i < 3; ++i) worldTint_[i] = 1.0f + (std::min(reach[i], 1.0f) - 1.0f) * amount;
+    }
     const float hs = t.heightScale();
     const float seaY = 0.0f;
     const float waterY = seaY - kWaterDrop * hs;
@@ -377,10 +440,13 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform3f(floorShader_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
     glUniform3f(floorShader_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
     glUniform1f(floorShader_.fog, sky.fog);
-    glDepthMask(GL_FALSE);
-    glBindVertexArray(emptyVao_);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDepthMask(GL_TRUE);
+    glUniform1f(floorShader_.mapSize, seaEnd);
+    if (hasWater) {
+        glDepthMask(GL_FALSE);
+        glBindVertexArray(emptyVao_);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDepthMask(GL_TRUE);
+    }
 
     glUseProgram(groundShader_.prog);
     glUniformMatrix4fv(groundShader_.viewProj, 1, GL_FALSE, viewProj_.m);
@@ -394,7 +460,12 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform3f(groundShader_.rockRgb, sky.rockRgb.x, sky.rockRgb.y, sky.rockRgb.z);
     glUniform1f(groundShader_.rockSlope, sky.rockSlope);
     glUniform1f(groundShader_.seaY, seaY);
-    glUniform1f(groundShader_.depthScale, 1.0f / hs);
+    glUniform1f(groundShader_.depthScale, hasWater ? 1.0f / hs : 0.0f);
+    glUniform1f(groundShader_.voidCut, hasWater ? -1000000.0f : -5.0f);
+    float groundTint[3] = { 1.0f, 1.0f, 1.0f };
+    if (hasTheme_) themeRgb(theme_.groundTint, groundTint);
+    glUniform3fv(groundShader_.groundTint, 1, groundTint);
+    glUniform1f(groundShader_.tintAmount, hasTheme_ ? (float)theme_.groundTintAmount / 100.0f : 0.0f);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTex_);
     glUniform1i(groundShader_.tile, 0);
@@ -439,6 +510,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
+    if (!hasWater) return;
 
     const float fadeEnd = kFarPlane * 0.9f;
     const float fadeStart = fadeEnd * 0.6f;
@@ -459,6 +531,9 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform1f(seaShader_.speed, sky.waterSpeed);
     glUniform1f(seaShader_.fadeStart, fadeStart);
     glUniform1f(seaShader_.fadeEnd, fadeEnd);
+    glUniform1f(seaShader_.glitter, hasTheme_ ? (float)theme_.waterGlitter / 100.0f : 0.0f);
+    glUniform1f(seaShader_.glow, hasTheme_ ? (float)theme_.waterGlow / 100.0f : 0.0f);
+    glUniform1f(seaShader_.mapSize, seaEnd);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, seaTex_);
     glUniform1i(seaShader_.tile, 0);

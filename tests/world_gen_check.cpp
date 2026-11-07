@@ -153,6 +153,64 @@ int main(int argc, char** argv) {
         check(!source->picture(64, none, stopped), "a world map picture can be cancelled");
     }
 
+    // Every style makes ground that can be played on
+    for (int style = 0; style < (int)MapStyle::Count; ++style) {
+        WorldGenSettings styled = settings;
+        styled.size = 1024;
+        styled.style = style;
+        const MapStyleInfo& info = mapStyleInfo(style);
+        const WorldGenerator styledGen(styled);
+        std::vector<uint8_t> walk(1024u * 1024u, 0);
+        ChunkData piece;
+        int walkable = 0;
+        for (int cz = 0; cz < 16; ++cz) {
+            for (int cx = 0; cx < 16; ++cx) {
+                styledGen.fill(cx, cz, piece);
+                for (int j = 0; j < CHUNK_TILES; ++j) {
+                    for (int i = 0; i < CHUNK_TILES; ++i) {
+                        const uint8_t w = piece.walk[(size_t)j * CHUNK_TILES + i];
+                        walk[(size_t)(cz * CHUNK_TILES + j) * 1024 + cx * CHUNK_TILES + i] = w;
+                        walkable += w;
+                    }
+                }
+            }
+        }
+        std::printf("note: %s is %d%% walkable\n", info.fileName, walkable * 100 / (1024 * 1024));
+        check(walkable > 1024 * 1024 / 20, std::string(info.fileName) + " has ground to walk on");
+        if (info.walled) {
+            // A walled map can't be walked off, from anywhere
+            bool sealed = true;
+            for (int i = 0; i < 1024 && sealed; ++i) {
+                for (int d = 0; d < 40; ++d) {
+                    sealed = sealed && !walk[(size_t)d * 1024 + i] && !walk[(size_t)(1023 - d) * 1024 + i]
+                                    && !walk[(size_t)i * 1024 + d] && !walk[(size_t)i * 1024 + 1023 - d];
+                }
+            }
+            check(sealed, std::string(info.fileName) + " is walled in, and the wall can't be walked on");
+            check(styledGen.heightAt(0, 512) > 20000 && styledGen.heightAt(1024, 512) > 20000, std::string(info.fileName) + " rises at its edges");
+        }
+        if (style != (int)MapStyle::Overworld) {
+            styled.themePreset = info.themePreset;
+            styled.theme = themePresets()[info.themePreset].theme;
+            WorldGenSettings back;
+            check(mapFromText(mapFileText(styled), back, err) && mapFileText(back) == mapFileText(styled) && back.style == style, std::string(info.fileName) + " reads back from its map file");
+            check(mapFileText(styled).size() < 256, std::string(info.fileName) + " stays a tiny map file");
+        }
+    }
+    {
+        // Only what differs from the preset is written, and it reads back
+        WorldGenSettings themed = settings;
+        themed.themePreset = 2;
+        themed.theme = themePresets()[2].theme;
+        themed.theme.waterColor = 0x123456;
+        themed.theme.fog = 33;
+        const std::string text = mapFileText(themed);
+        WorldGenSettings back;
+        check(mapFromText(text, back, err) && back.theme.waterColor == 0x123456 && back.theme.fog == 33 && back.theme.waterGlitter == themePresets()[2].theme.waterGlitter, "an edited theme reads back");
+        check(text.find("water_glitter") == std::string::npos && text.find("water_color 123456") != std::string::npos, "a map file only lists what differs from its theme preset");
+        check(mapFileText(settings).find("theme") == std::string::npos, "an overworld map's file doesn't change");
+    }
+
     // The map file
     const std::string mapText = mapFileText(settings);
     std::printf("note: an 8192-wide map file is %d bytes\n", (int)mapText.size());

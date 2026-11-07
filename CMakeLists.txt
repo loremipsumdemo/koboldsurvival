@@ -92,6 +92,7 @@ set(SIM_SOURCES
     src/look.cpp
     src/surface_tiles.cpp
     src/chunk_source.cpp
+    src/map_theme.cpp
     src/world_gen.cpp
     src/overview.cpp
     src/camera_limit.cpp

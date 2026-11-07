@@ -159,9 +159,114 @@ uniform vec3 uMoonCol;
 uniform float uStarAlpha; // 0 when there are no stars
 uniform vec3 uZenith;     // sky color straight up
 uniform vec3 uHorizon;    // sky color at the horizon
+uniform int uSkyKind;     // as SkyKind says
+uniform int uUseBaked;    // 1: the cave or galaxy has been drawn once into uBaked, so it only has to be looked up
+uniform samplerCube uBaked;
 out vec4 FragColor;
+
+float hash1(float n) { return fract(sin(n) * 43758.5453); }
+float hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+
+// Smooth noise over the sphere's directions
+float skyNoise(vec3 p) {
+    vec3 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x), mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x), mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float clouds(vec3 p) {
+    // Each octave turned against the last, so the noise's grid doesn't show as straight edges
+    const mat3 turn = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
+    float sum = 0.5 * skyNoise(p);
+    p = turn * p * 2.03;
+    sum += 0.25 * skyNoise(p);
+    p = turn * p * 2.01;
+    sum += 0.125 * skyNoise(p);
+    p = turn * p * 2.04;
+    sum += 0.0625 * skyNoise(p);
+    p = turn * p * 2.02;
+    return sum + 0.03125 * skyNoise(p);
+}
+
+// How far a row of sharp points reaches at this angle around the viewer, from 0 to 1. It wraps all the way round.
+float points(float around, float count, float seed) {
+    float at = around * count;
+    float cell = floor(at);
+    float inCell = at - cell;
+    float wrapped = mod(cell, count);
+    float tall = hash1(wrapped * 1.37 + seed);
+    float middle = 0.3 + 0.4 * hash1(wrapped * 2.11 + seed);
+    float tip = inCell < middle ? inCell / middle : (1.0 - inCell) / (1.0 - middle);
+    return tall * tall * pow(tip, 1.4);
+}
+
+// Inside a cave: a far dark back, then rows of stalactites and stalagmites, nearer rows larger and lighter
+vec3 caveSky(vec3 d) {
+    float around = atan(d.z, d.x) / 6.2831853 + 0.5;
+    float up = asin(clamp(d.y, -1.0, 1.0)) / 1.5707963;
+    float rough = clouds(d * 14.0);
+    vec3 col = uHorizon * (0.55 + 0.5 * rough);
+    for (int i = 0; i < 4; ++i) {
+        float layer = float(i);
+        float near = layer / 3.0;
+        float count = 90.0 - layer * 20.0;
+        float wobble = 0.03 * (skyNoise(vec3(around * 40.0, layer, 3.0)) - 0.5);
+        float roof = 0.50 - near * 0.10 + wobble;
+        float drop = (0.26 + near * 0.26) * points(around, count, 11.0 + layer * 7.0);
+        float floorAt = -0.12 + near * 0.05 + wobble;
+        float rise = (0.16 + near * 0.26) * points(around, count * 0.8, 47.0 + layer * 5.0);
+        vec3 rock = mix(uHorizon, uZenith, 0.25 + 0.5 * near) * (0.7 + 0.6 * rough);
+        float hang = smoothstep(0.0, 0.006, up - (roof - drop));
+        float stand = smoothstep(0.0, 0.006, (floorAt + rise) - up);
+        col = mix(col, rock * (0.75 + 0.5 * clamp((up - (roof - drop)) * 2.0, 0.0, 1.0)), hang);
+        col = mix(col, rock * (0.9 - 0.4 * clamp(((floorAt + rise) - up) * 2.0, 0.0, 1.0)), stand);
+    }
+    return col;
+}
+
+// Open space: black, with two colors of nebula along a band across the sky, and stars all the way round
+vec3 galaxySky(vec3 d, float stars) {
+    vec3 axis = normalize(vec3(0.35, 0.82, 0.45));
+    float band = exp(-pow(dot(d, axis) * 2.6, 2.0));
+    vec3 warp = vec3(clouds(d * 2.0 + 1.0), clouds(d * 2.0 + 9.0), clouds(d * 2.0 + 17.0)) * 2.5;
+    float a = clouds(d * 3.0 + warp);
+    float b = clouds(d * 4.5 + warp.yzx + 4.0);
+    vec3 col = vec3(0.006, 0.004, 0.018);
+    col += uZenith * pow(a, 2.2) * (0.55 + 2.4 * band);
+    col += uHorizon * pow(b, 3.0) * (0.25 + 2.2 * band);
+    col += vec3(0.9, 0.85, 1.0) * pow(band, 4.0) * pow(a, 1.5) * 0.65;
+
+    for (int i = 0; i < 2; ++i) {
+        float scale = i == 0 ? 170.0 : 340.0;
+        vec3 cell = floor(d * scale);
+        float h = hash3(cell + float(i));
+        float keep = i == 0 ? 0.990 : 0.975 - band * 0.03;
+        if (h > keep) {
+            float round_ = smoothstep(0.75, 0.15, length(d * scale - cell - 0.5));
+            float twinkle = 0.5 + 0.5 * hash3(cell + 7.0);
+            vec3 tint = mix(vec3(0.75, 0.82, 1.0), vec3(1.0, 0.8, 0.75), hash3(cell + 3.0));
+            col += tint * round_ * twinkle * (i == 0 ? 1.4 : 0.55) * stars;
+        }
+    }
+    return col;
+}
+
 void main() {
     vec3 d = normalize(vDir);
+    if (uSkyKind == 2) {
+        FragColor = vec4(uUseBaked == 1 ? texture(uBaked, d).rgb : caveSky(d), 1.0);
+        return;
+    }
+    if (uSkyKind == 3) {
+        vec3 space = uUseBaked == 1 ? texture(uBaked, d).rgb : galaxySky(d, uStarAlpha);
+        float galaxyMoon = max(dot(d, uMoonDir), 0.0);
+        space = mix(space, uMoonCol, smoothstep(0.9990, 0.9994, galaxyMoon) * uMoonAlpha);
+        float galaxySun = max(dot(d, uSunDir), 0.0);
+        space += uSunCol * (0.25 * pow(galaxySun, 8.0) + 0.5 * pow(galaxySun, 128.0)) * uSunAlpha;
+        space = mix(space, uSunCol, smoothstep(0.9994, 0.9997, galaxySun) * uSunAlpha);
+        FragColor = vec4(space, 1.0);
+        return;
+    }
     // Gradient: the horizon color blends up to the zenith color
     vec3 col = mix(uHorizon, uZenith, pow(clamp(d.y, 0.0, 1.0), 0.6));
 
@@ -329,6 +434,7 @@ bool Renderer::initGl() {
     if (modelInstProgram_) {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
         setGlyphDefaults(modelInstProgram_);
+        uTintInst_ = glGetUniformLocation(modelInstProgram_, "uTint");
         glGenBuffers(1, &instVbo_);
     }
 
@@ -397,6 +503,9 @@ void Renderer::shutdown() {
     for (Model& m : propModels_) destroyModel(m);
 
     glDeleteProgram(skyProgram_);
+    if (skyCube_) glDeleteTextures(1, &skyCube_);
+    if (skyBakeFbo_) glDeleteFramebuffers(1, &skyBakeFbo_);
+    skyCube_ = skyBakeFbo_ = 0;
     glDeleteBuffers(1, &skyVbo_);
     glDeleteVertexArrays(1, &skyVao_);
 
@@ -687,6 +796,11 @@ void Renderer::initSky() {
     uMoonAlpha_ = glGetUniformLocation(skyProgram_, "uMoonAlpha");
     uMoonCol_   = glGetUniformLocation(skyProgram_, "uMoonCol");
     uStarAlpha_ = glGetUniformLocation(skyProgram_, "uStarAlpha");
+    uSkyKind_ = glGetUniformLocation(skyProgram_, "uSkyKind");
+    uSkyBaked_ = glGetUniformLocation(skyProgram_, "uBaked");
+    uSkyUseBaked_ = glGetUniformLocation(skyProgram_, "uUseBaked");
+    glGenFramebuffers(1, &skyBakeFbo_);
+    skyBakeWanted_ = true;
 
     const float skyQuad[8] = { -1.0f, -1.0f,  1.0f, -1.0f,  1.0f, 1.0f,  -1.0f, 1.0f };
     glGenVertexArrays(1, &skyVao_);

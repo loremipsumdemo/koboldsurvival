@@ -24,8 +24,28 @@ inline constexpr WorldGenRow WORLD_GEN_ROWS[] = {
 };
 inline constexpr int WORLD_GEN_ROW_COUNT = (int)(sizeof(WORLD_GEN_ROWS) / sizeof(WORLD_GEN_ROWS[0]));
 
+// The Theme tab, the same on the World Generation screen and in the level editor
+struct ThemeUi {
+    int scroll = 0;
+    int openColor = -1;   // the color row showing its red, green and blue bars
+    int dragRow = -1;
+    int dragChannel = -1;
+};
+struct ThemeLine {
+    int row;       // into themeRows()
+    int channel;   // -1: the row itself. 0 to 2: red, green, blue of a color row.
+    Rect box, control;
+};
+struct ThemeLayout {
+    Rect presetDown, presetBox, presetUp;
+    std::vector<ThemeLine> lines;
+    int total = 0, shown = 0, first = 0;
+};
+ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float scale);
+
 struct WorldGenUi {
     WorldGenSettings settings;
+    bool themeTab = false;
     std::string name = "world";
     bool editingName = false;
     int dragRow = -1;
@@ -38,14 +58,14 @@ struct WorldGenUi {
 };
 
 struct WorldGenLayout {
-    Rect panel, nameBox, seedBox, seedRandom, sizeDown, sizeUp, sizeBox;
+    Rect panel, tabWorld, tabTheme, themeArea, nameBox, seedBox, seedRandom, sizeDown, sizeUp, sizeBox, styleDown, styleUp, styleBox, styleAbout;
     std::vector<Rect> bars, stepDown, stepUp;
     Rect preview, previewLabel, mapsBox, generate, proceed, back;
     std::vector<Rect> mapRows;
 };
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
-enum class EditorTab { Props, Mobs, Items };
+enum class EditorTab { Props, Mobs, Items, Theme };
 enum class EditorTool { None, Prop, Mob, Item, Spawn, Erase };
 inline constexpr int EDITOR_NAME_CHARS = 32;
 
@@ -61,10 +81,12 @@ struct LevelEditorUi {
     std::string savedText;
     std::vector<std::string> undo;
     bool exitWarned = false;
+    WorldGenSettings map;   // the map being edited, for its theme
+    std::string savedMapText;
 };
 
 struct EditorLayout {
-    Rect panel, tabs[3], nameBox, save, load, spawnTool, eraseTool, exit, status;
+    Rect panel, tabs[4], themeArea, nameBox, save, load, spawnTool, eraseTool, exit, status;
     std::vector<Rect> rows;
     Rect uiToggle;
 };

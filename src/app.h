@@ -220,6 +220,12 @@ struct App : AppSession {
     void drawWorldGenScreen();
     void worldGenClick(float x, float y);
     void worldGenBarAt(int row, float x);
+    MapTheme& themeBeingEdited();
+    int& themePresetBeingEdited();
+    void themeEdited();
+    void drawThemePanel(const Rect& area);
+    bool themeClick(const Rect& area, float x, float y);
+    void themeDragAt(float x);
     bool generateWorld();
     void openLevelEditor(const std::string& mapName);
     void editorFocusCamera();
@@ -241,6 +247,7 @@ struct App : AppSession {
 
     bool developer = false;
     WorldGenUi worldGenUi;
+    ThemeUi themeUi;
     bool editing = false;
     LevelEditorUi editor;
     std::vector<MapChoice> partyMaps;

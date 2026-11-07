@@ -223,9 +223,14 @@ void App::onMouseWheel() {
         int next = (int)listOffset - (int)e.wheel.y;
         listOffset = (size_t)std::clamp(next, 0, maxOffset);
     } else if (screen == Screen::WorldGen) {
-        worldGenUi.mapScroll = std::max(0, worldGenUi.mapScroll - (int)e.wheel.y);
+        if (worldGenUi.themeTab && layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+            themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
+        } else {
+            worldGenUi.mapScroll = std::max(0, worldGenUi.mapScroll - (int)e.wheel.y);
+        }
     } else if (screen == Screen::Playing && editing && editor.useOwnUi && layoutEditor(winW, winH, true).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
-        editor.listScroll = std::max(0, editor.listScroll - (int)e.wheel.y);
+        if (editor.tab == EditorTab::Theme) themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
+        else editor.listScroll = std::max(0, editor.listScroll - (int)e.wheel.y);
     } else if (screen == Screen::ScenarioSelect) {
         scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
                                         scenarioScroll - (int)e.wheel.y).first;
@@ -477,6 +482,7 @@ if (mouseDownOnPanels()) return;
 }
 
 void App::onMouseButtonUp() {
+    themeUi.dragRow = -1;
     if (screen == Screen::WorldGen) {
         worldGenUi.dragRow = -1;
         return;
@@ -623,6 +629,10 @@ void App::onMouseButtonUp() {
 }
 
 void App::onMouseMotion() {
+    if (themeUi.dragRow >= 0 && (screen == Screen::WorldGen || (screen == Screen::Playing && editing))) {
+        themeDragAt(e.motion.x);
+        return;
+    }
     if (screen == Screen::WorldGen) {
         if (worldGenUi.dragRow >= 0) worldGenBarAt(worldGenUi.dragRow, e.motion.x);
         return;

@@ -101,6 +101,7 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   main.cpp, app*.cpp  Start-up, the frame loop, input and the screens
   world_gen, level_file    The world generator and map files, and level files
   app_worldgen, editor_ui  The World Generation screen and level editor
+  map_theme            How a generated map looks: its sky, light, water and ground color
   simulation         One step of the game, with no window, and the events it reports to the screens
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
@@ -150,6 +151,9 @@ goes. Continue opens the level editor, which is regular gameplay with no units a
 interface and the game's. It saves to `MAP/LEVEL/<name>.level`. With F2 on, the party screen of New Game can pick a map and
 level. The editor writes beside the game: copy a finished map and level into `MAP/` here to keep them, since the build copies
 this folder over the one beside the game.
+
+
+A map has a style, chosen before it is generated (`MapStyle` in world_gen.h: Overworld, Walled Valley, Archipelago, Cavern, Galaxy Sea, Void Islands, Caldera), and a theme: sky, sun, moon, day and night, light, fog, water and ground color (`map_theme.h`). The Theme tab is on the World Generation screen and in the level editor, where it shows at once and Save writes it to the map. A map file lists only what differs from its theme preset. To add a theme setting, add a `MapTheme` member and a row in `map_theme.cpp`.
 
 ## Modding the data
 

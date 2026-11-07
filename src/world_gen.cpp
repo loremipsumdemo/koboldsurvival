@@ -58,8 +58,74 @@ int ridged(int x, int z, int period, int octaves, uint32_t seed) {
 
 constexpr int SLOPE_LIMIT = 900;   // the most a walkable tile's corners may differ, in thousandths of a tile
 
+// How far in from the map's edge a walled map's wall reaches, in tiles, and how much it rises each tile
+constexpr int WALL_BAND = 40;
+constexpr int WALL_RISE = 2400;
+constexpr int VOID_DEPTH = -24000;
+
+// How far inside the wall a tile is, with the wall's foot wandering a little. Negative: in the wall.
+int insideWall(const WorldGenSettings& s, int x, int z) {
+    const int edge = std::min({ x, z, s.size - x, s.size - z });
+    const int wander = (noise(x, z, 48, s.seed + 21) + 32768) * WALL_BAND / 65536;
+    return edge - WALL_BAND - wander;
+}
+
+// Land at height h, sinking gently into water where above runs out, with no step at the shore
+int shoreAt(int h, int above) {
+    if (above <= 0) return std::max(above / 2, -9000);
+    return 40 + (int)((int64_t)std::max(h, 0) * std::min(above, 2500) / 2500);
+}
+
+// The ground steps in flat shelves with sharp edges, for harsh shapes
+int shelved(int h, int shelf) {
+    const int floorOf = floorDiv(h, shelf), inShelf = h - floorOf * shelf;
+    const int rest = shelf * 3 / 4;
+    return floorOf * shelf + (inShelf < rest ? 0 : (inShelf - rest) * 4);
+}
+
+// A harsh, straight-sided shape in a grid of cells: a triangle or a four-sided shard, each turned its own way. Returns how far
+// inside it this tile is, in tiles. Negative: outside it.
+int shardInside(int x, int z, int cell, int fill, uint32_t seed, int& island) {
+    // Directions around a circle, in 1024ths, so that this stays whole numbers
+    static const int SIN[12] = { 0, 512, 887, 1024, 887, 512, 0, -512, -887, -1024, -887, -512 };
+    const int cx = floorDiv(x, cell), cz = floorDiv(z, cell);
+    int best = -100000;
+    island = 0;
+    for (int j = cz - 1; j <= cz + 1; ++j) {
+        for (int i = cx - 1; i <= cx + 1; ++i) {
+            const int a = lattice(i, j, seed) + 32768, b = lattice(i, j, seed + 31) + 32768, c = lattice(i, j, seed + 37) + 32768;
+            if (c * 100 / 65536 >= fill) continue;
+            const int px = i * cell + (a * cell >> 16), pz = j * cell + (b * cell >> 16);
+            const int sx = x - px, sz = z - pz;
+            const int picks = lattice(i, j, seed + 41) + 32768;
+            const int sides = picks % 2 == 0 ? 3 : 4;
+            const int turn = (picks >> 1) % 12;
+            const int reach = cell * (sides == 3 ? 18 + (lattice(i, j, seed + 43) + 32768) * 24 / 65536 : 24 + (lattice(i, j, seed + 43) + 32768) * 28 / 65536) / 100;
+            int far = -100000;
+            for (int side = 0; side < sides; ++side) {
+                const int at = (turn + side * 12 / sides) % 12;
+                far = std::max(far, (sx * SIN[(at + 3) % 12] + sz * SIN[at]) >> 10);
+            }
+            const int inside = reach - far;
+            if (inside > best) {
+                best = inside;
+                island = (int)((uint32_t)(i * 73 + j * 151) & 0xFFFFu);
+            }
+        }
+    }
+    return best;
+}
+
 Biome biomeOf(const WorldGenSettings& s, int x, int z, int h, int rise, uint8_t& veg) {
     veg = 0;
+    if (s.style == (int)MapStyle::Cavern || s.style == (int)MapStyle::GalaxySea || s.style == (int)MapStyle::VoidIslands || s.style == (int)MapStyle::Caldera) {
+        // Bare ground, with no snow or plants
+        if (h < 0) return Biome::Silt;
+        if (rise > SLOPE_LIMIT) return Biome::CliffRock;
+        const int patch = layered(x, z, 96, 3, s.seed + 9);
+        if (patch > 6000) return Biome::Gravel;
+        return patch < -6000 ? Biome::Scree : Biome::Rock;
+    }
     if (h < 0) return h > -1500 ? Biome::Beach : Biome::Silt;
     if (h < 500) return Biome::Beach;
     if (rise > SLOPE_LIMIT) return Biome::CliffRock;
@@ -74,16 +140,22 @@ Biome biomeOf(const WorldGenSettings& s, int x, int z, int h, int rise, uint8_t&
     return growth + (s.forests - 50) > 35 ? Biome::Forest : Biome::Grass;
 }
 
-void previewColor(Biome b, int h, uint8_t veg, int shade, uint8_t* px) {
+void previewColor(const MapTheme& theme, Biome b, int h, uint8_t veg, int shade, uint8_t* px) {
     int r = 0, g = 0, bl = 0;
+    if (h < 0 && !theme.waterShown) {
+        px[0] = 4; px[1] = 3; px[2] = 10; px[3] = 255;
+        return;
+    }
     switch (b) {
     case Biome::Silt:
     case Biome::Beach:
         if (h < 0) {
-            const int depth = std::clamp(-h / 120, 0, 200);
-            r = 30 - depth / 10;
-            g = 92 - depth / 4;
-            bl = 150 - depth / 4;
+            const int depth = std::clamp(-h / 40, 0, 256);
+            const int top[3] = { (int)(theme.waterColor >> 16) & 255, (int)(theme.waterColor >> 8) & 255, (int)theme.waterColor & 255 };
+            const int deep[3] = { (int)(theme.waterDeepColor >> 16) & 255, (int)(theme.waterDeepColor >> 8) & 255, (int)theme.waterDeepColor & 255 };
+            r = top[0] + (deep[0] - top[0]) * depth / 256;
+            g = top[1] + (deep[1] - top[1]) * depth / 256;
+            bl = top[2] + (deep[2] - top[2]) * depth / 256;
         } else {
             r = 220; g = 205; bl = 160;
         }
@@ -104,6 +176,13 @@ void previewColor(Biome b, int h, uint8_t veg, int shade, uint8_t* px) {
         bl = base[2] + (canopy[2] - base[2]) * share / 256;
         break;
     }
+    }
+    if (h >= 0 && theme.groundTintAmount > 0) {
+        const int amount = theme.groundTintAmount * 256 / 100;
+        const int grey = (r + g + bl) / 3;
+        r += (grey * (int)((theme.groundTint >> 16) & 255u) / 128 - r) * amount / 256;
+        g += (grey * (int)((theme.groundTint >> 8) & 255u) / 128 - g) * amount / 256;
+        bl += (grey * (int)(theme.groundTint & 255u) / 128 - bl) * amount / 256;
     }
     px[0] = (uint8_t)std::clamp(r + shade, 0, 255);
     px[1] = (uint8_t)std::clamp(g + shade, 0, 255);
@@ -129,6 +208,8 @@ public:
         rgba = generator_.preview(px, &cancel);
         return !rgba.empty();
     }
+    const MapTheme* theme() const override { return &generator_.settings().theme; }
+    bool walledIn() const override { return mapStyleInfo(generator_.settings().style).walled; }
 
 private:
     WorldGenerator generator_;
@@ -136,7 +217,115 @@ private:
 };
 }
 
+const MapStyleInfo& mapStyleInfo(int style) {
+    static const MapStyleInfo STYLES[] = {
+        { "overworld", "UILABEL_STYLE_OVERWORLD", "UILABEL_STYLE_OVERWORLD_ABOUT", 0, false },
+        { "valley", "UILABEL_STYLE_VALLEY", "UILABEL_STYLE_VALLEY_ABOUT", 0, true },
+        { "archipelago", "UILABEL_STYLE_ARCHIPELAGO", "UILABEL_STYLE_ARCHIPELAGO_ABOUT", 0, false },
+        { "cavern", "UILABEL_STYLE_CAVERN", "UILABEL_STYLE_CAVERN_ABOUT", 1, true },
+        { "galaxy", "UILABEL_STYLE_GALAXY", "UILABEL_STYLE_GALAXY_ABOUT", 2, false },
+        { "void", "UILABEL_STYLE_VOID", "UILABEL_STYLE_VOID_ABOUT", 3, false },
+        { "caldera", "UILABEL_STYLE_CALDERA", "UILABEL_STYLE_CALDERA_ABOUT", 4, true },
+    };
+    return STYLES[std::clamp(style, 0, (int)MapStyle::Count - 1)];
+}
+
 int WorldGenerator::heightAt(int x, int z) const {
+    return s_.style == (int)MapStyle::Overworld ? overworldHeight(x, z) : styledHeight(x, z);
+}
+
+int WorldGenerator::styledHeight(int x, int z) const {
+    const uint32_t seed = s_.seed;
+    const MapStyle style = (MapStyle)s_.style;
+    // The harsh shapes are barely bent, or their straight sides would turn to curves
+    const int warpBy = s_.warp * (style == MapStyle::GalaxySea || style == MapStyle::VoidIslands ? 12 : 80);
+    const int wx = x + (int)(((int64_t)noise(x, z, 200, seed + 11) * warpBy) >> 22);
+    const int wz = z + (int)(((int64_t)noise(x, z, 200, seed + 12) * warpBy) >> 22);
+    const int centerX = wx - s_.size / 2, centerZ = wz - s_.size / 2;
+    const int away = (int)std::min<int64_t>(((int64_t)std::abs(centerX) + std::abs(centerZ)) * 1000 / std::max(1, s_.size), 1000);   // 0 middle, 1000 far corner
+    const int detail = layered(wx, wz, 96, 4, seed + 2) * s_.hills / 100;
+    const int small = layered(x, z, 8, 2, seed + 5) * 120 / 32768;
+    int h = 0;
+
+    switch (style) {
+    case MapStyle::WalledValley: {
+        const int c = layered(wx, wz, std::max(128, s_.size * (110 - s_.continents) / 300), 4, seed + 1);
+        h = 1200 + (c + (s_.land - 35) * 500) / 6 + detail / 8 + small;
+        h = shoreAt(h, c + 9000 + (s_.land - 50) * 200);   // lakes
+        if (h > 0) {
+            const int range = layered(x, z, std::max(256, s_.size / 4), 2, seed + 3) - 6000;
+            if (range > 0) h += (int)(((int64_t)std::min(range, 12000) * ridged(wx, wz, 128, 5, seed + 4) >> 15) * s_.mountains / 40);
+        }
+        break;
+    }
+    case MapStyle::Archipelago: {
+        const int c = layered(wx, wz, std::max(64, s_.size * (110 - s_.continents) / 900), 3, seed + 1) + (s_.land - 62) * 400;
+        h = c <= 0 ? std::max(c * 2, -14000) : 100 + std::min(c, 6000) * 500 / 3000 + (detail + 8000) / 6 + small;
+        // The sea all around the edge
+        const int edge = std::min({ x, z, s_.size - x, s_.size - z }), band = std::max(32, s_.size / 12);
+        if (edge < band && h > -800) h = std::min(h, h * edge / band - 3000 * (band - edge) / band);
+        break;
+    }
+    case MapStyle::Cavern: {
+        const int c = layered(wx, wz, std::max(96, s_.size * (110 - s_.continents) / 500), 3, seed + 1);
+        h = 1100 + c / 12 + detail / 10 + small;
+        h = shoreAt(h, c + 11000 + (s_.land - 50) * 200);   // acid pools
+        // Stalagmites: thin sharp points standing up from the floor
+        int island = 0;
+        const int spike = shardInside(x, z, 20, 16 + s_.mountains / 3, seed + 51, island);
+        if (spike > 0 && h > 0) h += spike * (1400 + (island % 8) * 220) * (40 + s_.mountains) / 85;
+        break;
+    }
+    case MapStyle::GalaxySea: {
+        int island = 0;
+        const int inside = shardInside(wx, wz, std::max(96, s_.size * (110 - s_.continents) / 700), 45 + s_.land * 2 / 3, seed + 61, island) + layered(x, z, 18, 2, seed + 81) / 4000;
+        h = inside <= 0 ? std::max(inside * 500, -16000) : 600 + inside * 260 + detail / 6;
+        if (h > 0) {
+            h += (int)(((int64_t)ridged(wx, wz, 96, 4, seed + 4)) * s_.mountains / 1100);
+            h = shelved(h, 2400);
+        }
+        break;
+    }
+    case MapStyle::VoidIslands: {
+        // Sheer-sided flat shelves over nothing: there is no water, and the renderer cuts off the ground far below
+        int island = 0;
+        int inside = shardInside(wx, wz, std::max(128, s_.size * (110 - s_.continents) / 500), 45 + s_.land * 2 / 3, seed + 71, island);
+        inside += layered(x, z, 18, 2, seed + 81) / 4000;   // a broken edge
+        // A large island in the middle of the map to start on
+        const int middle = s_.size / 7 - std::max({ std::abs(centerX), std::abs(centerZ), (std::abs(centerX) * 2 + std::abs(centerZ)) / 3 + s_.size / 40 });
+        if (middle > inside) {
+            inside = middle;
+            island = 7;
+        }
+        if (inside <= 0) return VOID_DEPTH;
+        h = 1800 + (island % 8) * 1100 + (int)std::min<int64_t>(inside * 60, 1500) + detail / 7 + small;
+        h += (int)(((int64_t)ridged(wx, wz, 72, 3, seed + 4)) * s_.mountains / 600);
+        h = shelved(h, 2000);
+        return std::max(h, 200);
+    }
+    case MapStyle::Caldera: {
+        // A ring of land around a lava sea in the middle
+        const int c = layered(wx, wz, std::max(96, s_.size * (110 - s_.continents) / 400), 3, seed + 1) / 30;
+        const int sea = (100 - s_.land) * 5;   // how far out the sea reaches, in thousandths of the way to the corner
+        h = (away - sea) * 12 + c + detail / 8 + small;
+        h = h <= 0 ? std::max(h * 2, -14000) : 150 + std::min(h, 4800) / 2 + (int)((int64_t)std::max(h - 4800, 0) * s_.mountains / 40);
+        break;
+    }
+    default:
+        break;
+    }
+
+    if (mapStyleInfo(s_.style).walled) {
+        const int inside = insideWall(s_, x, z);
+        if (inside < 0) {
+            const int jag = (layered(x, z, 16, 2, seed + 22) + 32768) / 40;
+            h = std::max(h, 1500) + -inside * WALL_RISE + jag;
+        }
+    }
+    return std::max(h, -24000);
+}
+
+int WorldGenerator::overworldHeight(int x, int z) const {
     const uint32_t seed = s_.seed;
     const int warpBy = s_.warp * 120;
     const int wx = x + (int)(((int64_t)noise(x, z, 300, seed + 11) * warpBy) >> 22);
@@ -187,7 +376,8 @@ void WorldGenerator::fill(int cx, int cz, ChunkData& out) const {
             uint8_t veg = 0;
             out.biome[t] = (uint8_t)biomeOf(s_, tx, tz, (a + b + d + e) / 4, high - low, veg);
             out.veg[t] = veg;
-            out.walk[t] = tx < s_.size && tz < s_.size && low > 0 && high - low <= SLOPE_LIMIT ? 1 : 0;
+            const bool inWall = mapStyleInfo(s_.style).walled && insideWall(s_, tx, tz) < 2;
+            out.walk[t] = tx < s_.size && tz < s_.size && low > 0 && high - low <= SLOPE_LIMIT && !inWall ? 1 : 0;
         }
     }
 }
@@ -224,7 +414,7 @@ std::vector<uint8_t> WorldGenerator::preview(int px, const std::atomic<bool>* ca
             uint8_t veg = 0;
             const Biome b = biomeOf(s_, tile(i), z, h, 0, veg);
             const int shade = h > 0 ? std::clamp((int)(((int64_t)(h - left) + (h - above)) * 40 * px / s_.size / 256), -60, 60) : 0;
-            previewColor(b, h, veg, shade, &out[((size_t)j * px + i) * 4]);
+            previewColor(s_.theme, b, h, veg, shade, &out[((size_t)j * px + i) * 4]);
         }
     });
     if (stop.load()) out.clear();
@@ -255,6 +445,9 @@ std::string mapFileText(const WorldGenSettings& s) {
     out << "format 1\ngenerator " << WORLD_GEN_VERSION << "\nseed " << s.seed << "\nsize " << s.size << "\nland " << s.land
         << "\ncontinents " << s.continents << "\nwarp " << s.warp << "\nhills " << s.hills << "\nmountains " << s.mountains
         << "\nmoisture " << s.moisture << "\ntemperature " << s.temperature << "\nforests " << s.forests << "\n";
+    if (s.style != (int)MapStyle::Overworld) out << "style " << mapStyleInfo(s.style).fileName << "\n";
+    const std::string theme = themeFileText(s.theme, s.themePreset);
+    if (theme != std::string("theme ") + themePresets()[0].fileName + "\n") out << theme;
     return out.str();
 }
 
@@ -280,6 +473,17 @@ bool mapFromText(const std::string& text, WorldGenSettings& out, std::string& er
         else if (key == "moisture") ls >> s.moisture;
         else if (key == "temperature") ls >> s.temperature;
         else if (key == "forests") ls >> s.forests;
+        else if (key == "style") {
+            std::string name;
+            ls >> name;
+            for (int i = 0; i < (int)MapStyle::Count; ++i) {
+                if (name == mapStyleInfo(i).fileName) s.style = i;
+            }
+        } else {
+            std::string value;
+            ls >> value;
+            themeLineFromText(key, value, s.theme, s.themePreset);
+        }
     }
     if (format != 1) { err = "not a version 1 map"; return false; }
     if (generator != WORLD_GEN_VERSION) { err = "made by generator " + std::to_string(generator) + ", which this game doesn't have"; return false; }

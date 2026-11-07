@@ -10,6 +10,7 @@
 #include <SDL3/SDL_opengl.h>
 #include "camera.h"
 #include "game_tables.h"
+#include "map_theme.h"
 #include "sky.h"
 #include "ecs.h"
 #include "factions.h"
@@ -65,6 +66,8 @@ public:
     void shutdown();
 
     void setDayMinutes(float m) { dayMinutes_ = m; }
+    // Shows a map's theme at once. uploadTerrain sets it from the map when one loads.
+    void setMapTheme(const MapTheme& theme);
 
     void uploadTerrain(const Terrain& t);
 
@@ -334,15 +337,18 @@ private:
     struct TerrainShader {
         GLuint prog = 0;
         GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
+        GLint voidCut = -1, groundTint = -1, tintAmount = -1;
         GLint sunLight = -1, ambient = -1, underwater = -1, fogColor = -1, fog = -1, tile = -1;
     };
     struct SeaShader {
         GLuint prog = 0;
         GLint viewProj = -1, center = -1, half = -1, eye = -1, sunDir = -1, sunLight = -1, ambient = -1, color = -1;
+        GLint glitter = -1, glow = -1, mapSize = -1;
         GLint fogColor = -1, fog = -1, time = -1, opacity = -1, pattern = -1, speed = -1, fadeStart = -1, fadeEnd = -1, tile = -1;
     };
     struct FloorShader {
         GLuint prog = 0;
+        GLint mapSize = -1;
         GLint viewProj = -1, center = -1, half = -1, eye = -1, ambient = -1, sunLight = -1, underwater = -1, fogColor = -1, fog = -1;
     };
     TerrainShader groundShader_;
@@ -429,5 +435,15 @@ private:
     GLint uMoonDir_ = -1, uMoonAlpha_ = -1, uMoonCol_ = -1, uStarAlpha_ = -1;
     float dayMinutes_ = 360.0f;
     SkyColors sky_;
+    bool hasTheme_ = false;
+    bool seaBounded_ = false;
+    MapTheme theme_;
+    Look themeLook_;
+    SkyColors themeSky_;
+    float worldTint_[3] = { 1.0f, 1.0f, 1.0f };   // the light on props and units
+    GLint uSkyKind_ = -1, uSkyBaked_ = -1, uSkyUseBaked_ = -1, uTintInst_ = -1;
+    GLuint skyCube_ = 0, skyBakeFbo_ = 0;
+    bool skyBakeWanted_ = true;
+    void bakeSky(int skyKind, const float* zenith, const float* horizon, float stars);
     float billX_ = 0.0f, billZ_ = 0.0f;
 };

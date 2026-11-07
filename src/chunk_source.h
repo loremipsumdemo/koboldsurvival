@@ -7,6 +7,8 @@
 #include "chunk.h"
 #include "world_format.h"
 
+struct MapTheme;
+
 // Where a world's ground comes from. Terrain asks for chunks one at a time, as it needs them, and never needs the whole
 // map at once. A source that works out its chunks instead of reading them only has to be another of these.
 class ChunkSource {
@@ -27,6 +29,10 @@ public:
         (void)px; (void)rgba; (void)cancel;
         return false;
     }
+    // How this map looks, for a source that has a theme. Null: as surface() says, as it always was.
+    virtual const MapTheme* theme() const { return nullptr; }
+    // True: the world ends in walls, so its water stops at the map's edge instead of running on to the horizon
+    virtual bool walledIn() const { return false; }
 };
 
 // Flat ground with no water, all of it walkable

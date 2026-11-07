@@ -84,6 +84,67 @@ void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
     glEnable(GL_DEPTH_TEST);
 }
 
+// A cave or galaxy sky takes too long to work out for every pixel of every frame, and it doesn't move, so it is drawn once
+// into a cube of six pictures whenever the theme changes, and looked up from there
+void Renderer::bakeSky(int skyKind, const float* zenith, const float* horizon, float stars) {
+    constexpr int SIDE = 1024;
+    skyBakeWanted_ = false;
+    if (!skyCube_) {
+        glGenTextures(1, &skyCube_);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyCube_);
+        for (int face = 0; face < 6; ++face) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA8, SIDE, SIDE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+    GLint viewport[4], fbo = 0;
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo);
+    const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+    glDisable(GL_SCISSOR_TEST);
+
+    // For each face: the directions that a picture's across, up and straight-on stand for, as OpenGL lays out a cube
+    static const float FACES[6][9] = {
+        { 0, 0, -1,  0, -1, 0,  1, 0, 0 },
+        { 0, 0, 1,  0, -1, 0,  -1, 0, 0 },
+        { 1, 0, 0,  0, 0, 1,  0, 1, 0 },
+        { 1, 0, 0,  0, 0, -1,  0, -1, 0 },
+        { 1, 0, 0,  0, -1, 0,  0, 0, 1 },
+        { -1, 0, 0,  0, -1, 0,  0, 0, -1 },
+    };
+    glUseProgram(skyProgram_);
+    glUniform1i(uSkyKind_, skyKind);
+    glUniform1i(uSkyUseBaked_, 0);
+    glUniform1f(uSunAlpha_, 0.0f);
+    glUniform1f(uMoonAlpha_, 0.0f);
+    glUniform1f(uStarAlpha_, stars);
+    glUniform3fv(uZenith_, 1, zenith);
+    glUniform3fv(uHorizon_, 1, horizon);
+    glBindFramebuffer(GL_FRAMEBUFFER, skyBakeFbo_);
+    glViewport(0, 0, SIDE, SIDE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glBindVertexArray(skyVao_);
+    for (int face = 0; face < 6; ++face) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, skyCube_, 0);
+        const float* f = FACES[face];
+        const float m[16] = { f[0], f[1], f[2], 0.0f, f[3], f[4], f[5], 0.0f, f[6], f[7], f[8], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+        glUniformMatrix4fv(uSkyInvVP_, 1, GL_FALSE, m);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)fbo);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    if (scissor) glEnable(GL_SCISSOR_TEST);
+}
+
 void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, int winW, int winH) {
     if (alpha <= 0.0f) return;
 
@@ -161,7 +222,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float invSky[16];
         invert4x4(mul(proj, viewRot).m, invSky);
 
-        const float ang = (dayMinutes_ / 1440.0f - 0.25f) * 2.0f * PI;
+        const float minutes = hasTheme_ && !theme_.dayCycle ? (float)theme_.fixedHour * 60.0f : dayMinutes_;
+        const float ang = (minutes / 1440.0f - 0.25f) * 2.0f * PI;
         const float elev = std::sin(ang);
         float sunDir[3] = { std::cos(ang) * 0.4f, elev, std::cos(ang) * 0.9f };
         const float sunLen = std::sqrt(sunDir[0] * sunDir[0] + sunDir[1] * sunDir[1] + sunDir[2] * sunDir[2]);
@@ -180,17 +242,30 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         };
         const float day = smooth(-0.1f, 0.2f, elev);
         const float dusk = 1.0f - smooth(0.0f, 0.4f, std::fabs(elev));
-        const float sunAlpha = smooth(-0.05f, 0.05f, elev);
-        const float moonAlpha = 1.0f - sunAlpha;
-        const float starAlpha = 1.0f - day;
+        const float sunUp = smooth(-0.05f, 0.05f, elev);
+        const float sunAlpha = hasTheme_ && !theme_.sunShown ? 0.0f : sunUp;
+        const float moonAlpha = hasTheme_ && !theme_.moonShown ? 0.0f : 1.0f - sunUp;
+        // Space has its stars all day
+        float starAlpha = 1.0f - day;
+        if (hasTheme_) starAlpha = (theme_.skyKind == (int)SkyKind::Galaxy ? 1.0f : starAlpha) * (float)theme_.stars / 100.0f;
 
-        const auto& C = sky_.colors;
+        const auto& C = hasTheme_ ? themeSky_.colors : sky_.colors;
         float zen[3], hor[3], horDusk[3], sunC[3];
         lerp3(C[idx(ColorTarget::NightZenith)].data(), C[idx(ColorTarget::DayZenith)].data(), day, zen);
         lerp3(C[idx(ColorTarget::NightHorizon)].data(), C[idx(ColorTarget::DayHorizon)].data(), day, hor);
         lerp3(hor, C[idx(ColorTarget::DuskHorizon)].data(), dusk * 0.8f, horDusk);
         lerp3(C[idx(ColorTarget::DuskSun)].data(), C[idx(ColorTarget::Sun)].data(), day, sunC);
+        const int skyKind = hasTheme_ ? theme_.skyKind : (int)SkyKind::Gradient;
+        if (skyKind == (int)SkyKind::Solid) {
+            for (int i = 0; i < 3; ++i) zen[i] = horDusk[i] = C[idx(ColorTarget::DayZenith)][(size_t)i];
+        } else if (skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy) {
+            for (int i = 0; i < 3; ++i) {
+                zen[i] = C[idx(ColorTarget::DayZenith)][(size_t)i];
+                horDusk[i] = C[idx(ColorTarget::DayHorizon)][(size_t)i];
+            }
+        }
 
+        if (skyBakeWanted_ && (skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy)) bakeSky(skyKind, zen, horDusk, starAlpha);
         glUseProgram(skyProgram_);
         glUniformMatrix4fv(uSkyInvVP_, 1, GL_FALSE, invSky);
         glUniform3fv(uSunDir_, 1, sunDir);
@@ -202,6 +277,14 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUniform1f(uStarAlpha_, starAlpha);
         glUniform3fv(uZenith_, 1, zen);
         glUniform3fv(uHorizon_, 1, horDusk);
+        glUniform1i(uSkyKind_, skyKind);
+        const bool baked = skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy;
+        glUniform1i(uSkyUseBaked_, baked ? 1 : 0);
+        glUniform1i(uSkyBaked_, 0);
+        if (baked) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyCube_);
+        }
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glBindVertexArray(skyVao_);
@@ -372,7 +455,8 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
         constexpr int SEGMENTS = 16;
         constexpr float SHADOW_LIFT = 0.03f;
         const float radius = ITEM_SHADOW_RADIUS * (1.0f - 0.15f * itemBobShare(e, ticks));
-        const RGBA middle{ 0.0f, 0.0f, 0.0f, ITEM_SHADOW_ALPHA }, edge{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const float shadowAlpha = hasTheme_ ? std::min(1.0f, ITEM_SHADOW_ALPHA * (float)theme_.shadows / 50.0f) : ITEM_SHADOW_ALPHA;
+        const RGBA middle{ 0.0f, 0.0f, 0.0f, shadowAlpha }, edge{ 0.0f, 0.0f, 0.0f, 0.0f };
         const V3 center{ tr->x, t.heightAt(tr->x, tr->z) + SHADOW_LIFT, tr->z };
         V3 last{};
         for (int i = 0; i <= SEGMENTS; ++i) {
