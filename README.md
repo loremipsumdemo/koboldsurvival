@@ -119,6 +119,7 @@ tools/
   build_stamp.cpp    Writes the build stamp shown on the title screen
   make_icons.py, make_items.py, make_emotes.py   Draw the icons, item sprites and emotes (Python and Pillow; not part of the build)
   make_models.py     Makes simple low-poly prop models (Python and Pillow; not part of the build)
+  make_sfx.py        Synthesizes the sound effects in SFX/ (Python, NumPy and ffmpeg; not part of the build)
 data/                Game content, packed into data.pak
   itemdb.txt         The items
   factions.txt       Factions and starting reputations
@@ -134,7 +135,7 @@ data/                Game content, packed into data.pak
   item/ icon/ emote/ mob/ profile/ illustration/   PNG pictures
   font/              Noto fonts
 BGM/                 Music and ambient tracks (.mp3)
-SFX/                 Sound effects (.mp3)
+SFX/                 Sound effects (.mp3), made by tools/make_sfx.py
 ```
 
 ## Modding the data
@@ -147,8 +148,8 @@ a pink square.
 A new prop or mob needs no code: add a row to `data/props.txt` or `data/mobs.txt`, its language keys and its art. A new mob
 also needs a line in `data/factions.txt`. A new sound or emote still needs code, since its key is in `src/game_tables.cpp`.
 
-The icons, item sprites and emotes are drawn by the scripts in `tools/`. Each explains how to add a new picture at the top of
-the file.
+The icons, item sprites, emotes and sound effects are made by the scripts in `tools/`. Each explains how to add a new one at
+the top of the file.
 
 Language files copied to the `LANGUAGE` folder next to the game override the packed copy key by key, so text can be
 edited without rebuilding.
