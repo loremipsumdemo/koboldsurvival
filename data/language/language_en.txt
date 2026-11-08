@@ -798,6 +798,7 @@ MISC_GROUP_REMOVED	Group removed; {0} citizen(s) moved to Group 1
 MISC_AIRSHIP_FULL	{0} can't get on the {1}: it is full
 MISC_FLEES	{0} flees out of reach
 MISC_AIRSHIP_FALLS	{0} falls with the Airship
+MISC_LETS_GO_OF	{0} lets go of the {1}
 UILABEL_AUTO_CONSTRUCT	Auto-Construct
 UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
 UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
@@ -1121,6 +1122,7 @@ PROP_WOOD_STOCKPILE	Wood Stockpile
 PROP_STONE_STOCKPILE	Stone Stockpile
 MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
 PROP_STAIRS	Stairs
+PROP_WHEELBARROW	Wheelbarrow
 
 # ----------------------------------------------------------------------
 # Mobs

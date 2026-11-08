@@ -467,7 +467,7 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
         for (ObjectId o : w.view<Prop, Transform>()) {
             if (o == prop) continue;
             const PropInfo& oi = propInfo(w.get<Prop>(o)->kind);
-            if (oi.airship) continue;
+            if (oi.airship || oi.wheelbarrow) continue;
             const Transform* ot = w.get<Transform>(o);
             const float dx = x - ot->x, dz = z - ot->z;
             const float reach = footprintReach(oi.foot) + PROP_BLOCK_RADIUS;

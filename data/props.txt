@@ -39,6 +39,8 @@
 #                cage            an occupant is locked in
 #                airship         floats above the ground, and flies its occupants (as many as workers) over any ground; they
 #                                can only get off over open ground, and die if it is destroyed with them aboard
+#                wheelbarrow     its occupant pushes it about in front of them, store and all, and what is in it weighs
+#                                nothing on them; attacking or being attacked makes them let go
 #                foundation      laid by dragging a rectangle (3 to 64 tiles a side); pieces are built on it once it is done
 #                on_foundation   only on a finished foundation tile of the builder's
 #                wall_rule       a wall: each one takes the shape (end, straight, corner, tee or cross) and turn that fits the
@@ -91,6 +93,7 @@ Farm	PROP_FARM	model_40.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMo
 Turbine	PROP_TURBINE	model_41.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0
 Stove	PROP_STOVE	model_42.glb	1.2	crafting	Cooking	0	cookable	1	0	any	1	0	0	10	0	0	WorkCooking	DoneCooking	Cooking	built	0	0	12	0
 Airship	PROP_AIRSHIP	model_43.glb	4.0	occupy	none	0	0	4	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,airship	0	0	12	0
+Wheelbarrow	PROP_WHEELBARROW	model_53.glb	1.3	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,wheelbarrow	0	0	100	0
 Foundation	PROP_FOUNDATION	model_44.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,foundation	1	0.5	12	0
 WoodWall	PROP_WOOD_WALL	model_45.glb	2.4	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,wall_rule	1	8	12	0
 WoodDoor	PROP_WOOD_DOOR	model_46.glb	2.4	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,door	1	10	12	0

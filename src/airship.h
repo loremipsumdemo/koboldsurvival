@@ -7,7 +7,9 @@
 // it, and a move order for them flies the Airship instead, in a straight line over any ground, water or void. Its occupants
 // can only get off over open ground, and if it is destroyed with them aboard they die.
 inline constexpr float AIRSHIP_SPEED = 4.0f;    // tiles per second
-inline constexpr float AIRSHIP_LIFT = 2.2f;     // how high above the ground (or the water) it floats
+inline constexpr float AIRSHIP_LIFT = 2.54f;    // how high it floats above the ground (or the water), or the top floor
+                                                // built on its tile: about a floor's height (building.h FLOOR_TOP)
+inline constexpr float AIRSHIP_CLIMB = 4.0f;    // how fast it rises or sinks to that height, per second
 inline constexpr float AIRSHIP_DECK = 0.7f;     // where its occupants stand, above its keel
 inline constexpr float AIRSHIP_ARRIVED = 0.15f;
 inline constexpr int AIRSHIP_LAND_TILES = 64;  // land this big that can't be walked to gets you an Airship at the start
@@ -21,6 +23,11 @@ struct AirshipState {
     bool flying = false;
     float tx = 0.0f, tz = 0.0f;
     bool overOpen = true;
+    // Not saved: the tile its height was last worked out for, the top floor there, and whether it has settled at all yet
+    int tileX = -1, tileZ = -1;
+    int topFloor = 0;
+    float recheck = 0.0f;
+    bool settled = false;
 };
 
 bool isAirship(World& w, ObjectId prop);

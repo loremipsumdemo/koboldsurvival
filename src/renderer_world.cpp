@@ -1,6 +1,8 @@
 #include "renderer_internal.h"
 #include <unordered_set>
+#include "airship.h"
 #include "building.h"
+#include "wheelbarrow.h"
 #include "frustum.h"
 #include <unordered_map>
 
@@ -427,7 +429,17 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float x0, y0, z0, x1, y1, z1;
     };
     std::vector<PlannedBox> plannedBoxes;
-    Batch stairSteps;   // stairs, drawn as plain steps
+    Batch stairSteps;   // stairs, drawn as plain steps, and the mooring ropes of Airships nobody is aboard
+    // A thin square rope from a to b
+    auto rope = [&](V3 a, V3 b, float r, RGBA col) {
+        stairSteps.quad(V3{ a.x - r, a.y, a.z - r }, V3{ a.x + r, a.y, a.z - r }, V3{ b.x + r, b.y, b.z - r }, V3{ b.x - r, b.y, b.z - r }, col);
+        stairSteps.quad(V3{ a.x - r, a.y, a.z + r }, V3{ a.x + r, a.y, a.z + r }, V3{ b.x + r, b.y, b.z + r }, V3{ b.x - r, b.y, b.z + r }, col);
+        stairSteps.quad(V3{ a.x - r, a.y, a.z - r }, V3{ a.x - r, a.y, a.z + r }, V3{ b.x - r, b.y, b.z + r }, V3{ b.x - r, b.y, b.z - r }, col);
+        stairSteps.quad(V3{ a.x + r, a.y, a.z - r }, V3{ a.x + r, a.y, a.z + r }, V3{ b.x + r, b.y, b.z + r }, V3{ b.x + r, b.y, b.z - r }, col);
+    };
+    // Who pushes each Wheelbarrow: it is drawn in front of them, facing their way
+    std::unordered_map<ObjectId, ObjectId> pushers;
+    for (ObjectId u : w.view<Pushing, Transform>()) pushers[w.get<Pushing>(u)->barrow] = u;
     const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f };
     float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
     cam.eye(camX, camY, camZ);
@@ -521,10 +533,36 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             px += std::cos(along) * 0.42f;
             pz -= std::sin(along) * 0.42f;
         }
+        float py = baseY;
+        if (auto pu = info.wheelbarrow ? pushers.find(e) : pushers.end(); pu != pushers.end()) {
+            const Transform* ut = w.get<Transform>(pu->second);
+            const auto facing = unitFacing_.find(pu->second);
+            const float fy = facing != unitFacing_.end() ? facing->second.yaw : yaw + 1.5707963f;
+            px = ut->x + std::sin(fy) * WHEELBARROW_AHEAD;
+            pz = ut->z + std::cos(fy) * WHEELBARROW_AHEAD;
+            py = ut->y;
+            yaw = fy - 1.5707963f;
+        }
+        if (info.airship && modelled && occupantCount(w, e) == 0) {
+            // Moored: a rope off its side, down to the ground (or the floor) under it
+            const Model& m = propModel(kind);
+            const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+            const float k = extent > 0.0f ? info.size / extent : 1.0f;
+            const float c = std::cos(yaw), sn = std::sin(yaw);
+            auto at = [&](float lx, float ly, float lz) {
+                return V3{ px + k * (c * lx + sn * lz), baseY + k * ly, pz + k * (-sn * lx + c * lz) };
+            };
+            const V3 top = at(-0.5f, 0.66f, 0.52f);
+            V3 low = at(-0.75f, 0.0f, 1.25f);
+            low.y = baseY - AIRSHIP_LIFT;
+            const RGBA ropeColor{ 0.74f, 0.62f, 0.42f, 1.0f }, stake{ 0.38f, 0.26f, 0.15f, 1.0f };
+            rope(top, low, 0.025f, ropeColor);
+            rope(V3{ low.x, low.y - 0.05f, low.z }, V3{ low.x, low.y + 0.3f, low.z }, 0.05f, stake);
+        }
         if (const Model* made = info.door ? materialModel(0) : nullptr) {
-            drawModel(*made, px, baseY, pz, propInfo(kind).size, yaw);
+            drawModel(*made, px, py, pz, propInfo(kind).size, yaw);
         } else if (modelled) {
-            queuePropModel(kind, px, baseY, pz, propInfo(kind).size, yaw);
+            queuePropModel(kind, px, py, pz, propInfo(kind).size, yaw);
         } else {
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }

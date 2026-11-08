@@ -798,6 +798,7 @@ MISC_GROUP_REMOVED	组已删除；{0} 名居民移到第 1 组
 MISC_AIRSHIP_FULL	{0} 无法登上{1}：已经满员
 MISC_FLEES	{0} 逃到了够不着的地方
 MISC_AIRSHIP_FALLS	{0} 随飞艇一起坠落
+MISC_LETS_GO_OF	{0} 松开了{1}
 UILABEL_AUTO_CONSTRUCT	自动建造
 UILABEL_BEHAVIOR_AUTO_SUPPLY	自动搬运建材
 UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	自动搬运建材：旧的任务，现在等同于自动建造。
@@ -1121,6 +1122,7 @@ PROP_WOOD_STOCKPILE	木头堆放区
 PROP_STONE_STOCKPILE	石头堆放区
 MISC_PROP_HOLDS_ITEMS	存放 {0}/{1} 件物品
 PROP_STAIRS	楼梯
+PROP_WHEELBARROW	手推车
 
 # ----------------------------------------------------------------------
 # Mobs

@@ -1,6 +1,7 @@
 #include "airship.h"
 #include "build.h"
 #include "systems_internal.h"
+#include "wheelbarrow.h"
 
 using namespace systems_detail;
 
@@ -18,6 +19,7 @@ int occupyCapacity(World& w, ObjectId prop) {
 int occupantCount(World& w, ObjectId prop) {
     int n = 0;
     for (ObjectId u : w.view<Occupying>()) n += w.get<Occupying>(u)->prop == prop ? 1 : 0;
+    for (ObjectId u : w.view<Pushing>()) n += w.get<Pushing>(u)->barrow == prop ? 1 : 0;
     return n;
 }
 
@@ -149,6 +151,19 @@ void fleeSystem(World& w, Terrain& t, float dt) {
     }
 }
 
+namespace {
+// The top finished upper floor on this tile (1 the first), or 0 for none
+int topFloorAt(World& w, int x, int z) {
+    int top = 0;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (!propInfo(w.get<Prop>(e)->kind).upperFloor || w.has<Blueprint>(e)) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if ((int)std::floor(tr->x) == x && (int)std::floor(tr->z) == z) top = std::max(top, storeyOf(w, e));
+    }
+    return top;
+}
+}
+
 void airshipSystem(World& w, Terrain& t, float dt) {
     boardingStep(w, t, dt);
     for (ObjectId ship : w.view<Prop, Transform>()) {
@@ -167,7 +182,23 @@ void airshipSystem(World& w, Terrain& t, float dt) {
                 prop->yaw = std::atan2(dx, dz) - 1.5707963f;
             }
         }
-        tr->y = std::max(t.heightAt(tr->x, tr->z), 0.0f) + AIRSHIP_LIFT;
+        // It floats a floor's height above the ground, or above the top floor built on the tile it is over
+        const int tx = (int)std::floor(tr->x), tz = (int)std::floor(tr->z);
+        st.recheck -= dt;
+        if (tx != st.tileX || tz != st.tileZ || st.recheck <= 0.0f) {
+            st.tileX = tx;
+            st.tileZ = tz;
+            st.recheck = 0.5f;
+            st.topFloor = topFloorAt(w, tx, tz);
+        }
+        const float want = std::max(t.heightAt(tr->x, tr->z), 0.0f) + storeyBaseHeight(st.topFloor) + AIRSHIP_LIFT;
+        if (!st.settled) {
+            tr->y = want;
+            st.settled = true;
+        } else {
+            const float step = AIRSHIP_CLIMB * dt;
+            tr->y = std::fabs(want - tr->y) <= step ? want : tr->y + (want > tr->y ? step : -step);
+        }
         st.overOpen = t.walkable((int)std::floor(tr->x), (int)std::floor(tr->z));
 
         // Its occupants stand on deck, two by two

@@ -80,6 +80,7 @@ set(SIM_SOURCES
     src/behavior_groups.cpp
     src/ghosts.cpp
     src/airship.cpp
+    src/wheelbarrow.cpp
     src/building.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp

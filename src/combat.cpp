@@ -1,5 +1,6 @@
 #include "ghosts.h"
 #include "airship.h"
+#include "wheelbarrow.h"
 #include "combat.h"
 #include "language.h"
 #include <algorithm>
@@ -114,6 +115,7 @@ ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<O
 
 void onAttacked(World& w, ObjectId a, ObjectId d) {
     const int fa = factionOf(w, a), fd = factionOf(w, d);
+    pushingAttacked(w, a, d);
     if (fa == fd) return;
     fleeFromAirship(w, a, d);
     const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);

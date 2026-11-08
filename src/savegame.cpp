@@ -78,6 +78,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.body) w.line("body", i, *u.body);
     if (u.home) w.line("home", i, u.home->x, u.home->z, u.home->returning);
     if (u.occupying >= 0) w.line("occupy", i, u.occupying);
+    if (u.pushing >= 0) w.line("push", i, u.pushing);
     if (u.upstairs >= 0) w.line("upstairs", i, u.upstairs);
     if (u.down) w.line("down", i, u.down->dying, u.down->koFaction, u.down->conscious, u.down->tickPart);
     if (u.corpseHours) w.line("corpse", i, *u.corpseHours);
@@ -407,6 +408,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
             return true;
         } },
         { "occupy", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->occupying); } },
+        { "push", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->pushing); } },
         { "upstairs", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->upstairs); } },
         { "foundation", [](Line& l) {
             SaveProp* p = l.prop();

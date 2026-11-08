@@ -1,5 +1,6 @@
 #include "systems_internal.h"
 #include "ghosts.h"
+#include "wheelbarrow.h"
 
 using namespace systems_detail;
 
@@ -37,7 +38,8 @@ bool propInTheWay(World& w, ObjectId unit, ObjectId prop) {
     const float abx = b->x - a->x, abz = b->z - a->z;
     const float len2 = abx * abx + abz * abz;
     for (ObjectId p : w.view<Prop, Transform>()) {
-        if (p == prop || propInfo(w.get<Prop>(p)->kind).airship) continue;   // an Airship floats over the way
+        // An Airship floats over the way, and a Wheelbarrow is pushed out of it
+        if (p == prop || propInfo(w.get<Prop>(p)->kind).airship || propInfo(w.get<Prop>(p)->kind).wheelbarrow) continue;
         const Transform* c = w.get<Transform>(p);
         float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
         t = std::clamp(t, 0.0f, 1.0f);
@@ -51,7 +53,7 @@ ObjectId propOccupant(World& w, ObjectId prop) {
     for (ObjectId u : w.view<Occupying>()) {
         if (w.get<Occupying>(u)->prop == prop) return u;
     }
-    return NO_OBJECT;
+    return pusherOf(w, prop);
 }
 
 void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId prop, PropAction action) {
@@ -235,6 +237,17 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 }
                 if (w.has<OccupyBan>(u)) {
                     a.occupyBanned = true;
+                    break;
+                }
+                // A Wheelbarrow is taken hold of, and goes where its pusher walks
+                if (isWheelbarrow(w, prop)) {
+                    if (barrowOf(w, u) == prop) break;
+                    if (startPushing(w, u, prop)) {
+                        a.started = true;
+                        queueSoundFrom(w, Sfx::Occupy, prop);
+                    } else {
+                        a.taken = true;
+                    }
                     break;
                 }
                 // Getting on an Airship takes a while, and there must still be room once it is done

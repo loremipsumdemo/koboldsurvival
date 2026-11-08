@@ -44,6 +44,7 @@ struct SaveUnit {
     std::optional<int> body;
     std::optional<SpawnHome> home;
     int occupying = -1;
+    int pushing = -1;    // the Wheelbarrow (a prop index) it pushes
     int upstairs = -1;   // the foundation (a prop index) of the building whose upper floor it stands on
     std::optional<Unconscious> down;
     std::optional<double> corpseHours;

@@ -41,6 +41,7 @@
 #include "map_pick.h"
 #include "squads.h"
 #include "airship.h"
+#include "wheelbarrow.h"
 #include "display.h"
 #include "inventory.h"
 #include "party.h"

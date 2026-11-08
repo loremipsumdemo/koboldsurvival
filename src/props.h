@@ -61,6 +61,7 @@ enum class PropKind : int {
     WoodStockpile,
     StoneStockpile,
     Stairs,
+    Wheelbarrow,
     NamedCount
 };
 constexpr int PROP_NAMED_KIND_COUNT = idx(PropKind::NamedCount);
@@ -165,6 +166,7 @@ struct PropInfo {
     bool seat = false;
     bool cage = false;
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
+    bool wheelbarrow = false;    // its occupant pushes it about in front of them, with its store
     bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
     bool onFoundation = false;   // only on a finished foundation tile of the builder's
     bool wallRule = false;       // a wall: its shape fits the walls around it, and it blocks walking
@@ -201,7 +203,7 @@ inline bool yieldsItems(PropKind kind) { return propInfo(kind).use == PropUse::R
 
 inline bool isWorkProp(PropUse use) { return use == PropUse::Resource || use == PropUse::Crafting; }
 inline bool hasStorage(const PropInfo& info) {
-    return info.use == PropUse::Storage || info.use == PropUse::PassiveCrafting ||
+    return info.use == PropUse::Storage || info.use == PropUse::PassiveCrafting || info.wheelbarrow ||
            (info.use == PropUse::Crafting && info.input != 0);
 }
 inline bool isSeat(PropKind kind) { return propInfo(kind).seat; }

@@ -2,6 +2,7 @@
 #include "game_tables.h"
 #include "level.h"
 #include "systems_internal.h"
+#include "wheelbarrow.h"
 #include "build.h"
 #include "hostility.h"
 #include <sstream>
@@ -202,6 +203,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const Body* b = w.get<Body>(u)) su.body = idx(b->type);
     if (const SpawnHome* h = w.get<SpawnHome>(u)) su.home = *h;
     if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = idOf(propIds, oc->prop);
+    if (const Pushing* pu = w.get<Pushing>(u)) su.pushing = idOf(propIds, pu->barrow);
     if (const Upstairs* up = w.get<Upstairs>(u)) su.upstairs = idOf(propIds, up->foundation);
     if (const Unconscious* un = w.get<Unconscious>(u)) su.down = *un;
     if (const Corpse* c = w.get<Corpse>(u)) su.corpseHours = c->hours;
@@ -344,6 +346,9 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& 
                 *world.get<Transform>(e) = *world.get<Transform>(p);
                 world.add(e, Occupying{ p });
             }
+        }
+        if (u.pushing >= 0 && u.pushing < (int)props.size() && !world.has<Occupying>(e) && !world.has<Carried>(e)) {
+            startPushing(world, e, props[(size_t)u.pushing]);
         }
         if (u.workProp >= 0 && u.workProp < (int)props.size()) world.add(e, Working{ props[(size_t)u.workProp], u.workUnlocking });
         if (u.upstairs >= 0 && u.upstairs < (int)props.size() && world.has<Foundation>(props[(size_t)u.upstairs])) {

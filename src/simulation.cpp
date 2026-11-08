@@ -3,6 +3,7 @@
 #include "squads.h"
 #include "ghosts.h"
 #include "airship.h"
+#include "wheelbarrow.h"
 #include "building.h"
 #include "simulation.h"
 #include "calendar.h"
@@ -84,6 +85,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("squadSystem", squadSystem(w, dt, running));
     PROFILED("steeringSystem", steeringSystem(w, t, dt, running));
     airshipSystem(w, t, dt);
+    wheelbarrowSystem(w);
     PROFILED("pickupSystem", pickupSystem(w, t));
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
     PROFILED("wildMobSystem", wildMobSystem(w, t, dt));

@@ -443,6 +443,19 @@ def airship():
 
 
 
+def wheelbarrow():
+    """A tray on one wheel at the front (+x, the way it is pushed), with two handles back toward its pusher."""
+    parts = [box(0.1, 0.3, 0, 0.75, 0.24, 0.56, WOOD), box(0.1, 0.5, 0, 0.66, 0.05, 0.46, DARK_WOOD),
+             box(0.1, 0.54, -0.27, 0.78, 0.05, 0.04, PALE_WOOD), box(0.1, 0.54, 0.27, 0.78, 0.05, 0.04, PALE_WOOD)]
+    parts += wheel(0.58, -0.03, 0.2)
+    for z in (-0.2, 0.2):
+        parts.append(rod((0.62, 0.2, z * 0.4), (0.25, 0.32, z), 0.04, IRON))
+        parts.append(rod((0.4, 0.32, z), (-0.62, 0.5, z * 1.2), 0.05, DARK_WOOD))
+        parts.append(box(-0.62, 0.47, z * 1.2, 0.1, 0.06, 0.07, BARK))
+        parts.append(box(-0.15, 0, z, 0.05, 0.33, 0.05, DARK_WOOD))
+    return parts
+
+
 WALL_HEIGHT = 2.4   # src/building.h FLOOR_HEIGHT: the upper floor sits on the walls
 
 
@@ -570,7 +583,10 @@ BUILDERS = {
     'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'Airship': airship, 'Foundation': foundation,
     'WoodWall': wood_wall, 'WoodDoor': wood_door, 'Ladder': ladder, 'UpperFloor': upper_floor,
     'DragonCrystal': dragon_crystal, 'WoodStockpile': wood_stockpile, 'StoneStockpile': stone_stockpile,
+    'Wheelbarrow': wheelbarrow,
 }
+# Props the game draws itself, with no model file
+PROCEDURAL = {'Stairs'}
 
 
 def sub(a, b):
@@ -714,6 +730,8 @@ def main():
                 model_column = fields.index('model')
             else:
                 files[fields[0]] = fields[model_column]
+    for key in PROCEDURAL:
+        files.pop(key, None)
     if set(files) != set(BUILDERS):
         raise SystemExit('BUILDERS and data/props.txt differ: ' + ', '.join(sorted(set(files) ^ set(BUILDERS))))
     only = set(sys.argv[1:])

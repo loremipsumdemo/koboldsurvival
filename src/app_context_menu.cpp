@@ -4,9 +4,23 @@
 
 using namespace play;
 
-// Evacuate: someone else pushes the occupant out, or, on an Airship, those aboard get off
+// The prop a unit is in or on, or the Wheelbarrow it pushes
+static ObjectId heldProp(World& world, ObjectId u) {
+    const ObjectId in = occupiedProp(world, u);
+    return in != NO_OBJECT ? in : barrowOf(world, u);
+}
+
+// Evacuate: someone else pushes the occupant out, or, on an Airship, those aboard get off, or a Wheelbarrow's pusher
+// lets go of it
 static bool canEvacuate(World& world, ObjectId prop, ObjectId occupant) {
     if (prop == NO_OBJECT) return false;
+    if (isWheelbarrow(world, prop)) {
+        for (ObjectId u : selectedUnits(world)) {
+            if (barrowOf(world, u) == prop) return true;
+        }
+        const ObjectId pusher = pusherOf(world, prop);
+        return pusher != NO_OBJECT && world.has<Commandable>(pusher);
+    }
     if (isAirship(world, prop)) {
         for (ObjectId u : selectedUnits(world)) {
             if (airshipOf(world, u) == prop) return true;
@@ -150,7 +164,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
             if (!caged) out.push_back(MenuAction::AttackUnprovoked);
         }
-        if (canEvacuate(world, occupiedProp(world, target), target)) out.push_back(MenuAction::Evacuate);
+        if (canEvacuate(world, heldProp(world, target), target)) out.push_back(MenuAction::Evacuate);
         if (const Lock* lock = world.get<Lock>(occupiedProp(world, target))) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
     } else if (const Prop* p = world.get<Prop>(target)) {
         const PropUse use = propInfo(p->kind).use;
@@ -190,7 +204,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             }
         }
         if (use == PropUse::Occupy && occupantCount(world, target) < occupyCapacity(world, target) && (carrying || !allOccupying)) {
-            out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
+            out.push_back(carrying && !propInfo(p->kind).wheelbarrow ? MenuAction::Place : MenuAction::Occupy);
         }
         if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NO_OBJECT) out.push_back(MenuAction::Place);
         if (canEvacuate(world, target, isAirship(world, target) ? NO_OBJECT : propOccupant(world, target))) {
@@ -201,7 +215,9 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         const Transform* pt = world.get<Transform>(target);
         if (pt && claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
             if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
-            if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaul);
+            if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand && !propInfo(p->kind).wheelbarrow) {
+                out.push_back(MenuAction::AutoHaul);
+            }
             if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         }
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
@@ -376,7 +392,7 @@ void App::pickMenuAction(MenuAction a) {
     const ObjectId clicked = target;
     session.contextMenu.open = false;
     if ((a == MenuAction::Unlock || a == MenuAction::Lock || a == MenuAction::Evacuate) && world.has<Entity>(target)) {
-        target = occupiedProp(world, target);
+        target = a == MenuAction::Evacuate ? heldProp(world, target) : occupiedProp(world, target);
         if (target == NO_OBJECT) return;
     }
     if (a == MenuAction::Disband) {
@@ -426,6 +442,22 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::StockStall) {
         openStall(target);
+        return;
+    }
+    if (a == MenuAction::Evacuate && isWheelbarrow(world, target)) {
+        // Its pusher lets go: the selected one, or else the unit of yours pushing it
+        ObjectId pusher = NO_OBJECT;
+        for (ObjectId u : selectedUnits(world)) {
+            if (barrowOf(world, u) == target) pusher = u;
+        }
+        if (pusher == NO_OBJECT) {
+            const ObjectId other = pusherOf(world, target);
+            if (other != NO_OBJECT && world.has<Commandable>(other)) pusher = other;
+        }
+        if (pusher != NO_OBJECT) {
+            stopPushing(world, pusher);
+            playSfx(Sfx::UiClick);
+        }
         return;
     }
     if (a == MenuAction::Evacuate && isAirship(world, target)) {
