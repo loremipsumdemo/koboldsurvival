@@ -138,6 +138,8 @@ struct ActiveSquadMember {
 struct ActiveSquad {
     float cx = 0.0f, cz = 0.0f;
     float headX = 0.0f, headZ = 1.0f;
+    float endX = 0.0f, endZ = 1.0f;   // the way the shape faces once it has arrived, kept when it re-forms
+    Vec2 end{ 0.0f, 0.0f };           // the middle of the shape once it has arrived
     std::vector<Vec2> waypoints;
     size_t next = 0;
     bool arrived = false;

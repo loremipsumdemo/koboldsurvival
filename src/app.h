@@ -303,8 +303,10 @@ struct App : AppSession {
     void pickSquad(int squad, bool additive);
     void optimizeSquadGear();
     void optimizeSelectedGear();
-    // The Optimize and Floor buttons' dropdowns: 0 none open, 1 Optimize, 2 Floor
+    // The Optimize, Floor and Form buttons' dropdowns: 0 none open, 1 Optimize, 2 Floor, 3 Form
+    static constexpr int SQUAD_MENU_FORM = 3;
     int squadMenu = 0;
+    int formMenuScroll = 0;
     ItemMenuLayout squadMenuLayout();
     std::vector<std::string> squadMenuLabels();
     void runSquadMenu(int choice);
@@ -402,7 +404,12 @@ struct App : AppSession {
     void markMove(float x, float z);
     FormationChoice formationChoice() const;
     bool formationKeyDown();
-    void drawFormationKeys();
+    void applyFormationKey(int index);   // 0..3 a shape, 4 tight or loose: what Alt and 1..5 do
+    std::vector<Renderer::FormationHelpEntry> formationEntries();
+    Renderer::FormationMenuLayout formMenuLayout();
+    bool pressOnFormMenu();
+    bool wheelOnFormMenu();
+    void drawFormMenu();
     void finishFormationDrag();
     void beginRightHold(float x, float z);
     void moveSelectedTo(float x, float z);

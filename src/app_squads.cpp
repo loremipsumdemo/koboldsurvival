@@ -144,6 +144,7 @@ void App::runSelectMenu(int choice) {
 }
 
 bool App::pressOnSelectMenu() {
+    if (pressOnFormMenu()) return true;
     if (screen == Screen::Playing && squadMenu != 0) {
         const ItemMenuLayout L = squadMenuLayout();
         const int hit = e.button.button == SDL_BUTTON_LEFT ? itemMenuButtonAt(L, e.button.x, e.button.y) : -1;

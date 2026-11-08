@@ -89,6 +89,7 @@ struct UnitPanelLayout {
     Rect title;
     Rect squadHeading;   // "Squad: 1" at the top of the Squad tab
     Rect paceButton;
+    Rect formButton;     // opens the formation list
     Rect selectButton;
     Rect optimizeAllButton;
     Rect floorButton;

@@ -13,7 +13,7 @@ Vec2 middleOf(World& w, const std::vector<ObjectId>& units) {
     return Vec2{ cx / (float)units.size(), cz / (float)units.size() };
 }
 
-// Sets up the squad and hands out the slots. With no walk, it forms up where it is.
+// Sets up the squad and hands out the slots. With no walk, it forms up around point without a route.
 void formSquad(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 point, bool walk, const FormationSpec& spec) {
     const Vec2 from = middleOf(w, units);
     ActiveSquad s;
@@ -32,7 +32,7 @@ void formSquad(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 po
     } else {
         squad->arrived = true;
     }
-    Vec2 dest = from;
+    Vec2 dest = walk ? from : point;
     float endX = spec.headX, endZ = spec.headZ;
     if (!squad->waypoints.empty()) {
         dest = squad->waypoints.back();
@@ -52,6 +52,9 @@ void formSquad(World& w, Terrain& t, const std::vector<ObjectId>& units, Vec2 po
         squad->headX = endX;
         squad->headZ = endZ;
     }
+    squad->endX = endX;
+    squad->endZ = endZ;
+    squad->end = dest;
     squad->finalSpots = fitFormation(t, dest, endX, endZ, squad->offsets, squad->spacing);
 
     std::vector<Vec2> places;
@@ -103,21 +106,22 @@ void reformUnits(World& w, Terrain& t, const std::vector<ObjectId>& given, const
     FormationSpec spec;
     spec.choice = choice;
     spec.facing = true;
+    Vec2 middle = middleOf(w, units);
+    // The new shape keeps the old one's middle and the way it faces, only its shape or spacing changes
     for (ObjectId u : units) {
         const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u);
         const ActiveSquad* sq = sm ? w.get<ActiveSquad>(sm->squad) : nullptr;
         if (!sq) continue;
+        spec.headX = sq->endX;
+        spec.headZ = sq->endZ;
         if (!sq->arrived && !sq->waypoints.empty()) {
-            const Vec2 going = sq->waypoints.back();
-            spec.facing = false;
-            formSquad(w, t, units, going, true, spec);
+            formSquad(w, t, units, sq->waypoints.back(), true, spec);
             return;
         }
-        spec.headX = sq->headX;
-        spec.headZ = sq->headZ;
+        middle = sq->end;
         break;
     }
-    formSquad(w, t, units, Vec2{}, false, spec);
+    formSquad(w, t, units, middle, false, spec);
 }
 
 FormationSpec formationFromDrag(World& w, const std::vector<ObjectId>& units, Vec2 a, Vec2 b, const FormationChoice& choice, Vec2& point) {
@@ -126,8 +130,8 @@ FormationSpec formationFromDrag(World& w, const std::vector<ObjectId>& units, Ve
     point = a;
     const float dx = b.x - a.x, dz = b.z - a.z, len = std::hypot(dx, dz);
     if (len < FORMATION_DRAG_LEAST || units.empty()) return spec;
-    point = Vec2{ (a.x + b.x) * 0.5f, (a.z + b.z) * 0.5f };
-    spec.width = len;
+    // Where the drag started is the middle; the drag reaches out to one edge, so a circle's radius or half a line
+    spec.width = len * 2.0f;
     spec.facing = true;
     spec.headX = dz / len;
     spec.headZ = -dx / len;

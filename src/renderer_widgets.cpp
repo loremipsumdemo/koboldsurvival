@@ -341,28 +341,52 @@ void Renderer::drawPauseBar(bool hint) {
     if (hint) drawUiText(tip, uiW_ * 0.5f - uiTextWidth(tip) * 0.5f, pad + bigH + pad, theme::ASH);
 }
 
-void Renderer::drawFormationHelp(const std::string& title, const std::vector<FormationHelpEntry>& entries, float top) {
+namespace {
+constexpr float FORM_PAD = 6.0f, FORM_ICON_W = 66.0f, FORM_ICON_H = 40.0f, FORM_ROW_GAP = 2.0f, FORM_WIDTH = 230.0f, FORM_SCROLL_W = 8.0f;
+}
+
+Renderer::FormationMenuLayout Renderer::formationMenuLayout(const Rect& button, int count, int scroll, int winH) {
     const float s = uiScale();
-    const float pad = 10.0f * s, gap = 6.0f * s, iconW = 66.0f * s, iconH = 40.0f * s, mostStep = 11.0f * s, dot = 5.0f * s;
-    const RGBA gold{ 1.0f, 0.78f, 0.30f, 1.0f };
-    const float titleH = uiTextHeight(title), lineH = uiTextHeight("Ag");
-    std::vector<float> widths;
-    float total = pad * 2.0f;
-    for (const FormationHelpEntry& entry : entries) {
-        widths.push_back(std::max({ iconW, uiTextWidth(entry.key), uiTextWidth(entry.label) }) + 14.0f * s);
-        total += widths.back() + gap;
+    const float pad = FORM_PAD * s, rowH = FORM_ICON_H * s + 2.0f * pad, rowGap = FORM_ROW_GAP * s;
+    const float w = std::max(button.w, FORM_WIDTH * s);
+    const float fullH = count * rowH + std::max(0, count - 1) * rowGap + 2.0f * pad;
+    const float below = winH - (button.y + button.h) - 4.0f * s, above = button.y - 4.0f * s;
+    // Below the button, or above it when the panel sits low; as many rows as the room holds
+    const bool down = below >= fullH || below >= above;
+    const float room = std::max(rowH + 2.0f * pad, down ? below : above);
+    FormationMenuLayout L;
+    L.count = count;
+    const int visible = std::clamp((int)std::floor((room - 2.0f * pad + rowGap) / (rowH + rowGap) + 0.001f), 1, std::max(1, count));
+    L.first = std::clamp(scroll, 0, std::max(0, count - visible));
+    const float h = visible * rowH + (visible - 1) * rowGap + 2.0f * pad;
+    const float x = std::clamp(button.x, 0.0f, std::max(0.0f, (float)uiW_ - w));
+    L.box = Rect{ x, down ? button.y + button.h : button.y - h, w, h };
+    const bool scrolls = visible < count;
+    const float rowW = w - 2.0f * pad - (scrolls ? FORM_SCROLL_W * s + pad : 0.0f);
+    for (int i = 0; i < visible && L.first + i < count; ++i) {
+        L.rows.push_back(Rect{ x + pad, L.box.y + pad + i * (rowH + rowGap), rowW, rowH });
     }
-    total -= gap;
-    const float h = pad + titleH + gap + iconH + gap + lineH * 2.0f + 4.0f * s + pad;
-    const Rect panel{ (uiW_ - total) * 0.5f, top, total, h };
-    drawThemedPanel(panel);
-    drawUiTextCentered(title, uiW_ * 0.5f, top + pad, theme::ASH);
-    float x = panel.x + pad;
-    const float y = top + pad + titleH + gap;
-    for (size_t i = 0; i < entries.size(); ++i) {
+    if (scrolls) {
+        L.track = Rect{ x + w - pad - FORM_SCROLL_W * s, L.box.y + pad, FORM_SCROLL_W * s, h - 2.0f * pad };
+        L.thumb = scrollThumb(L.track, (float)visible / (float)count, std::min(8.0f * s, L.track.h), (float)L.first / (float)(count - visible));
+    }
+    return L;
+}
+
+void Renderer::drawFormationMenu(const FormationMenuLayout& L, const std::vector<FormationHelpEntry>& entries, float mx, float my) {
+    const float s = uiScale();
+    const float pad = FORM_PAD * s, iconW = FORM_ICON_W * s, iconH = FORM_ICON_H * s, mostStep = 11.0f * s, dot = 5.0f * s;
+    const RGBA gold{ 1.0f, 0.78f, 0.30f, 1.0f };
+    const float lineH = uiTextHeight("Ag");
+    drawThemedPanel(L.box);
+    for (size_t r = 0; r < L.rows.size(); ++r) {
+        const size_t i = (size_t)L.first + r;
+        if (i >= entries.size()) break;
         const FormationHelpEntry& entry = entries[i];
-        const Rect cell{ x, y - 3.0f * s, widths[i], h - (y - top) - pad + 6.0f * s };
-        if (entry.current) drawRect(cell, RGBA{ 0.45f, 0.30f, 0.14f, 0.9f });
+        const Rect& row = L.rows[r];
+        const bool hot = !entry.dots.empty() && row.contains(mx, my);
+        if (hot) noteHover(row);
+        drawRect(row, entry.current ? RGBA{ 0.45f, 0.30f, 0.14f, 0.9f } : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.6f });
         if (!entry.dots.empty()) {
             float lowX = entry.dots[0].x, highX = lowX, lowZ = entry.dots[0].z, highZ = lowZ;
             for (const Vec2& d : entry.dots) {
@@ -374,16 +398,18 @@ void Renderer::drawFormationHelp(const std::string& title, const std::vector<For
             float step = mostStep;
             if (highX > lowX) step = std::min(step, (iconW - dot) / (highX - lowX));
             if (highZ > lowZ) step = std::min(step, (iconH - dot) / (highZ - lowZ));
-            const float cx = x + widths[i] * 0.5f, cy = y + iconH * 0.5f;
+            const float cx = row.x + pad + iconW * 0.5f, cy = row.y + row.h * 0.5f;
             for (const Vec2& d : entry.dots) {
                 drawRect(Rect{ cx + (d.x - (lowX + highX) * 0.5f) * step - dot * 0.5f, cy + (d.z - (lowZ + highZ) * 0.5f) * step - dot * 0.5f, dot, dot },
                          entry.current ? gold : theme::BONE);
             }
         }
-        drawUiTextCentered(entry.key, x + widths[i] * 0.5f, y + iconH + gap, gold);
-        drawUiTextCentered(entry.label, x + widths[i] * 0.5f, y + iconH + gap + lineH + 2.0f * s, entry.current ? gold : theme::BONE);
-        x += widths[i] + gap;
+        const float tx = row.x + pad + iconW + pad, textW = row.x + row.w - pad - tx;
+        const float ty = row.y + (row.h - lineH * 2.0f - 2.0f * s) * 0.5f;
+        drawUiText(fitText(entry.key, textW, true), tx, ty, gold);
+        drawUiText(fitText(entry.label, textW, true), tx, ty + lineH + 2.0f * s, entry.current ? gold : theme::BONE);
     }
+    if (L.track.h > 0.0f) drawScrollBar(L.track, L.thumb, L.box.contains(mx, my));
 }
 
 void Renderer::drawThemedPanel(const Rect& r) {

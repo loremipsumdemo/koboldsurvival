@@ -75,9 +75,11 @@ std::vector<Vec2> formationOffsets(FormationShape shape, int count, float spacin
         break;
     }
     default: {
-        int columns = std::min(RECTANGLE_COLUMNS, count);
-        if (width > 0.0f) columns = std::clamp((int)std::lround(width / spacing) + 1, 1, count);
+        // A wider drag spreads the same rows and columns further apart, so the whole rectangle grows
+        const int columns = std::min(RECTANGLE_COLUMNS, count);
         const int rows = (count + columns - 1) / columns;
+        if (columns > 1) spacing = std::max(spacing, width / (float)(columns - 1));
+        else if (rows > 1) spacing = std::max(spacing, width / (float)(rows - 1));
         int left = count;
         for (int r = 0; r < rows; ++r) {
             const int inRow = std::min(columns, left);

@@ -313,35 +313,83 @@ FormationChoice App::formationChoice() const {
 // Alt and a number: picks the shape, or tight or loose, for the selected units and every order after
 bool App::formationKeyDown() {
     const SDL_Keycode k = e.key.key;
-    if (k >= SDLK_1 && k <= SDLK_4) settings.formationShape = (int)(k - SDLK_1);
-    else if (k == SDLK_5) settings.formationLoose = !settings.formationLoose;
-    else return false;
+    if (k < SDLK_1 || k > SDLK_5) return false;
+    applyFormationKey((int)(k - SDLK_1));
+    return true;
+}
+
+void App::applyFormationKey(int index) {
+    if (index >= 0 && index < (int)FormationShape::Count) settings.formationShape = index;
+    else if (index == (int)FormationShape::Count) settings.formationLoose = !settings.formationLoose;
+    else return;
     saveSettingsFile();
     const FormationChoice choice = formationChoice();
     world.resource<FormationChoice>() = choice;
     reformUnits(world, terrain, selectedUnits(world), choice);
     showNotice(langf("MISC_FORMATION", { lang(formationLabelKey(choice.shape)), lang(choice.loose ? "UILABEL_FORMATION_LOOSE" : "UILABEL_FORMATION_TIGHT") }));
     playSfx(Sfx::UiOrder);
-    return true;
 }
 
-// While Alt is held with several units selected: what Alt can do
-void App::drawFormationKeys() {
-    if (editing || panelOpen || screen != Screen::Playing || (SDL_GetModState() & SDL_KMOD_ALT) == 0) return;
-    if (selectedUnits(world).size() < 2) return;
+// What the Form list shows, a row each: the four shapes, tight or loose, and placing by a drag
+std::vector<Renderer::FormationHelpEntry> App::formationEntries() {
     static constexpr int PICTURE_DOTS[(int)FormationShape::Count] = { 8, 10, 12, 10 };
     const FormationChoice choice = formationChoice();
     std::vector<Renderer::FormationHelpEntry> entries;
     for (int i = 0; i < (int)FormationShape::Count; ++i) {
         const FormationShape shape = (FormationShape)i;
-        entries.push_back({ std::to_string(i + 1), lang(formationLabelKey(shape)), formationOffsets(shape, PICTURE_DOTS[i], 1.0f), shape == choice.shape });
+        entries.push_back({ "Alt+" + std::to_string(i + 1), lang(formationLabelKey(shape)), formationOffsets(shape, PICTURE_DOTS[i], 1.0f), shape == choice.shape });
     }
     // The picture is what the key changes it to
-    entries.push_back({ "5", lang(choice.loose ? "UILABEL_FORMATION_MAKE_TIGHT" : "UILABEL_FORMATION_MAKE_LOOSE"),
+    entries.push_back({ "Alt+" + std::to_string((int)FormationShape::Count + 1),
+                        lang(choice.loose ? "UILABEL_FORMATION_MAKE_TIGHT" : "UILABEL_FORMATION_MAKE_LOOSE"),
                         formationOffsets(FormationShape::Line, 4, choice.loose ? 1.0f : 2.0f), false });
-    entries.push_back({ lang("UILABEL_FORMATION_DRAG_KEY"), lang("UILABEL_FORMATION_DRAG"), {}, false });
-    const float top = session.paused ? renderer.pauseBarHeight(true) + 6.0f : 8.0f;
-    renderer.drawFormationHelp(lang("UILABEL_FORMATION_TITLE"), entries, top);
+    entries.push_back({ "Alt+" + std::string(lang("UILABEL_FORMATION_DRAG_KEY")), lang("UILABEL_FORMATION_DRAG"), {}, false });
+    return entries;
+}
+
+Renderer::FormationMenuLayout App::formMenuLayout() {
+    const Rect b = squadPanelLayout(winW, winH).formButton;
+    Renderer::FormationMenuLayout L = renderer.formationMenuLayout(b, (int)FormationShape::Count + 2, formMenuScroll, winH);
+    formMenuScroll = L.first;
+    return L;
+}
+
+// A click while the Form list is open: a row picks it; either way the list closes, except on its own empty space
+bool App::pressOnFormMenu() {
+    if (screen != Screen::Playing || squadMenu != SQUAD_MENU_FORM) return false;
+    const float mx = e.button.x, my = e.button.y;
+    const Renderer::FormationMenuLayout L = formMenuLayout();
+    if (e.button.button == SDL_BUTTON_LEFT) {
+        for (size_t r = 0; r < L.rows.size(); ++r) {
+            const int index = L.first + (int)r;
+            if (!L.rows[r].contains(mx, my) || index > (int)FormationShape::Count) continue;
+            squadMenu = 0;
+            applyFormationKey(index);
+            return true;
+        }
+    }
+    if (L.box.contains(mx, my)) return true;
+    squadMenu = 0;
+    // A click on the button itself only closes the list
+    return squadPanelLayout(winW, winH).formButton.contains(mx, my);
+}
+
+bool App::wheelOnFormMenu() {
+    if (screen != Screen::Playing || squadMenu != SQUAD_MENU_FORM) return false;
+    if (!formMenuLayout().box.contains(e.wheel.mouse_x, e.wheel.mouse_y)) return false;
+    const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
+    formMenuScroll = std::max(0, formMenuScroll + step);
+    formMenuLayout();
+    return true;
+}
+
+void App::drawFormMenu() {
+    if (squadMenu != SQUAD_MENU_FORM || editing || screen != Screen::Playing) return;
+    if (squadCollapsed || factionTab != FACTION_TAB_SQUAD) {
+        squadMenu = 0;
+        return;
+    }
+    renderer.drawFormationMenu(formMenuLayout(), formationEntries(), mouseX, mouseY);
 }
 
 void App::finishFormationDrag() {

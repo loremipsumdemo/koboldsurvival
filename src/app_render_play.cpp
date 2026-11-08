@@ -74,7 +74,7 @@ void App::drawGamePanels() {
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
     renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr, session.floorLevel,
-                           session.floorManual);
+                           session.floorManual, squadMenu == SQUAD_MENU_FORM);
     drawPanelLock(PanelId::Squad);
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
@@ -283,7 +283,7 @@ void App::drawPlayingScreen() {
         }
         renderer.drawItemMenu(selectMenuLayout(), labels, mouseX, mouseY);
     }
-    if (squadMenu != 0) renderer.drawItemMenu(squadMenuLayout(), squadMenuLabels(), mouseX, mouseY);
+    if (squadMenu == 1 || squadMenu == 2) renderer.drawItemMenu(squadMenuLayout(), squadMenuLabels(), mouseX, mouseY);
     if (session.disbandTarget != NO_OBJECT) {
         renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
     }
@@ -303,7 +303,7 @@ void App::drawPlayingScreen() {
     drawMaterialAsk();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
-    drawFormationKeys();
+    drawFormMenu();
     if (editing) {
         drawEditorPanel();
         const LevelInfo& level = world.resource<LevelInfo>();

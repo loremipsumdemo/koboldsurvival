@@ -164,7 +164,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 }
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                             int repView, const std::string* renameText, int floorLevel, bool floorManual) {
+                             int repView, const std::string* renameText, int floorLevel, bool floorManual, bool formOpen) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, bgAlpha });
@@ -210,6 +210,8 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
     mode(L.paceButton, fitTextTip(running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), L.paceButton.w - 6.0f * s, L.paceButton),
          running);
+    mode(L.formButton, fitTextTip(lang("UILABEL_FORM_BUTTON"), L.formButton.w - 6.0f * s, L.formButton), formOpen);
+    noteTip(lang("UILABEL_FORM_TIP"), L.formButton);
     mode(L.selectButton, fitTextTip(lang("UILABEL_SELECT_MENU"), L.selectButton.w - 6.0f * s, L.selectButton), false);
     {
         const std::string label = lang("UILABEL_OPTIMIZE");

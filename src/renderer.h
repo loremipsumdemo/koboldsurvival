@@ -97,7 +97,15 @@ public:
         std::vector<Vec2> dots;   // a little picture of what it does, with -z at the top
         bool current = false;
     };
-    void drawFormationHelp(const std::string& title, const std::vector<FormationHelpEntry>& entries, float top);
+    // The Form button's popout: one entry per row, scrolled when it does not all fit
+    struct FormationMenuLayout {
+        Rect box;
+        std::vector<Rect> rows;   // the shown rows, entry first + i
+        int first = 0, count = 0;
+        Rect track, thumb;        // empty when everything fits
+    };
+    FormationMenuLayout formationMenuLayout(const Rect& button, int count, int scroll, int winH);
+    void drawFormationMenu(const FormationMenuLayout& L, const std::vector<FormationHelpEntry>& entries, float mx, float my);
     void drawFormationPreview(const Camera& cam, const Terrain& t, const std::vector<Vec2>& spots, int winW, int winH);
 
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
@@ -121,7 +129,7 @@ public:
 
     // renameText: the squad name being typed, or null when no squad is being renamed
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                       int repView, const std::string* renameText = nullptr, int floorLevel = 0, bool floorManual = false);
+                       int repView, const std::string* renameText = nullptr, int floorLevel = 0, bool floorManual = false, bool formOpen = false);
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,

@@ -294,6 +294,7 @@ void App::onKeyDown() {
 }
 
 void App::onMouseWheel() {
+    if (wheelOnFormMenu()) return;
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
     if (screen == Screen::Playing && stallUi.open) {
