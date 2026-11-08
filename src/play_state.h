@@ -11,7 +11,7 @@ constexpr float TALK_COOLDOWN = 1.0f;
 
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
-                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, Disembark };
+                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, CancelBuild, AutoConstruct, Climb, ClimbDown };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -43,6 +43,17 @@ struct PlaySession {
     bool paused = false;
     bool autoPaused = false;
     BuildPick buildPick;
+    // A foundation being dragged out from this tile, the new foundation whose entrances are being picked, and the tile
+    // last painted with a piece
+    bool foundationDrag = false;
+    int dragTileX = 0, dragTileZ = 0;
+    ObjectId entranceFor = NO_OBJECT;
+    bool paintPiece = false;
+    long long lastPaintTile = -1;
+    // What a foundation, wall or door is made of (an int of BuildMaterial), and the kind waiting for that choice
+    int buildMaterial = 0;
+    bool askMaterial = false;
+    PropKind askKind = PropKind::Wagon;
     std::vector<TradeGhost> tradeNpc;
     std::vector<TradeGhost> tradePlayer;
     int tradeNpcDrag = -1;

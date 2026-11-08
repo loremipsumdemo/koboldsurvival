@@ -16,7 +16,7 @@ std::string upkeepLine(World& w, ObjectId e) {
     const PropInfo& info = propInfo(p->kind);
     if (const Storage* st = w.get<Storage>(e)) {
         for (const ItemStack& s : st->slots) {
-            if (s.item == info.input && s.count > 0) hours += s.count * info.fuelHours;
+            if (inputMatches(info, s.item) && s.count > 0) hours += s.count * info.fuelHours;
         }
     }
     return hours > 1e-9 ? langf("MISC_PROP_UPKEEP", { std::to_string((int)std::floor(hours)) }) : std::string(lang("MISC_NO_UPKEEP"));
@@ -49,6 +49,7 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
         if (info.use == PropUse::Crafting) out.push_back(lang("MISC_PROP_USE_CRAFTING"));
         if (info.use == PropUse::PassiveCrafting) out.push_back(lang("MISC_PROP_USE_PASSIVE"));
         if (info.input == INPUT_COOKABLE) out.push_back(lang("MISC_PROP_USES_RAW_MEAT"));
+        else if (info.input == INPUT_BONES) out.push_back(langf("MISC_PROP_USES", { lang("MISC_ANY_BONES") }));
         else if (info.input > 0) out.push_back(langf("MISC_PROP_USES", { itemNameOf(info.input) }));
         if (info.item > 0) out.push_back(langf("MISC_PROP_MAKES", { itemNameOf(info.item) }));
         else if (info.input == INPUT_COOKABLE) out.push_back(lang("MISC_PROP_MAKES_COOKED_MEAT"));

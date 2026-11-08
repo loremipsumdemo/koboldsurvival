@@ -86,6 +86,10 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && session.askMaterial) {
+        if (e.key.key == SDLK_ESCAPE) session.askMaterial = false;
+        return;
+    }
     if (screen == Screen::Playing && rename.open) {
         if (e.key.key == SDLK_BACKSPACE) popUtf8Char(rename.text);
         else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) finishRename(true);
@@ -557,6 +561,7 @@ void App::onMouseButtonUp() {
         session.disbandHeldAt = 0;
         return;
     }
+    if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && buildRelease()) return;
     if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
         squadThumbDrag = false;
         return;

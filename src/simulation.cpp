@@ -1,6 +1,7 @@
 #include "squads.h"
 #include "ghosts.h"
 #include "airship.h"
+#include "building.h"
 #include "simulation.h"
 #include "calendar.h"
 #include "claims.h"
@@ -63,6 +64,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("defendSystem", defendSystem(w));
     PROFILED("combatSystem", combatSystem(w, t, rng, dt));
     PROFILED("patrolSpawnSystem", patrolSpawnSystem(w, t, dt));
+    fleeSystem(w, t, dt);
     // Behaviors after the fight, so a unit hit this frame can drink in the same frame
     PROFILED("behaviorSystem", behaviorSystem(w, dt));
     downedSystem(w);
@@ -73,6 +75,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
     PROFILED("wildMobSystem", wildMobSystem(w, t, dt));
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
+    PROFILED("buildingSystem", buildingSystem(w, t, dt));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));
     append(events(w).lootOpened, std::move(carried.loot));
     PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(w, t));

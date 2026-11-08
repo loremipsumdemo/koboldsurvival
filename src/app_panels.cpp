@@ -1,3 +1,4 @@
+#include "building.h"
 #include "app.h"
 
 using namespace play;
@@ -52,7 +53,8 @@ std::vector<BehaviorOption> App::behaviorOptionsFor(ObjectId u) {
         r.prop = stores[i].second;
         r.propKind = idx(world.get<Prop>(r.prop)->kind);
         const std::string away = "  (" + std::to_string((int)std::lround(stores[i].first)) + "m)";
-        offer(r, behaviorName(r) + away);
+        // An Altar burns bones: Auto-Haul Bones keeps it going
+        if (!propInfo(world.get<Prop>(r.prop)->kind).claimsLand) offer(r, behaviorName(r) + away);
         if (propInfo(world.get<Prop>(r.prop)->kind).claimsLand) {
             r.kind = BehaviorKind::AutoHaulBones;
             offer(r, behaviorName(r) + away);
@@ -183,6 +185,7 @@ bool App::behaviorExtraClick(ObjectId unit, const SidebarLayout& sl, float x, fl
             refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
             return true;
         }
+        if (o.rule.kind == BehaviorKind::AutoHarvest) addHaulForHarvest(world, unit, o.rule.propKind);
         if (o.rule.kind == BehaviorKind::PatrolSpawn && !world.has<SpawnHome>(unit)) {
             if (const Transform* t = world.get<Transform>(unit)) world.add(unit, SpawnHome{ t->x, t->z, false });
         }
@@ -385,6 +388,7 @@ std::vector<ObjectId> App::flyAirshipsTo(const std::vector<ObjectId>& units, flo
     for (ObjectId u : units) {
         const ObjectId ship = airshipOf(world, u);
         if (ship != NO_OBJECT) flyAirship(world, ship, Vec2{ x, z });
+        else if (world.has<Upstairs>(u)) moveUpstairs(world, u, Vec2{ x, z });   // stays on its floor
         else walkers.push_back(u);
     }
     return walkers;

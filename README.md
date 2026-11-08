@@ -24,10 +24,11 @@ lose state: the world keeps running, whatever happens to your party.
 - **Gathering and crafting.** Mine ore, cut trees and gather mushrooms. Campfires and forges work by themselves from
   their fuel, and units work stoves, water pumps and training dummies. Items are kept in barrels, chests and
   specialised storage.
-- **Building and claims.** The Build tab places props at once and at no cost, and its Destroy tool takes them down
-  (Bones leave their item, Debris is cleared away, and anything else leaves Debris). A faction has one Altar, named
+- **Building and claims.** The Build tab places most props at once and at no cost (building pieces are blueprints, below), and its Destroy tool takes them down
+  (Debris is cleared away, and anything else leaves Debris). Bones and the rare Dragon Crystal are broken with the
+  right-click menu's Break and leave their items. A faction has one Altar, named
   for it ("Altar of Red Faction"), which claims the ground around it. Only its own faction can open it, and there is
-  no lock to pick. It burns Wood Logs as upkeep. With none left it decays, and when it breaks the claim is gone and the
+  no lock to pick. It burns bones (any kind) as upkeep. With none left it decays, and when it breaks the claim is gone and the
   props in the circle belong to nobody.
 - **Factions and reputation.** Rival camps start at set reputations with you. At -25 or below they attack on sight, and
   at 50 or more they are allies. The game keeps running while you talk or trade, unless you turn on Automatic Conversation
@@ -38,14 +39,34 @@ lose state: the world keeps running, whatever happens to your party.
   and once all nine are full, to the citizens. Right-click your Altar and choose Manage Units to move units between the two. The Faction tab of the
   Faction Panel shows the squads as a numpad, where you can pick and rename them. Settings has a soft and a hard cap on
   citizens. Rename any unit of yours by right-clicking it in the Squad Panel, or its portrait in Manage Units. Every
-  faction of people starts with an Altar, some citizens who keep near it, and some military who patrol its claim.
+  faction of people starts with a camp (an Altar, a campfire and four bedrolls), with open ground ten tiles round it
+  where the map allows, some citizens who keep near it, and some military who patrol its claim. New Game's map page shows
+  where a random set-up puts the camps.
 - **Ghosts.** A unit of yours that dies joins the Graveyard as a Ghost. Each Ghost wants one bones (any kind) sacrificed
   at your Altar: right-click it and choose Appease Ghosts. A Ghost left unappeased for 24 game hours haunts your whole
   faction, and Haunted units hit and walk slower. The Altar keeps bones ahead of time, brought by hand or by Auto-Haul
-  Bones (apart from Auto-Haul Logs, which keeps it burning).
-- **Airships.** An Airship floats above the ground and carries up to four units. A move order for those aboard flies it
-  in a straight line over anything, water and void included. Nobody can get off (Disembark) except over open ground, and
-  if it is destroyed with units aboard they die. A map with land that can't be walked to starts you with one.
+  Bones; the same bones keep it burning.
+- **Stockpiles.** Auto-Harvest of Trees puts the Wood Logs in a Wood Stockpile, and of Boulders (Mining) the Stone in a
+  Stone Stockpile, once a unit carries a load. With no stockpile of that kind with room, the task waits. Giving a unit Auto-Harvest also gives it Auto-Haul to the nearest store of yours that takes what it yields: the matching stockpile for logs and stone, any storage for the rest. A haul task is always put just above the first Auto-Harvest in the list, so carrying a load off comes first.
+- **Airships.** An Airship floats above the ground and carries up to four units. Getting on (Occupy) takes five seconds,
+  and only happens if there is still room then; getting off (Evacuate) takes one, and only over open ground. A move order
+  for those aboard flies it in a straight line over anything, water and void included. Melee can't reach anyone aboard,
+  and a unit shot at from one that can't shoot back flees out of range until it has been clear long enough to calm
+  down. If it is destroyed with units aboard they die. A map with land that can't be walked to starts you with one.
+- **Buildings.** In the Build tab, drag out a Foundation (3 to 64 tiles a side, in your claim). A foundation, wall or
+  door first asks what to make it of: wood (Wood Logs), iron (Iron Ingots) or Dragon Crystals; iron is twice as tough to
+  break as wood and crystal three times, and a wall twice as tough as a door. Click tiles on a foundation's edge to make
+  them entrances. Walls, Doors, Ladders and Upper Floors go on a finished foundation, one tile each (drag to lay a row of
+  them): walls anywhere but an entrance, doors only on one, and ladders and upper floors only once every edge tile has a
+  wall or a door. A building whose walls and doors are all gone loses its upper floors. Each piece starts as a blueprint
+  needing one of its material (an upper floor one per tile); the size of a foundation shows beside the cursor as you drag.
+  Right-click a blueprint for Auto-Construct, which brings the material any of your blueprints needs (carried or fetched
+  from your stockpiles and stores) and builds those that have it, from up to five tiles away. A blueprint holds its
+  material until building starts, when it is spent. Cancel Construction removes the blueprint and drops what it held; a
+  cancelled foundation takes the blueprints on it with it. A piece isn't finished while a unit stands where it goes: the unit is asked to move, and the builder comes back to
+  it later. Walls take the shape that fits the walls beside them, and close their tiles. A door lets its own faction
+  and its allies through even when locked; others have to pick the lock or smash it, and smash walls they run into. Climb a Ladder to stand on the
+  Upper Floor beside it: up there melee from the ground can't reach you, and you can shoot down.
 - **Combat.** Melee and ranged weapons (bows and crossbows with ammunition), armor, blocking, dodging, gear tiers and
   elixirs.
 - **Wildlife.** Animals from chickens and fish to bears and wolves, plus the Gorlicorn, Griffin and Manticore bosses, each with its own faction,
@@ -73,7 +94,7 @@ lose state: the world keeps running, whatever happens to your party.
 | Numpad 1 to 9 | Select that squad. Shift adds it to the selection, and pressing it twice brings the camera to it |
 | Ctrl + Numpad 1 to 9 | Move the selected units into that squad |
 | Numpad 0 | Select your unit nearest the camera's centre |
-| Right click | Orders and context menus (move, use a prop, talk, destroy bones, put down) |
+| Right click | Orders and context menus (move, use a prop, talk, break bones or crystals, put down) |
 | Right mouse held | Selected units walk straight at the pointer |
 | Shift with moving a stack | Choose how many to trade or store. Without Shift, the whole stack moves |
 | WASD / arrow keys | Move the camera. Shift moves it faster |
@@ -128,6 +149,8 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   world_setup, unit_spawn   Placing a new level, and making units
   squads, altar_ui     Squads of 16 and citizens, and the Altar's roster
   ghosts, airship      The Graveyard and Haunted, and Airships
+  building             Foundations, blueprints and the building tasks, walls, doors, ladders and the upper floor
+  app_building         The Build tab's foundation drag, entrances and pieces
   app_map_pick         New Game's map and level page
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...
@@ -184,7 +207,7 @@ The editor places entities, props and items. The words mean the same in the game
 
 A player unit placed in a level is the first member of the party from New Game. Party members beyond those placed start at the spawn point, and placed player units beyond the party's size are left out.
 
-Entities collide as circles. A melee fighter claims one of the `ATTACK_SLOTS` (5) places around its target; the others wait in a ring outside and can't hit it until a place opens. Taking damage slows movement for a moment (`DAMAGE_SLOW_SECONDS`, `DAMAGE_SLOW_FACTOR` in combat.h); more hits restart the moment but don't slow it further.
+Entities collide as circles. A melee fighter claims one of the `ATTACK_SLOTS` (5) places around its target; the others wait in a ring outside and can't hit it until a place opens. Taking damage slows movement for a moment (`DAMAGE_SLOW_SECONDS`, `DAMAGE_SLOW_FACTOR` in combat.h); more hits restart the moment but don't slow it further. Carried weight slows a unit in proportion to its load, but never below `MIN_LOAD_SPEED` (10%) of its speed (encumbrance.h).
 
 A squad of two or more walks at its slowest member's speed, in the chosen formation (`formation.h`). Slots go to the nearest units so paths don't cross, and a blocked slot moves to the nearest open place. After arriving, a unit that is blocked trades slots with a squadmate if that shortens both walks, or settles after a moment and tries again later, so nobody pushes forever. Settled units step aside for others.
 

@@ -20,6 +20,7 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 }
 
 void Terrain::open(std::shared_ptr<const ChunkSource> source) {
+    blocked_.clear();
     source_ = std::move(source);
     size_ = source_->size();
     cps_ = ::chunksPerSide(size_);
@@ -207,6 +208,7 @@ float Terrain::heightAt(float x, float z) const {
 }
 
 bool Terrain::walkable(int x, int y) const {
+    if (!blocked_.empty() && blockedByBuilding(x, y)) return false;
     if (!inBounds(x, y)) return false;
     return groundOf(x / CHUNK_TILES, y / CHUNK_TILES).walk[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES] != 0;
 }
@@ -219,6 +221,16 @@ bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
     const float* h = c.heights.data() + (size_t)tz * CHUNK_CORNERS + tx;
     height = (h[0] + h[1] + h[CHUNK_CORNERS] + h[CHUNK_CORNERS + 1]) * 0.25f;
     return true;
+}
+
+void Terrain::setBlocked(int x, int y, bool blocked) {
+    const long long key = (long long)y * 1000003LL + (long long)x;
+    if (blocked) blocked_.insert(key);
+    else blocked_.erase(key);
+}
+
+bool Terrain::blockedByBuilding(int x, int y) const {
+    return blocked_.count((long long)y * 1000003LL + (long long)x) > 0;
 }
 
 bool Terrain::isFree(float x, float z) const {

@@ -1,4 +1,5 @@
 #include "ghosts.h"
+#include "airship.h"
 #include "combat.h"
 #include "language.h"
 #include <algorithm>
@@ -101,7 +102,7 @@ ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<O
     int bestHp = 0;
     const float reach = reachOf(w, p);
     for (ObjectId h : hostiles) {
-        if (!targetable(w, h) || flatGap(w, p, h) > reach) continue;
+        if (!targetable(w, h) || flatGap(w, p, h) > reach || !canStrike(w, p, h)) continue;
         const int hp = hpOf(w, h);
         if ((best == NO_OBJECT || hp < bestHp) && canSee(w, t, p, h)) {
             best = h;
@@ -114,6 +115,7 @@ ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<O
 void onAttacked(World& w, ObjectId a, ObjectId d) {
     const int fa = factionOf(w, a), fd = factionOf(w, d);
     if (fa == fd) return;
+    fleeFromAirship(w, a, d);
     const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);
     const Transform* td = w.get<Transform>(d);
     if (!td) return;
@@ -145,13 +147,14 @@ void onAttacked(World& w, ObjectId a, ObjectId d) {
                               w.has<PropOrder>(u) || w.has<Working>(u) ||
                               w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
             const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
-            if (busy || (sq && !sq->arrived) || c.target != NO_OBJECT) continue;
+            if (busy || (sq && !sq->arrived) || c.target != NO_OBJECT || !canStrike(w, u, a)) continue;
             leaveSquad(w, u);
             w.add(u, AttackOrder{ a });
             c.target = a;
-        } else if (c.target == NO_OBJECT) {
+        } else {
+            // Its friends who see it stay angry at the attacker's faction until none of them are left in sight
             if (!factionsHostile(w, fu, fa)) provoke(w, u, fa);
-            c.target = a;
+            if (c.target == NO_OBJECT && canStrike(w, u, a) && !w.has<Fleeing>(u)) c.target = a;
         }
     }
 }
@@ -325,7 +328,7 @@ void assignAttackSlots(World& w, const Terrain& t, const std::vector<ObjectId>& 
         for (ObjectId o : everyone) {
             if (o == e || o == held->target || !standing(o) || !targetable(w, o)) continue;
             const float gap = flatGap(w, e, o);
-            if (gap > range || !unitsHostile(w, e, o) || (best != NO_OBJECT && gap >= bestGap)) continue;
+            if (gap > range || !unitsHostile(w, e, o) || !canStrike(w, e, o) || (best != NO_OBJECT && gap >= bestGap)) continue;
             const auto it = std::lower_bound(slotsTaken.begin(), slotsTaken.end(), std::make_pair(o, 0));
             if (it != slotsTaken.end() && it->first == o && it->second >= ATTACK_SLOTS) continue;
             if (!canSee(w, t, e, o)) continue;
@@ -525,8 +528,13 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
     for (ObjectId h : everyone) {
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
+        if (w.has<Fleeing>(h)) {
+            hc.target = NO_OBJECT;
+            continue;
+        }
         if (hc.target != NO_OBJECT) {
-            if (targetable(w, hc.target) && flatGap(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target)) continue;
+            if (targetable(w, hc.target) && flatGap(w, h, hc.target) <= LEASH_RANGE && unitsHostile(w, h, hc.target) &&
+                canStrike(w, h, hc.target)) continue;
             hc.target = NO_OBJECT;
         }
         if (isPassive(w, h)) continue;
@@ -536,7 +544,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
             if (!th || !tp) continue;
             const float gx = tp->x - th->x, gz = tp->z - th->z;
             if (gx * gx + gz * gz > MAX_NOTICE_RANGE * MAX_NOTICE_RANGE) continue;
-            if (p == h || !standing(p) || !unitsHostile(w, h, p)) continue;
+            if (p == h || !standing(p) || !unitsHostile(w, h, p) || !canStrike(w, h, p)) continue;
             if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p)) && canSee(w, t, h, p)) {
                 hc.target = p;
@@ -551,7 +559,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         if (!standing(p)) continue;
         Combat& pc = *w.get<Combat>(p);
         if (const AttackOrder* ao = w.get<AttackOrder>(p)) {
-            if (targetable(w, ao->target)) {
+            if (targetable(w, ao->target) && canStrike(w, p, ao->target)) {
                 if (pc.target != ao->target) {
                     pc.target = ao->target;
                     drinkForFight(w, p, pc);
@@ -562,7 +570,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
             pc.target = NO_OBJECT;
         }
         if (pc.target != NO_OBJECT && targetable(w, pc.target) && flatGap(w, p, pc.target) <= reachOf(w, p) &&
-            canSee(w, t, p, pc.target)) {
+            canSee(w, t, p, pc.target) && canStrike(w, p, pc.target)) {
             continue;
         }
         if (isPassive(w, p) || isBlocking(w, p)) {
@@ -581,7 +589,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         if (c.target == NO_OBJECT || c.swingLeft > 0.0f) continue;
         if (isBlocking(w, e)) continue;
         const ObjectId foe = c.target;
-        if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe)) continue;
+        if (!targetable(w, foe) || flatGap(w, e, foe) > reachOf(w, e) || !canSee(w, t, e, foe) || !canStrike(w, e, foe)) continue;
         if (usesAttackSlot(w, e)) {
             const AttackSlot* held = w.get<AttackSlot>(e);
             if (!held || held->target != foe || held->slot < 0) continue;

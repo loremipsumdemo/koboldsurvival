@@ -4,7 +4,7 @@ using namespace systems_detail;
 
 void patrolSpawnSystem(World& w, Terrain& t, float dt) {
     for (ObjectId u : w.view<SpawnHome, Transform, Behaviors>()) {
-        if (outCold(w, u) || w.has<Carried>(u)) continue;
+        if (outCold(w, u) || w.has<Carried>(u) || w.has<Fleeing>(u)) continue;
         SpawnHome* h = w.get<SpawnHome>(u);
         Behaviors* b = w.get<Behaviors>(u);
         BehaviorRule* rule = nullptr;

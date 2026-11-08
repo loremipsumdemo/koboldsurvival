@@ -28,6 +28,7 @@ void App::refuse(const std::string& text) {
 
 void App::startMapLevel(const MapChoice& choice) {
     std::string err;
+    renderer.pickLoadingArt();
     const LoadProgress progress = [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what); };
     if (!loadLevelGround(choice, terrain, renderer, err, progress)) {
         refuse(langf("MISC_LOAD_FAILED", { choice.name, err }));

@@ -1,9 +1,43 @@
 #include "app.h"
 #include "chunk_source.h"
+#include "factions.h"
 #include "level_file.h"
 #include "world_gen.h"
 
 using namespace play;
+
+void LayoutPlanner::start(std::shared_ptr<const ChunkSource> source) {
+    stop();
+    cancel_ = false;
+    {
+        std::lock_guard<std::mutex> hold(lock_);
+        done_ = false;
+        plan_ = LayoutPlan{};
+    }
+    // A streamed map only has the ground near the camera to hand, so there is nothing to plan from
+    if (!source || source->streamed()) return;
+    worker_ = std::thread([this, source]() {
+        Terrain ground(source);
+        LayoutPlan plan = planRandomLayout(ground, false, &cancel_);
+        if (cancel_) return;
+        std::lock_guard<std::mutex> hold(lock_);
+        plan_ = std::move(plan);
+        done_ = true;
+    });
+}
+
+void LayoutPlanner::stop() {
+    cancel_ = true;
+    if (worker_.joinable()) worker_.join();
+}
+
+bool LayoutPlanner::take(LayoutPlan& out) {
+    std::lock_guard<std::mutex> hold(lock_);
+    if (!done_) return false;
+    done_ = false;
+    out = plan_;
+    return true;
+}
 
 // New Game's first page: the map and the level to start on, with a picture of the map and where the level puts things
 MapPickLayout layoutMapPick(int W, int H, int maps, int levels, int mapScroll, int levelScroll) {
@@ -80,6 +114,10 @@ void App::pickMap(int i) {
         source = worldFolderSource(pendingMap.path, err);
     }
     if (!mapPreview) mapPreview = std::make_unique<OverviewBuilder>();
+    if (!layoutPlanner) layoutPlanner = std::make_unique<LayoutPlanner>();
+    mapPick.planReady = false;
+    mapPick.plan = LayoutPlan{};
+    layoutPlanner->start(source);
     if (!source) {
         mapPreview->stop();
         return;
@@ -102,6 +140,7 @@ void App::pickLevel(int i) {
 }
 
 void App::updateMapPick() {
+    if (layoutPlanner && layoutPlanner->take(mapPick.plan)) mapPick.planReady = true;
     OverviewPicture pic;
     if (!mapPreview || !mapPreview->take(pic) || pic.px <= 0) return;
     renderer.setWorldPreview(pic.px, pic.rgba);
@@ -127,11 +166,13 @@ bool App::mapPickMouseDown() {
     }
     if (L.back.contains(mx, my)) {
         if (mapPreview) mapPreview->stop();
+        if (layoutPlanner) layoutPlanner->stop();
         performAction(Action::ReturnToTitle, 0);
         return true;
     }
     if (L.next.contains(mx, my) && !mapPick.maps.empty()) {
         if (mapPreview) mapPreview->stop();
+        if (layoutPlanner) layoutPlanner->stop();
         playSfx(Sfx::UiClick);
         openParty(pendingMap);
         return true;
@@ -203,8 +244,19 @@ void App::drawMapPickScreen() {
             }
             if (mapPick.levelData.hasSpawn) dot(mapPick.levelData.spawnX, mapPick.levelData.spawnZ, 9.0f * s, accent);
         }
+        // A random set-up: each faction's camp, with the room it has round it, and where you start
+        if (pendingLevel.empty() && mapPick.planReady) {
+            for (const CampPlan& c : mapPick.plan.camps) {
+                const FactionColor fc = factionColor(c.faction);
+                const float side = std::max(6.0f, 2.0f * CAMP_ROOM * k);
+                const float sx = L.preview.x + c.x * k, sy = L.preview.y + c.z * k;
+                renderer.drawRect(Rect{ sx - side * 0.5f, sy - side * 0.5f, side, side }, RGBA{ fc.r, fc.g, fc.b, c.roomy ? 0.35f : 0.18f });
+                dot(c.x, c.z, std::max(4.0f, 6.0f * s), RGBA{ fc.r, fc.g, fc.b, 1.0f });
+            }
+            dot(mapPick.plan.spawnX, mapPick.plan.spawnZ, 9.0f * s, accent);
+        }
     }
-    const std::string note = pendingLevel.empty() ? lang("UILABEL_MAP_PICK_RANDOM_NOTE")
+    const std::string note = pendingLevel.empty() ? (mapPick.planReady ? lang("UILABEL_MAP_PICK_CAMPS_NOTE") : lang("UILABEL_MAP_PICK_RANDOM_NOTE"))
                            : mapPick.levelRead ? lang("UILABEL_MAP_PICK_LEVEL_NOTE") : lang("UILABEL_MAP_PICK_LEVEL_BAD");
     float noteY = L.note.y;
     for (const std::string& line : renderer.wrapListText(note, L.note.w)) {

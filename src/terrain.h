@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include "chunk.h"
 #include "chunk_source.h"
@@ -48,6 +49,10 @@ public:
     float floorY() const { return floorY_; }
 
     bool isFree(float x, float z) const;
+    // Tiles closed by buildings (walls), on top of the ground's own walkability. Opening a map clears them.
+    void setBlocked(int x, int y, bool blocked);
+    void clearBlocked() { blocked_.clear(); }
+    bool blockedByBuilding(int x, int y) const;
     // The piece of open ground a tile is in, numbered from 1; 0 for closed ground. On a map too big to work them out, all
     // open ground is piece 1.
     int areaAt(int x, int y) const { return walkable(x, y) ? areaOf(x, y) : 0; }
@@ -84,4 +89,5 @@ private:
     uint32_t surfaceVersion_ = 0;
     float heightScale_ = 1.0f;
     float floorY_ = -1.0f;
+    std::unordered_set<long long> blocked_;
 };

@@ -37,7 +37,8 @@ float walkSpeedOf(World& w, ObjectId e, bool running) {
     if (!w.has<Commandable>(e)) running = false;
 
     const float load = encumbranceOf(w, e);
-    float speed = u->speed * (1.0f - load);
+    // However heavily loaded, a unit still walks at a tenth of its speed, so it reads as slow, not stuck
+    float speed = u->speed * std::max(MIN_LOAD_SPEED, 1.0f - load);
     if (isSneaking(w, e)) {
         running = false;
         speed *= SNEAK_SPEED;

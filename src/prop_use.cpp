@@ -89,6 +89,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 if (!lockShutFor(w, prop, u)) storeCarried(w, u, prop, 0);
                 continue;
             }
+            if (action == PropAction::Climb) {
+                if (!startClimb(w, u, prop)) queueLog(w, langf("MISC_CANT_CLIMB", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+                continue;
+            }
             if (action == PropAction::Destroy) {
                 if (destroyedByHand(w.get<Prop>(prop)->kind)) {
                     queueSoundFrom(w, Sfx::Drop, prop);
@@ -213,6 +217,13 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 }
                 if (w.has<OccupyBan>(u)) {
                     a.occupyBanned = true;
+                    break;
+                }
+                // Getting on an Airship takes a while, and there must still be room once it is done
+                if (isAirship(w, prop)) {
+                    if (airshipOf(w, u) == prop) break;
+                    if (startBoarding(w, u, prop)) a.started = true;
+                    else a.taken = true;
                     break;
                 }
                 const ObjectId occupant = propOccupant(w, prop);
@@ -561,11 +572,16 @@ void propStorageChanged(World& w, ObjectId prop) {
     if (craftStateOf(w, prop) != CraftState::Ready) stopWorkersAt(w, prop);
 }
 
+bool inputMatches(const PropInfo& info, int item) {
+    if (item <= 0) return false;
+    return info.input == INPUT_BONES ? isBones(item) : item == info.input;
+}
+
 bool propAcceptsItem(PropKind kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
     if (info.claimsLand && isBones(item)) return true;   // kept for the Ghosts
-    if (info.use == PropUse::PassiveCrafting && info.item == 0) return item == info.input;
+    if (info.use == PropUse::PassiveCrafting && info.item == 0) return inputMatches(info, item);
     if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
     const ItemDef* def = findItem(item);
     switch (info.accepts) {
@@ -575,6 +591,8 @@ bool propAcceptsItem(PropKind kind, int item) {
     case ItemFilter::Weapon: return def && def->typeId == "weapon";
     case ItemFilter::Armor: return def && def->typeId == "armor";
     case ItemFilter::Water: return def && hasTag(*def, "water");
+    case ItemFilter::Wood: return def && hasTag(*def, ITEM_TAG_WOOD_LOG);
+    case ItemFilter::Stone: return def && hasTag(*def, ITEM_TAG_STONE);
     }
     return false;
 }
@@ -615,7 +633,7 @@ static int nextPassiveInput(const Storage* st, PropKind kind) {
     const PropInfo& info = propInfo(kind);
     for (const ItemStack& s : st->slots) {
         if (s.count <= 0 || s.item <= 0) continue;
-        if (info.input == INPUT_COOKABLE ? recipeOutput(kind, s.item) > 0 : s.item == info.input) return s.item;
+        if (info.input == INPUT_COOKABLE ? recipeOutput(kind, s.item) > 0 : inputMatches(info, s.item)) return s.item;
     }
     return 0;
 }

@@ -1668,13 +1668,31 @@ GEAR = {
     'Bone Arrows': bone_arrows, 'Fire Arrows': fire_arrows, 'Crossbow Bolts': bolts,
 }
 
+def stone(c):
+    s = ((128, 126, 120), (168, 166, 158), (88, 86, 82))
+    c.poly(s[0], (4, 24), (6, 13), (14, 8), (25, 10), (29, 19), (26, 27), (12, 29))
+    c.poly(s[1], (6, 13), (14, 8), (25, 10), (18, 15), (9, 17))
+    c.poly(s[2], (18, 15), (29, 19), (26, 27), (17, 24))
+    c.line(s[2], 0.8, (9, 17), (12, 26))
+
+
+def dragon_crystal(c):
+    p = ((150, 84, 214), (206, 160, 255), (92, 44, 150))
+    c.poly(p[0], (16, 2), (24, 11), (21, 29), (11, 29), (8, 11))
+    c.poly(p[1], (16, 2), (8, 11), (13, 13))
+    c.poly(p[2], (16, 2), (24, 11), (21, 29), (17, 16))
+    c.poly((255, 140, 90), (14, 18), (17, 14), (19, 19), (16, 24))
+    c.line(p[1], 0.7, (13, 13), (16, 26))
+
+
 PLAIN = {
     'Iron Ore': ore, 'Oak Log': oak_log, 'Healing Herb': healing_herb, 'Gold Coin': gold_coin, 'Wolf Pelt': wolf_pelt,
     'Ancient Relic': relic, 'Health Potion': health_potion, 'Mana Potion': mana_potion, 'Elixir of Might': elixir, 'Bread': bread,
     'Antidote': antidote, 'Apple': apple, 'Wild Berries': berries, 'Hard Biscuit': biscuit, 'Cheese Wedge': cheese,
     'Smoked Fish': smoked_fish, 'Honey Cake': honey_cake, 'Mutton Pie': pie, 'Stew Bowl': stew, 'Roast Boar Leg': roast_leg,
     'Trail Ration': ration, 'Wood Log': wood_log, 'Water': water, 'Iron Ingot': ingot, 'Mushroom': plain_mushroom,
-    'Poison Mushroom': poison_mushroom, 'Bones': bones_generic,
+    'Poison Mushroom': poison_mushroom, 'Bones': bones_generic, 'Stone': stone,
+    'Dragon Crystal': dragon_crystal,
 }
 
 

@@ -17,6 +17,8 @@ enum class EmoteId : int {
     CueTalk = 14,
     NoUpkeep = 15,
     Decaying = 16,
+    Hauling = 17,
+    Building = 18,
 };
 
 constexpr unsigned EMOTE_CYCLE_MS = 1000;

@@ -121,7 +121,7 @@ void App::drawStoragePanel() {
                 hint = langf("UILABEL_PASSIVE_HINT", { lang("MISC_FOOD_TO_COOK"),
                                                        std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                        lang("MISC_COOKED_FOOD") });
-            } else if (sinfo.item == 0) hint = langf("UILABEL_UPKEEP_HINT", { itemNameOf(sinfo.input) });
+            } else if (sinfo.item == 0) hint = langf("UILABEL_UPKEEP_HINT", { sinfo.input == INPUT_BONES ? std::string(lang("MISC_ANY_BONES")) : itemNameOf(sinfo.input) });
             else hint = langf("UILABEL_PASSIVE_HINT", { itemNameOf(sinfo.input),
                                                    std::to_string((int)std::lround(sinfo.fuelHours * 60.0)),
                                                    itemNameOf(sinfo.item) });
@@ -283,6 +283,8 @@ void App::drawPlayingScreen() {
     drawAltar();
     drawGhosts();
     drawRename();
+    drawFoundationSize();
+    drawMaterialAsk();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
     drawFormationKeys();

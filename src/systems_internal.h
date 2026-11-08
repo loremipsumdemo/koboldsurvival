@@ -21,6 +21,7 @@
 #include "squads.h"
 #include "ghosts.h"
 #include "airship.h"
+#include "building.h"
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;
@@ -34,7 +35,8 @@ inline void endPropTasks(World& w, ObjectId u) {
     w.remove<LootOrder>(u);
     w.remove<CarryOrder>(u);
     w.remove<PropOrder>(u);
-    if (!stuckAboard(w, u)) w.remove<Occupying>(u);   // aboard an Airship over closed ground, nobody gets off
+    if (airshipOf(w, u) == NO_OBJECT) w.remove<Occupying>(u);   // only Evacuate takes a unit off an Airship, and slowly
+    w.remove<Boarding>(u);
     w.remove<Working>(u);
     w.remove<FollowOrder>(u);
     w.remove<DefendOrder>(u);
@@ -51,6 +53,8 @@ inline void cancelPickup(World& w, ObjectId u) {
 }
 
 inline void clearOrdersButFight(World& w, ObjectId u) {
+    w.remove<BuildJob>(u);
+    w.remove<Climbing>(u);
     leaveSquad(w, u);
     w.remove<SoloMove>(u);
     cancelPickup(w, u);
@@ -112,6 +116,12 @@ inline void planActiveSquad(World& w, Terrain& t, ObjectId squadE, Vec2 target) 
 inline void planSolo(World& w, Terrain& t, ObjectId e, Vec2 target) {
     SoloMove* so = w.get<SoloMove>(e);
     Transform* tr = w.get<Transform>(e);
+    // Upstairs, a unit walks straight to the nearest spot of its floor
+    if (const Upstairs* up = w.get<Upstairs>(e)) {
+        so->waypoints = { nearestFloorSpot(w, up->foundation, target) };
+        so->next = 0;
+        return;
+    }
     so->waypoints = t.findPath({ tr->x, tr->z }, target);
     so->next = 0;
 }

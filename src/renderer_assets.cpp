@@ -99,6 +99,8 @@ void Renderer::loadPropModels(LoadStages& stages) {
     propInstVao_.resize((size_t)propKindCount(), 0);
     propInstances_.resize((size_t)propKindCount());
     stages.stage(0.57f, "LOADING_PROP_MODELS", propKindCount());
+    wallShapes_.assign((size_t)propKindCount(), {});
+    materialModels_.assign((size_t)propKindCount(), {});
     const char* standIn = "as a pink square";
     for (int k = 0; k < propKindCount(); ++k) {
         const PropKind kind = (PropKind)k;
@@ -109,6 +111,29 @@ void Renderer::loadPropModels(LoadStages& stages) {
         } else if (!loadDrawableModel(file.c_str(), propModels_[(size_t)kind], false)) {
             SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
                     file.c_str(), lang(info.nameKey).c_str(), standIn);
+        }
+        if (info.wallRule) {
+            // Its other shapes sit beside its model: model_45.glb has model_45_end.glb and so on
+            static const char* const SHAPES[5] = { "_end", "_straight", "_corner", "_tee", "_cross" };
+            const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            for (int s = 0; s < 5; ++s) {
+                const std::string shaped = stem + SHAPES[s] + ".glb";
+                if (!pakHas(shaped) || !loadDrawableModel(shaped.c_str(), wallShapes_[(size_t)k][(size_t)s], false)) {
+                    SDL_Log("Wall model %s is missing: that shape is drawn as the plain post", shaped.c_str());
+                }
+            }
+        }
+        if (info.foundation || info.wallRule || info.door) {
+            // Iron and crystal beside the plain one: model_45_iron.glb, model_45_iron_straight.glb and so on
+            static const char* const MATS[2] = { "_iron", "_crystal" };
+            static const char* const SHAPES[6] = { "", "_end", "_straight", "_corner", "_tee", "_cross" };
+            const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            for (int m = 0; m < 2; ++m) {
+                for (int sh = 0; sh < (info.wallRule ? 6 : 1); ++sh) {
+                    const std::string f = stem + MATS[m] + SHAPES[sh] + ".glb";
+                    if (pakHas(f)) loadDrawableModel(f.c_str(), materialModels_[(size_t)k][(size_t)m][(size_t)sh], false);
+                }
+            }
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)propKindCount(), k + 1);
     }

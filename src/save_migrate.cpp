@@ -100,6 +100,10 @@ bool upgrade6to7(Lines& lines) {
 bool upgrade7to8(Lines&) { return true; }
 // Version 9 added the ghost lines, for the Graveyard. A version 8 file has none: nobody has died yet, as far as it knows.
 bool upgrade8to9(Lines&) { return true; }
+// Version 10 added the foundation, blueprint and upstairs lines. A version 9 file has no buildings to tell of.
+bool upgrade9to10(Lines&) { return true; }
+// Version 11 added the material line. A version 10 piece without one is wood, as it was.
+bool upgrade10to11(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -109,6 +113,8 @@ constexpr Step STEPS[] = {
     { 6, upgrade6to7 },
     { 7, upgrade7to8 },
     { 8, upgrade8to9 },
+    { 9, upgrade9to10 },
+    { 10, upgrade10to11 },
 };
 }
 

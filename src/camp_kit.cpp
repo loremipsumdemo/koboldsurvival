@@ -3,6 +3,7 @@
 #include "build.h"
 #include "claims.h"
 #include "props.h"
+#include "items.h"
 
 namespace {
 struct KitSpot { PropKind kind; float dx, dz; };
@@ -14,6 +15,7 @@ const KitSpot CAMP_KIT[] = {
     { PropKind::Bedroll, -3.0f, 0.0f },
     { PropKind::Bedroll, -1.0f, 0.0f },
     { PropKind::Barrel, 0.0f, 2.0f },
+    { PropKind::WoodStockpile, 2.0f, 0.0f },
     { PropKind::Tree, -5.0f, -2.0f },
     { PropKind::Tree, -5.0f, 2.0f },
     { PropKind::Mushroom, -5.0f, 0.0f },
@@ -55,8 +57,8 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
         if (k.kind == PropKind::Altar) {
             kit.altar = e;
             const PropInfo& altar = propInfo(PropKind::Altar);
-            const int logs = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / altar.fuelHours);
-            w.get<Storage>(e)->slots[0] = ItemStack{ altar.input, logs };
+            const int bones = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / altar.fuelHours);
+            w.get<Storage>(e)->slots[0] = ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), bones };
         }
         if (k.kind == PropKind::Tree) kit.trees.push_back(e);
     }

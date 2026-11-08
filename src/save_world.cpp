@@ -58,6 +58,9 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
             s.bonesItems = pile->items;
         }
         if (const Health* h = w.get<Health>(e)) s.health = *h;
+        if (const Foundation* f = w.get<Foundation>(e)) s.foundation = *f;
+        if (const Blueprint* bp = w.get<Blueprint>(e)) s.blueprint = *bp;
+        s.material = (int)materialOf(w, e);
         d.props.push_back(std::move(s));
     }
 }
@@ -118,6 +121,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const Body* b = w.get<Body>(u)) su.body = idx(b->type);
     if (const SpawnHome* h = w.get<SpawnHome>(u)) su.home = *h;
     if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = idOf(propIds, oc->prop);
+    if (const Upstairs* up = w.get<Upstairs>(u)) su.upstairs = idOf(propIds, up->foundation);
     if (const Unconscious* un = w.get<Unconscious>(u)) su.down = *un;
     if (const Corpse* c = w.get<Corpse>(u)) su.corpseHours = c->hours;
     if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = idOf(unitIds, cd->by);
@@ -167,6 +171,10 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
             world.add(e, std::move(pile));
         }
         if (s.health) world.add(e, *s.health);
+        if (s.foundation) world.add(e, *s.foundation);
+        if (s.blueprint) world.add(e, *s.blueprint);
+        if (s.material > 0) world.add(e, Material{ (BuildMaterial)s.material });
+        if (s.blueprint && propInfo((PropKind)s.kind).door) world.remove<Lock>(e);
     }
     return props;
 }
@@ -245,6 +253,9 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& 
             }
         }
         if (u.workProp >= 0 && u.workProp < (int)props.size()) world.add(e, Working{ props[(size_t)u.workProp], u.workUnlocking });
+        if (u.upstairs >= 0 && u.upstairs < (int)props.size() && world.has<Foundation>(props[(size_t)u.upstairs])) {
+            world.add(e, Upstairs{ props[(size_t)u.upstairs] });
+        }
         if (u.stepKind >= 0) {
             Behaviors& b = *world.get<Behaviors>(e);
             for (const BehaviorRule& r : b.rules) {
@@ -301,6 +312,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     restoreLinks(world, d, units, props);
     restoreOrders(world, terrain, d, units, props);
     settleSquads(world);
+    rebuildBlocking(world, terrain);
     std::istringstream state(d.rngState);
     state >> rng.gen;
 }

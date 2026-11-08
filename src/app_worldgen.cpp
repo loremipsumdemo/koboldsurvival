@@ -478,6 +478,7 @@ void App::openLevelEditor(const std::string& mapName) {
         return;
     }
     std::string err;
+    renderer.pickLoadingArt();
     const LoadProgress progress = [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what); };
     if (!loadLevelGround(*map, terrain, renderer, err, progress)) {
         refuse(langf("MISC_LOAD_FAILED", { map->name, err }));

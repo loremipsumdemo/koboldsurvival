@@ -50,6 +50,14 @@ enum class PropKind : int {
     Turbine,
     Stove,
     Airship,
+    Foundation,
+    WoodWall,
+    WoodDoor,
+    Ladder,
+    UpperFloor,
+    DragonCrystal,
+    WoodStockpile,
+    StoneStockpile,
     NamedCount
 };
 constexpr int PROP_NAMED_KIND_COUNT = idx(PropKind::NamedCount);
@@ -70,7 +78,7 @@ struct BuildPick {
 };
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
 
-enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water };
+enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone };
 
 inline const char* itemFilterKey(ItemFilter f) {
     switch (f) {
@@ -79,13 +87,16 @@ inline const char* itemFilterKey(ItemFilter f) {
     case ItemFilter::Weapon: return "FILTER_WEAPON";
     case ItemFilter::Armor: return "FILTER_ARMOR";
     case ItemFilter::Water: return "FILTER_WATER";
+    case ItemFilter::Wood: return "FILTER_WOOD";
+    case ItemFilter::Stone: return "FILTER_STONE";
     default: return "";
     }
 }
 
-enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy, Evacuate };
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy, Evacuate, Climb };
 
 constexpr int INPUT_COOKABLE = -1;
+constexpr int INPUT_BONES = -2;   // any bones (the Altar's upkeep)
 
 struct Footprint {
     float halfW = 0.5f;
@@ -137,8 +148,19 @@ struct PropInfo {
     bool seat = false;
     bool cage = false;
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
+    bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
+    bool onFoundation = false;   // only on a finished foundation tile of the builder's
+    bool wallRule = false;       // a wall: its shape fits the walls around it, and it blocks walking
+    bool door = false;           // only on an entrance; strangers can't pass it while it is locked
+    bool ladder = false;         // climbs to the upper floor
+    bool upperFloor = false;     // a floor at wall height
+    bool rare = false;           // a new level scatters only one
+    double materials = 0.0;      // building material a blueprint needs (Wood Logs, or the material picked); 0: placed finished
+    double buildSeconds = 0.0;   // building it needs at Carpentry 1 (per tile for a foundation)
 };
 
+// Whether the item is what the prop takes as its input (an item, or any bones)
+bool inputMatches(const PropInfo& info, int item);
 // From data/props.txt. Any number outside the table gets its first row.
 const PropInfo& propInfo(PropKind kind);
 

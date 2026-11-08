@@ -70,6 +70,15 @@ std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
     }
     if (const Occupying* oc = w.get<Occupying>(u); oc && propEmoteOf(oc->prop) != EmoteId::None) out.push_back(propEmoteOf(oc->prop));
     if (lockedIn(w, u)) out.push_back(EmoteId::LockedIn);
+    if (const BuildJob* job = w.get<BuildJob>(u)) {
+        const SoloMove* so = w.get<SoloMove>(u);
+        const bool there = !so || so->next >= so->waypoints.size();
+        if (job->phase == BuildJob::Phase::Build) {
+            if (there) out.push_back(EmoteId::Building);
+        } else {
+            out.push_back(EmoteId::Hauling);
+        }
+    }
     if (w.has<Inventory>(u) && w.has<Stats>(u)) {
         const float limit = carryLimit(statsOf(w, u));
         if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EmoteId::Encumbered);

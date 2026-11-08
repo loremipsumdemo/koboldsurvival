@@ -1421,6 +1421,7 @@ on_use =
 material = 
 tier = 0
 equip_slot = 
+tags = wood_log
 
 [89]
 type = item
@@ -1488,6 +1489,7 @@ on_use =
 material = 
 tier = 0
 equip_slot = 
+tags = iron_ingot
 
 [93]
 type = item
@@ -2642,3 +2644,37 @@ on_use = hunger +450; health +300
 material =
 tier = 0
 equip_slot =
+
+[161]
+type = item
+max_stack_size = 99
+name = Stone
+description = A rough block of stone, broken from a boulder.
+weight = 3.0
+buy_value = 4
+sell_value = 2
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = stone
+
+[162]
+type = item
+max_stack_size = 20
+name = Dragon Crystal
+description = A rare crystal that glows with a dragon's heat. The toughest thing to build with.
+weight = 1.5
+buy_value = 250
+sell_value = 120
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = dragon_crystal

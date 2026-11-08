@@ -1,4 +1,6 @@
 #include "systems_internal.h"
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace systems_detail;
 
@@ -132,6 +134,12 @@ struct SteerFrame {
     std::vector<Vec2f> contacts;
     std::vector<std::uint32_t> contactWho;
     std::vector<std::pair<std::int64_t, std::uint32_t>> byCell;
+    // Which level each unit is on: the ground (0), aboard something (1), or the upper floor of a building (its foundation,
+    // past those). Units on different levels don't touch.
+    std::vector<std::int64_t> level;
+    std::unordered_map<long long, ObjectId> doors;   // locked doors, by tile
+    std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
+    std::unordered_set<long long> floors;            // finished upper floor tiles
     bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
 
@@ -175,7 +183,7 @@ void giveUpOnSlot(ActiveSquadMember& sm) {
 // heads for its slot and stops once in reach; one with no slot waits outside.
 void attackGoal(World& w, const Terrain& t, ObjectId e, const Transform* tr, ObjectId foe, float& tx, float& tz, bool& chasing) {
     const Transform* tt = w.get<Transform>(foe);
-    if (!tt) return;
+    if (!tt || !canStrike(w, e, foe)) return;   // melee doesn't chase a unit aboard an Airship
     const float gx = tt->x - tr->x, gz = tt->z - tr->z;
     const float gap = std::sqrt(gx * gx + gz * gz);
     const float reach = reachOf(w, e);
@@ -218,7 +226,8 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
     float leadGap = -1.0f;
     bool chasing = false;
     const Combat* fighting = w.get<Combat>(e);
-    if (w.has<Occupying>(e) || (w.has<InConversation>(e) && !underAttack(e) && !(fighting && fighting->target != NO_OBJECT))) {
+    if (w.has<Occupying>(e) || w.has<Climbing>(e) || w.has<Boarding>(e) ||
+        (w.has<InConversation>(e) && !underAttack(e) && !(fighting && fighting->target != NO_OBJECT))) {
         s.speeds[i] = 0.0f;
         s.pinned[i] = 1;
         s.goal[i] = { tr->x, tr->z };
@@ -489,6 +498,7 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
     int outsiderOnGoal = -1;
     for (const std::uint32_t j : nearby) {
         if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
+        if (s.level[i] != s.level[j]) continue;
         const std::pair<float, float>& o = s.pos[j];
         float nx = tr->x - o.first, nz = tr->z - o.second;
         const float touching = s.radius[i] + s.radius[j];
@@ -544,7 +554,7 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
     if (!shoved && !s.going[i] && !fighting && s.calmLead[i] == NO_OBJECT) {
         unitsNearby(s, tr, i, around, AVOID_CELLS);
         for (const std::uint32_t j : around) {
-            if (!s.going[j] || taskOf(w, s.units[j], e)) continue;
+            if (!s.going[j] || taskOf(w, s.units[j], e) || s.level[i] != s.level[j]) continue;
             const Vec2f vj = plannedVelocity(s, j);
             const float sp = std::hypot(vj.first, vj.second);
             if (sp < 0.2f) continue;
@@ -600,7 +610,7 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
             const float leftX = -headZ, leftZ = headX;
             for (const std::uint32_t j : around) {
                 if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
-                if (taskOf(w, e, s.units[j])) continue;
+                if (taskOf(w, e, s.units[j]) || s.level[i] != s.level[j]) continue;
                 // Squadmates keep their formation's spacing; the formation rules sort them out
                 if (myPlace) {
                     const ActiveSquadMember* theirs = w.get<ActiveSquadMember>(s.units[j]);
@@ -675,15 +685,46 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
     s.vel[i] = { vx + pushX, vz + pushZ };
 }
 
-void applySteering(World& w, Terrain& t, ObjectId e, Vec2f velocity, float dt, bool running) {
+void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f velocity, float dt, bool running) {
     Transform* tr = w.get<Transform>(e);
     const bool player = w.has<Commandable>(e);
     const float x0 = tr->x, z0 = tr->z;
 
     float nx = tr->x + velocity.first * dt;
     float nz = tr->z + velocity.second * dt;
-    if (t.isFree(nx, tr->z)) tr->x = nx;
-    if (t.isFree(tr->x, nz)) tr->z = nz;
+    // Upstairs, only onto the floor of its own building
+    if (const Upstairs* up = w.get<Upstairs>(e)) {
+        const Foundation* f = w.get<Foundation>(up->foundation);
+        auto onFloor = [&](float x, float z) {
+            const int tx = (int)std::floor(x), tz = (int)std::floor(z);
+            return f && f->contains(tx, tz) && s.floors.count(tileKey(tx, tz)) > 0;
+        };
+        if (onFloor(nx, tr->z)) tr->x = nx;
+        if (onFloor(tr->x, nz)) tr->z = nz;
+        tr->y = t.heightAt(tr->x, tr->z) + FLOOR_TOP;
+        return;
+    }
+    // A locked door that won't let it through stops it on the threshold
+    const int fromX = (int)std::floor(tr->x), fromZ = (int)std::floor(tr->z);
+    auto doorStops = [&](float x, float z) {
+        if (s.doors.empty()) return false;
+        const int tx = (int)std::floor(x), tz = (int)std::floor(z);
+        if (tx == fromX && tz == fromZ) return false;
+        const auto it = s.doors.find(tileKey(tx, tz));
+        if (it == s.doors.end() || doorLets(w, it->second, e)) return false;
+        w.add(e, AtDoor{ it->second, 0.0f });
+        return true;
+    };
+    // Pressed against a wall: noted, so a stranger hostile to its owner can break it
+    auto againstWall = [&](float x, float z) {
+        if (s.walls.empty()) return;
+        const auto it = s.walls.find(tileKey((int)std::floor(x), (int)std::floor(z)));
+        if (it != s.walls.end() && !w.has<Commandable>(e)) w.add(e, AtDoor{ it->second, 0.0f });
+    };
+    if (t.isFree(nx, tr->z) && !doorStops(nx, tr->z)) tr->x = nx;
+    else if (std::fabs(velocity.first) > 1e-3f) againstWall(nx + (velocity.first > 0.0f ? AGENT_CLEARANCE : -AGENT_CLEARANCE), tr->z);
+    if (t.isFree(tr->x, nz) && !doorStops(tr->x, nz)) tr->z = nz;
+    else if (std::fabs(velocity.second) > 1e-3f) againstWall(tr->x, nz + (velocity.second > 0.0f ? AGENT_CLEARANCE : -AGENT_CLEARANCE));
     tr->y = t.heightAt(tr->x, tr->z);
 
     const float moved = std::hypot(tr->x - x0, tr->z - z0);
@@ -712,6 +753,20 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     for (ObjectId e : units) {
         if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) s.attacked.push_back(c->target);
     }
+    s.level.assign(units.size(), 0);
+    for (size_t i = 0; i < units.size(); ++i) {
+        if (const Upstairs* up = w.get<Upstairs>(units[i])) s.level[i] = 2 + (std::int64_t)up->foundation;
+        else if (w.has<Occupying>(units[i])) s.level[i] = 1;
+    }
+    for (ObjectId p : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+        if ((!info.door && !info.upperFloor && !info.wallRule) || w.has<Blueprint>(p)) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const long long key = tileKey((int)std::floor(pt->x), (int)std::floor(pt->z));
+        if (info.upperFloor) s.floors.insert(key);
+        else if (info.wallRule) s.walls[key] = p;
+        else if (const Lock* l = w.get<Lock>(p); l && l->locked) s.doors[key] = p;
+    }
     std::sort(s.attacked.begin(), s.attacked.end());
 
     for (size_t i = 0; i < units.size(); ++i) steerGoal(w, t, s, i, running);
@@ -731,7 +786,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     for (size_t i = 0; i < units.size(); ++i) {
         if (!s.pinned[i]) steerVelocity(w, t, s, i, nearby, around);
     }
-    for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, units[i], s.vel[i], dt, running);
+    for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, s, units[i], s.vel[i], dt, running);
 }
 
 void cleanupActiveSquads(World& w) {

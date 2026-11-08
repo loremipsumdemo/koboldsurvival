@@ -28,6 +28,7 @@ bool altarFueled(World& w, ObjectId altar);
 bool altarHasUpkeep(World& w, ObjectId altar);
 std::string propDisplayName(World& w, ObjectId prop);
 bool lockShutFor(World& w, ObjectId prop, ObjectId unit);
+void releasePropLinks(World& w, ObjectId prop);
 bool lockShutFor(World& w, const std::vector<Claim>& claims, ObjectId prop, ObjectId unit);
 bool lockShutForFaction(World& w, ObjectId prop, int faction);
 bool lockShutForFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction);

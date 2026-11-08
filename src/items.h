@@ -45,6 +45,10 @@ const ItemDef* findItem(int id);
 inline constexpr const char* ITEM_TAG_COMMON_BONES = "common_bones";
 inline constexpr const char* ITEM_TAG_GOLD_COIN = "gold_coin";
 inline constexpr const char* ITEM_TAG_IRON_ORE = "iron_ore";
+inline constexpr const char* ITEM_TAG_WOOD_LOG = "wood_log";
+inline constexpr const char* ITEM_TAG_STONE = "stone";
+inline constexpr const char* ITEM_TAG_IRON_INGOT = "iron_ingot";
+inline constexpr const char* ITEM_TAG_DRAGON_CRYSTAL = "dragon_crystal";
 // The first item with this tag, or 0
 int itemTagged(const char* tag);
 

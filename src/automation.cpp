@@ -54,8 +54,32 @@ bool canHaulItem(World& w, const std::vector<Claim>& claims, ObjectId u, const B
     return false;
 }
 
+// Wood Logs and Stone each have a stockpile of their own: what kind of store takes this item, or Any for none
+ItemFilter stockpileFor(int item) {
+    const ItemDef* d = findItem(item);
+    if (d && hasTag(*d, ITEM_TAG_WOOD_LOG)) return ItemFilter::Wood;
+    if (d && hasTag(*d, ITEM_TAG_STONE)) return ItemFilter::Stone;
+    return ItemFilter::Any;
+}
+
+// The nearest stockpile of the unit's faction for this item with room in it, or NO_OBJECT
+ObjectId stockpileWithRoom(World& w, const std::vector<Claim>& claims, ObjectId u, int item) {
+    const Transform* ut = w.get<Transform>(u);
+    const ItemFilter want = stockpileFor(item);
+    if (!ut || want == ItemFilter::Any) return NO_OBJECT;
+    const int faction = factionOf(w, u);
+    return nearestProp(w, *ut, [&](ObjectId p) {
+        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+        const Storage* st = w.get<Storage>(p);
+        const Owner* own = w.get<Owner>(p);
+        return info.accepts == want && st && ((own && own->faction == faction) || inOwnClaim(w, claims, p, faction)) &&
+               !lockShutFor(w, claims, p, u) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item) > 0;
+    });
+}
+
 bool harvestLoaded(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
     if (fullFor(w, u, item)) return true;
+    if (stockpileFor(item) != ItemFilter::Any) return carriedCount(w, u, item) >= AUTO_LOAD;
     return carriedCount(w, u, item) >= AUTO_LOAD && canHaulItem(w, claims, u, b, item);
 }
 
@@ -200,6 +224,7 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& t
 }
 
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::Rescue) {
         r.why = BehaviorWait::None;
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
@@ -253,6 +278,32 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         action = PropAction::Store;
     } else {
         const int item = propInfo((PropKind)r.propKind).item;
+        // Wood and stone: with no stockpile of their kind that has room, the task waits; with a load, it is put away there
+        if (stockpileFor(item) != ItemFilter::Any) {
+            const ObjectId pile = stockpileWithRoom(w, claims, u, item);
+            if (pile == NO_OBJECT) {
+                r.why = BehaviorWait::NoStockpile;
+                return false;
+            }
+            if (harvestLoaded(w, claims, u, b, item)) {
+                r.why = BehaviorWait::None;
+                b.busy = true;
+                b.step = r;
+                b.stepProp = pile;
+                autoGo(w, t, u, pile, PropAction::Store);
+                return true;
+            }
+            if ((prop = harvestTarget(w, claims, u, r.propKind)) == NO_OBJECT) {
+                r.why = BehaviorWait::NoProp;
+                return false;
+            }
+            r.why = BehaviorWait::None;
+            b.busy = true;
+            b.step = r;
+            b.stepProp = prop;
+            autoGo(w, t, u, prop, action);
+            return true;
+        }
         if (fullFor(w, u, item)) r.why = BehaviorWait::CarryFull;
         else if (harvestLoaded(w, claims, u, b, item)) r.why = BehaviorWait::LoadWaiting;
         else if ((prop = harvestTarget(w, claims, u, r.propKind)) == NO_OBJECT) r.why = BehaviorWait::NoProp;
@@ -290,6 +341,10 @@ void systems_detail::autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to) {
 }
 
 void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
+    if (w.has<BuildJob>(u)) {
+        w.remove<BuildJob>(u);
+        w.remove<SoloMove>(u);
+    }
     if (const PropOrder* po = w.get<PropOrder>(u); po && po->automatic) {
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
@@ -423,13 +478,15 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
         const Combat* c = w.get<Combat>(u);
-        if ((c && c->target != NO_OBJECT) || w.has<AttackOrder>(u)) {
-            if (b->busy) stopAutoStep(w, u, *b);
+        if ((c && c->target != NO_OBJECT) || w.has<AttackOrder>(u) || w.has<Fleeing>(u)) {
+            if (b->busy && !w.has<Fleeing>(u)) stopAutoStep(w, u, *b);
             if (b->seeking) w.remove<SoloMove>(u);
             b->seeking = false;
             b->wait = resume;
             continue;
         }
+        // A building task runs by itself (buildJobSystem), and ends its own step
+        if (w.has<BuildJob>(u)) continue;
         if (b->seeking) {
             const SoloMove* so = w.get<SoloMove>(u);
             const bool walking = so && so->next < so->waypoints.size();
@@ -562,3 +619,26 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     }
 }
 
+ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind) {
+    Behaviors* b = w.get<Behaviors>(u);
+    const Transform* ut = w.get<Transform>(u);
+    if (!b || !ut || propKind < 0 || propKind >= propKindCount()) return NO_OBJECT;
+    const int item = propInfo((PropKind)propKind).item;
+    if (item <= 0) return NO_OBJECT;
+    const std::vector<Claim> claims = claimsOf(w);
+    const int faction = factionOf(w, u);
+    const ItemFilter pile = stockpileFor(item);
+    const ObjectId store = nearestProp(w, *ut, [&](ObjectId p) {
+        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+        if (info.use != PropUse::Storage || info.claimsLand || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
+        if (pile != ItemFilter::Any ? info.accepts != pile : !propAcceptsItem(w.get<Prop>(p)->kind, item)) return false;
+        const Owner* own = w.get<Owner>(p);
+        return ((own && own->faction == faction) || inOwnClaim(w, claims, p, faction)) && !lockShutFor(w, claims, p, u);
+    });
+    if (store == NO_OBJECT) return NO_OBJECT;
+    BehaviorRule haul;
+    haul.kind = BehaviorKind::AutoHaul;
+    haul.prop = store;
+    haul.propKind = idx(w.get<Prop>(store)->kind);
+    return addBehavior(b->rules, haul) ? store : NO_OBJECT;
+}

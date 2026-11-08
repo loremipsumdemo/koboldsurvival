@@ -26,6 +26,8 @@
 #include "chunk_source.h"
 #include "surface_tiles.h"
 #include "systems.h"
+#include "simulation.h"
+#include "building.h"
 #include "terrain.h"
 
 namespace {
@@ -89,6 +91,12 @@ private:
     int size_;
     WorldSurface surface_;
 };
+
+int countBarrelLogs(World& w, ObjectId barrel) {
+    int n = 0;
+    for (const ItemStack& st : w.get<Storage>(barrel)->slots) n += st.item == woodLogItem() ? st.count : 0;
+    return n;
+}
 
 int stacksIn(const Storage& st) {
     int n = 0;
@@ -350,6 +358,51 @@ int main(int, char**) {
         check(factionsWithUnits > 0 && housed == factionsWithUnits, "every faction of people has an Altar");
         check(split == factionsWithUnits, "every faction's units are some citizens and some military");
         check(citizenUnits(homes).empty(), "another faction's citizens are not yours");
+
+        // New Game's plan of a random set-up puts each camp where the game does, with an Altar, a campfire and four bedrolls
+        const LayoutPlan plan = planRandomLayout(terrain, false);
+        int matched = 0, kitted = 0, roomy = 0;
+        for (const CampPlan& c : plan.camps) {
+            int fires = 0, beds = 0;
+            bool altarThere = false;
+            for (ObjectId p : homes.view<Prop, Transform>()) {
+                const Transform* pt = homes.get<Transform>(p);
+                const PropKind kind = homes.get<Prop>(p)->kind;
+                if (std::hypot(pt->x - c.x, pt->z - c.z) > 4.0f) continue;
+                altarThere = altarThere || (kind == PropKind::Altar && std::hypot(pt->x - c.x, pt->z - c.z) < 0.01f);
+                fires += kind == PropKind::Campfire ? 1 : 0;
+                beds += kind == PropKind::Bedroll ? 1 : 0;
+            }
+            matched += altarThere ? 1 : 0;
+            kitted += fires >= 1 && beds >= 4 ? 1 : 0;
+            roomy += c.roomy ? 1 : 0;
+        }
+        std::printf("note: planned camps %d, matched %d, with kit %d, with room %d\n", (int)plan.camps.size(), matched, kitted, roomy);
+        check(!plan.camps.empty() && matched == (int)plan.camps.size(), "the planned camps are where a random set-up puts them");
+        check(kitted == (int)plan.camps.size(), "each camp has an Altar, a campfire and four bedrolls");
+        check(roomy == (int)plan.camps.size(), "on open ground, each camp has room all round it");
+
+        // A level file's faction with no camp gets a whole one where its units are
+        World bare;
+        Rng bareRng;
+        int friendly = -1;
+        for (const FactionDef& f : factions()) {
+            if (f.id != FACTION_PLAYER && f.id != FACTION_EXILE && !isMobFaction(f.id)) {
+                friendly = f.id;
+                break;
+            }
+        }
+        const Vec2 mid = systems_detail::findSpawn(terrain);
+        for (int i = 0; i < 3; ++i) spawnUnit(bare, terrain, bareRng, friendly, mid.x + (float)i, mid.z);
+        settleFactionHomes(bare, terrain);
+        int fires = 0, beds = 0, altars = 0;
+        for (ObjectId p : bare.view<Prop>()) {
+            const PropKind kind = bare.get<Prop>(p)->kind;
+            fires += kind == PropKind::Campfire ? 1 : 0;
+            beds += kind == PropKind::Bedroll ? 1 : 0;
+            altars += kind == PropKind::Altar ? 1 : 0;
+        }
+        check(altars == 1 && fires == 1 && beds == 4, "a faction placed by a level file gets an Altar, a campfire and four bedrolls");
     }
 
     // Ghosts: your dead rise, haunt after a day unappeased, and are appeased with bones at your Altar
@@ -411,9 +464,333 @@ int main(int, char**) {
         for (int i = 0; i < 60 * 20; ++i) airshipSystem(sky, moat, 1.0f / 60.0f);
         check(!stuckAboard(sky, pilot) && disembark(sky, moat, pilot) && airshipOf(sky, pilot) == NO_OBJECT,
               "over open ground on the far side, they get off");
+        // Getting on takes five seconds, and there must still be room at the end; getting off takes one
+        auto fly = [&](float seconds) {
+            for (int i = 0; i < (int)(seconds * 60.0f); ++i) airshipSystem(sky, moat, 1.0f / 60.0f);
+        };
+        const Transform at = *sky.get<Transform>(ship);
+        check(startBoarding(sky, pilot, ship), "a unit by an Airship starts getting on");
+        fly(4.8f);
+        check(airshipOf(sky, pilot) == NO_OBJECT, "getting on takes a while");
+        fly(0.4f);
+        check(airshipOf(sky, pilot) == ship, "after five seconds it is aboard");
+        std::vector<ObjectId> crowd;
+        for (int i = 0; i < 4; ++i) {
+            const ObjectId u = spawnUnit(sky, moat, skyRng, FACTION_PLAYER, at.x - 1.0f + 0.5f * (float)i, at.z + 1.0f);
+            crowd.push_back(u);
+            check(startBoarding(sky, u, ship), "with room, another starts getting on");
+        }
+        fly(5.2f);
+        int aboard = 0;
+        for (ObjectId u : crowd) aboard += airshipOf(sky, u) == ship ? 1 : 0;
+        check(aboard == 3 && occupantCount(sky, ship) == 4, "once full, the last to finish is turned away");
+        check(!startBoarding(sky, crowd[3], ship) || airshipOf(sky, crowd[3]) == ship, "a full Airship takes nobody new");
+        check(startLeaving(sky, pilot), "over open ground a unit starts getting off");
+        fly(0.8f);
+        check(airshipOf(sky, pilot) == ship, "getting off takes a moment");
+        fly(0.4f);
+        check(airshipOf(sky, pilot) == NO_OBJECT, "after a second it is off");
+        systems_detail::clearOrders(sky, crowd[0]);
+        check(airshipOf(sky, crowd[0]) == ship, "a new order doesn't take a unit off: only Evacuate does");
+        for (ObjectId u : crowd) {
+            if (airshipOf(sky, u) == ship) sky.remove<Occupying>(u);
+        }
+
         sky.add(pilot, Occupying{ ship });
         destroyBuilding(sky, ship);
         check(sky.has<Corpse>(pilot), "those aboard die when it is destroyed");
+    }
+
+    // Buildings: a foundation and its pieces are blueprints, supplied with logs and built by the two building tasks
+    {
+        World town;
+        Rng townRng;
+        townRng.gen.seed(3);
+        GameState townState;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const int cx = (int)std::floor(mid.x), cz = (int)std::floor(mid.z);
+        placeBuiltProp(town, ground, PropKind::Altar, cx - 8.5f, cz + 0.5f, 0.0f, FACTION_PLAYER);
+        check(checkFoundation(town, ground, cx, cz, cx + 1, cz + 4) == PieceCheck::TooSmall, "a foundation under 3 tiles a side is refused");
+        check(checkFoundation(town, ground, cx, cz, cx + 64, cz + 4) == PieceCheck::TooBig, "a foundation over 64 tiles a side is refused");
+        check(checkFoundation(town, ground, cx + 200, cz, cx + 204, cz + 4) == PieceCheck::OutsideClaim, "a foundation outside your claim is refused");
+        const int x0 = cx, z0 = cz, x1 = cx + 4, z1 = cz + 4;   // 5 x 5
+        check(checkFoundation(town, ground, x0, z0, x1, z1) == PieceCheck::Ok, "a 5 x 5 foundation in your claim may be laid");
+        const ObjectId base = placeFoundation(town, ground, x0, z0, x1, z1);
+        check(town.has<Blueprint>(base) && materialsNeeded(town, base) == 1, "it starts as a blueprint wanting one log");
+        check(!toggleEntrance(town, base, x0, z0), "a corner can't be an entrance");
+        check(!toggleEntrance(town, base, x0 + 2, z0 + 2), "a tile inside can't be an entrance");
+        check(toggleEntrance(town, base, x0 + 2, z1), "a tile on the edge becomes an entrance");
+        check(checkPiece(town, PropKind::WoodWall, x0, z0) == PieceCheck::FoundationUnfinished, "nothing is built on an unfinished foundation");
+
+        // A builder with logs and both tasks
+        const ObjectId builder = spawnUnit(town, ground, townRng, FACTION_PLAYER, cx - 3.5f, cz + 0.5f);
+        Behaviors& bb = *town.get<Behaviors>(builder);
+        bb.rules.clear();
+        BehaviorRule construct;
+        construct.kind = BehaviorKind::AutoConstruct;
+        bb.rules = { construct };   // Auto-Construct hauls the materials too
+        addToInventory(*town.get<Inventory>(builder), woodLogItem(), 20);
+        Stats handy = *town.get<Stats>(builder);
+        handy.xp[idx(StatId::Strength)] = xpForLevel(50);
+        handy.xp[idx(StatId::Carpentry)] = xpForLevel(MAX_LEVEL);
+        town.add(builder, handy);
+        // More logs in a barrel of yours, for it to fetch
+        const ObjectId barrel = placeBuiltProp(town, ground, PropKind::Barrel, cx - 4.5f, cz + 3.5f, 0.0f, FACTION_PLAYER);
+        if (!town.has<Storage>(barrel)) town.add(barrel, Storage{});
+        town.get<Storage>(barrel)->slots[0] = ItemStack{ woodLogItem(), 60 };
+        town.get<Storage>(barrel)->slots[1] = ItemStack{ woodLogItem(), 60 };
+        auto run = [&](float seconds) {
+            for (int i = 0; i < (int)(seconds * 60.0f); ++i) {
+                simStep(town, ground, townRng, townState, 1.0f / 60.0f, false);
+                takeEvents(town);
+            }
+        };
+        run(30.0f);
+        check(!town.has<Blueprint>(base), "the builder supplies the foundation and builds it");
+        check(std::hypot(town.get<Transform>(builder)->x - mid.x, town.get<Transform>(builder)->z - mid.z) < 12.0f,
+              "it works from up to five tiles away, without walking onto every tile");
+
+        check(checkPiece(town, PropKind::WoodDoor, x0 + 1, z1) == PieceCheck::EntranceOnly, "a door goes only on an entrance");
+        check(checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::EdgesOpen &&
+              checkPiece(town, PropKind::UpperFloor, x0, z0) == PieceCheck::EdgesOpen, "no ladder or upper floor before every edge has a wall or door");
+        check(checkPiece(town, PropKind::WoodWall, x0 + 2, z1) == PieceCheck::NotOnEntrance, "a wall can't close an entrance");
+        // Walls round the edge, a door in the entrance, a ladder inside and an upper floor along one side
+        std::vector<ObjectId> walls;
+        for (int x = x0; x <= x1; ++x) {
+            for (int z = z0; z <= z1; ++z) {
+                const bool edge = x == x0 || x == x1 || z == z0 || z == z1;
+                if (!edge || (x == x0 + 2 && z == z1)) continue;
+                check(checkPiece(town, PropKind::WoodWall, x, z) == PieceCheck::Ok, "a wall may go on the edge");
+                walls.push_back(placePiece(town, ground, PropKind::WoodWall, x, z));
+            }
+        }
+        const ObjectId door = placePiece(town, ground, PropKind::WoodDoor, x0 + 2, z1);
+        check(edgesClosed(town, base) && checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::Ok, "with every edge closed, a ladder may go in");
+        const ObjectId ladder = placePiece(town, ground, PropKind::Ladder, x0 + 1, z0 + 2);
+        std::vector<ObjectId> floors;
+        for (int z = z0; z <= z1; ++z) floors.push_back(placePiece(town, ground, PropKind::UpperFloor, x0, z));
+        check(checkPiece(town, PropKind::WoodWall, x0, z0) == PieceCheck::Taken, "one piece to a tile");
+        check(wallShapeOf(town, walls[0]).shape == 3, "a corner wall takes the corner shape");
+        const WallShape side = wallShapeOf(town, walls[1]);
+        check(side.shape == 2, "a wall between two walls is straight");
+        // A unit standing on a wall's tile: the wall waits, and the unit is asked to move
+        const ObjectId loafer = spawnUnit(town, ground, townRng, FACTION_PLAYER, x1 + 0.5f, z0 + 2.5f);
+        town.get<Behaviors>(loafer)->rules.clear();
+        ObjectId underLoafer = NO_OBJECT;
+        for (ObjectId wl : walls) {
+            const Transform* tr = town.get<Transform>(wl);
+            if ((int)std::floor(tr->x) == x1 && (int)std::floor(tr->z) == z0 + 2) underLoafer = wl;
+        }
+        town.get<Blueprint>(underLoafer)->supplied = materialsNeeded(town, underLoafer);
+        town.get<Blueprint>(underLoafer)->progress = 1.0;
+        check(!finishBlueprint(town, ground, underLoafer) && town.get<Blueprint>(underLoafer)->retryIn > 0.0f,
+              "a wall with a unit on its tile isn't finished yet");
+        check(town.has<SoloMove>(loafer), "the unit in the way is asked to move");
+        run(120.0f);
+        int unfinished = 0;
+        for (ObjectId e : town.view<Blueprint>()) unfinished += 1 + 0 * (int)e;
+        std::printf("note: building: %d pieces still unfinished\n", unfinished);
+        check(unfinished == 0, "every piece is supplied and built in time, with logs fetched from a barrel");
+        check(countBarrelLogs(town, barrel) < 120, "logs were fetched from the barrel");
+        const Transform* lt = town.get<Transform>(loafer);
+        check((int)std::floor(lt->x) != x1 || (int)std::floor(lt->z) != z0 + 2, "the unit moved off the wall's tile");
+        check(!ground.walkable(x0, z0 + 1) && ground.walkable(x0 + 2, z1) && ground.walkable(x0 + 2, z0 + 2),
+              "finished walls close their tiles; the doorway and the inside stay open");
+        check(town.has<Lock>(door) && town.get<Lock>(door)->locked, "a finished door is locked");
+        check(doorLets(town, door, builder), "your own units go through your door");
+
+        // Up the ladder, out of reach of melee from the ground
+        Transform* bt = town.get<Transform>(builder);
+        bt->x = x0 + 1.5f;
+        bt->z = z0 + 3.5f;
+        town.get<Behaviors>(builder)->rules.clear();
+        check(canClimbUp(town, ladder) && startClimb(town, builder, ladder), "a unit by a ladder climbs it");
+        run(2.0f);
+        check(town.has<Upstairs>(builder) && town.get<Transform>(builder)->y > ground.heightAt(bt->x, bt->z) + 2.0f,
+              "after climbing it stands on the upper floor");
+        int foes = -1;
+        for (const FactionDef& f : factions()) {
+            if (f.id != FACTION_PLAYER && !isMobFaction(f.id) && factionsHostile(town, f.id, FACTION_PLAYER)) {
+                foes = f.id;
+                break;
+            }
+        }
+        const ObjectId raider = spawnUnit(town, ground, townRng, foes, x0 + 2.5f, z1 + 1.5f);
+        town.add(raider, Equipment{});
+        check(!canStrike(town, raider, builder), "melee from the ground can't reach the upper floor");
+        town.add(raider, AtDoor{ door, 0.0f });
+        bool smashed = false;
+        for (int i = 0; i < 60 * 120 && !smashed; ++i) {
+            town.get<AtDoor>(raider) ? (void)(town.get<AtDoor>(raider)->since = 0.0f) : (void)town.add(raider, AtDoor{ door, 0.0f });
+            simStep(town, ground, townRng, townState, 1.0f / 60.0f, false);
+            takeEvents(town);
+            smashed = !town.has<Prop>(door) || town.get<Prop>(door)->kind != PropKind::WoodDoor;
+        }
+        check(smashed, "a hostile unit that can't pick the lock smashes the door");
+        check(town.get<Health>(walls[1])->max == 2.0 * DOOR_HEALTH, "a wall takes twice the breaking a door does");
+
+        // The buildings come back from a save
+        const MapChoice townMap{ "packed", "test", "test", "" };
+        const std::string townFile = "roundtrip_town.sav";
+        check(writeSaveFile(townFile, captureWorld(town, townState, Camera{}, townRng, 1000, "town", townMap)), "a game with buildings is saved");
+        SaveData townData;
+        check(readSaveFile(townFile, townData), "and read");
+        std::remove(townFile.c_str());
+        World again;
+        Rng againRng;
+        ground.clearBlocked();
+        restoreWorld(again, ground, againRng, townData);
+        int foundations = 0, upstairs = 0;
+        for (ObjectId e : again.view<Foundation>()) foundations += again.get<Foundation>(e)->entrances.size() == 1 ? 1 : 0;
+        for (ObjectId e : again.view<Upstairs>()) upstairs += again.has<Foundation>(again.get<Upstairs>(e)->foundation) ? 1 : 0;
+        check(foundations == 1 && upstairs == 1, "the foundation, its entrance, and who is upstairs come back");
+        check(!ground.walkable(x0, z0 + 1), "the walls close their tiles again after a reload");
+
+        // With every wall and door on the ground floor gone, the upper floor falls in, and those on it come down
+        for (ObjectId e : again.view<Prop>()) {
+            const PropInfo& info = propInfo(again.get<Prop>(e)->kind);
+            if ((info.wallRule || info.door) && again.has<Prop>(e)) destroyBuilding(again, e);
+        }
+        GameState againState;
+        for (int i = 0; i < 10; ++i) simStep(again, ground, againRng, againState, 1.0f / 60.0f, false);
+        int floorsLeft = 0;
+        for (ObjectId e : again.view<Prop>()) floorsLeft += propInfo(again.get<Prop>(e)->kind).upperFloor ? 1 : 0;
+        check(floorsLeft == 0 && again.view<Upstairs>().empty() && ground.walkable(x0, z0 + 1),
+              "with no walls or doors left, the upper floors collapse and the walls' tiles open");
+        ground.clearBlocked();
+    }
+
+    // Materials: iron and Dragon Crystal make tougher pieces, and a blueprint wants its own material
+    {
+        World forge;
+        Rng forgeRng;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const int cx = (int)std::floor(mid.x), cz = (int)std::floor(mid.z);
+        placeBuiltProp(forge, ground, PropKind::Altar, cx - 8.5f, cz + 0.5f, 0.0f, FACTION_PLAYER);
+        const ObjectId base = placeFoundation(forge, ground, cx, cz, cx + 3, cz + 3, FACTION_PLAYER, BuildMaterial::Iron);
+        check(materialOf(forge, base) == BuildMaterial::Iron && materialItem(BuildMaterial::Iron) == itemTagged(ITEM_TAG_IRON_INGOT),
+              "an iron foundation wants Iron Ingots");
+        forge.remove<Blueprint>(base);
+        const ObjectId iron = placePiece(forge, ground, PropKind::WoodWall, cx, cz, FACTION_PLAYER, BuildMaterial::Iron);
+        const ObjectId crystal = placePiece(forge, ground, PropKind::WoodWall, cx + 1, cz, FACTION_PLAYER, BuildMaterial::Crystal);
+        for (ObjectId e : { iron, crystal }) {
+            forge.get<Blueprint>(e)->supplied = materialsNeeded(forge, e);
+            finishBlueprint(forge, ground, e);
+        }
+        check(forge.get<Health>(iron)->max == 2.0 * WALL_HEALTH && forge.get<Health>(crystal)->max == 3.0 * WALL_HEALTH,
+              "an iron wall is twice as tough as wood, and a crystal one three times");
+        ground.clearBlocked();
+    }
+
+    // Wood and stone go to their stockpiles; with none that has room, the task waits
+    {
+        World yard;
+        Rng yardRng;
+        yardRng.gen.seed(8);
+        GameState yardState;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        placeBuiltProp(yard, ground, PropKind::Altar, mid.x - 6.5f, mid.z + 0.5f, 0.0f, FACTION_PLAYER);
+        check(propAcceptsItem(PropKind::Altar, itemTagged(ITEM_TAG_COMMON_BONES)) && !propAcceptsItem(PropKind::Altar, woodLogItem()),
+              "an Altar burns bones, not logs");
+        check(propAcceptsItem(PropKind::StoneStockpile, itemTagged(ITEM_TAG_STONE)) && !propAcceptsItem(PropKind::StoneStockpile, woodLogItem()) &&
+              propAcceptsItem(PropKind::WoodStockpile, woodLogItem()), "each stockpile takes only its own kind");
+        const ObjectId rock = makeProp(yard, PropKind::Boulder, Transform{ mid.x + 2.5f, ground.heightAt(mid.x + 2.5f, mid.z + 0.5f), mid.z + 0.5f });
+        claimOwnership(yard, rock);
+        const ObjectId miner = spawnUnit(yard, ground, yardRng, FACTION_PLAYER, mid.x + 0.5f, mid.z + 0.5f);
+        BehaviorRule mine;
+        mine.kind = BehaviorKind::AutoHarvest;
+        mine.propKind = idx(PropKind::Boulder);
+        yard.get<Behaviors>(miner)->rules = { mine };
+        Stats digger = *yard.get<Stats>(miner);
+        digger.xp[idx(StatId::Mining)] = xpForLevel(MAX_LEVEL);
+        yard.add(miner, digger);
+        for (int i = 0; i < 60 * 3; ++i) {
+            simStep(yard, ground, yardRng, yardState, 1.0f / 60.0f, false);
+            takeEvents(yard);
+        }
+        check(yard.get<Behaviors>(miner)->rules[0].why == BehaviorWait::NoStockpile && !yard.has<Working>(miner),
+              "with no Stone Stockpile, mining stone waits");
+        const ObjectId pile = placeBuiltProp(yard, ground, PropKind::StoneStockpile, mid.x - 1.5f, mid.z + 2.5f, 0.0f, FACTION_PLAYER);
+        check(addHaulForHarvest(yard, miner, idx(PropKind::Tree)) == NO_OBJECT, "with no Wood Stockpile, woodcutting gets no haul task");
+        {
+            const std::vector<BehaviorRule>& rules = yard.get<Behaviors>(miner)->rules;
+            check(addHaulForHarvest(yard, miner, idx(PropKind::Boulder)) == pile && rules.size() == 2 && rules[0].kind == BehaviorKind::AutoHaul &&
+                  rules[0].prop == pile && rules[1].kind == BehaviorKind::AutoHarvest,
+                  "mining stone also gets Auto-Haul to the Stone Stockpile, placed above the Auto-Harvest");
+            std::vector<BehaviorRule> order = defaultBehaviors();
+            BehaviorRule harvest, haul;
+            harvest.kind = BehaviorKind::AutoHarvest;
+            harvest.propKind = idx(PropKind::Tree);
+            haul.kind = BehaviorKind::AutoHaul;
+            haul.prop = pile;
+            BehaviorRule roam;
+            roam.kind = BehaviorKind::Roam;
+            addBehavior(order, harvest);
+            addBehavior(order, roam);
+            addBehavior(order, haul);
+            const size_t base = defaultBehaviors().size();
+            check(order[base].kind == BehaviorKind::AutoHaul && order[base + 1].kind == BehaviorKind::AutoHarvest &&
+                  order[base + 2].kind == BehaviorKind::Roam, "a haul task added later goes in just above the first Auto-Harvest");
+            std::swap(order[base], order[base + 1]);
+            addBehavior(order, haul);
+            check(order[base].kind == BehaviorKind::AutoHaul, "added again, a haul task below an Auto-Harvest moves above it");
+        }
+        for (int i = 0; i < 60 * 240; ++i) {
+            simStep(yard, ground, yardRng, yardState, 1.0f / 60.0f, false);
+            takeEvents(yard);
+        }
+        int stored = 0;
+        for (const ItemStack& st : yard.get<Storage>(pile)->slots) stored += st.item == itemTagged(ITEM_TAG_STONE) ? st.count : 0;
+        std::printf("note: stone stored %d, carried %d, why %d, busy %d, working %d, propgo %d\n", stored,
+                    carriedCount(*yard.get<Inventory>(miner), itemTagged(ITEM_TAG_STONE)), (int)yard.get<Behaviors>(miner)->rules[0].why,
+                    (int)yard.get<Behaviors>(miner)->busy, (int)yard.has<Working>(miner), (int)yard.has<PropOrder>(miner));
+        check(stored > 0, "with one, the stone mined from a Boulder goes into the Stone Stockpile");
+
+        // A Dragon Crystal is broken, not destroyed, and leaves crystals
+        const ObjectId gem = makeProp(yard, PropKind::DragonCrystal, Transform{ mid.x + 4.5f, 0.0f, mid.z + 4.5f });
+        check(destroyedByHand(PropKind::DragonCrystal) && propInfo(PropKind::DragonCrystal).rare, "a Dragon Crystal is broken by hand, and rare");
+        destroyBuilding(yard, gem);
+        int crystals = 0;
+        for (ObjectId g : yard.view<GroundItem>()) crystals += yard.get<GroundItem>(g)->item == itemTagged(ITEM_TAG_DRAGON_CRYSTAL) ? 1 : 0;
+        check(crystals == 1, "broken, it leaves Dragon Crystals");
+    }
+
+    // Cancelling a foundation blueprint drops what it and the blueprints on it hold; once building starts, it's spent
+    {
+        World site;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const int cx = (int)std::floor(mid.x), cz = (int)std::floor(mid.z);
+        placeBuiltProp(site, ground, PropKind::Altar, cx - 8.5f, cz + 0.5f, 0.0f, FACTION_PLAYER);
+        auto logsOnGround = [&] {
+            int n = 0;
+            for (ObjectId g : site.view<GroundItem>()) n += site.get<GroundItem>(g)->item == woodLogItem() ? site.get<GroundItem>(g)->count : 0;
+            return n;
+        };
+        const ObjectId plan = placeFoundation(site, ground, cx, cz, cx + 3, cz + 3, FACTION_PLAYER, BuildMaterial::Wood);
+        check(supplyBlueprint(site, plan, 5) == 1, "a foundation blueprint holds the one log it needs");
+        check(destroyBuilding(site, plan) && logsOnGround() == 1 && site.view<Blueprint>().empty(),
+              "cancelled, the foundation blueprint drops the log it held");
+        const ObjectId plan2 = placeFoundation(site, ground, cx, cz, cx + 3, cz + 3, FACTION_PLAYER, BuildMaterial::Wood);
+        supplyBlueprint(site, plan2, 1);
+        site.get<Blueprint>(plan2)->progress = 0.2;
+        destroyBuilding(site, plan2);
+        check(logsOnGround() == 1, "once building has started, the log is spent and nothing more drops");
+
+        // However heavy the load, a unit keeps a tenth of its speed
+        Rng siteRng;
+        const ObjectId mule = spawnUnit(site, ground, siteRng, FACTION_PLAYER, mid.x + 0.5f, mid.z + 6.5f);
+        addToInventory(*site.get<Inventory>(mule), itemTagged(ITEM_TAG_STONE), 999);
+        const float full = site.get<Entity>(mule)->speed;
+        check(walkSpeedOf(site, mule) >= 0.1f * full - 1e-4f, "a unit under any load still moves at a tenth of its speed");
+        ground.clearBlocked();
     }
 
     // Prisoner cages and Evacuate

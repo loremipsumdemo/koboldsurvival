@@ -27,6 +27,19 @@ constexpr float CAMP_EXTRA_FAR = 12.0f;
 constexpr float CAMP_RADIUS_BASE = 4.0f;
 constexpr float CAMP_RADIUS_PER_UNIT = 1.6f;
 
+// Open ground all round, CAMP_ROOM tiles out from the camp's middle, for it to grow into
+bool roomAround(const Terrain& t, float cx, float cz) {
+    const int r = (int)std::ceil(CAMP_ROOM);
+    const int x0 = (int)std::floor(cx), z0 = (int)std::floor(cz);
+    for (int dz = -r; dz <= r; ++dz) {
+        for (int dx = -r; dx <= r; ++dx) {
+            if ((float)(dx * dx + dz * dz) > CAMP_ROOM * CAMP_ROOM) continue;
+            if (!t.walkable(x0 + dx, z0 + dz)) return false;
+        }
+    }
+    return true;
+}
+
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
         for (int x = x0; x < x0 + n; ++x) {
@@ -76,6 +89,8 @@ struct LevelBuilder {
     std::vector<Vec2> flagSpots;
     std::vector<std::pair<ObjectId, CampKit>> woodcutters;
     std::vector<CampKit> kits;
+    bool planning = false;   // only finding where the camps go: no extras, no units
+    std::vector<CampPlan> plan;
 
     int tileAt(float v) const { return std::clamp((int)std::floor(v), 0, size - 1); }
 
@@ -104,7 +119,7 @@ struct LevelBuilder {
         return true;
     }
 
-    CampKit placeCamp(int faction, float cx, float cz) {
+    CampKit placeCamp(int faction, float cx, float cz, bool needRoom = false) {
         for (int ring = 0; ring <= (int)CAMP_SHIFT; ++ring) {
             const int steps = ring == 0 ? 1 : 8 * ring;
             for (int k = 0; k < steps; ++k) {
@@ -112,6 +127,7 @@ struct LevelBuilder {
                 const float x = cx + std::cos(a) * (float)ring, z = cz + std::sin(a) * (float)ring;
                 if (x < 8.0f || z < 8.0f || x > size - 8.0f || z > size - 8.0f) continue;
                 if (!clearOfCamps(x, z) || !campKitFits(w, t, x, z)) continue;
+                if (needRoom && !roomAround(t, x, z)) continue;
                 CampKit kit = placeCampKit(w, t, faction, x, z, 0.0f);
                 if (kit.placed) {
                     flagSpots.push_back(Vec2{ kit.x, kit.z });
@@ -163,15 +179,11 @@ struct LevelBuilder {
         }
         Behaviors* b = w.get<Behaviors>(u);
         if (!b) return;
-        BehaviorRule haul;
-        haul.kind = BehaviorKind::AutoHaul;
-        haul.prop = kit.altar;
-        haul.propKind = idx(PropKind::Altar);
+        // Logs go to the camp's Wood Stockpile
         BehaviorRule harvest;
         harvest.kind = BehaviorKind::AutoHarvest;
         harvest.propKind = idx(PropKind::Tree);
-        addBehavior(b->rules, haul);
-        addBehavior(b->rules, harvest);
+        if (addBehavior(b->rules, harvest)) addHaulForHarvest(w, u, harvest.propKind);
     }
 
     bool freeSpot(float cx, float cz, float radius, float& x, float& z) {
@@ -197,7 +209,7 @@ struct LevelBuilder {
 
     Vec2 placePlayerCamp(bool playerCamp) {
         const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET) : CampKit{};
-        addCampExtras(FACTION_PLAYER, playerKit);
+        if (!planning) addCampExtras(FACTION_PLAYER, playerKit);
         if (playerKit.placed) kits.push_back(playerKit);
         if (playerKit.placed) {
             ObjectId first = NO_OBJECT;
@@ -220,10 +232,20 @@ struct LevelBuilder {
             dirZ = std::sin(a);
         }
         const float dist = CAMP_DISTANCE * (ci >= 4 ? 1.4f : 1.0f);
-        CampKit kit = placeCamp(f.id, middle.x + dirX * dist, middle.z + dirZ * dist);
-        for (float d = dist - 10.0f; !kit.placed && d >= CAMP_GAP; d -= 10.0f) {
-            kit = placeCamp(f.id, middle.x + dirX * d, middle.z + dirZ * d);
+        // First anywhere along the way with room all round it, and only then anywhere the camp itself fits
+        CampKit kit;
+        bool roomy = false;
+        for (const bool needRoom : { true, false }) {
+            for (float d = dist; !kit.placed && d >= CAMP_GAP; d -= 10.0f) {
+                kit = placeCamp(f.id, middle.x + dirX * d, middle.z + dirZ * d, needRoom);
+            }
+            if (kit.placed) {
+                roomy = needRoom;
+                break;
+            }
         }
+        if (kit.placed) plan.push_back(CampPlan{ f.id, kit.x, kit.z, roomy });
+        if (planning) return;
         addCampExtras(f.id, kit);
         const float cx = kit.placed ? kit.x : middle.x + dirX * dist, cz = kit.placed ? kit.z : middle.z + dirZ * dist;
         ObjectId firstUnit = NO_OBJECT;
@@ -252,20 +274,30 @@ struct LevelBuilder {
 
     void placeLevelProps() {
         std::vector<GridPos> propTiles;
-        const std::vector<PropKind>& scattered = scatteredPropKinds();
-        const int propTotal = (int)scattered.size() * PROP_COPIES;
+        // PROP_COPIES of each kind, and one of a rare kind
+        std::vector<PropKind> scattered;
+        for (PropKind k : scatteredPropKinds()) scattered.insert(scattered.end(), propInfo(k).rare ? 1 : PROP_COPIES, k);
+        std::stable_sort(scattered.begin(), scattered.end(), [](PropKind a, PropKind b) { return propInfo(a).rare < propInfo(b).rare; });
+        const int propTotal = (int)scattered.size();
         for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
             GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
                        rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
             if (!t.walkable(g.x, g.y)) continue;
             if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
+            // Each camp keeps its room clear
+            bool inCamp = false;
+            for (const CampPlan& c : plan) {
+                const float dx = g.x + 0.5f - c.x, dz = g.y + 0.5f - c.z;
+                inCamp = inCamp || dx * dx + dz * dz <= CAMP_ROOM * CAMP_ROOM;
+            }
+            if (inCamp) continue;
             bool kitHere = false;
             for (ObjectId e : w.view<Prop, Transform>()) {
                 const Transform* kt = w.get<Transform>(e);
                 if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
             }
             if (kitHere) continue;
-            const PropKind kind = scattered[propTiles.size() % scattered.size()];
+            const PropKind kind = scattered[propTiles.size()];
             propTiles.push_back(g);
             const float x = g.x + 0.5f, z = g.y + 0.5f;
             const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z });
@@ -381,6 +413,28 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
     b.giveFactionPatrols();
 }
 
+LayoutPlan planRandomLayout(Terrain& t, bool playerCamp, const std::atomic<bool>* cancel) {
+    LayoutPlan out;
+    World w;
+    Rng rng;
+    const Vec2 spawn = findSpawn(t);
+    LevelBuilder b{ w, t, rng, spawn, t.size() };
+    b.planning = true;
+    out.spawnX = spawn.x;
+    out.spawnZ = spawn.z;
+    std::vector<const FactionDef*> camps;
+    for (const FactionDef& f : factions()) {
+        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
+    }
+    const Vec2 middle = b.placePlayerCamp(playerCamp);
+    for (size_t ci = 0; ci < camps.size(); ++ci) {
+        if (cancel && cancel->load()) return LayoutPlan{};
+        b.placeFactionCamp(camps, ci, middle);
+    }
+    out.camps = b.plan;
+    return out;
+}
+
 namespace {
 constexpr float FACTION_CITIZEN_SHARE = 0.4f;
 constexpr int FACTION_ALTAR_SEARCH = 24;   // how far from its units' middle an Altar is looked for, in tiles
@@ -411,6 +465,29 @@ bool altarSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& 
     }
     return false;
 }
+
+// A spot near (cx, cz) for a whole camp kit (Altar, campfire, four bedrolls and the rest), its claim clear of every other
+// claim: first with room all round it, then anywhere it fits
+bool campSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z) {
+    const std::vector<Claim> claims = claimsOf(w);
+    for (const bool needRoom : { true, false }) {
+        for (int ring = 0; ring <= FACTION_ALTAR_SEARCH; ++ring) {
+            for (int dz = -ring; dz <= ring; ++dz) {
+                for (int dx = -ring; dx <= ring; ++dx) {
+                    if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
+                    const float px = std::floor(cx) + dx + 0.5f, pz = std::floor(cz) + dz + 0.5f;
+                    bool clear = campKitFits(w, t, px, pz) && (!needRoom || roomAround(t, px, pz));
+                    for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, c.x, c.z);
+                    if (!clear) continue;
+                    x = px;
+                    z = pz;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 }
 
 void settleFactionHomes(World& w, Terrain& t) {
@@ -433,11 +510,20 @@ void settleFactionHomes(World& w, Terrain& t) {
         }
         if (altar == NO_OBJECT) {
             float x = 0.0f, z = 0.0f;
+            const float mx = sx / (float)units.size(), mz = sz / (float)units.size();
+            if (campSpot(w, t, mx, mz, x, z)) {
+                const CampKit kit = placeCampKit(w, t, f.id, x, z, 0.0f);
+                altar = kit.altar;
+                settleClaimOwnership(w);
+            }
+        }
+        if (altar == NO_OBJECT) {
+            float x = 0.0f, z = 0.0f;
             if (altarSpot(w, t, sx / (float)units.size(), sz / (float)units.size(), x, z)) {
                 altar = placeBuiltProp(w, t, PropKind::Altar, x, z, 0.0f, f.id);
                 const PropInfo& info = propInfo(PropKind::Altar);
                 if (Storage* st = w.get<Storage>(altar)) {
-                    st->slots[0] = ItemStack{ info.input, (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / info.fuelHours) };
+                    st->slots[0] = ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / info.fuelHours) };
                 }
                 settleClaimOwnership(w);
             }

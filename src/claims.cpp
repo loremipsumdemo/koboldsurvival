@@ -1,4 +1,5 @@
 #include "airship.h"
+#include "building.h"
 #include "items.h"
 #include "claims.h"
 #include "spatial.h"
@@ -43,9 +44,8 @@ bool altarHasUpkeep(World& w, ObjectId altar) {
     const Prop* p = w.get<Prop>(altar);
     const Storage* st = w.get<Storage>(altar);
     if (!p || !st) return false;
-    const int input = propInfo(p->kind).input;
     for (const ItemStack& s : st->slots) {
-        if (s.item == input && s.count > 0) return true;
+        if (inputMatches(propInfo(p->kind), s.item) && s.count > 0) return true;
     }
     return false;
 }
@@ -148,13 +148,27 @@ void breakBuilding(World& w, ObjectId e) {
         w.destroy(e);
         return;
     }
+    // A blueprint goes with nothing left behind but the logs brought to it; a foundation takes its pieces with it
+    if (const Blueprint* bp = w.get<Blueprint>(e)) {
+        const int logs = bp->progress > 0.0 ? 0 : bp->supplied;   // spent once building began
+        const int material = materialItem(materialOf(w, e));
+        if (propInfo(kind).foundation) foundationLost(w, e);
+        releaseProp(w, e);
+        w.destroy(e);
+        if (logs > 0) spawnGroundItem(w, at, material, logs);
+        return;
+    }
+    if (propInfo(kind).foundation) foundationLost(w, e);
+    if (propInfo(kind).wallRule || propInfo(kind).door) w.resource<BuildingsChanged>().dirty = true;
     const std::vector<ItemStack> held = propHoldings(w, e);
     airshipLost(w, e);
     if (destroyedByHand(kind)) {
         releaseProp(w, e);
         w.destroy(e);
         dropStacks(w, at, held);
-        spawnGroundItem(w, at, itemTagged(ITEM_TAG_COMMON_BONES), BONES_ITEM_COUNT);
+        // Broken: it leaves its item (a Dragon Crystal's crystals), or bones
+        const int left = propInfo(kind).item > 0 ? propInfo(kind).item : itemTagged(ITEM_TAG_COMMON_BONES);
+        spawnGroundItem(w, at, left, BONES_ITEM_COUNT);
         return;
     }
     releaseProp(w, e);
@@ -194,3 +208,6 @@ bool propDecaying(World& w, ObjectId e) {
     const Prop* p = w.get<Prop>(e);
     return p && propInfo(p->kind).claimsLand && w.has<Health>(e) && !altarFueled(w, e);
 }
+
+// Units let go of a prop that is going: they stop occupying, working or heading for it
+void releasePropLinks(World& w, ObjectId prop) { releaseProp(w, prop); }

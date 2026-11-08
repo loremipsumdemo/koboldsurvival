@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <vector>
 #include "components.h"
 #include "ecs.h"
@@ -9,6 +10,19 @@
 ObjectId makeEntity(World& w, const Transform& at, int faction);
 Dialogue defaultDialogue();
 void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp = true);
+// Where a random layout on this ground puts your start and each faction's camp, without building it. setupWorld puts
+// them in the same places, so New Game can show them. cancel, when set, stops it early (an empty plan).
+struct CampPlan {
+    int faction = 0;
+    float x = 0.0f, z = 0.0f;
+    bool roomy = false;   // with open ground all round it, CAMP_ROOM tiles out
+};
+struct LayoutPlan {
+    float spawnX = 0.0f, spawnZ = 0.0f;
+    std::vector<CampPlan> camps;
+};
+constexpr float CAMP_ROOM = 10.0f;
+LayoutPlan planRandomLayout(Terrain& t, bool playerCamp, const std::atomic<bool>* cancel = nullptr);
 
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot);
@@ -81,6 +95,9 @@ int storeCarried(World& w, ObjectId unit, ObjectId prop, int item);
 constexpr int AUTO_LOAD = 10;
 constexpr float AUTO_RESUME_SECONDS = 8.0f;
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng);
+// With an Auto-Harvest task of this prop kind, the unit also gets Auto-Haul to the nearest store of its faction that takes
+// what it yields: the Wood Stockpile for logs, the Stone Stockpile for stone, any storage otherwise. The store, or NO_OBJECT
+ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind);
 void wildMobSystem(World& w, Terrain& t, float dt);
 struct WorkGain {
     enum class Kind { Item, Unlocked, LockpickFailed, Trained };

@@ -1,4 +1,6 @@
 #include "renderer_internal.h"
+#include <unordered_set>
+#include "building.h"
 #include "frustum.h"
 #include <unordered_map>
 
@@ -387,22 +389,105 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     const DetailRange detail(cam);
     const FrustumPlanes frustum = framePlanes(viewProj_);
+    // Buildings: blueprints are see-through boxes, a foundation is a slab on each of its tiles, and a wall takes the shape
+    // that fits the walls and doors beside it
+    std::unordered_set<long long> wallTiles;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (!info.wallRule && !info.door) continue;
+        const Transform* tr = w.get<Transform>(e);
+        wallTiles.insert(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z)));
+    }
+    Batch blueprints;
+    const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f }, entrance{ 0.3f, 1.0f, 0.4f, 0.55f };
+    auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA side, RGBA top) {
+        blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, top);
+        blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, side);
+        blueprints.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, side);
+        blueprints.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, y1, z1 }, V3{ x0, y1, z0 }, side);
+        blueprints.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x1, y1, z0 }, side);
+    };
     for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
+        const PropInfo& info = propInfo(kind);
+        // The model for this piece's material and shape (0 plain), or nullptr for the plain wood one
+        const BuildMaterial mat = materialOf(w, e);
+        auto materialModel = [&](int shape) -> const Model* {
+            if (mat == BuildMaterial::Wood || (size_t)idx(kind) >= materialModels_.size()) return nullptr;
+            const Model& m = materialModels_[(size_t)idx(kind)][(size_t)mat - 1][(size_t)shape];
+            return m.vao ? &m : nullptr;
+        };
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            const bool plannedOnly = w.has<Blueprint>(e);
+            const Model* made = materialModel(0);
+            for (int z = f->z0; z < f->z0 + f->h; ++z) {
+                for (int x = f->x0; x < f->x0 + f->w; ++x) {
+                    const float cx = x + 0.5f, cz = z + 0.5f, y = t.heightAt(cx, cz);
+                    if (plannedOnly) box((float)x + 0.02f, y, (float)z + 0.02f, x + 0.98f, y + 0.2f, z + 0.98f, planned, plannedEdge);
+                    else if (made) drawModel(*made, cx, y, cz, info.size, 0.0f);
+                    else queuePropModel(kind, cx, y, cz, info.size, 0.0f);
+                }
+            }
+            if (plannedOnly || buildPreview_.showEntrances) {
+                for (long long key : f->entrances) {
+                    const int z = (int)(key / 1000003LL), x = (int)(key - (long long)z * 1000003LL);
+                    const float y = t.heightAt(x + 0.5f, z + 0.5f) + 0.24f;
+                    blueprints.quad(V3{ x + 0.1f, y, z + 0.1f }, V3{ x + 0.9f, y, z + 0.1f }, V3{ x + 0.9f, y, z + 0.9f },
+                                    V3{ x + 0.1f, y, z + 0.9f }, entrance);
+                }
+            }
+            continue;
+        }
+        if (w.has<Blueprint>(e)) {
+            const float x = std::floor(tr->x), z = std::floor(tr->z), y = tr->y;
+            if (info.upperFloor) box(x, y, z, x + 1.0f, y + 0.14f, z + 1.0f, planned, plannedEdge);
+            else if (info.ladder) box(tr->x - 0.3f, y, tr->z - 0.08f, tr->x + 0.3f, y + FLOOR_HEIGHT + 0.3f, tr->z + 0.08f, planned, plannedEdge);
+            else if (info.door && std::fabs(w.get<Prop>(e)->yaw) > 0.1f) box(tr->x - 0.15f, y, z, tr->x + 0.15f, y + FLOOR_HEIGHT, z + 1.0f, planned, plannedEdge);
+            else if (info.door) box(x, y, tr->z - 0.15f, x + 1.0f, y + FLOOR_HEIGHT, tr->z + 0.15f, planned, plannedEdge);
+            else box(x + 0.05f, y, z + 0.05f, x + 0.95f, y + (info.wallRule ? FLOOR_HEIGHT : info.size), z + 0.95f, planned, plannedEdge);
+            continue;
+        }
+        if (info.wallRule) {
+            const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z);
+            const int mask = (wallTiles.count(tileKey(x, z - 1)) ? 1 : 0) | (wallTiles.count(tileKey(x + 1, z)) ? 2 : 0) |
+                             (wallTiles.count(tileKey(x, z + 1)) ? 4 : 0) | (wallTiles.count(tileKey(x - 1, z)) ? 8 : 0);
+            const WallShape shape = wallShapeFor(mask);
+            const Model* m = &propModel(kind);
+            if (shape.shape > 0 && (size_t)idx(kind) < wallShapes_.size() && wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1].vao) {
+                m = &wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1];
+            }
+            if (const Model* made = materialModel(shape.shape)) m = made;
+            if (m->vao) {
+                drawModel(*m, tr->x, tr->y, tr->z, info.size, shape.yaw);
+                continue;
+            }
+        }
         const float baseY = propBaseY(w, e);
         const bool modelled = propModel(kind).vao != 0;
         const float side = modelled ? propInfo(kind).size : missingPropSide(kind);
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) continue;
-        if (modelled) {
+        if (const Model* made = info.door ? materialModel(0) : nullptr) {
+            drawModel(*made, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
+        } else if (modelled) {
             queuePropModel(kind, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
         } else {
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
     }
     drawPropInstances();
+    if (!blueprints.v.empty()) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        drawColorTris(blueprints, viewProj_);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+    }
 
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
@@ -463,13 +548,23 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 }
 
 void Renderer::drawBuildPreview(const Terrain& t) {
-    if (!buildPreview_.on && buildPreview_.ringR <= 0.0f) return;
+    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f) return;
     const float lift = 0.04f;
     const float lineW = 0.03f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift; };
     Batch b;
 
-    if (buildPreview_.on) {
+    if (buildPreview_.rect) {
+        // A foundation being dragged out: its tiles, green if it may be laid there
+        const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
+        for (int z = buildPreview_.rz0; z <= buildPreview_.rz1; ++z) {
+            for (int x = buildPreview_.rx0; x <= buildPreview_.rx1; ++x) {
+                const float a = 0.06f;
+                b.quad(V3{ x + a, hgt(x + a, z + a), z + a }, V3{ x + 1 - a, hgt(x + 1 - a, z + a), z + a },
+                       V3{ x + 1 - a, hgt(x + 1 - a, z + 1 - a), z + 1 - a }, V3{ x + a, hgt(x + a, z + 1 - a), z + 1 - a }, fill);
+            }
+        }
+    } else if (buildPreview_.on) {
         const Footprint& f = propInfo(buildPreview_.kind).foot;
         const float x0 = buildPreview_.x, z0 = buildPreview_.z;
         const float reach = footprintReach(f);

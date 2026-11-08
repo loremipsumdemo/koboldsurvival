@@ -78,6 +78,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.body) w.line("body", i, *u.body);
     if (u.home) w.line("home", i, u.home->x, u.home->z, u.home->returning);
     if (u.occupying >= 0) w.line("occupy", i, u.occupying);
+    if (u.upstairs >= 0) w.line("upstairs", i, u.upstairs);
     if (u.down) w.line("down", i, u.down->dying, u.down->koFaction, u.down->conscious, u.down->tickPart);
     if (u.corpseHours) w.line("corpse", i, *u.corpseHours);
     if (u.carriedBy >= 0) w.line("carried", i, u.carriedBy);
@@ -110,6 +111,14 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.bonesHours) w.line("bones", i, *p.bonesHours);
     for (const ItemStack& s : p.bonesItems) w.line("bonesitem", i, s.item, s.count);
     if (p.health) w.line("health", i, p.health->value, p.health->max);
+    if (p.foundation) {
+        std::ostringstream gates;
+        for (size_t k = 0; k < p.foundation->entrances.size(); ++k) gates << (k ? "," : "") << p.foundation->entrances[k];
+        w.line("foundation", i, p.foundation->x0, p.foundation->z0, p.foundation->w, p.foundation->h,
+               p.foundation->entrances.empty() ? std::string("-") : gates.str());
+    }
+    if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
+    if (p.material > 0) w.line("material", i, p.material);
 }
 
 void writeSaveLines(std::ostream& out, const SaveData& d) {
@@ -337,6 +346,42 @@ const std::unordered_map<std::string, Handler>& handlers() {
             return true;
         } },
         { "occupy", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->occupying); } },
+        { "upstairs", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->upstairs); } },
+        { "foundation", [](Line& l) {
+            SaveProp* p = l.prop();
+            Foundation f;
+            std::string gates;
+            if (!p || !l.read(f.x0, f.z0, f.w, f.h, gates)) return false;
+            if (f.w < 1 || f.h < 1 || f.w > FOUNDATION_MAX || f.h > FOUNDATION_MAX) return false;
+            if (gates != "-") {
+                std::istringstream in(gates);
+                std::string one;
+                while (std::getline(in, one, ',')) {
+                    char* end = nullptr;
+                    const long long key = std::strtoll(one.c_str(), &end, 10);
+                    if (end == one.c_str()) return false;
+                    f.entrances.push_back(key);
+                }
+            }
+            p->foundation = std::move(f);
+            return true;
+        } },
+        { "material", [](Line& l) {
+            SaveProp* p = l.prop();
+            int m = 0;
+            if (!p || !l.read(m) || m < 0 || m >= (int)BuildMaterial::Count) return false;
+            p->material = m;
+            return true;
+        } },
+        { "blueprint", [](Line& l) {
+            SaveProp* p = l.prop();
+            Blueprint b;
+            if (!p || !l.read(b.supplied, b.progress)) return false;
+            b.supplied = std::max(0, b.supplied);
+            b.progress = std::clamp(b.progress, 0.0, 1.0);
+            p->blueprint = b;
+            return true;
+        } },
         { "down", [](Line& l) {
             SaveUnit* u = l.unit();
             Unconscious un;

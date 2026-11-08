@@ -54,6 +54,7 @@ const char* const PROP_KEYS[] = {
     "LockedChest", "PrisonerCage", "Chair", "Bench", "Stool", "Table", "EndTable", "RoundTable", "MetalTable",
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
     "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Shop", "Farm", "Turbine", "Stove", "Airship",
+    "Foundation", "WoodWall", "WoodDoor", "Ladder", "UpperFloor", "DragonCrystal", "WoodStockpile", "StoneStockpile",
 };
 static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
@@ -70,7 +71,8 @@ struct Numbered {
 const std::vector<Numbered> EMOTE_KEYS = {
     { "Mining", 1 }, { "Woodcutting", 2 }, { "Cooking", 3 }, { "Encumbered", 4 }, { "Sleeping", 5 }, { "Hungry", 6 },
     { "Lockpicking", 7 }, { "LockedIn", 8 }, { "Herbalism", 9 }, { "Unconscious", 10 }, { "PlayingDead", 12 },
-    { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 },
+    { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 }, { "Hauling", 17 },
+    { "Building", 18 },
 };
 
 const std::vector<Numbered> ICON_KEYS = {
@@ -347,7 +349,7 @@ int placeIn(const char* const (&names)[N], const std::string& s) {
 }
 
 const char* const PROP_USE_KEYS[] = { "none", "storage", "occupy", "resource", "crafting", "passive" };
-const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water" };
+const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water", "wood", "stone" };
 
 bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
     if (text == "none") return true;
@@ -364,6 +366,13 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "seat") p.seat = true;
         else if (flag == "cage") p.cage = true;
         else if (flag == "airship") p.airship = true;
+        else if (flag == "foundation") p.foundation = true;
+        else if (flag == "on_foundation") p.onFoundation = true;
+        else if (flag == "wall_rule") p.wallRule = true;
+        else if (flag == "door") p.door = true;
+        else if (flag == "ladder") p.ladder = true;
+        else if (flag == "upper_floor") p.upperFloor = true;
+        else if (flag == "rare") p.rare = true;
         else {
             why = "unknown flag " + flag;
             return false;
@@ -379,12 +388,14 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
     p.model = cell(r, "model");
     const std::string& input = cell(r, "input");
     if (input == "cookable") p.input = INPUT_COOKABLE;
-    else if (!readInt(input, p.input)) { why = "input must be a number or cookable"; return false; }
+    else if (input == "bones") p.input = INPUT_BONES;
+    else if (!readInt(input, p.input)) { why = "input must be a number, cookable or bones"; return false; }
     if (!readFloat(cell(r, "size"), p.size) || !readInt(cell(r, "item"), p.item) || !readInt(cell(r, "workers"), p.workers) ||
         !readInt(cell(r, "lock_level"), p.lockLevel) || !readDouble(cell(r, "fuel_hours"), p.fuelHours) ||
         !readInt(cell(r, "alt_item"), p.altItem) || !readInt(cell(r, "alt_one_in"), p.altOneIn) ||
         !readDouble(cell(r, "speed"), p.speed) || !readDouble(cell(r, "rested"), p.restedPerHour) ||
-        !readDouble(cell(r, "comfort"), p.comfortPerHour)) {
+        !readDouble(cell(r, "comfort"), p.comfortPerHour) || !readDouble(cell(r, "materials"), p.materials) ||
+        !readDouble(cell(r, "build_seconds"), p.buildSeconds)) {
         why = "a number for " + r.key + " is not valid";
         return false;
     }
@@ -422,7 +433,8 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
 bool parseProps(const std::string& text, std::string& err) {
     const char* file = "data/props.txt";
     static const char* const NEEDED[] = { "name_key", "model", "size", "use", "stat", "item", "input", "workers", "lock_level",
-        "accepts", "fuel_hours", "alt_item", "alt_one_in", "speed", "rested", "comfort", "work_sound", "done_sound", "emote", "flags" };
+        "accepts", "fuel_hours", "alt_item", "alt_one_in", "speed", "rested", "comfort", "work_sound", "done_sound", "emote", "flags",
+        "materials", "build_seconds" };
     std::vector<Row> rows;
     if (!parseRows(file, text, 0, rows, err)) return false;
     if (rows.empty() || rows[0].key != NamedColumns::KEY) {

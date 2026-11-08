@@ -40,7 +40,117 @@ void flyAirship(World& w, ObjectId airship, Vec2 to) {
     st.tz = to.z;
 }
 
-void airshipSystem(World& w, const Terrain& t, float dt) {
+bool startBoarding(World& w, ObjectId u, ObjectId ship) {
+    if (!isAirship(w, ship) || airshipOf(w, u) == ship) return false;
+    if (occupantCount(w, ship) >= occupyCapacity(w, ship)) return false;
+    w.add(u, Boarding{ ship, AIRSHIP_BOARD_SECONDS, false });
+    return true;
+}
+
+bool startLeaving(World& w, ObjectId u) {
+    const ObjectId ship = airshipOf(w, u);
+    if (ship == NO_OBJECT || stuckAboard(w, u)) return false;
+    w.add(u, Boarding{ ship, AIRSHIP_LEAVE_SECONDS, true });
+    return true;
+}
+
+namespace {
+void boardingStep(World& w, Terrain& t, float dt) {
+    for (ObjectId u : w.view<Boarding>()) {
+        Boarding& b = *w.get<Boarding>(u);
+        const PropInfo* info = w.has<Prop>(b.ship) ? &propInfo(w.get<Prop>(b.ship)->kind) : nullptr;
+        if (!info || outCold(w, u) || w.has<Carried>(u) || (b.leaving && airshipOf(w, u) != b.ship) ||
+            (!b.leaving && (w.has<Occupying>(u) || flatGap(w, u, b.ship) > AIRSHIP_BOARD_REACH))) {
+            w.remove<Boarding>(u);
+            continue;
+        }
+        b.left -= dt;
+        if (b.left > 0.0f) continue;
+        const ObjectId ship = b.ship;
+        const bool leaving = b.leaving;
+        w.remove<Boarding>(u);
+        if (leaving) {
+            if (!disembark(w, t, u)) queueLog(w, lang("MISC_CANT_EVACUATE_AIRSHIP"), LogKind::Other, npcOnly(w, u));
+            else queueSoundFrom(w, Sfx::Occupy, ship);
+            continue;
+        }
+        // The room is checked again now: others may have got on meanwhile
+        if (occupantCount(w, ship) >= occupyCapacity(w, ship)) {
+            queueLog(w, langf("MISC_AIRSHIP_FULL", { nameOf(w, u), lang(info->nameKey) }), LogKind::Other, npcOnly(w, u));
+            continue;
+        }
+        if (w.has<Carrying>(u)) putDown(w, u);
+        w.remove<SoloMove>(u);
+        w.remove<IdleSpot>(u);
+        w.add(u, Occupying{ ship });
+        queueSoundFrom(w, Sfx::Occupy, ship);
+    }
+}
+}
+
+namespace {
+// Where a unit is, for reach: the ground (0), an Airship's deck, or a building's upper floor
+long long standingLevel(World& w, ObjectId u) {
+    if (const ObjectId ship = airshipOf(w, u); ship != NO_OBJECT) return 1 + 2 * (long long)ship;
+    if (const Upstairs* up = w.get<Upstairs>(u)) return 2 + 2 * (long long)up->foundation;
+    return 0;
+}
+}
+
+bool elevated(World& w, ObjectId u) { return airshipOf(w, u) != NO_OBJECT || w.has<Upstairs>(u); }
+
+bool canStrike(World& w, ObjectId attacker, ObjectId target) {
+    if (reachOf(w, attacker) > ATTACK_REACH) return true;   // ranged, with ammunition
+    return standingLevel(w, attacker) == standingLevel(w, target);
+}
+
+void fleeFromAirship(World& w, ObjectId attacker, ObjectId target) {
+    if (!elevated(w, attacker) || w.has<Commandable>(target) || canStrike(w, target, attacker)) return;
+    if (Fleeing* f = w.get<Fleeing>(target)) {
+        f->from = attacker;
+        f->left = PROVOKED_SECONDS;
+        return;
+    }
+    w.add(target, Fleeing{ attacker, PROVOKED_SECONDS });
+    queueLog(w, langf("MISC_FLEES", { nameOf(w, target) }), LogKind::Other, npcOnly(w, target));
+}
+
+void fleeSystem(World& w, Terrain& t, float dt) {
+    static const float TURNS[] = { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f, 1.6f, -1.6f };
+    for (ObjectId u : w.view<Fleeing, Transform>()) {
+        Fleeing& f = *w.get<Fleeing>(u);
+        if (w.has<Commandable>(u) || outCold(w, u) || w.has<Carried>(u)) {
+            w.remove<Fleeing>(u);
+            continue;
+        }
+        if (Combat* c = w.get<Combat>(u)) c->target = NO_OBJECT;
+        w.remove<AttackOrder>(u);
+        const Transform* ft = w.get<Transform>(f.from);
+        const bool danger = ft && w.has<Entity>(f.from) && !outCold(w, f.from) && elevated(w, f.from) &&
+                            flatGap(w, u, f.from) <= reachOf(w, f.from) + FLEE_MARGIN;
+        if (!danger) {
+            f.left -= dt;
+            if (f.left <= 0.0f) w.remove<Fleeing>(u);
+            continue;
+        }
+        f.left = PROVOKED_SECONDS;
+        const SoloMove* so = w.get<SoloMove>(u);
+        if (so && so->next < so->waypoints.size()) continue;
+        const Transform* ut = w.get<Transform>(u);
+        const float away = std::atan2(ut->z - ft->z, ut->x - ft->x);
+        const float run = reachOf(w, f.from) + FLEE_MARGIN + 2.0f;
+        for (float turn : TURNS) {
+            const float x = ft->x + std::cos(away + turn) * run, z = ft->z + std::sin(away + turn) * run;
+            if (!openTile(t, x, z)) continue;
+            if (Behaviors* b = w.get<Behaviors>(u); b && b->busy) stopAutoStep(w, u, *b);
+            walkSolo(w, t, u, Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f });
+            break;
+        }
+    }
+}
+
+void airshipSystem(World& w, Terrain& t, float dt) {
+    boardingStep(w, t, dt);
     for (ObjectId ship : w.view<Prop, Transform>()) {
         if (!isAirship(w, ship)) continue;
         AirshipState& st = w.has<AirshipState>(ship) ? *w.get<AirshipState>(ship) : w.add(ship, AirshipState{});

@@ -122,26 +122,43 @@ static void bleedIntoTransparent(SDL_Surface* rgba) {
             if (px(x, y)[3] >= VISIBLE_ALPHA) known[(size_t)y * (size_t)w + (size_t)x] = 1;
         }
     }
-    auto collect = [&](std::vector<int>& out) {
+    // The unknown pixels next to the given known ones, each once. `queued` marks pixels already in a ring.
+    std::vector<unsigned char> queued((size_t)w * (size_t)h, 0);
+    auto ringAround = [&](const std::vector<int>& from, std::vector<int>& out) {
         out.clear();
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                if (known[(size_t)y * (size_t)w + (size_t)x]) continue;
-                bool touches = false;
-                for (int dy = -1; dy <= 1 && !touches; ++dy) {
-                    for (int dx = -1; dx <= 1; ++dx) {
-                        const int nx = x + dx, ny = y + dy;
-                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-                        if (known[(size_t)ny * (size_t)w + (size_t)nx]) { touches = true; break; }
-                    }
+        for (int i : from) {
+            const int x = i % w, y = i / w;
+            for (int dy = -1; dy <= 1; ++dy) {
+                for (int dx = -1; dx <= 1; ++dx) {
+                    const int nx = x + dx, ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                    const size_t j = (size_t)ny * (size_t)w + (size_t)nx;
+                    if (known[j] || queued[j]) continue;
+                    queued[j] = 1;
+                    out.push_back((int)j);
                 }
-                if (touches) out.push_back(y * w + x);
             }
         }
     };
+    // The visible pixels that border a see-through one: only these can start the first ring
+    std::vector<int> edge;
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            if (!known[(size_t)y * (size_t)w + (size_t)x]) continue;
+            const bool border = (x > 0 && !known[(size_t)y * (size_t)w + (size_t)(x - 1)]) ||
+                                (x + 1 < w && !known[(size_t)y * (size_t)w + (size_t)(x + 1)]) ||
+                                (y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)x]) ||
+                                (y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)x]) ||
+                                (x > 0 && y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)(x - 1)]) ||
+                                (x + 1 < w && y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)(x + 1)]) ||
+                                (x > 0 && y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)(x - 1)]) ||
+                                (x + 1 < w && y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)(x + 1)]);
+            if (border) edge.push_back(y * w + x);
+        }
+    }
     // A few rings outward covers what filtering and the first mipmaps can reach
     constexpr int RINGS = 8;
-    collect(frontier);
+    ringAround(edge, frontier);
     for (int ring = 0; ring < RINGS && !frontier.empty(); ++ring) {
         for (int i : frontier) {
             const int x = i % w, y = i / w;
@@ -159,7 +176,10 @@ static void bleedIntoTransparent(SDL_Surface* rgba) {
             p[0] = (unsigned char)(r / n); p[1] = (unsigned char)(g / n); p[2] = (unsigned char)(b / n);
         }
         for (int i : frontier) known[(size_t)i] = 1;
-        if (ring + 1 < RINGS) collect(frontier);
+        if (ring + 1 < RINGS) {
+            ringAround(frontier, next);
+            frontier.swap(next);
+        }
     }
 }
 
@@ -529,6 +549,12 @@ void Renderer::loadLoadingArt() {
     }
 }
 
+void Renderer::pickLoadingArt() {
+    if (loadingArt_.tex) glDeleteTextures(1, &loadingArt_.tex);
+    loadingArt_ = TextTex{};
+    loadLoadingArt();
+}
+
 void Renderer::shutdown() {
     auto drop = [](TextTex& g) {
         if (g.tex) glDeleteTextures(1, &g.tex);
@@ -561,6 +587,16 @@ void Renderer::shutdown() {
     if (modelInstProgram_) glDeleteProgram(modelInstProgram_);
     instVbo_ = modelInstProgram_ = 0;
     for (Model& m : propModels_) destroyModel(m);
+    for (auto& shapes : wallShapes_) {
+        for (Model& m : shapes) destroyModel(m);
+    }
+    wallShapes_.clear();
+    for (auto& mats : materialModels_) {
+        for (auto& shapes : mats) {
+            for (Model& m : shapes) destroyModel(m);
+        }
+    }
+    materialModels_.clear();
 
     glDeleteProgram(skyProgram_);
     if (skyCube_) glDeleteTextures(1, &skyCube_);

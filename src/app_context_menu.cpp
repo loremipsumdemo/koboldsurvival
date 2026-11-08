@@ -1,9 +1,18 @@
+#include "building.h"
 #include "app.h"
 
 using namespace play;
 
+// Evacuate: someone else pushes the occupant out, or, on an Airship, those aboard get off
 static bool canEvacuate(World& world, ObjectId prop, ObjectId occupant) {
-    if (prop == NO_OBJECT || occupant == NO_OBJECT || isAirship(world, prop)) return false;
+    if (prop == NO_OBJECT) return false;
+    if (isAirship(world, prop)) {
+        for (ObjectId u : selectedUnits(world)) {
+            if (airshipOf(world, u) == prop) return true;
+        }
+        return occupant != NO_OBJECT && world.has<Commandable>(occupant) && airshipOf(world, occupant) == prop;
+    }
+    if (occupant == NO_OBJECT) return false;
     for (ObjectId u : selectedUnits(world)) {
         if (u != occupant && !world.has<Mob>(u) && !cannotAct(world, u) && !lockShutFor(world, prop, u)) return true;
     }
@@ -43,7 +52,9 @@ ObjectId App::menuTargetAt(float mx, float my) {
     float best = 0.0f;
     for (ObjectId p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
         const PropKind kind = world.get<Prop>(p)->kind;
-        if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p)) || hidden(p)) continue;
+        // Props with nothing to do are passed over; blueprints and ladders have their own orders
+        const bool orders = world.has<Blueprint>(p) || propInfo(kind).ladder;
+        if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p) && !orders) || (hidden(p) && !world.has<Foundation>(p))) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
         if (prop == NO_OBJECT || d2 < best) {
@@ -151,25 +162,44 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             for (ObjectId u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return std::vector<MenuAction>{ MenuAction::Unlock };
         }
-        bool carrying = false;
-        for (ObjectId u : selectedUnits(world)) carrying = carrying || world.has<Carrying>(u);
+        bool carrying = false, allOccupying = true;
+        const std::vector<ObjectId> picked = selectedUnits(world);
+        for (ObjectId u : picked) {
+            carrying = carrying || world.has<Carrying>(u);
+            allOccupying = allOccupying && world.has<Occupying>(u);
+        }
+        // Units that all occupy something already have nobody to send in
+        allOccupying = allOccupying && !picked.empty();
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
-        if (use == PropUse::Occupy && occupantCount(world, target) < occupyCapacity(world, target)) {
+        if (use == PropUse::Occupy && occupantCount(world, target) < occupyCapacity(world, target) && (carrying || !allOccupying)) {
             out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
         }
-        if (isAirship(world, target)) {
-            bool aboard = false;
-            for (ObjectId u : selectedUnits(world)) aboard = aboard || airshipOf(world, u) == target;
-            if (aboard) out.push_back(MenuAction::Disembark);
-        }
         if (propInfo(p->kind).burnsCorpses && corpseCarrier(target) != NO_OBJECT) out.push_back(MenuAction::Place);
-        if (canEvacuate(world, target, propOccupant(world, target))) out.push_back(MenuAction::Evacuate);
+        if (canEvacuate(world, target, isAirship(world, target) ? NO_OBJECT : propOccupant(world, target))) {
+            out.push_back(MenuAction::Evacuate);
+        }
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
         if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
-        if (world.has<Storage>(target)) out.push_back(MenuAction::AutoHaul);
+        if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaul);
         if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
         if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
+        // Buildings: supply and build a blueprint of yours; climb a ladder up or down
+        if (const Blueprint* bp = world.get<Blueprint>(target); bp && world.has<Owner>(target) && world.get<Owner>(target)->faction == FACTION_PLAYER) {
+            out.push_back(MenuAction::AutoConstruct);
+            out.push_back(MenuAction::CancelBuild);
+        }
+        if (propInfo(p->kind).ladder && !world.has<Blueprint>(target)) {
+            bool ground = false, up = false;
+            const Transform* lt = world.get<Transform>(target);
+            const ObjectId home = foundationAt(world, (int)std::floor(lt->x), (int)std::floor(lt->z));
+            for (ObjectId u : selectedUnits(world)) {
+                if (const Upstairs* st = world.get<Upstairs>(u)) up = up || st->foundation == home;
+                else ground = ground || airshipOf(world, u) == NO_OBJECT;
+            }
+            if (ground && canClimbUp(world, target)) out.push_back(MenuAction::Climb);
+            if (up) out.push_back(MenuAction::ClimbDown);
+        }
     }
     return out;
 }
@@ -206,9 +236,12 @@ std::vector<std::string> App::contextLabels() {
         }
         case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
-        case MenuAction::Disembark: labels.push_back(lang("UILABEL_DISEMBARK")); break;
+        case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
+        case MenuAction::AutoConstruct: labels.push_back(lang("UILABEL_AUTO_CONSTRUCT")); break;
+        case MenuAction::Climb: labels.push_back(lang("UILABEL_CLIMB_UP")); break;
+        case MenuAction::ClimbDown: labels.push_back(lang("UILABEL_CLIMB_DOWN")); break;
         case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
-        case MenuAction::Destroy: labels.push_back(lang("UILABEL_BUILD_DESTROY")); break;
+        case MenuAction::Destroy: labels.push_back(lang("UILABEL_BREAK")); break;
         case MenuAction::ManageUnits: labels.push_back(lang("UILABEL_MANAGE_UNITS")); break;
         case MenuAction::Rename: labels.push_back(lang("UILABEL_RENAME")); break;
         }
@@ -240,6 +273,13 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
             own.push_back(MenuAction::Rename);
             own.push_back(MenuAction::Disband);
             session.contextMenu = ContextMenu{ true, mx, my, target, own };
+            playSfx(Sfx::UiMenuOpen);
+            itemMenu.open = false;
+            return true;
+        }
+        // A blueprint of yours can be cancelled with nobody selected; building it needs units
+        if (std::find(actions.begin(), actions.end(), MenuAction::CancelBuild) != actions.end()) {
+            session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::CancelBuild } };
             playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
             return true;
@@ -287,6 +327,7 @@ void App::talkOrWalkUp(ObjectId target, const std::vector<ObjectId>& actors, boo
 
 void App::pickMenuAction(MenuAction a) {
     ObjectId target = session.contextMenu.target;
+    const ObjectId clicked = target;
     session.contextMenu.open = false;
     if ((a == MenuAction::Unlock || a == MenuAction::Lock || a == MenuAction::Evacuate) && world.has<Entity>(target)) {
         target = occupiedProp(world, target);
@@ -313,20 +354,37 @@ void App::pickMenuAction(MenuAction a) {
         openGhosts(target);
         return;
     }
-    if (a == MenuAction::Disembark) {
-        int off = 0, stuck = 0;
+    if (a == MenuAction::Evacuate && isAirship(world, target)) {
+        // Those aboard get off: the selected ones, or else the unit of yours that was clicked
+        std::vector<ObjectId> leaving;
         for (ObjectId u : selectedUnits(world)) {
-            if (airshipOf(world, u) != target) continue;
-            if (disembark(world, terrain, u)) ++off;
+            if (airshipOf(world, u) == target) leaving.push_back(u);
+        }
+        if (leaving.empty() && clicked != target && world.has<Commandable>(clicked) && airshipOf(world, clicked) == target) {
+            leaving.push_back(clicked);
+        }
+        int off = 0, stuck = 0;
+        for (ObjectId u : leaving) {
+            if (startLeaving(world, u)) ++off;
             else ++stuck;
         }
-        if (stuck > 0) refuse(lang("MISC_CANT_DISEMBARK"));
+        if (stuck > 0) refuse(lang("MISC_CANT_EVACUATE_AIRSHIP"));
         else if (off > 0) playSfx(Sfx::UiClick);
         return;
     }
     if (a == MenuAction::PutDown) {
         const ObjectId carrier = putDownCarrier(target);
         if (carrier != NO_OBJECT) putDown(world, carrier);
+        return;
+    }
+    if (a == MenuAction::CancelBuild) {
+        // The blueprint goes, and whatever was brought to it and not yet built with drops where it stood; a foundation
+        // takes the blueprints laid on it with it
+        const Prop* tp = world.get<Prop>(target);
+        const std::string name = tp ? lang(propInfo(tp->kind).nameKey) : std::string();
+        if (!world.has<Blueprint>(target) || !destroyBuilding(world, target)) return;
+        showNotice(langf("MISC_BUILD_CANCELLED", { name }));
+        playSfx(Sfx::UiClick);
         return;
     }
     const std::vector<ObjectId> actors = menuActors(target);
@@ -431,8 +489,37 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::ManageUnits:
     case MenuAction::Rename:
     case MenuAction::AppeaseGhosts:
-    case MenuAction::Disembark:
         break;
+    case MenuAction::CancelBuild:
+        break;
+    case MenuAction::AutoConstruct: {
+        BehaviorRule add;
+        add.kind = BehaviorKind::AutoConstruct;
+        int given = 0;
+        for (ObjectId u : actors) {
+            Behaviors* b = world.get<Behaviors>(u);
+            if (!b || world.has<Mob>(u) || !addBehavior(b->rules, add)) continue;
+            b->wait = 0.0f;
+            ++given;
+        }
+        if (given == 0) {
+            refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+            return;
+        }
+        showNotice(langf("MISC_AUTO_CONSTRUCT_SET", { std::to_string(given) }));
+        playSfx(Sfx::UiOrder);
+        return;
+    }
+    case MenuAction::Climb:
+    case MenuAction::ClimbDown: {
+        std::vector<ObjectId> climbers;
+        for (ObjectId u : actors) {
+            if ((a == MenuAction::ClimbDown) == world.has<Upstairs>(u) && airshipOf(world, u) == NO_OBJECT) climbers.push_back(u);
+        }
+        issuePropOrder(world, terrain, climbers, target, PropAction::Climb);
+        if (!climbers.empty()) playSfx(Sfx::UiOrder);
+        break;
+    }
     case MenuAction::AutoHarvest:
     case MenuAction::AutoHaulBones:
     case MenuAction::AutoHaul: {
@@ -448,14 +535,25 @@ void App::pickMenuAction(MenuAction a) {
         add.propKind = idx(kind);
         if (a != MenuAction::AutoHarvest) add.prop = target;
         int given = 0;
+        ObjectId haulTo = NO_OBJECT;
         for (ObjectId u : actors) {
             Behaviors* b = world.get<Behaviors>(u);
             if (!b || !addBehavior(b->rules, add)) continue;
             b->wait = 0.0f;
             ++given;
+            // Harvesting brings its haul along: to the stockpile (or store) that takes what it yields
+            if (a == MenuAction::AutoHarvest) {
+                if (const ObjectId s = addHaulForHarvest(world, u, idx(kind)); s != NO_OBJECT) haulTo = s;
+            }
         }
         if (given == 0) {
             refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+            return;
+        }
+        if (haulTo != NO_OBJECT) {
+            showNotice(langf("MISC_AUTO_HARVEST_HAUL_SET", { std::to_string(given), lang(propInfo(kind).nameKey),
+                                                             lang(propInfo(world.get<Prop>(haulTo)->kind).nameKey) }));
+            playSfx(Sfx::UiOrder);
             return;
         }
         showNotice(langf(a == MenuAction::AutoHarvest ? "MISC_AUTO_HARVEST_SET" : a == MenuAction::AutoHaulBones ? "MISC_AUTO_HAUL_BONES_SET" : "MISC_AUTO_HAUL_SET",

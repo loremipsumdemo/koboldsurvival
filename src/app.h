@@ -310,6 +310,15 @@ struct App : AppSession {
     void noteSquadOfSelection();
     void openAltar();
     std::vector<ObjectId> flyAirshipsTo(const std::vector<ObjectId>& units, float x, float z);
+    // The Build tab's foundations and pieces (app_building.cpp)
+    bool buildPressAt(float gx, float gz);
+    bool buildRelease();
+    void updateBuildPaint();
+    bool previewBuilding(BuildPreview& bp, float gx, float gz);
+    // Picking what a foundation, wall or door is made of
+    bool pressOnMaterialAsk();
+    void drawMaterialAsk();
+    void drawFoundationSize();
     void startRename(ObjectId u);
     void openGhosts(ObjectId altarProp);
     bool pressOnGhosts();
@@ -433,6 +442,7 @@ struct App : AppSession {
     GhostsUi ghostsUi;
     MapPickUi mapPick;
     std::unique_ptr<OverviewBuilder> mapPreview;
+    std::unique_ptr<LayoutPlanner> layoutPlanner;
     bool unitOpen = true;
     UnitTab unitTab = UnitTab::Inventory;
     PanelPlace squadPlace, unitPlace, logPlace;

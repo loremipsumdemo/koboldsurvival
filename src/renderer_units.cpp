@@ -1,4 +1,5 @@
 #include "renderer_internal.h"
+#include "building.h"
 
 using namespace render_detail;
 
@@ -493,8 +494,18 @@ std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float 
         if (!detail.within(tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
-        const Model& m = propModel(kind);
         const float baseY = propBaseY(w, e);
+        // A foundation covers its whole rectangle of tiles, whatever its model's size: the ray meets its top
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            const float top = baseY + 0.15f;
+            if (std::fabs(d[1]) > 1e-6f) {
+                const float t = (top - o[1]) / d[1];
+                const float hx = o[0] + d[0] * t, hz = o[2] + d[2] * t;
+                if (t >= 0.0f && hx >= f->x0 && hx < f->x0 + f->w && hz >= f->z0 && hz < f->z0 + f->h) hits.push_back({ t, e });
+            }
+            continue;
+        }
+        const Model& m = propModel(kind);
         if (m.vao) {
             const float t = rayHitModel(m, placeModel(m, tr->x, baseY, tr->z, propInfo(kind).size,
                                                       w.get<Prop>(e)->yaw), o, d);

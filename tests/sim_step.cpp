@@ -6,8 +6,14 @@
 #include <string>
 #include "camera.h"
 #include "combat.h"
+#include "encumbrance.h"
 #include "factions.h"
 #include "game_tables.h"
+#include "airship.h"
+#include "build.h"
+#include "items.h"
+#include "inventory.h"
+#include "hostility.h"
 #include "language.h"
 #include "level.h"
 #include "pak.h"
@@ -280,6 +286,129 @@ int main(int argc, char** argv) {
         std::printf("note: %s: closest %.2f\n", what.c_str(), closest);
         check(closest > 1.05f, what + " never touch");
         check(arrived, what + ": the walker still gets where it was going");
+    }
+
+    // Attacking a unit of a friendly faction: it and its friends nearby fight back, and follow you a little way.
+    // Once with plain camp units, and once with an Altar's citizen and military.
+    for (const bool homes : { false, true }) {
+        int friendly = -1;
+        for (const FactionDef& f : factions()) {
+            World probe;
+            if (f.id != FACTION_PLAYER && f.id != FACTION_EXILE && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
+                friendly = f.id;
+                break;
+            }
+        }
+        check(friendly >= 0, "there is a faction that is friendly to you");
+        World peace;
+        Rng peaceRng;
+        peaceRng.gen.seed(21);
+        GameState peaceState;
+        const Vec2 at = systems_detail::findSpawn(terrain);
+        const ObjectId you = spawnUnit(peace, terrain, peaceRng, FACTION_PLAYER, at.x, at.z);
+        const Vec2 nAt = terrain.snap({ at.x + 1.2f, at.z }), aAt = terrain.snap({ at.x + 1.2f, at.z + 4.0f });
+        const ObjectId npc = spawnUnit(peace, terrain, peaceRng, friendly, nAt.x, nAt.z);
+        const ObjectId ally = spawnUnit(peace, terrain, peaceRng, friendly, aAt.x, aAt.z);
+        for (ObjectId u : { you, npc, ally }) peace.add(u, Equipment{});
+        peace.get<Behaviors>(you)->rules.clear();
+        if (homes) {
+            BehaviorRule stay;
+            stay.kind = BehaviorKind::PatrolSpawn;
+            peace.get<Behaviors>(npc)->rules = { stay };
+            peace.add(npc, Citizen{});
+            peace.add(npc, SpawnHome{ nAt.x, nAt.z, false });
+            peace.add(ally, SquadMember{ 0 });
+        }
+        auto keepUp = [&]() {
+            Needs* n = peace.get<Needs>(you);
+            n->hp = n->maxHp;
+        };
+        auto run = [&](float seconds) {
+            for (int step = 0; step < (int)(seconds * 60.0f); ++step) {
+                keepUp();
+                simStep(peace, terrain, peaceRng, peaceState, STEP, false);
+                takeEvents(peace);
+            }
+        };
+        const std::string how = homes ? " (an Altar's citizen and military)" : " (camp units)";
+        makeHostile(peace, npc);
+        issueAttackOrder(peace, { you }, npc);
+        run(1.0f);
+        check(peace.get<Combat>(npc)->target == you, "the unit you attack fights back" + how);
+        check(peace.get<Combat>(ally)->target == you, "its friend nearby joins in" + how);
+        // Step back a little: they follow and keep at it
+        issueMoveOrder(peace, terrain, { you }, terrain.snap({ at.x - 3.0f, at.z }));
+        float npcGap = 0.0f, allyGap = 0.0f;
+        for (int step = 0; step < 60 * 4; ++step) {
+            run(1.0f / 60.0f);
+            if (step >= 60 * 3) {
+                npcGap = std::max(npcGap, flatGap(peace, npc, you));
+                allyGap = std::max(allyGap, flatGap(peace, ally, you));
+            }
+        }
+        std::printf("note: stepping away%s: npc target %d gap %.2f, ally target %d gap %.2f\n", how.c_str(),
+                    (int)(peace.get<Combat>(npc)->target == you), npcGap, (int)(peace.get<Combat>(ally)->target == you), allyGap);
+        check(peace.get<Combat>(npc)->target == you && npcGap < 2.0f, "it follows you when you step away" + how);
+        check(peace.get<Combat>(ally)->target == you && allyGap < 2.5f, "and so does its friend" + how);
+        // Out of their sight for long enough, they calm down
+        Transform* far = peace.get<Transform>(you);
+        const Vec2 gone = terrain.snap({ at.x - 30.0f, at.z });
+        far->x = gone.x;
+        far->z = gone.z;
+        peace.remove<SoloMove>(you);
+        peace.remove<IdleSpot>(you);
+        run(PROVOKED_SECONDS + 2.0f);
+        check(!unitsHostile(peace, npc, you) && !unitsHostile(peace, ally, you) && peace.get<Combat>(npc)->target == NO_OBJECT &&
+              peace.get<Combat>(ally)->target == NO_OBJECT, "out of their sight for a while, they calm down" + how);
+    }
+
+    // An archer aboard an Airship: melee can't reach it, and a unit it shoots that can't shoot back flees out of reach
+    {
+        World sky;
+        Rng skyRng;
+        skyRng.gen.seed(5);
+        GameState skyState;
+        const Vec2 at = systems_detail::findSpawn(terrain);
+        const ObjectId ship = placeBuiltProp(sky, terrain, PropKind::Airship, at.x, at.z, 0.0f, FACTION_PLAYER);
+        const ObjectId archer = spawnUnit(sky, terrain, skyRng, FACTION_PLAYER, at.x, at.z);
+        sky.get<Behaviors>(archer)->rules.clear();
+        Equipment bow;
+        bow.items[GearSlot::MainHand] = itemTagged("bow_long");
+        sky.add(archer, bow);
+        addToInventory(*sky.get<Inventory>(archer), itemTagged("arrow"), 60);
+        sky.add(archer, Occupying{ ship });
+        int friendly = -1, foes = -1;
+        for (const FactionDef& f : factions()) {
+            if (f.id == FACTION_PLAYER || f.id == FACTION_EXILE || isMobFaction(f.id)) continue;
+            if (factionsHostile(sky, f.id, FACTION_PLAYER)) {
+                if (foes < 0) foes = f.id;
+            } else if (friendly < 0) {
+                friendly = f.id;
+            }
+        }
+        const Vec2 nAt = terrain.snap({ at.x + 4.0f, at.z }), bAt = terrain.snap({ at.x - 2.0f, at.z });
+        const ObjectId target = spawnUnit(sky, terrain, skyRng, friendly, nAt.x, nAt.z);
+        const ObjectId brute = spawnUnit(sky, terrain, skyRng, foes, bAt.x, bAt.z);
+        for (ObjectId u : { target, brute }) sky.add(u, Equipment{});
+        makeHostile(sky, target);
+        issueAttackOrder(sky, { archer }, target);
+        const int hpStart = sky.get<Needs>(archer)->hp;
+        bool fled = false, bruteChased = false;
+        float bruteClosest = 1e9f;
+        for (int step = 0; step < 60 * 12; ++step) {
+            simStep(sky, terrain, skyRng, skyState, STEP, false);
+            takeEvents(sky);
+            fled = fled || sky.has<Fleeing>(target);
+            bruteChased = bruteChased || sky.get<Combat>(brute)->target == archer;
+            bruteClosest = std::min(bruteClosest, flatGap(sky, brute, archer));
+        }
+        const float reach = reachOf(sky, archer);
+        std::printf("note: airship archer: reach %.1f, target ends %.1f away, fled %d, brute chased %d\n", reach,
+                    flatGap(sky, target, archer), (int)fled, (int)bruteChased);
+        check(airshipOf(sky, archer) == ship, "the archer stays aboard while it fights");
+        check(sky.get<Needs>(archer)->hp == hpStart, "nobody on the ground hurts it with melee");
+        check(!bruteChased, "a melee foe doesn't take it for a target");
+        check(fled && (outCold(sky, target) || flatGap(sky, target, archer) > reach), "the unit it shoots, with no bow, runs out of reach");
     }
 
     std::printf("%d failure(s)\n", failures);

@@ -75,7 +75,9 @@ public:
     void uploadTerrain(const Terrain& t);
 
     void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string(),
-                           const std::string& category = std::string(), bool backdrop = true);
+                           const std::string& category = std::string(), bool backdrop = false);
+    // Picks one of the loading pictures again at random, for the next loading screen
+    void pickLoadingArt();
 
     std::vector<ObjectId> entitiesAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
     std::vector<ObjectId> propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH);
@@ -429,6 +431,10 @@ private:
     std::map<ObjectId, PropHop> propHops_;
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
     std::vector<Model> propModels_;
+    // A wall's other shapes (end, straight, corner, tee, cross), for each kind with the wall_rule flag
+    std::vector<std::array<Model, 5>> wallShapes_;
+    // The same in iron and crystal, for the kinds made of a material: [kind][material - 1][0 plain, 1.. the wall shapes]
+    std::vector<std::array<std::array<Model, 6>, 2>> materialModels_;
     const Model& propModel(PropKind kind) const;
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;

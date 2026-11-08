@@ -8,7 +8,7 @@
 class Renderer;
 
 void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label = std::string(),
-                  const std::string& category = std::string(), bool backdrop = true);
+                  const std::string& category = std::string(), bool backdrop = false);
 long long nowMs();
 void playSfx(Sfx s, float volume = 1.0f, float pan = 0.0f);
 int menuFontPercent(int uiScale, int windowH);

@@ -183,10 +183,30 @@ def decaying(c):
     c.poly(s[0], (13, 21), (17, 20.5), (16.5, 23.5), (13.5, 23.5))
 
 
+def hauling(c):
+    # Two logs on a shoulder strap, carried to a blueprint
+    for y, tone in ((14, WOOD[1]), (8, WOOD[0])):
+        c.rect(tone, 5, y, 25, y + 6, 3)
+        c.ell((222, 178, 120), 22, y, 28, y + 6)
+        c.circ(WOOD[2], 25, y + 3, 0.9)
+    c.line(LEATHER[0], 1.6, (9, 7), (13, 22))
+
+
+def building(c):
+    # A hammer over a plank
+    c.rect(WOOD[1], 4, 17, 28, 22, 1)
+    c.line(WOOD[2], 0.8, (10, 17), (10, 22))
+    c.line(WOOD[2], 0.8, (20, 17), (20, 22))
+    c.line(WOOD[0], 2.6, (9, 15), (20, 5))
+    c.poly(IRON[2], (16, 2.5), (24, 8), (21.5, 11), (13.5, 5.5))
+    c.poly(IRON[1], (17, 4), (22.5, 8), (21, 9.5), (15.5, 5.5))
+
+
 EMOTES = [
     (1, mining, STATUS), (2, woodcutting, STATUS), (3, cooking, STATUS), (4, encumbered, WARN), (5, sleeping, STATUS),
     (6, hungry, WARN), (7, lockpicking, STATUS), (8, locked_in, ALARM), (9, herbalism, STATUS), (10, unconscious, STATUS),
     (12, playing_dead, WARN), (13, cue_put_down, CUE), (14, cue_talk, CUE), (15, no_upkeep, WARN), (16, decaying, ALARM),
+    (17, hauling, STATUS), (18, building, STATUS),
 ]
 
 def main():

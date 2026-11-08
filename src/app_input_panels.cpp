@@ -1,3 +1,4 @@
+#include "building.h"
 #include "app.h"
 
 using namespace play;
@@ -82,6 +83,11 @@ bool App::mouseDownOnPanels() {
                         if (!buildAnywhere(pick) && !selectionInClaim(world)) break;
                         if (session.buildPick == pick) {
                             session.buildPick = {};
+                        } else if (pick.placing() && takesMaterial(pick.kind)) {
+                            // A foundation, wall or door: first, what it is made of
+                            session.buildPick = {};
+                            session.askMaterial = true;
+                            session.askKind = pick.kind;
                         } else {
                             session.buildPick = pick;
                             showNotice(lang(!pick.placing() ? "UILABEL_BUILD_DESTROY_HINT"
@@ -201,6 +207,7 @@ bool App::mouseDownOnPanels() {
                     refuse(lang("MISC_DESTROY_NOTHING"));
                 }
             } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
+                if (buildPressAt(hit->first, hit->second)) return true;
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
                 const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz);

@@ -442,6 +442,118 @@ def airship():
     return parts
 
 
+
+WALL_HEIGHT = 2.4   # src/building.h FLOOR_HEIGHT: the upper floor sits on the walls
+
+
+# A building piece's colours by material: main, dark, light, footing
+WOOD_PAL = (WOOD, DARK_WOOD, PALE_WOOD, DARK_STONE)
+IRON_PAL = ((132, 138, 150), (84, 88, 100), (178, 184, 196), (70, 72, 80))
+CRYSTAL_PAL = ((150, 92, 212), (98, 54, 152), (206, 166, 252), (72, 52, 92))
+# Each material's models sit beside the plain (wood) one: <model>_iron.glb, <model>_crystal_straight.glb and so on
+MATERIALS = {'_iron': IRON_PAL, '_crystal': CRYSTAL_PAL}
+
+
+def foundation(pal=WOOD_PAL):
+    """One tile of a finished foundation, a low deck. The game lays one for each tile the foundation covers."""
+    main, dark, light, foot = pal
+    return [box(0, 0, 0, 1.0, 0.14, 1.0, dark), box(0, 0.14, -0.25, 0.97, 0.06, 0.46, main), box(0, 0.14, 0.25, 0.97, 0.06, 0.46, light)]
+
+
+def wall_tile(arms, pal=WOOD_PAL):
+    """One tile of wall: a post in the middle and an arm toward each wall beside it. The footing spans the whole tile, so
+    that every shape is centred on its tile the same way (the game centres a model on its bounds)."""
+    main, dark, light, foot = pal
+    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.38, WALL_HEIGHT - 0.05, 0.38, dark)]
+    for dx, dz in arms:
+        cx, cz = dx * 0.34, dz * 0.34
+        w, d = (0.34, 0.3) if dx else (0.3, 0.34)
+        parts.append(box(cx, 0.05, cz, w, WALL_HEIGHT - 0.15, d, main))
+        for y in (0.6, 1.3, 2.0):
+            parts.append(box(cx, y, cz, w + 0.01, 0.05, d + 0.02, dark))
+    parts.append(box(0, WALL_HEIGHT - 0.1, 0, 0.42, 0.1, 0.42, light))
+    return parts
+
+
+def wood_wall(pal=WOOD_PAL):
+    return wall_tile([], pal)
+
+
+# The wall's other shapes, written next to its model: <model>_end.glb and so on. Each is drawn for its arms east (+x),
+# south (+z), west and north; the game turns it to fit.
+WALL_SHAPES = {
+    '_end': lambda pal: wall_tile([(1, 0)], pal),
+    '_straight': lambda pal: wall_tile([(1, 0), (-1, 0)], pal),
+    '_corner': lambda pal: wall_tile([(1, 0), (0, 1)], pal),
+    '_tee': lambda pal: wall_tile([(1, 0), (0, 1), (-1, 0)], pal),
+    '_cross': lambda pal: wall_tile([(1, 0), (0, 1), (-1, 0), (0, -1)], pal),
+}
+SHAPED = {'WoodWall'}
+MATERIAL_KEYS = {'Foundation', 'WoodWall', 'WoodDoor'}
+
+
+def wood_door(pal=WOOD_PAL):
+    """A plank door in a frame, across the x axis. The game turns it to lie along the foundation's edge."""
+    main, dark, light, foot = pal
+    parts = [box(0, 0, 0, 1.0, 0.05, 0.4, foot)]
+    for x in (-0.44, 0.44):
+        parts.append(box(x, 0.05, 0, 0.12, WALL_HEIGHT - 0.05, 0.36, dark))
+    parts.append(box(0, WALL_HEIGHT - 0.22, 0, 1.0, 0.22, 0.36, dark))
+    for x in (-0.28, -0.09, 0.09, 0.28):
+        parts.append(box(x, 0.05, 0, 0.18, WALL_HEIGHT - 0.3, 0.08, main if x < 0 or x > 0.1 else light))
+    parts += [box(0, 0.6, 0.05, 0.74, 0.08, 0.04, dark), box(0, 1.6, 0.05, 0.74, 0.08, 0.04, dark),
+              box(0.26, 1.05, 0.08, 0.08, 0.08, 0.06, IRON)]
+    return parts
+
+
+def dragon_crystal():
+    """A cluster of glowing purple crystals on a rock. Rare: a new level has one."""
+    parts = [box(0, 0, 0, 1.0, 0.18, 0.9, DARK_STONE)]
+    for x, z, h, w, yaw in ((0, 0, 1.2, 0.34, 0.2), (0.24, 0.12, 0.8, 0.24, 0.9), (-0.22, -0.1, 0.9, 0.26, 2.0), (0.05, -0.26, 0.6, 0.2, 1.3)):
+        parts.append(box(x, 0.18, z, w, h * 0.7, w, (150, 92, 212), yaw))
+        parts.append(pyramid(x, 0.18 + h * 0.7, z, w, h * 0.3, w, (206, 166, 252), yaw, 0))
+    return parts
+
+
+def wood_stockpile():
+    """Logs stacked on a low pallet."""
+    parts = [box(0, 0, 0, 1.3, 0.1, 1.0, DARK_WOOD)]
+    for row, (y, n) in enumerate(((0.1, 4), (0.33, 3), (0.56, 2))):
+        for i in range(n):
+            x = (i - (n - 1) / 2) * 0.27
+            parts.append(cyl(x, y, 0, 0.24, 0.24, 0.9, WOOD, 0, 1.5707963))
+    return parts
+
+
+def stone_stockpile():
+    """Stone blocks on a low pallet."""
+    parts = [box(0, 0, 0, 1.3, 0.1, 1.0, DARK_WOOD)]
+    for x, z, y, c in ((-0.32, -0.22, 0.1, STONE), (0.32, -0.22, 0.1, DARK_STONE), (-0.32, 0.22, 0.1, DARK_STONE), (0.32, 0.22, 0.1, STONE),
+                       (0, 0, 0.4, STONE), (0.3, 0.1, 0.4, DARK_STONE)):
+        parts.append(box(x, y, z, 0.5, 0.3, 0.4, c))
+    return parts
+
+
+def ladder():
+    """Two rails and rungs, from the ground up past the upper floor."""
+    parts = []
+    for x in (-0.26, 0.26):
+        parts.append(box(x, 0, 0, 0.08, WALL_HEIGHT + 0.3, 0.08, DARK_WOOD))
+    y = 0.3
+    while y < WALL_HEIGHT + 0.2:
+        parts.append(box(0, y, 0, 0.5, 0.05, 0.06, WOOD))
+        y += 0.32
+    return parts
+
+
+def upper_floor():
+    """One tile of upper floor: planks on two joists. The game sets it at wall height."""
+    parts = [box(0, 0, -0.3, 1.0, 0.08, 0.1, DARK_WOOD), box(0, 0, 0.3, 1.0, 0.08, 0.1, DARK_WOOD)]
+    for z in (-0.375, -0.125, 0.125, 0.375):
+        parts.append(box(0, 0.08, z, 1.0, 0.06, 0.24, WOOD if z < 0 else PALE_WOOD))
+    return parts
+
+
 BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
     'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Wall': wall, 'Stall': stall, 'LockedChest': locked_chest,
@@ -449,7 +561,9 @@ BUILDERS = {
     'RoundTable': round_table, 'MetalTable': metal_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
-    'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'Airship': airship,
+    'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'Airship': airship, 'Foundation': foundation,
+    'WoodWall': wood_wall, 'WoodDoor': wood_door, 'Ladder': ladder, 'UpperFloor': upper_floor,
+    'DragonCrystal': dragon_crystal, 'WoodStockpile': wood_stockpile, 'StoneStockpile': stone_stockpile,
 }
 
 
@@ -603,6 +717,21 @@ def main():
         parts = BUILDERS[key]()
         tris = write_glb(os.path.join(DATA, 'model', file), parts)
         print(f'{key:16s} {file:14s} {len(parts):3d} parts  {tris:4d} triangles')
+        stem = file[:-4] if file.endswith('.glb') else file
+        extra = {}
+        if key in SHAPED:
+            for suffix, build in WALL_SHAPES.items():
+                extra[suffix] = (lambda b: lambda: b(WOOD_PAL))(build)
+        if key in MATERIAL_KEYS:
+            for mat, pal in MATERIALS.items():
+                extra[mat] = (lambda f, pl: lambda: f(pl))(BUILDERS[key], pal)
+                if key in SHAPED:
+                    for suffix, build in WALL_SHAPES.items():
+                        extra[mat + suffix] = (lambda b, pl: lambda: b(pl))(build, pal)
+        for suffix, build in extra.items():
+            shaped = build()
+            tris = write_glb(os.path.join(DATA, 'model', stem + suffix + '.glb'), shaped)
+            print(f'{key + suffix:22s} {stem + suffix + ".glb":26s} {len(shaped):3d} parts  {tris:4d} triangles')
 
 
 if __name__ == '__main__':

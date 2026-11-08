@@ -643,6 +643,7 @@ UILABEL_AUTO_HARVEST	Auto-Harvest
 UILABEL_AUTO_HAUL	Auto-Haul
 MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside your faction's claim
 MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
+MISC_AUTO_HARVEST_HAUL_SET	{0} unit(s) will Auto-Harvest: {1}, and Auto-Haul it to the {2}
 MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
 MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
 MISC_BEHAVIOR_ADDED	Added: {0}
@@ -915,7 +916,7 @@ UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Right-click or Escape c
 UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
 MISC_BUILD_BLOCKED	No room to build here
 MISC_BUILD_UNWALKABLE	The ground here can't be built on
-MISC_NO_UPKEEP	No upkeep: no logs
+MISC_NO_UPKEEP	No upkeep: no bones
 MISC_UPKEEP_LEFT	Upkeep: {0} min left
 PROP_SHOP	Shop
 PROP_FARM	Farm
@@ -1200,6 +1201,7 @@ UILABEL_MAP_PICK_LEVELS	Level
 UILABEL_MAP_PICK_LOADING	Drawing the map...
 UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when the game starts.
 UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
+UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
 UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
 UILABEL_NEXT	Next
 UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Shift + click to change how.
@@ -1235,6 +1237,56 @@ MISC_NO_LONGER_HAUNTED	The Ghosts are at peace: your faction is no longer Haunte
 MISC_GHOSTS_NO_BONES	This Altar has no bones
 MISC_GHOSTS_ALL_APPEASED	Every Ghost is already appeased
 PROP_AIRSHIP	Airship
-UILABEL_DISEMBARK	Disembark
-MISC_CANT_DISEMBARK	Nobody can get off the Airship here: fly it over open ground first
+MISC_AIRSHIP_FULL	{0} can't get on the {1}: it is full
+MISC_FLEES	{0} flees out of reach
+MISC_CANT_EVACUATE_AIRSHIP	Nobody can get off the Airship here: fly it over open ground first
 MISC_AIRSHIP_FALLS	{0} falls with the Airship
+PROP_FOUNDATION	Foundation
+PROP_WOOD_WALL	Built Wall
+PROP_WOOD_DOOR	Door
+PROP_LADDER	Ladder
+PROP_UPPER_FLOOR	Upper Floor
+UILABEL_CANCEL_BUILD	Cancel Construction
+MISC_BUILD_CANCELLED	The {0} blueprint is cancelled, and what was brought to it is dropped
+UILABEL_AUTO_CONSTRUCT	Auto-Construct
+UILABEL_CLIMB_UP	Climb Up
+UILABEL_CLIMB_DOWN	Climb Down
+UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
+UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
+UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
+UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
+UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
+UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
+MISC_AUTO_SUPPLY_SET	{0} will haul building materials to your blueprints
+MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
+MISC_BUILT	A {0} is finished
+MISC_DOOR_SMASHED	{0} smashes the {1}
+MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
+MISC_FOUNDATION_TOO_SMALL	A foundation must be at least 3 tiles on each side
+MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
+MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
+MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
+MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
+MISC_BUILD_ENTRANCE_ONLY	A door goes on one of the foundation's entrances
+MISC_BUILD_NOT_ON_ENTRANCE	That tile is an entrance: only a door can go there
+MISC_BUILD_TILE_TAKEN	Something is already built on that tile
+MISC_BUILD_PICK_ENTRANCE	Click tiles on a foundation's edge to make them entrances, where doors go
+MISC_BUILD_ENTRANCE_HERE	An entrance goes on an edge tile, not a corner, with nothing built on it
+ITEM_161_NAME	Stone
+ITEM_161_DESC	A rough block of stone, broken from a boulder.
+ITEM_162_NAME	Dragon Crystal
+ITEM_162_DESC	A rare crystal that glows with a dragon's heat. The toughest thing to build with.
+PROP_DRAGON_CRYSTAL	Dragon Crystal
+PROP_WOOD_STOCKPILE	Wood Stockpile
+PROP_STONE_STOCKPILE	Stone Stockpile
+FILTER_WOOD	Wood Logs
+FILTER_STONE	stone
+UILABEL_BREAK	Break
+MISC_ANY_BONES	any Bones
+UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
+MISC_BUILD_EDGES_OPEN	Every edge tile of the foundation needs a wall or a door first
+MISC_FLOORS_COLLAPSE	With no walls or doors left under it, an upper floor falls in
+UILABEL_MATERIAL_TITLE	Build the {0} out of
+UILABEL_MATERIAL_WOOD	Wood (Wood Logs)
+UILABEL_MATERIAL_IRON	Iron (Iron Ingots)
+UILABEL_MATERIAL_CRYSTAL	Dragon Crystals

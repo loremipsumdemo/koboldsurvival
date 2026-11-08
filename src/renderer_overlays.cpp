@@ -1,5 +1,7 @@
 #include "renderer_internal.h"
 #include "prop_info.h"
+#include "airship.h"
+#include "building.h"
 
 using namespace render_detail;
 
@@ -50,6 +52,34 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         drawRing(sx, cy, outer, inner, 0.0f, frac, theme::AMBER);
     }
     propHops_.swap(seen);
+
+    for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
+        const Blueprint* bp = w.get<Blueprint>(e);
+        const int need = materialsNeeded(w, e);
+        if (bp->supplied <= 0 && bp->progress <= 0.0) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        float sx = 0.0f, sy = 0.0f;
+        const float top = propInfo(w.get<Prop>(e)->kind).foundation ? 0.6f : FLOOR_HEIGHT + 0.4f;
+        if (!worldToScreen(vp, tr->x, tr->y + top, tr->z, winW, winH, sx, sy)) continue;
+        const bool supplied = need <= 0 || bp->supplied >= need;
+        const float frac = supplied ? (float)std::clamp(bp->progress, 0.0, 1.0) : (float)bp->supplied / (float)std::max(1, need);
+        drawRing(sx, sy - outer, outer, inner, 0.0f, 1.0f, back);
+        drawRing(sx, sy - outer, outer, inner, 0.0f, frac, supplied ? RGBA{ 0.35f, 0.9f, 0.45f, 1.0f } : theme::AMBER);
+    }
+
+    // Units getting on or off an Airship: how far along they are
+    for (ObjectId u : w.view<Boarding, Transform>()) {
+        const Boarding* b = w.get<Boarding>(u);
+        const Transform* tr = w.get<Transform>(u);
+        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        float sx = 0.0f, sy = 0.0f;
+        if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.3f, tr->z, winW, winH, sx, sy)) continue;
+        const float whole = b->leaving ? AIRSHIP_LEAVE_SECONDS : AIRSHIP_BOARD_SECONDS;
+        const float frac = std::clamp(1.0f - b->left / whole, 0.0f, 1.0f);
+        drawRing(sx, sy - outer, outer, inner, 0.0f, 1.0f, back);
+        drawRing(sx, sy - outer, outer, inner, 0.0f, frac, theme::AMBER);
+    }
 }
 
 void Renderer::drawGroundItemName(World& w, const Camera& cam, int winW, int winH, ObjectId item) {

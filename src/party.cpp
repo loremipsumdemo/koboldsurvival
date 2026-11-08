@@ -92,8 +92,8 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
 }
 
 void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearItems& gear,
-                          const Stats& stats) {
-    const float cap = ENCUMBERED_SHARE * carryLimit(stats);
+                          const Stats& stats, float share) {
+    const float cap = (share < 0.0f ? ENCUMBERED_SHARE : share) * carryLimit(stats);
     auto weightOf = [](int item) {
         const ItemDef* d = findItem(item);
         return d ? std::max(0.0f, d->weight) : 0.0f;

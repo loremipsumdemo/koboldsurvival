@@ -74,6 +74,7 @@ constexpr int NPC_AMMO_MIN = 10;
 constexpr int NPC_AMMO_MAX = 30;
 constexpr int NPC_LOOT_MIN = 2;
 constexpr int NPC_LOOT_MAX = 5;
+constexpr float NPC_MOST_LOAD = 0.15f;   // share of what it can carry: it walks at least 85% of full speed
 constexpr int STORAGE_STACKS_MIN = 2;
 constexpr int STORAGE_STACKS_MAX = 5;
 constexpr int STORAGE_STACK_MOST = 10;
@@ -136,7 +137,8 @@ void systems_detail::finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std:
     if (Inventory* inv = w.get<Inventory>(u)) {
         Equipment* worn = w.get<Equipment>(u);
         GearItems gear = worn ? worn->items : GearItems{};
-        keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u));
+        // Your units may start well loaded; everyone else carries little enough to give chase at near full speed
+        keepUnderEncumbrance(inv->slots, gear, *w.get<Stats>(u), w.has<Commandable>(u) ? -1.0f : NPC_MOST_LOAD);
         if (worn) worn->items = gear;
     }
     if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });

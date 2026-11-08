@@ -15,5 +15,7 @@ Unconscious	emote_10.png	Unconscious: at 0 health, out cold until it recovers in
 PlayingDead	emote_12.png	Playing dead: awake but carried by a hostile, lying still until given an order
 CuePutDown	emote_13.png	Hover cue: over a carried unit whose carrier you have selected, right-click to Put down
 CueTalk	emote_14.png	Hover cue: over an NPC you can talk to
-NoUpkeep	emote_15.png	No upkeep: over an Altar with no upkeep items (logs) in it
+NoUpkeep	emote_15.png	No upkeep: over an Altar with no upkeep items (bones) in it
 Decaying	emote_16.png	Decaying: over an Altar that is wearing down
+Hauling	emote_17.png	Hauling: bringing Wood Logs to a blueprint
+Building	emote_18.png	Building: working on a blueprint

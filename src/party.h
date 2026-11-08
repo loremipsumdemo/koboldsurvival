@@ -72,8 +72,9 @@ PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken);
 
 Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
 
+// Drops items, then gear, until the load is under share of what the unit can carry (ENCUMBERED_SHARE by default)
 void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearItems& gear,
-                          const Stats& stats);
+                          const Stats& stats, float share = -1.0f);
 
 enum class ScenarioId : int {
     Vagabond = 0,   // one unit, every stat at level 1, nothing carried
