@@ -1,8 +1,64 @@
 # Language file. Each line is KEY, a tab, then the text shown. Keys have no spaces.
 # A missing key shows the English, and a key missing everywhere shows its key name.
+# Every language file keeps the same keys in the same order, under the same headers.
+# Anything the game shows the player is a key here, never English written in the code.
 
+# ----------------------------------------------------------------------
+# Language, title and loading
+# ----------------------------------------------------------------------
 LANGUAGE_NAME	English
+LOADING_PICTURES	Pictures
+LOADING_UNIT_MODELS	Unit models
+LOADING_MOB_MODELS	Mob models
+LOADING_MOB_PICTURES	Mob pictures
+LOADING_SKY	Sky
+LOADING_PROP_MODELS	Prop models
+LOADING_MAP	Map
+LOADING_MAP_GROUND	Map ground
+LOADING_WORLD	World
+LOADING_GROUND_ITEMS	Ground items
+GAME_TITLE_FIRST	Kobold
+GAME_TITLE_SECOND	Survival
+
+# ----------------------------------------------------------------------
+# Unit names (lists the game picks from)
+# ----------------------------------------------------------------------
+NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin", "Alaric", "Bertram", "Cedric", "Corwin", "Darian", "Edmund", "Edric", "Falk", "Gareth", "Godwin", "Hadrian", "Harold", "Ivor", "Jasper", "Kendrick", "Leofric", "Lorcan", "Magnus", "Malcolm", "Merrick", "Osric", "Oswin", "Percival", "Roderick", "Roland", "Silas", "Stellan", "Thaddeus", "Torin", "Tristan", "Ulric", "Victor", "Walter", "Wystan", "Aiden", "Brandt", "Callum", "Desmond", "Emrys", "Finnian", "Garrick", "Hector", "Lucan", "Rowan", "Tobias"]
+NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren", "Adela", "Alys", "Anwen", "Beatrix", "Brienne", "Catrin", "Celia", "Delphine", "Edith", "Elspeth", "Esme", "Fenna", "Freya", "Gisela", "Hazel", "Helena", "Ilsa", "Imogen", "Ivy", "Juliet", "Leda", "Linnea", "Lorelei", "Mabel", "Matilda", "Mirabel", "Nell", "Odette", "Petra", "Rosalind", "Rowena", "Seren", "Sybil", "Tamsin", "Thea", "Una", "Vera", "Viola", "Wilhelmina", "Yara", "Agnes", "Bryony", "Clara", "Ottilie", "Signe"]
+NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin", "Ash", "Avery", "Blair", "Briar", "Corin", "Dale", "Ember", "Ellis", "Emery", "Fallon", "Finch", "Gray", "Haven", "Hollis", "Indigo", "Jules", "Kai", "Lark", "Linden", "Marlow", "Merritt", "Morgan", "Nova", "Oakley", "Onyx", "Perrin", "Quinn", "Raven", "Reed", "Rook", "Rory", "Sage", "Shay", "Sparrow", "Sterling", "Tarn", "Teagan", "Vale", "Wynn", "Yarrow", "Zephyr", "Arden", "Cypress", "Ellery", "Lumen"]
+
+# ----------------------------------------------------------------------
+# Common buttons and words
+# ----------------------------------------------------------------------
 UILABEL_CONTINUE	Continue
+UILABEL_CLOSE	Close
+UILABEL_BACK	Back
+UILABEL_DELETE	Delete
+UILABEL_CANCEL	Cancel
+UILABEL_CONFIRM	Confirm
+UILABEL_YES	Yes
+UILABEL_NO	No
+UILABEL_LIST_MORE_ABOVE	...   {0} more above
+UILABEL_LIST_MORE_BELOW	...   {0} more below
+UILABEL_ON	On
+UILABEL_OFF	Off
+UILABEL_EMPTY	Empty
+UILABEL_DEFAULT	Default
+UILABEL_UNLIMITED	Unlimited
+UILABEL_RESET	Reset
+UILABEL_NO_NAME	No name
+UILABEL_SHIFT_CLICK	Shift + click changes a stat by 10.
+UILABEL_SCROLL_UP	Scroll up
+UILABEL_SCROLL_DOWN	Scroll down
+UILABEL_CHOOSE_HOW_MANY	Choose how many: {0} ({1} available)
+UILABEL_REMOVE_ALL	Remove All
+UILABEL_CLEAR	Clear
+UILABEL_NEXT	Next
+UILABEL_RENAME	Rename
+
+# ----------------------------------------------------------------------
+# Title, pause, saves and scenarios
+# ----------------------------------------------------------------------
 UILABEL_NEW_GAME	New Game
 UILABEL_LOAD_GAME	Load Game
 UILABEL_SETTINGS	Settings
@@ -10,33 +66,65 @@ UILABEL_QUIT	Quit
 UILABEL_RESUME	Resume
 UILABEL_SAVE_GAME	Save Game
 UILABEL_RETURN_TO_TITLE	Return to Title
-UILABEL_CLOSE	Close
-UILABEL_BACK	Back
 UILABEL_SAVE	Save
-UILABEL_DELETE	Delete
-UILABEL_CANCEL	Cancel
-UILABEL_CONFIRM	Confirm
-UILABEL_YES	Yes
-UILABEL_NO	No
 UILABEL_NAME	Name
-UILABEL_TIME	Time
-UILABEL_TYPE	Type
-UILABEL_AUTO	AUTO
-UILABEL_MANUAL	MANUAL
 UILABEL_NO_SAVES	No saves yet
 MISC_MAIN_MAP_MISSING	The main map is missing from data.pak
-UILABEL_LIST_MORE_ABOVE	...   {0} more above
-UILABEL_LIST_MORE_BELOW	...   {0} more below
 UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
 MISC_LEAVE_Q	Leave without saving?
 UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
 UILABEL_CLICK_SAVE	Click a save to load it
-UILABEL_ON	On
-UILABEL_OFF	Off
-UILABEL_EMPTY	Empty
 UILABEL_NONE_AVAILABLE	None available
-UILABEL_TWO_HANDED	Two-handed
-UILABEL_WILL_BE_REPLACED	Will be replaced
+UILABEL_RESTORE_DEFAULTS	Restore defaults
+UILABEL_PAUSED	PAUSED
+UILABEL_CLICK_TO_TYPE	Click to type a name
+UILABEL_IDENTITY	Identity
+UILABEL_RANDOMIZE_UNIT	Randomize this unit
+UILABEL_RANDOMIZE_ALL	Randomize all
+UILABEL_ADD_UNIT	Add unit
+UILABEL_REMOVE_UNIT	Remove unit
+UILABEL_ADD_MOB	Add mob
+UILABEL_CONFIRM_STARTS	Confirm starts the game with this party.
+UILABEL_NEEDS_NAMES	Every unit needs a name before the game can start.
+UILABEL_CLICK_UNIT_EDIT	Click a unit to edit it.
+UILABEL_CUSTOM_ONLY	Only a Custom Scenario can change stats, gear and items.
+MISC_GAME_SAVED	Game saved
+MISC_SAVE_FAILED	Could not save the game
+MISC_AUTOSAVED	Autosaved
+MISC_SCREENSHOT_FAILED	Could not save the screenshot
+MISC_SCREENSHOT_SAVED	Saved {0}
+MISC_LOAD_FAILED	Could not load {0}: {1}
+MISC_LOADED	Loaded {0}
+MISC_DELETE_FAILED	Could not delete "{0}"
+MISC_DELETED	Deleted "{0}"
+MISC_OVERWRITE_Q	Overwrite "{0}"?
+MISC_LOAD_Q	Load "{0}"?
+MISC_DELETE_Q	Delete "{0}"?
+UILABEL_MODEL_N	Model {0}
+UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
+UILABEL_BODY_TYPE	Body type
+UILABEL_BODY_MASCULINE	Masculine
+UILABEL_BODY_FEMININE	Feminine
+UILABEL_BODY_ANDROGYNOUS	Androgynous
+UILABEL_NEEDS_UNITS	Add at least one unit to start.
+UILABEL_SCENARIO	Scenario
+SCENARIO_VAGABOND_NAME	Vagabond
+SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat at level 1.
+SCENARIO_CUSTOM_NAME	Custom Squad
+SCENARIO_CUSTOM_DESC	Build your own squad. It starts with three units, and you can add or remove units and regular mobs, up to 32.
+MISC_TITLE_KEYS	Select  //  Enter Confirm
+UILABEL_TEMPERAMENT_AVOIDANT	Avoidant
+UILABEL_TEMPERAMENT_PASSIVE	Passive
+UILABEL_TEMPERAMENT_NEUTRAL	Neutral
+UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressive
+UILABEL_TEMPERAMENT	Temperament: {0}
+MISC_AUTOSAVE_FAILED	Autosave failed.
+UILABEL_PARTY_MAP	Map: {0}
+UILABEL_PARTY_LEVEL	Level: {0}
+
+# ----------------------------------------------------------------------
+# Settings
+# ----------------------------------------------------------------------
 UILABEL_GRAPHICS	Graphics
 UILABEL_INTERFACE	Interface
 UILABEL_LANGUAGE_TAB	Language
@@ -46,22 +134,16 @@ UILABEL_DISPLAY_MODE	Display mode
 UILABEL_MONITOR	Monitor
 UILABEL_RESOLUTION	Resolution
 UILABEL_REFRESH_RATE	Refresh rate
-UILABEL_DEFAULT	Default
 UILABEL_VSYNC	V-Sync
 UILABEL_FRAME_LIMIT	Frame rate limit
 UILABEL_VIEW_RANGE	View range
-UILABEL_TILES_N	{0} tiles
 UILABEL_SHOW_FPS	Show FPS
 UILABEL_CONVERSATION_PAUSE	Automatic Conversation Pause
-UILABEL_UNLIMITED	Unlimited
 UILABEL_FPS	{0} FPS
 UILABEL_AUTOSAVE	Autosave
-UILABEL_MINUTE	1 minute
-UILABEL_MINUTES	{0} minutes
 UILABEL_UNIT_NAMES	Player unit names
 UILABEL_NPC_NAMES	Non-player unit names
 UILABEL_RESET_PANELS	Reset All UI Panels
-UILABEL_RESET	Reset
 UILABEL_FONT	Font
 UILABEL_FONT_AUTOMATIC	Automatic
 UILABEL_EDGE_SCROLL	Edge scrolling
@@ -71,10 +153,19 @@ UILABEL_AMBIENT	Ambient
 UILABEL_INTERFACE_SOUNDS	Interface sounds
 UILABEL_CRAFT_GATHER_SOUNDS	Crafting and gathering sounds
 UILABEL_SOUND_EFFECTS	Sound effects
-UILABEL_RESTORE_DEFAULTS	Restore defaults
 UILABEL_WINDOWED	Windowed
 UILABEL_BORDERLESS	Borderless
 UILABEL_FULL_SCREEN	Full screen
+UILABEL_SHOW_NPC_INFO	Show NPC Info
+UILABEL_MONITOR_N	Monitor {0}
+UILABEL_UI_SCALE	UI scale
+UILABEL_LANGUAGE_LABEL	Language:
+UILABEL_CITIZEN_SOFT_CAP	Citizens: soft cap
+UILABEL_CITIZEN_HARD_CAP	Citizens: hard cap
+
+# ----------------------------------------------------------------------
+# Controls list (Settings, Controls tab)
+# ----------------------------------------------------------------------
 CONTROL_KEYS_1	W A S D, or the arrow keys
 CONTROL_DOES_1	Move the camera
 CONTROL_KEYS_2	Mouse wheel
@@ -95,166 +186,193 @@ CONTROL_KEYS_9	F12
 CONTROL_DOES_9	Take a screenshot
 CONTROL_KEYS_10	Hold Shift while moving a stack
 CONTROL_DOES_10	Choose how many to move
-UILABEL_PAUSED	PAUSED
-UILABEL_PACE_RUN	Run
-UILABEL_PACE_WALK	Walk
-UILABEL_SQUAD_PANEL	Faction Panel
+CONTROL_KEYS_11	Numpad 1 to 9
+CONTROL_DOES_11	Select that squad (Shift adds it; press twice to look at it)
+CONTROL_KEYS_12	Ctrl + Numpad 1 to 9
+CONTROL_DOES_12	Move the selected units into that squad
+CONTROL_KEYS_13	Numpad 0
+CONTROL_DOES_13	Select your unit nearest the camera's centre
+CONTROL_KEYS_14	Alt + 1 / 2 / 3 / 4, or the Form button
+CONTROL_DOES_14	Selected units form a line, circle, rectangle or wedge
+CONTROL_KEYS_15	Alt + 5
+CONTROL_DOES_15	Switch between tight and loose formations
+CONTROL_KEYS_16	Alt + right mouse drag
+CONTROL_DOES_16	Place the selected units around where the drag starts; the drag sets the size
+
+# ----------------------------------------------------------------------
+# World Generation, Level Editor and map pick
+# ----------------------------------------------------------------------
+UILABEL_WORLD_MAP	World Map
+UILABEL_LEVEL	Level
+UILABEL_LEVELS_HINT	Levels run from 1 to 99.
+MISC_MAP_MISSING	The map for "{0}" is missing
+MISC_MAP_LOAD_FAILED	Map "{0}" could not be loaded: {1}
+UILABEL_WORLD_GENERATION	World Generation
+UILABEL_GEN_LAND	Land
+UILABEL_GEN_CONTINENTS	Continents
+UILABEL_GEN_WARP	Coast warp
+UILABEL_GEN_HILLS	Hills
+UILABEL_GEN_MOUNTAINS	Mountains
+UILABEL_GEN_MOISTURE	Moisture
+UILABEL_GEN_TEMPERATURE	Temperature
+UILABEL_GEN_FORESTS	Forests
+UILABEL_GEN_SEED	Seed
+UILABEL_GEN_SIZE	Size
+UILABEL_GEN_RANDOM	Random
+UILABEL_GEN_PREVIEW	Preview
+UILABEL_GEN_DONE	Generated {0}: {1} bytes
+UILABEL_GEN_GENERATE	Generate
+UILABEL_GEN_CONTINUE	Continue to Level Editor
+UILABEL_GEN_MAPS	Existing Maps
+UILABEL_GEN_TAB_WORLD	World
+UILABEL_GEN_TAB_THEME	Theme
+UILABEL_GEN_STYLE	Map style
+UILABEL_STYLE_OVERWORLD	Overworld
+UILABEL_STYLE_OVERWORLD_ABOUT	One large island in a sea.
+UILABEL_STYLE_VALLEY	Walled Valley
+UILABEL_STYLE_VALLEY_ABOUT	Lakes and land ringed by sheer cliffs.
+UILABEL_STYLE_ARCHIPELAGO	Archipelago
+UILABEL_STYLE_ARCHIPELAGO_ABOUT	Many small islands in a sea.
+UILABEL_STYLE_CAVERN	Cavern
+UILABEL_STYLE_CAVERN_ABOUT	Stalagmites and acid pools, walled in.
+UILABEL_STYLE_GALAXY	Galaxy Sea
+UILABEL_STYLE_GALAXY_ABOUT	Harsh rock in a glittering neon sea.
+UILABEL_STYLE_VOID	Void Islands
+UILABEL_STYLE_VOID_ABOUT	Harsh floating islands over a black void.
+UILABEL_STYLE_CALDERA	Caldera
+UILABEL_STYLE_CALDERA_ABOUT	Ash around a lava sea, walled in.
+UILABEL_THEME_PRESET	Preset
+UILABEL_THEME_PRESET_OVERWORLD	Overworld
+UILABEL_THEME_PRESET_CAVERN	Cavern
+UILABEL_THEME_PRESET_GALAXY	Galaxy
+UILABEL_THEME_PRESET_VOID	Void
+UILABEL_THEME_PRESET_EMBER	Ember
+UILABEL_THEME_ON	On
+UILABEL_THEME_OFF	Off
+UILABEL_THEME_RED	Red
+UILABEL_THEME_GREEN	Green
+UILABEL_THEME_BLUE	Blue
+UILABEL_THEME_SKY	Sky
+UILABEL_THEME_SKY_KIND	Sky type
+UILABEL_THEME_SKY_GRADIENT	Gradient
+UILABEL_THEME_SKY_SOLID	Solid color
+UILABEL_THEME_SKY_CAVE	Cave
+UILABEL_THEME_SKY_GALAXY	Galaxy
+UILABEL_THEME_SKY_DAY_TOP	Day top / rock / nebula
+UILABEL_THEME_SKY_DAY_HORIZON	Day horizon / depths
+UILABEL_THEME_SKY_NIGHT_TOP	Night top
+UILABEL_THEME_SKY_NIGHT_HORIZON	Night horizon
+UILABEL_THEME_SKY_DUSK	Dusk glow
+UILABEL_THEME_STARS	Stars
+UILABEL_THEME_SUN_MOON	Sun, Moon and Time
+UILABEL_THEME_SUN_SHOWN	Show sun
+UILABEL_THEME_SUN_COLOR	Sun color
+UILABEL_THEME_MOON_SHOWN	Show moon
+UILABEL_THEME_MOON_COLOR	Moon color
+UILABEL_THEME_DAY_CYCLE	Day and night
+UILABEL_THEME_FIXED_HOUR	Fixed hour if off
+UILABEL_THEME_LIGHT	Light
+UILABEL_THEME_LIGHT_COLOR	Light color
+UILABEL_THEME_SUN_STRENGTH	Direct light
+UILABEL_THEME_AMBIENT	Ambient light
+UILABEL_THEME_SHADOWS	Shadow harshness
+UILABEL_THEME_MODEL_LIGHT	Light on props, units
+UILABEL_THEME_FOG	Fog
+UILABEL_THEME_FOG_COLOR	Fog color
+UILABEL_THEME_WATER	Water
+UILABEL_THEME_WATER_SHOWN	Water (off: void)
+UILABEL_THEME_WATER_COLOR	Water color
+UILABEL_THEME_WATER_DEEP	Deep color
+UILABEL_THEME_WATER_OPACITY	Opacity
+UILABEL_THEME_WATER_SPEED	Speed
+UILABEL_THEME_WATER_RIPPLES	Ripples
+UILABEL_THEME_WATER_GLITTER	Glitter
+UILABEL_THEME_WATER_GLOW	Glow
+UILABEL_THEME_GROUND	Ground
+UILABEL_THEME_GROUND_TINT	Ground tint
+UILABEL_THEME_GROUND_TINT_AMOUNT	Tint amount
+UILABEL_THEME_ROCK_COLOR	Steep rock color
+MISC_GEN_NEEDS_NAME	Needs a name made of letters, digits, spaces, - or _.
+UILABEL_EDITOR_TITLE	Level Editor: {0}
+UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
+UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
+UILABEL_EDITOR_RELOAD	Reload
+UILABEL_EDITOR_SPAWN	Spawn Point
+UILABEL_EDITOR_ERASE	Erase
+UILABEL_EDITOR_ENTITIES	Entities
+UILABEL_EDITOR_PROPS	Props
+UILABEL_EDITOR_ITEMS	Items
+UILABEL_EDITOR_UNITS	Units
+UILABEL_EDITOR_PLAYER_UNIT	Player Unit
+UILABEL_EDITOR_NPC_UNIT	NPC: {0}
+UILABEL_EDITOR_MOBS	Mobs
+UILABEL_EDITOR_BOSS_MOBS	Boss Mobs
+UILABEL_EDITOR_COUNTS	{0} entities, {1} props, {2} items
+UILABEL_EDITOR_FILE	File: {0} bytes
+UILABEL_EDITOR_HELP1	Left: place. Right: erase. Q/E: turn.
+UILABEL_EDITOR_HELP2	Ctrl+S: save. Ctrl+Z: undo. M: map.
+UILABEL_EDITOR_EXIT	Exit to World Generation
+UILABEL_EDITOR_EXIT_SURE	Unsaved! Click again to exit
+MISC_LEVEL_SAVED	Saved level {0}.
+MISC_LEVEL_OTHER_MAP	That level is for the map {0}.
+UILABEL_LEVEL_RANDOM	Random set-up
+UILABEL_MAP_PICK_TITLE	Choose where to start
+UILABEL_MAP_PICK_MAPS	Map
+UILABEL_MAP_PICK_LEVELS	Level
+UILABEL_MAP_PICK_LOADING	Drawing the map...
+UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when the game starts.
+UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
+UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
+UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
+UILABEL_GEN_DEFAULT_NAME	world
+UILABEL_MAP_MAIN	Main Map
+
+# ----------------------------------------------------------------------
+# Panels, HUD, time and the message log
+# ----------------------------------------------------------------------
+UILABEL_TIME	Time
+UILABEL_TILES_N	{0} tiles
+UILABEL_MINUTE	1 minute
+UILABEL_MINUTES	{0} minutes
 UILABEL_UNIT_PANEL	Unit Panel
 UILABEL_INFORMATION_PANEL	Information Panel
 UILABEL_INTERACTION_PANEL	Interaction Panel
-UILABEL_TRADE_PANEL	Trade Panel
-UILABEL_INVENTORY	Inventory
-UILABEL_EQUIPMENT	Equipment
-UILABEL_BEHAVIOR	Behavior
-UILABEL_TRADE	Trade
-UILABEL_END_DIALOGUE	End Dialogue
-UILABEL_TRADE_DROP_THEIRS	Drag or right-click items from their inventory here
-UILABEL_TRADE_DROP_YOURS	Drag or right-click your items from your inventory here
-UILABEL_SINGLE	Single
-UILABEL_MAX	Max
-UILABEL_SORT	Sort
-UILABEL_WORLD_MAP	World Map
 UILABEL_DAYS_PASSED	Days passed: {0}
 UILABEL_NO_UNIT_SELECTED	No unit selected
 UILABEL_UNNAMED_UNIT	Unnamed Unit
-UILABEL_NO_NAME	No name
 UILABEL_PROFILE	Profile
-UILABEL_STATS	Stats
-UILABEL_CLICK_TO_TYPE	Click to type a name
-UILABEL_HEALTH	Health
-UILABEL_HUNGER	Hunger
-UILABEL_RESTED	Rested
-UILABEL_COMFORT	Comfort
-UILABEL_CARRY	Carry
-UILABEL_NEXT_LEVEL_XP_LINE	Next Level XP: {0}
-UILABEL_STAT	Stat
-UILABEL_LEVEL	Level
-UILABEL_ATTRIBUTES	Attributes
-UILABEL_COMBAT	Combat
-UILABEL_RESOURCE_GATHERING	Resource Gathering
-UILABEL_CRAFTING	Crafting
-UILABEL_UTILITY	Utility
-UILABEL_GEAR	Gear
-UILABEL_ITEMS	Items
-UILABEL_IDENTITY	Identity
-UILABEL_RANDOMIZE_UNIT	Randomize this unit
-UILABEL_RANDOMIZE_ALL	Randomize all
-UILABEL_ADD_UNIT	Add unit
-UILABEL_REMOVE_UNIT	Remove unit
-UILABEL_ADD_MOB	Add mob
-UILABEL_MOB_KIND	Kind
-UILABEL_MOB_NO_ITEMS	A mob carries only its own meat and bones.
-UILABEL_CONFIRM_STARTS	Confirm starts the game with this party.
-UILABEL_NEEDS_NAMES	Every unit needs a name before the game can start.
-UILABEL_CLICK_UNIT_EDIT	Click a unit to edit it.
-UILABEL_SHIFT_CLICK	Shift + click changes a stat by 10.
-UILABEL_LEVELS_HINT	Levels run from 1 to 99.
-UILABEL_CLICK_SLOT	Click a slot to choose its item. Only items that fit are listed.
-UILABEL_CLICK_SLOT_STACK	Click a slot to choose its item. Stacks hold up to the item's limit.
-UILABEL_CUSTOM_ONLY	Only a Custom Scenario can change stats, gear and items.
-UILABEL_SCROLL_UP	Scroll up
-UILABEL_SCROLL_DOWN	Scroll down
-UILABEL_SLOT_HEAD	Head
-UILABEL_SLOT_TORSO	Torso
-UILABEL_SLOT_MAIN_HAND	Main hand
-UILABEL_SLOT_OFF_HAND	Off hand
-UILABEL_SLOT_LEGS	Legs
-UILABEL_SLOT_FEET	Feet
-UILABEL_SLOT_ACCESSORY	Accessory
-UILABEL_BEHAVIOR_ON	On
-UILABEL_BEHAVIOR_EAT	Eat when hunger < {0}%
-UILABEL_BEHAVIOR_REST	Rest when rested < {0}%
-UILABEL_BEHAVIOR_LEAVE_BED	Leave bed when recovered
-UILABEL_BEHAVIOR_RESCUE	Rescue downed allies
-UILABEL_BEHAVIOR_HEAL	Heal when health < {0}%
-UILABEL_BEHAVIOR_SHARE	Share
-UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
-UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
-UILABEL_BEHAVIOR_WAITING	(waiting)
-UILABEL_BEHAVIOR_WAIT_TIP	Waiting: {0}
-UILABEL_BEHAVIOR_ADD	Add Behavior
-UILABEL_BEHAVIOR_HAVE	(have)
-UILABEL_BEHAVIOR_FULL	(list full)
-UILABEL_BEHAVIOR_NUMBER_TIP	Set the percent ({0}-{1}%)
-UILABEL_BEHAVIOR_PROMPT_EAT	Eat when hunger is below what percent?
-UILABEL_BEHAVIOR_PROMPT_HEAL	Heal when health is below what percent?
-UILABEL_BEHAVIOR_PROMPT_REST	Rest when rested is below what percent?
-UILABEL_BEHAVIOR_PROMPT_RANGE	From {0} to {1}. Enter sets it, Escape cancels.
-UILABEL_BEHAVIOR_PROMPT_BAD	Enter a whole number from {0} to {1}
-UILABEL_BEHAVIOR_PROMPT_SET	Set
-UILABEL_WAIT_NO_FOOD	no food to eat, and none to share nearby
-UILABEL_WAIT_NO_BED	no free bed or bedroll to rest in
-UILABEL_WAIT_NO_HEALING	no healing item, and none to share nearby
-UILABEL_WAIT_WALKING_TO_SHARE	walking to {0}, who can share one
-UILABEL_WAIT_NO_PROP	no {0} inside your claim with room for another worker
-UILABEL_WAIT_CARRY_FULL	no room to carry any more
-UILABEL_WAIT_LOAD_WAITING	carrying a load for Auto-Haul to take first
-UILABEL_WAIT_PROP_GONE	the prop is gone
-UILABEL_WAIT_OUTSIDE_CLAIM	the prop is not inside your faction's claim
-UILABEL_WAIT_LOCKED	the prop is locked
-UILABEL_WAIT_NOTHING_TO_HAUL	carrying nothing the prop takes
-UILABEL_WAIT_PROP_FULL	the prop has no room for what it carries
-UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Press # to set when.
-UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Press # to set when.
-UILABEL_BEHAVIOR_REST_TIP	Rest: below {0}% rested, lies down in the nearest free bed or bedroll and gets up when fully rested. Press # to set when.
-UILABEL_BEHAVIOR_LEAVE_BED_TIP	Leave bed: gets out of a bed or bedroll after 30 seconds at full health and fully rested.
-UILABEL_BEHAVIOR_RESCUE_TIP	Rescue: carries a unit of its own faction that lies unconscious nearby to the nearest free bed or bedroll.
-UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
-UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
-UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_NPC_MESSAGES	NPCs
-UILABEL_SHOW_NPC_INFO	Show NPC Info
 UILABEL_COMBAT_MESSAGES	Combat Messages
 UILABEL_SEEN	Seen
-UILABEL_HIT	Hit
-UILABEL_MISS	Miss
-UILABEL_DAMAGE	Damage
 UILABEL_EXPERIENCE_MESSAGES	Experience Messages
-UILABEL_EXPERIENCE	Experience
 UILABEL_ITEM_MESSAGES	Item Messages
-UILABEL_PICKUP	Pickup
-UILABEL_DROP	Drop
-UILABEL_LOOT	Loot
-UILABEL_USE	Use
 UILABEL_MESSAGE	Message
 UILABEL_GAME	Game
 UILABEL_FILTER	Filter
-UILABEL_UNKNOWN_SLOT	Unknown
 UILABEL_MONTH_NAME	{0} Month
-UILABEL_STRENGTH_STAT	Strength
-MISC_GAME_SAVED	Game saved
-MISC_SAVE_FAILED	Could not save the game
-MISC_READ_FAILED	Could not read that save
-MISC_AUTOSAVED	Autosaved
-MISC_SCREENSHOT_FAILED	Could not save the screenshot
-MISC_SCREENSHOT_SAVED	Saved {0}
-MISC_TRADE_FULL	The trade is full
-MISC_TRADE_ALREADY	That item is already in the trade, or the trade is full.
-MISC_TRADE_NO_MORE	There is no more of that item to trade
-MISC_NO_UNIT_TO_TRADE	No unit to trade with
-MISC_TRADE_ADD_BOTH	Add items to both sides
-MISC_TRADE_NO_ROOM_YOURS	Your unit has no room for their items
-MISC_TRADE_NO_ROOM_THEIRS	They have no room for your items
-MISC_TRADE_FAILED	Trade failed
-MISC_TRADE_COMPLETE	Trade complete.
-MISC_TALK_INTERRUPTED	The conversation was interrupted.
-MISC_PICKUP_SELECT	Select units to pick the item up
-MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
-MISC_DROPS	{0} drops {1} {2}
 MISC_UNIT	Unit
-MISC_TWO_HANDED_IN_MAIN	A two-handed weapon is in the main hand
 MISC_YOU	You
-MISC_UNKNOWN_ITEM	Unknown item
-MISC_REASON_FEES	paying trade fees
-MISC_REASON_SWINGING	swinging
-MISC_REASON_DODGING	dodging
-MISC_REASON_DEALING	dealing damage
-MISC_REASON_TAKING	taking damage
-MISC_REASON_BLOCKING	blocking
-MISC_REASON_GEAR	changing gear
-NPC_GREETING	Hello world.
-NPC_OPTION_WARES	Show me your wares.
-NPC_OPTION_QUEST	What else can you tell me about the quest?
+UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
+MISC_FLAG_HEALTH	Health: {0} of {1}
+MISC_LOG_MISSES	{0} misses {1}
+MISC_LOG_SHOOTS_MISS	{0} shoots at {1} and misses
+MISC_LOG_DODGES	{0} dodges {1}'s swing
+MISC_LOG_SHRUGS	{0} shrugs off {1}'s hit
+MISC_LOG_HITS	{0} hits {1}
+MISC_LOG_SHOOTS	{0} shoots {1}
+MISC_LOG_HITS_BLOCKED	{0} hits {1} (blocked)
+MISC_LOG_SHOOTS_BLOCKED	{0} shoots {1} (blocked)
+MISC_LOG_DAMAGE	{0} takes {1} damage
+MISC_LOG_ELIXIR_ENDS	{0}'s {1} wears off
+MISC_LOG_NOTICES	{0} notices {1}
+
+# ----------------------------------------------------------------------
+# Squads, selection and formations
+# ----------------------------------------------------------------------
+UILABEL_MANUAL	MANUAL
+UILABEL_PACE_RUN	Run
+UILABEL_PACE_WALK	Walk
+UILABEL_SQUAD_PANEL	Faction Panel
 MISC_ORD_1	First
 MISC_ORD_2	Second
 MISC_ORD_3	Third
@@ -267,6 +385,100 @@ MISC_ORD_9	Ninth
 MISC_ORD_10	Tenth
 MISC_ORD_11	Eleventh
 MISC_ORD_12	Twelfth
+MISC_IS_DOWN	{0} is down
+UILABEL_FOLLOW	Follow
+MISC_SELECT_UNIT_FIRST	Select a unit first
+UILABEL_MODE_PASSIVE	Passive
+UILABEL_MODE_BLOCK	Block
+UILABEL_MODE_SNEAK	Sneak
+UILABEL_MODE_RANGED	Ranged
+UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
+UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
+UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice.
+UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
+UILABEL_SQUAD_TAB	Squad
+UILABEL_DISBAND	Disband
+UILABEL_DISBAND_HOLD	Hold Disband for {0} seconds to confirm
+MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become a Nomad: neutral to everyone and roaming alone.
+MISC_DISBAND_ASK_MOB	{0} will leave your squad and faction for good and go back to the wild.
+MISC_DISBANDED	{0} leaves your squad as a Nomad
+MISC_DISBANDED_MOB	{0} leaves your squad and returns to the wild
+UILABEL_OPTIMIZE	Optimize
+UILABEL_OPTIMIZE_ALL	Optimize All
+MISC_OPTIMIZE_ALL_ASK	Optimize the gear of the {0} units in this squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is. These settings are kept for the next click of Optimize All.
+UILABEL_OPTIMIZE_BALANCE	Attack {0}% / Defense {1}%
+UILABEL_OPTIMIZE_ACCESSORIES	Change accessories
+UILABEL_OPTIMIZE_TWO_HANDED	Allow two-handed weapons
+UILABEL_OPTIMIZE_VALUE_TIES	Ties go to the more valuable item
+MISC_OPTIMIZE_ALL_SAME	Every unit already wears its best gear
+MISC_OPTIMIZE_ALL_DONE	Optimized gear for {0} units
+MISC_OPTIMIZE_ALL_SOME_ROOM	Optimized gear for {0} units; {1} lacked inventory space
+MISC_FORMATION	Formation: {0}, {1}
+UILABEL_FORMATION_LINE	Line
+UILABEL_FORMATION_CIRCLE	Circle
+UILABEL_FORMATION_RECTANGLE	Rectangle
+UILABEL_FORMATION_WEDGE	Wedge
+UILABEL_FORMATION_TIGHT	tight
+UILABEL_FORM_BUTTON	Form
+UILABEL_FORM_TIP	Formation of the selected units. Alt and 1 to 5 pick one without the list.
+UILABEL_FORMATION_MAKE_TIGHT	Make tight
+UILABEL_FORMATION_MAKE_LOOSE	Make loose
+UILABEL_FORMATION_DRAG_KEY	Right-drag
+UILABEL_FORMATION_DRAG	Place squad
+UILABEL_FORMATION_LOOSE	loose
+UILABEL_SQUAD_HEADING	Squad: {0}
+UILABEL_SQUAD_DEFAULT_NAME	Squad {0}
+UILABEL_SQUAD_RENAME	Rename Squad {0}
+UILABEL_SQUAD_RENAME_DONE	Done
+UILABEL_SELECT_MENU	Select
+UILABEL_SELECT_ALL	Select All
+UILABEL_SELECT_CLOSEST	Select Closest
+UILABEL_SELECT_IDLE	Select Idle
+UILABEL_SELECT_BUSY	Select Non-Idle
+MISC_SQUAD_ASSIGNED	{0} unit(s) moved into Squad {1}
+MISC_SQUAD_FULL_SOME	Squad {0} is full: {1} moved in, {2} did not fit
+MISC_SQUADS_FULL_CITIZEN	{0} becomes a citizen: every squad is full
+UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Right-click for Selected, All or Custom.
+UILABEL_OPTIMIZE_SELECTED	Selected
+UILABEL_OPTIMIZE_EVERYONE	All
+UILABEL_OPTIMIZE_CUSTOM	Custom...
+UILABEL_FLOOR_BUTTON	Floor
+UILABEL_FLOOR_AUTO	Auto
+UILABEL_FLOOR_MANUAL	Manual (Q/E)
+UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on. Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
+UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on. Manual: Q steps down a floor and E up. Click for Auto or Manual.
+MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
+MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up
+MISC_FLOOR_NOW	Floor {0}
+MISC_FLOOR_NOW_GROUND	Ground floor
+
+# ----------------------------------------------------------------------
+# Unit stats, skills and needs
+# ----------------------------------------------------------------------
+UILABEL_STATS	Stats
+UILABEL_HEALTH	Health
+UILABEL_HUNGER	Hunger
+UILABEL_RESTED	Rested
+UILABEL_COMFORT	Comfort
+UILABEL_CARRY	Carry
+UILABEL_NEXT_LEVEL_XP_LINE	Next Level XP: {0}
+UILABEL_STAT	Stat
+UILABEL_ATTRIBUTES	Attributes
+UILABEL_COMBAT	Combat
+UILABEL_CRAFTING	Crafting
+UILABEL_UTILITY	Utility
+UILABEL_HIT	Hit
+UILABEL_MISS	Miss
+UILABEL_DAMAGE	Damage
+UILABEL_EXPERIENCE	Experience
+UILABEL_STRENGTH_STAT	Strength
+MISC_REASON_FEES	paying trade fees
+MISC_REASON_SWINGING	swinging
+MISC_REASON_DODGING	dodging
+MISC_REASON_DEALING	dealing damage
+MISC_REASON_TAKING	taking damage
+MISC_REASON_BLOCKING	blocking
+MISC_REASON_GEAR	changing gear
 UILABEL_STAT_DESC_STRENGTH	Melee damage, weight carry capacity
 UILABEL_STAT_DESC_DEXTERITY	Attack speed
 UILABEL_STAT_DESC_VITALITY	Max health
@@ -314,6 +526,59 @@ UILABEL_STONEWORKING_STAT	Stoneworking
 UILABEL_LOCKPICKING_STAT	Lockpicking
 UILABEL_THIEVERY_STAT	Thievery
 UILABEL_MEDICAL_STAT	Medical
+UILABEL_ATTACK_DEFENSE	Attack {0}      Defense {1}
+UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Defense {1}    Carry {2}
+MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
+MISC_REASON_GATHERING	gathering
+MISC_REASON_CLEARING	clearing debris
+MISC_REASON_CRAFTING	crafting
+UILABEL_ATTACK	Attack
+UILABEL_DEFEND	Defend
+MISC_TURNS_HOSTILE	{0} turns hostile
+MISC_CALMS_DOWN	{0} calms down
+UILABEL_DYING	Dying
+UILABEL_CONSCIOUS	Conscious
+MISC_DIES	{0} dies
+MISC_RECOVERS	{0} wakes up
+MISC_CORPSE_NO_PLACE	The dead can't be placed there
+MISC_CANT_OCCUPY_YET	{0} can't occupy anything for a moment
+MISC_REASON_LOCKPICKING	picking locks
+MISC_REASON_TRAINING	training
+MISC_XP_GAINED	+{0} {1} XP
+MISC_CANT_EVACUATE_AIRSHIP	Nobody can get off the Airship here: fly it over open ground first
+
+# ----------------------------------------------------------------------
+# Inventory, equipment and items
+# ----------------------------------------------------------------------
+UILABEL_TYPE	Type
+UILABEL_TWO_HANDED	Two-handed
+UILABEL_WILL_BE_REPLACED	Will be replaced
+UILABEL_INVENTORY	Inventory
+UILABEL_EQUIPMENT	Equipment
+UILABEL_SINGLE	Single
+UILABEL_MAX	Max
+UILABEL_SORT	Sort
+UILABEL_GEAR	Gear
+UILABEL_ITEMS	Items
+UILABEL_CLICK_SLOT	Click a slot to choose its item. Only items that fit are listed.
+UILABEL_CLICK_SLOT_STACK	Click a slot to choose its item. Stacks hold up to the item's limit.
+UILABEL_SLOT_HEAD	Head
+UILABEL_SLOT_TORSO	Torso
+UILABEL_SLOT_MAIN_HAND	Main hand
+UILABEL_SLOT_OFF_HAND	Off hand
+UILABEL_SLOT_LEGS	Legs
+UILABEL_SLOT_FEET	Feet
+UILABEL_SLOT_ACCESSORY	Accessory
+UILABEL_PICKUP	Pickup
+UILABEL_DROP	Drop
+UILABEL_LOOT	Loot
+UILABEL_USE	Use
+UILABEL_UNKNOWN_SLOT	Unknown
+MISC_READ_FAILED	Could not read that save
+MISC_PICKUP_SELECT	Select units to pick the item up
+MISC_DROPS	{0} drops {1} {2}
+MISC_TWO_HANDED_IN_MAIN	A two-handed weapon is in the main hand
+MISC_UNKNOWN_ITEM	Unknown item
 MISC_CANT_BE_WORN	{0} can't be worn
 MISC_ITEM_NAME_FORMAT	{0} {1}
 MISC_MATERIAL_IRON	Iron
@@ -323,18 +588,7 @@ MISC_MATERIAL_SILVER	Silver
 MISC_MATERIAL_LEATHER	Leather
 MISC_MATERIAL_BONE	Bone
 MISC_MATERIAL_WOOD	Wood
-MISC_NEED_MORE_VALUE	They need {0} more value
-MISC_TRADE_READY_FEE	Ready. Trade fee: {0}
-MISC_LOAD_FAILED	Could not load {0}: {1}
-MISC_MAP_MISSING	The map for "{0}" is missing
-MISC_MAP_LOAD_FAILED	Map "{0}" could not be loaded: {1}
-MISC_LOADED	Loaded {0}
-MISC_DELETE_FAILED	Could not delete "{0}"
-MISC_DELETED	Deleted "{0}"
 MISC_USED	Used {0}
-MISC_OVERWRITE_Q	Overwrite "{0}"?
-MISC_LOAD_Q	Load "{0}"?
-MISC_DELETE_Q	Delete "{0}"?
 MISC_NOT_FIT_SLOT	{0} doesn't fit the {1} slot
 MISC_EMPTY_OFF_HAND	Empty the off hand before holding {0}
 MISC_NO_ROOM_INV	No room in the inventory for {0}
@@ -352,23 +606,576 @@ UILABEL_TIP_BUY	Buy price: {0}
 UILABEL_TIP_SELL	Sell price: {0}
 UILABEL_TIP_USE	Use: {0}
 UILABEL_TOTAL_VALUE	Total value: {0}
-UILABEL_CHOOSE_HOW_MANY	Choose how many: {0} ({1} available)
 UILABEL_TIP_LEVEL	Level: {0}
 UILABEL_TIP_PROGRESS	Progress: {0}%
 UILABEL_TIP_CURRENT_XP	Current XP: {0}
-UILABEL_ATTACK_DEFENSE	Attack {0}      Defense {1}
-UILABEL_MODEL_N	Model {0}
 UILABEL_SLOT_N_ITEM	Slot {0}: {1}
 UILABEL_SLOT_N_EMPTY	Slot {0}: empty
 UILABEL_COUNT	Count {0}
-UILABEL_ATTACK_DEFENSE_CARRY	Attack {0}    Defense {1}    Carry {2}
-MISC_IS_DOWN	{0} is down
 MISC_PICKS_UP	{0} picks up {1} {2}
-UILABEL_DATE_LINE	DAY {0} · {1} · YEAR {2}
-UILABEL_MONITOR_N	Monitor {0}
-MISC_GAINS_XP	{0} gains {1} {2} XP for {3}
-UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
 MISC_DRINKS	{0} drinks {1}
+UILABEL_TYPE_ITEM	Item
+UILABEL_TYPE_CONSUMABLE	Consumable
+UILABEL_TYPE_WEAPON	Weapon
+UILABEL_TYPE_ARMOR	Armor
+UILABEL_TYPE_ACCESSORY	Accessory
+UILABEL_SLOT_EITHER_HAND	Either hand
+UILABEL_SLOT_TWO_HAND	Two-handed
+UILABEL_CRAFT_HINT	Right-click your unit's items to put them in. What is made goes to the worker's inventory. To start working, right-click the {0} and choose Use.
+MISC_CRAFT_WRONG_ITEM	{0} can't be used here
+MISC_CRAFT_NEEDS	Put {0} in the input to start
+MISC_CRAFTS	{0} makes {1}
+MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
+MISC_ITEM_GAINED	+{0}
+UILABEL_PICK_UP	Pick up
+UILABEL_PUT_DOWN	Put down
+UILABEL_TAKE_ALL	Take all
+UILABEL_LOOT_HINT	Click an item to take it into your unit's inventory.
+UILABEL_CORPSE_OF	Corpse of {0}
+MISC_PICKS_UP_UNIT	{0} picks up {1}
+MISC_PUTS_DOWN	{0} puts down {1}
+MISC_LOOT_NO_ROOM	No room in the inventory
+MISC_LOOT_NOTHING	Nothing more fits
+FILTER_RAW_FOOD	raw food
+FILTER_FOOD	food
+FILTER_WEAPON	weapons
+FILTER_ARMOR	armor
+FILTER_WATER	water
+UILABEL_INPUT	Input
+UILABEL_OUTPUT	Output
+MISC_OUTPUT_FULL	Output full: paused
+MISC_FOOD_TO_COOK	raw meat
+MISC_COOKED_FOOD	cooked meat
+MISC_ITEMS_GAINED	+{0}x {1}
+MISC_EFFECT_LABEL	{0} {1}
+MISC_ITEM_LOST	-{0}
+MISC_ITEMS_LOST	-{0}x {1}
+MISC_GEAR_NO_ROOM	Not enough inventory space
+MISC_GEAR_ALREADY_BEST	Already wearing the best gear
+MISC_GEAR_NONE_WORN	No gear to remove
+MISC_MEAT_TAKEN_DIES	{0} dies
+FILTER_WOOD	Wood Logs
+FILTER_STONE	stone
+MISC_ANY_BONES	any Bones
+UILABEL_SORT_KIND	By Kind
+UILABEL_SORT_FULLEST	Fullest
+UILABEL_SORT_RATIO	Fullest for Size
+
+# ----------------------------------------------------------------------
+# Behaviors, tasks and Behavior Groups
+# ----------------------------------------------------------------------
+UILABEL_AUTO	AUTO
+UILABEL_BEHAVIOR	Behavior
+UILABEL_RESOURCE_GATHERING	Resource Gathering
+UILABEL_BEHAVIOR_ON	On
+UILABEL_BEHAVIOR_EAT	Eat when hunger < {0}%
+UILABEL_BEHAVIOR_REST	Rest when rested < {0}%
+UILABEL_BEHAVIOR_LEAVE_BED	Leave bed when recovered
+UILABEL_BEHAVIOR_RESCUE	Rescue downed allies
+UILABEL_BEHAVIOR_HEAL	Heal when health < {0}%
+UILABEL_BEHAVIOR_SHARE	Share
+UILABEL_BEHAVIOR_AUTO_HARVEST	Auto-Harvest: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL	Auto-Haul: {0}
+UILABEL_BEHAVIOR_WAITING	(waiting)
+UILABEL_BEHAVIOR_WAIT_TIP	Waiting: {0}
+UILABEL_BEHAVIOR_ADD	Add Behavior
+UILABEL_BEHAVIOR_HAVE	(have)
+UILABEL_BEHAVIOR_FULL	(list full)
+UILABEL_BEHAVIOR_NUMBER_TIP	Set the percent ({0}-{1}%)
+UILABEL_BEHAVIOR_PROMPT_EAT	Eat when hunger is below what percent?
+UILABEL_BEHAVIOR_PROMPT_HEAL	Heal when health is below what percent?
+UILABEL_BEHAVIOR_PROMPT_REST	Rest when rested is below what percent?
+UILABEL_BEHAVIOR_PROMPT_RANGE	From {0} to {1}. Enter sets it, Escape cancels.
+UILABEL_BEHAVIOR_PROMPT_BAD	Enter a whole number from {0} to {1}
+UILABEL_BEHAVIOR_PROMPT_SET	Set
+UILABEL_WAIT_NO_FOOD	no food to eat, and none to share nearby
+UILABEL_WAIT_NO_BED	no free bed or bedroll to rest in
+UILABEL_WAIT_NO_HEALING	no healing item, and none to share nearby
+UILABEL_WAIT_WALKING_TO_SHARE	walking to {0}, who can share one
+UILABEL_WAIT_NO_PROP	no {0} inside your claim with room for another worker
+UILABEL_WAIT_CARRY_FULL	no room to carry any more
+UILABEL_WAIT_LOAD_WAITING	carrying a load for Auto-Haul to take first
+UILABEL_WAIT_PROP_GONE	the prop is gone
+UILABEL_WAIT_OUTSIDE_CLAIM	the prop is not inside your faction's claim
+UILABEL_WAIT_LOCKED	the prop is locked
+UILABEL_WAIT_NOTHING_TO_HAUL	carrying nothing the prop takes
+UILABEL_WAIT_PROP_FULL	the prop has no room for what it carries
+UILABEL_BEHAVIOR_EAT_TIP	Eat: below {0}% hunger, eats the food item that restores the most hunger. Press # to set when.
+UILABEL_BEHAVIOR_HEAL_TIP	Heal: below {0}% health, uses the healing item that restores the most health. Press # to set when.
+UILABEL_BEHAVIOR_REST_TIP	Rest: below {0}% rested, lies down in the nearest free bed or bedroll and gets up when fully rested. Press # to set when.
+UILABEL_BEHAVIOR_LEAVE_BED_TIP	Leave bed: gets out of a bed or bedroll after 30 seconds at full health and fully rested.
+UILABEL_BEHAVIOR_RESCUE_TIP	Rescue: carries a unit of its own faction that lies unconscious nearby to the nearest free bed or bedroll.
+UILABEL_BEHAVIOR_SHARE_TIP	Share: when Eat or Heal needs an item this unit lacks, it takes one from a unit at trading range that also shares and needs it less, walking over first if that unit is a little way off. Others that share can take from this one the same way.
+UILABEL_BEHAVIOR_AUTO_HARVEST_TIP	Auto-Harvest: works the nearest {0} inside your faction's claim. With a load and an Auto-Haul that can take it, it stops to haul. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+UILABEL_BEHAVIOR_AUTO_HAUL_TIP	Auto-Haul: takes the items in the inventory (not worn gear) that the {0} takes, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+MISC_GATHERS	{0} gathers {1}
+MISC_AUTO_HAUL_STORES	{0} stores {1} {2} in the {3}
+MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
+UILABEL_TASK	Task: {0}
+UILABEL_TASK_IDLE	Idle
+UILABEL_TASK_AUTO_GOING	{0} (on the way)
+UILABEL_TASK_SHARE_WALK	Going to {0} to share
+UILABEL_TASK_MOVING	Moving
+UILABEL_TASK_RESTING	Resting
+UILABEL_TASK_FOLLOWING	Following
+UILABEL_TASK_DEFENDING	Defending
+UILABEL_AUTO_HARVEST	Auto-Harvest
+UILABEL_AUTO_HAUL	Auto-Haul
+MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside your faction's claim
+MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
+MISC_AUTO_HARVEST_HAUL_SET	{0} unit(s) will Auto-Harvest: {1}, and Auto-Haul it to the {2}
+MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
+MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
+MISC_BEHAVIOR_ADDED	Added: {0}
+MISC_BEHAVIOR_SWITCHED_ON	Already on the list, switched on: {0}
+UILABEL_PLACE	Place
+UILABEL_OCCUPY	Occupy
+UILABEL_TASK_CARRIED	Being carried
+UILABEL_TASK_PLAYING_DEAD	Playing dead
+MISC_BREAKS_FREE	{0} breaks free
+MISC_PLAYS_DEAD	{0} plays dead
+UILABEL_TASK_UNCONSCIOUS	Unconscious
+UILABEL_TASK_DEAD	Dead
+UILABEL_TASK_CARRYING	Carrying
+UILABEL_TASK_STORING	Storing
+MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
+MISC_GOES_HOME	{0} gives up the chase and heads home
+MISC_GETS_UP	{0} gets up, the danger gone
+MISC_PLACES_IN	{0} places {1} in the {2}
+MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything
+MISC_ALREADY_CARRYING	None of your selected units can carry them
+MISC_EVACUATES	{0} pushes {1} out of the {2}
+UILABEL_TASK_SITTING	Sitting
+UILABEL_TASK_LOCKED_IN	Locked in
+UILABEL_EVACUATE	Evacuate
+UILABEL_TASK_CLEARING	Clearing debris
+MISC_CLEARS_DEBRIS	{0} clears away the Debris
+UILABEL_BEHAVIOR_PATROL	Patrol Town
+UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol Spawn
+UILABEL_BEHAVIOR_ROAM	Roam
+UILABEL_BEHAVIOR_PATROL_TIP	Patrol Town: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
+UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first appeared. Chased too far from there, it gives up, heals fully and walks back, taking no damage until it is home.
+UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the claims.
+UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
+UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims
+UILABEL_AUTO_HAUL_LOGS	Auto-Haul Logs
+UILABEL_AUTO_HAUL_BONES	Auto-Haul Bones
+UILABEL_BEHAVIOR_AUTO_HAUL_LOGS	Auto-Haul Logs: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL_BONES	Auto-Haul Bones: {0}
+UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP	Auto-Haul Logs: takes the fuel the {0} burns from the inventory, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP	Auto-Haul Bones: takes any bones in the inventory to the {0}, for the Ghosts, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
+MISC_AUTO_HAUL_BONES_SET	{0} unit(s) will Auto-Haul bones to the {1}
+UILABEL_BEHAVIOR_GROUPS	Behavior Groups
+UILABEL_GROUPS_TITLE	Behavior Groups
+UILABEL_GROUP_NAME	Group {0}
+UILABEL_GROUP_MILITARY_DEFAULT	Military Default Behavior
+UILABEL_GROUP_CITIZEN_DEFAULT	Citizen Default Behavior
+UILABEL_GROUP_MILITARY_TIP	Military Default Behavior: the tasks a unit of yours gets on joining the military. Not a group: no citizen follows it.
+UILABEL_GROUP_CITIZEN_TIP	Citizen Default Behavior: the everyday tasks of a citizen. Not a group, but a group can take it in with a Group task (Group 1 starts as just that).
+UILABEL_GROUP_MEMBERS	({0})
+UILABEL_GROUP_ADD	Add Group
+UILABEL_GROUP_REMOVE	Remove Group
+UILABEL_GROUP_ADD_TASK	Add Task
+UILABEL_GROUP_ADD_DONE	Back to Tasks
+UILABEL_GROUP_ADDING	Add to {0}
+UILABEL_GROUP_HAVE	{0} (has it)
+UILABEL_GROUP_EMPTY	No tasks
+UILABEL_TASKS_GROUPS	Groups
+UILABEL_TASKS_NEEDS	Needs
+UILABEL_TASKS_MOVEMENT	Movement
+UILABEL_TASKS_BUILDING	Building
+UILABEL_TASKS_HARVESTING	Harvesting
+UILABEL_TASKS_HAULING	Hauling
+UILABEL_GROUP_ADD_ALL	Add All
+UILABEL_GROUP_ADD_ALL_TIP	Adds every {0} task listed here that this list doesn't have yet
+MISC_GROUP_ADDED_ALL	Added {0} {1} task(s)
+MISC_GROUP_HAS_ALL	This list already has all of them
+UILABEL_BEHAVIOR_GROUP	{0} Behavior
+UILABEL_BEHAVIOR_GROUP_TIP	{0} Behavior: every task of {0}, in its order, at this place in the list. A task that comes up twice counts where it first comes.
+MISC_GROUPS_FULL	There can be at most {0} groups
+MISC_GROUP_CANT_REMOVE	Group 1 and the Default Behaviors can't be removed
+MISC_GROUP_REMOVED	Group removed; {0} citizen(s) moved to Group 1
+MISC_AIRSHIP_FULL	{0} can't get on the {1}: it is full
+MISC_FLEES	{0} flees out of reach
+MISC_AIRSHIP_FALLS	{0} falls with the Airship
+UILABEL_AUTO_CONSTRUCT	Auto-Construct
+UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
+UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
+UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
+UILABEL_BEHAVIOR_SLEEP	Sleep at night
+UILABEL_BEHAVIOR_AUTO_HAUL_GROUND	Auto-Haul Ground Items
+UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP	Picks up items lying in your claim that one of its Auto-Haul tasks can put away, so they get stored
+UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nearest free bed and sleeps there until morning
+UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
+UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
+UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
+MISC_AUTO_SUPPLY_SET	{0} will haul building materials to your blueprints
+MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
+UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
+MISC_BED_PUBLIC	Public: anyone may sleep here
+MISC_BED_PRIVATE	Private: for {0} only
+UILABEL_WAIT_NO_STALL_ORDER	No Stall orders waiting
+UILABEL_BEHAVIOR_AUTO_HAUL_STALL	Auto-Haul to Stalls
+UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	Carries the items picked in a Stall's Stock window from their store to the Stall. Each order is tried once, and dropped if the item has gone
+UILABEL_BEHAVIOR_MAN_STALL	Man Stall: {0}
+UILABEL_BEHAVIOR_MAN_STALL_TIP	Stands at the {0} as its shopkeeper, so units of friendly factions can buy from it. Tasks above it in the list still come first
+UILABEL_BED_MAKE_PUBLIC	Make Public
+UILABEL_BED_MAKE_PRIVATE	Make Private
+UILABEL_MAN_STALL	Man Stall
+MISC_BED_NOW_PUBLIC	Bed is now Public: anyone may use it
+MISC_BED_NOW_PRIVATE	Bed is now Private: your faction only
+MISC_MAN_STALL_SET	{0} units will man the Stall
+
+# ----------------------------------------------------------------------
+# Building, locks and upkeep
+# ----------------------------------------------------------------------
+UILABEL_UNLOCK	Unlock
+MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
+MISC_UNLOCKED	Unlocked!
+MISC_LOCKPICK_FAILED	Lockpick failed
+MISC_UNLOCKS	{0} unlocks the {1}
+MISC_LOCKS	{0} locks the {1}
+MISC_LOCKED_NAME	{0} (Locked)
+MISC_LOCKED_IN	{0} is locked in the {1}
+UILABEL_BUILD	Build
+UILABEL_BUILD_SELECTED	Selected: {0}
+UILABEL_BUILD_NONE	Selected: None
+UILABEL_BUILD_SELECT	Select
+UILABEL_BUILD_PICKED	Picked
+UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Right-click or Escape cancels.
+UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
+MISC_BUILD_BLOCKED	No room to build here
+MISC_BUILD_UNWALKABLE	The ground here can't be built on
+UILABEL_BUILD_DESTROY	Destroy
+UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
+UILABEL_LOCK	Lock
+MISC_BUILD_SEALED	That ground is claimed by another faction
+MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
+MISC_BUILD_ALTAR_TAKEN	Your faction already has an Altar
+MISC_DESTROY_NOTHING	Nothing to destroy there
+UILABEL_CANCEL_BUILD	Cancel Construction
+MISC_BUILD_CANCELLED	The {0} blueprint is cancelled, and what was brought to it is dropped
+UILABEL_CLIMB_UP	Climb Up
+UILABEL_CLIMB_DOWN	Climb Down
+MISC_BUILT	A {0} is finished
+MISC_DOOR_SMASHED	{0} smashes the {1}
+MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
+MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
+MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
+MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
+MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
+MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
+MISC_BUILD_TILE_TAKEN	Something is already built on that tile
+UILABEL_BREAK	Break
+MISC_BUILD_EDGES_OPEN	Every edge tile of the building needs a wall or a door on this floor first
+MISC_FLOORS_COLLAPSE	With no walls or doors left under it, an upper floor falls in
+UILABEL_MATERIAL_TITLE	Build the {0} out of
+UILABEL_MATERIAL_WOOD	Wood (Wood Logs)
+UILABEL_MATERIAL_IRON	Iron (Iron Ingots)
+UILABEL_MATERIAL_CRYSTAL	Dragon Crystals
+MISC_BUILD_NO_FLOOR	It must stand on a finished floor of yours on this level
+MISC_BUILD_NEEDS_FLOOR	That tile needs a finished floor of yours on this level first
+MISC_BLUEPRINT_NEEDS	{0} {1}/{2}
+MISC_BLUEPRINT_BUILDING	Building: {0}%
+MISC_BLUEPRINT_WAITING	Building starts once all its material is here
+MISC_ON_FLOOR	On floor {0}
+MISC_BUILD_ON_FLOOR	Building on floor {0} (Q/E)
+MISC_BUILD_ON_GROUND	Building on the ground floor (Q/E)
+MISC_DOOR_LOCKED	Door locked
+MISC_DOOR_UNLOCKED	Door unlocked
+MISC_STAIRS_TURN	R: turn
+MISC_BUILD_OUTDOORS_ONLY	That goes outside buildings only
+
+# ----------------------------------------------------------------------
+# Stores and storage filters
+# ----------------------------------------------------------------------
+MISC_STORAGE_FULL	No room in storage
+UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
+MISC_STORAGE_ONLY	Only takes {0}
+UILABEL_STORAGE_TAKES	Takes only {0}.
+UILABEL_STORE_FILTER	Allowed Items
+UILABEL_STORE_FILTER_TITLE	{0}: Allowed Items
+UILABEL_STORE_DEFAULT	Default
+UILABEL_STORE_DEFAULT_TIP	Every kind but Wood Logs and Stone (they have stockpiles of their own) and bones (they go to the Altar)
+UILABEL_STORE_ALL	All
+UILABEL_STORE_NONE	None
+UILABEL_STORE_FOOD	Food
+UILABEL_STORE_RAW_FOOD	Raw Food
+UILABEL_STORE_WATER	Water
+UILABEL_STORE_WEAPONS	Weapons
+UILABEL_STORE_ARMOR	Armor and Accessories
+UILABEL_STORE_AMMO	Arrows and Bolts
+UILABEL_STORE_METAL	Ore, Metal and Crystal
+UILABEL_STORE_MATERIALS	Other Materials
+UILABEL_STORE_WOOD	Wood Logs
+UILABEL_STORE_STONE	Stone
+UILABEL_STORE_BONES	Bones
+MISC_STORE_NOT_ALLOWED	This store isn't set to take {1} ({0}): right-click it for Allowed Items
+UILABEL_STORE_HOLDS	Holds {0}/{1} items.
+UILABEL_STORE_SCROLL	Scroll the mouse wheel over it to see more.
+UILABEL_STOCK_STALL	Stock Stall
+UILABEL_STOCK_STALL_TITLE	Stock {0}
+
+# ----------------------------------------------------------------------
+# Altar, citizens and ghosts
+# ----------------------------------------------------------------------
+MISC_ALTAR_OF	Altar of {0}
+UILABEL_ALTAR_ROSTER	Manage Units
+UILABEL_MANAGE_UNITS	Manage Units
+UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4})
+UILABEL_ALTAR_OVER_SOFT_CAP	You have more citizens than the soft cap in Settings
+UILABEL_ALTAR_MILITARY	Military
+UILABEL_ALTAR_CITIZENS	Citizens
+UILABEL_ALTAR_CITIZEN	Citizen
+UILABEL_ALTAR_MILITARY_TIP	Units you command, in nine squads of up to 16
+UILABEL_ALTAR_CITIZENS_TIP	Units the game commands. They stay near your altar
+UILABEL_ALTAR_LEVELS	Combat {0}  Other {1}
+UILABEL_ALTAR_SQUAD_TAG	Squad {0}
+UILABEL_ALTAR_TO_CITIZENS	Moving in
+UILABEL_ALTAR_TO_MILITARY	Moving in
+UILABEL_ALTAR_TO_CITIZENS_TIP	Move to the citizens
+UILABEL_ALTAR_TO_MILITARY_TIP	Move to the military
+UILABEL_ALTAR_UNDO_TIP	Undo this move
+UILABEL_ALTAR_EMPTY	No one
+UILABEL_ALTAR_APPLY	Apply ({0})
+UILABEL_ALTAR_NO_STATS	No stats
+MISC_CITIZENS_HARD_CAP	You can't have more than {0} citizens
+MISC_MILITARY_FULL	Your military is full: {0} units in nine squads
+MISC_ALTAR_APPLIED	{0} joined the military, {1} became citizens.
+MISC_CITIZENS_OVER_SOFT_CAP	Your citizens are over the soft cap of {0}.
+UILABEL_RENAME_UNIT	Rename {0}
+MISC_RENAME_EMPTY	A name can't be empty
+UILABEL_ALTAR_RENAME_TIP	Right-click a portrait to rename
+UILABEL_APPEASE_GHOSTS	Appease Ghosts
+UILABEL_ALTAR_GROUP_TAG	Group {0}
+UILABEL_ALTAR_GROUP_TIP	The behavior group this citizen follows. Click for the next group, right-click for the one before. Set up groups in Behavior Groups, on your Altar's menu.
+UILABEL_APPEASE	Appease
+UILABEL_APPEASE_ALL	Appease All ({0})
+UILABEL_GHOSTS_TOTALS	Bones in this Altar: {0}    Unappeased Ghosts: {1}
+UILABEL_GHOSTS_HAUNTED	Your faction is Haunted!
+UILABEL_GHOSTS_HOW	Each Ghost wants one bones of any kind. Left unappeased for 24 hours, a Ghost haunts your whole faction: Haunted units hit and walk slower. Store bones here with the Altar's Inventory or Auto-Haul Bones.
+UILABEL_GHOSTS_BONES	Bones
+UILABEL_GHOSTS_GRAVEYARD	Graveyard
+UILABEL_GHOSTS_NO_BONES	No bones here yet. Store some with the Altar's Inventory, or give units Auto-Haul Bones.
+UILABEL_GHOSTS_NONE	No one has died
+UILABEL_GHOST_APPEASED	Appeased
+UILABEL_GHOST_HAUNTING	Haunting your faction
+UILABEL_GHOST_HOURS_LEFT	Unappeased: haunts in {0}h
+UILABEL_HUD_HAUNTED	Haunted: {0} Ghost(s) to appease at your Altar
+MISC_GHOST_RISES	The Ghost of {0} rises. Appease it at your Altar with bones within {1} hours
+MISC_GHOST_APPEASED	The Ghost of {0} is appeased
+MISC_HAUNTED	An unappeased Ghost haunts your faction: your units hit and walk slower
+MISC_NO_LONGER_HAUNTED	The Ghosts are at peace: your faction is no longer Haunted
+MISC_GHOSTS_NO_BONES	This Altar has no bones
+MISC_GHOSTS_ALL_APPEASED	Every Ghost is already appeased
+
+# ----------------------------------------------------------------------
+# Factions, reputation, trade, stalls and visitors
+# ----------------------------------------------------------------------
+UILABEL_TRADE_PANEL	Trade Panel
+UILABEL_TRADE	Trade
+UILABEL_END_DIALOGUE	End Dialogue
+UILABEL_TRADE_DROP_THEIRS	Drag or right-click items from their inventory here
+UILABEL_TRADE_DROP_YOURS	Drag or right-click your items from your inventory here
+MISC_TRADE_FULL	The trade is full
+MISC_TRADE_ALREADY	That item is already in the trade, or the trade is full.
+MISC_TRADE_NO_MORE	There is no more of that item to trade
+MISC_NO_UNIT_TO_TRADE	No unit to trade with
+MISC_TRADE_ADD_BOTH	Add items to both sides
+MISC_TRADE_NO_ROOM_YOURS	Your unit has no room for their items
+MISC_TRADE_NO_ROOM_THEIRS	They have no room for your items
+MISC_TRADE_FAILED	Trade failed
+MISC_TRADE_COMPLETE	Trade complete.
+MISC_TALK_INTERRUPTED	The conversation was interrupted.
+MISC_TRADE_ONLY_TALKING	You can only trade with the unit you are talking to.
+NPC_GREETING	Hello world.
+NPC_OPTION_WARES	Show me your wares.
+NPC_OPTION_QUEST	What else can you tell me about the quest?
+MISC_NEED_MORE_VALUE	They need {0} more value
+MISC_TRADE_READY_FEE	Ready. Trade fee: {0}
+MISC_TRADE_CHANGE	Trade: {0}
+UILABEL_TALK	Talk
+MISC_FREE_TRADE_ADD	Add items to either side
+MISC_FREE_TRADE_READY	Ready to trade
+FACTION_PLAYER	Player Faction
+FACTION_RED	Red Faction
+FACTION_GREEN	Green Faction
+FACTION_BLUE	Blue Faction
+FACTION_YELLOW	Yellow Faction
+FACTION_NOMAD	Nomad
+MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
+UILABEL_REPUTATION	Reputation
+UILABEL_FACTION_TAB	Faction
+UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
+UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)
+UILABEL_REP_NEUTRAL	Neutral: they leave each other alone
+UILABEL_SHOP	Shop
+MISC_FLAG_FACTION	Owner: {0}
+MISC_ITEM_STOLEN_NAME	{0} (Stolen)
+MISC_ITEM_STOLEN_FROM	Stolen from {0}
+MISC_STALL_MANNED	Manned by a shopkeeper
+MISC_STALL_UNMANNED	No shopkeeper: nobody can buy here
+MISC_STALL_ORDERS	{0} orders waiting to be hauled here
+MISC_STALL_ORDER_DROPPED	A Stall order was dropped: the {0} wasn't in its store any more
+MISC_STALL_STOCKED	{0} stocks the Stall with {1} {2}
+MISC_SHOPPER_BOUGHT	{0} of {1} bought {2} items at your Stall
+MISC_SHOPPER_NOTHING	Nothing for me here
+MISC_SHOPPER_COMING	{0} of {1} is coming to shop at your Stall
+MISC_RAIDER_STOLE	{0} stole {1} items from your {2}!
+MISC_RAIDER_COMING	{0} is coming to raid your {1}!
+MISC_RAIDER_BREAKING_IN	{0} is breaking in to raid your {1}!
+MISC_WANDERING_TRADER	Wandering Trader
+MISC_TRADER_ARRIVES	A Wandering Trader appears in a puff of smoke at the edge of your claim
+MISC_TRADER_BOUGHT	The Wandering Trader bought {0} items for {1} Gold Coins
+MISC_TRADER_LEAVES	The Wandering Trader vanishes in a puff of smoke
+MISC_STOLEN_NOTICED	{0} noticed the {1} was stolen from them: your reputation with them falls
+MISC_STOLEN_LABEL	Stolen goods!
+UILABEL_STALL_NO_STORES	No stores of yours in your claim
+UILABEL_STALL_STORE_EMPTY	This store is empty
+UILABEL_STALL_ORDERS	Orders waiting: {0}
+UILABEL_STALL_CLEAR_ORDERS	Clear Orders
+UILABEL_STALL_PAYMENT	Accepts as payment (click to switch):
+MISC_STALL_ORDERED	Ordered {0} {1} to the Stall
+MISC_STALL_ALREADY_ORDERED	That is already ordered to the Stall
+
+# ----------------------------------------------------------------------
+# Props
+# ----------------------------------------------------------------------
+PROP_WAGON	Wagon
+PROP_CAMPFIRE	Campfire
+PROP_BEDROLL	Bedroll
+PROP_BED	Bed
+PROP_BARREL	Barrel
+PROP_ORE	Ore
+PROP_TREE	Tree
+PROP_BOULDER	Boulder
+PROP_MUSHROOM	Mushroom
+PROP_BONES	Bones
+PROP_WALL	Barrier
+PROP_STALL	Stall
+MISC_PROP_TAKEN	Already in use
+MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
+MISC_PROP_UNREACHABLE	Unreachable
+PROP_LOCKED_CHEST	Locked Chest
+PROP_PRISONER_CAGE	Prisoner Cage
+MISC_PROP_LOCKED	Locked
+PROP_CHAIR	Chair
+PROP_BENCH	Bench
+PROP_STOOL	Stool
+PROP_TABLE	Table
+PROP_END_TABLE	End Table
+PROP_ROUND_TABLE	Round Table
+PROP_METAL_TABLE	Metal Table
+PROP_STANDING_TORCH	Standing Torch
+PROP_SUPPORT_BEAM	Support Beam
+PROP_TRAINING_DUMMY	Training Dummy
+PROP_RAW_FOOD_STORAGE	Raw Food Storage
+PROP_FOOD_STORAGE	Food Storage
+PROP_WEAPON_RACK	Weapon Rack
+PROP_ARMOR_STAND	Armor Stand
+PROP_WATER_TANK	Water Tank
+PROP_WATER_PUMP	Water Pump
+PROP_FORGE	Forge
+MISC_FUEL_LEFT	Burning: {0} min of fuel left
+MISC_NO_FUEL	No fuel
+UILABEL_PASSIVE_HINT	Takes {0} as fuel: each burns for {1} in-game minutes and makes {2} in the output, with or without a worker. It pauses while the output is full. Right-click items to move them in or out.
+PROP_ALTAR	Altar
+PROP_DEBRIS	Debris
+MISC_NO_UPKEEP	No upkeep: no bones
+MISC_UPKEEP_LEFT	Upkeep: {0} min left
+PROP_SHOP	Shop
+PROP_FARM	Farm
+PROP_TURBINE	Turbine
+PROP_STOVE	Stove
+MISC_PROP_DECAYING	Decaying
+MISC_PROP_HOLDING	Not decaying
+MISC_PROP_LOCK_OPEN	Unlocked
+MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
+MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
+MISC_PROP_UPKEEP	Upkeep: {0} hours left
+MISC_PROP_USE_BED	Can be slept in
+MISC_PROP_USE_SEAT	Can be sat on
+MISC_PROP_USE_CAGE	Can hold a prisoner
+MISC_PROP_OCCUPIED	Occupied by {0}
+MISC_PROP_USE_RESOURCE	Resource: can be gathered
+MISC_PROP_USE_CRAFTING	Crafting: needs a worker
+MISC_PROP_USE_PASSIVE	Crafting: works on its own
+MISC_PROP_USES	Uses: {0}
+MISC_PROP_USES_RAW_MEAT	Uses: any raw meat
+MISC_PROP_MAKES	Makes: {0}
+MISC_PROP_MAKES_COOKED_MEAT	Makes: cooked meat
+MISC_PROP_SKILL	Skill: {0}
+MISC_PROP_WORKERS	Up to {0} workers
+MISC_PROP_FUEL	Fuel: {0} hours left
+MISC_PROP_INVENTORY	Inventory: {0} slots
+MISC_PROP_HOLDS_ONLY	Holds only {0}
+MISC_PROP_LOCKABLE	Lockable
+PROP_AIRSHIP	Airship
+PROP_FOUNDATION	Foundation
+PROP_WOOD_WALL	Wall
+PROP_WOOD_DOOR	Door
+PROP_LADDER	Ladder
+PROP_UPPER_FLOOR	Upper Floor
+PROP_DRAGON_CRYSTAL	Dragon Crystal
+PROP_WOOD_STOCKPILE	Wood Stockpile
+PROP_STONE_STOCKPILE	Stone Stockpile
+MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
+PROP_STAIRS	Stairs
+
+# ----------------------------------------------------------------------
+# Mobs
+# ----------------------------------------------------------------------
+UILABEL_MOB_KIND	Kind
+UILABEL_MOB_NO_ITEMS	A mob carries only its own meat and bones.
+MOB_BEAR	Bear
+MOB_COW	Cow
+MOB_CHICKEN	Chicken
+MOB_BOAR	Boar
+MOB_WOLF	Wolf
+MOB_DEER	Deer
+MOB_RABBIT	Rabbit
+MOB_FISH	Fish
+MOB_CRAB	Crab
+MOB_LIZARD	Lizard
+MOB_SNAKE	Snake
+MOB_PIG	Pig
+MOB_SHEEP	Sheep
+MOB_DUCK	Duck
+MOB_TURTLE	Turtle
+MOB_BAT	Bat
+MOB_FROG	Frog
+MOB_GORLICORN	Gorlicorn
+MOB_GRIFFIN	Griffin
+MOB_MANTICORE	Manticore
+FACTION_MOB_BEAR	Bears
+FACTION_MOB_COW	Cows
+FACTION_MOB_CHICKEN	Chickens
+FACTION_MOB_BOAR	Boars
+FACTION_MOB_WOLF	Wolves
+FACTION_MOB_DEER	Deer
+FACTION_MOB_RABBIT	Rabbits
+FACTION_MOB_FISH	Fish
+FACTION_MOB_CRAB	Crabs
+FACTION_MOB_LIZARD	Lizards
+FACTION_MOB_SNAKE	Snakes
+FACTION_MOB_PIG	Pigs
+FACTION_MOB_SHEEP	Sheep
+FACTION_MOB_DUCK	Ducks
+FACTION_MOB_TURTLE	Turtles
+FACTION_MOB_BAT	Bats
+FACTION_MOB_FROG	Frogs
+FACTION_MOB_GORLICORN	Gorlicorns
+FACTION_MOB_GRIFFIN	Griffins
+FACTION_MOB_MANTICORE	Manticores
+MISC_MOB_NO_GEAR	Mobs can't wear gear
+UILABEL_MOB_NO_GEAR	No gear slots: mobs can't wear gear
+MISC_MOB_INVENTORY_LOCKED	Not available
+MISC_MOB_CANT_HOLD	A mob holds nothing but its own meat and bones
+UILABEL_MOB_INVENTORY_HIDDEN	Not available
+
+# ----------------------------------------------------------------------
+# Item names and descriptions
+# ----------------------------------------------------------------------
 ITEM_1_NAME	Iron Ore
 ITEM_1_DESC	Raw ore that can be smelted into iron ingots.
 ITEM_2_NAME	Oak Log
@@ -541,281 +1348,82 @@ ITEM_86_NAME	Warhammer
 ITEM_86_DESC	Needs both hands. The off hand must be empty.
 ITEM_87_NAME	Battleaxe
 ITEM_87_DESC	Needs both hands. The off hand must be empty.
-UILABEL_UI_SCALE	UI scale
-NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin", "Alaric", "Bertram", "Cedric", "Corwin", "Darian", "Edmund", "Edric", "Falk", "Gareth", "Godwin", "Hadrian", "Harold", "Ivor", "Jasper", "Kendrick", "Leofric", "Lorcan", "Magnus", "Malcolm", "Merrick", "Osric", "Oswin", "Percival", "Roderick", "Roland", "Silas", "Stellan", "Thaddeus", "Torin", "Tristan", "Ulric", "Victor", "Walter", "Wystan", "Aiden", "Brandt", "Callum", "Desmond", "Emrys", "Finnian", "Garrick", "Hector", "Lucan", "Rowan", "Tobias"]
-NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren", "Adela", "Alys", "Anwen", "Beatrix", "Brienne", "Catrin", "Celia", "Delphine", "Edith", "Elspeth", "Esme", "Fenna", "Freya", "Gisela", "Hazel", "Helena", "Ilsa", "Imogen", "Ivy", "Juliet", "Leda", "Linnea", "Lorelei", "Mabel", "Matilda", "Mirabel", "Nell", "Odette", "Petra", "Rosalind", "Rowena", "Seren", "Sybil", "Tamsin", "Thea", "Una", "Vera", "Viola", "Wilhelmina", "Yara", "Agnes", "Bryony", "Clara", "Ottilie", "Signe"]
-NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin", "Ash", "Avery", "Blair", "Briar", "Corin", "Dale", "Ember", "Ellis", "Emery", "Fallon", "Finch", "Gray", "Haven", "Hollis", "Indigo", "Jules", "Kai", "Lark", "Linden", "Marlow", "Merritt", "Morgan", "Nova", "Oakley", "Onyx", "Perrin", "Quinn", "Raven", "Reed", "Rook", "Rory", "Sage", "Shay", "Sparrow", "Sterling", "Tarn", "Teagan", "Vale", "Wynn", "Yarrow", "Zephyr", "Arden", "Cypress", "Ellery", "Lumen"]
-UILABEL_BODY_TYPE	Body type
-UILABEL_BODY_MASCULINE	Masculine
-UILABEL_BODY_FEMININE	Feminine
-UILABEL_BODY_ANDROGYNOUS	Androgynous
-UILABEL_TYPE_ITEM	Item
-UILABEL_TYPE_CONSUMABLE	Consumable
-UILABEL_TYPE_WEAPON	Weapon
-UILABEL_TYPE_ARMOR	Armor
-UILABEL_TYPE_ACCESSORY	Accessory
-UILABEL_SLOT_EITHER_HAND	Either hand
-UILABEL_SLOT_TWO_HAND	Two-handed
-MISC_TRADE_CHANGE	Trade: {0}
-UILABEL_NEEDS_UNITS	Add at least one unit to start.
-PROP_WAGON	Wagon
-PROP_CAMPFIRE	Campfire
-PROP_BEDROLL	Bedroll
-PROP_BED	Bed
-PROP_BARREL	Barrel
-PROP_ORE	Ore
-PROP_TREE	Tree
-PROP_BOULDER	Boulder
-PROP_MUSHROOM	Mushroom
-PROP_BONES	Bones
-PROP_WALL	Barrier
-PROP_STALL	Stall
-MISC_STORAGE_FULL	No room in storage
-MISC_PROP_TAKEN	Already in use
-MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
-MISC_GATHERS	{0} gathers {1}
-MISC_AUTO_HAUL_STORES	{0} stores {1} {2} in the {3}
-MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
-MISC_REASON_GATHERING	gathering
-MISC_REASON_CLEARING	clearing debris
-UILABEL_TASK	Task: {0}
-UILABEL_TASK_IDLE	Idle
-UILABEL_TASK_AUTO_GOING	{0} (on the way)
-UILABEL_TASK_SHARE_WALK	Going to {0} to share
-UILABEL_TASK_MOVING	Moving
-UILABEL_TASK_RESTING	Resting
-UILABEL_STORAGE_HINT	Right-click an item to take it, or drag it out to drop it where your unit stands. Right-click your unit's items to store them.
 ITEM_88_NAME	Wood Log
 ITEM_88_DESC	Wood cut from a tree, used in crafting and building.
-UILABEL_CRAFT_HINT	Right-click your unit's items to put them in. What is made goes to the worker's inventory. To start working, right-click the {0} and choose Use.
-MISC_CRAFT_WRONG_ITEM	{0} can't be used here
-MISC_CRAFT_NEEDS	Put {0} in the input to start
-MISC_CRAFTS	{0} makes {1}
-MISC_CRAFT_STOPS	{0} has nothing left to work on and stops
-MISC_REASON_CRAFTING	crafting
 ITEM_89_NAME	Raw Bear Meat
 ITEM_89_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_90_NAME	Cooked Bear Meat
 ITEM_90_DESC	Meat cooked over a fire. Restores health and hunger.
-UILABEL_TALK	Talk
-UILABEL_ATTACK	Attack
-UILABEL_FOLLOW	Follow
-UILABEL_DEFEND	Defend
-UILABEL_TASK_FOLLOWING	Following
-UILABEL_TASK_DEFENDING	Defending
-MISC_FREE_TRADE_ADD	Add items to either side
-MISC_FREE_TRADE_READY	Ready to trade
-MISC_TURNS_HOSTILE	{0} turns hostile
-MISC_CALMS_DOWN	{0} calms down
-MISC_SELECT_UNIT_FIRST	Select a unit first
-FACTION_PLAYER	Player Faction
-FACTION_RED	Red Faction
-FACTION_GREEN	Green Faction
-FACTION_BLUE	Blue Faction
-FACTION_YELLOW	Yellow Faction
-FACTION_NOMAD	Nomad
-MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
-UILABEL_MODE_PASSIVE	Passive
-UILABEL_MODE_BLOCK	Block
-UILABEL_MODE_SNEAK	Sneak
-UILABEL_MODE_RANGED	Ranged
-UILABEL_MODE_PASSIVE_TIP	Passive: never starts a fight or joins one to help others. Still follows orders, attacks included.
-UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, even with empty hands.
-UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice.
-UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
-UILABEL_SQUAD_TAB	Squad
-UILABEL_REPUTATION	Reputation
-UILABEL_FACTION_TAB	Faction
-UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
-UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)
-UILABEL_REP_NEUTRAL	Neutral: they leave each other alone
-MISC_PROP_UNREACHABLE	Unreachable
-MISC_ITEM_GAINED	+{0}
-UILABEL_SCENARIO	Scenario
-SCENARIO_VAGABOND_NAME	Vagabond
-SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat at level 1.
-SCENARIO_CUSTOM_NAME	Custom Squad
-SCENARIO_CUSTOM_DESC	Build your own squad. It starts with three units, and you can add or remove units and regular mobs, up to 32.
-PROP_LOCKED_CHEST	Locked Chest
-PROP_PRISONER_CAGE	Prisoner Cage
-UILABEL_UNLOCK	Unlock
-UILABEL_AUTO_HARVEST	Auto-Harvest
-UILABEL_AUTO_HAUL	Auto-Haul
-MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside your faction's claim
-MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
-MISC_AUTO_HARVEST_HAUL_SET	{0} unit(s) will Auto-Harvest: {1}, and Auto-Haul it to the {2}
-MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
-MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
-MISC_BEHAVIOR_ADDED	Added: {0}
-MISC_BEHAVIOR_SWITCHED_ON	Already on the list, switched on: {0}
-UILABEL_PICK_UP	Pick up
-UILABEL_PLACE	Place
-UILABEL_OCCUPY	Occupy
-UILABEL_DISBAND	Disband
-UILABEL_DISBAND_HOLD	Hold Disband for {0} seconds to confirm
-UILABEL_PUT_DOWN	Put down
-UILABEL_SHOP	Shop
-UILABEL_TASK_CARRIED	Being carried
-UILABEL_TASK_PLAYING_DEAD	Playing dead
-MISC_BREAKS_FREE	{0} breaks free
-MISC_PLAYS_DEAD	{0} plays dead
-UILABEL_DYING	Dying
-UILABEL_CONSCIOUS	Conscious
-UILABEL_TASK_UNCONSCIOUS	Unconscious
-UILABEL_TASK_DEAD	Dead
-UILABEL_TASK_CARRYING	Carrying
-UILABEL_TASK_STORING	Storing
-UILABEL_TAKE_ALL	Take all
-UILABEL_LOOT_HINT	Click an item to take it into your unit's inventory.
-UILABEL_CORPSE_OF	Corpse of {0}
-MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
-MISC_DIES	{0} dies
-MISC_RECOVERS	{0} wakes up
-LOADING_PICTURES	Pictures
-LOADING_UNIT_MODELS	Unit models
-LOADING_MOB_MODELS	Mob models
-LOADING_MOB_PICTURES	Mob pictures
-LOADING_SKY	Sky
-LOADING_PROP_MODELS	Prop models
-LOADING_MAP	Map
-LOADING_MAP_GROUND	Map ground
-LOADING_WORLD	World
-LOADING_GROUND_ITEMS	Ground items
-MISC_GOES_HOME	{0} gives up the chase and heads home
-MISC_GETS_UP	{0} gets up, the danger gone
-MISC_PICKS_UP_UNIT	{0} picks up {1}
-MISC_PUTS_DOWN	{0} puts down {1}
-MISC_PLACES_IN	{0} places {1} in the {2}
-MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become a Nomad: neutral to everyone and roaming alone.
-MISC_DISBAND_ASK_MOB	{0} will leave your squad and faction for good and go back to the wild.
-MISC_DISBANDED	{0} leaves your squad as a Nomad
-MISC_DISBANDED_MOB	{0} leaves your squad and returns to the wild
-MISC_CORPSE_NO_PLACE	The dead can't be placed there
-MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything
-MISC_ALREADY_CARRYING	None of your selected units can carry them
-MISC_LOOT_NO_ROOM	No room in the inventory
-MISC_LOOT_NOTHING	Nothing more fits
-MISC_PROP_LOCKED	Locked
-MISC_LOCKPICK_NEEDS	Needs Lockpicking {0}
-MISC_UNLOCKED	Unlocked!
-MISC_LOCKPICK_FAILED	Lockpick failed
-MISC_UNLOCKS	{0} unlocks the {1}
-MISC_LOCKS	{0} locks the {1}
-MISC_EVACUATES	{0} pushes {1} out of the {2}
-MISC_CANT_OCCUPY_YET	{0} can't occupy anything for a moment
-MISC_REASON_LOCKPICKING	picking locks
-MISC_LOCKED_NAME	{0} (Locked)
-PROP_CHAIR	Chair
-PROP_BENCH	Bench
-PROP_STOOL	Stool
-PROP_TABLE	Table
-PROP_END_TABLE	End Table
-PROP_ROUND_TABLE	Round Table
-PROP_METAL_TABLE	Metal Table
-PROP_STANDING_TORCH	Standing Torch
-PROP_SUPPORT_BEAM	Support Beam
-PROP_TRAINING_DUMMY	Training Dummy
-PROP_RAW_FOOD_STORAGE	Raw Food Storage
-PROP_FOOD_STORAGE	Food Storage
-PROP_WEAPON_RACK	Weapon Rack
-PROP_ARMOR_STAND	Armor Stand
-PROP_WATER_TANK	Water Tank
-PROP_WATER_PUMP	Water Pump
-PROP_FORGE	Forge
-FILTER_RAW_FOOD	raw food
-FILTER_FOOD	food
-FILTER_WEAPON	weapons
-FILTER_ARMOR	armor
-FILTER_WATER	water
-MISC_STORAGE_ONLY	Only takes {0}
-UILABEL_STORAGE_TAKES	Takes only {0}.
-UILABEL_TASK_SITTING	Sitting
-UILABEL_TASK_LOCKED_IN	Locked in
-MISC_LOCKED_IN	{0} is locked in the {1}
-MISC_REASON_TRAINING	training
-MISC_XP_GAINED	+{0} {1} XP
-UILABEL_INPUT	Input
-UILABEL_OUTPUT	Output
-MISC_FUEL_LEFT	Burning: {0} min of fuel left
-MISC_NO_FUEL	No fuel
-MISC_OUTPUT_FULL	Output full: paused
-UILABEL_PASSIVE_HINT	Takes {0} as fuel: each burns for {1} in-game minutes and makes {2} in the output, with or without a worker. It pauses while the output is full. Right-click items to move them in or out.
 ITEM_91_NAME	Water
 ITEM_91_DESC	Fresh water from a pump.
 ITEM_92_NAME	Iron Ingot
 ITEM_92_DESC	A bar of iron smelted from ore at a forge.
-ITEM_93_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_93_NAME	Raw Cow Meat
-ITEM_94_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_93_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_94_NAME	Cooked Cow Meat
-ITEM_95_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_94_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_95_NAME	Raw Chicken Meat
-ITEM_96_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_95_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_96_NAME	Cooked Chicken Meat
-ITEM_97_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_96_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_97_NAME	Raw Boar Meat
-ITEM_98_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_97_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_98_NAME	Cooked Boar Meat
-ITEM_99_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_98_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_99_NAME	Raw Wolf Meat
-ITEM_100_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_99_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_100_NAME	Cooked Wolf Meat
-ITEM_101_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_100_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_101_NAME	Raw Deer Meat
-ITEM_102_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_101_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_102_NAME	Cooked Deer Meat
-ITEM_103_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_102_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_103_NAME	Raw Rabbit Meat
-ITEM_104_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_103_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_104_NAME	Cooked Rabbit Meat
-ITEM_105_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_104_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_105_NAME	Raw Fish
-ITEM_106_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_105_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_106_NAME	Cooked Fish
-ITEM_107_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_106_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_107_NAME	Raw Crab Meat
-ITEM_108_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_107_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_108_NAME	Cooked Crab Meat
-ITEM_109_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_108_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_109_NAME	Raw Lizard Meat
-ITEM_110_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_109_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_110_NAME	Cooked Lizard Meat
-ITEM_111_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_110_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_111_NAME	Raw Snake Meat
-ITEM_112_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_111_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_112_NAME	Cooked Snake Meat
-ITEM_113_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_112_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_113_NAME	Raw Pig Meat
-ITEM_114_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_113_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_114_NAME	Cooked Pig Meat
-ITEM_115_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_114_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_115_NAME	Raw Sheep Meat
-ITEM_116_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_115_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_116_NAME	Cooked Sheep Meat
-ITEM_117_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_116_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_117_NAME	Raw Duck Meat
-ITEM_118_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_117_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_118_NAME	Cooked Duck Meat
-ITEM_119_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_118_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_119_NAME	Raw Turtle Meat
-ITEM_120_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_119_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_120_NAME	Cooked Turtle Meat
-ITEM_121_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_120_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_121_NAME	Raw Bat Meat
-ITEM_122_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_121_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_122_NAME	Cooked Bat Meat
-ITEM_123_DESC	Uncooked meat. Cook it at a campfire.
+ITEM_122_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_123_NAME	Raw Frog Meat
-ITEM_124_DESC	Meat cooked over a fire. Restores health and hunger.
+ITEM_123_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_124_NAME	Cooked Frog Meat
-ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
+ITEM_124_DESC	Meat cooked over a fire. Restores health and hunger.
 ITEM_125_NAME	Mushroom
-MISC_FOOD_TO_COOK	raw meat
-MISC_COOKED_FOOD	cooked meat
-MISC_ITEMS_GAINED	+{0}x {1}
-MISC_EFFECT_LABEL	{0} {1}
-MISC_ITEM_LOST	-{0}
-MISC_ITEMS_LOST	-{0}x {1}
+ITEM_125_DESC	A small wild mushroom. Eaten raw, it does little for health or hunger.
 ITEM_126_NAME	Poison Mushroom
 ITEM_126_DESC	A wild mushroom that looks like any other. Eating it costs health and hunger.
 ITEM_127_NAME	Short Bow
@@ -886,538 +1494,7 @@ ITEM_159_NAME	Raw Manticore Meat
 ITEM_159_DESC	Uncooked meat. Cook it at a campfire.
 ITEM_160_NAME	Cooked Manticore Meat
 ITEM_160_DESC	Rich meat cooked over a fire. Restores a great deal of health and hunger.
-UILABEL_OPTIMIZE	Optimize
-UILABEL_REMOVE_ALL	Remove All
-MISC_GEAR_NO_ROOM	Not enough inventory space
-MISC_GEAR_ALREADY_BEST	Already wearing the best gear
-MISC_GEAR_NONE_WORN	No gear to remove
-UILABEL_OPTIMIZE_ALL	Optimize All
-MISC_OPTIMIZE_ALL_ASK	Optimize the gear of the {0} units in this squad? Each unit chooses from what it wears and carries. A unit without room for what comes off is left as it is. These settings are kept for the next click of Optimize All.
-UILABEL_OPTIMIZE_BALANCE	Attack {0}% / Defense {1}%
-UILABEL_OPTIMIZE_ACCESSORIES	Change accessories
-UILABEL_OPTIMIZE_TWO_HANDED	Allow two-handed weapons
-UILABEL_OPTIMIZE_VALUE_TIES	Ties go to the more valuable item
-MISC_OPTIMIZE_ALL_SAME	Every unit already wears its best gear
-MISC_OPTIMIZE_ALL_DONE	Optimized gear for {0} units
-MISC_OPTIMIZE_ALL_SOME_ROOM	Optimized gear for {0} units; {1} lacked inventory space
-GAME_TITLE_FIRST	Kobold
-GAME_TITLE_SECOND	Survival
-MISC_TITLE_KEYS	Select  //  Enter Confirm
-UILABEL_LANGUAGE_LABEL	Language:
-PROP_ALTAR	Altar
-MISC_ALTAR_OF	Altar of {0}
-PROP_DEBRIS	Debris
-UILABEL_BUILD	Build
-UILABEL_BUILD_SELECTED	Selected: {0}
-UILABEL_BUILD_NONE	Selected: None
-UILABEL_BUILD_SELECT	Select
-UILABEL_BUILD_PICKED	Picked
-UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Right-click or Escape cancels.
-UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
-MISC_BUILD_BLOCKED	No room to build here
-MISC_BUILD_UNWALKABLE	The ground here can't be built on
-MISC_NO_UPKEEP	No upkeep: no bones
-MISC_UPKEEP_LEFT	Upkeep: {0} min left
-PROP_SHOP	Shop
-PROP_FARM	Farm
-PROP_TURBINE	Turbine
-PROP_STOVE	Stove
-UILABEL_BUILD_DESTROY	Destroy
-UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
-UILABEL_LOCK	Lock
-UILABEL_EVACUATE	Evacuate
-MISC_BUILD_SEALED	That ground is claimed by another faction
-MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
-MISC_BUILD_ALTAR_TAKEN	Your faction already has an Altar
-MISC_DESTROY_NOTHING	Nothing to destroy there
-MISC_FLAG_FACTION	Owner: {0}
-MISC_FLAG_HEALTH	Health: {0} of {1}
-MISC_PROP_DECAYING	Decaying
-MISC_PROP_HOLDING	Not decaying
-MISC_PROP_LOCK_OPEN	Unlocked
-MISC_PROP_LOCK_YOURS	Locked to outsiders (open to you)
-MISC_PROP_LOCK_SHUT	Locked (Lockpicking {0})
-MISC_PROP_UPKEEP	Upkeep: {0} hours left
-MISC_PROP_USE_BED	Can be slept in
-MISC_PROP_USE_SEAT	Can be sat on
-MISC_PROP_USE_CAGE	Can hold a prisoner
-MISC_PROP_OCCUPIED	Occupied by {0}
-MISC_PROP_USE_RESOURCE	Resource: can be gathered
-MISC_PROP_USE_CRAFTING	Crafting: needs a worker
-MISC_PROP_USE_PASSIVE	Crafting: works on its own
-MISC_PROP_USES	Uses: {0}
-MISC_PROP_USES_RAW_MEAT	Uses: any raw meat
-MISC_PROP_MAKES	Makes: {0}
-MISC_PROP_MAKES_COOKED_MEAT	Makes: cooked meat
-MISC_PROP_SKILL	Skill: {0}
-MISC_PROP_WORKERS	Up to {0} workers
-MISC_PROP_FUEL	Fuel: {0} hours left
-MISC_PROP_INVENTORY	Inventory: {0} slots
-MISC_PROP_HOLDS_ONLY	Holds only {0}
-MISC_PROP_LOCKABLE	Lockable
-MOB_BEAR	Bear
-MOB_COW	Cow
-MOB_CHICKEN	Chicken
-MOB_BOAR	Boar
-MOB_WOLF	Wolf
-MOB_DEER	Deer
-MOB_RABBIT	Rabbit
-MOB_FISH	Fish
-MOB_CRAB	Crab
-MOB_LIZARD	Lizard
-MOB_SNAKE	Snake
-MOB_PIG	Pig
-MOB_SHEEP	Sheep
-MOB_DUCK	Duck
-MOB_TURTLE	Turtle
-MOB_BAT	Bat
-MOB_FROG	Frog
-MOB_GORLICORN	Gorlicorn
-MOB_GRIFFIN	Griffin
-MOB_MANTICORE	Manticore
-FACTION_MOB_BEAR	Bears
-FACTION_MOB_COW	Cows
-FACTION_MOB_CHICKEN	Chickens
-FACTION_MOB_BOAR	Boars
-FACTION_MOB_WOLF	Wolves
-FACTION_MOB_DEER	Deer
-FACTION_MOB_RABBIT	Rabbits
-FACTION_MOB_FISH	Fish
-FACTION_MOB_CRAB	Crabs
-FACTION_MOB_LIZARD	Lizards
-FACTION_MOB_SNAKE	Snakes
-FACTION_MOB_PIG	Pigs
-FACTION_MOB_SHEEP	Sheep
-FACTION_MOB_DUCK	Ducks
-FACTION_MOB_TURTLE	Turtles
-FACTION_MOB_BAT	Bats
-FACTION_MOB_FROG	Frogs
-FACTION_MOB_GORLICORN	Gorlicorns
-FACTION_MOB_GRIFFIN	Griffins
-FACTION_MOB_MANTICORE	Manticores
-MISC_MOB_NO_GEAR	Mobs can't wear gear
-UILABEL_MOB_NO_GEAR	No gear slots: mobs can't wear gear
-MISC_MEAT_TAKEN_DIES	{0} dies
-MISC_MOB_INVENTORY_LOCKED	Not available
-MISC_MOB_CANT_HOLD	A mob holds nothing but its own meat and bones
-UILABEL_CLEAR	Clear
-UILABEL_TASK_CLEARING	Clearing debris
-MISC_CLEARS_DEBRIS	{0} clears away the Debris
-UILABEL_MOB_INVENTORY_HIDDEN	Not available
-UILABEL_BEHAVIOR_PATROL	Patrol Town
-UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol Spawn
-UILABEL_BEHAVIOR_ROAM	Roam
-UILABEL_BEHAVIOR_PATROL_TIP	Patrol Town: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
-UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first appeared. Chased too far from there, it gives up, heals fully and walks back, taking no damage until it is home.
-UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the claims.
-UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
-UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims
-UILABEL_TEMPERAMENT_AVOIDANT	Avoidant
-UILABEL_TEMPERAMENT_PASSIVE	Passive
-UILABEL_TEMPERAMENT_NEUTRAL	Neutral
-UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressive
-UILABEL_TEMPERAMENT	Temperament: {0}
-MISC_LOG_MISSES	{0} misses {1}
-MISC_LOG_SHOOTS_MISS	{0} shoots at {1} and misses
-MISC_LOG_DODGES	{0} dodges {1}'s swing
-MISC_LOG_SHRUGS	{0} shrugs off {1}'s hit
-MISC_LOG_HITS	{0} hits {1}
-MISC_LOG_SHOOTS	{0} shoots {1}
-MISC_LOG_HITS_BLOCKED	{0} hits {1} (blocked)
-MISC_LOG_SHOOTS_BLOCKED	{0} shoots {1} (blocked)
-MISC_LOG_DAMAGE	{0} takes {1} damage
-MISC_LOG_ELIXIR_ENDS	{0}'s {1} wears off
-MISC_LOG_NOTICES	{0} notices {1}
-MISC_AUTOSAVE_FAILED	Autosave failed.
-UILABEL_WORLD_GENERATION	World Generation
-UILABEL_GEN_LAND	Land
-UILABEL_GEN_CONTINENTS	Continents
-UILABEL_GEN_WARP	Coast warp
-UILABEL_GEN_HILLS	Hills
-UILABEL_GEN_MOUNTAINS	Mountains
-UILABEL_GEN_MOISTURE	Moisture
-UILABEL_GEN_TEMPERATURE	Temperature
-UILABEL_GEN_FORESTS	Forests
-UILABEL_GEN_SEED	Seed
-UILABEL_GEN_SIZE	Size
-UILABEL_GEN_RANDOM	Random
-UILABEL_GEN_PREVIEW	Preview
-UILABEL_GEN_DONE	Generated {0}: {1} bytes
-UILABEL_GEN_GENERATE	Generate
-UILABEL_GEN_CONTINUE	Continue to Level Editor
-UILABEL_GEN_MAPS	Existing Maps
-UILABEL_GEN_TAB_WORLD	World
-UILABEL_GEN_TAB_THEME	Theme
-UILABEL_GEN_STYLE	Map style
-UILABEL_STYLE_OVERWORLD	Overworld
-UILABEL_STYLE_OVERWORLD_ABOUT	One large island in a sea.
-UILABEL_STYLE_VALLEY	Walled Valley
-UILABEL_STYLE_VALLEY_ABOUT	Lakes and land ringed by sheer cliffs.
-UILABEL_STYLE_ARCHIPELAGO	Archipelago
-UILABEL_STYLE_ARCHIPELAGO_ABOUT	Many small islands in a sea.
-UILABEL_STYLE_CAVERN	Cavern
-UILABEL_STYLE_CAVERN_ABOUT	Stalagmites and acid pools, walled in.
-UILABEL_STYLE_GALAXY	Galaxy Sea
-UILABEL_STYLE_GALAXY_ABOUT	Harsh rock in a glittering neon sea.
-UILABEL_STYLE_VOID	Void Islands
-UILABEL_STYLE_VOID_ABOUT	Harsh floating islands over a black void.
-UILABEL_STYLE_CALDERA	Caldera
-UILABEL_STYLE_CALDERA_ABOUT	Ash around a lava sea, walled in.
-UILABEL_THEME_PRESET	Preset
-UILABEL_THEME_PRESET_OVERWORLD	Overworld
-UILABEL_THEME_PRESET_CAVERN	Cavern
-UILABEL_THEME_PRESET_GALAXY	Galaxy
-UILABEL_THEME_PRESET_VOID	Void
-UILABEL_THEME_PRESET_EMBER	Ember
-UILABEL_THEME_ON	On
-UILABEL_THEME_OFF	Off
-UILABEL_THEME_RED	Red
-UILABEL_THEME_GREEN	Green
-UILABEL_THEME_BLUE	Blue
-UILABEL_THEME_SKY	Sky
-UILABEL_THEME_SKY_KIND	Sky type
-UILABEL_THEME_SKY_GRADIENT	Gradient
-UILABEL_THEME_SKY_SOLID	Solid color
-UILABEL_THEME_SKY_CAVE	Cave
-UILABEL_THEME_SKY_GALAXY	Galaxy
-UILABEL_THEME_SKY_DAY_TOP	Day top / rock / nebula
-UILABEL_THEME_SKY_DAY_HORIZON	Day horizon / depths
-UILABEL_THEME_SKY_NIGHT_TOP	Night top
-UILABEL_THEME_SKY_NIGHT_HORIZON	Night horizon
-UILABEL_THEME_SKY_DUSK	Dusk glow
-UILABEL_THEME_STARS	Stars
-UILABEL_THEME_SUN_MOON	Sun, Moon and Time
-UILABEL_THEME_SUN_SHOWN	Show sun
-UILABEL_THEME_SUN_COLOR	Sun color
-UILABEL_THEME_MOON_SHOWN	Show moon
-UILABEL_THEME_MOON_COLOR	Moon color
-UILABEL_THEME_DAY_CYCLE	Day and night
-UILABEL_THEME_FIXED_HOUR	Fixed hour if off
-UILABEL_THEME_LIGHT	Light
-UILABEL_THEME_LIGHT_COLOR	Light color
-UILABEL_THEME_SUN_STRENGTH	Direct light
-UILABEL_THEME_AMBIENT	Ambient light
-UILABEL_THEME_SHADOWS	Shadow harshness
-UILABEL_THEME_MODEL_LIGHT	Light on props, units
-UILABEL_THEME_FOG	Fog
-UILABEL_THEME_FOG_COLOR	Fog color
-UILABEL_THEME_WATER	Water
-UILABEL_THEME_WATER_SHOWN	Water (off: void)
-UILABEL_THEME_WATER_COLOR	Water color
-UILABEL_THEME_WATER_DEEP	Deep color
-UILABEL_THEME_WATER_OPACITY	Opacity
-UILABEL_THEME_WATER_SPEED	Speed
-UILABEL_THEME_WATER_RIPPLES	Ripples
-UILABEL_THEME_WATER_GLITTER	Glitter
-UILABEL_THEME_WATER_GLOW	Glow
-UILABEL_THEME_GROUND	Ground
-UILABEL_THEME_GROUND_TINT	Ground tint
-UILABEL_THEME_GROUND_TINT_AMOUNT	Tint amount
-UILABEL_THEME_ROCK_COLOR	Steep rock color
-MISC_GEN_NEEDS_NAME	Needs a name made of letters, digits, spaces, - or _.
-UILABEL_EDITOR_TITLE	Level Editor: {0}
-UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
-UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
-UILABEL_EDITOR_RELOAD	Reload
-UILABEL_EDITOR_SPAWN	Spawn Point
-UILABEL_EDITOR_ERASE	Erase
-UILABEL_EDITOR_ENTITIES	Entities
-UILABEL_EDITOR_PROPS	Props
-UILABEL_EDITOR_ITEMS	Items
-UILABEL_EDITOR_UNITS	Units
-UILABEL_EDITOR_PLAYER_UNIT	Player Unit
-UILABEL_EDITOR_NPC_UNIT	NPC: {0}
-UILABEL_EDITOR_MOBS	Mobs
-UILABEL_EDITOR_BOSS_MOBS	Boss Mobs
-UILABEL_EDITOR_COUNTS	{0} entities, {1} props, {2} items
-UILABEL_EDITOR_FILE	File: {0} bytes
-UILABEL_EDITOR_HELP1	Left: place. Right: erase. Q/E: turn.
-UILABEL_EDITOR_HELP2	Ctrl+S: save. Ctrl+Z: undo. M: map.
-UILABEL_EDITOR_EXIT	Exit to World Generation
-UILABEL_EDITOR_EXIT_SURE	Unsaved! Click again to exit
-MISC_LEVEL_SAVED	Saved level {0}.
-MISC_FORMATION	Formation: {0}, {1}
-UILABEL_FORMATION_LINE	Line
-UILABEL_FORMATION_CIRCLE	Circle
-UILABEL_FORMATION_RECTANGLE	Rectangle
-UILABEL_FORMATION_WEDGE	Wedge
-UILABEL_FORMATION_TIGHT	tight
-UILABEL_FORM_BUTTON	Form
-UILABEL_FORM_TIP	Formation of the selected units. Alt and 1 to 5 pick one without the list.
-UILABEL_FORMATION_MAKE_TIGHT	Make tight
-UILABEL_FORMATION_MAKE_LOOSE	Make loose
-UILABEL_FORMATION_DRAG_KEY	Right-drag
-UILABEL_FORMATION_DRAG	Place squad
-UILABEL_FORMATION_LOOSE	loose
-MISC_LEVEL_OTHER_MAP	That level is for the map {0}.
-UILABEL_LEVEL_RANDOM	Random set-up
-UILABEL_PARTY_MAP	Map: {0}
-UILABEL_PARTY_LEVEL	Level: {0}
-CONTROL_KEYS_11	Numpad 1 to 9
-CONTROL_DOES_11	Select that squad (Shift adds it; press twice to look at it)
-CONTROL_KEYS_12	Ctrl + Numpad 1 to 9
-CONTROL_DOES_12	Move the selected units into that squad
-CONTROL_KEYS_13	Numpad 0
-CONTROL_DOES_13	Select your unit nearest the camera's centre
-CONTROL_KEYS_14	Alt + 1 / 2 / 3 / 4, or the Form button
-CONTROL_DOES_14	Selected units form a line, circle, rectangle or wedge
-CONTROL_KEYS_15	Alt + 5
-CONTROL_DOES_15	Switch between tight and loose formations
-CONTROL_KEYS_16	Alt + right mouse drag
-CONTROL_DOES_16	Place the selected units around where the drag starts; the drag sets the size
-UILABEL_SQUAD_HEADING	Squad: {0}
-UILABEL_SQUAD_DEFAULT_NAME	Squad {0}
-UILABEL_SQUAD_RENAME	Rename Squad {0}
-UILABEL_SQUAD_RENAME_DONE	Done
-UILABEL_SELECT_MENU	Select
-UILABEL_SELECT_ALL	Select All
-UILABEL_SELECT_CLOSEST	Select Closest
-UILABEL_SELECT_IDLE	Select Idle
-UILABEL_SELECT_BUSY	Select Non-Idle
-MISC_SQUAD_ASSIGNED	{0} unit(s) moved into Squad {1}
-MISC_SQUAD_FULL_SOME	Squad {0} is full: {1} moved in, {2} did not fit
-MISC_SQUADS_FULL_CITIZEN	{0} becomes a citizen: every squad is full
-UILABEL_CITIZEN_SOFT_CAP	Citizens: soft cap
-UILABEL_CITIZEN_HARD_CAP	Citizens: hard cap
-UILABEL_ALTAR_ROSTER	Manage Units
-UILABEL_MANAGE_UNITS	Manage Units
-UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4})
-UILABEL_ALTAR_OVER_SOFT_CAP	You have more citizens than the soft cap in Settings
-UILABEL_ALTAR_MILITARY	Military
-UILABEL_ALTAR_CITIZENS	Citizens
-UILABEL_ALTAR_CITIZEN	Citizen
-UILABEL_ALTAR_MILITARY_TIP	Units you command, in nine squads of up to 16
-UILABEL_ALTAR_CITIZENS_TIP	Units the game commands. They stay near your altar
-UILABEL_ALTAR_LEVELS	Combat {0}  Other {1}
-UILABEL_ALTAR_SQUAD_TAG	Squad {0}
-UILABEL_ALTAR_TO_CITIZENS	Moving in
-UILABEL_ALTAR_TO_MILITARY	Moving in
-UILABEL_ALTAR_TO_CITIZENS_TIP	Move to the citizens
-UILABEL_ALTAR_TO_MILITARY_TIP	Move to the military
-UILABEL_ALTAR_UNDO_TIP	Undo this move
-UILABEL_ALTAR_EMPTY	No one
-UILABEL_ALTAR_APPLY	Apply ({0})
-UILABEL_ALTAR_NO_STATS	No stats
-MISC_CITIZENS_HARD_CAP	You can't have more than {0} citizens
-MISC_MILITARY_FULL	Your military is full: {0} units in nine squads
-MISC_ALTAR_APPLIED	{0} joined the military, {1} became citizens.
-MISC_CITIZENS_OVER_SOFT_CAP	Your citizens are over the soft cap of {0}.
-UILABEL_MAP_PICK_TITLE	Choose where to start
-UILABEL_MAP_PICK_MAPS	Map
-UILABEL_MAP_PICK_LEVELS	Level
-UILABEL_MAP_PICK_LOADING	Drawing the map...
-UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when the game starts.
-UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
-UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
-UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
-UILABEL_NEXT	Next
-UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Right-click for Selected, All or Custom.
-UILABEL_RENAME	Rename
-UILABEL_RENAME_UNIT	Rename {0}
-MISC_RENAME_EMPTY	A name can't be empty
-UILABEL_ALTAR_RENAME_TIP	Right-click a portrait to rename
-UILABEL_AUTO_HAUL_LOGS	Auto-Haul Logs
-UILABEL_AUTO_HAUL_BONES	Auto-Haul Bones
-UILABEL_BEHAVIOR_AUTO_HAUL_LOGS	Auto-Haul Logs: {0}
-UILABEL_BEHAVIOR_AUTO_HAUL_BONES	Auto-Haul Bones: {0}
-UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP	Auto-Haul Logs: takes the fuel the {0} burns from the inventory, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
-UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP	Auto-Haul Bones: takes any bones in the inventory to the {0}, for the Ghosts, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
-MISC_AUTO_HAUL_BONES_SET	{0} unit(s) will Auto-Haul bones to the {1}
-UILABEL_APPEASE_GHOSTS	Appease Ghosts
-UILABEL_BEHAVIOR_GROUPS	Behavior Groups
-UILABEL_GROUPS_TITLE	Behavior Groups
-UILABEL_GROUP_NAME	Group {0}
-UILABEL_GROUP_MILITARY_DEFAULT	Military Default Behavior
-UILABEL_GROUP_CITIZEN_DEFAULT	Citizen Default Behavior
-UILABEL_GROUP_MILITARY_TIP	Military Default Behavior: the tasks a unit of yours gets on joining the military. Not a group: no citizen follows it.
-UILABEL_GROUP_CITIZEN_TIP	Citizen Default Behavior: the everyday tasks of a citizen. Not a group, but a group can take it in with a Group task (Group 1 starts as just that).
-UILABEL_GROUP_MEMBERS	({0})
-UILABEL_GROUP_ADD	Add Group
-UILABEL_GROUP_REMOVE	Remove Group
-UILABEL_GROUP_ADD_TASK	Add Task
-UILABEL_GROUP_ADD_DONE	Back to Tasks
-UILABEL_GROUP_ADDING	Add to {0}
-UILABEL_GROUP_HAVE	{0} (has it)
-UILABEL_GROUP_EMPTY	No tasks
-UILABEL_TASKS_GROUPS	Groups
-UILABEL_TASKS_NEEDS	Needs
-UILABEL_TASKS_MOVEMENT	Movement
-UILABEL_TASKS_BUILDING	Building
-UILABEL_TASKS_HARVESTING	Harvesting
-UILABEL_TASKS_HAULING	Hauling
-UILABEL_GROUP_ADD_ALL	Add All
-UILABEL_GROUP_ADD_ALL_TIP	Adds every {0} task listed here that this list doesn't have yet
-MISC_GROUP_ADDED_ALL	Added {0} {1} task(s)
-MISC_GROUP_HAS_ALL	This list already has all of them
-UILABEL_BEHAVIOR_GROUP	{0} Behavior
-UILABEL_BEHAVIOR_GROUP_TIP	{0} Behavior: every task of {0}, in its order, at this place in the list. A task that comes up twice counts where it first comes.
-UILABEL_ALTAR_GROUP_TAG	Group {0}
-UILABEL_ALTAR_GROUP_TIP	The behavior group this citizen follows. Click for the next group, right-click for the one before. Set up groups in Behavior Groups, on your Altar's menu.
-MISC_GROUPS_FULL	There can be at most {0} groups
-MISC_GROUP_CANT_REMOVE	Group 1 and the Default Behaviors can't be removed
-MISC_GROUP_REMOVED	Group removed; {0} citizen(s) moved to Group 1
-UILABEL_APPEASE	Appease
-UILABEL_APPEASE_ALL	Appease All ({0})
-UILABEL_GHOSTS_TOTALS	Bones in this Altar: {0}    Unappeased Ghosts: {1}
-UILABEL_GHOSTS_HAUNTED	Your faction is Haunted!
-UILABEL_GHOSTS_HOW	Each Ghost wants one bones of any kind. Left unappeased for 24 hours, a Ghost haunts your whole faction: Haunted units hit and walk slower. Store bones here with the Altar's Inventory or Auto-Haul Bones.
-UILABEL_GHOSTS_BONES	Bones
-UILABEL_GHOSTS_GRAVEYARD	Graveyard
-UILABEL_GHOSTS_NO_BONES	No bones here yet. Store some with the Altar's Inventory, or give units Auto-Haul Bones.
-UILABEL_GHOSTS_NONE	No one has died
-UILABEL_GHOST_APPEASED	Appeased
-UILABEL_GHOST_HAUNTING	Haunting your faction
-UILABEL_GHOST_HOURS_LEFT	Unappeased: haunts in {0}h
-UILABEL_HUD_HAUNTED	Haunted: {0} Ghost(s) to appease at your Altar
-MISC_GHOST_RISES	The Ghost of {0} rises. Appease it at your Altar with bones within {1} hours
-MISC_GHOST_APPEASED	The Ghost of {0} is appeased
-MISC_HAUNTED	An unappeased Ghost haunts your faction: your units hit and walk slower
-MISC_NO_LONGER_HAUNTED	The Ghosts are at peace: your faction is no longer Haunted
-MISC_GHOSTS_NO_BONES	This Altar has no bones
-MISC_GHOSTS_ALL_APPEASED	Every Ghost is already appeased
-PROP_AIRSHIP	Airship
-MISC_AIRSHIP_FULL	{0} can't get on the {1}: it is full
-MISC_FLEES	{0} flees out of reach
-MISC_CANT_EVACUATE_AIRSHIP	Nobody can get off the Airship here: fly it over open ground first
-MISC_AIRSHIP_FALLS	{0} falls with the Airship
-PROP_FOUNDATION	Foundation
-PROP_WOOD_WALL	Wall
-PROP_WOOD_DOOR	Door
-PROP_LADDER	Ladder
-PROP_UPPER_FLOOR	Upper Floor
-UILABEL_CANCEL_BUILD	Cancel Construction
-MISC_BUILD_CANCELLED	The {0} blueprint is cancelled, and what was brought to it is dropped
-UILABEL_AUTO_CONSTRUCT	Auto-Construct
-UILABEL_CLIMB_UP	Climb Up
-UILABEL_CLIMB_DOWN	Climb Down
-UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
-UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
-UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
-UILABEL_BEHAVIOR_SLEEP	Sleep at night
-UILABEL_BEHAVIOR_AUTO_HAUL_GROUND	Auto-Haul Ground Items
-UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP	Picks up items lying in your claim that one of its Auto-Haul tasks can put away, so they get stored
-UILABEL_STORE_FILTER	Allowed Items
-UILABEL_STORE_FILTER_TITLE	{0}: Allowed Items
-UILABEL_STORE_DEFAULT	Default
-UILABEL_STORE_DEFAULT_TIP	Every kind but Wood Logs and Stone (they have stockpiles of their own) and bones (they go to the Altar)
-UILABEL_STORE_ALL	All
-UILABEL_STORE_NONE	None
-UILABEL_STORE_FOOD	Food
-UILABEL_STORE_RAW_FOOD	Raw Food
-UILABEL_STORE_WATER	Water
-UILABEL_STORE_WEAPONS	Weapons
-UILABEL_STORE_ARMOR	Armor and Accessories
-UILABEL_STORE_AMMO	Arrows and Bolts
-UILABEL_STORE_METAL	Ore, Metal and Crystal
-UILABEL_STORE_MATERIALS	Other Materials
-UILABEL_STORE_WOOD	Wood Logs
-UILABEL_STORE_STONE	Stone
-UILABEL_STORE_BONES	Bones
-MISC_STORE_NOT_ALLOWED	This store isn't set to take {1} ({0}): right-click it for Allowed Items
-UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nearest free bed and sleeps there until morning
-UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
-UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
-UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
-MISC_AUTO_SUPPLY_SET	{0} will haul building materials to your blueprints
-MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
-MISC_BUILT	A {0} is finished
-MISC_DOOR_SMASHED	{0} smashes the {1}
-MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
-MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
-MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
-MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
-MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
-MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
-MISC_BUILD_TILE_TAKEN	Something is already built on that tile
 ITEM_161_NAME	Stone
 ITEM_161_DESC	A rough block of stone, broken from a boulder.
 ITEM_162_NAME	Dragon Crystal
 ITEM_162_DESC	A rare crystal that glows with a dragon's heat. The toughest thing to build with.
-PROP_DRAGON_CRYSTAL	Dragon Crystal
-PROP_WOOD_STOCKPILE	Wood Stockpile
-PROP_STONE_STOCKPILE	Stone Stockpile
-FILTER_WOOD	Wood Logs
-FILTER_STONE	stone
-UILABEL_BREAK	Break
-MISC_ANY_BONES	any Bones
-UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
-MISC_BUILD_EDGES_OPEN	Every edge tile of the building needs a wall or a door on this floor first
-MISC_FLOORS_COLLAPSE	With no walls or doors left under it, an upper floor falls in
-UILABEL_MATERIAL_TITLE	Build the {0} out of
-UILABEL_MATERIAL_WOOD	Wood (Wood Logs)
-UILABEL_MATERIAL_IRON	Iron (Iron Ingots)
-UILABEL_MATERIAL_CRYSTAL	Dragon Crystals
-MISC_ITEM_STOLEN_NAME	{0} (Stolen)
-MISC_ITEM_STOLEN_FROM	Stolen from {0}
-MISC_BUILD_NO_FLOOR	It must stand on a finished floor of yours on this level
-MISC_BUILD_NEEDS_FLOOR	That tile needs a finished floor of yours on this level first
-MISC_BLUEPRINT_NEEDS	{0} {1}/{2}
-MISC_BLUEPRINT_BUILDING	Building: {0}%
-MISC_BLUEPRINT_WAITING	Building starts once all its material is here
-MISC_ON_FLOOR	On floor {0}
-MISC_BED_PUBLIC	Public: anyone may sleep here
-MISC_BED_PRIVATE	Private: for {0} only
-MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
-MISC_STALL_MANNED	Manned by a shopkeeper
-MISC_STALL_UNMANNED	No shopkeeper: nobody can buy here
-MISC_STALL_ORDERS	{0} orders waiting to be hauled here
-UILABEL_STORE_HOLDS	Holds {0}/{1} items.
-UILABEL_STORE_SCROLL	Scroll the mouse wheel over it to see more.
-UILABEL_WAIT_NO_STALL_ORDER	No Stall orders waiting
-UILABEL_BEHAVIOR_AUTO_HAUL_STALL	Auto-Haul to Stalls
-UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	Carries the items picked in a Stall's Stock window from their store to the Stall. Each order is tried once, and dropped if the item has gone
-UILABEL_BEHAVIOR_MAN_STALL	Man Stall: {0}
-UILABEL_BEHAVIOR_MAN_STALL_TIP	Stands at the {0} as its shopkeeper, so units of friendly factions can buy from it. Tasks above it in the list still come first
-MISC_STALL_ORDER_DROPPED	A Stall order was dropped: the {0} wasn't in its store any more
-MISC_STALL_STOCKED	{0} stocks the Stall with {1} {2}
-MISC_SHOPPER_BOUGHT	{0} of {1} bought {2} items at your Stall
-MISC_SHOPPER_NOTHING	Nothing for me here
-MISC_SHOPPER_COMING	{0} of {1} is coming to shop at your Stall
-MISC_RAIDER_STOLE	{0} stole {1} items from your {2}!
-MISC_RAIDER_COMING	{0} is coming to raid your {1}!
-MISC_RAIDER_BREAKING_IN	{0} is breaking in to raid your {1}!
-MISC_WANDERING_TRADER	Wandering Trader
-MISC_TRADER_ARRIVES	A Wandering Trader appears in a puff of smoke at the edge of your claim
-MISC_TRADER_BOUGHT	The Wandering Trader bought {0} items for {1} Gold Coins
-MISC_TRADER_LEAVES	The Wandering Trader vanishes in a puff of smoke
-MISC_STOLEN_NOTICED	{0} noticed the {1} was stolen from them: your reputation with them falls
-MISC_STOLEN_LABEL	Stolen goods!
-MISC_BUILD_ON_FLOOR	Building on floor {0} (Q/E)
-MISC_BUILD_ON_GROUND	Building on the ground floor (Q/E)
-UILABEL_BED_MAKE_PUBLIC	Make Public
-UILABEL_BED_MAKE_PRIVATE	Make Private
-UILABEL_STOCK_STALL	Stock Stall
-UILABEL_MAN_STALL	Man Stall
-MISC_DOOR_LOCKED	Door locked
-MISC_DOOR_UNLOCKED	Door unlocked
-MISC_BED_NOW_PUBLIC	Bed is now Public: anyone may use it
-MISC_BED_NOW_PRIVATE	Bed is now Private: your faction only
-MISC_MAN_STALL_SET	{0} units will man the Stall
-UILABEL_STOCK_STALL_TITLE	Stock {0}
-UILABEL_SORT_KIND	By Kind
-UILABEL_SORT_FULLEST	Fullest
-UILABEL_SORT_RATIO	Fullest for Size
-UILABEL_STALL_NO_STORES	No stores of yours in your claim
-UILABEL_STALL_STORE_EMPTY	This store is empty
-UILABEL_STALL_ORDERS	Orders waiting: {0}
-UILABEL_STALL_CLEAR_ORDERS	Clear Orders
-UILABEL_STALL_PAYMENT	Accepts as payment (click to switch):
-MISC_STALL_ORDERED	Ordered {0} {1} to the Stall
-MISC_STALL_ALREADY_ORDERED	That is already ordered to the Stall
-UILABEL_OPTIMIZE_SELECTED	Selected
-UILABEL_OPTIMIZE_EVERYONE	All
-UILABEL_OPTIMIZE_CUSTOM	Custom...
-UILABEL_FLOOR_BUTTON	Floor
-UILABEL_FLOOR_AUTO	Auto
-UILABEL_FLOOR_MANUAL	Manual (Q/E)
-UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on. Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
-UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on. Manual: Q steps down a floor and E up. Click for Auto or Manual.
-MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
-MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up
-MISC_FLOOR_NOW	Floor {0}
-MISC_FLOOR_NOW_GROUND	Ground floor
-PROP_STAIRS	Stairs
-MISC_STAIRS_TURN	R: turn
-MISC_BUILD_OUTDOORS_ONLY	That goes outside buildings only
-UILABEL_GEN_DEFAULT_NAME	world
-UILABEL_MAP_MAIN	Main Map
