@@ -85,7 +85,8 @@ inline constexpr RGBA PINK_DEEP{ 0.588f, 0.196f, 0.259f, 1.0f };
 inline constexpr RGBA PINK_DARK{ 0.298f, 0.086f, 0.125f, 1.0f };
 inline constexpr RGBA PINK_INK{ 0.098f, 0.027f, 0.039f, 1.0f };
 inline constexpr RGBA GOLD{ 0.961f, 0.788f, 0.459f, 1.0f };
-inline constexpr RGBA EMPTY_SLOT{ 1.0f, 1.0f, 1.0f, 0.35f };
+inline constexpr RGBA EMPTY_SLOT{ 1.0f, 1.0f, 1.0f, 0.12f };     // an empty gear slot's icon: faint, so it isn't taken for gear
+inline constexpr RGBA BLOCKED_SLOT{ 1.0f, 1.0f, 1.0f, 0.06f };   // an off hand a two-handed weapon blocks
 inline constexpr RGBA GOLD_DEEP{ 0.353f, 0.235f, 0.110f, 1.0f };
 inline constexpr RGBA BONE{ 0.957f, 0.902f, 0.796f, 1.0f };
 inline constexpr RGBA ASH{ 0.643f, 0.553f, 0.510f, 1.0f };

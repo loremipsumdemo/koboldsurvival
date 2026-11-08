@@ -237,8 +237,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
         const int item = worn ? worn->items[gi] : 0;
         const bool locked = (int)gi == idx(GearSlot::OffHand) && offLocked;
         if (item == 0) {
-            if (locked) drawSlotLabel(r, lang("UILABEL_TWO_HANDED"), inset, 2, theme::TEXT_DIM);
-            else drawUiIcon(gearSlotIcon((int)gi), Rect{ r.x + inset, r.y + inset, r.w - 2.0f * inset, r.h - 2.0f * inset }, theme::EMPTY_SLOT);
+            // The off hand a two-handed weapon blocks: its icon, fainter still, and a tip saying why
+            drawUiIcon(gearSlotIcon((int)gi), Rect{ r.x + inset, r.y + inset, r.w - 2.0f * inset, r.h - 2.0f * inset },
+                       locked ? theme::BLOCKED_SLOT : theme::EMPTY_SLOT);
+            if (locked && r.contains(mx, my)) tip_ = lang("UILABEL_TWO_HANDED");
             continue;
         }
 

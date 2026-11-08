@@ -462,18 +462,6 @@ void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool ena
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
 }
 
-void Renderer::drawSlotLabel(const Rect& r, const std::string& text, float inset, size_t maxLines, RGBA tint) {
-    const float lh = listTextHeight("Ag");
-    std::vector<std::string> lines = wrapListText(text, r.w - 2.0f * inset);
-    if (lines.size() > maxLines) lines.resize(maxLines);
-    float ty = r.y + (r.h - lh * lines.size()) * 0.5f;
-    for (const std::string& ln : lines) {
-        const std::string shown = fitText(ln, r.w - 2.0f * inset, false);
-        drawListText(shown, r.x + (r.w - listTextWidth(shown)) * 0.5f, ty, tint);
-        ty += lh;
-    }
-}
-
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
     const float s = uiScale();
     const float sz = ITEM_PICTURE_PX;

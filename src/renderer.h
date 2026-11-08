@@ -144,7 +144,6 @@ public:
     void endClip();
     void drawDraggedStack(float mx, float my, int item, int count);
     void drawItemCell(const Rect& r, int item, int count, float alpha = 1.0f);
-    void drawSlotLabel(const Rect& r, const std::string& text, float inset, size_t maxLines, RGBA tint);
     void drawPauseBar(bool hint);
     float pauseBarHeight(bool hint);
     void drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH);
