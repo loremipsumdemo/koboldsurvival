@@ -95,8 +95,6 @@ const char* pieceRefusalKey(PieceCheck c) {
     case PieceCheck::OutsideClaim: return "MISC_BUILD_OUTSIDE_CLAIM";
     case PieceCheck::NeedsFoundation: return "MISC_BUILD_NEEDS_FOUNDATION";
     case PieceCheck::FoundationUnfinished: return "MISC_BUILD_FOUNDATION_UNFINISHED";
-    case PieceCheck::EntranceOnly: return "MISC_BUILD_ENTRANCE_ONLY";
-    case PieceCheck::NotOnEntrance: return "MISC_BUILD_NOT_ON_ENTRANCE";
     case PieceCheck::Taken: return "MISC_BUILD_TILE_TAKEN";
     case PieceCheck::EdgesOpen: return "MISC_BUILD_EDGES_OPEN";
     case PieceCheck::Ok: break;
@@ -245,32 +243,11 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
     return e;
 }
 
-bool toggleEntrance(World& w, ObjectId foundation, int x, int z) {
-    Foundation* f = w.get<Foundation>(foundation);
-    if (!f || !f->onEdge(x, z)) return false;
-    const bool corner = (x == f->x0 || x == f->x0 + f->w - 1) && (z == f->z0 || z == f->z0 + f->h - 1);
-    if (corner || groundPieceAt(w, x, z) != NO_OBJECT) return false;
-    const long long key = tileKey(x, z);
-    auto it = std::find(f->entrances.begin(), f->entrances.end(), key);
-    if (it != f->entrances.end()) f->entrances.erase(it);
-    else f->entrances.push_back(key);
-    return true;
-}
-
-bool isEntrance(World& w, int x, int z) {
-    const ObjectId e = foundationAt(w, x, z);
-    const Foundation* f = e != NO_OBJECT ? w.get<Foundation>(e) : nullptr;
-    return f && std::find(f->entrances.begin(), f->entrances.end(), tileKey(x, z)) != f->entrances.end();
-}
-
 PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner) {
     const PropInfo& info = propInfo(kind);
     const ObjectId f = foundationAt(w, x, z);
     if (f == NO_OBJECT || ownerOf(w, f) != owner) return PieceCheck::NeedsFoundation;
     if (w.has<Blueprint>(f)) return PieceCheck::FoundationUnfinished;
-    const bool entrance = isEntrance(w, x, z);
-    if (info.door && !entrance) return PieceCheck::EntranceOnly;
-    if ((info.wallRule || info.ladder) && entrance) return PieceCheck::NotOnEntrance;
     if ((info.upperFloor || info.ladder) && !edgesClosed(w, f)) return PieceCheck::EdgesOpen;
     if (info.upperFloor) {
         if (floorPieceAt(w, x, z, false) != NO_OBJECT) return PieceCheck::Taken;

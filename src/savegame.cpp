@@ -96,6 +96,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
         const bool namesProp = r.rule.propKind >= 0 && r.rule.propKind < propKindCount();
         w.line("task", i, r.rule.on, behaviorKey(r.rule.kind), namesProp ? propInfo((PropKind)r.rule.propKind).key : std::string("-"), r.prop, r.rule.percent);
     }
+    if (u.citizen && u.citizenGroup > 0) w.line("citgroup", i, u.citizenGroup);
     if (u.stepKind >= 0) w.line("step", i, behaviorKey((BehaviorKind)u.stepKind));
     if (u.squad >= 0) w.line("squad", i, u.squad);
     if (u.citizen) w.line("citizen", i);
@@ -137,6 +138,16 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     }
     w.line("squadat", d.currentSquad);
     for (const Ghost& g : d.ghosts) w.line("ghost", g.appeased, g.hours, g.sprite, g.name);
+    // Behavior groups: a bgroup line, then its tasks. A Group task's ref goes where a haul's prop does.
+    for (const SaveGroup& g : d.groups) {
+        w.line("bgroup", g.ref);
+        for (const SaveRule& r : g.rules) {
+            const bool group = r.rule.kind == BehaviorKind::Group;
+            const bool namesProp = !group && r.rule.propKind >= 0 && r.rule.propKind < propKindCount();
+            w.line("btask", r.rule.on, behaviorKey(r.rule.kind), namesProp ? propInfo((PropKind)r.rule.propKind).key : std::string("-"),
+                   group ? r.rule.propKind : r.prop, r.rule.percent);
+        }
+    }
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
     for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
     for (size_t i = 0; i < d.units.size(); ++i) writeUnit(w, i, d.units[i]);
@@ -297,6 +308,33 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "slot", [](Line& l) { SaveUnit* u = l.unit(); return u && l.slotInto(u->stacks); } },
         { "squad", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->squad); } },
         { "citizen", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->citizen = true; return u != nullptr; } },
+        { "citgroup", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->citizenGroup) && u->citizenGroup >= 0; } },
+        { "bgroup", [](Line& l) {
+            SaveGroup g;
+            if (!l.read(g.ref)) return false;
+            l.d.groups.push_back(std::move(g));
+            return true;
+        } },
+        { "btask", [](Line& l) {
+            if (l.d.groups.empty()) return false;
+            int on = 0, percent = 0, propKind = -1;
+            std::string kindKey, propKey;
+            SaveRule r;
+            if (!l.read(on, kindKey, propKey, r.prop, percent)) return false;
+            const int kind = behaviorNamed(kindKey);
+            if (kind < 0) return false;
+            if (kind == (int)BehaviorKind::Group) {
+                propKind = r.prop;
+                r.prop = -1;
+            } else if (propKey != "-") {
+                PropKind named = PropKind::Wagon;
+                if (!propKindNamed(propKey, named)) return false;
+                propKind = idx(named);
+            }
+            r.rule = behaviorFromFields(on, kind, propKind, percent);
+            l.d.groups.back().rules.push_back(r);
+            return true;
+        } },
         { "squadname", [](Line& l) {
             size_t k = 0;
             if (!l.read(k) || k >= l.d.squadNames.size()) return false;

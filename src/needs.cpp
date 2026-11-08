@@ -31,7 +31,7 @@ void needsSystem(World& w, int hours, double gameSeconds) {
             const Prop* sp = seat != NO_OBJECT ? w.get<Prop>(seat) : nullptr;
             const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
             const double comfortGain = sp ? comfortGainPerHour(sp->kind) : 0.0;
-            const double restRate = restGain > 0.0 ? restGain : outCold(w, e) ? 0.0 : -RESTED_LOSS_PER_HOUR;
+            const double restRate = restGain > 0.0 ? restGain : outCold(w, e) ? 0.0 : -restedLossPerHour(n->maxRested);
             driftNeed(n->rested, n->maxRested, n->restedPart, restRate, gameHours);
             driftNeed(n->comfort, n->maxComfort, n->comfortPart, comfortGain > 0.0 ? comfortGain : -COMFORT_LOSS_PER_HOUR,
                       gameHours);

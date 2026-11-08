@@ -14,7 +14,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 11;
+inline constexpr int SAVE_VERSION = 12;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -67,6 +67,14 @@ struct SaveUnit {
     int propAction = 0;
     int squad = -1;        // a military unit's squad, 0 to 8
     bool citizen = false;
+    int citizenGroup = 0;  // the behavior group a citizen of yours follows, 0 for Group 1
+};
+
+// A behavior group's task list (a group's index, GROUP_REF_MILITARY or GROUP_REF_CITIZEN). A Group task keeps the ref it
+// names in its rule's propKind.
+struct SaveGroup {
+    int ref = 0;
+    std::vector<SaveRule> rules;
 };
 
 struct SaveGround {
@@ -109,6 +117,7 @@ struct SaveData {
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
     std::vector<Ghost> ghosts;
+    std::vector<SaveGroup> groups;   // empty in a file from before behavior groups: the defaults are used
     std::vector<SaveProp> props;
     std::vector<SaveGround> ground;
     std::vector<SaveUnit> units;

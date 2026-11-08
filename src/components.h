@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "factions.h"
 #include "formation.h"
 #include <array>
@@ -227,6 +228,7 @@ struct Behaviors {
     bool passive = false;
     bool block = false;
     bool sneak = false;
+    std::uint64_t carried = 0;  // what the unit carried when the automation last looked, to see when that changes
 };
 
 struct Combat {

@@ -221,6 +221,5 @@ struct BuildPreview {
     // A foundation being dragged out: its tiles, inclusive
     bool rect = false;
     int rx0 = 0, rz0 = 0, rx1 = 0, rz1 = 0;
-    bool showEntrances = false;   // mark every foundation's entrances, not only those of blueprints
 };
 

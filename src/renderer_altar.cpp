@@ -97,7 +97,8 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             if (ghost) tag = lang(c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_CITIZENS" : "UILABEL_ALTAR_TO_MILITARY");
             else if (c == ALTAR_MILITARY && squadOf(w, u) >= 0) tag = langf("UILABEL_ALTAR_SQUAD_TAG", { std::to_string(squadOf(w, u) + 1) });
             const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
-            const float textW = r.move.x - 6.0f * s - tagW - textX;
+            const float rightEdge = r.group.w > 0.0f && !ghost ? r.group.x : r.move.x;
+            const float textW = rightEdge - 6.0f * s - tagW - textX;
             const RGBA nameTint = ghost ? RGBA{ 1.0f, 1.0f, 1.0f, 0.6f } : WHITE;
             const RGBA dimTint = ghost ? theme::alpha(theme::TEXT_DIM, 0.6f) : theme::TEXT_DIM;
             const float top = r.row.y + r.row.h * 0.5f - th - 1.0f * s;
@@ -105,8 +106,15 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             const std::string levels = langf("UILABEL_ALTAR_LEVELS", { std::to_string(combat), std::to_string(other) });
             drawListText(fitText(levels, textW, false), textX, top + th + 2.0f * s, dimTint);
             if (!tag.empty()) {
-                drawListText(tag, r.move.x - 6.0f * s - listTextWidth(tag), r.row.y + (r.row.h - th) * 0.5f,
+                drawListText(tag, rightEdge - 6.0f * s - listTextWidth(tag), r.row.y + (r.row.h - th) * 0.5f,
                              ghost ? theme::GOLD : theme::TEXT_DIM);
+            }
+            // A citizen of yours: the behavior group it follows
+            if (const Citizen* cz = w.get<Citizen>(u); cz && !ghost && r.group.w > 0.0f) {
+                const bool groupHot = r.group.contains(mx, my);
+                if (groupHot) noteHover(r.group);
+                drawButton(r.group, langf("UILABEL_ALTAR_GROUP_TAG", { std::to_string(cz->group + 1) }), true, groupHot);
+                noteTip(lang("UILABEL_ALTAR_GROUP_TIP"), r.group);
             }
 
             // The move button points to the other column; on a ghost it points back, to undo the move

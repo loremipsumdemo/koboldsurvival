@@ -1,3 +1,4 @@
+#include "behavior_groups.h"
 #include "game_tables.h"
 #include "level.h"
 #include "systems_internal.h"
@@ -91,6 +92,53 @@ void captureOrders(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, con
     }
 }
 
+void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
+    BehaviorGroups& g = behaviorGroups(w);
+    std::vector<int> refs = { GROUP_REF_MILITARY, GROUP_REF_CITIZEN };
+    for (int k = 0; k < (int)g.groups.size(); ++k) refs.push_back(k);
+    for (int ref : refs) {
+        SaveGroup sg;
+        sg.ref = ref;
+        for (const BehaviorRule& r : *groupList(g, ref)) {
+            SaveRule sr;
+            sr.rule = r;
+            if (isHaul(r.kind)) {
+                sr.prop = idOf(propIds, r.prop);
+                if (sr.prop < 0) continue;
+            }
+            sg.rules.push_back(sr);
+        }
+        d.groups.push_back(std::move(sg));
+    }
+}
+
+void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>& props) {
+    BehaviorGroups& g = behaviorGroups(world);
+    if (d.groups.empty()) return;   // from before behavior groups: the defaults stand
+    g.groups.clear();
+    for (const SaveGroup& sg : d.groups) {
+        std::vector<BehaviorRule>* list = nullptr;
+        if (sg.ref == GROUP_REF_MILITARY) list = &g.military;
+        else if (sg.ref == GROUP_REF_CITIZEN) list = &g.citizen;
+        else if (sg.ref >= 0 && sg.ref < BEHAVIOR_GROUP_MAX) {
+            if ((int)g.groups.size() <= sg.ref) g.groups.resize((size_t)sg.ref + 1);
+            list = &g.groups[(size_t)sg.ref];
+        }
+        if (!list) continue;
+        list->clear();
+        for (const SaveRule& r : sg.rules) {
+            BehaviorRule rule = r.rule;
+            if (isHaul(rule.kind)) {
+                if (r.prop < 0 || r.prop >= (int)props.size()) continue;
+                rule.prop = props[(size_t)r.prop];
+            }
+            list->push_back(rule);
+        }
+    }
+    if (g.groups.empty()) resetBehaviorGroups(g);
+    ++g.version;
+}
+
 void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) {
     const Behaviors* b = w.get<Behaviors>(u);
     if (!b) return;
@@ -107,7 +155,7 @@ void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) 
         su.rules.push_back(sr);
     }
     // An idle unit would never pick these two up again: lying in the bed, or carrying the patient
-    const bool resting = b->busy && b->step.kind == BehaviorKind::Rest && w.has<Occupying>(u);
+    const bool resting = b->busy && isBedStep(b->step.kind) && w.has<Occupying>(u);
     const bool rescuing = b->busy && b->step.kind == BehaviorKind::Rescue && w.has<Carrying>(u);
     if (resting || rescuing) su.stepKind = idx(b->step.kind);
 }
@@ -144,6 +192,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (w.has<Commandable>(u)) captureOrders(w, u, su, propIds, unitIds);
     if (const SquadMember* sm = w.get<SquadMember>(u)) su.squad = sm->squad;
     su.citizen = w.has<Citizen>(u);
+    if (const Citizen* c = w.get<Citizen>(u)) su.citizenGroup = c->group;
 }
 
 std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
@@ -226,7 +275,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     // Saved as citizens, they keep their home and behaviors from the file
     if (u.citizen) {
         world.remove<Commandable>(e);
-        world.add(e, Citizen{});
+        world.add(e, Citizen{ std::max(0, u.citizenGroup), -1 });
     } else if (u.squad >= 0 && u.squad < SQUAD_COUNT) {
         world.add(e, SquadMember{ u.squad });
     }
@@ -301,6 +350,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world.resource<Graveyard>().ghosts = d.ghosts;
     ghostSystem(world, 0.0);
     const std::vector<ObjectId> props = restoreProps(world, d);
+    restoreGroups(world, d, props);
     for (const SaveGround& g : d.ground) {
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
         const ObjectId lying = spawnGroundItem(world, g.at, g.item.item, g.item.count);
@@ -336,6 +386,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
 
     IdMap propIds;
     captureProps(w, d, propIds);
+    captureGroups(w, d, propIds);
     for (ObjectId e : w.view<GroundItem, Transform>()) d.ground.push_back(SaveGround{ *w.get<Transform>(e), *w.get<GroundItem>(e) });
 
     std::vector<ObjectId> units = w.view<Entity, Transform>();

@@ -320,6 +320,11 @@ struct App : AppSession {
     void drawMaterialAsk();
     void drawFoundationSize();
     void startRename(ObjectId u);
+    void openBehaviorGroups(ObjectId altarProp);
+    std::vector<BehaviorOption> groupTaskOptions();
+    bool pressOnBehaviorGroups();
+    void scrollBehaviorGroups(float mx, float my, float wheel);
+    void drawBehaviorGroups();
     void openGhosts(ObjectId altarProp);
     bool pressOnGhosts();
     void drawGhosts();
@@ -438,6 +443,7 @@ struct App : AppSession {
     int lastSquadTap = -1;
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
+    BehaviorGroupsUi groupsUi;
     RenamePrompt rename;
     GhostsUi ghostsUi;
     MapPickUi mapPick;

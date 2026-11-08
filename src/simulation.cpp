@@ -1,3 +1,4 @@
+#include "behavior_groups.h"
 #include "squads.h"
 #include "ghosts.h"
 #include "airship.h"
@@ -58,6 +59,7 @@ void queueFloatingNumber(World& w, const FloatingNumber& number) {
 }
 
 void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool running) {
+    w.resource<WorldClock>().seconds = gs.clockSeconds;
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
     PROFILED("factionSystem", factionSystem(w, dt));
@@ -74,6 +76,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("pickupSystem", pickupSystem(w, t));
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
     PROFILED("wildMobSystem", wildMobSystem(w, t, dt));
+    PROFILED("behaviorGroupSystem", behaviorGroupSystem(w));
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
     PROFILED("buildingSystem", buildingSystem(w, t, dt));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));

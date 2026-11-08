@@ -339,7 +339,8 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
 
     drawRect(P, RGBA{ 0.10f, 0.04f, 0.05f, bgAlpha });
     drawIconText(P.x + 10.0f * s, P.y + 6.0f * s, listTextHeight("Ag"), ICON_BEHAVIOR, lang("UILABEL_BEHAVIOR"), WHITE);
-    const std::string count = std::to_string(rules.size()) + " / " + std::to_string(BEHAVIOR_LIMIT);
+    // A citizen follows its group, whose list may be longer than one you edit
+    const std::string count = std::to_string(rules.size()) + (editable ? " / " + std::to_string(BEHAVIOR_LIMIT) : std::string());
     const float countX = P.x + P.w - 10.0f * s - listTextWidth(count);
     drawListText(count, countX, P.y + 6.0f * s, theme::TEXT_DIM);
     {

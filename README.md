@@ -8,6 +8,9 @@ lose state: the world keeps running, whatever happens to your party.
 
 - **Units with stats and needs.** Each unit has attributes and skills such as Strength, Dexterity, Vitality, Melee,
   Mining and Cooking, which rise with use, and needs: health, hunger, Rested and Comfort.
+- **Day, night and sleep.** Daylight runs from 06:00 to 18:00. Awake, Rested runs from full to 0 in 11 hours, so a unit
+  up at dawn is spent an hour before dusk, and at 0 Rested it harvests and crafts at a fifth of its speed. The Sleep at
+  night task (the last of the Needs) sends a unit to the nearest free bed from 18:00 and keeps it there until 06:00.
 - **Being knocked out.** A unit at 0 health is Unconscious until its Conscious is back at 100, paid for in Rested and
   then Dying. Dying 100 makes it a corpse. Unconscious units and corpses can be carried and looted. One of your units
   that wakes near hostile units plays dead.
@@ -42,12 +45,24 @@ lose state: the world keeps running, whatever happens to your party.
   faction of people starts with a camp (an Altar, a campfire and four bedrolls), with open ground ten tiles round it
   where the map allows, some citizens who keep near it, and some military who patrol its claim. New Game's map page shows
   where a random set-up puts the camps.
+- **Behavior groups.** Your Altar keeps the task lists your citizens follow: right-click it and choose Behavior Groups.
+  Each citizen follows one group, Group 1 at first, set with the Group button on its row in Manage Units (click for the
+  next, right-click for the one before). There can be up to 64 groups of up to 256 tasks each. Add Task lists what can
+  be added under headings (Groups, Needs, Building, Hauling, Harvesting, Movement), each with an Add All button for every
+  task under it the list doesn't have. That is also the order of priority a new task is sorted into, in any list. A group's list may hold a Group task, which stands
+  for the whole list of another group or a Default Behavior at that place, so a group can take the usual tasks from one
+  and add its own (harvesting, hauling) below. Group 1 starts as just the Citizen Default Behavior, and a new group as
+  just Group 1. The Citizen Default Behavior starts as the needs (with Rest only below 5%, since citizens sleep the night
+  through, and Sleep at night last), then Auto-Construct, then Patrol Spawn; hauling and harvesting tasks added to it
+  go between those two. The Military and Citizen Default Behaviors are edited there too but aren't groups: a unit of yours that
+  joins the military gets the Military one. Auto-Harvest, Auto-Haul and Auto-Haul Bones are only offered for props in your
+  claim.
 - **Ghosts.** A unit of yours that dies joins the Graveyard as a Ghost. Each Ghost wants one bones (any kind) sacrificed
   at your Altar: right-click it and choose Appease Ghosts. A Ghost left unappeased for 24 game hours haunts your whole
   faction, and Haunted units hit and walk slower. The Altar keeps bones ahead of time, brought by hand or by Auto-Haul
   Bones; the same bones keep it burning.
 - **Stockpiles.** Auto-Harvest of Trees puts the Wood Logs in a Wood Stockpile, and of Boulders (Mining) the Stone in a
-  Stone Stockpile, once a unit carries a load. With no stockpile of that kind with room, the task waits. Giving a unit Auto-Harvest also gives it Auto-Haul to the nearest store of yours that takes what it yields: the matching stockpile for logs and stone, any storage for the rest. A haul task is always put just above the first Auto-Harvest in the list, so carrying a load off comes first.
+  Stone Stockpile, once a unit carries a load. With no stockpile of that kind with room, the task waits. Giving a unit Auto-Harvest also gives it Auto-Haul to the nearest store of yours that takes what it yields: the matching stockpile for logs and stone, any storage for the rest. A haul task is always put just above the first Auto-Harvest in the list, so carrying a load off comes first. Whenever what a unit carries changes, a haul task above the one it is doing (harvesting, patrolling) takes over if it has something to take there.
 - **Airships.** An Airship floats above the ground and carries up to four units. Getting on (Occupy) takes five seconds,
   and only happens if there is still room then; getting off (Evacuate) takes one, and only over open ground. A move order
   for those aboard flies it in a straight line over anything, water and void included. Melee can't reach anyone aboard,
@@ -55,10 +70,9 @@ lose state: the world keeps running, whatever happens to your party.
   down. If it is destroyed with units aboard they die. A map with land that can't be walked to starts you with one.
 - **Buildings.** In the Build tab, drag out a Foundation (3 to 64 tiles a side, in your claim). A foundation, wall or
   door first asks what to make it of: wood (Wood Logs), iron (Iron Ingots) or Dragon Crystals; iron is twice as tough to
-  break as wood and crystal three times, and a wall twice as tough as a door. Click tiles on a foundation's edge to make
-  them entrances. Walls, Doors, Ladders and Upper Floors go on a finished foundation, one tile each (drag to lay a row of
-  them): walls anywhere but an entrance, doors only on one, and ladders and upper floors only once every edge tile has a
-  wall or a door. A building whose walls and doors are all gone loses its upper floors. Each piece starts as a blueprint
+  break as wood and crystal three times, and a wall twice as tough as a door. Walls, Doors, Ladders and Upper Floors go
+  on a finished foundation, one tile each (drag to lay a row of them): walls and doors on any tile, and ladders and upper
+  floors only once every edge tile has a wall or a door. A building whose walls and doors are all gone loses its upper floors. Each piece starts as a blueprint
   needing one of its material (an upper floor one per tile); the size of a foundation shows beside the cursor as you drag.
   Right-click a blueprint for Auto-Construct, which brings the material any of your blueprints needs (carried or fetched
   from your stockpiles and stores) and builds those that have it, from up to five tiles away. A blueprint holds its
@@ -89,7 +103,7 @@ lose state: the world keeps running, whatever happens to your party.
 | Input | Action |
 | --- | --- |
 | Left click / drag | Select units. Shift adds to the selection. A box around ground items, and no units you haven't selected, picks the items up |
-| Right click on your Altar | Manage Units (move units between the military and the citizens) or Appease Ghosts, with or without units selected |
+| Right click on your Altar | Manage Units (move units between the military and the citizens), Behavior Groups or Appease Ghosts, with or without units selected |
 | Optimize All / Shift + click | Optimize the gear of the squad shown, or first choose how |
 | Numpad 1 to 9 | Select that squad. Shift adds it to the selection, and pressing it twice brings the camera to it |
 | Ctrl + Numpad 1 to 9 | Move the selected units into that squad |
@@ -148,9 +162,11 @@ src/                 Game source (an ECS-style design). The simulation is a libr
   orders, steering, automation, wild_ai, downed, carry, loot, needs, prop_use   The simulation systems
   world_setup, unit_spawn   Placing a new level, and making units
   squads, altar_ui     Squads of 16 and citizens, and the Altar's roster
+  behavior_groups      The Altar's behavior groups and Default Behaviors, and citizens taking their group's tasks
+  app_behavior_groups  The Behavior Groups window
   ghosts, airship      The Graveyard and Haunted, and Airships
   building             Foundations, blueprints and the building tasks, walls, doors, ladders and the upper floor
-  app_building         The Build tab's foundation drag, entrances and pieces
+  app_building         The Build tab's foundation drag and pieces
   app_map_pick         New Game's map and level page
   renderer*.cpp      OpenGL rendering of terrain, models, sky and UI
   combat, equip, inventory, items, factions, claims, build, party, ...

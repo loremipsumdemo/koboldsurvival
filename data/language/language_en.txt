@@ -1217,6 +1217,38 @@ UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP	Auto-Haul Logs: takes the fuel the {0} burns
 UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP	Auto-Haul Bones: takes any bones in the inventory to the {0}, for the Ghosts, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 MISC_AUTO_HAUL_BONES_SET	{0} unit(s) will Auto-Haul bones to the {1}
 UILABEL_APPEASE_GHOSTS	Appease Ghosts
+UILABEL_BEHAVIOR_GROUPS	Behavior Groups
+UILABEL_GROUPS_TITLE	Behavior Groups
+UILABEL_GROUP_NAME	Group {0}
+UILABEL_GROUP_MILITARY_DEFAULT	Military Default Behavior
+UILABEL_GROUP_CITIZEN_DEFAULT	Citizen Default Behavior
+UILABEL_GROUP_MILITARY_TIP	Military Default Behavior: the tasks a unit of yours gets on joining the military. Not a group: no citizen follows it.
+UILABEL_GROUP_CITIZEN_TIP	Citizen Default Behavior: the everyday tasks of a citizen. Not a group, but a group can take it in with a Group task (Group 1 starts as just that).
+UILABEL_GROUP_MEMBERS	({0})
+UILABEL_GROUP_ADD	Add Group
+UILABEL_GROUP_REMOVE	Remove Group
+UILABEL_GROUP_ADD_TASK	Add Task
+UILABEL_GROUP_ADD_DONE	Back to Tasks
+UILABEL_GROUP_ADDING	Add to {0}
+UILABEL_GROUP_HAVE	{0} (has it)
+UILABEL_GROUP_EMPTY	No tasks
+UILABEL_TASKS_GROUPS	Groups
+UILABEL_TASKS_NEEDS	Needs
+UILABEL_TASKS_MOVEMENT	Movement
+UILABEL_TASKS_BUILDING	Building
+UILABEL_TASKS_HARVESTING	Harvesting
+UILABEL_TASKS_HAULING	Hauling
+UILABEL_GROUP_ADD_ALL	Add All
+UILABEL_GROUP_ADD_ALL_TIP	Adds every {0} task listed here that this list doesn't have yet
+MISC_GROUP_ADDED_ALL	Added {0} {1} task(s)
+MISC_GROUP_HAS_ALL	This list already has all of them
+UILABEL_BEHAVIOR_GROUP	{0} Behavior
+UILABEL_BEHAVIOR_GROUP_TIP	{0} Behavior: every task of {0}, in its order, at this place in the list. A task that comes up twice counts where it first comes.
+UILABEL_ALTAR_GROUP_TAG	Group {0}
+UILABEL_ALTAR_GROUP_TIP	The behavior group this citizen follows. Click for the next group, right-click for the one before. Set up groups in Behavior Groups, on your Altar's menu.
+MISC_GROUPS_FULL	There can be at most {0} groups
+MISC_GROUP_CANT_REMOVE	Group 1 and the Default Behaviors can't be removed
+MISC_GROUP_REMOVED	Group removed; {0} citizen(s) moved to Group 1
 UILABEL_APPEASE	Appease
 UILABEL_APPEASE_ALL	Appease All ({0})
 UILABEL_GHOSTS_TOTALS	Bones in this Altar: {0}    Unappeased Ghosts: {1}
@@ -1242,7 +1274,7 @@ MISC_FLEES	{0} flees out of reach
 MISC_CANT_EVACUATE_AIRSHIP	Nobody can get off the Airship here: fly it over open ground first
 MISC_AIRSHIP_FALLS	{0} falls with the Airship
 PROP_FOUNDATION	Foundation
-PROP_WOOD_WALL	Built Wall
+PROP_WOOD_WALL	Wall
 PROP_WOOD_DOOR	Door
 PROP_LADDER	Ladder
 PROP_UPPER_FLOOR	Upper Floor
@@ -1254,6 +1286,8 @@ UILABEL_CLIMB_DOWN	Climb Down
 UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
 UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
+UILABEL_BEHAVIOR_SLEEP	Sleep at night
+UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nearest free bed and sleeps there until morning
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
 UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
 UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
@@ -1267,11 +1301,7 @@ MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
 MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
 MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
 MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
-MISC_BUILD_ENTRANCE_ONLY	A door goes on one of the foundation's entrances
-MISC_BUILD_NOT_ON_ENTRANCE	That tile is an entrance: only a door can go there
 MISC_BUILD_TILE_TAKEN	Something is already built on that tile
-MISC_BUILD_PICK_ENTRANCE	Click tiles on a foundation's edge to make them entrances, where doors go
-MISC_BUILD_ENTRANCE_HERE	An entrance goes on an edge tile, not a corner, with nothing built on it
 ITEM_161_NAME	Stone
 ITEM_161_DESC	A rough block of stone, broken from a boulder.
 ITEM_162_NAME	Dragon Crystal

@@ -19,8 +19,13 @@ struct SquadMember {
     int squad = 0;
 };
 
-// A unit the game commands that stays near its faction's Altar: one of your citizens, or an NPC faction's
-struct Citizen {};
+// A unit the game commands that stays near its faction's Altar: one of your citizens, or an NPC faction's. Yours follow
+// the behavior group (behavior_groups.h) numbered group, 0 for Group 1; applied is the version of the groups their task
+// list was last made from, -1 to make it again.
+struct Citizen {
+    int group = 0;
+    int applied = -1;
+};
 
 // In the World's resources: the squads' names (empty is the default name) and which squad the Squad tab shows
 struct SquadBook {

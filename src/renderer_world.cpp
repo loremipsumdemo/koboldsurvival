@@ -399,7 +399,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         wallTiles.insert(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z)));
     }
     Batch blueprints;
-    const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f }, entrance{ 0.3f, 1.0f, 0.4f, 0.55f };
+    const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f };
     auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA side, RGBA top) {
         blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, top);
         blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, side);
@@ -429,14 +429,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                     if (plannedOnly) box((float)x + 0.02f, y, (float)z + 0.02f, x + 0.98f, y + 0.2f, z + 0.98f, planned, plannedEdge);
                     else if (made) drawModel(*made, cx, y, cz, info.size, 0.0f);
                     else queuePropModel(kind, cx, y, cz, info.size, 0.0f);
-                }
-            }
-            if (plannedOnly || buildPreview_.showEntrances) {
-                for (long long key : f->entrances) {
-                    const int z = (int)(key / 1000003LL), x = (int)(key - (long long)z * 1000003LL);
-                    const float y = t.heightAt(x + 0.5f, z + 0.5f) + 0.24f;
-                    blueprints.quad(V3{ x + 0.1f, y, z + 0.1f }, V3{ x + 0.9f, y, z + 0.1f }, V3{ x + 0.9f, y, z + 0.9f },
-                                    V3{ x + 0.1f, y, z + 0.9f }, entrance);
                 }
             }
             continue;

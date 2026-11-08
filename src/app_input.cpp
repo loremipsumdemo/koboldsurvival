@@ -109,6 +109,13 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && groupsUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            groupsUi = BehaviorGroupsUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && ghostsUi.open) {
         if (e.key.key == SDLK_ESCAPE) {
             ghostsUi = GhostsUi{};
@@ -260,6 +267,10 @@ void App::onKeyDown() {
 void App::onMouseWheel() {
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
+    if (screen == Screen::Playing && groupsUi.open) {
+        scrollBehaviorGroups(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+        return;
+    }
     if (screen == Screen::Playing && ghostsUi.open) {
         const AltarLayout L = layoutAltar(winW, winH, { (int)ghostBones().size(), (int)ghostOrder().size() }, ghostsUi.scroll);
         for (int c = 0; c < 2; ++c) {

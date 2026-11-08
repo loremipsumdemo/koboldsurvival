@@ -4,8 +4,8 @@
 using namespace play;
 
 // The Build tab's foundations and the pieces built on them. A foundation, wall or door first asks what it is made of. A
-// foundation is dragged out as a rectangle; clicking a tile on the edge of a foundation of yours makes it an entrance (or
-// stops it being one). Walls, doors, ladders and upper floors go on single tiles, and dragging paints them along.
+// foundation is dragged out as a rectangle. Walls, doors, ladders and upper floors go on single tiles, and dragging
+// paints them along.
 
 namespace {
 int tileOf(float v) { return (int)std::floor(v); }
@@ -82,14 +82,6 @@ bool App::buildPressAt(float gx, float gz) {
     const PropInfo& info = propInfo(session.buildPick.kind);
     const int tx = tileOf(gx), tz = tileOf(gz);
     if (info.foundation) {
-        // An edge tile of a foundation of yours: it becomes an entrance, or stops being one
-        const ObjectId f = foundationAt(world, tx, tz);
-        const Owner* own = f != NO_OBJECT ? world.get<Owner>(f) : nullptr;
-        if (f != NO_OBJECT && own && own->faction == FACTION_PLAYER && world.get<Foundation>(f)->onEdge(tx, tz)) {
-            if (toggleEntrance(world, f, tx, tz)) playSfx(Sfx::UiClick);
-            else refuse(lang("MISC_BUILD_ENTRANCE_HERE"));
-            return true;
-        }
         session.foundationDrag = true;
         session.dragTileX = tx;
         session.dragTileZ = tz;
@@ -125,7 +117,6 @@ bool App::buildRelease() {
         return true;
     }
     placeFoundation(world, terrain, session.dragTileX, session.dragTileZ, x1, z1, FACTION_PLAYER, (BuildMaterial)session.buildMaterial);
-    showNotice(lang("MISC_BUILD_PICK_ENTRANCE"));
     playSfx(Sfx::UiOrder);
     return true;
 }
@@ -154,7 +145,6 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     const PropInfo& info = propInfo(session.buildPick.kind);
     if (!info.foundation && !info.onFoundation) return false;
     const int tx = tileOf(gx), tz = tileOf(gz);
-    bp.showEntrances = info.foundation || info.door;
     if (info.foundation && session.foundationDrag) {
         bp.rect = true;
         bp.rx0 = std::min(session.dragTileX, tx);
@@ -169,8 +159,7 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     bp.x = tx + 0.5f;
     bp.z = tz + 0.5f;
     if (info.foundation) {
-        const ObjectId f = foundationAt(world, tx, tz);
-        bp.valid = f != NO_OBJECT ? world.get<Foundation>(f)->onEdge(tx, tz) : terrain.walkable(tx, tz);
+        bp.valid = foundationAt(world, tx, tz) == NO_OBJECT && terrain.walkable(tx, tz);
     } else {
         bp.valid = checkPiece(world, session.buildPick.kind, tx, tz) == PieceCheck::Ok;
     }

@@ -14,6 +14,9 @@ constexpr int DAYS_PER_MONTH = 30;
 constexpr int MONTHS_PER_YEAR = 12;
 constexpr int START_YEAR = 500;
 constexpr double START_CLOCK_SECONDS = 6.0 * SECONDS_PER_HOUR;
+// Daylight: the sun is up from DAY_START_HOUR until NIGHT_START_HOUR
+constexpr int DAY_START_HOUR = 6, NIGHT_START_HOUR = 18;
+constexpr int DAYLIGHT_HOURS = NIGHT_START_HOUR - DAY_START_HOUR;
 static_assert(MONTHS_PER_YEAR <= 12, "month names are spelled out up to twelve");
 
 struct CalendarDate {
@@ -52,6 +55,16 @@ inline ClockTime clockOf(double seconds) {
     c.second = (int)(t % 60);
     return c;
 }
+
+inline bool isNightAt(double seconds) {
+    const int h = clockOf(seconds).hour;
+    return h < DAY_START_HOUR || h >= NIGHT_START_HOUR;
+}
+
+// The game clock, kept in the World so the simulation can tell day from night (simStep sets it every step)
+struct WorldClock {
+    double seconds = START_CLOCK_SECONDS;
+};
 
 inline float timeOfDayMinutes(double seconds) {
     return (float)((seconds - (double)dayIndexOf(seconds) * SECONDS_PER_DAY) / 60.0);

@@ -148,6 +148,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         // Your Altar manages your units, whether or not any are selected
         if (ownAltar(world, target)) {
             out.push_back(MenuAction::ManageUnits);
+            out.push_back(MenuAction::BehaviorGroups);
             out.push_back(MenuAction::AppeaseGhosts);
         }
         if (propInfo(p->kind).claimsLand) {
@@ -179,9 +180,13 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             out.push_back(MenuAction::Evacuate);
         }
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
-        if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
-        if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaul);
-        if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
+        // Auto tasks only work on props inside your claim, so they aren't offered on any outside it
+        const Transform* pt = world.get<Transform>(target);
+        if (pt && claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
+            if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
+            if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaul);
+            if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
+        }
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
         if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
@@ -236,6 +241,7 @@ std::vector<std::string> App::contextLabels() {
         }
         case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
+        case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
         case MenuAction::AutoConstruct: labels.push_back(lang("UILABEL_AUTO_CONSTRUCT")); break;
         case MenuAction::Climb: labels.push_back(lang("UILABEL_CLIMB_UP")); break;
@@ -261,7 +267,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     if (disband) actions.push_back(MenuAction::Disband);
     if (actions.empty()) return false;
     if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
-        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::AppeaseGhosts } };
+        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::AppeaseGhosts } };
         playSfx(Sfx::UiMenuOpen);
         itemMenu.open = false;
         return true;
@@ -352,6 +358,10 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::AppeaseGhosts) {
         openGhosts(target);
+        return;
+    }
+    if (a == MenuAction::BehaviorGroups) {
+        openBehaviorGroups(target);
         return;
     }
     if (a == MenuAction::Evacuate && isAirship(world, target)) {
@@ -489,6 +499,7 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::ManageUnits:
     case MenuAction::Rename:
     case MenuAction::AppeaseGhosts:
+    case MenuAction::BehaviorGroups:
         break;
     case MenuAction::CancelBuild:
         break;

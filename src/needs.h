@@ -1,10 +1,18 @@
 #pragma once
 #include <cmath>
+#include "calendar.h"
 #include "components.h"
 #include "props.h"
 #include "stats.h"
 
-constexpr double RESTED_LOSS_PER_HOUR = 4.0;
+// Awake, rested runs from full to 0 over the daylight hours less one, so a unit up at dawn is spent an hour before dusk
+constexpr double RESTED_EMPTY_HOURS = DAYLIGHT_HOURS - 1;
+inline double restedLossPerHour(int maxRested) { return std::max(1, maxRested) / RESTED_EMPTY_HOURS; }
+// Harvesting and crafting at 0 rested go at this share of the usual speed
+constexpr double EXHAUSTED_WORK_FACTOR = 0.2;
+inline double restedWorkFactor(const Needs* n) {
+    return n && n->maxRested > 0 && n->rested <= 0 ? EXHAUSTED_WORK_FACTOR : 1.0;
+}
 constexpr double COMFORT_LOSS_PER_HOUR = 2.0;
 inline double restedGainPerHour(PropKind propKind) { return propInfo(propKind).restedPerHour; }
 inline double comfortGainPerHour(PropKind propKind) { return propInfo(propKind).comfortPerHour; }

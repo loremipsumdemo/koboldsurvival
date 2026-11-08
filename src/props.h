@@ -151,7 +151,7 @@ struct PropInfo {
     bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
     bool onFoundation = false;   // only on a finished foundation tile of the builder's
     bool wallRule = false;       // a wall: its shape fits the walls around it, and it blocks walking
-    bool door = false;           // only on an entrance; strangers can't pass it while it is locked
+    bool door = false;           // goes where a wall can; strangers can't pass it while it is locked
     bool ladder = false;         // climbs to the upper floor
     bool upperFloor = false;     // a floor at wall height
     bool rare = false;           // a new level scatters only one

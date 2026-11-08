@@ -2,6 +2,7 @@
 #include "claims.h"
 #include "squads.h"
 #include "ghosts.h"
+#include "behavior_groups.h"
 
 using namespace play;
 
@@ -55,6 +56,20 @@ bool App::pressOnAltar() {
             return true;
         }
         if (menu.box.contains(x, y)) return true;
+    }
+    // A citizen's behavior group: the next one on a click, the one before on a right-click
+    if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT) {
+        for (const AltarRow& r : L.rows[ALTAR_CITIZEN]) {
+            if (!r.group.contains(x, y) || r.index >= (int)cols[ALTAR_CITIZEN].size()) continue;
+            const ObjectId u = cols[ALTAR_CITIZEN][(size_t)r.index];
+            const Citizen* c = world.get<Citizen>(u);
+            const int count = (int)behaviorGroups(world).groups.size();
+            if (!c || altar.moves.count(u) || count <= 0) return true;
+            const int step = e.button.button == SDL_BUTTON_LEFT ? 1 : count - 1;
+            setCitizenGroup(world, u, (c->group + step) % count);
+            playSfx(Sfx::UiClick);
+            return true;
+        }
     }
     if (e.button.button == SDL_BUTTON_RIGHT) {
         for (int c = 0; c < 2; ++c) {

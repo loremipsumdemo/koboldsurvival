@@ -388,7 +388,10 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         pw.workers = (int)workers.size();
 
         double perHour = 0.0;
-        for (ObjectId u : workers) perHour += propInfo(w.get<Prop>(prop)->kind).speed / workHoursFor(levelOf(statsOf(w, u), info.stat));
+        for (ObjectId u : workers) {
+            perHour += propInfo(w.get<Prop>(prop)->kind).speed / workHoursFor(levelOf(statsOf(w, u), info.stat)) *
+                       restedWorkFactor(w.get<Needs>(u));
+        }
         pw.progress += gameSeconds / 3600.0 * perHour;
 
         while (pw.progress >= 1.0 && !workers.empty()) {

@@ -47,6 +47,18 @@ bool haulable(World& w, const std::vector<Claim>& claims, ObjectId u, const Beha
     return haulWait(w, claims, u, r, item) == BehaviorWait::None;
 }
 
+// A fingerprint of what a unit carries, which changes whenever an item goes in or out
+std::uint64_t carriedPrint(World& w, ObjectId u) {
+    const Inventory* inv = w.get<Inventory>(u);
+    if (!inv) return 0;
+    std::uint64_t h = 1469598103934665603ull;
+    for (const ItemStack& s : inv->slots) {
+        h = (h ^ (std::uint64_t)(std::uint32_t)s.item) * 1099511628211ull;
+        h = (h ^ (std::uint64_t)(std::uint32_t)s.count) * 1099511628211ull;
+    }
+    return h;
+}
+
 bool canHaulItem(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
     for (const BehaviorRule& r : b.rules) {
         if (r.on && isHaul(r.kind) && haulable(w, claims, u, r, item)) return true;
@@ -242,6 +254,21 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         w.add(u, CarryOrder{ target });
         return true;
     }
+    if (r.kind == BehaviorKind::Sleep) {
+        r.why = BehaviorWait::None;
+        if (!isNightAt(w.resource<WorldClock>().seconds) || !w.has<Needs>(u) || w.has<Mob>(u) || w.has<OccupyBan>(u)) return false;
+        const ObjectId bed = restTarget(w, claims, u);
+        if (bed == NO_OBJECT) {
+            r.why = BehaviorWait::NoBed;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = bed;
+        if (const Occupying* oc = w.get<Occupying>(u); oc && oc->prop == bed) return true;   // already in it
+        autoGo(w, t, u, bed, PropAction::Occupy);
+        return true;
+    }
     if (r.kind == BehaviorKind::Rest) {
         const Needs* n = w.get<Needs>(u);
         r.why = BehaviorWait::None;
@@ -350,7 +377,7 @@ void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
         w.remove<SoloMove>(u);
     }
     if (b.busy && isWalkBehavior(b.step.kind)) w.remove<SoloMove>(u);
-    if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && b.step.kind == BehaviorKind::Rest && oc->prop == b.stepProp) {
+    if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && isBedStep(b.step.kind) && oc->prop == b.stepProp) {
         w.remove<Occupying>(u);
     }
     if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && b.busy && wk->prop == b.stepProp) w.remove<Working>(u);
@@ -460,18 +487,20 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             b->recovered = 0.0f;
             continue;
         }
+        const bool night = isNightAt(w.resource<WorldClock>().seconds);
         {
             const ObjectId bed = occupiedProp(w, u);
             const Prop* bp = bed != NO_OBJECT ? w.get<Prop>(bed) : nullptr;
             bool leaveOn = false;
             for (const BehaviorRule& r : b->rules) leaveOn = leaveOn || (r.on && r.kind == BehaviorKind::LeaveBed);
-            if (leaveOn && bp && restedGainPerHour(bp->kind) > 0.0 && n && n->hp >= n->maxHp && n->rested >= n->maxRested) {
+            const bool sleeping = night && b->busy && b->step.kind == BehaviorKind::Sleep;   // stays in bed till morning
+            if (leaveOn && !sleeping && bp && restedGainPerHour(bp->kind) > 0.0 && n && n->hp >= n->maxHp && n->rested >= n->maxRested) {
                 b->recovered += dt;
                 if (b->recovered >= LEAVE_BED_SECONDS) {
                     w.remove<Occupying>(u);
                     stepOffProp(w, t, u, bed);
                     b->recovered = 0.0f;
-                    if (b->busy && b->step.kind == BehaviorKind::Rest) b->busy = false;
+                    if (b->busy && isBedStep(b->step.kind)) b->busy = false;
                 }
             } else {
                 b->recovered = 0.0f;
@@ -523,6 +552,23 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         const Working* wk = w.get<Working>(u);
         const bool working = b->busy && wk && !wk->unlocking && wk->prop == b->stepProp;
 
+        // Whenever what it carries changes, a haul task above the step under way comes first: the step stops and the
+        // haul starts, if it has something to take there (harvesting, patrolling and the like; not a bed or a rescue)
+        if (const std::uint64_t print = carriedPrint(w, u); print != b->carried) {
+            b->carried = print;
+            if (b->busy && !isHaul(b->step.kind) && !isBedStep(b->step.kind) && b->step.kind != BehaviorKind::Rescue) {
+                bool hauled = false;
+                for (BehaviorRule& r : b->rules) {
+                    if (sameBehavior(r, b->step)) break;
+                    if (!r.on || !isHaul(r.kind) || !haulable(w, claims, u, r)) continue;
+                    stopAutoStep(w, u, *b);
+                    w.remove<SoloMove>(u);
+                    r.cooldown = 0.0f;
+                    if ((hauled = tryStep(w, t, claims, u, *b, r, rng))) break;
+                }
+                if (hauled) continue;
+            }
+        }
         if (b->busy && b->step.kind == BehaviorKind::Rescue) {
             const PropOrder* rpo = w.get<PropOrder>(u);
             const bool yoursNow = w.has<ActiveSquadMember>(u) || (rpo && !rpo->automatic) || hasPlayerOrder(w, u);
@@ -570,7 +616,29 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                     continue;
                 }
                 if (n && n->rested < n->maxRested) continue;
+                // Rested by night: stays in bed and sleeps, if it has Sleep on
+                if (night) {
+                    const auto sleep = std::find_if(b->rules.begin(), b->rules.end(),
+                                                    [](const BehaviorRule& r) { return r.on && r.kind == BehaviorKind::Sleep; });
+                    if (sleep != b->rules.end()) {
+                        b->step = *sleep;
+                        continue;
+                    }
+                }
                 w.remove<Occupying>(u);
+                b->busy = false;
+                if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                continue;
+            }
+        }
+        // Asleep: up at dawn
+        if (b->busy && b->step.kind == BehaviorKind::Sleep) {
+            const Occupying* oc = w.get<Occupying>(u);
+            if (oc && oc->prop == b->stepProp) {
+                if (night) continue;
+                const ObjectId bed = oc->prop;
+                w.remove<Occupying>(u);
+                stepOffProp(w, t, u, bed);
                 b->busy = false;
                 if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
                 continue;

@@ -11,10 +11,13 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
-                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct" };
-// Building: Auto-Haul Blueprint Supplies brings Wood Logs to your blueprints, Auto-Construct builds those that have them
+                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep" };
+// Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
+// Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
+inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
+// Building: Auto-Construct brings your blueprints their material and builds them (AutoSupply is the older name for it)
 inline bool isBuildTask(BehaviorKind k) { return k == BehaviorKind::AutoSupply || k == BehaviorKind::AutoConstruct; }
 // Hauling to one prop: AutoHaul carries what it takes (to an Altar, only its fuel), AutoHaulBones carries bones to an Altar
 inline bool isHaul(BehaviorKind k) { return k == BehaviorKind::AutoHaul || k == BehaviorKind::AutoHaulBones; }
@@ -53,6 +56,7 @@ constexpr float ROAM_PAUSE_MIN = 5.0f, ROAM_PAUSE_MAX = 20.0f;
 constexpr float ROAM_STEP_MIN = 6.0f, ROAM_STEP_MAX = 18.0f;
 
 constexpr int BEHAVIOR_LIMIT = 16;
+constexpr int BEHAVIOR_TASKS_MAX = 256;   // the longest task list: a behavior group's, and so a citizen's that follows one
 constexpr int BEHAVIOR_NEED_PERCENT = 50;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;
 constexpr float NO_BED_RETRY_SECONDS = 10.0f;
@@ -127,14 +131,16 @@ inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn || isBuildTask(k);
 }
-inline bool isAutoStep(BehaviorKind k) { return isAutomated(k) || k == BehaviorKind::Rest || k == BehaviorKind::Rescue; }
+// Lying in a bed: Rest until rested, Sleep until morning
+inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
+inline bool isAutoStep(BehaviorKind k) { return isAutomated(k) || isBedStep(k) || k == BehaviorKind::Rescue; }
 inline bool isWalkBehavior(BehaviorKind k) {
     return k == BehaviorKind::Patrol || k == BehaviorKind::Roam || k == BehaviorKind::PatrolSpawn;
 }
 
 inline bool sameBehavior(const BehaviorRule& a, const BehaviorRule& b) {
     if (a.kind != b.kind) return false;
-    if (a.kind == BehaviorKind::AutoHarvest) return a.propKind == b.propKind;
+    if (a.kind == BehaviorKind::AutoHarvest || a.kind == BehaviorKind::Group) return a.propKind == b.propKind;
     if (isHaul(a.kind)) return a.prop == b.prop;
     return true;
 }
@@ -142,6 +148,13 @@ inline bool sameBehavior(const BehaviorRule& a, const BehaviorRule& b) {
 inline std::string behaviorPropName(const BehaviorRule& r) {
     if (!isAutomated(r.kind) || r.propKind < 0 || r.propKind >= propKindCount()) return std::string();
     return lang(propInfo((PropKind)r.propKind).nameKey);
+}
+
+// "Group 3", "Military Default" or "Citizen Default"
+inline std::string groupRefName(int ref) {
+    if (ref == GROUP_REF_MILITARY) return lang("UILABEL_GROUP_MILITARY_DEFAULT");
+    if (ref == GROUP_REF_CITIZEN) return lang("UILABEL_GROUP_CITIZEN_DEFAULT");
+    return langf("UILABEL_GROUP_NAME", { std::to_string(ref + 1) });
 }
 
 inline std::string behaviorName(const BehaviorRule& r) {
@@ -162,6 +175,8 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::PatrolSpawn: return lang("UILABEL_BEHAVIOR_PATROL_SPAWN");
     case BehaviorKind::AutoSupply: return lang("UILABEL_BEHAVIOR_AUTO_SUPPLY");
     case BehaviorKind::AutoConstruct: return lang("UILABEL_BEHAVIOR_AUTO_CONSTRUCT");
+    case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP", { groupRefName(r.propKind) });
+    case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -185,6 +200,8 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::PatrolSpawn: return lang("UILABEL_BEHAVIOR_PATROL_SPAWN_TIP");
     case BehaviorKind::AutoSupply: return lang("UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP");
     case BehaviorKind::AutoConstruct: return lang("UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP");
+    case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP_TIP", { groupRefName(r.propKind) });
+    case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -199,7 +216,7 @@ inline BehaviorRule behaviorFromFields(int on, int kind, int propKind, int perce
     BehaviorRule r;
     r.on = on != 0;
     r.kind = (BehaviorKind)std::clamp(kind, 0, (int)BehaviorKind::Count - 1);
-    r.propKind = isAutomated(r.kind) ? propKind : -1;
+    r.propKind = isAutomated(r.kind) || r.kind == BehaviorKind::Group ? propKind : -1;
     const PercentRange range = percentRange(r.kind);
     r.percent = hasPercent(r.kind) ? std::clamp(percent, range.lo, range.hi) : BEHAVIOR_NEED_PERCENT;
     return r;
@@ -216,23 +233,41 @@ inline std::vector<BehaviorRule> mobBehaviors() {
 }
 
 // Producing tasks: what they make is carried off by the haul tasks, which therefore rank above them
-inline bool isProducing(BehaviorKind k) { return k == BehaviorKind::AutoHarvest; }
+// What kind of task it is, in the order of priority a new task is sorted into: group tasks first, then needs,
+// building, hauling, harvesting, and movement last. The Add Task list shows its headings in this order too.
+enum class TaskCategory : int { Groups = 0, Needs, Building, Hauling, Harvesting, Movement, Count };
+inline constexpr const char* TASK_CATEGORY_KEYS[] = { "UILABEL_TASKS_GROUPS", "UILABEL_TASKS_NEEDS", "UILABEL_TASKS_BUILDING",
+                                                      "UILABEL_TASKS_HAULING", "UILABEL_TASKS_HARVESTING", "UILABEL_TASKS_MOVEMENT" };
+static_assert(std::size(TASK_CATEGORY_KEYS) == (size_t)TaskCategory::Count);
+inline TaskCategory taskCategory(BehaviorKind k) {
+    switch (k) {
+    case BehaviorKind::Group: return TaskCategory::Groups;
+    case BehaviorKind::Patrol: case BehaviorKind::Roam: case BehaviorKind::PatrolSpawn: return TaskCategory::Movement;
+    case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: return TaskCategory::Building;
+    case BehaviorKind::AutoHarvest: return TaskCategory::Harvesting;
+    case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: return TaskCategory::Hauling;
+    default: return TaskCategory::Needs;
+    }
+}
 
-inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& add) {
-    // Where a haul task goes: just above the first producing task, or at the end if there is none
-    auto haulSpot = [&](size_t limit) {
-        for (size_t i = 0; i < limit; ++i) {
-            if (isProducing(rules[i].kind)) return i;
+
+// Adds a task, or switches on the one it has already. False once the list holds limit tasks. A new task goes in by its
+// category: below every task of its own or an earlier category, above the first of a later one (so hauls go above
+// harvesting, and both above movement). A haul added again that sits below a later category's task moves up likewise.
+inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& add, int limit = BEHAVIOR_LIMIT) {
+    const int rank = (int)taskCategory(add.kind);
+    auto spot = [&](size_t end) {
+        for (size_t i = 0; i < end; ++i) {
+            if ((int)taskCategory(rules[i].kind) > rank) return i;
         }
-        return limit;
+        return end;
     };
     for (size_t i = 0; i < rules.size(); ++i) {
         if (!sameBehavior(rules[i], add)) continue;
         rules[i].on = true;
         rules[i].cooldown = 0.0f;
-        // Added again, a haul task below a producing task moves up above it
         if (isHaul(add.kind)) {
-            const size_t to = haulSpot(i);
+            const size_t to = spot(i);
             if (to < i) {
                 const BehaviorRule moved = rules[i];
                 rules.erase(rules.begin() + (long)i);
@@ -241,22 +276,11 @@ inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& ad
         }
         return true;
     }
-    if ((int)rules.size() >= BEHAVIOR_LIMIT) return false;
-    if (isHaul(add.kind)) {
-        rules.insert(rules.begin() + (long)haulSpot(rules.size()), add);
-        return true;
-    }
-    if (isAutomated(add.kind)) {
-        rules.push_back(add);
-        return true;
-    }
-    size_t after = 0;
-    for (size_t i = 0; i < rules.size(); ++i) {
-        if (!isAutomated(rules[i].kind)) after = i + 1;
-    }
-    rules.insert(rules.begin() + (long)after, add);
+    if ((int)rules.size() >= limit) return false;
+    rules.insert(rules.begin() + (long)spot(rules.size()), add);
     return true;
 }
+
 
 struct BehaviorOption {
     BehaviorRule rule;
@@ -268,7 +292,7 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     std::vector<BehaviorKind> out;
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
-                BehaviorKind::Rescue };
+                BehaviorKind::Rescue, BehaviorKind::Sleep };
     }
     out.insert(out.end(), { BehaviorKind::Patrol, BehaviorKind::Roam, BehaviorKind::PatrolSpawn });
     return out;

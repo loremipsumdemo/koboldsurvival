@@ -104,6 +104,9 @@ bool upgrade8to9(Lines&) { return true; }
 bool upgrade9to10(Lines&) { return true; }
 // Version 11 added the material line. A version 10 piece without one is wood, as it was.
 bool upgrade10to11(Lines&) { return true; }
+// Version 12 added the bgroup, btask and citgroup lines, for behavior groups. A version 11 file has none: its citizens
+// follow Group 1, which starts as the Citizen Default Behavior.
+bool upgrade11to12(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -115,6 +118,7 @@ constexpr Step STEPS[] = {
     { 8, upgrade8to9 },
     { 9, upgrade9to10 },
     { 10, upgrade10to11 },
+    { 11, upgrade11to12 },
 };
 }
 

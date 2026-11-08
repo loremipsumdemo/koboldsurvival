@@ -246,7 +246,7 @@ SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, 
     const float colHeadH = 16.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s;
     const float buttonW = 18.0f * s, buttonGap = 2.0f * s;
     const float sortW = 56.0f * s, sortH = 22.0f * s, statRowH = 20.0f * s;
-    const int rules = std::clamp(ruleCount, 0, BEHAVIOR_LIMIT);
+    const int rules = std::clamp(ruleCount, 0, BEHAVIOR_TASKS_MAX);
     tab = (UnitTab)std::clamp(idx(tab), 0, UNIT_TAB_COUNT - 1);
 
     SidebarLayout L;

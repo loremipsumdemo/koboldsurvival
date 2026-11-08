@@ -7,9 +7,9 @@
 #include "geometry.h"
 #include "terrain.h"
 
-// Buildings. A foundation is laid as a blueprint by dragging a rectangle (3 to 64 tiles a side) and picking at least one
-// entrance on its edge. Every piece (the foundation, then walls, doors, ladders and upper floors on it) starts as a
-// blueprint that needs Wood Logs brought to it (Auto-Haul Blueprint Supplies) and then building (Auto-Construct). A piece
+// Buildings. A foundation is laid as a blueprint by dragging a rectangle (3 to 64 tiles a side). Every piece (the
+// foundation, then walls, doors, ladders and upper floors on it) starts as a blueprint that needs its material brought to
+// it and then building, both done by Auto-Construct. A piece
 // isn't finished while a unit stands where it goes: the unit is asked to move, and the piece is tried again later.
 inline constexpr int FOUNDATION_MIN = 3;
 inline constexpr int FOUNDATION_MAX = 64;
@@ -23,7 +23,7 @@ inline constexpr double DOOR_HEALTH = 60.0;
 inline constexpr double WALL_HEALTH = 2.0 * DOOR_HEALTH;   // a wall takes twice the breaking a door does
 inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
 
-// A foundation: the tiles it covers, and which of the tiles on its edge are entrances (packed by tileKey)
+// A foundation: the tiles it covers. entrances is no longer used (doors go anywhere walls do) but is kept for old saves
 struct Foundation {
     int x0 = 0, z0 = 0, w = 0, h = 0;
     std::vector<long long> entrances;
@@ -94,8 +94,6 @@ enum class PieceCheck {
     OutsideClaim,
     NeedsFoundation,
     FoundationUnfinished,
-    EntranceOnly,
-    NotOnEntrance,
     Taken,
     EdgesOpen,
 };
@@ -120,9 +118,6 @@ ObjectId upperFloorAt(World& w, int x, int z);
 PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER);
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER,
                          BuildMaterial material = BuildMaterial::Wood);
-// Makes the edge tile an entrance or no longer one. False if it is not on the edge, or a piece stands on it.
-bool toggleEntrance(World& w, ObjectId foundation, int x, int z);
-bool isEntrance(World& w, int x, int z);
 
 PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER);
 // A ladder and an upper floor need every edge tile of the foundation to have a wall or a door

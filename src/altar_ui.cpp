@@ -35,6 +35,10 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const st
             r.portrait = Rect{ r.row.x + 3.0f * s, r.row.y + 3.0f * s, rowH - 6.0f * s, rowH - 6.0f * s };
             const float mw = 34.0f * s;
             r.move = Rect{ r.row.x + r.row.w - mw - 4.0f * s, r.row.y + 6.0f * s, mw, rowH - 12.0f * s };
+            if (c == ALTAR_CITIZEN) {
+                const float gw = 74.0f * s;
+                r.group = Rect{ r.move.x - gw - 6.0f * s, r.move.y, gw, r.move.h };
+            }
             L.rows[(size_t)c].push_back(r);
         }
     }

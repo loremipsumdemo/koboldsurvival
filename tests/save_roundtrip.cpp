@@ -28,6 +28,7 @@
 #include "systems.h"
 #include "simulation.h"
 #include "building.h"
+#include "behavior_groups.h"
 #include "terrain.h"
 
 namespace {
@@ -244,6 +245,36 @@ int main(int, char**) {
     const ObjectId lying = spawnGroundItem(world, *world.get<Transform>(people[0]), itemTagged(ITEM_TAG_COMMON_BONES), 2);
     world.get<GroundItem>(lying)->hours = 5.0;
 
+    // Behavior groups: a second group that takes in Group 1 and adds woodcutting, with the citizen in it
+    const BehaviorRule chopTrees = [] {
+        BehaviorRule r;
+        r.kind = BehaviorKind::AutoHarvest;
+        r.propKind = idx(PropKind::Tree);
+        return r;
+    }();
+    {
+        BehaviorGroups& bg = behaviorGroups(world);
+        check(bg.groups.size() == 1 && expandGroup(bg, 0).size() == bg.citizen.size(), "Group 1 starts as the Citizen Default Behavior");
+        const int woodGroup = addBehaviorGroup(world);
+        BehaviorRule base;
+        base.kind = BehaviorKind::Group;
+        base.propKind = 0;
+        bg.groups[(size_t)woodGroup] = { base, chopTrees };
+        behaviorGroupsChanged(world);
+        check(!canIncludeGroup(bg, 0, woodGroup) && !canIncludeGroup(bg, woodGroup, woodGroup) &&
+              canIncludeGroup(bg, woodGroup, GROUP_REF_MILITARY) && !canIncludeGroup(bg, GROUP_REF_CITIZEN, 0),
+              "a group can't take in itself or a group that leads back to it, and a Default Behavior takes in no group");
+        const std::vector<BehaviorRule> all = expandGroup(bg, woodGroup);
+        check(all.size() == bg.citizen.size() + 1 && sameBehavior(all.back(), chopTrees),
+              "a Group task stands for the whole of Group 1, with the group's own task below it");
+        check(setCitizenGroup(world, resident, woodGroup) && !setCitizenGroup(world, resident, 9), "a citizen moves to a group that exists");
+        behaviorGroupSystem(world);
+        BehaviorRule home;
+        home.kind = BehaviorKind::PatrolSpawn;
+        check(holdsBehavior(world.get<Behaviors>(resident)->rules, chopTrees) && holdsBehavior(world.get<Behaviors>(resident)->rules, home),
+              "the citizen takes its group's tasks, the Citizen Default Behavior's among them");
+    }
+
     const size_t propsBefore = world.view<Prop, Transform>().size();
     const std::map<int, int> repBefore = playerReputation(world);
     const std::string first = "roundtrip_a.sav", second = "roundtrip_b.sav", cut = "roundtrip_cut.sav";
@@ -259,6 +290,94 @@ int main(int, char**) {
     restoreWorld(restored, terrain, after, loaded);
     check(writeSaveFile(second, captureWorld(restored, gs, cam, after, 1000, "test", map)), "the reloaded game is saved");
     check(slurp(first) == slurp(second), "both saves match");
+    {
+        const BehaviorGroups& bg = behaviorGroups(restored);
+        int residentGroup = -1;
+        for (ObjectId u : restored.view<Citizen, Name>()) {
+            if (restored.get<Name>(u)->text == "Resident") residentGroup = restored.get<Citizen>(u)->group;
+        }
+        check(bg.groups.size() == 2 && bg.groups[1].size() == 2 && sameBehavior(bg.groups[1][1], chopTrees) && residentGroup == 1,
+              "behavior groups, and the group a citizen follows, come back from a save");
+    }
+
+    // The Citizen Default Behavior runs needs, building, hauling, harvesting, then movement, and new tasks sort in
+    {
+        World town;
+        BehaviorGroups& bg = behaviorGroups(town);
+        bool ordered = true;
+        for (size_t i = 1; i < bg.citizen.size(); ++i) ordered = ordered && taskCategory(bg.citizen[i - 1].kind) <= taskCategory(bg.citizen[i].kind);
+        check(ordered && bg.citizen.back().kind == BehaviorKind::PatrolSpawn, "the Citizen Default Behavior is in category order, movement last");
+        bool sleeps = false, builds = false;
+        for (const BehaviorRule& r : bg.citizen) {
+            sleeps = sleeps || r.kind == BehaviorKind::Sleep;
+            builds = builds || r.kind == BehaviorKind::AutoConstruct;
+        }
+        check(sleeps && builds, "citizens sleep at night and build by default");
+        std::vector<BehaviorRule> list = bg.citizen;
+        BehaviorRule chop, haul;
+        chop.kind = BehaviorKind::AutoHarvest;
+        chop.propKind = idx(PropKind::Tree);
+        haul.kind = BehaviorKind::AutoHaul;
+        haul.prop = (ObjectId)4242;
+        addBehavior(list, chop, BEHAVIOR_GROUP_TASKS);
+        addBehavior(list, haul, BEHAVIOR_GROUP_TASKS);
+        const size_t n = list.size();
+        check(n >= 4 && list[n - 1].kind == BehaviorKind::PatrolSpawn && list[n - 2].kind == BehaviorKind::AutoHarvest &&
+              list[n - 3].kind == BehaviorKind::AutoHaul && list[n - 4].kind == BehaviorKind::AutoConstruct,
+              "hauling and harvesting sort in after building and before movement");
+        check(!isNightAt(START_CLOCK_SECONDS) && isNightAt(18.0 * SECONDS_PER_HOUR) && isNightAt(3.0 * SECONDS_PER_HOUR) &&
+              !isNightAt(17.9 * SECONDS_PER_HOUR), "night runs from 18:00 to 06:00");
+    }
+    // Awake, rested empties over the daylight hours less one; at 0, harvesting and crafting slow right down
+    {
+        World camp;
+        const ObjectId worker = makeEntity(camp, Transform{ 0.0f, 0.0f, 0.0f }, FACTION_PLAYER);
+        camp.add(worker, defaultStats());
+        needsSystem(camp, 0, 0.0);
+        Needs* n = camp.get<Needs>(worker);
+        n->rested = n->maxRested;
+        n->hunger = n->maxHunger;
+        for (int i = 0; i < 10 * 60; ++i) needsSystem(camp, 0, 60.0);
+        const bool leftAfterTen = n->rested > 0;
+        for (int i = 0; i < 61; ++i) needsSystem(camp, 0, 60.0);
+        check(leftAfterTen && n->rested == 0, "rested lasts eleven hours awake, from full to 0");
+        check(restedWorkFactor(n) == EXHAUSTED_WORK_FACTOR && EXHAUSTED_WORK_FACTOR < 0.5, "work at 0 rested goes far slower");
+        n->rested = 1;
+        check(restedWorkFactor(n) == 1.0, "with any rest left, work goes at the usual speed");
+    }
+
+    // Removing a group: its citizens go back to Group 1, and Group tasks naming it go
+    {
+        World hall;
+        Rng hallRng;
+        const ObjectId walker = makeEntity(hall, Transform{ 0.0f, 0.0f, 0.0f }, FACTION_PLAYER);
+        hall.add(walker, defaultStats());
+        makeCitizen(hall, walker);
+        const int a = addBehaviorGroup(hall), b = addBehaviorGroup(hall);
+        BehaviorRule takeA;
+        takeA.kind = BehaviorKind::Group;
+        takeA.propKind = a;
+        behaviorGroups(hall).groups[(size_t)b] = { takeA };
+        setCitizenGroup(hall, walker, a);
+        // A group's list holds up to 256 tasks, past a unit's 16
+        {
+            std::vector<BehaviorRule> big;
+            int added = 0;
+            for (int i = 0; i < 300; ++i) {
+                BehaviorRule haul;
+                haul.kind = BehaviorKind::AutoHaul;
+                haul.prop = (ObjectId)(1000 + i);
+                added += addBehavior(big, haul, BEHAVIOR_GROUP_TASKS) ? 1 : 0;
+            }
+            check(added == BEHAVIOR_GROUP_TASKS && BEHAVIOR_GROUP_TASKS == 256, "a group's list takes 256 tasks and no more");
+            check(taskCategory(BehaviorKind::AutoHaul) == TaskCategory::Hauling && taskCategory(BehaviorKind::AutoHaulBones) == TaskCategory::Hauling &&
+                  taskCategory(BehaviorKind::AutoHarvest) == TaskCategory::Harvesting && taskCategory(BehaviorKind::Group) == TaskCategory::Groups &&
+                  taskCategory(BehaviorKind::Eat) == TaskCategory::Needs, "tasks are sorted into kinds, hauling among them");
+        }
+        check(removeBehaviorGroup(hall, a) && !removeBehaviorGroup(hall, 0), "a group is removed, but never Group 1");
+        check(hall.get<Citizen>(walker)->group == 0 && behaviorGroups(hall).groups.size() == 2 && behaviorGroups(hall).groups[1].empty(),
+              "its citizen goes back to Group 1, the next group moves up, and Group tasks naming it go");
+    }
 
     check(restored.view<Prop, Transform>().size() == propsBefore, "broken props stay broken (only Debris takes their place)");
     size_t emptyContainers = 0;
@@ -519,9 +638,6 @@ int main(int, char**) {
         check(checkFoundation(town, ground, x0, z0, x1, z1) == PieceCheck::Ok, "a 5 x 5 foundation in your claim may be laid");
         const ObjectId base = placeFoundation(town, ground, x0, z0, x1, z1);
         check(town.has<Blueprint>(base) && materialsNeeded(town, base) == 1, "it starts as a blueprint wanting one log");
-        check(!toggleEntrance(town, base, x0, z0), "a corner can't be an entrance");
-        check(!toggleEntrance(town, base, x0 + 2, z0 + 2), "a tile inside can't be an entrance");
-        check(toggleEntrance(town, base, x0 + 2, z1), "a tile on the edge becomes an entrance");
         check(checkPiece(town, PropKind::WoodWall, x0, z0) == PieceCheck::FoundationUnfinished, "nothing is built on an unfinished foundation");
 
         // A builder with logs and both tasks
@@ -552,10 +668,10 @@ int main(int, char**) {
         check(std::hypot(town.get<Transform>(builder)->x - mid.x, town.get<Transform>(builder)->z - mid.z) < 12.0f,
               "it works from up to five tiles away, without walking onto every tile");
 
-        check(checkPiece(town, PropKind::WoodDoor, x0 + 1, z1) == PieceCheck::EntranceOnly, "a door goes only on an entrance");
+        check(checkPiece(town, PropKind::WoodDoor, x0 + 1, z1) == PieceCheck::Ok && checkPiece(town, PropKind::WoodDoor, x0 + 2, z0 + 2) == PieceCheck::Ok,
+              "a door goes anywhere on a foundation a wall can");
         check(checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::EdgesOpen &&
               checkPiece(town, PropKind::UpperFloor, x0, z0) == PieceCheck::EdgesOpen, "no ladder or upper floor before every edge has a wall or door");
-        check(checkPiece(town, PropKind::WoodWall, x0 + 2, z1) == PieceCheck::NotOnEntrance, "a wall can't close an entrance");
         // Walls round the edge, a door in the entrance, a ladder inside and an upper floor along one side
         std::vector<ObjectId> walls;
         for (int x = x0; x <= x1; ++x) {
@@ -643,9 +759,9 @@ int main(int, char**) {
         ground.clearBlocked();
         restoreWorld(again, ground, againRng, townData);
         int foundations = 0, upstairs = 0;
-        for (ObjectId e : again.view<Foundation>()) foundations += again.get<Foundation>(e)->entrances.size() == 1 ? 1 : 0;
+        for (ObjectId e : again.view<Foundation>()) foundations += 1;
         for (ObjectId e : again.view<Upstairs>()) upstairs += again.has<Foundation>(again.get<Upstairs>(e)->foundation) ? 1 : 0;
-        check(foundations == 1 && upstairs == 1, "the foundation, its entrance, and who is upstairs come back");
+        check(foundations == 1 && upstairs == 1, "the foundation and who is upstairs come back");
         check(!ground.walkable(x0, z0 + 1), "the walls close their tiles again after a reload");
 
         // With every wall and door on the ground floor gone, the upper floor falls in, and those on it come down
@@ -751,6 +867,20 @@ int main(int, char**) {
                     carriedCount(*yard.get<Inventory>(miner), itemTagged(ITEM_TAG_STONE)), (int)yard.get<Behaviors>(miner)->rules[0].why,
                     (int)yard.get<Behaviors>(miner)->busy, (int)yard.has<Working>(miner), (int)yard.has<PropOrder>(miner));
         check(stored > 0, "with one, the stone mined from a Boulder goes into the Stone Stockpile");
+        {
+            // Mining, the miner picks up a stone: its Auto-Haul, above the Auto-Harvest, comes first
+            for (int i = 0; i < 60 * 120 && !yard.has<Working>(miner); ++i) {
+                simStep(yard, ground, yardRng, yardState, 1.0f / 60.0f, false);
+                takeEvents(yard);
+            }
+            const bool wasWorking = yard.has<Working>(miner);
+            addToSlots(yard.get<Inventory>(miner)->slots.data(), INVENTORY_SLOTS, itemTagged(ITEM_TAG_STONE), 1);
+            simStep(yard, ground, yardRng, yardState, 1.0f / 60.0f, false);
+            takeEvents(yard);
+            const Behaviors* mb = yard.get<Behaviors>(miner);
+            check(wasWorking && mb->busy && isHaul(mb->step.kind) && !yard.has<Working>(miner),
+                  "when what a unit carries changes, a haul task above its harvesting comes first");
+        }
 
         // A Dragon Crystal is broken, not destroyed, and leaves crystals
         const ObjectId gem = makeProp(yard, PropKind::DragonCrystal, Transform{ mid.x + 4.5f, 0.0f, mid.z + 4.5f });

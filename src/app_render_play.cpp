@@ -282,6 +282,7 @@ void App::drawPlayingScreen() {
     if (mapOpen) drawWorldMapPopup();
     drawAltar();
     drawGhosts();
+    drawBehaviorGroups();
     drawRename();
     drawFoundationSize();
     drawMaterialAsk();

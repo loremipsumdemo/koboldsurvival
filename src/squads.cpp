@@ -1,4 +1,5 @@
 #include "squads.h"
+#include "behavior_groups.h"
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -130,11 +131,17 @@ bool makeMilitary(World& w, ObjectId u, int preferred) {
     w.remove<Neutral>(u);
     w.add(u, Commandable{});
     w.add(u, SquadMember{ squad });
+    // A unit of yours joining the military takes the Military Default Behavior
     if (Behaviors* b = w.get<Behaviors>(u)) {
-        const BehaviorRule home = stayNearHome();
-        b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) { return sameBehavior(r, home); }),
-                       b->rules.end());
-        if (b->busy && b->step.kind == BehaviorKind::PatrolSpawn) b->busy = false;
+        if (factionOf(w, u) == FACTION_PLAYER) {
+            b->rules = expandGroup(behaviorGroups(w), GROUP_REF_MILITARY);
+        } else {
+            const BehaviorRule home = stayNearHome();
+            b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) { return sameBehavior(r, home); }),
+                           b->rules.end());
+        }
+        b->busy = false;
+        b->pending = true;
         w.remove<SoloMove>(u);
     }
     return true;
