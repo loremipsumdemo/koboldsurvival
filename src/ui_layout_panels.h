@@ -91,6 +91,7 @@ struct UnitPanelLayout {
     Rect paceButton;
     Rect selectButton;
     Rect optimizeAllButton;
+    Rect floorButton;
     int tab = 0;
     Rect tabSquad;
     Rect tabFaction;

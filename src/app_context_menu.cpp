@@ -31,8 +31,9 @@ ObjectId App::menuTargetAt(float mx, float my) {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
     float groundD2 = 1e30f;
-    if (auto g = pickGround(cam, terrain, mx, my, winW, winH)) {
-        const float gy = std::max(terrain.heightAt(g->first, g->second), 0.0f);
+    int storey = 0;
+    if (auto g = pickFloor(mx, my, storey)) {
+        const float gy = std::max(terrain.heightAt(g->first, g->second), 0.0f) + storeyBaseHeight(storey);
         groundD2 = (g->first - ex) * (g->first - ex) + (gy - ey) * (gy - ey) + (g->second - ez) * (g->second - ez);
     }
     auto hidden = [&](ObjectId e) {

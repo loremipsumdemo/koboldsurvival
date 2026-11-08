@@ -106,6 +106,13 @@ bool floorWalkable(World& w, const BuildingMap& m, int x, int z, int level) {
     return !(info && info->wallRule);
 }
 
+bool anyFloorOn(World& w, const BuildingMap& m, const std::vector<long long>& tiles, int level, int owner) {
+    for (long long k : tiles) {
+        if (mapFloorSurface(w, m, keyX(k), keyZ(k), level, owner)) return true;
+    }
+    return false;
+}
+
 bool edgesClosedMap(World& w, const BuildingMap& m, const std::vector<long long>& tiles, int level) {
     if (tiles.empty()) return false;
     const std::unordered_set<long long> in(tiles.begin(), tiles.end());
@@ -213,8 +220,52 @@ std::unordered_map<long long, int> floorParts(World& w, const BuildingMap& m, in
     return part;
 }
 
-// Plans a walk from the unit to goal on goalStorey by way of ladders. False if there is no way.
+bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out);
+
+// Plans a walk from the unit to goal on goalStorey by way of ladders. False if there is no way. A goal on an upper floor
+// that can't be reached, as a corner tile walled in, is swapped for the nearest tile that can, near enough to work from.
 bool planRoute(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out) {
+    if (planRouteTo(w, t, u, goal, goalStorey, out)) return true;
+    if (goalStorey <= 0) return false;
+    const BuildingMap m = buildingMap(w);
+    const std::unordered_map<long long, int> parts = floorParts(w, m, goalStorey);
+    // The parts of this floor a ladder comes to
+    std::unordered_set<int> reached;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (!info.ladder || w.has<Blueprint>(e)) continue;
+        const Transform* lt = w.get<Transform>(e);
+        const int level = storeyOf(w, e);
+        Vec2 spot{ lt->x, lt->z };
+        if (level == goalStorey - 1) {
+            if (!ladderTop(w, m, e, spot)) continue;
+        } else if (level != goalStorey) {
+            continue;
+        }
+        const auto it = parts.find(tileKey(tileOf(spot.x), tileOf(spot.z)));
+        if (it != parts.end()) reached.insert(it->second);
+    }
+    if (const Upstairs* up = w.get<Upstairs>(u); up && up->level == goalStorey) {
+        const Transform* ut = w.get<Transform>(u);
+        const auto it = parts.find(tileKey(tileOf(ut->x), tileOf(ut->z)));
+        if (it != parts.end()) reached.insert(it->second);
+    }
+    Vec2 best = goal;
+    float bestD2 = -1.0f;
+    for (const auto& [tk, part] : parts) {
+        if (!reached.count(part)) continue;
+        const float x = keyX(tk) + 0.5f, z = keyZ(tk) + 0.5f;
+        const float d2 = (x - goal.x) * (x - goal.x) + (z - goal.z) * (z - goal.z);
+        if (bestD2 < 0.0f || d2 < bestD2) {
+            bestD2 = d2;
+            best = Vec2{ x, z };
+        }
+    }
+    if (bestD2 < 0.0f || bestD2 < 1e-4f) return false;
+    return planRouteTo(w, t, u, best, goalStorey, out);
+}
+
+bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out) {
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     const BuildingMap m = buildingMap(w);
@@ -526,7 +577,10 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
     if (info.upperFloor) {
         // A floor over this one, on the level above
         if (level + 1 > STOREY_MAX) return PieceCheck::NeedsFloor;
-        if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner)) return PieceCheck::NeedsFloor;
+        // It may span a hole in this floor, as over a ladder from the floor below: the walls round it hold it up
+        if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner) && !anyFloorOn(w, m, buildingTiles(m, x, z), level, owner)) {
+            return PieceCheck::NeedsFloor;
+        }
         if (mapGet(m.floor, levelKey(x, z, level + 1)) != NO_OBJECT) return PieceCheck::Taken;
         const ObjectId under = mapGet(m.piece, levelKey(x, z, level));
         if (under != NO_OBJECT && propInfo(w.get<Prop>(under)->kind).ladder) return PieceCheck::Taken;
@@ -536,6 +590,7 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
     if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner)) return PieceCheck::NeedsFloor;
     if (mapGet(m.piece, levelKey(x, z, level)) != NO_OBJECT) return PieceCheck::Taken;
     if (info.ladder) {
+        if (level + 1 > STOREY_MAX) return PieceCheck::NeedsFloor;
         if (mapGet(m.floor, levelKey(x, z, level + 1)) != NO_OBJECT) return PieceCheck::Taken;
         if (!edgesClosedMap(w, m, buildingTiles(m, x, z), level)) return PieceCheck::EdgesOpen;
     }
@@ -941,6 +996,13 @@ void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target) {
     clearOrders(w, u);
     w.remove<IdleSpot>(u);
     walkSoloTo(w, t, u, target, -1);
+}
+
+void moveToFloor(World& w, Terrain& t, ObjectId u, Vec2 target, int storey) {
+    if (!w.has<Commandable>(u) || cannotTakeOrder(w, u)) return;
+    clearOrders(w, u);
+    w.remove<IdleSpot>(u);
+    walkSoloTo(w, t, u, target, storey);
 }
 
 void climbSystem(World& w, Terrain& t, float dt) {

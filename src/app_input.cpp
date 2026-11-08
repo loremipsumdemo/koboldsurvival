@@ -208,12 +208,9 @@ void App::onKeyDown() {
             return;
         }
     }
-    if (screen == Screen::Playing && session.buildPick.placing() && (e.key.key == SDLK_PAGEUP || e.key.key == SDLK_PAGEDOWN)) {
-        const int before = session.buildStorey;
-        session.buildStorey = std::clamp(session.buildStorey + (e.key.key == SDLK_PAGEUP ? 1 : -1), 0, STOREY_MAX - 1);
-        if (session.buildStorey != before) playSfx(Sfx::UiClick);
-        showNotice(session.buildStorey > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildStorey) })
-                                           : lang("MISC_BUILD_ON_GROUND"), 2.0f);
+    if (screen == Screen::Playing && !editing && session.dialogueUnit == NO_OBJECT && (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) == 0 &&
+        (e.key.key == SDLK_Q || e.key.key == SDLK_E)) {
+        stepFloor(e.key.key == SDLK_E ? 1 : -1);
         return;
     }
     if (screen == Screen::Playing && session.buildPick.any() && e.key.key == SDLK_ESCAPE) {
@@ -253,6 +250,9 @@ void App::onKeyDown() {
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && selectMenuOpen) {
             selectMenuOpen = false;
+            playSfx(Sfx::UiBack);
+        } else if (screen == Screen::Playing && squadMenu != 0) {
+            squadMenu = 0;
             playSfx(Sfx::UiBack);
         } else if (screen == Screen::Playing && optimizeAllOpen) {
             optimizeAllOpen = false;
@@ -589,8 +589,13 @@ if (mouseDownOnPanels()) return;
             if (openContextMenu(e.button.x, e.button.y)) {
                 rightHold = false;
             } else {
-                float gx = 0.0f, gz = 0.0f;
-                if (rightClickOrder(world, terrain, cam, e.button.x, e.button.y, winW, winH, gx, gz)) beginRightHold(gx, gz);
+                int storey = 0;
+                if (!selectedUnits(world).empty()) {
+                    if (const auto hit = pickFloor(e.button.x, e.button.y, storey)) {
+                        clickStorey = storey;
+                        beginRightHold(hit->first, hit->second);
+                    }
+                }
             }
         }
     }

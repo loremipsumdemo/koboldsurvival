@@ -302,6 +302,17 @@ struct App : AppSession {
     std::vector<ObjectId> ownUnitList();   // the units of the squad the Squad tab shows
     void pickSquad(int squad, bool additive);
     void optimizeSquadGear();
+    void optimizeSelectedGear();
+    // The Optimize and Floor buttons' dropdowns: 0 none open, 1 Optimize, 2 Floor
+    int squadMenu = 0;
+    ItemMenuLayout squadMenuLayout();
+    std::vector<std::string> squadMenuLabels();
+    void runSquadMenu(int choice);
+    // Floors: the one looked at follows the camera; the cutaway inside a building; clicks that stop on that floor
+    void updateFloorView();
+    void stepFloor(int by);
+    std::optional<std::pair<float, float>> pickFloor(float mx, float my, int& storey);
+    int clickStorey = 0;   // the floor the last order's click landed on
     void pickClosestUnit();
     void runSelectMenu(int choice);
     ItemMenuLayout selectMenuLayout();

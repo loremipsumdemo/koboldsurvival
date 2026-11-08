@@ -1,6 +1,7 @@
 #include "app.h"
 #include "squads.h"
 #include "systems.h"
+#include "building.h"
 
 using namespace play;
 
@@ -14,7 +15,7 @@ std::vector<ObjectId> App::ownUnitList() {
     return squadUnits(world, world.resource<SquadBook>().current);
 }
 
-// Optimize All: the gear of the squad the Squad tab shows, with the settings the Shift + click window last saved
+// Optimize: the gear of the squad the Squad tab shows, with the settings the Custom window last saved
 void App::optimizeSquadGear() {
     const OptimizeAllResult r = optimizeAllGear(world, ownUnitList(), gearPrefs());
     if (r.changed == 0 && r.noRoom == 0) {
@@ -66,6 +67,58 @@ void App::pickClosestUnit() {
     playSfx(Sfx::UiClick);
 }
 
+void App::optimizeSelectedGear() {
+    const OptimizeAllResult r = optimizeAllGear(world, selectedUnits(world), gearPrefs());
+    if (r.changed == 0 && r.noRoom == 0) {
+        showNotice(lang("MISC_OPTIMIZE_ALL_SAME"));
+    } else if (r.noRoom == 0) {
+        showNotice(langf("MISC_OPTIMIZE_ALL_DONE", { std::to_string(r.changed) }));
+    } else {
+        showNotice(langf("MISC_OPTIMIZE_ALL_SOME_ROOM", { std::to_string(r.changed), std::to_string(r.noRoom) }));
+    }
+    playSfx(r.changed == 0 && r.noRoom > 0 ? Sfx::UiError : Sfx::UiClick);
+}
+
+std::vector<std::string> App::squadMenuLabels() {
+    std::vector<std::string> out;
+    if (squadMenu == 1) {
+        for (const char* key : { "UILABEL_OPTIMIZE_SELECTED", "UILABEL_OPTIMIZE_EVERYONE", "UILABEL_OPTIMIZE_CUSTOM" }) out.push_back(lang(key));
+    } else if (squadMenu == 2) {
+        const char* mark = "\xE2\x80\xA2 ";
+        out.push_back(std::string(session.floorManual ? "" : mark) + lang("UILABEL_FLOOR_AUTO"));
+        out.push_back(std::string(session.floorManual ? mark : "") + lang("UILABEL_FLOOR_MANUAL"));
+    }
+    return out;
+}
+
+ItemMenuLayout App::squadMenuLayout() {
+    const UnitPanelLayout pl = squadPanelLayout(winW, winH);
+    const Rect b = squadMenu == 1 ? pl.optimizeAllButton : pl.floorButton;
+    const int n = (int)squadMenuLabels().size();
+    ItemMenuLayout L = renderer.itemMenuLayout(b.x, b.y + b.h, n, winW, winH);
+    if (L.box.y < b.y + b.h - 0.5f) L = renderer.itemMenuLayout(b.x, b.y - L.box.h, n, winW, winH);
+    return L;
+}
+
+void App::runSquadMenu(int choice) {
+    if (squadMenu == 1) {
+        if (choice == 0) {
+            optimizeSelectedGear();
+        } else if (choice == 1) {
+            optimizeSquadGear();
+        } else {
+            // Custom: the window that says how
+            optimizeAllOpen = true;
+            optimizeSliderDrag = false;
+            playSfx(Sfx::UiMenuOpen);
+        }
+    } else if (squadMenu == 2) {
+        session.floorManual = choice == 1;
+        showNotice(lang(session.floorManual ? "MISC_FLOOR_MANUAL" : "MISC_FLOOR_AUTO"), 3.0f);
+        playSfx(Sfx::UiClick);
+    }
+}
+
 ItemMenuLayout App::selectMenuLayout() {
     const Rect b = squadPanelLayout(winW, winH).selectButton;
     ItemMenuLayout L = renderer.itemMenuLayout(b.x, b.y + b.h, SELECT_MENU_COUNT, winW, winH);
@@ -91,6 +144,17 @@ void App::runSelectMenu(int choice) {
 }
 
 bool App::pressOnSelectMenu() {
+    if (screen == Screen::Playing && squadMenu != 0) {
+        const ItemMenuLayout L = squadMenuLayout();
+        const int hit = e.button.button == SDL_BUTTON_LEFT ? itemMenuButtonAt(L, e.button.x, e.button.y) : -1;
+        const UnitPanelLayout pl = squadPanelLayout(winW, winH);
+        const Rect button = squadMenu == 1 ? pl.optimizeAllButton : pl.floorButton;
+        if (hit >= 0) runSquadMenu(hit);
+        squadMenu = 0;
+        // A click on the button itself only closes the menu
+        if (button.contains(e.button.x, e.button.y)) return true;
+        return L.box.contains(e.button.x, e.button.y);
+    }
     if (screen != Screen::Playing || !selectMenuOpen) return false;
     selectMenuOpen = false;
     const ItemMenuLayout L = selectMenuLayout();

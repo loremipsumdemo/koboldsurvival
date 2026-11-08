@@ -164,7 +164,7 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 }
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                             int repView, const std::string* renameText) {
+                             int repView, const std::string* renameText, int floorLevel, bool floorManual) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, bgAlpha });
@@ -208,13 +208,20 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         const std::string shown = fitTextTip(head, h.w, h);
         drawListText(shown, h.x, h.y + (h.h - listTextHeight(shown)) * 0.5f, theme::GOLD);
     }
-    mode(L.paceButton, running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), running);
+    mode(L.paceButton, fitTextTip(running ? lang("UILABEL_PACE_RUN") : lang("UILABEL_PACE_WALK"), L.paceButton.w - 6.0f * s, L.paceButton),
+         running);
     mode(L.selectButton, fitTextTip(lang("UILABEL_SELECT_MENU"), L.selectButton.w - 6.0f * s, L.selectButton), false);
     {
-        const std::string label = lang("UILABEL_OPTIMIZE_ALL");
+        const std::string label = lang("UILABEL_OPTIMIZE");
         const std::string shown = fitTextTip(label, L.optimizeAllButton.w - 6.0f * s, L.optimizeAllButton);
         mode(L.optimizeAllButton, shown, false);
         noteTip(lang("UILABEL_OPTIMIZE_ALL_TIP"), L.optimizeAllButton);
+    }
+    {
+        const std::string level = floorLevel > 0 ? std::to_string(floorLevel) : std::string(lang("UILABEL_FLOOR_GROUND_SHORT"));
+        const std::string label = langf("UILABEL_FLOOR_BUTTON", { level });
+        mode(L.floorButton, fitTextTip(label, L.floorButton.w - 6.0f * s, L.floorButton), floorManual);
+        noteTip(lang(floorManual ? "UILABEL_FLOOR_MANUAL_TIP" : "UILABEL_FLOOR_AUTO_TIP"), L.floorButton);
     }
 
     for (const UnitCell& c : L.cells) {

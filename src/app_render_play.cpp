@@ -73,7 +73,8 @@ void App::drawGamePanels() {
     const std::vector<ObjectId> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
-    renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr);
+    renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr, session.floorLevel,
+                           session.floorManual);
     drawPanelLock(PanelId::Squad);
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
@@ -282,6 +283,7 @@ void App::drawPlayingScreen() {
         }
         renderer.drawItemMenu(selectMenuLayout(), labels, mouseX, mouseY);
     }
+    if (squadMenu != 0) renderer.drawItemMenu(squadMenuLayout(), squadMenuLabels(), mouseX, mouseY);
     if (session.disbandTarget != NO_OBJECT) {
         renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
     }

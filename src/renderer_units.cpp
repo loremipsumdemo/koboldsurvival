@@ -438,7 +438,7 @@ std::vector<ObjectId> Renderer::entitiesAtPixel(World& w, const Camera& cam, flo
 
     for (ObjectId u : w.view<Entity, Transform, Name>()) {
         const Transform* tr = w.get<Transform>(u);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinDetail(cam, tr->x, tr->y, tr->z) || pickHidden(w, u)) continue;
         if (const Model* m = unitModel(w, u)) {
             const float tall = std::max(1.0f, unitHeight(w, u)), reach = 1.5f * tall + 1.0f;
             const float cx = tr->x - o[0], cy = tr->y + 0.5f * tall - o[1], cz = tr->z - o[2];
@@ -495,7 +495,7 @@ std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float 
     const DetailRange detail(cam);
     for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!detail.within(tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z) || pickHidden(w, e)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
         const float baseY = propBaseY(w, e);

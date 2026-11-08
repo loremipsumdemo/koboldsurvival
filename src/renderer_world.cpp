@@ -83,7 +83,7 @@ std::vector<ObjectId> Renderer::groundItemsAtPixel(World& w, const Terrain& t, c
     std::vector<ObjectId> shown;
     for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z)) shown.push_back(e);
+        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z) && !pickHidden(w, e)) shown.push_back(e);
     }
     const std::unordered_map<ObjectId, PileSpot> spots = pileSpots(w, shown);
     for (ObjectId e : shown) {
@@ -103,6 +103,20 @@ std::vector<ObjectId> Renderer::groundItemsAtPixel(World& w, const Terrain& t, c
         return da != db ? da < db : a < b;
     });
     return out;
+}
+
+bool Renderer::cutAway(World& w, ObjectId e) const {
+    if (!cutaway_.on) return false;
+    const Transform* tr = w.get<Transform>(e);
+    if (!tr || storeyOf(w, e) <= cutaway_.level) return false;
+    return cutaway_.tiles.count(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z))) > 0;
+}
+
+bool Renderer::pickHidden(World& w, ObjectId e) const {
+    if (!cutaway_.on) return false;
+    const Transform* tr = w.get<Transform>(e);
+    if (!tr || storeyOf(w, e) == cutaway_.level) return false;
+    return cutaway_.tiles.count(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z))) > 0;
 }
 
 void Renderer::drawHud(const std::vector<HudEntry>& lines, int winW, int winH) {
@@ -420,7 +434,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     };
     for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!detail.within(tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
         const PropInfo& info = propInfo(kind);
@@ -493,7 +507,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!detail.within(tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
         const float tall = std::max(1.0f, unitHeight(w, e));
         if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;
         const UnitPose pose = unitPose(w, e);
@@ -538,6 +552,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     Batch rings;
     for (ObjectId e : w.view<Entity, Transform, Selected>()) {
+        if (cutAway(w, e)) continue;
         const Transform* tr = w.get<Transform>(e);
         outlineSquare(rings, tr->x, tr->y + 0.03f, tr->z, 0.6f, 0.07f, RGBA{ 0.3f, 1.0f, 0.3f, 1.0f });
     }
@@ -655,7 +670,7 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     std::vector<ObjectId> items;
     for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z)) items.push_back(e);
+        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z) && !cutAway(w, e)) items.push_back(e);
     }
     if (items.empty()) return;
     const std::unordered_map<ObjectId, PileSpot> spots = pileSpots(w, items);
@@ -723,7 +738,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
     const DetailRange detail(cam);
     for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (!groundLoaded(t, tr->x, tr->z)) continue;
+        if (!groundLoaded(t, tr->x, tr->z) || cutAway(w, e)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         const float dist2 = dx * dx + dy * dy + dz * dz;
         if (dist2 > LOD_MID_TILES * LOD_MID_TILES || !detail.within(tr->x, tr->y, tr->z)) continue;

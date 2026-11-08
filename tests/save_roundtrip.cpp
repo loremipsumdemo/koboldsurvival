@@ -788,6 +788,103 @@ int main(int, char**) {
         ground.clearBlocked();
     }
 
+    // A building goes up floor by floor: walls, a ladder and an upper floor on each, up to the top floor
+    {
+        World tower;
+        Rng towerRng;
+        towerRng.gen.seed(5);
+        GameState towerState;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const int cx = (int)std::floor(mid.x), cz = (int)std::floor(mid.z);
+        placeBuiltProp(tower, ground, PropKind::Altar, cx - 8.5f, cz + 0.5f, 0.0f, FACTION_PLAYER);
+        const int x0 = cx, z0 = cz, x1 = cx + 4, z1 = cz + 4;
+        auto finish = [&](ObjectId e) {
+            if (e == NO_OBJECT || !tower.has<Blueprint>(e)) return;
+            tower.get<Blueprint>(e)->supplied = materialsNeeded(tower, e);
+            tower.get<Blueprint>(e)->progress = 1.0;
+            finishBlueprint(tower, ground, e);
+        };
+        placeFoundation(tower, ground, x0, z0, x1, z1);
+        for (ObjectId e : tower.view<Foundation, Blueprint>()) finish(e);
+        auto ladderX = [&](int level) { return level % 2 == 0 ? x0 + 1 : x0 + 3; };
+        std::vector<ObjectId> pending;
+        auto put = [&](PropKind kind, int x, int z, int level, bool instant) {
+            const PieceCheck c = checkPiece(tower, kind, x, z, FACTION_PLAYER, level);
+            if (c != PieceCheck::Ok) {
+                std::printf("note: floor %d: %s at %d,%d is refused (%s)\n", level, propInfo(kind).nameKey.c_str(), x - x0, z - z0,
+                            pieceRefusalKey(c));
+                return false;
+            }
+            const ObjectId p = placePiece(tower, ground, kind, x, z, FACTION_PLAYER, BuildMaterial::Wood, level);
+            if (instant) finish(p);
+            else pending.push_back(p);
+            return p != NO_OBJECT;
+        };
+        // One floor's walls and door; with withFloor, its ladder and the upper floor over it too
+        auto storey = [&](int level, bool instant, bool withFloor) {
+            bool ok = true;
+            for (int x = x0; x <= x1; ++x) {
+                for (int z = z0; z <= z1; ++z) {
+                    if (x != x0 && x != x1 && z != z0 && z != z1) continue;
+                    ok = put(x == x0 + 2 && z == z1 ? PropKind::WoodDoor : PropKind::WoodWall, x, z, level, instant) && ok;
+                }
+            }
+            if (!withFloor) return ok;
+            ok = put(PropKind::Ladder, ladderX(level), z0 + 2, level, instant) && ok;
+            for (int x = x0; x <= x1; ++x) {
+                for (int z = z0; z <= z1; ++z) {
+                    if (x == ladderX(level) && z == z0 + 2) continue;
+                    ok = put(PropKind::UpperFloor, x, z, level, instant) && ok;
+                }
+            }
+            return ok;
+        };
+        check(storey(0, true, true) && storey(1, true, true), "the ground floor and the first upper floor are built");
+        buildingSystem(tower, ground, 0.0f);
+        // The second upper floor's walls are left to a builder on the ground, with logs in a barrel
+        check(storey(2, false, false), "walls go on the second upper floor");
+        const ObjectId wall2 = pending.empty() ? NO_OBJECT : pending.front();
+        const Transform* w2 = wall2 != NO_OBJECT ? tower.get<Transform>(wall2) : nullptr;
+        check(w2 && storeyOf(tower, wall2) == 2 && std::fabs(w2->y - (ground.heightAt(w2->x, w2->z) + storeyBaseHeight(2))) < 0.05f,
+              "a wall on the second upper floor stands on that floor");
+        const ObjectId builder = spawnUnit(tower, ground, towerRng, FACTION_PLAYER, cx - 3.5f, cz + 0.5f);
+        BehaviorRule construct;
+        construct.kind = BehaviorKind::AutoConstruct;
+        tower.get<Behaviors>(builder)->rules = { construct };
+        Stats handy = *tower.get<Stats>(builder);
+        handy.xp[idx(StatId::Strength)] = xpForLevel(50);
+        handy.xp[idx(StatId::Carpentry)] = xpForLevel(MAX_LEVEL);
+        tower.add(builder, handy);
+        const ObjectId barrel = placeBuiltProp(tower, ground, PropKind::Barrel, cx - 4.5f, cz + 3.5f, 0.0f, FACTION_PLAYER);
+        if (!tower.has<Storage>(barrel)) tower.add(barrel, Storage{});
+        tower.get<Storage>(barrel)->slots[0] = ItemStack{ woodLogItem(), 60 };
+        for (int i = 0; i < 60 * 480 && !tower.view<Blueprint>().empty(); ++i) {
+            simStep(tower, ground, towerRng, towerState, 1.0f / 60.0f, false);
+            takeEvents(tower);
+        }
+        const int left = (int)tower.view<Blueprint>().size();
+        std::printf("note: tower: %d pieces on the second upper floor still unfinished, the builder on floor %d\n", left, storeyOf(tower, builder));
+        check(left == 0, "a builder climbs the ladders and builds the walls on the second upper floor");
+        pending.clear();
+        bool upward = put(PropKind::Ladder, ladderX(2), z0 + 2, 2, true);
+        for (int x = x0; x <= x1; ++x) {
+            for (int z = z0; z <= z1; ++z) {
+                if (x != ladderX(2) || z != z0 + 2) upward = put(PropKind::UpperFloor, x, z, 2, true) && upward;
+            }
+        }
+        for (int level = 3; level < STOREY_MAX; ++level) upward = storey(level, true, true) && upward;
+        check(upward, "floor after floor goes up to the top floor");
+        check(storey(STOREY_MAX, true, false), "walls go on the top floor");
+        check(checkPiece(tower, PropKind::UpperFloor, x0 + 2, z0 + 2, FACTION_PLAYER, STOREY_MAX) == PieceCheck::NeedsFloor &&
+              checkPiece(tower, PropKind::Ladder, x0 + 2, z0 + 2, FACTION_PLAYER, STOREY_MAX) == PieceCheck::NeedsFloor,
+              "nothing goes up from the top floor");
+        check(STOREY_MAX + 1 == 8, "a building is at most 8 floors high");
+        ground.clearBlocked();
+        ground.clearDecks();
+    }
+
     // Materials: iron and Dragon Crystal make tougher pieces, and a blueprint wants its own material
     {
         World forge;

@@ -55,7 +55,11 @@ void App::updateRightHold() {
             holdX = hx;
             holdZ = hz;
         }
-        steerUnits(world, selectedUnits(world), Vec2{ holdX, holdZ });
+        std::vector<ObjectId> steered;
+        for (ObjectId u : selectedUnits(world)) {
+            if (clickStorey == 0 && !world.has<Upstairs>(u) && !world.has<Route>(u) && !world.has<Climbing>(u)) steered.push_back(u);
+        }
+        steerUnits(world, steered, Vec2{ holdX, holdZ });
         actionX = holdX;
         actionZ = holdZ;
         actionAlpha = 1.0f;
@@ -212,6 +216,7 @@ void App::updateCamera() {
     if (session.dialogueUnit == NO_OBJECT && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NO_OBJECT && !followUnitCamera(world, cam, followUnit)) followUnit = NO_OBJECT;
     if (!editing) keepCameraNearUnits(world, cam);
+    updateFloorView();
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
 }
@@ -480,7 +485,7 @@ void App::updateHover() {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
-                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildStorey;
+                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.floorLevel;
                 bp.lift = storeyBaseHeight(storey);
                 bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z, storey) == BuildCheck::Ok;
             }

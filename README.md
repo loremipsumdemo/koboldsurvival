@@ -4,7 +4,7 @@
 | --- | --- |
 | Left click / drag | Select units. Shift adds to the selection. A box around ground items, and no units you haven't selected, picks the items up |
 | Right click on your Altar | Manage Units (move units between the military and the citizens), Behavior Groups or Appease Ghosts, with or without units selected |
-| Optimize All / Shift + click | Optimize the gear of the squad shown, or first choose how |
+| Optimize / right-click | Optimize the gear of the squad shown; right-click for Selected, All or Custom |
 | Numpad 1 to 9 | Select that squad. Shift adds it to the selection, and pressing it twice brings the camera to it |
 | Ctrl + Numpad 1 to 9 | Move the selected units into that squad |
 | Numpad 0 | Select your unit nearest the camera's centre |
@@ -21,7 +21,7 @@
 | Space | Pause or resume, also during a conversation |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
-| PageUp / PageDown (building) | Build on the next floor up or down: walls, doors, ladders, upper floors and other props go on the floor picked |
+| Floor button, Q / E | The floor shown, built on and clicked on. Auto follows the unit the camera follows; Manual steps with Q (down) and E (up). Inside a building the floors above are cut away |
 | F12 | Take a screenshot |
 
 

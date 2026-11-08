@@ -388,7 +388,7 @@ std::vector<ObjectId> App::flyAirshipsTo(const std::vector<ObjectId>& units, flo
     for (ObjectId u : units) {
         const ObjectId ship = airshipOf(world, u);
         if (ship != NO_OBJECT) flyAirship(world, ship, Vec2{ x, z });
-        else if (world.has<Upstairs>(u)) moveUpstairs(world, terrain, u, Vec2{ x, z });   // on its floor, or down the ladders
+        else if (world.has<Upstairs>(u) || clickStorey > 0) moveToFloor(world, terrain, u, Vec2{ x, z }, clickStorey);   // by way of the ladders
         else walkers.push_back(u);
     }
     return walkers;
@@ -425,9 +425,14 @@ bool App::mouseOverPanels() {
 }
 
 bool App::holdTarget(int W, int H, float x, float y, float& gx, float& gz) {
-    if (mapGroundAt(W, H, x, y, gx, gz)) return true;
+    if (mapGroundAt(W, H, x, y, gx, gz)) {
+        clickStorey = 0;
+        return true;
+    }
     if (overPanels(x, y, W, H)) return false;
-    auto hit = pickGround(cam, terrain, x, y, W, H);
+    int storey = 0;
+    auto hit = pickFloor(x, y, storey);
+    if (hit) clickStorey = storey;
     if (!hit) return false;
     gx = hit->first;
     gz = hit->second;

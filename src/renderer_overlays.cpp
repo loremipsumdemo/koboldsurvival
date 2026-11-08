@@ -54,6 +54,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     propHops_.swap(seen);
 
     for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
+        if (cutAway(w, e)) continue;
         const Blueprint* bp = w.get<Blueprint>(e);
         const int need = materialsNeeded(w, e);
         if (bp->supplied <= 0 && bp->progress <= 0.0) continue;
@@ -110,7 +111,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
     for (ObjectId u : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;

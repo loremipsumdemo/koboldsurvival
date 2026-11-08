@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -102,6 +103,17 @@ public:
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
+    // The cutaway: inside a building, what stands on the floors above the one looked at is left out, drawn and picked
+    struct Cutaway {
+        bool on = false;
+        int level = 0;
+        std::unordered_set<long long> tiles;   // the building's tiles, by tileKey
+    };
+    void setCutaway(Cutaway c) { cutaway_ = std::move(c); }
+    // Whether the cutaway leaves this out
+    bool cutAway(World& w, ObjectId e) const;
+    // Whether a click can't reach this: left out by the cutaway, or under the floor looked at
+    bool pickHidden(World& w, ObjectId e) const;
     void drawBuildPreview(const Terrain& t);
     void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
@@ -109,7 +121,7 @@ public:
 
     // renameText: the squad name being typed, or null when no squad is being renamed
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                       int repView, const std::string* renameText = nullptr);
+                       int repView, const std::string* renameText = nullptr, int floorLevel = 0, bool floorManual = false);
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
@@ -342,6 +354,7 @@ private:
     BuildPick buildSelected_;
     bool buildInClaim_ = false;
     BuildPreview buildPreview_;
+    Cutaway cutaway_;
     GLuint glyphVao_ = 0, glyphVbo_ = 0;
     struct TerrainChunk {
         GLuint vao = 0, vbo = 0, ebo = 0;

@@ -189,10 +189,11 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
     const float rowW = open.w - 2.0f * m.pad;
     L.squadHeading = Rect{ open.x + m.pad, bodyY + m.pad, rowW, m.headH };
     const float buttonsY = bodyY + m.pad + m.headH + m.gap;
-    const float thirdW = (rowW - 2.0f * m.gap) / 3.0f;
-    L.paceButton = Rect{ open.x + m.pad, buttonsY, thirdW, m.toggleH };
-    L.selectButton = Rect{ L.paceButton.x + thirdW + m.gap, buttonsY, thirdW, m.toggleH };
-    L.optimizeAllButton = Rect{ L.selectButton.x + thirdW + m.gap, buttonsY, thirdW, m.toggleH };
+    const float quarterW = (rowW - 3.0f * m.gap) / 4.0f;
+    L.paceButton = Rect{ open.x + m.pad, buttonsY, quarterW, m.toggleH };
+    L.selectButton = Rect{ L.paceButton.x + quarterW + m.gap, buttonsY, quarterW, m.toggleH };
+    L.optimizeAllButton = Rect{ L.selectButton.x + quarterW + m.gap, buttonsY, quarterW, m.toggleH };
+    L.floorButton = Rect{ L.optimizeAllButton.x + quarterW + m.gap, buttonsY, quarterW, m.toggleH };
     const float top = buttonsY + m.toggleH + m.gap;
 
     for (int r = 0; r < rowsVisible; ++r) {

@@ -52,7 +52,10 @@ struct PlaySession {
     long long lastPaintTile = -1;
     // What a foundation, wall or door is made of (an int of BuildMaterial), and the kind waiting for that choice
     int buildMaterial = 0;
-    int buildStorey = 0;   // the floor being built on: 0 the ground floor, 1 the first upper floor (PageUp, PageDown)
+    // The floor looked at, built on and clicked on: 0 the ground floor, 1 the first upper floor, up to STOREY_MAX.
+    // Auto: the floor of the unit the camera follows; Manual: Q and E step it down and up.
+    int floorLevel = 0;
+    bool floorManual = false;
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;
     std::vector<TradeGhost> tradeNpc;

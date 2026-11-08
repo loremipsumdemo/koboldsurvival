@@ -96,8 +96,8 @@ CONTROL_DOES_9	Take a screenshot
 CONTROL_KEYS_10	Hold Shift while moving a stack
 CONTROL_DOES_10	Choose how many to move
 UILABEL_PAUSED	PAUSED
-UILABEL_PACE_RUN	Pace: Run
-UILABEL_PACE_WALK	Pace: Walk
+UILABEL_PACE_RUN	Run
+UILABEL_PACE_WALK	Walk
 UILABEL_SQUAD_PANEL	Faction Panel
 UILABEL_UNIT_PANEL	Unit Panel
 UILABEL_INFORMATION_PANEL	Information Panel
@@ -1204,7 +1204,7 @@ UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: oth
 UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
 UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
 UILABEL_NEXT	Next
-UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Shift + click to change how.
+UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Right-click for Selected, All or Custom.
 UILABEL_RENAME	Rename
 UILABEL_RENAME_UNIT	Rename {0}
 MISC_RENAME_EMPTY	A name can't be empty
@@ -1375,8 +1375,8 @@ MISC_TRADER_BOUGHT	The Wandering Trader bought {0} items for {1} Gold Coins
 MISC_TRADER_LEAVES	The Wandering Trader vanishes in a puff of smoke
 MISC_STOLEN_NOTICED	{0} noticed the {1} was stolen from them: your reputation with them falls
 MISC_STOLEN_LABEL	Stolen goods!
-MISC_BUILD_ON_FLOOR	Building on floor {0} (PageUp/PageDown)
-MISC_BUILD_ON_GROUND	Building on the ground floor (PageUp/PageDown)
+MISC_BUILD_ON_FLOOR	Building on floor {0} (Q/E)
+MISC_BUILD_ON_GROUND	Building on the ground floor (Q/E)
 UILABEL_BED_MAKE_PUBLIC	Make Public
 UILABEL_BED_MAKE_PRIVATE	Make Private
 UILABEL_STOCK_STALL	Stock Stall
@@ -1397,3 +1397,16 @@ UILABEL_STALL_CLEAR_ORDERS	Clear Orders
 UILABEL_STALL_PAYMENT	Accepts as payment (click to switch):
 MISC_STALL_ORDERED	Ordered {0} {1} to the Stall
 MISC_STALL_ALREADY_ORDERED	That is already ordered to the Stall
+UILABEL_OPTIMIZE_SELECTED	Selected
+UILABEL_OPTIMIZE_EVERYONE	All
+UILABEL_OPTIMIZE_CUSTOM	Custom...
+UILABEL_FLOOR_BUTTON	Floor {0}
+UILABEL_FLOOR_GROUND_SHORT	G
+UILABEL_FLOOR_AUTO	Auto
+UILABEL_FLOOR_MANUAL	Manual (Q/E)
+UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on (G is the ground floor). Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
+UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on (G is the ground floor). Manual: Q steps down a floor and E up. Click for Auto or Manual.
+MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
+MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up
+MISC_FLOOR_NOW	Floor {0}
+MISC_FLOOR_NOW_GROUND	Ground floor

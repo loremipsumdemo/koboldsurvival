@@ -4,6 +4,18 @@
 using namespace play;
 
 bool App::mouseDownOnPanels() {
+    if (e.button.button == SDL_BUTTON_RIGHT && screen == Screen::Playing) {
+        // A right click on Optimize opens its dropdown: Selected, All or Custom
+        const UnitPanelLayout pl = squadPanelLayout(winW, winH);
+        if (pl.optimizeAllButton.contains(e.button.x, e.button.y) || pl.floorButton.contains(e.button.x, e.button.y)) {
+            session.contextMenu.open = false;
+            itemMenu.open = false;
+            selectMenuOpen = false;
+            squadMenu = pl.optimizeAllButton.contains(e.button.x, e.button.y) ? 1 : 2;
+            playSfx(Sfx::UiMenuOpen);
+            return true;
+        }
+    }
     if (e.button.button == SDL_BUTTON_LEFT && screen == Screen::Playing) {
         const float mx = e.button.x, my = e.button.y;
         const std::vector<ObjectId> own = ownUnitList();
@@ -61,13 +73,15 @@ bool App::mouseDownOnPanels() {
             if (pl.optimizeAllButton.contains(mx, my)) {
                 session.contextMenu.open = false;
                 itemMenu.open = false;
-                if ((SDL_GetModState() & SDL_KMOD_SHIFT) != 0) {
-                    optimizeAllOpen = true;
-                    optimizeSliderDrag = false;
-                    playSfx(Sfx::UiMenuOpen);
-                } else {
-                    optimizeSquadGear();
-                }
+                optimizeSquadGear();
+                return true;
+            }
+            if (pl.floorButton.contains(mx, my)) {
+                session.contextMenu.open = false;
+                itemMenu.open = false;
+                selectMenuOpen = false;
+                squadMenu = 2;
+                playSfx(Sfx::UiMenuOpen);
                 return true;
             }
 
@@ -210,7 +224,7 @@ bool App::mouseDownOnPanels() {
                 if (buildPressAt(hit->first, hit->second)) return true;
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
-                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildStorey;
+                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.floorLevel;
                 const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey);
                 if (why == BuildCheck::Ok) {
                     placeBuiltProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f, FACTION_PLAYER, storey);

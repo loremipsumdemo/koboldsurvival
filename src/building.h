@@ -19,7 +19,7 @@
 // piece is tried again later.
 inline constexpr int FOUNDATION_MIN = 3;
 inline constexpr int FOUNDATION_MAX = 64;
-inline constexpr int STOREY_MAX = 8;                 // the highest upper floor
+inline constexpr int STOREY_MAX = 7;                 // the top floor: 8 floors in all, the ground floor 0 to 7
 inline constexpr float BLUEPRINT_REACH = 5.0f;       // logs are handed over and building is done from this far
 inline constexpr float FLOOR_HEIGHT = 2.4f;          // walls' height: the upper floor sits on them
 inline constexpr float FLOOR_THICK = 0.14f;          // an upper floor's slab
@@ -206,6 +206,8 @@ bool startClimb(World& w, ObjectId u, ObjectId ladder);
 bool isUpstairs(World& w, ObjectId u);
 // The unit heads for a spot: on its own floor, or by way of ladders on another
 void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target);
+// An order to walk to a spot on this floor, by way of ladders if need be
+void moveToFloor(World& w, Terrain& t, ObjectId u, Vec2 target, int storey);
 // The nearest finished floor tile's middle on this level to target, within range tiles of it (0 for anywhere)
 Vec2 nearestFloorSpot(World& w, ObjectId foundation, Vec2 target, int level = 1);
 void climbSystem(World& w, Terrain& t, float dt);
