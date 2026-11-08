@@ -174,8 +174,9 @@ void App::drawFoundationSize() {
     // Building on an upper floor: which one, beside the cursor
     if (session.buildPick.placing() && !session.foundationDrag && !session.floorDrag && !propInfo(session.buildPick.kind).foundation) {
         const float s = uiScaleFor((float)winH);
-        const std::string text = session.floorLevel > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.floorLevel) })
-                                                        : lang("MISC_BUILD_ON_GROUND");
+        std::string text = session.floorLevel > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.floorLevel) })
+                                                  : lang("MISC_BUILD_ON_GROUND");
+        if (propInfo(session.buildPick.kind).stairs) text += "  " + lang("MISC_STAIRS_TURN");
         const float pad = 6.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
         const Rect box{ std::floor((float)mouseX + 18.0f * s), std::floor((float)mouseY + 18.0f * s), tw + 2.0f * pad, th + 2.0f * pad };
         renderer.drawRect(box, RGBA{ 0.0f, 0.0f, 0.0f, 0.65f });
@@ -213,9 +214,10 @@ bool App::buildPressAt(float gx, float gz) {
         return true;
     }
     if (info.onFoundation) {
-        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.floorLevel);
+        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.floorLevel, session.buildDir);
         if (why == PieceCheck::Ok) {
-            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.floorLevel);
+            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.floorLevel,
+                       session.buildDir);
             playSfx(Sfx::UiClick);
         } else {
             refuse(lang(pieceRefusalKey(why)));
@@ -273,7 +275,7 @@ bool App::buildRelease() {
 
 void App::updateBuildPaint() {
     if (!session.paintPiece) return;
-    if (!session.buildPick.placing() || !propInfo(session.buildPick.kind).onFoundation ||
+    if (!session.buildPick.placing() || !propInfo(session.buildPick.kind).onFoundation || propInfo(session.buildPick.kind).stairs ||
         !(SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK)) {
         session.paintPiece = false;
         return;
@@ -297,6 +299,18 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     const int tx = tileOf(gx), tz = tileOf(gz);
     if (info.upperFloor) {
         markFloorTiles(bp, tx, tz);
+        return true;
+    }
+    if (info.stairs) {
+        // Their three tiles, green where they may go and red where not, and the tile stepped off onto above (blue)
+        const int level = session.floorLevel, d = session.buildDir;
+        const bool ok = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, level, d) == PieceCheck::Ok;
+        for (int i = -1; i <= 2; ++i) {
+            const int x = tx + i * STAIRS_DX[d], z = tz + i * STAIRS_DZ[d];
+            const float ground = terrain.heightAt(x + 0.5f, z + 0.5f);
+            if (i == 2) bp.marks.push_back({ x, z, ground + storeyBaseHeight(level + 1) + 0.18f, 0 });
+            else bp.marks.push_back({ x, z, ground + storeyBaseHeight(level) + 0.18f + 0.3f * (float)(i + 1), ok ? 1 : 2 });
+        }
         return true;
     }
     if (info.foundation && session.foundationDrag) {

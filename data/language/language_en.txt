@@ -568,7 +568,7 @@ PROP_TREE	Tree
 PROP_BOULDER	Boulder
 PROP_MUSHROOM	Mushroom
 PROP_BONES	Bones
-PROP_WALL	Wall
+PROP_WALL	Barrier
 PROP_STALL	Stall
 MISC_STORAGE_FULL	No room in storage
 MISC_PROP_TAKEN	Already in use
@@ -1400,13 +1400,15 @@ MISC_STALL_ALREADY_ORDERED	That is already ordered to the Stall
 UILABEL_OPTIMIZE_SELECTED	Selected
 UILABEL_OPTIMIZE_EVERYONE	All
 UILABEL_OPTIMIZE_CUSTOM	Custom...
-UILABEL_FLOOR_BUTTON	Floor {0}
-UILABEL_FLOOR_GROUND_SHORT	G
+UILABEL_FLOOR_BUTTON	Floor
 UILABEL_FLOOR_AUTO	Auto
 UILABEL_FLOOR_MANUAL	Manual (Q/E)
-UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on (G is the ground floor). Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
-UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on (G is the ground floor). Manual: Q steps down a floor and E up. Click for Auto or Manual.
+UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on. Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
+UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on. Manual: Q steps down a floor and E up. Click for Auto or Manual.
 MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
 MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up
 MISC_FLOOR_NOW	Floor {0}
 MISC_FLOOR_NOW_GROUND	Ground floor
+PROP_STAIRS	Stairs
+MISC_STAIRS_TURN	R: turn
+MISC_BUILD_OUTDOORS_ONLY	That goes outside buildings only

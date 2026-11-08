@@ -55,6 +55,7 @@ const char* const PROP_KEYS[] = {
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
     "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Shop", "Farm", "Turbine", "Stove", "Airship",
     "Foundation", "WoodWall", "WoodDoor", "Ladder", "UpperFloor", "DragonCrystal", "WoodStockpile", "StoneStockpile",
+    "Stairs",
 };
 static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
@@ -371,9 +372,11 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "wall_rule") p.wallRule = true;
         else if (flag == "door") p.door = true;
         else if (flag == "ladder") p.ladder = true;
+        else if (flag == "stairs") p.stairs = p.ladder = true;
         else if (flag == "upper_floor") p.upperFloor = true;
         else if (flag == "rare") p.rare = true;
         else if (flag == "stall") p.stall = true;
+        else if (flag == "exterior") p.exterior = true;
         else {
             why = "unknown flag " + flag;
             return false;

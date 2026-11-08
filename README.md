@@ -22,6 +22,7 @@
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
 | Floor button, Q / E | The floor shown, built on and clicked on. Auto follows the unit the camera follows; Manual steps with Q (down) and E (up). Inside a building the floors above are cut away |
+| R (placing Stairs) | Turn the stairs: they rise toward the way they face, and you step off onto the floor above past their top |
 | F12 | Take a screenshot |
 
 

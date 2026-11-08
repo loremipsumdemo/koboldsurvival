@@ -45,8 +45,11 @@
 #                                wall pieces around it, from the models <model>_end, _straight, _corner, _tee and _cross. Blocks walking
 #                door            only on a foundation's entrance; strangers can't pass it while it is locked, and pick or smash it
 #                ladder          climbs to the upper floor; only once every edge tile of its foundation has a wall or door
+#                stairs          a ladder 3 tiles long (the tile placed on is the middle one), walked up from its foot to the
+#                                floor above, stepping off past its top. R turns it while it is placed
 #                rare            a new level scatters only one
 #                stall           sells to other factions' units while a shopkeeper mans it (Man Stall task)
+#                exterior        goes outside buildings only: never on a foundation or an upper floor
 #                upper_floor     a floor at wall height, that units who climb a ladder stand and move on
 
 key	name_key	model	size	use	stat	item	input	workers	lock_level	accepts	fuel_hours	alt_item	alt_one_in	speed	rested	comfort	work_sound	done_sound	emote	flags	materials	build_seconds	slots	capacity
@@ -61,7 +64,7 @@ Tree	PROP_TREE	model_7.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	Wor
 Boulder	PROP_BOULDER	model_8.glb	1.2	resource	Mining	161	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter	0	0	12	0
 Mushroom	PROP_MUSHROOM	model_9.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter	0	0	12	0
 Bones	PROP_BONES	model_10.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand	0	0	12	0
-Wall	PROP_WALL	model_11.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0
+Wall	PROP_WALL	model_11.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,exterior	0	0	12	0
 Stall	PROP_STALL	model_12.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,stall	0	0	1000	1000
 LockedChest	PROP_LOCKED_CHEST	model_13.glb	0.9	storage	none	0	0	0	5	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0
 PrisonerCage	PROP_PRISONER_CAGE	model_14.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	scatter,cage	0	0	12	0
@@ -96,3 +99,4 @@ UpperFloor	PROP_UPPER_FLOOR	model_48.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	n
 DragonCrystal	PROP_DRAGON_CRYSTAL	model_49.glb	1.2	none	none	162	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,rare	0	0	12	0
 WoodStockpile	PROP_WOOD_STOCKPILE	model_50.glb	1.4	storage	none	0	0	0	0	wood	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0
 StoneStockpile	PROP_STONE_STOCKPILE	model_51.glb	1.4	storage	none	0	0	0	0	stone	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0
+Stairs	PROP_STAIRS	model_52.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,stairs	3	12	12	0

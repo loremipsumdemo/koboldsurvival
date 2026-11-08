@@ -13,6 +13,7 @@ enum class BuildCheck {
     ClaimOverlap,
     AltarTaken,
     NoFloor,
+    Indoors,
 };
 
 void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);

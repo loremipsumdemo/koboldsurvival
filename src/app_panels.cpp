@@ -368,9 +368,19 @@ void App::beginRightHold(float x, float z) {
         actionAlpha = 1.0f;
         markMove(x, z);
         playSfx(Sfx::UiOrder);
+        // Units on or going to an upper floor: the hold still moves them with the pointer
+        bool walking = false;
+        for (ObjectId u : picked) walking = walking || airshipOf(world, u) == NO_OBJECT;
+        if (walking) {
+            holdPlanned = levelKey((int)std::floor(x), (int)std::floor(z), clickStorey);
+            rightHold = true;
+            holdX = x;
+            holdZ = z;
+        }
         return;
     }
     noteLockedIn(units);
+    holdPlanned = levelKey((int)std::floor(x), (int)std::floor(z), clickStorey);
     rightHold = true;
     holdX = x;
     holdZ = z;

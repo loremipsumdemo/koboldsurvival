@@ -125,10 +125,37 @@ bool edgesClosedMap(World& w, const BuildingMap& m, const std::vector<long long>
     return true;
 }
 
-// Where a unit coming up a ladder steps off: the nearest floor tile beside it on the floor above
+int dirOfYaw(float yaw) { return (((int)std::lround(yaw / 1.5707963f)) % 4 + 4) % 4; }
+
+bool isStairs(World& w, ObjectId e) {
+    const PropInfo* info = infoOf(w, e);
+    return info && info->stairs;
+}
+
+// Stairs' tiles from the foot up (the middle one where the prop stands), and the tile past the top
+void stairsTiles(World& w, ObjectId e, int xs[4], int zs[4]) {
+    const Transform* tr = w.get<Transform>(e);
+    const Prop* p = w.get<Prop>(e);
+    const int d = p ? dirOfYaw(p->yaw) : 0;
+    const int mx = tr ? tileOf(tr->x) : 0, mz = tr ? tileOf(tr->z) : 0;
+    for (int i = 0; i < 4; ++i) {
+        xs[i] = mx + (i - 1) * STAIRS_DX[d];
+        zs[i] = mz + (i - 1) * STAIRS_DZ[d];
+    }
+}
+
+// Where a unit coming up a ladder steps off: the nearest floor tile beside it on the floor above. Stairs: the tile past
+// their top.
 bool ladderTop(World& w, const BuildingMap& m, ObjectId ladder, Vec2& out) {
     const Transform* lt = w.get<Transform>(ladder);
     if (!lt) return false;
+    if (isStairs(w, ladder)) {
+        int xs[4], zs[4];
+        stairsTiles(w, ladder, xs, zs);
+        if (!floorWalkable(w, m, xs[3], zs[3], storeyOf(w, ladder) + 1)) return false;
+        out = Vec2{ xs[3] + 0.5f, zs[3] + 0.5f };
+        return true;
+    }
     const int x = tileOf(lt->x), z = tileOf(lt->z), up = storeyOf(w, ladder) + 1;
     float best = -1.0f;
     for (int dz = -1; dz <= 1; ++dz) {
@@ -234,9 +261,8 @@ bool planRoute(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey
     for (ObjectId e : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (!info.ladder || w.has<Blueprint>(e)) continue;
-        const Transform* lt = w.get<Transform>(e);
         const int level = storeyOf(w, e);
-        Vec2 spot{ lt->x, lt->z };
+        Vec2 spot = climbFoot(w, e);
         if (level == goalStorey - 1) {
             if (!ladderTop(w, m, e, spot)) continue;
         } else if (level != goalStorey) {
@@ -281,9 +307,8 @@ bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStor
         if (!info.ladder || w.has<Blueprint>(e)) continue;
         Vec2 top;
         if (!ladderTop(w, m, e, top)) continue;
-        const Transform* lt = w.get<Transform>(e);
         const int level = storeyOf(w, e);
-        nodes.push_back({ level, Vec2{ lt->x, lt->z }, e });
+        nodes.push_back({ level, climbFoot(w, e), e });
         nodes.push_back({ level + 1, top, e });
     }
     std::unordered_map<int, std::unordered_map<long long, int>> parts;
@@ -434,6 +459,19 @@ void pieceTiles(World& w, ObjectId prop, int& x0, int& z0, int& x1, int& z1) {
     const Transform* tr = w.get<Transform>(prop);
     x0 = x1 = tr ? tileOf(tr->x) : 0;
     z0 = z1 = tr ? tileOf(tr->z) : 0;
+    if (tr && isStairs(w, prop)) {
+        int xs[4], zs[4];
+        stairsTiles(w, prop, xs, zs);
+        x0 = std::min(xs[0], xs[2]);
+        x1 = std::max(xs[0], xs[2]);
+        z0 = std::min(zs[0], zs[2]);
+        z1 = std::max(zs[0], zs[2]);
+    }
+}
+
+int stairsDir(World& w, ObjectId stairs) {
+    const Prop* p = w.get<Prop>(stairs);
+    return p ? dirOfYaw(p->yaw) : 0;
 }
 
 BuildingMap buildingMap(World& w) {
@@ -449,6 +487,12 @@ BuildingMap buildingMap(World& w) {
         if (!info.onFoundation) continue;
         const Transform* tr = w.get<Transform>(e);
         const long long k = levelKey(tileOf(tr->x), tileOf(tr->z), storeyOf(w, e));
+        if (info.stairs) {
+            int xs[4], zs[4];
+            stairsTiles(w, e, xs, zs);
+            for (int i = 0; i < 3; ++i) m.piece[levelKey(xs[i], zs[i], storeyOf(w, e))] = e;
+            continue;
+        }
         if (info.upperFloor) m.floor[k] = e;
         else m.piece[k] = e;
     }
@@ -567,9 +611,31 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
     return first;
 }
 
-PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int level) {
+PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int level, int dir) {
     const PropInfo& info = propInfo(kind);
     const BuildingMap m = buildingMap(w);
+    if (info.stairs) {
+        // Three tiles of this floor in a row, with nothing on them and no floor over them, in one building of yours;
+        // the tile past the top is in it too, for the floor above to be stepped onto
+        if (level < 0 || level + 1 > STOREY_MAX) return PieceCheck::NeedsFloor;
+        dir = ((dir % 4) + 4) % 4;
+        const ObjectId mid = mapGet(m.foundation, tileKey(x, z));
+        if (mid == NO_OBJECT || ownerOf(w, mid) != owner) return PieceCheck::NeedsFoundation;
+        const std::vector<long long> tiles = buildingTiles(m, x, z);
+        const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+        for (int i = -1; i <= 2; ++i) {
+            const int tx = x + i * STAIRS_DX[dir], tz = z + i * STAIRS_DZ[dir];
+            const ObjectId f = mapGet(m.foundation, tileKey(tx, tz));
+            if (f == NO_OBJECT || !in.count(tileKey(tx, tz))) return PieceCheck::NeedsFoundation;
+            if (w.has<Blueprint>(f)) return PieceCheck::FoundationUnfinished;
+            if (i == 2) break;
+            if (level > 0 && !mapFloorSurface(w, m, tx, tz, level, owner)) return PieceCheck::NeedsFloor;
+            if (mapGet(m.piece, levelKey(tx, tz, level)) != NO_OBJECT) return PieceCheck::Taken;
+            if (mapGet(m.floor, levelKey(tx, tz, level + 1)) != NO_OBJECT) return PieceCheck::Taken;
+        }
+        if (!edgesClosedMap(w, m, tiles, level)) return PieceCheck::EdgesOpen;
+        return PieceCheck::Ok;
+    }
     const ObjectId f = mapGet(m.foundation, tileKey(x, z));
     if (f == NO_OBJECT || ownerOf(w, f) != owner) return PieceCheck::NeedsFoundation;
     if (w.has<Blueprint>(f)) return PieceCheck::FoundationUnfinished;
@@ -652,10 +718,10 @@ void collapseCheck(World& w) {
     if (fell) queueLog(w, lang("MISC_FLOORS_COLLAPSE"), LogKind::Seen);
 }
 
-ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level) {
+ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir) {
     const PropInfo& info = propInfo(kind);
     const BuildingMap m = buildingMap(w);
-    float yaw = 0.0f;
+    float yaw = info.stairs ? (float)(((dir % 4) + 4) % 4) * 1.5707963f : 0.0f;
     if (info.door) {
         // Across the doorway: in line with the walls beside it, or along the building's edge
         const bool ns = isWallOrDoor(w, mapGet(m.piece, levelKey(x, z - 1, level))) || isWallOrDoor(w, mapGet(m.piece, levelKey(x, z + 1, level)));
@@ -969,25 +1035,63 @@ bool canClimbUp(World& w, ObjectId ladder) {
     return ladderTop(w, m, ladder, top);
 }
 
+Vec2 climbFoot(World& w, ObjectId ladder) {
+    if (isStairs(w, ladder)) {
+        int xs[4], zs[4];
+        stairsTiles(w, ladder, xs, zs);
+        return Vec2{ xs[0] + 0.5f, zs[0] + 0.5f };
+    }
+    const Transform* lt = w.get<Transform>(ladder);
+    return lt ? Vec2{ lt->x, lt->z } : Vec2{ 0.0f, 0.0f };
+}
+
+bool climbTop(World& w, ObjectId ladder, Vec2& out) {
+    const BuildingMap m = buildingMap(w);
+    return ladderTop(w, m, ladder, out);
+}
+
+bool atClimbSpot(World& w, ObjectId u, ObjectId ladder) {
+    const Transform* ut = w.get<Transform>(u);
+    const Transform* lt = w.get<Transform>(ladder);
+    if (!ut || !lt) return false;
+    const int ls = storeyOf(w, ladder), us = storeyOf(w, u);
+    if (us != ls && us != ls + 1) return false;
+    // The tile it goes from: the ladder's own (its head is beside it), or the stairs' foot or the tile past their top
+    int ax = tileOf(lt->x), az = tileOf(lt->z);
+    if (isStairs(w, ladder)) {
+        int xs[4], zs[4];
+        stairsTiles(w, ladder, xs, zs);
+        ax = us == ls ? xs[0] : xs[3];
+        az = us == ls ? zs[0] : zs[3];
+    }
+    const int ux = tileOf(ut->x), uz = tileOf(ut->z);
+    if (std::max(std::abs(ux - ax), std::abs(uz - az)) > 1) return false;
+    // Inside the building: on one of its foundation tiles, so not outside its walls
+    const BuildingMap m = buildingMap(w);
+    if (!m.foundation.count(tileKey(ux, uz))) return false;
+    const std::vector<long long> tiles = buildingTiles(m, ax, az);
+    return std::find(tiles.begin(), tiles.end(), tileKey(ux, uz)) != tiles.end();
+}
+
 bool startClimb(World& w, ObjectId u, ObjectId ladder) {
     const Transform* lt = w.get<Transform>(ladder);
     const Transform* ut = w.get<Transform>(u);
     const PropInfo* info = infoOf(w, ladder);
     if (!lt || !ut || !info || !info->ladder || w.has<Blueprint>(ladder) || w.has<Climbing>(u) || outCold(w, u)) return false;
     const int ls = storeyOf(w, ladder), us = storeyOf(w, u);
-    const float gap = std::hypot(ut->x - lt->x, ut->z - lt->z);
     const bool routed = w.has<Route>(u);
+    const float whole = info->stairs ? STAIRS_SECONDS : CLIMB_SECONDS;
     if (us == ls + 1) {
-        if (gap > PROP_REACH + 0.6f) return false;
+        if (!atClimbSpot(w, u, ladder)) return false;
         if (!routed) w.remove<SoloMove>(u);
-        w.add(u, Climbing{ ladder, CLIMB_SECONDS, true });
+        w.add(u, Climbing{ ladder, whole, true, whole });
         return true;
     }
-    if (us != ls || !canClimbUp(w, ladder) || gap > PROP_REACH + 0.3f) return false;
+    if (us != ls || !canClimbUp(w, ladder) || !atClimbSpot(w, u, ladder)) return false;
     if (w.has<Carrying>(u)) putDown(w, u);
     leaveSquad(w, u);
     if (!routed) w.remove<SoloMove>(u);
-    w.add(u, Climbing{ ladder, CLIMB_SECONDS, false });
+    w.add(u, Climbing{ ladder, whole, false, whole });
     return true;
 }
 
@@ -1016,6 +1120,20 @@ void climbSystem(World& w, Terrain& t, float dt) {
         }
         c.left -= dt;
         if (c.left <= 0.0f) done.push_back(u);
+        if (isStairs(w, c.ladder) && c.whole > 0.0f) {
+            // Walked from the foot up to the floor above, or back down
+            const Vec2 foot = climbFoot(w, c.ladder);
+            Vec2 top = foot;
+            if (!climbTop(w, c.ladder, top)) continue;
+            const float share = std::clamp(1.0f - c.left / c.whole, 0.0f, 1.0f);
+            const float up = c.down ? 1.0f - share : share;
+            Transform* ut = w.get<Transform>(u);
+            const int ls = storeyOf(w, c.ladder);
+            ut->x = foot.x + (top.x - foot.x) * up;
+            ut->z = foot.z + (top.z - foot.z) * up;
+            const float low = ls == 0 ? t.standHeight(ut->x, ut->z) - t.heightAt(ut->x, ut->z) : storeyBaseHeight(ls);
+            ut->y = t.heightAt(ut->x, ut->z) + low + (storeyBaseHeight(ls + 1) - low) * std::clamp(up * 1.15f - 0.075f, 0.0f, 1.0f);
+        }
     }
     if (!done.empty()) {
         const BuildingMap m = buildingMap(w);
@@ -1028,8 +1146,9 @@ void climbSystem(World& w, Terrain& t, float dt) {
             w.remove<IdleSpot>(u);
             if (!w.has<Route>(u)) w.remove<SoloMove>(u);
             if (c.down) {
-                ut->x = lt.x;
-                ut->z = lt.z;
+                const Vec2 foot = climbFoot(w, c.ladder);
+                ut->x = foot.x;
+                ut->z = foot.z;
                 if (ls == 0) {
                     w.remove<Upstairs>(u);
                     ut->y = t.standHeight(ut->x, ut->z);
@@ -1053,6 +1172,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
     if (ups.empty()) return;
     const BuildingMap m = buildingMap(w);
     for (ObjectId u : ups) {
+        if (w.has<Climbing>(u)) continue;
         Transform* ut = w.get<Transform>(u);
         const int level = w.get<Upstairs>(u)->level;
         const ObjectId fl = mapGet(m.floor, levelKey(tileOf(ut->x), tileOf(ut->z), level));
@@ -1148,10 +1268,8 @@ void routeSystem(World& w, Terrain& t, float dt) {
         const bool arrived = so->next >= so->waypoints.size();
         if (leg.ladder != NO_OBJECT) {
             const Transform* ut = w.get<Transform>(u);
-            const Transform* lt = w.get<Transform>(leg.ladder);
-            const float near = ut && lt ? std::hypot(ut->x - lt->x, ut->z - lt->z) : 1e9f;
-            const bool down = lt && storeyOf(w, leg.ladder) < leg.storey;
-            if (!arrived && near > (down ? PROP_REACH : PROP_REACH - 0.2f)) continue;
+            const float near = ut ? std::hypot(ut->x - leg.to.x, ut->z - leg.to.z) : 1e9f;
+            if (!arrived && (near > 0.9f || !atClimbSpot(w, u, leg.ladder))) continue;
             const Vec2 goal = r.goal;
             if (startClimb(w, u, leg.ladder)) {
                 ++r.leg;
@@ -1282,6 +1400,27 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
         wanted.push_back({ (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z) + floors * floors, e });
     }
     std::sort(wanted.begin(), wanted.end());
+    // Blueprints on another floor than the unit's are left out when no ladders or stairs lead there (a few checks at most)
+    {
+        int checks = 0;
+        std::vector<std::pair<float, ObjectId>> reachable;
+        for (const auto& pe : wanted) {
+            const int ws = workStorey(w, pe.second), us = storeyOf(w, u);
+            if (ws == 0 && us == 0) {
+                reachable.push_back(pe);
+                continue;
+            }
+            if (gapTo(w, u, pe.second) <= BLUEPRINT_REACH) {
+                reachable.push_back(pe);
+                continue;
+            }
+            if (checks >= 12) continue;
+            ++checks;
+            Route r;
+            if (planRoute(w, t, u, approachOf(w, u, pe.second), ws, r)) reachable.push_back(pe);
+        }
+        wanted.swap(reachable);
+    }
     BuildJob job;
     bool hungry = false;
     for (const auto& [d2, e] : wanted) {

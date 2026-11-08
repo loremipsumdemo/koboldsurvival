@@ -59,9 +59,10 @@ struct Blueprint {
 
 // A unit climbing a ladder, up or down. Not saved.
 struct Climbing {
-    ObjectId ladder = NO_OBJECT;
+    ObjectId ladder = NO_OBJECT;   // a ladder or stairs
     float left = 0.0f;
     bool down = false;
+    float whole = CLIMB_SECONDS;   // seconds the whole climb takes
 };
 
 // A unit's building task under way: fetching logs from a store, bringing them to a blueprint, or building it. Not saved.
@@ -166,9 +167,16 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
 
 // A piece on this floor (level) of a tile. A ladder, and an upper floor over this floor, need every edge tile of the
 // building on this floor to have a wall or a door.
-PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER, int level = 0);
+// Stairs go on 3 tiles in a row, x and z the middle one, rising toward dir (0 north, 1 east, 2 south, 3 west); a unit
+// steps off them onto the floor above on the tile past their top.
+PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER, int level = 0, int dir = 0);
 ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner = FACTION_PLAYER,
-                    BuildMaterial material = BuildMaterial::Wood, int level = 0);
+                    BuildMaterial material = BuildMaterial::Wood, int level = 0, int dir = 0);
+// Stairs: the step a direction takes, and the direction stairs rise toward
+inline constexpr int STAIRS_DX[4] = { 0, 1, 0, -1 };
+inline constexpr int STAIRS_DZ[4] = { -1, 0, 1, 0 };
+inline constexpr float STAIRS_SECONDS = 1.2f;
+int stairsDir(World& w, ObjectId stairs);
 // Every edge tile of the building this foundation tile is part of has a wall or door on this floor (built or not)
 bool edgesClosed(World& w, ObjectId foundation, int level = 0);
 // Upper floors with no finished wall or door under them on their building's floor below fall in
@@ -202,6 +210,12 @@ int bedHouseOwner(World& w, ObjectId bed);
 
 // Ladders and the upper floors
 bool canClimbUp(World& w, ObjectId ladder);
+// Where a unit stands to climb up a ladder or stairs (their foot), and where it steps off at the top
+Vec2 climbFoot(World& w, ObjectId ladder);
+bool climbTop(World& w, ObjectId ladder, Vec2& out);
+// Whether u may start up (or down) this ladder or stairs from where it stands: inside their building, on their floor
+// (or the one above to go down), within a tile of their foot (or head). Not from outside, through a wall.
+bool atClimbSpot(World& w, ObjectId u, ObjectId ladder);
 bool startClimb(World& w, ObjectId u, ObjectId ladder);
 bool isUpstairs(World& w, ObjectId u);
 // The unit heads for a spot: on its own floor, or by way of ladders on another

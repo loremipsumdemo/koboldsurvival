@@ -137,6 +137,9 @@ struct SteerFrame {
     // Which level each unit is on: the ground (0), aboard something (1), or the upper floor of a building (its foundation,
     // past those). Units on different levels don't touch.
     std::vector<std::int64_t> level;
+    // Each unit's faction: units of one faction walk past each other instead of going round
+    std::vector<int> faction;
+    std::vector<char> fighting;
     std::unordered_map<long long, ObjectId> doors;   // locked doors, by tile
     std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
     std::unordered_set<long long> floors;            // finished upper floor tiles, by levelKey
@@ -481,6 +484,11 @@ void workOutSlot(World& w, const Terrain& t, SteerFrame& s, size_t i, int outsid
     }
 }
 
+bool alliesPassing(const SteerFrame& s, size_t i, size_t j) {
+    // Not while fighting: a crowd round a foe keeps its spacing
+    return s.faction[i] >= 0 && s.faction[i] == s.faction[j] && (s.going[i] || s.going[j]) && !s.fighting[i] && !s.fighting[j];
+}
+
 // Units are circles. A unit doesn't walk into one it touches, it slides around it, so walking never presses units into
 // each other. Those that do overlap ease apart, no faster than a set speed.
 void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vector<std::uint32_t>& nearby,
@@ -500,6 +508,8 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
     for (const std::uint32_t j : nearby) {
         if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
         if (s.level[i] != s.level[j]) continue;
+        // One of the faction walking past another: neither is in the other's way
+        if (alliesPassing(s, i, j)) continue;
         const std::pair<float, float>& o = s.pos[j];
         float nx = tr->x - o.first, nz = tr->z - o.second;
         const float touching = s.radius[i] + s.radius[j];
@@ -555,7 +565,7 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
     if (!shoved && !s.going[i] && !fighting && s.calmLead[i] == NO_OBJECT) {
         unitsNearby(s, tr, i, around, AVOID_CELLS);
         for (const std::uint32_t j : around) {
-            if (!s.going[j] || taskOf(w, s.units[j], e) || s.level[i] != s.level[j]) continue;
+            if (!s.going[j] || taskOf(w, s.units[j], e) || s.level[i] != s.level[j] || alliesPassing(s, i, j)) continue;
             const Vec2f vj = plannedVelocity(s, j);
             const float sp = std::hypot(vj.first, vj.second);
             if (sp < 0.2f) continue;
@@ -611,7 +621,7 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
             const float leftX = -headZ, leftZ = headX;
             for (const std::uint32_t j : around) {
                 if (s.calmLead[i] != NO_OBJECT && s.calmLead[i] == s.calmLead[j]) continue;
-                if (taskOf(w, e, s.units[j]) || s.level[i] != s.level[j]) continue;
+                if (taskOf(w, e, s.units[j]) || s.level[i] != s.level[j] || alliesPassing(s, i, j)) continue;
                 // Squadmates keep their formation's spacing; the formation rules sort them out
                 if (myPlace) {
                     const ActiveSquadMember* theirs = w.get<ActiveSquadMember>(s.units[j]);
@@ -755,6 +765,13 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         if (const Combat* c = w.get<Combat>(e); c && c->target != NO_OBJECT) s.attacked.push_back(c->target);
     }
     s.level.assign(units.size(), 0);
+    s.faction.assign(units.size(), -1);
+    s.fighting.assign(units.size(), 0);
+    for (size_t i = 0; i < units.size(); ++i) {
+        s.faction[i] = factionOf(w, units[i]);
+        const Combat* c = w.get<Combat>(units[i]);
+        s.fighting[i] = (c && c->target != NO_OBJECT) || w.has<AttackOrder>(units[i]) || w.has<AttackSlot>(units[i]);
+    }
     for (size_t i = 0; i < units.size(); ++i) {
         if (const Upstairs* up = w.get<Upstairs>(units[i])) s.level[i] = 1 + (std::int64_t)up->level;
         else if (w.has<Occupying>(units[i])) s.level[i] = 1;

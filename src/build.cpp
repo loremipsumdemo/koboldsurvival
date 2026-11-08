@@ -65,6 +65,14 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
     });
     if (!ground) return storey > 0 ? BuildCheck::NoFloor : BuildCheck::Unwalkable;
     if (storey > 0 && propInfo(kind).claimsLand) return BuildCheck::NoFloor;
+    // An outdoor prop: on the ground, off every building's foundation
+    if (propInfo(kind).exterior) {
+        if (storey > 0) return BuildCheck::Indoors;
+        const bool outdoors = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
+            return foundationAt(w, (int)std::floor(px), (int)std::floor(pz)) == NO_OBJECT;
+        });
+        if (!outdoors) return BuildCheck::Indoors;
+    }
 
     const std::vector<Claim> claims = claimsOf(w);
 
@@ -109,6 +117,7 @@ const char* buildRefusalKey(BuildCheck c) {
     case BuildCheck::ClaimOverlap: return "MISC_BUILD_CLAIM_OVERLAP";
     case BuildCheck::AltarTaken: return "MISC_BUILD_ALTAR_TAKEN";
     case BuildCheck::NoFloor: return "MISC_BUILD_NO_FLOOR";
+    case BuildCheck::Indoors: return "MISC_BUILD_OUTDOORS_ONLY";
     case BuildCheck::Ok: break;
     }
     return "";

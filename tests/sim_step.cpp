@@ -260,9 +260,18 @@ int main(int argc, char** argv) {
         check(reformed == 12, "shape " + std::to_string(shape) + ": everyone settles after changing shape");
     }
 
-    // Looking ahead: two units walking head on pass each other without touching, and one walking through a bystander
-    // goes round it while the bystander steps aside
-    for (int bystander = 0; bystander < 2; ++bystander) {
+    // Looking ahead: two units of different factions walking head on pass each other without touching, and one walking
+    // through a bystander goes round it while the bystander steps aside. Units of one faction walk through each other.
+    int otherFaction = -1;
+    for (const FactionDef& f : factions()) {
+        World probe;
+        if (f.id != FACTION_PLAYER && f.id != FACTION_NOMAD && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
+            otherFaction = f.id;
+            break;
+        }
+    }
+    for (int bystander = 0; bystander < 3; ++bystander) {
+        const bool allies = bystander == 2;
         World pass;
         Rng passRng;
         passRng.gen.seed(5);
@@ -270,10 +279,11 @@ int main(int argc, char** argv) {
         const Vec2 at = systems_detail::findSpawn(terrain);
         const Vec2 left = terrain.snap({ at.x - 4.0f, at.z }), right = terrain.snap({ at.x + 4.0f, at.z });
         const ObjectId a = spawnUnit(pass, terrain, passRng, FACTION_PLAYER, left.x, left.z);
-        const ObjectId b = spawnUnit(pass, terrain, passRng, FACTION_PLAYER, bystander ? at.x : right.x, bystander ? at.z : right.z);
+        const ObjectId b = spawnUnit(pass, terrain, passRng, allies ? FACTION_PLAYER : otherFaction, bystander == 1 ? at.x : right.x,
+                                     bystander == 1 ? at.z : right.z);
         for (ObjectId u : { a, b }) pass.get<Behaviors>(u)->rules.clear();
         issueMoveOrder(pass, terrain, { a }, right);
-        if (!bystander) issueMoveOrder(pass, terrain, { b }, left);
+        if (bystander != 1) issueMoveOrder(pass, terrain, { b }, left);
         float closest = 1e9f;
         for (int step = 0; step < 60 * 8; ++step) {
             simStep(pass, terrain, passRng, passState, STEP, false);
@@ -282,9 +292,10 @@ int main(int argc, char** argv) {
         }
         const Transform* ta = pass.get<Transform>(a);
         const bool arrived = std::hypot(ta->x - right.x, ta->z - right.z) <= 0.5f;
-        const std::string what = bystander ? "a walker and a bystander" : "two walkers head on";
+        const std::string what = allies ? "two walkers of one faction" : bystander ? "a walker and a bystander" : "two walkers head on";
         std::printf("note: %s: closest %.2f\n", what.c_str(), closest);
-        check(closest > 1.05f, what + " never touch");
+        if (allies) check(closest < 0.9f, what + " walk through each other");
+        else check(closest > 1.05f, what + " never touch");
         check(arrived, what + ": the walker still gets where it was going");
     }
 

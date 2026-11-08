@@ -55,11 +55,21 @@ void App::updateRightHold() {
             holdX = hx;
             holdZ = hz;
         }
-        std::vector<ObjectId> steered;
+        std::vector<ObjectId> steered, routed;
         for (ObjectId u : selectedUnits(world)) {
+            if (airshipOf(world, u) != NO_OBJECT) continue;
             if (clickStorey == 0 && !world.has<Upstairs>(u) && !world.has<Route>(u) && !world.has<Climbing>(u)) steered.push_back(u);
+            else routed.push_back(u);
         }
         steerUnits(world, steered, Vec2{ holdX, holdZ });
+        // Units on another floor, or going to one: a walk by way of the ladders, planned again when the point moves a tile
+        const long long held = levelKey((int)std::floor(holdX), (int)std::floor(holdZ), clickStorey);
+        if (held != holdPlanned) {
+            holdPlanned = held;
+            for (ObjectId u : routed) {
+                if (!world.has<Climbing>(u)) moveToFloor(world, terrain, u, Vec2{ holdX, holdZ }, clickStorey);
+            }
+        }
         actionX = holdX;
         actionZ = holdZ;
         actionAlpha = 1.0f;

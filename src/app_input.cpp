@@ -208,6 +208,12 @@ void App::onKeyDown() {
             return;
         }
     }
+    if (screen == Screen::Playing && !editing && session.buildPick.placing() && propInfo(session.buildPick.kind).stairs &&
+        e.key.key == SDLK_R && !e.key.repeat) {
+        session.buildDir = (session.buildDir + 1) % 4;
+        playSfx(Sfx::UiClick);
+        return;
+    }
     if (screen == Screen::Playing && !editing && session.dialogueUnit == NO_OBJECT && (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) == 0 &&
         (e.key.key == SDLK_Q || e.key.key == SDLK_E)) {
         stepFloor(e.key.key == SDLK_E ? 1 : -1);

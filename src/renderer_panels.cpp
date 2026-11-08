@@ -218,10 +218,9 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         noteTip(lang("UILABEL_OPTIMIZE_ALL_TIP"), L.optimizeAllButton);
     }
     {
-        const std::string level = floorLevel > 0 ? std::to_string(floorLevel) : std::string(lang("UILABEL_FLOOR_GROUND_SHORT"));
-        const std::string label = langf("UILABEL_FLOOR_BUTTON", { level });
-        mode(L.floorButton, fitTextTip(label, L.floorButton.w - 6.0f * s, L.floorButton), floorManual);
-        noteTip(lang(floorManual ? "UILABEL_FLOOR_MANUAL_TIP" : "UILABEL_FLOOR_AUTO_TIP"), L.floorButton);
+        mode(L.floorButton, fitTextTip(lang("UILABEL_FLOOR_BUTTON"), L.floorButton.w - 6.0f * s, L.floorButton), floorManual);
+        const std::string now = floorLevel > 0 ? langf("MISC_FLOOR_NOW", { std::to_string(floorLevel) }) : std::string(lang("MISC_FLOOR_NOW_GROUND"));
+        noteTip(now + ". " + lang(floorManual ? "UILABEL_FLOOR_MANUAL_TIP" : "UILABEL_FLOOR_AUTO_TIP"), L.floorButton);
     }
 
     for (const UnitCell& c : L.cells) {

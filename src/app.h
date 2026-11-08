@@ -313,6 +313,7 @@ struct App : AppSession {
     void stepFloor(int by);
     std::optional<std::pair<float, float>> pickFloor(float mx, float my, int& storey);
     int clickStorey = 0;   // the floor the last order's click landed on
+    long long holdPlanned = -1;   // a held right click: the tile and floor the units going by ladders were last sent to
     void pickClosestUnit();
     void runSelectMenu(int choice);
     ItemMenuLayout selectMenuLayout();

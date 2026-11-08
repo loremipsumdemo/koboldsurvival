@@ -116,6 +116,8 @@ bool Renderer::pickHidden(World& w, ObjectId e) const {
     if (!cutaway_.on) return false;
     const Transform* tr = w.get<Transform>(e);
     if (!tr || storeyOf(w, e) == cutaway_.level) return false;
+    // A ladder or stairs from the floor below comes up to this one: it is clicked to climb down
+    if (const Prop* p = w.get<Prop>(e); p && propInfo(p->kind).ladder && storeyOf(w, e) == cutaway_.level - 1) return false;
     return cutaway_.tiles.count(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z))) > 0;
 }
 
@@ -425,6 +427,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float x0, y0, z0, x1, y1, z1;
     };
     std::vector<PlannedBox> plannedBoxes;
+    Batch stairSteps;   // stairs, drawn as plain steps
     const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f };
     float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
     cam.eye(camX, camY, camZ);
@@ -455,6 +458,29 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                     else if (made) drawModel(*made, cx, y, cz, info.size, 0.0f);
                     else queuePropModel(kind, cx, y, cz, info.size, 0.0f);
                 }
+            }
+            continue;
+        }
+        if (info.stairs) {
+            // Three steps up toward the way they face, each a third of the way to the floor above
+            const int d = stairsDir(w, e), lv = storeyOf(w, e);
+            const float rise = storeyBaseHeight(lv + 1) - storeyBaseHeight(lv);
+            const int mx = (int)std::floor(tr->x), mz = (int)std::floor(tr->z);
+            const bool plannedOnly = w.has<Blueprint>(e);
+            for (int i = 0; i < 3; ++i) {
+                const float x0 = (float)(mx + (i - 1) * STAIRS_DX[d]), z0 = (float)(mz + (i - 1) * STAIRS_DZ[d]);
+                const float top = tr->y + rise * (float)(i + 1) / 3.0f;
+                if (plannedOnly) {
+                    box(x0 + 0.02f, tr->y, z0 + 0.02f, x0 + 0.98f, top, z0 + 0.98f, planned, plannedEdge);
+                    continue;
+                }
+                const RGBA side{ 0.45f, 0.30f, 0.17f, 1.0f }, face{ 0.62f, 0.44f, 0.26f, 1.0f };
+                const float x1 = x0 + 1.0f, z1 = z0 + 1.0f, y0 = tr->y;
+                stairSteps.quad(V3{ x0, top, z0 }, V3{ x1, top, z0 }, V3{ x1, top, z1 }, V3{ x0, top, z1 }, face);
+                stairSteps.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, top, z0 }, V3{ x0, top, z0 }, side);
+                stairSteps.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, top, z1 }, V3{ x0, top, z1 }, side);
+                stairSteps.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, top, z1 }, V3{ x0, top, z0 }, side);
+                stairSteps.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, top, z1 }, V3{ x1, top, z0 }, side);
             }
             continue;
         }
@@ -504,6 +530,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         }
     }
     drawPropInstances();
+    if (!stairSteps.v.empty()) {
+        glUseProgram(colorProgram_);
+        drawColorTris(stairSteps, viewProj_);
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+    }
 
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);

@@ -56,6 +56,7 @@ struct PlaySession {
     // Auto: the floor of the unit the camera follows; Manual: Q and E step it down and up.
     int floorLevel = 0;
     bool floorManual = false;
+    int buildDir = 0;   // stairs being placed: the way they rise (0 north, 1 east, 2 south, 3 west), turned with R
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;
     std::vector<TradeGhost> tradeNpc;

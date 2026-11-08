@@ -66,9 +66,14 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
             continue;
         }
         clearOrders(w, u);
-        // Climbing down: to the ladder's head, on the floor the unit is on
+        // Climbing: to the foot of the ladder or stairs, or down from their head, on the floor the unit is on
         const bool down = action == PropAction::Climb && storeyOf(w, u) == storeyOf(w, prop) + 1;
-        walkSolo(w, t, u, Vec2{ pt->x, pt->z }, down ? storeyOf(w, u) : storeyOf(w, prop));
+        Vec2 to{ pt->x, pt->z };
+        if (action == PropAction::Climb) {
+            to = climbFoot(w, prop);
+            if (down) climbTop(w, prop, to);
+        }
+        walkSolo(w, t, u, to, down ? storeyOf(w, u) : storeyOf(w, prop));
         w.add(u, PropOrder{ prop, action });
     }
 }
@@ -85,8 +90,14 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
         }
         const bool climbing = w.get<PropOrder>(u)->action == PropAction::Climb;
         const Transform* utr = w.get<Transform>(u);
-        const bool climbReach = climbing && utr && std::hypot(utr->x - pt->x, utr->z - pt->z) <= PROP_REACH + 0.5f &&
-                                (storeyOf(w, u) == storeyOf(w, prop) || storeyOf(w, u) == storeyOf(w, prop) + 1);
+        bool climbReach = false;
+        if (climbing && utr) {
+            Vec2 spot = climbFoot(w, prop);
+            if (storeyOf(w, u) == storeyOf(w, prop) + 1) climbTop(w, prop, spot);
+            const SoloMove* so = w.get<SoloMove>(u);
+            const bool stopped = !so || so->next >= so->waypoints.size();
+            climbReach = atClimbSpot(w, u, prop) && (stopped || std::hypot(utr->x - spot.x, utr->z - spot.z) <= 0.9f);
+        }
         if (climbing ? climbReach : flatGap(w, u, prop) <= PROP_REACH) {
             const PropAction action = w.get<PropOrder>(u)->action;
             const bool automatic = w.get<PropOrder>(u)->automatic;
