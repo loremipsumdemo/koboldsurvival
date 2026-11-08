@@ -106,10 +106,7 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
 }
 
 std::string fitTo(Renderer& renderer, const std::string& text, float maxW) {
-    if (renderer.listTextWidth(text) <= maxW) return text;
-    std::string t = text;
-    while (!t.empty() && renderer.listTextWidth(t + "...") > maxW) t.pop_back();
-    return t + "...";
+    return renderer.fitListText(text, maxW);
 }
 }
 

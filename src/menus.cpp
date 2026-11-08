@@ -32,8 +32,9 @@ std::string trimmedName(const std::string& s) {
 
 void popUtf8Char(std::string& s) {
     if (s.empty()) return;
-    s.pop_back();
+    // Drop the trailing bytes of the last character, then its first byte, so no half character is left
     while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0x80) s.pop_back();
+    if (!s.empty()) s.pop_back();
 }
 
 std::optional<SaveSummary> findSaveByName(const std::vector<SaveSummary>& saves, const std::string& name) {

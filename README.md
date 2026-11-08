@@ -14,10 +14,11 @@
 | WASD / arrow keys | Move the camera. Shift moves it faster |
 | Middle mouse drag | Orbit the camera |
 | Mouse wheel | Zoom, or scroll lists |
-| Alt (held) | Show the names of items on the ground. With several units selected, also show the formation keys |
+| Alt (held) | Show the names of items on the ground |
+| Form button | List the formations; click one to use it. Changing the shape or spacing keeps the formation's place and facing |
 | Alt + 1 / 2 / 3 / 4 | Selected units form a line, circle, rectangle or wedge, and later orders use that shape |
 | Alt + 5 | Switch between tight and loose formations |
-| Alt + right mouse drag | Place the selected units across the drag, looking away from where they are now |
+| Alt + right mouse drag | Place the selected units around where the drag starts; how far you drag sets the size (a circle's radius, half a line's length), looking away from where they are now |
 | Space | Pause or resume, also during a conversation |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
@@ -25,4 +26,21 @@
 | R (placing Stairs) | Turn the stairs: they rise toward the way they face, and you step off onto the floor above past their top |
 | F12 | Take a screenshot |
 
+## World Generation and the Level Editor
 
+**World Generation** on the title screen makes new maps: pick a map style, tune the land, hills, mountains, moisture,
+temperature and forests, set the look on the Theme tab, preview and generate. **Continue to Level Editor** places the
+spawn point, units, mobs, props and items (Tab switches between the editor's own UI and the game's).
+
+Maps are saved in [MAP](MAP) and levels in [MAP/LEVEL](MAP/LEVEL); New Game lets you choose the map and level to start on.
+
+## Text and languages
+
+All text the game shows comes from the language files in [data/language](data/language): `language_en.txt` (English,
+the base) and `language_zh-CN.txt` (Simplified Chinese). Each line is a key, a tab, and the text; `{0}`, `{1}` mark
+values filled in by the game.
+
+When you add anything the player can read, add a key instead of writing English in the code: button and menu labels,
+tooltips, messages, prop, item and mob names, and default text such as the starting world name. Put the English in
+`language_en.txt` and the translation in every other language file, then show it with `lang("KEY")` or
+`langf("KEY", { ... })`. `data_check` lists any key a language file is missing.

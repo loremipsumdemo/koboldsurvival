@@ -1159,6 +1159,12 @@ CONTROL_KEYS_12	Ctrl + Numpad 1 to 9
 CONTROL_DOES_12	Move the selected units into that squad
 CONTROL_KEYS_13	Numpad 0
 CONTROL_DOES_13	Select your unit nearest the camera's centre
+CONTROL_KEYS_14	Alt + 1 / 2 / 3 / 4, or the Form button
+CONTROL_DOES_14	Selected units form a line, circle, rectangle or wedge
+CONTROL_KEYS_15	Alt + 5
+CONTROL_DOES_15	Switch between tight and loose formations
+CONTROL_KEYS_16	Alt + right mouse drag
+CONTROL_DOES_16	Place the selected units around where the drag starts; the drag sets the size
 UILABEL_SQUAD_HEADING	Squad: {0}
 UILABEL_SQUAD_DEFAULT_NAME	Squad {0}
 UILABEL_SQUAD_RENAME	Rename Squad {0}
@@ -1413,3 +1419,5 @@ MISC_FLOOR_NOW_GROUND	Ground floor
 PROP_STAIRS	Stairs
 MISC_STAIRS_TURN	R: turn
 MISC_BUILD_OUTDOORS_ONLY	That goes outside buildings only
+UILABEL_GEN_DEFAULT_NAME	world
+UILABEL_MAP_MAIN	Main Map

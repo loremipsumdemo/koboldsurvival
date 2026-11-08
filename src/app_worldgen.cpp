@@ -257,6 +257,7 @@ bool App::themeClick(const Rect& area, float x, float y) {
 
 void App::openWorldGen() {
     if (worldGenUi.settings.seed == 1) worldGenUi.settings.seed = (uint32_t)SDL_GetTicksNS() | 1u;
+    if (!worldGenUi.nameEdited || worldGenUi.name.empty()) worldGenUi.name = lang("UILABEL_GEN_DEFAULT_NAME");
     worldGenUi.maps = listMapFiles();
     worldGenUi.previewDirty = true;
     worldGenUi.dragRow = -1;
@@ -440,6 +441,7 @@ void App::worldGenClick(float x, float y) {
             }
             ui.settings = opened;
             ui.name = name;
+            ui.nameEdited = true;
             ui.previewDirty = true;
             ui.generated = true;
             ui.generatedName = name;

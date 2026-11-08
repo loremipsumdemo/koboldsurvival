@@ -428,7 +428,9 @@ std::shared_ptr<const ChunkSource> generatedChunkSource(const WorldGenSettings& 
 std::string safeFileName(const std::string& name) {
     std::string out;
     for (const char c : name) {
-        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ' || c == '-' || c == '_';
+        // Bytes of a non-English letter (UTF-8, 0x80 and up) are kept, so names in other languages work; no ASCII punctuation
+        const unsigned char u = static_cast<unsigned char>(c);
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ' || c == '-' || c == '_' || u >= 0x80;
         if (ok) out += c;
     }
     const size_t first = out.find_first_not_of(' ');

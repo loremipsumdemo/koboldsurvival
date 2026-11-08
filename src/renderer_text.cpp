@@ -138,8 +138,9 @@ std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
 
     std::string t = text;
     while (!t.empty() && width(t + "...") > maxW) {
-        t.pop_back();
+        // Drop a whole character: its trailing bytes, then its first byte
         while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
+        if (!t.empty()) t.pop_back();
     }
     return t + "...";
 }

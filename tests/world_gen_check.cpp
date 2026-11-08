@@ -222,6 +222,8 @@ int main(int argc, char** argv) {
     check(!mapFromText("format 1\ngenerator 99\nsize 1024\n", read, err), "another generator is refused");
     check(!mapFromText("format 1\ngenerator 1\nsize 100\n", read, err), "a size that isn't whole chunks is refused");
     check(safeFileName("  My/Map:1 ") == "MyMap1" && safeFileName("///").empty(), "names become safe file names");
+    const std::string shijie = "\xe4\xb8\x96\xe7\x95\x8c 2";  // "World 2" in Chinese, as UTF-8 bytes
+    check(safeFileName(shijie) == shijie, "a name in another language's letters is kept");
 
     // Play on a generated map, with the level set-up the game uses when no level is picked
     WorldGenSettings small = settings;

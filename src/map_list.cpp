@@ -1,4 +1,5 @@
 #include "level.h"
+#include "language.h"
 #include <string>
 #include <vector>
 #include "pak.h"
@@ -14,7 +15,7 @@ bool mainMapPacked() {
 std::vector<MapChoice> listMaps() {
     std::vector<MapChoice> out;
     if (mainMapPacked()) {
-        out.push_back(MapChoice{ "packed", MAIN_MAP_STEM, MAIN_MAP_STEM,
+        out.push_back(MapChoice{ "packed", MAIN_MAP_STEM, lang("UILABEL_MAP_MAIN"),
                                  std::string(PAK_WORLD_PREFIX) + "data/map/" + MAIN_MAP_STEM });
     }
     for (const std::string& name : listMapFiles()) out.push_back(MapChoice{ MAP_SOURCE_FILE, name, name, mapFilePath(name) });

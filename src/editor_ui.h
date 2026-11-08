@@ -46,7 +46,8 @@ ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float scale);
 struct WorldGenUi {
     WorldGenSettings settings;
     bool themeTab = false;
-    std::string name = "world";
+    std::string name;          // set from UILABEL_GEN_DEFAULT_NAME when the screen opens
+    bool nameEdited = false;   // typed or picked, so a language change leaves it alone
     bool editingName = false;
     int dragRow = -1;
     bool previewDirty = true;

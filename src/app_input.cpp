@@ -57,6 +57,7 @@ void App::onTextInput() {
     }
     if (screen == Screen::WorldGen && worldGenUi.editingName) {
         appendUtf8Limited(worldGenUi.name, e.text.text, WORLD_GEN_NAME_CHARS);
+        worldGenUi.nameEdited = true;
         worldGenChanged();
         return;
     }
@@ -142,6 +143,7 @@ void App::onKeyDown() {
         if (worldGenUi.editingName) {
             if (e.key.key == SDLK_BACKSPACE) {
                 popUtf8Char(worldGenUi.name);
+                worldGenUi.nameEdited = true;
                 worldGenChanged();
             } else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER || e.key.key == SDLK_ESCAPE) {
                 stopWorldGenName();
