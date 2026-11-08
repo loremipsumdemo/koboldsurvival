@@ -235,6 +235,8 @@ add_dependencies(koboldsurvival game_data write_build_stamp)
 # so the game still runs if this folder is missing. Files here override the pak's copy of the same language.
 # The BGM and SFX folders (music and sound effects) are copied the same way. The audio module reads them loose.
 add_custom_command(TARGET koboldsurvival POST_BUILD
+    # Cleared first so a language file deleted from data/language does not linger in the menu
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:koboldsurvival>/LANGUAGE"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/language" "$<TARGET_FILE_DIR:koboldsurvival>/LANGUAGE"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/BGM" "$<TARGET_FILE_DIR:koboldsurvival>/BGM"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/SFX" "$<TARGET_FILE_DIR:koboldsurvival>/SFX"
