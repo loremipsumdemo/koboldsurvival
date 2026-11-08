@@ -11,9 +11,9 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
-                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep" };
+                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -129,7 +129,7 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 
 inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
-           k == BehaviorKind::PatrolSpawn || isBuildTask(k);
+           k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -177,6 +177,7 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::AutoConstruct: return lang("UILABEL_BEHAVIOR_AUTO_CONSTRUCT");
     case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP", { groupRefName(r.propKind) });
     case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP");
+    case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -202,6 +203,7 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::AutoConstruct: return lang("UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP");
     case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP_TIP", { groupRefName(r.propKind) });
     case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP_TIP");
+    case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -245,7 +247,7 @@ inline TaskCategory taskCategory(BehaviorKind k) {
     case BehaviorKind::Patrol: case BehaviorKind::Roam: case BehaviorKind::PatrolSpawn: return TaskCategory::Movement;
     case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: return TaskCategory::Building;
     case BehaviorKind::AutoHarvest: return TaskCategory::Harvesting;
-    case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: return TaskCategory::Hauling;
+    case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: return TaskCategory::Hauling;
     default: return TaskCategory::Needs;
     }
 }
@@ -256,9 +258,14 @@ inline TaskCategory taskCategory(BehaviorKind k) {
 // harvesting, and both above movement). A haul added again that sits below a later category's task moves up likewise.
 inline bool addBehavior(std::vector<BehaviorRule>& rules, const BehaviorRule& add, int limit = BEHAVIOR_LIMIT) {
     const int rank = (int)taskCategory(add.kind);
+    // Within hauling, hauls to a store go above Auto-Haul Ground Items, so what is carried is put away before more is fetched
+    auto later = [&](const BehaviorRule& x) {
+        const int rx = (int)taskCategory(x.kind);
+        return rx > rank || (rx == rank && isHaul(add.kind) && x.kind == BehaviorKind::AutoHaulGround);
+    };
     auto spot = [&](size_t end) {
         for (size_t i = 0; i < end; ++i) {
-            if ((int)taskCategory(rules[i].kind) > rank) return i;
+            if (later(rules[i])) return i;
         }
         return end;
     };
@@ -292,8 +299,10 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     std::vector<BehaviorKind> out;
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
-                BehaviorKind::Rescue, BehaviorKind::Sleep };
+                BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::Patrol, BehaviorKind::Roam };
+        return out;
     }
+    // Patrol Spawn (keeping near where it appeared) is for wild mobs
     out.insert(out.end(), { BehaviorKind::Patrol, BehaviorKind::Roam, BehaviorKind::PatrolSpawn });
     return out;
 }

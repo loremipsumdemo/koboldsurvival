@@ -109,6 +109,13 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && storeFilterUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            storeFilterUi = StoreFilterUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && groupsUi.open) {
         if (e.key.key == SDLK_ESCAPE) {
             groupsUi = BehaviorGroupsUi{};

@@ -8,6 +8,8 @@
 #include "terrain.h"
 
 std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terrain& t, float mx, float my, int W, int H);
+// Where the pointer's ray meets the flat plane at height y
+std::optional<std::pair<float, float>> pickPlane(const Camera& cam, float mx, float my, int W, int H, float y);
 
 constexpr float HIDDEN_BEHIND_GROUND = 3.0f;
 

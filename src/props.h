@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <iterator>
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -79,6 +81,20 @@ struct BuildPick {
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
 
 enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone };
+
+// The kinds of item a general store (a Barrel, a chest: storage that takes any item) can be set to allow, from its
+// right-click menu's Allowed Items. By default it takes all but Wood Logs and Stone, which have stockpiles of their
+// own, and bones, which go to the Altar.
+enum class StoreCategory : int { Food = 0, RawFood, Water, Weapons, Armor, Ammo, Metal, Materials, Wood, Stone, Bones, Count };
+inline constexpr const char* STORE_CATEGORY_KEYS[] = { "UILABEL_STORE_FOOD", "UILABEL_STORE_RAW_FOOD", "UILABEL_STORE_WATER",
+                                                       "UILABEL_STORE_WEAPONS", "UILABEL_STORE_ARMOR", "UILABEL_STORE_AMMO",
+                                                       "UILABEL_STORE_METAL", "UILABEL_STORE_MATERIALS", "UILABEL_STORE_WOOD",
+                                                       "UILABEL_STORE_STONE", "UILABEL_STORE_BONES" };
+static_assert(std::size(STORE_CATEGORY_KEYS) == (size_t)StoreCategory::Count);
+inline constexpr std::uint32_t storeBit(StoreCategory c) { return 1u << (int)c; }
+inline constexpr std::uint32_t STORE_ALL = (1u << (int)StoreCategory::Count) - 1u;
+inline constexpr std::uint32_t STORE_DEFAULT =
+    STORE_ALL & ~(storeBit(StoreCategory::Wood) | storeBit(StoreCategory::Stone) | storeBit(StoreCategory::Bones));
 
 inline const char* itemFilterKey(ItemFilter f) {
     switch (f) {

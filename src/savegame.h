@@ -14,7 +14,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 12;
+inline constexpr int SAVE_VERSION = 13;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -98,6 +98,7 @@ struct SaveProp {
     std::optional<Foundation> foundation;
     std::optional<Blueprint> blueprint;
     int material = 0;
+    std::optional<std::uint32_t> storeFilter;
 };
 
 struct SaveCamera {
@@ -107,6 +108,7 @@ struct SaveCamera {
 
 struct SaveData {
     std::string name;
+    bool storesListed = false;   // from version 13: the Citizen Default already has its store hauls
     bool autosave = false;
     long long timestamp = 0;
     std::string mapSource, mapStem;

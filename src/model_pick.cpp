@@ -76,6 +76,33 @@ float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], con
     return rayHitModelSpace(m, ro, rd);
 }
 
+float rayHitModelBox(const Model& m, const ModelPlacement& p, const float o[3], const float d[3], float minSide) {
+    if (!p.ok) return -1.0f;
+    const float lx = (o[0] - p.tx) / p.k, ly = (o[1] - p.ty) / p.k, lz = (o[2] - p.tz) / p.k;
+    const float ro[3] = { p.cs * lx - p.sn * lz + p.px, ly + p.py, p.sn * lx + p.cs * lz + p.pz };
+    const float rd[3] = { (p.cs * d[0] - p.sn * d[2]) / p.k, d[1] / p.k, (p.sn * d[0] + p.cs * d[2]) / p.k };
+    float lo[3] = { m.minX, m.minY, m.minZ }, hi[3] = { m.maxX, m.maxY, m.maxZ };
+    const float least = minSide / p.k;
+    for (int a : { 0, 2 }) {
+        const float mid = (lo[a] + hi[a]) * 0.5f, half = std::max((hi[a] - lo[a]) * 0.5f, least * 0.5f);
+        lo[a] = mid - half;
+        hi[a] = mid + half;
+    }
+    float t0 = 0.0f, t1 = 1e30f;
+    for (int a = 0; a < 3; ++a) {
+        if (std::fabs(rd[a]) < 1e-12f) {
+            if (ro[a] < lo[a] || ro[a] > hi[a]) return -1.0f;
+            continue;
+        }
+        float ta = (lo[a] - ro[a]) / rd[a], tb = (hi[a] - ro[a]) / rd[a];
+        if (ta > tb) std::swap(ta, tb);
+        t0 = std::max(t0, ta);
+        t1 = std::min(t1, tb);
+        if (t0 > t1) return -1.0f;
+    }
+    return t0;
+}
+
 float rayHitModelMatrix(const Model& m, const float matrix[16], const float o[3], const float d[3]) {
     float inv[16];
     if (m.triangles.size() < 3 || !invert4x4(matrix, inv)) return -1.0f;

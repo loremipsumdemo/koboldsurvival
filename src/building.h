@@ -81,9 +81,14 @@ double materialToughness(BuildMaterial m);
 const char* materialNameKey(BuildMaterial m);
 
 // Set when walls appear or go, so the terrain's closed tiles are worked out again
+// What the walkable ground and the foundation decks need: dirty for all of it (a game just opened), or else just the
+// tiles a building piece was finished or lost on, which refreshBuildingTiles updates and replans the walks that cross
 struct BuildingsChanged {
     bool dirty = true;
+    std::vector<std::pair<int, int>> tiles;
 };
+void buildingTilesChanged(World& w, int x0, int z0, int x1, int z1);
+void refreshBuildingTiles(World& w, Terrain& t);
 
 enum class PieceCheck {
     Ok,

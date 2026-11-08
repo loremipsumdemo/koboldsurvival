@@ -1,6 +1,7 @@
 #include "building.h"
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 #include "airship.h"
 #include "experience.h"
 #include "factions.h"
@@ -366,12 +367,11 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
     }
     w.remove<Blueprint>(prop);
     const double tough = materialToughness(materialOf(w, prop));
+    buildingTilesChanged(w, x0, z0, x1, z1);
     if (info->wallRule) {
-        w.resource<BuildingsChanged>().dirty = true;
         w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
     }
     if (info->door) {
-        w.resource<BuildingsChanged>().dirty = true;
         w.add(prop, Lock{ true, std::max(1, info->lockLevel), ownerOf(w, prop) });
         w.add(prop, Health{ DOOR_HEALTH * tough, DOOR_HEALTH * tough });
     }
@@ -382,12 +382,111 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
 
 void rebuildBlocking(World& w, Terrain& t) {
     t.clearBlocked();
+    t.clearDecks();
     for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).wallRule || w.has<Blueprint>(e)) continue;
+        if (w.has<Blueprint>(e)) continue;
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            for (int z = f->z0; z < f->z0 + f->h; ++z) {
+                for (int x = f->x0; x < f->x0 + f->w; ++x) t.setDeck(x, z, true);
+            }
+            continue;
+        }
+        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
         const Transform* tr = w.get<Transform>(e);
         t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
     }
     w.resource<BuildingsChanged>().dirty = false;
+    w.resource<BuildingsChanged>().tiles.clear();
+    collapseCheck(w);
+}
+
+void buildingTilesChanged(World& w, int x0, int z0, int x1, int z1) {
+    std::vector<std::pair<int, int>>& tiles = w.resource<BuildingsChanged>().tiles;
+    for (int z = std::min(z0, z1); z <= std::max(z0, z1); ++z) {
+        for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x) tiles.push_back({ x, z });
+    }
+}
+
+namespace {
+// Whether a walk from a through the rest of its waypoints passes near any of the tiles
+bool routeNear(Vec2 from, const std::vector<Vec2>& waypoints, size_t next, const std::vector<std::pair<int, int>>& tiles) {
+    constexpr float NEAR = 1.25f;
+    auto segNear = [&](Vec2 a, Vec2 b) {
+        const float dx = b.x - a.x, dz = b.z - a.z, len2 = dx * dx + dz * dz;
+        for (const auto& [tx, tz] : tiles) {
+            const float cx = tx + 0.5f, cz = tz + 0.5f;
+            const float s = len2 > 1e-6f ? std::clamp(((cx - a.x) * dx + (cz - a.z) * dz) / len2, 0.0f, 1.0f) : 0.0f;
+            const float ex = a.x + dx * s - cx, ez = a.z + dz * s - cz;
+            if (ex * ex + ez * ez <= NEAR * NEAR) return true;
+        }
+        return false;
+    };
+    Vec2 at = from;
+    for (size_t i = next; i < waypoints.size(); ++i) {
+        if (segNear(at, waypoints[i])) return true;
+        at = waypoints[i];
+    }
+    return false;
+}
+}
+
+void refreshBuildingTiles(World& w, Terrain& t) {
+    BuildingsChanged& bc = w.resource<BuildingsChanged>();
+    if (bc.tiles.empty()) return;
+    std::vector<std::pair<int, int>> tiles;
+    tiles.swap(bc.tiles);
+    std::sort(tiles.begin(), tiles.end());
+    tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
+    auto key = [](int x, int z) { return (long long)z * 1000003LL + (long long)x; };
+    std::unordered_set<long long> changed;
+    int x0 = tiles.front().first, x1 = x0, z0 = tiles.front().second, z1 = z0;
+    for (const auto& [x, z] : tiles) {
+        changed.insert(key(x, z));
+        t.setBlocked(x, z, false);
+        t.setDeck(x, z, false);
+        x0 = std::min(x0, x); x1 = std::max(x1, x);
+        z0 = std::min(z0, z); z1 = std::max(z1, z);
+    }
+    // Only the changed tiles are worked out again: a finished wall closes its tile, a finished foundation decks its own
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (w.has<Blueprint>(e)) continue;
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            if (f->x0 > x1 || f->x0 + f->w - 1 < x0 || f->z0 > z1 || f->z0 + f->h - 1 < z0) continue;
+            for (const auto& [x, z] : tiles) {
+                if (f->contains(x, z)) t.setDeck(x, z, true);
+            }
+            continue;
+        }
+        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (changed.count(key(tileOf(tr->x), tileOf(tr->z)))) t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
+    }
+    // Walks that pass near a changed tile are planned again, around a new wall or through a gap left by a lost one
+    for (ObjectId u : w.view<SoloMove, Transform>()) {
+        if (w.has<Upstairs>(u)) continue;
+        SoloMove* so = w.get<SoloMove>(u);
+        const Transform* ut = w.get<Transform>(u);
+        if (so->next >= so->waypoints.size() || !routeNear(Vec2{ ut->x, ut->z }, so->waypoints, so->next, tiles)) continue;
+        planSolo(w, t, u, so->waypoints.back());
+    }
+    for (ObjectId sq : w.view<ActiveSquad>()) {
+        ActiveSquad* a = w.get<ActiveSquad>(sq);
+        if (a->arrived || a->next >= a->waypoints.size() || !routeNear(Vec2{ a->cx, a->cz }, a->waypoints, a->next, tiles)) continue;
+        planActiveSquad(w, t, sq, a->waypoints.back());
+    }
+    for (ObjectId u : w.view<ChaseRoute>()) {
+        ChaseRoute* r = w.get<ChaseRoute>(u);
+        r->checkIn = 0.0f;
+        r->planIn = 0.0f;
+        r->waypoints.clear();
+        r->next = 0;
+    }
+    // Units on the changed tiles take its new height (onto a new deck, or down off a lost one)
+    for (ObjectId u : w.view<Entity, Transform>()) {
+        if (w.has<Upstairs>(u) || w.has<Carried>(u) || w.has<Occupying>(u) || w.has<Climbing>(u)) continue;
+        Transform* ut = w.get<Transform>(u);
+        if (changed.count(key(tileOf(ut->x), tileOf(ut->z)))) ut->y = t.standHeight(ut->x, ut->z);
+    }
     collapseCheck(w);
 }
 
@@ -549,7 +648,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
             w.remove<Upstairs>(u);
             ut->x = lt->x;
             ut->z = lt->z;
-            ut->y = t.heightAt(ut->x, ut->z);
+            ut->y = t.standHeight(ut->x, ut->z);
         } else {
             const ObjectId f = foundationAt(w, tileOf(lt->x), tileOf(lt->z));
             const Vec2 spot = nearestFloorSpot(w, f, Vec2{ lt->x, lt->z });
@@ -566,7 +665,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
         const Upstairs* up = w.get<Upstairs>(u);
         if (w.has<Foundation>(up->foundation) && upperFloorAt(w, tileOf(ut->x), tileOf(ut->z)) != NO_OBJECT) continue;
         w.remove<Upstairs>(u);
-        ut->y = t.heightAt(ut->x, ut->z);
+        ut->y = t.standHeight(ut->x, ut->z);
     }
 }
 
@@ -592,7 +691,7 @@ void foundationLost(World& w, ObjectId foundation) {
     for (ObjectId u : w.view<Upstairs>()) {
         if (w.get<Upstairs>(u)->foundation == foundation) w.remove<Upstairs>(u);
     }
-    w.resource<BuildingsChanged>().dirty = true;
+    buildingTilesChanged(w, keep.x0, keep.z0, keep.x0 + keep.w - 1, keep.z0 + keep.h - 1);
 }
 
 bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r) {
@@ -769,4 +868,5 @@ void buildingSystem(World& w, Terrain& t, float dt) {
     climbSystem(w, t, dt);
     doorSystem(w, dt);
     if (w.resource<BuildingsChanged>().dirty) rebuildBlocking(w, t);
+    else refreshBuildingTiles(w, t);
 }

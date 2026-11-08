@@ -464,14 +464,19 @@ def wall_tile(arms, pal=WOOD_PAL):
     """One tile of wall: a post in the middle and an arm toward each wall beside it. The footing spans the whole tile, so
     that every shape is centred on its tile the same way (the game centres a model on its bounds)."""
     main, dark, light, foot = pal
-    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.38, WALL_HEIGHT - 0.05, 0.38, dark)]
+    # No two faces share a plane, so none flicker: the post stops under the cap, an arm runs from inside the post to the
+    # tile's edge (meeting the next wall's arm there, not overlapping it) and stops just under the cap's height, and each
+    # band is a hair shorter than its arm
+    cap = WALL_HEIGHT - 0.1
+    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.38, cap - 0.06, 0.38, dark)]
     for dx, dz in arms:
-        cx, cz = dx * 0.34, dz * 0.34
-        w, d = (0.34, 0.3) if dx else (0.3, 0.34)
-        parts.append(box(cx, 0.05, cz, w, WALL_HEIGHT - 0.15, d, main))
+        cx, cz = dx * 0.335, dz * 0.335
+        w, d = (0.33, 0.3) if dx else (0.3, 0.33)
+        parts.append(box(cx, 0.05, cz, w, cap - 0.07, d, main))
+        bw, bd = (w - 0.004, d + 0.02) if dx else (w + 0.02, d - 0.004)
         for y in (0.6, 1.3, 2.0):
-            parts.append(box(cx, y, cz, w + 0.01, 0.05, d + 0.02, dark))
-    parts.append(box(0, WALL_HEIGHT - 0.1, 0, 0.42, 0.1, 0.42, light))
+            parts.append(box(cx, y, cz, bw, 0.05, bd, dark))
+    parts.append(box(0, cap, 0, 0.42, 0.1, 0.42, light))
     return parts
 
 
@@ -528,9 +533,10 @@ def wood_stockpile():
 def stone_stockpile():
     """Stone blocks on a low pallet."""
     parts = [box(0, 0, 0, 1.3, 0.1, 1.0, DARK_WOOD)]
-    for x, z, y, c in ((-0.32, -0.22, 0.1, STONE), (0.32, -0.22, 0.1, DARK_STONE), (-0.32, 0.22, 0.1, DARK_STONE), (0.32, 0.22, 0.1, STONE),
-                       (0, 0, 0.4, STONE), (0.3, 0.1, 0.4, DARK_STONE)):
-        parts.append(box(x, y, z, 0.5, 0.3, 0.4, c))
+    # The top two blocks differ in height and footprint, so their tops and sides never share a plane
+    for x, z, y, h, c in ((-0.32, -0.22, 0.1, 0.3, STONE), (0.32, -0.22, 0.1, 0.3, DARK_STONE), (-0.32, 0.22, 0.1, 0.3, DARK_STONE),
+                          (0.32, 0.22, 0.1, 0.3, STONE), (-0.16, -0.02, 0.4, 0.3, STONE), (0.3, 0.05, 0.4, 0.26, DARK_STONE)):
+        parts.append(box(x, y, z, 0.5, h, 0.4 if h == 0.3 else 0.36, c))
     return parts
 
 

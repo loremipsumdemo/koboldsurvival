@@ -20,6 +20,8 @@ constexpr size_t MAX_GROUND_CHUNKS = 1024;
 // tiles, which it asks its ChunkSource for. It starts as a blank flat map.
 // Two sets of chunks are held. For drawing, the ones around the camera and the units (stream()). For the simulation, the
 // ground of whichever chunks were last asked about, so units, paths and sight work the same everywhere, whatever is drawn.
+inline constexpr float DECK_HEIGHT = 0.2f;   // a finished foundation's top above the ground (its model is 0.2 tall)
+
 class Terrain {
 public:
     explicit Terrain(int size = DEFAULT_MAP_SIZE);
@@ -53,6 +55,12 @@ public:
     void setBlocked(int x, int y, bool blocked);
     void clearBlocked() { blocked_.clear(); }
     bool blockedByBuilding(int x, int y) const;
+    // Tiles under a finished foundation's deck: a unit there stands DECK_HEIGHT above the ground at the tile's middle
+    void setDeck(int x, int y, bool on);
+    void clearDecks() { decks_.clear(); }
+    bool onDeck(int x, int y) const;
+    // Where something standing at x, z is: the ground, or the top of a foundation's deck
+    float standHeight(float x, float z) const;
     // The piece of open ground a tile is in, numbered from 1; 0 for closed ground. On a map too big to work them out, all
     // open ground is piece 1.
     int areaAt(int x, int y) const { return walkable(x, y) ? areaOf(x, y) : 0; }
@@ -90,4 +98,5 @@ private:
     float heightScale_ = 1.0f;
     float floorY_ = -1.0f;
     std::unordered_set<long long> blocked_;
+    std::unordered_set<long long> decks_;
 };

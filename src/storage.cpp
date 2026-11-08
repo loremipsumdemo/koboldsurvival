@@ -77,8 +77,11 @@ bool dropFromStorage(World& w, int slot) {
 
 std::string refusalFor(World& w, int item) {
     const Prop* prop = w.get<Prop>(session.storageProp);
-    if (!prop || propAcceptsItem(prop->kind, item)) return std::string();
+    if (!prop || propTakesItem(w, session.storageProp, item)) return std::string();
     const PropInfo& info = propInfo(prop->kind);
+    if (hasStoreFilter(prop->kind) && propAcceptsItem(prop->kind, item)) {
+        return langf("MISC_STORE_NOT_ALLOWED", { itemNameOf(item), lang(STORE_CATEGORY_KEYS[(int)storeCategoryOf(item)]) });
+    }
     if (info.use == PropUse::Storage) return langf("MISC_STORAGE_ONLY", { lang(itemFilterKey(info.accepts)) });
     return langf("MISC_CRAFT_WRONG_ITEM", { itemNameOf(item) });
 }

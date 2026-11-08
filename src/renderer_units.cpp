@@ -483,6 +483,10 @@ std::vector<ObjectId> Renderer::entitiesAtPixel(World& w, const Camera& cam, flo
     return out;
 }
 
+namespace {
+constexpr float LADDER_PICK_DEPTH = 0.3f;   // how thick a ladder is to a click
+}
+
 std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float mx, float my, int winW, int winH) {
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     float o[3] = {}, d[3] = {};
@@ -507,8 +511,9 @@ std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float 
         }
         const Model& m = propModel(kind);
         if (m.vao) {
-            const float t = rayHitModel(m, placeModel(m, tr->x, baseY, tr->z, propInfo(kind).size,
-                                                      w.get<Prop>(e)->yaw), o, d);
+            const ModelPlacement at = placeModel(m, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
+            // A ladder is clicked as a solid slab, so a click between its rungs still finds it
+            const float t = propInfo(kind).ladder ? rayHitModelBox(m, at, o, d, LADDER_PICK_DEPTH) : rayHitModel(m, at, o, d);
             if (t >= 0.0f) hits.push_back({ t, e });
             continue;
         }

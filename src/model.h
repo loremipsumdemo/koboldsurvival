@@ -32,4 +32,7 @@ struct ModelPlacement {
 ModelPlacement placeModel(const Model& m, float x, float y, float z, float targetSize, float yaw = 0.0f);
 
 float rayHitModel(const Model& m, const ModelPlacement& p, const float o[3], const float d[3]);
+// Where the ray meets the model's bounding box, its thinner side padded out to at least minSide (world units): a solid
+// stand-in for clicking an open prop, such as a ladder, between its parts. -1 for a miss.
+float rayHitModelBox(const Model& m, const ModelPlacement& p, const float o[3], const float d[3], float minSide);
 float rayHitModelMatrix(const Model& m, const float matrix[16], const float o[3], const float d[3]);

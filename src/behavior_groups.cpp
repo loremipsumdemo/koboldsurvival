@@ -3,6 +3,9 @@
 #include "components.h"
 #include "factions.h"
 #include "squads.h"
+#include "systems.h"
+#include "claims.h"
+#include "building.h"
 
 namespace {
 BehaviorRule groupTask(int ref) {
@@ -41,16 +44,20 @@ bool reaches(const BehaviorGroups& g, int ref, int target, std::vector<int>& see
 void resetBehaviorGroups(BehaviorGroups& g) {
     g.military = defaultBehaviors();
     // Citizens: their needs (napping only when nearly spent, as they sleep the night through), then building, then
-    // staying near your Altar. Hauling and harvesting tasks added to it sort in between building and movement.
+    // hauling (to each of your stores, kept up by storeHaulSync, then items off the ground), then patrolling your town.
+    // Harvesting tasks added to it sort in between hauling and the patrol.
     g.citizen = defaultBehaviors();
     for (BehaviorRule& r : g.citizen) {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
-    BehaviorRule sleep, build, home;
+    BehaviorRule sleep, build, ground, patrol;
     sleep.kind = BehaviorKind::Sleep;
     build.kind = BehaviorKind::AutoConstruct;
-    home.kind = BehaviorKind::PatrolSpawn;
-    g.citizen.insert(g.citizen.end(), { sleep, build, home });
+    ground.kind = BehaviorKind::AutoHaulGround;
+    patrol.kind = BehaviorKind::Patrol;
+    g.citizen.insert(g.citizen.end(), { sleep, build, ground, patrol });
+    g.listedStores.clear();
+    g.storesListed = false;
     g.groups.assign(1, { groupTask(GROUP_REF_CITIZEN) });
     g.ready = true;
     ++g.version;
@@ -138,8 +145,68 @@ int citizensInGroup(World& w, int group) {
     return n;
 }
 
+bool isGroupStore(World& w, ObjectId p) {
+    const Prop* pp = w.get<Prop>(p);
+    if (!pp || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
+    const PropInfo& info = propInfo(pp->kind);
+    if (info.use != PropUse::Storage && !info.claimsLand) return false;
+    const Owner* own = w.get<Owner>(p);
+    if (own && own->faction != FACTION_PLAYER) return false;
+    const Transform* t = w.get<Transform>(p);
+    return t && claimAt(claimsOf(w), t->x, t->z, FACTION_PLAYER) != nullptr;
+}
+
+std::vector<ObjectId> groupStores(World& w) {
+    std::vector<ObjectId> out;
+    for (ObjectId p : w.view<Prop, Storage>()) {
+        if (isGroupStore(w, p)) out.push_back(p);
+    }
+    return out;
+}
+
+void markStoresListed(World& w) {
+    BehaviorGroups& g = behaviorGroups(w);
+    g.listedStores = groupStores(w);
+    std::sort(g.listedStores.begin(), g.listedStores.end());
+    g.storesListed = true;
+}
+
+bool storeHaulSync(World& w) {
+    BehaviorGroups& g = behaviorGroups(w);
+    bool changed = false;
+    // Haul tasks to a store that is gone leave every list
+    auto gone = [&](const BehaviorRule& r) { return isHaul(r.kind) && !w.has<Storage>(r.prop); };
+    auto prune = [&](std::vector<BehaviorRule>& list) {
+        const size_t before = list.size();
+        list.erase(std::remove_if(list.begin(), list.end(), gone), list.end());
+        changed = changed || list.size() != before;
+    };
+    prune(g.military);
+    prune(g.citizen);
+    for (std::vector<BehaviorRule>& list : g.groups) prune(list);
+    g.listedStores.erase(std::remove_if(g.listedStores.begin(), g.listedStores.end(), [&](ObjectId p) { return !w.has<Storage>(p); }),
+                         g.listedStores.end());
+    // A store of yours new to the list gets a haul task in the Citizen Default Behavior (bones, for the Altar), once
+    for (ObjectId p : groupStores(w)) {
+        if (std::binary_search(g.listedStores.begin(), g.listedStores.end(), p)) continue;
+        g.listedStores.insert(std::upper_bound(g.listedStores.begin(), g.listedStores.end(), p), p);
+        BehaviorRule r;
+        r.kind = propInfo(w.get<Prop>(p)->kind).claimsLand ? BehaviorKind::AutoHaulBones : BehaviorKind::AutoHaul;
+        r.prop = p;
+        r.propKind = idx(w.get<Prop>(p)->kind);
+        if (!holdsBehavior(g.citizen, r) && addBehavior(g.citizen, r, BEHAVIOR_GROUP_TASKS)) changed = true;
+    }
+    g.storesListed = true;
+    if (changed) ++g.version;
+    return changed;
+}
+
 void behaviorGroupSystem(World& w) {
     BehaviorGroups& g = behaviorGroups(w);
+    if (++g.syncTick >= STORE_SYNC_STEPS) {
+        g.syncTick = 0;
+        storeHaulSync(w);
+    }
     for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
         if (w.get<Faction>(u)->id != FACTION_PLAYER) continue;
         Citizen& c = *w.get<Citizen>(u);

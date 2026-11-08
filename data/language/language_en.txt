@@ -1004,10 +1004,10 @@ UILABEL_CLEAR	Clear
 UILABEL_TASK_CLEARING	Clearing debris
 MISC_CLEARS_DEBRIS	{0} clears away the Debris
 UILABEL_MOB_INVENTORY_HIDDEN	Not available
-UILABEL_BEHAVIOR_PATROL	Patrol
+UILABEL_BEHAVIOR_PATROL	Patrol Town
 UILABEL_BEHAVIOR_PATROL_SPAWN	Patrol Spawn
 UILABEL_BEHAVIOR_ROAM	Roam
-UILABEL_BEHAVIOR_PATROL_TIP	Patrol: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
+UILABEL_BEHAVIOR_PATROL_TIP	Patrol Town: walks about inside the claim it stands in, when the claim is its faction's, pausing now and then.
 UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first appeared. Chased too far from there, it gives up, heals fully and walks back, taking no damage until it is home.
 UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the claims.
 UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
@@ -1287,6 +1287,26 @@ UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
 UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
 UILABEL_BEHAVIOR_SLEEP	Sleep at night
+UILABEL_BEHAVIOR_AUTO_HAUL_GROUND	Auto-Haul Ground Items
+UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP	Picks up items lying in your claim that one of its Auto-Haul tasks can put away, so they get stored
+UILABEL_STORE_FILTER	Allowed Items
+UILABEL_STORE_FILTER_TITLE	{0}: Allowed Items
+UILABEL_STORE_DEFAULT	Default
+UILABEL_STORE_DEFAULT_TIP	Every kind but Wood Logs and Stone (they have stockpiles of their own) and bones (they go to the Altar)
+UILABEL_STORE_ALL	All
+UILABEL_STORE_NONE	None
+UILABEL_STORE_FOOD	Food
+UILABEL_STORE_RAW_FOOD	Raw Food
+UILABEL_STORE_WATER	Water
+UILABEL_STORE_WEAPONS	Weapons
+UILABEL_STORE_ARMOR	Armor and Accessories
+UILABEL_STORE_AMMO	Arrows and Bolts
+UILABEL_STORE_METAL	Ore, Metal and Crystal
+UILABEL_STORE_MATERIALS	Other Materials
+UILABEL_STORE_WOOD	Wood Logs
+UILABEL_STORE_STONE	Stone
+UILABEL_STORE_BONES	Bones
+MISC_STORE_NOT_ALLOWED	This store isn't set to take {1} ({0}): right-click it for Allowed Items
 UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nearest free bed and sleeps there until morning
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
 UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it

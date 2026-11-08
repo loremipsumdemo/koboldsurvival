@@ -725,7 +725,7 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
     else if (std::fabs(velocity.first) > 1e-3f) againstWall(nx + (velocity.first > 0.0f ? AGENT_CLEARANCE : -AGENT_CLEARANCE), tr->z);
     if (t.isFree(tr->x, nz) && !doorStops(tr->x, nz)) tr->z = nz;
     else if (std::fabs(velocity.second) > 1e-3f) againstWall(tr->x, nz + (velocity.second > 0.0f ? AGENT_CLEARANCE : -AGENT_CLEARANCE));
-    tr->y = t.heightAt(tr->x, tr->z);
+    tr->y = t.standHeight(tr->x, tr->z);
 
     const float moved = std::hypot(tr->x - x0, tr->z - z0);
     if (moved > 0.0f) {

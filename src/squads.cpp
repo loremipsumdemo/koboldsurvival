@@ -84,7 +84,7 @@ Vec2 citizenHome(World& w, ObjectId u) {
 
 BehaviorRule stayNearHome() {
     BehaviorRule r;
-    r.kind = BehaviorKind::PatrolSpawn;
+    r.kind = BehaviorKind::Patrol;
     return r;
 }
 }

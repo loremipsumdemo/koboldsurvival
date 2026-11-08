@@ -252,6 +252,11 @@ struct XpBuffer {
     std::array<float, STAT_COUNT> frac{};
 };
 
+// A general store's allowed item kinds (StoreCategory bits). One without it allows STORE_DEFAULT.
+struct StoreFilter {
+    std::uint32_t allowed = STORE_DEFAULT;
+};
+
 struct GroundItem {
     int item = 0;
     int count = 1;

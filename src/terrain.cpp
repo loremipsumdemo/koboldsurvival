@@ -21,6 +21,7 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 
 void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     blocked_.clear();
+    decks_.clear();
     source_ = std::move(source);
     size_ = source_->size();
     cps_ = ::chunksPerSide(size_);
@@ -227,6 +228,22 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
     const long long key = (long long)y * 1000003LL + (long long)x;
     if (blocked) blocked_.insert(key);
     else blocked_.erase(key);
+}
+
+void Terrain::setDeck(int x, int y, bool on) {
+    const long long key = (long long)y * 1000003LL + (long long)x;
+    if (on) decks_.insert(key);
+    else decks_.erase(key);
+}
+
+bool Terrain::onDeck(int x, int y) const {
+    return !decks_.empty() && decks_.count((long long)y * 1000003LL + (long long)x) > 0;
+}
+
+float Terrain::standHeight(float x, float z) const {
+    const int tx = (int)std::floor(x), tz = (int)std::floor(z);
+    if (onDeck(tx, tz)) return heightAt(tx + 0.5f, tz + 0.5f) + DECK_HEIGHT;
+    return heightAt(x, z);
 }
 
 bool Terrain::blockedByBuilding(int x, int y) const {

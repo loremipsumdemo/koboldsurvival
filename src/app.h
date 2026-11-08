@@ -320,6 +320,11 @@ struct App : AppSession {
     void drawMaterialAsk();
     void drawFoundationSize();
     void startRename(ObjectId u);
+    void openStoreFilter(ObjectId prop);
+    std::optional<std::pair<float, float>> buildPickAt(float mx, float my);
+    void markFloorTiles(BuildPreview& bp, int tx, int tz);
+    bool pressOnStoreFilter();
+    void drawStoreFilter();
     void openBehaviorGroups(ObjectId altarProp);
     std::vector<BehaviorOption> groupTaskOptions();
     bool pressOnBehaviorGroups();
@@ -444,6 +449,7 @@ struct App : AppSession {
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
     BehaviorGroupsUi groupsUi;
+    StoreFilterUi storeFilterUi;
     RenamePrompt rename;
     GhostsUi ghostsUi;
     MapPickUi mapPick;

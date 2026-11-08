@@ -26,6 +26,29 @@
 
 using namespace play;
 
+std::optional<std::pair<float, float>> pickPlane(const Camera& cam, float mx, float my, int W, int H, float y) {
+    const Mat4 vp = cam.viewProj((float)W / (float)H);
+    float inv[16];
+    if (!invert4x4(vp.m, inv)) return std::nullopt;
+    const float ndcX = 2.0f * mx / (float)W - 1.0f, ndcY = 1.0f - 2.0f * my / (float)H;
+    auto unproject = [&](float ndcZ, float out[3]) {
+        const float p[4] = { ndcX, ndcY, ndcZ, 1.0f };
+        float r[4];
+        for (int i = 0; i < 4; ++i) r[i] = inv[0 * 4 + i] * p[0] + inv[1 * 4 + i] * p[1] + inv[2 * 4 + i] * p[2] + inv[3 * 4 + i] * p[3];
+        out[0] = r[0] / r[3];
+        out[1] = r[1] / r[3];
+        out[2] = r[2] / r[3];
+    };
+    float n[3], f[3];
+    unproject(-1.0f, n);
+    unproject(1.0f, f);
+    const float dy = f[1] - n[1];
+    if (std::fabs(dy) < 1e-6f) return std::nullopt;
+    const float s = (y - n[1]) / dy;
+    if (s < 0.0f) return std::nullopt;
+    return std::make_pair(n[0] + (f[0] - n[0]) * s, n[2] + (f[2] - n[2]) * s);
+}
+
 std::optional<std::pair<float, float>> pickGround(const Camera& cam, const Terrain& t,
                                                   float mx, float my, int W, int H) {
     Mat4 vp = cam.viewProj((float)W / (float)H);

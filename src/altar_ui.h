@@ -26,6 +26,12 @@ struct GhostsUi {
     std::array<int, 2> scroll{};
 };
 
+// A general store's Allowed Items window
+struct StoreFilterUi {
+    bool open = false;
+    ObjectId prop = NO_OBJECT;
+};
+
 // Behavior Groups: the list picked (a group's index, or GROUP_REF_MILITARY or GROUP_REF_CITIZEN), and whether the tasks
 // that may be added to it are shown in place of its own
 struct BehaviorGroupsUi {

@@ -270,7 +270,7 @@ int main(int, char**) {
         check(setCitizenGroup(world, resident, woodGroup) && !setCitizenGroup(world, resident, 9), "a citizen moves to a group that exists");
         behaviorGroupSystem(world);
         BehaviorRule home;
-        home.kind = BehaviorKind::PatrolSpawn;
+        home.kind = BehaviorKind::Patrol;
         check(holdsBehavior(world.get<Behaviors>(resident)->rules, chopTrees) && holdsBehavior(world.get<Behaviors>(resident)->rules, home),
               "the citizen takes its group's tasks, the Citizen Default Behavior's among them");
     }
@@ -306,7 +306,16 @@ int main(int, char**) {
         BehaviorGroups& bg = behaviorGroups(town);
         bool ordered = true;
         for (size_t i = 1; i < bg.citizen.size(); ++i) ordered = ordered && taskCategory(bg.citizen[i - 1].kind) <= taskCategory(bg.citizen[i].kind);
-        check(ordered && bg.citizen.back().kind == BehaviorKind::PatrolSpawn, "the Citizen Default Behavior is in category order, movement last");
+        check(ordered && bg.citizen.back().kind == BehaviorKind::Patrol, "the Citizen Default Behavior is in category order, Patrol Town last");
+        bool spawnPatrol = false, groundHaul = false;
+        for (const BehaviorRule& r : bg.citizen) {
+            spawnPatrol = spawnPatrol || r.kind == BehaviorKind::PatrolSpawn;
+            groundHaul = groundHaul || r.kind == BehaviorKind::AutoHaulGround;
+        }
+        check(!spawnPatrol && groundHaul, "citizens haul ground items and don't Patrol Spawn (a wild mob's task)");
+        bool offered = false;
+        for (BehaviorKind k : addableKinds(false)) offered = offered || k == BehaviorKind::PatrolSpawn;
+        check(!offered, "Patrol Spawn isn't offered for your units");
         bool sleeps = false, builds = false;
         for (const BehaviorRule& r : bg.citizen) {
             sleeps = sleeps || r.kind == BehaviorKind::Sleep;
@@ -322,9 +331,10 @@ int main(int, char**) {
         addBehavior(list, chop, BEHAVIOR_GROUP_TASKS);
         addBehavior(list, haul, BEHAVIOR_GROUP_TASKS);
         const size_t n = list.size();
-        check(n >= 4 && list[n - 1].kind == BehaviorKind::PatrolSpawn && list[n - 2].kind == BehaviorKind::AutoHarvest &&
-              list[n - 3].kind == BehaviorKind::AutoHaul && list[n - 4].kind == BehaviorKind::AutoConstruct,
-              "hauling and harvesting sort in after building and before movement");
+        check(n >= 5 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
+              list[n - 3].kind == BehaviorKind::AutoHaulGround && list[n - 4].kind == BehaviorKind::AutoHaul &&
+              list[n - 5].kind == BehaviorKind::AutoConstruct,
+              "hauling (to stores, then off the ground) and harvesting sort in after building and before movement");
         check(!isNightAt(START_CLOCK_SECONDS) && isNightAt(18.0 * SECONDS_PER_HOUR) && isNightAt(3.0 * SECONDS_PER_HOUR) &&
               !isNightAt(17.9 * SECONDS_PER_HOUR), "night runs from 18:00 to 06:00");
     }
@@ -867,6 +877,77 @@ int main(int, char**) {
                     carriedCount(*yard.get<Inventory>(miner), itemTagged(ITEM_TAG_STONE)), (int)yard.get<Behaviors>(miner)->rules[0].why,
                     (int)yard.get<Behaviors>(miner)->busy, (int)yard.has<Working>(miner), (int)yard.has<PropOrder>(miner));
         check(stored > 0, "with one, the stone mined from a Boulder goes into the Stone Stockpile");
+        // A Barrel takes all but logs, stone and bones by default; its Allowed Items can change that
+        const ObjectId barrel = placeBuiltProp(yard, ground, PropKind::Barrel, mid.x + 3.5f, mid.z - 2.5f, 0.0f, FACTION_PLAYER);
+        check(hasStoreFilter(PropKind::Barrel) && !hasStoreFilter(PropKind::StoneStockpile) && !propTakesItem(yard, barrel, woodLogItem()) &&
+              !propTakesItem(yard, barrel, itemTagged(ITEM_TAG_STONE)) && !propTakesItem(yard, barrel, itemTagged(ITEM_TAG_COMMON_BONES)) &&
+              propTakesItem(yard, barrel, itemTagged(ITEM_TAG_IRON_ORE)), "a Barrel takes all but logs, stone and bones by default");
+        yard.add(barrel, StoreFilter{ STORE_ALL });
+        check(propTakesItem(yard, barrel, woodLogItem()), "set to allow everything, it takes logs too");
+        yard.add(barrel, StoreFilter{ STORE_ALL & ~storeBit(StoreCategory::Metal) });
+        check(!propTakesItem(yard, barrel, itemTagged(ITEM_TAG_IRON_ORE)), "a kind switched off isn't taken");
+        yard.remove<StoreFilter>(barrel);
+        // Every store of yours gets a haul task in the Citizen Default Behavior, once
+        {
+            BehaviorGroups& bg = behaviorGroups(yard);
+            storeHaulSync(yard);
+            BehaviorRule toPile, toBarrel;
+            toPile.kind = toBarrel.kind = BehaviorKind::AutoHaul;
+            toPile.prop = pile;
+            toBarrel.prop = barrel;
+            bool bones = false;
+            for (const BehaviorRule& r : bg.citizen) bones = bones || r.kind == BehaviorKind::AutoHaulBones;
+            check(holdsBehavior(bg.citizen, toPile) && holdsBehavior(bg.citizen, toBarrel) && bones,
+                  "the Citizen Default Behavior hauls to each store of yours, and bones to the Altar");
+            removeBehavior(bg.citizen, (size_t)(std::find_if(bg.citizen.begin(), bg.citizen.end(),
+                                                             [&](const BehaviorRule& r) { return sameBehavior(r, toBarrel); }) - bg.citizen.begin()));
+            storeHaulSync(yard);
+            check(!holdsBehavior(bg.citizen, toBarrel), "a store's haul task taken out of it stays out");
+        }
+        // Auto-Haul Ground Items: a stone lying in the claim is picked up and put away
+        {
+            Behaviors* mb = yard.get<Behaviors>(miner);
+            const std::vector<BehaviorRule> keepRules = mb->rules;
+            BehaviorRule haul, ground2;
+            haul.kind = BehaviorKind::AutoHaul;
+            haul.prop = pile;
+            ground2.kind = BehaviorKind::AutoHaulGround;
+            mb->rules = { haul, ground2 };
+            mb->busy = false;
+            yard.remove<Working>(miner);
+            yard.remove<PropOrder>(miner);
+            yard.remove<SoloMove>(miner);
+            const Transform* mt = yard.get<Transform>(miner);
+            const ObjectId lying = spawnGroundItem(yard, Transform{ mt->x + 2.0f, mt->y, mt->z + 1.0f }, itemTagged(ITEM_TAG_STONE), 1);
+            for (int i = 0; i < 60 * 60 && yard.has<GroundItem>(lying); ++i) {
+                simStep(yard, ground, yardRng, yardState, 1.0f / 60.0f, false);
+                takeEvents(yard);
+            }
+            check(!yard.has<GroundItem>(lying), "Auto-Haul Ground Items picks up an item its hauls can put away");
+            yard.get<Behaviors>(miner)->rules = keepRules;
+        }
+        // A finished foundation decks its tiles and a finished wall closes its tile, worked out for those tiles alone
+        {
+            const int fx = (int)std::floor(mid.x) + 8, fz = (int)std::floor(mid.z) - 8;
+            const ObjectId f = placeFoundation(yard, ground, fx, fz, fx + 2, fz + 2, FACTION_PLAYER, BuildMaterial::Wood);
+            check(f != NO_OBJECT, "a foundation is laid for the deck test");
+            if (f != NO_OBJECT) {
+                finishBlueprint(yard, ground, f);
+                buildingSystem(yard, ground, 0.0f);
+                check(ground.onDeck(fx + 1, fz + 1) && std::fabs(ground.standHeight(fx + 1.5f, fz + 1.5f) -
+                      (ground.heightAt(fx + 1.5f, fz + 1.5f) + DECK_HEIGHT)) < 1e-4f && !ground.onDeck(fx + 3, fz),
+                      "a unit on a finished foundation stands on its deck");
+                const ObjectId wall = placePiece(yard, ground, PropKind::WoodWall, fx, fz, FACTION_PLAYER, BuildMaterial::Wood);
+                finishBlueprint(yard, ground, wall);
+                buildingSystem(yard, ground, 0.0f);
+                check(ground.blockedByBuilding(fx, fz) && !ground.walkable(fx, fz), "a finished wall closes its tile to walking");
+                breakBuilding(yard, wall);
+                buildingSystem(yard, ground, 0.0f);
+                check(!ground.blockedByBuilding(fx, fz), "a lost wall opens its tile again");
+            }
+            ground.clearBlocked();
+            ground.clearDecks();
+        }
         {
             // Mining, the miner picks up a stone: its Auto-Haul, above the Auto-Harvest, comes first
             for (int i = 0; i < 60 * 120 && !yard.has<Working>(miner); ++i) {

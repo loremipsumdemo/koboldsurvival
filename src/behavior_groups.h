@@ -17,7 +17,12 @@ struct BehaviorGroups {
     std::vector<std::vector<BehaviorRule>> groups;   // Group 1 is groups[0]
     int version = 0;                                 // raised on every change, so citizens take their lists again
     bool ready = false;
+    // Your stores already given a haul task in the Citizen Default Behavior (sorted), so one you remove stays removed
+    std::vector<ObjectId> listedStores;
+    bool storesListed = false;
+    int syncTick = 0;
 };
+inline constexpr int STORE_SYNC_STEPS = 30;   // simulation steps between looks for new or lost stores
 
 // The World's groups, set up with their defaults the first time
 BehaviorGroups& behaviorGroups(World& w);
@@ -50,3 +55,11 @@ int citizensInGroup(World& w, int group);
 // Gives each of your citizens its group's tasks whenever the groups or its group changed, keeping how long each task it
 // already had waits
 void behaviorGroupSystem(World& w);
+
+// Your stores (storage, and the Altar) in your claim
+std::vector<ObjectId> groupStores(World& w);
+// Each store of yours not yet listed gets a haul task in the Citizen Default Behavior, and haul tasks to stores that
+// are gone leave every list. True if anything changed.
+bool storeHaulSync(World& w);
+// Counts every store there is now as listed (a loaded game whose lists already say what they haul)
+void markStoresListed(World& w);

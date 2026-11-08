@@ -1,4 +1,5 @@
 #include "systems_internal.h"
+#include "ghosts.h"
 
 using namespace systems_detail;
 
@@ -498,7 +499,7 @@ int storeCarried(World& w, ObjectId unit, ObjectId prop, int item) {
     for (ItemStack& s : inv->slots) {
         if (s.item <= 0 || s.count <= 0) continue;
         if (item != 0 && s.item != item) continue;
-        if (!propAcceptsItem(p->kind, s.item)) continue;
+        if (!propTakesItem(w, prop, s.item)) continue;
         const int left = addToSlots(st->slots.data(), STORAGE_SLOTS, s.item, s.count);
         moved += s.count - left;
         if (s.count - left > 0) movedItem = s.item;
@@ -598,6 +599,42 @@ bool propAcceptsItem(PropKind kind, int item) {
     case ItemFilter::Stone: return def && hasTag(*def, ITEM_TAG_STONE);
     }
     return false;
+}
+
+StoreCategory storeCategoryOf(int item) {
+    if (isBones(item)) return StoreCategory::Bones;
+    const ItemDef* d = findItem(item);
+    if (!d) return StoreCategory::Materials;
+    if (hasTag(*d, ITEM_TAG_WOOD_LOG)) return StoreCategory::Wood;
+    if (hasTag(*d, ITEM_TAG_STONE)) return StoreCategory::Stone;
+    if (d->typeId == "consumable") return StoreCategory::Food;
+    if (hasTag(*d, "raw_food")) return StoreCategory::RawFood;
+    if (hasTag(*d, "water")) return StoreCategory::Water;
+    if (d->typeId == "weapon") return StoreCategory::Weapons;
+    if (d->typeId == "armor" || d->typeId == "accessory") return StoreCategory::Armor;
+    if (hasTag(*d, "arrow") || hasTag(*d, "bolt")) return StoreCategory::Ammo;
+    if (hasTag(*d, "ore") || hasTag(*d, ITEM_TAG_IRON_ORE) || hasTag(*d, ITEM_TAG_IRON_INGOT) || hasTag(*d, ITEM_TAG_GOLD_COIN) ||
+        hasTag(*d, ITEM_TAG_DRAGON_CRYSTAL)) {
+        return StoreCategory::Metal;
+    }
+    return StoreCategory::Materials;
+}
+
+bool hasStoreFilter(PropKind kind) {
+    const PropInfo& info = propInfo(kind);
+    return info.use == PropUse::Storage && info.accepts == ItemFilter::Any && !info.claimsLand;
+}
+
+std::uint32_t storeFilterOf(World& w, ObjectId prop) {
+    const StoreFilter* f = w.get<StoreFilter>(prop);
+    return f ? f->allowed : STORE_DEFAULT;
+}
+
+bool propTakesItem(World& w, ObjectId prop, int item) {
+    const Prop* p = w.get<Prop>(prop);
+    if (!p || !propAcceptsItem(p->kind, item)) return false;
+    if (!hasStoreFilter(p->kind)) return true;
+    return (storeFilterOf(w, prop) & storeBit(storeCategoryOf(item))) != 0;
 }
 
 int recipeOutput(PropKind kind, int input) {

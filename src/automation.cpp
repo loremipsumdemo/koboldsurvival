@@ -1,4 +1,6 @@
 #include "systems_internal.h"
+#include "inventory.h"
+#include "world_labels.h"
 
 using namespace systems_detail;
 
@@ -21,8 +23,10 @@ bool fullFor(World& w, ObjectId u, int item) {
 }
 
 // What a haul rule carries to its prop: bones for Auto-Haul Bones; for Auto-Haul, what the prop takes, but only fuel to an Altar
-bool haulCarries(const BehaviorRule& r, PropKind kind, int item) {
-    if (!propAcceptsItem(kind, item)) return false;
+bool haulCarries(World& w, const BehaviorRule& r, ObjectId prop, int item) {
+    const Prop* p = w.get<Prop>(prop);
+    if (!p || !propTakesItem(w, prop, item)) return false;
+    const PropKind kind = p->kind;
     if (r.kind == BehaviorKind::AutoHaulBones) return isBones(item);
     if (propInfo(kind).claimsLand) return item == propInfo(kind).input;
     return true;
@@ -37,7 +41,7 @@ BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, ObjectId u, co
     if (lockShutFor(w, claims, r.prop, u)) return BehaviorWait::Locked;
     bool carries = false;
     for (const ItemStack& s : inv->slots) {
-        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !haulCarries(r, p->kind, s.item)) continue;
+        if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !haulCarries(w, r, r.prop, s.item)) continue;
         carries = true;
         if (slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return BehaviorWait::None;
     }
@@ -57,6 +61,49 @@ std::uint64_t carriedPrint(World& w, ObjectId u) {
         h = (h ^ (std::uint64_t)(std::uint32_t)s.count) * 1099511628211ull;
     }
     return h;
+}
+
+// Whether a haul rule's store could take this item now (whether or not the unit carries one)
+bool storeCouldTake(World& w, const std::vector<Claim>& claims, ObjectId u, const BehaviorRule& r, int item) {
+    const Storage* st = w.get<Storage>(r.prop);
+    if (!st || !w.has<Prop>(r.prop) || !inOwnClaim(w, claims, r.prop, factionOf(w, u)) || lockShutFor(w, claims, r.prop, u)) return false;
+    return haulCarries(w, r, r.prop, item) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item) > 0;
+}
+
+// Auto-Haul Ground Items: the nearest item lying in the unit's claim that one of its haul tasks could put away, that it
+// has room for and nobody else is fetching
+ObjectId groundHaulTarget(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, BehaviorWait& why) {
+    why = BehaviorWait::NothingToHaul;
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NO_OBJECT;
+    const int faction = factionOf(w, u);
+    std::vector<ObjectId> taken;
+    for (ObjectId o : w.view<Behaviors>()) {
+        const Behaviors* ob = w.get<Behaviors>(o);
+        if (o != u && ob->busy && ob->step.kind == BehaviorKind::AutoHaulGround) taken.push_back(ob->stepProp);
+    }
+    for (ObjectId o : w.view<PickupOrder>()) taken.push_back(w.get<PickupOrder>(o)->item);
+    ObjectId best = NO_OBJECT;
+    float bestD2 = 0.0f;
+    for (ObjectId g : w.view<GroundItem, Transform>()) {
+        const Transform* gt = w.get<Transform>(g);
+        if (!claimAt(claims, gt->x, gt->z, faction) || std::find(taken.begin(), taken.end(), g) != taken.end()) continue;
+        const int item = w.get<GroundItem>(g)->item;
+        bool stored = false;
+        for (const BehaviorRule& r : b.rules) stored = stored || (r.on && isHaul(r.kind) && storeCouldTake(w, claims, u, r, item));
+        if (!stored) continue;
+        if (fullFor(w, u, item)) {
+            why = BehaviorWait::CarryFull;
+            continue;
+        }
+        const float d2 = distSq(*gt, *ut);
+        if (best == NO_OBJECT || d2 < bestD2) {
+            best = g;
+            bestD2 = d2;
+        }
+    }
+    if (best != NO_OBJECT) why = BehaviorWait::None;
+    return best;
 }
 
 bool canHaulItem(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, int item) {
@@ -237,6 +284,17 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& t
 
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::AutoHaulGround) {
+        if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
+        const ObjectId item = groundHaulTarget(w, claims, u, b, r.why);
+        if (item == NO_OBJECT) return false;
+        const Transform* it = w.get<Transform>(item);
+        b.busy = true;
+        b.step = r;
+        b.stepProp = item;
+        autoWalk(w, t, u, Vec2{ it->x, it->z });
+        return true;
+    }
     if (r.kind == BehaviorKind::Rescue) {
         r.why = BehaviorWait::None;
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
@@ -376,7 +434,7 @@ void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
         w.remove<PropOrder>(u);
         w.remove<SoloMove>(u);
     }
-    if (b.busy && isWalkBehavior(b.step.kind)) w.remove<SoloMove>(u);
+    if (b.busy && (isWalkBehavior(b.step.kind) || b.step.kind == BehaviorKind::AutoHaulGround)) w.remove<SoloMove>(u);
     if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && isBedStep(b.step.kind) && oc->prop == b.stepProp) {
         w.remove<Occupying>(u);
     }
@@ -631,6 +689,34 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 continue;
             }
         }
+        // Fetching an item off the ground: picked up within reach, given up if it is gone or out of reach
+        if (b->busy && b->step.kind == BehaviorKind::AutoHaulGround) {
+            const Transform* it = w.get<Transform>(b->stepProp);
+            GroundItem* gi = w.get<GroundItem>(b->stepProp);
+            const Transform* ut = w.get<Transform>(u);
+            const SoloMove* so = w.get<SoloMove>(u);
+            const bool walking = so && so->next < so->waypoints.size();
+            if (it && gi && ut && distSq(*it, *ut) <= PICKUP_REACH * PICKUP_REACH) {
+                const int count = gi->count;
+                const int left = fullFor(w, u, gi->item) ? count : addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
+                if (left < count) {
+                    const std::string name = itemNameOf(gi->item);
+                    queueLog(w, langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), name }), LogKind::Pickup, npcOnly(w, u));
+                    queueUnitLabel(w, u, itemGainLabel(count - left, name));
+                    queueSoundFrom(w, Sfx::Pickup, u);
+                }
+                if (left == 0) w.destroy(b->stepProp);
+                else gi->count = left;
+                w.remove<SoloMove>(u);
+                b->busy = false;
+                continue;
+            }
+            if (it && gi && walking) continue;
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+            continue;
+        }
         // Asleep: up at dawn
         if (b->busy && b->step.kind == BehaviorKind::Sleep) {
             const Occupying* oc = w.get<Occupying>(u);
@@ -699,7 +785,7 @@ ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind) {
     const ObjectId store = nearestProp(w, *ut, [&](ObjectId p) {
         const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
         if (info.use != PropUse::Storage || info.claimsLand || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
-        if (pile != ItemFilter::Any ? info.accepts != pile : !propAcceptsItem(w.get<Prop>(p)->kind, item)) return false;
+        if (pile != ItemFilter::Any ? info.accepts != pile : !propTakesItem(w, p, item)) return false;
         const Owner* own = w.get<Owner>(p);
         return ((own && own->faction == faction) || inOwnClaim(w, claims, p, faction)) && !lockShutFor(w, claims, p, u);
     });

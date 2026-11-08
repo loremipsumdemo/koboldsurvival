@@ -141,6 +141,7 @@ add_executable(koboldsurvival
     src/app_squads.cpp
     src/app_altar.cpp
     src/app_behavior_groups.cpp
+    src/app_store_filter.cpp
     src/app_map_pick.cpp
     src/app_building.cpp
     src/altar_ui.cpp

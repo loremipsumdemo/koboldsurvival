@@ -172,6 +172,14 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         // Units that all occupy something already have nobody to send in
         allOccupying = allOccupying && !picked.empty();
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
+        // A general store of yours: which kinds of item it takes
+        if (hasStoreFilter(p->kind) && !world.has<Blueprint>(target)) {
+            const Owner* own = world.get<Owner>(target);
+            const Transform* st = world.get<Transform>(target);
+            if ((own && own->faction == FACTION_PLAYER) || (st && claimAt(claimsOf(world), st->x, st->z, FACTION_PLAYER))) {
+                out.push_back(MenuAction::StoreFilter);
+            }
+        }
         if (use == PropUse::Occupy && occupantCount(world, target) < occupyCapacity(world, target) && (carrying || !allOccupying)) {
             out.push_back(carrying ? MenuAction::Place : MenuAction::Occupy);
         }
@@ -242,6 +250,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
         case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
+        case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
         case MenuAction::AutoConstruct: labels.push_back(lang("UILABEL_AUTO_CONSTRUCT")); break;
         case MenuAction::Climb: labels.push_back(lang("UILABEL_CLIMB_UP")); break;
@@ -283,9 +292,13 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
             itemMenu.open = false;
             return true;
         }
-        // A blueprint of yours can be cancelled with nobody selected; building it needs units
-        if (std::find(actions.begin(), actions.end(), MenuAction::CancelBuild) != actions.end()) {
-            session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::CancelBuild } };
+        // A blueprint of yours can be cancelled, and a store's Allowed Items set, with nobody selected
+        std::vector<MenuAction> alone;
+        for (MenuAction a : actions) {
+            if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter) alone.push_back(a);
+        }
+        if (!alone.empty()) {
+            session.contextMenu = ContextMenu{ true, mx, my, target, alone };
             playSfx(Sfx::UiMenuOpen);
             itemMenu.open = false;
             return true;
@@ -362,6 +375,10 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::BehaviorGroups) {
         openBehaviorGroups(target);
+        return;
+    }
+    if (a == MenuAction::StoreFilter) {
+        openStoreFilter(target);
         return;
     }
     if (a == MenuAction::Evacuate && isAirship(world, target)) {
@@ -500,6 +517,7 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::Rename:
     case MenuAction::AppeaseGhosts:
     case MenuAction::BehaviorGroups:
+    case MenuAction::StoreFilter:
         break;
     case MenuAction::CancelBuild:
         break;

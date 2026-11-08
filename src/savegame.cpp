@@ -120,12 +120,14 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     }
     if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
     if (p.material > 0) w.line("material", i, p.material);
+    if (p.storeFilter) w.line("storefilter", i, *p.storeFilter);
 }
 
 void writeSaveLines(std::ostream& out, const SaveData& d) {
     Writer w(out);
     w.line("version", SAVE_VERSION);
     w.line("name", d.name);
+    if (d.storesListed) w.line("storeslisted", 1);
     w.line("timestamp", d.timestamp);
     w.line("autosave", d.autosave);
     w.line("map", d.mapSource, d.mapStem);
@@ -216,6 +218,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "name", [](Line& l) { return l.rest(l.d.name); } },
         { "timestamp", [](Line& l) { return l.read(l.d.timestamp); } },
         { "autosave", [](Line& l) { return l.read(l.d.autosave); } },
+        { "storeslisted", [](Line& l) { int v = 0; if (!l.read(v)) return false; l.d.storesListed = v != 0; return true; } },
         { "map", [](Line& l) { return l.read(l.d.mapSource) && l.rest(l.d.mapStem); } },
         { "clock", [](Line& l) { return l.read(l.d.gs.clockSeconds); } },
         { "camera", [](Line& l) { SaveCamera& c = l.d.cam; return l.read(c.fx, c.fy, c.fz, c.yaw, c.pitch, c.distance); } },
@@ -402,6 +405,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
                 }
             }
             p->foundation = std::move(f);
+            return true;
+        } },
+        { "storefilter", [](Line& l) {
+            SaveProp* p = l.prop();
+            unsigned m = 0;
+            if (!p || !l.read(m)) return false;
+            p->storeFilter = (std::uint32_t)m & STORE_ALL;
             return true;
         } },
         { "material", [](Line& l) {

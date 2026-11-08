@@ -107,6 +107,9 @@ bool upgrade10to11(Lines&) { return true; }
 // Version 12 added the bgroup, btask and citgroup lines, for behavior groups. A version 11 file has none: its citizens
 // follow Group 1, which starts as the Citizen Default Behavior.
 bool upgrade11to12(Lines&) { return true; }
+// Version 13 added the storefilter line (a general store's Allowed Items) and the storeslisted line. A version 12 store
+// without one allows the default, and its stores get their haul tasks in the Citizen Default Behavior on loading.
+bool upgrade12to13(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -119,6 +122,7 @@ constexpr Step STEPS[] = {
     { 9, upgrade9to10 },
     { 10, upgrade10to11 },
     { 11, upgrade11to12 },
+    { 12, upgrade12to13 },
 };
 }
 

@@ -221,5 +221,12 @@ struct BuildPreview {
     // A foundation being dragged out: its tiles, inclusive
     bool rect = false;
     int rx0 = 0, rz0 = 0, rx1 = 0, rz1 = 0;
+    // Tiles marked at a height: tone 0 open to build on (blue), 1 will be built (green), 2 can't be (red)
+    struct Mark {
+        int x = 0, z = 0;
+        float y = 0.0f;
+        int tone = 0;
+    };
+    std::vector<Mark> marks;
 };
 

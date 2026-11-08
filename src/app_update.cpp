@@ -474,7 +474,7 @@ void App::updateHover() {
                              && session.dialogueUnit == NO_OBJECT && !optimizeAllOpen && session.disbandTarget == NO_OBJECT;
         BuildPreview bp;
         if (placing && !mouseOverPanels()) {
-            if (auto hit = pickGround(cam, terrain, bmx, bmy, winW, winH); hit && !previewBuilding(bp, hit->first, hit->second)) {
+            if (auto hit = buildPickAt(bmx, bmy); hit && !previewBuilding(bp, hit->first, hit->second)) {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
@@ -482,7 +482,7 @@ void App::updateHover() {
             }
         }
         if (placing) updateBuildPaint();
-        else session.foundationDrag = session.paintPiece = false;
+        else session.foundationDrag = session.floorDrag = session.paintPiece = false;
         {
         }
         if (bp.on && propInfo(session.buildPick.kind).claimsLand) {

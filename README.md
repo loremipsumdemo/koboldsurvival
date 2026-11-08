@@ -22,7 +22,8 @@ lose state: the world keeps running, whatever happens to your party.
   on the ground are gone after 24 in-game hours. A corpse carried into a campfire is destroyed at once, and what it had
   falls to the ground.
 - **Behaviors.** Each unit works through a priority list: Eat, Heal, Share, Rescue, Rest, Leave Bed, Auto-Harvest,
-  Auto-Haul, Patrol, Patrol Spawn and Roam. You can reorder, switch off, add or remove them per unit. Units can also be
+  Auto-Haul, Auto-Haul Ground Items, Patrol Town and Roam (wild mobs also have Patrol Spawn, which keeps them near where
+  they appeared). You can reorder, switch off, add or remove them per unit. Units can also be
   set to Passive, Block or Sneak.
 - **Gathering and crafting.** Mine ore, cut trees and gather mushrooms. Campfires and forges work by themselves from
   their fuel, and units work stoves, water pumps and training dummies. Items are kept in barrels, chests and
@@ -53,8 +54,9 @@ lose state: the world keeps running, whatever happens to your party.
   for the whole list of another group or a Default Behavior at that place, so a group can take the usual tasks from one
   and add its own (harvesting, hauling) below. Group 1 starts as just the Citizen Default Behavior, and a new group as
   just Group 1. The Citizen Default Behavior starts as the needs (with Rest only below 5%, since citizens sleep the night
-  through, and Sleep at night last), then Auto-Construct, then Patrol Spawn; hauling and harvesting tasks added to it
-  go between those two. The Military and Citizen Default Behaviors are edited there too but aren't groups: a unit of yours that
+  through, and Sleep at night last), then Auto-Construct, then an Auto-Haul to each of your stores (bones to the Altar)
+  and Auto-Haul Ground Items, then Patrol Town last; harvesting tasks added to it go just above the patrol. A store you
+  build gets its haul task there by itself, once: take it out and it stays out. The Military and Citizen Default Behaviors are edited there too but aren't groups: a unit of yours that
   joins the military gets the Military one. Auto-Harvest, Auto-Haul and Auto-Haul Bones are only offered for props in your
   claim.
 - **Ghosts.** A unit of yours that dies joins the Graveyard as a Ghost. Each Ghost wants one bones (any kind) sacrificed
@@ -62,7 +64,9 @@ lose state: the world keeps running, whatever happens to your party.
   faction, and Haunted units hit and walk slower. The Altar keeps bones ahead of time, brought by hand or by Auto-Haul
   Bones; the same bones keep it burning.
 - **Stockpiles.** Auto-Harvest of Trees puts the Wood Logs in a Wood Stockpile, and of Boulders (Mining) the Stone in a
-  Stone Stockpile, once a unit carries a load. With no stockpile of that kind with room, the task waits. Giving a unit Auto-Harvest also gives it Auto-Haul to the nearest store of yours that takes what it yields: the matching stockpile for logs and stone, any storage for the rest. A haul task is always put just above the first Auto-Harvest in the list, so carrying a load off comes first. Whenever what a unit carries changes, a haul task above the one it is doing (harvesting, patrolling) takes over if it has something to take there.
+  Stone Stockpile, once a unit carries a load. Auto-Haul Ground Items picks up items lying in your claim that one of the
+  unit's haul tasks can put away. A general store (a Barrel or a chest) takes every kind of item but Wood Logs and Stone
+  (they have stockpiles) and bones (they go to the Altar); right-click it for Allowed Items to pick the kinds it takes. With no stockpile of that kind with room, the task waits. Giving a unit Auto-Harvest also gives it Auto-Haul to the nearest store of yours that takes what it yields: the matching stockpile for logs and stone, any storage for the rest. A haul task is always put just above the first Auto-Harvest in the list, so carrying a load off comes first. Whenever what a unit carries changes, a haul task above the one it is doing (harvesting, patrolling) takes over if it has something to take there.
 - **Airships.** An Airship floats above the ground and carries up to four units. Getting on (Occupy) takes five seconds,
   and only happens if there is still room then; getting off (Evacuate) takes one, and only over open ground. A move order
   for those aboard flies it in a straight line over anything, water and void included. Melee can't reach anyone aboard,
@@ -72,7 +76,10 @@ lose state: the world keeps running, whatever happens to your party.
   door first asks what to make it of: wood (Wood Logs), iron (Iron Ingots) or Dragon Crystals; iron is twice as tough to
   break as wood and crystal three times, and a wall twice as tough as a door. Walls, Doors, Ladders and Upper Floors go
   on a finished foundation, one tile each (drag to lay a row of them): walls and doors on any tile, and ladders and upper
-  floors only once every edge tile has a wall or a door. A building whose walls and doors are all gone loses its upper floors. Each piece starts as a blueprint
+  floors only once every edge tile has a wall or a door. Upper floors are dragged out as a rectangle at floor height: the
+  tiles open for one show blue, and while dragging, green for those that will be laid and red for those that can't. Units
+  on a finished foundation stand on its deck. A wall finished or lost changes the walkable ground of its own tile only,
+  and walks that pass near it are planned again. A building whose walls and doors are all gone loses its upper floors. Each piece starts as a blueprint
   needing one of its material (an upper floor one per tile); the size of a foundation shows beside the cursor as you drag.
   Right-click a blueprint for Auto-Construct, which brings the material any of your blueprints needs (carried or fetched
   from your stockpiles and stores) and builds those that have it, from up to five tiles away. A blueprint holds its

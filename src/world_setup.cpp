@@ -534,7 +534,7 @@ void settleFactionHomes(World& w, Terrain& t) {
         const int citizens = home && units.size() >= 2 ? std::max(1, (int)std::lround(FACTION_CITIZEN_SHARE * (float)units.size())) : 0;
         BehaviorRule patrol, stay;
         patrol.kind = BehaviorKind::Patrol;
-        stay.kind = BehaviorKind::PatrolSpawn;
+        stay.kind = BehaviorKind::Patrol;
         for (size_t i = 0; i < units.size(); ++i) {
             const ObjectId u = units[i];
             Behaviors* b = w.get<Behaviors>(u);

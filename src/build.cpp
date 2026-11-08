@@ -123,7 +123,8 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
 
 ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
     const PropInfo& info = propInfo(kind);
-    const ObjectId e = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, yaw);
+    const bool piece = info.foundation || info.onFoundation;
+    const ObjectId e = makeProp(w, kind, Transform{ x, piece ? t.heightAt(x, z) : t.standHeight(x, z), z }, yaw);
     if (!info.built) {
         claimOwnership(w, e);
         return e;

@@ -347,6 +347,7 @@ bool App::mouseDownOnPopups() {
     if (pressOnAltar()) return true;
     if (pressOnGhosts()) return true;
     if (pressOnBehaviorGroups()) return true;
+    if (pressOnStoreFilter()) return true;
     if (pressOnDisband()) return true;
     if (pressOnOptimizeAll()) return true;
     if (pressOnWorldMap()) return true;

@@ -283,6 +283,7 @@ void App::drawPlayingScreen() {
     drawAltar();
     drawGhosts();
     drawBehaviorGroups();
+    drawStoreFilter();
     drawRename();
     drawFoundationSize();
     drawMaterialAsk();

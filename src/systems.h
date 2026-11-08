@@ -115,6 +115,12 @@ void propStorageChanged(World& w, ObjectId prop);
 bool propInTheWay(World& w, ObjectId unit, ObjectId prop);
 ObjectId propOccupant(World& w, ObjectId prop);
 bool propAcceptsItem(PropKind kind, int item);
+// Store categories: what kind an item is, whether a prop kind is a general store with Allowed Items, what one allows,
+// and whether this prop takes the item (its kind takes it and, for a general store, its kind is allowed)
+StoreCategory storeCategoryOf(int item);
+bool hasStoreFilter(PropKind kind);
+std::uint32_t storeFilterOf(World& w, ObjectId prop);
+bool propTakesItem(World& w, ObjectId prop, int item);
 Storage startingStorage(PropKind kind, Rng& rng);
 int recipeOutput(PropKind kind, int input);
 bool lockedIn(World& w, ObjectId u);

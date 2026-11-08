@@ -206,7 +206,7 @@ bool App::mouseDownOnPanels() {
                 } else {
                     refuse(lang("MISC_DESTROY_NOTHING"));
                 }
-            } else if (auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
+            } else if (auto hit = buildPickAt(mx, my)) {
                 if (buildPressAt(hit->first, hit->second)) return true;
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);

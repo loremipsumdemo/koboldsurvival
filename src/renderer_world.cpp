@@ -398,14 +398,18 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const Transform* tr = w.get<Transform>(e);
         wallTiles.insert(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z)));
     }
-    Batch blueprints;
+    // Blueprints are see-through, so they are drawn after everything solid (units included), farthest first
+    struct PlannedBox {
+        float dist2;
+        float x0, y0, z0, x1, y1, z1;
+    };
+    std::vector<PlannedBox> plannedBoxes;
     const RGBA planned{ 0.35f, 0.7f, 1.0f, 0.22f }, plannedEdge{ 0.55f, 0.85f, 1.0f, 0.45f };
-    auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA side, RGBA top) {
-        blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, top);
-        blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, side);
-        blueprints.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, side);
-        blueprints.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, y1, z1 }, V3{ x0, y1, z0 }, side);
-        blueprints.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x1, y1, z0 }, side);
+    float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
+    cam.eye(camX, camY, camZ);
+    auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA, RGBA) {
+        const float cx = (x0 + x1) * 0.5f - camX, cy = (y0 + y1) * 0.5f - camY, cz = (z0 + z1) * 0.5f - camZ;
+        plannedBoxes.push_back(PlannedBox{ cx * cx + cy * cy + cz * cz, x0, y0, z0, x1, y1, z1 });
     };
     for (ObjectId e : w.view<Prop, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
@@ -470,16 +474,6 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         }
     }
     drawPropInstances();
-    if (!blueprints.v.empty()) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthMask(GL_FALSE);
-        drawColorTris(blueprints, viewProj_);
-        glDepthMask(GL_TRUE);
-        glDisable(GL_BLEND);
-        glUseProgram(glyphProgram_);
-        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
-    }
 
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
@@ -503,6 +497,27 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
 
     drawGroundItems(w, t, cam);
+    if (!plannedBoxes.empty()) {
+        std::sort(plannedBoxes.begin(), plannedBoxes.end(), [](const PlannedBox& a, const PlannedBox& b) { return a.dist2 > b.dist2; });
+        Batch blueprints;
+        for (const PlannedBox& p : plannedBoxes) {
+            const float x0 = p.x0, y0 = p.y0, z0 = p.z0, x1 = p.x1, y1 = p.y1, z1 = p.z1;
+            blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, planned);
+            blueprints.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, planned);
+            blueprints.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, y1, z1 }, V3{ x0, y1, z0 }, planned);
+            blueprints.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x1, y1, z0 }, planned);
+            blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, plannedEdge);
+        }
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        glUseProgram(colorProgram_);
+        drawColorTris(blueprints, viewProj_);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glUseProgram(glyphProgram_);
+        glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+    }
     drawBuildPreview(t);
 
     Batch rings;
@@ -540,12 +555,18 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 }
 
 void Renderer::drawBuildPreview(const Terrain& t) {
-    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f) return;
+    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty()) return;
     const float lift = 0.04f;
     const float lineW = 0.03f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift; };
     Batch b;
 
+    for (const BuildPreview::Mark& m : buildPreview_.marks) {
+        const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
+                                                                        : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
+        const float a = 0.08f, y = m.y + lift;
+        b.quad(V3{ m.x + a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + 1 - a }, V3{ m.x + a, y, m.z + 1 - a }, tone);
+    }
     if (buildPreview_.rect) {
         // A foundation being dragged out: its tiles, green if it may be laid there
         const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
@@ -635,12 +656,12 @@ void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
         const float radius = ITEM_SHADOW_RADIUS * (1.0f - 0.15f * itemBobShare(spots.at(e).bob, ticks));
         const float shadowAlpha = hasTheme_ ? std::min(1.0f, ITEM_SHADOW_ALPHA * (float)theme_.shadows / 50.0f) : ITEM_SHADOW_ALPHA;
         const RGBA middle{ 0.0f, 0.0f, 0.0f, shadowAlpha }, edge{ 0.0f, 0.0f, 0.0f, 0.0f };
-        const V3 center{ tr->x, t.heightAt(tr->x, tr->z) + SHADOW_LIFT, tr->z };
+        const V3 center{ tr->x, t.standHeight(tr->x, tr->z) + SHADOW_LIFT, tr->z };
         V3 last{};
         for (int i = 0; i <= SEGMENTS; ++i) {
             const float a = TWO_PI * (float)i / (float)SEGMENTS;
             const float x = tr->x + radius * std::cos(a), z = tr->z + radius * std::sin(a);
-            const V3 rim{ x, t.heightAt(x, z) + SHADOW_LIFT, z };
+            const V3 rim{ x, t.standHeight(x, z) + SHADOW_LIFT, z };
             if (i > 0) {
                 shadows.v.push_back({ center, middle });
                 shadows.v.push_back({ last, edge });

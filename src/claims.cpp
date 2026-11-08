@@ -159,7 +159,7 @@ void breakBuilding(World& w, ObjectId e) {
         return;
     }
     if (propInfo(kind).foundation) foundationLost(w, e);
-    if (propInfo(kind).wallRule || propInfo(kind).door) w.resource<BuildingsChanged>().dirty = true;
+    if (propInfo(kind).wallRule || propInfo(kind).door) buildingTilesChanged(w, (int)std::floor(at.x), (int)std::floor(at.z), (int)std::floor(at.x), (int)std::floor(at.z));
     const std::vector<ItemStack> held = propHoldings(w, e);
     airshipLost(w, e);
     if (destroyedByHand(kind)) {

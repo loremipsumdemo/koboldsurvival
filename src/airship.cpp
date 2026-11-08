@@ -192,7 +192,7 @@ bool disembark(World& w, Terrain& t, ObjectId u) {
     if (stuckAboard(w, u)) return false;
     w.remove<Occupying>(u);
     stepOffProp(w, t, u, ship);
-    if (Transform* ut = w.get<Transform>(u)) ut->y = t.heightAt(ut->x, ut->z);
+    if (Transform* ut = w.get<Transform>(u)) ut->y = t.standHeight(ut->x, ut->z);
     return true;
 }
 

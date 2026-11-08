@@ -62,6 +62,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         if (const Foundation* f = w.get<Foundation>(e)) s.foundation = *f;
         if (const Blueprint* bp = w.get<Blueprint>(e)) s.blueprint = *bp;
         s.material = (int)materialOf(w, e);
+        if (const StoreFilter* f = w.get<StoreFilter>(e)) s.storeFilter = f->allowed;
         d.props.push_back(std::move(s));
     }
 }
@@ -94,6 +95,7 @@ void captureOrders(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, con
 
 void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
     BehaviorGroups& g = behaviorGroups(w);
+    d.storesListed = g.storesListed;
     std::vector<int> refs = { GROUP_REF_MILITARY, GROUP_REF_CITIZEN };
     for (int k = 0; k < (int)g.groups.size(); ++k) refs.push_back(k);
     for (int ref : refs) {
@@ -132,10 +134,14 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
                 if (r.prop < 0 || r.prop >= (int)props.size()) continue;
                 rule.prop = props[(size_t)r.prop];
             }
+            // Patrol Spawn is for wild mobs: your citizens patrol their town
+            if (rule.kind == BehaviorKind::PatrolSpawn) rule.kind = BehaviorKind::Patrol;
+            if (holdsBehavior(*list, rule)) continue;
             list->push_back(rule);
         }
     }
     if (g.groups.empty()) resetBehaviorGroups(g);
+    if (d.storesListed) markStoresListed(world);
     ++g.version;
 }
 
@@ -223,6 +229,7 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
         if (s.foundation) world.add(e, *s.foundation);
         if (s.blueprint) world.add(e, *s.blueprint);
         if (s.material > 0) world.add(e, Material{ (BuildMaterial)s.material });
+        if (s.storeFilter) world.add(e, StoreFilter{ *s.storeFilter });
         if (s.blueprint && propInfo((PropKind)s.kind).door) world.remove<Lock>(e);
     }
     return props;
