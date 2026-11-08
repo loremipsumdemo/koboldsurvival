@@ -61,6 +61,50 @@ bool slotsCanTake(const ItemStack* slots, int slotCount, int item, int count) {
     return false;
 }
 
+int storedCount(const Storage& st) {
+    int n = 0;
+    for (const ItemStack& s : st.slots) n += s.item > 0 ? s.count : 0;
+    return n;
+}
+
+int storeRoomFor(const Storage& st, int item) {
+    int room = slotsRoomFor(st.slots.data(), (int)st.slots.size(), item);
+    if (st.capacity > 0) room = std::min(room, std::max(0, st.capacity - storedCount(st)));
+    return room;
+}
+
+bool storeCanTake(const Storage& st, int item, int count) {
+    if (count <= 0) return true;
+    if (st.capacity > 0 && storedCount(st) + count > st.capacity) return false;
+    return slotsCanTake(st.slots.data(), (int)st.slots.size(), item, count);
+}
+
+int addToStore(Storage& st, int item, int count) {
+    if (count <= 0) return 0;
+    const int fits = st.capacity > 0 ? std::min(count, std::max(0, st.capacity - storedCount(st))) : count;
+    const int left = addToSlots(st.slots.data(), (int)st.slots.size(), item, fits);
+    return left + (count - fits);
+}
+
+int takeFromSlots(ItemStack* slots, int slotCount, int item, int count) {
+    int took = 0;
+    for (int i = 0; i < slotCount && took < count; ++i) {
+        ItemStack& s = slots[i];
+        if (s.item != item || s.count <= 0) continue;
+        const int n = std::min(s.count, count - took);
+        s.count -= n;
+        took += n;
+        if (s.count <= 0) s = ItemStack{};
+    }
+    return took;
+}
+
+int countInSlots(const ItemStack* slots, int slotCount, int item) {
+    int n = 0;
+    for (int i = 0; i < slotCount; ++i) n += slots[i].item == item ? slots[i].count : 0;
+    return n;
+}
+
 float carriedWeight(const Inventory& inv) {
     float total = 0.0f;
     for (const ItemStack& s : inv.slots) {

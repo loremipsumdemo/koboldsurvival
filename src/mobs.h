@@ -69,7 +69,7 @@ inline const char* temperamentKey(MobTemperament t) {
 }
 constexpr float WILD_AVOID_RANGE = 6.0f;
 constexpr float WILD_FLEE_DISTANCE = 12.0f;
-constexpr int EXILE_FLEE_PERCENT = 25;
+constexpr int NOMAD_FLEE_PERCENT = 25;
 
 inline float mobSpriteScale(MobKind kind) { return mobInfo(kind).spriteScale; }
 inline float mobHoverFraction(MobKind kind) { return mobInfo(kind).hover; }

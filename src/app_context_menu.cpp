@@ -1,5 +1,6 @@
 #include "building.h"
 #include "app.h"
+#include "commerce.h"
 
 using namespace play;
 
@@ -52,8 +53,8 @@ ObjectId App::menuTargetAt(float mx, float my) {
     float best = 0.0f;
     for (ObjectId p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
         const PropKind kind = world.get<Prop>(p)->kind;
-        // Props with nothing to do are passed over; blueprints and ladders have their own orders
-        const bool orders = world.has<Blueprint>(p) || propInfo(kind).ladder;
+        // Props with nothing to do are passed over; blueprints, ladders and doors have their own orders
+        const bool orders = world.has<Blueprint>(p) || propInfo(kind).ladder || propInfo(kind).door;
         if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p) && !orders) || (hidden(p) && !world.has<Foundation>(p))) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
@@ -77,6 +78,13 @@ std::vector<ObjectId> App::menuActors(ObjectId target) {
         return flatGap(world, a, target) < flatGap(world, b, target);
     });
     return units;
+}
+
+// A finished door of yours
+bool App::ownDoor(ObjectId target) {
+    const Prop* p = world.get<Prop>(target);
+    const Lock* l = world.get<Lock>(target);
+    return p && l && propInfo(p->kind).door && !world.has<Blueprint>(target) && l->faction == FACTION_PLAYER;
 }
 
 bool App::talkable(ObjectId u) {
@@ -202,12 +210,22 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             out.push_back(MenuAction::AutoConstruct);
             out.push_back(MenuAction::CancelBuild);
         }
+        // A bed in your building: open it to anyone, or keep it for your faction
+        if (isBed(p->kind) && bedHouseOwner(world, target) == FACTION_PLAYER) {
+            out.push_back(world.has<BedPublic>(target) ? MenuAction::BedPrivate : MenuAction::BedPublic);
+        }
+        // A Stall of yours: pick what to stock it with, and send the selected units to keep it
+        if (propInfo(p->kind).stall && world.has<StallStock>(target) && !world.has<Blueprint>(target) && world.has<Owner>(target) &&
+            world.get<Owner>(target)->faction == FACTION_PLAYER) {
+            out.push_back(MenuAction::StockStall);
+            if (!selectedUnits(world).empty()) out.push_back(MenuAction::ManStall);
+        }
         if (propInfo(p->kind).ladder && !world.has<Blueprint>(target)) {
+            // Up for units anywhere else (they walk and climb there), down for units on the floor it climbs to
             bool ground = false, up = false;
-            const Transform* lt = world.get<Transform>(target);
-            const ObjectId home = foundationAt(world, (int)std::floor(lt->x), (int)std::floor(lt->z));
+            const int ladderFloor = storeyOf(world, target);
             for (ObjectId u : selectedUnits(world)) {
-                if (const Upstairs* st = world.get<Upstairs>(u)) up = up || st->foundation == home;
+                if (storeyOf(world, u) == ladderFloor + 1) up = true;
                 else ground = ground || airshipOf(world, u) == NO_OBJECT;
             }
             if (ground && canClimbUp(world, target)) out.push_back(MenuAction::Climb);
@@ -259,6 +277,10 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::Destroy: labels.push_back(lang("UILABEL_BREAK")); break;
         case MenuAction::ManageUnits: labels.push_back(lang("UILABEL_MANAGE_UNITS")); break;
         case MenuAction::Rename: labels.push_back(lang("UILABEL_RENAME")); break;
+        case MenuAction::BedPublic: labels.push_back(lang("UILABEL_BED_MAKE_PUBLIC")); break;
+        case MenuAction::BedPrivate: labels.push_back(lang("UILABEL_BED_MAKE_PRIVATE")); break;
+        case MenuAction::StockStall: labels.push_back(lang("UILABEL_STOCK_STALL")); break;
+        case MenuAction::ManStall: labels.push_back(lang("UILABEL_MAN_STALL")); break;
         }
     }
     return labels;
@@ -292,10 +314,14 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
             itemMenu.open = false;
             return true;
         }
-        // A blueprint of yours can be cancelled, and a store's Allowed Items set, with nobody selected
+        // A blueprint of yours can be cancelled, a store's Allowed Items set, a door of yours locked or unlocked, a bed of
+        // yours made Public or Private, and a Stall of yours stocked, with nobody selected
         std::vector<MenuAction> alone;
         for (MenuAction a : actions) {
-            if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter) alone.push_back(a);
+            if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
+                a == MenuAction::StockStall || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
+                alone.push_back(a);
+            }
         }
         if (!alone.empty()) {
             session.contextMenu = ContextMenu{ true, mx, my, target, alone };
@@ -379,6 +405,26 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::StoreFilter) {
         openStoreFilter(target);
+        return;
+    }
+    // Your own door locks and unlocks at once, from anywhere
+    if ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target)) {
+        if (Lock* l = world.get<Lock>(target)) {
+            l->locked = a == MenuAction::Lock;
+            showNotice(lang(l->locked ? "MISC_DOOR_LOCKED" : "MISC_DOOR_UNLOCKED"));
+            playSfx(Sfx::UiToggle);
+        }
+        return;
+    }
+    if (a == MenuAction::BedPublic || a == MenuAction::BedPrivate) {
+        if (a == MenuAction::BedPublic) world.add(target, BedPublic{});
+        else world.remove<BedPublic>(target);
+        showNotice(lang(a == MenuAction::BedPublic ? "MISC_BED_NOW_PUBLIC" : "MISC_BED_NOW_PRIVATE"));
+        playSfx(Sfx::UiToggle);
+        return;
+    }
+    if (a == MenuAction::StockStall) {
+        openStall(target);
         return;
     }
     if (a == MenuAction::Evacuate && isAirship(world, target)) {
@@ -521,6 +567,30 @@ void App::pickMenuAction(MenuAction a) {
         break;
     case MenuAction::CancelBuild:
         break;
+    case MenuAction::ManStall: {
+        BehaviorRule add;
+        add.kind = BehaviorKind::ManStall;
+        add.prop = target;
+        add.propKind = idx(world.get<Prop>(target)->kind);
+        int given = 0;
+        for (ObjectId u : actors) {
+            Behaviors* b = world.get<Behaviors>(u);
+            if (!b || world.has<Mob>(u) || !addBehavior(b->rules, add)) continue;
+            b->wait = 0.0f;
+            ++given;
+        }
+        if (given == 0) {
+            refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+            return;
+        }
+        showNotice(langf("MISC_MAN_STALL_SET", { std::to_string(given) }));
+        playSfx(Sfx::UiOrder);
+        return;
+    }
+    case MenuAction::BedPublic:
+    case MenuAction::BedPrivate:
+    case MenuAction::StockStall:
+        break;
     case MenuAction::AutoConstruct: {
         BehaviorRule add;
         add.kind = BehaviorKind::AutoConstruct;
@@ -543,7 +613,8 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::ClimbDown: {
         std::vector<ObjectId> climbers;
         for (ObjectId u : actors) {
-            if ((a == MenuAction::ClimbDown) == world.has<Upstairs>(u) && airshipOf(world, u) == NO_OBJECT) climbers.push_back(u);
+            const bool above = storeyOf(world, u) == storeyOf(world, target) + 1;
+            if ((a == MenuAction::ClimbDown) == above && airshipOf(world, u) == NO_OBJECT) climbers.push_back(u);
         }
         issuePropOrder(world, terrain, climbers, target, PropAction::Climb);
         if (!climbers.empty()) playSfx(Sfx::UiOrder);

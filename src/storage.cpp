@@ -1,4 +1,8 @@
 #include "storage.h"
+#include "spatial.h"
+#include "mobs.h"
+#include "hostility.h"
+#include "factions.h"
 #include "trade.h"
 #include <algorithm>
 #include <array>
@@ -34,24 +38,61 @@ bool ownedLockOf(World& w, ObjectId prop) {
 }
 
 StorageLayout storageLayout(World& w, int W, int H) {
-    return layoutStorage(W, H, w.has<Output>(session.storageProp), ownedLockOf(w, session.storageProp));
+    const Storage* st = w.get<Storage>(session.storageProp);
+    return layoutStorage(W, H, w.has<Output>(session.storageProp), ownedLockOf(w, session.storageProp),
+                         st ? (int)st->slots.size() : STORAGE_SLOTS);
 }
 
+int storageShown(World& w) {
+    const Storage* st = w.get<Storage>(session.storageProp);
+    return st ? visibleStorageSlots((int)st->slots.size()) : STORAGE_SLOTS;
+}
+
+int storageScrollMax(World& w) {
+    const Storage* st = w.get<Storage>(session.storageProp);
+    if (!st) return 0;
+    const int rows = ((int)st->slots.size() + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
+    return std::max(0, rows - STORAGE_VISIBLE_ROWS);
+}
+
+// A window cell: the shown input cells first (from the row scrolled to), then the output cells
 ItemStack* storageSlot(World& w, int slot) {
     if (slot < 0) return nullptr;
-    if (slot < STORAGE_SLOTS) {
+    const int shown = storageShown(w);
+    if (slot < shown) {
         Storage* st = w.get<Storage>(session.storageProp);
-        return st ? &st->slots[(size_t)slot] : nullptr;
+        if (!st) return nullptr;
+        const size_t at = (size_t)(std::clamp(session.storageScroll, 0, storageScrollMax(w)) * STORAGE_COLUMNS + slot);
+        return at < st->slots.size() ? &st->slots[at] : nullptr;
     }
     Output* out = w.get<Output>(session.storageProp);
-    return out && slot < 2 * STORAGE_SLOTS ? &out->slots[(size_t)(slot - STORAGE_SLOTS)] : nullptr;
+    return out && slot - shown < STORAGE_SLOTS ? &out->slots[(size_t)(slot - shown)] : nullptr;
+}
+
+int stolenFromBy(World& w, ObjectId prop, ObjectId unit) {
+    int owner = -1;
+    if (const Owner* own = w.get<Owner>(prop)) owner = own->faction;
+    else if (const Transform* pt = w.get<Transform>(prop)) {
+        if (const Claim* c = claimAt(claimsOf(w), pt->x, pt->z)) owner = c->owner;
+    }
+    const int taker = factionOf(w, unit);
+    if (owner < 0 || owner == taker || factionsAllied(w, owner, taker) || isMobFaction(owner)) return -1;
+    return owner;
+}
+
+int markTaken(World& w, int item, int stolenFrom, ObjectId taker) {
+    // Your own goods taken back are yours again
+    if (isStolen(item) && stolenFromOf(item) == factionOf(w, taker)) return baseItemId(item);
+    if (stolenFrom >= 0 && !isStolen(item)) return markStolen(item, stolenFrom);
+    return item;
 }
 
 bool takeFromStorage(World& w, int slot, std::string& why) {
     ItemStack* from = storageSlot(w, slot);
     Inventory* inv = w.get<Inventory>(session.storageUnit);
     if (!from || !inv || from->item == 0) return false;
-    const ItemStack stack = *from;
+    ItemStack stack = *from;
+    stack.item = markTaken(w, stack.item, stolenFromBy(w, session.storageProp, session.storageUnit), session.storageUnit);
     if (!slotsCanTake(inv->slots.data(), INVENTORY_SLOTS, stack.item, stack.count)) {
         why = langf("MISC_NO_ROOM_INV", { itemNameOf(stack.item) });
         return false;
@@ -60,7 +101,7 @@ bool takeFromStorage(World& w, int slot, std::string& why) {
     giveOrDrop(w, session.storageUnit, stack.item, stack.count);
     queueSound(w, Sfx::Take);
     propStorageChanged(w, session.storageProp);
-    queueUnitLabel(w, session.storageUnit, itemGainLabel(stack.count, itemNameOf(stack.item)));
+    queueItemMove(w, session.storageProp, session.storageUnit, stack.item, stack.count);
     return true;
 }
 
@@ -68,8 +109,11 @@ bool dropFromStorage(World& w, int slot) {
     ItemStack* from = storageSlot(w, slot);
     const Transform* ut = w.get<Transform>(session.storageUnit);
     if (!from || !ut || from->item == 0) return false;
-    const ItemStack stack = *from;
-    dropAtUnit(w, session.storageUnit, stack.item, stack.count);
+    ItemStack stack = *from;
+    stack.item = markTaken(w, stack.item, stolenFromBy(w, session.storageProp, session.storageUnit), session.storageUnit);
+    spawnGroundItem(w, *ut, stack.item, stack.count);
+    queueUnitLabel(w, session.storageProp, itemLossLabelFor(stack.count, stack.item), true);
+    queueSound(w, Sfx::Drop);
     *from = ItemStack{};
     propStorageChanged(w, session.storageProp);
     return true;
@@ -96,7 +140,7 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
         why = no;
         return false;
     }
-    if (!slotsCanTake(st->slots.data(), STORAGE_SLOTS, item, count)) {
+    if (!storeCanTake(*st, item, count)) {
         why = lang("MISC_STORAGE_FULL");
         return false;
     }
@@ -111,9 +155,9 @@ bool storeCountInStorage(World& w, int clickedSlot, int count, std::string& why)
         takeFromSlot(*inv, slot, take);
         left -= take;
     }
-    addToSlots(st->slots.data(), STORAGE_SLOTS, item, count);
+    addToStore(*st, item, count);
     propStorageChanged(w, session.storageProp);
-    queueUnitLabel(w, session.storageUnit, itemLossLabelFor(count, item), true);
+    queueItemMove(w, session.storageUnit, session.storageProp, item, count);
     queueSound(w, Sfx::Store);
     return true;
 }

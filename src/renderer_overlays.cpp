@@ -229,6 +229,26 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     }
 }
 
+// A puff of smoke: grey clouds swelling out from the spot and fading
+void Renderer::drawPuffs(const std::vector<Puff>& puffs, const Camera& cam, int winW, int winH) {
+    const float s = uiScaleFor(winH);
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    for (const Puff& p : puffs) {
+        if (!withinDetail(cam, p.x, p.y, p.z)) continue;
+        const float t = std::clamp(p.age / PUFF_LIFE, 0.0f, 1.0f);
+        const float alpha = (t < 0.25f ? t / 0.25f : (1.0f - t) / 0.75f) * 0.8f;
+        for (int k = 0; k < 9; ++k) {
+            const float a = (float)k * 0.6981317f + t * 0.8f;
+            const float spread = (k == 0 ? 0.0f : 0.45f + 0.9f * t);
+            float sx = 0.0f, sy = 0.0f;
+            if (!worldToScreen(vp, p.x + std::cos(a) * spread, p.y + 0.8f + 1.2f * t + (k % 3) * 0.25f, p.z + std::sin(a) * spread, winW, winH, sx, sy)) continue;
+            const float r = (18.0f + 26.0f * t + (k % 3) * 6.0f) * s;
+            const float g = 0.78f + 0.06f * (float)(k % 3);
+            drawRoundedRect(Rect{ sx - r, sy - r, 2.0f * r, 2.0f * r }, r, RGBA{ g, g, g, alpha });
+        }
+    }
+}
+
 void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH) {
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
@@ -237,7 +257,10 @@ void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, 
         const Transform* tr = w.get<Transform>(l.unit);
         if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
-        if (!worldToScreen(vp, tr->x, tr->y + GLYPH_H * 2.2f, tr->z, winW, winH, sx, sy)) continue;
+        // Over a prop (a store, a blueprint), above its model rather than at a unit's head height
+        float lift = GLYPH_H * 2.2f;
+        if (const Prop* p = w.get<Prop>(l.unit)) lift = std::max(lift, propInfo(p->kind).size * 1.1f);
+        if (!worldToScreen(vp, tr->x, tr->y + lift, tr->z, winW, winH, sx, sy)) continue;
         const int row = stacked[l.unit]++;
         const float t = std::clamp(l.age / TRADE_LABEL_LIFE, 0.0f, 1.0f);
         const float alpha = t < 0.7f ? 1.0f : (1.0f - t) / 0.3f;

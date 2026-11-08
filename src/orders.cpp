@@ -163,7 +163,7 @@ void issuePickupOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, 
         if (!w.has<Inventory>(u) || !w.get<Transform>(u)) continue;
         if (cannotTakeOrder(w, u) || !canHoldItem(w, u, w.get<GroundItem>(item)->item)) continue;
         clearOrders(w, u);
-        walkSolo(w, t, u, target);
+        walkSolo(w, t, u, target, storeyOf(w, item));
         w.add(u, PickupOrder{ item });
     }
 }
@@ -248,7 +248,7 @@ void pickupChainSystem(World& w, Terrain& t) {
             if (bi == NO_OBJECT) break;
             const ObjectId u = idle[bu];
             const Transform* itr = w.get<Transform>(bi);
-            walkSolo(w, t, u, Vec2{ itr->x, itr->z });
+            walkSolo(w, t, u, Vec2{ itr->x, itr->z }, storeyOf(w, bi));
             w.add(u, PickupOrder{ bi });
             w.get<PickupChain>(u)->replans = 0;
             claimed.push_back(bi);

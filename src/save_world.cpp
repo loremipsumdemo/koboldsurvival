@@ -34,6 +34,21 @@ void restoreSlots(const std::vector<SaveSlot>& saved, std::array<ItemStack, N>& 
     }
 }
 
+std::vector<SaveSlot> occupiedSlots(const std::vector<ItemStack>& slots) {
+    std::vector<SaveSlot> out;
+    for (size_t i = 0; i < slots.size(); ++i) {
+        if (slots[i].item > 0 && slots[i].count > 0) out.push_back(SaveSlot{ (int)i, slots[i] });
+    }
+    return out;
+}
+
+void restoreSlots(const std::vector<SaveSlot>& saved, std::vector<ItemStack>& slots) {
+    for (const SaveSlot& s : saved) {
+        if (s.slot < 0 || s.slot >= (int)slots.size() || !findItem(s.stack.item) || s.stack.count <= 0) continue;
+        slots[(size_t)s.slot] = ItemStack{ s.stack.item, std::min(s.stack.count, std::max(1, stackLimit(s.stack.item))) };
+    }
+}
+
 // Oldest first, since the older of two Altars holds a claim
 void captureProps(World& w, SaveData& d, IdMap& ids) {
     std::vector<ObjectId> props = w.view<Prop, Transform>();
@@ -63,7 +78,19 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         if (const Blueprint* bp = w.get<Blueprint>(e)) s.blueprint = *bp;
         s.material = (int)materialOf(w, e);
         if (const StoreFilter* f = w.get<StoreFilter>(e)) s.storeFilter = f->allowed;
+        s.bedPublic = w.has<BedPublic>(e);
+        if (const StallStock* ss = w.get<StallStock>(e)) s.stallPayment = ss->payment;
         d.props.push_back(std::move(s));
+    }
+    // A Stall's orders name their stores, all of which have their numbers by now
+    for (ObjectId e : props) {
+        const StallStock* ss = w.get<StallStock>(e);
+        if (!ss) continue;
+        SaveProp& s = d.props[(size_t)ids[e]];
+        for (const StallRequest& r : ss->requests) {
+            const int from = idOf(ids, r.from);
+            if (from >= 0 && r.item > 0 && r.count > 0) s.stallRequests.push_back({ from, r.item, r.count });
+        }
     }
 }
 
@@ -104,7 +131,7 @@ void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
         for (const BehaviorRule& r : *groupList(g, ref)) {
             SaveRule sr;
             sr.rule = r;
-            if (isHaul(r.kind)) {
+            if (ruleNamesProp(r.kind)) {
                 sr.prop = idOf(propIds, r.prop);
                 if (sr.prop < 0) continue;
             }
@@ -130,7 +157,7 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
         list->clear();
         for (const SaveRule& r : sg.rules) {
             BehaviorRule rule = r.rule;
-            if (isHaul(rule.kind)) {
+            if (ruleNamesProp(rule.kind)) {
                 if (r.prop < 0 || r.prop >= (int)props.size()) continue;
                 rule.prop = props[(size_t)r.prop];
             }
@@ -154,7 +181,7 @@ void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) 
     for (const BehaviorRule& r : b->rules) {
         SaveRule sr;
         sr.rule = r;
-        if (isHaul(r.kind)) {
+        if (ruleNamesProp(r.kind)) {
             sr.prop = idOf(propIds, r.prop);
             if (sr.prop < 0) continue;
         }
@@ -231,6 +258,16 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
         if (s.material > 0) world.add(e, Material{ (BuildMaterial)s.material });
         if (s.storeFilter) world.add(e, StoreFilter{ *s.storeFilter });
         if (s.blueprint && propInfo((PropKind)s.kind).door) world.remove<Lock>(e);
+        if (s.bedPublic) world.add(e, BedPublic{});
+        if (StallStock* ss = world.get<StallStock>(e); ss && s.stallPayment) ss->payment = *s.stallPayment;
+    }
+    for (size_t i = 0; i < d.props.size(); ++i) {
+        StallStock* ss = world.get<StallStock>(props[i]);
+        if (!ss) continue;
+        for (const auto& r : d.props[i].stallRequests) {
+            if (r[0] < 0 || r[0] >= (int)props.size() || !findItem(r[1]) || r[2] <= 0) continue;
+            ss->requests.push_back(StallRequest{ props[(size_t)r[0]], r[1], r[2], NO_OBJECT });
+        }
     }
     return props;
 }
@@ -260,7 +297,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     b.rules.clear();
     for (const SaveRule& r : u.rules) {
         BehaviorRule rule = r.rule;
-        if (isHaul(rule.kind)) {
+        if (ruleNamesProp(rule.kind)) {
             if (r.prop < 0 || r.prop >= (int)props.size()) continue;
             rule.prop = props[(size_t)r.prop];
         }
@@ -367,6 +404,16 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     units.reserve(d.units.size());
     for (const SaveUnit& u : d.units) units.push_back(restoreUnit(world, u, props));
     restoreLinks(world, d, units, props);
+    settleBuildingsAfterLoad(world, terrain);
+    // From before Auto-Haul to Stalls: your units and the Citizen Default get it, switched on
+    if (!d.stallHaulListed) {
+        BehaviorRule stall;
+        stall.kind = BehaviorKind::AutoHaulStall;
+        for (ObjectId u : world.view<Commandable, Behaviors>()) addBehavior(world.get<Behaviors>(u)->rules, stall, BEHAVIOR_TASKS_MAX);
+        BehaviorGroups& g = behaviorGroups(world);
+        addBehavior(g.citizen, stall, BEHAVIOR_TASKS_MAX);
+        ++g.version;
+    }
     restoreOrders(world, terrain, d, units, props);
     settleSquads(world);
     rebuildBlocking(world, terrain);
@@ -386,6 +433,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
     d.ghosts = w.resource<Graveyard>().ghosts;
+    d.stallHaulListed = true;
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };
     std::ostringstream state;
     state << rng.gen;
@@ -397,6 +445,8 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     for (ObjectId e : w.view<GroundItem, Transform>()) d.ground.push_back(SaveGround{ *w.get<Transform>(e), *w.get<GroundItem>(e) });
 
     std::vector<ObjectId> units = w.view<Entity, Transform>();
+    // The Wandering Trader comes and goes within a day: it isn't kept
+    units.erase(std::remove_if(units.begin(), units.end(), [&](ObjectId u) { return w.has<WanderingTrader>(u); }), units.end());
     std::sort(units.begin(), units.end());
     IdMap unitIds;
     for (size_t i = 0; i < units.size(); ++i) unitIds[units[i]] = (int)i;

@@ -54,6 +54,7 @@ bool appeaseGhost(World& w, ObjectId altar, size_t ghost) {
     if (!st || ghost >= yard.ghosts.size() || yard.ghosts[ghost].appeased) return false;
     for (ItemStack& s : st->slots) {
         if (s.count <= 0 || !isBones(s.item)) continue;
+        queueItemMove(w, altar, NO_OBJECT, s.item, 1);
         if (--s.count == 0) s = ItemStack{};
         yard.ghosts[ghost].appeased = true;
         queueLog(w, langf("MISC_GHOST_APPEASED", { yard.ghosts[ghost].name }), LogKind::Other);

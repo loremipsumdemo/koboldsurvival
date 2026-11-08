@@ -373,6 +373,7 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "ladder") p.ladder = true;
         else if (flag == "upper_floor") p.upperFloor = true;
         else if (flag == "rare") p.rare = true;
+        else if (flag == "stall") p.stall = true;
         else {
             why = "unknown flag " + flag;
             return false;
@@ -397,6 +398,15 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
         !readDouble(cell(r, "comfort"), p.comfortPerHour) || !readDouble(cell(r, "materials"), p.materials) ||
         !readDouble(cell(r, "build_seconds"), p.buildSeconds)) {
         why = "a number for " + r.key + " is not valid";
+        return false;
+    }
+    // Optional columns: a store's slots and capacity
+    if (cell.at.count("slots") && (!readInt(cell(r, "slots"), p.slots) || p.slots < 1 || p.slots > 4096)) {
+        why = "slots must be 1 to 4096";
+        return false;
+    }
+    if (cell.at.count("capacity") && (!readInt(cell(r, "capacity"), p.capacity) || p.capacity < 0)) {
+        why = "capacity must be 0 or more";
         return false;
     }
     const int use = placeIn(PROP_USE_KEYS, cell(r, "use"));

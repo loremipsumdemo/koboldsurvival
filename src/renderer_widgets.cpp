@@ -1,3 +1,4 @@
+#include "factions.h"
 #include "renderer_internal.h"
 
 using namespace render_detail;
@@ -229,7 +230,11 @@ void Renderer::drawItemTooltip(int item, int count, float mx, float my, const Eq
     const GearSum base = sumGear(replacedItems);
     const float tipTextW = 260.0f * s;
     const TipWrap wrapTip = [this, tipTextW](const std::string& t) { return wrapListText(t, tipTextW); };
-    const std::vector<TipRow> main = itemRows(*d, count, compare ? &base : nullptr, wrapTip);
+    std::vector<TipRow> main = itemRows(*d, count, compare ? &base : nullptr, wrapTip);
+    // A stolen item says whose it was
+    if (isStolen(item) && !main.empty()) {
+        main.insert(main.begin() + 1, TipRow{ langf("MISC_ITEM_STOLEN_FROM", { factionName(stolenFromOf(item)) }), RGBA{ 1.0f, 0.4f, 0.35f, 1.0f } });
+    }
 
     std::vector<std::vector<TipRow>> cards;
     if (compare) {

@@ -99,6 +99,9 @@ struct SaveProp {
     std::optional<Blueprint> blueprint;
     int material = 0;
     std::optional<std::uint32_t> storeFilter;
+    bool bedPublic = false;
+    std::optional<std::uint32_t> stallPayment;
+    std::vector<std::array<int, 3>> stallRequests;   // a Stall's orders: the store (prop index), item, count
 };
 
 struct SaveCamera {
@@ -109,6 +112,7 @@ struct SaveCamera {
 struct SaveData {
     std::string name;
     bool storesListed = false;   // from version 13: the Citizen Default already has its store hauls
+    bool stallHaulListed = false;   // units and the Citizen Default already have Auto-Haul to Stalls
     bool autosave = false;
     long long timestamp = 0;
     std::string mapSource, mapStem;

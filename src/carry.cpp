@@ -9,7 +9,7 @@ bool issueCarryOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, O
         if (u == target || !w.has<Commandable>(u) || !w.get<Transform>(u) || w.has<Carrying>(u)) continue;
         if (cannotTakeOrder(w, u)) continue;
         clearOrders(w, u);
-        walkSolo(w, t, u, Vec2{ tt->x, tt->z });
+        walkSolo(w, t, u, Vec2{ tt->x, tt->z }, storeyOf(w, target));
         w.add(u, CarryOrder{ target });
         return true;
     }

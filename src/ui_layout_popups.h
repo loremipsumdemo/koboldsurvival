@@ -74,7 +74,10 @@ struct LootLayout {
 };
 LootLayout layoutLoot(int W, int H);
 
-StorageLayout layoutStorage(int W, int H, bool output = false, bool lockToggle = false);
+// A store's window shows at most this many rows of slots at once; a bigger store (a Stall's) scrolls with the wheel
+inline constexpr int STORAGE_VISIBLE_ROWS = 6;
+inline int visibleStorageSlots(int slotCount) { return std::min(slotCount, STORAGE_VISIBLE_ROWS * STORAGE_COLUMNS); }
+StorageLayout layoutStorage(int W, int H, bool output = false, bool lockToggle = false, int slotCount = STORAGE_SLOTS);
 
 struct TradeStatus {
     bool ok = false;

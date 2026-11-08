@@ -1,6 +1,7 @@
 #include "systems_internal.h"
 #include "inventory.h"
 #include "world_labels.h"
+#include "commerce.h"
 
 using namespace systems_detail;
 
@@ -43,7 +44,7 @@ BehaviorWait haulWait(World& w, const std::vector<Claim>& claims, ObjectId u, co
     for (const ItemStack& s : inv->slots) {
         if (s.item <= 0 || s.count <= 0 || (item != 0 && s.item != item) || !haulCarries(w, r, r.prop, s.item)) continue;
         carries = true;
-        if (slotsRoomFor(st->slots.data(), STORAGE_SLOTS, s.item) > 0) return BehaviorWait::None;
+        if (storeRoomFor(*st, s.item) > 0) return BehaviorWait::None;
     }
     return carries ? BehaviorWait::PropFull : BehaviorWait::NothingToHaul;
 }
@@ -67,7 +68,7 @@ std::uint64_t carriedPrint(World& w, ObjectId u) {
 bool storeCouldTake(World& w, const std::vector<Claim>& claims, ObjectId u, const BehaviorRule& r, int item) {
     const Storage* st = w.get<Storage>(r.prop);
     if (!st || !w.has<Prop>(r.prop) || !inOwnClaim(w, claims, r.prop, factionOf(w, u)) || lockShutFor(w, claims, r.prop, u)) return false;
-    return haulCarries(w, r, r.prop, item) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item) > 0;
+    return haulCarries(w, r, r.prop, item) && storeRoomFor(*st, item) > 0;
 }
 
 // Auto-Haul Ground Items: the nearest item lying in the unit's claim that one of its haul tasks could put away, that it
@@ -132,7 +133,7 @@ ObjectId stockpileWithRoom(World& w, const std::vector<Claim>& claims, ObjectId 
         const Storage* st = w.get<Storage>(p);
         const Owner* own = w.get<Owner>(p);
         return info.accepts == want && st && ((own && own->faction == faction) || inOwnClaim(w, claims, p, faction)) &&
-               !lockShutFor(w, claims, p, u) && slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item) > 0;
+               !lockShutFor(w, claims, p, u) && storeRoomFor(*st, item) > 0;
     });
 }
 
@@ -172,7 +173,7 @@ bool onOtherOrder(World& w, ObjectId u, const Behaviors& b) {
 void autoGo(World& w, Terrain& t, ObjectId u, ObjectId prop, PropAction action) {
     const Transform* pt = w.get<Transform>(prop);
     if (!pt) return;
-    autoWalk(w, t, u, Vec2{ pt->x, pt->z });
+    autoWalk(w, t, u, Vec2{ pt->x, pt->z }, storeyOf(w, prop));
     w.add(u, PropOrder{ prop, action, true });
 }
 
@@ -229,6 +230,7 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
         if (restedGainPerHour(kind) <= 0.0) continue;
         const bool ownBed = lyingIn && lyingIn->prop == p;
         if ((countIn(occupied, p) > 0 && !ownBed) || lockShutFor(w, claims, p, u)) continue;
+        if (!bedOpenTo(w, p, u)) continue;   // a bed in another faction's building, not set Public
         if (std::binary_search(wanted.begin(), wanted.end(), p)) continue;
         const Transform* pt = w.get<Transform>(p);
         const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
@@ -284,6 +286,8 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& t
 
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::AutoHaulStall) return startStallHaulStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::ManStall) return startManStallStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::AutoHaulGround) {
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
         const ObjectId item = groundHaulTarget(w, claims, u, b, r.why);
@@ -292,7 +296,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         b.busy = true;
         b.step = r;
         b.stepProp = item;
-        autoWalk(w, t, u, Vec2{ it->x, it->z });
+        autoWalk(w, t, u, Vec2{ it->x, it->z }, storeyOf(w, item));
         return true;
     }
     if (r.kind == BehaviorKind::Rescue) {
@@ -308,7 +312,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         b.busy = true;
         b.step = r;
         b.stepProp = NO_OBJECT;
-        autoWalk(w, t, u, Vec2{ tt->x, tt->z });
+        autoWalk(w, t, u, Vec2{ tt->x, tt->z }, storeyOf(w, target));
         w.add(u, CarryOrder{ target });
         return true;
     }
@@ -419,16 +423,22 @@ BehaviorRule* rescueRule(Behaviors& b) {
 }
 }
 
-void systems_detail::autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to) {
+void systems_detail::autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int storey) {
     clearOrdersButFight(w, u);
     w.remove<IdleSpot>(u);
-    walkSolo(w, t, u, to);
+    walkSolo(w, t, u, to, storey);
 }
 
 void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
-    if (w.has<BuildJob>(u)) {
+    if (w.has<BuildJob>(u) || w.has<StallJob>(u)) {
         w.remove<BuildJob>(u);
+        w.remove<StallJob>(u);
         w.remove<SoloMove>(u);
+        w.remove<Route>(u);
+    }
+    if (b.busy && b.step.kind == BehaviorKind::ManStall) {
+        w.remove<SoloMove>(u);
+        w.remove<Route>(u);
     }
     if (const PropOrder* po = w.get<PropOrder>(u); po && po->automatic) {
         w.remove<PropOrder>(u);
@@ -572,8 +582,8 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             b->wait = resume;
             continue;
         }
-        // A building task runs by itself (buildJobSystem), and ends its own step
-        if (w.has<BuildJob>(u)) continue;
+        // A building task, or a Stall order, runs by itself (buildJobSystem, commerce), and ends its own step
+        if (w.has<BuildJob>(u) || w.has<StallJob>(u)) continue;
         if (b->seeking) {
             const SoloMove* so = w.get<SoloMove>(u);
             const bool walking = so && so->next < so->waypoints.size();
@@ -595,7 +605,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             const float stop = std::min(SHARE_WALK_STOP, d);
             leaveSquad(w, u);
             w.remove<IdleSpot>(u);
-            walkSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop });
+            walkSolo(w, t, u, Vec2{ gt->x - dx / d * stop, gt->z - dz / d * stop }, storeyOf(w, b->seek));
             b->seeking = true;
             continue;
         }
@@ -717,6 +727,36 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
             continue;
         }
+        // Keeping a Stall: it stays there, but anything its list ranks higher still comes first
+        if (b->busy && b->step.kind == BehaviorKind::ManStall) {
+            if (!w.has<StallStock>(b->stepProp)) {
+                stopAutoStep(w, u, *b);
+                continue;
+            }
+            bool other = false;
+            for (BehaviorRule& r : b->rules) {
+                if (sameBehavior(r, b->step)) break;
+                if (r.kind == BehaviorKind::Rest) {
+                    BehaviorRule* rescue = rescueRule(*b);
+                    if (rescue && rescue->on && rescue->cooldown <= 0.0f && tryStep(w, t, claims, u, *b, *rescue, rng)) {
+                        other = true;
+                        break;
+                    }
+                }
+                if (r.on && r.cooldown <= 0.0f && isAutoStep(r.kind) && tryStep(w, t, claims, u, *b, r, rng)) {
+                    other = true;
+                    break;
+                }
+            }
+            if (other) continue;
+            const SoloMove* so = w.get<SoloMove>(u);
+            const bool walking = (so && so->next < so->waypoints.size()) || w.has<Route>(u) || w.has<Climbing>(u);
+            if (!walking && flatGap(w, u, b->stepProp) > STALL_KEEPER_REACH - 0.5f) {
+                const Transform* st = w.get<Transform>(b->stepProp);
+                autoWalk(w, t, u, Vec2{ st->x, st->z }, storeyOf(w, b->stepProp));
+            }
+            continue;
+        }
         // Asleep: up at dawn
         if (b->busy && b->step.kind == BehaviorKind::Sleep) {
             const Occupying* oc = w.get<Occupying>(u);
@@ -784,7 +824,7 @@ ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind) {
     const ItemFilter pile = stockpileFor(item);
     const ObjectId store = nearestProp(w, *ut, [&](ObjectId p) {
         const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-        if (info.use != PropUse::Storage || info.claimsLand || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
+        if (info.use != PropUse::Storage || info.claimsLand || info.stall || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
         if (pile != ItemFilter::Any ? info.accepts != pile : !propTakesItem(w, p, item)) return false;
         const Owner* own = w.get<Owner>(p);
         return ((own && own->faction == faction) || inOwnClaim(w, claims, p, faction)) && !lockShutFor(w, claims, p, u);

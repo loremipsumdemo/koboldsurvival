@@ -1,4 +1,7 @@
 #pragma once
+#include <algorithm>
+#include <cmath>
+#include <unordered_map>
 #include <vector>
 #include "behavior.h"
 #include "build.h"
@@ -7,15 +10,20 @@
 #include "geometry.h"
 #include "terrain.h"
 
-// Buildings. A foundation is laid as a blueprint by dragging a rectangle (3 to 64 tiles a side). Every piece (the
-// foundation, then walls, doors, ladders and upper floors on it) starts as a blueprint that needs its material brought to
-// it and then building, both done by Auto-Construct. A piece
-// isn't finished while a unit stands where it goes: the unit is asked to move, and the piece is tried again later.
+// Buildings. A foundation is laid tile by tile: dragging a rectangle (at least 3 by 3 to start a building) lays one
+// foundation tile per tile, and a rectangle of any size touching a foundation of yours extends it. Every piece (the
+// foundation tiles, then walls, doors, ladders and upper floors on them) starts as a blueprint that needs its material
+// brought to it and then building, both done by Auto-Construct. Walls, doors, ladders, upper floors and other props go
+// on any floor: the ground floor (the foundation) or an upper floor, which is level 1, 2 and so on. A ladder on a floor
+// climbs to the floor above. A piece isn't finished while a unit stands where it goes: the unit is asked to move, and the
+// piece is tried again later.
 inline constexpr int FOUNDATION_MIN = 3;
 inline constexpr int FOUNDATION_MAX = 64;
+inline constexpr int STOREY_MAX = 8;                 // the highest upper floor
 inline constexpr float BLUEPRINT_REACH = 5.0f;       // logs are handed over and building is done from this far
 inline constexpr float FLOOR_HEIGHT = 2.4f;          // walls' height: the upper floor sits on them
-inline constexpr float FLOOR_TOP = FLOOR_HEIGHT + 0.14f;   // where a unit upstairs stands
+inline constexpr float FLOOR_THICK = 0.14f;          // an upper floor's slab
+inline constexpr float FLOOR_TOP = FLOOR_HEIGHT + FLOOR_THICK;   // where a unit on the first upper floor stands
 inline constexpr float CLIMB_SECONDS = 1.5f;
 inline constexpr float BLOCKED_RETRY_SECONDS = 4.0f; // a piece with a unit in the way waits this long before it is tried again
 inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
@@ -23,7 +31,16 @@ inline constexpr double DOOR_HEALTH = 60.0;
 inline constexpr double WALL_HEALTH = 2.0 * DOOR_HEALTH;   // a wall takes twice the breaking a door does
 inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
 
-// A foundation: the tiles it covers. entrances is no longer used (doors go anywhere walls do) but is kept for old saves
+// How far above the ground a floor's top is: 0 for the ground floor
+inline float storeyBaseHeight(int level) { return level <= 0 ? 0.0f : level * FLOOR_HEIGHT + FLOOR_THICK; }
+// The floor something this far above the ground stands on
+inline int storeyAtHeight(float aboveGround) {
+    if (aboveGround < FLOOR_HEIGHT * 0.5f) return 0;
+    return std::max(1, (int)std::lround((aboveGround - FLOOR_THICK) / FLOOR_HEIGHT));
+}
+
+// A foundation: the tiles it covers. Each is a single tile now; older saves had whole rectangles, split when opened.
+// entrances is no longer used but is kept for old saves.
 struct Foundation {
     int x0 = 0, z0 = 0, w = 0, h = 0;
     std::vector<long long> entrances;
@@ -31,17 +48,13 @@ struct Foundation {
     bool onEdge(int x, int z) const { return contains(x, z) && (x == x0 || z == z0 || x == x0 + w - 1 || z == z0 + h - 1); }
 };
 inline long long tileKey(int x, int z) { return (long long)z * 1000003LL + (long long)x; }
+inline long long levelKey(int x, int z, int level) { return tileKey(x, z) * 16 + level; }
 
-// A piece not finished yet: the logs brought to it so far, and how far it is built
+// A piece not finished yet: the material brought to it so far, and how far it is built
 struct Blueprint {
     int supplied = 0;
     double progress = 0.0;
     float retryIn = 0.0f;
-};
-
-// A unit on an upper floor, of this foundation's building
-struct Upstairs {
-    ObjectId foundation = NO_OBJECT;
 };
 
 // A unit climbing a ladder, up or down. Not saved.
@@ -67,12 +80,25 @@ struct AtDoor {
     float since = 0.0f;
 };
 
+// A walk that goes up or down ladders: walks on one floor each, each but the last ending at a ladder it climbs. Not saved.
+struct RouteLeg {
+    int storey = 0;
+    Vec2 to{ 0.0f, 0.0f };
+    ObjectId ladder = NO_OBJECT;
+};
+struct Route {
+    std::vector<RouteLeg> legs;
+    size_t leg = 0;
+    bool planned = false;
+    Vec2 goal{ 0.0f, 0.0f };
+};
+
 // What a foundation, wall or door is made of: Wood Logs, Iron Ingots or Dragon Crystals. The tougher, the harder to break.
 enum class BuildMaterial : int { Wood = 0, Iron, Crystal, Count };
 struct Material {
     BuildMaterial kind = BuildMaterial::Wood;
 };
-// Whether this kind is made of a material picked when it is placed (a foundation, wall or door)
+// Whether this kind is made of a material picked when it is placed (a foundation, wall, door or upper floor)
 bool takesMaterial(PropKind kind);
 BuildMaterial materialOf(World& w, ObjectId prop);
 // The item a material is, and how many times tougher than wood it is
@@ -90,6 +116,14 @@ struct BuildingsChanged {
 void buildingTilesChanged(World& w, int x0, int z0, int x1, int z1);
 void refreshBuildingTiles(World& w, Terrain& t);
 
+// Every building piece by where it is, made in one pass over the props: for the checks that look at many tiles
+struct BuildingMap {
+    std::unordered_map<long long, ObjectId> foundation;   // tileKey: a foundation tile
+    std::unordered_map<long long, ObjectId> piece;        // levelKey: a wall, door or ladder on that floor
+    std::unordered_map<long long, ObjectId> floor;        // levelKey: an upper floor (level 1 and up)
+};
+BuildingMap buildingMap(World& w);
+
 enum class PieceCheck {
     Ok,
     TooSmall,
@@ -101,6 +135,7 @@ enum class PieceCheck {
     FoundationUnfinished,
     Taken,
     EdgesOpen,
+    NeedsFloor,
 };
 const char* pieceRefusalKey(PieceCheck c);
 
@@ -110,27 +145,33 @@ bool isBuildingPiece(PropKind kind);
 int materialsNeeded(World& w, ObjectId prop);
 double buildSecondsNeeded(World& w, ObjectId prop);
 bool isFinished(World& w, ObjectId prop);
-// Tiles a piece covers (a foundation's whole rectangle)
+// Tiles a piece covers
 void pieceTiles(World& w, ObjectId prop, int& x0, int& z0, int& x1, int& z1);
 
-// The foundation covering this tile, or NO_OBJECT
+// The foundation tile here, or NO_OBJECT
 ObjectId foundationAt(World& w, int x, int z);
-// A piece other than a foundation or upper floor on this tile (a wall, door or ladder), or NO_OBJECT
-ObjectId groundPieceAt(World& w, int x, int z);
-// A finished upper floor on this tile, or NO_OBJECT
-ObjectId upperFloorAt(World& w, int x, int z);
+// A wall, door or ladder on this tile and floor, or NO_OBJECT
+ObjectId groundPieceAt(World& w, int x, int z, int level = 0);
+// A finished upper floor on this tile at this level (1 and up), or NO_OBJECT
+ObjectId upperFloorAt(World& w, int x, int z, int level = 1);
+// Whether this tile has a finished floor of the faction's on this level: its foundation (level 0) or an upper floor
+bool floorSurfaceAt(World& w, int x, int z, int level, int owner);
+// The foundation tiles joined to this one, side by side: one building
+std::vector<long long> buildingTiles(const BuildingMap& map, int x, int z);
 
 PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER);
+// Lays a foundation tile on every tile of the rectangle that has none: the first laid, or NO_OBJECT
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER,
                          BuildMaterial material = BuildMaterial::Wood);
 
-PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER);
-// A ladder and an upper floor need every edge tile of the foundation to have a wall or a door
+// A piece on this floor (level) of a tile. A ladder, and an upper floor over this floor, need every edge tile of the
+// building on this floor to have a wall or a door.
+PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER, int level = 0);
 ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner = FACTION_PLAYER,
-                    BuildMaterial material = BuildMaterial::Wood);
-// Every edge tile of the foundation has a wall or door (built or not), but for none: its entrances may wait
-bool edgesClosed(World& w, ObjectId foundation);
-// A building whose ground floor has lost all its walls and doors: its upper floors fall in
+                    BuildMaterial material = BuildMaterial::Wood, int level = 0);
+// Every edge tile of the building this foundation tile is part of has a wall or door on this floor (built or not)
+bool edgesClosed(World& w, ObjectId foundation, int level = 0);
+// Upper floors with no finished wall or door under them on their building's floor below fall in
 void collapseCheck(World& w);
 
 // Material is brought to a blueprint: how much it took
@@ -140,8 +181,8 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop);
 // The terrain's closed tiles, from the finished walls
 void rebuildBlocking(World& w, Terrain& t);
 
-// A wall's shape and turn, from the walls and doors around it: 0 none around (a post), 1 end, 2 straight, 3 corner,
-// 4 tee, 5 cross. Each shape is modelled for its arms east, south, west and north, and turned by yaw.
+// A wall's shape and turn, from the walls and doors around it on its floor: 0 none around (a post), 1 end, 2 straight,
+// 3 corner, 4 tee, 5 cross. Each shape is modelled for its arms east, south, west and north, and turned by yaw.
 struct WallShape {
     int shape = 0;
     float yaw = 0.0f;
@@ -154,19 +195,34 @@ bool doorLets(World& w, ObjectId door, ObjectId u);
 // Strangers held back by a door or wall they are hostile to pick a door's lock if they can, and smash it if not
 void doorSystem(World& w, float dt);
 
-// Ladders and the upper floor
+// Whether a bed may be used by this unit: a bed on a faction's foundation is that faction's alone, unless set Public
+bool bedOpenTo(World& w, ObjectId bed, ObjectId u);
+// The faction whose building a bed stands in, or -1 for none
+int bedHouseOwner(World& w, ObjectId bed);
+
+// Ladders and the upper floors
 bool canClimbUp(World& w, ObjectId ladder);
 bool startClimb(World& w, ObjectId u, ObjectId ladder);
 bool isUpstairs(World& w, ObjectId u);
-// The unit, upstairs, heads for a spot on its floor: the nearest finished floor tile to target
-void moveUpstairs(World& w, ObjectId u, Vec2 target);
-Vec2 nearestFloorSpot(World& w, ObjectId foundation, Vec2 target);
+// The unit heads for a spot: on its own floor, or by way of ladders on another
+void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target);
+// The nearest finished floor tile's middle on this level to target, within range tiles of it (0 for anywhere)
+Vec2 nearestFloorSpot(World& w, ObjectId foundation, Vec2 target, int level = 1);
 void climbSystem(World& w, Terrain& t, float dt);
+
+// Walking anywhere, across floors: a walk on the unit's own floor, or else a Route by way of ladders. storey -1: the
+// unit's own floor if the target tile has one there, else the ground.
+void planSoloMove(World& w, Terrain& t, ObjectId e, Vec2 target);
+void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey = -1);
+// Units following a Route, and units chasing a foe on another floor
+void routeSystem(World& w, Terrain& t, float dt);
 
 // The building tasks: Auto-Haul Blueprint Supplies and Auto-Construct
 bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r);
 void buildJobSystem(World& w, Terrain& t, float dt);
-// The whole building step: jobs, climbing, doors, and the terrain's closed tiles
+// The whole building step: jobs, climbing, routes, doors, and the terrain's closed tiles
 void buildingSystem(World& w, Terrain& t, float dt);
-// Pieces on a foundation that is going: they go too, and units upstairs come down
+// Pieces on a foundation tile that is going: they go too, and units above come down
 void foundationLost(World& w, ObjectId foundation);
+// After a game is opened: older foundations split into tiles, and the floors of things above the ground worked out
+void settleBuildingsAfterLoad(World& w, Terrain& t);

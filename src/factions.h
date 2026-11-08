@@ -6,7 +6,7 @@
 class World;
 
 constexpr int FACTION_PLAYER = 0;
-constexpr int FACTION_EXILE = 6;
+constexpr int FACTION_NOMAD = 6;
 
 constexpr int REP_MIN = -100;
 constexpr int REP_MAX = 100;
@@ -37,6 +37,8 @@ int defaultReputation(int a, int b);
 int reputation(World& w, int a, int b);
 bool factionsHostile(World& w, int a, int b);
 bool factionsAllied(World& w, int a, int b);
+// Whether a faction may hold an Altar and the claim around it: all but the Nomads and the mobs (boss and wild alike)
+bool factionCanClaim(int faction);
 
 std::map<int, int> playerReputation(World& w);
 const std::vector<FactionDef>& reputationFactions();

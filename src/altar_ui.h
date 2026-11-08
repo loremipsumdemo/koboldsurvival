@@ -32,6 +32,17 @@ struct StoreFilterUi {
     ObjectId prop = NO_OBJECT;
 };
 
+// A Stall's Stock window: the store picked on the left, how the list is sorted (0 by kind, 1 fullest, 2 fullest for
+// its size), and how far each side is scrolled
+struct StallUi {
+    bool open = false;
+    ObjectId stall = NO_OBJECT;
+    ObjectId store = NO_OBJECT;
+    int sort = 0;
+    int listScroll = 0;
+    int itemScroll = 0;
+};
+
 // Behavior Groups: the list picked (a group's index, or GROUP_REF_MILITARY or GROUP_REF_CITIZEN), and whether the tasks
 // that may be added to it are shown in place of its own
 struct BehaviorGroupsUi {

@@ -846,12 +846,12 @@ void PictureCache::clear() {
 }
 
 const TextTex* Renderer::itemTexture(int item) {
-    const TextTex& t = itemPics_.get(item);
+    const TextTex& t = itemPics_.get(baseItemId(item));
     return t.tex ? &t : &pink_;
 }
 
 bool Renderer::itemPixelSolid(int item, float u, float v) {
-    const AlphaMask& m = itemPics_.mask(item);
+    const AlphaMask& m = itemPics_.mask(baseItemId(item));
     if (m.alpha.empty()) return true;
     const int x = std::clamp((int)(u * (float)m.w), 0, m.w - 1);
     const int y = std::clamp((int)(v * (float)m.h), 0, m.h - 1);

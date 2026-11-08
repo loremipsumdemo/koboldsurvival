@@ -13,7 +13,7 @@
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
     for (ObjectId e : w.view<Prop, Transform, Owner>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).claimsLand) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).claimsLand || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
         Claim c;
         c.altar = e;
         c.x = w.get<Transform>(e)->x;
@@ -121,7 +121,7 @@ void releaseProp(World& w, ObjectId prop) {
         Behaviors* b = w.get<Behaviors>(u);
         if (b->busy && b->stepProp == prop) b->busy = false;
         b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) {
-                           return isHaul(r.kind) && r.prop == prop;
+                           return ruleNamesProp(r.kind) && r.prop == prop;
                        }),
                        b->rules.end());
     }

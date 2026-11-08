@@ -1,4 +1,5 @@
 #include "app.h"
+#include "building.h"
 
 using namespace play;
 
@@ -116,6 +117,13 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && stallUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            stallUi = StallUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && groupsUi.open) {
         if (e.key.key == SDLK_ESCAPE) {
             groupsUi = BehaviorGroupsUi{};
@@ -200,6 +208,14 @@ void App::onKeyDown() {
             return;
         }
     }
+    if (screen == Screen::Playing && session.buildPick.placing() && (e.key.key == SDLK_PAGEUP || e.key.key == SDLK_PAGEDOWN)) {
+        const int before = session.buildStorey;
+        session.buildStorey = std::clamp(session.buildStorey + (e.key.key == SDLK_PAGEUP ? 1 : -1), 0, STOREY_MAX - 1);
+        if (session.buildStorey != before) playSfx(Sfx::UiClick);
+        showNotice(session.buildStorey > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildStorey) })
+                                           : lang("MISC_BUILD_ON_GROUND"), 2.0f);
+        return;
+    }
     if (screen == Screen::Playing && session.buildPick.any() && e.key.key == SDLK_ESCAPE) {
         session.buildPick = {};
         playSfx(Sfx::UiBack);
@@ -274,6 +290,17 @@ void App::onKeyDown() {
 void App::onMouseWheel() {
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
+    if (screen == Screen::Playing && stallUi.open) {
+        scrollStall(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+        return;
+    }
+    // A big store's window (a Stall's) scrolls a row at a time
+    if (screen == Screen::Playing && session.storageProp != NO_OBJECT && storageScrollMax(world) > 0 &&
+        storageLayout(world, winW, winH).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+        const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
+        session.storageScroll = std::clamp(session.storageScroll + step, 0, storageScrollMax(world));
+        return;
+    }
     if (screen == Screen::Playing && groupsUi.open) {
         scrollBehaviorGroups(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
         return;

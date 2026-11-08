@@ -1,3 +1,4 @@
+#include "commerce.h"
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -9,7 +10,7 @@ bool issueLootOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
         if (u == target || !w.has<Commandable>(u) || !w.has<Inventory>(u) || !w.get<Transform>(u) || cannotTakeOrder(w, u)) continue;
         if (w.has<Mob>(u)) continue;
         clearOrders(w, u);
-        walkSolo(w, t, u, Vec2{ tt->x, tt->z });
+        walkSolo(w, t, u, Vec2{ tt->x, tt->z }, storeyOf(w, target));
         w.add(u, LootOrder{ target });
         return true;
     }
@@ -60,7 +61,7 @@ bool lootTake(World& w, ObjectId looter, ObjectId target, bool gear, int slot, s
         if (!worn || slot < 0 || slot >= GEAR_SLOTS || worn->items[slot] == 0) return false;
         item = worn->items[slot];
         count = 1;
-        if (addToInventory(*into, item, 1) > 0) {
+        if (addToInventory(*into, reclaimStolen(w, looter, item), 1) > 0) {
             why = lang("MISC_LOOT_NO_ROOM");
             return false;
         }
@@ -70,7 +71,7 @@ bool lootTake(World& w, ObjectId looter, ObjectId target, bool gear, int slot, s
         if (!from || slot < 0 || slot >= INVENTORY_SLOTS || from->slots[slot].item == 0) return false;
         ItemStack& st = from->slots[slot];
         item = st.item;
-        const int left = addToInventory(*into, st.item, st.count);
+        const int left = addToInventory(*into, reclaimStolen(w, looter, st.item), st.count);
         count = st.count - left;
         if (count <= 0) {
             why = lang("MISC_LOOT_NO_ROOM");
@@ -79,7 +80,7 @@ bool lootTake(World& w, ObjectId looter, ObjectId target, bool gear, int slot, s
         if (left > 0) st.count = left;
         else st = ItemStack{};
     }
-    queueUnitLabel(w, looter, itemGainLabelFor(count, item));
+    queueItemMove(w, target, looter, item, count);
     queueSound(w, Sfx::Take);
     if (w.has<Mob>(target) && !w.has<Corpse>(target)) {
         if (Needs* n = w.get<Needs>(target)) {

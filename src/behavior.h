@@ -11,9 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
-                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround" };
+                                                 "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
+                                                 "AutoHaulStall", "ManStall" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -21,6 +22,8 @@ inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
 inline bool isBuildTask(BehaviorKind k) { return k == BehaviorKind::AutoSupply || k == BehaviorKind::AutoConstruct; }
 // Hauling to one prop: AutoHaul carries what it takes (to an Altar, only its fuel), AutoHaulBones carries bones to an Altar
 inline bool isHaul(BehaviorKind k) { return k == BehaviorKind::AutoHaul || k == BehaviorKind::AutoHaulBones; }
+// A task tied to one prop, which saves name: a haul's store, or the Stall a shopkeeper mans
+inline bool ruleNamesProp(BehaviorKind k) { return isHaul(k) || k == BehaviorKind::ManStall; }
 static_assert(std::size(BEHAVIOR_KEYS) == (size_t)BehaviorKind::Count);
 inline const char* behaviorKey(BehaviorKind k) { return BEHAVIOR_KEYS[std::clamp((int)k, 0, (int)BehaviorKind::Count - 1)]; }
 // -1 if no behavior has this key
@@ -49,6 +52,7 @@ enum class BehaviorWait : int {
     NoBlueprint,
     NoLogs,
     NoStockpile,
+    NoStallOrder,
 };
 
 constexpr float PATROL_PAUSE_MIN = 4.0f, PATROL_PAUSE_MAX = 12.0f;
@@ -113,23 +117,26 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::NoBlueprint: return lang("UILABEL_WAIT_NO_BLUEPRINT");
     case BehaviorWait::NoLogs: return lang("UILABEL_WAIT_NO_LOGS");
     case BehaviorWait::NoStockpile: return lang("UILABEL_WAIT_NO_STOCKPILE");
+    case BehaviorWait::NoStallOrder: return lang("UILABEL_WAIT_NO_STALL_ORDER");
     }
     return std::string();
 }
 
 inline std::vector<BehaviorRule> defaultBehaviors() {
-    BehaviorRule eat, heal, share, rest, leave, rescue;
+    BehaviorRule eat, heal, share, rest, leave, rescue, stall;
     heal.kind = BehaviorKind::Heal;
     share.kind = BehaviorKind::Share;
     rest.kind = BehaviorKind::Rest;
     leave.kind = BehaviorKind::LeaveBed;
     rescue.kind = BehaviorKind::Rescue;
-    return { eat, heal, share, rescue, rest, leave };
+    stall.kind = BehaviorKind::AutoHaulStall;   // on by default: carries out the orders picked for your Stalls
+    return { eat, heal, share, rescue, rest, leave, stall };
 }
 
 inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
-           k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround;
+           k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
+           k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -141,12 +148,12 @@ inline bool isWalkBehavior(BehaviorKind k) {
 inline bool sameBehavior(const BehaviorRule& a, const BehaviorRule& b) {
     if (a.kind != b.kind) return false;
     if (a.kind == BehaviorKind::AutoHarvest || a.kind == BehaviorKind::Group) return a.propKind == b.propKind;
-    if (isHaul(a.kind)) return a.prop == b.prop;
+    if (ruleNamesProp(a.kind)) return a.prop == b.prop;
     return true;
 }
 
 inline std::string behaviorPropName(const BehaviorRule& r) {
-    if (!isAutomated(r.kind) || r.propKind < 0 || r.propKind >= propKindCount()) return std::string();
+    if (!isAutomated(r.kind) || r.kind == BehaviorKind::AutoHaulStall || r.propKind < 0 || r.propKind >= propKindCount()) return std::string();
     return lang(propInfo((PropKind)r.propKind).nameKey);
 }
 
@@ -178,6 +185,8 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP", { groupRefName(r.propKind) });
     case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP");
     case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND");
+    case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL");
+    case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL", { propName });
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -204,6 +213,8 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::Group: return langf("UILABEL_BEHAVIOR_GROUP_TIP", { groupRefName(r.propKind) });
     case BehaviorKind::Sleep: return lang("UILABEL_BEHAVIOR_SLEEP_TIP");
     case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP");
+    case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP");
+    case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL_TIP", { propName });
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -218,13 +229,13 @@ inline BehaviorRule behaviorFromFields(int on, int kind, int propKind, int perce
     BehaviorRule r;
     r.on = on != 0;
     r.kind = (BehaviorKind)std::clamp(kind, 0, (int)BehaviorKind::Count - 1);
-    r.propKind = isAutomated(r.kind) || r.kind == BehaviorKind::Group ? propKind : -1;
+    r.propKind = (isAutomated(r.kind) && r.kind != BehaviorKind::AutoHaulStall) || r.kind == BehaviorKind::Group ? propKind : -1;
     const PercentRange range = percentRange(r.kind);
     r.percent = hasPercent(r.kind) ? std::clamp(percent, range.lo, range.hi) : BEHAVIOR_NEED_PERCENT;
     return r;
 }
 
-inline std::vector<BehaviorRule> exileBehaviors() {
+inline std::vector<BehaviorRule> nomadBehaviors() {
     BehaviorRule eat, heal, roam;
     heal.kind = BehaviorKind::Heal;
     roam.kind = BehaviorKind::Roam;
@@ -247,7 +258,9 @@ inline TaskCategory taskCategory(BehaviorKind k) {
     case BehaviorKind::Patrol: case BehaviorKind::Roam: case BehaviorKind::PatrolSpawn: return TaskCategory::Movement;
     case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: return TaskCategory::Building;
     case BehaviorKind::AutoHarvest: return TaskCategory::Harvesting;
-    case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: return TaskCategory::Hauling;
+    case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: case BehaviorKind::AutoHaulStall:
+        return TaskCategory::Hauling;
+    case BehaviorKind::ManStall: return TaskCategory::Movement;
     default: return TaskCategory::Needs;
     }
 }
@@ -299,7 +312,8 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     std::vector<BehaviorKind> out;
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
-                BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::Patrol, BehaviorKind::Roam };
+                BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::AutoHaulStall,
+                BehaviorKind::Patrol, BehaviorKind::Roam };
         return out;
     }
     // Patrol Spawn (keeping near where it appeared) is for wild mobs

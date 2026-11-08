@@ -41,6 +41,15 @@ const std::vector<ItemDef>& itemDatabase();
 
 const ItemDef* findItem(int id);
 
+// A stolen item is the same item marked with the faction it was taken from, in the high bits of its number, so it
+// stays marked wherever it goes. findItem and the item's name and picture see through the mark.
+inline constexpr int ITEM_STOLEN_SHIFT = 20;
+inline constexpr int ITEM_BASE_MASK = (1 << ITEM_STOLEN_SHIFT) - 1;
+inline int baseItemId(int id) { return id > 0 ? (id & ITEM_BASE_MASK) : id; }
+inline int stolenFromOf(int id) { return id > 0 ? (id >> ITEM_STOLEN_SHIFT) - 1 : -1; }
+inline bool isStolen(int id) { return stolenFromOf(id) >= 0; }
+inline int markStolen(int id, int faction) { return id > 0 ? (baseItemId(id) | ((faction + 1) << ITEM_STOLEN_SHIFT)) : id; }
+
 // The items the game asks for by name. Each is the tag of exactly one item in data/itemdb.txt.
 inline constexpr const char* ITEM_TAG_COMMON_BONES = "common_bones";
 inline constexpr const char* ITEM_TAG_GOLD_COIN = "gold_coin";

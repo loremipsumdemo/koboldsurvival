@@ -92,10 +92,10 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
     std::vector<ObjectId> fighters, walkers;
     bool fightersListed = false, walkersListed = false;
     for (ObjectId u : w.view<Behaviors, Transform, Faction>()) {
-        if (w.get<Faction>(u)->id != FACTION_EXILE || w.has<Mob>(u)) continue;
+        if (w.get<Faction>(u)->id != FACTION_NOMAD || w.has<Mob>(u)) continue;
         Behaviors* b = w.get<Behaviors>(u);
         const Needs* n = w.get<Needs>(u);
-        const bool low = n && n->maxHp > 0 && n->hp * 100 <= n->maxHp * EXILE_FLEE_PERCENT;
+        const bool low = n && n->maxHp > 0 && n->hp * 100 <= n->maxHp * NOMAD_FLEE_PERCENT;
         b->passive = low;
         if (!low) continue;
         if (Combat* c = w.get<Combat>(u)) c->target = NO_OBJECT;

@@ -228,5 +228,6 @@ struct BuildPreview {
         int tone = 0;
     };
     std::vector<Mark> marks;
+    float lift = 0.0f;   // building on an upper floor: how far above the ground the preview is drawn
 };
 

@@ -58,6 +58,7 @@ set(SIM_SOURCES
     src/simulation.cpp
     src/game_log.cpp
     src/world_labels.cpp
+    src/commerce.cpp
     src/items.cpp
     src/language.cpp
     src/fontlist.cpp
@@ -142,6 +143,7 @@ add_executable(koboldsurvival
     src/app_altar.cpp
     src/app_behavior_groups.cpp
     src/app_store_filter.cpp
+    src/app_stall.cpp
     src/app_map_pick.cpp
     src/app_building.cpp
     src/altar_ui.cpp

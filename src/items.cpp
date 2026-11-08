@@ -187,6 +187,7 @@ int itemTagged(const char* tag) {
 }
 
 const ItemDef* findItem(int id) {
+    id = baseItemId(id);
     return id > 0 && (size_t)id < itemIndex.size() ? itemIndex[(size_t)id] : nullptr;
 }
 
@@ -220,5 +221,6 @@ std::string itemDisplayDescription(const ItemDef& d) {
 
 std::string itemNameOf(int item) {
     const ItemDef* d = findItem(item);
-    return d ? itemDisplayName(*d) : std::string(lang("MISC_UNKNOWN_ITEM"));
+    if (!d) return std::string(lang("MISC_UNKNOWN_ITEM"));
+    return isStolen(item) ? langf("MISC_ITEM_STOLEN_NAME", { itemDisplayName(*d) }) : itemDisplayName(*d);
 }

@@ -45,5 +45,7 @@ inline float flatGap(World& w, ObjectId a, ObjectId b) {
     const Transform* ta = w.get<Transform>(a);
     const Transform* tb = w.get<Transform>(b);
     if (!ta || !tb) return 1e9f;
+    // On different floors of a building, nothing is in reach of the other
+    if (storeyOf(w, a) != storeyOf(w, b)) return 1e9f;
     return std::hypot(ta->x - tb->x, ta->z - tb->z);
 }

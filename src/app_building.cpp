@@ -68,9 +68,15 @@ void App::drawMaterialAsk() {
 // tiles dragged over are the ones seen at that height
 std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
     auto hit = pickGround(cam, terrain, mx, my, winW, winH);
-    if (!hit || !session.buildPick.placing() || !propInfo(session.buildPick.kind).upperFloor) return hit;
+    if (!hit || !session.buildPick.placing()) return hit;
+    // Building on an upper floor: the tiles at that floor's height; an upper floor goes over the floor being built on
+    const PropInfo& info = propInfo(session.buildPick.kind);
+    float lift = 0.0f;
+    if (info.upperFloor) lift = (session.buildStorey + 1) * FLOOR_HEIGHT;
+    else if (!info.foundation && session.buildStorey > 0) lift = storeyBaseHeight(session.buildStorey);
+    if (lift <= 0.0f) return hit;
     for (int i = 0; i < 2; ++i) {
-        const auto up = pickPlane(cam, mx, my, winW, winH, terrain.heightAt(hit->first, hit->second) + FLOOR_HEIGHT);
+        const auto up = pickPlane(cam, mx, my, winW, winH, terrain.heightAt(hit->first, hit->second) + lift);
         if (!up) break;
         hit = up;
     }
@@ -81,23 +87,20 @@ std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
 // tiles that will get one (green) or can't (red)
 void App::markFloorTiles(BuildPreview& bp, int tx, int tz) {
     const PropKind kind = session.buildPick.kind;
-    std::unordered_set<long long> taken;
-    for (ObjectId e : world.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(world.get<Prop>(e)->kind);
-        if (!info.upperFloor && !info.ladder) continue;
-        const Transform* tr = world.get<Transform>(e);
-        taken.insert(tileKey(tileOf(tr->x), tileOf(tr->z)));
-    }
+    const int level = session.buildStorey;
+    const float above = (level + 1) * FLOOR_HEIGHT;
+    // Open tiles near the pointer: those of your walled buildings that may take a floor over this one
     std::unordered_set<long long> open;
     for (ObjectId fe : world.view<Foundation>()) {
         const Owner* fo = world.get<Owner>(fe);
-        if (world.has<Blueprint>(fe) || !fo || fo->faction != FACTION_PLAYER || !edgesClosed(world, fe)) continue;
+        if (world.has<Blueprint>(fe) || !fo || fo->faction != FACTION_PLAYER) continue;
         const Foundation* f = world.get<Foundation>(fe);
+        if (std::abs(f->x0 - tx) > 24 || std::abs(f->z0 - tz) > 24) continue;
         for (int z = f->z0; z < f->z0 + f->h; ++z) {
             for (int x = f->x0; x < f->x0 + f->w; ++x) {
-                if (taken.count(tileKey(x, z))) continue;
+                if (checkPiece(world, kind, x, z, FACTION_PLAYER, level) != PieceCheck::Ok) continue;
                 open.insert(tileKey(x, z));
-                bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + FLOOR_HEIGHT + 0.16f, 0 });
+                bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + above + 0.16f, 0 });
             }
         }
     }
@@ -105,13 +108,24 @@ void App::markFloorTiles(BuildPreview& bp, int tx, int tz) {
     const int z0 = session.floorDrag ? std::min(session.dragTileZ, tz) : tz, z1 = session.floorDrag ? std::max(session.dragTileZ, tz) : tz;
     for (int z = z0; z <= z1; ++z) {
         for (int x = x0; x <= x1; ++x) {
-            const bool ok = open.count(tileKey(x, z)) && checkPiece(world, kind, x, z) == PieceCheck::Ok;
-            bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + FLOOR_HEIGHT + 0.18f, ok ? 1 : 2 });
+            const bool ok = open.count(tileKey(x, z)) && checkPiece(world, kind, x, z, FACTION_PLAYER, level) == PieceCheck::Ok;
+            bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + above + 0.18f, ok ? 1 : 2 });
         }
     }
 }
 
 void App::drawFoundationSize() {
+    // Building on an upper floor: which one, beside the cursor
+    if (session.buildPick.placing() && !session.foundationDrag && !session.floorDrag && !propInfo(session.buildPick.kind).foundation) {
+        const float s = uiScaleFor((float)winH);
+        const std::string text = session.buildStorey > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildStorey) })
+                                                         : lang("MISC_BUILD_ON_GROUND");
+        const float pad = 6.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
+        const Rect box{ std::floor((float)mouseX + 18.0f * s), std::floor((float)mouseY + 18.0f * s), tw + 2.0f * pad, th + 2.0f * pad };
+        renderer.drawRect(box, RGBA{ 0.0f, 0.0f, 0.0f, 0.65f });
+        renderer.drawListText(text, box.x + pad, box.y + pad, RGBA{ 0.75f, 0.85f, 1.0f, 1.0f });
+        return;
+    }
     // While a foundation or upper floors are dragged out: the size beside the cursor, as columns x rows
     if ((!session.foundationDrag && !session.floorDrag) || !session.buildPick.placing()) return;
     const auto hit = buildPickAt((float)mouseX, (float)mouseY);
@@ -143,9 +157,9 @@ bool App::buildPressAt(float gx, float gz) {
         return true;
     }
     if (info.onFoundation) {
-        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz);
+        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildStorey);
         if (why == PieceCheck::Ok) {
-            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial);
+            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildStorey);
             playSfx(Sfx::UiClick);
         } else {
             refuse(lang(pieceRefusalKey(why)));
@@ -171,12 +185,12 @@ bool App::buildRelease() {
         PieceCheck why = PieceCheck::Ok;
         for (int z = std::min(session.dragTileZ, z1); z <= std::max(session.dragTileZ, z1); ++z) {
             for (int x = std::min(session.dragTileX, x1); x <= std::max(session.dragTileX, x1); ++x) {
-                const PieceCheck c = checkPiece(world, session.buildPick.kind, x, z);
+                const PieceCheck c = checkPiece(world, session.buildPick.kind, x, z, FACTION_PLAYER, session.buildStorey);
                 if (c != PieceCheck::Ok) {
                     why = c;
                     continue;
                 }
-                placePiece(world, terrain, session.buildPick.kind, x, z, FACTION_PLAYER, (BuildMaterial)session.buildMaterial);
+                placePiece(world, terrain, session.buildPick.kind, x, z, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildStorey);
                 ++laid;
             }
         }
@@ -216,8 +230,8 @@ void App::updateBuildPaint() {
     if (tileKey(tx, tz) == session.lastPaintTile) return;
     session.lastPaintTile = tileKey(tx, tz);
     // Dragging lays the piece on each tile it may go on, and passes over the rest
-    if (checkPiece(world, session.buildPick.kind, tx, tz) == PieceCheck::Ok) {
-        placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial);
+    if (checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildStorey) == PieceCheck::Ok) {
+        placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildStorey);
     }
 }
 
@@ -245,7 +259,8 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     if (info.foundation) {
         bp.valid = foundationAt(world, tx, tz) == NO_OBJECT && terrain.walkable(tx, tz);
     } else {
-        bp.valid = checkPiece(world, session.buildPick.kind, tx, tz) == PieceCheck::Ok;
+        bp.lift = storeyBaseHeight(session.buildStorey);
+        bp.valid = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildStorey) == PieceCheck::Ok;
     }
     return true;
 }

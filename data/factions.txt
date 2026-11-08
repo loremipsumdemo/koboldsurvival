@@ -19,8 +19,8 @@ faction	2	FACTION_RED	#ff4d4d	30
 faction	3	FACTION_GREEN	#5ccf5c	10
 faction	4	FACTION_BLUE	#4d7dff	10
 faction	5	FACTION_YELLOW	#f5d43a	10
-# The Exiles: units disbanded from your squad. No camp, and no reputation: neutral to everyone, always (src/factions.h).
-faction	6	FACTION_EXILE	#9a9a9a	0
+# The Nomads: units disbanded from your squad, and the Wandering Trader. No camp, and no reputation: neutral to everyone, always (src/factions.h).
+faction	6	FACTION_NOMAD	#9a9a9a	0
 
 relation	0	2	-100
 relation	2	3	-100

@@ -43,6 +43,9 @@ void App::drawWorldOverlays() {
         }
     }
     renderer.drawFloatingNumbers(floatingNumbers, cam, winW, winH);
+    for (Puff& p : puffs) p.age += dt;
+    puffs.erase(std::remove_if(puffs.begin(), puffs.end(), [](const Puff& p) { return p.age >= PUFF_LIFE; }), puffs.end());
+    renderer.drawPuffs(puffs, cam, winW, winH);
     for (TradeLabel& l : tradeLabels) l.age += dt;
     tradeLabels.erase(std::remove_if(tradeLabels.begin(), tradeLabels.end(),
                                      [](const TradeLabel& l) { return l.age >= TRADE_LABEL_LIFE; }),
@@ -140,10 +143,18 @@ void App::drawStoragePanel() {
         } else {
             hint = lang("UILABEL_STORAGE_HINT");
         }
+        // A store with a capacity, or more slots than fit: how full it is, and that it scrolls
+        if (st && (st->capacity > 0 || storageScrollMax(world) > 0)) {
+            const int cap = st->capacity > 0 ? st->capacity : 0;
+            hint = langf("UILABEL_STORE_HOLDS", { std::to_string(storedCount(*st)), cap > 0 ? std::to_string(cap) : std::string("-") }) + " " + hint;
+            if (storageScrollMax(world) > 0) hint += " " + lang("UILABEL_STORE_SCROLL");
+        }
+        session.storageScroll = std::clamp(session.storageScroll, 0, storageScrollMax(world));
         const Lock* ownLock = ownedLockOf(world, session.storageProp) ? world.get<Lock>(session.storageProp) : nullptr;
         renderer.drawStorage(storageLayout(world, winW, winH), propNameOf(world, session.storageProp), hint, st,
                              world.get<Output>(session.storageProp), status, session.storageDrag, mouseX, mouseY,
-                             ownLock ? lang(ownLock->locked ? "UILABEL_UNLOCK" : "UILABEL_LOCK") : std::string());
+                             ownLock ? lang(ownLock->locked ? "UILABEL_UNLOCK" : "UILABEL_LOCK") : std::string(),
+                             session.storageScroll);
         if (const ItemStack* dragged = storageSlot(world, session.storageDrag); dragged && dragged->item != 0) {
             renderer.drawDraggedStack(mouseX, mouseY, dragged->item, dragged->count);
         }
@@ -284,6 +295,7 @@ void App::drawPlayingScreen() {
     drawGhosts();
     drawBehaviorGroups();
     drawStoreFilter();
+    drawStall();
     drawRename();
     drawFoundationSize();
     drawMaterialAsk();

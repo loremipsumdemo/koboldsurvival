@@ -1,6 +1,7 @@
 #include "building.h"
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <unordered_set>
 #include "airship.h"
 #include "experience.h"
@@ -9,11 +10,14 @@
 #include "inventory.h"
 #include "items.h"
 #include "systems_internal.h"
+#include "world_labels.h"
 
 using namespace systems_detail;
 
 namespace {
 int tileOf(float v) { return (int)std::floor(v); }
+int keyX(long long k) { return (int)(k % 1000003LL); }
+int keyZ(long long k) { return (int)(k / 1000003LL); }
 
 const PropInfo* infoOf(World& w, ObjectId e) {
     const Prop* p = w.get<Prop>(e);
@@ -30,31 +34,21 @@ double carpentryPace(World& w, ObjectId u) {
     return 2.0 / workHoursFor(levelOf(statsOf(w, u), StatId::Carpentry));
 }
 
-// Takes up to count of item out of the slots: how many it took
-int takeItems(ItemStack* slots, int slotCount, int item, int count) {
-    int took = 0;
-    for (int i = 0; i < slotCount && took < count; ++i) {
-        ItemStack& s = slots[i];
-        if (s.item != item || s.count <= 0) continue;
-        const int n = std::min(s.count, count - took);
-        s.count -= n;
-        took += n;
-        if (s.count <= 0) s = ItemStack{};
-    }
-    return took;
+// The floor a builder works a piece from: an upper floor is built from the floor under it
+int workStorey(World& w, ObjectId prop) {
+    const PropInfo* info = infoOf(w, prop);
+    const int level = storeyOf(w, prop);
+    return info && info->upperFloor ? std::max(0, level - 1) : level;
 }
 
-int countItems(const ItemStack* slots, int slotCount, int item) {
-    int n = 0;
-    for (int i = 0; i < slotCount; ++i) n += slots[i].item == item ? slots[i].count : 0;
-    return n;
-}
-
-// How far u is from the piece: from a foundation's rectangle, or the edge of a piece's tile
+// How far u is from the piece's tile, or very far if it is on another floor than the piece is worked from
 float gapTo(World& w, ObjectId u, ObjectId prop) {
     const Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
     if (!ut || !pt) return 1e9f;
+    const int su = storeyOf(w, u);
+    const PropInfo* info = infoOf(w, prop);
+    if (su != workStorey(w, prop) && !(info && info->upperFloor && su == storeyOf(w, prop))) return 1e9f;
     if (const Foundation* f = w.get<Foundation>(prop)) {
         const float cx = std::clamp(ut->x, (float)f->x0, (float)(f->x0 + f->w));
         const float cz = std::clamp(ut->z, (float)f->z0, (float)(f->z0 + f->h));
@@ -63,7 +57,7 @@ float gapTo(World& w, ObjectId u, ObjectId prop) {
     return std::max(0.0f, std::hypot(ut->x - pt->x, ut->z - pt->z) - 0.5f);
 }
 
-// Where to walk to reach the piece: a foundation's nearest point, or the piece itself
+// Where to walk to reach the piece
 Vec2 approachOf(World& w, ObjectId u, ObjectId prop) {
     const Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
@@ -75,6 +69,7 @@ Vec2 approachOf(World& w, ObjectId u, ObjectId prop) {
 }
 
 bool walking(World& w, ObjectId u) {
+    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
     const SoloMove* so = w.get<SoloMove>(u);
     return so && so->next < so->waypoints.size();
 }
@@ -84,6 +79,223 @@ BehaviorRule* ruleOf(Behaviors& b, BehaviorKind kind) {
         if (r.kind == kind) return &r;
     }
     return nullptr;
+}
+
+ObjectId mapGet(const std::unordered_map<long long, ObjectId>& m, long long key) {
+    const auto it = m.find(key);
+    return it == m.end() ? NO_OBJECT : it->second;
+}
+
+bool isWallOrDoor(World& w, ObjectId p) {
+    const PropInfo* info = p != NO_OBJECT ? infoOf(w, p) : nullptr;
+    return info && (info->wallRule || info->door);
+}
+
+// A finished floor of owner's on this tile and level: the foundation for level 0, else an upper floor
+bool mapFloorSurface(World& w, const BuildingMap& m, int x, int z, int level, int owner) {
+    const ObjectId f = level <= 0 ? mapGet(m.foundation, tileKey(x, z)) : mapGet(m.floor, levelKey(x, z, level));
+    return f != NO_OBJECT && !w.has<Blueprint>(f) && (owner < 0 || ownerOf(w, f) == owner);
+}
+
+// Whether a unit on this floor can stand on this tile: a finished upper floor with no finished wall on it
+bool floorWalkable(World& w, const BuildingMap& m, int x, int z, int level) {
+    if (!mapFloorSurface(w, m, x, z, level, -1)) return false;
+    const ObjectId p = mapGet(m.piece, levelKey(x, z, level));
+    if (p == NO_OBJECT || w.has<Blueprint>(p)) return true;
+    const PropInfo* info = infoOf(w, p);
+    return !(info && info->wallRule);
+}
+
+bool edgesClosedMap(World& w, const BuildingMap& m, const std::vector<long long>& tiles, int level) {
+    if (tiles.empty()) return false;
+    const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+    for (long long k : tiles) {
+        const int x = keyX(k), z = keyZ(k);
+        const bool edge = !in.count(tileKey(x + 1, z)) || !in.count(tileKey(x - 1, z)) || !in.count(tileKey(x, z + 1)) ||
+                          !in.count(tileKey(x, z - 1));
+        if (edge && !isWallOrDoor(w, mapGet(m.piece, levelKey(x, z, level)))) return false;
+    }
+    return true;
+}
+
+// Where a unit coming up a ladder steps off: the nearest floor tile beside it on the floor above
+bool ladderTop(World& w, const BuildingMap& m, ObjectId ladder, Vec2& out) {
+    const Transform* lt = w.get<Transform>(ladder);
+    if (!lt) return false;
+    const int x = tileOf(lt->x), z = tileOf(lt->z), up = storeyOf(w, ladder) + 1;
+    float best = -1.0f;
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            if ((dx == 0 && dz == 0) || !floorWalkable(w, m, x + dx, z + dz, up)) continue;
+            const float d = (float)(dx * dx + dz * dz);
+            if (best < 0.0f || d < best) {
+                best = d;
+                out = Vec2{ x + dx + 0.5f, z + dz + 0.5f };
+            }
+        }
+    }
+    return best >= 0.0f;
+}
+
+// A walk on one upper floor, tile to tile: empty if the goal can't be reached
+std::vector<Vec2> floorPath(World& w, const BuildingMap& m, int level, Vec2 from, Vec2 to) {
+    const int sx = tileOf(from.x), sz = tileOf(from.z), gx = tileOf(to.x), gz = tileOf(to.z);
+    if (!floorWalkable(w, m, gx, gz, level)) return {};
+    if (sx == gx && sz == gz) return { to };
+    std::unordered_map<long long, long long> parent;
+    std::deque<long long> open;
+    const long long start = tileKey(sx, sz), goal = tileKey(gx, gz);
+    parent[start] = start;
+    open.push_back(start);
+    bool found = false;
+    while (!open.empty() && parent.size() < 8192) {
+        const long long k = open.front();
+        open.pop_front();
+        if (k == goal) {
+            found = true;
+            break;
+        }
+        const int x = keyX(k), z = keyZ(k);
+        for (int dz = -1; dz <= 1; ++dz) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                if (dx == 0 && dz == 0) continue;
+                const int nx = x + dx, nz = z + dz;
+                if (!floorWalkable(w, m, nx, nz, level)) continue;
+                if (dx != 0 && dz != 0 && (!floorWalkable(w, m, x + dx, z, level) || !floorWalkable(w, m, x, z + dz, level))) continue;
+                const long long nk = tileKey(nx, nz);
+                if (parent.count(nk)) continue;
+                parent[nk] = k;
+                open.push_back(nk);
+            }
+        }
+    }
+    if (!found) return {};
+    std::vector<Vec2> tiles;
+    for (long long k = goal; k != start; k = parent[k]) tiles.push_back(Vec2{ keyX(k) + 0.5f, keyZ(k) + 0.5f });
+    std::reverse(tiles.begin(), tiles.end());
+    // Keep only the turns, and end on the goal itself
+    std::vector<Vec2> out;
+    for (size_t i = 0; i < tiles.size(); ++i) {
+        if (i + 1 < tiles.size() && i > 0) {
+            const Vec2 a = tiles[i - 1], b = tiles[i], c = tiles[i + 1];
+            if (std::fabs((b.x - a.x) - (c.x - b.x)) < 1e-3f && std::fabs((b.z - a.z) - (c.z - b.z)) < 1e-3f) continue;
+        }
+        out.push_back(tiles[i]);
+    }
+    if (!out.empty()) out.back() = to;
+    return out;
+}
+
+// Which part of a floor a tile is in: tiles that can be walked between share a number
+std::unordered_map<long long, int> floorParts(World& w, const BuildingMap& m, int level) {
+    std::unordered_map<long long, int> part;
+    int next = 1;
+    for (const auto& [lk, e] : m.floor) {
+        if ((int)(lk % 16) != level) continue;
+        const long long tk = lk / 16;
+        if (part.count(tk) || !floorWalkable(w, m, keyX(tk), keyZ(tk), level)) continue;
+        std::deque<long long> open{ tk };
+        part[tk] = next;
+        while (!open.empty()) {
+            const long long k = open.front();
+            open.pop_front();
+            const int x = keyX(k), z = keyZ(k);
+            const int dxs[4] = { 1, -1, 0, 0 }, dzs[4] = { 0, 0, 1, -1 };
+            for (int i = 0; i < 4; ++i) {
+                const long long nk = tileKey(x + dxs[i], z + dzs[i]);
+                if (part.count(nk) || !floorWalkable(w, m, x + dxs[i], z + dzs[i], level)) continue;
+                part[nk] = next;
+                open.push_back(nk);
+            }
+        }
+        ++next;
+    }
+    return part;
+}
+
+// Plans a walk from the unit to goal on goalStorey by way of ladders. False if there is no way.
+bool planRoute(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    const BuildingMap m = buildingMap(w);
+    struct Node {
+        int level;
+        Vec2 p;
+        ObjectId ladder;
+    };
+    // 0 the start, 1 the goal, then each usable ladder's foot and head, side by side
+    std::vector<Node> nodes = { { storeyOf(w, u), Vec2{ ut->x, ut->z }, NO_OBJECT }, { goalStorey, goal, NO_OBJECT } };
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (!info.ladder || w.has<Blueprint>(e)) continue;
+        Vec2 top;
+        if (!ladderTop(w, m, e, top)) continue;
+        const Transform* lt = w.get<Transform>(e);
+        const int level = storeyOf(w, e);
+        nodes.push_back({ level, Vec2{ lt->x, lt->z }, e });
+        nodes.push_back({ level + 1, top, e });
+    }
+    std::unordered_map<int, std::unordered_map<long long, int>> parts;
+    auto partOf = [&](const Node& n) -> long long {
+        const int x = tileOf(n.p.x), z = tileOf(n.p.z);
+        if (n.level == 0) return t.areaAt(x, z);
+        auto it = parts.find(n.level);
+        if (it == parts.end()) it = parts.emplace(n.level, floorParts(w, m, n.level)).first;
+        const auto p = it->second.find(tileKey(x, z));
+        return p == it->second.end() ? 0 : p->second;
+    };
+    const size_t n = nodes.size();
+    std::vector<long long> part(n);
+    for (size_t i = 0; i < n; ++i) part[i] = partOf(nodes[i]);
+    auto climbPair = [&](size_t a, size_t b) { return a >= 2 && b >= 2 && a / 2 == b / 2 && a != b; };
+    auto linked = [&](size_t a, size_t b, float& cost) {
+        if (climbPair(a, b)) {
+            cost = CLIMB_SECONDS * 2.0f;
+            return true;
+        }
+        if (nodes[a].level != nodes[b].level) return false;
+        const bool sameTile = tileOf(nodes[a].p.x) == tileOf(nodes[b].p.x) && tileOf(nodes[a].p.z) == tileOf(nodes[b].p.z);
+        if (!sameTile && (part[a] == 0 || part[a] != part[b])) return false;
+        cost = std::hypot(nodes[a].p.x - nodes[b].p.x, nodes[a].p.z - nodes[b].p.z);
+        return true;
+    };
+    std::vector<float> dist(n, 1e30f);
+    std::vector<int> prev(n, -1);
+    std::vector<char> done(n, 0);
+    dist[0] = 0.0f;
+    for (size_t round = 0; round < n; ++round) {
+        size_t best = n;
+        for (size_t i = 0; i < n; ++i) {
+            if (!done[i] && dist[i] < 1e29f && (best == n || dist[i] < dist[best])) best = i;
+        }
+        if (best == n || best == 1) break;
+        done[best] = 1;
+        for (size_t j = 0; j < n; ++j) {
+            float cost = 0.0f;
+            if (done[j] || !linked(best, j, cost)) continue;
+            if (dist[best] + cost < dist[j]) {
+                dist[j] = dist[best] + cost;
+                prev[j] = (int)best;
+            }
+        }
+    }
+    if (prev[1] < 0) return false;
+    std::vector<size_t> path;
+    for (int k = 1; k >= 0; k = prev[(size_t)k]) path.push_back((size_t)k);
+    std::reverse(path.begin(), path.end());
+    out = Route{};
+    out.goal = goal;
+    for (size_t i = 0; i + 1 < path.size(); ++i) {
+        const Node& a = nodes[path[i]];
+        const Node& b = nodes[path[i + 1]];
+        if (climbPair(path[i], path[i + 1])) {
+            if (out.legs.empty() || out.legs.back().ladder != NO_OBJECT) out.legs.push_back(RouteLeg{ a.level, a.p, NO_OBJECT });
+            out.legs.back().ladder = a.ladder;
+        } else {
+            out.legs.push_back(RouteLeg{ a.level, b.p, NO_OBJECT });
+        }
+    }
+    return !out.legs.empty();
 }
 }
 
@@ -98,6 +310,7 @@ const char* pieceRefusalKey(PieceCheck c) {
     case PieceCheck::FoundationUnfinished: return "MISC_BUILD_FOUNDATION_UNFINISHED";
     case PieceCheck::Taken: return "MISC_BUILD_TILE_TAKEN";
     case PieceCheck::EdgesOpen: return "MISC_BUILD_EDGES_OPEN";
+    case PieceCheck::NeedsFloor: return "MISC_BUILD_NEEDS_FLOOR";
     case PieceCheck::Ok: break;
     }
     return "";
@@ -110,7 +323,7 @@ int woodLogItem() {
 
 bool takesMaterial(PropKind kind) {
     const PropInfo& i = propInfo(kind);
-    return i.foundation || i.wallRule || i.door;
+    return i.foundation || i.wallRule || i.door || i.upperFloor;
 }
 
 BuildMaterial materialOf(World& w, ObjectId prop) {
@@ -140,10 +353,13 @@ bool isBuildingPiece(PropKind kind) {
     return i.foundation || i.onFoundation;
 }
 
+// One unit of material per tile: a foundation tile or an upper floor tile takes one
 int materialsNeeded(World& w, ObjectId prop) {
     const PropInfo* info = infoOf(w, prop);
     if (!info || info->materials <= 0.0) return 0;
-    return std::max(1, (int)std::ceil(info->materials - 1e-9));
+    double tiles = 1.0;
+    if (const Foundation* f = w.get<Foundation>(prop)) tiles = (double)f->w * (double)f->h;
+    return std::max(1, (int)std::ceil(info->materials * tiles - 1e-9));
 }
 
 double buildSecondsNeeded(World& w, ObjectId prop) {
@@ -169,6 +385,25 @@ void pieceTiles(World& w, ObjectId prop, int& x0, int& z0, int& x1, int& z1) {
     z0 = z1 = tr ? tileOf(tr->z) : 0;
 }
 
+BuildingMap buildingMap(World& w) {
+    BuildingMap m;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            for (int z = f->z0; z < f->z0 + f->h; ++z) {
+                for (int x = f->x0; x < f->x0 + f->w; ++x) m.foundation[tileKey(x, z)] = e;
+            }
+            continue;
+        }
+        if (!info.onFoundation) continue;
+        const Transform* tr = w.get<Transform>(e);
+        const long long k = levelKey(tileOf(tr->x), tileOf(tr->z), storeyOf(w, e));
+        if (info.upperFloor) m.floor[k] = e;
+        else m.piece[k] = e;
+    }
+    return m;
+}
+
 ObjectId foundationAt(World& w, int x, int z) {
     for (ObjectId e : w.view<Foundation>()) {
         if (w.get<Foundation>(e)->contains(x, z)) return e;
@@ -176,142 +411,212 @@ ObjectId foundationAt(World& w, int x, int z) {
     return NO_OBJECT;
 }
 
-ObjectId groundPieceAt(World& w, int x, int z) {
+ObjectId groundPieceAt(World& w, int x, int z, int level) {
     for (ObjectId e : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (!info.onFoundation || info.upperFloor) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (tileOf(tr->x) == x && tileOf(tr->z) == z) return e;
+        if (tileOf(tr->x) == x && tileOf(tr->z) == z && storeyOf(w, e) == level) return e;
     }
     return NO_OBJECT;
 }
 
-namespace {
-ObjectId floorPieceAt(World& w, int x, int z, bool finishedOnly) {
+ObjectId upperFloorAt(World& w, int x, int z, int level) {
     for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).upperFloor || (finishedOnly && w.has<Blueprint>(e))) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).upperFloor || w.has<Blueprint>(e)) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (tileOf(tr->x) == x && tileOf(tr->z) == z) return e;
+        if (tileOf(tr->x) == x && tileOf(tr->z) == z && storeyOf(w, e) == level) return e;
     }
     return NO_OBJECT;
 }
+
+bool floorSurfaceAt(World& w, int x, int z, int level, int owner) {
+    const ObjectId f = level <= 0 ? foundationAt(w, x, z) : upperFloorAt(w, x, z, level);
+    return f != NO_OBJECT && !w.has<Blueprint>(f) && (owner < 0 || ownerOf(w, f) == owner);
 }
 
-ObjectId upperFloorAt(World& w, int x, int z) { return floorPieceAt(w, x, z, true); }
+std::vector<long long> buildingTiles(const BuildingMap& map, int x, int z) {
+    std::vector<long long> out;
+    const long long start = tileKey(x, z);
+    if (!map.foundation.count(start)) return out;
+    std::unordered_set<long long> seen{ start };
+    std::deque<long long> open{ start };
+    while (!open.empty()) {
+        const long long k = open.front();
+        open.pop_front();
+        out.push_back(k);
+        const int kx = keyX(k), kz = keyZ(k);
+        const long long next[4] = { tileKey(kx + 1, kz), tileKey(kx - 1, kz), tileKey(kx, kz + 1), tileKey(kx, kz - 1) };
+        for (long long nk : next) {
+            if (seen.count(nk) || !map.foundation.count(nk)) continue;
+            seen.insert(nk);
+            open.push_back(nk);
+        }
+    }
+    return out;
+}
 
 PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner) {
     if (x1 < x0) std::swap(x0, x1);
     if (z1 < z0) std::swap(z0, z1);
     const int fw = x1 - x0 + 1, fh = z1 - z0 + 1;
-    if (fw < FOUNDATION_MIN || fh < FOUNDATION_MIN) return PieceCheck::TooSmall;
     if (fw > FOUNDATION_MAX || fh > FOUNDATION_MAX) return PieceCheck::TooBig;
+    const BuildingMap m = buildingMap(w);
+    // Props in the way, on the ground
+    std::unordered_set<long long> propTiles;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (info.airship || info.foundation || storeyOf(w, e) != 0) continue;
+        const Transform* tr = w.get<Transform>(e);
+        propTiles.insert(tileKey(tileOf(tr->x), tileOf(tr->z)));
+    }
+    const std::vector<Claim> claims = claimsOf(w);
+    bool touches = false;
+    int fresh = 0;
     for (int z = z0; z <= z1; ++z) {
         for (int x = x0; x <= x1; ++x) {
+            if (const ObjectId f = mapGet(m.foundation, tileKey(x, z)); f != NO_OBJECT) {
+                if (ownerOf(w, f) != owner) return PieceCheck::Blocked;
+                touches = true;
+                continue;
+            }
+            ++fresh;
+            const long long side[4] = { tileKey(x + 1, z), tileKey(x - 1, z), tileKey(x, z + 1), tileKey(x, z - 1) };
+            for (long long k : side) {
+                const ObjectId f = mapGet(m.foundation, k);
+                if (f != NO_OBJECT && ownerOf(w, f) == owner) touches = true;
+            }
             if (!t.walkable(x, z)) return PieceCheck::Unwalkable;
+            if (propTiles.count(tileKey(x, z))) return PieceCheck::Blocked;
+            const Claim* c = claimAt(claims, x + 0.5f, z + 0.5f);
+            if (!c || c->owner != owner) return PieceCheck::OutsideClaim;
         }
     }
-    // Its middle in the builder's claim, and none of it in anyone else's
-    const std::vector<Claim> claims = claimsOf(w);
-    const float cx = (x0 + x1 + 1) * 0.5f, cz = (z0 + z1 + 1) * 0.5f;
-    if (!claimAt(claims, cx, cz, owner)) return PieceCheck::OutsideClaim;
-    for (const float px : { (float)x0, (float)x1 + 1.0f }) {
-        for (const float pz : { (float)z0, (float)z1 + 1.0f }) {
-            const Claim* c = claimAt(claims, px, pz);
-            if (c && c->owner != owner) return PieceCheck::OutsideClaim;
-        }
-    }
-    for (ObjectId e : w.view<Foundation>()) {
-        const Foundation* f = w.get<Foundation>(e);
-        if (x0 < f->x0 + f->w && f->x0 <= x1 && z0 < f->z0 + f->h && f->z0 <= z1) return PieceCheck::Blocked;
-    }
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (propInfo(w.get<Prop>(e)->kind).airship) continue;
-        const Transform* tr = w.get<Transform>(e);
-        const int px = tileOf(tr->x), pz = tileOf(tr->z);
-        if (px >= x0 && px <= x1 && pz >= z0 && pz <= z1) return PieceCheck::Blocked;
-    }
+    if (fresh == 0) return PieceCheck::Taken;
+    // A new building starts at least 3 by 3; from there it can be extended by any shape that touches it
+    if (!touches && (fw < FOUNDATION_MIN || fh < FOUNDATION_MIN)) return PieceCheck::TooSmall;
     return PieceCheck::Ok;
 }
 
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner, BuildMaterial material) {
     if (x1 < x0) std::swap(x0, x1);
     if (z1 < z0) std::swap(z0, z1);
-    const float cx = (x0 + x1 + 1) * 0.5f, cz = (z0 + z1 + 1) * 0.5f;
-    const ObjectId e = placeBuiltProp(w, t, PropKind::Foundation, cx, cz, 0.0f, owner);
-    w.add(e, Foundation{ x0, z0, x1 - x0 + 1, z1 - z0 + 1, {} });
-    w.add(e, Blueprint{});
-    if (material != BuildMaterial::Wood) w.add(e, Material{ material });
-    return e;
+    const BuildingMap m = buildingMap(w);
+    ObjectId first = NO_OBJECT;
+    for (int z = z0; z <= z1; ++z) {
+        for (int x = x0; x <= x1; ++x) {
+            if (m.foundation.count(tileKey(x, z))) continue;
+            const ObjectId e = placeBuiltProp(w, t, PropKind::Foundation, x + 0.5f, z + 0.5f, 0.0f, owner);
+            w.add(e, Foundation{ x, z, 1, 1, {} });
+            w.add(e, Blueprint{});
+            if (material != BuildMaterial::Wood) w.add(e, Material{ material });
+            if (first == NO_OBJECT) first = e;
+        }
+    }
+    return first;
 }
 
-PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner) {
+PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int level) {
     const PropInfo& info = propInfo(kind);
-    const ObjectId f = foundationAt(w, x, z);
+    const BuildingMap m = buildingMap(w);
+    const ObjectId f = mapGet(m.foundation, tileKey(x, z));
     if (f == NO_OBJECT || ownerOf(w, f) != owner) return PieceCheck::NeedsFoundation;
     if (w.has<Blueprint>(f)) return PieceCheck::FoundationUnfinished;
-    if ((info.upperFloor || info.ladder) && !edgesClosed(w, f)) return PieceCheck::EdgesOpen;
+    if (level < 0 || level > STOREY_MAX) return PieceCheck::NeedsFloor;
     if (info.upperFloor) {
-        if (floorPieceAt(w, x, z, false) != NO_OBJECT) return PieceCheck::Taken;
-        const ObjectId under = groundPieceAt(w, x, z);
+        // A floor over this one, on the level above
+        if (level + 1 > STOREY_MAX) return PieceCheck::NeedsFloor;
+        if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner)) return PieceCheck::NeedsFloor;
+        if (mapGet(m.floor, levelKey(x, z, level + 1)) != NO_OBJECT) return PieceCheck::Taken;
+        const ObjectId under = mapGet(m.piece, levelKey(x, z, level));
         if (under != NO_OBJECT && propInfo(w.get<Prop>(under)->kind).ladder) return PieceCheck::Taken;
+        if (!edgesClosedMap(w, m, buildingTiles(m, x, z), level)) return PieceCheck::EdgesOpen;
         return PieceCheck::Ok;
     }
-    if (groundPieceAt(w, x, z) != NO_OBJECT) return PieceCheck::Taken;
-    if (info.ladder && floorPieceAt(w, x, z, false) != NO_OBJECT) return PieceCheck::Taken;
+    if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner)) return PieceCheck::NeedsFloor;
+    if (mapGet(m.piece, levelKey(x, z, level)) != NO_OBJECT) return PieceCheck::Taken;
+    if (info.ladder) {
+        if (mapGet(m.floor, levelKey(x, z, level + 1)) != NO_OBJECT) return PieceCheck::Taken;
+        if (!edgesClosedMap(w, m, buildingTiles(m, x, z), level)) return PieceCheck::EdgesOpen;
+    }
     return PieceCheck::Ok;
 }
 
-bool edgesClosed(World& w, ObjectId foundation) {
+bool edgesClosed(World& w, ObjectId foundation, int level) {
     const Foundation* f = w.get<Foundation>(foundation);
     if (!f) return false;
-    for (int z = f->z0; z < f->z0 + f->h; ++z) {
-        for (int x = f->x0; x < f->x0 + f->w; ++x) {
-            if (!f->onEdge(x, z)) continue;
-            const ObjectId p = groundPieceAt(w, x, z);
-            const PropInfo* info = p != NO_OBJECT ? infoOf(w, p) : nullptr;
-            if (!info || (!info->wallRule && !info->door)) return false;
-        }
-    }
-    return true;
+    const BuildingMap m = buildingMap(w);
+    return edgesClosedMap(w, m, buildingTiles(m, f->x0, f->z0), level);
 }
 
 void collapseCheck(World& w) {
-    for (ObjectId fe : w.view<Foundation>()) {
-        const Foundation f = *w.get<Foundation>(fe);
-        std::vector<ObjectId> floors;
-        int standing = 0;
-        for (ObjectId e : w.view<Prop, Transform>()) {
-            const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-            const Transform* tr = w.get<Transform>(e);
-            if (!f.contains(tileOf(tr->x), tileOf(tr->z))) continue;
-            if (info.upperFloor) floors.push_back(e);
-            else if ((info.wallRule || info.door) && !w.has<Blueprint>(e)) ++standing;
+    const BuildingMap m = buildingMap(w);
+    std::unordered_set<long long> seen;
+    std::vector<ObjectId> doomed;
+    std::vector<std::pair<ObjectId, int>> drop;   // props on fallen floors, and the floor they were on
+    bool fell = false;
+    for (const auto& [k, fe] : m.foundation) {
+        if (seen.count(k)) continue;
+        const std::vector<long long> tiles = buildingTiles(m, keyX(k), keyZ(k));
+        seen.insert(tiles.begin(), tiles.end());
+        const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+        for (int level = 1; level <= STOREY_MAX; ++level) {
+            bool finishedFloor = false, any = false;
+            int standing = 0;
+            for (long long tk : tiles) {
+                const ObjectId fl = mapGet(m.floor, levelKey(keyX(tk), keyZ(tk), level));
+                if (fl != NO_OBJECT) {
+                    any = true;
+                    finishedFloor = finishedFloor || !w.has<Blueprint>(fl);
+                }
+                const ObjectId p = mapGet(m.piece, levelKey(keyX(tk), keyZ(tk), level - 1));
+                if (isWallOrDoor(w, p) && !w.has<Blueprint>(p)) ++standing;
+            }
+            if (!any) break;
+            if (standing > 0 || !finishedFloor) continue;
+            // Nothing holds this floor up: it and everything above it on this building fall in
+            for (ObjectId e : w.view<Prop, Transform>()) {
+                const Transform* tr = w.get<Transform>(e);
+                const int s = storeyOf(w, e);
+                if (s < level || !in.count(tileKey(tileOf(tr->x), tileOf(tr->z)))) continue;
+                if (isBuildingPiece(w.get<Prop>(e)->kind)) doomed.push_back(e);
+                else drop.push_back({ e, s });
+            }
+            fell = true;
+            break;
         }
-        if (standing > 0 || floors.empty()) continue;
-        bool finishedFloor = false;
-        for (ObjectId e : floors) finishedFloor = finishedFloor || !w.has<Blueprint>(e);
-        if (!finishedFloor) continue;
-        for (ObjectId e : floors) {
-            releasePropLinks(w, e);
-            w.destroy(e);
-        }
-        queueLog(w, lang("MISC_FLOORS_COLLAPSE"), LogKind::Seen);
     }
+    for (ObjectId e : doomed) {
+        releasePropLinks(w, e);
+        w.destroy(e);
+    }
+    for (const auto& [e, s] : drop) {
+        if (Transform* tr = w.get<Transform>(e)) tr->y -= storeyBaseHeight(s);
+        w.remove<Storey>(e);
+    }
+    if (fell) queueLog(w, lang("MISC_FLOORS_COLLAPSE"), LogKind::Seen);
 }
 
-ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material) {
+ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level) {
     const PropInfo& info = propInfo(kind);
+    const BuildingMap m = buildingMap(w);
     float yaw = 0.0f;
     if (info.door) {
-        // Across the doorway: along the edge it is on
-        const ObjectId fe = foundationAt(w, x, z);
-        const Foundation* f = fe != NO_OBJECT ? w.get<Foundation>(fe) : nullptr;
-        if (f && (x == f->x0 || x == f->x0 + f->w - 1)) yaw = 1.5707963f;
+        // Across the doorway: in line with the walls beside it, or along the building's edge
+        const bool ns = isWallOrDoor(w, mapGet(m.piece, levelKey(x, z - 1, level))) || isWallOrDoor(w, mapGet(m.piece, levelKey(x, z + 1, level)));
+        const bool ew = isWallOrDoor(w, mapGet(m.piece, levelKey(x - 1, z, level))) || isWallOrDoor(w, mapGet(m.piece, levelKey(x + 1, z, level)));
+        const bool westOrEastEdge = !m.foundation.count(tileKey(x - 1, z)) || !m.foundation.count(tileKey(x + 1, z));
+        if ((ns && !ew) || (!ns && !ew && westOrEastEdge)) yaw = 1.5707963f;
     }
+    const int storey = info.upperFloor ? level + 1 : level;
     const ObjectId e = placeBuiltProp(w, t, kind, x + 0.5f, z + 0.5f, yaw, owner);
-    if (info.upperFloor) {
-        if (Transform* tr = w.get<Transform>(e)) tr->y += FLOOR_HEIGHT;
+    if (Transform* tr = w.get<Transform>(e)) {
+        const float ground = t.heightAt(x + 0.5f, z + 0.5f);
+        // An upper floor's slab sits under its top; anything else stands on its floor's top
+        if (info.upperFloor) tr->y = ground + storey * FLOOR_HEIGHT;
+        else if (storey > 0) tr->y = ground + storeyBaseHeight(storey);
     }
+    if (storey > 0) w.add(e, Storey{ storey });
     w.remove<Lock>(e);   // a door locks once it is built
     if (takesMaterial(kind) && material != BuildMaterial::Wood) w.add(e, Material{ material });
     if (info.materials > 0.0) w.add(e, Blueprint{});
@@ -332,17 +637,19 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
     if (!info) return false;
     int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
     pieceTiles(w, prop, x0, z0, x1, z1);
-    // Units standing where it goes are asked to step off it, and it waits
+    const int level = storeyOf(w, prop);
+    // Units standing where it goes, on its floor, are asked to step off it, and it waits
     std::vector<ObjectId> inTheWay;
     if (!info->upperFloor) {
         for (ObjectId u : w.view<Entity, Transform>()) {
-            if (w.has<Corpse>(u) || outCold(w, u) || w.has<Carried>(u) || w.has<Upstairs>(u) || w.has<Occupying>(u)) continue;
+            if (w.has<Corpse>(u) || outCold(w, u) || w.has<Carried>(u) || w.has<Occupying>(u) || storeyOf(w, u) != level) continue;
             const Transform* ut = w.get<Transform>(u);
             const float r = w.get<Entity>(u)->radius * 0.8f;
             if (ut->x + r > x0 && ut->x - r < x1 + 1 && ut->z + r > z0 && ut->z - r < z1 + 1) inTheWay.push_back(u);
         }
     }
     if (!inTheWay.empty()) {
+        const BuildingMap m = buildingMap(w);
         for (ObjectId u : inTheWay) {
             if (walking(w, u)) continue;
             const Transform* ut = w.get<Transform>(u);
@@ -353,10 +660,11 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
                     for (int dx = -ring; dx <= ring && !moved; ++dx) {
                         if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
                         const int x = ux + dx, z = uz + dz;
-                        if ((x >= x0 && x <= x1 && z >= z0 && z <= z1) || !t.walkable(x, z)) continue;
+                        if (x >= x0 && x <= x1 && z >= z0 && z <= z1) continue;
+                        if (level == 0 ? !t.walkable(x, z) : !floorWalkable(w, m, x, z, level)) continue;
                         leaveSquad(w, u);
                         w.remove<IdleSpot>(u);
-                        walkSolo(w, t, u, Vec2{ x + 0.5f, z + 0.5f });
+                        walkSoloTo(w, t, u, Vec2{ x + 0.5f, z + 0.5f }, level);
                         moved = true;
                     }
                 }
@@ -391,7 +699,7 @@ void rebuildBlocking(World& w, Terrain& t) {
             }
             continue;
         }
-        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).wallRule || storeyOf(w, e) != 0) continue;
         const Transform* tr = w.get<Transform>(e);
         t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
     }
@@ -437,17 +745,17 @@ void refreshBuildingTiles(World& w, Terrain& t) {
     tiles.swap(bc.tiles);
     std::sort(tiles.begin(), tiles.end());
     tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
-    auto key = [](int x, int z) { return (long long)z * 1000003LL + (long long)x; };
     std::unordered_set<long long> changed;
     int x0 = tiles.front().first, x1 = x0, z0 = tiles.front().second, z1 = z0;
     for (const auto& [x, z] : tiles) {
-        changed.insert(key(x, z));
+        changed.insert(tileKey(x, z));
         t.setBlocked(x, z, false);
         t.setDeck(x, z, false);
         x0 = std::min(x0, x); x1 = std::max(x1, x);
         z0 = std::min(z0, z); z1 = std::max(z1, z);
     }
-    // Only the changed tiles are worked out again: a finished wall closes its tile, a finished foundation decks its own
+    // Only the changed tiles are worked out again: a finished ground-floor wall closes its tile, a finished foundation
+    // tile decks its own
     for (ObjectId e : w.view<Prop, Transform>()) {
         if (w.has<Blueprint>(e)) continue;
         if (const Foundation* f = w.get<Foundation>(e)) {
@@ -457,17 +765,17 @@ void refreshBuildingTiles(World& w, Terrain& t) {
             }
             continue;
         }
-        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).wallRule || storeyOf(w, e) != 0) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (changed.count(key(tileOf(tr->x), tileOf(tr->z)))) t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
+        if (changed.count(tileKey(tileOf(tr->x), tileOf(tr->z)))) t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
     }
     // Walks that pass near a changed tile are planned again, around a new wall or through a gap left by a lost one
     for (ObjectId u : w.view<SoloMove, Transform>()) {
-        if (w.has<Upstairs>(u)) continue;
+        if (w.has<Upstairs>(u) || w.has<Climbing>(u)) continue;
         SoloMove* so = w.get<SoloMove>(u);
         const Transform* ut = w.get<Transform>(u);
         if (so->next >= so->waypoints.size() || !routeNear(Vec2{ ut->x, ut->z }, so->waypoints, so->next, tiles)) continue;
-        planSolo(w, t, u, so->waypoints.back());
+        planSoloMove(w, t, u, so->waypoints.back());
     }
     for (ObjectId sq : w.view<ActiveSquad>()) {
         ActiveSquad* a = w.get<ActiveSquad>(sq);
@@ -485,7 +793,7 @@ void refreshBuildingTiles(World& w, Terrain& t) {
     for (ObjectId u : w.view<Entity, Transform>()) {
         if (w.has<Upstairs>(u) || w.has<Carried>(u) || w.has<Occupying>(u) || w.has<Climbing>(u)) continue;
         Transform* ut = w.get<Transform>(u);
-        if (changed.count(key(tileOf(ut->x), tileOf(ut->z)))) ut->y = t.standHeight(ut->x, ut->z);
+        if (changed.count(tileKey(tileOf(ut->x), tileOf(ut->z)))) ut->y = t.standHeight(ut->x, ut->z);
     }
     collapseCheck(w);
 }
@@ -511,12 +819,8 @@ WallShape wallShapeFor(int mask) {
 WallShape wallShapeOf(World& w, ObjectId wall) {
     const Transform* tr = w.get<Transform>(wall);
     if (!tr) return {};
-    const int x = tileOf(tr->x), z = tileOf(tr->z);
-    auto joins = [&](int nx, int nz) {
-        const ObjectId p = groundPieceAt(w, nx, nz);
-        const PropInfo* info = p != NO_OBJECT ? infoOf(w, p) : nullptr;
-        return info && (info->wallRule || info->door);
-    };
+    const int x = tileOf(tr->x), z = tileOf(tr->z), level = storeyOf(w, wall);
+    auto joins = [&](int nx, int nz) { return isWallOrDoor(w, groundPieceAt(w, nx, nz, level)); };
     const int mask = (joins(x, z - 1) ? 1 : 0) | (joins(x + 1, z) ? 2 : 0) | (joins(x, z + 1) ? 4 : 0) | (joins(x - 1, z) ? 8 : 0);
     return wallShapeFor(mask);
 }
@@ -568,20 +872,35 @@ void doorSystem(World& w, float dt) {
     }
 }
 
+int bedHouseOwner(World& w, ObjectId bed) {
+    const Transform* tr = w.get<Transform>(bed);
+    if (!tr) return -1;
+    const ObjectId f = foundationAt(w, tileOf(tr->x), tileOf(tr->z));
+    return f != NO_OBJECT && !w.has<Blueprint>(f) ? ownerOf(w, f) : -1;
+}
+
+bool bedOpenTo(World& w, ObjectId bed, ObjectId u) {
+    if (w.has<BedPublic>(bed)) return true;
+    const int owner = bedHouseOwner(w, bed);
+    return owner < 0 || owner == factionOf(w, u);
+}
+
 bool isUpstairs(World& w, ObjectId u) { return w.has<Upstairs>(u); }
 
-Vec2 nearestFloorSpot(World& w, ObjectId foundation, Vec2 target) {
-    const Foundation* f = w.get<Foundation>(foundation);
+Vec2 nearestFloorSpot(World& w, ObjectId, Vec2 target, int level) {
+    const BuildingMap m = buildingMap(w);
     Vec2 best = target;
     float bestD2 = -1.0f;
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).upperFloor || w.has<Blueprint>(e)) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (f && !f->contains(tileOf(tr->x), tileOf(tr->z))) continue;
-        const float d2 = (tr->x - target.x) * (tr->x - target.x) + (tr->z - target.z) * (tr->z - target.z);
+    for (const auto& [lk, e] : m.floor) {
+        if ((int)(lk % 16) != level) continue;
+        const long long tk = lk / 16;
+        const int x = keyX(tk), z = keyZ(tk);
+        if (!floorWalkable(w, m, x, z, level)) continue;
+        const float cx = x + 0.5f, cz = z + 0.5f;
+        const float d2 = (cx - target.x) * (cx - target.x) + (cz - target.z) * (cz - target.z);
         if (bestD2 < 0.0f || d2 < bestD2) {
             bestD2 = d2;
-            best = Vec2{ tr->x, tr->z };
+            best = Vec2{ cx, cz };
         }
     }
     return best;
@@ -589,46 +908,43 @@ Vec2 nearestFloorSpot(World& w, ObjectId foundation, Vec2 target) {
 
 bool canClimbUp(World& w, ObjectId ladder) {
     const PropInfo* info = infoOf(w, ladder);
-    const Transform* tr = w.get<Transform>(ladder);
-    if (!info || !info->ladder || !tr || w.has<Blueprint>(ladder)) return false;
-    const int x = tileOf(tr->x), z = tileOf(tr->z);
-    for (int dz = -1; dz <= 1; ++dz) {
-        for (int dx = -1; dx <= 1; ++dx) {
-            if (upperFloorAt(w, x + dx, z + dz) != NO_OBJECT) return true;
-        }
-    }
-    return false;
+    if (!info || !info->ladder || w.has<Blueprint>(ladder)) return false;
+    const BuildingMap m = buildingMap(w);
+    Vec2 top;
+    return ladderTop(w, m, ladder, top);
 }
 
 bool startClimb(World& w, ObjectId u, ObjectId ladder) {
     const Transform* lt = w.get<Transform>(ladder);
     const Transform* ut = w.get<Transform>(u);
-    if (!lt || !ut || w.has<Climbing>(u) || outCold(w, u)) return false;
-    if (const Upstairs* up = w.get<Upstairs>(u)) {
-        if (up->foundation != foundationAt(w, tileOf(lt->x), tileOf(lt->z))) return false;
-        if (std::hypot(ut->x - lt->x, ut->z - lt->z) > PROP_REACH + 0.1f) return false;
-        w.remove<SoloMove>(u);
+    const PropInfo* info = infoOf(w, ladder);
+    if (!lt || !ut || !info || !info->ladder || w.has<Blueprint>(ladder) || w.has<Climbing>(u) || outCold(w, u)) return false;
+    const int ls = storeyOf(w, ladder), us = storeyOf(w, u);
+    const float gap = std::hypot(ut->x - lt->x, ut->z - lt->z);
+    const bool routed = w.has<Route>(u);
+    if (us == ls + 1) {
+        if (gap > PROP_REACH + 0.6f) return false;
+        if (!routed) w.remove<SoloMove>(u);
         w.add(u, Climbing{ ladder, CLIMB_SECONDS, true });
         return true;
     }
-    if (!canClimbUp(w, ladder) || flatGap(w, u, ladder) > PROP_REACH) return false;
+    if (us != ls || !canClimbUp(w, ladder) || gap > PROP_REACH + 0.3f) return false;
     if (w.has<Carrying>(u)) putDown(w, u);
     leaveSquad(w, u);
-    w.remove<SoloMove>(u);
+    if (!routed) w.remove<SoloMove>(u);
     w.add(u, Climbing{ ladder, CLIMB_SECONDS, false });
     return true;
 }
 
-void moveUpstairs(World& w, ObjectId u, Vec2 target) {
-    const Upstairs* up = w.get<Upstairs>(u);
-    if (!up) return;
-    const Vec2 spot = nearestFloorSpot(w, up->foundation, target);
+void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target) {
+    if (!w.has<Upstairs>(u)) return;
     clearOrders(w, u);
     w.remove<IdleSpot>(u);
-    w.add(u, SoloMove{ { spot }, 0 });
+    walkSoloTo(w, t, u, target, -1);
 }
 
 void climbSystem(World& w, Terrain& t, float dt) {
+    std::vector<ObjectId> done;
     for (ObjectId u : w.view<Climbing, Transform>()) {
         Climbing& c = *w.get<Climbing>(u);
         const Transform* lt = w.get<Transform>(c.ladder);
@@ -637,35 +953,179 @@ void climbSystem(World& w, Terrain& t, float dt) {
             continue;
         }
         c.left -= dt;
-        if (c.left > 0.0f) continue;
-        const bool down = c.down;
-        const ObjectId ladder = c.ladder;
-        w.remove<Climbing>(u);
-        Transform* ut = w.get<Transform>(u);
-        w.remove<IdleSpot>(u);
-        w.remove<SoloMove>(u);
-        if (down) {
-            w.remove<Upstairs>(u);
-            ut->x = lt->x;
-            ut->z = lt->z;
-            ut->y = t.standHeight(ut->x, ut->z);
-        } else {
-            const ObjectId f = foundationAt(w, tileOf(lt->x), tileOf(lt->z));
-            const Vec2 spot = nearestFloorSpot(w, f, Vec2{ lt->x, lt->z });
-            ut->x = spot.x;
-            ut->z = spot.z;
-            ut->y = t.heightAt(spot.x, spot.z) + FLOOR_TOP;
-            w.add(u, Upstairs{ f });
-        }
-        queueSoundFrom(w, Sfx::Occupy, ladder);
+        if (c.left <= 0.0f) done.push_back(u);
     }
-    // Upstairs with no floor under it any more: it comes down
-    for (ObjectId u : w.view<Upstairs, Transform>()) {
+    if (!done.empty()) {
+        const BuildingMap m = buildingMap(w);
+        for (ObjectId u : done) {
+            const Climbing c = *w.get<Climbing>(u);
+            const Transform lt = *w.get<Transform>(c.ladder);
+            const int ls = storeyOf(w, c.ladder);
+            w.remove<Climbing>(u);
+            Transform* ut = w.get<Transform>(u);
+            w.remove<IdleSpot>(u);
+            if (!w.has<Route>(u)) w.remove<SoloMove>(u);
+            if (c.down) {
+                ut->x = lt.x;
+                ut->z = lt.z;
+                if (ls == 0) {
+                    w.remove<Upstairs>(u);
+                    ut->y = t.standHeight(ut->x, ut->z);
+                } else {
+                    w.add(u, Upstairs{ mapGet(m.foundation, tileKey(tileOf(lt.x), tileOf(lt.z))), ls });
+                    ut->y = t.heightAt(ut->x, ut->z) + storeyBaseHeight(ls);
+                }
+            } else {
+                Vec2 spot{ lt.x, lt.z };
+                ladderTop(w, m, c.ladder, spot);
+                ut->x = spot.x;
+                ut->z = spot.z;
+                ut->y = t.heightAt(spot.x, spot.z) + storeyBaseHeight(ls + 1);
+                w.add(u, Upstairs{ mapGet(m.foundation, tileKey(tileOf(spot.x), tileOf(spot.z))), ls + 1 });
+            }
+            queueSoundFrom(w, Sfx::Occupy, c.ladder);
+        }
+    }
+    // Upstairs with no floor under it any more: it comes down to the ground
+    const std::vector<ObjectId> ups = w.view<Upstairs, Transform>();
+    if (ups.empty()) return;
+    const BuildingMap m = buildingMap(w);
+    for (ObjectId u : ups) {
         Transform* ut = w.get<Transform>(u);
-        const Upstairs* up = w.get<Upstairs>(u);
-        if (w.has<Foundation>(up->foundation) && upperFloorAt(w, tileOf(ut->x), tileOf(ut->z)) != NO_OBJECT) continue;
+        const int level = w.get<Upstairs>(u)->level;
+        const ObjectId fl = mapGet(m.floor, levelKey(tileOf(ut->x), tileOf(ut->z), level));
+        if (fl != NO_OBJECT && !w.has<Blueprint>(fl)) {
+            if (!w.has<Occupying>(u) && !w.has<Carried>(u)) ut->y = t.heightAt(ut->x, ut->z) + storeyBaseHeight(level);
+            continue;
+        }
         w.remove<Upstairs>(u);
+        w.remove<Route>(u);
         ut->y = t.standHeight(ut->x, ut->z);
+    }
+}
+
+void planSoloMove(World& w, Terrain& t, ObjectId e, Vec2 target) {
+    SoloMove* so = w.get<SoloMove>(e);
+    if (!so) so = &w.add(e, SoloMove{});
+    const Transform* tr = w.get<Transform>(e);
+    if (!tr) return;
+    if (const Upstairs* up = w.get<Upstairs>(e)) {
+        const BuildingMap m = buildingMap(w);
+        std::vector<Vec2> path = floorPath(w, m, up->level, Vec2{ tr->x, tr->z }, target);
+        if (path.empty()) path = { nearestFloorSpot(w, up->foundation, target, up->level) };
+        so->waypoints = std::move(path);
+        so->next = 0;
+        return;
+    }
+    so->waypoints = t.findPath({ tr->x, tr->z }, target);
+    so->next = 0;
+}
+
+void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
+    w.remove<Route>(e);
+    const Transform* tr = w.get<Transform>(e);
+    if (!tr) return;
+    const int here = storeyOf(w, e);
+    if (storey < 0) {
+        storey = 0;
+        if (here > 0) {
+            const BuildingMap m = buildingMap(w);
+            if (floorWalkable(w, m, tileOf(target.x), tileOf(target.z), here)) storey = here;
+        }
+    }
+    w.add(e, SoloMove{});
+    if (storey == here) {
+        if (here == 0) {
+            planSoloMove(w, t, e, target);
+            return;
+        }
+        const BuildingMap m = buildingMap(w);
+        std::vector<Vec2> path = floorPath(w, m, here, Vec2{ tr->x, tr->z }, target);
+        if (!path.empty()) {
+            w.get<SoloMove>(e)->waypoints = std::move(path);
+            return;
+        }
+    }
+    Route r;
+    if (planRoute(w, t, e, target, storey, r)) {
+        const Vec2 first = r.legs.front().to;
+        r.planned = true;
+        w.add(e, std::move(r));
+        planSoloMove(w, t, e, first);
+        return;
+    }
+    planSoloMove(w, t, e, target);
+}
+
+namespace {
+// A unit chasing a foe on another floor: how soon it looks for a way there again. Not saved.
+struct FloorChase {
+    float retryIn = 0.0f;
+};
+}
+
+void routeSystem(World& w, Terrain& t, float dt) {
+    for (ObjectId u : w.view<Route>()) {
+        if (w.has<Climbing>(u)) continue;
+        Route& r = *w.get<Route>(u);
+        SoloMove* so = w.get<SoloMove>(u);
+        if (!so || r.leg >= r.legs.size() || outCold(w, u) || w.has<Carried>(u)) {
+            w.remove<Route>(u);
+            continue;
+        }
+        const RouteLeg leg = r.legs[r.leg];
+        if (storeyOf(w, u) != leg.storey) {
+            w.remove<Route>(u);
+            continue;
+        }
+        if (!r.planned) {
+            planSoloMove(w, t, u, leg.to);
+            r.planned = true;
+            continue;
+        }
+        const bool arrived = so->next >= so->waypoints.size();
+        if (leg.ladder != NO_OBJECT) {
+            const Transform* ut = w.get<Transform>(u);
+            const Transform* lt = w.get<Transform>(leg.ladder);
+            const float near = ut && lt ? std::hypot(ut->x - lt->x, ut->z - lt->z) : 1e9f;
+            const bool down = lt && storeyOf(w, leg.ladder) < leg.storey;
+            if (!arrived && near > (down ? PROP_REACH : PROP_REACH - 0.2f)) continue;
+            const Vec2 goal = r.goal;
+            if (startClimb(w, u, leg.ladder)) {
+                ++r.leg;
+                r.planned = false;
+                so->waypoints = { goal };
+                so->next = 0;
+            } else {
+                w.remove<Route>(u);
+                so->next = so->waypoints.size();
+            }
+            continue;
+        }
+        if (arrived) {
+            w.remove<Route>(u);
+            if (w.has<FloorChase>(u)) w.remove<SoloMove>(u);
+        }
+    }
+    // Units fighting a foe on another floor go there by way of the ladders
+    for (ObjectId u : w.view<Combat, Transform>()) {
+        const Combat* c = w.get<Combat>(u);
+        ObjectId foe = c->target;
+        if (const AttackOrder* ao = w.get<AttackOrder>(u)) foe = ao->target;
+        FloorChase* fc = w.get<FloorChase>(u);
+        if (foe == NO_OBJECT || !w.has<Entity>(foe) || storeyOf(w, foe) == storeyOf(w, u) || outCold(w, u) || w.has<Carried>(u) ||
+            w.has<Occupying>(u)) {
+            if (fc && !w.has<Route>(u)) w.remove<FloorChase>(u);
+            continue;
+        }
+        if (w.has<Route>(u) || w.has<Climbing>(u)) continue;
+        if (!fc) fc = &w.add(u, FloorChase{});
+        fc->retryIn -= dt;
+        if (fc->retryIn > 0.0f) continue;
+        fc->retryIn = 2.0f;
+        const Transform* ft = w.get<Transform>(foe);
+        walkSoloTo(w, t, u, Vec2{ ft->x, ft->z }, storeyOf(w, foe));
+        if (!w.has<Route>(u)) w.remove<SoloMove>(u);
     }
 }
 
@@ -674,10 +1134,13 @@ void foundationLost(World& w, ObjectId foundation) {
     if (!f) return;
     const Foundation keep = *f;
     std::vector<ObjectId> pieces;
+    std::vector<std::pair<ObjectId, int>> drop;
     for (ObjectId e : w.view<Prop, Transform>()) {
-        if (e == foundation || !propInfo(w.get<Prop>(e)->kind).onFoundation) continue;
+        if (e == foundation) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (keep.contains(tileOf(tr->x), tileOf(tr->z))) pieces.push_back(e);
+        if (!keep.contains(tileOf(tr->x), tileOf(tr->z))) continue;
+        if (propInfo(w.get<Prop>(e)->kind).onFoundation) pieces.push_back(e);
+        else if (const int s = storeyOf(w, e); s > 0) drop.push_back({ e, s });
     }
     for (ObjectId e : pieces) {
         const Transform at = *w.get<Transform>(e);
@@ -688,16 +1151,64 @@ void foundationLost(World& w, ObjectId foundation) {
         w.destroy(e);
         if (logs > 0) spawnGroundItem(w, Transform{ at.x, at.y, at.z }, material, logs);
     }
-    for (ObjectId u : w.view<Upstairs>()) {
-        if (w.get<Upstairs>(u)->foundation == foundation) w.remove<Upstairs>(u);
+    for (const auto& [e, s] : drop) {
+        if (Transform* tr = w.get<Transform>(e)) tr->y -= storeyBaseHeight(s);
+        w.remove<Storey>(e);
     }
     buildingTilesChanged(w, keep.x0, keep.z0, keep.x0 + keep.w - 1, keep.z0 + keep.h - 1);
+}
+
+void settleBuildingsAfterLoad(World& w, Terrain& t) {
+    // Foundations from before they were laid tile by tile: one foundation tile for each tile of the rectangle
+    for (ObjectId e : w.view<Foundation>()) {
+        const Foundation f = *w.get<Foundation>(e);
+        if (f.w * f.h <= 1) continue;
+        const int owner = ownerOf(w, e);
+        const BuildMaterial material = materialOf(w, e);
+        const Blueprint* bp = w.get<Blueprint>(e);
+        const bool planned = bp != nullptr;
+        const int supplied = bp && bp->progress <= 0.0 ? bp->supplied : 0;
+        const Transform at = *w.get<Transform>(e);
+        for (int z = f.z0; z < f.z0 + f.h; ++z) {
+            for (int x = f.x0; x < f.x0 + f.w; ++x) {
+                const ObjectId n = owner >= 0 ? placeBuiltProp(w, t, PropKind::Foundation, x + 0.5f, z + 0.5f, 0.0f, owner)
+                                              : makeProp(w, PropKind::Foundation, Transform{ x + 0.5f, t.heightAt(x + 0.5f, z + 0.5f), z + 0.5f });
+                w.add(n, Foundation{ x, z, 1, 1, {} });
+                if (planned) w.add(n, Blueprint{});
+                if (material != BuildMaterial::Wood) w.add(n, Material{ material });
+            }
+        }
+        if (supplied > 0) spawnGroundItem(w, at, materialItem(material), supplied);
+        releasePropLinks(w, e);
+        w.destroy(e);
+    }
+    // The floor everything above the ground stands on, from its height
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (info.airship || w.has<Foundation>(e)) continue;
+        const Transform* tr = w.get<Transform>(e);
+        const int level = storeyAtHeight(tr->y - t.heightAt(tr->x, tr->z));
+        if (level > 0) w.add(e, Storey{ level });
+        else w.remove<Storey>(e);
+    }
+    for (ObjectId e : w.view<GroundItem, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        const int level = storeyAtHeight(tr->y - t.heightAt(tr->x, tr->z));
+        if (level > 0) w.add(e, Storey{ level });
+    }
+    for (ObjectId u : w.view<Upstairs, Transform>()) {
+        const Transform* tr = w.get<Transform>(u);
+        Upstairs& up = *w.get<Upstairs>(u);
+        up.level = std::max(1, storeyAtHeight(tr->y - t.heightAt(tr->x, tr->z)));
+        up.foundation = foundationAt(w, tileOf(tr->x), tileOf(tr->z));
+    }
+    w.resource<BuildingsChanged>().dirty = true;
 }
 
 bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r) {
     const Transform* ut = w.get<Transform>(u);
     Inventory* inv = w.get<Inventory>(u);
-    if (!ut || w.has<Mob>(u) || w.has<Upstairs>(u)) return false;
+    if (!ut || w.has<Mob>(u)) return false;
     const int faction = factionOf(w, u);
     // Auto-Construct: build the nearest blueprint of its faction that has everything it needs; failing that, bring the
     // nearest one that still wants materials what it wants, carried or fetched from a store of its faction
@@ -705,7 +1216,8 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
         if (ownerOf(w, e) != faction) continue;
         const Vec2 at = approachOf(w, u, e);
-        wanted.push_back({ (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z), e });
+        const float floors = (float)std::abs(workStorey(w, e) - storeyOf(w, u)) * 20.0f;
+        wanted.push_back({ (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z) + floors * floors, e });
     }
     std::sort(wanted.begin(), wanted.end());
     BuildJob job;
@@ -733,10 +1245,11 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
             float sourceD2 = 0.0f;
             for (ObjectId s : w.view<Storage, Prop, Transform>()) {
                 const PropInfo& info = propInfo(w.get<Prop>(s)->kind);
-                if (info.claimsLand || w.has<Blueprint>(s) || lockShutFor(w, claims, s, u)) continue;
+                if (info.claimsLand || info.stall || w.has<Blueprint>(s) || lockShutFor(w, claims, s, u)) continue;
                 const Transform* st = w.get<Transform>(s);
                 if (ownerOf(w, s) != faction && !claimAt(claims, st->x, st->z, faction)) continue;
-                if (countItems(w.get<Storage>(s)->slots.data(), STORAGE_SLOTS, item) <= 0) continue;
+                const Storage* sto = w.get<Storage>(s);
+                if (countInSlots(sto->slots.data(), (int)sto->slots.size(), item) <= 0) continue;
                 const float sd2 = (st->x - ut->x) * (st->x - ut->x) + (st->z - ut->z) * (st->z - ut->z);
                 if (source == NO_OBJECT || sd2 < sourceD2) {
                     source = s;
@@ -765,7 +1278,8 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     const ObjectId first = job.phase == BuildJob::Phase::Fetch ? job.source : target;
     const float reach = job.phase == BuildJob::Phase::Fetch ? PROP_REACH : BLUEPRINT_REACH;
     const float gap = job.phase == BuildJob::Phase::Fetch ? flatGap(w, u, first) : gapTo(w, u, first);
-    if (gap > reach) walkSolo(w, t, u, approachOf(w, u, first));
+    const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, first) : workStorey(w, first);
+    if (gap > reach) walkSoloTo(w, t, u, approachOf(w, u, first), storey);
     w.add(u, job);
     return true;
 }
@@ -782,6 +1296,7 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
         auto end = [&](float cooldown) {
             w.remove<BuildJob>(u);
             w.remove<SoloMove>(u);
+            w.remove<Route>(u);
             if (!b) return;
             const BehaviorKind kind = b->step.kind;
             b->busy = false;
@@ -801,13 +1316,16 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
         if (gap > reach) {
             if (!walking(w, u)) {
                 job.stuck += dt;
+                const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, goal) : workStorey(w, goal);
                 if (job.stuck > BUILD_GIVE_UP_SECONDS) end(BEHAVIOR_RETRY_SECONDS * 3.0f);
-                else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSolo(w, t, u, approachOf(w, u, goal));
+                else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSoloTo(w, t, u, approachOf(w, u, goal), storey);
             }
             continue;
         }
+        if (w.has<Climbing>(u)) continue;
         job.stuck = 0.0f;
         w.remove<SoloMove>(u);
+        w.remove<Route>(u);
         Inventory* inv = w.get<Inventory>(u);
         switch (job.phase) {
         case BuildJob::Phase::Fetch: {
@@ -823,22 +1341,24 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
             const int byWeight = std::max(0, (int)std::floor(spare / each));
             const int want = std::min({ materialsNeeded(w, job.target) - bp->supplied, byWeight,
                                         slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, log) });
-            const int took = takeItems(s->slots.data(), STORAGE_SLOTS, log, std::max(0, want));
+            const int took = takeFromSlots(s->slots.data(), (int)s->slots.size(), log, std::max(0, want));
             if (took <= 0) {
                 end(BEHAVIOR_RETRY_SECONDS);
                 break;
             }
             addToInventory(*inv, log, took);
+            queueItemMove(w, job.source, u, log, took);
             queueSoundFrom(w, Sfx::ItemMove, job.source);
             job.phase = BuildJob::Phase::Deliver;
-            if (gapTo(w, u, job.target) > BLUEPRINT_REACH) walkSolo(w, t, u, approachOf(w, u, job.target));
+            if (gapTo(w, u, job.target) > BLUEPRINT_REACH) walkSoloTo(w, t, u, approachOf(w, u, job.target), workStorey(w, job.target));
             break;
         }
         case BuildJob::Phase::Deliver: {
             const int carried = inv ? carriedCount(*inv, log) : 0;
             const int took = supplyBlueprint(w, job.target, carried);
             if (took > 0) {
-                takeItems(inv->slots.data(), INVENTORY_SLOTS, log, took);
+                takeFromSlots(inv->slots.data(), INVENTORY_SLOTS, log, took);
+                queueItemMove(w, u, job.target, log, took);
                 queueSoundFrom(w, Sfx::ItemMove, job.target);
             }
             end(0.0f);
@@ -866,6 +1386,7 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
 void buildingSystem(World& w, Terrain& t, float dt) {
     buildJobSystem(w, t, dt);
     climbSystem(w, t, dt);
+    routeSystem(w, t, dt);
     doorSystem(w, dt);
     if (w.resource<BuildingsChanged>().dirty) rebuildBlocking(w, t);
     else refreshBuildingTiles(w, t);

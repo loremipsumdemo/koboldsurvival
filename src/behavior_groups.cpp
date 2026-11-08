@@ -50,12 +50,13 @@ void resetBehaviorGroups(BehaviorGroups& g) {
     for (BehaviorRule& r : g.citizen) {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
+    // Each sorts into its place by its category (Auto-Haul to Stalls is in the defaults already)
     BehaviorRule sleep, build, ground, patrol;
     sleep.kind = BehaviorKind::Sleep;
     build.kind = BehaviorKind::AutoConstruct;
     ground.kind = BehaviorKind::AutoHaulGround;
     patrol.kind = BehaviorKind::Patrol;
-    g.citizen.insert(g.citizen.end(), { sleep, build, ground, patrol });
+    for (const BehaviorRule& r : { sleep, build, ground, patrol }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
     g.listedStores.clear();
     g.storesListed = false;
     g.groups.assign(1, { groupTask(GROUP_REF_CITIZEN) });
@@ -149,7 +150,7 @@ bool isGroupStore(World& w, ObjectId p) {
     const Prop* pp = w.get<Prop>(p);
     if (!pp || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
     const PropInfo& info = propInfo(pp->kind);
-    if (info.use != PropUse::Storage && !info.claimsLand) return false;
+    if ((info.use != PropUse::Storage && !info.claimsLand) || info.stall) return false;   // a Stall is stocked by its orders
     const Owner* own = w.get<Owner>(p);
     if (own && own->faction != FACTION_PLAYER) return false;
     const Transform* t = w.get<Transform>(p);
@@ -175,7 +176,7 @@ bool storeHaulSync(World& w) {
     BehaviorGroups& g = behaviorGroups(w);
     bool changed = false;
     // Haul tasks to a store that is gone leave every list
-    auto gone = [&](const BehaviorRule& r) { return isHaul(r.kind) && !w.has<Storage>(r.prop); };
+    auto gone = [&](const BehaviorRule& r) { return ruleNamesProp(r.kind) && !w.has<Storage>(r.prop); };
     auto prune = [&](std::vector<BehaviorRule>& list) {
         const size_t before = list.size();
         list.erase(std::remove_if(list.begin(), list.end(), gone), list.end());

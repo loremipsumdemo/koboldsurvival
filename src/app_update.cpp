@@ -1,4 +1,5 @@
 #include "app.h"
+#include "building.h"
 #include "camera_limit.h"
 #include "prop_info.h"
 #include "profile.h"
@@ -280,6 +281,7 @@ void App::showEvents() {
     if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
     logSeen = logCount;
     floatingNumbers.insert(floatingNumbers.end(), ev.floats.begin(), ev.floats.end());
+    puffs.insert(puffs.end(), ev.puffs.begin(), ev.puffs.end());
     tradeLabels.insert(tradeLabels.end(), ev.labels.begin(), ev.labels.end());
     soundsToPlay.insert(soundsToPlay.end(), ev.sounds.begin(), ev.sounds.end());
 
@@ -478,7 +480,9 @@ void App::updateHover() {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
-                bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z) == BuildCheck::Ok;
+                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildStorey;
+                bp.lift = storeyBaseHeight(storey);
+                bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z, storey) == BuildCheck::Ok;
             }
         }
         if (placing) updateBuildPaint();

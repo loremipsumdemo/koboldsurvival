@@ -21,6 +21,7 @@
 | Space | Pause or resume, also during a conversation |
 | M | Open or close the world map |
 | Escape | Cancel, back out of menus, open the game menu |
+| PageUp / PageDown (building) | Build on the next floor up or down: walls, doors, ladders, upper floors and other props go on the floor picked |
 | F12 | Take a screenshot |
 
 

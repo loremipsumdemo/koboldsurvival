@@ -492,7 +492,7 @@ bool campSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z
 
 void settleFactionHomes(World& w, Terrain& t) {
     for (const FactionDef& f : factions()) {
-        if (f.id == FACTION_PLAYER || f.id == FACTION_EXILE || isMobFaction(f.id)) continue;
+        if (f.id == FACTION_PLAYER || !factionCanClaim(f.id)) continue;
         std::vector<ObjectId> units;
         float sx = 0.0f, sz = 0.0f;
         for (ObjectId u : w.view<Entity, Faction, Transform>()) {

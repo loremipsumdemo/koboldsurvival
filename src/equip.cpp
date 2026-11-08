@@ -185,7 +185,8 @@ void dropAtUnit(World& w, ObjectId unit, int item, int count) {
              npcOnly(w, unit));
     queueUnitLabel(w, unit, itemLossLabelFor(count, item), true);
     queueSound(w, Sfx::Drop);
-    spawnGroundItem(w, *tr, item, count);
+    const ObjectId dropped = spawnGroundItem(w, *tr, item, count);
+    if (const int level = storeyOf(w, unit); level > 0) w.add(dropped, Storey{ level });
 }
 
 bool dropEquipped(World& w, ObjectId unit, int gearSlot) {

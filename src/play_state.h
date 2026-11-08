@@ -11,7 +11,8 @@ constexpr float TALK_COOLDOWN = 1.0f;
 
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
-                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown };
+                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
+                        BedPublic, BedPrivate, StockStall, ManStall };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -51,6 +52,7 @@ struct PlaySession {
     long long lastPaintTile = -1;
     // What a foundation, wall or door is made of (an int of BuildMaterial), and the kind waiting for that choice
     int buildMaterial = 0;
+    int buildStorey = 0;   // the floor being built on: 0 the ground floor, 1 the first upper floor (PageUp, PageDown)
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;
     std::vector<TradeGhost> tradeNpc;
@@ -59,6 +61,7 @@ struct PlaySession {
     ObjectId storageProp = NO_OBJECT;
     ObjectId storageUnit = NO_OBJECT;
     int storageDrag = -1;
+    int storageScroll = 0;   // rows scrolled down in a big store's window
     ContextMenu contextMenu;
     ObjectId disbandTarget = NO_OBJECT;
     unsigned long long disbandHeldAt = 0;

@@ -25,7 +25,7 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                 n->hurried = false;
             }
             tickNeeds(*n, ticks);
-            if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_EXILE) n->hunger = n->maxHunger;
+            if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_NOMAD) n->hunger = n->maxHunger;
 
             const ObjectId seat = occupiedProp(w, e);
             const Prop* sp = seat != NO_OBJECT ? w.get<Prop>(seat) : nullptr;

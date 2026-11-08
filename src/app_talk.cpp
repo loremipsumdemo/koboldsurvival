@@ -130,7 +130,7 @@ void App::requestStore(int slot) {
         refuse(no);
         return;
     }
-    const int cap = std::min(carriedCount(*inv, item), slotsRoomFor(st->slots.data(), STORAGE_SLOTS, item));
+    const int cap = std::min(carriedCount(*inv, item), storeRoomFor(*st, item));
     if (cap <= 0) {
         refuse(lang("MISC_STORAGE_FULL"));
         return;

@@ -17,6 +17,7 @@ struct SimEvents {
     std::vector<LogLine> log;
     std::vector<TradeLabel> labels;
     std::vector<FloatingNumber> floats;
+    std::vector<Puff> puffs;
     std::vector<PropArrival> arrivals;
     std::vector<WorkGain> gains;
     std::vector<std::pair<ObjectId, ObjectId>> lootOpened;   // looter, looted

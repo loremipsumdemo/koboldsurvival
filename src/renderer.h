@@ -27,6 +27,7 @@ class LoadStages;
 class Terrain;
 struct FloatingNumber;
 struct TradeLabel;
+struct Puff;
 struct PartyMember;
 struct PartyUi;
 struct PartyPanels;
@@ -127,11 +128,12 @@ public:
     void drawPauseBar(bool hint);
     float pauseBarHeight(bool hint);
     void drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, const Camera& cam, int winW, int winH);
+    void drawPuffs(const std::vector<Puff>& puffs, const Camera& cam, int winW, int winH);
     void drawUiTextLarge(const std::string& s, float cx, float cy, float scale, RGBA tint);
     void drawLoot(const LootLayout& L, const std::string& name, const Equipment* worn, const Inventory* inv, float mx, float my);
     void drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                      const Storage* storage, const Output* output, const std::string& status, int dragFrom,
-                     float mx, float my, const std::string& toggleLabel = std::string());
+                     float mx, float my, const std::string& toggleLabel = std::string(), int scroll = 0);
     void drawEmotes(World& w, const Camera& cam, int winW, int winH, bool playerNames, bool otherNames);
     void drawPropEmotes(World& w, const Camera& cam, int winW, int winH);
     void drawHoverCue(World& w, const Camera& cam, int winW, int winH, ObjectId u, EmoteId emote, bool namesShown);
@@ -164,6 +166,7 @@ public:
 
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
     void drawPropTooltip(const std::vector<std::string>& lines, float mx, float my);
+    void showItemTooltip(int item, int count, float mx, float my) { drawItemTooltip(item, count, mx, my); }
 
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
     GameLogLayout gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,

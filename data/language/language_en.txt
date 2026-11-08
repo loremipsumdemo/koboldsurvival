@@ -613,7 +613,7 @@ FACTION_RED	Red Faction
 FACTION_GREEN	Green Faction
 FACTION_BLUE	Blue Faction
 FACTION_YELLOW	Yellow Faction
-FACTION_EXILE	Exile
+FACTION_NOMAD	Nomad
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
 UILABEL_MODE_PASSIVE	Passive
 UILABEL_MODE_BLOCK	Block
@@ -686,9 +686,9 @@ MISC_GETS_UP	{0} gets up, the danger gone
 MISC_PICKS_UP_UNIT	{0} picks up {1}
 MISC_PUTS_DOWN	{0} puts down {1}
 MISC_PLACES_IN	{0} places {1} in the {2}
-MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become an Exile: neutral to everyone and roaming alone.
+MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become a Nomad: neutral to everyone and roaming alone.
 MISC_DISBAND_ASK_MOB	{0} will leave your squad and faction for good and go back to the wild.
-MISC_DISBANDED	{0} leaves your squad as an Exile
+MISC_DISBANDED	{0} leaves your squad as a Nomad
 MISC_DISBANDED_MOB	{0} leaves your squad and returns to the wild
 MISC_CORPSE_NO_PLACE	The dead can't be placed there
 MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything
@@ -1316,7 +1316,7 @@ MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
 MISC_BUILT	A {0} is finished
 MISC_DOOR_SMASHED	{0} smashes the {1}
 MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
-MISC_FOUNDATION_TOO_SMALL	A foundation must be at least 3 tiles on each side
+MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
 MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
 MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
 MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
@@ -1334,9 +1334,66 @@ FILTER_STONE	stone
 UILABEL_BREAK	Break
 MISC_ANY_BONES	any Bones
 UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
-MISC_BUILD_EDGES_OPEN	Every edge tile of the foundation needs a wall or a door first
+MISC_BUILD_EDGES_OPEN	Every edge tile of the building needs a wall or a door on this floor first
 MISC_FLOORS_COLLAPSE	With no walls or doors left under it, an upper floor falls in
 UILABEL_MATERIAL_TITLE	Build the {0} out of
 UILABEL_MATERIAL_WOOD	Wood (Wood Logs)
 UILABEL_MATERIAL_IRON	Iron (Iron Ingots)
 UILABEL_MATERIAL_CRYSTAL	Dragon Crystals
+MISC_ITEM_STOLEN_NAME	{0} (Stolen)
+MISC_ITEM_STOLEN_FROM	Stolen from {0}
+MISC_BUILD_NO_FLOOR	It must stand on a finished floor of yours on this level
+MISC_BUILD_NEEDS_FLOOR	That tile needs a finished floor of yours on this level first
+MISC_BLUEPRINT_NEEDS	{0} {1}/{2}
+MISC_BLUEPRINT_BUILDING	Building: {0}%
+MISC_BLUEPRINT_WAITING	Building starts once all its material is here
+MISC_ON_FLOOR	On floor {0}
+MISC_BED_PUBLIC	Public: anyone may sleep here
+MISC_BED_PRIVATE	Private: for {0} only
+MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
+MISC_STALL_MANNED	Manned by a shopkeeper
+MISC_STALL_UNMANNED	No shopkeeper: nobody can buy here
+MISC_STALL_ORDERS	{0} orders waiting to be hauled here
+UILABEL_STORE_HOLDS	Holds {0}/{1} items.
+UILABEL_STORE_SCROLL	Scroll the mouse wheel over it to see more.
+UILABEL_WAIT_NO_STALL_ORDER	No Stall orders waiting
+UILABEL_BEHAVIOR_AUTO_HAUL_STALL	Auto-Haul to Stalls
+UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	Carries the items picked in a Stall's Stock window from their store to the Stall. Each order is tried once, and dropped if the item has gone
+UILABEL_BEHAVIOR_MAN_STALL	Man Stall: {0}
+UILABEL_BEHAVIOR_MAN_STALL_TIP	Stands at the {0} as its shopkeeper, so units of friendly factions can buy from it. Tasks above it in the list still come first
+MISC_STALL_ORDER_DROPPED	A Stall order was dropped: the {0} wasn't in its store any more
+MISC_STALL_STOCKED	{0} stocks the Stall with {1} {2}
+MISC_SHOPPER_BOUGHT	{0} of {1} bought {2} items at your Stall
+MISC_SHOPPER_NOTHING	Nothing for me here
+MISC_SHOPPER_COMING	{0} of {1} is coming to shop at your Stall
+MISC_RAIDER_STOLE	{0} stole {1} items from your {2}!
+MISC_RAIDER_COMING	{0} is coming to raid your {1}!
+MISC_RAIDER_BREAKING_IN	{0} is breaking in to raid your {1}!
+MISC_WANDERING_TRADER	Wandering Trader
+MISC_TRADER_ARRIVES	A Wandering Trader appears in a puff of smoke at the edge of your claim
+MISC_TRADER_BOUGHT	The Wandering Trader bought {0} items for {1} Gold Coins
+MISC_TRADER_LEAVES	The Wandering Trader vanishes in a puff of smoke
+MISC_STOLEN_NOTICED	{0} noticed the {1} was stolen from them: your reputation with them falls
+MISC_STOLEN_LABEL	Stolen goods!
+MISC_BUILD_ON_FLOOR	Building on floor {0} (PageUp/PageDown)
+MISC_BUILD_ON_GROUND	Building on the ground floor (PageUp/PageDown)
+UILABEL_BED_MAKE_PUBLIC	Make Public
+UILABEL_BED_MAKE_PRIVATE	Make Private
+UILABEL_STOCK_STALL	Stock Stall
+UILABEL_MAN_STALL	Man Stall
+MISC_DOOR_LOCKED	Door locked
+MISC_DOOR_UNLOCKED	Door unlocked
+MISC_BED_NOW_PUBLIC	Bed is now Public: anyone may use it
+MISC_BED_NOW_PRIVATE	Bed is now Private: your faction only
+MISC_MAN_STALL_SET	{0} units will man the Stall
+UILABEL_STOCK_STALL_TITLE	Stock {0}
+UILABEL_SORT_KIND	By Kind
+UILABEL_SORT_FULLEST	Fullest
+UILABEL_SORT_RATIO	Fullest for Size
+UILABEL_STALL_NO_STORES	No stores of yours in your claim
+UILABEL_STALL_STORE_EMPTY	This store is empty
+UILABEL_STALL_ORDERS	Orders waiting: {0}
+UILABEL_STALL_CLEAR_ORDERS	Clear Orders
+UILABEL_STALL_PAYMENT	Accepts as payment (click to switch):
+MISC_STALL_ORDERED	Ordered {0} {1} to the Stall
+MISC_STALL_ALREADY_ORDERED	That is already ordered to the Stall

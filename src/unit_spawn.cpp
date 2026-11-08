@@ -160,8 +160,8 @@ ObjectId spawnUnit(World& w, const Terrain& t, Rng& rng, int faction, float x, f
         w.add(u, randomNpcLoot(rng));
         w.add(u, defaultDialogue());
         Behaviors* b = w.get<Behaviors>(u);
-        if (faction == FACTION_EXILE) {
-            b->rules = exileBehaviors();
+        if (faction == FACTION_NOMAD) {
+            b->rules = nomadBehaviors();
         } else {
             BehaviorRule patrol;
             patrol.kind = BehaviorKind::Patrol;

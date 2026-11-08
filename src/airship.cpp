@@ -92,7 +92,7 @@ namespace {
 // Where a unit is, for reach: the ground (0), an Airship's deck, or a building's upper floor
 long long standingLevel(World& w, ObjectId u) {
     if (const ObjectId ship = airshipOf(w, u); ship != NO_OBJECT) return 1 + 2 * (long long)ship;
-    if (const Upstairs* up = w.get<Upstairs>(u)) return 2 + 2 * (long long)up->foundation;
+    if (const Upstairs* up = w.get<Upstairs>(u)) return 2 + 2 * (long long)up->level;
     return 0;
 }
 }

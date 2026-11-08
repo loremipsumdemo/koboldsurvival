@@ -342,12 +342,82 @@ struct Health {
     double max = 10.0;
 };
 
+// A prop's store. Most have STORAGE_SLOTS slots; a kind can have more (props.txt's slots column, a Stall's 1000).
+// capacity: the most items it holds in all, or 0 for as many as its slots fit.
 struct Storage {
-    std::array<ItemStack, STORAGE_SLOTS> slots{};
+    std::vector<ItemStack> slots = std::vector<ItemStack>(STORAGE_SLOTS);
+    int capacity = 0;
 };
 
 struct Output {
     std::array<ItemStack, STORAGE_SLOTS> slots{};
+};
+
+// A prop or ground item above the ground floor of a building: on the upper floor of this level (1 is the first upper
+// floor). Not saved: worked out again from the height when a game is opened.
+struct Storey {
+    int level = 1;
+};
+
+// A unit on an upper floor of a building: the foundation tile it stands over, and which floor (1 the first)
+struct Upstairs {
+    ObjectId foundation = NO_OBJECT;
+    int level = 1;
+};
+
+// Which floor something is on: 0 the ground (or a ground floor's deck), 1 the first upper floor and so on
+inline int storeyOf(World& w, ObjectId e) {
+    if (const Upstairs* u = w.get<Upstairs>(e)) return u->level;
+    if (const Storey* s = w.get<Storey>(e)) return s->level;
+    return 0;
+}
+
+// A bed or bedroll inside a building set to Public: anyone may use it. Without it, a bed on a faction's foundation is
+// only for that faction.
+struct BedPublic {};
+
+// A Stall's orders: items picked from your stores to be hauled to it (each tried once), and what it takes as payment
+struct StallRequest {
+    ObjectId from = NO_OBJECT;
+    int item = 0;
+    int count = 0;
+    ObjectId takenBy = NO_OBJECT;   // the unit hauling it, or NO_OBJECT while it waits
+};
+struct StallStock {
+    std::vector<StallRequest> requests;
+    std::uint32_t payment = STORE_ALL;   // StoreCategory bits it accepts as payment
+};
+
+// A unit hauling a Stall order: fetching it from its store, then bringing it to the Stall. Not saved.
+struct StallJob {
+    ObjectId stall = NO_OBJECT;
+    ObjectId source = NO_OBJECT;
+    int item = 0;
+    int count = 0;
+    bool fetched = false;
+    float stuck = 0.0f;
+};
+
+// A unit of a friendly faction on its way to shop at a Stall. Not saved.
+struct Shopper {
+    ObjectId stall = NO_OBJECT;
+    float timeLeft = 0.0f;
+};
+
+// A unit of a hostile faction raiding your stores: going for one, then running off with what it took. Not saved.
+struct Raider {
+    ObjectId target = NO_OBJECT;
+    bool fleeing = false;
+    float timeLeft = 0.0f;
+    float fleeX = 0.0f, fleeZ = 0.0f;
+};
+
+// The Wandering Trader: buys from a Stall with coins it makes on the spot, then leaves in a puff of smoke. Not saved.
+struct WanderingTrader {
+    ObjectId stall = NO_OBJECT;
+    bool leaving = false;
+    float timeLeft = 0.0f;
+    float exitX = 0.0f, exitZ = 0.0f;
 };
 
 struct Fuel {

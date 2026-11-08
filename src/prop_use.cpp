@@ -66,7 +66,9 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
             continue;
         }
         clearOrders(w, u);
-        walkSolo(w, t, u, Vec2{ pt->x, pt->z });
+        // Climbing down: to the ladder's head, on the floor the unit is on
+        const bool down = action == PropAction::Climb && storeyOf(w, u) == storeyOf(w, prop) + 1;
+        walkSolo(w, t, u, Vec2{ pt->x, pt->z }, down ? storeyOf(w, u) : storeyOf(w, prop));
         w.add(u, PropOrder{ prop, action });
     }
 }
@@ -81,7 +83,11 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
             w.remove<SoloMove>(u);
             continue;
         }
-        if (flatGap(w, u, prop) <= PROP_REACH) {
+        const bool climbing = w.get<PropOrder>(u)->action == PropAction::Climb;
+        const Transform* utr = w.get<Transform>(u);
+        const bool climbReach = climbing && utr && std::hypot(utr->x - pt->x, utr->z - pt->z) <= PROP_REACH + 0.5f &&
+                                (storeyOf(w, u) == storeyOf(w, prop) || storeyOf(w, u) == storeyOf(w, prop) + 1);
+        if (climbing ? climbReach : flatGap(w, u, prop) <= PROP_REACH) {
             const PropAction action = w.get<PropOrder>(u)->action;
             const bool automatic = w.get<PropOrder>(u)->automatic;
             w.remove<PropOrder>(u);
@@ -433,10 +439,11 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 }
                 if (info.input != 0) {
                     Storage* st = w.get<Storage>(prop);
-                    if (!st || inItem <= 0 || !takeOne(st->slots.data(), STORAGE_SLOTS, inItem)) {
+                    if (!st || inItem <= 0 || !takeOne(st->slots.data(), (int)st->slots.size(), inItem)) {
                         stopAll();
                         break;
                     }
+                    queueItemMove(w, prop, NO_OBJECT, inItem, 1);
                 }
                 pw.progress -= 1.0;
                 ++pw.made;
@@ -500,7 +507,8 @@ int storeCarried(World& w, ObjectId unit, ObjectId prop, int item) {
         if (s.item <= 0 || s.count <= 0) continue;
         if (item != 0 && s.item != item) continue;
         if (!propTakesItem(w, prop, s.item)) continue;
-        const int left = addToSlots(st->slots.data(), STORAGE_SLOTS, s.item, s.count);
+        const int left = addToStore(*st, s.item, s.count);
+        queueItemMove(w, unit, prop, s.item, s.count - left);
         moved += s.count - left;
         if (s.count - left > 0) movedItem = s.item;
         s.count = left;
@@ -622,7 +630,7 @@ StoreCategory storeCategoryOf(int item) {
 
 bool hasStoreFilter(PropKind kind) {
     const PropInfo& info = propInfo(kind);
-    return info.use == PropUse::Storage && info.accepts == ItemFilter::Any && !info.claimsLand;
+    return info.use == PropUse::Storage && info.accepts == ItemFilter::Any && !info.claimsLand && !info.stall;
 }
 
 std::uint32_t storeFilterOf(World& w, ObjectId prop) {
@@ -721,6 +729,7 @@ void passiveCraftSystem(World& w, double gameSeconds) {
                 if (made > 0) {
                     if (!slotsCanTake(out.slots.data(), STORAGE_SLOTS, made, 1)) break;
                     addToSlots(out.slots.data(), STORAGE_SLOTS, made, 1);
+                    queueItemMove(w, NO_OBJECT, e, made, 1);
                     ++pw.made;
                     queueSoundFrom(w, cooks ? Sfx::DoneCooking : Sfx::DoneForge, e);
                 }
@@ -736,7 +745,8 @@ void passiveCraftSystem(World& w, double gameSeconds) {
             if (fuel.hours <= 1e-9) {
                 fuel.hours = 0.0;
                 const int in = nextPassiveInput(st, kind);
-                if (in <= 0 || !takeOne(st->slots.data(), STORAGE_SLOTS, in)) break;
+                if (in <= 0 || !takeOne(st->slots.data(), (int)st->slots.size(), in)) break;
+                queueItemMove(w, e, NO_OBJECT, in, 1);
                 fuel.hours = perInput;
                 fuel.item = in;
             }

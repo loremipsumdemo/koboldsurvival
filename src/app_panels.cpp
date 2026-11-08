@@ -388,7 +388,7 @@ std::vector<ObjectId> App::flyAirshipsTo(const std::vector<ObjectId>& units, flo
     for (ObjectId u : units) {
         const ObjectId ship = airshipOf(world, u);
         if (ship != NO_OBJECT) flyAirship(world, ship, Vec2{ x, z });
-        else if (world.has<Upstairs>(u)) moveUpstairs(world, u, Vec2{ x, z });   // stays on its floor
+        else if (world.has<Upstairs>(u)) moveUpstairs(world, terrain, u, Vec2{ x, z });   // on its floor, or down the ladders
         else walkers.push_back(u);
     }
     return walkers;

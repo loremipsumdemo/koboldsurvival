@@ -121,6 +121,9 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
     if (p.material > 0) w.line("material", i, p.material);
     if (p.storeFilter) w.line("storefilter", i, *p.storeFilter);
+    if (p.bedPublic) w.line("bedpublic", i);
+    if (p.stallPayment) w.line("stallpay", i, *p.stallPayment);
+    for (const auto& r : p.stallRequests) w.line("stallreq", i, r[0], r[1], r[2]);
 }
 
 void writeSaveLines(std::ostream& out, const SaveData& d) {
@@ -128,6 +131,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     w.line("version", SAVE_VERSION);
     w.line("name", d.name);
     if (d.storesListed) w.line("storeslisted", 1);
+    if (d.stallHaulListed) w.line("stallhaul", 1);
     w.line("timestamp", d.timestamp);
     w.line("autosave", d.autosave);
     w.line("map", d.mapSource, d.mapStem);
@@ -219,6 +223,22 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "timestamp", [](Line& l) { return l.read(l.d.timestamp); } },
         { "autosave", [](Line& l) { return l.read(l.d.autosave); } },
         { "storeslisted", [](Line& l) { int v = 0; if (!l.read(v)) return false; l.d.storesListed = v != 0; return true; } },
+        { "stallhaul", [](Line& l) { int v = 0; if (!l.read(v)) return false; l.d.stallHaulListed = v != 0; return true; } },
+        { "bedpublic", [](Line& l) { SaveProp* p = l.prop(); if (!p) return false; p->bedPublic = true; return true; } },
+        { "stallpay", [](Line& l) {
+            SaveProp* p = l.prop();
+            unsigned m = 0;
+            if (!p || !l.read(m)) return false;
+            p->stallPayment = (std::uint32_t)m & STORE_ALL;
+            return true;
+        } },
+        { "stallreq", [](Line& l) {
+            SaveProp* p = l.prop();
+            std::array<int, 3> r{};
+            if (!p || !l.read(r[0], r[1], r[2])) return false;
+            p->stallRequests.push_back(r);
+            return true;
+        } },
         { "map", [](Line& l) { return l.read(l.d.mapSource) && l.rest(l.d.mapStem); } },
         { "clock", [](Line& l) { return l.read(l.d.gs.clockSeconds); } },
         { "camera", [](Line& l) { SaveCamera& c = l.d.cam; return l.read(c.fx, c.fy, c.fz, c.yaw, c.pitch, c.distance); } },

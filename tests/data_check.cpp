@@ -65,7 +65,7 @@ int main(int, char**) {
     // A new prop needs only a row
     const std::string realProps = pakText("data/props.txt");
     const int propsBefore = propKindCount();
-    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\n";
+    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\t12\t0\n";
     check(loadPropTableText(extra, err), "a new prop loads " + err);
     const PropKind added = (PropKind)propsBefore;
     check(propKindCount() == propsBefore + 1 && propInfo(added).key == "Birdbath" && isSeat(added) && isBed(added), "a new prop is what its row says");

@@ -1,4 +1,7 @@
 #include "prop_info.h"
+#include "commerce.h"
+#include "inventory.h"
+#include "building.h"
 #include <algorithm>
 #include <cmath>
 #include "claims.h"
@@ -36,9 +39,27 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
     const PropInfo& info = propInfo(p->kind);
     out.push_back(propDisplayName(w, e));
     if (const Owner* own = w.get<Owner>(e)) out.push_back(langf("MISC_FLAG_FACTION", { factionName(own->faction) }));
+    // A blueprint: the material it needs, and how much of it has been brought (building starts once it has it all)
+    if (const Blueprint* bp = w.get<Blueprint>(e)) {
+        const int need = materialsNeeded(w, e);
+        out.push_back(langf("MISC_BLUEPRINT_NEEDS", { itemNameOf(materialItem(materialOf(w, e))), std::to_string(std::min(bp->supplied, need)),
+                                                      std::to_string(need) }));
+        if (bp->supplied >= need) {
+            out.push_back(langf("MISC_BLUEPRINT_BUILDING", { std::to_string((int)std::floor(bp->progress * 100.0)) }));
+        } else {
+            out.push_back(lang("MISC_BLUEPRINT_WAITING"));
+        }
+    }
+    if (const int level = storeyOf(w, e); level > 0 && !info.upperFloor) out.push_back(langf("MISC_ON_FLOOR", { std::to_string(level) }));
     if (info.use == PropUse::Occupy) {
         const bool bed = isBed(p->kind);
         out.push_back(lang(bed ? "MISC_PROP_USE_BED" : isSeat(p->kind) ? "MISC_PROP_USE_SEAT" : "MISC_PROP_USE_CAGE"));
+        // A bed in a building: only its faction's, unless set Public
+        if (bed) {
+            const int house = bedHouseOwner(w, e);
+            if (w.has<BedPublic>(e)) out.push_back(lang("MISC_BED_PUBLIC"));
+            else if (house >= 0) out.push_back(langf("MISC_BED_PRIVATE", { factionName(house) }));
+        }
         const ObjectId occupant = propOccupant(w, e);
         if (occupant != NO_OBJECT) {
             if (const Name* name = w.get<Name>(occupant)) out.push_back(langf("MISC_PROP_OCCUPIED", { name->text }));
@@ -61,7 +82,15 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
         }
     }
     if (hasStorage(info)) {
-        out.push_back(langf("MISC_PROP_INVENTORY", { std::to_string(STORAGE_SLOTS) }));
+        const Storage* st = w.get<Storage>(e);
+        if (st && st->capacity > 0) out.push_back(langf("MISC_PROP_HOLDS_ITEMS", { std::to_string(storedCount(*st)), std::to_string(st->capacity) }));
+        else out.push_back(langf("MISC_PROP_INVENTORY", { std::to_string(st ? (int)st->slots.size() : STORAGE_SLOTS) }));
+        if (info.stall) {
+            out.push_back(lang(stallManned(w, e) ? "MISC_STALL_MANNED" : "MISC_STALL_UNMANNED"));
+            if (const StallStock* ss = w.get<StallStock>(e); ss && !ss->requests.empty()) {
+                out.push_back(langf("MISC_STALL_ORDERS", { std::to_string(ss->requests.size()) }));
+            }
+        }
         if (info.accepts != ItemFilter::Any) out.push_back(langf("MISC_PROP_HOLDS_ONLY", { lang(itemFilterKey(info.accepts)) }));
     }
     if (const Health* hp = w.get<Health>(e)) {

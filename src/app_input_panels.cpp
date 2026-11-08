@@ -210,9 +210,10 @@ bool App::mouseDownOnPanels() {
                 if (buildPressAt(hit->first, hit->second)) return true;
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
-                const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz);
+                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildStorey;
+                const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey);
                 if (why == BuildCheck::Ok) {
-                    placeBuiltProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f);
+                    placeBuiltProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f, FACTION_PLAYER, storey);
                     playSfx(Sfx::UiClick);
                 } else {
                     refuse(lang(buildRefusalKey(why)));

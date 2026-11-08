@@ -163,7 +163,7 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
 
 void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, const std::string& hint,
                            const Storage* storage, const Output* output, const std::string& status, int dragFrom,
-                           float mx, float my, const std::string& toggleLabel) {
+                           float mx, float my, const std::string& toggleLabel, int scroll) {
     const float th = listTextHeight("Ag");
 
     drawThemedPanel(L.panel);
@@ -171,13 +171,16 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     drawListText(fitText(lang(L.output ? "UILABEL_INPUT" : "UILABEL_INVENTORY"), L.heading.w, false), L.heading.x,
                  L.heading.y, theme::GOLD);
     ItemStack hoverStack{};
-    const ItemStack* in = storage ? storage->slots.data() : nullptr;
-    const int hotIn = drawStackGrid(L.grid, L.slots, in, (size_t)STORAGE_SLOTS, dragFrom, mx, my);
+    const int shown = (int)L.slots.size();
+    const size_t first = storage ? std::min(storage->slots.size(), (size_t)std::max(0, scroll) * (size_t)STORAGE_COLUMNS) : 0;
+    const ItemStack* in = storage ? storage->slots.data() + first : nullptr;
+    const size_t inCount = storage ? std::min((size_t)shown, storage->slots.size() - first) : 0;
+    const int hotIn = drawStackGrid(L.grid, L.slots, in, inCount, dragFrom < shown ? dragFrom : -1, mx, my);
     if (hotIn >= 0) hoverStack = in[hotIn];
     if (L.output) {
         drawListText(fitText(lang("UILABEL_OUTPUT"), L.outHeading.w, false), L.outHeading.x, L.outHeading.y, theme::GOLD);
         const ItemStack* out = output ? output->slots.data() : nullptr;
-        const int hotOut = drawStackGrid(L.outGrid, L.outSlots, out, (size_t)STORAGE_SLOTS, dragFrom - STORAGE_SLOTS, mx, my);
+        const int hotOut = drawStackGrid(L.outGrid, L.outSlots, out, (size_t)STORAGE_SLOTS, dragFrom - shown, mx, my);
         if (hotOut >= 0) hoverStack = out[hotOut];
         const std::string line = fitTextTip(status, L.status.w, L.status);
         drawListText(line, L.status.x, L.status.y + (L.status.h - th) * 0.5f, theme::AMBER);

@@ -1,4 +1,5 @@
 #include "build.h"
+#include "building.h"
 #include <algorithm>
 #include <cmath>
 
@@ -51,15 +52,19 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
     z = snapCoord(gz, h);
 }
 
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z) {
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey) {
     const Footprint& f = propInfo(kind).foot;
     const int builder = FACTION_PLAYER;
     const float yaw = 0.0f;
 
+    // On an upper floor, every bit of it must stand on a finished floor of yours on that level
     const bool ground = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
-        return t.walkable((int)std::floor(px), (int)std::floor(pz));
+        const int tx = (int)std::floor(px), tz = (int)std::floor(pz);
+        if (storey > 0) return floorSurfaceAt(w, tx, tz, storey, builder);
+        return t.walkable(tx, tz);
     });
-    if (!ground) return BuildCheck::Unwalkable;
+    if (!ground) return storey > 0 ? BuildCheck::NoFloor : BuildCheck::Unwalkable;
+    if (storey > 0 && propInfo(kind).claimsLand) return BuildCheck::NoFloor;
 
     const std::vector<Claim> claims = claimsOf(w);
 
@@ -74,8 +79,11 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 
     for (ObjectId e : w.view<Prop, Transform>()) {
         const Prop* p = w.get<Prop>(e);
+        const PropInfo& other = propInfo(p->kind);
+        // Floors (a foundation's tiles, upper floors) are stood on, not in the way; things on other floors don't count
+        if (other.foundation || other.upperFloor || storeyOf(w, e) != storey) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (footprintsOverlap(f, x, z, yaw, propInfo(p->kind).foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
+        if (footprintsOverlap(f, x, z, yaw, other.foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
     }
     return BuildCheck::Ok;
 }
@@ -100,6 +108,7 @@ const char* buildRefusalKey(BuildCheck c) {
     case BuildCheck::EnemySealed: return "MISC_BUILD_SEALED";
     case BuildCheck::ClaimOverlap: return "MISC_BUILD_CLAIM_OVERLAP";
     case BuildCheck::AltarTaken: return "MISC_BUILD_ALTAR_TAKEN";
+    case BuildCheck::NoFloor: return "MISC_BUILD_NO_FLOOR";
     case BuildCheck::Ok: break;
     }
     return "";
@@ -110,7 +119,13 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
     const ObjectId e = w.create();
     w.add(e, at);
     w.add(e, Prop{ kind, yaw });
-    if (hasStorage(info)) w.add(e, Storage{});
+    if (hasStorage(info)) {
+        Storage st;
+        st.slots.assign((size_t)std::max(1, info.slots), ItemStack{});
+        st.capacity = info.capacity;
+        w.add(e, std::move(st));
+    }
+    if (info.stall) w.add(e, StallStock{});
     if (info.use == PropUse::PassiveCrafting) {
         w.add(e, Output{});
         w.add(e, Fuel{});
@@ -121,10 +136,13 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
     return e;
 }
 
-ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner) {
+ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey) {
     const PropInfo& info = propInfo(kind);
     const bool piece = info.foundation || info.onFoundation;
-    const ObjectId e = makeProp(w, kind, Transform{ x, piece ? t.heightAt(x, z) : t.standHeight(x, z), z }, yaw);
+    float y = piece ? t.heightAt(x, z) : t.standHeight(x, z);
+    if (storey > 0) y = t.heightAt(x, z) + storeyBaseHeight(storey);
+    const ObjectId e = makeProp(w, kind, Transform{ x, y, z }, yaw);
+    if (storey > 0) w.add(e, Storey{ storey });
     if (!info.built) {
         claimOwnership(w, e);
         return e;

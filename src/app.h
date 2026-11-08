@@ -133,6 +133,7 @@ struct AppSession {
     ObjectId followUnit = NO_OBJECT;
     GameLog gameLog;
     std::vector<FloatingNumber> floatingNumbers;
+    std::vector<Puff> puffs;
     std::vector<TradeLabel> tradeLabels;
     int logOffset = 0;
     size_t logSeen = 0;
@@ -321,6 +322,12 @@ struct App : AppSession {
     void drawFoundationSize();
     void startRename(ObjectId u);
     void openStoreFilter(ObjectId prop);
+    bool ownDoor(ObjectId target);
+    // A Stall's Stock window: your stores down the left, the one picked's items on the right to order hauled to the Stall
+    void openStall(ObjectId stall);
+    bool pressOnStall();
+    void drawStall();
+    void scrollStall(float mx, float my, float wheel);
     std::optional<std::pair<float, float>> buildPickAt(float mx, float my);
     void markFloorTiles(BuildPreview& bp, int tx, int tz);
     bool pressOnStoreFilter();
@@ -450,6 +457,7 @@ struct App : AppSession {
     AltarUi altar;
     BehaviorGroupsUi groupsUi;
     StoreFilterUi storeFilterUi;
+    StallUi stallUi;
     RenamePrompt rename;
     GhostsUi ghostsUi;
     MapPickUi mapPick;

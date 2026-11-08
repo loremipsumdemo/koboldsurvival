@@ -331,9 +331,9 @@ int main(int, char**) {
         addBehavior(list, chop, BEHAVIOR_GROUP_TASKS);
         addBehavior(list, haul, BEHAVIOR_GROUP_TASKS);
         const size_t n = list.size();
-        check(n >= 5 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
+        check(n >= 6 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
               list[n - 3].kind == BehaviorKind::AutoHaulGround && list[n - 4].kind == BehaviorKind::AutoHaul &&
-              list[n - 5].kind == BehaviorKind::AutoConstruct,
+              list[n - 5].kind == BehaviorKind::AutoHaulStall && list[n - 6].kind == BehaviorKind::AutoConstruct,
               "hauling (to stores, then off the ground) and harvesting sort in after building and before movement");
         check(!isNightAt(START_CLOCK_SECONDS) && isNightAt(18.0 * SECONDS_PER_HOUR) && isNightAt(3.0 * SECONDS_PER_HOUR) &&
               !isNightAt(17.9 * SECONDS_PER_HOUR), "night runs from 18:00 to 06:00");
@@ -471,7 +471,7 @@ int main(int, char**) {
         settleFactionHomes(homes, terrain);
         int factionsWithUnits = 0, housed = 0, split = 0;
         for (const FactionDef& f : factions()) {
-            if (f.id == FACTION_PLAYER || f.id == FACTION_EXILE || isMobFaction(f.id)) continue;
+            if (f.id == FACTION_PLAYER || f.id == FACTION_NOMAD || isMobFaction(f.id)) continue;
             int units = 0, citizens = 0, military = 0;
             for (ObjectId u : homes.view<Entity, Faction>()) {
                 if (homes.get<Faction>(u)->id != f.id || homes.has<Mob>(u)) continue;
@@ -516,7 +516,7 @@ int main(int, char**) {
         Rng bareRng;
         int friendly = -1;
         for (const FactionDef& f : factions()) {
-            if (f.id != FACTION_PLAYER && f.id != FACTION_EXILE && !isMobFaction(f.id)) {
+            if (f.id != FACTION_PLAYER && f.id != FACTION_NOMAD && !isMobFaction(f.id)) {
                 friendly = f.id;
                 break;
             }
@@ -771,7 +771,7 @@ int main(int, char**) {
         int foundations = 0, upstairs = 0;
         for (ObjectId e : again.view<Foundation>()) foundations += 1;
         for (ObjectId e : again.view<Upstairs>()) upstairs += again.has<Foundation>(again.get<Upstairs>(e)->foundation) ? 1 : 0;
-        check(foundations == 1 && upstairs == 1, "the foundation and who is upstairs come back");
+        check(foundations >= 9 && upstairs == 1, "the foundation tiles and who is upstairs come back");
         check(!ground.walkable(x0, z0 + 1), "the walls close their tiles again after a reload");
 
         // With every wall and door on the ground floor gone, the upper floor falls in, and those on it come down
@@ -932,7 +932,8 @@ int main(int, char**) {
             const ObjectId f = placeFoundation(yard, ground, fx, fz, fx + 2, fz + 2, FACTION_PLAYER, BuildMaterial::Wood);
             check(f != NO_OBJECT, "a foundation is laid for the deck test");
             if (f != NO_OBJECT) {
-                finishBlueprint(yard, ground, f);
+                // One foundation tile per tile, each finished
+                for (ObjectId e : yard.view<Foundation, Blueprint>()) finishBlueprint(yard, ground, e);
                 buildingSystem(yard, ground, 0.0f);
                 check(ground.onDeck(fx + 1, fz + 1) && std::fabs(ground.standHeight(fx + 1.5f, fz + 1.5f) -
                       (ground.heightAt(fx + 1.5f, fz + 1.5f) + DECK_HEIGHT)) < 1e-4f && !ground.onDeck(fx + 3, fz),
@@ -986,9 +987,13 @@ int main(int, char**) {
             return n;
         };
         const ObjectId plan = placeFoundation(site, ground, cx, cz, cx + 3, cz + 3, FACTION_PLAYER, BuildMaterial::Wood);
-        check(supplyBlueprint(site, plan, 5) == 1, "a foundation blueprint holds the one log it needs");
-        check(destroyBuilding(site, plan) && logsOnGround() == 1 && site.view<Blueprint>().empty(),
-              "cancelled, the foundation blueprint drops the log it held");
+        check(site.view<Foundation>().size() == 16, "a 4 by 4 foundation is laid as 16 foundation tiles");
+        check(supplyBlueprint(site, plan, 5) == 1, "a foundation tile's blueprint holds the one log it needs");
+        check(destroyBuilding(site, plan) && logsOnGround() == 1 && !site.has<Prop>(plan) && site.view<Foundation>().size() == 15,
+              "cancelled, the foundation tile's blueprint drops the log it held");
+        const PieceCheck extend = checkFoundation(site, ground, cx + 4, cz, cx + 4, cz);
+        check(extend == PieceCheck::Ok, "a building is extended by a single tile beside it");
+        check(checkFoundation(site, ground, cx - 20, cz, cx - 19, cz) == PieceCheck::TooSmall, "a new building starts at least 3 by 3");
         const ObjectId plan2 = placeFoundation(site, ground, cx, cz, cx + 3, cz + 3, FACTION_PLAYER, BuildMaterial::Wood);
         supplyBlueprint(site, plan2, 1);
         site.get<Blueprint>(plan2)->progress = 0.2;

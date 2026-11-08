@@ -391,12 +391,19 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     const FrustumPlanes frustum = framePlanes(viewProj_);
     // Buildings: blueprints are see-through boxes, a foundation is a slab on each of its tiles, and a wall takes the shape
     // that fits the walls and doors beside it
-    std::unordered_set<long long> wallTiles;
+    std::unordered_set<long long> wallTiles;   // by levelKey: walls join the walls on their own floor
     for (ObjectId e : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (!info.wallRule && !info.door) continue;
         const Transform* tr = w.get<Transform>(e);
-        wallTiles.insert(tileKey((int)std::floor(tr->x), (int)std::floor(tr->z)));
+        wallTiles.insert(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e)));
+    }
+    // A door stands open while anyone is in its doorway
+    std::unordered_set<long long> standing;
+    for (ObjectId u : w.view<Entity, Transform>()) {
+        if (outCold(w, u) || w.has<Carried>(u)) continue;
+        const Transform* ut = w.get<Transform>(u);
+        standing.insert(levelKey((int)std::floor(ut->x), (int)std::floor(ut->z), storeyOf(w, u)));
     }
     // Blueprints are see-through, so they are drawn after everything solid (units included), farthest first
     struct PlannedBox {
@@ -447,9 +454,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             continue;
         }
         if (info.wallRule) {
-            const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z);
-            const int mask = (wallTiles.count(tileKey(x, z - 1)) ? 1 : 0) | (wallTiles.count(tileKey(x + 1, z)) ? 2 : 0) |
-                             (wallTiles.count(tileKey(x, z + 1)) ? 4 : 0) | (wallTiles.count(tileKey(x - 1, z)) ? 8 : 0);
+            const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z), lv = storeyOf(w, e);
+            const int mask = (wallTiles.count(levelKey(x, z - 1, lv)) ? 1 : 0) | (wallTiles.count(levelKey(x + 1, z, lv)) ? 2 : 0) |
+                             (wallTiles.count(levelKey(x, z + 1, lv)) ? 4 : 0) | (wallTiles.count(levelKey(x - 1, z, lv)) ? 8 : 0);
             const WallShape shape = wallShapeFor(mask);
             const Model* m = &propModel(kind);
             if (shape.shape > 0 && (size_t)idx(kind) < wallShapes_.size() && wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1].vao) {
@@ -465,10 +472,19 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const bool modelled = propModel(kind).vao != 0;
         const float side = modelled ? propInfo(kind).size : missingPropSide(kind);
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) continue;
+        float yaw = w.get<Prop>(e)->yaw;
+        float px = tr->x, pz = tr->z;
+        if (info.door && standing.count(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e)))) {
+            // Swung open about its edge: a quarter turn, pushed to the side of the doorway
+            const float along = yaw;
+            yaw += 1.5707963f;
+            px += std::cos(along) * 0.42f;
+            pz -= std::sin(along) * 0.42f;
+        }
         if (const Model* made = info.door ? materialModel(0) : nullptr) {
-            drawModel(*made, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
+            drawModel(*made, px, baseY, pz, propInfo(kind).size, yaw);
         } else if (modelled) {
-            queuePropModel(kind, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
+            queuePropModel(kind, px, baseY, pz, propInfo(kind).size, yaw);
         } else {
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
@@ -558,7 +574,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty()) return;
     const float lift = 0.04f;
     const float lineW = 0.03f;
-    auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift; };
+    auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift + buildPreview_.lift; };
     Batch b;
 
     for (const BuildPreview::Mark& m : buildPreview_.marks) {

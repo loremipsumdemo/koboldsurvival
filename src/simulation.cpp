@@ -1,3 +1,4 @@
+#include "commerce.h"
 #include "behavior_groups.h"
 #include "squads.h"
 #include "ghosts.h"
@@ -54,6 +55,16 @@ void queueUnitLabel(World& w, ObjectId unit, const std::string& text, bool red) 
     events(w).labels.push_back(TradeLabel{ unit, text, 0.0f, red });
 }
 
+void queuePuff(World& w, float x, float y, float z) {
+    events(w).puffs.push_back(Puff{ x, y, z, 0.0f });
+}
+
+void queueItemMove(World& w, ObjectId from, ObjectId to, int item, int count) {
+    if (item <= 0 || count <= 0) return;
+    queueUnitLabel(w, from, itemLossLabelFor(count, item), true);
+    queueUnitLabel(w, to, itemGainLabelFor(count, item));
+}
+
 void queueFloatingNumber(World& w, const FloatingNumber& number) {
     events(w).floats.push_back(number);
 }
@@ -79,6 +90,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("behaviorGroupSystem", behaviorGroupSystem(w));
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
     PROFILED("buildingSystem", buildingSystem(w, t, dt));
+    PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));
     append(events(w).lootOpened, std::move(carried.loot));
     PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(w, t));

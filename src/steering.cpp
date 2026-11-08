@@ -139,7 +139,8 @@ struct SteerFrame {
     std::vector<std::int64_t> level;
     std::unordered_map<long long, ObjectId> doors;   // locked doors, by tile
     std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
-    std::unordered_set<long long> floors;            // finished upper floor tiles
+    std::unordered_set<long long> floors;            // finished upper floor tiles, by levelKey
+    std::unordered_set<long long> upperWalls;        // finished walls on upper floors, by levelKey
     bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
 
@@ -692,16 +693,16 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
 
     float nx = tr->x + velocity.first * dt;
     float nz = tr->z + velocity.second * dt;
-    // Upstairs, only onto the floor of its own building
+    // Upstairs, only onto finished floor of its level, and not through the walls up there
     if (const Upstairs* up = w.get<Upstairs>(e)) {
-        const Foundation* f = w.get<Foundation>(up->foundation);
+        const int level = up->level;
         auto onFloor = [&](float x, float z) {
-            const int tx = (int)std::floor(x), tz = (int)std::floor(z);
-            return f && f->contains(tx, tz) && s.floors.count(tileKey(tx, tz)) > 0;
+            const long long k = levelKey((int)std::floor(x), (int)std::floor(z), level);
+            return s.floors.count(k) > 0 && s.upperWalls.count(k) == 0;
         };
         if (onFloor(nx, tr->z)) tr->x = nx;
         if (onFloor(tr->x, nz)) tr->z = nz;
-        tr->y = t.heightAt(tr->x, tr->z) + FLOOR_TOP;
+        tr->y = t.heightAt(tr->x, tr->z) + storeyBaseHeight(level);
         return;
     }
     // A locked door that won't let it through stops it on the threshold
@@ -755,15 +756,20 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
     s.level.assign(units.size(), 0);
     for (size_t i = 0; i < units.size(); ++i) {
-        if (const Upstairs* up = w.get<Upstairs>(units[i])) s.level[i] = 2 + (std::int64_t)up->foundation;
+        if (const Upstairs* up = w.get<Upstairs>(units[i])) s.level[i] = 1 + (std::int64_t)up->level;
         else if (w.has<Occupying>(units[i])) s.level[i] = 1;
     }
     for (ObjectId p : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
         if ((!info.door && !info.upperFloor && !info.wallRule) || w.has<Blueprint>(p)) continue;
         const Transform* pt = w.get<Transform>(p);
-        const long long key = tileKey((int)std::floor(pt->x), (int)std::floor(pt->z));
-        if (info.upperFloor) s.floors.insert(key);
+        const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
+        const int storey = storeyOf(w, p);
+        const long long key = tileKey(px, pz);
+        if (info.upperFloor) s.floors.insert(levelKey(px, pz, storey));
+        else if (storey > 0) {
+            if (info.wallRule) s.upperWalls.insert(levelKey(px, pz, storey));
+        }
         else if (info.wallRule) s.walls[key] = p;
         else if (const Lock* l = w.get<Lock>(p); l && l->locked) s.doors[key] = p;
     }

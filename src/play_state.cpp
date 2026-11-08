@@ -9,6 +9,7 @@ void resetPlayState() {
 
 void closeStorage() {
     session.storageProp = NO_OBJECT;
+    session.storageScroll = 0;
     session.storageUnit = NO_OBJECT;
     session.storageDrag = -1;
 }

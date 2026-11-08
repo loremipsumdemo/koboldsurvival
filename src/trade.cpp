@@ -1,4 +1,6 @@
 #include "trade.h"
+#include "hostility.h"
+#include "commerce.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -148,7 +150,12 @@ void completeTrade(World& w, ObjectId npc, ObjectId player) {
     for (const TradeGhost& g : session.tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
     for (const TradeGhost& g : session.tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);
     for (const TradeGhost& g : session.tradeNpc) giveOrDrop(w, player, g.stack.item, g.stack.count);
-    for (const TradeGhost& g : session.tradePlayer) giveOrDrop(w, npc, g.stack.item, g.stack.count);
+    // Goods stolen from the buyer's faction or its allies may be noticed: the trade stands, but costs reputation
+    static Rng noticing{ std::mt19937(0x5eed1234u) };
+    for (const TradeGhost& g : session.tradePlayer) {
+        stolenSaleNoticed(w, noticing, player, factionOf(w, npc), g.stack.item);
+        giveOrDrop(w, npc, reclaimStolen(w, npc, g.stack.item), g.stack.count);
+    }
     auto totals = [](const std::vector<TradeGhost>& side) {
         std::vector<std::pair<int, int>> out;
         for (const TradeGhost& g : side) {

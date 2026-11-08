@@ -54,7 +54,9 @@ inline void cancelPickup(World& w, ObjectId u) {
 
 inline void clearOrdersButFight(World& w, ObjectId u) {
     w.remove<BuildJob>(u);
+    w.remove<StallJob>(u);
     w.remove<Climbing>(u);
+    w.remove<Route>(u);
     leaveSquad(w, u);
     w.remove<SoloMove>(u);
     cancelPickup(w, u);
@@ -97,7 +99,7 @@ ObjectId nearestProp(World& w, const Transform& from, Pred pred) {
     return best;
 }
 
-void autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to);
+void autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int storey = -1);
 void stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop);
 void stopAutoStep(World& w, ObjectId u, Behaviors& b);
 bool openTile(const Terrain& t, float x, float z);
@@ -113,23 +115,12 @@ inline void planActiveSquad(World& w, Terrain& t, ObjectId squadE, Vec2 target) 
     sq->arrived = sq->waypoints.empty();
 }
 
-inline void planSolo(World& w, Terrain& t, ObjectId e, Vec2 target) {
-    SoloMove* so = w.get<SoloMove>(e);
-    Transform* tr = w.get<Transform>(e);
-    // Upstairs, a unit walks straight to the nearest spot of its floor
-    if (const Upstairs* up = w.get<Upstairs>(e)) {
-        so->waypoints = { nearestFloorSpot(w, up->foundation, target) };
-        so->next = 0;
-        return;
-    }
-    so->waypoints = t.findPath({ tr->x, tr->z }, target);
-    so->next = 0;
-}
+// A walk on the unit's own floor
+inline void planSolo(World& w, Terrain& t, ObjectId e, Vec2 target) { planSoloMove(w, t, e, target); }
 
-inline void walkSolo(World& w, Terrain& t, ObjectId e, Vec2 target) {
-    w.add(e, SoloMove{});
-    planSolo(w, t, e, target);
-}
+// A walk anywhere: storey is the floor the target is on (-1: the unit's own floor if the target has one there, else the
+// ground). On another floor, the unit goes by way of the ladders.
+inline void walkSolo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey = -1) { walkSoloTo(w, t, e, target, storey); }
 
 inline PropUse useOf(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);

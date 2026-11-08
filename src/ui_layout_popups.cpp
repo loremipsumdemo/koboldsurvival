@@ -117,12 +117,13 @@ LootLayout layoutLoot(int W, int H) {
     return L;
 }
 
-StorageLayout layoutStorage(int W, int H, bool output, bool lockToggle) {
+StorageLayout layoutStorage(int W, int H, bool output, bool lockToggle, int slotCount) {
     const float s = uiScaleFor(H);
     const float pad = 10.0f * s, bar = 22.0f * s, line = 20.0f * s, gap = 8.0f * s;
     const float btnH = 28.0f * s, btnW = 110.0f * s;
     const float cell = ITEM_CELL_PX, cellGap = 4.0f * s, inset = 4.0f * s;
-    const int cols = STORAGE_COLUMNS, rows = (STORAGE_SLOTS + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
+    const int shown = visibleStorageSlots(std::max(1, slotCount));
+    const int cols = STORAGE_COLUMNS, rows = (shown + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
     const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
     const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
     const float panelW = std::max(gridW, 260.0f * s) + 2.0f * pad;
@@ -138,20 +139,21 @@ StorageLayout layoutStorage(int W, int H, bool output, bool lockToggle) {
     L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
     L.heading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
     L.grid = Rect{ x0 + (panelW - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
-    auto cells = [&](const Rect& grid, std::vector<Rect>& out) {
-        for (int i = 0; i < STORAGE_SLOTS; ++i) {
+    auto cells = [&](const Rect& grid, std::vector<Rect>& out, int count) {
+        for (int i = 0; i < count; ++i) {
             const int col = i % cols, row = i / cols;
             out.push_back(Rect{ grid.x + inset + col * (cell + cellGap), grid.y + inset + row * (cell + cellGap), cell, cell });
         }
     };
-    cells(L.grid, L.slots);
+    cells(L.grid, L.slots, shown);
     float below = L.grid.y + gridH;
     L.output = output;
     if (output) {
         L.outHeading = Rect{ x0 + pad, below, panelW - 2.0f * pad, line };
-        L.outGrid = Rect{ L.grid.x, below + line, gridW, gridH };
-        cells(L.outGrid, L.outSlots);
-        L.status = Rect{ x0 + pad, L.outGrid.y + gridH, panelW - 2.0f * pad, line };
+        const float outGridH = 2 * cell + cellGap + 2.0f * inset;
+        L.outGrid = Rect{ L.grid.x, below + line, gridW, outGridH };
+        cells(L.outGrid, L.outSlots, STORAGE_SLOTS);
+        L.status = Rect{ x0 + pad, L.outGrid.y + outGridH, panelW - 2.0f * pad, line };
         below = L.status.y + line;
     }
     L.hint = Rect{ x0 + pad, below + gap, panelW - 2.0f * pad, hintH };

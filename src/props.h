@@ -173,6 +173,9 @@ struct PropInfo {
     bool rare = false;           // a new level scatters only one
     double materials = 0.0;      // building material a blueprint needs (Wood Logs, or the material picked); 0: placed finished
     double buildSeconds = 0.0;   // building it needs at Carpentry 1 (per tile for a foundation)
+    int slots = 12;              // a store's slots (props.txt's optional slots column; STORAGE_SLOTS by default)
+    int capacity = 0;            // the most items a store holds in all, or 0 for as many as its slots fit
+    bool stall = false;          // sells to other factions' units, manned by a shopkeeper
 };
 
 // Whether the item is what the prop takes as its input (an item, or any bones)
