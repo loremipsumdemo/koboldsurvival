@@ -181,6 +181,9 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     }
     rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
     rows.push_back(makeRange(RowId::ViewRange, lang("UILABEL_VIEW_RANGE"), s.viewRange));
+    rows.push_back(makeToggle(RowId::Clouds, lang("UILABEL_CLOUDS"), s.clouds));
+    rows.push_back(makeToggle(RowId::CloudShadows, lang("UILABEL_CLOUD_SHADOWS"), s.cloudShadows));
+    rows.push_back(makeToggle(RowId::VariedSurfaces, lang("UILABEL_VARIED_SURFACES"), s.variedSurfaces));
     rows.push_back(makeToggle(RowId::ShowFps, lang("UILABEL_SHOW_FPS"), s.showFps));
     return rows;
 }
@@ -286,7 +289,16 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
 
     const float cx = px + pad, cw = pw - 2.0f * pad;
     const float top = tabY + tabH + CONTENT_GAP * u;
-    const float rowStep = ROW_STEP * u, rowH = ROW_H * u, vpad = ROW_VPAD * u;
+    float rowStep = ROW_STEP * u, rowH = ROW_H * u, vpad = ROW_VPAD * u;
+    // More rows of controls than fit above the footer: they close up to fit, rather than run under it
+    const bool hasText = std::any_of(rows.begin(), rows.end(), [](const RowSpec& r) { return r.kind == RowKind::Text; });
+    const float room = footY - CONTENT_GAP * u - top;
+    if (!hasText && !rows.empty() && (float)rows.size() * rowStep > room) {
+        const float fit = room / ((float)rows.size() * rowStep);
+        rowStep *= fit;
+        rowH *= fit;
+        vpad *= fit;
+    }
     const float colX = cx + cw * COL_SPLIT, colW = cw * (1.0f - COL_SPLIT) - COL_RIGHT * u;
 
     L.rows.resize(rows.size());
@@ -496,6 +508,15 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::ShowFps:
         s.showFps = on;
+        break;
+    case RowId::Clouds:
+        s.clouds = on;
+        break;
+    case RowId::CloudShadows:
+        s.cloudShadows = on;
+        break;
+    case RowId::VariedSurfaces:
+        s.variedSurfaces = on;
         break;
     case RowId::CraftGatherSounds:
         s.craftGatherSounds = on;

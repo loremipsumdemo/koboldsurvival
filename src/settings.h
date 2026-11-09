@@ -49,6 +49,9 @@ struct GameSettings {
     int formationShape = (int)FormationShape::Rectangle;
     bool formationLoose = false;
     bool showFps = false;
+    bool clouds = true;
+    bool cloudShadows = true;
+    bool variedSurfaces = true;   // ground and water tiles laid with a random turn and shift each, so they don't repeat
 
     int autosaveMinutes = 5;
     int citizenSoftCap = 500;
@@ -119,6 +122,9 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
+        else if (key == "clouds")          s.clouds = (val == "1");
+        else if (key == "cloudShadows")    s.cloudShadows = (val == "1");
+        else if (key == "variedSurfaces")  s.variedSurfaces = (val == "1");
         else if (key == "autosaveMinutes") s.autosaveMinutes = parseInt(val, s.autosaveMinutes);
         else if (key == "citizenSoftCap")  s.citizenSoftCap = parseInt(val, s.citizenSoftCap);
         else if (key == "citizenHardCap")  s.citizenHardCap = parseInt(val, s.citizenHardCap);
@@ -194,6 +200,9 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "formationShape=" << s.formationShape << "\n";
     out << "formationLoose=" << (s.formationLoose ? 1 : 0) << "\n";
     out << "showFps=" << (s.showFps ? 1 : 0) << "\n";
+    out << "clouds=" << (s.clouds ? 1 : 0) << "\n";
+    out << "cloudShadows=" << (s.cloudShadows ? 1 : 0) << "\n";
+    out << "variedSurfaces=" << (s.variedSurfaces ? 1 : 0) << "\n";
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "npcNames=" << (s.showNpcNames ? 1 : 0) << "\n";

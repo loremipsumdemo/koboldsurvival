@@ -27,7 +27,8 @@ enum class RowId : int {
     Autosave, CitizenSoftCap, CitizenHardCap, UnitNames, NpcNames, FontScale, ResetPanels,
     Language, Font,
     EdgeScroll, Reference, ConversationPause,
-    GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds
+    GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds,
+    Clouds, CloudShadows, VariedSurfaces
 };
 
 enum class RowKind { Dropdown, Toggle, Level, Scale, Text, Action };

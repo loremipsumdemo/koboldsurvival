@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <vector>
 
 namespace {
@@ -19,6 +20,7 @@ layout(location = 1) in vec3 aNrm;
 layout(location = 2) in vec3 aCol;
 uniform mat4 uViewProj;
 uniform vec3 uEye;
+uniform vec2 uOrigin;
 out vec3 vNrm;
 out vec3 vCol;
 out float vDist;
@@ -29,14 +31,98 @@ void main() {
     vNrm = aNrm;
     vCol = aCol;
     vDist = distance(aPos, uEye);
-    vXZ = aPos.xz;
+    // Measured from a point near the camera, so the numbers stay small however far out on a big map it is
+    vXZ = aPos.xz - uOrigin;
     vPos = aPos;
 }
 )GLSL";
 
+// What the ground, the water and the clouds share: the noise picture, tiles laid in hexagons, and the clouds' shadows.
+// Positions here are measured from uOrigin (a point near the camera), and every lookup has its shift worked out on the CPU
+// in doubles, so nothing drifts or swims however big the map is.
+const char* const kSurfaceCommon = R"GLSL(
+uniform sampler2D uNoise;
+uniform int uVaried;          // 1: tiles laid in hexagons, each turned and shifted, and the slow changes across the map
+uniform int uSalt;            // from the world's seed
+uniform vec3 uMacro;          // xy: shift, z: 1 / the size the slow changes repeat at
+uniform float uCloudShadow;   // 0: no cloud shadows
+uniform vec3 uShadowSun;      // towards the sun
+uniform vec4 uCloudShift;     // xy: the lower layer's shift, zw: the upper's (they drift with the wind)
+uniform vec2 uCloudScale;     // the size each layer repeats at
+uniform vec2 uCloudHeight;
+uniform vec2 uCloudOpacity;
+uniform float uCloudCover;    // the noise above this is cloud
+
+// Whole-number hashing, so a cell gets the same value wherever it is looked up from
+vec3 cellRandom(ivec2 c, int salt) {
+    uvec3 v = uvec3(uint(c.x), uint(c.y), uint(salt)) * 1664525u + 1013904223u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    v ^= v >> 16u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    return vec3(v >> 8u) * (1.0 / 16777216.0);
+}
+
+// A tile texel as a normal tilted in the world's x and z (back turns it from the tile's way round), its z, and its height
+vec4 decodeTile(vec4 t, mat2 back) {
+    return vec4(back * (t.rg * 2.0 - 1.0), t.b * 2.0 - 1.0, t.a);
+}
+
+// The tile laid on a grid of hexagons, each turned and shifted at random and blended into its neighbours, so it never
+// shows a repeat. p is measured from the grid point base; drift moves the picture (in world units) without moving the grid.
+vec4 hexTile(sampler2D tex, vec2 p, ivec2 base, float hexSize, float tileSize, int salt, vec2 drift, vec2 dx, vec2 dy) {
+    vec2 q = p / hexSize;
+    vec2 skew = vec2(q.x - 0.57735027 * q.y, 1.15470054 * q.y);
+    vec2 fl = floor(skew);
+    ivec2 b = ivec2(fl);
+    vec3 f = vec3(skew - fl, 0.0);
+    f.z = 1.0 - f.x - f.y;
+    float s = step(0.0, -f.z);
+    float s2 = 2.0 * s - 1.0;
+    vec3 w = vec3(-f.z * s2, s - f.y * s2, s - f.x * s2);
+    int si = int(s);
+    ivec2 corner[3] = ivec2[3](b + ivec2(si, si), b + ivec2(si, 1 - si), b + ivec2(1 - si, si));
+    w = w * w * w;
+    w /= w.x + w.y + w.z;
+    vec4 sum = vec4(0.0);
+    for (int i = 0; i < 3; ++i) {
+        ivec2 v = corner[i];
+        vec2 center = hexSize * vec2(float(v.x) + 0.5 * float(v.y), 0.8660254 * float(v.y));
+        vec3 r = cellRandom(v + base, salt);
+        float a = r.x * 6.2831853;
+        float c = cos(a), sn = sin(a);
+        mat2 turn = mat2(c, sn, -sn, c);
+        vec2 uv = turn * (p - center + drift) / tileSize + r.yz;
+        vec4 t = textureGrad(tex, uv, turn * dx / tileSize, turn * dy / tileSize);
+        sum += w[i] * decodeTile(t, transpose(turn));
+    }
+    // Blending three lowers the contrast between them; this puts it back, so the hexagons' middles don't show
+    float k = inversesqrt(dot(w, w));
+    sum.xy *= k;
+    sum.w = (sum.w - 0.5) * k + 0.5;
+    return sum;
+}
+
+vec4 macroAt(vec2 p) { return texture(uNoise, p * uMacro.z + uMacro.xy); }
+
+float cloudAmount(float n) { return smoothstep(uCloudCover, uCloudCover + 0.18, n); }
+
+// 1 in full sun, less under a cloud: the point on each layer between here and the sun
+float cloudShade(vec2 p, float y) {
+    if (uCloudShadow <= 0.0) return 1.0;
+    vec2 slope = uShadowSun.xz / max(uShadowSun.y, 0.2);
+    vec2 at0 = p + slope * (uCloudHeight.x - y);
+    vec2 at1 = p + slope * (uCloudHeight.y - y);
+    float c0 = cloudAmount(texture(uNoise, at0 / uCloudScale.x + uCloudShift.xy).r) * uCloudOpacity.x;
+    float c1 = cloudAmount(texture(uNoise, at1 / uCloudScale.y + uCloudShift.zw).g) * uCloudOpacity.y;
+    return 1.0 - uCloudShadow * (1.0 - (1.0 - c0) * (1.0 - c1));
+}
+)GLSL";
+
 const char* const kGroundFS = R"GLSL(
-#version 330 core
 uniform sampler2D uTile;
+uniform vec2 uTileShift;      // tiles in a plain grid: where the grid falls
+uniform vec4 uHex;            // xy: the hexagon grid's point from uOrigin, z: hexagon size, w: tile size
+uniform ivec2 uHexBase;
 uniform float uSeaY;
 uniform float uDepthScale;
 uniform vec3 uRockRgb;
@@ -59,18 +145,28 @@ out vec4 fragColor;
 void main() {
     // Over a void, ground far below sea level isn't there, and the edge it stops at is jagged like a broken-off underside
     if (vPos.y < uVoidCut) {
-        vec2 cell = floor(vXZ / 3.0);
-        float h = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+        vec2 cell = floor(vPos.xz / 3.0);
+        float h = cellRandom(ivec2(cell), 7).x;
         if (vPos.y < uVoidCut - 12.0 * h) discard;
     }
-    // Ground detail from the tile: its normal tilts the lighting, and its height
-    // darkens the color a little. The tile repeats every 8 world units.
-    vec4 t = texture(uTile, vXZ / 8.0);
+    vec2 dx = dFdx(vXZ), dy = dFdy(vXZ);
     // The fine grain fades out with distance so far ground does not shimmer.
     float grain = 1.0 - smoothstep(40.0, 220.0, vDist);
-    vec3 bump = vec3(t.r * 2.0 - 1.0, 0.0, t.g * 2.0 - 1.0) * grain;
-    vec3 n = normalize(normalize(vNrm) + bump * 0.35);
-    float diff = max(dot(n, normalize(uSunDir)), 0.0);
+    // Ground detail from the tile: its normal tilts the lighting, and its height darkens the color a little
+    vec4 t;
+    float bumpBy = 0.35, shadeBy = 1.0;
+    if (uVaried == 1) {
+        t = hexTile(uTile, vXZ - uHex.xy, uHexBase, uHex.z, uHex.w, uSalt, vec2(0.0), dx, dy);
+        // Slow changes across the map: some ground a little lighter or darker, some rougher or smoother
+        vec4 m = macroAt(vXZ);
+        shadeBy = mix(0.86, 1.12, m.b);
+        bumpBy *= mix(0.55, 1.35, m.a);
+    } else {
+        t = decodeTile(texture(uTile, vXZ / uHex.w + uTileShift), mat2(1.0));
+    }
+    vec3 bump = vec3(t.x, 0.0, t.y) * grain;
+    vec3 n = normalize(normalize(vNrm) + bump * bumpBy);
+    float diff = max(dot(n, normalize(uSunDir)), 0.0) * cloudShade(vXZ, vPos.y);
 
     // Steep faces turn to bare rock.
     float steep = 1.0 - clamp(normalize(vNrm).y, 0.0, 1.0);
@@ -79,7 +175,7 @@ void main() {
     float grey = dot(vCol, vec3(0.333));
     base = mix(base, mix(grey * uGroundTint * 2.0, uRockRgb, rock), uTintAmount);
     // Steep faces take more of the sky's light, so they read as rock rather than black.
-    vec3 lit = base * mix(1.0, 0.85 + 0.3 * t.a, grain) * (uAmbient * (1.0 + 0.8 * steep) + uSunLight * diff);
+    vec3 lit = base * shadeBy * mix(1.0, 0.85 + 0.3 * t.w, grain) * (uAmbient * (1.0 + 0.8 * steep) + uSunLight * diff);
 
     // Under the sea, the water between the eye and the ground absorbs light and tints
     // it. The deeper the ground, the more of the water it has been seen through.
@@ -112,8 +208,11 @@ void main() {
 )GLSL";
 
 const char* const kSeaFS = R"GLSL(
-#version 330 core
 in vec3 vWorld;
+uniform vec2 uOrigin;
+uniform vec4 uTileShift;      // tiles in a plain grid: where each layer's grid falls
+uniform vec4 uHex1, uHex2;    // as the ground's uHex, for each layer
+uniform ivec2 uHexBase1, uHexBase2;
 uniform vec3 uEye;
 uniform vec3 uSunDir;
 uniform vec3 uSunLight;
@@ -134,35 +233,45 @@ uniform sampler2D uTile;
 out vec4 fragColor;
 void main() {
     if (uMapSize > 0.0 && (vWorld.x < 0.0 || vWorld.z < 0.0 || vWorld.x > uMapSize || vWorld.z > uMapSize)) discard;
-    // Two drifting copies of the tile, at different scales and directions, so the
-    // surface shows no obvious repeat. Nothing here reflects the sky: the light only
+    // Two drifting copies of the tile, at different scales and directions. Nothing here reflects the sky: the light only
     // changes the shading and the bright caustic bands.
+    vec2 local = vWorld.xz - uOrigin;
     vec2 p = vWorld.xz;
     float tm = uTime * uSpeed;
-    vec4 t1 = texture(uTile, p / 10.0 + vec2(tm * 0.020, tm * 0.013));
-    vec4 t2 = texture(uTile, p / 6.0 - vec2(tm * 0.017, tm * 0.025));
+    vec2 drift1 = vec2(tm * 0.20, tm * 0.13), drift2 = -vec2(tm * 0.102, tm * 0.15);
+    vec2 dx = dFdx(local), dy = dFdy(local);
+    vec4 t1, t2;
+    float tone = 1.0;
+    if (uVaried == 1) {
+        t1 = hexTile(uTile, local - uHex1.xy, uHexBase1, uHex1.z, uHex1.w, uSalt + 1, drift1, dx, dy);
+        t2 = hexTile(uTile, local - uHex2.xy, uHexBase2, uHex2.z, uHex2.w, uSalt + 2, drift2, dx, dy);
+        tone = mix(0.92, 1.08, macroAt(local).b);
+    } else {
+        t1 = decodeTile(texture(uTile, (local + drift1) / uHex1.w + uTileShift.xy), mat2(1.0));
+        t2 = decodeTile(texture(uTile, (local + drift2) / uHex2.w + uTileShift.zw), mat2(1.0));
+    }
     vec4 t = mix(t1, t2, 0.5);
-    vec3 nt = t.rgb * 2.0 - 1.0;
-    vec3 n = normalize(vec3(nt.x * 1.4, 1.0, nt.y * 1.4));
+    vec3 n = normalize(vec3(t.x * 1.4, 1.0, t.y * 1.4));
     vec3 sun = normalize(uSunDir);
-    float ndl = max(dot(n, sun), 0.0);
+    float shade = cloudShade(local, vWorld.y);
+    float ndl = max(dot(n, sun), 0.0) * shade;
 
     // Caustic-like light play: thin bright bands along the height ridges, brightest
     // when the sun is high.
-    float ridge = 1.0 - abs(2.0 * t.a - 1.0);
-    float caustic = pow(ridge, 4.0) * max(sun.y, 0.0) * uPattern;
+    float ridge = 1.0 - abs(2.0 * t.w - 1.0);
+    float caustic = pow(ridge, 4.0) * max(sun.y, 0.0) * uPattern * shade;
 
-    vec3 base = uColor * (0.85 + 0.3 * t.a);
+    vec3 base = uColor * tone * (0.85 + 0.3 * t.w);
     vec3 lit = base * (uAmbient + uSunLight * ndl * 0.6) + uSunLight * caustic * 0.35;
 
     // Fairly see-through, a little more opaque where the ripples are high.
-    float alpha = clamp((0.42 + 0.10 * t.a) * uOpacity, 0.0, 1.0);
+    float alpha = clamp((0.42 + 0.10 * t.w) * uOpacity, 0.0, 1.0);
 
     // Sun glint: a bright spot where the sun's reflection points at the eye. Only the
     // sun is reflected, never the sky, so the surface stays non-reflective.
     vec3 viewDir = normalize(uEye - vWorld);
     vec3 halfV = normalize(sun + viewDir);
-    float glint = pow(max(dot(n, halfV), 0.0), 180.0) * max(sun.y, 0.0);
+    float glint = pow(max(dot(n, halfV), 0.0), 180.0) * max(sun.y, 0.0) * shade;
     lit += uSunLight * glint * 2.0 * uPattern;
 
     // Glow: the water gives its own light. Glitter: small points that flash at their own times, none of it reflecting anything.
@@ -175,7 +284,7 @@ void main() {
             float size = i == 0 ? 0.55 : 1.3;
             vec2 at = (p + (i == 0 ? vec2(tm * 0.3, tm * 0.2) : vec2(-tm * 0.2, tm * 0.25))) / size;
             vec2 cell = floor(at);
-            float h = fract(sin(dot(cell, vec2(41.31, 289.17))) * 43758.5453);
+            float h = cellRandom(ivec2(cell), 11 + i).x;
             float round_ = smoothstep(0.5, 0.05, length(at - cell - 0.5));
             float flash = pow(0.5 + 0.5 * sin(uTime * (1.5 + 3.0 * h) + h * 300.0), 10.0);
             float sparkle = step(1.0 - 0.22 * uGlitter, h) * round_ * flash * mix(0.35, 1.0, near);
@@ -192,6 +301,46 @@ void main() {
     float far = smoothstep(uFadeStart, uFadeEnd, dist);
     vec3 col = mix(mix(lit, uFogColor, f), uFogColor, far);
     fragColor = vec4(col, mix(alpha, 1.0, far));
+}
+)GLSL";
+
+// One layer of cloud: a flat sheet high over the map, drawn from the same noise as its shadows below
+const char* const kCloudFS = R"GLSL(
+in vec3 vWorld;
+uniform vec2 uOrigin;
+uniform vec3 uEye;
+uniform int uLayer;           // 0 the lower layer (the noise's red), 1 the upper (green)
+uniform vec3 uLit;            // the cloud's color in the light
+uniform vec3 uFogColor;
+uniform float uFog;
+uniform float uFadeStart;     // from here out the clouds even out into a haze of their average cover...
+uniform float uFadeEnd;
+uniform float uEdge;          // ...and from here they thin away, so the sheet's edge never shows against the sky
+out vec4 fragColor;
+void main() {
+    vec2 p = vWorld.xz - uOrigin;
+    vec4 nz = texture(uNoise, p / uCloudScale[uLayer] + (uLayer == 0 ? uCloudShift.xy : uCloudShift.zw));
+    float n = uLayer == 0 ? nz.r : nz.g;
+    // The soft edge is never narrower than a pixel, so it can't crawl or stair-step
+    float soft = max(0.18, 1.5 * fwidth(n));
+    float amount = smoothstep(uCloudCover, uCloudCover + soft, n);
+    // Thicker cloud is darker underneath
+    float thick = smoothstep(uCloudCover, 1.0, n);
+    vec3 col = uLit * mix(1.0, 0.62, thick);
+
+    float dist = distance(vWorld, uEye);
+    float flat_ = distance(vWorld.xz, uEye.xz);
+    // Far off, many clouds fall in one pixel: they become an even haze of how much of the sky they cover
+    amount = mix(amount, 0.30, smoothstep(uFadeStart, uFadeEnd, dist));
+    amount *= 1.0 - smoothstep(uEdge * 0.55, uEdge, flat_);
+    // Near the sheet itself (a high camera), it fades, so it never hides the ground
+    amount *= smoothstep(15.0, 80.0, abs(vWorld.y - uEye.y));
+    amount *= uCloudOpacity[uLayer];
+    if (amount <= 0.002) discard;
+
+    float d = dist * uFog * 0.004;
+    float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
+    fragColor = vec4(mix(col, uFogColor, f), amount);
 }
 )GLSL";
 
@@ -231,11 +380,31 @@ bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     return true;
 }
 
-GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels) {
-    const GLuint tex = makeTexture2D(SURFACE_TILE_SIZE, SURFACE_TILE_SIZE, GL_RGBA8, GL_RGBA, pixels.data(), GL_LINEAR,
-                                     GL_REPEAT);
+// How the surfaces are laid, in world units
+constexpr double GROUND_TILE = 8.0, GROUND_HEX = 6.0;
+constexpr double WATER_TILE_1 = 10.0, WATER_HEX_1 = 8.5;
+constexpr double WATER_TILE_2 = 6.0, WATER_HEX_2 = 5.3;
+constexpr double MACRO_SIZE = 173.0;      // the slow changes across the ground repeat this far apart
+constexpr double ORIGIN_STEP = 64.0;      // the point positions are measured from moves with the camera in steps this big
+// The two layers of cloud: how far each repeats, how high it floats, which way and how fast (world units a second) the
+// wind takes it, and how solid it is
+constexpr double CLOUD_SCALE[2] = { 1100.0, 1700.0 };
+constexpr float CLOUD_HEIGHT[2] = { 260.0f, 380.0f };
+constexpr double CLOUD_WIND[2][2] = { { 3.2, 1.4 }, { 5.5, -2.3 } };
+constexpr float CLOUD_OPACITY[2] = { 0.85f, 0.55f };
+constexpr float CLOUD_COVER = 0.52f;
+constexpr float CLOUD_SHADOW = 0.45f;     // how much of the sun a full cloud takes
+
+GLuint makeSurfaceTexture(const std::vector<uint8_t>& pixels, int side) {
+    const GLuint tex = makeTexture2D(side, side, GL_RGBA8, GL_RGBA, pixels.data(), GL_LINEAR, GL_REPEAT);
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // Ground and clouds seen at a low angle stay sharp without shimmering, where the card can
+    if (GLEW_EXT_texture_filter_anisotropic) {
+        GLfloat most = 1.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &most);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(most, 4.0f));
+    }
     glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
@@ -244,12 +413,161 @@ float SecondsSinceStart() {
     static const auto start = std::chrono::steady_clock::now();
     return std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
 }
+
+double SecondsSinceStartExact() {
+    static const auto start = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+}
+
+// Where a lookup that repeats every size falls, from the origin: only the part past whole repeats, so it stays small
+float wrapShift(double v, double size) {
+    const double r = v / size;
+    return (float)(r - std::floor(r));
+}
+
+// The corner of a hexagon grid (hexagons hexSize apart) nearest the origin: out[0..1] where it is from the origin, out[2] the
+// hexagon size, out[3] the tile size; base its whole-number place in the grid, which the hexagons' random turns come from
+void hexFrame(double ox, double oz, double hexSize, double tileSize, float out[4], int base[2]) {
+    const double qx = ox / hexSize, qz = oz / hexSize;
+    const double j = std::round(1.1547005383792515 * qz);
+    const double i = std::round(qx - 0.5773502691896258 * qz);
+    const double cx = hexSize * (i + 0.5 * j), cz = hexSize * 0.8660254037844386 * j;
+    out[0] = (float)(cx - ox);
+    out[1] = (float)(cz - oz);
+    out[2] = (float)hexSize;
+    out[3] = (float)tileSize;
+    base[0] = (int)i;
+    base[1] = (int)j;
+}
+
+std::string withCommon(const char* body) {
+    return std::string("#version 330 core\n") + kSurfaceCommon + body;
+}
+}
+
+void Renderer::SurfaceUniforms::find(GLuint prog) {
+    origin = glGetUniformLocation(prog, "uOrigin");
+    noise = glGetUniformLocation(prog, "uNoise");
+    varied = glGetUniformLocation(prog, "uVaried");
+    salt = glGetUniformLocation(prog, "uSalt");
+    macro = glGetUniformLocation(prog, "uMacro");
+    cloudShadow = glGetUniformLocation(prog, "uCloudShadow");
+    shadowSun = glGetUniformLocation(prog, "uShadowSun");
+    cloudShift = glGetUniformLocation(prog, "uCloudShift");
+    cloudScale = glGetUniformLocation(prog, "uCloudScale");
+    cloudHeight = glGetUniformLocation(prog, "uCloudHeight");
+    cloudOpacity = glGetUniformLocation(prog, "uCloudOpacity");
+    cloudCover = glGetUniformLocation(prog, "uCloudCover");
+}
+
+// Binds the noise to texture unit 1 and leaves unit 0 active
+void Renderer::setSurfaceUniforms(const SurfaceUniforms& u) const {
+    const SurfaceFrame& F = surfaceFrame_;
+    glUniform2f(u.origin, (float)F.originX, (float)F.originZ);
+    glUniform1i(u.noise, 1);
+    glUniform1i(u.varied, variedSurfaces_ ? 1 : 0);
+    glUniform1i(u.salt, (int)(surfaceSeed_ & 0x7FFFFFFFu));
+    glUniform3fv(u.macro, 1, F.macro);
+    glUniform1f(u.cloudShadow, F.cloudShadow);
+    glUniform3fv(u.shadowSun, 1, F.sun);
+    glUniform4fv(u.cloudShift, 1, F.cloudShift);
+    glUniform2fv(u.cloudScale, 1, F.cloudScale);
+    glUniform2fv(u.cloudHeight, 1, F.cloudHeight);
+    glUniform2fv(u.cloudOpacity, 1, F.cloudOpacity);
+    glUniform1f(u.cloudCover, F.cloudCover);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, noiseTex_);
+    glActiveTexture(GL_TEXTURE0);
+}
+
+void Renderer::updateSurfaceFrame(const Camera& cam, const SkyLight& sky) {
+    SurfaceFrame& F = surfaceFrame_;
+    float ex, ey, ez;
+    cam.eye(ex, ey, ez);
+    const double ox = std::floor((double)ex / ORIGIN_STEP) * ORIGIN_STEP;
+    const double oz = std::floor((double)ez / ORIGIN_STEP) * ORIGIN_STEP;
+    F.originX = ox;
+    F.originZ = oz;
+    hexFrame(ox, oz, GROUND_HEX, GROUND_TILE, F.groundHex, F.groundBase);
+    hexFrame(ox, oz, WATER_HEX_1, WATER_TILE_1, F.waterHex1, F.waterBase1);
+    hexFrame(ox, oz, WATER_HEX_2, WATER_TILE_2, F.waterHex2, F.waterBase2);
+    F.groundShift[0] = wrapShift(ox, GROUND_TILE);
+    F.groundShift[1] = wrapShift(oz, GROUND_TILE);
+    F.waterShift[0] = wrapShift(ox, WATER_TILE_1);
+    F.waterShift[1] = wrapShift(oz, WATER_TILE_1);
+    F.waterShift[2] = wrapShift(ox, WATER_TILE_2);
+    F.waterShift[3] = wrapShift(oz, WATER_TILE_2);
+    F.macro[0] = wrapShift(ox, MACRO_SIZE);
+    F.macro[1] = wrapShift(oz, MACRO_SIZE);
+    F.macro[2] = (float)(1.0 / MACRO_SIZE);
+
+    const double now = SecondsSinceStartExact();
+    for (int k = 0; k < 2; ++k) {
+        F.cloudShift[2 * k] = wrapShift(ox - CLOUD_WIND[k][0] * now, CLOUD_SCALE[k]);
+        F.cloudShift[2 * k + 1] = wrapShift(oz - CLOUD_WIND[k][1] * now, CLOUD_SCALE[k]);
+        F.cloudScale[k] = (float)CLOUD_SCALE[k];
+        F.cloudHeight[k] = CLOUD_HEIGHT[k];
+        F.cloudOpacity[k] = CLOUD_OPACITY[k];
+    }
+    F.cloudCover = CLOUD_COVER;
+    const bool themeClouds = !hasTheme_ || theme_.cloudsShown != 0;
+    F.clouds = cloudsOn_ && themeClouds && noiseTex_ != 0;
+    const float sunUp = std::clamp((sky.sunDir.y - 0.05f) / 0.30f, 0.0f, 1.0f);
+    F.cloudShadow = cloudShadowsOn_ && themeClouds && noiseTex_ != 0 ? CLOUD_SHADOW * sunUp * sunUp * (3.0f - 2.0f * sunUp) : 0.0f;
+    F.sun[0] = sky.sunDir.x;
+    F.sun[1] = sky.sunDir.y;
+    F.sun[2] = sky.sunDir.z;
+    const float up = std::max(sky.sunDir.y, 0.0f);
+    const float lit[3] = { sky.ambientLight.x * 1.4f + sky.sunLight.x * 0.85f * up + 0.04f,
+                           sky.ambientLight.y * 1.4f + sky.sunLight.y * 0.85f * up + 0.04f,
+                           sky.ambientLight.z * 1.4f + sky.sunLight.z * 0.85f * up + 0.04f };
+    for (int i = 0; i < 3; ++i) F.cloudLit[i] = std::min(lit[i], 1.0f);
+    F.fogColor[0] = sky.fogColor.x;
+    F.fogColor[1] = sky.fogColor.y;
+    F.fogColor[2] = sky.fogColor.z;
+    F.fog = sky.fog;
+}
+
+void Renderer::drawClouds(const Camera& cam) {
+    const SurfaceFrame& F = surfaceFrame_;
+    if (!F.clouds || !cloudShader_.prog) return;
+    float ex, ey, ez;
+    cam.eye(ex, ey, ez);
+    glUseProgram(cloudShader_.prog);
+    setSurfaceUniforms(cloudShader_.common);
+    glUniformMatrix4fv(cloudShader_.viewProj, 1, GL_FALSE, viewProj_.m);
+    glUniform1f(cloudShader_.half, kFarPlane * 1.2f);
+    glUniform3f(cloudShader_.eye, ex, ey, ez);
+    glUniform3fv(cloudShader_.lit, 1, F.cloudLit);
+    glUniform3fv(cloudShader_.fogColor, 1, F.fogColor);
+    glUniform1f(cloudShader_.fog, F.fog);
+    glUniform1f(cloudShader_.fadeStart, 1500.0f);
+    glUniform1f(cloudShader_.fadeEnd, 4500.0f);
+    glUniform1f(cloudShader_.edge, kFarPlane * 1.15f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glBindVertexArray(emptyVao_);
+    // The upper layer first: from below, it is the farther one
+    for (int layer = 1; layer >= 0; --layer) {
+        glUniform1i(cloudShader_.layer, layer);
+        glUniform3f(cloudShader_.center, ex, F.cloudHeight[layer], ez);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 bool Renderer::initTerrainGl() {
-    groundShader_.prog = linkProgram("terrain", kGroundVS, kGroundFS);
+    groundShader_.prog = linkProgram("terrain", kGroundVS, withCommon(kGroundFS).c_str());
     if (!groundShader_.prog) return false;
     GLuint g = groundShader_.prog;
+    groundShader_.common.find(g);
+    groundShader_.tileShift = glGetUniformLocation(g, "uTileShift");
+    groundShader_.hex = glGetUniformLocation(g, "uHex");
+    groundShader_.hexBase = glGetUniformLocation(g, "uHexBase");
     groundShader_.viewProj = glGetUniformLocation(g, "uViewProj");
     groundShader_.eye = glGetUniformLocation(g, "uEye");
     groundShader_.seaY = glGetUniformLocation(g, "uSeaY");
@@ -267,9 +585,15 @@ bool Renderer::initTerrainGl() {
     groundShader_.groundTint = glGetUniformLocation(g, "uGroundTint");
     groundShader_.tintAmount = glGetUniformLocation(g, "uTintAmount");
 
-    seaShader_.prog = linkProgram("sea", kSeaVS, kSeaFS);
+    seaShader_.prog = linkProgram("sea", kSeaVS, withCommon(kSeaFS).c_str());
     if (!seaShader_.prog) return false;
     GLuint s = seaShader_.prog;
+    seaShader_.common.find(s);
+    seaShader_.tileShift = glGetUniformLocation(s, "uTileShift");
+    seaShader_.hex1 = glGetUniformLocation(s, "uHex1");
+    seaShader_.hex2 = glGetUniformLocation(s, "uHex2");
+    seaShader_.hexBase1 = glGetUniformLocation(s, "uHexBase1");
+    seaShader_.hexBase2 = glGetUniformLocation(s, "uHexBase2");
     seaShader_.viewProj = glGetUniformLocation(s, "uViewProj");
     seaShader_.center = glGetUniformLocation(s, "uCenter");
     seaShader_.half = glGetUniformLocation(s, "uHalf");
@@ -305,6 +629,22 @@ bool Renderer::initTerrainGl() {
     floorShader_.fog = glGetUniformLocation(f, "uFog");
     floorShader_.mapSize = glGetUniformLocation(f, "uMapSize");
 
+    cloudShader_.prog = linkProgram("clouds", kSeaVS, withCommon(kCloudFS).c_str());
+    if (!cloudShader_.prog) return false;
+    GLuint c = cloudShader_.prog;
+    cloudShader_.common.find(c);
+    cloudShader_.viewProj = glGetUniformLocation(c, "uViewProj");
+    cloudShader_.center = glGetUniformLocation(c, "uCenter");
+    cloudShader_.half = glGetUniformLocation(c, "uHalf");
+    cloudShader_.eye = glGetUniformLocation(c, "uEye");
+    cloudShader_.layer = glGetUniformLocation(c, "uLayer");
+    cloudShader_.lit = glGetUniformLocation(c, "uLit");
+    cloudShader_.fogColor = glGetUniformLocation(c, "uFogColor");
+    cloudShader_.fog = glGetUniformLocation(c, "uFog");
+    cloudShader_.fadeStart = glGetUniformLocation(c, "uFadeStart");
+    cloudShader_.fadeEnd = glGetUniformLocation(c, "uFadeEnd");
+    cloudShader_.edge = glGetUniformLocation(c, "uEdge");
+
     glGenVertexArrays(1, &emptyVao_);
     return true;
 }
@@ -314,13 +654,16 @@ void Renderer::releaseTerrainGl() {
     glDeleteProgram(groundShader_.prog);
     glDeleteProgram(seaShader_.prog);
     glDeleteProgram(floorShader_.prog);
+    glDeleteProgram(cloudShader_.prog);
     glDeleteTextures(1, &groundTex_);
     glDeleteTextures(1, &seaTex_);
+    glDeleteTextures(1, &noiseTex_);
     glDeleteVertexArrays(1, &emptyVao_);
     groundShader_ = TerrainShader{};
     seaShader_ = SeaShader{};
     floorShader_ = FloorShader{};
-    groundTex_ = seaTex_ = 0;
+    cloudShader_ = CloudShader{};
+    groundTex_ = seaTex_ = noiseTex_ = 0;
     emptyVao_ = 0;
     surfaceVersion_ = 0;
 }
@@ -328,8 +671,14 @@ void Renderer::releaseTerrainGl() {
 void Renderer::uploadSurfaceTiles(const Terrain& t) {
     glDeleteTextures(1, &groundTex_);
     glDeleteTextures(1, &seaTex_);
-    groundTex_ = makeSurfaceTexture(t.surface().ground);
-    seaTex_ = makeSurfaceTexture(t.surface().water);
+    groundTex_ = makeSurfaceTexture(t.surface().ground, SURFACE_TILE_SIZE);
+    seaTex_ = makeSurfaceTexture(t.surface().water, SURFACE_TILE_SIZE);
+    // The noise is the same for the same seed, so it is only made again for a new one
+    if (!noiseTex_ || surfaceSeed_ != t.surface().seed) {
+        glDeleteTextures(1, &noiseTex_);
+        surfaceSeed_ = t.surface().seed;
+        noiseTex_ = makeSurfaceTexture(skyNoisePixels(surfaceSeed_), SKY_NOISE_SIZE);
+    }
     surfaceVersion_ = t.surfaceVersion();
 }
 
@@ -412,6 +761,8 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
     const SkyLight sky = skyLightFor(hasTheme_ ? themeLook_ : t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    updateSurfaceFrame(cam, sky);
+    const SurfaceFrame& frame = surfaceFrame_;
     const bool hasWater = !hasTheme_ || theme_.waterShown;
     const float seaEnd = hasTheme_ && seaBounded_ ? (float)t.size() : 0.0f;
     // The light that reaches props and units
@@ -466,6 +817,10 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (hasTheme_) themeRgb(theme_.groundTint, groundTint);
     glUniform3fv(groundShader_.groundTint, 1, groundTint);
     glUniform1f(groundShader_.tintAmount, hasTheme_ ? (float)theme_.groundTintAmount / 100.0f : 0.0f);
+    setSurfaceUniforms(groundShader_.common);
+    glUniform2fv(groundShader_.tileShift, 1, frame.groundShift);
+    glUniform4fv(groundShader_.hex, 1, frame.groundHex);
+    glUniform2iv(groundShader_.hexBase, 1, frame.groundBase);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTex_);
     glUniform1i(groundShader_.tile, 0);
@@ -534,6 +889,12 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform1f(seaShader_.glitter, hasTheme_ ? (float)theme_.waterGlitter / 100.0f : 0.0f);
     glUniform1f(seaShader_.glow, hasTheme_ ? (float)theme_.waterGlow / 100.0f : 0.0f);
     glUniform1f(seaShader_.mapSize, seaEnd);
+    setSurfaceUniforms(seaShader_.common);
+    glUniform4fv(seaShader_.tileShift, 1, frame.waterShift);
+    glUniform4fv(seaShader_.hex1, 1, frame.waterHex1);
+    glUniform4fv(seaShader_.hex2, 1, frame.waterHex2);
+    glUniform2iv(seaShader_.hexBase1, 1, frame.waterBase1);
+    glUniform2iv(seaShader_.hexBase2, 1, frame.waterBase2);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, seaTex_);
     glUniform1i(seaShader_.tile, 0);

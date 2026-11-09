@@ -198,7 +198,9 @@ inline bool withinDetail(const Camera& cam, float x, float y, float z) { return 
 constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
 float missingPropSide(PropKind kind);
 
-enum class MapDotKind { Player, Hostile, Neutral, Prop };
+// What the world map marks. Altars, vehicles and stores each have a shape of their own; other props are small squares,
+// and items lying on the ground little red dots.
+enum class MapDotKind { Player, Hostile, Neutral, Prop, Altar, Vehicle, Storage, Item };
 struct MapDot {
     Vec2 at{ 0.0f, 0.0f };
     MapDotKind kind = MapDotKind::Player;

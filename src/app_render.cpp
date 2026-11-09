@@ -288,6 +288,7 @@ void App::drawFrameOverlays() {
 
 void App::render() {
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
+    renderer.setGraphicsOptions(settings.clouds, settings.cloudShadows, settings.variedSurfaces);
     if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;
     renderer.setMenuText(screen != Screen::Playing);
     renderer.hoverFrameStart();

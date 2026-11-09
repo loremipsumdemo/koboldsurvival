@@ -202,9 +202,19 @@ void App::updateDisbandHold() {
 
 void App::drawWorldMapPopup() {
     std::vector<MapDot> mapDots;
+    for (ObjectId e : world.view<GroundItem, Transform>()) {
+        const Transform* t = world.get<Transform>(e);
+        mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Item });
+    }
     for (ObjectId e : world.view<Prop, Transform>()) {
         const Transform* t = world.get<Transform>(e);
-        mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, MapDotKind::Prop });
+        const PropKind kind = world.get<Prop>(e)->kind;
+        const PropInfo& info = propInfo(kind);
+        MapDotKind mark = MapDotKind::Prop;
+        if (kind == PropKind::Altar) mark = MapDotKind::Altar;
+        else if (info.airship || info.wheelbarrow) mark = MapDotKind::Vehicle;
+        else if (world.has<Storage>(e)) mark = MapDotKind::Storage;
+        mapDots.push_back(MapDot{ Vec2{ t->x, t->z }, mark });
     }
     for (ObjectId e : world.view<Entity, Transform>()) {
         const Transform* t = world.get<Transform>(e);

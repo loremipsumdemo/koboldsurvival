@@ -619,6 +619,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
     }
     drawBuildPreview(t);
+    drawClouds(cam);
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
     Batch rings;
     for (ObjectId e : w.view<Entity, Transform, Selected>()) {

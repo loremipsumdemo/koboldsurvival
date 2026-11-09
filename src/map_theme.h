@@ -21,7 +21,8 @@ struct MapTheme {
     ThemeColor sunColor = 0xFFFAE6;
     int moonShown = 1;
     ThemeColor moonColor = 0xCCDBFF;
-    int dayCycle = 1;     // 0: always the fixed hour, though the game's clock and calendar still run
+    int cloudsShown = 1;  // two drifting layers of cloud overhead, and their shadows on the ground
+    int dayCycle = 1;    // 0: always the fixed hour, though the game's clock and calendar still run
     int fixedHour = 12;
 
     ThemeColor lightColor = 0xFFF5D1;

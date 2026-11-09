@@ -92,23 +92,83 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
         tris.insert(tris.end(), { { x - h, y - h, c }, { x + h, y - h, c }, { x + h, y + h, c },
                                   { x - h, y - h, c }, { x + h, y + h, c }, { x - h, y + h, c } });
     };
+    auto rect = [&](float x, float y, float halfW, float halfH, RGBA c) {
+        tris.insert(tris.end(), { { x - halfW, y - halfH, c }, { x + halfW, y - halfH, c }, { x + halfW, y + halfH, c },
+                                  { x - halfW, y - halfH, c }, { x + halfW, y + halfH, c }, { x - halfW, y + halfH, c } });
+    };
+    auto diamond = [&](float x, float y, float half, RGBA c) {
+        tris.insert(tris.end(), { { x, y - half, c }, { x + half, y, c }, { x, y + half, c },
+                                  { x, y - half, c }, { x, y + half, c }, { x - half, y, c } });
+    };
     auto inMap = [&](float px, float py) { return r.contains(px, py); };
+    auto isMark = [](MapDotKind k) {
+        return k == MapDotKind::Prop || k == MapDotKind::Altar || k == MapDotKind::Vehicle || k == MapDotKind::Storage ||
+               k == MapDotKind::Item;
+    };
 
+    const float rim = std::max(1.0f, s);
     const RGBA purple{ 0.62f, 0.25f, 0.88f, 1.0f };
+    const RGBA itemRed{ 0.95f, 0.18f, 0.16f, 1.0f };
+    const RGBA crate{ 0.86f, 0.56f, 0.22f, 1.0f }, crateLid{ 0.52f, 0.30f, 0.10f, 1.0f };
+    const RGBA cart{ 0.30f, 0.82f, 0.95f, 1.0f };
+    const RGBA gold{ 1.0f, 0.80f, 0.20f, 1.0f }, altarHeart{ 0.75f, 0.10f, 0.12f, 1.0f };
     const float propSide = std::max(4.0f, 6.0f * s);
-    for (const MapDot& dot : dots) {
-        if (dot.kind != MapDotKind::Prop) continue;
-        const float px = sx(dot.at.x), py = sy(dot.at.z);
-        if (!inMap(px, py)) continue;
-        square(px, py, propSide + 2.0f * std::max(1.0f, s), black);
-        square(px, py, propSide, purple);
+    const float itemSide = std::max(3.0f, 4.0f * s);
+    // Drawn in this order, so the rarer and more important marks sit on top: items, plain props, stores, vehicles, altars
+    const MapDotKind layers[] = { MapDotKind::Item, MapDotKind::Prop, MapDotKind::Storage, MapDotKind::Vehicle, MapDotKind::Altar };
+    for (MapDotKind layer : layers) {
+        for (const MapDot& dot : dots) {
+            if (dot.kind != layer) continue;
+            const float px = sx(dot.at.x), py = sy(dot.at.z);
+            if (!inMap(px, py)) continue;
+            switch (layer) {
+            case MapDotKind::Item:
+                square(px, py, itemSide + 2.0f * rim, black);
+                square(px, py, itemSide, itemRed);
+                break;
+            case MapDotKind::Prop:
+                square(px, py, propSide + 2.0f * rim, black);
+                square(px, py, propSide, purple);
+                break;
+            case MapDotKind::Storage: {
+                // A crate: a box with its lid
+                const float h = std::max(4.5f, 6.0f * s);
+                rect(px, py, h + rim, h + rim, black);
+                rect(px, py, h, h, crate);
+                rect(px, py - h * 0.45f, h, h * 0.22f, crateLid);
+                rect(px, py + h * 0.25f, h * 0.15f, h * 0.55f, crateLid);
+                break;
+            }
+            case MapDotKind::Vehicle: {
+                // A cart: a long body on two wheels
+                const float bodyW = std::max(5.5f, 7.5f * s), h = std::max(3.0f, 4.0f * s), wheel = std::max(2.0f, 2.6f * s);
+                rect(px, py - h * 0.3f, bodyW + rim, h + rim, black);
+                rect(px, py - h * 0.3f, bodyW, h, cart);
+                square(px - bodyW * 0.55f, py + h * 0.85f, 2.0f * wheel + 2.0f * rim, black);
+                square(px + bodyW * 0.55f, py + h * 0.85f, 2.0f * wheel + 2.0f * rim, black);
+                square(px - bodyW * 0.55f, py + h * 0.85f, 2.0f * wheel, RGBA{ 0.85f, 0.85f, 0.85f, 1.0f });
+                square(px + bodyW * 0.55f, py + h * 0.85f, 2.0f * wheel, RGBA{ 0.85f, 0.85f, 0.85f, 1.0f });
+                break;
+            }
+            case MapDotKind::Altar: {
+                // A gold diamond with a red heart
+                const float h = std::max(7.0f, 9.5f * s);
+                diamond(px, py, h + 1.6f * rim, black);
+                diamond(px, py, h, gold);
+                diamond(px, py, h * 0.4f, altarHeart);
+                break;
+            }
+            default:
+                break;
+            }
+        }
     }
     drawUiTris(tris);
     tris.clear();
 
     const float d = std::max(6.0f, 9.0f * s);
     for (const MapDot& dot : dots) {
-        if (dot.kind == MapDotKind::Prop) continue;
+        if (isMark(dot.kind)) continue;
         const float px = sx(dot.at.x), py = sy(dot.at.z);
         if (!inMap(px, py)) continue;
         if (dot.kind == MapDotKind::Player) {

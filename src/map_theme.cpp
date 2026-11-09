@@ -17,6 +17,7 @@ MapTheme cavernTheme() {
     t.stars = 0;
     t.sunShown = 0;
     t.moonShown = 0;
+    t.cloudsShown = 0;
     t.dayCycle = 0;
     t.fixedHour = 11;
     t.lightColor = 0xDDE2D6;
@@ -45,6 +46,7 @@ MapTheme galaxyTheme() {
     t.skyDayHorizon = t.skyNightHorizon = 0x1BA6C4;   // the other
     t.sunShown = 0;
     t.moonShown = 0;
+    t.cloudsShown = 0;
     t.dayCycle = 0;
     t.fixedHour = 10;
     t.lightColor = 0xE4DAFF;
@@ -84,6 +86,7 @@ MapTheme emberTheme() {
     t.stars = 0;
     t.sunShown = 0;
     t.moonShown = 0;
+    t.cloudsShown = 0;
     t.dayCycle = 0;
     t.fixedHour = 15;
     t.lightColor = 0xFFB070;
@@ -139,6 +142,7 @@ const ThemeRow ROWS[] = {
     color("sun_color", "UILABEL_THEME_SUN_COLOR", &MapTheme::sunColor),
     toggle("moon_shown", "UILABEL_THEME_MOON_SHOWN", &MapTheme::moonShown),
     color("moon_color", "UILABEL_THEME_MOON_COLOR", &MapTheme::moonColor),
+    toggle("clouds_shown", "UILABEL_THEME_CLOUDS_SHOWN", &MapTheme::cloudsShown),
     toggle("day_cycle", "UILABEL_THEME_DAY_CYCLE", &MapTheme::dayCycle),
     number("fixed_hour", "UILABEL_THEME_FIXED_HOUR", &MapTheme::fixedHour, 0, 23),
 

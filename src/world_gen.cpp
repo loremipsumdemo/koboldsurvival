@@ -193,8 +193,9 @@ void previewColor(const MapTheme& theme, Biome b, int h, uint8_t veg, int shade,
 class GeneratedSource : public ChunkSource {
 public:
     explicit GeneratedSource(const WorldGenSettings& settings) : generator_(settings) {
-        surface_.ground = surfaceTilePixels(GROUND_TILE_SPEC);
-        surface_.water = surfaceTilePixels(WATER_TILE_SPEC);
+        surface_.seed = settings.seed;
+        surface_.ground = surfaceTilePixels(seededSpec(GROUND_TILE_SPEC, settings.seed));
+        surface_.water = surfaceTilePixels(seededSpec(WATER_TILE_SPEC, settings.seed));
     }
     int size() const override { return generator_.settings().size; }
     float floorY() const override { return WORLD_GEN_FLOOR_Y; }

@@ -71,6 +71,13 @@ public:
     void shutdown();
 
     void setDayMinutes(float m) { dayMinutes_ = m; }
+    // From the Graphics settings: the clouds overhead, their shadows on the ground, and ground and water tiles laid so
+    // they don't repeat (off: one plain repeating tile, the cheapest)
+    void setGraphicsOptions(bool clouds, bool cloudShadows, bool variedSurfaces) {
+        cloudsOn_ = clouds;
+        cloudShadowsOn_ = cloudShadows;
+        variedSurfaces_ = variedSurfaces;
+    }
     // Shows a map's theme at once. uploadTerrain sets it from the map when one loads.
     void setMapTheme(const MapTheme& theme);
 
@@ -380,18 +387,52 @@ private:
     void buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep);
     void drawTerrain(const Terrain& t, const Camera& cam);
 
+    // The uniforms of kSurfaceCommon, which the ground, water and cloud shaders all have
+    struct SurfaceUniforms {
+        GLint origin = -1, noise = -1, varied = -1, salt = -1, macro = -1, cloudShadow = -1, shadowSun = -1;
+        GLint cloudShift = -1, cloudScale = -1, cloudHeight = -1, cloudOpacity = -1, cloudCover = -1;
+        void find(GLuint prog);
+    };
     struct TerrainShader {
         GLuint prog = 0;
         GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
         GLint voidCut = -1, groundTint = -1, tintAmount = -1;
         GLint sunLight = -1, ambient = -1, underwater = -1, fogColor = -1, fog = -1, tile = -1;
+        GLint tileShift = -1, hex = -1, hexBase = -1;
+        SurfaceUniforms common;
     };
     struct SeaShader {
         GLuint prog = 0;
         GLint viewProj = -1, center = -1, half = -1, eye = -1, sunDir = -1, sunLight = -1, ambient = -1, color = -1;
         GLint glitter = -1, glow = -1, mapSize = -1;
         GLint fogColor = -1, fog = -1, time = -1, opacity = -1, pattern = -1, speed = -1, fadeStart = -1, fadeEnd = -1, tile = -1;
+        GLint tileShift = -1, hex1 = -1, hex2 = -1, hexBase1 = -1, hexBase2 = -1;
+        SurfaceUniforms common;
     };
+    struct CloudShader {
+        GLuint prog = 0;
+        GLint viewProj = -1, center = -1, half = -1, eye = -1, layer = -1, lit = -1, fogColor = -1, fog = -1;
+        GLint fadeStart = -1, fadeEnd = -1, edge = -1;
+        SurfaceUniforms common;
+    };
+    // Worked out once a frame, in doubles, for every surface shader: the point near the camera that positions are measured
+    // from, where each grid of tiles and hexagons falls from it, and where the drifting clouds are
+    struct SurfaceFrame {
+        double originX = 0.0, originZ = 0.0;
+        float groundHex[4] = {}, waterHex1[4] = {}, waterHex2[4] = {};
+        int groundBase[2] = {}, waterBase1[2] = {}, waterBase2[2] = {};
+        float groundShift[2] = {}, waterShift[4] = {};
+        float macro[3] = {};
+        float cloudShift[4] = {}, cloudScale[2] = {}, cloudHeight[2] = {}, cloudOpacity[2] = {};
+        float cloudCover = 0.5f, cloudShadow = 0.0f;
+        float sun[3] = { 0.0f, 1.0f, 0.0f };
+        float cloudLit[3] = { 1.0f, 1.0f, 1.0f };
+        float fogColor[3] = {}, fog = 0.0f;
+        bool clouds = false;
+    };
+    void setSurfaceUniforms(const SurfaceUniforms& u) const;
+    void updateSurfaceFrame(const Camera& cam, const SkyLight& sky);
+    void drawClouds(const Camera& cam);
     struct FloorShader {
         GLuint prog = 0;
         GLint mapSize = -1;
@@ -400,6 +441,11 @@ private:
     TerrainShader groundShader_;
     SeaShader seaShader_;
     FloorShader floorShader_;
+    CloudShader cloudShader_;
+    SurfaceFrame surfaceFrame_;
+    GLuint noiseTex_ = 0;
+    uint32_t surfaceSeed_ = 0;
+    bool cloudsOn_ = true, cloudShadowsOn_ = true, variedSurfaces_ = true;
     GLuint groundTex_ = 0, seaTex_ = 0;
     uint32_t surfaceVersion_ = 0;
     GLuint emptyVao_ = 0;

@@ -245,14 +245,25 @@ uniform samplerCube uBaked;
 out vec4 FragColor;
 
 float hash1(float n) { return fract(sin(n) * 43758.5453); }
-float hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+// A whole-number hash, so a grid corner gets exactly the same value from every cell that shares it. A sin() hash
+// doesn't: the GPU works the corner out a hair differently from each side, and the big multiply turns that into
+// a different value, which showed as hard seams through the noise.
+float hashI(ivec3 c) {
+    uvec3 v = uvec3(c) * 1664525u + 1013904223u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    v ^= v >> 16u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    return float((v.x ^ v.y ^ v.z) >> 8u) * (1.0 / 16777216.0);
+}
+float hash3(vec3 p) { return hashI(ivec3(floor(p + 0.5))); }
 
 // Smooth noise over the sphere's directions
 float skyNoise(vec3 p) {
-    vec3 i = floor(p), f = fract(p);
+    vec3 fl = floor(p), f = p - fl;
+    ivec3 i = ivec3(fl);
     f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x), mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
-               mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x), mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+    return mix(mix(mix(hashI(i), hashI(i + ivec3(1, 0, 0)), f.x), mix(hashI(i + ivec3(0, 1, 0)), hashI(i + ivec3(1, 1, 0)), f.x), f.y),
+               mix(mix(hashI(i + ivec3(0, 0, 1)), hashI(i + ivec3(1, 0, 1)), f.x), mix(hashI(i + ivec3(0, 1, 1)), hashI(i + ivec3(1, 1, 1)), f.x), f.y), f.z);
 }
 float clouds(vec3 p) {
     // Each octave turned against the last, so the noise's grid doesn't show as straight edges
@@ -286,11 +297,13 @@ vec3 caveSky(vec3 d) {
     float up = asin(clamp(d.y, -1.0, 1.0)) / 1.5707963;
     float rough = clouds(d * 14.0);
     vec3 col = uHorizon * (0.55 + 0.5 * rough);
+    // The wobble follows a circle round the viewer, so it meets itself where the angle wraps instead of jumping there
+    vec2 ring = normalize(d.xz + vec2(1e-6, 0.0)) * (40.0 / 6.2831853);
     for (int i = 0; i < 4; ++i) {
         float layer = float(i);
         float near = layer / 3.0;
         float count = 90.0 - layer * 20.0;
-        float wobble = 0.03 * (skyNoise(vec3(around * 40.0, layer, 3.0)) - 0.5);
+        float wobble = 0.03 * (skyNoise(vec3(ring.x, layer * 5.0 + 3.0, ring.y)) - 0.5);
         float roof = 0.50 - near * 0.10 + wobble;
         float drop = (0.26 + near * 0.26) * points(around, count, 11.0 + layer * 7.0);
         float floorAt = -0.12 + near * 0.05 + wobble;
@@ -322,7 +335,8 @@ vec3 galaxySky(vec3 d, float stars) {
         float h = hash3(cell + float(i));
         float keep = i == 0 ? 0.990 : 0.975 - band * 0.03;
         if (h > keep) {
-            float round_ = smoothstep(0.75, 0.15, length(d * scale - cell - 0.5));
+            // Fades out before the cell's edge, so no star is cut off square
+            float round_ = smoothstep(0.5, 0.1, length(d * scale - cell - 0.5));
             float twinkle = 0.5 + 0.5 * hash3(cell + 7.0);
             vec3 tint = mix(vec3(0.75, 0.82, 1.0), vec3(1.0, 0.8, 0.75), hash3(cell + 3.0));
             col += tint * round_ * twinkle * (i == 0 ? 1.4 : 0.55) * stars;
@@ -353,7 +367,7 @@ void main() {
     // Stars: one per cell of a fine grid over the sphere, where a hash says so. Upper sky only.
     if (uStarAlpha > 0.0 && d.y > 0.0) {
         vec3 cell = floor(d * 180.0);
-        float h = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        float h = hash3(cell);
         col += vec3(step(0.994, h) * smoothstep(0.0, 0.3, d.y) * uStarAlpha);
     }
 

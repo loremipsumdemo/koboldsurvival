@@ -18,6 +18,9 @@ struct WorldSurface {
     Look look;
     std::vector<uint8_t> ground;
     std::vector<uint8_t> water;
+    // The world's seed, which lays out the clouds and how the ground and water tiles are turned and shifted. Never saved:
+    // a generated world has its own, a world folder 0.
+    uint32_t seed = 0;
 };
 
 int chunksPerSide(int size);
