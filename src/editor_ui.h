@@ -46,7 +46,7 @@ ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float scale);
 struct WorldGenUi {
     WorldGenSettings settings;
     bool themeTab = false;
-    std::string name;          // set from UILABEL_GEN_DEFAULT_NAME when the screen opens
+    std::string name;          // UILABEL_GEN_DEFAULT_NAME and the seed until typed or picked
     bool nameEdited = false;   // typed or picked, so a language change leaves it alone
     bool editingName = false;
     int dragRow = -1;
@@ -55,15 +55,25 @@ struct WorldGenUi {
     bool generated = false;
     std::string generatedName;
     std::vector<std::string> maps;
+    std::vector<std::string> playedMaps;   // lowercased names of the maps game saves are played on, once per save
     int mapScroll = 0;
+    std::string deleteMap;                 // the map the delete question is asked about, empty when none is
+    int deleteLevels = 0;                  // how many levels are made on it, counted when the question opens
 };
 
 struct WorldGenLayout {
     Rect panel, tabWorld, tabTheme, themeArea, nameBox, seedBox, seedRandom, sizeDown, sizeUp, sizeBox, styleDown, styleUp, styleBox, styleAbout;
     std::vector<Rect> bars, stepDown, stepUp;
     Rect preview, previewLabel, mapsBox, generate, proceed, back;
-    std::vector<Rect> mapRows;
+    std::vector<Rect> mapRows, mapDelete;  // a map's row, and the X beside it that asks to delete it
 };
+
+// The question asked before a map is deleted: its box, the Delete button held down to delete, and Cancel
+struct MapDeleteLayout {
+    Rect box, hold, cancel;
+    std::vector<Rect> lines;
+};
+MapDeleteLayout layoutMapDelete(int W, int H, int lineCount);
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
 enum class EditorTab { Entities, Props, Items, Theme };

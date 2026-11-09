@@ -227,6 +227,13 @@ struct App : AppSession {
         int value = 0;
     };
     void openWorldGen();
+    void defaultWorldGenName();
+    bool worldHasSaves(const std::string& name) const;
+    int worldSaveCount(const std::string& name) const;
+    std::vector<std::pair<std::string, RGBA>> mapDeleteLines();
+    void cancelMapDelete();
+    void deleteWorldMap();
+    void refreshPlayedMaps();
     void stopWorldGenName();
     void worldGenChanged();
     void drawWorldGenScreen();

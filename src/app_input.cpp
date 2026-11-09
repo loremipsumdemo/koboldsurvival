@@ -140,7 +140,9 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::WorldGen) {
-        if (worldGenUi.editingName) {
+        if (!worldGenUi.deleteMap.empty()) {
+            if (e.key.key == SDLK_ESCAPE) cancelMapDelete();
+        } else if (worldGenUi.editingName) {
             if (e.key.key == SDLK_BACKSPACE) {
                 popUtf8Char(worldGenUi.name);
                 worldGenUi.nameEdited = true;

@@ -115,6 +115,10 @@ MISC_DELETED	Deleted "{0}"
 MISC_OVERWRITE_Q	Overwrite "{0}"?
 MISC_LOAD_Q	Load "{0}"?
 MISC_DELETE_Q	Delete "{0}"?
+MISC_DELETE_MAP_Q	Delete the map "{0}"?
+UILABEL_DELETE_MAP_SAVES	Game saves played on it: {0}. They won't load without the map.
+UILABEL_DELETE_MAP_LEVELS	Levels made on it are deleted too: {0}.
+UILABEL_MAP_SAVES_TIP	Game saves played on this map: {0}
 UILABEL_MODEL_N	Model {0}
 UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
 UILABEL_BODY_TYPE	Body type
@@ -312,6 +316,7 @@ UILABEL_THEME_GROUND_TINT	Ground tint
 UILABEL_THEME_GROUND_TINT_AMOUNT	Tint amount
 UILABEL_THEME_ROCK_COLOR	Steep rock color
 MISC_GEN_NEEDS_NAME	Needs a name made of letters, digits, spaces, - or _.
+MISC_GEN_HAS_SAVES	"{0}" has game saves played on it, so it can't be generated again. Pick another name.
 UILABEL_EDITOR_TITLE	Level Editor: {0}
 UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
 UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)

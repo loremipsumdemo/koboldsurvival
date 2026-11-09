@@ -223,6 +223,10 @@ bool App::autosaveNow() {
 }
 
 void App::performDelete() {
+    if (screen == Screen::WorldGen && !worldGenUi.deleteMap.empty()) {
+        deleteWorldMap();
+        return;
+    }
     if (!pendingDelete) {
         ask = Ask::None;
         return;

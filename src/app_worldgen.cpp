@@ -57,8 +57,25 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     const int shown = std::max(0, (int)((L.mapsBox.h - 56.0f * s) / (listRow + 4.0f * s)));
     const int first = std::clamp(mapScroll, 0, std::max(0, mapCount - shown));
     for (int i = first; i < mapCount && i < first + shown; ++i) {
-        L.mapRows.push_back(Rect{ L.mapsBox.x + 10.0f * s, L.mapsBox.y + 44.0f * s + (i - first) * (listRow + 4.0f * s), rightW - 20.0f * s, listRow });
+        const float rowY = L.mapsBox.y + 44.0f * s + (i - first) * (listRow + 4.0f * s);
+        const float rowW = rightW - 20.0f * s - listRow - 4.0f * s;
+        L.mapRows.push_back(Rect{ L.mapsBox.x + 10.0f * s, rowY, rowW, listRow });
+        L.mapDelete.push_back(Rect{ L.mapsBox.x + 10.0f * s + rowW + 4.0f * s, rowY, listRow, listRow });
     }
+    return L;
+}
+
+// The lines stack up from the buttons, so the box grows upwards with them
+MapDeleteLayout layoutMapDelete(int W, int H, int lineCount) {
+    const float s = uiScaleFor(H);
+    const DialogGeometry d = questionGeometry(W, H);
+    const float lineH = 44.0f * s;
+    const float bottom = d.yes.y - 10.0f * s, top = bottom - lineCount * lineH;
+    MapDeleteLayout L;
+    L.box = Rect{ d.box.x, top - 22.0f * s, d.box.w, d.box.y + d.box.h - (top - 22.0f * s) };
+    L.hold = d.yes;
+    L.cancel = d.no;
+    for (int i = 0; i < lineCount; ++i) L.lines.push_back(Rect{ d.box.x + 24.0f * s, top + i * lineH, d.box.w - 48.0f * s, lineH });
     return L;
 }
 
@@ -255,9 +272,85 @@ bool App::themeClick(const Rect& area, float x, float y) {
 
 // ---- World Generation screen
 
+namespace {
+std::string lowered(std::string s) {
+    for (char& c : s) {
+        if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+    }
+    return s;
+}
+}
+
+// "world" and the seed, until a name is typed or a map picked
+void App::defaultWorldGenName() {
+    if (!worldGenUi.nameEdited || worldGenUi.name.empty()) {
+        worldGenUi.name = lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(worldGenUi.settings.seed);
+        worldGenUi.nameEdited = false;
+    }
+}
+
+// True if a game save is played on the map of this name. Such a map isn't written over, so the save's ground stays
+// as it was.
+bool App::worldHasSaves(const std::string& name) const {
+    return worldSaveCount(name) > 0;
+}
+
+int App::worldSaveCount(const std::string& name) const {
+    const std::vector<std::string>& played = worldGenUi.playedMaps;
+    return (int)std::count(played.begin(), played.end(), lowered(name));
+}
+
+// The lines of the question asked before the map is deleted, with their colours
+std::vector<std::pair<std::string, RGBA>> App::mapDeleteLines() {
+    const std::string& name = worldGenUi.deleteMap;
+    std::vector<std::pair<std::string, RGBA>> lines;
+    lines.push_back({ langf("MISC_DELETE_MAP_Q", { name }), RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } });
+    const int saves = worldSaveCount(name);
+    if (saves > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_SAVES", { std::to_string(saves) }), RGBA{ 1.0f, 0.45f, 0.38f, 1.0f } });
+    const int levels = worldGenUi.deleteLevels;
+    if (levels > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_LEVELS", { std::to_string(levels) }), RGBA{ 0.80f, 0.72f, 0.64f, 1.0f } });
+    lines.push_back({ lang("UILABEL_HOLD_DELETE"), RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } });
+    return lines;
+}
+
+void App::cancelMapDelete() {
+    worldGenUi.deleteMap.clear();
+    deleteHolding = false;
+    playSfx(Sfx::UiBack);
+}
+
+// Deletes the map the question was asked about, with the levels made on it and their pictures
+void App::deleteWorldMap() {
+    WorldGenUi& ui = worldGenUi;
+    const std::string name = ui.deleteMap;
+    ui.deleteMap.clear();
+    deleteHolding = false;
+    std::error_code ec;
+    for (const std::string& level : listLevelFiles(name)) {
+        std::error_code levelEc;
+        std::filesystem::remove(std::filesystem::u8path(levelFilePath(level)), levelEc);
+        std::filesystem::remove(std::filesystem::u8path(savePreviewPath(levelFilePath(level))), levelEc);
+    }
+    std::filesystem::remove(std::filesystem::u8path(mapFilePath(name)), ec);
+    if (ui.generated && ui.generatedName == name) ui.generated = false;
+    ui.maps = listMapFiles();
+    ui.mapScroll = std::min(ui.mapScroll, std::max(0, (int)ui.maps.size() - 1));
+    showNotice(ec ? langf("MISC_DELETE_FAILED", { name }) : langf("MISC_DELETED", { name }));
+    playSfx(Sfx::UiClick);
+}
+
+// Reads which maps the game saves on disk are played on
+void App::refreshPlayedMaps() {
+    worldGenUi.playedMaps.clear();
+    for (const SaveSummary& s : listSaves()) {
+        if (s.mapSource == MAP_SOURCE_FILE) worldGenUi.playedMaps.push_back(lowered(s.mapStem));
+    }
+}
+
 void App::openWorldGen() {
     if (worldGenUi.settings.seed == 1) worldGenUi.settings.seed = (uint32_t)SDL_GetTicksNS() | 1u;
-    if (!worldGenUi.nameEdited || worldGenUi.name.empty()) worldGenUi.name = lang("UILABEL_GEN_DEFAULT_NAME");
+    defaultWorldGenName();
+    refreshPlayedMaps();
     worldGenUi.maps = listMapFiles();
     worldGenUi.previewDirty = true;
     worldGenUi.dragRow = -1;
@@ -338,8 +431,43 @@ void App::drawWorldGenScreen() {
     renderer.drawThemedPanel(L.mapsBox);
     renderer.drawListText(lang("UILABEL_GEN_MAPS"), L.mapsBox.x + 10.0f * s, L.mapsBox.y + 12.0f * s, gray);
     const int first = std::clamp(ui.mapScroll, 0, std::max(0, (int)ui.maps.size() - (int)L.mapRows.size()));
+    const bool asking = !ui.deleteMap.empty();
+    const float hoverX = asking ? -1.0f : mouseX, hoverY = asking ? -1.0f : mouseY;
     for (size_t i = 0; i < L.mapRows.size(); ++i) {
-        renderer.drawListButton(L.mapRows[i], renderer.fitListText(ui.maps[(size_t)first + i], L.mapRows[i].w - 12.0f * s), L.mapRows[i].contains(mouseX, mouseY));
+        const Rect& row = L.mapRows[i];
+        const std::string& name = ui.maps[(size_t)first + i];
+        renderer.drawListButton(row, "", row.contains(hoverX, hoverY));
+        // A floppy disk and the number of game saves played on the map, in a slot every row keeps so the names line up
+        const Rect slot{ row.x + 8.0f * s, row.y, 34.0f * s, row.h };
+        const int saves = worldSaveCount(name);
+        if (saves > 0) {
+            const float d = row.h * 0.56f, dx = slot.x, dy = row.y + (row.h - d) * 0.5f;
+            const RGBA body{ 0.62f, 0.46f, 0.20f, 1.0f }, metal{ 0.86f, 0.84f, 0.80f, 1.0f }, paper{ 0.96f, 0.92f, 0.82f, 1.0f };
+            renderer.drawRect(Rect{ dx, dy, d, d }, body);
+            renderer.drawRect(Rect{ dx + d * 0.22f, dy, d * 0.52f, d * 0.34f }, metal);
+            renderer.drawRect(Rect{ dx + d * 0.54f, dy + d * 0.05f, d * 0.12f, d * 0.24f }, body);
+            renderer.drawRect(Rect{ dx + d * 0.16f, dy + d * 0.52f, d * 0.68f, d * 0.40f }, paper);
+            renderer.drawListText(std::to_string(saves), dx + d + 3.0f * s, row.y + (row.h - textH) * 0.5f, gold);
+            if (!asking) renderer.noteTip(langf("UILABEL_MAP_SAVES_TIP", { std::to_string(saves) }), slot);
+        }
+        const float nameX = slot.x + slot.w + 4.0f * s, nameW = row.x + row.w - 8.0f * s - nameX;
+        const Rect nameArea{ nameX, row.y, nameW, row.h };
+        const std::string shown = renderer.fitListText(name, nameW);
+        if (!asking && shown != name) renderer.noteTip(name, nameArea);
+        renderer.drawListText(shown,
+                              nameX, row.y + (row.h - textH) * 0.5f, white);
+        renderer.drawListButton(L.mapDelete[i], "X", L.mapDelete[i].contains(hoverX, hoverY));
+    }
+
+    if (asking) {
+        dimScreen(0.45f);
+        const std::vector<std::pair<std::string, RGBA>> lines = mapDeleteLines();
+        const MapDeleteLayout D = layoutMapDelete(winW, winH, (int)lines.size());
+        renderer.drawThemedPanel(D.box);
+        for (size_t i = 0; i < lines.size(); ++i) renderer.drawUiTextInBox(lines[i].first, D.lines[i], lines[i].second);
+        const float fill = deleteHolding ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS) : 0.0f;
+        renderer.drawHoldButton(D.hold, lang("UILABEL_DELETE"), fill);
+        drawScreenButtons({ Button{ lang("UILABEL_CANCEL"), D.cancel, Action::DeleteNo } });
     }
     renderer.endUi();
 }
@@ -357,6 +485,30 @@ void App::worldGenBarAt(int row, float x) {
 void App::worldGenClick(float x, float y) {
     WorldGenUi& ui = worldGenUi;
     const WorldGenLayout L = layoutWorldGen(winW, winH, (int)ui.maps.size(), ui.mapScroll);
+    if (!ui.deleteMap.empty()) {
+        const MapDeleteLayout D = layoutMapDelete(winW, winH, (int)mapDeleteLines().size());
+        if (D.hold.contains(x, y)) {
+            deleteHolding = true;
+            deleteHoldStart = SDL_GetTicks();
+            deleteHoldRect = D.hold;
+        } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
+            cancelMapDelete();
+        }
+        return;
+    }
+    {
+        const int top = std::clamp(ui.mapScroll, 0, std::max(0, (int)ui.maps.size() - (int)L.mapRows.size()));
+        for (size_t i = 0; i < L.mapDelete.size(); ++i) {
+            if (!L.mapDelete[i].contains(x, y)) continue;
+            stopWorldGenName();
+            refreshPlayedMaps();
+            ui.deleteMap = ui.maps[(size_t)top + i];
+            ui.deleteLevels = (int)listLevelFiles(ui.deleteMap).size();
+            deleteHolding = false;
+            playSfx(Sfx::UiClick);
+            return;
+        }
+    }
     if (L.tabWorld.contains(x, y) || L.tabTheme.contains(x, y)) {
         ui.themeTab = L.tabTheme.contains(x, y);
         stopWorldGenName();
@@ -400,6 +552,7 @@ void App::worldGenClick(float x, float y) {
         return;
     } else if (L.seedRandom.contains(x, y)) {
         ui.settings.seed = partyRng.gen();
+        defaultWorldGenName();
         worldGenChanged();
         playSfx(Sfx::UiClick);
     } else if (L.sizeDown.contains(x, y)) {
@@ -459,6 +612,12 @@ bool App::generateWorld() {
         return false;
     }
     ui.name = name;
+    // Read the saves again right before writing, so a map with game saves is never written over
+    refreshPlayedMaps();
+    if (worldHasSaves(name)) {
+        refuse(langf("MISC_GEN_HAS_SAVES", { name }));
+        return false;
+    }
     std::string err;
     if (!writeMapFile(mapFilePath(name), ui.settings, err)) {
         refuse(err);
