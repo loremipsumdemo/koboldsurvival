@@ -251,8 +251,9 @@ struct App : AppSession {
     bool editorMouseDown();
     void editorPlaceAt(float mx, float my);
     void editorEraseAt(float mx, float my);
-    void editorSave();
-    void editorLoad();
+    bool editorSave();
+    bool editorLoad();
+    bool editorDirty();
     void editorExit();
     bool editorKeyDown();
 
@@ -273,7 +274,14 @@ struct App : AppSession {
     void showNotice(const std::string& text, float seconds = 2.5f);
     void refuse(const std::string& text);
     void closePanel();
-    void openPanel(bool saveMode);
+    // levels: the level editor's levels for this map, in place of saved games
+    void openPanel(bool saveMode, bool levels = false);
+    int pickedIndex() const;
+    bool panelCanConfirm() const;
+    void pickSave(int index);
+    void loadPicked();
+    void writePreview(const std::string& savePath);
+    void drawPanelSide(const PanelGeometry& g);
     bool wouldLoseProgress();
     enum class LeaveTo { Title, Desktop };
     void requestLeave(LeaveTo to);
@@ -519,6 +527,9 @@ struct App : AppSession {
     std::optional<SaveSummary> pendingOverwrite;
     std::optional<SaveSummary> pendingLoad;
     std::optional<SaveSummary> pendingDelete;
+    bool panelLevels = false;
+    std::string pickedPath;   // the save or level picked in the list
+    std::optional<LevelData> pickedLevel;   // the picked level, read for its details
     bool deleteHolding = false;
     Uint64 deleteHoldStart = 0;
     Rect deleteHoldRect;

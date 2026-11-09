@@ -136,6 +136,7 @@ uniform float uFog;
 uniform float uVoidCut;
 uniform vec3 uGroundTint;
 uniform float uTintAmount;
+uniform vec3 uEye;
 in vec3 vNrm;
 in vec3 vCol;
 in float vDist;
@@ -143,33 +144,68 @@ in vec2 vXZ;
 in vec3 vPos;
 out vec4 fragColor;
 void main() {
-    // Over a void, ground far below sea level isn't there, and the edge it stops at is jagged like a broken-off underside
-    if (vPos.y < uVoidCut) {
-        vec2 cell = floor(vPos.xz / 3.0);
-        float h = cellRandom(ivec2(cell), 7).x;
-        if (vPos.y < uVoidCut - 12.0 * h) discard;
-    }
+    // Over a void, ground far below sea level isn't there. Where it stops wanders up and down smoothly, like a broken-off
+    // underside, and the last pixel is blended into what is behind so the edge doesn't stair-step.
     vec2 dx = dFdx(vXZ), dy = dFdy(vXZ);
+    float dYx = dFdx(vPos.y), dYy = dFdy(vPos.y);
+    float cover = 1.0;
+    float cutY = -1.0e9;
+    if (uVoidCut > -1.0e5) {
+        // 64 and 16 divide the 64-tile step uOrigin moves in, so the line doesn't jump when it moves
+        float wide = texture(uNoise, vXZ / 64.0).b;
+        float fine = texture(uNoise, vXZ / 16.0 + vec2(0.37, 0.61)).a;
+        cutY = uVoidCut - 9.0 * wide - 4.0 * fine;
+        float above = vPos.y - cutY;
+        cover = clamp(above / max(fwidth(above), 1e-4) + 0.5, 0.0, 1.0);
+        if (cover <= 0.0) discard;
+    }
     // The fine grain fades out with distance so far ground does not shimmer.
     float grain = 1.0 - smoothstep(40.0, 220.0, vDist);
+
+    // The face's own slope (the vertex normals are smoothed over several tiles, so a one-tile-wide wall gets an up-facing
+    // one). Walls take the tile from the side rather than from above, so it isn't smeared down them.
+    vec3 face = normalize(cross(dFdx(vPos), dFdy(vPos)));
+    if (dot(face, uEye - vPos) < 0.0) face = -face;
+    vec3 aw = pow(abs(face), vec3(4.0));
+    aw /= aw.x + aw.y + aw.z;
+    float side = 1.0 - aw.y;
+
     // Ground detail from the tile: its normal tilts the lighting, and its height darkens the color a little
-    vec4 t;
+    vec4 t = vec4(0.0);
     float bumpBy = 0.35, shadeBy = 1.0;
+    if (aw.y > 0.02) {
+        if (uVaried == 1) {
+            t = hexTile(uTile, vXZ - uHex.xy, uHexBase, uHex.z, uHex.w, uSalt, vec2(0.0), dx, dy);
+        } else {
+            t = decodeTile(textureGrad(uTile, vXZ / uHex.w + uTileShift, dx / uHex.w, dy / uHex.w), mat2(1.0));
+        }
+        t.xyw *= aw.y;
+    }
+    vec3 bump = vec3(t.x, 0.0, t.y);
+    if (side > 0.02) {
+        // Facing along z: the tile laid on x and y. Facing along x: on z and y. Its tilt goes along the wall and up it.
+        float vy = vPos.y / uHex.w;
+        vec4 tz = decodeTile(textureGrad(uTile, vec2(vXZ.x / uHex.w + uTileShift.x, vy),
+                                         vec2(dx.x, dYx) / uHex.w, vec2(dy.x, dYy) / uHex.w), mat2(1.0));
+        vec4 tx = decodeTile(textureGrad(uTile, vec2(vXZ.y / uHex.w + uTileShift.y, vy + 0.5),
+                                         vec2(dx.y, dYx) / uHex.w, vec2(dy.y, dYy) / uHex.w), mat2(1.0));
+        bump += vec3(tz.x, tz.y, 0.0) * aw.z + vec3(0.0, tx.y, tx.x) * aw.x;
+        t.w += tz.w * aw.z + tx.w * aw.x;
+    }
     if (uVaried == 1) {
-        t = hexTile(uTile, vXZ - uHex.xy, uHexBase, uHex.z, uHex.w, uSalt, vec2(0.0), dx, dy);
         // Slow changes across the map: some ground a little lighter or darker, some rougher or smoother
         vec4 m = macroAt(vXZ);
         shadeBy = mix(0.86, 1.12, m.b);
         bumpBy *= mix(0.55, 1.35, m.a);
-    } else {
-        t = decodeTile(texture(uTile, vXZ / uHex.w + uTileShift), mat2(1.0));
     }
-    vec3 bump = vec3(t.x, 0.0, t.y) * grain;
-    vec3 n = normalize(normalize(vNrm) + bump * bumpBy);
+    bump *= grain;
+    // On walls the face's own slope lights them, so they shade by which way they face
+    vec3 nBase = normalize(mix(normalize(vNrm), face, smoothstep(0.5, 0.9, side)));
+    vec3 n = normalize(nBase + bump * bumpBy);
     float diff = max(dot(n, normalize(uSunDir)), 0.0) * cloudShade(vXZ, vPos.y);
 
     // Steep faces turn to bare rock.
-    float steep = 1.0 - clamp(normalize(vNrm).y, 0.0, 1.0);
+    float steep = max(1.0 - clamp(normalize(vNrm).y, 0.0, 1.0), smoothstep(0.6, 0.9, side));
     float rock = smoothstep(uRockSlope, uRockSlope + 0.15, steep);
     vec3 base = mix(vCol, uRockRgb, rock);
     float grey = dot(vCol, vec3(0.333));
@@ -183,10 +219,12 @@ void main() {
     float absorb = 1.0 - exp(-depth * 0.25);
     vec3 underwater = uUnderwater * (uAmbient + uSunLight * 0.5);
     lit = mix(lit, underwater, absorb);
+    // A void wall darkens towards where it stops, so the broken edge is a dim fringe rather than a hard line
+    lit *= mix(0.18, 1.0, smoothstep(cutY, cutY + 10.0, vPos.y));
 
     float d = vDist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
-    fragColor = vec4(mix(lit, uFogColor, f), 1.0);
+    fragColor = vec4(mix(lit, uFogColor, f), cover);
 }
 )GLSL";
 
@@ -825,6 +863,12 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glBindTexture(GL_TEXTURE_2D, groundTex_);
     glUniform1i(groundShader_.tile, 0);
 
+    // Over a void the ground's broken-off edge blends its last pixel into the sky behind it; everywhere else it's opaque
+    const bool blendEdge = !hasWater;
+    if (blendEdge) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
     const FrustumPlanes planes = framePlanes(viewProj_);
     int builds = 0;
     for (int id = 0; id < (int)chunks_.size(); ++id) {
@@ -865,6 +909,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
+    if (blendEdge) glDisable(GL_BLEND);
     if (!hasWater) return;
 
     const float fadeEnd = kFarPlane * 0.9f;

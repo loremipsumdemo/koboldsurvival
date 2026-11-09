@@ -11,7 +11,7 @@ const RGBA LIST_HINT{ 0.957f, 0.902f, 0.796f, 1.0f };
 const RGBA LIST_MARKED{ 1.0f, 0.62f, 0.62f, 1.0f };
 
 void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::string& timeLabel, bool byName, bool ascending) {
-    const float innerX = g.box.x + g.pad, innerW = g.box.w - 2.0f * g.pad;
+    const float innerX = g.listX, innerW = g.listW;
     const float y = g.headerY + (g.headerH - r.listTextHeight("Ag")) * 0.5f;
     auto label = [&](const std::string& text, bool active) { return active ? text + (ascending ? "  ^" : "  v") : text; };
     r.drawListText(label(lang("UILABEL_NAME"), byName), innerX + 12.0f * s, y, byName ? LIST_WHITE : LIST_GRAY);
@@ -31,15 +31,99 @@ void drawListMoreRows(Renderer& r, const PanelGeometry& g, float s, size_t offse
     if (last < total) row(g.belowBand, "UILABEL_LIST_MORE_BELOW", total - last);
 }
 
-void drawListRow(Renderer& r, const Rect& rect, bool hot, float s, const std::string& name, const std::string& type,
+// picked: the row the right side shows, drawn lit like a hovered one
+void drawListRow(Renderer& r, const Rect& rect, bool hot, bool picked, float s, const std::string& name, const std::string& type,
                  RGBA typeTint, const std::string& time) {
-    r.drawButton(rect, "", true, hot);
+    r.drawButton(rect, "", true, hot || picked);
+    if (picked) r.drawRect(Rect{ rect.x, rect.y, 4.0f * s, rect.h }, theme::GOLD);
     const float y = rect.y + (rect.h - r.listTextHeight("Ag")) * 0.5f;
-    const RGBA tint = hot ? LIST_HOVER : LIST_WHITE;
+    const RGBA tint = hot || picked ? LIST_HOVER : LIST_WHITE;
     r.drawListText(name, rect.x + 12.0f * s, y, tint);
     r.drawListText(type, rect.x + COL_TYPE * rect.w, y, typeTint);
     r.drawListText(time, rect.x + COL_TIME * rect.w, y, tint);
 }
+
+// "2026-11-09 14:05", for the details beside the list
+std::string savedAtText(long long ms) {
+    std::time_t t = (std::time_t)(ms / 1000);
+    std::tm tmv{};
+#ifdef _WIN32
+    localtime_s(&tmv, &t);
+#else
+    localtime_r(&t, &tmv);
+#endif
+    char out[32];
+    std::strftime(out, sizeof(out), "%Y-%m-%d %H:%M", &tmv);
+    return out;
+}
+}
+
+// The right side of the save panel: the picture, the name again, and the details. Saving shows the game (or level) as
+// it is now; loading shows the picked save.
+void App::drawPanelSide(const PanelGeometry& g) {
+    const float s = uiScaleFor(winH);
+    const Rect& p = g.preview;
+    const int i = pickedIndex();
+    const SaveSummary* picked = i >= 0 ? &saves[(size_t)i] : nullptr;
+    renderer.drawRect(p, theme::WELL);
+    bool shown = false;
+    if (panelSaveMode) shown = renderer.previewFromGrab();
+    else if (picked) shown = renderer.previewFromFile(savePreviewPath(picked->path));
+    const float inset = 2.0f * s;
+    if (shown) {
+        renderer.drawSavePreview(Rect{ p.x + inset, p.y + inset, p.w - 2.0f * inset, p.h - 2.0f * inset });
+    } else {
+        const char* key = panelSaveMode || picked ? "UILABEL_SAVE_NO_PICTURE" : panelLevels ? "UILABEL_LEVEL_PICK" : "UILABEL_SAVE_PICK";
+        const std::string text = renderer.fitListText(lang(key), p.w - 16.0f * s);
+        renderer.drawListText(text, p.x + (p.w - renderer.listTextWidth(text)) * 0.5f,
+                              p.y + (p.h - renderer.listTextHeight("Ag")) * 0.5f, LIST_GRAY);
+    }
+    if (!panelSaveMode && !picked) return;
+
+    float y = g.detailsY;
+    const float lineH = renderer.listTextHeight("Ag") + 8.0f * s;
+    const auto line = [&](const std::string& text, RGBA tint) {
+        renderer.drawListText(renderer.fitListText(text, g.detailsW), p.x, y, tint);
+        y += lineH;
+    };
+    const auto clockLines = [&](double clock) {
+        if (clock < 0.0) return;
+        line(langf("UILABEL_SAVE_IN_GAME", { formatDate(clock), formatTime(clock) }), LIST_WHITE);
+        line(langf("UILABEL_DAYS_PASSED", { std::to_string(dayIndexOf(clock)) }), LIST_WHITE);
+    };
+    const auto countLines = [&](int entities, int props, int items, bool spawn) {
+        line(langf("UILABEL_EDITOR_COUNTS", { std::to_string(entities), std::to_string(props), std::to_string(items) }), LIST_WHITE);
+        line(lang(spawn ? "UILABEL_LEVEL_SPAWN_SET" : "UILABEL_LEVEL_SPAWN_UNSET"), LIST_GRAY);
+    };
+
+    if (panelSaveMode) {
+        const std::string name = trimmedName(saveName);
+        line(name.empty() ? lang("UILABEL_SAVE_TYPE_NAME") : name, name.empty() ? LIST_GRAY : theme::GOLD);
+        line(langf("UILABEL_SAVE_MAP", { currentMap.name }), LIST_WHITE);
+        if (panelLevels) {
+            countLines((int)world.count<Entity>(), (int)world.count<Prop>(), (int)world.count<GroundItem>(), world.resource<LevelInfo>().spawnSet);
+        } else {
+            clockLines(gs.clockSeconds);
+        }
+        return;
+    }
+    line(picked->name, theme::GOLD);
+    line(langf("UILABEL_SAVE_MAP", { picked->mapName.empty() ? picked->mapStem : picked->mapName }), LIST_WHITE);
+    if (panelLevels) {
+        if (pickedLevel) {
+            int entities = 0, props = 0, items = 0;
+            for (const LevelObject& o : pickedLevel->objects) {
+                if (o.type == LevelObject::Type::Prop) ++props;
+                else if (o.type == LevelObject::Type::Item) ++items;
+                else ++entities;
+            }
+            countLines(entities, props, items, pickedLevel->hasSpawn);
+        }
+    } else {
+        clockLines(picked->clock);
+        line(lang(picked->autosave ? "UILABEL_AUTOSAVE" : "UILABEL_MANUAL_SAVE"), picked->autosave ? LIST_MARKED : LIST_WHITE);
+    }
+    line(langf("UILABEL_SAVE_SAVED_AT", { savedAtText(picked->timestamp) }), LIST_GRAY);
 }
 
 void App::drawScreenButtons(const std::vector<Button>& buttons) {
@@ -168,12 +252,14 @@ void App::drawSavePanel() {
     const float s = uiScaleFor(winH);
     PanelGeometry g = panelGeometry(winW, winH);
     const RGBA white = LIST_WHITE, gray = LIST_GRAY;
-    const float cx = g.box.x + g.box.w * 0.5f;
+    const float cx = g.box.x + g.box.w * 0.5f, listCx = g.listX + g.listW * 0.5f;
+    const char* title = panelLevels ? (panelSaveMode ? "UILABEL_SAVE_LEVEL" : "UILABEL_LOAD_LEVEL")
+                                    : (panelSaveMode ? "UILABEL_SAVE_GAME" : "UILABEL_LOAD_GAME");
 
     renderer.beginUi(winW, winH);
     dimScreen(0.25f);
     renderer.drawThemedPanel(g.box);
-    renderer.drawUiTextCentered(uiUpper(panelSaveMode ? lang("UILABEL_SAVE_GAME") : lang("UILABEL_LOAD_GAME")), cx, g.box.y + g.pad, white);
+    renderer.drawUiTextCentered(uiUpper(lang(title)), cx, g.box.y + g.pad, white);
 
     if (ask != Ask::None) {
         DialogGeometry d = questionGeometry(winW, winH);
@@ -200,7 +286,7 @@ void App::drawSavePanel() {
                                         d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, white);
         }
         for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
-                                           panelFrom == Screen::Title)) {
+                                           panelFrom == Screen::Title, panelCanConfirm())) {
             if (b.action == Action::DeleteHold) {
                 const float fill = deleteHolding
                     ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS)
@@ -217,25 +303,29 @@ void App::drawSavePanel() {
             bool cursorOn = (SDL_GetTicks() / 500) % 2 == 0;
             renderer.drawUiText(saveName + (cursorOn ? "|" : ""), g.nameBox.x + 12.0f, textY, white);
         } else {
-            renderer.drawUiTextCentered(lang("UILABEL_CLICK_SAVE"),
-                                        cx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
+            renderer.drawUiTextCentered(lang(panelLevels ? "UILABEL_CLICK_LEVEL" : "UILABEL_CLICK_SAVE"),
+                                        listCx, g.nameBox.y + g.nameBox.h * 0.22f, gray);
         }
 
         drawListHeaders(renderer, g, s, lang("UILABEL_TIME"), sortKey == SortKey::Name, sortAsc);
 
         if (saves.empty()) {
-            renderer.drawUiTextCentered(lang("UILABEL_NO_SAVES"), cx, g.listTop + g.nameBox.h * 0.22f, gray);
+            renderer.drawUiTextCentered(lang(panelLevels ? "UILABEL_NO_LEVELS" : "UILABEL_NO_SAVES"), listCx,
+                                        g.listTop + g.nameBox.h * 0.22f, gray);
         }
+        drawPanelSide(g);
 
         drawListMoreRows(renderer, g, s, listOffset, saves.size(), winH, mouseX, mouseY);
 
         for (const Button& b : layoutPanel(winW, winH, panelSaveMode, Ask::None, saves, listOffset,
-                                           panelFrom == Screen::Title)) {
+                                           panelFrom == Screen::Title, panelCanConfirm())) {
             const bool isHover = b.rect.contains(mouseX, mouseY);
             if (b.action == Action::LoadSlot) {
                 const SaveSummary& sv = saves[b.param];
-                drawListRow(renderer, b.rect, isHover, s, sv.name, sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL"),
-                            sv.autosave ? LIST_MARKED : LIST_WHITE, timeString(sv.timestamp));
+                const std::string type = panelLevels ? uiUpper(lang("UILABEL_MAP_PICK_LEVELS"))
+                                                     : sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL");
+                drawListRow(renderer, b.rect, isHover, sv.path == pickedPath, s, sv.name, type,
+                            sv.autosave ? LIST_MARKED : LIST_WHITE, savedAtText(sv.timestamp));
             } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown
                        || b.action == Action::SortName || b.action == Action::SortTime) {
                 continue;

@@ -164,6 +164,7 @@ add_executable(koboldsurvival
     src/renderer_widgets.cpp
     src/renderer_units.cpp
     src/renderer_world.cpp
+    src/renderer_preview.cpp
     src/renderer_overlays.cpp
     src/renderer_menus.cpp
     src/renderer_panels.cpp

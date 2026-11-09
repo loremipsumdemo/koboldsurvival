@@ -209,6 +209,9 @@ void App::playWorkSounds() {
 }
 
 void App::autosaveTick() {
+    const float limit = settings.autosaveMinutes * 60.0f;
+    // A second ahead, so the autosave has a picture of the world to keep beside it
+    if (settings.autosaveMinutes > 0 && autoTimer < limit - 1.0f && autoTimer + dt >= limit - 1.0f) renderer.requestSceneGrab();
     autoTimer += dt;
     if (settings.autosaveMinutes > 0 && autoTimer >= settings.autosaveMinutes * 60.0f) {
         autoTimer = 0.0f;

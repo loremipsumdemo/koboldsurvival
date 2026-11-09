@@ -67,13 +67,28 @@ UILABEL_RESUME	Resume
 UILABEL_SAVE_GAME	Save Game
 UILABEL_RETURN_TO_TITLE	Return to Title
 UILABEL_SAVE	Save
+UILABEL_LOAD	Load
 UILABEL_NAME	Name
 UILABEL_NO_SAVES	No saves yet
 MISC_MAIN_MAP_MISSING	The main map is missing from data.pak
 UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
 MISC_LEAVE_Q	Leave without saving?
 UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
-UILABEL_CLICK_SAVE	Click a save to load it
+UILABEL_CLICK_SAVE	Pick a save, then press Load
+UILABEL_CLICK_LEVEL	Pick a level, then press Load
+UILABEL_SAVE_PICK	Pick a save to see it here
+UILABEL_LEVEL_PICK	Pick a level to see it here
+UILABEL_SAVE_NO_PICTURE	No picture
+UILABEL_SAVE_TYPE_NAME	Type a name
+UILABEL_SAVE_MAP	Map: {0}
+UILABEL_SAVE_IN_GAME	In game: {0}, {1}
+UILABEL_SAVE_SAVED_AT	Saved: {0}
+UILABEL_MANUAL_SAVE	Manual save
+UILABEL_SAVE_LEVEL	Save Level
+UILABEL_LOAD_LEVEL	Load Level
+UILABEL_NO_LEVELS	No levels for this map yet
+UILABEL_LEVEL_SPAWN_SET	Start point set
+UILABEL_LEVEL_SPAWN_UNSET	No start point
 UILABEL_NONE_AVAILABLE	None available
 UILABEL_RESTORE_DEFAULTS	Restore defaults
 UILABEL_PAUSED	PAUSED
@@ -300,7 +315,6 @@ MISC_GEN_NEEDS_NAME	Needs a name made of letters, digits, spaces, - or _.
 UILABEL_EDITOR_TITLE	Level Editor: {0}
 UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
 UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
-UILABEL_EDITOR_RELOAD	Reload
 UILABEL_EDITOR_SPAWN	Spawn Point
 UILABEL_EDITOR_ERASE	Erase
 UILABEL_EDITOR_ENTITIES	Entities

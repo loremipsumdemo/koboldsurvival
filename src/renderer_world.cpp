@@ -620,6 +620,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
     drawBuildPreview(t);
     drawClouds(cam);
+    grabScene();
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 

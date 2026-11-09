@@ -625,6 +625,7 @@ void Renderer::shutdown() {
     glDeleteVertexArrays(1, &dynVao_);
     glDeleteBuffers(1, &glyphVbo_);
     glDeleteVertexArrays(1, &glyphVao_);
+    releasePreviewGl();
     releaseTerrainGl();
     colorProgram_ = glyphProgram_ = 0;
 }

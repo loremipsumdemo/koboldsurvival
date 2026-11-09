@@ -135,7 +135,13 @@ struct SaveSummary {
     std::string name;
     long long timestamp = 0;
     bool autosave = false;
+    std::string mapSource, mapStem;
+    std::string mapName;   // filled in by the list that shows it
+    double clock = -1.0;   // the game's clock, in seconds; below 0 if not known (a level has none)
 };
+
+// The picture kept beside a save or level file: the same path with .png in place of its extension
+std::string savePreviewPath(const std::string& path);
 
 bool writeSaveFile(const std::string& path, const SaveData& d);
 // False if the file is damaged, truncated or of another version

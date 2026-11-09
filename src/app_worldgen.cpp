@@ -596,7 +596,7 @@ void App::drawEditorPanel() {
         renderer.drawButton(r, (on ? "> " : "") + text, true, r.contains(mouseX, mouseY));
     };
     button(L.save, lang("UILABEL_SAVE"), false);
-    button(L.load, lang("UILABEL_EDITOR_RELOAD"), false);
+    button(L.load, lang("UILABEL_LOAD"), false);
     button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.tool == EditorTool::Spawn);
     button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.tool == EditorTool::Erase);
     button(L.tabs[0], lang("UILABEL_EDITOR_ENTITIES"), editor.tab == EditorTab::Entities);
@@ -652,9 +652,11 @@ bool App::editorMouseDown() {
         }
         stopEditorName();
         if (L.save.contains(x, y)) {
-            editorSave();
+            openPanel(true, true);
+            playSfx(Sfx::UiClick);
         } else if (L.load.contains(x, y)) {
-            editorLoad();
+            openPanel(false, true);
+            playSfx(Sfx::UiClick);
         } else if (L.exit.contains(x, y)) {
             editorExit();
         } else if (L.spawnTool.contains(x, y)) {
@@ -759,54 +761,61 @@ void App::editorEraseAt(float mx, float my) {
     editorEdited();
 }
 
-void App::editorSave() {
+bool App::editorDirty() {
+    return levelToText(captureLevel(world, currentMap.stem)) != editor.savedText || mapFileText(editor.map) != editor.savedMapText;
+}
+
+bool App::editorSave() {
     const std::string name = safeFileName(editor.name);
     if (name.empty()) {
         refuse(lang("MISC_GEN_NEEDS_NAME"));
-        return;
+        return false;
     }
     editor.name = name;
     std::string err;
     const LevelData d = captureLevel(world, currentMap.stem);
     if (!writeLevelFile(levelFilePath(name), d, err)) {
         refuse(err);
-        return;
+        return false;
     }
+    writePreview(levelFilePath(name));
     editor.savedText = levelToText(d);
     editor.exitWarned = false;
     // The theme belongs to the map, so a level and its map are saved together
     if (mapFileText(editor.map) != editor.savedMapText) {
         if (!writeMapFile(mapFilePath(currentMap.stem), editor.map, err)) {
             refuse(err);
-            return;
+            return false;
         }
         editor.savedMapText = mapFileText(editor.map);
     }
     showNotice(langf("MISC_LEVEL_SAVED", { name }));
     playSfx(Sfx::UiSaved);
+    return true;
 }
 
-void App::editorLoad() {
+bool App::editorLoad() {
     LevelData d;
     std::string err;
     if (!readLevelFile(levelFilePath(safeFileName(editor.name)), d, err)) {
         refuse(err);
-        return;
+        return false;
     }
     if (d.map != currentMap.stem) {
         refuse(langf("MISC_LEVEL_OTHER_MAP", { d.map }));
-        return;
+        return false;
     }
     editorRemember();
     applyLevel(world, terrain, rng, d);
     editor.savedText = levelToText(captureLevel(world, currentMap.stem));
     hoverProp = NO_OBJECT;
+    showNotice(langf("MISC_LOADED", { editor.name }));
     playSfx(Sfx::UiLoaded);
+    return true;
 }
 
 void App::editorExit() {
-    const bool dirty = levelToText(captureLevel(world, currentMap.stem)) != editor.savedText || mapFileText(editor.map) != editor.savedMapText;
-    if (dirty && !editor.exitWarned) {
+    if (editorDirty() && !editor.exitWarned) {
         editor.exitWarned = true;
         playSfx(Sfx::UiError);
         return;
@@ -850,7 +859,7 @@ bool App::editorKeyDown() {
         return true;
     }
     if (k == SDLK_S && (SDL_GetModState() & SDL_KMOD_CTRL) != 0) {
-        editorSave();
+        openPanel(true, true);
         return true;
     }
     if (k == SDLK_Q || k == SDLK_E) {

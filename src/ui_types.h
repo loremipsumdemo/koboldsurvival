@@ -11,7 +11,7 @@ enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, 
 
 enum class Action {
     Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration,
-    Resume, Save, Load, LoadSlot, ReturnToTitle, Back,
+    Resume, Save, Load, LoadSlot, LoadPicked, ReturnToTitle, Back,
     ConfirmName,
     CancelName,
     OverwriteYes, OverwriteNo,

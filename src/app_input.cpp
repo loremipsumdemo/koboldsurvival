@@ -154,7 +154,7 @@ void App::onKeyDown() {
         }
         return;
     }
-    if (screen == Screen::Playing && editing && editorKeyDown()) return;
+    if (screen == Screen::Playing && editing && !panelOpen && editorKeyDown()) return;
     if (screen == Screen::PartySetup) {
         if (e.key.key == SDLK_ESCAPE) {
             if (partyUi.dropKind != DropKind::None) {
@@ -422,7 +422,7 @@ void App::onMouseButtonDown() {
     if (panelOpen) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
-                                               panelFrom == Screen::Title)) {
+                                               panelFrom == Screen::Title, panelCanConfirm())) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
                     if (b.action == Action::DeleteHold) {
                         deleteHolding = true;

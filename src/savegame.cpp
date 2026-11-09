@@ -522,20 +522,34 @@ const std::unordered_map<std::string, Handler>& handlers() {
     return table;
 }
 
-// The header ends at the map line, so listing saves stays quick
+// The header ends at the map line and the clock after it, so listing saves stays quick
 bool readSaveHeader(const std::string& path, SaveSummary& s) {
     std::ifstream in(fs::u8path(path));
     if (!in) return false;
     s.path = path;
     SaveData d;
+    d.gs.clockSeconds = -1.0;
     Line l{ {}, d };
     std::string text, key;
-    bool versionOk = false;
+    bool versionOk = false, mapRead = false;
     while (std::getline(in, text)) {
         if (!text.empty() && text.back() == '\r') text.pop_back();
         l.ss = std::istringstream(text);
         l.ss >> key;
-        if (key == "map") break;
+        if (mapRead) {
+            // Only the clock is wanted past the map line; a file of any version is still listed if it isn't there
+            if (key == "clock") {
+                const auto it = handlers().find(key);
+                if (it == handlers().end() || !it->second(l)) d.gs.clockSeconds = -1.0;
+            }
+            break;
+        }
+        if (key == "map") {
+            const auto it = handlers().find(key);
+            if (it == handlers().end() || !it->second(l)) break;
+            mapRead = true;
+            continue;
+        }
         if (key == "version") {
             int version = 0;
             if (!l.read(version) || version < SAVE_OLDEST_VERSION || version > SAVE_VERSION) return false;
@@ -549,8 +563,15 @@ bool readSaveHeader(const std::string& path, SaveSummary& s) {
     s.name = d.name;
     s.timestamp = d.timestamp;
     s.autosave = d.autosave;
+    s.mapSource = d.mapSource;
+    s.mapStem = d.mapStem;
+    s.clock = d.gs.clockSeconds;
     return versionOk;
 }
+}
+
+std::string savePreviewPath(const std::string& path) {
+    return fs::u8path(path).replace_extension(".png").u8string();
 }
 
 bool writeSaveFile(const std::string& path, const SaveData& d) {

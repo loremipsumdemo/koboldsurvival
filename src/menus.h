@@ -37,11 +37,16 @@ std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::
 
 size_t visibleSaveRows(int H);
 
+// The save list on the left; on the right the picked save's Load (or Save) button, its picture, and its details
 struct PanelGeometry {
     Rect box;
     float pad;
+    float listX, listW;
     Rect nameBox;
-    Rect saveBtn;
+    Rect sideBtn;
+    Rect preview;
+    float detailsY;
+    float detailsW;
     float headerY;
     float headerH;
     Rect aboveBand;
@@ -61,8 +66,9 @@ struct DialogGeometry {
 };
 DialogGeometry questionGeometry(int W, int H);
 
+// canConfirm: whether the Load or Save button at the top of the right side can be pressed
 std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
-                                const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle);
+                                const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle, bool canConfirm);
 std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector<SaveSummary>& saves);
 
 Soundtrack soundtrackFor(Screen screen);

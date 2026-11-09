@@ -265,7 +265,30 @@ public:
     void drawListButton(const Rect& r, const std::string& label, bool hovered);
     void drawHoldButton(const Rect& r, const std::string& label, float fill);
 
+    // A small picture of the world as last drawn, without the UI, kept beside a save to show in the save list
+    // (renderer_preview.cpp). The next drawFrame takes it.
+    void requestSceneGrab() { grabWanted_ = true; }
+    // The latest picture, or null if none has been taken yet
+    const std::vector<uint8_t>* sceneGrab(int& w, int& h) const;
+    // What drawSavePreview shows: a saved picture file, or the latest grab. False if there is nothing to show.
+    bool previewFromFile(const std::string& path);
+    bool previewFromGrab();
+    void drawSavePreview(const Rect& r);
+    void forgetPreview() { previewKey_.clear(); }   // a picture file was written: read it again next time
+    void releasePreviewGl();
+
 private:
+    void grabScene();
+    bool grabWanted_ = false;
+    std::vector<uint8_t> grab_;
+    int grabW_ = 0, grabH_ = 0;
+    unsigned grabCount_ = 0;
+    GLuint grabFbo_[2] = { 0, 0 };
+    GLuint grabTex_[2] = { 0, 0 };
+    GLuint previewTex_ = 0;
+    std::string previewKey_;
+    bool previewShown_ = false;
+
     bool initGl();
     void loadLoadingArt();
     void loadPictures(LoadStages& stages);
