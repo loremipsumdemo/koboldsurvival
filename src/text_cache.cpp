@@ -1,5 +1,6 @@
 #include "text_cache.h"
 #include "gl_util.h"
+#include <algorithm>
 #include <cstring>
 #include <utility>
 
@@ -21,9 +22,13 @@ TextTex makeGlyphTexture(TTF_Font* font, const char* text, SDL_Color color) {
 
 const TextLine& TextFont::line(const std::string& s) {
     auto it = lines.find(s);
-    if (it != lines.end()) return it->second;
+    if (it != lines.end()) {
+        it->second.used = now;
+        return it->second;
+    }
 
     TextLine hl;
+    hl.used = now;
     hl.text = s;
     int tw = 0, th = 0;
     if (!font) return lines[s] = hl;
@@ -37,6 +42,21 @@ const TextLine& TextFont::line(const std::string& s) {
     hl.w = (float)tw;
     hl.h = (float)th;
     return lines[s] = hl;
+}
+
+void TextFont::trim(size_t limit) {
+    now = SDL_GetTicks();
+    if (lines.size() <= limit) return;
+    std::vector<std::map<std::string, TextLine>::iterator> old;
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->second.used + 500 < now) old.push_back(it);
+    }
+    std::sort(old.begin(), old.end(), [](const auto& a, const auto& b) { return a->second.used < b->second.used; });
+    for (auto& it : old) {
+        if (lines.size() <= limit) break;
+        if (it->second.tex.tex) glDeleteTextures(1, &it->second.tex.tex);
+        lines.erase(it);
+    }
 }
 
 void TextFont::clear() {

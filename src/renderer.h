@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <SDL3/SDL.h>
@@ -88,9 +89,10 @@ public:
     // From the Graphics settings: the world is drawn at this percent of the window's width and height and stretched to
     // fit, which costs fewer pixels. The interface is always drawn at the window's own size.
     void setRenderScale(int percent) { renderScale_ = percent; }
-    // How far from the eye, in tiles, varied ground and water are laid in hexagons: the view range from the settings. Over
-    // the last fifth of it they blend into the plain grid beyond.
+    // The detail distance from the settings, in tiles: props and units past it are not drawn
     void setDetailRange(int tiles) { detailRange_ = tiles; }
+    // The view distance from the settings, in tiles: ground chunks wholly beyond it from the view's centre aren't drawn
+    void setViewDistance(int tiles) { viewDistance_ = tiles; }
     std::string renderScaleText() const;
     // The distances the ground's and water's detail is drawn to, in words, for the debug log
     std::string surfaceBandsText() const;
@@ -439,7 +441,7 @@ private:
         GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
         GLint voidCut = -1, groundTint = -1, tintAmount = -1;
         GLint sunLight = -1, ambient = -1, underwater = -1, fogColor = -1, fog = -1, tile = -1;
-        GLint tileShift = -1, hex = -1, hexBase = -1;
+        GLint tileShift = -1, tileSize = -1;
         SurfaceUniforms common;
     };
     struct SeaShader {
@@ -447,7 +449,7 @@ private:
         GLint viewProj = -1, center = -1, half = -1, eye = -1, sunDir = -1, sunLight = -1, ambient = -1, color = -1;
         GLint glitter = -1, glow = -1, mapSize = -1;
         GLint fogColor = -1, fog = -1, time = -1, opacity = -1, pattern = -1, speed = -1, fadeStart = -1, fadeEnd = -1, tile = -1;
-        GLint tileShift = -1, hex1 = -1, hex2 = -1, hexBase1 = -1, hexBase2 = -1, evenOut = -1;
+        GLint tileShift = -1, tileSizes = -1, evenOut = -1;
         SurfaceUniforms common;
     };
     struct CloudShader {
@@ -457,11 +459,9 @@ private:
         SurfaceUniforms common;
     };
     // Worked out once a frame, in doubles, for every surface shader: the point near the camera that positions are measured
-    // from, where each grid of tiles and hexagons falls from it, and where the drifting clouds are
+    // from, where each grid of tiles falls from it, and where the drifting clouds are
     struct SurfaceFrame {
         double originX = 0.0, originZ = 0.0;
-        float groundHex[4] = {}, waterHex1[4] = {}, waterHex2[4] = {};
-        int groundBase[2] = {}, waterBase1[2] = {}, waterBase2[2] = {};
         float groundShift[2] = {}, waterShift[4] = {};
         float macro[3] = {};
         float cloudShift[4] = {}, cloudScale[2] = {}, cloudHeight[2] = {}, cloudOpacity[2] = {};
@@ -490,6 +490,15 @@ private:
     bool surfaceBands_ = true;
     int renderScale_ = 100;
     int detailRange_ = 256;
+    int viewDistance_ = 1024;
+    // The walls' and doors' tiles, worked out again only when a prop or a storey is added or removed (see drawWorld)
+    struct BuildingTiles {
+        bool valid = false;
+        uint64_t propRevision = 0, storeyRevision = 0;
+        std::unordered_set<long long> walls;   // by levelKey: walls and doors
+        std::unordered_set<long long> doors;   // by levelKey: doors only
+    };
+    BuildingTiles buildingTiles_;
     GLuint sceneFbo_ = 0, sceneTex_ = 0, sceneDepth_ = 0;
     int sceneW_ = 0, sceneH_ = 0, sceneWinW_ = 0, sceneWinH_ = 0;
     bool sceneActive_ = false;
@@ -571,11 +580,28 @@ private:
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;
     GLuint instVbo_ = 0;
-    std::vector<GLuint> propInstVao_;
-    std::vector<std::vector<Mat4>> propInstances_;
-    GLuint propInstVao(PropKind kind);
+    // One copy of a model in the world: where it is, and the faction color and saturation a unit is drawn with
+    struct ModelInstance {
+        Mat4 place;
+        float faction[4];
+        float sat;
+        float pad[3];
+    };
+    // Every model drawn this frame, each with its copies, so each model is one draw however many copies it has. The
+    // lists keep their room from frame to frame.
+    std::vector<std::pair<const Model*, std::vector<ModelInstance>>> instQueues_;
+    std::unordered_map<const Model*, size_t> instSlot_;
+    std::vector<ModelInstance> instUpload_;
+    GLuint modelInstVao(const Model& m);
+    void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
+    void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
-    void drawPropInstances();
+    void drawModelInstances();
+    struct ModelDrawCount { int models = 0, copies = 0, draws = 0; } modelDraws_;
+public:
+    // The last frame's instanced models: how many models, copies of them, and draw calls
+    std::string modelDrawText() const;
+private:
     float propTop(PropKind kind) const;
     float propBaseY(World& w, ObjectId e) const;
 

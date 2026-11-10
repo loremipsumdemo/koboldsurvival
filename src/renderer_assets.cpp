@@ -96,8 +96,6 @@ void Renderer::makeTexels() {
 
 void Renderer::loadPropModels(LoadStages& stages) {
     propModels_.resize((size_t)propKindCount());
-    propInstVao_.resize((size_t)propKindCount(), 0);
-    propInstances_.resize((size_t)propKindCount());
     stages.stage(0.57f, "LOADING_PROP_MODELS", propKindCount());
     wallShapes_.assign((size_t)propKindCount(), {});
     materialModels_.assign((size_t)propKindCount(), {});

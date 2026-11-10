@@ -12,6 +12,13 @@
 using ObjectId = std::uint32_t;
 constexpr ObjectId NO_OBJECT = 0;
 
+// Every change to a component store takes the next number from one counter shared by all of them, so a number seen once is
+// never seen again, in this World or another. Anything kept from an earlier look can tell by it that the store changed.
+inline std::uint64_t nextRevision() {
+    static std::uint64_t last = 0;
+    return ++last;
+}
+
 class IComponentStorage {
 public:
     virtual ~IComponentStorage() = default;
@@ -28,6 +35,7 @@ template <typename T>
 class ComponentStorage : public IComponentStorage {
 public:
     T& add(ObjectId e, T value) {
+        revision_ = nextRevision();
         if (T* existing = get(e)) return *existing = std::move(value);
         std::uint32_t at;
         if (!free_.empty()) {
@@ -55,6 +63,7 @@ public:
     void remove(ObjectId e) override {
         Ref* r = ref(e);
         if (!r) return;
+        revision_ = nextRevision();
         const std::uint32_t at = r->slot - 1, d = r->dense;
         const ObjectId last = dense_.back();
         dense_[d] = last;
@@ -68,6 +77,8 @@ public:
     }
     const std::vector<ObjectId>& objects() const { return dense_; }
     size_t size() const { return dense_.size(); }
+    // Changed when a component is added or removed here (a component changed in place does not count)
+    std::uint64_t revision() const { return revision_; }
 
 private:
     static constexpr size_t PAGE_BITS = 8;
@@ -93,6 +104,7 @@ private:
     std::vector<std::uint32_t> free_;
     std::vector<std::unique_ptr<Page>> pages_;
     std::vector<ObjectId> dense_;
+    std::uint64_t revision_ = 0;
 };
 
 namespace ecs_detail {
@@ -126,6 +138,10 @@ public:
 
     template <typename T>
     void remove(ObjectId e) { storage<T>().remove(e); }
+
+    // When components of type T were last added or removed, in this World or any other (see nextRevision)
+    template <typename T>
+    std::uint64_t revision() { return storage<T>().revision(); }
 
     template <typename T>
     size_t count() { return storage<T>().size(); }

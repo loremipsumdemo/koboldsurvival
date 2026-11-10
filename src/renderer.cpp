@@ -67,11 +67,38 @@ const char* MODEL_INST_VS = R"(
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec2 aUV;
 layout(location=2) in mat4 aModel;   // locations 2 to 5, one per instance
+layout(location=6) in vec4 aFaction;
+layout(location=7) in float aSat;
 uniform mat4 uVP;
 out vec2 vUV;
+out vec4 vFaction;
+out float vSat;
 void main() {
     vUV = aUV;
+    vFaction = aFaction;
+    vSat = aSat;
     gl_Position = uVP * aModel * vec4(aPos, 1.0);
+}
+)";
+
+// GLYPH_FS for instanced models: the faction color and saturation come with each copy instead of from uniforms
+const char* MODEL_INST_FS = R"(
+#version 330 core
+in vec2 vUV;
+in vec4 vFaction;
+in float vSat;
+uniform sampler2D uTex;
+uniform vec4 uTint;
+out vec4 FragColor;
+void main() {
+    vec4 c = texture(uTex, vUV);
+    if (c.a < 0.1) discard;
+    float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 fl = vFaction.rgb / max(dot(vFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
+    c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), vFaction.a);
+    l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    c.rgb = mix(vec3(l), c.rgb, vSat);
+    FragColor = c * uTint;
 }
 )";
 
@@ -524,7 +551,7 @@ bool Renderer::initGl() {
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     setGlyphDefaults(glyphProgram_);
 
-    modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, GLYPH_FS);
+    modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, MODEL_INST_FS);
     if (modelInstProgram_) {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
         setGlyphDefaults(modelInstProgram_);
@@ -593,10 +620,8 @@ void Renderer::shutdown() {
     emotePics_.clear();
     uiIcons_.clear();
     text_.clear();
-    for (GLuint& vao : propInstVao_) {
-        if (vao) glDeleteVertexArrays(1, &vao);
-        vao = 0;
-    }
+    instQueues_.clear();
+    instSlot_.clear();
     if (instVbo_) glDeleteBuffers(1, &instVbo_);
     if (modelInstProgram_) glDeleteProgram(modelInstProgram_);
     instVbo_ = modelInstProgram_ = 0;
@@ -676,8 +701,8 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
 
 void Renderer::beginUi(int winW, int winH) {
     constexpr size_t TEXT_CACHE_LIMIT = 512;
-    if (text_.ui.lines.size() > TEXT_CACHE_LIMIT) text_.ui.clear();
-    if (text_.list.lines.size() > TEXT_CACHE_LIMIT) text_.list.clear();
+    text_.ui.trim(TEXT_CACHE_LIMIT);
+    text_.list.trim(TEXT_CACHE_LIMIT);
     presentScene();
     uiW_ = winW;
     uiH_ = winH;

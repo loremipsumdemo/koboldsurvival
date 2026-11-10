@@ -366,8 +366,9 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "debris") p.debris = true;
         else if (flag == "seat") p.seat = true;
         else if (flag == "cage") p.cage = true;
-        else if (flag == "airship") p.airship = true;
-        else if (flag == "wheelbarrow") p.wheelbarrow = true;
+        else if (flag == "airship") p.airship = p.moves = true;
+        else if (flag == "wheelbarrow") p.wheelbarrow = p.moves = true;
+        else if (flag == "moves") p.moves = true;
         else if (flag == "foundation") p.foundation = true;
         else if (flag == "on_foundation") p.onFoundation = true;
         else if (flag == "wall_rule") p.wallRule = true;

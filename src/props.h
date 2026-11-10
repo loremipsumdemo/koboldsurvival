@@ -167,6 +167,7 @@ struct PropInfo {
     bool cage = false;
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
     bool wheelbarrow = false;    // its occupant pushes it about in front of them, with its store
+    bool moves = false;          // a vehicle: goes wherever it is taken while the game runs (airship and wheelbarrow imply it)
     bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
     bool onFoundation = false;   // only on a finished foundation tile of the builder's
     bool wallRule = false;       // a wall: its shape fits the walls around it, and it blocks walking
@@ -182,6 +183,15 @@ struct PropInfo {
     bool stall = false;
     bool exterior = false;       // goes outside buildings only, never on a foundation          // sells to other factions' units, manned by a shopkeeper
 };
+
+// How often what is drawn of a prop changes. A still prop stands where it was put and looks the same until it is built,
+// broken or moved by hand; a door stays on its tile but swings open while someone is in its doorway; a moving prop (a
+// vehicle) goes wherever it is taken. The renderer draws them in that order, and only still props could be kept drawn
+// from one frame to the next.
+enum class PropMotion { Still, Swings, Moves };
+inline PropMotion propMotion(const PropInfo& p) {
+    return p.moves ? PropMotion::Moves : p.door ? PropMotion::Swings : PropMotion::Still;
+}
 
 // Whether the item is what the prop takes as its input (an item, or any bones)
 bool inputMatches(const PropInfo& info, int item);
