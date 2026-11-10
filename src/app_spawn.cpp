@@ -2,6 +2,7 @@
 #include "build.h"
 #include "level_file.h"
 #include "spawn_cluster.h"
+#include "useitem.h"
 
 using namespace play;
 
@@ -15,8 +16,15 @@ SpawnPickerLayout layoutSpawnPicker(const Rect& area, float s) {
     const float third = (area.w - 2.0f * gap) / 3.0f;
     for (int i = 0; i < 3; ++i) L.tabs[i] = Rect{ area.x + i * (third + gap), y, third, btnH };
     y += btnH + gap;
-    // Cluster of N: the label, then - N +
     const float small = 30.0f * s, box = 46.0f * s;
+    // Faction: the label, then < name >
+    const float labelW = std::min(area.w * 0.3f, 80.0f * s);
+    L.factionLabel = Rect{ area.x, y, labelW, btnH };
+    L.factionDown = Rect{ area.x + labelW + gap, y, small, btnH };
+    L.factionUp = Rect{ area.x + area.w - small, y, small, btnH };
+    L.factionBox = Rect{ L.factionDown.x + small + gap, y, L.factionUp.x - gap - (L.factionDown.x + small + gap), btnH };
+    y += btnH + gap;
+    // Cluster of N: the label, then - N +
     L.clusterUp = Rect{ area.x + area.w - small, y, small, btnH };
     L.clusterBox = Rect{ L.clusterUp.x - gap - box, y, box, btnH };
     L.clusterDown = Rect{ L.clusterBox.x - gap - small, y, small, btnH };
@@ -43,16 +51,27 @@ DeveloperLayout layoutDeveloper(int W, int H) {
     return L;
 }
 
+namespace {
+// The factions the spawn list's Faction row steps through: every faction but the mobs' own. Factionless is the wild:
+// a Factionless mob is one of its own kind's.
+std::vector<int> spawnFactions() {
+    std::vector<int> out;
+    for (const FactionDef& f : factions()) {
+        if (!isMobFaction(f.id)) out.push_back(f.id);
+    }
+    return out;
+}
+
+std::string spawnFactionName(int faction) { return factionName(faction); }
+}
+
 std::vector<App::EditorEntry> App::spawnEntries(EditorTab tab) {
     std::vector<EditorEntry> out;
     switch (tab) {
     case EditorTab::Entities:
+        // The kind of unit; what it belongs to is the Faction row's
         out.push_back(EditorEntry{ lang("UILABEL_EDITOR_UNITS") });
-        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_PLAYER_UNIT"), EditorTool::Unit, FACTION_PLAYER });
-        for (const FactionDef& f : factions()) {
-            if (f.id == FACTION_PLAYER || isMobFaction(f.id)) continue;
-            out.push_back(EditorEntry{ langf("UILABEL_EDITOR_NPC_UNIT", { factionName(f.id) }), EditorTool::Unit, f.id });
-        }
+        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_KOBOLD"), EditorTool::Unit, 0 });
         out.push_back(EditorEntry{ lang("UILABEL_EDITOR_MOBS") });
         for (int i = 1; i <= mobKindCount(); ++i) {
             if (isRegularMob((MobKind)i)) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), EditorTool::Mob, i });
@@ -74,9 +93,33 @@ std::vector<App::EditorEntry> App::spawnEntries(EditorTab tab) {
             }
         }
         break;
-    case EditorTab::Items:
-        for (const ItemDef& d : itemDatabase()) out.push_back(EditorEntry{ itemDisplayName(d), EditorTool::Item, d.id });
+    case EditorTab::Items: {
+        // Under headings, each in the item table's order
+        enum Group { Weapons, Ammo, Armor, Accessories, Food, Medicine, Materials, Bones, GroupCount };
+        static const char* const GROUP_KEYS[GroupCount] = { "UILABEL_ITEMS_WEAPONS", "UILABEL_ITEMS_AMMO", "UILABEL_ITEMS_ARMOR",
+                                                            "UILABEL_ITEMS_ACCESSORIES", "UILABEL_ITEMS_FOOD", "UILABEL_ITEMS_MEDICINE",
+                                                            "UILABEL_ITEMS_MATERIALS", "UILABEL_ITEMS_BONES" };
+        auto groupOf = [](const ItemDef& d) {
+            if (d.typeId == "weapon") return Weapons;
+            if (hasTag(d, "arrow") || hasTag(d, "bolt")) return Ammo;
+            if (d.typeId == "armor") return Armor;
+            if (d.typeId == "accessory") return Accessories;
+            if (hasTag(d, "raw_food") || restoreAmount(d, UseEffect::Stat::Hunger) > 0) return Food;
+            if (d.typeId == "consumable") return Medicine;
+            if (hasTag(d, "bones")) return Bones;
+            return Materials;
+        };
+        for (int g = 0; g < GroupCount; ++g) {
+            bool headed = false;
+            for (const ItemDef& d : itemDatabase()) {
+                if (groupOf(d) != g) continue;
+                if (!headed) out.push_back(EditorEntry{ lang(GROUP_KEYS[g]) });
+                headed = true;
+                out.push_back(EditorEntry{ itemDisplayName(d), EditorTool::Item, d.id });
+            }
+        }
         break;
+    }
     case EditorTab::Theme:
         break;
     }
@@ -91,6 +134,21 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
     for (int i = 0; i < 3; ++i) {
         const bool on = p.tab == (EditorTab)i;
         renderer.drawButton(L.tabs[i], (on ? "> " : "") + lang(TAB_KEYS[i]), true, L.tabs[i].contains(mouseX, mouseY));
+    }
+    if (p.tab != EditorTab::Items) {
+        renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_FACTION"), L.factionLabel.w), L.factionLabel.x,
+                              L.factionLabel.y + (L.factionLabel.h - textH) * 0.5f, white);
+        renderer.drawButton(L.factionDown, "<", true, L.factionDown.contains(mouseX, mouseY));
+        renderer.drawRect(L.factionBox, RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        {
+            const FactionColor c = factionColor(p.faction);
+            const float d = 10.0f * s;
+            renderer.drawRect(Rect{ L.factionBox.x + 6.0f * s, L.factionBox.y + (L.factionBox.h - d) * 0.5f, d, d }, RGBA{ c.r, c.g, c.b, 1.0f });
+        }
+        const std::string name = renderer.fitListText(spawnFactionName(p.faction), L.factionBox.w - 26.0f * s);
+        renderer.drawListText(name, L.factionBox.x + 20.0f * s, L.factionBox.y + (L.factionBox.h - textH) * 0.5f, gold);
+        renderer.drawButton(L.factionUp, ">", true, L.factionUp.contains(mouseX, mouseY));
+        if (L.factionBox.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_FACTION_TIP"), L.factionBox);
     }
     renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_CLUSTER"), L.clusterLabel.w), L.clusterLabel.x,
                           L.clusterLabel.y + (L.clusterLabel.h - textH) * 0.5f, white);
@@ -125,6 +183,15 @@ bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, 
         p.tool = EditorTool::None;
         p.picked = 0;
         playSfx(Sfx::UiTab);
+        return true;
+    }
+    if (p.tab != EditorTab::Items && (L.factionDown.contains(x, y) || L.factionUp.contains(x, y))) {
+        const std::vector<int> list = spawnFactions();
+        const auto at = std::find(list.begin(), list.end(), p.faction);
+        const int i = at == list.end() ? 0 : (int)(at - list.begin());
+        const int n = (int)list.size();
+        p.faction = list[(size_t)(((i + (L.factionUp.contains(x, y) ? 1 : -1)) % n + n) % n)];
+        playSfx(Sfx::UiClick);
         return true;
     }
     // Shift steps the count by 5
@@ -174,11 +241,19 @@ int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds) {
         if (p.tool == EditorTool::Prop) {
             snapBuildSpot((PropKind)p.picked, spot.x, spot.z, o.x, o.z);
             o.type = LevelObject::Type::Prop;
-            if (propInfo((PropKind)p.picked).built) o.owner = FACTION_PLAYER;
+            // A built prop belongs to the faction picked (a Factionless one to yours, as it needs an owner that can claim);
+            // another prop only if a faction is picked
+            const bool none = p.faction == FACTION_FACTIONLESS;
+            if (propInfo((PropKind)p.picked).built) o.owner = none ? FACTION_PLAYER : p.faction;
+            else if (!none && p.faction != FACTION_PLAYER) o.owner = p.faction;
         } else if (p.tool == EditorTool::Unit) {
+            // A Kobold of the faction picked
             o.type = LevelObject::Type::Unit;
+            o.kind = p.faction;
         } else if (p.tool == EditorTool::Mob) {
+            // A mob of the faction picked; a Factionless one is wild, of its own kind's
             o.type = LevelObject::Type::Mob;
+            o.owner = p.faction == FACTION_FACTIONLESS ? -1 : p.faction;
         } else {
             o.type = LevelObject::Type::Item;
         }

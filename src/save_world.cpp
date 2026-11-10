@@ -3,6 +3,7 @@
 #include "level.h"
 #include "systems_internal.h"
 #include "wheelbarrow.h"
+#include "taming.h"
 #include "build.h"
 #include "hostility.h"
 #include <sstream>
@@ -164,6 +165,7 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
         list->clear();
         for (const SaveRule& r : sg.rules) {
             BehaviorRule rule = r.rule;
+            if (rule.kind == BehaviorKind::TameAnimals) continue;
             if (ruleNamesProp(rule.kind)) {
                 if (r.prop < 0 || r.prop >= (int)props.size()) continue;
                 rule.prop = props[(size_t)r.prop];
@@ -206,6 +208,8 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const UnitSprite* us = w.get<UnitSprite>(u)) su.sprite = us->id;
     if (const Name* n = w.get<Name>(u)) su.name = n->text;
     if (const Mob* m = w.get<Mob>(u)) su.mob = idx(m->kind);
+    if (const Coloration* c = w.get<Coloration>(u)) su.coloration = c->hue;
+    if (const Taming* tm = w.get<Taming>(u)) su.tamingHours = tm->hours;
     if (const Body* b = w.get<Body>(u)) su.body = idx(b->type);
     if (const SpawnHome* h = w.get<SpawnHome>(u)) su.home = *h;
     if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = idOf(propIds, oc->prop);
@@ -285,6 +289,10 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
 ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId>& props) {
     const ObjectId e = makeEntity(world, u.at, u.faction);
     if (u.mob > 0) world.add(e, Mob{ (MobKind)u.mob });
+    // A boss from before bosses had their own coloring gets one, the same each time that save is loaded
+    if (u.coloration) world.add(e, Coloration{ *u.coloration });
+    else if (u.mob > 0 && isBossMob((MobKind)u.mob)) world.add(e, Coloration{ (int)((u.at.x * 131.0f + u.at.z * 71.0f)) % 360 });
+    if (u.tamingHours) world.add(e, Taming{ *u.tamingHours });
     else if (!world.has<Commandable>(e) && !u.corpseHours) world.add(e, defaultDialogue());
     if (u.corpseHours) {
         world.remove<Commandable>(e);
@@ -308,6 +316,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     b.rules.clear();
     for (const SaveRule& r : u.rules) {
         BehaviorRule rule = r.rule;
+        if (rule.kind == BehaviorKind::TameAnimals) continue;   // no longer a task: taming takes time alone
         if (ruleNamesProp(rule.kind)) {
             if (r.prop < 0 || r.prop >= (int)props.size()) continue;
             rule.prop = props[(size_t)r.prop];
@@ -403,6 +412,7 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
 void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world = World{};
     setPlayerReputation(world, d.reputation);
+    setChangedFactionRules(world, d.factionRules);
     SquadBook& book = world.resource<SquadBook>();
     book.names = d.squadNames;
     book.current = std::clamp(d.currentSquad, 0, SQUAD_COUNT - 1);
@@ -451,6 +461,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.mapStem = map.stem;
     d.gs = gs;
     d.reputation = playerReputation(w);
+    d.factionRules = changedFactionRules(w);
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
     d.ghosts = w.resource<Graveyard>().ghosts;

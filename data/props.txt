@@ -45,7 +45,7 @@
 #                                nothing on them; attacking or being attacked makes them let go
 #                pulled          with wheelbarrow: drawn behind the one pulling it, not pushed in front, and it slows them
 #                                to a tenth of their speed unless they are a large animal (a Bear, or a boss)
-#                taming          with cage: only an animal (a mob) can be put in it, and Tame Animals feeds those inside
+#                taming          with cage: only an animal (a mob, bosses too) can be put in it, and one inside is tamed in time
 #                moves           a vehicle: it goes wherever it is taken while the game runs, so it is drawn apart from the
 #                                props that stay put (airship and wheelbarrow imply it)
 #                foundation      laid by dragging a rectangle (3 to 64 tiles a side); pieces are built on it once it is done

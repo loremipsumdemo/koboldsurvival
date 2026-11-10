@@ -35,6 +35,8 @@
 #include "taming.h"
 #include "useitem.h"
 #include "wheelbarrow.h"
+#include "faction_rules.h"
+#include "level_file.h"
 
 namespace {
 
@@ -286,6 +288,13 @@ int main(int, char**) {
     const Camera cam;
     const GameState gs;
     const MapChoice map{ "packed", "test", "test", "" };
+    // Your faction's rules, changed in play
+    FactionRules changedRules = factionRules(world, FACTION_PLAYER);
+    changedRules.downedBody = DownedBodyRule::Cage;
+    changedRules.downedTake = DownedTakeRule::Weapons;
+    changedRules.trespass = TrespassRule::Warn;
+    changedRules.markup = 35;
+    setFactionRules(world, FACTION_PLAYER, changedRules);
     check(writeSaveFile(first, captureWorld(world, gs, cam, rng, 1000, "test", map)), "the save is written");
 
     SaveData loaded;
@@ -295,6 +304,8 @@ int main(int, char**) {
     restoreWorld(restored, terrain, after, loaded);
     check(writeSaveFile(second, captureWorld(restored, gs, cam, after, 1000, "test", map)), "the reloaded game is saved");
     check(slurp(first) == slurp(second), "both saves match");
+    check(factionRules(restored, FACTION_PLAYER) == changedRules && factionRules(restored, 2) == findFaction(2)->rules,
+          "your faction's changed rules come back from a save, and the others keep factions.txt's");
     {
         const BehaviorGroups& bg = behaviorGroups(restored);
         int residentGroup = -1;
@@ -476,7 +487,7 @@ int main(int, char**) {
         settleFactionHomes(homes, terrain);
         int factionsWithUnits = 0, housed = 0, split = 0;
         for (const FactionDef& f : factions()) {
-            if (f.id == FACTION_PLAYER || f.id == FACTION_NOMAD || isMobFaction(f.id)) continue;
+            if (f.id == FACTION_PLAYER || f.id == FACTION_FACTIONLESS || isMobFaction(f.id)) continue;
             int units = 0, citizens = 0, military = 0;
             for (ObjectId u : homes.view<Entity, Faction>()) {
                 if (homes.get<Faction>(u)->id != f.id || homes.has<Mob>(u)) continue;
@@ -521,7 +532,7 @@ int main(int, char**) {
         Rng bareRng;
         int friendly = -1;
         for (const FactionDef& f : factions()) {
-            if (f.id != FACTION_PLAYER && f.id != FACTION_NOMAD && !isMobFaction(f.id)) {
+            if (f.id != FACTION_PLAYER && f.id != FACTION_FACTIONLESS && !isMobFaction(f.id)) {
                 friendly = f.id;
                 break;
             }
@@ -673,7 +684,7 @@ int main(int, char**) {
         farm.remove<Pushing>(bear);
         farm.destroy(bear);
 
-        // A Taming Cage, with a Rabbit in it, and a unit with Tame Animals and raw meat in a store
+        // A Taming Cage of yours with a Rabbit in it: tamed in time, about a day for every 100 of its most health
         PropKind tamingCage = PropKind::Wagon;
         check(propKindNamed("TamingCage", tamingCage) && propInfo(tamingCage).taming && propInfo(tamingCage).cage, "props.txt has the Taming Cage");
         const ObjectId cage = placeBuiltProp(farm, ground, tamingCage, cx + 3.5f, cz + 3.5f, 0.0f, FACTION_PLAYER);
@@ -683,18 +694,15 @@ int main(int, char**) {
         check(tamingCageOf(farm, rabbit) == cage, "the Rabbit is in the Taming Cage");
         const int rawMeat = mobInfo(MobKind::Bear).meat;
         check(isRawMeat(rawMeat), "a mob's meat is raw meat");
-        const ObjectId larder = placeBuiltProp(farm, ground, PropKind::Barrel, cx - 3.5f, cz + 2.5f, 0.0f, FACTION_PLAYER);
-        farm.get<Storage>(larder)->slots[0] = ItemStack{ rawMeat, 5 };
-        const ObjectId keeper = spawnUnit(farm, ground, farmRng, FACTION_PLAYER, cx - 1.5f, cz + 1.5f);
-        BehaviorRule tame;
-        tame.kind = BehaviorKind::TameAnimals;
-        farm.get<Behaviors>(keeper)->rules = { tame };
-        run(40.0f);
-        check(farm.has<Taming>(rabbit) && farm.get<Taming>(rabbit)->fed == 1, "Tame Animals fetches raw meat from a store and feeds the caged animal");
-        check(countInSlots(farm.get<Storage>(larder)->slots.data(), (int)farm.get<Storage>(larder)->slots.size(), rawMeat) < 5,
-              "the meat came from the store");
-        run(10.0f);
-        check(farm.has<Taming>(rabbit) && farm.get<Taming>(rabbit)->fed == 1, "it isn't fed again until hours have passed");
+        check(std::fabs(tameHoursFor(100) - 24.0) < 1e-9 && std::fabs(tameHoursFor(300) - 72.0) < 1e-9, "taming takes a game day for every 100 most health");
+        const double needed = tameHoursNeeded(farm, rabbit);
+        tamingSystem(farm, needed * 0.5 * 3600.0);
+        check(farm.has<Taming>(rabbit) && std::fabs(tamingProgress(farm, rabbit) - 0.5f) < 0.01f && factionOf(farm, rabbit) != FACTION_PLAYER,
+              "halfway through its time the Rabbit is half tamed");
+        tamingSystem(farm, needed * 0.6 * 3600.0);
+        check(factionOf(farm, rabbit) == FACTION_PLAYER && farm.has<Commandable>(rabbit) && tamingCageOf(farm, rabbit) == NO_OBJECT &&
+                  !farm.has<Taming>(rabbit) && !farm.get<Lock>(cage)->locked,
+              "once its time is up it is yours to order, out of the opened cage");
 
         // Hungry with Eat on and no food carried: a unit of yours fetches food from your store and eats it
         const ObjectId hungry = spawnUnit(farm, ground, farmRng, FACTION_PLAYER, cx + 1.5f, cz - 2.5f);
@@ -719,6 +727,169 @@ int main(int, char**) {
             }
         }
         check(apart, "a cluster of 5 spawns is 5 spots kept apart, the first where it was asked");
+    }
+
+    // Factions: the Factionless, the rules for outsiders, and Deal with Downed
+    {
+        World fw;
+        Rng frng;
+        frng.gen.seed(33);
+        GameState fstate;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const float cx = std::floor(mid.x) + 0.5f, cz = std::floor(mid.z) + 0.5f;
+        placeBuiltProp(fw, ground, PropKind::Altar, cx - 8.0f, cz, 0.0f, FACTION_PLAYER);
+        auto run = [&](float seconds) {
+            for (int i = 0; i < (int)(seconds * 60.0f); ++i) {
+                simStep(fw, ground, frng, fstate, 1.0f / 60.0f, false);
+                takeEvents(fw);
+            }
+        };
+        const int red = 2;
+        check(findFaction(red) && findFaction(red)->rules.factionless == StanceRule::Hostile, "factions.txt makes the Red Faction hostile to the Factionless");
+        check(factionsHostile(fw, red, FACTION_FACTIONLESS) && !factionsHostile(fw, FACTION_PLAYER, FACTION_FACTIONLESS),
+              "so they fight on sight; yours is neutral to them");
+        check(!factionsAllied(fw, FACTION_FACTIONLESS, FACTION_FACTIONLESS) && factionsAllied(fw, FACTION_PLAYER, FACTION_PLAYER) &&
+                  !factionAids(fw, FACTION_FACTIONLESS, FACTION_FACTIONLESS) && !factionCanClaim(FACTION_FACTIONLESS),
+              "two Factionless units are not allies and don't help each other, and the Factionless hold no Altar");
+        check(factionPlayerControlled(FACTION_PLAYER) && !factionPlayerControlled(red), "your faction is yours to control, the Red Faction runs itself");
+        FactionRules written;
+        written.downedBody = DownedBodyRule::FinishOff;
+        written.recruit = RecruitRule::Both;
+        written.markup = 40;
+        FactionRules read;
+        std::string err;
+        check(parseFactionRules(factionRulesText(written), read, err) && read == written, "faction rules are written and read back the same");
+        check(!parseFactionRules("downed=sideways", read, err), "an unknown rule is refused");
+
+        // A Red Faction bear is one of theirs; a Kobold spawned with no faction is Factionless
+        const ObjectId redBear = spawnMob(fw, ground, frng, MobKind::Bear, red, cx + 12.0f, cz + 12.0f);
+        const ObjectId yourBear = spawnMob(fw, ground, frng, MobKind::Bear, FACTION_PLAYER, cx + 13.0f, cz + 12.0f);
+        check(factionOf(fw, redBear) == red && fw.has<Mob>(redBear) && fw.has<Commandable>(yourBear) && !fw.has<Commandable>(redBear),
+              "a mob may belong to any faction, and one of yours takes orders");
+        fw.destroy(redBear);
+        fw.destroy(yourBear);
+        const ObjectId wildWolf = spawnMob(fw, ground, frng, MobKind::Wolf, FACTION_FACTIONLESS, cx + 14.0f, cz + 12.0f);
+        check(factionOf(fw, wildWolf) == mobFaction(MobKind::Wolf) && factionName(factionOf(fw, wildWolf)) == factionName(FACTION_FACTIONLESS),
+              "a Factionless mob is a wild one, shown as Factionless");
+        fw.destroy(wildWolf);
+        check(factionsAllied(fw, mobFaction(MobKind::Gorlicorn), mobFaction(MobKind::Rabbit)) &&
+                  factionsAllied(fw, mobFaction(MobKind::Wolf), mobFaction(MobKind::Wolf)) &&
+                  !factionsAllied(fw, mobFaction(MobKind::Wolf), mobFaction(MobKind::Rabbit)),
+              "wild animals of one kind are allies, and so are a Gorlicorn and Rabbits; a Wolf and a Rabbit are not");
+        int bossesColored = 0, bosses = 0;
+        for (int k = 1; k <= mobKindCount(); ++k) {
+            if (!isBossMob((MobKind)k)) continue;
+            const ObjectId boss = spawnMob(fw, ground, frng, (MobKind)k, FACTION_FACTIONLESS, cx + 16.0f, cz + 12.0f);
+            ++bosses;
+            const Coloration* c = fw.get<Coloration>(boss);
+            bossesColored += c && c->hue >= 0 && c->hue < 360 ? 1 : 0;
+            fw.destroy(boss);
+        }
+        const ObjectId plainWolf = spawnMob(fw, ground, frng, MobKind::Wolf, FACTION_FACTIONLESS, cx + 14.0f, cz + 12.0f);
+        check(bosses > 0 && bossesColored == bosses && !fw.has<Coloration>(plainWolf), "every boss spawns with its own Coloration, and other mobs with none");
+        fw.destroy(plainWolf);
+        LevelData level;
+        level.map = "test";
+        LevelObject bearRow;
+        bearRow.type = LevelObject::Type::Mob;
+        bearRow.kind = idx(MobKind::Bear);
+        bearRow.owner = red;
+        level.objects.push_back(bearRow);
+        LevelData levelBack;
+        check(levelFromText(levelToText(level), levelBack, err) && levelBack.objects.size() == 1 && levelBack.objects[0].owner == red,
+              "a level file keeps a mob's faction");
+
+        // Deal with Downed: your rules say cage them and take their weapons
+        FactionRules mine = factionRules(fw, FACTION_PLAYER);
+        mine.downedBody = DownedBodyRule::Cage;
+        mine.downedTake = DownedTakeRule::Weapons;
+        setFactionRules(fw, FACTION_PLAYER, mine);
+        const ObjectId cage = makeProp(fw, PropKind::PrisonerCage, Transform{ cx + 3.5f, ground.heightAt(cx + 3.5f, cz - 3.5f), cz - 3.5f });
+        fw.add(cage, Owner{ FACTION_PLAYER });
+        int food = 0, sword = 0;
+        for (const ItemDef& d : itemDatabase()) {
+            if (food == 0 && restoreAmount(d, UseEffect::Stat::Hunger) > 0) food = d.id;
+            if (sword == 0 && d.equipSlot == "main_hand") sword = d.id;
+        }
+        const ObjectId enemy = spawnUnit(fw, ground, frng, red, cx + 2.5f, cz + 2.5f);
+        Inventory& pack = *fw.get<Inventory>(enemy);
+        pack = Inventory{};
+        addToInventory(pack, food, 3);
+        if (sword) fw.get<Equipment>(enemy)->items[GearSlot::MainHand] = sword;
+        fw.get<Behaviors>(enemy)->rules.clear();
+        knockOut(fw, enemy);
+        const ObjectId warden = spawnUnit(fw, ground, frng, FACTION_PLAYER, cx, cz);
+        BehaviorRule deal;
+        deal.kind = BehaviorKind::DealWithDowned;
+        fw.get<Behaviors>(warden)->rules = { deal };
+        *fw.get<Inventory>(warden) = Inventory{};
+        run(40.0f);
+        check(inPrisonerCage(fw, enemy) && fw.get<Lock>(cage)->locked, "Deal with Downed locks a knocked-out enemy in your Prisoner Cage");
+        check(fw.get<Equipment>(enemy)->items[GearSlot::MainHand] == 0 && carriedCount(*fw.get<Inventory>(warden), food) == 3 &&
+                  (sword == 0 || carriedCount(*fw.get<Inventory>(warden), sword) == 1),
+              "after taking its weapons and food");
+
+        // Carry out of the claim, taking nothing
+        mine.downedBody = DownedBodyRule::CarryOut;
+        mine.downedTake = DownedTakeRule::Nothing;
+        setFactionRules(fw, FACTION_PLAYER, mine);
+        const ObjectId intruder = spawnUnit(fw, ground, frng, red, cx + 3.5f, cz + 3.5f);
+        fw.get<Behaviors>(intruder)->rules.clear();
+        knockOut(fw, intruder);
+        run(80.0f);
+        const Transform* out = fw.get<Transform>(intruder);
+        check(!fw.has<Carried>(intruder) && claimAt(claimsOf(fw), out->x, out->z, FACTION_PLAYER) == nullptr,
+              "Deal with Downed carries a knocked-out enemy out of your claim");
+
+        // A trespasser on your land, with your rule to attack them
+        mine.trespass = TrespassRule::Attack;
+        setFactionRules(fw, FACTION_PLAYER, mine);
+        const ObjectId stranger = spawnUnit(fw, ground, frng, FACTION_FACTIONLESS, cx - 2.5f, cz + 1.5f);
+        fw.get<Behaviors>(stranger)->rules.clear();
+        check(!hostileToPlayer(fw, stranger), "a Factionless unit is not hostile to you at first");
+        run(1.0f);
+        check(hostileToPlayer(fw, stranger), "your rule to attack trespassers turns one standing in your claim against you");
+        fw.destroy(stranger);
+
+        // A Factionless unit who stays a minute in your claim joins you, if your rules take them in
+        mine.trespass = TrespassRule::Ignore;
+        mine.recruit = RecruitRule::Factionless;
+        setFactionRules(fw, FACTION_PLAYER, mine);
+        const ObjectId drifter = spawnUnit(fw, ground, frng, FACTION_FACTIONLESS, cx - 3.5f, cz - 1.5f);
+        fw.get<Behaviors>(drifter)->rules.clear();
+        run(RECRUIT_SECONDS + 2.0f);
+        check(factionOf(fw, drifter) == FACTION_PLAYER && fw.has<Citizen>(drifter), "a Factionless unit who lingers in your claim joins you as a citizen");
+
+        // A boss part tamed in your Taming Cage: its coloring and its taming hours come back from a save
+        PropKind tamingKind = PropKind::Wagon;
+        propKindNamed("TamingCage", tamingKind);
+        const ObjectId bossCage = placeBuiltProp(fw, ground, tamingKind, cx + 5.5f, cz - 5.5f, 0.0f, FACTION_PLAYER);
+        MobKind bossKind = MobKind::None;
+        for (int k = 1; k <= mobKindCount() && bossKind == MobKind::None; ++k) {
+            if (isBossMob((MobKind)k)) bossKind = (MobKind)k;
+        }
+        const ObjectId boss = spawnMob(fw, ground, frng, bossKind, FACTION_FACTIONLESS, cx + 5.5f, cz - 5.5f);
+        *fw.get<Transform>(boss) = *fw.get<Transform>(bossCage);
+        fw.add(boss, Occupying{ bossCage });
+        fw.get<Coloration>(boss)->hue = 123;
+        tamingSystem(fw, 3.0 * 3600.0);
+        check(fw.has<Taming>(boss) && std::fabs(fw.get<Taming>(boss)->hours - 3.0) < 1e-6, "a boss can be tamed too");
+        const std::string tameFile = "roundtrip_taming.sav";
+        check(writeSaveFile(tameFile, captureWorld(fw, gs, cam, frng, 1000, "test", map)), "the taming game is saved");
+        SaveData tameData;
+        World tameBack;
+        Rng tameRng;
+        check(readSaveFile(tameFile, tameData), "and read");
+        restoreWorld(tameBack, terrain, tameRng, tameData);
+        bool found = false;
+        for (ObjectId u : tameBack.view<Mob, Coloration>()) {
+            const Taming* tm = tameBack.get<Taming>(u);
+            found = found || (tameBack.get<Coloration>(u)->hue == 123 && tm && std::fabs(tm->hours - 3.0) < 1e-3);
+        }
+        check(found, "a boss's Coloration and its hours of taming come back from a save");
+        std::remove(tameFile.c_str());
     }
 
     // Buildings: a foundation and its pieces are blueprints, supplied with logs and built by the two building tasks

@@ -30,7 +30,7 @@ void needsSystem(World& w, int hours, double gameSeconds) {
             if (n->maxHunger > 0 && factionOf(w, e) != FACTION_PLAYER && !w.has<Commandable>(e) && !inPrisonerCage(w, e)) {
                 n->hunger = std::max(n->hunger, (n->maxHunger * HUNGER_FLOOR_PERCENT + 99) / 100);
             }
-            if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_NOMAD) n->hunger = n->maxHunger;
+            if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_FACTIONLESS) n->hunger = n->maxHunger;
 
             const ObjectId seat = occupiedProp(w, e);
             const Prop* sp = seat != NO_OBJECT ? w.get<Prop>(seat) : nullptr;

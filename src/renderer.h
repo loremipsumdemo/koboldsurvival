@@ -425,7 +425,7 @@ private:
     void drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint);
 
     GLuint colorProgram_ = 0, glyphProgram_ = 0;
-    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uShine_ = -1, uFaction_ = -1;
+    GLint uMVPColor_ = -1, uMVPGlyph_ = -1, uTint_ = -1, uSat_ = -1, uShine_ = -1, uFaction_ = -1, uHue_ = -1;
 
     GLuint dynVao_ = 0, dynVbo_ = 0;
     BuildPick buildSelected_;
@@ -571,6 +571,8 @@ private:
     Mat4 unitWorldMatrix(World& w, ObjectId e, const Model& m, float yaw) const;
     void drawUnitModel(const Model& m, const Mat4& placement);
     RGBA unitFactionTint(World& w, ObjectId e) const;
+    // A boss's Coloration, in turns of hue
+    float unitHue(World& w, ObjectId e) const;
     struct UnitFacing {
         float x = 0.0f, z = 0.0f;
         float yaw = 0.0f;
@@ -611,7 +613,8 @@ private:
         Mat4 place;
         float faction[4];
         float sat;
-        float pad[3];
+        float hue;   // turns of hue shift
+        float pad[2];
     };
     // Every model drawn this frame, each with its copies, so each model is one draw however many copies it has. The
     // lists keep their room from frame to frame.
@@ -620,7 +623,7 @@ private:
     std::vector<ModelInstance> instUpload_;
     GLuint modelInstVao(const Model& m);
     void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
-    void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat);
+    void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
     void drawModelInstances();
     struct ModelDrawCount { int models = 0, copies = 0, draws = 0; } modelDraws_;

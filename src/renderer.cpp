@@ -46,10 +46,20 @@ uniform vec4 uTint;
 uniform float uSat;   // 1 keeps the colors, 0 is fully gray
 uniform float uShine;   // how far a white shine has crossed, up to 1. 0 is no shine
 uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
+uniform float uHue;      // turns of hue shift, a boss's Coloration (0 leaves the colors as they are)
 out vec4 FragColor;
+// The color turned round the gray axis by h turns: a hue shift that keeps brightness and shading
+vec3 hueTurn(vec3 c, float h) {
+    if (h == 0.0) return c;
+    const vec3 k = vec3(0.57735);
+    float a = h * 6.2831853;
+    float ca = cos(a);
+    return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+}
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;   // keep only the visible pixels
+    c.rgb = clamp(hueTurn(c.rgb, uHue), 0.0, 1.0);
     float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
     // The faction's color at the texture's own brightness, so shading and detail stay
     vec3 fl = uFaction.rgb / max(dot(uFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
@@ -71,15 +81,18 @@ layout(location=1) in vec2 aUV;
 layout(location=2) in mat4 aModel;   // locations 2 to 5, one per instance
 layout(location=6) in vec4 aFaction;
 layout(location=7) in float aSat;
+layout(location=8) in float aHue;
 uniform mat4 uVP;
 out vec2 vUV;
 out vec4 vFaction;
 out float vSat;
+out float vHue;
 out vec3 vWorld;
 void main() {
     vUV = aUV;
     vFaction = aFaction;
     vSat = aSat;
+    vHue = aHue;
     vec4 world = aModel * vec4(aPos, 1.0);
     vWorld = world.xyz;
     gl_Position = uVP * world;
@@ -92,6 +105,7 @@ const char* MODEL_INST_FS = R"(
 in vec2 vUV;
 in vec4 vFaction;
 in float vSat;
+in float vHue;
 in vec3 vWorld;
 uniform sampler2D uTex;
 uniform sampler2D uGrain;   // a building material's gray texture around 0.5, tiling; on unit 1
@@ -99,9 +113,18 @@ uniform float uGrainOn;     // 1 for building pieces, 0 for everything else
 uniform float uGrainTile;   // world units one copy of the texture covers
 uniform vec4 uTint;
 out vec4 FragColor;
+// The color turned round the gray axis by h turns: a hue shift that keeps brightness and shading
+vec3 hueTurn(vec3 c, float h) {
+    if (h == 0.0) return c;
+    const vec3 k = vec3(0.57735);
+    float a = h * 6.2831853;
+    float ca = cos(a);
+    return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+}
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;
+    c.rgb = clamp(hueTurn(c.rgb, vHue), 0.0, 1.0);
     if (uGrainOn > 0.0) {
         // Laid on in world space along the face's own plane, so it runs on from one tile's piece into the next.
         // The face's facing comes from how the position changes across the pixel: the models have no normals here.
@@ -128,6 +151,7 @@ void setGlyphDefaults(GLuint program) {
     glUniform4f(glGetUniformLocation(program, "uTint"), 1.0f, 1.0f, 1.0f, 1.0f);
     glUniform1f(glGetUniformLocation(program, "uSat"), 1.0f);
     glUniform4f(glGetUniformLocation(program, "uFaction"), 0.0f, 0.0f, 0.0f, 0.0f);
+    glUniform1f(glGetUniformLocation(program, "uHue"), 0.0f);
     glUseProgram(0);
 }
 
@@ -567,6 +591,7 @@ bool Renderer::initGl() {
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
     uTint_ = glGetUniformLocation(glyphProgram_, "uTint");
     uSat_ = glGetUniformLocation(glyphProgram_, "uSat");
+    uHue_ = glGetUniformLocation(glyphProgram_, "uHue");
     uShine_ = glGetUniformLocation(glyphProgram_, "uShine");
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     setGlyphDefaults(glyphProgram_);

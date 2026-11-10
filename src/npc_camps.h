@@ -23,7 +23,7 @@ inline constexpr int HUNGER_FLOOR_PERCENT = 10;           // other factions' uni
 inline constexpr float FORAGE_RANGE = 40.0f;
 inline constexpr float FORAGE_SECONDS = 60.0f;            // a trip for food is given up after this long
 
-// A unit of a faction that keeps camps and retreats (not yours, not a mob's, not the Nomads')
+// A unit of a faction that keeps camps and retreats (not yours, not a mob's, not the Factionless)
 bool campNpc(World& w, ObjectId u);
 // Called as a unit comes round: one of another faction starts retreating
 void startRetreat(World& w, ObjectId u);

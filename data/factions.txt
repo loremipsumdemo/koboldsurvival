@@ -7,6 +7,25 @@
 #       shown as written.
 #   color: #rrggbb, for its dot in the Reputation tab
 #   units: how many of its units a new level places, together in one camp. 0 for the Player Faction.
+#   Then, optional words of key=value, in any order. Those left out take the value in [brackets]:
+#     control      player: its units are yours to order. npc: they run themselves. [player for id 0, npc for the rest]
+#     factionless  how it takes to the Factionless: friendly (as allies), neutral, hostile (attacks them on sight) [neutral]
+#     trespass     an outsider, neither ally nor enemy, standing in its claim: ignore; warn (it is attacked if it stays
+#                  on); attack [ignore]
+#     downed       what its units do with a hostile unit lying knocked out: leave (it lies); cage (locked in the
+#                  faction's nearest free Prisoner Cage, or carried out of its claim when none is free); carry_out
+#                  (carried past the edge of its claim and put down); finish_off (killed) [leave]
+#     take         what they take from that unit first: nothing; food (what in its pack eases hunger); weapons (food,
+#                  and what it holds in its main hand and off hand); everything (its weapons and whole pack, not its
+#                  armor). What the taker can't hold is dropped beside it. [nothing]
+#     trade        whom it trades with: nobody; allies; not_factionless (anyone not hostile but the Factionless);
+#                  anyone (anyone not hostile) [anyone]
+#     markup       percent added to what it asks in a trade, 0 to 200 [0]
+#     recruit      whom it takes in: never; rescued (an outsider it rescued who wakes up in its bed); factionless (a
+#                  Factionless unit who stays a while in its claim); both [never]
+#     aid          whom its units rescue and share food with: own (their own faction only; for the Factionless, no
+#                  one); allies (allies too); anyone (anyone not hostile) [allies]
+#   Your faction's rules can be changed in play, in Faction Rules on the Faction tab, and the save keeps them.
 #
 # relation <id> <id> <reputation>
 #   The starting reputation between two factions, the same both ways, from -100 to 100. Pairs not listed start
@@ -14,13 +33,15 @@
 #   sight; at 50 or above they are allies. Reputations between two other factions never change; the Player
 #   Faction's change in play.
 
-faction	0	FACTION_PLAYER	#c77dff	0
-faction	2	FACTION_RED	#ff4d4d	30
-faction	3	FACTION_GREEN	#5ccf5c	10
-faction	4	FACTION_BLUE	#4d7dff	10
-faction	5	FACTION_YELLOW	#f5d43a	10
-# The Nomads: units disbanded from your squad, and the Wandering Trader. No camp, and no reputation: neutral to everyone, always (src/factions.h).
-faction	6	FACTION_NOMAD	#9a9a9a	0
+faction	0	FACTION_PLAYER	#c77dff	0	control=player
+faction	2	FACTION_RED	#ff4d4d	30	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own
+faction	3	FACTION_GREEN	#5ccf5c	10	factionless=friendly downed=carry_out recruit=rescued aid=anyone
+faction	4	FACTION_BLUE	#4d7dff	10	trespass=warn downed=carry_out take=food markup=10
+faction	5	FACTION_YELLOW	#f5d43a	10	take=weapons trade=not_factionless markup=15 recruit=factionless
+# The Factionless: units disbanded from your squad, the Wandering Trader, and units spawned with no faction. No camp,
+# no Altar and no reputation: how each faction takes to them is its factionless rule. Their own rules are what each of
+# them does alone: they are not one another's allies.
+faction	6	FACTION_FACTIONLESS	#9a9a9a	0	take=food aid=own
 
 relation	0	2	-100
 relation	2	3	-100

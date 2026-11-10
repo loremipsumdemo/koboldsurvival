@@ -1,36 +1,33 @@
 #pragma once
-#include "behavior.h"
+#include <algorithm>
 #include "components.h"
 #include "ecs.h"
-#include "terrain.h"
 
-// Taming: an animal (a mob) knocked out and carried into a Taming Cage (props.txt flag "taming") is fed raw meat by the
-// units of the cage's faction that have the Tame Animals task. The task fetches raw meat from a store of theirs when
-// they carry none, takes it to the cage, and feeds the animal inside.
-inline constexpr double TAME_FEED_HOURS = 6.0;      // an animal is fed at most this often, game hours
-inline constexpr int TAME_MEAT_CARRIED = 3;         // the most raw meat a trip fetches
+// Taming: an animal (a mob, a boss among them; never a Kobold) knocked out and carried into a Taming Cage (props.txt flag
+// "taming") is tamed by time alone: about one game day for every 100 of its most health. Once the time is up it joins
+// the cage's faction (the cage's owner, or the faction whose claim it stands in), and the cage lets it out. Taken out
+// before then, it loses what it had.
+inline constexpr double TAME_HOURS_PER_100_HEALTH = 24.0;
+inline constexpr double TAME_HOURS_LEAST = 1.0;
 
-// On an animal in a Taming Cage: how often it has been fed there, and game hours since the last time
+// On an animal in a Taming Cage of another faction's: game hours it has been there
 struct Taming {
-    int fed = 0;
-    double sinceFed = 1e9;
+    double hours = 0.0;
 };
 
-// A Tame Animals trip under way: fetching raw meat from a store, then feeding it to the animal in the cage
-struct TameJob {
-    enum class Phase { Fetch, Feed };
-    Phase phase = Phase::Feed;
-    ObjectId cage = NO_OBJECT;
-    ObjectId animal = NO_OBJECT;
-    ObjectId source = NO_OBJECT;
-    int item = 0;
-    float stuck = 0.0f;
-};
+// Game hours a mob of this most health takes to tame
+inline double tameHoursFor(int maxHp) { return std::max(TAME_HOURS_LEAST, TAME_HOURS_PER_100_HEALTH * (double)std::max(1, maxHp) / 100.0); }
+// Game hours this animal takes to tame
+double tameHoursNeeded(World& w, ObjectId animal);
+// How far along its taming is, 0 to 1 (0 when it isn't being tamed)
+float tamingProgress(World& w, ObjectId animal);
 
 bool isRawMeat(int item);
 // The Taming Cage this unit is locked in, or NO_OBJECT
 ObjectId tamingCageOf(World& w, ObjectId animal);
-// Starts a Tame Animals trip, or says why it waits (r.why)
-bool startTameStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r);
-// Runs the trips under way, and counts the hours since each caged animal was fed
-void tameJobSystem(World& w, Terrain& t, float dt, double gameSeconds);
+// The faction taming the animal in this cage, or -1
+int tamingFaction(World& w, ObjectId cage);
+// Moves an animal into a faction as tamed: out of its cage, and yours to order if the faction is yours
+void tameAnimal(World& w, ObjectId animal, int faction);
+// Counts the hours of each caged animal, and tames those whose time is up
+void tamingSystem(World& w, double gameSeconds);

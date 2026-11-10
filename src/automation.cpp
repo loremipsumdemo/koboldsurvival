@@ -2,6 +2,7 @@
 #include "inventory.h"
 #include "world_labels.h"
 #include "taming.h"
+#include "faction_rules.h"
 #include "commerce.h"
 
 using namespace systems_detail;
@@ -258,7 +259,7 @@ ObjectId rescueTarget(World& w, ObjectId u) {
     ObjectId best = NO_OBJECT;
     float bestD2 = RESCUE_RANGE * RESCUE_RANGE;
     for (ObjectId v : w.view<Unconscious, Transform>()) {
-        if (v == u || w.has<Corpse>(v) || w.has<Carried>(v) || w.has<Mob>(v) || factionOf(w, v) != mine) continue;
+        if (v == u || w.has<Corpse>(v) || w.has<Carried>(v) || w.has<Mob>(v) || !factionAids(w, mine, factionOf(w, v))) continue;
         const ObjectId bed = occupiedProp(w, v);
         if (bed != NO_OBJECT && w.has<Prop>(bed) && restedGainPerHour(w.get<Prop>(bed)->kind) > 0.0) continue;
         if (std::find(fetched.begin(), fetched.end(), v) != fetched.end()) continue;
@@ -289,7 +290,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
     if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::AutoHaulStall) return startStallHaulStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::ManStall) return startManStallStep(w, t, u, b, r);
-    if (r.kind == BehaviorKind::TameAnimals) return startTameStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::DealWithDowned) return startDealStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::AutoHaulGround) {
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
         const ObjectId item = groundHaulTarget(w, claims, u, b, r.why);
@@ -432,10 +433,15 @@ void systems_detail::autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int sto
 }
 
 void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
-    if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<TameJob>(u)) {
+    if (const DealJob* dj = w.get<DealJob>(u); dj && !dj->ordered) {
+        if (const Carrying* cr = w.get<Carrying>(u); cr && cr->unit == dj->target) putDown(w, u);
+        w.remove<DealJob>(u);
+        w.remove<SoloMove>(u);
+        w.remove<Route>(u);
+    }
+    if (w.has<BuildJob>(u) || w.has<StallJob>(u)) {
         w.remove<BuildJob>(u);
         w.remove<StallJob>(u);
-        w.remove<TameJob>(u);
         w.remove<SoloMove>(u);
         w.remove<Route>(u);
     }
@@ -585,9 +591,15 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             b->wait = resume;
             continue;
         }
-        // A building task, a Stall order or a Tame Animals trip runs by itself (buildJobSystem, commerce, tameJobSystem),
+        // A building task, a Stall order or a Deal with Downed trip runs by itself (buildJobSystem, commerce, dealJobSystem),
         // and ends its own step
-        if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<TameJob>(u)) continue;
+        if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<DealJob>(u)) continue;
+        // A Deal with Downed trip ended by an order of yours meanwhile
+        if (b->busy && b->step.kind == BehaviorKind::DealWithDowned) {
+            b->busy = false;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+            continue;
+        }
         if (b->seeking) {
             const SoloMove* so = w.get<SoloMove>(u);
             const bool walking = so && so->next < so->waypoints.size();

@@ -108,6 +108,13 @@ bool tradeFits(Inventory inv, const std::vector<TradeGhost>& gives, const std::v
     return true;
 }
 
+namespace {
+int markedUp(World& w, ObjectId npc, int value) {
+    const int markup = tradeMarkup(w, factionOf(w, npc));
+    return value + (value * markup + 99) / 100;
+}
+}
+
 TradeStatus checkTrade(World& w, ObjectId npc, ObjectId player) {
     TradeStatus st;
     const Inventory* ni = npc != NO_OBJECT ? w.get<Inventory>(npc) : nullptr;
@@ -127,7 +134,8 @@ TradeStatus checkTrade(World& w, ObjectId npc, ObjectId player) {
         }
         return st;
     }
-    const int npcValue = tradeValueOf(session.tradeNpc);
+    // What they ask: their goods' worth, and their faction's markup on top
+    const int npcValue = markedUp(w, npc, tradeValueOf(session.tradeNpc));
     const int offer = tradeValueOf(session.tradePlayer);
     const int needed = requiredOffer(npcValue, levelOf(statsOf(w, player), StatId::Charisma));
     st.progress = needed > 0 ? (float)offer / (float)needed : 1.0f;
@@ -145,7 +153,7 @@ TradeStatus checkTrade(World& w, ObjectId npc, ObjectId player) {
 void completeTrade(World& w, ObjectId npc, ObjectId player) {
     Inventory* ni = w.get<Inventory>(npc);
     Inventory* pi = w.get<Inventory>(player);
-    const int npcValue = tradeValueOf(session.tradeNpc);
+    const int npcValue = markedUp(w, npc, tradeValueOf(session.tradeNpc));
     const int fee = session.freeTrade ? 0 : requiredOffer(npcValue, levelOf(statsOf(w, player), StatId::Charisma)) - npcValue;
     for (const TradeGhost& g : session.tradeNpc) takeFromSlot(*ni, g.slot, g.stack.count);
     for (const TradeGhost& g : session.tradePlayer) takeFromSlot(*pi, g.slot, g.stack.count);

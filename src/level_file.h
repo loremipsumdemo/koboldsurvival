@@ -17,7 +17,7 @@ struct LevelObject {
     int id = 0;
     int kind = 0;       // a unit's faction, a MobKind, a PropKind or an item id
     int count = 1;      // items
-    int owner = -1;     // props: their faction, or -1
+    int owner = -1;     // props and mobs: their faction, or -1 (a prop of none, a mob of its own kind's)
     float x = 0.0f, z = 0.0f, yaw = 0.0f;
 };
 

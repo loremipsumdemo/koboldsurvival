@@ -11,10 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, TameAnimals, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, TameAnimals, DealWithDowned, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
                                                  "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
-                                                 "AutoHaulStall", "ManStall", "TameAnimals" };
+                                                 "AutoHaulStall", "ManStall", "TameAnimals", "DealWithDowned" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -53,8 +53,9 @@ enum class BehaviorWait : int {
     NoLogs,
     NoStockpile,
     NoStallOrder,
-    NoCagedAnimal,   // Tame Animals: no animal of yours in a Taming Cage wants feeding
+    NoCagedAnimal,   // (Tame Animals, a task no longer used: taming takes time alone)
     NoRawMeat,       // Tame Animals: no raw meat carried or in your stores
+    NoDowned,        // Deal with Downed: no knocked-out enemy near, or the faction's rules leave them be
 };
 
 constexpr float PATROL_PAUSE_MIN = 4.0f, PATROL_PAUSE_MAX = 12.0f;
@@ -122,25 +123,28 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::NoStallOrder: return lang("UILABEL_WAIT_NO_STALL_ORDER");
     case BehaviorWait::NoCagedAnimal: return lang("UILABEL_WAIT_NO_CAGED_ANIMAL");
     case BehaviorWait::NoRawMeat: return lang("UILABEL_WAIT_NO_RAW_MEAT");
+    case BehaviorWait::NoDowned: return lang("UILABEL_WAIT_NO_DOWNED");
     }
     return std::string();
 }
 
 inline std::vector<BehaviorRule> defaultBehaviors() {
-    BehaviorRule eat, heal, share, rest, leave, rescue, stall;
+    BehaviorRule eat, heal, share, rest, leave, rescue, stall, deal;
     heal.kind = BehaviorKind::Heal;
     share.kind = BehaviorKind::Share;
     rest.kind = BehaviorKind::Rest;
     leave.kind = BehaviorKind::LeaveBed;
     rescue.kind = BehaviorKind::Rescue;
     stall.kind = BehaviorKind::AutoHaulStall;   // on by default: carries out the orders picked for your Stalls
-    return { eat, heal, share, rescue, rest, leave, stall };
+    deal.kind = BehaviorKind::DealWithDowned;   // does what your Faction Rules say; with the first rules, nothing
+    return { eat, heal, share, rescue, rest, leave, deal, stall };
 }
 
 inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
-           k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall || k == BehaviorKind::TameAnimals;
+           k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall || k == BehaviorKind::TameAnimals ||
+           k == BehaviorKind::DealWithDowned;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -192,6 +196,7 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL");
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL", { propName });
     case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS");
+    case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -221,6 +226,7 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP");
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL_TIP", { propName });
     case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS_TIP");
+    case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -241,11 +247,20 @@ inline BehaviorRule behaviorFromFields(int on, int kind, int propKind, int perce
     return r;
 }
 
-inline std::vector<BehaviorRule> nomadBehaviors() {
-    BehaviorRule eat, heal, roam;
+inline std::vector<BehaviorRule> factionlessBehaviors() {
+    BehaviorRule eat, heal, deal, roam;
     heal.kind = BehaviorKind::Heal;
+    deal.kind = BehaviorKind::DealWithDowned;
     roam.kind = BehaviorKind::Roam;
-    return { eat, heal, roam };
+    return { eat, heal, deal, roam };
+}
+// A unit of a faction that runs itself: rescues and deals with the knocked out as its faction's rules say, and patrols
+inline std::vector<BehaviorRule> npcFactionBehaviors() {
+    BehaviorRule rescue, deal, patrol;
+    rescue.kind = BehaviorKind::Rescue;
+    deal.kind = BehaviorKind::DealWithDowned;
+    patrol.kind = BehaviorKind::Patrol;
+    return { rescue, deal, patrol };
 }
 inline std::vector<BehaviorRule> mobBehaviors() {
     return {};
@@ -319,7 +334,7 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
                 BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::AutoHaulStall,
-                BehaviorKind::TameAnimals, BehaviorKind::Patrol, BehaviorKind::Roam };
+                BehaviorKind::DealWithDowned, BehaviorKind::Patrol, BehaviorKind::Roam };
         return out;
     }
     // Patrol Spawn (keeping near where it appeared) is for wild mobs

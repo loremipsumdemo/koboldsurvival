@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
             units.push_back(u);
         }
         const Vec2 dest{ at.x + 3.0f, at.z + 3.0f };
-        const ObjectId outsider = spawnUnit(squad, terrain, squadRng, FACTION_NOMAD, dest.x, dest.z);
+        const ObjectId outsider = spawnUnit(squad, terrain, squadRng, FACTION_FACTIONLESS, dest.x, dest.z);
         squad.get<Behaviors>(outsider)->rules.clear();
         squad.add(outsider, InConversation{});
         FormationSpec spec;
@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
     int otherFaction = -1;
     for (const FactionDef& f : factions()) {
         World probe;
-        if (f.id != FACTION_PLAYER && f.id != FACTION_NOMAD && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
+        if (f.id != FACTION_PLAYER && f.id != FACTION_FACTIONLESS && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
             otherFaction = f.id;
             break;
         }
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
         int friendly = -1;
         for (const FactionDef& f : factions()) {
             World probe;
-            if (f.id != FACTION_PLAYER && f.id != FACTION_NOMAD && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
+            if (f.id != FACTION_PLAYER && f.id != FACTION_FACTIONLESS && !isMobFaction(f.id) && !factionsHostile(probe, f.id, FACTION_PLAYER)) {
                 friendly = f.id;
                 break;
             }
@@ -390,7 +390,7 @@ int main(int argc, char** argv) {
         sky.add(archer, Occupying{ ship });
         int friendly = -1, foes = -1;
         for (const FactionDef& f : factions()) {
-            if (f.id == FACTION_PLAYER || f.id == FACTION_NOMAD || isMobFaction(f.id)) continue;
+            if (f.id == FACTION_PLAYER || f.id == FACTION_FACTIONLESS || isMobFaction(f.id)) continue;
             if (factionsHostile(sky, f.id, FACTION_PLAYER)) {
                 if (foes < 0) foes = f.id;
             } else if (friendly < 0) {

@@ -239,6 +239,11 @@ void App::chooseOption(size_t i) {
 }
 
 void App::openTrade(bool free) {
+    // Their faction's Trade rule (or yours) may rule it out: they say so, and no trade opens
+    if (!free && !factionsTrade(world, factionOf(world, session.dialogueUnit), factionOf(world, session.dialoguePlayer))) {
+        sayAs(session.dialogueUnit, lang("NPC_WONT_TRADE"), false);
+        return;
+    }
     session.tradeOpen = true;
     showTraderInventory();
     session.freeTrade = free;

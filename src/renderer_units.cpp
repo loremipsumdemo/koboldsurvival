@@ -144,15 +144,17 @@ void Renderer::queueModel(const Model& m, float x, float y, float z, float targe
     if (p.ok) queueModelMatrix(m, placementMatrix(p), RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
 }
 
-void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat) {
+void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue) {
     if (!m.vao) return;
     if (!modelInstProgram_) {
         glUseProgram(glyphProgram_);
         glUniform4f(uFaction_, faction.r, faction.g, faction.b, faction.a);
         glUniform1f(uSat_, sat);
+        glUniform1f(uHue_, hue);
         drawUnitModel(m, place);
         glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
         glUniform1f(uSat_, 1.0f);
+        glUniform1f(uHue_, 0.0f);
         return;
     }
     auto slot = instSlot_.find(&m);
@@ -167,6 +169,7 @@ void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction,
     inst.faction[2] = faction.b;
     inst.faction[3] = faction.a;
     inst.sat = sat;
+    inst.hue = hue;
     instQueues_[slot->second].second.push_back(inst);
 }
 
@@ -181,7 +184,7 @@ GLuint Renderer::modelInstVao(const Model& m) {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    for (int a = 2; a <= 7; ++a) {
+    for (int a = 2; a <= 8; ++a) {
         glEnableVertexAttribArray((GLuint)a);
         glVertexAttribDivisor((GLuint)a, 1);
     }
@@ -227,6 +230,7 @@ void Renderer::drawModelInstances() {
             }
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, faction)));
             glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, sat)));
+            glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, hue)));
             if (m.surface != surfaceBound) {
                 if (m.surface) {
                     glActiveTexture(GL_TEXTURE1);
@@ -433,6 +437,11 @@ const TextTex& Renderer::unitPortrait(World& w, ObjectId e) const {
 const Model* Renderer::unitModelNumber(int n) const {
     const int idx = ((n - 1) % UNIT_SPRITE_COUNT + UNIT_SPRITE_COUNT) % UNIT_SPRITE_COUNT;
     return unitModelFor_[(size_t)idx];
+}
+
+float Renderer::unitHue(World& w, ObjectId e) const {
+    const Coloration* c = w.get<Coloration>(e);
+    return c ? (float)c->hue / 360.0f : 0.0f;
 }
 
 RGBA Renderer::unitFactionTint(World& w, ObjectId e) const {
