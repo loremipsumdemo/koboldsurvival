@@ -511,25 +511,24 @@ void App::updateHover() {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
+        // Hovering an Altar, or the campfire of another faction's camp: its claim, with the others around it
         ObjectId hoverAltar = NO_OBJECT;
+        const std::vector<Claim> claims = bp.ringR > 0.0f || !placing ? claimsOf(world) : std::vector<Claim>{};
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
             for (ObjectId e : propsAt(bmx, bmy)) {
-                const Prop* fp = world.get<Prop>(e);
-                const Transform* ft = world.get<Transform>(e);
-                if (!fp || !ft || !propInfo(fp->kind).claimsLand) continue;
-                bp.ringR = CLAIM_RADIUS;
+                const Claim* c = claimOf(claims, e);
+                if (!c) continue;
+                bp.ringR = c->radius;
                 bp.ringTone = 3;
-                bp.x = ft->x;
-                bp.z = ft->z;
+                bp.x = c->x;
+                bp.z = c->z;
                 hoverAltar = e;
                 break;
             }
         }
         if (bp.ringR > 0.0f) {
-            for (ObjectId e : world.view<Prop, Transform>()) {
-                if (e == hoverAltar || !propInfo(world.get<Prop>(e)->kind).claimsLand) continue;
-                const Transform* ft = world.get<Transform>(e);
-                bp.otherRings.push_back({ ft->x, ft->z });
+            for (const Claim& c : claims) {
+                if (c.altar != hoverAltar) bp.otherRings.push_back({ c.x, c.z, c.radius });
             }
         }
         renderer.setBuildPreview(bp);

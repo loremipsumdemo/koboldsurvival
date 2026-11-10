@@ -479,7 +479,10 @@ void raiderSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float dt
                 if (!factionsHostile(w, f, FACTION_PLAYER) && !w.has<Hostile>(u)) continue;
                 const Transform* ut = w.get<Transform>(u);
                 if (nearClaim(claims, *ut, CLAIM_RADIUS)) ++inside;
-                if (freeNpc(w, u) && nearClaim(claims, *ut, RAID_RANGE)) pool.push_back(u);
+                // Not one still getting over a beating: it raids again only at full health
+                if (w.has<Retreating>(u)) continue;
+                const Needs* n = w.get<Needs>(u);
+                if (freeNpc(w, u) && n && n->hp >= n->maxHp && nearClaim(claims, *ut, RAID_RANGE)) pool.push_back(u);
             }
             if (!pool.empty()) {
                 const ObjectId u = pool[(size_t)rng.range(0, (int)pool.size() - 1)];

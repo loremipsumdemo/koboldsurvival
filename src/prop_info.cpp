@@ -53,7 +53,10 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
     if (const int level = storeyOf(w, e); level > 0 && !info.upperFloor) out.push_back(langf("MISC_ON_FLOOR", { std::to_string(level + 1) }));
     if (info.use == PropUse::Occupy) {
         const bool bed = isBed(p->kind);
-        out.push_back(lang(bed ? "MISC_PROP_USE_BED" : isSeat(p->kind) ? "MISC_PROP_USE_SEAT" : "MISC_PROP_USE_CAGE"));
+        // A vehicle (Airship, Wheelbarrow) gets no line: it is not a cage
+        if (bed) out.push_back(lang("MISC_PROP_USE_BED"));
+        else if (isSeat(p->kind)) out.push_back(lang("MISC_PROP_USE_SEAT"));
+        else if (info.cage) out.push_back(lang("MISC_PROP_USE_CAGE"));
         // A bed in a building: only its faction's, unless set Public
         if (bed) {
             const int house = bedHouseOwner(w, e);

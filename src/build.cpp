@@ -80,8 +80,8 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 
     if (propInfo(kind).claimsLand) {
         for (const Claim& c : claims) {
-            if (c.owner == builder) return BuildCheck::AltarTaken;
-            if (claimsOverlap(x, z, c.x, c.z)) return BuildCheck::ClaimOverlap;
+            if (c.owner == builder && !c.camp) return BuildCheck::AltarTaken;
+            if (claimsOverlap(x, z, CLAIM_RADIUS, c.x, c.z, c.radius)) return BuildCheck::ClaimOverlap;
         }
     }
 

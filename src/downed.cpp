@@ -1,5 +1,6 @@
 #include "systems_internal.h"
 #include "build.h"
+#include "npc_camps.h"
 
 using namespace systems_detail;
 
@@ -54,6 +55,8 @@ static void wakeUp(World& w, ObjectId u, WakeChanges& out) {
     if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
     queueLog(w, langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     out.woke.push_back(u);
+    // Beaten: one of another faction's retreats till it is well again
+    startRetreat(w, u);
     if (inBedOrBedroll(w, u)) {
         const Behaviors* b = w.get<Behaviors>(u);
         const bool leaves = b && std::any_of(b->rules.begin(), b->rules.end(),

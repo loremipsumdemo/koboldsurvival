@@ -769,6 +769,9 @@ UILABEL_TASK_CARRYING	Carrying
 UILABEL_TASK_STORING	Storing
 MISC_FALLS_UNCONSCIOUS	{0} falls unconscious
 MISC_GOES_HOME	{0} gives up the chase and heads home
+MISC_RETREATS_HOME	{0} retreats home to recover
+MISC_RETREATS_AWAY	{0} retreats to make camp and recover
+MISC_MAKES_CAMP	{0} makes camp
 MISC_GETS_UP	{0} gets up, the danger gone
 MISC_PLACES_IN	{0} places {1} in the {2}
 MISC_IS_UNCONSCIOUS	{0} is unconscious and can't do anything

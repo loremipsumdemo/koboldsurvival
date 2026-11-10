@@ -112,6 +112,9 @@ bool upgrade11to12(Lines&) { return true; }
 bool upgrade12to13(Lines&) { return true; }
 // Version 14 added the groundedit line, for ground a foundation levelled. A version 13 file's ground is the map's own.
 bool upgrade13to14(Lines&) { return true; }
+// Version 15 adds "retreat" (a beaten unit of another faction's) and "outdoor" (a bedroll or campfire in the open):
+// an older save has neither
+bool upgrade14to15(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -126,6 +129,7 @@ constexpr Step STEPS[] = {
     { 11, upgrade11to12 },
     { 12, upgrade12to13 },
     { 13, upgrade13to14 },
+    { 14, upgrade14to15 },
 };
 }
 

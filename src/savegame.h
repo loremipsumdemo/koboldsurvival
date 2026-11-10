@@ -14,7 +14,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 14;
+inline constexpr int SAVE_VERSION = 15;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -48,6 +48,7 @@ struct SaveUnit {
     int upstairs = -1;   // the foundation (a prop index) of the building whose upper floor it stands on
     std::optional<Unconscious> down;
     std::optional<double> corpseHours;
+    std::optional<Retreating> retreat;   // from version 15
     int carriedBy = -1;
     bool playingDead = false;
     Needs needs;
@@ -94,6 +95,7 @@ struct SaveProp {
     std::optional<double> workProgress;
     unsigned workTurn = 0;
     std::optional<double> bonesHours;
+    std::optional<double> outdoorHours;   // from version 15: a bedroll or campfire out in the open
     std::vector<ItemStack> bonesItems;
     std::optional<Health> health;
     std::optional<Foundation> foundation;
