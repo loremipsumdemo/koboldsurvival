@@ -4,15 +4,18 @@
 #include "components.h"
 #include "ecs.h"
 
-inline ObjectId spawnGroundItem(World& w, Transform at, int item, int count) {
+// storey: the floor it lies on (0 the ground). Something dropped upstairs must say so, or it is taken for the ground
+// floor's and can't be seen picked or clicked on its own floor.
+inline ObjectId spawnGroundItem(World& w, Transform at, int item, int count, int storey = 0) {
     const ObjectId e = w.create();
     w.add(e, at);
     w.add(e, GroundItem{ item, count });
+    if (storey > 0) w.add(e, Storey{ storey });
     return e;
 }
 
-inline void dropStacks(World& w, Transform at, const std::vector<ItemStack>& stacks) {
-    for (const ItemStack& st : stacks) spawnGroundItem(w, at, st.item, st.count);
+inline void dropStacks(World& w, Transform at, const std::vector<ItemStack>& stacks, int storey = 0) {
+    for (const ItemStack& st : stacks) spawnGroundItem(w, at, st.item, st.count, storey);
 }
 
 template <typename Slots>

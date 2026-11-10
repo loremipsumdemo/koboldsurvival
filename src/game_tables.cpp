@@ -369,6 +369,8 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "cage") p.cage = true;
         else if (flag == "airship") p.airship = p.moves = true;
         else if (flag == "wheelbarrow") p.wheelbarrow = p.moves = true;
+        else if (flag == "pulled") p.pulled = p.wheelbarrow = p.moves = true;
+        else if (flag == "taming") p.taming = p.cage = true;
         else if (flag == "moves") p.moves = true;
         else if (flag == "foundation") p.foundation = true;
         else if (flag == "on_foundation") p.onFoundation = true;
@@ -414,6 +416,12 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
     if (cell.at.count("capacity") && (!readInt(cell(r, "capacity"), p.capacity) || p.capacity < 0)) {
         why = "capacity must be 0 or more";
         return false;
+    }
+    // Optional: the Build tab's heading (none of them Developer, which is the tab's own)
+    if (cell.at.count("group")) {
+        const int group = placeIn(BUILD_GROUP_KEYS, cell(r, "group"));
+        if (group < 0 || group == (int)BuildGroup::Developer) { why = "unknown group " + cell(r, "group"); return false; }
+        p.group = (BuildGroup)group;
     }
     const int use = placeIn(PROP_USE_KEYS, cell(r, "use"));
     if (use < 0) { why = "unknown use " + cell(r, "use"); return false; }

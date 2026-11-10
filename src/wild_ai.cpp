@@ -4,7 +4,8 @@ using namespace systems_detail;
 
 void patrolSpawnSystem(World& w, Terrain& t, float dt) {
     for (ObjectId u : w.view<SpawnHome, Transform, Behaviors>()) {
-        if (outCold(w, u) || w.has<Carried>(u) || w.has<Fleeing>(u)) continue;
+        // In a cage (a Taming Cage's animal): it stays put, and doesn't head home
+        if (outCold(w, u) || w.has<Carried>(u) || w.has<Fleeing>(u) || inPrisonerCage(w, u)) continue;
         SpawnHome* h = w.get<SpawnHome>(u);
         Behaviors* b = w.get<Behaviors>(u);
         BehaviorRule* rule = nullptr;
@@ -132,7 +133,7 @@ void wildMobSystem(World& w, Terrain& t, float dt) {
         b->passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive || (home && home->returning);
         if (tm != MobTemperament::Avoidant) continue;
         const Needs* n = w.get<Needs>(u);
-        if (outCold(w, u) || w.has<Carried>(u) || (n && n->hp <= 0)) continue;
+        if (outCold(w, u) || w.has<Carried>(u) || (n && n->hp <= 0) || inPrisonerCage(w, u)) continue;
         b->sense -= dt;
         if (b->sense > 0.0f) continue;
         b->sense = 0.5f;

@@ -68,67 +68,14 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (r.index < 0 || r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
-            const auto mv = moves.find(u);
-            const bool ghost = mv != moves.end();
-            const bool hot = r.row.contains(mx, my);
-            if (hot) noteHover(r.row);
-            RGBA bg = hot ? RGBA{ 0.26f, 0.12f, 0.14f, 0.95f } : RGBA{ 0.16f, 0.07f, 0.085f, 0.85f };
-            if (u == pinned) bg = theme::alpha(theme::GOLD_DEEP, 0.9f);
-            drawRect(r.row, bg);
-            if (ghost) {
-                // A ghost: dashed gold edges and faded contents, until Apply
-                const float dash = 6.0f * s, t = std::max(1.0f, 1.5f * s);
-                for (float x = r.row.x; x < r.row.x + r.row.w; x += 2.0f * dash) {
-                    const float dw = std::min(dash, r.row.x + r.row.w - x);
-                    drawRect(Rect{ x, r.row.y, dw, t }, theme::GOLD);
-                    drawRect(Rect{ x, r.row.y + r.row.h - t, dw, t }, theme::GOLD);
-                }
-            }
-            const float fade = ghost ? 0.55f : 1.0f;
-            drawRect(r.portrait, theme::TAB_OFF);
-            drawPortrait(unitPortrait(w, u), r.portrait, unitSaturation(w, u) * fade);
-            if (ghost) drawRect(r.portrait, RGBA{ 0.0f, 0.0f, 0.0f, 0.4f });
-            noteTip(lang("UILABEL_ALTAR_RENAME_TIP"), r.portrait);
-
-            int combat = 0, other = 0;
-            levelTotals(w, u, combat, other);
-            const float textX = r.portrait.x + r.portrait.w + 8.0f * s;
+            const bool ghost = moves.count(u) > 0;
             std::string tag;
             if (ghost) tag = lang(c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_CITIZENS" : "UILABEL_ALTAR_TO_MILITARY");
             else if (c == ALTAR_MILITARY && squadOf(w, u) >= 0) tag = langf("UILABEL_ALTAR_SQUAD_TAG", { std::to_string(squadOf(w, u) + 1) });
-            const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
-            const float rightEdge = r.group.w > 0.0f && !ghost ? r.group.x : r.move.x;
-            const float textW = rightEdge - 6.0f * s - tagW - textX;
-            const RGBA nameTint = ghost ? RGBA{ 1.0f, 1.0f, 1.0f, 0.6f } : WHITE;
-            const RGBA dimTint = ghost ? theme::alpha(theme::TEXT_DIM, 0.6f) : theme::TEXT_DIM;
-            const float top = r.row.y + r.row.h * 0.5f - th - 1.0f * s;
-            drawListText(fitText(unitNameOf(w, u), textW, false), textX, top, nameTint);
-            const std::string levels = langf("UILABEL_ALTAR_LEVELS", { std::to_string(combat), std::to_string(other) });
-            drawListText(fitText(levels, textW, false), textX, top + th + 2.0f * s, dimTint);
-            if (!tag.empty()) {
-                drawListText(tag, rightEdge - 6.0f * s - listTextWidth(tag), r.row.y + (r.row.h - th) * 0.5f,
-                             ghost ? theme::GOLD : theme::TEXT_DIM);
-            }
-            // A citizen of yours: the behavior group it follows
-            if (const Citizen* cz = w.get<Citizen>(u); cz && !ghost && r.group.w > 0.0f) {
-                const bool groupHot = r.group.contains(mx, my);
-                if (groupHot) noteHover(r.group);
-                drawButton(r.group, langf("UILABEL_ALTAR_GROUP_TAG", { std::to_string(cz->group + 1) }), true, groupHot);
-                noteTip(lang("UILABEL_ALTAR_GROUP_TIP"), r.group);
-            }
-
-            // The move button points to the other column; on a ghost it points back, to undo the move
-            const bool moveHot = r.move.contains(mx, my);
-            if (moveHot) noteHover(r.move);
-            drawRect(r.move, moveHot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
             const bool right = c == ALTAR_MILITARY;
-            const float cx = r.move.x + r.move.w * 0.5f, cy = r.move.y + r.move.h * 0.5f;
-            const float hw = r.move.w * 0.22f, hh = r.move.h * 0.3f;
-            const RGBA ac = ghost ? theme::GOLD : WHITE;
-            if (right) drawUiTris({ { cx - hw, cy - hh, ac }, { cx + hw, cy, ac }, { cx - hw, cy + hh, ac } });
-            else drawUiTris({ { cx + hw, cy - hh, ac }, { cx - hw, cy, ac }, { cx + hw, cy + hh, ac } });
-            noteTip(lang(ghost ? "UILABEL_ALTAR_UNDO_TIP" : right ? "UILABEL_ALTAR_TO_CITIZENS_TIP" : "UILABEL_ALTAR_TO_MILITARY_TIP"),
-                    r.move);
+            drawRosterRow(w, r, u, ghost, tag, right,
+                          ghost ? "UILABEL_ALTAR_UNDO_TIP" : right ? "UILABEL_ALTAR_TO_CITIZENS_TIP" : "UILABEL_ALTAR_TO_MILITARY_TIP",
+                          pinned, mx, my);
         }
         if (cols[(size_t)c].empty()) {
             const std::string none = lang("UILABEL_ALTAR_EMPTY");
@@ -150,6 +97,131 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
 
     const bool anyMoves = !moves.empty();
     drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(moves.size()) }), anyMoves, anyMoves && L.apply.contains(mx, my));
+    drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
+}
+
+void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost, const std::string& tag, bool pointRight,
+                             const char* moveTipKey, ObjectId pinned, float mx, float my) {
+    const float s = uiScale();
+    const float th = listTextHeight("Ag");
+    const bool hot = r.row.contains(mx, my);
+    if (hot) noteHover(r.row);
+    RGBA bg = hot ? RGBA{ 0.26f, 0.12f, 0.14f, 0.95f } : RGBA{ 0.16f, 0.07f, 0.085f, 0.85f };
+    if (u == pinned) bg = theme::alpha(theme::GOLD_DEEP, 0.9f);
+    drawRect(r.row, bg);
+    if (ghost) {
+        // A ghost: dashed gold edges and faded contents, until Apply
+        const float dash = 6.0f * s, t = std::max(1.0f, 1.5f * s);
+        for (float x = r.row.x; x < r.row.x + r.row.w; x += 2.0f * dash) {
+            const float dw = std::min(dash, r.row.x + r.row.w - x);
+            drawRect(Rect{ x, r.row.y, dw, t }, theme::GOLD);
+            drawRect(Rect{ x, r.row.y + r.row.h - t, dw, t }, theme::GOLD);
+        }
+    }
+    const float fade = ghost ? 0.55f : 1.0f;
+    drawRect(r.portrait, theme::TAB_OFF);
+    drawPortrait(unitPortrait(w, u), r.portrait, unitSaturation(w, u) * fade);
+    if (ghost) drawRect(r.portrait, RGBA{ 0.0f, 0.0f, 0.0f, 0.4f });
+    noteTip(lang("UILABEL_ALTAR_RENAME_TIP"), r.portrait);
+
+    int combat = 0, other = 0;
+    levelTotals(w, u, combat, other);
+    const float textX = r.portrait.x + r.portrait.w + 8.0f * s;
+    const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
+    const float rightEdge = r.group.w > 0.0f && !ghost ? r.group.x : r.move.x;
+    const float textW = rightEdge - 6.0f * s - tagW - textX;
+    const RGBA nameTint = ghost ? RGBA{ 1.0f, 1.0f, 1.0f, 0.6f } : WHITE;
+    const RGBA dimTint = ghost ? theme::alpha(theme::TEXT_DIM, 0.6f) : theme::TEXT_DIM;
+    const float top = r.row.y + r.row.h * 0.5f - th - 1.0f * s;
+    drawListText(fitText(unitNameOf(w, u), textW, false), textX, top, nameTint);
+    const std::string levels = langf("UILABEL_ALTAR_LEVELS", { std::to_string(combat), std::to_string(other) });
+    drawListText(fitText(levels, textW, false), textX, top + th + 2.0f * s, dimTint);
+    if (!tag.empty()) {
+        drawListText(tag, rightEdge - 6.0f * s - listTextWidth(tag), r.row.y + (r.row.h - th) * 0.5f, ghost ? theme::GOLD : theme::TEXT_DIM);
+    }
+    // A citizen of yours: the behavior group it follows
+    if (const Citizen* cz = w.get<Citizen>(u); cz && !ghost && r.group.w > 0.0f) {
+        const bool groupHot = r.group.contains(mx, my);
+        if (groupHot) noteHover(r.group);
+        drawButton(r.group, langf("UILABEL_ALTAR_GROUP_TAG", { std::to_string(cz->group + 1) }), true, groupHot);
+        noteTip(lang("UILABEL_ALTAR_GROUP_TIP"), r.group);
+    }
+
+    // The move button points to the other column
+    const bool moveHot = r.move.contains(mx, my);
+    if (moveHot) noteHover(r.move);
+    drawRect(r.move, moveHot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+    const float cx = r.move.x + r.move.w * 0.5f, cy = r.move.y + r.move.h * 0.5f;
+    const float hw = r.move.w * 0.22f, hh = r.move.h * 0.3f;
+    const RGBA ac = ghost ? theme::GOLD : WHITE;
+    if (pointRight) drawUiTris({ { cx - hw, cy - hh, ac }, { cx + hw, cy, ac }, { cx - hw, cy + hh, ac } });
+    else drawUiTris({ { cx + hw, cy - hh, ac }, { cx - hw, cy, ac }, { cx + hw, cy + hh, ac } });
+    noteTip(lang(moveTipKey), r.move);
+}
+
+void Renderer::drawSquadsRoster(World& w, const SquadsLayout& SL, const std::array<std::vector<ObjectId>, 2>& cols,
+                                const std::map<ObjectId, int>& moves, const SquadsRosterText& text, ObjectId pinned,
+                                float mx, float my) {
+    const AltarLayout& L = SL.roster;
+    const float s = uiScale();
+    const float th = listTextHeight("Ag");
+    drawScrim();
+    drawThemedPanel(L.box);
+    drawListText(fitText(lang("UILABEL_MANAGE_SQUADS"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
+    if (L.close.contains(mx, my)) noteHover(L.close);
+    drawCloseButton(L.close);
+    {
+        const std::string shown = fitTextTip(text.totals, L.totals.w, L.totals);
+        drawListText(shown, L.totals.x, L.totals.y + (L.totals.h - th) * 0.5f, text.warn ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f } : theme::TEXT_DIM);
+    }
+    for (int c = 0; c < 2; ++c) {
+        const Rect& h = L.heads[(size_t)c];
+        drawRect(h, theme::alpha(theme::GOLD_DEEP, 0.85f));
+        const std::string& countText = text.counts[(size_t)c];
+        const float countX = SL.prev[(size_t)c].x - 6.0f * s - listTextWidth(countText);
+        drawListText(fitText(text.heads[(size_t)c], countX - h.x - 12.0f * s, false), h.x + 6.0f * s, h.y + (h.h - th) * 0.5f, theme::GOLD);
+        drawListText(countText, countX, h.y + (h.h - th) * 0.5f, text.full[(size_t)c] ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f } : WHITE);
+        // The arrows that pick the squad this column shows
+        for (int side = 0; side < 2; ++side) {
+            const Rect& b = side == 0 ? SL.prev[(size_t)c] : SL.next[(size_t)c];
+            const bool hot = b.contains(mx, my);
+            if (hot) noteHover(b);
+            drawRect(b, hot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+            const float cx = b.x + b.w * 0.5f, cy = b.y + b.h * 0.5f, hw = b.w * 0.2f, hh = b.h * 0.28f;
+            if (side == 1) drawUiTris({ { cx - hw, cy - hh, WHITE }, { cx + hw, cy, WHITE }, { cx - hw, cy + hh, WHITE } });
+            else drawUiTris({ { cx + hw, cy - hh, WHITE }, { cx - hw, cy, WHITE }, { cx + hw, cy + hh, WHITE } });
+            noteTip(lang("UILABEL_SQUADS_PICK_TIP"), b);
+        }
+        drawRect(L.lists[(size_t)c], RGBA{ 0.0f, 0.0f, 0.0f, 0.22f });
+        for (const AltarRow& r : L.rows[(size_t)c]) {
+            if (r.index < 0 || r.index >= (int)cols[(size_t)c].size()) continue;
+            const ObjectId u = cols[(size_t)c][(size_t)r.index];
+            const bool ghost = moves.count(u) > 0;
+            std::string tag;
+            if (ghost) {
+                const int from = squadOf(w, u);
+                tag = from >= 0 ? langf("UILABEL_SQUADS_FROM", { std::to_string(from + 1) }) : std::string();
+            }
+            drawRosterRow(w, r, u, ghost, tag, c == 0, "UILABEL_SQUADS_MOVE_TIP", pinned, mx, my);
+        }
+        if (cols[(size_t)c].empty()) {
+            const std::string none = lang("UILABEL_ALTAR_EMPTY");
+            const Rect& list = L.lists[(size_t)c];
+            drawListText(none, list.x + (list.w - listTextWidth(none)) * 0.5f, list.y + 12.0f * s, theme::TEXT_DIM);
+        }
+        const int count = (int)cols[(size_t)c].size();
+        if (count > L.visible[(size_t)c] && L.visible[(size_t)c] > 0) {
+            const Rect& list = L.lists[(size_t)c];
+            const float barW = 4.0f * s;
+            const Rect track{ list.x + list.w - barW, list.y, barW, list.h };
+            const float share = (float)L.visible[(size_t)c] / (float)count;
+            const float at = (float)L.first[(size_t)c] / (float)std::max(1, count - L.visible[(size_t)c]);
+            const float thumbH = std::max(8.0f * s, track.h * share);
+            drawRect(track, RGBA{ 0.24f, 0.10f, 0.12f, 0.8f });
+            drawRect(Rect{ track.x, track.y + (track.h - thumbH) * at, barW, thumbH }, RGBA{ 0.80f, 0.70f, 0.60f, 1.0f });
+        }
+    }
+    drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(text.moveCount) }), text.canApply, text.canApply && L.apply.contains(mx, my));
     drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
 }
 

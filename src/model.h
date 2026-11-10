@@ -17,6 +17,7 @@ struct Model {
     std::vector<GLuint> textures;
     std::vector<float> positions;
     std::vector<GLuint> triangles;
+    GLuint surface = 0;   // a building piece's material texture laid over it in world space (not owned), or 0
 };
 
 bool loadGLBModel(const char* path, Model& m);

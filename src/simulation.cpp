@@ -9,6 +9,7 @@
 #include "calendar.h"
 #include "claims.h"
 #include "npc_camps.h"
+#include "taming.h"
 #include "combat.h"
 #include "factions.h"
 #include "hostility.h"
@@ -93,6 +94,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("behaviorGroupSystem", behaviorGroupSystem(w));
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
     PROFILED("buildingSystem", buildingSystem(w, t, dt));
+    PROFILED("tameJobSystem", tameJobSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
     PROFILED("npcCampSystem", npcCampSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));

@@ -16,6 +16,7 @@ void App::openAltar() {
     altar = AltarUi{};
     altar.open = true;
     ghostsUi = GhostsUi{};
+    squadsUi = SquadsUi{};
     selectMenuOpen = false;
     session.contextMenu.open = false;
     itemMenu.open = false;
@@ -189,6 +190,220 @@ void App::drawAltar() {
     if (altar.menuUnit != NO_OBJECT) {
         renderer.drawItemMenu(renderer.itemMenuLayout(altar.menuX, altar.menuY, 1, winW, winH), { lang("UILABEL_RENAME") }, mouseX, mouseY);
     }
+}
+
+// ---- Manage Squads ----
+
+void App::openManageSquads() {
+    squadsUi = SquadsUi{};
+    squadsUi.open = true;
+    // The squad the Squad tab shows on the left, and the next one on the right
+    const int current = std::clamp(world.resource<SquadBook>().current, 0, SQUAD_COUNT - 1);
+    squadsUi.view = { current, (current + 1) % SQUAD_COUNT };
+    altar = AltarUi{};
+    ghostsUi = GhostsUi{};
+    selectMenuOpen = false;
+    session.contextMenu.open = false;
+    itemMenu.open = false;
+    stopSquadRename(true);
+    playSfx(Sfx::UiMenuOpen);
+}
+
+// The squad a unit will be in once the moves are applied (SQUAD_UNSORTED for one put aside)
+int App::squadsTarget(ObjectId u) {
+    const auto it = squadsUi.moves.find(u);
+    return it != squadsUi.moves.end() ? it->second : squadOf(world, u);
+}
+
+// How many units a squad (or Unsorted) will have once the moves are applied
+int App::squadsCount(int squad) {
+    int n = 0;
+    for (ObjectId u : militaryUnits(world)) n += squadsTarget(u) == squad ? 1 : 0;
+    return n;
+}
+
+// Each column's units as they will be after Apply: the units moving in come first, shown as ghosts
+std::array<std::vector<ObjectId>, 2> App::squadsColumns() {
+    for (auto it = squadsUi.moves.begin(); it != squadsUi.moves.end();) {
+        if (!world.has<Entity>(it->first) || !world.has<Commandable>(it->first) || it->second == squadOf(world, it->first)) {
+            it = squadsUi.moves.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    std::array<std::vector<ObjectId>, 2> cols;
+    const std::vector<ObjectId> military = militaryUnits(world);
+    for (int c = 0; c < 2; ++c) {
+        const int view = squadsUi.view[(size_t)c];
+        for (const auto& [u, to] : squadsUi.moves) {
+            if (to == view) cols[(size_t)c].push_back(u);
+        }
+        for (ObjectId u : military) {
+            if (!squadsUi.moves.count(u) && squadOf(world, u) == view) cols[(size_t)c].push_back(u);
+        }
+    }
+    return cols;
+}
+
+bool App::pressOnManageSquads() {
+    if (screen != Screen::Playing || !squadsUi.open) return false;
+    const float x = e.button.x, y = e.button.y;
+    const std::array<std::vector<ObjectId>, 2> cols = squadsColumns();
+    const SquadsLayout SL = layoutSquads(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, squadsUi.scroll);
+    const AltarLayout& L = SL.roster;
+    if (e.button.button == SDL_BUTTON_RIGHT) {
+        // A right-click on a portrait renames that unit, as in the roster
+        for (int c = 0; c < 2; ++c) {
+            for (const AltarRow& r : L.rows[(size_t)c]) {
+                if (!r.portrait.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
+                startRename(cols[(size_t)c][(size_t)r.index]);
+                return true;
+            }
+        }
+        return true;
+    }
+    if (e.button.button != SDL_BUTTON_LEFT) return true;
+    if (L.close.contains(x, y) || L.cancel.contains(x, y)) {
+        squadsUi = SquadsUi{};
+        playSfx(Sfx::UiBack);
+        return true;
+    }
+    if (L.apply.contains(x, y)) {
+        applySquadMoves();
+        return true;
+    }
+    // The arrows: the column shows the next or the one before of Unsorted and the nine squads, never the other
+    // column's
+    for (int c = 0; c < 2; ++c) {
+        const bool prev = SL.prev[(size_t)c].contains(x, y), next = SL.next[(size_t)c].contains(x, y);
+        if (!prev && !next) continue;
+        constexpr int CHOICES = SQUAD_COUNT + 1;   // Unsorted, then the squads
+        int at = squadsUi.view[(size_t)c] + 1;
+        do {
+            at = (at + (next ? 1 : CHOICES - 1)) % CHOICES;
+        } while (at - 1 == squadsUi.view[(size_t)(1 - c)]);
+        squadsUi.view[(size_t)c] = at - 1;
+        squadsUi.scroll[(size_t)c] = 0;
+        playSfx(Sfx::UiClick);
+        return true;
+    }
+    if (!L.box.contains(x, y)) {
+        squadsUi.pinned = NO_OBJECT;
+        return true;
+    }
+    for (int c = 0; c < 2; ++c) {
+        for (const AltarRow& r : L.rows[(size_t)c]) {
+            if (!r.row.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
+            const ObjectId u = cols[(size_t)c][(size_t)r.index];
+            if (!r.move.contains(x, y)) {
+                squadsUi.pinned = squadsUi.pinned == u ? NO_OBJECT : u;
+                playSfx(Sfx::UiClick);
+                return true;
+            }
+            // Across to the other column's squad: back where it was undoes the move. Unsorted takes any number.
+            const int to = squadsUi.view[(size_t)(1 - c)];
+            if (to != SQUAD_UNSORTED && squadsCount(to) >= SQUAD_SIZE) {
+                refuse(langf("MISC_SQUAD_FULL", { std::to_string(to + 1), std::to_string(SQUAD_SIZE) }));
+                return true;
+            }
+            if (to == squadOf(world, u)) squadsUi.moves.erase(u);
+            else squadsUi.moves[u] = to;
+            playSfx(Sfx::UiClick);
+            return true;
+        }
+    }
+    return true;
+}
+
+void App::scrollManageSquads(float x, float y, float notches) {
+    const std::array<std::vector<ObjectId>, 2> cols = squadsColumns();
+    const SquadsLayout SL = layoutSquads(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, squadsUi.scroll);
+    for (int c = 0; c < 2; ++c) {
+        if (!SL.roster.lists[(size_t)c].contains(x, y)) continue;
+        const int step = notches > 0.0f ? -3 : notches < 0.0f ? 3 : 0;
+        squadsUi.scroll[(size_t)c] = std::clamp(SL.roster.first[(size_t)c] + step, 0, altarMaxScroll(SL.roster, c, (int)cols[(size_t)c].size()));
+    }
+}
+
+void App::applySquadMoves() {
+    squadsColumns();   // drops moves of units gone since
+    if (squadsUi.moves.empty()) return;
+    const int unsorted = squadsCount(SQUAD_UNSORTED);
+    if (unsorted > 0) {
+        refuse(langf("MISC_SQUADS_UNSORTED", { std::to_string(unsorted) }));
+        return;
+    }
+    // Every squad's count was kept to SQUAD_SIZE as units were moved, so they all go at once (moving them one by one
+    // could find a squad full until another unit has left it)
+    const int moved = (int)squadsUi.moves.size();
+    for (const auto& [u, to] : squadsUi.moves) world.add(u, SquadMember{ to });
+    squadsUi.moves.clear();
+    squadsUi.pinned = NO_OBJECT;
+    showNotice(langf("MISC_SQUADS_APPLIED", { std::to_string(moved) }));
+    playSfx(Sfx::UiClick);
+}
+
+void App::drawManageSquads() {
+    if (!squadsUi.open) return;
+    const std::array<std::vector<ObjectId>, 2> cols = squadsColumns();
+    const SquadsLayout SL = layoutSquads(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, squadsUi.scroll);
+    squadsUi.scroll = SL.roster.first;
+    Renderer::SquadsRosterText text;
+    for (int c = 0; c < 2; ++c) {
+        const int view = squadsUi.view[(size_t)c];
+        const int n = squadsCount(view);
+        if (view == SQUAD_UNSORTED) {
+            text.heads[(size_t)c] = lang("UILABEL_SQUADS_UNSORTED");
+            text.counts[(size_t)c] = std::to_string(n);
+        } else {
+            text.heads[(size_t)c] = squadLabel(world, view);
+            text.counts[(size_t)c] = std::to_string(n) + "/" + std::to_string(SQUAD_SIZE);
+            text.full[(size_t)c] = n >= SQUAD_SIZE;
+        }
+    }
+    const int unsorted = squadsCount(SQUAD_UNSORTED);
+    text.moveCount = (int)squadsUi.moves.size();
+    text.canApply = text.moveCount > 0 && unsorted == 0;
+    text.warn = unsorted > 0;
+    text.totals = unsorted > 0 ? langf("MISC_SQUADS_UNSORTED", { std::to_string(unsorted) }) : lang("UILABEL_SQUADS_HOW");
+    renderer.drawSquadsRoster(world, SL, cols, squadsUi.moves, text, squadsUi.pinned, mouseX, mouseY);
+
+    // The card of the pinned unit, or else of the unit under the mouse
+    ObjectId shown = NO_OBJECT;
+    Rect beside{};
+    for (int c = 0; c < 2; ++c) {
+        for (const AltarRow& r : SL.roster.rows[(size_t)c]) {
+            if (r.index >= (int)cols[(size_t)c].size()) continue;
+            const ObjectId u = cols[(size_t)c][(size_t)r.index];
+            if (u == squadsUi.pinned || (squadsUi.pinned == NO_OBJECT && r.row.contains(mouseX, mouseY) && !r.move.contains(mouseX, mouseY))) {
+                shown = u;
+                beside = r.row;
+            }
+        }
+    }
+    if (shown == NO_OBJECT && squadsUi.pinned != NO_OBJECT && world.has<Entity>(squadsUi.pinned)) {
+        shown = squadsUi.pinned;
+        beside = SL.roster.box;
+    }
+    if (shown != NO_OBJECT) renderer.drawUnitCard(world, shown, layoutUnitCard(beside, winW, winH, STAT_GROUP_COUNT + STAT_COUNT));
+}
+
+void App::followSelectionSquad() {
+    std::vector<ObjectId> now = selectedUnits(world);
+    std::sort(now.begin(), now.end());
+    if (now == lastSelection) return;
+    lastSelection = now;
+    SquadBook& book = world.resource<SquadBook>();
+    if (!squadUnits(world, book.current).empty()) return;
+    // The squad most of the selected units are in
+    std::array<int, SQUAD_COUNT> counts{};
+    for (ObjectId u : now) {
+        if (const int s = squadOf(world, u); s >= 0) ++counts[(size_t)s];
+    }
+    const auto best = std::max_element(counts.begin(), counts.end());
+    if (*best <= 0) return;
+    book.current = (int)(best - counts.begin());
+    unitPanelRow = 0;
 }
 
 void App::openGhosts(ObjectId altarProp) {

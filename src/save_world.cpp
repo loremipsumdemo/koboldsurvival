@@ -116,6 +116,11 @@ void captureOrders(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, con
         su.workUnlocking = wk->unlocking;
     } else if (sq && !sq->arrived && !sq->waypoints.empty()) {
         su.move = sq->waypoints.back();
+    } else if (const Route* r = w.get<Route>(u); r && !r->legs.empty() && !automated && !po && !hasPlayerOrder(w, u) &&
+               !w.has<CarryOrder>(u) && !(own && own->seeking)) {
+        // Bound for another floor: its goal and floor, not just the end of the leg it is on
+        su.floorMove = r->goal;
+        su.floorMoveStorey = r->legs.back().storey;
     } else if (so && so->next < so->waypoints.size() && !automated && !po && !hasPlayerOrder(w, u) &&
                !w.has<CarryOrder>(u) && !(own && own->seeking)) {
         su.move = so->waypoints.back();
@@ -382,7 +387,8 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
         if (const ObjectId lead = unitAt(u.followUnit); lead != NO_OBJECT) issueFollowOrder(world, { e }, lead);
         if (const ObjectId ward = unitAt(u.defendUnit); ward != NO_OBJECT) issueDefendOrder(world, { e }, ward);
         if (const ObjectId foe = unitAt(u.attackUnit); foe != NO_OBJECT) issueAttackOrder(world, { e }, foe);
-        if (u.move) walkers[{ u.move->x, u.move->z }].push_back(e);
+        if (u.floorMove) moveToFloor(world, terrain, e, *u.floorMove, u.floorMoveStorey);
+        else if (u.move) walkers[{ u.move->x, u.move->z }].push_back(e);
         if (u.propOrder >= 0 && u.propOrder < (int)props.size()) {
             const PropAction action = (PropAction)u.propAction;
             if (action == PropAction::Use || action == PropAction::Occupy || action == PropAction::Unlock || action == PropAction::Destroy) {

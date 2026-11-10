@@ -1,4 +1,5 @@
 #include "ghosts.h"
+#include "wheelbarrow.h"
 #include "encumbrance.h"
 #include "combat.h"
 #include "inventory.h"
@@ -45,6 +46,7 @@ float walkSpeedOf(World& w, ObjectId e, bool running) {
     }
     if (running) speed *= 1.0f + RUN_SPEED_BONUS;
     if (hauntedUnit(w, e)) speed *= HAUNTED_SPEED;
+    speed *= vehiclePace(w, e);   // pulling a Wagon
     if (const Combat* c = w.get<Combat>(e); c && c->slowedLeft > 0.0f) speed *= DAMAGE_SLOW_FACTOR;
     if (const SpawnHome* home = w.get<SpawnHome>(e); home && home->returning) {
         if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).category == MobCategory::Boss) {

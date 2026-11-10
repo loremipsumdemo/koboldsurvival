@@ -7,7 +7,8 @@
 //    Altar or camp, or away from your claims to make a camp, and rests in a bed or bedroll till it is back to full health.
 //  - A camp is a campfire with no one but the faction's own units within CAMP_CLEAR_RANGE; it claims CAMP_CLAIM_RADIUS
 //    of land (claims.h), and each unit that comes to rest there lays a bedroll around it.
-//  - Below half hunger and not busy, a unit goes for food: on the ground, or in its own faction's stores.
+//  - Below half hunger and not busy, a unit goes for food: on the ground, or in its own faction's stores. Your units
+//    (military and citizens) do the same when their Eat task is on and they are below its percent with no food on them.
 //  - A bedroll or campfire out in the open (off buildings, outside every Altar's claim) is gone after
 //    OUTDOOR_DECAY_HOURS, with no debris; what a campfire held is dropped.
 

@@ -1,4 +1,5 @@
 #include "renderer_internal.h"
+#include "building.h"
 
 using namespace render_detail;
 
@@ -120,12 +121,13 @@ void Renderer::loadPropModels(LoadStages& stages) {
                 }
             }
         }
-        if (info.foundation || info.wallRule || info.door) {
-            // Iron and crystal beside the plain one: model_45_iron.glb, model_45_iron_straight.glb and so on
-            static const char* const MATS[2] = { "_iron", "_crystal" };
+        if (takesMaterial(kind)) {
+            // The other materials beside the plain (wood) one, in BuildMaterial's order after Wood:
+            // model_45_iron.glb, model_45_iron_straight.glb and so on
+            static const char* const MATS[MATERIAL_MODELS] = { "_iron", "_crystal", "_stone" };
             static const char* const SHAPES[6] = { "", "_end", "_straight", "_corner", "_tee", "_cross" };
             const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
-            for (int m = 0; m < 2; ++m) {
+            for (int m = 0; m < MATERIAL_MODELS; ++m) {
                 for (int sh = 0; sh < (info.wallRule ? 6 : 1); ++sh) {
                     const std::string f = stem + MATS[m] + SHAPES[sh] + ".glb";
                     if (pakHas(f)) loadDrawableModel(f.c_str(), materialModels_[(size_t)k][(size_t)m][(size_t)sh], false);
@@ -134,4 +136,44 @@ void Renderer::loadPropModels(LoadStages& stages) {
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)propKindCount(), k + 1);
     }
+    {
+        // Stairs' step in each material, by BuildMaterial: stair_step.glb, stair_step_iron.glb and so on
+        static const char* const STEPS[4] = { "data/model/stair_step.glb", "data/model/stair_step_iron.glb",
+                                              "data/model/stair_step_crystal.glb", "data/model/stair_step_stone.glb" };
+        for (int m = 0; m < 4; ++m) {
+            if (pakHas(STEPS[m])) loadDrawableModel(STEPS[m], stairSteps_[(size_t)m], false);
+        }
+    }
+
+    // The building pieces' surfaces (tools/make_building_textures.py), laid over them in world space
+    auto surface = [](const char* path) {
+        TextTex t = loadOptionalImage(path);
+        if (!t.tex) {
+            SDL_Log("%s is missing: building pieces of that material are drawn plain", path);
+            return t;
+        }
+        addMipmaps(t);
+        glBindTexture(GL_TEXTURE_2D, t.tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return t;
+    };
+    surfaces_[(size_t)BuildMaterial::Wood] = surface("data/texture/wood_grain.png");
+    surfaces_[(size_t)BuildMaterial::Stone] = surface("data/texture/stone_blocks.png");
+    surfaces_[(size_t)BuildMaterial::Iron] = surface("data/texture/metal_plates.png");
+    surfaces_[(size_t)BuildMaterial::Crystal] = surface("data/texture/crystal_facets.png");
+    const GLuint wood = surfaces_[(size_t)BuildMaterial::Wood].tex;
+    for (int k = 0; k < propKindCount(); ++k) {
+        const PropInfo& info = propInfo((PropKind)k);
+        // Every piece built on a foundation is wood unless made of a material: ladders and stairs too
+        if (!takesMaterial((PropKind)k) && !info.ladder && !info.stairs) continue;
+        propModels_[(size_t)k].surface = wood;
+        for (Model& m : wallShapes_[(size_t)k]) m.surface = wood;
+        for (int m = 0; m < MATERIAL_MODELS; ++m) {
+            const GLuint tex = surfaces_[(size_t)m + 1].tex;   // BuildMaterial m + 1
+            for (Model& shaped : materialModels_[(size_t)k][(size_t)m]) shaped.surface = tex;
+        }
+    }
+    for (size_t m = 0; m < stairSteps_.size(); ++m) stairSteps_[m].surface = surfaces_[m].tex;
 }

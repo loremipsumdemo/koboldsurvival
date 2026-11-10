@@ -287,6 +287,10 @@ bool App::pressOnFactionGrid() {
     const bool onName = fp.renameButton.contains(tx, ty) || fp.squadCells[(size_t)world.resource<SquadBook>().current].contains(tx, ty);
     if (squadRenaming && (!onName || factionTab != FACTION_TAB_FACTION || squadCollapsed)) stopSquadRename(true);
     if (factionTab != FACTION_TAB_FACTION || squadCollapsed || e.button.button != SDL_BUTTON_LEFT) return false;
+    if (fp.manageSquadsButton.contains(tx, ty)) {
+        openManageSquads();
+        return true;
+    }
     if (fp.renameButton.contains(tx, ty)) {
         if (squadRenaming) stopSquadRename(true);
         else startSquadRename();

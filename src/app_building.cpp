@@ -43,7 +43,7 @@ bool App::pressOnMaterialAsk() {
     const MaterialAskLayout L = layoutMaterialAsk(winW, winH);
     for (int i = 0; i < (int)BuildMaterial::Count; ++i) {
         if (!L.choice[i].contains(e.button.x, e.button.y)) continue;
-        session.buildMaterial = i;
+        session.buildMaterial = (int)MATERIAL_TIERS[i];
         session.buildPick = BuildPick::place(session.askKind);
         session.askMaterial = false;
         showNotice(lang("UILABEL_BUILD_PLACE_HINT"), 4.0f);
@@ -63,7 +63,7 @@ void App::drawMaterialAsk() {
     renderer.drawListText(langf("UILABEL_MATERIAL_TITLE", { lang(propInfo(session.askKind).nameKey) }), L.title.x,
                           L.title.y + (L.title.h - th) * 0.5f, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
     for (int i = 0; i < (int)BuildMaterial::Count; ++i) {
-        const BuildMaterial m = (BuildMaterial)i;
+        const BuildMaterial m = MATERIAL_TIERS[i];
         renderer.drawButton(L.choice[i], lang(materialNameKey(m)), true, L.choice[i].contains(mouseX, mouseY));
     }
     renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
@@ -204,7 +204,7 @@ std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
     if (!hit || !session.buildPick.placing()) return hit;
     const PropInfo& info = propInfo(session.buildPick.kind);
     if (info.upperFloor) {
-        const auto up = pickAbove(mx, my, hit, (session.floorLevel + 1) * FLOOR_HEIGHT);
+        const auto up = pickAbove(mx, my, hit, floorSlabHeight(session.floorLevel + 1));
         return up ? up : hit;
     }
     session.buildLevel = 0;
@@ -227,7 +227,7 @@ std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
 void App::markFloorTiles(BuildPreview& bp, int tx, int tz) {
     const PropKind kind = session.buildPick.kind;
     const int level = session.floorLevel;
-    const float above = (level + 1) * FLOOR_HEIGHT;
+    const float above = floorSlabHeight(level + 1);
     // Open tiles near the pointer: those of your walled buildings that may take a floor over this one
     std::unordered_set<long long> open;
     for (ObjectId fe : world.view<Foundation>()) {

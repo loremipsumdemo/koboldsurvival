@@ -95,6 +95,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.defendUnit >= 0) w.line("defend", i, u.defendUnit);
     if (u.attackUnit >= 0) w.line("attack", i, u.attackUnit);
     if (u.move) w.line("move", i, u.move->x, u.move->z);
+    if (u.floorMove) w.line("floormove", i, u.floorMove->x, u.floorMove->z, u.floorMoveStorey);
     if (u.propOrder >= 0) w.line("propgo", i, u.propOrder, u.propAction);
     if (u.workProp >= 0) w.line("working", i, u.workProp, u.workUnlocking);
     for (const SaveRule& r : u.rules) {
@@ -512,6 +513,15 @@ const std::unordered_map<std::string, Handler>& handlers() {
             Vec2 to{ 0.0f, 0.0f };
             if (!u || !l.read(to.x, to.z)) return false;
             u->move = to;
+            return true;
+        } },
+        { "floormove", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Vec2 to{ 0.0f, 0.0f };
+            int storey = 0;
+            if (!u || !l.read(to.x, to.z, storey) || storey < 0 || storey > STOREY_MAX) return false;
+            u->floorMove = to;
+            u->floorMoveStorey = storey;
             return true;
         } },
         { "propgo", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->propOrder, u->propAction); } },

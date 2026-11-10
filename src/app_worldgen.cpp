@@ -97,17 +97,15 @@ EditorLayout layoutEditor(int W, int H, bool ownUi) {
     L.spawnTool = Rect{ x, y, half, btnH };
     L.eraseTool = Rect{ x + half + gap, y, half, btnH };
     y += btnH + gap * 2.0f;
-    const float third = (w - 2.0f * gap) / 3.0f;
-    for (int i = 0; i < 3; ++i) L.tabs[i] = Rect{ x + i * (third + gap), y, third, btnH };
-    y += btnH + gap;
-    L.tabs[3] = Rect{ x, y, w, btnH };
+    L.themeTab = Rect{ x, y, w, btnH };
     y += btnH + gap;
     const float bottom = L.panel.y + L.panel.h - 10.0f * s;
     L.exit = Rect{ x, bottom - btnH, w, btnH };
     L.status = Rect{ x, bottom - btnH - gap - 96.0f * s, w, 96.0f * s };
-    L.themeArea = Rect{ x, y, w, L.status.y - gap - y };
-    const int shown = std::max(1, (int)((L.status.y - gap - y) / (rowH + 2.0f * s)));
-    for (int i = 0; i < shown; ++i) L.rows.push_back(Rect{ x, y + i * (rowH + 2.0f * s), w, rowH });
+    // The spawn list, as the Developer panel has it; the theme panel takes the list's place
+    L.picker = layoutSpawnPicker(Rect{ x, y, w, L.status.y - gap - y }, s);
+    L.themeArea = L.picker.listArea;
+    (void)rowH;
     return L;
 }
 
@@ -704,40 +702,9 @@ void App::stopEditorName() {
 }
 
 void App::setEditorTool(EditorTool tool, int picked) {
-    editor.tool = tool;
-    editor.picked = picked;
+    editor.spawn.tool = tool;
+    editor.spawn.picked = picked;
     session.buildPick = tool == EditorTool::Prop ? BuildPick::place((PropKind)picked) : BuildPick{};
-}
-
-std::vector<App::EditorEntry> App::editorEntries() {
-    std::vector<EditorEntry> out;
-    switch (editor.tab) {
-    case EditorTab::Entities:
-        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_UNITS") });
-        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_PLAYER_UNIT"), EditorTool::Unit, FACTION_PLAYER });
-        for (const FactionDef& f : factions()) {
-            if (f.id == FACTION_PLAYER || isMobFaction(f.id)) continue;
-            out.push_back(EditorEntry{ langf("UILABEL_EDITOR_NPC_UNIT", { factionName(f.id) }), EditorTool::Unit, f.id });
-        }
-        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_MOBS") });
-        for (int i = 1; i <= mobKindCount(); ++i) {
-            if (isRegularMob((MobKind)i)) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), EditorTool::Mob, i });
-        }
-        out.push_back(EditorEntry{ lang("UILABEL_EDITOR_BOSS_MOBS") });
-        for (int i = 1; i <= mobKindCount(); ++i) {
-            if (isBossMob((MobKind)i)) out.push_back(EditorEntry{ lang(mobInfo((MobKind)i).nameKey), EditorTool::Mob, i });
-        }
-        break;
-    case EditorTab::Props:
-        for (PropKind k : propKindsListed()) out.push_back(EditorEntry{ lang(propInfo(k).nameKey), EditorTool::Prop, idx(k) });
-        break;
-    case EditorTab::Items:
-        for (const ItemDef& d : itemDatabase()) out.push_back(EditorEntry{ itemDisplayName(d), EditorTool::Item, d.id });
-        break;
-    case EditorTab::Theme:
-        break;
-    }
-    return out;
 }
 
 void App::drawEditorPanel() {
@@ -756,26 +723,11 @@ void App::drawEditorPanel() {
     };
     button(L.save, lang("UILABEL_SAVE"), false);
     button(L.load, lang("UILABEL_LOAD"), false);
-    button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.tool == EditorTool::Spawn);
-    button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.tool == EditorTool::Erase);
-    button(L.tabs[0], lang("UILABEL_EDITOR_ENTITIES"), editor.tab == EditorTab::Entities);
-    button(L.tabs[1], lang("UILABEL_EDITOR_PROPS"), editor.tab == EditorTab::Props);
-    button(L.tabs[2], lang("UILABEL_EDITOR_ITEMS"), editor.tab == EditorTab::Items);
-    button(L.tabs[3], lang("UILABEL_GEN_TAB_THEME"), editor.tab == EditorTab::Theme);
-    if (editor.tab == EditorTab::Theme) drawThemePanel(L.themeArea);
-    const std::vector<EditorEntry> entries = editorEntries();
-    editor.listScroll = std::clamp(editor.listScroll, 0, std::max(0, (int)entries.size() - (int)L.rows.size()));
-    for (size_t i = 0; i < L.rows.size() && (size_t)editor.listScroll + i < entries.size(); ++i) {
-        const EditorEntry& entry = entries[(size_t)editor.listScroll + i];
-        if (entry.tool == EditorTool::None) {
-            renderer.drawListText(renderer.fitListText(entry.label, L.rows[i].w), L.rows[i].x, L.rows[i].y + (L.rows[i].h - textH) * 0.5f, gold);
-            continue;
-        }
-        const bool on = editor.tool == entry.tool && editor.picked == entry.value;
-        const bool hot = L.rows[i].contains(mouseX, mouseY);
-        if (on || hot) renderer.drawRect(L.rows[i], on ? RGBA{ 0.45f, 0.30f, 0.14f, 1.0f } : RGBA{ 0.28f, 0.18f, 0.12f, 1.0f });
-        renderer.drawListText(renderer.fitListText(entry.label, L.rows[i].w - 12.0f * s), L.rows[i].x + 6.0f * s, L.rows[i].y + (L.rows[i].h - textH) * 0.5f, on ? gold : white);
-    }
+    button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.spawn.tool == EditorTool::Spawn);
+    button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.spawn.tool == EditorTool::Erase);
+    button(L.themeTab, lang("UILABEL_GEN_TAB_THEME"), editor.spawn.tab == EditorTab::Theme);
+    drawSpawnPicker(editor.spawn, L.picker);
+    if (editor.spawn.tab == EditorTab::Theme) drawThemePanel(L.themeArea);
     const std::string text = levelToText(captureLevel(world, currentMap.stem));
     const bool dirty = text != editor.savedText || mapFileText(editor.map) != editor.savedMapText;
     float y = L.status.y;
@@ -819,33 +771,21 @@ bool App::editorMouseDown() {
         } else if (L.exit.contains(x, y)) {
             editorExit();
         } else if (L.spawnTool.contains(x, y)) {
-            setEditorTool(editor.tool == EditorTool::Spawn ? EditorTool::None : EditorTool::Spawn, 0);
+            setEditorTool(editor.spawn.tool == EditorTool::Spawn ? EditorTool::None : EditorTool::Spawn, 0);
             playSfx(Sfx::UiClick);
         } else if (L.eraseTool.contains(x, y)) {
-            setEditorTool(editor.tool == EditorTool::Erase ? EditorTool::None : EditorTool::Erase, 0);
+            setEditorTool(editor.spawn.tool == EditorTool::Erase ? EditorTool::None : EditorTool::Erase, 0);
             playSfx(Sfx::UiClick);
+        } else if (L.themeTab.contains(x, y)) {
+            editor.spawn.tab = EditorTab::Theme;
+            setEditorTool(EditorTool::None, 0);
+            playSfx(Sfx::UiTab);
         } else {
-            if (editor.tab == EditorTab::Theme && L.themeArea.contains(x, y)) {
+            if (editor.spawn.tab == EditorTab::Theme && L.themeArea.contains(x, y)) {
                 themeClick(L.themeArea, x, y);
                 return true;
             }
-            for (int i = 0; i < 4; ++i) {
-                if (!L.tabs[i].contains(x, y)) continue;
-                editor.tab = (EditorTab)i;
-                editor.listScroll = 0;
-                setEditorTool(EditorTool::None, 0);
-                playSfx(Sfx::UiTab);
-                return true;
-            }
-            const std::vector<EditorEntry> entries = editorEntries();
-            for (size_t i = 0; i < L.rows.size() && (size_t)editor.listScroll + i < entries.size(); ++i) {
-                if (!L.rows[i].contains(x, y)) continue;
-                const EditorEntry& entry = entries[(size_t)editor.listScroll + i];
-                if (entry.tool == EditorTool::None) return true;
-                setEditorTool(entry.tool, entry.value);
-                playSfx(Sfx::UiSelect);
-                return true;
-            }
+            if (spawnPickerClick(editor.spawn, L.picker, x, y)) setEditorTool(editor.spawn.tool, editor.spawn.picked);
         }
         return true;
     }
@@ -855,11 +795,11 @@ bool App::editorMouseDown() {
         return true;
     }
     if (e.button.button != SDL_BUTTON_LEFT) return false;
-    if (editor.tool == EditorTool::Erase) {
+    if (editor.spawn.tool == EditorTool::Erase) {
         editorEraseAt(x, y);
         return true;
     }
-    if (editor.tool != EditorTool::None) {
+    if (editor.spawn.tool != EditorTool::None) {
         editorPlaceAt(x, y);
         return true;
     }
@@ -869,8 +809,8 @@ bool App::editorMouseDown() {
 void App::editorPlaceAt(float mx, float my) {
     const auto hit = pickGround(cam, terrain, mx, my, winW, winH);
     if (!hit) return;
-    float x = hit->first, z = hit->second;
-    if (editor.tool == EditorTool::Spawn) {
+    const float x = hit->first, z = hit->second;
+    if (editor.spawn.tool == EditorTool::Spawn) {
         editorRemember();
         LevelInfo& info = world.resource<LevelInfo>();
         info.spawnSet = true;
@@ -880,28 +820,9 @@ void App::editorPlaceAt(float mx, float my) {
         editorEdited();
         return;
     }
-    LevelObject o;
-    o.yaw = editor.yaw;
-    o.kind = editor.picked;
-    if (editor.tool == EditorTool::Prop) {
-        snapBuildSpot((PropKind)editor.picked, hit->first, hit->second, x, z);
-        o.type = LevelObject::Type::Prop;
-        if (propInfo((PropKind)editor.picked).built) o.owner = FACTION_PLAYER;
-    } else if (editor.tool == EditorTool::Unit) {
-        o.type = LevelObject::Type::Unit;
-    } else if (editor.tool == EditorTool::Mob) {
-        o.type = LevelObject::Type::Mob;
-    } else {
-        o.type = LevelObject::Type::Item;
-    }
-    o.x = x;
-    o.z = z;
     editorRemember();
-    LevelInfo& info = world.resource<LevelInfo>();
-    o.id = info.nextId++;
-    placeLevelObject(world, terrain, rng, o);
-    playSfx(Sfx::Drop);
-    editorEdited();
+    if (spawnAt(editor.spawn, x, z, true) > 0) editorEdited();
+    else editor.undo.pop_back();
 }
 
 void App::editorEraseAt(float mx, float my) {
@@ -1005,7 +926,7 @@ bool App::editorKeyDown() {
     if (k == SDLK_ESCAPE) {
         if (mapOpen) {
             mapOpen = false;
-        } else if (editor.tool != EditorTool::None) {
+        } else if (editor.spawn.tool != EditorTool::None) {
             setEditorTool(EditorTool::None, 0);
             playSfx(Sfx::UiBack);
         }
@@ -1023,7 +944,7 @@ bool App::editorKeyDown() {
     }
     if (k == SDLK_Q || k == SDLK_E) {
         constexpr float TURN = 3.14159265f / 12.0f;
-        editor.yaw += k == SDLK_E ? TURN : -TURN;
+        editor.spawn.yaw += k == SDLK_E ? TURN : -TURN;
         return true;
     }
     return false;

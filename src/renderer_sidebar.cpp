@@ -316,19 +316,27 @@ void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
     drawListText(head, L.buildHeading.x + 4.0f * s, L.buildHeading.y + (L.buildHeading.h - headTextH) * 0.5f,
                  buildSelected_.any() ? theme::GOLD : theme::TEXT_DIM);
     const float btnW = 64.0f * s, gap = 8.0f * s;
-    for (size_t i = 0; i < L.buildRows.size(); ++i) {
+    const std::vector<BuildRow> rows = buildRows();
+    const float th = listTextHeight("Ag");
+    for (size_t i = 0; i < L.buildRows.size() && i < rows.size(); ++i) {
         const Rect& row = L.buildRows[i];
-        const BuildPick pick = buildRowPick((int)i);
-        if (!pick.any()) continue;
-        const bool usable = buildInClaim_ || buildAnywhere(pick);
-        const bool picked = pick == buildSelected_;
+        const BuildRow& br = rows[i];
+        if (br.heading) {
+            // A heading: the group's name in gold over a thin rule
+            drawRect(Rect{ row.x, row.y + row.h - 2.0f * s, row.w, std::max(1.0f, 1.0f * s) }, theme::alpha(theme::GOLD_DEEP, 0.9f));
+            drawListText(lang(BUILD_GROUP_LABELS[idx(br.group)]), row.x + 4.0f * s, row.y + (row.h - th) * 0.5f, theme::GOLD);
+            continue;
+        }
+        const BuildPick pick = br.pick;
+        const bool usable = br.developer || buildInClaim_ || buildAnywhere(pick);
+        const bool picked = br.developer ? developerOpen_ : pick == buildSelected_;
         const bool hovered = usable && row.contains(mx, my);
         if (hovered) drawRect(row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
         const Rect btn{ row.x + 2.0f * s, row.y + 2.0f * s, btnW, row.h - 4.0f * s };
-        drawSmallButton(btn, lang(picked ? "UILABEL_BUILD_PICKED" : "UILABEL_BUILD_SELECT"), usable, hovered);
-        const float th = listTextHeight("Ag");
+        drawSmallButton(btn, lang(picked ? (br.developer ? "UILABEL_BUILD_OPEN" : "UILABEL_BUILD_PICKED")
+                                         : (br.developer ? "UILABEL_BUILD_OPEN_IT" : "UILABEL_BUILD_SELECT")), usable, hovered);
         const RGBA tone = !usable ? theme::alpha(theme::ASH, 0.5f) : picked ? theme::GOLD : WHITE;
-        drawListText(pickName(pick), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
+        drawListText(br.developer ? lang("UILABEL_BUILD_DEVELOPER") : pickName(pick), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
     }
 }
 

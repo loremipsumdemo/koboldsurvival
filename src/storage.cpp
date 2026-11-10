@@ -111,7 +111,7 @@ bool dropFromStorage(World& w, int slot) {
     if (!from || !ut || from->item == 0) return false;
     ItemStack stack = *from;
     stack.item = markTaken(w, stack.item, stolenFromBy(w, session.storageProp, session.storageUnit), session.storageUnit);
-    spawnGroundItem(w, *ut, stack.item, stack.count);
+    spawnGroundItem(w, *ut, stack.item, stack.count, storeyOf(w, session.storageUnit));
     queueUnitLabel(w, session.storageProp, itemLossLabelFor(stack.count, stack.item), true);
     queueSound(w, Sfx::Drop);
     *from = ItemStack{};

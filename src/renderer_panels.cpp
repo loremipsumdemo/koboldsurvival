@@ -366,6 +366,15 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
                              : sizes[(size_t)k] == 0 ? theme::TEXT_DIM : WHITE;
         drawListText(count, r.x + r.w - inset - listTextWidth(count), r.y + r.h - th - 3.0f * s, countTint);
     }
+    if (L.manageSquadsButton.w > 0.0f) {
+        const Rect& b = L.manageSquadsButton;
+        const bool hot = b.contains(mouseX_, mouseY_);
+        if (hot) noteHover(b);
+        drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
+        const std::string shown = fitText(lang("UILABEL_MANAGE_SQUADS"), b.w - 6.0f * s, false);
+        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
+        noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), b);
+    }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;
         const bool hot = b.contains(mouseX_, mouseY_);

@@ -30,6 +30,11 @@
 #include "building.h"
 #include "behavior_groups.h"
 #include "terrain.h"
+#include "encumbrance.h"
+#include "spawn_cluster.h"
+#include "taming.h"
+#include "useitem.h"
+#include "wheelbarrow.h"
 
 namespace {
 
@@ -630,6 +635,92 @@ int main(int, char**) {
         check(sky.has<Corpse>(pilot), "those aboard die when it is destroyed");
     }
 
+    // The Wagon, the Taming Cage, food from your stores, and clusters of spawns
+    {
+        World farm;
+        Rng farmRng;
+        farmRng.gen.seed(21);
+        GameState farmState;
+        Terrain& ground = terrain;
+        ground.clearBlocked();
+        const Vec2 mid = systems_detail::findSpawn(ground);
+        const float cx = std::floor(mid.x) + 0.5f, cz = std::floor(mid.z) + 0.5f;
+        placeBuiltProp(farm, ground, PropKind::Altar, cx - 8.0f, cz, 0.0f, FACTION_PLAYER);
+        auto run = [&](float seconds) {
+            for (int i = 0; i < (int)(seconds * 60.0f); ++i) {
+                simStep(farm, ground, farmRng, farmState, 1.0f / 60.0f, false);
+                takeEvents(farm);
+            }
+        };
+
+        // A Wagon goes behind whoever pulls it, holds four times a Wheelbarrow, and slows all but a large animal
+        const ObjectId hauler = spawnUnit(farm, ground, farmRng, FACTION_PLAYER, cx, cz);
+        farm.get<Behaviors>(hauler)->rules.clear();
+        const float pace = walkSpeedOf(farm, hauler, false);
+        const ObjectId wagon = makeProp(farm, PropKind::Wagon, Transform{ cx + 1.0f, ground.heightAt(cx + 1.0f, cz), cz });
+        check(farm.has<Storage>(wagon) && farm.get<Storage>(wagon)->slots.size() == 4 * (size_t)propInfo(PropKind::Wheelbarrow).slots,
+              "a Wagon holds four times what a Wheelbarrow does");
+        check(startPushing(farm, hauler, wagon), "a unit takes hold of a Wagon");
+        wheelbarrowSystem(farm);
+        check(farm.get<Transform>(wagon)->x < farm.get<Transform>(hauler)->x - 1.0f, "a Wagon goes behind whoever pulls it");
+        check(std::fabs(walkSpeedOf(farm, hauler, false) - pace * PULLED_SPEED) < 1e-3f, "pulling a Wagon slows a unit to a tenth");
+        stopPushing(farm, hauler);
+        const ObjectId bear = spawnMob(farm, ground, farmRng, MobKind::Bear, mobFaction(MobKind::Bear), cx + 6.0f, cz + 6.0f);
+        const ObjectId rabbit = spawnMob(farm, ground, farmRng, MobKind::Rabbit, mobFaction(MobKind::Rabbit), cx + 3.0f, cz + 3.0f);
+        check(largeAnimal(farm, bear) && !largeAnimal(farm, rabbit) && !largeAnimal(farm, hauler), "a Bear is a large animal, a Rabbit isn't");
+        farm.add(bear, Pushing{ wagon, 0.0f, cx + 6.0f, cz + 6.0f });
+        check(vehiclePace(farm, bear) == 1.0f, "a large animal pulls a Wagon at its own pace");
+        farm.remove<Pushing>(bear);
+        farm.destroy(bear);
+
+        // A Taming Cage, with a Rabbit in it, and a unit with Tame Animals and raw meat in a store
+        PropKind tamingCage = PropKind::Wagon;
+        check(propKindNamed("TamingCage", tamingCage) && propInfo(tamingCage).taming && propInfo(tamingCage).cage, "props.txt has the Taming Cage");
+        const ObjectId cage = placeBuiltProp(farm, ground, tamingCage, cx + 3.5f, cz + 3.5f, 0.0f, FACTION_PLAYER);
+        *farm.get<Transform>(rabbit) = *farm.get<Transform>(cage);
+        farm.add(rabbit, Occupying{ cage });
+        if (Lock* lk = farm.get<Lock>(cage)) lk->locked = true;   // as putting it in does
+        check(tamingCageOf(farm, rabbit) == cage, "the Rabbit is in the Taming Cage");
+        const int rawMeat = mobInfo(MobKind::Bear).meat;
+        check(isRawMeat(rawMeat), "a mob's meat is raw meat");
+        const ObjectId larder = placeBuiltProp(farm, ground, PropKind::Barrel, cx - 3.5f, cz + 2.5f, 0.0f, FACTION_PLAYER);
+        farm.get<Storage>(larder)->slots[0] = ItemStack{ rawMeat, 5 };
+        const ObjectId keeper = spawnUnit(farm, ground, farmRng, FACTION_PLAYER, cx - 1.5f, cz + 1.5f);
+        BehaviorRule tame;
+        tame.kind = BehaviorKind::TameAnimals;
+        farm.get<Behaviors>(keeper)->rules = { tame };
+        run(40.0f);
+        check(farm.has<Taming>(rabbit) && farm.get<Taming>(rabbit)->fed == 1, "Tame Animals fetches raw meat from a store and feeds the caged animal");
+        check(countInSlots(farm.get<Storage>(larder)->slots.data(), (int)farm.get<Storage>(larder)->slots.size(), rawMeat) < 5,
+              "the meat came from the store");
+        run(10.0f);
+        check(farm.has<Taming>(rabbit) && farm.get<Taming>(rabbit)->fed == 1, "it isn't fed again until hours have passed");
+
+        // Hungry with Eat on and no food carried: a unit of yours fetches food from your store and eats it
+        const ObjectId hungry = spawnUnit(farm, ground, farmRng, FACTION_PLAYER, cx + 1.5f, cz - 2.5f);
+        Needs& hn = *farm.get<Needs>(hungry);
+        hn.hunger = hn.maxHunger / 5;
+        const int before = hn.hunger;
+        int food = 0;
+        for (const ItemDef& d : itemDatabase()) {
+            if (food == 0 && restoreAmount(d, UseEffect::Stat::Hunger) > 0) food = d.id;
+        }
+        const ObjectId pantry = placeBuiltProp(farm, ground, PropKind::Barrel, cx + 4.5f, cz - 3.5f, 0.0f, FACTION_PLAYER);
+        farm.get<Storage>(pantry)->slots[0] = ItemStack{ food, 5 };
+        run(30.0f);
+        check(farm.get<Needs>(hungry)->hunger > before, "a hungry unit of yours eats food fetched from your store");
+
+        // Clusters: as many spots as asked for, the first where it was asked, all kept apart on open ground
+        const std::vector<Vec2> spots = clusterSpots(farm, ground, farmRng, cx, cz - 6.0f, 5, 1.0f, false);
+        bool apart = spots.size() == 5 && spots[0].x == cx && spots[0].z == cz - 6.0f;
+        for (size_t i = 0; i < spots.size(); ++i) {
+            for (size_t j = i + 1; j < spots.size(); ++j) {
+                apart = apart && std::hypot(spots[i].x - spots[j].x, spots[i].z - spots[j].z) >= 1.0f - 1e-4f;
+            }
+        }
+        check(apart, "a cluster of 5 spawns is 5 spots kept apart, the first where it was asked");
+    }
+
     // Buildings: a foundation and its pieces are blueprints, supplied with logs and built by the two building tasks
     {
         World town;
@@ -680,8 +771,8 @@ int main(int, char**) {
 
         check(checkPiece(town, PropKind::WoodDoor, x0 + 1, z1) == PieceCheck::Ok && checkPiece(town, PropKind::WoodDoor, x0 + 2, z0 + 2) == PieceCheck::Ok,
               "a door goes anywhere on a foundation a wall can");
-        check(checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::EdgesOpen &&
-              checkPiece(town, PropKind::UpperFloor, x0, z0) == PieceCheck::EdgesOpen, "no ladder or upper floor before every edge has a wall or door");
+        check(checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::Ok &&
+              checkPiece(town, PropKind::UpperFloor, x0, z0) == PieceCheck::Ok, "a ladder or floor may go in before the edges have walls");
         // Walls round the edge, a door in the entrance, a ladder inside and an upper floor along one side
         std::vector<ObjectId> walls;
         for (int x = x0; x <= x1; ++x) {
@@ -984,19 +1075,52 @@ int main(int, char**) {
         for (int i = 0; i < 60 * 6 && hall.has<Climbing>(inside); ++i) buildingSystem(hall, ground, 1.0f / 60.0f);
         check(storeyOf(hall, inside) == 1 && (int)std::floor(it->x) == x0 + 4 && (int)std::floor(it->z) == z0 + 2,
               "and walks up onto their top step");
-        // A piece isn't finished with a unit standing beside it, so nobody is walled into a corner
+        // Only a unit on a piece's own tile holds it up; one beside it doesn't (corners are built first instead)
         {
             const ObjectId nearBy = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 + 4.5f, z0 + 3.5f);
             hall.get<Behaviors>(nearBy)->rules.clear();
             const ObjectId post = placePiece(hall, ground, PropKind::WoodWall, x0 + 5, z0 + 3);
             hall.get<Blueprint>(post)->supplied = materialsNeeded(hall, post);
             hall.get<Blueprint>(post)->progress = 1.0;
-            check(!finishBlueprint(hall, ground, post) && hall.has<SoloMove>(nearBy), "a unit beside a piece holds it up, and is asked to move");
-            hall.get<Transform>(nearBy)->x = x0 + 1.5f;
-            hall.get<Transform>(nearBy)->z = z0 + 1.5f;
-            check(finishBlueprint(hall, ground, post), "once it has moved off, the piece is finished");
+            hall.get<Transform>(nearBy)->x = x0 + 5.5f;
+            check(!finishBlueprint(hall, ground, post) && hall.has<SoloMove>(nearBy), "a unit on a piece's tile holds it up, and is asked to move");
+            hall.remove<SoloMove>(nearBy);
+            hall.get<Transform>(nearBy)->x = x0 + 4.5f;
+            check(finishBlueprint(hall, ground, post), "a unit on the tile beside it doesn't");
             breakBuilding(hall, post);
             hall.destroy(nearBy);
+        }
+        // A walk on the stairs isn't saved: a unit loaded partway up is set down off the steps, or on the top one upstairs
+        {
+            const ObjectId stray = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 + 3.5f, z0 + 2.5f);
+            hall.get<Behaviors>(stray)->rules.clear();
+            Transform* st = hall.get<Transform>(stray);
+            st->y = ground.heightAt(st->x, st->z) + 1.2f;
+            settleBuildingsAfterLoad(hall, ground);
+            buildingSystem(hall, ground, 1.0f / 60.0f);
+            const int sx = (int)std::floor(st->x), sz = (int)std::floor(st->z);
+            const bool onSteps = sz == z0 + 2 && sx >= x0 + 2 && sx <= x0 + 4;
+            const bool onTop = hall.has<Upstairs>(stray) && hall.get<Upstairs>(stray)->level == 1 && sx == x0 + 4;
+            check(!onSteps || onTop, "a unit loaded partway up the stairs steps off them");
+            hall.destroy(stray);
+        }
+        // A piece broken upstairs leaves its debris on that floor, where it can be seen and clicked
+        {
+            const ObjectId high = placePiece(hall, ground, PropKind::WoodWall, x0 + 5, z0 + 1, FACTION_PLAYER, BuildMaterial::Wood, 1);
+            hall.get<Blueprint>(high)->supplied = materialsNeeded(hall, high);
+            hall.get<Blueprint>(high)->progress = 1.0;
+            check(finishBlueprint(hall, ground, high), "a wall is built on the upper floor");
+            const float wallY = hall.get<Transform>(high)->y;
+            breakBuilding(hall, high);
+            ObjectId debris = NO_OBJECT;
+            for (ObjectId e : hall.view<Prop, Transform>()) {
+                const Transform* tr = hall.get<Transform>(e);
+                if (hall.get<Prop>(e)->kind == PropKind::Debris && (int)std::floor(tr->x) == x0 + 5 && (int)std::floor(tr->z) == z0 + 1) debris = e;
+            }
+            check(debris != NO_OBJECT && storeyOf(hall, debris) == 1 && std::fabs(hall.get<Transform>(debris)->y - wallY) < 0.01f,
+                  "debris from a piece broken upstairs is on that floor");
+            if (debris != NO_OBJECT) hall.destroy(debris);
+            rebuildBlocking(hall, ground);
         }
         // The one outside is sent to the upper floor: through the door, and up the stairs or the ladder
         walkSoloTo(hall, ground, outside, Vec2{ x0 + 5.5f, z0 + 1.5f }, 1);

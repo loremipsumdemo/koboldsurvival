@@ -189,7 +189,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     const std::vector<ItemStack> belongings = unitBelongings(w, corpse);
                     w.remove<Carrying>(u);
                     w.destroy(corpse);
-                    dropStacks(w, at, belongings);
+                    dropStacks(w, at, belongings, storeyOf(w, prop));
                     a.placed = true;
                     a.started = true;
                 }
@@ -211,6 +211,8 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                     const ObjectId occupant = propOccupant(w, prop);
                     if (w.has<Corpse>(carried)) {
                         a.corpse = true;
+                    } else if (info.taming && !w.has<Mob>(carried)) {
+                        a.notAnimal = true;
                     } else if (propInTheWay(w, u, prop)) {
                         a.unreachable = true;
                     } else if (occupant != NO_OBJECT && occupantCount(w, prop) >= occupyCapacity(w, prop)) {
@@ -505,7 +507,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 grantXp(w, got, info.stat, WORK_XP_PER_ITEM, yours ? "MISC_REASON_GATHERING" : nullptr);
             } else {
                 if (const Transform* ut = w.get<Transform>(got)) {
-                    spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, gives, 1);
+                    spawnGroundItem(w, Transform{ ut->x, ut->y, ut->z }, gives, 1, storeyOf(w, got));
                 }
                 queueLog(w, langf("MISC_GATHER_NO_ROOM", { nameOf(w, got), itemName }), LogKind::Drop, npcOnly(w, got));
                 queueUnitLabel(w, got, itemLossLabel(1, itemName), true);

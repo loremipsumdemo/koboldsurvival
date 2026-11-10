@@ -142,6 +142,10 @@ void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
             refuse(lang("MISC_CORPSE_NO_PLACE"));
             continue;
         }
+        if (a.notAnimal) {
+            refuse(lang("MISC_TAMING_CAGE_ANIMALS_ONLY"));
+            continue;
+        }
         if (a.placed) continue;
         if (a.unreachable) {
             refuse(lang("MISC_PROP_UNREACHABLE"));
@@ -401,6 +405,7 @@ void App::update() {
     // Even while paused, new and loaded units go straight into squads
     if (screen == Screen::Playing && gameActive) settleSquads(world);
     if (screen == Screen::Playing) updateUnitPanelState();
+    if (screen == Screen::Playing) followSelectionSquad();
     pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
     updateRightHold();
     moveMarkTime = std::max(0.0f, moveMarkTime - dt);
@@ -488,6 +493,7 @@ void App::updateHover() {
         const bool inClaim = selectionInClaim(world);
         if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing) session.buildPick = {};
         renderer.setBuildInClaim(inClaim);
+        renderer.setDeveloperOpen(devSpawn.open);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
         const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen

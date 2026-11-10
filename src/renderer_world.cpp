@@ -507,6 +507,22 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 }
                 const float x1 = x0 + 1.0f, z1 = z0 + 1.0f, y0 = tr->y;
                 if (!boxVisible(frustum, x0, y0, z0, x1, top, z1)) continue;
+                const Model& made = stairSteps_[(size_t)mat];
+                const Model& s = made.vao ? made : stairSteps_[0];
+                if (s.vao && s.maxX > s.minX && s.maxY > s.minY && s.maxZ > s.minZ) {
+                    // The step's model stretched over the step: a tile across and up to its top, wood grain and all
+                    const float sx = 1.0f / (s.maxX - s.minX), sy = (top - y0) / (s.maxY - s.minY), sz = 1.0f / (s.maxZ - s.minZ);
+                    Mat4 place{};
+                    place.m[0] = sx;
+                    place.m[5] = sy;
+                    place.m[10] = sz;
+                    place.m[12] = x0 - s.minX * sx;
+                    place.m[13] = y0 - s.minY * sy;
+                    place.m[14] = z0 - s.minZ * sz;
+                    place.m[15] = 1.0f;
+                    queueModelMatrix(s, place, RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
+                    continue;
+                }
                 const RGBA side{ 0.45f, 0.30f, 0.17f, 1.0f }, face{ 0.62f, 0.44f, 0.26f, 1.0f };
                 stairSteps.quad(V3{ x0, top, z0 }, V3{ x1, top, z0 }, V3{ x1, top, z1 }, V3{ x0, top, z1 }, face);
                 stairSteps.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, top, z0 }, V3{ x0, top, z0 }, side);
@@ -531,7 +547,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const bool modelled = propModel(kind).vao != 0;
         float side = modelled ? info.size : missingPropSide(kind);
         if (info.wallRule || info.door || info.ladder) side = std::max(side, (float)FLOOR_HEIGHT);
-        if (info.wheelbarrow) side += WHEELBARROW_AHEAD;
+        if (info.wheelbarrow) side += info.pulled ? PULLED_BEHIND : WHEELBARROW_AHEAD;
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) return;
         if (info.wallRule) {
             const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z), lv = storeyOf(w, e);
@@ -562,8 +578,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             const Transform* ut = w.get<Transform>(pu->second);
             const auto facing = unitFacing_.find(pu->second);
             const float fy = facing != unitFacing_.end() ? facing->second.yaw : yaw + 1.5707963f;
-            px = ut->x + std::sin(fy) * WHEELBARROW_AHEAD;
-            pz = ut->z + std::cos(fy) * WHEELBARROW_AHEAD;
+            const float offset = vehicleOffset(w, e);   // ahead, or behind for a pulled Wagon
+            px = ut->x + std::sin(fy) * offset;
+            pz = ut->z + std::cos(fy) * offset;
             py = ut->y;
             yaw = fy - 1.5707963f;
         }
@@ -583,7 +600,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             rope(top, low, 0.025f, ropeColor);
             rope(V3{ low.x, low.y - 0.05f, low.z }, V3{ low.x, low.y + 0.3f, low.z }, 0.05f, stake);
         }
-        if (const Model* made = info.door ? materialModel(0) : nullptr) {
+        if (const Model* made = info.door || info.upperFloor || info.ladder ? materialModel(0) : nullptr) {
             queueModel(*made, px, py, pz, info.size, yaw);
         } else if (modelled) {
             queuePropModel(kind, px, py, pz, info.size, yaw);
@@ -795,7 +812,6 @@ void Renderer::drawFrameTop(bool dragging, const float* corners, const std::vect
 void Renderer::drawBuildPreview(const Terrain& t) {
     if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty()) return;
     const float lift = 0.04f;
-    const float lineW = 0.03f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift + buildPreview_.lift; };
     Batch b;
 
@@ -831,15 +847,6 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         const float reach = footprintReach(f);
         const float cell = 0.25f;
         const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.25f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.25f };
-        const RGBA line{ 1.0f, 0.15f, 0.15f, 0.9f };
-        auto strip = [&](float ax, float az, float bx, float bz) {
-            const float dx = bx - ax, dz = bz - az;
-            const float len = std::hypot(dx, dz);
-            if (len <= 0.0f) return;
-            const float px = -dz / len * lineW * 0.5f, pz = dx / len * lineW * 0.5f;
-            b.quad(V3{ ax + px, hgt(ax + px, az + pz), az + pz }, V3{ bx + px, hgt(bx + px, bz + pz), bz + pz },
-                   V3{ bx - px, hgt(bx - px, bz - pz), bz - pz }, V3{ ax - px, hgt(ax - px, az - pz), az - pz }, line);
-        };
         const float startX = std::floor((x0 - reach) / cell) * cell, endX = x0 + reach;
         const float startZ = std::floor((z0 - reach) / cell) * cell, endZ = z0 + reach;
         for (float gx = startX; gx < endX; gx += cell) {
@@ -849,10 +856,6 @@ void Renderer::drawBuildPreview(const Terrain& t) {
                 const V3 a{ gx, hgt(gx, gz), gz }, bb{ gx + cell, hgt(gx + cell, gz), gz };
                 const V3 c{ gx + cell, hgt(gx + cell, gz + cell), gz + cell }, d{ gx, hgt(gx, gz + cell), gz + cell };
                 b.quad(a, bb, c, d, fill);
-                strip(gx, gz, gx + cell, gz);
-                strip(gx + cell, gz, gx + cell, gz + cell);
-                strip(gx + cell, gz + cell, gx, gz + cell);
-                strip(gx, gz + cell, gx, gz);
             }
         }
     }
