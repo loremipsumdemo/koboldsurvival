@@ -78,6 +78,24 @@ public:
         cloudShadowsOn_ = cloudShadows;
         variedSurfaces_ = variedSurfaces;
     }
+    // The time the graphics card spends on the ground, the water and the clouds, in milliseconds a frame, smoothed over
+    // the last frames. Only measured while switched on.
+    struct PassTimes {
+        float ground = 0.0f, water = 0.0f, clouds = 0.0f;
+    };
+    void setPassTimers(bool on) { passTimersOn_ = on; }
+    PassTimes passTimes() const { return PassTimes{ groundTimer_.ms, waterTimer_.ms, cloudTimer_.ms }; }
+    // From the Graphics settings: the world is drawn at this percent of the window's width and height and stretched to
+    // fit, which costs fewer pixels. The interface is always drawn at the window's own size.
+    void setRenderScale(int percent) { renderScale_ = percent; }
+    // How far from the eye, in tiles, varied ground and water are laid in hexagons: the view range from the settings. Over
+    // the last fifth of it they blend into the plain grid beyond.
+    void setDetailRange(int tiles) { detailRange_ = tiles; }
+    std::string renderScaleText() const;
+    // The distances the ground's and water's detail is drawn to, in words, for the debug log
+    std::string surfaceBandsText() const;
+    // For measuring: off draws the ground's and water's detail at every distance, as it was before the distance bands
+    void setSurfaceBands(bool on) { surfaceBands_ = on; }
     // Shows a map's theme at once. uploadTerrain sets it from the map when one loads.
     void setMapTheme(const MapTheme& theme);
 
@@ -413,7 +431,7 @@ private:
     // The uniforms of kSurfaceCommon, which the ground, water and cloud shaders all have
     struct SurfaceUniforms {
         GLint origin = -1, noise = -1, varied = -1, salt = -1, macro = -1, cloudShadow = -1, shadowSun = -1;
-        GLint cloudShift = -1, cloudScale = -1, cloudHeight = -1, cloudOpacity = -1, cloudCover = -1;
+        GLint cloudShift = -1, cloudScale = -1, cloudHeight = -1, cloudOpacity = -1, cloudCover = -1, bands = -1;
         void find(GLuint prog);
     };
     struct TerrainShader {
@@ -429,7 +447,7 @@ private:
         GLint viewProj = -1, center = -1, half = -1, eye = -1, sunDir = -1, sunLight = -1, ambient = -1, color = -1;
         GLint glitter = -1, glow = -1, mapSize = -1;
         GLint fogColor = -1, fog = -1, time = -1, opacity = -1, pattern = -1, speed = -1, fadeStart = -1, fadeEnd = -1, tile = -1;
-        GLint tileShift = -1, hex1 = -1, hex2 = -1, hexBase1 = -1, hexBase2 = -1;
+        GLint tileShift = -1, hex1 = -1, hex2 = -1, hexBase1 = -1, hexBase2 = -1, evenOut = -1;
         SurfaceUniforms common;
     };
     struct CloudShader {
@@ -469,6 +487,28 @@ private:
     GLuint noiseTex_ = 0;
     uint32_t surfaceSeed_ = 0;
     bool cloudsOn_ = true, cloudShadowsOn_ = true, variedSurfaces_ = true;
+    bool surfaceBands_ = true;
+    int renderScale_ = 100;
+    int detailRange_ = 256;
+    GLuint sceneFbo_ = 0, sceneTex_ = 0, sceneDepth_ = 0;
+    int sceneW_ = 0, sceneH_ = 0, sceneWinW_ = 0, sceneWinH_ = 0;
+    bool sceneActive_ = false;
+    bool heldDragging_ = false;
+    float heldBox_[4] = {};
+    std::vector<HudEntry> heldHud_;
+    void beginScene(int winW, int winH);
+    void presentScene();
+    void releaseScene();
+    void drawFrameTop(bool dragging, const float* corners, const std::vector<HudEntry>& hud, int winW, int winH);
+    struct PassTimer {
+        GLuint query = 0;
+        bool running = false, waiting = false;
+        float ms = 0.0f;
+    };
+    PassTimer groundTimer_, waterTimer_, cloudTimer_;
+    bool passTimersOn_ = false;
+    void passTimerBegin(PassTimer& t);
+    void passTimerEnd(PassTimer& t);
     GLuint groundTex_ = 0, seaTex_ = 0;
     uint32_t surfaceVersion_ = 0;
     GLuint emptyVao_ = 0;

@@ -568,6 +568,31 @@ struct App : AppSession {
     Uint64 fpsSince = 0;
     int fpsFrames = 0;
     std::string fpsText = "-- FPS";
+    // A measuring run (see app_bench.cpp)
+    struct Bench {
+        bool on = false, measuring = false, quit = false;
+        int step = 0, frames = 0;
+        Uint64 since = 0, measureSince = 0;
+        bool clouds = true, shadows = true, varied = true;
+        int renderScale = 100;
+        Camera saved;
+        double ground = 0.0, water = 0.0, cloudMs = 0.0;
+    };
+    Bench bench;
+    void benchStart();
+    void benchFrame();
+    // The debug log (see app_debug_log.cpp): what has been written so far, and what the next overview line sums up
+    struct DebugLogState {
+        bool on = false;
+        std::string level;
+        Uint64 since = 0, lastFrame = 0;
+        int frames = 0;
+        double worstMs = 0.0;
+    };
+    DebugLogState debugLogState;
+    void debugLogFrame();
+    void debugLogSession();
+    void debugLogBuildTest();
     SDL_Event e{};
 
     std::chrono::steady_clock::time_point frameStart;

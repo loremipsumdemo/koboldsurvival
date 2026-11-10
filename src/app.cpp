@@ -1,4 +1,5 @@
 #include "app.h"
+#include "debug_log.h"
 #include "game_tables.h"
 #include "game_data_check.h"
 #include "user_files.h"
@@ -130,6 +131,7 @@ void App::beginFrame() {
 }
 
 void App::run() {
+    benchStart();
     while (running) {
         beginFrame();
 
@@ -139,17 +141,22 @@ void App::run() {
 
         PROFILED("frame: update", update());
         PROFILED("frame: updateHover", updateHover());
+        benchFrame();
+        debugLogFrame();
         PROFILED("frame: render", render());
         putUnitsBack();
 
         if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);
         PROFILED("frame: swap", SDL_GL_SwapWindow(window));
         PROFILE_FRAME_END();
-        limitFrameRate(frameStart, settings.fpsLimit);
+        if (bench.quit) running = false;
+        if (!bench.on) limitFrameRate(frameStart, settings.fpsLimit);
     }
 }
 
 void App::shutdown() {
+    debuglog::line("session", "end");
+    debuglog::setEnabled(false);
     audio::shutdown();
     renderer.shutdown();
     renderer.setTitleFont(nullptr);

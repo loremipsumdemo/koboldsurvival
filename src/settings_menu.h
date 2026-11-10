@@ -28,7 +28,7 @@ enum class RowId : int {
     Language, Font,
     EdgeScroll, Reference, ConversationPause,
     GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds,
-    Clouds, CloudShadows, VariedSurfaces
+    Clouds, CloudShadows, VariedSurfaces, DebugLogging, RenderScale
 };
 
 enum class RowKind { Dropdown, Toggle, Level, Scale, Text, Action };

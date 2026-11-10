@@ -18,6 +18,9 @@ inline constexpr const char* DISPLAY_MODE_NAMES[] = { "UILABEL_WINDOWED", "UILAB
 
 inline constexpr int FPS_CHOICES[] = { 0, 30, 60, 90, 120, 144, 165, 240 };
 inline constexpr int FPS_CHOICE_COUNT = 8;
+// The percent of the window's width and height the world is drawn at
+inline constexpr int RENDER_SCALE_CHOICES[] = { 50, 67, 75, 100 };
+inline constexpr int RENDER_SCALE_CHOICE_COUNT = 4;
 
 inline constexpr int AUTOSAVE_CHOICES[] = { 0, 1, 2, 5, 10, 15, 30 };
 inline constexpr int AUTOSAVE_COUNT = 7;
@@ -46,9 +49,11 @@ struct GameSettings {
     bool vsync = true;
     int fpsLimit = 60;
     int viewRange = 256;
+    int renderScale = 75;
     int formationShape = (int)FormationShape::Rectangle;
     bool formationLoose = false;
     bool showFps = false;
+    bool debugLogging = false;    // writes what the game is doing to logs.txt in the user files folder
     bool clouds = true;
     bool cloudShadows = true;
     bool variedSurfaces = true;   // ground and water tiles laid with a random turn and shift each, so they don't repeat
@@ -122,6 +127,8 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
+        else if (key == "renderScale")     s.renderScale = parseInt(val, s.renderScale);
+        else if (key == "debugLogging")    s.debugLogging = (val == "1");
         else if (key == "clouds")          s.clouds = (val == "1");
         else if (key == "cloudShadows")    s.cloudShadows = (val == "1");
         else if (key == "variedSurfaces")  s.variedSurfaces = (val == "1");
@@ -167,6 +174,7 @@ inline GameSettings loadSettings(const std::string& path) {
     s.height = std::clamp(s.height, 480, 8640);
     s.refreshHz = std::clamp(s.refreshHz, 0, 1000);
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
+    if (!isChoice(s.renderScale, RENDER_SCALE_CHOICES, RENDER_SCALE_CHOICE_COUNT)) s.renderScale = GameSettings{}.renderScale;
     s.formationShape = std::clamp(s.formationShape, 0, (int)FormationShape::Count - 1);
     s.viewRange = std::clamp(s.viewRange, VIEW_RANGE_MIN, VIEW_RANGE_MAX);
     s.viewRange = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((s.viewRange - VIEW_RANGE_MIN + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
@@ -200,6 +208,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "formationShape=" << s.formationShape << "\n";
     out << "formationLoose=" << (s.formationLoose ? 1 : 0) << "\n";
     out << "showFps=" << (s.showFps ? 1 : 0) << "\n";
+    out << "renderScale=" << s.renderScale << "\n";
+    out << "debugLogging=" << (s.debugLogging ? 1 : 0) << "\n";
     out << "clouds=" << (s.clouds ? 1 : 0) << "\n";
     out << "cloudShadows=" << (s.cloudShadows ? 1 : 0) << "\n";
     out << "variedSurfaces=" << (s.variedSurfaces ? 1 : 0) << "\n";

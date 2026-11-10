@@ -133,6 +133,10 @@ add_executable(koboldsurvival
     src/app_party_actions.cpp
     src/app_settings.cpp
     src/app_saves.cpp
+    src/app_bench.cpp
+    src/app_debug_log.cpp
+    src/app_build_test.cpp
+    src/debug_log.cpp
     src/app_panels.cpp
     src/app_panel_grab.cpp
     src/app_talk.cpp

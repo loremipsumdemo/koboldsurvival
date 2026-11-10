@@ -358,6 +358,13 @@ void App::drawFrameOverlays() {
     ++fpsFrames;
     if (const Uint64 at = SDL_GetTicks(); at - fpsSince >= 500) {
         fpsText = std::to_string((int)std::lround(fpsFrames * 1000.0 / (double)(at - fpsSince))) + " FPS";
+        // What the graphics card spends on each of the big surfaces, in milliseconds a frame
+        if (settings.showFps && !bench.on && screen == Screen::Playing) {
+            const Renderer::PassTimes times = renderer.passTimes();
+            char passes[96];
+            std::snprintf(passes, sizeof passes, "   ground %.2f  water %.2f  clouds %.2f ms", times.ground, times.water, times.clouds);
+            fpsText += passes;
+        }
         fpsSince = at;
         fpsFrames = 0;
     }
@@ -379,6 +386,13 @@ void App::drawFrameOverlays() {
 void App::render() {
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
     renderer.setGraphicsOptions(settings.clouds, settings.cloudShadows, settings.variedSurfaces);
+    renderer.setRenderScale(settings.renderScale);
+    renderer.setDetailRange(settings.viewRange);
+    if (bench.on) {
+        renderer.setGraphicsOptions(bench.clouds, bench.shadows, bench.varied);
+        renderer.setRenderScale(bench.renderScale);
+    }
+    renderer.setPassTimers(settings.showFps || settings.debugLogging || bench.on);
     if (screen != Screen::Title && screen != Screen::Pause) menuScreen = screen;
     renderer.setMenuText(screen != Screen::Playing);
     renderer.hoverFrameStart();
