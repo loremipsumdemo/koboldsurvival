@@ -220,7 +220,7 @@ struct BuildPreview {
     bool valid = false;
     float ringR = 0.0f;
     int ringTone = 0;
-    std::vector<std::pair<float, float>> otherRings;
+    std::vector<std::array<float, 3>> otherRings;   // the other claims: x, z, radius
     // A foundation being dragged out: its tiles, inclusive
     bool rect = false;
     int rx0 = 0, rz0 = 0, rx1 = 0, rz1 = 0;

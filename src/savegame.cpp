@@ -82,6 +82,10 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.upstairs >= 0) w.line("upstairs", i, u.upstairs);
     if (u.down) w.line("down", i, u.down->dying, u.down->koFaction, u.down->conscious, u.down->tickPart);
     if (u.corpseHours) w.line("corpse", i, *u.corpseHours);
+    if (u.retreat) {
+        const Retreating& r = *u.retreat;
+        w.line("retreat", i, r.x, r.z, r.planned, r.home, r.arrived, r.wasPassive, r.hours);
+    }
     if (u.carriedBy >= 0) w.line("carried", i, u.carriedBy);
     if (u.playingDead) w.line("still", i);
     if (u.passive || u.block || u.sneak) w.line("modes", i, u.passive, u.block, u.sneak);
@@ -111,6 +115,7 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.fuel) w.line("fuel", i, p.fuel->hours, p.fuel->item);
     if (p.workProgress) w.line("work", i, *p.workProgress, p.workTurn);
     if (p.bonesHours) w.line("bones", i, *p.bonesHours);
+    if (p.outdoorHours) w.line("outdoor", i, *p.outdoorHours);
     for (const ItemStack& s : p.bonesItems) w.line("bonesitem", i, s.item, s.count);
     if (p.health) w.line("health", i, p.health->value, p.health->max);
     if (p.foundation) {
@@ -288,6 +293,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             double hours = 0.0;
             if (!p || !l.read(hours)) return false;
             p->bonesHours = hours;
+            return true;
+        } },
+        { "outdoor", [](Line& l) {
+            SaveProp* p = l.prop();
+            double hours = 0.0;
+            if (!p || !l.read(hours)) return false;
+            p->outdoorHours = hours;
             return true;
         } },
         { "bonesitem", [](Line& l) {
@@ -472,6 +484,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             double hours = 0.0;
             if (!u || !l.read(hours)) return false;
             u->corpseHours = hours;
+            return true;
+        } },
+        { "retreat", [](Line& l) {
+            SaveUnit* u = l.unit();
+            Retreating r;
+            if (!u || !l.read(r.x, r.z, r.planned, r.home, r.arrived, r.wasPassive, r.hours)) return false;
+            u->retreat = r;
             return true;
         } },
         { "carried", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->carriedBy); } },

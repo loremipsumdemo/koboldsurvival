@@ -8,6 +8,7 @@
 #include "simulation.h"
 #include "calendar.h"
 #include "claims.h"
+#include "npc_camps.h"
 #include "combat.h"
 #include "factions.h"
 #include "hostility.h"
@@ -93,6 +94,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
     PROFILED("buildingSystem", buildingSystem(w, t, dt));
     PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
+    PROFILED("npcCampSystem", npcCampSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));
     append(events(w).lootOpened, std::move(carried.loot));
     PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(w, t));
@@ -116,6 +118,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     gs.claimDecayDue += gameSecs;
     if (gs.claimDecayDue >= GAME_SECONDS_PER_REAL_SECOND) {
         PROFILED("claimDecaySystem", claimDecaySystem(w, gs.claimDecayDue));
+        PROFILED("outdoorDecaySystem", outdoorDecaySystem(w, gs.claimDecayDue));
         gs.claimDecayDue = 0.0;
     }
 }

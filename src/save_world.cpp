@@ -75,6 +75,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
             s.bonesItems = pile->items;
         }
         if (const Health* h = w.get<Health>(e)) s.health = *h;
+        if (const OutdoorDecay* od = w.get<OutdoorDecay>(e)) s.outdoorHours = od->hours;
         if (const Foundation* f = w.get<Foundation>(e)) s.foundation = *f;
         if (const Blueprint* bp = w.get<Blueprint>(e)) s.blueprint = *bp;
         s.material = (int)materialOf(w, e);
@@ -207,6 +208,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const Upstairs* up = w.get<Upstairs>(u)) su.upstairs = idOf(propIds, up->foundation);
     if (const Unconscious* un = w.get<Unconscious>(u)) su.down = *un;
     if (const Corpse* c = w.get<Corpse>(u)) su.corpseHours = c->hours;
+    if (const Retreating* r = w.get<Retreating>(u)) su.retreat = *r;
     if (const Carried* cd = w.get<Carried>(u)) su.carriedBy = idOf(unitIds, cd->by);
     su.playingDead = w.has<PlayingDead>(u);
     if (const Needs* n = w.get<Needs>(u)) su.needs = *n;
@@ -255,6 +257,7 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
             world.add(e, std::move(pile));
         }
         if (s.health) world.add(e, *s.health);
+        if (s.outdoorHours) world.add(e, OutdoorDecay{ *s.outdoorHours });
         if (s.foundation) world.add(e, *s.foundation);
         if (s.blueprint) world.add(e, *s.blueprint);
         if (s.material > 0) world.add(e, Material{ (BuildMaterial)s.material });
@@ -285,6 +288,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
         world.add(e, *u.down);
     }
     if (u.body) world.add(e, Body{ (BodyType)std::clamp(*u.body, 0, 2) });
+    if (u.retreat && !u.corpseHours) world.add(e, *u.retreat);
     if (u.home) world.add(e, *u.home);
     if (u.stats) world.add(e, *u.stats);
     if (u.xpParts) world.add(e, *u.xpParts);

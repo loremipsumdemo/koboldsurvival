@@ -1,4 +1,5 @@
 #include "systems_internal.h"
+#include "npc_camps.h"
 
 using namespace systems_detail;
 
@@ -25,6 +26,10 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                 n->hurried = false;
             }
             tickNeeds(*n, ticks);
+            // Other factions' units never get hungrier than this, unless caged
+            if (n->maxHunger > 0 && factionOf(w, e) != FACTION_PLAYER && !w.has<Commandable>(e) && !inPrisonerCage(w, e)) {
+                n->hunger = std::max(n->hunger, (n->maxHunger * HUNGER_FLOOR_PERCENT + 99) / 100);
+            }
             if (const Faction* fa = w.get<Faction>(e); fa && fa->id == FACTION_NOMAD) n->hunger = n->maxHunger;
 
             const ObjectId seat = occupiedProp(w, e);

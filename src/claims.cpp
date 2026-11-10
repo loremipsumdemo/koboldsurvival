@@ -21,6 +21,28 @@ std::vector<Claim> claimsOf(World& w) {
         c.owner = w.get<Owner>(e)->faction;
         out.push_back(c);
     }
+    // Camps: a campfire of another faction (not yours) that stands outside its own faction's Altar claim
+    const size_t altars = out.size();
+    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
+        if (w.get<Prop>(e)->kind != PropKind::Campfire || w.has<Blueprint>(e)) continue;
+        const int faction = w.get<Owner>(e)->faction;
+        if (faction == FACTION_PLAYER || !factionCanClaim(faction)) continue;
+        const Transform* t = w.get<Transform>(e);
+        bool atHome = false;
+        for (size_t i = 0; i < altars && !atHome; ++i) {
+            const float dx = t->x - out[i].x, dz = t->z - out[i].z;
+            atHome = out[i].owner == faction && dx * dx + dz * dz <= CLAIM_RADIUS * CLAIM_RADIUS;
+        }
+        if (atHome) continue;
+        Claim c;
+        c.altar = e;
+        c.x = t->x;
+        c.z = t->z;
+        c.owner = faction;
+        c.radius = CAMP_CLAIM_RADIUS;
+        c.camp = true;
+        out.push_back(c);
+    }
     std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) { return a.altar < b.altar; });
     return out;
 }
@@ -29,15 +51,22 @@ const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int own
     for (const Claim& c : claims) {
         if (owner >= 0 && c.owner != owner) continue;
         const float dx = x - c.x, dz = z - c.z;
-        if (dx * dx + dz * dz <= CLAIM_RADIUS * CLAIM_RADIUS) return &c;
+        if (dx * dx + dz * dz <= c.radius * c.radius) return &c;
     }
     return nullptr;
 }
 
-bool claimsOverlap(float ax, float az, float bx, float bz) {
+bool claimsOverlap(float ax, float az, float ar, float bx, float bz, float br) {
     const float dx = ax - bx, dz = az - bz;
-    const float reach = 2.0f * CLAIM_RADIUS;
+    const float reach = ar + br;
     return dx * dx + dz * dz < reach * reach;
+}
+
+const Claim* claimOf(const std::vector<Claim>& claims, ObjectId prop) {
+    for (const Claim& c : claims) {
+        if (c.altar == prop) return &c;
+    }
+    return nullptr;
 }
 
 bool altarHasUpkeep(World& w, ObjectId altar) {
@@ -95,11 +124,14 @@ void claimOwnership(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     const Transform* t = w.get<Transform>(prop);
     if (!p || !t || propInfo(p->kind).claimsLand) return;
-    const Claim* c = claimAt(claimsOf(w), t->x, t->z);
+    const std::vector<Claim> claims = claimsOf(w);
+    const Claim* c = claimAt(claims, t->x, t->z);
     if (!c) return;
     const int faction = c->owner;
     if (Owner* own = w.get<Owner>(prop)) own->faction = faction;
     else w.add(prop, Owner{ faction });
+    // A camp's claim owns what is in it, but locks none of it
+    if (c->camp) return;
     if (Lock* lock = w.get<Lock>(prop)) lock->faction = faction;
     else if (propInfo(p->kind).use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
 }
@@ -127,12 +159,12 @@ void releaseProp(World& w, ObjectId prop) {
     }
 }
 
-void abandonClaim(World& w, float x, float z, int faction) {
+void abandonClaim(World& w, float x, float z, float radius, int faction) {
     for (ObjectId e : w.view<Prop, Transform, Owner>()) {
         if (w.get<Owner>(e)->faction != faction) continue;
         const Transform* t = w.get<Transform>(e);
         const float dx = t->x - x, dz = t->z - z;
-        if (dx * dx + dz * dz > CLAIM_RADIUS * CLAIM_RADIUS) continue;
+        if (dx * dx + dz * dz > radius * radius) continue;
         w.remove<Owner>(e);
         if (Lock* lock = w.get<Lock>(e); lock && lock->faction == faction) lock->faction = -1;
     }
@@ -178,10 +210,12 @@ void breakBuilding(World& w, ObjectId e) {
         return;
     }
     releaseProp(w, e);
-    const Owner* own = w.get<Owner>(e);
-    const int altarOwner = propInfo(kind).claimsLand && own ? own->faction : -1;
+    const std::vector<Claim> claims = claimsOf(w);
+    const Claim* heldClaim = claimOf(claims, e);
+    const int altarOwner = heldClaim ? heldClaim->owner : -1;
+    const float heldRadius = heldClaim ? heldClaim->radius : 0.0f;
     w.destroy(e);
-    if (altarOwner >= 0) abandonClaim(w, at.x, at.z, altarOwner);
+    if (altarOwner >= 0) abandonClaim(w, at.x, at.z, heldRadius, altarOwner);
     dropStacks(w, at, held);
     claimOwnership(w, makeProp(w, PropKind::Debris, at));
 }
@@ -217,3 +251,18 @@ bool propDecaying(World& w, ObjectId e) {
 
 // Units let go of a prop that is going: they stop occupying, working or heading for it
 void releasePropLinks(World& w, ObjectId prop) { releaseProp(w, prop); }
+
+void removeProp(World& w, ObjectId e) {
+    const Transform* tr = w.get<Transform>(e);
+    if (!tr || !w.has<Prop>(e)) return;
+    const Transform at = *tr;
+    const std::vector<ItemStack> held = propHoldings(w, e);
+    const std::vector<Claim> claims = claimsOf(w);
+    const Claim* c = claimOf(claims, e);
+    const int owner = c ? c->owner : -1;
+    const float radius = c ? c->radius : 0.0f;
+    releaseProp(w, e);
+    w.destroy(e);
+    if (owner >= 0) abandonClaim(w, at.x, at.z, radius, owner);
+    dropStacks(w, at, held);
+}

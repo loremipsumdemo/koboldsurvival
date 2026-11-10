@@ -451,7 +451,7 @@ bool altarSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& 
                 if (!t.walkable(gx, gz)) continue;
                 const float px = gx + 0.5f, pz = gz + 0.5f;
                 bool clear = true;
-                for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, c.x, c.z);
+                for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, CLAIM_RADIUS, c.x, c.z, c.radius);
                 for (size_t i = 0; i < props.size() && clear; ++i) {
                     const Transform* tr = w.get<Transform>(props[i]);
                     clear = std::fabs(tr->x - px) >= 1.0f || std::fabs(tr->z - pz) >= 1.0f;
@@ -477,7 +477,7 @@ bool campSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z
                     if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
                     const float px = std::floor(cx) + dx + 0.5f, pz = std::floor(cz) + dz + 0.5f;
                     bool clear = campKitFits(w, t, px, pz) && (!needRoom || roomAround(t, px, pz));
-                    for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, c.x, c.z);
+                    for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, CLAIM_RADIUS, c.x, c.z, c.radius);
                     if (!clear) continue;
                     x = px;
                     z = pz;

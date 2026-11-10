@@ -189,7 +189,7 @@ BehaviorWait patrolSpot(World& w, const Terrain& t, const std::vector<Claim>& cl
     const Claim* c = ut ? claimAt(claims, ut->x, ut->z, factionOf(w, u)) : nullptr;
     if (!c) return BehaviorWait::NotInClaim;
     for (int attempt = 0; attempt < 12; ++attempt) {
-        const float a = rng.unit() * TWO_PI, d = std::sqrt(rng.unit()) * (CLAIM_RADIUS - 2.0f);
+        const float a = rng.unit() * TWO_PI, d = std::sqrt(rng.unit()) * std::max(1.0f, c->radius - 2.0f);
         const float x = c->x + std::cos(a) * d, z = c->z + std::sin(a) * d;
         if (!openTile(t, x, z)) continue;
         to = Vec2{ std::floor(x) + 0.5f, std::floor(z) + 0.5f };

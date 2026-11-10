@@ -414,6 +414,29 @@ struct Raider {
     float fleeX = 0.0f, fleeZ = 0.0f;
 };
 
+// A unit of another faction that was beaten (knocked out and come round): it keeps out of fights and raids and goes to
+// its faction's Altar or camp, or away from your claims to make a camp there, and rests until it is back to full health
+struct Retreating {
+    float x = 0.0f, z = 0.0f;   // where it is going
+    bool planned = false;       // x, z picked
+    bool home = false;          // x, z is its faction's Altar or camp (else a spot to make a camp)
+    bool arrived = false;
+    bool wasPassive = false;    // its Passive before, given back when it is done
+    double hours = 0.0;         // game hours since it began; it gives up after RETREAT_MOST_HOURS
+    float replan = 0.0f;
+};
+
+// A unit of another faction going for food (on the ground, or in its own faction's store). Not saved.
+struct Foraging {
+    ObjectId source = NO_OBJECT;
+    float timeLeft = 0.0f;
+};
+
+// A bedroll or campfire out in the open (off buildings and outside every Altar's claim): game hours it has stood there
+struct OutdoorDecay {
+    double hours = 0.0;
+};
+
 // The Wandering Trader: buys from a Stall with coins it makes on the spot, then leaves in a puff of smoke. Not saved.
 struct WanderingTrader {
     ObjectId stall = NO_OBJECT;

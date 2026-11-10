@@ -871,7 +871,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         }
     };
     if (buildPreview_.ringR > 0.0f && buildPreview_.ringTone > 0) {
-        for (const auto& o : buildPreview_.otherRings) ring(o.first, o.second, buildPreview_.ringR, RGBA{ 0.95f, 0.95f, 1.0f, 0.85f });
+        for (const auto& o : buildPreview_.otherRings) ring(o[0], o[1], o[2], RGBA{ 0.95f, 0.95f, 1.0f, 0.85f });
         const RGBA tone = buildPreview_.ringTone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.85f }
                         : buildPreview_.ringTone == 2 ? RGBA{ 1.0f, 0.2f, 0.2f, 0.85f }
                                                       : RGBA{ 0.95f, 0.95f, 1.0f, 0.85f };

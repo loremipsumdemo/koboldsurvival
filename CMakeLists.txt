@@ -59,6 +59,7 @@ set(SIM_SOURCES
     src/game_log.cpp
     src/world_labels.cpp
     src/commerce.cpp
+    src/npc_camps.cpp
     src/items.cpp
     src/language.cpp
     src/fontlist.cpp
