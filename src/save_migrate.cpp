@@ -110,6 +110,8 @@ bool upgrade11to12(Lines&) { return true; }
 // Version 13 added the storefilter line (a general store's Allowed Items) and the storeslisted line. A version 12 store
 // without one allows the default, and its stores get their haul tasks in the Citizen Default Behavior on loading.
 bool upgrade12to13(Lines&) { return true; }
+// Version 14 added the groundedit line, for ground a foundation levelled. A version 13 file's ground is the map's own.
+bool upgrade13to14(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -123,6 +125,7 @@ constexpr Step STEPS[] = {
     { 10, upgrade10to11 },
     { 11, upgrade11to12 },
     { 12, upgrade12to13 },
+    { 13, upgrade13to14 },
 };
 }
 

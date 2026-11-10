@@ -442,6 +442,7 @@ const char* pieceRefusalKey(PieceCheck c) {
     case PieceCheck::Taken: return "MISC_BUILD_TILE_TAKEN";
     case PieceCheck::EdgesOpen: return "MISC_BUILD_EDGES_OPEN";
     case PieceCheck::NeedsFloor: return "MISC_BUILD_NEEDS_FLOOR";
+    case PieceCheck::TooSteep: return "MISC_FOUNDATION_TOO_STEEP";
     case PieceCheck::Ok: break;
     }
     return "";
@@ -665,7 +666,105 @@ PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, i
     if (fresh == 0) return PieceCheck::Taken;
     // A new building starts at least 3 by 3; from there it can be extended by any shape that touches it
     if (!touches && (fw < FOUNDATION_MIN || fh < FOUNDATION_MIN)) return PieceCheck::TooSmall;
+    // The ground must be flat enough to level: the rectangle's corners and the buildings it joins (their level where
+    // finished, else their ground) all within the spread
+    float lo = 1e30f, hi = -1e30f;
+    auto take = [&](float h) { lo = std::min(lo, h); hi = std::max(hi, h); };
+    for (int z = z0; z <= z1 + 1; ++z) {
+        for (int x = x0; x <= x1 + 1; ++x) take(t.heightAt((float)x, (float)z));
+    }
+    if (touches) {
+        std::unordered_set<long long> seen;
+        for (int z = z0 - 1; z <= z1 + 1; ++z) {
+            for (int x = x0 - 1; x <= x1 + 1; ++x) {
+                const long long k = tileKey(x, z);
+                const ObjectId f = mapGet(m.foundation, k);
+                if (f == NO_OBJECT || ownerOf(w, f) != owner || seen.count(k)) continue;
+                for (long long bk : buildingTiles(m, x, z)) {
+                    if (!seen.insert(bk).second) continue;
+                    const int bx = keyX(bk), bz = keyZ(bk);
+                    if (!w.has<Blueprint>(mapGet(m.foundation, bk))) {
+                        take(t.heightAt(bx + 0.5f, bz + 0.5f));
+                        continue;
+                    }
+                    for (int cz = bz; cz <= bz + 1; ++cz) {
+                        for (int cx = bx; cx <= bx + 1; ++cx) take(t.heightAt((float)cx, (float)cz));
+                    }
+                }
+            }
+        }
+    }
+    if (hi - lo > FOUNDATION_LEVEL_SPREAD) return PieceCheck::TooSteep;
     return PieceCheck::Ok;
+}
+
+void editGroundCorner(World& w, Terrain& t, int x, int z, float h) {
+    w.resource<GroundEdits>().corners[Terrain::cornerKey(x, z)] = h;
+    t.setCornerHeight(x, z, h);
+}
+
+void levelFoundationGround(World& w, Terrain& t, ObjectId foundation) {
+    const Foundation* fd = w.get<Foundation>(foundation);
+    if (!fd) return;
+    const BuildingMap m = buildingMap(w);
+    const std::vector<long long> tiles = buildingTiles(m, fd->x0, fd->z0);
+    if (tiles.empty()) return;
+    // The level: a finished tile's, else the average of the building's ground at its corners
+    bool haveLevel = false;
+    float level = 0.0f;
+    for (long long k : tiles) {
+        const ObjectId f = mapGet(m.foundation, k);
+        if (f == foundation || w.has<Blueprint>(f)) continue;
+        level = t.heightAt(keyX(k) + 0.5f, keyZ(k) + 0.5f);
+        haveLevel = true;
+        break;
+    }
+    // The corners to set: those of the unfinished tiles, but not one a finished foundation tile (of any building) has,
+    // which stays as it is
+    std::unordered_set<long long> corners;
+    for (long long k : tiles) {
+        if (!w.has<Blueprint>(mapGet(m.foundation, k))) continue;
+        const int x = keyX(k), z = keyZ(k);
+        for (int cz = z; cz <= z + 1; ++cz) {
+            for (int cx = x; cx <= x + 1; ++cx) corners.insert(Terrain::cornerKey(cx, cz));
+        }
+    }
+    for (auto it = corners.begin(); it != corners.end();) {
+        const int cx = keyX(*it), cz = keyZ(*it);
+        bool finishedHasIt = false;
+        for (int dz = -1; dz <= 0 && !finishedHasIt; ++dz) {
+            for (int dx = -1; dx <= 0 && !finishedHasIt; ++dx) {
+                const ObjectId f = mapGet(m.foundation, tileKey(cx + dx, cz + dz));
+                finishedHasIt = f != NO_OBJECT && f != foundation && !w.has<Blueprint>(f);
+            }
+        }
+        it = finishedHasIt ? corners.erase(it) : std::next(it);
+    }
+    if (corners.empty()) return;
+    if (!haveLevel) {
+        double sum = 0.0;
+        for (long long c : corners) sum += t.heightAt((float)keyX(c), (float)keyZ(c));
+        level = (float)(sum / (double)corners.size());
+    }
+    // What stands on or beside the reshaped ground, and the ground's height under it before
+    int x0 = 1 << 30, z0 = 1 << 30, x1 = -(1 << 30), z1 = -(1 << 30);
+    for (long long c : corners) {
+        x0 = std::min(x0, keyX(c) - 1); x1 = std::max(x1, keyX(c));
+        z0 = std::min(z0, keyZ(c) - 1); z1 = std::max(z1, keyZ(c));
+    }
+    std::vector<std::pair<ObjectId, float>> standing;
+    for (ObjectId e : w.view<Transform>()) {
+        if (w.has<Carried>(e)) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (tr->x < x0 || tr->x >= x1 + 1 || tr->z < z0 || tr->z >= z1 + 1) continue;
+        standing.push_back({ e, t.heightAt(tr->x, tr->z) });
+    }
+    for (long long c : corners) editGroundCorner(w, t, keyX(c), keyZ(c), level);
+    for (const auto& [e, before] : standing) {
+        Transform* tr = w.get<Transform>(e);
+        tr->y += t.heightAt(tr->x, tr->z) - before;
+    }
+    buildingTilesChanged(w, x0, z0, x1, z1);
 }
 
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner, BuildMaterial material) {
@@ -873,6 +972,8 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
         if (Blueprint* bp = w.get<Blueprint>(prop)) bp->retryIn = BLOCKED_RETRY_SECONDS;
         return false;
     }
+    // A foundation's ground is levelled, with the rest of its building's, before it is finished
+    if (info->foundation) levelFoundationGround(w, t, prop);
     w.remove<Blueprint>(prop);
     const double tough = materialToughness(materialOf(w, prop));
     buildingTilesChanged(w, x0, z0, x1, z1);

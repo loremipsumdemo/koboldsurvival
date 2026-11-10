@@ -22,6 +22,7 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     blocked_.clear();
     decks_.clear();
+    heightEdits_.clear();
     source_ = std::move(source);
     size_ = source_->size();
     cps_ = ::chunksPerSide(size_);
@@ -71,6 +72,7 @@ const Terrain::GroundChunk& Terrain::groundOf(int cx, int cz) const {
         }
         ChunkData c;
         if (!source_->fill(cx, cz, c)) c = emptyChunk(cx, cz);
+        applyEdits(cx, cz, c.heights);
         slot = std::make_unique<GroundChunk>();
         slot->heights = std::move(c.heights);
         slot->walk = std::move(c.walk);
@@ -181,12 +183,65 @@ int Terrain::stream(const std::vector<Vec2>& focuses, int radius, int maxLoads) 
         if (slot) continue;
         auto c = std::make_unique<ChunkData>();
         if (!source_->fill(w.cx, w.cz, *c)) *c = emptyChunk(w.cx, w.cz);
+        applyEdits(w.cx, w.cz, c->heights);
         c->version = nextVersion_++;
         slot = std::move(c);
         drawn_.push_back(w.cz * cps_ + w.cx);
         ++loaded;
     }
     return changed + loaded;
+}
+
+void Terrain::applyEdits(int cx, int cz, std::vector<float>& heights) const {
+    if (heightEdits_.empty() || heights.size() < (size_t)CHUNK_CORNERS * CHUNK_CORNERS) return;
+    const int x0 = cx * CHUNK_TILES, z0 = cz * CHUNK_TILES;
+    for (const auto& [key, h] : heightEdits_) {
+        const int z = (int)(key / 1000003LL), x = (int)(key % 1000003LL);
+        if (x < x0 || z < z0 || x > x0 + CHUNK_TILES || z > z0 + CHUNK_TILES) continue;
+        heights[(size_t)(z - z0) * CHUNK_CORNERS + (x - x0)] = h;
+    }
+}
+
+// Every chunk held that has this corner (up to four, on chunk edges) takes its height again, and is drawn anew
+void Terrain::refreshCorner(int x, int z) {
+    const auto it = heightEdits_.find(cornerKey(x, z));
+    for (int cz = (z - 1) / CHUNK_TILES; cz <= z / CHUNK_TILES; ++cz) {
+        for (int cx = (x - 1) / CHUNK_TILES; cx <= x / CHUNK_TILES; ++cx) {
+            if (cx < 0 || cz < 0 || cx >= cps_ || cz >= cps_) continue;
+            const int lx = x - cx * CHUNK_TILES, lz = z - cz * CHUNK_TILES;
+            if (lx < 0 || lz < 0 || lx > CHUNK_TILES || lz > CHUNK_TILES) continue;
+            const size_t i = (size_t)lz * CHUNK_CORNERS + lx;
+            const size_t id = (size_t)cz * cps_ + cx;
+            float h = 0.0f;
+            if (it != heightEdits_.end()) {
+                h = it->second;
+            } else {
+                // An edit taken away: the source's own height again
+                ChunkData c;
+                if (!source_->fill(cx, cz, c)) c = emptyChunk(cx, cz);
+                h = c.heights[i];
+            }
+            if (ground_[id]) ground_[id]->heights[i] = h;
+            if (chunks_[id]) {
+                chunks_[id]->heights[i] = h;
+                chunks_[id]->version = nextVersion_++;
+            }
+        }
+    }
+}
+
+void Terrain::setCornerHeight(int x, int z, float h) {
+    if (x < 0 || z < 0 || x > size_ || z > size_) return;
+    heightEdits_[cornerKey(x, z)] = h;
+    refreshCorner(x, z);
+}
+
+void Terrain::setHeightEdits(const std::unordered_map<long long, float>& edits) {
+    std::vector<long long> touched;
+    for (const auto& [key, h] : heightEdits_) touched.push_back(key);
+    heightEdits_ = edits;
+    for (const auto& [key, h] : heightEdits_) touched.push_back(key);
+    for (long long key : touched) refreshCorner((int)(key % 1000003LL), (int)(key / 1000003LL));
 }
 
 float Terrain::heightAt(float x, float z) const {

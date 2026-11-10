@@ -14,7 +14,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 13;
+inline constexpr int SAVE_VERSION = 14;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -128,6 +128,7 @@ struct SaveData {
     std::vector<SaveProp> props;
     std::vector<SaveGround> ground;
     std::vector<SaveUnit> units;
+    std::vector<std::array<float, 3>> groundEdits;   // ground levelled in play: a corner's x, z and height
 };
 
 struct SaveSummary {

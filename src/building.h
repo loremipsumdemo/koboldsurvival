@@ -30,6 +30,9 @@ inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
 inline constexpr double DOOR_HEALTH = 60.0;
 inline constexpr double WALL_HEALTH = 2.0 * DOOR_HEALTH;   // a wall takes twice the breaking a door does
 inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
+// A foundation is laid only on ground it can be levelled from: its corners, the rest of its building's and (once one of
+// its tiles is finished) the building's level may differ by at most this much
+inline constexpr float FOUNDATION_LEVEL_SPREAD = 1.5f;
 
 // How far above the ground a floor's top is: 0 for the ground floor
 inline float storeyBaseHeight(int level) { return level <= 0 ? 0.0f : level * FLOOR_HEIGHT + FLOOR_THICK; }
@@ -126,6 +129,18 @@ struct BuildingsChanged {
 void buildingTilesChanged(World& w, int x0, int z0, int x1, int z1);
 void refreshBuildingTiles(World& w, Terrain& t);
 
+// The ground reshaped in play, kept with the game: corner heights by Terrain::cornerKey. The Terrain holds the same, to
+// sample; this is what a save keeps.
+struct GroundEdits {
+    std::unordered_map<long long, float> corners;
+};
+// Sets a corner's height in the world and on the terrain
+void editGroundCorner(World& w, Terrain& t, int x, int z, float h);
+// The ground under a building is levelled when its first foundation tile is finished: every unfinished foundation tile
+// of the building, to the level of its finished tiles (or, with none finished yet, to the average of its ground). What
+// stands on the reshaped ground moves with it.
+void levelFoundationGround(World& w, Terrain& t, ObjectId foundation);
+
 // Every building piece by where it is, made in one pass over the props: for the checks that look at many tiles
 struct BuildingMap {
     std::unordered_map<long long, ObjectId> foundation;   // tileKey: a foundation tile
@@ -152,6 +167,7 @@ enum class PieceCheck {
     Taken,
     EdgesOpen,
     NeedsFloor,
+    TooSteep,
 };
 const char* pieceRefusalKey(PieceCheck c);
 

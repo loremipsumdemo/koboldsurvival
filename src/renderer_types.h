@@ -229,6 +229,7 @@ struct BuildPreview {
         int x = 0, z = 0;
         float y = 0.0f;
         int tone = 0;
+        bool outline = false;   // just the tile's edge, not filled
     };
     std::vector<Mark> marks;
     float lift = 0.0f;   // building on an upper floor: how far above the ground the preview is drawn

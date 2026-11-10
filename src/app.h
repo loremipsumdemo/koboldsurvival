@@ -141,6 +141,7 @@ struct AppSession {
     std::vector<QueuedSound> soundsToPlay;
     float autoTimer = 0.0f;
     float pivotAlpha = 0.0f;
+    int pivotTopFloor = 0;   // the highest finished floor under the camera's pivot (0: the ground)
     float actionAlpha = 0.0f;
     float actionX = 0.0f, actionZ = 0.0f;
     float simLeft = 0.0f;
