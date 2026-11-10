@@ -68,7 +68,9 @@ ObjectId App::menuTargetAt(float mx, float my) {
     float best = 0.0f;
     for (ObjectId p : renderer.propsAtPixel(world, cam, mx, my, winW, winH)) {
         const PropKind kind = world.get<Prop>(p)->kind;
-        // Props with nothing to do are passed over; blueprints, ladders and doors have their own orders
+        // Props with nothing to do are passed over; blueprints, ladders and doors have their own orders. Finished stairs
+        // are walked like floor, so a click on them is a move.
+        if (propInfo(kind).stairs && !world.has<Blueprint>(p)) continue;
         const bool orders = world.has<Blueprint>(p) || propInfo(kind).ladder || propInfo(kind).door;
         if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p) && !orders) || (hidden(p) && !world.has<Foundation>(p))) continue;
         const Transform* pt = world.get<Transform>(p);

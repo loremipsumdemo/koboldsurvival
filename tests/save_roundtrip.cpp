@@ -732,7 +732,7 @@ int main(int, char**) {
         bt->x = x0 + 1.5f;
         bt->z = z0 + 3.5f;
         town.get<Behaviors>(builder)->rules.clear();
-        check(canClimbUp(town, ladder) && startClimb(town, builder, ladder), "a unit by a ladder climbs it");
+        check(canClimbUp(town, ladder) && startClimb(town, ground, builder, ladder), "a unit by a ladder climbs it");
         run(2.0f);
         check(town.has<Upstairs>(builder) && town.get<Transform>(builder)->y > ground.heightAt(bt->x, bt->z) + 2.0f,
               "after climbing it stands on the upper floor");
@@ -885,7 +885,8 @@ int main(int, char**) {
         ground.clearDecks();
     }
 
-    // Stairs: three tiles walked up to the floor above, and ladders climbed only from inside, within a tile
+    // Stairs: three steps walked up from the tile before them, the top one a tile of the floor above; ladders climbed
+    // only from inside, within a tile
     {
         World hall;
         Rng hallRng;
@@ -911,14 +912,19 @@ int main(int, char**) {
                 finish(placePiece(hall, ground, x == x0 + 3 && z == z1 ? PropKind::WoodDoor : PropKind::WoodWall, x, z));
             }
         }
-        // Rising east, from x0+2 to x0+4, stepped off onto x0+5 on the first upper floor
+        // Rising east, from x0+2 to x0+4, stepped onto from any floor tile beside x0+2; their top step is a tile of the
+        // first upper floor
         check(checkPiece(hall, PropKind::Stairs, x0 + 3, z0 + 2, FACTION_PLAYER, 0, 1) == PieceCheck::Ok, "stairs may go on three tiles in a row");
-        check(checkPiece(hall, PropKind::Stairs, x0 + 5, z0 + 2, FACTION_PLAYER, 0, 1) != PieceCheck::Ok,
-              "stairs whose top would be outside the building are refused");
+        check(checkPiece(hall, PropKind::Stairs, x0 + 5, z0 + 2, FACTION_PLAYER, 0, 1) != PieceCheck::Ok, "stairs over a wall are refused");
+        check(checkPiece(hall, PropKind::Stairs, x0 + 2, z0 + 2, FACTION_PLAYER, 0, 1) == PieceCheck::Ok,
+              "stairs need no tile before their bottom step");
         const ObjectId stairs = placePiece(hall, ground, PropKind::Stairs, x0 + 3, z0 + 2, FACTION_PLAYER, BuildMaterial::Wood, 0, 1);
         finish(stairs);
         check(checkPiece(hall, PropKind::WoodWall, x0 + 2, z0 + 2) == PieceCheck::Taken &&
               checkPiece(hall, PropKind::WoodWall, x0 + 4, z0 + 2) == PieceCheck::Taken, "stairs take all three of their tiles");
+        refreshBuildingTiles(hall, ground);
+        check(!ground.walkable(x0 + 2, z0 + 2) && !ground.walkable(x0 + 4, z0 + 2) && ground.walkable(x0 + 1, z0 + 2),
+              "the steps aren't walked across on the ground floor, only stepped up onto");
         bool laid = true;
         for (int x = x0; x <= x1; ++x) {
             for (int z = z0; z <= z1; ++z) {
@@ -930,29 +936,68 @@ int main(int, char**) {
             }
         }
         check(laid && canClimbUp(hall, stairs), "an upper floor goes everywhere but over the stairs, and they lead up to it");
+        {
+            const BuildingMap m = buildingMap(hall);
+            check(floorSurfaceOn(hall, m, x0 + 4, z0 + 2, 1) && !floorSurfaceOn(hall, m, x0 + 3, z0 + 2, 1),
+                  "the stairs' top step is floor of the level above, the others aren't");
+        }
         // A ladder inside, by the west wall: not climbed from outside the wall
         const ObjectId ladder = placePiece(hall, ground, PropKind::Ladder, x0 + 1, z0 + 1);
         finish(ladder);
         const ObjectId outside = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 - 0.5f, z0 + 1.5f);
         hall.get<Behaviors>(outside)->rules.clear();
-        check(!atClimbSpot(hall, outside, ladder) && !startClimb(hall, outside, ladder), "a ladder isn't climbed from outside the building");
+        check(!atClimbSpot(hall, outside, ladder) && !startClimb(hall, ground, outside, ladder), "a ladder isn't climbed from outside the building");
         const ObjectId inside = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 + 1.5f, z0 + 2.5f);
         hall.get<Behaviors>(inside)->rules.clear();
         check(atClimbSpot(hall, inside, ladder), "a ladder is climbed from inside, within a tile of it");
         hall.get<Transform>(inside)->x = x0 + 5.5f;
         check(!atClimbSpot(hall, inside, ladder), "but not from further than a tile");
-        // Up the stairs from their foot: walked up, and stepped off past the top
+        // Up the stairs from their foot: walked up step by step, with a hop past each step's height, onto the top step
         Transform* it = hall.get<Transform>(inside);
-        it->x = x0 + 2.5f;
+        it->x = x0 + 1.5f;
         it->z = z0 + 2.5f;
-        check(startClimb(hall, inside, stairs), "a unit at the foot of the stairs goes up them");
-        float highest = 0.0f;
-        for (int i = 0; i < 90; ++i) {
+        check(startClimb(hall, ground, inside, stairs), "a unit at the foot of the stairs goes up them");
+        float highest = 0.0f, firstStep = 0.0f;
+        for (int i = 0; i < 60 * 6 && hall.has<Climbing>(inside); ++i) {
             buildingSystem(hall, ground, 1.0f / 60.0f);
-            highest = std::max(highest, hall.get<Transform>(inside)->y - ground.heightAt(hall.get<Transform>(inside)->x, hall.get<Transform>(inside)->z));
+            const Transform* at = hall.get<Transform>(inside);
+            const float up = at->y - ground.heightAt(at->x, at->z);
+            highest = std::max(highest, up);
+            if ((int)std::floor(at->x) == x0 + 2) firstStep = std::max(firstStep, up);
         }
-        check(storeyOf(hall, inside) == 1 && (int)std::floor(hall.get<Transform>(inside)->x) == x0 + 5 && highest > FLOOR_HEIGHT,
-              "it walks up them onto the first upper floor, past their top");
+        check(storeyOf(hall, inside) == 1 && (int)std::floor(hall.get<Transform>(inside)->x) == x0 + 4 && highest > storeyBaseHeight(1) &&
+                  firstStep > storeyBaseHeight(1) / 3.0f,
+              "it walks up them onto their top step on the first upper floor, hopping a little past each step");
+        // Down again, stopped partway by a new order: it steps off at the nearer end, not left on the steps
+        check(startClimb(hall, ground, inside, stairs), "a unit on the top step goes down the stairs");
+        for (int i = 0; i < 60 * 6 && hall.has<Climbing>(inside); ++i) {
+            buildingSystem(hall, ground, 1.0f / 60.0f);
+            if (hall.get<Transform>(inside)->x < x0 + 2.2f) hall.remove<Climbing>(inside);
+        }
+        buildingSystem(hall, ground, 1.0f / 60.0f);
+        check(storeyOf(hall, inside) == 0 && (int)std::floor(hall.get<Transform>(inside)->x) == x0 + 1,
+              "stopped on the bottom step, it steps off at the stairs' foot");
+        // Up again from beside the bottom step rather than in front of it
+        it->x = x0 + 2.5f;
+        it->z = z0 + 1.5f;
+        check(startClimb(hall, ground, inside, stairs), "a unit beside the bottom step steps up onto it");
+        for (int i = 0; i < 60 * 6 && hall.has<Climbing>(inside); ++i) buildingSystem(hall, ground, 1.0f / 60.0f);
+        check(storeyOf(hall, inside) == 1 && (int)std::floor(it->x) == x0 + 4 && (int)std::floor(it->z) == z0 + 2,
+              "and walks up onto their top step");
+        // A piece isn't finished with a unit standing beside it, so nobody is walled into a corner
+        {
+            const ObjectId nearBy = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 + 4.5f, z0 + 3.5f);
+            hall.get<Behaviors>(nearBy)->rules.clear();
+            const ObjectId post = placePiece(hall, ground, PropKind::WoodWall, x0 + 5, z0 + 3);
+            hall.get<Blueprint>(post)->supplied = materialsNeeded(hall, post);
+            hall.get<Blueprint>(post)->progress = 1.0;
+            check(!finishBlueprint(hall, ground, post) && hall.has<SoloMove>(nearBy), "a unit beside a piece holds it up, and is asked to move");
+            hall.get<Transform>(nearBy)->x = x0 + 1.5f;
+            hall.get<Transform>(nearBy)->z = z0 + 1.5f;
+            check(finishBlueprint(hall, ground, post), "once it has moved off, the piece is finished");
+            breakBuilding(hall, post);
+            hall.destroy(nearBy);
+        }
         // The one outside is sent to the upper floor: through the door, and up the stairs or the ladder
         walkSoloTo(hall, ground, outside, Vec2{ x0 + 5.5f, z0 + 1.5f }, 1);
         for (int i = 0; i < 60 * 40 && storeyOf(hall, outside) != 1; ++i) {
@@ -960,6 +1005,46 @@ int main(int, char**) {
             takeEvents(hall);
         }
         check(storeyOf(hall, outside) == 1, "a unit outside finds its way in and up to the upper floor");
+        // A second floor up, with stairs on the first rising west from x0+4 to x0+2 along z0+3: one move order from
+        // outside the building to the second floor goes up both flights
+        hall.destroy(inside);
+        hall.destroy(outside);
+        for (int x = x0; x <= x1; ++x) {
+            for (int z = z0; z <= z1; ++z) {
+                if (x == x0 || x == x1 || z == z0 || z == z1) finish(placePiece(hall, ground, PropKind::WoodWall, x, z, FACTION_PLAYER, BuildMaterial::Wood, 1));
+            }
+        }
+        check(checkPiece(hall, PropKind::Stairs, x0 + 3, z0 + 3, FACTION_PLAYER, 1, 3) == PieceCheck::Ok, "stairs go on an upper floor too");
+        const ObjectId flight2 = placePiece(hall, ground, PropKind::Stairs, x0 + 3, z0 + 3, FACTION_PLAYER, BuildMaterial::Wood, 1, 3);
+        finish(flight2);
+        for (int x = x0; x <= x1; ++x) {
+            for (int z = z0; z <= z1; ++z) {
+                if (checkPiece(hall, PropKind::UpperFloor, x, z, FACTION_PLAYER, 1) == PieceCheck::Ok) {
+                    finish(placePiece(hall, ground, PropKind::UpperFloor, x, z, FACTION_PLAYER, BuildMaterial::Wood, 1));
+                }
+            }
+        }
+        refreshBuildingTiles(hall, ground);
+        {
+            const BuildingMap m = buildingMap(hall);
+            check(floorSurfaceOn(hall, m, x0 + 2, z0 + 3, 2) && floorSurfaceOn(hall, m, x0 + 5, z0 + 1, 2) && canClimbUp(hall, flight2),
+                  "the second flight's top step is floor of the second floor");
+        }
+        const ObjectId climber = spawnUnit(hall, ground, hallRng, FACTION_PLAYER, x0 - 0.5f, z0 + 1.5f);
+        hall.get<Behaviors>(climber)->rules.clear();
+        walkSoloTo(hall, ground, climber, Vec2{ x0 + 5.5f, z0 + 1.5f }, 2);
+        int climbs = 0;
+        if (const Route* r = hall.get<Route>(climber)) {
+            for (const RouteLeg& leg : r->legs) climbs += leg.ladder != NO_OBJECT ? 1 : 0;
+        }
+        check(climbs == 2, "one move order plans a way up both flights");
+        for (int i = 0; i < 60 * 60 && !(storeyOf(hall, climber) == 2 && !hall.has<Route>(climber)); ++i) {
+            simStep(hall, ground, hallRng, hallState, 1.0f / 60.0f, false);
+            takeEvents(hall);
+        }
+        const Transform* ct = hall.get<Transform>(climber);
+        check(storeyOf(hall, climber) == 2 && std::hypot(ct->x - (x0 + 5.5f), ct->z - (z0 + 1.5f)) < 1.0f,
+              "and the unit walks it, onto the second floor where it was sent");
         ground.clearBlocked();
         ground.clearDecks();
     }

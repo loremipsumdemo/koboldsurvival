@@ -326,10 +326,14 @@ struct App : AppSession {
     ItemMenuLayout squadMenuLayout();
     std::vector<std::string> squadMenuLabels();
     void runSquadMenu(int choice);
-    // Floors: the one looked at follows the camera; the cutaway inside a building; clicks that stop on that floor
+    // Floors: the one looked at follows the camera (Auto) or Q and E (Manual), Z back to Auto; the cutaway inside a
+    // building; clicks that land on the highest floor seen under the pointer
     void updateFloorView();
     void stepFloor(int by);
+    void floorAuto();
+    void drawFloorBanner();
     std::optional<std::pair<float, float>> pickFloor(float mx, float my, int& storey);
+    std::optional<std::pair<float, float>> pickAbove(float mx, float my, std::optional<std::pair<float, float>> ground, float above);
     int clickStorey = 0;   // the floor the last order's click landed on
     long long holdPlanned = -1;   // a held right click: the tile and floor the units going by ladders were last sent to
     void pickClosestUnit();

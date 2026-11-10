@@ -224,6 +224,8 @@ CONTROL_KEYS_15	Alt + 5
 CONTROL_DOES_15	Switch between tight and loose formations
 CONTROL_KEYS_16	Alt + right mouse drag
 CONTROL_DOES_16	Place the selected units around where the drag starts; the drag sets the size
+CONTROL_KEYS_17	Q / E, Z
+CONTROL_DOES_17	Show the floor below or above (Manual); Z goes back to Auto
 
 # ----------------------------------------------------------------------
 # World Generation, Level Editor and map pick
@@ -470,14 +472,15 @@ UILABEL_OPTIMIZE_SELECTED	Selected
 UILABEL_OPTIMIZE_EVERYONE	All
 UILABEL_OPTIMIZE_CUSTOM	Custom...
 UILABEL_FLOOR_BUTTON	Floor
-UILABEL_FLOOR_AUTO	Auto
+UILABEL_FLOOR_AUTO	Auto (Z)
 UILABEL_FLOOR_MANUAL	Manual (Q/E)
-UILABEL_FLOOR_AUTO_TIP	The floor shown, built on and clicked on. Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor.
-UILABEL_FLOOR_MANUAL_TIP	The floor shown, built on and clicked on. Manual: Q steps down a floor and E up. Click for Auto or Manual.
+UILABEL_FLOOR_AUTO_TIP	The floor shown. Auto: the floor of the unit the camera follows. Click for Auto or Manual; Q and E step down and up a floor, and Z goes back to Auto.
+UILABEL_FLOOR_MANUAL_TIP	The floor shown. Manual: Q steps down a floor and E up; Z goes back to Auto. Click for Auto or Manual.
 MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
-MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up
+MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up, Z goes back to Auto
 MISC_FLOOR_NOW	Floor {0}
 MISC_FLOOR_NOW_GROUND	Ground floor
+MISC_FLOOR_MANUAL_BANNER	Manual floor view: {0}. Press Z to go back to Auto
 
 # ----------------------------------------------------------------------
 # Unit stats, skills and needs
@@ -907,8 +910,8 @@ MISC_BLUEPRINT_NEEDS	{0} {1}/{2}
 MISC_BLUEPRINT_BUILDING	Building: {0}%
 MISC_BLUEPRINT_WAITING	Building starts once all its material is here
 MISC_ON_FLOOR	On floor {0}
-MISC_BUILD_ON_FLOOR	Building on floor {0} (Q/E)
-MISC_BUILD_ON_GROUND	Building on the ground floor (Q/E)
+MISC_BUILD_ON_FLOOR	Building on floor {0}
+MISC_BUILD_ON_GROUND	Building on the ground floor
 MISC_DOOR_LOCKED	Door locked
 MISC_DOOR_UNLOCKED	Door unlocked
 MISC_STAIRS_TURN	R: turn

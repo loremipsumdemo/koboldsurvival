@@ -110,7 +110,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 continue;
             }
             if (action == PropAction::Climb) {
-                if (!startClimb(w, u, prop)) queueLog(w, langf("MISC_CANT_CLIMB", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+                if (!startClimb(w, t, u, prop)) queueLog(w, langf("MISC_CANT_CLIMB", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
                 continue;
             }
             if (action == PropAction::Destroy) {
