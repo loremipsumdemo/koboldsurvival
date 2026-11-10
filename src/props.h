@@ -82,6 +82,17 @@ struct BuildPick {
 };
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
 
+// The Build tab's headings, in the order listed. props.txt's group column names one for each prop; Developer is the
+// tab's own (the spawn panel) and holds no prop.
+enum class BuildGroup : int { Claims = 0, Crafting, Storage, Settlement, Furniture, Cages, Vehicles, Nature, Developer, Count };
+inline constexpr const char* BUILD_GROUP_KEYS[] = { "claims", "crafting", "storage", "settlement", "furniture", "cages",
+                                                    "vehicles", "nature", "developer" };
+inline constexpr const char* BUILD_GROUP_LABELS[] = { "UILABEL_BUILD_GROUP_CLAIMS", "UILABEL_BUILD_GROUP_CRAFTING",
+                                                      "UILABEL_BUILD_GROUP_STORAGE", "UILABEL_BUILD_GROUP_SETTLEMENT",
+                                                      "UILABEL_BUILD_GROUP_FURNITURE", "UILABEL_BUILD_GROUP_CAGES",
+                                                      "UILABEL_BUILD_GROUP_VEHICLES", "UILABEL_BUILD_GROUP_NATURE",
+                                                      "UILABEL_BUILD_GROUP_DEVELOPER" };
+
 enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone };
 
 // The kinds of item a general store (a Barrel, a chest: storage that takes any item) can be set to allow, from its
@@ -167,6 +178,8 @@ struct PropInfo {
     bool cage = false;
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
     bool wheelbarrow = false;    // its occupant pushes it about in front of them, with its store
+    bool pulled = false;         // with wheelbarrow: drawn behind its puller, slowing all but a large animal
+    bool taming = false;         // with cage: only an animal goes in, and Tame Animals feeds it
     bool moves = false;          // a vehicle: goes wherever it is taken while the game runs (airship and wheelbarrow imply it)
     bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
     bool onFoundation = false;   // only on a finished foundation tile of the builder's
@@ -182,6 +195,7 @@ struct PropInfo {
     int capacity = 0;            // the most items a store holds in all, or 0 for as many as its slots fit
     bool stall = false;
     bool exterior = false;       // goes outside buildings only, never on a foundation          // sells to other factions' units, manned by a shopkeeper
+    BuildGroup group = BuildGroup::Nature;   // the Build tab's heading it is listed under
 };
 
 // How often what is drawn of a prop changes. A still prop stands where it was put and looks the same until it is built,
@@ -222,11 +236,26 @@ constexpr int STORAGE_SLOTS = 12;
 constexpr int STORAGE_COLUMNS = 6;
 
 constexpr int PROP_COPIES = 3;
-inline int buildRowCount() { return propKindCount() + 1; }
-inline BuildPick buildRowPick(int row) {
-    if (row <= 0) return BuildPick::destroy();
-    const std::vector<PropKind>& order = propKindsListed();
-    return row - 1 < (int)order.size() ? BuildPick::place(order[(size_t)row - 1]) : BuildPick{};
+// One row of the Build tab: a heading, a pick (Destroy, or a prop to place), or the Developer entry that opens the spawn
+// panel. Under each heading in BuildGroup's order: Destroy first under Claims, then that group's props in props.txt's order.
+struct BuildRow {
+    BuildGroup group = BuildGroup::Claims;
+    bool heading = false;
+    bool developer = false;
+    BuildPick pick;
+};
+inline std::vector<BuildRow> buildRows() {
+    std::vector<BuildRow> rows;
+    for (int g = 0; g < (int)BuildGroup::Count; ++g) {
+        const BuildGroup group = (BuildGroup)g;
+        rows.push_back(BuildRow{ group, true, false, {} });
+        if (group == BuildGroup::Claims) rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
+        if (group == BuildGroup::Developer) rows.push_back(BuildRow{ group, false, true, {} });
+        for (PropKind k : propKindsListed()) {
+            if (propInfo(k).group == group) rows.push_back(BuildRow{ group, false, false, BuildPick::place(k) });
+        }
+    }
+    return rows;
 }
 
 constexpr float PROP_RANGE = 40.0f;

@@ -254,7 +254,16 @@ struct App : AppSession {
     void editorUndo();
     void stopEditorName();
     void setEditorTool(EditorTool tool, int picked);
-    std::vector<EditorEntry> editorEntries();
+    // The spawn list, shared by the level editor and the Build tab's Developer panel (app_spawn.cpp)
+    std::vector<EditorEntry> spawnEntries(EditorTab tab);
+    void drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L);
+    bool spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y);   // true when a row was picked
+    void spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y, float notches);
+    int spawnAt(SpawnPicker& p, float x, float z, bool levelIds);   // places the pick (a cluster of them); how many
+    void openDeveloper();
+    void closeDeveloper();
+    bool pressOnDeveloper();
+    void drawDeveloper();
     void drawEditorPanel();
     bool editorMouseDown();
     void editorPlaceAt(float mx, float my);
@@ -391,6 +400,17 @@ struct App : AppSession {
     std::array<std::vector<ObjectId>, 2> altarColumns();
     void applyAltarMoves();
     void drawAltar();
+    // Manage Squads (app_altar.cpp)
+    void openManageSquads();
+    int squadsTarget(ObjectId u);
+    std::array<std::vector<ObjectId>, 2> squadsColumns();
+    int squadsCount(int squad);
+    bool pressOnManageSquads();
+    void scrollManageSquads(float x, float y, float notches);
+    void applySquadMoves();
+    void drawManageSquads();
+    // When the selection changes and the Squad tab shows an emptied squad: the squad of the selected units instead
+    void followSelectionSquad();
     bool sidebarUp();
     std::vector<BehaviorOption> behaviorOptionsFor(ObjectId u);
     SidebarLayout sidebarFor(int W, int H, float scroll);
@@ -495,6 +515,9 @@ struct App : AppSession {
     int lastSquadTap = -1;
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
+    SquadsUi squadsUi;
+    SpawnPicker devSpawn;   // the Build tab's Developer panel
+    std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;
     StoreFilterUi storeFilterUi;
     StallUi stallUi;

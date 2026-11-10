@@ -172,7 +172,8 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
             const int row = 2 - k / 3, col = k % 3;
             L.squadCells[(size_t)k] = Rect{ open.x + m.pad + col * (cellW + gridGap), gridTop + row * (cellH + gridGap), cellW, cellH };
         }
-        L.renameButton = Rect{ open.x + m.pad, gridTop + 3.0f * cellH + 2.0f * gridGap + m.gap, open.w - 2.0f * m.pad, m.toggleH };
+        L.manageSquadsButton = Rect{ open.x + m.pad, gridTop + 3.0f * cellH + 2.0f * gridGap + m.gap, open.w - 2.0f * m.pad, m.toggleH };
+        L.renameButton = Rect{ open.x + m.pad, L.manageSquadsButton.y + L.manageSquadsButton.h + m.gap, open.w - 2.0f * m.pad, m.toggleH };
 
         const float rowH = 24.0f * s, rowGap = 2.0f * s;
         L.repHeading = Rect{ open.x + m.pad, L.renameButton.y + L.renameButton.h + m.gap, open.w - 2.0f * m.pad, rowH };
@@ -272,7 +273,8 @@ SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, 
                                  optionCount * (optionH + rowGap) + innerPad;
     const float statsH = (1.0f + STAT_GROUP_COUNT + STAT_COUNT) * statRowH;
     const float buildRowH = 22.0f * s, buildHeadH = 22.0f * s;
-    const float buildH = buildHeadH + buildRowCount() * (buildRowH + rowGap) + innerPad;
+    const int buildRowTotal = (int)buildRows().size();
+    const float buildH = buildHeadH + buildRowTotal * (buildRowH + rowGap) + innerPad;
     const float contents[UNIT_TAB_COUNT] = { um.inventoryTabH(), cardH, statsH, behaviorPanelH, buildH };
 
     const float bodyVis = std::max(0.0f, openRect.h - barH - tabH);
@@ -324,7 +326,7 @@ SidebarLayout layoutInventorySidebar(int W, int H, int ruleCount, float scroll, 
     }
     if (tab == UnitTab::Build) {
         L.buildHeading = Rect{ L.panel.x + pad, top, width - 2.0f * pad, buildHeadH };
-        for (int i = 0; i < buildRowCount(); ++i) {
+        for (int i = 0; i < buildRowTotal; ++i) {
             L.buildRows.push_back(Rect{ L.panel.x + pad, top + buildHeadH + i * (buildRowH + rowGap),
                                         width - 2.0f * pad, buildRowH });
         }

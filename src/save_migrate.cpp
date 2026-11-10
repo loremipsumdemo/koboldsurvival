@@ -115,6 +115,9 @@ bool upgrade13to14(Lines&) { return true; }
 // Version 15 adds "retreat" (a beaten unit of another faction's) and "outdoor" (a bedroll or campfire in the open):
 // an older save has neither
 bool upgrade14to15(Lines&) { return true; }
+// Version 16 adds "floormove" (a walk to another floor) and the Stone material (material 3). An older save has neither.
+// Its floors were stacked a slab short; that is put right on loading (settleBuildingsAfterLoad), not here.
+bool upgrade15to16(Lines&) { return true; }
 
 struct Step {
     int from;
@@ -130,6 +133,7 @@ constexpr Step STEPS[] = {
     { 12, upgrade12to13 },
     { 13, upgrade13to14 },
     { 14, upgrade14to15 },
+    { 15, upgrade15to16 },
 };
 }
 

@@ -58,6 +58,8 @@ struct DisbandLayout;
 struct ItemMenuLayout;
 struct AltarLayout;
 struct AltarTotals;
+struct AltarRow;
+struct SquadsLayout;
 struct UnitCardLayout;
 struct TitleLayout;
 struct PercentPromptLayout;
@@ -137,6 +139,7 @@ public:
 
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
+    void setDeveloperOpen(bool on) { developerOpen_ = on; }
     void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
     // The cutaway: inside a building, what stands on the floors above the one looked at is left out, drawn and picked
     struct Cutaway {
@@ -192,6 +195,21 @@ public:
     // The altar's roster. cols: each column's units, ghosts (units moving into it) included
     void drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
                          const std::map<ObjectId, int>& moves, const AltarTotals& totals, ObjectId pinned, float mx, float my);
+    // Manage Squads. heads: each column's squad name; totals: the line under the title (warn: drawn as a warning)
+    struct SquadsRosterText {
+        std::array<std::string, 2> heads, counts;
+        std::array<bool, 2> full{};
+        std::string totals;
+        bool warn = false;
+        bool canApply = false;
+        int moveCount = 0;
+    };
+    void drawSquadsRoster(World& w, const SquadsLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
+                          const std::map<ObjectId, int>& moves, const SquadsRosterText& text, ObjectId pinned, float mx, float my);
+    // One unit's row in the roster or Manage Squads: portrait, name, levels, a tag at its right, and the move arrow
+    // (pointing right, or left). A ghost is a unit moving in, until Apply.
+    void drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost, const std::string& tag, bool pointRight,
+                       const char* moveTipKey, ObjectId pinned, float mx, float my);
     void drawUnitCard(World& w, ObjectId u, const UnitCardLayout& C);
     // Appease Ghosts. ghosts: the Graveyard's ghosts in the order shown
     void drawGhostsWindow(World& w, const AltarLayout& L, const std::vector<ItemStack>& bones, const std::vector<size_t>& ghosts,
@@ -412,6 +430,7 @@ private:
     GLuint dynVao_ = 0, dynVbo_ = 0;
     BuildPick buildSelected_;
     bool buildInClaim_ = false;
+    bool developerOpen_ = false;   // the Build tab's Developer spawn panel is open
     BuildPreview buildPreview_;
     Cutaway cutaway_;
     GLuint glyphVao_ = 0, glyphVbo_ = 0;
@@ -576,11 +595,16 @@ private:
     std::vector<Model> propModels_;
     // A wall's other shapes (end, straight, corner, tee, cross), for each kind with the wall_rule flag
     std::vector<std::array<Model, 5>> wallShapes_;
-    // The same in iron and crystal, for the kinds made of a material: [kind][material - 1][0 plain, 1.. the wall shapes]
-    std::vector<std::array<std::array<Model, 6>, 2>> materialModels_;
+    // The same in iron, crystal and stone, for the kinds made of a material: [kind][material - 1][0 plain, 1.. the wall shapes]
+    static constexpr int MATERIAL_MODELS = 3;
+    std::vector<std::array<std::array<Model, 6>, MATERIAL_MODELS>> materialModels_;
+    std::array<Model, 4> stairSteps_;   // one step of stairs in each material (by BuildMaterial), stretched to each step's height
     const Model& propModel(PropKind kind) const;
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;
+    GLint uGrainOnInst_ = -1;
+    // Each building material's texture, by BuildMaterial (tools/make_building_textures.py), laid over its pieces
+    std::array<TextTex, 4> surfaces_{};
     GLuint instVbo_ = 0;
     // One copy of a model in the world: where it is, and the faction color and saturation a unit is drawn with
     struct ModelInstance {

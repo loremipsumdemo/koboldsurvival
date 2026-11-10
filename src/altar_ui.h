@@ -19,6 +19,19 @@ struct AltarUi {
     float menuX = 0.0f, menuY = 0.0f;
 };
 
+// Manage Squads, from the Faction tab: two columns, each showing a squad picked with its arrows (or Unsorted, a place
+// to hold units while shuffling them). A unit moved across shows as a ghost in its new squad, and nothing changes until
+// Apply, which waits until nobody is left in Unsorted.
+inline constexpr int SQUAD_UNSORTED = -1;
+
+struct SquadsUi {
+    bool open = false;
+    std::map<ObjectId, int> moves;    // a unit and the squad it is moving to, or SQUAD_UNSORTED
+    std::array<int, 2> view{ 0, 1 };  // the squad each column shows, or SQUAD_UNSORTED
+    std::array<int, 2> scroll{};
+    ObjectId pinned = NO_OBJECT;      // a unit whose card stays open after a click on its row
+};
+
 // Appease Ghosts: the Altar's bones on the left and the Graveyard on the right, laid out as the roster is
 struct GhostsUi {
     bool open = false;
@@ -88,6 +101,13 @@ struct AltarLayout {
 Rect ghostButton(const AltarRow& r, int H);
 AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll);
 int altarMaxScroll(const AltarLayout& L, int column, int count);
+
+// Manage Squads: the roster's layout, with arrows at the right of each column's head that pick the squad it shows
+struct SquadsLayout {
+    AltarLayout roster;
+    std::array<Rect, 2> prev{}, next{};
+};
+SquadsLayout layoutSquads(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll);
 
 // A unit's full card, beside the row it is for and always inside the window
 struct UnitCardLayout {

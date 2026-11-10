@@ -97,6 +97,7 @@ struct UnitPanelLayout {
     Rect tabSquad;
     Rect tabFaction;
     std::array<Rect, SQUAD_COUNT> squadCells{};   // the Faction tab's squads, laid out like a numpad: 7 8 9 on top
+    Rect manageSquadsButton;   // above renameButton: opens Manage Squads
     Rect renameButton;
     Rect repHeading;
     std::vector<Rect> repRows;

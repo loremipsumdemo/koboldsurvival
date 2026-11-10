@@ -345,6 +345,8 @@ bool App::mouseDownOnPopups() {
     if (pressOnRename()) return true;
     if (pressOnMaterialAsk()) return true;
     if (pressOnAltar()) return true;
+    if (pressOnManageSquads()) return true;
+    if (pressOnDeveloper()) return true;
     if (pressOnGhosts()) return true;
     if (pressOnBehaviorGroups()) return true;
     if (pressOnStoreFilter()) return true;

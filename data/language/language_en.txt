@@ -340,6 +340,8 @@ UILABEL_EDITOR_COUNTS	{0} entities, {1} props, {2} items
 UILABEL_EDITOR_FILE	File: {0} bytes
 UILABEL_EDITOR_HELP1	Left: place. Right: erase. Q/E: turn.
 UILABEL_EDITOR_HELP2	Ctrl+S: save. Ctrl+Z: undo. M: map.
+UILABEL_SPAWN_CLUSTER	Cluster of
+MISC_SPAWNED	Spawned {0}
 UILABEL_EDITOR_EXIT	Exit to World Generation
 UILABEL_EDITOR_EXIT_SURE	Unsaved! Click again to exit
 MISC_LEVEL_SAVED	Saved level {0}.
@@ -466,6 +468,16 @@ UILABEL_SELECT_IDLE	Select Idle
 UILABEL_SELECT_BUSY	Select Non-Idle
 MISC_SQUAD_ASSIGNED	{0} unit(s) moved into Squad {1}
 MISC_SQUAD_FULL_SOME	Squad {0} is full: {1} moved in, {2} did not fit
+MISC_SQUAD_FULL	Squad {0} is full: it holds at most {1}
+MISC_SQUADS_UNSORTED	{0} still in Unsorted: move them into a squad to apply
+MISC_SQUADS_APPLIED	{0} moved between squads
+UILABEL_MANAGE_SQUADS	Manage Squads
+UILABEL_MANAGE_SQUADS_TIP	Move your military units between squads
+UILABEL_SQUADS_UNSORTED	Unsorted
+UILABEL_SQUADS_HOW	Pick a squad for each side with its arrows, then move units across. Unsorted holds units while you shuffle them.
+UILABEL_SQUADS_PICK_TIP	Show another squad, or Unsorted, on this side
+UILABEL_SQUADS_FROM	from {0}
+UILABEL_SQUADS_MOVE_TIP	Move to the squad on the other side (back to its own squad undoes it)
 MISC_SQUADS_FULL_CITIZEN	{0} becomes a citizen: every squad is full
 UILABEL_OPTIMIZE_ALL_TIP	Optimize the gear of this squad. Right-click for Selected, All or Custom.
 UILABEL_OPTIMIZE_SELECTED	Selected
@@ -570,6 +582,8 @@ UILABEL_CONSCIOUS	Conscious
 MISC_DIES	{0} dies
 MISC_RECOVERS	{0} wakes up
 MISC_CORPSE_NO_PLACE	The dead can't be placed there
+MISC_TAMING_CAGE_ANIMALS_ONLY	Only animals can be put in a Taming Cage
+MISC_FEEDS_CAGED	{0} feeds {1} some {2} (fed {3} times)
 MISC_CANT_OCCUPY_YET	{0} can't occupy anything for a moment
 MISC_REASON_LOCKPICKING	picking locks
 MISC_REASON_TRAINING	training
@@ -848,10 +862,14 @@ UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
 MISC_BED_PUBLIC	Public: anyone may sleep here
 MISC_BED_PRIVATE	Private: for {0} only
 UILABEL_WAIT_NO_STALL_ORDER	No Stall orders waiting
+UILABEL_WAIT_NO_CAGED_ANIMAL	No caged animal is due a feed
+UILABEL_WAIT_NO_RAW_MEAT	No raw meat carried or in your stores
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL	Auto-Haul to Stalls
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	Carries the items picked in a Stall's Stock window from their store to the Stall. Each order is tried once, and dropped if the item has gone
 UILABEL_BEHAVIOR_MAN_STALL	Man Stall: {0}
 UILABEL_BEHAVIOR_MAN_STALL_TIP	Stands at the {0} as its shopkeeper, so units of friendly factions can buy from it. Tasks above it in the list still come first
+UILABEL_BEHAVIOR_TAME_ANIMALS	Tame Animals
+UILABEL_BEHAVIOR_TAME_ANIMALS_TIP	Brings raw meat to the animals in your Taming Cages, fetching it from your stores if none is carried. Each animal is fed once every 6 hours
 UILABEL_BED_MAKE_PUBLIC	Make Public
 UILABEL_BED_MAKE_PRIVATE	Make Private
 UILABEL_MAN_STALL	Man Stall
@@ -881,6 +899,19 @@ MISC_BUILD_BLOCKED	No room to build here
 MISC_BUILD_UNWALKABLE	The ground here can't be built on
 UILABEL_BUILD_DESTROY	Destroy
 UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
+UILABEL_BUILD_GROUP_CLAIMS	Claims
+UILABEL_BUILD_GROUP_CRAFTING	Crafting
+UILABEL_BUILD_GROUP_STORAGE	Storage
+UILABEL_BUILD_GROUP_SETTLEMENT	Settlement
+UILABEL_BUILD_GROUP_FURNITURE	Furniture
+UILABEL_BUILD_GROUP_CAGES	Cages
+UILABEL_BUILD_GROUP_VEHICLES	Vehicles
+UILABEL_BUILD_GROUP_NATURE	Nature
+UILABEL_BUILD_GROUP_DEVELOPER	Developer
+UILABEL_BUILD_DEVELOPER	Developer: spawn anything
+UILABEL_BUILD_OPEN_IT	Open
+UILABEL_BUILD_OPEN	Close
+UILABEL_DEVELOPER_HELP	Pick something, then left-click the ground to spawn it. Right-click or Escape puts it down.
 UILABEL_LOCK	Lock
 MISC_BUILD_SEALED	That ground is claimed by another faction
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
@@ -892,7 +923,7 @@ UILABEL_CLIMB_UP	Climb Up
 UILABEL_CLIMB_DOWN	Climb Down
 MISC_BUILT	A {0} is finished
 MISC_DOOR_SMASHED	{0} smashes the {1}
-MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
+MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Floor beside the Ladder
 MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
 MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
 MISC_FOUNDATION_TOO_STEEP	The ground there is too steep to level for a foundation
@@ -902,10 +933,11 @@ MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
 MISC_BUILD_TILE_TAKEN	Something is already built on that tile
 UILABEL_BREAK	Break
 MISC_BUILD_EDGES_OPEN	Every edge tile of the building needs a wall or a door on this floor first
-MISC_FLOORS_COLLAPSE	With no walls or doors left under it, an upper floor falls in
+MISC_FLOORS_COLLAPSE	With no walls or doors left under it, a floor falls in
 UILABEL_MATERIAL_TITLE	Build the {0} out of
 UILABEL_MATERIAL_WOOD	Wood (Wood Logs)
-UILABEL_MATERIAL_IRON	Iron (Iron Ingots)
+UILABEL_MATERIAL_STONE	Stone (Stone)
+UILABEL_MATERIAL_IRON	Metal (Iron Ingots)
 UILABEL_MATERIAL_CRYSTAL	Dragon Crystals
 MISC_BUILD_NO_FLOOR	It must stand on a finished floor of yours on this level
 MISC_BUILD_NEEDS_FLOOR	That tile needs a finished floor of yours on this level first
@@ -1148,12 +1180,13 @@ PROP_FOUNDATION	Foundation
 PROP_WOOD_WALL	Wall
 PROP_WOOD_DOOR	Door
 PROP_LADDER	Ladder
-PROP_UPPER_FLOOR	Upper Floor
+PROP_UPPER_FLOOR	Floor
 PROP_DRAGON_CRYSTAL	Dragon Crystal
 PROP_WOOD_STOCKPILE	Wood Stockpile
 PROP_STONE_STOCKPILE	Stone Stockpile
 MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
 PROP_STAIRS	Stairs
+PROP_TAMING_CAGE	Taming Cage
 PROP_WHEELBARROW	Wheelbarrow
 
 # ----------------------------------------------------------------------

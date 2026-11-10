@@ -80,13 +80,37 @@ enum class EditorTab { Entities, Props, Items, Theme };
 enum class EditorTool { None, Unit, Mob, Prop, Item, Spawn, Erase };
 inline constexpr int EDITOR_NAME_CHARS = 32;
 
-struct LevelEditorUi {
-    bool useOwnUi = true;
-    EditorTab tab = EditorTab::Entities;
+// The spawn list: the level editor's, and the Build tab's Developer panel in a game, which work the same way (app_spawn.cpp).
+// A pick of a unit, mob, prop or item is placed with a left click, cluster of them at once around the spot.
+struct SpawnPicker {
+    bool open = false;   // the Developer panel is showing (a game only; the level editor's is always there)
+    EditorTab tab = EditorTab::Entities;   // Theme in the level editor shows its theme panel in place of the list
     EditorTool tool = EditorTool::None;
     int picked = 0;      // by the tool: a unit's faction, a MobKind, a PropKind or an item id
     int listScroll = 0;
+    int cluster = 1;     // how many each click places
     float yaw = 0.0f;
+};
+
+// The three list tabs, the cluster's - and + around its count, and the list's rows, in the area given
+struct SpawnPickerLayout {
+    Rect tabs[3];
+    Rect clusterLabel, clusterDown, clusterBox, clusterUp;
+    Rect listArea;
+    std::vector<Rect> rows;
+};
+SpawnPickerLayout layoutSpawnPicker(const Rect& area, float scale);
+
+// The Developer panel in a game: its title and close button over the spawn list
+struct DeveloperLayout {
+    Rect panel, title, close, help;
+    SpawnPickerLayout picker;
+};
+DeveloperLayout layoutDeveloper(int W, int H);
+
+struct LevelEditorUi {
+    bool useOwnUi = true;
+    SpawnPicker spawn;
     std::string name;
     bool editingName = false;
     std::string savedText;
@@ -97,8 +121,8 @@ struct LevelEditorUi {
 };
 
 struct EditorLayout {
-    Rect panel, tabs[4], themeArea, nameBox, save, load, spawnTool, eraseTool, exit, status;
-    std::vector<Rect> rows;
+    Rect panel, themeTab, themeArea, nameBox, save, load, spawnTool, eraseTool, exit, status;
+    SpawnPickerLayout picker;
     Rect uiToggle;
 };
 EditorLayout layoutEditor(int W, int H, bool ownUi);

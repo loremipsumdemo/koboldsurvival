@@ -85,6 +85,7 @@ struct PropArrival {
     bool locked = false;
     bool placed = false;
     bool corpse = false;
+    bool notAnimal = false;   // only an animal goes in a Taming Cage
     bool occupyBanned = false;
     WorkStart craft = WorkStart::Started;
     bool automatic = false;

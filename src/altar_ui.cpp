@@ -74,6 +74,20 @@ int altarMaxScroll(const AltarLayout& L, int column, int count) {
     return std::max(0, count - L.visible[(size_t)column]);
 }
 
+SquadsLayout layoutSquads(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll) {
+    const float s = uiScaleFor((float)H);
+    SquadsLayout L;
+    L.roster = layoutAltar(W, H, counts, scroll);
+    for (int c = 0; c < 2; ++c) {
+        for (AltarRow& r : L.roster.rows[(size_t)c]) r.group = Rect{};   // no behavior group buttons here
+        const Rect& h = L.roster.heads[(size_t)c];
+        const float bw = 28.0f * s, inset = 2.0f * s;
+        L.next[(size_t)c] = Rect{ h.x + h.w - bw - inset, h.y + inset, bw, h.h - 2.0f * inset };
+        L.prev[(size_t)c] = Rect{ L.next[(size_t)c].x - bw - inset, h.y + inset, bw, h.h - 2.0f * inset };
+    }
+    return L;
+}
+
 UnitCardLayout layoutUnitCard(const Rect& beside, int W, int H, int statLines) {
     const float s = uiScaleFor((float)H);
     const float pad = 10.0f * s, gap = 8.0f * s, margin = 8.0f * s;

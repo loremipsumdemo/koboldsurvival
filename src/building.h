@@ -25,6 +25,7 @@ inline constexpr float FLOOR_HEIGHT = 2.4f;          // walls' height: the upper
 inline constexpr float FLOOR_THICK = 0.14f;          // an upper floor's slab
 inline constexpr float FLOOR_TOP = FLOOR_HEIGHT + FLOOR_THICK;   // where a unit on the first upper floor stands
 inline constexpr float CLIMB_SECONDS = 1.5f;
+inline constexpr double BUILD_SPEED = 4.0;           // every piece builds this many times faster than props.txt's build_seconds
 inline constexpr float BLOCKED_RETRY_SECONDS = 4.0f; // a piece with a unit in the way waits this long before it is tried again
 inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
 inline constexpr double DOOR_HEALTH = 60.0;
@@ -34,12 +35,15 @@ inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
 // its tiles is finished) the building's level may differ by at most this much
 inline constexpr float FOUNDATION_LEVEL_SPREAD = 1.5f;
 
-// How far above the ground a floor's top is: 0 for the ground floor
-inline float storeyBaseHeight(int level) { return level <= 0 ? 0.0f : level * FLOOR_HEIGHT + FLOOR_THICK; }
+// How far above the ground a floor's top is: 0 for the ground floor. Each storey is a wall's height plus the slab on
+// top of it, so a wall ends just under the slab above it and never pokes through.
+inline float storeyBaseHeight(int level) { return level <= 0 ? 0.0f : level * FLOOR_TOP; }
+// The underside of the upper floor at this level: it rests on the tops of the walls below
+inline float floorSlabHeight(int level) { return level <= 0 ? 0.0f : storeyBaseHeight(level) - FLOOR_THICK; }
 // The floor something this far above the ground stands on
 inline int storeyAtHeight(float aboveGround) {
     if (aboveGround < FLOOR_HEIGHT * 0.5f) return 0;
-    return std::max(1, (int)std::lround((aboveGround - FLOOR_THICK) / FLOOR_HEIGHT));
+    return std::max(1, (int)std::lround(aboveGround / FLOOR_TOP));
 }
 
 // A foundation: the tiles it covers. Each is a single tile now; older saves had whole rectangles, split when opened.
@@ -106,12 +110,16 @@ struct Route {
     Vec2 goal{ 0.0f, 0.0f };
 };
 
-// What a foundation, wall or door is made of: Wood Logs, Iron Ingots or Dragon Crystals. The tougher, the harder to break.
-enum class BuildMaterial : int { Wood = 0, Iron, Crystal, Count };
+// What a foundation, wall, door or floor is made of: Wood Logs, Stone, Iron Ingots (shown as Metal) or Dragon Crystals.
+// The tougher, the harder to break. The numbers are saved, so Stone, added last, comes after Crystal; MATERIAL_TIERS
+// gives the order they are offered in, weakest first.
+enum class BuildMaterial : int { Wood = 0, Iron, Crystal, Stone, Count };
+inline constexpr BuildMaterial MATERIAL_TIERS[(int)BuildMaterial::Count] = { BuildMaterial::Wood, BuildMaterial::Stone,
+                                                                              BuildMaterial::Iron, BuildMaterial::Crystal };
 struct Material {
     BuildMaterial kind = BuildMaterial::Wood;
 };
-// Whether this kind is made of a material picked when it is placed (a foundation, wall, door or upper floor)
+// Whether this kind is made of a material picked when it is placed (a foundation, wall, door, floor, ladder or stairs)
 bool takesMaterial(PropKind kind);
 BuildMaterial materialOf(World& w, ObjectId prop);
 // The item a material is, and how many times tougher than wood it is

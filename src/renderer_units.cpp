@@ -208,6 +208,9 @@ void Renderer::drawModelInstances() {
     glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), nullptr, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), instUpload_.data());
+    // A building piece's material texture goes on unit 1, bound only when it changes
+    GLuint surfaceBound = 0;
+    glUniform1f(uGrainOnInst_, 0.0f);
     size_t first = 0;
     for (auto& q : instQueues_) {
         std::vector<ModelInstance>& list = q.second;
@@ -224,6 +227,15 @@ void Renderer::drawModelInstances() {
             }
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, faction)));
             glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, sat)));
+            if (m.surface != surfaceBound) {
+                if (m.surface) {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, m.surface);
+                    glActiveTexture(GL_TEXTURE0);
+                }
+                if ((m.surface != 0) != (surfaceBound != 0)) glUniform1f(uGrainOnInst_, m.surface ? 1.0f : 0.0f);
+                surfaceBound = m.surface;
+            }
             for (const DrawRange& d : m.draws) {
                 glBindTexture(GL_TEXTURE_2D, d.texture);
                 glDrawElementsInstanced(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT,
@@ -236,6 +248,7 @@ void Renderer::drawModelInstances() {
         first += list.size();
         list.clear();
     }
+    if (surfaceBound) glUniform1f(uGrainOnInst_, 0.0f);
     glBindVertexArray(0);
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);

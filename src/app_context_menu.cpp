@@ -164,7 +164,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             if (talkable(target)) out.push_back(MenuAction::Talk);
             if (sells(target)) out.push_back(MenuAction::Shop);
             out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
-            if (!caged) out.push_back(MenuAction::AttackUnprovoked);
+            // Never your own units (your citizens, who take no orders, land here)
+            if (!caged && factionOf(world, target) != FACTION_PLAYER) out.push_back(MenuAction::AttackUnprovoked);
         }
         if (canEvacuate(world, heldProp(world, target), target)) out.push_back(MenuAction::Evacuate);
         if (const Lock* lock = world.get<Lock>(occupiedProp(world, target))) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);

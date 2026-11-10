@@ -104,6 +104,23 @@ void App::onKeyDown() {
         else if (e.key.key == SDLK_ESCAPE) stopSquadRename(false);
         return;
     }
+    // The Developer panel stays open while the game is played; Escape puts down its pick, then closes it
+    if (screen == Screen::Playing && !editing && devSpawn.open && e.key.key == SDLK_ESCAPE) {
+        if (devSpawn.tool != EditorTool::None) {
+            devSpawn.tool = EditorTool::None;
+            playSfx(Sfx::UiBack);
+        } else {
+            closeDeveloper();
+        }
+        return;
+    }
+    if (screen == Screen::Playing && squadsUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            squadsUi = SquadsUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && altar.open) {
         if (e.key.key == SDLK_ESCAPE) {
             altar = AltarUi{};
@@ -330,6 +347,17 @@ void App::onMouseWheel() {
         }
         return;
     }
+    if (screen == Screen::Playing && squadsUi.open) {
+        scrollManageSquads(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+        return;
+    }
+    if (screen == Screen::Playing && !editing && devSpawn.open) {
+        const DeveloperLayout L = layoutDeveloper(winW, winH);
+        if (L.panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+            spawnPickerWheel(devSpawn, L.picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+            return;
+        }
+    }
     if (screen == Screen::Playing && altar.open) {
         const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
         const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
@@ -353,8 +381,11 @@ void App::onMouseWheel() {
             worldGenUi.mapScroll = std::max(0, worldGenUi.mapScroll - (int)e.wheel.y);
         }
     } else if (screen == Screen::Playing && editing && editor.useOwnUi && layoutEditor(winW, winH, true).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
-        if (editor.tab == EditorTab::Theme) themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
-        else editor.listScroll = std::max(0, editor.listScroll - (int)e.wheel.y);
+        if (editor.spawn.tab == EditorTab::Theme && layoutEditor(winW, winH, true).themeArea.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+            themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
+        } else {
+            spawnPickerWheel(editor.spawn, layoutEditor(winW, winH, true).picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+        }
     } else if (screen == Screen::ScenarioSelect) {
         scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
                                         scenarioScroll - (int)e.wheel.y).first;

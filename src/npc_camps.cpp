@@ -342,8 +342,22 @@ bool takeFood(World& w, ObjectId u, ObjectId source) {
     return true;
 }
 
+// How hungry (percent of full) a unit gets before it goes for food: other factions' camp folk at FORAGE_BELOW_PERCENT;
+// yours (military or citizen) when their Eat task is on, at its percent, as that task can only eat what they carry.
+// -1 for a unit that doesn't go for food.
+int foragePercent(World& w, ObjectId u) {
+    if (campNpc(w, u)) return FORAGE_BELOW_PERCENT;
+    if (w.has<Mob>(u) || factionOf(w, u) != FACTION_PLAYER) return -1;
+    const Behaviors* b = w.get<Behaviors>(u);
+    if (!b) return -1;
+    for (const BehaviorRule& r : b->rules) {
+        if (r.on && r.kind == BehaviorKind::Eat) return r.percent;
+    }
+    return -1;
+}
+
 // Free to go for food: not out of action, on no errand, in no fight, and not busy with a task (walking about aside)
-bool freeToForage(World& w, ObjectId u) {
+bool freeToForage(World& w, ObjectId u, int percent) {
     if (outCold(w, u) || w.has<Carried>(u) || inPrisonerCage(w, u) || w.has<Foraging>(u)) return false;
     if (w.has<Raider>(u) || w.has<Shopper>(u) || w.has<WanderingTrader>(u) || w.has<StallJob>(u) || w.has<InConversation>(u)) return false;
     if (w.has<PropOrder>(u) || w.has<CarryOrder>(u) || w.has<BuildJob>(u) || w.has<AttackOrder>(u)) return false;
@@ -353,7 +367,13 @@ bool freeToForage(World& w, ObjectId u) {
     // Lying in a bed: only one resting off a beating gets up to eat
     if (occupiedProp(w, u) != NO_OBJECT && !w.has<Retreating>(u)) return false;
     const Needs* n = w.get<Needs>(u);
-    return n && n->maxHunger > 0 && n->hunger * 100 < n->maxHunger * FORAGE_BELOW_PERCENT && !carriesFood(w, u);
+    if (!n || n->maxHunger <= 0 || n->hunger * 100 >= n->maxHunger * percent || carriesFood(w, u)) return false;
+    // Yours never drop a walk you ordered, nor leave a squad you have moving
+    if (w.has<Commandable>(u)) {
+        if (hasPlayerOrder(w, u) || w.has<ActiveSquadMember>(u)) return false;
+        if (walkingNow(w, u) && !b->busy) return false;
+    }
+    return true;
 }
 
 void forageSystem(World& w, Terrain& t, float dt) {
@@ -364,7 +384,8 @@ void forageSystem(World& w, Terrain& t, float dt) {
         std::vector<Claim> claims;
         bool listed = false;
         for (ObjectId u : w.view<Behaviors, Needs, Transform>()) {
-            if (!campNpc(w, u) || !freeToForage(w, u)) continue;
+            const int percent = foragePercent(w, u);
+            if (percent < 0 || !freeToForage(w, u, percent)) continue;
             if (!listed) {
                 claims = claimsOf(w);
                 listed = true;

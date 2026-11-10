@@ -98,9 +98,17 @@ bool App::mouseDownOnPanels() {
             const bool inBody = sl.body.contains(mx, my);
             if (onSidebar) {
                 if (sl.open && sl.tab == UnitTab::Build) {
-                    for (size_t i = 0; inBody && i < sl.buildRows.size(); ++i) {
+                    const std::vector<BuildRow> rows = buildRows();
+                    for (size_t i = 0; inBody && i < sl.buildRows.size() && i < rows.size(); ++i) {
                         if (!sl.buildRows[i].contains(mx, my)) continue;
-                        const BuildPick pick = buildRowPick((int)i);
+                        if (rows[i].heading) break;
+                        if (rows[i].developer) {
+                            // Developer: the spawn panel, the same as the level editor's
+                            if (devSpawn.open) closeDeveloper();
+                            else openDeveloper();
+                            break;
+                        }
+                        const BuildPick pick = rows[i].pick;
                         if (!pick.any()) break;
                         if (!buildAnywhere(pick) && !selectionInClaim(world)) break;
                         if (session.buildPick == pick) {

@@ -160,7 +160,7 @@ ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObjec
         e = spawnGroundItem(w, at, o.kind, o.count);
         break;
     }
-    if (e != NO_OBJECT) w.add(e, LevelId{ o.id });
+    if (e != NO_OBJECT && o.id > 0) w.add(e, LevelId{ o.id });   // 0: placed in a game, for no level file
     return e;
 }
 

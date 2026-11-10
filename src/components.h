@@ -426,7 +426,7 @@ struct Retreating {
     float replan = 0.0f;
 };
 
-// A unit of another faction going for food (on the ground, or in its own faction's store). Not saved.
+// A unit going for food (on the ground, or in its own faction's store): another faction's, or yours with Eat on. Not saved.
 struct Foraging {
     ObjectId source = NO_OBJECT;
     float timeLeft = 0.0f;

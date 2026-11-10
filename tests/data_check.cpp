@@ -65,15 +65,25 @@ int main(int, char**) {
     // A new prop needs only a row
     const std::string realProps = pakText("data/props.txt");
     const int propsBefore = propKindCount();
-    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\t12\t0\n";
+    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\t12\t0\tfurniture\n";
     check(loadPropTableText(extra, err), "a new prop loads " + err);
     const PropKind added = (PropKind)propsBefore;
-    check(propKindCount() == propsBefore + 1 && propInfo(added).key == "Birdbath" && isSeat(added) && isBed(added), "a new prop is what its row says");
+    check(propKindCount() == propsBefore + 1 && propInfo(added).key == "Birdbath" && isSeat(added) && isBed(added) &&
+              propInfo(added).group == BuildGroup::Furniture, "a new prop is what its row says, its heading too");
     check(propInfo(PropKind::Stove).key == "Stove" && propInfo(PropKind::Bedroll).key == "Bedroll", "the named props keep their numbers");
     check(!loadPropTableText(realProps + "Birdbath2\tX\n", err), "a short row is refused");
     check(propKindCount() == propsBefore + 1, "a refused table changes nothing");
     check(loadPropTableText(realProps, err) && propKindCount() == propsBefore, "the real props load again");
-    check(buildRowPick(1).kind == PropKind::Bedroll && buildRowPick(3).kind == PropKind::Altar, "the Build tab follows the table");
+    {
+        // Under the Claims heading: Destroy, then the Bedroll, Campfire and Altar in the table's order; Developer last
+        const std::vector<BuildRow> rows = buildRows();
+        check(rows.size() > 4 && rows[0].heading && rows[0].group == BuildGroup::Claims && rows[1].pick == BuildPick::destroy() &&
+                  rows[2].pick.places(PropKind::Bedroll) && rows[4].pick.places(PropKind::Altar),
+              "the Build tab is sorted under its headings, following the table");
+        check(rows.back().developer && propInfo(PropKind::Forge).group == BuildGroup::Crafting &&
+                  propInfo(PropKind::Wagon).group == BuildGroup::Vehicles && propInfo(PropKind::Wagon).pulled,
+              "props.txt names each prop's heading");
+    }
     int factionsOk = 0;
     for (int i = 1; i <= mobKindCount(); ++i) factionsOk += mobKindOfFaction(mobFaction((MobKind)i)) == (MobKind)i ? 1 : 0;
     check(factionsOk == mobKindCount(), "each mob's faction leads back to it");

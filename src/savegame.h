@@ -14,7 +14,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 15;
+inline constexpr int SAVE_VERSION = 16;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -63,6 +63,10 @@ struct SaveUnit {
     std::vector<Provoked::Entry> provoked;
     int followUnit = -1, defendUnit = -1, attackUnit = -1;
     std::optional<Vec2> move;
+    // From version 16: a walk to another floor, by ladders or stairs: where to, and on which floor (move only names a
+    // point, which is walked to on the unit's own floor)
+    std::optional<Vec2> floorMove;
+    int floorMoveStorey = 0;
     int propOrder = -1;
     int workProp = -1;
     bool workUnlocking = false;

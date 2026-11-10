@@ -3,6 +3,8 @@
 using namespace render_detail;
 
 namespace {
+constexpr float GRAIN_TILE = 1.25f;   // world units one copy of a building material's texture covers
+
 const char* COLOR_VS = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
@@ -73,11 +75,14 @@ uniform mat4 uVP;
 out vec2 vUV;
 out vec4 vFaction;
 out float vSat;
+out vec3 vWorld;
 void main() {
     vUV = aUV;
     vFaction = aFaction;
     vSat = aSat;
-    gl_Position = uVP * aModel * vec4(aPos, 1.0);
+    vec4 world = aModel * vec4(aPos, 1.0);
+    vWorld = world.xyz;
+    gl_Position = uVP * world;
 }
 )";
 
@@ -87,12 +92,27 @@ const char* MODEL_INST_FS = R"(
 in vec2 vUV;
 in vec4 vFaction;
 in float vSat;
+in vec3 vWorld;
 uniform sampler2D uTex;
+uniform sampler2D uGrain;   // a building material's gray texture around 0.5, tiling; on unit 1
+uniform float uGrainOn;     // 1 for building pieces, 0 for everything else
+uniform float uGrainTile;   // world units one copy of the texture covers
 uniform vec4 uTint;
 out vec4 FragColor;
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;
+    if (uGrainOn > 0.0) {
+        // Laid on in world space along the face's own plane, so it runs on from one tile's piece into the next.
+        // The face's facing comes from how the position changes across the pixel: the models have no normals here.
+        vec3 n = abs(normalize(cross(dFdx(vWorld), dFdy(vWorld))));
+        vec2 p;
+        if (n.y >= n.x && n.y >= n.z) p = vWorld.xz;        // floors and tops: grain along z
+        else if (n.x >= n.z) p = vec2(vWorld.z, vWorld.y);  // walls facing x: grain upright
+        else p = vec2(vWorld.x, vWorld.y);                  // walls facing z: grain upright
+        float g = texture(uGrain, p / uGrainTile).r;
+        c.rgb = clamp(c.rgb * (g * 2.0), 0.0, 1.0);
+    }
     float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
     vec3 fl = vFaction.rgb / max(dot(vFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
     c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), vFaction.a);
@@ -556,6 +576,12 @@ bool Renderer::initGl() {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
         setGlyphDefaults(modelInstProgram_);
         uTintInst_ = glGetUniformLocation(modelInstProgram_, "uTint");
+        uGrainOnInst_ = glGetUniformLocation(modelInstProgram_, "uGrainOn");
+        glUseProgram(modelInstProgram_);
+        glUniform1i(glGetUniformLocation(modelInstProgram_, "uGrain"), 1);
+        glUniform1f(glGetUniformLocation(modelInstProgram_, "uGrainTile"), GRAIN_TILE);
+        glUniform1f(uGrainOnInst_, 0.0f);
+        glUseProgram(0);
         glGenBuffers(1, &instVbo_);
     }
 
@@ -604,6 +630,7 @@ void Renderer::shutdown() {
     drop(white_);
     drop(pink_);
     drop(titleLogo_);
+    for (TextTex& s : surfaces_) drop(s);
     drop(loadingArt_);
     for (TextTex& g : profilePics_) drop(g);
     for (TextTex& g : mobSprites_) drop(g);
@@ -636,6 +663,7 @@ void Renderer::shutdown() {
         }
     }
     materialModels_.clear();
+    for (Model& m : stairSteps_) destroyModel(m);
 
     glDeleteProgram(skyProgram_);
     if (skyCube_) glDeleteTextures(1, &skyCube_);

@@ -55,6 +55,23 @@ void pushingAttacked(World& w, ObjectId attacker, ObjectId target) {
     stopPushing(w, target, true);
 }
 
+float vehicleOffset(World& w, ObjectId barrow) {
+    const Prop* p = w.get<Prop>(barrow);
+    return p && propInfo(p->kind).pulled ? -PULLED_BEHIND : WHEELBARROW_AHEAD;
+}
+
+bool largeAnimal(World& w, ObjectId u) {
+    const Mob* m = w.get<Mob>(u);
+    return m && (mobSpriteScale(m->kind) >= LARGE_ANIMAL_SCALE || mobInfo(m->kind).category == MobCategory::Boss);
+}
+
+float vehiclePace(World& w, ObjectId u) {
+    const Pushing* p = w.get<Pushing>(u);
+    const Prop* bp = p ? w.get<Prop>(p->barrow) : nullptr;
+    if (!bp || !propInfo(bp->kind).pulled || largeAnimal(w, u)) return 1.0f;
+    return PULLED_SPEED;
+}
+
 void wheelbarrowSystem(World& w) {
     std::vector<ObjectId> held;
     for (ObjectId u : w.view<Pushing, Transform>()) {
@@ -82,8 +99,9 @@ void wheelbarrowSystem(World& w) {
             p.lastZ = ut->z;
         }
         Transform* bt = w.get<Transform>(barrow);
-        bt->x = ut->x + std::sin(p.yaw) * WHEELBARROW_AHEAD;
-        bt->z = ut->z + std::cos(p.yaw) * WHEELBARROW_AHEAD;
+        const float offset = vehicleOffset(w, barrow);
+        bt->x = ut->x + std::sin(p.yaw) * offset;
+        bt->z = ut->z + std::cos(p.yaw) * offset;
         bt->y = ut->y;
         w.get<Prop>(barrow)->yaw = p.yaw - 1.5707963f;
         w.remove<Storey>(barrow);

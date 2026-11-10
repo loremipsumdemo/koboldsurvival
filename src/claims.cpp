@@ -169,12 +169,26 @@ void abandonClaim(World& w, float x, float z, float radius, int faction) {
         if (Lock* lock = w.get<Lock>(e); lock && lock->faction == faction) lock->faction = -1;
     }
 }
+
+// Where what a broken prop leaves lies, and on which floor: its own floor's top, or for a floor itself (which held
+// it up), the top of the floor under it
+Transform remainsAt(World& w, ObjectId e, int& storey) {
+    Transform at = *w.get<Transform>(e);
+    storey = storeyOf(w, e);
+    if (storey <= 0) return at;
+    const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+    const float ground = at.y - (info.upperFloor ? floorSlabHeight(storey) : storeyBaseHeight(storey));
+    if (info.upperFloor) --storey;
+    at.y = ground + storeyBaseHeight(storey);
+    return at;
+}
 }
 
 void breakBuilding(World& w, ObjectId e) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
     const PropKind kind = w.get<Prop>(e)->kind;
-    const Transform at = *w.get<Transform>(e);
+    int storey = 0;
+    const Transform at = remainsAt(w, e, storey);
     if (propInfo(kind).debris) {
         releaseProp(w, e);
         w.destroy(e);
@@ -187,7 +201,7 @@ void breakBuilding(World& w, ObjectId e) {
         if (propInfo(kind).foundation) foundationLost(w, e);
         releaseProp(w, e);
         w.destroy(e);
-        if (logs > 0) spawnGroundItem(w, at, material, logs);
+        if (logs > 0) spawnGroundItem(w, at, material, logs, storey);
         return;
     }
     if (propInfo(kind).foundation) foundationLost(w, e);
@@ -203,10 +217,10 @@ void breakBuilding(World& w, ObjectId e) {
     if (destroyedByHand(kind)) {
         releaseProp(w, e);
         w.destroy(e);
-        dropStacks(w, at, held);
+        dropStacks(w, at, held, storey);
         // Broken: it leaves its item (a Dragon Crystal's crystals), or bones
         const int left = propInfo(kind).item > 0 ? propInfo(kind).item : itemTagged(ITEM_TAG_COMMON_BONES);
-        spawnGroundItem(w, at, left, BONES_ITEM_COUNT);
+        spawnGroundItem(w, at, left, BONES_ITEM_COUNT, storey);
         return;
     }
     releaseProp(w, e);
@@ -216,8 +230,11 @@ void breakBuilding(World& w, ObjectId e) {
     const float heldRadius = heldClaim ? heldClaim->radius : 0.0f;
     w.destroy(e);
     if (altarOwner >= 0) abandonClaim(w, at.x, at.z, heldRadius, altarOwner);
-    dropStacks(w, at, held);
-    claimOwnership(w, makeProp(w, PropKind::Debris, at));
+    dropStacks(w, at, held, storey);
+    // The debris stands on the floor the remains are on, as if it had been placed there
+    const ObjectId debris = makeProp(w, PropKind::Debris, at);
+    if (storey > 0) w.add(debris, Storey{ storey });
+    claimOwnership(w, debris);
 }
 
 bool destroyBuilding(World& w, ObjectId e) {
@@ -255,7 +272,8 @@ void releasePropLinks(World& w, ObjectId prop) { releaseProp(w, prop); }
 void removeProp(World& w, ObjectId e) {
     const Transform* tr = w.get<Transform>(e);
     if (!tr || !w.has<Prop>(e)) return;
-    const Transform at = *tr;
+    int storey = 0;
+    const Transform at = remainsAt(w, e, storey);
     const std::vector<ItemStack> held = propHoldings(w, e);
     const std::vector<Claim> claims = claimsOf(w);
     const Claim* c = claimOf(claims, e);
@@ -264,5 +282,5 @@ void removeProp(World& w, ObjectId e) {
     releaseProp(w, e);
     w.destroy(e);
     if (owner >= 0) abandonClaim(w, at.x, at.z, radius, owner);
-    dropStacks(w, at, held);
+    dropStacks(w, at, held, storey);
 }
