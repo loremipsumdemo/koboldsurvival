@@ -120,7 +120,7 @@ int main(int, char**) {
             return 1;
         }
         check(sfxInfo(Sfx::Recovers).file == "sfx_56.mp3" && sfxInfo(Sfx::UiClick).ui && !sfxInfo(Sfx::Hit).ui, "sfx.txt reaches the sounds");
-        check(propModelFile(PropKind::Stove) == "model_42.glb" && unitModelFile(3) == "unit/unit_03.glb", "models.txt reaches the props and units");
+        check(propModelFile(PropKind::Stove) == "model_42.glb" && unitModelFile(3) == "unit/a1.glb" && unitModelKey(4) == "f2", "models.txt reaches the props and units");
         check(emoteFile(16) == "emote_16.png" && iconFile(51) == "icon_51.png", "emotes.txt and icons.txt give each id its picture");
         check(mobInfo(MobKind::Bat).hover > 0.0f && mobBones(MobKind::Frog) == 150 && mobTemperament(MobKind::Cow) == MobTemperament::Passive,
               "mobs.txt reaches the mobs");

@@ -40,7 +40,7 @@ void systems_detail::spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn,
                             spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
     const ObjectId u = makeEntity(w, Transform{ p.x, t.heightAt(p.x, p.z), p.z }, FACTION_PLAYER);
     const BodyType body = randomBodyType(rng);
-    w.add(u, UnitSprite{ modelForBody(body) });
+    w.add(u, UnitSprite{ randomModelForBody(rng, body) });
     w.add(u, Body{ body });
 }
 
@@ -143,7 +143,7 @@ void systems_detail::finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std:
     }
     if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
     const BodyType body = w.get<Body>(u)->type;
-    if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
+    if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = randomModelForBody(rng, body);
     Name* nm = w.get<Name>(u);
     if (!nm) return;
     if (w.has<Commandable>(u)) {

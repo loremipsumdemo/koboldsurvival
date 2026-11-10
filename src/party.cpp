@@ -63,16 +63,14 @@ std::vector<int> allItemChoices() {
 }
 
 std::string modelLabel(int n) {
-    char num[16];
-    std::snprintf(num, sizeof(num), "%02d", n);
-    return langf("UILABEL_MODEL_N", { num });
+    return langf("UILABEL_MODEL_N", { unitModelKey(n) });
 }
 
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     PartyMember m;
     m.body = randomBodyType(rng);
     m.name = randomUnitName(rng, m.body, taken);
-    m.sprite = modelForBody(m.body);
+    m.sprite = randomModelForBody(rng, m.body);
     m.stats = randomStartingStats(rng);
 
     for (int slot = 0; slot < GEAR_SLOTS; ++slot) {

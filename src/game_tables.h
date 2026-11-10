@@ -4,7 +4,7 @@
 #include "mobs.h"
 #include "props.h"
 
-inline constexpr int UNIT_SPRITE_COUNT = 3;
+inline constexpr int UNIT_SPRITE_COUNT = 9;
 
 // The tables in data/: itemdb.txt, factions.txt, and those that say which file each thing uses: sfx.txt, bgm.txt,
 // emotes.txt, icons.txt, models.txt, mobs.txt, fonts.txt and languages.txt. mobInfo (mobs.h) and sfxInfo (sounds.h)
@@ -29,6 +29,8 @@ const std::string& emoteFile(int emote);
 const std::string& iconFile(int icon);
 const std::string& propModelFile(PropKind kind);
 const std::string& unitModelFile(int model);
+// A unit model's name, such as "f1": the key in models.txt, its Model name in the party menu and its profile picture.
+std::string unitModelKey(int model);
 
 // The built-in fonts, in the order they are tried, with the language's own first.
 std::vector<std::string> fontFilesFor(const std::string& languageId);

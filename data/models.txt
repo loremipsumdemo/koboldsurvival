@@ -1,7 +1,16 @@
 # Unit models. Tab-separated: key, file under data/model, what it is.
 # Every key must be listed once. The last column is only a note. A missing model is drawn as a pink square.
-# Props name their models in props.txt, and mobs in mobs.txt. Unit1 to Unit3 are the party menu's Model numbers.
+# Props name their models in props.txt, and mobs in mobs.txt. The keys are the party menu's Model names, and each
+# key's profile picture is data/profile/<key>.png. f is feminine, m masculine, a androgynous.
+# Saves store a unit's model by its place in this list (f1 = 1, m1 = 2, a1 = 3, f2 = 4, ...), so the order is fixed
+# in src/game_tables.cpp: new models go on the end.
 
-Unit1	unit/unit_01.glb	Model 01 (Feminine by default)
-Unit2	unit/unit_02.glb	Model 02 (Masculine by default)
-Unit3	unit/unit_03.glb	Model 03 (Androgynous by default)
+f1	unit/f1.glb	Feminine
+m1	unit/m1.glb	Masculine
+a1	unit/a1.glb	Androgynous
+f2	unit/f2.glb	Feminine
+m2	unit/m2.glb	Masculine
+a2	unit/a2.glb	Androgynous
+f3	unit/f3.glb	Feminine
+m3	unit/m3.glb	Masculine
+a3	unit/a3.glb	Androgynous
