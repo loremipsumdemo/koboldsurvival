@@ -181,10 +181,17 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     }
     rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
     rows.push_back(makeRange(RowId::ViewRange, lang("UILABEL_VIEW_RANGE"), s.viewRange));
+    std::vector<DropOption> scales;
+    for (int i = 0; i < RENDER_SCALE_CHOICE_COUNT; ++i) {
+        const int v = RENDER_SCALE_CHOICES[i];
+        scales.push_back(DropOption{ langf("UILABEL_RENDER_PERCENT", { std::to_string(v) }), v, 0, 0, true });
+    }
+    rows.push_back(makeDropdown(RowId::RenderScale, lang("UILABEL_RENDER_SCALE"), scales, indexOfValue(scales, s.renderScale), true));
     rows.push_back(makeToggle(RowId::Clouds, lang("UILABEL_CLOUDS"), s.clouds));
     rows.push_back(makeToggle(RowId::CloudShadows, lang("UILABEL_CLOUD_SHADOWS"), s.cloudShadows));
     rows.push_back(makeToggle(RowId::VariedSurfaces, lang("UILABEL_VARIED_SURFACES"), s.variedSurfaces));
     rows.push_back(makeToggle(RowId::ShowFps, lang("UILABEL_SHOW_FPS"), s.showFps));
+    rows.push_back(makeToggle(RowId::DebugLogging, lang("UILABEL_DEBUG_LOGGING"), s.debugLogging));
     return rows;
 }
 
@@ -459,6 +466,9 @@ SettingsChange pickOption(RowId id, const DropOption& option, GameSettings& s) {
     case RowId::FpsLimit:
         s.fpsLimit = option.value;
         break;
+    case RowId::RenderScale:
+        s.renderScale = option.value;
+        break;
     case RowId::Autosave:
         s.autosaveMinutes = option.value;
         break;
@@ -508,6 +518,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::ShowFps:
         s.showFps = on;
+        break;
+    case RowId::DebugLogging:
+        s.debugLogging = on;
         break;
     case RowId::Clouds:
         s.clouds = on;

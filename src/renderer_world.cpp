@@ -297,7 +297,7 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                          const std::vector<HudEntry>& hud, int winW, int winH) {
-    glViewport(0, 0, winW, winH);
+    beginScene(winW, winH);
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -632,10 +632,99 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
     drawColorTris(rings, viewProj_);
 
-    if (sel.dragging) {
+    // The selection box and the HUD lines are measured in window pixels. With the world drawn smaller than the window they
+    // wait until it has been put on the window, so they stay sharp.
+    const float dragged[4] = { sel.x0, sel.y0, sel.x1, sel.y1 };
+    if (sceneActive_) {
+        heldDragging_ = sel.dragging;
+        for (int i = 0; i < 4; ++i) heldBox_[i] = dragged[i];
+        heldHud_ = hud;
+    } else {
+        drawFrameTop(sel.dragging, dragged, hud, winW, winH);
+    }
+    glBindVertexArray(0);
+}
+
+// Where the world is drawn. At a render scale under 100 that is a picture smaller than the window, which presentScene
+// stretches over the window before anything measured in window pixels is drawn.
+void Renderer::beginScene(int winW, int winH) {
+    sceneActive_ = false;
+    const int percent = std::clamp(renderScale_, 25, 100);
+    if (percent < 100 && winW > 0 && winH > 0) {
+        const int w = std::max(1, (winW * percent + 50) / 100), h = std::max(1, (winH * percent + 50) / 100);
+        if (w != sceneW_ || h != sceneH_ || !sceneFbo_) {
+            releaseScene();
+            GLint texture = 0;
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+            sceneTex_ = makeTexture2D(w, h, GL_RGBA8, GL_RGBA, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, (GLuint)texture);
+            glGenRenderbuffers(1, &sceneDepth_);
+            glBindRenderbuffer(GL_RENDERBUFFER, sceneDepth_);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+            glGenFramebuffers(1, &sceneFbo_);
+            glBindFramebuffer(GL_FRAMEBUFFER, sceneFbo_);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneTex_, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sceneDepth_);
+            const bool whole = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            if (whole) {
+                sceneW_ = w;
+                sceneH_ = h;
+            } else {
+                releaseScene();
+            }
+        }
+        if (sceneFbo_) {
+            glBindFramebuffer(GL_FRAMEBUFFER, sceneFbo_);
+            glViewport(0, 0, sceneW_, sceneH_);
+            sceneActive_ = true;
+            sceneWinW_ = winW;
+            sceneWinH_ = winH;
+            return;
+        }
+    }
+    glViewport(0, 0, winW, winH);
+}
+
+void Renderer::presentScene() {
+    if (!sceneActive_) return;
+    sceneActive_ = false;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, sceneFbo_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glDisable(GL_SCISSOR_TEST);
+    glBlitFramebuffer(0, 0, sceneW_, sceneH_, 0, 0, sceneWinW_, sceneWinH_, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, sceneWinW_, sceneWinH_);
+    drawFrameTop(heldDragging_, heldBox_, heldHud_, sceneWinW_, sceneWinH_);
+    glBindVertexArray(0);
+}
+
+void Renderer::releaseScene() {
+    if (sceneFbo_) glDeleteFramebuffers(1, &sceneFbo_);
+    if (sceneTex_) glDeleteTextures(1, &sceneTex_);
+    if (sceneDepth_) glDeleteRenderbuffers(1, &sceneDepth_);
+    sceneFbo_ = sceneTex_ = sceneDepth_ = 0;
+    sceneW_ = sceneH_ = 0;
+    sceneActive_ = false;
+}
+
+std::string Renderer::renderScaleText() const {
+    char text[96];
+    if (sceneW_ > 0 && renderScale_ < 100) {
+        std::snprintf(text, sizeof text, "render scale %d%%, world drawn at %d x %d", renderScale_, sceneW_, sceneH_);
+    } else {
+        std::snprintf(text, sizeof text, "render scale %d%%, world drawn at the window's size", renderScale_);
+    }
+    return text;
+}
+
+// What drawFrame draws in window pixels over the world: the selection box being dragged, and the HUD lines
+void Renderer::drawFrameTop(bool dragging, const float* corners, const std::vector<HudEntry>& hud, int winW, int winH) {
+    if (dragging) {
         Batch box;
-        float x0 = std::min(sel.x0, sel.x1), x1 = std::max(sel.x0, sel.x1);
-        float y0 = std::min(sel.y0, sel.y1), y1 = std::max(sel.y0, sel.y1);
+        float x0 = std::min(corners[0], corners[2]), x1 = std::max(corners[0], corners[2]);
+        float y0 = std::min(corners[1], corners[3]), y1 = std::max(corners[1], corners[3]);
         RGBA fill{ 0.3f, 1.0f, 0.3f, 0.30f };
         RGBA line{ 0.3f, 1.0f, 0.3f, 1.0f };
         float th = 2.0f;

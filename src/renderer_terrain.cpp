@@ -52,6 +52,9 @@ uniform vec2 uCloudScale;     // the size each layer repeats at
 uniform vec2 uCloudHeight;
 uniform vec2 uCloudOpacity;
 uniform float uCloudCover;    // the noise above this is cloud
+// How far from the eye the costly detail goes. x: tiles laid in hexagons end here, y: over this far before it they blend
+// into the plain grid, z: past this the ground's tile detail has faded out and isn't looked up at all
+uniform vec3 uBands;
 
 // Whole-number hashing, so a cell gets the same value wherever it is looked up from
 vec3 cellRandom(ivec2 c, int salt) {
@@ -173,16 +176,19 @@ void main() {
     // Ground detail from the tile: its normal tilts the lighting, and its height darkens the color a little
     vec4 t = vec4(0.0);
     float bumpBy = 0.35, shadeBy = 1.0;
-    if (aw.y > 0.02) {
-        if (uVaried == 1) {
-            t = hexTile(uTile, vXZ - uHex.xy, uHexBase, uHex.z, uHex.w, uSalt, vec2(0.0), dx, dy);
-        } else {
-            t = decodeTile(textureGrad(uTile, vXZ / uHex.w + uTileShift, dx / uHex.w, dy / uHex.w), mat2(1.0));
+    // Past uBands.z the grain is 0, so nothing the tile gives is seen and it isn't looked up
+    bool detailed = vDist < uBands.z;
+    if (aw.y > 0.02 && detailed) {
+        // Near the eye the tiles are laid in hexagons; farther off, where the detail is fading anyway, in a plain grid
+        float plain = uVaried == 1 ? smoothstep(uBands.x - uBands.y, uBands.x, vDist) : 1.0;
+        if (plain < 1.0) t = hexTile(uTile, vXZ - uHex.xy, uHexBase, uHex.z, uHex.w, uSalt, vec2(0.0), dx, dy);
+        if (plain > 0.0) {
+            t = mix(t, decodeTile(textureGrad(uTile, vXZ / uHex.w + uTileShift, dx / uHex.w, dy / uHex.w), mat2(1.0)), plain);
         }
         t.xyw *= aw.y;
     }
     vec3 bump = vec3(t.x, 0.0, t.y);
-    if (side > 0.02) {
+    if (side > 0.02 && detailed) {
         // Facing along z: the tile laid on x and y. Facing along x: on z and y. Its tilt goes along the wall and up it.
         float vy = vPos.y / uHex.w;
         vec4 tz = decodeTile(textureGrad(uTile, vec2(vXZ.x / uHex.w + uTileShift.x, vy),
@@ -267,6 +273,7 @@ uniform float uFadeEnd;
 uniform float uGlitter;
 uniform float uGlow;
 uniform float uMapSize;
+uniform vec2 uFar;            // from x to y from the eye the ripples even out into the tile's average, and past y aren't looked up
 uniform sampler2D uTile;
 out vec4 fragColor;
 void main() {
@@ -278,17 +285,28 @@ void main() {
     float tm = uTime * uSpeed;
     vec2 drift1 = vec2(tm * 0.20, tm * 0.13), drift2 = -vec2(tm * 0.102, tm * 0.15);
     vec2 dx = dFdx(local), dy = dFdy(local);
-    vec4 t1, t2;
-    float tone = 1.0;
-    if (uVaried == 1) {
-        t1 = hexTile(uTile, local - uHex1.xy, uHexBase1, uHex1.z, uHex1.w, uSalt + 1, drift1, dx, dy);
-        t2 = hexTile(uTile, local - uHex2.xy, uHexBase2, uHex2.z, uHex2.w, uSalt + 2, drift2, dx, dy);
-        tone = mix(0.92, 1.08, macroAt(local).b);
-    } else {
-        t1 = decodeTile(texture(uTile, (local + drift1) / uHex1.w + uTileShift.xy), mat2(1.0));
-        t2 = decodeTile(texture(uTile, (local + drift2) / uHex2.w + uTileShift.zw), mat2(1.0));
+    float dist = distance(vWorld, uEye);
+    float tone = uVaried == 1 ? mix(0.92, 1.08, macroAt(local).b) : 1.0;
+    // Near the eye the tiles are laid in hexagons, farther off in a plain grid, and far off, where a whole tile falls in a
+    // pixel or two, the ripples are the tile's average (its smallest mip) and cost one small lookup
+    float evened = smoothstep(uFar.x, uFar.y, dist);
+    vec4 t = vec4(0.0);
+    if (evened < 1.0) {
+        vec4 t1 = vec4(0.0), t2 = vec4(0.0);
+        float plain = uVaried == 1 ? smoothstep(uBands.x - uBands.y, uBands.x, dist) : 1.0;
+        if (plain < 1.0) {
+            t1 = hexTile(uTile, local - uHex1.xy, uHexBase1, uHex1.z, uHex1.w, uSalt + 1, drift1, dx, dy);
+            t2 = hexTile(uTile, local - uHex2.xy, uHexBase2, uHex2.z, uHex2.w, uSalt + 2, drift2, dx, dy);
+        }
+        if (plain > 0.0) {
+            vec4 p1 = textureGrad(uTile, (local + drift1) / uHex1.w + uTileShift.xy, dx / uHex1.w, dy / uHex1.w);
+            vec4 p2 = textureGrad(uTile, (local + drift2) / uHex2.w + uTileShift.zw, dx / uHex2.w, dy / uHex2.w);
+            t1 = mix(t1, decodeTile(p1, mat2(1.0)), plain);
+            t2 = mix(t2, decodeTile(p2, mat2(1.0)), plain);
+        }
+        t = mix(t1, t2, 0.5);
     }
-    vec4 t = mix(t1, t2, 0.5);
+    if (evened > 0.0) t = mix(t, decodeTile(textureLod(uTile, vec2(0.5), 16.0), mat2(1.0)), evened);
     vec3 n = normalize(vec3(t.x * 1.4, 1.0, t.y * 1.4));
     vec3 sun = normalize(uSunDir);
     float shade = cloudShade(local, vWorld.y);
@@ -315,7 +333,6 @@ void main() {
     // Glow: the water gives its own light. Glitter: small points that flash at their own times, none of it reflecting anything.
     lit = mix(lit, base, uGlow);
     alpha = mix(alpha, 1.0, uGlow * 0.5);
-    float dist = distance(vWorld, uEye);
     if (uGlitter > 0.0) {
         float near = 1.0 - smoothstep(60.0, 420.0, dist);
         for (int i = 0; i < 2; ++i) {
@@ -422,6 +439,11 @@ bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
 constexpr double GROUND_TILE = 8.0, GROUND_HEX = 6.0;
 constexpr double WATER_TILE_1 = 10.0, WATER_HEX_1 = 8.5;
 constexpr double WATER_TILE_2 = 6.0, WATER_HEX_2 = 5.3;
+// The share of the detail range (the view range) over which hexagon-laid tiles blend into the plain grid, at its far end
+constexpr float HEX_BLEND_SHARE = 0.2f;
+constexpr float GROUND_DETAIL_END = 220.0f;   // where kGroundFS's grain reaches 0
+constexpr float WATER_EVEN_START = 600.0f, WATER_EVEN_END = 900.0f;
+constexpr float NO_BAND = 1.0e9f;
 constexpr double MACRO_SIZE = 173.0;      // the slow changes across the ground repeat this far apart
 constexpr double ORIGIN_STEP = 64.0;      // the point positions are measured from moves with the camera in steps this big
 // The two layers of cloud: how far each repeats, how high it floats, which way and how fast (world units a second) the
@@ -496,6 +518,7 @@ void Renderer::SurfaceUniforms::find(GLuint prog) {
     cloudHeight = glGetUniformLocation(prog, "uCloudHeight");
     cloudOpacity = glGetUniformLocation(prog, "uCloudOpacity");
     cloudCover = glGetUniformLocation(prog, "uCloudCover");
+    bands = glGetUniformLocation(prog, "uBands");
 }
 
 // Binds the noise to texture unit 1 and leaves unit 0 active
@@ -513,6 +536,11 @@ void Renderer::setSurfaceUniforms(const SurfaceUniforms& u) const {
     glUniform2fv(u.cloudHeight, 1, F.cloudHeight);
     glUniform2fv(u.cloudOpacity, 1, F.cloudOpacity);
     glUniform1f(u.cloudCover, F.cloudCover);
+    // The blend is never no width at all, which a smoothstep can't take; at range 0 it ends at the eye, so all is plain
+    const float range = (float)std::max(detailRange_, 0);
+    const float blend = std::max(range * HEX_BLEND_SHARE, 0.01f);
+    if (surfaceBands_) glUniform3f(u.bands, range, blend, GROUND_DETAIL_END);
+    else glUniform3f(u.bands, NO_BAND, 1.0f, NO_BAND);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, noiseTex_);
     glActiveTexture(GL_TEXTURE0);
@@ -571,6 +599,7 @@ void Renderer::drawClouds(const Camera& cam) {
     if (!F.clouds || !cloudShader_.prog) return;
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
+    passTimerBegin(cloudTimer_);
     glUseProgram(cloudShader_.prog);
     setSurfaceUniforms(cloudShader_.common);
     glUniformMatrix4fv(cloudShader_.viewProj, 1, GL_FALSE, viewProj_.m);
@@ -596,6 +625,42 @@ void Renderer::drawClouds(const Camera& cam) {
     glBindVertexArray(0);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+    passTimerEnd(cloudTimer_);
+}
+
+// Times a pass on the graphics card. The answer comes a frame or more later, so a pass is only timed again once its last
+// time has been read: nothing here ever waits for the card.
+void Renderer::passTimerBegin(PassTimer& t) {
+    if (!passTimersOn_) return;
+    if (!t.query) glGenQueries(1, &t.query);
+    if (t.waiting) {
+        GLint ready = 0;
+        glGetQueryObjectiv(t.query, GL_QUERY_RESULT_AVAILABLE, &ready);
+        if (!ready) return;
+        GLuint64 ns = 0;
+        glGetQueryObjectui64v(t.query, GL_QUERY_RESULT, &ns);
+        const float ms = (float)((double)ns / 1.0e6);
+        t.ms = t.ms <= 0.0f ? ms : t.ms + (ms - t.ms) * 0.1f;
+        t.waiting = false;
+    }
+    glBeginQuery(GL_TIME_ELAPSED, t.query);
+    t.running = true;
+}
+
+void Renderer::passTimerEnd(PassTimer& t) {
+    if (!t.running) return;
+    glEndQuery(GL_TIME_ELAPSED);
+    t.running = false;
+    t.waiting = true;
+}
+
+std::string Renderer::surfaceBandsText() const {
+    char text[160];
+    if (!surfaceBands_) return "distance bands off (detail at every distance)";
+    const float range = (float)std::max(detailRange_, 0);
+    std::snprintf(text, sizeof text, "hexagons to %.0f tiles (blend from %.0f), ground detail to %.0f, water ripples even out %.0f-%.0f",
+                  range, range * (1.0f - HEX_BLEND_SHARE), GROUND_DETAIL_END, WATER_EVEN_START, WATER_EVEN_END);
+    return text;
 }
 
 bool Renderer::initTerrainGl() {
@@ -632,6 +697,7 @@ bool Renderer::initTerrainGl() {
     seaShader_.hex2 = glGetUniformLocation(s, "uHex2");
     seaShader_.hexBase1 = glGetUniformLocation(s, "uHexBase1");
     seaShader_.hexBase2 = glGetUniformLocation(s, "uHexBase2");
+    seaShader_.evenOut = glGetUniformLocation(s, "uFar");
     seaShader_.viewProj = glGetUniformLocation(s, "uViewProj");
     seaShader_.center = glGetUniformLocation(s, "uCenter");
     seaShader_.half = glGetUniformLocation(s, "uHalf");
@@ -689,6 +755,7 @@ bool Renderer::initTerrainGl() {
 
 void Renderer::releaseTerrainGl() {
     releaseTerrain();
+    releaseScene();
     glDeleteProgram(groundShader_.prog);
     glDeleteProgram(seaShader_.prog);
     glDeleteProgram(floorShader_.prog);
@@ -697,6 +764,10 @@ void Renderer::releaseTerrainGl() {
     glDeleteTextures(1, &seaTex_);
     glDeleteTextures(1, &noiseTex_);
     glDeleteVertexArrays(1, &emptyVao_);
+    for (PassTimer* t : { &groundTimer_, &waterTimer_, &cloudTimer_ }) {
+        if (t->query) glDeleteQueries(1, &t->query);
+        *t = PassTimer{};
+    }
     groundShader_ = TerrainShader{};
     seaShader_ = SeaShader{};
     floorShader_ = FloorShader{};
@@ -819,6 +890,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
 
     glEnable(GL_DEPTH_TEST);
 
+    passTimerBegin(groundTimer_);
     glUseProgram(floorShader_.prog);
     glUniformMatrix4fv(floorShader_.viewProj, 1, GL_FALSE, viewProj_.m);
     glUniform3f(floorShader_.eye, ex, ey, ez);
@@ -910,8 +982,10 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     }
     glBindVertexArray(0);
     if (blendEdge) glDisable(GL_BLEND);
+    passTimerEnd(groundTimer_);
     if (!hasWater) return;
 
+    passTimerBegin(waterTimer_);
     const float fadeEnd = kFarPlane * 0.9f;
     const float fadeStart = fadeEnd * 0.6f;
     glUseProgram(seaShader_.prog);
@@ -934,6 +1008,8 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform1f(seaShader_.glitter, hasTheme_ ? (float)theme_.waterGlitter / 100.0f : 0.0f);
     glUniform1f(seaShader_.glow, hasTheme_ ? (float)theme_.waterGlow / 100.0f : 0.0f);
     glUniform1f(seaShader_.mapSize, seaEnd);
+    if (surfaceBands_) glUniform2f(seaShader_.evenOut, WATER_EVEN_START, WATER_EVEN_END);
+    else glUniform2f(seaShader_.evenOut, NO_BAND, 2.0f * NO_BAND);
     setSurfaceUniforms(seaShader_.common);
     glUniform4fv(seaShader_.tileShift, 1, frame.waterShift);
     glUniform4fv(seaShader_.hex1, 1, frame.waterHex1);
@@ -955,4 +1031,5 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
     glBindVertexArray(0);
+    passTimerEnd(waterTimer_);
 }
