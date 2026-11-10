@@ -7,11 +7,8 @@ using namespace render_detail;
 namespace {
 constexpr float FACTION_TINT = 0.85f;
 
-constexpr float UNIT_MODEL_FRONT_YAW = -1.5707963f;
-
 Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool lying, float height) {
     const float k = height / (m.maxY - m.minY);
-    yaw += UNIT_MODEL_FRONT_YAW;
     const float cs = std::cos(yaw), sn = std::sin(yaw);
     const float R[3][3] = {
         { lying ? 0.0f : cs, lying ? -cs : 0.0f, sn },

@@ -9,9 +9,8 @@ void Renderer::loadPictures(LoadStages& stages) {
     addMipmaps(titleLogo_);
     stages.step(0.03f, 1);
     for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) {
-        char path[64];
-        std::snprintf(path, sizeof(path), "data/profile/profile_%02d.png", i);
-        profilePics_[(size_t)i - 1] = loadOptionalImage(path);
+        const std::string path = "data/profile/" + unitModelKey(i) + ".png";
+        profilePics_[(size_t)i - 1] = loadOptionalImage(path.c_str());
         stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 1 + i);
     }
 }

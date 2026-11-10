@@ -39,7 +39,7 @@ void App::partyDropPick(int param) {
         break;
     case DropKind::Body:
         m.body = (BodyType)value;
-        m.sprite = modelForBody(m.body);
+        m.sprite = modelForBody(m.body, modelRow(m.sprite));
         break;
     case DropKind::Gear:
         if (partyUi.editable) m.gear[partyUi.dropSlot] = value;

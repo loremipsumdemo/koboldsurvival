@@ -59,7 +59,8 @@ const char* const PROP_KEYS[] = {
 };
 static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
-const char* const UNIT_KEYS[] = { "Unit1", "Unit2", "Unit3" };
+// In save order: a save keeps a unit's model as its place here plus one, so models are only ever added on the end.
+const char* const UNIT_KEYS[] = { "f1", "m1", "a1", "f2", "m2", "a2", "f3", "m3", "a3" };
 static_assert(std::size(UNIT_KEYS) == UNIT_SPRITE_COUNT);
 
 const char* const SCREEN_KEYS[] = { "Title", "Settings", "ScenarioSelect", "PartySetup", "Pause", "Playing" };
@@ -636,6 +637,10 @@ const std::string& propModelFile(PropKind kind) { return propInfo(kind).model; }
 
 const std::string& unitModelFile(int model) {
     return unitModels[(model >= 1 && model <= UNIT_SPRITE_COUNT) ? (size_t)model - 1 : 0];
+}
+
+std::string unitModelKey(int model) {
+    return UNIT_KEYS[(model >= 1 && model <= UNIT_SPRITE_COUNT) ? (size_t)model - 1 : 0];
 }
 
 std::vector<std::string> fontFilesFor(const std::string& languageId) {

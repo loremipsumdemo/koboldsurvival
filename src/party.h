@@ -6,15 +6,28 @@
 #include "components.h"
 #include "ecs.h"
 #include "equip.h"
+#include "game_tables.h"
 #include "grid.h"
 #include "model.h"
 #include "rng.h"
 #include "stats.h"
 
-inline int modelForBody(BodyType body) {
-    if (body == BodyType::Feminine) return 1;
-    if (body == BodyType::Androgynous) return 3;
-    return 2;
+// Unit models come in rows of three, feminine, masculine and androgynous: f1 m1 a1, then f2 m2 a2, and so on.
+inline constexpr int UNIT_MODEL_ROW = 3;
+static_assert(UNIT_SPRITE_COUNT % UNIT_MODEL_ROW == 0, "unit models come in whole rows of three");
+
+// The model of that body in the given row (0 is f1 m1 a1).
+inline int modelForBody(BodyType body, int row) {
+    const int column = body == BodyType::Feminine ? 0 : body == BodyType::Masculine ? 1 : 2;
+    return row * UNIT_MODEL_ROW + column + 1;
+}
+
+// The row a model is in, so a change of body keeps the same look number (f2 becomes m2).
+inline int modelRow(int model) { return model >= 1 ? (model - 1) / UNIT_MODEL_ROW : 0; }
+
+// A random model of that body.
+inline int randomModelForBody(Rng& rng, BodyType body) {
+    return modelForBody(body, rng.range(0, UNIT_SPRITE_COUNT / UNIT_MODEL_ROW - 1));
 }
 
 std::string modelLabel(int n);
