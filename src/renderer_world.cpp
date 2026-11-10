@@ -644,7 +644,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (const Model* m = unitModel(w, e)) {
             if (!(m->maxY > m->minY)) continue;
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            queueModelMatrix(*m, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f);
+            queueModelMatrix(*m, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f,
+                             unitHue(w, e));
             continue;
         }
         if (pose.lying) {

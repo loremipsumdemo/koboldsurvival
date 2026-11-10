@@ -9,12 +9,13 @@
 #include "game_state.h"
 #include "squads.h"
 #include "ghosts.h"
+#include "factions.h"
 
 // Plain text, one record per line. Terrain comes from the named map; everything else is in the file.
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 16;
+inline constexpr int SAVE_VERSION = 17;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -74,6 +75,8 @@ struct SaveUnit {
     int squad = -1;        // a military unit's squad, 0 to 8
     bool citizen = false;
     int citizenGroup = 0;  // the behavior group a citizen of yours follows, 0 for Group 1
+    std::optional<int> coloration;     // from version 17: a boss's hue turn, degrees
+    std::optional<double> tamingHours; // from version 17: game hours in a Taming Cage of another faction's
 };
 
 // A behavior group's task list (a group's index, GROUP_REF_MILITARY or GROUP_REF_CITIZEN). A Group task keeps the ref it
@@ -127,6 +130,7 @@ struct SaveData {
     SaveCamera cam;
     std::string rngState;
     std::map<int, int> reputation;
+    std::map<int, FactionRules> factionRules;   // the factions whose rules were changed in play
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
     std::vector<Ghost> ghosts;

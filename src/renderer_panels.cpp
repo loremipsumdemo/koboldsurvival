@@ -375,6 +375,15 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
         noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), b);
     }
+    if (L.factionRulesButton.w > 0.0f) {
+        const Rect& b = L.factionRulesButton;
+        const bool hot = b.contains(mouseX_, mouseY_);
+        if (hot) noteHover(b);
+        drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
+        const std::string shown = fitText(lang("UILABEL_FACTION_RULES"), b.w - 6.0f * s, false);
+        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
+        noteTip(lang("UILABEL_FACTION_RULES_TIP"), b);
+    }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;
         const bool hot = b.contains(mouseX_, mouseY_);

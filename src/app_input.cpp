@@ -121,6 +121,13 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && factionRulesOpen) {
+        if (e.key.key == SDLK_ESCAPE) {
+            factionRulesOpen = false;
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && altar.open) {
         if (e.key.key == SDLK_ESCAPE) {
             altar = AltarUi{};

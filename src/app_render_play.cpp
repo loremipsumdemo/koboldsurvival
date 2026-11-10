@@ -305,6 +305,7 @@ void App::drawPlayingScreen() {
     if (mapOpen) drawWorldMapPopup();
     drawAltar();
     drawManageSquads();
+    drawFactionRules();
     drawDeveloper();
     drawGhosts();
     drawBehaviorGroups();

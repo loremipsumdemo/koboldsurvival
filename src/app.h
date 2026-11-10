@@ -409,6 +409,10 @@ struct App : AppSession {
     void scrollManageSquads(float x, float y, float notches);
     void applySquadMoves();
     void drawManageSquads();
+    // Faction Rules: your faction's rules for outsiders (app_faction_rules.cpp)
+    void openFactionRules();
+    bool pressOnFactionRules();
+    void drawFactionRules();
     // When the selection changes and the Squad tab shows an emptied squad: the squad of the selected units instead
     void followSelectionSquad();
     bool sidebarUp();
@@ -516,6 +520,7 @@ struct App : AppSession {
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
     SquadsUi squadsUi;
+    bool factionRulesOpen = false;
     SpawnPicker devSpawn;   // the Build tab's Developer panel
     std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;

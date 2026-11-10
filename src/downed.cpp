@@ -1,6 +1,7 @@
 #include "systems_internal.h"
 #include "build.h"
 #include "npc_camps.h"
+#include "faction_rules.h"
 
 using namespace systems_detail;
 
@@ -48,6 +49,7 @@ void downedSystem(World& w) {
 
 static void wakeUp(World& w, ObjectId u, WakeChanges& out) {
     w.remove<Unconscious>(u);
+    w.remove<Dealt>(u);
     if (Needs* n = w.get<Needs>(u)) {
         n->hp = std::max(n->hp, std::min(std::max(n->maxHp, 1), RECOVERY_HEALTH));
         n->changed |= NEEDS_HP_CHANGED;
@@ -55,8 +57,11 @@ static void wakeUp(World& w, ObjectId u, WakeChanges& out) {
     if (const Carried* cd = w.get<Carried>(u); cd && !w.has<Hostile>(cd->by)) putDown(w, cd->by);
     queueLog(w, langf("MISC_RECOVERS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     out.woke.push_back(u);
-    // Beaten: one of another faction's retreats till it is well again
-    startRetreat(w, u);
+    // Rescued into the bed of a faction that takes in those it rescues: joins it. Otherwise, beaten, one of another
+    // faction's retreats till it is well again.
+    const int was = factionOf(w, u);
+    recruitOnWaking(w, u);
+    if (factionOf(w, u) == was) startRetreat(w, u);
     if (inBedOrBedroll(w, u)) {
         const Behaviors* b = w.get<Behaviors>(u);
         const bool leaves = b && std::any_of(b->rules.begin(), b->rules.end(),

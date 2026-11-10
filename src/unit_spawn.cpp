@@ -156,16 +156,14 @@ void systems_detail::finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std:
 
 ObjectId spawnUnit(World& w, const Terrain& t, Rng& rng, int faction, float x, float z) {
     const ObjectId u = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
-    if (faction != FACTION_PLAYER) {
+    if (!factionPlayerControlled(faction)) {
         w.add(u, randomNpcLoot(rng));
         w.add(u, defaultDialogue());
         Behaviors* b = w.get<Behaviors>(u);
-        if (faction == FACTION_NOMAD) {
-            b->rules = nomadBehaviors();
+        if (faction == FACTION_FACTIONLESS) {
+            b->rules = factionlessBehaviors();
         } else {
-            BehaviorRule patrol;
-            patrol.kind = BehaviorKind::Patrol;
-            addBehavior(b->rules, patrol);
+            b->rules = npcFactionBehaviors();
         }
     }
     std::vector<std::string> noNamesTaken;
@@ -196,8 +194,11 @@ Stats mobStats(MobKind kind, Rng& rng) {
 
 ObjectId spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int faction, float x, float z) {
     const MobInfo& m = mobInfo(kind);
+    // A Factionless mob is a wild one: in its own kind's faction
+    if (faction < 0 || faction == FACTION_FACTIONLESS) faction = mobFaction(kind);
     const ObjectId e = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
     w.add(e, Mob{ kind });
+    if (isBossMob(kind)) w.add(e, Coloration{ rng.range(0, 359) });
     Inventory inv;
     addToInventory(inv, m.meat, m.meatCount);
     addToInventory(inv, mobBones(kind), mobBoneCount(kind));
@@ -209,6 +210,12 @@ ObjectId spawnMob(World& w, const Terrain& t, Rng& rng, MobKind kind, int factio
     w.add(e, n);
     Behaviors b;
     b.rules = mobBehaviors();
+    // A mob of a faction that runs itself (a Red Faction bear) keeps near where it was put, as that faction's units patrol
+    if (!isMobFaction(faction) && !factionPlayerControlled(faction)) {
+        BehaviorRule patrol;
+        patrol.kind = BehaviorKind::Patrol;
+        addBehavior(b.rules, patrol);
+    }
     if (isMobFaction(faction)) {
         BehaviorRule roam;
         roam.kind = m.patrolSpawn ? BehaviorKind::PatrolSpawn : BehaviorKind::Roam;

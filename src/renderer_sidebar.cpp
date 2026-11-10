@@ -1,3 +1,4 @@
+#include "taming.h"
 #include "renderer_internal.h"
 
 using namespace render_detail;
@@ -178,6 +179,13 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
     }
     const bool corpse = w.has<Corpse>(unit);
     const bool noNeeds = w.has<Mob>(unit) || corpse;
+    // An animal being tamed: how far along, and the game hours it has had of those it needs
+    if (const Taming* tm = w.get<Taming>(unit); tm && !corpse) {
+        const double need = tameHoursNeeded(w, unit);
+        char text[48];
+        std::snprintf(text, sizeof text, "%.0f / %.0f h", std::min(tm->hours, need), need);
+        y = statRow(y, lang("UILABEL_TAMING"), text, tamingProgress(w, unit), RGBA{ 0.45f, 0.85f, 0.40f, 1.0f });
+    }
     if (!noNeeds) {
         y = statRow(y, lang("UILABEL_HUNGER"), std::to_string(needs.hunger) + " / " + std::to_string(needs.maxHunger),
                     needs.maxHunger > 0 ? (float)needs.hunger / (float)needs.maxHunger : 0.0f, RGBA{ 0.86f, 0.62f, 0.22f, 1.0f });

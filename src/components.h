@@ -84,6 +84,10 @@ struct UnitSprite {
 struct Mob {
     MobKind kind = MobKind::Bear;
 };
+// A boss's own coloring: its texture's colors turned round the color wheel by this many degrees, 0 to 359
+struct Coloration {
+    int hue = 0;
+};
 
 inline bool isUnit(World& w, ObjectId e) { return w.has<Entity>(e) && !w.has<Mob>(e); }
 

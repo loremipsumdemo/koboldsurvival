@@ -88,6 +88,8 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     }
     if (u.carriedBy >= 0) w.line("carried", i, u.carriedBy);
     if (u.playingDead) w.line("still", i);
+    if (u.coloration) w.line("color", i, *u.coloration);
+    if (u.tamingHours) w.line("taming", i, *u.tamingHours);
     if (u.passive || u.block || u.sneak) w.line("modes", i, u.passive, u.block, u.sneak);
     if (u.buffLeft > 0.0f) w.line("buff", i, u.buffLeft, u.buffAttack);
     for (const Provoked::Entry& p : u.provoked) w.line("provoked", i, p.faction, p.secondsLeft);
@@ -146,6 +148,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     w.line("camera", d.cam.fx, d.cam.fy, d.cam.fz, d.cam.yaw, d.cam.pitch, d.cam.distance);
     w.line("rng", d.rngState);
     for (const auto& [faction, value] : d.reputation) w.line("rep", faction, value);
+    for (const auto& [faction, rules] : d.factionRules) w.line("factionrules", faction, factionRulesText(rules));
     for (size_t k = 0; k < d.squadNames.size(); ++k) {
         if (!d.squadNames[k].empty()) w.line("squadname", k, d.squadNames[k]);
     }
@@ -255,6 +258,15 @@ const std::unordered_map<std::string, Handler>& handlers() {
             int faction = 0, value = 0;
             if (!l.read(faction, value)) return false;
             l.d.reputation[faction] = std::clamp(value, REP_MIN, REP_MAX);
+            return true;
+        } },
+        { "factionrules", [](Line& l) {
+            int faction = 0;
+            std::string words, err;
+            if (!l.read(faction) || !l.rest(words)) return false;
+            FactionRules r = findFaction(faction) ? findFaction(faction)->rules : FactionRules{};
+            if (!parseFactionRules(words, r, err)) return false;
+            l.d.factionRules[faction] = r;
             return true;
         } },
         { "prop", [](Line& l) {
@@ -496,6 +508,20 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "carried", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->carriedBy); } },
         { "still", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->playingDead = true; return u != nullptr; } },
+        { "color", [](Line& l) {
+            SaveUnit* u = l.unit();
+            int hue = 0;
+            if (!u || !l.read(hue)) return false;
+            u->coloration = ((hue % 360) + 360) % 360;
+            return true;
+        } },
+        { "taming", [](Line& l) {
+            SaveUnit* u = l.unit();
+            double hours = 0.0;
+            if (!u || !l.read(hours) || hours < 0.0) return false;
+            u->tamingHours = hours;
+            return true;
+        } },
         { "modes", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->passive, u->block, u->sneak); } },
         { "buff", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->buffLeft, u->buffAttack); } },
         { "provoked", [](Line& l) {

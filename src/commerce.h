@@ -12,7 +12,7 @@
 //    in the kinds of item the Stall accepts.
 //  - Raids: units of factions hostile to you go for your stores outside your buildings and run off with the valuables.
 //    Three or more inside your claim with nothing left outside break in through a door.
-//  - The Wandering Trader: a Nomad who may appear at the edge of your claim each day, buys from a Stall with coins made
+//  - The Wandering Trader: a Factionless unit who may appear at the edge of your claim each day, buys from a Stall with coins made
 //    on the spot, and leaves.
 // Items taken from another faction's store are marked stolen from it. Selling them to that faction, or to one allied with
 // it, may be noticed (more likely for a valuable item, less with a good Thievery), and costs reputation with the buyer.

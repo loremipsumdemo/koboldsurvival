@@ -86,15 +86,18 @@ struct SpawnPicker {
     bool open = false;   // the Developer panel is showing (a game only; the level editor's is always there)
     EditorTab tab = EditorTab::Entities;   // Theme in the level editor shows its theme panel in place of the list
     EditorTool tool = EditorTool::None;
-    int picked = 0;      // by the tool: a unit's faction, a MobKind, a PropKind or an item id
+    int picked = 0;      // by the tool: 0 for a Kobold, a MobKind, a PropKind or an item id
+    int faction = 0;     // what a unit, mob or built prop placed belongs to (FACTION_PLAYER at first); Factionless: a wild mob
     int listScroll = 0;
     int cluster = 1;     // how many each click places
     float yaw = 0.0f;
 };
 
-// The three list tabs, the cluster's - and + around its count, and the list's rows, in the area given
+// The three list tabs, the faction's < and > around its name, the cluster's - and + around its count, and the list's
+// rows, in the area given
 struct SpawnPickerLayout {
     Rect tabs[3];
+    Rect factionLabel, factionDown, factionBox, factionUp;
     Rect clusterLabel, clusterDown, clusterBox, clusterUp;
     Rect listArea;
     std::vector<Rect> rows;

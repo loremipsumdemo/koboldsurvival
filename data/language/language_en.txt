@@ -332,8 +332,6 @@ UILABEL_EDITOR_ENTITIES	Entities
 UILABEL_EDITOR_PROPS	Props
 UILABEL_EDITOR_ITEMS	Items
 UILABEL_EDITOR_UNITS	Units
-UILABEL_EDITOR_PLAYER_UNIT	Player Unit
-UILABEL_EDITOR_NPC_UNIT	NPC: {0}
 UILABEL_EDITOR_MOBS	Mobs
 UILABEL_EDITOR_BOSS_MOBS	Boss Mobs
 UILABEL_EDITOR_COUNTS	{0} entities, {1} props, {2} items
@@ -430,9 +428,9 @@ UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the m
 UILABEL_SQUAD_TAB	Squad
 UILABEL_DISBAND	Disband
 UILABEL_DISBAND_HOLD	Hold Disband for {0} seconds to confirm
-MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become a Nomad: neutral to everyone and roaming alone.
+MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become Factionless: belonging to no faction and roaming alone.
 MISC_DISBAND_ASK_MOB	{0} will leave your squad and faction for good and go back to the wild.
-MISC_DISBANDED	{0} leaves your squad as a Nomad
+MISC_DISBANDED	{0} leaves your squad and becomes Factionless
 MISC_DISBANDED_MOB	{0} leaves your squad and returns to the wild
 UILABEL_OPTIMIZE	Optimize
 UILABEL_OPTIMIZE_ALL	Optimize All
@@ -1067,7 +1065,7 @@ FACTION_RED	Red Faction
 FACTION_GREEN	Green Faction
 FACTION_BLUE	Blue Faction
 FACTION_YELLOW	Yellow Faction
-FACTION_NOMAD	Nomad
+FACTION_FACTIONLESS	Factionless
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
 UILABEL_REPUTATION	Reputation
 UILABEL_FACTION_TAB	Faction
@@ -1565,3 +1563,75 @@ ITEM_161_NAME	Stone
 ITEM_161_DESC	A rough block of stone, broken from a boulder.
 ITEM_162_NAME	Dragon Crystal
 ITEM_162_DESC	A rare crystal that glows with a dragon's heat. The toughest thing to build with.
+UILABEL_EDITOR_KOBOLD	Kobold
+UILABEL_SPAWN_FACTION	Faction
+UILABEL_SPAWN_FACTION_TIP	What a unit, mob or built prop placed belongs to. A Factionless mob is a wild one.
+UILABEL_BEHAVIOR_DEAL_WITH_DOWNED	Deal with Downed
+UILABEL_BEHAVIOR_DEAL_WITH_DOWNED_TIP	Goes to an enemy lying knocked out nearby and does what your Faction Rules say: takes what they say to take, then leaves them, locks them in a Prisoner Cage, carries them out of your claim or finishes them off
+UILABEL_WAIT_NO_DOWNED	No knocked-out enemy near, or your Faction Rules leave them be
+UILABEL_DEAL_WITH	Deal With
+UILABEL_FACTION_RULES	Faction Rules
+UILABEL_FACTION_RULES_TIP	How your faction treats those outside it: the Factionless, trespassers, knocked-out enemies, trade, recruits and aid
+UILABEL_FACTION_RULES_TITLE	Faction Rules: {0}
+UILABEL_FACTION_RULES_HELP	Click < or > to change a rule; it takes hold at once. Point at a rule to read what it does.
+UILABEL_FACTION_RULES_RESET	Back to the Start
+UILABEL_RULES_FACTIONLESS	Factionless
+UILABEL_RULES_FACTIONLESS_TIP	How your units take to the Factionless: as friends (allies), as anyone else, or as enemies they attack on sight
+UILABEL_RULES_TRESPASS	Trespassers
+UILABEL_RULES_TRESPASS_TIP	An outsider, neither ally nor enemy, standing in your claim: let them be; warn them, and attack if they stay 30 seconds; or attack at once
+UILABEL_RULES_DOWNED_BODY	Downed enemies
+UILABEL_RULES_DOWNED_BODY_TIP	What Deal with Downed does with an enemy lying knocked out: leaves them; locks them in your nearest free Prisoner Cage (out of your claim if none is free); carries them past the edge of your claim; or finishes them off
+UILABEL_RULES_DOWNED_TAKE	Take from them
+UILABEL_RULES_DOWNED_TAKE_TIP	What is taken from them first. Food: what in their pack eases hunger. Weapons: that, and what they hold in main hand and off hand. Everything: their weapons and whole pack, not their armor. What won't fit is dropped beside them.
+UILABEL_RULES_TRADE	Trade with
+UILABEL_RULES_TRADE_TIP	Whom your faction trades with. A trade needs both sides' rules to allow it.
+UILABEL_RULES_MARKUP	Markup
+UILABEL_RULES_MARKUP_TIP	Percent added to what your Stalls ask of buyers. Shift-click steps it by 25.
+UILABEL_RULES_RECRUIT	Recruits
+UILABEL_RULES_RECRUIT_TIP	Whom your faction takes in: outsiders rescued into one of your beds who wake there (not another player faction's), Factionless units who stay a minute in your claim, or both
+UILABEL_RULES_AID	Aid
+UILABEL_RULES_AID_TIP	Whom your units rescue and share food with: your own faction only, your allies too, or anyone not hostile
+UILABEL_RULE_FRIENDLY	Friendly
+UILABEL_RULE_NEUTRAL	Neutral
+UILABEL_RULE_HOSTILE	Hostile
+UILABEL_RULE_IGNORE	Let them be
+UILABEL_RULE_WARN	Warn, then attack
+UILABEL_RULE_ATTACK	Attack
+UILABEL_RULE_LEAVE	Leave them
+UILABEL_RULE_CAGE	Prisoner Cage
+UILABEL_RULE_CARRY_OUT	Carry out of claim
+UILABEL_RULE_FINISH_OFF	Finish off
+UILABEL_RULE_NOTHING	Nothing
+UILABEL_RULE_FOOD	Food
+UILABEL_RULE_WEAPONS	Food and weapons
+UILABEL_RULE_EVERYTHING	Everything but armor
+UILABEL_RULE_NOBODY	Nobody
+UILABEL_RULE_ALLIES	Allies
+UILABEL_RULE_NOT_FACTIONLESS	Anyone but Factionless
+UILABEL_RULE_ANYONE	Anyone
+UILABEL_RULE_NEVER	Never
+UILABEL_RULE_RESCUED	Those rescued
+UILABEL_RULE_FACTIONLESS	Factionless who stay
+UILABEL_RULE_BOTH	Both
+UILABEL_RULE_OWN	Own faction only
+UILABEL_RULE_PERCENT	+{0}%
+MISC_TAKES_FROM_DOWNED	{0} takes from {1}
+MISC_TAKES_FROM_DOWNED_DROPS	{0} takes from {1}, dropping what won't fit
+MISC_FINISHES_OFF	{0} finishes off {1}
+MISC_CARRIES_OUT	{0} carries {1} out of the claim
+MISC_JOINS_FACTION	{0} joins {1}
+MISC_TRESPASS_WARNED	{0} is warned off {1} land
+MISC_TRESPASS_ATTACKED	{1} turns on {0} for trespassing
+MISC_DEAL_RULES_LEAVE	Your Faction Rules leave downed enemies be: change them on the Faction tab
+MISC_DEAL_NOT_DOWNED_ENEMY	Only a knocked-out enemy can be dealt with
+NPC_WONT_TRADE	We don't trade with your kind.
+UILABEL_ITEMS_WEAPONS	Weapons
+UILABEL_ITEMS_AMMO	Ammunition
+UILABEL_ITEMS_ARMOR	Armor
+UILABEL_ITEMS_ACCESSORIES	Accessories
+UILABEL_ITEMS_FOOD	Food
+UILABEL_ITEMS_MEDICINE	Potions and Medicine
+UILABEL_ITEMS_MATERIALS	Materials
+UILABEL_ITEMS_BONES	Bones
+UILABEL_TAMING	Taming
+MISC_TAMED	{0} is tamed and joins {1}

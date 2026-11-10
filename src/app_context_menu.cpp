@@ -1,6 +1,7 @@
 #include "building.h"
 #include "app.h"
 #include "commerce.h"
+#include "faction_rules.h"
 
 using namespace play;
 
@@ -145,6 +146,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         return out;
     }
     if (outCold(world, target)) {
+        // A knocked-out enemy: dealt with as your Faction Rules say
+        if (dealableBy(world, FACTION_PLAYER, target)) out.push_back(MenuAction::DealWith);
         if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
         out.push_back(MenuAction::Inventory);
         if (canEvacuate(world, occupiedProp(world, target), target)) out.push_back(MenuAction::Evacuate);
@@ -301,6 +304,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::BedPrivate: labels.push_back(lang("UILABEL_BED_MAKE_PRIVATE")); break;
         case MenuAction::StockStall: labels.push_back(lang("UILABEL_STOCK_STALL")); break;
         case MenuAction::ManStall: labels.push_back(lang("UILABEL_MAN_STALL")); break;
+        case MenuAction::DealWith: labels.push_back(lang("UILABEL_DEAL_WITH")); break;
         }
     }
     return labels;
@@ -554,6 +558,11 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::PickUp:
         if (!issueCarryOrder(world, terrain, actors, target)) refuse(lang("MISC_ALREADY_CARRYING"));
         break;
+    case MenuAction::DealWith: {
+        std::string why;
+        if (!issueDealOrder(world, terrain, actors, target, why)) refuse(why);
+        break;
+    }
     case MenuAction::Place: {
         ObjectId carrier = propInfo(world.get<Prop>(target)->kind).burnsCorpses ? corpseCarrier(target) : NO_OBJECT;
         if (!propInfo(world.get<Prop>(target)->kind).burnsCorpses) {

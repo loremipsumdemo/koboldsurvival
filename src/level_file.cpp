@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "build.h"
+#include "hostility.h"
 #include "game_tables.h"
 #include "items.h"
 #include "spatial.h"
@@ -33,7 +34,7 @@ std::string levelToText(const LevelData& d) {
             std::snprintf(line, sizeof line, "prop %d %s %.2f %.2f %.3f %d\n", o.id, propInfo((PropKind)o.kind).key.c_str(), o.x, o.z, o.yaw, o.owner);
             break;
         case LevelObject::Type::Mob:
-            std::snprintf(line, sizeof line, "mob %d %s %.2f %.2f\n", o.id, mobInfo((MobKind)o.kind).key.c_str(), o.x, o.z);
+            std::snprintf(line, sizeof line, "mob %d %s %.2f %.2f %d\n", o.id, mobInfo((MobKind)o.kind).key.c_str(), o.x, o.z, o.owner);
             break;
         case LevelObject::Type::Item:
             std::snprintf(line, sizeof line, "item %d %d %d %.2f %.2f\n", o.id, o.kind, o.count, o.x, o.z);
@@ -83,6 +84,9 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             std::string kind;
             MobKind named = MobKind::None;
             ok = (ls >> o.id >> kind >> o.x >> o.z) && mobKindNamed(kind, named);
+            // Its faction, when not its own kind's; a level written before mobs had one names none
+            if (ok && !(ls >> o.owner)) o.owner = -1;
+            if (o.owner >= 0 && (!findFaction(o.owner) || isMobFaction(o.owner))) o.owner = -1;
             o.type = LevelObject::Type::Mob;
             o.kind = idx(named);
             d.objects.push_back(o);
@@ -154,7 +158,7 @@ ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObjec
         break;
     }
     case LevelObject::Type::Mob:
-        e = spawnMob(w, t, rng, (MobKind)o.kind, mobFaction((MobKind)o.kind), o.x, o.z);
+        e = spawnMob(w, t, rng, (MobKind)o.kind, o.owner, o.x, o.z);   // -1 or Factionless: wild
         break;
     case LevelObject::Type::Item:
         e = spawnGroundItem(w, at, o.kind, o.count);
@@ -217,6 +221,8 @@ LevelData captureLevel(World& w, const std::string& map) {
         o.type = LevelObject::Type::Mob;
         o.id = idOf(e);
         o.kind = idx(w.get<Mob>(e)->kind);
+        const int faction = factionOf(w, e);
+        o.owner = faction != mobFaction(w.get<Mob>(e)->kind) ? faction : -1;
         o.x = w.get<Transform>(e)->x;
         o.z = w.get<Transform>(e)->z;
         d.objects.push_back(o);

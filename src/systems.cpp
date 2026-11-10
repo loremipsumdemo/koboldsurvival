@@ -5,7 +5,7 @@ using namespace systems_detail;
 ObjectId makeEntity(World& w, const Transform& at, int faction) {
     const ObjectId e = w.create();
     w.add(e, at);
-    if (faction == FACTION_PLAYER) {
+    if (factionPlayerControlled(faction)) {
         w.add(e, Entity{});
         w.add(e, Commandable{});
     } else {
@@ -62,7 +62,7 @@ bool disbandUnit(World& w, ObjectId u) {
     b.pending = true;
     b.block = false;
     b.sneak = false;
-    int faction = FACTION_NOMAD;
+    int faction = FACTION_FACTIONLESS;
     if (const Mob* mb = w.get<Mob>(u)) {
         const MobInfo& m = mobInfo(mb->kind);
         faction = mobFaction(mb->kind);
@@ -74,7 +74,7 @@ bool disbandUnit(World& w, ObjectId u) {
         const MobTemperament tm = mobTemperament(mb->kind);
         b.passive = tm == MobTemperament::Avoidant || tm == MobTemperament::Passive;
     } else {
-        b.rules = nomadBehaviors();
+        b.rules = factionlessBehaviors();
         b.passive = false;
         if (!w.has<Dialogue>(u)) w.add(u, defaultDialogue());
         if (Needs* n = w.get<Needs>(u)) n->hunger = n->maxHunger;

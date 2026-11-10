@@ -291,6 +291,10 @@ bool App::pressOnFactionGrid() {
         openManageSquads();
         return true;
     }
+    if (fp.factionRulesButton.contains(tx, ty)) {
+        openFactionRules();
+        return true;
+    }
     if (fp.renameButton.contains(tx, ty)) {
         if (squadRenaming) stopSquadRename(true);
         else startSquadRename();

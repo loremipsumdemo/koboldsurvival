@@ -286,7 +286,9 @@ void shop(World& w, Rng& rng, ObjectId buyer, ObjectId stall) {
         const ItemStack stack = st->slots[(size_t)slot];
         if (stack.item <= 0) continue;
         const int count = std::min(want, stack.count);
-        const int price = valueOf(stack.item) * count;
+        // Your faction's markup on top of the goods' worth
+        const int worth = valueOf(stack.item) * count;
+        const int price = worth + (worth * tradeMarkup(w, FACTION_PLAYER) + 99) / 100;
         const std::vector<ItemStack> pay = paymentFor(w, buyer, ss->payment, price);
         if (pay.empty()) continue;
         // The goods go to the buyer (its own, if they were stolen from it), the payment into the Stall
@@ -323,8 +325,9 @@ void shopperSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float d
             std::vector<ObjectId> pool;
             for (ObjectId u : w.view<Entity, Faction, Transform>()) {
                 const int f = w.get<Faction>(u)->id;
-                if (f == FACTION_PLAYER || f == FACTION_NOMAD || isMobFaction(f) || !freeNpc(w, u)) continue;
+                if (f == FACTION_PLAYER || f == FACTION_FACTIONLESS || isMobFaction(f) || !freeNpc(w, u)) continue;
                 if (factionsHostile(w, f, FACTION_PLAYER) || w.has<Hostile>(u) || reputation(w, FACTION_PLAYER, f) < 0) continue;
+                if (!factionsTrade(w, f, FACTION_PLAYER)) continue;
                 if (std::find(busyFactions.begin(), busyFactions.end(), f) != busyFactions.end()) continue;
                 const ObjectId s = nearestOf(w, stalls, *w.get<Transform>(u));
                 if (s == NO_OBJECT || distSq(*w.get<Transform>(s), *w.get<Transform>(u)) > SHOP_RANGE * SHOP_RANGE) continue;
@@ -475,7 +478,7 @@ void raiderSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float dt
             int inside = 0;
             for (ObjectId u : w.view<Entity, Faction, Transform>()) {
                 const int f = w.get<Faction>(u)->id;
-                if (f == FACTION_PLAYER || f == FACTION_NOMAD || isMobFaction(f) || w.has<Mob>(u) || outCold(w, u)) continue;
+                if (f == FACTION_PLAYER || f == FACTION_FACTIONLESS || isMobFaction(f) || w.has<Mob>(u) || outCold(w, u)) continue;
                 if (!factionsHostile(w, f, FACTION_PLAYER) && !w.has<Hostile>(u)) continue;
                 const Transform* ut = w.get<Transform>(u);
                 if (nearClaim(claims, *ut, CLAIM_RADIUS)) ++inside;
@@ -559,7 +562,7 @@ void spawnTrader(World& w, Terrain& t, Rng& rng) {
         if (x < 0.0f || z < 0.0f || x >= t.size() || z >= t.size() || !t.walkable((int)std::floor(x), (int)std::floor(z))) continue;
         if (claimAt(claimsOf(w), x, z)) continue;
         const float sx = std::floor(x) + 0.5f, sz = std::floor(z) + 0.5f;
-        const ObjectId u = spawnUnit(w, t, rng, FACTION_NOMAD, sx, sz);
+        const ObjectId u = spawnUnit(w, t, rng, FACTION_FACTIONLESS, sx, sz);
         if (Name* n = w.get<Name>(u)) n->text = lang("MISC_WANDERING_TRADER");
         if (Inventory* inv = w.get<Inventory>(u)) *inv = Inventory{};
         if (Behaviors* b = w.get<Behaviors>(u)) b->rules.clear();
