@@ -398,6 +398,12 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     book.current = std::clamp(d.currentSquad, 0, SQUAD_COUNT - 1);
     world.resource<Graveyard>().ghosts = d.ghosts;
     ghostSystem(world, 0.0);
+    {
+        std::unordered_map<long long, float> edits;
+        for (const auto& g : d.groundEdits) edits[Terrain::cornerKey((int)g[0], (int)g[1])] = g[2];
+        world.resource<GroundEdits>().corners = edits;
+        terrain.setHeightEdits(edits);
+    }
     const std::vector<ObjectId> props = restoreProps(world, d);
     restoreGroups(world, d, props);
     for (const SaveGround& g : d.ground) {
@@ -443,6 +449,13 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     std::ostringstream state;
     state << rng.gen;
     d.rngState = state.str();
+
+    for (const auto& [key, h] : w.resource<GroundEdits>().corners) {
+        d.groundEdits.push_back({ (float)(key % 1000003LL), (float)(key / 1000003LL), h });
+    }
+    std::sort(d.groundEdits.begin(), d.groundEdits.end(), [](const auto& a, const auto& b) {
+        return a[1] != b[1] ? a[1] < b[1] : a[0] < b[0];
+    });
 
     IdMap propIds;
     captureProps(w, d, propIds);

@@ -479,7 +479,6 @@ UILABEL_FLOOR_MANUAL_TIP	显示的楼层。手动：Q 下一层，E 上一层；
 MISC_FLOOR_AUTO	楼层：自动，跟随镜头跟随的单位
 MISC_FLOOR_MANUAL	楼层：手动。Q 下一层，E 上一层，Z 回到自动
 MISC_FLOOR_NOW	{0}楼
-MISC_FLOOR_NOW_GROUND	地面层
 MISC_FLOOR_MANUAL_BANNER	手动楼层视图：{0}。按 Z 回到自动
 
 # ----------------------------------------------------------------------
@@ -893,6 +892,7 @@ MISC_DOOR_SMASHED	{0} 砸坏了{1}
 MISC_CANT_CLIMB	{0} 不能在这里攀爬：梯子旁边需要一块建好的楼板
 MISC_FOUNDATION_TOO_SMALL	新建筑的地基每边至少 3 格；之后可以随意扩建
 MISC_FOUNDATION_TOO_BIG	地基每边最多 64 格
+MISC_FOUNDATION_TOO_STEEP	那里的地面太陡，无法为地基整平
 MISC_BUILD_OUTSIDE_CLAIM	它的中心必须在你的领地内，且任何部分都不能在别的阵营领地内
 MISC_BUILD_NEEDS_FOUNDATION	这必须建在你的地基上
 MISC_BUILD_FOUNDATION_UNFINISHED	必须先建好地基
@@ -911,7 +911,6 @@ MISC_BLUEPRINT_BUILDING	建造中：{0}%
 MISC_BLUEPRINT_WAITING	材料到齐后开始建造
 MISC_ON_FLOOR	位于{0}楼
 MISC_BUILD_ON_FLOOR	在{0}楼建造
-MISC_BUILD_ON_GROUND	在地面层建造
 MISC_DOOR_LOCKED	门已上锁
 MISC_DOOR_UNLOCKED	门已解锁
 MISC_STAIRS_TURN	R：旋转

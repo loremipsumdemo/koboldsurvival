@@ -281,7 +281,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
     {
         mode(L.floorButton, fitTextTip(lang("UILABEL_FLOOR_BUTTON"), L.floorButton.w - 6.0f * s, L.floorButton), floorManual);
-        const std::string now = floorLevel > 0 ? langf("MISC_FLOOR_NOW", { std::to_string(floorLevel) }) : std::string(lang("MISC_FLOOR_NOW_GROUND"));
+        const std::string now = langf("MISC_FLOOR_NOW", { std::to_string(std::max(0, floorLevel) + 1) });
         noteTip(now + ". " + lang(floorManual ? "UILABEL_FLOOR_MANUAL_TIP" : "UILABEL_FLOOR_AUTO_TIP"), L.floorButton);
     }
 

@@ -22,6 +22,7 @@ struct Camera {
     float pitch = 0.6f;
     float distance = 13.0f;
     float lift = 0.0f;
+    float floorLift = 0.0f;   // the pivot's height over the ground: the top of the floor it is on
     float mapSize = 1024.0f;
     float eyeClearance = 1000.0f;
     float viewRange = 256.0f;
@@ -49,7 +50,7 @@ struct Camera {
     }
 
     void updateClearance(const Terrain& t) {
-        focusY = t.heightAt(focusX, focusZ) + FOCUS_HEIGHT;
+        focusY = t.heightAt(focusX, focusZ) + floorLift + FOCUS_HEIGHT;
         float ex = focusX + distance * std::sin(yaw) * std::cos(pitch);
         float ey = focusY + distance * std::sin(pitch);
         float ez = focusZ + distance * std::cos(yaw) * std::cos(pitch);

@@ -155,6 +155,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
                    group ? r.rule.propKind : r.prop, r.rule.percent);
         }
     }
+    for (const auto& g : d.groundEdits) w.line("groundedit", (int)g[0], (int)g[1], g[2]);
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
     for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
     for (size_t i = 0; i < d.units.size(); ++i) writeUnit(w, i, d.units[i]);
@@ -301,6 +302,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             Health h;
             if (!p || !l.read(h.value, h.max)) return false;
             p->health = h;
+            return true;
+        } },
+        { "groundedit", [](Line& l) {
+            int x = 0, z = 0;
+            float h = 0.0f;
+            if (!l.read(x, z, h)) return false;
+            l.d.groundEdits.push_back({ (float)x, (float)z, h });
             return true;
         } },
         { "ground", [](Line& l) {

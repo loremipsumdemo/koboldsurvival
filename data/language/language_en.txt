@@ -479,7 +479,6 @@ UILABEL_FLOOR_MANUAL_TIP	The floor shown. Manual: Q steps down a floor and E up;
 MISC_FLOOR_AUTO	Floor: Auto, following the unit the camera follows
 MISC_FLOOR_MANUAL	Floor: Manual. Q steps down a floor, E steps up, Z goes back to Auto
 MISC_FLOOR_NOW	Floor {0}
-MISC_FLOOR_NOW_GROUND	Ground floor
 MISC_FLOOR_MANUAL_BANNER	Manual floor view: {0}. Press Z to go back to Auto
 
 # ----------------------------------------------------------------------
@@ -893,6 +892,7 @@ MISC_DOOR_SMASHED	{0} smashes the {1}
 MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Upper Floor beside the Ladder
 MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
 MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
+MISC_FOUNDATION_TOO_STEEP	The ground there is too steep to level for a foundation
 MISC_BUILD_OUTSIDE_CLAIM	Its middle must be in your claim, and none of it in another faction's
 MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
 MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
@@ -911,7 +911,6 @@ MISC_BLUEPRINT_BUILDING	Building: {0}%
 MISC_BLUEPRINT_WAITING	Building starts once all its material is here
 MISC_ON_FLOOR	On floor {0}
 MISC_BUILD_ON_FLOOR	Building on floor {0}
-MISC_BUILD_ON_GROUND	Building on the ground floor
 MISC_DOOR_LOCKED	Door locked
 MISC_DOOR_UNLOCKED	Door unlocked
 MISC_STAIRS_TURN	R: turn

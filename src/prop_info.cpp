@@ -50,7 +50,7 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
             out.push_back(lang("MISC_BLUEPRINT_WAITING"));
         }
     }
-    if (const int level = storeyOf(w, e); level > 0 && !info.upperFloor) out.push_back(langf("MISC_ON_FLOOR", { std::to_string(level) }));
+    if (const int level = storeyOf(w, e); level > 0 && !info.upperFloor) out.push_back(langf("MISC_ON_FLOOR", { std::to_string(level + 1) }));
     if (info.use == PropUse::Occupy) {
         const bool bed = isBed(p->kind);
         out.push_back(lang(bed ? "MISC_PROP_USE_BED" : isSeat(p->kind) ? "MISC_PROP_USE_SEAT" : "MISC_PROP_USE_CAGE"));

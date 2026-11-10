@@ -234,7 +234,7 @@ void Renderer::drawPivotRing(const Camera& cam, const Terrain& t, float alpha, i
     if (alpha <= 0.0f) return;
 
     const float cx = cam.focusX, cz = cam.focusZ;
-    const float cy = t.heightAt(cx, cz) + 0.03f;
+    const float cy = t.heightAt(cx, cz) + cam.floorLift + 0.03f;
     const float outer = 0.5f, inner = 0.44f;
     const int segments = 48;
 
@@ -803,6 +803,16 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
                                                                         : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
         const float a = 0.08f, y = m.y + lift;
+        if (m.outline) {
+            const RGBA edge{ tone.r, tone.g, tone.b, 0.95f };
+            const float o0 = 0.04f, o1 = 1.0f - o0, w = 0.07f;
+            const float x0 = m.x + o0, x1 = m.x + o1, z0 = m.z + o0, z1 = m.z + o1;
+            b.quad(V3{ x0, y, z0 }, V3{ x1, y, z0 }, V3{ x1, y, z0 + w }, V3{ x0, y, z0 + w }, edge);
+            b.quad(V3{ x0, y, z1 - w }, V3{ x1, y, z1 - w }, V3{ x1, y, z1 }, V3{ x0, y, z1 }, edge);
+            b.quad(V3{ x0, y, z0 + w }, V3{ x0 + w, y, z0 + w }, V3{ x0 + w, y, z1 - w }, V3{ x0, y, z1 - w }, edge);
+            b.quad(V3{ x1 - w, y, z0 + w }, V3{ x1, y, z0 + w }, V3{ x1, y, z1 - w }, V3{ x1 - w, y, z1 - w }, edge);
+            continue;
+        }
         b.quad(V3{ m.x + a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + 1 - a }, V3{ m.x + a, y, m.z + 1 - a }, tone);
     }
     if (buildPreview_.rect) {

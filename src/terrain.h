@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "chunk.h"
@@ -61,6 +62,12 @@ public:
     bool onDeck(int x, int y) const;
     // Where something standing at x, z is: the ground, or the top of a foundation's deck
     float standHeight(float x, float z) const;
+    // Ground reshaped in play (foundations levelling it): corner heights by cornerKey, laid over what the map's source
+    // gives. Opening a map clears them; a save's are put back with setHeightEdits.
+    static long long cornerKey(int x, int z) { return (long long)z * 1000003LL + (long long)x; }
+    void setCornerHeight(int x, int z, float h);
+    void setHeightEdits(const std::unordered_map<long long, float>& edits);
+    const std::unordered_map<long long, float>& heightEdits() const { return heightEdits_; }
     // The piece of open ground a tile is in, numbered from 1; 0 for closed ground. On a map too big to work them out, all
     // open ground is piece 1.
     int areaAt(int x, int y) const { return walkable(x, y) ? areaOf(x, y) : 0; }
@@ -80,6 +87,8 @@ private:
     };
     const GroundChunk& groundOf(int cx, int cz) const;
     void findAreas();
+    void applyEdits(int cx, int cz, std::vector<float>& heights) const;
+    void refreshCorner(int x, int z);
     int areaOf(int x, int y) const;
 
     int size_ = 0;
@@ -99,4 +108,5 @@ private:
     float floorY_ = -1.0f;
     std::unordered_set<long long> blocked_;
     std::unordered_set<long long> decks_;
+    std::unordered_map<long long, float> heightEdits_;
 };
