@@ -160,6 +160,12 @@ void breakBuilding(World& w, ObjectId e) {
     }
     if (propInfo(kind).foundation) foundationLost(w, e);
     if (propInfo(kind).wallRule || propInfo(kind).door) buildingTilesChanged(w, (int)std::floor(at.x), (int)std::floor(at.z), (int)std::floor(at.x), (int)std::floor(at.z));
+    if (propInfo(kind).stairs) {
+        // Their steps open up to walk across again
+        int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+        pieceTiles(w, e, x0, z0, x1, z1);
+        buildingTilesChanged(w, x0, z0, x1, z1);
+    }
     const std::vector<ItemStack> held = propHoldings(w, e);
     airshipLost(w, e);
     if (destroyedByHand(kind)) {

@@ -49,8 +49,8 @@
 #                                wall pieces around it, from the models <model>_end, _straight, _corner, _tee and _cross. Blocks walking
 #                door            only on a foundation's entrance; strangers can't pass it while it is locked, and pick or smash it
 #                ladder          climbs to the upper floor; only once every edge tile of its foundation has a wall or door
-#                stairs          a ladder 3 tiles long (the tile placed on is the middle one), walked up from its foot to the
-#                                floor above, stepping off past its top. R turns it while it is placed
+#                stairs          3 steps in a row (the tile placed on is the middle one); the bottom step is stepped onto from
+#                                any floor tile beside it, the top step is floor of the level above. R turns it while placed
 #                rare            a new level scatters only one
 #                stall           sells to other factions' units while a shopkeeper mans it (Man Stall task)
 #                exterior        goes outside buildings only: never on a foundation or an upper floor

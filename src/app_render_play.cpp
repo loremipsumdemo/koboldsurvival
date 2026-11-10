@@ -313,6 +313,7 @@ void App::drawPlayingScreen() {
     drawMaterialAsk();
     drawTalkOrTrade();
     if (session.paused && !editing) renderer.drawPauseBar(true);
+    drawFloorBanner();
     drawFormMenu();
     if (editing) {
         drawEditorPanel();

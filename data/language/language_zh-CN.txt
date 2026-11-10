@@ -224,6 +224,8 @@ CONTROL_KEYS_15	Alt + 5
 CONTROL_DOES_15	在紧密阵型和松散阵型之间切换
 CONTROL_KEYS_16	Alt + 按住鼠标右键拖动
 CONTROL_DOES_16	以拖动起点为中心布置所选单位，拖动距离决定大小
+CONTROL_KEYS_17	Q / E，Z
+CONTROL_DOES_17	显示下一层或上一层（手动）；Z 回到自动
 
 # ----------------------------------------------------------------------
 # World Generation, Level Editor and map pick
@@ -470,14 +472,15 @@ UILABEL_OPTIMIZE_SELECTED	已选
 UILABEL_OPTIMIZE_EVERYONE	全部
 UILABEL_OPTIMIZE_CUSTOM	自定义...
 UILABEL_FLOOR_BUTTON	楼层
-UILABEL_FLOOR_AUTO	自动
+UILABEL_FLOOR_AUTO	自动（Z）
 UILABEL_FLOOR_MANUAL	手动（Q/E）
-UILABEL_FLOOR_AUTO_TIP	显示、建造和点击的楼层。自动：镜头跟随的单位所在的楼层。点击选择自动或手动；Q 和 E 下楼和上楼。
-UILABEL_FLOOR_MANUAL_TIP	显示、建造和点击的楼层。手动：Q 下一层，E 上一层。点击选择自动或手动。
+UILABEL_FLOOR_AUTO_TIP	显示的楼层。自动：镜头跟随的单位所在的楼层。点击选择自动或手动；Q 和 E 下楼和上楼，Z 回到自动。
+UILABEL_FLOOR_MANUAL_TIP	显示的楼层。手动：Q 下一层，E 上一层；Z 回到自动。点击选择自动或手动。
 MISC_FLOOR_AUTO	楼层：自动，跟随镜头跟随的单位
-MISC_FLOOR_MANUAL	楼层：手动。Q 下一层，E 上一层
+MISC_FLOOR_MANUAL	楼层：手动。Q 下一层，E 上一层，Z 回到自动
 MISC_FLOOR_NOW	{0}楼
 MISC_FLOOR_NOW_GROUND	地面层
+MISC_FLOOR_MANUAL_BANNER	手动楼层视图：{0}。按 Z 回到自动
 
 # ----------------------------------------------------------------------
 # Unit stats, skills and needs
@@ -907,8 +910,8 @@ MISC_BLUEPRINT_NEEDS	{0} {1}/{2}
 MISC_BLUEPRINT_BUILDING	建造中：{0}%
 MISC_BLUEPRINT_WAITING	材料到齐后开始建造
 MISC_ON_FLOOR	位于{0}楼
-MISC_BUILD_ON_FLOOR	在{0}楼建造（Q/E）
-MISC_BUILD_ON_GROUND	在地面层建造（Q/E）
+MISC_BUILD_ON_FLOOR	在{0}楼建造
+MISC_BUILD_ON_GROUND	在地面层建造
 MISC_DOOR_LOCKED	门已上锁
 MISC_DOOR_UNLOCKED	门已解锁
 MISC_STAIRS_TURN	R：旋转

@@ -52,10 +52,13 @@ struct PlaySession {
     long long lastPaintTile = -1;
     // What a foundation, wall or door is made of (an int of BuildMaterial), and the kind waiting for that choice
     int buildMaterial = 0;
-    // The floor looked at, built on and clicked on: 0 the ground floor, 1 the first upper floor, up to STOREY_MAX.
-    // Auto: the floor of the unit the camera follows; Manual: Q and E step it down and up.
+    // The floor looked at: 0 the ground floor, 1 the first upper floor, up to STOREY_MAX. Auto: the floor of the unit the
+    // camera follows; Manual: Q and E step it down and up, and Z goes back to Auto.
     int floorLevel = 0;
     bool floorManual = false;
+    // The floor what is being placed goes on: the highest finished floor seen under the pointer (upper floors: the one
+    // looked at)
+    int buildLevel = 0;
     int buildDir = 0;   // stairs being placed: the way they rise (0 north, 1 east, 2 south, 3 west), turned with R
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;

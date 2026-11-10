@@ -498,7 +498,7 @@ void App::updateHover() {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
-                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.floorLevel;
+                const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
                 bp.lift = storeyBaseHeight(storey);
                 bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z, storey) == BuildCheck::Ok;
             }

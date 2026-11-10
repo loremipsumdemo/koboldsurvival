@@ -697,6 +697,8 @@ void steerVelocity(World& w, const Terrain& t, SteerFrame& s, size_t i, std::vec
 }
 
 void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f velocity, float dt, bool running) {
+    // Climbing a ladder or walking stairs: the climb moves it
+    if (w.has<Climbing>(e)) return;
     Transform* tr = w.get<Transform>(e);
     const bool player = w.has<Commandable>(e);
     const float x0 = tr->x, z0 = tr->z;
@@ -778,7 +780,21 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
     for (ObjectId p : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-        if ((!info.door && !info.upperFloor && !info.wallRule) || w.has<Blueprint>(p)) continue;
+        if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs) || w.has<Blueprint>(p)) continue;
+        if (info.stairs) {
+            // Their top step is floor of the level above; their steps can't be walked across up on their own floor
+            int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+            pieceTiles(w, p, x0, z0, x1, z1);
+            const int lv = storeyOf(w, p), d = stairsDir(w, p);
+            const Transform* pt = w.get<Transform>(p);
+            s.floors.insert(levelKey((int)std::floor(pt->x) + STAIRS_DX[d], (int)std::floor(pt->z) + STAIRS_DZ[d], lv + 1));
+            if (lv > 0) {
+                for (int z = z0; z <= z1; ++z) {
+                    for (int x = x0; x <= x1; ++x) s.upperWalls.insert(levelKey(x, z, lv));
+                }
+            }
+            continue;
+        }
         const Transform* pt = w.get<Transform>(p);
         const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
         const int storey = storeyOf(w, p);

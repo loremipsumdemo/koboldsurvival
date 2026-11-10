@@ -73,6 +73,7 @@ inline constexpr ControlNote CONTROL_NOTES[] = {
     { "CONTROL_KEYS_14", "CONTROL_DOES_14" },
     { "CONTROL_KEYS_15", "CONTROL_DOES_15" },
     { "CONTROL_KEYS_16", "CONTROL_DOES_16" },
+    { "CONTROL_KEYS_17", "CONTROL_DOES_17" },
 };
 inline constexpr int CONTROL_NOTE_COUNT = (int)(sizeof(CONTROL_NOTES) / sizeof(CONTROL_NOTES[0]));
 

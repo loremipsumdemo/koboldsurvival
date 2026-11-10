@@ -15,8 +15,8 @@
 // foundation tiles, then walls, doors, ladders and upper floors on them) starts as a blueprint that needs its material
 // brought to it and then building, both done by Auto-Construct. Walls, doors, ladders, upper floors and other props go
 // on any floor: the ground floor (the foundation) or an upper floor, which is level 1, 2 and so on. A ladder on a floor
-// climbs to the floor above. A piece isn't finished while a unit stands where it goes: the unit is asked to move, and the
-// piece is tried again later.
+// climbs to the floor above. A piece isn't finished while a unit stands where it goes or on a tile beside it (so nobody is
+// walled into a corner): the unit is asked to move, and the piece is tried again later.
 inline constexpr int FOUNDATION_MIN = 3;
 inline constexpr int FOUNDATION_MAX = 64;
 inline constexpr int STOREY_MAX = 7;                 // the top floor: 8 floors in all, the ground floor 0 to 7
@@ -57,12 +57,20 @@ struct Blueprint {
     float retryIn = 0.0f;
 };
 
-// A unit climbing a ladder, up or down. Not saved.
+// A unit climbing a ladder, up or down, or walking up or down stairs. Not saved.
 struct Climbing {
     ObjectId ladder = NO_OBJECT;   // a ladder or stairs
     float left = 0.0f;
     bool down = false;
     float whole = CLIMB_SECONDS;   // seconds the whole climb takes
+    // Stairs: the walk, point to point (from where it set off, over the steps, to where it gets off), and where on it
+    // (by distance) it hops from one height to the next, as heights above the ground at the bottom step
+    struct Hop {
+        float at, from, to;
+    };
+    std::vector<Vec2> path;
+    std::vector<Hop> hops;
+    float startHeight = 0.0f;
 };
 
 // A unit's building task under way: fetching logs from a store, bringing them to a blueprint, or building it. Not saved.
@@ -86,6 +94,7 @@ struct RouteLeg {
     int storey = 0;
     Vec2 to{ 0.0f, 0.0f };
     ObjectId ladder = NO_OBJECT;
+    Vec2 off{ 0.0f, 0.0f };   // a leg that climbs: where it gets off (stairs down: the tile beside the bottom step)
 };
 struct Route {
     std::vector<RouteLeg> legs;
@@ -122,8 +131,14 @@ struct BuildingMap {
     std::unordered_map<long long, ObjectId> foundation;   // tileKey: a foundation tile
     std::unordered_map<long long, ObjectId> piece;        // levelKey: a wall, door or ladder on that floor
     std::unordered_map<long long, ObjectId> floor;        // levelKey: an upper floor (level 1 and up)
+    std::unordered_map<long long, ObjectId> stairTop;     // levelKey: the top step of stairs, a tile of the floor above them
 };
 BuildingMap buildingMap(World& w);
+// A finished floor of owner's (any owner for -1) on this tile and level: the foundation for level 0, else an upper floor
+// or the top step of stairs from the floor below
+bool floorSurfaceOn(World& w, const BuildingMap& m, int x, int z, int level, int owner = -1);
+// Stairs standing on this floor whose step this tile is: the step (0 the bottom, 2 the top), or -1
+int stairsStepAt(World& w, const BuildingMap& m, int x, int z, int level, ObjectId& stairs);
 
 enum class PieceCheck {
     Ok,
@@ -167,8 +182,9 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
 
 // A piece on this floor (level) of a tile. A ladder, and an upper floor over this floor, need every edge tile of the
 // building on this floor to have a wall or a door.
-// Stairs go on 3 tiles in a row, x and z the middle one, rising toward dir (0 north, 1 east, 2 south, 3 west); a unit
-// steps off them onto the floor above on the tile past their top.
+// Stairs go on 3 tiles in a row, x and z the middle one, rising toward dir (0 north, 1 east, 2 south, 3 west). Their
+// bottom step is stepped onto from any open floor tile beside it, and their top step is a tile of the floor above. Their
+// steps can't be walked across on the floor they stand on.
 PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER, int level = 0, int dir = 0);
 ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner = FACTION_PLAYER,
                     BuildMaterial material = BuildMaterial::Wood, int level = 0, int dir = 0);
@@ -210,13 +226,15 @@ int bedHouseOwner(World& w, ObjectId bed);
 
 // Ladders and the upper floors
 bool canClimbUp(World& w, ObjectId ladder);
-// Where a unit stands to climb up a ladder or stairs (their foot), and where it steps off at the top
+// Where a unit stands to climb up a ladder or stairs (their foot: for stairs, an open tile beside the bottom step, the
+// one in front first), and where it steps off at the top (for stairs, their top step)
 Vec2 climbFoot(World& w, ObjectId ladder);
 bool climbTop(World& w, ObjectId ladder, Vec2& out);
 // Whether u may start up (or down) this ladder or stairs from where it stands: inside their building, on their floor
 // (or the one above to go down), within a tile of their foot (or head). Not from outside, through a wall.
 bool atClimbSpot(World& w, ObjectId u, ObjectId ladder);
-bool startClimb(World& w, ObjectId u, ObjectId ladder);
+// off: stairs down, the tile beside the bottom step to get off onto (else the one nearest the unit)
+bool startClimb(World& w, const Terrain& t, ObjectId u, ObjectId ladder, const Vec2* off = nullptr);
 bool isUpstairs(World& w, ObjectId u);
 // The unit heads for a spot: on its own floor, or by way of ladders on another
 void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target);

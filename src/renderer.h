@@ -145,6 +145,8 @@ public:
         std::unordered_set<long long> tiles;   // the building's tiles, by tileKey
     };
     void setCutaway(Cutaway c) { cutaway_ = std::move(c); }
+    // Whether the cutaway leaves out what stands on this tile on this floor
+    bool tileCutAway(int x, int z, int level) const { return cutaway_.on && level > cutaway_.level && cutaway_.tiles.count((long long)z * 1000003LL + x) > 0; }   // tileKey
     // Whether the cutaway leaves this out
     bool cutAway(World& w, ObjectId e) const;
     // Whether a click can't reach this: left out by the cutaway, or under the floor looked at

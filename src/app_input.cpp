@@ -219,8 +219,13 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Playing && !editing && session.dialogueUnit == NO_OBJECT && (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT)) == 0 &&
-        (e.key.key == SDLK_Q || e.key.key == SDLK_E)) {
-        stepFloor(e.key.key == SDLK_E ? 1 : -1);
+        (e.key.key == SDLK_Q || e.key.key == SDLK_E || e.key.key == SDLK_Z)) {
+        // Q and E: Manual, down and up a floor; Z: back to Auto
+        if (e.key.key == SDLK_Z) {
+            if (!e.key.repeat) floorAuto();
+        } else {
+            stepFloor(e.key.key == SDLK_E ? 1 : -1);
+        }
         return;
     }
     if (screen == Screen::Playing && session.buildPick.any() && e.key.key == SDLK_ESCAPE) {

@@ -104,37 +104,107 @@ void App::stepFloor(int by) {
     showNotice(session.floorLevel > 0 ? langf("MISC_FLOOR_NOW", { std::to_string(session.floorLevel) }) : lang("MISC_FLOOR_NOW_GROUND"), 2.0f);
 }
 
-// Where a click lands: on the floor looked at, where it has a floor, so a click doesn't go through it; else the ground
-std::optional<std::pair<float, float>> App::pickFloor(float mx, float my, int& storey) {
-    storey = 0;
-    const auto ground = pickGround(cam, terrain, mx, my, winW, winH);
-    if (!ground || session.floorLevel <= 0) return ground;
+// Z: back to Auto, the floor following the camera again
+void App::floorAuto() {
+    if (!session.floorManual) {
+        playSfx(Sfx::UiError);
+        return;
+    }
+    session.floorManual = false;
+    playSfx(Sfx::UiClick);
+    showNotice(lang("MISC_FLOOR_AUTO"), 2.0f);
+}
+
+// In Manual: a banner at the top middle saying which floor is shown, and that Z goes back to Auto
+void App::drawFloorBanner() {
+    if (!session.floorManual || editing) return;
+    const float s = uiScaleFor((float)winH);
+    const std::string floor = session.floorLevel > 0 ? langf("MISC_FLOOR_NOW", { std::to_string(session.floorLevel) }) : lang("MISC_FLOOR_NOW_GROUND");
+    const std::string text = langf("MISC_FLOOR_MANUAL_BANNER", { floor });
+    const float pad = 10.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
+    // Under the notice when one shows, and under the pause bar
+    float top = 14.0f * s;
+    if (noticeSec > 0.0f && !notice.empty()) top += renderer.listTextHeight("Ag") + 12.0f * s + 8.0f * s;
+    if (session.paused) top = std::max(top, renderer.pauseBarHeight(true) + 8.0f * s);
+    const Rect box{ std::floor((winW - tw) * 0.5f - pad), std::floor(top), tw + 2.0f * pad, th + pad };
+    renderer.drawRect(box, RGBA{ 0.0f, 0.0f, 0.0f, 0.65f });
+    renderer.drawRect(Rect{ box.x, box.y + box.h - 2.0f * s, box.w, 2.0f * s }, RGBA{ 0.75f, 0.85f, 1.0f, 0.9f });
+    renderer.drawListText(text, box.x + pad, box.y + pad * 0.5f, RGBA{ 0.75f, 0.85f, 1.0f, 1.0f });
+}
+
+// The point under the pointer this high above the ground
+std::optional<std::pair<float, float>> App::pickAbove(float mx, float my, std::optional<std::pair<float, float>> ground, float above) {
     auto hit = ground;
-    for (int i = 0; i < 3; ++i) {
-        const auto up = pickPlane(cam, mx, my, winW, winH, terrain.heightAt(hit->first, hit->second) + storeyBaseHeight(session.floorLevel));
+    for (int i = 0; hit && i < 3; ++i) {
+        const auto up = pickPlane(cam, mx, my, winW, winH, terrain.heightAt(hit->first, hit->second) + above);
         if (!up) break;
         hit = up;
     }
-    if (!floorSurfaceAt(world, tileOf(hit->first), tileOf(hit->second), session.floorLevel, -1)) return ground;
-    storey = session.floorLevel;
     return hit;
 }
 
-// Where the pointer points for building: the ground, or for an upper floor, the height of the floor above it, so the
-// tiles dragged over are the ones seen at that height
+// Where a click lands: on the highest floor seen under the pointer (an upper floor, or the top step of stairs, which is
+// a tile of the floor above them), passing over what the cutaway leaves out, so units go up or down the stairs to get
+// there. A lower step of stairs is where it leads: the bottom one their foot, the middle one their top. Else the ground.
+std::optional<std::pair<float, float>> App::pickFloor(float mx, float my, int& storey) {
+    storey = 0;
+    const auto ground = pickGround(cam, terrain, mx, my, winW, winH);
+    if (!ground) return ground;
+    const BuildingMap m = buildingMap(world);
+    if (m.floor.empty() && m.stairTop.empty()) return ground;
+    for (int level = STOREY_MAX; level >= 0; --level) {
+        // Stairs standing on this floor: their middle step, then their bottom one
+        const float base = storeyBaseHeight(level), rise = storeyBaseHeight(level + 1) - base;
+        for (int step = 1; step >= 0; --step) {
+            const auto hit = pickAbove(mx, my, ground, base + rise * (float)(step + 1) / 3.0f);
+            if (!hit) continue;
+            const int x = tileOf(hit->first), z = tileOf(hit->second);
+            ObjectId stairs = NO_OBJECT;
+            if (stairsStepAt(world, m, x, z, level, stairs) != step || world.has<Blueprint>(stairs) || renderer.tileCutAway(x, z, level)) continue;
+            Vec2 spot = climbFoot(world, stairs);
+            storey = level;
+            if (step == 1 && climbTop(world, stairs, spot)) storey = level + 1;
+            if (step == 0 || storey == level + 1) return std::make_pair(spot.x, spot.z);
+        }
+        if (level == 0) break;
+        const auto hit = pickAbove(mx, my, ground, base);
+        if (!hit) continue;
+        const int x = tileOf(hit->first), z = tileOf(hit->second);
+        if (!floorSurfaceOn(world, m, x, z, level)) continue;
+        // A stairs' top step shows with the stairs, on the floor below
+        const bool topStep = !m.floor.count(levelKey(x, z, level));
+        if (renderer.tileCutAway(x, z, topStep ? level - 1 : level)) continue;
+        storey = level;
+        return hit;
+    }
+    storey = 0;
+    return ground;
+}
+
+// Where the pointer points for building. An upper floor: the tiles at the height of the floor above the one looked at,
+// so the tiles dragged over are the ones seen there. A foundation or something that claims land: the ground. Anything
+// else: on the highest finished floor seen under the pointer (passing over what the cutaway leaves out), or the ground,
+// and buildLevel says which.
 std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
     auto hit = pickGround(cam, terrain, mx, my, winW, winH);
+    session.buildLevel = session.floorLevel;
     if (!hit || !session.buildPick.placing()) return hit;
-    // Building on an upper floor: the tiles at that floor's height; an upper floor goes over the floor being built on
     const PropInfo& info = propInfo(session.buildPick.kind);
-    float lift = 0.0f;
-    if (info.upperFloor) lift = (session.floorLevel + 1) * FLOOR_HEIGHT;
-    else if (!info.foundation && session.floorLevel > 0) lift = storeyBaseHeight(session.floorLevel);
-    if (lift <= 0.0f) return hit;
-    for (int i = 0; i < 2; ++i) {
-        const auto up = pickPlane(cam, mx, my, winW, winH, terrain.heightAt(hit->first, hit->second) + lift);
-        if (!up) break;
-        hit = up;
+    if (info.upperFloor) {
+        const auto up = pickAbove(mx, my, hit, (session.floorLevel + 1) * FLOOR_HEIGHT);
+        return up ? up : hit;
+    }
+    session.buildLevel = 0;
+    if (info.foundation || info.claimsLand) return hit;
+    const BuildingMap m = buildingMap(world);
+    for (int level = STOREY_MAX; level >= 1 && !m.floor.empty(); --level) {
+        const auto up = pickAbove(mx, my, hit, storeyBaseHeight(level));
+        if (!up) continue;
+        const int x = tileOf(up->first), z = tileOf(up->second);
+        const auto f = m.floor.find(levelKey(x, z, level));
+        if (f == m.floor.end() || world.has<Blueprint>(f->second) || renderer.tileCutAway(x, z, level)) continue;
+        session.buildLevel = level;
+        return up;
     }
     return hit;
 }
@@ -174,7 +244,7 @@ void App::drawFoundationSize() {
     // Building on an upper floor: which one, beside the cursor
     if (session.buildPick.placing() && !session.foundationDrag && !session.floorDrag && !propInfo(session.buildPick.kind).foundation) {
         const float s = uiScaleFor((float)winH);
-        std::string text = session.floorLevel > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.floorLevel) })
+        std::string text = session.buildLevel > 0 ? langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildLevel) })
                                                   : lang("MISC_BUILD_ON_GROUND");
         if (propInfo(session.buildPick.kind).stairs) text += "  " + lang("MISC_STAIRS_TURN");
         const float pad = 6.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
@@ -214,9 +284,9 @@ bool App::buildPressAt(float gx, float gz) {
         return true;
     }
     if (info.onFoundation) {
-        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.floorLevel, session.buildDir);
+        const PieceCheck why = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildLevel, session.buildDir);
         if (why == PieceCheck::Ok) {
-            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.floorLevel,
+            placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildLevel,
                        session.buildDir);
             playSfx(Sfx::UiClick);
         } else {
@@ -288,8 +358,8 @@ void App::updateBuildPaint() {
     if (tileKey(tx, tz) == session.lastPaintTile) return;
     session.lastPaintTile = tileKey(tx, tz);
     // Dragging lays the piece on each tile it may go on, and passes over the rest
-    if (checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.floorLevel) == PieceCheck::Ok) {
-        placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.floorLevel);
+    if (checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildLevel) == PieceCheck::Ok) {
+        placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildLevel);
     }
 }
 
@@ -302,14 +372,15 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
         return true;
     }
     if (info.stairs) {
-        // Their three tiles, green where they may go and red where not, and the tile stepped off onto above (blue)
-        const int level = session.floorLevel, d = session.buildDir;
+        // Their three steps, green where they may go and red where not, each at its height (the top one is a tile of the
+        // floor above)
+        const int level = session.buildLevel, d = session.buildDir;
         const bool ok = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, level, d) == PieceCheck::Ok;
-        for (int i = -1; i <= 2; ++i) {
+        const float rise = storeyBaseHeight(level + 1) - storeyBaseHeight(level);
+        for (int i = -1; i <= 1; ++i) {
             const int x = tx + i * STAIRS_DX[d], z = tz + i * STAIRS_DZ[d];
-            const float ground = terrain.heightAt(x + 0.5f, z + 0.5f);
-            if (i == 2) bp.marks.push_back({ x, z, ground + storeyBaseHeight(level + 1) + 0.18f, 0 });
-            else bp.marks.push_back({ x, z, ground + storeyBaseHeight(level) + 0.18f + 0.3f * (float)(i + 1), ok ? 1 : 2 });
+            const float ground = terrain.heightAt(x + 0.5f, z + 0.5f) + storeyBaseHeight(level);
+            bp.marks.push_back({ x, z, ground + 0.06f + rise * (float)(i + 2) / 3.0f, ok ? 1 : 2 });
         }
         return true;
     }
@@ -329,8 +400,8 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     if (info.foundation) {
         bp.valid = foundationAt(world, tx, tz) == NO_OBJECT && terrain.walkable(tx, tz);
     } else {
-        bp.lift = storeyBaseHeight(session.floorLevel);
-        bp.valid = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.floorLevel) == PieceCheck::Ok;
+        bp.lift = storeyBaseHeight(session.buildLevel);
+        bp.valid = checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildLevel) == PieceCheck::Ok;
     }
     return true;
 }

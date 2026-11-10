@@ -69,10 +69,11 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         drawRing(sx, sy - outer, outer, inner, 0.0f, frac, supplied ? RGBA{ 0.35f, 0.9f, 0.45f, 1.0f } : theme::AMBER);
     }
 
-    // Units climbing a ladder or stairs, up or down: how far along they are
+    // Units climbing a ladder, up or down: how far along they are (stairs are just walked)
     for (ObjectId u : w.view<Climbing, Transform>()) {
         const Climbing* c = w.get<Climbing>(u);
         const Transform* tr = w.get<Transform>(u);
+        if (const Prop* lp = w.get<Prop>(c->ladder); lp && propInfo(lp->kind).stairs) continue;
         if (!withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u) || c->whole <= 0.0f) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.3f, tr->z, winW, winH, sx, sy)) continue;
