@@ -190,5 +190,6 @@ void destroyModel(Model& m) {
     if (m.ebo) glDeleteBuffers(1, &m.ebo);
     if (m.vbo) glDeleteBuffers(1, &m.vbo);
     if (m.vao) glDeleteVertexArrays(1, &m.vao);
+    if (m.instVao) glDeleteVertexArrays(1, &m.instVao);
     m = Model{};
 }

@@ -21,8 +21,8 @@ void App::debugLogSession() {
     debuglog::line("session", "card: %s | %s | OpenGL %s", glText(GL_VENDOR), glText(GL_RENDERER), glText(GL_VERSION));
     debuglog::line("session", "window: %d x %d pixels, display mode %d, vsync %d, FPS limit %d", winW, winH, settings.displayMode,
                    settings.vsync ? 1 : 0, settings.fpsLimit);
-    debuglog::line("session", "graphics: render scale %d%%, view range %d, clouds %d, cloud shadows %d, varied ground and water %d",
-                   settings.renderScale, settings.viewRange, settings.clouds ? 1 : 0, settings.cloudShadows ? 1 : 0,
+    debuglog::line("session", "graphics: render scale %d%%, view distance %d, detail distance %d, clouds %d, cloud shadows %d, varied ground and water %d",
+                   settings.renderScale, settings.viewDistance, settings.detailRange, settings.clouds ? 1 : 0, settings.cloudShadows ? 1 : 0,
                    settings.variedSurfaces ? 1 : 0);
 }
 

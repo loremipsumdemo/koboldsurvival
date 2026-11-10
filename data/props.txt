@@ -41,6 +41,8 @@
 #                                can only get off over open ground, and die if it is destroyed with them aboard
 #                wheelbarrow     its occupant pushes it about in front of them, store and all, and what is in it weighs
 #                                nothing on them; attacking or being attacked makes them let go
+#                moves           a vehicle: it goes wherever it is taken while the game runs, so it is drawn apart from the
+#                                props that stay put (airship and wheelbarrow imply it)
 #                foundation      laid by dragging a rectangle (3 to 64 tiles a side); pieces are built on it once it is done
 #                on_foundation   only on a finished foundation tile of the builder's
 #                wall_rule       a wall: each one takes the shape (end, straight, corner, tee or cross) and turn that fits the

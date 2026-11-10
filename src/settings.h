@@ -36,9 +36,14 @@ inline constexpr int UI_SCALE_MIN = 50;
 inline constexpr int UI_SCALE_MAX = 200;
 inline constexpr int UI_SCALE_STEP = 5;
 
-inline constexpr int VIEW_RANGE_MIN = 16;
-inline constexpr int VIEW_RANGE_MAX = 256;
-inline constexpr int VIEW_RANGE_STEP = 8;
+// The detail distance: how far from the view's centre props, units and the ground's and water's fine detail are drawn
+inline constexpr int DETAIL_RANGE_MIN = 16;
+inline constexpr int DETAIL_RANGE_MAX = 256;
+inline constexpr int DETAIL_RANGE_STEP = 8;
+// The view distance: how far from the view's centre the ground's terrain chunks are drawn at all
+inline constexpr int VIEW_DISTANCE_MIN = 64;
+inline constexpr int VIEW_DISTANCE_MAX = 1024;
+inline constexpr int VIEW_DISTANCE_STEP = 32;
 
 struct GameSettings {
     int displayMode = DISPLAY_BORDERLESS;
@@ -48,8 +53,9 @@ struct GameSettings {
     int refreshHz = 0;
     bool vsync = true;
     int fpsLimit = 60;
-    int viewRange = 256;
-    int renderScale = 75;
+    int detailRange = 256;
+    int viewDistance = 1024;
+    int renderScale = 100;
     int formationShape = (int)FormationShape::Rectangle;
     bool formationLoose = false;
     bool showFps = false;
@@ -123,7 +129,9 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "refreshHz")       s.refreshHz = parseInt(val, s.refreshHz);
         else if (key == "vsync")           s.vsync = (val == "1");
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
-        else if (key == "viewRange")       s.viewRange = parseInt(val, s.viewRange);
+        else if (key == "viewRange")       s.detailRange = parseInt(val, s.detailRange);   // the older name of the detail distance
+        else if (key == "detailRange")     s.detailRange = parseInt(val, s.detailRange);
+        else if (key == "viewDistance")    s.viewDistance = parseInt(val, s.viewDistance);
         else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
@@ -176,8 +184,10 @@ inline GameSettings loadSettings(const std::string& path) {
     if (!isChoice(s.fpsLimit, FPS_CHOICES, FPS_CHOICE_COUNT)) s.fpsLimit = GameSettings{}.fpsLimit;
     if (!isChoice(s.renderScale, RENDER_SCALE_CHOICES, RENDER_SCALE_CHOICE_COUNT)) s.renderScale = GameSettings{}.renderScale;
     s.formationShape = std::clamp(s.formationShape, 0, (int)FormationShape::Count - 1);
-    s.viewRange = std::clamp(s.viewRange, VIEW_RANGE_MIN, VIEW_RANGE_MAX);
-    s.viewRange = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((s.viewRange - VIEW_RANGE_MIN + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
+    s.detailRange = std::clamp(s.detailRange, DETAIL_RANGE_MIN, DETAIL_RANGE_MAX);
+    s.detailRange = DETAIL_RANGE_MIN + DETAIL_RANGE_STEP * ((s.detailRange - DETAIL_RANGE_MIN + DETAIL_RANGE_STEP / 2) / DETAIL_RANGE_STEP);
+    s.viewDistance = std::clamp(s.viewDistance, VIEW_DISTANCE_MIN, VIEW_DISTANCE_MAX);
+    s.viewDistance = VIEW_DISTANCE_MIN + VIEW_DISTANCE_STEP * ((s.viewDistance - VIEW_DISTANCE_MIN + VIEW_DISTANCE_STEP / 2) / VIEW_DISTANCE_STEP);
     if (!isChoice(s.autosaveMinutes, AUTOSAVE_CHOICES, AUTOSAVE_COUNT)) s.autosaveMinutes = 5;
     if (!isChoice(s.citizenSoftCap, CITIZEN_SOFT_CHOICES, CITIZEN_SOFT_COUNT)) s.citizenSoftCap = GameSettings{}.citizenSoftCap;
     if (!isChoice(s.citizenHardCap, CITIZEN_HARD_CHOICES, CITIZEN_HARD_COUNT)) s.citizenHardCap = GameSettings{}.citizenHardCap;
@@ -204,7 +214,8 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "refreshHz=" << s.refreshHz << "\n";
     out << "vsync=" << (s.vsync ? 1 : 0) << "\n";
     out << "fpsLimit=" << s.fpsLimit << "\n";
-    out << "viewRange=" << s.viewRange << "\n";
+    out << "detailRange=" << s.detailRange << "\n";
+    out << "viewDistance=" << s.viewDistance << "\n";
     out << "formationShape=" << s.formationShape << "\n";
     out << "formationLoose=" << (s.formationLoose ? 1 : 0) << "\n";
     out << "showFps=" << (s.showFps ? 1 : 0) << "\n";

@@ -10,6 +10,7 @@ struct DrawRange {
 
 struct Model {
     GLuint vao = 0, vbo = 0, ebo = 0;
+    mutable GLuint instVao = 0;   // the same mesh with the renderer's per-instance data, made the first time it is instanced
     float minX = 0, minY = 0, minZ = 0;
     float maxX = 0, maxY = 0, maxZ = 0;
     std::vector<DrawRange> draws;

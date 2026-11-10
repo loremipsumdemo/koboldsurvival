@@ -103,13 +103,13 @@ RowSpec makeScale(RowId id, const std::string& label, int percent) {
     return r;
 }
 
-RowSpec makeRange(RowId id, const std::string& label, int tiles) {
+RowSpec makeRange(RowId id, const std::string& label, int tiles, int minTiles, int maxTiles) {
     RowSpec r;
     r.id = id;
     r.kind = RowKind::Scale;
     r.label = label;
-    const int span = VIEW_RANGE_MAX - VIEW_RANGE_MIN;
-    r.current = std::clamp(((tiles - VIEW_RANGE_MIN) * 100 + span / 2) / span, 0, 100);
+    const int span = maxTiles - minTiles;
+    r.current = std::clamp(((tiles - minTiles) * 100 + span / 2) / span, 0, 100);
     r.text = langf("UILABEL_TILES_N", { std::to_string(tiles) });
     return r;
 }
@@ -180,7 +180,8 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
         fps.push_back(DropOption{ v == 0 ? std::string(lang("UILABEL_UNLIMITED")) : langf("UILABEL_FPS", { std::to_string(v) }), v, 0, 0, true });
     }
     rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
-    rows.push_back(makeRange(RowId::ViewRange, lang("UILABEL_VIEW_RANGE"), s.viewRange));
+    rows.push_back(makeRange(RowId::DetailRange, lang("UILABEL_DETAIL_RANGE"), s.detailRange, DETAIL_RANGE_MIN, DETAIL_RANGE_MAX));
+    rows.push_back(makeRange(RowId::ViewDistance, lang("UILABEL_VIEW_DISTANCE"), s.viewDistance, VIEW_DISTANCE_MIN, VIEW_DISTANCE_MAX));
     std::vector<DropOption> scales;
     for (int i = 0; i < RENDER_SCALE_CHOICE_COUNT; ++i) {
         const int v = RENDER_SCALE_CHOICES[i];
@@ -574,12 +575,22 @@ SettingsChange setRowLevel(RowId id, int level, GameSettings& s) {
         }
         return c;
     }
-    if (id == RowId::ViewRange) {
-        const int span = VIEW_RANGE_MAX - VIEW_RANGE_MIN;
+    if (id == RowId::DetailRange) {
+        const int span = DETAIL_RANGE_MAX - DETAIL_RANGE_MIN;
         const int offset = std::clamp(level, 0, 100) * span / 100;
-        const int tiles = VIEW_RANGE_MIN + VIEW_RANGE_STEP * ((offset + VIEW_RANGE_STEP / 2) / VIEW_RANGE_STEP);
-        if (s.viewRange != tiles) {
-            s.viewRange = tiles;
+        const int tiles = DETAIL_RANGE_MIN + DETAIL_RANGE_STEP * ((offset + DETAIL_RANGE_STEP / 2) / DETAIL_RANGE_STEP);
+        if (s.detailRange != tiles) {
+            s.detailRange = tiles;
+            c.any = true;
+        }
+        return c;
+    }
+    if (id == RowId::ViewDistance) {
+        const int span = VIEW_DISTANCE_MAX - VIEW_DISTANCE_MIN;
+        const int offset = std::clamp(level, 0, 100) * span / 100;
+        const int tiles = VIEW_DISTANCE_MIN + VIEW_DISTANCE_STEP * ((offset + VIEW_DISTANCE_STEP / 2) / VIEW_DISTANCE_STEP);
+        if (s.viewDistance != tiles) {
+            s.viewDistance = tiles;
             c.any = true;
         }
         return c;

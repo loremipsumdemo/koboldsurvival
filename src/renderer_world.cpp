@@ -409,19 +409,34 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     const FrustumPlanes frustum = framePlanes(viewProj_);
     // Buildings: blueprints are see-through boxes, a foundation is a slab on each of its tiles, and a wall takes the shape
     // that fits the walls and doors beside it
-    std::unordered_set<long long> wallTiles;   // by levelKey: walls join the walls on their own floor
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (!info.wallRule && !info.door) continue;
-        const Transform* tr = w.get<Transform>(e);
-        wallTiles.insert(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e)));
+    // The walls' and doors' tiles only change when one is added or removed, or moves between floors, so they are kept
+    // and worked out again only then. Walls and doors don't move, and a foundation doesn't change a wall's shape.
+    BuildingTiles& bt = buildingTiles_;
+    if (!bt.valid || bt.propRevision != w.revision<Prop>() || bt.storeyRevision != w.revision<Storey>()) {
+        bt.walls.clear();
+        bt.doors.clear();
+        for (ObjectId e : w.view<Prop, Transform>()) {
+            const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+            if (!info.wallRule && !info.door) continue;
+            const Transform* tr = w.get<Transform>(e);
+            const long long k = levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e));
+            bt.walls.insert(k);
+            if (info.door) bt.doors.insert(k);
+        }
+        bt.propRevision = w.revision<Prop>();
+        bt.storeyRevision = w.revision<Storey>();
+        bt.valid = true;
     }
-    // A door stands open while anyone is in its doorway
+    const std::unordered_set<long long>& wallTiles = bt.walls;   // walls join the walls on their own floor
+    // A door stands open while anyone is in its doorway. Units move every frame, so only the door tiles are looked up.
     std::unordered_set<long long> standing;
-    for (ObjectId u : w.view<Entity, Transform>()) {
-        if (outCold(w, u) || w.has<Carried>(u)) continue;
-        const Transform* ut = w.get<Transform>(u);
-        standing.insert(levelKey((int)std::floor(ut->x), (int)std::floor(ut->z), storeyOf(w, u)));
+    if (!bt.doors.empty()) {
+        for (ObjectId u : w.view<Entity, Transform>()) {
+            if (outCold(w, u) || w.has<Carried>(u)) continue;
+            const Transform* ut = w.get<Transform>(u);
+            const long long k = levelKey((int)std::floor(ut->x), (int)std::floor(ut->z), storeyOf(w, u));
+            if (bt.doors.count(k)) standing.insert(k);
+        }
     }
     // Blueprints are see-through, so they are drawn after everything solid (units included), farthest first
     struct PlannedBox {
@@ -444,15 +459,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
     cam.eye(camX, camY, camZ);
     auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA, RGBA) {
+        if (!boxVisible(frustum, x0, y0, z0, x1, y1, z1)) return;
         const float cx = (x0 + x1) * 0.5f - camX, cy = (y0 + y1) * 0.5f - camY, cz = (z0 + z1) * 0.5f - camZ;
         plannedBoxes.push_back(PlannedBox{ cx * cx + cy * cy + cz * cz, x0, y0, z0, x1, y1, z1 });
     };
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const Transform* tr = w.get<Transform>(e);
-        if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
-        const PropKind kind = w.get<Prop>(e)->kind;
-        if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
-        const PropInfo& info = propInfo(kind);
+    // One prop: queued to be drawn (models are drawn together, a model at a time, once every prop and unit is queued),
+    // or added to the stairs' and blueprints' batches
+    auto drawProp = [&](ObjectId e, const Transform* tr, PropKind kind, const PropInfo& info) {
         // The model for this piece's material and shape (0 plain), or nullptr for the plain wood one
         const BuildMaterial mat = materialOf(w, e);
         auto materialModel = [&](int shape) -> const Model* {
@@ -461,17 +474,23 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             return m.vao ? &m : nullptr;
         };
         if (const Foundation* f = w.get<Foundation>(e)) {
+            // The whole slab first (its ground may rise and fall, so the box is tall), then each tile
+            if (!boxVisible(frustum, (float)f->x0, tr->y - 64.0f, (float)f->z0, (float)(f->x0 + f->w), tr->y + 64.0f,
+                            (float)(f->z0 + f->h))) {
+                return;
+            }
             const bool plannedOnly = w.has<Blueprint>(e);
             const Model* made = materialModel(0);
             for (int z = f->z0; z < f->z0 + f->h; ++z) {
                 for (int x = f->x0; x < f->x0 + f->w; ++x) {
                     const float cx = x + 0.5f, cz = z + 0.5f, y = t.heightAt(cx, cz);
                     if (plannedOnly) box((float)x + 0.02f, y, (float)z + 0.02f, x + 0.98f, y + 0.2f, z + 0.98f, planned, plannedEdge);
-                    else if (made) drawModel(*made, cx, y, cz, info.size, 0.0f);
+                    else if (!sphereVisible(frustum, cx, y + 0.1f, cz, 0.8f)) continue;
+                    else if (made) queueModel(*made, cx, y, cz, info.size, 0.0f);
                     else queuePropModel(kind, cx, y, cz, info.size, 0.0f);
                 }
             }
-            continue;
+            return;
         }
         if (info.stairs) {
             // Three steps up toward the way they face, each a third of the way to the floor above
@@ -486,15 +505,16 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                     box(x0 + 0.02f, tr->y, z0 + 0.02f, x0 + 0.98f, top, z0 + 0.98f, planned, plannedEdge);
                     continue;
                 }
-                const RGBA side{ 0.45f, 0.30f, 0.17f, 1.0f }, face{ 0.62f, 0.44f, 0.26f, 1.0f };
                 const float x1 = x0 + 1.0f, z1 = z0 + 1.0f, y0 = tr->y;
+                if (!boxVisible(frustum, x0, y0, z0, x1, top, z1)) continue;
+                const RGBA side{ 0.45f, 0.30f, 0.17f, 1.0f }, face{ 0.62f, 0.44f, 0.26f, 1.0f };
                 stairSteps.quad(V3{ x0, top, z0 }, V3{ x1, top, z0 }, V3{ x1, top, z1 }, V3{ x0, top, z1 }, face);
                 stairSteps.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, top, z0 }, V3{ x0, top, z0 }, side);
                 stairSteps.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, top, z1 }, V3{ x0, top, z1 }, side);
                 stairSteps.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, top, z1 }, V3{ x0, top, z0 }, side);
                 stairSteps.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, top, z1 }, V3{ x1, top, z0 }, side);
             }
-            continue;
+            return;
         }
         if (w.has<Blueprint>(e)) {
             const float x = std::floor(tr->x), z = std::floor(tr->z), y = tr->y;
@@ -503,8 +523,16 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             else if (info.door && std::fabs(w.get<Prop>(e)->yaw) > 0.1f) box(tr->x - 0.15f, y, z, tr->x + 0.15f, y + FLOOR_HEIGHT, z + 1.0f, planned, plannedEdge);
             else if (info.door) box(x, y, tr->z - 0.15f, x + 1.0f, y + FLOOR_HEIGHT, tr->z + 0.15f, planned, plannedEdge);
             else box(x + 0.05f, y, z + 0.05f, x + 0.95f, y + (info.wallRule ? FLOOR_HEIGHT : info.size), z + 0.95f, planned, plannedEdge);
-            continue;
+            return;
         }
+        // Everything else is tested as a ball around it: as tall as a floor for a wall, door or ladder, and its size
+        // otherwise. A pushed Wheelbarrow is drawn a little ahead of its pusher, so its ball is padded out.
+        const float baseY = propBaseY(w, e);
+        const bool modelled = propModel(kind).vao != 0;
+        float side = modelled ? info.size : missingPropSide(kind);
+        if (info.wallRule || info.door || info.ladder) side = std::max(side, (float)FLOOR_HEIGHT);
+        if (info.wheelbarrow) side += WHEELBARROW_AHEAD;
+        if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) return;
         if (info.wallRule) {
             const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z), lv = storeyOf(w, e);
             const int mask = (wallTiles.count(levelKey(x, z - 1, lv)) ? 1 : 0) | (wallTiles.count(levelKey(x + 1, z, lv)) ? 2 : 0) |
@@ -516,14 +544,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             }
             if (const Model* made = materialModel(shape.shape)) m = made;
             if (m->vao) {
-                drawModel(*m, tr->x, tr->y, tr->z, info.size, shape.yaw);
-                continue;
+                queueModel(*m, tr->x, tr->y, tr->z, info.size, shape.yaw);
+                return;
             }
         }
-        const float baseY = propBaseY(w, e);
-        const bool modelled = propModel(kind).vao != 0;
-        const float side = modelled ? propInfo(kind).size : missingPropSide(kind);
-        if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) continue;
         float yaw = w.get<Prop>(e)->yaw;
         float px = tr->x, pz = tr->z;
         if (info.door && standing.count(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e)))) {
@@ -560,14 +584,32 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             rope(V3{ low.x, low.y - 0.05f, low.z }, V3{ low.x, low.y + 0.3f, low.z }, 0.05f, stake);
         }
         if (const Model* made = info.door ? materialModel(0) : nullptr) {
-            drawModel(*made, px, py, pz, propInfo(kind).size, yaw);
+            queueModel(*made, px, py, pz, info.size, yaw);
         } else if (modelled) {
-            queuePropModel(kind, px, py, pz, propInfo(kind).size, yaw);
+            queuePropModel(kind, px, py, pz, info.size, yaw);
         } else {
             drawGlyph(white_, tr->x, baseY, tr->z, missingPropSide(kind), MISSING_PROP_PINK);
         }
+    };
+    // Props in the order of how often what is drawn of them changes (PropMotion): the ones that stay put, then the
+    // vehicles, which go wherever they are taken
+    std::vector<ObjectId> moving;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const Transform* tr = w.get<Transform>(e);
+        if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
+        const PropKind kind = w.get<Prop>(e)->kind;
+        if (idx(kind) < 0 || idx(kind) >= propKindCount()) continue;
+        const PropInfo& info = propInfo(kind);
+        if (propMotion(info) == PropMotion::Moves) {
+            moving.push_back(e);
+            continue;
+        }
+        drawProp(e, tr, kind, info);
     }
-    drawPropInstances();
+    for (ObjectId e : moving) {
+        const PropKind kind = w.get<Prop>(e)->kind;
+        drawProp(e, w.get<Transform>(e), kind, propInfo(kind));
+    }
     if (!stairSteps.v.empty()) {
         glUseProgram(colorProgram_);
         drawColorTris(stairSteps, viewProj_);
@@ -575,26 +617,28 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
     }
 
+    // Units with a model join the props' models, one draw for each model; the few without one are pictures
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
         const float tall = std::max(1.0f, unitHeight(w, e));
         if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;
         const UnitPose pose = unitPose(w, e);
-        if (pose.lying) setSaturation(unitSaturation(w, e));
         if (const Model* m = unitModel(w, e)) {
+            if (!(m->maxY > m->minY)) continue;
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            const RGBA tint = unitFactionTint(w, e);
-            glUniform4f(uFaction_, tint.r, tint.g, tint.b, tint.a);
-            drawUnitModel(*m, unitWorldMatrix(w, e, *m, yaw));
-            glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
-        } else if (pose.lying) {
+            queueModelMatrix(*m, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f);
+            continue;
+        }
+        if (pose.lying) {
+            setSaturation(unitSaturation(w, e));
             drawLyingGlyph(unitGlyph(w, e), tr->x, tr->y + pose.lift, tr->z, unitHeight(w, e), WHITE, pose.carried ? 0.15f : 0.0f);
+            setSaturation(1.0f);
         } else {
             drawGlyph(unitGlyph(w, e), tr->x, tr->y + pose.lift, tr->z, unitHeight(w, e), WHITE);
         }
-        if (pose.lying) setSaturation(1.0f);
     }
+    drawModelInstances();
 
     drawGroundItems(w, t, cam);
     if (!plannedBoxes.empty()) {
@@ -831,9 +875,14 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {
     const unsigned long long ticks = SDL_GetTicks();
     std::vector<ObjectId> items;
+    // A pile is kept or left out whole, by a ball around its tile, so its items keep their order front to back
+    const FrustumPlanes frustum = framePlanes(viewProj_);
+    const DetailRange detail(cam);
     for (ObjectId e : w.view<GroundItem, Transform>()) {
         const Transform* tr = w.get<Transform>(e);
-        if (groundLoaded(t, tr->x, tr->z) && withinDetail(cam, tr->x, tr->y, tr->z) && !cutAway(w, e)) items.push_back(e);
+        if (!groundLoaded(t, tr->x, tr->z) || !detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
+        if (!sphereVisible(frustum, std::floor(tr->x) + 0.5f, tr->y + 0.5f, std::floor(tr->z) + 0.5f, 1.3f)) continue;
+        items.push_back(e);
     }
     if (items.empty()) return;
     const std::unordered_map<ObjectId, PileSpot> spots = pileSpots(w, items);

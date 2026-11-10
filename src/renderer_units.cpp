@@ -1,5 +1,6 @@
 #include "renderer_internal.h"
 #include "building.h"
+#include <cstddef>
 
 using namespace render_detail;
 
@@ -133,60 +134,109 @@ static Mat4 placementMatrix(const ModelPlacement& p) {
 }
 
 void Renderer::queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw) {
-    const Model& m = propModel(kind);
+    queueModel(propModel(kind), x, y, z, targetSize, yaw);
+}
+
+void Renderer::queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {
     if (!m.vao) return;
     if (!modelInstProgram_) {
         drawModel(m, x, y, z, targetSize, yaw);
         return;
     }
     const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
-    if (p.ok) propInstances_[(size_t)kind].push_back(placementMatrix(p));
+    if (p.ok) queueModelMatrix(m, placementMatrix(p), RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
 }
 
-GLuint Renderer::propInstVao(PropKind kind) {
-    GLuint& vao = propInstVao_[(size_t)kind];
-    if (vao) return vao;
-    const Model& m = propModel(kind);
+void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat) {
+    if (!m.vao) return;
+    if (!modelInstProgram_) {
+        glUseProgram(glyphProgram_);
+        glUniform4f(uFaction_, faction.r, faction.g, faction.b, faction.a);
+        glUniform1f(uSat_, sat);
+        drawUnitModel(m, place);
+        glUniform4f(uFaction_, 0.0f, 0.0f, 0.0f, 0.0f);
+        glUniform1f(uSat_, 1.0f);
+        return;
+    }
+    auto slot = instSlot_.find(&m);
+    if (slot == instSlot_.end()) {
+        slot = instSlot_.emplace(&m, instQueues_.size()).first;
+        instQueues_.push_back({ &m, {} });
+    }
+    ModelInstance inst{};
+    inst.place = place;
+    inst.faction[0] = faction.r;
+    inst.faction[1] = faction.g;
+    inst.faction[2] = faction.b;
+    inst.faction[3] = faction.a;
+    inst.sat = sat;
+    instQueues_[slot->second].second.push_back(inst);
+}
+
+GLuint Renderer::modelInstVao(const Model& m) {
+    if (m.instVao) return m.instVao;
     if (!m.vao || !instVbo_) return 0;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    glGenVertexArrays(1, &m.instVao);
+    glBindVertexArray(m.instVao);
     glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
-    for (int c = 0; c < 4; ++c) {
-        glVertexAttribPointer(2 + c, 4, GL_FLOAT, GL_FALSE, sizeof(Mat4), (void*)(c * 4 * sizeof(float)));
-        glEnableVertexAttribArray(2 + c);
-        glVertexAttribDivisor(2 + c, 1);
+    for (int a = 2; a <= 7; ++a) {
+        glEnableVertexAttribArray((GLuint)a);
+        glVertexAttribDivisor((GLuint)a, 1);
     }
     glBindVertexArray(0);
-    return vao;
+    return m.instVao;
 }
 
-void Renderer::drawPropInstances() {
-    bool any = false;
-    for (const auto& list : propInstances_) any = any || !list.empty();
-    if (!any) return;
+// Every queued copy goes up to the card in one upload, and each model is then one draw (per texture it has) of its copies
+std::string Renderer::modelDrawText() const {
+    char text[128];
+    std::snprintf(text, sizeof text, "instanced models: %d models, %d copies, %d draw calls", modelDraws_.models,
+                  modelDraws_.copies, modelDraws_.draws);
+    return text;
+}
+
+void Renderer::drawModelInstances() {
+    modelDraws_ = ModelDrawCount{};
+    instUpload_.clear();
+    for (const auto& q : instQueues_) instUpload_.insert(instUpload_.end(), q.second.begin(), q.second.end());
+    if (instUpload_.empty()) return;
     glUseProgram(modelInstProgram_);
     glUniform4f(uTintInst_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
     glUniformMatrix4fv(uVPInst_, 1, GL_FALSE, viewProj_.m);
-    for (int k = 0; k < propKindCount(); ++k) {
-        std::vector<Mat4>& list = propInstances_[(size_t)k];
+    glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), nullptr, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), instUpload_.data());
+    size_t first = 0;
+    for (auto& q : instQueues_) {
+        std::vector<ModelInstance>& list = q.second;
         if (list.empty()) continue;
-        const GLuint vao = propInstVao((PropKind)k);
-        if (vao) {
-            glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
-            glBufferData(GL_ARRAY_BUFFER, list.size() * sizeof(Mat4), list.data(), GL_STREAM_DRAW);
+        const Model& m = *q.first;
+        if (const GLuint vao = modelInstVao(m)) {
             glBindVertexArray(vao);
-            for (const DrawRange& d : propModel((PropKind)k).draws) {
+            // OpenGL 3.3 has no base instance, so the copies' attributes are pointed at where this model's begin
+            glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
+            const size_t at = first * sizeof(ModelInstance);
+            constexpr GLsizei STRIDE = (GLsizei)sizeof(ModelInstance);
+            for (int c = 0; c < 4; ++c) {
+                glVertexAttribPointer((GLuint)(2 + c), 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + c * 4 * sizeof(float)));
+            }
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, faction)));
+            glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, sat)));
+            for (const DrawRange& d : m.draws) {
                 glBindTexture(GL_TEXTURE_2D, d.texture);
                 glDrawElementsInstanced(GL_TRIANGLES, d.indexCount, GL_UNSIGNED_INT,
                                         (void*)(size_t)(d.firstIndex * sizeof(GLuint)), (GLsizei)list.size());
+                ++modelDraws_.draws;
             }
+            ++modelDraws_.models;
+            modelDraws_.copies += (int)list.size();
         }
+        first += list.size();
         list.clear();
     }
     glBindVertexArray(0);

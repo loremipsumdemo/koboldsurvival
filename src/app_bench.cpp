@@ -82,6 +82,7 @@ void App::benchFrame() {
     debuglog::line("bench", "view %d | %-36s | frame %6.2f (%3.0f FPS) | ground %6.2f | water %5.2f | clouds %5.2f", view + 1, c.name,
                    seconds * 1000.0 / frames, frames / seconds, bench.ground / frames, bench.water / frames,
                    c.clouds ? bench.cloudMs / frames : 0.0);
+    debugLogBuildTest();
 
     bench.measuring = false;
     bench.since = now;

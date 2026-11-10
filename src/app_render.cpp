@@ -387,7 +387,8 @@ void App::render() {
     renderer.setDayMinutes(timeOfDayMinutes(gs.clockSeconds));
     renderer.setGraphicsOptions(settings.clouds, settings.cloudShadows, settings.variedSurfaces);
     renderer.setRenderScale(settings.renderScale);
-    renderer.setDetailRange(settings.viewRange);
+    renderer.setDetailRange(settings.detailRange);
+    renderer.setViewDistance(settings.viewDistance);
     if (bench.on) {
         renderer.setGraphicsOptions(bench.clouds, bench.shadows, bench.varied);
         renderer.setRenderScale(bench.renderScale);

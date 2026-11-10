@@ -407,7 +407,7 @@ void App::update() {
 
     showEvents();
     cam.mapSize = (float)terrain.size();
-    cam.viewRange = (float)settings.viewRange;
+    cam.viewRange = (float)settings.detailRange;
 
     session.talkCooldown = std::max(0.0f, session.talkCooldown - dt);
     if (screen == Screen::MapSelect) updateMapPick();

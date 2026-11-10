@@ -23,7 +23,7 @@ inline std::string settingsTabName(SettingsTab tab) {
 }
 
 enum class RowId : int {
-    Display, Monitor, Resolution, Refresh, VSync, FpsLimit, ViewRange, ShowFps,
+    Display, Monitor, Resolution, Refresh, VSync, FpsLimit, DetailRange, ViewDistance, ShowFps,
     Autosave, CitizenSoftCap, CitizenHardCap, UnitNames, NpcNames, FontScale, ResetPanels,
     Language, Font,
     EdgeScroll, Reference, ConversationPause,
