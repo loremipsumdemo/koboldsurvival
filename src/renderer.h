@@ -17,6 +17,7 @@
 #include "ecs.h"
 #include "factions.h"
 #include "game_log.h"
+#include "items.h"
 #include "mobs.h"
 #include "model.h"
 #include "terrain_mesh.h"
@@ -594,7 +595,7 @@ private:
     };
     std::map<ObjectId, UnitFacing> unitFacing_;
     float unitYaw(ObjectId e, float x, float z, bool idle);
-    PictureCache itemPics_{ "data/item/item_", true };
+    PictureCache itemPics_{ "data/item/", true, itemPictureFile };
     PictureCache emotePics_{ "data/emote/", false, emoteFile };
     const TextTex* emoteTexture(EmoteId emote);
     TextTex pink_;

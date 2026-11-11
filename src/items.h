@@ -22,6 +22,7 @@ struct ItemDef {
     std::string onUse;
     std::vector<std::string> tags;
     int cooksInto = 0;
+    std::string picture;   // its file in data/item; picture in itemdb.txt, else its material and name (leather_cap.png)
 };
 
 bool spoilsOnGround(int item);
@@ -40,6 +41,23 @@ bool loadItemDbText(const std::string& text, std::string& err);
 const std::vector<ItemDef>& itemDatabase();
 
 const ItemDef* findItem(int id);
+// An item'"'"'s picture file in data/item, for the renderer
+const std::string& itemPictureFile(int id);
+// A name as a file name: lowercase, words joined by underscores ("Great Helm" is great_helm, "GearHead" gear_head)
+inline std::string fileSlug(const std::string& text) {
+    std::string out;
+    for (size_t i = 0; i < text.size(); ++i) {
+        const unsigned char c = (unsigned char)text[i];
+        if (std::isalnum(c)) {
+            if (std::isupper(c) && i > 0 && std::islower((unsigned char)text[i - 1]) && !out.empty() && out.back() != '_') out += '_';
+            out += (char)std::tolower(c);
+        } else if (!out.empty() && out.back() != '_') {
+            out += '_';
+        }
+    }
+    while (!out.empty() && out.back() == '_') out.pop_back();
+    return out;
+}
 
 // A stolen item is the same item marked with the faction it was taken from, in the high bits of its number, so it
 // stays marked wherever it goes. findItem and the item's name and picture see through the mark.

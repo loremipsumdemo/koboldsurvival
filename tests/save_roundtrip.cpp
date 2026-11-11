@@ -128,12 +128,12 @@ int main(int, char**) {
             std::printf("FAIL: %s\n", err.c_str());
             return 1;
         }
-        check(sfxInfo(Sfx::Recovers).file == "sfx_56.mp3" && sfxInfo(Sfx::UiClick).ui && !sfxInfo(Sfx::Hit).ui, "sfx.txt reaches the sounds");
+        check(sfxInfo(Sfx::Recovers).file == "recovers.mp3" && sfxInfo(Sfx::UiClick).ui && !sfxInfo(Sfx::Hit).ui, "sfx.txt reaches the sounds");
         check(propModelFile(PropKind::Stove) == "stove.glb" && unitModelFile(3) == "unit/a1.glb" && unitModelKey(4) == "f2", "models.txt reaches the props and units");
-        check(emoteFile(16) == "emote_16.png" && iconFile(51) == "icon_51.png", "emotes.txt and icons.txt give each id its picture");
+        check(emoteFile(16) == "decaying.png" && iconFile(51) == "gear_accessory_2.png", "emotes.txt and icons.txt give each id its picture");
         check(mobInfo(MobKind::Bat).hover > 0.0f && mobBones(MobKind::Frog) == 150 && mobTemperament(MobKind::Cow) == MobTemperament::Passive,
               "mobs.txt reaches the mobs");
-        check(std::string(soundtrackNamed("Playing").music) == "bgm_01.mp3" && !soundtrackNamed("Pause").music &&
+        check(std::string(soundtrackNamed("Playing").music) == "playing.mp3" && !soundtrackNamed("Pause").music &&
               std::string(soundtrackNamed("Title").ambient).empty(), "bgm.txt gives each screen its tracks");
         check(fontFilesFor("language_ja").front() == "NotoSansJP-Regular.ttf" && fontFilesFor("language_xx").front() == "NotoSans-Regular.ttf" &&
               fontFilesFor("language_ja").size() == 7, "languages.txt puts a language's font first");

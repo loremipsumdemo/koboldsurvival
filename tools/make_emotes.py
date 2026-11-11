@@ -1,4 +1,4 @@
-"""Draws the game's emotes, the small bubbles over a unit's head: data/emote/emote_<n>.png, 64 x 64 pixels.
+"""Draws the game's emotes, the small bubbles over a unit's head: data/emote/<key>.png (mining.png), 64 x 64 pixels.
 
 Run it with:  python tools/make_emotes.py     (needs Python 3 and Pillow: pip install pillow)
 Then build the game, which packs data/ into data.pak. The game only reads the finished PNGs and never runs this script.
@@ -23,6 +23,7 @@ import os
 from PIL import Image, ImageDraw, ImageFilter
 
 import make_items as art
+from asset_names import numbered_files
 from make_items import C, star, DARK, GOLD, GREEN, IRON, LEATHER, RED, STEEL, WHITE, WOOD
 
 art.S = 16   # emotes are drawn larger, to shrink further
@@ -210,6 +211,7 @@ EMOTES = [
 ]
 
 def main():
+    files = numbered_files('emotes.txt', 'EMOTE_KEYS')
     BACKS = [(92, 140, 70), (206, 188, 140), (70, 60, 56)]
     sheet = Image.new('RGB', (len(EMOTES) * 76, 3 * 104), (0, 0, 0))
     dr = ImageDraw.Draw(sheet)
@@ -222,7 +224,7 @@ def main():
         base.putalpha(grown)
         base.alpha_composite(c.im)
         out = base.resize((SIZE, SIZE), Image.LANCZOS)
-        out.save(os.path.join(OUT, f'emote_{n}.png'))
+        out.save(os.path.join(OUT, files[n]))
         for row, back in enumerate(BACKS):
             x, y = i * 76, row * 104
             dr.rectangle([x, y, x + 76, y + 104], fill=back)
