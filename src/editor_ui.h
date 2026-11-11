@@ -76,7 +76,7 @@ struct MapDeleteLayout {
 MapDeleteLayout layoutMapDelete(int W, int H, int lineCount);
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
-enum class EditorTab { Entities, Props, Items, Theme };
+enum class EditorTab { Entities, Props, Items, Theme, Kill, Clean, Destroy };   // Kill: the Developer panel's own, never the level editor's
 enum class EditorTool { None, Unit, Mob, Prop, Item, Spawn, Erase };
 inline constexpr int EDITOR_NAME_CHARS = 32;
 
@@ -111,15 +111,48 @@ struct SpawnPickerLayout {
 };
 SpawnPickerLayout layoutSpawnPicker(const Rect& area, float scale);
 
-// The Developer panel in a game: its title and close button, the Spawn and Theme tabs, then either the spawn list with
-// its help, or (on the Theme tab) the theme panel with the temporary-theme status and its buttons
+// The Developer panel's Kill Entity and Clean tabs work alike: one thing clicked, everything within a radius of a click, or
+// everything on the map. The last is held down for SWEEP_ALL_HOLD_MS to go through, or cancelled.
+enum class SweepMode { Single, Radius, All };
+inline constexpr int SWEEP_MODE_COUNT = 3;
+inline constexpr int SWEEP_RADIUS_MIN = 1, SWEEP_RADIUS_MAX = 50;
+inline constexpr unsigned long long SWEEP_ALL_HOLD_MS = 3000;
+struct SweepUi {
+    SweepMode mode = SweepMode::Single;
+    bool dropOpen = false;       // the mode list is showing under its box
+    int radius = 5;              // tiles, for Radius
+    bool holding = false;        // the All button is held down
+    unsigned long long holdStart = 0;
+};
+// Kill Entity: what becomes of a corpse and what it held. With none of these on, the corpse stays with its things.
+struct KillUi : SweepUi {
+    bool deleteCorpse = false;   // the corpse is removed, and what it held goes with it unless dropped
+    bool dropItems = false;      // what it held is put on the ground where it fell
+    bool deleteItems = false;    // what it held is removed
+};
+
+// Destroy: a prop broken the way the game breaks one, which leaves Debris and puts what it holds (a store, a forge's
+// output, a pile of bones, a blueprint's logs) on the ground. Exactly one of the two item toggles is on.
+struct DestroyUi : SweepUi {
+    bool deleteDebris = false;   // no Debris is left behind
+    bool dropItems = true;       // what it held is put on the ground
+    bool deleteItems = false;    // what it held is removed
+};
+
+// The Developer panel in a game: its title and close button, the Spawn and Theme tabs, the Kill, Clean and Destroy tabs under them, then either the spawn
+// list with its help, or (on the Theme tab) the theme panel with the temporary-theme status and its buttons, or (on the
+// Kill, Clean and Destroy tabs) the mode box and what the mode needs
 struct DeveloperLayout {
     Rect panel, title, close, help;
-    Rect spawnTab, themeTab;
+    Rect spawnTab, themeTab, killTab, cleanTab, destroyTab;
     SpawnPickerLayout picker;
     Rect themeArea, status, revert, makePermanent;
+    Rect modeLabel, modeBox, modeRows[SWEEP_MODE_COUNT];
+    Rect toggles[3];   // Kill: delete corpse, drop items, delete items. Destroy: delete debris, drop items, delete items.
+    Rect radiusLabel, radiusDown, radiusBox, radiusUp;
+    Rect sweepText, sweepHold, sweepCancel;
 };
-DeveloperLayout layoutDeveloper(int W, int H, bool themeTab = false);
+DeveloperLayout layoutDeveloper(int W, int H, EditorTab tab = EditorTab::Entities);
 
 struct LevelEditorUi {
     bool useOwnUi = true;

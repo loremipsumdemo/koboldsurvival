@@ -1,6 +1,7 @@
 #include "behavior_groups.h"
 #include "game_tables.h"
 #include "level.h"
+#include "party.h"
 #include "systems_internal.h"
 #include "wheelbarrow.h"
 #include "taming.h"
@@ -321,6 +322,8 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     *world.get<Needs>(e) = u.needs;
     world.get<Name>(e)->text = u.name;
     world.get<UnitSprite>(e)->id = std::clamp(u.sprite, 1, UNIT_SPRITE_COUNT);
+    // A model is always one of its body's
+    if (const Body* body = world.get<Body>(e)) world.get<UnitSprite>(e)->id = modelForBody(body->type, modelRow(world.get<UnitSprite>(e)->id));
     restoreSlots(u.stacks, world.get<Inventory>(e)->slots);
     for (const SaveGear& g : u.gear) {
         if (findItem(g.item)) world.get<Equipment>(e)->items[g.slot] = g.item;

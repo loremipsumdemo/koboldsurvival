@@ -44,7 +44,8 @@ void releasePropLinks(World& w, ObjectId prop);
 bool lockShutFor(World& w, const std::vector<Claim>& claims, ObjectId prop, ObjectId unit);
 bool lockShutForFaction(World& w, ObjectId prop, int faction);
 bool lockShutForFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction);
-void breakBuilding(World& w, ObjectId e);
+// leaveDebris false: no Debris is left where a building (or anything that leaves one) stood
+void breakBuilding(World& w, ObjectId e, bool leaveDebris = true);
 // Gone without a trace (no debris): what it held is dropped where it stood, and a claim it held is let go
 void removeProp(World& w, ObjectId e);
 bool destroyBuilding(World& w, ObjectId e);

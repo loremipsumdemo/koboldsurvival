@@ -107,7 +107,6 @@ struct LevelBuilder {
         const ObjectId e = makeEntity(w, Transform{ x, t.heightAt(x, z), z }, faction);
         w.add(e, randomNpcLoot(rng));
         w.add(e, defaultDialogue());
-        w.add(e, UnitSprite{ rng.range(1, UNIT_SPRITE_COUNT) });
         return e;
     }
 
@@ -547,6 +546,25 @@ void settleFactionHomes(World& w, Terrain& t) {
                 w.add(u, SquadMember{ 0 });
                 addBehavior(b->rules, patrol);
             }
+        }
+    }
+}
+
+void spawnStartItems(World& w, Terrain& t, Rng& rng, int count, float range) {
+    const Vec2 spawn = systems_detail::findSpawn(t);
+    const std::vector<ItemDef>& items = itemDatabase();
+    constexpr int TRIES_PER_ITEM = 500;
+    if (items.empty()) return;
+    for (int n = 0; n < count; ++n) {
+        for (int attempt = 0; attempt < TRIES_PER_ITEM; ++attempt) {
+            const int x = rng.range((int)std::floor(spawn.x - range), (int)std::floor(spawn.x + range));
+            const int z = rng.range((int)std::floor(spawn.z - range), (int)std::floor(spawn.z + range));
+            if (distSq(x + 0.5f, z + 0.5f, spawn.x, spawn.z) > range * range) continue;
+            bool walk = false;
+            float h = 0.0f;
+            if (!t.tileGround(x, z, walk, h) || !walk) continue;
+            spawnGroundItem(w, Transform{ x + 0.5f, h, z + 0.5f }, items[(size_t)rng.range(0, (int)items.size() - 1)].id, 1);
+            break;
         }
     }
 }

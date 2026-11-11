@@ -224,7 +224,7 @@ Transform remainsAt(World& w, ObjectId e, int& storey) {
 }
 }
 
-void breakBuilding(World& w, ObjectId e) {
+void breakBuilding(World& w, ObjectId e, bool leaveDebris) {
     if (!w.has<Prop>(e) || !w.has<Transform>(e)) return;
     const PropKind kind = w.get<Prop>(e)->kind;
     int storey = 0;
@@ -273,6 +273,7 @@ void breakBuilding(World& w, ObjectId e) {
     // A camp's campfire claims what is in it but never strips its owners: what it sheltered falls on its own
     if (altarOwner >= 0) abandonClaim(w, at.x, at.z, heldRadius, altarOwner);
     dropStacks(w, at, held, storey);
+    if (!leaveDebris) return;
     // The debris stands on the floor the remains are on, as if it had been placed there
     const ObjectId debris = makeProp(w, PropKind::Debris, at);
     if (storey > 0) w.add(debris, Storey{ storey });

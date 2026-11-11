@@ -668,6 +668,8 @@ void Renderer::shutdown() {
     drop(loadingArt_);
     for (TextTex& g : profilePics_) drop(g);
     for (TextTex& g : mobSprites_) drop(g);
+    for (TextTex& g : mobProfiles_) drop(g);
+    mobProfiles_.clear();
     mobSprites_.clear();
     for (GLuint* t : { &dotTex_, &dotWhiteTex_ }) {
         if (*t) glDeleteTextures(1, t);

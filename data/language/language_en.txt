@@ -910,6 +910,36 @@ UILABEL_DEV_THEME_CONFIRM	Press Make permanent again to change the world's theme
 UILABEL_DEV_REVERT	Revert to the world's theme
 UILABEL_DEV_MAKE_PERMANENT	Make permanent
 UILABEL_DEV_THEME_SAVED	The world's theme is saved
+UILABEL_DEV_TAB_KILL	Kill
+UILABEL_DEV_KILL_MODE	Mode
+UILABEL_DEV_KILL_SINGLE	Single selection
+UILABEL_DEV_KILL_RADIUS	Radius
+UILABEL_DEV_KILL_ALL	Kill all entities
+UILABEL_DEV_KILL_HELP_SINGLE	Left-click an entity to kill it.
+UILABEL_DEV_KILL_HELP_RADIUS	Left-click the ground to kill every entity within this many tiles of the spot.
+UILABEL_DEV_KILL_WARN	This kills every entity on the map, yours included. Hold the button for {0} seconds to go through.
+UILABEL_DEV_KILL_HOLD	Hold to kill all
+MISC_KILLED	Killed {0}
+UILABEL_DEV_KILL_DELETE_CORPSE	Delete the corpse
+UILABEL_DEV_KILL_DROP_ITEMS	Drop its items
+UILABEL_DEV_KILL_DELETE_ITEMS	Delete its items
+UILABEL_DEV_TAB_CLEAN	Clean
+UILABEL_DEV_CLEAN_SINGLE	Single item
+UILABEL_DEV_CLEAN_ALL	All ground items
+UILABEL_DEV_CLEAN_HELP_SINGLE	Left-click an item on the ground to delete it.
+UILABEL_DEV_CLEAN_HELP_RADIUS	Left-click the ground to delete every ground item within this many tiles of the spot.
+UILABEL_DEV_CLEAN_WARN	This deletes every item lying on the ground of the map. Hold the button for {0} seconds to go through.
+UILABEL_DEV_CLEAN_HOLD	Hold to delete all
+MISC_CLEANED	Deleted {0}
+UILABEL_DEV_TAB_DESTROY	Destroy
+UILABEL_DEV_DESTROY_SINGLE	Single prop
+UILABEL_DEV_DESTROY_ALL	Destroy all props
+UILABEL_DEV_DESTROY_DELETE_DEBRIS	Delete the debris
+UILABEL_DEV_DESTROY_HELP_SINGLE	Left-click a prop or building to destroy it.
+UILABEL_DEV_DESTROY_HELP_RADIUS	Left-click the ground to destroy every prop and building within this many tiles of the spot.
+UILABEL_DEV_DESTROY_WARN	This destroys every prop and building on the map, altars and your own included. Hold the button for {0} seconds to go through.
+UILABEL_DEV_DESTROY_HOLD	Hold to destroy all
+MISC_DESTROYED	Destroyed {0}
 UILABEL_LOCK	Lock
 MISC_BUILD_SEALED	That ground is claimed by another faction
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim

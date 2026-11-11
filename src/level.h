@@ -33,7 +33,9 @@ void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool pl
 // The same, with what a level file says in place of the random set-up
 void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, const LevelData& level);
 
-constexpr int ITEM_COPIES_PER_LEVEL = 10;
+// A new random level lays this many items on the ground, of random kinds, within this many tiles of where you start
+constexpr int START_ITEM_COUNT = 32;
+constexpr float START_ITEM_RANGE = 20.0f;
 constexpr int STREAM_RADIUS = 4;
 constexpr int STREAM_LOADS_PER_FRAME = 4;
 
