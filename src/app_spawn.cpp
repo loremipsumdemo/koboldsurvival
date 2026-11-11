@@ -23,6 +23,16 @@ SpawnPickerLayout layoutSpawnPicker(const Rect& area, float s) {
     L.factionDown = Rect{ area.x + labelW + gap, y, small, btnH };
     L.factionUp = Rect{ area.x + area.w - small, y, small, btnH };
     L.factionBox = Rect{ L.factionDown.x + small + gap, y, L.factionUp.x - gap - (L.factionDown.x + small + gap), btnH };
+    {
+        // Stack: the label, then - N +, 1 and Max
+        const float word = 44.0f * s;
+        L.stackMax = Rect{ area.x + area.w - word, y, word, btnH };
+        L.stackOne = Rect{ L.stackMax.x - gap - small, y, small, btnH };
+        L.stackUp = Rect{ L.stackOne.x - gap - small, y, small, btnH };
+        L.stackBox = Rect{ L.stackUp.x - gap - box, y, box, btnH };
+        L.stackDown = Rect{ L.stackBox.x - gap - small, y, small, btnH };
+        L.stackLabel = Rect{ area.x, y, std::max(0.0f, L.stackDown.x - gap - area.x), btnH };
+    }
     y += btnH + gap;
     // Cluster of N: the label, then - N +
     L.clusterUp = Rect{ area.x + area.w - small, y, small, btnH };
@@ -126,6 +136,49 @@ std::vector<App::EditorEntry> App::spawnEntries(EditorTab tab) {
     return out;
 }
 
+namespace {
+// The most of the picked item one stack holds (1 when no item is picked)
+int pickedStackLimit(const SpawnPicker& p) {
+    return p.tool == EditorTool::Item && findItem(p.picked) ? std::max(1, stackLimit(p.picked)) : 1;
+}
+}
+
+void App::spawnPickerCommit(SpawnPicker& p, bool keep) {
+    if (p.typing == SpawnPicker::Typing::None) return;
+    if (keep && !p.typed.empty()) {
+        const int n = std::atoi(p.typed.c_str());
+        if (p.typing == SpawnPicker::Typing::Cluster) {
+            p.cluster = std::clamp(n, 1, SPAWN_CLUSTER_MAX);
+        } else {
+            p.stack = std::clamp(n, 1, pickedStackLimit(p));
+            p.stackMax = false;
+        }
+    }
+    p.typing = SpawnPicker::Typing::None;
+    p.typed.clear();
+}
+
+bool App::spawnPickerKey(SpawnPicker& p) {
+    if (p.typing == SpawnPicker::Typing::None) return false;
+    const SDL_Keycode k = e.key.key;
+    int digit = -1;
+    if (k >= SDLK_0 && k <= SDLK_9) digit = (int)(k - SDLK_0);
+    else if (k >= SDLK_KP_1 && k <= SDLK_KP_9) digit = (int)(k - SDLK_KP_1) + 1;
+    else if (k == SDLK_KP_0) digit = 0;
+    if (digit >= 0) {
+        if (p.typed.size() < 3) p.typed += std::to_string(digit);
+    } else if (k == SDLK_BACKSPACE) {
+        if (!p.typed.empty()) p.typed.pop_back();
+    } else if (k == SDLK_RETURN || k == SDLK_KP_ENTER) {
+        spawnPickerCommit(p, true);
+        playSfx(Sfx::UiClick);
+    } else if (k == SDLK_ESCAPE) {
+        spawnPickerCommit(p, false);
+        playSfx(Sfx::UiBack);
+    }
+    return true;   // every key goes to the box while it is typed into
+}
+
 void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
     const float s = uiScaleFor((float)winH);
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
@@ -152,11 +205,29 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
     }
     renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_CLUSTER"), L.clusterLabel.w), L.clusterLabel.x,
                           L.clusterLabel.y + (L.clusterLabel.h - textH) * 0.5f, white);
+    // A count's box: click it and type a number, Enter to keep it
+    auto countBox = [&](const Rect& r, int value, bool typing) {
+        renderer.drawRect(r, typing ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        const std::string text = typing ? p.typed + "|" : std::to_string(value);
+        renderer.drawListText(text, r.x + (r.w - renderer.listTextWidth(text)) * 0.5f, r.y + (r.h - textH) * 0.5f, gold);
+        if (!typing && r.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_TYPE_TIP"), r);
+    };
+    if (p.tab == EditorTab::Items) {
+        const int limit = pickedStackLimit(p);
+        if (p.stackMax) p.stack = limit;
+        p.stack = std::clamp(p.stack, 1, limit);
+        renderer.drawListText(renderer.fitListText(langf("UILABEL_SPAWN_STACK", { std::to_string(limit) }), L.stackLabel.w), L.stackLabel.x,
+                              L.stackLabel.y + (L.stackLabel.h - textH) * 0.5f, white);
+        renderer.drawButton(L.stackDown, "-", p.stack > 1, L.stackDown.contains(mouseX, mouseY));
+        countBox(L.stackBox, p.stack, p.typing == SpawnPicker::Typing::Stack);
+        renderer.drawButton(L.stackUp, "+", p.stack < limit, L.stackUp.contains(mouseX, mouseY));
+        renderer.drawButton(L.stackOne, std::string(!p.stackMax && p.stack == 1 ? ">1" : "1"), true, L.stackOne.contains(mouseX, mouseY));
+        renderer.drawButton(L.stackMax, (p.stackMax ? ">" : "") + lang("UILABEL_SPAWN_STACK_MAX"), true, L.stackMax.contains(mouseX, mouseY));
+        if (L.stackOne.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_STACK_ONE_TIP"), L.stackOne);
+        if (L.stackMax.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_STACK_MAX_TIP"), L.stackMax);
+    }
     renderer.drawButton(L.clusterDown, "-", p.cluster > 1, L.clusterDown.contains(mouseX, mouseY));
-    renderer.drawRect(L.clusterBox, RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
-    const std::string count = std::to_string(p.cluster);
-    renderer.drawListText(count, L.clusterBox.x + (L.clusterBox.w - renderer.listTextWidth(count)) * 0.5f,
-                          L.clusterBox.y + (L.clusterBox.h - textH) * 0.5f, gold);
+    countBox(L.clusterBox, p.cluster, p.typing == SpawnPicker::Typing::Cluster);
     renderer.drawButton(L.clusterUp, "+", p.cluster < SPAWN_CLUSTER_MAX, L.clusterUp.contains(mouseX, mouseY));
     if (p.tab == EditorTab::Theme) return;   // the level editor's theme panel takes the list's place
     const std::vector<EditorEntry> entries = spawnEntries(p.tab);
@@ -176,6 +247,31 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
 }
 
 bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y) {
+    // A click anywhere keeps what was typed; one on a count's box starts typing into it
+    spawnPickerCommit(p, true);
+    if (L.clusterBox.contains(x, y) || (p.tab == EditorTab::Items && L.stackBox.contains(x, y))) {
+        p.typing = L.clusterBox.contains(x, y) ? SpawnPicker::Typing::Cluster : SpawnPicker::Typing::Stack;
+        p.typed.clear();
+        playSfx(Sfx::UiClick);
+        return false;
+    }
+    if (p.tab == EditorTab::Items) {
+        const int limit = pickedStackLimit(p);
+        const int by = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 5 : 1;
+        if (L.stackDown.contains(x, y) || L.stackUp.contains(x, y)) {
+            const int was = p.stack;
+            p.stack = std::clamp(p.stack + (L.stackUp.contains(x, y) ? by : -by), 1, limit);
+            p.stackMax = false;
+            playSfx(p.stack != was ? Sfx::UiClick : Sfx::UiError);
+            return false;
+        }
+        if (L.stackOne.contains(x, y) || L.stackMax.contains(x, y)) {
+            p.stackMax = L.stackMax.contains(x, y);
+            p.stack = p.stackMax ? limit : 1;
+            playSfx(Sfx::UiClick);
+            return false;
+        }
+    }
     for (int i = 0; i < 3; ++i) {
         if (!L.tabs[i].contains(x, y)) continue;
         p.tab = (EditorTab)i;
@@ -210,6 +306,8 @@ bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, 
         if (entry.tool == EditorTool::None) return false;
         p.tool = entry.tool;
         p.picked = entry.value;
+        // The stack follows the item picked: a full one with Max on, else no more than this item's limit
+        p.stack = p.stackMax ? pickedStackLimit(p) : std::clamp(p.stack, 1, pickedStackLimit(p));
         playSfx(Sfx::UiSelect);
         return true;
     }
@@ -221,10 +319,16 @@ void App::spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, 
         p.cluster = std::clamp(p.cluster + (notches > 0.0f ? 1 : notches < 0.0f ? -1 : 0), 1, SPAWN_CLUSTER_MAX);
         return;
     }
+    if (p.tab == EditorTab::Items && (L.stackBox.contains(x, y) || L.stackDown.contains(x, y) || L.stackUp.contains(x, y))) {
+        p.stack = std::clamp(p.stack + (notches > 0.0f ? 1 : notches < 0.0f ? -1 : 0), 1, pickedStackLimit(p));
+        p.stackMax = false;
+        return;
+    }
     p.listScroll = std::max(0, p.listScroll - (int)notches);
 }
 
 int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds) {
+    spawnPickerCommit(p, true);
     if (p.tool != EditorTool::Unit && p.tool != EditorTool::Mob && p.tool != EditorTool::Prop && p.tool != EditorTool::Item) return 0;
     // Props kept a footprint apart, units and mobs a body apart, items a little
     float spacing = 0.6f;
@@ -256,6 +360,7 @@ int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds) {
             o.owner = p.faction == FACTION_FACTIONLESS ? -1 : p.faction;
         } else {
             o.type = LevelObject::Type::Item;
+            o.count = std::clamp(p.stackMax ? pickedStackLimit(p) : p.stack, 1, pickedStackLimit(p));
         }
         // The level editor numbers what it places, for its level file; a game has no use for the numbers
         o.id = levelIds ? world.resource<LevelInfo>().nextId++ : 0;

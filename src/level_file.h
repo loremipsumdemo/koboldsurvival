@@ -19,6 +19,7 @@ struct LevelObject {
     int count = 1;      // items
     int owner = -1;     // props and mobs: their faction, or -1 (a prop of none, a mob of its own kind's)
     float x = 0.0f, z = 0.0f, yaw = 0.0f;
+    PropVisual visual;  // props: how it is drawn apart from where it stands (plain when it isn't)
 };
 
 struct LevelData {

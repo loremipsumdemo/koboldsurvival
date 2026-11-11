@@ -1,3 +1,4 @@
+#include "recipes.h"
 #include "game_tables.h"
 #include <algorithm>
 #include <array>
@@ -50,10 +51,10 @@ const char* const MOB_KEYS[] = {
 static_assert(std::size(MOB_KEYS) == MOB_NAMED_KIND_COUNT);
 
 const char* const PROP_KEYS[] = {
-    "Wagon", "Campfire", "Bedroll", "Bed", "Barrel", "Ore", "Tree", "Boulder", "Mushroom", "Bones", "Wall", "Stall",
-    "LockedChest", "PrisonerCage", "Chair", "Bench", "Stool", "Table", "EndTable", "RoundTable", "MetalTable",
+    "Wagon", "Campfire", "Bedroll", "Bed", "Barrel", "Ore", "Tree", "Boulder", "Mushroom", "Bones", "Stall",
+    "LockedChest", "PrisonerCage", "Chair", "Bench", "Stool", "Table", "EndTable", "RoundTable", "ResearchTable",
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
-    "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Shop", "Farm", "Turbine", "Stove", "Airship",
+    "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Farm", "Turbine", "Stove", "Airship",
     "Foundation", "WoodWall", "WoodDoor", "Ladder", "UpperFloor", "DragonCrystal", "WoodStockpile", "StoneStockpile",
     "Stairs", "Wheelbarrow",
 };
@@ -351,7 +352,7 @@ int placeIn(const char* const (&names)[N], const std::string& s) {
 }
 
 const char* const PROP_USE_KEYS[] = { "none", "storage", "occupy", "resource", "crafting", "passive" };
-const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water", "wood", "stone" };
+const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water", "wood", "stone", "gizmo" };
 
 bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
     if (text == "none") return true;
@@ -371,6 +372,17 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "wheelbarrow") p.wheelbarrow = p.moves = true;
         else if (flag == "pulled") p.pulled = p.wheelbarrow = p.moves = true;
         else if (flag == "taming") p.taming = p.cage = true;
+        else if (flag == "random_yaw") p.randomYaw = true;
+        else if (flag == "needs_camp") p.needsCamp = true;
+        else if (flag == "advanced") p.advanced = true;
+        else if (flag.rfind("fire:", 0) == 0) {
+            // fire:x:y:z:size
+            p.fire = std::sscanf(flag.c_str(), "fire:%f:%f:%f:%f", &p.fireX, &p.fireY, &p.fireZ, &p.fireSize) == 4;
+            if (!p.fire) {
+                why = "a fire flag that is not fire:x:y:z:size";
+                return false;
+            }
+        }
         else if (flag == "moves") p.moves = true;
         else if (flag == "foundation") p.foundation = true;
         else if (flag == "on_foundation") p.onFoundation = true;
@@ -572,7 +584,7 @@ static bool loadWholeFile(const char* file, bool (*load)(const std::string&, std
 
 bool loadGameTables(std::string& err) {
     return loadWholeFile("data/itemdb.txt", loadItemDbText, err) && loadWholeFile("data/factions.txt", loadFactions, err) && loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
-           loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadPropsFile(err) && loadMobs(err) && loadFonts(err);
+           loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadPropsFile(err) && loadWholeFile("data/recipes.txt", loadRecipes, err) && loadMobs(err) && loadFonts(err);
 }
 
 const SfxInfo& sfxInfo(Sfx s) {

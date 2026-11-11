@@ -11,7 +11,7 @@
 #   input      id of the item it takes, cookable for any item with a cooks_into, or bones for any bones. 0 for none
 #   workers    how many can work it at once
 #   lock_level Lockpicking needed for its lock. 0 for no lock
-#   accepts    what it stores: any, raw_food, food, weapon, armor, water, wood (Wood Logs) or stone
+#   accepts    what it stores: any, raw_food, food, weapon, armor, water, wood (Wood Logs), stone or gizmo
 #   fuel_hours hours one fuel item burns
 #   alt_item   id of an item it sometimes makes instead. 0 for none
 #   alt_one_in 1 in this many times it makes alt_item
@@ -46,6 +46,15 @@
 #                pulled          with wheelbarrow: drawn behind the one pulling it, not pushed in front, and it slows them
 #                                to a tenth of their speed unless they are a large animal (a Bear, or a boss)
 #                taming          with cage: only an animal (a mob, bosses too) can be put in it, and one inside is tamed in time
+#                advanced        an Advanced Crafting prop (with use crafting): it makes the one recipe picked for it, of
+#                                those data/recipes.txt lists for it, a batch at a time into its output
+#                needs_camp      placed only within a camp's reach of a Campfire, or in an Altar's claim, of its
+#                                faction; one whose camp is gone falls to Debris
+#                fire:x:y:z:size a fire burns on it, at this spot from the middle of its base (x and z turn with it)
+#                                and this big: the game draws its flames and a warm glow for its light, so its
+#                                model has none
+#                random_yaw      faces a way of its own (a full turn, by where it stands) whenever one comes into being,
+#                                however it does: built, placed, spawned, scattered, or left by something destroyed
 #                moves           a vehicle: it goes wherever it is taken while the game runs, so it is drawn apart from the
 #                                props that stay put (airship and wheelbarrow imply it)
 #                foundation      laid by dragging a rectangle (3 to 64 tiles a side); pieces are built on it once it is done
@@ -62,52 +71,53 @@
 #                upper_floor     a floor at wall height, that units who climb a ladder stand and move on
 
 key	name_key	model	size	use	stat	item	input	workers	lock_level	accepts	fuel_hours	alt_item	alt_one_in	speed	rested	comfort	work_sound	done_sound	emote	flags	materials	build_seconds	slots	capacity	group
-Bedroll	PROP_BEDROLL	model_3.glb	1.0	occupy	none	0	0	0	0	any	1	0	0	1	15	10	none	ItemMove	Sleeping	build_anywhere,scatter	0	0	12	0	claims
-Campfire	PROP_CAMPFIRE	model_2.glb	0.8	passive	Cooking	0	cookable	0	0	any	1	0	0	1	0	0	WorkCooking	ItemMove	none	build_anywhere,scatter,burns_corpses	0	0	12	0	claims
-Altar	PROP_ALTAR	model_32.glb	1.2	passive	none	0	bones	0	0	any	4	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,claims_land	0	0	12	0	claims
-Wagon	PROP_WAGON	model_1.glb	1.5	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,wheelbarrow,pulled	0	0	400	0	vehicles
-Bed	PROP_BED	model_4.glb	1.4	occupy	none	0	0	0	0	any	1	0	0	1	25	20	none	ItemMove	Sleeping	scatter	0	0	12	0	furniture
-Barrel	PROP_BARREL	model_5.glb	0.7	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-Ore	PROP_ORE	model_6.glb	1.0	resource	Mining	1	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter	0	0	12	0	nature
-Tree	PROP_TREE	model_7.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	WorkWoodcutting	DoneTree	Woodcutting	scatter	0	0	12	0	nature
-Boulder	PROP_BOULDER	model_8.glb	1.2	resource	Mining	161	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter	0	0	12	0	nature
-Mushroom	PROP_MUSHROOM	model_9.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter	0	0	12	0	nature
-Bones	PROP_BONES	model_10.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand	0	0	12	0	nature
-Wall	PROP_WALL	model_11.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,exterior	0	0	12	0	nature
-Stall	PROP_STALL	model_12.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,stall	0	0	1000	1000	storage
-LockedChest	PROP_LOCKED_CHEST	model_13.glb	0.9	storage	none	0	0	0	5	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-PrisonerCage	PROP_PRISONER_CAGE	model_14.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	scatter,cage	0	0	12	0	cages
-Chair	PROP_CHAIR	model_15.glb	0.9	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
-Bench	PROP_BENCH	model_16.glb	1.5	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
-Stool	PROP_STOOL	model_17.glb	0.5	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
-Table	PROP_TABLE	model_18.glb	1.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-EndTable	PROP_END_TABLE	model_19.glb	0.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-RoundTable	PROP_ROUND_TABLE	model_20.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-MetalTable	PROP_METAL_TABLE	model_21.glb	1.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-StandingTorch	PROP_STANDING_TORCH	model_22.glb	1.6	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-SupportBeam	PROP_SUPPORT_BEAM	model_23.glb	2.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
-TrainingDummy	PROP_TRAINING_DUMMY	model_24.glb	1.6	crafting	Melee	0	0	1	0	any	1	0	0	1	0	0	WorkTraining	ItemMove	none	scatter	0	0	12	0	crafting
-RawFoodStorage	PROP_RAW_FOOD_STORAGE	model_25.glb	1.0	storage	none	0	0	0	0	raw_food	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-FoodStorage	PROP_FOOD_STORAGE	model_26.glb	1.0	storage	none	0	0	0	0	food	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-WeaponRack	PROP_WEAPON_RACK	model_27.glb	1.4	storage	none	0	0	0	0	weapon	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-ArmorStand	PROP_ARMOR_STAND	model_28.glb	1.7	storage	none	0	0	0	0	armor	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-WaterTank	PROP_WATER_TANK	model_29.glb	1.4	storage	none	0	0	0	0	water	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
-WaterPump	PROP_WATER_PUMP	model_30.glb	1.4	crafting	Strength	91	0	1	0	any	1	0	0	1	0	0	WorkPump	DoneWater	none	scatter	0	0	12	0	crafting
-Forge	PROP_FORGE	model_31.glb	1.6	passive	Smelting	92	1	0	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	none	scatter	0	0	12	0	crafting
-Debris	PROP_DEBRIS	model_33.glb	1.0	resource	Strength	0	0	3	0	any	1	0	0	4	0	0	none	ItemMove	none	debris	0	0	12	0	nature
-Shop	PROP_SHOP	model_39.glb	1.6	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0	storage
-Farm	PROP_FARM	model_40.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0	crafting
-Turbine	PROP_TURBINE	model_41.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0	crafting
-Stove	PROP_STOVE	model_42.glb	1.2	crafting	Cooking	0	cookable	1	0	any	1	0	0	10	0	0	WorkCooking	DoneCooking	Cooking	built	0	0	12	0	crafting
-Airship	PROP_AIRSHIP	model_43.glb	4.0	occupy	none	0	0	4	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,airship	0	0	12	0	vehicles
-Wheelbarrow	PROP_WHEELBARROW	model_53.glb	1.3	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,wheelbarrow	0	0	100	0	vehicles
-Foundation	PROP_FOUNDATION	model_44.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,foundation	1	0.5	12	0	settlement
-WoodWall	PROP_WOOD_WALL	model_45.glb	2.4	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,wall_rule	1	8	12	0	settlement
-WoodDoor	PROP_WOOD_DOOR	model_46.glb	2.4	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,door	1	10	12	0	settlement
-Ladder	PROP_LADDER	model_47.glb	2.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,ladder	1	6	12	0	settlement
-UpperFloor	PROP_UPPER_FLOOR	model_48.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,upper_floor	1	3	12	0	settlement
-DragonCrystal	PROP_DRAGON_CRYSTAL	model_49.glb	1.2	none	none	162	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,rare	0	0	12	0	nature
-WoodStockpile	PROP_WOOD_STOCKPILE	model_50.glb	1.4	storage	none	0	0	0	0	wood	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0	storage
-StoneStockpile	PROP_STONE_STOCKPILE	model_51.glb	1.4	storage	none	0	0	0	0	stone	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0	storage
-Stairs	PROP_STAIRS	model_52.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,stairs	3	12	12	0	settlement
-TamingCage	PROP_TAMING_CAGE	model_54.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	built,cage,taming	0	0	12	0	cages
+Bedroll	PROP_BEDROLL	bedroll.glb	1.0	occupy	none	0	0	0	0	any	1	0	0	1	15	10	none	ItemMove	Sleeping	build_anywhere,scatter,needs_camp	0	0	12	0	claims
+Campfire	PROP_CAMPFIRE	campfire.glb	0.8	passive	Cooking	0	cookable	0	0	any	1	0	0	1	0	0	WorkCooking	ItemMove	none	build_anywhere,scatter,burns_corpses,fire:0:0.1:0:0.5	0	0	12	0	claims
+Altar	PROP_ALTAR	altar.glb	1.2	passive	none	0	bones	0	0	any	4	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,claims_land,fire:0:0.9:0:0.34	0	0	12	0	claims
+Wagon	PROP_WAGON	wagon.glb	1.5	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,wheelbarrow,pulled	0	0	400	0	vehicles
+Bed	PROP_BED	bed.glb	1.4	occupy	none	0	0	0	0	any	1	0	0	1	25	20	none	ItemMove	Sleeping	scatter	0	0	12	0	furniture
+Barrel	PROP_BARREL	barrel.glb	0.7	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+Ore	PROP_ORE	ore.glb	1.0	resource	Mining	1	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
+Tree	PROP_TREE	tree.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	WorkWoodcutting	DoneTree	Woodcutting	scatter,random_yaw	0	0	12	0	nature
+Boulder	PROP_BOULDER	boulder.glb	1.2	resource	Mining	161	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
+Mushroom	PROP_MUSHROOM	mushroom.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter	0	0	12	0	nature
+Bones	PROP_BONES	bones.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,random_yaw	0	0	12	0	nature
+Stall	PROP_STALL	stall.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,stall	0	0	1000	1000	storage
+LockedChest	PROP_LOCKED_CHEST	locked_chest.glb	0.9	storage	none	0	0	0	5	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+PrisonerCage	PROP_PRISONER_CAGE	prisoner_cage.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	scatter,cage	0	0	12	0	cages
+Chair	PROP_CHAIR	chair.glb	0.9	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
+Bench	PROP_BENCH	bench.glb	1.5	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
+Stool	PROP_STOOL	stool.glb	0.5	occupy	none	0	0	0	0	any	1	0	0	1	0	10	none	ItemMove	none	scatter,seat	0	0	12	0	furniture
+Table	PROP_TABLE	table.glb	1.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
+EndTable	PROP_END_TABLE	end_table.glb	0.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
+RoundTable	PROP_ROUND_TABLE	round_table.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
+ResearchTable	PROP_RESEARCH_TABLE	research_table.glb	1.5	storage	none	0	0	0	0	gizmo	1	0	0	1	0	0	none	ItemMove	none	built	4	40	12	0	crafting
+StandingTorch	PROP_STANDING_TORCH	standing_torch.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,fire:0:1.2:0:0.3	0	0	12	0	furniture
+SupportBeam	PROP_SUPPORT_BEAM	support_beam.glb	2.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	furniture
+TrainingDummy	PROP_TRAINING_DUMMY	training_dummy.glb	1.6	crafting	Melee	0	0	1	0	any	1	0	0	1	0	0	WorkTraining	ItemMove	none	scatter	0	0	12	0	crafting
+RawFoodStorage	PROP_RAW_FOOD_STORAGE	raw_food_storage.glb	1.0	storage	none	0	0	0	0	raw_food	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+FoodStorage	PROP_FOOD_STORAGE	food_storage.glb	1.0	storage	none	0	0	0	0	food	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+WeaponRack	PROP_WEAPON_RACK	weapon_rack.glb	1.4	storage	none	0	0	0	0	weapon	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+ArmorStand	PROP_ARMOR_STAND	armor_stand.glb	1.7	storage	none	0	0	0	0	armor	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+WaterTank	PROP_WATER_TANK	water_tank.glb	1.4	storage	none	0	0	0	0	water	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage
+WaterPump	PROP_WATER_PUMP	water_pump.glb	1.4	crafting	Strength	91	0	1	0	any	1	0	0	1	0	0	WorkPump	DoneWater	none	scatter	0	0	12	0	crafting
+Forge	PROP_FORGE	forge.glb	1.6	passive	Smelting	92	1	0	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	none	scatter,fire:-0.24:0.24:0.45:0.26	0	0	12	0	crafting
+Debris	PROP_DEBRIS	debris.glb	1.0	resource	Strength	0	0	3	0	any	1	0	0	4	0	0	none	ItemMove	none	debris,random_yaw	0	0	12	0	nature
+Farm	PROP_FARM	farm.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0	crafting
+Turbine	PROP_TURBINE	turbine.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	0	0	12	0	crafting
+Stove	PROP_STOVE	stove.glb	1.2	crafting	Cooking	0	cookable	1	0	any	1	0	0	10	0	0	WorkCooking	DoneCooking	Cooking	built,fire:-0.17:0.34:0.31:0.12,advanced	0	0	12	0	crafting
+WeaponBench	PROP_WEAPON_BENCH	weapon_workbench.glb	1.5	crafting	Forging	0	0	1	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	none	built,advanced	4	40	12	0	crafting
+ArmorBench	PROP_ARMOR_BENCH	armor_workbench.glb	1.5	crafting	Forging	0	0	1	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	none	built,advanced	4	40	12	0	crafting
+AmmoBench	PROP_AMMO_BENCH	ammunition_workbench.glb	1.5	crafting	Carpentry	0	0	1	0	any	1	0	0	1	0	0	none	ItemMove	none	built,advanced	4	40	12	0	crafting
+Airship	PROP_AIRSHIP	airship.glb	4.0	occupy	none	0	0	4	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,airship	0	0	12	0	vehicles
+Wheelbarrow	PROP_WHEELBARROW	wheelbarrow.glb	1.3	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,wheelbarrow	0	0	100	0	vehicles
+Foundation	PROP_FOUNDATION	foundation_wood.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,foundation	1	0.5	12	0	settlement
+WoodWall	PROP_WOOD_WALL	wall_wood.glb	2.4	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,wall_rule	1	8	12	0	settlement
+WoodDoor	PROP_WOOD_DOOR	door_wood.glb	2.4	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,door	1	10	12	0	settlement
+Ladder	PROP_LADDER	ladder_wood.glb	2.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,ladder	1	6	12	0	settlement
+UpperFloor	PROP_UPPER_FLOOR	floor_wood.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,upper_floor	1	3	12	0	settlement
+DragonCrystal	PROP_DRAGON_CRYSTAL	dragon_crystal.glb	1.2	none	none	162	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,rare,random_yaw	0	0	12	0	nature
+WoodStockpile	PROP_WOOD_STOCKPILE	wood_stockpile.glb	1.4	storage	none	0	0	0	0	wood	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0	storage
+StoneStockpile	PROP_STONE_STOCKPILE	stone_stockpile.glb	1.4	storage	none	0	0	0	0	stone	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	0	0	12	0	storage
+Stairs	PROP_STAIRS	stair_step_wood.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,stairs	3	12	12	0	settlement
+TamingCage	PROP_TAMING_CAGE	taming_cage.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	built,cage,taming	0	0	12	0	cages

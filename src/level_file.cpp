@@ -41,6 +41,14 @@ std::string levelToText(const LevelData& d) {
             break;
         }
         out << line;
+        // A prop drawn apart from where it stands: its move, turn and stretch, on the line after its own
+        if (o.type == LevelObject::Type::Prop && !o.visual.plain()) {
+            const PropVisual& v = o.visual;
+            char more[200];
+            std::snprintf(more, sizeof more, "visual %.3f %.3f %.3f %.1f %.1f %.1f %.3f %.3f %.3f\n", v.dx, v.dy, v.dz, v.rx, v.ry, v.rz,
+                          v.sx, v.sy, v.sz);
+            out << more;
+        }
     }
     return out.str();
 }
@@ -70,10 +78,18 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             LevelObject o;
             std::string kind;
             PropKind named = PropKind::Wagon;
-            ok = (ls >> o.id >> kind >> o.x >> o.z >> o.yaw >> o.owner) && propKindNamed(kind, named);
+            ok = (bool)(ls >> o.id >> kind >> o.x >> o.z >> o.yaw >> o.owner);
+            kind = currentPropKey(kind);   // a prop that is gone loads as the one that took its place
+            ok = ok && propKindNamed(kind, named);
             o.type = LevelObject::Type::Prop;
             o.kind = idx(named);
             d.objects.push_back(o);
+        } else if (key == "visual") {
+            // Of the prop on the line before
+            PropVisual v;
+            ok = (bool)(ls >> v.dx >> v.dy >> v.dz >> v.rx >> v.ry >> v.rz >> v.sx >> v.sy >> v.sz) && !d.objects.empty() &&
+                 d.objects.back().type == LevelObject::Type::Prop;
+            if (ok) d.objects.back().visual = clampPropVisual(v);
         } else if (key == "unit") {
             LevelObject o;
             ok = (ls >> o.id >> o.kind >> o.x >> o.z) && findFaction(o.kind) != nullptr && !isMobFaction(o.kind);
@@ -155,6 +171,7 @@ ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObjec
             e = makeProp(w, kind, at, o.yaw);
             if (o.owner >= 0) w.add(e, Owner{ o.owner });
         }
+        if (e != NO_OBJECT && !o.visual.plain()) w.add(e, o.visual);
         break;
     }
     case LevelObject::Type::Mob:
@@ -200,6 +217,7 @@ LevelData captureLevel(World& w, const std::string& map) {
         o.x = w.get<Transform>(e)->x;
         o.z = w.get<Transform>(e)->z;
         if (const Owner* own = w.get<Owner>(e)) o.owner = own->faction;
+        if (const PropVisual* pv = w.get<PropVisual>(e)) o.visual = *pv;
         d.objects.push_back(o);
     }
     std::vector<ObjectId> units = w.view<Entity, Transform>();

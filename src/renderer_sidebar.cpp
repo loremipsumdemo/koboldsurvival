@@ -156,6 +156,8 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
     };
     if (const Faction* fa = w.get<Faction>(unit)) infoLine(factionName(fa->id));
     if (const Body* bd = w.get<Body>(unit)) infoLine(lang(bodyTypeKey(bd->type)));
+    // A boss's Coloration: how far its colors are shifted round the color wheel
+    if (const Coloration* col = w.get<Coloration>(unit)) infoLine(langf("UILABEL_HUE_SHIFT", { std::to_string(col->hue) }));
     if (const Mob* mb = w.get<Mob>(unit); mb && w.has<Faction>(unit) && isMobFaction(w.get<Faction>(unit)->id)) {
         infoLine(langf("UILABEL_TEMPERAMENT", { lang(temperamentKey(mobTemperament(mb->kind))) }));
     }
@@ -315,7 +317,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
 void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
     const float s = uiScale();
     auto pickName = [](const BuildPick& pick) {
-        return pick.placing() ? lang(propInfo(pick.kind).nameKey) : lang("UILABEL_BUILD_DESTROY");
+        return pick.placing() ? lang(propInfo(pick.kind).nameKey) : lang(pick.adjusting() ? "UILABEL_BUILD_ADJUST" : "UILABEL_BUILD_DESTROY");
     };
     const std::string head = buildSelected_.any()
         ? langf("UILABEL_BUILD_SELECTED", { pickName(buildSelected_) })

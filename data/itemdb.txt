@@ -2678,3 +2678,20 @@ material =
 tier = 0
 equip_slot = 
 tags = dragon_crystal
+
+[163]
+type = item
+max_stack_size = 20
+name = Gizmo
+description = A small device of springs and cogs. Spent at a Research Table to work out a Crafting Recipe for your whole faction.
+weight = 0.3
+buy_value = 120
+sell_value = 60
+required_level = 1
+attack_value = 0
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = 
+tags = gizmo

@@ -85,6 +85,7 @@ set(SIM_SOURCES
     src/spawn_cluster.cpp
     src/taming.cpp
     src/faction_rules.cpp
+    src/recipes.cpp
     src/building.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp
@@ -152,6 +153,8 @@ add_executable(koboldsurvival
     src/app_altar.cpp
     src/app_spawn.cpp
     src/app_faction_rules.cpp
+    src/app_prop_adjust.cpp
+    src/app_crafting.cpp
     src/app_behavior_groups.cpp
     src/app_store_filter.cpp
     src/app_stall.cpp

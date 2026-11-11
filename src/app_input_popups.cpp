@@ -342,11 +342,13 @@ bool App::pressToGrabPanel() {
 }
 
 bool App::mouseDownOnPopups() {
+    if (pressOnAdjustWidget()) return true;
     if (pressOnRename()) return true;
     if (pressOnMaterialAsk()) return true;
     if (pressOnAltar()) return true;
     if (pressOnManageSquads()) return true;
     if (pressOnFactionRules()) return true;
+    if (pressOnCraftWindow()) return true;
     if (pressOnDeveloper()) return true;
     if (pressOnGhosts()) return true;
     if (pressOnBehaviorGroups()) return true;

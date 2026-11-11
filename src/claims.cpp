@@ -9,6 +9,7 @@
 #include "factions.h"
 #include "hostility.h"
 #include "language.h"
+#include "game_log.h"
 
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
@@ -45,6 +46,46 @@ std::vector<Claim> claimsOf(World& w) {
     }
     std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) { return a.altar < b.altar; });
     return out;
+}
+
+bool campSheltered(World& w, const std::vector<Claim>& claims, float x, float z, int faction) {
+    if (claimAt(claims, x, z, faction)) return true;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (w.get<Prop>(e)->kind != PropKind::Campfire || w.has<Blueprint>(e)) continue;
+        if (const Owner* own = w.get<Owner>(e); own && own->faction != faction) continue;
+        const Transform* t = w.get<Transform>(e);
+        const float dx = t->x - x, dz = t->z - z;
+        if (dx * dx + dz * dz <= CAMP_CLAIM_RADIUS * CAMP_CLAIM_RADIUS) return true;
+    }
+    return false;
+}
+
+namespace {
+struct CampPropClock {
+    float since = 0.0f;
+};
+}
+
+void campPropSystem(World& w, float dt) {
+    CampPropClock& clock = w.resource<CampPropClock>();
+    clock.since += dt;
+    if (clock.since < 1.0f) return;
+    clock.since = 0.0f;
+    std::vector<ObjectId> lost;
+    std::vector<Claim> claims;
+    bool read = false;
+    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
+        if (!propInfo(w.get<Prop>(e)->kind).needsCamp || w.has<Blueprint>(e)) continue;
+        if (!read) claims = claimsOf(w);
+        read = true;
+        const Transform* t = w.get<Transform>(e);
+        if (!campSheltered(w, claims, t->x, t->z, w.get<Owner>(e)->faction)) lost.push_back(e);
+    }
+    for (ObjectId e : lost) {
+        queueLog(w, langf("MISC_CAMP_PROP_LOST", { lang(propInfo(w.get<Prop>(e)->kind).nameKey) }), LogKind::Other,
+                 w.get<Owner>(e)->faction != FACTION_PLAYER);
+        breakBuilding(w, e);
+    }
 }
 
 const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int owner) {

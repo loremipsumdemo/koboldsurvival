@@ -119,7 +119,8 @@ bool upgrade14to15(Lines&) { return true; }
 // Its floors were stacked a slab short; that is put right on loading (settleBuildingsAfterLoad), not here.
 bool upgrade15to16(Lines&) { return true; }
 // Version 17 adds "factionrules" (a faction's rules for outsiders, where they were changed in play), "color" (a boss's
-// coloring) and "taming" (hours in a Taming Cage). An older save keeps the rules of data/factions.txt, its bosses are
+// coloring), "taming" (hours in a Taming Cage) "visual" (a prop drawn apart from where it stands), "research" (a recipe a faction has
+// researched) and "craftorder" (an Advanced Crafting prop's recipe and stock). An older save keeps the rules of data/factions.txt, its bosses are
 // given a coloring on loading, and its caged animals start taming afresh. Its Nomads (faction 6) are the Factionless, by the same number.
 bool upgrade16to17(Lines&) { return true; }
 

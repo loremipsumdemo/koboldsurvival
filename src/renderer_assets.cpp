@@ -92,6 +92,20 @@ void Renderer::makeTexels() {
     };
     texel(white_, 255, 255, 255);
     texel(pink_, 255, 89, 191);
+    // A soft round spot for flames and their glow: white, fading out from the middle
+    constexpr int SIDE = 48;
+    std::vector<uint8_t> px((size_t)SIDE * SIDE * 4);
+    for (int y = 0; y < SIDE; ++y) {
+        for (int x = 0; x < SIDE; ++x) {
+            const float dx = ((float)x + 0.5f) / SIDE * 2.0f - 1.0f, dy = ((float)y + 0.5f) / SIDE * 2.0f - 1.0f;
+            const float d = std::min(1.0f, std::sqrt(dx * dx + dy * dy));
+            const float a = (1.0f - d) * (1.0f - d);
+            uint8_t* p = &px[((size_t)y * SIDE + x) * 4];
+            p[0] = p[1] = p[2] = 255;
+            p[3] = (uint8_t)(a * 255.0f);
+        }
+    }
+    glow_ = TextTex{ MakeRgbaTexture(SIDE, SIDE, px.data(), GL_LINEAR), 1.0f };
 }
 
 void Renderer::loadPropModels(LoadStages& stages) {
@@ -111,7 +125,7 @@ void Renderer::loadPropModels(LoadStages& stages) {
                     file.c_str(), lang(info.nameKey).c_str(), standIn);
         }
         if (info.wallRule) {
-            // Its other shapes sit beside its model: model_45.glb has model_45_end.glb and so on
+            // Its other shapes sit beside its model: wall_wood.glb has wall_wood_end.glb and so on
             static const char* const SHAPES[5] = { "_end", "_straight", "_corner", "_tee", "_cross" };
             const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
             for (int s = 0; s < 5; ++s) {
@@ -123,10 +137,11 @@ void Renderer::loadPropModels(LoadStages& stages) {
         }
         if (takesMaterial(kind)) {
             // The other materials beside the plain (wood) one, in BuildMaterial's order after Wood:
-            // model_45_iron.glb, model_45_iron_straight.glb and so on
-            static const char* const MATS[MATERIAL_MODELS] = { "_iron", "_crystal", "_stone" };
+            // wall_wood.glb has wall_metal.glb, wall_metal_straight.glb and so on
+            static const char* const MATS[MATERIAL_MODELS] = { "_metal", "_crystal", "_stone" };
             static const char* const SHAPES[6] = { "", "_end", "_straight", "_corner", "_tee", "_cross" };
-            const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            if (stem.size() > 5 && stem.compare(stem.size() - 5, 5, "_wood") == 0) stem.erase(stem.size() - 5);
             for (int m = 0; m < MATERIAL_MODELS; ++m) {
                 for (int sh = 0; sh < (info.wallRule ? 6 : 1); ++sh) {
                     const std::string f = stem + MATS[m] + SHAPES[sh] + ".glb";
@@ -137,8 +152,8 @@ void Renderer::loadPropModels(LoadStages& stages) {
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)propKindCount(), k + 1);
     }
     {
-        // Stairs' step in each material, by BuildMaterial: stair_step.glb, stair_step_iron.glb and so on
-        static const char* const STEPS[4] = { "data/model/stair_step.glb", "data/model/stair_step_iron.glb",
+        // Stairs' step in each material, by BuildMaterial
+        static const char* const STEPS[4] = { "data/model/stair_step_wood.glb", "data/model/stair_step_metal.glb",
                                               "data/model/stair_step_crystal.glb", "data/model/stair_step_stone.glb" };
         for (int m = 0; m < 4; ++m) {
             if (pakHas(STEPS[m])) loadDrawableModel(STEPS[m], stairSteps_[(size_t)m], false);

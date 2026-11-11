@@ -1,3 +1,4 @@
+#include "recipes.h"
 #include "systems_internal.h"
 #include "ghosts.h"
 #include "wheelbarrow.h"
@@ -23,6 +24,7 @@ CraftState craftStateOf(World& w, ObjectId prop) {
     const Storage* st = w.get<Storage>(prop);
     if (!p || propInfo(p->kind).use != PropUse::Crafting) return CraftState::NoInput;
     const PropInfo& info = propInfo(p->kind);
+    if (info.advanced) return craftBlock(w, prop) ? CraftState::NoInput : CraftState::Ready;
     if (info.input == 0) return CraftState::Ready;
     if (!st) return CraftState::NoInput;
     for (const ItemStack& stack : st->slots) {
@@ -114,9 +116,17 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 continue;
             }
             if (action == PropAction::Destroy) {
-                if (destroyedByHand(w.get<Prop>(prop)->kind)) {
+                const PropKind broken = w.get<Prop>(prop)->kind;
+                if (breakableKind(broken) && !w.has<Blueprint>(prop)) {
+                    // Another faction's prop, broken by one of yours: it costs you with them, as the Destroy tool does
+                    const Owner* own = destroyedByHand(broken) ? nullptr : w.get<Owner>(prop);
+                    const int owner = own ? own->faction : -1;
                     queueSoundFrom(w, Sfx::Drop, prop);
+                    queueLog(w, langf("MISC_BREAKS", { nameOf(w, u), lang(propInfo(broken).nameKey) }), LogKind::Other, npcOnly(w, u));
                     destroyBuilding(w, prop);
+                    if (owner >= 0 && owner != FACTION_PLAYER && !isMobFaction(owner) && factionOf(w, u) == FACTION_PLAYER) {
+                        changePlayerReputation(w, owner, -REP_DESTROY_PENALTY);
+                    }
                 }
                 continue;
             }
@@ -368,7 +378,13 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
             for (ObjectId u : workers) {
                 perHour += 1.0 / (LOCKPICK_SHARE * workHoursFor(levelOf(statsOf(w, u), StatId::Lockpicking)));
             }
-            pw.progress += gameSeconds / 3600.0 * perHour;
+            // An Advanced Crafting prop's batch takes its recipe's hours
+        if (info.advanced) {
+            const CraftOrder* order = w.get<CraftOrder>(prop);
+            const double hours = order && order->recipe >= 0 && order->recipe < (int)recipes().size() ? recipes()[(size_t)order->recipe].hours : 1.0;
+            perHour /= std::max(0.05, hours);
+        }
+        pw.progress += gameSeconds / 3600.0 * perHour;
             Lock* lock = w.get<Lock>(prop);
             while (pw.progress >= 1.0 && lock->locked) {
                 pw.progress -= 1.0;
@@ -428,6 +444,18 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
         pw.progress += gameSeconds / 3600.0 * perHour;
 
         while (pw.progress >= 1.0 && !workers.empty()) {
+            if (info.advanced) {
+                // One batch into its output, and no more until that is carried out
+                const ObjectId maker = workers[pw.turn % workers.size()];
+                finishCraft(w, prop, maker);
+                grantXp(w, maker, info.stat, WORK_XP_PER_ITEM, "MISC_REASON_CRAFTING");
+                queueSoundFrom(w, Sfx::ItemMove, prop);
+                pw.progress = 0.0;
+                ++pw.made;
+                ++pw.turn;
+                stopAll();
+                break;
+            }
             if (crafting) {
                 int inItem = 0, outItem = info.item;
                 if (info.input != 0) {
@@ -619,6 +647,7 @@ bool propAcceptsItem(PropKind kind, int item) {
     const PropInfo& info = propInfo(kind);
     if (item <= 0) return false;
     if (info.claimsLand && isBones(item)) return true;   // kept for the Ghosts
+    if (info.advanced) return stationTakesItem(kind, item);   // the ingredients of the recipes made at it
     if (info.use == PropUse::PassiveCrafting && info.item == 0) return inputMatches(info, item);
     if (info.use == PropUse::Crafting || info.use == PropUse::PassiveCrafting) return recipeOutput(kind, item) > 0;
     const ItemDef* def = findItem(item);
@@ -631,6 +660,7 @@ bool propAcceptsItem(PropKind kind, int item) {
     case ItemFilter::Water: return def && hasTag(*def, "water");
     case ItemFilter::Wood: return def && hasTag(*def, ITEM_TAG_WOOD_LOG);
     case ItemFilter::Stone: return def && hasTag(*def, ITEM_TAG_STONE);
+    case ItemFilter::Gizmo: return def && hasTag(*def, "gizmo");
     }
     return false;
 }

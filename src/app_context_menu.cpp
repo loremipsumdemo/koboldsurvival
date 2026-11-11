@@ -1,6 +1,7 @@
 #include "building.h"
 #include "app.h"
 #include "commerce.h"
+#include "systems_internal.h"
 #include "faction_rules.h"
 
 using namespace play;
@@ -201,6 +202,13 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         // Units that all occupy something already have nobody to send in
         allOccupying = allOccupying && !picked.empty();
         if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
+        // An Advanced Crafting prop or a Research Table that is yours (or no one's): its order, or its research
+        if ((propInfo(p->kind).advanced || p->kind == PropKind::ResearchTable) && !world.has<Blueprint>(target)) {
+            const Owner* own = world.get<Owner>(target);
+            if (!own || own->faction == FACTION_PLAYER) {
+                out.push_back(propInfo(p->kind).advanced ? MenuAction::CraftOrder : MenuAction::Research);
+            }
+        }
         // A general store of yours: which kinds of item it takes
         if (hasStoreFilter(p->kind) && !world.has<Blueprint>(target)) {
             const Owner* own = world.get<Owner>(target);
@@ -227,7 +235,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         }
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
-        if (destroyedByHand(p->kind)) out.push_back(MenuAction::Destroy);
+        if (breakableKind(p->kind) && !world.has<Blueprint>(target)) out.push_back(MenuAction::Destroy);
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
         if (const Blueprint* bp = world.get<Blueprint>(target); bp && world.has<Owner>(target) && world.get<Owner>(target)->faction == FACTION_PLAYER) {
             out.push_back(MenuAction::AutoConstruct);
@@ -305,6 +313,9 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::StockStall: labels.push_back(lang("UILABEL_STOCK_STALL")); break;
         case MenuAction::ManStall: labels.push_back(lang("UILABEL_MAN_STALL")); break;
         case MenuAction::DealWith: labels.push_back(lang("UILABEL_DEAL_WITH")); break;
+        case MenuAction::GetOut: labels.push_back(lang("UILABEL_EVACUATE")); break;
+        case MenuAction::CraftOrder: labels.push_back(lang("UILABEL_CRAFT_ORDER")); break;
+        case MenuAction::Research: labels.push_back(lang("UILABEL_RESEARCH")); break;
         }
     }
     return labels;
@@ -318,6 +329,14 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     if (target == NO_OBJECT) return false;
     std::vector<MenuAction> actions = menuActionsFor(target);
     const bool disband = squadPanel && world.has<Commandable>(target);
+    // From the Squad panel, a unit of yours in or holding something (a bed, a seat, a cage, a Wheelbarrow, an Airship)
+    // can be told to get out of it itself
+    const bool yours = world.has<Commandable>(target) || world.has<Citizen>(target);
+    const bool getOut = squadPanel && yours && heldProp(world, target) != NO_OBJECT;
+    if (getOut) {
+        actions.erase(std::remove(actions.begin(), actions.end(), MenuAction::Evacuate), actions.end());
+        actions.push_back(MenuAction::GetOut);
+    }
     if (squadPanel && (world.has<Commandable>(target) || world.has<Citizen>(target))) actions.push_back(MenuAction::Rename);
     if (disband) actions.push_back(MenuAction::Disband);
     if (actions.empty()) return false;
@@ -331,6 +350,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         if (disband) {
             std::vector<MenuAction> own;
             if (actions[0] == MenuAction::PutDown) own.push_back(MenuAction::PutDown);
+            if (getOut) own.push_back(MenuAction::GetOut);
             own.push_back(MenuAction::Rename);
             own.push_back(MenuAction::Disband);
             session.contextMenu = ContextMenu{ true, mx, my, target, own };
@@ -343,7 +363,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         std::vector<MenuAction> alone;
         for (MenuAction a : actions) {
             if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
-                a == MenuAction::StockStall || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
+                a == MenuAction::StockStall || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
                 alone.push_back(a);
             }
         }
@@ -398,6 +418,29 @@ void App::pickMenuAction(MenuAction a) {
     ObjectId target = session.contextMenu.target;
     const ObjectId clicked = target;
     session.contextMenu.open = false;
+    if (a == MenuAction::CraftOrder || a == MenuAction::Research) {
+        openCraftWindow(clicked, a == MenuAction::Research);
+        return;
+    }
+    if (a == MenuAction::GetOut) {
+        // The unit itself leaves what it is in or lets go of what it holds
+        const ObjectId prop = heldProp(world, clicked);
+        if (prop == NO_OBJECT) return;
+        if (isWheelbarrow(world, prop)) {
+            stopPushing(world, clicked);
+        } else if (isAirship(world, prop)) {
+            if (!startLeaving(world, clicked)) {
+                refuse(lang("MISC_CANT_EVACUATE_AIRSHIP"));
+                return;
+            }
+        } else {
+            if (noteLockedIn({ clicked })) return;
+            systems_detail::stepOffProp(world, terrain, clicked, prop);
+            world.remove<Occupying>(clicked);
+        }
+        playSfx(Sfx::UiClick);
+        return;
+    }
     if ((a == MenuAction::Unlock || a == MenuAction::Lock || a == MenuAction::Evacuate) && world.has<Entity>(target)) {
         target = a == MenuAction::Evacuate ? heldProp(world, target) : occupiedProp(world, target);
         if (target == NO_OBJECT) return;

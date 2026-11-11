@@ -1,3 +1,4 @@
+#include "prop_visual.h"
 #include "renderer_internal.h"
 #include "building.h"
 #include <cstddef>
@@ -579,6 +580,13 @@ std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float 
             continue;
         }
         const Model& m = propModel(kind);
+        // One adjusted with the Adjust tool is clicked where it is drawn, not where it stands
+        if (const PropVisual* visual = w.get<PropVisual>(e); m.vao && visual && !visual->plain()) {
+            const Mat4 at = propVisualMatrix(m, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw, *visual);
+            const float t = rayHitModelMatrix(m, at.m, o, d);
+            if (t >= 0.0f) hits.push_back({ t, e });
+            continue;
+        }
         if (m.vao) {
             const ModelPlacement at = placeModel(m, tr->x, baseY, tr->z, propInfo(kind).size, w.get<Prop>(e)->yaw);
             // A ladder is clicked as a solid slab, so a click between its rungs still finds it

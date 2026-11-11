@@ -1,0 +1,44 @@
+# Crafting Recipes. Whitespace-separated lines; blank lines and lines starting with # are skipped.
+#
+# recipe <key> <prop> <item> <count> <hours> <gizmos> <item:count,item:count,...>
+#   key     its name in saves: never change it, or orders and research that name it are lost
+#   prop    the Advanced Crafting prop it is made at (a key of data/props.txt with the advanced flag)
+#   item    id of the item it makes (data/itemdb.txt), and count how many one batch makes
+#   hours   game hours one batch takes a worker of skill 1 at a prop of speed 1 (higher skill and speed are faster)
+#   gizmos  Gizmos a faction spends at a Research Table to unlock it. 0: everyone knows it from the start.
+#   then what one batch takes, as item:count pairs with commas and no spaces
+#
+# Every item with a cooks_into is also a Stove recipe, added by the game: five of it into five cooked, known to everyone.
+# The game shows a recipe by the name of the item it makes.
+
+# Weapons, at the Weapon Workbench (92 Iron Ingot, 88 Wood Log)
+recipe Knife        WeaponBench 81  1 1.0 0 92:1
+recipe Dagger       WeaponBench 80  1 1.5 0 92:1,88:1
+recipe ShortSword   WeaponBench 74  1 2.0 1 92:2,88:1
+recipe Axe          WeaponBench 76  1 2.0 1 92:2,88:2
+recipe Buckler      WeaponBench 83  1 2.0 1 88:3,92:1
+recipe ShortBow     WeaponBench 127 1 2.0 1 88:3
+recipe LongSword    WeaponBench 75  1 3.0 2 92:3,88:1
+recipe Mace         WeaponBench 77  1 3.0 2 92:3,88:1
+recipe KiteShield   WeaponBench 84  1 3.0 2 92:3,88:2
+recipe LongBow      WeaponBench 128 1 3.0 2 88:5
+recipe Crossbow     WeaponBench 129 1 4.0 3 88:4,92:2
+recipe Greatsword   WeaponBench 86  1 4.0 3 92:5,88:1
+recipe Warhammer    WeaponBench 87  1 4.0 3 92:5,88:2
+
+# Armor, at the Armor Workbench (5 Wolf Pelt)
+recipe Hood         ArmorBench 25 1 1.0 0 5:1
+recipe Boots        ArmorBench 56 1 1.0 0 5:1
+recipe Tunic        ArmorBench 34 1 1.5 0 5:2
+recipe Leggings     ArmorBench 46 1 1.5 1 5:2
+recipe Helm         ArmorBench 27 1 2.0 1 92:2
+recipe Greaves      ArmorBench 50 1 3.0 2 92:3
+recipe Sabatons     ArmorBench 61 1 2.5 2 92:2
+recipe Breastplate  ArmorBench 39 1 4.0 2 92:4
+recipe FullPlate    ArmorBench 42 1 6.0 4 92:8
+
+# Ammunition, at the Ammunition Workbench (161 Stone): ten to a batch
+recipe WoodArrows     AmmoBench 130 10 1.0 0 88:1
+recipe BoneArrows     AmmoBench 131 10 1.5 1 88:1,161:1
+recipe CrossbowBolts  AmmoBench 133 10 1.5 1 88:1,92:1
+recipe FireArrows     AmmoBench 132 10 2.0 2 88:1,92:1

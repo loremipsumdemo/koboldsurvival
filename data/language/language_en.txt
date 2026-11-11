@@ -1114,7 +1114,6 @@ PROP_TREE	Tree
 PROP_BOULDER	Boulder
 PROP_MUSHROOM	Mushroom
 PROP_BONES	Bones
-PROP_WALL	Barrier
 PROP_STALL	Stall
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
@@ -1128,7 +1127,6 @@ PROP_STOOL	Stool
 PROP_TABLE	Table
 PROP_END_TABLE	End Table
 PROP_ROUND_TABLE	Round Table
-PROP_METAL_TABLE	Metal Table
 PROP_STANDING_TORCH	Standing Torch
 PROP_SUPPORT_BEAM	Support Beam
 PROP_TRAINING_DUMMY	Training Dummy
@@ -1146,7 +1144,6 @@ PROP_ALTAR	Altar
 PROP_DEBRIS	Debris
 MISC_NO_UPKEEP	No upkeep: no bones
 MISC_UPKEEP_LEFT	Upkeep: {0} min left
-PROP_SHOP	Shop
 PROP_FARM	Farm
 PROP_TURBINE	Turbine
 PROP_STOVE	Stove
@@ -1635,3 +1632,55 @@ UILABEL_ITEMS_MATERIALS	Materials
 UILABEL_ITEMS_BONES	Bones
 UILABEL_TAMING	Taming
 MISC_TAMED	{0} is tamed and joins {1}
+UILABEL_HUE_SHIFT	Hue Shift: {0}°
+UILABEL_SPAWN_TYPE_TIP	Click and type a number, then press Enter
+UILABEL_SPAWN_STACK	Stack (max {0})
+UILABEL_SPAWN_STACK_MAX	Max
+UILABEL_SPAWN_STACK_ONE_TIP	Place a single item in each spot
+UILABEL_SPAWN_STACK_MAX_TIP	Place a full stack in each spot, whatever the item's stack limit is
+UILABEL_BUILD_ADJUST	Adjust Position
+UILABEL_BUILD_ADJUST_HINT	Left-click a prop, then drag the widget on it. The buttons at its top right switch between Move, Rotate and Scale; the check mark keeps the change. Right-click or Escape cancels.
+UILABEL_ADJUST_MOVE	Move: drag an arrow to slide it along that way, or the middle to slide it over the ground. Up to half a tile.
+UILABEL_ADJUST_ROTATE	Rotate: drag a ring to turn it about that ring's axis
+UILABEL_ADJUST_SCALE	Scale: drag a block to stretch it that way, or the middle to size it every way. From half to one and a half times.
+UILABEL_ADJUST_COMMIT	Commit: keep this change
+UILABEL_ADJUST_MOVE_SHORT	Move
+UILABEL_ADJUST_ROTATE_SHORT	Rotate
+UILABEL_ADJUST_SCALE_SHORT	Scale
+MISC_ADJUST_COMMITTED	Adjustment kept
+MISC_ADJUST_CANT	Building pieces, vehicles and blueprints can't be adjusted
+UILABEL_BUILD_GROUP_TOOLS	Tools
+MISC_BREAKS	{0} breaks the {1}
+MISC_BUILD_NEEDS_CAMP	A Bedroll must be laid near a Campfire or in your Altar's claim
+MISC_CAMP_PROP_LOST	A {0} is left without a camp and falls apart
+PROP_RESEARCH_TABLE	Research Table
+PROP_WEAPON_BENCH	Weapon Workbench
+PROP_ARMOR_BENCH	Armor Workbench
+PROP_AMMO_BENCH	Ammunition Workbench
+FILTER_GIZMO	Gizmos
+UILABEL_BEHAVIOR_AUTO_CRAFT	Auto-Craft
+UILABEL_BEHAVIOR_AUTO_CRAFT_TIP	Fills your Crafting Orders that keep a stock: while your stores hold fewer than the order asks and hold what its recipe takes, fetches the ingredients to the crafting prop and works it
+UILABEL_WAIT_NO_CRAFT_ORDER	No Crafting Order is short of stock with its ingredients in your stores
+MISC_RECIPE_RESEARCHED	{0} works out how to make {1}
+MISC_CRAFTS_BATCH	{0} makes {1}
+MISC_CRAFT_NO_RECIPE	Pick a recipe first: right-click it and choose Crafting Order
+MISC_CRAFT_NOT_RESEARCHED	Its recipe has not been researched
+MISC_CRAFT_OUTPUT_FULL	What it made must be carried out before it makes more
+MISC_CRAFT_MISSING	Its recipe's ingredients are not all in it
+UILABEL_CRAFT_ORDER	Crafting Order
+UILABEL_RESEARCH	Research
+UILABEL_CRAFT_ORDER_TITLE	Crafting Order: {0}
+UILABEL_RESEARCH_TITLE	Research: Crafting Recipes
+UILABEL_RESEARCH_GIZMOS	Gizmos in this table: {0}
+UILABEL_RESEARCH_COST	{0} Gizmos
+UILABEL_RESEARCH_UNLOCK	Unlock
+UILABEL_RESEARCH_KNOWN	Known
+UILABEL_RESEARCH_HELP	Put Gizmos in this table, then unlock a recipe to spend them. A recipe unlocked is your whole faction's.
+UILABEL_CRAFT_PICKED	Picked
+UILABEL_CRAFT_PICK	Pick
+UILABEL_CRAFT_KEEP	Keep in stock
+UILABEL_CRAFT_KEEP_OFF	Off
+UILABEL_CRAFT_STOCK	In your stores now: {0}
+UILABEL_CRAFT_ORDER_HELP	One recipe at a time. With a stock to keep, units with Auto-Craft make more while your stores hold fewer than that and hold the ingredients. What is made must be carried out before more is.
+UILABEL_CRAFT_NONE_KNOWN	No recipe for this is known yet: unlock one at a Research Table
+UILABEL_CRAFT_TAKES	takes {0}

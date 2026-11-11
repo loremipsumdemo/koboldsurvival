@@ -48,13 +48,18 @@ uniform float uShine;   // how far a white shine has crossed, up to 1. 0 is no s
 uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
 uniform float uHue;      // turns of hue shift, a boss's Coloration (0 leaves the colors as they are)
 out vec4 FragColor;
-// The color turned round the gray axis by h turns: a hue shift that keeps brightness and shading
+// A hue shift by h turns: the color's hue moved round the color wheel, its saturation and value kept, so grays stay gray
+// and shading stays as it was. Not a colorize: every color in the texture moves by the same angle.
 vec3 hueTurn(vec3 c, float h) {
     if (h == 0.0) return c;
-    const vec3 k = vec3(0.57735);
-    float a = h * 6.2831853;
-    float ca = cos(a);
-    return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    vec3 hsv = vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+    hsv.x = fract(hsv.x + h);
+    vec3 t = abs(fract(hsv.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+    return hsv.z * mix(vec3(1.0), clamp(t - 1.0, 0.0, 1.0), hsv.y);
 }
 void main() {
     vec4 c = texture(uTex, vUV);
@@ -113,13 +118,18 @@ uniform float uGrainOn;     // 1 for building pieces, 0 for everything else
 uniform float uGrainTile;   // world units one copy of the texture covers
 uniform vec4 uTint;
 out vec4 FragColor;
-// The color turned round the gray axis by h turns: a hue shift that keeps brightness and shading
+// A hue shift by h turns: the color's hue moved round the color wheel, its saturation and value kept, so grays stay gray
+// and shading stays as it was. Not a colorize: every color in the texture moves by the same angle.
 vec3 hueTurn(vec3 c, float h) {
     if (h == 0.0) return c;
-    const vec3 k = vec3(0.57735);
-    float a = h * 6.2831853;
-    float ca = cos(a);
-    return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    vec3 hsv = vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+    hsv.x = fract(hsv.x + h);
+    vec3 t = abs(fract(hsv.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+    return hsv.z * mix(vec3(1.0), clamp(t - 1.0, 0.0, 1.0), hsv.y);
 }
 void main() {
     vec4 c = texture(uTex, vUV);
@@ -748,6 +758,32 @@ void Renderer::drawRoundedRect(const Rect& r, float radius, RGBA c) {
                 v.push_back({ cx[k] + std::cos(a1) * rad, cy[k] + std::sin(a1) * rad, c });
             }
         }
+    }
+    drawUiTris(v);
+}
+
+void Renderer::drawLine2D(float x0, float y0, float x1, float y1, float thick, RGBA c) {
+    const float dx = x1 - x0, dy = y1 - y0;
+    const float len = std::sqrt(dx * dx + dy * dy);
+    if (len < 0.01f) return;
+    const float nx = -dy / len * thick * 0.5f, ny = dx / len * thick * 0.5f;
+    static std::vector<UiVert> v;
+    v.clear();
+    v.insert(v.end(), { { x0 + nx, y0 + ny, c }, { x1 + nx, y1 + ny, c }, { x1 - nx, y1 - ny, c },
+                        { x0 + nx, y0 + ny, c }, { x1 - nx, y1 - ny, c }, { x0 - nx, y0 - ny, c } });
+    drawUiTris(v);
+}
+
+void Renderer::drawDisc(float x, float y, float radius, RGBA c) {
+    if (radius <= 0.0f) return;
+    static std::vector<UiVert> v;
+    v.clear();
+    const int steps = 20;
+    for (int i = 0; i < steps; ++i) {
+        const float a0 = 2.0f * PI * (float)i / (float)steps, a1 = 2.0f * PI * (float)(i + 1) / (float)steps;
+        v.push_back({ x, y, c });
+        v.push_back({ x + std::cos(a0) * radius, y + std::sin(a0) * radius, c });
+        v.push_back({ x + std::cos(a1) * radius, y + std::sin(a1) * radius, c });
     }
     drawUiTris(v);
 }
