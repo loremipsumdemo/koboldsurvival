@@ -73,7 +73,7 @@ Vec2 citizenHome(World& w, ObjectId u) {
     float best = -1.0f;
     for (const Claim& c : claimsOf(w)) {
         if (c.owner != FACTION_PLAYER) continue;
-        const float dx = c.x - home.x, dz = c.z - home.z, d2 = dx * dx + dz * dz;
+        const float d2 = distSq(c.x, c.z, home.x, home.z);
         if (best < 0.0f || d2 < best) {
             best = d2;
             home = Vec2{ c.x, c.z };

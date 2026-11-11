@@ -498,9 +498,10 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
             const Transform* ot = w.get<Transform>(o);
             const float dx = x - ot->x, dz = z - ot->z;
             const float reach = footprintReach(oi.foot) + PROP_BLOCK_RADIUS;
-            if (dx * dx + dz * dz > reach * reach) continue;
+            const float d2 = distSq(x, z, ot->x, ot->z);
+            if (d2 > reach * reach) continue;
             if (insideFootprint(oi.foot, dx, dz, w.get<Prop>(o)->yaw)) return true;
-            if (dx * dx + dz * dz < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) return true;
+            if (d2 < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) return true;
         }
         return false;
     };

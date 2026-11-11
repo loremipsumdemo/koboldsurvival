@@ -24,6 +24,12 @@ inline float distSq(const Transform& a, const Transform& b) {
     return dx * dx + dz * dz;
 }
 
+// Squared distance across the ground between two points
+inline float distSq(float x1, float z1, float x2, float z2) {
+    const float dx = x1 - x2, dz = z1 - z2;
+    return dx * dx + dz * dz;
+}
+
 // An entity is a living thing: it has health and it moves. There are two kinds:
 //  - a unit, a person: a player unit (Commandable) or an NPC
 //  - a mob, an animal or beast (it also has Mob), of which a boss mob is one whose MobCategory is Boss

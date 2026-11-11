@@ -240,8 +240,7 @@ void pickupChainSystem(World& w, Terrain& t) {
                 for (ObjectId it : job->items) {
                     if (!freeFor(idle[i], it)) continue;
                     const Transform* itr = w.get<Transform>(it);
-                    const float dx = itr->x - ut->x, dz = itr->z - ut->z;
-                    const float d2 = dx * dx + dz * dz;
+                    const float d2 = distSq(*itr, *ut);
                     if (bestD2 < 0.0f || d2 < bestD2) {
                         bestD2 = d2;
                         bu = i;
@@ -323,8 +322,7 @@ int pickupSystem(World& w, Terrain& t) {
             continue;
         }
 
-        const float dx = it->x - ut->x, dz = it->z - ut->z;
-        if (dx * dx + dz * dz <= PICKUP_REACH * PICKUP_REACH) {
+        if (distSq(*it, *ut) <= PICKUP_REACH * PICKUP_REACH) {
             if (!canHoldItem(w, u, gi->item)) {
                 if (PickupChain* ch = w.get<PickupChain>(u)) ch->skipped.push_back(item);
                 endPickup(w, u);

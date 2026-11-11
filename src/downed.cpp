@@ -151,8 +151,7 @@ bool hostileNear(World& w, ObjectId u) {
         if (o == u || outCold(w, o) || w.has<PlayingDead>(o) || w.has<Carried>(o)) continue;
         if (!factionsHostile(w, mine, factionOf(w, o))) continue;
         const Transform* ot = w.get<Transform>(o);
-        const float dx = ot->x - ut->x, dz = ot->z - ut->z;
-        if (dx * dx + dz * dz <= RESTED_HOSTILE_RANGE * RESTED_HOSTILE_RANGE) return true;
+        if (distSq(*ot, *ut) <= RESTED_HOSTILE_RANGE * RESTED_HOSTILE_RANGE) return true;
     }
     return false;
 }

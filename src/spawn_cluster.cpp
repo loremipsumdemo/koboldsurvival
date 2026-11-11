@@ -16,8 +16,7 @@ bool clearOfProps(World& w, float x, float z, float spacing) {
     for (ObjectId p : w.view<Prop, Transform>()) {
         const Transform* pt = w.get<Transform>(p);
         const float reach = footprintReach(propInfo(w.get<Prop>(p)->kind).foot) + spacing * 0.5f;
-        const float dx = pt->x - x, dz = pt->z - z;
-        if (dx * dx + dz * dz < reach * reach) return false;
+        if (distSq(pt->x, pt->z, x, z) < reach * reach) return false;
     }
     return true;
 }

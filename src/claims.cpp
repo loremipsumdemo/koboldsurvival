@@ -31,8 +31,7 @@ std::vector<Claim> claimsOf(World& w) {
         const Transform* t = w.get<Transform>(e);
         bool atHome = false;
         for (size_t i = 0; i < altars && !atHome; ++i) {
-            const float dx = t->x - out[i].x, dz = t->z - out[i].z;
-            atHome = out[i].owner == faction && dx * dx + dz * dz <= CLAIM_RADIUS * CLAIM_RADIUS;
+            atHome = out[i].owner == faction && distSq(t->x, t->z, out[i].x, out[i].z) <= CLAIM_RADIUS * CLAIM_RADIUS;
         }
         if (atHome) continue;
         Claim c;
@@ -58,8 +57,7 @@ bool campSheltered(World& w, const std::vector<Claim>& claims, float x, float z,
         if (w.get<Prop>(e)->kind != PropKind::Campfire || w.has<Blueprint>(e)) continue;
         if (const Owner* own = w.get<Owner>(e); own && own->faction != faction) continue;
         const Transform* t = w.get<Transform>(e);
-        const float dx = t->x - x, dz = t->z - z;
-        if (dx * dx + dz * dz <= CAMP_CLAIM_RADIUS * CAMP_CLAIM_RADIUS) return true;
+        if (distSq(t->x, t->z, x, z) <= CAMP_CLAIM_RADIUS * CAMP_CLAIM_RADIUS) return true;
     }
     return false;
 }
@@ -95,16 +93,14 @@ void campPropSystem(World& w, float dt) {
 const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int owner) {
     for (const Claim& c : claims) {
         if (owner >= 0 && c.owner != owner) continue;
-        const float dx = x - c.x, dz = z - c.z;
-        if (dx * dx + dz * dz <= c.radius * c.radius) return &c;
+        if (distSq(x, z, c.x, c.z) <= c.radius * c.radius) return &c;
     }
     return nullptr;
 }
 
 bool claimsOverlap(float ax, float az, float ar, float bx, float bz, float br) {
-    const float dx = ax - bx, dz = az - bz;
     const float reach = ar + br;
-    return dx * dx + dz * dz < reach * reach;
+    return distSq(ax, az, bx, bz) < reach * reach;
 }
 
 const Claim* claimOf(const std::vector<Claim>& claims, ObjectId prop) {
@@ -208,8 +204,7 @@ void abandonClaim(World& w, float x, float z, float radius, int faction) {
     for (ObjectId e : w.view<Prop, Transform, Owner>()) {
         if (w.get<Owner>(e)->faction != faction) continue;
         const Transform* t = w.get<Transform>(e);
-        const float dx = t->x - x, dz = t->z - z;
-        if (dx * dx + dz * dz > radius * radius) continue;
+        if (distSq(t->x, t->z, x, z) > radius * radius) continue;
         w.remove<Owner>(e);
         if (Lock* lock = w.get<Lock>(e); lock && lock->faction == faction) lock->faction = -1;
     }
