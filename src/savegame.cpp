@@ -125,6 +125,8 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
         const PropVisual& v = *p.visual;
         w.line("visual", i, v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz);
     }
+    if (p.claimSteps) w.line("claimsteps", i, *p.claimSteps);
+    if (p.site) w.line("plansite", i, p.site->plan, p.site->x, p.site->z, p.site->turns, p.site->material, p.site->stage, p.site->hours);
     if (p.foundation) {
         w.line("foundation", i, p.foundation->x0, p.foundation->z0, p.foundation->w, p.foundation->h);
     }
@@ -325,6 +327,21 @@ const std::unordered_map<std::string, Handler>& handlers() {
             ItemStack s;
             if (!p || !l.read(s.item, s.count)) return false;
             p->bonesItems.push_back(s);
+            return true;
+        } },
+        { "claimsteps", [](Line& l) {
+            SaveProp* p = l.prop();
+            int steps = 0;
+            if (!p || !l.read(steps)) return false;
+            p->claimSteps = std::clamp(steps, 0, 1000);
+            return true;
+        } },
+        { "plansite", [](Line& l) {
+            SaveProp* p = l.prop();
+            SaveSite s;
+            if (!p || !l.read(s.plan, s.x, s.z, s.turns, s.material, s.stage, s.hours)) return false;
+            s.turns = ((s.turns % 4) + 4) % 4;
+            p->site = std::move(s);
             return true;
         } },
         { "visual", [](Line& l) {

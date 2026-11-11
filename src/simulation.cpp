@@ -9,6 +9,7 @@
 #include "calendar.h"
 #include "claims.h"
 #include "npc_camps.h"
+#include "npc_builders.h"
 #include "taming.h"
 #include "faction_rules.h"
 #include "recipes.h"
@@ -126,6 +127,8 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     gs.claimDecayDue += gameSecs;
     if (gs.claimDecayDue >= GAME_SECONDS_PER_REAL_SECOND) {
         PROFILED("claimDecaySystem", claimDecaySystem(w, gs.claimDecayDue));
+        PROFILED("claimGrowthSystem", claimGrowthSystem(w, (float)(gs.claimDecayDue / GAME_SECONDS_PER_REAL_SECOND)));
+        PROFILED("npcBuilderSystem", npcBuilderSystem(w, t, rng, (float)(gs.claimDecayDue / GAME_SECONDS_PER_REAL_SECOND), gs.claimDecayDue));
         PROFILED("outdoorDecaySystem", outdoorDecaySystem(w, gs.claimDecayDue));
         gs.claimDecayDue = 0.0;
     }

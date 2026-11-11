@@ -172,3 +172,38 @@ struct EditorLayout {
     Rect uiToggle;
 };
 EditorLayout layoutEditor(int W, int H, bool ownUi);
+
+// The Building Blueprints editor (app_blueprint.cpp): a flat test area, with the Build tab's tools put down finished at once,
+// and a panel for the plan's name, its box, and saving, opening and leaving. Its plans go to MAP/BLUEPRINT (build_plan.h).
+inline constexpr int BLUEPRINT_NAME_CHARS = 32;
+inline constexpr int BLUEPRINT_MOST_FLOORS = 8;   // the game's top floor, STOREY_MAX, and the ground floor under it
+inline constexpr int BLUEPRINT_AREA = 192;      // the test area, in tiles each way
+inline constexpr int BLUEPRINT_CORNER = 64;     // where the plan's box starts, in tiles from the area's corner
+struct BlueprintUi {
+    bool active = false;
+    std::string name;
+    bool editingName = false;
+    int w = 5, d = 5, floors = BLUEPRINT_MOST_FLOORS;   // the plan's box, and the floors that can be looked at (up to 8)
+    std::string savedText;          // the plan as last saved or opened, to tell what has changed
+    bool exitWarned = false;
+    bool saveWarned = false;        // Save was pressed with pieces outside the box: pressed again, it saves anyway
+    bool dirty = false;             // changed since it was saved or opened, looked at twice a second
+    float dirtyIn = 0.0f;
+    float x = -1.0f, y = -1.0f;     // where the panel is: -1, the top left corner
+    bool folded = false;            // only its title bar shows
+    bool dragging = false;          // the title bar is held, to move the panel
+    float grabX = 0.0f, grabY = 0.0f;
+    bool listOpen = false;          // the plans to open
+    std::vector<std::string> plans;
+    int listScroll = 0;
+};
+struct BlueprintLayout {
+    Rect panel, title, fold, nameBox;
+    Rect widthLabel, widthDown, widthBox, widthUp;
+    Rect depthLabel, depthDown, depthBox, depthUp;
+    Rect floorsLabel, floorsDown, floorsBox, floorsUp;
+    Rect save, load, clear, exit, status;
+    Rect list;                      // the plans to open, under the panel
+    std::vector<Rect> rows;
+};
+BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui);

@@ -2,6 +2,7 @@
 #include "game_tables.h"
 #include "level.h"
 #include "party.h"
+#include "npc_builders.h"
 #include "systems_internal.h"
 #include "wheelbarrow.h"
 #include "taming.h"
@@ -65,6 +66,8 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         s.at = *w.get<Transform>(e);
         s.yaw = p->yaw;
         if (const PropVisual* pv = w.get<PropVisual>(e); pv && !pv->plain()) s.visual = *pv;
+        if (const ClaimGrowth* g = w.get<ClaimGrowth>(e); g && g->steps > 0) s.claimSteps = g->steps;
+        if (const PlanSite* ps = w.get<PlanSite>(e)) s.site = SaveSite{ ps->plan, ps->x, ps->z, ps->turns, ps->material, ps->stage, ps->hours };
         if (const Owner* own = w.get<Owner>(e)) s.owner = own->faction;
         if (const Lock* lock = w.get<Lock>(e)) s.lock = *lock;
         if (const Storage* st = w.get<Storage>(e)) s.storage = occupiedSlots(st->slots);
@@ -254,6 +257,8 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
         const ObjectId e = makeProp(world, (PropKind)s.kind, s.at, s.yaw);
         world.get<Prop>(e)->yaw = s.yaw;   // as it was saved, whatever way a new one would face
         if (s.visual) world.add(e, *s.visual);
+        if (s.claimSteps) world.add(e, ClaimGrowth{ *s.claimSteps });
+        if (s.site) world.add(e, PlanSite{ s.site->plan, s.site->x, s.site->z, s.site->turns, s.site->material, s.site->stage, s.site->hours });
         props.push_back(e);
         if (s.owner >= 0) world.add(e, Owner{ s.owner });
         if (s.lock) world.add(e, *s.lock);

@@ -138,6 +138,9 @@ void App::performAction(Action action, int param) {
     case Action::WorldGeneration:
         openWorldGen();
         return;
+    case Action::BuildingBlueprints:
+        openBlueprintEditor();
+        return;
     case Action::Language:
         settingsUi.tab = SettingsTab::Language;
         [[fallthrough]];

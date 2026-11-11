@@ -103,18 +103,6 @@ bool anyFloorOn(World& w, const BuildingMap& m, const std::vector<long long>& ti
     return false;
 }
 
-bool edgesClosedMap(World& w, const BuildingMap& m, const std::vector<long long>& tiles, int level) {
-    if (tiles.empty()) return false;
-    const std::unordered_set<long long> in(tiles.begin(), tiles.end());
-    for (long long k : tiles) {
-        const int x = keyX(k), z = keyZ(k);
-        const bool edge = !in.count(tileKey(x + 1, z)) || !in.count(tileKey(x - 1, z)) || !in.count(tileKey(x, z + 1)) ||
-                          !in.count(tileKey(x, z - 1));
-        if (edge && !isWallOrDoor(w, mapGet(m.piece, levelKey(x, z, level)))) return false;
-    }
-    return true;
-}
-
 int dirOfYaw(float yaw) { return (((int)std::lround(yaw / 1.5707963f)) % 4 + 4) % 4; }
 
 bool isStairs(World& w, ObjectId e) {
@@ -428,7 +416,6 @@ const char* pieceRefusalKey(PieceCheck c) {
     case PieceCheck::NeedsFoundation: return "MISC_BUILD_NEEDS_FOUNDATION";
     case PieceCheck::FoundationUnfinished: return "MISC_BUILD_FOUNDATION_UNFINISHED";
     case PieceCheck::Taken: return "MISC_BUILD_TILE_TAKEN";
-    case PieceCheck::EdgesOpen: return "MISC_BUILD_EDGES_OPEN";
     case PieceCheck::NeedsFloor: return "MISC_BUILD_NEEDS_FLOOR";
     case PieceCheck::TooSteep: return "MISC_FOUNDATION_TOO_STEEP";
     case PieceCheck::Ok: break;
@@ -623,6 +610,48 @@ std::vector<long long> buildingTiles(const BuildingMap& map, int x, int z) {
             seen.insert(nk);
             open.push_back(nk);
         }
+    }
+    return out;
+}
+
+std::vector<BuildingCluster> buildingClusters(World& w, const BuildingMap& m) {
+    std::vector<BuildingCluster> out;
+    std::unordered_set<long long> seen;
+    // In tile order, so the same world always gives the same list
+    std::vector<long long> keys;
+    keys.reserve(m.foundation.size());
+    for (const auto& [k, fe] : m.foundation) keys.push_back(k);
+    std::sort(keys.begin(), keys.end());
+    for (long long k : keys) {
+        if (seen.count(k)) continue;
+        BuildingCluster c;
+        c.tiles = buildingTiles(m, keyX(k), keyZ(k));
+        seen.insert(c.tiles.begin(), c.tiles.end());
+        const ObjectId first = mapGet(m.foundation, k);
+        c.owner = ownerOf(w, first);
+        c.material = materialOf(w, first);
+        c.x0 = c.x1 = keyX(k);
+        c.z0 = c.z1 = keyZ(k);
+        c.foundationBuilt = true;
+        const std::unordered_set<long long> in(c.tiles.begin(), c.tiles.end());
+        bool closed = true;
+        int doors = 0;
+        for (long long tk : c.tiles) {
+            const int x = keyX(tk), z = keyZ(tk);
+            c.x0 = std::min(c.x0, x);
+            c.x1 = std::max(c.x1, x);
+            c.z0 = std::min(c.z0, z);
+            c.z1 = std::max(c.z1, z);
+            if (w.has<Blueprint>(mapGet(m.foundation, tk))) c.foundationBuilt = false;
+            const bool edge = !in.count(tileKey(x + 1, z)) || !in.count(tileKey(x - 1, z)) || !in.count(tileKey(x, z + 1)) ||
+                              !in.count(tileKey(x, z - 1));
+            if (!edge) continue;
+            const ObjectId p = mapGet(m.piece, levelKey(x, z, 0));
+            if (!isWallOrDoor(w, p) || w.has<Blueprint>(p)) closed = false;
+            else if (infoOf(w, p)->door) ++doors;
+        }
+        c.complete = c.foundationBuilt && closed && doors > 0 && c.x1 - c.x0 >= 2 && c.z1 - c.z0 >= 2;
+        out.push_back(std::move(c));
     }
     return out;
 }
@@ -836,13 +865,6 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
     return PieceCheck::Ok;
 }
 
-bool edgesClosed(World& w, ObjectId foundation, int level) {
-    const Foundation* f = w.get<Foundation>(foundation);
-    if (!f) return false;
-    const BuildingMap m = buildingMap(w);
-    return edgesClosedMap(w, m, buildingTiles(m, f->x0, f->z0), level);
-}
-
 void collapseCheck(World& w) {
     const BuildingMap m = buildingMap(w);
     std::unordered_set<long long> seen;
@@ -897,6 +919,16 @@ void collapseCheck(World& w) {
     if (fell) queueLog(w, lang("MISC_FLOORS_COLLAPSE"), LogKind::Seen);
 }
 
+ObjectId placeCostedProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey) {
+    const ObjectId e = placeBuiltProp(w, t, kind, x, z, yaw, owner, storey);
+    if (propInfo(kind).materials <= 0.0) return e;
+    // Whoever places it is who builds it, so it is theirs while it is a blueprint
+    if (Owner* own = w.get<Owner>(e)) own->faction = owner;
+    else w.add(e, Owner{ owner });
+    w.add(e, Blueprint{});
+    return e;
+}
+
 ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir) {
     const PropInfo& info = propInfo(kind);
     const BuildingMap m = buildingMap(w);
@@ -930,6 +962,23 @@ int supplyBlueprint(World& w, ObjectId blueprint, int logs) {
     const int took = std::clamp(materialsNeeded(w, blueprint) - bp->supplied, 0, logs);
     bp->supplied += took;
     return took;
+}
+
+void finishAllBlueprints(World& w, Terrain& t) {
+    for (int pass = 0; pass < 16; ++pass) {
+        bool any = false;
+        for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
+            if (!w.has<Blueprint>(e)) continue;
+            Blueprint* bp = w.get<Blueprint>(e);
+            bp->supplied = std::max(bp->supplied, materialsNeeded(w, e));
+            bp->progress = 1.0;
+            bp->retryIn = 0.0f;
+            if (finishBlueprint(w, t, e)) any = true;
+        }
+        // What stands on a floor stands at its height, which the terrain learns of here
+        refreshBuildingTiles(w, t);
+        if (!any) break;
+    }
 }
 
 bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
@@ -1201,6 +1250,7 @@ int bedHouseOwner(World& w, ObjectId bed) {
 }
 
 bool bedOpenTo(World& w, ObjectId bed, ObjectId u) {
+    if (w.has<Blueprint>(bed)) return false;
     if (w.has<BedPublic>(bed)) return true;
     const int owner = bedHouseOwner(w, bed);
     return owner < 0 || owner == factionOf(w, u);

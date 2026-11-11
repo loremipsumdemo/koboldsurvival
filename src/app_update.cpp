@@ -237,7 +237,7 @@ void App::updateCamera() {
     if (screen != Screen::Playing) return;
     if (session.dialogueUnit == NO_OBJECT && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NO_OBJECT && !followUnitCamera(world, cam, followUnit)) followUnit = NO_OBJECT;
-    if (!editing) keepCameraNearUnits(world, cam);
+    if (!editing && !bpEdit.active) keepCameraNearUnits(world, cam);
     updateFloorView();
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
@@ -245,6 +245,10 @@ void App::updateCamera() {
 
 void App::stepSimulation() {
     if (screen != Screen::Playing || session.paused || editing) return;
+    if (bpEdit.active) {
+        updateBlueprintEditor();
+        return;
+    }
     const float frameDt = dt;
     simLeft += frameDt;
     dt = SIM_STEP_SECONDS;
@@ -497,8 +501,8 @@ void App::updateHover() {
 
     {
         const bool inClaim = selectionInClaim(world);
-        if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing) session.buildPick = {};
-        renderer.setBuildInClaim(inClaim);
+        if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing && !bpEdit.active) session.buildPick = {};
+        renderer.setBuildInClaim(inClaim || bpEdit.active);
         renderer.setDeveloperOpen(devSpawn.open);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
@@ -561,6 +565,15 @@ void App::updateHover() {
         if (bp.ringR > 0.0f) {
             for (const Claim& c : claims) {
                 if (c.altar != hoverAltar) bp.otherRings.push_back({ c.x, c.z, c.radius });
+            }
+        }
+        if (bpEdit.active) {
+            // The plan's box, marked on the ground by its edge
+            for (int i = 0; i < bpEdit.w; ++i) {
+                for (int j = 0; j < bpEdit.d; ++j) {
+                    if (i != 0 && j != 0 && i != bpEdit.w - 1 && j != bpEdit.d - 1) continue;
+                    bp.marks.push_back(BuildPreview::Mark{ BLUEPRINT_CORNER + i, BLUEPRINT_CORNER + j, 0.02f, 0, true });
+                }
             }
         }
         renderer.setBuildPreview(bp);

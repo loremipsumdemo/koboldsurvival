@@ -1,5 +1,6 @@
 #pragma once
 #include "systems.h"
+#include "building.h"
 #include "need_behaviors.h"
 #include "claims.h"
 #include "mobs.h"
@@ -89,7 +90,7 @@ ObjectId nearestProp(World& w, const Transform& from, Pred pred) {
     ObjectId best = NO_OBJECT;
     float bestD2 = 0.0f;
     for (ObjectId p : w.view<Prop, Transform>()) {
-        if (!pred(p)) continue;
+        if (w.has<Blueprint>(p) || !pred(p)) continue;
         const float d2 = distSq(*w.get<Transform>(p), from);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = p;

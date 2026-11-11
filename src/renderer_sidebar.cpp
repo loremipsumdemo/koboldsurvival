@@ -346,7 +346,14 @@ void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
         drawSmallButton(btn, lang(picked ? (br.developer ? "UILABEL_BUILD_OPEN" : "UILABEL_BUILD_PICKED")
                                          : (br.developer ? "UILABEL_BUILD_OPEN_IT" : "UILABEL_BUILD_SELECT")), usable, hovered);
         const RGBA tone = !usable ? theme::alpha(theme::ASH, 0.5f) : picked ? theme::GOLD : WHITE;
-        drawListText(br.developer ? lang("UILABEL_BUILD_DEVELOPER") : pickName(pick), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
+        std::string label = br.developer ? lang("UILABEL_BUILD_DEVELOPER") : pickName(pick);
+        if (!br.developer && pick.placing() && propInfo(pick.kind).materials > 0.0) {
+            // What it costs to build: logs, or logs a tile for a foundation or an upper floor
+            const PropInfo& pi = propInfo(pick.kind);
+            label = langf(pi.foundation || pi.upperFloor ? "UILABEL_BUILD_COST_TILE" : "UILABEL_BUILD_COST",
+                          { label, std::to_string((int)std::ceil(pi.materials - 1e-9)) });
+        }
+        drawListText(fitText(label, row.x + row.w - (btn.x + btnW + gap) - 2.0f * s, false), btn.x + btnW + gap, row.y + (row.h - th) * 0.5f, tone);
     }
 }
 

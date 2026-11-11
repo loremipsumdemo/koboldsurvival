@@ -61,6 +61,10 @@ void App::onTextInput() {
         worldGenChanged();
         return;
     }
+    if (screen == Screen::Playing && bpEdit.active && bpEdit.editingName) {
+        appendUtf8Limited(bpEdit.name, e.text.text, BLUEPRINT_NAME_CHARS);
+        return;
+    }
     if (screen == Screen::Playing && editing && editor.editingName) {
         appendUtf8Limited(editor.name, e.text.text, EDITOR_NAME_CHARS);
         return;
@@ -104,6 +108,7 @@ void App::onKeyDown() {
         else if (e.key.key == SDLK_ESCAPE) stopSquadRename(false);
         return;
     }
+    if (screen == Screen::Playing && bpEdit.active && blueprintKeyDown()) return;
     // A count being typed into the spawn list (the Developer panel's, or the level editor's)
     if (screen == Screen::Playing && !editing && devSpawn.open && spawnPickerKey(devSpawn)) return;
     if (screen == Screen::Playing && editing && spawnPickerKey(editor.spawn)) return;
@@ -937,7 +942,7 @@ void App::onMouseMotion() {
 void App::panWithKeys(float dt, bool edgeScroll) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     float right = 0.0f, forward = 0.0f;
-    if (percentPrompt.open || panelOpen) keys = nullptr;
+    if (percentPrompt.open || panelOpen || (bpEdit.active && bpEdit.editingName)) keys = nullptr;
     if (keys && (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT])) right += 1.0f;
     if (keys && (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT])) right -= 1.0f;
     if (keys && (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP])) forward += 1.0f;

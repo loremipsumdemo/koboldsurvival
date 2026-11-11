@@ -54,6 +54,7 @@
 #include "equip.h"
 #include "textcase.h"
 #include "items.h"
+#include "build_plan.h"
 #include "systems.h"
 #include "terrain.h"
 #include "ui_types.h"
@@ -565,6 +566,19 @@ struct App : AppSession {
         float lastX = 0.0f, lastY = 0.0f;
     };
     PropAdjustUi propAdjust;
+    // The Building Blueprints editor (app_blueprint.cpp)
+    BlueprintUi bpEdit;
+    void openBlueprintEditor();
+    void blueprintExit();
+    bool blueprintSave();
+    bool blueprintLoad(const std::string& name);
+    void blueprintClear();
+    bool blueprintKeyDown();
+    bool pressOnBlueprint();
+    void drawBlueprintPanel();
+    void updateBlueprintEditor();
+    std::string blueprintText();
+    BuildPlan blueprintPlan();
     KillUi devKill;     // the Developer panel's Kill Entity tab
     SweepUi devClean;   // and its Clean tab
     DestroyUi devDestroy;   // and its Destroy tab

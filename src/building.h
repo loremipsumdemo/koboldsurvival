@@ -171,13 +171,15 @@ enum class PieceCheck {
     NeedsFoundation,
     FoundationUnfinished,
     Taken,
-    EdgesOpen,
     NeedsFloor,
     TooSteep,
 };
 const char* pieceRefusalKey(PieceCheck c);
 
 int woodLogItem();
+// A prop that is not a building piece, placed from the Build tab: finished at once when props.txt gives it no materials,
+// else a blueprint of the placer's faction that is built like any piece
+ObjectId placeCostedProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey = 0);
 bool isBuildingPiece(PropKind kind);
 // Building material this piece needs in all (one unit for most), and seconds of building at Carpentry 1
 int materialsNeeded(World& w, ObjectId prop);
@@ -197,13 +199,27 @@ bool floorSurfaceAt(World& w, int x, int z, int level, int owner);
 // The foundation tiles joined to this one, side by side: one building
 std::vector<long long> buildingTiles(const BuildingMap& map, int x, int z);
 
+// Every building (its foundation tiles joined side by side) in the world, and how far it has come. A building is complete
+// when all its foundation is built, it is at least 3 by 3, every edge tile of its ground floor has a built wall or door
+// (a 3 by 3 has 7 walls and a door), and it has a built door.
+struct BuildingCluster {
+    int owner = -1;
+    BuildMaterial material = BuildMaterial::Wood;   // what its first foundation tile is made of
+    std::vector<long long> tiles;                   // by tileKey
+    int x0 = 0, z0 = 0, x1 = 0, z1 = 0;             // the box round it
+    bool foundationBuilt = false;                   // no foundation tile is still a blueprint
+    bool complete = false;
+    float centerX() const { return (float)(x0 + x1 + 1) * 0.5f; }
+    float centerZ() const { return (float)(z0 + z1 + 1) * 0.5f; }
+};
+std::vector<BuildingCluster> buildingClusters(World& w, const BuildingMap& m);
+
 PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER);
 // Lays a foundation tile on every tile of the rectangle that has none: the first laid, or NO_OBJECT
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner = FACTION_PLAYER,
                          BuildMaterial material = BuildMaterial::Wood);
 
-// A piece on this floor (level) of a tile. A ladder, and an upper floor over this floor, need every edge tile of the
-// building on this floor to have a wall or a door.
+// A piece on this floor (level) of a tile.
 // Stairs go on 3 tiles in a row, x and z the middle one, rising toward dir (0 north, 1 east, 2 south, 3 west). Their
 // bottom step is stepped onto from any open floor tile beside it, and their top step is a tile of the floor above. Their
 // steps can't be walked across on the floor they stand on.
@@ -215,13 +231,14 @@ inline constexpr int STAIRS_DX[4] = { 0, 1, 0, -1 };
 inline constexpr int STAIRS_DZ[4] = { -1, 0, 1, 0 };
 inline constexpr float STAIRS_SECONDS = 1.2f;
 int stairsDir(World& w, ObjectId stairs);
-// Every edge tile of the building this foundation tile is part of has a wall or door on this floor (built or not)
-bool edgesClosed(World& w, ObjectId foundation, int level = 0);
 // Upper floors with no finished wall or door under them on their building's floor below fall in
 void collapseCheck(World& w);
 
 // Material is brought to a blueprint: how much it took
 int supplyBlueprint(World& w, ObjectId blueprint, int logs);
+// Builds every blueprint at once, material and time and all (the Building Blueprints editor): foundations and the pieces on them
+// in as many passes as it takes
+void finishAllBlueprints(World& w, Terrain& t);
 // Finishes a blueprint whose building is done. False, with the units in the way asked to move, if any stand there.
 bool finishBlueprint(World& w, Terrain& t, ObjectId prop);
 // The terrain's closed tiles, from the finished walls

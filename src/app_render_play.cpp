@@ -309,6 +309,7 @@ void App::drawPlayingScreen() {
     drawFactionRules();
     drawCraftWindow();
     drawDeveloper();
+    drawBlueprintPanel();
     drawGhosts();
     drawBehaviorGroups();
     drawStoreFilter();
@@ -317,7 +318,7 @@ void App::drawPlayingScreen() {
     drawFoundationSize();
     drawMaterialAsk();
     drawTalkOrTrade();
-    if (session.paused && !editing) renderer.drawPauseBar(true);
+    if (session.paused && !editing && !bpEdit.active) renderer.drawPauseBar(true);
     drawFloorBanner();
     drawFormMenu();
     if (editing) {

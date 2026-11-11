@@ -145,6 +145,10 @@ bool upgrade17to18(Lines& lines) {
     return true;
 }
 
+// Version 19 adds "claimsteps" (how far an Altar's claim has grown) and "plansite" (a building an NPC faction is building from a
+// plan). An older save has neither: its claims are as they were, and no faction is building from a plan.
+bool upgrade18to19(Lines&) { return true; }
+
 struct Step {
     int from;
     bool (*upgrade)(Lines&);
@@ -162,6 +166,7 @@ constexpr Step STEPS[] = {
     { 15, upgrade15to16 },
     { 16, upgrade16to17 },
     { 17, upgrade17to18 },
+    { 18, upgrade18to19 },
 };
 }
 
